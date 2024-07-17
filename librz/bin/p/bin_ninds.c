@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2022 deroad <wargio@libero.it>
+// SPDX-FileCopyrightText: 2022-2024 deroad <wargio@libero.it>
 // SPDX-FileCopyrightText: 2015-2019 a0rtega
 // SPDX-License-Identifier: LGPL-3.0-only
 
@@ -10,7 +10,75 @@
 
 #include "../format/nin/nds.h"
 
-#define nds_get_hdr(bf) ((NDSHeader *)bf->o->bin_obj)
+typedef struct nds_rom_t {
+	NDSHeader header;
+	RzPVector /*<NDSFatEntry *>*/ *fat_table;
+	RzPVector /*<NDSOverlayTblEntry *>*/ *arm9_overlays;
+	RzPVector /*<NDSOverlayTblEntry *>*/ *arm7_overlays;
+} NDSRom;
+
+#define nds_get_rom(bf) ((NDSRom *)bf->o->bin_obj)
+#define nds_get_hdr(bf) (&nds_get_rom(bf)->header)
+
+static bool nds_read_overlay_entry(RzBuffer *buf, NDSOverlayTblEntry *entry, ut64 *offset) {
+	return rz_buf_read_le32_offset(buf, offset, &entry->id) &&
+		rz_buf_read_le32_offset(buf, offset, &entry->load_address) &&
+		rz_buf_read_le32_offset(buf, offset, &entry->ram_size) &&
+		rz_buf_read_le32_offset(buf, offset, &entry->bss_size) &&
+		rz_buf_read_le32_offset(buf, offset, &entry->static_initializer_start_address) &&
+		rz_buf_read_le32_offset(buf, offset, &entry->static_initializer_end_address) &&
+		rz_buf_read_le32_offset(buf, offset, &entry->file_id) &&
+		rz_buf_read_le32_offset(buf, offset, &entry->reserved);
+}
+
+static bool nds_read_overlay_table(RzBuffer *buf, RzPVector /*<NDSOverlayTblEntry *>*/ *table, ut32 offset_begin, ut32 size) {
+	if (!buf || !table) {
+		rz_warn_if_reached();
+		return false;
+	} else if (offset_begin < 1 || size < 1) {
+		return true;
+	}
+	ut64 offset_end = offset_begin + size;
+	for (ut64 offset = offset_begin; offset < offset_end;) {
+		NDSOverlayTblEntry *entry = RZ_NEW0(NDSOverlayTblEntry);
+		if (!entry || !nds_read_overlay_entry(buf, entry, &offset)) {
+			free(entry);
+			rz_warn_if_reached();
+			return false;
+		}
+		rz_pvector_push(table, entry);
+	}
+
+	return true;
+}
+
+static bool nds_read_file_alloc_entry(RzBuffer *buf, NDSFatEntry *entry, ut64 *offset) {
+	// these addresses are relative to the beginning of the file.
+	// https://problemkaputt.de/gbatek-ds-cartridge-nitrorom-and-nitroarc-file-systems.htm
+	return rz_buf_read_le32_offset(buf, offset, &entry->file_start_offset) &&
+		rz_buf_read_le32_offset(buf, offset, &entry->file_end_offset);
+}
+
+static bool nds_read_file_alloc_table(RzBuffer *buf, RzPVector /*<NDSFatEntry *>*/ *table, NDSHeader *header) {
+	if (!buf || !table) {
+		rz_warn_if_reached();
+		return false;
+	} else if (header->fat_offset < 1 || header->fat_size < 1) {
+		return true;
+	}
+	ut64 offset_end = header->fat_offset + header->fat_size;
+	for (ut64 offset = header->fat_offset; offset < offset_end;) {
+		NDSFatEntry *entry = RZ_NEW0(NDSFatEntry);
+		if (!entry || !nds_read_file_alloc_entry(buf, entry, &offset)) {
+			free(entry);
+			rz_warn_if_reached();
+			return false;
+		}
+		rz_pvector_push(table, entry);
+	}
+
+	return true;
+}
 
 static bool nds_read_header(RzBuffer *buf, NDSHeader *hdr) {
 	ut64 offset = 0;
@@ -43,12 +111,11 @@ static bool nds_read_header(RzBuffer *buf, NDSHeader *hdr) {
 		rz_buf_read_le32_offset(buf, &offset, &hdr->rom_control_info2) &&
 		rz_buf_read_le32_offset(buf, &offset, &hdr->banner_offset) &&
 		rz_buf_read_le16_offset(buf, &offset, &hdr->secure_area_crc) &&
-		rz_buf_read_le16_offset(buf, &offset, &hdr->rom_control_info3) &&
-		rz_buf_read_le32_offset(buf, &offset, &hdr->offset_0x70) &&
-		rz_buf_read_le32_offset(buf, &offset, &hdr->offset_0x74) &&
-		rz_buf_read_le32_offset(buf, &offset, &hdr->offset_0x78) &&
-		rz_buf_read_le32_offset(buf, &offset, &hdr->offset_0x7C) &&
-		rz_buf_read_le32_offset(buf, &offset, &hdr->application_end_offset) &&
+		rz_buf_read_le16_offset(buf, &offset, &hdr->secure_transfer_timeout) &&
+		rz_buf_read_le32_offset(buf, &offset, &hdr->arm9_autoload) &&
+		rz_buf_read_le32_offset(buf, &offset, &hdr->arm7_autoload) &&
+		rz_buf_read_le64_offset(buf, &offset, &hdr->secure_disable) &&
+		rz_buf_read_le32_offset(buf, &offset, &hdr->ntr_region_rom_size) &&
 		rz_buf_read_le32_offset(buf, &offset, &hdr->rom_header_size) &&
 		rz_buf_read_le32_offset(buf, &offset, &hdr->offset_0x88) &&
 		rz_buf_read_le32_offset(buf, &offset, &hdr->offset_0x8C) &&
@@ -84,13 +151,31 @@ static bool nds_check_buffer(RzBuffer *b) {
 	return false;
 }
 
+static void nds_rom_free(NDSRom *rom) {
+	if (!rom) {
+		return;
+	}
+	rz_pvector_free(rom->fat_table);
+	rz_pvector_free(rom->arm7_overlays);
+	rz_pvector_free(rom->arm9_overlays);
+	free(rom);
+}
+
 static bool nds_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *sdb) {
-	NDSHeader *hdr = RZ_NEW0(NDSHeader);
-	if (!hdr || !nds_read_header(b, hdr)) {
-		free(hdr);
+	NDSRom *rom = RZ_NEW0(NDSRom);
+	rom->fat_table = rz_pvector_new((RzPVectorFree)free);
+	rom->arm9_overlays = rz_pvector_new((RzPVectorFree)free);
+	rom->arm7_overlays = rz_pvector_new((RzPVectorFree)free);
+	if (!rom ||
+		!nds_read_header(b, &rom->header) ||
+		!nds_read_file_alloc_table(b, rom->fat_table, &rom->header) ||
+		!nds_read_overlay_table(b, rom->arm9_overlays, rom->header.arm9_overlay_offset, rom->header.arm9_overlay_size) ||
+		!nds_read_overlay_table(b, rom->arm7_overlays, rom->header.arm7_overlay_offset, rom->header.arm7_overlay_size)) {
+		nds_rom_free(rom);
+		rz_warn_if_reached();
 		return false;
 	}
-	obj->bin_obj = hdr;
+	obj->bin_obj = rom;
 	return true;
 }
 
@@ -99,8 +184,8 @@ static void nds_destroy(RzBinFile *bf) {
 		return;
 	}
 
-	NDSHeader *hdr = nds_get_hdr(bf);
-	free(hdr);
+	NDSRom *rom = nds_get_rom(bf);
+	nds_rom_free(rom);
 }
 
 static ut64 nds_baddr(RzBinFile *bf) {
@@ -121,6 +206,7 @@ static RzPVector /*<RzBinSection *>*/ *nds_sections(RzBinFile *bf) {
 	}
 	RzPVector *ret = NULL;
 	RzBinSection *ptr9 = NULL, *ptr7 = NULL;
+	int perm_rwx = rz_str_rwx("rwx");
 
 	if (!(ret = rz_pvector_new((RzPVectorFree)rz_bin_section_free)) ||
 		!(ptr9 = RZ_NEW0(RzBinSection)) ||
@@ -129,14 +215,15 @@ static RzPVector /*<RzBinSection *>*/ *nds_sections(RzBinFile *bf) {
 		free(ptr9);
 		return NULL;
 	}
-	NDSHeader *hdr = nds_get_hdr(bf);
+	NDSRom *rom = nds_get_rom(bf);
+	NDSHeader *hdr = &rom->header;
 
 	ptr9->name = strdup("arm9");
 	ptr9->size = hdr->arm9_size;
 	ptr9->vsize = hdr->arm9_size;
 	ptr9->paddr = hdr->arm9_rom_offset;
 	ptr9->vaddr = hdr->arm9_ram_address;
-	ptr9->perm = rz_str_rwx("rwx");
+	ptr9->perm = perm_rwx;
 	rz_pvector_push(ret, ptr9);
 
 	ptr7->name = strdup("arm7");
@@ -144,9 +231,54 @@ static RzPVector /*<RzBinSection *>*/ *nds_sections(RzBinFile *bf) {
 	ptr7->vsize = hdr->arm7_size;
 	ptr7->paddr = hdr->arm7_rom_offset;
 	ptr7->vaddr = hdr->arm7_ram_address;
-	ptr7->perm = rz_str_rwx("rwx");
+	ptr7->perm = perm_rwx;
 	rz_pvector_push(ret, ptr7);
 
+	void **it;
+
+	rz_pvector_foreach (rom->arm7_overlays, it) {
+		NDSOverlayTblEntry *ovl_entry = *it;
+		NDSFatEntry *fat_entry = rz_pvector_at(rom->fat_table, ovl_entry->file_id);
+		if (!fat_entry) {
+			rz_warn_if_reached();
+			continue;
+		}
+
+		RzBinSection *overlay = RZ_NEW0(RzBinSection);
+		if (!overlay) {
+			return ret;
+		}
+
+		overlay->name = rz_str_newf("arm7_overlay_%" PFMT32u, ovl_entry->id);
+		overlay->size = fat_entry->file_end_offset - fat_entry->file_start_offset;
+		overlay->vsize = ovl_entry->ram_size;
+		overlay->paddr = fat_entry->file_start_offset;
+		overlay->vaddr = ovl_entry->load_address;
+		overlay->perm = perm_rwx;
+		rz_pvector_push(ret, overlay);
+	}
+
+	rz_pvector_foreach (rom->arm9_overlays, it) {
+		NDSOverlayTblEntry *ovl_entry = *it;
+		NDSFatEntry *fat_entry = rz_pvector_at(rom->fat_table, ovl_entry->file_id);
+		if (!fat_entry) {
+			rz_warn_if_reached();
+			continue;
+		}
+
+		RzBinSection *overlay = RZ_NEW0(RzBinSection);
+		if (!overlay) {
+			return ret;
+		}
+
+		overlay->name = rz_str_newf("arm9_overlay_%" PFMT32u, ovl_entry->id);
+		overlay->size = fat_entry->file_end_offset - fat_entry->file_start_offset;
+		overlay->vsize = ovl_entry->ram_size;
+		overlay->paddr = fat_entry->file_start_offset;
+		overlay->vaddr = ovl_entry->load_address;
+		overlay->perm = perm_rwx;
+		rz_pvector_push(ret, overlay);
+	}
 	return ret;
 }
 
