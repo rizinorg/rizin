@@ -520,7 +520,7 @@ static int fill_rop_gadget_info_from_events(RzCore *core, RzRopGadgetInfo *gadge
 		const RzILEventVarWrite *var_write = &event->data.var_write;
 		bool is_reg = false;
 		rz_list_foreach (head, iter_dst, item_dst) {
-			if (RZ_STR_EQ(var_write->variable, item_dst->name) && item_dst->type == RZ_REG_TYPE_GPR) {\
+			if (RZ_STR_EQ(var_write->variable, item_dst->name) && item_dst->type == RZ_REG_TYPE_GPR) {
 				is_reg = true;
 				break;
 			}
@@ -818,7 +818,8 @@ static RzList /*<RzCoreAsmHit *>*/ *construct_rop_gadget(RzCore *core, ut8 *buf,
 
 	RzList *hitlist = rz_core_asm_hit_list_new();
 	if (!hitlist) {
-		goto cleanup;
+		free(grep_str);
+		return NULL;
 	}
 
 	ut8 nb_instr = 0;
