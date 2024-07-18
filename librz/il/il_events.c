@@ -38,8 +38,8 @@ RZ_API void rz_il_event_free(RZ_NULLABLE RzILEvent *evt) {
 		rz_il_value_free(evt->data.var_write.old_value);
 		rz_il_value_free(evt->data.var_write.new_value);
 		break;
-	case RZ_IL_EVENT_IL_LOG_EFFECT:
 	case RZ_IL_EVENT_IL_LOG_PURE:
+		rz_il_value_free(evt->data.il_log.data);
 		break;
 	default:
 		rz_warn_if_reached();
@@ -200,29 +200,12 @@ RZ_API RZ_OWN RzILEvent *rz_il_event_var_write_new(RZ_NONNULL const char *name, 
 }
 
 /**
- * Creates an RzILEvent of type RZ_IL_EVENT_IL_LOG_EFFECT
- * \param op RzILOpEffect, pointer to the RzILOpEffect struct
- */
-RZ_API RZ_OWN RzILEvent *rz_il_event_effect_new(RzILOpEffect *op) {
-	rz_return_val_if_fail(op, NULL);
-
-	RzILEvent *evt = RZ_NEW(RzILEvent);
-	if (!evt) {
-		return NULL;
-	}
-
-	evt->type = RZ_IL_EVENT_IL_LOG_EFFECT;
-	evt->data.il_log.op.op_effect = op->code;
-
-	return evt;
-}
-
-/**
  * Creates an RzILEvent of type RZ_IL_EVENT_IL_LOG_PURE
  * \param op RzILOpPure, pointer to the RzILOpPure struct
+ * \param val RzILVal, pointer to the RzILVal struct
  */
-RZ_API RZ_OWN RzILEvent *rz_il_event_pure_new(RZ_NONNULL RzILOpPure *op) {
-	rz_return_val_if_fail(op, NULL);
+RZ_API RZ_OWN RzILEvent *rz_il_event_pure_new(RZ_NONNULL const RzILOpPure *op, RZ_NONNULL const RzILVal *val) {
+	rz_return_val_if_fail(op && val, NULL);
 
 	RzILEvent *evt = RZ_NEW0(RzILEvent);
 	if (!evt) {
@@ -230,7 +213,7 @@ RZ_API RZ_OWN RzILEvent *rz_il_event_pure_new(RZ_NONNULL RzILOpPure *op) {
 	}
 
 	evt->type = RZ_IL_EVENT_IL_LOG_PURE;
-	evt->data.il_log.op.op_effect = op->code;
-
+	evt->data.il_log.code = op->code;
+	evt->data.il_log.data = rz_il_value_dup(val);
 	return evt;
 }

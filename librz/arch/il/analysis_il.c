@@ -233,7 +233,6 @@ static void il_events(RzILVM *vm, RzStrBuf *sb) {
 	rz_pvector_foreach (vm->events, it) {
 		RzILEvent *evt = *it;
 		rz_il_event_stringify(evt, sb);
-		rz_strbuf_append(sb, "\n");
 	}
 }
 

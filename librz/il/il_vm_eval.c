@@ -317,7 +317,6 @@ RZ_API bool rz_il_vm_step(RzILVM *vm, RzILOpEffect *op, ut64 fallthrough_addr) {
 static void *eval_pure(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOpPure *op, RZ_NONNULL RzILTypePure *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
 	RzILOpPureHandler handler = vm->op_handler_pure_table[op->code];
-	rz_il_vm_event_add(vm, rz_il_event_pure_new(op));
 	rz_return_val_if_fail(handler, NULL);
 	return handler(vm, op, type);
 }
@@ -325,7 +324,6 @@ static void *eval_pure(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOpPure *op, RZ_NONN
 static bool eval_effect(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOpEffect *op) {
 	rz_return_val_if_fail(vm && op, false);
 	RzILOpEffectHandler handler = vm->op_handler_effect_table[op->code];
-	rz_il_vm_event_add(vm, rz_il_event_effect_new(op));
 	rz_return_val_if_fail(handler, false);
 	return handler(vm, op);
 }
@@ -396,17 +394,23 @@ RZ_API RZ_NULLABLE RZ_OWN RzILVal *rz_il_evaluate_val(RZ_NONNULL RzILVM *vm, RZ_
 		// propagate error
 		return NULL;
 	}
+	RzILVal *val = NULL;
 	switch (type) {
 	case RZ_IL_TYPE_PURE_BOOL:
-		return rz_il_value_new_bool(res);
+		val = rz_il_value_new_bool(res);
+		break;
 	case RZ_IL_TYPE_PURE_BITVECTOR:
-		return rz_il_value_new_bitv(res);
+		val = rz_il_value_new_bitv(res);
+		break;
 	case RZ_IL_TYPE_PURE_FLOAT:
-		return rz_il_value_new_float(res);
+		val = rz_il_value_new_float(res);
+		break;
 	default:
 		RZ_LOG_ERROR("RzIL: type error: got %s\n", pure_type_name(type));
 		return NULL;
 	}
+	rz_il_vm_event_add(vm, rz_il_event_pure_new(op, val));
+	return val;
 }
 
 /**

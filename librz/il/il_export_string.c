@@ -1073,6 +1073,10 @@ RZ_API void rz_il_event_stringify(RZ_NONNULL const RzILEvent *evt, RZ_NONNULL Rz
 		tmp2 = rz_il_value_stringify(evt->data.var_write.new_value);
 		rz_strbuf_appendf(sb, "var_write(name: %s, old: %s, new: %s)", evt->data.var_write.variable, tmp1 ? tmp1 : "uninitialized variable", tmp2);
 		break;
+	case RZ_IL_EVENT_IL_LOG_PURE:
+		tmp1 = rz_il_value_stringify(evt->data.il_log.data);
+		rz_strbuf_appendf(sb, "il_log_pure(name: %s, val: %s)", rz_il_op_pure_code_stringify(evt->data.il_log.code), tmp1 ? tmp1 : "uninitialized variable");
+		break;
 	default:
 		rz_warn_if_reached();
 		rz_strbuf_append(sb, "unknown(?)");

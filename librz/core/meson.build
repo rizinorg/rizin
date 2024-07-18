@@ -163,6 +163,7 @@ rz_core_deps = [
   shell_parser_dep,
   lrt,
   mth,
+  #z3_dep,
 ]
 
 rz_core = library('rz_core', rz_core_sources,

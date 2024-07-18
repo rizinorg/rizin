@@ -391,41 +391,24 @@ RZ_IPI RzRopRegInfo *rz_core_rop_reg_info_dup(RzRopRegInfo *src) {
 }
 
 static bool is_stack_pointer(const RzCore *core, const char *name) {
-	RzRegItem *reg_item = rz_reg_get(core->analysis->reg, name, RZ_REG_TYPE_GPR);
-	if (!reg_item) {
+	rz_return_val_if_fail(core && core->analysis && core->analysis->reg && name, false);
+	const char *sp = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_SP);
+	if (!sp) {
 		return false;
 	}
-	if (core->analysis->bits == 32 && RZ_STR_EQ(core->analysis->cpu, "x86")) {
-		return !strcmp(reg_item->name, "esp");
-	}
-	if (core->analysis->bits == 64) {
-		return !strcmp(reg_item->name, "rsp") || !strcmp(reg_item->name, "esp");
-	}
-	if (core->analysis->bits == 64 && !strcmp(core->analysis->cpu, "arm")) {
-		return !strcmp(reg_item->name, "r13");
-	}
-	return reg_item->name;
+	return RZ_STR_EQ(sp, name);
 }
 
 static bool is_base_pointer(const RzCore *core, const char *name) {
-	RzRegItem *reg_item = rz_reg_get(core->analysis->reg, name, RZ_REG_TYPE_GPR);
-	if (!reg_item) {
+	rz_return_val_if_fail(core && core->analysis && core->analysis->reg && name, false);
+	const char *bp = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_BP);
+	if (!bp) {
 		return false;
 	}
-	if (core->analysis->bits == 32 && RZ_STR_EQ(core->analysis->cpu, "x86")) {
-		return RZ_STR_EQ(reg_item->name, "ebp");
-	}
-	if (core->analysis->bits == 64) {
-		return RZ_STR_EQ(reg_item->name, "rbp") || RZ_STR_EQ(reg_item->name, "ebp");
-	}
-	if (core->analysis->bits == 64 && !strcmp(core->analysis->cpu, "arm")) {
-		return RZ_STR_EQ(reg_item->name, "r11");
-	}
-	return reg_item->name;
+	return RZ_STR_EQ(bp, name);
 }
 
 static void rz_rop_gadget_info_add_dependency(const RzCore *core, RzRopGadgetInfo *gadget_info, const RzILEvent *evt, RzRopRegInfo *reg_info) {
-
 	RzRopRegInfo *reg_info_dup = rz_core_rop_reg_info_dup(reg_info);
 	if (!reg_info_dup) {
 		return;
@@ -480,6 +463,12 @@ static int fill_rop_gadget_info_from_events(RzCore *core, RzRopGadgetInfo *gadge
 	if (!gadget_info) {
 		return -1;
 	}
+	const RzList *head = rz_reg_get_list(core->analysis->reg, RZ_REG_TYPE_GPR);
+	if (!head) {
+		return -1;
+	}
+	RzListIter *iter_dst;
+	RzRegItem *item_dst;
 	switch (event->type) {
 	case RZ_IL_EVENT_VAR_READ: {
 		const RzILEventVarRead *var_read = &event->data.var_read;
@@ -528,11 +517,21 @@ static int fill_rop_gadget_info_from_events(RzCore *core, RzRopGadgetInfo *gadge
 		if (is_dependency) {
 			break;
 		}
+		const RzILEventVarWrite *var_write = &event->data.var_write;
+		bool is_reg = false;
+		rz_list_foreach (head, iter_dst, item_dst) {
+			if (RZ_STR_EQ(var_write->variable, item_dst->name) && item_dst->type == RZ_REG_TYPE_GPR) {\
+				is_reg = true;
+				break;
+			}
+		}
+		if (!is_reg) {
+			break;
+		}
 		while (!rz_pvector_empty(vec)) {
 			RzILEvent *evt = rz_pvector_pop(vec);
 			fill_rop_gadget_info_from_events(core, gadget_info, event, evt, vec, true);
 		}
-		const RzILEventVarWrite *var_write = &event->data.var_write;
 		RzRopRegInfo *reg_info = rz_core_rop_gadget_info_get_modified_register(gadget_info, var_write->variable);
 		if (!reg_info) {
 			RzBitVector *old_val = rz_il_value_to_bv(var_write->old_value);
@@ -564,10 +563,8 @@ static int fill_rop_gadget_info_from_events(RzCore *core, RzRopGadgetInfo *gadge
 	case RZ_IL_EVENT_PC_WRITE: {
 		if (!gadget_info->is_pc_write) {
 			gadget_info->is_pc_write = true;
-		}
-	} break;
-	case RZ_IL_EVENT_IL_LOG_EFFECT: {
-		if (!event) {
+		} else {
+			gadget_info->is_syscall = true;
 		}
 	} break;
 	case RZ_IL_EVENT_IL_LOG_PURE: {
