@@ -218,16 +218,19 @@ RzDebugInfo *bsd_info(RzDebug *dbg, const char *arg) {
 		rdi->gid = kp->p__pgid;
 		rdi->exe = strdup(kp->p_comm);
 
-		rdi->status = RZ_DBG_PROC_STOP;
-
-		if (kp->p_psflags & PS_ZOMBIE) {
-			rdi->status = RZ_DBG_PROC_ZOMBIE;
-		} else if (kp->p_psflags & PS_STOPPED) {
+		switch (kp->p_stat) {
+		case SDEAD:
+			rdi->status = RZ_DBG_PROC_DEAD;
+			break;
+		case SSTOP:
 			rdi->status = RZ_DBG_PROC_STOP;
-		} else if (kp->p_psflags & PS_PPWAIT) {
+			break;
+		case SSLEEP:
 			rdi->status = RZ_DBG_PROC_SLEEP;
-		} else if ((kp->p_psflags & PS_EXEC) || (kp->p_psflags & PS_INEXEC)) {
+			break;
+		default:
 			rdi->status = RZ_DBG_PROC_RUN;
+			break;
 		}
 	}
 
