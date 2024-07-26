@@ -530,6 +530,7 @@ typedef struct rz_analysis_t {
 	HtSP *ht_global_var; // global variables
 	HtUP *ht_rop_semantics; ///< cache rop gadget semantic information
 	HtUP *ht_rop; ///< cache rop gadget address list
+	bool is_rop_analysis;
 	RBTree global_var_tree; // global variables by address. must not overlap
 	RzHash *hash;
 	RzAnalysisDebugInfo *debug_info; ///< store all debug info parsed from DWARF, etc..

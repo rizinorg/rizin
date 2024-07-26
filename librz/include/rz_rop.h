@@ -22,6 +22,7 @@ extern "C" {
  */
 typedef struct rz_rop_reg_info_t {
 	char *name;
+	bool is_cast;
 	bool is_mem_read; ///< Register involved in Memory read.
 	bool is_pc_write; ///< PC write flag.
 	bool is_var_read; ///< Register involved in Variable read.
@@ -29,6 +30,8 @@ typedef struct rz_rop_reg_info_t {
 	bool is_mem_write; ///< Register involved in Memory write.
 	ut64 init_val;
 	ut64 new_val;
+	ut64 bits; ///< Register bits for capturing cast
+	RzILOpPure *value_transformations; ///< Captures Value transformations.
 } RzRopRegInfo;
 
 /**
@@ -40,8 +43,8 @@ typedef struct rz_rop_gadget_info_t {
 	ut64 curr_pc_val; ///< Current PC value.
 	bool is_pc_write; ///< PC write flag.
 	bool is_syscall; ///< Syscall flag.
-	RzPVector /*<RzRegInfo *>*/ *modified_registers; ///< Modified registers.
-	RzList /*<RzRegInfo *>*/ *dependencies; ///< Dependencies.
+	RzPVector /*<RzRopRegInfo *>*/ *modified_registers; ///< Modified registers.
+	RzList /*<RzRopRegInfo *>*/ *dependencies; ///< Dependencies.
 } RzRopGadgetInfo;
 
 /**
@@ -115,6 +118,28 @@ typedef struct rz_rop_search_context_t {
 	HtSU *unique_hitlists;
 } RzRopSearchContext;
 
+/**
+ * \brief Enum for different ROP register events.
+ */
+typedef enum {
+	RZ_ROP_EVENT_VAR_WRITE,
+	RZ_ROP_EVENT_MEM_READ,
+	RZ_ROP_EVENT_MEM_WRITE,
+	RZ_ROP_EVENT_PC_WRITE,
+	// Event can be to filter pure operations as needed.
+	RZ_ROP_EVENT_COUNT // This should always be the last element
+} RzRopEvent;
+
+/**
+ * \brief Function pointer type for event check functions.
+ */
+typedef bool (*event_check_fn)(const RzRopRegInfo *);
+
+/**
+ * \brief Array of event check functions.
+ */
+extern event_check_fn event_functions[RZ_ROP_EVENT_COUNT];
+
 // Command APIs
 RZ_API RzCmdStatus rz_core_rop_search(RzCore *core, RZ_OWN RzRopSearchContext *context);
 RZ_API RzCmdStatus rz_core_rop_gadget_info(RzCore *core, RZ_OWN RzRopSearchContext *context);
@@ -139,6 +164,9 @@ RZ_IPI RzRopRegInfo *rz_core_rop_reg_info_dup(RzRopRegInfo *src);
 RZ_IPI void rz_core_rop_reg_info_free(RzRopRegInfo *reg_info);
 RZ_IPI RzRopRegInfo *rz_core_rop_reg_info_new(const RzCore *core, const RzILEvent *evt, ut64 init_val, ut64 new_val);
 RZ_BORROW RZ_API RzRopRegInfo *rz_core_rop_gadget_info_get_modified_register(const RZ_NONNULL RzRopGadgetInfo *gadget_info, RZ_NONNULL const char *name);
+RZ_API bool rz_core_rop_gadget_info_has_register(const RZ_NONNULL RzRopGadgetInfo *gadget_info, RZ_NONNULL const char *name);
+RZ_API RzRopRegInfo *rz_core_rop_get_reg_info_by_reg_name(const RZ_NONNULL RzRopGadgetInfo *gadget_info, RZ_NONNULL const char *name);
+RZ_API RzPVector *rz_core_rop_gadget_get_reg_info_by_event(const RZ_NONNULL RzRopGadgetInfo *gadget_info, RzRopEvent event);
 
 #ifdef __cplusplus
 }

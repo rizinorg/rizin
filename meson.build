@@ -80,9 +80,9 @@ if is_static_build
 endif
 
 if cc.has_argument('--std=gnu99')
-  add_global_arguments('--std=gnu99', language: ['c', 'cpp'])
+  add_global_arguments('--std=gnu99', language: ['c'])
 elif cc.has_argument('--std=c99')
-  add_global_arguments('--std=c99', language: ['c', 'cpp'])
+  add_global_arguments('--std=c99', language: ['c'])
 endif
 
 # Sanitize correct usage of rz_strf()
@@ -628,9 +628,9 @@ endif
 
 z3_dep = dependency('z3', required: get_option('use_sys_z3'), static: is_static_build)
 if not z3_dep.found()
-  #z3_proj = subproject('z3', default_options: ['default_library=static', 'warning_level=0'])
-  #z3_dep = z3_proj.get_variable('z3_dep')
-endif
+  z3_proj = subproject('z3', default_options: ['default_library=static', 'warning_level=0'])
+  z3_dep = z3_proj.get_variable('z3_dep')
+ endif
 
 # handle zip dependency
 r = run_command(py3_exe, check_meson_subproject_py, 'libzip', check: false)

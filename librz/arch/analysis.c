@@ -132,6 +132,7 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 	analysis->ht_global_var = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_analysis_var_global_free);
 	analysis->ht_rop_semantics = NULL;
 	analysis->ht_rop = NULL;
+	analysis->is_rop_analysis = false;
 	analysis->global_var_tree = NULL;
 	analysis->il_vm = NULL;
 	analysis->hash = rz_hash_new();

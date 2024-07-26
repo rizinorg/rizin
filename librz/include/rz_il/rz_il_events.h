@@ -25,7 +25,6 @@ typedef enum rz_il_event_id_t {
 	RZ_IL_EVENT_VAR_READ,
 	RZ_IL_EVENT_MEM_WRITE,
 	RZ_IL_EVENT_VAR_WRITE,
-	RZ_IL_EVENT_IL_LOG_PURE,
 } RzILEventId;
 
 typedef union {

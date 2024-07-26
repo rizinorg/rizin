@@ -202,7 +202,6 @@ RZ_API RzBitVector *rz_il_vm_mem_load(RzILVM *vm, RzILMemIndex index, RzBitVecto
 		return NULL;
 	}
 	RzBitVector *value = rz_il_mem_load(mem, key);
-	rz_il_vm_event_add(vm, rz_il_event_mem_read_new(key, value));
 	return value;
 }
 
@@ -409,7 +408,6 @@ RZ_API RZ_NULLABLE RZ_OWN RzILVal *rz_il_evaluate_val(RZ_NONNULL RzILVM *vm, RZ_
 		RZ_LOG_ERROR("RzIL: type error: got %s\n", pure_type_name(type));
 		return NULL;
 	}
-	rz_il_vm_event_add(vm, rz_il_event_pure_new(op, val));
 	return val;
 }
 

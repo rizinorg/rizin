@@ -55,6 +55,7 @@ include_files = [
   'rz_windows.h',
   'rz_windows_heap.h',
   'rz_rop.h',
+  'rz_smt.h',
 ]
 install_headers(include_files, install_dir: rizin_incdir)
 

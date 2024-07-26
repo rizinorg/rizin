@@ -1,0 +1,6 @@
+[wrap-git]
+url = https://github.com/Z3Prover/z3.git
+revision = 3049f578a8f98a0b0992eca193afe57a73b30ca3
+patch_directory = z3
+directory = z3
+depth = 1

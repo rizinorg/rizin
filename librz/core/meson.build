@@ -55,6 +55,7 @@ rz_core_sources = [
   'linux_heap_glibc.c',
   'linux_heap_glibc64.c',
   'rop.c',
+  'smt.c',
   'project.c',
   'project_migrate.c',
   'rtr.c',
@@ -163,7 +164,7 @@ rz_core_deps = [
   shell_parser_dep,
   lrt,
   mth,
-  #z3_dep,
+  z3_dep,
 ]
 
 rz_core = library('rz_core', rz_core_sources,
