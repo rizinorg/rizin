@@ -867,6 +867,7 @@ static void extend_icfg(const RzAnalysis *analysis, RZ_BORROW RzGraph /*<RzGraph
 			continue;
 		}
 		RzGraphNode *to_node = get_graph_node_of_fcn(icfg, graph_idx, called_fcn);
+		assert(to_node && from_node);
 		if (rz_graph_adjacent(icfg, from_node, to_node)) {
 			// Edge already added and walked. Don't recurse.
 			continue;

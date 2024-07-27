@@ -291,7 +291,20 @@ RZ_API const RzList *rz_graph_get_nodes(const RzGraph *g) {
 	return g ? g->nodes : NULL;
 }
 
-/* true if there is an edge from the node `from` to the node `to` */
+/**
+ * \brief Checks if the edge \p from -> \p to exists in the graph.
+ * For this it checks the neighbors of \p from.
+ *
+ * \param g The graph to check.
+ * \param from The pointer to the source node of the edge. The pointer must be a node in the graph.
+ * \param to The destination node of the edge. The pointer must be a node in the graph.
+ *
+ * NOTE: It only compares the pointer of \p to against the neighbor list of \p from.
+ * If the pointer doesn't match it returns false. Even if the node content is the same.
+ *
+ * \returns true If there is an edge from the node `from` to the node `to`
+ * \return false Otherwise
+ */
 RZ_API bool rz_graph_adjacent(const RzGraph *g, const RzGraphNode *from, const RzGraphNode *to) {
 	if (!g || !from) {
 		return false;
