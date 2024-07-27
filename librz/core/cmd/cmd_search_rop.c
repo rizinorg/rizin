@@ -436,7 +436,7 @@ static RzRopConstraint *rop_constraint_parse_args(RzCore *core, char *token) {
 	return rop_constraint;
 }
 
-static RzList /*<RzILOpPureCode *>*/ *rop_constraint_list_parse(RzCore *core, const int argc, const char **argv) {
+RZ_API RzList /*<RzRopConstraint *>*/ *rop_constraint_list_parse(RzCore *core, const int argc, const char **argv) {
 	RzList *constr_list = rz_rop_constraint_list_new();
 	for (int i = 1; i < argc; i++) {
 		RzList *l = rz_str_split_duplist_n(argv[i], ",", 1, false);

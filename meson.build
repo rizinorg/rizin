@@ -620,18 +620,6 @@ if not softfloat_dep.found()
   softfloat_dep = softfloat_proj.get_variable('softfloat_dep')
 endif
 
-# handle z3 dependency
-r = run_command(py3_exe, check_meson_subproject_py, 'z3', check: false)
-if r.returncode() == 1 and get_option('subprojects_check')
-  error(subproject_clean_error_msg)
-endif
-
-z3_dep = dependency('z3', required: get_option('use_sys_z3'), static: is_static_build)
-if not z3_dep.found()
-  z3_proj = subproject('z3', default_options: ['default_library=static', 'warning_level=0'])
-  z3_dep = z3_proj.get_variable('z3_dep')
- endif
-
 # handle zip dependency
 r = run_command(py3_exe, check_meson_subproject_py, 'libzip', check: false)
 if r.returncode() == 1 and get_option('subprojects_check')

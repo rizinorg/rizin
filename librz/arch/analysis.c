@@ -8,7 +8,6 @@
 #include <rz_util/rz_path.h>
 #include <rz_arch.h>
 #include <rz_lib.h>
-#include <rz_rop.h>
 
 /**
  * \brief Returns the default size byte width of memory access operations.

@@ -230,7 +230,7 @@ RZ_IPI RzCmdStatus rz_cmd_info_gadget_handler(RzCore *core, int argc, const char
 }
 
 RZ_IPI RzCmdStatus rz_cmd_query_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	RzList /*<RzILOpPureCode *>*/ *constraints = rop_constraint_list_parse(core, argc, argv);
+	RzList /*<RzRopConstraint *>*/ *constraints = rop_constraint_list_parse(core, argc, argv);
 	if (!constraints) {
 		return RZ_CMD_STATUS_ERROR;
 	}
