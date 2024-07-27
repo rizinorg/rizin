@@ -153,7 +153,7 @@ RZ_API void rz_core_rop_search_context_free(RZ_NULLABLE RzRopSearchContext *cont
 // ROP Constraint APIs
 RZ_API void rz_core_rop_constraint_free(RZ_NULLABLE void *data);
 RZ_OWN RZ_API RzList /*<RzRopConstraint *>*/ *rz_rop_constraint_list_new(void);
-	RZ_API RzList /*<RzRopConstraint *>*/ *rop_constraint_list_parse(RzCore *core, int argc, const char **argv);
+RZ_API RzList /*<RzRopConstraint *>*/ *rop_constraint_list_parse(RzCore *core, int argc, const char **argv);
 
 // ROP Gadget Info APIs
 RZ_API void rz_core_rop_gadget_info_free(RZ_NULLABLE RzRopGadgetInfo *gadget_info);

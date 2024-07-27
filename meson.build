@@ -80,9 +80,9 @@ if is_static_build
 endif
 
 if cc.has_argument('--std=gnu99')
-  add_global_arguments('--std=gnu99', language: ['c'])
+  add_global_arguments('--std=gnu99', language: ['c', 'cpp'])
 elif cc.has_argument('--std=c99')
-  add_global_arguments('--std=c99', language: ['c'])
+  add_global_arguments('--std=c99', language: ['c', 'cpp'])
 endif
 
 # Sanitize correct usage of rz_strf()

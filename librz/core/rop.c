@@ -479,24 +479,6 @@ RZ_API RzPVector *rz_core_rop_gadget_get_reg_info_by_event(const RZ_NONNULL RzRo
 	return matches;
 }
 
-static bool is_stack_pointer(const RzCore *core, const char *name) {
-	rz_return_val_if_fail(core && core->analysis && core->analysis->reg && name, false);
-	const char *sp = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_SP);
-	if (!sp) {
-		return false;
-	}
-	return RZ_STR_EQ(sp, name);
-}
-
-static bool is_base_pointer(const RzCore *core, const char *name) {
-	rz_return_val_if_fail(core && core->analysis && core->analysis->reg && name, false);
-	const char *bp = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_BP);
-	if (!bp) {
-		return false;
-	}
-	return RZ_STR_EQ(bp, name);
-}
-
 static void rz_rop_gadget_info_add_dependency(const RzCore *core, RzRopGadgetInfo *gadget_info, const RzILEvent *evt, RzRopRegInfo *reg_info) {
 	rz_return_if_fail(core);
 	if (!reg_info) {
@@ -537,7 +519,7 @@ static void rz_rop_gadget_info_add_dependency(const RzCore *core, RzRopGadgetInf
 			break;
 		}
 		reg_info_dup->new_val = rz_bv_to_ut64(new_val);
-		if (is_stack_pointer(core, reg_info->name)) {
+		if (rz_reg_is_role(core, reg_info->name, RZ_REG_NAME_SP)) {
 			gadget_info->stack_change += rz_bv_to_ut64(new_val) - reg_info->new_val;
 		}
 		rz_bv_free(init_val);
@@ -722,7 +704,7 @@ static void rz_rop_gadget_print_standard_mode(const RzCore *core, const RzRopGad
 	rz_cons_printf("Register dependencies:\n");
 	RzListIter *iter;
 	rz_list_foreach (gadget_info->dependencies, iter, reg_info) {
-		if (is_stack_pointer(core, reg_info->name) || is_base_pointer(core, reg_info->name)) {
+		if (rz_reg_is_role(core, reg_info->name, RZ_REG_NAME_SP) || rz_reg_is_role(core, reg_info->name, RZ_REG_NAME_BP)) {
 			continue;
 		}
 		if (reg_info->is_var_write) {
@@ -761,7 +743,7 @@ static void rz_rop_gadget_print_json_mode(const RzCore *core, const RzRopGadgetI
 	pj_a(pj);
 	RzListIter *iter;
 	rz_list_foreach (gadget_info->dependencies, iter, reg_info) {
-		if (is_stack_pointer(core, reg_info->name) || is_base_pointer(core, reg_info->name)) {
+		if (rz_reg_is_role(core, reg_info->name, RZ_REG_NAME_SP) || rz_reg_is_role(core, reg_info->name, RZ_REG_NAME_BP)) {
 			continue;
 		}
 		pj_o(pj);
