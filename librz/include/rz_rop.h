@@ -167,7 +167,7 @@ RZ_IPI RzRopRegInfo *rz_core_rop_reg_info_new(const RzCore *core, const RzILEven
 RZ_BORROW RZ_API RzRopRegInfo *rz_core_rop_gadget_info_get_modified_register(const RZ_NONNULL RzRopGadgetInfo *gadget_info, RZ_NONNULL const char *name);
 RZ_API bool rz_core_rop_gadget_info_has_register(const RZ_NONNULL RzRopGadgetInfo *gadget_info, RZ_NONNULL const char *name);
 RZ_API RzRopRegInfo *rz_core_rop_get_reg_info_by_reg_name(const RZ_NONNULL RzRopGadgetInfo *gadget_info, RZ_NONNULL const char *name);
-RZ_API RzPVector *rz_core_rop_gadget_get_reg_info_by_event(const RZ_NONNULL RzRopGadgetInfo *gadget_info, RzRopEvent event);
+RZ_API RzPVector /*<RzRopRegInfo *>*/ *rz_core_rop_gadget_get_reg_info_by_event(const RZ_NONNULL RzRopGadgetInfo *gadget_info, RzRopEvent event);
 
 #ifdef __cplusplus
 }

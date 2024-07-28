@@ -463,7 +463,7 @@ event_check_fn event_functions[RZ_ROP_EVENT_COUNT] = {
  * \param event The RzRopEvent to check.
  * \return RZ_OUT A pointer to a list of RzRopRegInfo objects matching the given event, or NULL if none are found or if gadget_info is NULL.
  */
-RZ_API RzPVector *rz_core_rop_gadget_get_reg_info_by_event(const RZ_NONNULL RzRopGadgetInfo *gadget_info, const RzRopEvent event) {
+RZ_API RzPVector /*<RzRopRegInfo *>*/ *rz_core_rop_gadget_get_reg_info_by_event(const RZ_NONNULL RzRopGadgetInfo *gadget_info, const RzRopEvent event) {
 	rz_return_val_if_fail(gadget_info, NULL);
 	if (event < 0 || event >= RZ_ROP_EVENT_COUNT) {
 		return NULL;
