@@ -202,6 +202,7 @@ RZ_API RzBitVector *rz_il_vm_mem_load(RzILVM *vm, RzILMemIndex index, RzBitVecto
 		return NULL;
 	}
 	RzBitVector *value = rz_il_mem_load(mem, key);
+	rz_il_vm_event_add(vm, rz_il_event_mem_read_new(key, value));
 	return value;
 }
 
@@ -393,22 +394,17 @@ RZ_API RZ_NULLABLE RZ_OWN RzILVal *rz_il_evaluate_val(RZ_NONNULL RzILVM *vm, RZ_
 		// propagate error
 		return NULL;
 	}
-	RzILVal *val = NULL;
 	switch (type) {
 	case RZ_IL_TYPE_PURE_BOOL:
-		val = rz_il_value_new_bool(res);
-		break;
+		return rz_il_value_new_bool(res);
 	case RZ_IL_TYPE_PURE_BITVECTOR:
-		val = rz_il_value_new_bitv(res);
-		break;
+		return rz_il_value_new_bitv(res);
 	case RZ_IL_TYPE_PURE_FLOAT:
-		val = rz_il_value_new_float(res);
-		break;
+		return rz_il_value_new_float(res);
 	default:
 		RZ_LOG_ERROR("RzIL: type error: got %s\n", pure_type_name(type));
 		return NULL;
 	}
-	return val;
 }
 
 /**
