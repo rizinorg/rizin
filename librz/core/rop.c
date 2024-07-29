@@ -579,8 +579,6 @@ static int fill_rop_gadget_info_from_events(RzCore *core, RzRopGadgetInfo *gadge
 		if (!val) {
 			break;
 		}
-		reg_info = rz_core_rop_reg_info_new(core, event, rz_bv_to_ut64(val), rz_bv_to_ut64(val));
-		rz_core_rop_gadget_info_add_register(gadget_info, reg_info, is_dependency);
 		if (!is_dependency) {
 			rz_pvector_push(vec, event);
 		}
