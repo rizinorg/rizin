@@ -15,14 +15,14 @@ static const char *types[RZ_REG_TYPE_LAST + 1] = {
 /**
  * \brief Check if the given register has the given RegisterId.
  *
- * \param core RzCore pointer.
+ * \param reg RzReg Pointer
  * \param name Register name.
  * \param id RegisterId to check.
  * \return true if the register has the given RegisterId, false otherwise.
  */
-RZ_API bool rz_reg_is_role(const RzCore *core, const char *name, const RzRegisterId id) {
-	rz_return_val_if_fail(core && core->analysis && core->analysis->reg && name, false);
-	const char *sp = rz_reg_get_name(core->analysis->reg, id);
+RZ_API bool rz_reg_is_role(RzReg *reg, const char *name, const RzRegisterId id) {
+	rz_return_val_if_fail(reg && name, false);
+	const char *sp = rz_reg_get_name(reg, id);
 	if (!sp) {
 		return false;
 	}

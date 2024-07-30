@@ -436,16 +436,19 @@ static RzRopConstraint *rop_constraint_parse_args(RzCore *core, char *token) {
 	return rop_constraint;
 }
 
-RZ_API RzList /*<RzRopConstraint *>*/ *rop_constraint_list_parse(RzCore *core, const int argc, const char **argv) {
-	RzList *constr_list = rz_rop_constraint_list_new();
+RZ_API RzPVector /*<RzRopConstraint *>*/ *rop_constraint_map_parse(RzCore *core, const int argc, const char **argv) {
+	RzPVector *constr_map = rz_core_rop_constraint_map_new();
+	if (!constr_map) {
+		return NULL;
+	}
 	for (int i = 1; i < argc; i++) {
 		RzList *l = rz_str_split_duplist_n(argv[i], ",", 1, false);
 		if (!l) {
-			return constr_list;
+			return constr_map;
 		}
 		size_t llen = rz_list_length(l);
 		if (!llen) {
-			return constr_list;
+			return constr_map;
 		}
 		RzListIter *it;
 		char *token;
@@ -454,9 +457,9 @@ RZ_API RzList /*<RzRopConstraint *>*/ *rop_constraint_list_parse(RzCore *core, c
 			if (!rop_constraint) {
 				continue;
 			}
-			rz_list_append(constr_list, rop_constraint);
+			rz_pvector_push(constr_map, rop_constraint);
 		}
 		rz_list_free(l);
 	}
-	return constr_list;
+	return constr_map;
 }

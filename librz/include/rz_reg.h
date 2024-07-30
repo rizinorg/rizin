@@ -185,7 +185,7 @@ RZ_API ut64 rz_reg_getv(RzReg *reg, const char *name);
 RZ_API ut64 rz_reg_getv_by_role_or_name(RzReg *reg, const char *name);
 RZ_API ut64 rz_reg_setv(RzReg *reg, const char *name, ut64 val);
 RZ_API const char *rz_reg_32_to_64(RzReg *reg, const char *rreg32);
-RZ_API bool rz_reg_is_role(const RzCore *core, const char *name, RzRegisterId id);
+RZ_API bool rz_reg_is_role(RzReg *reg, const char *name, const RzRegisterId id);
 RZ_API const char *rz_reg_64_to_32(RzReg *reg, const char *rreg64);
 RZ_API const char *rz_reg_get_name_by_type(RzReg *reg, const char *name);
 RZ_API const char *rz_reg_get_type(int idx);
