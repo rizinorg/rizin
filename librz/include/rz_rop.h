@@ -140,9 +140,9 @@ typedef bool (*event_check_fn)(const RzRopRegInfo *);
 extern event_check_fn event_functions[RZ_ROP_EVENT_COUNT];
 
 // Command APIs
-RZ_API RzCmdStatus rz_core_rop_search(RzCore *core, RZ_OWN RzRopSearchContext *context);
-RZ_API RzCmdStatus rz_core_rop_gadget_info(RzCore *core, RZ_OWN RzRopSearchContext *context);
-RZ_API bool rz_core_rop_analyze_constraint(RzCore *core, const char *str, RzRopConstraint *rop_constraint);
+RZ_API RzCmdStatus rz_core_rop_search(RZ_NONNULL RzCore *core, RZ_OWN RzRopSearchContext *context);
+RZ_API RzCmdStatus rz_core_rop_gadget_info(RZ_NONNULL RzCore *core, RZ_OWN RzRopSearchContext *context);
+RZ_API bool rz_core_rop_analyze_constraint(RZ_NONNULL RzCore *core, const char *str, RzRopConstraint *rop_constraint);
 
 // ROP Search Context APIs
 RZ_OWN RZ_API RzRopSearchContext *rz_core_rop_search_context_new(RZ_NONNULL const RzCore *core, RZ_NULLABLE const char *greparg,
@@ -152,7 +152,7 @@ RZ_API void rz_core_rop_search_context_free(RZ_NULLABLE RzRopSearchContext *cont
 // ROP Constraint APIs
 RZ_API void rz_core_rop_constraint_free(RZ_NULLABLE void *data);
 RZ_OWN RZ_API RzPVector /*<RzRopConstraint *>*/ *rz_core_rop_constraint_map_new(void);
-RZ_API RzPVector /*<RzRopConstraint *>*/ *rop_constraint_map_parse(RzCore *core, int argc, const char **argv);
+RZ_API RzPVector /*<RzRopConstraint *>*/ *rop_constraint_map_parse(RZ_NONNULL RzCore *core, int argc, const char **argv);
 
 // ROP Gadget Info APIs
 RZ_API void rz_core_rop_gadget_info_free(RZ_NULLABLE RzRopGadgetInfo *gadget_info);
@@ -165,7 +165,7 @@ RZ_IPI RzRopRegInfo *rz_core_rop_reg_info_new(const RzCore *core, const RzILEven
 RZ_BORROW RZ_API RzRopRegInfo *rz_core_rop_gadget_info_get_modified_register(const RZ_NONNULL RzRopGadgetInfo *gadget_info, RZ_NONNULL const char *name);
 RZ_API bool rz_core_rop_gadget_info_has_register(const RZ_NONNULL RzRopGadgetInfo *gadget_info, RZ_NONNULL const char *name);
 RZ_API RzPVector /*<RzRopRegInfo *>*/ *rz_core_rop_gadget_get_reg_info_by_event(const RZ_NONNULL RzRopGadgetInfo *gadget_info, RzRopEvent event);
-RZ_API RzPVector /*<RzRopRegInfo *>*/ *rz_core_rop_get_reg_info_by_reg_names(const RZ_NONNULL RzRopGadgetInfo *gadget_info, RZ_NONNULL const RzPVector *registers);
+RZ_API RzPVector /*<RzRopRegInfo *>*/ *rz_core_rop_get_reg_info_by_reg_names(const RZ_NONNULL RzRopGadgetInfo *gadget_info, RZ_NONNULL const RzPVector /*<char *>*/ *registers);
 
 #ifdef __cplusplus
 }
