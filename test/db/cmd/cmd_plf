@@ -9,11 +9,11 @@ plf
 EOF
 EXPECT=<<EOF
 0x5ae0 empty
-0x5ae4 (seq (set _xor (^ (cast 32 false (var rbp)) (cast 32 false (var rbp)))) (set rbp (cast 64 false (var _xor))) (set of false) (set cf false) (set _result (var _xor)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (! (is_zero (var _val))) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (mod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
+0x5ae4 (seq (set _xor (^ (cast 32 false (var rbp)) (cast 32 false (var rbp)))) (set rbp (cast 64 false (var _xor))) (set of false) (set cf false) (set _result (var _xor)) (set pf (! (lsb (let _val (cast 8 false (var _result)) (let _c4 (^ (var _val) (>> (var _val) (bv 8 0x4) false)) (let _c2 (^ (var _c4) (>> (var _c4) (bv 8 0x2) false)) (^ (var _c2) (>> (var _c2) (bv 8 0x1) false)))))))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
 0x5ae6 (set r9 (cast 64 false (var rdx)))
 0x5ae9 (seq (set rsi (loadw 0 64 (+ (var rsp) (bv 64 0x0)))) (set rsp (+ (var rsp) (bv 64 0x8))))
 0x5aea (set rdx (var rsp))
-0x5aed (seq (set and_ (& (var rsp) (bv 64 0xfffffffffffffff0))) (set rsp (var and_)) (set of false) (set cf false) (set _result (var and_)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (! (is_zero (var _val))) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (mod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
+0x5aed (seq (set and_ (& (var rsp) (bv 64 0xfffffffffffffff0))) (set rsp (var and_)) (set of false) (set cf false) (set _result (var and_)) (set pf (! (lsb (let _val (cast 8 false (var _result)) (let _c4 (^ (var _val) (>> (var _val) (bv 8 0x4) false)) (let _c2 (^ (var _c4) (>> (var _c4) (bv 8 0x2) false)) (^ (var _c2) (>> (var _c2) (bv 8 0x1) false)))))))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
 0x5af1 (seq (set final (- (var rsp) (bv 64 0x8))) (storew 0 (var final) (cast 64 false (var rax))) (set rsp (var final)))
 0x5af2 (seq (set final (- (var rsp) (bv 64 0x8))) (storew 0 (var final) (cast 64 false (var rsp))) (set rsp (var final)))
 0x5af3 (set r8 (cast 64 false (cast 64 false (+ (bv 64 0x5afa) (bv 64 0x10c66)))))
@@ -22,11 +22,11 @@ EXPECT=<<EOF
 0x5b08 (seq (set final (- (var rsp) (bv 64 0x8))) (storew 0 (var final) (cast 64 false (bv 64 0x5b0e))) (set rsp (var final)) (jmp (loadw 0 64 (+ (bv 64 0x5b0e) (bv 64 0x1c30a)))))
 ---
 0x5ae0 empty
-0x5ae4 (seq (set _xor (^ (cast 32 false (var rbp)) (cast 32 false (var rbp)))) (set rbp (cast 64 false (var _xor))) (set of false) (set cf false) (set _result (var _xor)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (! (is_zero (var _val))) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (mod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
+0x5ae4 (seq (set _xor (^ (cast 32 false (var rbp)) (cast 32 false (var rbp)))) (set rbp (cast 64 false (var _xor))) (set of false) (set cf false) (set _result (var _xor)) (set pf (! (lsb (let _val (cast 8 false (var _result)) (let _c4 (^ (var _val) (>> (var _val) (bv 8 0x4) false)) (let _c2 (^ (var _c4) (>> (var _c4) (bv 8 0x2) false)) (^ (var _c2) (>> (var _c2) (bv 8 0x1) false)))))))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
 0x5ae6 (set r9 (cast 64 false (var rdx)))
 0x5ae9 (seq (set rsi (loadw 0 64 (+ (var rsp) (bv 64 0x0)))) (set rsp (+ (var rsp) (bv 64 0x8))))
 0x5aea (set rdx (var rsp))
-0x5aed (seq (set and_ (& (var rsp) (bv 64 0xfffffffffffffff0))) (set rsp (var and_)) (set of false) (set cf false) (set _result (var and_)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (! (is_zero (var _val))) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (mod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
+0x5aed (seq (set and_ (& (var rsp) (bv 64 0xfffffffffffffff0))) (set rsp (var and_)) (set of false) (set cf false) (set _result (var and_)) (set pf (! (lsb (let _val (cast 8 false (var _result)) (let _c4 (^ (var _val) (>> (var _val) (bv 8 0x4) false)) (let _c2 (^ (var _c4) (>> (var _c4) (bv 8 0x2) false)) (^ (var _c2) (>> (var _c2) (bv 8 0x1) false)))))))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
 0x5af1 (seq (set final (- (var rsp) (bv 64 0x8))) (storew 0 (var final) (cast 64 false (var rax))) (set rsp (var final)))
 0x5af2 (seq (set final (- (var rsp) (bv 64 0x8))) (storew 0 (var final) (cast 64 false (var rsp))) (set rsp (var final)))
 0x5af3 (set r8 (cast 64 false (cast 64 false (+ (bv 64 0x5afa) (bv 64 0x10c66)))))
