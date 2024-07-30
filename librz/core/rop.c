@@ -580,7 +580,6 @@ static int fill_rop_gadget_info_from_events(RzCore *core, RzRopGadgetInfo *gadge
 		}
 		if (is_dependency && curr_event) {
 			bool is_stack_evt = false;
-			// shouldn't take this path if it is a dependency
 			if (curr_event->type == RZ_IL_EVENT_VAR_READ) {
 				break;
 			}
