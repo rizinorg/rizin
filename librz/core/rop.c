@@ -430,7 +430,7 @@ static bool is_pc_write_event(const RzRopRegInfo *reg_info) {
 	return reg_info->is_pc_write;
 }
 
-event_check_fn event_functions[RZ_ROP_EVENT_COUNT] = {
+rz_rop_event_check_fn rz_rop_event_functions[RZ_ROP_EVENT_COUNT] = {
 	is_var_write_event,
 	is_mem_read_event,
 	is_mem_write_event,
@@ -452,7 +452,7 @@ RZ_API RzPVector /*<RzRopRegInfo *>*/ *rz_core_rop_gadget_get_reg_info_by_event(
 	RzListIter *iter;
 	RzRopRegInfo *reg_info;
 	rz_list_foreach (gadget_info->dependencies, iter, reg_info) {
-		if (event_functions[event](reg_info)) {
+		if (rz_rop_event_functions[event](reg_info)) {
 			rz_pvector_push(matches, reg_info);
 		}
 	}
@@ -479,7 +479,7 @@ RZ_API RzPVector /*<RzRopRegInfo *>*/ *rz_core_rop_get_reg_info_by_reg_names(con
 		rz_pvector_foreach (registers, reg_it) {
 			const char *reg = *reg_it;
 			if (RZ_STR_EQ(reg_info->name, reg)) {
-				rz_pvector_push(result, reg_info);
+				rz_pvector_push(result, rz_core_rop_reg_info_dup(reg_info));
 				break;
 			}
 		}

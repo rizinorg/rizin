@@ -132,12 +132,12 @@ typedef enum {
 /**
  * \brief Function pointer type for event check functions.
  */
-typedef bool (*event_check_fn)(const RzRopRegInfo *);
+typedef bool (*rz_rop_event_check_fn)(const RzRopRegInfo *);
 
 /**
  * \brief Array of event check functions.
  */
-extern event_check_fn event_functions[RZ_ROP_EVENT_COUNT];
+extern rz_rop_event_check_fn rz_rop_event_functions[RZ_ROP_EVENT_COUNT];
 
 // Command APIs
 RZ_API RzCmdStatus rz_core_rop_search(RZ_NONNULL RzCore *core, RZ_OWN RzRopSearchContext *context);
