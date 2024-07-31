@@ -61,3 +61,16 @@ commands:
           - name: Gadget address
             type: RZ_CMD_ARG_TYPE_STRING
             optional: true
+  - name: "/x"
+    cname: cmd_search_hex
+    summary: Search hexadecimal sequence
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    default_mode: RZ_OUTPUT_MODE_STANDARD
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_QUIET
+      - RZ_OUTPUT_MODE_TABLE
+    args:
+      - name: hex
+        type: RZ_CMD_ARG_TYPE_STRING

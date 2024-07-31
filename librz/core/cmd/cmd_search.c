@@ -2225,43 +2225,28 @@ static void __core_cmd_search_asm_byteswap(RzCore *core, int nth) {
 	}
 }
 
-RZ_IPI int rz_cmd_search(void *data, const char *input) {
-	bool dosearch = false;
-	int ret = true;
-	RzCore *core = (RzCore *)data;
-	struct search_parameters param = {
-		.core = core,
-		.cmd_hit = rz_config_get(core->config, "cmd.hit"),
-		.outmode = 0,
-		.inverse = false,
-		.aes_search = false,
-		.privkey_search = false,
-	};
-	if (!param.cmd_hit) {
-		param.cmd_hit = "";
-	}
-	RzSearch *search = core->search;
-	int ignorecase = false;
-	int param_offset = 2;
-	char *inp;
+static bool cmd_search_prelude(RzCore *core, struct search_parameters *param) {
+	rz_return_val_if_fail(param, false);
+
 	if (!core || !core->io) {
 		RZ_LOG_ERROR("core: Can't search if we don't have an open file.\n");
 		return false;
 	}
+
+	param->cmd_hit = rz_config_get(core->config, "cmd.hit");
+	param->outmode = 0;
+	param->inverse = false;
+	param->aes_search = false;
+	param->privkey_search = false;
+
+	if (!param->cmd_hit) {
+		param->cmd_hit = strdup("");
+	}
+
+	RzSearch *search = core->search;
 	if (core->in_search) {
 		RZ_LOG_ERROR("core: Can't search from within a search.\n");
 		return false;
-	}
-	if (input[0] == '/') {
-		if (core->lastsearch) {
-			input = core->lastsearch;
-		} else {
-			RZ_LOG_ERROR("core: No previous search done\n");
-			return false;
-		}
-	} else {
-		free(core->lastsearch);
-		core->lastsearch = strdup(input);
 	}
 
 	core->in_search = true;
@@ -2287,8 +2272,6 @@ RZ_IPI int rz_cmd_search(void *data, const char *input) {
 		search_itv.size = UT64_MAX;
 	}
 
-	c = 0;
-
 	searchshow = rz_config_get_i(core->config, "search.show");
 	param.mode = rz_config_get(core->config, "search.in");
 	param.boundaries = rz_core_get_boundaries_prot(core, -1, param.mode, "search");
@@ -2311,6 +2294,29 @@ RZ_IPI int rz_cmd_search(void *data, const char *input) {
 	searchprefix = rz_config_get(core->config, "search.prefix");
 	core->search->overlap = rz_config_get_i(core->config, "search.overlap");
 	core->search->bckwrds = false;
+	return true;
+}
+
+RZ_IPI int rz_cmd_search(void *data, const char *input) {
+	bool dosearch = false;
+	int ret = true;
+	RzCore *core = (RzCore *)data;
+
+	struct search_parameters param;
+	if (!cmd_search_prelude(core, &param)) {
+		return false;
+	}
+	if (input[0] == '/') {
+		if (core->lastsearch) {
+			input = core->lastsearch;
+		} else {
+			RZ_LOG_ERROR("core: No previous search done\n");
+			return false;
+		}
+	} else {
+		free(core->lastsearch);
+		core->lastsearch = strdup(input);
+	}
 
 	/* Quick & dirty check for json output */
 	if (input[0] && (input[1] == 'j') && (input[0] != ' ')) {
@@ -3007,26 +3013,6 @@ reread:
 		if (input[1] == '?') {
 			rz_core_cmd_help(core, help_msg_slash_x);
 		} else {
-			RzSearchKeyword *kw;
-			char *s, *p = strdup(input + param_offset);
-			rz_search_reset(core->search, RZ_SEARCH_KEYWORD);
-			rz_search_set_distance(core->search, (int)rz_config_get_i(core->config, "search.distance"));
-			s = strchr(p, ':');
-			if (s) {
-				*s++ = 0;
-				kw = rz_search_keyword_new_hex(p, s, NULL);
-			} else {
-				kw = rz_search_keyword_new_hexmask(p, NULL);
-			}
-			if (kw) {
-				rz_search_kw_add(core->search, kw);
-				// eprintf ("Searching %d byte(s)...\n", kw->keyword_length);
-				rz_search_begin(core->search);
-				dosearch = true;
-			} else {
-				RZ_LOG_ERROR("core: no keyword\n");
-			}
-			free(p);
 		}
 		break;
 	case 's': // "/s"
@@ -3122,4 +3108,29 @@ beach:
 	rz_list_free(param.boundaries);
 	rz_search_kw_reset(search);
 	return ret;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_search_hex_handler(RzCore *core, int argc, const char **argv) {
+	RzSearchKeyword *kw;
+	if (!cmd_search_prelude(core)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_search_reset(core->search, RZ_SEARCH_KEYWORD);
+	rz_search_set_distance(core->search, (int)rz_config_get_i(core->config, "search.distance"));
+	s = strchr(p, ':');
+	if (s) {
+		*s++ = 0;
+		kw = rz_search_keyword_new_hex(p, s, NULL);
+	} else {
+		kw = rz_search_keyword_new_hexmask(p, NULL);
+	}
+	if (kw) {
+		rz_search_kw_add(core->search, kw);
+		rz_search_begin(core->search);
+		dosearch = true;
+	} else {
+		RZ_LOG_ERROR("core: no keyword\n");
+	}
+	free(p);
+	return RZ_CMD_STATUS_OK;
 }
