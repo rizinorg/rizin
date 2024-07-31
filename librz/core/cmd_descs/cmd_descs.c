@@ -19247,7 +19247,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(cmd_query_gadget_cd);
 	rz_cmd_desc_set_default_mode(cmd_query_gadget_cd, RZ_OUTPUT_MODE_STANDARD);
 
-	RzCmdDesc *cmd_detail_gadget_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_R_cd, "/Rg", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_detail_gadget_handler, &cmd_detail_gadget_help);
+	RzCmdDesc *cmd_detail_gadget_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_R_cd, "/Rg", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_detail_gadget_handler, &cmd_detail_gadget_help);
 	rz_warn_if_fail(cmd_detail_gadget_cd);
 	rz_cmd_desc_set_default_mode(cmd_detail_gadget_cd, RZ_OUTPUT_MODE_STANDARD);
 

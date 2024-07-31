@@ -298,6 +298,8 @@ RZ_OWN RZ_API RzRopSearchContext *rz_core_rop_search_context_new(RZ_NONNULL cons
 	}
 
 	context->greparg = greparg ? strdup(greparg) : NULL;
+	context->mode_str = rz_config_get(core->config, "search.in");
+	context->arch = rz_config_get(core->config, "asm.arch");
 	context->regexp = regexp;
 	context->mask = mask;
 	context->state = state;
@@ -310,6 +312,7 @@ RZ_OWN RZ_API RzRopSearchContext *rz_core_rop_search_context_new(RZ_NONNULL cons
 	context->unique_hitlists = NULL;
 	context->crop = rz_config_get_i(core->config, "rop.conditional");
 	context->subchain = rz_config_get_i(core->config, "rop.subchain");
+	context->cache = rz_config_get_i(core->config, "rop.cache");
 
 	return context;
 }
@@ -401,7 +404,7 @@ static bool parse_reg_op_reg(const RzCore *core, const char *str, RzRopConstrain
  *
  * The function returns true if any of these parsing methods succeed.
  */
-RZ_API bool rz_core_rop_analyze_constraint(RzCore *core, const char *str, RzRopConstraint *rop_constraint) {
+RZ_API bool rz_core_rop_analyze_constraint(RZ_NONNULL RzCore *core, const char *str, RzRopConstraint *rop_constraint) {
 	rz_return_val_if_fail(core, false);
 	return parse_reg_to_const(core, str, rop_constraint) ||
 		parse_reg_to_reg(core, str, rop_constraint) ||
@@ -433,16 +436,28 @@ static RzRopConstraint *rop_constraint_parse_args(RzCore *core, char *token) {
 	return rop_constraint;
 }
 
-static RzList /*<RzILOpPureCode *>*/ *rop_constraint_list_parse(RzCore *core, const int argc, const char **argv) {
-	RzList *constr_list = rz_rop_constraint_list_new();
+/**
+ * \brief Parse rop constraint map
+ * \param core Pointer to the RzCore object.
+ * \param argc Number of arguments.
+ * \param argv Array of arguments.
+ * \return RzPVector of RzRopConstraint objects.
+ *
+ * This function parses a list of arguments into a RzPVector of RzRopConstraint objects.
+ */
+RZ_API RzPVector /*<RzRopConstraint *>*/ *rop_constraint_map_parse(RZ_NONNULL RzCore *core, const int argc, const char **argv) {
+	RzPVector *constr_map = rz_core_rop_constraint_map_new();
+	if (!constr_map) {
+		return NULL;
+	}
 	for (int i = 1; i < argc; i++) {
 		RzList *l = rz_str_split_duplist_n(argv[i], ",", 1, false);
 		if (!l) {
-			return constr_list;
+			return constr_map;
 		}
 		size_t llen = rz_list_length(l);
 		if (!llen) {
-			return constr_list;
+			return constr_map;
 		}
 		RzListIter *it;
 		char *token;
@@ -451,9 +466,9 @@ static RzList /*<RzILOpPureCode *>*/ *rop_constraint_list_parse(RzCore *core, co
 			if (!rop_constraint) {
 				continue;
 			}
-			rz_list_append(constr_list, rop_constraint);
+			rz_pvector_push(constr_map, rop_constraint);
 		}
 		rz_list_free(l);
 	}
-	return constr_list;
+	return constr_map;
 }

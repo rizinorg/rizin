@@ -57,8 +57,6 @@ commands:
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
-          - RZ_OUTPUT_MODE_QUIET
-          - RZ_OUTPUT_MODE_TABLE
         args:
           - name: Gadget address
             type: RZ_CMD_ARG_TYPE_STRING

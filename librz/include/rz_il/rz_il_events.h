@@ -5,6 +5,8 @@
 #ifndef RZ_IL_VM_EVENTS_H
 #define RZ_IL_VM_EVENTS_H
 
+#include "rz_il_opcodes.h"
+
 #include <rz_il/definitions/definitions.h>
 
 #ifdef __cplusplus
