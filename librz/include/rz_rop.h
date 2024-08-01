@@ -42,6 +42,7 @@ typedef struct rz_rop_gadget_info_t {
 	ut64 curr_pc_val; ///< Current PC value.
 	bool is_pc_write; ///< PC write flag.
 	bool is_syscall; ///< Syscall flag.
+	HtUP *analysis_cache; ///< Analysis cache.
 	RzPVector /*<RzRopRegInfo *>*/ *modified_registers; ///< Modified registers.
 	RzList /*<RzRopRegInfo *>*/ *dependencies; ///< Dependencies.
 } RzRopGadgetInfo;
