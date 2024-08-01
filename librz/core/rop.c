@@ -91,6 +91,7 @@ static bool rz_rop_process_asm_op(const RzCore *core, const RzCoreAsmHit *hit, R
 		return false;
 	}
 	rz_analysis_op_init(aop);
+	rz_analysis_op(core->analysis, aop, hit->addr, buf, hit->len, RZ_ANALYSIS_OP_MASK_DISASM);
 	*size += hit->len;
 
 	// Append assembly operation string
