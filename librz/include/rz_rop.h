@@ -12,6 +12,7 @@
  */
 
 #include <rz_cmd.h>
+#include <rz_il.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -122,11 +123,11 @@ typedef struct rz_rop_search_context_t {
  * \brief Enum for different ROP register events.
  */
 typedef enum {
+	RZ_ROP_EVENT_VAR_READ,
 	RZ_ROP_EVENT_VAR_WRITE,
 	RZ_ROP_EVENT_MEM_READ,
 	RZ_ROP_EVENT_MEM_WRITE,
 	RZ_ROP_EVENT_PC_WRITE,
-	// Event can be to filter pure operations as needed.
 	RZ_ROP_EVENT_COUNT // This should always be the last element
 } RzRopEvent;
 
@@ -160,13 +161,14 @@ RZ_API void rz_core_rop_gadget_info_free(RZ_NULLABLE RzRopGadgetInfo *gadget_inf
 RZ_API void rz_core_rop_gadget_info_add_register(const RZ_NONNULL RZ_OUT RzRopGadgetInfo *gadget_info, RZ_NONNULL RzRopRegInfo *reg_info, bool is_dependency);
 RZ_API int rz_core_rop_gadget_info_update_register(RZ_INOUT RzRopGadgetInfo *gadget_info, RZ_NONNULL RzRopRegInfo *new_reg_info);
 RZ_API RZ_OWN RzRopGadgetInfo *rz_core_rop_gadget_info_new(ut64 address);
-RZ_IPI RzRopRegInfo *rz_core_rop_reg_info_dup(RzRopRegInfo *src);
-RZ_IPI void rz_core_rop_reg_info_free(RzRopRegInfo *reg_info);
+RZ_API RzRopRegInfo *rz_core_rop_reg_info_dup(RzRopRegInfo *src);
+RZ_API void rz_core_rop_reg_info_free(RzRopRegInfo *reg_info);
 RZ_IPI RzRopRegInfo *rz_core_rop_reg_info_new(const RzCore *core, const RzILEvent *evt, ut64 init_val, ut64 new_val);
 RZ_BORROW RZ_API RzRopRegInfo *rz_core_rop_gadget_info_get_modified_register(const RZ_NONNULL RzRopGadgetInfo *gadget_info, RZ_NONNULL const char *name);
 RZ_API bool rz_core_rop_gadget_info_has_register(const RZ_NONNULL RzRopGadgetInfo *gadget_info, RZ_NONNULL const char *name);
 RZ_API RzPVector /*<RzRopRegInfo *>*/ *rz_core_rop_gadget_get_reg_info_by_event(const RZ_NONNULL RzRopGadgetInfo *gadget_info, RzRopEvent event);
 RZ_API RzPVector /*<RzRopRegInfo *>*/ *rz_core_rop_get_reg_info_by_reg_names(const RZ_NONNULL RzRopGadgetInfo *gadget_info, RZ_NONNULL const RzPVector /*<char *>*/ *registers);
+RZ_API bool rz_core_rop_gadget_reg_info_has_event(const RZ_NONNULL RzRopGadgetInfo *gadget_info, const RzRopEvent event, const char *reg_name);
 
 #ifdef __cplusplus
 }
