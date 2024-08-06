@@ -229,6 +229,7 @@ static void rz_diff_show_help(bool usage_only) {
 		"",         "",             "   bytes      | compare raw bytes in the files (only for small files)",
 		"",         "",             "   lines      | compare text files",
 		"",         "",             "   functions  | compare functions found in the files",
+		"",         "",             "              | optional -0 <fcn name|offset> to compare only one function",
 		"",         "",             "   classes    | compare classes found in the files",
 		"",         "",             "   command    | compare command output returned when executed in both files",
 		"",         "",             "              | require -0 <cmd> and -1 <cmd> is optional",
@@ -365,9 +366,7 @@ static void rz_diff_parse_arguments(int argc, const char **argv, DiffContext *ct
 		} else if (!strcmp(type, "lines")) {
 			rz_diff_ctx_set_type(ctx, DIFF_TYPE_LINES);
 		} else if (!strcmp(type, "functions")) {
-			if (ctx->input_a) {
-				rz_diff_error_opt(ctx, DIFF_OPT_ERROR, "option -t '%s' does not support -0.\n", type);
-			} else if (ctx->input_b) {
+			if (ctx->input_b) {
 				rz_diff_error_opt(ctx, DIFF_OPT_ERROR, "option -t '%s' does not support -1.\n", type);
 			}
 			ctx->option = DIFF_OPT_GRAPH;
@@ -2072,7 +2071,7 @@ static int comparePairFunctions(const RzAnalysisMatchPair *ma, const RzAnalysisM
  * Then the scores are shown in a table (when in quiet mode, the table
  * is headerless)
  * */
-static void core_diff_show(RzCore *core_a, RzCore *core_b, DiffMode mode, bool verbose) {
+static void core_diff_show(RzCore *core_a, RzCore *core_b, const char *addr_a, DiffMode mode, bool verbose) {
 	rz_return_if_fail(core_a && core_b);
 
 	char *output = NULL;
@@ -2085,8 +2084,22 @@ static void core_diff_show(RzCore *core_a, RzCore *core_b, DiffMode mode, bool v
 	RzAnalysisFunction *fcn_a = NULL, *fcn_b = NULL;
 	RzListIter *iter = NULL;
 	bool color = false, no_name = false;
-
-	fcns_a = rz_list_clone(rz_analysis_function_list(core_a->analysis));
+	if (RZ_STR_ISEMPTY(addr_a)) {
+		fcns_a = rz_list_clone(rz_analysis_function_list(core_a->analysis));
+	} else {
+		fcns_a = rz_list_new();
+		if (!fcns_a) {
+			RZ_LOG_ERROR("rz-diff: failed to create new list.\n");
+			goto fail;
+		}
+		ut64 addr = rz_num_get(core_a->num, addr_a);
+		RzAnalysisFunction *fcn = rz_analysis_get_function_at(core_a->analysis, addr);
+		if (!fcn) {
+			RZ_LOG_ERROR("rz-diff: failed to find %s in file0.\n", addr_a);
+			goto fail;
+		}
+		rz_list_append(fcns_a, fcn);
+	}
 	if (rz_list_empty(fcns_a)) {
 		RZ_LOG_ERROR("rz-diff: No functions found in file0.\n");
 		goto fail;
@@ -2296,7 +2309,7 @@ static bool rz_diff_graphs_files(DiffContext *ctx) {
 		if (ctx->verbose) {
 			fprintf(stderr, "rz-diff: start diffing.\n");
 		}
-		core_diff_show(a->core, b->core, ctx->mode, ctx->verbose);
+		core_diff_show(a->core, b->core, ctx->input_a, ctx->mode, ctx->verbose);
 	}
 
 	success = true;
