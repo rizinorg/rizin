@@ -513,6 +513,40 @@ static void *analysis_match_functions(SharedContext *shared) {
 	return NULL;
 }
 
+static void *analysis_match_one_function(SharedContext *shared) {
+	RzAnalysisFunction *fcn_a = NULL, *fcn_b = NULL;
+	RzAnalysisMatchPair *pair = NULL;
+	ut32 size_a = 0, size_b = 0;
+	ut8 *buf_a = NULL, *buf_b = NULL;
+
+	fcn_b = rz_list_first(shared->list_b);
+	if (!shared_context_alloc_a(shared, fcn_b, &buf_b, &size_b)) {
+		RZ_LOG_ERROR("analysis_match: cannot allocate buffer for function %s (B)\n", fcn_b->name);
+		return NULL;
+	}
+
+	while (rz_atomic_bool_get(shared->loop) && (fcn_a = rz_th_queue_pop(shared->queue, false))) {
+		if (!shared_context_alloc_b(shared, fcn_a, &buf_a, &size_a)) {
+			RZ_LOG_ERROR("analysis_match: cannot allocate buffer for function %s (A)\n", fcn_a->name);
+			free(buf_b);
+			return NULL;
+		}
+
+		double similarity = calculate_similarity(buf_a, size_a, buf_b, size_b);
+		free(buf_a);
+
+		if (!(pair = match_pair_new(fcn_a, fcn_b, similarity))) {
+			RZ_LOG_ERROR("analysis_match: cannot allocate match pair\n");
+			free(buf_b);
+			return NULL;
+		}
+		rz_th_queue_push(shared->matches, pair, true);
+	}
+
+	free(buf_b);
+	return NULL;
+}
+
 /**
  * \brief      Finds matching functions of 2 given lists of functions using the same RzAnalysis core
  *
@@ -524,5 +558,8 @@ static void *analysis_match_functions(SharedContext *shared) {
  */
 RZ_API RZ_OWN RzAnalysisMatchResult *rz_analysis_match_functions(RzList /*<RzAnalysisFunction *>*/ *list_a, RzList /*<RzAnalysisFunction *>*/ *list_b, RZ_NONNULL RzAnalysisMatchOpt *opt) {
 	rz_return_val_if_fail(opt && opt->analysis_a && opt->analysis_b && list_a && list_b, NULL);
+	if (rz_list_length(list_a) == 1) {
+		return analysis_match_result_new(opt, list_b, list_a, (RzThreadFunction)analysis_match_one_function, (AllocateBuffer)function_data_new);
+	}
 	return analysis_match_result_new(opt, list_a, list_b, (RzThreadFunction)analysis_match_functions, (AllocateBuffer)function_data_new);
 }

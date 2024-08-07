@@ -980,3 +980,22 @@ EXPECT=<<EOF
 `-------------------------------------------------------------------------------------------------'
 EOF
 RUN
+
+NAME=rz-diff functions comparison against only one function
+FILE==
+CMDS=!rz-diff -e 'analysis.fcnprefix=test' -e 'analysis.limits=true' -e 'analysis.from=0x401460' -e 'analysis.to=0x4033d0' -C -t functions -0 test.00401ae0 bins/other/rz-diff/true bins/other/rz-diff/false
+EXPECT=<<EOF
+.-------------------------------------------------------------------------------------------------.
+| name0         | size0 | addr0      | type     | similarity | addr1      | size1 | name1         |
+)-------------------------------------------------------------------------------------------------(
+| test.00401470 | 41    | 0x00401470 | UNLIKE   | 0.0746     | 0x00401ae0 | 228   | test.00401ae0 |
+| test.004019a0 | 137   | 0x004019a0 | UNLIKE   | 0.1228     | 0x00401ae0 | 228   | test.00401ae0 |
+| test.00401a30 | 162   | 0x00401a30 | UNLIKE   | 0.0746     | 0x00401ae0 | 228   | test.00401ae0 |
+| test.00401af0 | 228   | 0x00401af0 | PARTIAL  | 0.964912   | 0x00401ae0 | 228   | test.00401ae0 |
+| test.00401bf0 | 2728  | 0x00401bf0 | UNLIKE   | 0.0433     | 0x00401ae0 | 228   | test.00401ae0 |
+| test.00402740 | 425   | 0x00402740 | UNLIKE   | 0.1106     | 0x00401ae0 | 228   | test.00401ae0 |
+| test.004029b0 | 50    | 0x004029b0 | UNLIKE   | 0.0702     | 0x00401ae0 | 228   | test.00401ae0 |
+| test.00402e30 | 204   | 0x00402e30 | UNLIKE   | 0.1140     | 0x00401ae0 | 228   | test.00401ae0 |
+`-------------------------------------------------------------------------------------------------'
+EOF
+RUN
