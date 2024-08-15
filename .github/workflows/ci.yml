@@ -331,6 +331,10 @@ jobs:
     if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'centos') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable' || github.event_name == 'schedule'
     container: centos:7
     steps:
+      - name: Fix mirrors list
+        run: |
+          sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-*
+          sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
       - name: Install tools
         run: yum install -y patch unzip git gcc make python3-pip
         # Pin Meson to the last version stil supporting Python 3.6
