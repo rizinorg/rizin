@@ -1,4 +1,4 @@
-project('zlib', 'c', version : '1.3', license : 'zlib')
+project('zlib', 'c', version : '1.3.1', license : 'zlib')
 
 cc = meson.get_compiler('c')
 
