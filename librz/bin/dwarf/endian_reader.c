@@ -78,9 +78,10 @@ RZ_IPI RZ_OWN RzBinEndianReader *rz_bin_dwarf_section_reader(
 	ut64 src_len = len - Chdr_size;
 	ut64 uncompressed_len = 0;
 	ut8 *uncompressed = NULL;
-	RZ_LOG_VERBOSE("Section %s is compressed\n", section->name);
+	RZ_LOG_VERBOSE("Section %s is compressed, type %d%s\n", section->name, ch_type,
+		is_zlib_gnu ? " (GNU)" : "");
 	if (ch_type == ELFCOMPRESS_ZLIB) {
-		int len_tmp;
+		int len_tmp = 0;
 		uncompressed = rz_inflate(
 			src, (int)src_len, NULL, &len_tmp);
 		uncompressed_len = len_tmp;
@@ -106,7 +107,7 @@ RZ_IPI RZ_OWN RzBinEndianReader *rz_bin_dwarf_section_reader(
 		RZ_LOG_WARN("Unsupported compression type: %d\n", ch_type);
 	}
 
-	if (!uncompressed || uncompressed_len <= 0) {
+	if (!uncompressed || uncompressed_len == 0) {
 		RZ_LOG_ERROR("section [%s] uncompress failed\n", section->name);
 		goto err;
 	}
