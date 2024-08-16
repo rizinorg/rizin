@@ -620,6 +620,11 @@ if not softfloat_dep.found()
   softfloat_dep = softfloat_proj.get_variable('softfloat_dep')
 endif
 
+if meson.is_cross_build()
+  softfloat_proj = subproject('softfloat', default_options: ['default_library=static', 'warning_level=0'])
+  softfloat_native_dep = softfloat_proj.get_variable('softfloat_dep')
+endif
+
 # handle zip dependency
 r = run_command(py3_exe, check_meson_subproject_py, 'libzip', check: false)
 if r.returncode() == 1 and get_option('subprojects_check')
