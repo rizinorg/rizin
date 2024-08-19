@@ -402,11 +402,11 @@ RZ_IPI RzRopRegInfo *rz_core_rop_reg_info_dup(RzRopRegInfo *src) {
 }
 
 /**
- * \brief Find the RzRopRegInfo in the dependencies
+ * \brief Find the ROP Register information for the given register
  * \param gadget_info Pointer to the RzRopGadgetInfo
- * \param name Register name
+ * \param name Register to filter the dependencies
  *
- * \return RzList* *<RzRopRegInfo *>
+ * \return List of register rop information
  */
 RZ_API RzList /*<RzRopRegInfo *>*/ *rz_core_rop_reg_info_find(const RzRopGadgetInfo *gadget_info, const char *name) {
 	rz_return_val_if_fail(gadget_info && name, NULL);
@@ -477,7 +477,7 @@ rz_rop_event_check_fn rz_rop_event_functions[RZ_ROP_EVENT_COUNT] = {
  * \param gadget_info RZ_NONNULL Pointer to the RzRopGadgetInfo object.
  * \param event The RzRopEvent to check.
  * \param reg_name Name of the register
- * \return True if there is a match or false
+ * \return True if there is an event which \p event which uses \p reg_name. False otherwise.
  */
 RZ_API bool rz_core_rop_gadget_reg_info_has_event(const RZ_NONNULL RzRopGadgetInfo *gadget_info, const RzRopEvent event, const char *reg_name) {
 	rz_return_val_if_fail(gadget_info, NULL);

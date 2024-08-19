@@ -34,7 +34,7 @@ RZ_IPI int rz_core_visual_view_rop(RzCore *core) {
 	// maybe store in RzCore, so we can save it in project and use it outside visual
 
 	eprintf("Searching ROP gadgets...\n");
-	char *ropstr = rz_core_cmd_strf(core, "\"/Rl %s\" @e:scr.color=0", linestr);
+	char *ropstr = rz_core_cmd_strf(core, "\"/Rq %s\" @e:scr.color=0", linestr);
 	RzList *rops = rz_str_split_list(ropstr, "\n", 0);
 	int delta = 0;
 	bool show_color = core->print->flags & RZ_PRINT_FLAGS_COLOR;
@@ -207,15 +207,20 @@ RZ_IPI int rz_core_visual_view_rop(RzCore *core) {
 		case '\n':
 		case '\r':
 			if (curline && *curline) {
-				char *line = rz_core_cmd_strf(core, "piuq@0x%08" PFMT64x, addr + delta);
-				rz_str_replace_char(line, '\n', ';');
+				const ut64 limit = addr + delta > 1 ? addr + delta : 1024;
+				RzStrBuf *line = rz_strbuf_new(NULL);
+				const int ret = rz_core_disasm_until_ret(core, core->offset, limit, RZ_OUTPUT_MODE_QUIET, true, line);
+				if (ret != 0) {
+					free(line);
+					break;
+				}
 				if (show_color) {
 					// XXX parsing fails to read this ansi-offset
 					// const char *offsetColor = rz_cons_singleton ()->context->pal.offset; // TODO etooslow. must cache
 					// rz_list_push (core->ropchain, rz_str_newf ("%s0x%08"PFMT64x""Color_RESET"  %s", offsetColor, addr + delta, line));
-					rz_list_push(core->ropchain, rz_str_newf("0x%08" PFMT64x "  %s", addr + delta, line));
+					rz_list_push(core->ropchain, rz_str_newf("0x%08" PFMT64x "  %s", addr + delta, rz_strbuf_get(line)));
 				} else {
-					rz_list_push(core->ropchain, rz_str_newf("0x%08" PFMT64x "  %s", addr + delta, line));
+					rz_list_push(core->ropchain, rz_str_newf("0x%08" PFMT64x "  %s", addr + delta, rz_strbuf_get(line)));
 				}
 				free(line);
 			}
