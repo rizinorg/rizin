@@ -1717,17 +1717,17 @@ static void pr_bb(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisBlock *b, boo
 }
 
 static void handle_default_disasm_print_mode(const RzCore *core, const ut64 addr, const bool ret_val,
-											 const char *m_intr, RzStrBuf *buf) {
+	const char *m_intr, RzStrBuf *buf) {
 	const bool show_color = rz_config_get_i(core->config, "scr.color");
 
 	if (show_color) {
 		const char *offsetColor = rz_cons_singleton()->context->pal.offset; // TODO etooslow. must cache
 		if (!ret_val) {
 			rz_cons_printf("%s0x%08" PFMT64x "" Color_RESET "  %10s %s\n",
-			offsetColor, addr, "", m_intr);
+				offsetColor, addr, "", m_intr);
 		} else {
 			char *str_buf = rz_str_newf("%s0x%08" PFMT64x "" Color_RESET "  %10s %s\n",
-			offsetColor, addr, "", m_intr);
+				offsetColor, addr, "", m_intr);
 			rz_strbuf_append(buf, str_buf);
 			free(str_buf);
 		}
@@ -1740,12 +1740,11 @@ static void handle_default_disasm_print_mode(const RzCore *core, const ut64 addr
 			free(str_buf);
 		}
 	}
-
 }
 
 static void disasm_print_ret(const RzCore *core, const RzOutputMode mode, const char *m_intr, const ut64 addr,
-							const bool ret_val, RzStrBuf *buf) {
-	switch(mode) {
+	const bool ret_val, RzStrBuf *buf) {
+	switch (mode) {
 	case RZ_OUTPUT_MODE_QUIET:
 		if (!ret_val) {
 			rz_cons_printf("%s\n", m_intr);
@@ -1760,7 +1759,7 @@ static void disasm_print_ret(const RzCore *core, const RzOutputMode mode, const 
 }
 
 RZ_API RZ_BORROW int rz_core_disasm_until_ret(RzCore *core, ut64 addr, const int limit,
-											  const RzOutputMode mode, const bool ret_val, RzStrBuf *buf) {
+	const RzOutputMode mode, const bool ret_val, RzStrBuf *buf) {
 	rz_return_val_if_fail(core, -1);
 	for (int i = 0; i < limit; i++) {
 		RzAnalysisOp *op = rz_core_analysis_op(core, addr, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_DISASM);

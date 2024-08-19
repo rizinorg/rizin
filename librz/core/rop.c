@@ -624,15 +624,15 @@ static void var_read_add_reg_info(const RzCore *core, const RzILEvent *event, co
 	rz_bv_free(val);
 }
 
-static int handle_il_event_read(const RzCore *core, const RzILEventVarRead *var_read,
+static bool is_handle_il_event_read(const RzCore *core, const RzILEventVarRead *var_read,
 	RzRopRegInfo *reg_info, RzRopGadgetInfo *gadget_info, const RzILEvent *event, const RzILEvent *curr_event) {
 	if (rz_core_rop_gadget_reg_info_has_event(gadget_info, RZ_ROP_EVENT_VAR_READ, event->data.var_read.variable)) {
-		return -1;
+		return false;
 	}
 	var_read_add_reg_info(core, event, var_read, &reg_info);
 	rz_rop_gadget_info_add_dependency(core, gadget_info, curr_event, reg_info);
 	rz_core_rop_reg_info_free(reg_info);
-	return 0;
+	return true;
 }
 
 static int fill_rop_gadget_info_from_events(RzCore *core, RzRopGadgetInfo *gadget_info, const RzILEvent *curr_event,
@@ -677,7 +677,7 @@ static int fill_rop_gadget_info_from_events(RzCore *core, RzRopGadgetInfo *gadge
 				var_read_add_reg_info(core, event, var_read, &reg_info);
 			}
 			if (event->type == RZ_IL_EVENT_VAR_READ && !is_stack_evt) {
-				if (handle_il_event_read(core, var_read, reg_info, gadget_info, event, curr_event) == 0) {
+				if (is_handle_il_event_read(core, var_read, reg_info, gadget_info, event, curr_event)) {
 					break;
 				}
 			}
