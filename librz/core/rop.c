@@ -224,7 +224,7 @@ static bool rz_rop_print_json_mode(const RzCore *core, const RzCoreAsmHit *hit, 
 	return true;
 }
 
-RZ_IPI void rz_core_rop_reg_info_free(RzRopRegInfo *reg_info) {
+RZ_API void rz_core_rop_reg_info_free(RzRopRegInfo *reg_info) {
 	if (!reg_info) {
 		return;
 	}
@@ -381,7 +381,7 @@ RZ_API int rz_core_rop_gadget_info_update_register(RZ_INOUT RzRopGadgetInfo *gad
  * \param src Pointer to RzRopRegInfo
  * \return RzRopRegInfo* on success, NULL on failure
  */
-RZ_IPI RzRopRegInfo *rz_core_rop_reg_info_dup(RzRopRegInfo *src) {
+RZ_API RzRopRegInfo *rz_core_rop_reg_info_dup(RzRopRegInfo *src) {
 	rz_return_val_if_fail(src, NULL);
 
 	RzRopRegInfo *dup = RZ_NEW0(RzRopRegInfo);
