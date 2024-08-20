@@ -1304,7 +1304,7 @@ RZ_API void rz_core_sym_name_init(RZ_NONNULL RZ_OUT RzBinSymNames *names, RZ_NON
 RZ_API void rz_core_sym_name_fini(RZ_NULLABLE RzBinSymNames *names);
 
 RZ_API void rz_core_analysis_bytes_il(RZ_NONNULL RzCore *core, ut64 len, ut64 num_ops, bool pretty);
-RZ_API RZ_BORROW int rz_core_disasm_until_ret(RzCore *core, ut64 addr, int limit, RzOutputMode mode, bool val, RzStrBuf *buf);
+RZ_API bool rz_core_disasm_until_ret(RzCore *core, ut64 addr, int limit, RzOutputMode mode, bool ret_val, RZ_BORROW RzStrBuf *buf);
 
 #endif
 

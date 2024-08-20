@@ -233,7 +233,7 @@ RZ_API void rz_core_rop_reg_info_free(RzRopRegInfo *reg_info) {
 	free(reg_info);
 }
 
-RZ_IPI RzRopRegInfo *rz_core_rop_reg_info_new(const RzCore *core, const RzILEvent *evt, const ut64 init_val, const ut64 new_val) {
+RZ_API RZ_NULLABLE RzRopRegInfo *rz_core_rop_reg_info_new(const RzCore *core, const RzILEvent *evt, const ut64 init_val, const ut64 new_val) {
 	rz_return_val_if_fail(core && evt, NULL);
 	RzRopRegInfo *reg_info = RZ_NEW0(RzRopRegInfo);
 	if (!reg_info) {
@@ -279,7 +279,7 @@ RZ_IPI RzRopRegInfo *rz_core_rop_reg_info_new(const RzCore *core, const RzILEven
  *
  * This function allocates and initializes a new RzRopGadgetInfo object with the given address.
  */
-RZ_API RZ_OWN RzRopGadgetInfo *rz_core_rop_gadget_info_new(const ut64 address) {
+RZ_API RZ_NULLABLE RZ_OWN RzRopGadgetInfo *rz_core_rop_gadget_info_new(const ut64 address) {
 	RzRopGadgetInfo *gadget_info = RZ_NEW0(RzRopGadgetInfo);
 	if (!gadget_info) {
 		return NULL;
@@ -381,7 +381,7 @@ RZ_API int rz_core_rop_gadget_info_update_register(RZ_INOUT RzRopGadgetInfo *gad
  * \param src Pointer to RzRopRegInfo
  * \return RzRopRegInfo* on success, NULL on failure
  */
-RZ_API RzRopRegInfo *rz_core_rop_reg_info_dup(RzRopRegInfo *src) {
+RZ_API RZ_NULLABLE RzRopRegInfo *rz_core_rop_reg_info_dup(RzRopRegInfo *src) {
 	rz_return_val_if_fail(src, NULL);
 
 	RzRopRegInfo *dup = RZ_NEW0(RzRopRegInfo);
@@ -506,7 +506,7 @@ RZ_API bool rz_core_rop_gadget_reg_info_has_event(const RZ_NONNULL RzRopGadgetIn
  * \param event The RzRopEvent to check.
  * \return RZ_OUT A pointer to a list of RzRopRegInfo objects matching the given event, or NULL if none are found or if gadget_info is NULL.
  */
-RZ_API RzPVector /*<RzRopRegInfo *>*/ *rz_core_rop_gadget_get_reg_info_by_event(const RZ_NONNULL RzRopGadgetInfo *gadget_info, const RzRopEvent event) {
+RZ_API RZ_NULLABLE RzPVector /*<RzRopRegInfo *>*/ *rz_core_rop_gadget_get_reg_info_by_event(const RZ_NONNULL RzRopGadgetInfo *gadget_info, const RzRopEvent event) {
 	rz_return_val_if_fail(gadget_info, NULL);
 	if (event < 0 || event >= RZ_ROP_EVENT_COUNT) {
 		return NULL;
@@ -530,7 +530,7 @@ RZ_API RzPVector /*<RzRopRegInfo *>*/ *rz_core_rop_gadget_get_reg_info_by_event(
  *
  * Searches the modified registers in the RzRopGadgetInfo object for all registers with the given registers and returns their info in a vector.
  */
-RZ_API RzPVector /*<RzRopRegInfo *>*/ *rz_core_rop_get_reg_info_by_reg_names(const RZ_NONNULL RzRopGadgetInfo *gadget_info,
+RZ_API RZ_NULLABLE RzPVector /*<RzRopRegInfo *>*/ *rz_core_rop_get_reg_info_by_reg_names(const RZ_NONNULL RzRopGadgetInfo *gadget_info,
 	RZ_NONNULL const RzPVector /*<char *>*/ *registers) {
 	rz_return_val_if_fail(gadget_info && registers, NULL);
 
@@ -542,7 +542,11 @@ RZ_API RzPVector /*<RzRopRegInfo *>*/ *rz_core_rop_get_reg_info_by_reg_names(con
 		rz_pvector_foreach (registers, reg_it) {
 			const char *reg = *reg_it;
 			if (RZ_STR_EQ(reg_info->name, reg)) {
-				rz_pvector_push(result, rz_core_rop_reg_info_dup(reg_info));
+				RzRopRegInfo *rop_reg_info_dup = rz_core_rop_reg_info_dup(reg_info);
+				if (!rop_reg_info_dup) {
+					continue;
+				}
+				rz_pvector_push(result, rop_reg_info_dup);
 				break;
 			}
 		}
@@ -610,7 +614,8 @@ static void rz_rop_gadget_info_add_dependency(const RzCore *core, RzRopGadgetInf
 	rz_list_append(gadget_info->dependencies, reg_info_dup);
 }
 
-static void var_read_add_reg_info(const RzCore *core, const RzILEvent *event, const RzILEventVarRead *var_read, RzRopRegInfo **reg_info) {
+static void var_read_add_reg_info(const RzCore *core, const RzILEvent *event,
+	const RzILEventVarRead *var_read, RZ_OUT RzRopRegInfo **reg_info) {
 	rz_return_if_fail(core && event && var_read);
 	RzBitVector *val = rz_il_value_to_bv(var_read->value);
 	if (!val) {
@@ -822,11 +827,13 @@ static void rz_rop_gadget_print_standard_mode(const RzCore *core, const RzRopGad
 			continue;
 		}
 		if (reg_info->is_var_write) {
-			rz_cons_printf("Var write: %s Initial value: 0x%llx New Value: 0x%llx\n", reg_info->name, reg_info->init_val, reg_info->new_val);
+			rz_cons_printf("Var write: %s Initial value: 0x%" PFMT64x "New Value: 0x%" PFMT64x "\n",
+				reg_info->name, reg_info->init_val, reg_info->new_val);
 		} else if (reg_info->is_mem_read) {
-			rz_cons_printf("Memory Read: %s Value: 0x%llx\n", reg_info->name, reg_info->new_val);
+			rz_cons_printf("Memory Read: %s Value: 0x%" PFMT64x, reg_info->name, reg_info->new_val);
 		} else if (reg_info->is_mem_write) {
-			rz_cons_printf("Memory Write: %s Initial Value: %llx New Value: 0x%llx\n", reg_info->name, reg_info->init_val, reg_info->new_val);
+			rz_cons_printf("Memory Write: %s Initial Value: 0x%" PFMT64x "New Value: 0x%" PFMT64x "\n",
+				reg_info->name, reg_info->init_val, reg_info->new_val);
 		} else if (reg_info->is_var_read) {
 			// Var read needed for cases like mov dst, src kind of instructions
 			rz_cons_printf("Var Read: %s\n", reg_info->name);
@@ -1155,24 +1162,24 @@ cleanup:
 	return hitlist;
 }
 
-static int update_analysis_cache(const RzCore *core, const RzCoreAsmHit *hit, const RzRopGadgetInfo *gadget_info) {
+static bool update_analysis_cache(const RzCore *core, const RzCoreAsmHit *hit, const RzRopGadgetInfo *gadget_info) {
 	rz_return_val_if_fail(core && core->analysis, -1);
 	if (is_ret_gadget(core, hit, 0)) {
-		return 0;
+		return true;
 	}
 	RzAnalysisOp *op = rz_analysis_op_new();
-	int status = 0;
+	bool status = true;
 	ut8 *buf = calloc(1, hit->len);
 	if (!buf) {
 		rz_analysis_op_free(op);
-		return -1;
+		return false;
 	}
 	if (rz_io_nread_at(core->io, hit->addr, buf, hit->len) < 0) {
-		status = -1;
+		status = false;
 		goto fini;
 	}
 	if (rz_analysis_op(core->analysis, op, hit->addr, buf, hit->len, RZ_ANALYSIS_OP_MASK_VAL | RZ_ANALYSIS_OP_MASK_DISASM | RZ_ANALYSIS_OP_MASK_HINT) < 0) {
-		status = -1;
+		status = false;
 		goto fini;
 	}
 	ht_up_insert(gadget_info->analysis_cache, hit->addr, op);
@@ -1198,10 +1205,13 @@ static RzRopGadgetInfo *perform_gadget_analysis(RzCore *core, const RzRopSearchC
 		RzListIter *iter;
 		RzCoreAsmHit *hit;
 		rop_gadget_info = rz_core_rop_gadget_info_new(addr_start);
+		if (!rop_gadget_info) {
+			return NULL;
+		}
 		const bool is_rop_analysis = core->analysis->is_rop_analysis;
 		core->analysis->is_rop_analysis = true;
 		rz_list_foreach (hitlist, iter, hit) {
-			if (update_analysis_cache(core, hit, rop_gadget_info) < 0) {
+			if (!update_analysis_cache(core, hit, rop_gadget_info)) {
 				RZ_LOG_WARN("Failed to analyze gadget at 0x%" PFMT64x "\n", hit->addr);
 			}
 			if (analyze_gadget(core, hit, rop_gadget_info) < 0) {

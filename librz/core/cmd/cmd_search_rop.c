@@ -445,7 +445,7 @@ static RzRopConstraint *rop_constraint_parse_args(RzCore *core, char *token) {
  *
  * This function parses a list of arguments into a RzPVector of RzRopConstraint objects.
  */
-RZ_API RzPVector /*<RzRopConstraint *>*/ *rop_constraint_map_parse(RZ_NONNULL RzCore *core, const int argc, const char **argv) {
+RZ_API RZ_NULLABLE RzPVector /*<RzRopConstraint *>*/ *rop_constraint_map_parse(RZ_NONNULL RzCore *core, const int argc, const char **argv) {
 	RzPVector *constr_map = rz_core_rop_constraint_map_new();
 	if (!constr_map) {
 		return NULL;

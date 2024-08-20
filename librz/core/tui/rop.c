@@ -209,8 +209,7 @@ RZ_IPI int rz_core_visual_view_rop(RzCore *core) {
 			if (curline && *curline) {
 				const ut64 limit = addr + delta > 1 ? addr + delta : 1024;
 				RzStrBuf *line = rz_strbuf_new(NULL);
-				const int ret = rz_core_disasm_until_ret(core, core->offset, limit, RZ_OUTPUT_MODE_QUIET, true, line);
-				if (ret != 0) {
+				if (!rz_core_disasm_until_ret(core, core->offset, limit, RZ_OUTPUT_MODE_QUIET, true, line)) {
 					free(line);
 					break;
 				}

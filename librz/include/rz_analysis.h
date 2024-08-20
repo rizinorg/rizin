@@ -11,12 +11,12 @@
 #define USE_VARSUBS 0
 
 #define RZ_ANALYSIS_OP_INVALID_STACKPTR 0
+#define RZ_ANALYSIS_OP_MASK_WILDCARD    0xfffff
 
 #include <rz_types.h>
 #include <rz_io.h>
 #include <rz_reg.h>
 #include <rz_list.h>
-#include <rz_search.h>
 #include <rz_util.h>
 #include <rz_bind.h>
 #include <rz_syscall.h>
