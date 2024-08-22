@@ -22,6 +22,7 @@
 #include <rz_syscall.h>
 #include <rz_util/rz_set.h>
 #include <rz_flag.h>
+#include <rz_search.h>
 #include <rz_bin.h>
 #include <rz_type.h>
 #include <rz_il.h>
