@@ -161,7 +161,7 @@ RZ_API void rz_core_rop_gadget_info_free(RZ_NULLABLE RzRopGadgetInfo *gadget_inf
 RZ_API void rz_core_rop_gadget_info_add_register(const RZ_NONNULL RZ_OUT RzRopGadgetInfo *gadget_info, RZ_NONNULL RzRopRegInfo *reg_info, bool is_dependency);
 RZ_API int rz_core_rop_gadget_info_update_register(RZ_INOUT RzRopGadgetInfo *gadget_info, RZ_NONNULL RzRopRegInfo *new_reg_info);
 RZ_API RZ_NULLABLE RZ_OWN RzRopGadgetInfo *rz_core_rop_gadget_info_new(ut64 address);
-RZ_API RzRopRegInfo *rz_core_rop_reg_info_dup(RzRopRegInfo *src);
+RZ_API RZ_NULLABLE RzRopRegInfo *rz_core_rop_reg_info_dup(RzRopRegInfo *src);
 RZ_API void rz_core_rop_reg_info_free(RzRopRegInfo *reg_info);
 RZ_API RZ_NULLABLE RzRopRegInfo *rz_core_rop_reg_info_new(const RzCore *core, const RzILEvent *evt, ut64 init_val, ut64 new_val);
 RZ_BORROW RZ_API RzRopRegInfo *rz_core_rop_gadget_info_get_modified_register(const RZ_NONNULL RzRopGadgetInfo *gadget_info, RZ_NONNULL const char *name);
