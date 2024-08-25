@@ -210,7 +210,7 @@ RZ_IPI int rz_core_visual_view_rop(RzCore *core) {
 				const ut64 limit = addr + delta > 1 ? addr + delta : 1024;
 				RzStrBuf *line = rz_strbuf_new(NULL);
 				if (!rz_core_disasm_until_ret(core, core->offset, limit, RZ_OUTPUT_MODE_QUIET, true, line)) {
-					free(line);
+					rz_strbuf_free(line);
 					break;
 				}
 				if (show_color) {
@@ -221,7 +221,7 @@ RZ_IPI int rz_core_visual_view_rop(RzCore *core) {
 				} else {
 					rz_list_push(core->ropchain, rz_str_newf("0x%08" PFMT64x "  %s", addr + delta, rz_strbuf_get(line)));
 				}
-				free(line);
+				rz_strbuf_free(line);
 			}
 			break;
 		case 'h':

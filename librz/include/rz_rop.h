@@ -142,33 +142,38 @@ typedef bool (*rz_rop_event_check_fn)(const RzRopRegInfo *);
 extern rz_rop_event_check_fn rz_rop_event_functions[RZ_ROP_EVENT_COUNT];
 
 // Command APIs
-RZ_API RzCmdStatus rz_core_rop_search(RZ_NONNULL RzCore *core, RZ_OWN RzRopSearchContext *context);
-RZ_API RzCmdStatus rz_core_rop_gadget_info(RZ_NONNULL RzCore *core, RZ_OWN RzRopSearchContext *context);
-RZ_API bool rz_core_rop_analyze_constraint(RZ_NONNULL RzCore *core, const char *str, RzRopConstraint *rop_constraint);
+RZ_API RzCmdStatus rz_core_rop_search(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_OWN RzRopSearchContext *context);
+RZ_API RzCmdStatus rz_core_rop_gadget_info(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_OWN RzRopSearchContext *context);
+RZ_API bool rz_core_rop_analyze_constraint(const RZ_NONNULL RzCore *core, const RZ_NONNULL char *str,
+	RZ_NONNULL RZ_OUT RzRopConstraint *rop_constraint);
 
 // ROP Search Context APIs
-RZ_OWN RZ_API RzRopSearchContext *rz_core_rop_search_context_new(RZ_NONNULL const RzCore *core, RZ_NULLABLE const char *greparg,
-	bool regexp, RzRopRequestMask mask, RZ_BORROW RzCmdStateOutput *state);
+RZ_API RZ_OWN RZ_NULLABLE RzRopSearchContext *rz_core_rop_search_context_new(RZ_NONNULL const RzCore *core, RZ_NULLABLE const char *greparg, bool regexp,
+	const RzRopRequestMask mask, RZ_NONNULL RZ_BORROW RzCmdStateOutput *state);
 RZ_API void rz_core_rop_search_context_free(RZ_NULLABLE RzRopSearchContext *context);
 
 // ROP Constraint APIs
-RZ_API void rz_core_rop_constraint_free(RZ_NULLABLE void *data);
-RZ_OWN RZ_API RzPVector /*<RzRopConstraint *>*/ *rz_core_rop_constraint_map_new(void);
-RZ_API RZ_NULLABLE RzPVector /*<RzRopConstraint *>*/ *rop_constraint_map_parse(RZ_NONNULL RzCore *core, int argc, const char **argv);
+RZ_API void rz_core_rop_constraint_free(RZ_NONNULL void *data);
+RZ_API RZ_OWN RzPVector /*<RzRopConstraint *>*/ *rz_core_rop_constraint_map_new(void);
+RZ_API RZ_OWN RzPVector /*<RzRopConstraint *>*/ *rz_core_rop_constraint_map_new(void);
 
 // ROP Gadget Info APIs
-RZ_API void rz_core_rop_gadget_info_free(RZ_NULLABLE RzRopGadgetInfo *gadget_info);
-RZ_API void rz_core_rop_gadget_info_add_register(const RZ_NONNULL RZ_OUT RzRopGadgetInfo *gadget_info, RZ_NONNULL RzRopRegInfo *reg_info, bool is_dependency);
-RZ_API int rz_core_rop_gadget_info_update_register(RZ_INOUT RzRopGadgetInfo *gadget_info, RZ_NONNULL RzRopRegInfo *new_reg_info);
-RZ_API RZ_NULLABLE RZ_OWN RzRopGadgetInfo *rz_core_rop_gadget_info_new(ut64 address);
-RZ_API RZ_NULLABLE RzRopRegInfo *rz_core_rop_reg_info_dup(RzRopRegInfo *src);
-RZ_API void rz_core_rop_reg_info_free(RzRopRegInfo *reg_info);
-RZ_API RZ_NULLABLE RzRopRegInfo *rz_core_rop_reg_info_new(const RzCore *core, const RzILEvent *evt, ut64 init_val, ut64 new_val);
-RZ_BORROW RZ_API RzRopRegInfo *rz_core_rop_gadget_info_get_modified_register(const RZ_NONNULL RzRopGadgetInfo *gadget_info, RZ_NONNULL const char *name);
-RZ_API bool rz_core_rop_gadget_info_has_register(const RZ_NONNULL RzRopGadgetInfo *gadget_info, RZ_NONNULL const char *name);
+RZ_API void rz_core_rop_gadget_info_free(RZ_NONNULL RzRopGadgetInfo *gadget_info);
+RZ_API void rz_core_rop_gadget_info_add_register(const RZ_NONNULL RZ_OUT RzRopGadgetInfo *gadget_info,
+	RZ_NONNULL RzRopRegInfo *reg_info, bool is_dependency);
+RZ_API bool rz_core_rop_gadget_info_update_register(const RZ_INOUT RzRopGadgetInfo *gadget_info, RZ_INOUT RZ_NONNULL RzRopRegInfo *new_reg_info);
+RZ_API RZ_OWN RzRopGadgetInfo *rz_core_rop_gadget_info_new(ut64 address);
+RZ_API RZ_OWN RzRopRegInfo *rz_core_rop_reg_info_dup(RZ_BORROW RZ_NONNULL RzRopRegInfo *src);
+RZ_API void rz_core_rop_reg_info_free(RZ_NULLABLE RzRopRegInfo *reg_info);
+RZ_API RZ_NULLABLE RzRopRegInfo *rz_core_rop_reg_info_new(RZ_NONNULL const RzCore *core, RZ_NONNULL const RzILEvent *evt,
+	ut64 init_val, ut64 new_val);
+RZ_API RZ_BORROW RzRopRegInfo *rz_core_rop_gadget_info_get_modified_register(const RZ_NONNULL RzRopGadgetInfo *gadget_info,
+	const RZ_NONNULL char *name);
+RZ_API bool rz_core_rop_gadget_info_has_register(const RZ_NONNULL RzRopGadgetInfo *gadget_info, const RZ_NONNULL char *name);
 RZ_API RZ_NULLABLE RzPVector /*<RzRopRegInfo *>*/ *rz_core_rop_gadget_get_reg_info_by_event(const RZ_NONNULL RzRopGadgetInfo *gadget_info, RzRopEvent event);
 RZ_API RZ_NULLABLE RzPVector /*<RzRopRegInfo *>*/ *rz_core_rop_get_reg_info_by_reg_names(const RZ_NONNULL RzRopGadgetInfo *gadget_info, RZ_NONNULL const RzPVector /*<char *>*/ *registers);
-RZ_API bool rz_core_rop_gadget_reg_info_has_event(const RZ_NONNULL RzRopGadgetInfo *gadget_info, RzRopEvent event, const char *reg_name);
+RZ_API bool rz_core_rop_gadget_reg_info_has_event(const RZ_NONNULL RzRopGadgetInfo *gadget_info,
+	RzRopEvent event, const RZ_NULLABLE char *reg_name);
 
 #ifdef __cplusplus
 }
