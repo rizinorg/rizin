@@ -225,13 +225,15 @@ static bool rz_rop_print_json_mode(const RzCore *core, const RzCoreAsmHit *hit, 
 }
 
 RZ_API void rz_core_rop_reg_info_free(RZ_NULLABLE RzRopRegInfo *reg_info) {
-	rz_return_if_fail(reg_info);
+	if (!reg_info) {
+		return;
+	}
 	free(reg_info->name);
 	free(reg_info->value_transformations);
 	free(reg_info);
 }
 
-RZ_API RZ_NULLABLE RzRopRegInfo *rz_core_rop_reg_info_new(RZ_NONNULL const RzCore *core, RZ_NONNULL const RzILEvent *evt,
+RZ_API RZ_OWN RzRopRegInfo *rz_core_rop_reg_info_new(RZ_NONNULL const RzCore *core, RZ_NONNULL const RzILEvent *evt,
 	const ut64 init_val, const ut64 new_val) {
 	rz_return_val_if_fail(core && evt, NULL);
 	RzRopRegInfo *reg_info = RZ_NEW0(RzRopRegInfo);
@@ -302,8 +304,10 @@ RZ_API RZ_OWN RzRopGadgetInfo *rz_core_rop_gadget_info_new(const ut64 address) {
  *
  * Frees the memory allocated for an RzRopGadgetInfo object, including its modified registers and dependencies.
  */
-RZ_API void rz_core_rop_gadget_info_free(RZ_NONNULL RzRopGadgetInfo *gadget_info) {
-	rz_return_if_fail(gadget_info);
+RZ_API void rz_core_rop_gadget_info_free(RZ_NULLABLE RzRopGadgetInfo *gadget_info) {
+	if (!gadget_info) {
+		return;
+	}
 	rz_pvector_free(gadget_info->modified_registers);
 	rz_list_free(gadget_info->dependencies);
 	ht_up_free(gadget_info->analysis_cache);
@@ -405,7 +409,7 @@ RZ_API RZ_OWN RzRopRegInfo *rz_core_rop_reg_info_dup(RZ_BORROW RZ_NONNULL RzRopR
  *
  * \return List of register rop information
  */
-RZ_API RZ_NULLABLE RzList /*<RzRopRegInfo *>*/ *rz_core_rop_reg_info_find(const RZ_NONNULL RzRopGadgetInfo *gadget_info, const RZ_NONNULL char *name) {
+RZ_API RZ_OWN RzList /*<RzRopRegInfo *>*/ *rz_core_rop_reg_info_find(const RZ_NONNULL RzRopGadgetInfo *gadget_info, const RZ_NONNULL char *name) {
 	rz_return_val_if_fail(gadget_info && name, NULL);
 	RzList * /*<RzRopRegInfo *>*/ reg_info_list = rz_list_new();
 	if (!reg_info_list) {
@@ -504,7 +508,7 @@ RZ_API bool rz_core_rop_gadget_reg_info_has_event(const RZ_NONNULL RzRopGadgetIn
  * \param event The RzRopEvent to check.
  * \return RZ_OUT A pointer to a list of RzRopRegInfo objects matching the given event, or NULL if none are found or if gadget_info is NULL.
  */
-RZ_API RZ_NULLABLE RzPVector /*<RzRopRegInfo *>*/ *rz_core_rop_gadget_get_reg_info_by_event(const RZ_NONNULL RzRopGadgetInfo *gadget_info,
+RZ_API RZ_OWN RzPVector /*<RzRopRegInfo *>*/ *rz_core_rop_gadget_get_reg_info_by_event(const RZ_NONNULL RzRopGadgetInfo *gadget_info,
 	const RzRopEvent event) {
 	rz_return_val_if_fail(gadget_info, NULL);
 	if (event < 0 || event >= RZ_ROP_EVENT_COUNT) {
@@ -532,7 +536,7 @@ RZ_API RZ_NULLABLE RzPVector /*<RzRopRegInfo *>*/ *rz_core_rop_gadget_get_reg_in
  *
  * Searches the modified registers in the RzRopGadgetInfo object for all registers with the given registers and returns their info in a vector.
  */
-RZ_API RZ_NULLABLE RzPVector /*<RzRopRegInfo *>*/ *rz_core_rop_get_reg_info_by_reg_names(const RZ_NONNULL RzRopGadgetInfo *gadget_info,
+RZ_API RZ_OWN RzPVector /*<RzRopRegInfo *>*/ *rz_core_rop_get_reg_info_by_reg_names(const RZ_NONNULL RzRopGadgetInfo *gadget_info,
 	const RZ_NONNULL RzPVector /*<char *>*/ *registers) {
 	rz_return_val_if_fail(gadget_info && registers, NULL);
 
@@ -1557,7 +1561,7 @@ RZ_API RzCmdStatus rz_core_rop_gadget_info(RZ_NONNULL RzCore *core, RZ_NONNULL R
  *
  * Frees the memory allocated for an RzRopConstraint object.
  */
-RZ_API void rz_core_rop_constraint_free(RZ_NONNULL void *data) {
+RZ_API void rz_core_rop_constraint_free(RZ_NULLABLE void *data) {
 	RzRopConstraint *constraint = data;
 	if (!constraint) {
 		return;

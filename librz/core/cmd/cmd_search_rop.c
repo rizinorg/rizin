@@ -286,7 +286,7 @@ static bool parse_reg_op_const(const RzCore *core, const char *str, RzRopConstra
  *
  * This function allocates and initializes a new RzRopSearchContext object.
  */
-RZ_API RZ_OWN RZ_NULLABLE RzRopSearchContext *rz_core_rop_search_context_new(RZ_NONNULL const RzCore *core, RZ_NULLABLE const char *greparg, const bool regexp,
+RZ_API RZ_OWN RzRopSearchContext *rz_core_rop_search_context_new(RZ_NONNULL const RzCore *core, RZ_NULLABLE const char *greparg, const bool regexp,
 	const RzRopRequestMask mask, RZ_NONNULL RZ_BORROW RzCmdStateOutput *state) {
 
 	rz_return_val_if_fail(core && state, NULL);
@@ -444,7 +444,7 @@ static RzRopConstraint *rop_constraint_parse_args(const RzCore *core, const char
  *
  * This function parses a list of arguments into a RzPVector of RzRopConstraint objects.
  */
-RZ_API RZ_NULLABLE RzPVector /*<RzRopConstraint *>*/ *rop_constraint_map_parse(const RZ_NONNULL RzCore *core, const int argc, const char **argv) {
+RZ_API RZ_OWN RzPVector /*<RzRopConstraint *>*/ *rop_constraint_map_parse(const RZ_NONNULL RzCore *core, const int argc, const char **argv) {
 	RzPVector *constr_map = rz_core_rop_constraint_map_new();
 	if (!constr_map) {
 		return NULL;
