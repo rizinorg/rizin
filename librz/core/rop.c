@@ -132,7 +132,8 @@ static bool rz_rop_print_table_mode(const RzCore *core, const RzCoreAsmHit *hit,
 	return true;
 }
 
-static bool rz_rop_print_quiet_mode(const RzCore *core, const RzCoreAsmHit *hit, unsigned int *size, const bool colorize) {
+static bool rz_rop_print_quiet_mode(const RzCore *core, const RzCoreAsmHit *hit, unsigned int *size) {
+	const bool colorize = rz_config_get_i(core->config, "scr.color");
 	RzAnalysisOp aop = RZ_EMPTY;
 	RzAsmOp *asmop = rz_asm_op_new();
 	if (!asmop) {
@@ -159,8 +160,7 @@ static bool rz_rop_print_quiet_mode(const RzCore *core, const RzCoreAsmHit *hit,
 	return true;
 }
 
-static bool rz_rop_print_standard_mode(const RzCore *core, const RzCoreAsmHit *hit,
-	unsigned int *size, const bool rop_comments, const bool colorize) {
+static bool rz_rop_print_standard_mode(const RzCore *core, const RzCoreAsmHit *hit, ut32 *size) {
 	RzAnalysisOp aop = RZ_EMPTY;
 	RzAsmOp *asmop = rz_asm_op_new();
 	if (!asmop) {
@@ -170,8 +170,10 @@ static bool rz_rop_print_standard_mode(const RzCore *core, const RzCoreAsmHit *h
 		rz_asm_op_free(asmop);
 		return false;
 	}
+	const bool rop_comments = rz_config_get_i(core->config, "rop.comments");
 	const char *comment = rop_comments ? rz_meta_get_string(core->analysis, RZ_META_TYPE_COMMENT, hit->addr) : NULL;
 	char *asm_op_hex = rz_asm_op_get_hex(asmop);
+	const bool colorize = rz_config_get_i(core->config, "scr.color");
 	if (colorize) {
 		RzStrBuf *bw_str = rz_strbuf_new(rz_asm_op_get_asm(asmop));
 		RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, aop.type);
@@ -940,18 +942,16 @@ static bool print_rop(const RzCore *core, const RzList /*<RzCoreAsmHit *>*/ *hit
 	rz_list_foreach (hitlist, iter, hit) {
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_JSON:
-			result = rz_rop_print_json_mode(core, hit, &size, state->d.pj) != 0;
+			result = rz_rop_print_json_mode(core, hit, &size, state->d.pj);
 			break;
 		case RZ_OUTPUT_MODE_QUIET:
-			const bool colorize = rz_config_get_i(core->config, "scr.color");
-			result = rz_rop_print_quiet_mode(core, hit, &size, colorize) != 0;
+			result = rz_rop_print_quiet_mode(core, hit, &size);
 			break;
 		case RZ_OUTPUT_MODE_STANDARD:
-			const bool rop_comments = rz_config_get_i(core->config, "rop.comments");
-			result = rz_rop_print_standard_mode(core, hit, &size, rop_comments, colorize) != 0;
+			result = rz_rop_print_standard_mode(core, hit, &size);
 			break;
 		case RZ_OUTPUT_MODE_TABLE:
-			result = rz_rop_print_table_mode(core, hit, hitlist, &size, &asmop_str, &asmop_hex_str) != 0;
+			result = rz_rop_print_table_mode(core, hit, hitlist, &size, &asmop_str, &asmop_hex_str);
 			break;
 		default:
 			rz_warn_if_reached();
