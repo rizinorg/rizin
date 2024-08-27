@@ -1766,14 +1766,14 @@ static void disasm_print_ret(const RzCore *core, const RzOutputMode mode, const 
  * \param addr Address to start disassembling
  * \param limit Maximum number of instructions to disassemble
  * \param mode The mode in which data has to be printed/crafted
- * \param ret_val Flag to indicate if the disassembled string has to be stored in \p buf
+ * \param ret_val If true, the disassembled string is stored in \p buf. Otherwise it is streamed to stdout
  * \param buf Pointer to the RzStrBuf to store the disassembled string
  *
- * \return True if there are no errors during disassembling and crafting the response else False
+ * \return True if there are no errors during disassembling and crafting the response. False otherwise.
  */
 RZ_API bool rz_core_disasm_until_ret(RZ_NONNULL RzCore *core, ut64 addr, const int limit,
-	const RzOutputMode mode, const bool ret_val, RZ_NONNULL RZ_BORROW RzStrBuf *buf) {
-	rz_return_val_if_fail(core, false);
+	const RzOutputMode mode, const bool ret_val, RZ_NONNULL RZ_OUT RzStrBuf *buf) {
+	rz_return_val_if_fail(core && buf, false);
 	for (int i = 0; i < limit; i++) {
 		RzAnalysisOp *op = rz_core_analysis_op(core, addr, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_DISASM);
 		if (!op) {
