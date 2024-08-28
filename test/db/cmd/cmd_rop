@@ -6,12 +6,6 @@ e search.maxhits=1
 EOF
 EXPECT=<<EOF
 0x0040052c: pop r12; pop r13; pop r14; pop r15; ret;
-0x0040052d: pop rsp; pop r13; pop r14; pop r15; ret;
-0x0040052e: pop r13; pop r14; pop r15; ret;
-0x0040052f: pop rbp; pop r14; pop r15; ret;
-0x00400530: pop r14; pop r15; ret;
-0x00400531: pop rsi; pop r15; ret;
-0x00400532: pop r15; ret;
 EOF
 RUN
 

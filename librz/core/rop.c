@@ -1235,7 +1235,7 @@ static RzRopGadgetInfo *perform_gadget_analysis(RzCore *core, const RzRopSearchC
 }
 
 static bool handle_rop_request_type(RzCore *core, const RzRopSearchContext *context, RzList /*<RzCoreAsmHit *>*/ *hitlist) {
-	rz_return_val_if_fail(core && core->analysis && hitlist, -1);
+	rz_return_val_if_fail(core && core->analysis && hitlist, false);
 	if (context->mask & RZ_ROP_GADGET_PRINT) {
 		if (context->subchain) {
 			do {
@@ -1264,7 +1264,7 @@ static bool handle_rop_request_type(RzCore *core, const RzRopSearchContext *cont
 		}
 		print_rop_gadget_info(core, rop_gadget_info, context);
 	}
-	return false;
+	return true;
 }
 
 static bool fetch_search_itv(const RzCore *core, RzInterval *search_itv) {
