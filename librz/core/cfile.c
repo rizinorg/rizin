@@ -938,6 +938,15 @@ static bool map_multi_dex(RzCore *core, RzIODesc *desc, ut32 id) {
 	return true;
 }
 
+/**
+ * \brief Load the binary specified by the \p filenameuri URI using \p baddr base address
+ *
+ * \param core A pointer to the `RzCore` object used for opening file into
+ * \param filenameuri A file name/path or any other URI supported by Rizin
+ * \param baddr The base address to use for loading. UT64_MAX value enables autodetection
+ *
+ * \return true if loading successfully completed, false otherwise.
+ */
 RZ_API bool rz_core_bin_load(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *filenameuri, ut64 baddr) {
 	rz_return_val_if_fail(r, false);
 
