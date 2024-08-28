@@ -1268,7 +1268,7 @@ static bool handle_rop_request_type(RzCore *core, const RzRopSearchContext *cont
 }
 
 static bool fetch_search_itv(const RzCore *core, RzInterval *search_itv) {
-	rz_return_val_if_fail(core && core->config, -1);
+	rz_return_val_if_fail(core && core->config && search_itv, false);
 	const ut64 search_from = rz_config_get_i(core->config, "search.from"),
 		   search_to = rz_config_get_i(core->config, "search.to");
 	if (search_from > search_to && search_to) {
@@ -1438,7 +1438,7 @@ static bool update_end_gadget(int *i, const int ropdepth, RzRopEndListPair **end
 RZ_API RzCmdStatus rz_core_rop_search(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_OWN RzRopSearchContext *context) {
 	rz_return_val_if_fail(core && core->search && context, RZ_CMD_STATUS_ERROR);
 
-	RzInterval search_itv;
+	RzInterval search_itv = { 0 };
 	if (!fetch_search_itv(core, &search_itv)) {
 		return RZ_CMD_STATUS_ERROR;
 	}
