@@ -484,7 +484,7 @@ rz_rop_event_check_fn rz_rop_event_functions[RZ_ROP_EVENT_COUNT] = {
  */
 RZ_API bool rz_core_rop_gadget_reg_info_has_event(const RZ_NONNULL RzRopGadgetInfo *gadget_info,
 	const RzRopEvent event, const RZ_NULLABLE char *reg_name) {
-	rz_return_val_if_fail(gadget_info, NULL);
+	rz_return_val_if_fail(gadget_info, false);
 	if (event < 0 || event >= RZ_ROP_EVENT_COUNT) {
 		return false;
 	}
@@ -779,7 +779,7 @@ static bool fill_rop_gadget_info_from_events(RzCore *core, RzRopGadgetInfo *gadg
 }
 
 static bool analyze_gadget(RzCore *core, const RzCoreAsmHit *hit, RzRopGadgetInfo *rop_gadget_info) {
-	rz_return_val_if_fail(core && core->analysis, -1);
+	rz_return_val_if_fail(core && core->analysis, false);
 	int ret = true;
 
 	const ut64 old_addr = core->offset;
@@ -1172,7 +1172,7 @@ cleanup:
 }
 
 static bool update_analysis_cache(const RzCore *core, const RzCoreAsmHit *hit, const RzRopGadgetInfo *gadget_info) {
-	rz_return_val_if_fail(core && core->analysis, -1);
+	rz_return_val_if_fail(core && core->analysis, false);
 	if (is_ret_gadget(core, hit, 0)) {
 		return true;
 	}
