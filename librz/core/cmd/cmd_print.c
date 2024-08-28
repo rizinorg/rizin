@@ -1716,48 +1716,94 @@ static void pr_bb(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisBlock *b, boo
 	}
 }
 
-static void disasm_until_ret(RzCore *core, ut64 addr, int limit, RzOutputMode mode) {
-	int p = 0;
+static void handle_default_disasm_print_mode(const RzCore *core, const ut64 addr, const bool ret_val,
+	const char *m_intr, RzStrBuf *buf) {
 	const bool show_color = rz_config_get_i(core->config, "scr.color");
+
+	if (show_color) {
+		const char *offsetColor = rz_cons_singleton()->context->pal.offset;
+		if (!ret_val) {
+			rz_cons_printf("%s0x%08" PFMT64x "" Color_RESET "  %10s %s\n",
+				offsetColor, addr, "", m_intr);
+		} else {
+			char *str_buf = rz_str_newf("%s0x%08" PFMT64x "" Color_RESET "  %10s %s\n",
+				offsetColor, addr, "", m_intr);
+			rz_strbuf_append(buf, str_buf);
+			free(str_buf);
+		}
+	} else {
+		if (!ret_val) {
+			rz_cons_printf("0x%08" PFMT64x "  %10s %s\n", addr, "", m_intr);
+		} else {
+			char *str_buf = rz_str_newf("0x%08" PFMT64x "  %10s %s\n", addr, "", m_intr);
+			rz_strbuf_append(buf, str_buf);
+			free(str_buf);
+		}
+	}
+}
+
+static void disasm_print_ret(const RzCore *core, const RzOutputMode mode, const char *m_intr, const ut64 addr,
+	const bool ret_val, RzStrBuf *buf) {
+	switch (mode) {
+	case RZ_OUTPUT_MODE_QUIET:
+		if (!ret_val) {
+			rz_cons_printf("%s\n", m_intr);
+		} else {
+			rz_strbuf_append(buf, m_intr);
+		}
+		break;
+	default:
+		handle_default_disasm_print_mode(core, addr, ret_val, m_intr, buf);
+		break;
+	}
+}
+
+/**
+ * \brief Disassemble from \p addr until \p limit no of instructions and
+ * prints or returns the disassembled string in \p buf
+ *
+ * \param core Pointer to the RzCore
+ * \param addr Address to start disassembling
+ * \param limit Maximum number of instructions to disassemble
+ * \param mode The mode in which data has to be printed/crafted
+ * \param ret_val If true, the disassembled string is stored in \p buf. Otherwise it is streamed to stdout
+ * \param buf Pointer to the RzStrBuf to store the disassembled string
+ *
+ * \return True if there are no errors during disassembling and crafting the response. False otherwise.
+ */
+RZ_API bool rz_core_disasm_until_ret(RZ_NONNULL RzCore *core, ut64 addr, const int limit,
+	const RzOutputMode mode, const bool ret_val, RZ_NONNULL RZ_OUT RzStrBuf *buf) {
+	rz_return_val_if_fail(core && buf, false);
 	for (int i = 0; i < limit; i++) {
 		RzAnalysisOp *op = rz_core_analysis_op(core, addr, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_DISASM);
-		if (op) {
-			char *mnem = op->mnemonic;
-			char *m = malloc((strlen(mnem) * 2) + 32);
-			strcpy(m, mnem);
-			// rz_parse_parse (core->parser, op->mnemonic, m);
-			if (mode == RZ_OUTPUT_MODE_QUIET) {
-				rz_cons_printf("%s\n", m);
-			} else {
-				if (show_color) {
-					const char *offsetColor = rz_cons_singleton()->context->pal.offset; // TODO etooslow. must cache
-					rz_cons_printf("%s0x%08" PFMT64x "" Color_RESET "  %10s %s\n",
-						offsetColor, addr + p, "", m);
-				} else {
-					rz_cons_printf("0x%08" PFMT64x "  %10s %s\n", addr + p, "", m);
-				}
-			}
-			switch (op->type & 0xfffff) {
-			case RZ_ANALYSIS_OP_TYPE_RET:
-			case RZ_ANALYSIS_OP_TYPE_UJMP:
-				goto beach;
-				break;
-			}
-			if (op->type == RZ_ANALYSIS_OP_TYPE_JMP) {
-				addr = op->jump;
-			} else {
-				addr += op->size;
-			}
-		} else {
-			RZ_LOG_ERROR("Cannot get op at 0x%08" PFMT64x "\n", addr + p);
+		if (!op) {
+			RZ_LOG_ERROR("Cannot get op at 0x%08" PFMT64x "\n", addr);
 			rz_analysis_op_free(op);
 			break;
 		}
-		// rz_io_read_at (core->io, n, rbuf, 512);
+		const char *mnem = op->mnemonic;
+		disasm_print_ret(core, mode, mnem, addr, ret_val, buf);
+		switch (op->type & RZ_ANALYSIS_OP_MASK_WILDCARD) {
+		case RZ_ANALYSIS_OP_TYPE_RET:
+		case RZ_ANALYSIS_OP_TYPE_UJMP:
+			rz_analysis_op_free(op);
+			goto beach;
+			break;
+		default:
+			break;
+		}
+		if (op->type == RZ_ANALYSIS_OP_TYPE_JMP) {
+			addr = op->jump;
+		} else {
+			addr += op->size;
+		}
+		if (ret_val) {
+			rz_strbuf_append(buf, "\n");
+		}
 		rz_analysis_op_free(op);
 	}
 beach:
-	return;
+	return true;
 }
 
 static void func_walk_blocks(RzCore *core, RzAnalysisFunction *f, bool fromHere, RzCmdStateOutput *state) {
@@ -4693,8 +4739,10 @@ RZ_IPI RzCmdStatus rz_print_instr_recursive_at_handler(RzCore *core, int argc, c
 }
 
 RZ_IPI RzCmdStatus rz_print_instr_until_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	ut64 limit = argc > 1 ? rz_num_math(core->num, argv[1]) : 1024;
-	disasm_until_ret(core, core->offset, limit, state->mode);
+	const ut64 limit = argc > 1 ? rz_num_math(core->num, argv[1]) : 1024;
+	if (!rz_core_disasm_until_ret(core, core->offset, limit, state->mode, false, NULL)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
 	return RZ_CMD_STATUS_OK;
 }
 
