@@ -368,7 +368,7 @@ compliance of the project and get the licenses/copyright of each file.
 
 # Custom Pointer Modifiers
 
-In Rizin code there are some conventions to help developers use pointers more safely, which are defined in `librz/include/rz_types.h`:
+In Rizin code, there are some conventions to help developers use pointers more safely, which are defined in `librz/include/rz_types.h`:
 
 ```c
 #define RZ_IN        /* do not use, implicit */
@@ -376,25 +376,39 @@ In Rizin code there are some conventions to help developers use pointers more sa
 #define RZ_INOUT     /* parameter is read and written */
 #define RZ_OWN       /* pointer ownership is transferred */
 #define RZ_BORROW    /* pointer ownership is not transferred, it must not be freed by the receiver */
-#define RZ_NONNULL   /* pointer can not be null */
+#define RZ_NONNULL   /* pointer cannot be null */
 #define RZ_NULLABLE  /* pointer can be null */
 #define RZ_DEPRECATE /* should not be used in new code and should/will be removed in the future */
 ```
 
-Most of them are easy to understand and you can see brief explanation in the comments. But `RZ_OWN` and `RZ_BORROW` may be a little tricky to new developers.
+### Usage of Modifiers
 
-Sometimes it may not be immediately clear whether the object you are getting from a function shall be freed or not. Rizin uses `RZ_OWN` and `RZ_BORROW` to indicate pointer ownership so you don't have to read complicated function definitions to know whether they should still free objects or not.
+Most of these modifiers are self-explanatory, and you can see brief explanations in the comments. However, `RZ_OWN` and `RZ_BORROW` can be a bit tricky for new developers.
 
-You can use the two modifiers in two places and their explanations are as below:
+Sometimes it may not be immediately clear whether the object you are getting from a function shall be freed or not.
+Rizin uses `RZ_OWN` and `RZ_BORROW` to indicate pointer ownership,
+so you don't have to read complicated function definitions to know whether they should still free objects or not.
 
-- before the return type of function
-  - `RZ_OWN`: the ownership of the returned object is transferred to the caller. The caller *owns* the object, so it must free it (or ensure that something else frees it).
-  - `RZ_BORROW`: the ownership of the returned object is not transferred. The caller can use the object, but it does not own it, so it should not free it.
-- before the parameter of function.
-  - `RZ_OWN`: the ownership of the passed argument is transferred to the callee. The callee now owns the object and it is its duty to free it (or ensure that something else frees it). In any case, the caller should not care anymore about freeing that passed object.
-  - `RZ_BORROW`: the ownership of the passed argument is *not* transferred to the callee, which can use it but it should not free it. After calling this function, the caller still owns the passed object and it should ensure that at some point it is freed.
+You can use the two modifiers in two places, and their explanations are as follows:
 
-Examples:
+- **Before the return type of a function**:
+  - `RZ_OWN`: The ownership of the returned object is transferred to the caller. The caller *owns* the object, so it must free it (or ensure that something else frees it).
+  - `RZ_BORROW`: The ownership of the returned object is not transferred. The caller can use the object, but it does not own it, so it should not free it.
+- **Before the parameter of a function**:
+  - `RZ_OWN`: The ownership of the passed argument is transferred to the callee. The callee now owns the object and it is its duty to free it (or ensure that something else frees it). In any case, the caller should not care anymore about freeing that passed object.
+  - `RZ_BORROW`: The ownership of the passed argument is *not* transferred to the callee, which can use it but it should not free it. After calling this function, the caller still owns the passed object and it should ensure that at some point it is freed.
+
+### Guidelines for Functions
+
+#### Functions Returning Pointers
+- **Arguments (Pointers)**: Must have both ownership and nullability definitions specified.
+- **Return Value**: Must have ownership defined and, unless otherwise specified, it is assumed to be `RZ_NULLABLE`.
+
+#### Functions Handling `NULL` Pointers
+- **Arguments (Pointers)**: Must be marked with `RZ_NULLABLE`.
+- **Assertions**: There should not be any assertions on these arguments as the function is expected to handle `NULL` pointers.
+
+### Examples:
 
 ```c
 RZ_OWN MyString *capitalize_str(RZ_BORROW char *s) {
@@ -405,9 +419,9 @@ RZ_OWN MyString *capitalize_str(RZ_BORROW char *s) {
 }
 
 int main() {
-  char *s = strdup("Hello World");
+  char *s = rz_str_dup("Hello World");
   MyString *m = capitalize_str(s);
-  // s was RZ_BORROW, so main still need to free it
+  // s was RZ_BORROW, so main MUST free it
   free(s);
   // ... use m ....
   // m was RZ_OWN, so main now has to free it
