@@ -421,7 +421,7 @@ RZ_OWN MyString *capitalize_str(RZ_BORROW char *s) {
 int main() {
   char *s = strdup("Hello World");
   MyString *m = capitalize_str(s);
-  // s was RZ_BORROW, so main still needs to free it
+  // s was RZ_BORROW, so main MUST free it
   free(s);
   // ... use m ....
   // m was RZ_OWN, so main now has to free it
