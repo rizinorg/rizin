@@ -6010,6 +6010,8 @@ finish:
  * \param var RzAnalysisVar to be converted to string
  */
 RZ_API RZ_OWN char *rz_core_analysis_var_to_string(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnalysisVar *var) {
+	rz_return_val_if_fail(core && var, NULL);
+
 	RzStrBuf *sb = rz_strbuf_new(NULL);
 	if (!sb) {
 		return NULL;
@@ -6035,4 +6037,43 @@ RZ_API RZ_OWN char *rz_core_analysis_var_to_string(RZ_NONNULL RzCore *core, RZ_N
 	free(constr);
 	rz_analysis_var_storage_dump(core->analysis, sb, var, &var->storage);
 	return rz_strbuf_drain(sb);
+}
+
+static const RzBinSourceLineSample *get_source_line_info(RzCore *core, ut64 addr) {
+	RzBinObject *o = rz_bin_cur_object(core->bin);
+	const RzBinSourceLineInfo *sl = o ? o->lines : NULL;
+	const RzBinSourceLineSample *s = rz_bin_source_line_info_get_first_at(sl, addr);
+	if (!(s && s->address == addr)) {
+		// consider only exact matches, not inside of samples
+		return NULL;
+	}
+	while (s && !s->file) {
+		s = rz_bin_source_line_info_get_next(sl, s);
+	}
+	if (!s) {
+		return NULL;
+	}
+	return s;
+}
+
+/**
+ * \brief Get debug source line information for the given function
+ *
+ * \param core RzCore instance
+ * \param var RzAnalysisFunction to get the source level information for
+ */
+RZ_API RZ_BORROW const RzBinSourceLineSample *rz_analysis_function_sourceline_information(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnalysisFunction *fcn) {
+	rz_return_val_if_fail(core && fcn, NULL);
+	return get_source_line_info(core, fcn->addr);
+}
+
+/**
+ * \brief Get debug source line information for the given global variable
+ *
+ * \param core RzCore instance
+ * \param var RzAnalysisVarGlobal to get the source level information for
+ */
+RZ_API RZ_BORROW const RzBinSourceLineSample *rz_analysis_var_global_sourceline_information(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnalysisVarGlobal *glb) {
+	rz_return_val_if_fail(core && glb, NULL);
+	return get_source_line_info(core, glb->addr);
 }
