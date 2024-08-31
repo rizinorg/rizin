@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: 2023 Florian Märkl <info@florianmaerkl.de>
+# SPDX-License-Identifier: LGPL-3.0-only
+
+[constants]
+common_flags = ['-mios-version-min=10.0', '-isysroot', '/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk']
+
+[host_machine]
+system = 'darwin'
+cpu_family = 'aarch64'
+cpu = 'arm64'
+endian = 'little'
+
+[binaries]
+c = 'clang'
+strip = 'strip'
+
+[built-in options]
+c_args = common_flags
+c_link_args = common_flags

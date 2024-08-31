@@ -30,7 +30,7 @@ static int __get_pid(RzIODesc *desc);
 #include <mach/vm_map.h>
 #include <mach-o/loader.h>
 #include <mach-o/nlist.h>
-#include <sys/ptrace.h>
+#include <rz_util/rz_ptrace.h>
 #include <sys/types.h>
 #include <sys/types.h>
 #include <sys/wait.h>

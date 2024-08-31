@@ -11,6 +11,7 @@
 #include <rz_bind.h>
 #include "rz_vector.h"
 #include "rz_skyline.h"
+#include <rz_util/rz_ptrace.h>
 
 #define RZ_IO_SEEK_SET 0
 #define RZ_IO_SEEK_CUR 1
@@ -18,37 +19,6 @@
 
 #define rz_io_map_get_from(map) map->itv.addr
 #define rz_io_map_get_to(map)   (rz_itv_size(map->itv) ? rz_itv_end(map->itv) - 1 : 0)
-
-#if HAVE_PTRACE
-
-#if __sun
-#include <sys/types.h>
-#else
-#if DEBUGGER && HAVE_PTRACE
-#include <sys/ptrace.h>
-#endif
-#endif
-
-#if (defined(__GLIBC__) && defined(__linux__))
-typedef enum __ptrace_request rz_ptrace_request_t;
-typedef void *rz_ptrace_data_t;
-#define RZ_PTRACE_NODATA NULL
-#else
-#if __ANDROID__
-typedef int rz_ptrace_request_t;
-typedef void *rz_ptrace_data_t;
-#define RZ_PTRACE_NODATA NULL
-#elif __APPLE__ || __OpenBSD__ || __NetBSD__ || __FreeBSD__ || __DragonFly__
-typedef int rz_ptrace_request_t;
-typedef int rz_ptrace_data_t;
-#define RZ_PTRACE_NODATA 0
-#else
-typedef int rz_ptrace_request_t;
-typedef void *rz_ptrace_data_t;
-#define RZ_PTRACE_NODATA NULL
-#endif
-#endif
-#endif
 
 #if __cplusplus
 extern "C" {

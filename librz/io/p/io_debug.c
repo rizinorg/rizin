@@ -33,7 +33,7 @@
 
 #include <signal.h>
 #if __UNIX__
-#include <sys/ptrace.h>
+#include <rz_util/rz_ptrace.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #endif

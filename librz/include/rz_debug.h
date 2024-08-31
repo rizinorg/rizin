@@ -38,6 +38,7 @@ RZ_LIB_VERSION_HEADER(rz_debug);
 #undef PTRACE_SYSCALL
 #endif
 
+// TODO: move this into librz/op/ptrace.h after testing it on BSDs
 #define PTRACE_PEEKTEXT   PT_READ_I
 #define PTRACE_POKETEXT   PT_WRITE_I
 #define PTRACE_PEEKDATA   PT_READ_D
