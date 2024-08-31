@@ -77,6 +77,36 @@ RZ_API bool rz_type_db_delete_base_type(RzTypeDB *typedb, RZ_NONNULL RzBaseType 
 	return true;
 }
 
+/**
+ * \brief Renames the RzBaseType in the types database given the name
+ *
+ * \param typedb Type Database instance
+ * \param oldname Name of the exiting RzBaseType
+ * \param newname New name of the RzBaseType
+ */
+RZ_API bool rz_type_db_rename_base_type(const RzTypeDB *typedb, RZ_NONNULL const char *name, RZ_NONNULL const char *newname) {
+	rz_return_val_if_fail(typedb && name && newname, NULL);
+	// Do not rename if the new name as the old one
+	if (!strcmp(name, newname)) {
+		return false;
+	}
+	bool found = false;
+	RzBaseType *btype = ht_pp_find(typedb->types, name, &found);
+	if (!found || !btype) {
+		return false;
+	}
+	RzBaseType *newbtype = rz_base_type_clone(btype);
+	ht_pp_delete(typedb->types, btype->name);
+	free(newbtype->name);
+	newbtype->name = rz_str_new(newname);
+	// TODO: Search for all types that use the name, and change them too
+	if (!ht_pp_insert(typedb->types, newbtype->name, (void *)newbtype)) {
+		rz_type_base_type_free(newbtype);
+		return false;
+	}
+	return true;
+}
+
 struct list_kind {
 	RzList /*<RzBaseType *>*/ *types;
 	RzBaseTypeKind kind;
