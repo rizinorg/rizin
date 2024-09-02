@@ -81,6 +81,7 @@ At the time of writing, these are:
 * `use_sys_libmspack`
 * `use_sys_pcre2`
 * `use_sys_tree_sitter`
+* `use_sys_tree_sitter_c`
 * `use_sys_softfloat`
 
 See [meson_options.txt][] for a complete list of compile-time options.

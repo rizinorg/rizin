@@ -306,7 +306,7 @@ if r.returncode() == 1 and get_option('subprojects_check')
   error(subproject_clean_error_msg)
 endif
 
-tree_sitter_c_dep = dependency('tree-sitter-c', required: get_option('use_sys_tree_sitter'), static: is_static_build, fallback: [])
+tree_sitter_c_dep = dependency('tree-sitter-c', required: get_option('use_sys_tree_sitter_c'), static: is_static_build, fallback: [])
 if not tree_sitter_c_dep.found()
   tree_sitter_c_proj = subproject('tree-sitter-c', default_options: ['default_library=static'])
   tree_sitter_c_dep = tree_sitter_c_proj.get_variable('tree_sitter_c_dep')
@@ -813,6 +813,7 @@ summary({
   'System openssl library': sys_openssl.found() and sys_openssl.type_name() != 'internal',
   'System capstone library': capstone_dep.found() and capstone_dep.type_name() != 'internal',
   'System tree-sitter library': tree_sitter_dep.found() and tree_sitter_dep.type_name() != 'internal',
+  'System tree-sitter-c library': tree_sitter_c_dep.found() and tree_sitter_c_dep.type_name() != 'internal',
   'System lz4 library': lz4_dep.found() and lz4_dep.type_name() != 'internal',
   'System lzma library': liblzma_dep.found() and liblzma_dep.type_name() != 'internal',
   'System softfloat library': softfloat_dep.found() and softfloat_dep.type_name() != 'internal',
