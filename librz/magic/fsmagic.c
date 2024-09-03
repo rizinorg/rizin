@@ -54,7 +54,7 @@
 
 #ifndef HAVE_MAJOR
 #define major(dev) (((dev) >> 8) & 0xff)
-#define minor(dev) ((dev)&0xff)
+#define minor(dev) ((dev) & 0xff)
 #endif
 #undef HAVE_MAJOR
 

@@ -1055,7 +1055,7 @@ static inline uint16_t GET_LIBRARY_ORDINAL(uint16_t n_desc) {
 }
 
 static inline void SET_LIBRARY_ORDINAL(uint16_t *n_desc, uint8_t ordinal) {
-	*n_desc = (((*n_desc) & 0x00ff) | (((ordinal)&0xff) << 8));
+	*n_desc = (((*n_desc) & 0x00ff) | (((ordinal) & 0xff) << 8));
 }
 
 static inline uint8_t GET_COMM_ALIGN(uint16_t n_desc) {

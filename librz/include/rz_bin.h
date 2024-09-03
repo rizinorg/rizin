@@ -165,7 +165,7 @@ typedef enum {
 } RzBinLanguage;
 
 #define RZ_BIN_LANGUAGE_MASK(x)       ((x) & ~RZ_BIN_LANGUAGE_BLOCKS)
-#define RZ_BIN_LANGUAGE_HAS_BLOCKS(x) ((x)&RZ_BIN_LANGUAGE_BLOCKS)
+#define RZ_BIN_LANGUAGE_HAS_BLOCKS(x) ((x) & RZ_BIN_LANGUAGE_BLOCKS)
 
 enum {
 	RZ_BIN_CLASS_PRIVATE,

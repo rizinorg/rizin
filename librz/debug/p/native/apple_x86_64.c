@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2009-2019 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <errno.h>
 #if !defined(__HAIKU__) && !defined(__sun)
 #include <sys/ptrace.h>
@@ -6,7 +9,7 @@
 #include <signal.h>
 
 #include <sys/resource.h>
-#include "native/xnu/xnu_debug.h"
+#include "xnu/xnu_debug.h"
 
 #ifdef __WALL
 #define WAITPID_FLAGS __WALL

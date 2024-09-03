@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2009-2019 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <errno.h>
 #if !defined(__HAIKU__) && !defined(__sun)
 #include <sys/ptrace.h>
@@ -6,12 +9,9 @@
 #include <signal.h>
 
 #include <sys/mman.h>
-#include "native/linux/linux_debug.h"
-#include "native/procfs.h"
-#define WAIT_ANY -1
-#ifndef WIFCONTINUED
-#define WIFCONTINUED(s) ((s) == 0xffff)
-#endif
+#include "linux/linux_debug.h"
+#include "procfs.h"
+#include "linux/linux_coredump.h"
 
 #ifdef __WALL
 #define WAITPID_FLAGS __WALL
@@ -37,8 +37,6 @@ static int rz_debug_handle_signals(RzDebug *dbg) {
 static char *rz_debug_native_reg_profile(RzDebug *dbg) {
 	return linux_reg_profile(dbg);
 }
-
-#include "native/reg.c"
 
 static bool rz_debug_native_step(RzDebug *dbg) {
 	return linux_step(dbg);
@@ -268,8 +266,86 @@ static int io_perms_to_prot(int io_perms) {
 	return prot_perms;
 }
 
+static int sys_thp_mode(void) {
+	size_t i;
+	const char *thp[] = {
+		"/sys/kernel/mm/transparent_hugepage/enabled",
+		"/sys/kernel/mm/redhat_transparent_hugepage/enabled",
+	};
+	int ret = 0;
+
+	for (i = 0; i < RZ_ARRAY_SIZE(thp); i++) {
+		char *val = rz_file_slurp(thp[i], NULL);
+		if (val) {
+			if (strstr(val, "[madvise]")) {
+				ret = 1;
+			} else if (strstr(val, "[always]")) {
+				ret = 2;
+			}
+			free(val);
+			break;
+		}
+	}
+
+	return ret;
+}
+
 static int linux_map_thp(RzDebug *dbg, ut64 addr, int size) {
-return false;
+#if defined(MADV_HUGEPAGE)
+	RzBuffer *buf = NULL;
+	char code[1024];
+	int ret = true;
+	char *asm_list[] = {
+		"x86", "x86.as",
+		"x64", "x86.as",
+		NULL
+	};
+	// In architectures where rizin is supported, arm and x86, it is 2MB
+	const size_t thpsize = 1 << 21;
+
+	if ((size % thpsize)) {
+		eprintf("size not a power of huge pages size\n");
+		return false;
+	}
+	// In always mode, is more into mmap syscall level
+	// even though the address might not have the 'hg'
+	// vmflags
+	if (sys_thp_mode() != 1) {
+		eprintf("transparent huge page mode is not in madvise mode\n");
+		return false;
+	}
+
+	int num = rz_syscall_get_num(dbg->analysis->syscall, "madvise");
+
+	snprintf(code, sizeof(code),
+		"sc_madvise@syscall(%d);\n"
+		"main@naked(0) { .rarg0 = sc_madvise(0x%08" PFMT64x ",%d, %d);break;\n"
+		"}\n",
+		num, addr, size, MADV_HUGEPAGE);
+	rz_egg_reset(dbg->egg);
+	rz_egg_setup(dbg->egg, dbg->arch, 8 * dbg->bits, 0, 0);
+	rz_egg_load(dbg->egg, code, 0);
+	if (!rz_egg_compile(dbg->egg)) {
+		eprintf("Cannot compile.\n");
+		goto err_linux_map_thp;
+	}
+	if (!rz_egg_assemble_asm(dbg->egg, asm_list)) {
+		eprintf("rz_egg_assemble: invalid assembly\n");
+		goto err_linux_map_thp;
+	}
+	buf = rz_egg_get_bin(dbg->egg);
+	if (buf) {
+		rz_reg_arena_push(dbg->reg);
+		ut64 tmpsz;
+		const ut8 *tmp = rz_buf_data(buf, &tmpsz);
+		ret = rz_debug_execute(dbg, tmp, tmpsz, 1) == 0;
+		rz_reg_arena_pop(dbg->reg);
+	}
+err_linux_map_thp:
+	return ret;
+#else
+	return false;
+#endif
 }
 
 static RzDebugMap *linux_map_alloc(RzDebug *dbg, ut64 addr, int size, bool thp) {
@@ -560,7 +636,6 @@ static bool rz_debug_native_init(RzDebug *dbg, void **user) {
 static void rz_debug_native_fini(RzDebug *dbg, void *user) {
 }
 
-
 static int rz_debug_native_drx(RzDebug *dbg, int n, ut64 addr, int sz, int rwx, int g, int api_type) {
 	eprintf("drx: Unsupported platform\n");
 	return -1;
@@ -580,7 +655,6 @@ static int rz_debug_native_drx(RzDebug *dbg, int n, ut64 addr, int sz, int rwx, 
 #define PTRACE_SETHBPREGS 30
 #endif
 
-
 static bool ll_arm32_hwbp_set(pid_t pid, ut64 addr, int size, int wp, int type) {
 	const unsigned byte_mask = (1 << size) - 1;
 	// const unsigned type = 2; // Write.
@@ -590,20 +664,81 @@ static bool ll_arm32_hwbp_set(pid_t pid, ut64 addr, int size, int wp, int type) 
 	return ptrace(PTRACE_SETHBPREGS, pid, -2, &control) != -1;
 }
 
-static bool arm32_hwbp_add(RzDebug *dbg, RzBreakpoint *bp, RzBreakpointItem *b) {
-	return ll_arm32_hwbp_set(dbg->pid, b->addr, b->size, 0, 1 | 2 | 4);
+#if PTRACE_GETREGSET
+// type = 2 = write
+// static volatile uint8_t var[96] __attribute__((__aligned__(32)));
+
+static bool ll_arm64_hwbp_set(pid_t pid, ut64 _addr, int size, int wp, ut32 type) {
+	const volatile uint8_t *addr = (void *)(size_t)_addr; //&var[32 + wp];
+	const unsigned int offset = (uintptr_t)addr % 8;
+	const ut32 byte_mask = ((1 << size) - 1) << offset;
+	const ut32 enable = 1;
+	const ut32 control = byte_mask << 5 | type << 3 | enable;
+
+	struct user_hwdebug_state dreg_state = { 0 };
+	struct iovec iov = { 0 };
+	iov.iov_base = &dreg_state;
+	iov.iov_len = sizeof(dreg_state);
+
+	if (ptrace(PTRACE_GETREGSET, pid, NT_ARM_HW_WATCH, &iov) == -1) {
+		// error reading regs
+	}
+	memcpy(&dreg_state, iov.iov_base, sizeof(dreg_state));
+	// wp is not honored here i think... we can't have more than one wp for now..
+	dreg_state.dbg_regs[0].addr = (uintptr_t)(addr - offset);
+	dreg_state.dbg_regs[0].ctrl = control;
+	iov.iov_base = &dreg_state;
+	iov.iov_len = rz_offsetof(struct user_hwdebug_state, dbg_regs) +
+		sizeof(dreg_state.dbg_regs[0]);
+	if (ptrace(PTRACE_SETREGSET, pid, NT_ARM_HW_WATCH, &iov) == 0) {
+		return true;
+	}
+
+	if (errno == EIO) {
+		eprintf("ptrace(PTRACE_SETREGSET, NT_ARM_HW_WATCH) not supported on this hardware: %s\n",
+			strerror(errno));
+	}
+
+	eprintf("ptrace(PTRACE_SETREGSET, NT_ARM_HW_WATCH) failed: %s\n", strerror(errno));
+	return false;
 }
 
-static bool arm32_hwbp_del(RzDebug *dbg, RzBreakpoint *bp, RzBreakpointItem *b) {
-	return false; // TODO: hwbp.del not yetimplemented
+static bool ll_arm64_hwbp_del(pid_t pid, ut64 _addr, int size, int wp, ut32 type) {
+	// const volatile uint8_t *addr = &var[32 + wp];
+	// TODO: support multiple watchpoints and find
+	struct user_hwdebug_state dreg_state = { 0 };
+	struct iovec iov = { 0 };
+	iov.iov_base = &dreg_state;
+	// only delete 1 bp for now
+	iov.iov_len = rz_offsetof(struct user_hwdebug_state, dbg_regs) +
+		sizeof(dreg_state.dbg_regs[0]);
+	if (ptrace(PTRACE_SETREGSET, pid, NT_ARM_HW_WATCH, &iov) == 0) {
+		return true;
+	}
+	if (errno == EIO) {
+		eprintf("ptrace(PTRACE_SETREGSET, NT_ARM_HW_WATCH) not supported on this hardware: %s\n",
+			strerror(errno));
+	}
+
+	eprintf("ptrace(PTRACE_SETREGSET, NT_ARM_HW_WATCH) failed: %s\n", strerror(errno));
+	return false;
 }
 
+static bool arm64_hwbp_add(RzDebug *dbg, RzBreakpoint *bp, RzBreakpointItem *b) {
+	return ll_arm64_hwbp_set(dbg->pid, b->addr, b->size, 0, 1 | 2 | 4);
+}
+
+static bool arm64_hwbp_del(RzDebug *dbg, RzBreakpoint *bp, RzBreakpointItem *b) {
+	return ll_arm64_hwbp_del(dbg->pid, b->addr, b->size, 0, 1 | 2 | 4);
+}
+
+#endif
 
 static int rz_debug_native_bp(RzBreakpoint *bp, RzBreakpointItem *b, bool set) {
 	if (b && b->hw) {
 		return set
-			? arm32_hwbp_add((RzDebug *)bp->user, bp, b)
-			: arm32_hwbp_del((RzDebug *)bp->user, bp, b);
+			? arm64_hwbp_add((RzDebug *)bp->user, bp, b)
+			: arm64_hwbp_del((RzDebug *)bp->user, bp, b);
 	}
 	return false;
 }
@@ -655,5 +790,5 @@ static int rz_debug_desc_native_open(const char *path) {
 
 static bool rz_debug_gcore(RzDebug *dbg, char *path, RzBuffer *dest) {
 	(void)path;
-	return false;
+	return linux_generate_corefile(dbg, dest);
 }

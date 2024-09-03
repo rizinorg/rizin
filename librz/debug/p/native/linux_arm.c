@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2009-2019 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <errno.h>
 #if !defined(__HAIKU__) && !defined(__sun)
 #include <sys/ptrace.h>
@@ -6,9 +9,9 @@
 #include <signal.h>
 
 #include <sys/mman.h>
-#include "native/linux/linux_debug.h"
-#include "native/procfs.h"
-#include "native/linux/linux_coredump.h"
+#include "linux/linux_debug.h"
+#include "procfs.h"
+#include "linux/linux_coredump.h"
 
 #ifdef __WALL
 #define WAITPID_FLAGS __WALL
@@ -34,8 +37,6 @@ static int rz_debug_handle_signals(RzDebug *dbg) {
 static char *rz_debug_native_reg_profile(RzDebug *dbg) {
 	return linux_reg_profile(dbg);
 }
-
-#include "native/reg.c"
 
 static bool rz_debug_native_step(RzDebug *dbg) {
 	return linux_step(dbg);

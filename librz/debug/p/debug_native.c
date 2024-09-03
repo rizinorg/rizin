@@ -23,43 +23,43 @@ static int rz_debug_native_reg_write(RzDebug *dbg, int type, const ut8 *buf, int
 // Native OS & Arch
 #if __APPLE__
 #if __i386__ || __x86_64__
-#include "apple_x86_64.c"
+#include "native/apple_x86_64.c"
 #else
-#include "apple_aarch64.c"
+#include "native/apple_aarch64.c"
 #endif
 
 #elif __ANDROID__
 #if __i386__ || __x86_64__
-#include "android_x86_64.c"
+#include "native/android_x86_64.c"
 #elif __arm__
-#include "android_arm.c"
+#include "native/android_arm.c"
 #else
-#include "android_arm64.c"
+#include "native/android_arm64.c"
 #endif
 
 #elif __linux__
 #if __i386__ || __x86_64__
-#include "linux_x86_64.c"
+#include "native/linux_x86_64.c"
 #elif __arm__
-#include "linux_arm.c"
+#include "native/linux_arm.c"
 #else
-#include "linux_arm64.c"
+#include "native/linux_arm64.c"
 #endif
 
-#elif __WIDOWS__
-#include "windows.c"
+#elif __WINDOWS__
+#include "native/windows.c"
 
 #elif __BSD__
 #if __KFBSD__
-#include "KFBSD.c"
+#include "native/kfbsd.c"
 #elif __OpenBSD__
-#include "OpenBSD.c"
+#include "native/openbsd.c"
 #elif __NetBSD__
-#include "NetBSD.c"
+#include "native/netbsd.c"
 #elif __DragonFly__
-#include "DragonFly.c"
+#include "native/dragonfly.c"
 #else
-#warning Unsupported debugging platform
+#warning "Unsupported debugging platform"
 #undef DEBUGGER
 #define DEBUGGER 0
 #endif
@@ -68,10 +68,10 @@ static int rz_debug_native_reg_write(RzDebug *dbg, int type, const ut8 *buf, int
 #define RZ_DEBUG_REG_T gregset_t
 #undef DEBUGGER
 #define DEBUGGER 0
-#warning No debugger support for SunOS yet
+#warning "No debugger support for SunOS yet"
 
 #else
-#warning Unsupported debugging platform
+#warning "Unsupported debugging platform"
 #undef DEBUGGER
 #define DEBUGGER 0
 #endif // Native OS & Arch
@@ -125,7 +125,7 @@ RzDebugPlugin rz_debug_plugin_native = {
 #ifdef _MSC_VER
 #pragma message("Unsupported architecture")
 #else
-#warning Unsupported architecture
+#warning "Unsupported architecture"
 #endif
 #endif
 	.init = &rz_debug_native_init,

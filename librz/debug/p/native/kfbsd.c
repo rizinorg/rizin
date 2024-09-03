@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2009-2019 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <errno.h>
 #if !defined(__HAIKU__) && !defined(__sun)
 #include <sys/ptrace.h>
@@ -5,8 +8,8 @@
 #include <sys/wait.h>
 #include <signal.h>
 
-#include "native/bsd/bsd_debug.h"
-#include "native/procfs.h"
+#include "bsd/bsd_debug.h"
+#include "procfs.h"
 
 #ifdef __WALL
 #define WAITPID_FLAGS __WALL
@@ -26,7 +29,7 @@ static int rz_debug_handle_signals(RzDebug *dbg) {
 	return bsd_handle_signals(dbg);
 }
 
-#include "native/reg.c"
+#include "reg.c"
 
 static bool rz_debug_native_step(RzDebug *dbg) {
 	int ret = ptrace(PT_STEP, dbg->pid, (caddr_t)1, 0);
@@ -95,57 +98,57 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 	}
 	/* we don't know what to do yet, let's try harder to figure it out. */
 	if (reason == RZ_DEBUG_REASON_UNKNOWN) {
-	if (WIFEXITED(status)) {
-		eprintf("child exited with status %d\n", WEXITSTATUS(status));
-		reason = RZ_DEBUG_REASON_DEAD;
-	} else if (WIFSIGNALED(status)) {
-		eprintf("child received signal %d\n", WTERMSIG(status));
-		reason = RZ_DEBUG_REASON_SIGNAL;
-	} else if (WIFSTOPPED(status)) {
-		if (WSTOPSIG(status) != SIGTRAP &&
-			WSTOPSIG(status) != SIGSTOP) {
-			eprintf("Child stopped with signal %d\n", WSTOPSIG(status));
-		}
+		if (WIFEXITED(status)) {
+			eprintf("child exited with status %d\n", WEXITSTATUS(status));
+			reason = RZ_DEBUG_REASON_DEAD;
+		} else if (WIFSIGNALED(status)) {
+			eprintf("child received signal %d\n", WTERMSIG(status));
+			reason = RZ_DEBUG_REASON_SIGNAL;
+		} else if (WIFSTOPPED(status)) {
+			if (WSTOPSIG(status) != SIGTRAP &&
+				WSTOPSIG(status) != SIGSTOP) {
+				eprintf("Child stopped with signal %d\n", WSTOPSIG(status));
+			}
 
-		/* the ptrace documentation says GETSIGINFO is only necessary for
-		 * differentiating the various stops.
-		 *
-		 * this might modify dbg->reason.signum
-		 */
+			/* the ptrace documentation says GETSIGINFO is only necessary for
+			 * differentiating the various stops.
+			 *
+			 * this might modify dbg->reason.signum
+			 */
 			if (rz_debug_handle_signals(dbg) != 0) {
 				return RZ_DEBUG_REASON_ERROR;
 			}
 			reason = dbg->reason.type;
 #ifdef WIFCONTINUED
-	} else if (WIFCONTINUED(status)) {
-		eprintf("child continued...\n");
-		reason = RZ_DEBUG_REASON_NONE;
+		} else if (WIFCONTINUED(status)) {
+			eprintf("child continued...\n");
+			reason = RZ_DEBUG_REASON_NONE;
 #endif
-	} else if (status == 1) {
-		/* XXX(jjd): does this actually happen? */
-		eprintf("debugger is dead with status 1!\n");
-		reason = RZ_DEBUG_REASON_DEAD;
-	} else if (status == 0) {
-		/* XXX(jjd): does this actually happen? */
-		eprintf("debugger is dead with status 0\n");
-		reason = RZ_DEBUG_REASON_DEAD;
-	} else {
-		if (ret != pid) {
-			reason = RZ_DEBUG_REASON_NEW_PID;
+		} else if (status == 1) {
+			/* XXX(jjd): does this actually happen? */
+			eprintf("debugger is dead with status 1!\n");
+			reason = RZ_DEBUG_REASON_DEAD;
+		} else if (status == 0) {
+			/* XXX(jjd): does this actually happen? */
+			eprintf("debugger is dead with status 0\n");
+			reason = RZ_DEBUG_REASON_DEAD;
 		} else {
-			/* ugh. still don't know :-/ */
-			eprintf("returning from wait without knowing why...\n");
+			if (ret != pid) {
+				reason = RZ_DEBUG_REASON_NEW_PID;
+			} else {
+				/* ugh. still don't know :-/ */
+				eprintf("returning from wait without knowing why...\n");
+			}
 		}
 	}
-}
-/* if we still don't know what to do, we have a problem... */
-if (reason == RZ_DEBUG_REASON_UNKNOWN) {
-	eprintf("%s: no idea what happened...\n", __func__);
-	reason = RZ_DEBUG_REASON_ERROR;
-}
-dbg->reason.tid = pid;
-dbg->reason.type = reason;
-return reason;
+	/* if we still don't know what to do, we have a problem... */
+	if (reason == RZ_DEBUG_REASON_UNKNOWN) {
+		eprintf("%s: no idea what happened...\n", __func__);
+		reason = RZ_DEBUG_REASON_ERROR;
+	}
+	dbg->reason.tid = pid;
+	dbg->reason.type = reason;
+	return reason;
 }
 
 #undef MAXPID
@@ -280,7 +283,6 @@ static RzList /*<RzDebugMap *>*/ *rz_debug_native_map_get(RzDebug *dbg) {
 	/* prepend 0x prefix */
 	region[0] = region2[0] = '0';
 	region[1] = region2[1] = 'x';
-
 
 	list = bsd_native_sysctl_map(dbg);
 	if (list) {

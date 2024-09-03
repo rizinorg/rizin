@@ -1,4 +1,7 @@
-#include "native/windows/windows_debug.h"
+// SPDX-FileCopyrightText: 2009-2019 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
+#include "windows/windows_debug.h"
 // TODO: Move these onto windows.h?
 RZ_API RzList *rz_w32_dbg_modules(RzDebug *); // ugly!
 RZ_API RzList *rz_w32_dbg_maps(RzDebug *);
@@ -24,7 +27,7 @@ RZ_API RzList *rz_w32_dbg_maps(RzDebug *);
 #define PROC_PERM_SZ        5
 #define PROC_UNKSTR_SZ      128
 
-#include "native/reg.c"
+#include "reg.c"
 
 static bool rz_debug_native_step(RzDebug *dbg) {
 	return w32_step(dbg);

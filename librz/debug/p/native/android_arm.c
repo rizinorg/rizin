@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2009-2019 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <errno.h>
 #if !defined(__HAIKU__) && !defined(__sun)
 #include <sys/ptrace.h>
@@ -6,9 +9,12 @@
 #include <signal.h>
 
 #include <sys/mman.h>
-#include "native/linux/linux_debug.h"
-#include "native/procfs.h"
-#include "native/linux/linux_coredump.h"
+#include "linux/linux_debug.h"
+#include "procfs.h"
+#define WAIT_ANY -1
+#ifndef WIFCONTINUED
+#define WIFCONTINUED(s) ((s) == 0xffff)
+#endif
 
 #ifdef __WALL
 #define WAITPID_FLAGS __WALL
@@ -35,7 +41,7 @@ static char *rz_debug_native_reg_profile(RzDebug *dbg) {
 	return linux_reg_profile(dbg);
 }
 
-#include "native/reg.c"
+#include "reg.c"
 
 static bool rz_debug_native_step(RzDebug *dbg) {
 	return linux_step(dbg);
@@ -241,7 +247,7 @@ static int rz_debug_native_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) 
 static int rz_debug_native_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
 	// XXX use switch or so
 	if (type == RZ_REG_TYPE_DRX) {
-		return linux_reg_write(dbg, type, buf, size);
+		return false;
 	} else if (type == RZ_REG_TYPE_GPR) {
 		return linux_reg_write(dbg, type, buf, size);
 	} else if (type == RZ_REG_TYPE_FPU) {
@@ -265,86 +271,8 @@ static int io_perms_to_prot(int io_perms) {
 	return prot_perms;
 }
 
-static int sys_thp_mode(void) {
-	size_t i;
-	const char *thp[] = {
-		"/sys/kernel/mm/transparent_hugepage/enabled",
-		"/sys/kernel/mm/redhat_transparent_hugepage/enabled",
-	};
-	int ret = 0;
-
-	for (i = 0; i < RZ_ARRAY_SIZE(thp); i++) {
-		char *val = rz_file_slurp(thp[i], NULL);
-		if (val) {
-			if (strstr(val, "[madvise]")) {
-				ret = 1;
-			} else if (strstr(val, "[always]")) {
-				ret = 2;
-			}
-			free(val);
-			break;
-		}
-	}
-
-	return ret;
-}
-
 static int linux_map_thp(RzDebug *dbg, ut64 addr, int size) {
-#if defined(MADV_HUGEPAGE)
-	RzBuffer *buf = NULL;
-	char code[1024];
-	int ret = true;
-	char *asm_list[] = {
-		"x86", "x86.as",
-		"x64", "x86.as",
-		NULL
-	};
-	// In architectures where rizin is supported, arm and x86, it is 2MB
-	const size_t thpsize = 1 << 21;
-
-	if ((size % thpsize)) {
-		eprintf("size not a power of huge pages size\n");
-		return false;
-	}
-	// In always mode, is more into mmap syscall level
-	// even though the address might not have the 'hg'
-	// vmflags
-	if (sys_thp_mode() != 1) {
-		eprintf("transparent huge page mode is not in madvise mode\n");
-		return false;
-	}
-
-	int num = rz_syscall_get_num(dbg->analysis->syscall, "madvise");
-
-	snprintf(code, sizeof(code),
-		"sc_madvise@syscall(%d);\n"
-		"main@naked(0) { .rarg0 = sc_madvise(0x%08" PFMT64x ",%d, %d);break;\n"
-		"}\n",
-		num, addr, size, MADV_HUGEPAGE);
-	rz_egg_reset(dbg->egg);
-	rz_egg_setup(dbg->egg, dbg->arch, 8 * dbg->bits, 0, 0);
-	rz_egg_load(dbg->egg, code, 0);
-	if (!rz_egg_compile(dbg->egg)) {
-		eprintf("Cannot compile.\n");
-		goto err_linux_map_thp;
-	}
-	if (!rz_egg_assemble_asm(dbg->egg, asm_list)) {
-		eprintf("rz_egg_assemble: invalid assembly\n");
-		goto err_linux_map_thp;
-	}
-	buf = rz_egg_get_bin(dbg->egg);
-	if (buf) {
-		rz_reg_arena_push(dbg->reg);
-		ut64 tmpsz;
-		const ut8 *tmp = rz_buf_data(buf, &tmpsz);
-		ret = rz_debug_execute(dbg, tmp, tmpsz, 1) == 0;
-		rz_reg_arena_pop(dbg->reg);
-	}
-err_linux_map_thp:
-	return ret;
-#else
 	return false;
-#endif
 }
 
 static RzDebugMap *linux_map_alloc(RzDebug *dbg, ut64 addr, int size, bool thp) {
@@ -635,85 +563,47 @@ static bool rz_debug_native_init(RzDebug *dbg, void **user) {
 static void rz_debug_native_fini(RzDebug *dbg, void *user) {
 }
 
-static void sync_drx_regs(RzDebug *dbg, drxt *regs, size_t num_regs) {
-	/* sanity check, we rely on this assumption */
-	if (num_regs != NUM_DRX_REGISTERS) {
-		eprintf("drx: Unsupported number of registers for get_debug_regs\n");
-		return;
-	}
-
-	// sync drx regs
-#define R dbg->reg
-	regs[0] = rz_reg_getv(R, "dr0");
-	regs[1] = rz_reg_getv(R, "dr1");
-	regs[2] = rz_reg_getv(R, "dr2");
-	regs[3] = rz_reg_getv(R, "dr3");
-	/*
-	RESERVED
-	regs[4] = rz_reg_getv (R, "dr4");
-	regs[5] = rz_reg_getv (R, "dr5");
-*/
-	regs[6] = rz_reg_getv(R, "dr6");
-	regs[7] = rz_reg_getv(R, "dr7");
-}
-
-static void set_drx_regs(RzDebug *dbg, drxt *regs, size_t num_regs) {
-	/* sanity check, we rely on this assumption */
-	if (num_regs != NUM_DRX_REGISTERS) {
-		eprintf("drx: Unsupported number of registers for get_debug_regs\n");
-		return;
-	}
-
-#define R dbg->reg
-	rz_reg_setv(R, "dr0", regs[0]);
-	rz_reg_setv(R, "dr1", regs[1]);
-	rz_reg_setv(R, "dr2", regs[2]);
-	rz_reg_setv(R, "dr3", regs[3]);
-	rz_reg_setv(R, "dr6", regs[6]);
-	rz_reg_setv(R, "dr7", regs[7]);
-}
-
 static int rz_debug_native_drx(RzDebug *dbg, int n, ut64 addr, int sz, int rwx, int g, int api_type) {
-	int retval = false;
-	drxt regs[NUM_DRX_REGISTERS] = { 0 };
-	// sync drx regs
-	sync_drx_regs(dbg, regs, NUM_DRX_REGISTERS);
+	eprintf("drx: Unsupported platform\n");
+	return -1;
+}
 
-	switch (api_type) {
-	case DRX_API_LIST:
-		drx_list(regs);
-		retval = false;
-		break;
-	case DRX_API_GET_BP:
-		/* get the index of the breakpoint at addr */
-		retval = drx_get_at(regs, addr);
-		break;
-	case DRX_API_REMOVE_BP:
-		/* remove hardware breakpoint */
-		drx_set(regs, n, addr, -1, 0, 0);
-		retval = true;
-		break;
-	case DRX_API_SET_BP:
-		/* set hardware breakpoint */
-		drx_set(regs, n, addr, sz, rwx, g);
-		retval = true;
-		break;
-	default:
-		/* this should not happen, someone misused the API */
-		eprintf("drx: Unsupported api type in rz_debug_native_drx\n");
-		retval = false;
-	}
+#include <sys/prctl.h>
+#include <sys/uio.h>
 
-	set_drx_regs(dbg, regs, NUM_DRX_REGISTERS);
+#define NT_ARM_VFP         0x400 /* ARM VFP/NEON registers */
+#define NT_ARM_TLS         0x401 /* ARM TLS register */
+#define NT_ARM_HW_BREAK    0x402 /* ARM hardware breakpoint registers */
+#define NT_ARM_HW_WATCH    0x403 /* ARM hardware watchpoint registers */
+#define NT_ARM_SYSTEM_CALL 0x404 /* ARM system call number */
 
-	return retval;
+#ifndef PTRACE_GETHBPREGS
+#define PTRACE_GETHBPREGS 29
+#define PTRACE_SETHBPREGS 30
+#endif
+
+static bool ll_arm32_hwbp_set(pid_t pid, ut64 addr, int size, int wp, int type) {
+	const unsigned byte_mask = (1 << size) - 1;
+	// const unsigned type = 2; // Write.
+	const unsigned enable = 1;
+	const unsigned control = byte_mask << 5 | type << 3 | enable;
+	(void)ptrace(PTRACE_SETHBPREGS, pid, -1, (void *)(size_t)addr);
+	return ptrace(PTRACE_SETHBPREGS, pid, -2, &control) != -1;
+}
+
+static bool arm32_hwbp_add(RzDebug *dbg, RzBreakpoint *bp, RzBreakpointItem *b) {
+	return ll_arm32_hwbp_set(dbg->pid, b->addr, b->size, 0, 1 | 2 | 4);
+}
+
+static bool arm32_hwbp_del(RzDebug *dbg, RzBreakpoint *bp, RzBreakpointItem *b) {
+	return false; // TODO: hwbp.del not yetimplemented
 }
 
 static int rz_debug_native_bp(RzBreakpoint *bp, RzBreakpointItem *b, bool set) {
 	if (b && b->hw) {
 		return set
-			? drx_add((RzDebug *)bp->user, bp, b)
-			: drx_del((RzDebug *)bp->user, bp, b);
+			? arm32_hwbp_add((RzDebug *)bp->user, bp, b)
+			: arm32_hwbp_del((RzDebug *)bp->user, bp, b);
 	}
 	return false;
 }
@@ -765,5 +655,5 @@ static int rz_debug_desc_native_open(const char *path) {
 
 static bool rz_debug_gcore(RzDebug *dbg, char *path, RzBuffer *dest) {
 	(void)path;
-	return linux_generate_corefile(dbg, dest);
+	return false;
 }

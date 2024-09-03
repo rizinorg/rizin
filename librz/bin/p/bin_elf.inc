@@ -1023,7 +1023,7 @@ static void patch_reloc_hexagon(RZ_INOUT RzBuffer *buf_patched, const ut64 patch
 // AARCH64-specific defines
 // Take the PAGE component of an address or offset.
 #define PG(x)         ((x) & ~0xFFFULL)
-#define PG_OFFSET(x)  ((x)&0xFFFULL)
+#define PG_OFFSET(x)  ((x) & 0xFFFULL)
 #define ADR_IMM_MASK1 (((1U << 2) - 1) << 29)
 #define ADR_IMM_MASK2 (((1U << 19) - 1) << 5)
 #define ADR_IMM_MASK3 (((1U << 19) - 1) << 2)
