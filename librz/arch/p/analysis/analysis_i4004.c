@@ -9,7 +9,7 @@
 #include <rz_analysis.h>
 #include <i4004/i4004dis.h>
 
-#define AVR_SOFTCAST(x, y) ((x) + ((y) * 0x100))
+#define AVR_SOFTCAST(x, y) ((x) + ((y)*0x100))
 
 static char *get_reg_profile(RzAnalysis *analysis) {
 	const char *p =

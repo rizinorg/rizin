@@ -8,7 +8,7 @@
 
 #include "pyc/pyc_dis.h"
 
-#define JMP_OFFSET(ops, v) ((ops)->jump_use_instruction_offset ? (v) * 2 : (v))
+#define JMP_OFFSET(ops, v) ((ops)->jump_use_instruction_offset ? (v)*2 : (v))
 
 static int archinfo(RzAnalysis *analysis, RzAnalysisInfoType query) {
 	if (!strcmp(analysis->cpu, "x86")) {

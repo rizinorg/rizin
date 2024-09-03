@@ -112,7 +112,7 @@ typedef struct _utX {
 #define UT32_ALIGN(x) (x + (x - (x % sizeof(ut32))))
 #define UT16_ALIGN(x) (x + (x - (x % sizeof(ut16))))
 
-#define UT32_LO(x) ((ut32)((x) & UT32_MAX))
+#define UT32_LO(x) ((ut32)((x)&UT32_MAX))
 #define UT32_HI(x) ((ut32)(((ut64)(x)) >> 32) & UT32_MAX)
 
 #define RZ_BETWEEN(x, y, z) (((y) >= (x)) && ((y) <= (z)))
@@ -135,7 +135,7 @@ typedef struct _utX {
 /* copied from bithacks.h */
 #define B_IS_SET(x, n) (((x) & (1ULL << (n))) ? 1 : 0)
 #define B_SET(x, n)    ((x) |= (1ULL << (n)))
-#define B_EVEN(x)      (((x) & 1) == 0)
+#define B_EVEN(x)      (((x)&1) == 0)
 #define B_ODD(x)       (!B_EVEN((x)))
 #define B_UNSET(x, n)  ((x) &= ~(1ULL << (n)))
 #define B_TOGGLE(x, n) ((x) ^= (1ULL << (n)))

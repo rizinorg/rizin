@@ -5,12 +5,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#define NELEM(N, ELEMPER) ((N + (ELEMPER) - 1) / (ELEMPER))
+#define NELEM(N, ELEMPER) ((N + (ELEMPER)-1) / (ELEMPER))
 #define BV_ELEM_SIZE      8U
 
 // optimization for reversing 8 bits which uses 32 bits
 // https://graphics.stanford.edu/~seander/bithacks.html#ReverseByteWith32Bits
-#define reverse_byte(x) ((((x) * 0x0802LU & 0x22110LU) | ((x) * 0x8020LU & 0x88440LU)) * 0x10101LU >> 16)
+#define reverse_byte(x) ((((x)*0x0802LU & 0x22110LU) | ((x)*0x8020LU & 0x88440LU)) * 0x10101LU >> 16)
 
 // https://graphics.stanford.edu/~seander/bithacks.html#BitReverseObvious
 // With changes.

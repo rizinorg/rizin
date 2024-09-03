@@ -15,16 +15,16 @@
 #define OP_MASK OP(0x3f)
 
 #define OPS(op, xop)      (OP(op) | ((((ut32)(xop)) & 0x1f) << 1))
-#define OPSC(op, xop, rc) (OPS((op), (xop)) | ((rc) & 1))
+#define OPSC(op, xop, rc) (OPS((op), (xop)) | ((rc)&1))
 #define OPS_MASK          OPSC(0x3f, 0x1f, 1)
 #define OPS_MASK_DOT      OPSC(0x3f, 0x1f, 1)
 
 #define OPM(op, xop)      (OP(op) | ((((ut32)(xop)) & 0x3f) << 1))
-#define OPMC(op, xop, rc) (OPM((op), (xop)) | ((rc) & 1))
+#define OPMC(op, xop, rc) (OPM((op), (xop)) | ((rc)&1))
 #define OPM_MASK          OPMC(0x3f, 0x3f, 0)
 
 #define OPL(op, xop)      (OP(op) | ((((ut32)(xop)) & 0x3ff) << 1))
-#define OPLC(op, xop, rc) (OPL((op), (xop)) | ((rc) & 1))
+#define OPLC(op, xop, rc) (OPL((op), (xop)) | ((rc)&1))
 #define OPL_MASK          OPLC(0x3f, 0x3ff, 1)
 #define OPL_MASK_DOT      OPLC(0x3f, 0x3ff, 1)
 

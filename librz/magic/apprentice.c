@@ -49,14 +49,14 @@
 #ifdef _MSC_VER
 #include <rz_windows.h>
 #include <sys\stat.h>
-#define S_ISREG(m) (((m) & S_IFMT) == S_IFREG)
-#define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
+#define S_ISREG(m) (((m)&S_IFMT) == S_IFREG)
+#define S_ISDIR(m) (((m)&S_IFMT) == S_IFDIR)
 #define MAXPATHLEN 255
 #endif
 
 #define EATAB \
 	{ \
-		while (isascii((ut8) * l) && isspace((ut8) * l)) { \
+		while (isascii((ut8)*l) && isspace((ut8)*l)) { \
 			l++; \
 		} \
 	}

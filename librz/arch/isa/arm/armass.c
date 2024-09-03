@@ -5813,7 +5813,7 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 						}
 						ao->o |= ((ret >> 16) & 0xff) << 8;
 						ao->o |= ((ret >> 8) & 0xff) << 16;
-						ao->o |= ((ret) & 0xff) << 24;
+						ao->o |= ((ret)&0xff) << 24;
 					} else {
 						RZ_LOG_ERROR("assembler: arm: %s: instruction does not accept a register as argument\n", ops[i].name);
 						return 0;
@@ -5839,7 +5839,7 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 						dst /= 4;
 						ao->o |= ((dst >> 16) & 0xff) << 8;
 						ao->o |= ((dst >> 8) & 0xff) << 16;
-						ao->o |= ((dst) & 0xff) << 24;
+						ao->o |= ((dst)&0xff) << 24;
 						return 4;
 					} else {
 						ao->o |= (getreg(ao->a[0]) << 24);
@@ -5850,7 +5850,7 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 					o |= ((n >> 12) & 0xf) << 8;
 					o |= ((n >> 8) & 0xf) << 20;
 					o |= ((n >> 4) & 0xf) << 16;
-					o |= ((n) & 0xf) << 24;
+					o |= ((n)&0xf) << 24;
 					ao->o |= o;
 				} break;
 				case TYPE_SWI:

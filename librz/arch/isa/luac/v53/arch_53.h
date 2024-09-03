@@ -166,11 +166,11 @@ name            args    description
 #define cast(x, y) ((x)(y))
 
 #define GET_OPCODE(i)    (cast(LuaOpCode, ((i) >> POS_OP) & MASK1(SIZE_OP, 0)))
-#define SET_OPCODE(i, o) ((i) = (((i) & MASK0(SIZE_OP, POS_OP)) | \
+#define SET_OPCODE(i, o) ((i) = (((i)&MASK0(SIZE_OP, POS_OP)) | \
 				  ((cast(ut32, o) << POS_OP) & MASK1(SIZE_OP, POS_OP))))
 
 #define getarg(i, pos, size)    (cast(int, ((i) >> (pos)) & MASK1(size, 0)))
-#define setarg(i, v, pos, size) ((i) = (((i) & MASK0(size, pos)) | \
+#define setarg(i, v, pos, size) ((i) = (((i)&MASK0(size, pos)) | \
 					 ((cast(ut32, v) << (pos)) & MASK1(size, pos))))
 
 #define GETARG_A(i)    getarg(i, POS_A, SIZE_A)

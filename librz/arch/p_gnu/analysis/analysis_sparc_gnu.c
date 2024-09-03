@@ -159,7 +159,7 @@ static int fcc_to_r_cond(const int cond) {
 /* These are for v9.  */
 #define X_DISP16(i) (((((i) >> 20) & 3) << 14) | (((i) >> 0) & 0x3fff))
 #define X_DISP19(i) (((i) >> 0) & 0x7ffff)
-#define X_MEMBAR(i) ((i) & 0x7f)
+#define X_MEMBAR(i) ((i)&0x7f)
 
 enum {
 	OP_0 = 0,

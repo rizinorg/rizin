@@ -761,8 +761,8 @@ typedef struct rz_cons_t {
 #define Colors_PLAIN \
 	{ \
 		Color_BLACK, Color_RED, Color_WHITE, \
-		Color_GREEN, Color_MAGENTA, Color_YELLOW, \
-		Color_CYAN, Color_BLUE, Color_GRAY \
+			Color_GREEN, Color_MAGENTA, Color_YELLOW, \
+			Color_CYAN, Color_BLUE, Color_GRAY \
 	}
 
 enum {

@@ -188,7 +188,7 @@ typedef enum {
 /* Macros Highlight the cast */
 #define LUA_CAST(x, y) ((x)y)
 #define int2sC(i)      ((i) + LUAOP_FIX_sC)
-#define sC2int(i)      ((i) - LUAOP_FIX_sC)
+#define sC2int(i)      ((i)-LUAOP_FIX_sC)
 
 /* creates a mask with 'n' 1/0 bits at position 'p' */
 #define LUA_MASK1(n, p) ((~((~(LuaInstruction)0) << (n))) << (p))
@@ -196,12 +196,12 @@ typedef enum {
 
 /* OPCODE getter */
 #define LUA_GET_OPCODE(i)    (LUA_CAST(LuaOpCode, ((i) >> LUAOP_OP_OFFSET) & LUA_MASK1(LUAOP_OP_SIZE, 0)))
-#define LUA_SET_OPCODE(i, o) ((i) = (((i) & LUA_MASK0(LUAOP_OP_SIZE, LUAOP_OP_OFFSET)) | \
+#define LUA_SET_OPCODE(i, o) ((i) = (((i)&LUA_MASK0(LUAOP_OP_SIZE, LUAOP_OP_OFFSET)) | \
 				      ((LUA_CAST(LuaInstruction, o) << LUAOP_OP_OFFSET) & LUA_MASK1(LUAOP_OP_SIZE, LUAOP_OP_OFFSET))))
 
 /* Arguments getter */
 #define LUA_GETARG(i, offset, size) (LUA_CAST(int, ((i) >> (offset)) & LUA_MASK1(size, 0)))
-#define LUA_SETARG(i, v, pos, size) ((i) = (((i) & LUA_MASK0(size, pos)) | \
+#define LUA_SETARG(i, v, pos, size) ((i) = (((i)&LUA_MASK0(size, pos)) | \
 					     ((LUA_CAST(LuaInstruction, v) << (pos)) & LUA_MASK1(size, pos))))
 
 #define LUA_GETARG_A(i)   LUA_GETARG(i, LUAOP_A_OFFSET, LUAOP_A_SIZE)

@@ -33,10 +33,7 @@
 	{ .type = RX_TOKEN_CB, .tk.cb.tk_len = (x) }
 #define RxDspSplit(x, v, it, xx) \
 	{ .type = RX_TOKEN_DSP_SPLIT, \
-		.tk.dsp_sp.tk_len = (x), \
-		.tk.dsp_sp.vid = (v), \
-		.tk.dsp_sp.tk_len_more = (xx), \
-		.tk.dsp_sp.interval = (it) }
+	  .tk.dsp_sp.tk_len = (x), .tk.dsp_sp.vid = (v), .tk.dsp_sp.tk_len_more = (xx), .tk.dsp_sp.interval = (it) }
 #define RxIgnore(x) \
 	{ .type = RX_TOKEN_IGNORE, .tk.reserved.tk_len = (x) }
 

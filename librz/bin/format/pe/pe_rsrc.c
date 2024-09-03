@@ -129,7 +129,7 @@ static void free_StringFileInfo(StringFileInfo *stringFileInfo) {
 	}
 }
 
-#define align32(x) x = (((x) & 0x3) == 0) ? (x) : ((x) & ~0x3) + 0x4;
+#define align32(x) x = (((x)&0x3) == 0) ? (x) : ((x) & ~0x3) + 0x4;
 
 static void free_VS_VERSIONINFO(PE_VS_VERSIONINFO *vs_VersionInfo) {
 	if (vs_VersionInfo) {

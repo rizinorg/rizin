@@ -79,11 +79,11 @@ static size_t RtlpLFHKeyOffset = 0;
 	}
 
 #define UPDATE_FLAGS(hb, flags) \
-	if (((flags) & 0xf1) || ((flags) & 0x0200)) { \
+	if (((flags)&0xf1) || ((flags)&0x0200)) { \
 		hb->dwFlags = LF32_FIXED; \
-	} else if ((flags) & 0x20) { \
+	} else if ((flags)&0x20) { \
 		hb->dwFlags = LF32_MOVEABLE; \
-	} else if ((flags) & 0x0100) { \
+	} else if ((flags)&0x0100) { \
 		hb->dwFlags = LF32_FREE; \
 	} \
 	hb->dwFlags |= ((flags) >> SHIFT) << SHIFT;

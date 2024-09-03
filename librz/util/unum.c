@@ -637,7 +637,7 @@ RZ_API ut64 rz_num_get_input_value(RzNum *num, const char *input_value) {
 	return value;
 }
 
-#define NIBBLE_TO_HEX(n) (((n) & 0xf) > 9 ? 'a' + ((n) & 0xf) - 10 : '0' + ((n) & 0xf))
+#define NIBBLE_TO_HEX(n) (((n)&0xf) > 9 ? 'a' + ((n)&0xf) - 10 : '0' + ((n)&0xf))
 static int escape_char(char *dst, char byte) {
 	const char escape_map[] = "abtnvfr";
 	if (byte >= 7 && byte <= 13) {

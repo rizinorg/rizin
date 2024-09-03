@@ -10,10 +10,10 @@ RZ_LIB_VERSION(rz_magic);
 #ifdef _MSC_VER
 #include <io.h>
 #include <sys\stat.h>
-#define S_ISREG(m)  (((m) & S_IFMT) == S_IFREG)
-#define S_ISDIR(m)  (((m) & S_IFMT) == S_IFDIR)
+#define S_ISREG(m)  (((m)&S_IFMT) == S_IFREG)
+#define S_ISDIR(m)  (((m)&S_IFMT) == S_IFDIR)
 #define S_IFIFO     (-1)
-#define S_ISFIFO(m) (((m) & S_IFIFO) == S_IFIFO)
+#define S_ISFIFO(m) (((m)&S_IFIFO) == S_IFIFO)
 #define MAXPATHLEN  255
 #endif
 

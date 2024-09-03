@@ -1895,7 +1895,7 @@ static char *get_format_type(const char fmt, const char arg) {
 	return type;
 }
 
-#define MINUSONE ((void *)(size_t) - 1)
+#define MINUSONE ((void *)(size_t)-1)
 #define ISSTRUCT (tmp == '?' || (tmp == '*' && *(arg + 1) == '?'))
 
 RZ_API const char *rz_type_db_format_get(const RzTypeDB *typedb, const char *name) {
