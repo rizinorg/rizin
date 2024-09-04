@@ -41,8 +41,6 @@ static char *rz_debug_native_reg_profile(RzDebug *dbg) {
 	return linux_reg_profile(dbg);
 }
 
-#include "reg.c"
-
 static bool rz_debug_native_step(RzDebug *dbg) {
 	return linux_step(dbg);
 }
