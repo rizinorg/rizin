@@ -1962,6 +1962,7 @@ RZ_API double rz_analysis_similarity_basic_block_2(RZ_NONNULL RzAnalysis *analys
 RZ_API double rz_analysis_similarity_function_2(RZ_NONNULL RzAnalysis *analysis_a, RZ_NONNULL RzAnalysisFunction *fcn_a, RZ_NONNULL RzAnalysis *analysis_b, RZ_NONNULL RzAnalysisFunction *fcn_b);
 RZ_API RZ_OWN RzAnalysisMatchResult *rz_analysis_match_basic_blocks(RZ_NONNULL RzAnalysisFunction *fcn_a, RZ_NONNULL RzAnalysisFunction *fcn_b, RZ_NONNULL RzAnalysisMatchOpt *opt);
 RZ_API RZ_OWN RzAnalysisMatchResult *rz_analysis_match_functions(RzList /*<RzAnalysisFunction *>*/ *list_a, RzList /*<RzAnalysisFunction *>*/ *list_b, RZ_NONNULL RzAnalysisMatchOpt *opt);
+RZ_API bool rz_analysis_function_eq(RZ_NONNULL RzAnalysisFunction *fcn_a, RZ_NONNULL RzAnalysisFunction *fcn_b);
 RZ_API void rz_analysis_match_result_free(RZ_NULLABLE RzAnalysisMatchResult *result);
 
 /* value.c */
