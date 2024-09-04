@@ -77,10 +77,10 @@ s 2
 avga bla short
 sd +6
 avga foo int
-avgj
+avglj
 EOF
 EXPECT=<<EOF
-[{"name":"bla","type":"short","addr":"0x2"},{"name":"foo","type":"int","addr":"0x8"}]
+[{"name":"bla","type":"short","size":2,"addr":"0x2"},{"name":"foo","type":"int","size":4,"addr":"0x8"}]
 EOF
 RUN
 
@@ -90,7 +90,7 @@ CMDS=<<EOF
 avga bla int @ 0x4
 w test @ 0x10
 avga foo "char *" @ 0x10
-avg
+avgl
 EOF
 EXPECT=<<EOF
 global int bla @ 0x4

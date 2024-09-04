@@ -445,14 +445,14 @@ static bool test_autocmplt_global(void) {
 	rz_analysis_var_global_set_type(glob2, typ);
 
 	RzLineBuffer *buf = &core->cons->line->buffer;
-	const char *s = "avg ";
+	const char *s = "avgl ";
 	strcpy(buf->data, s);
 	buf->length = strlen(s);
 	buf->index = buf->length;
 
 	RzLineNSCompletionResult *r = rz_core_autocomplete_rzshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
 	mu_assert_notnull(r, "r should not be null");
-	mu_assert_eq(r->start, strlen("avg "), "should autocomplete the last arg");
+	mu_assert_eq(r->start, strlen("avgl "), "should autocomplete the last arg");
 	mu_assert_eq(r->end, buf->length, "should autocomplete ending at end of buffer");
 	mu_assert_eq(rz_pvector_len(&r->options), 2, "there are 2 global vars");
 	mu_assert_streq(rz_pvector_at(&r->options, 0), "GINT", "GINT found");
