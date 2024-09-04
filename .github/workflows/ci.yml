@@ -797,8 +797,13 @@ jobs:
           ninja -C build && sudo ninja -C build install
       - name: Compile jsdec in EXTRA_PREFIX
         run: |
-          git clone https://github.com/rizinorg/jsdec
-          cd jsdec && meson -Dstandalone=false --prefix=/usr/local build && meson compile -C build && sudo meson install -C build
+          if ${{ (contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') }} ; then
+            git clone --depth 1 --branch master https://github.com/rizinorg/jsdec
+            cd jsdec && meson -Dstandalone=false --prefix=/usr/local build && meson compile -C build && sudo meson install -C build
+          else
+            git clone --depth 1 --branch dev https://github.com/rizinorg/jsdec
+            cd jsdec && meson -Dbuild_type=rizin --prefix=/usr/local build && meson compile -C build && sudo meson install -C build
+          fi
       - name: Test jsdec plugin is loaded from EXTRA_PREFIX
         run: |
           rizin -qc "Lc~jsdec"
