@@ -566,11 +566,20 @@ RZ_IPI void rz_core_types_function_noreturn_print(RzCore *core, RzOutputMode mod
 // Type formatting
 
 RZ_IPI void rz_core_types_show_format(RzCore *core, const char *name, RzOutputMode mode) {
-	char *fmt = rz_type_format(core->analysis->typedb, name);
+	RzTypeDB *typedb = core->analysis->typedb;
+	char *fmt = rz_type_format(typedb, name);
+	if (!fmt) {
+		RZ_LOG_ERROR("core: cannot find '%s' type's format\n", name);
+		return;
+	}
+	RzBaseType *btype = rz_type_db_get_base_type(typedb, name);
 	if (!fmt) {
 		RZ_LOG_ERROR("core: cannot find '%s' type\n", name);
 		return;
 	}
+	ut64 type_size = rz_type_db_base_get_bitsize(typedb, btype);
+	const char *kind = rz_type_base_type_kind_as_string(btype->kind);
+
 	// Simply skip types with empty format
 	if (RZ_STR_ISEMPTY(fmt)) {
 		RZ_LOG_WARN("core: '%s' type has empty format\n", name);
@@ -586,19 +595,24 @@ RZ_IPI void rz_core_types_show_format(RzCore *core, const char *name, RzOutputMo
 		}
 		pj_o(pj);
 		pj_ks(pj, "name", name);
+		pj_ks(pj, "kind", kind);
 		pj_ks(pj, "format", fmt);
+		pj_ki(pj, "size", type_size);
 		pj_end(pj);
 		rz_cons_printf("%s", pj_string(pj));
 		pj_free(pj);
 	} break;
-	case RZ_OUTPUT_MODE_RIZIN: {
+	case RZ_OUTPUT_MODE_RIZIN:
 		rz_cons_printf("pfn \"%s\" \"%s\"\n", name, fmt);
-	} break;
-	case RZ_OUTPUT_MODE_STANDARD: {
+		break;
+	case RZ_OUTPUT_MODE_LONG:
+		rz_cons_printf("%s %s (0x%" PFMT64x ") \"%s\"\n", kind, name, type_size, fmt);
+		break;
+	case RZ_OUTPUT_MODE_STANDARD:
 		// FIXME: Not really a standard format
 		// We should think about better representation by default here
 		rz_cons_printf("pf \"%s\"\n", fmt);
-	} break;
+		break;
 	default:
 		break;
 	}
@@ -898,10 +912,13 @@ RZ_IPI void rz_core_types_print_all(RzCore *core, RzOutputMode mode) {
 		}
 		pj_a(pj);
 		rz_list_foreach (types, it, btype) {
+			ut64 type_size = rz_type_db_base_get_bitsize(core->analysis->typedb, btype);
+			const char *kind = rz_type_base_type_kind_as_string(btype->kind);
 			pj_o(pj);
 			// rz_str_trim(format_s);
 			pj_ks(pj, "type", btype->name);
-			pj_ki(pj, "size", btype->size);
+			pj_ks(pj, "kind", kind);
+			pj_ki(pj, "size", type_size);
 			// pj_ks(pj, "format", format_s);
 			pj_end(pj);
 		}
@@ -913,6 +930,13 @@ RZ_IPI void rz_core_types_print_all(RzCore *core, RzOutputMode mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
 		rz_list_foreach (types, it, btype) {
 			rz_cons_println(btype->name);
+		}
+		break;
+	case RZ_OUTPUT_MODE_LONG:
+		rz_list_foreach (types, it, btype) {
+			ut64 type_size = rz_type_db_base_get_bitsize(core->analysis->typedb, btype);
+			const char *kind = rz_type_base_type_kind_as_string(btype->kind);
+			rz_cons_printf("%s %s (0x%" PFMT64x ")\n", kind, btype->name, type_size);
 		}
 		break;
 	case RZ_OUTPUT_MODE_RIZIN:
