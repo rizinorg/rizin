@@ -243,7 +243,7 @@ EXPECT=<<EOF
 pf "d int"
 EOF
 EXPECT_ERR=<<EOF
-ERROR: core: cannot find 'int' type
+ERROR: core: cannot find 'int' type's format
 EOF
 RUN
 
@@ -293,7 +293,7 @@ union xoo {
 };
 EOF
 EXPECT_ERR=<<EOF
-ERROR: core: cannot find 'xoo' type
+ERROR: core: cannot find 'xoo' type's format
 ERROR: Cannot find "xoo" union type
 EOF
 RUN

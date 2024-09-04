@@ -22472,7 +22472,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *seek_register_cd = rz_cmd_desc_argv_new(core->rcmd, s_cd, "sr", rz_seek_register_handler, &seek_register_help);
 	rz_warn_if_fail(seek_register_cd);
 
-	RzCmdDesc *t_cd = rz_cmd_desc_group_modes_new(core->rcmd, root_cd, "t", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_type_handler, &type_help, &t_help);
+	RzCmdDesc *t_cd = rz_cmd_desc_group_modes_new(core->rcmd, root_cd, "t", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_LONG, rz_type_handler, &type_help, &t_help);
 	rz_warn_if_fail(t_cd);
 	RzCmdDesc *type_del_cd = rz_cmd_desc_argv_new(core->rcmd, t_cd, "t-", rz_type_del_handler, &type_del_help);
 	rz_warn_if_fail(type_del_cd);
