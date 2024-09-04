@@ -4964,7 +4964,7 @@ static const RzCmdDescArg analysis_print_global_variable_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp analysis_print_global_variable_help = {
-	.summary = "show global variables",
+	.summary = "show/list global variables",
 	.args = analysis_print_global_variable_args,
 };
 
@@ -19975,8 +19975,11 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *av_cd = rz_cmd_desc_group_modes_new(core->rcmd, cmd_analysis_cd, "av", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_analysis_list_vtables_handler, &analysis_list_vtables_help, &av_help);
 	rz_warn_if_fail(av_cd);
-	RzCmdDesc *avg_cd = rz_cmd_desc_group_state_new(core->rcmd, av_cd, "avg", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_print_global_variable_handler, &analysis_print_global_variable_help, &avg_help);
+	RzCmdDesc *avg_cd = rz_cmd_desc_group_new(core->rcmd, av_cd, "avg", NULL, NULL, &avg_help);
 	rz_warn_if_fail(avg_cd);
+	RzCmdDesc *analysis_print_global_variable_cd = rz_cmd_desc_argv_state_new(core->rcmd, avg_cd, "avgl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_TABLE, rz_analysis_print_global_variable_handler, &analysis_print_global_variable_help);
+	rz_warn_if_fail(analysis_print_global_variable_cd);
+
 	RzCmdDesc *analysis_global_variable_add_cd = rz_cmd_desc_argv_new(core->rcmd, avg_cd, "avga", rz_analysis_global_variable_add_handler, &analysis_global_variable_add_help);
 	rz_warn_if_fail(analysis_global_variable_add_cd);
 

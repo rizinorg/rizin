@@ -41,7 +41,7 @@ NAME=Load global variables from PDB
 FILE=
 CMDS=<<EOF
 idp bins/pdb/Project1.pdb
-avg
+avgl
 EOF
 EXPECT=<<EOF
 global struct IMAGE_LOAD_CONFIG_DIRECTORY32_2 _load_config_used @ 0x165b0
@@ -99,7 +99,7 @@ FILE=bins/pdb/exceptions-test.exe
 CMDS=<<EOF
 idp
 aaa
-avg
+avgl
 echo ---
 avgx __guard_check_icall_fptr
 pd 3 @ 0x140007344

@@ -4481,8 +4481,11 @@ RZ_IPI bool rz_analysis_var_global_list_show(RzAnalysis *analysis, RzCmdStateOut
 	char *var_type = NULL;
 	bool json = state->mode == RZ_OUTPUT_MODE_JSON;
 	PJ *pj = json ? state->d.pj : NULL;
+	RzTable *table = state->mode == RZ_OUTPUT_MODE_TABLE ? state->d.t : NULL;
 
 	rz_cmd_state_output_array_start(state);
+	rz_cmd_state_output_set_columnsf(state, "ssxx", "name", "type",
+		"size", "address");
 	if (!global_vars) {
 		rz_cmd_state_output_array_end(state);
 		return false;
@@ -4492,6 +4495,7 @@ RZ_IPI bool rz_analysis_var_global_list_show(RzAnalysis *analysis, RzCmdStateOut
 		if (!var_type) {
 			continue;
 		}
+		ut64 var_size = rz_type_db_get_bitsize(analysis->typedb, glob->type) / 8;
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_STANDARD:
 			rz_cons_printf("global %s %s @ 0x%" PFMT64x "\n",
@@ -4501,11 +4505,16 @@ RZ_IPI bool rz_analysis_var_global_list_show(RzAnalysis *analysis, RzCmdStateOut
 			pj_o(pj);
 			pj_ks(pj, "name", glob->name);
 			pj_ks(pj, "type", var_type);
+			pj_ki(pj, "size", var_size);
 			char addr[32];
 			rz_strf(addr, "0x%" PFMT64x, glob->addr);
 			pj_ks(pj, "addr", addr);
 			pj_end(pj);
 			break;
+		case RZ_OUTPUT_MODE_TABLE: {
+			rz_table_add_rowf(table, "ssxx", glob->name, var_type, var_size, glob->addr);
+			break;
+		}
 		default:
 			break;
 		}

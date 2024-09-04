@@ -2,9 +2,9 @@ NAME=avga # add global variable
 FILE==
 CMDS=<<EOF
 avga foo int @ 0x100
-avg
+avgl
 avga bar char @ 0x1000
-avg
+avgl
 EOF
 EXPECT=<<EOF
 global int foo @ 0x100
@@ -13,15 +13,15 @@ global char bar @ 0x1000
 EOF
 RUN
 
-NAME=avgj # output in json mode
+NAME=avgjl # output in json mode
 FILE==
 CMDS=<<EOF
 avga foo int @ 0x100
 avga bar char @ 0x1000
-avgj
+avglj
 EOF
 EXPECT=<<EOF
-[{"name":"foo","type":"int","addr":"0x100"},{"name":"bar","type":"char","addr":"0x1000"}]
+[{"name":"foo","type":"int","size":4,"addr":"0x100"},{"name":"bar","type":"char","size":1,"addr":"0x1000"}]
 EOF
 RUN
 
@@ -30,13 +30,13 @@ FILE==
 CMDS=<<EOF
 avga foo int @ 0x100
 avga bar char @ 0x1000
-avg
+avgl
 avgd 0x100
-avg
+avgl
 avga foofoo int @ 0x100
-avg
+avgl
 avgd 0x102
-avg
+avgl
 EOF
 EXPECT=<<EOF
 global int foo @ 0x100
@@ -52,9 +52,9 @@ NAME=avgn # rename global variable
 FILE==
 CMDS=<<EOF
 avga foo int @ 0x100
-avg
+avgl
 avgn foo bar
-avg
+avgl
 EOF
 EXPECT=<<EOF
 global int foo @ 0x100
@@ -66,25 +66,25 @@ NAME=avgt # retype global variable
 FILE==
 CMDS=<<EOF
 avga foo int @ 0x100
-avg
+avgl
 avgt foo char
-avg
+avgl
 avgt foo "struct a { int a; char b; };"
-avg
+avgl
 avgt foo "struct { int a; char b; void (*c)(int a, char b); };"
-avg
+avgl
 avgt foo "union { int a; char b; };"
-avg
+avgl
 avgt foo "enum { A=0,B,C,D };"
-avg
+avgl
 avgt foo "enum foo { A=0,B,C,D };"
-avg
+avgl
 avgt foo "void (*a)(int a, char b);"
-avg
+avgl
 avgt foo "char *"
-avg
+avgl
 avgt foo "char [50]"
-avg
+avgl
 EOF
 EXPECT=<<EOF
 global int foo @ 0x100
@@ -100,10 +100,10 @@ global char [50] foo @ 0x100
 EOF
 RUN
 
-NAME=avg <non-existing-var>
+NAME=avgl <non-existing-var>
 FILE==
 CMDS=<<EOF
-avg foo
+avgl foo
 EOF
 EXPECT=<<EOF
 EOF

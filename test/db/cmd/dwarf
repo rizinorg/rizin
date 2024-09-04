@@ -518,7 +518,7 @@ NAME="Static variables inside function"
 FILE=bins/elf/dwarf/static_var
 CMDS=<<EOF
 aaa
-avg
+avgl
 avgx qwe
 avgx bla
 echo "fn1"
@@ -554,7 +554,7 @@ NAME="Global and static variables"
 FILE=bins/elf/dwarf_go_tree
 CMDS=<<EOF
 aaa
-avg
+avgl
 EOF
 EXPECT=<<EOF
 global error internal/oserror.ErrClosed @ 0x565370

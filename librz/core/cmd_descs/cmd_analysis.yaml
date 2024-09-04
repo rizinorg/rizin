@@ -1544,13 +1544,14 @@ commands:
       - name: avg
         summary: Global variables
         subcommands:
-          - name: avg
-            summary: show global variables
+          - name: avgl
+            summary: show/list global variables
             type: RZ_CMD_DESC_TYPE_ARGV_STATE
             cname: analysis_print_global_variable
             modes:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_JSON
+              - RZ_OUTPUT_MODE_TABLE
             args:
               - name: var_name
                 type: RZ_CMD_ARG_TYPE_GLOBAL_VAR
