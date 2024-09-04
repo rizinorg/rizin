@@ -1,0 +1,9 @@
+[wrap-git]
+url = https://github.com/rizinorg/softfloat
+revision = 05dc625eecbccae9113403248cb33730600ed722
+directory = softfloat_cross_native
+depth = 1
+
+[provide]
+dependency_names = softfloat_cross_native
+softfloat_cross_native = softfloat_cross_native_dep
