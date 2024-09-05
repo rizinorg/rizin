@@ -655,14 +655,6 @@ static int rz_debug_native_drx(RzDebug *dbg, int n, ut64 addr, int sz, int rwx, 
 #define PTRACE_SETHBPREGS 30
 #endif
 
-static bool ll_arm32_hwbp_set(pid_t pid, ut64 addr, int size, int wp, int type) {
-	const unsigned byte_mask = (1 << size) - 1;
-	// const unsigned type = 2; // Write.
-	const unsigned enable = 1;
-	const unsigned control = byte_mask << 5 | type << 3 | enable;
-	(void)ptrace(PTRACE_SETHBPREGS, pid, -1, (void *)(size_t)addr);
-	return ptrace(PTRACE_SETHBPREGS, pid, -2, &control) != -1;
-}
 
 #if PTRACE_GETREGSET
 // type = 2 = write
