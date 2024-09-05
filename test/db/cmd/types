@@ -8303,3 +8303,25 @@ EXPECT=<<EOF
  4 fd: 6 +0x00000d98 0x00200d98 - 0x0020100f r-- vmap.LOAD1
 EOF
 RUN
+
+NAME=tp nested structs with typedefs
+FILE=--
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+td "typedef struct { int a; char b; struct { float c; char d[5]; } q; long long *z; } bla_t"
+td "typedef struct { char a; unsigned b; long long *z; } moo_t"
+td "typedef struct { void *a; char b[10]; struct { double c; char d[5]; } q;} goo_t"
+td "typedef struct { bla_t bla[2]; moo_t moot; goo_t goot; } bmg"
+tl bmg;
+tl bla_t;
+tl moo_t;
+tl goo_t;
+EOF
+EXPECT=<<EOF
+typedef bmg (0x2a0) "[2]??? (bla_t)bla (moo_t)moot (goo_t)goot"
+typedef bla_t (0xb0) "dc?*q a b (anonymous struct 1)q z"
+typedef moo_t (0x48) "c*q a z"
+typedef goo_t (0xf8) "p[10]c? a b (anonymous struct 4)q"
+EOF
+RUN

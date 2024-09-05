@@ -2850,7 +2850,11 @@ static void base_type_to_format_no_unfold(const RzTypeDB *typedb, RZ_NONNULL RzB
 		char *fmt = rz_type_as_format(typedb, type->type);
 		if (fmt) {
 			rz_strbuf_append(format, fmt);
-			rz_strbuf_appendf(fields, "%s ", identifier);
+			if (!rz_type_is_atomic(typedb, type->type)) {
+				rz_strbuf_appendf(fields, "(%s)%s ", type->name, identifier);
+			} else {
+				rz_strbuf_appendf(fields, "%s ", identifier);
+			}
 		} else {
 			type_to_format_pair(typedb, format, fields, identifier, type->type);
 		}
