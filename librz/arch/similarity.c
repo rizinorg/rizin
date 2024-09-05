@@ -563,3 +563,29 @@ RZ_API RZ_OWN RzAnalysisMatchResult *rz_analysis_match_functions(RzList /*<RzAna
 	}
 	return analysis_match_result_new(opt, list_a, list_b, (RzThreadFunction)analysis_match_functions, (AllocateBuffer)function_data_new);
 }
+
+/**
+ * \brief Function performs equality check of two functions \p fcn_a and \p fcn_b
+ */
+RZ_API bool rz_analysis_function_eq(RZ_NONNULL RzAnalysisFunction *fcn_a, RZ_NONNULL RzAnalysisFunction *fcn_b) {
+	rz_return_val_if_fail(fcn_a && fcn_b, false);
+	if (rz_pvector_len(fcn_a->bbs) != rz_pvector_len(fcn_b->bbs)) {
+		return false;
+	}
+
+	size_t len = rz_pvector_len(fcn_a->bbs);
+	for (unsigned int i = 0; i < len; i++) {
+		RzAnalysisBlock *bb_a = (RzAnalysisBlock *)rz_pvector_at(fcn_a->bbs, i);
+		RzAnalysisBlock *bb_b = (RzAnalysisBlock *)rz_pvector_at(fcn_b->bbs, i);
+		if (!bb_a || !bb_b) {
+			return false;
+		}
+		if (bb_a->size != bb_b->size && bb_a->ninstr != bb_b->ninstr) {
+			return false;
+		}
+		if (bb_a->bbhash != bb_b->bbhash) {
+			return false;
+		}
+	}
+	return true;
+}
