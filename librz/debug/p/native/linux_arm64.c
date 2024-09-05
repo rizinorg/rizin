@@ -655,7 +655,6 @@ static int rz_debug_native_drx(RzDebug *dbg, int n, ut64 addr, int sz, int rwx, 
 #define PTRACE_SETHBPREGS 30
 #endif
 
-
 #if PTRACE_GETREGSET
 // type = 2 = write
 // static volatile uint8_t var[96] __attribute__((__aligned__(32)));
