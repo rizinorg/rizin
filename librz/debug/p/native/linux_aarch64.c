@@ -11,7 +11,6 @@
 #include <sys/mman.h>
 #include "linux/linux_debug.h"
 #include "procfs.h"
-#include "linux/linux_coredump.h"
 
 #ifdef __WALL
 #define WAITPID_FLAGS __WALL
@@ -782,6 +781,5 @@ static int rz_debug_desc_native_open(const char *path) {
 }
 
 static bool rz_debug_gcore(RzDebug *dbg, char *path, RzBuffer *dest) {
-	(void)path;
-	return linux_generate_corefile(dbg, dest);
+	return false;
 }
