@@ -11,7 +11,6 @@
 #include <sys/mman.h>
 #include "linux/linux_debug.h"
 #include "procfs.h"
-#include "linux/linux_coredump.h"
 
 #ifdef __WALL
 #define WAITPID_FLAGS __WALL
@@ -641,98 +640,7 @@ static int rz_debug_native_drx(RzDebug *dbg, int n, ut64 addr, int sz, int rwx, 
 	return -1;
 }
 
-#include <sys/prctl.h>
-#include <sys/uio.h>
-
-#define NT_ARM_VFP         0x400 /* ARM VFP/NEON registers */
-#define NT_ARM_TLS         0x401 /* ARM TLS register */
-#define NT_ARM_HW_BREAK    0x402 /* ARM hardware breakpoint registers */
-#define NT_ARM_HW_WATCH    0x403 /* ARM hardware watchpoint registers */
-#define NT_ARM_SYSTEM_CALL 0x404 /* ARM system call number */
-
-#ifndef PTRACE_GETHBPREGS
-#define PTRACE_GETHBPREGS 29
-#define PTRACE_SETHBPREGS 30
-#endif
-
-#if PTRACE_GETREGSET
-// type = 2 = write
-// static volatile uint8_t var[96] __attribute__((__aligned__(32)));
-
-static bool ll_arm64_hwbp_set(pid_t pid, ut64 _addr, int size, int wp, ut32 type) {
-	const volatile uint8_t *addr = (void *)(size_t)_addr; //&var[32 + wp];
-	const unsigned int offset = (uintptr_t)addr % 8;
-	const ut32 byte_mask = ((1 << size) - 1) << offset;
-	const ut32 enable = 1;
-	const ut32 control = byte_mask << 5 | type << 3 | enable;
-
-	struct user_hwdebug_state dreg_state = { 0 };
-	struct iovec iov = { 0 };
-	iov.iov_base = &dreg_state;
-	iov.iov_len = sizeof(dreg_state);
-
-	if (ptrace(PTRACE_GETREGSET, pid, NT_ARM_HW_WATCH, &iov) == -1) {
-		// error reading regs
-	}
-	memcpy(&dreg_state, iov.iov_base, sizeof(dreg_state));
-	// wp is not honored here i think... we can't have more than one wp for now..
-	dreg_state.dbg_regs[0].addr = (uintptr_t)(addr - offset);
-	dreg_state.dbg_regs[0].ctrl = control;
-	iov.iov_base = &dreg_state;
-	iov.iov_len = rz_offsetof(struct user_hwdebug_state, dbg_regs) +
-		sizeof(dreg_state.dbg_regs[0]);
-	if (ptrace(PTRACE_SETREGSET, pid, NT_ARM_HW_WATCH, &iov) == 0) {
-		return true;
-	}
-
-	if (errno == EIO) {
-		eprintf("ptrace(PTRACE_SETREGSET, NT_ARM_HW_WATCH) not supported on this hardware: %s\n",
-			strerror(errno));
-	}
-
-	eprintf("ptrace(PTRACE_SETREGSET, NT_ARM_HW_WATCH) failed: %s\n", strerror(errno));
-	return false;
-}
-
-static bool ll_arm64_hwbp_del(pid_t pid, ut64 _addr, int size, int wp, ut32 type) {
-	// const volatile uint8_t *addr = &var[32 + wp];
-	// TODO: support multiple watchpoints and find
-	struct user_hwdebug_state dreg_state = { 0 };
-	struct iovec iov = { 0 };
-	iov.iov_base = &dreg_state;
-	// only delete 1 bp for now
-	iov.iov_len = rz_offsetof(struct user_hwdebug_state, dbg_regs) +
-		sizeof(dreg_state.dbg_regs[0]);
-	if (ptrace(PTRACE_SETREGSET, pid, NT_ARM_HW_WATCH, &iov) == 0) {
-		return true;
-	}
-	if (errno == EIO) {
-		eprintf("ptrace(PTRACE_SETREGSET, NT_ARM_HW_WATCH) not supported on this hardware: %s\n",
-			strerror(errno));
-	}
-
-	eprintf("ptrace(PTRACE_SETREGSET, NT_ARM_HW_WATCH) failed: %s\n", strerror(errno));
-	return false;
-}
-
-static bool arm64_hwbp_add(RzDebug *dbg, RzBreakpoint *bp, RzBreakpointItem *b) {
-	return ll_arm64_hwbp_set(dbg->pid, b->addr, b->size, 0, 1 | 2 | 4);
-}
-
-static bool arm64_hwbp_del(RzDebug *dbg, RzBreakpoint *bp, RzBreakpointItem *b) {
-	return ll_arm64_hwbp_del(dbg->pid, b->addr, b->size, 0, 1 | 2 | 4);
-}
-
-#endif
-
 static int rz_debug_native_bp(RzBreakpoint *bp, RzBreakpointItem *b, bool set) {
-#if PTRACE_GETREGSET
-	if (b && b->hw) {
-		return set
-			? arm64_hwbp_add((RzDebug *)bp->user, bp, b)
-			: arm64_hwbp_del((RzDebug *)bp->user, bp, b);
-	}
-#endif
 	return false;
 }
 
@@ -782,6 +690,5 @@ static int rz_debug_desc_native_open(const char *path) {
 }
 
 static bool rz_debug_gcore(RzDebug *dbg, char *path, RzBuffer *dest) {
-	(void)path;
-	return linux_generate_corefile(dbg, dest);
+	return false;
 }
