@@ -4497,6 +4497,9 @@ RZ_IPI bool rz_analysis_var_global_list_show(RzAnalysis *analysis, RzCmdStateOut
 		}
 		ut64 var_size = rz_type_db_get_bitsize(analysis->typedb, glob->type) / 8;
 		switch (state->mode) {
+		case RZ_OUTPUT_MODE_QUIET:
+			rz_cons_println(glob->name);
+			break;
 		case RZ_OUTPUT_MODE_STANDARD:
 			rz_cons_printf("global %s %s @ 0x%" PFMT64x "\n",
 				var_type, glob->name, glob->addr);
