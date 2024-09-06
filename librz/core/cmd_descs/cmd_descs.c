@@ -19977,7 +19977,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(av_cd);
 	RzCmdDesc *avg_cd = rz_cmd_desc_group_new(core->rcmd, av_cd, "avg", NULL, NULL, &avg_help);
 	rz_warn_if_fail(avg_cd);
-	RzCmdDesc *analysis_print_global_variable_cd = rz_cmd_desc_argv_state_new(core->rcmd, avg_cd, "avgl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_TABLE, rz_analysis_print_global_variable_handler, &analysis_print_global_variable_help);
+	RzCmdDesc *analysis_print_global_variable_cd = rz_cmd_desc_argv_state_new(core->rcmd, avg_cd, "avgl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_TABLE, rz_analysis_print_global_variable_handler, &analysis_print_global_variable_help);
 	rz_warn_if_fail(analysis_print_global_variable_cd);
 
 	RzCmdDesc *analysis_global_variable_add_cd = rz_cmd_desc_argv_new(core->rcmd, avg_cd, "avga", rz_analysis_global_variable_add_handler, &analysis_global_variable_add_help);
