@@ -540,12 +540,12 @@ fn1
 arg int b origin=DWARF @ rbp-8
 arg int a origin=DWARF @ rbp-4
 var int arg1 @ rdi
-var uintmax_t arg2 @ rsi
+var unsigned long long arg2 @ rsi
 fn2
 arg void *q origin=DWARF @ rbp-8
 var float *arg1 @ rdi
 main
-var uintmax_t var_18h @ stack - 0x18
+var unsigned long long var_18h @ stack - 0x18
 var int64_t var_ch @ stack - 0xc
 EOF
 RUN

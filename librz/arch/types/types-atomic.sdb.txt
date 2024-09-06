@@ -2,6 +2,10 @@ void=type
 type.void=
 type.void.size=0
 
+_Bool=type
+type._Bool=b
+type._Bool.size=8
+
 bool=type
 type.bool=b
 type.bool.size=8
@@ -16,15 +20,15 @@ type.short=w
 type.short.size=16
 type.short.typeclass=Signed Integral
 
+short int=type
+type.short int=w
+type.short int.size=16
+type.short int.typeclass=Signed Integral
+
 int=type
 type.int=d
 type.int.size=32
 type.int.typeclass=Signed Integral
-
-long=type
-type.long=x
-type.long.size=64
-type.long.typeclass=Signed Integral
 
 float=type
 type.float=f
@@ -35,6 +39,71 @@ double=type
 type.double=F
 type.double.size=64
 type.double.typeclass=Floating
+
+signed int=type
+type.signed int=i
+type.signed int.size=32
+type.signed int.typeclass=Signed Integral
+
+signed char=type
+type.signed char=b
+type.signed char.size=8
+type.signed char.typeclass=Signed Integral
+
+signed short=type
+type.signed short=w
+type.signed short.size=16
+type.signed short.typeclass=Signed Integral
+
+signed short int=type
+type.signed short int=w
+type.signed short int.size=16
+type.signed short int.typeclass=Signed Integral
+
+short signed int=type
+type.short signed int=w
+type.short signed int.size=16
+type.short signed int.typeclass=Signed Integral
+
+signed long=type
+type.signed long=d
+type.signed long.size=32
+type.signed long.typeclass=Signed Integral
+
+long unsigned=type
+type.long unsigned=d
+type.long unsigned.size=32
+type.long unsigned.typeclass=Signed Integral
+
+signed long int=type
+type.signed long int=d
+type.signed long int.size=32
+type.signed long int.typeclass=Signed Integral
+
+long signed int=type
+type.long signed int=d
+type.long signed int.size=32
+type.long signed int.typeclass=Signed Integral
+
+signed long long=type
+type.signed long long=q
+type.signed long long.size=64
+type.signed long long.typeclass=Signed Integral
+
+long long signed=type
+type.long long signed=q
+type.long long signed.size=64
+type.long long signed.typeclass=Signed Integral
+
+signed long long int=type
+type.signed long long int=q
+type.signed long long int.size=64
+type.signed long long int.typeclass=Signed Integral
+
+long long signed int=type
+type.long long signed int=q
+type.long long signed int.size=64
+type.long long signed int.typeclass=Signed Integral
 
 unsigned int=type
 type.unsigned int=i
@@ -51,20 +120,35 @@ type.unsigned short=w
 type.unsigned short.size=16
 type.unsigned short.typeclass=Unsigned Integral
 
-unsigned long=type
-type.unsigned long=d
-type.unsigned long.size=32
-type.unsigned long.typeclass=Unsigned Integral
+unsigned short int=type
+type.unsigned short int=w
+type.unsigned short int.size=16
+type.unsigned short int.typeclass=Unsigned Integral
+
+short unsigned int=type
+type.short unsigned int=w
+type.short unsigned int.size=16
+type.short unsigned int.typeclass=Unsigned Integral
 
 unsigned long long=type
 type.unsigned long long=q
 type.unsigned long long.size=64
 type.unsigned long long.typeclass=Unsigned Integral
 
-long int=type
-type.long int=x
-type.long int.size=64
-type.long int.typeclass=Signed Integral
+long long unsigned=type
+type.long long unsigned=q
+type.long long unsigned.size=64
+type.long long unsigned.typeclass=Unsigned Integral
+
+unsigned long long int=type
+type.unsigned long long int=q
+type.unsigned long long int.size=64
+type.unsigned long long int.typeclass=Unsigned Integral
+
+long long unsigned int=type
+type.long long unsigned int=q
+type.long long unsigned int.size=64
+type.long long unsigned int.typeclass=Unsigned Integral
 
 long double=type
 type.long double=F

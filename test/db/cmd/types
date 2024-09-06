@@ -216,7 +216,7 @@ pf "F long double"
 pf "f float"
 pf "d int"
 pf "w short"
-pf "x long"
+pf "q long"
 pf "q long long"
 pf "q size_t"
 pf "q uid_t"
@@ -1613,8 +1613,8 @@ ar bp=0x98
 afvd var_70h
 EOF
 EXPECT=<<EOF
-var uint64_t var_80h @ stack - 0x80
-var uint64_t var_71h @ stack - 0x71
+var unsigned long long var_80h @ stack - 0x80
+var unsigned long long var_71h @ stack - 0x71
 var int64_t var_70h @ stack - 0x70
 var char *var_60h @ stack - 0x60
 var int64_t var_58h @ stack - 0x58
@@ -1627,8 +1627,8 @@ var int64_t var_40h @ stack - 0x40
 arg int64_t arg_5h @ stack + 0x5
 arg int argc @ rdi
 arg char **argv @ rsi
-var uint64_t var_80h @ stack - 0x80
-var uint64_t var_71h @ stack - 0x71
+var unsigned long long var_80h @ stack - 0x80
+var unsigned long long var_71h @ stack - 0x71
 var char [20] var_70h @ stack - 0x70
 var int64_t var_58h @ stack - 0x58
 var int64_t var_56h @ stack - 0x56
@@ -1788,10 +1788,10 @@ s sym.funcarg
 pd 1
 EOF
 EXPECT=<<EOF
-sym.funcarg(const char *arg1, uint64_t arg2);
+sym.funcarg(const char *arg1, unsigned long long arg2);
 ; arg const char *arg1 @ rdi
-; arg uint64_t arg2 @ rsi
-; var uint64_t var_14h @ stack - 0x14
+; arg unsigned long long arg2 @ rsi
+; var unsigned long long var_14h @ stack - 0x14
 ; var const char *var_10h @ stack - 0x10
 0x0000068a      55             push  rbp
 EOF
@@ -1809,10 +1809,10 @@ s sym.funcarg
 pd 1
 EOF
 EXPECT=<<EOF
-sym.funcarg(const char *arg_4h, unsigned long arg_8h);
+sym.funcarg(const char *arg_4h, size_t arg_8h);
 ; var int32_t var_8h @ stack - 0x8
 ; arg const char *arg_4h @ stack + 0x4
-; arg unsigned long arg_8h @ stack + 0x8
+; arg size_t arg_8h @ stack + 0x8
 0x0000054d      55             push  ebp
 EOF
 RUN
@@ -1879,7 +1879,7 @@ EOF
 EXPECT=<<EOF
 var int var_3ch @ stack - 0x3c
 var int64_t var_38h @ stack - 0x38
-var uint64_t var_30h @ stack - 0x30
+var unsigned long long var_30h @ stack - 0x30
 EOF
 RUN
 
@@ -1893,7 +1893,7 @@ afvl
 EOF
 EXPECT=<<EOF
 var void *va_args @ stack - 0x3c
-var uint64_t var_34h @ stack - 0x34
+var unsigned long long var_34h @ stack - 0x34
 var FILE *stream @ stack - 0x30
 var const char *s @ stack - 0x28
 var const char *var_20h @ stack - 0x20
@@ -1932,9 +1932,9 @@ var int *wstatus @ stack - 0x14d4
 var int64_t var_14cch @ stack - 0x14cc
 var int64_t var_14c8h @ stack - 0x14c8
 var int64_t var_14c4h @ stack - 0x14c4
-var uint64_t pid @ stack - 0x14c0
-var uint64_t var_14bch @ stack - 0x14bc
-var uint64_t var_14b8h @ stack - 0x14b8
+var unsigned long long pid @ stack - 0x14c0
+var unsigned long long var_14bch @ stack - 0x14bc
+var unsigned long long var_14b8h @ stack - 0x14b8
 var int64_t var_14b4h @ stack - 0x14b4
 var const char *var_14b0h @ stack - 0x14b0
 var const char *s @ stack - 0x14a8
@@ -1950,9 +1950,9 @@ var int64_t var_20h @ stack - 0x20
 arg int argc @ rdi
 arg char **argv @ rsi
 var char *str @ stack - 0xb8
-var int64_t var_ach @ stack - 0xac
+var long long signed int var_ach @ stack - 0xac
 var int64_t var_a8h @ stack - 0xa8
-var uint64_t var_a4h @ stack - 0xa4
+var unsigned long long var_a4h @ stack - 0xa4
 var int var_a0h @ stack - 0xa0
 var int var_9ch @ stack - 0x9c
 var int var_98h @ stack - 0x98
@@ -1971,14 +1971,14 @@ var char *var_68h @ stack - 0x68
 var char *var_60h @ stack - 0x60
 var char *var_58h @ stack - 0x58
 var char *var_50h @ stack - 0x50
-var uint64_t var_48h @ stack - 0x48
+var unsigned long long var_48h @ stack - 0x48
 var const char *s1 @ stack - 0x40
 var const char *s @ stack - 0x38
 var const char *var_30h @ stack - 0x30
 var const char *var_28h @ stack - 0x28
 var int64_t var_20h @ stack - 0x20
 var int64_t var_10h @ stack - 0x10
-arg int64_t arg1 @ rdi
+arg long long signed int arg1 @ rdi
 arg char *arg2 @ rsi
 EOF
 RUN
@@ -2317,13 +2317,13 @@ EOF
 EXPECT=<<EOF
 int64_t
 const char *
-uint64_t
+unsigned long long
 int
 char **
 =
 int64_t
 const char *
-uint64_t
+unsigned long long
 const void *
 size_t
 mbstate_t *

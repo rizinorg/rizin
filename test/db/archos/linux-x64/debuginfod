@@ -69,7 +69,7 @@ paddr      size  vaddr      vsize align perm name               type       flags
 |           ; var char **arg1 @ rdi
 |           ; var const char *arg2 @ rsi
 |           ; var int64_t arg7 @ xmm0
-|           ; var uintmax_t arg3 @ rdx
+|           ; var unsigned long long arg3 @ rdx
 |           ; var some_t *arg4 @ rcx
 |           ; arg int a @ stack - 0x10
 |           ; arg char *g @ stack - 0x18
