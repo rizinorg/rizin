@@ -4311,10 +4311,10 @@ arg int64_t arg2 @ rsi
 void fcn.00010270(int64_t arg1, int64_t arg2, const char **s, int64_t arg4, int64_t arg5);
 var const char *s2 @ stack - 0xc8
 var void *s1 @ stack - 0xc0
-var uint64_t var_b8h @ stack - 0xb8
+var unsigned long long var_b8h @ stack - 0xb8
 var int64_t var_b0h @ stack - 0xb0
 var int64_t var_a8h @ stack - 0xa8
-var uint64_t var_98h @ stack - 0x98
+var unsigned long long var_98h @ stack - 0x98
 var int64_t var_94h @ stack - 0x94
 var int64_t var_90h @ stack - 0x90
 var int64_t var_88h @ stack - 0x88
