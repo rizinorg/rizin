@@ -202,20 +202,20 @@ static const char *arg(csh *handle, cs_insn *insn, char *buf, int n) {
 
 static int analyze_op_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
 	char str[8][32] = { { 0 } };
-	int i;
 
 	rz_strbuf_init(&op->esil);
 	rz_strbuf_set(&op->esil, "");
 
-	if (insn) {
-		// caching operands
-		for (i = 0; i < insn->detail->mips.op_count && i < 8; i++) {
-			*str[i] = 0;
-			ARG(i);
-		}
+	if (!insn) {
+		return 0;
 	}
 
-	if (insn) {
+	// caching operands
+	for (int i = 0; i < insn->detail->mips.op_count && i < 8; i++) {
+		*str[i] = 0;
+		ARG(i);
+	}
+	{
 		switch (insn->id) {
 		case MIPS_INS_NOP:
 			rz_strbuf_setf(&op->esil, ",");
@@ -245,10 +245,28 @@ static int analyze_op_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8
 			rz_strbuf_appendf(&op->esil, "%s,%s,=[1]",
 				ARG(0), ARG(1));
 			break;
+#if CS_NEXT_VERSION >= 6
+		case MIPS_INS_CMPU_LE_QB:
+		case MIPS_INS_CMPGU_LE_QB:
+		case MIPS_INS_CMPGDU_LE_QB:
+			rz_strbuf_appendf(&op->esil, "%s,%s,<=", ARG(1), ARG(0));
+			break;
+		case MIPS_INS_CMPU_LT_QB:
+		case MIPS_INS_CMPGU_LT_QB:
+		case MIPS_INS_CMPGDU_LT_QB:
+			rz_strbuf_appendf(&op->esil, "%s,%s,<", ARG(1), ARG(0));
+			break;
+#endif /* CS_NEXT_VERSION */
 		case MIPS_INS_CMP:
+#if CS_NEXT_VERSION < 6
 		case MIPS_INS_CMPU:
 		case MIPS_INS_CMPGU:
 		case MIPS_INS_CMPGDU:
+#else
+		case MIPS_INS_CMPU_EQ_QB:
+		case MIPS_INS_CMPGU_EQ_QB:
+		case MIPS_INS_CMPGDU_EQ_QB:
+#endif /* CS_NEXT_VERSION */
 		case MIPS_INS_CMPI:
 			rz_strbuf_appendf(&op->esil, "%s,%s,==", ARG(1), ARG(0));
 			break;
@@ -257,16 +275,36 @@ static int analyze_op_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8
 				"%s,%s,>>,31,%s,>>,?{,32,%s,32,-,0xffffffff,<<,0xffffffff,&,<<,}{,0,},|,%s,=",
 				ARG(2), ARG(1), ARG(1), ARG(2), ARG(0));
 			break;
+#if CS_NEXT_VERSION < 6
 		case MIPS_INS_SHRAV:
 		case MIPS_INS_SHRAV_R:
 		case MIPS_INS_SHRA:
 		case MIPS_INS_SHRA_R:
+#else
+		case MIPS_INS_SHRA_PH:
+		case MIPS_INS_SHRA_QB:
+		case MIPS_INS_SHRA_R_PH:
+		case MIPS_INS_SHRA_R_QB:
+		case MIPS_INS_SHRA_R_W:
+		case MIPS_INS_SHRAV_PH:
+		case MIPS_INS_SHRAV_QB:
+		case MIPS_INS_SHRAV_R_PH:
+		case MIPS_INS_SHRAV_R_QB:
+		case MIPS_INS_SHRAV_R_W:
+#endif /* CS_NEXT_VERSION */
 		case MIPS_INS_SRA:
 			rz_strbuf_appendf(&op->esil,
 				"0xffffffff,%s,%s,>>,&,31,%s,>>,?{,%s,32,-,0xffffffff,<<,0xffffffff,&,}{,0,},|,%s,=",
 				ARG(2), ARG(1), ARG(1), ARG(2), ARG(0));
 			break;
+#if CS_NEXT_VERSION < 6
 		case MIPS_INS_SHRL:
+#else
+		case MIPS_INS_SHRL_PH:
+		case MIPS_INS_SHRL_QB:
+		case MIPS_INS_SHRLV_PH:
+		case MIPS_INS_SHRLV_QB:
+#endif /* CS_NEXT_VERSION */
 			// suffix 'S' forces conditional flag to be updated
 		case MIPS_INS_SRLV:
 		case MIPS_INS_SRL:
@@ -320,7 +358,15 @@ static int analyze_op_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8
 			rz_strbuf_appendf(&op->esil, ES_TRAP_DS() "%s,%s,==,$z,?{," ES_J("%s") ",}",
 				ARG(0), ARG(1), ARG(2));
 			break;
+#if CS_NEXT_VERSION < 6
 		case MIPS_INS_BZ:
+#else
+		case MIPS_INS_BZ_B:
+		case MIPS_INS_BZ_D:
+		case MIPS_INS_BZ_H:
+		case MIPS_INS_BZ_V:
+		case MIPS_INS_BZ_W:
+#endif /* CS_NEXT_VERSION */
 		case MIPS_INS_BEQZ:
 		case MIPS_INS_BEQZC:
 			rz_strbuf_appendf(&op->esil, ES_TRAP_DS() "%s,0,==,$z,?{," ES_J("%s") ",}",
@@ -383,7 +429,12 @@ static int analyze_op_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8
 		case MIPS_INS_BTNEZ:
 			rz_strbuf_appendf(&op->esil, ES_TRAP_DS() "0,t,==,$z,!,?{," ES_J("%s") ",}", ARG(0));
 			break;
+#if CS_NEXT_VERSION < 6
 		case MIPS_INS_MOV:
+#else
+		case MIPS_INS_MOV_D:
+		case MIPS_INS_MOV_S:
+#endif /* CS_NEXT_VERSION */
 		case MIPS_INS_MOVE:
 			PROTECT_ZERO() {
 				rz_strbuf_appendf(&op->esil, "%s,%s,=", ARG(1), REG(0));
@@ -402,7 +453,12 @@ static int analyze_op_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8
 					ARG(2), ARG(1), REG(0));
 			}
 			break;
+#if CS_NEXT_VERSION < 6
 		case MIPS_INS_FSUB:
+#else
+		case MIPS_INS_FSUB_D:
+		case MIPS_INS_FSUB_W:
+#endif /* CS_NEXT_VERSION */
 		case MIPS_INS_SUB:
 		case MIPS_INS_SUBU:
 		case MIPS_INS_DSUB:
@@ -412,8 +468,13 @@ static int analyze_op_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8
 					ARG(2), ARG(1), ARG(0));
 			}
 			break;
-		case MIPS_INS_NEG:
+#if CS_NEXT_VERSION < 6
 		case MIPS_INS_NEGU:
+#else
+		case MIPS_INS_NEG_D:
+		case MIPS_INS_NEG_S:
+#endif /* CS_NEXT_VERSION */
+		case MIPS_INS_NEG:
 			rz_strbuf_appendf(&op->esil, "%s,0,-,%s,=,",
 				ARG(1), ARG(0));
 			break;
@@ -452,7 +513,14 @@ static int analyze_op_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8
 			}
 		} break;
 		case MIPS_INS_LI:
+#if CS_NEXT_VERSION < 6
 		case MIPS_INS_LDI:
+#else
+		case MIPS_INS_LDI_B:
+		case MIPS_INS_LDI_D:
+		case MIPS_INS_LDI_H:
+		case MIPS_INS_LDI_W:
+#endif /* CS_NEXT_VERSION */
 			rz_strbuf_appendf(&op->esil, "0x%" PFMT64x ",%s,=", (ut64)IMM(1), ARG(0));
 			break;
 		case MIPS_INS_LUI:
@@ -578,18 +646,6 @@ static int analyze_op_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8
 			rz_strbuf_appendf(&op->esil, "%s,hi,=", REG(0));
 			ES_SIGN32_64("hi");
 			break;
-#if 0
-	// could not test div
-	case MIPS_INS_DIV:
-	case MIPS_INS_DIVU:
-	case MIPS_INS_DDIV:
-	case MIPS_INS_DDIVU:
-		PROTECT_ZERO () {
-			// 32 bit needs sign extend
-			rz_strbuf_appendf (&op->esil, "%s,%s,/,lo,=,%s,%s,%%,hi,=", REG(1), REG(0), REG(1), REG(0));
-		}
-		break;
-#endif
 		default:
 			return -1;
 		}
@@ -790,302 +846,6 @@ static int analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const u
 	case MIPS_INS_INVALID:
 		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 		break;
-	case MIPS_INS_LB:
-	case MIPS_INS_LBU:
-	case MIPS_INS_LBUX:
-		op->refptr = 1;
-		/* fallthrough */
-	case MIPS_INS_LW:
-	case MIPS_INS_LWC1:
-	case MIPS_INS_LWC2:
-	case MIPS_INS_LWL:
-	case MIPS_INS_LWR:
-	case MIPS_INS_LWXC1:
-		if (!op->refptr) {
-			op->refptr = 4;
-		}
-		/* fallthrough */
-	case MIPS_INS_LD:
-	case MIPS_INS_LDC1:
-	case MIPS_INS_LDC2:
-	case MIPS_INS_LDL:
-	case MIPS_INS_LDR:
-	case MIPS_INS_LDXC1:
-		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
-		if (!op->refptr) {
-			op->refptr = 8;
-		}
-		switch (OPERAND(1).type) {
-		case MIPS_OP_MEM:
-			if (OPERAND(1).mem.base == MIPS_REG_GP) {
-				op->ptr = analysis->gp + OPERAND(1).mem.disp;
-				if (REGID(0) == MIPS_REG_T9) {
-					t9_pre = op->ptr;
-				}
-			} else if (REGID(0) == MIPS_REG_T9) {
-				t9_pre = UT64_MAX;
-			}
-			break;
-		case MIPS_OP_IMM:
-			op->ptr = OPERAND(1).imm;
-			break;
-		case MIPS_OP_REG:
-			break;
-		default:
-			break;
-		}
-		// TODO: fill
-		break;
-	case MIPS_INS_SD:
-	case MIPS_INS_SW:
-	case MIPS_INS_SB:
-	case MIPS_INS_SH:
-	case MIPS_INS_SWC1:
-	case MIPS_INS_SWC2:
-	case MIPS_INS_SWL:
-	case MIPS_INS_SWR:
-	case MIPS_INS_SWXC1:
-		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
-		break;
-	case MIPS_INS_NOP:
-		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
-		break;
-	case MIPS_INS_SYSCALL:
-		op->type = RZ_ANALYSIS_OP_TYPE_SWI;
-		break;
-	case MIPS_INS_BREAK:
-		op->type = RZ_ANALYSIS_OP_TYPE_TRAP;
-		break;
-	case MIPS_INS_JALR:
-		op->type = RZ_ANALYSIS_OP_TYPE_UCALL;
-		op->delay = 1;
-		if (REGID(0) == MIPS_REG_25) {
-			op->jump = t9_pre;
-			t9_pre = UT64_MAX;
-			op->type = RZ_ANALYSIS_OP_TYPE_RCALL;
-		}
-		break;
-	case MIPS_INS_JAL:
-	case MIPS_INS_JALS:
-	case MIPS_INS_JALX:
-	case MIPS_INS_JRADDIUSP:
-	case MIPS_INS_BAL:
-	// (no blezal/bgtzal or blezall/bgtzall, only blezalc/bgtzalc)
-	case MIPS_INS_BLTZAL: // Branch on <0 and link
-	case MIPS_INS_BGEZAL: // Branch on >=0 and link
-	case MIPS_INS_BLTZALL: // "likely" versions
-	case MIPS_INS_BGEZALL:
-	case MIPS_INS_BLTZALC: // compact versions
-	case MIPS_INS_BLEZALC:
-	case MIPS_INS_BGEZALC:
-	case MIPS_INS_BGTZALC:
-	case MIPS_INS_JIALC:
-	case MIPS_INS_JIC:
-		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
-		op->jump = IMM(0);
-
-		switch (insn->id) {
-		case MIPS_INS_JIALC:
-		case MIPS_INS_JIC:
-		case MIPS_INS_BLTZALC:
-		case MIPS_INS_BLEZALC:
-		case MIPS_INS_BGEZALC:
-		case MIPS_INS_BGTZALC:
-			// compact versions (no delay)
-			op->delay = 0;
-			op->fail = addr + 4;
-			break;
-		default:
-			op->delay = 1;
-			op->fail = addr + 8;
-			break;
-		}
-		break;
-	case MIPS_INS_LI:
-	case MIPS_INS_LUI:
-		SET_VAL(op, 1);
-		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
-		break;
-	case MIPS_INS_MOVE:
-		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
-		break;
-	case MIPS_INS_ADD:
-	case MIPS_INS_ADDI:
-	case MIPS_INS_ADDU:
-	case MIPS_INS_ADDIU:
-	case MIPS_INS_DADD:
-	case MIPS_INS_DADDI:
-	case MIPS_INS_DADDIU:
-		SET_VAL(op, 2);
-		op->sign = (insn->id == MIPS_INS_ADDI || insn->id == MIPS_INS_ADD);
-		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
-		if (REGID(0) == MIPS_REG_T9) {
-			t9_pre += IMM(2);
-		}
-		if (REGID(0) == MIPS_REG_SP) {
-			op->stackop = RZ_ANALYSIS_STACK_INC;
-			op->stackptr = -IMM(2);
-		}
-		break;
-	case MIPS_INS_SUB:
-	case MIPS_INS_SUBV:
-	case MIPS_INS_SUBVI:
-	case MIPS_INS_DSUBU:
-	case MIPS_INS_FSUB:
-	case MIPS_INS_FMSUB:
-	case MIPS_INS_SUBU:
-	case MIPS_INS_DSUB:
-	case MIPS_INS_SUBS_S:
-	case MIPS_INS_SUBS_U:
-	case MIPS_INS_SUBUH:
-	case MIPS_INS_SUBUH_R:
-		SET_VAL(op, 2);
-		op->sign = insn->id == MIPS_INS_SUB;
-		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
-		break;
-	case MIPS_INS_MULV:
-	case MIPS_INS_MULT:
-	case MIPS_INS_MULSA:
-	case MIPS_INS_FMUL:
-	case MIPS_INS_MUL:
-	case MIPS_INS_DMULT:
-	case MIPS_INS_DMULTU:
-		op->type = RZ_ANALYSIS_OP_TYPE_MUL;
-		break;
-	case MIPS_INS_XOR:
-	case MIPS_INS_XORI:
-		SET_VAL(op, 2);
-		op->type = RZ_ANALYSIS_OP_TYPE_XOR;
-		break;
-	case MIPS_INS_AND:
-	case MIPS_INS_ANDI:
-		SET_VAL(op, 2);
-		op->type = RZ_ANALYSIS_OP_TYPE_AND;
-		if (REGID(0) == MIPS_REG_SP) {
-			op->stackop = RZ_ANALYSIS_STACK_ALIGN;
-		}
-		break;
-	case MIPS_INS_NOT:
-		op->type = RZ_ANALYSIS_OP_TYPE_NOT;
-		break;
-	case MIPS_INS_OR:
-	case MIPS_INS_ORI:
-		SET_VAL(op, 2);
-		op->type = RZ_ANALYSIS_OP_TYPE_OR;
-		break;
-	case MIPS_INS_DIV:
-	case MIPS_INS_DIVU:
-	case MIPS_INS_DDIV:
-	case MIPS_INS_DDIVU:
-	case MIPS_INS_FDIV:
-	case MIPS_INS_DIV_S:
-	case MIPS_INS_DIV_U:
-		op->type = RZ_ANALYSIS_OP_TYPE_DIV;
-		break;
-	case MIPS_INS_CMPGDU:
-	case MIPS_INS_CMPGU:
-	case MIPS_INS_CMPU:
-	case MIPS_INS_CMPI:
-		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
-		break;
-	case MIPS_INS_J:
-	case MIPS_INS_B:
-	case MIPS_INS_BZ:
-	case MIPS_INS_BEQ:
-	case MIPS_INS_BNZ:
-	case MIPS_INS_BNE:
-	case MIPS_INS_BNEL:
-	case MIPS_INS_BEQL:
-	case MIPS_INS_BEQZ:
-	case MIPS_INS_BNEG:
-	case MIPS_INS_BNEGI:
-	case MIPS_INS_BNEZ:
-	case MIPS_INS_BTEQZ:
-	case MIPS_INS_BTNEZ:
-	case MIPS_INS_BLTZ:
-	case MIPS_INS_BLTZL:
-	case MIPS_INS_BLEZ:
-	case MIPS_INS_BLEZL:
-	case MIPS_INS_BGEZ:
-	case MIPS_INS_BGEZL:
-	case MIPS_INS_BGTZ:
-	case MIPS_INS_BGTZL:
-	case MIPS_INS_BLEZC:
-	case MIPS_INS_BGEZC:
-	case MIPS_INS_BLTZC:
-	case MIPS_INS_BGTZC:
-		if (insn->id == MIPS_INS_J || insn->id == MIPS_INS_B) {
-			op->type = RZ_ANALYSIS_OP_TYPE_JMP;
-		} else {
-			op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-		}
-
-		if (OPERAND(0).type == MIPS_OP_IMM) {
-			op->jump = IMM(0);
-		} else if (OPERAND(1).type == MIPS_OP_IMM) {
-			op->jump = IMM(1);
-		} else if (OPERAND(2).type == MIPS_OP_IMM) {
-			op->jump = IMM(2);
-		}
-
-		switch (insn->id) {
-		case MIPS_INS_BLEZC:
-		case MIPS_INS_BGEZC:
-		case MIPS_INS_BLTZC:
-		case MIPS_INS_BGTZC:
-			// compact versions (no delay)
-			op->delay = 0;
-			op->fail = addr + 4;
-			break;
-		default:
-			op->delay = 1;
-			op->fail = addr + 8;
-			break;
-		}
-
-		break;
-	case MIPS_INS_JR:
-	case MIPS_INS_JRC:
-		op->type = RZ_ANALYSIS_OP_TYPE_RJMP;
-		op->delay = 1;
-		// register is $ra, so jmp is a return
-		if (insn->detail->mips.operands[0].reg == MIPS_REG_RA) {
-			op->type = RZ_ANALYSIS_OP_TYPE_RET;
-			t9_pre = UT64_MAX;
-		}
-		if (REGID(0) == MIPS_REG_25) {
-			op->jump = t9_pre;
-			t9_pre = UT64_MAX;
-		}
-
-		break;
-	case MIPS_INS_SLT:
-	case MIPS_INS_SLTI:
-		op->sign = true;
-		SET_VAL(op, 2);
-		break;
-	case MIPS_INS_SLTIU:
-		SET_VAL(op, 2);
-		break;
-	case MIPS_INS_SHRAV:
-	case MIPS_INS_SHRAV_R:
-	case MIPS_INS_SHRA:
-	case MIPS_INS_SHRA_R:
-	case MIPS_INS_SRA:
-		op->type = RZ_ANALYSIS_OP_TYPE_SAR;
-		SET_VAL(op, 2);
-		break;
-	case MIPS_INS_SHRL:
-	case MIPS_INS_SRLV:
-	case MIPS_INS_SRL:
-		op->type = RZ_ANALYSIS_OP_TYPE_SHR;
-		SET_VAL(op, 2);
-		break;
-	case MIPS_INS_SLLV:
-	case MIPS_INS_SLL:
-		op->type = RZ_ANALYSIS_OP_TYPE_SHL;
-		SET_VAL(op, 2);
-		break;
 	}
 beach:
 	set_opdir(op);
@@ -1244,7 +1004,7 @@ static bool mips_fini(void *user) {
 	return true;
 }
 
-RzAnalysisPlugin rz_analysis_plugin_mips_cs = {
+RzAnalysisPlugin rz_analysis_plugin_mips = {
 	.name = "mips",
 	.desc = "Capstone MIPS analyzer",
 	.license = "BSD",
@@ -1262,7 +1022,7 @@ RzAnalysisPlugin rz_analysis_plugin_mips_cs = {
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct rizin_plugin = {
 	.type = RZ_LIB_TYPE_ANALYSIS,
-	.data = &rz_analysis_plugin_mips_cs,
+	.data = &rz_analysis_plugin_mips,
 	.version = RZ_VERSION
 };
 #endif
