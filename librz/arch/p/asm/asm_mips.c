@@ -85,7 +85,7 @@ static int mips_assemble(RzAsm *a, RzAsmOp *op, const char *str) {
 	return ret;
 }
 
-RzAsmPlugin rz_asm_plugin_mips_cs = {
+RzAsmPlugin rz_asm_plugin_mips = {
 	.name = "mips",
 	.desc = "Capstone MIPS disassembler",
 	.license = "BSD",
@@ -103,7 +103,7 @@ RzAsmPlugin rz_asm_plugin_mips_cs = {
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct rizin_plugin = {
 	.type = RZ_LIB_TYPE_ASM,
-	.data = &rz_asm_plugin_mips_cs,
+	.data = &rz_asm_plugin_mips,
 	.version = RZ_VERSION
 };
 #endif
