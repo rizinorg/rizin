@@ -463,6 +463,7 @@ typedef struct {
 
 typedef struct rz_analysis_t {
 	char *cpu; // analysis.cpu
+	char *features; // analysis.features
 	char *os; // asm.os
 	int bits; // asm.bits
 	int lineswidth; // asm.lines.width

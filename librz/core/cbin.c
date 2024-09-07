@@ -13,6 +13,7 @@
 
 #include "../bin/dwarf/dwarf_private.h"
 #include "core_private.h"
+#include "rz_util/rz_str.h"
 
 #define is_invalid_address_va(va, vaddr, paddr)  (((va) && (vaddr) == UT64_MAX) || (!(va) && (paddr) == UT64_MAX))
 #define is_invalid_address_va2(va, vaddr, paddr) (((va) != VA_FALSE && (vaddr) == UT64_MAX) || ((va) == VA_FALSE && (paddr) == UT64_MAX))
@@ -24,14 +25,14 @@
 
 #define LOAD_BSS_MALLOC 0
 
-#define IS_MODE_SET(mode)       ((mode)&RZ_MODE_SET)
-#define IS_MODE_SIMPLE(mode)    ((mode)&RZ_MODE_SIMPLE)
-#define IS_MODE_SIMPLEST(mode)  ((mode)&RZ_MODE_SIMPLEST)
-#define IS_MODE_JSON(mode)      ((mode)&RZ_MODE_JSON)
-#define IS_MODE_RZCMD(mode)     ((mode)&RZ_MODE_RIZINCMD)
-#define IS_MODE_EQUAL(mode)     ((mode)&RZ_MODE_EQUAL)
+#define IS_MODE_SET(mode)       ((mode) & RZ_MODE_SET)
+#define IS_MODE_SIMPLE(mode)    ((mode) & RZ_MODE_SIMPLE)
+#define IS_MODE_SIMPLEST(mode)  ((mode) & RZ_MODE_SIMPLEST)
+#define IS_MODE_JSON(mode)      ((mode) & RZ_MODE_JSON)
+#define IS_MODE_RZCMD(mode)     ((mode) & RZ_MODE_RIZINCMD)
+#define IS_MODE_EQUAL(mode)     ((mode) & RZ_MODE_EQUAL)
 #define IS_MODE_NORMAL(mode)    (!(mode))
-#define IS_MODE_CLASSDUMP(mode) ((mode)&RZ_MODE_CLASSDUMP)
+#define IS_MODE_CLASSDUMP(mode) ((mode) & RZ_MODE_CLASSDUMP)
 
 // dup from cmd_info
 #define PAIR_WIDTH "9"
@@ -584,10 +585,10 @@ RZ_API bool rz_core_bin_apply_config(RzCore *r, RzBinFile *binfile) {
 		rz_config_set(r->config, "analysis.cpp.abi", "itanium");
 	}
 	rz_config_set(r->config, "asm.arch", info->arch);
-	if (info->cpu && *info->cpu) {
+	if (RZ_STR_ISNOTEMPTY(info->cpu)) {
 		rz_config_set(r->config, "asm.cpu", info->cpu);
 	}
-	if (info->features && *info->features) {
+	if (RZ_STR_ISNOTEMPTY(info->features)) {
 		rz_config_set(r->config, "asm.features", info->features);
 	}
 	rz_config_set(r->config, "analysis.arch", info->arch);
@@ -5241,8 +5242,8 @@ static void print_arch(RzBin *bin, RzCmdStateOutput *state, struct arch_ctx *ctx
 		pj_ki(state->d.pj, "bits", ctx->bits);
 		pj_kn(state->d.pj, "offset", ctx->offset);
 		pj_kn(state->d.pj, "size", ctx->size);
-		if (info && !strcmp(ctx->arch, "mips")) {
-			pj_ks(state->d.pj, "isa", info->cpu);
+		if (info) {
+			pj_ks(state->d.pj, "cpu", info->cpu);
 			pj_ks(state->d.pj, "features", info->features);
 		}
 		if (ctx->machine) {

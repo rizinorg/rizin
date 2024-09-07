@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2013-2021 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include "aarch64.h"
 #include <rz_analysis.h>
 #include <rz_lib.h>
 #include <rz_util/ht_uu.h>
@@ -525,37 +526,37 @@ static void opex64(RzStrBuf *buf, csh handle, cs_insn *insn) {
 			pj_ki(pj, "value", op->barrier - 1);
 			break;
 #else
-		case AArch64_OP_SYSALIAS:
+		case AARCH64_OP_SYSALIAS:
 			switch (op->sysop.sub_type) {
 			default:
 				pj_ks(pj, "type", "sys");
 				pj_kn(pj, "value", op->sysop.alias.raw_val);
 				break;
-			case AArch64_OP_PSTATEIMM0_1:
+			case AARCH64_OP_PSTATEIMM0_1:
 				pj_ks(pj, "type", "pstate");
 				pj_ki(pj, "value", op->sysop.alias.pstateimm0_1);
 				break;
-			case AArch64_OP_PSTATEIMM0_15:
+			case AARCH64_OP_PSTATEIMM0_15:
 				pj_ks(pj, "type", "pstate");
 				switch (op->sysop.alias.pstateimm0_15) {
-				case AArch64_PSTATEIMM0_15_SPSEL:
+				case AARCH64_PSTATEIMM0_15_SPSEL:
 					pj_ks(pj, "value", "spsel");
 					break;
-				case AArch64_PSTATEIMM0_15_DAIFSET:
+				case AARCH64_PSTATEIMM0_15_DAIFSET:
 					pj_ks(pj, "value", "daifset");
 					break;
-				case AArch64_PSTATEIMM0_15_DAIFCLR:
+				case AARCH64_PSTATEIMM0_15_DAIFCLR:
 					pj_ks(pj, "value", "daifclr");
 					break;
 				default:
 					pj_ki(pj, "value", op->sysop.alias.pstateimm0_15);
 				}
 				break;
-			case AArch64_OP_PRFM:
+			case AARCH64_OP_PRFM:
 				pj_ks(pj, "type", "prefetch");
 				pj_ki(pj, "value", op->sysop.alias.prfm);
 				break;
-			case AArch64_OP_DB:
+			case AARCH64_OP_DB:
 				pj_ks(pj, "type", "prefetch");
 				pj_ki(pj, "value", op->sysop.alias.db);
 				break;
@@ -599,7 +600,7 @@ static void opex64(RzStrBuf *buf, csh handle, cs_insn *insn) {
 #if CS_NEXT_VERSION < 6
 		if (op->vas != CS_AARCH64_VL_(INVALID)) {
 #else
-		if (op->vas != AArch64Layout_Invalid) {
+		if (op->vas != AARCH64LAYOUT_INVALID) {
 #endif
 			pj_ks(pj, "vas", vas_name(op->vas));
 		}
@@ -689,23 +690,23 @@ static int cond_cs2rz_64(int cc) {
 
 #if CS_NEXT_VERSION >= 6
 static bool is_system_hint(const cs_insn *insn) {
-	rz_return_val_if_fail(insn && insn->id == AArch64_INS_HINT, false);
+	rz_return_val_if_fail(insn && insn->id == AARCH64_INS_HINT, false);
 	switch (insn->alias_id) {
 	default:
 		return false;
-	case AArch64_INS_ALIAS_PACIA1716:
-	case AArch64_INS_ALIAS_PACIASP:
-	case AArch64_INS_ALIAS_PACIAZ:
-	case AArch64_INS_ALIAS_PACIB1716:
-	case AArch64_INS_ALIAS_PACIBSP:
-	case AArch64_INS_ALIAS_PACIBZ:
-	case AArch64_INS_ALIAS_AUTIA1716:
-	case AArch64_INS_ALIAS_AUTIASP:
-	case AArch64_INS_ALIAS_AUTIAZ:
-	case AArch64_INS_ALIAS_AUTIB1716:
-	case AArch64_INS_ALIAS_AUTIBSP:
-	case AArch64_INS_ALIAS_AUTIBZ:
-	case AArch64_INS_ALIAS_XPACLRI:
+	case AARCH64_INS_ALIAS_PACIA1716:
+	case AARCH64_INS_ALIAS_PACIASP:
+	case AARCH64_INS_ALIAS_PACIAZ:
+	case AARCH64_INS_ALIAS_PACIB1716:
+	case AARCH64_INS_ALIAS_PACIBSP:
+	case AARCH64_INS_ALIAS_PACIBZ:
+	case AARCH64_INS_ALIAS_AUTIA1716:
+	case AARCH64_INS_ALIAS_AUTIASP:
+	case AARCH64_INS_ALIAS_AUTIAZ:
+	case AARCH64_INS_ALIAS_AUTIB1716:
+	case AARCH64_INS_ALIAS_AUTIBSP:
+	case AARCH64_INS_ALIAS_AUTIBZ:
+	case AARCH64_INS_ALIAS_XPACLRI:
 		return true;
 	}
 }
@@ -732,17 +733,17 @@ static void anop64(AnalysisArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 	}
 #else
 	/* grab family */
-	if (cs_insn_group(handle, insn, AArch64_FEATURE_HasAES)) {
+	if (cs_insn_group(handle, insn, AARCH64_FEATURE_HASAES)) {
 		op->family = RZ_ANALYSIS_OP_FAMILY_CRYPTO;
-	} else if (cs_insn_group(handle, insn, AArch64_FEATURE_HasCRC)) {
+	} else if (cs_insn_group(handle, insn, AARCH64_FEATURE_HASCRC)) {
 		op->family = RZ_ANALYSIS_OP_FAMILY_CRYPTO;
-	} else if (cs_insn_group(handle, insn, AArch64_GRP_PRIVILEGE)) {
+	} else if (cs_insn_group(handle, insn, AARCH64_GRP_PRIVILEGE)) {
 		op->family = RZ_ANALYSIS_OP_FAMILY_PRIV;
-	} else if (cs_insn_group(handle, insn, AArch64_FEATURE_HasNEON)) {
+	} else if (cs_insn_group(handle, insn, AARCH64_FEATURE_HASNEON)) {
 		op->family = RZ_ANALYSIS_OP_FAMILY_MMX;
-	} else if (cs_insn_group(handle, insn, AArch64_FEATURE_HasMTE)) {
+	} else if (cs_insn_group(handle, insn, AARCH64_FEATURE_HASMTE)) {
 		op->family = RZ_ANALYSIS_OP_FAMILY_SECURITY;
-	} else if (cs_insn_group(handle, insn, AArch64_FEATURE_HasFPARMv8)) {
+	} else if (cs_insn_group(handle, insn, AARCH64_FEATURE_HASFPARMV8)) {
 		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
 	} else {
 		op->family = RZ_ANALYSIS_OP_FAMILY_CPU;
@@ -1012,7 +1013,7 @@ static void anop64(AnalysisArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 		break;
 #if CS_NEXT_VERSION >= 6
 	case CS_AARCH64(_INS_ADDS):
-		if (is_alias64(insn, AArch64_INS_ALIAS_CMN)) {
+		if (is_alias64(insn, AARCH64_INS_ALIAS_CMN)) {
 			op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 		} else {
 			op->type = RZ_ANALYSIS_OP_TYPE_ADD;
@@ -1022,7 +1023,7 @@ static void anop64(AnalysisArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 		}
 		break;
 	case CS_AARCH64(_INS_SUBS):
-		if (is_alias64(insn, AArch64_INS_ALIAS_CMP)) {
+		if (is_alias64(insn, AARCH64_INS_ALIAS_CMP)) {
 			op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 		} else {
 			op->type = RZ_ANALYSIS_OP_TYPE_SUB;
@@ -1032,7 +1033,7 @@ static void anop64(AnalysisArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 		}
 		break;
 	case CS_AARCH64(_INS_ANDS):
-		if (is_alias64(insn, AArch64_INS_ALIAS_TST)) {
+		if (is_alias64(insn, AARCH64_INS_ALIAS_TST)) {
 			op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 		} else {
 			op->type = RZ_ANALYSIS_OP_TYPE_AND;

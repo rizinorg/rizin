@@ -128,6 +128,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->os = rz_bin_te_get_os(bf->o->bin_obj);
 	ret->arch = rz_bin_te_get_arch(bf->o->bin_obj);
 	ret->machine = rz_bin_te_get_machine(bf->o->bin_obj);
+	ret->cpu = rz_bin_te_get_cpu(bf->o->bin_obj);
 	ret->subsystem = rz_bin_te_get_subsystem(bf->o->bin_obj);
 	ret->type = rz_str_dup("EXEC (Executable file)");
 	ret->bits = rz_bin_te_get_bits(bf->o->bin_obj);
