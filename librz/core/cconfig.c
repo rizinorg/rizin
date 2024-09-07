@@ -475,6 +475,27 @@ static bool cb_asm_varfold(void *core, void *node) {
 	return false;
 }
 
+static void handle_cpu_feature(RzConfig *config, const char *supported, const char *cpu) {
+	// strdup is required when calling rz_config_set, because it will free the old value
+	char *cpu_copy = rz_str_dup(cpu);
+
+	// we need to duplicate supported because rz_str_split_list will modify the string.
+	char *supported_copy = rz_str_dup(supported);
+	RzList *cpu_list = rz_str_split_list(supported_copy, ",", 0);
+	RzListIter *it;
+	const char *lcpu;
+	rz_list_foreach (cpu_list, it, lcpu) {
+		if (!strcmp(lcpu, cpu_copy)) {
+			rz_config_set(config, "asm.cpu", cpu_copy);
+			break;
+		}
+	}
+
+	rz_list_free(cpu_list);
+	free(supported_copy);
+	free(cpu_copy);
+}
+
 static bool cb_asmarch(void *user, void *data) {
 	char asmparser[32];
 	RzCore *core = (RzCore *)user;
@@ -509,25 +530,14 @@ static bool cb_asmarch(void *user, void *data) {
 		RZ_LOG_ERROR("core: asm.arch: cannot find (%s)\n", node->value);
 		return false;
 	}
-	// we should rz_str_dup here otherwise will crash if any rz_config_set
-	// free the old value
 	char *asm_cpu = rz_str_dup(rz_config_get(core->config, "asm.cpu"));
 	if (core->rasm->cur) {
-		const char *newAsmCPU = core->rasm->cur->cpus;
-		if (newAsmCPU) {
-			if (*newAsmCPU) {
-				char *nac = rz_str_dup(newAsmCPU);
-				char *comma = strchr(nac, ',');
-				if (comma) {
-					if (!*asm_cpu || (*asm_cpu && !strstr(nac, asm_cpu))) {
-						*comma = 0;
-						rz_config_set(core->config, "asm.cpu", nac);
-					}
-				}
-				free(nac);
-			} else {
-				rz_config_set(core->config, "asm.cpu", "");
-			}
+		const char *cpus_supported = core->rasm->cur->cpus;
+		if (RZ_STR_ISNOTEMPTY(cpus_supported) &&
+			RZ_STR_ISNOTEMPTY(asm_cpu)) {
+			handle_cpu_feature(core->config, cpus_supported, asm_cpu);
+		} else {
+			rz_config_set(core->config, "asm.cpu", "");
 		}
 		bits = core->rasm->cur->bits;
 		if (8 & bits) {
@@ -724,8 +734,10 @@ static bool cb_asmfeatures(void *user, void *data) {
 		return 0;
 	}
 	RZ_FREE(core->rasm->features);
+	RZ_FREE(core->analysis->features);
 	if (node->value[0]) {
 		core->rasm->features = rz_str_dup(node->value);
+		core->analysis->features = rz_str_dup(node->value);
 	}
 	return 1;
 }
