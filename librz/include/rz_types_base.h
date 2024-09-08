@@ -4,7 +4,19 @@
 #include <ctype.h>
 #include <sys/types.h>
 #include <limits.h>
+
+#if defined(_MSC_VER)
+// required to forbid the declaration
+// of __ucrt_int_to_float which is
+// included from 10.0.25182.0, where
+// `math.h` includes `corecrt_math.h`
+#define __midl
+#endif
 #include <math.h>
+#if defined(_MSC_VER)
+// remove __midl
+#undef __midl
+#endif
 
 #define cut8  const unsigned char
 #define ut64  unsigned long long
