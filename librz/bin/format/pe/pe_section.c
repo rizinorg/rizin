@@ -232,7 +232,10 @@ struct rz_bin_pe_section_t *PE_(rz_bin_pe_get_sections)(RzBinPEObj *bin) {
 			sec_name[PE_IMAGE_SIZEOF_SHORT_NAME] = '\0';
 			int idx = atoi(sec_name + 1);
 			ut64 sym_tbl_off = bin->nt_headers->file_header.PointerToSymbolTable;
-			int num_symbols = bin->nt_headers->file_header.NumberOfSymbols;
+			st64 num_symbols = bin->nt_headers->file_header.NumberOfSymbols;
+			if (ST32_MUL_OVFCHK(num_symbols, COFF_SYMBOL_SIZE)) {
+				continue;
+			}
 			st64 off = num_symbols * COFF_SYMBOL_SIZE;
 			if (off > 0 && sym_tbl_off &&
 				sym_tbl_off + off + idx < bin->size &&
