@@ -2547,12 +2547,16 @@ reread:
 		} break;
 		case 'd': // "cd"
 		{
-			RzSearchKeyword *kw;
-			kw = rz_search_keyword_new_hex("308200003082", "ffff0000fffc", NULL);
+			// Certificate with version number
+			RzSearchKeyword *kw_1 = rz_search_keyword_new_hex("30820000308100A0030201", "ffff0000fffc00ffffffff", NULL);
+			RzSearchKeyword *kw_2 = rz_search_keyword_new_hex("3082000030820000A0030201", "ffff0000fffc0000ffffffff", NULL);
+			// Certificate with serial number
+			RzSearchKeyword *kw_3 = rz_search_keyword_new_hex("308200003082000002", "ffff0000fffc0000ff", NULL);
 			rz_search_reset(core->search, RZ_SEARCH_KEYWORD);
-			if (kw) {
-				rz_search_kw_add(core->search, kw);
-				// eprintf ("Searching %d byte(s)...\n", kw->keyword_length);
+			if (kw_1 && kw_2 && kw_3) {
+				rz_search_kw_add(core->search, kw_1);
+				rz_search_kw_add(core->search, kw_2);
+				rz_search_kw_add(core->search, kw_3);
 				rz_search_begin(core->search);
 			} else {
 				RZ_LOG_ERROR("core: null pointer on search keyword\n");
