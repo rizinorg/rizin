@@ -24,7 +24,7 @@ ut64 rz_bin_te_get_stripped_delta(struct rz_bin_te_obj_t *bin) {
 #define parse_header_value(off, bits, key) \
 	do { \
 		if (!rz_buf_read_le##bits##_at(bin->b, off, &bin->header->key)) { \
-			RZ_LOG_ERROR("Cannot read TE_image_file_header." macro_str(key) "\n"); \
+			RZ_LOG_ERROR("Failed to read TE_image_file_header." macro_str(key) "\n"); \
 			return false; \
 		} \
 		off += (bits / 8); \
@@ -95,10 +95,10 @@ ut64 rz_bin_te_get_main_paddr(struct rz_bin_te_obj_t *bin) {
 		return 0LL;
 	}
 	if (rz_buf_read_at(bin->b, entry->paddr, buf, sizeof(buf)) == -1) {
-		eprintf("Error: read (entry)\n");
+		RZ_LOG_ERROR("Failed to read TE entry\n");
 	} else {
 		if (buf[367] == 0xe8) {
-			int delta = (buf[368] | buf[369] << 8 | buf[370] << 16 | buf[371] << 24);
+			int delta = rz_read_at_le32(buf, 368);
 			delta += 367 + 5;
 			addr = entry->vaddr;
 			if (delta >= (UT64_MAX - addr)) {
@@ -129,16 +129,16 @@ static TE_DWord rz_bin_te_vaddr_to_paddr(struct rz_bin_te_obj_t *bin, TE_DWord v
 static int rz_bin_te_init_sections(struct rz_bin_te_obj_t *bin) {
 	int sections_size = sizeof(TE_image_section_header) * bin->header->NumberOfSections;
 	if (sections_size > bin->size) {
-		eprintf("Invalid NumberOfSections value\n");
+		RZ_LOG_ERROR("Invalid TE NumberOfSections value\n");
 		return false;
 	}
 	if (!(bin->section_header = malloc(sections_size))) {
-		perror("malloc (sections headers)");
+		RZ_LOG_ERROR("Failed to allocate TE sections headers\n");
 		return false;
 	}
 	if (rz_buf_read_at(bin->b, sizeof(TE_image_file_header),
 		    (ut8 *)bin->section_header, sections_size) == -1) {
-		eprintf("Error: read (sections headers)\n");
+		RZ_LOG_ERROR("Failed to read TE sections headers\n");
 		return false;
 	}
 	return true;
@@ -149,11 +149,11 @@ static int rz_bin_te_init(struct rz_bin_te_obj_t *bin) {
 	bin->section_header = NULL;
 	bin->endian = 0;
 	if (!rz_bin_te_init_hdr(bin)) {
-		eprintf("Warning: File is not TE\n");
+		RZ_LOG_WARN("File is not TE\n");
 		return false;
 	}
 	if (!rz_bin_te_init_sections(bin)) {
-		eprintf("Warning: Cannot initialize sections\n");
+		RZ_LOG_WARN("Cannot initialize sections\n");
 		return false;
 	}
 	return true;
