@@ -2548,7 +2548,7 @@ reread:
 		case 'd': // "cd"
 		{
 			RzSearchKeyword *kw;
-			kw = rz_search_keyword_new_hex("308200003082", "ffff0000ffff", NULL);
+			kw = rz_search_keyword_new_hex("308200003082", "ffff0000fffc", NULL);
 			rz_search_reset(core->search, RZ_SEARCH_KEYWORD);
 			if (kw) {
 				rz_search_kw_add(core->search, kw);
