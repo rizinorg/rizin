@@ -14,7 +14,6 @@
 #define STRUCTPTR       100
 #define NESTEDSTRUCT    1
 #define STRUCTFLAG      10000
-#define NESTDEPTH       14
 #define ARRAYINDEX_COEF 10000
 
 #define MUSTSEE       (mode & RZ_PRINT_MUSTSEE && mode & RZ_PRINT_ISFIELD && !(mode & RZ_PRINT_JSON))
@@ -27,6 +26,9 @@
 // this define is used as a way to acknowledge when updateAddr should take len
 // as real len of the buffer
 #define THRESHOLD (-4444)
+
+// Maximum depth level of structure unfolding
+#define STRUCT_MAX_NESTED_LEVELS 50
 
 // TODO REWRITE THIS IS BECOMING A NIGHTMARE
 
@@ -1423,7 +1425,7 @@ static void rz_type_format_num_specifier(RzStrBuf *outbuf, ut64 addr, int bytes,
 	} else if (bytes == 2) {
 		rz_strbuf_appendf(outbuf, fs, EXT(short));
 	} else if (bytes == 4) {
-		rz_strbuf_appendf(outbuf, fs, EXT(int)); // XXX: int is not necessarily 4 bytes I guess.
+		rz_strbuf_appendf(outbuf, fs, EXT(long));
 	} else if (bytes == 8) {
 		rz_strbuf_appendf(outbuf, fs64, addr);
 	}
@@ -1512,14 +1514,18 @@ static void rz_type_format_num(RzStrBuf *outbuf, int endian, int mode, const cha
 }
 
 // XXX: this is somewhat incomplete. must be updated to handle all format chars
-RZ_API int rz_type_format_struct_size(const RzTypeDB *typedb, const char *f, int mode, int n) {
+static int format_struct_size(const RzTypeDB *typedb, const char *parent_format, const char *f, int mode, int depth) {
 	char *end, *args, *fmt;
 	int size = 0, tabsize = 0, i, idx = 0, biggest = 0, fmt_len = 0, times = 1;
 	bool tabsize_set = false;
 	if (!f) {
 		return -1;
 	}
-	if (n >= 5) { // This is the nesting level, is this not a bit arbitrary?!
+	if (parent_format && RZ_STR_EQ(parent_format, f)) {
+		return 0;
+	}
+	if (depth >= STRUCT_MAX_NESTED_LEVELS) {
+		RZ_LOG_WARN("Structure nesting depth level reached maximum...\n");
 		return 0;
 	}
 	const char *fmt2 = rz_type_db_format_get(typedb, f);
@@ -1682,7 +1688,7 @@ RZ_API int rz_type_format_struct_size(const RzTypeDB *typedb, const char *f, int
 				free(o);
 				return 0;
 			}
-			int newsize = rz_type_format_struct_size(typedb, format, mode, n + 1);
+			int newsize = format_struct_size(typedb, f, format, mode, depth + 1);
 			if (newsize < 1) {
 				RZ_LOG_ERROR("Cannot find size for `%s'\n", format);
 				free(structname);
@@ -1769,6 +1775,10 @@ RZ_API int rz_type_format_struct_size(const RzTypeDB *typedb, const char *f, int
 	return (mode & RZ_PRINT_UNIONMODE) ? biggest : size;
 }
 
+RZ_API int rz_type_format_struct_size(const RzTypeDB *typedb, const char *f, int mode, int n) {
+	return format_struct_size(typedb, NULL, f, mode, n);
+}
+
 static int rz_type_format_data_internal(const RzTypeDB *typedb, RzPrint *p, RzStrBuf *outbuf, ut64 seek, const ut8 *b, const int len,
 	const char *formatname, int mode, const char *setval, char *ofield);
 
@@ -1778,8 +1788,8 @@ static int rz_type_format_struct(const RzTypeDB *typedb, RzPrint *p, RzStrBuf *o
 	int ret = 0;
 	char namefmt[128];
 	slide++;
-	if ((slide % STRUCTPTR) > NESTDEPTH || (slide % STRUCTFLAG) / STRUCTPTR > NESTDEPTH) {
-		eprintf("Too much nested struct, recursion too deep...\n");
+	if ((slide % STRUCTPTR) > STRUCT_MAX_NESTED_LEVELS || (slide % STRUCTFLAG) / STRUCTPTR > STRUCT_MAX_NESTED_LEVELS) {
+		RZ_LOG_WARN("Structure nesting depth level reached maximum...\n");
 		return 0;
 	}
 	if (anon) {
