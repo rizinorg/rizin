@@ -185,40 +185,120 @@ type.uint8_t=b
 type.uint8_t.size=8
 type.uint8_t.typeclass=Unsigned Integral
 
+uint_fast8_t=type
+type.uint_fast8_t=b
+type.uint_fast8_t.size=8
+type.uint_fast8_t.typeclass=Unsigned Integral
+
+uint_least8_t=type
+type.uint_least8_t=b
+type.uint_least8_t.size=8
+type.uint_least8_t.typeclass=Unsigned Integral
+
 uint16_t=type
 type.uint16_t=w
 type.uint16_t.size=16
 type.uint16_t.typeclass=Unsigned Integral
+
+uint_fast16_t=type
+type.uint_fast16_t=w
+type.uint_fast16_t.size=16
+type.uint_fast16_t.typeclass=Unsigned Integral
+
+uint_least16_t=type
+type.uint_least16_t=w
+type.uint_least16_t.size=16
+type.uint_least16_t.typeclass=Unsigned Integral
 
 uint32_t=type
 type.uint32_t=d
 type.uint32_t.size=32
 type.uint32_t.typeclass=Unsigned Integral
 
+uint_fast32_t=type
+type.uint_fast32_t=d
+type.uint_fast32_t.size=32
+type.uint_fast32_t.typeclass=Unsigned Integral
+
+uint_least32_t=type
+type.uint_least32_t=d
+type.uint_least32_t.size=32
+type.uint_least32_t.typeclass=Unsigned Integral
+
 uint64_t=type
 type.uint64_t=q
 type.uint64_t.size=64
 type.uint64_t.typeclass=Unsigned Integral
+
+uint_fast64_t=type
+type.uint_fast64_t=q
+type.uint_fast64_t.size=64
+type.uint_fast64_t.typeclass=Unsigned Integral
+
+uint_least64_t=type
+type.uint_least64_t=q
+type.uint_least64_t.size=64
+type.uint_least64_t.typeclass=Unsigned Integral
 
 int8_t=type
 type.int8_t=b
 type.int8_t.size=8
 type.int8_t.typeclass=Signed Integral
 
+int_fast8_t=type
+type.int_fast8_t=b
+type.int_fast8_t.size=8
+type.int_fast8_t.typeclass=Signed Integral
+
+int_least8_t=type
+type.int_least8_t=b
+type.int_least8_t.size=8
+type.int_least8_t.typeclass=Signed Integral
+
 int16_t=type
 type.int16_t=w
 type.int16_t.size=16
 type.int16_t.typeclass=Signed Integral
+
+int_fast16_t=type
+type.int_fast16_t=w
+type.int_fast16_t.size=16
+type.int_fast16_t.typeclass=Signed Integral
+
+int_least16_t=type
+type.int_least16_t=w
+type.int_least16_t.size=16
+type.int_least16_t.typeclass=Signed Integral
 
 int32_t=type
 type.int32_t=d
 type.int32_t.size=32
 type.int32_t.typeclass=Signed Integral
 
+int_fast32_t=type
+type.int_fast32_t=d
+type.int_fast32_t.size=32
+type.int_fast32_t.typeclass=Signed Integral
+
+int_least32_t=type
+type.int_least32_t=d
+type.int_least32_t.size=32
+type.int_least32_t.typeclass=Signed Integral
+
 int64_t=type
 type.int64_t=q
 type.int64_t.size=64
 type.int64_t.typeclass=Signed Integral
+
+int_fast64_t=type
+type.int_fast64_t=q
+type.int_fast64_t.size=64
+type.int_fast64_t.typeclass=Signed Integral
+
+int_least64_t=type
+type.int_least64_t=q
+type.int_least64_t.size=64
+type.int_least64_t.typeclass=Signed Integral
 
 intmax_t=type
 type.intmax_t=q
