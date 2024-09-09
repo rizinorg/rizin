@@ -23,7 +23,7 @@ static char *ts_node_sub_string(TSNode node, const char *cstr) {
 }
 
 // Declare the `tree_sitter_c` function, which is
-// implemented by the `tree-sitter-c` library.
+// implemented by the `rizin-grammar-c` (fork of `tree-sitter-c`) library.
 TSLanguage *tree_sitter_c();
 
 // Declare the `tree_sitter_cpp` function, which is

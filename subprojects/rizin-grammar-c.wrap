@@ -1,0 +1,6 @@
+[wrap-git]
+url = https://github.com/rizinorg/rizin-grammar-c
+revision = 81d96d8822b4ae5983a1c6bae0f9fe764b666581
+patch_directory = rizin-grammar-c
+directory = rizin-grammar-c
+depth = 1
