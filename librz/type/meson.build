@@ -13,14 +13,14 @@ rz_type_sources = [
   'parser/types_storage.c',
 ]
 
-r = run_command(py3_exe, check_meson_subproject_py, 'tree-sitter-c', check: false)
+r = run_command(py3_exe, check_meson_subproject_py, 'rizin-grammar-c', check: false)
 if r.returncode() == 1 and get_option('subprojects_check')
   error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
 endif
 
 
-# use subproject/tree-sitter-c
-# tree_sitter_c_dep = dependency('tree-sitter-c')
+# use subproject/rizin-grammar-c
+# rizin_grammar_c_dep = dependency('rizin-grammar-c')
 
 rz_type_inc = [
   platform_inc,
@@ -32,7 +32,7 @@ rz_type = library('rz_type', rz_type_sources,
   dependencies: [
     rz_util_dep,
     tree_sitter_dep,
-    tree_sitter_c_dep,
+    rizin_grammar_c_dep,
     lrt
   ],
   install: true,
