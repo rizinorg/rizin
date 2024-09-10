@@ -23,6 +23,7 @@ RZ_IPI int rz_core_visual_view_rop(RzCore *core) {
 	const int rows = 7;
 	int cur = 0;
 	RzLine *line = core->cons->line;
+	bool status = true;
 
 	rz_line_set_prompt(line, "rop regexp: ");
 	const char *linestr = rz_line_readline(line);
@@ -51,6 +52,7 @@ RZ_IPI int rz_core_visual_view_rop(RzCore *core) {
 	RzList *rops = rz_str_split_list(ropstr, "\n", 0);
 	if (!rops) {
 		free(ropstr);
+		rz_core_rop_search_context_free(context);
 		return false;
 	}
 	rz_core_rop_search_context_free(context);
@@ -59,6 +61,7 @@ RZ_IPI int rz_core_visual_view_rop(RzCore *core) {
 	bool forceaddr = false;
 	ut64 addr = UT64_MAX;
 	char *cursearch = strdup(linestr);
+	char *curline = NULL, *chainstr = NULL;
 	while (true) {
 		rz_cons_clear00();
 		rz_cons_printf("[0x%08" PFMT64x "]-[visual-rzrop] %s (see pdp command)\n",
@@ -78,13 +81,14 @@ RZ_IPI int rz_core_visual_view_rop(RzCore *core) {
 				rz_strbuf_appendf(sb, "%08x", n);
 			}
 		}
-		char *chainstr = rz_strbuf_drain(sb);
+		chainstr = rz_strbuf_drain(sb);
 
 		char *wlist = rz_str_widget_list(core, rops, rows, cur, print_rop);
 		rz_cons_printf("%s", wlist);
 		free(wlist);
 		char *widget_str = rz_str_widget_list(core, rops, rows, cur, print_rop);
-		char *curline = rz_str_dup(rz_str_trim_head_ro(widget_str));
+		curline = rz_str_dup(rz_str_trim_head_ro(widget_str));
+		free(widget_str);
 		if (curline) {
 			char *sp = strchr(curline, ' ');
 			if (sp) {
@@ -125,11 +129,8 @@ RZ_IPI int rz_core_visual_view_rop(RzCore *core) {
 		rz_cons_flush();
 		int ch = rz_cons_readchar();
 		if (ch == -1 || ch == 4) {
-			free(curline);
-			free(widget_str);
-			free(cursearch);
-			RZ_FREE(chainstr);
-			return false;
+			status = false;
+			goto exit;
 		}
 #define NEWTYPE(x, y) rz_mem_dup(&(y), sizeof(x));
 		ch = rz_cons_arrow_to_hjkl(ch); // get ESC+char, return 'hjkl' char
@@ -204,13 +205,15 @@ RZ_IPI int rz_core_visual_view_rop(RzCore *core) {
 				cursearch = strdup(linestr);
 				RzCmdStateOutput state_detail = { 0 };
 				if (!rz_cmd_state_output_init(&state_detail, RZ_OUTPUT_MODE_STANDARD)) {
-					return false;
+					status = false;
+					goto exit;
 				}
 				RzRopSearchContext *context = rz_core_rop_search_context_new(core, linestr, false, RZ_ROP_GADGET_PRINT, &state);
 				context->ret_val = true;
 				if (rz_core_rop_search(core, context) != RZ_CMD_STATUS_OK) {
 					rz_core_rop_search_context_free(context);
-					return false;
+					status = false;
+					goto exit;
 				}
 				ropstr = rz_strbuf_get(context->buf);
 				rz_cmd_state_output_fini(&state_detail);
@@ -297,13 +300,19 @@ RZ_IPI int rz_core_visual_view_rop(RzCore *core) {
 			break;
 		case 'q':
 			free(curline);
-			free(widget_str);
 			free(cursearch);
+			free(rops);
 			RZ_FREE(chainstr);
 			return true;
 		}
 		RZ_FREE(chainstr);
 		free(curline);
-		free(widget_str);
 	}
+
+exit:
+	free(curline);
+	free(cursearch);
+	free(rops);
+	RZ_FREE(chainstr);
+	return status;
 }
