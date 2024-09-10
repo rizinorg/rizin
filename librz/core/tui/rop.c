@@ -7,6 +7,7 @@
 #include <rz_util.h>
 
 #include "../core_private.h"
+#include "rz_rop.h"
 #include <rz_asm.h>
 #include <rz_util/rz_print.h>
 #include <rz_util/rz_strbuf.h>
@@ -34,8 +35,25 @@ RZ_IPI int rz_core_visual_view_rop(RzCore *core) {
 	// maybe store in RzCore, so we can save it in project and use it outside visual
 
 	eprintf("Searching ROP gadgets...\n");
-	char *ropstr = rz_core_cmd_strf(core, "\"/Rq %s\" @e:scr.color=0", linestr);
+	RzCmdStateOutput state = { 0 };
+	if (!rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET)) {
+		return false;
+	}
+	RzRopSearchContext *context = rz_core_rop_search_context_new(core, linestr, false, RZ_ROP_GADGET_PRINT, &state);
+	context->ret_val = true;
+	if (rz_core_rop_search(core, context) != RZ_CMD_STATUS_OK) {
+		rz_core_rop_search_context_free(context);
+		return false;
+	}
+	char *ropstr = rz_strbuf_get(context->buf);
+	ropstr = strdup(ropstr);
+	rz_cmd_state_output_fini(&state);
 	RzList *rops = rz_str_split_list(ropstr, "\n", 0);
+	if (!rops) {
+		free(ropstr);
+		return false;
+	}
+	rz_core_rop_search_context_free(context);
 	int delta = 0;
 	bool show_color = core->print->flags & RZ_PRINT_FLAGS_COLOR;
 	bool forceaddr = false;
@@ -78,10 +96,13 @@ RZ_IPI int rz_core_visual_view_rop(RzCore *core) {
 			if (addr != UT64_MAX) {
 				rz_cons_printf("Gadget:");
 				// get comment
-				char *output = rz_core_cmd_strf(core, "piu 10 @ 0x%08" PFMT64x, addr + delta);
-				if (output) {
-					rz_cons_strcat_at(output, 0, 10, scr_w, 10);
-					free(output);
+				RzStrBuf *str_buf = rz_strbuf_new(NULL);
+				if (rz_core_disasm_until_ret(core, addr + delta, 10, RZ_OUTPUT_MODE_QUIET, true, str_buf)) {
+					char *output = rz_strbuf_get(str_buf);
+					if (output) {
+						rz_cons_strcat_at(output, 0, 10, scr_w, 10);
+					}
+					rz_strbuf_free(str_buf);
 				}
 			}
 		}
@@ -179,8 +200,19 @@ RZ_IPI int rz_core_visual_view_rop(RzCore *core) {
 				addr = UT64_MAX;
 				cur = 0;
 				cursearch = strdup(linestr);
-				free(ropstr);
-				ropstr = rz_core_cmd_strf(core, "\"/Rl %s\" @e:scr.color=0", linestr);
+				RzCmdStateOutput state_detail = { 0 };
+				if (!rz_cmd_state_output_init(&state_detail, RZ_OUTPUT_MODE_STANDARD)) {
+					return false;
+				}
+				RzRopSearchContext *context = rz_core_rop_search_context_new(core, linestr, false, RZ_ROP_GADGET_PRINT, &state);
+				context->ret_val = true;
+				if (rz_core_rop_search(core, context) != RZ_CMD_STATUS_OK) {
+					rz_core_rop_search_context_free(context);
+					return false;
+				}
+				ropstr = rz_strbuf_get(context->buf);
+				rz_cmd_state_output_fini(&state_detail);
+				ropstr = strdup(ropstr);
 				rz_list_free(rops);
 				rops = rz_str_split_list(ropstr, "\n", 0);
 			}
@@ -207,9 +239,8 @@ RZ_IPI int rz_core_visual_view_rop(RzCore *core) {
 		case '\n':
 		case '\r':
 			if (curline && *curline) {
-				const ut64 limit = addr + delta > 1 ? addr + delta : 1024;
 				RzStrBuf *line = rz_strbuf_new(NULL);
-				if (!rz_core_disasm_until_ret(core, core->offset, limit, RZ_OUTPUT_MODE_QUIET, true, line)) {
+				if (!rz_core_disasm_until_ret(core, addr + delta, 1024, RZ_OUTPUT_MODE_QUIET, true, line)) {
 					rz_strbuf_free(line);
 					break;
 				}
@@ -271,6 +302,4 @@ RZ_IPI int rz_core_visual_view_rop(RzCore *core) {
 		RZ_FREE(chainstr);
 		free(curline);
 	}
-	free(cursearch);
-	return false;
 }

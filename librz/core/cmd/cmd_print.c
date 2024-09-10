@@ -1772,8 +1772,8 @@ static void disasm_print_ret(const RzCore *core, const RzOutputMode mode, const 
  * \return True if there are no errors during disassembling and crafting the response. False otherwise.
  */
 RZ_API bool rz_core_disasm_until_ret(RZ_NONNULL RzCore *core, ut64 addr, const int limit,
-	const RzOutputMode mode, const bool ret_val, RZ_NONNULL RZ_OUT RzStrBuf *buf) {
-	rz_return_val_if_fail(core && buf, false);
+	const RzOutputMode mode, const bool ret_val, RZ_NULLABLE RZ_OUT RzStrBuf *buf) {
+	rz_return_val_if_fail(core, false);
 	for (int i = 0; i < limit; i++) {
 		RzAnalysisOp *op = rz_core_analysis_op(core, addr, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_DISASM);
 		if (!op) {

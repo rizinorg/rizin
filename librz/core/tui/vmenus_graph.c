@@ -25,7 +25,7 @@ RZ_API char *rz_str_widget_list(void *user, RzList /*<void *>*/ *list, int rows,
 			} else {
 				char *line = cb(user, item, cur == count);
 				if (line) {
-					rz_strbuf_appendf(sb, "%s", line);
+					rz_strbuf_append(sb, line);
 					free(line);
 				}
 				rows--;

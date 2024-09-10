@@ -101,22 +101,24 @@ typedef struct rz_rop_constraint_t {
  * \brief Structure representing a ROP search context.
  */
 typedef struct rz_rop_search_context_t {
-	ut8 max_instr;
-	ut8 subchain;
-	ut8 crop;
-	char *greparg;
-	const char *mode_str;
-	const char *arch;
-	bool regexp;
-	bool cache;
-	RzRopRequestMask mask;
-	RzCmdStateOutput *state;
-	int increment;
-	int max_count;
-	ut64 from;
-	ut64 to;
-	RzList /*<RzRopEndListPair *>*/ *end_list;
-	HtSU *unique_hitlists;
+	ut8 max_instr; ///< Rop search max length.
+	ut8 subchain; ///< Display every length gadget from rop.len=X to 2 in /Rl.
+	ut8 crop; ///< Include conditional jump, calls and returns in ropsearch.
+	char *greparg; ///< Grep argument string.
+	const char *search_addr; ///< specify where to search stuff.
+	const char *arch; ///< Architecture of the binary.
+	bool regexp; ///< Regular expression argument flag.
+	bool cache; ///< Cache the search results.
+	RzRopRequestMask mask; ///< Mask for kind of rop request operation.
+	RzCmdStateOutput *state; ///< Command state output.
+	int increment; ///< ROP search increment value.
+	ut64 max_count; ///< Maximum number of hits (0: no limit).
+	ut64 from; ///< Start address to start rop search.
+	ut64 to; ///< End address to stop rop search.
+	RzList /*<RzRopEndListPair *>*/ *end_list; ///< List of end gadgets.
+	HtSU *unique_hitlists; ///< Cache unique ROP hitlists.
+	bool ret_val; ///< Flag to indicate return the search results.
+	RzStrBuf *buf; ///< String buffer for storing search results.
 } RzRopSearchContext;
 
 /**
@@ -142,14 +144,14 @@ typedef bool (*rz_rop_event_check_fn)(const RzRopRegInfo *);
 extern rz_rop_event_check_fn rz_rop_event_functions[RZ_ROP_EVENT_COUNT];
 
 // Command APIs
-RZ_API RzCmdStatus rz_core_rop_search(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_OWN RzRopSearchContext *context);
-RZ_API RzCmdStatus rz_core_rop_gadget_info(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_OWN RzRopSearchContext *context);
+RZ_API RzCmdStatus rz_core_rop_search(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW RzRopSearchContext *context);
+RZ_API RzCmdStatus rz_core_rop_gadget_info(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW RzRopSearchContext *context);
 RZ_API bool rz_core_rop_analyze_constraint(const RZ_NONNULL RzCore *core, const RZ_NONNULL char *str,
 	RZ_NONNULL RZ_OUT RzRopConstraint *rop_constraint);
 
 // ROP Search Context APIs
 RZ_API RZ_OWN RzRopSearchContext *rz_core_rop_search_context_new(RZ_NONNULL const RzCore *core, RZ_NULLABLE const char *greparg, bool regexp,
-	const RzRopRequestMask mask, RZ_NONNULL RZ_BORROW RzCmdStateOutput *state);
+	RzRopRequestMask mask, RZ_NONNULL RZ_BORROW RzCmdStateOutput *state);
 RZ_API void rz_core_rop_search_context_free(RZ_NULLABLE RzRopSearchContext *context);
 
 // ROP Constraint APIs
