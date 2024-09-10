@@ -1027,9 +1027,6 @@ static bool print_rop(const RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, 
 			break;
 		}
 		pj_end(state->d.pj);
-		if (context->ret_val) {
-			break;
-		}
 		if (hit) {
 			pj_kn(state->d.pj, "retaddr", hit->addr);
 			pj_ki(state->d.pj, "size", size);
@@ -1045,9 +1042,6 @@ static bool print_rop(const RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, 
 		break;
 		// fallthrough
 	case RZ_OUTPUT_MODE_STANDARD:
-		if (context->ret_val) {
-			break;
-		}
 		if (hit) {
 			rz_cons_printf("Gadget size: %d\n", (int)size);
 		}
