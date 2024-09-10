@@ -83,7 +83,8 @@ RZ_IPI int rz_core_visual_view_rop(RzCore *core) {
 		char *wlist = rz_str_widget_list(core, rops, rows, cur, print_rop);
 		rz_cons_printf("%s", wlist);
 		free(wlist);
-		char *curline = rz_str_dup(rz_str_trim_head_ro(rz_str_widget_list(core, rops, rows, cur, print_rop)));
+		char *widget_str = rz_str_widget_list(core, rops, rows, cur, print_rop);
+		char *curline = rz_str_dup(rz_str_trim_head_ro(widget_str));
 		if (curline) {
 			char *sp = strchr(curline, ' ');
 			if (sp) {
@@ -125,6 +126,7 @@ RZ_IPI int rz_core_visual_view_rop(RzCore *core) {
 		int ch = rz_cons_readchar();
 		if (ch == -1 || ch == 4) {
 			free(curline);
+			free(widget_str);
 			free(cursearch);
 			RZ_FREE(chainstr);
 			return false;
@@ -295,11 +297,13 @@ RZ_IPI int rz_core_visual_view_rop(RzCore *core) {
 			break;
 		case 'q':
 			free(curline);
+			free(widget_str);
 			free(cursearch);
 			RZ_FREE(chainstr);
 			return true;
 		}
 		RZ_FREE(chainstr);
 		free(curline);
+		free(widget_str);
 	}
 }
