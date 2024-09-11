@@ -52,7 +52,11 @@ static int mips_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	n = cs_disasm(ctx->handle, (ut8 *)buf, len, a->pc, 1, &insn);
 	if (n < 1) {
 		rz_asm_op_set_asm(op, "invalid");
+#if CS_NEXT_VERSION < 6
+		op->size = mode & CS_MODE_MICRO ? 2 : 4;
+#else
 		op->size = mode & (CS_MODE_MICRO | CS_MODE_NANOMIPS | CS_MODE_MIPS16) ? 2 : 4;
+#endif
 		goto fin;
 	}
 	if (insn->size < 1) {

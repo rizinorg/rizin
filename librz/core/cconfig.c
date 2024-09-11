@@ -550,6 +550,8 @@ static bool cb_asmarch(void *user, void *data) {
 			bits = 64;
 		}
 		update_asmbits_options(core, rz_config_node_get(core->config, "asm.bits"));
+	} else {
+		rz_config_set(core->config, "asm.cpu", "");
 	}
 	snprintf(asmparser, sizeof(asmparser), "%s.pseudo", node->value);
 	rz_config_set(core->config, "asm.parser", asmparser);
