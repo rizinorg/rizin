@@ -4,10 +4,15 @@
 #include <rz_asm.h>
 #include <rz_lib.h>
 
+#define CRIS_MIN_OP_SIZE 2
+
 static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	int opsize = -1;
 	op->type = -1;
-	opsize = 2;
+	opsize = CRIS_MIN_OP_SIZE;
+	if (len < CRIS_MIN_OP_SIZE) {
+		return -1;
+	}
 	switch (buf[0]) {
 	case 0x3f:
 	case 0x4f:
