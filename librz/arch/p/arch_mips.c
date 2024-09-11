@@ -18,10 +18,6 @@
 #define MIPS_CPUS     CAPSTONE_CPUS "," EXTRA_CPUS
 #define MIPS_FEATURES CAPSTONE_FEATURES
 
-static bool cs_mode_from_cpu(const char *cpu, const char *features, int bits, bool big_endian, cs_mode *mode) {
-	cs_mode _mode = (big_endian) ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN;
-#if CS_NEXT_VERSION < 6
-	(void)features;
 #define return_on_cpu(cpu_name, mode_flag) \
 	do { \
 		if (!strcmp(cpu, cpu_name)) { \
@@ -29,6 +25,12 @@ static bool cs_mode_from_cpu(const char *cpu, const char *features, int bits, bo
 			return true; \
 		} \
 	} while (0)
+
+static bool cs_mode_from_cpu(const char *cpu, const char *features, int bits, bool big_endian, cs_mode *mode) {
+	cs_mode _mode = (big_endian) ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN;
+#if CS_NEXT_VERSION < 6
+
+	(void)features;
 
 	switch (bits) {
 	case 64:
@@ -40,40 +42,41 @@ static bool cs_mode_from_cpu(const char *cpu, const char *features, int bits, bo
 	default:
 		return false;
 	}
+	*mode = _mode;
 
-	if (RZ_STR_ISEMPTY(cpu)) {
-		*mode = _mode;
-		return true;
+	if (RZ_STR_ISNOTEMPTY(cpu)) {
+		return_on_cpu("micromips", CS_MODE_MICRO);
+		return_on_cpu("mips1", CS_MODE_MIPS2); // mips1 is subset of mips2
+		return_on_cpu("mips2", CS_MODE_MIPS2);
+		return_on_cpu("mips3", CS_MODE_MIPS3);
+		return_on_cpu("mips4", CS_MODE_MIPS32); // old capstone uses the same
+		return_on_cpu("mips16", CS_MODE_MIPS32); // old capstone uses the same
+		return_on_cpu("mips32", CS_MODE_MIPS32);
+		return_on_cpu("mips32r6", CS_MODE_MIPS32R6);
+		return_on_cpu("mips64", CS_MODE_MIPS64);
+
+		// extra cpus
+		return_on_cpu("r2300", CS_MODE_MIPS2);
+		return_on_cpu("r2600", CS_MODE_MIPS2);
+		return_on_cpu("r2800", CS_MODE_MIPS2);
+		return_on_cpu("r2000a", CS_MODE_MIPS2);
+		return_on_cpu("r2000", CS_MODE_MIPS2);
+		return_on_cpu("r3000a", CS_MODE_MIPS2); // ISA mips2
+		return_on_cpu("r3000", CS_MODE_MIPS2); // ISA mips2
+		return_on_cpu("r10000", CS_MODE_MIPS32); // old capstone uses the same
 	}
 
-	return_on_cpu("micromips", CS_MODE_MICRO);
-	return_on_cpu("mips1", CS_MODE_MIPS2); // mips1 is subset of mips2
-	return_on_cpu("mips2", CS_MODE_MIPS2);
-	return_on_cpu("mips3", CS_MODE_MIPS3);
-	return_on_cpu("mips4", CS_MODE_MIPS32); // old capstone uses the same
-	return_on_cpu("mips16", CS_MODE_MIPS32); // old capstone uses the same
-	return_on_cpu("mips32", CS_MODE_MIPS32);
-	return_on_cpu("mips32r6", CS_MODE_MIPS32R6);
-	return_on_cpu("mips64", CS_MODE_MIPS64);
-
-	// extra cpus
-	return_on_cpu("r2300", CS_MODE_MIPS2);
-	return_on_cpu("r2600", CS_MODE_MIPS2);
-	return_on_cpu("r2800", CS_MODE_MIPS2);
-	return_on_cpu("r2000a", CS_MODE_MIPS2);
-	return_on_cpu("r2000", CS_MODE_MIPS2);
-	return_on_cpu("r3000a", CS_MODE_MIPS2); // ISA mips2
-	return_on_cpu("r3000", CS_MODE_MIPS2); // ISA mips2
-	return_on_cpu("r10000", CS_MODE_MIPS32); // old capstone uses the same
-
-	return false;
-#else
-#define return_on_cpu(cpu_name, mode_flag) \
+#else // CS_NEXT_VERSION >= 6
+#define return_or_add_on_cpu(cpu_name, mode_flag) \
 	do { \
-		if (cpu_len == strlen(cpu_name) && \
-			!strncmp(cpu, cpu_name, cpu_len)) { \
+		if (!strcmp(cpu, cpu_name)) { \
 			*mode = _mode | mode_flag; \
 			return true; \
+		} \
+		const size_t cpu_name_len = strlen(cpu_name); \
+		const char *p = strstr(cpu, cpu_name); \
+		if (p && (p[cpu_name_len] == '\0' || p[cpu_name_len] == ' ')) { \
+			_add_mode |= mode_flag; \
 		} \
 	} while (0)
 
@@ -86,66 +89,68 @@ static bool cs_mode_from_cpu(const char *cpu, const char *features, int bits, bo
 	if (is_nofloat) {
 		_mode |= CS_MODE_MIPS_NOFLOAT;
 	}
-	if (RZ_STR_ISEMPTY(cpu) || cpu[0] == '+') {
-		switch (bits) {
-		case 64: // generic mips64
-			*mode = _mode | CS_MODE_MIPS64;
+
+	if (RZ_STR_ISNOTEMPTY(cpu)) {
+		cs_mode _add_mode = 0;
+		return_or_add_on_cpu("micromips", CS_MODE_MICRO);
+		return_or_add_on_cpu("mips1", CS_MODE_MIPS1);
+		return_or_add_on_cpu("mips2", CS_MODE_MIPS2);
+		return_or_add_on_cpu("mips16", CS_MODE_MIPS16);
+		return_or_add_on_cpu("mips32", CS_MODE_MIPS3); // we always map the generic mips32 as mips3
+		return_or_add_on_cpu("mips32r2", CS_MODE_MIPS32R2);
+		return_or_add_on_cpu("mips32r3", CS_MODE_MIPS32R3);
+		return_or_add_on_cpu("mips32r5", CS_MODE_MIPS32R5);
+		return_or_add_on_cpu("mips32r6", CS_MODE_MIPS32R6);
+		return_or_add_on_cpu("mips3", CS_MODE_MIPS3);
+		return_or_add_on_cpu("mips4", CS_MODE_MIPS4);
+		return_or_add_on_cpu("mips5", CS_MODE_MIPS5);
+		return_or_add_on_cpu("mips64", CS_MODE_MIPS64);
+		return_or_add_on_cpu("mips64r2", CS_MODE_MIPS64R2);
+		return_or_add_on_cpu("mips64r3", CS_MODE_MIPS64R3);
+		return_or_add_on_cpu("mips64r5", CS_MODE_MIPS64R5);
+		return_or_add_on_cpu("mips64r6", CS_MODE_MIPS64R6);
+		return_or_add_on_cpu("octeon", CS_MODE_OCTEON);
+		return_or_add_on_cpu("octeonp", CS_MODE_OCTEONP);
+		return_or_add_on_cpu("nanomips", CS_MODE_NANOMIPS);
+		return_or_add_on_cpu("nms1", CS_MODE_NMS1);
+		return_or_add_on_cpu("i7200", CS_MODE_I7200);
+#undef return_or_add_on_cpu
+
+		if (_add_mode) {
+			*mode = _add_mode;
 			return true;
-		case 32: // generic mips32
-			*mode = _mode | CS_MODE_MIPS32;
-			return true;
-		case 16: // generic mips16
-			*mode = _mode | CS_MODE_MIPS16;
-			return true;
-		default:
-			return false;
 		}
-		return true;
+
+		// special cpus.
+		return_on_cpu("micro32r3", CS_MODE_MICRO32R3);
+		return_on_cpu("micro32r6", CS_MODE_MICRO32R6);
+
+		// extra cpus
+		return_on_cpu("r2300", CS_MODE_MIPS2);
+		return_on_cpu("r2600", CS_MODE_MIPS2);
+		return_on_cpu("r2800", CS_MODE_MIPS2);
+		return_on_cpu("r2000a", CS_MODE_MIPS2);
+		return_on_cpu("r2000", CS_MODE_MIPS2);
+		return_on_cpu("r3000a", CS_MODE_MIPS2); // ISA mips2
+		return_on_cpu("r3000", CS_MODE_MIPS2); // ISA mips2
+		return_on_cpu("r10000", CS_MODE_MIPS4);
 	}
 
-	size_t cpu_len = strlen(cpu);
-	const char *plus = NULL;
-	if ((plus = strchr(cpu, '+'))) {
-		cpu_len = plus - cpu;
+	switch (bits) {
+	case 64: // generic mips64
+		*mode = _mode | CS_MODE_MIPS64R3;
+		break;
+	case 32: // generic mips32
+		*mode = _mode | CS_MODE_MIPS5;
+		break;
+	case 16: // generic mips16
+		*mode = _mode | CS_MODE_MIPS16;
+		break;
+	default:
+		return false;
 	}
-
-	return_on_cpu("micromips", CS_MODE_MICRO);
-	return_on_cpu("mips1", CS_MODE_MIPS1);
-	return_on_cpu("mips2", CS_MODE_MIPS2);
-	return_on_cpu("mips16", CS_MODE_MIPS16);
-	return_on_cpu("mips32", CS_MODE_MIPS32);
-	return_on_cpu("mips32r2", CS_MODE_MIPS32R2);
-	return_on_cpu("mips32r3", CS_MODE_MIPS32R3);
-	return_on_cpu("mips32r5", CS_MODE_MIPS32R5);
-	return_on_cpu("mips32r6", CS_MODE_MIPS32R6);
-	return_on_cpu("mips3", CS_MODE_MIPS3);
-	return_on_cpu("mips4", CS_MODE_MIPS4);
-	return_on_cpu("mips5", CS_MODE_MIPS5);
-	return_on_cpu("mips64", CS_MODE_MIPS64);
-	return_on_cpu("mips64r2", CS_MODE_MIPS64R2);
-	return_on_cpu("mips64r3", CS_MODE_MIPS64R3);
-	return_on_cpu("mips64r5", CS_MODE_MIPS64R5);
-	return_on_cpu("mips64r6", CS_MODE_MIPS64R6);
-	return_on_cpu("octeon", CS_MODE_OCTEON);
-	return_on_cpu("octeonp", CS_MODE_OCTEONP);
-	return_on_cpu("nanomips", CS_MODE_NANOMIPS);
-	return_on_cpu("nms1", CS_MODE_NMS1);
-	return_on_cpu("i7200", CS_MODE_I7200);
-	return_on_cpu("micro32r3", CS_MODE_MICRO32R3);
-	return_on_cpu("micro32r6", CS_MODE_MICRO32R6);
-
-	// extra cpus
-	return_on_cpu("r2300", CS_MODE_MIPS2);
-	return_on_cpu("r2600", CS_MODE_MIPS2);
-	return_on_cpu("r2800", CS_MODE_MIPS2);
-	return_on_cpu("r2000a", CS_MODE_MIPS2);
-	return_on_cpu("r2000", CS_MODE_MIPS2);
-	return_on_cpu("r3000a", CS_MODE_MIPS2); // ISA mips2
-	return_on_cpu("r3000", CS_MODE_MIPS2); // ISA mips2
-	return_on_cpu("r10000", CS_MODE_MIPS4);
-
 #endif /* CS_NEXT_VERSION */
-	return false;
+	return true;
 }
 #undef return_on_cpu
 

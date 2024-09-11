@@ -6,6 +6,7 @@
 #include <capstone/mips.h>
 
 #define OPCOUNT() insn->detail->mips.op_count
+#define REGID(x)  insn->detail->mips.operands[x].reg
 #define REG(x)    cs_reg_name(*handle, insn->detail->mips.operands[x].reg)
 #define IMM(x)    insn->detail->mips.operands[x].imm
 
@@ -58,10 +59,18 @@ static inline void es_add_ck(RzAnalysisOp *op, const char *a1, const char *a2, c
 		bit - 2, mask, a1, a2, bit - 1, mask, a1, a2, a1, a2, re);
 }
 
+#if CS_NEXT_VERSION < 6
 #define PROTECT_ZERO() \
-	if (REG(0)[0] == 'z') { \
+	if (REGID(0) == MIPS_REG_ZERO) { \
 		rz_strbuf_appendf(&op->esil, ","); \
 	} else
+#else
+#define PROTECT_ZERO() \
+	if (REGID(0) == MIPS_REG_ZERO || \
+		REGID(0) == MIPS_REG_ZERO_64) { \
+		rz_strbuf_appendf(&op->esil, ","); \
+	} else
+#endif // CS_NEXT_VERSION
 
 #define ESIL_LOAD(size) \
 	PROTECT_ZERO() { \
@@ -215,7 +224,16 @@ RZ_IPI int analyze_op_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8
 			break;
 		case MIPS_INS_SLLV:
 		case MIPS_INS_SLL:
+#if CS_NEXT_VERSION < 6
 			rz_strbuf_appendf(&op->esil, "%s,%s,<<,%s,=", ARG(2), ARG(1), ARG(0));
+#else
+			if (REGID(0) == MIPS_REG_INVALID) {
+				// NOP
+				rz_strbuf_setf(&op->esil, ",");
+			} else {
+				rz_strbuf_appendf(&op->esil, "%s,%s,<<,%s,=", ARG(2), ARG(1), ARG(0));
+			}
+#endif /* CS_NEXT_VERSION */
 			break;
 		case MIPS_INS_BAL:
 		case MIPS_INS_JAL:
@@ -434,24 +452,28 @@ RZ_IPI int analyze_op_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8
 			ESIL_LOAD("1");
 			break;
 		case MIPS_INS_LBU:
+		case MIPS_INS_LBUX:
 			// one of these is wrong
 			ESIL_LOAD("1");
 			break;
+		case MIPS_INS_LL:
 		case MIPS_INS_LW:
 		case MIPS_INS_LWC1:
 		case MIPS_INS_LWC2:
 		case MIPS_INS_LWL:
 		case MIPS_INS_LWR:
 		case MIPS_INS_LWU:
-		case MIPS_INS_LL:
+		case MIPS_INS_LWXC1:
 			ESIL_LOAD("4");
 			break;
 
-		case MIPS_INS_LDL:
+		case MIPS_INS_LD:
 		case MIPS_INS_LDC1:
 		case MIPS_INS_LDC2:
+		case MIPS_INS_LDL:
+		case MIPS_INS_LDR:
+		case MIPS_INS_LDXC1:
 		case MIPS_INS_LLD:
-		case MIPS_INS_LD:
 			ESIL_LOAD("8");
 			break;
 

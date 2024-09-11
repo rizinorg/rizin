@@ -25,14 +25,14 @@
 
 #define LOAD_BSS_MALLOC 0
 
-#define IS_MODE_SET(mode)       ((mode) & RZ_MODE_SET)
-#define IS_MODE_SIMPLE(mode)    ((mode) & RZ_MODE_SIMPLE)
-#define IS_MODE_SIMPLEST(mode)  ((mode) & RZ_MODE_SIMPLEST)
-#define IS_MODE_JSON(mode)      ((mode) & RZ_MODE_JSON)
-#define IS_MODE_RZCMD(mode)     ((mode) & RZ_MODE_RIZINCMD)
-#define IS_MODE_EQUAL(mode)     ((mode) & RZ_MODE_EQUAL)
+#define IS_MODE_SET(mode)       ((mode)&RZ_MODE_SET)
+#define IS_MODE_SIMPLE(mode)    ((mode)&RZ_MODE_SIMPLE)
+#define IS_MODE_SIMPLEST(mode)  ((mode)&RZ_MODE_SIMPLEST)
+#define IS_MODE_JSON(mode)      ((mode)&RZ_MODE_JSON)
+#define IS_MODE_RZCMD(mode)     ((mode)&RZ_MODE_RIZINCMD)
+#define IS_MODE_EQUAL(mode)     ((mode)&RZ_MODE_EQUAL)
 #define IS_MODE_NORMAL(mode)    (!(mode))
-#define IS_MODE_CLASSDUMP(mode) ((mode) & RZ_MODE_CLASSDUMP)
+#define IS_MODE_CLASSDUMP(mode) ((mode)&RZ_MODE_CLASSDUMP)
 
 // dup from cmd_info
 #define PAIR_WIDTH "9"
@@ -3089,6 +3089,7 @@ RZ_API bool rz_core_bin_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile
 	case RZ_OUTPUT_MODE_QUIET:
 		rz_cons_printf("arch %s\n", info->arch);
 		rz_cons_printf("cpu %s\n", str2na(info->cpu));
+		rz_cons_printf("features %s\n", str2na(info->features));
 		rz_cons_printf("bits %d\n", bits);
 		rz_cons_printf("os %s\n", info->os);
 		rz_cons_printf("endian %s\n", info->big_endian ? "big" : "little");
@@ -3112,6 +3113,9 @@ RZ_API bool rz_core_bin_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile
 		}
 		if (RZ_STR_ISNOTEMPTY(info->cpu)) {
 			pj_ks(pj, "cpu", info->cpu);
+		}
+		if (RZ_STR_ISNOTEMPTY(info->features)) {
+			pj_ks(pj, "features", info->features);
 		}
 		pj_kn(pj, "baddr", rz_bin_get_baddr(core->bin));
 		pj_kn(pj, "binsz", rz_bin_get_size(core->bin));
@@ -3246,6 +3250,7 @@ RZ_API bool rz_core_bin_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile
 
 		rz_table_add_rowf(t, "ss", "arch", str2na(info->arch));
 		rz_table_add_rowf(t, "ss", "cpu", str2na(info->cpu));
+		rz_table_add_rowf(t, "ss", "features", str2na(info->features));
 		rz_table_add_rowf(t, "sX", "baddr", rz_bin_get_baddr(core->bin));
 		rz_table_add_rowf(t, "sX", "binsz", rz_bin_get_size(core->bin));
 		rz_table_add_rowf(t, "ss", "bintype", str2na(info->rclass));

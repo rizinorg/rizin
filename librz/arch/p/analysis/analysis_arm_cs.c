@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: 2013-2021 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "aarch64.h"
 #include <rz_analysis.h>
 #include <rz_lib.h>
 #include <rz_util/ht_uu.h>
