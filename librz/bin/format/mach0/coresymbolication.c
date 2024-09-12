@@ -256,7 +256,7 @@ RZ_API RzCoreSymCacheElement *rz_coresym_cache_element_new(RzBinFile *bf, RzBuff
 			if (cursor >= upper_boundary) {
 				goto beach;
 			}
-			ut64 sect_name_off = rz_read_ble(cursor, false, bits);
+			size_t sect_name_off = rz_read_ble(cursor, false, bits);
 			if (!i && !sect_name_off) {
 				relative_to_strings = true;
 			}
@@ -265,7 +265,10 @@ RZ_API RzCoreSymCacheElement *rz_coresym_cache_element_new(RzBinFile *bf, RzBuff
 				cursor += word_size;
 			}
 			string_origin = relative_to_strings ? b + start_of_strings : sect_start;
-			sect->name = str_dup_safe(b, string_origin + (size_t)sect_name_off, end);
+			if (string_origin + sect_name_off >= end) {
+				goto beach;
+			}
+			sect->name = str_dup_safe(b, string_origin + sect_name_off, end);
 		}
 	}
 	if (hdr->n_symbols) {
