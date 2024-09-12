@@ -124,6 +124,7 @@ subprojects/lz4-*/
 subprojects/packagecache/
 subprojects/sdb/
 subprojects/tree-sitter-*/
+subprojects/rizin-grammar-*/
 subprojects/zlib-*/
 subprojects/sigdb/
 subprojects/libdemangle/
