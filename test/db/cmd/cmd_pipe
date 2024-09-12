@@ -109,7 +109,7 @@ Copied bins/mach0/mach0_2-x86_64 succesfully
 -------------
 Shared buffer size 0x10e8
 -------------
-{'arch': 'x86', 'baddr': 4294967296, 'binsz': 4328, 'bintype': 'mach0', 'bits': 64, 'class': 'MACH064', 'endian': 'LE', 'intrp': '/usr/lib/dyld', 'laddr': 0, 'lang': 'c', 'machine': 'x86 64 all', 'maxopsz': 16, 'minopsz': 1, 'os': 'darwin', 'pcalign': 0, 'subsys': 'macOS', 'stripped': False, 'crypto': False, 'havecode': True, 'va': True, 'sanitiz': False, 'static': False, 'linenum': False, 'lsyms': False, 'canary': False, 'PIE': True, 'RELROCS': False, 'NX': False}
+{'arch': 'x86', 'baddr': 4294967296, 'binsz': 4328, 'bintype': 'mach0', 'bits': 64, 'class': 'MACH064', 'compiler': '', 'endian': 'LE', 'intrp': '/usr/lib/dyld', 'laddr': 0, 'lang': 'c', 'machine': 'x86 64 all', 'maxopsz': 16, 'minopsz': 1, 'os': 'darwin', 'pcalign': 0, 'subsys': 'macOS', 'stripped': False, 'crypto': False, 'havecode': True, 'va': True, 'sanitiz': False, 'static': False, 'linenum': False, 'lsyms': False, 'canary': False, 'PIE': True, 'RELROCS': False, 'NX': False}
 - offset -    0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x100000f70  5548 89e5 4883 ec10 c745 fc00 0000 0089  UH..H....E......
 

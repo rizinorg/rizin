@@ -221,6 +221,18 @@ char *PE_(rz_bin_pe_get_cc)(RzBinPEObj *bin) {
 	return NULL;
 }
 
+char *PE_(rz_bin_pe_get_compiler)(RzBinPEObj *bin) {
+	if (!bin || !bin->nt_headers) {
+		return NULL;
+	}
+	int major = (int)bin->nt_headers->optional_header.MajorLinkerVersion;
+	int minor = (int)bin->nt_headers->optional_header.MinorLinkerVersion;
+	if (major || minor) {
+		return rz_str_newf("Linker %02d.%02d", major, minor);
+	}
+	return NULL;
+}
+
 int PE_(bin_pe_get_claimed_checksum)(RzBinPEObj *bin) {
 	if (!bin || !bin->optional_header) {
 		return 0;
