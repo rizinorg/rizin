@@ -145,7 +145,7 @@ static bool objc_build_refs(RzCoreObjc *objc) {
 		RZ_LOG_ERROR("aao: Cannot read the whole const section %zu\n", ss_const);
 		return false;
 	}
-	for (off = 0; off + word_size < ss_const; off += word_size) {
+	for (off = 0; off + word_size < ss_const && (off + 8) < maxsize; off += word_size) {
 		ut64 va = va_const + off;
 		ut64 xrefs_to = rz_read_le64(buf + off);
 		if (isValid(xrefs_to)) {
@@ -156,7 +156,7 @@ static bool objc_build_refs(RzCoreObjc *objc) {
 		RZ_LOG_ERROR("aao: Cannot read the whole selrefs section\n");
 		return false;
 	}
-	for (off = 0; off + word_size < ss_selrefs; off += word_size) {
+	for (off = 0; off + word_size < ss_selrefs && (off + 8) < maxsize; off += word_size) {
 		ut64 va = va_selrefs + off;
 		ut64 xrefs_to = rz_read_le64(buf + off);
 		if (isValid(xrefs_to)) {
