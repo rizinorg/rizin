@@ -319,6 +319,9 @@ static void populate_cache_maps(RzDyldCache *cache) {
 		return;
 	}
 	cache_map_t *maps = RZ_NEWS0(cache_map_t, n_maps);
+	if (!maps) {
+		return;
+	}
 
 	ut32 next_map = 0;
 	ut32 last_idx = UT32_MAX;
