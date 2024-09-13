@@ -314,6 +314,9 @@ jobs:
           fi
           cd test
           rz-test -LF bins/fuzzed @fuzz
+          # some fuzzed bins are mem hungry and are killed by the runner.
+          # running them one threaded allows to be check them
+          rz-test -j1 -LF bins/fuzzed-memhungry @fuzz
         env:
           ASAN: ${{ matrix.asan }}
           ASAN_OPTIONS: ${{ matrix.asan_options }}
@@ -502,7 +505,11 @@ jobs:
           ASAN: true
           ASAN_OPTIONS: detect_leaks=0,detect_odr_violation=0,allocator_may_return_null=1
       - name: Run fuzz tests
-        run: rz-test -LF bins/fuzzed @fuzz
+        run: |
+          rz-test -LF bins/fuzzed @fuzz
+          # some fuzzed bins are mem hungry and are killed by the runner.
+          # running them one threaded allows to be check them
+          rz-test -j1 -LF bins/fuzzed-memhungry @fuzz
         working-directory: rizin/test
         env:
           ASAN: true
