@@ -577,17 +577,17 @@ static char *setphname(ut16 mach, Elf_(Word) ptyp) {
 	// TODO to complete over time
 	if (mach == EM_ARM) {
 		if (ptyp == SHT_ARM_EXIDX) {
-			return strdup("EXIDX");
+			return rz_str_dup("EXIDX");
 		}
 	} else if (mach == EM_MIPS) {
 		if (ptyp == PT_MIPS_ABIFLAGS) {
-			return strdup("ABIFLAGS");
+			return rz_str_dup("ABIFLAGS");
 		} else if (ptyp == PT_MIPS_REGINFO) {
-			return strdup("REGINFO");
+			return rz_str_dup("REGINFO");
 		}
 	}
 
-	return strdup("UNKNOWN");
+	return rz_str_dup("UNKNOWN");
 }
 
 static bool is_wordable_section(const char *name) {
@@ -683,11 +683,11 @@ static RzPVector /*<RzBinMap *>*/ *maps_unpatched(RzBinFile *bf) {
 
 			// map names specific to core files...
 			if (core_sp != UT64_MAX && core_sp >= iter->data.p_vaddr && core_sp < iter->data.p_vaddr + iter->data.p_memsz) {
-				map->name = strdup("[stack]");
+				map->name = rz_str_dup("[stack]");
 			} else {
 				RzBinElfNoteFile *nf = note_file_for_load_segment(obj, &iter->data);
 				if (nf && nf->file) {
-					map->name = strdup(nf->file);
+					map->name = rz_str_dup(nf->file);
 				}
 			}
 			// generic names
@@ -722,7 +722,7 @@ static RzPVector /*<RzBinMap *>*/ *maps_unpatched(RzBinFile *bf) {
 		if (!map) {
 			return ret;
 		}
-		map->name = strdup("uphdr");
+		map->name = rz_str_dup("uphdr");
 		map->paddr = 0;
 		map->psize = bf->size;
 		map->vaddr = 0x10000;
@@ -740,7 +740,7 @@ static RzPVector /*<RzBinMap *>*/ *maps_unpatched(RzBinFile *bf) {
 		if (bf->size < ehdr_size) {
 			ehdr_size = bf->size;
 		}
-		map->name = strdup("ehdr");
+		map->name = rz_str_dup("ehdr");
 		map->paddr = 0;
 		map->psize = ehdr_size;
 		map->vaddr = obj->baddr;
@@ -1636,7 +1636,7 @@ static RzPVector /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 		}
 		vf->buf = buf;
 		vf->buf_owned = true;
-		vf->name = strdup(VFILE_NAME_RELOC_TARGETS);
+		vf->name = rz_str_dup(VFILE_NAME_RELOC_TARGETS);
 		rz_pvector_push(r, vf);
 	}
 	// virtual file mirroring the raw file, but with relocs patched
@@ -1646,7 +1646,7 @@ static RzPVector /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 			return r;
 		}
 		vf->buf = obj->buf_patched;
-		vf->name = strdup(VFILE_NAME_PATCHED);
+		vf->name = rz_str_dup(VFILE_NAME_PATCHED);
 		rz_pvector_push(r, vf);
 	}
 	return r;
@@ -1730,7 +1730,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 
 		switch (iter->data.p_type) {
 		case PT_DYNAMIC:
-			ptr->name = strdup("DYNAMIC");
+			ptr->name = rz_str_dup("DYNAMIC");
 			break;
 		case PT_LOAD: {
 			ptr->name = rz_str_newf("LOAD%zu", n++);
@@ -1738,41 +1738,41 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 			break;
 		}
 		case PT_INTERP:
-			ptr->name = strdup("INTERP");
+			ptr->name = rz_str_dup("INTERP");
 			break;
 		case PT_GNU_STACK:
-			ptr->name = strdup("GNU_STACK");
+			ptr->name = rz_str_dup("GNU_STACK");
 			break;
 		case PT_GNU_RELRO:
-			ptr->name = strdup("GNU_RELRO");
+			ptr->name = rz_str_dup("GNU_RELRO");
 			break;
 		case PT_GNU_EH_FRAME:
-			ptr->name = strdup("GNU_EH_FRAME");
+			ptr->name = rz_str_dup("GNU_EH_FRAME");
 			break;
 		case PT_PHDR:
-			ptr->name = strdup("PHDR");
+			ptr->name = rz_str_dup("PHDR");
 			break;
 		case PT_TLS:
-			ptr->name = strdup("TLS");
+			ptr->name = rz_str_dup("TLS");
 			break;
 		case PT_NOTE:
-			ptr->name = strdup("NOTE");
+			ptr->name = rz_str_dup("NOTE");
 			break;
 		case PT_OPENBSD_RANDOMIZE:
-			ptr->name = strdup("OPENBSD_RANDOMIZE");
+			ptr->name = rz_str_dup("OPENBSD_RANDOMIZE");
 			break;
 		case PT_OPENBSD_WXNEEDED:
-			ptr->name = strdup("OPENBSD_WXNEEDED");
+			ptr->name = rz_str_dup("OPENBSD_WXNEEDED");
 			break;
 		case PT_OPENBSD_BOOTDATA:
-			ptr->name = strdup("OPENBSD_BOOTDATA");
+			ptr->name = rz_str_dup("OPENBSD_BOOTDATA");
 			break;
 		case PT_OPENBSD_NOBTCFI:
-			ptr->name = strdup("OPENBSD_NOBTCFI");
+			ptr->name = rz_str_dup("OPENBSD_NOBTCFI");
 			break;
 		default:
 			if (ptr->size == 0 && ptr->vsize == 0) {
-				ptr->name = strdup("NONE");
+				ptr->name = rz_str_dup("NONE");
 			} else {
 				ptr->name = setphname(mach, iter->data.p_type);
 			}
@@ -1788,7 +1788,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		if (bf->size < ehdr_size) {
 			ehdr_size = bf->size;
 		}
-		ptr->name = strdup("ehdr");
+		ptr->name = rz_str_dup("ehdr");
 		ptr->paddr = 0;
 		ptr->vaddr = obj->baddr;
 		ptr->size = ehdr_size;
@@ -1983,15 +1983,13 @@ static RzBinInfo *info(RzBinFile *bf) {
 	if (!(ret = RZ_NEW0(RzBinInfo))) {
 		return NULL;
 	}
-	ret->file = bf->file
-		? strdup(bf->file)
-		: NULL;
+	ret->file = rz_str_dup(bf->file);
 	ELFOBJ *obj = bf->o->bin_obj;
 	if ((str = Elf_(rz_bin_elf_get_rpath)(obj))) {
-		ret->rpath = strdup(str);
+		ret->rpath = rz_str_dup(str);
 		free(str);
 	} else {
-		ret->rpath = strdup("NONE");
+		ret->rpath = rz_str_dup("NONE");
 	}
 	if (!(str = Elf_(rz_bin_elf_get_file_type)(obj))) {
 		free(ret);
@@ -2038,7 +2036,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 		ret->features = str;
 	}
 
-	ret->rclass = strdup("elf");
+	ret->rclass = rz_str_dup("elf");
 	ret->bits = obj->bits;
 	if (!strcmp(ret->arch, "avr")) {
 		ret->bits = 16;

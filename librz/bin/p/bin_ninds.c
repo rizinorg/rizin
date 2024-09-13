@@ -218,7 +218,7 @@ static RzPVector /*<RzBinSection *>*/ *nds_sections(RzBinFile *bf) {
 	NDSRom *rom = nds_get_rom(bf);
 	NDSHeader *hdr = &rom->header;
 
-	ptr9->name = strdup("arm9");
+	ptr9->name = rz_str_dup("arm9");
 	ptr9->size = hdr->arm9_size;
 	ptr9->vsize = hdr->arm9_size;
 	ptr9->paddr = hdr->arm9_rom_offset;
@@ -226,7 +226,7 @@ static RzPVector /*<RzBinSection *>*/ *nds_sections(RzBinFile *bf) {
 	ptr9->perm = perm_rwx;
 	rz_pvector_push(ret, ptr9);
 
-	ptr7->name = strdup("arm7");
+	ptr7->name = rz_str_dup("arm7");
 	ptr7->size = hdr->arm7_size;
 	ptr7->vsize = hdr->arm7_size;
 	ptr7->paddr = hdr->arm7_rom_offset;
@@ -323,10 +323,10 @@ static RzBinInfo *nds_info(RzBinFile *bf) {
 	NDSHeader *hdr = nds_get_hdr(bf);
 
 	ret->file = rz_str_newf("%.12s - %.4s", hdr->title, hdr->gamecode);
-	ret->type = strdup("ROM");
-	ret->machine = strdup("Nintendo DS");
-	ret->os = strdup("nds");
-	ret->arch = strdup("arm");
+	ret->type = rz_str_dup("ROM");
+	ret->machine = rz_str_dup("Nintendo DS");
+	ret->os = rz_str_dup("nds");
+	ret->arch = rz_str_dup("arm");
 	ret->has_va = true;
 	ret->bits = 32;
 	return ret;

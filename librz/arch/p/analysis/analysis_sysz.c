@@ -177,7 +177,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"gpr	r13	.32	52	0\n"
 		"gpr	r14	.32	56	0\n"
 		"gpr	r15	.32	60	0\n";
-	return strdup(p);
+	return rz_str_dup(p);
 }
 
 static int archinfo(RzAnalysis *a, RzAnalysisInfoType query) {

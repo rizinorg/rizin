@@ -454,7 +454,7 @@ static void core_analysis_bytes_desc(RzCore *core, const ut8 *buf, int len, int 
 			break;
 		}
 
-		char *opname = strdup(rz_asm_op_get_asm(&asmop));
+		char *opname = rz_str_dup(rz_asm_op_get_asm(&asmop));
 		if (opname) {
 			rz_str_split(opname, ' ');
 			char *d = rz_asm_describe(core->rasm, opname);
@@ -703,7 +703,7 @@ static char *fcnjoin(RzList /*<RzAnalysisFunction *>*/ *list) {
 	rz_list_foreach (list, iter, n) {
 		rz_strbuf_appendf(&buf, " 0x%08" PFMT64x, n->addr);
 	}
-	char *s = strdup(rz_strbuf_get(&buf));
+	char *s = rz_str_dup(rz_strbuf_get(&buf));
 	rz_strbuf_fini(&buf);
 	return s;
 }
@@ -716,7 +716,7 @@ static char *ut64join(RzList /*<ut64 *>*/ *list) {
 	rz_list_foreach (list, iter, n) {
 		rz_strbuf_appendf(&buf, " 0x%08" PFMT64x, *n);
 	}
-	char *s = strdup(rz_strbuf_get(&buf));
+	char *s = rz_str_dup(rz_strbuf_get(&buf));
 	rz_strbuf_fini(&buf);
 	return s;
 }
@@ -866,14 +866,14 @@ static int myregwrite(RzAnalysisEsil *esil, const char *name, ut64 *val) {
 	AeaStats *stats = esil->user;
 	if (!IS_DIGIT(*name)) {
 		if (!contains(stats->regs, name)) {
-			rz_list_push(stats->regs, strdup(name));
+			rz_list_push(stats->regs, rz_str_dup(name));
 		}
 		if (!contains(stats->regwrite, name)) {
-			rz_list_push(stats->regwrite, strdup(name));
+			rz_list_push(stats->regwrite, rz_str_dup(name));
 		}
 		char *v = rz_str_newf("%" PFMT64d, *val);
 		if (!contains(stats->regvalues, v)) {
-			rz_list_push(stats->regvalues, strdup(v));
+			rz_list_push(stats->regvalues, rz_str_dup(v));
 		}
 		free(v);
 	}
@@ -885,14 +885,14 @@ static int myregread(RzAnalysisEsil *esil, const char *name, ut64 *val, int *len
 	if (!IS_DIGIT(*name)) {
 		if (!contains(stats->inputregs, name)) {
 			if (!contains(stats->regwrite, name)) {
-				rz_list_push(stats->inputregs, strdup(name));
+				rz_list_push(stats->inputregs, rz_str_dup(name));
 			}
 		}
 		if (!contains(stats->regs, name)) {
-			rz_list_push(stats->regs, strdup(name));
+			rz_list_push(stats->regs, rz_str_dup(name));
 		}
 		if (!contains(stats->regread, name)) {
-			rz_list_push(stats->regread, strdup(name));
+			rz_list_push(stats->regread, rz_str_dup(name));
 		}
 	}
 	return 0;
@@ -1036,7 +1036,7 @@ static bool cmd_aea(RzCore *core, int mode, ut64 addr, int length) {
 		char *reg;
 		rz_list_foreach (stats.regs, iter, reg) {
 			if (!contains(stats.regwrite, reg)) {
-				rz_list_push(regnow, strdup(reg));
+				rz_list_push(regnow, rz_str_dup(reg));
 			}
 		}
 	}
@@ -1636,7 +1636,7 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 		int ret, bufsz;
 
 		input = rz_str_trim_head_ro(input + 1);
-		hex = strdup(input);
+		hex = rz_str_dup(input);
 		if (!hex) {
 			break;
 		}
@@ -2295,7 +2295,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_signature_bytes_handler(RzCore *core, in
 
 	if (!(s_pattern = rz_hex_bin2strdup(pattern, size)) ||
 		!(s_mask = rz_hex_bin2strdup(mask, size)) ||
-		!(s_search = strdup(s_pattern))) {
+		!(s_search = rz_str_dup(s_pattern))) {
 		RZ_LOG_ERROR("core: failed to convert pattern & mask to string\n");
 		status = RZ_CMD_STATUS_ERROR;
 		goto fail;
@@ -3344,7 +3344,7 @@ RZ_IPI RzCmdStatus rz_analysis_xrefs_to_graph_cmd_handler(RzCore *core, int argc
 	rz_list_foreach (list, iter, xref) {
 		char *str = rz_core_cmd_strf(core, "fd @ 0x%" PFMT64x, xref->from);
 		if (!str) {
-			str = strdup("?\n");
+			str = rz_str_dup("?\n");
 		}
 		rz_str_trim_tail(str);
 		rz_cons_printf("agn 0x%" PFMT64x " \"%s\"\n", xref->from, str);
@@ -4153,7 +4153,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_import_list_handler(RzCore *core, int ar
 				return RZ_CMD_STATUS_ERROR;
 			}
 		}
-		char *import = strdup(argv[1]);
+		char *import = rz_str_dup(argv[1]);
 		if (!import || !rz_list_append(fcn->imports, import)) {
 			free(import);
 			return RZ_CMD_STATUS_ERROR;
@@ -4258,7 +4258,7 @@ static void print_stats(RzCore *core, HtSU *ht, RzAnalysisFunction *fcn, RzCmdSt
 			rz_list_free(list);
 			return;
 		}
-		rz_pvector_push(items, strdup(fcn->name));
+		rz_pvector_push(items, rz_str_dup(fcn->name));
 		rz_list_foreach (list, iter, name) {
 			int nv = (int)ht_su_find(ht, name, NULL);
 			rz_pvector_push(items, rz_str_newf("%d", nv));
@@ -4354,8 +4354,8 @@ RZ_IPI RzCmdStatus rz_analysis_function_all_opcode_stat_handler(RzCore *core, in
 		}
 		ut64 fcnAddr = ht_su_find(db, ".addr", NULL);
 		RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, fcnAddr);
-		rz_pvector_push(items, fcn ? strdup(fcn->name) : strdup(""));
-		rz_pvector_push(items, fcn ? rz_str_newf("0x%08" PFMT64x, fcnAddr) : strdup("0"));
+		rz_pvector_push(items, fcn ? rz_str_dup(fcn->name) : rz_str_dup(""));
+		rz_pvector_push(items, fcn ? rz_str_newf("0x%08" PFMT64x, fcnAddr) : rz_str_dup("0"));
 		rz_list_foreach (keys, iter, key) {
 			ut32 n = (ut32)ht_su_find(db, key, NULL);
 			rz_pvector_push(items, rz_str_newf("%u", n));
@@ -4704,7 +4704,7 @@ RZ_IPI char **rz_analysis_graph_format_choices(RzCore *core) {
 		return NULL;
 	}
 	for (ut8 i = 0; i < sz - 1; ++i) {
-		res[i] = strdup(formats[i]);
+		res[i] = rz_str_dup(formats[i]);
 	}
 	res[sz - 1] = NULL;
 	return res;
@@ -5331,8 +5331,8 @@ static RzCmdStatus class_method_error(RzAnalysisClassErr err) {
 
 RZ_IPI RzCmdStatus rz_analysis_class_method_add_handler(RzCore *core, int argc, const char **argv) {
 	RzAnalysisMethod meth;
-	meth.name = strdup(argv[2]);
-	meth.real_name = strdup(argv[2]);
+	meth.name = rz_str_dup(argv[2]);
+	meth.real_name = rz_str_dup(argv[2]);
 	meth.method_type = RZ_ANALYSIS_CLASS_METHOD_DEFAULT;
 	meth.addr = rz_num_math(core->num, argv[3]);
 	meth.vtable_offset = -1;
@@ -5374,7 +5374,7 @@ RZ_IPI RzCmdStatus rz_analysis_class_base_add_handler(RzCore *core, int argc, co
 	RzAnalysisBaseClass base;
 	base.id = NULL;
 	base.offset = 0;
-	base.class_name = strdup(argv[2]);
+	base.class_name = rz_str_dup(argv[2]);
 	if (argc == 4) {
 		base.offset = rz_num_math(core->num, argv[3]);
 	}
@@ -5989,8 +5989,8 @@ RZ_IPI RzCmdStatus rz_analysis_basic_block_list_handler(RzCore *core, int argc, 
 			pj_end(pj);
 			break;
 		case RZ_OUTPUT_MODE_TABLE: {
-			char *jump = block->jump != UT64_MAX ? rz_str_newf("0x%08" PFMT64x, block->jump) : strdup("");
-			char *fail = block->fail != UT64_MAX ? rz_str_newf("0x%08" PFMT64x, block->fail) : strdup("");
+			char *jump = block->jump != UT64_MAX ? rz_str_newf("0x%08" PFMT64x, block->jump) : rz_str_dup("");
+			char *fail = block->fail != UT64_MAX ? rz_str_newf("0x%08" PFMT64x, block->fail) : rz_str_dup("");
 			char *call = ut64join(calls);
 			char *xref = ut64join(calls);
 			char *fcns = fcnjoin(block->fcns);

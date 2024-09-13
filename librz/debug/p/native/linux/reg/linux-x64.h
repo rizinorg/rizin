@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 // 64bit host debugging 64bit target
-return strdup(
+return rz_str_dup(
 	"=PC	rip\n"
 	"=SP	rsp\n"
 	"=BP	rbp\n"

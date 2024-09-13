@@ -232,7 +232,7 @@ static RzBinClass *bin_class_new(RzBinObject *o, const char *name, const char *s
 		return NULL;
 	}
 
-	c->name = strdup(name);
+	c->name = rz_str_dup(name);
 	c->super = rz_str_dup(super);
 	c->methods = rz_list_newf((RzListFree)rz_bin_symbol_free);
 	c->fields = rz_list_newf((RzListFree)rz_bin_class_field_free);
@@ -304,7 +304,7 @@ RZ_API RZ_BORROW RzBinClass *rz_bin_object_add_class(RZ_NONNULL RzBinObject *o, 
 	RzBinClass *oclass = ht_sp_find(o->name_to_class_object, name, NULL);
 	if (oclass) {
 		if (super && !oclass->super) {
-			oclass->super = strdup(super);
+			oclass->super = rz_str_dup(super);
 		}
 		if (oclass->addr == UT64_MAX) {
 			oclass->addr = vaddr;

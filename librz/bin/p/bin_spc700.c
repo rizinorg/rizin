@@ -29,11 +29,11 @@ static RzBinInfo *info(RzBinFile *bf) {
 	if (!(ret = RZ_NEW0(RzBinInfo))) {
 		return NULL;
 	}
-	ret->file = strdup(bf->file);
-	ret->type = strdup("Sound File Data");
-	ret->machine = strdup("SPC700");
-	ret->os = strdup("spc700");
-	ret->arch = strdup("spc700");
+	ret->file = rz_str_dup(bf->file);
+	ret->type = rz_str_dup("Sound File Data");
+	ret->machine = rz_str_dup("SPC700");
+	ret->os = rz_str_dup("spc700");
+	ret->arch = rz_str_dup("spc700");
 	ret->bits = 16;
 	ret->has_va = 1;
 	return ret;
@@ -56,7 +56,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		rz_pvector_free(ret);
 		return NULL;
 	}
-	ptr->name = strdup("RAM");
+	ptr->name = rz_str_dup("RAM");
 	ptr->paddr = RAM_START_ADDRESS;
 	ptr->size = RAM_SIZE;
 	ptr->vaddr = 0x0;

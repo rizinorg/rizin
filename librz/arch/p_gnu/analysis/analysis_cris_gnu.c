@@ -277,7 +277,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"gpr	r15	.32	60	0\n"
 		// ADD P REGISTERS
 		;
-	return strdup(p);
+	return rz_str_dup(p);
 }
 
 RzAnalysisPlugin rz_analysis_plugin_cris_gnu = {

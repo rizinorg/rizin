@@ -170,7 +170,7 @@ RzDebugInfo *bsd_info(RzDebug *dbg, const char *arg) {
 	rdi->tid = dbg->tid;
 	rdi->uid = kp->ki_uid;
 	rdi->gid = kp->ki_pgid;
-	rdi->exe = strdup(kp->ki_comm);
+	rdi->exe = rz_str_dup(kp->ki_comm);
 
 	switch (kp->ki_stat) {
 	case SSLEEP:
@@ -216,7 +216,7 @@ RzDebugInfo *bsd_info(RzDebug *dbg, const char *arg) {
 		rdi->tid = dbg->tid;
 		rdi->uid = kp->p_uid;
 		rdi->gid = kp->p__pgid;
-		rdi->exe = strdup(kp->p_comm);
+		rdi->exe = rz_str_dup(kp->p_comm);
 
 		switch (kp->p_stat) {
 		case SDEAD:
@@ -258,7 +258,7 @@ RzDebugInfo *bsd_info(RzDebug *dbg, const char *arg) {
 		rdi->tid = dbg->tid;
 		rdi->uid = kp->p_uid;
 		rdi->gid = kp->p__pgid;
-		rdi->exe = strdup(kp->p_comm);
+		rdi->exe = rz_str_dup(kp->p_comm);
 
 		rdi->status = RZ_DBG_PROC_STOP;
 

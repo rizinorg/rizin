@@ -208,5 +208,5 @@ char *pic16_get_reg_profile(RzAnalysis *a) {
 		"gpr tosh .8 25 0\n"
 		"gpr tris .8 26 0\n"
 		"gpr _bank .8 27 0\n";
-	return strdup(p);
+	return rz_str_dup(p);
 }

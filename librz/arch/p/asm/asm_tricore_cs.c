@@ -45,7 +45,7 @@ beach:
 	do { \
 		RzAsmTokenPattern *pat = RZ_NEW0(RzAsmTokenPattern); \
 		pat->type = RZ_ASM_TOKEN_##_type; \
-		pat->pattern = strdup(_pat); \
+		pat->pattern = rz_str_dup(_pat); \
 		rz_pvector_push(pvec, pat); \
 	} while (0)
 

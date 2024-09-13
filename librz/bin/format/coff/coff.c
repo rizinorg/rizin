@@ -59,21 +59,21 @@ RZ_API char *rz_coff_symbol_name(struct rz_bin_coff_obj *obj, const ut8 *ptr) {
 	ut32 zero = rz_read_at_ble32(ptr, 0, obj->endian == COFF_IS_BIG_ENDIAN);
 	ut32 offset = rz_read_at_ble32(ptr, 4, obj->endian == COFF_IS_BIG_ENDIAN);
 	if (!ptr) {
-		return strdup("");
+		return rz_str_dup("");
 	}
 	if (zero) {
 		return rz_str_ndup((const char *)ptr, 8);
 	}
 	ut32 addr = obj->hdr.f_symptr + obj->hdr.f_nsyms * sizeof(struct coff_symbol) + offset;
 	if (addr > obj->size) {
-		return strdup("");
+		return rz_str_dup("");
 	}
 	char n[256] = { 0 };
 	st64 len = rz_buf_read_at(obj->b, addr, (ut8 *)n, sizeof(n) - 1);
 	if (len < 1) {
-		return strdup("");
+		return rz_str_dup("");
 	}
-	return strdup(n);
+	return rz_str_dup(n);
 }
 
 static int rz_coff_rebase_sym(struct rz_bin_coff_obj *obj, RzBinAddr *addr, struct coff_symbol *sym) {

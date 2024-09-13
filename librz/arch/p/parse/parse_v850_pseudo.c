@@ -120,13 +120,13 @@ RzList /*<char *>*/ *v850_tokenize(const char *assembly, size_t length) {
 	buf = rz_list_first(tokens);
 	for (i = 0; i < RZ_ARRAY_SIZE(v850_short_op); ++i) {
 		if (!strcmp(buf, v850_short_op[i])) {
-			rz_list_insert(tokens, 1, strdup("0"));
+			rz_list_insert(tokens, 1, rz_str_dup("0"));
 			break;
 		}
 	}
 
 	if (insert_zero) {
-		rz_list_insert(tokens, rz_list_length(tokens) - 1, strdup("0"));
+		rz_list_insert(tokens, rz_list_length(tokens) - 1, rz_str_dup("0"));
 	}
 
 	return tokens;

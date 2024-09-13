@@ -991,7 +991,7 @@ static void sanitize_input(char *cinput, st32 input_size) {
 
 static char **tokens_new(cchar *input, st32 input_size, ut32 *ntokens) {
 
-	char *cinput = strdup(input);
+	char *cinput = rz_str_dup(input);
 	if (!cinput) {
 		rz_warn_if_reached();
 		return NULL;

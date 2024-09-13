@@ -69,14 +69,14 @@ static RzBinInfo *info(RzBinFile *bf) {
 		return NULL;
 	}
 	ret->lang = NULL;
-	ret->file = bf->file ? strdup(bf->file) : NULL;
-	ret->type = strdup("bios");
-	ret->bclass = strdup("1.0");
-	ret->rclass = strdup("bios");
-	ret->os = strdup("any");
-	ret->subsystem = strdup("unknown");
-	ret->machine = strdup("pc");
-	ret->arch = strdup("x86");
+	ret->file = rz_str_dup(bf->file);
+	ret->type = rz_str_dup("bios");
+	ret->bclass = rz_str_dup("1.0");
+	ret->rclass = rz_str_dup("bios");
+	ret->os = rz_str_dup("any");
+	ret->subsystem = rz_str_dup("unknown");
+	ret->machine = rz_str_dup("pc");
+	ret->arch = rz_str_dup("x86");
 	ret->has_va = 1;
 	ret->bits = 16;
 	ret->big_endian = 0;
@@ -96,7 +96,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
 	}
-	ptr->name = strdup("bootblk"); // Maps to 0xF000:0000 segment
+	ptr->name = rz_str_dup("bootblk"); // Maps to 0xF000:0000 segment
 	ptr->vsize = ptr->size = 0x10000;
 	ptr->paddr = rz_buf_size(bf->buf) - ptr->size;
 	ptr->vaddr = 0xf0000;
@@ -107,7 +107,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		if (!(ptr = RZ_NEW0(RzBinSection))) {
 			return ret;
 		}
-		ptr->name = strdup("_e000"); // Maps to 0xE000:0000 segment
+		ptr->name = rz_str_dup("_e000"); // Maps to 0xE000:0000 segment
 		ptr->vsize = ptr->size = 0x10000;
 		ptr->paddr = rz_buf_size(obj) - 2 * ptr->size;
 		ptr->vaddr = 0xe0000;

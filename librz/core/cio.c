@@ -422,7 +422,7 @@ RZ_API RzCmdStatus rz_core_io_plugin_print(RzIOPlugin *plugin, RzCmdStateOutput 
 
 		if (plugin->uris) {
 			char *uri;
-			char *uris = strdup(plugin->uris);
+			char *uris = rz_str_dup(plugin->uris);
 			RzList *plist = rz_str_split_list(uris, ",", 0);
 			RzListIter *piter;
 			pj_k(pj, "uris");
@@ -605,7 +605,7 @@ RZ_API bool rz_core_write_value_inc_at(RzCore *core, ut64 addr, st64 value, int 
 RZ_API bool rz_core_write_string_at(RzCore *core, ut64 addr, RZ_NONNULL const char *s) {
 	rz_return_val_if_fail(core && s, false);
 
-	char *str = strdup(s);
+	char *str = rz_str_dup(s);
 	if (!str) {
 		return false;
 	}
@@ -631,7 +631,7 @@ RZ_API bool rz_core_write_string_wide_at(RzCore *core, ut64 addr, const char *s)
 	rz_return_val_if_fail(core && s, false);
 
 	bool res = false;
-	char *str = strdup(s);
+	char *str = rz_str_dup(s);
 	if (!str) {
 		return false;
 	}
@@ -673,7 +673,7 @@ str_err:
 RZ_API bool rz_core_write_length_string_at(RzCore *core, ut64 addr, const char *s) {
 	rz_return_val_if_fail(core && s, false);
 
-	char *str = strdup(s);
+	char *str = rz_str_dup(s);
 	if (!str) {
 		return false;
 	}
@@ -905,7 +905,7 @@ RZ_API RzCmdStatus rz_core_io_pcache_print(RzCore *core, RzIODesc *desc, RzCmdSt
 RZ_API bool rz_core_write_string_zero_at(RzCore *core, ut64 addr, const char *s) {
 	rz_return_val_if_fail(core && s, false);
 
-	char *str = strdup(s);
+	char *str = rz_str_dup(s);
 	if (!str) {
 		return false;
 	}

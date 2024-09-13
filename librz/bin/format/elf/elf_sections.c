@@ -74,7 +74,7 @@ static bool create_section_from_phdr(ELFOBJ *bin, RzVector /*<RzBinElfSection>*/
 
 	section.rva = addr;
 	section.size = sz;
-	section.name = strdup(name);
+	section.name = rz_str_dup(name);
 	if (!section.name) {
 		return false;
 	}

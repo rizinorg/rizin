@@ -156,7 +156,7 @@ RZ_API bool MACH0_(get_chained_import)(struct MACH0_(obj_t) * obj, ut32 ordinal,
 
 RZ_API RZ_OWN char *MACH0_(chained_import_read_symbol_name)(struct MACH0_(obj_t) * obj, struct MACH0_(chained_import_t) * imp) {
 	if (imp->name) {
-		return strdup(imp->name);
+		return rz_str_dup(imp->name);
 	}
 	return MACH0_(read_chained_symbol)(obj, imp->name_offset);
 }
@@ -287,7 +287,7 @@ static void reconstruct_threaded_bind(ut64 paddr, ut64 vaddr, st64 addend, ut8 r
 	}
 	RzDyldChainedImportThreaded *imp = rz_vector_index_ptr(&cf->imports, sym_ord);
 	free(imp->sym_name);
-	imp->sym_name = strdup(sym_name);
+	imp->sym_name = rz_str_dup(sym_name);
 	imp->lib_ord = lib_ord;
 	imp->addend = addend;
 }

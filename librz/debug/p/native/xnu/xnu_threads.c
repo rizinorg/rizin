@@ -223,7 +223,7 @@ static bool xnu_fill_info_thread(RzDebug *dbg, xnu_thread_t *thread) {
 #if !defined(MAC_OS_X_VERSION_10_6)
 	// THREAD_IDENTIFIER_INFO introduced in 10.6
 	// TODO: use e.g. only basic info as a fallback here
-	thread->name = strdup("unknown");
+	thread->name = rz_str_dup("unknown");
 	return false;
 #else
 	mach_msg_type_number_t count = THREAD_BASIC_INFO_COUNT;
@@ -244,16 +244,16 @@ static bool xnu_fill_info_thread(RzDebug *dbg, xnu_thread_t *thread) {
 	RZ_FREE(thread->name);
 #if TARGET_OS_IPHONE
 	// TODO proc_pidinfo here
-	thread->name = strdup("unknown");
+	thread->name = rz_str_dup("unknown");
 #else
 	struct proc_threadinfo proc_threadinfo;
 	int ret_proc = proc_pidinfo(dbg->pid, PROC_PIDTHREADINFO,
 		identifier_info.thread_handle,
 		&proc_threadinfo, PROC_PIDTHREADINFO_SIZE);
 	if (ret_proc && proc_threadinfo.pth_name[0]) {
-		thread->name = strdup(proc_threadinfo.pth_name);
+		thread->name = rz_str_dup(proc_threadinfo.pth_name);
 	} else {
-		thread->name = strdup("unknown");
+		thread->name = rz_str_dup("unknown");
 	}
 #endif
 #endif
@@ -268,7 +268,7 @@ static xnu_thread_t *xnu_get_thread_with_info(RzDebug *dbg, thread_t port) {
 	thread->port = port;
 	if (!xnu_fill_info_thread(dbg, thread)) {
 		free(thread->name);
-		thread->name = strdup("unknown");
+		thread->name = rz_str_dup("unknown");
 	}
 	return thread;
 }
@@ -276,7 +276,7 @@ static xnu_thread_t *xnu_get_thread_with_info(RzDebug *dbg, thread_t port) {
 static int xnu_update_thread_info(RzDebug *dbg, xnu_thread_t *thread) {
 	if (!xnu_fill_info_thread(dbg, thread)) {
 		free(thread->name);
-		thread->name = strdup("unknown");
+		thread->name = rz_str_dup("unknown");
 	}
 	return true;
 }

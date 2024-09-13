@@ -301,7 +301,7 @@ RZ_API char *rz_core_add_asmqjmp(RzCore *core, ut64 addr) {
 			return NULL;
 		}
 		rz_core_set_asmqjmps(core, t, sizeof(t), i);
-		return strdup(t);
+		return rz_str_dup(t);
 	}
 	return NULL;
 }
@@ -364,7 +364,7 @@ static char *getNameDelta(RzCore *core, ut64 addr) {
 				: item->name;
 			return rz_str_newf("%s+%" PFMT64u, name, addr - item->offset);
 		}
-		return strdup(item->name);
+		return rz_str_dup(item->name);
 	}
 	return NULL;
 }
@@ -591,7 +591,7 @@ static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 		// push state
 		if (str[0] && str[1]) {
 			const char *q;
-			char *o = strdup(str + 1);
+			char *o = rz_str_dup(str + 1);
 			if (o) {
 				q = rz_num_calc_index(core->num, NULL);
 				if (q) {
@@ -634,7 +634,7 @@ static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 				RZ_LOG_ERROR("core: expected '{' after 'k'.\n");
 				break;
 			}
-			bptr = strdup(str + 3);
+			bptr = rz_str_dup(str + 3);
 			ptr = strchr(bptr, '}');
 			if (!ptr) {
 				// invalid json
@@ -655,7 +655,7 @@ static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 			free(out);
 			return ret;
 		case '{': // ${ev} eval var
-			bptr = strdup(str + 2);
+			bptr = rz_str_dup(str + 2);
 			ptr = strchr(bptr, '}');
 			if (ptr) {
 				ptr[0] = '\0';
@@ -670,7 +670,7 @@ static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 			return rz_cons_get_size(NULL);
 		case 'r': // $r
 			if (str[2] == '{') {
-				bptr = strdup(str + 3);
+				bptr = rz_str_dup(str + 3);
 				ptr = strchr(bptr, '}');
 				if (!ptr) {
 					free(bptr);
@@ -688,7 +688,7 @@ static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 			break;
 		case 'e': // $e
 			if (str[2] == '{') { // $e{flag} flag off + size
-				char *flagName = strdup(str + 3);
+				char *flagName = rz_str_dup(str + 3);
 				int flagLength = strlen(flagName);
 				if (flagLength > 0) {
 					flagName[flagLength - 1] = 0;
@@ -747,7 +747,7 @@ static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 			return core->blocksize;
 		case 's': // $s file size
 			if (str[2] == '{') { // $s{flag} flag size
-				bptr = strdup(str + 3);
+				bptr = rz_str_dup(str + 3);
 				ptr = strchr(bptr, '}');
 				if (!ptr) {
 					// invalid json
@@ -1013,7 +1013,7 @@ RZ_API char *rz_core_analysis_hasrefs(RzCore *core, ut64 value, int mode) {
 		return res;
 	}
 	RzFlagItem *fi = rz_flag_get_i(core->flags, value);
-	return fi ? strdup(fi->name) : NULL;
+	return fi ? rz_str_dup(fi->name) : NULL;
 }
 
 static char *getvalue(ut64 value, int bits) {
@@ -1278,10 +1278,10 @@ RZ_API char *rz_core_analysis_get_comments(RzCore *core, ut64 addr) {
 			return rz_str_newf("%s %s", type, cmt);
 		}
 		if (type) {
-			return strdup(type);
+			return rz_str_dup(type);
 		}
 		if (cmt) {
-			return strdup(cmt);
+			return rz_str_dup(cmt);
 		}
 	}
 	return NULL;
@@ -1501,7 +1501,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	rz_core_seek_reset(core);
 	core->lastsearch = NULL;
 	core->cmdfilter = NULL;
-	core->curtheme = strdup("default");
+	core->curtheme = rz_str_dup("default");
 	core->switch_file_view = 0;
 	core->cmdremote = 0;
 	core->incomment = false;
@@ -1924,7 +1924,7 @@ RZ_API int rz_core_prompt(RzCore *r, int sync) {
 		return rz_core_prompt_exec(r);
 	}
 	free(r->cmdqueue);
-	r->cmdqueue = strdup(line);
+	r->cmdqueue = rz_str_dup(line);
 	if (r->scr_gadgets && *line && *line != 'q') {
 		rz_core_gadget_print(r);
 	}
@@ -1972,7 +1972,7 @@ RZ_API char *rz_core_op_str(RzCore *core, ut64 addr) {
 	rz_asm_set_pc(core->rasm, addr);
 	rz_io_read_at(core->io, addr, buf, sizeof(buf));
 	int ret = rz_asm_disassemble(core->rasm, &op, buf, sizeof(buf));
-	char *str = (ret > 0) ? strdup(rz_strbuf_get(&op.buf_asm)) : NULL;
+	char *str = (ret > 0) ? rz_str_dup(rz_strbuf_get(&op.buf_asm)) : NULL;
 	rz_asm_op_fini(&op);
 	return str;
 }
@@ -2145,7 +2145,7 @@ reaccept:
 				if (cmd_output) {
 					cmd_len = strlen(cmd_output) + 1;
 				} else {
-					cmd_output = strdup("");
+					cmd_output = rz_str_dup("");
 					cmd_len = 0;
 				}
 				bufw = malloc(cmd_len + 5);
@@ -2297,7 +2297,7 @@ RZ_API RZ_OWN char *rz_core_editor(const RzCore *core, RZ_NULLABLE const char *f
 
 	bool readonly = false;
 	if (file && *file != '*') {
-		name = strdup(file);
+		name = rz_str_dup(file);
 		fd = rz_sys_open(file, O_RDWR, 0644);
 		if (fd == -1) {
 			fd = rz_sys_open(file, O_RDWR | O_CREAT, 0644);

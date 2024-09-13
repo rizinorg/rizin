@@ -78,7 +78,7 @@ static char *download(struct SPDBDownloader *pd) {
 
 	if (opt->extract == 0) {
 		char *extractor_cmd = NULL;
-		char *archive_name = strdup(opt->dbg_file);
+		char *archive_name = rz_str_dup(opt->dbg_file);
 		archive_name[strlen(archive_name) - 1] = '_';
 		char *abspath_to_archive = rz_str_newf("%s%s%s%s%s%s%s",
 			opt->symbol_store_path, RZ_SYS_DIR,
@@ -126,10 +126,10 @@ void init_pdb_downloader(SPDBDownloaderOpt *opt, SPDBDownloader *pd) {
 		eprintf("Cannot allocate memory for SPDBDownloaderOpt.\n");
 		return;
 	}
-	pd->opt->dbg_file = strdup(opt->dbg_file);
-	pd->opt->guid = strdup(opt->guid);
-	pd->opt->symbol_server = strdup(opt->symbol_server);
-	pd->opt->symbol_store_path = strdup(opt->symbol_store_path);
+	pd->opt->dbg_file = rz_str_dup(opt->dbg_file);
+	pd->opt->guid = rz_str_dup(opt->guid);
+	pd->opt->symbol_server = rz_str_dup(opt->symbol_server);
+	pd->opt->symbol_store_path = rz_str_dup(opt->symbol_store_path);
 	pd->opt->extract = opt->extract;
 	pd->download = download;
 }
@@ -222,7 +222,7 @@ RZ_API RZ_OWN char *rz_bin_symserver_download(RZ_NONNULL const SPDBDownloaderOpt
 	SPDBDownloader downloader;
 	SPDBDownloaderOpt opt = *options;
 	char *path = NULL;
-	char *symbol_server = strdup(options->symbol_server);
+	char *symbol_server = rz_str_dup(options->symbol_server);
 	char *server = strtok(symbol_server, ";");
 	while (server && !path) {
 		opt.symbol_server = server;

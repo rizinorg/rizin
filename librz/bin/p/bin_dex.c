@@ -19,15 +19,15 @@ static RzBinInfo *info(RzBinFile *bf) {
 	}
 
 	binfo->lang = "java";
-	binfo->file = strdup(bf->file);
-	binfo->type = strdup("DEX CLASS");
+	binfo->file = rz_str_dup(bf->file);
+	binfo->type = rz_str_dup("DEX CLASS");
 	binfo->bclass = rz_bin_dex_version(dex);
 	binfo->has_va = true;
-	binfo->rclass = strdup("class");
-	binfo->os = strdup("linux");
-	binfo->subsystem = strdup("any");
-	binfo->machine = strdup("Dalvik VM");
-	binfo->arch = strdup("dalvik");
+	binfo->rclass = rz_str_dup("class");
+	binfo->os = rz_str_dup("linux");
+	binfo->subsystem = rz_str_dup("any");
+	binfo->machine = rz_str_dup("Dalvik VM");
+	binfo->arch = rz_str_dup("dalvik");
 	binfo->bits = 32;
 	binfo->big_endian = false;
 	binfo->dbg_info = rz_bin_dex_debug_info(dex);
@@ -163,7 +163,7 @@ static RzPVector /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 	}
 	vf->buf = buffer;
 	vf->buf_owned = false;
-	vf->name = strdup(RZ_DEX_RELOC_TARGETS);
+	vf->name = rz_str_dup(RZ_DEX_RELOC_TARGETS);
 
 	rz_pvector_push(vfiles, vf);
 	return vfiles;
@@ -224,7 +224,7 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 		if (strcmp(map->name, RZ_DEX_RELOC_TARGETS)) {
 			continue;
 		}
-		map->vfile_name = strdup(RZ_DEX_RELOC_TARGETS);
+		map->vfile_name = rz_str_dup(RZ_DEX_RELOC_TARGETS);
 	}
 	return maps;
 }

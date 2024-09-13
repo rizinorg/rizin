@@ -247,7 +247,7 @@ static char *mnemonics(RzAsm *a, int id, bool json) {
 		if (json) {
 			return name ? rz_str_newf("[\"%s\"]\n", name) : NULL;
 		}
-		return name ? strdup(name) : NULL;
+		return rz_str_dup(name);
 	}
 	RzStrBuf *buf = rz_strbuf_new("");
 	if (json) {

@@ -83,7 +83,7 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 	analysis->bb_tree = NULL;
 	analysis->ht_addr_fun = ht_up_new(NULL, NULL);
 	analysis->ht_name_fun = ht_sp_new(HT_STR_DUP, NULL, NULL);
-	analysis->os = strdup(RZ_SYS_OS);
+	analysis->os = rz_str_dup(RZ_SYS_OS);
 	analysis->esil_goto_limit = RZ_ANALYSIS_ESIL_GOTO_LIMIT;
 	analysis->opt.nopskip = true; // skip nops in code analysis
 	analysis->opt.hpskip = false; // skip `mov reg,reg` and `lea reg,[reg]`
@@ -286,7 +286,7 @@ static bool analysis_set_os(RzAnalysis *analysis, const char *os) {
 		os = RZ_SYS_OS;
 	}
 	free(analysis->os);
-	analysis->os = strdup(os);
+	analysis->os = rz_str_dup(os);
 	char *types_dir = rz_path_system(RZ_SDB_TYPES);
 	rz_type_db_set_os(analysis->typedb, os);
 	rz_type_db_reload(analysis->typedb, types_dir);
@@ -367,7 +367,7 @@ RZ_API void rz_analysis_set_cpu(RzAnalysis *analysis, const char *cpu) {
 		return;
 	}
 	free(analysis->cpu);
-	analysis->cpu = cpu ? strdup(cpu) : NULL;
+	analysis->cpu = rz_str_dup(cpu);
 	int v = rz_analysis_archinfo(analysis, RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN);
 	if (v != -1) {
 		analysis->pcalign = v;
@@ -612,7 +612,7 @@ RZ_API bool rz_analysis_noreturn_add(RzAnalysis *analysis, const char *name, ut6
 		}
 	}
 	if (rz_type_func_exist(analysis->typedb, tmp_name)) {
-		fnl_name = strdup(tmp_name);
+		fnl_name = rz_str_dup(tmp_name);
 	} else if (!(fnl_name = rz_analysis_function_name_guess(analysis->typedb, (char *)tmp_name))) {
 		if (addr == UT64_MAX) {
 			if (name) {
@@ -816,7 +816,7 @@ RZ_API void rz_analysis_add_import(RzAnalysis *analysis, const char *imp) {
 			return;
 		}
 	}
-	char *cimp = strdup(imp);
+	char *cimp = rz_str_dup(imp);
 	if (!cimp) {
 		return;
 	}

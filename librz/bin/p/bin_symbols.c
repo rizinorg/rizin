@@ -170,10 +170,10 @@ static RzBinSymbol *bin_symbol_from_symbol(RzCoreSymCacheElement *element, RzCor
 	RzBinSymbol *sym = RZ_NEW0(RzBinSymbol);
 	if (sym) {
 		if (s->name && s->mangled_name) {
-			sym->dname = strdup(s->name);
-			sym->name = strdup(s->mangled_name);
+			sym->dname = rz_str_dup(s->name);
+			sym->name = rz_str_dup(s->mangled_name);
 		} else if (s->name) {
-			sym->name = strdup(s->name);
+			sym->name = rz_str_dup(s->name);
 		} else if (s->mangled_name) {
 			sym->name = s->mangled_name;
 		}
@@ -335,13 +335,13 @@ static RzBinInfo *info(RzBinFile *bf) {
 	if (!ret) {
 		return NULL;
 	}
-	ret->file = strdup(bf->file);
-	ret->bclass = strdup("symbols");
-	ret->os = strdup("unknown");
-	ret->arch = sm.arch ? strdup(sm.arch) : NULL;
+	ret->file = rz_str_dup(bf->file);
+	ret->bclass = rz_str_dup("symbols");
+	ret->os = rz_str_dup("unknown");
+	ret->arch = rz_str_dup(sm.arch);
 	ret->bits = sm.bits;
-	ret->type = strdup("Symbols file");
-	ret->subsystem = strdup("llvm");
+	ret->type = rz_str_dup("Symbols file");
+	ret->subsystem = rz_str_dup("llvm");
 	ret->has_va = true;
 
 	return ret;

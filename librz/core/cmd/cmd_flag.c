@@ -82,7 +82,7 @@ static RzList /*<char *>*/ *__childrenFlagsOf(RzCore *core, RzList /*<RzFlagItem
 		const char *only = __isOnlySon(core, flags, kw);
 		if (only) {
 			free(kw);
-			kw = strdup(only);
+			kw = rz_str_dup(only);
 		} else {
 			const char *fname = NULL;
 			size_t fname_len = 0;
@@ -685,7 +685,7 @@ static bool rename_flag_ordinal(RzFlagItem *fi, void *user) {
 }
 
 static void flag_ordinals(RzCore *core, const char *glob) {
-	char *pfx = strdup(glob);
+	char *pfx = rz_str_dup(glob);
 	char *p = strchr(pfx, '*');
 	if (p) {
 		*p = 0;

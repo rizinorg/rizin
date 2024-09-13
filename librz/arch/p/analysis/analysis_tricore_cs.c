@@ -245,7 +245,7 @@ static char *tricore_reg_profile(RzAnalysis *_) {
 		"drx	set_FZ	.1	902	0\n"
 		"drx	set_FU	.1	903	0\n"
 		"drx	set_FX	.1	904	0\n";
-	return strdup(p);
+	return rz_str_dup(p);
 }
 
 static void tricore_opex(RzAsmTriCoreContext *ctx, RzStrBuf *sb);
@@ -275,7 +275,7 @@ tricore_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len,
 	if (ctx->count <= 0 || !ctx->insn) {
 		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
-			op->mnemonic = strdup("invalid");
+			op->mnemonic = rz_str_dup("invalid");
 		}
 		goto beach;
 	}

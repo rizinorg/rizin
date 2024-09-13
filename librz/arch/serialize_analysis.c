@@ -710,7 +710,7 @@ RZ_API RZ_OWN RzAnalysisVar *rz_serialize_analysis_var_load(
 		if (!ret) {
 			goto beach;
 		}
-		ret->name = strdup(name);
+		ret->name = rz_str_dup(name);
 		ret->type = vartype;
 		ret->fcn = fcn;
 		rz_mem_copy(&ret->storage, sizeof(RzAnalysisVarStorage), &storage, sizeof(RzAnalysisVarStorage));
@@ -727,7 +727,7 @@ RZ_API RZ_OWN RzAnalysisVar *rz_serialize_analysis_var_load(
 	ret->kind = k;
 	if (comment) {
 		free(ret->comment);
-		ret->comment = strdup(comment);
+		ret->comment = rz_str_dup(comment);
 	}
 	RzAnalysisVarAccess *acc;
 	rz_vector_foreach (&accesses, acc) {
@@ -1209,7 +1209,7 @@ static bool function_load_cb(void *user, const SdbKv *kv) {
 			if (function->name) {
 				free(function->name);
 			}
-			function->name = strdup(child->str_value);
+			function->name = rz_str_dup(child->str_value);
 			break;
 		case FUNCTION_FIELD_BITS:
 			if (child->type != RZ_JSON_INTEGER) {
@@ -1297,7 +1297,7 @@ static bool function_load_cb(void *user, const SdbKv *kv) {
 				if (baby->type != RZ_JSON_STRING) {
 					continue;
 				}
-				char *import = strdup(baby->str_value);
+				char *import = rz_str_dup(baby->str_value);
 				if (!import) {
 					break;
 				}
@@ -1713,7 +1713,7 @@ static bool meta_load_cb(void *user, const SdbKv *kv) {
 		item->type = type;
 		item->subtype = subtype;
 		item->space = space_name ? rz_spaces_get(&analysis->meta_spaces, space_name) : NULL;
-		item->str = str ? strdup(str) : NULL;
+		item->str = rz_str_dup(str);
 		if (str && !item->str) {
 			free(item);
 			continue;

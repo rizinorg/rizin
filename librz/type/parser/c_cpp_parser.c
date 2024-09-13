@@ -199,7 +199,7 @@ static int type_parse_string(CParserState *state, const char *code, char **error
 		RZ_LOG_DEBUG("Warnings:\n");
 		RZ_LOG_DEBUG("%s", warning_msgs);
 		if (error_msg) {
-			*error_msg = strdup(error_msgs);
+			*error_msg = rz_str_dup(error_msgs);
 		}
 		free(error_msgs);
 		free(warning_msgs);
@@ -382,7 +382,7 @@ RZ_API RZ_OWN RzType *rz_type_parse_string_single(RzTypeParser *parser, const ch
 		RZ_LOG_DEBUG("Warnings:\n");
 		RZ_LOG_DEBUG("%s", warning_msgs);
 		if (error_msg) {
-			*error_msg = strdup(error_msgs);
+			*error_msg = rz_str_dup(error_msgs);
 		}
 		free(error_msgs);
 		free(warning_msgs);
@@ -472,7 +472,7 @@ RZ_API RZ_OWN RzType *rz_type_parse_string_declaration_single(RzTypeParser *pars
 		RZ_LOG_DEBUG("Warnings:\n");
 		RZ_LOG_DEBUG("%s", warning_msgs);
 		if (error_msg) {
-			*error_msg = strdup(error_msgs);
+			*error_msg = rz_str_dup(error_msgs);
 		}
 		free(error_msgs);
 		free(warning_msgs);

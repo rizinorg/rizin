@@ -23,7 +23,7 @@ static RzType *parse_type_string_cached(RzTypeParser *parser, HtSP *cache, const
 	}
 	r = rz_type_parse_string_single(parser, str, error_msg);
 	if (r) {
-		char *reminder = strdup(str);
+		char *reminder = rz_str_dup(str);
 		if (reminder) {
 			ht_sp_insert(cache, str, r);
 			rz_list_push(newly_added, reminder);

@@ -50,8 +50,8 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	map->psize = obj->hdr.data_start;
 	map->vsize = obj->hdr.data_start;
 	map->perm = RZ_PERM_RWX;
-	map->name = strdup("hdr+text");
-	map->vfile_name = obj->buf_patched ? strdup(VFILE_NAME_PATCHED) : NULL;
+	map->name = rz_str_dup("hdr+text");
+	map->vfile_name = obj->buf_patched ? rz_str_dup(VFILE_NAME_PATCHED) : NULL;
 	rz_pvector_push(ret, map);
 
 	map = RZ_NEW0(RzBinMap);
@@ -64,8 +64,8 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	map->psize = obj->hdr.data_end - obj->hdr.data_start;
 	map->vsize = rz_bflt_get_data_vsize(obj);
 	map->perm = RZ_PERM_RWX;
-	map->name = strdup("data+bss");
-	map->vfile_name = obj->buf_patched ? strdup(VFILE_NAME_PATCHED) : NULL;
+	map->name = rz_str_dup("data+bss");
+	map->vfile_name = obj->buf_patched ? rz_str_dup(VFILE_NAME_PATCHED) : NULL;
 	rz_pvector_push(ret, map);
 
 	return ret;
@@ -89,7 +89,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	sec->size = obj->hdr.data_start;
 	sec->vsize = obj->hdr.data_start;
 	sec->perm = RZ_PERM_RWX;
-	sec->name = strdup("TEXT");
+	sec->name = rz_str_dup("TEXT");
 	sec->is_segment = true;
 	rz_pvector_push(ret, sec);
 
@@ -102,7 +102,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	sec->size = obj->hdr.data_start;
 	sec->vsize = rz_bflt_get_data_vsize(obj);
 	sec->perm = RZ_PERM_RWX;
-	sec->name = strdup("DATA");
+	sec->name = rz_str_dup("DATA");
 	sec->is_segment = true;
 	rz_pvector_push(ret, sec);
 
@@ -117,7 +117,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	sec->size = BFLT_HDR_SIZE;
 	sec->vsize = BFLT_HDR_SIZE;
 	sec->perm = RZ_PERM_RWX;
-	sec->name = strdup("header");
+	sec->name = rz_str_dup("header");
 	rz_pvector_push(ret, sec);
 
 	sec = RZ_NEW0(RzBinSection);
@@ -129,7 +129,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	sec->size = obj->hdr.data_start - BFLT_HDR_SIZE;
 	sec->vsize = obj->hdr.data_start - BFLT_HDR_SIZE;
 	sec->perm = RZ_PERM_RWX;
-	sec->name = strdup("text");
+	sec->name = rz_str_dup("text");
 	rz_pvector_push(ret, sec);
 
 	sec = RZ_NEW0(RzBinSection);
@@ -141,7 +141,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	sec->size = obj->hdr.data_end - obj->hdr.data_start;
 	sec->vsize = obj->hdr.data_end - obj->hdr.data_start;
 	sec->perm = RZ_PERM_RWX;
-	sec->name = strdup("data");
+	sec->name = rz_str_dup("data");
 	sec->is_data = true;
 	rz_pvector_push(ret, sec);
 
@@ -154,7 +154,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	sec->size = 0;
 	sec->vsize = obj->hdr.bss_end - obj->hdr.data_end;
 	sec->perm = RZ_PERM_RWX;
-	sec->name = strdup("bss");
+	sec->name = rz_str_dup("bss");
 	sec->is_data = true;
 	rz_pvector_push(ret, sec);
 
@@ -176,7 +176,7 @@ static RzPVector /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 			return r;
 		}
 		vf->buf = obj->buf_patched;
-		vf->name = strdup(VFILE_NAME_PATCHED);
+		vf->name = rz_str_dup(VFILE_NAME_PATCHED);
 		rz_pvector_push(r, vf);
 	}
 	return r;
@@ -222,18 +222,18 @@ static RzBinInfo *info(RzBinFile *bf) {
 	if (!(info = RZ_NEW0(RzBinInfo))) {
 		return NULL;
 	}
-	info->file = bf->file ? strdup(bf->file) : NULL;
-	info->rclass = strdup("bflt");
-	info->bclass = strdup("bflt");
-	info->type = strdup("bFLT (Executable file)");
-	info->os = strdup("Linux");
-	info->subsystem = strdup("uClinux");
-	info->arch = strdup("arm"); // this is a wild guess, the format does not specify any arch, but arm is probably the most popular
+	info->file = rz_str_dup(bf->file);
+	info->rclass = rz_str_dup("bflt");
+	info->bclass = rz_str_dup("bflt");
+	info->type = rz_str_dup("bFLT (Executable file)");
+	info->os = rz_str_dup("Linux");
+	info->subsystem = rz_str_dup("uClinux");
+	info->arch = rz_str_dup("arm"); // this is a wild guess, the format does not specify any arch, but arm is probably the most popular
 	info->big_endian = obj->big_endian;
 	info->bits = 32;
 	info->has_va = true;
 	info->dbg_info = 0;
-	info->machine = strdup("unknown");
+	info->machine = rz_str_dup("unknown");
 	info->has_pi = true;
 	return info;
 }

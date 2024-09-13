@@ -3156,7 +3156,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	if (n < 1) {
 		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
-			op->mnemonic = strdup("invalid");
+			op->mnemonic = rz_str_dup("invalid");
 		}
 	} else {
 		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
@@ -3706,7 +3706,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		 break;
 #endif
 	}
-	return (p && *p) ? strdup(p) : NULL;
+	return rz_str_dup(p);
 }
 
 static int archinfo(RzAnalysis *a, RzAnalysisInfoType query) {

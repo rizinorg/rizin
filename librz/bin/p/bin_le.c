@@ -13,11 +13,11 @@ static RzBinInfo *le_info(RzBinFile *bf) {
 	rz_bin_le_obj_t *bin = bf->o->bin_obj;
 	LE_header *h = bin->header;
 	info->bits = 32;
-	info->type = strdup(bin->type);
-	info->cpu = strdup(bin->cpu);
-	info->os = strdup(bin->os);
-	info->arch = strdup(bin->arch);
-	info->file = strdup(bin->modname ? bin->modname : "");
+	info->type = rz_str_dup(bin->type);
+	info->cpu = rz_str_dup(bin->cpu);
+	info->os = rz_str_dup(bin->os);
+	info->arch = rz_str_dup(bin->arch);
+	info->file = rz_str_dup(bin->modname ? bin->modname : "");
 	info->big_endian = h->border || h->worder;
 	info->has_va = true;
 	info->baddr = 0;

@@ -26,7 +26,7 @@ RZ_API RzTypeDB *rz_type_db_new() {
 		free(typedb);
 		return NULL;
 	}
-	typedb->target->default_type = strdup("int");
+	typedb->target->default_type = rz_str_dup("int");
 	typedb->types = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_type_base_type_free);
 	if (!typedb->types) {
 		goto rz_type_db_new_fail;
@@ -101,20 +101,20 @@ static void set_default_type(RzTypeTarget *target, int bits) {
 	}
 	switch (bits) {
 	case 8:
-		target->default_type = strdup("int8_t");
+		target->default_type = rz_str_dup("int8_t");
 		break;
 	case 16:
-		target->default_type = strdup("int16_t");
+		target->default_type = rz_str_dup("int16_t");
 		break;
 	case 32:
-		target->default_type = strdup("int32_t");
+		target->default_type = rz_str_dup("int32_t");
 		break;
 	case 64:
-		target->default_type = strdup("int64_t");
+		target->default_type = rz_str_dup("int64_t");
 		break;
 	default:
 		rz_warn_if_reached();
-		target->default_type = strdup("int");
+		target->default_type = rz_str_dup("int");
 	}
 }
 
@@ -159,7 +159,7 @@ RZ_API void rz_type_db_set_address_bits(RzTypeDB *typedb, int addr_bits) {
  */
 RZ_API void rz_type_db_set_os(RzTypeDB *typedb, const char *os) {
 	free(typedb->target->os);
-	typedb->target->os = os ? strdup(os) : NULL;
+	typedb->target->os = rz_str_dup(os);
 }
 
 /**
@@ -173,7 +173,7 @@ RZ_API void rz_type_db_set_os(RzTypeDB *typedb, const char *os) {
  */
 RZ_API void rz_type_db_set_cpu(RzTypeDB *typedb, const char *cpu) {
 	free(typedb->target->cpu);
-	typedb->target->cpu = cpu ? strdup(cpu) : NULL;
+	typedb->target->cpu = rz_str_dup(cpu);
 }
 
 /**
@@ -835,7 +835,7 @@ static bool type_decl_as_pretty_string(const RzTypeDB *typedb, const RzType *typ
 		*self_ref = false;
 		ht_sp_find(used_types, type->identifier.name, self_ref);
 		*self_ref = *self_ref && !is_anon; // no self_ref for anon types
-		*self_ref_typename = *self_ref ? strdup(type->identifier.name) : NULL;
+		*self_ref_typename = *self_ref ? rz_str_dup(type->identifier.name) : NULL;
 
 		RzBaseType *btype = rz_type_db_get_base_type(typedb, type->identifier.name);
 		if (!btype && !allow_non_exist) {

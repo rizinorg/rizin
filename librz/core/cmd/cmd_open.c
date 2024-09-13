@@ -991,7 +991,7 @@ RZ_IPI RzCmdStatus rz_reopen_debug_file_handler(RzCore *core, int argc, const ch
 
 RZ_IPI RzCmdStatus rz_reopen_debug_rzrun_handler(RzCore *core, int argc, const char **argv) {
 	char *file = rz_file_temp("rz-run");
-	char *s = strdup(argv[1]);
+	char *s = rz_str_dup(argv[1]);
 	rz_config_set(core->config, "dbg.profile", file);
 	rz_str_replace_char(s, ',', '\n');
 	rz_file_dump(file, (const ut8 *)s, strlen(s), 0);
@@ -1022,7 +1022,7 @@ static RzCmdStatus reopen_nobin_headers(RzCore *core, int add_perms) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	int perms = core->io->desc->perm | add_perms;
-	char *fname = strdup(desc->name);
+	char *fname = rz_str_dup(desc->name);
 	if (!fname) {
 		return RZ_CMD_STATUS_ERROR;
 	}

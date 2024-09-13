@@ -22,9 +22,9 @@ static char *showfile(char *res, const int nth, const char *fpath, const char *n
 	}
 	const bool isdir = rz_file_is_directory(n);
 	if (isdir) {
-		nn = rz_str_append(strdup(fpath), "/");
+		nn = rz_str_append(rz_str_dup(fpath), "/");
 	} else {
-		nn = strdup(fpath);
+		nn = rz_str_dup(fpath);
 	}
 	if (!*nn) {
 		free(nn);
@@ -46,7 +46,7 @@ static char *showfile(char *res, const int nth, const char *fpath, const char *n
 		uid = sb.st_uid;
 		gid = sb.st_gid;
 		perm = sb.st_mode & 0777;
-		if (!(u_rwx = strdup(rz_str_rwx_i(perm >> 6)))) {
+		if (!(u_rwx = rz_str_dup(rz_str_rwx_i(perm >> 6)))) {
 			free(nn);
 			return res;
 		}
@@ -68,7 +68,7 @@ static char *showfile(char *res, const int nth, const char *fpath, const char *n
 		}
 	}
 #else
-	u_rwx = strdup("-");
+	u_rwx = rz_str_dup("-");
 	fch = isdir ? 'd' : '-';
 #endif
 	if (printfmt == 'q') {
@@ -177,13 +177,13 @@ static char *syscmd_ls(RZ_NONNULL const int argc, const char **argv) {
 			}
 			memcpy(d, path, off);
 			path = (const char *)d;
-			pattern = strdup(p + 1);
+			pattern = rz_str_dup(p + 1);
 		} else {
-			pattern = strdup(path);
+			pattern = rz_str_dup(path);
 			path = ".";
 		}
 	} else {
-		pattern = strdup("*");
+		pattern = rz_str_dup("*");
 	}
 	if (rz_file_is_regular(path)) {
 		res = showfile(res, 0, path, path, printfmt);
@@ -195,17 +195,17 @@ static char *syscmd_ls(RZ_NONNULL const int argc, const char **argv) {
 	files = rz_sys_dir(path);
 
 	if (path[strlen(path) - 1] == '/') {
-		dir = strdup(path);
+		dir = rz_str_dup(path);
 	} else {
-		dir = rz_str_append(strdup(path), "/");
+		dir = rz_str_append(rz_str_dup(path), "/");
 	}
 	int nth = 0;
 	if (printfmt == FMT_JSON) {
-		res = strdup("[");
+		res = rz_str_dup("[");
 	}
 	needs_newline = 0;
 	rz_list_foreach (files, iter, name) {
-		char *n = rz_str_append(strdup(dir), name);
+		char *n = rz_str_append(rz_str_dup(dir), name);
 		if (!n) {
 			break;
 		}
@@ -287,7 +287,7 @@ static ut32 vernum(const char *s) {
 	// XXX this is known to be buggy, only works for strings like "x.x.x"
 	// XXX anything like "x.xx.x" will break the parsing
 	// XXX -git is ignored, maybe we should shift for it
-	char *a = strdup(s);
+	char *a = rz_str_dup(s);
 	a = rz_str_replace(a, ".", "0", 1);
 	char *dash = strchr(a, '-');
 	if (dash) {

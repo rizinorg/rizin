@@ -639,7 +639,7 @@ static bool deserialize_checkpoints_cb(void *user, const SdbKv *kv) {
 			eprintf("Error: failed to allocate RzDebugSnap snap");
 			continue;
 		}
-		snap->name = strdup(namej->str_value);
+		snap->name = rz_str_dup(namej->str_value);
 		snap->addr = addrj->num.u_value;
 		snap->addr_end = addr_endj->num.u_value;
 		snap->size = sizej->num.u_value;

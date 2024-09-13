@@ -889,7 +889,7 @@ static ut32 thumb_getshift(const char *str) {
 	const char *shifts[] = {
 		"LSL", "LSR", "ASR", "ROR", 0, "RRX"
 	};
-	char *type = strdup(str);
+	char *type = rz_str_dup(str);
 	char *arg;
 	char *space;
 	ut32 res = 0;
@@ -914,7 +914,7 @@ static ut32 thumb_getshift(const char *str) {
 		return 0;
 	}
 	*space = 0;
-	arg = strdup(++space);
+	arg = rz_str_dup(++space);
 
 	for (i = 0; shifts[i]; i++) {
 		if (!strcmp(type, shifts[i])) {

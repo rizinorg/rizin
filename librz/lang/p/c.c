@@ -52,7 +52,7 @@ static int lang_c_file(RzLang *lang, const char *file) {
 	}
 	cc = rz_sys_getenv("CC");
 	if (RZ_STR_ISEMPTY(cc)) {
-		cc = strdup("gcc");
+		cc = rz_str_dup("gcc");
 	}
 	char *libdir = rz_path_libdir();
 	char *pkgconf_path = rz_file_path_join(libdir, "pkgconfig");

@@ -108,7 +108,7 @@ static RzIODesc *__open(RzIO *io, const char *pathname, int rw, int mode) {
 		if (!mal) {
 			return NULL;
 		}
-		char *path = strdup(pathname + 8);
+		char *path = rz_str_dup(pathname + 8);
 		int path_len = strlen(path);
 		if (path_len > 0) {
 			if (path[path_len - 1] == '/') {

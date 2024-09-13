@@ -176,8 +176,8 @@ static bool parse(RzParse *p, const char *data, RzStrBuf *sb) {
 	if (len >= sizeof(w0) || sz >= sizeof(w0)) {
 		return false;
 	}
-	// strdup can be slow here :?
-	if (!(buf = strdup(data))) {
+	// rz_str_dup can be slow here :?
+	if (!(buf = rz_str_dup(data))) {
 		return false;
 	}
 	*w0 = *w1 = *w2 = *w3 = '\0';
@@ -391,7 +391,7 @@ static char *subvar_stack(RzParse *p, RzAnalysisOp *op, RZ_NULLABLE RzAnalysisFu
 static bool subvar(RzParse *p, RzAnalysisFunction *f, RzAnalysisOp *op, char *data, char *str, int len) {
 	const ut64 addr = op->addr;
 	const int oplen = op->size;
-	char *tstr = strdup(data);
+	char *tstr = rz_str_dup(data);
 	if (!tstr) {
 		return false;
 	}

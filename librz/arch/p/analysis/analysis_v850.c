@@ -415,7 +415,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"flg	ov  .1 152.29 0\n" // overflow
 		"flg	s   .1 152.30 0\n" // signed result
 		"flg	z   .1 152.31 0\n"; // zero result
-	return strdup(p);
+	return rz_str_dup(p);
 }
 
 /**

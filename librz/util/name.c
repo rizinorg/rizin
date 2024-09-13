@@ -94,7 +94,7 @@ RZ_API char *rz_name_filter2(const char *name, bool strict) {
 	while (!rz_name_validate_char(*name, strict)) {
 		name++;
 	}
-	char *res = strdup(name);
+	char *res = rz_str_dup(name);
 	for (i = 0; res[i]; i++) {
 		if (!rz_name_validate_char(res[i], strict)) {
 			res[i] = '_';

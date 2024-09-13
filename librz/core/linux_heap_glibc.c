@@ -88,7 +88,7 @@ static GHT GH(get_main_arena_with_symbol)(RzCore *core, RzDebugMap *map) {
 
 	GHT main_arena = GHT_MAX;
 	GHT off = GHT_MAX;
-	char *path = strdup(map->name);
+	char *path = rz_str_dup(map->name);
 	if (path && rz_file_exists(path)) {
 		off = GH(get_va_symbol)(core, path, "main_arena");
 		if (off != GHT_MAX) {
@@ -178,7 +178,7 @@ static ut8 *GH(get_glibc_banner)(RzCore *core, const char *section_name,
 			goto cleanup;
 		}
 		buf_parse = (ut8 *)rz_mem_mem((const ut8 *)buf, rz_section->size, (const ut8 *)"GNU C Library", strlen("GNU C Library"));
-		ret_buf = (ut8 *)strdup((char *)buf_parse);
+		ret_buf = (ut8 *)rz_str_dup((char *)buf_parse);
 		break;
 	}
 
@@ -2736,7 +2736,7 @@ RZ_IPI int GH(rz_cmd_heap_bins_list_print)(RzCore *core, const char *input) {
 		free(main_arena);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	char *m_state_str, *dup = strdup(input);
+	char *m_state_str, *dup = rz_str_dup(input);
 	if (*dup) {
 		strtok(dup, ":");
 		m_state_str = strtok(NULL, ":");
@@ -2781,7 +2781,7 @@ RZ_IPI int GH(rz_cmd_heap_fastbins_print)(void *data, const char *input) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	bool main_arena_only = false;
-	char *m_state_str, *dup = strdup(input);
+	char *m_state_str, *dup = rz_str_dup(input);
 	if (*dup) {
 		strtok(dup, ":");
 		m_state_str = strtok(NULL, ":");

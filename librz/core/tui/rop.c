@@ -40,7 +40,7 @@ RZ_IPI int rz_core_visual_view_rop(RzCore *core) {
 	bool show_color = core->print->flags & RZ_PRINT_FLAGS_COLOR;
 	bool forceaddr = false;
 	ut64 addr = UT64_MAX;
-	char *cursearch = strdup(linestr);
+	char *cursearch = rz_str_dup(linestr);
 	while (true) {
 		rz_cons_clear00();
 		rz_cons_printf("[0x%08" PFMT64x "]-[visual-rzrop] %s (see pdp command)\n",
@@ -178,7 +178,7 @@ RZ_IPI int rz_core_visual_view_rop(RzCore *core) {
 				delta = 0;
 				addr = UT64_MAX;
 				cur = 0;
-				cursearch = strdup(linestr);
+				cursearch = rz_str_dup(linestr);
 				free(ropstr);
 				ropstr = rz_core_cmd_strf(core, "\"/Rl %s\" @e:scr.color=0", linestr);
 				rz_list_free(rops);

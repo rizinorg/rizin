@@ -22,15 +22,15 @@ static RzBinInfo *info(RzBinFile *bf) {
 		return NULL;
 	}
 	binfo->lang = rz_bin_java_class_language(jclass);
-	binfo->file = strdup(bf->file);
-	binfo->type = strdup("JAVA CLASS");
+	binfo->file = rz_str_dup(bf->file);
+	binfo->type = rz_str_dup("JAVA CLASS");
 	binfo->bclass = rz_bin_java_class_version(jclass);
 	binfo->has_va = false;
-	binfo->rclass = strdup("class");
-	binfo->os = strdup("any");
-	binfo->subsystem = strdup("any");
-	binfo->machine = strdup("jvm");
-	binfo->arch = strdup("java");
+	binfo->rclass = rz_str_dup("class");
+	binfo->os = rz_str_dup("any");
+	binfo->subsystem = rz_str_dup("any");
+	binfo->machine = rz_str_dup("jvm");
+	binfo->arch = rz_str_dup("java");
 	binfo->bits = 32;
 	binfo->big_endian = true;
 	binfo->dbg_info = rz_bin_java_class_debug_info(jclass);

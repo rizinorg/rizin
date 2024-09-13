@@ -1717,7 +1717,7 @@ int parse_type_declarator_node(CParserState *state, TSNode node, const char *tex
 			node_malformed_error(state, parameter_list, text, "parameter_list");
 			return -1;
 		}
-		naked_callable->callable->name = strdup(*identifier);
+		naked_callable->callable->name = rz_str_dup(*identifier);
 		// Preserve the parent callable type
 		parent_type = (*tpair)->type;
 		// Then override with the naked callable type to proceed with parameter parsing

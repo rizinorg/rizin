@@ -171,14 +171,14 @@ static RzBinInfo *info(RzBinFile *bf) {
 	if (!ret) {
 		return NULL;
 	}
-	ret->file = strdup(bf->file);
-	ret->bclass = strdup("MZ");
-	ret->rclass = strdup("mz");
-	ret->os = strdup("DOS");
-	ret->arch = strdup("x86");
-	ret->machine = strdup("i386");
-	ret->type = strdup("EXEC (Executable file)");
-	ret->subsystem = strdup("DOS");
+	ret->file = rz_str_dup(bf->file);
+	ret->bclass = rz_str_dup("MZ");
+	ret->rclass = rz_str_dup("mz");
+	ret->os = rz_str_dup("DOS");
+	ret->arch = rz_str_dup("x86");
+	ret->machine = rz_str_dup("i386");
+	ret->type = rz_str_dup("EXEC (Executable file)");
+	ret->subsystem = rz_str_dup("DOS");
 	ret->bits = 16;
 	ret->dbg_info = 0;
 	ret->big_endian = false;

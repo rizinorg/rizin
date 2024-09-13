@@ -1315,7 +1315,7 @@ static char *_resource_type_str(int type) {
 		break;
 	default: return rz_str_newf("UNKNOWN (%d)", type);
 	}
-	return strdup(typeName);
+	return rz_str_dup(typeName);
 }
 
 static int read_image_resource_directory_entry(RzBuffer *b, ut64 addr, Pe_image_resource_directory_entry *entry) {
@@ -1480,10 +1480,10 @@ static void _parse_resource_directory(RzBinPEObj *bin, Pe_image_resource_directo
 			rs->timestr = rz_time_stamp_to_str(dir->TimeDateStamp);
 		}
 		rs->type = _resource_type_str(type);
-		rs->language = strdup(_resource_lang_str(entry.u1.Name & 0x3ff));
+		rs->language = rz_str_dup(_resource_lang_str(entry.u1.Name & 0x3ff));
 		rs->data = data;
 		if (resource_name) {
-			rs->name = strdup(resource_name);
+			rs->name = rz_str_dup(resource_name);
 		} else {
 			rs->name = rz_str_newf("%d", id);
 		}

@@ -89,7 +89,7 @@ char *tms320_c64x_mnemonics(RzAsm *a, int id, bool json, void *c64x) {
 		if (json) {
 			return vname ? rz_str_newf("[\"%s\"]\n", vname) : NULL;
 		}
-		return vname ? strdup(vname) : NULL;
+		return rz_str_dup(vname);
 	}
 	RzStrBuf *buf = rz_strbuf_new("");
 	if (json) {

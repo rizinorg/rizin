@@ -174,7 +174,7 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 		return ret;
 	}
 
-	ptr[8]->name = strdup("Interrupt_Vblank");
+	ptr[8]->name = rz_str_dup("Interrupt_Vblank");
 	ptr[8]->paddr = ptr[8]->vaddr = 64;
 	ptr[8]->size = 1;
 	ptr[8]->ordinal = 8;
@@ -184,7 +184,7 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 		return ret;
 	}
 
-	ptr[9]->name = strdup("Interrupt_LCDC-Status");
+	ptr[9]->name = rz_str_dup("Interrupt_LCDC-Status");
 	ptr[9]->paddr = ptr[9]->vaddr = 72;
 	ptr[9]->size = 1;
 	ptr[9]->ordinal = 9;
@@ -194,7 +194,7 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 		return ret;
 	}
 
-	ptr[10]->name = strdup("Interrupt_Timer-Overflow");
+	ptr[10]->name = rz_str_dup("Interrupt_Timer-Overflow");
 	ptr[10]->paddr = ptr[10]->vaddr = 80;
 	ptr[10]->size = 1;
 	ptr[10]->ordinal = 10;
@@ -204,7 +204,7 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 		return ret;
 	}
 
-	ptr[11]->name = strdup("Interrupt_Serial-Transfere");
+	ptr[11]->name = rz_str_dup("Interrupt_Serial-Transfere");
 	ptr[11]->paddr = ptr[11]->vaddr = 88;
 	ptr[11]->size = 1;
 	ptr[11]->ordinal = 11;
@@ -214,7 +214,7 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 		return ret;
 	}
 
-	ptr[12]->name = strdup("Interrupt_Joypad");
+	ptr[12]->name = rz_str_dup("Interrupt_Joypad");
 	ptr[12]->paddr = ptr[12]->vaddr = 96;
 	ptr[12]->size = 1;
 	ptr[12]->ordinal = 12;
@@ -241,9 +241,9 @@ static RzBinInfo *info(RzBinFile *bf) {
 		ret->type = rz_str_newf("%s card_%02x", gbtype, (ut32)rom_header[67]);
 	}
 	ret->file = rz_str_ndup((const char *)&rom_header[48], 16);
-	ret->machine = strdup("Gameboy");
-	ret->os = strdup("any");
-	ret->arch = strdup("gb");
+	ret->machine = rz_str_dup("Gameboy");
+	ret->os = rz_str_dup("any");
+	ret->arch = rz_str_dup("gb");
 	ret->has_va = true;
 	ret->bits = 16;
 	ret->big_endian = 0;
@@ -261,7 +261,7 @@ RzPVector /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
 		rz_pvector_free(ret);
 		return NULL;
 	}
-	m->name = strdup("fastram");
+	m->name = rz_str_dup("fastram");
 	m->addr = 0xff80LL;
 	m->size = 0x80;
 	m->perms = rz_str_rwx("rwx");
@@ -270,7 +270,7 @@ RzPVector /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
 	if (!(m = RZ_NEW0(RzBinMem))) {
 		return ret;
 	}
-	m->name = strdup("ioports");
+	m->name = rz_str_dup("ioports");
 	m->addr = 0xff00LL;
 	m->size = 0x4c;
 	m->perms = rz_str_rwx("rwx");
@@ -279,7 +279,7 @@ RzPVector /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
 	if (!(m = RZ_NEW0(RzBinMem))) {
 		return ret;
 	}
-	m->name = strdup("oam");
+	m->name = rz_str_dup("oam");
 	m->addr = 0xfe00LL;
 	m->size = 0xa0;
 	m->perms = rz_str_rwx("rwx");
@@ -288,7 +288,7 @@ RzPVector /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
 	if (!(m = RZ_NEW0(RzBinMem))) {
 		return ret;
 	}
-	m->name = strdup("videoram");
+	m->name = rz_str_dup("videoram");
 	m->addr = 0x8000LL;
 	m->size = 0x2000;
 	m->perms = rz_str_rwx("rwx");
@@ -297,7 +297,7 @@ RzPVector /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
 	if (!(m = RZ_NEW0(RzBinMem))) {
 		return ret;
 	}
-	m->name = strdup("iram");
+	m->name = rz_str_dup("iram");
 	m->addr = 0xc000LL;
 	m->size = 0x2000;
 	m->perms = rz_str_rwx("rwx");
@@ -310,7 +310,7 @@ RzPVector /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
 		m->mirrors = NULL;
 		return ret;
 	}
-	n->name = strdup("iram_echo");
+	n->name = rz_str_dup("iram_echo");
 	n->addr = 0xe000LL;
 	n->size = 0x1e00;
 	n->perms = rz_str_rwx("rx");

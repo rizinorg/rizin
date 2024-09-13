@@ -124,7 +124,7 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 			if (!ptr) {
 				goto beach;
 			}
-			ptr->name = strdup("LMF_RESOURCE");
+			ptr->name = rz_str_dup("LMF_RESOURCE");
 			ptr->paddr = offset;
 			ptr->vsize = lrec.data_nbytes - LMF_RESOURCE_SIZE;
 			ptr->size = ptr->vsize;
@@ -134,7 +134,7 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 			if (!map) {
 				goto beach;
 			}
-			map->name = ptr->name ? strdup(ptr->name) : NULL;
+			map->name = rz_str_dup(ptr->name);
 			map->paddr = ptr->paddr;
 			map->psize = ptr->size;
 			map->vsize = ptr->vsize;
@@ -153,7 +153,7 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 				free(ptr);
 				goto beach;
 			}
-			ptr->name = strdup("LMF_LOAD");
+			ptr->name = rz_str_dup("LMF_LOAD");
 			ptr->paddr = offset;
 			ptr->vaddr = ldata.offset;
 			ptr->vsize = lrec.data_nbytes - LMF_DATA_SIZE;
@@ -164,7 +164,7 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 			if (!map) {
 				goto beach;
 			}
-			map->name = ptr->name ? strdup(ptr->name) : NULL;
+			map->name = rz_str_dup(ptr->name);
 			map->paddr = ptr->paddr;
 			map->psize = ptr->size;
 			map->vsize = ptr->vsize;
@@ -231,14 +231,14 @@ static RzBinInfo *info(RzBinFile *bf) {
 	if (!ret) {
 		return NULL;
 	}
-	ret->file = bf->file ? strdup(bf->file) : NULL;
-	ret->type = strdup("QNX Executable");
-	ret->bclass = strdup("qnx");
-	ret->machine = strdup("i386");
-	ret->rclass = strdup("QNX");
-	ret->arch = strdup("x86");
-	ret->os = strdup("any");
-	ret->subsystem = strdup("any");
+	ret->file = rz_str_dup(bf->file);
+	ret->type = rz_str_dup("QNX Executable");
+	ret->bclass = rz_str_dup("qnx");
+	ret->machine = rz_str_dup("i386");
+	ret->rclass = rz_str_dup("QNX");
+	ret->arch = rz_str_dup("x86");
+	ret->os = rz_str_dup("any");
+	ret->subsystem = rz_str_dup("any");
 	ret->lang = "C/C++";
 	ret->signature = true;
 	return ret;

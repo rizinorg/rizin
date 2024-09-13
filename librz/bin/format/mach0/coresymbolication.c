@@ -158,7 +158,7 @@ RZ_API RzCoreSymCacheElement *rz_coresym_cache_element_new(RzBinFile *bf, RzBuff
 	}
 	ut8 *end = b + hdr->size;
 	if (file_name) {
-		result->file_name = strdup(file_name);
+		result->file_name = rz_str_dup(file_name);
 	} else if (hdr->file_name_off) {
 		result->file_name = str_dup_safe(b, b + (size_t)hdr->file_name_off, end);
 	}

@@ -20,10 +20,10 @@ static bool encrypt_or_decrypt_block(RzCore *core, const char *algo, const char 
 	bool no_key_mode = !strcmp("base64", algo) || !strcmp("base91", algo) || !strcmp("punycode", algo);
 	ut8 *binkey = NULL;
 	if (!strncmp(key, "s:", 2)) {
-		binkey = (ut8 *)strdup(key + 2);
+		binkey = (ut8 *)rz_str_dup(key + 2);
 		keylen = strlen(key + 2);
 	} else {
-		binkey = (ut8 *)strdup(key);
+		binkey = (ut8 *)rz_str_dup(key);
 		keylen = rz_hex_str2bin(key, binkey);
 	}
 	if (!no_key_mode && keylen < 1) {
@@ -245,7 +245,7 @@ err:
 
 RZ_IPI RzCmdStatus rz_write_from_socket_handler(RzCore *core, int argc, const char **argv) {
 	RzCmdStatus res = RZ_CMD_STATUS_ERROR;
-	char *address = strdup(argv[1]);
+	char *address = rz_str_dup(argv[1]);
 	ut64 sz = argc > 2 ? rz_num_math(core->num, argv[2]) : core->blocksize;
 
 	size_t n_split = rz_str_split(address, ':');

@@ -28,8 +28,8 @@ RZ_API RzLib *rz_lib_new(RZ_NULLABLE const char *symname, RZ_NULLABLE const char
 	}
 	lib->handlers = rz_list_newf(free);
 	lib->plugins = rz_list_new();
-	lib->symname = strdup(symname ? symname : RZ_LIB_SYMNAME);
-	lib->symnamefunc = strdup(symnamefunc ? symnamefunc : RZ_LIB_SYMFUNC);
+	lib->symname = rz_str_dup(symname ? symname : RZ_LIB_SYMNAME);
+	lib->symnamefunc = rz_str_dup(symnamefunc ? symnamefunc : RZ_LIB_SYMFUNC);
 	lib->opened_dirs = ht_su_new(HT_STR_DUP);
 	return lib;
 }
@@ -120,7 +120,7 @@ static bool lib_already_loaded(RzLib *lib, const char *file) {
 }
 
 static char *major_minor(const char *s) {
-	char *a = strdup(s);
+	char *a = rz_str_dup(s);
 	char *p = strchr(a, '.');
 	if (p) {
 		p = strchr(p + 1, '.');
@@ -163,7 +163,7 @@ static bool lib_open_ptr(RzLib *lib, const char *file, void *handler, RzLibStruc
 
 	p->type = stru->type;
 	p->data = stru->data;
-	p->file = strdup(file);
+	p->file = rz_str_dup(file);
 	p->handler = lib_handler;
 	p->free = stru->free;
 

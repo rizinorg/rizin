@@ -175,7 +175,7 @@ RZ_API RzAnalysisFunction *rz_analysis_create_function(RzAnalysis *analysis, con
 	fcn->bits = analysis->bits;
 	if (name) {
 		free(fcn->name);
-		fcn->name = strdup(name);
+		fcn->name = rz_str_dup(name);
 	} else {
 		const char *fcnprefix = analysis->coreb.cfgGet ? analysis->coreb.cfgGet(analysis->coreb.core, "analysis.fcnprefix") : NULL;
 		if (RZ_STR_ISEMPTY(fcnprefix)) {
@@ -268,7 +268,7 @@ RZ_API bool rz_analysis_function_rename(RzAnalysisFunction *fcn, const char *nam
 		}
 		return false;
 	}
-	char *newname = strdup(name);
+	char *newname = rz_str_dup(name);
 	if (!newname) {
 		return false;
 	}
@@ -409,7 +409,7 @@ static RZ_OWN char *function_name_try_guess(RzTypeDB *typedb, RZ_NONNULL char *n
 		return NULL;
 	}
 	if (rz_type_func_exist(typedb, name)) {
-		return strdup(name);
+		return rz_str_dup(name);
 	}
 	return NULL;
 }
@@ -495,7 +495,7 @@ RZ_API RZ_OWN char *rz_analysis_function_name_guess(RzTypeDB *typedb, RZ_NONNULL
 		return result;
 	}
 
-	str = strdup(str);
+	str = rz_str_dup(str);
 	clean_function_name(str);
 
 	if (*str == '_' && (result = function_name_try_guess(typedb, str + 1))) {

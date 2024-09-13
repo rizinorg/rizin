@@ -109,7 +109,7 @@ bool winkd_download_module_and_pdb(WindModule *module, const char *symserver, co
 		return false;
 	}
 	if (pdbpath) {
-		*pdbpath = strdup(ppath->str_value);
+		*pdbpath = rz_str_dup(ppath->str_value);
 	}
 	rz_json_free(json);
 	free(res);

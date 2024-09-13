@@ -22,21 +22,21 @@ static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns(RzAsm *a) 
 	// Mnemonic pattern
 	RzAsmTokenPattern *pat = RZ_NEW0(RzAsmTokenPattern);
 	pat->type = RZ_ASM_TOKEN_MNEMONIC;
-	pat->pattern = strdup(
+	pat->pattern = rz_str_dup(
 		"^(while|inc|dec|out|in|trap|nop|invalid|loop)");
 	rz_pvector_push(pvec, pat);
 
 	// ptr pattern
 	pat = RZ_NEW0(RzAsmTokenPattern);
 	pat->type = RZ_ASM_TOKEN_REGISTER;
-	pat->pattern = strdup(
+	pat->pattern = rz_str_dup(
 		"ptr");
 	rz_pvector_push(pvec, pat);
 
 	// reference pattern
 	pat = RZ_NEW0(RzAsmTokenPattern);
 	pat->type = RZ_ASM_TOKEN_OPERATOR;
-	pat->pattern = strdup(
+	pat->pattern = rz_str_dup(
 		"\\[|\\]" // Matches a single bracket
 	);
 	rz_pvector_push(pvec, pat);
@@ -44,7 +44,7 @@ static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns(RzAsm *a) 
 	// Separator pattern
 	pat = RZ_NEW0(RzAsmTokenPattern);
 	pat->type = RZ_ASM_TOKEN_SEPARATOR;
-	pat->pattern = strdup(
+	pat->pattern = rz_str_dup(
 		"\\s+");
 	rz_pvector_push(pvec, pat);
 

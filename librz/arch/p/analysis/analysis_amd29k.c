@@ -275,7 +275,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"gpr	lr126   .32 2024 0\n"
 		"gpr	lr127   .32 2032 0\n"
 		"gpr	lr128   .32 2040 0\n";
-	return strdup(p);
+	return rz_str_dup(p);
 }
 
 static int archinfo(RzAnalysis *a, RzAnalysisInfoType query) {

@@ -163,7 +163,7 @@ static RzType *procedure_parse(
 	if (!name) {
 		typ->callable->name = create_type_name_from_offset(type->index);
 	} else {
-		typ->callable->name = strdup(name);
+		typ->callable->name = rz_str_dup(name);
 	}
 
 	typ->callable->cc = rz_bin_pdb_calling_convention_as_string(lf_procedure->func_attr.calling_convention);
@@ -201,7 +201,7 @@ static RzType *mfunction_parse(const RzTypeDB *typedb, RzPdbTpiStream *stream, R
 	}
 	type->kind = RZ_TYPE_KIND_CALLABLE;
 	type->callable = callable;
-	type->callable->name = strdup(name);
+	type->callable->name = rz_str_dup(name);
 	type->callable->cc = rz_bin_pdb_calling_convention_as_string(lf_mfunction->func_attr.calling_convention);
 	// parse return type
 	RzPdbTpiType *ret_type = rz_bin_pdb_get_type_by_index(stream, lf_mfunction->return_type);
@@ -368,7 +368,7 @@ static RzTypeStructMember *class_member_parse(
 	if (!member) {
 		goto cleanup;
 	}
-	member->name = strdup(name);
+	member->name = rz_str_dup(name);
 	member->type = type;
 	member->offset = offset;
 	return member;
@@ -400,7 +400,7 @@ static RzType *create_rztype(RzPdbTpiType *type, RzTypeIdentifierKind kind, cons
 	}
 	t->kind = RZ_TYPE_KIND_IDENTIFIER;
 	t->identifier.kind = kind;
-	t->identifier.name = is_tpitype_unnamed(name) ? create_type_name_from_offset(type->index) : strdup(name);
+	t->identifier.name = is_tpitype_unnamed(name) ? create_type_name_from_offset(type->index) : rz_str_dup(name);
 	return t;
 }
 
@@ -462,7 +462,7 @@ static RzType *class_parse(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdb
 			return NULL;
 		}
 		base_type->type = typ;
-		base_type->name = strdup(typ->identifier.name);
+		base_type->name = rz_str_dup(typ->identifier.name);
 		base_type->attrs = RZ_TYPE_TYPECLASS_INVALID;
 		if (!rz_type_db_save_base_type(typedb, base_type)) {
 			return NULL;
@@ -544,7 +544,7 @@ static RzTypeUnionMember *union_member_parse(const RzTypeDB *typedb, RzPdbTpiStr
 	if (!member) {
 		goto cleanup;
 	}
-	member->name = strdup(name);
+	member->name = rz_str_dup(name);
 	member->type = type;
 	member->offset = offset;
 	return member;
@@ -592,7 +592,7 @@ static RzType *union_parse(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdb
 			return NULL;
 		}
 		base_type->type = typ;
-		base_type->name = strdup(typ->identifier.name);
+		base_type->name = rz_str_dup(typ->identifier.name);
 		base_type->attrs = RZ_TYPE_TYPECLASS_INVALID;
 		if (!rz_type_db_save_base_type(typedb, base_type)) {
 			return NULL;
@@ -644,7 +644,7 @@ static RzTypeEnumCase *enumerate_parse(RzPdbTpiType *type) {
 	if (!cas) {
 		goto cleanup;
 	}
-	cas->name = strdup(name);
+	cas->name = rz_str_dup(name);
 	cas->val = value;
 	return cas;
 cleanup:
@@ -696,7 +696,7 @@ static RzType *enum_parse(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbT
 			rz_type_base_type_free(base_type);
 			return NULL;
 		}
-		base_type->name = is_tpitype_unnamed(name) ? create_type_name_from_offset(type->index) : strdup(name);
+		base_type->name = is_tpitype_unnamed(name) ? create_type_name_from_offset(type->index) : rz_str_dup(name);
 		base_type->size = rz_type_db_get_bitsize(typedb, btype);
 		base_type->type = btype;
 		base_type->attrs = RZ_TYPE_TYPECLASS_INVALID;

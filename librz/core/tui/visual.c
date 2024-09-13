@@ -1221,13 +1221,13 @@ repeat:
 				RzAnalysisFunction *fun = rz_analysis_get_fcn_in(core->analysis, xaddr1, RZ_ANALYSIS_FCN_TYPE_NULL);
 				char *name;
 				if (fun) {
-					name = strdup(fun->name);
+					name = rz_str_dup(fun->name);
 				} else {
 					RzFlagItem *f = rz_flag_get_at(core->flags, xaddr1, true);
 					if (f) {
 						name = rz_str_newf("%s + %" PFMT64d, f->name, xaddr1 - f->offset);
 					} else {
-						name = strdup("unk");
+						name = rz_str_dup("unk");
 					}
 				}
 				if (w > 45) {
@@ -1462,13 +1462,13 @@ static void visual_comma(RzCore *core) {
 	ut64 addr = core->offset + (core->print->cur_enabled ? core->print->cur : 0);
 	char *comment, *cmtfile;
 	const char *prev_cmt = rz_meta_get_string(core->analysis, RZ_META_TYPE_COMMENT, addr);
-	comment = prev_cmt ? strdup(prev_cmt) : NULL;
+	comment = rz_str_dup(prev_cmt);
 	cmtfile = rz_str_between(comment, ",(", ")");
 	if (!cmtfile) {
 		char *fn;
 		fn = rz_cons_input("<comment-file> ");
 		if (fn && *fn) {
-			cmtfile = strdup(fn);
+			cmtfile = rz_str_dup(fn);
 			if (!comment || !*comment) {
 				comment = rz_str_newf(",(%s)", fn);
 				rz_meta_set_string(core->analysis, RZ_META_TYPE_COMMENT, addr, comment);
@@ -2261,7 +2261,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 #define I core->cons
 			const char *cmd = rz_config_get(core->config, "cmd.vprompt");
 			rz_line_set_prompt(line, "cmd.vprompt> ");
-			I->line->contents = strdup(cmd);
+			I->line->contents = rz_str_dup(cmd);
 			buf = rz_line_readline(line);
 			I->line->contents = NULL;
 			(void)rz_config_set(core->config, "cmd.vprompt", buf);
@@ -2273,7 +2273,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 #define I core->cons
 			const char *cmd = rz_config_get(core->config, "cmd.cprompt");
 			rz_line_set_prompt(line, "cmd.cprompt> ");
-			line->contents = strdup(cmd);
+			line->contents = rz_str_dup(cmd);
 			buf = rz_line_readline(line);
 			if (buf && !strcmp(buf, "|")) {
 				RZ_FREE(line->contents);
@@ -2492,7 +2492,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 				if (rz_cons_fgets(buf + 4, sizeof(buf) - 4, 0, NULL) < 0) {
 					buf[0] = '\0';
 				}
-				char *p = strdup(buf);
+				char *p = rz_str_dup(buf);
 				int cur = core->print->cur;
 				if (cur >= core->blocksize) {
 					cur = core->print->cur - 1;
@@ -3567,7 +3567,7 @@ static RZ_OWN char *screen_bottom_address(RzCore *core) {
 	if (!core->cons->context->buffer) {
 		return NULL;
 	}
-	char *output = strdup(core->cons->context->buffer);
+	char *output = rz_str_dup(core->cons->context->buffer);
 	size_t line_count = 0, *line_index = rz_str_split_lines(output, &line_count);
 	int rows;
 	rz_cons_get_size(&rows);

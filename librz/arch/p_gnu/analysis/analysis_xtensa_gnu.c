@@ -2017,7 +2017,7 @@ static int xtensa_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut
 }
 
 static char *get_reg_profile(RzAnalysis *analysis) {
-	return strdup(
+	return rz_str_dup(
 		// Assuming call0 ABI
 		"# a0		return address\n"
 		"# a1		stack pointer\n"

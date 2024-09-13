@@ -585,7 +585,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 
 		break;
 	}
-	return (p && *p) ? strdup(p) : NULL;
+	return rz_str_dup(p);
 }
 
 static int archinfo(RzAnalysis *a, RzAnalysisInfoType query) {

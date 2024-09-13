@@ -1767,7 +1767,7 @@ static char *mips_get_reg_profile(RzAnalysis *analysis) {
 		/* extra */
 		"gpr	pc	.64	272	0\n";
 #endif
-	return strdup(p);
+	return rz_str_dup(p);
 }
 
 static int archinfo(RzAnalysis *a, RzAnalysisInfoType query) {

@@ -745,7 +745,7 @@ RZ_API char *get_reg_profile(RzAnalysis *analysis) {
 		"sys	S77:76_tmp	.64	220096	0\n"
 		"sys	S79:78	.64	220160	0\n"
 		"sys	S79:78_tmp	.64	220224	0\n";
-	return strdup(p);
+	return rz_str_dup(p);
 }
 
 RzAnalysisPlugin rz_analysis_plugin_hexagon = {

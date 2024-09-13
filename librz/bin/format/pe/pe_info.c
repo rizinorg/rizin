@@ -64,7 +64,7 @@ char *PE_(rz_bin_pe_get_machine)(RzBinPEObj *bin) {
 		default: machine = "unknown";
 		}
 	}
-	return machine ? strdup(machine) : NULL;
+	return rz_str_dup(machine);
 }
 
 // TODO: make it const! like in elf
@@ -75,28 +75,28 @@ char *PE_(rz_bin_pe_get_os)(RzBinPEObj *bin) {
 	}
 	switch (bin->nt_headers->optional_header.Subsystem) {
 	case PE_IMAGE_SUBSYSTEM_NATIVE:
-		os = strdup("native");
+		os = rz_str_dup("native");
 		break;
 	case PE_IMAGE_SUBSYSTEM_WINDOWS_GUI:
 	case PE_IMAGE_SUBSYSTEM_WINDOWS_CUI:
 	case PE_IMAGE_SUBSYSTEM_WINDOWS_CE_GUI:
-		os = strdup("windows");
+		os = rz_str_dup("windows");
 		break;
 	case PE_IMAGE_SUBSYSTEM_POSIX_CUI:
-		os = strdup("posix");
+		os = rz_str_dup("posix");
 		break;
 	case PE_IMAGE_SUBSYSTEM_EFI_APPLICATION:
 	case PE_IMAGE_SUBSYSTEM_EFI_BOOT_SERVICE_DRIVER:
 	case PE_IMAGE_SUBSYSTEM_EFI_RUNTIME_DRIVER:
 	case PE_IMAGE_SUBSYSTEM_EFI_ROM:
-		os = strdup("efi");
+		os = rz_str_dup("efi");
 		break;
 	case PE_IMAGE_SUBSYSTEM_XBOX:
-		os = strdup("xbox");
+		os = rz_str_dup("xbox");
 		break;
 	default:
 		// XXX: this is unknown
-		os = strdup("windows");
+		os = rz_str_dup("windows");
 	}
 	return os;
 }
@@ -105,9 +105,9 @@ char *PE_(rz_bin_pe_get_os)(RzBinPEObj *bin) {
 char *PE_(rz_bin_pe_get_class)(RzBinPEObj *bin) {
 	if (bin && bin->nt_headers) {
 		switch (bin->nt_headers->optional_header.Magic) {
-		case PE_IMAGE_FILE_TYPE_PE32: return strdup("PE32");
-		case PE_IMAGE_FILE_TYPE_PE32PLUS: return strdup("PE32+");
-		default: return strdup("Unknown");
+		case PE_IMAGE_FILE_TYPE_PE32: return rz_str_dup("PE32");
+		case PE_IMAGE_FILE_TYPE_PE32PLUS: return rz_str_dup("PE32+");
+		default: return rz_str_dup("Unknown");
 		}
 	}
 	return NULL;
@@ -116,45 +116,45 @@ char *PE_(rz_bin_pe_get_class)(RzBinPEObj *bin) {
 char *PE_(rz_bin_pe_get_arch)(RzBinPEObj *bin) {
 	char *arch;
 	if (!bin || !bin->nt_headers) {
-		return strdup("x86");
+		return rz_str_dup("x86");
 	}
 	switch (bin->nt_headers->file_header.Machine) {
 	case PE_IMAGE_FILE_MACHINE_ALPHA:
 	case PE_IMAGE_FILE_MACHINE_ALPHA64:
-		arch = strdup("alpha");
+		arch = rz_str_dup("alpha");
 		break;
 	case PE_IMAGE_FILE_MACHINE_ARM:
 	case PE_IMAGE_FILE_MACHINE_ARMNT:
 	case PE_IMAGE_FILE_MACHINE_THUMB:
-		arch = strdup("arm");
+		arch = rz_str_dup("arm");
 		break;
 	case PE_IMAGE_FILE_MACHINE_M68K:
-		arch = strdup("m68k");
+		arch = rz_str_dup("m68k");
 		break;
 	case PE_IMAGE_FILE_MACHINE_MIPS16:
 	case PE_IMAGE_FILE_MACHINE_MIPSFPU:
 	case PE_IMAGE_FILE_MACHINE_MIPSFPU16:
 	case PE_IMAGE_FILE_MACHINE_WCEMIPSV2:
-		arch = strdup("mips");
+		arch = rz_str_dup("mips");
 		break;
 	case PE_IMAGE_FILE_MACHINE_POWERPC:
 	case PE_IMAGE_FILE_MACHINE_POWERPCFP:
 	case PE_IMAGE_FILE_MACHINE_POWERPCBE:
-		arch = strdup("ppc");
+		arch = rz_str_dup("ppc");
 		break;
 	case PE_IMAGE_FILE_MACHINE_EBC:
-		arch = strdup("ebc");
+		arch = rz_str_dup("ebc");
 		break;
 	case PE_IMAGE_FILE_MACHINE_ARM64:
-		arch = strdup("arm");
+		arch = rz_str_dup("arm");
 		break;
 	case PE_IMAGE_FILE_MACHINE_RISCV32:
 	case PE_IMAGE_FILE_MACHINE_RISCV64:
 	case PE_IMAGE_FILE_MACHINE_RISCV128:
-		arch = strdup("riscv");
+		arch = rz_str_dup("riscv");
 		break;
 	default:
-		arch = strdup("x86");
+		arch = rz_str_dup("x86");
 	}
 	return arch;
 }
@@ -198,23 +198,23 @@ char *PE_(rz_bin_pe_get_subsystem)(RzBinPEObj *bin) {
 			break;
 		}
 	}
-	return subsystem ? strdup(subsystem) : NULL;
+	return rz_str_dup(subsystem);
 }
 
 char *PE_(rz_bin_pe_get_cc)(RzBinPEObj *bin) {
 	if (bin && bin->nt_headers) {
 		if (is_arm(bin)) {
 			if (is_thumb(bin)) {
-				return strdup("arm16");
+				return rz_str_dup("arm16");
 			}
 			switch (bin->nt_headers->optional_header.Magic) {
-			case PE_IMAGE_FILE_TYPE_PE32: return strdup("arm32");
-			case PE_IMAGE_FILE_TYPE_PE32PLUS: return strdup("arm64");
+			case PE_IMAGE_FILE_TYPE_PE32: return rz_str_dup("arm32");
+			case PE_IMAGE_FILE_TYPE_PE32PLUS: return rz_str_dup("arm64");
 			}
 		} else {
 			switch (bin->nt_headers->optional_header.Magic) {
-			case PE_IMAGE_FILE_TYPE_PE32: return strdup("cdecl");
-			case PE_IMAGE_FILE_TYPE_PE32PLUS: return strdup("ms");
+			case PE_IMAGE_FILE_TYPE_PE32: return rz_str_dup("cdecl");
+			case PE_IMAGE_FILE_TYPE_PE32PLUS: return rz_str_dup("ms");
 			}
 		}
 	}

@@ -281,7 +281,7 @@ static window *window_from_handle(HANDLE hwnd) {
 	win->name = rz_utf16_to_utf8(tmp);
 	free(tmp);
 	if (!win->name) {
-		win->name = strdup("");
+		win->name = rz_str_dup("");
 	}
 	return win;
 }
@@ -461,7 +461,7 @@ RZ_API void rz_w32_print_windows(RzDebug *dbg) {
 
 RZ_API bool rz_w32_add_winmsg_breakpoint(RzDebug *dbg, const char *msg_name, const char *window_id) {
 	rz_return_val_if_fail(dbg && msg_name, false);
-	char *name = strdup(msg_name);
+	char *name = rz_str_dup(msg_name);
 	rz_str_trim(name);
 
 	DWORD type = get_msg_type(name);

@@ -22,7 +22,7 @@ static inline bool is_between(ut64 a, ut64 x, ut64 b) {
 
 static inline char *core_flag_name(const RzCore *core, ut64 addr) {
 	RzFlagItem *item = rz_flag_get_i(core->flags, addr);
-	return item ? strdup(item->name) : rz_str_newf("0x%08" PFMT64x, addr);
+	return item ? rz_str_dup(item->name) : rz_str_newf("0x%08" PFMT64x, addr);
 }
 
 static inline void core_graph_dataref(RzCore *core, RzAnalysisFunction *fcn, RzGraph /*<RzGraphNodeInfo *>*/ *graph) {
@@ -259,7 +259,7 @@ static inline char *block_disasm(RzCore *core, ut64 addr, RzAnalysisBlock *bb) {
 	rz_core_print_disasm(core, b->addr, block, b->size, 9999, NULL, &disasm_options);
 	rz_cons_filter();
 	const char *retstr = rz_str_get(rz_cons_get_buffer());
-	char *opcodes = strdup(retstr);
+	char *opcodes = rz_str_dup(retstr);
 	rz_cons_pop();
 	rz_cons_echo(NULL);
 	free(block);

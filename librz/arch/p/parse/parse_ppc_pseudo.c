@@ -1704,7 +1704,7 @@ static bool parse(RzParse *p, const char *data, RzStrBuf *sb) {
 			}
 			replace(nw, wa, str);
 			{
-				char *p = strdup(str);
+				char *p = rz_str_dup(str);
 				p = rz_str_replace(p, "+ -", "- ", 0);
 				p = rz_str_replace(p, " + ]", "]  ", 0);
 				//  p = rz_str_replace (p, "if (r0 == r0) trap", "trap            ", 0);

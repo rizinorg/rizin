@@ -334,7 +334,7 @@ typedef struct {
  **/
 static bool seek_load_item(SeekLoadCtx *ctx, const char *k, const char *v) {
 	bool ret = false;
-	char *json_str = strdup(v);
+	char *json_str = rz_str_dup(v);
 	if (!json_str) {
 		return true;
 	}
@@ -372,7 +372,7 @@ static bool seek_load_item(SeekLoadCtx *ctx, const char *k, const char *v) {
 		// Switch to the vector of redos
 		ctx->vec = &ctx->core->seek_history.redos;
 		// Remember we've found the current seek
-		ctx->current_key = strdup(k);
+		ctx->current_key = rz_str_dup(k);
 	} else {
 		if (seek_item.is_current) {
 			// Warn about this additional "current" seek

@@ -27,12 +27,12 @@ RZ_API RZ_OWN RzPlatformProfile *rz_platform_profile_new() {
 	if (!profile) {
 		return NULL;
 	}
-	profile->registers_mmio = ht_up_new((HtUPDupValue)strdup, free);
+	profile->registers_mmio = ht_up_new((HtUPDupValue)rz_str_dup, free);
 	if (!profile->registers_mmio) {
 		free(profile);
 		return NULL;
 	}
-	profile->registers_extended = ht_up_new((HtUPDupValue)strdup, free);
+	profile->registers_extended = ht_up_new((HtUPDupValue)rz_str_dup, free);
 	if (!profile->registers_extended) {
 		ht_up_free(profile->registers_mmio);
 		free(profile);
@@ -235,8 +235,8 @@ RZ_API bool rz_platform_profiles_init(RzPlatformTarget *t, const char *cpu, cons
 	}
 	free(t->cpu);
 	free(t->arch);
-	t->cpu = strdup(cpu);
-	t->arch = strdup(arch);
+	t->cpu = rz_str_dup(cpu);
+	t->arch = rz_str_dup(arch);
 	rz_platform_load_profile_sdb(t, path);
 	free(path);
 	return true;

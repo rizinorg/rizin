@@ -92,7 +92,7 @@ static void processNode(mpc_ast_t *node) {
 			}
 		}
 	} else if (isComment(node)) {
-		char *s = strdup(node->contents + 2);
+		char *s = rz_str_dup(node->contents + 2);
 		int len = strlen(s);
 		if (node->contents[1] == '*') {
 			s[len - 2] = 0;

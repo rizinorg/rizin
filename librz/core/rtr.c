@@ -104,7 +104,7 @@ static void showcursor(RzCore *core, int x) {
 }
 
 static char *rtr_dir_files(const char *path) {
-	char *ptr = strdup("<html><body>\n");
+	char *ptr = rz_str_dup("<html><body>\n");
 	const char *file;
 	RzListIter *iter;
 	// list files
@@ -819,7 +819,7 @@ RZ_API void rz_core_rtr_cmd(RzCore *core, const char *input) {
 				return;
 			}
 			rap_th->core = core;
-			rap_th->input = strdup(input + 1);
+			rap_th->input = rz_str_dup(input + 1);
 			rap_th->loop = rz_atomic_bool_new(true);
 
 			rapthread = rz_th_new((RzThreadFunction)rz_core_rtr_rap_thread, rap_th);
@@ -935,7 +935,7 @@ RZ_API char *rz_core_rtr_cmds_query(RzCore *core, const char *host, const char *
 		retries--;
 	}
 	if (retries > 0) {
-		rbuf = strdup("");
+		rbuf = rz_str_dup("");
 		rz_socket_write(s, (void *)cmd, strlen(cmd));
 		// rz_socket_write (s, "px\n", 3);
 		for (;;) {

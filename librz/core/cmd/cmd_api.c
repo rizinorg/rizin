@@ -160,7 +160,7 @@ static RzCmdDesc *create_cmd_desc(RzCmd *cmd, RzCmdDesc *parent, RzCmdDescType t
 		return NULL;
 	}
 	res->type = type;
-	res->name = strdup(name);
+	res->name = rz_str_dup(name);
 	if (!res->name) {
 		goto err;
 	}
@@ -323,7 +323,7 @@ RZ_API RzCmdDesc *rz_cmd_desc_get_exec(RzCmdDesc *cd) {
 
 static RzCmdDesc *cmd_get_desc_best(RzCmd *cmd, const char *cmd_identifier, bool best_match) {
 	rz_return_val_if_fail(cmd && cmd_identifier, NULL);
-	char *cmdid = strdup(cmd_identifier);
+	char *cmdid = rz_str_dup(cmd_identifier);
 	char *end_cmdid = cmdid + strlen(cmdid);
 	RzCmdDesc *res = NULL;
 	bool is_exact_match = true;
@@ -490,7 +490,7 @@ RZ_API int rz_cmd_alias_set(RzCmd *cmd, const char *k, const char *v, int remote
 		int matches = !strcmp(k, cmd->aliases.keys[i]);
 		if (matches) {
 			free(cmd->aliases.values[i]);
-			cmd->aliases.values[i] = strdup(v);
+			cmd->aliases.values[i] = rz_str_dup(v);
 			free(tofree);
 			return 1;
 		}
@@ -509,8 +509,8 @@ RZ_API int rz_cmd_alias_set(RzCmd *cmd, const char *k, const char *v, int remote
 				sizeof(char *) * cmd->aliases.count);
 			if (V) {
 				cmd->aliases.values = V;
-				cmd->aliases.keys[i] = strdup(k);
-				cmd->aliases.values[i] = strdup(v);
+				cmd->aliases.keys[i] = rz_str_dup(k);
+				cmd->aliases.values[i] = rz_str_dup(v);
 				cmd->aliases.remote[i] = remote;
 			}
 		}
@@ -930,7 +930,7 @@ static void fill_wrapped_comment(RzCmd *cmd, RzStrBuf *sb, const char *comment, 
 		help_color = use_color ? cons->context->pal.help : "";
 	}
 	if (is_interactive && cols > 0 && cols - columns > MIN_SUMMARY_WIDTH && !RZ_STR_ISEMPTY(comment)) {
-		char *text = strdup(comment);
+		char *text = rz_str_dup(comment);
 		RzList *wrapped_text = rz_str_wrap(text, cols - columns - 2);
 		RzListIter *it;
 		const char *line;
@@ -1358,7 +1358,7 @@ static char *oldinput_get_help(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *a) {
 		res = rz_cons_get_buffer_dup();
 	}
 	if (!res) {
-		res = strdup("");
+		res = rz_str_dup("");
 	}
 	rz_cons_pop();
 	return res;
@@ -1536,7 +1536,7 @@ RZ_API bool rz_cmd_get_help_strbuf(RzCmd *cmd, const RzCmdDesc *cd, bool use_col
 }
 
 RZ_API char *rz_cmd_get_help(RzCmd *cmd, RzCmdParsedArgs *args, bool use_color) {
-	char *cmdid = strdup(rz_cmd_parsed_args_cmd(args));
+	char *cmdid = rz_str_dup(rz_cmd_parsed_args_cmd(args));
 	if (!cmdid) {
 		return NULL;
 	}
@@ -1583,11 +1583,11 @@ RZ_API bool rz_cmd_macro_add(RZ_NONNULL RzCmd *cmd, RZ_NONNULL const char *name,
 	if (!macro) {
 		return false;
 	}
-	macro->name = strdup(name);
+	macro->name = rz_str_dup(name);
 	if (!macro->name) {
 		goto err;
 	}
-	macro->code = strdup(code);
+	macro->code = rz_str_dup(code);
 	if (!macro->code) {
 		goto err;
 	}
@@ -1599,7 +1599,7 @@ RZ_API bool rz_cmd_macro_add(RZ_NONNULL RzCmd *cmd, RZ_NONNULL const char *name,
 		goto err;
 	}
 	for (size_t i = 0; i < macro->nargs; i++) {
-		macro->args[i] = strdup(args[i]);
+		macro->args[i] = rz_str_dup(args[i]);
 		if (!macro->args[i]) {
 			goto err;
 		}
@@ -1632,11 +1632,11 @@ RZ_API bool rz_cmd_macro_update(RZ_NONNULL RzCmd *cmd, RZ_NONNULL const char *na
 	char **new_args = NULL;
 	size_t new_nargs = 0;
 
-	new_name = strdup(name);
+	new_name = rz_str_dup(name);
 	if (!new_name) {
 		goto err;
 	}
-	new_code = strdup(code);
+	new_code = rz_str_dup(code);
 	if (!new_code) {
 		goto err;
 	}
@@ -1647,7 +1647,7 @@ RZ_API bool rz_cmd_macro_update(RZ_NONNULL RzCmd *cmd, RZ_NONNULL const char *na
 		goto err;
 	}
 	for (size_t i = 0; i < new_nargs; i++) {
-		new_args[i] = strdup(args[i]);
+		new_args[i] = rz_str_dup(args[i]);
 		if (!new_args[i]) {
 			goto err;
 		}
@@ -1720,7 +1720,7 @@ RZ_API RZ_OWN RzList /*<RzCmdMacro *>*/ *rz_cmd_macro_list(RZ_NONNULL RzCmd *cmd
 }
 
 static RzCmdStatus macro_call(RzCmd *cmd, const RzCmdMacro *macro, const char **argv) {
-	char *code = strdup(macro->code);
+	char *code = rz_str_dup(macro->code);
 	char key[100];
 	size_t i;
 	for (i = 0; i < macro->nargs; i++) {
@@ -1844,10 +1844,10 @@ RZ_API RzCmdParsedArgs *rz_cmd_parsed_args_new(const char *cmd, int n_args, char
 	res->has_space_after_cmd = true;
 	res->argc = n_args + 1;
 	res->argv = RZ_NEWS0(char *, res->argc + 1);
-	res->argv[0] = strdup(cmd);
+	res->argv[0] = rz_str_dup(cmd);
 	int i;
 	for (i = 1; i < res->argc; i++) {
-		res->argv[i] = strdup(args[i - 1]);
+		res->argv[i] = rz_str_dup(args[i - 1]);
 	}
 	res->argv[res->argc] = NULL;
 	return res;
@@ -1888,10 +1888,10 @@ RZ_API bool rz_cmd_parsed_args_setargs(RzCmdParsedArgs *a, int n_args, char **ar
 	if (!tmp) {
 		return false;
 	}
-	tmp[0] = strdup(a->argv[0]);
+	tmp[0] = rz_str_dup(a->argv[0]);
 	int i;
 	for (i = 1; i < n_args + 1; i++) {
-		tmp[i] = strdup(args[i - 1]);
+		tmp[i] = rz_str_dup(args[i - 1]);
 		if (!tmp[i]) {
 			goto err;
 		}
@@ -1913,7 +1913,7 @@ RZ_API bool rz_cmd_parsed_args_addarg(RzCmdParsedArgs *a, const char *arg) {
 	}
 
 	a->argv = tmp;
-	a->argv[a->argc] = strdup(arg);
+	a->argv[a->argc] = rz_str_dup(arg);
 	a->argv[a->argc + 1] = NULL;
 	a->argc++;
 	return true;
@@ -1921,7 +1921,7 @@ RZ_API bool rz_cmd_parsed_args_addarg(RzCmdParsedArgs *a, const char *arg) {
 
 RZ_API bool rz_cmd_parsed_args_setcmd(RzCmdParsedArgs *a, const char *cmd) {
 	rz_return_val_if_fail(a && a->argv && a->argv[0], false);
-	char *tmp = strdup(cmd);
+	char *tmp = rz_str_dup(cmd);
 	if (!tmp) {
 		return false;
 	}
@@ -2360,7 +2360,7 @@ RZ_API char *rz_cmd_escape_arg(const char *arg, RzCmdEscape esc) {
 	case RZ_CMD_ESCAPE_PF_ARG:
 		return escape_special_chars(arg, SPECIAL_CHARS_PF);
 	}
-	rz_return_val_if_reached(strdup(arg));
+	rz_return_val_if_reached(rz_str_dup(arg));
 }
 
 /**
@@ -2380,7 +2380,7 @@ RZ_API char *rz_cmd_unescape_arg(const char *arg, RzCmdEscape esc) {
 	case RZ_CMD_ESCAPE_PF_ARG:
 		return unescape_special_chars(arg, SPECIAL_CHARS_PF);
 	}
-	rz_return_val_if_reached(strdup(arg));
+	rz_return_val_if_reached(rz_str_dup(arg));
 }
 
 /**

@@ -275,7 +275,7 @@ static char *stdin_gets(bool liberate) {
 	if (feof(stdin)) {
 		return NULL;
 	}
-	return strdup(stdin_buf);
+	return rz_str_dup(stdin_buf);
 }
 
 static void __sdb_prompt(Sdb *sdb) {
@@ -339,7 +339,7 @@ static bool extract_binobj(const RzBinFile *bf, RzBinXtrData *data, int idx) {
 	if (!arch) {
 		arch = "unknown";
 	}
-	path = strdup(filename);
+	path = rz_str_dup(filename);
 	if (!path) {
 		return false;
 	}
@@ -498,7 +498,7 @@ static int rzbin_do_operation(RzBin *bin, const char *op, int rad, const char *o
 	bool rc = true;
 
 	/* Implement alloca with fixed-size buffer? */
-	if (!(arg = strdup(op))) {
+	if (!(arg = rz_str_dup(op))) {
 		return false;
 	}
 	if ((ptr = strchr(arg, '/'))) {
@@ -846,7 +846,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		case 'a': arch = opt.arg; break;
 		case 'C':
 			set_action(RZ_BIN_REQ_CREATE);
-			create = strdup(opt.arg);
+			create = rz_str_dup(opt.arg);
 			break;
 		case 'u': bin->filter = 0; break;
 		case 'k': query = opt.arg; break;
@@ -859,7 +859,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 				set_action(RZ_BIN_REQ_CLASSES);
 			}
 			break;
-		case 'f': arch_name = strdup(opt.arg); break;
+		case 'f': arch_name = rz_str_dup(opt.arg); break;
 		case 'F': forcebin = opt.arg; break;
 		case 'b': bits = rz_num_math(NULL, opt.arg); break;
 		case 'm':

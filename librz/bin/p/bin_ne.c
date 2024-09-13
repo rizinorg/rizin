@@ -88,8 +88,8 @@ RzBinInfo *info(RzBinFile *bf) {
 	RzBinInfo *i = RZ_NEW0(RzBinInfo);
 	if (i) {
 		i->bits = 16;
-		i->arch = strdup("x86");
-		i->os = strdup(ne->os);
+		i->arch = rz_str_dup("x86");
+		i->os = rz_str_dup(ne->os);
 		i->claimed_checksum = rz_str_newf("%08x", ne->ne_header->FileLoadCRC);
 	}
 	return i;

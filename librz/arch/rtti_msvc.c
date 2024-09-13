@@ -403,7 +403,7 @@ RZ_API char *rz_analysis_rtti_msvc_demangle_class_name(RVTableContext *context, 
 	if (ret && *ret) {
 		char *n = strchr(ret, ' ');
 		if (n && *(++n)) {
-			char *tmp = strdup(n);
+			char *tmp = rz_str_dup(n);
 			free(ret);
 			ret = tmp;
 		} else {
@@ -792,7 +792,7 @@ RecoveryTypeDescriptor *recovery_analysis_type_descriptor(RRTTIMSVCAnalContext *
 
 static char *unique_class_name(RzAnalysis *analysis, const char *original_name) {
 	if (!rz_analysis_class_exists(analysis, original_name)) {
-		return strdup(original_name);
+		return rz_str_dup(original_name);
 	}
 
 	char *name = NULL;
@@ -879,7 +879,7 @@ static void recovery_apply_bases(RRTTIMSVCAnalContext *context, const char *clas
 		RzAnalysisBaseClass base;
 		base.id = NULL;
 		base.offset = (ut64)base_desc->bcd->where.mdisp;
-		base.class_name = strdup(base_class_name);
+		base.class_name = rz_str_dup(base_class_name);
 		rz_analysis_class_base_set(context->vt_context->analysis, class_name, &base);
 		rz_analysis_class_base_fini(&base);
 	}
@@ -905,7 +905,7 @@ static const char *recovery_apply_complete_object_locator(RRTTIMSVCAnalContext *
 	char *name = rz_analysis_rtti_msvc_demangle_class_name(context->vt_context, col->td->td.name);
 	if (!name) {
 		RZ_LOG_DEBUG("Failed to demangle a class name: \"%s\"\n", col->td->td.name);
-		name = strdup(col->td->td.name);
+		name = rz_str_dup(col->td->td.name);
 		if (!name) {
 			return NULL;
 		}
@@ -942,7 +942,7 @@ static const char *recovery_apply_type_descriptor(RRTTIMSVCAnalContext *context,
 	char *name = rz_analysis_rtti_msvc_demangle_class_name(context->vt_context, td->td.name);
 	if (!name) {
 		RZ_LOG_DEBUG("Failed to demangle a class name: \"%s\"\n", td->td.name);
-		name = strdup(td->td.name);
+		name = rz_str_dup(td->td.name);
 		if (!name) {
 			return NULL;
 		}

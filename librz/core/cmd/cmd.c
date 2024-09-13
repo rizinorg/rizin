@@ -268,7 +268,7 @@ static char *langFromHashbang(RzCore *core, const char *file) {
 			if (nl) {
 				*nl = 0;
 			}
-			nl = strdup(firstLine + 2);
+			nl = rz_str_dup(firstLine + 2);
 			close(fd);
 			return nl;
 		}
@@ -292,7 +292,7 @@ RZ_API bool rz_core_run_script(RzCore *core, RZ_NONNULL const char *file) {
 			return false;
 		}
 	}
-	rz_list_push(core->scriptstack, strdup(file));
+	rz_list_push(core->scriptstack, rz_str_dup(file));
 
 	if (!strcmp(file, "-")) {
 		char *out = rz_core_editor(core, NULL, NULL);
@@ -301,7 +301,7 @@ RZ_API bool rz_core_run_script(RzCore *core, RZ_NONNULL const char *file) {
 			free(out);
 		}
 	} else if (rz_str_endswith(file, ".html")) {
-		char *httpIndex = strdup(rz_config_get(core->config, "http.index"));
+		char *httpIndex = rz_str_dup(rz_config_get(core->config, "http.index"));
 		char *absfile = rz_file_abspath(file);
 		rz_config_set(core->config, "http.index", absfile);
 		free(absfile);
@@ -385,7 +385,7 @@ RZ_API bool rz_core_run_script(RzCore *core, RZ_NONNULL const char *file) {
 				} else if (!strcmp(ext, "sh")) {
 					char *shell = rz_sys_getenv("SHELL");
 					if (!shell) {
-						shell = strdup("sh");
+						shell = rz_str_dup("sh");
 					}
 					if (shell) {
 						rz_lang_use(core->lang, "pipe");
@@ -549,7 +549,7 @@ RZ_IPI int rz_cmd_kuery(void *data, const char *input) {
 			return false;
 		}
 		if (input[1] == ' ') {
-			char *n, *o, *p = strdup(input + 2);
+			char *n, *o, *p = rz_str_dup(input + 2);
 			// TODO: slash split here? or inside sdb_ns ?
 			for (n = o = p; n; o = n) {
 				n = strchr(o, '/'); // SDB_NS_SEPARATOR NAMESPACE
@@ -579,7 +579,7 @@ RZ_IPI int rz_cmd_kuery(void *data, const char *input) {
 			}
 			if (sdb_hist) {
 				if ((rz_list_length(sdb_hist) == 1) || (rz_list_length(sdb_hist) > 1 && strcmp(rz_list_get_n(sdb_hist, 1), buf))) {
-					rz_list_insert(sdb_hist, 1, strdup(buf));
+					rz_list_insert(sdb_hist, 1, rz_str_dup(buf));
 				}
 				line->sdbshell_hist_iter = sdb_hist->head;
 			}
@@ -593,7 +593,7 @@ RZ_IPI int rz_cmd_kuery(void *data, const char *input) {
 		break;
 	case 'o': // "ko"
 		if (input[1] == ' ') {
-			char *fn = strdup(input + 2);
+			char *fn = rz_str_dup(input + 2);
 			if (!fn) {
 				RZ_LOG_ERROR("core: Unable to allocate memory\n");
 				return 0;
@@ -627,7 +627,7 @@ RZ_IPI int rz_cmd_kuery(void *data, const char *input) {
 		break;
 	case 'd': // "kd"
 		if (input[1] == ' ') {
-			char *fn = strdup(input + 2);
+			char *fn = rz_str_dup(input + 2);
 			char *ns = strchr(fn, ' ');
 			if (ns) {
 				*ns++ = 0;
@@ -658,7 +658,7 @@ RZ_IPI int rz_cmd_kuery(void *data, const char *input) {
 
 	sp = strchr(input + 1, ' ');
 	if (sp) {
-		char *inp = strdup(input);
+		char *inp = rz_str_dup(input);
 		inp[(size_t)(sp - input)] = 0;
 		s = sdb_ns(core->sdb, inp + 1, 1);
 		out = sdb_querys(s, NULL, 0, sp + 1);
@@ -989,9 +989,9 @@ RZ_API int rz_core_cmd_pipe_old(RzCore *core, char *rizin_cmd, char *shell_cmd) 
 }
 
 static char *parse_tmp_evals(RzCore *core, const char *str) {
-	char *s = strdup(str);
+	char *s = rz_str_dup(str);
 	int i, argc = rz_str_split(s, ',');
-	char *res = strdup("");
+	char *res = rz_str_dup("");
 	if (!s || !res) {
 		free(s);
 		free(res);
@@ -1078,7 +1078,7 @@ static int rz_core_cmd_subst(RzCore *core, char *cmd) {
 	/* must store a local orig_offset because there can be
 	 * nested call of this function */
 	ut64 orig_offset = core->offset;
-	icmd = strdup(cmd);
+	icmd = rz_str_dup(cmd);
 	if (!icmd) {
 		goto beach;
 	}
@@ -1170,7 +1170,7 @@ static int rz_core_cmd_subst(RzCore *core, char *cmd) {
 		if (rz_cons_is_breaked()) {
 			break;
 		}
-		char *cr = strdup(cmdrep);
+		char *cr = rz_str_dup(cmdrep);
 		core->break_loop = false;
 		ret = rz_core_cmd_subst_i(core, cmd, colon, (rep == orep - 1) ? &tmpseek : NULL);
 		if (ret && *cmd == 'q') {
@@ -1241,7 +1241,7 @@ static void tmpenvs_free(void *item) {
 
 static bool set_tmp_arch(RzCore *core, char *arch, char **tmparch) {
 	rz_return_val_if_fail(tmparch, false);
-	*tmparch = strdup(rz_config_get(core->config, "asm.arch"));
+	*tmparch = rz_str_dup(rz_config_get(core->config, "asm.arch"));
 	rz_config_set(core->config, "asm.arch", arch);
 	core->fixedarch = true;
 	return true;
@@ -1249,7 +1249,7 @@ static bool set_tmp_arch(RzCore *core, char *arch, char **tmparch) {
 
 static bool set_tmp_bits(RzCore *core, int bits, char **tmpbits, int *cmd_ignbithints) {
 	rz_return_val_if_fail(tmpbits, false);
-	*tmpbits = strdup(rz_config_get(core->config, "asm.bits"));
+	*tmpbits = rz_str_dup(rz_config_get(core->config, "asm.bits"));
 	rz_config_set_i(core->config, "asm.bits", bits);
 	core->fixedbits = true;
 	// XXX: why?
@@ -1373,7 +1373,7 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 					cpipe = rz_cons_pipe_open(str, 1, append);
 				}
 			}
-			line = strdup(cmd);
+			line = rz_str_dup(cmd);
 			line = rz_str_replace(line, "\\\"", "\"", true);
 			if (p && *p && p[1] == '|') {
 				str = (char *)rz_str_trim_head_ro(p + 2);
@@ -1732,7 +1732,7 @@ next2:
 				}
 			}
 			str = rz_str_append(str, ptr2 + 1);
-			cmd = rz_str_append(strdup(cmd), str);
+			cmd = rz_str_append(rz_str_dup(cmd), str);
 			core->num->value = value;
 			ret = rz_core_cmd_subst(core, cmd);
 			free(cmd);
@@ -1822,7 +1822,7 @@ escape_backtick:
 		if (ptr[1] == '?') {
 			rz_core_cmd_help(core, help_msg_at);
 		} else if (ptr[1] == '%') { // "@%"
-			char *k = strdup(ptr + 2);
+			char *k = rz_str_dup(ptr + 2);
 			char *v = strchr(k, '=');
 			if (v) {
 				*v++ = 0;
@@ -1883,7 +1883,7 @@ escape_backtick:
 			case 'r': // "@r:" // regname
 				if (ptr[1] == ':') {
 					ut64 regval;
-					char *mander = strdup(ptr + 2);
+					char *mander = rz_str_dup(ptr + 2);
 					char *sep = findSeparator(mander);
 					if (sep) {
 						char ch = *sep;
@@ -2411,7 +2411,7 @@ RZ_API int rz_core_cmd_foreach3(RzCore *core, const char *cmd, char *each) { // 
 				if (item->type != i) {
 					continue;
 				}
-				rz_list_append(list, strdup(item->name));
+				rz_list_append(list, rz_str_dup(item->name));
 			}
 			const char *item_name;
 			rz_list_foreach (list, iter, item_name) {
@@ -2605,7 +2605,7 @@ RZ_API int rz_core_cmd_foreach3(RzCore *core, const char *cmd, char *each) { // 
 }
 
 static void foreachOffset(RzCore *core, const char *_cmd, const char *each) {
-	char *cmd = strdup(_cmd);
+	char *cmd = rz_str_dup(_cmd);
 	char *nextLine = NULL;
 	ut64 addr;
 	/* foreach list of items */
@@ -2679,12 +2679,12 @@ RZ_API int rz_core_cmd_foreach(RzCore *core, const char *cmd, char *each) {
 	}
 
 	oseek = core->offset;
-	ostr = str = strdup(each);
+	ostr = str = rz_str_dup(each);
 	rz_cons_break_push(NULL, NULL); // pop on return
 	switch (each[0]) {
 	case '/': // "@@/"
 	{
-		char *cmdhit = strdup(rz_config_get(core->config, "cmd.hit"));
+		char *cmdhit = rz_str_dup(rz_config_get(core->config, "cmd.hit"));
 		rz_config_set(core->config, "cmd.hit", cmd);
 		rz_core_cmd0(core, each);
 		rz_config_set(core->config, "cmd.hit", cmdhit);
@@ -2907,7 +2907,7 @@ RZ_API int rz_core_cmd_foreach(RzCore *core, const char *cmd, char *each) {
 			}
 			ch = str[i];
 			str[i] = '\0';
-			word = strdup(str + j);
+			word = rz_str_dup(str + j);
 			if (!word) {
 				break;
 			}
@@ -3221,7 +3221,7 @@ static char *do_handle_substitution_cmd(struct tsr2cmd_state *state, TSNode inn_
 	}
 
 	// replace the output of the sub command with the current argument
-	char *out = strdup(o_out);
+	char *out = rz_str_dup(o_out);
 	rz_str_trim(out);
 	RZ_LOG_DEBUG("output of inner command: '%s'\n", out);
 	free(o_out);
@@ -4577,7 +4577,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_hit_stmt) {
 	TSNode command = ts_node_named_child(node, 0);
 	TSNode search_cmd = ts_node_named_child(node, 1);
 	char *command_str = ts_node_sub_string(command, state->input);
-	char *cmdhit = strdup(rz_config_get(core->config, "cmd.hit"));
+	char *cmdhit = rz_str_dup(rz_config_get(core->config, "cmd.hit"));
 	rz_config_set(core->config, "cmd.hit", command_str);
 	RzCmdStatus res = handle_ts_stmt(state, search_cmd);
 	rz_config_set(core->config, "cmd.hit", cmdhit);
@@ -4635,7 +4635,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_interpret_stmt) {
 	rz_list_append(edits, e);
 
 	TSNode op = ts_node_child(node, 1);
-	e = create_cmd_edit(state, op, strdup("@@="));
+	e = create_cmd_edit(state, op, rz_str_dup("@@="));
 	rz_list_append(edits, e);
 
 	TSNode new_command;
@@ -4673,7 +4673,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_interpret_offsetssizes_stmt) {
 	rz_list_append(edits, e);
 
 	TSNode op = ts_node_child(node, 1);
-	e = create_cmd_edit(state, op, strdup("@@@="));
+	e = create_cmd_edit(state, op, rz_str_dup("@@@="));
 	rz_list_append(edits, e);
 
 	TSNode new_command;
@@ -4777,7 +4777,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_register_stmt) {
 			if (item->type != i) {
 				continue;
 			}
-			rz_list_append(list, strdup(item->name));
+			rz_list_append(list, rz_str_dup(item->name));
 		}
 		const char *item_name;
 		rz_list_foreach (list, iter, item_name) {
@@ -5252,7 +5252,7 @@ static RzCmdStatus core_cmd_tsrzcmd(RzCore *core, const char *cstr, bool split_l
 	bool language_ok = ts_parser_set_language(parser, (TSLanguage *)core->rcmd->language);
 	rz_return_val_if_fail(language_ok, RZ_CMD_STATUS_INVALID);
 
-	char *input = strdup(rz_str_trim_head_ro(cstr));
+	char *input = rz_str_dup(rz_str_trim_head_ro(cstr));
 
 	TSTree *tree = ts_parser_parse_string(parser, NULL, input, strlen(input));
 	if (!tree) {
@@ -5399,7 +5399,7 @@ RZ_API char *rz_core_disassemble_bytes(RzCore *core, ut64 addr, int b) {
 }
 
 RZ_API int rz_core_cmd_buffer(RzCore *core, const char *buf) {
-	char *ptr, *optr, *str = strdup(buf);
+	char *ptr, *optr, *str = rz_str_dup(buf);
 	if (!str) {
 		return false;
 	}
@@ -5455,7 +5455,7 @@ RZ_API char *rz_core_cmd_str_pipe(RzCore *core, const char *cmd) {
 			free(tmp);
 			return rz_core_cmd_str(core, cmd);
 		}
-		char *_cmd = strdup(cmd);
+		char *_cmd = rz_str_dup(cmd);
 		rz_core_cmd(core, _cmd, 0);
 		rz_cons_flush();
 		rz_cons_pipe_close(cpipe);
@@ -5464,7 +5464,7 @@ RZ_API char *rz_core_cmd_str_pipe(RzCore *core, const char *cmd) {
 			rz_file_rm(tmp);
 			free(tmp);
 			free(_cmd);
-			return s ? s : strdup("");
+			return s ? s : rz_str_dup("");
 		}
 		RZ_LOG_ERROR("core: slurp %s fails\n", tmp);
 		rz_file_rm(tmp);
@@ -5505,7 +5505,7 @@ static ut8 *core_cmd_raw(RzCore *core, const char *cmd, int *length) {
 		retstr = (ut8 *)rz_str_newlen(static_str, len);
 		*length = len;
 	} else {
-		retstr = (ut8 *)strdup(rz_str_get(static_str));
+		retstr = (ut8 *)rz_str_dup(rz_str_get(static_str));
 	}
 
 	rz_cons_pop();

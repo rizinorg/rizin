@@ -5,6 +5,7 @@
 #define TMS320_C64X_CAPSTONE_H
 
 #include <rz_asm.h>
+#include <rz_util.h>
 #include <rz_analysis.h>
 #include <capstone/capstone.h>
 

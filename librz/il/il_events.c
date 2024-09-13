@@ -59,7 +59,7 @@ RZ_API RZ_OWN RzILEvent *rz_il_event_exception_new(RZ_NONNULL const char *except
 	}
 
 	evt->type = RZ_IL_EVENT_EXCEPTION;
-	evt->data.exception = strdup(exception);
+	evt->data.exception = rz_str_dup(exception);
 	if (!evt->data.exception) {
 		rz_il_event_free(evt);
 		RZ_LOG_ERROR("RzIL: cannot allocate exception string\n");
@@ -158,7 +158,7 @@ RZ_API RZ_OWN RzILEvent *rz_il_event_var_read_new(RZ_NONNULL const char *name, R
 	}
 
 	evt->type = RZ_IL_EVENT_VAR_READ;
-	evt->data.var_read.variable = strdup(name);
+	evt->data.var_read.variable = rz_str_dup(name);
 	evt->data.var_read.value = rz_il_value_dup(value);
 	if (!evt->data.var_read.variable || !evt->data.var_read.value) {
 		rz_il_event_free(evt);
@@ -183,7 +183,7 @@ RZ_API RZ_OWN RzILEvent *rz_il_event_var_write_new(RZ_NONNULL const char *name, 
 	}
 
 	evt->type = RZ_IL_EVENT_VAR_WRITE;
-	evt->data.var_write.variable = strdup(name);
+	evt->data.var_write.variable = rz_str_dup(name);
 	evt->data.var_write.old_value = rz_il_value_dup(old_v);
 	evt->data.var_write.new_value = rz_il_value_dup(new_v);
 	if (!evt->data.var_write.variable ||

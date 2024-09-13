@@ -1194,7 +1194,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 			sprintf(mn, gb_op[data[0]].name, reg);
 			break;
 		}
-		op->mnemonic = strdup(mn);
+		op->mnemonic = rz_str_dup(mn);
 	}
 	op->addr = addr;
 	op->type = RZ_ANALYSIS_OP_TYPE_UNK;
@@ -2002,7 +2002,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"gpr	mbcram	.16	16	0\n"
 
 		"gpr	ime	.1	18	0\n";
-	return strdup(p);
+	return rz_str_dup(p);
 }
 
 static int esil_gb_init(RzAnalysisEsil *esil) {

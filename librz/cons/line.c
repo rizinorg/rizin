@@ -24,7 +24,7 @@ RZ_API RZ_OWN RzLine *rz_line_new(void) {
 	if (!line) {
 		return NULL;
 	}
-	line->prompt = strdup("> ");
+	line->prompt = rz_str_dup("> ");
 	line->kill_ring = rz_list_newf(free);
 	line->kill_ring_ptr = -1;
 #if __WINDOWS__
@@ -56,14 +56,14 @@ RZ_API void rz_line_free(RZ_NULLABLE RzLine *line) {
 RZ_API void rz_line_clipboard_push(RZ_NONNULL RzLine *line, RZ_NONNULL const char *str) {
 	rz_return_if_fail(line && str);
 	line->kill_ring_ptr += 1;
-	rz_list_insert(line->kill_ring, line->kill_ring_ptr, strdup(str));
+	rz_list_insert(line->kill_ring, line->kill_ring_ptr, rz_str_dup(str));
 }
 
 // handle const or dynamic prompts?
 RZ_API void rz_line_set_prompt(RZ_NONNULL RzLine *line, RZ_NONNULL const char *prompt) {
 	rz_return_if_fail(line && prompt);
 	free(line->prompt);
-	line->prompt = strdup(prompt);
+	line->prompt = rz_str_dup(prompt);
 	RzCons *cons = rz_cons_singleton();
 	line->cb_fkey = cons->cb_fkey;
 }
@@ -71,7 +71,7 @@ RZ_API void rz_line_set_prompt(RZ_NONNULL RzLine *line, RZ_NONNULL const char *p
 // handle const or dynamic prompts?
 RZ_API RZ_OWN char *rz_line_get_prompt(RZ_NONNULL RzLine *line) {
 	rz_return_val_if_fail(line, NULL);
-	return strdup(line->prompt);
+	return rz_str_dup(line->prompt);
 }
 
 RZ_API void rz_line_completion_init(RzLineCompletion *completion, size_t args_limit) {
@@ -91,7 +91,7 @@ RZ_API void rz_line_completion_push(RzLineCompletion *completion, const char *st
 		return;
 	}
 	if (rz_pvector_len(&completion->args) < completion->args_limit) {
-		char *s = strdup(str);
+		char *s = rz_str_dup(str);
 		if (s) {
 			rz_pvector_push(&completion->args, (void *)s);
 		}
@@ -166,7 +166,7 @@ RZ_API void rz_line_ns_completion_result_add(RzLineNSCompletionResult *res, cons
 	if (ht_pp_find(res->options_ht, option, NULL)) {
 		return;
 	}
-	char *dup = strdup(option);
+	char *dup = rz_str_dup(option);
 	rz_pvector_push(&res->options, dup);
 	ht_pp_insert(res->options_ht, dup, dup);
 }

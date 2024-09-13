@@ -69,7 +69,7 @@ static int rz_core_magic_at(RzCore *core, const char *file, ut64 addr, int depth
 		ck = rz_magic_new(0);
 		if (file) {
 			free(ofile);
-			ofile = strdup(file);
+			ofile = rz_str_dup(file);
 			if (!rz_magic_load(ck, file)) {
 				RZ_LOG_ERROR("core: failed rz_magic_load (\"%s\") %s\n", file, rz_magic_error(ck));
 				ck = NULL;
@@ -111,7 +111,7 @@ static int rz_core_magic_at(RzCore *core, const char *file, ut64 addr, int depth
 			ret = mod + 1;
 			goto seek_exit;
 		}
-		p = strdup(str);
+		p = rz_str_dup(str);
 		fmt = p;
 		// processing newlinez
 		for (q = p; *q; q++) {

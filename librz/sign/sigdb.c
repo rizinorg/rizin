@@ -86,9 +86,9 @@ static bool sigdb_signature_resolve_details(RzSigDBEntry *entry, size_t path_len
 
 skip_details:
 	bin_end[0] = 0;
-	entry->bin_name = strdup(copy_path);
+	entry->bin_name = rz_str_dup(copy_path);
 	arch_end[0] = 0;
-	entry->arch_name = strdup(bin_end + strlen(RZ_SYS_DIR));
+	entry->arch_name = rz_str_dup(bin_end + strlen(RZ_SYS_DIR));
 	bits_end[0] = 0;
 	entry->arch_bits = rz_get_input_num_value(NULL, arch_end + strlen(RZ_SYS_DIR));
 
@@ -132,7 +132,7 @@ RZ_API RZ_OWN RzSigDb *rz_sign_sigdb_load_database(RZ_NONNULL const char *sigdb_
 			goto fail;
 		}
 
-		sig->file_path = strdup(file);
+		sig->file_path = rz_str_dup(file);
 		if (!sig->file_path || !sigdb_signature_resolve_details(sig, path_len, with_details)) {
 			rz_sign_sigdb_signature_free(sig);
 			goto fail;

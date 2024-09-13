@@ -103,7 +103,7 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 		SdbKv *kv = *iter;
 		const char *k = sdbkv_key(kv);
 		const char *v = sdbkv_value(kv);
-		char *dup = strdup(k);
+		char *dup = rz_str_dup(k);
 		if ((flagname = strstr(dup, ".offset"))) {
 			*flagname = 0;
 			flagname = dup;
@@ -114,7 +114,7 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 				rz_flag_set(core->flags, flagname, nv, 0);
 			}
 			free(offset);
-			offset = strdup(v);
+			offset = rz_str_dup(v);
 		}
 		if (strstr(dup, ".cparse")) {
 			if (IS_MODE_RZCMD(mode)) {
@@ -138,11 +138,11 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 		SdbKv *kv = *iter;
 		const char *k = sdbkv_key(kv);
 		const char *v = sdbkv_value(kv);
-		char *dup = strdup(k);
+		char *dup = rz_str_dup(k);
 		if ((flagname = strstr(dup, ".format"))) {
 			*flagname = 0;
 			if (!offset) {
-				offset = strdup("0");
+				offset = rz_str_dup("0");
 			}
 			flagname = dup;
 			if (IS_MODE_RZCMD(mode)) {
@@ -157,11 +157,11 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 		SdbKv *kv = *iter;
 		const char *k = sdbkv_key(kv);
 		const char *v = sdbkv_value(kv);
-		char *dup = strdup(k);
+		char *dup = rz_str_dup(k);
 		if ((flagname = strstr(dup, ".format"))) {
 			*flagname = 0;
 			if (!offset) {
-				offset = strdup("0");
+				offset = rz_str_dup("0");
 			}
 			flagname = dup;
 			int fmtsize = rz_type_format_struct_size(core->analysis->typedb, v, 0, 0);
@@ -1202,7 +1202,7 @@ static void set_bin_relocs(RzCore *r, RzBinObject *o, RzBinReloc *reloc, bool va
 				sdb_free(*db);
 				*db = NULL;
 				free(*sdb_module);
-				*sdb_module = strdup(module);
+				*sdb_module = rz_str_dup(module);
 				/* always lowercase */
 				filename = rz_str_newf("%s.sdb", module);
 				rz_str_case(filename, false);
@@ -1535,7 +1535,7 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 					}
 				} else {
 					fi = rz_flag_set(core->flags, sn.methflag, addr, symbol->size);
-					char *comment = (fi && fi->comment) ? strdup(fi->comment) : NULL;
+					char *comment = (fi && fi->comment) ? rz_str_dup(fi->comment) : NULL;
 					if (comment) {
 						rz_flag_item_set_comment(fi, comment);
 						RZ_FREE(comment);
@@ -1544,7 +1544,7 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 			} else {
 				const char *n = sn.demname ? sn.demname : symbol->name;
 				const char *fn = sn.demflag ? sn.demflag : sn.nameflag;
-				char *fnp = (core->bin->prefix) ? rz_str_newf("%s.%s", core->bin->prefix, fn) : strdup(fn ? fn : "");
+				char *fnp = (core->bin->prefix) ? rz_str_newf("%s.%s", core->bin->prefix, fn) : rz_str_dup(fn ? fn : "");
 
 				RzFlagItem *fi = rz_flag_get(core->flags, fnp);
 				if (fi) {
@@ -2086,9 +2086,9 @@ RZ_API bool rz_core_bin_cur_export_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzB
 
 static char *dup_import_name(RzBinImport *import, bool demangle) {
 	if (demangle && import->dname) {
-		return strdup(import->dname);
+		return rz_str_dup(import->dname);
 	} else if (import->name) {
-		return strdup(import->name);
+		return rz_str_dup(import->name);
 	}
 	return NULL;
 }
@@ -2789,7 +2789,7 @@ static bool strings_print(RzCore *core, RzCmdStateOutput *state, const RzPVector
 					}
 					if (*(ptr + 1) == '\\') {
 						if (!no_dbl_bslash_str) {
-							no_dbl_bslash_str = strdup(str);
+							no_dbl_bslash_str = rz_str_dup(str);
 							if (!no_dbl_bslash_str) {
 								break;
 							}
@@ -2906,7 +2906,7 @@ RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_core_bin_whole_strings(RZ_NONNUL
 			free(bf);
 			return NULL;
 		}
-		bf->file = strdup(desc->name);
+		bf->file = rz_str_dup(desc->name);
 		bf->size = (int)rz_io_desc_size(desc);
 		if (bf->size == UT64_MAX) {
 			free(bf);
@@ -3367,55 +3367,55 @@ static char *get_rp(const char *rtype) {
 	char *rp = NULL;
 	switch (rtype[0]) {
 	case 'v':
-		rp = strdup("void");
+		rp = rz_str_dup("void");
 		break;
 	case 'c':
-		rp = strdup("char");
+		rp = rz_str_dup("char");
 		break;
 	case 'i':
-		rp = strdup("int");
+		rp = rz_str_dup("int");
 		break;
 	case 's':
-		rp = strdup("short");
+		rp = rz_str_dup("short");
 		break;
 	case 'l':
-		rp = strdup("long");
+		rp = rz_str_dup("long");
 		break;
 	case 'q':
-		rp = strdup("long long");
+		rp = rz_str_dup("long long");
 		break;
 	case 'C':
-		rp = strdup("unsigned char");
+		rp = rz_str_dup("unsigned char");
 		break;
 	case 'I':
-		rp = strdup("unsigned int");
+		rp = rz_str_dup("unsigned int");
 		break;
 	case 'S':
-		rp = strdup("unsigned short");
+		rp = rz_str_dup("unsigned short");
 		break;
 	case 'L':
-		rp = strdup("unsigned long");
+		rp = rz_str_dup("unsigned long");
 		break;
 	case 'Q':
-		rp = strdup("unsigned long long");
+		rp = rz_str_dup("unsigned long long");
 		break;
 	case 'f':
-		rp = strdup("float");
+		rp = rz_str_dup("float");
 		break;
 	case 'd':
-		rp = strdup("double");
+		rp = rz_str_dup("double");
 		break;
 	case 'D':
-		rp = strdup("long double");
+		rp = rz_str_dup("long double");
 		break;
 	case 'B':
-		rp = strdup("bool");
+		rp = rz_str_dup("bool");
 		break;
 	case '#':
-		rp = strdup("CLASS");
+		rp = rz_str_dup("CLASS");
 		break;
 	default:
-		rp = strdup("unknown");
+		rp = rz_str_dup("unknown");
 		break;
 	}
 	return rp;
@@ -3424,10 +3424,10 @@ static char *get_rp(const char *rtype) {
 // https://nshipster.com/type-encodings/
 static char *objc_type_toc(const char *objc_type) {
 	if (!objc_type) {
-		return strdup("void*");
+		return rz_str_dup("void*");
 	}
 	if (*objc_type == '^' && objc_type[1] == '{') {
-		char *a = strdup(objc_type + 2);
+		char *a = rz_str_dup(objc_type + 2);
 		char *b = strchr(a, '>');
 		if (b) {
 			*b = 0;
@@ -3436,7 +3436,7 @@ static char *objc_type_toc(const char *objc_type) {
 		return a;
 	}
 	if (*objc_type == '<') {
-		char *a = strdup(objc_type + 1);
+		char *a = rz_str_dup(objc_type + 1);
 		char *b = strchr(a, '>');
 		if (b) {
 			*b = 0;
@@ -3444,46 +3444,46 @@ static char *objc_type_toc(const char *objc_type) {
 		return a;
 	}
 	if (!strcmp(objc_type, "f")) {
-		return strdup("float");
+		return rz_str_dup("float");
 	}
 	if (!strcmp(objc_type, "d")) {
-		return strdup("double");
+		return rz_str_dup("double");
 	}
 	if (!strcmp(objc_type, "i")) {
-		return strdup("int");
+		return rz_str_dup("int");
 	}
 	if (!strcmp(objc_type, "s")) {
-		return strdup("short");
+		return rz_str_dup("short");
 	}
 	if (!strcmp(objc_type, "l")) {
-		return strdup("long");
+		return rz_str_dup("long");
 	}
 	if (!strcmp(objc_type, "L")) {
-		return strdup("unsigned long");
+		return rz_str_dup("unsigned long");
 	}
 	if (!strcmp(objc_type, "*")) {
-		return strdup("char*");
+		return rz_str_dup("char*");
 	}
 	if (!strcmp(objc_type, "c")) {
-		return strdup("bool");
+		return rz_str_dup("bool");
 	}
 	if (!strcmp(objc_type, "v")) {
-		return strdup("void");
+		return rz_str_dup("void");
 	}
 	if (!strcmp(objc_type, "#")) {
-		return strdup("class");
+		return rz_str_dup("class");
 	}
 	if (!strcmp(objc_type, "B")) {
-		return strdup("cxxbool");
+		return rz_str_dup("cxxbool");
 	}
 	if (!strcmp(objc_type, "Q")) {
-		return strdup("uint64_t");
+		return rz_str_dup("uint64_t");
 	}
 	if (!strcmp(objc_type, "q")) {
-		return strdup("long long");
+		return rz_str_dup("long long");
 	}
 	if (!strcmp(objc_type, "C")) {
-		return strdup("uint8_t");
+		return rz_str_dup("uint8_t");
 	}
 	if (strlen(objc_type) == 1) {
 		RZ_LOG_ERROR("core: unknown objc type '%s'\n", objc_type);
@@ -3493,12 +3493,12 @@ static char *objc_type_toc(const char *objc_type) {
 		s[strlen(s) - 1] = '*';
 		return s;
 	}
-	return strdup(objc_type);
+	return rz_str_dup(objc_type);
 }
 
 static char *objc_name_toc(const char *objc_name) {
 	const char *n = rz_str_lchr(objc_name, ')');
-	char *s = strdup(n ? n + 1 : objc_name);
+	char *s = rz_str_dup(n ? n + 1 : objc_name);
 	char *p = strchr(s, '(');
 	if (p) {
 		*p = 0;
@@ -3662,20 +3662,20 @@ static void classdump_cpp(RzBinClass *c) {
 
 static inline char *demangle_type(const char *any) {
 	if (!any) {
-		return strdup("unknown");
+		return rz_str_dup("unknown");
 	}
 	switch (any[0]) {
 	case 'L': return rz_demangler_java(any, RZ_DEMANGLER_FLAG_ENABLE_ALL);
-	case 'B': return strdup("byte");
-	case 'C': return strdup("char");
-	case 'D': return strdup("double");
-	case 'F': return strdup("float");
-	case 'I': return strdup("int");
-	case 'J': return strdup("long");
-	case 'S': return strdup("short");
-	case 'V': return strdup("void");
-	case 'Z': return strdup("boolean");
-	default: return strdup("unknown");
+	case 'B': return rz_str_dup("byte");
+	case 'C': return rz_str_dup("char");
+	case 'D': return rz_str_dup("double");
+	case 'F': return rz_str_dup("float");
+	case 'I': return rz_str_dup("int");
+	case 'J': return rz_str_dup("long");
+	case 'S': return rz_str_dup("short");
+	case 'V': return rz_str_dup("void");
+	case 'Z': return rz_str_dup("boolean");
+	default: return rz_str_dup("unknown");
 	}
 }
 
@@ -3691,13 +3691,13 @@ static void classdump_java(RzBinClass *c) {
 	char *package = NULL, *classname = NULL;
 	char *tmp = (char *)rz_str_rchr(c->name, NULL, '.');
 	if (tmp) {
-		package = strdup(c->name);
-		classname = strdup(tmp + 1);
+		package = rz_str_dup(c->name);
+		classname = rz_str_dup(tmp + 1);
 		classname[strlen(classname) - 1] = 0;
 		simplify = true;
 	} else {
-		package = strdup("defpackage");
-		classname = strdup(c->name);
+		package = rz_str_dup("defpackage");
+		classname = rz_str_dup(c->name);
 	}
 
 	rz_cons_printf("package %s;\n\n", package);
@@ -3708,7 +3708,7 @@ static void classdump_java(RzBinClass *c) {
 		visibility = resolve_java_visibility(f->visibility_str);
 		char *ftype = demangle_type(f->type);
 		if (!ftype) {
-			ftype = strdup(f->type);
+			ftype = rz_str_dup(f->type);
 		} else if (simplify && ftype && package && classname) {
 			// hide the current package in the demangled value.
 			ftype = rz_str_replace(ftype, package, classname, 1);
@@ -3725,7 +3725,7 @@ static void classdump_java(RzBinClass *c) {
 		visibility = resolve_java_visibility(sym->visibility_str);
 		char *dem = rz_demangler_java(mn, RZ_DEMANGLER_FLAG_ENABLE_ALL);
 		if (!dem) {
-			dem = strdup(mn);
+			dem = rz_str_dup(mn);
 		} else if (simplify && dem && package && classname) {
 			// hide the current package in the demangled value.
 			dem = rz_str_replace(dem, package, classname, 1);
@@ -4537,7 +4537,7 @@ RZ_API int rz_core_bin_set_arch_bits(RzCore *r, const char *name, const char *ar
 		rz_core_bin_set_cur(r, binfile);
 		if (binfile->o && binfile->o->info) {
 			free(binfile->o->info->arch);
-			binfile->o->info->arch = strdup(arch);
+			binfile->o->info->arch = rz_str_dup(arch);
 			binfile->o->info->bits = bits;
 		}
 		return rz_core_bin_apply_all_info(r, binfile);
@@ -4685,7 +4685,7 @@ RZ_API RZ_OWN char *rz_core_bin_class_build_flag_name(RZ_NONNULL RzBinClass *cls
 	}
 
 	if (cls->visibility_str) {
-		char *copy = strdup(cls->visibility_str);
+		char *copy = rz_str_dup(cls->visibility_str);
 		rz_str_replace_ch(copy, ' ', '.', 1);
 		ret = rz_str_newf("class.%s.%s", copy, cls->name);
 		free(copy);
@@ -4708,7 +4708,7 @@ RZ_API RZ_OWN char *rz_core_bin_super_build_flag_name(RZ_NONNULL RzBinClass *cls
 	}
 
 	if (cls->visibility_str) {
-		char *copy = strdup(cls->visibility_str);
+		char *copy = rz_str_dup(cls->visibility_str);
 		rz_str_replace_ch(copy, ' ', '.', 1);
 		ret = rz_str_newf("super.%s.%s.%s", copy, cls->name, cls->super);
 		free(copy);
@@ -4733,7 +4733,7 @@ RZ_API RZ_OWN char *rz_core_bin_method_build_flag_name(RZ_NONNULL RzBinClass *cl
 	rz_strbuf_initf(&buf, "method");
 
 	if (meth->visibility_str) {
-		char *copy = strdup(meth->visibility_str);
+		char *copy = rz_str_dup(meth->visibility_str);
 		rz_str_replace_ch(copy, ' ', '.', 1);
 		rz_strbuf_appendf(&buf, ".%s", copy);
 		free(copy);
@@ -4761,7 +4761,7 @@ RZ_API RZ_OWN char *rz_core_bin_field_build_flag_name(RZ_NONNULL RzBinClass *cls
 	rz_strbuf_initf(&buf, "field");
 
 	if (field->visibility_str) {
-		char *copy = strdup(field->visibility_str);
+		char *copy = rz_str_dup(field->visibility_str);
 		rz_str_replace_ch(copy, ' ', '.', 1);
 		rz_strbuf_appendf(&buf, ".%s", copy);
 		free(copy);
@@ -4940,13 +4940,13 @@ RZ_API RZ_OWN char *rz_core_bin_pdb_get_filename(RZ_NONNULL RzCore *core) {
 	// Check raw path for debug filename
 	bool file_found = rz_file_exists(info->debug_file_name);
 	if (file_found) {
-		return strdup(info->debug_file_name);
+		return rz_str_dup(info->debug_file_name);
 	}
 	// Check debug filename basename in current directory
 	const char *basename = rz_file_dos_basename(info->debug_file_name);
 	file_found = rz_file_exists(basename);
 	if (file_found) {
-		return strdup(basename);
+		return rz_str_dup(basename);
 	}
 	// Check if debug file is in file directory
 	char *dir = rz_file_dirname(core->bin->cur->file);
@@ -5323,7 +5323,7 @@ RZ_API bool rz_core_bin_pdb_load(RZ_NONNULL RzCore *core, RZ_NONNULL const char 
 	if (!buf) {
 		return false;
 	}
-	char *s = strdup(buf);
+	char *s = rz_str_dup(buf);
 	if (!s) {
 		return false;
 	}

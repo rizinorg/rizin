@@ -405,7 +405,7 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 
 	if (ro->mode == RZ_SEARCH_MAGIC) {
 		/* TODO: implement using api */
-		char *tostr = (to && to != UT64_MAX) ? rz_str_newf("-e search.to=%" PFMT64d, to) : strdup("");
+		char *tostr = (to && to != UT64_MAX) ? rz_str_newf("-e search.to=%" PFMT64d, to) : rz_str_dup("");
 		rz_sys_cmdf("rizin"
 			    " -e search.in=range"
 			    " -e search.align=%d"

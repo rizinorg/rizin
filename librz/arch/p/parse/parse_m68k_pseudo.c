@@ -85,7 +85,7 @@ RzList /*<char *>*/ *m68k_tokenize(const char *assembly, size_t length) {
 }
 
 static bool parse(RzParse *parse, const char *assembly, RzStrBuf *sb) {
-	char *copy = strdup(assembly);
+	char *copy = rz_str_dup(assembly);
 	if (!copy) {
 		rz_strbuf_setf(sb, "asm(\"%s\")", assembly);
 		return true;

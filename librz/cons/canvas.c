@@ -255,7 +255,7 @@ RZ_API RzConsCanvas *rz_cons_canvas_new(int w, int h) {
 	if (!rz_str_constpool_init(&c->constpool)) {
 		goto beach;
 	}
-	c->attrs = ht_up_new((HtUPDupValue)strdup, free);
+	c->attrs = ht_up_new((HtUPDupValue)rz_str_dup, free);
 	if (!c->attrs) {
 		goto beach;
 	}

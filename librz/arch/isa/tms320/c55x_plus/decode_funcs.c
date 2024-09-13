@@ -17,7 +17,7 @@ char *get_tc2_tc1(ut32 ins_bits) {
 		}
 		res = "tc2";
 	}
-	return strdup(res);
+	return rz_str_dup(res);
 }
 
 char *get_trans_reg(ut32 ins_bits) {
@@ -52,7 +52,7 @@ char *get_trans_reg(ut32 ins_bits) {
 	default:
 		fprintf(stderr, "Invalid transaction instruction 0x%x\n", ins_bits);
 	}
-	return res ? strdup(res) : NULL;
+	return rz_str_dup(res);
 }
 
 char *get_AR_regs_class1(ut32 ins_bits) {
@@ -260,7 +260,7 @@ char *get_reg_pair(ut32 idx) {
 	}
 
 	if (res != NULL) {
-		res = strdup(res);
+		res = rz_str_dup(res);
 	}
 
 	return res;
@@ -325,7 +325,7 @@ char *get_reg_name_3(ut32 idx) {
 	}
 
 	if (res != NULL) {
-		res = strdup(res);
+		res = rz_str_dup(res);
 	}
 	return res;
 }
@@ -380,7 +380,7 @@ char *get_reg_name_2(ut32 idx) {
 	}
 
 	if (res != NULL) {
-		res = strdup(res);
+		res = rz_str_dup(res);
 	}
 
 	return res;
@@ -635,7 +635,7 @@ char *get_reg_name_1(ut32 idx) {
 	}
 
 	if (res != NULL) {
-		res = strdup(res);
+		res = rz_str_dup(res);
 	}
 
 	return res;
@@ -850,7 +850,7 @@ char *get_status_regs_and_bits(char *reg_arg, int reg_bit) {
 	}
 
 	if (res != NULL) {
-		res = strdup(res);
+		res = rz_str_dup(res);
 	}
 
 	return res;
@@ -945,71 +945,71 @@ char *get_reg_name_4(ut32 idx) {
 		res = "ac7.l";
 		break;
 	}
-	return res ? strdup(res) : NULL;
+	return rz_str_dup(res);
 }
 
 char *get_opers(ut8 oper_byte) {
 	switch (oper_byte) {
 	case 0xE0u:
-		return strdup("overflow(ac0)");
+		return rz_str_dup("overflow(ac0)");
 	case 0xE1u:
-		return strdup("overflow(ac1)");
+		return rz_str_dup("overflow(ac1)");
 	case 0xE2u:
-		return strdup("overflow(ac2)");
+		return rz_str_dup("overflow(ac2)");
 	case 0xE3u:
-		return strdup("overflow(ac3)");
+		return rz_str_dup("overflow(ac3)");
 	case 0xE4u:
-		return strdup("tc1");
+		return rz_str_dup("tc1");
 	case 0xE5u:
-		return strdup("tc2");
+		return rz_str_dup("tc2");
 	case 0xE6u:
-		return strdup("carry");
+		return rz_str_dup("carry");
 	case 0xE7u:
-		return strdup("overflow(govf)");
+		return rz_str_dup("overflow(govf)");
 	case 0xE8u:
-		return strdup("tc1 & tc2");
+		return rz_str_dup("tc1 & tc2");
 	case 0xE9u:
-		return strdup("tc1 & !tc2");
+		return rz_str_dup("tc1 & !tc2");
 	case 0xEAu:
-		return strdup("!tc1 & tc2");
+		return rz_str_dup("!tc1 & tc2");
 	case 0xEBu:
-		return strdup("!tc1 & !tc2");
+		return rz_str_dup("!tc1 & !tc2");
 	case 0xECu:
-		return strdup("word_mode");
+		return rz_str_dup("word_mode");
 	case 0xEDu:
-		return strdup("byte_mode");
+		return rz_str_dup("byte_mode");
 	case 0xF0u:
-		return strdup("!overflow(ac0)");
+		return rz_str_dup("!overflow(ac0)");
 	case 0xF1u:
-		return strdup("!overflow(ac1)");
+		return rz_str_dup("!overflow(ac1)");
 	case 0xF2u:
-		return strdup("!overflow(ac2)");
+		return rz_str_dup("!overflow(ac2)");
 	case 0xF3u:
-		return strdup("!overflow(ac3)");
+		return rz_str_dup("!overflow(ac3)");
 	case 0xF4u:
-		return strdup("!tc1");
+		return rz_str_dup("!tc1");
 	case 0xF5u:
-		return strdup("!tc2");
+		return rz_str_dup("!tc2");
 	case 0xF6u:
-		return strdup("!carry");
+		return rz_str_dup("!carry");
 	case 0xF7u:
-		return strdup("!overflow(govf)");
+		return rz_str_dup("!overflow(govf)");
 	case 0xF8u:
-		return strdup("tc1 | tc2");
+		return rz_str_dup("tc1 | tc2");
 	case 0xF9u:
-		return strdup("tc1 | !tc2");
+		return rz_str_dup("tc1 | !tc2");
 	case 0xFAu:
-		return strdup("!tc1 | tc2");
+		return rz_str_dup("!tc1 | tc2");
 	case 0xFBu:
-		return strdup("!tc1 | !tc2");
+		return rz_str_dup("!tc1 | !tc2");
 	case 0xFCu:
-		return strdup("tc1 ^ tc2");
+		return rz_str_dup("tc1 ^ tc2");
 	case 0xFDu:
-		return strdup("tc1 ^ !tc2");
+		return rz_str_dup("tc1 ^ !tc2");
 	case 0xFEu:
-		return strdup("!tc1 ^ tc2");
+		return rz_str_dup("!tc1 ^ tc2");
 	case 0xFFu:
-		return strdup("!tc1 ^ !tc2");
+		return rz_str_dup("!tc1 ^ !tc2");
 	default: {
 		ut8 oper_type = oper_byte >> 5;
 		if (oper_type != 6) {
@@ -1057,7 +1057,7 @@ char *get_cmp_op(ut32 idx) {
 	case 2: res = "<"; break;
 	case 3: res = ">="; break;
 	}
-	return res ? strdup(res) : NULL;
+	return rz_str_dup(res);
 }
 
 char *get_sim_reg(char *reg_arg, ut32 ins_bits) {
@@ -1069,10 +1069,10 @@ char *get_sim_reg(char *reg_arg, ut32 ins_bits) {
 	case 0:
 		if (reg_arg && strchr(reg_arg, 'w')) {
 			if (code == 62) {
-				return strdup("sim0");
+				return rz_str_dup("sim0");
 			}
 			if (code == 63) {
-				return strdup("sim0");
+				return rz_str_dup("sim0");
 			}
 		}
 		aux = get_reg_name_1(ins_bits >> 2);
@@ -1088,7 +1088,7 @@ char *get_sim_reg(char *reg_arg, ut32 ins_bits) {
 		break;
 	case 1:
 	case 3:
-		res = strdup("<reserved>");
+		res = rz_str_dup("<reserved>");
 		break;
 	}
 	return res;

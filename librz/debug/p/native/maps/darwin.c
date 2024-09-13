@@ -161,7 +161,7 @@ static RzList *ios_dbg_maps(RzDebug *dbg) {
 				eprintf("Cannot create rz_debug_map_new\n");
 				break;
 			}
-			mr->file = strdup(module_name);
+			mr->file = rz_str_dup(module_name);
 			i++;
 			rz_list_append(list, mr);
 		}
@@ -267,7 +267,7 @@ static RzList *osx_dbg_maps (RzDebug *dbg) {
 				eprintf ("Cannot create rz_debug_map_new\n");
 				break;
 			}
-			mr->file = strdup (module_name);
+			mr->file = rz_str_dup (module_name);
 			rz_list_append (list, mr);
 		}
 }

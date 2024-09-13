@@ -21,7 +21,7 @@ int lua53_anal_op(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *data
 	if (GET_OPCODE(instruction) > OP_EXTRAARG) {
 		return op->size;
 	}
-	// op->mnemonic = strdup ();
+	// op->mnemonic = rz_str_dup ();
 
 	switch (GET_OPCODE(instruction)) {
 	case OP_MOVE: /*      A B     R(A) := R(B)                                    */

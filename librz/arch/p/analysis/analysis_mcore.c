@@ -107,7 +107,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"gpr	cr30  .32 184 0\n"
 		"gpr	cr31  .32 188 0\n"
 		"gpr	pc	.32 192 0\n";
-	return strdup(p);
+	return rz_str_dup(p);
 }
 
 static int archinfo(RzAnalysis *a, RzAnalysisInfoType query) {

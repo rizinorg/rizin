@@ -337,7 +337,7 @@ static char *subvar_stack(RzParse *p, RzAnalysisOp *op, RZ_NULLABLE RzAnalysisFu
 static bool subvar(RzParse *p, RzAnalysisFunction *f, RzAnalysisOp *op, char *data, char *str, int len) {
 	const ut64 addr = op->addr;
 	const int oplen = op->size;
-	char *tstr = strdup(data);
+	char *tstr = rz_str_dup(data);
 	if (!tstr) {
 		return false;
 	}

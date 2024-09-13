@@ -744,7 +744,7 @@ RZ_API int rz_main_rz_ax(int argc, const char **argv) {
 	} else {
 		ut64 flags = 0;
 		for (i = 1; i < argc; i++) {
-			char *argv_i = strdup(argv[i]);
+			char *argv_i = rz_str_dup(argv[i]);
 			rz_str_unescape(argv_i);
 			rax(num, argv_i, 0, i == argc - 1, &flags, &fm);
 			free(argv_i);

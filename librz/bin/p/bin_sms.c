@@ -43,11 +43,11 @@ static RzBinInfo *info(RzBinFile *bf) {
 		free(ret);
 		return NULL;
 	}
-	ret->file = strdup(bf->file);
-	ret->type = strdup("ROM");
-	ret->machine = strdup("SEGA MasterSystem");
-	ret->os = strdup("sms");
-	ret->arch = strdup("z80");
+	ret->file = rz_str_dup(bf->file);
+	ret->type = rz_str_dup("ROM");
+	ret->machine = rz_str_dup("SEGA MasterSystem");
+	ret->os = rz_str_dup("sms");
+	ret->arch = rz_str_dup("z80");
 	ret->has_va = 1;
 	ret->bits = 8;
 	if (!check_buffer(bf->buf)) {

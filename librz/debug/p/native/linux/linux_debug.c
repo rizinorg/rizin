@@ -740,7 +740,7 @@ static char *read_link(int pid, const char *file) {
 	int ret = readlink(path, buf, sizeof(buf));
 	if (ret > 0) {
 		buf[sizeof(buf) - 1] = '\0';
-		return strdup(buf);
+		return rz_str_dup(buf);
 	}
 	return NULL;
 }
@@ -832,7 +832,7 @@ RzDebugPid *fill_pid_info(const char *info, const char *path, int tid) {
 	}
 
 	pid_info->pid = tid;
-	pid_info->path = path ? strdup(path) : NULL;
+	pid_info->path = rz_str_dup(path);
 	pid_info->runnable = true;
 	pid_info->pc = 0;
 	return pid_info;

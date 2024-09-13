@@ -531,7 +531,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 
 	set_color_default(r);
 	bool load_l = true;
-	char *debugbackend = strdup("native");
+	char *debugbackend = rz_str_dup("native");
 
 	RzGetopt opt;
 	rz_getopt_init(&opt, argc, argv, "=02AMCwxfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:R:r:c:D:vVSTzuXt");
@@ -544,7 +544,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			break;
 		case '=':
 			RZ_FREE(r->cmdremote);
-			r->cmdremote = strdup("");
+			r->cmdremote = rz_str_dup("");
 			break;
 		case '2':
 			noStderr = true;
@@ -594,7 +594,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		case 'D': {
 			debug = 2;
 			free(debugbackend);
-			debugbackend = strdup(opt.arg);
+			debugbackend = rz_str_dup(opt.arg);
 			RzCmdStateOutput state = { 0 };
 			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET);
 			if (!strcmp(opt.arg, "?")) {
@@ -788,16 +788,16 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 					}
 					if (p) {
 						*p = 0;
-						pfile = strdup(program);
+						pfile = rz_str_dup(program);
 					}
 				}
 				free(msg);
 			} else {
 				eprintf("Cannot read dbg.profile '%s'\n", dbg_profile);
-				pfile = NULL; // strdup ("");
+				pfile = NULL; // rz_str_dup ("");
 			}
 		} else {
-			pfile = argv[opt.ind] ? strdup(argv[opt.ind]) : NULL;
+			pfile = rz_str_dup(argv[opt.ind]);
 		}
 	}
 
@@ -849,14 +849,14 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		}
 		const char *src = haveRarunProfile ? pfile : argv[opt.ind];
 		if (src && *src) {
-			char *uri = strdup(src);
+			char *uri = rz_str_dup(src);
 			if (uri) {
 				char *p = strstr(uri, "://");
 				if (p) {
 					*p = 0;
 					// TODO: this must be specified by the io plugin, not hardcoded here
 					if (!strcmp(uri, "winedbg")) {
-						debugbackend = strdup("io");
+						debugbackend = rz_str_dup("io");
 					} else {
 						debugbackend = uri;
 						uri = NULL;
@@ -1007,7 +1007,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 				}
 				if (strcmp(debugbackend, "native")) {
 					if (!haveRarunProfile) {
-						pfile = strdup(argv[opt.ind++]);
+						pfile = rz_str_dup(argv[opt.ind++]);
 					}
 					// If plugin is winkd we should keep RWX permission to be able to write to the fd
 					if (strcmp(debugbackend, "winkd")) {
@@ -1061,7 +1061,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 				const char *f = (haveRarunProfile && pfile) ? pfile : argv[opt.ind];
 				is_gdb = (!memcmp(f, "gdb://", RZ_MIN(f ? strlen(f) : 0, 6)));
 				if (!is_gdb) {
-					pfile = strdup("dbg://");
+					pfile = rz_str_dup("dbg://");
 				}
 #if __UNIX__
 				/* implicit ./ to make unix behave like windows */
@@ -1069,11 +1069,11 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 					char *path, *escaped_path;
 					if (strchr(f, '/')) {
 						// f is a path
-						path = strdup(f);
+						path = rz_str_dup(f);
 					} else {
 						// f is a filename
 						if (rz_file_exists(f)) {
-							path = rz_str_prepend(strdup(f), "./");
+							path = rz_str_prepend(rz_str_dup(f), "./");
 						} else {
 							path = rz_file_path(f);
 						}
@@ -1130,7 +1130,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			if (opt.ind < argc) {
 				RZ_FREE(pfile);
 				while (opt.ind < argc) {
-					pfile = strdup(argv[opt.ind++]);
+					pfile = rz_str_dup(argv[opt.ind++]);
 					fh = rz_core_file_open(r, pfile, perms, mapaddr);
 					if (!fh && perms & RZ_PERM_W) {
 						perms |= RZ_PERM_CREAT;
@@ -1343,7 +1343,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		/* check if file.path has changed */
 		if (iod && !strstr(iod->uri, "://")) {
 			const char *npath;
-			char *path = strdup(rz_config_get(r->config, "file.path"));
+			char *path = rz_str_dup(rz_config_get(r->config, "file.path"));
 			iod = r->io ? rz_io_desc_get(r->io, fh->fd) : NULL;
 			npath = rz_config_get(r->config, "file.path");
 			if (!quiet && path && *path && npath && strcmp(path, npath)) {

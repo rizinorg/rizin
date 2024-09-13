@@ -29,8 +29,8 @@ RZ_API void rz_asm_equ_item_free(RzAsmEqu *equ) {
 static RzAsmEqu *__asm_equ_new(const char *key, const char *value) {
 	RzAsmEqu *equ = RZ_NEW0(RzAsmEqu);
 	if (equ) {
-		equ->key = strdup(key);
-		equ->value = strdup(value);
+		equ->key = rz_str_dup(key);
+		equ->value = rz_str_dup(value);
 	}
 	return equ;
 }
@@ -44,7 +44,7 @@ RZ_API bool rz_asm_code_set_equ(RzAsmCode *code, const char *key, const char *va
 		rz_list_foreach (code->equs, iter, equ) {
 			if (!strcmp(equ->key, key)) {
 				free(equ->value);
-				equ->value = strdup(value);
+				equ->value = rz_str_dup(value);
 				return true;
 			}
 		}

@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <rz_util/rz_assert.h>
+#include <rz_util/rz_str.h>
 
 #define LOAD_FACTOR     1
 #define S_ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))

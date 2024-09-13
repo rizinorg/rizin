@@ -806,7 +806,7 @@ static bool parse_signature(struct MACH0_(obj_t) * bin, ut64 off) {
 
 	data = link.dataoff;
 	if (data > bin->size || data + sizeof(struct super_blob_t) > bin->size) {
-		bin->signature = (ut8 *)strdup("Malformed entitlement");
+		bin->signature = (ut8 *)rz_str_dup("Malformed entitlement");
 		return true;
 	}
 
@@ -829,7 +829,7 @@ static bool parse_signature(struct MACH0_(obj_t) * bin, ut64 off) {
 	// $ openssl pkcs7 -inform DER -print_certs -text -in a
 	for (i = 0; i < super.count; i++) {
 		if (data + i > bin->size) {
-			bin->signature = (ut8 *)strdup("Malformed entitlement");
+			bin->signature = (ut8 *)rz_str_dup("Malformed entitlement");
 			break;
 		}
 		struct blob_index_t bi;
@@ -844,7 +844,7 @@ static bool parse_signature(struct MACH0_(obj_t) * bin, ut64 off) {
 			if (true || isVerbose) {
 				ut64 off = data + idx.offset;
 				if (off > bin->size || off + sizeof(struct blob_t) > bin->size) {
-					bin->signature = (ut8 *)strdup("Malformed entitlement");
+					bin->signature = (ut8 *)rz_str_dup("Malformed entitlement");
 					break;
 				}
 				struct blob_t entitlements = { 0 };
@@ -864,10 +864,10 @@ static bool parse_signature(struct MACH0_(obj_t) * bin, ut64 off) {
 							bin->signature[len] = '\0';
 						}
 					} else {
-						bin->signature = (ut8 *)strdup("Malformed entitlement");
+						bin->signature = (ut8 *)rz_str_dup("Malformed entitlement");
 					}
 				} else {
-					bin->signature = (ut8 *)strdup("Malformed entitlement");
+					bin->signature = (ut8 *)rz_str_dup("Malformed entitlement");
 				}
 			}
 			break;
@@ -935,7 +935,7 @@ static bool parse_signature(struct MACH0_(obj_t) * bin, ut64 off) {
 		}
 	}
 	if (!bin->signature) {
-		bin->signature = (ut8 *)strdup("No entitlement found");
+		bin->signature = (ut8 *)rz_str_dup("No entitlement found");
 	}
 	return true;
 }
@@ -1923,7 +1923,7 @@ RzPVector /*<RzBinVirtualFile *>*/ *MACH0_(get_virtual_files)(RzBinFile *bf) {
 		}
 		vf->buf = buf;
 		vf->buf_owned = true;
-		vf->name = strdup(MACH0_VFILE_NAME_RELOC_TARGETS);
+		vf->name = rz_str_dup(MACH0_VFILE_NAME_RELOC_TARGETS);
 		rz_pvector_push(ret, vf);
 	}
 	// virtual file mirroring the raw file, but with relocs patched
@@ -1934,7 +1934,7 @@ RzPVector /*<RzBinVirtualFile *>*/ *MACH0_(get_virtual_files)(RzBinFile *bf) {
 		}
 		vf->buf = obj->buf_patched;
 		vf->buf_owned = false;
-		vf->name = strdup(MACH0_VFILE_NAME_PATCHED);
+		vf->name = rz_str_dup(MACH0_VFILE_NAME_PATCHED);
 		rz_pvector_push(ret, vf);
 	}
 	return ret;
@@ -2252,7 +2252,7 @@ static bool parse_import_stub(struct MACH0_(obj_t) * bin, struct symbol_t *symbo
 				if (*symstr == '_') {
 					symstr++;
 				}
-				symbol->name = strdup(symstr);
+				symbol->name = rz_str_dup(symstr);
 				return true;
 			}
 		}
@@ -2472,7 +2472,7 @@ static void assign_export_symbol_t(struct MACH0_(obj_t) * bin, const char *name,
 		}
 		sym_ctx->symbols[j].size = 0;
 		sym_ctx->symbols[j].type = RZ_BIN_MACH0_SYMBOL_TYPE_EXT;
-		sym_ctx->symbols[j].name = strdup(name);
+		sym_ctx->symbols[j].name = rz_str_dup(name);
 		sym_ctx->j++;
 	}
 }
@@ -2870,11 +2870,11 @@ const char *MACH0_(get_cputype)(struct MACH0_(obj_t) * bin) {
 
 char *MACH0_(get_cpusubtype_from_hdr)(struct MACH0_(mach_header) * hdr) {
 	rz_return_val_if_fail(hdr, NULL);
-	return strdup(rz_mach0_cpusubtype_tostring(hdr->cputype, hdr->cpusubtype));
+	return rz_str_dup(rz_mach0_cpusubtype_tostring(hdr->cputype, hdr->cpusubtype));
 }
 
 char *MACH0_(get_cpusubtype)(struct MACH0_(obj_t) * bin) {
-	return bin ? MACH0_(get_cpusubtype_from_hdr)(&bin->hdr) : strdup("Unknown");
+	return bin ? MACH0_(get_cpusubtype_from_hdr)(&bin->hdr) : rz_str_dup("Unknown");
 }
 
 bool MACH0_(is_pie)(struct MACH0_(obj_t) * bin) {
@@ -2902,11 +2902,11 @@ char *MACH0_(get_filetype_from_hdr)(struct MACH0_(mach_header) * hdr) {
 	case MH_KEXT_BUNDLE: mhtype = "Kernel extension bundle file"; break;
 	case MH_FILESET: mhtype = "Kernel cache file"; break;
 	}
-	return strdup(mhtype);
+	return rz_str_dup(mhtype);
 }
 
 char *MACH0_(get_filetype)(struct MACH0_(obj_t) * bin) {
-	return bin ? MACH0_(get_filetype_from_hdr)(&bin->hdr) : strdup("Unknown");
+	return bin ? MACH0_(get_filetype_from_hdr)(&bin->hdr) : rz_str_dup("Unknown");
 }
 
 ut64 MACH0_(get_main)(struct MACH0_(obj_t) * bin) {

@@ -239,10 +239,10 @@ RZ_IPI RzCmdStatus rz_remote_tcp_handler(RzCore *core, int argc, const char **ar
 		char *host, *port = strchr(argv[1], ':');
 		if (port) {
 			host = rz_str_ndup(argv[1], port - argv[1]);
-			port = strdup(port + 1);
+			port = rz_str_dup(port + 1);
 		} else {
-			host = strdup("localhost");
-			port = strdup(argv[1]);
+			host = rz_str_dup("localhost");
+			port = rz_str_dup(argv[1]);
 		}
 		char *rbuf = rz_core_rtr_cmds_query(core, host, port, argv[2]);
 		if (rbuf) {
@@ -260,5 +260,5 @@ RZ_API void rz_core_rtr_enable(RZ_NONNULL RzCore *core, const char *cmdremote) {
 	rz_return_if_fail(core && cmdremote);
 
 	RZ_FREE(core->cmdremote);
-	core->cmdremote = strdup(cmdremote);
+	core->cmdremote = rz_str_dup(cmdremote);
 }

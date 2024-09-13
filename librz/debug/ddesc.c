@@ -9,7 +9,7 @@ RZ_API RzDebugDesc *rz_debug_desc_new(int fd, char *path, int perm, int type, in
 	RzDebugDesc *desc = RZ_NEW(RzDebugDesc);
 	if (desc) {
 		desc->fd = fd;
-		desc->path = strdup(path);
+		desc->path = rz_str_dup(path);
 		desc->perm = perm;
 		desc->type = type;
 		desc->off = off;

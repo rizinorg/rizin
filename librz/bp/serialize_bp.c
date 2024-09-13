@@ -256,10 +256,10 @@ static bool bp_load_cb(void *user, const SdbKv *kv) {
 	}
 
 	if (bp_item_temp.name) {
-		bp_item->name = strdup(bp_item_temp.name);
+		bp_item->name = rz_str_dup(bp_item_temp.name);
 	}
 	if (bp_item_temp.module_name) {
-		bp_item->module_name = strdup(bp_item_temp.module_name);
+		bp_item->module_name = rz_str_dup(bp_item_temp.module_name);
 	}
 	bp_item->module_delta = bp_item_temp.module_delta;
 	bp_item->delta = bp_item_temp.delta;
@@ -274,13 +274,13 @@ static bool bp_load_cb(void *user, const SdbKv *kv) {
 		bp_item->pids[i] = bp_item_temp.pids[i];
 	}
 	if (bp_item_temp.data) {
-		bp_item->data = strdup(bp_item_temp.data);
+		bp_item->data = rz_str_dup(bp_item_temp.data);
 	}
 	if (bp_item_temp.cond) {
-		bp_item->cond = strdup(bp_item_temp.cond);
+		bp_item->cond = rz_str_dup(bp_item_temp.cond);
 	}
 	if (bp_item_temp.expr) {
-		bp_item->expr = strdup(bp_item_temp.expr);
+		bp_item->expr = rz_str_dup(bp_item_temp.expr);
 	}
 	ret = true;
 

@@ -86,7 +86,7 @@ RZ_API char *rz_analysis_cond_to_string(RzAnalysisCond *cond) {
 	}
 	free(val0);
 	free(val1);
-	return out ? out : strdup("?");
+	return out ? out : rz_str_dup("?");
 }
 
 RZ_API RzAnalysisCond *rz_analysis_cond_new_from_op(RzAnalysisOp *op) {

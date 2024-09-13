@@ -140,7 +140,7 @@ static int update_self_regions(RzIO *io, int pid) {
 		}
 		self_sections[self_sections_count].from = rz_num_get(NULL, region);
 		self_sections[self_sections_count].to = rz_num_get(NULL, region2);
-		self_sections[self_sections_count].name = strdup(name);
+		self_sections[self_sections_count].name = rz_str_dup(name);
 		self_sections[self_sections_count].perm = perm;
 		self_sections_count++;
 		rz_num_get(NULL, region2);
@@ -157,7 +157,7 @@ static int update_self_regions(RzIO *io, int pid) {
 	while (get_next_image_info(0, &cookie, &ii) == B_OK) {
 		self_sections[self_sections_count].from = (ut64)ii.text;
 		self_sections[self_sections_count].to = (ut64)((char *)ii.text + ii.text_size);
-		self_sections[self_sections_count].name = strdup(ii.name);
+		self_sections[self_sections_count].name = rz_str_dup(ii.name);
 		self_sections[self_sections_count].perm = 0;
 		self_sections_count++;
 	}
@@ -221,7 +221,7 @@ static int update_self_regions(RzIO *io, int pid) {
 
 		self_sections[self_sections_count].from = (ut64)c->pr_vaddr;
 		self_sections[self_sections_count].to = (ut64)(c->pr_vaddr + c->pr_size);
-		self_sections[self_sections_count].name = strdup(name);
+		self_sections[self_sections_count].name = rz_str_dup(name);
 		self_sections[self_sections_count].perm = perm;
 		self_sections_count++;
 	}
@@ -347,7 +347,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 	} else if (!strncmp(cmd, "call ", 5)) {
 		size_t cbptr = 0;
 		ut64 result = 0;
-		char *argv = strdup(cmd + 5);
+		char *argv = rz_str_dup(cmd + 5);
 		int argc = rz_str_word_set0(argv);
 		if (argc == 0) {
 			eprintf("Usage: R!call [fcnptr] [a0] [a1] ...\n");
@@ -676,7 +676,7 @@ bool bsd_proc_vmmaps(RzIO *io, int pid) {
 
 			self_sections[self_sections_count].from = entry->kve_start;
 			self_sections[self_sections_count].to = entry->kve_end;
-			self_sections[self_sections_count].name = strdup(entry->kve_path);
+			self_sections[self_sections_count].name = rz_str_dup(entry->kve_path);
 			self_sections[self_sections_count].perm = perm;
 			self_sections_count++;
 			p_start += sz;
@@ -785,7 +785,7 @@ exit:
 
 			self_sections[self_sections_count].from = entry->kve_start;
 			self_sections[self_sections_count].to = entry->kve_end;
-			self_sections[self_sections_count].name = strdup(entry->kve_path);
+			self_sections[self_sections_count].name = rz_str_dup(entry->kve_path);
 			self_sections[self_sections_count].perm = perm;
 			self_sections_count++;
 			p_start += sz;

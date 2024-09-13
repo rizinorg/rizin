@@ -503,7 +503,7 @@ RZ_API bool rz_asm_use(RzAsm *a, const char *name) {
 RZ_DEPRECATE RZ_API void rz_asm_set_cpu(RzAsm *a, const char *cpu) {
 	if (a) {
 		free(a->cpu);
-		a->cpu = cpu ? strdup(cpu) : NULL;
+		a->cpu = rz_str_dup(cpu);
 	}
 }
 
@@ -725,7 +725,7 @@ RZ_API void rz_asm_list_directives(void) {
 RZ_API int rz_asm_assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
 	rz_return_val_if_fail(a && op && buf, 0);
 	int ret = 0;
-	char *b = strdup(buf);
+	char *b = rz_str_dup(buf);
 	if (!b) {
 		return 0;
 	}
@@ -871,7 +871,7 @@ RZ_API RzAsmCode *rz_asm_massemble(RzAsm *a, const char *assembly) {
 		free(tokens);
 		return rz_asm_code_free(acode);
 	}
-	lbuf = strdup(assembly);
+	lbuf = rz_str_dup(assembly);
 	acode->code_align = 0;
 
 	/* consider ,, an alias for a newline */
@@ -900,7 +900,7 @@ RZ_API RzAsmCode *rz_asm_massemble(RzAsm *a, const char *assembly) {
 			if (sp) {
 				char osp = *sp;
 				*sp = 0;
-				aa = strdup(p);
+				aa = rz_str_dup(p);
 				*sp = osp;
 				num = rz_syscall_get_num(a->syscall, aa + 5);
 				snprintf(val, sizeof(val), "%d", num);
@@ -1022,7 +1022,7 @@ RZ_API RzAsmCode *rz_asm_massemble(RzAsm *a, const char *assembly) {
 					// if (stage != 2) {
 					if (ptr_start[1] && ptr_start[1] != ' ') {
 						*ptr = 0;
-						char *p = strdup(ptr_start);
+						char *p = rz_str_dup(ptr_start);
 						*ptr = ':';
 						if (acode->code_align) {
 							off += (acode->code_align - (off % acode->code_align));
@@ -1060,7 +1060,7 @@ RZ_API RzAsmCode *rz_asm_massemble(RzAsm *a, const char *assembly) {
 					ret = rz_asm_pseudo_string(&op, ptr + 8, 1);
 				} else if (!strncmp(ptr, ".string ", 8)) {
 					rz_str_trim(ptr + 8);
-					char *str = strdup(ptr + 8);
+					char *str = rz_str_dup(ptr + 8);
 					ret = rz_asm_pseudo_string(&op, str, 1);
 					free(str);
 				} else if (!strncmp(ptr, ".ascii", 6)) {
@@ -1151,7 +1151,7 @@ RZ_API RzAsmCode *rz_asm_massemble(RzAsm *a, const char *assembly) {
 					if (!*ptr_start) {
 						continue;
 					}
-					str = rz_asm_code_equ_replace(acode, strdup(ptr_start));
+					str = rz_asm_code_equ_replace(acode, rz_str_dup(ptr_start));
 					rz_asm_op_fini(&op);
 					rz_asm_op_init(&op);
 					ret = rz_asm_assemble(a, &op, str);
@@ -1293,7 +1293,7 @@ RZ_API int rz_asm_mnemonics_byname(RzAsm *a, const char *name) {
 
 RZ_API RzAsmCode *rz_asm_rasm_assemble(RzAsm *a, const char *buf, bool use_spp) {
 	rz_return_val_if_fail(a && buf, NULL);
-	char *lbuf = strdup(buf);
+	char *lbuf = rz_str_dup(buf);
 	if (!lbuf) {
 		return NULL;
 	}
@@ -1309,7 +1309,7 @@ RZ_API RzAsmCode *rz_asm_rasm_assemble(RzAsm *a, const char *buf, bool use_spp) 
 		lbuf = replace_directives(lbuf);
 		spp_eval(lbuf, &out);
 		free(lbuf);
-		lbuf = strdup(rz_strbuf_get(out.cout));
+		lbuf = rz_str_dup(rz_strbuf_get(out.cout));
 	}
 	acode = rz_asm_massemble(a, lbuf);
 	free(lbuf);

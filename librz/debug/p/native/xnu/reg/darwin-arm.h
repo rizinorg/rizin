@@ -17,7 +17,7 @@ VFP: FPU
 	ut32 r[64]
 	ut32 fpscr
 #endif
-return strdup(
+return rz_str_dup(
 	"=PC	r15\n"
 	"=LR	r14\n"
 	"=SP	r13\n"

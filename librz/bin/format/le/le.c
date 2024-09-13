@@ -295,7 +295,7 @@ static RZ_BORROW LE_import *le_add_import(rz_bin_le_obj_t *bin,
 	RzBinSymbol *sym = le_add_symbol(bin, sym_ord, sym_vaddr);
 	CHECK(le_imp->symbol = sym);
 	sym->is_imported = true;
-	CHECK(sym->name = strdup(le_imp->import->name));
+	CHECK(sym->name = rz_str_dup(le_imp->import->name));
 
 	CHECK(ht_pp_insert(bin->le_import_ht, le_imp, NULL));
 	return le_imp;
@@ -1692,7 +1692,7 @@ RZ_OWN RzPVector /*<RzBinAddr *>*/ *rz_bin_le_get_entry_points(RzBinFile *bf) {
 static void str_copy(void *dst, void *src) {
 	char **_dst = (char **)dst;
 	char **_src = (char **)src;
-	*_dst = strdup(*_src);
+	*_dst = rz_str_dup(*_src);
 }
 
 RZ_OWN RzPVector /*<char *>*/ *rz_bin_le_get_libs(RzBinFile *bf) {
@@ -1727,7 +1727,7 @@ RZ_OWN RzPVector /*<RzBinVirtualFile *>*/ *rz_bin_le_get_virtual_files(RzBinFile
 	if (bin->buf_patched) {
 		// patched vfile over main buffer
 		CHECK(vf = RZ_NEW0(RzBinVirtualFile));
-		CHECK(vf->name = strdup(VFILE_NAME_PATCHED));
+		CHECK(vf->name = rz_str_dup(VFILE_NAME_PATCHED));
 		vf->buf = bin->buf_patched;
 		vf->buf_owned = false;
 		CHECK(rz_pvector_push(vfiles, vf));
@@ -1741,7 +1741,7 @@ RZ_OWN RzPVector /*<RzBinVirtualFile *>*/ *rz_bin_le_get_virtual_files(RzBinFile
 			continue;
 		}
 		CHECK(vf = RZ_NEW0(RzBinVirtualFile));
-		CHECK(vf->name = strdup(le_map->vfile_name));
+		CHECK(vf->name = rz_str_dup(le_map->vfile_name));
 		vf->buf = le_map->vfile_buf;
 		vf->buf_owned = false;
 		CHECK(rz_pvector_push(vfiles, vf));
@@ -1752,7 +1752,7 @@ RZ_OWN RzPVector /*<RzBinVirtualFile *>*/ *rz_bin_le_get_virtual_files(RzBinFile
 	ut64 rtmsz = le_reloc_targets_vfile_size(bin);
 	if (rtmsz) {
 		CHECK(vf = RZ_NEW0(RzBinVirtualFile));
-		CHECK(vf->name = strdup(VFILE_NAME_RELOC_TARGETS))
+		CHECK(vf->name = rz_str_dup(VFILE_NAME_RELOC_TARGETS))
 		CHECK(vf->buf = rz_buf_new_empty(rtmsz));
 		vf->buf_owned = true;
 		CHECK(rz_pvector_push(vfiles, vf));
@@ -1854,11 +1854,11 @@ RZ_OWN RzPVector /*<RzBinMap *>*/ *rz_bin_le_get_maps(RzBinFile *bf) {
 		CHECK(map->name = rz_str_newf("obj%u_map%u", obj_num, map_num));
 		if (le_map->is_physical) {
 			map->paddr = le_map->paddr;
-			CHECK(map->vfile_name = strdup(VFILE_NAME_PATCHED));
+			CHECK(map->vfile_name = rz_str_dup(VFILE_NAME_PATCHED));
 		} else {
 			map->paddr = 0;
 			if (map->psize != 0) {
-				CHECK(map->vfile_name = strdup(le_map->vfile_name));
+				CHECK(map->vfile_name = rz_str_dup(le_map->vfile_name));
 			}
 		}
 		CHECK(rz_pvector_push(maps, map));
@@ -1871,8 +1871,8 @@ RZ_OWN RzPVector /*<RzBinMap *>*/ *rz_bin_le_get_maps(RzBinFile *bf) {
 	map->vaddr = bin->reloc_target_map_base;
 	map->psize = rtmsz;
 	map->vsize = rtmsz;
-	CHECK(map->name = strdup(VFILE_NAME_RELOC_TARGETS));
-	CHECK(map->vfile_name = strdup(VFILE_NAME_RELOC_TARGETS));
+	CHECK(map->name = rz_str_dup(VFILE_NAME_RELOC_TARGETS));
+	CHECK(map->vfile_name = rz_str_dup(VFILE_NAME_RELOC_TARGETS));
 	CHECK(rz_pvector_push(maps, map));
 
 	return maps;

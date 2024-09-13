@@ -88,7 +88,7 @@ static pyc_object *get_none_object(void) {
 		return NULL;
 	}
 	ret->type = TYPE_NONE;
-	ret->data = strdup("None");
+	ret->data = rz_str_dup("None");
 	if (!ret->data) {
 		RZ_FREE(ret);
 	}
@@ -101,7 +101,7 @@ static pyc_object *get_false_object(void) {
 		return NULL;
 	}
 	ret->type = TYPE_FALSE;
-	ret->data = strdup("False");
+	ret->data = rz_str_dup("False");
 	if (!ret->data) {
 		RZ_FREE(ret);
 	}
@@ -114,7 +114,7 @@ static pyc_object *get_true_object(void) {
 		return NULL;
 	}
 	ret->type = TYPE_TRUE;
-	ret->data = strdup("True");
+	ret->data = rz_str_dup("True");
 	if (!ret->data) {
 		RZ_FREE(ret);
 	}
@@ -189,7 +189,7 @@ static pyc_object *get_long_object(RzBuffer *buffer) {
 		neg = true;
 	}
 	if (ndigits == 0) {
-		ret->data = strdup("0x0");
+		ret->data = rz_str_dup("0x0");
 	} else {
 		// the explicit cast is safe since ndigits is positive
 		size = (size_t)ndigits * 15;
@@ -831,7 +831,7 @@ static pyc_object *copy_object(pyc_object *object) {
 	case TYPE_SHORT_ASCII:
 	case TYPE_ASCII_INTERNED:
 	case TYPE_SHORT_ASCII_INTERNED:
-		copy->data = strdup(object->data);
+		copy->data = rz_str_dup(object->data);
 		break;
 	case TYPE_CODE_v0:
 	case TYPE_CODE_v1: {
@@ -1186,7 +1186,7 @@ static bool extract_sections_symbols(RzBinPycObj *pyc, pyc_object *obj, RzPVecto
 	if (!prefix || !section || !symbol) {
 		goto fail;
 	}
-	section->name = strdup(prefix);
+	section->name = rz_str_dup(prefix);
 	if (!section->name) {
 		goto fail;
 	}
@@ -1200,7 +1200,7 @@ static bool extract_sections_symbols(RzBinPycObj *pyc, pyc_object *obj, RzPVecto
 	}
 	section = NULL;
 	// start building symbol
-	symbol->name = strdup(prefix);
+	symbol->name = rz_str_dup(prefix);
 	// symbol->bind;
 	symbol->type = RZ_BIN_TYPE_FUNC_STR;
 	symbol->size = cobj->end_offset - cobj->start_offset;

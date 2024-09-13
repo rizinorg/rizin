@@ -88,7 +88,7 @@ static RzIODesc *dmp_open(RzIO *io, const char *file, int rw, int mode) {
 		free(ctx);
 		return NULL;
 	}
-	c->fd->name = strdup(file + 6);
+	c->fd->name = rz_str_dup(file + 6);
 	ctx->windctx.user = c;
 	return c->fd;
 }

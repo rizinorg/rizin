@@ -116,7 +116,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"gpr r13 .16  26    0\n"
 		"gpr r14 .16  28    0\n"
 		"gpr r15 .16  30    0\n";
-	return strdup(prof);
+	return rz_str_dup(prof);
 }
 
 RzAnalysisPlugin rz_analysis_plugin_msp430 = {

@@ -253,7 +253,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"flg	isp0	.1	0	0	in_service_priority_flags_bit_0\n"
 		"flg	cy	.1	0	0	carry\n";
 
-	return strdup(p);
+	return rz_str_dup(p);
 }
 
 RzAnalysisPlugin rz_analysis_plugin_rl78 = {

@@ -704,5 +704,5 @@ RZ_API char *rz_cons_input(const char *msg) {
 	rz_cons_fgets(buf, sizeof(buf), 0, NULL);
 	rz_line_set_prompt(I->line, oprompt);
 	free(oprompt);
-	return strdup(buf);
+	return rz_str_dup(buf);
 }

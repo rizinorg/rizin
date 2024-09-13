@@ -38,7 +38,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"gpr	N	.1	.31	0\n"
 		"gpr	sp	.8	4	0\n"
 		"gpr	pc	.16	5	0\n";
-	return strdup(p);
+	return rz_str_dup(p);
 }
 
 RzAnalysisPlugin rz_analysis_plugin_spc700 = {

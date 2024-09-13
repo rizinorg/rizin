@@ -213,7 +213,7 @@ RZ_API RzList /*<RzIODesc *>*/ *rz_io_open_many(RzIO *io, const char *uri, int p
 				desc->plugin = plugin;
 			}
 			if (!desc->uri) {
-				desc->uri = strdup(uri);
+				desc->uri = rz_str_dup(uri);
 			}
 			// should autofd be honored here?
 			rz_io_desc_add(io, desc);

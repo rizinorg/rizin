@@ -125,7 +125,7 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 			return ret;
 		}
 		sym_omf = ((rz_bin_omf_obj *)bf->o->bin_obj)->symbols[ct_sym++];
-		sym->name = strdup(sym_omf->name);
+		sym->name = rz_str_dup(sym_omf->name);
 		sym->forwarder = "NONE";
 		sym->paddr = rz_bin_omf_get_paddr_sym(bf->o->bin_obj, sym_omf);
 		sym->vaddr = rz_bin_omf_get_vaddr_sym(bf->o->bin_obj, sym_omf);
@@ -142,14 +142,14 @@ static RzBinInfo *info(RzBinFile *bf) {
 	if (!(ret = RZ_NEW0(RzBinInfo))) {
 		return NULL;
 	}
-	ret->file = strdup(bf->file);
-	ret->bclass = strdup("OMF");
-	ret->rclass = strdup("omf");
+	ret->file = rz_str_dup(bf->file);
+	ret->bclass = rz_str_dup("OMF");
+	ret->rclass = rz_str_dup("omf");
 	// the "E" is here to made rva return the same value for 16 bit en 32 bits files
-	ret->type = strdup("E OMF (Relocatable Object Module Format)");
-	ret->os = strdup("any");
-	ret->machine = strdup("i386");
-	ret->arch = strdup("x86");
+	ret->type = rz_str_dup("E OMF (Relocatable Object Module Format)");
+	ret->os = rz_str_dup("any");
+	ret->machine = rz_str_dup("i386");
+	ret->arch = rz_str_dup("x86");
 	ret->big_endian = false;
 	ret->has_va = true;
 	ret->bits = rz_bin_omf_get_bits(bf->o->bin_obj);

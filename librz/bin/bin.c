@@ -173,13 +173,13 @@ RZ_API RZ_OWN char *rz_bin_symbol_name(RZ_NONNULL RzBinSymbol *s) {
 	if (s->dup_count) {
 		return rz_str_newf("%s_%d", s->name, s->dup_count);
 	}
-	return strdup(s->name);
+	return rz_str_dup(s->name);
 }
 
 RZ_API RzBinSymbol *rz_bin_symbol_new(const char *name, ut64 paddr, ut64 vaddr) {
 	RzBinSymbol *sym = RZ_NEW0(RzBinSymbol);
 	if (sym) {
-		sym->name = name ? strdup(name) : NULL;
+		sym->name = rz_str_dup(name);
 		sym->paddr = paddr;
 		sym->vaddr = vaddr;
 	}
@@ -896,7 +896,7 @@ RZ_API RzBinObject *rz_bin_cur_object(RzBin *bin) {
 RZ_API void rz_bin_force_plugin(RzBin *bin, const char *name) {
 	rz_return_if_fail(bin);
 	free(bin->force);
-	bin->force = (name && *name) ? strdup(name) : NULL;
+	bin->force = RZ_STR_ISNOTEMPTY(name) ? rz_str_dup(name) : NULL;
 }
 
 RZ_API const char *rz_bin_entry_type_string(int etype) {
@@ -1077,7 +1077,7 @@ RZ_API RZ_OWN RzPVector /*<RzBinMap *>*/ *rz_bin_maps_of_file_sections(RZ_NONNUL
 		if (!map) {
 			goto hcf;
 		}
-		map->name = sec->name ? strdup(sec->name) : NULL;
+		map->name = rz_str_dup(sec->name);
 		map->paddr = sec->paddr;
 		map->psize = sec->size;
 		map->vaddr = sec->vaddr;
@@ -1115,7 +1115,7 @@ RZ_API RzPVector /*<RzBinSection *>*/ *rz_bin_sections_of_maps(RzPVector /*<RzBi
 		if (!sec) {
 			break;
 		}
-		sec->name = map->name ? strdup(map->name) : NULL;
+		sec->name = rz_str_dup(map->name);
 		sec->paddr = map->paddr;
 		sec->size = map->psize;
 		sec->vaddr = map->vaddr;
@@ -1129,7 +1129,7 @@ RZ_API RzPVector /*<RzBinSection *>*/ *rz_bin_sections_of_maps(RzPVector /*<RzBi
 RZ_API RzBinSection *rz_bin_section_new(const char *name) {
 	RzBinSection *s = RZ_NEW0(RzBinSection);
 	if (s) {
-		s->name = name ? strdup(name) : NULL;
+		s->name = rz_str_dup(name);
 	}
 	return s;
 }

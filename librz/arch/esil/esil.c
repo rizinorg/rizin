@@ -379,7 +379,7 @@ RZ_API bool rz_analysis_esil_push(RzAnalysisEsil *esil, const char *str) {
 	if (!str || !esil || !*str || esil->stackptr > (esil->stacksize - 1)) {
 		return false;
 	}
-	esil->stack[esil->stackptr++] = strdup(str);
+	esil->stack[esil->stackptr++] = rz_str_dup(str);
 	return true;
 }
 

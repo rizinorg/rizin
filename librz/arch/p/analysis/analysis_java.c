@@ -141,7 +141,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"=A6	garbage\n"
 		"gpr	pc	    .32 0  0\n"
 		"gpr	garbage	.32 32 0\n";
-	return strdup(p);
+	return rz_str_dup(p);
 }
 
 static int archinfo(RzAnalysis *a, RzAnalysisInfoType query) {

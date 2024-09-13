@@ -802,8 +802,8 @@ static void add_library(DWORD pid, LPVOID lpBaseOfDll, HANDLE hFile, char *dllna
 	lib->pid = pid;
 	lib->hFile = hFile;
 	lib->BaseOfDll = lpBaseOfDll;
-	lib->Path = strdup(dllname);
-	lib->Name = strdup(rz_file_basename(dllname));
+	lib->Path = rz_str_dup(dllname);
+	lib->Name = rz_str_dup(rz_file_basename(dllname));
 
 	(void)rz_list_append(lib_list, lib);
 }
@@ -1301,7 +1301,7 @@ RzList *w32_thread_list(RzDebug *dbg, int pid, RzList *list) {
 		}
 		if (!path) {
 			// TODO: enum processes to get binary's name
-			path = strdup("???");
+			path = rz_str_dup("???");
 		}
 		int saved_tid = dbg->tid;
 		do {

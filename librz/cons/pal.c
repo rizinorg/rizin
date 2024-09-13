@@ -293,7 +293,7 @@ RZ_API char *rz_cons_pal_parse(const char *str, RzColor *outcol) {
 	if (RZ_STR_ISEMPTY(str)) {
 		return NULL;
 	}
-	fgcolor = strdup(str);
+	fgcolor = rz_str_dup(str);
 	if (!fgcolor) {
 		return NULL;
 	}
@@ -419,7 +419,7 @@ RZ_API char *rz_cons_pal_parse(const char *str, RzColor *outcol) {
 		*outcol = rcolor;
 	}
 	free(fgcolor);
-	return (*out && !outcol) ? strdup(out) : NULL;
+	return (*out && !outcol) ? rz_str_dup(out) : NULL;
 }
 
 static void rz_cons_pal_show_gs(void) {
@@ -552,7 +552,7 @@ RZ_API void rz_cons_pal_list(int rad, const char *arg) {
 			}
 			hasnext = (keys[i + 1].name) ? "\n" : "";
 			// TODO Need to replace the '.' char because this is not valid CSS
-			char *name = strdup(keys[i].name);
+			char *name = rz_str_dup(keys[i].name);
 			int j, len = strlen(name);
 			for (j = 0; j < len; j++) {
 				if (name[j] == '.') {
@@ -564,7 +564,7 @@ RZ_API void rz_cons_pal_list(int rad, const char *arg) {
 			free(name);
 		} break;
 		case 'h':
-			name = strdup(keys[i].name);
+			name = rz_str_dup(keys[i].name);
 			rz_str_replace_char(name, '.', '_');
 			rz_cons_printf(".%s { color:#%02x%02x%02x }\n",
 				name, rcolor->r, rcolor->g, rcolor->b);

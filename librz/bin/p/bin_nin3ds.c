@@ -101,13 +101,13 @@ static void n3ds_destroy(RzBinFile *bf) {
 static char *n3ds_section_name(N3DSFirmSectHdr *shdr) {
 	switch (shdr->type) {
 	case N3DS_TYPE_ARM9:
-		return strdup(N3DS_STR_ARM9);
+		return rz_str_dup(N3DS_STR_ARM9);
 	case N3DS_TYPE_ARM11:
-		return strdup(N3DS_STR_ARM11);
+		return rz_str_dup(N3DS_STR_ARM11);
 	case N3DS_TYPE_SYSMODULE:
-		return strdup(N3DS_STR_SYSMODULE);
+		return rz_str_dup(N3DS_STR_SYSMODULE);
 	case N3DS_TYPE_K11_EXT:
-		return strdup(N3DS_STR_K11_EXT);
+		return rz_str_dup(N3DS_STR_K11_EXT);
 	default:
 		return rz_str_newf("section_%x", shdr->address);
 	}
@@ -211,10 +211,10 @@ static RzBinInfo *n3ds_info(RzBinFile *bf) {
 		return NULL;
 	}
 
-	ret->type = strdup("FIRM");
-	ret->machine = strdup("Nintendo 3DS");
-	ret->os = strdup("n3ds");
-	ret->arch = strdup("arm");
+	ret->type = rz_str_dup("FIRM");
+	ret->machine = rz_str_dup("Nintendo 3DS");
+	ret->os = rz_str_dup("n3ds");
+	ret->arch = rz_str_dup("arm");
 	ret->has_va = true;
 	ret->bits = 32;
 	return ret;
@@ -225,7 +225,7 @@ static RzBinFileHash *n3ds_hash_buffer(const char *name, const ut8 *hash, size_t
 	if (!fh) {
 		return NULL;
 	}
-	fh->type = strdup(name);
+	fh->type = rz_str_dup(name);
 	fh->hex = rz_hex_bin2strdup(hash, size);
 	return fh;
 }
@@ -281,13 +281,13 @@ static RzPVector /*<RzBinFileHash *>*/ *n3ds_hashes(RzBinFile *bf) {
 static RZ_OWN char *n3ds_section_type_to_string(ut64 type) {
 	switch (type) {
 	case N3DS_TYPE_ARM9:
-		return strdup(N3DS_DESCR_ARM9);
+		return rz_str_dup(N3DS_DESCR_ARM9);
 	case N3DS_TYPE_ARM11:
-		return strdup(N3DS_DESCR_ARM11);
+		return rz_str_dup(N3DS_DESCR_ARM11);
 	case N3DS_TYPE_SYSMODULE:
-		return strdup(N3DS_DESCR_SYSMODULE);
+		return rz_str_dup(N3DS_DESCR_SYSMODULE);
 	case N3DS_TYPE_K11_EXT:
-		return strdup(N3DS_DESCR_K11_EXT);
+		return rz_str_dup(N3DS_DESCR_K11_EXT);
 	default:
 		return NULL;
 	}

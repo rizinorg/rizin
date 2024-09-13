@@ -714,7 +714,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"gpr	Z	.1	.146	0\n"
 		"gpr	V	.1	.145	0\n"
 		"gpr	C	.1	.144	0\n";
-	return strdup(p);
+	return rz_str_dup(p);
 }
 
 RzAnalysisPlugin rz_analysis_plugin_h8300 = {

@@ -72,14 +72,14 @@ static RzBinInfo *info(RzBinFile *bf) {
 		return NULL;
 	}
 	ret->lang = NULL;
-	ret->file = strdup(bf->file);
-	ret->type = strdup("pebble");
+	ret->file = rz_str_dup(bf->file);
+	ret->type = rz_str_dup("pebble");
 	ret->bclass = rz_str_ndup(pai.name, 32);
 	ret->rclass = rz_str_ndup(pai.company, 32);
-	ret->os = strdup("rtos");
-	ret->subsystem = strdup("pebble");
-	ret->machine = strdup("watch");
-	ret->arch = strdup("arm"); // thumb only
+	ret->os = rz_str_dup("rtos");
+	ret->subsystem = rz_str_dup("pebble");
+	ret->machine = rz_str_dup("watch");
+	ret->arch = rz_str_dup("arm"); // thumb only
 	ret->has_va = 1;
 	ret->bits = 16;
 	ret->big_endian = 0;
@@ -103,7 +103,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
 	}
-	ptr->name = strdup("relocs");
+	ptr->name = rz_str_dup("relocs");
 	ptr->vsize = ptr->size = pai.num_reloc_entries * sizeof(ut32);
 	ptr->vaddr = ptr->paddr = pai.reloc_list_start;
 	ptr->perm = RZ_PERM_RW;
@@ -116,7 +116,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
 	}
-	ptr->name = strdup("symtab");
+	ptr->name = rz_str_dup("symtab");
 	ptr->vsize = ptr->size = 0;
 	ptr->vaddr = ptr->paddr = pai.sym_table_addr;
 	ptr->perm = RZ_PERM_R;
@@ -128,7 +128,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
 	}
-	ptr->name = strdup("text");
+	ptr->name = rz_str_dup("text");
 	ptr->vaddr = ptr->paddr = 0x80;
 	ptr->vsize = ptr->size = textsize - ptr->paddr;
 	ptr->perm = RZ_PERM_RWX;
@@ -137,7 +137,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
 	}
-	ptr->name = strdup("header");
+	ptr->name = rz_str_dup("header");
 	ptr->vsize = ptr->size = sizeof(PebbleAppInfo);
 	ptr->vaddr = ptr->paddr = 0;
 	ptr->perm = RZ_PERM_R;

@@ -557,9 +557,9 @@ static char *get_lib_name(RzBuffer *cache_buf, cache_img_t *img) {
 	char *lib_name = file;
 	if (rz_buf_read_at(cache_buf, img->pathFileOffset, (ut8 *)file, sizeof(file)) == sizeof(file)) {
 		file[255] = 0;
-		return strdup(lib_name);
+		return rz_str_dup(lib_name);
 	}
-	return strdup("FAIL");
+	return rz_str_dup("FAIL");
 }
 
 static int string_contains(const void *a, const void *b, void *user) {
@@ -777,15 +777,15 @@ static RzList /*<RzDyldBinImage *>*/ *create_cache_bins(RzDyldCache *cache) {
 								scan--;
 							}
 							if (*scan == '/') {
-								bin->file = strdup(scan + 1);
+								bin->file = rz_str_dup(scan + 1);
 							} else {
-								bin->file = strdup(last_slash + 1);
+								bin->file = rz_str_dup(last_slash + 1);
 							}
 						} else {
-							bin->file = strdup(last_slash + 1);
+							bin->file = rz_str_dup(last_slash + 1);
 						}
 					} else {
-						bin->file = strdup(file);
+						bin->file = rz_str_dup(file);
 					}
 				} else {
 					bin->file = rz_str_newf("unknown_image_%08" PFMT64x, symbols_off);

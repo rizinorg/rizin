@@ -307,7 +307,7 @@ RZ_API RzList /*<char *>*/ *rz_sys_dir(const char *path) {
 		if (list) {
 			list->free = free;
 			while ((entry = readdir(dir))) {
-				rz_list_append(list, strdup(entry->d_name));
+				rz_list_append(list, rz_str_dup(entry->d_name));
 			}
 		}
 		closedir(dir);
@@ -535,7 +535,7 @@ RZ_API int rz_sys_crash_handler(const char *cmd) {
 #endif
 
 	free(crash_handler_cmd);
-	crash_handler_cmd = strdup(cmd);
+	crash_handler_cmd = rz_str_dup(cmd);
 
 	rz_sys_sigaction(sig, signal_handler);
 #else
@@ -568,7 +568,7 @@ RZ_API char *rz_sys_getenv(const char *key) {
 		return NULL;
 	}
 	b = getenv(key);
-	return b ? strdup(b) : NULL;
+	return rz_str_dup(b);
 #endif
 }
 
@@ -919,7 +919,7 @@ RZ_API bool rz_sys_mkdir(const char *dir) {
 RZ_API bool rz_sys_mkdirp(const char *dir) {
 	bool ret = true;
 	char slash = RZ_SYS_DIR[0];
-	char *path = strdup(dir), *ptr = path;
+	char *path = rz_str_dup(dir), *ptr = path;
 	if (!path) {
 		RZ_LOG_ERROR("rz_sys_mkdirp: Unable to allocate memory\n");
 		return false;
@@ -1207,7 +1207,7 @@ RZ_API char *rz_sys_pid_to_path(int pid) {
 						RZ_LOG_ERROR("rz_sys_pid_to_path: Error calling rz_str_newf\n");
 						return NULL;
 					}
-					result = strdup(tmp);
+					result = rz_str_dup(tmp);
 					break;
 				}
 				free(dvc);
@@ -1227,7 +1227,7 @@ RZ_API char *rz_sys_pid_to_path(int pid) {
 	if (ret <= 0) {
 		return NULL;
 	}
-	return strdup(pathbuf);
+	return rz_str_dup(pathbuf);
 #else
 	int ret;
 #if __FreeBSD__ || __DragonFly__
@@ -1264,7 +1264,7 @@ RZ_API char *rz_sys_pid_to_path(int pid) {
 		}
 	} else {
 		char *sp;
-		char *xpath = strdup(getenv("PATH"));
+		char *xpath = rz_str_dup(getenv("PATH"));
 		char *path = strtok_r(xpath, ":", &sp);
 		struct stat st;
 
@@ -1316,7 +1316,7 @@ RZ_API char *rz_sys_pid_to_path(int pid) {
 	}
 	pathbuf[ret] = 0;
 #endif
-	return strdup(pathbuf);
+	return rz_str_dup(pathbuf);
 #endif
 }
 
@@ -1373,7 +1373,7 @@ RZ_API char *rz_sys_whoami(char *buf) {
 		buf = _buf;
 	}
 	sprintf(buf, "pid%d", pid);
-	return hasbuf ? buf : strdup(buf);
+	return hasbuf ? buf : rz_str_dup(buf);
 }
 
 RZ_API int rz_sys_getpid(void) {
@@ -1393,11 +1393,11 @@ RZ_API RSysInfo *rz_sys_info(void) {
 	if (uname(&un) != -1) {
 		RSysInfo *si = RZ_NEW0(RSysInfo);
 		if (si) {
-			si->sysname = strdup(un.sysname);
-			si->nodename = strdup(un.nodename);
-			si->release = strdup(un.release);
-			si->version = strdup(un.version);
-			si->machine = strdup(un.machine);
+			si->sysname = rz_str_dup(un.sysname);
+			si->nodename = rz_str_dup(un.nodename);
+			si->release = rz_str_dup(un.release);
+			si->version = rz_str_dup(un.version);
+			si->machine = rz_str_dup(un.machine);
 			return si;
 		}
 	}
@@ -1426,7 +1426,7 @@ RZ_API RSysInfo *rz_sys_info(void) {
 		type != REG_SZ) {
 		goto beach;
 	}
-	si->sysname = strdup(tmp);
+	si->sysname = rz_str_dup(tmp);
 
 	size = sizeof(major);
 	if (RegQueryValueExA(key, "CurrentMajorVersionNumber", NULL, &type,
@@ -1455,7 +1455,7 @@ RZ_API RSysInfo *rz_sys_info(void) {
 		type != REG_SZ) {
 		goto beach;
 	}
-	si->release = strdup(tmp);
+	si->release = rz_str_dup(tmp);
 beach:
 	RegCloseKey(key);
 	return si;
@@ -1805,7 +1805,7 @@ RZ_API int rz_sys_execl(const char *pathname, const char *arg, ...) {
 	}
 	va_end(count_args);
 	char **argv = RZ_NEWS0(char *, argc + 2);
-	argv[0] = strdup(pathname);
+	argv[0] = rz_str_dup(pathname);
 	for (i = 1; i <= argc; i++) {
 		argv[i] = va_arg(args, char *);
 	}
@@ -1826,7 +1826,7 @@ RZ_API int rz_sys_execl(const char *pathname, const char *arg, ...) {
 	}
 	va_end(count_args);
 	char **argv = RZ_NEWS0(char *, argc + 2);
-	argv[0] = strdup(pathname);
+	argv[0] = rz_str_dup(pathname);
 	for (i = 1; i <= argc; i++) {
 		argv[i] = va_arg(args, char *);
 	}
@@ -1863,7 +1863,7 @@ RZ_API int rz_sys_system(const char *command) {
 #include <spawn.h>
 RZ_API int rz_sys_system(const char *command) {
 	int argc;
-	char *cmd = strdup(command);
+	char *cmd = rz_str_dup(command);
 	char **argv = rz_str_argv(cmd, &argc);
 	if (argv) {
 		char *argv0 = rz_file_path(argv[0]);
@@ -1878,7 +1878,7 @@ RZ_API int rz_sys_system(const char *command) {
 #include <spawn.h>
 RZ_API int rz_sys_system(const char *command) {
 	if (!strchr(command, '|')) {
-		char **argv, *cmd = strdup(command);
+		char **argv, *cmd = rz_str_dup(command);
 		int rc, pid, argc;
 		char *isbg = strchr(cmd, '&');
 		// XXX this is hacky

@@ -1241,9 +1241,9 @@ RZ_API RZ_OWN char *rz_il_sort_pure_stringify(RzILSortPure sort) {
 	case RZ_IL_TYPE_PURE_BITVECTOR:
 		return rz_str_newf("bitvector:%u", (unsigned int)sort.props.bv.length);
 	case RZ_IL_TYPE_PURE_BOOL:
-		return strdup("bool");
+		return rz_str_dup("bool");
 	case RZ_IL_TYPE_PURE_FLOAT:
 		return rz_str_newf("float:%u", (unsigned int)sort.props.f.format);
 	}
-	return strdup("invalid");
+	return rz_str_dup("invalid");
 }

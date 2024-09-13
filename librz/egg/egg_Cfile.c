@@ -30,7 +30,7 @@ static char *rz_egg_Cfile_getCompiler(void) {
 		output = rz_file_path(compilers[i]);
 		if (strcmp(output, compilers[i])) {
 			free(output);
-			return strdup(compilers[i]);
+			return rz_str_dup(compilers[i]);
 		}
 		free(output);
 	}
@@ -94,15 +94,15 @@ static struct cEnv_t *rz_egg_Cfile_set_cEnv(const char *arch, const char *os, in
 		cEnv->FMT = "mach0";
 		if (!strcmp(arch, "x86")) {
 			if (bits == 32) {
-				cEnv->CFLAGS = strdup("-arch i386 -fPIC -fPIE");
-				cEnv->LDFLAGS = strdup("-arch i386 -shared -c -fPIC -fPIE -pie");
+				cEnv->CFLAGS = rz_str_dup("-arch i386 -fPIC -fPIE");
+				cEnv->LDFLAGS = rz_str_dup("-arch i386 -shared -c -fPIC -fPIE -pie");
 			} else {
-				cEnv->CFLAGS = strdup("-arch x86_64 -fPIC -fPIE");
-				cEnv->LDFLAGS = strdup("-arch x86_64 -shared -c -fPIC -fPIE -pie");
+				cEnv->CFLAGS = rz_str_dup("-arch x86_64 -fPIC -fPIE");
+				cEnv->LDFLAGS = rz_str_dup("-arch x86_64 -shared -c -fPIC -fPIE -pie");
 			}
 		} else {
-			cEnv->CFLAGS = strdup("-shared -c -fPIC -pie -fPIE");
-			cEnv->LDFLAGS = strdup("-shared -c -fPIC -pie -fPIE");
+			cEnv->CFLAGS = rz_str_dup("-shared -c -fPIC -pie -fPIE");
+			cEnv->LDFLAGS = rz_str_dup("-shared -c -fPIC -pie -fPIE");
 		}
 		cEnv->SHDR = rz_str_newf("\n.text\n%s _main\n", cEnv->JMP);
 	} else {
@@ -113,15 +113,15 @@ static struct cEnv_t *rz_egg_Cfile_set_cEnv(const char *arch, const char *os, in
 			cEnv->JMP);
 		if (!strcmp(arch, "x86")) {
 			if (bits == 32) {
-				cEnv->CFLAGS = strdup("-fPIC -fPIE -pie -fpic -m32");
-				cEnv->LDFLAGS = strdup("-fPIC -fPIE -pie -fpic -m32");
+				cEnv->CFLAGS = rz_str_dup("-fPIC -fPIE -pie -fpic -m32");
+				cEnv->LDFLAGS = rz_str_dup("-fPIC -fPIE -pie -fpic -m32");
 			} else {
-				cEnv->CFLAGS = strdup("-fPIC -fPIE -pie -fpic -m64");
-				cEnv->LDFLAGS = strdup("-fPIC -fPIE -pie -fpic -m64");
+				cEnv->CFLAGS = rz_str_dup("-fPIC -fPIE -pie -fpic -m64");
+				cEnv->LDFLAGS = rz_str_dup("-fPIC -fPIE -pie -fpic -m64");
 			}
 		} else {
-			cEnv->CFLAGS = strdup("-fPIC -fPIE -pie -fpic -nostartfiles");
-			cEnv->LDFLAGS = strdup("-fPIC -fPIE -pie -fpic -nostartfiles");
+			cEnv->CFLAGS = rz_str_dup("-fPIC -fPIE -pie -fpic -nostartfiles");
+			cEnv->LDFLAGS = rz_str_dup("-fPIC -fPIE -pie -fpic -nostartfiles");
 		}
 	}
 
@@ -140,12 +140,12 @@ static struct cEnv_t *rz_egg_Cfile_set_cEnv(const char *arch, const char *os, in
 	use_clang = false;
 	if (!strcmp(cEnv->TRIPLET, "darwin-arm-64")) {
 		free(cEnv->CC);
-		cEnv->CC = strdup("xcrun --sdk iphoneos gcc -arch arm64 -miphoneos-version-min=0.0");
+		cEnv->CC = rz_str_dup("xcrun --sdk iphoneos gcc -arch arm64 -miphoneos-version-min=0.0");
 		use_clang = true;
 		cEnv->TEXT = "0.__TEXT.__text";
 	} else if (!strcmp(cEnv->TRIPLET, "darwin-arm-32")) {
 		free(cEnv->CC);
-		cEnv->CC = strdup("xcrun --sdk iphoneos gcc -arch armv7 -miphoneos-version-min=0.0");
+		cEnv->CC = rz_str_dup("xcrun --sdk iphoneos gcc -arch armv7 -miphoneos-version-min=0.0");
 		use_clang = true;
 		cEnv->TEXT = "0.__TEXT.__text";
 	}
@@ -156,7 +156,7 @@ static struct cEnv_t *rz_egg_Cfile_set_cEnv(const char *arch, const char *os, in
 		goto fail;
 	}
 	free(cEnv->CFLAGS);
-	cEnv->CFLAGS = strdup(buffer);
+	cEnv->CFLAGS = rz_str_dup(buffer);
 
 	if (use_clang) {
 		free(buffer);
@@ -167,7 +167,7 @@ static struct cEnv_t *rz_egg_Cfile_set_cEnv(const char *arch, const char *os, in
 			goto fail;
 		}
 		free(cEnv->CFLAGS);
-		cEnv->CFLAGS = strdup(buffer);
+		cEnv->CFLAGS = rz_str_dup(buffer);
 	} else {
 		free(buffer);
 		buffer = rz_str_newf("%s -z execstack -fomit-frame-pointer"
@@ -177,7 +177,7 @@ static struct cEnv_t *rz_egg_Cfile_set_cEnv(const char *arch, const char *os, in
 			goto fail;
 		}
 		free(cEnv->CFLAGS);
-		cEnv->CFLAGS = strdup(buffer);
+		cEnv->CFLAGS = rz_str_dup(buffer);
 	}
 	free(buffer);
 	buffer = rz_str_newf("%s -nostdlib", cEnv->LDFLAGS);
@@ -185,7 +185,7 @@ static struct cEnv_t *rz_egg_Cfile_set_cEnv(const char *arch, const char *os, in
 		goto fail;
 	}
 	free(cEnv->LDFLAGS);
-	cEnv->LDFLAGS = strdup(buffer);
+	cEnv->LDFLAGS = rz_str_dup(buffer);
 
 	if (rz_egg_Cfile_check_cEnv(cEnv)) {
 		eprintf("Error with cEnv allocation!\n");

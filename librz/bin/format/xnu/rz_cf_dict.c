@@ -567,7 +567,7 @@ static void rz_cf_value_string_free(RzCFValueString *string) {
 }
 
 static void rz_cf_value_string_print(RzCFValueString *string) {
-	char *escaped = strdup(string->value);
+	char *escaped = rz_str_dup(string->value);
 	escaped = rz_str_replace(escaped, "\"", "\\\"", 1);
 	printf("\"%s\"", escaped);
 	RZ_FREE(escaped);

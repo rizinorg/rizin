@@ -672,7 +672,7 @@ static void set_offset_hint(RzCore *core, RzAnalysisOp *op, RZ_BORROW RzTypePath
 	if (tpath->root->kind != RZ_TYPE_KIND_IDENTIFIER) {
 		return;
 	}
-	char *cmt = (offimm == 0) ? strdup(tpath->path->path) : rz_type_as_string(core->analysis->typedb, tpath->root);
+	char *cmt = (offimm == 0) ? rz_str_dup(tpath->path->path) : rz_type_as_string(core->analysis->typedb, tpath->root);
 	if (offimm > 0) {
 		// Set only the type path as the analysis hint
 		// only and only if the types are the exact match between

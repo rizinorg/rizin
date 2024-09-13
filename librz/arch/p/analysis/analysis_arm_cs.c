@@ -2106,7 +2106,7 @@ static int analysis_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *bu
 	if (n < 1) {
 		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
-			op->mnemonic = strdup("invalid");
+			op->mnemonic = rz_str_dup("invalid");
 		}
 	} else {
 #if CS_NEXT_VERSION < 6
@@ -2541,7 +2541,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 			"fpu	q15	.128	308	0\n"
 			"flg    fpscr .32   324 0\n";
 	}
-	return strdup(p);
+	return rz_str_dup(p);
 }
 
 static int archinfo(RzAnalysis *analysis, RzAnalysisInfoType query) {

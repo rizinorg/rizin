@@ -208,7 +208,7 @@ RZ_API void rz_debug_trace_op(RzDebug *dbg, RzAnalysisOp *op) {
 RZ_API void rz_debug_trace_at(RzDebug *dbg, const char *str) {
 	// TODO: parse offsets and so use ut64 instead of strstr()
 	free(dbg->trace->addresses);
-	dbg->trace->addresses = (str && *str) ? strdup(str) : NULL;
+	dbg->trace->addresses = (str && *str) ? rz_str_dup(str) : NULL;
 }
 
 RZ_API RzDebugTracepoint *rz_debug_trace_get(RzDebug *dbg, ut64 addr) {

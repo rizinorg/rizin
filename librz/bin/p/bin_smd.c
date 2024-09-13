@@ -114,14 +114,14 @@ static RzBinInfo *info(RzBinFile *bf) {
 	if (!(ret = RZ_NEW0(RzBinInfo))) {
 		return NULL;
 	}
-	ret->file = strdup(bf->file);
-	ret->type = strdup("ROM");
-	ret->machine = strdup("Sega Megadrive");
+	ret->file = rz_str_dup(bf->file);
+	ret->type = rz_str_dup("ROM");
+	ret->machine = rz_str_dup("Sega Megadrive");
 	ut8 tmp[32];
 	rz_buf_read_at(bf->buf, 0x100, tmp, sizeof(tmp));
 	ret->bclass = rz_str_ndup((char *)tmp, 32);
-	ret->os = strdup("smd");
-	ret->arch = strdup("m68k");
+	ret->os = rz_str_dup("smd");
+	ret->arch = rz_str_dup("m68k");
 	ret->bits = 16;
 	ret->has_va = 1;
 	ret->big_endian = 1;
@@ -133,7 +133,7 @@ static void addsym(RzPVector /*<RzBinSymbol *>*/ *ret, const char *name, ut64 ad
 	if (!ptr) {
 		return;
 	}
-	ptr->name = strdup(name ? name : "");
+	ptr->name = rz_str_dup(name ? name : "");
 	ptr->paddr = ptr->vaddr = addr;
 	ptr->size = 0;
 	ptr->ordinal = 0;
@@ -261,7 +261,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
 	}
-	ptr->name = strdup("vtable");
+	ptr->name = rz_str_dup("vtable");
 	ptr->paddr = ptr->vaddr = 0;
 	ptr->size = ptr->vsize = 0x100;
 	ptr->perm = RZ_PERM_R;
@@ -270,7 +270,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
 	}
-	ptr->name = strdup("header");
+	ptr->name = rz_str_dup("header");
 	ptr->paddr = ptr->vaddr = 0x100;
 	ptr->size = ptr->vsize = sizeof(SMD_Header);
 	ptr->perm = RZ_PERM_R;
@@ -279,7 +279,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
 	}
-	ptr->name = strdup("text");
+	ptr->name = rz_str_dup("text");
 	ptr->paddr = ptr->vaddr = 0x100 + sizeof(SMD_Header);
 	{
 		SMD_Header hdr = { { 0 } };

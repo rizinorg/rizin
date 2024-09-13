@@ -334,7 +334,7 @@ RZ_API void rz_io_map_set_name(RzIOMap *map, const char *name) {
 		return;
 	}
 	free(map->name);
-	map->name = strdup(name);
+	map->name = rz_str_dup(name);
 }
 
 RZ_API void rz_io_map_del_name(RzIOMap *map) {

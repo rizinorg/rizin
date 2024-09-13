@@ -107,18 +107,18 @@ static RzBinInfo *info(RzBinFile *bf) {
 	}
 	ArtObj *ao = bf->o->bin_obj;
 	ret->lang = NULL;
-	ret->file = bf->file ? strdup(bf->file) : NULL;
-	ret->type = strdup("ART");
+	ret->file = rz_str_dup(bf->file);
+	ret->type = rz_str_dup("ART");
 
 	ret->bclass = malloc(5);
 	memcpy(ret->bclass, &ao->art.version, 4);
 	ret->bclass[3] = 0;
 
-	ret->rclass = strdup("program");
-	ret->os = strdup("android");
-	ret->subsystem = strdup("unknown");
-	ret->machine = strdup("arm");
-	ret->arch = strdup("arm");
+	ret->rclass = rz_str_dup("program");
+	ret->os = rz_str_dup("android");
+	ret->subsystem = rz_str_dup("unknown");
+	ret->machine = rz_str_dup("arm");
+	ret->arch = rz_str_dup("arm");
 	ret->has_va = 1;
 	ret->has_pi = ao->art.compile_pic;
 	ret->bits = 16; // 32? 64?
@@ -161,7 +161,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
 	}
-	ptr->name = strdup("load");
+	ptr->name = rz_str_dup("load");
 	ptr->size = rz_buf_size(bf->buf);
 	ptr->vsize = art.image_size; // TODO: align?
 	ptr->paddr = 0;
@@ -172,7 +172,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
 	}
-	ptr->name = strdup("bitmap");
+	ptr->name = rz_str_dup("bitmap");
 	ptr->size = art.bitmap_size;
 	ptr->vsize = art.bitmap_size;
 	ptr->paddr = art.bitmap_offset;
@@ -183,7 +183,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
 	}
-	ptr->name = strdup("oat");
+	ptr->name = rz_str_dup("oat");
 	ptr->paddr = art.bitmap_offset;
 	ptr->vaddr = art.oat_file_begin;
 	ptr->size = art.oat_file_end - art.oat_file_begin;
@@ -194,7 +194,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
 	}
-	ptr->name = strdup("oat_data");
+	ptr->name = rz_str_dup("oat_data");
 	ptr->paddr = art.bitmap_offset;
 	ptr->vaddr = art.oat_data_begin;
 	ptr->size = art.oat_data_end - art.oat_data_begin;

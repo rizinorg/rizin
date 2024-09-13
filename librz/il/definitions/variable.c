@@ -16,7 +16,7 @@ RZ_API RZ_OWN RzILVar *rz_il_variable_new(RZ_NONNULL const char *name, RzILSortP
 	if (!ret) {
 		return NULL;
 	}
-	ret->name = strdup(name);
+	ret->name = rz_str_dup(name);
 	if (!ret->name) {
 		free(ret);
 		return NULL;

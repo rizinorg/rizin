@@ -113,7 +113,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		rz_pvector_free(ret);
 		return NULL;
 	}
-	text->name = strdup("text");
+	text->name = rz_str_dup("text");
 	text->size = rz_buf_size(bf->buf) - N64_ROM_START;
 	text->vsize = text->size;
 	text->paddr = N64_ROM_START;
@@ -135,10 +135,10 @@ static RzBinInfo *info(RzBinFile *bf) {
 	}
 	memcpy(GameName, n64_header.Name, sizeof(n64_header.Name));
 	ret->file = rz_str_newf("%s (%c)", GameName, n64_header.CountryCode);
-	ret->os = strdup("n64");
-	ret->arch = strdup("mips");
-	ret->machine = strdup("Nintendo 64");
-	ret->type = strdup("ROM");
+	ret->os = rz_str_dup("n64");
+	ret->arch = rz_str_dup("mips");
+	ret->machine = rz_str_dup("Nintendo 64");
+	ret->type = rz_str_dup("ROM");
 	ret->bits = 64;
 	ret->has_va = true;
 	ret->big_endian = true;

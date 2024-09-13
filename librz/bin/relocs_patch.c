@@ -106,7 +106,7 @@ RZ_API void rz_bin_relocs_patch_maps(RZ_NONNULL RzPVector /*<RzBinMap *>*/ *maps
 				// avoid using the patched file if there is nothing different in this range
 				continue;
 			}
-			map->vfile_name = strdup(vfile_name_patched);
+			map->vfile_name = rz_str_dup(vfile_name_patched);
 			map->paddr = buf_addr;
 		}
 	}
@@ -117,13 +117,13 @@ RZ_API void rz_bin_relocs_patch_maps(RZ_NONNULL RzPVector /*<RzBinMap *>*/ *maps
 		if (!map) {
 			return;
 		}
-		map->name = strdup("reloc-targets");
+		map->name = rz_str_dup("reloc-targets");
 		map->paddr = 0;
 		map->psize = target_vfile_size;
 		map->vaddr = target_vfile_base;
 		map->vsize = target_vfile_size;
 		map->perm = RZ_PERM_R;
-		map->vfile_name = strdup(vfile_name_reloc_targets);
+		map->vfile_name = rz_str_dup(vfile_name_reloc_targets);
 		rz_pvector_push_front(maps, map);
 	}
 }

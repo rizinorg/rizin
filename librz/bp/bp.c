@@ -425,7 +425,7 @@ RZ_API bool rz_bp_item_set_cond(RZ_NONNULL RzBreakpointItem *item, RZ_NULLABLE c
 
 	char *tmp_cond = NULL;
 	if (cond) {
-		tmp_cond = strdup(cond);
+		tmp_cond = rz_str_dup(cond);
 		if (!tmp_cond) {
 			return false;
 		}
@@ -447,7 +447,7 @@ RZ_API bool rz_bp_item_set_data(RZ_NONNULL RzBreakpointItem *item, RZ_NULLABLE c
 
 	char *tmp_data = NULL;
 	if (data) {
-		tmp_data = strdup(data);
+		tmp_data = rz_str_dup(data);
 		if (!tmp_data) {
 			return false;
 		}
@@ -469,7 +469,7 @@ RZ_API bool rz_bp_item_set_expr(RZ_NONNULL RzBreakpointItem *item, RZ_NULLABLE c
 
 	char *tmp_expr = NULL;
 	if (expr) {
-		tmp_expr = strdup(expr);
+		tmp_expr = rz_str_dup(expr);
 		if (!tmp_expr) {
 			return false;
 		}
@@ -491,7 +491,7 @@ RZ_API bool rz_bp_item_set_name(RZ_NONNULL RzBreakpointItem *item, RZ_NULLABLE c
 
 	char *tmp_name = NULL;
 	if (name) {
-		tmp_name = strdup(name);
+		tmp_name = rz_str_dup(name);
 		if (!tmp_name) {
 			return false;
 		}

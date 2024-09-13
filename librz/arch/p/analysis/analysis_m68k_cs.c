@@ -774,7 +774,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"gpr	fpcr	.32	176	0\n"
 		"gpr	fpsr	.32	180	0\n"
 		"gpr	fpiar	.32	184	0\n";
-	return strdup(p);
+	return rz_str_dup(p);
 }
 
 static bool m68k_fini(void *user) {

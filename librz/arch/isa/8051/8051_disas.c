@@ -121,7 +121,7 @@ char *rz_8051_disas(ut64 pc, const ut8 *buf, int len, int *olen) {
 				}
 			} else {
 				*olen = -1;
-				return strdup("truncated");
+				return rz_str_dup("truncated");
 			}
 			break;
 		case 3:
@@ -159,7 +159,7 @@ char *rz_8051_disas(ut64 pc, const ut8 *buf, int len, int *olen) {
 				}
 			} else {
 				*olen = -1;
-				return strdup("truncated");
+				return rz_str_dup("truncated");
 			}
 			break;
 		default:

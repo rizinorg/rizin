@@ -53,9 +53,9 @@ static RzBinInfo *info(RzBinFile *bf) {
 	rz_buf_read_at(bf->buf, 0xa0, rom_info, 16);
 	ret->file = rz_str_ndup((const char *)rom_info, 12);
 	ret->type = rz_str_ndup((char *)&rom_info[12], 4);
-	ret->machine = strdup("GameBoy Advance");
-	ret->os = strdup("any");
-	ret->arch = strdup("arm");
+	ret->machine = rz_str_dup("GameBoy Advance");
+	ret->os = rz_str_dup("any");
+	ret->arch = rz_str_dup("arm");
 	ret->has_va = 1;
 	ret->bits = 32;
 	ret->big_endian = 0;
@@ -74,7 +74,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		free(s);
 		return NULL;
 	}
-	s->name = strdup("ROM");
+	s->name = rz_str_dup("ROM");
 	s->paddr = 0;
 	s->vaddr = 0x8000000;
 	s->size = sz;

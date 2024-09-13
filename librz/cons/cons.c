@@ -73,7 +73,7 @@ static RzConsStack *cons_stack_dump(bool recreate) {
 		if (data->grep) {
 			memcpy(data->grep, &CTX(grep), sizeof(RzConsGrep));
 			if (CTX(grep).str) {
-				data->grep->str = strdup(CTX(grep).str);
+				data->grep->str = rz_str_dup(CTX(grep).str);
 			}
 		}
 		if (recreate && CTX(buffer_sz) > 0) {
@@ -834,7 +834,7 @@ RZ_API const char *rz_cons_get_buffer(void) {
  */
 RZ_API RZ_OWN char *rz_cons_get_buffer_dup(void) {
 	const char *s = rz_cons_get_buffer();
-	return s ? strdup(s) : NULL;
+	return rz_str_dup(s);
 }
 
 RZ_API int rz_cons_get_buffer_len(void) {
@@ -1829,10 +1829,10 @@ RZ_API void rz_cons_highlight(const char *word) {
 		if (I.highlight) {
 			if (strcmp(word, I.highlight)) {
 				free(I.highlight);
-				I.highlight = strdup(word);
+				I.highlight = rz_str_dup(word);
 			}
 		} else {
-			I.highlight = strdup(word);
+			I.highlight = rz_str_dup(word);
 		}
 		rword = malloc(word_len + linv[0] + linv[1] + 1);
 		if (!rword) {
@@ -1935,7 +1935,7 @@ RZ_API char *rz_cons_swap_ground(const char *col) {
 		/* is foreground */
 		return rz_str_newf("\x1b[4%s", col + 3);
 	}
-	return strdup(col);
+	return rz_str_dup(col);
 }
 
 RZ_API bool rz_cons_drop(int n) {
@@ -1989,7 +1989,7 @@ RZ_API const char *rz_cons_get_rune(const ut8 ch) {
 RZ_API void rz_cons_breakword(RZ_NULLABLE const char *s) {
 	free(I.break_word);
 	if (s) {
-		I.break_word = strdup(s);
+		I.break_word = rz_str_dup(s);
 		I.break_word_len = strlen(s);
 	} else {
 		I.break_word = NULL;

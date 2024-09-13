@@ -60,7 +60,7 @@ static int expect_reg_type_by_name(const char *str) {
  */
 static bool parse_type(RZ_OUT RzRegProfileDef *def, const char *type_str) {
 	rz_return_val_if_fail(def && type_str, false);
-	char *s = strdup(type_str);
+	char *s = rz_str_dup(type_str);
 	char *at = strchr(s, '@');
 	if (at) {
 		// This register has a secondary type e.g. xmm@fpu
@@ -168,8 +168,8 @@ static bool parse_alias(RZ_OUT RzList /*<RzRegProfileAlias *>*/ *alias_list, RZ_
 		return false;
 	}
 
-	pa->alias = strdup(alias);
-	pa->reg_name = strdup(real_name);
+	pa->alias = rz_str_dup(alias);
+	pa->reg_name = rz_str_dup(real_name);
 	pa->role = role;
 	rz_list_append(alias_list, pa);
 
@@ -196,7 +196,7 @@ static bool parse_def(RZ_OUT RzList /*<RzRegProfileDef *>*/ *def_list, RZ_BORROW
 	if (!name) {
 		goto reg_parse_error;
 	}
-	def->name = strdup(name);
+	def->name = rz_str_dup(name);
 
 	if (!parse_type(def, rz_list_get_n(tokens, 0))) {
 		RZ_LOG_WARN("Invalid register type.\n");
@@ -228,9 +228,9 @@ static bool parse_def(RZ_OUT RzList /*<RzRegProfileDef *>*/ *def_list, RZ_BORROW
 		}
 		if (comment_flag[0] == '#') {
 			// Remove # from the comment
-			def->comment = strdup(comment_flag + 1);
+			def->comment = rz_str_dup(comment_flag + 1);
 		} else {
-			def->flags = strdup(comment_flag);
+			def->flags = rz_str_dup(comment_flag);
 		}
 	}
 	RZ_LOG_DEBUG("profile: register def: %s %d %d %s\n", def->name, def->size, def->offset, def->flags);
@@ -289,7 +289,7 @@ static bool parse_reg_profile_str(RZ_OUT RzList /*<RzRegProfileAlias *>*/ *alias
 		}
 		if (rz_str_strchr(line, "#")) {
 			RzList *line_and_cmt = rz_str_split_duplist_n_regex(line, "\\#", 0, true);
-			char *raw_comment = strdup(rz_list_last(line_and_cmt));
+			char *raw_comment = rz_str_dup(rz_list_last(line_and_cmt));
 			if (!raw_comment) {
 				RZ_LOG_WARN("Comment could not be split from register definition. Line: \"%s\"\n", line);
 				continue;
@@ -396,7 +396,7 @@ RZ_API bool rz_reg_set_reg_profile(RZ_BORROW RzReg *reg) {
 			return false;
 		}
 
-		item->name = strdup(def->name);
+		item->name = rz_str_dup(def->name);
 
 		item->type = def->type;
 		item->arena = def->arena_type;
@@ -411,10 +411,10 @@ RZ_API bool rz_reg_set_reg_profile(RZ_BORROW RzReg *reg) {
 		item->packed_size = def->packed;
 
 		if (def->comment) {
-			item->comment = strdup(def->comment);
+			item->comment = rz_str_dup(def->comment);
 		}
 		if (def->flags) {
-			item->flags = strdup(def->flags);
+			item->flags = rz_str_dup(def->flags);
 		}
 
 		add_item_to_regset(reg, item);
@@ -445,7 +445,7 @@ RZ_API bool rz_reg_set_profile_string(RZ_NONNULL RzReg *reg, RZ_NONNULL const ch
 	rz_reg_arena_shrink(reg);
 
 	// Cache the profile string
-	reg->reg_profile_str = strdup(profile_str);
+	reg->reg_profile_str = rz_str_dup(profile_str);
 	reg->reg_profile.defs = rz_list_newf((RzListFree)rz_reg_profile_def_free);
 	reg->reg_profile.alias = rz_list_newf((RzListFree)rz_reg_profile_alias_free);
 	rz_return_val_if_fail(reg->reg_profile.defs && reg->reg_profile.alias, true);

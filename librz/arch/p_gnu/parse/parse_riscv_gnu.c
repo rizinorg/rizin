@@ -182,7 +182,7 @@ static bool parse(RzParse *p, const char *data, RzStrBuf *sb) {
 					rz_str_cpy(num + 1, ptr);
 					ptr = (char *)rz_str_lchr(buf, ']');
 					if (n && ptr) {
-						char *rest = strdup(ptr + 1);
+						char *rest = rz_str_dup(ptr + 1);
 						size_t dist = len + 1 - (ptr - buf);
 						if (n > 0) {
 							snprintf(ptr, dist, "+%d]%s", n, rest);
@@ -208,7 +208,7 @@ static bool parse(RzParse *p, const char *data, RzStrBuf *sb) {
 		}
 	}
 	{
-		char *s = strdup(str);
+		char *s = rz_str_dup(str);
 		s = rz_str_replace(s, "+ -", "- ", 1);
 		s = rz_str_replace(s, "- -", "+ ", 1);
 		rz_strf(str, "%s", s);

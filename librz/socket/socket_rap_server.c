@@ -9,7 +9,7 @@ RZ_API RzSocketRapServer *rz_socket_rap_server_new(bool use_ssl, const char *por
 	rz_return_val_if_fail(port, NULL);
 	RzSocketRapServer *s = RZ_NEW0(RzSocketRapServer);
 	if (s) {
-		s->port = strdup(port);
+		s->port = rz_str_dup(port);
 		s->fd = rz_socket_new(use_ssl);
 		if (s->fd) {
 			return s;

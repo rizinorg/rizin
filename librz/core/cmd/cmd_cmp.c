@@ -117,7 +117,7 @@ static bool core_cmp_bits(RzCore *core, RzCompareData *cmp) {
 // c
 RZ_IPI RzCmdStatus rz_cmd_cmp_string_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	RzCmdStatus ret = RZ_CMD_STATUS_ERROR;
-	char *unescaped = strdup(argv[1]);
+	char *unescaped = rz_str_dup(argv[1]);
 	int len = rz_str_unescape(unescaped);
 	RzCompareData *cmp = rz_core_cmp_mem_data(core, core->offset, (ut8 *)unescaped, len);
 	if (!cmp) {
@@ -316,7 +316,7 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_remove_watcher_handler(RzCore *core, int argc, con
 
 // cx
 RZ_IPI RzCmdStatus rz_cmd_cmp_hexpair_string_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	char *input = strdup(argv[1]);
+	char *input = rz_str_dup(argv[1]);
 	rz_str_remove_char(input, ' ');
 	unsigned char *buf;
 	int ret = false;

@@ -9,8 +9,8 @@ RZ_API RZ_OWN RzConfigNode *rz_config_node_new(RZ_NONNULL const char *name, RZ_N
 	if (!node) {
 		return NULL;
 	}
-	node->name = strdup(name);
-	node->value = strdup(value);
+	node->name = rz_str_dup(name);
+	node->value = rz_str_dup(value);
 	node->flags = CN_RW | CN_STR;
 	node->i_value = rz_num_get(NULL, value);
 	node->options = rz_list_new();
@@ -23,9 +23,9 @@ RZ_API RZ_OWN RzConfigNode *rz_config_node_clone(RzConfigNode *n) {
 	if (!cn) {
 		return NULL;
 	}
-	cn->name = strdup(n->name);
-	cn->desc = n->desc ? strdup(n->desc) : NULL;
-	cn->value = strdup(n->value ? n->value : "");
+	cn->name = rz_str_dup(n->name);
+	cn->desc = n->desc ? rz_str_dup(n->desc) : NULL;
+	cn->value = rz_str_dup(n->value ? n->value : "");
 	cn->i_value = n->i_value;
 	cn->flags = n->flags;
 	cn->setter = n->setter;
@@ -213,11 +213,11 @@ RZ_API RzConfigNode *rz_config_set_b(RzConfig *cfg, RZ_NONNULL const char *name,
 
 		oi = node->i_value;
 		if (node->value) {
-			ov = strdup(node->value);
+			ov = rz_str_dup(node->value);
 		}
 		if (rz_config_node_is_bool(node)) {
 			node->i_value = value ? 1 : 0;
-			char *svalue = strdup(rz_str_bool(value));
+			char *svalue = rz_str_dup(rz_str_bool(value));
 			if (svalue) {
 				free(node->value);
 				node->value = svalue;
@@ -251,7 +251,7 @@ RZ_API RzConfigNode *rz_config_set_b(RzConfig *cfg, RZ_NONNULL const char *name,
 				node->i_value = oi;
 			}
 			free(node->value);
-			node->value = strdup(ov ? ov : "");
+			node->value = rz_str_dup(ov ? ov : "");
 		}
 	}
 
@@ -278,18 +278,18 @@ RZ_API RzConfigNode *rz_config_set(RzConfig *cfg, RZ_NONNULL const char *name, c
 		}
 		oi = node->i_value;
 		if (node->value) {
-			ov = strdup(node->value);
+			ov = rz_str_dup(node->value);
 			if (!ov) {
 				goto beach;
 			}
 		} else {
 			free(node->value);
-			node->value = strdup("");
+			node->value = rz_str_dup("");
 		}
 		if (rz_config_node_is_bool(node)) {
 			bool b = rz_str_is_true(value);
 			node->i_value = b ? 1 : 0;
-			char *value = strdup(rz_str_bool(b));
+			char *value = rz_str_dup(rz_str_bool(b));
 			if (value) {
 				free(node->value);
 				node->value = value;
@@ -297,14 +297,14 @@ RZ_API RzConfigNode *rz_config_set(RzConfig *cfg, RZ_NONNULL const char *name, c
 		} else {
 			if (!value) {
 				free(node->value);
-				node->value = strdup("");
+				node->value = rz_str_dup("");
 				node->i_value = 0;
 			} else {
 				if (node->value == value) {
 					goto beach;
 				}
 				free(node->value);
-				node->value = strdup(value);
+				node->value = rz_str_dup(value);
 				if (IS_DIGIT(*value) || (value[0] == '-' && IS_DIGIT(value[1]))) {
 					if (strchr(value, '/')) {
 						node->i_value = rz_num_get(cfg->num, value);
@@ -342,7 +342,7 @@ RZ_API RzConfigNode *rz_config_set(RzConfig *cfg, RZ_NONNULL const char *name, c
 				node->i_value = oi;
 			}
 			free(node->value);
-			node->value = strdup(ov ? ov : "");
+			node->value = rz_str_dup(ov ? ov : "");
 			free(ov);
 			return NULL;
 		}
@@ -384,7 +384,7 @@ RZ_API const char *rz_config_node_desc(RzConfigNode *node, RZ_NULLABLE const cha
 	rz_return_val_if_fail(node, NULL);
 	if (desc) {
 		free(node->desc);
-		node->desc = strdup(desc);
+		node->desc = rz_str_dup(desc);
 	}
 	return node->desc;
 }
@@ -426,11 +426,11 @@ RZ_API RzConfigNode *rz_config_set_i(RzConfig *cfg, RZ_NONNULL const char *name,
 			goto beach;
 		}
 		if (node->value) {
-			ov = strdup(node->value);
+			ov = rz_str_dup(node->value);
 		}
 		rz_config_node_value_format_i(buf, sizeof(buf), i, NULL);
 		free(node->value);
-		node->value = strdup(buf);
+		node->value = rz_str_dup(buf);
 		if (!node->value) {
 			node = NULL;
 			goto beach;
@@ -461,7 +461,7 @@ RZ_API RzConfigNode *rz_config_set_i(RzConfig *cfg, RZ_NONNULL const char *name,
 		if (!ret) {
 			node->i_value = oi;
 			free(node->value);
-			node->value = strdup(ov ? ov : "");
+			node->value = rz_str_dup(ov ? ov : "");
 		}
 	}
 beach:
@@ -537,7 +537,7 @@ RZ_API void rz_config_visual_hit_i(RzConfig *cfg, const char *name, int delta) {
 }
 
 RZ_API void rz_config_bump(RzConfig *cfg, const char *key) {
-	char *orig = strdup(rz_config_get(cfg, key));
+	char *orig = rz_str_dup(rz_config_get(cfg, key));
 	if (orig) {
 		rz_config_set(cfg, key, orig);
 		free(orig);

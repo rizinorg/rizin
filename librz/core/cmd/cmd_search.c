@@ -454,7 +454,7 @@ static int _cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 			pre = getstring(buf, prectx);
 			pos = getstring(buf + prectx + len, ctx);
 			if (!pos) {
-				pos = strdup("");
+				pos = rz_str_dup("");
 			}
 			if (param->outmode == RZ_MODE_JSON) {
 				wrd = getstring(buf + prectx, len);
@@ -2261,7 +2261,7 @@ RZ_IPI int rz_cmd_search(void *data, const char *input) {
 		}
 	} else {
 		free(core->lastsearch);
-		core->lastsearch = strdup(input);
+		core->lastsearch = rz_str_dup(input);
 	}
 
 	core->in_search = true;
@@ -2510,14 +2510,14 @@ reread:
 				RZ_LOG_ERROR("core:  /ccb - binary (any number is valid)\n");
 				goto beach;
 			}
-			char *s = strdup(arg);
+			char *s = rz_str_dup(arg);
 			char *sp = strchr(s, ' ');
 			int mode = input[2];
 			if (sp) {
 				*sp = 0;
 				sp++;
 				char *hashName = s;
-				ut8 *hashValue = (ut8 *)strdup(sp);
+				ut8 *hashValue = (ut8 *)rz_str_dup(sp);
 				if (hashValue) {
 					if (!rz_str_startswith((const char *)hashValue, "0x")) {
 						// TODO: support bigger hashes
@@ -2832,7 +2832,7 @@ reread:
 		}
 		// fallthrough
 	case ' ': // "/ " search string
-		inp = strdup(input + 1 + ignorecase + (param.outmode == RZ_MODE_JSON ? 1 : 0));
+		inp = rz_str_dup(input + 1 + ignorecase + (param.outmode == RZ_MODE_JSON ? 1 : 0));
 		len = rz_str_unescape(inp);
 		rz_search_reset(core->search, RZ_SEARCH_KEYWORD);
 		rz_search_set_distance(core->search, (int)rz_config_get_i(core->config, "search.distance"));
@@ -3012,7 +3012,7 @@ reread:
 			rz_core_cmd_help(core, help_msg_slash_x);
 		} else {
 			RzSearchKeyword *kw;
-			char *s, *p = strdup(input + param_offset);
+			char *s, *p = rz_str_dup(input + param_offset);
 			rz_search_reset(core->search, RZ_SEARCH_KEYWORD);
 			rz_search_set_distance(core->search, (int)rz_config_get_i(core->config, "search.distance"));
 			s = strchr(p, ':');
@@ -3040,7 +3040,7 @@ reread:
 		if (input[1] == ' ') {
 			// TODO: support /+j
 			char *buf = malloc(strlen(input) * 2);
-			char *str = strdup(input + 2);
+			char *str = rz_str_dup(input + 2);
 			int ochunksize;
 			int i, len, chunksize = rz_config_get_i(core->config, "search.chunk");
 			if (chunksize < 1) {

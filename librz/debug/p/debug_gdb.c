@@ -263,7 +263,7 @@ static RzList /*<RzDebugMap *>*/ *rz_debug_gdb_map_get(RzDebug *dbg) { // TODO
 		}
 		map->offset = offset;
 		map->shared = map_is_shared;
-		map->file = strdup(name);
+		map->file = rz_str_dup(name);
 		rz_list_append(retlist, map);
 		ptr = strtok(NULL, "\n");
 	}
@@ -288,7 +288,7 @@ static RzList /*<RzDebugMap *>*/ *rz_debug_gdb_modules_get(RzDebug *dbg) {
 	rz_list_foreach_safe (list, iter, iter2, map) {
 		const char *file = map->file;
 		if (!map->file) {
-			file = map->file = strdup(map->name);
+			file = map->file = rz_str_dup(map->name);
 		}
 		must_delete = true;
 		if (file && *file == '/') {
@@ -301,7 +301,7 @@ static RzList /*<RzDebugMap *>*/ *rz_debug_gdb_modules_get(RzDebug *dbg) {
 		} else {
 			rz_list_append(last, map);
 			free(lastname);
-			lastname = strdup(file);
+			lastname = rz_str_dup(file);
 		}
 	}
 	list->free = NULL;
@@ -452,7 +452,7 @@ static const char *rz_debug_gdb_reg_profile(RzDebug *dbg) {
 		gdbr_set_architecture(ctx->desc, arch, bits);
 	}
 	if (ctx->desc->target.regprofile) {
-		return strdup(ctx->desc->target.regprofile);
+		return rz_str_dup(ctx->desc->target.regprofile);
 	}
 	return NULL;
 }

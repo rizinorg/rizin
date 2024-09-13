@@ -192,7 +192,7 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 			contents = opt.arg;
 			break;
 		case 'w': {
-			char *arg = strdup(opt.arg);
+			char *arg = rz_str_dup(opt.arg);
 			char *p = strchr(arg, ':');
 			if (p) {
 				int len, off;
@@ -329,7 +329,7 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 			break;
 		case 'q':
 			get_offset = 1;
-			sequence = strdup(opt.arg);
+			sequence = rz_str_dup(opt.arg);
 			break;
 		default:
 			goto fail;
@@ -455,7 +455,7 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 	/* set output (create output file if needed) */
 	if (ofileauto) {
 		if (file) {
-			char *o, *q, *p = strdup(file);
+			char *o, *q, *p = rz_str_dup(file);
 			if ((o = strchr(p, '.'))) {
 				while ((q = strchr(o + 1, '.'))) {
 					o = q;

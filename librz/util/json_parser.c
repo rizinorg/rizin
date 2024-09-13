@@ -559,7 +559,7 @@ RZ_API RZ_OWN char *rz_json_as_string(const RzJson *json, bool with_key) {
 	rz_return_val_if_fail(json, NULL);
 	if (json->type == RZ_JSON_STRING && (!with_key || !json->key)) {
 		// Printing string without surrounding quotes
-		return strdup(json->str_value);
+		return rz_str_dup(json->str_value);
 	}
 	PJ *pj = pj_new();
 	if (!pj) {
@@ -614,8 +614,8 @@ RZ_API bool rz_json_eq(RZ_NONNULL RZ_BORROW const RzJson *a, RZ_NONNULL RZ_BORRO
  */
 RZ_API bool rz_json_string_eq(RZ_NONNULL RZ_BORROW const char *sa, RZ_NONNULL RZ_BORROW const char *sb) {
 	rz_return_val_if_fail(sa && sb, false);
-	char *sa_dup = strdup(sa);
-	char *sb_dup = strdup(sb);
+	char *sa_dup = rz_str_dup(sa);
+	char *sb_dup = rz_str_dup(sb);
 	RzJson *a = rz_json_parse(sa_dup);
 	RzJson *b = NULL;
 	bool ret = false;

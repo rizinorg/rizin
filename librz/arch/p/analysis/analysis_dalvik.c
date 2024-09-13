@@ -50,7 +50,7 @@ static int dalvik_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut
 	int sz = dalvik_opcodes[data[0]].len;
 	if (!op || sz > len) {
 		if (op && (mask & RZ_ANALYSIS_OP_MASK_DISASM)) {
-			op->mnemonic = strdup("invalid");
+			op->mnemonic = rz_str_dup("invalid");
 		}
 		return -1;
 	}
@@ -754,7 +754,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"gpr	ip	.32	116	0\n"
 		"gpr	sp	.32	120	0\n"
 		"gpr	bp	.32	124	0\n";
-	return strdup(p);
+	return rz_str_dup(p);
 }
 
 static int archinfo(RzAnalysis *a, RzAnalysisInfoType query) {

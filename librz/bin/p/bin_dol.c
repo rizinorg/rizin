@@ -62,7 +62,7 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 	if (!dol) {
 		return false;
 	}
-	char *lowername = strdup(bf->file);
+	char *lowername = rz_str_dup(bf->file);
 	if (!lowername) {
 		goto dol_err;
 	}
@@ -123,7 +123,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	}
 	/* bss section */
 	s = RZ_NEW0(RzBinSection);
-	s->name = strdup("bss");
+	s->name = rz_str_dup("bss");
 	s->paddr = 0;
 	s->vaddr = dol->bss_addr;
 	s->size = dol->bss_size;
@@ -151,12 +151,12 @@ static RzBinInfo *info(RzBinFile *bf) {
 	if (!ret) {
 		return NULL;
 	}
-	ret->file = strdup(bf->file);
+	ret->file = rz_str_dup(bf->file);
 	ret->big_endian = true;
-	ret->type = strdup("ROM");
-	ret->machine = strdup("Nintendo Wii");
-	ret->os = strdup("wii-ios");
-	ret->arch = strdup("ppc");
+	ret->type = rz_str_dup("ROM");
+	ret->machine = rz_str_dup("Nintendo Wii");
+	ret->os = rz_str_dup("wii-ios");
+	ret->arch = rz_str_dup("ppc");
 	ret->has_va = true;
 	ret->bits = 32;
 

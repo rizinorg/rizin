@@ -245,7 +245,7 @@ void add_arg_fmt(pyc_opcodes *ret, char *op_name, const char *(*formatter)(ut32 
 
 void(def_opN)(struct op_parameter par) {
 	free(par.op_obj[par.op_code].op_name);
-	par.op_obj[par.op_code].op_name = strdup(par.op_name);
+	par.op_obj[par.op_code].op_name = rz_str_dup(par.op_name);
 	par.op_obj[par.op_code].op_code = par.op_code;
 	par.op_obj[par.op_code].op_pop = par.pop;
 	par.op_obj[par.op_code].op_push = par.push;

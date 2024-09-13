@@ -447,7 +447,7 @@ RZ_IPI RzCmdDescDetail *rz_cmd_math_help_vars_details_cb(RzCore *core, int argc,
 	if (!details) {
 		return NULL;
 	}
-	details[0].name = (const char *)strdup("Rizin variables");
+	details[0].name = (const char *)rz_str_dup("Rizin variables");
 	if (!details->name) {
 		goto err;
 	}
@@ -459,18 +459,18 @@ RZ_IPI RzCmdDescDetail *rz_cmd_math_help_vars_details_cb(RzCore *core, int argc,
 	int i;
 	for (i = 0; i < RZ_ARRAY_SIZE(core_vars); i++) {
 		struct rz_core_var *var = &core_vars[i];
-		entries[i].text = (char *)strdup(var->name);
-		entries[i].arg_str = strdup("");
-		entries[i].comment = strdup(var->description);
+		entries[i].text = (char *)rz_str_dup(var->name);
+		entries[i].arg_str = rz_str_dup("");
+		entries[i].comment = rz_str_dup(var->description);
 		if (!entries[i].text || !entries[i].arg_str || !entries[i].comment) {
 			goto err;
 		}
 	}
 	for (int j = 0; j < RZ_ARRAY_SIZE(help_core_vars); j++, i++) {
 		struct rz_core_var *var = &help_core_vars[j];
-		entries[i].text = (char *)strdup(var->name);
-		entries[i].arg_str = strdup("");
-		entries[i].comment = strdup(var->description);
+		entries[i].text = (char *)rz_str_dup(var->name);
+		entries[i].arg_str = rz_str_dup("");
+		entries[i].comment = rz_str_dup(var->description);
 		if (!entries[i].text || !entries[i].arg_str || !entries[i].comment) {
 			goto err;
 		}
