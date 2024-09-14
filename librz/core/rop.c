@@ -133,117 +133,120 @@ static bool rz_rop_print_table_mode(const RzCore *core, const RzCoreAsmHit *hit,
 	return true;
 }
 
-static bool rz_rop_print_quiet_mode(const RzCore *core, const RzCoreAsmHit *hit, ut32 *size, RzRopSearchContext *context) {
-	rz_return_val_if_fail(core && context, false);
-	const bool colorize = rz_config_get_i(core->config, "scr.color");
-	RzAnalysisOp aop = RZ_EMPTY;
+static bool rz_rop_prepare_asm_op(const RzCore *core, const RzCoreAsmHit *hit, RzAsmOp **asmop_out, RzAnalysisOp *aop, ut32 *size) {
 	RzAsmOp *asmop = rz_asm_op_new();
 	if (!asmop) {
 		return false;
 	}
-
-	if (!rz_rop_process_asm_op(core, hit, asmop, &aop, size, NULL, NULL)) {
+	if (!rz_rop_process_asm_op(core, hit, asmop, aop, size, NULL, NULL)) {
 		rz_asm_op_free(asmop);
 		return false;
 	}
+	*asmop_out = asmop;
+	return true;
+}
+
+static RzStrBuf* get_colored_asm_str(const RzCore *core, RzAsmOp *asmop, RzAnalysisOp *aop) {
+	RzStrBuf *bw_str = rz_strbuf_new(rz_asm_op_get_asm(asmop));
+	RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, aop->type);
+	RzStrBuf *colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, param, asmop->asm_toks);
+	rz_asm_parse_param_free(param);
+	rz_strbuf_free(bw_str);
+	return colored_asm;
+}
+
+static bool rz_rop_print_quiet_mode(const RzCore *core, const RzCoreAsmHit *hit, ut32 *size, RzRopSearchContext *context) {
+	if (!core || !context) {
+		return false;
+	}
+
+	RzAnalysisOp aop = RZ_EMPTY;
+	RzAsmOp *asmop = NULL;
+	if (!rz_rop_prepare_asm_op(core, hit, &asmop, &aop, size)) {
+		return false;
+	}
+
+	const bool colorize = rz_config_get_i(core->config, "scr.color");
+
+	const char *asm_str = rz_asm_op_get_asm(asmop);
+	RzStrBuf *colored_asm = NULL;
 	if (colorize) {
-		RzStrBuf *bw_str = rz_strbuf_new(rz_asm_op_get_asm(asmop));
-		RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, aop.type);
-		RzStrBuf *colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, param, asmop->asm_toks);
-		rz_asm_parse_param_free(param);
-		if (context->ret_val) {
-			char *str_buf = rz_str_newf(" %s%s;", colored_asm ? rz_strbuf_get(colored_asm) : "", Color_RESET);
-			rz_strbuf_append(context->buf, str_buf);
-			free(str_buf);
-		} else {
-			rz_cons_printf(" %s%s;", colored_asm ? rz_strbuf_get(colored_asm) : "", Color_RESET);
-		}
-		rz_strbuf_free(colored_asm);
-		rz_strbuf_free(bw_str);
+		colored_asm = get_colored_asm_str(core, asmop, &aop);
+		asm_str = colored_asm ? rz_strbuf_get(colored_asm) : "";
+	}
+
+	const char *reset_color = colorize ? Color_RESET : "";
+	const char *format = " %s%s;";
+	const char *output_str = asm_str;
+	if (context->ret_val) {
+		rz_strbuf_appendf(context->buf, format, output_str, reset_color);
 	} else {
-		if (context->ret_val) {
-			char *str_buf = rz_str_newf(" %s;", rz_asm_op_get_asm(asmop));
-			rz_strbuf_append(context->buf, str_buf);
-			free(str_buf);
-		} else {
-			rz_cons_printf(" %s;", rz_asm_op_get_asm(asmop));
-		}
+		rz_cons_printf(format, output_str, reset_color);
+	}
+
+	if (colored_asm) {
+		rz_strbuf_free(colored_asm);
 	}
 	rz_asm_op_free(asmop);
 	rz_analysis_op_fini(&aop);
+
 	return true;
 }
 
 static bool rz_rop_print_standard_mode(const RzCore *core, const RzCoreAsmHit *hit, ut32 *size, RzRopSearchContext *context) {
-	rz_return_val_if_fail(core && context, false);
+	if (!core || !context) {
+		return false;
+	}
+
 	RzAnalysisOp aop = RZ_EMPTY;
-	RzAsmOp *asmop = rz_asm_op_new();
-	if (!asmop) {
+	RzAsmOp *asmop = NULL;
+	if (!rz_rop_prepare_asm_op(core, hit, &asmop, &aop, size)) {
 		return false;
 	}
-	if (!rz_rop_process_asm_op(core, hit, asmop, &aop, size, NULL, NULL)) {
-		rz_asm_op_free(asmop);
-		return false;
-	}
+
 	const bool rop_comments = rz_config_get_i(core->config, "rop.comments");
-	const char *comment = rop_comments ? rz_meta_get_string(core->analysis, RZ_META_TYPE_COMMENT, hit->addr) : NULL;
-	char *asm_op_hex = rz_asm_op_get_hex(asmop);
 	const bool colorize = rz_config_get_i(core->config, "scr.color");
 	bool ret_val = context->ret_val;
+
+	const char *comment = NULL;
+	if (rop_comments) {
+		comment = rz_meta_get_string(core->analysis, RZ_META_TYPE_COMMENT, hit->addr);
+	}
+
+	char *asm_op_hex = rz_asm_op_get_hex(asmop);
+	const char *asm_str = rz_asm_op_get_asm(asmop);
+	RzStrBuf *colored_asm = NULL;
 	if (colorize) {
-		RzStrBuf *bw_str = rz_strbuf_new(rz_asm_op_get_asm(asmop));
-		RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, aop.type);
-		RzStrBuf *colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, param, asmop->asm_toks);
-		rz_asm_parse_param_free(param);
+		colored_asm = get_colored_asm_str(core, asmop, &aop);
+		asm_str = colored_asm ? rz_strbuf_get(colored_asm) : "";
+	}
+
+	const char *reset_color = colorize ? Color_RESET : "";
+	const char *format_with_comment = "  0x%08" PFMT64x " %18s  %s%s ; %s\n";
+	const char *format_without_comment = "  0x%08" PFMT64x " %18s  %s%s\n";
+	const char *format = comment ? format_with_comment : format_without_comment;
+
+	if (ret_val) {
 		if (comment) {
-			if (ret_val) {
-				char *str_buf = rz_str_newf("  0x%08" PFMT64x " %18s  %s%s ; %s\n",
-					hit->addr, asm_op_hex, colored_asm ? rz_strbuf_get(colored_asm) : "", Color_RESET, comment);
-				rz_strbuf_append(context->buf, str_buf);
-				free(str_buf);
-			} else {
-				rz_cons_printf("  0x%08" PFMT64x " %18s  %s%s ; %s\n",
-					hit->addr, asm_op_hex, colored_asm ? rz_strbuf_get(colored_asm) : "", Color_RESET, comment);
-			}
+			rz_strbuf_appendf(context->buf, format, hit->addr, asm_op_hex, asm_str, reset_color, comment);
 		} else {
-			if (ret_val) {
-				char *str_buf = rz_str_newf("  0x%08" PFMT64x " %18s  %s%s\n",
-					hit->addr, asm_op_hex, colored_asm ? rz_strbuf_get(colored_asm) : "", Color_RESET);
-				rz_strbuf_append(context->buf, str_buf);
-				free(str_buf);
-			} else {
-				rz_cons_printf("  0x%08" PFMT64x " %18s  %s%s\n",
-					hit->addr, asm_op_hex, colored_asm ? rz_strbuf_get(colored_asm) : "", Color_RESET);
-			}
+			rz_strbuf_appendf(context->buf, format, hit->addr, asm_op_hex, asm_str, reset_color);
 		}
-		rz_strbuf_free(colored_asm);
-		rz_strbuf_free(bw_str);
 	} else {
 		if (comment) {
-			if (ret_val) {
-				char *str_buf = rz_str_newf("  0x%08" PFMT64x " %18s  %s ; %s\n",
-					hit->addr, asm_op_hex, rz_asm_op_get_asm(asmop), comment);
-				rz_strbuf_append(context->buf, str_buf);
-				free(str_buf);
-			} else {
-				rz_cons_printf("  0x%08" PFMT64x " %18s  %s ; %s\n",
-					hit->addr, asm_op_hex, rz_asm_op_get_asm(asmop), comment);
-			}
+			rz_cons_printf(format, hit->addr, asm_op_hex, asm_str, reset_color, comment);
 		} else {
-			if (ret_val) {
-				char *str_buf = rz_str_newf("  0x%08" PFMT64x " %18s  %s\n",
-					hit->addr, asm_op_hex, rz_asm_op_get_asm(asmop));
-				rz_strbuf_append(context->buf, str_buf);
-				free(str_buf);
-			} else {
-				rz_cons_printf("  0x%08" PFMT64x " %18s  %s\n",
-					hit->addr, asm_op_hex, rz_asm_op_get_asm(asmop));
-			}
+			rz_cons_printf(format, hit->addr, asm_op_hex, asm_str, reset_color);
 		}
 	}
+
 	free(asm_op_hex);
-	rz_analysis_op_fini(&aop);
+	if (colored_asm) {
+		rz_strbuf_free(colored_asm);
+	}
 	rz_asm_op_free(asmop);
+	rz_analysis_op_fini(&aop);
+
 	return true;
 }
 
@@ -973,22 +976,24 @@ static bool print_rop(const RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, 
 	rz_return_val_if_fail(core && hitlist && context && context->state, false);
 	RzCmdStateOutput *state = context->state;
 	rz_cmd_state_output_set_columnsf(state, "XXs", "addr", "bytes", "disasm");
+	RzCoreAsmHit *hit = (RzCoreAsmHit *)rz_list_first(hitlist);
+	if (!hit) {
+		return false;
+	}
 	if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		pj_o(state->d.pj);
 		pj_ka(state->d.pj, "opcodes");
 	} else if (state->mode == RZ_OUTPUT_MODE_QUIET) {
 		if (context->ret_val) {
-			char *str_buf = rz_str_newf("0x%08" PFMT64x ":", ((RzCoreAsmHit *)rz_list_first(hitlist))->addr);
-			rz_strbuf_append(context->buf, str_buf);
-			free(str_buf);
+			rz_strbuf_appendf(context->buf, "0x%08" PFMT64x ":", hit->addr);
 		} else {
-			rz_cons_printf("0x%08" PFMT64x ":", ((RzCoreAsmHit *)rz_list_first(hitlist))->addr);
+			rz_cons_printf("0x%08" PFMT64x ":", hit->addr);
 		}
 	}
-	const ut64 addr = ((RzCoreAsmHit *)rz_list_first(hitlist))->addr;
+	const ut64 addr = hit->addr;
 
 	bool result = 0;
-	const RzCoreAsmHit *hit = NULL;
+	hit = NULL;
 	RzListIter *iter;
 	ut32 size = 0;
 	char *asmop_str = NULL, *asmop_hex_str = NULL;

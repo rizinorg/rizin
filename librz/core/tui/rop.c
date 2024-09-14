@@ -244,20 +244,20 @@ RZ_IPI int rz_core_visual_view_rop(RzCore *core) {
 		case '\n':
 		case '\r':
 			if (curline && *curline) {
-				RzStrBuf *line = rz_strbuf_new(NULL);
-				if (!rz_core_disasm_until_ret(core, addr + delta, 1024, RZ_OUTPUT_MODE_QUIET, true, line)) {
-					rz_strbuf_free(line);
+				RzStrBuf *str_buf = rz_strbuf_new(NULL);
+				if (!rz_core_disasm_until_ret(core, addr + delta, 1024, RZ_OUTPUT_MODE_QUIET, true, str_buf)) {
+					rz_strbuf_free(str_buf);
 					break;
 				}
 				if (show_color) {
 					// XXX parsing fails to read this ansi-offset
 					// const char *offsetColor = rz_cons_singleton ()->context->pal.offset; // TODO etooslow. must cache
 					// rz_list_push (core->ropchain, rz_str_newf ("%s0x%08"PFMT64x""Color_RESET"  %s", offsetColor, addr + delta, line));
-					rz_list_push(core->ropchain, rz_str_newf("0x%08" PFMT64x "  %s", addr + delta, rz_strbuf_get(line)));
+					rz_list_push(core->ropchain, rz_str_newf("0x%08" PFMT64x "  %s", addr + delta, rz_strbuf_get(str_buf)));
 				} else {
-					rz_list_push(core->ropchain, rz_str_newf("0x%08" PFMT64x "  %s", addr + delta, rz_strbuf_get(line)));
+					rz_list_push(core->ropchain, rz_str_newf("0x%08" PFMT64x "  %s", addr + delta, rz_strbuf_get(str_buf)));
 				}
-				rz_strbuf_free(line);
+				rz_strbuf_free(str_buf);
 			}
 			break;
 		case 'h':
