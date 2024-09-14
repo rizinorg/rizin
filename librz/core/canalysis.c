@@ -4468,9 +4468,13 @@ static void var_global_show(RzAnalysis *analysis, RzAnalysisVarGlobal *glob, RzC
 		rz_cons_println(glob->name);
 		break;
 	case RZ_OUTPUT_MODE_STANDARD:
-		rz_cons_printf("global %s %s @ 0x%" PFMT64x " %s:%d:%d\n",
-			var_type, glob->name, glob->addr,
-			glob->coord.decl_file, glob->coord.decl_line, glob->coord.decl_col);
+		rz_cons_printf("global %s %s @ 0x%" PFMT64x, var_type, glob->name, glob->addr);
+		if (RZ_STR_ISNOTEMPTY(glob->coord.decl_file)) {
+			rz_cons_printf(" %s:%" PFMT32d "%" PFMT32d "\n",
+				glob->coord.decl_file, glob->coord.decl_line, glob->coord.decl_col);
+		} else {
+			rz_cons_print("\n");
+		}
 		break;
 	case RZ_OUTPUT_MODE_JSON: {
 		PJ *pj = state->d.pj;
@@ -4491,8 +4495,9 @@ static void var_global_show(RzAnalysis *analysis, RzAnalysisVarGlobal *glob, RzC
 		break;
 	}
 	case RZ_OUTPUT_MODE_TABLE: {
-		rz_table_add_rowf(state->d.t, "ssxxsnn", glob->name, var_type, var_size, glob->addr,
-			glob->coord.decl_file, glob->coord.decl_line, glob->coord.decl_col);
+		rz_table_add_rowf(state->d.t, "ssxxsdd", glob->name, var_type, var_size, glob->addr,
+			RZ_STR_ISNOTEMPTY(glob->coord.decl_file) ? glob->coord.decl_file : "-",
+			glob->coord.decl_line, glob->coord.decl_col);
 		break;
 	}
 	default:

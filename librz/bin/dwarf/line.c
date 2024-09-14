@@ -214,7 +214,7 @@ static char *full_file_path(
 	RzBinDWARF *dw,
 	RzBinDwarfLineUnitHdr *hdr,
 	ut64 index) {
-	rz_return_val_if_fail(dw && hdr, NULL);
+	rz_return_val_if_fail(hdr, NULL);
 	if (index >= rz_vector_len(&hdr->file_names)) {
 		return NULL;
 	}
@@ -232,7 +232,7 @@ static char *full_file_path(
 	 * or backslashes anyway, we will simply use slashes always here.
 	 */
 
-	const char *comp_dir = dw->info
+	const char *comp_dir = dw && dw->info
 		? ht_up_find(dw->info->comp_dir_by_offset, hdr->offset, NULL)
 		: NULL;
 	const ut64 dir_index = hdr->encoding.version < 5 ? file->directory_index - 1 : file->directory_index;

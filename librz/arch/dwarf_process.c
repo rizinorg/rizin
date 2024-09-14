@@ -1673,14 +1673,14 @@ static bool try_create_var_global(
 	RzBinDwarfAttr *attr = NULL;
 	attr = rz_bin_dwarf_die_get_attr(die, DW_AT_decl_file);
 	RzBinDwarfLineUnit *lu = ctx->unit ? rz_pvector_at(ctx->dw->line->units, ctx->unit->index) : NULL;
-	ut64 file_index = rz_bin_dwarf_attr_udata(attr);
+	ut64 file_index = attr ? rz_bin_dwarf_attr_udata(attr) : UT64_MAX;
 	const char *file = file_index != 0 && lu ? rz_bin_dwarf_file_path(ctx->dw, lu, file_index) : NULL;
 
 	attr = rz_bin_dwarf_die_get_attr(die, DW_AT_decl_line);
-	ut32 line = rz_bin_dwarf_attr_udata(attr);
+	ut32 line = attr ? rz_bin_dwarf_attr_udata(attr) : UT32_MAX;
 
 	attr = rz_bin_dwarf_die_get_attr(die, DW_AT_decl_column);
-	ut32 column = rz_bin_dwarf_attr_udata(attr);
+	ut32 column = attr ? rz_bin_dwarf_attr_udata(attr) : UT32_MAX;
 
 	result = rz_analysis_var_global_create_with_sourceline(
 		ctx->analysis, v->prefer_name, v->type, v->location->address,

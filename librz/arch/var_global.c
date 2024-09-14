@@ -20,6 +20,9 @@ RZ_API RZ_OWN RzAnalysisVarGlobal *rz_analysis_var_global_new(RZ_NONNULL const c
 	glob->name = rz_str_dup(name);
 	glob->addr = addr;
 	glob->analysis = NULL;
+	glob->coord.decl_file = NULL;
+	glob->coord.decl_line = UT32_MAX;
+	glob->coord.decl_col = UT32_MAX;
 
 	return glob;
 }

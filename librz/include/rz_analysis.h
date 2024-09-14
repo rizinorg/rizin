@@ -808,7 +808,7 @@ typedef struct rz_analysis_var_t {
 typedef struct {
 	ut32 decl_line; ///< File containing source declaration
 	ut32 decl_col; ///< Line number of source declaration
-	const char* decl_file; ///< Column position of source declaration
+	const char *decl_file; ///< Column position of source declaration
 } RzAnalysisDeclCoord;
 
 /**
