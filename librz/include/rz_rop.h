@@ -144,8 +144,8 @@ typedef bool (*rz_rop_event_check_fn)(const RzRopRegInfo *);
 extern rz_rop_event_check_fn rz_rop_event_functions[RZ_ROP_EVENT_COUNT];
 
 // Command APIs
-RZ_API RzCmdStatus rz_core_rop_search(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW RzRopSearchContext *context);
-RZ_API RzCmdStatus rz_core_rop_gadget_info(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW RzRopSearchContext *context);
+RZ_API RzCmdStatus rz_core_rop_search(RZ_NONNULL RzCore *core, RZ_NONNULL RzRopSearchContext *context);
+RZ_API RzCmdStatus rz_core_rop_gadget_info(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_OWN RzRopSearchContext *context);
 RZ_API bool rz_core_rop_analyze_constraint(const RZ_NONNULL RzCore *core, const RZ_NONNULL char *str,
 	RZ_NONNULL RZ_OUT RzRopConstraint *rop_constraint);
 

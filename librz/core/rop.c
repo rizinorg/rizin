@@ -250,9 +250,8 @@ static bool rz_rop_print_standard_mode(const RzCore *core, const RzCoreAsmHit *h
 	return true;
 }
 
-static bool rz_rop_print_json_mode(const RzCore *core, const RzCoreAsmHit *hit, unsigned int *size, RzRopSearchContext *context) {
-	rz_return_val_if_fail(core && hit && context && context->state, false);
-	RzCmdStateOutput *state = context->state;
+static bool rz_rop_print_json_mode(const RzCore *core, const RzCoreAsmHit *hit, unsigned int *size, PJ *pj) {
+	rz_return_val_if_fail(core && hit && pj, false);
 	RzAnalysisOp aop = RZ_EMPTY;
 	RzAsmOp *asmop = rz_asm_op_new();
 	if (!asmop) {
@@ -263,12 +262,12 @@ static bool rz_rop_print_json_mode(const RzCore *core, const RzCoreAsmHit *hit, 
 		return false;
 	}
 
-	pj_o(context->state->d.pj);
-	pj_kn(state->d.pj, "offset", hit->addr);
-	pj_ki(state->d.pj, "size", hit->len);
-	pj_ks(state->d.pj, "opcode", rz_asm_op_get_asm(asmop));
-	pj_ks(state->d.pj, "type", rz_analysis_optype_to_string(aop.type));
-	pj_end(state->d.pj);
+	pj_o(pj);
+	pj_kn(pj, "offset", hit->addr);
+	pj_ki(pj, "size", hit->len);
+	pj_ks(pj, "opcode", rz_asm_op_get_asm(asmop));
+	pj_ks(pj, "type", rz_analysis_optype_to_string(aop.type));
+	pj_end(pj);
 
 	rz_analysis_op_fini(&aop);
 	rz_asm_op_free(asmop);
@@ -1000,7 +999,10 @@ static bool print_rop(const RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, 
 	rz_list_foreach (hitlist, iter, hit) {
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_JSON:
-			result = rz_rop_print_json_mode(core, hit, &size, context);
+			if (!state->d.pj) {
+				break;
+			}
+			result = rz_rop_print_json_mode(core, hit, &size, state->d.pj);
 			break;
 		case RZ_OUTPUT_MODE_QUIET:
 			result = rz_rop_print_quiet_mode(core, hit, &size, context);
@@ -1021,6 +1023,9 @@ static bool print_rop(const RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, 
 	}
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_JSON:
+		if (!state->d.pj) {
+			break;
+		}
 		pj_end(state->d.pj);
 		if (context->ret_val) {
 			break;
@@ -1505,7 +1510,7 @@ static bool update_end_gadget(int *i, const int ropdepth, RzRopEndListPair **end
  * filters results based on the grep argument and request mask. Outputs results to
  * the provided state object.
  */
-RZ_API RzCmdStatus rz_core_rop_search(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW RzRopSearchContext *context) {
+RZ_API RzCmdStatus rz_core_rop_search(RZ_NONNULL RzCore *core, RZ_NONNULL RzRopSearchContext *context) {
 	rz_return_val_if_fail(core && core->search && context, RZ_CMD_STATUS_ERROR);
 
 	RzInterval search_itv = { 0 };
@@ -1622,7 +1627,7 @@ RZ_API RzCmdStatus rz_core_rop_search(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BOR
  * Displays ROP gadgets from the gadgetSdb.
  * If unavailable, performs a ROP search with the input.
  */
-RZ_API RzCmdStatus rz_core_rop_gadget_info(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW RzRopSearchContext *context) {
+RZ_API RzCmdStatus rz_core_rop_gadget_info(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_OWN RzRopSearchContext *context) {
 	rz_return_val_if_fail(core && core->analysis && context, RZ_CMD_STATUS_ERROR);
 
 	if (!core->analysis->ht_rop_semantics) {
