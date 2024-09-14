@@ -122,7 +122,7 @@ bool test_dwarf3_c_basic(void) { // this should work for dwarf2 aswell
 	RzBinDwarfLine *li = rz_bin_dwarf_line_from_file(
 		bin->cur, NULL, false);
 	mu_assert_notnull(li, "line info");
-	mu_assert_eq(rz_list_length(li->units), 1, "line units count");
+	mu_assert_eq(rz_pvector_len(li->units), 1, "line units count");
 	mu_assert_notnull(li->lines, "line info");
 	const RzBinSourceLineSample test_line_samples[] = {
 		{ 0x1129, 3, 1, "main.c" },
@@ -208,7 +208,7 @@ bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 aswell
 	RzBinDwarfLine *li = rz_bin_dwarf_line_from_file(
 		bin->cur, NULL, false);
 	mu_assert_notnull(li, "line info");
-	mu_assert_eq(rz_list_length(li->units), 1, "line units count");
+	mu_assert_eq(rz_pvector_len(li->units), 1, "line units count");
 	mu_assert_notnull(li->lines, "line info");
 	const RzBinSourceLineSample test_line_samples[] = {
 		{ 0x1169, 19, 12, "main.cpp" },
@@ -324,7 +324,7 @@ bool test_dwarf3_cpp_many_comp_units(void) {
 	RzBinDwarfLine *li = rz_bin_dwarf_line_from_file(
 		bin->cur, NULL, false);
 	mu_assert_notnull(li, "line info");
-	mu_assert_eq(rz_list_length(li->units), 2, "line units count");
+	mu_assert_eq(rz_pvector_len(li->units), 2, "line units count");
 	mu_assert_notnull(li->lines, "line info");
 	const RzBinSourceLineSample test_line_samples[] = {
 		{ 0x118a, 3, 3, "mammal.cpp" },
@@ -442,8 +442,8 @@ bool test_dwarf_cpp_empty_line_info(void) { // this should work for dwarf2 aswel
 	RzBinDwarfLine *li = rz_bin_dwarf_line_from_file(
 		bin->cur, NULL, false);
 	mu_assert_notnull(li, "line info");
-	mu_assert_eq(rz_list_length(li->units), 25, "line units count");
-	RzBinDwarfLineUnit *lunit = rz_list_last(li->units);
+	mu_assert_eq(rz_pvector_len(li->units), 25, "line units count");
+	RzBinDwarfLineUnit *lunit = rz_pvector_tail(li->units);
 	mu_assert_notnull(lunit, "line unit");
 
 	RzBinDwarfLineUnitHdr *hdr = &lunit->hdr;
@@ -570,7 +570,7 @@ bool test_dwarf2_cpp_many_comp_units(void) {
 	RzBinDwarfLine *li = rz_bin_dwarf_line_from_file(
 		bin->cur, NULL, false);
 	mu_assert_notnull(li, "line info");
-	mu_assert_eq(rz_list_length(li->units), 2, "line units count");
+	mu_assert_eq(rz_pvector_len(li->units), 2, "line units count");
 	mu_assert_notnull(li->lines, "line info");
 	const RzBinSourceLineSample test_line_samples[] = {
 		{ 0x118a, 3, 3, "mammal.cpp" },
@@ -662,7 +662,7 @@ bool test_dwarf4_cpp_many_comp_units(void) {
 	RzBinDwarfLine *li = rz_bin_dwarf_line_from_file(
 		bin->cur, NULL, false);
 	mu_assert_notnull(li, "line info");
-	mu_assert_eq(rz_list_length(li->units), 2, "line units count");
+	mu_assert_eq(rz_pvector_len(li->units), 2, "line units count");
 	mu_assert_notnull(li->lines, "line info");
 	const RzBinSourceLineSample test_line_samples[] = {
 		{ 0x401160, 15, 0, "../main.cpp" },
@@ -771,7 +771,7 @@ bool test_dwarf4_multidir_comp_units(void) {
 
 	RzBinDwarfLine *li = dw->line;
 	mu_assert_notnull(li, "line info");
-	mu_assert_eq(rz_list_length(li->units), 2, "line units count");
+	mu_assert_eq(rz_pvector_len(li->units), 2, "line units count");
 	mu_assert_notnull(li->lines, "line info");
 	const RzBinSourceLineSample test_line_samples[] = {
 		{ 0x1139, 6, 12, "/home/florian/dev/dwarf-comp-units/main.c" },
@@ -807,7 +807,7 @@ bool test_big_endian_dwarf2(void) {
 
 	RzBinDwarfLine *li = rz_bin_dwarf_line_from_file(bin->cur, NULL, false);
 	mu_assert_notnull(li, "line info");
-	mu_assert_eq(rz_list_length(li->units), 1, "line units count");
+	mu_assert_eq(rz_pvector_len(li->units), 1, "line units count");
 	mu_assert_notnull(li->lines, "line info");
 	const RzBinSourceLineSample test_line_samples[] = {
 		{ 0x10000ec4, 30, 1, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },

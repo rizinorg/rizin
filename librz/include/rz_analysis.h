@@ -738,6 +738,7 @@ typedef struct dwarf_variable_t {
 	const char *prefer_name; ///< prefer name of the variable, reference to name or link_name depends on language
 	RzType *type; ///< type of the variable
 	RzAnalysisVarKind kind; ///< kind of the variable
+	ut32 cu_index; ///< compile unit index
 } RzAnalysisDwarfVariable;
 
 typedef enum {
@@ -800,6 +801,16 @@ typedef struct rz_analysis_var_t {
 		};
 	} origin; ///< Origin of the variable, i.e. DWARF, PDB, OMF
 } RzAnalysisVar;
+
+/**
+ * A declaration with its occurrence in the program source.
+ */
+typedef struct {
+	ut32 decl_line; ///< File containing source declaration
+	ut32 decl_col; ///< Line number of source declaration
+	const char* decl_file; ///< Column position of source declaration
+} RzAnalysisDeclCoord;
+
 /**
  * \brief Global variables
  */
@@ -810,6 +821,7 @@ typedef struct rz_analysis_var_global_t {
 	RzType *type; ///< type of the variable
 	RzVector /*<RzTypeConstraint>*/ constraints;
 	RZ_BORROW RzAnalysis *analysis; ///< analysis pertaining to this global variable
+	RzAnalysisDeclCoord coord; ///< a declaration of the variable
 } RzAnalysisVarGlobal;
 
 typedef struct dwarf_function_t {
@@ -1889,7 +1901,11 @@ RZ_API void rz_analysis_fcn_vars_add_types(RzAnalysis *analysis, RZ_NONNULL RzAn
 // Global vars
 RZ_API RZ_OWN RzAnalysisVarGlobal *rz_analysis_var_global_new(RZ_NONNULL const char *name, ut64 addr);
 RZ_API bool rz_analysis_var_global_add(RzAnalysis *analysis, RZ_NONNULL RzAnalysisVarGlobal *global_var);
-RZ_API bool rz_analysis_var_global_create(RzAnalysis *analysis, RZ_NONNULL const char *name, RZ_NONNULL RZ_BORROW RzType *type, ut64 addr);
+RZ_API bool rz_analysis_var_global_create_with_sourceline(RzAnalysis *analysis,
+	RZ_NONNULL const char *name, RZ_NONNULL RZ_BORROW RzType *type, ut64 addr,
+	RZ_NULLABLE const char *file, ut32 line, ut32 colum);
+RZ_API bool rz_analysis_var_global_create(RzAnalysis *analysis,
+	RZ_NONNULL const char *name, RZ_NONNULL RZ_BORROW RzType *type, ut64 addr);
 RZ_API void rz_analysis_var_global_free(RzAnalysisVarGlobal *glob);
 
 RZ_API RZ_NULLABLE RzFlagItem *rz_analysis_var_global_get_flag_item(RzAnalysisVarGlobal *glob);

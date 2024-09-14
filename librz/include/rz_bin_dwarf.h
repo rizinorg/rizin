@@ -1076,6 +1076,7 @@ typedef struct {
 
 typedef struct rz_bin_dwarf_comp_unit_t {
 	ut64 offset;
+	ut64 index;
 	RzBinDwarfCompUnitHdr hdr;
 	RzVector /*<RzBinDwarfDie>*/ dies;
 	const char *name;
@@ -1103,7 +1104,7 @@ typedef struct {
 	 * representing the DW_AT_comp_dir attribute of the compilation unit
 	 * that references this particular line information.
 	 */
-	HtUP /*<ut64, char *>*/ *offset_comp_dir;
+	HtUP /*<ut64, char *>*/ *comp_dir_by_offset;
 	HtUP /*<ut64, const RzBinDwarfEncoding*>*/ *location_encoding;
 } RzBinDwarfInfo;
 
@@ -1210,7 +1211,7 @@ typedef struct {
  */
 typedef struct {
 	RzBinEndianReader *R;
-	RzList /*<RzBinDwarfLineUnit *>*/ *units;
+	RzPVector /*<RzBinDwarfLineUnit *>*/ *units;
 	RzBinSourceLineInfo *lines;
 } RzBinDwarfLine;
 
@@ -1529,6 +1530,8 @@ RZ_API void rz_bin_dwarf_line_free(RZ_OWN RZ_NULLABLE RzBinDwarfLine *li);
 RZ_API void rz_bin_dwarf_line_units_dump(
 	RZ_NONNULL RZ_BORROW RzBinDwarfLine *line,
 	RZ_NONNULL RZ_BORROW RzStrBuf *sb);
+RZ_API char *rz_bin_dwarf_file_path(RZ_NONNULL RZ_BORROW RzBinDWARF *dw,
+	RZ_NONNULL RZ_BORROW RzBinDwarfLineUnit *lu, ut64 index);
 
 /// dwarf
 RZ_API RZ_OWN RzBinDWARF *rz_bin_dwarf_from_file(RZ_BORROW RZ_NONNULL RzBinFile *bf);

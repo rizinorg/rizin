@@ -205,18 +205,20 @@ static bool LineHdr_parse_v4(DWLineContext *ctx) {
 
 /**
  * \brief Get the full path from a file index, it will join the directory find in \p info with the filename
- * \param ctx the context
+ * \param dw the DWARF instance
+ * \param hdr the RzBinDwarfLineUnitHdr instance
  * \param index the index of the file
  * \return the full path or NULL if the file index is invalid
  */
 static char *full_file_path(
-	DWLineContext *ctx,
+	RzBinDWARF *dw,
+	RzBinDwarfLineUnitHdr *hdr,
 	ut64 index) {
-	rz_return_val_if_fail(ctx && ctx->hdr, NULL);
-	if (index >= rz_vector_len(&ctx->hdr->file_names)) {
+	rz_return_val_if_fail(dw && hdr, NULL);
+	if (index >= rz_vector_len(&hdr->file_names)) {
 		return NULL;
 	}
-	RzBinDwarfFileEntry *file = rz_vector_index_ptr(&ctx->hdr->file_names, index);
+	RzBinDwarfFileEntry *file = rz_vector_index_ptr(&hdr->file_names, index);
 	if (!file->path_name) {
 		return NULL;
 	}
@@ -230,12 +232,12 @@ static char *full_file_path(
 	 * or backslashes anyway, we will simply use slashes always here.
 	 */
 
-	const char *comp_dir = ctx->dw && ctx->dw->info
-		? ht_up_find(ctx->dw->info->offset_comp_dir, ctx->hdr->offset, NULL)
+	const char *comp_dir = dw->info
+		? ht_up_find(dw->info->comp_dir_by_offset, hdr->offset, NULL)
 		: NULL;
-	const ut64 dir_index = ctx->hdr->encoding.version < 5 ? file->directory_index - 1 : file->directory_index;
-	const char *dir = (dir_index >= 0 && dir_index < rz_pvector_len(&ctx->hdr->directories))
-		? rz_pvector_at(&ctx->hdr->directories, dir_index)
+	const ut64 dir_index = hdr->encoding.version < 5 ? file->directory_index - 1 : file->directory_index;
+	const char *dir = (dir_index >= 0 && dir_index < rz_pvector_len(&hdr->directories))
+		? rz_pvector_at(&hdr->directories, dir_index)
 		: NULL;
 	char *file_path_abs = NULL;
 	if (comp_dir && dir) {
@@ -254,6 +256,19 @@ static char *full_file_path(
 	return file_path_abs;
 }
 
+/**
+ * \brief Get the full path from a file index, it will join the directory find in \p info with the filename
+ * \param dw the DWARF instance
+ * \param lu the RzBinDwarfLineUnit instance
+ * \param index the index of the file
+ * \return the full path or NULL if the file index is invalid
+ */
+RZ_API char *rz_bin_dwarf_file_path(RZ_NONNULL RZ_BORROW RzBinDWARF *dw,
+	RZ_NONNULL RZ_BORROW RzBinDwarfLineUnit *lu, ut64 index) {
+	rz_return_val_if_fail(dw && lu, NULL);
+	return full_file_path(dw, &lu->hdr, index);
+}
+
 static const char *full_file_path_cached(DWLineContext *ctx, ut64 file_index) {
 	if (ctx->hdr->encoding.version <= 4) {
 		file_index -= 1;
@@ -267,7 +282,7 @@ static const char *full_file_path_cached(DWLineContext *ctx, ut64 file_index) {
 	}
 	char *path = rz_pvector_at(ctx->file_path_cache, file_index);
 	if (!path) {
-		path = full_file_path(ctx, file_index);
+		path = full_file_path(ctx->dw, ctx->hdr, file_index);
 		rz_pvector_set(ctx->file_path_cache, file_index, path);
 	}
 	return path;
@@ -636,7 +651,7 @@ static RzBinDwarfLine *Line_parse(
 		return NULL;
 	}
 	li->R = R;
-	li->units = rz_list_newf((RzListFree)LineUnit_free);
+	li->units = rz_pvector_new((RzPVectorFree)LineUnit_free);
 	if (!li->units) {
 		free(li);
 		return NULL;
@@ -678,7 +693,7 @@ static RzBinDwarfLine *Line_parse(
 		}
 
 		rz_pvector_free(ctx.file_path_cache);
-		rz_list_push(li->units, unit);
+		rz_pvector_push(li->units, unit);
 	}
 	li->lines = rz_bin_source_line_info_builder_build_and_fini(&source_line_info_builder);
 	return li;
@@ -689,7 +704,7 @@ RZ_API void rz_bin_dwarf_line_free(RZ_OWN RZ_NULLABLE RzBinDwarfLine *li) {
 		return;
 	}
 	R_free(li->R);
-	rz_list_free(li->units);
+	rz_pvector_free(li->units);
 	rz_bin_source_line_info_free(li->lines);
 	free(li);
 }
@@ -854,16 +869,17 @@ RZ_API void rz_bin_dwarf_line_units_dump(
 	RZ_NONNULL RZ_BORROW RzBinDwarfLine *line,
 	RZ_NONNULL RZ_BORROW RzStrBuf *sb) {
 	rz_return_if_fail(line && line->R && sb);
-	if (!(rz_list_empty(line->units))) {
+	if (!(rz_pvector_empty(line->units))) {
 		rz_strbuf_append(sb, ".debug_line content:\n");
 	}
-	RzListIter *it;
+	void **it;
 	RzBinDwarfLineUnit *unit;
 	bool first = true;
-	rz_list_foreach (line->units, it, unit) {
-		if (!unit) {
+	rz_pvector_foreach (line->units, it) {
+		if (!it) {
 			continue;
 		}
+		unit = *it;
 		if (first) {
 			first = false;
 		} else {
