@@ -146,7 +146,7 @@ static bool rz_rop_prepare_asm_op(const RzCore *core, const RzCoreAsmHit *hit, R
 	return true;
 }
 
-static RzStrBuf* get_colored_asm_str(const RzCore *core, RzAsmOp *asmop, RzAnalysisOp *aop) {
+static RzStrBuf *get_colored_asm_str(const RzCore *core, RzAsmOp *asmop, RzAnalysisOp *aop) {
 	RzStrBuf *bw_str = rz_strbuf_new(rz_asm_op_get_asm(asmop));
 	RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, aop->type);
 	RzStrBuf *colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, param, asmop->asm_toks);
