@@ -112,7 +112,8 @@ static bool rz_rop_process_asm_op(const RzCore *core, const RzCoreAsmHit *hit, R
 }
 
 static bool rz_rop_print_table_mode(const RzCore *core, const RzCoreAsmHit *hit, const RzList /*<RzCoreAsmHit *>*/ *hitlist,
-	unsigned int *size, char **asmop_str, char **asmop_hex_str) {
+	ut32 *size, char **asmop_str, char **asmop_hex_str, RzRopSearchContext *context) {
+	rz_return_val_if_fail(core && hitlist, false);
 	RzAnalysisOp aop = RZ_EMPTY;
 	RzAsmOp *asmop = rz_asm_op_new();
 	if (!asmop) {
@@ -132,78 +133,125 @@ static bool rz_rop_print_table_mode(const RzCore *core, const RzCoreAsmHit *hit,
 	return true;
 }
 
-static bool rz_rop_print_quiet_mode(const RzCore *core, const RzCoreAsmHit *hit, unsigned int *size) {
-	const bool colorize = rz_config_get_i(core->config, "scr.color");
-	RzAnalysisOp aop = RZ_EMPTY;
+static bool rz_rop_prepare_asm_op(const RzCore *core, const RzCoreAsmHit *hit, RzAsmOp **asmop_out, RzAnalysisOp *aop, ut32 *size) {
 	RzAsmOp *asmop = rz_asm_op_new();
 	if (!asmop) {
 		return false;
 	}
-
-	if (!rz_rop_process_asm_op(core, hit, asmop, &aop, size, NULL, NULL)) {
+	if (!rz_rop_process_asm_op(core, hit, asmop, aop, size, NULL, NULL)) {
 		rz_asm_op_free(asmop);
 		return false;
 	}
-	if (colorize) {
-		RzStrBuf *bw_str = rz_strbuf_new(rz_asm_op_get_asm(asmop));
-		RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, aop.type);
-		RzStrBuf *colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, param, asmop->asm_toks);
-		rz_asm_parse_param_free(param);
-		rz_cons_printf(" %s%s;", colored_asm ? rz_strbuf_get(colored_asm) : "", Color_RESET);
-		rz_strbuf_free(colored_asm);
-		rz_strbuf_free(bw_str);
-	} else {
-		rz_cons_printf(" %s;", rz_asm_op_get_asm(asmop));
-	}
-	rz_asm_op_free(asmop);
-	rz_analysis_op_fini(&aop);
+	*asmop_out = asmop;
 	return true;
 }
 
-static bool rz_rop_print_standard_mode(const RzCore *core, const RzCoreAsmHit *hit, ut32 *size) {
+static RzStrBuf *get_colored_asm_str(const RzCore *core, RzAsmOp *asmop, RzAnalysisOp *aop) {
+	RzStrBuf *bw_str = rz_strbuf_new(rz_asm_op_get_asm(asmop));
+	RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, aop->type);
+	RzStrBuf *colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, param, asmop->asm_toks);
+	rz_asm_parse_param_free(param);
+	rz_strbuf_free(bw_str);
+	return colored_asm;
+}
+
+static bool rz_rop_print_quiet_mode(const RzCore *core, const RzCoreAsmHit *hit, ut32 *size, RzRopSearchContext *context) {
+	if (!core || !context) {
+		return false;
+	}
+
 	RzAnalysisOp aop = RZ_EMPTY;
-	RzAsmOp *asmop = rz_asm_op_new();
-	if (!asmop) {
+	RzAsmOp *asmop = NULL;
+	if (!rz_rop_prepare_asm_op(core, hit, &asmop, &aop, size)) {
 		return false;
 	}
-	if (!rz_rop_process_asm_op(core, hit, asmop, &aop, size, NULL, NULL)) {
-		rz_asm_op_free(asmop);
-		return false;
-	}
-	const bool rop_comments = rz_config_get_i(core->config, "rop.comments");
-	const char *comment = rop_comments ? rz_meta_get_string(core->analysis, RZ_META_TYPE_COMMENT, hit->addr) : NULL;
-	char *asm_op_hex = rz_asm_op_get_hex(asmop);
+
 	const bool colorize = rz_config_get_i(core->config, "scr.color");
+
+	const char *asm_str = rz_asm_op_get_asm(asmop);
+	RzStrBuf *colored_asm = NULL;
 	if (colorize) {
-		RzStrBuf *bw_str = rz_strbuf_new(rz_asm_op_get_asm(asmop));
-		RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, aop.type);
-		RzStrBuf *colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, param, asmop->asm_toks);
-		rz_asm_parse_param_free(param);
-		if (comment) {
-			rz_cons_printf("  0x%08" PFMT64x " %18s  %s%s ; %s\n",
-				hit->addr, asm_op_hex, colored_asm ? rz_strbuf_get(colored_asm) : "", Color_RESET, comment);
-		} else {
-			rz_cons_printf("  0x%08" PFMT64x " %18s  %s%s\n",
-				hit->addr, asm_op_hex, colored_asm ? rz_strbuf_get(colored_asm) : "", Color_RESET);
-		}
+		colored_asm = get_colored_asm_str(core, asmop, &aop);
+		asm_str = colored_asm ? rz_strbuf_get(colored_asm) : "";
+	}
+
+	const char *reset_color = colorize ? Color_RESET : "";
+	const char *format = " %s%s;";
+	const char *output_str = asm_str;
+	if (context->ret_val) {
+		rz_strbuf_appendf(context->buf, format, output_str, reset_color);
+	} else {
+		rz_cons_printf(format, output_str, reset_color);
+	}
+
+	if (colored_asm) {
 		rz_strbuf_free(colored_asm);
-		rz_strbuf_free(bw_str);
+	}
+	rz_asm_op_free(asmop);
+	rz_analysis_op_fini(&aop);
+
+	return true;
+}
+
+static bool rz_rop_print_standard_mode(const RzCore *core, const RzCoreAsmHit *hit, ut32 *size, RzRopSearchContext *context) {
+	if (!core || !context) {
+		return false;
+	}
+
+	RzAnalysisOp aop = RZ_EMPTY;
+	RzAsmOp *asmop = NULL;
+	if (!rz_rop_prepare_asm_op(core, hit, &asmop, &aop, size)) {
+		return false;
+	}
+
+	const bool rop_comments = rz_config_get_i(core->config, "rop.comments");
+	const bool colorize = rz_config_get_i(core->config, "scr.color");
+	bool ret_val = context->ret_val;
+
+	const char *comment = NULL;
+	if (rop_comments) {
+		comment = rz_meta_get_string(core->analysis, RZ_META_TYPE_COMMENT, hit->addr);
+	}
+
+	char *asm_op_hex = rz_asm_op_get_hex(asmop);
+	const char *asm_str = rz_asm_op_get_asm(asmop);
+	RzStrBuf *colored_asm = NULL;
+	if (colorize) {
+		colored_asm = get_colored_asm_str(core, asmop, &aop);
+		asm_str = colored_asm ? rz_strbuf_get(colored_asm) : "";
+	}
+
+	const char *reset_color = colorize ? Color_RESET : "";
+	const char *format_with_comment = "  0x%08" PFMT64x " %18s  %s%s ; %s\n";
+	const char *format_without_comment = "  0x%08" PFMT64x " %18s  %s%s\n";
+	const char *format = comment ? format_with_comment : format_without_comment;
+
+	if (ret_val) {
+		if (comment) {
+			rz_strbuf_appendf(context->buf, format, hit->addr, asm_op_hex, asm_str, reset_color, comment);
+		} else {
+			rz_strbuf_appendf(context->buf, format, hit->addr, asm_op_hex, asm_str, reset_color);
+		}
 	} else {
 		if (comment) {
-			rz_cons_printf("  0x%08" PFMT64x " %18s  %s ; %s\n",
-				hit->addr, asm_op_hex, rz_asm_op_get_asm(asmop), comment);
+			rz_cons_printf(format, hit->addr, asm_op_hex, asm_str, reset_color, comment);
 		} else {
-			rz_cons_printf("  0x%08" PFMT64x " %18s  %s\n",
-				hit->addr, asm_op_hex, rz_asm_op_get_asm(asmop));
+			rz_cons_printf(format, hit->addr, asm_op_hex, asm_str, reset_color);
 		}
 	}
+
 	free(asm_op_hex);
-	rz_analysis_op_fini(&aop);
+	if (colored_asm) {
+		rz_strbuf_free(colored_asm);
+	}
 	rz_asm_op_free(asmop);
+	rz_analysis_op_fini(&aop);
+
 	return true;
 }
 
 static bool rz_rop_print_json_mode(const RzCore *core, const RzCoreAsmHit *hit, unsigned int *size, PJ *pj) {
+	rz_return_val_if_fail(core && hit && pj, false);
 	RzAnalysisOp aop = RZ_EMPTY;
 	RzAsmOp *asmop = rz_asm_op_new();
 	if (!asmop) {
@@ -923,35 +971,47 @@ static void print_rop_gadget_info(const RzCore *core, const RzRopGadgetInfo *gad
 	}
 }
 
-static bool print_rop(const RzCore *core, const RzList /*<RzCoreAsmHit *>*/ *hitlist, RzCmdStateOutput *state) {
-	rz_return_val_if_fail(core && hitlist && state, false);
+static bool print_rop(const RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, RzRopSearchContext *context) {
+	rz_return_val_if_fail(core && hitlist && context && context->state, false);
+	RzCmdStateOutput *state = context->state;
 	rz_cmd_state_output_set_columnsf(state, "XXs", "addr", "bytes", "disasm");
+	RzCoreAsmHit *hit = (RzCoreAsmHit *)rz_list_first(hitlist);
+	if (!hit) {
+		return false;
+	}
 	if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		pj_o(state->d.pj);
 		pj_ka(state->d.pj, "opcodes");
 	} else if (state->mode == RZ_OUTPUT_MODE_QUIET) {
-		rz_cons_printf("0x%08" PFMT64x ":", ((RzCoreAsmHit *)rz_list_first(hitlist))->addr);
+		if (context->ret_val) {
+			rz_strbuf_appendf(context->buf, "0x%08" PFMT64x ":", hit->addr);
+		} else {
+			rz_cons_printf("0x%08" PFMT64x ":", hit->addr);
+		}
 	}
-	const ut64 addr = ((RzCoreAsmHit *)rz_list_first(hitlist))->addr;
+	const ut64 addr = hit->addr;
 
 	bool result = 0;
-	const RzCoreAsmHit *hit = NULL;
+	hit = NULL;
 	RzListIter *iter;
 	ut32 size = 0;
 	char *asmop_str = NULL, *asmop_hex_str = NULL;
 	rz_list_foreach (hitlist, iter, hit) {
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_JSON:
+			if (!state->d.pj) {
+				break;
+			}
 			result = rz_rop_print_json_mode(core, hit, &size, state->d.pj);
 			break;
 		case RZ_OUTPUT_MODE_QUIET:
-			result = rz_rop_print_quiet_mode(core, hit, &size);
+			result = rz_rop_print_quiet_mode(core, hit, &size, context);
 			break;
 		case RZ_OUTPUT_MODE_STANDARD:
-			result = rz_rop_print_standard_mode(core, hit, &size);
+			result = rz_rop_print_standard_mode(core, hit, &size, context);
 			break;
 		case RZ_OUTPUT_MODE_TABLE:
-			result = rz_rop_print_table_mode(core, hit, hitlist, &size, &asmop_str, &asmop_hex_str);
+			result = rz_rop_print_table_mode(core, hit, hitlist, &size, &asmop_str, &asmop_hex_str, context);
 			break;
 		default:
 			rz_warn_if_reached();
@@ -963,7 +1023,13 @@ static bool print_rop(const RzCore *core, const RzList /*<RzCoreAsmHit *>*/ *hit
 	}
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_JSON:
+		if (!state->d.pj) {
+			break;
+		}
 		pj_end(state->d.pj);
+		if (context->ret_val) {
+			break;
+		}
 		if (hit) {
 			pj_kn(state->d.pj, "retaddr", hit->addr);
 			pj_ki(state->d.pj, "size", size);
@@ -971,17 +1037,26 @@ static bool print_rop(const RzCore *core, const RzList /*<RzCoreAsmHit *>*/ *hit
 		pj_end(state->d.pj);
 		break;
 	case RZ_OUTPUT_MODE_QUIET:
+		if (context->ret_val) {
+			rz_strbuf_append(context->buf, "\n");
+			break;
+		}
 		rz_cons_newline();
 		break;
 		// fallthrough
 	case RZ_OUTPUT_MODE_STANDARD:
+		if (context->ret_val) {
+			break;
+		}
 		if (hit) {
 			rz_cons_printf("Gadget size: %d\n", (int)size);
 		}
 		rz_cons_newline();
 		break;
 	case RZ_OUTPUT_MODE_TABLE:
-		rz_table_add_rowf(state->d.t, "Xss", addr, asmop_hex_str, asmop_str);
+		if (!context->ret_val) {
+			rz_table_add_rowf(state->d.t, "Xss", addr, asmop_hex_str, asmop_str);
+		}
 		free(asmop_str);
 		free(asmop_hex_str);
 		break;
@@ -1234,18 +1309,18 @@ static RzRopGadgetInfo *perform_gadget_analysis(RzCore *core, const RzRopSearchC
 	return rop_gadget_info;
 }
 
-static bool handle_rop_request_type(RzCore *core, const RzRopSearchContext *context, RzList /*<RzCoreAsmHit *>*/ *hitlist) {
+static bool handle_rop_request_type(RzCore *core, RzRopSearchContext *context, RzList /*<RzCoreAsmHit *>*/ *hitlist) {
 	rz_return_val_if_fail(core && core->analysis && hitlist, false);
 	if (context->mask & RZ_ROP_GADGET_PRINT) {
 		if (context->subchain) {
 			do {
-				if (!print_rop(core, hitlist, context->state)) {
+				if (!print_rop(core, hitlist, context)) {
 					return false;
 				}
 				hitlist->head = hitlist->head->next;
 			} while (hitlist->head->next);
 		} else {
-			if (!print_rop(core, hitlist, context->state)) {
+			if (!print_rop(core, hitlist, context)) {
 				return false;
 			}
 		}
@@ -1435,7 +1510,7 @@ static bool update_end_gadget(int *i, const int ropdepth, RzRopEndListPair **end
  * filters results based on the grep argument and request mask. Outputs results to
  * the provided state object.
  */
-RZ_API RzCmdStatus rz_core_rop_search(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_OWN RzRopSearchContext *context) {
+RZ_API RzCmdStatus rz_core_rop_search(RZ_NONNULL RzCore *core, RZ_NONNULL RzRopSearchContext *context) {
 	rz_return_val_if_fail(core && core->search && context, RZ_CMD_STATUS_ERROR);
 
 	RzInterval search_itv = { 0 };
@@ -1455,7 +1530,7 @@ RZ_API RzCmdStatus rz_core_rop_search(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_OWN
 	RzList /*<char *>*/ *rx_list = handle_grep_args(context->greparg, context->regexp);
 	rz_cmd_state_output_array_start(context->state);
 	rz_cons_break_push(NULL, NULL);
-	RzList *boundaries = rz_core_get_boundaries_prot(core, -1, context->mode_str, "search");
+	RzList *boundaries = rz_core_get_boundaries_prot(core, -1, context->search_addr, "search");
 	if (!boundaries) {
 		rz_cmd_state_output_array_end(context->state);
 	}
@@ -1466,6 +1541,9 @@ RZ_API RzCmdStatus rz_core_rop_search(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_OWN
 	RzListIter *itermap;
 	RzIOMap *map;
 	RzCmdStatus result = RZ_CMD_STATUS_OK;
+	if (context->ret_val) {
+		context->buf = rz_strbuf_new(NULL);
+	}
 	rz_list_foreach (boundaries, itermap, map) {
 		if (!rz_itv_overlap(search_itv, map->itv)) {
 			continue;
@@ -1536,7 +1614,6 @@ RZ_API RzCmdStatus rz_core_rop_search(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_OWN
 	rz_cmd_state_output_array_end(context->state);
 	rz_cons_break_pop();
 	rz_list_free(rx_list);
-	rz_core_rop_search_context_free(context);
 	rz_list_free(boundaries);
 	return result;
 }
@@ -1556,7 +1633,9 @@ RZ_API RzCmdStatus rz_core_rop_gadget_info(RZ_NONNULL RzCore *core, RZ_NONNULL R
 	if (!core->analysis->ht_rop_semantics) {
 		// TODO: resolve this logic later.
 	}
-	return rz_core_rop_search(core, context);
+	RzCmdStatus status = rz_core_rop_search(core, context);
+	rz_core_rop_search_context_free(context);
+	return status;
 }
 
 /**
