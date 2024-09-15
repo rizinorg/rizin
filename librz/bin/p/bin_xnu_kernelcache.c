@@ -54,7 +54,7 @@ typedef struct _RKmodInfo {
 
 #define KEXT_SHORT_NAME_FROM_SECTION(io_section) ({ \
 	char *result = NULL; \
-	char *clone = strdup(io_section->name); \
+	char *clone = rz_str_dup(io_section->name); \
 	char *cursor = strstr(clone, "__"); \
 	if (cursor) { \
 		cursor--; \
@@ -65,7 +65,7 @@ typedef struct _RKmodInfo {
 			*cursor = 0; \
 			cursor = strrchr(cursor, '.'); \
 			if (cursor) { \
-				result = strdup(cursor + 1); \
+				result = rz_str_dup(cursor + 1); \
 				RZ_FREE(clone); \
 			} \
 		} \
@@ -519,7 +519,7 @@ static RzList /*<RKext *>*/ *carve_kexts(RzXNUKernelCacheObj *obj) {
 				continue;
 			}
 
-			kext->name = strdup(all_infos[j].name);
+			kext->name = rz_str_dup(all_infos[j].name);
 			kext->own_name = true;
 			break;
 		}
@@ -623,7 +623,7 @@ static RzList /*<RKext *>*/ *kexts_from_load_commands(RzXNUKernelCacheObj *obj) 
 		kext->vaddr = K_PPTR(kext->vaddr);
 		kext->pa2va_exec = obj->pa2va_exec;
 		kext->pa2va_data = obj->pa2va_data;
-		kext->name = strdup(padded_name);
+		kext->name = rz_str_dup(padded_name);
 		kext->own_name = true;
 		free(padded_name);
 		rz_list_push(kexts, kext);
@@ -999,7 +999,7 @@ static RzPVector /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 		}
 		vf->buf = kobj->patched_buf;
 		vf->buf_owned = false;
-		vf->name = strdup(VFILE_NAME_PATCHED);
+		vf->name = rz_str_dup(VFILE_NAME_PATCHED);
 		rz_pvector_push(ret, vf);
 	}
 	return ret;
@@ -1038,7 +1038,7 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 			map->vaddr = map->paddr;
 		}
 		map->perm = prot2perm(seg->initprot);
-		map->vfile_name = kobj->patched_buf ? strdup(VFILE_NAME_PATCHED) : NULL;
+		map->vfile_name = kobj->patched_buf ? rz_str_dup(VFILE_NAME_PATCHED) : NULL;
 		rz_pvector_push(ret, map);
 	}
 
@@ -1177,7 +1177,7 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 
 	symbols_from_mach0(ret, obj->mach0, bf, 0, 0);
 
-	HtUP *kernel_syms_by_addr = ht_up_new((HtUPDupValue)strdup, free);
+	HtUP *kernel_syms_by_addr = ht_up_new((HtUPDupValue)rz_str_dup, free);
 	if (!kernel_syms_by_addr) {
 		rz_pvector_free(ret);
 		return NULL;
@@ -1260,7 +1260,7 @@ static void symbols_from_mach0(RzPVector /*<RzBinSymbol *>*/ *ret, struct MACH0_
 		if (!sym) {
 			break;
 		}
-		sym->name = strdup(symbols[i].name);
+		sym->name = rz_str_dup(symbols[i].name);
 		sym->vaddr = symbols[i].addr;
 		sym->forwarder = "NONE";
 		sym->bind = (symbols[i].type == RZ_BIN_MACH0_SYMBOL_TYPE_LOCAL) ? "LOCAL" : "GLOBAL";
@@ -1753,14 +1753,14 @@ static RzBinInfo *info(RzBinFile *bf) {
 	if (!(ret = RZ_NEW0(RzBinInfo))) {
 		return NULL;
 	}
-	ret->file = strdup(bf->file);
-	ret->bclass = strdup("kernelcache");
-	ret->rclass = strdup("ios");
-	ret->os = strdup("iOS");
-	ret->arch = strdup("arm"); // XXX
-	ret->machine = strdup(ret->arch);
-	ret->subsystem = strdup("xnu");
-	ret->type = strdup("kernel-cache");
+	ret->file = rz_str_dup(bf->file);
+	ret->bclass = rz_str_dup("kernelcache");
+	ret->rclass = rz_str_dup("ios");
+	ret->os = rz_str_dup("iOS");
+	ret->arch = rz_str_dup("arm"); // XXX
+	ret->machine = rz_str_dup(ret->arch);
+	ret->subsystem = rz_str_dup("xnu");
+	ret->type = rz_str_dup("kernel-cache");
 	ret->bits = 64;
 	ret->has_va = true;
 	ret->big_endian = big_endian;

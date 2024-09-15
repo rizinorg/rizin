@@ -132,7 +132,7 @@ static void parse_grep_expression(const char *str) {
 					grep->less = 1;
 				}
 			} else {
-				char *jsonPath = strdup(str + 1);
+				char *jsonPath = rz_str_dup(str + 1);
 				char *jsonPathEnd = strchr(jsonPath, '}');
 				if (jsonPathEnd) {
 					*jsonPathEnd = 0;
@@ -318,7 +318,7 @@ while_end:
 
 	free(grep->str);
 	if (*ptr) {
-		grep->str = (char *)strdup(ptr);
+		grep->str = (char *)rz_str_dup(ptr);
 		do {
 			optr = ptr;
 			ptr = strchr(ptr, ','); // grep keywords
@@ -342,7 +342,7 @@ while_end:
 				optr, RZ_CONS_GREP_WORD_SIZE);
 		} while (ptr);
 	} else {
-		grep->str = strdup(ptr);
+		grep->str = rz_str_dup(ptr);
 		grep->nstrings++;
 		grep->strings[0][0] = 0;
 	}
@@ -452,8 +452,8 @@ static int cmp(const void *a, const void *b, void *user) {
 	}
 	RzConsGrep *grep = user;
 	if (grep->sorted_column > 0) {
-		da = strdup(ca);
-		db = strdup(cb);
+		da = rz_str_dup(ca);
+		db = rz_str_dup(cb);
 		int colsa = rz_str_word_set0(da);
 		int colsb = rz_str_word_set0(db);
 		ca = (colsa > grep->sorted_column) ? rz_str_word_get0(da, grep->sorted_column) : "";
@@ -560,7 +560,7 @@ RZ_API void rz_cons_grepbuf(void) {
 				Color_RESET,
 				NULL
 			};
-			char *bb = strdup(buf);
+			char *bb = rz_str_dup(buf);
 			rz_str_ansi_filter(bb, NULL, NULL, -1);
 			char *out = (cons->context->grep.human)
 				? rz_print_json_human(bb)
@@ -875,9 +875,9 @@ RZ_API int rz_cons_grep_line(char *buf, int len) {
 			grep->unsorted_lines = rz_list_newf(free);
 		}
 		if (cons->lines >= grep->sort_row) {
-			rz_list_append(grep->sorted_lines, strdup(buf));
+			rz_list_append(grep->sorted_lines, rz_str_dup(buf));
 		} else {
-			rz_list_append(grep->unsorted_lines, strdup(buf));
+			rz_list_append(grep->unsorted_lines, rz_str_dup(buf));
 		}
 		buf[len] = ch;
 	}

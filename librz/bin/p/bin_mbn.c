@@ -111,7 +111,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
 	}
-	ptr->name = strdup("text");
+	ptr->name = rz_str_dup("text");
 	ptr->size = sb->psize;
 	ptr->vsize = sb->psize;
 	ptr->paddr = sb->paddr + 40;
@@ -123,7 +123,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
 	}
-	ptr->name = strdup("sign");
+	ptr->name = rz_str_dup("sign");
 	ptr->size = sb->sign_sz;
 	ptr->vsize = sb->sign_sz;
 	ptr->paddr = sb->sign_va - sb->vaddr;
@@ -136,7 +136,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		if (!(ptr = RZ_NEW0(RzBinSection))) {
 			return ret;
 		}
-		ptr->name = strdup("cert");
+		ptr->name = rz_str_dup("cert");
 		ptr->size = sb->cert_sz;
 		ptr->vsize = sb->cert_sz;
 		ptr->paddr = sb->cert_va - sb->vaddr;
@@ -154,14 +154,14 @@ static RzBinInfo *info(RzBinFile *bf) {
 	if (!(ret = RZ_NEW0(RzBinInfo))) {
 		return NULL;
 	}
-	ret->file = strdup(bf->file);
-	ret->bclass = strdup("bootloader");
-	ret->rclass = strdup("mbn");
-	ret->os = strdup("MBN");
-	ret->arch = strdup("arm");
-	ret->machine = strdup(ret->arch);
-	ret->subsystem = strdup("mbn");
-	ret->type = strdup("sbl"); // secondary boot loader
+	ret->file = rz_str_dup(bf->file);
+	ret->bclass = rz_str_dup("bootloader");
+	ret->rclass = rz_str_dup("mbn");
+	ret->os = rz_str_dup("MBN");
+	ret->arch = rz_str_dup("arm");
+	ret->machine = rz_str_dup(ret->arch);
+	ret->subsystem = rz_str_dup("mbn");
+	ret->type = rz_str_dup("sbl"); // secondary boot loader
 	ret->bits = bits;
 	ret->has_va = true;
 	ret->has_crypto = true; // must be false if there' no sign or cert sections

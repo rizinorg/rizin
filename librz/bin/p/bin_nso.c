@@ -252,7 +252,7 @@ static RzPVector /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 		}
 		vf->buf = bin->decompressed;
 		vf->buf_owned = false;
-		vf->name = strdup(VFILE_NAME_DECOMPRESSED);
+		vf->name = rz_str_dup(VFILE_NAME_DECOMPRESSED);
 		rz_pvector_push(ret, vf);
 	}
 	return ret;
@@ -272,12 +272,12 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	if (!map) {
 		return ret;
 	}
-	map->name = strdup("text");
+	map->name = rz_str_dup("text");
 	map->paddr = bin->decompressed ? 0 : hdr->text_memoffset;
 	map->vsize = map->psize = hdr->text_size;
 	map->vaddr = hdr->text_loc + ba;
 	map->perm = RZ_PERM_RX;
-	map->vfile_name = bin->decompressed ? strdup(VFILE_NAME_DECOMPRESSED) : NULL;
+	map->vfile_name = bin->decompressed ? rz_str_dup(VFILE_NAME_DECOMPRESSED) : NULL;
 	rz_pvector_push(ret, map);
 
 	// add ro segment
@@ -285,12 +285,12 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	if (!map) {
 		return ret;
 	}
-	map->name = strdup("ro");
+	map->name = rz_str_dup("ro");
 	map->paddr = bin->decompressed ? hdr->text_size : hdr->ro_memoffset;
 	map->vsize = map->psize = hdr->ro_size;
 	map->vaddr = hdr->ro_loc + ba;
 	map->perm = RZ_PERM_R;
-	map->vfile_name = bin->decompressed ? strdup(VFILE_NAME_DECOMPRESSED) : NULL;
+	map->vfile_name = bin->decompressed ? rz_str_dup(VFILE_NAME_DECOMPRESSED) : NULL;
 	rz_pvector_push(ret, map);
 
 	// add data segment
@@ -298,12 +298,12 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	if (!map) {
 		return ret;
 	}
-	map->name = strdup("data");
+	map->name = rz_str_dup("data");
 	map->paddr = bin->decompressed ? hdr->text_size + hdr->ro_size : hdr->data_memoffset;
 	map->vsize = map->psize = hdr->data_size;
 	map->vaddr = hdr->data_loc + ba;
 	map->perm = RZ_PERM_RW;
-	map->vfile_name = bin->decompressed ? strdup(VFILE_NAME_DECOMPRESSED) : NULL;
+	map->vfile_name = bin->decompressed ? rz_str_dup(VFILE_NAME_DECOMPRESSED) : NULL;
 	rz_pvector_push(ret, map);
 	return ret;
 }
@@ -319,7 +319,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
 	}
-	ptr->name = strdup("header");
+	ptr->name = rz_str_dup("header");
 	ut32 tmp;
 	if (!rz_buf_read_le32_at(b, NSO_OFF(text_memoffset), &tmp)) {
 		rz_pvector_free(ret);
@@ -371,14 +371,14 @@ static RzBinInfo *info(RzBinFile *bf) {
 	if (!ft) {
 		ft = "nso";
 	}
-	ret->file = strdup(bf->file);
-	ret->rclass = strdup(ft);
-	ret->os = strdup("switch");
-	ret->arch = strdup("arm");
-	ret->machine = strdup("Nintendo Switch");
-	ret->subsystem = strdup(ft);
-	ret->bclass = strdup("program");
-	ret->type = strdup("EXEC (executable file)");
+	ret->file = rz_str_dup(bf->file);
+	ret->rclass = rz_str_dup(ft);
+	ret->os = rz_str_dup("switch");
+	ret->arch = rz_str_dup("arm");
+	ret->machine = rz_str_dup("Nintendo Switch");
+	ret->subsystem = rz_str_dup(ft);
+	ret->bclass = rz_str_dup("program");
+	ret->type = rz_str_dup("EXEC (executable file)");
 	ret->bits = 64;
 	ret->has_va = true;
 	ret->big_endian = false;

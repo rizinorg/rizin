@@ -25,7 +25,7 @@ static void emit_init(RzEgg *egg) {
 static char *emit_syscall(RzEgg *egg, int num) {
 	char buf[32];
 	snprintf(buf, sizeof(buf), "syscall (%d)\n", num);
-	return strdup(buf);
+	return rz_str_dup(buf);
 }
 
 static void emit_frame(RzEgg *egg, int sz) {

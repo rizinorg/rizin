@@ -81,8 +81,8 @@ RZ_API bool rz_lang_define(RzLang *lang, const char *type, const char *name, voi
 	if (!def) {
 		return false;
 	}
-	def->type = strdup(type);
-	def->name = strdup(name);
+	def->type = rz_str_dup(type);
+	def->name = rz_str_dup(name);
 	def->value = value;
 	rz_list_append(lang->defs, def);
 	return true;
@@ -234,7 +234,7 @@ RZ_API int rz_lang_prompt(RzLang *lang) {
 	RzLineHistory histnull = { 0 };
 	RzLineCompletion oc = line->completion;
 	RzLineCompletion ocnull = { 0 };
-	char *prompt = strdup(line->prompt);
+	char *prompt = rz_str_dup(line->prompt);
 	line->completion = ocnull;
 	line->history = histnull;
 

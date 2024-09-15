@@ -127,7 +127,7 @@ RZ_OWN ParserTypePair *c_parser_new_unspecified_naked_type(CParserState *state, 
 	}
 	type->kind = RZ_TYPE_KIND_IDENTIFIER;
 	type->identifier.is_const = is_const;
-	type->identifier.name = strdup(name);
+	type->identifier.name = rz_str_dup(name);
 	type->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED;
 
 	ParserTypePair *tpair = RZ_NEW0(ParserTypePair);
@@ -163,7 +163,7 @@ RZ_OWN ParserTypePair *c_parser_new_primitive_type(CParserState *state, RZ_NONNU
 	}
 	type->kind = RZ_TYPE_KIND_IDENTIFIER;
 	type->identifier.is_const = is_const;
-	type->identifier.name = strdup(name);
+	type->identifier.name = rz_str_dup(name);
 	if (!type->identifier.name) {
 		free(type);
 		return NULL;
@@ -175,7 +175,7 @@ RZ_OWN ParserTypePair *c_parser_new_primitive_type(CParserState *state, RZ_NONNU
 		rz_type_free(type);
 		return NULL;
 	}
-	base_type->name = strdup(name);
+	base_type->name = rz_str_dup(name);
 	if (!base_type->name) {
 		rz_type_free(type);
 		rz_type_base_type_free(base_type);
@@ -220,7 +220,7 @@ RZ_OWN ParserTypePair *c_parser_get_primitive_type(CParserState *state, RZ_NONNU
 	}
 	type->kind = RZ_TYPE_KIND_IDENTIFIER;
 	type->identifier.is_const = is_const;
-	type->identifier.name = strdup(name);
+	type->identifier.name = rz_str_dup(name);
 	type->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED;
 
 	ParserTypePair *tpair = RZ_NEW0(ParserTypePair);
@@ -248,7 +248,7 @@ RZ_OWN ParserTypePair *c_parser_new_structure_naked_type(CParserState *state, RZ
 	}
 	type->kind = RZ_TYPE_KIND_IDENTIFIER;
 	type->identifier.is_const = false;
-	type->identifier.name = strdup(name);
+	type->identifier.name = rz_str_dup(name);
 	type->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_STRUCT;
 
 	ParserTypePair *tpair = RZ_NEW0(ParserTypePair);
@@ -289,7 +289,7 @@ RZ_OWN ParserTypePair *c_parser_new_structure_type(CParserState *state, RZ_NONNU
 		free(tpair);
 		return NULL;
 	}
-	base_type->name = strdup(name);
+	base_type->name = rz_str_dup(name);
 	base_type->type = NULL;
 	tpair->btype = base_type;
 
@@ -375,7 +375,7 @@ RZ_OWN ParserTypePair *c_parser_new_union_naked_type(CParserState *state, RZ_NON
 	}
 	type->kind = RZ_TYPE_KIND_IDENTIFIER;
 	type->identifier.is_const = false;
-	type->identifier.name = strdup(name);
+	type->identifier.name = rz_str_dup(name);
 	type->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_UNION;
 
 	ParserTypePair *tpair = RZ_NEW0(ParserTypePair);
@@ -417,7 +417,7 @@ RZ_OWN ParserTypePair *c_parser_new_union_type(CParserState *state, RZ_NONNULL c
 		return NULL;
 	}
 
-	base_type->name = strdup(name);
+	base_type->name = rz_str_dup(name);
 	base_type->type = NULL;
 	tpair->btype = base_type;
 
@@ -503,7 +503,7 @@ RZ_OWN ParserTypePair *c_parser_new_enum_naked_type(CParserState *state, RZ_NONN
 	}
 	type->kind = RZ_TYPE_KIND_IDENTIFIER;
 	type->identifier.is_const = false;
-	type->identifier.name = strdup(name);
+	type->identifier.name = rz_str_dup(name);
 	type->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_ENUM;
 
 	ParserTypePair *tpair = RZ_NEW0(ParserTypePair);
@@ -545,7 +545,7 @@ RZ_OWN ParserTypePair *c_parser_new_enum_type(CParserState *state, RZ_NONNULL co
 		return NULL;
 	}
 
-	base_type->name = strdup(name);
+	base_type->name = rz_str_dup(name);
 	base_type->type = NULL;
 	tpair->btype = base_type;
 
@@ -631,7 +631,7 @@ RZ_OWN ParserTypePair *c_parser_new_typedef_naked_type(CParserState *state, RZ_N
 	}
 	type->kind = RZ_TYPE_KIND_IDENTIFIER;
 	type->identifier.is_const = false;
-	type->identifier.name = strdup(name);
+	type->identifier.name = rz_str_dup(name);
 	type->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED;
 
 	ParserTypePair *tpair = RZ_NEW0(ParserTypePair);
@@ -701,7 +701,7 @@ RZ_OWN ParserTypePair *c_parser_new_typedef(CParserState *state, RZ_NONNULL cons
 		free(tpair);
 		return NULL;
 	}
-	base_type->name = strdup(name);
+	base_type->name = rz_str_dup(name);
 
 	if (!c_parser_base_type_exists(state, base)) {
 		// If it not exists already in the parser
@@ -716,7 +716,7 @@ RZ_OWN ParserTypePair *c_parser_new_typedef(CParserState *state, RZ_NONNULL cons
 			return NULL;
 		}
 		type->kind = RZ_TYPE_KIND_IDENTIFIER;
-		type->identifier.name = strdup(base);
+		type->identifier.name = rz_str_dup(base);
 		type->identifier.is_const = false;
 		base_type->type = type;
 	}
@@ -750,7 +750,7 @@ RZ_OWN ParserTypePair *c_parser_get_typedef(CParserState *state, RZ_NONNULL cons
 	}
 	type->kind = RZ_TYPE_KIND_IDENTIFIER;
 	type->identifier.is_const = false;
-	type->identifier.name = strdup(name);
+	type->identifier.name = rz_str_dup(name);
 	type->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED;
 
 	ParserTypePair *tpair = RZ_NEW0(ParserTypePair);
@@ -815,7 +815,7 @@ RZ_OWN RzType *c_parser_new_callable(CParserState *state, RZ_NONNULL const char 
 			free(type);
 			return NULL;
 		}
-		callable->name = strdup(name);
+		callable->name = rz_str_dup(name);
 		callable->args = rz_pvector_new((RzPVectorFree)rz_type_callable_arg_free);
 	}
 	type->kind = RZ_TYPE_KIND_CALLABLE;
@@ -846,7 +846,7 @@ bool c_parser_new_callable_argument(CParserState *state, RZ_NONNULL RzCallable *
 	if (!arg) {
 		return false;
 	}
-	arg->name = strdup(name);
+	arg->name = rz_str_dup(name);
 	arg->type = type;
 	rz_pvector_push(callable->args, arg);
 	return true;

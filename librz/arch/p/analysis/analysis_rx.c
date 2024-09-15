@@ -373,7 +373,7 @@ static char *analysis_rx_reg_profile(RzAnalysis *analysis) {
 		"flg    fof   .1     .772  0\n"
 		"flg    fvf   .1     .773  0\n"
 		"flg    rmode   .2   .798  0\n";
-	return strdup(p);
+	return rz_str_dup(p);
 }
 
 RzAnalysisPlugin rz_analysis_plugin_rx = {

@@ -28,14 +28,14 @@ static RzBinInfo *info(RzBinFile *bf) {
 		return NULL;
 	}
 	ret->lang = NULL;
-	ret->file = bf->file ? strdup(bf->file) : NULL;
-	ret->type = strdup("brainfuck");
-	ret->bclass = strdup("1.0");
-	ret->rclass = strdup("program");
-	ret->os = strdup("any");
-	ret->subsystem = strdup("unknown");
-	ret->machine = strdup("brainfuck");
-	ret->arch = strdup("bf");
+	ret->file = rz_str_dup(bf->file);
+	ret->type = rz_str_dup("brainfuck");
+	ret->bclass = rz_str_dup("1.0");
+	ret->rclass = rz_str_dup("program");
+	ret->os = rz_str_dup("any");
+	ret->subsystem = rz_str_dup("unknown");
+	ret->machine = rz_str_dup("brainfuck");
+	ret->arch = rz_str_dup("bf");
 	ret->has_va = 1;
 	ret->bits = 64; // RzIL emulation of bf uses 64bit values
 	ret->big_endian = 0;
@@ -129,7 +129,7 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	map->psize = bf->size;
 	map->vsize = bf->size;
 	map->perm = RZ_PERM_RWX;
-	map->name = strdup("code");
+	map->name = rz_str_dup("code");
 	rz_pvector_push(ret, map);
 
 	map = RZ_NEW0(RzBinMap);
@@ -142,7 +142,7 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	map->psize = 0;
 	map->vsize = 30000;
 	map->perm = RZ_PERM_RW;
-	map->name = strdup("mem");
+	map->name = rz_str_dup("mem");
 	rz_pvector_push(ret, map);
 	return ret;
 }

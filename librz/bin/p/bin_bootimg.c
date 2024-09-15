@@ -131,18 +131,18 @@ static RzBinInfo *info(RzBinFile *bf) {
 	}
 
 	ret->lang = NULL;
-	ret->file = bf->file ? strdup(bf->file) : NULL;
-	ret->type = strdup("Android Boot Image");
-	ret->os = strdup("android");
-	ret->subsystem = strdup("unknown");
-	ret->machine = strdup("arm");
-	ret->arch = strdup("arm");
+	ret->file = rz_str_dup(bf->file);
+	ret->type = rz_str_dup("Android Boot Image");
+	ret->os = rz_str_dup("android");
+	ret->subsystem = rz_str_dup("unknown");
+	ret->machine = rz_str_dup("arm");
+	ret->arch = rz_str_dup("arm");
 	ret->has_va = 1;
 	ret->has_pi = 0;
 	ret->bits = 16;
 	ret->big_endian = 0;
 	ret->dbg_info = 0;
-	ret->rclass = strdup("image");
+	ret->rclass = rz_str_dup("image");
 	return ret;
 }
 
@@ -189,7 +189,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
 	}
-	ptr->name = strdup("header");
+	ptr->name = rz_str_dup("header");
 	ptr->size = sizeof(BootImage);
 	ptr->vsize = bi->page_size;
 	ptr->paddr = 0;
@@ -200,7 +200,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
 	}
-	ptr->name = strdup("kernel");
+	ptr->name = rz_str_dup("kernel");
 	ptr->size = bi->kernel_size;
 	ptr->vsize = ADD_REMAINDER(ptr->size, bi->page_size);
 	ptr->paddr = bi->page_size;
@@ -213,7 +213,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		if (!(ptr = RZ_NEW0(RzBinSection))) {
 			return ret;
 		}
-		ptr->name = strdup("ramdisk");
+		ptr->name = rz_str_dup("ramdisk");
 		ptr->size = bi->ramdisk_size;
 		ptr->vsize = ADD_REMAINDER(bi->ramdisk_size, bi->page_size);
 		ptr->paddr = ROUND_DOWN(base, bi->page_size);
@@ -227,7 +227,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		if (!(ptr = RZ_NEW0(RzBinSection))) {
 			return ret;
 		}
-		ptr->name = strdup("second");
+		ptr->name = rz_str_dup("second");
 		ptr->size = bi->second_size;
 		ptr->vsize = ADD_REMAINDER(bi->second_size, bi->page_size);
 		ptr->paddr = ROUND_DOWN(base, bi->page_size);

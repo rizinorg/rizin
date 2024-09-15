@@ -76,7 +76,7 @@ RZ_API char *rz_str_trim_lines(char *str) {
 }
 
 RZ_API char *rz_str_trim_dup(const char *str) {
-	char *a = strdup(str);
+	char *a = rz_str_dup(str);
 	rz_str_trim(a);
 	return a;
 }

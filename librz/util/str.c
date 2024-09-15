@@ -644,7 +644,7 @@ static const char *skip_separator_chars(const char *text) {
  */
 RZ_API RZ_OWN char *rz_str_skip_separator_chars(RZ_NONNULL const char *text) {
 	rz_return_val_if_fail(text, NULL);
-	return strdup(skip_separator_chars(text));
+	return rz_str_dup(skip_separator_chars(text));
 }
 
 // Counts the number of words (separated by separator characters: newlines, tabs,
@@ -844,8 +844,8 @@ RZ_API const char *rz_str_rsep(const char *base, const char *p, const char *sep)
 }
 
 RZ_API const char *rz_str_rstr(const char *base, const char *p) {
-	char *s = strdup(base);
-	char *k = strdup(p);
+	char *s = rz_str_dup(base);
+	char *k = rz_str_dup(p);
 	rz_str_reverse(s);
 	rz_str_reverse(k);
 	char *q = strstr(s, k);
@@ -900,7 +900,7 @@ RZ_API const char *rz_str_nstr(const char *s, const char *find, int slen) {
  */
 RZ_API const char *rz_str_case_nstr(RZ_NONNULL const char *s, RZ_NONNULL const char *find, int slen) {
 	rz_return_val_if_fail(s && find, NULL);
-	char *new_s = strdup(s), *new_find = strdup(find);
+	char *new_s = rz_str_dup(s), *new_find = rz_str_dup(find);
 	const char *res = NULL;
 	rz_str_case(new_s, false);
 	rz_str_case(new_find, false);
@@ -932,7 +932,7 @@ RZ_API char *rz_str_trunc_ellipsis(const char *str, int len) {
 		return NULL;
 	}
 	if (strlen(str) < len) {
-		return strdup(str);
+		return rz_str_dup(str);
 	}
 	char *buf = rz_str_newlen(str, len);
 	if (buf && len > 4) {
@@ -948,7 +948,7 @@ RZ_API char *rz_str_newf(const char *fmt, ...) {
 	va_start(ap, fmt);
 	if (!strchr(fmt, '%')) {
 		va_end(ap);
-		return strdup(fmt);
+		return rz_str_dup(fmt);
 	}
 	va_copy(ap2, ap);
 	int ret = vsnprintf(NULL, 0, fmt, ap2);
@@ -1080,7 +1080,7 @@ RZ_API RZ_OWN char *rz_str_dup(RZ_NULLABLE const char *str) {
 RZ_API char *rz_str_prepend(char *ptr, const char *string) {
 	int slen, plen;
 	if (!ptr) {
-		return strdup(string);
+		return rz_str_dup(string);
 	}
 	plen = strlen(ptr);
 	slen = strlen(string);
@@ -1121,7 +1121,7 @@ RZ_API char *rz_str_append_owned(char *ptr, char *string) {
  */
 RZ_API RZ_OWN char *rz_str_append(RZ_OWN RZ_NULLABLE char *ptr, const char *string) {
 	if (string && !ptr) {
-		return strdup(string);
+		return rz_str_dup(string);
 	}
 	if (RZ_STR_ISEMPTY(string)) {
 		return ptr;
@@ -1267,7 +1267,7 @@ RZ_API char *rz_str_replace_icase(char *str, const char *key, const char *val, i
 		}
 
 		if (keep_case) {
-			char *tmp_val = strdup(val);
+			char *tmp_val = rz_str_dup(val);
 			char *str_case = rz_str_ndup(p, klen);
 			if (!tmp_val || !str_case) {
 				free(tmp_val);
@@ -1339,7 +1339,7 @@ RZ_API char *rz_str_replace_thunked(char *str, char *clean, int *thunk, int clen
 
 		int newo = thunk[i + klen] - thunk[i];
 		rz_str_ansi_filter(str_p, NULL, NULL, newo);
-		scnd = strdup(str_p + newo);
+		scnd = rz_str_dup(str_p + newo);
 		bias = vlen - newo;
 
 		slen += bias;
@@ -1369,7 +1369,7 @@ RZ_API char *rz_str_replace_in(char *str, ut32 sz, const char *key, const char *
 	if (!str || !key || !val) {
 		return NULL;
 	}
-	char *heaped = rz_str_replace(strdup(str), key, val, g);
+	char *heaped = rz_str_replace(rz_str_dup(str), key, val, g);
 	if (heaped) {
 		strncpy(str, heaped, sz);
 		free(heaped);
@@ -2257,7 +2257,7 @@ RZ_API char *rz_str_ansi_crop(const char *str, ut32 x, ut32 y, ut32 x2, ut32 y2)
 	size_t rz_len, str_len = 0, nr_of_lines = 0;
 	ut32 ch = 0, cw = 0;
 	if (x2 <= x || y2 <= y || !str) {
-		return strdup("");
+		return rz_str_dup("");
 	}
 	s = s_start = str;
 	while (*s) {
@@ -2682,7 +2682,7 @@ RZ_API char **rz_str_argv(const char *cmdline, int *_argc) {
 			cmdline_current++;
 		}
 		args[args_current++] = '\0';
-		argv[argc++] = strdup(&args[arg_begin]);
+		argv[argc++] = rz_str_dup(&args[arg_begin]);
 		if (argc >= argv_len) {
 			argv_len *= 2;
 			char **tmp = realloc(argv, argv_len * sizeof(char *));
@@ -3122,10 +3122,10 @@ RZ_API char *rz_str_prefix_all(const char *s, const char *pfx) {
 	int pfx_len = 0;
 
 	if (!s) {
-		return strdup(pfx);
+		return rz_str_dup(pfx);
 	}
 	if (!pfx) {
-		return strdup(s);
+		return rz_str_dup(s);
 	}
 	len = strlen(s);
 	pfx_len = strlen(pfx);
@@ -3238,9 +3238,9 @@ RZ_API char *rz_str_crop(const char *str, unsigned int x, unsigned int y,
 	char *r, *ret;
 	unsigned int ch = 0, cw = 0;
 	if (x2 < 1 || y2 < 1 || !str) {
-		return strdup("");
+		return rz_str_dup("");
 	}
-	r = ret = strdup(str);
+	r = ret = rz_str_dup(str);
 	while (*str) {
 		/* crop height */
 		if (ch >= y2) {
@@ -3332,7 +3332,7 @@ RZ_API RZ_OWN char *rz_str_repeat(const char *str, ut16 times) {
 	rz_return_val_if_fail(str, NULL);
 	int i;
 	if (times == 0) {
-		return strdup("");
+		return rz_str_dup("");
 	}
 	RzStrBuf *buf = rz_strbuf_new(str);
 	for (i = 1; i < times; i++) {
@@ -3431,7 +3431,7 @@ static RzList /*<char *>*/ *str_split_list_common(char *str, const char *c, int 
 	for (; e;) {
 		e = strstr(aux, c);
 		if (n > 0 && ++i > n) {
-			rz_list_append(lst, dup ? strdup(aux) : aux);
+			rz_list_append(lst, dup ? rz_str_dup(aux) : aux);
 			break;
 		}
 		if (e) {
@@ -3441,7 +3441,7 @@ static RzList /*<char *>*/ *str_split_list_common(char *str, const char *c, int 
 		if (trim) {
 			rz_str_trim(aux);
 		}
-		rz_list_append(lst, dup ? strdup(aux) : aux);
+		rz_list_append(lst, dup ? rz_str_dup(aux) : aux);
 		aux = e;
 	}
 	return lst;
@@ -3547,7 +3547,7 @@ RZ_API RZ_OWN RzList /*<char *>*/ *rz_str_split_list_regex(RZ_NONNULL char *str,
  */
 RZ_API RzList /*<char *>*/ *rz_str_split_duplist(const char *_str, const char *c, bool trim) {
 	rz_return_val_if_fail(_str && c, NULL);
-	char *str = strdup(_str);
+	char *str = rz_str_dup(_str);
 	RzList *res = str_split_list_common(str, c, 0, trim, true);
 	free(str);
 	return res;
@@ -3568,7 +3568,7 @@ RZ_API RzList /*<char *>*/ *rz_str_split_duplist(const char *_str, const char *c
  */
 RZ_API RzList /*<char *>*/ *rz_str_split_duplist_n(const char *_str, const char *c, int n, bool trim) {
 	rz_return_val_if_fail(_str && c, NULL);
-	char *str = strdup(_str);
+	char *str = rz_str_dup(_str);
 	RzList *res = str_split_list_common(str, c, n, trim, true);
 	free(str);
 	return res;
@@ -3589,7 +3589,7 @@ RZ_API RzList /*<char *>*/ *rz_str_split_duplist_n(const char *_str, const char 
  */
 RZ_API RZ_OWN RzList /*<char *>*/ *rz_str_split_duplist_n_regex(RZ_NONNULL const char *_str, RZ_NONNULL const char *r, int n, bool trim) {
 	rz_return_val_if_fail(_str && r, NULL);
-	char *str = strdup(_str);
+	char *str = rz_str_dup(_str);
 	RzRegex *regex = rz_regex_new(r, RZ_REGEX_EXTENDED, 0);
 	RzList *res = str_split_list_common_regex(str, regex, n, trim, true);
 	free(str);
@@ -3748,7 +3748,7 @@ RZ_API char *rz_str_highlight(char *str, const char *word, const char *color, co
 	ut32 l_reset = strlen(color_reset);
 	ut32 l_color = color ? strlen(color) : 0;
 	if (!color) {
-		return strdup(str);
+		return rz_str_dup(str);
 	}
 	if (!word || !*word) {
 		return rz_str_newf("%s%s%s", color, str, color_reset);
@@ -3800,7 +3800,7 @@ RZ_API char *rz_str_highlight(char *str, const char *word, const char *color, co
 			break;
 		}
 	}
-	return strdup(o);
+	return rz_str_dup(o);
 }
 
 RZ_API char *rz_str_from_ut64(ut64 val) {
@@ -3940,7 +3940,7 @@ RZ_API char *rz_str_scale(const char *s, int w, int h) {
 	// for now this function is ascii only (no utf8 or ansi escapes)
 	RzListIter *iter;
 	char *line;
-	char *str = strdup(s);
+	char *str = rz_str_dup(s);
 	RzList *lines = rz_str_split_list(str, "\n", 0);
 	int i, j;
 	int rows = 0;
@@ -3964,7 +3964,7 @@ RZ_API char *rz_str_scale(const char *s, int w, int h) {
 			linetext[j] = srcline[zoomedcol];
 		}
 		if (curline != zoomedline) {
-			rz_list_append(out, strdup(linetext));
+			rz_list_append(out, rz_str_dup(linetext));
 			curline = zoomedline;
 		}
 		memset(linetext, ' ', w);

@@ -79,9 +79,9 @@ static char *find_include(const char *prefix, const char *file) {
 	}
 	if (*prefix == '$') {
 		char *out = rz_sys_getenv(prefix + 1);
-		pfx = out ? out : strdup("");
+		pfx = out ? out : rz_str_dup("");
 	} else {
-		pfx = strdup(prefix);
+		pfx = rz_str_dup(prefix);
 		if (!pfx) {
 			free(env);
 			return NULL;
@@ -172,7 +172,7 @@ RZ_API void rz_egg_lang_include_init(RzEgg *egg) {
 static void rcc_set_callname(RzEgg *egg, const char *s) {
 	RZ_FREE(egg->lang.callname);
 	egg->lang.nargs = 0;
-	egg->lang.callname = trim(strdup(skipspaces(s)));
+	egg->lang.callname = trim(rz_str_dup(skipspaces(s)));
 	egg->lang.pushargs = !((!strcmp(s, "goto")) || (!strcmp(s, "break")));
 }
 
@@ -224,7 +224,7 @@ static const char *find_alias(RzEgg *egg, const char *str) {
 	char *p = (char *)str;
 	int i;
 	if (*str == '"') {
-		return strdup(str);
+		return rz_str_dup(str);
 	}
 	// strings could not means aliases
 	while (*p && !is_space(*p)) {
@@ -233,7 +233,7 @@ static const char *find_alias(RzEgg *egg, const char *str) {
 	*p = '\x00';
 	for (i = 0; i < egg->lang.nalias; i++) {
 		if (!strcmp(str, egg->lang.aliases[i].name)) {
-			return strdup(egg->lang.aliases[i].content);
+			return rz_str_dup(egg->lang.aliases[i].content);
 		}
 	}
 	return NULL;
@@ -244,7 +244,7 @@ static void rcc_internal_mathop(RzEgg *egg, const char *ptr, char *ep, char op) 
 	char *p, *q, *oldp; // avoid mem leak
 	char type = ' ';
 	char buf[64]; // may cause stack overflow
-	oldp = p = q = strdup(ptr);
+	oldp = p = q = rz_str_dup(ptr);
 	if (get_op(&q)) {
 		*q = '\x00';
 	}
@@ -257,13 +257,13 @@ static void rcc_internal_mathop(RzEgg *egg, const char *ptr, char *ep, char op) 
 		if (egg->lang.varxs == '*') {
 			e->load(egg, p, egg->lang.varsize);
 			RZ_FREE(oldp);
-			oldp = p = strdup(e->regs(egg, 0));
+			oldp = p = rz_str_dup(e->regs(egg, 0));
 			// XXX: which will go wrong in arm
 			// for reg used in emit.load in arm is r7 not r0
 		} else if (egg->lang.varxs == '&') {
 			e->load_ptr(egg, p);
 			RZ_FREE(oldp);
-			oldp = p = strdup(e->regs(egg, 0));
+			oldp = p = rz_str_dup(e->regs(egg, 0));
 		}
 		type = ' ';
 	} else {
@@ -301,10 +301,10 @@ static void rcc_mathop(RzEgg *egg, char **pos, int level) {
 		if (op_ret > level) {
 			rcc_mathop(egg, pos, op_ret);
 			rcc_internal_mathop(egg, e->regs(egg, op_ret - 1),
-				strdup(e->regs(egg, level - 1)), op);
+				rz_str_dup(e->regs(egg, level - 1)), op);
 			next_pos = *pos + 1;
 		} else {
-			rcc_internal_mathop(egg, *pos, strdup(e->regs(egg, level - 1)), op);
+			rcc_internal_mathop(egg, *pos, rz_str_dup(e->regs(egg, level - 1)), op);
 			*pos = next_pos;
 			next_pos++;
 		}
@@ -312,17 +312,17 @@ static void rcc_mathop(RzEgg *egg, char **pos, int level) {
 
 	/* following code block sould not handle '-' and '/' well
     if (op_ret < level) {
-	rcc_internal_mathop(egg, p, strdup(e->regs(egg, level-1)) ,'=');
+	rcc_internal_mathop(egg, p, rz_str_dup(e->regs(egg, level-1)) ,'=');
 	return;
     }
     op = *pos, *pos = '\x00', (*pos)++;
     rcc_mathop(egg, pos, op_ret);
     if (op_ret > level) {
-	rcc_internal_mathop(egg, p, strdup(e->regs(egg, op_ret-1)), op);
+	rcc_internal_mathop(egg, p, rz_str_dup(e->regs(egg, op_ret-1)), op);
 	rcc_internal_mathop(egg, (char *)e->regs(egg, op_ret-1)
-			    , strdup(e->regs(egg, level-1)), '=');
+			    , rz_str_dup(e->regs(egg, level-1)), '=');
     }
-    else rcc_internal_mathop(egg, p, strdup(e->regs(egg, level-1)), op);
+    else rcc_internal_mathop(egg, p, rz_str_dup(e->regs(egg, level-1)), op);
 */
 }
 
@@ -333,12 +333,12 @@ static void rcc_pusharg(RzEgg *egg, char *str) {
 		return;
 	}
 	RZ_FREE(egg->lang.ctxpush[CTX]);
-	egg->lang.ctxpush[CTX] = strdup(p); // INDEX IT WITH NARGS OR CONTEXT?!?
+	egg->lang.ctxpush[CTX] = rz_str_dup(p); // INDEX IT WITH NARGS OR CONTEXT?!?
 	egg->lang.nargs++;
 	if (egg->lang.pushargs) {
 		e->push_arg(egg, egg->lang.varxs, egg->lang.nargs, p);
 	}
-	// egg->lang.ctxpush[context+egg->lang.nbrackets] = strdup(str); // use egg->lang.nargs??? (in callname)
+	// egg->lang.ctxpush[context+egg->lang.nbrackets] = rz_str_dup(str); // use egg->lang.nargs??? (in callname)
 	free(p);
 }
 
@@ -356,14 +356,14 @@ static void rcc_element(RzEgg *egg, char *str) {
 		if (egg->lang.slurp == '"') {
 			if (egg->lang.mode == NORMAL) {
 				if (!egg->lang.dstvar) {
-					egg->lang.dstvar = strdup(".fix0");
+					egg->lang.dstvar = rz_str_dup(".fix0");
 				}
 				rcc_pushstr(egg, str, 1);
 			}
 		} else {
 			if (egg->lang.callname) {
 				if (strstr(egg->lang.callname, "while") || strstr(egg->lang.callname, "if")) {
-					egg->lang.conditionstr = strdup(str);
+					egg->lang.conditionstr = rz_str_dup(str);
 				}
 			}
 			egg->lang.nargs = 0;
@@ -400,8 +400,8 @@ static void rcc_element(RzEgg *egg, char *str) {
 					break;
 				}
 			}
-			egg->lang.aliases[i].name = strdup(egg->lang.dstvar);
-			egg->lang.aliases[i].content = strdup(str);
+			egg->lang.aliases[i].name = rz_str_dup(egg->lang.dstvar);
+			egg->lang.aliases[i].content = rz_str_dup(str);
 			egg->lang.nalias = (i == egg->lang.nalias) ? (egg->lang.nalias + 1) : egg->lang.nalias;
 			// allow alias overwrite
 			RZ_FREE(egg->lang.dstvar);
@@ -429,8 +429,8 @@ static void rcc_element(RzEgg *egg, char *str) {
 				// XXX the mem for name and arg are not freed - MEMLEAK
 				RZ_FREE(egg->lang.syscalls[idx].name);
 				RZ_FREE(egg->lang.syscalls[idx].arg);
-				egg->lang.syscalls[idx].name = strdup(egg->lang.dstvar);
-				egg->lang.syscalls[idx].arg = strdup(str);
+				egg->lang.syscalls[idx].name = rz_str_dup(egg->lang.dstvar);
+				egg->lang.syscalls[idx].arg = rz_str_dup(str);
 				if (!found) {
 					egg->lang.nsyscalls++;
 				}
@@ -451,7 +451,7 @@ static void rcc_element(RzEgg *egg, char *str) {
 					} else {
 						eprintf("loss back quote in include directory\n");
 					}
-					egg->lang.includedir = strdup(ptr);
+					egg->lang.includedir = rz_str_dup(ptr);
 				} else {
 					eprintf("wrong include syntax\n");
 					// for must use string to symbolize directory
@@ -544,7 +544,7 @@ RZ_API char *rz_egg_mkvar(RzEgg *egg, char *out, const char *_str, int delta) {
 		return NULL; /* fix segfault, but not badparsing */
 	}
 	/* XXX memory leak */
-	ret = str = oldstr = strdup(skipspaces(_str));
+	ret = str = oldstr = rz_str_dup(skipspaces(_str));
 	// if (num || str[0]=='0') { sprintf(out, "$%d", num); ret = out; }
 	if ((q = strchr(str, ':'))) {
 		*q = '\0';
@@ -590,7 +590,7 @@ RZ_API char *rz_egg_mkvar(RzEgg *egg, char *out, const char *_str, int delta) {
 					for (i = 0; i < egg->lang.nsyscalls; i++) {
 						if (!strcmp(egg->lang.syscalls[i].name, egg->lang.callname)) {
 							free(oldstr);
-							return strdup(egg->lang.syscalls[i].arg);
+							return rz_str_dup(egg->lang.syscalls[i].arg);
 						}
 					}
 					eprintf("Unknown arg for syscall '%s'\n", egg->lang.callname);
@@ -609,7 +609,7 @@ RZ_API char *rz_egg_mkvar(RzEgg *egg, char *out, const char *_str, int delta) {
 			out = str; /* TODO: show error, invalid var name? */
 			eprintf("Something is really wrong\n");
 		}
-		ret = strdup(out);
+		ret = rz_str_dup(out);
 		free(oldstr);
 	} else if (*str == '"' || *str == '\'') {
 		int mustfilter = *str == '"';
@@ -623,7 +623,7 @@ RZ_API char *rz_egg_mkvar(RzEgg *egg, char *out, const char *_str, int delta) {
 		str[len] = '\0';
 		snprintf(foo, sizeof(foo) - 1, ".fix%d", egg->lang.nargs * 16); /* XXX FIX DELTA !!!1 */
 		free(egg->lang.dstvar);
-		egg->lang.dstvar = strdup(skipspaces(foo));
+		egg->lang.dstvar = rz_str_dup(skipspaces(foo));
 		rcc_pushstr(egg, str, mustfilter);
 		ret = rz_egg_mkvar(egg, out, foo, 0);
 		free(oldstr);
@@ -640,7 +640,7 @@ static void rcc_fun(RzEgg *egg, const char *str) {
 		if (ptr) {
 			*ptr++ = '\0';
 			free(egg->lang.dstvar);
-			egg->lang.dstvar = strdup(skipspaces(str));
+			egg->lang.dstvar = rz_str_dup(skipspaces(str));
 			ptr2 = (char *)skipspaces(ptr);
 			if (*ptr2) {
 				rcc_set_callname(egg, skipspaces(ptr));
@@ -659,14 +659,14 @@ static void rcc_fun(RzEgg *egg, const char *str) {
 			if (strstr(ptr, "env")) {
 				// eprintf ("SETENV (%s)\n", str);
 				free(egg->lang.setenviron);
-				egg->lang.setenviron = strdup(skipspaces(str));
+				egg->lang.setenviron = rz_str_dup(skipspaces(str));
 				egg->lang.slurp = 0;
 			} else if (strstr(ptr, "fastcall")) {
 				/* TODO : not yet implemented */
 			} else if (strstr(ptr, "syscall")) {
 				if (*str) {
 					egg->lang.mode = SYSCALL;
-					egg->lang.dstvar = strdup(skipspaces(str));
+					egg->lang.dstvar = rz_str_dup(skipspaces(str));
 				} else {
 					egg->lang.mode = INLINE;
 					free(egg->lang.syscallbody);
@@ -679,12 +679,12 @@ static void rcc_fun(RzEgg *egg, const char *str) {
 			} else if (strstr(ptr, "include")) {
 				egg->lang.mode = INCLUDE;
 				free(egg->lang.includefile);
-				egg->lang.includefile = strdup(skipspaces(str));
+				egg->lang.includefile = rz_str_dup(skipspaces(str));
 				// egg->lang.slurp = 0;
 				// try to deal with alias
 			} else if (strstr(ptr, "alias")) {
 				egg->lang.mode = ALIAS;
-				ptr2 = egg->lang.dstvar = strdup(skipspaces(str));
+				ptr2 = egg->lang.dstvar = rz_str_dup(skipspaces(str));
 				while (*ptr2 && !is_space(*ptr2)) {
 					ptr2++;
 				}
@@ -693,13 +693,13 @@ static void rcc_fun(RzEgg *egg, const char *str) {
 			} else if (strstr(ptr, "data")) {
 				egg->lang.mode = DATA;
 				egg->lang.ndstval = 0;
-				egg->lang.dstvar = strdup(skipspaces(str));
+				egg->lang.dstvar = rz_str_dup(skipspaces(str));
 				egg->lang.dstval = malloc(4096);
 			} else if (strstr(ptr, "naked")) {
 				egg->lang.mode = NAKED;
 				/*
 				free (egg->lang.dstvar);
-				egg->lang.dstvar = strdup (skipspaces (str));
+				egg->lang.dstvar = rz_str_dup (skipspaces (str));
 				egg->lang.dstval = malloc (4096);
 				egg->lang.ndstval = 0;
 				*/
@@ -707,7 +707,7 @@ static void rcc_fun(RzEgg *egg, const char *str) {
 			} else if (strstr(ptr, "inline")) {
 				egg->lang.mode = INLINE;
 				free(egg->lang.dstvar);
-				egg->lang.dstvar = strdup(skipspaces(str));
+				egg->lang.dstvar = rz_str_dup(skipspaces(str));
 				egg->lang.dstval = malloc(4096);
 				egg->lang.ndstval = 0;
 			} else {
@@ -751,7 +751,7 @@ static void set_nested(RzEgg *egg, const char *s) {
 		return;
 	}
 	free(egg->lang.nested[CTX]);
-	egg->lang.nested[CTX] = strdup(s);
+	egg->lang.nested[CTX] = rz_str_dup(s);
 	// egg->lang.nestedi[c]++;
 	// seems not need to increase egg->lang.nestedi[c]
 	/** clear inner levels **/
@@ -773,7 +773,7 @@ static void rcc_context(RzEgg *egg, int delta) {
 		egg->lang.nestedi[CTX]++;
 		RZ_FREE(egg->lang.nested_callname[CTX]);
 		if (egg->lang.callname) {
-			egg->lang.nested_callname[CTX] = strdup(egg->lang.callname);
+			egg->lang.nested_callname[CTX] = rz_str_dup(egg->lang.callname);
 		}
 	}
 	if (egg->lang.callname && CTX > 0) { // && delta>0) {
@@ -803,7 +803,7 @@ static void rcc_context(RzEgg *egg, int delta) {
 		if (delta < 0 && context > 0) {
 			eprintf ("close bracket foo!!!\n");
 			shownested ();
-			cn = strdup (egg->lang.nested[context - 1]);
+			cn = rz_str_dup (egg->lang.nested[context - 1]);
 			eprintf ("STATEMENT cn=(%s) idx=%d (%s)\n", cn, context - 1, egg->lang.nested[context - 1]);
 			eprintf ("CNTXXXPUSH (%s)\n", egg->lang.ctxpush[context - 1]);
 #if 0
@@ -853,7 +853,7 @@ static void rcc_context(RzEgg *egg, int delta) {
 				// HACK HACK :D
 				// sprintf (str, "__end_%d_%d_%d", egg->lang.nfunctions,
 				// CTX-1, egg->lang.nestedi[CTX-1]);
-				// nestede[CTX-1] = strdup (str);
+				// nestede[CTX-1] = rz_str_dup (str);
 				// where give nestede value
 				sprintf(str, "__end_%d_%d_%d", egg->lang.nfunctions, CTX - 1, egg->lang.nestedi[CTX - 1] - 1);
 				emit->branch(egg, b, g, e, n, egg->lang.varsize, str);
@@ -957,8 +957,8 @@ static int parseinlinechar(RzEgg *egg, char c) {
 				if (egg->lang.dstval && egg->lang.dstvar) {
 					egg->lang.dstval[egg->lang.ndstval] = '\0';
 					// printf(" /* END OF INLINE (%s)(%s) */\n", egg->lang.dstvar, egg->lang.dstval);
-					egg->lang.inlines[egg->lang.ninlines].name = strdup(skipspaces(egg->lang.dstvar));
-					egg->lang.inlines[egg->lang.ninlines].body = strdup(skipspaces(egg->lang.dstval));
+					egg->lang.inlines[egg->lang.ninlines].name = rz_str_dup(skipspaces(egg->lang.dstvar));
+					egg->lang.inlines[egg->lang.ninlines].body = rz_str_dup(skipspaces(egg->lang.dstval));
 					egg->lang.ninlines++;
 					RZ_FREE(egg->lang.dstvar);
 					RZ_FREE(egg->lang.dstval);
@@ -1168,7 +1168,7 @@ static void rcc_next(RzEgg *egg) {
 				*buf = *eq = '\x00';
 				e->mathop(egg, '=', vs, '$', "0", e->regs(egg, 1));
 				// avoid situation that egg->lang.mathline starts with a single '-'
-				egg->lang.mathline = strdup((char *)skipspaces(eq + 1));
+				egg->lang.mathline = rz_str_dup((char *)skipspaces(eq + 1));
 				tmp = egg->lang.mathline;
 				rcc_mathop(egg, &tmp, 2);
 				RZ_FREE(egg->lang.mathline);

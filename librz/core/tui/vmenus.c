@@ -23,7 +23,7 @@ static void function_rename(RzCore *core, ut64 addr, const char *name) {
 		if (fcn->addr == addr) {
 			rz_flag_unset_name(core->flags, fcn->name);
 			free(fcn->name);
-			fcn->name = strdup(name);
+			fcn->name = rz_str_dup(name);
 			rz_flag_set(core->flags, name, addr, rz_analysis_function_size_from_entry(fcn));
 			break;
 		}
@@ -573,7 +573,7 @@ static char *__prompt(const char *msg, void *p) {
 	if (!rz_cons_fgets(res, sizeof(res), 0, NULL)) {
 		res[0] = 0;
 	}
-	return strdup(res);
+	return rz_str_dup(res);
 }
 
 static void addVar(RzCore *core, int ch, const char *msg) {

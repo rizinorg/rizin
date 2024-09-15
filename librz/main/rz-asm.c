@@ -60,13 +60,13 @@ static void __as_free(RzAsmState *as) {
 
 static char *stackop2str(int type) {
 	switch (type) {
-	case RZ_ANALYSIS_STACK_NULL: return strdup("null");
-	case RZ_ANALYSIS_STACK_NOP: return strdup("nop");
-	// case RZ_ANALYSIS_STACK_INCSTACK: return strdup ("incstack");
-	case RZ_ANALYSIS_STACK_GET: return strdup("get");
-	case RZ_ANALYSIS_STACK_SET: return strdup("set");
+	case RZ_ANALYSIS_STACK_NULL: return rz_str_dup("null");
+	case RZ_ANALYSIS_STACK_NOP: return rz_str_dup("nop");
+	// case RZ_ANALYSIS_STACK_INCSTACK: return rz_str_dup ("incstack");
+	case RZ_ANALYSIS_STACK_GET: return rz_str_dup("get");
+	case RZ_ANALYSIS_STACK_SET: return rz_str_dup("set");
 	}
-	return strdup("unknown");
+	return rz_str_dup("unknown");
 }
 
 static void showanalysis(RzAsmState *as, RzAnalysisOp *op, ut64 offset, ut8 *buf, int len, PJ *pj) {
@@ -121,7 +121,7 @@ static void showanalysis(RzAsmState *as, RzAnalysisOp *op, ut64 offset, ut8 *buf
 
 // TODO: add israw/len
 static int show_analinfo(RzAsmState *as, const char *arg, ut64 offset) {
-	ut8 *buf = (ut8 *)strdup((const char *)arg);
+	ut8 *buf = (ut8 *)rz_str_dup((const char *)arg);
 	int ret, len = rz_hex_str2bin((char *)buf, buf);
 	PJ *pj = NULL;
 	if (as->json) {
@@ -888,9 +888,9 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 			goto beach;
 		}
 		if (dis) {
-			char *usrstr = strdup(opt.argv[opt.ind]);
+			char *usrstr = rz_str_dup(opt.argv[opt.ind]);
 			if (!usrstr) {
-				eprintf("rz-asm: disassemble strdup OOM\n");
+				eprintf("rz-asm: disassemble rz_str_dup OOM\n");
 				ret = 1;
 				goto beach;
 			}

@@ -773,7 +773,7 @@ static int analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const u
 	n = cs_disasm(hndl, (ut8 *)buf, len, addr, 1, &insn);
 	if (n < 1 || insn->size < 1) {
 		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
-			op->mnemonic = strdup("invalid");
+			op->mnemonic = rz_str_dup("invalid");
 		}
 		goto beach;
 	}
@@ -1209,7 +1209,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 			"gpr	t	.64	280	0\n";
 		break;
 	}
-	return p ? strdup(p) : NULL;
+	return rz_str_dup(p);
 }
 
 static int archinfo(RzAnalysis *a, RzAnalysisInfoType query) {

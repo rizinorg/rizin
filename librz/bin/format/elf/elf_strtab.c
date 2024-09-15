@@ -56,7 +56,7 @@ RZ_OWN char *Elf_(rz_bin_elf_strtab_get_dup)(RZ_NONNULL RzBinElfStrtab *strtab, 
 		return NULL;
 	}
 
-	char *result = strdup(strtab->data + index);
+	char *result = rz_str_dup(strtab->data + index);
 	if (!result) {
 		return NULL;
 	}

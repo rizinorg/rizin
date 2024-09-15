@@ -26,7 +26,7 @@ RZ_API RZ_OWN RzSysregItem *rz_sysreg_item_new(RZ_NULLABLE const char *name) {
 	}
 	sysregitem->comment = NULL;
 	sysregitem->type = NULL;
-	sysregitem->name = name ? strdup(name) : NULL;
+	sysregitem->name = rz_str_dup(name);
 	return sysregitem;
 }
 
@@ -242,13 +242,13 @@ RZ_API bool rz_syscall_setup(RzSyscall *s, const char *arch, int bits, const cha
 	sysregs_changed = sysregs_reload_needed(s, arch, bits, cpu);
 
 	free(s->os);
-	s->os = strdup(os);
+	s->os = rz_str_dup(os);
 
 	free(s->cpu);
-	s->cpu = strdup(cpu);
+	s->cpu = rz_str_dup(cpu);
 
 	free(s->arch);
-	s->arch = strdup(arch);
+	s->arch = rz_str_dup(arch);
 
 	s->bits = bits;
 
@@ -288,7 +288,7 @@ RZ_API RzSyscallItem *rz_syscall_item_new_from_string(const char *name, const ch
 	if (!name || !s) {
 		return NULL;
 	}
-	o = strdup(s);
+	o = rz_str_dup(s);
 	int cols = rz_str_split(o, ',');
 	if (cols < 3) {
 		free(o);
@@ -300,7 +300,7 @@ RZ_API RzSyscallItem *rz_syscall_item_new_from_string(const char *name, const ch
 		free(o);
 		return NULL;
 	}
-	si->name = strdup(name);
+	si->name = rz_str_dup(name);
 	si->swi = (int)rz_num_get(NULL, rz_str_word_get0(o, 0));
 	si->num = (int)rz_num_get(NULL, rz_str_word_get0(o, 1));
 	si->args = (int)rz_num_get(NULL, rz_str_word_get0(o, 2));

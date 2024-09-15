@@ -60,7 +60,7 @@ RZ_IPI int rz_core_visual_view_rop(RzCore *core) {
 	bool show_color = core->print->flags & RZ_PRINT_FLAGS_COLOR;
 	bool forceaddr = false;
 	ut64 addr = UT64_MAX;
-	char *cursearch = strdup(linestr);
+	char *cursearch = rz_str_dup(linestr);
 	char *curline = NULL, *chainstr = NULL;
 	while (true) {
 		rz_cons_clear00();
@@ -202,7 +202,7 @@ RZ_IPI int rz_core_visual_view_rop(RzCore *core) {
 				delta = 0;
 				addr = UT64_MAX;
 				cur = 0;
-				cursearch = strdup(linestr);
+				cursearch = rz_str_dup(linestr);
 				RzCmdStateOutput state_detail = { 0 };
 				if (!rz_cmd_state_output_init(&state_detail, RZ_OUTPUT_MODE_STANDARD)) {
 					status = false;
@@ -217,7 +217,7 @@ RZ_IPI int rz_core_visual_view_rop(RzCore *core) {
 				}
 				ropstr = rz_strbuf_get(context->buf);
 				rz_cmd_state_output_fini(&state_detail);
-				ropstr = strdup(ropstr);
+				ropstr = rz_str_dup(ropstr);
 				rz_list_free(rops);
 				rops = rz_str_split_list(ropstr, "\n", 0);
 			}

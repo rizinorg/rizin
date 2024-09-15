@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2024 Wenlong Zhang <zhangwenlong@loongson.cn>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-return strdup(
+return rz_str_dup(
 	"=PC    pc\n"
 	"=SP    sp\n"
 	"=BP    fp\n"

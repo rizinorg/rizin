@@ -46,7 +46,7 @@ static int rz_core_rtr_http_handler_get_file(RzCore *core, RzSocketHTTPRequest *
 	char *dir = NULL;
 	if (rz_config_get_i(core->config, "http.dirlist")) {
 		if (rz_file_is_directory(rs->path)) {
-			dir = strdup(rs->path);
+			dir = rz_str_dup(rs->path);
 		}
 	}
 	if (rz_config_get_i(core->config, "http.upget")) {
@@ -99,7 +99,7 @@ static int rz_core_rtr_http_handler_get_cmd(RzCore *core, RzSocketHTTPRequest *r
 		char *refstr = NULL;
 		if (httpref_enabled) {
 			if (strstr(httpref, "http")) {
-				refstr = strdup(httpref);
+				refstr = rz_str_dup(httpref);
 			} else {
 				refstr = rz_str_newf("http://localhost:%d/", atoi(port));
 			}
@@ -150,7 +150,7 @@ static int rz_core_rtr_http_handler_get_index(RzCore *core, RzSocketHTTPRequest 
 	const char *index = rz_config_get(core->config, "http.index");
 	if (rz_config_get_i(core->config, "http.dirlist")) {
 		if (rz_file_is_directory(rs->path)) {
-			dir = strdup(rs->path);
+			dir = rz_str_dup(rs->path);
 		}
 	}
 	const char *root = rz_config_get(core->config, "http.root");
@@ -159,8 +159,8 @@ static int rz_core_rtr_http_handler_get_index(RzCore *core, RzSocketHTTPRequest 
 	if (!strcmp(rs->path, "/")) {
 		free(rs->path);
 		if (*index == '/') {
-			rs->path = strdup(index);
-			path = strdup(index);
+			rs->path = rz_str_dup(index);
+			path = rz_str_dup(index);
 		} else {
 			rs->path = rz_str_newf("/%s", index);
 			path = rz_file_root(root, rs->path);
@@ -175,13 +175,13 @@ static int rz_core_rtr_http_handler_get_index(RzCore *core, RzSocketHTTPRequest 
 		}
 	} else {
 		if (*index == '/') {
-			path = strdup(index);
+			path = rz_str_dup(index);
 		} else {
 		}
 	}
 	// FD IS OK HERE
 	if (rs->path[strlen(rs->path) - 1] == '/') {
-		path = (*index == '/') ? strdup(index) : rz_str_append(path, index);
+		path = (*index == '/') ? rz_str_dup(index) : rz_str_append(path, index);
 	} else {
 		if (rz_file_is_directory(path)) {
 			char *res = rz_str_newf("Location: %s/\n%s", rs->path, headers);
@@ -480,7 +480,7 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 			bool accepted = false;
 			const char *allows_host;
 			char *p, *peer = rz_socket_to_string(rs->s);
-			char *allows = strdup(allow);
+			char *allows = rz_str_dup(allow);
 			// eprintf ("Firewall (%s)\n", allows);
 			int i, count = rz_str_split(allows, ',');
 			p = strchr(peer, ':');
@@ -520,7 +520,7 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 		}
 		if (rz_config_get_i(core->config, "http.dirlist")) {
 			if (rz_file_is_directory(rs->path)) {
-				dir = strdup(rs->path);
+				dir = rz_str_dup(rs->path);
 			}
 		}
 		if (rz_config_get_i(core->config, "http.cors")) {

@@ -46,7 +46,7 @@ static TypeFormatPair *get_enum_type(Sdb *sdb, const char *sname) {
 		goto error;
 	}
 
-	base_type->name = strdup(sname);
+	base_type->name = rz_str_dup(sname);
 	RzVector *cases = &base_type->enum_data.cases;
 	if (!rz_vector_reserve(cases, (size_t)sdb_alen(members))) {
 		goto error;
@@ -65,7 +65,7 @@ static TypeFormatPair *get_enum_type(Sdb *sdb, const char *sname) {
 			goto error;
 		}
 
-		RzTypeEnumCase cas = { .name = strdup(cur), .val = strtol(value, NULL, 16) };
+		RzTypeEnumCase cas = { .name = rz_str_dup(cur), .val = strtol(value, NULL, 16) };
 
 		void *element = rz_vector_push(cases, &cas); // returns null if no space available
 		if (!element) {
@@ -99,7 +99,7 @@ static TypeFormatPair *get_struct_type(RzTypeDB *typedb, Sdb *sdb, const char *s
 	if (!base_type) {
 		return NULL;
 	}
-	base_type->name = strdup(sname);
+	base_type->name = rz_str_dup(sname);
 
 	char *sdb_members = get_type_data(sdb, "struct", sname);
 	if (sdb_members) {
@@ -136,7 +136,7 @@ static TypeFormatPair *get_struct_type(RzTypeDB *typedb, Sdb *sdb, const char *s
 			}
 
 			RzTypeStructMember memb = {
-				.name = strdup(cur),
+				.name = rz_str_dup(cur),
 				.type = ttype,
 				.offset = strtol(offset, NULL, 10)
 			};
@@ -159,7 +159,7 @@ static TypeFormatPair *get_struct_type(RzTypeDB *typedb, Sdb *sdb, const char *s
 
 	TypeFormatPair *tpair = RZ_NEW0(TypeFormatPair);
 	tpair->type = base_type;
-	tpair->format = format ? strdup(format) : NULL;
+	tpair->format = rz_str_dup(format);
 
 	return tpair;
 
@@ -177,7 +177,7 @@ static TypeFormatPair *get_union_type(RzTypeDB *typedb, Sdb *sdb, const char *sn
 		return NULL;
 	}
 
-	base_type->name = strdup(sname);
+	base_type->name = rz_str_dup(sname);
 
 	char *sdb_members = get_type_data(sdb, "union", sname);
 	if (sdb_members) {
@@ -207,7 +207,7 @@ static TypeFormatPair *get_union_type(RzTypeDB *typedb, Sdb *sdb, const char *sn
 			}
 
 			RzTypeUnionMember memb = {
-				.name = strdup(cur),
+				.name = rz_str_dup(cur),
 				.type = ttype
 			};
 			free(values);
@@ -228,7 +228,7 @@ static TypeFormatPair *get_union_type(RzTypeDB *typedb, Sdb *sdb, const char *sn
 
 	TypeFormatPair *tpair = RZ_NEW0(TypeFormatPair);
 	tpair->type = base_type;
-	tpair->format = format ? strdup(format) : NULL;
+	tpair->format = rz_str_dup(format);
 
 	return tpair;
 
@@ -246,7 +246,7 @@ static TypeFormatPair *get_typedef_type(RzTypeDB *typedb, Sdb *sdb, const char *
 		return NULL;
 	}
 
-	base_type->name = strdup(sname);
+	base_type->name = rz_str_dup(sname);
 	char *type = get_type_data(sdb, "typedef", sname);
 	char *error_msg = NULL;
 	RzType *ttype = rz_type_parse_string_single(typedb->parser, type, &error_msg);
@@ -289,12 +289,12 @@ static TypeFormatPair *get_atomic_type(RzTypeDB *typedb, Sdb *sdb, const char *s
 		goto error;
 	}
 	ttype->kind = RZ_TYPE_KIND_IDENTIFIER;
-	ttype->identifier.name = strdup(sname);
+	ttype->identifier.name = rz_str_dup(sname);
 	ttype->identifier.is_const = false; // We don't preload const types by default
 	ttype->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED;
 	base_type->type = ttype;
 
-	base_type->name = strdup(sname);
+	base_type->name = rz_str_dup(sname);
 	RzStrBuf key;
 	base_type->size = sdb_num_get(sdb, rz_strbuf_initf(&key, "type.%s.size", sname));
 	RzTypeTypeclass typeclass = RZ_TYPE_TYPECLASS_NONE;
@@ -308,7 +308,7 @@ static TypeFormatPair *get_atomic_type(RzTypeDB *typedb, Sdb *sdb, const char *s
 
 	TypeFormatPair *tpair = RZ_NEW0(TypeFormatPair);
 	tpair->type = base_type;
-	tpair->format = format ? strdup(format) : NULL;
+	tpair->format = rz_str_dup(format);
 
 	return tpair;
 

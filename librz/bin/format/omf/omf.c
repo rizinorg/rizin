@@ -487,7 +487,7 @@ static int cpy_omf_names(rz_bin_omf_obj *obj) {
 		while (++ct_rec < lname->nb_elem) {
 			if (!((char **)lname->elems)[ct_rec]) {
 				obj->names[ct_obj++] = NULL;
-			} else if (!(obj->names[ct_obj++] = strdup(((char **)lname->elems)[ct_rec]))) {
+			} else if (!(obj->names[ct_obj++] = rz_str_dup(((char **)lname->elems)[ct_rec]))) {
 				return false;
 			}
 		}
@@ -530,7 +530,7 @@ static int get_omf_symbol_info(rz_bin_omf_obj *obj) {
 				return false;
 			}
 			memcpy(obj->symbols[ct_obj], ((OMF_symbol *)symbols->elems) + ct_rec, sizeof(*(obj->symbols[ct_obj])));
-			obj->symbols[ct_obj]->name = strdup(((OMF_symbol *)symbols->elems)[ct_rec].name);
+			obj->symbols[ct_obj]->name = rz_str_dup(((OMF_symbol *)symbols->elems)[ct_rec].name);
 			ct_obj++;
 		}
 		tmp = tmp->next;

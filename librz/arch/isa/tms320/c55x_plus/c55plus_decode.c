@@ -136,7 +136,7 @@ static char *decode_regis(char *reg_arg, st32 hash_code, ut32 ins_bits,
 			*err_code = -1;
 			return NULL;
 		}
-		res = (check_arg(ins_bits, err_code) != 0 && *err_code == 0) ? strdup("dbl(") : NULL;
+		res = (check_arg(ins_bits, err_code) != 0 && *err_code == 0) ? rz_str_dup("dbl(") : NULL;
 		if (*err_code < 0) {
 			return NULL;
 		}
@@ -147,7 +147,7 @@ static char *decode_regis(char *reg_arg, st32 hash_code, ut32 ins_bits,
 			*err_code = -1;
 			return NULL;
 		}
-		res = (check_arg(ins_bits, err_code) && *err_code == 0) ? strdup(")") : NULL;
+		res = (check_arg(ins_bits, err_code) && *err_code == 0) ? rz_str_dup(")") : NULL;
 		if (*err_code < 0) {
 			return NULL;
 		}
@@ -553,7 +553,7 @@ static char *get_token_decoded(st32 hash_code, char *ins_token, ut32 ins_token_l
 	case 64:
 	case 65:
 		if (!reg_arg || *reg_arg == '\0') {
-			res = strdup("<register>");
+			res = rz_str_dup("<register>");
 			goto ret_decode;
 		}
 		res = decode_regis(reg_arg, hash_code, ins_bits, ret_ins_bits, err_code);
@@ -561,18 +561,18 @@ static char *get_token_decoded(st32 hash_code, char *ins_token, ut32 ins_token_l
 			return NULL;
 		}
 		break;
-	case 35: res = ins_bits ? strdup(" || far()") : NULL; break;
-	case 36: res = ins_bits ? strdup(" || local()") : NULL; break;
+	case 35: res = ins_bits ? rz_str_dup(" || far()") : NULL; break;
+	case 36: res = ins_bits ? rz_str_dup(" || local()") : NULL; break;
 	case 37: res = get_opers(ins_bits); break;
 	case 38:
 		res = ins_bits ? "lo" : "hi";
-		res = strdup(res);
+		res = rz_str_dup(res);
 		break;
 	case 39: res = get_cmp_op(ins_bits); break;
 	case 40:
 	case 48:
 		sprintf(buff_aux, "#0x%x", (ins_bits << (32 - ins_token_len) >> (32 - ins_token_len)));
-		res = strdup(buff_aux);
+		res = rz_str_dup(buff_aux);
 		break;
 	case 70:
 	case 72:
@@ -594,7 +594,7 @@ static char *get_token_decoded(st32 hash_code, char *ins_token, ut32 ins_token_l
 		} else {
 			sprintf(buff_aux, "-#0x%lx", (long unsigned int)ins_bits);
 		}
-		res = strdup(buff_aux);
+		res = rz_str_dup(buff_aux);
 		if (!reg_arg || *reg_arg != 'm') {
 			break;
 		}
@@ -621,10 +621,10 @@ static char *get_token_decoded(st32 hash_code, char *ins_token, ut32 ins_token_l
 			ins_bits = ins_bits << (32 - ins_token_len) >> (32 - ins_token_len);
 		}
 		if (reg_arg && *reg_arg == 'i') {
-			res = strdup("");
+			res = rz_str_dup("");
 		} else {
 			sprintf(buff_aux, "#0x%06lx", (long unsigned int)ins_bits);
-			res = strdup(buff_aux);
+			res = rz_str_dup(buff_aux);
 		}
 		break;
 	case 42:
@@ -724,7 +724,7 @@ static char *get_token_decoded(st32 hash_code, char *ins_token, ut32 ins_token_l
 		} else {
 			res = "<W !flags>";
 		}
-		res = strdup(res);
+		res = rz_str_dup(res);
 		break;
 	case 53:
 	case 54:
@@ -784,7 +784,7 @@ static char *get_token_decoded(st32 hash_code, char *ins_token, ut32 ins_token_l
 				res = "<$/#>";
 			}
 		}
-		res = strdup(res);
+		res = rz_str_dup(res);
 		break;
 	case 2:
 		if (!ins_bits) {
@@ -801,7 +801,7 @@ static char *get_token_decoded(st32 hash_code, char *ins_token, ut32 ins_token_l
 				res = "<%>";
 			}
 		}
-		res = strdup(res);
+		res = rz_str_dup(res);
 		break;
 	case 12:
 		if (!ins_bits) {
@@ -820,7 +820,7 @@ static char *get_token_decoded(st32 hash_code, char *ins_token, ut32 ins_token_l
 				res = "</>";
 			}
 		}
-		res = strdup(res);
+		res = rz_str_dup(res);
 		break;
 	case 29:
 		if (!ins_bits) {
@@ -837,10 +837,10 @@ static char *get_token_decoded(st32 hash_code, char *ins_token, ut32 ins_token_l
 				res = "<saturate>";
 			}
 		}
-		res = strdup(res);
+		res = rz_str_dup(res);
 		break;
 	case 16:
-		res = (ins_bits != 0) ? strdup("t3 = ") : NULL;
+		res = (ins_bits != 0) ? rz_str_dup("t3 = ") : NULL;
 		break;
 	case 17:
 		if (!ins_bits) {
@@ -857,7 +857,7 @@ static char *get_token_decoded(st32 hash_code, char *ins_token, ut32 ins_token_l
 				res = "<4>";
 			}
 		}
-		res = strdup(res);
+		res = rz_str_dup(res);
 		break;
 	case 78:
 		if (!rz_str_ncasecmp(ins_token, "q_SAT", 5)) {
@@ -875,7 +875,7 @@ static char *get_token_decoded(st32 hash_code, char *ins_token, ut32 ins_token_l
 			if (C55PLUS_DEBUG) {
 				printf("OP(78): TOKEN=%s\n", res);
 			}
-			res = strdup(res);
+			res = rz_str_dup(res);
 		}
 		break;
 	}

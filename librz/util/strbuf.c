@@ -310,7 +310,7 @@ RZ_API ut8 *rz_strbuf_getbin(RzStrBuf *sb, int *len) {
 }
 
 static inline char *drain(RzStrBuf *sb) {
-	return sb->ptr ? sb->ptr : strdup(sb->buf);
+	return sb->ptr ? sb->ptr : rz_str_dup(sb->buf);
 }
 
 RZ_API RZ_OWN char *rz_strbuf_drain(RzStrBuf *sb) {

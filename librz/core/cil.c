@@ -32,7 +32,7 @@ static void core_esil_init(RzCore *core) {
 	esil->verbose = verbose;
 	const char *s = rz_config_get(core->config, "cmd.esil.intr");
 	if (s) {
-		char *my = strdup(s);
+		char *my = rz_str_dup(s);
 		if (my) {
 			rz_config_set(core->config, "cmd.esil.intr", my);
 			free(my);

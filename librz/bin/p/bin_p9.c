@@ -68,7 +68,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		rz_pvector_free(ret);
 		return NULL;
 	}
-	ptr->name = strdup("text");
+	ptr->name = rz_str_dup("text");
 	ptr->size = textsize;
 	ptr->vsize = textsize + (textsize % 4096);
 	ptr->paddr = 8 * 4;
@@ -85,7 +85,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		if (!(ptr = RZ_NEW0(RzBinSection))) {
 			return ret;
 		}
-		ptr->name = strdup("data");
+		ptr->name = rz_str_dup("data");
 		ptr->size = datasize;
 		ptr->vsize = datasize + (datasize % 4096);
 		ptr->paddr = textsize + (8 * 4);
@@ -105,7 +105,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		if (!(ptr = RZ_NEW0(RzBinSection))) {
 			return ret;
 		}
-		ptr->name = strdup("syms");
+		ptr->name = rz_str_dup("syms");
 		ptr->size = symssize;
 		ptr->vsize = symssize + (symssize % 4096);
 		ptr->paddr = datasize + textsize + (8 * 4);
@@ -123,7 +123,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		if (!(ptr = RZ_NEW0(RzBinSection))) {
 			return ret;
 		}
-		ptr->name = strdup("spsz");
+		ptr->name = rz_str_dup("spsz");
 		ptr->size = spszsize;
 		ptr->vsize = spszsize + (spszsize % 4096);
 		ptr->paddr = symssize + datasize + textsize + (8 * 4);
@@ -143,7 +143,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		if (!(ptr = RZ_NEW0(RzBinSection))) {
 			return ret;
 		}
-		ptr->name = strdup("pcsz");
+		ptr->name = rz_str_dup("pcsz");
 		ptr->size = pcszsize;
 		ptr->vsize = pcszsize + (pcszsize % 4096);
 		ptr->paddr = spszsize + symssize + datasize + textsize + (8 * 4);
@@ -177,14 +177,14 @@ static RzBinInfo *info(RzBinFile *bf) {
 	if (!(ret = RZ_NEW0(RzBinInfo))) {
 		return NULL;
 	}
-	ret->file = strdup(bf->file);
-	ret->bclass = strdup("program");
-	ret->rclass = strdup("p9");
-	ret->os = strdup("Plan9");
-	ret->arch = strdup(rz_sys_arch_str(bina));
-	ret->machine = strdup(ret->arch);
-	ret->subsystem = strdup("plan9");
-	ret->type = strdup("EXEC (executable file)");
+	ret->file = rz_str_dup(bf->file);
+	ret->bclass = rz_str_dup("program");
+	ret->rclass = rz_str_dup("p9");
+	ret->os = rz_str_dup("Plan9");
+	ret->arch = rz_str_dup(rz_sys_arch_str(bina));
+	ret->machine = rz_str_dup(ret->arch);
+	ret->subsystem = rz_str_dup("plan9");
+	ret->type = rz_str_dup("EXEC (executable file)");
 	ret->bits = bits;
 	ret->has_va = true;
 	ret->big_endian = big_endian;

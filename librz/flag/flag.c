@@ -123,7 +123,7 @@ static RzFlagsAtOffset *flags_at_offset(RzFlag *f, ut64 off) {
 }
 
 static char *filter_item_name(const char *name) {
-	char *res = strdup(name);
+	char *res = rz_str_dup(name);
 	if (!res) {
 		return NULL;
 	}
@@ -666,28 +666,28 @@ err:
 RZ_API void rz_flag_item_set_alias(RzFlagItem *item, const char *alias) {
 	rz_return_if_fail(item);
 	free(item->alias);
-	item->alias = RZ_STR_ISEMPTY(alias) ? NULL : strdup(alias);
+	item->alias = RZ_STR_ISEMPTY(alias) ? NULL : rz_str_dup(alias);
 }
 
 /* add/replace/remove the comment of a flag item */
 RZ_API void rz_flag_item_set_comment(RzFlagItem *item, const char *comment) {
 	rz_return_if_fail(item);
 	free(item->comment);
-	item->comment = RZ_STR_ISEMPTY(comment) ? NULL : strdup(comment);
+	item->comment = RZ_STR_ISEMPTY(comment) ? NULL : rz_str_dup(comment);
 }
 
 /* add/replace/remove the realname of a flag item */
 RZ_API void rz_flag_item_set_realname(RzFlagItem *item, const char *realname) {
 	rz_return_if_fail(item);
 	free_item_realname(item);
-	item->realname = RZ_STR_ISEMPTY(realname) ? NULL : strdup(realname);
+	item->realname = RZ_STR_ISEMPTY(realname) ? NULL : rz_str_dup(realname);
 }
 
 /* add/replace/remove the color of a flag item */
 RZ_API const char *rz_flag_item_set_color(RzFlagItem *item, const char *color) {
 	rz_return_val_if_fail(item, NULL);
 	free(item->color);
-	item->color = (color && *color) ? strdup(color) : NULL;
+	item->color = STRDUP_OR_NULL(color);
 	return item->color;
 }
 

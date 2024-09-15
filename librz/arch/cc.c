@@ -36,14 +36,14 @@ RZ_API void rz_analysis_cc_del(RzAnalysis *analysis, const char *name) {
 
 RZ_API bool rz_analysis_cc_set(RzAnalysis *analysis, const char *expr) {
 	rz_return_val_if_fail(analysis && expr, false);
-	char *e = strdup(expr);
+	char *e = rz_str_dup(expr);
 	char *p = strchr(e, '(');
 	if (!p) {
 		free(e);
 		return false;
 	}
 	*p++ = 0;
-	char *args = strdup(p);
+	char *args = rz_str_dup(p);
 	rz_str_trim(p);
 	char *end = strchr(args, ')');
 	if (!end) {
@@ -275,7 +275,7 @@ RZ_API RzList /*<char *>*/ *rz_analysis_calling_conventions(RzAnalysis *analysis
 	RzPVector *items = sdb_get_items_filter(analysis->sdb_cc, filter_cc, NULL, true);
 	rz_pvector_foreach (items, iter) {
 		SdbKv *kv = *iter;
-		rz_list_append(ccl, strdup(sdbkv_key(kv)));
+		rz_list_append(ccl, rz_str_dup(sdbkv_key(kv)));
 	}
 	rz_pvector_free(items);
 	return ccl;

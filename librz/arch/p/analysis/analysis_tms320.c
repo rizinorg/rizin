@@ -342,7 +342,7 @@ static char *get_reg_profile(RZ_BORROW RzAnalysis *a) {
 			;
 	}
 
-	return strdup(p);
+	return rz_str_dup(p);
 }
 
 RzAnalysisPlugin rz_analysis_plugin_tms320 = {

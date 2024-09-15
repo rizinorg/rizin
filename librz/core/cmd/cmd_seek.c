@@ -166,7 +166,7 @@ RZ_IPI RzCmdStatus rz_seek_handler(RzCore *core, int argc, const char **argv) {
 	// NOTE: hack to make it work with local function labels
 	char *ptr;
 	if ((ptr = strstr(argv[1], "+.")) != NULL) {
-		char *dup = strdup(argv[1]);
+		char *dup = rz_str_dup(argv[1]);
 		dup[ptr - argv[1]] = '\x00';
 		core->offset = rz_num_math(core->num, dup);
 		free(dup);
@@ -243,7 +243,7 @@ RZ_IPI RzCmdStatus rz_seek_history_list_handler(RzCore *core, int argc, const ch
 			if (f->offset != undo->offset) {
 				name = rz_str_newf("%s+%" PFMT64d, f->name, undo->offset - f->offset);
 			} else {
-				name = strdup(f->name);
+				name = rz_str_dup(f->name);
 			}
 		}
 		current_met |= undo->is_current;

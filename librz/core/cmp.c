@@ -192,9 +192,9 @@ RZ_API RZ_OWN RzList /*<RzCompareData *>*/ *rz_core_cmp_disasm(RzCore *core, ut6
 			buf + j, len - j);
 
 		comp->len = UT8_MAX;
-		comp->data1 = (ut8 *)strdup(rz_strbuf_get(&op.buf_asm));
+		comp->data1 = (ut8 *)rz_str_dup(rz_strbuf_get(&op.buf_asm));
 		comp->addr1 = addr1 + i;
-		comp->data2 = (ut8 *)strdup(rz_strbuf_get(&op2.buf_asm));
+		comp->data2 = (ut8 *)rz_str_dup(rz_strbuf_get(&op2.buf_asm));
 		comp->addr2 = addr2 + j;
 		comp->same = !strcmp((char *)comp->data1, (char *)comp->data2); // we can assume that instructions can be represented as plain chars
 		rz_list_append(cmp_list, comp);

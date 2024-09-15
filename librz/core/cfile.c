@@ -74,7 +74,7 @@ static RZ_OWN RzPVector /*<RzBinSection *>*/ *__save_old_sections(RzCore *core) 
 			break;
 		}
 		*old_sec = *sec;
-		old_sec->name = strdup(sec->name);
+		old_sec->name = rz_str_dup(sec->name);
 		old_sec->format = NULL;
 		rz_pvector_push(old_sections, old_sec);
 	}
@@ -245,7 +245,7 @@ RZ_API void rz_core_file_reopen_remote_debug(RzCore *core, const char *uri, ut64
 	rz_config_set_b(core->config, "cfg.debug", true);
 	// Set referer as the original uri so we could return to it with `oo`
 	desc->referer = desc->uri;
-	desc->uri = strdup(uri);
+	desc->uri = rz_str_dup(uri);
 
 	if ((file = rz_core_file_open(core, uri, RZ_PERM_R | RZ_PERM_W, addr))) {
 		fd = file->fd;
@@ -293,10 +293,10 @@ RZ_API void rz_core_file_reopen_debug(RzCore *core, const char *args) {
 	}
 
 	RzBinFile *bf = rz_bin_file_find_by_fd(core->bin, ofile->fd);
-	char *binpath = (bf && bf->file) ? strdup(bf->file) : NULL;
+	char *binpath = (bf && bf->file) ? rz_str_dup(bf->file) : NULL;
 	if (!binpath) {
 		if (rz_file_exists(desc->name)) {
-			binpath = strdup(desc->name);
+			binpath = rz_str_dup(desc->name);
 		}
 	}
 	if (!binpath) {
@@ -336,7 +336,7 @@ RZ_API bool rz_core_file_reopen(RzCore *core, const char *args, int perm, int lo
 	RzBinFile *bf = ofile ? rz_bin_file_find_by_fd(core->bin, ofile->fd)
 			      : NULL;
 	RzIODesc *odesc = (core->io && ofile) ? rz_io_desc_get(core->io, ofile->fd) : NULL;
-	char *ofilepath = NULL, *obinfilepath = (bf && bf->file) ? strdup(bf->file) : NULL;
+	char *ofilepath = NULL, *obinfilepath = (bf && bf->file) ? rz_str_dup(bf->file) : NULL;
 	int ret = false;
 	ut64 origoff = core->offset;
 	if (odesc) {
@@ -389,9 +389,9 @@ RZ_API bool rz_core_file_reopen(RzCore *core, const char *args, int perm, int lo
 	// HACK: move last mapped address to higher place
 	// XXX - why does this hack work?
 	// when the new memory maps are created.
-	path = strdup(ofilepath);
+	path = rz_str_dup(ofilepath);
 	free(obinfilepath);
-	obinfilepath = strdup(ofilepath);
+	obinfilepath = rz_str_dup(ofilepath);
 
 	// rz_str_trim (path);
 	file = rz_core_file_open(core, path, perm, laddr);

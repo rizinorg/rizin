@@ -115,7 +115,7 @@ static RzCmdStatus meta_variable_comment_append(RzCore *core, const char *name, 
 			rz_cons_println(var->comment);
 		}
 	} else {
-		var->comment = strdup(comment);
+		var->comment = rz_str_dup(comment);
 	}
 	free(heap_comment);
 	return RZ_CMD_STATUS_OK;
@@ -307,7 +307,7 @@ RZ_IPI RzCmdStatus rz_comment_unique_handler(RzCore *core, int argc, const char 
 			comment = s;
 		}
 	} else {
-		comment = strdup(argv[1]);
+		comment = rz_str_dup(argv[1]);
 	}
 	if (comment) {
 		rz_core_meta_comment_add(core, comment, core->offset);

@@ -168,7 +168,7 @@ RZ_API RzCmdStatus rz_core_asm_plugins_print(RzCore *core, const char *arch, RzC
 	if (arch) {
 		rz_list_foreach (a->plugins, iter, ap) {
 			if (ap->cpus && !strcmp(arch, ap->name)) {
-				char *c = strdup(ap->cpus);
+				char *c = rz_str_dup(ap->cpus);
 				int n = rz_str_split(c, ',');
 				for (i = 0; i < n; i++) {
 					rz_cons_println(rz_str_word_get0(c, i));
@@ -231,7 +231,7 @@ RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_strsearch(RzCore *core, const ch
 	if (!(buf = (ut8 *)calloc(core->blocksize, 1))) {
 		return NULL;
 	}
-	if (!(ptr = strdup(input))) {
+	if (!(ptr = rz_str_dup(input))) {
 		free(buf);
 		return NULL;
 	}
@@ -333,7 +333,7 @@ RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_strsearch(RzCore *core, const ch
 					continue;
 				}
 				// opsz = aop.size;
-				opst = strdup(rz_strbuf_get(&aop.esil));
+				opst = rz_str_dup(rz_strbuf_get(&aop.esil));
 				rz_analysis_op_fini(&aop);
 			} else {
 				if (!(len = rz_asm_disassemble(
@@ -346,7 +346,7 @@ RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_strsearch(RzCore *core, const ch
 					continue;
 				}
 				// opsz = op.size;
-				opst = strdup(rz_strbuf_get(&op.buf_asm));
+				opst = rz_str_dup(rz_strbuf_get(&op.buf_asm));
 				rz_asm_op_fini(&op);
 			}
 			if (opst) {
@@ -388,7 +388,7 @@ RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_strsearch(RzCore *core, const ch
 						goto beach;
 					}
 					code[strlen(code) - 2] = 0;
-					hit->code = strdup(code);
+					hit->code = rz_str_dup(code);
 					rz_list_append(hits, hit);
 					RZ_FREE(code);
 					matchcount = 0;

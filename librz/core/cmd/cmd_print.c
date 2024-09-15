@@ -520,7 +520,7 @@ static void colordump(RzCore *core, const ut8 *block, int len) {
 					ch = ' ';
 				}
 			} else {
-				color = strdup("");
+				color = rz_str_dup("");
 				if (show_cursor && core->print->cur == j) {
 					ch = '_';
 				} else {
@@ -533,7 +533,7 @@ static void colordump(RzCore *core, const ut8 *block, int len) {
 				ch = core->print->io_unalloc_ch;
 				if (show_color) {
 					free(color);
-					color = strdup(Color_RESET);
+					color = rz_str_dup(Color_RESET);
 					if (ch == ' ') {
 						ch = '.';
 					}
@@ -967,7 +967,7 @@ static void annotated_hexdump(RzCore *core, int len) {
 					fend = addr + j + flag->size;
 				}
 				free(note[j]);
-				note[j] = rz_str_prepend(strdup(flag->name), "/");
+				note[j] = rz_str_prepend(rz_str_dup(flag->name), "/");
 				marks = true;
 				color_idx++;
 				color_idx %= 10;
@@ -5081,8 +5081,8 @@ RZ_IPI RzCmdStatus rz_print_columns_debug_handler(RzCore *core, int argc, const 
 		rows = user_rows;
 	}
 	bool asm_minicols = rz_config_get_i(core->config, "asm.minicols");
-	char *o_ao = strdup(rz_config_get(core->config, "asm.offset"));
-	char *o_ab = strdup(rz_config_get(core->config, "asm.bytes"));
+	char *o_ao = rz_str_dup(rz_config_get(core->config, "asm.offset"));
+	char *o_ab = rz_str_dup(rz_config_get(core->config, "asm.bytes"));
 	if (asm_minicols) {
 		// Set asm.offset and asm.bytes configs to false to avoid printing them
 		rz_config_set_b(core->config, "asm.offset", false);

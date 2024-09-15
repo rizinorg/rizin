@@ -403,5 +403,5 @@ char *pic18_get_reg_profile(RzAnalysis *esil) {
 		"gpr wregs .8 101 0\n"
 		"gpr statuss .8 102 0\n"
 		"gpr bsrs .8 103 0\n";
-	return strdup(p);
+	return rz_str_dup(p);
 }

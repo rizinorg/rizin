@@ -15,13 +15,13 @@ static void fini_kv_key(HT_(Kv) *kv, RZ_UNUSED void *user) {
  *
  * Keys are compared using strcmp function.
  * Size of keys is calculated using strlen function.
- * Copies of keys are made using strdup function if appropriate option is set.
+ * Copies of keys are made using rz_str_dup function if appropriate option is set.
  */
 RZ_API RZ_OWN HtName_(Ht) *Ht_(new)(HtStrOption key_opt) {
 	HT_(Options) opt = {
 		.cmp = (HT_(Comparator))strcmp,
 		.hashfn = (HT_(HashFunction))sdb_hash,
-		.dupkey = key_opt == HT_STR_DUP ? (HT_(DupKey))strdup : NULL,
+		.dupkey = key_opt == HT_STR_DUP ? (HT_(DupKey))rz_str_dup : NULL,
 		.dupvalue = NULL,
 		.calcsizeK = (HT_(CalcSizeK))strlen,
 		.calcsizeV = NULL,

@@ -363,7 +363,7 @@ RZ_API bool rz_core_yank_hexpair(RzCore *core, const char *str) {
 	if (RZ_STR_ISEMPTY(str)) {
 		return false;
 	}
-	char *out = strdup(str);
+	char *out = rz_str_dup(str);
 	int len = rz_hex_str2bin(str, (ut8 *)str);
 	if (len > 0) {
 		rz_core_yank_set(core, core->offset, (ut8 *)out, len);

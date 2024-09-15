@@ -927,7 +927,7 @@ static void set_lib_and_class_name(char *mangled, char **out_class, char **out_l
 
 	*out_class = object;
 	if (!is_java_lang || startswith(object, "java.lang")) {
-		*out_lib = strdup(object);
+		*out_lib = rz_str_dup(object);
 	} else {
 		*out_lib = rz_str_newf("java.lang.%s", object);
 	}
@@ -1202,7 +1202,7 @@ static RzBinSection *section_new(const char *name, ut32 perm, ut32 size, ut64 pa
 	if (!section) {
 		return NULL;
 	}
-	section->name = strdup(name);
+	section->name = rz_str_dup(name);
 	section->paddr = paddr;
 	section->vaddr = vaddr;
 	section->size = section->vsize = size;
@@ -2015,19 +2015,19 @@ RZ_API RZ_OWN char *rz_bin_dex_version(RZ_NONNULL RzBinDex *dex) {
 	// https://cs.android.com/android/platform/superproject/+/master:dalvik/dx/src/com/android/dex/DexFormat.java;l=55;bpv=1;bpt=0
 	// https://developer.android.com/studio/releases/platforms
 	if (startswith((char *)dex->version, "009")) {
-		return strdup("Android M3 release (Nov-Dec 2007)");
+		return rz_str_dup("Android M3 release (Nov-Dec 2007)");
 	} else if (startswith((char *)dex->version, "013")) {
-		return strdup("Android M5 release (Feb-Mar 2008)");
+		return rz_str_dup("Android M5 release (Feb-Mar 2008)");
 	} else if (startswith((char *)dex->version, "035")) {
-		return strdup("Android 3.2 (API level 13 and earlier)");
+		return rz_str_dup("Android 3.2 (API level 13 and earlier)");
 	} else if (startswith((char *)dex->version, "037")) {
-		return strdup("Android 7 (API level 24 and earlier)");
+		return rz_str_dup("Android 7 (API level 24 and earlier)");
 	} else if (startswith((char *)dex->version, "038")) {
-		return strdup("Android 8 (API level 26 and earlier)");
+		return rz_str_dup("Android 8 (API level 26 and earlier)");
 	} else if (startswith((char *)dex->version, "039")) {
-		return strdup("Android 9 (API level 28 and earlier)");
+		return rz_str_dup("Android 9 (API level 28 and earlier)");
 	} else if (startswith((char *)dex->version, "040")) {
-		return strdup("Android 10+ (Aug 2019)");
+		return rz_str_dup("Android 10+ (Aug 2019)");
 	}
 	return NULL;
 }

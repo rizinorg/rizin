@@ -106,10 +106,10 @@ RZ_API bool rz_bin_file_object_new_from_xtr_data(RzBin *bin, RzBinFile *bf, RzBi
 	free(o->info->arch);
 	free(o->info->machine);
 	free(o->info->type);
-	o->info->file = strdup(bf->file);
-	o->info->arch = strdup(data->metadata->arch);
-	o->info->machine = strdup(data->metadata->machine);
-	o->info->type = strdup(data->metadata->type);
+	o->info->file = rz_str_dup(bf->file);
+	o->info->arch = rz_str_dup(data->metadata->arch);
+	o->info->machine = rz_str_dup(data->metadata->machine);
+	o->info->type = rz_str_dup(data->metadata->type);
 	o->info->bits = data->metadata->bits;
 	o->info->has_crypto = bf->o->info->has_crypto;
 	data->loaded = true;
@@ -378,8 +378,8 @@ static inline bool add_file_hash(RzHashCfg *md, const char *name, RzPVector /*<R
 		return false;
 	}
 
-	fh->type = strdup(name);
-	fh->hex = strdup(hash);
+	fh->type = rz_str_dup(name);
+	fh->hex = rz_str_dup(hash);
 	rz_pvector_push(vec, fh);
 	return true;
 }

@@ -5120,7 +5120,7 @@ static int parseOpcode(RzAsm *a, const char *op, Opcode *out) {
 		op += 4;
 	}
 	char *args = strchr(op, ' ');
-	out->mnemonic = args ? rz_str_ndup(op, args - op) : strdup(op);
+	out->mnemonic = args ? rz_str_ndup(op, args - op) : rz_str_dup(op);
 	out->operands[0].type = out->operands[1].type = 0;
 	out->operands[0].extended = out->operands[1].extended = false;
 	out->operands[0].reg = out->operands[0].regs[0] = out->operands[0].regs[1] = X86R_UNDEFINED;

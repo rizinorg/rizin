@@ -22,7 +22,7 @@ RZ_API bool rz_analysis_function_set_label(RzAnalysisFunction *fcn, const char *
 	if (ht_sp_find(fcn->label_addrs, name, NULL)) {
 		return false;
 	}
-	char *n = strdup(name);
+	char *n = rz_str_dup(name);
 	if (!ht_up_insert(fcn->labels, addr, n)) {
 		free(n);
 		return false;

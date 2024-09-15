@@ -56,7 +56,7 @@ struct trace_node {
 
 // XXX those tmp files are never removed and we shuoldnt use files for this
 static void set_profile_string(RzCore *core, const char *str) {
-	char *file = strdup(rz_config_get(core->config, "dbg.profile"));
+	char *file = rz_str_dup(rz_config_get(core->config, "dbg.profile"));
 	if (RZ_STR_ISEMPTY(file)) {
 		free(file);
 		file = rz_file_temp("rz-run");
@@ -72,7 +72,7 @@ static void cmd_debug_cont_syscall(RzCore *core, const char *_str) {
 	int i, *syscalls = NULL;
 	int count = 0;
 	if (_str && *_str) {
-		char *str = strdup(_str);
+		char *str = rz_str_dup(_str);
 		count = rz_str_word_set0(str);
 		syscalls = calloc(sizeof(int), count);
 		for (i = 0; i < count; i++) {
@@ -563,7 +563,7 @@ static int dump_maps(RzCore *core, int perm, const char *filename) {
 			}
 			rz_io_read_at(core->io, map->addr, buf, map->size);
 			char *file = filename
-				? strdup(filename)
+				? rz_str_dup(filename)
 				: rz_str_newf("0x%08" PFMT64x "-0x%08" PFMT64x "-%s.dmp",
 					  map->addr, map->addr_end, rz_str_rwx_i(map->perm));
 			if (!rz_file_dump(file, buf, map->size, 0)) {
@@ -595,7 +595,7 @@ static void cmd_debug_current_modules(RzCore *core, RzOutputMode mode) { // "dmm
 		} else if (mode == RZ_OUTPUT_MODE_RIZIN) {
 			/* Escape backslashes (e.g. for Windows). */
 			char *escaped_path = rz_str_escape(map->file);
-			char *filtered_name = strdup(map->name);
+			char *filtered_name = rz_str_dup(map->name);
 			rz_name_filter(filtered_name, 0, true);
 			rz_cons_printf("f mod.%s @ 0x%08" PFMT64x "\n",
 				filtered_name, map->addr);
@@ -629,7 +629,7 @@ static void cmd_debug_modules(RzCore *core, RzCmdStateOutput *state) { // "dmm"
 		} else if (mode == RZ_OUTPUT_MODE_RIZIN) {
 			/* Escape backslashes (e.g. for Windows). */
 			char *escaped_path = rz_str_escape(map->file);
-			char *filtered_name = strdup(map->name);
+			char *filtered_name = rz_str_dup(map->name);
 			rz_name_filter(filtered_name, 0, true);
 			rz_cons_printf("f mod.%s @ 0x%08" PFMT64x "\n",
 				filtered_name, map->addr);
@@ -891,7 +891,7 @@ RZ_IPI int rz_cmd_debug_dmi(void *data, const char *input) {
 			mode = RZ_MODE_PRINT;
 			break;
 		}
-		ptr = strdup(input[0] ? rz_str_trim_head_ro(input + 1) : "");
+		ptr = rz_str_dup(input[0] ? rz_str_trim_head_ro(input + 1) : "");
 		if (!ptr || !*ptr) {
 			rz_core_cmd(core, "dmm", 0);
 			free(ptr);
@@ -1299,7 +1299,7 @@ RZ_IPI void rz_core_debug_bp_add(RzCore *core, ut64 addr, const char *arg_perm, 
 			rz_bp_item_set_name(bpi, name);
 			free(name);
 		} else {
-			bpi->name = strdup(f->name);
+			bpi->name = rz_str_dup(f->name);
 		}
 	} else {
 		char *name = rz_str_newf("0x%08" PFMT64x, addr);
@@ -3129,7 +3129,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_core_dump_generate_handler(RzCore *core, int arg
 		RZ_LOG_ERROR("core: Not debugging, can't write core file.\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	char *corefile = argc > 1 ? strdup(argv[1]) : rz_str_newf("core.%u", core->dbg->pid);
+	char *corefile = argc > 1 ? rz_str_dup(argv[1]) : rz_str_newf("core.%u", core->dbg->pid);
 	RZ_LOG_WARN("core: Writing to file '%s'\n", corefile);
 	rz_file_rm(corefile);
 	RzBuffer *dst = rz_buf_new_file(corefile, O_RDWR | O_CREAT, 0644);

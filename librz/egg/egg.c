@@ -212,7 +212,7 @@ RZ_API bool rz_egg_load_file(RzEgg *egg, const char *file) {
 	// We have to reset the RzEgg state first
 	rz_egg_reset(egg);
 	if (rz_str_endswith(file, ".c")) {
-		char *fileSanitized = strdup(file);
+		char *fileSanitized = rz_str_dup(file);
 		rz_str_sanitize(fileSanitized);
 		const char *arch = rz_sys_arch_str(egg->arch);
 		const char *os = rz_egg_os_as_string(egg->os);
@@ -468,7 +468,7 @@ static inline char *eon(char *n) {
 RZ_API int rz_egg_padding(RzEgg *egg, const char *pad) {
 	int number;
 	ut8 *buf, padding_byte;
-	char *p, *o = strdup(pad);
+	char *p, *o = rz_str_dup(pad);
 
 	for (p = o; *p;) { // parse pad string
 		const char f = *p++;

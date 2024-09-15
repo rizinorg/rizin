@@ -186,8 +186,8 @@ static void copy_sym_name_with_namespace(char *class_name, char *read_name, RzBi
 	if (!class_name) {
 		class_name = "";
 	}
-	sym->classname = strdup(class_name);
-	sym->name = strdup(read_name);
+	sym->classname = rz_str_dup(class_name);
+	sym->name = rz_str_dup(read_name);
 }
 
 static int sort_by_offset(const void *_a, const void *_b, void *user) {
@@ -294,7 +294,7 @@ static void get_ivar_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinClass
 			}
 			char *name;
 			if (bin->has_crypto) {
-				name = strdup("some_encrypted_data");
+				name = rz_str_dup("some_encrypted_data");
 				left = strlen(name) + 1;
 			} else {
 				int name_len = RZ_MIN(MAX_CLASS_NAME_LEN, left);
@@ -324,7 +324,7 @@ static void get_ivar_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinClass
 			}
 			char *type = NULL;
 			if (is_crypted == 1) {
-				type = strdup("some_encrypted_data");
+				type = rz_str_dup("some_encrypted_data");
 				// 	left = strlen (name) + 1;
 			} else {
 				int type_len = RZ_MIN(MAX_CLASS_NAME_LEN, left);
@@ -449,7 +449,7 @@ static void get_objc_property_list(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzB
 				goto error;
 			}
 			if (bin->has_crypto) {
-				name = strdup("some_encrypted_data");
+				name = rz_str_dup("some_encrypted_data");
 				left = strlen(name) + 1;
 			} else {
 				int name_len = RZ_MIN(MAX_CLASS_NAME_LEN, left);
@@ -474,7 +474,7 @@ static void get_objc_property_list(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzB
 			if (r + left < r) goto error;
 
 			if (is_crypted == 1) {
-				name = strdup ("some_encrypted_data");
+				name = rz_str_dup ("some_encrypted_data");
 				left = strlen (name) + 1;
 			} else {
 				name = malloc (left);
@@ -628,7 +628,7 @@ static void get_method_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, char *cl
 				goto error;
 			}
 			if (bin->has_crypto) {
-				name = strdup("some_encrypted_data");
+				name = rz_str_dup("some_encrypted_data");
 				left = strlen(name) + 1;
 			} else {
 				int name_len = RZ_MIN(MAX_CLASS_NAME_LEN, left);
@@ -653,7 +653,7 @@ static void get_method_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, char *cl
 				goto error;
 			}
 			if (bin->has_crypto) {
-				rtype = strdup("some_encrypted_data");
+				rtype = rz_str_dup("some_encrypted_data");
 				left = strlen(rtype) + 1;
 			} else {
 				left = 1;
@@ -667,7 +667,7 @@ static void get_method_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, char *cl
 				}
 				rtype[left] = 0;
 			}
-			method->rtype = strdup(rtype);
+			method->rtype = rz_str_dup(rtype);
 			RZ_FREE(rtype);
 		}
 
@@ -817,7 +817,7 @@ static void get_protocol_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinC
 				return;
 			}
 			if (bin->has_crypto) {
-				name = strdup("some_encrypted_data");
+				name = rz_str_dup("some_encrypted_data");
 				left = strlen(name) + 1;
 			} else {
 				int name_len = RZ_MIN(MAX_CLASS_NAME_LEN, left);
@@ -867,7 +867,7 @@ static char *demangle_classname(const char *s) {
 		len = atoi(s + off);
 		modlen = strlen(s + off);
 		if (!len || len >= modlen) {
-			return strdup(s);
+			return rz_str_dup(s);
 		}
 		module = rz_str_ndup(skipnum(s + off), len);
 		int skip = (skipnum(s + off) - s) + len;
@@ -881,14 +881,14 @@ static char *demangle_classname(const char *s) {
 		modlen = strlen(kstr);
 		if (!len || len >= modlen) {
 			free(module);
-			return strdup(s);
+			return rz_str_dup(s);
 		}
 		klass = rz_str_ndup(skipnum(kstr), len);
 		ret = rz_str_newf("%s.%s", module, klass);
 		free(module);
 		free(klass);
 	} else {
-		ret = strdup(s);
+		ret = rz_str_dup(s);
 	}
 	return ret;
 }
@@ -967,7 +967,7 @@ static char *get_class_name(mach0_ut p, RzBinFile *bf, RzBuffer *buf) {
 			return NULL;
 		}
 		if (bin->has_crypto) {
-			return strdup("some_encrypted_data");
+			return rz_str_dup("some_encrypted_data");
 		} else {
 			int name_len = RZ_MIN(MAX_CLASS_NAME_LEN, left);
 			char *name = malloc(name_len + 1);
@@ -1061,7 +1061,7 @@ static void get_class_ro_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, ut32 *is_me
 			return;
 		}
 		if (bin->has_crypto) {
-			klass->name = strdup("some_encrypted_data");
+			klass->name = rz_str_dup("some_encrypted_data");
 			left = strlen(klass->name) + 1;
 		} else {
 			int name_len = RZ_MIN(MAX_CLASS_NAME_LEN, left);
@@ -1168,7 +1168,7 @@ RZ_API void MACH0_(get_class_t)(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinC
 			char *target_class_name = (char *)((struct reloc_t *)found->data)->name;
 			if (rz_str_startswith(target_class_name, _objc_class)) {
 				target_class_name += _objc_class_len;
-				klass->super = strdup(target_class_name);
+				klass->super = rz_str_dup(target_class_name);
 			}
 		}
 	} else if (c.superclass) {
@@ -1213,10 +1213,10 @@ static RzList *parse_swift_classes(RzBinFile *bf) {
 	ret = rz_list_newf (rz_bin_string_free);
 	rz_list_foreach (bf->o->strings, iter, str) {
 		if (!strncmp (str->string, "_TtC", 4)) {
-			char *msg = strdup (str->string + 4);
+			char *msg = rz_str_dup (str->string + 4);
 			cls = RZ_NEW0 (RzBinClass);
-			cls->name = strdup (msg);
-			cls->super = strdup (msg);
+			cls->name = rz_str_dup (msg);
+			cls->super = rz_str_dup (msg);
 			cls->index = idx++;
 			rz_list_append (ret, cls);
 			free (msg);

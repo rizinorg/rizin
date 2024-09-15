@@ -228,7 +228,7 @@ static void rz_hash_show_algorithms(RzHashContext *ctx) {
 		if ((x)->k) { \
 			rz_hash_error(x, RZ_HASH_OP_UNKNOWN, "invalid combination of arguments for '-%c'\n", c); \
 		} else if (h || strlen(s) < 1) { \
-			(x)->k = strdup(s); \
+			(x)->k = rz_str_dup(s); \
 		} else { \
 			(x)->k = rz_str_newf("s:%s", s); \
 		} \
@@ -236,7 +236,7 @@ static void rz_hash_show_algorithms(RzHashContext *ctx) {
 
 #define rz_hash_ctx_set_mode(x, m)   rz_hash_ctx_set_val(x, mode, RZ_HASH_MODE_STANDARD, m)
 #define rz_hash_ctx_set_op(x, o)     rz_hash_ctx_set_val(x, operation, RZ_HASH_OP_UNKNOWN, o)
-#define rz_hash_ctx_set_str(x, k, s) rz_hash_ctx_set_val(x, k, NULL, strdup(s))
+#define rz_hash_ctx_set_str(x, k, s) rz_hash_ctx_set_val(x, k, NULL, rz_str_dup(s))
 
 static bool hash_parse_string(const char *option, const char *string, ut8 **buffer, size_t *bufsize) {
 	char *sstdin = NULL;

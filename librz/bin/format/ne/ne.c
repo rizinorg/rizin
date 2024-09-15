@@ -274,7 +274,7 @@ static char *__resource_type_str(int type) {
 	default:
 		return rz_str_newf("UNKNOWN (%d)", type);
 	}
-	return strdup(typeName);
+	return rz_str_dup(typeName);
 }
 
 static void __free_resource_entry(void *entry) {

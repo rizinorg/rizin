@@ -24,7 +24,7 @@ RZ_API RzDebugSnap *rz_debug_snap_map(RzDebug *dbg, RzDebugMap *map) {
 		return NULL;
 	}
 
-	snap->name = strdup(map->name);
+	snap->name = rz_str_dup(map->name);
 	snap->addr = map->addr;
 	snap->addr_end = map->addr_end;
 	snap->size = map->size;

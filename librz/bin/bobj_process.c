@@ -110,7 +110,7 @@ static char *get_swift_field(const char *demangled, const char *classname) {
 	if (p) {
 		char *q = strstr(demangled, classname);
 		if (q && q[strlen(classname)] == '.') {
-			q = strdup(q + strlen(classname) + 1);
+			q = rz_str_dup(q + strlen(classname) + 1);
 			char *r = strchr(q, '.');
 			if (r) {
 				*r = 0;

@@ -248,7 +248,7 @@ static void types_xrefs_all(RzCore *core) {
 		rz_list_foreach (types, iter2, type) {
 			const char *ident = rz_type_identifier(type);
 			if (ident) {
-				rz_list_push(types_list, strdup(ident));
+				rz_list_push(types_list, rz_str_dup(ident));
 			}
 		}
 		rz_list_free(types);

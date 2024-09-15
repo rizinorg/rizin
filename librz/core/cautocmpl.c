@@ -261,7 +261,7 @@ static void autocmplt_cmd_arg_file(RzLineNSCompletionResult *res, const char *s,
 
 	if (RZ_STR_ISEMPTY(input)) {
 		free(input);
-		input = strdup(".");
+		input = rz_str_dup(".");
 	} else if (!rz_file_is_abspath(input) && !rz_str_startswith(input, ".")) {
 		const char *fmt = ".%s%s";
 #if __WINDOWS__
@@ -312,7 +312,7 @@ static void autocmplt_cmd_arg_env(RzLineNSCompletionResult *res, const char *s, 
 	res->end_string = "";
 	for (env = rz_sys_get_environ(); *env; env++) {
 		const char *eq = strchr(*env, '=');
-		char *envkey = eq ? rz_str_ndup(*env, eq - *env) : strdup(*env);
+		char *envkey = eq ? rz_str_ndup(*env, eq - *env) : rz_str_dup(*env);
 		if (!strncmp(envkey, s, len)) {
 			rz_line_ns_completion_result_add(res, envkey);
 		}

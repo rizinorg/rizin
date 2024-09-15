@@ -185,7 +185,7 @@ static RzList /*<RzDebugMap *>*/ *rz_debug_native_modules_get(RzDebug *dbg) {
 	rz_list_foreach_safe (list, iter, iter2, map) {
 		const char *file = map->file;
 		if (!map->file) {
-			file = map->file = strdup(map->name);
+			file = map->file = rz_str_dup(map->name);
 		}
 		must_delete = true;
 		if (file && *file == '/') {
@@ -198,7 +198,7 @@ static RzList /*<RzDebugMap *>*/ *rz_debug_native_modules_get(RzDebug *dbg) {
 		} else {
 			rz_list_append(last, map);
 			free(lastname);
-			lastname = strdup(file);
+			lastname = rz_str_dup(file);
 		}
 	}
 	list->free = NULL;

@@ -20,7 +20,7 @@ RZ_API RZ_OWN char *rz_syscmd_sort(RZ_NONNULL const char *file) {
 		p = file;
 	}
 	if (p && *p) {
-		char *filename = strdup(p);
+		char *filename = rz_str_dup(p);
 		rz_str_trim(filename);
 		char *data = rz_file_slurp(filename, NULL);
 		if (!data) {
@@ -49,7 +49,7 @@ RZ_API RZ_OWN char *rz_syscmd_head(RZ_NONNULL const char *file, int count) {
 		p = file;
 	}
 	if (p && *p) {
-		char *filename = strdup(p);
+		char *filename = rz_str_dup(p);
 		rz_str_trim(filename);
 		char *data = rz_file_slurp_lines(filename, 1, count);
 		if (!data) {
@@ -75,7 +75,7 @@ RZ_API RZ_OWN char *rz_syscmd_tail(RZ_NONNULL const char *file, int count) {
 		}
 	}
 	if (p && *p) {
-		char *filename = strdup(p);
+		char *filename = rz_str_dup(p);
 		rz_str_trim(filename);
 		char *data = rz_file_slurp_lines_from_bottom(filename, count);
 		if (!data) {
@@ -102,7 +102,7 @@ RZ_API RZ_OWN char *rz_syscmd_uniq(RZ_NONNULL const char *file) {
 		}
 	}
 	if (p && *p) {
-		char *filename = strdup(p);
+		char *filename = rz_str_dup(p);
 		rz_str_trim(filename);
 		char *data = rz_file_slurp(filename, NULL);
 		if (!data) {
@@ -141,8 +141,8 @@ RZ_API RZ_OWN char *rz_syscmd_join(RZ_NONNULL const char *file1, RZ_NONNULL cons
 		}
 	}
 	if (p1 && *p1 && p2 && *p2) {
-		char *filename1 = strdup(p1);
-		char *filename2 = strdup(p2);
+		char *filename1 = rz_str_dup(p1);
+		char *filename2 = rz_str_dup(p2);
 		rz_str_trim(filename1);
 		rz_str_trim(filename2);
 		char *data1 = rz_file_slurp(filename1, NULL);
@@ -163,7 +163,7 @@ RZ_API RZ_OWN char *rz_syscmd_join(RZ_NONNULL const char *file1, RZ_NONNULL cons
 			char *str1, *str2;
 			RzListIter *iter1, *iter2;
 			rz_list_foreach (list1, iter1, str1) {
-				char *field = strdup(str1); // extract comman field
+				char *field = rz_str_dup(str1); // extract comman field
 				char *end = strchr(field, ' ');
 				if (end) {
 					*end = '\0';
@@ -209,7 +209,7 @@ RZ_API RZ_OWN char *rz_syscmd_cat(RZ_NONNULL const char *file) {
 		}
 	}
 	if (p && *p) {
-		char *filename = strdup(p);
+		char *filename = rz_str_dup(p);
 		rz_str_trim(filename);
 		char *data = rz_file_slurp(filename, NULL);
 		if (!data) {
@@ -232,8 +232,8 @@ RZ_API RZ_OWN char *rz_syscmd_mkdir(RZ_NONNULL const char *dir) {
 	}
 	int ret;
 	char *dirname = (!strncmp(suffix, "-p ", 3))
-		? strdup(suffix + 3)
-		: strdup(suffix);
+		? rz_str_dup(suffix + 3)
+		: rz_str_dup(suffix);
 	rz_str_trim(dirname);
 	ret = rz_sys_mkdirp(dirname);
 	if (!ret && rz_sys_mkdir_failed()) {

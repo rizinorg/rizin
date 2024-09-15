@@ -20,7 +20,7 @@ RZ_API RZ_OWN RzList /*<char *>*/ *rz_flag_tags_list(RzFlag *f) {
 		if (strlen(tag) < 5) {
 			continue;
 		}
-		rz_list_append(res, (void *)strdup(tag + 4));
+		rz_list_append(res, (void *)rz_str_dup(tag + 4));
 	}
 	rz_pvector_free(items);
 	return res;

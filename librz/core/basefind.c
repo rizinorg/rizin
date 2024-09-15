@@ -75,7 +75,7 @@ static RzBinFile *basefind_new_bin_file(RzCore *core) {
 		return NULL;
 	}
 
-	bf->file = strdup(desc->name);
+	bf->file = rz_str_dup(desc->name);
 	bf->size = rz_io_desc_size(desc);
 	if (bf->size == UT64_MAX) {
 		RZ_LOG_ERROR("basefind: filesize exeeds memory size (UT64_MAX).\n");

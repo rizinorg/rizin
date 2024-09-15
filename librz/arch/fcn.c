@@ -790,7 +790,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			const char *name = analysis->coreb.getName(analysis->coreb.core, at);
 			if (name) {
 				if (rz_str_startswith(name, "try.") && rz_str_endswith(name, ".from")) {
-					char *handle = strdup(name);
+					char *handle = rz_str_dup(name);
 					// handle = rz_str_replace (handle, ".from", ".to", 0);
 					ut64 from_addr = analysis->coreb.numGet(analysis->coreb.core, handle);
 					handle = rz_str_replace(handle, ".from", ".catch", 0);
@@ -910,7 +910,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			// Is this a mov of immediate value into a register?
 			if (op.dst && op.dst->reg && op.dst->reg->name && op.val > 0 && op.val != UT64_MAX) {
 				free(last_reg_mov_lea_name);
-				if ((last_reg_mov_lea_name = strdup(op.dst->reg->name))) {
+				if ((last_reg_mov_lea_name = rz_str_dup(op.dst->reg->name))) {
 					last_reg_mov_lea_val = op.val;
 					last_is_reg_mov_lea = true;
 				}
@@ -921,7 +921,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 				movscale = op.scale;
 				if (op.src[0] && op.src[0]->reg) {
 					free(movbasereg);
-					movbasereg = strdup(op.src[0]->reg->name);
+					movbasereg = rz_str_dup(op.src[0]->reg->name);
 				} else {
 					RZ_FREE(movbasereg);
 				}
@@ -948,9 +948,9 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 				pair->op_addr = op.addr;
 				pair->leaddr = op.ptr; // XXX movdisp is dupped but seems to be trashed sometimes(?), better track leaddr separately
 				pair->reg = op.reg
-					? strdup(op.reg)
+					? rz_str_dup(op.reg)
 					: op.dst && op.dst->reg
-					? strdup(op.dst->reg->name)
+					? rz_str_dup(op.dst->reg->name)
 					: NULL;
 				rz_list_append(analysis->leaddrs, pair);
 			}
@@ -959,7 +959,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			}
 			if (op.dst && op.dst->reg && op.dst->reg->name && op.ptr > 0 && op.ptr != UT64_MAX) {
 				free(last_reg_mov_lea_name);
-				if ((last_reg_mov_lea_name = strdup(op.dst->reg->name))) {
+				if ((last_reg_mov_lea_name = rz_str_dup(op.dst->reg->name))) {
 					last_reg_mov_lea_val = op.ptr;
 					last_is_reg_mov_lea = true;
 				}
@@ -2605,7 +2605,7 @@ RZ_API RZ_OWN RzCallable *rz_analysis_function_clone_type(RzAnalysis *analysis, 
 	// Check first if there is a match with some pre-existing RzCallable type in the database
 	char *shortname = rz_analysis_function_name_guess(analysis->typedb, f->name);
 	if (!shortname) {
-		shortname = strdup(f->name);
+		shortname = rz_str_dup(f->name);
 	}
 	// At this point the `callable` pointer is *borrowed*
 	RzCallable *callable = rz_type_func_get(analysis->typedb, shortname);

@@ -335,7 +335,7 @@ RZ_API RZ_OWN char *rz_bin_source_line_addr2text(
 	}
 	const char *filepath = opt.abspath ? s->file : rz_file_basename(s->file);
 	if (!s->line) {
-		return strdup(filepath);
+		return rz_str_dup(filepath);
 	}
 
 	RzStrBuf sb = { 0 };

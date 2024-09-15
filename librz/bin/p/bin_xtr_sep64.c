@@ -299,11 +299,11 @@ static RSepSlice64 *sep64_xtr_ctx_get_slice(RSepXtr64Ctx *ctx, RzBuffer *whole, 
 	ut64 total_size = 0;
 
 	if (idx == 0) {
-		name = strdup("boot");
+		name = rz_str_dup("boot");
 		slice_buf = rz_buf_new_slice(whole, 0, ctx->hdr->kernel_base_paddr);
 		total_size = ctx->hdr->kernel_base_paddr;
 	} else if (idx == 1) {
-		name = strdup("kernel");
+		name = rz_str_dup("kernel");
 		info = mach0_info_new(whole, ctx->hdr->kernel_base_paddr, whole_size - ctx->hdr->kernel_base_paddr);
 		if (!info) {
 			goto beach;
@@ -345,10 +345,10 @@ static RSepSlice64 *sep64_xtr_ctx_get_slice(RSepXtr64Ctx *ctx, RzBuffer *whole, 
 	if (info) {
 		fill_metadata_info_from_hdr(meta, info->hdr);
 	} else {
-		meta->arch = strdup("arm");
+		meta->arch = rz_str_dup("arm");
 		meta->bits = 64;
-		meta->machine = strdup("arm64e");
-		meta->type = strdup("Executable file");
+		meta->machine = rz_str_dup("arm64e");
+		meta->type = rz_str_dup("Executable file");
 	}
 
 	meta->xtr_type = "SEP";
@@ -484,7 +484,7 @@ beach:
 }
 
 static inline void fill_metadata_info_from_hdr(RzBinXtrMetadata *meta, struct MACH0_(mach_header) * hdr) {
-	meta->arch = strdup(MACH0_(get_cputype_from_hdr)(hdr));
+	meta->arch = rz_str_dup(MACH0_(get_cputype_from_hdr)(hdr));
 	meta->bits = MACH0_(get_bits_from_hdr)(hdr);
 	meta->machine = MACH0_(get_cpusubtype_from_hdr)(hdr);
 	meta->type = MACH0_(get_filetype_from_hdr)(hdr);

@@ -17,7 +17,7 @@ RZ_API RZ_OWN RzAnalysisVarGlobal *rz_analysis_var_global_new(RZ_NONNULL const c
 	if (!glob) {
 		return NULL;
 	}
-	glob->name = strdup(name);
+	glob->name = rz_str_dup(name);
 	glob->addr = addr;
 	glob->analysis = NULL;
 
@@ -323,7 +323,7 @@ RZ_API bool rz_analysis_var_global_rename(RzAnalysis *analysis, RZ_NONNULL const
 	}
 
 	RZ_FREE(glob->name);
-	glob->name = strdup(newname);
+	glob->name = rz_str_dup(newname);
 	return ht_sp_update_key(analysis->ht_global_var, old_name, newname);
 }
 

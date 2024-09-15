@@ -453,7 +453,7 @@ RZ_API RZ_OWN char *rz_core_print_hexdump_byline_str(RZ_NONNULL RzCore *core, bo
 			st64 delta = (st64)(v - f->offset);
 			if (delta >= 0 && delta < 8192) {
 				if (v == f->offset) {
-					fn = strdup(f->name);
+					fn = rz_str_dup(f->name);
 				} else {
 					fn = rz_str_newf("%s+%" PFMT64d, f->name, v - f->offset);
 				}
@@ -614,7 +614,7 @@ RZ_IPI RZ_OWN char *rz_core_print_cons_disassembly(RzCore *core, ut64 addr, ut32
 	rz_core_print_disasm(core, addr, block, byte_len, inst_len, NULL, &disasm_options);
 	rz_cons_filter();
 	const char *cons_str = rz_str_get(rz_cons_get_buffer());
-	char *ret = strdup(cons_str);
+	char *ret = rz_str_dup(cons_str);
 	rz_cons_pop();
 	rz_cons_echo(NULL);
 	free(block);
@@ -818,7 +818,7 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RzCore
 				string2 = rz_str_ndup(str + 1, qoe - str - 1);
 			} else {
 				free(string2);
-				string2 = strdup(str + 1);
+				string2 = rz_str_dup(str + 1);
 			}
 			if (string2) {
 				RZ_FREE(string);
@@ -843,7 +843,7 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RzCore
 			}
 		}
 		if (str) {
-			string2 = mark_malloc ? str : strdup(str);
+			string2 = mark_malloc ? str : rz_str_dup(str);
 			linecolor = RZ_CONS_COLOR(call);
 		}
 		if (!string && string2) {
@@ -872,7 +872,7 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RzCore
 					}
 					if (rz_str_startswith(comment, "switch table")) {
 						free(switchcmp);
-						switchcmp = strdup(comment);
+						switchcmp = rz_str_dup(comment);
 					}
 					RZ_FREE(comment);
 				}

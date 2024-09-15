@@ -494,7 +494,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 			"flg	ov	.1	2585	0	# Overflow\n"
 			"flg	ca	.1	2586	0	# Carry\n"
 			"gpr	0	.64	2587	0	# The zero register.\n";
-		return strdup(p);
+		return rz_str_dup(p);
 	} else {
 		p =
 			"=PC	pc\n"
@@ -755,7 +755,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 			"flg	ov	.1	2585	0	# Overflow\n"
 			"flg	ca	.1	2586	0	# Carry\n"
 			"gpr	0	.32	2587	0	# The zero register.\n";
-		return strdup(p);
+		return rz_str_dup(p);
 	}
 }
 
@@ -769,7 +769,7 @@ static int analyze_op_vle(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 
 		// op->id = instr->type;
 
 		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
-			op->mnemonic = strdup(instr->name);
+			op->mnemonic = rz_str_dup(instr->name);
 		}
 		switch (op->type) {
 		case RZ_ANALYSIS_OP_TYPE_ILL:
@@ -991,7 +991,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	} else {
 		op->il_op = rz_ppc_cs_get_il_op(ctx->handle, insn, mode);
 		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
-			op->mnemonic = strdup(insn->mnemonic);
+			op->mnemonic = rz_str_dup(insn->mnemonic);
 		}
 		if (mask & RZ_ANALYSIS_OP_MASK_OPEX) {
 			opex(&op->opex, ctx->handle, insn);

@@ -2009,7 +2009,7 @@ static bool RzAnalysisDwarfVariable_as_RzAnalysisVar(RzAnalysis *a, RzAnalysisFu
 		return false;
 	}
 	var->type = DW_var->type ? rz_type_clone(DW_var->type) : rz_type_new_default(a->typedb);
-	var->name = strdup(DW_var->prefer_name ? DW_var->prefer_name : "");
+	var->name = rz_str_dup(DW_var->prefer_name ? DW_var->prefer_name : "");
 	var->kind = DW_var->kind;
 	var->fcn = f;
 	var->origin.kind = RZ_ANALYSIS_VAR_ORIGIN_DWARF;

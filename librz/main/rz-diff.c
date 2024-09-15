@@ -524,11 +524,11 @@ static bool rz_diff_calculate_distance(DiffContext *ctx) {
 	double similarity = 0.0;
 
 	if (ctx->command_line) {
-		if (!(a_buffer = (ut8 *)strdup(ctx->file_a))) {
+		if (!(a_buffer = (ut8 *)rz_str_dup(ctx->file_a))) {
 			goto rz_diff_calculate_distance_bad;
 		}
 		a_size = strlen((const char *)a_buffer);
-		if (!(b_buffer = (ut8 *)strdup(ctx->file_b))) {
+		if (!(b_buffer = (ut8 *)rz_str_dup(ctx->file_b))) {
 			goto rz_diff_calculate_distance_bad;
 		}
 		b_size = strlen((const char *)b_buffer);
@@ -1554,7 +1554,7 @@ static char *basic_block_opcodes(RzCore *core, RzAnalysisBlock *bbi) {
 	rz_core_print_disasm(core, b->addr, block, b->size, 9999, NULL, &disasm_options);
 	rz_cons_filter();
 	const char *retstr = rz_str_get(rz_cons_get_buffer());
-	opcodes = strdup(retstr);
+	opcodes = rz_str_dup(retstr);
 exit:
 	rz_cons_pop();
 	rz_cons_echo(NULL);
@@ -2677,7 +2677,7 @@ static char *visual_prompt(DiffHexView *hview, const char *prompt) {
 	rz_cons_flush();
 	rz_cons_fgets(buf, sizeof(buf), 0, NULL);
 	if (*buf) {
-		return strdup(buf);
+		return rz_str_dup(buf);
 	}
 	return NULL;
 }

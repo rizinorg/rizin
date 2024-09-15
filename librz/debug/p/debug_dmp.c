@@ -150,7 +150,7 @@ static bool rz_debug_dmp_init(RzDebug *dbg, void **user) {
 			// TODO: Convert to API call
 			dbg->corebind.cmdf(dbg->corebind.core, "idp \"%s\"", pdbpath);
 			free(exepath);
-			kernel_pdb = strdup(rz_file_basename(pdbpath));
+			kernel_pdb = rz_str_dup(rz_file_basename(pdbpath));
 			free(pdbpath);
 			if (!ctx->windctx.profile) {
 				winkd_build_profile(&ctx->windctx, dbg->analysis->typedb);
@@ -182,7 +182,7 @@ static bool rz_debug_dmp_init(RzDebug *dbg, void **user) {
 		kpb_flag_name = rz_str_newf("pdb.%s.KiProcessorBlock", kernel_pdb);
 		free(kernel_pdb);
 	} else {
-		kpb_flag_name = strdup("0");
+		kpb_flag_name = rz_str_dup("0");
 	}
 	const ut64 KiProcessorBlock = dbg->corebind.numGet(dbg->corebind.core, kpb_flag_name);
 	free(kpb_flag_name);
@@ -200,7 +200,7 @@ static bool rz_debug_dmp_init(RzDebug *dbg, void **user) {
 		// Map ETHREAD into address space
 		const ut64 address = 0x1000;
 		map = rz_io_map_new(core->io, desc->fd, RZ_PERM_R, ThreadOffset, address, CallStackOffset - ThreadOffset);
-		map->name = strdup("kernel.target.ethread");
+		map->name = rz_str_dup("kernel.target.ethread");
 		WindThread *target_thread = winkd_get_thread_at(&ctx->windctx, address);
 
 		ctx->windctx.target_thread.ethread = address;
@@ -213,7 +213,7 @@ static bool rz_debug_dmp_init(RzDebug *dbg, void **user) {
 				// Map EPROCESS into address space
 				const ut64 current_process = winkd_read_ptr_at(&ctx->windctx, ctx->windctx.read_at_kernel_virtual, thread->ethread + ctx->kthread_process_offset);
 				RzIOMap *map = rz_io_map_new(core->io, desc->fd, RZ_PERM_R, ProcessOffset, current_process, ThreadOffset - ProcessOffset);
-				map->name = strdup("kernel.target.eprocess");
+				map->name = rz_str_dup("kernel.target.eprocess");
 				WindProc *process = winkd_get_process_at(&ctx->windctx, current_process);
 				ctx->windctx.target = *process;
 				ctx->windctx.target_thread = *thread;
@@ -292,7 +292,7 @@ static RzList /*<RzDebugPid *>*/ *rz_debug_dmp_pids(RzDebug *dbg, int pid) {
 			rz_list_free(pids);
 			return NULL;
 		}
-		newpid->path = strdup(p->name);
+		newpid->path = rz_str_dup(p->name);
 		newpid->pid = p->uniqueid;
 		newpid->status = 's';
 		newpid->runnable = true;
@@ -772,7 +772,7 @@ static RzList /*<WindModule *>*/ *dmp_get_modules(DmpCtx *ctx) {
 			rz_list_free(ret);
 			return NULL;
 		}
-		mod->name = strdup(driver->file);
+		mod->name = rz_str_dup(driver->file);
 		mod->size = driver->size;
 		mod->addr = driver->base;
 		mod->timestamp = driver->timestamp;
@@ -798,7 +798,7 @@ static RzList /*<RzDebugMap *>*/ *rz_debug_dmp_modules(RzDebug *dbg) {
 			return NULL;
 		}
 		RZ_PTR_MOVE(mod->file, m->name);
-		mod->name = strdup(rz_file_dos_basename(mod->file));
+		mod->name = rz_str_dup(rz_file_dos_basename(mod->file));
 		mod->size = m->size;
 		mod->addr = m->addr;
 		mod->addr_end = m->addr + m->size;
@@ -827,7 +827,7 @@ static RzList /*<RzDebugMap *>*/ *rz_debug_dmp_maps(RzDebug *dbg) {
 		}
 		if (m->file) {
 			RZ_PTR_MOVE(map->file, m->file);
-			map->name = strdup(rz_file_dos_basename(map->file));
+			map->name = rz_str_dup(rz_file_dos_basename(map->file));
 		}
 		map->size = m->end - m->start;
 		map->addr = m->start;

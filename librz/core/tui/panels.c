@@ -1651,7 +1651,7 @@ void __handleComment(RzCore *core) {
 		}
 		if (buf[3] == ' ') {
 			int j, len = strlen(buf);
-			char *duped = strdup(buf);
+			char *duped = rz_str_dup(buf);
 			for (i = 4, j = 4; i < len; i++, j++) {
 				char c = duped[i];
 				if (c == '"' && i != (len - 1)) {
@@ -3581,8 +3581,8 @@ int __symbols_cb(void *user) {
 int __program_cb(void *user) {
 	RzCore *core = (RzCore *)user;
 	char *dh_orig = core->dbg->cur
-		? strdup(core->dbg->cur->name)
-		: strdup("esil");
+		? rz_str_dup(core->dbg->cur->name)
+		: rz_str_dup("esil");
 	rz_core_analysis_all(core);
 	rz_core_analysis_everything(core, false, dh_orig);
 	return 0;
@@ -4263,7 +4263,7 @@ RZ_OWN RzPanelsMenuItem *rz_panels_menu_item_new(RZ_NULLABLE const char *name, R
 	}
 	item->selectedIndex = 0;
 	rz_pvector_init(&item->submenus, (RzPVectorFree)rz_panels_menu_item_free);
-	item->name = name ? strdup(name) : NULL;
+	item->name = rz_str_dup(name);
 	item->cb = cb;
 	return item;
 }
@@ -4371,7 +4371,7 @@ void __init_menu_color_settings_layout(void *_core, const char *parent) {
 	RzCore *core = (RzCore *)_core;
 	const char *color = core->cons->context->pal.graph_box2;
 	const char *curtheme = rz_core_theme_get(core);
-	char *now = strdup(curtheme);
+	char *now = rz_str_dup(curtheme);
 	rz_str_split(now, '\n');
 	parent = "Settings.Colors";
 	RzStrBuf *buf = rz_strbuf_new(NULL);
@@ -6420,7 +6420,7 @@ RZ_OWN char *get_word_from_canvas(RzCore *core, RzPanelsTab *tab, int x, int y) 
 	if (sp2) {
 		*sp2 = 0;
 	}
-	char *res = strdup(sp);
+	char *res = rz_str_dup(sp);
 	free(r);
 	free(R);
 	free(cs);
@@ -6451,7 +6451,7 @@ RZ_OWN char *get_word_from_canvas_for_menu(RzCore *core, RzPanelsTab *tab, int x
 	}
 	char *ret = rz_str_newlen(pos += strlen(padding), i - strlen(padding));
 	if (!ret) {
-		ret = strdup(pos);
+		ret = rz_str_dup(pos);
 	}
 	free(r);
 	free(R);

@@ -1171,7 +1171,7 @@ static RZ_OWN char *sh_get_reg_profile(RzAnalysis *analysis) {
 		"gpr	macl	.32	132		0\n"
 		"gpr	pr		.32	136		0\n";
 
-	return strdup(p);
+	return rz_str_dup(p);
 }
 
 static int archinfo(RzAnalysis *a, RzAnalysisInfoType query) {

@@ -100,7 +100,7 @@ RZ_API RzTableColumn *rz_table_column_clone(RzTableColumn *col) {
 		return NULL;
 	}
 	memcpy(c, col, sizeof(*c));
-	c->name = strdup(c->name);
+	c->name = rz_str_dup(c->name);
 	return c;
 }
 
@@ -142,7 +142,7 @@ RZ_API void rz_table_add_column(RzTable *t, RzTableColumnType *type, const char 
 
 	RzTableColumn *c = RZ_NEW0(RzTableColumn);
 	if (c) {
-		c->name = strdup(name);
+		c->name = rz_str_dup(name);
 		c->maxWidth = maxWidth;
 		c->type = type;
 		int itemLength = rz_str_len_utf8_ansi(name) + 1;
@@ -163,7 +163,7 @@ static bool __addRow(RzTable *t, RzPVector /*<char *>*/ *items, const char *arg,
 	int itemLength = rz_str_len_utf8_ansi(arg);
 	RzTableColumn *c = rz_vector_index_ptr(t->cols, col);
 	if (c) {
-		char *str = strdup(arg);
+		char *str = rz_str_dup(arg);
 		c->width = RZ_MAX(c->width, itemLength);
 		rz_pvector_push(items, str);
 		return true;
@@ -249,7 +249,7 @@ RZ_API void rz_table_set_columnsf(RzTable *t, const char *fmt, ...) {
 		case 's': \
 		case 'z': \
 			arg = va_arg(ap, const char *); \
-			rz_pvector_push(row, strdup(arg ? arg : "")); \
+			rz_pvector_push(row, rz_str_dup(arg ? arg : "")); \
 			break; \
 		case 'b': \
 			rz_pvector_push(row, rz_str_dup(rz_str_bool(va_arg(ap, int)))); \
@@ -272,9 +272,9 @@ RZ_API void rz_table_set_columnsf(RzTable *t, const char *fmt, ...) {
 			ut64 n = va_arg(ap, ut64); \
 			if (n == UT64_MAX) { \
 				if (fmt == 'X') { \
-					rz_pvector_push(row, strdup("----------")); \
+					rz_pvector_push(row, rz_str_dup("----------")); \
 				} else { \
-					rz_pvector_push(row, strdup("-1")); \
+					rz_pvector_push(row, rz_str_dup("-1")); \
 				} \
 			} else { \
 				if (fmt == 'X') { \
@@ -417,7 +417,7 @@ static void __computeTotal(RzTable *t) {
 RZ_API RZ_OWN char *rz_table_tofancystring(RZ_NONNULL RzTable *t) {
 	rz_return_val_if_fail(t, NULL);
 	if (rz_vector_len(t->cols) == 0) {
-		return strdup("");
+		return rz_str_dup("");
 	}
 	RzStrBuf *sb = rz_strbuf_new("");
 	RzTableRow *row;
@@ -977,7 +977,7 @@ RZ_API void rz_table_columns(RzTable *t, RzList /*<char *>*/ *col_names) {
 				continue;
 			}
 			if (col_sources[i].dup) {
-				item = strdup(item);
+				item = rz_str_dup(item);
 			}
 			rz_pvector_push(new_items, item);
 		}
@@ -1106,7 +1106,7 @@ RZ_API bool rz_table_query(RzTable *t, const char *q) {
 	}
 
 	RzListIter *iter;
-	char *qq = strdup(q);
+	char *qq = rz_str_dup(q);
 	RzList *queries = rz_str_split_list(qq, ":", 0);
 	char *query;
 	rz_list_foreach (queries, iter, query) {
@@ -1136,7 +1136,7 @@ RZ_API bool rz_table_query(RzTable *t, const char *q) {
 		if (!operation) {
 			RzList *list = rz_list_new();
 			if (list) {
-				rz_list_append(list, strdup(columnName));
+				rz_list_append(list, rz_str_dup(columnName));
 				rz_table_columns(t, list);
 				rz_list_free(list);
 			}
@@ -1149,9 +1149,9 @@ RZ_API bool rz_table_query(RzTable *t, const char *q) {
 		} else if (!strcmp(operation, "join")) {
 			// TODO: implement join operation with other command's tables
 		} else if (!strcmp(operation, "sum")) {
-			char *op = strdup(operand ? operand : "");
+			char *op = rz_str_dup(operand ? operand : "");
 			RzList *list = rz_str_split_list(op, "/", 0);
-			rz_list_prepend(list, strdup(columnName));
+			rz_list_prepend(list, rz_str_dup(columnName));
 			rz_table_columns(t, list); // select/reorder columns
 			rz_list_free(list);
 			rz_table_filter(t, 0, '+', op);
@@ -1185,9 +1185,9 @@ RZ_API bool rz_table_query(RzTable *t, const char *q) {
 				rz_table_filter(t, col, '~', operand);
 			}
 		} else if (!strcmp(operation, "cols")) {
-			char *op = strdup(operand ? operand : "");
+			char *op = rz_str_dup(operand ? operand : "");
 			RzList *list = rz_str_split_list(op, "/", 0);
-			rz_list_prepend(list, strdup(columnName));
+			rz_list_prepend(list, rz_str_dup(columnName));
 			rz_table_columns(t, list); // select/reorder columns
 			rz_list_free(list);
 			free(op);
@@ -1224,11 +1224,11 @@ RZ_API void rz_table_hide_header(RzTable *t) {
 RZ_API RzListInfo *rz_listinfo_new(const char *name, RzInterval pitv, RzInterval vitv, int perm, const char *extra) {
 	RzListInfo *info = RZ_NEW(RzListInfo);
 	if (info) {
-		info->name = name ? strdup(name) : NULL;
+		info->name = rz_str_dup(name);
 		info->pitv = pitv;
 		info->vitv = vitv;
 		info->perm = perm;
-		info->extra = extra ? strdup(extra) : NULL;
+		info->extra = rz_str_dup(extra);
 	}
 	return info;
 }
@@ -1390,7 +1390,7 @@ RZ_API RZ_OWN RzTable *rz_table_transpose(RZ_NONNULL RzTable *t) {
 				item = *pitem;
 				RzTableRow *tr_row = rz_vector_index_ptr(transpose->rows, i++);
 				RzPVector *tr_items = tr_row->items;
-				rz_pvector_push(tr_items, strdup(item));
+				rz_pvector_push(tr_items, rz_str_dup(item));
 			}
 		}
 	}

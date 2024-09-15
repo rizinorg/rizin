@@ -119,7 +119,7 @@ Example:
 */
 RZ_API char *rz_file_dirname(const char *path) {
 	rz_return_val_if_fail(path, NULL);
-	char *newpath = strdup(path);
+	char *newpath = rz_str_dup(path);
 	char *ptr = (char *)rz_str_rchr(newpath, NULL, '/');
 	if (ptr) {
 		if (ptr == newpath) {
@@ -219,10 +219,10 @@ RZ_API bool rz_file_is_abspath(const char *file) {
 RZ_API RZ_OWN char *rz_file_abspath_rel(const char *cwd, const char *file) {
 	char *ret = NULL;
 	if (RZ_STR_ISEMPTY(file) || !strcmp(file, ".") || !strcmp(file, "./")) {
-		return strdup(cwd);
+		return rz_str_dup(cwd);
 	}
 	if (strstr(file, "://")) {
-		return strdup(file);
+		return rz_str_dup(file);
 	}
 	ret = rz_path_home_expand(file);
 #if __UNIX__
@@ -238,7 +238,7 @@ RZ_API RZ_OWN char *rz_file_abspath_rel(const char *cwd, const char *file) {
 #elif __WINDOWS__
 	// Network path
 	if (!strncmp(ret, "\\\\", 2)) {
-		return strdup(ret);
+		return rz_str_dup(ret);
 	}
 	if (!strchr(ret, ':')) {
 		char *tmp = rz_str_newf("%s" RZ_SYS_DIR "%s", cwd, ret);
@@ -254,7 +254,7 @@ RZ_API RZ_OWN char *rz_file_abspath_rel(const char *cwd, const char *file) {
 	char rp[PATH_MAX] = { 0 };
 	char *abspath = realpath(ret, rp); // second arg == NULL is only an extension
 	if (abspath) {
-		abspath = strdup(abspath);
+		abspath = rz_str_dup(abspath);
 		if (abspath) {
 			free(ret);
 			ret = abspath;
@@ -330,7 +330,7 @@ diverge:
 }
 
 RZ_API char *rz_file_path_local_to_unix(const char *path) {
-	char *r = strdup(path);
+	char *r = rz_str_dup(path);
 	if (!r) {
 		return NULL;
 	}
@@ -341,7 +341,7 @@ RZ_API char *rz_file_path_local_to_unix(const char *path) {
 }
 
 RZ_API char *rz_file_path_unix_to_local(const char *path) {
-	char *r = strdup(path);
+	char *r = rz_str_dup(path);
 	if (!r) {
 		return NULL;
 	}
@@ -369,7 +369,7 @@ RZ_API char *rz_file_path(const char *bin) {
 	}
 #endif
 	if (path_env) {
-		str = path = strdup(path_env);
+		str = path = rz_str_dup(path_env);
 		do {
 			ptr = strchr(str, RZ_SYS_ENVSEP[0]);
 			if (ptr) {
@@ -387,7 +387,7 @@ RZ_API char *rz_file_path(const char *bin) {
 	}
 	free(path_env);
 	free(path);
-	return strdup(bin);
+	return rz_str_dup(bin);
 }
 
 RZ_API char *rz_file_binsh(void) {
@@ -401,7 +401,7 @@ RZ_API char *rz_file_binsh(void) {
 		return bin_sh;
 	}
 	free(bin_sh);
-	bin_sh = strdup("/bin/sh");
+	bin_sh = rz_str_dup("/bin/sh");
 	return bin_sh;
 }
 
@@ -663,7 +663,7 @@ RZ_API char *rz_file_slurp_random_line_count(const char *file, int *line) {
 					break;
 				}
 			}
-			ptr = strdup(ptr);
+			ptr = rz_str_dup(ptr);
 		}
 		free(str);
 	}
@@ -699,7 +699,7 @@ RZ_API char *rz_file_slurp_line(const char *file, int line, int context) {
 				break;
 			}
 		}
-		ptr = strdup(ptr);
+		ptr = rz_str_dup(ptr);
 		free(str);
 	}
 	return ptr;
@@ -727,7 +727,7 @@ RZ_API RZ_OWN char *rz_file_slurp_lines_from_bottom(const char *file, int line) 
 			}
 		}
 		ptr = str + i;
-		ptr = strdup(ptr);
+		ptr = rz_str_dup(ptr);
 		free(str);
 	}
 	return ptr;
@@ -766,7 +766,7 @@ RZ_API char *rz_file_slurp_lines(const char *file, int line, int count) {
 				}
 			}
 		}
-		ptr = strdup(ptr);
+		ptr = rz_str_dup(ptr);
 		free(str);
 	}
 	return ptr;
@@ -774,7 +774,7 @@ RZ_API char *rz_file_slurp_lines(const char *file, int line, int count) {
 
 RZ_API char *rz_file_root(const char *root, const char *path) {
 	rz_return_val_if_fail(root && path, NULL);
-	char *ret, *s = rz_str_replace(strdup(path), "..", "", 1);
+	char *ret, *s = rz_str_replace(rz_str_dup(path), "..", "", 1);
 	// XXX ugly hack
 	while (strstr(s, "..")) {
 		s = rz_str_replace(s, "..", "", 1);
@@ -785,7 +785,7 @@ RZ_API char *rz_file_root(const char *root, const char *path) {
 	while (strstr(s, "//")) {
 		s = rz_str_replace(s, "//", "", 1);
 	}
-	ret = rz_str_append(strdup(root), RZ_SYS_DIR);
+	ret = rz_str_append(rz_str_dup(root), RZ_SYS_DIR);
 	ret = rz_str_append(ret, s);
 	free(s);
 	return ret;
@@ -902,7 +902,7 @@ repeat:
 		path = pathbuf;
 		goto repeat;
 	}
-	return strdup(pathbuf);
+	return rz_str_dup(pathbuf);
 #endif
 	return NULL;
 }
@@ -978,7 +978,7 @@ RZ_API RzMmap *rz_file_mmap(const char *file, int perm, int mode, ut64 base) {
 	m->base = base;
 	m->perm = perm;
 	m->len = 0;
-	m->filename = strdup(file);
+	m->filename = rz_str_dup(file);
 	m->mode = mode;
 	if (!m->filename) {
 		rz_file_mmap_free(m);
@@ -1123,7 +1123,7 @@ err_r_file_mkstemp:
 	}
 	umask(mask);
 	if (oname) {
-		*oname = (h != -1) ? strdup(name) : NULL;
+		*oname = (h != -1) ? rz_str_dup(name) : NULL;
 	}
 	free(name);
 #endif
@@ -1143,7 +1143,7 @@ RZ_API char *rz_file_tmpdir(void) {
 	if ((len = GetTempPathW(MAX_PATH + 1, tmpdir)) == 0) {
 		path = rz_sys_getenv("TEMP");
 		if (!path) {
-			path = strdup("C:\\WINDOWS\\Temp\\");
+			path = rz_str_dup("C:\\WINDOWS\\Temp\\");
 		}
 	} else {
 		tmpdir[len] = 0;
@@ -1166,9 +1166,9 @@ RZ_API char *rz_file_tmpdir(void) {
 	}
 	if (!path) {
 #if __ANDROID__
-		path = strdup("/data/data/org.rizin.rizininstaller/rizin/tmp");
+		path = rz_str_dup("/data/data/org.rizin.rizininstaller/rizin/tmp");
 #else
-		path = strdup("/tmp");
+		path = rz_str_dup("/tmp");
 #endif
 	}
 #endif
@@ -1222,8 +1222,8 @@ RZ_API bool rz_file_copy(const char *src, const char *dst) {
 	free(d);
 	return ret;
 #else
-	char *src2 = rz_str_replace(strdup(src), "'", "\\'", 1);
-	char *dst2 = rz_str_replace(strdup(dst), "'", "\\'", 1);
+	char *src2 = rz_str_replace(rz_str_dup(src), "'", "\\'", 1);
+	char *dst2 = rz_str_replace(rz_str_dup(dst), "'", "\\'", 1);
 	int rc = rz_sys_cmdf("cp -f '%s' '%s'", src2, dst2);
 	free(src2);
 	free(dst2);
@@ -1263,11 +1263,11 @@ static void recursive_search_glob(const char *path, const char *glob, RzList /*<
 }
 
 RZ_API RzList /*<char *>*/ *rz_file_globsearch(const char *_globbed_path, int maxdepth) {
-	char *globbed_path = strdup(_globbed_path);
+	char *globbed_path = rz_str_dup(_globbed_path);
 	RzList *files = rz_list_newf(free);
 	char *glob = strchr(globbed_path, '*');
 	if (!glob) {
-		rz_list_append(files, strdup(globbed_path));
+		rz_list_append(files, rz_str_dup(globbed_path));
 	} else {
 		*glob = '\0';
 		char *last_slash = (char *)rz_str_last(globbed_path, RZ_SYS_DIR);
@@ -1315,10 +1315,10 @@ RZ_API RZ_OWN char *rz_file_path_join(RZ_NONNULL const char *s1, RZ_NULLABLE con
 	rz_return_val_if_fail(s1, NULL);
 
 	if (s1[0] == 0) {
-		return strdup(s2);
+		return rz_str_dup(s2);
 	}
 	if (!s2) {
-		return strdup(s1);
+		return rz_str_dup(s1);
 	}
 	bool ends_with_dir = s1[strlen(s1) - 1] == RZ_SYS_DIR[0];
 	const char *sep = ends_with_dir ? "" : RZ_SYS_DIR;

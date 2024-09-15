@@ -49,7 +49,7 @@ static char *parse_register(const RzCore *core, const char *str, ut64 *idx) {
 
 	// Check if the register is correct for the given architecture.
 	if (rz_analysis_is_reg_in_profile(core->analysis, reg)) {
-		return strdup(reg);
+		return rz_str_dup(reg);
 	}
 
 	return NULL;
@@ -269,7 +269,7 @@ static bool parse_reg_op_const(const RzCore *core, const char *str, RzRopConstra
 
 	char op_str[16];
 	rz_strf(op_str, "%" PFMT64u, const_value);
-	rop_constraint->args[SRC_CONST] = strdup(op_str);
+	rop_constraint->args[SRC_CONST] = rz_str_dup(op_str);
 	const char *value_str = rz_il_op_pure_code_stringify(*op);
 	rop_constraint->args[OP] = rz_str_dup(value_str);
 	return true;
@@ -295,7 +295,7 @@ RZ_API RZ_OWN RzRopSearchContext *rz_core_rop_search_context_new(RZ_NONNULL cons
 		return NULL;
 	}
 
-	context->greparg = greparg ? strdup(greparg) : NULL;
+	context->greparg = rz_str_dup(greparg);
 	context->search_addr = rz_config_get(core->config, "search.in");
 	context->arch = rz_config_get(core->config, "asm.arch");
 	context->regexp = regexp;

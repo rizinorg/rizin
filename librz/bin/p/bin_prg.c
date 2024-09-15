@@ -27,11 +27,11 @@ static RzBinInfo *info(RzBinFile *bf) {
 	if (!ret) {
 		return NULL;
 	}
-	ret->file = strdup(bf->file);
-	ret->type = strdup("PRG");
-	ret->machine = strdup("Commodore 64");
-	ret->os = strdup("c64");
-	ret->arch = strdup("6502");
+	ret->file = rz_str_dup(bf->file);
+	ret->type = rz_str_dup("PRG");
+	ret->machine = rz_str_dup("Commodore 64");
+	ret->os = rz_str_dup("c64");
+	ret->arch = rz_str_dup("6502");
 	ret->bits = 8;
 	ret->has_va = 1;
 	return ret;
@@ -50,7 +50,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	if (!section) {
 		return ret;
 	}
-	section->name = strdup("prg");
+	section->name = rz_str_dup("prg");
 	section->paddr = 2;
 	section->size = sz - 2;
 	section->vaddr = baddr(bf);

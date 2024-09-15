@@ -38,7 +38,7 @@ static ut8 *tcpme(const char *pathname, int *code, int *len) {
 		}
 	} else {
 		/* connect and slurp the end point */
-		char *host = strdup(pathname);
+		char *host = rz_str_dup(pathname);
 		if (!host) {
 			return NULL;
 		}

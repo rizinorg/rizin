@@ -78,7 +78,7 @@ static RzPVector /*<RzBinField *>*/ *fields(RzBinFile *bf) {
 	RzListIter *it;
 	Pe_image_rich_entry *rich;
 	rz_list_foreach (bin->rich_entries, it, rich) {
-		rz_pvector_push(ret, rz_bin_field_new(addr, addr, 0, "RICH_ENTRY_NAME", strdup(rich->productName), "s", false));
+		rz_pvector_push(ret, rz_bin_field_new(addr, addr, 0, "RICH_ENTRY_NAME", rz_str_dup(rich->productName), "s", false));
 		ROWL(tmpbuf, "RICH_ENTRY_ID", 2, rich->productId, "x");
 		addr += 2;
 		ROWL(tmpbuf, "RICH_ENTRY_VERSION", 2, rich->minVersion, "x");

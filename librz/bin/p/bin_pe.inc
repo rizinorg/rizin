@@ -155,7 +155,7 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	if (!map) {
 		return ret;
 	}
-	map->name = strdup("header");
+	map->name = rz_str_dup("header");
 	map->paddr = 0;
 	ut32 aligned_hdr_size = UT32_MAX;
 	if (bin->nt_headers->optional_header.FileAlignment != 0) {
@@ -174,7 +174,7 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 			break;
 		}
 		map->paddr = sections[i].paddr;
-		map->name = strdup((char *)sections[i].name);
+		map->name = rz_str_dup((char *)sections[i].name);
 		map->psize = sections[i].size;
 		if (map->psize > bin->size) {
 			if (sections[i].vsize < bin->size) {
@@ -216,7 +216,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		if (!(ptr = RZ_NEW0(RzBinSection))) {
 			break;
 		}
-		ptr->name = strdup((char *)sections[i].name);
+		ptr->name = rz_str_dup((char *)sections[i].name);
 		ptr->size = sections[i].size;
 		ptr->vsize = sections[i].vsize;
 		ptr->flags = sections[i].flags;
@@ -337,8 +337,8 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 			if (!(ptr = RZ_NEW0(RzBinSymbol))) {
 				break;
 			}
-			ptr->name = strdup((char *)symbols[i].name);
-			ptr->libname = *symbols[i].libname ? strdup((char *)symbols[i].libname) : NULL;
+			ptr->name = rz_str_dup((char *)symbols[i].name);
+			ptr->libname = RZ_STR_ISNOTEMPTY(symbols[i].libname) ? rz_str_dup((char *)symbols[i].libname) : NULL;
 			ptr->forwarder = rz_str_constpool_get(&bf->rbin->constpool, (char *)symbols[i].forwarder);
 			// strncpy (ptr->bind, "NONE", RZ_BIN_SIZEOF_STRINGS);
 			ptr->bind = RZ_BIN_BIND_GLOBAL_STR;
@@ -363,7 +363,7 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 		if (!(ptr = RZ_NEW0(RzBinSymbol))) {
 			return ret;
 		}
-		ptr->name = strdup("gopclntab");
+		ptr->name = rz_str_dup("gopclntab");
 		ptr->bind = RZ_BIN_BIND_GLOBAL_STR;
 		ptr->type = RZ_BIN_TYPE_NOTYPE_STR;
 		ptr->size = go_pclntab_size;
@@ -379,8 +379,8 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 				break;
 			}
 			// strncpy (ptr->name, (char*)symbols[i].name, RZ_BIN_SIZEOF_STRINGS);
-			ptr->name = strdup((const char *)imports[i].name);
-			ptr->libname = strdup((const char *)imports[i].libname);
+			ptr->name = rz_str_dup((const char *)imports[i].name);
+			ptr->libname = rz_str_dup((const char *)imports[i].libname);
 			ptr->is_imported = true;
 			// strncpy (ptr->forwarder, (char*)imports[i].forwarder, RZ_BIN_SIZEOF_STRINGS);
 			ptr->bind = "NONE";
@@ -455,8 +455,8 @@ static RzPVector /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 			break;
 		}
 		filter_import(imports[i].name);
-		ptr->name = strdup((char *)imports[i].name);
-		ptr->libname = strdup((char *)imports[i].libname);
+		ptr->name = rz_str_dup((char *)imports[i].name);
+		ptr->libname = rz_str_dup((char *)imports[i].libname);
 		ptr->bind = "NONE";
 		ptr->type = "FUNC";
 		ptr->ordinal = imports[i].ordinal;
@@ -521,24 +521,24 @@ static RzPVector /*<RzBinResource *>*/ *resources(RzBinFile *bf) {
 		}
 
 		br->index = index++;
-		br->name = strdup(rs->name);
+		br->name = rz_str_dup(rs->name);
 		if (!br->name) {
 			rz_bin_resource_free(br);
 			goto err;
 		}
-		br->time = strdup(rs->timestr);
+		br->time = rz_str_dup(rs->timestr);
 		if (!br->time) {
 			rz_bin_resource_free(br);
 			goto err;
 		}
 		br->vaddr = PE_(rz_bin_pe_get_image_base)(obj) + rs->data->OffsetToData;
 		br->size = rs->data->Size;
-		br->type = strdup(rs->type);
+		br->type = rz_str_dup(rs->type);
 		if (!br->type) {
 			rz_bin_resource_free(br);
 			goto err;
 		}
-		br->language = strdup(rs->language);
+		br->language = rz_str_dup(rs->language);
 		if (!br->language) {
 			rz_bin_resource_free(br);
 			goto err;
@@ -602,9 +602,9 @@ static RzBinInfo *info(RzBinFile *bf) {
 		return NULL;
 	}
 	bin = bf->o->bin_obj;
-	ret->file = strdup(bf->file);
+	ret->file = rz_str_dup(bf->file);
 	ret->bclass = PE_(rz_bin_pe_get_class)(bf->o->bin_obj);
-	ret->rclass = strdup("pe");
+	ret->rclass = rz_str_dup("pe");
 	ret->os = PE_(rz_bin_pe_get_os)(bf->o->bin_obj);
 	ret->arch = PE_(rz_bin_pe_get_arch)(bf->o->bin_obj);
 	ret->machine = PE_(rz_bin_pe_get_machine)(bf->o->bin_obj);
@@ -621,9 +621,9 @@ static RzBinInfo *info(RzBinFile *bf) {
 	rz_pvector_free(libs);
 
 	if (PE_(rz_bin_pe_is_dll)(bf->o->bin_obj)) {
-		ret->type = strdup("DLL (Dynamic Link Library)");
+		ret->type = rz_str_dup("DLL (Dynamic Link Library)");
 	} else {
-		ret->type = strdup("EXEC (Executable file)");
+		ret->type = rz_str_dup("EXEC (Executable file)");
 	}
 	claimed_checksum = PE_(bin_pe_get_claimed_checksum)(bf->o->bin_obj);
 	actual_checksum = PE_(bin_pe_get_actual_checksum)(bf->o->bin_obj);
@@ -693,8 +693,8 @@ static RzPVector /*<RzBinFileHash *>*/ *compute_hashes(RzBinFile *bf) {
 	if (authentihash) {
 		RzBinFileHash *authhash = RZ_NEW0(RzBinFileHash);
 		if (authhash) {
-			authhash->type = strdup("authentihash");
-			authhash->hex = strdup(authentihash);
+			authhash->type = rz_str_dup("authentihash");
+			authhash->hex = rz_str_dup(authentihash);
 			rz_pvector_push(file_hashes, authhash);
 		}
 	}

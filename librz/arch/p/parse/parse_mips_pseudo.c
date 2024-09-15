@@ -132,7 +132,7 @@ RzList /*<char *>*/ *mips_tokenize(const char *assembly, size_t length) {
 	}
 
 	if (insert_zero) {
-		rz_list_insert(tokens, rz_list_length(tokens) - 1, strdup("0"));
+		rz_list_insert(tokens, rz_list_length(tokens) - 1, rz_str_dup("0"));
 	}
 
 	return tokens;
@@ -240,7 +240,7 @@ static char *subvar_stack(RzParse *p, RzAnalysisOp *op, RZ_NULLABLE RzAnalysisFu
 }
 
 static bool subvar(RzParse *p, RzAnalysisFunction *f, RzAnalysisOp *op, char *data, char *str, int len) {
-	char *tstr = strdup(data);
+	char *tstr = rz_str_dup(data);
 	tstr = subvar_stack(p, op, f, tstr);
 	bool ret = true;
 	if (len > strlen(tstr)) {

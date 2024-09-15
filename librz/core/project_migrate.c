@@ -49,7 +49,7 @@ bool v1_v2_types_foreach_cb(void *user, const SdbKv *kv) {
 	}
 	V1V2TypesCtx *ctx = user;
 	sdb_set(ctx->noreturn_db, k, v);
-	rz_list_push(ctx->moved_keys, strdup(k));
+	rz_list_push(ctx->moved_keys, rz_str_dup(k));
 	return true;
 }
 
@@ -100,14 +100,14 @@ bool v2_v3_types_foreach_cb(void *user, const SdbKv *kv) {
 	const char *v = sdbkv_value(kv);
 	if (rz_str_startswith(k, "func.") || !strcmp(v, "func")) {
 		sdb_set(ctx->callables_db, k, v);
-		rz_list_push(ctx->moved_keys, strdup(k));
+		rz_list_push(ctx->moved_keys, rz_str_dup(k));
 	} else if (rz_str_startswith(k, "link.")) {
 		// Old addresses were stored as hexadecimal numbers without `0x` part
 		// New addresses have them
 		char *tl_key = rz_str_newf("0x%s", k + strlen("link."));
 		sdb_set(ctx->typelinks_db, tl_key, v);
 		free(tl_key);
-		rz_list_push(ctx->moved_keys, strdup(k));
+		rz_list_push(ctx->moved_keys, rz_str_dup(k));
 	}
 	return true;
 }
@@ -379,7 +379,7 @@ bool v10_v11_functions_foreach_cb(void *user, const SdbKv *kv) {
 	const char *k = sdbkv_key(kv);
 	const char *v = sdbkv_value(kv);
 	V10V11FunctionsCtx *ctx = user;
-	char *json_str = strdup(v);
+	char *json_str = rz_str_dup(v);
 	RzJson *j = rz_json_parse(json_str);
 	bool ret = false;
 	if (!j || j->type != RZ_JSON_OBJECT) {
@@ -508,7 +508,7 @@ bool v12_v13_types_foreach_cb(void *user, const SdbKv *kv) {
 		pj_end(j);
 		sdb_set(ctx->global_vars_db, k, pj_string(j));
 		pj_free(j);
-		rz_list_push(ctx->moved_keys, strdup(k));
+		rz_list_push(ctx->moved_keys, rz_str_dup(k));
 	}
 	return true;
 }

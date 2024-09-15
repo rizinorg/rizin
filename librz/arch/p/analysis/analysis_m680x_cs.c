@@ -524,7 +524,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"gpr	sp	.16	48	0\n"
 		"gpr	a0	.16	48	0\n"
 		"gpr	a1	.16	48	0\n";
-	return strdup(p);
+	return rz_str_dup(p);
 }
 
 static bool m680x_analysis_fini(void *user) {

@@ -321,15 +321,15 @@ RZ_API RZ_OWN char *rz_float_as_dec_string(RZ_NULLABLE RzFloat *f) {
 	RzFloatSpec type = rz_float_detect_spec(f);
 	switch (type) {
 	case RZ_FLOAT_SPEC_ZERO:
-		return strdup("0.0");
+		return rz_str_dup("0.0");
 	case RZ_FLOAT_SPEC_PINF:
-		return strdup("+inf");
+		return rz_str_dup("+inf");
 	case RZ_FLOAT_SPEC_NINF:
-		return strdup("-inf");
+		return rz_str_dup("-inf");
 	case RZ_FLOAT_SPEC_QNAN:
 		/* fall-thru */
 	case RZ_FLOAT_SPEC_SNAN:
-		return strdup("nan");
+		return rz_str_dup("nan");
 	default:
 		break;
 	}

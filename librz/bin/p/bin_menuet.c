@@ -124,7 +124,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
 	}
-	ptr->name = strdup("text");
+	ptr->name = rz_str_dup("text");
 	ptr->size = rz_read_ble32(buf + 16, false);
 	ptr->vsize = ptr->size + (ptr->size % 4096);
 	ptr->paddr = rz_read_ble32(buf + 12, false);
@@ -137,7 +137,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		if (!(ptr = RZ_NEW0(RzBinSection))) {
 			return ret;
 		}
-		ptr->name = strdup("idata");
+		ptr->name = rz_str_dup("idata");
 		const ut32 idata_start = rz_read_ble32(buf + 40, false);
 		const ut32 idata_end = rz_read_ble32(buf + 44, false);
 		ptr->size = idata_end - idata_start;
@@ -154,14 +154,14 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 static RzBinInfo *info(RzBinFile *bf) {
 	RzBinInfo *ret = RZ_NEW0(RzBinInfo);
 	if (ret) {
-		ret->file = strdup(bf->file);
-		ret->bclass = strdup("program");
-		ret->rclass = strdup("menuet");
-		ret->os = strdup("MenuetOS");
-		ret->arch = strdup("x86");
-		ret->machine = strdup(ret->arch);
-		ret->subsystem = strdup("kolibri");
-		ret->type = strdup("EXEC");
+		ret->file = rz_str_dup(bf->file);
+		ret->bclass = rz_str_dup("program");
+		ret->rclass = rz_str_dup("menuet");
+		ret->os = rz_str_dup("MenuetOS");
+		ret->arch = rz_str_dup("x86");
+		ret->machine = rz_str_dup(ret->arch);
+		ret->subsystem = rz_str_dup("kolibri");
+		ret->type = rz_str_dup("EXEC");
 		ret->bits = 32;
 		ret->has_va = true;
 		ret->big_endian = 0;

@@ -55,7 +55,7 @@ static bool zone_load_cb(void *user, const SdbKv *kv) {
 	if (!item) {
 		goto beach;
 	}
-	item->name = strdup(sdbkv_key(kv));
+	item->name = rz_str_dup(sdbkv_key(kv));
 	if (!item->name) {
 		free(item);
 		goto beach;

@@ -51,14 +51,14 @@ static char *getFunctionName(RzCore *core, ut64 addr) {
 	}
 
 	RzFlagItem *flag = rz_core_flag_get_by_spaces(core->flags, addr);
-	return (flag && flag->name) ? strdup(flag->name) : NULL;
+	return (flag && flag->name) ? rz_str_dup(flag->name) : NULL;
 }
 
 static char *getFunctionNamePrefix(RzCore *core, ut64 off, const char *name) {
 	if (rz_reg_get(core->analysis->reg, name, -1)) {
 		return rz_str_newf("%s.%08" PFMT64x, "fcn", off);
 	}
-	return strdup(name);
+	return rz_str_dup(name);
 }
 
 static bool find_string_at(RzCore *core, RzBinObject *bobj, ut64 pointer, char **string, size_t *length, RzStrEnc *encoding) {
@@ -569,22 +569,22 @@ RZ_API RZ_OWN char *rz_core_analysis_function_autoname(RZ_NONNULL RzCore *core, 
 			}
 			if (!strncmp(f->name, "method.", 7)) {
 				free(do_call);
-				do_call = strdup(f->name + 7);
+				do_call = rz_str_dup(f->name + 7);
 				break;
 			}
 			if (!strncmp(f->name, "str.", 4)) {
 				free(do_call);
-				do_call = strdup(f->name + 4);
+				do_call = rz_str_dup(f->name + 4);
 				break;
 			}
 			if (!strncmp(f->name, "sym.imp.", 8)) {
 				free(do_call);
-				do_call = strdup(f->name + 8);
+				do_call = rz_str_dup(f->name + 8);
 				break;
 			}
 			if (!strncmp(f->name, "reloc.", 6)) {
 				free(do_call);
-				do_call = strdup(f->name + 6);
+				do_call = rz_str_dup(f->name + 6);
 				break;
 			}
 		}
@@ -596,9 +596,9 @@ RZ_API RZ_OWN char *rz_core_analysis_function_autoname(RZ_NONNULL RzCore *core, 
 		free(do_call);
 		// if referenced from entrypoint. this should be main
 		if (item && item->offset == fcn->addr) {
-			return strdup("main"); // main?
+			return rz_str_dup("main"); // main?
 		}
-		return strdup("parse_args"); // main?
+		return rz_str_dup("parse_args"); // main?
 	}
 	if (use_isatty) {
 		char *ret = rz_str_newf("sub.setup_tty_%s_%" PFMT64x, do_call, fcn->addr);
@@ -895,7 +895,7 @@ static int __core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, in
 		} else if (fcnlen == RZ_ANALYSIS_RET_END) { /* Function analysis complete */
 			f = rz_core_flag_get_by_spaces(core->flags, fcn->addr);
 			if (f && f->name && strncmp(f->name, "sect", 4)) { /* Check if it's already flagged */
-				char *new_name = strdup(f->name);
+				char *new_name = rz_str_dup(f->name);
 				if (is_entry_flag(f)) {
 					RzBinSymbol *sym;
 					RzBinObject *o = rz_bin_cur_object(core->bin);
@@ -1067,7 +1067,7 @@ RZ_API RzAnalysisOp *rz_core_analysis_op(RzCore *core, ut64 addr, int mask) {
 		rz_asm_set_pc(core->rasm, addr);
 		rz_asm_op_init(&asmop);
 		if (rz_asm_disassemble(core->rasm, &asmop, ptr, len) > 0) {
-			op->mnemonic = strdup(rz_strbuf_get(&asmop.buf_asm));
+			op->mnemonic = rz_str_dup(rz_strbuf_get(&asmop.buf_asm));
 		}
 		rz_asm_op_fini(&asmop);
 	}
@@ -3556,7 +3556,7 @@ RZ_IPI char *rz_core_analysis_function_signature(RzCore *core, RzOutputMode mode
 			pj_end(j);
 		}
 		pj_end(j);
-		signature = strdup(pj_string(j));
+		signature = rz_str_dup(pj_string(j));
 		pj_free(j);
 	} else {
 		signature = rz_analysis_fcn_format_sig(core->analysis, fcn, fcn_name, NULL, NULL, NULL);
@@ -4564,7 +4564,7 @@ RZ_API bool rz_analysis_add_device_peripheral_map(RzBinObject *o, RzAnalysis *an
 	if (!s) {
 		return false;
 	}
-	s->name = strdup(".rom");
+	s->name = rz_str_dup(".rom");
 	s->vaddr = rom_address;
 	s->vsize = rom_size;
 	s->size = rom_size;
@@ -4633,14 +4633,14 @@ RZ_IPI bool rz_core_analysis_function_set_signature(RzCore *core, RzAnalysisFunc
 	bool res = false;
 	char *fcnname = NULL;
 	char *fcnstr = rz_str_newf("%s;", newsig);
-	char *fcnstr_copy = strdup(fcnstr);
+	char *fcnstr_copy = rz_str_dup(fcnstr);
 	char *fcnname_aux = strtok(fcnstr_copy, "(");
 	if (!fcnname_aux) {
 		goto err;
 	}
 	rz_str_trim_tail(fcnname_aux);
 	const char *ls = rz_str_lchr(fcnname_aux, ' ');
-	fcnname = strdup(ls ? ls : fcnname_aux);
+	fcnname = rz_str_dup(ls ? ls : fcnname_aux);
 	if (!fcnname) {
 		goto err;
 	}
@@ -4758,7 +4758,7 @@ static void _CbInRangeAav(RzCore *core, ut64 from, ut64 to, int vsize, void *use
 RZ_IPI void rz_core_analysis_value_pointers(RzCore *core, RzOutputMode mode) {
 	ut64 o_align = rz_config_get_i(core->config, "search.align");
 	const char *analysisin = rz_config_get(core->config, "analysis.in");
-	char *tmp = strdup(analysisin);
+	char *tmp = rz_str_dup(analysisin);
 	bool is_debug = rz_config_get_b(core->config, "cfg.debug");
 	int archAlign = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN);
 	rz_config_set_i(core->config, "search.align", archAlign);
@@ -4905,12 +4905,12 @@ RZ_API void rz_core_analysis_cc_init_by_path(RzCore *core, RZ_NULLABLE const cha
 	RZ_FREE(cc->path);
 	if (rz_file_exists(dbpath)) {
 		sdb_concat_by_path(cc, dbpath);
-		cc->path = strdup(dbpath);
+		cc->path = rz_str_dup(dbpath);
 	}
 	if (rz_file_exists(dbhomepath)) {
 		sdb_concat_by_path(cc, dbhomepath);
 		free(cc->path);
-		cc->path = strdup(dbhomepath);
+		cc->path = rz_str_dup(dbhomepath);
 	}
 	free(dbpath);
 	free(dbhomepath);
@@ -5693,19 +5693,19 @@ RZ_API RZ_OWN RzCoreAnalysisName *rz_core_analysis_name(RZ_NONNULL RzCore *core,
 
 	if (var) {
 		p->type = RZ_CORE_ANALYSIS_NAME_TYPE_VAR;
-		p->name = strdup(var->name);
+		p->name = rz_str_dup(var->name);
 		p->offset = op.addr;
 	} else if (tgt_addr != UT64_MAX) {
 		RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, tgt_addr);
 		RzFlagItem *f = rz_flag_get_i(core->flags, tgt_addr);
 		if (fcn) {
 			p->type = RZ_CORE_ANALYSIS_NAME_TYPE_FUNCTION;
-			p->name = strdup(fcn->name);
+			p->name = rz_str_dup(fcn->name);
 			p->offset = tgt_addr;
 		} else if (f) {
 			p->type = RZ_CORE_ANALYSIS_NAME_TYPE_FLAG;
-			p->name = strdup(f->name);
-			p->realname = strdup(f->realname);
+			p->name = rz_str_dup(f->name);
+			p->realname = rz_str_dup(f->realname);
 			p->offset = tgt_addr;
 		} else {
 			p->type = RZ_CORE_ANALYSIS_NAME_TYPE_ADDRESS;
@@ -5995,7 +5995,7 @@ RZ_API void rz_core_perform_auto_analysis(RZ_NONNULL RzCore *core, RzCoreAnalysi
 	// set debugger only if is debugging
 	char *debugger = NULL;
 	if (rz_core_is_debugging(core)) {
-		debugger = core->dbg->cur ? strdup(core->dbg->cur->name) : strdup("esil");
+		debugger = core->dbg->cur ? rz_str_dup(core->dbg->cur->name) : rz_str_dup("esil");
 	}
 	rz_cons_clear_line(1);
 

@@ -414,7 +414,7 @@ static void print_debug_map_line(RzDebug *dbg, RzDebugMap *map, ut64 addr, RzCmd
 		if (!flagname) {
 			flagname = "";
 		} else if (map->name) {
-			char *filtered_name = strdup(map->name);
+			char *filtered_name = rz_str_dup(map->name);
 			rz_name_filter(filtered_name, 0, true);
 			if (!strncmp(flagname, "map.", 4) &&
 				!strcmp(flagname + 4, filtered_name)) {

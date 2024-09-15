@@ -122,7 +122,7 @@ static bool meta_set(RzAnalysis *a, RzAnalysisMetaType type, int subtype, ut64 f
 	if (is_string_with_zeroes(type, subtype)) {
 		item->str = rz_str_ndup(str, item->size);
 	} else {
-		item->str = str ? strdup(str) : NULL;
+		item->str = rz_str_dup(str);
 	}
 	if (str && !item->str) {
 		if (!node) { // If we just created this

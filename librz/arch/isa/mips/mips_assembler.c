@@ -149,7 +149,7 @@ static int getreg(const char *p) {
 RZ_IPI int mips_assemble_opcode(const char *str, ut64 pc, ut8 *out) {
 	int i, hasp;
 	char w0[32], w1[32], w2[32], w3[32];
-	char *s = strdup(str);
+	char *s = rz_str_dup(str);
 	if (!s) {
 		return -1;
 	}
@@ -170,7 +170,7 @@ RZ_IPI int mips_assemble_opcode(const char *str, ut64 pc, ut8 *out) {
 		if (arg) {
 			snprintf(opstr, sizeof(opstr), "jalr ra ra %s", arg + 1);
 			free(s);
-			s = strdup(opstr);
+			s = rz_str_dup(opstr);
 			if (!s) {
 				return -1;
 			}

@@ -8,7 +8,7 @@ RZ_API RzDebugPid *rz_debug_pid_new(const char *path, int pid, int uid, char sta
 	if (!p) {
 		return NULL;
 	}
-	p->path = strdup(path);
+	p->path = rz_str_dup(path);
 	p->pid = pid;
 	p->uid = uid;
 	p->status = status;

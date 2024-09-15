@@ -217,7 +217,7 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 		if (!(ptr = RZ_NEW0(RzBinSymbol))) {
 			break;
 		}
-		ptr->name = strdup((char *)syms[i].name);
+		ptr->name = rz_str_dup((char *)syms[i].name);
 		ptr->is_imported = syms[i].is_imported;
 		ptr->forwarder = "NONE";
 		ptr->bind = (syms[i].type == RZ_BIN_MACH0_SYMBOL_TYPE_LOCAL) ? RZ_BIN_BIND_LOCAL_STR : RZ_BIN_BIND_GLOBAL_STR;
@@ -306,7 +306,7 @@ static RzBinImport *import_from_name(RzBin *rbin, const char *orig_name, HtPP *i
 	if (*name == '_') {
 		name++;
 	}
-	ptr->name = strdup(name);
+	ptr->name = rz_str_dup(name);
 	ptr->bind = "NONE";
 	ptr->type = rz_str_constpool_get(&rbin->constpool, type);
 
@@ -433,7 +433,7 @@ static RzPVector /*<char *>*/ *libs(RzBinFile *bf) {
 	}
 	if ((libs = MACH0_(get_libs)(obj->bin_obj))) {
 		for (i = 0; !libs[i].last; i++) {
-			ptr = strdup(libs[i].name);
+			ptr = rz_str_dup(libs[i].name);
 			rz_pvector_push(ret, ptr);
 		}
 		free(libs);
@@ -453,7 +453,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 
 	bin = bf->o->bin_obj;
 	if (bf->file) {
-		ret->file = strdup(bf->file);
+		ret->file = rz_str_dup(bf->file);
 	}
 	if ((str = MACH0_(get_class)(bf->o->bin_obj))) {
 		ret->bclass = str;
@@ -467,10 +467,10 @@ static RzBinInfo *info(RzBinFile *bf) {
 	}
 	ret->intrp = rz_str_dup(MACH0_(get_intrp)(bf->o->bin_obj));
 	ret->compiler = rz_str_dup("");
-	ret->rclass = strdup("mach0");
-	ret->os = strdup("darwin");
-	ret->subsystem = strdup(MACH0_(get_platform)(bf->o->bin_obj));
-	ret->arch = strdup(MACH0_(get_cputype)(bf->o->bin_obj));
+	ret->rclass = rz_str_dup("mach0");
+	ret->os = rz_str_dup("darwin");
+	ret->subsystem = rz_str_dup(MACH0_(get_platform)(bf->o->bin_obj));
+	ret->arch = rz_str_dup(MACH0_(get_cputype)(bf->o->bin_obj));
 	ret->machine = MACH0_(get_cpusubtype)(bf->o->bin_obj);
 	ret->type = MACH0_(get_filetype)(bf->o->bin_obj);
 	ret->big_endian = MACH0_(is_big_endian)(bf->o->bin_obj);

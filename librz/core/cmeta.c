@@ -101,7 +101,7 @@ RZ_IPI void rz_core_meta_print(RzCore *core, RzAnalysisMetaItem *d, ut64 start, 
 		} else if (d->type == RZ_META_TYPE_VARTYPE) {
 			// Sanitize (don't escape) Ct comments so we can see "char *", etc.
 			free(str);
-			str = strdup(d->str);
+			str = rz_str_dup(d->str);
 			rz_str_sanitize(str);
 			pstr = str;
 		} else if (d->type != RZ_META_TYPE_COMMENT) {
@@ -159,7 +159,7 @@ RZ_IPI void rz_core_meta_print(RzCore *core, RzAnalysisMetaItem *d, ut64 start, 
 				const char *type = rz_meta_type_to_string(d->type);
 				char *s = sdb_encode((const ut8 *)pstr, -1);
 				if (!s) {
-					s = strdup(pstr);
+					s = rz_str_dup(pstr);
 				}
 				if (mode == RZ_OUTPUT_MODE_RIZIN) {
 					if (!strcmp(type, "CCu")) {
@@ -375,7 +375,7 @@ RZ_IPI void rz_core_meta_print_list_in_function(RzCore *core, RzAnalysisMetaType
 
 RZ_IPI void rz_core_meta_append(RzCore *core, const char *newcomment, RzAnalysisMetaType mtype, ut64 addr) {
 	const char *comment = rz_meta_get_string(core->analysis, mtype, addr);
-	char *nc = strdup(newcomment);
+	char *nc = rz_str_dup(newcomment);
 	rz_str_unescape(nc);
 	if (comment) {
 		char *text = rz_str_newf("%s %s", comment, nc);

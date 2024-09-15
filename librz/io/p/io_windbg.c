@@ -447,7 +447,7 @@ static RzIODesc *windbg_open(RzIO *io, const char *uri, int perm, int mode) {
 	}
 	argv = tmp;
 	memmove(argv + 1, argv, argv_sz - sizeof(char *));
-	argv[0] = strdup(WINDBGURI);
+	argv[0] = rz_str_dup(WINDBGURI);
 	argc++;
 	const char *command = NULL;
 	bool image_path_set = false, symbol_path_set = false;
@@ -524,7 +524,7 @@ static RzIODesc *windbg_open(RzIO *io, const char *uri, int perm, int mode) {
 	if (!symbol_path_set) {
 		const char *store = io->corebind.cfgGet(core, "pdb.symstore");
 		const char *server = io->corebind.cfgGet(core, "pdb.server");
-		char *s = strdup(server);
+		char *s = rz_str_dup(server);
 		rz_str_replace_ch(s, ';', '*', true);
 		char *sympath = rz_str_newf("cache*;srv*%s*%s", store, s);
 		ITHISCALL(dbgSymbols, SetSymbolPath, sympath);
@@ -575,7 +575,7 @@ static RzIODesc *windbg_open(RzIO *io, const char *uri, int perm, int mode) {
 	rz_str_argv_free(argv);
 remote_client:
 	fd = rz_io_desc_new(io, &rz_io_plugin_windbg, uri, perm | RZ_PERM_X, mode, idbg);
-	fd->name = strdup(args);
+	fd->name = rz_str_dup(args);
 	if (cur_dbg_plugin_is_windbg(core->dbg)) {
 		core->dbg->plugin_data = idbg;
 	}

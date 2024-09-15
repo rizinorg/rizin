@@ -53,7 +53,7 @@ static bool is_equal_file_hashes(RzPVector /*<RzBinFileHash *>*/ *lfile_hashes, 
 
 static bool source_file_collect_cb(void *user, const char *k, const void *v) {
 	RzPVector *r = user;
-	char *f = strdup(k);
+	char *f = rz_str_dup(k);
 	if (f) {
 		rz_pvector_push(r, f);
 	}
@@ -474,7 +474,7 @@ RZ_IPI RzCmdStatus rz_cmd_info_dwarf_handler(RzCore *core, int argc, const char 
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_pdb_load_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	char *filename = argc > 1 ? strdup(argv[1]) : rz_core_bin_pdb_get_filename(core);
+	char *filename = argc > 1 ? rz_str_dup(argv[1]) : rz_core_bin_pdb_get_filename(core);
 	if (!filename) {
 		RZ_LOG_ERROR("Cannot find the right PDB file to load\n");
 		return RZ_CMD_STATUS_ERROR;
@@ -491,7 +491,7 @@ RZ_IPI RzCmdStatus rz_cmd_info_pdb_load_handler(RzCore *core, int argc, const ch
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_pdb_show_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	char *filename = argc > 1 ? strdup(argv[1]) : rz_core_bin_pdb_get_filename(core);
+	char *filename = argc > 1 ? rz_str_dup(argv[1]) : rz_core_bin_pdb_get_filename(core);
 	if (!filename) {
 		RZ_LOG_ERROR("Cannot find the right PDB file to load\n");
 		return RZ_CMD_STATUS_ERROR;
@@ -576,7 +576,7 @@ RZ_IPI char **rz_cmd_info_demangle_lang_choices(RzCore *core) {
 	RzListIter *it;
 	int i = 0;
 	rz_list_foreach (core->bin->demangler->plugins, it, plugin) {
-		res[i++] = strdup(plugin->language);
+		res[i++] = rz_str_dup(plugin->language);
 	}
 	return res;
 }

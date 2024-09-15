@@ -30,7 +30,7 @@ static int archinfo(RzAnalysis *analysis, RzAnalysisInfoType query) {
 }
 
 static char *get_reg_profile(RzAnalysis *analysis) {
-	return strdup(
+	return rz_str_dup(
 		"=PC    pc\n"
 		"=BP    bp\n"
 		"=SP    sp\n"

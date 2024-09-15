@@ -87,14 +87,14 @@ RZ_API char *resolve_fcn_name(RzAnalysis *analysis, const char *func_name) {
 	const char *str = func_name;
 	const char *name = func_name;
 	if (rz_type_func_exist(analysis->typedb, func_name)) {
-		return strdup(func_name);
+		return rz_str_dup(func_name);
 	}
 	while ((str = strchr(str, '.'))) {
 		name = str + 1;
 		str++;
 	}
 	if (rz_type_func_exist(analysis->typedb, name)) {
-		return strdup(name);
+		return rz_str_dup(name);
 	}
 	return rz_analysis_function_name_guess(analysis->typedb, (char *)func_name);
 }
@@ -289,7 +289,7 @@ RZ_API RZ_OWN RzList /*<RzAnalysisFuncArg *>*/ *rz_core_get_func_args(RzCore *co
 		rz_list_free(list);
 		return NULL;
 	}
-	char *cc = strdup(rz_analysis_cc_func(core->analysis, key));
+	char *cc = rz_str_dup(rz_analysis_cc_func(core->analysis, key));
 	const char *src = rz_analysis_cc_arg(core->analysis, cc, 0); // src of first argument
 	if (!cc) {
 		// unsupported calling convention

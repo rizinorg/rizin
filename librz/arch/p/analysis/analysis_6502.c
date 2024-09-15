@@ -418,7 +418,7 @@ static char *_6502_op_mnemonic(snes_op_t *op) {
 	}
 	const char *end = strchr(op->name, ' ');
 	if (!end) {
-		return strdup(op->name);
+		return rz_str_dup(op->name);
 	}
 	return rz_str_ndup(op->name, end - op->name);
 }
@@ -1177,7 +1177,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"gpr	N	.1	.31	0\n"
 		"gpr	sp	.8	4	0\n"
 		"gpr	pc	.16	5	0\n";
-	return strdup(p);
+	return rz_str_dup(p);
 }
 
 static int esil_6502_init(RzAnalysisEsil *esil) {

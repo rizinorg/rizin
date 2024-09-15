@@ -93,7 +93,7 @@ static void *show_class(RzCore *core, int mode, int *idx, RzBinClass *_c, const 
 				}
 			}
 
-			char *mflags = strdup("");
+			char *mflags = rz_str_dup("");
 
 			if (rz_str_startswith(name, _c->name)) {
 				name += strlen(_c->name);

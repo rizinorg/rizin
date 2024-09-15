@@ -114,8 +114,8 @@ RzPVector /*<RzBinImport *>*/ *PE_(rz_bin_mdmp_pe_get_imports)(struct PE_(rz_bin
 			break;
 		}
 		filter_import(imports[i].name);
-		ptr->name = strdup((const char *)imports[i].name);
-		ptr->libname = *imports[i].libname ? strdup((const char *)imports[i].libname) : NULL;
+		ptr->name = rz_str_dup((const char *)imports[i].name);
+		ptr->libname = RZ_STR_ISNOTEMPTY(imports[i].libname) ? rz_str_dup((const char *)imports[i].libname) : NULL;
 		ptr->bind = "NONE";
 		ptr->type = RZ_BIN_TYPE_FUNC_STR;
 		ptr->ordinal = imports[i].ordinal;
@@ -167,9 +167,9 @@ RzPVector /*<RzBinSection *>*/ *PE_(rz_bin_mdmp_pe_get_sections)(struct PE_(rz_b
 			break;
 		}
 		if (sections[i].name[0]) {
-			ptr->name = strdup((char *)sections[i].name);
+			ptr->name = rz_str_dup((char *)sections[i].name);
 		} else {
-			ptr->name = strdup("");
+			ptr->name = rz_str_dup("");
 		}
 		ptr->size = sections[i].size;
 		if (ptr->size > pe_bin->bin->size) {
@@ -233,8 +233,8 @@ RzList /*<RzBinSymbol *>*/ *PE_(rz_bin_mdmp_pe_get_symbols)(RzBin *rbin, struct 
 			if (offset > pe_bin->vaddr) {
 				offset -= pe_bin->vaddr;
 			}
-			ptr->name = strdup((char *)symbols[i].name);
-			ptr->libname = *symbols[i].libname ? strdup((char *)symbols[i].libname) : NULL;
+			ptr->name = rz_str_dup((char *)symbols[i].name);
+			ptr->libname = RZ_STR_ISNOTEMPTY(symbols[i].libname) ? rz_str_dup((char *)symbols[i].libname) : NULL;
 			ptr->forwarder = rz_str_constpool_get(&rbin->constpool, (char *)symbols[i].forwarder);
 			ptr->bind = RZ_BIN_BIND_GLOBAL_STR;
 			ptr->type = RZ_BIN_TYPE_FUNC_STR;
@@ -257,8 +257,8 @@ RzList /*<RzBinSymbol *>*/ *PE_(rz_bin_mdmp_pe_get_symbols)(RzBin *rbin, struct 
 			if (offset > pe_bin->vaddr) {
 				offset -= pe_bin->vaddr;
 			}
-			ptr->name = strdup((const char *)imports[i].name);
-			ptr->libname = *imports[i].libname ? strdup((const char *)imports[i].libname) : NULL;
+			ptr->name = rz_str_dup((const char *)imports[i].name);
+			ptr->libname = RZ_STR_ISNOTEMPTY(imports[i].libname) ? rz_str_dup((const char *)imports[i].libname) : NULL;
 			ptr->is_imported = true;
 			ptr->bind = "NONE";
 			ptr->type = RZ_BIN_TYPE_FUNC_STR;

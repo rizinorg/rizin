@@ -132,7 +132,7 @@ RZ_API RZ_OWN RzPVector /*<char *>*/ *rz_core_get_themes(RZ_NONNULL RzCore *core
 		rz_set_s_free(themes);
 		return NULL;
 	}
-	rz_pvector_push(vec, strdup("default"));
+	rz_pvector_push(vec, rz_str_dup("default"));
 	rz_pvector_sort(vec, (RzPVectorComparator)compare_strings, NULL);
 	rz_set_s_free(themes);
 	return vec;

@@ -120,7 +120,7 @@ static char *socket_http_answer(RzSocket *s, int *code, int *rlen, ut32 redirect
 			}
 		}
 	} else {
-		res = strdup("");
+		res = rz_str_dup("");
 	}
 exit:
 	free(buf);
@@ -230,7 +230,7 @@ static char *socket_http_get_recursive(const char *url, int *code, int *rlen, ut
 	}
 #endif
 	char *response, *host, *path, *port = "80";
-	char *uri = strdup(url);
+	char *uri = rz_str_dup(url);
 	if (!uri) {
 		return NULL;
 	}
@@ -291,7 +291,7 @@ RZ_API char *rz_socket_http_get(const char *url, int *code, int *rlen) {
 RZ_API char *rz_socket_http_post(const char *url, const char *data, int *code, int *rlen) {
 	RzSocket *s;
 	bool ssl = rz_str_startswith(url, "https://");
-	char *uri = strdup(url);
+	char *uri = rz_str_dup(url);
 	if (!uri) {
 		return NULL;
 	}

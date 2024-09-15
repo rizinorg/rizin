@@ -1388,7 +1388,7 @@ RZ_API RZ_OWN char *rz_print_jsondump_str(RZ_NONNULL RzPrint *p, RZ_NONNULL cons
 		pj_n(j, word);
 	}
 	pj_end(j);
-	char *str = strdup(pj_string(j));
+	char *str = rz_str_dup(pj_string(j));
 	pj_free(j);
 	return str;
 }

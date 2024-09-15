@@ -282,7 +282,7 @@ static RZ_OWN RzType *var_type_default(RzAnalysis *analysis, int size) {
 		return NULL;
 	}
 	type->kind = RZ_TYPE_KIND_IDENTIFIER;
-	type->identifier.name = strdup(typestr);
+	type->identifier.name = rz_str_dup(typestr);
 	if (!type->identifier.name) {
 		free(type);
 		return NULL;
@@ -370,7 +370,7 @@ RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_set_var(
 		RZ_FREE(var->name);
 	}
 
-	var->name = strdup(name);
+	var->name = rz_str_dup(name);
 	var->storage = *stor;
 	rz_analysis_var_storage_poolify(fcn->analysis, &var->storage);
 	if (type) {
@@ -744,7 +744,7 @@ RZ_API RZ_NULLABLE char *rz_analysis_function_var_expr_for_reg_access_at(RzAnaly
 	if (var_offset) {
 		return rz_str_newf("%s + 0x%" PFMT64x, var->name, var_offset);
 	} else {
-		return strdup(var->name);
+		return rz_str_dup(var->name);
 	}
 }
 
@@ -764,7 +764,7 @@ RZ_API bool rz_analysis_var_rename(RzAnalysisVar *var, const char *new_name, boo
 		}
 		return false;
 	}
-	char *nn = strdup(new_name);
+	char *nn = rz_str_dup(new_name);
 	if (!nn) {
 		return false;
 	}
@@ -1126,7 +1126,7 @@ static void extract_stack_var(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzA
 		if (!op_esil) {
 			return;
 		}
-		esil_buf = strdup(op_esil);
+		esil_buf = rz_str_dup(op_esil);
 		if (!esil_buf) {
 			return;
 		}
@@ -1235,7 +1235,7 @@ static void extract_stack_var(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzA
 					}
 					if (sum_sz == stack_off) {
 						vartype = tp;
-						varname = strdup(rz_type_func_args_name(analysis->typedb, fname, i));
+						varname = rz_str_dup(rz_type_func_args_name(analysis->typedb, fname, i));
 						break;
 					}
 					ut64 bit_sz = rz_type_db_get_bitsize(analysis->typedb, tp);
@@ -1451,7 +1451,7 @@ RZ_API void rz_analysis_extract_rarg(RzAnalysis *analysis, RzAnalysisOp *op, RzA
 				}
 				if (found_arg) {
 					type = found_arg->type;
-					vname = name = strdup(found_arg->name);
+					vname = name = rz_str_dup(found_arg->name);
 				}
 			}
 			if (!vname) {
@@ -1515,7 +1515,7 @@ RZ_API void rz_analysis_extract_rarg(RzAnalysis *analysis, RzAnalysisOp *op, RzA
 	if (selfreg) {
 		bool is_used_like_an_arg = is_used_like_arg(selfreg, opsreg, opdreg, op, analysis);
 		if (reg_set[i] != 2 && is_used_like_an_arg) {
-			char *vname = strdup("self");
+			char *vname = rz_str_dup("self");
 			RzAnalysisVarStorage stor;
 			rz_analysis_var_storage_init_reg(&stor, selfreg);
 			RzAnalysisVar *newvar = rz_analysis_function_set_var(fcn, &stor, NULL, size, vname);
@@ -1536,7 +1536,7 @@ RZ_API void rz_analysis_extract_rarg(RzAnalysis *analysis, RzAnalysisOp *op, RzA
 	const char *errorreg = rz_analysis_cc_error(analysis, fcn->cc);
 	if (errorreg) {
 		if (reg_set[i] == 0 && STR_EQUAL(opdreg, errorreg)) {
-			char *vname = strdup("error");
+			char *vname = rz_str_dup("error");
 			RzAnalysisVarStorage stor;
 			rz_analysis_var_storage_init_reg(&stor, errorreg);
 			RzAnalysisVar *newvar = rz_analysis_function_set_var(fcn, &stor, NULL, size, vname);

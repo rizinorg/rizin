@@ -47,7 +47,7 @@ static void emit_init(RzEgg *egg) {
 static char *emit_syscall(RzEgg *egg, int nargs) {
 	char p[512];
 	if (attsyntax) {
-		return strdup(": mov $`.arg`, %" RZ_AX "\n: " SYSCALL_ATT "\n");
+		return rz_str_dup(": mov $`.arg`, %" RZ_AX "\n: " SYSCALL_ATT "\n");
 	}
 	switch (egg->os) {
 	case RZ_EGG_OS_LINUX:
@@ -72,7 +72,7 @@ static char *emit_syscall(RzEgg *egg, int nargs) {
 	default:
 		return NULL;
 	}
-	return strdup(p);
+	return rz_str_dup(p);
 }
 
 static void emit_frame(RzEgg *egg, int sz) {

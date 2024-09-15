@@ -307,7 +307,7 @@ RZ_API RZ_OWN RzRopRegInfo *rz_core_rop_reg_info_new(RZ_NONNULL const RzCore *co
 	RzRegItem *item_dst;
 	rz_list_foreach (head, iter_dst, item_dst) {
 		if (RZ_STR_EQ(name, item_dst->name) && item_dst->type == RZ_REG_TYPE_GPR) {
-			reg_info->name = strdup(name);
+			reg_info->name = rz_str_dup(name);
 			break;
 		}
 	}
@@ -440,7 +440,7 @@ RZ_API RZ_OWN RzRopRegInfo *rz_core_rop_reg_info_dup(RZ_BORROW RZ_NONNULL RzRopR
 		return NULL;
 	}
 
-	dup->name = strdup(src->name);
+	dup->name = rz_str_dup(src->name);
 	dup->is_mem_read = src->is_mem_read;
 	dup->is_pc_write = src->is_pc_write;
 	dup->is_mem_write = src->is_mem_write;
@@ -1411,7 +1411,7 @@ static RzList /*<char *>*/ *handle_grep_args(const char *greparg, const bool reg
 		return NULL;
 	}
 
-	char *grep_arg = strdup(greparg);
+	char *grep_arg = rz_str_dup(greparg);
 	if (!grep_arg) {
 		return NULL;
 	}
@@ -1428,7 +1428,7 @@ static RzList /*<char *>*/ *handle_grep_args(const char *greparg, const bool reg
 
 	const char *tok = strtok(gregexp, ";");
 	while (tok) {
-		char *rx = strdup(tok);
+		char *rx = rz_str_dup(tok);
 		if (!rx) {
 			break;
 		}

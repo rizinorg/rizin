@@ -109,20 +109,20 @@ static RzBinInfo *info(RzBinFile *bf) {
 	if (!(ret = RZ_NEW0(RzBinInfo))) {
 		return NULL;
 	}
-	ret->file = strdup(bf->file);
-	ret->bclass = strdup("dyldcache");
-	ret->os = strdup(rz_dyldcache_get_platform_str(cache));
+	ret->file = rz_str_dup(bf->file);
+	ret->bclass = rz_str_dup("dyldcache");
+	ret->os = rz_str_dup(rz_dyldcache_get_platform_str(cache));
 	if (strstr(cache->hdr->magic, "x86_64")) {
-		ret->arch = strdup("x86");
+		ret->arch = rz_str_dup("x86");
 		ret->bits = 64;
 	} else {
-		ret->arch = strdup("arm");
+		ret->arch = rz_str_dup("arm");
 		ret->bits = strstr(cache->hdr->magic, "arm64") ? 64 : 32;
 	}
-	ret->machine = strdup(ret->arch);
-	ret->subsystem = strdup("xnu");
+	ret->machine = rz_str_dup(ret->arch);
+	ret->subsystem = rz_str_dup("xnu");
 	ret->guid = rz_hex_bin2strdup((ut8 *)cache->hdr->uuid, sizeof(cache->hdr->uuid));
-	ret->type = strdup(rz_dyldcache_get_type_str(cache));
+	ret->type = rz_str_dup(rz_dyldcache_get_type_str(cache));
 	ret->has_va = true;
 	ret->big_endian = big_endian;
 	ret->dbg_info = 0;
@@ -156,7 +156,7 @@ void symbols_from_bin(RzDyldCache *cache, RzPVector /*<RzBinSymbol *>*/ *ret, Rz
 		if (!sym) {
 			break;
 		}
-		sym->name = strdup(symbols[i].name);
+		sym->name = rz_str_dup(symbols[i].name);
 		sym->vaddr = symbols[i].addr;
 		sym->forwarder = "NONE";
 		sym->bind = (symbols[i].type == RZ_BIN_MACH0_SYMBOL_TYPE_LOCAL) ? RZ_BIN_BIND_LOCAL_STR : RZ_BIN_BIND_GLOBAL_STR;
@@ -251,7 +251,7 @@ static RzPVector /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 		}
 		vf->buf = rz_dyldcache_new_rebasing_buf(cache);
 		vf->buf_owned = true;
-		vf->name = strdup(RZ_DYLDCACHE_VFILE_NAME_REBASED);
+		vf->name = rz_str_dup(RZ_DYLDCACHE_VFILE_NAME_REBASED);
 		rz_pvector_push(ret, vf);
 	}
 	return ret;
@@ -294,7 +294,7 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 		map->vaddr = cache->maps[i].address + slide;
 		map->perm = prot2perm(cache->maps[i].initProt);
 		if (rz_dyldcache_range_needs_rebasing(cache, map->paddr, map->psize)) {
-			map->vfile_name = strdup(RZ_DYLDCACHE_VFILE_NAME_REBASED);
+			map->vfile_name = rz_str_dup(RZ_DYLDCACHE_VFILE_NAME_REBASED);
 		}
 		rz_pvector_push(ret, map);
 	}

@@ -315,42 +315,42 @@ RZ_API RZ_OWN char *rz_bin_java_class_version(RZ_NONNULL RzBinJavaClass *bin) {
 #define is_version(bin, major, minor) ((bin)->major_version == (major) && (bin)->minor_version >= (minor))
 	if (bin->major_version < 45 ||
 		(bin->major_version == 45 && bin->minor_version < 3)) {
-		return strdup("Java SE 1.0.2"); // old format
+		return rz_str_dup("Java SE 1.0.2"); // old format
 	} else if (is_version(bin, 45, 3)) {
-		return strdup("Java SE 1.1");
+		return rz_str_dup("Java SE 1.1");
 	} else if (is_version(bin, 46, 0)) {
-		return strdup("Java SE 1.2");
+		return rz_str_dup("Java SE 1.2");
 	} else if (is_version(bin, 47, 0)) {
-		return strdup("Java SE 1.3");
+		return rz_str_dup("Java SE 1.3");
 	} else if (is_version(bin, 48, 0)) {
-		return strdup("Java SE 1.4");
+		return rz_str_dup("Java SE 1.4");
 	} else if (is_version(bin, 49, 0)) {
-		return strdup("Java SE 1.5"); // enum, generics, annotations
+		return rz_str_dup("Java SE 1.5"); // enum, generics, annotations
 	} else if (is_version(bin, 50, 0)) {
-		return strdup("Java SE 1.6"); // stackmaps
+		return rz_str_dup("Java SE 1.6"); // stackmaps
 	} else if (is_version(bin, 51, 0)) {
-		return strdup("Java SE 1.7");
+		return rz_str_dup("Java SE 1.7");
 	} else if (is_version(bin, 52, 0)) {
-		return strdup("Java SE 1.8"); // lambda, type annos, param names
+		return rz_str_dup("Java SE 1.8"); // lambda, type annos, param names
 	} else if (is_version(bin, 53, 0)) {
-		return strdup("Java SE 1.9"); // modules, indy string concat
+		return rz_str_dup("Java SE 1.9"); // modules, indy string concat
 	} else if (is_version(bin, 54, 0)) {
-		return strdup("Java SE 10");
+		return rz_str_dup("Java SE 10");
 	} else if (is_version(bin, 55, 0)) {
-		return strdup("Java SE 11"); // constant dynamic, nest mates
+		return rz_str_dup("Java SE 11"); // constant dynamic, nest mates
 	} else if (is_version(bin, 56, 0)) {
-		return strdup("Java SE 12");
+		return rz_str_dup("Java SE 12");
 	} else if (is_version(bin, 57, 0)) {
-		return strdup("Java SE 13");
+		return rz_str_dup("Java SE 13");
 	} else if (is_version(bin, 58, 0)) {
-		return strdup("Java SE 14");
+		return rz_str_dup("Java SE 14");
 	} else if (is_version(bin, 59, 0)) {
-		return strdup("Java SE 15");
+		return rz_str_dup("Java SE 15");
 	} else if (is_version(bin, 60, 0)) {
-		return strdup("Java SE 16");
+		return rz_str_dup("Java SE 16");
 	}
 #undef is_version
-	return strdup("unknown");
+	return rz_str_dup("unknown");
 }
 
 RZ_API ut64 rz_bin_java_class_debug_info(RZ_NONNULL RzBinJavaClass *bin) {
@@ -456,7 +456,7 @@ RZ_API RZ_OWN char *rz_bin_java_class_name(RZ_NONNULL RzBinJavaClass *bin) {
 
 	if (!cpool || java_constant_pool_resolve(cpool, &index, NULL) != 1) {
 		RZ_LOG_ERROR("java bin: unknown class name at constant pool index %u\n", bin->this_class);
-		return strdup("unknown_class");
+		return rz_str_dup("unknown_class");
 	}
 
 	char *tmp = java_class_constant_pool_stringify_at(bin, index);
@@ -474,7 +474,7 @@ RZ_API RZ_OWN char *rz_bin_java_class_super(RZ_NONNULL RzBinJavaClass *bin) {
 	const ConstPool *cpool = java_class_constant_pool_at(bin, bin->super_class);
 	if (!cpool || java_constant_pool_resolve(cpool, &index, NULL) != 1) {
 		RZ_LOG_ERROR("java bin: unknown super name at constant pool index %u\n", bin->this_class);
-		return strdup("unknown_super");
+		return rz_str_dup("unknown_super");
 	}
 	char *tmp = java_class_constant_pool_stringify_at(bin, index);
 	if (!tmp) {
@@ -811,17 +811,17 @@ RZ_API void rz_bin_java_class_as_source_code(RZ_NONNULL RzBinJavaClass *bin, RZ_
 
 			char *name = java_class_constant_pool_stringify_at(bin, method->name_index);
 			if (!name) {
-				name = strdup("?");
+				name = rz_str_dup("?");
 			}
 			char *desc = java_class_constant_pool_stringify_at(bin, method->descriptor_index);
 			if (!desc) {
-				desc = strdup("(?)V");
+				desc = rz_str_dup("(?)V");
 			}
 
 			if (desc[0] == '(') {
 				tmp = rz_str_newf("%s%s", name, desc);
 			} else {
-				tmp = strdup(name);
+				tmp = rz_str_dup(name);
 			}
 			free(desc);
 			free(name);
@@ -1043,7 +1043,7 @@ RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_bin_java_class_strings(RZ_NONNUL
 			bstr->ordinal = i;
 			bstr->length = attr->attribute_length;
 			bstr->size = attr->attribute_length;
-			bstr->string = strdup(attr->info);
+			bstr->string = rz_str_dup(attr->info);
 			bstr->type = RZ_STRING_ENC_UTF8;
 			rz_pvector_push(vec, bstr);
 		}
@@ -1055,7 +1055,7 @@ static char *add_class_name_to_name(char *name, char *classname) {
 	if (classname) {
 		return rz_str_newf("%s.%s", classname, name);
 	}
-	return strdup(name);
+	return rz_str_dup(name);
 }
 
 static char *demangle_java_and_free(char *mangled) {
@@ -1085,7 +1085,7 @@ static void set_lib_and_class_name(char *mangled, char **out_class, char **out_l
 	if (is_java_lang && !startswith(object, "java.lang")) {
 		*out_lib = rz_str_newf("java.lang.%s", object);
 	} else {
-		*out_lib = strdup(object);
+		*out_lib = rz_str_dup(object);
 	}
 }
 
@@ -1136,7 +1136,7 @@ RZ_API RZ_OWN RzList /*<RzBinSymbol *>*/ *rz_bin_java_class_methods_as_symbols(R
 			}
 			char *desc = java_class_constant_pool_stringify_at(bin, method->descriptor_index);
 			if (!desc) {
-				desc = strdup("(?)V");
+				desc = rz_str_dup("(?)V");
 			}
 
 			set_lib_and_class_name(rz_bin_java_class_name(bin), &symbol->classname, &symbol->libname);
@@ -1518,17 +1518,17 @@ RZ_API RZ_OWN RzList /*<RzBinSymbol *>*/ *rz_bin_java_class_const_pool_as_symbol
 
 			char *desc = java_class_constant_pool_stringify_at(bin, descriptor_index);
 			if (!desc) {
-				desc = strdup("(?)V");
+				desc = rz_str_dup("(?)V");
 			}
 
 			method_name = java_class_constant_pool_stringify_at(bin, name_index);
 			if (!method_name) {
-				method_name = strdup("unknown_method");
+				method_name = rz_str_dup("unknown_method");
 			}
 
 			classname = java_class_constant_pool_stringify_at(bin, class_name_index);
 			if (!classname) {
-				classname = strdup("unknown_class");
+				classname = rz_str_dup("unknown_class");
 			}
 
 			set_lib_and_class_name(rz_str_newf("L%s;", classname), &symbol->classname, &symbol->libname);
@@ -1536,7 +1536,7 @@ RZ_API RZ_OWN RzList /*<RzBinSymbol *>*/ *rz_bin_java_class_const_pool_as_symbol
 			if (desc[0] == '(') {
 				symbol->dname = rz_str_newf("%s%s", method_name, desc);
 			} else {
-				symbol->dname = strdup(method_name);
+				symbol->dname = rz_str_dup(method_name);
 			}
 			symbol->dname = demangle_java_and_free(symbol->dname);
 			symbol->bind = RZ_BIN_BIND_IMPORT_STR;
@@ -1637,7 +1637,7 @@ RZ_API RZ_OWN RzPVector /*<RzBinImport *>*/ *rz_bin_java_class_const_pool_as_imp
 			}
 
 			set_lib_and_class_name(rz_str_newf("L%s;", object), &import->classname, &import->libname);
-			import->name = strdup("*");
+			import->name = rz_str_dup("*");
 			import->bind = RZ_BIN_BIND_WEAK_STR;
 			import->type = RZ_BIN_TYPE_IFACE_STR;
 			import->ordinal = i;
@@ -1739,7 +1739,7 @@ static RzBinSection *new_section(const char *name, ut64 start, ut64 end, ut32 pe
 		rz_warn_if_reached();
 		return NULL;
 	}
-	section->name = strdup(name);
+	section->name = rz_str_dup(name);
 	if (!section->name) {
 		rz_warn_if_reached();
 		free(section);

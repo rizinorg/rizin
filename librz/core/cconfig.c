@@ -14,7 +14,7 @@ static bool boolify_var_cb(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
 	if (node->i_value || rz_str_is_false(node->value)) {
 		free(node->value);
-		node->value = strdup(rz_str_bool(node->i_value));
+		node->value = rz_str_dup(rz_str_bool(node->i_value));
 	}
 	return true;
 }
@@ -388,13 +388,13 @@ static void update_asmcpu_options(RzCore *core, RzConfigNode *node) {
 	rz_list_purge(node->options);
 	rz_list_foreach (core->rasm->plugins, iter, h) {
 		if (h->cpus && !strcmp(arch, h->name)) {
-			char *c = strdup(h->cpus);
+			char *c = rz_str_dup(h->cpus);
 			int i, n = rz_str_split(c, ',');
 			for (i = 0; i < n; i++) {
 				const char *word = rz_str_word_get0(c, i);
 				if (word && *word) {
 					node->options->free = free;
-					SETOPTIONS(node, strdup(word), NULL);
+					SETOPTIONS(node, rz_str_dup(word), NULL);
 				}
 			}
 			free(c);
@@ -509,14 +509,14 @@ static bool cb_asmarch(void *user, void *data) {
 		RZ_LOG_ERROR("core: asm.arch: cannot find (%s)\n", node->value);
 		return false;
 	}
-	// we should strdup here otherwise will crash if any rz_config_set
+	// we should rz_str_dup here otherwise will crash if any rz_config_set
 	// free the old value
-	char *asm_cpu = strdup(rz_config_get(core->config, "asm.cpu"));
+	char *asm_cpu = rz_str_dup(rz_config_get(core->config, "asm.cpu"));
 	if (core->rasm->cur) {
 		const char *newAsmCPU = core->rasm->cur->cpus;
 		if (newAsmCPU) {
 			if (*newAsmCPU) {
-				char *nac = strdup(newAsmCPU);
+				char *nac = rz_str_dup(newAsmCPU);
 				char *comma = strchr(nac, ',');
 				if (comma) {
 					if (!*asm_cpu || (*asm_cpu && !strstr(nac, asm_cpu))) {
@@ -550,7 +550,7 @@ static bool cb_asmarch(void *user, void *data) {
 
 	rz_debug_set_arch(core->dbg, node->value, bits);
 	if (!rz_config_set(core->config, "analysis.arch", node->value)) {
-		char *p, *s = strdup(node->value);
+		char *p, *s = rz_str_dup(node->value);
 		if (s) {
 			p = strchr(s, '.');
 			if (p) {
@@ -693,14 +693,14 @@ static void update_asmfeatures_options(RzCore *core, RzConfigNode *node) {
 
 	if (core && core->rasm && core->rasm->cur) {
 		if (core->rasm->cur->features) {
-			char *features = strdup(core->rasm->cur->features);
+			char *features = rz_str_dup(core->rasm->cur->features);
 			rz_list_purge(node->options);
 			argc = rz_str_split(features, ',');
 			for (i = 0; i < argc; i++) {
 				node->options->free = free;
 				const char *feature = rz_str_word_get0(features, i);
 				if (feature) {
-					rz_list_append(node->options, strdup(feature));
+					rz_list_append(node->options, rz_str_dup(feature));
 				}
 			}
 			free(features);
@@ -725,7 +725,7 @@ static bool cb_asmfeatures(void *user, void *data) {
 	}
 	RZ_FREE(core->rasm->features);
 	if (node->value[0]) {
-		core->rasm->features = strdup(node->value);
+		core->rasm->features = rz_str_dup(node->value);
 	}
 	return 1;
 }
@@ -735,14 +735,14 @@ static void update_asmplatforms_options(RzCore *core, RzConfigNode *node) {
 
 	if (core && core->rasm && core->rasm->cur) {
 		if (core->rasm->cur->platforms) {
-			char *platforms = strdup(core->rasm->cur->platforms);
+			char *platforms = rz_str_dup(core->rasm->cur->platforms);
 			rz_list_purge(node->options);
 			argc = rz_str_split(platforms, ',');
 			for (i = 0; i < argc; i++) {
 				node->options->free = free;
 				const char *feature = rz_str_word_get0(platforms, i);
 				if (feature) {
-					rz_list_append(node->options, strdup(feature));
+					rz_list_append(node->options, rz_str_dup(feature));
 				}
 			}
 			free(platforms);
@@ -763,7 +763,7 @@ static bool cb_asmplatform(void *user, void *data) {
 	}
 	RZ_FREE(core->rasm->platforms);
 	if (node->value[0]) {
-		core->rasm->platforms = strdup(node->value);
+		core->rasm->platforms = rz_str_dup(node->value);
 	}
 	const char *asmcpu = rz_config_get(core->config, "asm.cpu");
 	const char *asmarch = rz_config_get(core->config, "asm.arch");
@@ -842,7 +842,7 @@ static bool cb_asmos(void *user, void *data) {
 	}
 	if (!node->value[0]) {
 		free(node->value);
-		node->value = strdup(RZ_SYS_OS);
+		node->value = rz_str_dup(RZ_SYS_OS);
 	}
 	asmarch = rz_config_node_get(core->config, "asm.arch");
 	if (asmarch) {
@@ -926,7 +926,7 @@ static bool cb_strpurge(void *user, void *data) {
 	free(core->bin->strpurge);
 	core->bin->strpurge = !*node->value || !strcmp(node->value, "false")
 		? NULL
-		: strdup(node->value);
+		: rz_str_dup(node->value);
 	return true;
 }
 
@@ -1100,7 +1100,7 @@ static bool cb_dirsrc(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
 	RzCore *core = (RzCore *)user;
 	free(core->bin->srcdir);
-	core->bin->srcdir = strdup(node->value);
+	core->bin->srcdir = rz_str_dup(node->value);
 	return true;
 }
 
@@ -1371,7 +1371,7 @@ static bool cb_color_getter(void *user, RzConfigNode *node) {
 	rz_config_node_value_format_i(buf, sizeof(buf), rz_cons_singleton()->context->color_mode, node);
 	if (!node->value || strcmp(node->value, buf) != 0) {
 		free(node->value);
-		node->value = strdup(buf);
+		node->value = rz_str_dup(buf);
 	}
 	return true;
 }
@@ -1405,7 +1405,7 @@ static bool cb_dbg_btalgo(void *user, void *data) {
 		return false;
 	}
 	free(core->dbg->btalgo);
-	core->dbg->btalgo = strdup(node->value);
+	core->dbg->btalgo = rz_str_dup(node->value);
 	return true;
 }
 
@@ -1413,7 +1413,7 @@ static bool cb_dbg_libs(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	free(core->dbg->glob_libs);
-	core->dbg->glob_libs = strdup(node->value);
+	core->dbg->glob_libs = rz_str_dup(node->value);
 	return true;
 }
 
@@ -1421,7 +1421,7 @@ static bool cb_dbg_unlibs(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	free(core->dbg->glob_unlibs);
-	core->dbg->glob_unlibs = strdup(node->value);
+	core->dbg->glob_unlibs = rz_str_dup(node->value);
 	return true;
 }
 
@@ -1534,7 +1534,7 @@ static bool cb_runprofile(void *user, void *data) {
 	if (!node || !*(node->value)) {
 		r->io->runprofile = NULL;
 	} else {
-		r->io->runprofile = strdup(node->value);
+		r->io->runprofile = rz_str_dup(node->value);
 	}
 	return true;
 }
@@ -1545,7 +1545,7 @@ static bool cb_dbg_args(void *user, void *data) {
 	if (!node || !*(node->value)) {
 		core->io->args = NULL;
 	} else {
-		core->io->args = strdup(node->value);
+		core->io->args = rz_str_dup(node->value);
 	}
 	return true;
 }
@@ -1939,7 +1939,7 @@ static bool cb_cmd_esil_ioer(void *user, void *data) {
 	if (core && core->analysis && core->analysis->esil) {
 		core->analysis->esil->cmd = rz_core_esil_cmd;
 		free(core->analysis->esil->cmd_ioer);
-		core->analysis->esil->cmd_ioer = strdup(node->value);
+		core->analysis->esil->cmd_ioer = rz_str_dup(node->value);
 	}
 	return true;
 }
@@ -1950,7 +1950,7 @@ static bool cb_cmd_esil_todo(void *user, void *data) {
 	if (core && core->analysis && core->analysis->esil) {
 		core->analysis->esil->cmd = rz_core_esil_cmd;
 		free(core->analysis->esil->cmd_todo);
-		core->analysis->esil->cmd_todo = strdup(node->value);
+		core->analysis->esil->cmd_todo = rz_str_dup(node->value);
 	}
 	return true;
 }
@@ -1961,7 +1961,7 @@ static bool cb_cmd_esil_intr(void *user, void *data) {
 	if (core && core->analysis && core->analysis->esil) {
 		core->analysis->esil->cmd = rz_core_esil_cmd;
 		free(core->analysis->esil->cmd_intr);
-		core->analysis->esil->cmd_intr = strdup(node->value);
+		core->analysis->esil->cmd_intr = rz_str_dup(node->value);
 	}
 	return true;
 }
@@ -1972,7 +1972,7 @@ static bool cb_mdevrange(void *user, void *data) {
 	if (core && core->analysis && core->analysis->esil) {
 		core->analysis->esil->cmd = rz_core_esil_cmd;
 		free(core->analysis->esil->mdev_range);
-		core->analysis->esil->mdev_range = strdup(node->value);
+		core->analysis->esil->mdev_range = rz_str_dup(node->value);
 	}
 	return true;
 }
@@ -1983,7 +1983,7 @@ static bool cb_cmd_esil_step(void *user, void *data) {
 	if (core && core->analysis && core->analysis->esil) {
 		core->analysis->esil->cmd = rz_core_esil_cmd;
 		free(core->analysis->esil->cmd_step);
-		core->analysis->esil->cmd_step = strdup(node->value);
+		core->analysis->esil->cmd_step = rz_str_dup(node->value);
 	}
 	return true;
 }
@@ -1994,7 +1994,7 @@ static bool cb_cmd_esil_step_out(void *user, void *data) {
 	if (core && core->analysis && core->analysis->esil) {
 		core->analysis->esil->cmd = rz_core_esil_cmd;
 		free(core->analysis->esil->cmd_step_out);
-		core->analysis->esil->cmd_step_out = strdup(node->value);
+		core->analysis->esil->cmd_step_out = rz_str_dup(node->value);
 	}
 	return true;
 }
@@ -2005,7 +2005,7 @@ static bool cb_cmd_esil_mdev(void *user, void *data) {
 	if (core && core->analysis && core->analysis->esil) {
 		core->analysis->esil->cmd = rz_core_esil_cmd;
 		free(core->analysis->esil->cmd_mdev);
-		core->analysis->esil->cmd_mdev = strdup(node->value);
+		core->analysis->esil->cmd_mdev = rz_str_dup(node->value);
 	}
 	return true;
 }
@@ -2015,7 +2015,7 @@ static bool cb_cmd_esil_trap(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
 	if (core && core->analysis && core->analysis->esil) {
 		core->analysis->esil->cmd = rz_core_esil_cmd;
-		core->analysis->esil->cmd_trap = strdup(node->value);
+		core->analysis->esil->cmd_trap = rz_str_dup(node->value);
 	}
 	return true;
 }
@@ -2148,7 +2148,7 @@ static bool cb_filepath(void *user, void *data) {
 		if (pikaboo[3] == '/') {
 			rz_config_set(core->config, "file.lastpath", node->value);
 			char *ovalue = node->value;
-			node->value = strdup(pikaboo + 3);
+			node->value = rz_str_dup(pikaboo + 3);
 			free(ovalue);
 			return true;
 		}
@@ -2190,7 +2190,7 @@ static bool cb_pager(void *user, void *data) {
 	}
 	/* Let cons know we have a new pager. */
 	free(core->cons->pager);
-	core->cons->pager = strdup(node->value);
+	core->cons->pager = rz_str_dup(node->value);
 	return true;
 }
 
@@ -2332,7 +2332,7 @@ static bool cb_scrstrconv(void *user, void *data) {
 		return false;
 	} else {
 		free((char *)core->print->strconv_mode);
-		core->print->strconv_mode = strdup(node->value);
+		core->print->strconv_mode = rz_str_dup(node->value);
 	}
 	return true;
 }
@@ -2617,7 +2617,7 @@ static bool cb_binprefix(void *user, void *data) {
 			if (name) {
 				rz_name_filter(name, strlen(name), true);
 				rz_str_filter(name);
-				core->bin->prefix = strdup(name);
+				core->bin->prefix = rz_str_dup(name);
 				free(name);
 			}
 		} else {
@@ -3902,7 +3902,7 @@ RZ_API RZ_OWN RzList /*<char *>*/ *rz_core_config_in_space(RZ_NONNULL RzCore *co
 	RzConfigNode *node;
 	RzListIter *iter;
 	rz_list_foreach (core->config->nodes, iter, node) {
-		char *name = strdup(node->name);
+		char *name = rz_str_dup(node->name);
 		if (!name) {
 			continue;
 		}
@@ -3913,11 +3913,11 @@ RZ_API RZ_OWN RzList /*<char *>*/ *rz_core_config_in_space(RZ_NONNULL RzCore *co
 
 		if (RZ_STR_ISNOTEMPTY(space)) {
 			if (0 == strcmp(name, space) && dot && !rz_list_find(list, dot + 1, (RzListComparator)strcmp, NULL)) {
-				rz_list_append(list, strdup(dot + 1));
+				rz_list_append(list, rz_str_dup(dot + 1));
 			}
 		} else {
 			if (!rz_list_find(list, name, (RzListComparator)strcmp, NULL)) {
-				rz_list_append(list, strdup(name));
+				rz_list_append(list, rz_str_dup(name));
 			}
 		}
 		free(name);

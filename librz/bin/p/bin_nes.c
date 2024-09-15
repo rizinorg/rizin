@@ -30,11 +30,11 @@ static RzBinInfo *info(RzBinFile *bf) {
 	if (!(ret = RZ_NEW0(RzBinInfo))) {
 		return NULL;
 	}
-	ret->file = strdup(bf->file);
-	ret->type = strdup("ROM");
-	ret->machine = strdup("Nintendo NES");
-	ret->os = strdup("nes");
-	ret->arch = strdup("6502");
+	ret->file = rz_str_dup(bf->file);
+	ret->type = rz_str_dup("ROM");
+	ret->machine = rz_str_dup("Nintendo NES");
+	ret->os = rz_str_dup("nes");
+	ret->arch = rz_str_dup("6502");
 	ret->bits = 8;
 	ret->has_va = 1;
 	return ret;
@@ -45,7 +45,7 @@ static void addsym(RzPVector /*<RzBinSymbol *>*/ *ret, const char *name, ut64 ad
 	if (!ptr) {
 		return;
 	}
-	ptr->name = strdup(name ? name : "");
+	ptr->name = rz_str_dup(name ? name : "");
 	ptr->paddr = ptr->vaddr = addr;
 	ptr->size = size;
 	ptr->ordinal = 0;
@@ -98,7 +98,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
 	}
-	ptr->name = strdup("ROM");
+	ptr->name = rz_str_dup("ROM");
 	ptr->paddr = INES_HDR_SIZE;
 	ptr->size = ihdr.prg_page_count_16k * PRG_PAGE_SIZE;
 	bool mirror = ROM_START_ADDRESS + ptr->size <= ROM_MIRROR_ADDRESS; // not a 256bit ROM, mapper 0 mirrors the complete ROM in this case
@@ -110,7 +110,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		if (!(ptr = RZ_NEW0(RzBinSection))) {
 			return ret;
 		}
-		ptr->name = strdup("ROM_MIRROR");
+		ptr->name = rz_str_dup("ROM_MIRROR");
 		ptr->paddr = INES_HDR_SIZE;
 		ptr->size = ihdr.prg_page_count_16k * PRG_PAGE_SIZE;
 		ptr->vaddr = ROM_MIRROR_ADDRESS;
@@ -131,7 +131,7 @@ static RzPVector /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
 		rz_pvector_free(ret);
 		return NULL;
 	}
-	m->name = strdup("RAM");
+	m->name = rz_str_dup("RAM");
 	m->addr = RAM_START_ADDRESS;
 	m->size = RAM_SIZE;
 	m->perms = rz_str_rwx("rwx");
@@ -140,7 +140,7 @@ static RzPVector /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
 		return ret;
 	}
 	m->mirrors = rz_pvector_new(rz_bin_mem_free);
-	n->name = strdup("RAM_MIRROR_2");
+	n->name = rz_str_dup("RAM_MIRROR_2");
 	n->addr = RAM_MIRROR_2_ADDRESS;
 	n->size = RAM_MIRROR_2_SIZE;
 	n->perms = rz_str_rwx("rwx");
@@ -150,7 +150,7 @@ static RzPVector /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
 		m->mirrors = NULL;
 		return ret;
 	}
-	n->name = strdup("RAM_MIRROR_3");
+	n->name = rz_str_dup("RAM_MIRROR_3");
 	n->addr = RAM_MIRROR_3_ADDRESS;
 	n->size = RAM_MIRROR_3_SIZE;
 	n->perms = rz_str_rwx("rwx");
@@ -159,7 +159,7 @@ static RzPVector /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
 		rz_pvector_free(ret);
 		return NULL;
 	}
-	m->name = strdup("PPU_REG");
+	m->name = rz_str_dup("PPU_REG");
 	m->addr = PPU_REG_ADDRESS;
 	m->size = PPU_REG_SIZE;
 	m->perms = rz_str_rwx("rwx");
@@ -182,7 +182,7 @@ static RzPVector /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
 		rz_pvector_free(ret);
 		return NULL;
 	}
-	m->name = strdup("APU_AND_IOREGS");
+	m->name = rz_str_dup("APU_AND_IOREGS");
 	m->addr = APU_AND_IOREGS_START_ADDRESS;
 	m->size = APU_AND_IOREGS_SIZE;
 	m->perms = rz_str_rwx("rwx");
@@ -191,7 +191,7 @@ static RzPVector /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
 		rz_pvector_free(ret);
 		return NULL;
 	}
-	m->name = strdup("SRAM");
+	m->name = rz_str_dup("SRAM");
 	m->addr = SRAM_START_ADDRESS;
 	m->size = SRAM_SIZE;
 	m->perms = rz_str_rwx("rwx");

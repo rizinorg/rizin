@@ -73,7 +73,7 @@ static int dalvik_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 
 	strasm = NULL;
 	if (size <= len) {
-		strasm = strdup(dalvik_opcodes[i].name);
+		strasm = rz_str_dup(dalvik_opcodes[i].name);
 		size = dalvik_opcodes[i].len;
 		switch (dalvik_opcodes[i].fmt) {
 		case fmtop: break;

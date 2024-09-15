@@ -88,7 +88,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		if (!(ptr = RZ_NEW0(RzBinSection))) {
 			break;
 		}
-		ptr->name = strdup((char *)sections[i].name);
+		ptr->name = rz_str_dup((char *)sections[i].name);
 		ptr->size = sections[i].size;
 		ptr->vsize = sections[i].vsize;
 		ptr->paddr = sections[i].paddr;
@@ -122,14 +122,14 @@ static RzBinInfo *info(RzBinFile *bf) {
 	if (!ret) {
 		return NULL;
 	}
-	ret->file = strdup(bf->file);
-	ret->bclass = strdup("TE");
-	ret->rclass = strdup("te");
+	ret->file = rz_str_dup(bf->file);
+	ret->bclass = rz_str_dup("TE");
+	ret->rclass = rz_str_dup("te");
 	ret->os = rz_bin_te_get_os(bf->o->bin_obj);
 	ret->arch = rz_bin_te_get_arch(bf->o->bin_obj);
 	ret->machine = rz_bin_te_get_machine(bf->o->bin_obj);
 	ret->subsystem = rz_bin_te_get_subsystem(bf->o->bin_obj);
-	ret->type = strdup("EXEC (Executable file)");
+	ret->type = rz_str_dup("EXEC (Executable file)");
 	ret->bits = rz_bin_te_get_bits(bf->o->bin_obj);
 	ret->big_endian = 1;
 	ret->dbg_info = 0;

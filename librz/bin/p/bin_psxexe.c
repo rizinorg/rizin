@@ -34,11 +34,11 @@ static RzBinInfo *info(RzBinFile *bf) {
 		return NULL;
 	}
 
-	ret->file = strdup(bf->file);
-	ret->type = strdup("Sony PlayStation 1 Executable");
-	ret->machine = strdup("Sony PlayStation 1");
-	ret->os = strdup("psx");
-	ret->arch = strdup("mips");
+	ret->file = rz_str_dup(bf->file);
+	ret->type = rz_str_dup("Sony PlayStation 1 Executable");
+	ret->machine = rz_str_dup("Sony PlayStation 1");
+	ret->os = rz_str_dup("psx");
+	ret->arch = rz_str_dup("mips");
 	ret->bits = 32;
 	ret->has_va = true;
 	return ret;
@@ -68,7 +68,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 
 	sz = rz_buf_size(bf->buf);
 
-	sect->name = strdup("TEXT");
+	sect->name = rz_str_dup("TEXT");
 	sect->paddr = PSXEXE_TEXTSECTION_OFFSET;
 	sect->size = sz - PSXEXE_TEXTSECTION_OFFSET;
 	sect->vaddr = psxheader.t_addr;

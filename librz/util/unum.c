@@ -311,7 +311,7 @@ RZ_API ut64 rz_num_get(RZ_NULLABLE RzNum *num, RZ_NULLABLE const char *str) {
 		if (lodash) {
 			// Support 0x1000_f000_4000
 			// TODO: Only take underscores separated every 4 chars starting at the end
-			char *s = strdup(str + 2);
+			char *s = rz_str_dup(str + 2);
 			if (s) {
 				rz_str_replace_char(s, '_', 0);
 				errno = 0;
@@ -555,7 +555,7 @@ RZ_API int rz_num_to_trits(char *out, ut64 num) {
 }
 
 RZ_API int rz_num_conditional(RzNum *num, const char *str) {
-	char *lgt, *t, *p, *s = strdup(str);
+	char *lgt, *t, *p, *s = rz_str_dup(str);
 	int res = 0;
 	ut64 n, a, b;
 	p = s;
@@ -678,10 +678,10 @@ RZ_API char *rz_num_as_string(RzNum *___, ut64 n, bool printable_only) {
 		num >>= 8;
 	}
 	if (ret) {
-		return strdup(str);
+		return rz_str_dup(str);
 	}
 	if (!printable_only) {
-		return strdup("\\0");
+		return rz_str_dup("\\0");
 	}
 	return NULL;
 }
@@ -780,7 +780,7 @@ static ut64 rz_num_tailff(RzNum *num, const char *hex) {
 RZ_API int rz_num_between(RzNum *num, const char *input_value) {
 	int i;
 	ut64 ns[3];
-	char *const str = strdup(input_value);
+	char *const str = rz_str_dup(input_value);
 	RzList *nums = rz_num_str_split_list(str);
 	int len = rz_list_length(nums);
 	if (len < 3) {

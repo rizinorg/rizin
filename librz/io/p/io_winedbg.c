@@ -297,7 +297,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 			"flg	nt	.1	.201	0\n"
 			"flg	rf	.1	.202	0\n"
 			"flg	vm	.1	.203	0\n";
-		return strdup(msg);
+		return rz_str_dup(msg);
 	} else if (!strncmp(cmd, "dr*", 3)) {
 		struct winedbg_x86_32 r = regState();
 		io->cb_printf("f eip @ 0x%08x\n", r.eip);

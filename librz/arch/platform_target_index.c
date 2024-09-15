@@ -12,7 +12,7 @@ RZ_API RZ_OWN RzPlatformItem *rz_platform_item_new(RZ_NULLABLE const char *name)
 	if (!item) {
 		return NULL;
 	}
-	item->name = name ? strdup(name) : NULL;
+	item->name = rz_str_dup(name);
 	item->comment = NULL;
 	return item;
 }

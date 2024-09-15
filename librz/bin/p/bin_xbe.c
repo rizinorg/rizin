@@ -347,12 +347,12 @@ static RzBinInfo *info(RzBinFile *bf) {
 	memset(dbg_name, 0, sizeof(dbg_name));
 	rz_buf_read_at(bf->buf, obj->header.debug_name_addr - obj->header.base, dbg_name, sizeof(dbg_name));
 	dbg_name[sizeof(dbg_name) - 1] = 0;
-	ret->file = strdup((char *)dbg_name);
-	ret->bclass = strdup("program");
-	ret->machine = strdup("Microsoft Xbox");
-	ret->os = strdup("xbox");
-	ret->type = strdup("Microsoft Xbox executable");
-	ret->arch = strdup("x86");
+	ret->file = rz_str_dup((char *)dbg_name);
+	ret->bclass = rz_str_dup("program");
+	ret->machine = rz_str_dup("Microsoft Xbox");
+	ret->os = rz_str_dup("xbox");
+	ret->type = rz_str_dup("Microsoft Xbox executable");
+	ret->arch = rz_str_dup("x86");
 	ret->has_va = 1;
 	ret->bits = 32;
 	ret->big_endian = 0;

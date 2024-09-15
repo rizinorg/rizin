@@ -20,7 +20,7 @@ RZ_API RZ_OWN RzCallable *rz_type_callable_new(RZ_NULLABLE const char *name) {
 		return NULL;
 	}
 	callable->ret = NULL;
-	callable->name = name ? strdup(name) : NULL;
+	callable->name = rz_str_dup(name);
 	callable->args = rz_pvector_new((RzPVectorFree)rz_type_callable_arg_free);
 	return callable;
 }
@@ -37,7 +37,7 @@ RZ_API RZ_OWN RzCallable *rz_type_callable_clone(RZ_BORROW RZ_NONNULL const RzCa
 		return NULL;
 	}
 	newcallable->ret = callable->ret ? rz_type_clone(callable->ret) : NULL;
-	newcallable->name = callable->name ? strdup(callable->name) : NULL;
+	newcallable->name = rz_str_dup(callable->name);
 	newcallable->args = rz_pvector_new((RzPVectorFree)rz_type_callable_arg_free);
 	void **it;
 	rz_pvector_foreach (callable->args, it) {
@@ -72,7 +72,7 @@ RZ_API RZ_OWN RzCallableArg *rz_type_callable_arg_new(RzTypeDB *typedb, RZ_NONNU
 	if (!arg) {
 		return NULL;
 	}
-	arg->name = strdup(name);
+	arg->name = rz_str_dup(name);
 	arg->type = type;
 	return arg;
 }
@@ -88,7 +88,7 @@ RZ_API RZ_OWN RzCallableArg *rz_type_callable_arg_clone(RZ_BORROW RZ_NONNULL con
 	if (!newarg) {
 		return NULL;
 	}
-	newarg->name = strdup(arg->name);
+	newarg->name = rz_str_dup(arg->name);
 	newarg->type = rz_type_clone(arg->type);
 	return newarg;
 }
@@ -260,7 +260,7 @@ RZ_API bool rz_type_func_cc_set(RzTypeDB *typedb, const char *name, const char *
 	if (!callable) {
 		return false;
 	}
-	callable->cc = strdup(cc);
+	callable->cc = rz_str_dup(cc);
 	return true;
 }
 
@@ -436,7 +436,7 @@ static inline char *callable_name_or_ptr(RZ_NONNULL const RzCallable *callable, 
 		// Due to the portability issues with other solutions we use this hack to repeat the '*' character
 		return rz_str_newf("(%.*s%s)", (int)ptr_depth, "****************", rz_str_get(callable->name));
 	} else {
-		return strdup(rz_str_get(callable->name));
+		return rz_str_dup(rz_str_get(callable->name));
 	}
 }
 
@@ -573,7 +573,7 @@ RZ_API bool rz_type_func_noreturn_drop(RzTypeDB *typedb, RZ_NONNULL const char *
 static bool function_names_collect_cb(void *user, RZ_UNUSED const char *k, const void *v) {
 	RzList *l = (RzList *)user;
 	RzCallable *callable = (RzCallable *)v;
-	rz_list_append(l, strdup(callable->name));
+	rz_list_append(l, rz_str_dup(callable->name));
 	return true;
 }
 
@@ -593,7 +593,7 @@ static bool noreturn_function_names_collect_cb(void *user, RZ_UNUSED const char 
 	RzList *l = (RzList *)user;
 	RzCallable *callable = (RzCallable *)v;
 	if (callable->noret) {
-		rz_list_append(l, strdup(callable->name));
+		rz_list_append(l, rz_str_dup(callable->name));
 	}
 	return true;
 }

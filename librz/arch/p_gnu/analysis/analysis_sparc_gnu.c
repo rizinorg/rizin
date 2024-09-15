@@ -594,7 +594,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"fpu	qf60	.128	544	0\n" /* df60 df62 */
 		"gpr	fsr	.64	560	0\n"; /* note that
 						   we've left out the filler */
-	return strdup(p);
+	return rz_str_dup(p);
 }
 
 static int archinfo(RzAnalysis *a, RzAnalysisInfoType query) {

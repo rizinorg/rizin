@@ -349,7 +349,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		// Store Program Memory Control and Status Register (SPMCSR)
 		"gpr	spmcsr	.8	64	0\n";
 
-	return strdup(p);
+	return rz_str_dup(p);
 }
 
 static int archinfo(RzAnalysis *analysis, RzAnalysisInfoType query) {

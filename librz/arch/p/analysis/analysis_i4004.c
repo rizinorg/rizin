@@ -42,7 +42,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"gpr	PC1	.64	34	0\n"
 		"gpr	PC2	.64	34	0\n"
 		"gpr	PC3	.64	34	0\n";
-	return strdup(p);
+	return rz_str_dup(p);
 }
 
 RzAnalysisPlugin rz_analysis_plugin_i4004 = {

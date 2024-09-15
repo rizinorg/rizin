@@ -94,7 +94,7 @@ RZ_API void rz_run_reset(RzRunProfile *p) {
 
 RZ_API bool rz_run_parse(RzRunProfile *pf, const char *profile) {
 	rz_return_val_if_fail(pf && profile, false);
-	char *p, *o, *str = strdup(profile);
+	char *p, *o, *str = rz_str_dup(profile);
 	if (!str) {
 		return false;
 	}
@@ -166,7 +166,7 @@ static char *resolve_value(const char *src, size_t *result_len) {
 			goto end_resolve;
 		}
 	} else {
-		copy = strdup(src);
+		copy = rz_str_dup(src);
 	}
 
 	copy_len = src_len = rz_str_unescape(copy);
@@ -213,7 +213,7 @@ static char *resolve_value(const char *src, size_t *result_len) {
 		size_t msg_len = backtick_end - (copy + 1);
 		if (msg_len < 1) {
 			free(copy);
-			return strdup("");
+			return rz_str_dup("");
 		}
 		*backtick_end = 0;
 		char *tmp = rz_sys_cmd_str(copy + 1, NULL, NULL);
@@ -518,46 +518,46 @@ RZ_API bool rz_run_parseline(RzRunProfile *p, const char *b) {
 	}
 
 	if (!strcmp(key, "program")) {
-		p->_args[0] = strdup(value);
-		p->_program = strdup(value);
+		p->_args[0] = rz_str_dup(value);
+		p->_program = rz_str_dup(value);
 	} else if (!strcmp(key, "daemon")) {
 		p->_daemon = true;
 	} else if (!strcmp(key, "system")) {
-		p->_system = strdup(value);
+		p->_system = rz_str_dup(value);
 	} else if (!strcmp(key, "runlib")) {
-		p->_runlib = strdup(value);
+		p->_runlib = rz_str_dup(value);
 	} else if (!strcmp(key, "runlib.fcn")) {
-		p->_runlib_fcn = strdup(value);
+		p->_runlib_fcn = rz_str_dup(value);
 	} else if (!strcmp(key, "aslr")) {
 		p->_aslr = parse_bool(value);
 	} else if (!strcmp(key, "pid")) {
 		p->_pid = parse_bool(value);
 	} else if (!strcmp(key, "pidfile")) {
-		p->_pidfile = strdup(value);
+		p->_pidfile = rz_str_dup(value);
 	} else if (!strcmp(key, "connect")) {
-		p->_connect = strdup(value);
+		p->_connect = rz_str_dup(value);
 	} else if (!strcmp(key, "listen")) {
-		p->_listen = strdup(value);
+		p->_listen = rz_str_dup(value);
 	} else if (!strcmp(key, "pty")) {
 		p->_pty = parse_bool(value);
 	} else if (!strcmp(key, "stdio")) {
 		if (value[0] == '!') {
-			p->_stdio = strdup(value);
+			p->_stdio = rz_str_dup(value);
 		} else {
-			p->_stdout = strdup(value);
-			p->_stderr = strdup(value);
-			p->_stdin = strdup(value);
+			p->_stdout = rz_str_dup(value);
+			p->_stderr = rz_str_dup(value);
+			p->_stdin = rz_str_dup(value);
 		}
 	} else if (!strcmp(key, "stdout")) {
-		p->_stdout = strdup(value);
+		p->_stdout = rz_str_dup(value);
 	} else if (!strcmp(key, "stdin")) {
-		p->_stdin = strdup(value);
+		p->_stdin = rz_str_dup(value);
 	} else if (!strcmp(key, "stderr")) {
-		p->_stderr = strdup(value);
+		p->_stderr = rz_str_dup(value);
 	} else if (!strcmp(key, "input")) {
-		p->_input = strdup(value);
+		p->_input = rz_str_dup(value);
 	} else if (!strcmp(key, "chdir")) {
-		p->_chgdir = strdup(value);
+		p->_chgdir = rz_str_dup(value);
 	} else if (!strcmp(key, "core")) {
 		p->_docore = parse_bool(value);
 	} else if (!strcmp(key, "fork")) {
@@ -573,21 +573,21 @@ RZ_API bool rz_run_parseline(RzRunProfile *p, const char *b) {
 	} else if (!strcmp(key, "bits")) {
 		p->_bits = atoi(value);
 	} else if (!strcmp(key, "chroot")) {
-		p->_chroot = strdup(value);
+		p->_chroot = rz_str_dup(value);
 	} else if (!strcmp(key, "libpath")) {
-		p->_libpath = strdup(value);
+		p->_libpath = rz_str_dup(value);
 	} else if (!strcmp(key, "preload")) {
-		p->_preload = strdup(value);
+		p->_preload = rz_str_dup(value);
 	} else if (!strcmp(key, "rzpreload")) {
 		p->_rzpreload = parse_bool(value);
 	} else if (!strcmp(key, "setuid")) {
-		p->_setuid = strdup(value);
+		p->_setuid = rz_str_dup(value);
 	} else if (!strcmp(key, "seteuid")) {
-		p->_seteuid = strdup(value);
+		p->_seteuid = rz_str_dup(value);
 	} else if (!strcmp(key, "setgid")) {
-		p->_setgid = strdup(value);
+		p->_setgid = rz_str_dup(value);
 	} else if (!strcmp(key, "setegid")) {
-		p->_setegid = strdup(value);
+		p->_setegid = rz_str_dup(value);
 	} else if (!strcmp(key, "nice")) {
 		p->_nice = atoi(value);
 	} else if (!strcmp(key, "timeout")) {
@@ -1303,7 +1303,7 @@ RZ_API char *rz_run_get_environ_profile(char **env) {
 	}
 	RzStrBuf *sb = rz_strbuf_new(NULL);
 	while (*env) {
-		char *k = strdup(*env);
+		char *k = rz_str_dup(*env);
 		char *v = strchr(k, '=');
 		if (v) {
 			*v++ = 0;

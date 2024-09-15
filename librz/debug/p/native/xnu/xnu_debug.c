@@ -464,7 +464,7 @@ RzDebugInfo *xnu_info(RzDebug *dbg, const char *arg) {
 	file_path_len = proc_pidpath(rdi->pid, file_path, sizeof(file_path));
 	if (file_path_len > 0) {
 		file_path[file_path_len] = 0;
-		rdi->exe = strdup(file_path);
+		rdi->exe = rz_str_dup(file_path);
 	}
 	if (proc_pidinfo(rdi->pid, PROC_PIDTBSDINFO, 0,
 		    &proc, PROC_PIDTBSDINFO_SIZE) == PROC_PIDTBSDINFO_SIZE) {
@@ -1241,7 +1241,7 @@ static RzList *xnu_dbg_modules(RzDebug *dbg) {
 			eprintf("Cannot create rz_debug_map_new\n");
 			break;
 		}
-		mr->file = strdup(file_path);
+		mr->file = rz_str_dup(file_path);
 		mr->shared = true;
 		rz_list_append(list, mr);
 	}
@@ -1277,10 +1277,10 @@ static RzDebugMap *rz_debug_map_clone(RzDebugMap *m) {
 	RzDebugMap *map = RZ_NEWCOPY(RzDebugMap, m);
 	// memcpy (map, m, sizeof (RzDebugMap));
 	if (m->name) {
-		map->name = strdup(m->name);
+		map->name = rz_str_dup(m->name);
 	}
 	if (m->file) {
-		map->file = strdup(m->file);
+		map->file = rz_str_dup(m->file);
 	}
 	return map;
 }
@@ -1373,10 +1373,10 @@ RzList *xnu_dbg_maps(RzDebug *dbg, int only_modules) {
 			}
 			RzDebugMap *rdm = moduleAt(modules, address);
 			if (rdm) {
-				mr->file = strdup(rdm->name);
+				mr->file = rz_str_dup(rdm->name);
 			} else {
 				if (*module_name) {
-					mr->file = strdup(module_name);
+					mr->file = rz_str_dup(module_name);
 				}
 			}
 			if (mr->file) {

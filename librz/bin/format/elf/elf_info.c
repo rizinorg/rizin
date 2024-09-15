@@ -714,7 +714,7 @@ static char *get_ver_flags(ut32 flags) {
 	char *result = NULL;
 
 	if (!flags) {
-		return strdup("none");
+		return rz_str_dup("none");
 	}
 
 	for (size_t i = 0; i < RZ_ARRAY_SIZE(ver_flags_translation_table); i++) {
@@ -737,7 +737,7 @@ static char *get_osabi_name_from_section_note(ELFOBJ *bin, RzBinElfSection *sect
 
 	for (size_t i = 0; i < RZ_ARRAY_SIZE(section_note_osabi_translation_table); i++) {
 		if (!strcmp(section->name, section_note_osabi_translation_table[i].note_name)) {
-			return strdup(section_note_osabi_translation_table[i].os_name);
+			return rz_str_dup(section_note_osabi_translation_table[i].os_name);
 		}
 	}
 
@@ -767,13 +767,13 @@ static char *get_osabi_name_from_shdr(ELFOBJ *bin) {
 static char *get_osabi_name_from_ehdr(ELFOBJ *bin) {
 	switch (bin->ehdr.e_ident[EI_OSABI]) {
 	case ELFOSABI_LINUX:
-		return strdup("linux");
+		return rz_str_dup("linux");
 	case ELFOSABI_SOLARIS:
-		return strdup("solaris");
+		return rz_str_dup("solaris");
 	case ELFOSABI_FREEBSD:
-		return strdup("freebsd");
+		return rz_str_dup("freebsd");
 	case ELFOSABI_HPUX:
-		return strdup("hpux");
+		return rz_str_dup("hpux");
 	}
 
 	return NULL;
@@ -820,15 +820,15 @@ static bool file_type_is_os_specific(ELFOBJ *bin) {
 static char *get_file_type_basic(RZ_NONNULL ELFOBJ *bin) {
 	switch (bin->ehdr.e_type) {
 	case ET_NONE:
-		return strdup("NONE (None)");
+		return rz_str_dup("NONE (None)");
 	case ET_REL:
-		return strdup("REL (Relocatable file)");
+		return rz_str_dup("REL (Relocatable file)");
 	case ET_EXEC:
-		return strdup("EXEC (Executable file)");
+		return rz_str_dup("EXEC (Executable file)");
 	case ET_DYN:
-		return strdup("DYN (Shared object file)");
+		return rz_str_dup("DYN (Shared object file)");
 	case ET_CORE:
-		return strdup("CORE (Core file)");
+		return rz_str_dup("CORE (Core file)");
 	}
 
 	return NULL;
@@ -839,11 +839,11 @@ static char *get_cpu_mips(ELFOBJ *bin) {
 
 	for (size_t i = 0; i < RZ_ARRAY_SIZE(cpu_mips_translation_table); i++) {
 		if (mips_arch == cpu_mips_translation_table[i].arch) {
-			return strdup(cpu_mips_translation_table[i].name);
+			return rz_str_dup(cpu_mips_translation_table[i].name);
 		}
 	}
 
-	return strdup(" Unknown mips ISA");
+	return rz_str_dup(" Unknown mips ISA");
 }
 
 static bool is_elf_class64(ELFOBJ *bin) {
@@ -880,15 +880,15 @@ static bool is_mips_n32(ELFOBJ *bin) {
 
 static char *get_abi_mips(ELFOBJ *bin) {
 	if (is_elf_class64(bin)) {
-		return strdup("n64");
+		return rz_str_dup("n64");
 	}
 
 	if (is_mips_n32(bin)) {
-		return strdup("n32");
+		return rz_str_dup("n32");
 	}
 
 	if (is_mips_o32(bin)) {
-		return strdup("o32");
+		return rz_str_dup("o32");
 	}
 
 	return NULL;
@@ -1449,11 +1449,11 @@ RZ_OWN char *Elf_(rz_bin_elf_get_arch)(RZ_NONNULL ELFOBJ *bin) {
 
 	for (size_t i = 0; i < RZ_ARRAY_SIZE(arch_translation_table); i++) {
 		if (bin->ehdr.e_machine == arch_translation_table[i].arch) {
-			return strdup(arch_translation_table[i].name);
+			return rz_str_dup(arch_translation_table[i].name);
 		}
 	}
 
-	return strdup("");
+	return rz_str_dup("");
 }
 
 /**
@@ -1489,7 +1489,7 @@ RZ_OWN char *Elf_(rz_bin_elf_get_elf_class)(RZ_NONNULL ELFOBJ *bin) {
 
 	for (size_t i = 0; i < RZ_ARRAY_SIZE(class_translation_table); i++) {
 		if (bin->ehdr.e_ident[EI_CLASS] == class_translation_table[i].class) {
-			return strdup(class_translation_table[i].name);
+			return rz_str_dup(class_translation_table[i].name);
 		}
 	}
 
@@ -1535,7 +1535,7 @@ RZ_OWN char *Elf_(rz_bin_elf_get_head_flag)(RZ_NONNULL ELFOBJ *bin) {
 
 	if (RZ_STR_ISEMPTY(head_flag)) {
 		free(head_flag);
-		return strdup("unknown_flag");
+		return rz_str_dup("unknown_flag");
 	}
 
 	return head_flag;
@@ -1554,7 +1554,7 @@ RZ_OWN char *Elf_(rz_bin_elf_get_machine_name)(RZ_NONNULL ELFOBJ *bin) {
 
 	for (size_t i = 0; i < RZ_ARRAY_SIZE(machine_name_translation_table); i++) {
 		if (bin->ehdr.e_machine == machine_name_translation_table[i].machine) {
-			return strdup(machine_name_translation_table[i].name);
+			return rz_str_dup(machine_name_translation_table[i].name);
 		}
 	}
 
@@ -1581,7 +1581,7 @@ RZ_OWN char *Elf_(rz_bin_elf_get_osabi_name)(RZ_NONNULL ELFOBJ *bin) {
 		return name;
 	}
 
-	return strdup("linux");
+	return rz_str_dup("linux");
 }
 
 /**

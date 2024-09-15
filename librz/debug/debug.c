@@ -352,7 +352,7 @@ RZ_API RZ_BORROW RzBreakpointItem *rz_debug_bp_add(RZ_NONNULL RzDebug *dbg, ut64
 	}
 	if (bpi) {
 		if (module_name) {
-			bpi->module_name = strdup(module_name);
+			bpi->module_name = rz_str_dup(module_name);
 			bpi->name = rz_str_newf("%s+0x%" PFMT64x, module_name, m_delta);
 		}
 		bpi->module_delta = m_delta;
@@ -373,7 +373,7 @@ RZ_API RZ_OWN RzDebug *rz_debug_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *bp
 		return NULL;
 	}
 	// RZ_SYS_ARCH
-	dbg->arch = strdup(RZ_SYS_ARCH);
+	dbg->arch = rz_str_dup(RZ_SYS_ARCH);
 	dbg->bits = RZ_SYS_BITS;
 	dbg->trace_forks = 1;
 	dbg->forked_pid = -1;
@@ -511,7 +511,7 @@ RZ_API bool rz_debug_set_arch(RzDebug *dbg, const char *arch, int bits) {
 			}
 		}
 		free(dbg->arch);
-		dbg->arch = strdup(arch);
+		dbg->arch = rz_str_dup(arch);
 		return true;
 	}
 	return false;
@@ -1735,7 +1735,7 @@ RZ_API ut64 rz_debug_get_baddr(RzDebug *dbg, const char *file) {
 	}
 #endif
 	if (!abspath && file) {
-		abspath = strdup(file);
+		abspath = rz_str_dup(file);
 	}
 	if (abspath) {
 		rz_list_foreach (dbg->maps, iter, map) {

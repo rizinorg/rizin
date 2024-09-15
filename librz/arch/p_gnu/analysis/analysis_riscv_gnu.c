@@ -328,7 +328,7 @@ static int riscv_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	}
 
 	if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
-		op->mnemonic = strdup(o->name);
+		op->mnemonic = rz_str_dup(o->name);
 	}
 
 	if (o->args) {
@@ -655,7 +655,7 @@ static int riscv_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	}
 	if (mask & RZ_ANALYSIS_OP_MASK_VAL && args.num) {
 		op->dst = RZ_NEW0(RzAnalysisValue);
-		char *argf = strdup(o->args);
+		char *argf = rz_str_dup(o->args);
 		const char *comma = NULL;
 		int dst_idx = 0, src_idx;
 		if (op->type == RZ_ANALYSIS_OP_TYPE_STORE) {
@@ -905,7 +905,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 
 		break;
 	}
-	return (p && *p) ? strdup(p) : NULL;
+	return rz_str_dup(p);
 }
 
 static int archinfo(RzAnalysis *a, RzAnalysisInfoType query) {

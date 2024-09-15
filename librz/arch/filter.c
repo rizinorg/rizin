@@ -32,7 +32,7 @@ static char *findEnd(const char *s) {
 		s++;
 		// also skip ansi escape codes here :?
 	}
-	return strdup(s);
+	return rz_str_dup(s);
 }
 
 static void insert(char *dst, const char *src) {
@@ -130,7 +130,7 @@ static void __replaceRegisters(RzReg *reg, char *s, bool x86) {
 		}
 		if (x86 && *k == 'r') {
 			replaceWords(s, k, v);
-			char *reg32 = strdup(k);
+			char *reg32 = rz_str_dup(k);
 			*reg32 = 'e';
 			replaceWords(s, reg32, v);
 		} else {
@@ -576,7 +576,7 @@ RZ_API bool rz_parse_filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hi
 // easier to use, should replace rz_parse_filter(), but its not using rflag, analhint, endian, etc
 RZ_API char *rz_parse_filter_dup(RzParse *p, ut64 addr, const char *opstr) {
 	const size_t out_len = 256;
-	char *in = strdup(opstr);
+	char *in = rz_str_dup(opstr);
 	char *out = calloc(out_len, 1);
 	if (!rz_parse_filter(p, addr, NULL, NULL, in, out, out_len, false)) {
 		free(out);

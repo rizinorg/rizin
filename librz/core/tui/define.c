@@ -199,7 +199,7 @@ onemoretime:
 				if (item) {
 					const char *ptr = rz_str_lchr(item->name, '.');
 					if (ptr) {
-						man = strdup(ptr + 1);
+						man = rz_str_dup(ptr + 1);
 					}
 				}
 			}

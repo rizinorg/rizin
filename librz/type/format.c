@@ -1232,7 +1232,7 @@ static void rz_type_format_nulltermstring(const RzTypeDB *typedb, RzPrint *p, Rz
 	if (MUSTSET) {
 		int buflen = strlen((const char *)buf + seeki);
 		int vallen = strlen(setval);
-		char *ons, *newstring = ons = strdup(setval);
+		char *ons, *newstring = ons = rz_str_dup(setval);
 		if ((newstring[0] == '\"' && newstring[vallen - 1] == '\"') || (newstring[0] == '\'' && newstring[vallen - 1] == '\'')) {
 			newstring[vallen - 1] = '\0';
 			newstring++;
@@ -1301,7 +1301,7 @@ static void rz_type_format_nulltermwidestring(RzPrint *p, RzStrBuf *outbuf, cons
 	if (MUSTSET) {
 		int vallen = strlen(setval);
 		char *newstring, *ons;
-		newstring = ons = strdup(setval);
+		newstring = ons = rz_str_dup(setval);
 		if ((newstring[0] == '\"' && newstring[vallen - 1] == '\"') || (newstring[0] == '\'' && newstring[vallen - 1] == '\'')) {
 			newstring[vallen - 1] = '\0';
 			newstring++;
@@ -1532,7 +1532,7 @@ static int format_struct_size(const RzTypeDB *typedb, const char *parent_format,
 	if (!fmt2) {
 		fmt2 = f;
 	}
-	char *o = strdup(fmt2);
+	char *o = rz_str_dup(fmt2);
 	if (!o) {
 		return -1;
 	}
@@ -1544,9 +1544,9 @@ static int format_struct_size(const RzTypeDB *typedb, const char *parent_format,
 	}
 	if (*end) {
 		*end = 0;
-		args = strdup(end + 1);
+		args = rz_str_dup(end + 1);
 	} else {
-		args = strdup("");
+		args = rz_str_dup("");
 	}
 
 	if (fmt[0] == '{') {
@@ -1654,7 +1654,7 @@ static int format_struct_size(const RzTypeDB *typedb, const char *parent_format,
 			if (!wordAtIndex) {
 				break;
 			}
-			structname = strdup(wordAtIndex);
+			structname = rz_str_dup(wordAtIndex);
 			if (*structname == '(') {
 				endname = (char *)rz_str_rchr(structname, NULL, ')');
 			} else {
@@ -1793,13 +1793,13 @@ static int rz_type_format_struct(const RzTypeDB *typedb, RzPrint *p, RzStrBuf *o
 		return 0;
 	}
 	if (anon) {
-		fmt = strdup(name);
+		fmt = rz_str_dup(name);
 	} else {
 		const char *dbfmt = rz_type_db_format_get(typedb, name);
 		if (!dbfmt) { // Fetch struct info from types DB
 			fmt = rz_type_format(typedb, name);
 		} else {
-			fmt = strdup(dbfmt);
+			fmt = rz_str_dup(dbfmt);
 		}
 	}
 	if (RZ_STR_ISEMPTY(fmt)) {
@@ -1841,40 +1841,40 @@ static char *get_format_type(const char fmt, const char arg) {
 	switch (fmt) {
 	case 'b':
 	case 'C':
-		type = strdup("uint8_t");
+		type = rz_str_dup("uint8_t");
 		break;
 	case 'c':
-		type = strdup("int8_t");
+		type = rz_str_dup("int8_t");
 		break;
 	case 'd':
 	case 'i':
 	case 'o':
 	case 'x':
-		type = strdup("int32_t");
+		type = rz_str_dup("int32_t");
 		break;
 	case 'E':
-		type = strdup("enum");
+		type = rz_str_dup("enum");
 		break;
 	case 'f':
-		type = strdup("float");
+		type = rz_str_dup("float");
 		break;
 	case 'F':
-		type = strdup("double");
+		type = rz_str_dup("double");
 		break;
 	case 'q':
-		type = strdup("uint64_t");
+		type = rz_str_dup("uint64_t");
 		break;
 	case 'u':
-		type = strdup("uleb128_t");
+		type = rz_str_dup("uleb128_t");
 		break;
 	case 'Q':
-		type = strdup("uint128_t");
+		type = rz_str_dup("uint128_t");
 		break;
 	case 'w':
-		type = strdup("uint16_t");
+		type = rz_str_dup("uint16_t");
 		break;
 	case 'X':
-		type = strdup("uint8_t[]");
+		type = rz_str_dup("uint8_t[]");
 		break;
 	case 'D':
 	case 's':
@@ -1882,22 +1882,22 @@ static char *get_format_type(const char fmt, const char arg) {
 	case 't':
 	case 'z':
 	case 'Z':
-		type = strdup("char*");
+		type = rz_str_dup("char*");
 		break;
 	case 'n':
 	case 'N':
 		switch (arg) {
 		case '1':
-			type = strdup(fmt == 'n' ? "int8_t" : "uint8_t");
+			type = rz_str_dup(fmt == 'n' ? "int8_t" : "uint8_t");
 			break;
 		case '2':
-			type = strdup(fmt == 'n' ? "int16_t" : "uint16_t");
+			type = rz_str_dup(fmt == 'n' ? "int16_t" : "uint16_t");
 			break;
 		case '4':
-			type = strdup(fmt == 'n' ? "int32_t" : "uint32_t");
+			type = rz_str_dup(fmt == 'n' ? "int32_t" : "uint32_t");
 			break;
 		case '8':
-			type = strdup(fmt == 'n' ? "int64_t" : "uint64_t");
+			type = rz_str_dup(fmt == 'n' ? "int64_t" : "uint64_t");
 			break;
 		}
 		break;
@@ -1922,7 +1922,7 @@ RZ_API const char *rz_type_db_format_get(const RzTypeDB *typedb, const char *nam
 RZ_API void rz_type_db_format_set(RzTypeDB *typedb, const char *name, const char *fmt) {
 	rz_return_if_fail(typedb && name && fmt);
 	// TODO: We should check if the file format is valid (e.g. syntax) before storing it
-	ht_ss_insert(typedb->formats, name, strdup(fmt));
+	ht_ss_insert(typedb->formats, name, rz_str_dup(fmt));
 }
 
 static bool format_collect_cb(void *user, const char *k, const char *v) {
@@ -1970,7 +1970,7 @@ static int rz_type_format_data_internal(const RzTypeDB *typedb, RzPrint *p, RzSt
 	if (!fmt) {
 		fmt = formatname;
 	}
-	internal_format = strdup(fmt);
+	internal_format = rz_str_dup(fmt);
 	fmt = internal_format;
 	while (*fmt && IS_WHITECHAR(*fmt)) {
 		fmt++;
@@ -1995,7 +1995,7 @@ static int rz_type_format_data_internal(const RzTypeDB *typedb, RzPrint *p, RzSt
 	endian = typedb->target->big_endian;
 
 	if (ofield && ofield != MINUSONE) {
-		field = strdup(ofield);
+		field = rz_str_dup(ofield);
 	}
 	/* get times */
 	otimes = times = atoi(arg);
@@ -2031,7 +2031,7 @@ static int rz_type_format_data_internal(const RzTypeDB *typedb, RzPrint *p, RzSt
 			args++;
 			tmp = *args;
 		}
-		args = strdup(args);
+		args = rz_str_dup(args);
 		nargs = rz_str_word_set0_stack(args);
 		if (nargs == 0) {
 			RZ_FREE(args);
@@ -2076,7 +2076,7 @@ static int rz_type_format_data_internal(const RzTypeDB *typedb, RzPrint *p, RzSt
 			if (strchr(formatname, ' ')) {
 				fmtname = rz_str_newf("0x%" PFMT64x, seek);
 			} else {
-				fmtname = strdup(formatname);
+				fmtname = rz_str_dup(formatname);
 			}
 		} else {
 			fmtname = rz_str_newf("0x%" PFMT64x, seek);
@@ -2169,7 +2169,7 @@ static int rz_type_format_data_internal(const RzTypeDB *typedb, RzPrint *p, RzSt
 					*dot = '\0';
 				}
 				free(oarg);
-				oarg = fieldname = strdup(rz_str_word_get0(args, idx));
+				oarg = fieldname = rz_str_dup(rz_str_word_get0(args, idx));
 				if (ISSTRUCT || tmp == 'E' || tmp == 'B' || tmp == 'r') {
 					if (*fieldname == '(') {
 						fmtname = fieldname + 1;
@@ -3053,15 +3053,15 @@ RZ_API RZ_OWN char *rz_type_as_format(const RzTypeDB *typedb, RZ_NONNULL RzType 
 	if (type->kind == RZ_TYPE_KIND_CALLABLE) {
 		// We can't print anything useful for function type
 		// Thus we consider this is just a `void *` pointer
-		return strdup("p");
+		return rz_str_dup("p");
 	}
 	// Special case of callable ptr or `void *`
 	if (rz_type_is_void_ptr(type) || rz_type_is_callable_ptr(type)) {
-		return strdup("p");
+		return rz_str_dup("p");
 	}
 	// Special case of `char *`
 	if (rz_type_is_char_ptr(type)) {
-		return strdup("z");
+		return rz_str_dup("z");
 	}
 	RzStrBuf *buf = rz_strbuf_new(NULL);
 	type_to_format(typedb, buf, type);

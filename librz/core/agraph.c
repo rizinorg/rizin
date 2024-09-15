@@ -3662,7 +3662,7 @@ RZ_API void rz_agraph_print_json(RzAGraph *g, PJ *pj) {
 	}
 	rz_list_foreach (nodes, it, node) {
 		RzANode *anode = (RzANode *)node->data;
-		char *label = strdup(anode->body);
+		char *label = rz_str_dup(anode->body);
 		pj_o(pj);
 		pj_ki(pj, "id", anode->gnode->idx);
 		pj_ks(pj, "title", anode->title);
@@ -3681,7 +3681,7 @@ RZ_API void rz_agraph_print_json(RzAGraph *g, PJ *pj) {
 
 RZ_API void rz_agraph_set_title(RzAGraph *g, const char *title) {
 	free(g->title);
-	g->title = title ? strdup(title) : NULL;
+	g->title = rz_str_dup(title);
 	sdb_set(g->db, "agraph.title", g->title);
 }
 
@@ -3746,8 +3746,8 @@ RZ_API RzANode *rz_agraph_add_node(const RzAGraph *g, const char *title, const c
 		return NULL;
 	}
 
-	res->title = title ? rz_str_trunc_ellipsis(title, 255) : strdup("");
-	res->body = body ? strdup(body) : strdup("");
+	res->title = title ? rz_str_trunc_ellipsis(title, 255) : rz_str_dup("");
+	res->body = rz_str_dup(body ? body : "");
 	res->layer = -1;
 	res->pos_in_layer = -1;
 	res->is_dummy = false;
@@ -3761,7 +3761,7 @@ RZ_API RzANode *rz_agraph_add_node(const RzAGraph *g, const char *title, const c
 		char *s, *estr, *b;
 		size_t len;
 		sdb_array_add(g->db, "agraph.nodes", res->title);
-		b = strdup(res->body);
+		b = rz_str_dup(res->body);
 		len = strlen(b);
 		if (len > 0 && b[len - 1] == '\n') {
 			b[len - 1] = '\0';
@@ -4136,7 +4136,7 @@ static void nextword(RzCore *core, RzAGraph *g, const char *word) {
 		}
 	}
 	free(gh->old_word);
-	gh->old_word = strdup(word);
+	gh->old_word = rz_str_dup(word);
 	free(s);
 	if (!a && count == 0) {
 		return;
@@ -4301,7 +4301,7 @@ RZ_IPI int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 			showcursor(core, true);
 			const char *cmd = rz_config_get(core->config, "cmd.gprompt");
 			rz_line_set_prompt(line, "cmd.gprompt> ");
-			line->contents = strdup(cmd);
+			line->contents = rz_str_dup(cmd);
 			const char *buf = rz_line_readline(line);
 			line->contents = NULL;
 			rz_config_set(core->config, "cmd.gprompt", buf);

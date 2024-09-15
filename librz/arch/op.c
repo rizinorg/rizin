@@ -162,7 +162,7 @@ RZ_API RzAnalysisOp *rz_analysis_op_copy(RzAnalysisOp *op) {
 	}
 	*nop = *op;
 	if (op->mnemonic) {
-		nop->mnemonic = strdup(op->mnemonic);
+		nop->mnemonic = rz_str_dup(op->mnemonic);
 		if (!nop->mnemonic) {
 			free(nop);
 			return NULL;
@@ -356,13 +356,13 @@ RZ_API char *rz_analysis_op_to_string(RzAnalysis *analysis, RzAnalysisOp *op) {
 	char *a0 = rz_analysis_value_to_string(op->src[0]);
 	char *a1 = rz_analysis_value_to_string(op->src[1]);
 	if (!r0) {
-		r0 = strdup("?");
+		r0 = rz_str_dup("?");
 	}
 	if (!a0) {
-		a0 = strdup("?");
+		a0 = rz_str_dup("?");
 	}
 	if (!a1) {
-		a1 = strdup("?");
+		a1 = rz_str_dup("?");
 	}
 
 	switch (op->type) {
@@ -532,7 +532,7 @@ RZ_API char *rz_analysis_op_to_string(RzAnalysis *analysis, RzAnalysisOp *op) {
 	free(r0);
 	free(a0);
 	free(a1);
-	return strdup(ret);
+	return rz_str_dup(ret);
 }
 
 RZ_API const char *rz_analysis_stackop_tostring(int s) {
@@ -581,7 +581,7 @@ RZ_API RZ_NULLABLE RZ_OWN char *rz_analysis_op_describe_sp_effect(RzAnalysisOp *
 	case RZ_ANALYSIS_STACK_INC:
 		return rz_str_newf("%c= %" PFMT64d, op->stackptr > 0 ? '-' : '+', RZ_ABS(op->stackptr));
 	case RZ_ANALYSIS_STACK_RESET:
-		return strdup(":= 0");
+		return rz_str_dup(":= 0");
 	default:
 		return NULL;
 	}
@@ -658,7 +658,7 @@ RZ_API int rz_analysis_op_hint(RzAnalysisOp *op, RzAnalysisHint *hint) {
 		if (hint->opcode) {
 			/* XXX: this is not correct */
 			free(op->mnemonic);
-			op->mnemonic = strdup(hint->opcode);
+			op->mnemonic = rz_str_dup(hint->opcode);
 			changes++;
 		}
 		if (hint->esil) {

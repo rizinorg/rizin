@@ -140,7 +140,7 @@ RzList /*<char *>*/ *avr_tokenize(const char *assembly, size_t length) {
 	}
 
 	if (insert_zero) {
-		rz_list_insert(tokens, rz_list_length(tokens) - 1, strdup("0"));
+		rz_list_insert(tokens, rz_list_length(tokens) - 1, rz_str_dup("0"));
 	}
 
 	return tokens;

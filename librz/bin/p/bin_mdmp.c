@@ -60,11 +60,11 @@ static RzBinInfo *mdmp_info(RzBinFile *bf) {
 
 	ret->big_endian = false;
 	ret->claimed_checksum = rz_str_newf("0x%08x", obj->hdr->check_sum);
-	ret->file = bf->file ? strdup(bf->file) : NULL;
+	ret->file = rz_str_dup(bf->file);
 	ret->has_va = true;
-	ret->rclass = strdup("mdmp");
-	ret->rpath = strdup("NONE");
-	ret->type = strdup("MDMP (MiniDump crash report data)");
+	ret->rclass = rz_str_dup("mdmp");
+	ret->rpath = rz_str_dup("NONE");
+	ret->type = rz_str_dup("MDMP (MiniDump crash report data)");
 
 	sdb_set(bf->sdb, "mdmp.flags", rz_strf(tmpbuf, "0x%08" PFMT64x, obj->hdr->flags));
 	sdb_num_set(bf->sdb, "mdmp.streams", obj->hdr->number_of_streams);
@@ -72,26 +72,26 @@ static RzBinInfo *mdmp_info(RzBinFile *bf) {
 	if (obj->streams.system_info) {
 		switch (obj->streams.system_info->processor_architecture) {
 		case MDMP_PROCESSOR_ARCHITECTURE_INTEL:
-			ret->machine = strdup("i386");
-			ret->arch = strdup("x86");
+			ret->machine = rz_str_dup("i386");
+			ret->arch = rz_str_dup("x86");
 			ret->bits = 32;
 			break;
 		case MDMP_PROCESSOR_ARCHITECTURE_ARM:
-			ret->machine = strdup("ARM");
+			ret->machine = rz_str_dup("ARM");
 			ret->big_endian = false;
 			break;
 		case MDMP_PROCESSOR_ARCHITECTURE_IA64:
-			ret->machine = strdup("IA64");
-			ret->arch = strdup("IA64");
+			ret->machine = rz_str_dup("IA64");
+			ret->arch = rz_str_dup("IA64");
 			ret->bits = 64;
 			break;
 		case MDMP_PROCESSOR_ARCHITECTURE_AMD64:
-			ret->machine = strdup("AMD64");
-			ret->arch = strdup("x86");
+			ret->machine = rz_str_dup("AMD64");
+			ret->arch = rz_str_dup("x86");
 			ret->bits = 64;
 			break;
 		default:
-			ret->machine = strdup("Unknown");
+			ret->machine = rz_str_dup("Unknown");
 			break;
 		}
 
@@ -115,7 +115,7 @@ static RzBinInfo *mdmp_info(RzBinFile *bf) {
 				obj->streams.system_info->build_number);
 			break;
 		default:
-			ret->os = strdup("Unknown");
+			ret->os = rz_str_dup("Unknown");
 		}
 	}
 

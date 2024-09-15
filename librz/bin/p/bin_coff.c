@@ -204,7 +204,7 @@ static RzPVector /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 		}
 		vf->buf = buf;
 		vf->buf_owned = true;
-		vf->name = strdup(VFILE_NAME_RELOC_TARGETS);
+		vf->name = rz_str_dup(VFILE_NAME_RELOC_TARGETS);
 		rz_pvector_push(r, vf);
 	}
 	// virtual file mirroring the raw file, but with relocs patched
@@ -215,7 +215,7 @@ static RzPVector /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 			return r;
 		}
 		vf->buf = buf_patched;
-		vf->name = strdup(VFILE_NAME_PATCHED);
+		vf->name = rz_str_dup(VFILE_NAME_PATCHED);
 		rz_pvector_push(r, vf);
 	}
 	return r;
@@ -247,7 +247,7 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 		}
 		ptr->perm = rz_coff_perms_from_section_flags(hdr->s_flags);
 		if (hdr->s_nreloc) {
-			ptr->vfile_name = strdup(VFILE_NAME_PATCHED);
+			ptr->vfile_name = rz_str_dup(VFILE_NAME_PATCHED);
 		}
 		rz_pvector_push(ret, ptr);
 	}
@@ -258,13 +258,13 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 		if (!map) {
 			return ret;
 		}
-		map->name = strdup("reloc-targets");
+		map->name = rz_str_dup("reloc-targets");
 		map->paddr = 0;
 		map->psize = rtmsz;
 		map->vaddr = rz_coff_get_reloc_targets_map_base(obj);
 		map->vsize = rtmsz;
 		map->perm = RZ_PERM_R;
-		map->vfile_name = strdup(VFILE_NAME_RELOC_TARGETS);
+		map->vfile_name = rz_str_dup(VFILE_NAME_RELOC_TARGETS);
 		rz_pvector_push_front(ret, map);
 	}
 	return ret;
@@ -390,12 +390,12 @@ static RzBinInfo *info(RzBinFile *bf) {
 	RzBinInfo *ret = RZ_NEW0(RzBinInfo);
 	struct rz_bin_coff_obj *obj = (struct rz_bin_coff_obj *)bf->o->bin_obj;
 
-	ret->file = bf->file ? strdup(bf->file) : NULL;
-	ret->rclass = strdup("coff");
-	ret->bclass = strdup("coff");
-	ret->type = strdup("COFF (Executable file)");
-	ret->os = strdup("any");
-	ret->subsystem = strdup("any");
+	ret->file = rz_str_dup(bf->file);
+	ret->rclass = rz_str_dup("coff");
+	ret->bclass = rz_str_dup("coff");
+	ret->type = rz_str_dup("COFF (Executable file)");
+	ret->os = rz_str_dup("any");
+	ret->subsystem = rz_str_dup("any");
 	ret->big_endian = obj->endian;
 	ret->has_va = true;
 	ret->dbg_info = 0;
@@ -419,77 +419,77 @@ static RzBinInfo *info(RzBinFile *bf) {
 	case COFF_FILE_MACHINE_MIPS16:
 	case COFF_FILE_MACHINE_MIPSFPU:
 	case COFF_FILE_MACHINE_MIPSFPU16:
-		ret->machine = strdup("mips");
-		ret->arch = strdup("mips");
+		ret->machine = rz_str_dup("mips");
+		ret->arch = rz_str_dup("mips");
 		ret->bits = 32;
 		break;
 	case COFF_FILE_MACHINE_I386:
-		ret->machine = strdup("i386");
-		ret->arch = strdup("x86");
+		ret->machine = rz_str_dup("i386");
+		ret->arch = rz_str_dup("x86");
 		ret->bits = 32;
 		break;
 	case COFF_FILE_MACHINE_AMD64:
-		ret->machine = strdup("AMD64");
-		ret->arch = strdup("x86");
+		ret->machine = rz_str_dup("AMD64");
+		ret->arch = rz_str_dup("x86");
 		ret->bits = 64;
 		break;
 	case COFF_FILE_MACHINE_H8300:
-		ret->machine = strdup("H8300");
-		ret->arch = strdup("h8300");
+		ret->machine = rz_str_dup("H8300");
+		ret->arch = rz_str_dup("h8300");
 		ret->bits = 16;
 		break;
 	case COFF_FILE_MACHINE_AMD29KBE:
 	case COFF_FILE_MACHINE_AMD29KLE:
-		ret->cpu = strdup("29000");
-		ret->machine = strdup("amd29k");
-		ret->arch = strdup("amd29k");
+		ret->cpu = rz_str_dup("29000");
+		ret->machine = rz_str_dup("amd29k");
+		ret->arch = rz_str_dup("amd29k");
 		ret->bits = 32;
 		break;
 	case COFF_FILE_MACHINE_THUMB:
-		ret->machine = strdup("arm");
-		ret->arch = strdup("arm");
+		ret->machine = rz_str_dup("arm");
+		ret->arch = rz_str_dup("arm");
 		ret->bits = 16;
 		break;
 	case COFF_FILE_MACHINE_ARM:
 	case COFF_FILE_MACHINE_ARMNT:
-		ret->machine = strdup("arm");
-		ret->arch = strdup("arm");
+		ret->machine = rz_str_dup("arm");
+		ret->arch = rz_str_dup("arm");
 		ret->bits = 32;
 		break;
 	case COFF_FILE_MACHINE_ARM64:
-		ret->machine = strdup("arm");
-		ret->arch = strdup("arm");
+		ret->machine = rz_str_dup("arm");
+		ret->arch = rz_str_dup("arm");
 		ret->bits = 64;
 		break;
 	case COFF_FILE_MACHINE_SH3:
 	case COFF_FILE_MACHINE_SH3DSP:
 	case COFF_FILE_MACHINE_SH4:
 	case COFF_FILE_MACHINE_SH5:
-		ret->machine = strdup("sh");
-		ret->arch = strdup("sh");
+		ret->machine = rz_str_dup("sh");
+		ret->arch = rz_str_dup("sh");
 		ret->bits = 32;
 		break;
 	case COFF_FILE_TI_COFF:
 		switch (obj->target_id) {
 		case COFF_FILE_MACHINE_TMS320C54:
-			ret->machine = strdup("c54x");
-			ret->arch = strdup("tms320");
+			ret->machine = rz_str_dup("c54x");
+			ret->arch = rz_str_dup("tms320");
 			ret->bits = 32;
 			break;
 		case COFF_FILE_MACHINE_TMS320C55:
-			ret->machine = strdup("c55x");
-			ret->arch = strdup("tms320");
+			ret->machine = rz_str_dup("c55x");
+			ret->arch = rz_str_dup("tms320");
 			ret->bits = 32;
 			break;
 		case COFF_FILE_MACHINE_TMS320C55PLUS:
-			ret->machine = strdup("c55x+");
-			ret->arch = strdup("tms320");
+			ret->machine = rz_str_dup("c55x+");
+			ret->arch = rz_str_dup("tms320");
 			ret->bits = 32;
 			break;
 		}
 		break;
 	default:
-		ret->machine = strdup("unknown");
+		ret->machine = rz_str_dup("unknown");
 	}
 
 	return ret;

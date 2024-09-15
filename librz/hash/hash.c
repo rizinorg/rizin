@@ -597,7 +597,7 @@ RZ_API RZ_OWN char *rz_hash_cfg_get_result_string(RZ_NONNULL RzHashCfg *md, RZ_N
 		double entropy = rz_read_be_double(mdc->digest);
 		return rz_str_newf("%.8f", entropy);
 	} else if (!strcmp(name, "ssdeep")) {
-		return strdup((char *)mdc->digest);
+		return rz_str_dup((char *)mdc->digest);
 	}
 
 	char *string = malloc((mdc->digest_size * 2) + 1);

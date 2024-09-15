@@ -218,7 +218,7 @@ static char *__rap_system(RzIO *io, RzIODesc *fd, const char *command) {
 		if (str && *str) {
 			res = io->cb_core_cmdstr (io->user, str);
 		} else {
-			res = strdup ("");
+			res = rz_str_dup ("");
 		}
 		eprintf ("[%s]=>(%s)\n", str, res);
 		reslen = strlen (res);

@@ -24,7 +24,7 @@ static SHAddrMode sh_pb_get_addrmode(SHParamBuilder pb) {
  * \return char* Duplicated output "spaced out" string
  */
 static char *sh_op_space_params(const char *buffer) {
-	char *spaced = strdup(buffer);
+	char *spaced = rz_str_dup(buffer);
 	bool inside_paren = false;
 
 	for (ut8 i = 0; spaced[i] != '\0'; i++) {
@@ -87,9 +87,9 @@ static ut32 sh_op_param_bits(SHParamBuilder shb, const char *param, SHScaling sc
 
 	ut32 opcode = 0;
 	struct sh_param_builder_addr_t shba = shb.addr;
-	char *const reg = strdup(param);
-	char *const dup = strdup(param);
-	char *const disp = strdup(param);
+	char *const reg = rz_str_dup(param);
+	char *const dup = rz_str_dup(param);
+	char *const disp = rz_str_dup(param);
 	ut8 d;
 
 	switch (shba.mode) {
@@ -209,7 +209,7 @@ static ut32 sh_op_param_bits(SHParamBuilder shb, const char *param, SHScaling sc
 static ut64 sh_op_movl_param_bits(const char *reg_direct, const char *reg_disp_indirect) {
 	ut64 opcode = sh_op_reg_bits(reg_direct, NIB1);
 
-	char *const dup = strdup(reg_disp_indirect);
+	char *const dup = rz_str_dup(reg_disp_indirect);
 	char *comma = strchr(dup, ',');
 	if (!comma) {
 		goto fail;
@@ -222,7 +222,7 @@ static ut64 sh_op_movl_param_bits(const char *reg_direct, const char *reg_disp_i
 	}
 	*paren = '\0';
 
-	char *const disp = strdup(reg_disp_indirect);
+	char *const disp = rz_str_dup(reg_disp_indirect);
 	sscanf(dup, "@(%s", disp);
 	ut8 d = (rz_num_get(NULL, disp) / sh_scaling_size[SH_SCALING_L]) & 0xf;
 	opcode |= d << NIB0;

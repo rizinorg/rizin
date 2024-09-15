@@ -25,16 +25,16 @@ static ut64 initializeEsil(RzCore *core) {
 	{
 		const char *cmd_esil_step = rz_config_get(core->config, "cmd.esil.step");
 		if (cmd_esil_step && *cmd_esil_step) {
-			esil->cmd_step = strdup(cmd_esil_step);
+			esil->cmd_step = rz_str_dup(cmd_esil_step);
 		}
 		const char *cmd_esil_step_out = rz_config_get(core->config, "cmd.esil.stepout");
 		if (cmd_esil_step_out && *cmd_esil_step_out) {
-			esil->cmd_step_out = strdup(cmd_esil_step_out);
+			esil->cmd_step_out = rz_str_dup(cmd_esil_step_out);
 		}
 		{
 			const char *s = rz_config_get(core->config, "cmd.esil.intr");
 			if (s) {
-				char *my = strdup(s);
+				char *my = rz_str_dup(s);
 				if (my) {
 					rz_config_set(core->config, "cmd.esil.intr", my);
 					free(my);

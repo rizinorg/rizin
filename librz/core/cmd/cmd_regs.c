@@ -149,7 +149,7 @@ RZ_API bool rz_core_reg_assign_sync(RZ_NONNULL RzCore *core, RZ_NONNULL RzReg *r
  * \param eq_pos index of the '=' in arg
  */
 static RzCmdStatus assign_reg(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, RZ_NONNULL const char *arg, size_t eq_pos) {
-	char *str = strdup(arg);
+	char *str = rz_str_dup(arg);
 	if (!str) {
 		return RZ_CMD_STATUS_ERROR;
 	}

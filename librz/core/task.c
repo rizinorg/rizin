@@ -586,7 +586,7 @@ static CmdTaskCtx *cmd_task_ctx_new(RzCore *core, const char *cmd, RzCoreCmdTask
 		free(ctx);
 		return NULL;
 	}
-	ctx->cmd = strdup(cmd);
+	ctx->cmd = rz_str_dup(cmd);
 	ctx->cmd_log = false;
 	ctx->res = NULL;
 	ctx->finished_cb = finished_cb;

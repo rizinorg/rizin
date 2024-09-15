@@ -10,9 +10,9 @@ RZ_IPI void rz_core_agraph_reset(RzCore *core) {
 }
 
 RZ_IPI void rz_core_agraph_add_node(RzCore *core, const char *title, const char *body) {
-	char *b = strdup(body);
+	char *b = rz_str_dup(body);
 	if (rz_str_startswith(b, "base64:")) {
-		char *newbody = strdup(b);
+		char *newbody = rz_str_dup(b);
 		if (!newbody) {
 			free(b);
 			return;
@@ -101,7 +101,7 @@ RZ_IPI void rz_core_agraph_print_interactive(RzCore *core) {
 }
 
 static void agraph_print_node_dot(RzANode *n, void *user) {
-	char *label = strdup(n->body);
+	char *label = rz_str_dup(n->body);
 	// label = rz_str_replace (label, "\n", "\\l", 1);
 
 	if (!label || !*label) {

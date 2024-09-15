@@ -907,7 +907,7 @@ RZ_API RzAnalysisClassErr rz_analysis_class_base_get(RzAnalysis *analysis, const
 	char *next;
 	sdb_anext(cur, &next);
 
-	base->class_name = strdup(cur);
+	base->class_name = rz_str_dup(cur);
 	if (!base->class_name) {
 		free(content);
 		return RZ_ANALYSIS_CLASS_ERR_OTHER;
