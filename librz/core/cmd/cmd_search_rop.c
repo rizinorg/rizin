@@ -296,7 +296,7 @@ RZ_API RZ_OWN RzRopSearchContext *rz_core_rop_search_context_new(RZ_NONNULL cons
 	}
 
 	context->greparg = rz_str_dup(greparg);
-	context->mode_str = rz_config_get(core->config, "search.in");
+	context->search_addr = rz_config_get(core->config, "search.in");
 	context->arch = rz_config_get(core->config, "asm.arch");
 	context->regexp = regexp;
 	context->mask = mask;
@@ -311,7 +311,8 @@ RZ_API RZ_OWN RzRopSearchContext *rz_core_rop_search_context_new(RZ_NONNULL cons
 	context->crop = rz_config_get_i(core->config, "rop.conditional");
 	context->subchain = rz_config_get_i(core->config, "rop.subchain");
 	context->cache = rz_config_get_i(core->config, "rop.cache");
-
+	context->ret_val = false;
+	context->buf = NULL;
 	return context;
 }
 
@@ -328,6 +329,7 @@ RZ_API void rz_core_rop_search_context_free(RZ_NULLABLE RzRopSearchContext *cont
 	}
 
 	free(context->greparg);
+	rz_strbuf_free(context->buf);
 	free(context);
 }
 
