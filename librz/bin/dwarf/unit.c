@@ -66,7 +66,7 @@ static void CU_attr_apply(DebugInfoContext *ctx, RzBinDwarfCompUnit *cu, RzBinDw
 	return;
 offset_comp_dir:
 	if (cu->stmt_list < UT64_MAX && cu->comp_dir) {
-		ht_up_insert(ctx->info->offset_comp_dir, cu->stmt_list, (void *)cu->comp_dir);
+		ht_up_insert(ctx->info->comp_dir_by_offset, cu->stmt_list, (void *)cu->comp_dir);
 	}
 }
 
@@ -264,6 +264,7 @@ static bool CU_Hdr_parse(DebugInfoContext *ctx, RzBinDwarfCompUnitHdr *hdr) {
  */
 static bool CU_parse_all(DebugInfoContext *ctx) {
 	RzBinEndianReader *buffer = ctx->info->R;
+	ut64 index = 0;
 	while (true) {
 		ut64 offset = R_tell(buffer);
 		if (offset >= R_size(buffer)) {
@@ -293,6 +294,7 @@ static bool CU_parse_all(DebugInfoContext *ctx) {
 			unit.offset, unit.hdr.length, unit.hdr.abbrev_offset);
 		CU_dies_parse(ctx, &unit, tbl);
 		ctx->info->die_count += rz_vector_len(&unit.dies);
+		unit.index = index++;
 		rz_vector_push(&ctx->info->units, &unit);
 	}
 	return true;
@@ -314,9 +316,9 @@ RZ_API RZ_BORROW RzBinDwarfAttr *rz_bin_dwarf_die_get_attr(
 
 static bool info_init(RzBinDwarfInfo *info) {
 	rz_vector_init(&info->units, sizeof(RzBinDwarfCompUnit), (RzVectorFree)CU_fini, NULL);
-	info->offset_comp_dir = ht_up_new(NULL, NULL);
+	info->comp_dir_by_offset = ht_up_new(NULL, NULL);
 	info->location_encoding = ht_up_new(NULL, NULL);
-	if (!info->offset_comp_dir) {
+	if (!info->comp_dir_by_offset) {
 		goto beach;
 	}
 	return true;
@@ -331,7 +333,7 @@ static inline void info_free(RzBinDwarfInfo *info) {
 	}
 	R_free(info->R);
 	rz_vector_fini(&info->units);
-	ht_up_free(info->offset_comp_dir);
+	ht_up_free(info->comp_dir_by_offset);
 	ht_up_free(info->die_by_offset);
 	ht_up_free(info->unit_by_offset);
 	ht_up_free(info->location_encoding);

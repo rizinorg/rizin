@@ -4457,74 +4457,89 @@ RZ_IPI char *rz_core_analysis_all_vars_display(RzCore *core, RzAnalysisFunction 
 	return rz_strbuf_drain(sb);
 }
 
+static void var_global_show(RzAnalysis *analysis, RzAnalysisVarGlobal *glob, RzCmdStateOutput *state) {
+	char *var_type = rz_type_as_string(analysis->typedb, glob->type);
+	if (!var_type) {
+		return;
+	}
+	ut64 var_size = rz_type_db_get_bitsize(analysis->typedb, glob->type) / 8;
+	switch (state->mode) {
+	case RZ_OUTPUT_MODE_QUIET:
+		rz_cons_println(glob->name);
+		break;
+	case RZ_OUTPUT_MODE_STANDARD:
+		rz_cons_printf("global %s %s @ 0x%" PFMT64x, var_type, glob->name, glob->addr);
+		if (RZ_STR_ISNOTEMPTY(glob->coord.decl_file)) {
+			rz_cons_printf(" %s:%" PFMT32d "%" PFMT32d "\n",
+				glob->coord.decl_file, glob->coord.decl_line, glob->coord.decl_col);
+		} else {
+			rz_cons_print("\n");
+		}
+		break;
+	case RZ_OUTPUT_MODE_JSON: {
+		PJ *pj = state->d.pj;
+		pj_o(pj);
+		pj_ks(pj, "name", glob->name);
+		pj_ks(pj, "type", var_type);
+		pj_kn(pj, "size", var_size);
+		char addr[32];
+		rz_strf(addr, "0x%" PFMT64x, glob->addr);
+		pj_ks(pj, "addr", addr);
+		if (RZ_STR_ISNOTEMPTY(glob->coord.decl_file))
+			pj_ks(pj, "decl_file", glob->coord.decl_file);
+		if (glob->coord.decl_line != UT32_MAX)
+			pj_kn(pj, "decl_line", glob->coord.decl_line);
+		if (glob->coord.decl_col != UT32_MAX)
+			pj_kn(pj, "decl_col", glob->coord.decl_col);
+		pj_end(pj);
+		break;
+	}
+	case RZ_OUTPUT_MODE_TABLE: {
+		rz_table_add_rowf(state->d.t, "ssxxsdd", glob->name, var_type, var_size, glob->addr,
+			RZ_STR_ISNOTEMPTY(glob->coord.decl_file) ? glob->coord.decl_file : "-",
+			glob->coord.decl_line, glob->coord.decl_col);
+		break;
+	}
+	default:
+		break;
+	}
+	free(var_type);
+}
+
+typedef struct {
+	RzAnalysis *analysis;
+	RzCmdStateOutput *state;
+} VarGlobalShowContext;
+
+static bool var_global_show_cb(void *user, RZ_UNUSED const char *k, const void *v) {
+	VarGlobalShowContext *ctx = user;
+	RzAnalysisVarGlobal *glob = (RzAnalysisVarGlobal *)v;
+	var_global_show(ctx->analysis, glob, ctx->state);
+	return true;
+}
+
 RZ_IPI bool rz_analysis_var_global_list_show(RzAnalysis *analysis, RzCmdStateOutput *state, RZ_NULLABLE const char *name) {
 	rz_return_val_if_fail(analysis && state, false);
-	RzList *global_vars = NULL;
-	RzAnalysisVarGlobal *glob = NULL;
+	rz_cmd_state_output_array_start(state);
+	rz_cmd_state_output_set_columnsf(state, "ssxxsnn",
+		"name", "type", "size", "address", "decl_file", "decl_line", "decl_col");
 	if (name) {
-		global_vars = rz_list_new();
-		if (!global_vars) {
-			return false;
-		}
-		glob = rz_analysis_var_global_get_byname(analysis, name);
+		RzAnalysisVarGlobal *glob = rz_analysis_var_global_get_byname(analysis, name);
 		if (!glob) {
 			RZ_LOG_ERROR("Global variable '%s' does not exist!\n", name);
-			rz_list_free(global_vars);
-			return false;
+			goto beach;
 		}
-		rz_list_append(global_vars, glob);
+		var_global_show(analysis, glob, state);
 	} else {
-		global_vars = rz_analysis_var_global_get_all(analysis);
+		VarGlobalShowContext context = {
+			.analysis = analysis,
+			.state = state
+		};
+		ht_sp_foreach(analysis->ht_global_var, var_global_show_cb, &context);
 	}
 
-	RzListIter *it = NULL;
-	char *var_type = NULL;
-	bool json = state->mode == RZ_OUTPUT_MODE_JSON;
-	PJ *pj = json ? state->d.pj : NULL;
-	RzTable *table = state->mode == RZ_OUTPUT_MODE_TABLE ? state->d.t : NULL;
-
-	rz_cmd_state_output_array_start(state);
-	rz_cmd_state_output_set_columnsf(state, "ssxx", "name", "type",
-		"size", "address");
-	if (!global_vars) {
-		rz_cmd_state_output_array_end(state);
-		return false;
-	}
-	rz_list_foreach (global_vars, it, glob) {
-		var_type = rz_type_as_string(analysis->typedb, glob->type);
-		if (!var_type) {
-			continue;
-		}
-		ut64 var_size = rz_type_db_get_bitsize(analysis->typedb, glob->type) / 8;
-		switch (state->mode) {
-		case RZ_OUTPUT_MODE_QUIET:
-			rz_cons_println(glob->name);
-			break;
-		case RZ_OUTPUT_MODE_STANDARD:
-			rz_cons_printf("global %s %s @ 0x%" PFMT64x "\n",
-				var_type, glob->name, glob->addr);
-			break;
-		case RZ_OUTPUT_MODE_JSON:
-			pj_o(pj);
-			pj_ks(pj, "name", glob->name);
-			pj_ks(pj, "type", var_type);
-			pj_ki(pj, "size", var_size);
-			char addr[32];
-			rz_strf(addr, "0x%" PFMT64x, glob->addr);
-			pj_ks(pj, "addr", addr);
-			pj_end(pj);
-			break;
-		case RZ_OUTPUT_MODE_TABLE: {
-			rz_table_add_rowf(table, "ssxx", glob->name, var_type, var_size, glob->addr);
-			break;
-		}
-		default:
-			break;
-		}
-		free(var_type);
-	}
+beach:
 	rz_cmd_state_output_array_end(state);
-	rz_list_free(global_vars);
 	return true;
 }
 

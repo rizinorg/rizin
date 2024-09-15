@@ -1399,6 +1399,7 @@ static bool function_var_parse(
 	const RzBinDwarfDie *var_die,
 	bool *has_unspecified_parameters) {
 	v->offset = var_die->offset;
+	v->cu_index = ctx->unit->index;
 	switch (var_die->tag) {
 	case DW_TAG_formal_parameter:
 		v->kind = RZ_ANALYSIS_VAR_KIND_FORMAL_PARAMETER;
@@ -1656,6 +1657,41 @@ static bool variable_exist_global(RzAnalysis *a, RzAnalysisDwarfVariable *v) {
 	return false;
 }
 
+static bool try_create_var_global(
+	RZ_BORROW RZ_IN RZ_NONNULL DwContext *ctx,
+	RZ_BORROW RZ_IN RZ_NONNULL const RzBinDwarfDie *die,
+	RzAnalysisDwarfVariable *v) {
+
+	bool result = false;
+	if (!(v->type && v->location->kind == RzBinDwarfLocationKind_ADDRESS)) {
+		goto beach;
+	}
+	if (variable_exist_global(ctx->analysis, v)) {
+		goto beach;
+	}
+
+	RzBinDwarfAttr *attr = NULL;
+	attr = rz_bin_dwarf_die_get_attr(die, DW_AT_decl_file);
+	RzBinDwarfLineUnit *lu = ctx->unit ? rz_pvector_at(ctx->dw->line->units, ctx->unit->index) : NULL;
+	ut64 file_index = attr ? rz_bin_dwarf_attr_udata(attr) : UT64_MAX;
+	const char *file = file_index != 0 && lu ? rz_bin_dwarf_file_path(ctx->dw, lu, file_index) : NULL;
+
+	attr = rz_bin_dwarf_die_get_attr(die, DW_AT_decl_line);
+	ut32 line = attr ? rz_bin_dwarf_attr_udata(attr) : UT32_MAX;
+
+	attr = rz_bin_dwarf_die_get_attr(die, DW_AT_decl_column);
+	ut32 column = attr ? rz_bin_dwarf_attr_udata(attr) : UT32_MAX;
+
+	result = rz_analysis_var_global_create_with_sourceline(
+		ctx->analysis, v->prefer_name, v->type, v->location->address,
+		file, line, column);
+
+	v->type = NULL;
+beach:
+	variable_fini(v);
+	return result;
+}
+
 static bool variable_from_die(
 	RZ_BORROW RZ_IN RZ_NONNULL DwContext *ctx,
 	RZ_BORROW RZ_IN RZ_NONNULL const RzBinDwarfDie *die) {
@@ -1664,22 +1700,8 @@ static bool variable_from_die(
 		variable_fini(&v);
 		return false;
 	}
-	if (!(v.type && v.location->kind == RzBinDwarfLocationKind_ADDRESS)) {
-		variable_fini(&v);
-		return false;
-	}
 
-	if (variable_exist_global(ctx->analysis, &v)) {
-		variable_fini(&v);
-		return false;
-	}
-
-	bool result = rz_analysis_var_global_create(
-		ctx->analysis, v.prefer_name, v.type, v.location->address);
-
-	v.type = NULL;
-	variable_fini(&v);
-	return result;
+	return try_create_var_global(ctx, die, &v);
 }
 
 static void die_parse(DwContext *ctx, RzBinDwarfDie *die) {
@@ -1943,11 +1965,17 @@ static bool RzBinDwarfLocation_as_RzAnalysisVarStorage(
 		break;
 	}
 	case RzBinDwarfLocationKind_ADDRESS: {
-		if (variable_exist_global(a, dw_var)) {
+		RzBinDwarfDie *die = ht_up_find(a->debug_info->dw->info->die_by_offset, dw_var->offset, NULL);
+		if (!die) {
 			return false;
 		}
-		rz_analysis_var_global_create(a, dw_var->prefer_name,
-			rz_type_clone(dw_var->type), loc->address);
+		DwContext context = {
+			.analysis = a,
+			.dw = a->debug_info->dw,
+			.unit = rz_vector_index_ptr(&a->debug_info->dw->info->units, dw_var->cu_index),
+			.str_escaped = NULL
+		};
+		try_create_var_global(&context, die, dw_var);
 		rz_analysis_var_fini(var);
 		return false;
 	}

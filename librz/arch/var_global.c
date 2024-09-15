@@ -20,6 +20,9 @@ RZ_API RZ_OWN RzAnalysisVarGlobal *rz_analysis_var_global_new(RZ_NONNULL const c
 	glob->name = rz_str_dup(name);
 	glob->addr = addr;
 	glob->analysis = NULL;
+	glob->coord.decl_file = NULL;
+	glob->coord.decl_line = UT32_MAX;
+	glob->coord.decl_col = UT32_MAX;
 
 	return glob;
 }
@@ -85,9 +88,14 @@ RZ_API bool rz_analysis_var_global_add(RzAnalysis *analysis, RZ_NONNULL RzAnalys
  * \param name Global variable name
  * \param type Global variable type
  * \param addr Global variable address
+ * \param file File containing source declaration
+ * \param line Line number of source declaration
+ * \param colum Column position of source declaration
  * \return true if succeed
  */
-RZ_API bool rz_analysis_var_global_create(RzAnalysis *analysis, RZ_NONNULL const char *name, RZ_NONNULL RZ_BORROW RzType *type, ut64 addr) {
+RZ_API bool rz_analysis_var_global_create_with_sourceline(RzAnalysis *analysis,
+	RZ_NONNULL const char *name, RZ_NONNULL RZ_BORROW RzType *type, ut64 addr,
+	RZ_NULLABLE const char *file, ut32 line, ut32 colum) {
 	rz_return_val_if_fail(analysis && name && type, false);
 
 	RzAnalysisVarGlobal *glob = rz_analysis_var_global_new(name, addr);
@@ -102,7 +110,27 @@ RZ_API bool rz_analysis_var_global_create(RzAnalysis *analysis, RZ_NONNULL const
 		return false;
 	}
 
+	glob->coord.decl_file = rz_str_constpool_get(&analysis->constpool, file);
+	glob->coord.decl_line = line;
+	glob->coord.decl_col = colum;
+
 	return true;
+}
+
+/**
+ * \brief Create the global variable and add into hashtable
+ *
+ * \param analysis RzAnalysis
+ * \param name Global variable name
+ * \param type Global variable type
+ * \param addr Global variable address
+ * \return true if succeed
+ */
+RZ_API bool rz_analysis_var_global_create(RzAnalysis *analysis,
+	RZ_NONNULL const char *name, RZ_NONNULL RZ_BORROW RzType *type, ut64 addr) {
+	rz_return_val_if_fail(analysis && name && type, false);
+	return rz_analysis_var_global_create_with_sourceline(
+		analysis, name, type, addr, NULL, UT32_MAX, UT32_MAX);
 }
 
 /**
