@@ -607,7 +607,7 @@ bool test_ht_uu_foreach(void) {
 	HtUU *ht = ht_uu_new();
 	ut32 icnt = 0;
 	HtUUIter it;
-	ht_foreach (uu, ht, it) {
+	ht_uu_foreach (ht, it) {
 		icnt++;
 	}
 	mu_assert_eq(icnt, 0, "Wrong number of iterations");
@@ -617,7 +617,7 @@ bool test_ht_uu_foreach(void) {
 	ht_uu_insert(ht, 0x4040404, 0x4040404);
 	ht_uu_insert(ht, 0x5050505, 0x5050505);
 	icnt = 0;
-	ht_foreach (uu, ht, it) {
+	ht_uu_foreach (ht, it) {
 		icnt++;
 		mu_assert_true(
 			it.kv->value == 0x1010101 ||
@@ -630,7 +630,7 @@ bool test_ht_uu_foreach(void) {
 	mu_assert_eq(icnt, 5, "Wrong number of iterations");
 	icnt = 0;
 	// Test write of value
-	ht_foreach (uu, ht, it) {
+	ht_uu_foreach (ht, it) {
 		icnt++;
 		if (it.kv->value == 0x1010101) {
 			it.kv->value = 0x0;
@@ -649,7 +649,7 @@ bool test_ht_ss_foreach(void) {
 	HtSS *ht = ht_ss_new(HT_STR_CONST, HT_STR_CONST);
 	ut32 icnt = 0;
 	HtSSIter it;
-	ht_foreach (ss, ht, it) {
+	ht_ss_foreach (ht, it) {
 		icnt++;
 	}
 	mu_assert_eq(icnt, 0, "Wrong number of iterations");
@@ -660,7 +660,7 @@ bool test_ht_ss_foreach(void) {
 	ht_ss_insert(ht, "0x4040404", "0x4040404");
 	ht_ss_insert(ht, "0x5050505", "0x5050505");
 	icnt = 0;
-	ht_foreach (ss, ht, it) {
+	ht_ss_foreach (ht, it) {
 		icnt++;
 		mu_assert_true(
 			RZ_STR_EQ(it.kv->value, "0x1010101") ||
@@ -673,7 +673,7 @@ bool test_ht_ss_foreach(void) {
 	mu_assert_eq(icnt, 5, "Wrong number of iterations");
 	icnt = 0;
 	// Test write of value
-	ht_foreach (ss, ht, it) {
+	ht_ss_foreach (ht, it) {
 		icnt++;
 		if (RZ_STR_EQ(it.kv->value, "0x1010101")) {
 			it.kv->value = "0x0";

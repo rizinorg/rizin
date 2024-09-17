@@ -18,6 +18,7 @@ extern "C" {
 #include <rz_util/ht_inc.h>
 
 RZ_API RZ_OWN HtName_(Ht) *Ht_(new)(void);
+#define ht_uu_foreach(ht, iter) ht_foreach(uu, ht, iter)
 #undef HT_TYPE
 
 #ifdef __cplusplus

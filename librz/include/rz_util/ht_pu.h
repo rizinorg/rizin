@@ -16,6 +16,7 @@ extern "C" {
  */
 #define HT_TYPE 4
 #include <rz_util/ht_inc.h>
+#define ht_pu_foreach(ht, iter) ht_foreach(pu, ht, iter)
 #undef HT_TYPE
 
 #ifdef __cplusplus

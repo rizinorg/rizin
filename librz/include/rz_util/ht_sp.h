@@ -16,6 +16,7 @@ extern "C" {
 #include <rz_util/ht_inc.h>
 
 RZ_API RZ_OWN HtName_(Ht) *Ht_(new)(HtStrOption key_opt, RZ_NULLABLE HT_(DupValue) dup_val, RZ_NULLABLE HT_(FreeValue) free_val);
+#define ht_sp_foreach(ht, iter) ht_foreach(sp, ht, iter)
 #undef HT_TYPE
 
 #ifdef __cplusplus
