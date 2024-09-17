@@ -610,6 +610,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->machine = PE_(rz_bin_pe_get_machine)(bf->o->bin_obj);
 	ret->subsystem = PE_(rz_bin_pe_get_subsystem)(bf->o->bin_obj);
 	ret->default_cc = PE_(rz_bin_pe_get_cc)(bf->o->bin_obj);
+	ret->compiler = PE_(rz_bin_pe_get_compiler)(bf->o->bin_obj);
 
 	RzPVector *libs = PE_(rz_bin_pe_get_libs)(bf->o->bin_obj);
 	if (libs && rz_pvector_find(libs, "mscoree.dll", compare_strings, NULL)) {

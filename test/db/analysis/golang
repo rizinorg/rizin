@@ -708,7 +708,7 @@ EXPECT=<<EOF
 1788
 0x004a699b str.hello__hacktivity
 9222
-compiler go1.15
+compiler go1.15 Linker 03.00
 errors
 fmt
 go
