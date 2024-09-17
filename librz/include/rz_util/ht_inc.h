@@ -167,8 +167,8 @@ typedef struct Ht_(t) {
 HtName_(Ht);
 
 typedef struct Ht_(iter_t) {
-	st64 ti; ///< Table index
-	ut64 bi; ///< Bucket index
+	ut32 ti; ///< Table index
+	ut32 bi; ///< Bucket index
 	HT_(Kv) *kv; ///< Current Key-Value-pair. Stop iteration if kv is NULL.
 }
 HT_(Iter);
