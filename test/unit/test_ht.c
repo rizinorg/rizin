@@ -3,6 +3,7 @@
 
 #include "minunit.h"
 #include <sdb.h>
+#include <rz_util/rz_iterator.h>
 #include <rz_util/ht_uu.h>
 #include <rz_util/ht_up.h>
 #include <rz_util/ht_pp.h>
@@ -10,6 +11,7 @@
 #include <rz_util/ht_sp.h>
 #include <rz_util/ht_su.h>
 #include <rz_util/ht_ss.h>
+#include <rz_util/rz_str.h>
 
 typedef struct _test_struct {
 	char *name;
@@ -570,6 +572,138 @@ bool test_insert_update_ex(void) {
 	mu_end;
 }
 
+bool test_ht_size(void) {
+	HtUU *ht = ht_uu_new();
+	mu_assert_eq(ht_uu_size(ht), 0, "Length wrong.");
+	ht_uu_insert(ht, 0x5050505, 0x5050505);
+	ht_uu_insert(ht, 0x5050505, 0x5050505);
+	ht_uu_insert(ht, 0x6060606, 0x6060606);
+	ht_uu_insert(ht, 0x7070707, 0x7070707);
+	ht_uu_insert(ht, 0x7070707, 0x7070707);
+	mu_assert_eq(ht_uu_size(ht), 3, "Length wrong.");
+	bool found = false;
+	ht_uu_find(ht, 0x5050505, &found);
+	mu_assert_true(found, "Value was not added.");
+	ht_uu_find(ht, 0x6060606, &found);
+	mu_assert_true(found, "Value was not added.");
+	ht_uu_find(ht, 0x7070707, &found);
+	mu_assert_true(found, "Value was not added.");
+
+	ht_uu_delete(ht, 0x7070707);
+	ht_uu_find(ht, 0x7070707, &found);
+	mu_assert_false(found, "Value was not deleted.");
+	mu_assert_eq(ht_uu_size(ht), 2, "Length wrong.");
+
+	// Double delete
+	ht_uu_delete(ht, 0x7070707);
+	ht_uu_find(ht, 0x7070707, &found);
+	mu_assert_false(found, "Value was not deleted.");
+	mu_assert_eq(ht_uu_size(ht), 2, "Length wrong.");
+	ht_uu_free(ht);
+	mu_end;
+}
+
+bool test_ht_uu_iter(void) {
+	HtUU *ht = ht_uu_new();
+	ut32 icnt = 0;
+	const ut64 *im_elem;
+
+	RzIterator *it = ht_uu_as_iter(ht);
+	rz_iterator_foreach(it, im_elem) {
+		icnt++;
+	}
+	rz_iterator_free(it);
+	mu_assert_eq(icnt, 0, "Wrong number of iterations");
+	ht_uu_insert(ht, 0x1010101, 0x1010101);
+	ht_uu_insert(ht, 0x2020202, 0x2020202);
+	ht_uu_insert(ht, 0x3030303, 0x3030303);
+	ht_uu_insert(ht, 0x4040404, 0x4040404);
+	ht_uu_insert(ht, 0x5050505, 0x5050505);
+	icnt = 0;
+	it = ht_uu_as_iter(ht);
+	rz_iterator_foreach(it, im_elem) {
+		icnt++;
+		mu_assert_true(
+			*im_elem == 0x1010101 ||
+				*im_elem == 0x2020202 ||
+				*im_elem == 0x3030303 ||
+				*im_elem == 0x4040404 ||
+				*im_elem == 0x5050505,
+			"Value mismtach");
+	}
+	rz_iterator_free(it);
+	mu_assert_eq(icnt, 5, "Wrong number of iterations");
+	icnt = 0;
+	// Test write of value
+	ut64 *m_elem;
+	it = ht_uu_as_iter_mut(ht);
+	rz_iterator_foreach(it, m_elem) {
+		icnt++;
+		if (*m_elem == 0x1010101) {
+			*m_elem = 0x0;
+		}
+	}
+	rz_iterator_free(it);
+	mu_assert_eq(icnt, 5, "Wrong number of iterations");
+	bool found = false;
+	ut64 v = ht_uu_find(ht, 0x1010101, &found);
+	mu_assert_true(found, "Key not in hash map");
+	mu_assert_eq(v, 0x0, "Value didn't change.");
+	ht_uu_free(ht);
+	mu_end;
+}
+
+bool test_ht_ss_iter(void) {
+	HtSS *ht = ht_ss_new(HT_STR_CONST, HT_STR_CONST);
+	ut32 icnt = 0;
+	const char **im_elem;
+
+	RzIterator *it = ht_ss_as_iter(ht);
+	rz_iterator_foreach(it, im_elem) {
+		icnt++;
+	}
+	rz_iterator_free(it);
+	mu_assert_eq(icnt, 0, "Wrong number of iterations");
+
+	ht_ss_insert(ht, "0x1010101", "0x1010101");
+	ht_ss_insert(ht, "0x2020202", "0x2020202");
+	ht_ss_insert(ht, "0x3030303", "0x3030303");
+	ht_ss_insert(ht, "0x4040404", "0x4040404");
+	ht_ss_insert(ht, "0x5050505", "0x5050505");
+	icnt = 0;
+	it = ht_ss_as_iter(ht);
+	rz_iterator_foreach(it, im_elem) {
+		icnt++;
+		mu_assert_true(
+			RZ_STR_EQ(*im_elem, "0x1010101") ||
+				RZ_STR_EQ(*im_elem, "0x2020202") ||
+				RZ_STR_EQ(*im_elem, "0x3030303") ||
+				RZ_STR_EQ(*im_elem, "0x4040404") ||
+				RZ_STR_EQ(*im_elem, "0x5050505"),
+			"Value mismtach");
+	}
+	rz_iterator_free(it);
+	mu_assert_eq(icnt, 5, "Wrong number of iterations");
+	icnt = 0;
+	// Test write of value
+	char **m_elem;
+	it = ht_ss_as_iter_mut(ht);
+	rz_iterator_foreach(it, m_elem) {
+		icnt++;
+		if (RZ_STR_EQ(*m_elem, "0x1010101")) {
+			*m_elem = "0x0";
+		}
+	}
+	rz_iterator_free(it);
+	mu_assert_eq(icnt, 5, "Wrong number of iterations");
+	bool found = false;
+	const char *v = ht_ss_find(ht, "0x1010101", &found);
+	mu_assert_true(found, "Key not in hash map");
+	mu_assert_streq(v, "0x0", "Value didn't change.");
+	ht_ss_free(ht);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_ht_insert_lookup);
 	mu_run_test(test_ht_update_lookup);
@@ -591,6 +725,9 @@ int all_tests() {
 	mu_run_test(test_update_key);
 	mu_run_test(test_ht_pu_ops);
 	mu_run_test(test_insert_update_ex);
+	mu_run_test(test_ht_size);
+	mu_run_test(test_ht_uu_iter);
+	mu_run_test(test_ht_ss_iter);
 	return tests_passed != tests_run;
 }
 

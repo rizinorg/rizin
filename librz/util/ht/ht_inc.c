@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <rz_util/rz_assert.h>
+#include <rz_util/rz_iterator.h>
 #include <rz_util/rz_str.h>
 
 #define LOAD_FACTOR     1
@@ -511,4 +512,145 @@ RZ_API void Ht_(foreach)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(ForeachCallb
 			}
 		}
 	}
+}
+
+/**
+ * \brief Returns the number of elements stored in the hash map \p ht.
+ *
+ * \param ht The hash map.
+ *
+ * \return The number of elements saved in the hash map.
+ */
+RZ_API ut32 Ht_(size)(RZ_NONNULL HtName_(Ht) *ht) {
+	return ht->count;
+}
+
+/**
+ * \brief Advances an RzIterator with over a hashtable to the next element in
+ * the hash table returns it.
+ *
+ * \param it The next mutable element or NULL if iteration terminated.
+ */
+RZ_API VALUE_TYPE *Ht_(iter_next_mut)(RzIterator *it) {
+	rz_return_val_if_fail(it, NULL);
+
+	HT_(IterMutState) *state = it->u;
+	if (state->ti >= state->ht->size) {
+		// Iteration is done. No elements left to select.
+		return NULL;
+	}
+	// Iterate over tables until a table with an element is found.
+	for (; state->ti < state->ht->size; state->ti++) {
+		if (state->ht->table[state->ti].count == 0) {
+			// Table has no elements. Check next table.
+			continue;
+		}
+		if (state->bi < state->ht->table[state->ti].count) {
+			// Table has elements, select the element.
+			state->kv = &state->ht->table[state->ti].arr[state->bi];
+			// For the next iteration, increment bucket index to the following element.
+			state->bi++;
+			return &state->kv->value;
+		}
+		// Reset bucket index to first bucket.
+		state->bi = 0;
+		// Go to next table
+	}
+	// Iteration is done. No elements left to select.
+	return NULL;
+}
+
+/**
+ * \brief Advances an RzIterator with over a hashtable to the next element in
+ * the hash table returns it as const.
+ *
+ * \param it The next element as immutable or NULL if iteration terminated.
+ */
+RZ_API const VALUE_TYPE *Ht_(iter_next)(RzIterator *it) {
+	rz_return_val_if_fail(it, NULL);
+
+	HT_(IterState) *state = it->u;
+	if (state->ti >= state->ht->size) {
+		// Iteration is done. No elements left to select.
+		return NULL;
+	}
+	// Iterate over tables until a table with an element is found.
+	for (; state->ti < state->ht->size; state->ti++) {
+		if (state->ht->table[state->ti].count == 0) {
+			// Table has no elements. Check next table.
+			continue;
+		}
+		if (state->bi < state->ht->table[state->ti].count) {
+			// Table has elements, select the element.
+			state->kv = &state->ht->table[state->ti].arr[state->bi];
+			// For the next iteration, increment bucket index to the following element.
+			state->bi++;
+			return (const VALUE_TYPE *)&state->kv->value;
+		}
+		// Reset bucket index to first bucket.
+		state->bi = 0;
+		// Go to next table
+	}
+	// Iteration is done. No elements left to select.
+	return NULL;
+}
+
+RZ_API HT_(IterMutState) *Ht_(new_iter_mut_state)(RZ_NONNULL HtName_(Ht) *ht) {
+	rz_return_val_if_fail(ht, NULL);
+	HT_(IterMutState) *state = RZ_NEW0(HT_(IterMutState));
+	rz_return_val_if_fail(state, NULL);
+	state->ht = ht;
+	return state;
+}
+
+RZ_API HT_(IterState) *Ht_(new_iter_state)(const RZ_NONNULL HtName_(Ht) *ht) {
+	rz_return_val_if_fail(ht, NULL);
+	HT_(IterState) *state = RZ_NEW0(HT_(IterState));
+	rz_return_val_if_fail(state, NULL);
+	state->ht = ht;
+	return state;
+}
+
+RZ_API void Ht_(free_iter_mut_state)(HT_(IterMutState) *state) {
+	if (state) {
+		free(state);
+	}
+}
+
+RZ_API void Ht_(free_iter_state)(HT_(IterState) *state) {
+	if (state) {
+		free(state);
+	}
+}
+
+/**
+ * \brief Returns an iterator over the hash table \p ht. The iterator yields mutable elements.
+ *
+ * \param ht The hash table to create the iterator for.
+ *
+ * \return The iterator over the hash table or NULL in case of failure.
+ */
+RZ_API RZ_OWN RzIterator *Ht_(as_iter_mut)(RZ_NONNULL HtName_(Ht) *ht) {
+	rz_return_val_if_fail(ht, NULL);
+	HT_(IterMutState) *state = Ht_(new_iter_mut_state)(ht);
+	rz_return_val_if_fail(state, NULL);
+
+	RzIterator *iter = rz_iterator_new((rz_iterator_next_cb)Ht_(iter_next_mut), NULL, (rz_iterator_free_cb)Ht_(free_iter_mut_state), state);
+	return iter;
+}
+
+/**
+ * \brief Returns an iterator over the hash table \p ht. The iterator yields immutable elements.
+ *
+ * \param ht The hash table to create the iterator for.
+ *
+ * \return The iterator over the hash table or NULL in case of failure.
+ */
+RZ_API RZ_OWN RzIterator *Ht_(as_iter)(const RZ_NONNULL HtName_(Ht) *ht) {
+	rz_return_val_if_fail(ht, NULL);
+	HT_(IterState) *state = Ht_(new_iter_state)(ht);
+	rz_return_val_if_fail(state, NULL);
+
+	RzIterator *iter = rz_iterator_new((rz_iterator_next_cb)Ht_(iter_next), NULL, (rz_iterator_free_cb)Ht_(free_iter_state), state);
+	return iter;
 }

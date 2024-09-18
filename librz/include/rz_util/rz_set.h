@@ -21,6 +21,8 @@ RZ_API void rz_set_s_add(RZ_NONNULL RzSetS *set, const char *str);
 RZ_API bool rz_set_s_contains(RZ_NONNULL RzSetS *set, const char *str);
 RZ_API void rz_set_s_delete(RZ_NONNULL RzSetS *set, const char *str);
 RZ_API RZ_OWN RzPVector /*<char *>*/ *rz_set_s_to_vector(RZ_NONNULL RzSetS *set);
+RZ_API RzIterator *rz_set_s_as_iter(const RZ_NONNULL RzSetS *set);
+RZ_API RzIterator *rz_set_s_as_iter_mut(RZ_NONNULL RzSetS *set);
 
 typedef HtUP RzSetU;
 
@@ -29,6 +31,8 @@ RZ_API void rz_set_u_free(RZ_NULLABLE RzSetU *set);
 RZ_API void rz_set_u_add(RZ_NONNULL RzSetU *set, ut64 u);
 RZ_API bool rz_set_u_contains(RZ_NONNULL RzSetU *set, ut64 u);
 RZ_API void rz_set_u_delete(RZ_NONNULL RzSetU *set, ut64 u);
+RZ_API RzIterator *rz_set_u_as_iter(const RZ_NONNULL RzSetU *set);
+RZ_API RzIterator *rz_set_u_as_iter_mut(RZ_NONNULL RzSetU *set);
 
 #ifdef __cplusplus
 }
