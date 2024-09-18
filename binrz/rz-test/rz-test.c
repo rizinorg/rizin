@@ -780,6 +780,18 @@ static RzSubprocessOutput *print_runner(const char *file, const char *args[], si
 	return NULL;
 }
 
+static void print_asm_exit_status(const char *mode, bool timeout, int ret) {
+	printf("-- %s exit status: ", mode);
+	if (timeout) {
+		printf(Color_CYAN "TIMEOUT" Color_RESET);
+	} else if (ret != 0) {
+		printf(Color_RED "%d" Color_RESET, ret);
+	} else {
+		printf("0");
+	}
+	printf("\n");
+}
+
 static void print_result_diff(RzTestRunConfig *config, RzTestResultInfo *result) {
 	if (result->run_failed) {
 		printf(Color_RED "RUN FAILED (e.g. wrong rizin path)" Color_RESET "\n");
@@ -855,6 +867,15 @@ static void print_result_diff(RzTestRunConfig *config, RzTestResultInfo *result)
 				}
 				printf(Color_RED "%s" Color_RESET "\n", report);
 			}
+		}
+		if (test->mode & RZ_ASM_TEST_MODE_DISASSEMBLE) {
+			print_asm_exit_status("disasm", out->disas_timeout, out->disas_ret);
+		}
+		if (test->mode & RZ_ASM_TEST_MODE_ASSEMBLE) {
+			print_asm_exit_status("asm", out->as_timeout, out->as_ret);
+		}
+		if (test->il) {
+			print_asm_exit_status("IL", out->il_timeout, out->il_ret);
 		}
 		free(expect_hex);
 		break;

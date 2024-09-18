@@ -278,6 +278,7 @@ RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest 
 	if (!out) {
 		return NULL;
 	}
+	out->as_ret = out->disas_ret = out->il_ret = INT_MAX;
 
 	RzPVector args;
 	rz_pvector_init(&args, NULL);
@@ -318,7 +319,8 @@ RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest 
 			out->as_timeout = true;
 			goto rip;
 		}
-		if (rz_subprocess_ret(proc) != 0) {
+		out->as_ret = rz_subprocess_ret(proc);
+		if (out->as_ret != 0) {
 			goto rip;
 		}
 		char *hex = (char *)crlf2lf(rz_subprocess_out(proc, NULL));
@@ -352,7 +354,8 @@ RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest 
 			out->disas_timeout = true;
 			goto ship;
 		}
-		if (rz_subprocess_ret(proc) != 0) {
+		out->disas_ret = rz_subprocess_ret(proc);
+		if (out->disas_ret != 0) {
 			goto ship;
 		}
 		char *disasm = (char *)crlf2lf(rz_subprocess_out(proc, NULL));
@@ -382,7 +385,8 @@ RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest 
 			rz_str_trim(il_err);
 			out->il = il;
 			out->il_report = il_err;
-			out->il_failed = rz_subprocess_ret(proc) != 0;
+			out->il_ret = rz_subprocess_ret(proc);
+			out->il_failed = out->il_ret != 0;
 		}
 		free(hex);
 		rz_pvector_pop(&args);
