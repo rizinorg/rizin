@@ -78,7 +78,8 @@ RZ_API void rz_set_s_free(RZ_NULLABLE RzSetS *set) {
 /**
  * \brief Return number of elements saved in the set.
  */
-RZ_API ut32 rz_set_s_size(RZ_NULLABLE RzSetS *set) {
+RZ_API ut32 rz_set_s_size(const RZ_NONNULL RzSetS *set) {
+	rz_return_val_if_fail(set, 0);
 	return ht_sp_size((HtSP *)set);
 }
 
@@ -120,7 +121,8 @@ RZ_API void rz_set_u_free(RZ_NULLABLE RzSetU *set) {
 /**
  * \brief Return number of elements saved in the set.
  */
-RZ_API ut32 rz_set_u_size(RZ_NULLABLE RzSetU *set) {
+RZ_API ut32 rz_set_u_size(const RZ_NONNULL RzSetU *set) {
+	rz_return_val_if_fail(set, 0);
 	return ht_up_size((HtUP *)set);
 }
 

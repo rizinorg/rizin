@@ -208,7 +208,7 @@ RZ_API VALUE_TYPE Ht_(find)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, RZ_N
 // NOTE: cb can delete the current element, but it should be avoided
 RZ_API void Ht_(foreach)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(ForeachCallback) cb, RZ_NULLABLE void *user);
 
-RZ_API ut32 Ht_(size)(RZ_NONNULL HtName_(Ht) *ht);
+RZ_API ut32 Ht_(size)(const RZ_NONNULL HtName_(Ht) *ht);
 
 RZ_API RZ_BORROW HT_(Kv) *Ht_(find_kv)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, RZ_NULLABLE bool *found);
 RZ_API bool Ht_(insert_kv)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(Kv) *kv, bool update);

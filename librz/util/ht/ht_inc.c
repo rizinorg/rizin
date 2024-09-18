@@ -521,7 +521,8 @@ RZ_API void Ht_(foreach)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(ForeachCallb
  *
  * \return The number of elements saved in the hash map.
  */
-RZ_API ut32 Ht_(size)(RZ_NONNULL HtName_(Ht) *ht) {
+RZ_API ut32 Ht_(size)(const RZ_NONNULL HtName_(Ht) *ht) {
+	rz_return_val_if_fail(ht, 0);
 	return ht->count;
 }
 
