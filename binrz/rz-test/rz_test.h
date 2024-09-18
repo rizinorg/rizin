@@ -156,6 +156,9 @@ typedef struct rz_test_asm_test_output_t {
 	bool as_timeout;
 	bool disas_timeout;
 	bool il_timeout;
+	int as_ret;
+	int disas_ret;
+	int il_ret;
 } RzAsmTestOutput;
 
 typedef enum rz_test_test_result_t {
