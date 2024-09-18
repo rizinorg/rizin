@@ -1688,7 +1688,6 @@ static bool try_create_var_global(
 
 	v->type = NULL;
 beach:
-	variable_fini(v);
 	return result;
 }
 
