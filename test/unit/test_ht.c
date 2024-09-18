@@ -4,6 +4,7 @@
 #include "minunit.h"
 #include <sdb.h>
 #include <rz_util/rz_iterator.h>
+#include <rz_util/rz_set.h>
 #include <rz_util/ht_uu.h>
 #include <rz_util/ht_up.h>
 #include <rz_util/ht_pp.h>
@@ -704,6 +705,140 @@ bool test_ht_ss_iter(void) {
 	mu_end;
 }
 
+bool test_set_u(void) {
+	RzSetU *set_u = rz_set_u_new();
+	rz_set_u_add(set_u, 0x5050505);
+	rz_set_u_add(set_u, 0x5050505);
+	rz_set_u_add(set_u, 0x6060606);
+	rz_set_u_add(set_u, 0x7070707);
+	rz_set_u_add(set_u, 0x7070707);
+	mu_assert_eq(rz_set_u_size(set_u), 3, "Length wrong.");
+	mu_assert_true(rz_set_u_contains(set_u, 0x5050505), "Value was not added.");
+	mu_assert_true(rz_set_u_contains(set_u, 0x6060606), "Value was not added.");
+	mu_assert_true(rz_set_u_contains(set_u, 0x7070707), "Value was not added.");
+
+	rz_set_u_delete(set_u, 0x7070707);
+	mu_assert_false(rz_set_u_contains(set_u, 0x7070707), "Value was not deleted.");
+	mu_assert_eq(rz_set_u_size(set_u), 2, "Length wrong.");
+
+	// Double delete
+	rz_set_u_delete(set_u, 0x7070707);
+	mu_assert_eq(rz_set_u_size(set_u), 2, "Length wrong.");
+
+	size_t x = 0;
+	const ut64 *im_elem;
+	RzIterator *it = rz_set_u_as_iter(set_u);
+	rz_iterator_foreach(it, im_elem) {
+		x++;
+		bool matches = *im_elem == 0x5050505 || *im_elem == 0x6060606;
+		mu_assert_true(matches, "Set contained ill-formed value.");
+	}
+	rz_iterator_free(it);
+	mu_assert_eq(x, 2, "Foreach hasn't iterated the correct number of times.");
+
+	rz_set_u_delete(set_u, 0x6060606);
+	mu_assert_eq(rz_set_u_size(set_u), 1, "Length wrong.");
+	rz_set_u_delete(set_u, 0x5050505);
+	mu_assert_eq(rz_set_u_size(set_u), 0, "Length wrong.");
+
+	it = rz_set_u_as_iter(set_u);
+	rz_iterator_foreach(it, im_elem) {
+		mu_assert("Should not be reached.", false);
+	}
+	rz_iterator_free(it);
+	rz_set_u_add(set_u, 0x53e0);
+	rz_set_u_add(set_u, 0x53bc);
+	x = 0;
+	it = rz_set_u_as_iter(set_u);
+	rz_iterator_foreach(it, im_elem) {
+		x++;
+	}
+	rz_iterator_free(it);
+	mu_assert_eq(x, 2, "Foreach hasn't iterated the correct number of times.");
+	rz_set_u_delete(set_u, 0x53e0);
+	rz_set_u_delete(set_u, 0x53bc);
+
+	rz_set_u_add(set_u, 0);
+	rz_set_u_add(set_u, 1);
+	rz_set_u_add(set_u, 2);
+	rz_set_u_add(set_u, 3);
+
+	// Add an address as key which is far away from the heap addresses.
+	rz_set_u_add(set_u, 100000000);
+	mu_assert_true(rz_set_u_contains(set_u, 100000000), "Not contained.");
+	mu_assert_eq(set_u->count, 5, "count");
+	mu_assert_false(rz_set_u_contains(set_u, 6), "should not be here.");
+
+	x = 0;
+	it = rz_set_u_as_iter(set_u);
+	rz_iterator_foreach(it, im_elem) {
+		x++;
+	}
+	rz_iterator_free(it);
+	mu_assert_eq(x, 5, "Foreach hasn't iterated the correct number of times.");
+
+	rz_set_u_free(set_u);
+	mu_end;
+}
+
+bool test_set_s(void) {
+	RzSetS *set_s = rz_set_s_new(HT_STR_CONST);
+	rz_set_s_add(set_s, "0x5050505");
+	rz_set_s_add(set_s, "0x5050505");
+	rz_set_s_add(set_s, "0x6060606");
+	rz_set_s_add(set_s, "0x7070707");
+	rz_set_s_add(set_s, "0x7070707");
+	mu_assert_eq(rz_set_s_size(set_s), 3, "Length wrong.");
+	mu_assert_true(rz_set_s_contains(set_s, "0x5050505"), "Value was not added.");
+	mu_assert_true(rz_set_s_contains(set_s, "0x6060606"), "Value was not added.");
+	mu_assert_true(rz_set_s_contains(set_s, "0x7070707"), "Value was not added.");
+
+	rz_set_s_delete(set_s, "0x7070707");
+	mu_assert_false(rz_set_s_contains(set_s, "0x7070707"), "Value was not deleted.");
+	mu_assert_eq(rz_set_s_size(set_s), 2, "Length wrong.");
+
+	// Double delete
+	rz_set_s_delete(set_s, "0x7070707");
+	mu_assert_eq(rz_set_s_size(set_s), 2, "Length wrong.");
+
+	size_t x = 0;
+	const char **im_elem;
+
+	RzIterator *it = rz_set_s_as_iter(set_s);
+	rz_iterator_foreach(it, im_elem) {
+		x++;
+		bool matches = RZ_STR_EQ(*im_elem, "0x5050505") || RZ_STR_EQ(*im_elem, "0x6060606");
+		mu_assert_true(matches, "Set contained ill-formed value.");
+	}
+	rz_iterator_free(it);
+	mu_assert_eq(x, 2, "Foreach hasn't iterated the correct number of times.");
+
+	rz_set_s_delete(set_s, "0x6060606");
+	mu_assert_eq(rz_set_s_size(set_s), 1, "Length wrong.");
+	rz_set_s_delete(set_s, "0x5050505");
+	mu_assert_eq(rz_set_s_size(set_s), 0, "Length wrong.");
+
+	it = rz_set_s_as_iter(set_s);
+	rz_iterator_foreach(it, im_elem) {
+		mu_assert("Should not be reached.", false);
+	}
+	rz_iterator_free(it);
+	rz_set_s_add(set_s, "0x53e0");
+	rz_set_s_add(set_s, "0x53bc");
+	x = 0;
+	it = rz_set_s_as_iter(set_s);
+	rz_iterator_foreach(it, im_elem) {
+		x++;
+	}
+	rz_iterator_free(it);
+	mu_assert_eq(x, 2, "Foreach hasn't iterated the correct number of times.");
+	rz_set_s_delete(set_s, "0x53e0");
+	rz_set_s_delete(set_s, "0x53bc");
+
+	rz_set_s_free(set_s);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_ht_insert_lookup);
 	mu_run_test(test_ht_update_lookup);
@@ -728,6 +863,8 @@ int all_tests() {
 	mu_run_test(test_ht_size);
 	mu_run_test(test_ht_uu_iter);
 	mu_run_test(test_ht_ss_iter);
+	mu_run_test(test_set_u);
+	mu_run_test(test_set_s);
 	return tests_passed != tests_run;
 }
 

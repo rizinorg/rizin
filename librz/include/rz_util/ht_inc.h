@@ -220,6 +220,8 @@ RZ_API void Ht_(free_iter_state)(HT_(IterState) *state);
 
 RZ_API VALUE_TYPE *Ht_(iter_next_mut)(RzIterator *it);
 RZ_API const VALUE_TYPE *Ht_(iter_next)(RzIterator *it);
+RZ_API const KEY_TYPE *Ht_(iter_next_key)(RzIterator *it);
 
 RZ_API RZ_OWN RzIterator *Ht_(as_iter_mut)(RZ_NONNULL HtName_(Ht) *ht);
 RZ_API RZ_OWN RzIterator *Ht_(as_iter)(const RZ_NONNULL HtName_(Ht) *ht);
+RZ_API RZ_OWN RzIterator *Ht_(as_iter_keys)(const RZ_NONNULL HtName_(Ht) *ht);
