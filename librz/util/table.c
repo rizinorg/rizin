@@ -242,6 +242,23 @@ RZ_API void rz_table_set_columnsf(RzTable *t, const char *fmt, ...) {
 	va_end(ap);
 }
 
+/**
+ * \brief Given a row in \c RzTable, append a new column with given format
+ *        by pulling out value of that type form given va_list
+ *
+ * Possible values for format are :
+ * - s, z : String (const char*)
+ * - b    : Boolean (bool)
+ * - i, d : Integer (int, int32_t)
+ * - n    : Number (unsigned long long int, uint64_t)
+ * - u    : Size (B, KB, MB, GB, etc...)
+ * - f    : Double
+ * - x, X : Hex value (x means all smal, X means all CAPS)
+ *
+ * \param row \p RzPVector to append the new column into
+ * \param fmt Character representing the type of value to be stored in last column of given row.
+ * \param ap Variadic argument list. Will be used to pull out value based on given fmt.
+ */
 #define add_column_to_rowf(row, fmt, ap) \
 	do { \
 		const char *arg = NULL; \
@@ -318,6 +335,25 @@ RZ_API void rz_table_add_row_columnsf(RzTable *t, const char *fmt, ...) {
 }
 
 /**
+ * \breif Add a new row with given format and variadic list of values.
+ *
+ * \param t Table to add new row into
+ * \param fmt Format string to define column ordering and type of given row.
+ * \param ap Variadic argument list to pull values for each column in row from.
+ *
+ * \sa rz_table_append_column_to_vrowf
+ */
+RZ_API void rz_table_add_vrowf(RZ_NONNULL RzTable *t, const char *fmt, va_list ap) {
+	rz_return_if_fail(t && fmt);
+
+	RzPVector *vec = rz_pvector_new(free);
+	for (const char *f = fmt; *f; f++) {
+		add_column_to_rowf(vec, *f, ap);
+	}
+	rz_table_add_row_vec(t, vec);
+}
+
+/**
  * Add a new row with the specified columns values.
  */
 RZ_API void rz_table_add_rowf(RzTable *t, const char *fmt, ...) {
@@ -325,12 +361,8 @@ RZ_API void rz_table_add_rowf(RzTable *t, const char *fmt, ...) {
 
 	va_list ap;
 	va_start(ap, fmt);
-	RzPVector *vec = rz_pvector_new(free);
-	for (const char *f = fmt; *f; f++) {
-		add_column_to_rowf(vec, *f, ap);
-	}
+	rz_table_add_vrowf(t, fmt, ap);
 	va_end(ap);
-	rz_table_add_row_vec(t, vec);
 }
 
 RZ_API void rz_table_add_row(RZ_NONNULL RzTable *t, const char *name, ...) {
