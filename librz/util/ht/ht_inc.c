@@ -527,10 +527,9 @@ RZ_API ut32 Ht_(size)(const RZ_NONNULL HtName_(Ht) *ht) {
 }
 
 /**
- * \brief Advances an RzIterator with over a hashtable to the next value in
- * the hash table returns it.
+ * \brief Advances an RzIterator over a hashtable to the next value and returns it.
  *
- * \param it The next mutable value or NULL if iteration terminated.
+ * \param it The next value or NULL if iteration terminated. The value is mutable.
  */
 RZ_API VALUE_TYPE *Ht_(iter_next_mut)(RzIterator *it) {
 	rz_return_val_if_fail(it, NULL);
@@ -562,8 +561,7 @@ RZ_API VALUE_TYPE *Ht_(iter_next_mut)(RzIterator *it) {
 }
 
 /**
- * \brief Advances an RzIterator with over a hash table to the next value in
- * the hash table returns it as const.
+ * \brief Advances an RzIterator over a hash table to the next value and returns it.
  *
  * \param it The next value as immutable or NULL if iteration terminated.
  */
@@ -598,7 +596,7 @@ RZ_API const VALUE_TYPE *Ht_(iter_next)(RzIterator *it) {
 
 /**
  * \brief Advances an RzIterator over a hash table to the next key in
- * the hash table returns it as const pointer.
+ * and returns it.
  *
  * \param it The next key as immutable or NULL if iteration terminated.
  */
