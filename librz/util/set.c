@@ -42,7 +42,7 @@ RZ_API void rz_set_s_delete(RZ_NONNULL RzSetS *set, const char *str) {
  *
  * \return Iterator yielding immutable elements.
  */
-RZ_API RzIterator *rz_set_s_as_iter(const RZ_NONNULL RzSetS *set) {
+RZ_API RzIterator /* <RzSetS> */ *rz_set_s_as_iter(const RZ_NONNULL RzSetS *set) {
 	rz_return_val_if_fail(set, NULL);
 	return ht_sp_as_iter_keys((const HtSP *)set);
 }
@@ -131,7 +131,7 @@ RZ_API ut32 rz_set_u_size(const RZ_NONNULL RzSetU *set) {
  *
  * \return Iterator yielding immutable elements.
  */
-RZ_API RzIterator *rz_set_u_as_iter(const RZ_NONNULL RzSetU *set) {
+RZ_API RzIterator /* <RzSetU> */ *rz_set_u_as_iter(const RZ_NONNULL RzSetU *set) {
 	rz_return_val_if_fail(set, NULL);
 	return ht_up_as_iter_keys((const HtUP *)set);
 }
