@@ -646,15 +646,17 @@ RZ_API HT_(IterState) *Ht_(new_iter_state)(const RZ_NONNULL HtName_(Ht) *ht) {
 }
 
 RZ_API void Ht_(free_iter_mut_state)(HT_(IterMutState) *state) {
-	if (state) {
-		free(state);
+	if (!state) {
+		return;
 	}
+	free(state);
 }
 
 RZ_API void Ht_(free_iter_state)(HT_(IterState) *state) {
-	if (state) {
-		free(state);
+	if (!state) {
+		return;
 	}
+	free(state);
 }
 
 /**
