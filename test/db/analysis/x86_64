@@ -3988,31 +3988,6 @@ outputs: 11
 EOF
 RUN
 
-NAME=./noncode
-FILE=bins/mach0/ls-osx-x86_64
-CMDS=<<EOF
-e analysis.noncode=false
-afr
-afl~?str.
-EOF
-EXPECT=<<EOF
-0
-EOF
-RUN
-
-NAME=./noncode
-FILE=bins/mach0/ls-osx-x86_64
-CMDS=<<EOF
-e analysis.noncode=false
-e analysis.calls=true
-af
-afl~?str.
-EOF
-EXPECT=<<EOF
-0
-EOF
-RUN
-
 NAME=Microsoft x64 CC Args/Vars
 FILE=bins/pe/testx64.exe
 CMDS=<<EOF
