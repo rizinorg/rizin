@@ -160,36 +160,29 @@ static int rz_bin_te_init(struct rz_bin_te_obj_t *bin) {
 }
 
 char *rz_bin_te_get_arch(struct rz_bin_te_obj_t *bin) {
-	char *arch;
 	if (!bin) {
 		return NULL;
 	}
 	switch (bin->header->Machine) {
 	case TE_IMAGE_FILE_MACHINE_ALPHA:
 	case TE_IMAGE_FILE_MACHINE_ALPHA64:
-		arch = rz_str_dup("alpha");
-		break;
+		return rz_str_dup("alpha");
 	case TE_IMAGE_FILE_MACHINE_ARM:
 	case TE_IMAGE_FILE_MACHINE_THUMB:
-		arch = rz_str_dup("arm");
-		break;
+		return rz_str_dup("arm");
 	case TE_IMAGE_FILE_MACHINE_M68K:
-		arch = rz_str_dup("m68k");
-		break;
+		return rz_str_dup("m68k");
 	case TE_IMAGE_FILE_MACHINE_MIPS16:
 	case TE_IMAGE_FILE_MACHINE_MIPSFPU:
 	case TE_IMAGE_FILE_MACHINE_MIPSFPU16:
 	case TE_IMAGE_FILE_MACHINE_WCEMIPSV2:
-		arch = rz_str_dup("mips");
-		break;
+		return rz_str_dup("mips");
 	case TE_IMAGE_FILE_MACHINE_POWERPC:
 	case TE_IMAGE_FILE_MACHINE_POWERPCFP:
-		arch = rz_str_dup("ppc");
-		break;
+		return rz_str_dup("ppc");
 	default:
-		arch = rz_str_dup("x86");
+		return rz_str_dup("x86");
 	}
-	return arch;
 }
 
 int rz_bin_te_get_bits(struct rz_bin_te_obj_t *bin) {
@@ -228,127 +221,92 @@ char *rz_bin_te_get_machine(struct rz_bin_te_obj_t *bin) {
 	}
 	switch (bin->header->Machine) {
 	case TE_IMAGE_FILE_MACHINE_ALPHA:
-		machine = rz_str_dup("Alpha");
-		break;
+		return rz_str_dup("Alpha");
 	case TE_IMAGE_FILE_MACHINE_ALPHA64:
-		machine = rz_str_dup("Alpha 64");
-		break;
+		return rz_str_dup("Alpha 64");
 	case TE_IMAGE_FILE_MACHINE_AM33:
-		machine = rz_str_dup("AM33");
-		break;
+		return rz_str_dup("AM33");
 	case TE_IMAGE_FILE_MACHINE_AMD64:
-		machine = rz_str_dup("AMD 64");
-		break;
+		return rz_str_dup("AMD 64");
 	case TE_IMAGE_FILE_MACHINE_ARM:
-		machine = rz_str_dup("ARM");
-		break;
+		return rz_str_dup("ARM");
 	case TE_IMAGE_FILE_MACHINE_CEE:
-		machine = rz_str_dup("CEE");
-		break;
+		return rz_str_dup("CEE");
 	case TE_IMAGE_FILE_MACHINE_CEF:
-		machine = rz_str_dup("CEF");
-		break;
+		return rz_str_dup("CEF");
 	case TE_IMAGE_FILE_MACHINE_EBC:
-		machine = rz_str_dup("EBC");
-		break;
+		return rz_str_dup("EBC");
 	case TE_IMAGE_FILE_MACHINE_I386:
-		machine = rz_str_dup("i386");
-		break;
+		return rz_str_dup("i386");
 	case TE_IMAGE_FILE_MACHINE_IA64:
-		machine = rz_str_dup("ia64");
-		break;
+		return rz_str_dup("ia64");
 	case TE_IMAGE_FILE_MACHINE_M32R:
-		machine = rz_str_dup("M32R");
-		break;
+		return rz_str_dup("M32R");
 	case TE_IMAGE_FILE_MACHINE_M68K:
-		machine = rz_str_dup("M68K");
-		break;
+		return rz_str_dup("M68K");
 	case TE_IMAGE_FILE_MACHINE_MIPS16:
-		machine = rz_str_dup("Mips 16");
-		break;
+		return rz_str_dup("Mips 16");
 	case TE_IMAGE_FILE_MACHINE_MIPSFPU:
-		machine = rz_str_dup("Mips FPU");
-		break;
+		return rz_str_dup("Mips FPU");
 	case TE_IMAGE_FILE_MACHINE_MIPSFPU16:
-		machine = rz_str_dup("Mips FPU 16");
-		break;
+		return rz_str_dup("Mips FPU 16");
 	case TE_IMAGE_FILE_MACHINE_POWERPC:
-		machine = rz_str_dup("PowerPC");
-		break;
+		return rz_str_dup("PowerPC");
 	case TE_IMAGE_FILE_MACHINE_POWERPCFP:
-		machine = rz_str_dup("PowerPC FP");
-		break;
+		return rz_str_dup("PowerPC FP");
 	case TE_IMAGE_FILE_MACHINE_R10000:
-		machine = rz_str_dup("R10000");
-		break;
+		return rz_str_dup("R10000");
 	case TE_IMAGE_FILE_MACHINE_R3000:
-		machine = rz_str_dup("R3000");
-		break;
+		return rz_str_dup("R3000");
 	case TE_IMAGE_FILE_MACHINE_R4000:
-		machine = rz_str_dup("R4000");
-		break;
+		return rz_str_dup("R4000");
 	case TE_IMAGE_FILE_MACHINE_SH3:
-		machine = rz_str_dup("SH3");
-		break;
+		return rz_str_dup("SH3");
 	case TE_IMAGE_FILE_MACHINE_SH3DSP:
-		machine = rz_str_dup("SH3DSP");
-		break;
+		return rz_str_dup("SH3DSP");
 	case TE_IMAGE_FILE_MACHINE_SH3E:
-		machine = rz_str_dup("SH3E");
-		break;
+		return rz_str_dup("SH3E");
 	case TE_IMAGE_FILE_MACHINE_SH4:
-		machine = rz_str_dup("SH4");
-		break;
+		return rz_str_dup("SH4");
 	case TE_IMAGE_FILE_MACHINE_SH5:
-		machine = rz_str_dup("SH5");
-		break;
+		return rz_str_dup("SH5");
 	case TE_IMAGE_FILE_MACHINE_THUMB:
-		machine = rz_str_dup("Thumb");
-		break;
+		return rz_str_dup("Thumb");
 	case TE_IMAGE_FILE_MACHINE_TRICORE:
-		machine = rz_str_dup("Tricore");
-		break;
+		return rz_str_dup("Tricore");
 	case TE_IMAGE_FILE_MACHINE_WCEMIPSV2:
-		machine = rz_str_dup("WCE Mips V2");
-		break;
+		return rz_str_dup("WCE Mips V2");
 	default:
-		machine = rz_str_dup("unknown");
+		return rz_str_dup("unknown");
 	}
 	return machine;
 }
 
 char *rz_bin_te_get_os(struct rz_bin_te_obj_t *bin) {
-	char *os;
 	if (!bin) {
 		return NULL;
 	}
 
 	switch (bin->header->Subsystem) {
 	case TE_IMAGE_SUBSYSTEM_NATIVE:
-		os = rz_str_dup("native");
-		break;
+		return rz_str_dup("native");
 	case TE_IMAGE_SUBSYSTEM_WINDOWS_GUI:
 	case TE_IMAGE_SUBSYSTEM_WINDOWS_CUI:
 	case TE_IMAGE_SUBSYSTEM_WINDOWS_CE_GUI:
-		os = rz_str_dup("windows");
-		break;
+		return rz_str_dup("windows");
 	case TE_IMAGE_SUBSYSTEM_POSIX_CUI:
-		os = rz_str_dup("posix");
-		break;
+		return rz_str_dup("posix");
 	case TE_IMAGE_SUBSYSTEM_EFI_APPLICATION:
 	case TE_IMAGE_SUBSYSTEM_EFI_BOOT_SERVICE_DRIVER:
 	case TE_IMAGE_SUBSYSTEM_EFI_RUNTIME_DRIVER:
 	case TE_IMAGE_SUBSYSTEM_EFI_ROM:
-		os = rz_str_dup("efi");
-		break;
+		return rz_str_dup("efi");
 	case TE_IMAGE_SUBSYSTEM_XBOX:
-		os = rz_str_dup("xbox");
-		break;
+		return rz_str_dup("xbox");
 	default:
 		// XXX: this is unknown
-		os = rz_str_dup("windows");
+		return rz_str_dup("windows");
 	}
-	return os;
 }
 
 struct rz_bin_te_section_t *rz_bin_te_get_sections(struct rz_bin_te_obj_t *bin) {
@@ -381,46 +339,33 @@ struct rz_bin_te_section_t *rz_bin_te_get_sections(struct rz_bin_te_obj_t *bin) 
 }
 
 char *rz_bin_te_get_subsystem(struct rz_bin_te_obj_t *bin) {
-	char *subsystem;
-
 	if (!bin) {
 		return NULL;
 	}
 	switch (bin->header->Subsystem) {
 	case TE_IMAGE_SUBSYSTEM_NATIVE:
-		subsystem = rz_str_dup("Native");
-		break;
+		return rz_str_dup("Native");
 	case TE_IMAGE_SUBSYSTEM_WINDOWS_GUI:
-		subsystem = rz_str_dup("Windows GUI");
-		break;
+		return rz_str_dup("Windows GUI");
 	case TE_IMAGE_SUBSYSTEM_WINDOWS_CUI:
-		subsystem = rz_str_dup("Windows CUI");
-		break;
+		return rz_str_dup("Windows CUI");
 	case TE_IMAGE_SUBSYSTEM_POSIX_CUI:
-		subsystem = rz_str_dup("POSIX CUI");
-		break;
+		return rz_str_dup("POSIX CUI");
 	case TE_IMAGE_SUBSYSTEM_WINDOWS_CE_GUI:
-		subsystem = rz_str_dup("Windows CE GUI");
-		break;
+		return rz_str_dup("Windows CE GUI");
 	case TE_IMAGE_SUBSYSTEM_EFI_APPLICATION:
-		subsystem = rz_str_dup("EFI Application");
-		break;
+		return rz_str_dup("EFI Application");
 	case TE_IMAGE_SUBSYSTEM_EFI_BOOT_SERVICE_DRIVER:
-		subsystem = rz_str_dup("EFI Boot Service Driver");
-		break;
+		return rz_str_dup("EFI Boot Service Driver");
 	case TE_IMAGE_SUBSYSTEM_EFI_RUNTIME_DRIVER:
-		subsystem = rz_str_dup("EFI Runtime Driver");
-		break;
+		return rz_str_dup("EFI Runtime Driver");
 	case TE_IMAGE_SUBSYSTEM_EFI_ROM:
-		subsystem = rz_str_dup("EFI ROM");
-		break;
+		return rz_str_dup("EFI ROM");
 	case TE_IMAGE_SUBSYSTEM_XBOX:
-		subsystem = rz_str_dup("XBOX");
-		break;
+		return rz_str_dup("XBOX");
 	default:
-		subsystem = rz_str_dup("Unknown");
+		return rz_str_dup("Unknown");
 	}
-	return subsystem;
 }
 
 void *rz_bin_te_free(struct rz_bin_te_obj_t *bin) {
