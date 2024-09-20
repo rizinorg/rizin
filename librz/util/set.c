@@ -100,14 +100,6 @@ RZ_API void rz_set_u_add(RZ_NONNULL RzSetU *set, ut64 u) {
 }
 
 /**
- * \brief Get the size of set \s.
- */
-RZ_API ut64 set_u_size(SetU *s) {
-	rz_return_val_if_fail(s, 0);
-	return s->count;
-}
-
-/**
  * \brief Check if hash set \p set contains element \p u.
  */
 RZ_API bool rz_set_u_contains(RZ_NONNULL RzSetU *set, ut64 u) {

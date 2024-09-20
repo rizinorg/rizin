@@ -1253,15 +1253,15 @@ RZ_API bool hexagon_decode_iword(RZ_OUT RzAnalysisInsnWord *iword, ut64 addr, co
 
 		set_iword_properties(aop->type, iword);
 		if (iword->props & RZ_ANALYSIS_IWORD_CALL && aop->jump != UT64_MAX) {
-			set_u_add(iword->call_targets, aop->jump);
+			rz_set_u_add(iword->call_targets, aop->jump);
 		} else if (aop->jump != UT64_MAX) {
-			set_u_add(iword->jump_targets, aop->jump);
+			rz_set_u_add(iword->jump_targets, aop->jump);
 		}
 
 		if (hic->pkt_info.last_insn) {
 			if (aop->type != RZ_ANALYSIS_OP_TYPE_RET && !rz_analysis_op_is_jump(aop)) {
 				ut64 next_iword_addr = addr + iword->size_bytes;
-				set_u_add(iword->jump_targets, next_iword_addr);
+				rz_set_u_add(iword->jump_targets, next_iword_addr);
 			}
 			return true;
 		}

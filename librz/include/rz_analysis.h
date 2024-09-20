@@ -1002,8 +1002,8 @@ typedef struct {
 	ut64 addr; ///< Address the instruction word is located.
 	RzStrBuf *asm_str; ///< The whole asm string. Single instructions are separated by a newline.
 	RzPVector /*<RzAnalysisOp *>*/ *insns; ///< Instructions forming the instruction word.
-	SetU *jump_targets; ///< Set of addresses this iword possibly jumps to. This includes the next instr. word if there is any.
-	SetU *call_targets; ///< Set of addresses this iword calls.
+	RzSetU *jump_targets; ///< Set of addresses this iword possibly jumps to. This includes the next instr. word if there is any.
+	RzSetU *call_targets; ///< Set of addresses this iword calls.
 	RzAnalysisLiftedILOp il_op; ///< The complete IL operation of this instr. word.
 	RzAnalysisIWordProperties props; ///< Properties of this instruction word.
 } RzAnalysisInsnWord;

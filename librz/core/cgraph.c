@@ -9,7 +9,8 @@
 #include <rz_core.h>
 #include <rz_util/rz_graph_drawable.h>
 #include "core_private.h"
-#include <rz_util/set.h>
+#include <rz_util/rz_iterator.h>
+#include <rz_util/rz_set.h>
 #include <rz_util/rz_assert.h>
 #include <rz_util/rz_str.h>
 #include <rz_util/ht_uu.h>
@@ -1357,18 +1358,17 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg_iwords(RZ_NONNU
 		}
 		// Add all neighbors to graph
 		RzAnalysisInsnWord target_iword = { 0 };
-		SetUIter it;
-		set_u_iter_reset(it);
-		set_u_foreach(cur_iword.jump_targets, it) {
-			ut64 target = it.v;
+		RzIterator *iter = rz_set_u_as_iter(cur_iword.jump_targets);
+		ut64 *target;
+		rz_iterator_foreach(iter, target) {
 			rz_analysis_insn_word_setup(&target_iword);
-			if (decode_iword_at(core, target, buf, sizeof(buf), &target_iword) <= 0) {
+			if (decode_iword_at(core, *target, buf, sizeof(buf), &target_iword) <= 0) {
 				rz_analysis_insn_word_fini(&target_iword);
 				continue;
 			}
-			bool target_within_fcn = fcn ? rz_analysis_function_contains(fcn, target) : true;
+			bool target_within_fcn = fcn ? rz_analysis_function_contains(fcn, *target) : true;
 			bool found = false;
-			ht_uu_find(nodes_visited, target, &found);
+			ht_uu_find(nodes_visited, *target, &found);
 			if (!found && target_within_fcn) {
 				rz_vector_push(to_visit, &target);
 			}
