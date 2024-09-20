@@ -812,8 +812,10 @@ static void *sigchld_th(void *th) {
 
 			if (WIFEXITED(wstat)) {
 				proc->ret = WEXITSTATUS(wstat);
+			} else if (WIFSIGNALED(wstat)) {
+				proc->ret = -(WTERMSIG(wstat));
 			} else {
-				proc->ret = -1;
+				proc->ret = -128;
 			}
 			rz_th_sem_post(proc->ret_sem);
 			subprocess_unlock();
