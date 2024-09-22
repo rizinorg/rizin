@@ -28,4 +28,4 @@ steps:
     commands:
       - export PATH="`pwd`/prefix/bin:$PATH"
       - cd test
-      - rz-test -L
+      - rz-test -V -L
