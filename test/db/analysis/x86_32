@@ -219,7 +219,6 @@ e asm.bytes=false
 e asm.indentspace=0
 e asm.xrefs=false
 e asm.functions=false
-e asm.fcncalls=false
 e asm.lines.fcn=false
 e scr.utf8=false
 e analysis.jmp.after=false
