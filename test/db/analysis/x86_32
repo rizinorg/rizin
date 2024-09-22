@@ -226,7 +226,6 @@ e analysis.calls=false
 e analysis.jmp.cref=false
 e analysis.jmp.above=true
 e analysis.jmp.ref=true
-e analysis.split=true
 # HACK to avoid ASAN taking too long on travis.. this is broken anyway
 e analysis.bb.maxsize=1K
 adf @ sym.testObf27.exe_VirtMe
