@@ -790,7 +790,7 @@ static void print_asm_exit_status(const char *mode, bool timeout, int ret, const
 		printf("0");
 	}
 	printf("\n");
-	if (*err) {
+	if (RZ_STR_ISNOTEMPTY(err)) {
 		printf("-- %s stderr\n" Color_RED "%s" Color_RESET "\n", mode, err);
 	}
 }
