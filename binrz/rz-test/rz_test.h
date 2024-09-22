@@ -151,7 +151,6 @@ typedef struct rz_test_asm_test_output_t {
 	ut8 *bytes;
 	size_t bytes_size;
 	char *il;
-	char *il_report;
 	bool il_failed;
 	bool as_timeout;
 	bool disas_timeout;
@@ -159,6 +158,9 @@ typedef struct rz_test_asm_test_output_t {
 	int as_ret;
 	int disas_ret;
 	int il_ret;
+	char *as_err;
+	char *disas_err;
+	char *il_err;
 } RzAsmTestOutput;
 
 typedef enum rz_test_test_result_t {
