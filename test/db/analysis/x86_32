@@ -217,7 +217,6 @@ e asm.lines.bb=false
 e asm.lines.out=false
 e asm.bytes=false
 e asm.indentspace=0
-e asm.jmphints=false
 e asm.xrefs=false
 e asm.functions=false
 e asm.fcncalls=false
