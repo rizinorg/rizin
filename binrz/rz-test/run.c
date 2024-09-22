@@ -319,6 +319,9 @@ RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest 
 			out->as_timeout = true;
 			goto rip;
 		}
+		char *as_err = (char *)crlf2lf(rz_subprocess_err(proc, NULL));
+		rz_str_trim(as_err);
+		out->as_err = as_err;
 		out->as_ret = rz_subprocess_ret(proc);
 		if (out->as_ret != 0) {
 			goto rip;
@@ -354,6 +357,9 @@ RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest 
 			out->disas_timeout = true;
 			goto ship;
 		}
+		char *disas_err = (char *)crlf2lf(rz_subprocess_err(proc, NULL));
+		rz_str_trim(disas_err);
+		out->disas_err = disas_err;
 		out->disas_ret = rz_subprocess_ret(proc);
 		if (out->disas_ret != 0) {
 			goto ship;
@@ -384,7 +390,7 @@ RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest 
 			char *il_err = (char *)crlf2lf(rz_subprocess_err(proc, NULL));
 			rz_str_trim(il_err);
 			out->il = il;
-			out->il_report = il_err;
+			out->il_err = il_err;
 			out->il_ret = rz_subprocess_ret(proc);
 			out->il_failed = out->il_ret != 0;
 		}
@@ -421,7 +427,7 @@ RZ_API bool rz_test_check_asm_test(RzAsmTestOutput *out, RzAsmTest *test) {
 	}
 	if (test->il) {
 		// expect some IL, no failure, no report and no timeout
-		if (!out->il || out->il_failed || (out->il_report && *out->il_report) || out->il_timeout) {
+		if (!out->il || out->il_failed || (out->il_err && *out->il_err) || out->il_timeout) {
 			return false;
 		}
 		// IL must also be correct
@@ -439,7 +445,9 @@ RZ_API void rz_test_asm_test_output_free(RzAsmTestOutput *out) {
 	free(out->disasm);
 	free(out->bytes);
 	free(out->il);
-	free(out->il_report);
+	free(out->as_err);
+	free(out->disas_err);
+	free(out->il_err);
 	free(out);
 }
 

@@ -780,7 +780,7 @@ static RzSubprocessOutput *print_runner(const char *file, const char *args[], si
 	return NULL;
 }
 
-static void print_asm_exit_status(const char *mode, bool timeout, int ret) {
+static void print_asm_exit_status(const char *mode, bool timeout, int ret, const char *err) {
 	printf("-- %s exit status: ", mode);
 	if (timeout) {
 		printf(Color_CYAN "TIMEOUT" Color_RESET);
@@ -790,6 +790,9 @@ static void print_asm_exit_status(const char *mode, bool timeout, int ret) {
 		printf("0");
 	}
 	printf("\n");
+	if (*err) {
+		printf("-- %s stderr\n" Color_RED "%s" Color_RESET "\n", mode, err);
+	}
 }
 
 static void print_result_diff(RzTestRunConfig *config, RzTestResultInfo *result) {
@@ -850,32 +853,20 @@ static void print_result_diff(RzTestRunConfig *config, RzTestResultInfo *result)
 		if (test->il) {
 			const char *expect = test->il;
 			const char *actual = out->il;
-			const char *report = out->il_report;
-			bool il_printed = false;
 			const char *hdr = "-- IL\n";
 			if (expect && actual && strcmp(actual, expect)) {
 				printf("%s", hdr);
-				il_printed = true;
 				print_diff(actual, expect, NULL);
-			}
-			if (report) {
-				if (!il_printed) {
-					printf("%s", hdr);
-					if (actual) {
-						printf("%s\n", actual);
-					}
-				}
-				printf(Color_RED "%s" Color_RESET "\n", report);
 			}
 		}
 		if (test->mode & RZ_ASM_TEST_MODE_DISASSEMBLE) {
-			print_asm_exit_status("disasm", out->disas_timeout, out->disas_ret);
+			print_asm_exit_status("disasm", out->disas_timeout, out->disas_ret, out->disas_err);
 		}
 		if (test->mode & RZ_ASM_TEST_MODE_ASSEMBLE) {
-			print_asm_exit_status("asm", out->as_timeout, out->as_ret);
+			print_asm_exit_status("asm", out->as_timeout, out->as_ret, out->as_err);
 		}
 		if (test->il) {
-			print_asm_exit_status("IL", out->il_timeout, out->il_ret);
+			print_asm_exit_status("IL", out->il_timeout, out->il_ret, out->il_err);
 		}
 		free(expect_hex);
 		break;
