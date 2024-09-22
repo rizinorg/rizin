@@ -916,7 +916,22 @@ static void print_new_results(RzTestState *state, ut64 prev_completed) {
 		if (result->timeout) {
 			printf(Color_CYAN " TIMEOUT" Color_RESET);
 		}
-		printf(" %s " Color_YELLOW "%s" Color_RESET "\n", result->test->path, name);
+		// time_elapsed is in microsecs
+		ut64 elapsed = result->time_elapsed;
+		const char *unit = NULL;
+		if (elapsed < 1000) {
+			unit = "usec";
+		} else if (elapsed < 1000000) {
+			elapsed /= 1000;
+			unit = "ms";
+		} else if (elapsed < 1000000000) {
+			elapsed /= 1000000;
+			unit = "secs";
+		} else {
+			elapsed /= 1000000000;
+			unit = "mins";
+		}
+		printf(Color_BLUE "%4" PFMT64u " %-4s" Color_RESET " %s " Color_YELLOW "%s" Color_RESET "\n", elapsed, unit, result->test->path, name);
 		if (result->result == RZ_TEST_RESULT_FAILED || (state->verbose && result->result == RZ_TEST_RESULT_BROKEN)) {
 			print_result_diff(&state->run_config, result);
 		}
