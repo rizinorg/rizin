@@ -148,6 +148,9 @@ RZ_API RzCmdStatus rz_core_rop_search(RZ_NONNULL RzCore *core, RZ_NONNULL RzRopS
 RZ_API RzCmdStatus rz_core_rop_gadget_info(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_OWN RzRopSearchContext *context);
 RZ_API bool rz_core_rop_analyze_constraint(const RZ_NONNULL RzCore *core, const RZ_NONNULL char *str,
 	RZ_NONNULL RZ_OUT RzRopConstraint *rop_constraint);
+RZ_API RZ_OWN RzPVector /*<RzRopConstraint *>*/ *rop_constraint_map_parse(const RZ_NONNULL RzCore *core, int argc, const char **argv);
+RZ_API bool rz_core_handle_rop_request_type(RzCore *core, RzRopSearchContext *context, RzList /*<RzCoreAsmHit *>*/ *hitlist);
+RZ_API RZ_NULLABLE RZ_OWN RzList /*<char *>*/ *rz_core_rop_handle_grep_args(RZ_NULLABLE const char *greparg, const bool regexp);
 
 // ROP Search Context APIs
 RZ_API RZ_OWN RzRopSearchContext *rz_core_rop_search_context_new(RZ_NONNULL const RzCore *core, RZ_NULLABLE const char *greparg, bool regexp,
@@ -157,12 +160,13 @@ RZ_API void rz_core_rop_search_context_free(RZ_NULLABLE RzRopSearchContext *cont
 // ROP Constraint APIs
 RZ_API void rz_core_rop_constraint_free(RZ_NULLABLE void *data);
 RZ_API RZ_OWN RzPVector /*<RzRopConstraint *>*/ *rz_core_rop_constraint_map_new(void);
+RZ_API RZ_OWN RzRopConstraint *rop_constraint_parse_args(const RZ_NONNULL RzCore *core, const RZ_NONNULL char *token);
 
 // ROP Gadget Info APIs
 RZ_API void rz_core_rop_gadget_info_free(RZ_NULLABLE RzRopGadgetInfo *gadget_info);
 RZ_API void rz_core_rop_gadget_info_add_register(const RZ_NONNULL RZ_OUT RzRopGadgetInfo *gadget_info,
 	RZ_NONNULL RzRopRegInfo *reg_info, bool is_dependency);
-RZ_API bool rz_core_rop_gadget_info_update_register(const RZ_INOUT RzRopGadgetInfo *gadget_info, RZ_INOUT RZ_NONNULL RzRopRegInfo *new_reg_info);
+RZ_API void rz_core_rop_gadget_info_update_register(const RZ_INOUT RzRopGadgetInfo *gadget_info, RZ_INOUT RZ_NONNULL RzRopRegInfo *new_reg_info);
 RZ_API RZ_OWN RzRopGadgetInfo *rz_core_rop_gadget_info_new(ut64 address);
 RZ_API RZ_OWN RzRopRegInfo *rz_core_rop_reg_info_dup(RZ_BORROW RZ_NONNULL RzRopRegInfo *src);
 RZ_API void rz_core_rop_reg_info_free(RZ_NULLABLE RzRopRegInfo *reg_info);

@@ -289,7 +289,7 @@ static bool parse_reg_op_const(const RzCore *core, const char *str, RzRopConstra
 RZ_API RZ_OWN RzRopSearchContext *rz_core_rop_search_context_new(RZ_NONNULL const RzCore *core, RZ_NULLABLE const char *greparg, const bool regexp,
 	const RzRopRequestMask mask, RZ_NONNULL RZ_BORROW RzCmdStateOutput *state) {
 
-	rz_return_val_if_fail(core && state, NULL);
+	rz_return_val_if_fail(core, NULL);
 	RzRopSearchContext *context = RZ_NEW0(RzRopSearchContext);
 	if (!context) {
 		return NULL;
@@ -413,7 +413,17 @@ RZ_API bool rz_core_rop_analyze_constraint(const RZ_NONNULL RzCore *core, const 
 		parse_reg_op_reg(core, str, rop_constraint);
 }
 
-static RzRopConstraint *rop_constraint_parse_args(const RzCore *core, const char *token) {
+/**
+ * \brief Parse the given token into a rop constraint
+ * \param core Pointer to the RzCore object.
+ * \param token Input string in the form `key=value`(Eg: rbx=rdx, r12=1)`
+ * \return \p RzRopConstraint if parsing is successful else NULL
+ *
+
+ * The function parses the given token and parses according to the predefined ROP constriant type
+ */
+RZ_API RZ_OWN RzRopConstraint *rop_constraint_parse_args(const RZ_NONNULL RzCore *core, const RZ_NONNULL char *token) {
+	rz_return_val_if_fail(core && token, NULL);
 	RzRopConstraint *rop_constraint = RZ_NEW0(RzRopConstraint);
 	RzList *l = rz_str_split_duplist_n(token, "=", 1, false);
 	char *key = rz_list_get_n(l, 0);
