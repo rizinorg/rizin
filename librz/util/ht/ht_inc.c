@@ -531,7 +531,7 @@ RZ_API ut32 Ht_(size)(const RZ_NONNULL HtName_(Ht) *ht) {
  *
  * \param it The next value or NULL if iteration terminated. The value is mutable.
  */
-RZ_API VALUE_TYPE *Ht_(iter_next_mut)(RzIterator *it) {
+RZ_API RZ_BORROW VALUE_TYPE *Ht_(iter_next_mut)(RzIterator *it) {
 	rz_return_val_if_fail(it, NULL);
 
 	HT_(IterMutState) *state = it->u;
@@ -629,7 +629,7 @@ RZ_API const KEY_TYPE *Ht_(iter_next_key)(RzIterator *it) {
 	return NULL;
 }
 
-RZ_API HT_(IterMutState) *Ht_(new_iter_mut_state)(RZ_NONNULL HtName_(Ht) *ht) {
+RZ_API RZ_OWN HT_(IterMutState) *Ht_(new_iter_mut_state)(RZ_NONNULL HtName_(Ht) *ht) {
 	rz_return_val_if_fail(ht, NULL);
 	HT_(IterMutState) *state = RZ_NEW0(HT_(IterMutState));
 	rz_return_val_if_fail(state, NULL);
@@ -637,7 +637,7 @@ RZ_API HT_(IterMutState) *Ht_(new_iter_mut_state)(RZ_NONNULL HtName_(Ht) *ht) {
 	return state;
 }
 
-RZ_API HT_(IterState) *Ht_(new_iter_state)(const RZ_NONNULL HtName_(Ht) *ht) {
+RZ_API RZ_OWN HT_(IterState) *Ht_(new_iter_state)(const RZ_NONNULL HtName_(Ht) *ht) {
 	rz_return_val_if_fail(ht, NULL);
 	HT_(IterState) *state = RZ_NEW0(HT_(IterState));
 	rz_return_val_if_fail(state, NULL);
@@ -652,7 +652,7 @@ RZ_API void Ht_(free_iter_mut_state)(HT_(IterMutState) *state) {
 	free(state);
 }
 
-RZ_API void Ht_(free_iter_state)(HT_(IterState) *state) {
+RZ_API void Ht_(free_iter_state)(RZ_NULLABLE HT_(IterState) *state) {
 	if (!state) {
 		return;
 	}
