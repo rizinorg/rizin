@@ -4,6 +4,7 @@
 // SPDX-FileCopyrightText: 2024 pelijah
 // SPDX-License-Identifier: BSD-3-Clause
 
+#include <rz_util/rz_log.h>
 #include <rz_util/rz_assert.h>
 #include <rz_util/rz_iterator.h>
 #include <rz_util/rz_str.h>
@@ -669,7 +670,10 @@ RZ_API void Ht_(free_iter_state)(RZ_NULLABLE HT_(IterState) *state) {
 RZ_API RZ_OWN RzIterator /* <HtName_(Ht)> */ *Ht_(as_iter_mut)(RZ_NONNULL HtName_(Ht) *ht) {
 	rz_return_val_if_fail(ht, NULL);
 	HT_(IterMutState) *state = Ht_(new_iter_mut_state)(ht);
-	rz_return_val_if_fail(state, NULL);
+	if (!state) {
+		RZ_LOG_ERROR("Could not allocate a new ht_iter state.\n");
+		return NULL;
+	}
 
 	RzIterator *iter = rz_iterator_new((rz_iterator_next_cb)Ht_(iter_next_mut), NULL, (rz_iterator_free_cb)Ht_(free_iter_mut_state), state);
 	return iter;
