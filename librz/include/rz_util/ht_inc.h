@@ -216,6 +216,7 @@ RZ_API HtRetCode Ht_(insert_kv_ex)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(Kv
 
 RZ_API RZ_OWN HT_(IterMutState) *Ht_(new_iter_mut_state)(RZ_NONNULL HtName_(Ht) *ht);
 RZ_API RZ_OWN HT_(IterState) *Ht_(new_iter_state)(const RZ_NONNULL HtName_(Ht) *ht);
+RZ_API void Ht_(free_iter_mut_state)(RZ_NULLABLE HT_(IterMutState) *state);
 RZ_API void Ht_(free_iter_state)(RZ_NULLABLE HT_(IterState) *state);
 
 RZ_API RZ_BORROW VALUE_TYPE *Ht_(iter_next_mut)(RzIterator *it);
