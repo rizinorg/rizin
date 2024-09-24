@@ -203,6 +203,9 @@ rz_core_wrap.cxx:32103:61: error: assigning to 'RzDebugReasonType' from incompat
 int sum = 0; // set sum to 0
 ```
 
+* If you want to iterate over values of your struct, implement `RzIterator *mystruct_as_iter()` and `RzIterator *mystruct_as_iter_mut()` for them.
+  See `rz_iterator.h` for details about the iterator.
+
 * If you need bitmaps, do not shift and OR the bits manually on `ut32`. Use bit vectors from `rz_bitvector.h` instead.
 
 ### Shell Scripts

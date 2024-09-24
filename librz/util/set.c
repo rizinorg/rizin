@@ -37,6 +37,16 @@ RZ_API void rz_set_s_delete(RZ_NONNULL RzSetS *set, const char *str) {
 	ht_sp_delete(set, str);
 }
 
+/**
+ * \brief Returns an iterator over the \p set with immutable elements.
+ *
+ * \return Iterator yielding immutable elements.
+ */
+RZ_API RzIterator /* <RzSetS> */ *rz_set_s_as_iter(const RZ_NONNULL RzSetS *set) {
+	rz_return_val_if_fail(set, NULL);
+	return ht_sp_as_iter_keys((const HtSP *)set);
+}
+
 static bool push_to_pvector(void *user, const char *k, RZ_UNUSED const void *v) {
 	RzPVector *vec = (RzPVector *)user;
 	return !!rz_pvector_push(vec, (void *)k);
@@ -63,6 +73,14 @@ RZ_API RZ_OWN RzPVector /*<char *>*/ *rz_set_s_to_vector(RZ_NONNULL RzSetS *set)
 
 RZ_API void rz_set_s_free(RZ_NULLABLE RzSetS *set) {
 	ht_sp_free((HtSP *)set);
+}
+
+/**
+ * \brief Return number of elements saved in the set.
+ */
+RZ_API ut32 rz_set_s_size(const RZ_NONNULL RzSetS *set) {
+	rz_return_val_if_fail(set, 0);
+	return ht_sp_size((HtSP *)set);
 }
 
 /**
@@ -98,4 +116,22 @@ RZ_API void rz_set_u_delete(RZ_NONNULL RzSetU *set, ut64 u) {
 
 RZ_API void rz_set_u_free(RZ_NULLABLE RzSetU *set) {
 	ht_up_free((HtUP *)set);
+}
+
+/**
+ * \brief Return number of elements saved in the set.
+ */
+RZ_API ut32 rz_set_u_size(const RZ_NONNULL RzSetU *set) {
+	rz_return_val_if_fail(set, 0);
+	return ht_up_size((HtUP *)set);
+}
+
+/**
+ * \brief Returns an iterator over the \p set with immutable elements.
+ *
+ * \return Iterator yielding immutable elements.
+ */
+RZ_API RzIterator /* <RzSetU> */ *rz_set_u_as_iter(const RZ_NONNULL RzSetU *set) {
+	rz_return_val_if_fail(set, NULL);
+	return ht_up_as_iter_keys((const HtUP *)set);
 }

@@ -4,6 +4,8 @@
 // SPDX-FileCopyrightText: 2024 pelijah
 // SPDX-License-Identifier: BSD-3-Clause
 
+#include <rz_util/rz_iterator.h>
+
 #ifndef HT_TYPE
 #error HT_TYPE should be defined before including this header
 #endif
@@ -166,6 +168,22 @@ typedef struct Ht_(t) {
 }
 HtName_(Ht);
 
+typedef struct Ht_(iter_mut_t) {
+	HtName_(Ht) *ht; ///< The hash table to iterate over.
+	ut32 ti; ///< Table index
+	ut32 bi; ///< Bucket index
+	HT_(Kv) *kv; ///< Current Key-Value-pair.
+}
+HT_(IterMutState);
+
+typedef struct Ht_(iter_t) {
+	const HtName_(Ht) *ht; ///< The hash table to iterate over.
+	ut32 ti; ///< Table index
+	ut32 bi; ///< Bucket index
+	const HT_(Kv) *kv; ///< Current Key-Value-pair.
+}
+HT_(IterState);
+
 // Create a new Ht with the provided Options
 RZ_API RZ_OWN HtName_(Ht) *Ht_(new_opt)(RZ_NONNULL HT_(Options) *opt);
 // Create a new Ht with the provided Options and initial size
@@ -190,6 +208,21 @@ RZ_API VALUE_TYPE Ht_(find)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, RZ_N
 // NOTE: cb can delete the current element, but it should be avoided
 RZ_API void Ht_(foreach)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(ForeachCallback) cb, RZ_NULLABLE void *user);
 
+RZ_API ut32 Ht_(size)(const RZ_NONNULL HtName_(Ht) *ht);
+
 RZ_API RZ_BORROW HT_(Kv) *Ht_(find_kv)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, RZ_NULLABLE bool *found);
 RZ_API bool Ht_(insert_kv)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(Kv) *kv, bool update);
 RZ_API HtRetCode Ht_(insert_kv_ex)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(Kv) *kv, bool update, RZ_OUT RZ_NULLABLE HT_(Kv) **out_kv);
+
+RZ_API RZ_OWN HT_(IterMutState) *Ht_(new_iter_mut_state)(RZ_NONNULL HtName_(Ht) *ht);
+RZ_API RZ_OWN HT_(IterState) *Ht_(new_iter_state)(const RZ_NONNULL HtName_(Ht) *ht);
+RZ_API void Ht_(free_iter_mut_state)(RZ_NULLABLE HT_(IterMutState) *state);
+RZ_API void Ht_(free_iter_state)(RZ_NULLABLE HT_(IterState) *state);
+
+RZ_API RZ_BORROW VALUE_TYPE *Ht_(iter_next_mut)(RzIterator *it);
+RZ_API const VALUE_TYPE *Ht_(iter_next)(RzIterator *it);
+RZ_API const KEY_TYPE *Ht_(iter_next_key)(RzIterator *it);
+
+RZ_API RZ_OWN RzIterator /* <HtName_(Ht)> */ *Ht_(as_iter_mut)(RZ_NONNULL HtName_(Ht) *ht);
+RZ_API RZ_OWN RzIterator /* <HtName_(Ht)> */ *Ht_(as_iter)(const RZ_NONNULL HtName_(Ht) *ht);
+RZ_API RZ_OWN RzIterator /* <HtName_(Ht)> */ *Ht_(as_iter_keys)(const RZ_NONNULL HtName_(Ht) *ht);
