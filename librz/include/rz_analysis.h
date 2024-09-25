@@ -1743,7 +1743,7 @@ RZ_API bool rz_analysis_add_device_peripheral_map(RzBinObject *o, RzAnalysis *an
 
 /* fcn.c */
 RZ_API ut32 rz_analysis_function_cost(RzAnalysisFunction *fcn);
-RZ_API int rz_analysis_function_count_edges(const RzAnalysisFunction *fcn, RZ_NULLABLE int *ebbs);
+RZ_API ut32 rz_analysis_function_count_edges(const RzAnalysisFunction *fcn, RZ_NULLABLE int *ebbs);
 
 // Use rz_analysis_get_functions_in¿() instead
 RZ_DEPRECATE RZ_API RzAnalysisFunction *rz_analysis_get_fcn_in(RzAnalysis *analysis, ut64 addr, int type);
@@ -1764,16 +1764,16 @@ RZ_API void rz_analysis_function_update_analysis(RzAnalysisFunction *fcn);
 RZ_API bool rz_analysis_task_item_new(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzVector /*<RzAnalysisTaskItem>*/ *tasks, RZ_NONNULL RzAnalysisFunction *fcn, RZ_NULLABLE RzAnalysisBlock *block, ut64 address, RzStackAddr sp);
 RZ_API int rz_analysis_run_tasks(RZ_NONNULL RzVector /*<RzAnalysisTaskItem>*/ *tasks);
 
-RZ_API int rz_analysis_function_complexity(RzAnalysisFunction *fcn);
-RZ_API int rz_analysis_function_loops(RzAnalysisFunction *fcn);
+RZ_API ut32 rz_analysis_function_complexity(RzAnalysisFunction *fcn);
+RZ_API ut32 rz_analysis_function_loops(RzAnalysisFunction *fcn);
 RZ_API void rz_analysis_trim_jmprefs(RzAnalysis *analysis, RzAnalysisFunction *fcn);
 RZ_API void rz_analysis_del_jmprefs(RzAnalysis *analysis, RzAnalysisFunction *fcn);
-RZ_API char *rz_analysis_function_get_json(RzAnalysisFunction *function);
+RZ_API RZ_OWN char *rz_analysis_function_get_json(RzAnalysisFunction *function);
 RZ_API RzAnalysisFunction *rz_analysis_fcn_next(RzAnalysis *analysis, ut64 addr);
 RZ_API RZ_OWN char *rz_analysis_function_get_signature(RZ_NONNULL RzAnalysisFunction *function);
 RZ_API void rz_analysis_function_set_type(RzAnalysis *a, RZ_NONNULL RzAnalysisFunction *f, RZ_NONNULL RzCallable *callable);
 RZ_API bool rz_analysis_function_set_type_str(RzAnalysis *a, RZ_NONNULL RzAnalysisFunction *f, RZ_NONNULL const char *sig);
-RZ_API int rz_analysis_fcn_count(RzAnalysis *a, ut64 from, ut64 to);
+RZ_API ut32 rz_analysis_fcn_count(RzAnalysis *a, ut64 from, ut64 to);
 RZ_API RzAnalysisBlock *rz_analysis_fcn_bbget_in(const RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 addr);
 RZ_API RzAnalysisBlock *rz_analysis_fcn_bbget_at(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 addr);
 RZ_API int rz_analysis_function_resize(RzAnalysisFunction *fcn, int newsize);

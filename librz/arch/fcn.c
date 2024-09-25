@@ -1775,7 +1775,7 @@ RZ_API bool rz_analysis_fcn_add_bb(RzAnalysis *a, RzAnalysisFunction *fcn, ut64 
 /**
  * \brief Returns the amount of loops located in the \p fcn function
  */
-RZ_API int rz_analysis_function_loops(RzAnalysisFunction *fcn) {
+RZ_API ut32 rz_analysis_function_loops(RzAnalysisFunction *fcn) {
 	RzAnalysisBlock *bb;
 	ut32 loops = 0;
 
@@ -1804,9 +1804,9 @@ RZ_API int rz_analysis_function_loops(RzAnalysisFunction *fcn) {
  * P is the number of connected components (exit nodes).
  *
  */
-RZ_API int rz_analysis_function_complexity(RzAnalysisFunction *fcn) {
+RZ_API ut32 rz_analysis_function_complexity(RzAnalysisFunction *fcn) {
 	RzAnalysis *analysis = fcn->analysis;
-	int E = 0, N = 0, P = 0;
+	ut32 E = 0, N = 0, P = 0;
 	RzAnalysisBlock *bb;
 
 	void **it;
@@ -1851,7 +1851,7 @@ RZ_API int rz_analysis_function_get_arg_count(RzAnalysis *analysis, RzAnalysisFu
 }
 
 // tfj and afsj call this function
-RZ_API char *rz_analysis_function_get_json(RzAnalysisFunction *function) {
+RZ_API RZ_OWN char *rz_analysis_function_get_json(RzAnalysisFunction *function) {
 	char *tmp = NULL;
 	RzAnalysis *a = function->analysis;
 	PJ *pj = pj_new();
@@ -2017,8 +2017,8 @@ RZ_API RzAnalysisFunction *rz_analysis_fcn_next(RzAnalysis *analysis, ut64 addr)
 	return closer;
 }
 
-RZ_API int rz_analysis_fcn_count(RzAnalysis *analysis, ut64 from, ut64 to) {
-	int n = 0;
+RZ_API ut32 rz_analysis_fcn_count(RzAnalysis *analysis, ut64 from, ut64 to) {
+	ut32 n = 0;
 	RzAnalysisFunction *fcni;
 	RzListIter *iter;
 	rz_list_foreach (analysis->fcns, iter, fcni) {
@@ -2105,10 +2105,10 @@ RZ_API ut32 rz_analysis_function_cost(RzAnalysisFunction *fcn) {
 	return totalCycles;
 }
 
-RZ_API int rz_analysis_function_count_edges(const RzAnalysisFunction *fcn, RZ_NULLABLE int *ebbs) {
+RZ_API ut32 rz_analysis_function_count_edges(const RzAnalysisFunction *fcn, RZ_NULLABLE int *ebbs) {
 	rz_return_val_if_fail(fcn, 0);
 	RzAnalysisBlock *bb;
-	int edges = 0;
+	ut32 edges = 0;
 	if (ebbs) {
 		*ebbs = 0;
 	}
