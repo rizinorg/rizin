@@ -41,13 +41,16 @@ RZ_IPI int rz_core_visual_view_rop(RzCore *core) {
 		return false;
 	}
 	RzRopSearchContext *context = rz_core_rop_search_context_new(core, linestr, false, RZ_ROP_GADGET_PRINT, &state);
+	if (!context) {
+		return false;
+	}
 	context->ret_val = true;
 	if (rz_core_rop_search(core, context) != RZ_CMD_STATUS_OK) {
 		rz_core_rop_search_context_free(context);
 		return false;
 	}
 	char *ropstr = rz_strbuf_get(context->buf);
-	ropstr = strdup(ropstr);
+	ropstr = rz_str_dup(ropstr);
 	rz_cmd_state_output_fini(&state);
 	RzList *rops = rz_str_split_list(ropstr, "\n", 0);
 	if (!rops) {
@@ -208,7 +211,7 @@ RZ_IPI int rz_core_visual_view_rop(RzCore *core) {
 					status = false;
 					goto exit;
 				}
-				RzRopSearchContext *context = rz_core_rop_search_context_new(core, linestr, false, RZ_ROP_GADGET_PRINT, &state);
+				context = rz_core_rop_search_context_new(core, linestr, false, RZ_ROP_GADGET_PRINT, &state);
 				context->ret_val = true;
 				if (rz_core_rop_search(core, context) != RZ_CMD_STATUS_OK) {
 					rz_core_rop_search_context_free(context);
