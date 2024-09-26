@@ -10,6 +10,12 @@
 
 CAPSTONE_DEFINE_PLUGIN_FUNCTIONS(sysz);
 
+#if CS_NEXT_VERSION < 6
+#define SYSTEMZ_ARCH CS_ARCH_SYSZ
+#else
+#define SYSTEMZ_ARCH CS_ARCH_SYSTEMZ
+#endif
+
 static int sysz_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	CapstoneContext *ctx = (CapstoneContext *)a->plugin_data;
 	int n, ret;
@@ -23,7 +29,7 @@ static int sysz_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		ctx->omode = -1;
 	}
 	if (!ctx->handle) {
-		ret = cs_open(CS_ARCH_SYSZ, mode, &ctx->handle);
+		ret = cs_open(SYSTEMZ_ARCH, mode, &ctx->handle);
 		if (ret) {
 			return -1;
 		}
