@@ -2887,7 +2887,6 @@ analysis.jmp.indir=false
 analysis.jmp.mid=true
 analysis.jmp.ref=true
 analysis.jmp.retpoline=true
-analysis.jmp.tailcall=0
 analysis.jmp.tbl=true
 analysis.jmp.tblmax=512
 analysis.limits=false

@@ -539,6 +539,17 @@ static inline void set_bb_branches(RZ_OUT RzAnalysisBlock *bb, const ut64 jump, 
 }
 
 /**
+ * \brief Peaks into the memory at the jump address.
+ * If it finds a function prelude, at it it returns true.
+ * False otherwise.
+ */
+static inline bool jumps_to_prelude(RzAnalysis *analysis, ut64 jmp_addr) {
+	ut8 buf[32] = { 0 };
+	(void)analysis->iob.read_at(analysis->iob.io, jmp_addr, (ut8 *)buf, sizeof(buf));
+	return rz_analysis_is_prelude(analysis, buf, sizeof(buf));
+}
+
+/**
  * \brief Analyses the given task item \p item for branches.
  *
  * Analysis starts for all instructions from \p item->start_address. If a branch is
@@ -1092,25 +1103,20 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			if (!overlapped) {
 				set_bb_branches(bb, op.jump, UT64_MAX);
 			}
+			if (jumps_to_prelude(analysis, op.jump) || op.type & RZ_ANALYSIS_OP_TYPE_TAIL) {
+				rz_analysis_xrefs_set(analysis, op.addr, op.jump, RZ_ANALYSIS_XREF_TYPE_CALL);
+				if (is_hexagon) {
+					// After the jump should always follow a dealloc instruction.
+					// It is not included in the block, if we do RET_END here.
+					break;
+				}
+				gotoBeach(RZ_ANALYSIS_RET_END);
+			}
+
 			rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.jump, sp);
 			if (continue_after_jump && (is_hexagon || (is_dalvik && op.cond == RZ_TYPE_COND_EXCEPTION))) {
 				rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.addr + op.size, sp);
 				gotoBeach(RZ_ANALYSIS_RET_BRANCH);
-			}
-			int tc = analysis->opt.tailcall;
-			if (tc) {
-				int diff = op.jump - op.addr;
-				if (tc < 0) {
-					ut8 buf[32];
-					(void)analysis->iob.read_at(analysis->iob.io, op.jump, (ut8 *)buf, sizeof(buf));
-					if (rz_analysis_is_prelude(analysis, buf, sizeof(buf))) {
-						rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.jump, sp);
-					}
-				} else if (RZ_ABS(diff) > tc) {
-					(void)rz_analysis_xrefs_set(analysis, op.addr, op.jump, RZ_ANALYSIS_XREF_TYPE_CALL);
-					rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.jump, sp);
-					gotoBeach(RZ_ANALYSIS_RET_END);
-				}
 			}
 			goto beach;
 			break;

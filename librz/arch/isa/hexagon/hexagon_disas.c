@@ -34293,5 +34293,6 @@ int hexagon_disasm_instruction(HexState *state, const ut32 hi_u32, RZ_INOUT HexI
 		snprintf(hic->bin.insn->text_infix, sizeof(hic->bin.insn->text_infix), "invalid");
 	}
 	hex_set_hic_text(hic);
+	hexagon_pkt_mark_tail_calls(pkt);
 	return 4;
 }
