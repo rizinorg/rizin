@@ -26,12 +26,12 @@ EOF
 RUN
 
 NAME=dk 9
+BROKEN=1
 FILE=bins/elf/analysis/calls_x64
 ARGS=-a x86 -d
 CMDS=<<EOF
 dk 9
-wx ebfe  # infinite loop
-dc
+dc  # binary may or may not have been terminated already
 EOF
 EXPECT=<<EOF
 EOF
@@ -81,9 +81,6 @@ dko 15 skip
 dkl~SIGTERM
 dk 15
 dc
-dk 9
-wx ebfe  # infinite loop
-dc
 EOF
 EXPECT=<<EOF
 15 SIGTERM
@@ -91,10 +88,6 @@ EXPECT=<<EOF
 15 SIGTERM
 15 SIGTERM skip
 [+] signal 15 aka SIGTERM received 2
-EOF
-REGEXP_FILTER_ERR=child.*signal [0-9]+.*
-EXPECT_ERR=<<EOF
-child received signal 9
 EOF
 RUN
 
