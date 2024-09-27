@@ -6435,16 +6435,7 @@ RZ_API int rz_core_disasm_pde(RzCore *core, int nb_opcodes, RzCmdStateOutput *st
 		rz_analysis_op_init(&op);
 		int ret = rz_analysis_op(core->analysis, &op, op_addr, buf + block_sz, read_len, RZ_ANALYSIS_OP_MASK_ESIL);
 		const bool invalid_instr = ret < 1 || op.size < 1 || op.type == RZ_ANALYSIS_OP_TYPE_ILL;
-		bool end_of_block = false;
-		switch (op.type & RZ_ANALYSIS_OP_TYPE_MASK & ~RZ_ANALYSIS_OP_HINT_MASK) {
-		case RZ_ANALYSIS_OP_TYPE_JMP:
-		case RZ_ANALYSIS_OP_TYPE_UJMP:
-		case RZ_ANALYSIS_OP_TYPE_CALL:
-		case RZ_ANALYSIS_OP_TYPE_UCALL:
-		case RZ_ANALYSIS_OP_TYPE_RET:
-			end_of_block = true;
-			break;
-		}
+		bool end_of_block = rz_analysis_op_is_eob(&op);
 		if (RZ_STR_ISNOTEMPTY(strip) && strstr(strip, rz_analysis_optype_to_string(op.type))) {
 			i--;
 		} else {

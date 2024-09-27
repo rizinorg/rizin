@@ -365,7 +365,7 @@ RZ_API char *rz_analysis_op_to_string(RzAnalysis *analysis, RzAnalysisOp *op) {
 		a1 = rz_str_dup("?");
 	}
 
-	switch (op->type) {
+	switch (op->type & RZ_ANALYSIS_OP_TYPE_MASK) {
 	case RZ_ANALYSIS_OP_TYPE_MOV:
 		snprintf(ret, sizeof(ret), "%s = %s", r0, a0);
 		break;
