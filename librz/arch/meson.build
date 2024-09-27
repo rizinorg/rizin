@@ -307,17 +307,20 @@ if capstone_dep.version() == 'next' or capstone_dep.version().split('.')[0].to_i
   arch_plugins_list += [
     'riscv_cs',
     'tricore_cs',
+    'xtensa_cs',
   ]
 
   # plugins sources
   arch_plugin_sources += [
     'p/arch_riscv_cs.c',
     'p/arch_tricore_cs.c',
+    'p/arch_xtensa_cs.c',
   ]
 
   # isa sources
   arch_isa_sources += [
     'isa/tricore/tricore_il.c',
+    'isa/xtensa/xtensa.c',
   ]
 endif
 
