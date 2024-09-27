@@ -29,8 +29,8 @@ NAME=dk 9
 FILE=bins/elf/analysis/calls_x64
 ARGS=-a x86 -d
 CMDS=<<EOF
-dk 9
 wx ebfe @ main  # infinite loop
+dk 9
 dc
 EOF
 EXPECT=<<EOF
@@ -78,8 +78,8 @@ dko 15 reset
 dkl~SIGTERM
 dko 15 skip
 dkl~SIGTERM
-dk 15
 wx ebfe @ main  # infinite loop
+dk 15
 dc
 dk 9
 dc
