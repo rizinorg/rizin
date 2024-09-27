@@ -959,7 +959,7 @@ EXPECT=<<EOF
 0x00490692 str.name:
 0x0049071e str.tail:
 0x00490780 str.expected__foo__or__bar__subcommands
-20633
+20629
 EOF
 RUN
 
@@ -989,6 +989,6 @@ EXPECT=<<EOF
 0x00487a12 str.name:
 0x00487a9e str.tail:
 0x00487b00 str.expected__foo__or__bar__subcommands
-3616
+3612
 EOF
 RUN
