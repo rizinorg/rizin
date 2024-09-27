@@ -549,6 +549,12 @@ static inline bool jumps_to_prelude(RzAnalysis *analysis, ut64 jmp_addr) {
 	return rz_analysis_is_prelude(analysis, buf, sizeof(buf));
 }
 
+static inline bool jump_leaves_mapped_mem(RzAnalysis *analysis, ut64 insn_addr, ut64 jump_target) {
+	rz_return_val_if_fail(analysis, false);
+	RzIOMap *map = analysis->iob.map_get(analysis->iob.io, insn_addr);
+	return (jump_target < map->itv.addr || jump_target >= map->itv.addr + map->itv.size);
+}
+
 /**
  * \brief Analyses the given task item \p item for branches.
  *
@@ -1082,12 +1088,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 				gotoBeach(RZ_ANALYSIS_RET_END);
 			}
 			{
-				bool must_eob = true;
-				RzIOMap *map = analysis->iob.map_get(analysis->iob.io, addr);
-				if (map) {
-					must_eob = (op.jump < map->itv.addr || op.jump >= map->itv.addr + map->itv.size);
-				}
-				if (must_eob) {
+				if (jump_leaves_mapped_mem(analysis, addr, op.jump)) {
 					if (continue_after_jump && is_hexagon) {
 						rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.jump, sp);
 						rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.addr + op.size, sp);
