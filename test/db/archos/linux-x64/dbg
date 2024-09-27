@@ -30,7 +30,7 @@ FILE=bins/elf/analysis/calls_x64
 ARGS=-a x86 -d
 CMDS=<<EOF
 dk 9
-wx ebfe  # infinite loop
+wx ebfe @ main  # infinite loop
 dc
 EOF
 EXPECT=<<EOF
@@ -79,9 +79,9 @@ dkl~SIGTERM
 dko 15 skip
 dkl~SIGTERM
 dk 15
+wx ebfe @ main  # infinite loop
 dc
 dk 9
-wx ebfe  # infinite loop
 dc
 EOF
 EXPECT=<<EOF
