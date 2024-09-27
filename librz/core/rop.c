@@ -453,22 +453,22 @@ RZ_API RZ_OWN RzRopRegInfo *rz_core_rop_reg_info_dup(RZ_BORROW RZ_NONNULL RzRopR
  * \param gadget_info Pointer to the RzRopGadgetInfo
  * \param name Register to filter the dependencies
  *
- * \return List of register rop information
+ * \return Pvector of register rop information
  */
-RZ_API RZ_OWN RzList /*<RzRopRegInfo *>*/ *rz_core_rop_reg_info_find(const RZ_NONNULL RzRopGadgetInfo *gadget_info, const RZ_NONNULL char *name) {
+RZ_API RZ_OWN RzPVector /*<RzRopRegInfo *>*/ *rz_core_rop_reg_info_find(const RZ_NONNULL RzRopGadgetInfo *gadget_info, const RZ_NONNULL char *name) {
 	rz_return_val_if_fail(gadget_info && name, NULL);
-	RzList * /*<RzRopRegInfo *>*/ reg_info_list = rz_list_new();
-	if (!reg_info_list) {
+	RzPVector * /*<RzRopRegInfo *>*/ reg_info_v = rz_pvector_new((RzPVectorFree)rz_core_rop_reg_info_free);
+	if (!reg_info_v) {
 		return NULL;
 	}
 	RzListIter *iter;
 	RzRopRegInfo *reg_info;
 	rz_list_foreach (gadget_info->dependencies, iter, reg_info) {
 		if (RZ_STR_EQ(reg_info->name, name)) {
-			rz_list_push(reg_info_list, reg_info);
+			rz_pvector_push(reg_info_v, reg_info);
 		}
 	}
-	return reg_info_list;
+	return reg_info_v;
 }
 
 /**
@@ -1026,6 +1026,10 @@ static bool print_rop(const RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, 
 		if (!state->d.pj) {
 			break;
 		}
+		pj_end(state->d.pj);
+		if (context->ret_val) {
+			break;
+		}
 		if (hit) {
 			pj_kn(state->d.pj, "retaddr", hit->addr);
 			pj_ki(state->d.pj, "size", size);
@@ -1039,7 +1043,6 @@ static bool print_rop(const RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, 
 		}
 		rz_cons_newline();
 		break;
-		// fallthrough
 	case RZ_OUTPUT_MODE_STANDARD:
 		if (hit) {
 			rz_cons_printf("Gadget size: %d\n", (int)size);
@@ -1579,7 +1582,7 @@ static int handle_rop_search_address(RzCore *core, RzRopSearchContext *context, 
  * filters results based on the grep argument and request mask. Outputs results to
  * the provided state object.
  */
-RZ_API RzCmdStatus rz_core_rop_search(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW RzRopSearchContext *context) {
+RZ_API RzCmdStatus rz_core_rop_search(RZ_NONNULL RzCore *core, RZ_NONNULL RzRopSearchContext *context) {
 	rz_return_val_if_fail(core && core->search && context, RZ_CMD_STATUS_ERROR);
 
 	RzInterval search_itv = { 0 };
@@ -1695,15 +1698,15 @@ RZ_API void rz_core_rop_constraint_free(RZ_NULLABLE void *data) {
 }
 
 /**
- * \brief Create a new list of RzRopConstraint objects.
+ * \brief Create a pvector of RzRopConstraint objects.
  * \return Pointer to the newly created list.
  *
  * Creates a new RzList for RzRopConstraint object.
  */
-RZ_API RZ_OWN RzPVector /*<RzRopConstraint *>*/ *rz_core_rop_constraint_map_new(void) {
-	RzPVector *list = rz_pvector_new((RzPVectorFree)rz_core_rop_constraint_free);
-	if (!list) {
+RZ_API RZ_OWN RzPVector /*<RzRopConstraint *>*/ *rz_core_rop_constraint_new(void) {
+	RzPVector *v = rz_pvector_new((RzPVectorFree)rz_core_rop_constraint_free);
+	if (!v) {
 		return NULL;
 	}
-	return list;
+	return v;
 }

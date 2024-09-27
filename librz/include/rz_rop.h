@@ -149,7 +149,7 @@ RZ_API RzCmdStatus rz_core_rop_gadget_info(RZ_NONNULL RzCore *core, RZ_NONNULL R
 RZ_API bool rz_core_rop_analyze_constraint(const RZ_NONNULL RzCore *core, const RZ_NONNULL char *str,
 	RZ_NONNULL RZ_OUT RzRopConstraint *rop_constraint);
 RZ_API RZ_OWN RzPVector /*<RzRopConstraint *>*/ *rop_constraint_map_parse(const RZ_NONNULL RzCore *core, int argc, const char **argv);
-RZ_API bool rz_core_handle_rop_request_type(RzCore *core, RzRopSearchContext *context, RzList /*<RzCoreAsmHit *>*/ *hitlist);
+RZ_API bool rz_core_handle_rop_request_type(RZ_NONNULL RzCore *core, RZ_NONNULL RzRopSearchContext *context, RZ_NONNULL RzList /*<RzCoreAsmHit *>*/ *hitlist);
 RZ_API RZ_NULLABLE RZ_OWN RzList /*<char *>*/ *rz_core_rop_handle_grep_args(RZ_NULLABLE const char *greparg, const bool regexp);
 
 // ROP Search Context APIs
@@ -159,7 +159,7 @@ RZ_API void rz_core_rop_search_context_free(RZ_NULLABLE RzRopSearchContext *cont
 
 // ROP Constraint APIs
 RZ_API void rz_core_rop_constraint_free(RZ_NULLABLE void *data);
-RZ_API RZ_OWN RzPVector /*<RzRopConstraint *>*/ *rz_core_rop_constraint_map_new(void);
+RZ_API RZ_OWN RzPVector /*<RzRopConstraint *>*/ *rz_core_rop_constraint_new(void);
 RZ_API RZ_OWN RzRopConstraint *rop_constraint_parse_args(const RZ_NONNULL RzCore *core, const RZ_NONNULL char *token);
 
 // ROP Gadget Info APIs
@@ -179,6 +179,7 @@ RZ_API RZ_OWN RzPVector /*<RzRopRegInfo *>*/ *rz_core_rop_gadget_get_reg_info_by
 RZ_API RZ_OWN RzPVector /*<RzRopRegInfo *>*/ *rz_core_rop_get_reg_info_by_reg_names(const RZ_NONNULL RzRopGadgetInfo *gadget_info, RZ_NONNULL const RzPVector /*<char *>*/ *registers);
 RZ_API bool rz_core_rop_gadget_reg_info_has_event(const RZ_NONNULL RzRopGadgetInfo *gadget_info,
 	RzRopEvent event, const RZ_NULLABLE char *reg_name);
+RZ_API RZ_OWN RzPVector /*<RzRopRegInfo *>*/ *rz_core_rop_reg_info_find(const RZ_NONNULL RzRopGadgetInfo *gadget_info, const RZ_NONNULL char *name);
 
 #ifdef __cplusplus
 }

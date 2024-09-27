@@ -287,7 +287,7 @@ static bool parse_reg_op_const(const RzCore *core, const char *str, RzRopConstra
  * This function allocates and initializes a new RzRopSearchContext object.
  */
 RZ_API RZ_OWN RzRopSearchContext *rz_core_rop_search_context_new(RZ_NONNULL const RzCore *core, RZ_NULLABLE const char *greparg, const bool regexp,
-	const RzRopRequestMask mask, RZ_NONNULL RZ_BORROW RzCmdStateOutput *state) {
+	const RzRopRequestMask mask, RZ_NULLABLE RZ_BORROW RzCmdStateOutput *state) {
 
 	rz_return_val_if_fail(core, NULL);
 	RzRopSearchContext *context = RZ_NEW0(RzRopSearchContext);
@@ -458,7 +458,7 @@ RZ_API RZ_OWN RzRopConstraint *rop_constraint_parse_args(const RZ_NONNULL RzCore
  */
 RZ_API RZ_OWN RzPVector /*<RzRopConstraint *>*/ *rop_constraint_map_parse(const RZ_NONNULL RzCore *core, const int argc, const char **argv) {
 	rz_return_val_if_fail(core && argv && RZ_STR_ISNOTEMPTY(argv[0]), false);
-	RzPVector *constr_map = rz_core_rop_constraint_map_new();
+	RzPVector *constr_map = rz_core_rop_constraint_new();
 	if (!constr_map) {
 		return NULL;
 	}
