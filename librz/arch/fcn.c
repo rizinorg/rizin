@@ -1105,6 +1105,8 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 				set_bb_branches(bb, op.jump, UT64_MAX);
 			}
 			if (jumps_to_prelude(analysis, op.jump) || op.type & RZ_ANALYSIS_OP_TYPE_TAIL) {
+				// Most archs don't set this flag. So we update it here.
+				op.type |= RZ_ANALYSIS_OP_TYPE_TAIL;
 				rz_analysis_xrefs_set(analysis, op.addr, op.jump, RZ_ANALYSIS_XREF_TYPE_CALL);
 				if (is_hexagon) {
 					// After the jump should always follow a dealloc instruction.
