@@ -4,8 +4,6 @@
 #ifndef AARCH64_META_MACROS_H
 #define AARCH64_META_MACROS_H
 
-#ifdef USE_SYS_CAPSTONE
-
 /// Macro for meta programming.
 /// Meant for projects using Capstone and need to support multiple
 /// versions of it.
@@ -14,7 +12,7 @@
 #if CS_NEXT_VERSION < 6
 #define CS_AARCH64(x) ARM64##x
 #else
-#define CS_AARCH64(x) AArch64##x
+#define CS_AARCH64(x) AARCH64##x
 #endif
 
 #if CS_NEXT_VERSION < 6
@@ -32,7 +30,7 @@
 #if CS_NEXT_VERSION < 6
 #define CS_AARCH64_VL_(x) ARM64_VAS_##x
 #else
-#define CS_AARCH64_VL_(x) AArch64Layout_VL_##x
+#define CS_AARCH64_VL_(x) AARCH64LAYOUT_VL_##x
 #endif
 
 #if CS_NEXT_VERSION < 6
@@ -65,5 +63,4 @@
 #define CS_aarch64_vas()      AArch64Layout_VectorLayout
 #endif
 
-#endif // USE_SYS_CAPSTONE
 #endif // AARCH64_META_MACROS_H

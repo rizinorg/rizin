@@ -93,8 +93,10 @@ static const char *shift_type_name(arm_shifter type) {
 		return "lsr_reg";
 	case ARM_SFT_ROR_REG:
 		return "ror_reg";
+#if CS_NEXT_VERSION < 6
 	case ARM_SFT_RRX_REG:
 		return "rrx_reg";
+#endif
 	default:
 		return "";
 	}
@@ -274,7 +276,9 @@ static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
 			case ARM_SFT_LSL_REG:
 			case ARM_SFT_LSR_REG:
 			case ARM_SFT_ROR_REG:
+#if CS_NEXT_VERSION < 6
 			case ARM_SFT_RRX_REG:
+#endif
 				pj_ks(pj, "type", shift_type_name(op->shift.type));
 				pj_ks(pj, "value", cs_reg_name(handle, op->shift.value));
 				break;
@@ -1944,7 +1948,7 @@ static void set_src_dst(RzAnalysisValue *val, RzReg *reg, csh *handle, cs_insn *
 			break;
 		case ARM_OP_MEM:
 			val->type = RZ_ANALYSIS_VAL_MEM;
-			val->mul = armop.mem.scale << armop.mem.lshift;
+			val->mul = armop.mem.scale << armop.shift.value;
 #if CS_NEXT_VERSION >= 6
 			val->delta = MEMDISP(x);
 #else
