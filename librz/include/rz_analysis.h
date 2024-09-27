@@ -1613,7 +1613,7 @@ RZ_API void rz_analysis_op_free(void *op);
 RZ_API void rz_analysis_op_init(RzAnalysisOp *op);
 RZ_API bool rz_analysis_op_fini(RzAnalysisOp *op);
 RZ_API int rz_analysis_op_reg_delta(RzAnalysis *analysis, ut64 addr, const char *name);
-RZ_API bool rz_analysis_op_is_eob(RzAnalysisOp *op);
+RZ_API bool rz_analysis_op_is_eob(const RzAnalysisOp *op);
 RZ_API RzList /*<RzAnalysisOp *>*/ *rz_analysis_op_list_new(void);
 RZ_API int rz_analysis_op(RZ_NONNULL RzAnalysis *analysis, RZ_OUT RzAnalysisOp *op, ut64 addr, const ut8 *data, ut64 len, RzAnalysisOpMask mask);
 RZ_API RzAnalysisOp *rz_analysis_op_hexstr(RzAnalysis *analysis, ut64 addr, const char *hexstr);
