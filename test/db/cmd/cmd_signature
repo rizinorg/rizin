@@ -132,7 +132,7 @@ EXPECT=<<EOF
 0x004015f0 581 flirt.libc_setup_tls
 0x00401930 339 flirt.assert_fail_base
 0x00401a90 80 flirt.assert_fail
-0x00401ae0 7517 flirt.dcgettext
+0x00401ae0 15 flirt.dcgettext
 0x00403840 672 flirt.nl_find_domain
 0x00403ae0 5366 flirt.nl_load_domain
 0x004054e0 601 flirt.cxa_finalize
@@ -146,7 +146,8 @@ EXPECT=<<EOF
 0x0040da90 7 flirt.umount
 0x0040dbb0 561 flirt.abort
 0x0040ddf0 1092 flirt.msort_with_tmp.part.0
-0x0040e6c0 1160 flirt.qsort
+0x0040e240 1152 flirt.qsort_r
+0x0040e6c0 8 flirt.qsort
 0x0040e6d0 212 flirt.getenv
 0x0040e7b0 636 flirt.run_exit_handlers
 0x0040ea30 32 flirt.exit
