@@ -4249,3 +4249,41 @@ EXPECT=<<EOF
 |      ,==< 0x08049432   -12            jmp   0x8049447
 EOF
 RUN
+
+NAME=tail call
+FILE=bins/pe/bcc1.ex
+CMDS=<<EOF
+af
+afb
+pdf
+EOF
+EXPECT=<<EOF
+0x00401000 0x00401002 00:0000 2 j 0x00401012
+0x00401012 0x00401059 00:0000 71 j 0x0040dfd0
+            ;-- section..text:
+/ entry0();
+|       ,=< 0x00401000      jmp   0x401012                             ; [00] -r-x section size 65536 named .text
+..
+|      ||   ; CODE XREF from entry0 @ 0x401000
+|      |`-> 0x00401012      mov   eax, dword [0x411133]                ; [0x411133:4]=0
+|      |    0x00401017      shl   eax, 2
+|      |    0x0040101a      mov   dword [0x411137], eax                ; [0x411137:4]=0
+|      |    0x0040101f      push  edx
+|      |    0x00401020      push  0
+|      |    0x00401022      call  sub.KERNEL32.DLL_GetModuleHandleA
+|      |    0x00401027      mov   edx, eax
+|      |    0x00401029      call  fcn.0040710c
+|      |    0x0040102e      pop   edx
+|      |    0x0040102f      call  fcn.004064a8
+|      |    0x00401034      call  fcn.00407110
+|      |    0x00401039      push  0
+|      |    0x0040103b      call  fcn.00408058
+|      |    0x00401040      pop   ecx
+|      |    0x00401041      push  0x4110dc
+|      |    0x00401046      push  0
+|      |    0x00401048      call  sub.KERNEL32.DLL_GetModuleHandleA
+|      |    0x0040104d      mov   dword [0x41113b], eax                ; [0x41113b:4]=0
+|      |    0x00401052      push  0
+\      |,=< 0x00401054      jmp   fcn.0040dfd0
+EOF
+RUN
