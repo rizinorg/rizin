@@ -32,11 +32,9 @@ CMDS=<<EOF
 dk 9
 wx ebfe  # infinite loop
 dc
-sleep 1
 EOF
 EXPECT=<<EOF
 EOF
-REGEXP_FILTER_ERR=child.*signal [0-9]+.*
 EXPECT_ERR=<<EOF
 child received signal 9
 EOF
@@ -85,7 +83,6 @@ dc
 dk 9
 wx ebfe  # infinite loop
 dc
-sleep 1
 EOF
 EXPECT=<<EOF
 15 SIGTERM
@@ -94,7 +91,6 @@ EXPECT=<<EOF
 15 SIGTERM skip
 [+] signal 15 aka SIGTERM received 2
 EOF
-REGEXP_FILTER_ERR=child.*signal [0-9]+.*
 EXPECT_ERR=<<EOF
 child received signal 9
 EOF
