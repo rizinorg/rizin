@@ -1171,7 +1171,13 @@ RZ_API HexInsnContainer *hexagon_reverse_opcode(const RzAsm *rz_asm, HexReversed
 	if (!hic) {
 		return NULL;
 	}
-	HexPkt *p = hex_get_pkt(state, hic->addr);
+	HexPkt *p = hex_get_pkt(state, hic->addr);;
+	while (!p) {
+		// This is not a fix. It is a
+		// poor mans version of handling threads which iterate too quickly through packets.
+		hic = hex_add_hic_to_state(state, &hic_new, assume_valid_pkt);
+		p = hex_get_pkt(state, hic->addr);
+	}
 
 	// Do disassembly and analysis
 	hexagon_disasm_instruction(state, data, hic, p);
