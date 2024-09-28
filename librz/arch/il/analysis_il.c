@@ -201,6 +201,9 @@ static void setup_vm_init_state(RzAnalysisILVM *vm, RZ_NULLABLE RzAnalysisILInit
 		rz_vector_foreach (&is->vars, v) {
 			rz_il_vm_set_global_var(vm->vm, v->name, rz_il_value_dup(v->val));
 		}
+		if (is->cb) {
+			is->cb(vm, reg);
+		}
 	}
 }
 

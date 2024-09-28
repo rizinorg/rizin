@@ -338,6 +338,7 @@ if capstone_dep.version() == 'next'
   arch_isa_sources += [
     'isa/xtensa/xtensa.c',
     'isa/xtensa/xtensa_esil.c',
+    'isa/xtensa/xtensa_il.c',
   ]
 endif
 

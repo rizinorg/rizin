@@ -445,7 +445,7 @@ a____ 16 32 64   x86.nasm    LGPL3   X86 nasm assembler
 a____ 16 32 64   x86.nz      LGPL3   x86 handmade assembler
 _dA__ 16         xap         PD      XAP4 RISC (CSR)
 _dA__ 32         xcore       BSD     Capstone XCore disassembler (by pancake)
-_dAe_ 32         xtensa      LGPL3   Capstone Xtensa disassembly plugin (by billow)
+_dAeI 32         xtensa      LGPL3   Capstone Xtensa disassembly plugin (by billow)
 adA__ 8          z80         GPL3    Zilog Z80 (by condret)
 EOF
 RUN

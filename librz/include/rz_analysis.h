@@ -928,7 +928,7 @@ typedef struct rz_analysis_op_t {
 	st64 stackptr; /* stack pointer */
 	int refptr; /* if (0) ptr = "reference" else ptr = "load memory of refptr bytes" */
 	ut64 mmio_address; // mmio address
-	RzAnalysisValue *src[6];
+	RzAnalysisValue *src[8];
 	RzAnalysisValue *dst;
 	RzList /*<RzAnalysisValue *>*/ *access; /* RzAnalysisValue access information */
 	RzStrBuf esil;
@@ -1230,6 +1230,8 @@ typedef struct rz_analysis_il_init_state_var_t {
 	RZ_NONNULL RzILVal *val;
 } RzAnalysisILInitStateVar;
 
+typedef void (*RzAnalysisILInitCallback)(RzAnalysisILVM *vm, RzReg *reg);
+
 /**
  * \brief Description of an initial state of an RzAnalysisILVM
  *
@@ -1240,6 +1242,7 @@ typedef struct rz_analysis_il_init_state_var_t {
  */
 typedef struct rz_analysis_il_init_state_t {
 	RzVector /*<RzAnalysisILInitStateVar>*/ vars; ///< Contents of global variables
+	RzAnalysisILInitCallback cb; ///< Callback to run after the initial state has been set up
 } RzAnalysisILInitState;
 
 /**

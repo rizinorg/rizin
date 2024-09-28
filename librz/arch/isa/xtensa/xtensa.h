@@ -31,6 +31,8 @@ bool xtensa_open(XtensaContext *ctx, const char *cpu, bool big_endian);
 bool xtensa_disassemble(XtensaContext *self, const ut8 *buf, int len, ut64 addr);
 void xtensa_disassemble_fini(XtensaContext *self);
 void xtensa_analyze_op_esil(XtensaContext *ctx, RzAnalysisOp *op);
+void xtensa_analyze_op_rzil(XtensaContext *ctx, RzAnalysisOp *op);
+RzAnalysisILConfig *xtensa_il_config(RzAnalysis *a);
 
 static inline cs_xtensa_op_mem *xtensa_op_mem(cs_insn *insn, unsigned int index) {
 	cs_xtensa_op *op = &insn->detail->xtensa.operands[index];
@@ -56,12 +58,13 @@ static inline int32_t xtensa_op_l32r(cs_insn *insn, unsigned int index) {
 	return op->imm;
 }
 
-#define XOP(I)    (ctx->insn->detail->xtensa.operands + I)
-#define MEM(I)    xtensa_op_mem(ctx->insn, I)
-#define REGI(I)   xtensa_op_reg(ctx->insn, I)
-#define REGN(I)   cs_reg_name(ctx->handle, (xtensa_op_reg(ctx->insn, I)))
-#define IMM(I)    xtensa_op_imm(ctx->insn, I)
-#define L32R(I)   xtensa_op_l32r(ctx->insn, I)
-#define INSN_SIZE (ctx->insn->size)
+#define XOP(I)     (ctx->insn->detail->xtensa.operands + I)
+#define MEM(I)     xtensa_op_mem(ctx->insn, I)
+#define REGI(I)    xtensa_op_reg(ctx->insn, I)
+#define REGNAME(I) cs_reg_name(ctx->handle, (I))
+#define REGN(I)    REGNAME(REGI((I)))
+#define IMM(I)     xtensa_op_imm(ctx->insn, I)
+#define L32R(I)    xtensa_op_l32r(ctx->insn, I)
+#define INSN_SIZE  (ctx->insn->size)
 
 #endif // RZ_XTENSA_H
