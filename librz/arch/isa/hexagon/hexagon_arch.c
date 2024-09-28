@@ -203,6 +203,7 @@ RZ_API ut8 hexagon_get_pkt_index_of_addr(const ut32 addr, const HexPkt *p) {
 		}
 		++i;
 	}
+	RZ_LOG_WARN("Failed to find index in packet for %" PFMT32x, addr);
 	return UT8_MAX;
 }
 
@@ -219,7 +220,6 @@ static void hex_clear_pkt(RZ_NONNULL HexPkt *p, bool assume_valid_pkt) {
 	p->hw_loop0_addr = 0;
 	p->hw_loop1_addr = 0;
 	p->pkt_addr = 0;
-	p->last_instr_present = false;
 	p->last_access = 0;
 	rz_list_purge(p->bin);
 	rz_pvector_clear(p->il_ops);
@@ -266,6 +266,7 @@ RZ_API HexPkt *hex_get_pkt(RZ_BORROW HexState *state, const ut32 addr) {
 			}
 		}
 	}
+	RZ_LOG_DEBUG("Failed to get packet at 0x%" PFMT32x, addr);
 	return NULL;
 }
 
@@ -327,6 +328,7 @@ static ut8 get_state_pkt_index(HexState *state, const HexPkt *p) {
 			return i;
 		}
 	}
+	RZ_LOG_WARN("Failed to find state packet index");
 	return UT8_MAX;
 }
 
@@ -876,9 +878,7 @@ static void print_state_pkt(const HexState *state, st32 index, HexBufferAction a
  * \return The pointer to the added instruction. Null if the instruction could not be copied.
  */
 static HexInsnContainer *hex_add_hic_to_state(HexState *state, const HexInsnContainer *new_hic, bool assume_valid_pkt) {
-	if (!new_hic) {
-		return NULL;
-	}
+	rz_return_val_if_fail(state && new_hic, NULL);
 	bool add_to_pkt = false;
 	bool new_pkt = false;
 	bool write_to_stale_pkt = false;
@@ -1169,6 +1169,7 @@ RZ_API HexInsnContainer *hexagon_reverse_opcode(const RzAsm *rz_asm, HexReversed
 	// Add to state
 	hic = hex_add_hic_to_state(state, &hic_new, assume_valid_pkt);
 	if (!hic) {
+		RZ_LOG_WARN("Could not add new hic to state");
 		return NULL;
 	}
 	HexPkt *p = hex_get_pkt(state, hic->addr);;
