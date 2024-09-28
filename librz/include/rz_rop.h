@@ -154,7 +154,7 @@ RZ_API RZ_NULLABLE RZ_OWN RzList /*<char *>*/ *rz_core_rop_handle_grep_args(RZ_N
 
 // ROP Search Context APIs
 RZ_API RZ_OWN RzRopSearchContext *rz_core_rop_search_context_new(RZ_NONNULL const RzCore *core, RZ_NULLABLE const char *greparg, bool regexp,
-	RzRopRequestMask mask, RZ_NONNULL RZ_BORROW RzCmdStateOutput *state);
+	RzRopRequestMask mask, RZ_NULLABLE RZ_BORROW RzCmdStateOutput *state);
 RZ_API void rz_core_rop_search_context_free(RZ_NULLABLE RzRopSearchContext *context);
 
 // ROP Constraint APIs
