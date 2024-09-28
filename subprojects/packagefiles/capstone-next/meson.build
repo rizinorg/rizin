@@ -75,6 +75,10 @@ cs_files = [
   'arch/TriCore/TriCoreInstPrinter.c',
   'arch/TriCore/TriCoreMapping.c',
   'arch/TriCore/TriCoreModule.c',
+  'arch/Xtensa/XtensaDisassembler.c',
+  'arch/Xtensa/XtensaInstPrinter.c',
+  'arch/Xtensa/XtensaMapping.c',
+  'arch/Xtensa/XtensaModule.c',
   'cs.c',
   'Mapping.c',
   'MCInst.c',
@@ -106,6 +110,7 @@ libcapstone_c_args = [
   '-DCAPSTONE_HAS_XCORE',
   '-DCAPSTONE_HAS_TMS320C64X',
   '-DCAPSTONE_HAS_TRICORE',
+  '-DCAPSTONE_HAS_XTENSA',
 ]
 
 if meson.get_compiler('c').has_argument('-Wmaybe-uninitialized')
