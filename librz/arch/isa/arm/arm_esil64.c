@@ -713,8 +713,13 @@ RZ_IPI int rz_arm_cs_analysis_op_64_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 a
 					rz_strbuf_appendf(&op->esil, "%" PFMT64d ",%s,-",
 						-(st64)MEMDISP64(1), MEMBASE64(1));
 				} else {
-					rz_strbuf_appendf(&op->esil, "%" PFMT64d ",%s,+",
-						MEMDISP64(1), MEMBASE64(1));
+					if (insn->detail->CS_aarch64_.operands[1].mem.base == 0) {
+						rz_strbuf_appendf(&op->esil, "%" PFMT64d,
+							MEMDISP64(1));
+					} else {
+						rz_strbuf_appendf(&op->esil, "%" PFMT64d ",%s,+",
+							MEMDISP64(1), MEMBASE64(1));
+					}
 				}
 
 				rz_strbuf_append(&op->esil, ",DUP,tmp,=");

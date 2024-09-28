@@ -246,7 +246,7 @@ static RzILOpBitVector *read_reg(CS_aarch64_reg() reg) {
 	}
 	const char *var = reg_var_name(reg);
 	if (!var) {
-		return NULL;
+		return U64(0);
 	}
 	if (is_wreg(reg)) {
 		return UNSIGNED(32, VARG(var));
