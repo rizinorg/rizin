@@ -90,10 +90,10 @@ jobs:
             build_system: meson
             compiler: clang
             run_tests: true
-            meson_options: -Dbuildtype=release --werror
+            meson_options: -Dbuildtype=release -Db_lto=true --werror
             enabled: ${{ needs.changes.outputs.edited == 'true' }}
             timeout: 60
-            cflags: "-mshstk"
+            cflags: "-fsanitize=cfi"
             allow_failure: false
           - name: linux-gcc-tests-asan
             os: ubuntu-22.04
