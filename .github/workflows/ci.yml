@@ -93,7 +93,7 @@ jobs:
             meson_options: -Dbuildtype=release --werror
             enabled: ${{ needs.changes.outputs.edited == 'true' }}
             timeout: 60
-            cflags: "-fcf-protection=full" 
+            cflags: "-fcf-protection=full"
             allow_failure: false
           - name: linux-gcc-tests-asan
             os: ubuntu-22.04
