@@ -272,3 +272,23 @@ EXPECT=<<EOF
 \           0x00000010      retab
 EOF
 RUN
+
+NAME=tail call
+FILE=bins/elf/static-glibc-2.27
+CMDS=<<EOF
+s 0x00401ae0
+af
+pdf
+EOF
+EXPECT=<<EOF
+/ fcn.00401ae0(int64_t arg1, int64_t arg2, int64_t arg3);
+|           ; arg int64_t arg1 @ rdi
+|           ; arg int64_t arg2 @ rsi
+|           ; arg int64_t arg3 @ rdx
+|           0x00401ae0      mov   r9d, edx                             ; arg3
+|           0x00401ae3      xor   r8d, r8d
+|           0x00401ae6      xor   ecx, ecx
+|           0x00401ae8      xor   edx, edx
+\       ,=< 0x00401aea      jmp   fcn.00402f40
+EOF
+RUN

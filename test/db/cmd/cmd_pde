@@ -23,11 +23,11 @@ EXPECT=<<EOF
 0x0040132a mov dword [ebp - 0x1c], eax
 0x0040132d mov eax, dword [ebp - 0x1c]
 0x00401330 call 0x402c70
-0x00402c70 push ecx
-0x00402c71 mov ecx, esp
-0x00402c73 add ecx, 8
-0x00402c76 cmp eax, 0x1000
-0x00402c7b jb 0x402c8d
+0x00401335 push ecx
+0x00401336 mov ecx, esp
+0x00401338 add ecx, 8
+0x0040133b cmp eax, 0x1000
+0x00401340 jb 0x401352
 0x00402c8d sub ecx, eax
 0x00402c8f or dword [ecx], 0
 0x00402c92 mov eax, esp
@@ -36,8 +36,7 @@ EXPECT=<<EOF
 0x00402c98 mov eax, dword [eax + 4]
 0x00402c9b jmp eax
 0x00401335 call sym.___main
-0x00401470   sym.___main:
-0x00401470 push ebp
+0x0040133a push ebp
 EOF
 RUN
 
@@ -54,10 +53,9 @@ EXPECT=<<EOF
 0x000101c8 movw r0, 0x200
 0x000101cc movt r0, 1
 0x000101d0 bl sym.imp.puts
-0x0001019c   sym.imp.puts:
-0x0001019c add ip, pc, 0, 12
-0x000101a0 add ip, ip, 16, 20
-0x000101a4 ldr pc, [ip, 0x118]!
+0x000101d4 add ip, pc, 0, 12
+0x000101d8 add ip, ip, 16, 20
+0x000101dc ldr pc, [ip, 0x118]!
 0x00010188   sym..plt:
 0x00010188 str lr, [sp, -4]!
 0x0001018c ldr lr, [pc, 4]
@@ -79,18 +77,17 @@ EXPECT=<<EOF
 ;-- _start:
 ;-- pc:
 0x000804f0      bal   0x804f8
-0x000804f4      nop
-0x000804f8      lui   gp, 2
-0x000804fc      addiu gp, gp, -0x74f8
-0x00080500      addu  gp, gp, ra
-0x00080504      move  a0, sp
-0x00080508      addiu sp, sp, -0x20
-0x0008050c      sw    zero, 0x1c(sp)
-0x00080510      lw    t9, -sym.do_mips_start(gp)
-0x00080514      jalr  t9
-0x00080518      nop
-;-- do_mips_start:
-0x0008053c      lui   gp, 2
+0x000804f4      lui   gp, 2
+0x000804f8      addiu gp, gp, -0x74f8
+0x000804fc      addu  gp, gp, ra
+0x00080500      move  a0, sp
+0x00080504      addiu sp, sp, -0x20
+0x00080508      sw    zero, 0x1c(sp)
+0x0008050c      lw    t9, -sym.do_mips_start(gp)
+0x00080510      jalr  t9
+0x00080514      lui   gp, 2
+0x00080518      addiu gp, gp, -0x753c
+0x0008051c      addu  gp, gp, t9
 EOF
 RUN
 
