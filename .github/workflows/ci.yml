@@ -90,6 +90,7 @@ jobs:
             build_system: meson
             compiler: clang
             run_tests: true
+            # -Dbuildtype=release can cause SIGILL (?)
             meson_options: -Dbuildtype=debugoptimized --werror
             enabled: ${{ needs.changes.outputs.edited == 'true' }}
             timeout: 60
