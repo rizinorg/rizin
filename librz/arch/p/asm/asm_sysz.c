@@ -65,6 +65,7 @@ RzAsmPlugin rz_asm_plugin_sysz = {
 	.desc = "SystemZ CPU disassembler",
 	.license = "BSD",
 	.arch = "sysz",
+	.cpus = "z10,z196,zec12,z13,z14,z15,z16",
 	.bits = 32 | 64,
 	.endian = RZ_SYS_ENDIAN_BIG,
 	.init = sysz_init,
