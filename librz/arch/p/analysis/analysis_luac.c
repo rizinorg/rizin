@@ -11,9 +11,9 @@ int rz_lua_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const 
 		RZ_LOG_ERROR("Cannot get lua version\n");
 		return 0;
 	}
-	if (strcmp(analysis->cpu, "5.4") == 0) {
+	if (!strcmp(analysis->cpu, "5.4")) {
 		return lua54_anal_op(analysis, op, addr, data, len);
-	} else if (strcmp(analysis->cpu, "5.3") == 0) {
+	} else if (!strcmp(analysis->cpu, "5.3")) {
 		return lua53_anal_op(analysis, op, addr, data, len);
 	} else {
 		RZ_LOG_ERROR("Cannot find a suitable lua version to handle lua analysis\n");
