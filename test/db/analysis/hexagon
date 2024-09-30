@@ -1434,3 +1434,29 @@ offset - 0 1 2 3 4 5
 3400 0008 3400 0000 3400 0000 7cff ffff
 EOF
 RUN
+
+NAME=hexagon tail calls
+FILE=bins/elf/analysis/hexagon-hello-loop
+CMDS=<<EOF
+s 0x00008f04
+af
+pdf
+EOF
+EXPECT=<<EOF
+/ sym._Mbtowc();
+|           0x00008f04      ?       R17:16 = combine(R2,R3)
+|           0x00008f08      ?       memd(R29+#-0x10) = R17:16 ; allocframe(#0x10)
+|           0x00008f0c      [   R4 = memw(GP+##0x18)
+|           0x00008f10      /       R19:18 = combine(R0,R1)
+|           0x00008f14      \       memd(SP+##0x0) = R19:18
+|       ,=< 0x00008f18      [   P0 = cmp.eq(R4,#0x0); if (P0.new) jump:nt 0x8f20
+|       |   0x00008f1c      [   callr R4
+|       `-> 0x00008f20      /       R1:0 = combine(R18,R19)
+|           0x00008f24      |       R3:2 = combine(R16,R17)
+|           0x00008f28      |       immext(##0xd980)
+|           0x00008f2c      \       R4 = ##obj._Mbstate
+|           0x00008f30      [   R17:16 = memd(R29+#0x8) ; R19:18 = memd(R29+#0x0)
+|           0x00008f34      /       jump sym._Mbtowcx
+\           0x00008f38      \       LR:FP = deallocframe(FP):raw
+EOF
+RUN

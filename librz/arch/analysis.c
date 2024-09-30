@@ -468,11 +468,16 @@ RZ_API RzAnalysisOp *rz_analysis_op_hexstr(RzAnalysis *analysis, ut64 addr, cons
 	return op;
 }
 
-RZ_API bool rz_analysis_op_is_eob(RzAnalysisOp *op) {
+/**
+ * \brief Checks \p op->type and \p op->eob if it marks the end of a block.
+ *
+ * \return True, if it is the end of a block. False otherwise.
+ */
+RZ_API bool rz_analysis_op_is_eob(const RzAnalysisOp *op) {
 	if (op->eob) {
 		return true;
 	}
-	switch (op->type) {
+	switch (op->type & RZ_ANALYSIS_OP_TYPE_MASK) {
 	case RZ_ANALYSIS_OP_TYPE_JMP:
 	case RZ_ANALYSIS_OP_TYPE_UJMP:
 	case RZ_ANALYSIS_OP_TYPE_RJMP:

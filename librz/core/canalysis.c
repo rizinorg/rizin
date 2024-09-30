@@ -1853,32 +1853,12 @@ static int core_analysis_followptr(RzCore *core, int type, ut64 at, ut64 ptr, ut
 }
 
 static bool opiscall(RzCore *core, RzAnalysisOp *aop, ut64 addr, const ut8 *buf, int len, int arch) {
-	switch (arch) {
-	case RZ_ARCH_ARM64:
-		aop->size = 4;
-		// addr should be aligned by 4 in aarch64
-		if (addr % 4) {
-			char diff = addr % 4;
-			addr = addr - diff;
-			buf = buf - diff;
+	if (rz_analysis_op(core->analysis, aop, addr, buf, len, RZ_ANALYSIS_OP_MASK_BASIC) > 0) {
+		switch (aop->type & RZ_ANALYSIS_OP_TYPE_MASK) {
+		case RZ_ANALYSIS_OP_TYPE_CALL:
+		case RZ_ANALYSIS_OP_TYPE_CCALL:
+			return true;
 		}
-		// if is not bl do not analyze
-		if (buf[3] == 0x94) {
-			if (rz_analysis_op(core->analysis, aop, addr, buf, len, RZ_ANALYSIS_OP_MASK_BASIC) > 0) {
-				return true;
-			}
-		}
-		break;
-	default:
-		aop->size = 1;
-		if (rz_analysis_op(core->analysis, aop, addr, buf, len, RZ_ANALYSIS_OP_MASK_BASIC) > 0) {
-			switch (aop->type & RZ_ANALYSIS_OP_TYPE_MASK) {
-			case RZ_ANALYSIS_OP_TYPE_CALL:
-			case RZ_ANALYSIS_OP_TYPE_CCALL:
-				return true;
-			}
-		}
-		break;
 	}
 	return false;
 }

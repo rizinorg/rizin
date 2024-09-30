@@ -139,12 +139,6 @@ static bool cb_analysis_jmpretpoline(void *user, void *data) {
 	core->analysis->opt.retpoline = node->i_value;
 	return true;
 }
-static bool cb_analysis_jmptailcall(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	core->analysis->opt.tailcall = node->i_value;
-	return true;
-}
 
 static bool cb_analysis_armthumb(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
@@ -3003,7 +2997,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 		NULL);
 	SETI("analysis.timeout", 0, "Stop analyzing after a couple of seconds");
 	SETCB("analysis.jmp.retpoline", "true", &cb_analysis_jmpretpoline, "Analyze retpolines, may be slower if not needed");
-	SETICB("analysis.jmp.tailcall", 0, &cb_analysis_jmptailcall, "Consume a branch as a call if delta is big");
 
 	SETCB("analysis.armthumb", "false", &cb_analysis_armthumb, "aae computes arm/thumb changes (lot of false positives ahead)");
 	SETCB("analysis.jmp.after", "true", &cb_analysis_afterjmp, "Continue analysis after jmp/ujmp");

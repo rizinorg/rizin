@@ -9,6 +9,8 @@
 // Do not edit. Repository of code generator:
 // https://github.com/rizinorg/rz-hexagon
 
+#include <rz_list.h>
+#include <rz_util/rz_assert.h>
 #include <rz_asm.h>
 #include <rz_analysis.h>
 #include <rz_util.h>
@@ -1072,6 +1074,51 @@ static void copy_asm_ana_ops(const HexState *state, RZ_BORROW HexReversedOpcode 
 		memcpy(rz_reverse->ana_op, &hic->ana_op, sizeof(RzAnalysisOp));
 		break;
 	}
+}
+
+/**
+ * \brief Checks if the packet \p pkt has a jump and deallocframe instructions.
+ * This indicates it is a tail call.
+ * It sets the relevant flags accordingly.
+ *
+ * \param pkt The instruction packet to check.
+ */
+RZ_IPI void hexagon_pkt_mark_tail_calls(HexPkt *pkt) {
+	rz_return_if_fail(pkt);
+	ut32 n = rz_list_length(pkt->bin);
+	if (!pkt->last_instr_present || n < 2) {
+		return;
+	}
+	HexInsnContainer *hic = rz_list_get_n(pkt->bin, 0);
+	HexInsnContainer *hic1 = rz_list_get_n(pkt->bin, 1);
+	if (hic->identifier != HEX_INS_L2_DEALLOCFRAME && hic1->identifier != HEX_INS_L2_DEALLOCFRAME) {
+		// deallocframe is a store/load instruction and can only inhabit slot 0 and 1.
+		return;
+	}
+	bool is_tail_call = false;
+	for (size_t i = 0; i < n; ++i) {
+		hic = rz_list_get_n(pkt->bin, i);
+		if (hic->identifier == HEX_INS_J2_JUMP) {
+			is_tail_call = true;
+			break;
+		}
+	}
+	if (!is_tail_call) {
+		return;
+	}
+	for (size_t i = 0; i < n; ++i) {
+		hic = rz_list_get_n(pkt->bin, i);
+		hic->ana_op.type |= RZ_ANALYSIS_OP_TYPE_TAIL;
+	}
+	hic = rz_list_get_n(pkt->bin, n - 1);
+	hic->ana_op.eob = true;
+	// This is nonesense. And we can just hope it doesn't
+	// break anything. The instruction is no return instruction.
+	// But we just don't have any other way currently to signal the
+	// block analysis, that the function ends here.
+	// eob (end of block) is ignored.
+	// So until RzArch is not done, there is no other way.
+	hic->ana_op.type = RZ_ANALYSIS_OP_TYPE_TAIL | RZ_ANALYSIS_OP_TYPE_RET;
 }
 
 /**

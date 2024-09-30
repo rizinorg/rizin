@@ -1,11 +1,11 @@
-NAME=got switch cases
+NAME=analyze preludes
 FILE=bins/elf/fedora_32_bin_ls
 CMDS=<<EOF
 aap
 aflc
 EOF
 EXPECT=<<EOF
-459
+458
 EOF
 RUN
 

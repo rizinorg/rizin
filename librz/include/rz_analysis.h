@@ -257,7 +257,7 @@ typedef enum {
 
 // XXX: this definition is plain wrong. use enum or empower bits
 #define RZ_ANALYSIS_OP_TYPE_MASK 0x8000ffff
-#define RZ_ANALYSIS_OP_HINT_MASK 0xf0000000
+#define RZ_ANALYSIS_OP_HINT_MASK 0xff000000
 typedef enum {
 	RZ_ANALYSIS_OP_TYPE_COND = 0x80000000, // TODO must be moved to prefix?
 	// TODO: MOVE TO PREFIX .. it is used by analysis_java.. must be updated
@@ -266,6 +266,7 @@ typedef enum {
 	RZ_ANALYSIS_OP_TYPE_REG = 0x10000000, // operand is a register
 	RZ_ANALYSIS_OP_TYPE_IND = 0x08000000, // operand is indirect
 	RZ_ANALYSIS_OP_TYPE_SIMD = 0x04000000, // SIMD
+	RZ_ANALYSIS_OP_TYPE_TAIL = 0x02000000, ///< Part of a tail call. This effectively marks the end of a sub-routine.
 	RZ_ANALYSIS_OP_TYPE_NULL = 0,
 	RZ_ANALYSIS_OP_TYPE_JMP = 1, /* mandatory jump */
 	RZ_ANALYSIS_OP_TYPE_UJMP = 2, /* unknown jump (register or so) */
@@ -432,7 +433,6 @@ typedef struct rz_analysis_options_t {
 	bool pushret; // analyze push+ret as jmp
 	bool armthumb; //
 	bool delay;
-	int tailcall;
 	bool retpoline;
 } RzAnalysisOptions;
 
@@ -1613,7 +1613,7 @@ RZ_API void rz_analysis_op_free(void *op);
 RZ_API void rz_analysis_op_init(RzAnalysisOp *op);
 RZ_API bool rz_analysis_op_fini(RzAnalysisOp *op);
 RZ_API int rz_analysis_op_reg_delta(RzAnalysis *analysis, ut64 addr, const char *name);
-RZ_API bool rz_analysis_op_is_eob(RzAnalysisOp *op);
+RZ_API bool rz_analysis_op_is_eob(const RzAnalysisOp *op);
 RZ_API RzList /*<RzAnalysisOp *>*/ *rz_analysis_op_list_new(void);
 RZ_API int rz_analysis_op(RZ_NONNULL RzAnalysis *analysis, RZ_OUT RzAnalysisOp *op, ut64 addr, const ut8 *data, ut64 len, RzAnalysisOpMask mask);
 RZ_API RzAnalysisOp *rz_analysis_op_hexstr(RzAnalysis *analysis, ut64 addr, const char *hexstr);
