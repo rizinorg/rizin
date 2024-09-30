@@ -8,6 +8,7 @@ EOF
 EXPECT=<<EOF
 arch     6502
 cpu      N/A
+features N/A
 baddr    0x00000801
 binsz    0x00000026
 bintype  N/A

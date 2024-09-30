@@ -2,7 +2,6 @@ NAME=aoj 4140f008
 FILE==
 CMDS=<<EOF
 e asm.arch=sysz
-e asm.bits=64
 wx 4140f008
 aoj~{}
 EOF
@@ -21,11 +20,11 @@ EXPECT=<<EOF
       "operands": [
         {
           "type": "reg",
-          "value": "4"
+          "value": "r4"
         },
         {
           "type": "mem",
-          "base": "15",
+          "base": "r15",
           "disp": 8
         }
       ]
