@@ -26,7 +26,8 @@ typedef enum {
 	RZ_ARCH_XCODE_MEMBER_PACKET, ///< Member is RzArchPacket
 	RZ_ARCH_XCODE_MEMBER_HINT, ///< Member is RzArchHint
 	RZ_ARCH_XCODE_MEMBER_DETAIL, ///< Member is RzArchDetail
-	RZ_ARCH_XCODE_MEMBER_IL, ///< Member is RzIL
+	RZ_ARCH_XCODE_MEMBER_IL, ///< Member is RzILEffect
+	RZ_ARCH_XCODE_MEMBER_TOKEN, ///< Member is RzArchToken
 	RZ_ARCH_XCODE_MEMBER_PARSE, ///< [Deprecated] Member is parsed string (pseudo code)
 	RZ_ARCH_XCODE_MEMBER_ESIL, ///< [Deprecated] Member is ESIL
 } RzArchXCodeMember;
@@ -73,7 +74,6 @@ typedef struct rz_arch_packet_t {
 	RzList /*<RzAnalysisValue *>*/ *access; /* RzAnalysisValue access information */
 	RzStrBuf esil;
 	RzStrBuf opex;
-	RzAnalysisLiftedILOp il_op;
 	const char *reg; /* destination register */
 	const char *ireg; /* register used for indirect memory computation*/
 	int scale;
