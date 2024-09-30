@@ -382,7 +382,7 @@ static void update_asmcpu_options(RzCore *core, RzConfigNode *node) {
 	RzListIter *iter;
 	rz_return_if_fail(core && core->rasm);
 	const char *arch = rz_config_get(core->config, "asm.arch");
-	if (!arch || !*arch) {
+	if (RZ_STR_ISEMPTY(arch)) {
 		return;
 	}
 	rz_list_purge(node->options);
@@ -402,7 +402,7 @@ static void update_asmcpu_options(RzCore *core, RzConfigNode *node) {
 	}
 }
 
-static bool cb_asmcpu(void *user, void *data) {
+static bool cb_asm_cpu(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	if (*node->value == '?') {
@@ -475,15 +475,15 @@ static bool cb_asm_varfold(void *core, void *node) {
 	return false;
 }
 
-static void handle_cpu_feature(RzConfig *config, const char *supported, const char *cpu) {
+static void handle_supported_cpus(RzConfig *config, const char *supported, const char *cpu) {
 	// strdup is required when calling rz_config_set, because it will free the old value
 	char *cpu_copy = rz_str_dup(cpu);
 
 	// we need to duplicate supported because rz_str_split_list will modify the string.
 	char *supported_copy = rz_str_dup(supported);
 	RzList *cpu_list = rz_str_split_list(supported_copy, ",", 0);
-	RzListIter *it;
-	const char *lcpu;
+	RzListIter *it = NULL;
+	const char *lcpu = NULL;
 	rz_list_foreach (cpu_list, it, lcpu) {
 		if (!strcmp(lcpu, cpu_copy)) {
 			rz_config_set(config, "asm.cpu", cpu_copy);
@@ -491,12 +491,16 @@ static void handle_cpu_feature(RzConfig *config, const char *supported, const ch
 		}
 	}
 
+	if (lcpu && strcmp(lcpu, cpu_copy) != 0) {
+		RZ_LOG_ERROR("asm.cpu: unknown cpu: %s\n", cpu_copy)
+	}
+
 	rz_list_free(cpu_list);
 	free(supported_copy);
 	free(cpu_copy);
 }
 
-static bool cb_asmarch(void *user, void *data) {
+static bool cb_asm_arch(void *user, void *data) {
 	char asmparser[32];
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
@@ -535,7 +539,7 @@ static bool cb_asmarch(void *user, void *data) {
 		const char *cpus_supported = core->rasm->cur->cpus;
 		if (RZ_STR_ISNOTEMPTY(cpus_supported) &&
 			RZ_STR_ISNOTEMPTY(asm_cpu)) {
-			handle_cpu_feature(core->config, cpus_supported, asm_cpu);
+			handle_supported_cpus(core->config, cpus_supported, asm_cpu);
 		} else {
 			rz_config_set(core->config, "asm.cpu", "");
 		}
@@ -644,7 +648,7 @@ static bool cb_dbgbtdepth(void *user, void *data) {
 	return true;
 }
 
-static bool cb_asmbits(void *user, void *data) {
+static bool cb_asm_bits(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 
@@ -727,7 +731,7 @@ static bool cb_flag_realnames(void *user, void *data) {
 	return true;
 }
 
-static bool cb_asmfeatures(void *user, void *data) {
+static bool cb_asm_features(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	if (*node->value == '?') {
@@ -3244,14 +3248,14 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETI("asm.symbol.col", 40, "Columns width to show asm.section");
 	SETCB("asm.assembler", "", &cb_asmassembler, "Set the plugin name to use when assembling");
 	SETBPREF("asm.minicols", "false", "Only show the instruction in the column disasm");
-	RzConfigNode *asmcpu = NODECB("asm.cpu", RZ_SYS_ARCH, &cb_asmcpu);
+	RzConfigNode *asmcpu = NODECB("asm.cpu", "", &cb_asm_cpu);
 	SETDESC(asmcpu, "Set the kind of asm.arch cpu");
-	RzConfigNode *asmarch = NODECB("asm.arch", RZ_SYS_ARCH, &cb_asmarch);
+	RzConfigNode *asmarch = NODECB("asm.arch", RZ_SYS_ARCH, &cb_asm_arch);
 	SETDESC(asmarch, "Set the arch to be used by asm");
 	/* we need to have both asm.arch and asm.cpu defined before updating options */
 	update_asmarch_options(core, asmarch);
 	update_asmcpu_options(core, asmcpu);
-	n = NODECB("asm.features", "", &cb_asmfeatures);
+	n = NODECB("asm.features", "", &cb_asm_features);
 	SETDESC(n, "Specify supported features by the target CPU");
 	update_asmfeatures_options(core, n);
 	n = NODECB("asm.platform", "", &cb_asmplatform);
@@ -3269,9 +3273,9 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETI("asm.nbytes", 6, "Number of bytes for each opcode at disassembly");
 	SETBPREF("asm.bytes.space", "false", "Separate hexadecimal bytes with a whitespace");
 #if RZ_SYS_BITS == RZ_SYS_BITS_64
-	SETICB("asm.bits", 64, &cb_asmbits, "Word size in bits at assembler");
+	SETICB("asm.bits", 64, &cb_asm_bits, "Word size in bits at assembler");
 #else
-	SETICB("asm.bits", 32, &cb_asmbits, "Word size in bits at assembler");
+	SETICB("asm.bits", 32, &cb_asm_bits, "Word size in bits at assembler");
 #endif
 	n = rz_config_node_get(cfg, "asm.bits");
 	update_asmbits_options(core, n);

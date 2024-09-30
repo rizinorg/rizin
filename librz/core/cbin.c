@@ -13,7 +13,6 @@
 
 #include "../bin/dwarf/dwarf_private.h"
 #include "core_private.h"
-#include "rz_util/rz_str.h"
 
 #define is_invalid_address_va(va, vaddr, paddr)  (((va) && (vaddr) == UT64_MAX) || (!(va) && (paddr) == UT64_MAX))
 #define is_invalid_address_va2(va, vaddr, paddr) (((va) != VA_FALSE && (vaddr) == UT64_MAX) || ((va) == VA_FALSE && (paddr) == UT64_MAX))
@@ -304,7 +303,7 @@ RZ_API bool rz_core_bin_apply_all_info(RzCore *r, RzBinFile *binfile) {
 	rz_config_set(r->config, "asm.arch", arch);
 	rz_config_set_i(r->config, "asm.bits", bits);
 	rz_config_set(r->config, "analysis.arch", arch);
-	if (info->cpu && *info->cpu) {
+	if (RZ_STR_ISNOTEMPTY(info->cpu)) {
 		rz_config_set(r->config, "analysis.cpu", info->cpu);
 	} else {
 		rz_config_set(r->config, "analysis.cpu", arch);

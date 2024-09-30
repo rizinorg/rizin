@@ -4,9 +4,8 @@
 #include <rz_asm.h>
 #include <rz_lib.h>
 #include <mips/mips_internal.h>
-#include "capstone.h"
+#include <capstone/capstone.h>
 #include "cs_helper.h"
-#include "rz_util/rz_log.h"
 
 CAPSTONE_DEFINE_PLUGIN_FUNCTIONS(mips_asm);
 
