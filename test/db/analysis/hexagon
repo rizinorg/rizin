@@ -1460,3 +1460,63 @@ EXPECT=<<EOF
 \           0x00008f38      \       LR:FP = deallocframe(FP):raw
 EOF
 RUN
+
+NAME=hexagon instructions buffer edge cases. 3 instr.
+FILE=bins/elf/analysis/hexagon-hello-loop
+CMDS=<<EOF
+# At 0x00000091c0 there is a three instruction packet.
+# We first disassemble the last instruction IL op at aoi @ 0x00000091c8 (buffering it in its own packet).
+# Then disassemble from the first instruction. Both should give a valid IL instr.
+# Although they were buffered in different packets initially.
+# They should be merged.
+pd 1 @ 0x00000091c8
+pd 4 @ 0x00000091bc
+aoi @ 0x00000091c8
+aoi @ 0x00000091c0
+EOF
+EXPECT=<<EOF
+?   R1 = R17 ; R0 = memw(R16+#0x4)
+?   invalid
+/   call sym.write
+|   R2 = sub(R3,R17)
+\   R1 = R17 ; R0 = memw(R16+#0x4)
+0x91c8 (seq empty (set jump_flag false) (set jump_target (bv 32 0xffffffff)) (set R1_tmp (cast 32 false (cast 32 false (var R17)))) (set u (bv 32 0x4)) (set EA (+ (cast 32 false (var R16)) (var u))) (set R0_tmp (cast 32 false (cast 32 false (cast 32 false (cast 32 false (loadw 0 32 (var EA))))))) empty (set R0 (var R0_tmp)) (set R1 (var R1_tmp)) (branch (var jump_flag) (jmp (var jump_target)) (jmp (bv 32 0x91cc))))
+0x91c0 (seq empty (set jump_flag false) (set jump_target (bv 32 0xffffffff)) (set r (bv 32 0x290)) (set r (& (var r) (bv 32 0xfffffffc))) (set ret_val (bv 64 0x91cc)) (set h_tmp157 (cast 32 false (var ret_val))) (set R31_tmp (cast 32 false (cast 32 false (& (var h_tmp157) (cast 32 false (bv 32 0xfffffffe)))))) (set jump_flag true) (set jump_target (+ (bv 32 0x91c0) (cast 32 false (var r)))) (set R2_tmp (cast 32 false (cast 32 false (- (var R3) (var R17))))) (set R1_tmp (cast 32 false (cast 32 false (var R17)))) (set u (bv 32 0x4)) (set EA (+ (cast 32 false (var R16)) (var u))) (set R0_tmp (cast 32 false (cast 32 false (cast 32 false (cast 32 false (loadw 0 32 (var EA))))))) empty (set R0 (var R0_tmp)) (set R1 (var R1_tmp)) (set R2 (var R2_tmp)) (set R31 (var R31_tmp)) (branch (var jump_flag) (jmp (var jump_target)) (jmp (bv 32 0x91cc))))
+EOF
+RUN
+
+NAME=hexagon instructions buffer edge cases. 4 instr.
+FILE=bins/elf/analysis/hexagon-hello-loop
+CMDS=<<EOF
+pi 1 @ 0x000053cc # instr. 1
+pi 1 @ 0x000053d4 # instr. 3
+pi 5 @ 0x000053c4 # instr 0 - 3 and one before
+EOF
+EXPECT=<<EOF
+?   R4 = add(R4,##0x4)
+?   if (P0.new) R16 = ##0xb
+?   R2 = add(R2,##0x18) ; R3 = add(R3,#1)
+/   if (!P0.new) jump:t 0x53b4
+|   R4 = add(R4,##0x4)
+|   P0 = cmp.gtu(R5,##0x3f)
+\   if (P0.new) R16 = ##0xb
+EOF
+RUN
+
+NAME=hexagon instructions buffer edge cases. 4 instr. Rev
+FILE=bins/elf/analysis/hexagon-hello-loop
+CMDS=<<EOF
+pi 1 @ 0x000053d4 # instr. 3
+pi 1 @ 0x000053cc # instr. 1
+pi 5 @ 0x000053c4 # instr 0 - 3 and one before
+EOF
+EXPECT=<<EOF
+?   if (P0.new) R16 = ##0xb
+?   R4 = add(R4,##0x4)
+?   R2 = add(R2,##0x18) ; R3 = add(R3,#1)
+/   if (!P0.new) jump:t 0x53b4
+|   R4 = add(R4,##0x4)
+|   P0 = cmp.gtu(R5,##0x3f)
+\   if (P0.new) R16 = ##0xb
+EOF
+RUN
