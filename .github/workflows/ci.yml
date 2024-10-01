@@ -180,7 +180,9 @@ jobs:
           fetch-depth: 2
       - name: Install pkg-config with Homebrew
         if: matrix.os == 'macos-12' && matrix.enabled
-        run: brew install pkg-config
+        run: |
+          sysctl -n hw.ncpu
+          brew install pkg-config
       - name: Install python and other dependencies
         if: (matrix.run_tests || matrix.build_system == 'meson') && matrix.os != 'macos-12' && matrix.enabled
         run: sudo apt-get --assume-yes install python3-wheel python3-setuptools libcapstone4 libcapstone-dev
