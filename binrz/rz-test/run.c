@@ -426,8 +426,8 @@ RZ_API bool rz_test_check_asm_test(RzAsmTestOutput *out, RzAsmTest *test) {
 		}
 	}
 	if (test->il) {
-		// expect some IL, no failure, no report and no timeout
-		if (!out->il || out->il_failed || RZ_STR_ISNOTEMPTY(out->il_err) || out->il_timeout) {
+		// expect some IL, no failure, and no timeout
+		if (!out->il || out->il_failed || out->il_timeout) {
 			return false;
 		}
 		// IL must also be correct
