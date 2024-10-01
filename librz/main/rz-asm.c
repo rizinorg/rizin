@@ -552,6 +552,7 @@ static void __load_plugins(RzAsmState *as) {
 }
 
 RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
+	eprintf("* begin rz_main_rz_asm\n"); // DBG
 	const char *env_arch = rz_sys_getenv("RZ_ASM_ARCH");
 	const char *env_bits = rz_sys_getenv("RZ_ASM_BITS");
 	const char *arch = NULL;
@@ -723,12 +724,15 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 	}
 
 	if (arch) {
+		eprintf("** before rz_asm_use\n"); // DBG
 		if (!rz_asm_use(as->a, arch)) {
 			eprintf("rz-asm: Unknown asm plugin '%s'\n", arch);
 			ret = 0;
 			goto beach;
 		}
+		eprintf("** before rz_analysis_use\n"); // DBG
 		rz_analysis_use(as->analysis, arch);
+		eprintf("** after rz_analysis_use\n"); // DBG
 	} else if (env_arch) {
 		if (!rz_asm_use(as->a, env_arch)) {
 			eprintf("rz-asm: Unknown asm plugin '%s'\n", env_arch);
@@ -912,13 +916,17 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 				printf("e asm.bits=%d\n", bits);
 				printf("\"wa ");
 			}
+			eprintf("** before rasm_disasm\n"); // DBG
 			ret = rasm_disasm(as, offset, (char *)usrstr, len, as->a->bits, bin, dis);
+			eprintf("** after rasm_disasm\n"); // DBG
 			free(usrstr);
 		} else if (analinfo) {
 			ret = show_analinfo(as, (const char *)opt.argv[opt.ind], offset);
 		} else {
+			eprintf("** before print_assembly_output\n"); // DBG
 			ret = print_assembly_output(as, opt.argv[opt.ind], offset, len, as->a->bits,
 				bin, use_spp, rad, hexwords, arch);
+			eprintf("** after print_assembly_output\n"); // DBG
 		}
 		ret = !ret;
 	}
@@ -929,5 +937,6 @@ beach:
 	if (fd != -1) {
 		close(fd);
 	}
+	eprintf("* end rz_main_rz_asm\n"); // DBG
 	return ret;
 }
