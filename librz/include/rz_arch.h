@@ -21,7 +21,8 @@ extern "C" {
 RZ_LIB_VERSION_HEADER(rz_arch);
 
 typedef enum {
-	RZ_ARCH_XCODE_MEMBER_BYTES = 0, ///< Member is raw bytes
+	RZ_ARCH_XCODE_MEMBER_INVALID = 0, ///< Invalid member
+	RZ_ARCH_XCODE_MEMBER_BUFFER, ///< Member is a RzBuffer
 	RZ_ARCH_XCODE_MEMBER_ASSEMBLY, ///< Member is assembly
 	RZ_ARCH_XCODE_MEMBER_PACKET, ///< Member is RzArchPacket
 	RZ_ARCH_XCODE_MEMBER_HINT, ///< Member is RzArchHint
