@@ -1077,10 +1077,13 @@ static bool add_edge_to_cfg(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *graph,
 	RZ_NONNULL HtUU *nodes_visited,
 	const RzAnalysisOp *op_from,
 	const RzAnalysisOp *op_to,
-	RZ_NULLABLE RzAnalysisFunction *fcn) {
+	bool to_node_within_fcn) {
 	rz_return_val_if_fail(graph && to_visit && nodes_visited && op_from && op_to, -1);
 	ut64 from = op_from->addr;
 	ut64 to = op_to->addr;
+	if (!to_node_within_fcn) {
+		return true;
+	}
 	bool visited = false;
 	ut64 from_idx = ht_uu_find(nodes_visited, from, &visited);
 	if (!visited && from != to) {
@@ -1106,8 +1109,7 @@ static bool add_edge_to_cfg(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *graph,
 	}
 	to_idx = ht_uu_find(nodes_visited, to, &visited);
 
-	bool target_within_fcn = fcn ? rz_analysis_function_contains(fcn, to) : true;
-	if (from != to && !visited && target_within_fcn) {
+	if (from != to && !visited) {
 		// The target node wasn't visited before. Otherwise this is a back-edge.
 		rz_vector_push(to_visit, &to);
 	}
@@ -1210,7 +1212,8 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg(RZ_NONNULL RzCo
 				rz_analysis_op_fini(&target_op);
 				goto error;
 			}
-			if (!add_edge_to_cfg(graph, to_visit, nodes_visited, &curr_op, &target_op, fcn)) {
+			bool to_node_within_fcn = fcn ? rz_analysis_function_contains(fcn, target_op.addr) : true;
+			if (!add_edge_to_cfg(graph, to_visit, nodes_visited, &curr_op, &target_op, to_node_within_fcn)) {
 				goto error;
 			}
 			rz_analysis_op_fini(&target_op);
@@ -1220,7 +1223,8 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg(RZ_NONNULL RzCo
 				rz_analysis_op_fini(&target_op);
 				goto error;
 			}
-			if (!add_edge_to_cfg(graph, to_visit, nodes_visited, &curr_op, &target_op, fcn)) {
+			bool to_node_within_fcn = fcn ? rz_analysis_function_contains(fcn, target_op.addr) : true;
+			if (!add_edge_to_cfg(graph, to_visit, nodes_visited, &curr_op, &target_op, to_node_within_fcn)) {
 				goto error;
 			}
 			rz_analysis_op_fini(&target_op);
@@ -1279,6 +1283,9 @@ static bool add_iword_edge_to_cfg(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *gr
 	const RzAnalysisInsnWord *irowrd_from,
 	const RzAnalysisInsnWord *iword_to,
 	bool to_node_in_fcn) {
+	if (!to_node_in_fcn) {
+		return true;
+	}
 	rz_return_val_if_fail(graph && to_visit && nodes_visited && irowrd_from && iword_to, -1);
 	ut64 from = irowrd_from->addr;
 	ut64 to = iword_to->addr;
@@ -1305,7 +1312,7 @@ static bool add_iword_edge_to_cfg(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *gr
 		from_idx = to_idx;
 	}
 
-	if (from != to && !visited && to_node_in_fcn) {
+	if (from != to && !visited) {
 		// The target node wasn't visited before. Otherwise this is a back-edge.
 		rz_vector_push(to_visit, &to);
 	}
