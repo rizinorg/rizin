@@ -921,6 +921,20 @@ static inline bool is_call(const RzAnalysisOp *op) {
 		type == RZ_ANALYSIS_OP_TYPE_UCCALL;
 }
 
+static inline bool is_jump(const RzAnalysisOp *op) {
+	_RzAnalysisOpType type = (op->type & RZ_ANALYSIS_OP_TYPE_MASK);
+	return type == RZ_ANALYSIS_OP_TYPE_JMP ||
+		type == RZ_ANALYSIS_OP_TYPE_UJMP ||
+		type == RZ_ANALYSIS_OP_TYPE_RJMP ||
+		type == RZ_ANALYSIS_OP_TYPE_IJMP ||
+		type == RZ_ANALYSIS_OP_TYPE_IRJMP ||
+		type == RZ_ANALYSIS_OP_TYPE_CJMP ||
+		type == RZ_ANALYSIS_OP_TYPE_RCJMP ||
+		type == RZ_ANALYSIS_OP_TYPE_MJMP ||
+		type == RZ_ANALYSIS_OP_TYPE_MCJMP ||
+		type == RZ_ANALYSIS_OP_TYPE_UCJMP;
+}
+
 static inline bool is_uncond_jump(const RzAnalysisOp *op) {
 	return (op->type & RZ_ANALYSIS_OP_TYPE_MASK) == RZ_ANALYSIS_OP_TYPE_JMP &&
 		!((op->type & RZ_ANALYSIS_OP_HINT_MASK) & RZ_ANALYSIS_OP_TYPE_COND);
@@ -956,6 +970,9 @@ static RzGraphNodeCFGSubType get_cfg_node_flags(const RzAnalysisOp *op, bool is_
 	}
 	if (is_call(op)) {
 		subtype |= RZ_GRAPH_NODE_SUBTYPE_CFG_CALL;
+	}
+	if (is_jump(op)) {
+		subtype |= RZ_GRAPH_NODE_SUBTYPE_CFG_JUMP;
 	}
 	if (is_return(op)) {
 		subtype |= RZ_GRAPH_NODE_SUBTYPE_CFG_RETURN;
