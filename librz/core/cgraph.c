@@ -1319,6 +1319,7 @@ static st32 decode_iword_at(RZ_BORROW RzCore *core,
 	size_t bl = buf_len;
 	if (!read_aligned_to_mapped(core->io, addr, buf, &bl, leading_bytes)) {
 		RZ_LOG_ERROR("read_aligned_to_mapped() read from unmapped region at 0x%" PFMT64x ".\n", addr);
+		return -1;
 	}
 	bool success = core->analysis->cur->decode_iword(core->analysis, target_iword, addr, buf, bl, leading_bytes);
 	return success ? target_iword->size_bytes : -1;
