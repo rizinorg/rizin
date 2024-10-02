@@ -8,7 +8,7 @@
 #include <rz_analysis.h>
 #include "xap/dis.c"
 
-static int label_off(struct directive *d) {
+static int label_off(xap_directive_t *d) {
 	int off = d->d_operand;
 	int lame = off & 0x80;
 
@@ -34,38 +34,34 @@ static int label_off(struct directive *d) {
 	return d->d_off + off;
 }
 
-static inline ut16 i2ut16(struct instruction *in) {
-	return *((uint16_t *)in);
-}
-
-static int xap_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *bytes, int len, RzAnalysisOpMask mask) {
-	struct instruction *in = (struct instruction *)bytes;
-	ut16 lol, ins;
-	struct directive d = { { 0 } };
-	struct state s = { 0 };
+static int xap_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
+	xap_directive_t d = { 0 };
+	xap_state_t s = { 0 };
+	xap_instruction_t *in = &d.d_inst;
+	RzStrBuf sb;
 
 	if (!analysis || !op) {
 		return 2;
 	}
 
-	memcpy(&ins, bytes, sizeof(ins));
-	memcpy(&lol, bytes, sizeof(ins));
-	s.s_buf = (void *)bytes;
+	rz_strbuf_init(&sb);
+
+	s.s_buf = buf;
 	s.s_off = addr;
-	s.s_out = NULL;
-	s.s_prefix = 0;
-	memset(&d, '\0', sizeof(struct directive));
-	memcpy(&d.d_inst, s.s_buf, sizeof(d.d_inst));
-	s.s_off += 2;
-	d.d_off = s.s_off;
-	xap_decode(&s, &d);
+	d.d_asm = &sb;
+
+	if (xap_read_instruction(&s, &d) > 0) {
+		xap_decode(&s, &d);
+	} else {
+		rz_strbuf_fini(&sb);
+		return op->size;
+	}
 	d.d_operand = get_operand(&s, &d);
 
-	memset(op, 0, sizeof(RzAnalysisOp));
 	op->type = RZ_ANALYSIS_OP_TYPE_UNK;
 	op->size = 2;
 
-	switch (i2ut16(in)) {
+	switch (d.opcode) {
 	case INST_NOP:
 		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 		break;
@@ -81,7 +77,7 @@ static int xap_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 	default:
 		switch (in->in_opcode) {
 		case 0:
-			switch (lol & 0xf) {
+			switch (d.opcode & 0xf) {
 			case 1:
 			case 2:
 			case 3:
@@ -207,6 +203,7 @@ static int xap_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		}
 		break;
 	}
+	rz_strbuf_fini(&sb);
 	return op->size;
 }
 

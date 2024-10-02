@@ -6,9 +6,16 @@
 #define _INCLUDE_XAP_DIS_H_
 
 #include <rz_types.h>
+#include <rz_util.h>
 
-#define __packed __attribute__((__packed__))
+typedef struct instruction {
+	ut16 in_mode; // : 2,
+	ut16 in_reg; // : 2,
+	ut16 in_opcode; // : 4,
+	ut16 in_operand; // : 8;
+} xap_instruction_t;
 
+#if 0
 struct instruction {
 	ut16 in_mode : 2,
 		in_reg : 2,
@@ -22,41 +29,41 @@ struct instruction {
 #else
 } __packed;
 #endif
+#endif
 
-struct directive {
+typedef struct directive {
+	ut16 opcode;
 	struct instruction d_inst;
 	int d_operand;
 	int d_prefix;
 	unsigned int d_off;
-	char d_asm[128];
+	RzStrBuf *d_asm;
 	struct directive *d_next;
-};
+} xap_directive_t;
 
-struct label {
+typedef struct label {
 	char l_name[128];
 	unsigned int l_off;
 	struct directive *l_refs[666];
 	int l_refc;
 	struct label *l_next;
-};
+} xap_label_t;
 
-struct state {
+typedef struct state {
 	int s_prefix;
 	unsigned int s_prefix_val;
-	FILE *s_in;
 	unsigned int s_off;
 	char *s_fname;
 	int s_u;
 	unsigned int s_labelno;
 	const unsigned char *s_buf;
-	struct directive s_dirs;
-	struct label s_labels;
-	FILE *s_out;
+	xap_directive_t s_dirs;
+	xap_label_t s_labels;
 	int s_format;
 	int s_nop;
-	struct directive *s_nopd;
+	xap_directive_t *s_nopd;
 	int s_ff_quirk;
-};
+} xap_state_t;
 
 #define MODE_MASK     3
 #define REG_SHIFT     2
@@ -87,6 +94,7 @@ struct state {
 #define ADDR_MODE_RELATIVE   0
 #define ADDR_MODE_X_RELATIVE 2
 
-static void xap_decode(struct state *s, struct directive *d);
+static void xap_decode(xap_state_t *s, xap_directive_t *d);
+static int xap_read_instruction(xap_state_t *s, xap_directive_t *d);
 
 #endif
