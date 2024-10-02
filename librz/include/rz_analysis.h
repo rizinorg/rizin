@@ -979,12 +979,14 @@ static inline bool rz_analysis_op_is_ccall(const RzAnalysisOp *op) {
  */
 typedef enum {
 	RZ_ANALYSIS_IWORD_COND = 0x80000000, ///< Conditional property.
+	RZ_ANALYSIS_IWORD_TAIL = 0x40000000, ///< Tail call property.
 	RZ_ANALYSIS_IWORD_NONE = 0, ///< Unset property
 	RZ_ANALYSIS_IWORD_R_MEM = 1 << 0, ///< Reads memory
 	RZ_ANALYSIS_IWORD_W_MEM = 1 << 1, ///< Writes memory
 	RZ_ANALYSIS_IWORD_JUMP = 1 << 2, ///< Jumps to a different address (no call)
 	RZ_ANALYSIS_IWORD_CALL = 1 << 3, ///< Calls a sub-procedure.
 	RZ_ANALYSIS_IWORD_RET = 1 << 4, ///< Returns from a sub-procedure.
+	RZ_ANALYSIS_IWORD_EXIT = 1 << 5, ///< Exits the program.
 	RZ_ANALYSIS_IWORD_CR_MEM = RZ_ANALYSIS_IWORD_R_MEM | RZ_ANALYSIS_IWORD_COND, ///< Conditionally reads memory
 	RZ_ANALYSIS_IWORD_CW_MEM = RZ_ANALYSIS_IWORD_W_MEM | RZ_ANALYSIS_IWORD_COND, ///< Conditionally writes memory
 	RZ_ANALYSIS_IWORD_CJUMP = RZ_ANALYSIS_IWORD_JUMP | RZ_ANALYSIS_IWORD_COND, ///< Conditionally jumps to a different address.

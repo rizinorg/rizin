@@ -1191,11 +1191,7 @@ RZ_API HexInsnContainer *hexagon_reverse_opcode(const RzAsm *rz_asm, HexReversed
 
 static void set_iword_properties(ut32 anaop_type, RzAnalysisInsnWord *iword) {
 	rz_return_if_fail(iword);
-	if (anaop_type & RZ_ANALYSIS_OP_TYPE_COND) {
-		iword->props |= RZ_ANALYSIS_IWORD_COND;
-	}
-
-	switch (anaop_type) {
+	switch (anaop_type & ~RZ_ANALYSIS_OP_HINT_MASK) {
 	default:
 		break;
 	case RZ_ANALYSIS_OP_TYPE_CALL:
@@ -1221,6 +1217,17 @@ static void set_iword_properties(ut32 anaop_type, RzAnalysisInsnWord *iword) {
 		break;
 	case RZ_ANALYSIS_OP_TYPE_RET:
 		iword->props |= RZ_ANALYSIS_IWORD_RET;
+		break;
+	}
+
+	switch (anaop_type & RZ_ANALYSIS_OP_HINT_MASK) {
+	default:
+		break;
+	case RZ_ANALYSIS_OP_TYPE_TAIL:
+		iword->props |= RZ_ANALYSIS_IWORD_TAIL;
+		break;
+	case RZ_ANALYSIS_OP_TYPE_COND:
+		iword->props |= RZ_ANALYSIS_IWORD_COND;
 		break;
 	}
 }

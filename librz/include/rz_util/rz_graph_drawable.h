@@ -33,6 +33,7 @@ typedef enum {
 	RZ_GRAPH_NODE_SUBTYPE_CFG_EXIT = 1 << 3, ///< A node which exits the program (precedure does not return).
 	RZ_GRAPH_NODE_SUBTYPE_CFG_COND = 1 << 4, ///< A conditional instruction node.
 	RZ_GRAPH_NODE_SUBTYPE_CFG_JUMP = 1 << 5, ///> A node which jumps to another node.
+	RZ_GRAPH_NODE_SUBTYPE_CFG_TAIL = 1 << 6, ///> A tail call node.
 	RZ_GRAPH_NODE_SUBTYPE_CFG_ENTRY_CALL = RZ_GRAPH_NODE_SUBTYPE_CFG_ENTRY | RZ_GRAPH_NODE_SUBTYPE_CFG_CALL,
 	RZ_GRAPH_NODE_SUBTYPE_CFG_ENTRY_RETURN = RZ_GRAPH_NODE_SUBTYPE_CFG_ENTRY | RZ_GRAPH_NODE_SUBTYPE_CFG_RETURN,
 	RZ_GRAPH_NODE_SUBTYPE_CFG_ENTRY_EXIT = RZ_GRAPH_NODE_SUBTYPE_CFG_ENTRY | RZ_GRAPH_NODE_SUBTYPE_CFG_EXIT,
@@ -47,6 +48,8 @@ typedef enum {
 	RZ_GRAPH_NODE_SUBTYPE_CFG_IWORD_ENTRY = 1 << 0, ///< Entry node of the procedure CFG with iwords
 	RZ_GRAPH_NODE_SUBTYPE_CFG_IWORD_RETURN = 1 << 2, ///< A return node of the procedure.
 	RZ_GRAPH_NODE_SUBTYPE_CFG_IWORD_COND = 1 << 3, ///< A conditional instruction word.
+	RZ_GRAPH_NODE_SUBTYPE_CFG_IWORD_TAIL = 1 << 4, ///< A tail call node.
+	RZ_GRAPH_NODE_SUBTYPE_CFG_IWORD_EXIT = 1 << 5, ///< Node exits the program.
 	RZ_GRAPH_NODE_SUBTYPE_CFG_IWORD_ENTRY_RETURN = RZ_GRAPH_NODE_SUBTYPE_CFG_ENTRY | RZ_GRAPH_NODE_SUBTYPE_CFG_RETURN,
 } RzGraphNodeCFGIWordSubType;
 
