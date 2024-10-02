@@ -336,7 +336,6 @@ if get_option('use_gpl')
     'riscv_gnu',
     'sparc_gnu',
     'vax_gnu',
-    'xtensa_gnu',
     'z80_gnu',
   ]
 
@@ -350,7 +349,6 @@ if get_option('use_gpl')
     'p_gnu/arch_riscv.c',
     'p_gnu/arch_sparc.c',
     'p_gnu/arch_vax.c',
-    'p_gnu/arch_xtensa.c',
     'p_gnu/arch_z80.c',
   ]
 
@@ -373,10 +371,6 @@ if get_option('use_gpl')
     'isa_gnu/sparc/sparc-dis.c',
     'isa_gnu/sparc/sparc-opc.c',
     'isa_gnu/vax/vax-dis.c',
-    'isa_gnu/xtensa/elf32-xtensa.c',
-    'isa_gnu/xtensa/xtensa-dis.c',
-    'isa_gnu/xtensa/xtensa-isa.c',
-    'isa_gnu/xtensa/xtensa-modules.c',
     # 'isa_gnu/z80/expressions.c',
     # 'isa_gnu/z80/z80.c',
     # 'isa_gnu/z80/z80asm.c',
