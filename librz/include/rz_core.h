@@ -787,6 +787,7 @@ typedef enum {
 	RZ_CORE_GRAPH_TYPE_IL, ///< RzIL graph
 	RZ_CORE_GRAPH_TYPE_ICFG, ///< Inter-procedual control flow graph
 	RZ_CORE_GRAPH_TYPE_CFG, ///< control flow graph (without calls)
+	RZ_CORE_GRAPH_TYPE_CFG_FCN, ///< control flow graph (without calls) of a function.
 	RZ_CORE_GRAPH_TYPE_UNK ///< Unknown graph
 } RzCoreGraphType;
 

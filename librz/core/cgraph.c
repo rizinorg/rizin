@@ -511,6 +511,14 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph(RzCore *core, RzCor
 			graph = rz_core_graph_cfg(core, addr, false);
 		}
 		break;
+	case RZ_CORE_GRAPH_TYPE_CFG_FCN:
+		if (core->analysis->cur && core->analysis->cur->decode_iword) {
+			// Build the instruction word graph.
+			graph = rz_core_graph_cfg_iwords(core, addr, true);
+		} else {
+			graph = rz_core_graph_cfg(core, addr, true);
+		}
+		break;
 	case RZ_CORE_GRAPH_TYPE_DIFF:
 	default:
 		rz_warn_if_reached();
