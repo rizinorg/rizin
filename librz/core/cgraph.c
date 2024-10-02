@@ -936,8 +936,13 @@ static inline bool is_jump(const RzAnalysisOp *op) {
 }
 
 static inline bool is_uncond_jump(const RzAnalysisOp *op) {
-	return (op->type & RZ_ANALYSIS_OP_TYPE_MASK) == RZ_ANALYSIS_OP_TYPE_JMP &&
+	ut32 op_type = op->type & RZ_ANALYSIS_OP_TYPE_MASK;
+	return (op_type == RZ_ANALYSIS_OP_TYPE_JMP || op_type == RZ_ANALYSIS_OP_TYPE_UJMP) &&
 		!((op->type & RZ_ANALYSIS_OP_HINT_MASK) & RZ_ANALYSIS_OP_TYPE_COND);
+}
+
+static inline bool is_invalid(const RzAnalysisOp *op) {
+	return (op->type & RZ_ANALYSIS_OP_TYPE_MASK) == RZ_ANALYSIS_OP_TYPE_ILL;
 }
 
 static inline bool is_return(const RzAnalysisOp *op) {
@@ -959,7 +964,7 @@ static inline bool is_leaf_op(const RzAnalysisOp *op) {
 
 static inline bool ignore_next_instr(const RzAnalysisOp *op) {
 	// Ignore if:
-	return is_uncond_jump(op) || (op->fail != UT64_MAX && !is_call(op)); // Except calls, everything which has set fail
+	return is_uncond_jump(op) || (op->fail != UT64_MAX && !is_call(op)) || is_invalid(op); // Except calls, everything which has set fail
 }
 
 static RzGraphNodeCFGSubType get_cfg_node_flags(const RzAnalysisOp *op, bool is_entry) {
@@ -1019,8 +1024,8 @@ static RzGraphNodeInfo *rz_graph_create_node_info_cfg_iword(const RzAnalysisInsn
 		RzGraphNodeInfoDataCFG *info = RZ_NEW0(RzGraphNodeInfoDataCFG);
 		info->address = op->addr;
 		info->call_address = (rz_analysis_op_is_call(op) || rz_analysis_op_is_ccall(op)) ? op->jump : UT64_MAX;
-		info->jump_address = (rz_analysis_op_is_jump(op) || rz_analysis_op_is_cjump(op)) ? op->jump : UT64_MAX;
-		info->next = rz_analysis_op_is_return(op) ? UT64_MAX : op->addr + op->size;
+		info->jump_address = is_jump(op) ? op->jump : UT64_MAX;
+		info->next = is_return(op) || is_uncond_jump(op) ? UT64_MAX : op->addr + op->size;
 		info->subtype = get_cfg_node_flags(op, is_entry);
 		rz_pvector_push(data->cfg_iword.insn, info);
 		is_entry = false;
@@ -1033,7 +1038,7 @@ static RzGraphNode *add_node_info_cfg(RzGraph /*<RzGraphNodeInfo *>*/ *cfg, cons
 	RzGraphNodeCFGSubType subtype = get_cfg_node_flags(op, is_entry);
 	ut64 call_target = is_call(op) ? op->jump : UT64_MAX;
 	ut64 jump_target = rz_analysis_op_is_jump(op) ? op->jump : UT64_MAX;
-	ut64 next = is_return(op) ? UT64_MAX : op->addr + op->size;
+	ut64 next = is_return(op) || is_uncond_jump(op) ? UT64_MAX : op->addr + op->size;
 	RzGraphNodeInfo *data = rz_graph_create_node_info_cfg(op->addr, call_target, jump_target, next, subtype);
 	if (!data) {
 		return NULL;

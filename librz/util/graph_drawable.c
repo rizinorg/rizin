@@ -28,6 +28,13 @@ RZ_API RZ_OWN char *rz_graph_get_node_subtype_annotation_cfg(RzGraphNodeCFGSubTy
 		}
 		return annotation;
 	}
+	if (subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_JUMP && !(subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_COND)) {
+		annotation = rz_str_append(annotation, letter_abbr ? (utf8 ? "○" : ".") : "jump");
+		if (!utf8 || !letter_abbr) {
+			annotation = rz_str_append(annotation, ")");
+		}
+		return annotation;
+	}
 	if (subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_ENTRY) {
 		annotation = rz_str_append(annotation, letter_abbr ? (utf8 ? "↓" : "e") : "entry");
 	}
