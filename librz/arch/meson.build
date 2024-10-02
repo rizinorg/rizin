@@ -321,6 +321,7 @@ if capstone_dep.version() == 'next' or capstone_dep.version().split('.')[0].to_i
   arch_isa_sources += [
     'isa/tricore/tricore_il.c',
     'isa/xtensa/xtensa.c',
+    'isa/xtensa/xtensa_esil.c',
   ]
 endif
 
