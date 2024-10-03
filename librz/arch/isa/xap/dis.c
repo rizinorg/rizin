@@ -3,16 +3,9 @@
 // SPDX-FileCopyrightText: 2024 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <fcntl.h>
-#include <string.h>
-#include <stdarg.h>
-#include <stdint.h>
-#include "dis.h"
-
 #include <rz_types.h>
 #include <rz_util/rz_assert.h>
+#include "dis.h"
 
 static int decode_fixed(xap_state_t *s, xap_directive_t *d) {
 	switch (d->opcode) {
