@@ -1239,7 +1239,9 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg(RZ_NONNULL RzCo
 		}
 
 		bool to_node_within_fcn = true;
-		if (curr_op.jump != UT64_MAX && !is_call(&curr_op)) {
+		bool add_jump = curr_op.jump != UT64_MAX && !is_call(&curr_op);
+		bool add_fail = curr_op.fail != UT64_MAX && !is_call(&curr_op);
+		if (add_jump) {
 			if (decode_op_at(core, curr_op.jump, buf, sizeof(buf), &target_op) <= 0) {
 				rz_analysis_op_fini(&target_op);
 				goto error;
@@ -1250,7 +1252,7 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg(RZ_NONNULL RzCo
 			}
 			rz_analysis_op_fini(&target_op);
 		}
-		if (curr_op.fail != UT64_MAX && !is_call(&curr_op)) {
+		if (add_fail) {
 			if (decode_op_at(core, curr_op.fail, buf, sizeof(buf), &target_op) <= 0) {
 				rz_analysis_op_fini(&target_op);
 				goto error;
@@ -1264,7 +1266,7 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg(RZ_NONNULL RzCo
 
 		ut64 next_addr = cur_addr + disas_bytes;
 		bool next_within_fcn = fcn ? rz_analysis_function_contains(fcn, next_addr) : true;
-		if (within_fcn && !next_within_fcn && tail_exit_candidate(to_node_within_fcn, next_within_fcn, &curr_op)) {
+		if (within_fcn && !next_within_fcn && tail_exit_candidate(to_node_within_fcn && add_jump, next_within_fcn, &curr_op)) {
 			assign_tails_exits(graph, nodes_visited, &curr_op);
 			rz_analysis_op_fini(&curr_op);
 			continue;

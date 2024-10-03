@@ -1402,3 +1402,35 @@ EXPECT=<<EOF
                       `----------------'
 EOF
 RUN
+
+NAME=arm tail call no target
+FILE=bins/elf/analysis/arm-ls
+CMDS=<<EOF
+s 0x00011ba4
+af
+pdf
+agFf
+EOF
+EXPECT=<<EOF
+/ void sym.imp.error(int status, int errname, char *format);
+|           0x00011ba4      add   ip, pc, 0, 12
+|           0x00011ba8      add   ip, ip, 0x25000
+\           0x00011bac      ldr   pc, [ip, 0x528]!
+ .---------------.
+ |  0x11ba4 (e)  |
+ `---------------'
+     v
+     |
+     |
+ .---------------.
+ |  0x11ba8 (.)  |
+ `---------------'
+     v
+     |
+    .'
+    |
+.----------------.
+|  0x11bac (jt)  |
+`----------------'
+EOF
+RUN
