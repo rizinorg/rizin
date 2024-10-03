@@ -7,20 +7,14 @@
 #include <rz_util.h>
 #include <rz_asm.h>
 
-static int arch_xap_disasm(char *str, const unsigned char *buf, ut64 seek) {
-	struct state *s = get_state();
-	struct directive *d;
-	memset(s, 0, sizeof(*s));
-	s->s_buf = buf;
-	s->s_off = seek;
-	s->s_out = NULL;
-	d = next_inst(s);
-	if (d != NULL) {
-		xap_decode(s, d);
-		strcpy(str, d->d_asm);
-		free(d);
-	} else {
-		*str = '\0';
+static int arch_xap_disasm(RzStrBuf *asm_buf, const unsigned char *buf, ut64 addr) {
+	xap_state_t s = { 0 };
+	xap_directive_t d = { 0 };
+	s.s_buf = buf;
+	s.s_off = addr;
+	d.d_asm = asm_buf;
+	if (xap_read_instruction(&s, &d) > 0) {
+		xap_decode(&s, &d);
 	}
 #if 0
 	if (s->s_ff_quirk) {
@@ -30,9 +24,8 @@ static int arch_xap_disasm(char *str, const unsigned char *buf, ut64 seek) {
 #endif
 	return 0;
 }
-static int disassemble(RzAsm *a, struct rz_asm_op_t *op, const ut8 *buf, int len) {
-	char *buf_asm = rz_strbuf_get(&op->buf_asm);
-	arch_xap_disasm(buf_asm, buf, a->pc);
+static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+	arch_xap_disasm(&op->buf_asm, buf, a->pc);
 	return (op->size = 2);
 }
 

@@ -1,62 +1,54 @@
 // SPDX-FileCopyrightText: 2007 sorbo
 // SPDX-FileCopyrightText: 2010-2019 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2024 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef _INCLUDE_XAP_DIS_H_
 #define _INCLUDE_XAP_DIS_H_
 
 #include <rz_types.h>
+#include <rz_util.h>
 
-#define __packed __attribute__((__packed__))
+typedef struct instruction {
+	ut16 in_mode; // : 2,
+	ut16 in_reg; // : 2,
+	ut16 in_opcode; // : 4,
+	ut16 in_operand; // : 8;
+} xap_instruction_t;
 
-struct instruction {
-	ut16 in_mode : 2,
-		in_reg : 2,
-		in_opcode : 4,
-		in_operand : 8;
-#if __sun || defined(_MSC_VER)
-#ifndef _MSC_VER
-#warning XXX related to sunstudio :O
-#endif
-};
-#else
-} __packed;
-#endif
-
-struct directive {
+typedef struct directive {
+	ut16 opcode;
 	struct instruction d_inst;
 	int d_operand;
 	int d_prefix;
 	unsigned int d_off;
-	char d_asm[128];
+	RzStrBuf *d_asm;
 	struct directive *d_next;
-};
+} xap_directive_t;
 
-struct label {
+typedef struct label {
 	char l_name[128];
 	unsigned int l_off;
 	struct directive *l_refs[666];
 	int l_refc;
 	struct label *l_next;
-};
+} xap_label_t;
 
-struct state {
+typedef struct state {
 	int s_prefix;
 	unsigned int s_prefix_val;
-	FILE *s_in;
 	unsigned int s_off;
 	char *s_fname;
 	int s_u;
 	unsigned int s_labelno;
 	const unsigned char *s_buf;
-	struct directive s_dirs;
-	struct label s_labels;
-	FILE *s_out;
+	xap_directive_t s_dirs;
+	xap_label_t s_labels;
 	int s_format;
 	int s_nop;
-	struct directive *s_nopd;
+	xap_directive_t *s_nopd;
 	int s_ff_quirk;
-};
+} xap_state_t;
 
 #define MODE_MASK     3
 #define REG_SHIFT     2
@@ -73,6 +65,7 @@ struct state {
 #define INST_RTS   0x00E2
 #define INST_BRXL  0xfe09
 #define INST_BC    0xff09
+#define INST_BC2   0xfd09
 
 #define REG_AH 0
 #define REG_AL 1
@@ -87,6 +80,7 @@ struct state {
 #define ADDR_MODE_RELATIVE   0
 #define ADDR_MODE_X_RELATIVE 2
 
-static void xap_decode(struct state *s, struct directive *d);
+static void xap_decode(xap_state_t *s, xap_directive_t *d);
+static int xap_read_instruction(xap_state_t *s, xap_directive_t *d);
 
 #endif
