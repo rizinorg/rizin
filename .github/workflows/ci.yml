@@ -295,7 +295,7 @@ jobs:
           meson test -C build --suite integration
           cd test
           if [ "$RUNNER_OS" == "macOS" ]; then
-            rz-test -j `sysctl -n hw.ncpu` -L -o results.json
+            rz-test -j `sysctl -n hw.activecpu` -L -o results.json
           else
             rz-test -L -o results.json
           fi
