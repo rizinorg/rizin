@@ -13,10 +13,6 @@
 #include <rz_types.h>
 #include <rz_util/rz_assert.h>
 
-static void decode_unknown(xap_state_t *s, xap_directive_t *d) {
-	rz_strbuf_setf(d->d_asm, "DC 0x%4x", d->opcode);
-}
-
 static int decode_fixed(xap_state_t *s, xap_directive_t *d) {
 	switch (d->opcode) {
 	case INST_NOP:
@@ -30,6 +26,7 @@ static int decode_fixed(xap_state_t *s, xap_directive_t *d) {
 	case INST_SLEEP: rz_strbuf_set(d->d_asm, "sleep"); break;
 	case INST_SIF: rz_strbuf_set(d->d_asm, "sif"); break;
 	case INST_BC: rz_strbuf_set(d->d_asm, "bc"); break;
+	case INST_BC2: rz_strbuf_set(d->d_asm, "bc2"); break;
 	case INST_BRXL: rz_strbuf_set(d->d_asm, "brxl"); break;
 	case INST_U:
 		s->s_u = 1;
@@ -82,12 +79,14 @@ static int decode_known(xap_state_t *s, xap_directive_t *d) {
 	switch (in->in_opcode) {
 	case 0:
 		if (in->in_reg == 0 && in->in_mode == 0) {
-			if (s->s_prefix == 0)
+			if (s->s_prefix == 0) {
 				s->s_prefix_val = 0;
+			}
 			s->s_prefix++;
 
-			if (s->s_prefix == 2)
+			if (s->s_prefix == 2) {
 				s->s_prefix_val <<= 8;
+			}
 #if 0
 			/* XXX we need to look ahead more to see if we're
 			 * getting a branch instruction */
@@ -95,7 +94,6 @@ static int decode_known(xap_state_t *s, xap_directive_t *d) {
 				strcpy(s->s_nopd->d_asm, "");
 #endif
 			s->s_prefix_val |= in->in_operand << 8;
-
 			return 1;
 		}
 
@@ -326,8 +324,9 @@ static int decode_known(xap_state_t *s, xap_directive_t *d) {
 		break;
 	}
 
-	if (!op)
+	if (!op) {
 		return 0;
+	}
 
 	if (ptr && in->in_mode == DATA_MODE_IMMEDIATE)
 		ptr = 0;
@@ -335,8 +334,9 @@ static int decode_known(xap_state_t *s, xap_directive_t *d) {
 	if (branch && in->in_mode == ADDR_MODE_X_RELATIVE)
 		ptr = 0;
 
-	if (idx && (!(in->in_mode & 2)))
+	if (idx && (!(in->in_mode & 2))) {
 		idx = 0;
+	}
 
 	if (regn) {
 		ptr = 1;
@@ -376,15 +376,18 @@ static int decode_known(xap_state_t *s, xap_directive_t *d) {
 		d->d_operand = s->s_prefix_val | in->in_operand;
 		if (d->d_operand & 0x80) {
 			if (d->d_prefix) {
-				if (!rel)
+				if (!rel) {
 					d->d_operand -= 0x100;
-			} else
+				}
+			} else {
 				d->d_operand |= 0xff00;
+			}
 		}
 	}
 	fmtsz = 4;
-	if (d->d_operand & 0xff0000)
+	if (d->d_operand & 0xff0000) {
 		fmtsz += 2;
+	}
 
 	rz_strf(fmt, "%s0x%%.%dx", sign, fmtsz);
 	rz_strbuf_appendf(d->d_asm, fmt, d->d_operand);
@@ -404,9 +407,9 @@ static int decode_known(xap_state_t *s, xap_directive_t *d) {
 
 static void xap_decode(xap_state_t *s, xap_directive_t *d) {
 	int prefix = s->s_prefix;
-	if (!decode_fixed(s, d))
-		if (!decode_known(s, d))
-			decode_unknown(s, d);
+	if (!decode_fixed(s, d) && !decode_known(s, d)) {
+		rz_strbuf_setf(d->d_asm, "unknown");
+	}
 	if (s->s_prefix == prefix)
 		s->s_prefix_val = s->s_prefix = 0;
 }

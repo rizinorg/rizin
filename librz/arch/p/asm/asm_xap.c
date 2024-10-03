@@ -7,11 +7,11 @@
 #include <rz_util.h>
 #include <rz_asm.h>
 
-static int arch_xap_disasm(RzStrBuf *asm_buf, const unsigned char *buf, ut64 seek) {
+static int arch_xap_disasm(RzStrBuf *asm_buf, const unsigned char *buf, ut64 addr) {
 	xap_state_t s = { 0 };
 	xap_directive_t d = { 0 };
 	s.s_buf = buf;
-	s.s_off = seek;
+	s.s_off = addr;
 	d.d_asm = asm_buf;
 	if (xap_read_instruction(&s, &d) > 0) {
 		xap_decode(&s, &d);

@@ -71,6 +71,9 @@ static int xap_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 	case INST_BC:
 		op->type = RZ_ANALYSIS_OP_TYPE_TRAP;
 		break;
+	case INST_BC2:
+		op->type = RZ_ANALYSIS_OP_TYPE_TRAP;
+		break;
 	case INST_BRXL:
 		op->type = RZ_ANALYSIS_OP_TYPE_TRAP;
 		break;

@@ -80,6 +80,7 @@ typedef struct state {
 #define INST_RTS   0x00E2
 #define INST_BRXL  0xfe09
 #define INST_BC    0xff09
+#define INST_BC2   0xfd09
 
 #define REG_AH 0
 #define REG_AL 1
