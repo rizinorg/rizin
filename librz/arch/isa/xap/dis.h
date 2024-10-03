@@ -15,22 +15,6 @@ typedef struct instruction {
 	ut16 in_operand; // : 8;
 } xap_instruction_t;
 
-#if 0
-struct instruction {
-	ut16 in_mode : 2,
-		in_reg : 2,
-		in_opcode : 4,
-		in_operand : 8;
-#if __sun || defined(_MSC_VER)
-#ifndef _MSC_VER
-#warning XXX related to sunstudio :O
-#endif
-};
-#else
-} __packed;
-#endif
-#endif
-
 typedef struct directive {
 	ut16 opcode;
 	struct instruction d_inst;
