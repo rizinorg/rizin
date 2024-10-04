@@ -5,6 +5,7 @@
 #ifndef RZ_ARCH_H
 #define RZ_ARCH_H
 
+#include <rz_util/rz_iterator.h>
 #include <rz_types.h>
 #include <rz_vector.h>
 #include <rz_util.h>
@@ -35,6 +36,8 @@ typedef enum {
 
 #define RZ_ARCH_BUFFER_SIZE 128
 
+typedef ut64 RzAddress;
+
 typedef struct rz_arch_xcode_t {
 	RzArchXCodeMember member; ///< Describes the content of array
 	void *array; ///< Array of variable size, containing one or more structures of type member.
@@ -42,9 +45,9 @@ typedef struct rz_arch_xcode_t {
 } RzArchXCode;
 
 /// This needs to be redone, copied for reference from RzAnalysisOp
-typedef struct rz_arch_packet_t {
+typedef struct rz_arch_insn_t {
 	char *mnemonic; /* mnemonic.. it actually contains the args too, we should replace rasm with this */
-	ut64 addr; /* address */
+	RzAddress addr; /* address */
 	ut32 type; /* type of opcode */
 	RzAnalysisOpPrefix prefix; /* type of opcode prefix (rep,lock,..) */
 	ut32 type2; /* used by java */
@@ -60,8 +63,8 @@ typedef struct rz_arch_packet_t {
 	bool sign; /* operates on signed values, false by default */
 	/* Run N instructions before executing the current one */
 	int delay; /* delay N slots (mips, ..)*/
-	ut64 jump; /* true jmp */
-	ut64 fail; /* false jmp */
+	RzAddress jump; /* true jmp */
+	RzAddress fail; /* false jmp */
 	RzAnalysisOpDirection direction;
 	st64 ptr; /* reference to memory */ /* XXX signed? */
 	ut64 val; /* reference to value */ /* XXX signed? */
@@ -82,6 +85,65 @@ typedef struct rz_arch_packet_t {
 	RzAnalysisSwitchOp *switch_op;
 	RzAnalysisHint hint;
 	RzAnalysisDataType datatype;
+} RzArchInsn;
+
+/**
+ * \brief Values a packet can contain.
+ */
+typedef enum {
+	RZ_ARCH_PACKET_ITER_KIND_INVALID = 0,
+	RZ_ARCH_PACKET_ITER_KIND_CALL_TARGETS,
+	RZ_ARCH_PACKET_ITER_KIND_JUMP_TARGETS,
+	RZ_ARCH_PACKET_ITER_KIND_DATA_REFS,
+	RZ_ARCH_PACKET_ITER_KIND_CODE_REFS,
+	RZ_ARCH_PACKET_ITER_KIND_IMMS,
+	RZ_ARCH_PACKET_ITER_KIND_REGS,
+} RzArchPacketIterKind;
+
+typedef enum {
+	RZ_ARCH_PACKET_INSN_ORDER_INVALID = 0,
+	RZ_ARCH_PACKET_INSN_ORDER_LOW_ADDR_FIRST,
+	RZ_ARCH_PACKET_INSN_ORDER_HIGH_ADDR_FIRST,
+} RzArchPacketInsnOrder;
+
+/// We should implement an enum for each of it though.
+typedef _RzAnalysisOpType RzArchPacketType;
+typedef _RzAnalysisOpType RzArchInsnType;
+
+struct rz_arch_packet_t;
+
+/**
+ * \brief Get an iterator over elements of type \p kind from all instructions in the packet.
+ * The order of values follows RzArchPacket.order. Values of the first instruction are returned first.
+ *
+ * \param packet The instruction packet.
+ * \param kind The kind of values the iterator should yield.
+ *
+ * \return Returns an iterator over the \p kind elements.
+ * Or NULL if the architecture doesn't support this iterator kind. Or has no elements to iterate over.
+ */
+typedef RZ_OWN RzIterator /*<void>*/ *(*rz_arch_packet_iter)(const struct rz_arch_packet_t *packet, RzArchPacketIterKind kind);
+
+/**
+ * \brief Get an iterator instructions with \p property.
+ * The order of instrctions follows RzArchPacket.order.
+ *
+ * \param packet The instruction packet.
+ * \param kind The kind of values the iterator should yield.
+ *
+ * \return Returns an iterator over the insturctions with \p insn_type.
+ * Or NULL if the packet has no instructions of such type.
+ */
+typedef RZ_OWN RzIterator /*<RzArchInsn>*/ *(*rz_arch_packet_iter_insn)(const struct rz_arch_packet_t *packet, RzArchInsnType insn_type);
+
+/**
+ * \brief An atomically executed unit. Can contain 1-n instructions.
+ */
+typedef struct rz_arch_packet_t {
+	RzArchPacketInsnOrder order; ///< Order the instructions.
+	RzPVector /*<RzArchInsn>*/ *insns; ///< All instructions of a packet. Sorted according to order.
+	rz_arch_packet_iter value_iter;
+	rz_arch_packet_iter_insn insn_iter;
 } RzArchPacket;
 
 /// This needs to be redone, copied for reference from RzAnalysisHint
