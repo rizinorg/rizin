@@ -223,7 +223,7 @@ RZ_API bool rz_lib_open(RzLib *lib, RZ_NONNULL const char *file) {
 		rz_sys_dlclose(handler);
 	}
 
-	if (strf) {
+	if (strf && !stru->is_plugin_owned) {
 		free(stru);
 	}
 	return res;

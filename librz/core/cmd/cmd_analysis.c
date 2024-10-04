@@ -4780,6 +4780,11 @@ RZ_IPI RzCmdStatus rz_analysis_graph_cfg_handler(RzCore *core, int argc, const c
 	return bool2status(rz_core_graph_print(core, core->offset, RZ_CORE_GRAPH_TYPE_CFG, format));
 }
 
+RZ_IPI RzCmdStatus rz_analysis_graph_cfg_fcn_handler(RzCore *core, int argc, const char **argv) {
+	const RzCoreGraphFormat format = rz_core_graph_format_from_string(argv[1]);
+	return bool2status(rz_core_graph_print(core, core->offset, RZ_CORE_GRAPH_TYPE_CFG_FCN, format));
+}
+
 RZ_IPI RzCmdStatus rz_analysis_graph_custom_handler(RzCore *core, int argc, const char **argv) {
 	const RzCoreGraphFormat format = rz_core_graph_format_from_string(argv[1]);
 	return bool2status(rz_core_agraph_print(core, format));
