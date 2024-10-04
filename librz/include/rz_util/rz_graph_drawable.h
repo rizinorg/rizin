@@ -42,14 +42,17 @@ typedef enum {
 /**
  * \brief Flags which describes instruction word nodes in a CFG.
  * Note: These flags are *not* a replacement for the flags assigned to each single instruction within the node.
+ * But they are kept in sync with RzGraphNodeCFGSubType, so they can use the same parser.
  */
 typedef enum {
 	RZ_GRAPH_NODE_SUBTYPE_CFG_IWORD_NONE = 0, ///< No details given to this node.
 	RZ_GRAPH_NODE_SUBTYPE_CFG_IWORD_ENTRY = 1 << 0, ///< Entry node of the procedure CFG with iwords
+	// Call = 1 << 1
 	RZ_GRAPH_NODE_SUBTYPE_CFG_IWORD_RETURN = 1 << 2, ///< A return node of the procedure.
-	RZ_GRAPH_NODE_SUBTYPE_CFG_IWORD_COND = 1 << 3, ///< A conditional instruction word.
-	RZ_GRAPH_NODE_SUBTYPE_CFG_IWORD_TAIL = 1 << 4, ///< A tail call node.
-	RZ_GRAPH_NODE_SUBTYPE_CFG_IWORD_EXIT = 1 << 5, ///< Node exits the program.
+	RZ_GRAPH_NODE_SUBTYPE_CFG_IWORD_EXIT = 1 << 3, ///< Node exits the program.
+	RZ_GRAPH_NODE_SUBTYPE_CFG_IWORD_COND = 1 << 4, ///< A conditional instruction word.
+	// Jump = 1 << 1
+	RZ_GRAPH_NODE_SUBTYPE_CFG_IWORD_TAIL = 1 << 6, ///< A tail call node.
 	RZ_GRAPH_NODE_SUBTYPE_CFG_IWORD_ENTRY_RETURN = RZ_GRAPH_NODE_SUBTYPE_CFG_ENTRY | RZ_GRAPH_NODE_SUBTYPE_CFG_RETURN,
 } RzGraphNodeCFGIWordSubType;
 
