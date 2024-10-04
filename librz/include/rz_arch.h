@@ -23,7 +23,7 @@ RZ_LIB_VERSION_HEADER(rz_arch);
 
 typedef enum {
 	RZ_ARCH_XCODE_MEMBER_INVALID = 0, ///< Invalid member
-	RZ_ARCH_XCODE_MEMBER_BUFFER, ///< Member is a RzBuffer
+	RZ_ARCH_XCODE_MEMBER_BYTES, ///< Member are bytes provided by a RzBuffer.
 	RZ_ARCH_XCODE_MEMBER_ASSEMBLY, ///< Member is assembly
 	RZ_ARCH_XCODE_MEMBER_PACKET, ///< Member is RzArchPacket
 	RZ_ARCH_XCODE_MEMBER_HINT, ///< Member is RzArchHint
@@ -33,8 +33,6 @@ typedef enum {
 	RZ_ARCH_XCODE_MEMBER_PARSE, ///< [Deprecated] Member is parsed string (pseudo code)
 	RZ_ARCH_XCODE_MEMBER_ESIL, ///< [Deprecated] Member is ESIL
 } RzArchXCodeMember;
-
-#define RZ_ARCH_BUFFER_SIZE 128
 
 typedef ut64 RzAddress;
 
