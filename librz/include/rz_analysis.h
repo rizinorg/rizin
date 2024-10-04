@@ -332,7 +332,7 @@ typedef enum {
 	RZ_ANALYSIS_OP_TYPE_CPL = 45, /* complement */
 	RZ_ANALYSIS_OP_TYPE_CRYPTO = 46,
 	RZ_ANALYSIS_OP_TYPE_SYNC = 47,
-// RZ_ANALYSIS_OP_TYPE_DEBUG = 43, // monitor/trace/breakpoint
+	RZ_ANALYSIS_OP_TYPE_CTX_SWITCH = 48
 #if 0
 	RZ_ANALYSIS_OP_TYPE_PRIV = 40, /* privileged instruction */
 	RZ_ANALYSIS_OP_TYPE_FPU = 41, /* floating point stuff */
