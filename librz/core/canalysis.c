@@ -2061,6 +2061,55 @@ RZ_API void rz_core_analysis_resolve_jumps(RZ_NONNULL RzCore *core) {
 }
 
 /**
+ * \brief Mark the bytes that are referenced and don't belong
+ *      to any functions as data.
+ */
+static void core_analysis_referenced_data(RzCore *core) {
+	RzList *xrefs = rz_analysis_xrefs_list(core->analysis);
+	RzListIter *it, *it1;
+	RzAnalysisXRef *x, *x1;
+	rz_list_foreach (xrefs, it, x) {
+		if (x->type != RZ_ANALYSIS_XREF_TYPE_DATA) {
+			continue;
+		}
+		ut64 to = x->to;
+
+		// the location doesn't belong to any function
+		RzList *funcs = rz_analysis_get_functions_in(core->analysis, to);
+		if (!rz_list_empty(funcs)) {
+			rz_list_free(funcs);
+			continue;
+		}
+		rz_list_free(funcs);
+
+		// the location is only referenced as DATA instead of CODE
+		RzList *to_xrefs = rz_analysis_xrefs_get_to(core->analysis, to);
+		bool has_nondata_ref = false;
+		rz_list_foreach (to_xrefs, it1, x1) {
+			if (x1->type != RZ_ANALYSIS_XREF_TYPE_DATA) {
+				has_nondata_ref = true;
+			}
+		}
+		rz_list_free(to_xrefs);
+		if (has_nondata_ref) {
+			continue;
+		}
+
+		RzAsmOp asmop;
+		const int max_opsz = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE);
+		ut8 *buf = malloc(max_opsz);
+		rz_io_read_at(core->io, to, buf, max_opsz);
+		int opsz = rz_asm_disassemble(core->rasm, &asmop, buf, max_opsz);
+		free(buf);
+		if (opsz < 1 || strcmp("invalid", rz_strbuf_get(&asmop.buf_asm))) {
+			continue;
+		}
+		rz_meta_set_data_at(core->analysis, to, asmop.size);
+		rz_asm_op_fini(&asmop);
+	}
+}
+
+/**
  * \brief      Analyze xrefs and prints the result.
  *
  * \param[in]  core    The RzCore to use
@@ -4165,6 +4214,7 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 		rz_analysis_add_device_peripheral_map(core->bin->cur->o, core->analysis);
 	}
 
+	core_analysis_referenced_data(core);
 	core_analysis_using_plugins(core);
 	return true;
 }
