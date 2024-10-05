@@ -596,10 +596,13 @@ static RzILOpEffect *shift(cs_insn *insn) {
 		res = LOGOR(SHIFTR0(a, b), SHIFTL0(DUP(a), NEG(DUP(b))));
 		break;
 #if CS_NEXT_VERSION >= 6
-	case AArch64_INS_EXTR:
-		if (insn->alias_id != AArch64_INS_ALIAS_ROR) {
+	case AARCH64_INS_EXTR:
+		if (insn->alias_id != AARCH64_INS_ALIAS_ROR) {
+			rz_il_op_pure_free(a);
+			rz_il_op_pure_free(b);
 			return NULL;
 		}
+		rz_il_op_pure_free(b);
 		b = ARG(3, &bits);
 		res = LOGOR(SHIFTR0(a, b), SHIFTL0(DUP(a), NEG(DUP(b))));
 		break;
