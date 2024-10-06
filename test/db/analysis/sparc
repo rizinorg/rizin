@@ -157,104 +157,27 @@ RUN
 NAME=analysis.fcnprefix sparc
 FILE=bins/elf/elf-solaris-sparc-ls
 CMDS=<<EOF
+# The test before showed not a single function with a 'root' prefix.
+# No idea if those discovered functions are actual functions.
+# But at least they are named 'root.xxxxxx'.
 s 0x00018c08
 e analysis.fcnprefix=root
 af
-afl
+aac
+afl~root
 EOF
 EXPECT=<<EOF
-0x00013620   12 240          sym.dired_dump_obstack
-0x00013774    1 16           sym.dev_ino_free
-0x00013784    1 32           sym.free_pending_ent
-0x000137a4    9 132          sym.is_colored
-0x0001386c    5 180          sym.clear_files
-0x00013920    1 40           sym.add_ignore_pattern
-0x00013948    1 64           sym.get_funky_string
-0x00013c38    5 104          sym.queue_directory
-0x00013cd8    1 52           sym.file_failure
-0x00013d0c    6 72           sym.patterns_match
-0x00013d80   22 476  -> 344  sym.extract_dirs_from_files
-0x00015c2c   13 396  -> 364  sym.sort_files
-0x00015f6c  129 2740 -> 2472 sym.gobble_file
-0x00016a20   31 748  -> 504  sym.quote_name
-0x00016da0   31 420          sym.restore_default_color
-0x00017b7c    3 3544 -> 56   sym.print_current_files
-0x00018954    4 692          sym.usage
-0x00018c08  344 8388 -> 7256 main
-0x0001b334    7 136          sym.set_program_name
-0x0001b3e4   16 324  -> 316  sym.version_etc_va
-0x0001b528    1 48           sym.version_etc
-0x0001b558    1 44           sym.xalloc_die
-0x0001b59c   14 248          sym.argmatch
-0x0001b694    3 88           sym.argmatch_invalid
-0x0001b6ec    9 248          sym.argmatch_valid
-0x0001b7e4    3 88           sym.__xargmatch_internal
-0x0001ba88    1 8            sym.dirfd
-0x0001bb8c    4 120          sym.error
-0x0001caf4  198 2792 -> 2720 sym.internal_fnmatch
-0x0001e84c    3 552  -> 76   sym.gnu_fnmatch
-0x0001eb64  181 3004         sym._getopt_internal_r
-0x0001f720    1 116          sym._getopt_internal
-0x0001f7c4    1 44           sym.rpl_getopt_long
-0x0001f8d0   10 184          sym.hard_locale
-0x0001f998    1 8            sym.hash_get_n_entries
-0x0001ff34   27 480          sym.hash_initialize
-0x000201f0   26 324          sym.hash_free
-0x00021a50   26 416  -> 396  sym.human_options
-0x00022250    8 224          sym._obstack_begin
-0x00022414   23 408          sym._obstack_newchunk
-0x00022768    1 700          sym.quote
-0x00022a24    2 56           sym.clone_quoting_options
-0x00022a5c    2 24           sym.get_quoting_style
-0x00022a74    2 24           sym.set_quoting_style
-0x00022a8c    2 80           sym.set_char_quoting
-0x00022afc    1 12           sym.quoting_options_from_style
-0x00023634   15 372          sym.quotearg_n_options
-0x000237a8    1 28           sym.quotearg_n
-0x000237c4    1 24           sym.quotearg_n_mem
-0x000237dc    1 108          sym.quotearg
-0x0002396c    3 588          sym.quotearg_colon
-0x000255f0    3 56           sym.xmalloc
-0x00025720    1 32           sym.xmemdup
-0x00025740    1 24           sym.xstrdup
-0x00025758   14 436          sym.xstrtol_fatal
-0x00025948   53 796          sym.xstrtoul
-0x0003f98c    2 56           sym.imp.atexit
-0x0003f998    1 8            sym.imp.exit
-0x0003f9d4    1 8            sym.imp.fputs
-0x0003f9e0    1 8            sym.imp.printf
-0x0003f9ec    1 8            sym.imp.__flsbuf
-0x0003f9f8    1 8            sym.imp.free
-0x0003fa04    1 8            sym.imp.strncmp
-0x0003fa28    1 8            sym.imp.strcmp
-0x0003fa40    1 8            sym.imp..udiv
-0x0003fa4c    1 8            sym.imp..umul
-0x0003fa64    1 8            sym.imp.__assert_c99
-0x0003fa70    1 8            sym.imp.strlen
-0x0003faa0    1 8            sym.imp.stat64
-0x0003fb00    1 8            sym.imp.fwrite
-0x0003fb0c    1 8            sym.imp.memcpy
-0x0003fb18    1 8            sym.imp.fflush
-0x0003fb30    1 8            sym.imp.raise
-0x0003fb3c    1 8            sym.imp.signal
-0x0003fb60    1 8            sym.imp.abort
-0x0003fb6c    1 8            sym.imp.fprintf
-0x0003fb78    1 8            sym.imp.setlocale
-0x0003fb84    1 8            sym.imp.getenv
-0x0003fb90    1 8            sym.imp.ioctl
-0x0003fb9c    1 8            sym.imp.opendir
-0x0003fba8    1 8            sym.imp.fstat64
-0x0003fbb4    1 8            sym.imp.readdir64
-0x0003fbc0    1 8            sym.imp.closedir
-0x0003fbcc    1 8            sym.imp.sigismember
-0x0003fbd8    1 8            sym.imp.isatty
-0x0003fbe4    1 8            sym.imp.strchr
-0x0003fbf0    1 8            sym.imp.tcgetpgrp
-0x0003fbfc    1 8            sym.imp.sigemptyset
-0x0003fc08    1 8            sym.imp.sigaction
-0x0003fc14    1 8            sym.imp.sigaddset
-0x0003fc20    1 8            sym.imp.malloc
-0x0003fc2c    1 8            sym.imp.acl_trivial
+0x00012d9c    1 8            root.00012d9c
+0x00020110   17 224          root.00020110
+0x0002b180    1 8            root.0002b180
+0x0002b538    1 8            root.0002b538
+0x0002b938    1 8            root.0002b938
+0x0002bca4    1 8            root.0002bca4
+0x0002c05c    1 8            root.0002c05c
+0x0002c880    1 16           root.0002c880
+0x0003f9b0    1 8            root.0003f9b0
+0x0003f9bc    1 8            root.0003f9bc
+0x0003f9c8    1 8            root.0003f9c8
 EOF
 RUN
 
@@ -584,7 +507,7 @@ EXPECT=<<EOF
 0x0001bc98 0x0001bca8 00:0000 16 j 0x0001bcf8 f 0x0001bca8
 0x0001bca8 0x0001bcbc 00:0000 20 j 0x0001bcf8 f 0x0001bcbc
 0x0001bcbc 0x0001bcc4 00:0000 8 j 0x0001bc34 f 0x0001bcc4
-0x0001bcc4 0x0001bcec 00:0000 40 f 0x0001bcec
+0x0001bcc4 0x0001bcec 00:0000 40 j 0x0001bc70 f 0x0001bcec
 0x0001bcec 0x0001bcf8 00:0000 12 j 0x0001bc70 f 0x0001bcf8
 0x0001bcf8 0x0001bd00 00:0000 8
 EOF
