@@ -115,7 +115,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			case SYSZ_INS_JGNO:
 			case SYSZ_INS_JGO:
 			case SYSZ_INS_JG:
-	#endif
+#endif
 			case SYSZ_INS_JNE:
 			case SYSZ_INS_JNHE:
 			case SYSZ_INS_JNH:

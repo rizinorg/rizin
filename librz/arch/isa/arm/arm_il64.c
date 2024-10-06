@@ -361,7 +361,7 @@ static RzILOpEffect *write_reg(arm64_reg reg, RZ_OWN RZ_NONNULL RzILOpBitVector 
 	return SETG(var, v);
 }
 
-static RzILOpBitVector *arg_mem(RzILOpBitVector *base_plus_disp, cs_arm64_op * op) {
+static RzILOpBitVector *arg_mem(RzILOpBitVector *base_plus_disp, cs_arm64_op *op) {
 	if (op->mem.index == ARM64_REG_INVALID) {
 		return base_plus_disp;
 	}
