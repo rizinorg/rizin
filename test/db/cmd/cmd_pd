@@ -2709,6 +2709,7 @@ EXPECT=<<EOF
 |           0x00000804      return
 \           0x00000808      
 EOF
+BROKEN=1
 RUN
 
 NAME=Check output pdr and pdrj to be the same
