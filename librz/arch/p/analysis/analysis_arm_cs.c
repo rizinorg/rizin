@@ -609,8 +609,8 @@ static void opex64(RzStrBuf *buf, csh handle, cs_insn *insn) {
 #else
 		if (op->vas != AARCH64LAYOUT_INVALID) {
 #endif
-			pj_ks(pj, "vas", vas_name(op->vas));
-		}
+				pj_ks(pj, "vas", vas_name(op->vas));
+			}
 #if CS_API_MAJOR == 4
 		if (op->vess != ARM64_VESS_INVALID) {
 			pj_ks(pj, "vess", vess_name(op->vess));

@@ -873,7 +873,7 @@ static int analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const u
 	case MIPS_INS_JALR:
 		op->type = RZ_ANALYSIS_OP_TYPE_UCALL;
 		op->delay = 1;
-	#if CS_NEXT_VERSION < 6
+#if CS_NEXT_VERSION < 6
 		if (REGID(0) == MIPS_REG_25) {
 			op->jump = t9_pre;
 			t9_pre = UT64_MAX;
@@ -1086,7 +1086,7 @@ static int analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const u
 			op->type = RZ_ANALYSIS_OP_TYPE_RET;
 			t9_pre = UT64_MAX;
 		}
-	#if CS_NEXT_VERSION < 6
+#if CS_NEXT_VERSION < 6
 		if (REGID(0) == MIPS_REG_25) {
 			op->jump = t9_pre;
 			t9_pre = UT64_MAX;
