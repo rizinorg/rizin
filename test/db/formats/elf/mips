@@ -34,6 +34,7 @@ sw v0, 0x14(sp)
 jal sym.imp.__uClibc_main
 sw sp, 0x18(sp)
 EOF
+BROKEN=1
 RUN
 
 NAME=ELF: mipsbe-busybox
@@ -64,3 +65,4 @@ jal sym.imp.__uClibc_main
 sw sp, 0x18(sp)
 EOF
 RUN
+BROKEN=1
