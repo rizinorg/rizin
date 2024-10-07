@@ -169,13 +169,13 @@ static inline RzArchOperandMember rz_arch_op_val_member_class(RZ_NONNULL const R
  */
 typedef enum {
 	RZ_ARCH_PACKET_ITER_KIND_INVALID = 0,
-	RZ_ARCH_PACKET_ITER_KIND_CALL_TARGETS,
-	RZ_ARCH_PACKET_ITER_KIND_JUMP_TARGETS,
-	RZ_ARCH_PACKET_ITER_KIND_DATA_REFS,
-	RZ_ARCH_PACKET_ITER_KIND_CODE_REFS,
-	RZ_ARCH_PACKET_ITER_KIND_IMMS,
-	RZ_ARCH_PACKET_ITER_KIND_REGS,
-	RZ_ARCH_PACKET_ITER_KIND_OPERANDS,
+	RZ_ARCH_PACKET_ITER_KIND_CALL_TARGETS, ///< Element type: RzBitevector
+	RZ_ARCH_PACKET_ITER_KIND_JUMP_TARGETS, ///< Element type: RzBitevector
+	RZ_ARCH_PACKET_ITER_KIND_DATA_REFS, ///< Element type: RzBitevector
+	RZ_ARCH_PACKET_ITER_KIND_CODE_REFS, ///< Element type: RzBitevector
+	RZ_ARCH_PACKET_ITER_KIND_IMMS, ///< Element type: RzBitevector
+	RZ_ARCH_PACKET_ITER_KIND_REGS, ///< Element type: size_t
+	RZ_ARCH_PACKET_ITER_KIND_OPERANDS, ///< Element type: RzArchOperand
 } RzArchPacketIterKind;
 
 typedef enum {
@@ -205,7 +205,20 @@ struct rz_arch_packet_t;
  * \return Returns an iterator over the \p kind elements.
  * Or NULL if the architecture doesn't support this iterator kind. Or has no elements to iterate over.
  */
-typedef RZ_OWN RzIterator /*<void>*/ *(*rz_arch_packet_iter)(const struct rz_arch_packet_t *packet, RzArchPacketIterKind kind, RzArchPacketIterGrouped grouped_by);
+typedef RZ_OWN RzIterator /*<void>*/ *(*rz_arch_packet_iter)(const struct rz_arch_packet_t *packet, RzArchPacketIterKind kind);
+
+/**
+ * \brief Get an iterator over elements of type \p kind from all instructions in the packet.
+ * The order of values follows RzArchPacket.order. Values of the first instruction are returned first.
+ *
+ * \param packet The instruction packet.
+ * \param kind The kind of values the iterator should yield.
+ * \param grouped_by Groups the elements as requested.
+ *
+ * \return Returns an iterator over RzIterator<ELementType>.
+ * Or NULL if the architecture doesn't support this iterator kind. Or has no elements to iterate over.
+ */
+typedef RZ_OWN RzIterator /*<void>*/ *(*rz_arch_packet_grouped_iter)(const struct rz_arch_packet_t *packet, RzArchPacketIterKind kind, RzArchPacketIterGrouped grouped_by);
 
 /**
  * \brief Get an iterator instructions with \p property.
@@ -226,6 +239,7 @@ typedef struct rz_arch_packet_t {
 	RzArchPacketInsnOrder order; ///< Order the instructions.
 	RzPVector /*<RzArchInsn>*/ *insns; ///< All instructions of a packet. Sorted according to order.
 	rz_arch_packet_iter value_iter;
+	rz_arch_packet_grouped_iter grouped_value_iter;
 	rz_arch_packet_iter_insn insn_iter;
 } RzArchPacket;
 
