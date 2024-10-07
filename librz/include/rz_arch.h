@@ -5,6 +5,7 @@
 #ifndef RZ_ARCH_H
 #define RZ_ARCH_H
 
+#include <rz_util/rz_bitvector.h>
 #include <rz_util/rz_iterator.h>
 #include <rz_types.h>
 #include <rz_vector.h>
@@ -84,6 +85,85 @@ typedef struct rz_arch_insn_t {
 	RzAnalysisDataType datatype;
 } RzArchInsn;
 
+typedef enum {
+	RZ_ARCH_OPERAND_ACCESS_UNDEF = 0, ///< Undefined access
+	RZ_ARCH_OPERAND_ACCESS_READ, ///< Read access
+	RZ_ARCH_OPERAND_ACCESS_WRITE, ///< Write access
+} RzArchOperandAccess;
+
+#define RZ_ARCH_OPERAND_MEMBER_ATOMIC 0xffff
+#define RZ_ARCH_OPERAND_MEMBER_CLASS 0xff0000
+
+/**
+ * \brief Memberships of operands.
+ */
+typedef enum {
+	RZ_ARCH_OPERAND_MEMBER_INVALID = 0,
+	RZ_ARCH_OPERAND_MEMBER_REGISTER, ///< Register operand
+	RZ_ARCH_OPERAND_MEMBER_IMMEDIATE, ///< Immediate value of any sign operand.
+	RZ_ARCH_OPERAND_MEMBER_UNSIGNED, ///< Unsigned immediate value operand.
+	RZ_ARCH_OPERAND_MEMBER_SIGNED, ///< Signed immediate value operand.
+	RZ_ARCH_OPERAND_MEMBER_COMPLEX = 0x10000, ///< This operand consists of multiple other operands.
+	RZ_ARCH_OPERAND_MEMBER_ADDRESS = 0x20000, ///< This operand should be interpreted as an address.
+} RzArchOperandMember;
+
+/// The bitvecor must be initialized with rz_bv_fini. In case it holds a value >64bits.
+typedef struct rz_arch_operand_value_t {
+	RzArchOperandMember member; ///< Details about the operand membership.
+	RzArchOperandAccess access; ///< Access to this operand.
+	union {
+		size_t register_id; ///< A register
+		RzBitVector imm; ///< An immediate value.
+	};
+	RzPVector /*<RzArchOperandValue>*/ *components; ///< Components of complex operands.
+} RzArchOperand;
+
+static inline bool rz_arch_op_val_is_reg(RZ_NONNULL const RzArchOperand *op) {
+	return op->member & RZ_ARCH_OPERAND_MEMBER_REGISTER;
+}
+
+static inline bool rz_arch_op_val_is_imm(RZ_NONNULL const RzArchOperand *op) {
+	return op->member & RZ_ARCH_OPERAND_MEMBER_IMMEDIATE;
+}
+
+static inline bool rz_arch_op_val_is_signed(RZ_NONNULL const RzArchOperand *op) {
+	return op->member & RZ_ARCH_OPERAND_MEMBER_SIGNED;
+}
+
+static inline bool rz_arch_op_val_is_unsigned(RZ_NONNULL const RzArchOperand *op) {
+	return op->member & RZ_ARCH_OPERAND_MEMBER_UNSIGNED;
+}
+
+static inline bool rz_arch_op_val_is_complex(RZ_NONNULL const RzArchOperand *op) {
+	return op->member & RZ_ARCH_OPERAND_MEMBER_COMPLEX;
+}
+
+/**
+ * \brief Returns the member a complex operand was reduced to.
+ *
+ * E.g.: a complex address operand consisting of two immediate values `base` and `offset`.
+ * If the plugin already reduced them to their final value (`base + offset`), this function
+ * returns RZ_ARCH_OPERAND_MEMBER_IMMEDIATE.
+ *
+ * \return The member the combined operands are reduced to. The reduced value is stored in the suitable field.
+ * It returns RZ_ARCH_OPERAND_MEMBER_INVALID, if the plugin cannot reduce complex operand.
+ */
+static inline RzArchOperandMember rz_arch_op_val_is_complex_reduced(RZ_NONNULL const RzArchOperand *op) {
+	return (RzArchOperandMember) (op->member & RZ_ARCH_OPERAND_MEMBER_ATOMIC);
+}
+
+static inline bool rz_arch_op_val_is_address(RZ_NONNULL const RzArchOperand *op) {
+	return op->member & RZ_ARCH_OPERAND_MEMBER_ADDRESS;
+}
+
+static inline RzArchOperandMember rz_arch_op_val_member_atmoic(RZ_NONNULL const RzArchOperand *op) {
+	return (RzArchOperandMember) (op->member & RZ_ARCH_OPERAND_MEMBER_ATOMIC);
+}
+
+static inline RzArchOperandMember rz_arch_op_val_member_class(RZ_NONNULL const RzArchOperand *op) {
+	return (RzArchOperandMember) (op->member & RZ_ARCH_OPERAND_MEMBER_CLASS);
+}
+
 /**
  * \brief Values a packet can contain.
  */
@@ -95,7 +175,13 @@ typedef enum {
 	RZ_ARCH_PACKET_ITER_KIND_CODE_REFS,
 	RZ_ARCH_PACKET_ITER_KIND_IMMS,
 	RZ_ARCH_PACKET_ITER_KIND_REGS,
+	RZ_ARCH_PACKET_ITER_KIND_OPERANDS,
 } RzArchPacketIterKind;
+
+typedef enum {
+	RZ_ARCH_PACKET_ITER_GROUPED_NONE = 0, ///< The iterator iterates over all requested elements in a packet.
+	RZ_ARCH_PACKET_ITER_GROUPED_INSN, ///< The iterator groups the requested elements by instuctions (iterator over iterators).
+} RzArchPacketIterGrouped;
 
 typedef enum {
 	RZ_ARCH_PACKET_INSN_ORDER_INVALID = 0,
@@ -119,7 +205,7 @@ struct rz_arch_packet_t;
  * \return Returns an iterator over the \p kind elements.
  * Or NULL if the architecture doesn't support this iterator kind. Or has no elements to iterate over.
  */
-typedef RZ_OWN RzIterator /*<void>*/ *(*rz_arch_packet_iter)(const struct rz_arch_packet_t *packet, RzArchPacketIterKind kind);
+typedef RZ_OWN RzIterator /*<void>*/ *(*rz_arch_packet_iter)(const struct rz_arch_packet_t *packet, RzArchPacketIterKind kind, RzArchPacketIterGrouped grouped_by);
 
 /**
  * \brief Get an iterator instructions with \p property.
@@ -166,32 +252,6 @@ typedef struct rz_arch_hint_t {
 	ut64 stackframe;
 } RzArchHint;
 
-typedef enum {
-	RZ_ARCH_DETAIL_ACCESS_UNDEF = 0, ///< Undefined access
-	RZ_ARCH_DETAIL_ACCESS_READ, ///< Read access
-	RZ_ARCH_DETAIL_ACCESS_WRITE, ///< Write access
-} RzArchDetailAccess;
-
-typedef enum {
-	RZ_ARCH_DETAIL_MEMBER_REGISTER = 0, ///< Member is raw bytes
-	RZ_ARCH_DETAIL_MEMBER_UNSIGNED, ///< Member is assembly
-	RZ_ARCH_DETAIL_MEMBER_SIGNED, ///< Member is RzArchPacket
-} RzArchDetailMember;
-
-typedef struct rz_arch_detail_value_t {
-	RzArchDetailMember member;
-	union {
-		size_t register_id;
-		ut64 imm_unsigned;
-		st64 imm_signed;
-	};
-} RzArchDetailValue;
-
-typedef struct rz_arch_detail_t {
-	RzArchDetailValue source[6];
-	RzArchDetailValue destination;
-} RzArchDetail;
-
 typedef void RzArchPluginContext;
 
 typedef struct rz_arch_plugin_t {
@@ -199,11 +259,11 @@ typedef struct rz_arch_plugin_t {
 	RZ_DEPRECATE RzAnalysisPlugin *p_analysis; ///< [Deprecated] Analysis Plugin
 	RZ_DEPRECATE RzParsePlugin *p_parse; ///< [Deprecated] Parse Plugin
 
-    bool (*init)(RZ_NONNULL RzConfig *config); ///< Global constructor for the plugin to fill the configuration values.
-    bool (*fini)(); ///< Global destructor for the plugin
+	bool (*init)(RZ_NONNULL RzConfig *config); ///< Global constructor for the plugin to fill the configuration values.
+	bool (*fini)(); ///< Global destructor for the plugin
 	bool (*can_xcode_in)(RZ_NONNULL RzArchXCodeMember input); ///< Returns true if the plugin can support the given RzArchXCodeMember in input.
 	bool (*can_xcode_out)(RZ_NONNULL RzArchXCodeMember output); ///< Returns true if the plugin can support the given RzArchXCodeMember in ouput.
-	bool (*context_init)(RZ_NONNULL RzConfig *config, RZ_OUT RzArchPluginContext** context); ///< Create a new context for a given configuration
+	bool (*context_init)(RZ_NONNULL RzConfig *config, RZ_OUT RzArchPluginContext **context); ///< Create a new context for a given configuration
 	void (*context_fini)(RZ_NULLABLE RzArchPluginContext *context); ///< Free the given context
 	void (*context_update)(RZ_NULLABLE RzArchPluginContext *context, RZ_NONNULL RzConfig *config); ///< Updates the given context with the given configuration.
 	bool (*context_xcode)(RZ_NULLABLE RzArchPluginContext *context, RZ_NONNULL RzArchXCode *input, RZ_NONNULL RzArchXCode *output); ///< Updates the given context with the given configuration.
