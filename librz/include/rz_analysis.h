@@ -462,6 +462,10 @@ typedef struct {
 } RzAnalysisDebugInfo;
 
 typedef struct rz_analysis_t {
+	void *core;
+	ut8 lets_hope;
+	ut8 alignment_matches;
+	// See end of rz_types.h for this mess above.
 	char *cpu; // analysis.cpu
 	char *os; // asm.os
 	int bits; // asm.bits
@@ -470,7 +474,6 @@ typedef struct rz_analysis_t {
 	int sleep; // analysis.sleep, sleep some usecs before analyzing more (avoid 100% cpu usages)
 	RzAnalysisCPPABI cpp_abi; // analysis.cpp.abi
 	void *plugin_data;
-	void *core;
 	ut64 gp; // analysis.gp, global pointer. used for mips. but can be used by other arches too in the future
 	RBTree bb_tree; // all basic blocks by address. They can overlap each other, but must never start at the same address.
 	RzList /*<RzAnalysisFunction *>*/ *fcns;

@@ -95,13 +95,16 @@ typedef struct {
 
 #define _RzAsmPlugin struct rz_asm_plugin_t
 typedef struct rz_asm_t {
+	void *core;
+	void *plugin_data;
+	ut8 lets_hope;
+	ut8 alignment_matches;
+	// See end of rz_types.h for this mess above.
 	char *cpu;
 	int bits;
 	int big_endian;
 	int syntax;
 	ut64 pc;
-	void *core;
-	void *plugin_data;
 	_RzAsmPlugin *cur;
 	_RzAsmPlugin *acur;
 	RzList /*<RzAsmPlugin *>*/ *plugins;
@@ -140,7 +143,7 @@ typedef struct rz_asm_plugin_t {
 	int (*disassemble)(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len);
 	int (*assemble)(RzAsm *a, RzAsmOp *op, const char *buf);
 	char *(*mnemonics)(RzAsm *a, int id, bool json);
-	RzConfig *(*get_config)(void);
+	RzConfig *(*get_config)(void *user);
 	const char *features;
 	const char *platforms;
 } RzAsmPlugin;
