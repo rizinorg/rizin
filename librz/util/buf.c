@@ -6,16 +6,6 @@
 #include <rz_util.h>
 #include <rz_io.h>
 
-typedef enum {
-	RZ_BUFFER_FILE,
-	RZ_BUFFER_IO_FD,
-	RZ_BUFFER_IO,
-	RZ_BUFFER_BYTES,
-	RZ_BUFFER_MMAP,
-	RZ_BUFFER_SPARSE,
-	RZ_BUFFER_REF,
-} RzBufferType;
-
 #include "buf_file.c"
 #include "buf_sparse.c"
 #include "buf_bytes.c"
@@ -313,7 +303,7 @@ static RzBuffer *new_buffer(RzBufferType type, void *user) {
 		return NULL;
 	}
 
-	return rz_buf_new_with_methods(methods, user);
+	return rz_buf_new_with_methods(methods, user, type);
 }
 
 /**
@@ -564,12 +554,13 @@ RZ_API RZ_OWN RzBuffer *rz_buf_new_with_io(RZ_NONNULL void *iob) {
  * The function creates a new allocated buffer using a custom back end. This function
  * should only be used when no other back end are appropriate.
  */
-RZ_API RZ_OWN RzBuffer *rz_buf_new_with_methods(RZ_NONNULL const RzBufferMethods *methods, void *init_user) {
+RZ_API RZ_OWN RzBuffer *rz_buf_new_with_methods(RZ_NONNULL const RzBufferMethods *methods, void *init_user, RzBufferType type) {
 	RzBuffer *b = RZ_NEW0(RzBuffer);
 	if (!b) {
 		return NULL;
 	}
 
+	b->type = type;
 	b->methods = methods;
 
 	if (!buf_init(b, init_user)) {
