@@ -38,6 +38,8 @@ typedef struct {
 	HexReverseAction action; // Whether ana_op, asm_op or both should be filled.
 	RzAnalysisOp *ana_op;
 	RzAsmOp *asm_op;
+	HexState *state;
+	bool pkt_fully_decoded;
 } HexReversedOpcode;
 
 #define HEX_PKT_UNK           "?   "
@@ -62,14 +64,16 @@ typedef struct {
 #define HEX_PKT_ELOOP_1_SDK   ":endloop1"
 #define HEX_PKT_ELOOP_0_SDK   ":endloop0"
 
+#define HEX_PARSE_BITS_FROM_UT32(data) ((data & HEX_PARSE_BITS_MASK) >> 14)
+
 RZ_API HexInsn *hexagon_alloc_instr();
 RZ_API void hex_insn_free(RZ_NULLABLE HexInsn *i);
 RZ_API HexInsnContainer *hexagon_alloc_instr_container();
 RZ_API void hex_insn_container_free(RZ_NULLABLE HexInsnContainer *c);
 RZ_API void hex_const_ext_free(RZ_NULLABLE HexConstExt *ce);
-RZ_API HexState *hexagon_state(bool reset);
+RZ_API HexState *hexagon_state_new();
 RZ_IPI void hexagon_state_fini(HexState *state);
-RZ_API void hexagon_reverse_opcode(const RzAsm *rz_asm, HexReversedOpcode *rz_reverse, const ut8 *buf, const ut64 addr, const bool copy_result);
+RZ_API void hexagon_reverse_opcode(HexReversedOpcode *rz_reverse, const ut64 addr, RzAsm *rz_asm, RzAnalysis *rz_analysis);
 RZ_API ut8 hexagon_get_pkt_index_of_addr(const ut32 addr, const HexPkt *p);
 RZ_API HexLoopAttr hex_get_loop_flag(const HexPkt *p);
 RZ_API const HexOp *hex_isa_to_reg(const HexInsn *hi, const char isa_id, bool new_reg);
