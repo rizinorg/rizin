@@ -662,5 +662,94 @@ typedef int RzRef;
 	}
 
 typedef struct rz_core_t RzCore;
+// RZ_API void /*<RzAsm>*/ *rz_analysis_to_rz_asm(RZ_NONNULL void /*<RzAnalysis>*/ *rz_analysis);
+// RZ_API void *rz_asm_plugin_data_from_rz_analysis(RZ_NONNULL void /*<RzAnalysis>*/ *rz_analysis);
+// RZ_API void /*<RzAnalysis>*/ *rz_asm_to_rz_analysis(RZ_NONNULL void /*<RzAsm>*/ *rz_asm);
+// RZ_API void /*<RzIO>*/ *rz_analysis_to_rz_io(RZ_NONNULL void /*<RzAnalysis>*/ *rz);
+// RZ_API void /*<RzIO>*/ *rz_asm_to_rz_io(RZ_NONNULL void /*<RzAsm>*/ *rz);
+
+// Mimics order in RzCore.
+struct dummy_rz_core_t {
+	void *rasm;
+	void *analysis;
+	void *io;
+	ut8 lets_hope;
+	ut8 alignment_matches;
+};
+
+// Mimics order in RzAsm.
+struct dummy_rz_asm_t {
+	void *core;
+	void *plugin_data;
+	ut8 lets_hope;
+	ut8 alignment_matches;
+};
+
+// Mimics order in RzAnalysis.
+struct dummy_rz_analysis_t {
+	void *core;
+	ut8 lets_hope;
+	ut8 alignment_matches;
+};
+
+/**
+ * \brief The hacky way to get the RzAsm pointer from RzAnalysis.
+ * Will be removed with the RzArch refactor.
+ */
+static inline void /*<RzAsm>*/ *rz_analysis_to_rz_asm(RZ_NONNULL void /*<RzAnalysis>*/ *rz_analysis) {
+	assert(rz_analysis && "This function can only be used if RzAnalysis and RzAsm were set up before.");
+	struct dummy_rz_analysis_t *analysis = rz_analysis;
+	void *rasm = ((struct dummy_rz_core_t *)(analysis->core))->rasm;
+	assert(rasm && "This function can only be used if RzAnalysis and RzAsm were set up before.");
+	return rasm;
+}
+
+/**
+ * \brief The hacky way to get the RzAnalysis pointer from RzAsm.
+ * Will be removed with the RzArch refactor.
+ */
+static inline void /*<RzAnalysis>*/ *rz_asm_to_rz_analysis(RZ_NONNULL void /*<RzAsm>*/ *rz_asm) {
+	assert(rz_asm && "This function can only be used if RzAnalysis and RzAsm were set up before.");
+	struct dummy_rz_asm_t *rasm = rz_asm;
+	void *analysis = ((struct dummy_rz_core_t *)(rasm->core))->analysis;
+	assert(analysis && "This function can only be used if RzAnalysis and RzAsm were set up before.");
+	return analysis;
+}
+
+/**
+ * \brief The hacky way to get the plugin data from RzAsm via RzAnalysis.
+ * Will be removed with the RzArch refactor.
+ */
+static inline void *rz_asm_plugin_data_from_rz_analysis(RZ_NONNULL void /*<RzAnalysis>*/ *rz_analysis) {
+	assert(rz_analysis && "This function can only be used if RzAnalysis and RzAsm were set up before.");
+	struct dummy_rz_analysis_t *analysis = rz_analysis;
+	struct dummy_rz_asm_t *rasm = ((struct dummy_rz_core_t *)(analysis->core))->rasm;
+	assert(rasm && "This function can only be used if RzAnalysis and RzAsm were set up before.");
+	return rasm->plugin_data;
+}
+
+/**
+ * \brief The hacky way to get the RzIO pointer from RzAsm.
+ * Will be removed with the RzArch refactor.
+ */
+static inline void /*<RzIO>*/ *rz_asm_to_rz_io(RZ_NONNULL void /*<RzAsm>*/ *rz) {
+	assert(rz && "This function can only be used if RzAsm were set up before.");
+	struct dummy_rz_asm_t *rasm = rz;
+	void *io = ((struct dummy_rz_core_t *)(rasm->core))->io;
+	assert(io && "This function can only be used if RzAsm were set up before.");
+	return io;
+}
+
+/**
+ * \brief The hacky way to get the RzIO pointer from RzAnalysis.
+ * Will be removed with the RzArch refactor.
+ */
+static inline void /*<RzIO>*/ *rz_analysis_to_rz_io(RZ_NONNULL void /*<RzAnalysis>*/ *rz) {
+	assert(rz && "This function can only be used if RzAnalysis and RzAsm were set up before.");
+	struct dummy_rz_analysis_t *analysis = rz;
+	void *io = ((struct dummy_rz_core_t *)(analysis->core))->io;
+	assert(io && "This function can only be used if RzAnalysis and RzAsm were set up before.");
+	return io;
+}
 
 #endif // RZ_TYPES_H

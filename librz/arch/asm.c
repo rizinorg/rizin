@@ -483,12 +483,12 @@ RZ_API bool rz_asm_use(RzAsm *a, const char *name) {
 
 			if (a->cur && a->cur->get_config && core) {
 				rz_config_lock(core->config, false);
-				unset_plugins_config(a, a->cur->get_config());
+				unset_plugins_config(a, a->cur->get_config(a->plugin_data));
 				rz_config_lock(core->config, true);
 			}
 			if (h->get_config && core) {
 				rz_config_lock(core->config, false);
-				set_plugin_configs(a, h->get_config());
+				set_plugin_configs(a, h->get_config(a->plugin_data));
 				rz_config_lock(core->config, true);
 			}
 			a->cur = h;

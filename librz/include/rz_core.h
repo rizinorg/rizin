@@ -243,6 +243,12 @@ typedef struct rz_core_seek_history_t {
 } RzCoreSeekHistory;
 
 struct rz_core_t {
+	RzAsm *rasm;
+	RzAnalysis *analysis;
+	RzIO *io;
+	ut8 lets_hope;
+	ut8 alignment_matches;
+	// See end of rz_types.h for this mess above.
 	RzBin *bin;
 	RzList /*<RzCorePlugin *>*/ *plugins; ///< List of registered core plugins
 	RzConfig *config;
@@ -258,7 +264,6 @@ struct rz_core_t {
 	int interrupted; // XXX IS THIS DUPPED SOMEWHERE?
 	/* files */
 	RzCons *cons;
-	RzIO *io;
 	RzCoreFile *file;
 	RzList /*<RzCoreFile *>*/ *files;
 	RzNum *num;
@@ -267,8 +272,6 @@ struct rz_core_t {
 	RzCmd *rcmd;
 	RzCmdDescriptor root_cmd_descriptor;
 	RzList /*<RzCmdDescriptor *>*/ *cmd_descriptors;
-	RzAnalysis *analysis;
-	RzAsm *rasm;
 	/* ^^ */
 	RzCoreTimes *times;
 	RzParse *parser;
