@@ -37,9 +37,8 @@ typedef enum {
 typedef ut64 RzAddress;
 
 typedef struct rz_arch_xcode_t {
-	RzArchXCodeMember member; ///< Describes the content of array
-	void *array; ///< Array of variable size, containing one or more structures of type member.
-	size_t length; ///< Length of the data as an array
+	RzArchXCodeMember member_type; ///< Describes the content of array
+	RzPVector /*<void>*/ *members; ///< Array of variable size, containing one or more structures of type member.
 } RzArchXCode;
 
 /// This needs to be redone, copied for reference from RzAnalysisOp
