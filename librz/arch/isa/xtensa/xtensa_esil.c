@@ -178,15 +178,15 @@ static void esil_move_imm(XtensaContext *ctx, RzAnalysisOp *op) {
 		REGO(0));
 }
 
-static void esil_move(XtensaContext *ctx, RzAnalysisOp *op) {
-	rz_strbuf_appendf(
-		&op->esil,
-		"%s" CM
-		"%s" CM
-		"=",
-		REGO(1),
-		REGO(0));
-}
+// static void esil_move(XtensaContext *ctx, RzAnalysisOp *op) {
+//	rz_strbuf_appendf(
+//		&op->esil,
+//		"%s" CM
+//		"%s" CM
+//		"=",
+//		REGO(1),
+//		REGO(0));
+// }
 
 static void esil_move_conditional(XtensaContext *ctx, RzAnalysisOp *op) {
 	const char *compare_op = "";
