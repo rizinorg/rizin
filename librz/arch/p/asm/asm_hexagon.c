@@ -132,16 +132,6 @@ static bool hex_cfg_set(void *user, void *data) {
 	return false;
 }
 
-RZ_IPI void hexagon_state_fini(HexState *state) {
-	if (!state) {
-		return;
-	}
-	rz_config_free(state->cfg);
-	rz_pvector_free(state->token_patterns);
-	rz_list_free(state->const_ext_l);
-	return;
-}
-
 static bool hexagon_fini(void *user) {
 	hexagon_state_fini(user);
 	free(user);

@@ -240,7 +240,7 @@ static RZ_OWN RzILOpEffect *hex_pkt_to_il_seq(HexPkt *pkt) {
 
 static bool set_pkt_il_ops(RZ_INOUT HexPkt *p) {
 	rz_return_val_if_fail(p, false);
-	hex_reset_il_pkt_stats(&p->il_op_stats);
+	hex_il_pkt_stats_reset(&p->il_op_stats);
 	// This function is a lot of unnecessary overhead so:
 	// TODO The assignment of IL instructions to their actual instructions should be done in the instruction template.
 	// But with the current separation between Asm and Analysis plugins this is not possible.
@@ -851,7 +851,8 @@ RzILOpPure *hex_get_corresponding_cs(RZ_BORROW HexPkt *pkt, const HexOp *Mu) {
 	return NULL;
 }
 
-RZ_IPI void hex_reset_il_pkt_stats(HexILExecData *stats) {
+RZ_IPI void hex_il_pkt_stats_fini(HexILExecData *stats) {
+	rz_return_if_fail(stats);
 	rz_bv_free(stats->slot_cancelled);
 	rz_bv_free(stats->ctr_written);
 	rz_bv_free(stats->gpr_written);
@@ -862,6 +863,10 @@ RZ_IPI void hex_reset_il_pkt_stats(HexILExecData *stats) {
 	rz_bv_free(stats->ctr_tmp_read);
 	rz_bv_free(stats->gpr_tmp_read);
 	rz_bv_free(stats->pred_tmp_read);
+}
+
+RZ_IPI void hex_il_pkt_stats_init(HexILExecData *stats) {
+	rz_return_if_fail(stats);
 	stats->slot_cancelled = rz_bv_new(64);
 	stats->ctr_written = rz_bv_new(64);
 	stats->gpr_written = rz_bv_new(64);
@@ -872,6 +877,11 @@ RZ_IPI void hex_reset_il_pkt_stats(HexILExecData *stats) {
 	stats->ctr_tmp_read = rz_bv_new(64);
 	stats->gpr_tmp_read = rz_bv_new(64);
 	stats->pred_tmp_read = rz_bv_new(32);
+}
+
+RZ_IPI void hex_il_pkt_stats_reset(HexILExecData *stats) {
+	hex_il_pkt_stats_fini(stats);
+	hex_il_pkt_stats_init(stats);
 }
 
 #include <rz_il/rz_il_opbuilder_end.h>

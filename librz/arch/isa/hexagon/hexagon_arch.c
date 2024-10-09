@@ -23,6 +23,21 @@
 #include <hexagon/hexagon_arch.h>
 #include <hexagon/hexagon_il.h>
 
+RZ_IPI void hexagon_state_fini(RZ_NULLABLE HexState *state) {
+	if (!state) {
+		return;
+	}
+	rz_config_free(state->cfg);
+	rz_pvector_free(state->token_patterns);
+	rz_list_free(state->const_ext_l);
+	for (size_t i = 0; i < HEXAGON_STATE_PKTS; ++i) {
+		rz_list_free(state->pkts[i].bin);
+		rz_pvector_free(state->pkts[i].il_ops);
+		hex_il_pkt_stats_fini(&state->pkts[i].il_op_stats);
+	}
+	return;
+}
+
 static inline bool is_invalid_insn_data(ut32 data) {
 	return data == HEX_INVALID_INSN_0 || data == HEX_INVALID_INSN_F;
 }
@@ -227,7 +242,7 @@ static void hex_clear_pkt(RZ_NONNULL HexPkt *p) {
 	p->last_access = 0;
 	rz_list_purge(p->bin);
 	rz_pvector_clear(p->il_ops);
-	hex_reset_il_pkt_stats(&p->il_op_stats);
+	hex_il_pkt_stats_reset(&p->il_op_stats);
 }
 
 /**
