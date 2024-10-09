@@ -244,12 +244,13 @@ typedef struct rz_core_seek_history_t {
 
 struct rz_core_t {
 	RzAsm *rasm;
-	RzAnalysis *analysis;
-	RzIO *io;
 	ut8 lets_hope;
-	ut8 alignment_matches;
-	// See end of rz_types.h for this mess above.
+	RzAnalysis *analysis;
+	ut8 alignment;
 	RzBin *bin;
+	ut8 matches;
+	// See end of rz_types.h for this mess above.
+	RzIO *io;
 	RzList /*<RzCorePlugin *>*/ *plugins; ///< List of registered core plugins
 	RzConfig *config;
 	ut64 offset; // current seek

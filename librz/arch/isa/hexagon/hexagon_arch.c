@@ -1177,17 +1177,18 @@ static ut64 get_pre_decoding_start(RZ_BORROW RzBuffer *buffer, ut64 addr) {
 
 static bool perform_hacks(HexState **state, RzBuffer **buffer, RzAsm **rz_asm, RzAnalysis **rz_analysis) {
 	if (*rz_analysis) {
-		*rz_asm = rz_analysis_to_rz_asm(rz_analysis);
-	} else if (!(*rz_asm)) {
-		RZ_LOG_FATAL("Either RzAsm or RzAnalysis must be given.\n");
-		return false;
+		*rz_asm = rz_analysis_to_rz_asm(*rz_analysis);
+		assert(*rz_asm && (*rz_asm)->cur && (*rz_analysis)->cur && RZ_STR_EQ((*rz_asm)->cur->arch, (*rz_analysis)->cur->arch));
+	} else if (*rz_asm) {
+		*rz_analysis = rz_asm_to_rz_analysis(rz_asm);
+		assert(*rz_analysis && (*rz_asm)->cur && (*rz_analysis)->cur && RZ_STR_EQ((*rz_asm)->cur->arch, (*rz_analysis)->cur->arch));
+	} else {
+		assert(0 && "Requires either RzAsm or RzAnalysis");
 	}
 	*state = (*rz_asm)->plugin_data;
-	rz_return_val_if_fail(state, false);
-	RzIO *io = rz_asm_to_rz_io(rz_asm);
-	rz_return_val_if_fail(io, false);
-	*buffer = rz_buf_new_with_io(io);
-	rz_return_val_if_fail(buffer, false);
+	rz_return_val_if_fail(*state, false);
+	*buffer = rz_buf_new_with_io(&(*rz_analysis)->iob);
+	rz_return_val_if_fail(*buffer, false);
 	return true;
 }
 
@@ -1223,6 +1224,7 @@ RZ_API void hexagon_reverse_opcode(HexReversedOpcode *rz_reverse, const ut64 add
 		hic = decode_hic(state, rz_reverse, buffer, pre_addr);
 		if (!hic) {
 			RZ_LOG_ERROR("Filed during pre-decoding.\n");
+			rz_buf_free(buffer);
 			return;
 		}
 		pre_addr += HEX_INSN_SIZE;
@@ -1233,9 +1235,11 @@ RZ_API void hexagon_reverse_opcode(HexReversedOpcode *rz_reverse, const ut64 add
 	}
 	if (!hic) {
 		RZ_LOG_FATAL("Could not decode packet.\n");
+		rz_buf_free(buffer);
 		return;
 	}
 	HexPkt *p = hex_get_pkt(state, hic->addr);
 	rz_reverse->pkt_fully_decoded = p && p->is_valid;
 	copy_asm_ana_ops(state, rz_reverse, hic);
+	rz_buf_free(buffer);
 }
