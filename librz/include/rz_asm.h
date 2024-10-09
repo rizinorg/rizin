@@ -96,8 +96,8 @@ typedef struct {
 #define _RzAsmPlugin struct rz_asm_plugin_t
 typedef struct rz_asm_t {
 	void *core;
-	void *plugin_data;
 	ut8 lets_hope;
+	void *plugin_data;
 	ut8 alignment_matches;
 	// See end of rz_types.h for this mess above.
 	char *cpu;

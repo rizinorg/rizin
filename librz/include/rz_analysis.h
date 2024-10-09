@@ -463,8 +463,7 @@ typedef struct {
 
 typedef struct rz_analysis_t {
 	void *core;
-	ut8 lets_hope;
-	ut8 alignment_matches;
+	ut8 lets_hope_alignment_matches;
 	// See end of rz_types.h for this mess above.
 	char *cpu; // analysis.cpu
 	char *os; // asm.os
