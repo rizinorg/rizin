@@ -365,9 +365,6 @@ pdf
 EOF
 EXPECT=<<EOF
 0x80080020    1 10           entry0
-0x8008245a    1 6            fcn.8008245a
-0x80082662    1 4            fcn.80082662
-0x80082796    1 4            fcn.80082796
 0x80082d14    1 206          fcn.80082d14
 0x80082de2    1 84           fcn.80082de2
 0x800830d8   42 3622         fcn.800830d8
@@ -812,107 +809,107 @@ EXPECT=<<EOF
 .-----------.
 |  sym.fn1  |
 `-----------'
-  .-----------.
-  |  sym.fn1  |
-  `-----------'
-        t
-        |
-      .-'
-      |
-.--------------.
-|  dbg.malloc  |
-`--------------'
+                       .-----------.
+                       |  sym.fn1  |
+                       `-----------'
+                             v
+                             |
+      .----------------------|
+      |                   .--|
+      |                   |  '----------------.
+      |                   |                   |
+.--------------.    .---------------.   .--------------------.
+|  dbg.malloc  |    |  dbg.strncpy  |   |  dbg.__truncdfsf2  |
+`--------------'    `---------------'   `--------------------'
 .-----------.
 |  sym.fn1  |
 `-----------'
-                    .-------------------------------------------------------------------.
-                    |  0x800004ce                                                       |
-                    |   ; CALL XREF from main @ 0x80000642                              |
-                    | sym.fn1(size_t nbytes, int32_t arg5, int32_t arg6, int32_t arg7); |
-                    | ; arg size_t nbytes @ a0                                          |
-                    | ; arg int32_t arg5 @ a4                                           |
-                    | ; arg int32_t arg6 @ a5                                           |
-                    | ; arg int32_t arg7 @ a6                                           |
-                    | mov.aa a14, sp                                                    |
-                    | sub.a sp, #0x18                                                   |
-                    | st.w [a14]#-4, d4                                                 |
-                    | ; arg5                                                            |
-                    | st.a [a14]#-8, a4                                                 |
-                    | st.d [a14]#-0x10, e6                                              |
-                    | ; arg6                                                            |
-                    | st.a [a14]#-0x14, a5                                              |
-                    | ; arg7                                                            |
-                    | st.a [a14]#-0x18, a6                                              |
-                    | ld.w d15, [a14]#-0x14                                             |
-                    | jz d15, 0x800004f2                                                |
-                    `-------------------------------------------------------------------'
-                            f t
-                            | |
-                            | '-------------------------------.
-                            '---------.                       |
-                                      |                       |
-                                  .-----------------------.   |
-                                  |  0x800004ec           |   |
-                                  | ld.w d15, [a14]#-0x18 |   |
-                                  | jnz d15, 0x800004f6   |   |
-                                  `-----------------------'   |
-                                          f t                 |
-                                          | |                 |
-                                          | '-----------------|------------------.
-                   .----------------------'                   |                  |
-                   |                                          '--------------------.
-                   |                                                             | |
-               .-------------------------------.                           .---------------------.
-               |  0x800004f6                   |                           |  0x800004f2         |
-               | mov d4, #0x14                 |                           | mov d15, #0         |
-               | ; void *malloc(size_t nbytes) |                           | ; fcn.80000518+0x34 |
-               | call dbg.malloc               |                           | j 0x8000054c        |
-               | mov.aa a15, a2                |                           `---------------------'
-               | mov.d d15, a15                |                               v
-               | ld.a a15, [a14]#-0x18         |                               |
-               | st.w [a15]#0, d15             |                               |
-               | ld.a a15, [a14]#-0x18         |                               |
-               | ld.a a15, [a15]#0             |                               |
-               | ld.w d15, [a14]#-4            |                               |
-               | st.w [a15]#0, d15             |                               |
-               | ld.a a15, [a14]#-0x18         |                               |
-               `-------------------------------'                               |
-                   v                                                           |
-                   |                                                           |
-                   |                                                  .--------'
-    .--------------'                                                  |
+                               .-------------------------------------------------------------------.
+                               |  0x800004ce                                                       |
+                               |   ; CALL XREF from main @ 0x80000642                              |
+                               | sym.fn1(size_t nbytes, int32_t arg5, int32_t arg6, int32_t arg7); |
+                               | ; arg size_t nbytes @ a0                                          |
+                               | ; arg int32_t arg5 @ a4                                           |
+                               | ; arg int32_t arg6 @ a5                                           |
+                               | ; arg int32_t arg7 @ a6                                           |
+                               | mov.aa a14, sp                                                    |
+                               | sub.a sp, #0x18                                                   |
+                               | st.w [a14]#-4, d4                                                 |
+                               | ; arg5                                                            |
+                               | st.a [a14]#-8, a4                                                 |
+                               | st.d [a14]#-0x10, e6                                              |
+                               | ; arg6                                                            |
+                               | st.a [a14]#-0x14, a5                                              |
+                               | ; arg7                                                            |
+                               | st.a [a14]#-0x18, a6                                              |
+                               | ld.w d15, [a14]#-0x14                                             |
+                               | jz d15, 0x800004f2                                                |
+                               `-------------------------------------------------------------------'
+                                       f t
+                                       | |
+                                       | '------------------------------------.
+                                       '----.                                 |
+                                            |                                 |
+                                        .-----------------------.             |
+                                        |  0x800004ec           |             |
+                                        | ld.w d15, [a14]#-0x18 |             |
+                                        | jnz d15, 0x800004f6   |             |
+                                        `-----------------------'             |
+                                                f t                           |
+                                                | |                           |
+                                                | '---------------------.     |
+    .-------------------------------------------'                       |     |
+    |                                                                   | .---'
+    |                                                                   | |
+.-------------------------------------------------------------.   .--------------.
+|  0x800004f6                                                 |   |  0x800004f2  |
+| mov d4, #0x14                                               |   | mov d15, #0  |
+| ; void *malloc(size_t nbytes)                               |   | j 0x8000054c |
+| call dbg.malloc                                             |   `--------------'
+| mov.aa a15, a2                                              |       v
+| mov.d d15, a15                                              |       |
+| ld.a a15, [a14]#-0x18                                       |       |
+| st.w [a15]#0, d15                                           |       |
+| ld.a a15, [a14]#-0x18                                       |       |
+| ld.a a15, [a15]#0                                           |       |
+| ld.w d15, [a14]#-4                                          |       |
+| st.w [a15]#0, d15                                           |       |
+| ld.a a15, [a14]#-0x18                                       |       |
+| nop                                                         |       |
+| ld.w d15, [a15]#0                                           |       |
+| mov.a a15, d15                                              |       |
+| add.a a15, #4                                               |       |
+| mov d4, #5                                                  |       |
+| ld.a a5, [a14]#-8                                           |       |
+| mov.aa a4, a15                                              |       |
+| ; char *strncpy(char *dst0, const char *src0, size_t count) |       |
+| call dbg.strncpy                                            |       |
+| ld.a a15, [a14]#-0x18                                       |       |
+| ld.a a15, [a15]#0                                           |       |
+| ld.d e4, [a14]#-0x10                                        |       |
+| ; SFtype __truncdfsf2(DFtype arg_a)                         |       |
+| call dbg.__truncdfsf2                                       |       |
+| mov d15, d2                                                 |       |
+| ; 12                                                        |       |
+| st.w [a15]#0xc, d15                                         |       |
+| ld.a a15, [a14]#-0x18                                       |       |
+| ld.a a15, [a15]#0                                           |       |
+| ld.w d15, [a14]#-0x14                                       |       |
+| ; 16                                                        |       |
+| st.w [a15]#0x10, d15                                        |       |
+| mov d15, #1                                                 |       |
+`-------------------------------------------------------------'       |
+    v                                                                 |
     |                                                                 |
-.-------------------------------------------------------------.   .---------------------------------------.
-|  0x80000518                                                 |   |  0x8000054c                           |
-|   ; CALL XREF from sym.__do_global_dtors_aux @ 0x800004c2   |   | ; CODE XREF from sym.fn1 @ 0x800004f4 |
-| fcn.80000518(char *dst0, const char *src0, size_t count);   |   | mov d2, d15                           |
-| ; arg char *dst0 @ a0                                       |   | ret                                   |
-| ; arg const char *src0 @ d5                                 |   `---------------------------------------'
-| ; arg size_t count @ d6                                     |
-| nop                                                         |
-| ld.w d15, [a15]#0                                           |
-| mov.a a15, d15                                              |
-| add.a a15, #4                                               |
-| mov d4, #5                                                  |
-| ld.a a5, [a14]#-8                                           |
-| mov.aa a4, a15                                              |
-| ; char *strncpy(char *dst0, const char *src0, size_t count) |
-| call dbg.strncpy                                            |
-| ld.a a15, [a14]#-0x18                                       |
-| ld.a a15, [a15]#0                                           |
-| ld.d e4, [a14]#-0x10                                        |
-| ; SFtype __truncdfsf2(DFtype arg_a)                         |
-| call dbg.__truncdfsf2                                       |
-| mov d15, d2                                                 |
-| ; 12                                                        |
-| st.w [a15]#0xc, d15                                         |
-| ld.a a15, [a14]#-0x18                                       |
-| ld.a a15, [a15]#0                                           |
-| ld.w d15, [a14]#-0x14                                       |
-| ; 16                                                        |
-| st.w [a15]#0x10, d15                                        |
-| mov d15, #1                                                 |
-`-------------------------------------------------------------'
+    |                                 .-------------------------------'
+    '-----------------------------------.
+                                      | |
+                                .---------------------------------------.
+                                |  0x8000054c                           |
+                                | ; CODE XREF from sym.fn1 @ 0x800004f4 |
+                                | mov d2, d15                           |
+                                | ret                                   |
+                                `---------------------------------------'
 EOF
 RUN
 
@@ -948,7 +945,7 @@ EXPECT=<<EOF
 | 0x800004f0      jnz   d15, 0x800004f6
 | ----------- true: 0x800004f6  false: 0x800004f2
 | 0x800004f2      mov   d15, #0
-| 0x800004f4      j     0x8000054c                                     ; fcn.80000518+0x34
+| 0x800004f4      j     0x8000054c
 | ----------- true: 0x8000054c
 | 0x800004f6      mov   d4, #0x14
 | 0x800004fa      call  dbg.malloc                                     ; void *malloc(size_t nbytes)
@@ -960,8 +957,31 @@ EXPECT=<<EOF
 | 0x8000050c      ld.a  a15, [a15]#0
 | 0x8000050e      ld.w  d15, [a14]#-4
 | 0x80000512      st.w  [a15]#0, d15
-\ 0x80000514      ld.a  a15, [a14]#-0x18
-| ----------- true: 0x80000518
+| 0x80000514      ld.a  a15, [a14]#-0x18
+| 0x80000518      nop
+| 0x8000051a      ld.w  d15, [a15]#0
+| 0x8000051c      mov.a a15, d15
+| 0x8000051e      add.a a15, #4
+| 0x80000520      mov   d4, #5
+| 0x80000522      ld.a  a5, [a14]#-8
+| 0x80000526      mov.aa a4, a15
+| 0x80000528      call  dbg.strncpy                                    ; char *strncpy(char *dst0, const char *src0, size_t count)
+| 0x8000052c      ld.a  a15, [a14]#-0x18
+| 0x80000530      ld.a  a15, [a15]#0
+| 0x80000532      ld.d  e4, [a14]#-0x10
+| 0x80000536      call  dbg.__truncdfsf2                               ; SFtype __truncdfsf2(DFtype arg_a)
+| 0x8000053a      mov   d15, d2
+| 0x8000053c      st.w  [a15]#0xc, d15                                 ; 12
+| 0x8000053e      ld.a  a15, [a14]#-0x18
+| 0x80000542      ld.a  a15, [a15]#0
+| 0x80000544      ld.w  d15, [a14]#-0x14
+| 0x80000548      st.w  [a15]#0x10, d15                                ; 16
+| 0x8000054a      mov   d15, #1
+| ----------- true: 0x8000054c
+| ; CODE XREF from sym.fn1 @ 0x800004f4
+| 0x8000054c      mov   d2, d15
+\ 0x8000054e      ret
+
             ; CALL XREF from main @ 0x80000642
 / sym.fn1(size_t nbytes, int32_t arg5, int32_t arg6, int32_t arg7);
 |           ; arg size_t nbytes @ a0
@@ -980,7 +1000,7 @@ EXPECT=<<EOF
 |           0x800004ec      ld.w  d15, [a14]#-0x18
 |       ,=< 0x800004f0      jnz   d15, 0x800004f6
 |           0x800004f2      mov   d15, #0
-|       ,=< 0x800004f4      j     0x8000054c                           ; fcn.80000518+0x34
+|       ,=< 0x800004f4      j     0x8000054c
 |           ; CODE XREF from sym.fn1 @ 0x800004f4
 |           0x8000054c      mov   d2, d15
 \           0x8000054e      ret
@@ -988,28 +1008,27 @@ EXPECT=<<EOF
 0x800004d6 arg5
 0x800004de arg6
 0x800004e2 arg7
-0x800004f4 fcn.80000518+0x34 fcn.80000518+0x34
 offset: 0x800004ce
 name: sym.fn1
-size: 74
+size: 130
 is-pure: true
-realsz: 74
+realsz: 130
 stackframe: 0
 call-convention: reg
 cyclomatic-cost: 0
-cyclomatic-complexity: 2
+cyclomatic-complexity: 3
 loops: 0
 bits: 32
 type: sym
-num-bbs: 4
+num-bbs: 5
 edges: 6
-end-bbs: 0
-call-refs: 0x8000054c J 0x80000afc C
+end-bbs: 1
+call-refs: 0x8000054c J 0x80000afc C 0x800011e0 C 0x80000728 C
 data-refs:
-code-xrefs: 0x80000642 C
+code-xrefs: 0x800004f4 J 0x80000642 C
 noreturn: false
-in-degree: 1
-out-degree: 1
+in-degree: 2
+out-degree: 3
 data-xrefs:
 locals: 0
 args: 4
