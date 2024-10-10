@@ -406,22 +406,15 @@ RZ_API bool rz_asm_use_assembler(RzAsm *a, const char *name) {
 }
 
 /**
- * \brief Copies all config nodes in \p pcfg to the config in \p rz_asm.
+ * \brief Appends the plugin configuration \p pcfg to the core plugin_config vector.
  *
  * \param rz_asm Pointer to RzAsm struct.
  * \param pcfg Pointer to the plugins RzConfig struct.
  */
-static void set_plugin_configs(RZ_BORROW RzAsm *rz_asm, RZ_BORROW RzConfig *pcfg) {
-	rz_return_if_fail(pcfg && rz_asm);
-
-	RzConfig *conf = ((RzCore *)(rz_asm->core))->config;
-	RzConfigNode *n;
-	RzListIter *it;
-	rz_list_foreach (pcfg->nodes, it, n) {
-		if (!rz_config_add_node(conf, rz_config_node_clone(n))) {
-			RZ_LOG_WARN("Failed to add \"%s\" to the global config.\n", n->name)
-		}
-	}
+static void set_plugin_configs(RZ_BORROW RzCore *core, const char *plugin_name, RZ_OWN RzConfig *pcfg) {
+	rz_return_if_fail(pcfg && core);
+	rz_config_lock(pcfg, 1);
+	ht_sp_insert(core->plugin_configs, plugin_name, pcfg);
 }
 
 /**
@@ -430,17 +423,9 @@ static void set_plugin_configs(RZ_BORROW RzAsm *rz_asm, RZ_BORROW RzConfig *pcfg
  * \param rz_asm Pointer to RzAsm struct.
  * \param pcfg Pointer to the plugins RzConfig struct.
  */
-static void unset_plugins_config(RZ_BORROW RzAsm *rz_asm, RZ_BORROW RzConfig *pcfg) {
-	rz_return_if_fail(pcfg && rz_asm && rz_asm->core);
-
-	RzConfig *conf = ((RzCore *)(rz_asm->core))->config;
-	RzConfigNode *n;
-	RzListIter *it;
-	rz_list_foreach (pcfg->nodes, it, n) {
-		if (!rz_config_rm(conf, n->name)) {
-			RZ_LOG_WARN("Failed to remove \"%s\" from the global config.\n", n->name)
-		}
-	}
+static void remove_plugin_config(RZ_BORROW RzCore *core, const char *plugin_name) {
+	rz_return_if_fail(core && plugin_name);
+	ht_sp_delete(core->plugin_configs, plugin_name);
 }
 
 // TODO: this can be optimized using rz_str_hash()
@@ -482,14 +467,10 @@ RZ_API bool rz_asm_use(RzAsm *a, const char *name) {
 			}
 
 			if (a->cur && a->cur->get_config && core) {
-				rz_config_lock(core->config, false);
-				unset_plugins_config(a, a->cur->get_config(a->plugin_data));
-				rz_config_lock(core->config, true);
+				remove_plugin_config(core, a->cur->name);
 			}
 			if (h->get_config && core) {
-				rz_config_lock(core->config, false);
-				set_plugin_configs(a, h->get_config(a->plugin_data));
-				rz_config_lock(core->config, true);
+				set_plugin_configs(core, h->name, h->get_config(a->plugin_data));
 			}
 			a->cur = h;
 			return true;

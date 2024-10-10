@@ -126,6 +126,7 @@ static bool hex_cfg_set(void *user, void *data) {
 	}
 	if (cnode) {
 		pnode->i_value = cnode->i_value;
+		free(pnode->value);
 		pnode->value = rz_str_dup(cnode->value);
 		return true;
 	}
@@ -161,10 +162,10 @@ static bool hexagon_init(void **plugin_data) {
 	return true;
 }
 
-RZ_API RZ_BORROW RzConfig *hexagon_get_config(void *plugin_data) {
+RZ_API RZ_OWN RzConfig *hexagon_get_config(void *plugin_data) {
 	rz_return_val_if_fail(plugin_data, NULL);
 	HexState *state = plugin_data;
-	return state->cfg;
+	return rz_config_clone(state->cfg);
 }
 
 /**

@@ -505,6 +505,7 @@ RZ_API RzConfig *rz_config_new(void *user) {
 }
 
 RZ_API RzConfig *rz_config_clone(RzConfig *cfg) {
+	rz_return_val_if_fail(cfg, NULL);
 	RzListIter *iter;
 	RzConfigNode *node;
 	RzConfig *c = rz_config_new(cfg->user);
