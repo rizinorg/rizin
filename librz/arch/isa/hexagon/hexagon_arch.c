@@ -277,6 +277,9 @@ RZ_API HexPkt *hex_get_pkt(RZ_BORROW HexState *state, const ut32 addr) {
 	RzListIter *iter = NULL;
 	for (ut8 i = 0; i < HEXAGON_STATE_PKTS; ++i) {
 		p = &state->pkts[i];
+		if (rz_list_length(p->bin) == 0) {
+			continue;
+		}
 		rz_list_foreach (p->bin, iter, hic) {
 			if (hic_at_addr(hic, addr)) {
 				p->last_access = rz_time_now_mono();
@@ -1134,7 +1137,7 @@ static RZ_BORROW HexInsnContainer *decode_hic(HexState *state, HexReversedOpcode
 	ut8 tmp[HEX_INSN_SIZE] = { 0 };
 	ut32 bytes = rz_buf_read(buffer, tmp, 4);
 	if (bytes != HEX_INSN_SIZE) {
-		RZ_LOG_ERROR("Failed to read from buffer!\n");
+		RZ_LOG_DEBUG("Failed to read from buffer!\n");
 		return NULL;
 	}
 	ut32 data = rz_read_le32(tmp);
@@ -1163,11 +1166,10 @@ static RZ_BORROW HexInsnContainer *decode_hic(HexState *state, HexReversedOpcode
  * and with an offset with an multiple of HEX_INSN_SIZE.
  */
 static ut64 get_pre_decoding_start(RZ_BORROW RzBuffer *buffer, ut64 addr) {
-	rz_return_val_if_fail(buffer, addr);
-	
+	rz_return_val_if_fail(buffer, addr);	
 	ut64 seek = rz_buf_tell(buffer);
 	if (addr < HEX_INSN_SIZE && seek < HEX_INSN_SIZE) {
-		return addr;
+		goto seek_return;
 	}
 
 	size_t look_back = 0;
@@ -1177,15 +1179,21 @@ static ut64 get_pre_decoding_start(RZ_BORROW RzBuffer *buffer, ut64 addr) {
 		ut8 tmp[HEX_INSN_SIZE] = { 0 };
 		ut32 bytes = rz_buf_read(buffer, tmp, 4);
 		if (bytes != HEX_INSN_SIZE) {
-			return addr;
+			goto seek_return;
 		}
 		ut32 data = rz_read_le32(tmp);
 		is_last_insn = is_last_instr(HEX_PARSE_BITS_FROM_UT32(data));
 		if (!rz_buf_seek(buffer, -HEX_INSN_SIZE, RZ_BUF_CUR)) {
-			return addr;
+			goto seek_return;
 		}
 		addr -= HEX_INSN_SIZE;
 		look_back++;
+	}
+
+seek_return:
+	if (rz_buf_seek(buffer, addr, RZ_BUF_CUR) != addr) {
+		RZ_LOG_ERROR("Could not seek to address: 0x%" PFMT64x "\n", addr);
+		return UT64_MAX;
 	}
 	return addr;
 }
@@ -1195,19 +1203,22 @@ static bool perform_hacks(HexState **state, RzBuffer **buffer, RzAsm **rz_asm, R
 		*rz_asm = rz_analysis_to_rz_asm(*rz_analysis);
 		assert(*rz_asm && (*rz_asm)->cur && (*rz_analysis)->cur && RZ_STR_EQ((*rz_asm)->cur->arch, (*rz_analysis)->cur->arch));
 	} else if (*rz_asm) {
-		*rz_analysis = rz_asm_to_rz_analysis(rz_asm);
-		if (!(*rz_analysis)->cur) {
-			assert(*rz_analysis && (*rz_asm)->cur);
-			// Only RzAsm present (rz-test, rz-asm etc.). So also likely a test situation without IO.
-			*buffer = rz_buf_new_with_bytes(rz_reverse->bytes_buf, rz_reverse->bytes_buf_len);
-			rz_return_val_if_fail(*buffer, false);
-		} else {
-			assert(*rz_analysis && (*rz_asm)->cur && (*rz_analysis)->cur && RZ_STR_EQ((*rz_asm)->cur->arch, (*rz_analysis)->cur->arch));
-			*buffer = rz_buf_new_with_io(&(*rz_analysis)->iob);
-			rz_return_val_if_fail(*buffer, false);
+		*rz_analysis = rz_asm_to_rz_analysis(*rz_asm);
+		if (*rz_analysis && (*rz_analysis)->cur) {
+			assert(RZ_STR_EQ((*rz_asm)->cur->arch, (*rz_analysis)->cur->arch));
 		}
 	} else {
 		assert(0 && "Requires either RzAsm or RzAnalysis");
+	}
+
+	// Set Buffer
+	if (!((*rz_analysis) && (*rz_analysis)->cur)) {
+		// Only RzAsm present (rz-test, rz-asm etc.). So also likely a test situation without IO.
+		*buffer = rz_buf_new_with_bytes(rz_reverse->bytes_buf, rz_reverse->bytes_buf_len);
+		rz_return_val_if_fail(*buffer, false);
+	} else {
+		*buffer = rz_buf_new_with_io(&(*rz_analysis)->iob);
+		rz_return_val_if_fail(*buffer, false);
 	}
 	*state = (*rz_asm)->plugin_data;
 	rz_return_val_if_fail(*state, false);
@@ -1235,7 +1246,9 @@ RZ_API void hexagon_reverse_opcode(HexReversedOpcode *rz_reverse, const ut64 add
 		memcpy(&state->rz_asm, rz_asm, sizeof(RzAsm));
 	}
 	ut64 pre_addr = get_pre_decoding_start(buffer, addr);
-	HexInsnContainer *hic;
+	//printf("addr: 0x%llx - seek: 0x%llx - pre_addr: 0x%llx\n", addr, rz_buf_tell(buffer), pre_addr);
+
+	HexInsnContainer *hic = NULL;
 	// Do pre-decoding to know the context.
 	while (pre_addr < addr) {
 		if (hex_get_hic_at_addr(state, pre_addr)) {
@@ -1251,12 +1264,16 @@ RZ_API void hexagon_reverse_opcode(HexReversedOpcode *rz_reverse, const ut64 add
 		}
 		pre_addr += HEX_INSN_SIZE;
 	}
-	hic = hex_get_hic_at_addr(state, addr);
+	if (addr != 0) {
+		// Only check for buffered instructions not at 0x0.
+		// Because structs are 0 initialized.
+		hic = hex_get_hic_at_addr(state, addr);
+	}
 	if (!hic) {
 		hic = decode_hic(state, rz_reverse, buffer, addr);
 	}
 	if (!hic) {
-		RZ_LOG_FATAL("Could not decode packet.\n");
+		RZ_LOG_DEBUG("Could not decode packet.\n");
 		rz_buf_free(buffer);
 		return;
 	}

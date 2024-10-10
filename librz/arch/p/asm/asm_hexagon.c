@@ -178,6 +178,9 @@ RZ_API RZ_BORROW RzConfig *hexagon_get_config(void *plugin_data) {
  */
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int l) {
 	rz_return_val_if_fail(a && op, -1);
+	if (l < HEX_INSN_SIZE) {
+		return -1;
+	}
 
 	ut32 addr = (ut32)a->pc;
 	HexReversedOpcode rev = { .action = HEXAGON_DISAS, .ana_op = NULL, .asm_op = op, .state = NULL, .pkt_fully_decoded = false, .bytes_buf = buf, .bytes_buf_len = l };
