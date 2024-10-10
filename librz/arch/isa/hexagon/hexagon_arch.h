@@ -40,6 +40,8 @@ typedef struct {
 	RzAsmOp *asm_op;
 	HexState *state;
 	bool pkt_fully_decoded;
+	const ut8 *bytes_buf; ///< Deprecated. Raw byte buffer provided to analysis and asm.
+	size_t bytes_buf_len; ///< Deprecated.
 } HexReversedOpcode;
 
 #define HEX_PKT_UNK           "?   "
