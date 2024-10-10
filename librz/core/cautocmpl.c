@@ -555,6 +555,16 @@ static void autocmplt_cmd_arg_eval_key(RzCore *core, RzLineNSCompletionResult *r
 			rz_line_ns_completion_result_add(res, bt->name);
 		}
 	}
+	RzConfig **plugin_cfg;
+	RzIterator *it = ht_sp_as_iter(core->plugin_configs);
+	rz_iterator_foreach(it, plugin_cfg) {
+		rz_list_foreach ((*plugin_cfg)->nodes, iter, bt) {
+			if (!strncmp(bt->name, s, len)) {
+				rz_line_ns_completion_result_add(res, bt->name);
+			}
+		}
+	}
+	rz_iterator_free(it);
 }
 
 static void autocmplt_cmd_arg_eval_full(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
