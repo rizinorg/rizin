@@ -1190,20 +1190,27 @@ static ut64 get_pre_decoding_start(RZ_BORROW RzBuffer *buffer, ut64 addr) {
 	return addr;
 }
 
-static bool perform_hacks(HexState **state, RzBuffer **buffer, RzAsm **rz_asm, RzAnalysis **rz_analysis) {
+static bool perform_hacks(HexState **state, RzBuffer **buffer, RzAsm **rz_asm, RzAnalysis **rz_analysis, HexReversedOpcode *rz_reverse) {
 	if (*rz_analysis) {
 		*rz_asm = rz_analysis_to_rz_asm(*rz_analysis);
 		assert(*rz_asm && (*rz_asm)->cur && (*rz_analysis)->cur && RZ_STR_EQ((*rz_asm)->cur->arch, (*rz_analysis)->cur->arch));
 	} else if (*rz_asm) {
 		*rz_analysis = rz_asm_to_rz_analysis(rz_asm);
-		assert(*rz_analysis && (*rz_asm)->cur && (*rz_analysis)->cur && RZ_STR_EQ((*rz_asm)->cur->arch, (*rz_analysis)->cur->arch));
+		if (!(*rz_analysis)->cur) {
+			assert(*rz_analysis && (*rz_asm)->cur);
+			// Only RzAsm present (rz-test, rz-asm etc.). So also likely a test situation without IO.
+			*buffer = rz_buf_new_with_bytes(rz_reverse->bytes_buf, rz_reverse->bytes_buf_len);
+			rz_return_val_if_fail(*buffer, false);
+		} else {
+			assert(*rz_analysis && (*rz_asm)->cur && (*rz_analysis)->cur && RZ_STR_EQ((*rz_asm)->cur->arch, (*rz_analysis)->cur->arch));
+			*buffer = rz_buf_new_with_io(&(*rz_analysis)->iob);
+			rz_return_val_if_fail(*buffer, false);
+		}
 	} else {
 		assert(0 && "Requires either RzAsm or RzAnalysis");
 	}
 	*state = (*rz_asm)->plugin_data;
 	rz_return_val_if_fail(*state, false);
-	*buffer = rz_buf_new_with_io(&(*rz_analysis)->iob);
-	rz_return_val_if_fail(*buffer, false);
 	return true;
 }
 
@@ -1220,7 +1227,7 @@ RZ_API void hexagon_reverse_opcode(HexReversedOpcode *rz_reverse, const ut64 add
 	rz_return_if_fail(rz_reverse);
 	HexState *state;
 	RzBuffer *buffer;
-	if (!perform_hacks(&state, &buffer, &rz_asm, &rz_analysis)) {
+	if (!perform_hacks(&state, &buffer, &rz_asm, &rz_analysis, rz_reverse)) {
 		RZ_LOG_FATAL("Could not preform pointer hacks. Sorry.\n");
 		return;
 	}
