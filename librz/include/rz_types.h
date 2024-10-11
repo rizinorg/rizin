@@ -696,6 +696,9 @@ static inline void /*<RzAsm>*/ *rz_analysis_to_rz_asm(RZ_NONNULL void /*<RzAnaly
 	assert(rz_analysis && "This function can only be used if RzAnalysis and RzAsm were set up before.");
 	struct dummy_rz_analysis_t *analysis = rz_analysis;
 	struct dummy_rz_core_t *core = analysis->core;
+	if (!core) {
+		return NULL;
+	}
 	void *rasm = core->rasm;
 	assert(rasm && "This function can only be used if RzAnalysis and RzAsm were set up before.");
 	return rasm;
@@ -709,6 +712,9 @@ static inline void /*<RzAnalysis>*/ *rz_asm_to_rz_analysis(RZ_NONNULL void /*<Rz
 	assert(rz_asm && "This function can only be used if RzAnalysis and RzAsm were set up before.");
 	struct dummy_rz_asm_t *rasm = rz_asm;
 	struct dummy_rz_core_t *core = rasm->core;
+	if (!core) {
+		return NULL;
+	}
 	void *analysis = core->analysis;
 	assert(analysis && "This function can only be used if RzAnalysis and RzAsm were set up before.");
 	return analysis;

@@ -1166,35 +1166,28 @@ static RZ_BORROW HexInsnContainer *decode_hic(HexState *state, HexReversedOpcode
  * and with an offset with an multiple of HEX_INSN_SIZE.
  */
 static ut64 get_pre_decoding_start(RZ_BORROW RzBuffer *buffer, ut64 addr) {
-	rz_return_val_if_fail(buffer, addr);	
-	ut64 seek = rz_buf_tell(buffer);
-	if (addr < HEX_INSN_SIZE && seek < HEX_INSN_SIZE) {
-		goto seek_return;
+	rz_return_val_if_fail(buffer, addr);
+	if (addr < HEX_INSN_SIZE) {
+		return addr;
 	}
 
+	size_t seek = rz_buf_tell(buffer);
 	size_t look_back = 0;
 	bool is_last_insn = false;
 	// Search until we cross a boundary or have found a last instruction.
 	while (addr >= HEX_INSN_SIZE && seek >= HEX_INSN_SIZE && look_back < 4 && !is_last_insn) {
+		seek = rz_buf_seek(buffer, -HEX_INSN_SIZE, RZ_BUF_CUR);
+		addr -= HEX_INSN_SIZE;
+		look_back++;
 		ut8 tmp[HEX_INSN_SIZE] = { 0 };
 		ut32 bytes = rz_buf_read(buffer, tmp, 4);
 		if (bytes != HEX_INSN_SIZE) {
-			goto seek_return;
+			return addr;
 		}
 		ut32 data = rz_read_le32(tmp);
 		is_last_insn = is_last_instr(HEX_PARSE_BITS_FROM_UT32(data));
-		if (!rz_buf_seek(buffer, -HEX_INSN_SIZE, RZ_BUF_CUR)) {
-			goto seek_return;
-		}
-		addr -= HEX_INSN_SIZE;
-		look_back++;
 	}
 
-seek_return:
-	if (rz_buf_seek(buffer, addr, RZ_BUF_CUR) != addr) {
-		RZ_LOG_ERROR("Could not seek to address: 0x%" PFMT64x "\n", addr);
-		return UT64_MAX;
-	}
 	return addr;
 }
 
@@ -1225,6 +1218,14 @@ static bool perform_hacks(HexState **state, RzBuffer **buffer, RzAsm **rz_asm, R
 	return true;
 }
 
+static inline bool do_decoding_loop(ut64 current_addr, ut64 requested_addr, const HexInsnContainer *prev_hic) {
+	// Loop as long as:
+	// - pre_addr < requested_addr: pre_decoding hasn't finished.
+	// - We have not seen a last instruction of a packet (max. check +4 insn after address).
+	return (current_addr <= requested_addr) || 
+	       (prev_hic && ((current_addr < (requested_addr + (HEX_INSN_SIZE * HEX_MAX_INSN_PER_PKT))) && !prev_hic->pkt_info.last_insn));
+}
+
 /**
  * \brief Reverses a given opcode and copies the result into one of the rizin structs in rz_reverse
  * if \p copy_result is set.
@@ -1245,31 +1246,41 @@ RZ_API void hexagon_reverse_opcode(HexReversedOpcode *rz_reverse, const ut64 add
 	if (rz_asm) {
 		memcpy(&state->rz_asm, rz_asm, sizeof(RzAsm));
 	}
-	ut64 pre_addr = get_pre_decoding_start(buffer, addr);
-	//printf("addr: 0x%llx - seek: 0x%llx - pre_addr: 0x%llx\n", addr, rz_buf_tell(buffer), pre_addr);
+
+	// Seek to initial position. Byte buffers are assumed to be aligned.
+	if (buffer->type == RZ_BUFFER_IO && rz_buf_seek(buffer, addr, RZ_BUF_CUR) != addr) {
+		RZ_LOG_ERROR("Could not seek to address: 0x%" PFMT64x "\n", addr);
+		return;
+	}
+
+	ut64 current_addr = get_pre_decoding_start(buffer, addr);
 
 	HexInsnContainer *hic = NULL;
-	// Do pre-decoding to know the context.
-	while (pre_addr < addr) {
-		if (hex_get_hic_at_addr(state, pre_addr)) {
+	// Do pre- and post-decoding to know the context.
+	while (do_decoding_loop(current_addr, addr, hic)) {
+		if (hex_get_hic_at_addr(state, current_addr)) {
 			// Already decoded.
-			pre_addr += HEX_INSN_SIZE;
+			rz_buf_seek(buffer, HEX_INSN_SIZE, RZ_BUF_CUR);
+			current_addr += HEX_INSN_SIZE;
 			continue;
 		}
-		hic = decode_hic(state, rz_reverse, buffer, pre_addr);
+		hic = decode_hic(state, rz_reverse, buffer, current_addr);
 		if (!hic) {
-			RZ_LOG_ERROR("Filed during pre-decoding.\n");
-			rz_buf_free(buffer);
-			return;
+			// Read over buffer limit.
+			break;
 		}
-		pre_addr += HEX_INSN_SIZE;
+		rz_buf_seek(buffer, HEX_INSN_SIZE, RZ_BUF_CUR);
+		current_addr += HEX_INSN_SIZE;
 	}
-	if (addr != 0) {
-		// Only check for buffered instructions not at 0x0.
-		// Because structs are 0 initialized.
-		hic = hex_get_hic_at_addr(state, addr);
+	if (current_addr > addr) {
+		// Go back to bytes of the actual instruction.
+		rz_buf_seek(buffer, -(current_addr - addr), RZ_BUF_CUR);
 	}
+
+	hic = hex_get_hic_at_addr(state, addr);
 	if (!hic) {
+		// Should have been decoded before. Maybe a reace condition
+		// if the same core is used by several threads vai a plugin.
 		hic = decode_hic(state, rz_reverse, buffer, addr);
 	}
 	if (!hic) {
