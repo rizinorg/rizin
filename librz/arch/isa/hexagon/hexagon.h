@@ -266,9 +266,9 @@ typedef struct {
 	bool just_init; ///< Flag indicates if IL VM was just initialized.
 	HexPkt pkts[HEXAGON_STATE_PKTS]; // buffered instructions
 	RzList /*<HexConstExt *>*/ *const_ext_l; // Constant extender values.
-	RzAsm rz_asm; // Copy of RzAsm struct. Holds certain flags of interesed for disassembly formatting.
 	RzConfig *cfg;
 	RzPVector /*<RzAsmTokenPattern *>*/ *token_patterns; ///< PVector with token patterns. Priority ordered.
+	bool utf8_enabled; ///< If set, print UTF-8 characters.
 } HexState;
 
 /**
