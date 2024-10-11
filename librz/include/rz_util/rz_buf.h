@@ -19,7 +19,18 @@ typedef struct rz_buf_t RzBuffer;
 
 typedef bool (*RzBufferInit)(RzBuffer *b, const void *user);
 typedef bool (*RzBufferFini)(RzBuffer *b);
-typedef st64 (*RzBufferRead)(RzBuffer *b, ut8 *buf, ut64 len);
+/**
+ * \brief Reads \p len bytes from buffer \p b into \p buf.
+ * \p buf should have enough space to contain the bytes.
+ * The seek of \p b is advanced by \p len bytes.
+ *
+ * \param b The buffer to read from.
+ * \param buf The array to move te bytes into.
+ * \param len The number of bytes to read from the buffer.
+ *
+ * \return The number of bytes read. -1 in case of error and 0 for EOF reached.
+ */
+typedef st64 (*RzBufferRead)(RZ_BORROW RzBuffer *b, RZ_OUT ut8 *buf, ut64 len);
 typedef st64 (*RzBufferWrite)(RzBuffer *b, const ut8 *buf, ut64 len);
 typedef ut64 (*RzBufferGetSize)(RzBuffer *b);
 typedef bool (*RzBufferResize)(RzBuffer *b, ut64 newsize);

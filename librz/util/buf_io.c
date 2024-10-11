@@ -44,8 +44,11 @@ static st64 buf_io_seek(RzBuffer *b, st64 addr, int whence) {
 static st64 buf_io_read(RzBuffer *b, ut8 *buf, ut64 len) {
 	BufIOPriv *priv = b->priv;
 	len = RZ_MIN(INT_MAX, len); // remove if read_at takes ut64 at some point
-	bool r = priv->iob->read_at(priv->iob->io, priv->offset, buf, len);
-	return r ? len : -1;
+	bool success = priv->iob->read_at(priv->iob->io, priv->offset, buf, len);
+	if (success) {
+		rz_seek_offset(priv->offset, 0, len, RZ_BUF_CUR);
+	}
+	return success ? len : -1;
 }
 
 static st64 buf_io_write(RzBuffer *b, const ut8 *buf, ut64 len) {

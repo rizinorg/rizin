@@ -1168,13 +1168,15 @@ RZ_API st64 rz_buf_insert_bytes(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL co
 }
 
 /**
- * \brief Read len bytes of the buffer at the cursor.
- * \param b ...
- * \param buf ...
- * \param len ...
- * \return Return the number of bytes read.
+ * \brief Reads \p len bytes from buffer \p b into \p buf.
+ * \p buf should have enough space to contain the bytes.
+ * The seek of \p b is advanced by \p len bytes.
  *
- * ...
+ * \param b The buffer to read from.
+ * \param buf The array to move te bytes into.
+ * \param len The number of bytes to read from the buffer.
+ *
+ * \return The number of bytes read. -1 in case of error and 0 for EOF reached.
  */
 RZ_API st64 rz_buf_read(RZ_NONNULL RzBuffer *b, RZ_NONNULL ut8 RZ_OUT *buf, ut64 len) {
 	rz_return_val_if_fail(b && buf, -1);
