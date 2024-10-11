@@ -151,6 +151,9 @@ el plugins.hexagon.imm
 # Check if a value change is performed properly.
 wx 01c09da0
 pi 1
+# Empty buffer
+pi 1000~nothing
+# Check if option was set
 e plugins.hexagon.imm.hash=false
 pi 1
 # Disable plugin.
