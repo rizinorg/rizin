@@ -528,7 +528,7 @@ void hex_set_hic_text(RZ_INOUT HexInsnContainer *hic) {
  * \param pkt The packet the instruction belongs to.
  * \param k The index of the instruction within the packet.
  */
-static void hex_set_pkt_info(const RzAsm *rz_asm, RZ_INOUT HexInsnContainer *hic, const HexPkt *pkt, const ut8 k, const bool update_text, HexState *state) {
+static void hex_set_pkt_info(RZ_INOUT HexInsnContainer *hic, const HexPkt *pkt, const ut8 k, const bool update_text, HexState *state) {
 	rz_return_if_fail(hic && pkt && state);
 	bool is_first = (k == 0);
 	HexPktInfo *hi_pi = &hic->pkt_info;
@@ -540,9 +540,9 @@ static void hex_set_pkt_info(const RzAsm *rz_asm, RZ_INOUT HexInsnContainer *hic
 		hi_pi->first_insn = true;
 		hi_pi->last_insn = true;
 		if (pkt->is_valid) {
-			strncpy(hi_pi->text_prefix, get_pkt_indicator(rz_asm->utf8, sdk_form, true, SINGLE_IN_PKT), 8);
+			strncpy(hi_pi->text_prefix, get_pkt_indicator(state->utf8_enabled, sdk_form, true, SINGLE_IN_PKT), 8);
 			if (sdk_form) {
-				strncpy(hi_pi->text_postfix, get_pkt_indicator(rz_asm->utf8, sdk_form, false, SINGLE_IN_PKT), 8);
+				strncpy(hi_pi->text_postfix, get_pkt_indicator(state->utf8_enabled, sdk_form, false, SINGLE_IN_PKT), 8);
 			}
 		} else {
 			strncpy(hi_pi->text_prefix, HEX_PKT_UNK, 8);
@@ -551,7 +551,7 @@ static void hex_set_pkt_info(const RzAsm *rz_asm, RZ_INOUT HexInsnContainer *hic
 		hi_pi->first_insn = true;
 		hi_pi->last_insn = false;
 		if (pkt->is_valid) {
-			strncpy(hi_pi->text_prefix, get_pkt_indicator(rz_asm->utf8, sdk_form, true, FIRST_IN_PKT), 8);
+			strncpy(hi_pi->text_prefix, get_pkt_indicator(state->utf8_enabled, sdk_form, true, FIRST_IN_PKT), 8);
 		} else {
 			strncpy(hi_pi->text_prefix, HEX_PKT_UNK, 8);
 		}
@@ -559,22 +559,22 @@ static void hex_set_pkt_info(const RzAsm *rz_asm, RZ_INOUT HexInsnContainer *hic
 		hi_pi->first_insn = false;
 		hi_pi->last_insn = true;
 		if (pkt->is_valid) {
-			strncpy(hi_pi->text_prefix, get_pkt_indicator(rz_asm->utf8, sdk_form, true, LAST_IN_PKT), 8);
+			strncpy(hi_pi->text_prefix, get_pkt_indicator(state->utf8_enabled, sdk_form, true, LAST_IN_PKT), 8);
 			if (sdk_form) {
-				strncpy(hi_pi->text_postfix, get_pkt_indicator(rz_asm->utf8, sdk_form, false, LAST_IN_PKT), 8);
+				strncpy(hi_pi->text_postfix, get_pkt_indicator(state->utf8_enabled, sdk_form, false, LAST_IN_PKT), 8);
 			}
 
 			switch (hex_get_loop_flag(pkt)) {
 			default:
 				break;
 			case HEX_LOOP_01:
-				strncat(hi_pi->text_postfix, get_pkt_indicator(rz_asm->utf8, sdk_form, false, ELOOP_01_PKT), 23 - strlen(hi_pi->text_postfix));
+				strncat(hi_pi->text_postfix, get_pkt_indicator(state->utf8_enabled, sdk_form, false, ELOOP_01_PKT), 23 - strlen(hi_pi->text_postfix));
 				break;
 			case HEX_LOOP_0:
-				strncat(hi_pi->text_postfix, get_pkt_indicator(rz_asm->utf8, sdk_form, false, ELOOP_0_PKT), 23 - strlen(hi_pi->text_postfix));
+				strncat(hi_pi->text_postfix, get_pkt_indicator(state->utf8_enabled, sdk_form, false, ELOOP_0_PKT), 23 - strlen(hi_pi->text_postfix));
 				break;
 			case HEX_LOOP_1:
-				strncat(hi_pi->text_postfix, get_pkt_indicator(rz_asm->utf8, sdk_form, false, ELOOP_1_PKT), 23 - strlen(hi_pi->text_postfix));
+				strncat(hi_pi->text_postfix, get_pkt_indicator(state->utf8_enabled, sdk_form, false, ELOOP_1_PKT), 23 - strlen(hi_pi->text_postfix));
 				break;
 			}
 		} else {
@@ -584,7 +584,7 @@ static void hex_set_pkt_info(const RzAsm *rz_asm, RZ_INOUT HexInsnContainer *hic
 		hi_pi->first_insn = false;
 		hi_pi->last_insn = false;
 		if (pkt->is_valid) {
-			strncpy(hi_pi->text_prefix, get_pkt_indicator(rz_asm->utf8, sdk_form, true, MID_IN_PKT), 8);
+			strncpy(hi_pi->text_prefix, get_pkt_indicator(state->utf8_enabled, sdk_form, true, MID_IN_PKT), 8);
 		} else {
 			strncpy(hi_pi->text_prefix, HEX_PKT_UNK, 8);
 		}
@@ -638,7 +638,7 @@ static void make_packet_valid(RZ_BORROW HexState *state, RZ_BORROW HexPkt *pkt) 
 	ut8 i = 0;
 	ut8 slot = 0;
 	rz_list_foreach (pkt->bin, it, hi) {
-		hex_set_pkt_info(&state->rz_asm, hi, pkt, i, true, state);
+		hex_set_pkt_info(hi, pkt, i, true, state);
 		if (hi->is_duplex) {
 			hi->bin.sub[0]->slot = 0;
 			hi->bin.sub[1]->slot = 1;
@@ -731,10 +731,10 @@ static HexInsnContainer *hex_add_to_pkt(HexState *state, const HexInsnContainer 
 	}
 	pkt->last_instr_present |= is_last_instr(hic->parse_bits);
 	ut32 p_l = rz_list_length(pkt->bin);
-	hex_set_pkt_info(&state->rz_asm, hic, pkt, k, false, state);
+	hex_set_pkt_info(hic, pkt, k, false, state);
 	if (k == 0 && p_l > 1) {
 		// Update the instruction which was previously the first one.
-		hex_set_pkt_info(&state->rz_asm, rz_list_get_n(pkt->bin, 1), pkt, 1, true, state);
+		hex_set_pkt_info(rz_list_get_n(pkt->bin, 1), pkt, 1, true, state);
 	}
 	pkt->last_access = rz_time_now_mono();
 	if (pkt->last_instr_present) {
@@ -766,7 +766,7 @@ static HexInsnContainer *hex_to_new_pkt(HexState *state, const HexInsnContainer 
 	new_pkt->is_valid = (pkt->is_valid || pkt->last_instr_present);
 	new_pkt->pkt_addr = hic->addr;
 	new_pkt->last_access = rz_time_now_mono();
-	hex_set_pkt_info(&state->rz_asm, hic, new_pkt, 0, false, state);
+	hex_set_pkt_info(hic, new_pkt, 0, false, state);
 	if (new_pkt->last_instr_present) {
 		make_next_packet_valid(state, new_pkt);
 	}
@@ -792,7 +792,7 @@ static HexInsnContainer *hex_add_to_stale_pkt(HexState *state, const HexInsnCont
 	pkt->pkt_addr = new_hic->addr;
 	// p->is_valid = true; // Setting it true also detects a lot of data as valid assembly.
 	pkt->last_access = rz_time_now_mono();
-	hex_set_pkt_info(&state->rz_asm, hic, pkt, 0, false, state);
+	hex_set_pkt_info(hic, pkt, 0, false, state);
 	if (pkt->last_instr_present) {
 		make_next_packet_valid(state, pkt);
 	}
@@ -1233,6 +1233,7 @@ static void perform_hacks(RZ_NONNULL HexState **state,
 	}
 	*state = (*rz_asm)->plugin_data;
 	assert(*state);
+	(*state)->utf8_enabled = (*rz_asm)->utf8;
 	return;
 }
 
@@ -1258,10 +1259,6 @@ RZ_API void hexagon_reverse_opcode(HexReversedOpcode *rz_reverse, const ut64 add
 	HexState *state;
 	RzBuffer *buffer;
 	perform_hacks(&state, &buffer, &rz_asm, &rz_analysis, rz_reverse);
-
-	if (rz_asm) {
-		memcpy(&state->rz_asm, rz_asm, sizeof(RzAsm));
-	}
 
 	// Seek to initial position for IO buffers.
 	// Only for IO buffers an address is a valid seek.
