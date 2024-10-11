@@ -96,10 +96,11 @@ typedef struct {
 #define _RzAsmPlugin struct rz_asm_plugin_t
 typedef struct rz_asm_t {
 	void *core;
-	ut8 lets_hope;
+	ut8 ptr_alignment_I;
 	void *plugin_data;
-	ut8 alignment_matches;
-	// See end of rz_types.h for this mess above.
+	ut8 ptr_alignment_II;
+	// NOTE: Do not change the order of fields above!
+	// They are used in pointer passing hacks in rz_types.h.
 	char *cpu;
 	int bits;
 	int big_endian;
