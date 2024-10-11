@@ -23,6 +23,9 @@ typedef bool (*RzBufferFini)(RzBuffer *b);
  * \brief Reads \p len bytes from buffer \p b into \p buf.
  * \p buf should have enough space to contain the bytes.
  * The seek of \p b is advanced by \p len bytes.
+ * EXCEPT: RZ_BUF_IO_FD, RZ_BUF_FILE.
+ * Because they were implemented without seek advancement.
+ * And changing it breaks everything. Sorry :/
  *
  * \param b The buffer to read from.
  * \param buf The array to move te bytes into.

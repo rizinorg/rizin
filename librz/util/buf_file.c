@@ -58,9 +58,6 @@ static ut64 buf_file_get_size(RzBuffer *b) {
 static st64 buf_file_read(RZ_BORROW RzBuffer *b, RZ_OUT ut8 *buf, ut64 len) {
 	struct buf_file_priv *priv = get_priv_file(b);
 	ssize_t result = read(priv->fd, buf, len);
-	if (result > 0) {
-		lseek(priv->fd, (off_t)result, RZ_BUF_CUR);
-	}
 	return result;
 }
 

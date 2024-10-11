@@ -73,9 +73,6 @@ static bool buf_io_fd_resize(RzBuffer *b, ut64 newsize) {
 static st64 buf_io_fd_read(RZ_BORROW RzBuffer *b, RZ_OUT ut8 *buf, ut64 len) {
 	struct buf_io_fd_priv *priv = get_priv_io(b);
 	st64 result = priv->iob->fd_read(priv->iob->io, priv->fd, buf, len);
-	if (result > 0) {
-		priv->iob->fd_seek(priv->iob->io, priv->fd, result, RZ_BUF_CUR);
-	}
 	return result;
 }
 
