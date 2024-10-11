@@ -102,6 +102,7 @@ static int main_help(int line) {
 			"- ",          "",          "Read file from stdin",
 			"-=",          "",          "Perform R=! command to run all commands remotely",
 			"-0",          "",          "Print \\x00 after init and every command",
+			"-1",          "",          "Redirect stderr to stdout",
 			"-2",          "",          "Close stderr file descriptor (silent warning messages)",
 			"-a",          "[arch]",    "Set asm.arch",
 			"-A",          "",          "Run 'aaa' command to analyze all referenced code",
@@ -469,6 +470,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		rz_list_free(prefiles); \
 	}
 
+	bool stderr2stdout = false;
 	bool noStderr = false;
 
 #ifdef __UNIX
@@ -534,7 +536,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	char *debugbackend = rz_str_dup("native");
 
 	RzGetopt opt;
-	rz_getopt_init(&opt, argc, argv, "=02AMCwxfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:R:r:c:D:vVSTzuXt");
+	rz_getopt_init(&opt, argc, argv, "=012AMCwxfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:R:r:c:D:vVSTzuXt");
 	while (argc >= 2 && (c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case '-':
@@ -545,6 +547,9 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		case '=':
 			RZ_FREE(r->cmdremote);
 			r->cmdremote = rz_str_dup("");
+			break;
+		case '1':
+			stderr2stdout = true;
 			break;
 		case '2':
 			noStderr = true;
@@ -742,6 +747,12 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		default:
 			help++;
 		}
+	}
+	if (stderr2stdout && -1 == dup2(1, 2)) {
+		RZ_LOG_ERROR("stderr2stdout: Failed to dup2 stderr\n");
+		LISTS_FREE();
+		RZ_FREE(debugbackend);
+		return 1;
 	}
 	if (noStderr) {
 		if (-1 == close(2)) {
