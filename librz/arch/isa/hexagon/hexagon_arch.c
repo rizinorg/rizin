@@ -1238,6 +1238,7 @@ static void perform_hacks(RZ_NONNULL HexState **state,
 	*state = (*rz_asm)->plugin_data;
 	assert(*state);
 	(*state)->utf8_enabled = (*rz_asm)->utf8;
+	rz_reverse->state = *state;
 	return;
 }
 
