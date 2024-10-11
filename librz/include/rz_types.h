@@ -716,7 +716,6 @@ static inline void /*<RzAnalysis>*/ *rz_asm_to_rz_analysis(RZ_NONNULL void /*<Rz
 		return NULL;
 	}
 	void *analysis = core->analysis;
-	assert(analysis && "This function can only be used if RzAnalysis and RzAsm were set up before.");
 	return analysis;
 }
 

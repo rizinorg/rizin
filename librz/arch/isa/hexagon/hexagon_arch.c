@@ -109,6 +109,10 @@ RZ_API HexInsnContainer *hex_get_hic_at_addr(HexState *state, const ut32 addr) {
 		p = &state->pkts[i];
 		HexInsnContainer *hic = NULL;
 		RzListIter *iter = NULL;
+		if (p->last_access == 0) {
+			// Just initialized packets without any instructions.
+			continue;
+		}
 		rz_list_foreach (p->bin, iter, hic) {
 			if (addr == hic->addr) {
 				p->last_access = rz_time_now_mono();
@@ -1263,7 +1267,7 @@ RZ_API void hexagon_reverse_opcode(HexReversedOpcode *rz_reverse, const ut64 add
 	// Seek to initial position for IO buffers.
 	// Only for IO buffers an address is a valid seek.
 	// For bytes buffers (e.g. given in case of `rz-asm`) the address is not a valid seek, but distinct.
-	if (buffer->type == RZ_BUFFER_IO && rz_buf_seek(buffer, addr, RZ_BUF_CUR) != addr) {
+	if (buffer->type == RZ_BUFFER_IO && rz_buf_seek(buffer, addr, RZ_BUF_SET) != addr) {
 		RZ_LOG_DEBUG("Could not seek to address: 0x%" PFMT64x ". Attempting to read out of mapped memory region?\n", addr);
 		return;
 	}
@@ -1280,13 +1284,15 @@ RZ_API void hexagon_reverse_opcode(HexReversedOpcode *rz_reverse, const ut64 add
 			continue;
 		}
 		hic = decode_hic(state, rz_reverse, buffer, current_addr);
+		if (rz_buf_tell(buffer) == current_addr + HEX_INSN_SIZE) {
+			// Update current_addr only if it read successful.
+			current_addr += HEX_INSN_SIZE;
+		}
 		if (!hic) {
-			// Read over buffer limit.
 			break;
 		}
-		rz_buf_seek(buffer, HEX_INSN_SIZE, RZ_BUF_CUR);
-		current_addr += HEX_INSN_SIZE;
 	}
+
 	if (current_addr > addr) {
 		// Go back to bytes of the actual instruction.
 		rz_buf_seek(buffer, -(current_addr - addr), RZ_BUF_CUR);
