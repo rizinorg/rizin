@@ -1162,6 +1162,9 @@ static RZ_BORROW HexInsnContainer *decode_hic(HexState *state, HexReversedOpcode
  * \brief Returns the address at which the decoding must start to get a valid packet at \p addr.
  * The \p buffer seek is set to the position to start reading from.
  *
+ * \param buffer The buffer to search in and update its seek.
+ * \param addr The address to start searching for the pre-decoding start.
+ *
  * \return The address to start decoding. It always returns an address <= \p addr
  * and with an offset with an multiple of HEX_INSN_SIZE.
  */
@@ -1191,7 +1194,22 @@ static ut64 get_pre_decoding_start(RZ_BORROW RzBuffer *buffer, ut64 addr) {
 	return addr;
 }
 
-static bool perform_hacks(HexState **state, RzBuffer **buffer, RzAsm **rz_asm, RzAnalysis **rz_analysis, HexReversedOpcode *rz_reverse) {
+/**
+ * \brief Performs pointer passing hacks to set up the \p buffer and assign RzAsm::plugin_data to \p state.
+ * It will take either a valid RzAsm OR RzAnalysis pointer. It assumes that RzCore and RzAsm is initialized.
+ *
+ * If RzAnlysis is initialized and set in the current RzCore object, it will initialize the \p buffer with RzAnalysis::iob.
+ * If no RzAnalysis object is initialized, it sets up the \p buffer with the bytes given via \p rz_reverse.
+ *
+ * This function guarantees to set \p state, \p buffer and \p rz_asm to valid objects.
+ *
+ * This function does not return any status. It will do only asserts because every failure is critical and means memory miss-alignment.
+ */
+static void perform_hacks(RZ_NONNULL HexState **state,
+	RZ_NONNULL RzBuffer **buffer,
+	RZ_NONNULL RzAsm **rz_asm,
+	RZ_NONNULL RzAnalysis **rz_analysis,
+	RZ_NONNULL HexReversedOpcode *rz_reverse) {
 	if (*rz_analysis) {
 		*rz_asm = rz_analysis_to_rz_asm(*rz_analysis);
 		assert(*rz_asm && (*rz_asm)->cur && (*rz_analysis)->cur && RZ_STR_EQ((*rz_asm)->cur->arch, (*rz_analysis)->cur->arch));
@@ -1208,22 +1226,22 @@ static bool perform_hacks(HexState **state, RzBuffer **buffer, RzAsm **rz_asm, R
 	if (!((*rz_analysis) && (*rz_analysis)->cur)) {
 		// Only RzAsm present (rz-test, rz-asm etc.). So also likely a test situation without IO.
 		*buffer = rz_buf_new_with_bytes(rz_reverse->bytes_buf, rz_reverse->bytes_buf_len);
-		rz_return_val_if_fail(*buffer, false);
+		assert(*buffer);
 	} else {
 		*buffer = rz_buf_new_with_io(&(*rz_analysis)->iob);
-		rz_return_val_if_fail(*buffer, false);
+		assert(*buffer);
 	}
 	*state = (*rz_asm)->plugin_data;
-	rz_return_val_if_fail(*state, false);
-	return true;
+	assert(*state);
+	return;
 }
 
 static inline bool do_decoding_loop(ut64 current_addr, ut64 requested_addr, const HexInsnContainer *prev_hic) {
 	// Loop as long as:
 	// - pre_addr < requested_addr: pre_decoding hasn't finished.
 	// - We have not seen a last instruction of a packet (max. check +4 insn after address).
-	return (current_addr <= requested_addr) || 
-	       (prev_hic && ((current_addr < (requested_addr + (HEX_INSN_SIZE * HEX_MAX_INSN_PER_PKT))) && !prev_hic->pkt_info.last_insn));
+	return (current_addr <= requested_addr) ||
+		(prev_hic && ((current_addr < (requested_addr + (HEX_INSN_SIZE * HEX_MAX_INSN_PER_PKT))) && !prev_hic->pkt_info.last_insn));
 }
 
 /**
@@ -1239,17 +1257,17 @@ RZ_API void hexagon_reverse_opcode(HexReversedOpcode *rz_reverse, const ut64 add
 	rz_return_if_fail(rz_reverse);
 	HexState *state;
 	RzBuffer *buffer;
-	if (!perform_hacks(&state, &buffer, &rz_asm, &rz_analysis, rz_reverse)) {
-		RZ_LOG_FATAL("Could not preform pointer hacks. Sorry.\n");
-		return;
-	}
+	perform_hacks(&state, &buffer, &rz_asm, &rz_analysis, rz_reverse);
+
 	if (rz_asm) {
 		memcpy(&state->rz_asm, rz_asm, sizeof(RzAsm));
 	}
 
-	// Seek to initial position. Byte buffers are assumed to be aligned.
+	// Seek to initial position for IO buffers.
+	// Only for IO buffers an address is a valid seek.
+	// For bytes buffers (e.g. given in case of `rz-asm`) the address is not a valid seek, but distinct.
 	if (buffer->type == RZ_BUFFER_IO && rz_buf_seek(buffer, addr, RZ_BUF_CUR) != addr) {
-		RZ_LOG_ERROR("Could not seek to address: 0x%" PFMT64x "\n", addr);
+		RZ_LOG_DEBUG("Could not seek to address: 0x%" PFMT64x ". Attempting to read out of mapped memory region?\n", addr);
 		return;
 	}
 
@@ -1259,7 +1277,7 @@ RZ_API void hexagon_reverse_opcode(HexReversedOpcode *rz_reverse, const ut64 add
 	// Do pre- and post-decoding to know the context.
 	while (do_decoding_loop(current_addr, addr, hic)) {
 		if (hex_get_hic_at_addr(state, current_addr)) {
-			// Already decoded.
+			// Already decoded and still in buffer.
 			rz_buf_seek(buffer, HEX_INSN_SIZE, RZ_BUF_CUR);
 			current_addr += HEX_INSN_SIZE;
 			continue;
@@ -1279,8 +1297,9 @@ RZ_API void hexagon_reverse_opcode(HexReversedOpcode *rz_reverse, const ut64 add
 
 	hic = hex_get_hic_at_addr(state, addr);
 	if (!hic) {
-		// Should have been decoded before. Maybe a reace condition
-		// if the same core is used by several threads vai a plugin.
+		// Should have been decoded before. Maybe a race condition
+		// if the same RzCore is used by several threads via a plugin and
+		// the hic was already pushed out of the buffer by other decodings.
 		hic = decode_hic(state, rz_reverse, buffer, addr);
 	}
 	if (!hic) {
