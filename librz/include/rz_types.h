@@ -666,26 +666,25 @@ typedef struct rz_core_t RzCore;
 // Mimics order in RzCore.
 struct dummy_rz_core_t {
 	void *rasm;
-	ut8 lets_hope;
+	ut8 ptr_alignment_I;
 	void *analysis;
-	ut8 alignment;
+	ut8 ptr_alignment_II;
 	void *bin;
-	ut8 matches;
+	ut8 ptr_alignment_III;
 };
 
 // Mimics order in RzAsm.
 struct dummy_rz_asm_t {
 	void *core;
-	ut8 lets_hope;
+	ut8 ptr_alignment_I;
 	void *plugin_data;
-	ut8 alignment_matches;
+	ut8 ptr_alignment_II;
 };
 
 // Mimics order in RzAnalysis.
 struct dummy_rz_analysis_t {
 	void *core;
-	ut8 lets_hope;
-	ut8 alignment_matches;
+	ut8 ptr_alignment_I;
 };
 
 /**

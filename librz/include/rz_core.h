@@ -244,12 +244,13 @@ typedef struct rz_core_seek_history_t {
 
 struct rz_core_t {
 	RzAsm *rasm;
-	ut8 lets_hope;
+	ut8 ptr_alignment_I;
 	RzAnalysis *analysis;
-	ut8 alignment;
+	ut8 ptr_alignment_II;
 	RzBin *bin;
-	ut8 matches;
-	// See end of rz_types.h for this mess above.
+	ut8 ptr_alignment_III;
+	// NOTE: Do not change the order of fields above!
+	// They are used in pointer passing hacks in rz_types.h.
 	RzIO *io;
 	RzList /*<RzCorePlugin *>*/ *plugins; ///< List of registered core plugins
 	RzConfig *config;
