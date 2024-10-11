@@ -42,7 +42,7 @@ bool xtensa_open(XtensaContext *ctx, const char *cpu, bool big_endian) {
 bool xtensa_disassemble(XtensaContext *self, const ut8 *buf, int len, ut64 addr) {
 	self->count = cs_disasm(self->handle, buf, len, addr, 1, &self->insn);
 	if (self->count == 0) {
-		return -1;
+		return false;
 	}
 	return true;
 }

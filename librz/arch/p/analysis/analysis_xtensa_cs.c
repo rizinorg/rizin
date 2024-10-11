@@ -99,6 +99,9 @@ static int xtensa_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut
 	}
 
 	op->size = ctx->insn->size;
+	op->id = ctx->insn->id;
+	op->addr = addr;
+
 	xtensa_disassemble_fini(ctx);
 	return op->size;
 beach:
