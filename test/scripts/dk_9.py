@@ -1,4 +1,4 @@
-import sys 
+import sys
 import rzpipe
 
 rzp = rzpipe.open("bins/elf/analysis/calls_x64", flags=["-a", "x86", "-d", "-1"])
