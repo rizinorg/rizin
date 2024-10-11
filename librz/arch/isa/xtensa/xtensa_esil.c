@@ -9,11 +9,6 @@
 
 #define CM      ","
 #define opcode  (ctx->insn->id)
-#define REG(I)  cs_reg_name(ctx->handle, I)
-#define MEM(I)  xtensa_op_mem(ctx->insn, I)
-#define REGO(I) REG(xtensa_op_reg(ctx->insn, I))
-#define IMM(I)  xtensa_op_imm(ctx->insn, I)
-#define L32R(I) xtensa_op_l32r(ctx->insn, I)
 
 static void esil_push_signed_imm(RzStrBuf *esil, st32 imm) {
 	if (imm >= 0) {
@@ -850,7 +845,7 @@ void xtensa_analyze_op_esil(XtensaContext *ctx, RzAnalysisOp *op) {
 	case XTENSA_INS_J: /* j */
 		esil_call(ctx, op);
 		break;
-	case 81: /* jx */
+		//	case 81: /* jx */
 	case XTENSA_INS_CALLX0: /* callx0 */
 		esil_callx(ctx, op);
 		break;
