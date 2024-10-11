@@ -8,7 +8,7 @@ aaa
 afx
 EOF
 EXPECT=<<EOF
-c 0x00005124 -> 0x00005128 ?   jump 0x5128
+c 0x00005124 -> 0x00005128 [   jump 0x5128
 c 0x00005130 -> 0x00005134 [   if (P0) jump:nt 0x5154
 c 0x00005130 -> 0x00005154 [   if (P0) jump:nt 0x5154
 c 0x00005134 -> 0x00005138 [   jump 0x5138
@@ -29,12 +29,12 @@ s 0x0000539c
 pi 4
 EOF
 EXPECT=<<EOF
-?   immext(##0xb0c0)
-?   R0 = ##loc._MSG_BASE
-?   immext(##0xd180)
-?   R2 = ##0xd1ac
-?   immext(##0xfe105000)
-?   R3 = ##-0x1efb000
+/   immext(##0xb0c0)
+\   R0 = ##loc._MSG_BASE
+/   immext(##0xd180)
+|   R2 = ##0xd1ac
+|   immext(##0xfe105000)
+\   R3 = ##-0x1efb000
 EOF
 RUN
 
@@ -102,7 +102,6 @@ RUN
 
 NAME=hexagon extended immediate search
 FILE=bins/elf/analysis/hexagon-hello-loop
-BROKEN=1
 CMDS=<<EOF
 b 0x100000
 aar
@@ -110,12 +109,12 @@ aar
 /ai sym.coredump
 EOF
 EXPECT=<<EOF
-0x000051d4   # 4: ?   R1 = ##0x5410
-0x00000b70   # 4: ?   jump sym.coredump
-0x00000b7c   # 4: ?   jump sym.coredump
-0x00000b8c   # 4: ?   jump sym.coredump
-0x00000f48   # 4: ?   jump sym.coredump
-0x000051f0   # 4: ?   R28 = ##sym.coredump
+0x000051d4   # 4: \   R1 = ##sym.sys_TLSFreeAll
+0x00000b70   # 4: [   jump sym.coredump
+0x00000b7c   # 4: [   jump sym.coredump
+0x00000b8c   # 4: [   jump sym.coredump
+0x00000f48   # 4: [   jump sym.coredump
+0x000051f0   # 4: |   R28 = ##sym.coredump
 EOF
 RUN
 
@@ -452,7 +451,7 @@ EXPECT=<<EOF
             ; CALL XREF from sym.__libc_start_main @ 0x5e98
 / int main(int argc, char **argv, char **envp);
 |           ; arg int argc @ R0
-|           0x00005110      ?       allocframe(SP,#0x8):raw
+|           0x00005110      [   allocframe(SP,#0x8):raw
 EOF
 RUN
 
@@ -469,7 +468,7 @@ EXPECT=<<EOF
           |   ; CALL XREF from sym.__libc_start_main @ 0x5e98 |
           | int main(int argc, char **argv, char **envp);     |
           | ; arg int argc @ R0                               |
-          | ?   allocframe(SP,#0x8):raw                       |
+          | [   allocframe(SP,#0x8):raw                       |
           | [   R2 = add(FP,##-0x4)                           |
           | [   memw(R2+#0x0) = ##0x0                         |
           | [   R2 = add(FP,##-0x8)                           |
@@ -496,7 +495,7 @@ EXPECT=<<EOF
 |.------------------------------------.    .-----------------.
 ||  0x5154                            |    |  0x5134         |
 || ; DATA XREF from main @ 0x5130     |    | [   jump 0x5138 |
-|| ?   R0 = ##0x0                     |    `-----------------'
+|| [   R0 = ##0x0                     |    `-----------------'
 || [   LR:FP = dealloc_return(FP):raw |        v
 |`------------------------------------'        |
 |                                              |
@@ -536,8 +535,8 @@ pd 12
 EOF
 EXPECT=<<EOF
 / sym.thread_join();
-|           0x00005200      ?       R1 = HTID
-|           0x00005204      ?       R3 = ##0x1
+|           0x00005200      /       R1 = HTID
+|           0x00005204      \       R3 = ##0x1
 |           0x00005208      [   R1 = asl(R3,R1)
 |           0x0000520c      [   R1 = sub(##-0x1,R1)
 |           0x00005210      [   R0 = and(R0,R1)
@@ -565,7 +564,7 @@ pd 11
 EOF
 EXPECT=<<EOF
 / sym.sys_deinit_tls();
-|           0x00005344      ?       R2 = UGP
+|           0x00005344      [   R2 = UGP
 |           0x00005348      /       immext(##loc.CoreDump)             ; 0x1100
 |           0x0000534c      |       R3 = memw(GP+##loc._TLSEnd)        ; 0x1110
 |           0x00005350      |       immext(##loc.CoreDump)             ; 0x1100
@@ -588,7 +587,7 @@ s 0x00005abc
 pd 22
 EOF
 EXPECT=<<EOF
-|       ,=< 0x00005abc      ?       if (P3) jump:nt 0x5b1c
+|       ,=< 0x00005abc      [   if (P3) jump:nt 0x5b1c
 |       |   ; CODE XREF from sym.memcpy @ 0x5abc
 |      ,==< 0x00005ac0      /       loop0(0x5acc,R4)
 |      ||   0x00005ac4      |       P0 = cmp.gtu(R4,##0x1)
@@ -625,11 +624,11 @@ s 0x00008df4
 axt
 EOF
 EXPECT=<<EOF
-sym._Mbtowcx 0x8df0 [CODE] ?   loop0(0x8df4,R2)
-sym._Mbtowcx 0x8e3c [CODE] ?   R6 = ##0x1 ; R7 = add(R7,#1)
-sym._Mbtowcx 0x8e54 [CODE] ?   R6 = ##0x2 ; R7 = add(R7,#1)
-sym._Mbtowcx 0x8e70 [CODE] ?   R6 = ##0x3 ; R7 = add(R7,#1)
-sym._Mbtowcx 0x8e98 [CODE] ?   nop
+sym._Mbtowcx 0x8df0 [CODE] [   loop0(0x8df4,R2)
+sym._Mbtowcx 0x8e3c [CODE] \   R6 = ##0x1 ; R7 = add(R7,#1)     < endloop0
+sym._Mbtowcx 0x8e54 [CODE] \   R6 = ##0x2 ; R7 = add(R7,#1)     < endloop0
+sym._Mbtowcx 0x8e70 [CODE] \   R6 = ##0x3 ; R7 = add(R7,#1)     < endloop0
+sym._Mbtowcx 0x8e98 [CODE] \   nop     < endloop0
 EOF
 RUN
 
@@ -1400,7 +1399,7 @@ s loc.r_hex_32
 px 16~[1-8]
 EOF
 EXPECT=<<EOF
-?   nop
+[   nop
 [   nop
 [   nop
 [   nop
@@ -1444,8 +1443,8 @@ pdf
 EOF
 EXPECT=<<EOF
 / sym._Mbtowc();
-|           0x00008f04      ?       R17:16 = combine(R2,R3)
-|           0x00008f08      ?       memd(R29+#-0x10) = R17:16 ; allocframe(#0x10)
+|           0x00008f04      /       R17:16 = combine(R2,R3)
+|           0x00008f08      \       memd(R29+#-0x10) = R17:16 ; allocframe(#0x10)
 |           0x00008f0c      [   R4 = memw(GP+##0x18)
 |           0x00008f10      /       R19:18 = combine(R0,R1)
 |           0x00008f14      \       memd(SP+##0x0) = R19:18
