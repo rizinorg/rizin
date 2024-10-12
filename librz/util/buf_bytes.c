@@ -73,12 +73,12 @@ static bool buf_bytes_resize(RzBuffer *b, ut64 newsize) {
 	return true;
 }
 
-static st64 buf_bytes_read(RzBuffer *b, ut8 *buf, ut64 len) {
+static st64 buf_bytes_read(RZ_BORROW RzBuffer *b, RZ_OUT ut8 *buf, ut64 len) {
 	struct buf_bytes_priv *priv = get_priv_bytes(b);
 	if (!priv->buf) {
 		// This can happen when called from buf_mmap.c, when you open a 0-length
 		// file.
-		return 0;
+		return -1;
 	}
 	ut64 real_len = priv->length < priv->offset ? 0 : RZ_MIN(priv->length - priv->offset, len);
 	memmove(buf, priv->buf + priv->offset, real_len);

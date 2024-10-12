@@ -19,7 +19,7 @@ typedef struct rz_buf_t RzBuffer;
 
 typedef bool (*RzBufferInit)(RzBuffer *b, const void *user);
 typedef bool (*RzBufferFini)(RzBuffer *b);
-typedef st64 (*RzBufferRead)(RzBuffer *b, ut8 *buf, ut64 len);
+typedef st64 (*RzBufferRead)(RZ_BORROW RzBuffer *b, RZ_OUT ut8 *buf, ut64 len);
 typedef st64 (*RzBufferWrite)(RzBuffer *b, const ut8 *buf, ut64 len);
 typedef ut64 (*RzBufferGetSize)(RzBuffer *b);
 typedef bool (*RzBufferResize)(RzBuffer *b, ut64 newsize);
@@ -31,7 +31,7 @@ typedef RzList *(*RzBufferNonEmptyList)(RzBuffer *b);
 typedef struct rz_buffer_methods_t {
 	RzBufferInit init;
 	RzBufferFini fini;
-	RzBufferRead read;
+	RzBufferRead read; ///< The buffer read() method. It should behave as rz_buf_read() documents.
 	RzBufferWrite write;
 	RzBufferGetSize get_size;
 	RzBufferResize resize;
@@ -40,7 +40,20 @@ typedef struct rz_buffer_methods_t {
 	RzBufferFreeWholeBuf free_whole_buf;
 } RzBufferMethods;
 
+typedef enum {
+	RZ_BUFFER_INVALID = 0,
+	RZ_BUFFER_FILE,
+	RZ_BUFFER_IO_FD,
+	RZ_BUFFER_IO, ///< A buffer over RzIO.
+	RZ_BUFFER_BYTES, ///< A buffer over raw bytes.
+	RZ_BUFFER_MMAP,
+	RZ_BUFFER_SPARSE,
+	RZ_BUFFER_REF,
+	RZ_BUFFER_CUSTOM, ///< A buffer with custom methods.
+} RzBufferType;
+
 struct rz_buf_t {
+	RzBufferType type;
 	const RzBufferMethods *methods;
 	void *priv;
 	ut8 *whole_buf;
@@ -99,7 +112,7 @@ RZ_API RZ_OWN RzBuffer *rz_buf_new_with_buf(RzBuffer *b);
 RZ_API RZ_OWN RzBuffer *rz_buf_new_with_bytes(RZ_NULLABLE RZ_BORROW const ut8 *bytes, ut64 len);
 RZ_API RZ_OWN RzBuffer *rz_buf_new_with_io_fd(RZ_NONNULL void /* RzIOBind */ *iob, int fd);
 RZ_API RZ_OWN RzBuffer *rz_buf_new_with_io(RZ_NONNULL void /* RzIOBind */ *iob);
-RZ_API RZ_OWN RzBuffer *rz_buf_new_with_methods(RZ_NONNULL const RzBufferMethods *methods, void *init_user);
+RZ_API RZ_OWN RzBuffer *rz_buf_new_with_methods(RZ_NONNULL const RzBufferMethods *methods, void *init_user, RzBufferType type);
 RZ_API RZ_OWN RzBuffer *rz_buf_new_with_pointers(const ut8 *bytes, ut64 len, bool steal);
 RZ_API RZ_OWN RzBuffer *rz_buf_new_with_string(RZ_NONNULL const char *msg);
 

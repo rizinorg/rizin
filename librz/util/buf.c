@@ -6,16 +6,6 @@
 #include <rz_util.h>
 #include <rz_io.h>
 
-typedef enum {
-	RZ_BUFFER_FILE,
-	RZ_BUFFER_IO_FD,
-	RZ_BUFFER_IO,
-	RZ_BUFFER_BYTES,
-	RZ_BUFFER_MMAP,
-	RZ_BUFFER_SPARSE,
-	RZ_BUFFER_REF,
-} RzBufferType;
-
 #include "buf_file.c"
 #include "buf_sparse.c"
 #include "buf_bytes.c"
@@ -313,7 +303,7 @@ static RzBuffer *new_buffer(RzBufferType type, void *user) {
 		return NULL;
 	}
 
-	return rz_buf_new_with_methods(methods, user);
+	return rz_buf_new_with_methods(methods, user, type);
 }
 
 /**
@@ -564,12 +554,13 @@ RZ_API RZ_OWN RzBuffer *rz_buf_new_with_io(RZ_NONNULL void *iob) {
  * The function creates a new allocated buffer using a custom back end. This function
  * should only be used when no other back end are appropriate.
  */
-RZ_API RZ_OWN RzBuffer *rz_buf_new_with_methods(RZ_NONNULL const RzBufferMethods *methods, void *init_user) {
+RZ_API RZ_OWN RzBuffer *rz_buf_new_with_methods(RZ_NONNULL const RzBufferMethods *methods, void *init_user, RzBufferType type) {
 	RzBuffer *b = RZ_NEW0(RzBuffer);
 	if (!b) {
 		return NULL;
 	}
 
+	b->type = type;
 	b->methods = methods;
 
 	if (!buf_init(b, init_user)) {
@@ -1168,13 +1159,18 @@ RZ_API st64 rz_buf_insert_bytes(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL co
 }
 
 /**
- * \brief Read len bytes of the buffer at the cursor.
- * \param b ...
- * \param buf ...
- * \param len ...
- * \return Return the number of bytes read.
+ * \brief Reads \p len bytes from buffer \p b into \p buf.
+ * \p buf should have enough space to contain the bytes.
+ * The seek of \p b is advanced by \p len bytes.
+ * EXCEPT: RZ_BUF_IO_FD, RZ_BUF_FILE.
+ * Because they were implemented without seek advancement.
+ * And changing it breaks everything. Sorry :/
  *
- * ...
+ * \param b The buffer to read from.
+ * \param buf The array to move te bytes into.
+ * \param len The number of bytes to read from the buffer.
+ *
+ * \return The number of bytes read. -1 in case of error and 0 for EOF reached.
  */
 RZ_API st64 rz_buf_read(RZ_NONNULL RzBuffer *b, RZ_NONNULL ut8 RZ_OUT *buf, ut64 len) {
 	rz_return_val_if_fail(b && buf, -1);
