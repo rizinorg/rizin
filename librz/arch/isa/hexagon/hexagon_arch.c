@@ -364,7 +364,7 @@ static ut8 get_state_pkt_index(HexState *state, const HexPkt *p) {
  *
  * \return The initialized state of the plugins or NULL if \p reset = true.
  */
-RZ_API HexState *hexagon_state_new() {
+RZ_IPI RZ_OWN HexState *hexagon_state_new() {
 	HexState *state = RZ_NEW0(HexState);
 	if (!state) {
 		RZ_LOG_FATAL("Could not allocate memory for HexState!");

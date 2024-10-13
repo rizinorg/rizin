@@ -17,7 +17,7 @@ RZ_API RZ_OWN RzConfigNode *rz_config_node_new(RZ_NONNULL const char *name, RZ_N
 	return node;
 }
 
-RZ_API RZ_OWN RzConfigNode *rz_config_node_clone(RzConfigNode *n) {
+RZ_API RZ_OWN RzConfigNode *rz_config_node_clone(RZ_BORROW RzConfigNode *n) {
 	rz_return_val_if_fail(n, NULL);
 	RzConfigNode *cn = RZ_NEW0(RzConfigNode);
 	if (!cn) {
@@ -45,7 +45,7 @@ RZ_API void rz_config_node_free(RZ_NULLABLE void *n) {
 	free(node);
 }
 
-RZ_API RZ_BORROW RzConfigNode *rz_config_node_get(RzConfig *cfg, RZ_NONNULL const char *name) {
+RZ_API RZ_BORROW RzConfigNode *rz_config_node_get(RZ_BORROW RzConfig *cfg, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), NULL);
 	return ht_sp_find(cfg->ht, name, NULL);
 }
@@ -94,7 +94,7 @@ RZ_API RZ_BORROW const char *rz_config_get(RzConfig *cfg, RZ_NONNULL const char 
  * the variable is boolean, then tries to write back the inverted value.
  * Returns true in case of success.
  */
-RZ_API bool rz_config_toggle(RzConfig *cfg, RZ_NONNULL const char *name) {
+RZ_API bool rz_config_toggle(RZ_BORROW RzConfig *cfg, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), false);
 	RzConfigNode *node = rz_config_node_get(cfg, name);
 	if (!node) {
@@ -170,7 +170,7 @@ RZ_API const char *rz_config_node_type(RzConfigNode *node) {
 	return "";
 }
 
-RZ_API RzConfigNode *rz_config_set_cb(RzConfig *cfg, const char *name, const char *value, RzConfigCallback cb) {
+RZ_API RZ_BORROW RzConfigNode *rz_config_set_cb(RZ_BORROW RzConfig *cfg, const char *name, const char *value, RzConfigCallback cb) {
 	RzConfigNode *node = rz_config_set(cfg, name, value);
 	if (node && (node->setter = cb)) {
 		if (!cb(cfg->user, node)) {
@@ -180,7 +180,7 @@ RZ_API RzConfigNode *rz_config_set_cb(RzConfig *cfg, const char *name, const cha
 	return node;
 }
 
-RZ_API RzConfigNode *rz_config_set_i_cb(RzConfig *cfg, const char *name, int ivalue, RzConfigCallback cb) {
+RZ_API RZ_BORROW RzConfigNode *rz_config_set_i_cb(RZ_BORROW RzConfig *cfg, const char *name, int ivalue, RzConfigCallback cb) {
 	RzConfigNode *node = rz_config_set_i(cfg, name, ivalue);
 	if (node && (node->setter = cb)) {
 		if (!node->setter(cfg->user, node)) {
@@ -198,7 +198,7 @@ static bool __is_true_or_false(const char *s) {
  * Writes the boolean \p value in the config variable of \p name only and only if
  * the variable is boolean.
  */
-RZ_API RzConfigNode *rz_config_set_b(RzConfig *cfg, RZ_NONNULL const char *name, bool value) {
+RZ_API RZ_BORROW RzConfigNode *rz_config_set_b(RZ_BORROW RzConfig *cfg, RZ_NONNULL const char *name, bool value) {
 	rz_return_val_if_fail(cfg && cfg->ht, NULL);
 	rz_return_val_if_fail(RZ_STR_ISNOTEMPTY(name), NULL);
 
@@ -264,7 +264,7 @@ beach:
 /**
  * Writes the string \p value in the config variable of \p name.
  */
-RZ_API RzConfigNode *rz_config_set(RzConfig *cfg, RZ_NONNULL const char *name, const char *value) {
+RZ_API RZ_BORROW RzConfigNode *rz_config_set(RZ_BORROW RzConfig *cfg, RZ_NONNULL const char *name, const char *value) {
 	rz_return_val_if_fail(cfg && cfg->ht, NULL);
 	rz_return_val_if_fail(RZ_STR_ISNOTEMPTY(name), NULL);
 
@@ -400,7 +400,7 @@ RZ_API bool rz_config_rm(RzConfig *cfg, RZ_NONNULL const char *name) {
 	return false;
 }
 
-RZ_API void rz_config_node_value_format_i(char *buf, size_t buf_size, const ut64 i, RZ_NULLABLE RzConfigNode *node) {
+RZ_API void rz_config_node_value_format_i(RZ_OUT char *buf, size_t buf_size, const ut64 i, RZ_NULLABLE RzConfigNode *node) {
 	if (node && rz_config_node_is_bool(node)) {
 		rz_str_ncpy(buf, rz_str_bool((int)i), buf_size);
 		return;
@@ -416,7 +416,7 @@ RZ_API void rz_config_node_value_format_i(char *buf, size_t buf_size, const ut64
  * Writes the integer \p value in the config variable of \p name only and only if
  * the variable is integer.
  */
-RZ_API RzConfigNode *rz_config_set_i(RzConfig *cfg, RZ_NONNULL const char *name, const ut64 i) {
+RZ_API RZ_BORROW RzConfigNode *rz_config_set_i(RZ_BORROW RzConfig *cfg, RZ_NONNULL const char *name, const ut64 i) {
 	char buf[128], *ov = NULL;
 	rz_return_val_if_fail(cfg && name, NULL);
 	RzConfigNode *node = rz_config_node_get(cfg, name);
@@ -473,12 +473,12 @@ static int cmp(RzConfigNode *a, RzConfigNode *b, void *user) {
 	return strcmp(a->name, b->name);
 }
 
-RZ_API void rz_config_lock(RzConfig *cfg, int l) {
+RZ_API void rz_config_lock(RZ_BORROW RzConfig *cfg, int l) {
 	rz_list_sort(cfg->nodes, (RzListComparator)cmp, NULL);
 	cfg->lock = l;
 }
 
-RZ_API bool rz_config_readonly(RzConfig *cfg, const char *key) {
+RZ_API bool rz_config_readonly(RZ_BORROW RzConfig *cfg, const char *key) {
 	RzConfigNode *n = rz_config_node_get(cfg, key);
 	if (n) {
 		n->flags |= CN_RO;
@@ -487,7 +487,7 @@ RZ_API bool rz_config_readonly(RzConfig *cfg, const char *key) {
 	return false;
 }
 
-RZ_API RzConfig *rz_config_new(void *user) {
+RZ_API RZ_OWN RzConfig *rz_config_new(RZ_BORROW void *user) {
 	RzConfig *cfg = RZ_NEW0(RzConfig);
 	if (!cfg) {
 		return NULL;
@@ -504,7 +504,7 @@ RZ_API RzConfig *rz_config_new(void *user) {
 	return cfg;
 }
 
-RZ_API RzConfig *rz_config_clone(RzConfig *cfg) {
+RZ_API RZ_OWN RzConfig *rz_config_clone(RZ_BORROW RzConfig *cfg) {
 	rz_return_val_if_fail(cfg, NULL);
 	RzListIter *iter;
 	RzConfigNode *node;
@@ -521,7 +521,7 @@ RZ_API RzConfig *rz_config_clone(RzConfig *cfg) {
 	return c;
 }
 
-RZ_API void rz_config_free(RzConfig *cfg) {
+RZ_API void rz_config_free(RZ_OWN RzConfig *cfg) {
 	if (cfg) {
 		cfg->nodes->free = rz_config_node_free;
 		rz_list_free(cfg->nodes);
@@ -537,7 +537,7 @@ RZ_API void rz_config_visual_hit_i(RzConfig *cfg, const char *name, int delta) {
 	}
 }
 
-RZ_API void rz_config_bump(RzConfig *cfg, const char *key) {
+RZ_API void rz_config_bump(RZ_BORROW RzConfig *cfg, const char *key) {
 	char *orig = rz_str_dup(rz_config_get(cfg, key));
 	if (orig) {
 		rz_config_set(cfg, key, orig);

@@ -347,7 +347,7 @@ static inline bool pkt_at_addr_is_emu_ready(const HexPkt *pkt, const ut32 addr) 
  * If false, the behavior is as documented above.
  * \return RzILOpEffect* Sequence of operations to emulate the packet.
  */
-RZ_IPI RzILOpEffect *hex_get_il_op(const ut32 addr, const bool get_pkt_op, HexState *state) {
+RZ_IPI RZ_OWN RzILOpEffect *hex_get_il_op(const ut32 addr, const bool get_pkt_op, RZ_NONNULL HexState *state) {
 	rz_return_val_if_fail(state, NULL);
 	static bool might_has_jumped = false;
 	HexPkt *p = hex_get_pkt(state, addr);

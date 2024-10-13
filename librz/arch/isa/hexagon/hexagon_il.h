@@ -56,7 +56,7 @@ static const ut64 hex_ctr_immut_masks[32] = {
 };
 
 RZ_IPI bool hex_shuffle_insns(RZ_INOUT HexPkt *p);
-RZ_IPI RzILOpEffect *hex_get_il_op(const ut32 addr, const bool get_pkt_op, HexState *state);
+RZ_IPI RZ_OWN RzILOpEffect *hex_get_il_op(const ut32 addr, const bool get_pkt_op, RZ_NONNULL HexState *state);
 RZ_IPI RZ_OWN RzILOpPure *hex_get_rf_property_val(const HexRegFieldProperty property, const HexRegField field);
 RZ_IPI RZ_OWN RzILOpEffect *hex_get_npc(const HexPkt *pkt);
 RZ_IPI RZ_OWN RzILOpEffect *hex_il_op_jump_flag_init(HexInsnPktBundle *bundle);
