@@ -340,8 +340,8 @@ RZ_API RZ_OWN RzRopGadgetInfo *rz_core_rop_gadget_info_new(const ut64 address) {
 	gadget_info->is_syscall = false;
 	gadget_info->modified_registers = rz_pvector_new((RzPVectorFree)rz_core_rop_reg_info_free);
 	gadget_info->dependencies = rz_list_newf((RzListFree)rz_core_rop_reg_info_free);
-	gadget_info->analysis_cache = ht_up_new(NULL, (HtUPFreeValue)rz_analysis_op_free);
-
+	gadget_info->analysis_cache = NULL;
+	gadget_info->size = 0;
 	return gadget_info;
 }
 
@@ -357,7 +357,7 @@ RZ_API void rz_core_rop_gadget_info_free(RZ_NULLABLE RzRopGadgetInfo *gadget_inf
 	}
 	rz_pvector_free(gadget_info->modified_registers);
 	rz_list_free(gadget_info->dependencies);
-	ht_up_free(gadget_info->analysis_cache);
+	rz_iterator_free(gadget_info->analysis_cache);
 	free(gadget_info);
 }
 
@@ -1245,32 +1245,6 @@ cleanup:
 	return hitlist;
 }
 
-static bool update_analysis_cache(const RzCore *core, const RzCoreAsmHit *hit, const RzRopGadgetInfo *gadget_info) {
-	rz_return_val_if_fail(core && core->analysis, false);
-	if (is_ret_gadget(core, hit, 0)) {
-		return true;
-	}
-	RzAnalysisOp *op = rz_analysis_op_new();
-	bool status = true;
-	ut8 *buf = RZ_NEWS0(ut8, hit->len);
-	if (!buf) {
-		rz_analysis_op_free(op);
-		return false;
-	}
-	if (rz_io_nread_at(core->io, hit->addr, buf, hit->len) < 0) {
-		status = false;
-		goto fini;
-	}
-	if (rz_analysis_op(core->analysis, op, hit->addr, buf, hit->len, RZ_ANALYSIS_OP_MASK_VAL | RZ_ANALYSIS_OP_MASK_DISASM | RZ_ANALYSIS_OP_MASK_HINT) < 0) {
-		status = false;
-		goto fini;
-	}
-	ht_up_insert(gadget_info->analysis_cache, hit->addr, op);
-fini:
-	free(buf);
-	return status;
-}
-
 static RzRopGadgetInfo *perform_gadget_analysis(RzCore *core, const ut8 crop, const RzList /*<RzCoreAsmHit *>*/ *hitlist) {
 	rz_return_val_if_fail(core && core->analysis && hitlist, NULL);
 	RzRopGadgetInfo *rop_gadget_info = NULL;
@@ -1295,14 +1269,14 @@ static RzRopGadgetInfo *perform_gadget_analysis(RzCore *core, const ut8 crop, co
 	}
 	const bool is_rop_analysis = core->analysis->is_rop_analysis;
 	core->analysis->is_rop_analysis = true;
+	ut32 rop_gadget_size = 0;
 	rz_list_foreach (hitlist, iter, hit) {
-		if (!update_analysis_cache(core, hit, rop_gadget_info)) {
-			RZ_LOG_WARN("Failed to analyze gadget at 0x%" PFMT64x "\n", hit->addr);
-		}
 		if (!analyze_gadget(core, hit, rop_gadget_info)) {
 			RZ_LOG_WARN("Failed to analyze gadget at 0x%" PFMT64x "\n", hit->addr);
 		}
+		rop_gadget_size += hit->len;
 	}
+	rop_gadget_info->size = rop_gadget_size;
 	core->analysis->is_rop_analysis = is_rop_analysis;
 	ht_up_insert(core->analysis->ht_rop_semantics, addr_start, rop_gadget_info);
 	return rop_gadget_info;

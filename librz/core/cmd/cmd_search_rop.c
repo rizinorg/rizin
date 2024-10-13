@@ -10,6 +10,9 @@
 #include "rz_rop.h"
 
 static void skip_whitespace(const char *str, ut64 *idx) {
+	if (*idx >= strlen(str)) {
+		return;
+	}
 	while (IS_WHITECHAR(str[*idx])) {
 		(*idx)++;
 	}
@@ -94,6 +97,204 @@ static bool parse_constant(const char *str, RZ_NONNULL ut64 *idx, unsigned long 
 	return true;
 }
 
+static bool parse_il_op(RzList /*<RzILOpPureCode *>*/ *args, const char *str, ut64 *idx, bool *is_compound_op) {
+	RzILOpPureCode res = RZ_IL_OP_VAR;
+
+	skip_whitespace(str, idx);
+	if (*idx >= strlen(str)) {
+		return false;
+	}
+
+	switch (str[*idx]) {
+	case '+':
+		(*idx)++;
+		if (IS_COMPOUND_OP(str[*idx - 1], str[*idx]) && is_compound_op) {
+			(*idx)++;
+			*is_compound_op = true;
+		}
+		res = RZ_IL_OP_ADD;
+		break;
+	case '/':
+		(*idx)++;
+		if (IS_COMPOUND_OP(str[*idx - 1], str[*idx]) && is_compound_op) {
+			(*idx)++;
+			*is_compound_op = true;
+		}
+		res = RZ_IL_OP_DIV;
+		break;
+	case '*':
+		(*idx)++;
+		if (IS_COMPOUND_OP(str[*idx - 1], str[*idx]) && is_compound_op) {
+			(*idx)++;
+			*is_compound_op = true;
+		}
+		res = RZ_IL_OP_MUL;
+		break;
+	case '^':
+		(*idx)++;
+		if (IS_COMPOUND_OP(str[*idx - 1], str[*idx]) && is_compound_op) {
+			(*idx)++;
+			*is_compound_op = true;
+		}
+		res = RZ_IL_OP_XOR;
+		break;
+	case '&':
+		(*idx)++;
+		if (IS_COMPOUND_OP(str[*idx - 1], str[*idx]) && is_compound_op) {
+			(*idx)++;
+			*is_compound_op = true;
+		}
+		res = RZ_IL_OP_AND;
+		break;
+	case '|':
+		(*idx)++;
+		if (IS_COMPOUND_OP(str[*idx - 1], str[*idx]) && is_compound_op) {
+			(*idx)++;
+			*is_compound_op = true;
+		}
+		res = RZ_IL_OP_OR;
+		break;
+	case '%':
+		(*idx)++;
+		if (IS_COMPOUND_OP(str[*idx - 1], str[*idx]) && is_compound_op) {
+			(*idx)++;
+			*is_compound_op = true;
+		}
+		res = RZ_IL_OP_MOD;
+		break;
+	case '-':
+		(*idx)++;
+		if (IS_COMPOUND_OP(str[*idx - 1], str[*idx]) && is_compound_op) {
+			(*idx)++;
+			*is_compound_op = true;
+		}
+		res = RZ_IL_OP_SUB;
+		break;
+	default: break;
+	}
+	if (res == RZ_IL_OP_VAR) {
+		if (strncmp(&str[*idx], "<<", 2) == 0) {
+			*idx += 2;
+			res = RZ_IL_OP_SHIFTL;
+		} else if (strncmp(&str[*idx], ">>", 2) == 0) {
+			*idx += 2;
+			res = RZ_IL_OP_SHIFTR;
+		} else {
+			return false;
+		}
+	}
+
+	RzILOpPureCode *op_ptr = RZ_NEW0(RzILOpPureCode);
+	if (!op_ptr) {
+		return false;
+	}
+	*op_ptr = res;
+	rz_list_append(args, op_ptr);
+
+	return true;
+}
+
+static bool parse_compound_op(const RzCore *core, const char *str, RzRopConstraint *rop_constraint) {
+	ut64 idx = 0;
+	char *src_reg = parse_register(core, str, &idx);
+	if (!src_reg) {
+		return false;
+	}
+
+	skip_whitespace(str, &idx);
+
+	RzList *args = rz_list_new();
+	bool is_compound_op = false;
+	if (!parse_il_op(args, str, &idx, &is_compound_op)) {
+		free(src_reg);
+		rz_list_free(args);
+		return false;
+	}
+
+	bool inc_dec = false;
+	// idx - 2 and idx - 1 as we would have skipped it during parse_il_op
+	if ((str[idx - 2] == '+' && str[idx - 1] == '+') || (str[idx - 2] == '-' && str[idx - 1] == '-')) {
+		inc_dec = true;
+	}
+	// Now parse the constant after the operator
+	ut64 const_value;
+	bool constant_status = false;
+	char *dst_reg1 = NULL;
+	if (!inc_dec) {
+		constant_status = parse_constant(str, &idx, &const_value);
+		dst_reg1 = parse_register(core, str, &idx);
+	}
+	if (!constant_status && !dst_reg1 && !is_compound_op) {
+		free(src_reg);
+		rz_list_free(args);
+		return false;
+	}
+
+	if (!parse_eof(str, idx)) {
+		free(src_reg);
+		rz_list_free(args);
+		return false;
+	}
+
+	if (constant_status && is_compound_op) {
+		rop_constraint->type = MOV_OP_CONST;
+		rop_constraint->args[DST_REG] = src_reg;
+		rop_constraint->args[SRC_REG] = strdup(src_reg);
+		RzILOpPureCode *op = rz_list_get_n(args, 0);
+		if (!op) {
+			free(src_reg);
+			rz_list_free(args);
+			return false;
+		}
+
+		char op_str[16];
+		rz_strf(op_str, "%" PFMT64u, const_value);
+		rop_constraint->args[SRC_CONST] = rz_str_dup(op_str);
+		const char *value_str = rz_il_op_pure_code_stringify(*op);
+		rop_constraint->args[OP] = rz_str_dup(value_str);
+		return true;
+	}
+
+	if (dst_reg1 && is_compound_op) {
+		rop_constraint->type = MOV_OP_REG;
+		rop_constraint->args[DST_REG] = src_reg;
+		rop_constraint->args[SRC_REG] = strdup(src_reg);
+		RzILOpPureCode *op = rz_list_get_n(args, 0);
+		if (!op) {
+			free(src_reg);
+			free(dst_reg1);
+			rz_list_free(args);
+			return false;
+		}
+
+		const char *op_str = rz_il_op_pure_code_stringify(*op);
+		rop_constraint->args[OP] = rz_str_dup(op_str);
+		rop_constraint->args[SRC_REG_SECOND] = strdup(dst_reg1);
+		return true;
+	}
+
+	if (!inc_dec) {
+		return false;
+	}
+	const_value = 1;
+	rop_constraint->type = MOV_OP_CONST;
+	rop_constraint->args[DST_REG] = src_reg;
+	rop_constraint->args[SRC_REG] = strdup(src_reg);
+	RzILOpPureCode *op = rz_list_get_n(args, 0);
+	if (!op) {
+		free(src_reg);
+		rz_list_free(args);
+		return false;
+	}
+
+	char op_str[16];
+	rz_strf(op_str, "%" PFMT64u, const_value);
+	rop_constraint->args[SRC_CONST] = rz_str_dup(op_str);
+	const char *value_str = rz_il_op_pure_code_stringify(*op);
+	rop_constraint->args[OP] = rz_str_dup(value_str);
+	return true;
+}
+
 static bool parse_reg_to_const(const RzCore *core, const char *str, RzRopConstraint *rop_constraint) {
 	ut64 idx = 0;
 	char *dst_reg = parse_register(core, str, &idx);
@@ -153,107 +354,43 @@ static bool parse_reg_to_reg(const RzCore *core, const char *str, RzRopConstrain
 	return true;
 }
 
-static bool parse_il_op(RzList /*<RzILOpPureCode *>*/ *args, const char *str, ut64 *idx) {
-	RzILOpPureCode res = RZ_IL_OP_VAR;
-
-	skip_whitespace(str, idx);
-	if (*idx >= strlen(str)) {
-		return false;
-	}
-
-	switch (str[*idx]) {
-	case '+':
-		(*idx)++;
-		res = RZ_IL_OP_ADD;
-		break;
-	case '/':
-		(*idx)++;
-		res = RZ_IL_OP_DIV;
-		break;
-	case '*':
-		(*idx)++;
-		res = RZ_IL_OP_MUL;
-		break;
-	case '^':
-		(*idx)++;
-		res = RZ_IL_OP_XOR;
-		break;
-	case '&':
-		(*idx)++;
-		res = RZ_IL_OP_AND;
-		break;
-	case '|':
-		(*idx)++;
-		res = RZ_IL_OP_OR;
-		break;
-	case '%':
-		(*idx)++;
-		res = RZ_IL_OP_MOD;
-		break;
-	case '-':
-		(*idx)++;
-		res = RZ_IL_OP_SUB;
-	default: break;
-	}
-	if (res == RZ_IL_OP_VAR) {
-		if (strncmp(&str[*idx], "<<", 2) == 0) {
-			*idx += 2;
-			res = RZ_IL_OP_SHIFTL;
-		} else if (strncmp(&str[*idx], ">>", 2) == 0) {
-			*idx += 2;
-			res = RZ_IL_OP_SHIFTR;
-		} else {
-			return false;
-		}
-	}
-
-	RzILOpPureCode *op_ptr = RZ_NEW0(RzILOpPureCode);
-	if (!op_ptr) {
-		return false;
-	}
-	*op_ptr = res;
-	rz_list_append(args, op_ptr);
-
-	return true;
-}
-
 static bool parse_reg_op_const(const RzCore *core, const char *str, RzRopConstraint *rop_constraint) {
 	ut64 idx = 0;
 	char *dst_reg = parse_register(core, str, &idx);
 	if (!dst_reg) {
-		return false;
+		goto compound;
 	}
 
 	if (!parse_il_equal(str, &idx)) {
 		free(dst_reg);
-		return false;
+		goto compound;
 	}
 
 	char *src_reg = parse_register(core, str, &idx);
 	if (!src_reg) {
 		free(dst_reg);
-		return false;
+		goto compound;
 	}
 	RzList *args = rz_list_new();
-	if (!parse_il_op(args, str, &idx)) {
+	if (!parse_il_op(args, str, &idx, NULL)) {
 		free(dst_reg);
 		free(src_reg);
 		rz_list_free(args);
-		return false;
+		goto compound;
 	}
 
 	ut64 const_value;
 	if (!parse_constant(str, &idx, &const_value)) {
 		free(dst_reg);
 		free(src_reg);
-		return false;
+		goto compound;
 	}
 
 	if (!parse_eof(str, idx)) {
 		free(dst_reg);
 		free(src_reg);
 		rz_list_free(args);
-		return false;
+		goto compound;
 	}
 
 	rop_constraint->type = MOV_OP_CONST;
@@ -264,7 +401,7 @@ static bool parse_reg_op_const(const RzCore *core, const char *str, RzRopConstra
 		free(dst_reg);
 		free(src_reg);
 		rz_list_free(args);
-		return false;
+		goto compound;
 	}
 
 	char op_str[16];
@@ -273,6 +410,9 @@ static bool parse_reg_op_const(const RzCore *core, const char *str, RzRopConstra
 	const char *value_str = rz_il_op_pure_code_stringify(*op);
 	rop_constraint->args[OP] = rz_str_dup(value_str);
 	return true;
+
+compound:
+	return parse_compound_op(core, str, rop_constraint);
 }
 
 /**
@@ -337,33 +477,33 @@ static bool parse_reg_op_reg(const RzCore *core, const char *str, RzRopConstrain
 	ut64 idx = 0;
 	char *dst_reg = parse_register(core, str, &idx);
 	if (!dst_reg) {
-		return false;
+		goto compound;
 	}
 
 	if (!parse_il_equal(str, &idx)) {
 		free(dst_reg);
-		return false;
+		goto compound;
 	}
 
 	char *src_reg1 = parse_register(core, str, &idx);
 	if (!src_reg1) {
 		free(dst_reg);
-		return false;
+		goto compound;
 	}
 
 	RzList *args = rz_list_new();
-	if (!args || !parse_il_op(args, str, &idx)) {
+	if (!args || !parse_il_op(args, str, &idx, NULL)) {
 		free(dst_reg);
 		free(src_reg1);
 		rz_list_free(args);
-		return false;
+		goto compound;
 	}
 
 	char *dst_reg2 = parse_register(core, str, &idx);
 	if (!dst_reg2) {
 		free(dst_reg);
 		free(src_reg1);
-		return false;
+		goto compound;
 	}
 
 	if (!parse_eof(str, idx)) {
@@ -371,7 +511,7 @@ static bool parse_reg_op_reg(const RzCore *core, const char *str, RzRopConstrain
 		free(src_reg1);
 		free(dst_reg2);
 		rz_list_free(args);
-		return false;
+		goto compound;
 	}
 
 	rop_constraint->type = MOV_OP_REG;
@@ -383,13 +523,16 @@ static bool parse_reg_op_reg(const RzCore *core, const char *str, RzRopConstrain
 		free(src_reg1);
 		free(dst_reg2);
 		rz_list_free(args);
-		return false;
+		goto compound;
 	}
 
 	const char *op_str = rz_il_op_pure_code_stringify(*op);
 	rop_constraint->args[OP] = rz_str_dup(op_str);
-	rop_constraint->args[SRC_CONST] = dst_reg2;
+	rop_constraint->args[SRC_REG_SECOND] = dst_reg2;
 	return true;
+
+compound:
+	return parse_compound_op(core, str, rop_constraint);
 }
 
 /**
@@ -405,8 +548,11 @@ static bool parse_reg_op_reg(const RzCore *core, const char *str, RzRopConstrain
  * The function returns true if any of these parsing methods succeed.
  */
 RZ_API bool rz_core_rop_analyze_constraint(const RZ_NONNULL RzCore *core, const RZ_NONNULL char *str,
-	RZ_NONNULL RZ_OUT RzRopConstraint *rop_constraint) {
-	rz_return_val_if_fail(core && str && rop_constraint, false);
+	RZ_NULLABLE RZ_OUT RzRopConstraint *rop_constraint) {
+	rz_return_val_if_fail(core && str, false);
+	if (!rop_constraint) {
+		return false;
+	}
 	return parse_reg_to_const(core, str, rop_constraint) ||
 		parse_reg_to_reg(core, str, rop_constraint) ||
 		parse_reg_op_const(core, str, rop_constraint) ||
@@ -426,13 +572,6 @@ RZ_API RZ_OWN RzRopConstraint *rop_constraint_parse_args(const RZ_NONNULL RzCore
 	rz_return_val_if_fail(core && token, NULL);
 	RzRopConstraint *rop_constraint = RZ_NEW0(RzRopConstraint);
 	RzList *l = rz_str_split_duplist_n(token, "=", 1, false);
-	char *key = rz_list_get_n(l, 0);
-	char *value = rz_list_get_n(l, 1);
-	if (RZ_STR_ISEMPTY(key) || RZ_STR_ISEMPTY(value)) {
-		RZ_LOG_ERROR("core: Make sure to use the format <key>=<value> without spaces.\n");
-		rz_list_free(l);
-		return NULL;
-	}
 	if (!rop_constraint) {
 		rz_list_free(l);
 		return NULL;
