@@ -110,7 +110,7 @@ bool test_rz_core_analysis_bytes() {
 	RzCore *core = rz_core_new();
 	rz_core_set_asm_configs(core, "x86", 64, 0);
 	ut8 buf[128];
-	int len = rz_hex_str2bin("678D40C0", buf);
+	int len = rz_hex_str2bin("554889e5897dfc", buf);
 	RzIterator *iter = rz_core_analysis_bytes(core, core->offset, buf, len, 0);
 	mu_assert_notnull(iter, "rz_core_analysis_bytes");
 
