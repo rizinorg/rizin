@@ -361,7 +361,7 @@ static void print_all_plugin_configs(const RzCore *core) {
 	rz_cmd_state_output_fini(&state);
 }
 
-static RZ_BORROW RzConfig *rz_eval_get_config_obj_by_key(const RzCore *core, const char *config_str) {
+static RZ_BORROW RzConfig *eval_get_config_obj_by_key(const RzCore *core, const char *config_str) {
 	rz_return_val_if_fail(core && config_str, NULL);
 	RzConfig *cfg = NULL;
 	if (!rz_str_startswith(config_str, "plugins")) {
@@ -408,7 +408,7 @@ RZ_IPI RzCmdStatus rz_eval_getset_handler(RzCore *core, int argc, const char **a
 		}
 
 		RzConfig *cfg = NULL;
-		if (!(cfg = rz_eval_get_config_obj_by_key(core, key))) {
+		if (!(cfg = eval_get_config_obj_by_key(core, key))) {
 			print_all_plugin_configs(core);
 			return RZ_CMD_STATUS_OK;
 		}
@@ -440,7 +440,7 @@ RZ_IPI RzCmdStatus rz_eval_getset_handler(RzCore *core, int argc, const char **a
 RZ_IPI RzCmdStatus rz_eval_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	const char *arg = argc > 1 ? argv[1] : "";
 	RzConfig *cfg = NULL;
-	if (!(cfg = rz_eval_get_config_obj_by_key(core, arg))) {
+	if (!(cfg = eval_get_config_obj_by_key(core, arg))) {
 		print_all_plugin_configs(core);
 		return RZ_CMD_STATUS_OK;
 	}
@@ -454,7 +454,7 @@ RZ_IPI RzCmdStatus rz_eval_reset_handler(RzCore *core, int argc, const char **ar
 
 RZ_IPI RzCmdStatus rz_eval_bool_invert_handler(RzCore *core, int argc, const char **argv) {
 	RzConfig *cfg = NULL;
-	if (!(cfg = rz_eval_get_config_obj_by_key(core, argv[1]))) {
+	if (!(cfg = eval_get_config_obj_by_key(core, argv[1]))) {
 		print_all_plugin_configs(core);
 		return RZ_CMD_STATUS_OK;
 	}
@@ -467,7 +467,7 @@ RZ_IPI RzCmdStatus rz_eval_bool_invert_handler(RzCore *core, int argc, const cha
 
 RZ_IPI RzCmdStatus rz_eval_editor_handler(RzCore *core, int argc, const char **argv) {
 	RzConfig *cfg = NULL;
-	if (!(cfg = rz_eval_get_config_obj_by_key(core, argv[1]))) {
+	if (!(cfg = eval_get_config_obj_by_key(core, argv[1]))) {
 		print_all_plugin_configs(core);
 		return RZ_CMD_STATUS_OK;
 	}
@@ -487,7 +487,7 @@ RZ_IPI RzCmdStatus rz_eval_editor_handler(RzCore *core, int argc, const char **a
 
 RZ_IPI RzCmdStatus rz_eval_readonly_handler(RzCore *core, int argc, const char **argv) {
 	RzConfig *cfg = NULL;
-	if (!(cfg = rz_eval_get_config_obj_by_key(core, argv[1]))) {
+	if (!(cfg = eval_get_config_obj_by_key(core, argv[1]))) {
 		print_all_plugin_configs(core);
 		return RZ_CMD_STATUS_OK;
 	}
@@ -515,7 +515,7 @@ RZ_IPI RzCmdStatus rz_eval_spaces_handler(RzCore *core, int argc, const char **a
 
 RZ_IPI RzCmdStatus rz_eval_type_handler(RzCore *core, int argc, const char **argv) {
 	RzConfig *cfg = NULL;
-	if (!(cfg = rz_eval_get_config_obj_by_key(core, argv[1]))) {
+	if (!(cfg = eval_get_config_obj_by_key(core, argv[1]))) {
 		print_all_plugin_configs(core);
 		return RZ_CMD_STATUS_OK;
 	}
