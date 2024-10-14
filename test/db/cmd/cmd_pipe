@@ -8,11 +8,7 @@ RUN
 
 NAME=rzpipe.py
 FILE=bins/elf/_Exit (42)
-CMDS=<<EOF
-%= `env~?^ASAN_LD_PRELOAD=`
-%+ env LD_PRELOAD=`env ASAN_LD_PRELOAD`
-#!pipe python3 scripts/get-funcs.py
-EOF
+CMDS=#!pipe python3 scripts/get-funcs.py
 EXPECT=<<EOF
 
 Function names:
@@ -36,11 +32,7 @@ RUN
 
 NAME=rzpipe load project
 FILE=--
-CMDS=<<EOF
-%= `env~?^ASAN_LD_PRELOAD=`
-%+ env LD_PRELOAD=`env ASAN_LD_PRELOAD`
-!python3 -c 'import rzpipe;rz=rzpipe.open("--");rz.cmd("Po bins/other/ls.rzdb");print(rz.cmd("%v custom_main"))'
-EOF
+CMDS=!python3 -c 'import rzpipe;rz=rzpipe.open("--");rz.cmd("Po bins/other/ls.rzdb");print(rz.cmd("%v custom_main"))'
 EXPECT=<<EOF
 0x4070
 
@@ -49,11 +41,7 @@ RUN
 
 NAME=rzpipe.py - shared memory (shm://)
 FILE=bins/elf/_Exit (42)
-CMDS=<<EOF
-%= `env~?^ASAN_LD_PRELOAD=`
-%+ env LD_PRELOAD=`env ASAN_LD_PRELOAD`
-#!pipe python3 scripts/shared_memory.py
-EOF
+CMDS=#!pipe python3 scripts/shared_memory.py
 EXPECT=<<EOF
 Copying bins/elf/_Exit (42)...
 Copied bins/elf/_Exit (42) succesfully

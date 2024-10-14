@@ -27,11 +27,7 @@ RUN
 
 NAME=dk 9
 FILE=--
-CMDS=<<EOF
-%= `env~?^ASAN_LD_PRELOAD=`
-%+ env LD_PRELOAD=`env ASAN_LD_PRELOAD`
-!python3 scripts/dk_9.py
-EOF
+CMDS=!python3 scripts/dk_9.py
 EXPECT=<<EOF
 EOF
 EXPECT_ERR=<<EOF
