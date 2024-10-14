@@ -527,6 +527,8 @@ jobs:
     steps:
       - name: Install meson and ninja
         run: sudo pip3 install meson ninja
+      - name: Install test dependency
+        run: sudo pip3 install 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
       - name: Checkout rizin
         run: |
           git clone https://github.com/${{ github.repository }}
