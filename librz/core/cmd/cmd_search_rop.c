@@ -18,6 +18,19 @@ static void skip_whitespace(const char *str, ut64 *idx) {
 	}
 }
 
+static inline bool is_compound_operator(char x, char y) {
+	return ((x == '+' && y == '+') ||
+		(x == '-' && y == '-') ||
+		(x == '+' && y == '=') ||
+		(x == '-' && y == '=') ||
+		(x == '*' && y == '=') ||
+		(x == '/' && y == '=') ||
+		(x == '%' && y == '=') ||
+		(x == '&' && y == '=') ||
+		(x == '|' && y == '=') ||
+		(x == '^' && y == '='));
+}
+
 static bool parse_eof(const char *str, ut64 idx) {
 	skip_whitespace(str, &idx);
 	return str[idx] == '\0';
@@ -108,7 +121,7 @@ static bool parse_il_op(RzList /*<RzILOpPureCode *>*/ *args, const char *str, ut
 	switch (str[*idx]) {
 	case '+':
 		(*idx)++;
-		if (IS_COMPOUND_OP(str[*idx - 1], str[*idx]) && is_compound_op) {
+		if (is_compound_operator(str[*idx - 1], str[*idx]) && is_compound_op) {
 			(*idx)++;
 			*is_compound_op = true;
 		}
@@ -116,7 +129,7 @@ static bool parse_il_op(RzList /*<RzILOpPureCode *>*/ *args, const char *str, ut
 		break;
 	case '/':
 		(*idx)++;
-		if (IS_COMPOUND_OP(str[*idx - 1], str[*idx]) && is_compound_op) {
+		if (is_compound_operator(str[*idx - 1], str[*idx]) && is_compound_op) {
 			(*idx)++;
 			*is_compound_op = true;
 		}
@@ -124,7 +137,7 @@ static bool parse_il_op(RzList /*<RzILOpPureCode *>*/ *args, const char *str, ut
 		break;
 	case '*':
 		(*idx)++;
-		if (IS_COMPOUND_OP(str[*idx - 1], str[*idx]) && is_compound_op) {
+		if (is_compound_operator(str[*idx - 1], str[*idx]) && is_compound_op) {
 			(*idx)++;
 			*is_compound_op = true;
 		}
@@ -132,7 +145,7 @@ static bool parse_il_op(RzList /*<RzILOpPureCode *>*/ *args, const char *str, ut
 		break;
 	case '^':
 		(*idx)++;
-		if (IS_COMPOUND_OP(str[*idx - 1], str[*idx]) && is_compound_op) {
+		if (is_compound_operator(str[*idx - 1], str[*idx]) && is_compound_op) {
 			(*idx)++;
 			*is_compound_op = true;
 		}
@@ -140,7 +153,7 @@ static bool parse_il_op(RzList /*<RzILOpPureCode *>*/ *args, const char *str, ut
 		break;
 	case '&':
 		(*idx)++;
-		if (IS_COMPOUND_OP(str[*idx - 1], str[*idx]) && is_compound_op) {
+		if (is_compound_operator(str[*idx - 1], str[*idx]) && is_compound_op) {
 			(*idx)++;
 			*is_compound_op = true;
 		}
@@ -148,7 +161,7 @@ static bool parse_il_op(RzList /*<RzILOpPureCode *>*/ *args, const char *str, ut
 		break;
 	case '|':
 		(*idx)++;
-		if (IS_COMPOUND_OP(str[*idx - 1], str[*idx]) && is_compound_op) {
+		if (is_compound_operator(str[*idx - 1], str[*idx]) && is_compound_op) {
 			(*idx)++;
 			*is_compound_op = true;
 		}
@@ -156,7 +169,7 @@ static bool parse_il_op(RzList /*<RzILOpPureCode *>*/ *args, const char *str, ut
 		break;
 	case '%':
 		(*idx)++;
-		if (IS_COMPOUND_OP(str[*idx - 1], str[*idx]) && is_compound_op) {
+		if (is_compound_operator(str[*idx - 1], str[*idx]) && is_compound_op) {
 			(*idx)++;
 			*is_compound_op = true;
 		}
@@ -164,7 +177,7 @@ static bool parse_il_op(RzList /*<RzILOpPureCode *>*/ *args, const char *str, ut
 		break;
 	case '-':
 		(*idx)++;
-		if (IS_COMPOUND_OP(str[*idx - 1], str[*idx]) && is_compound_op) {
+		if (is_compound_operator(str[*idx - 1], str[*idx]) && is_compound_op) {
 			(*idx)++;
 			*is_compound_op = true;
 		}
