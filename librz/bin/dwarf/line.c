@@ -625,7 +625,9 @@ static bool LineOp_all(
 			break;
 		}
 		RzBinDwarfLineOp op = { 0 };
-		LineOp_at(ctx, offset, &op);
+		if (!LineOp_at(ctx, offset, &op)) {
+			break;
+		}
 		rz_vector_push(ops, &op);
 	}
 	return true;
