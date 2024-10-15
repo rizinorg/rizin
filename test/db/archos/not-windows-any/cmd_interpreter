@@ -13,6 +13,8 @@ RUN
 NAME=#! with ext != name
 FILE==
 CMDS=<<EOF
+%= `env~?^ASAN_LD_PRELOAD=`
+%+ env LD_PRELOAD=`env ASAN_LD_PRELOAD`
 echo "#include <stdio.h>\nint main(){printf(\"Hello\\n\");return 0;}" > .tmp-hashextname.c
 #!cpipe .tmp-hashextname.c
 rm .tmp-hashextname.c
