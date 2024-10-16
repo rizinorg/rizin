@@ -9,8 +9,7 @@ RUN
 NAME=rzpipe.py
 FILE=bins/elf/_Exit (42)
 CMDS=<<EOF
-%= `env~?^ASAN_LD_PRELOAD=`
-%+ env LD_PRELOAD=`env ASAN_LD_PRELOAD`
+. scripts/set-LD_PRELOAD.rz
 #!pipe python3 scripts/get-funcs.py
 EOF
 EXPECT=<<EOF
@@ -37,8 +36,7 @@ RUN
 NAME=rzpipe load project
 FILE=--
 CMDS=<<EOF
-%= `env~?^ASAN_LD_PRELOAD=`
-%+ env LD_PRELOAD=`env ASAN_LD_PRELOAD`
+. scripts/set-LD_PRELOAD.rz
 !python3 -c 'import rzpipe;rz=rzpipe.open("--");rz.cmd("Po bins/other/ls.rzdb");print(rz.cmd("%v custom_main"))'
 EOF
 EXPECT=<<EOF
@@ -50,8 +48,7 @@ RUN
 NAME=rzpipe.py - shared memory (shm://)
 FILE=bins/elf/_Exit (42)
 CMDS=<<EOF
-%= `env~?^ASAN_LD_PRELOAD=`
-%+ env LD_PRELOAD=`env ASAN_LD_PRELOAD`
+. scripts/set-LD_PRELOAD.rz
 #!pipe python3 scripts/shared_memory.py
 EOF
 EXPECT=<<EOF
