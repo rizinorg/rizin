@@ -24,6 +24,7 @@ struct rz_timezone {
 	int tz_dsttime; /* type of dst correction */
 };
 #else
+#include <sys/time.h>
 #define rz_timezone timezone
 #endif
 
