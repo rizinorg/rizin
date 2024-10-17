@@ -214,8 +214,31 @@ ut64 rz_bin_te_get_image_base(struct rz_bin_te_obj_t *bin) {
 	return 0LL;
 }
 
+char *rz_bin_te_get_cpu(struct rz_bin_te_obj_t *bin) {
+	if (!bin) {
+		return NULL;
+	}
+	switch (bin->header->Machine) {
+	case TE_IMAGE_FILE_MACHINE_MIPS16:
+		return rz_str_dup("mips16");
+	case TE_IMAGE_FILE_MACHINE_MIPSFPU:
+		return rz_str_dup("mips32");
+	case TE_IMAGE_FILE_MACHINE_MIPSFPU16:
+		return rz_str_dup("mips16");
+	case TE_IMAGE_FILE_MACHINE_R10000:
+		return rz_str_dup("r10000");
+	case TE_IMAGE_FILE_MACHINE_R3000:
+		return rz_str_dup("r3000");
+	case TE_IMAGE_FILE_MACHINE_R4000:
+		return rz_str_dup("r4000");
+	case TE_IMAGE_FILE_MACHINE_WCEMIPSV2:
+		return rz_str_dup("mips2");
+	default:
+		return NULL;
+	}
+}
+
 char *rz_bin_te_get_machine(struct rz_bin_te_obj_t *bin) {
-	char *machine;
 	if (!bin) {
 		return NULL;
 	}
@@ -279,7 +302,6 @@ char *rz_bin_te_get_machine(struct rz_bin_te_obj_t *bin) {
 	default:
 		return rz_str_dup("unknown");
 	}
-	return machine;
 }
 
 char *rz_bin_te_get_os(struct rz_bin_te_obj_t *bin) {

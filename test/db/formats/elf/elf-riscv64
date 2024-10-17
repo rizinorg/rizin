@@ -407,6 +407,7 @@ block    0x100
 type     EXEC (Executable file)
 arch     riscv
 cpu      N/A
+features N/A
 baddr    0x00010000
 binsz    0x0009d024
 bintype  elf

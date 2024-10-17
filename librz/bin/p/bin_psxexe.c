@@ -39,6 +39,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->machine = rz_str_dup("Sony PlayStation 1");
 	ret->os = rz_str_dup("psx");
 	ret->arch = rz_str_dup("mips");
+	ret->cpu = strdup("mips3");
 	ret->bits = 32;
 	ret->has_va = true;
 	return ret;

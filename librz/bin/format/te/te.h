@@ -50,6 +50,7 @@ ut64 rz_bin_te_get_main_paddr(struct rz_bin_te_obj_t *bin);
 ut64 rz_bin_te_get_image_base(struct rz_bin_te_obj_t *bin);
 int rz_bin_te_get_image_size(struct rz_bin_te_obj_t *bin);
 char *rz_bin_te_get_machine(struct rz_bin_te_obj_t *bin);
+char *rz_bin_te_get_cpu(struct rz_bin_te_obj_t *bin);
 int rz_bin_te_get_bits(struct rz_bin_te_obj_t *bin);
 char *rz_bin_te_get_os(struct rz_bin_te_obj_t *bin);
 struct rz_bin_te_section_t *rz_bin_te_get_sections(struct rz_bin_te_obj_t *bin);

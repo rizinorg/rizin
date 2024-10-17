@@ -27,14 +27,13 @@
 #define ISMEM(x)   (insn->detail->arm.operands[x].type == ARM_OP_MEM)
 #define ISFPIMM(x) (insn->detail->arm.operands[x].type == ARM_OP_FP)
 
-#define LSHIFT(x)       insn->detail->arm.operands[x].mem.lshift
+#define LSHIFT(x)       insn->detail->arm.operands[x].shift.value
 #define LSHIFT2(x)      insn->detail->arm.operands[x].shift.value // Dangerous, returns value even if isn't LSL
 #define OPCOUNT()       insn->detail->arm.op_count
 #define ISSHIFTED(x)    (insn->detail->arm.operands[x].shift.type != ARM_SFT_INVALID && insn->detail->arm.operands[x].shift.value != 0)
 #define SHIFTTYPE(x)    insn->detail->arm.operands[x].shift.type
 #define SHIFTTYPEREG(x) (SHIFTTYPE(x) == ARM_SFT_ASR_REG || SHIFTTYPE(x) == ARM_SFT_LSL_REG || \
-	SHIFTTYPE(x) == ARM_SFT_LSR_REG || SHIFTTYPE(x) == ARM_SFT_ROR_REG || \
-	SHIFTTYPE(x) == ARM_SFT_RRX_REG)
+	SHIFTTYPE(x) == ARM_SFT_LSR_REG || SHIFTTYPE(x) == ARM_SFT_ROR_REG)
 #define SHIFTVALUE(x) insn->detail->arm.operands[x].shift.value
 
 #if CS_NEXT_VERSION >= 6

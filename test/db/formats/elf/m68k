@@ -22,7 +22,7 @@ ori.b 0x8a, d0
 illegal 0x4afc
 link.w a6, 0x0
 move.l 0x8015b11c, d0
-subi.l 0x8015b119, d0
+subi.l 0x15b119, d0
 moveq 0x6, d1
 cmp.l d0, d1
 bcc.b 0x80000df6

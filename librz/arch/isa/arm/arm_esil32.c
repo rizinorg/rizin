@@ -34,7 +34,9 @@ static const char *decode_shift(arm_shifter shift) {
 	case ARM_SFT_ROR:
 	case ARM_SFT_RRX:
 	case ARM_SFT_ROR_REG:
+#if CS_NEXT_VERSION < 6
 	case ARM_SFT_RRX_REG:
+#endif
 		return E_OP_RR;
 
 	default:
