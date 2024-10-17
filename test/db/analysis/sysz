@@ -21,11 +21,11 @@ EXPECT=<<EOF
       "operands": [
         {
           "type": "reg",
-          "value": "4"
+          "value": "r4"
         },
         {
           "type": "mem",
-          "base": "15",
+          "base": "r15",
           "disp": 8
         }
       ]

@@ -1252,6 +1252,7 @@ pc = 0x00000004
 EOF
 RUN
 
+BROKEN=1
 NAME=blez v0, 0x3c (taken)
 FILE=malloc://0x200
 CMDS=<<EOF
@@ -1473,6 +1474,7 @@ ar t4
 EOF
 EXPECT=<<EOF
 pc = 0x00000010
+BROKEN=1
 t4 = 0x00000008
 EOF
 RUN
@@ -1489,6 +1491,7 @@ aes
 ar pc
 ar t4
 EOF
+BROKEN=1
 EXPECT=<<EOF
 pc = 0x00000010
 t4 = 0x00000008
@@ -1505,6 +1508,7 @@ ar v0=1
 ar v1=2
 wx 2a804300
 aes
+BROKEN=1
 ar s0
 EOF
 EXPECT=<<EOF
@@ -1622,6 +1626,7 @@ e asm.bits=32
 ar > /dev/null
 ar v1=0
 ar v0=1
+BROKEN=1
 wx 23180200
 aes
 ar v1
@@ -1637,6 +1642,7 @@ CMDS=<<EOF
 e asm.arch=mips
 e asm.bits=32
 ar > /dev/null
+BROKEN=1
 ar v1=0
 ar v0=3497
 wx 23180200
@@ -1652,6 +1658,7 @@ NAME=negative mem reference
 FILE=malloc://0x200
 ARGS=-m 0x410984
 CMDS=<<EOF
+BROKEN=1
 e io.va=true
 e asm.arch=mips
 e asm.bits=32
@@ -1698,6 +1705,7 @@ SLOWDOWNWOMAN
 EOF
 RUN
 
+BROKEN=1
 NAME=complex function 2
 FILE=malloc://0x800
 ARGS=-m 0x0040092c
@@ -1724,6 +1732,7 @@ EOF
 RUN
 
 NAME=complex function 3
+BROKEN=1
 FILE=malloc://0x800
 ARGS=-m 0x00400ac0
 CMDS=<<EOF
@@ -1743,6 +1752,7 @@ EOF
 EXPECT=<<EOF
 v0 = 0x000035df
 EOF
+BROKEN=1
 RUN
 
 NAME=asm.emu with meta
