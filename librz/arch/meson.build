@@ -31,7 +31,7 @@ arch_plugins_list = [
   'malbolge',
   'mcore',
   'mcs96',
-  'mips_cs',
+  'mips',
   'msp430',
   'null',
   'or1k',
@@ -88,7 +88,7 @@ arch_plugin_sources = [
   'p/arch_malbolge.c',
   'p/arch_mcore.c',
   'p/arch_mcs96.c',
-  'p/arch_mips_cs.c',
+  'p/arch_mips.c',
   'p/arch_msp430.c',
   'p/arch_null.c',
   'p/arch_or1k.c',
@@ -218,6 +218,7 @@ arch_isa_sources = [
   'isa/luac/v54/opcode_54.c',
   'isa/mcore/mcore.c',
   'isa/mips/mips_assembler.c',
+  'isa/mips/mips_esil.c',
   'isa/msp430/msp430_disas.c',
   'isa/msp430/msp430_il.c',
   'isa/or1k/or1k_disas.c',
@@ -307,17 +308,21 @@ if capstone_dep.version() == 'next' or capstone_dep.version().split('.')[0].to_i
   arch_plugins_list += [
     'riscv_cs',
     'tricore_cs',
+    'xtensa_cs',
   ]
 
   # plugins sources
   arch_plugin_sources += [
     'p/arch_riscv_cs.c',
     'p/arch_tricore_cs.c',
+    'p/arch_xtensa_cs.c',
   ]
 
   # isa sources
   arch_isa_sources += [
     'isa/tricore/tricore_il.c',
+    'isa/xtensa/xtensa.c',
+    'isa/xtensa/xtensa_esil.c',
   ]
 endif
 
@@ -328,11 +333,9 @@ if get_option('use_gpl')
     'cris_gnu',
     'hppa_gnu',
     'lanai_gnu',
-    'mips_gnu',
     'riscv_gnu',
     'sparc_gnu',
     'vax_gnu',
-    'xtensa_gnu',
     'z80_gnu',
   ]
 
@@ -342,11 +345,9 @@ if get_option('use_gpl')
     'p_gnu/arch_cris.c',
     'p_gnu/arch_hppa.c',
     'p_gnu/arch_lanai.c',
-    'p_gnu/arch_mips.c',
     'p_gnu/arch_riscv.c',
     'p_gnu/arch_sparc.c',
     'p_gnu/arch_vax.c',
-    'p_gnu/arch_xtensa.c',
     'p_gnu/arch_z80.c',
   ]
 
@@ -361,18 +362,11 @@ if get_option('use_gpl')
     'isa_gnu/hppa/hppa-dis.c',
     'isa_gnu/lanai/lanai-dis.c',
     'isa_gnu/lanai/lanai-opc.c',
-    'isa_gnu/mips/mips-dis.c',
-    'isa_gnu/mips/mips-opc.c',
-    'isa_gnu/mips/mips16-opc.c',
     # 'isa_gnu/riscv/riscv-opc.c',
     # 'isa_gnu/riscv/riscv.c',
     'isa_gnu/sparc/sparc-dis.c',
     'isa_gnu/sparc/sparc-opc.c',
     'isa_gnu/vax/vax-dis.c',
-    'isa_gnu/xtensa/elf32-xtensa.c',
-    'isa_gnu/xtensa/xtensa-dis.c',
-    'isa_gnu/xtensa/xtensa-isa.c',
-    'isa_gnu/xtensa/xtensa-modules.c',
     # 'isa_gnu/z80/expressions.c',
     # 'isa_gnu/z80/z80.c',
     # 'isa_gnu/z80/z80asm.c',
