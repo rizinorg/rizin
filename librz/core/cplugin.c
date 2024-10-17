@@ -21,6 +21,7 @@ RZ_API bool rz_core_plugin_fini(RzCore *core) {
 		}
 	}
 	rz_list_free(core->plugins);
+	ht_sp_free(core->plugin_configs);
 	core->plugins = NULL;
 	return true;
 }
@@ -28,6 +29,7 @@ RZ_API bool rz_core_plugin_fini(RzCore *core) {
 RZ_API bool rz_core_plugin_add(RzCore *core, RZ_NONNULL RzCorePlugin *plugin) {
 	rz_return_val_if_fail(core, false);
 	rz_return_val_if_fail(plugin && plugin->init && plugin->name && plugin->author && plugin->license, false);
+	// TODO: Add config from core plugin.
 	RZ_PLUGIN_CHECK_AND_ADD(core->plugins, plugin, RzCorePlugin);
 	if (!plugin->init(core)) {
 		RZ_PLUGIN_REMOVE(core->plugins, plugin);
@@ -38,6 +40,7 @@ RZ_API bool rz_core_plugin_add(RzCore *core, RZ_NONNULL RzCorePlugin *plugin) {
 
 RZ_API bool rz_core_plugin_del(RzCore *core, RZ_NONNULL RzCorePlugin *plugin) {
 	rz_return_val_if_fail(core && plugin, false);
+	ht_sp_delete(core->plugin_configs, plugin->name);
 	if (plugin->fini && !plugin->fini(core)) {
 		return false;
 	}

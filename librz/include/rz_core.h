@@ -243,9 +243,18 @@ typedef struct rz_core_seek_history_t {
 } RzCoreSeekHistory;
 
 struct rz_core_t {
+	RzAsm *rasm;
+	ut8 ptr_alignment_I;
+	RzAnalysis *analysis;
+	ut8 ptr_alignment_II;
 	RzBin *bin;
+	ut8 ptr_alignment_III;
+	// NOTE: Do not change the order of fields above!
+	// They are used in pointer passing hacks in rz_types.h.
+	RzIO *io;
 	RzList /*<RzCorePlugin *>*/ *plugins; ///< List of registered core plugins
 	RzConfig *config;
+	HtSP /*<plugins.<plugin_name>: RzConfig>*/ *plugin_configs; ///< Pointers to plugin configurations. Indexed by "plugins.<name>"
 	ut64 offset; // current seek
 	ut64 prompt_offset; // temporarily set to offset to have $$ in expressions always stay the same during temp seeks
 	ut32 blocksize;
@@ -258,7 +267,6 @@ struct rz_core_t {
 	int interrupted; // XXX IS THIS DUPPED SOMEWHERE?
 	/* files */
 	RzCons *cons;
-	RzIO *io;
 	RzCoreFile *file;
 	RzList /*<RzCoreFile *>*/ *files;
 	RzNum *num;
@@ -267,8 +275,6 @@ struct rz_core_t {
 	RzCmd *rcmd;
 	RzCmdDescriptor root_cmd_descriptor;
 	RzList /*<RzCmdDescriptor *>*/ *cmd_descriptors;
-	RzAnalysis *analysis;
-	RzAsm *rasm;
 	/* ^^ */
 	RzCoreTimes *times;
 	RzParse *parser;

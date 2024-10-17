@@ -9,6 +9,9 @@
 // Do not edit. Repository of code generator:
 // https://github.com/rizinorg/rz-hexagon
 
+#include "rz_types.h"
+#include <rz_util/rz_log.h>
+#include <rz_util/rz_buf.h>
 #include <rz_list.h>
 #include <rz_util/rz_assert.h>
 #include <rz_asm.h>
@@ -19,6 +22,21 @@
 #include <hexagon/hexagon_insn.h>
 #include <hexagon/hexagon_arch.h>
 #include <hexagon/hexagon_il.h>
+
+RZ_IPI void hexagon_state_fini(RZ_NULLABLE HexState *state) {
+	if (!state) {
+		return;
+	}
+	rz_config_free(state->cfg);
+	rz_pvector_free(state->token_patterns);
+	rz_list_free(state->const_ext_l);
+	for (size_t i = 0; i < HEXAGON_STATE_PKTS; ++i) {
+		rz_list_free(state->pkts[i].bin);
+		rz_pvector_free(state->pkts[i].il_ops);
+		hex_il_pkt_stats_fini(&state->pkts[i].il_op_stats);
+	}
+	return;
+}
 
 static inline bool is_invalid_insn_data(ut32 data) {
 	return data == HEX_INVALID_INSN_0 || data == HEX_INVALID_INSN_F;
@@ -91,6 +109,10 @@ RZ_API HexInsnContainer *hex_get_hic_at_addr(HexState *state, const ut32 addr) {
 		p = &state->pkts[i];
 		HexInsnContainer *hic = NULL;
 		RzListIter *iter = NULL;
+		if (p->last_access == 0) {
+			// Just initialized packets without any instructions.
+			continue;
+		}
 		rz_list_foreach (p->bin, iter, hic) {
 			if (addr == hic->addr) {
 				p->last_access = rz_time_now_mono();
@@ -224,7 +246,7 @@ static void hex_clear_pkt(RZ_NONNULL HexPkt *p) {
 	p->last_access = 0;
 	rz_list_purge(p->bin);
 	rz_pvector_clear(p->il_ops);
-	hex_reset_il_pkt_stats(&p->il_op_stats);
+	hex_il_pkt_stats_reset(&p->il_op_stats);
 }
 
 /**
@@ -259,6 +281,9 @@ RZ_API HexPkt *hex_get_pkt(RZ_BORROW HexState *state, const ut32 addr) {
 	RzListIter *iter = NULL;
 	for (ut8 i = 0; i < HEXAGON_STATE_PKTS; ++i) {
 		p = &state->pkts[i];
+		if (rz_list_length(p->bin) == 0) {
+			continue;
+		}
 		rz_list_foreach (p->bin, iter, hic) {
 			if (hic_at_addr(hic, addr)) {
 				p->last_access = rz_time_now_mono();
@@ -339,17 +364,8 @@ static ut8 get_state_pkt_index(HexState *state, const HexPkt *p) {
  *
  * \return The initialized state of the plugins or NULL if \p reset = true.
  */
-RZ_API HexState *hexagon_state(bool reset) {
-	static HexState *state = NULL;
-	if (reset) {
-		state = NULL;
-		return NULL;
-	}
-	if (state) {
-		return state;
-	}
-
-	state = RZ_NEW0(HexState);
+RZ_IPI RZ_OWN HexState *hexagon_state_new() {
+	HexState *state = RZ_NEW0(HexState);
 	if (!state) {
 		RZ_LOG_FATAL("Could not allocate memory for HexState!");
 		return NULL;
@@ -516,11 +532,10 @@ void hex_set_hic_text(RZ_INOUT HexInsnContainer *hic) {
  * \param pkt The packet the instruction belongs to.
  * \param k The index of the instruction within the packet.
  */
-static void hex_set_pkt_info(const RzAsm *rz_asm, RZ_INOUT HexInsnContainer *hic, const HexPkt *pkt, const ut8 k, const bool update_text) {
-	rz_return_if_fail(hic && pkt);
+static void hex_set_pkt_info(RZ_INOUT HexInsnContainer *hic, const HexPkt *pkt, const ut8 k, const bool update_text, HexState *state) {
+	rz_return_if_fail(hic && pkt && state);
 	bool is_first = (k == 0);
 	HexPktInfo *hi_pi = &hic->pkt_info;
-	HexState *state = hexagon_state(false);
 	bool sdk_form = rz_config_get_b(state->cfg, "plugins.hexagon.sdk");
 
 	strncpy(hi_pi->text_postfix, "", 16);
@@ -529,9 +544,9 @@ static void hex_set_pkt_info(const RzAsm *rz_asm, RZ_INOUT HexInsnContainer *hic
 		hi_pi->first_insn = true;
 		hi_pi->last_insn = true;
 		if (pkt->is_valid) {
-			strncpy(hi_pi->text_prefix, get_pkt_indicator(rz_asm->utf8, sdk_form, true, SINGLE_IN_PKT), 8);
+			strncpy(hi_pi->text_prefix, get_pkt_indicator(state->utf8_enabled, sdk_form, true, SINGLE_IN_PKT), 8);
 			if (sdk_form) {
-				strncpy(hi_pi->text_postfix, get_pkt_indicator(rz_asm->utf8, sdk_form, false, SINGLE_IN_PKT), 8);
+				strncpy(hi_pi->text_postfix, get_pkt_indicator(state->utf8_enabled, sdk_form, false, SINGLE_IN_PKT), 8);
 			}
 		} else {
 			strncpy(hi_pi->text_prefix, HEX_PKT_UNK, 8);
@@ -540,7 +555,7 @@ static void hex_set_pkt_info(const RzAsm *rz_asm, RZ_INOUT HexInsnContainer *hic
 		hi_pi->first_insn = true;
 		hi_pi->last_insn = false;
 		if (pkt->is_valid) {
-			strncpy(hi_pi->text_prefix, get_pkt_indicator(rz_asm->utf8, sdk_form, true, FIRST_IN_PKT), 8);
+			strncpy(hi_pi->text_prefix, get_pkt_indicator(state->utf8_enabled, sdk_form, true, FIRST_IN_PKT), 8);
 		} else {
 			strncpy(hi_pi->text_prefix, HEX_PKT_UNK, 8);
 		}
@@ -548,22 +563,22 @@ static void hex_set_pkt_info(const RzAsm *rz_asm, RZ_INOUT HexInsnContainer *hic
 		hi_pi->first_insn = false;
 		hi_pi->last_insn = true;
 		if (pkt->is_valid) {
-			strncpy(hi_pi->text_prefix, get_pkt_indicator(rz_asm->utf8, sdk_form, true, LAST_IN_PKT), 8);
+			strncpy(hi_pi->text_prefix, get_pkt_indicator(state->utf8_enabled, sdk_form, true, LAST_IN_PKT), 8);
 			if (sdk_form) {
-				strncpy(hi_pi->text_postfix, get_pkt_indicator(rz_asm->utf8, sdk_form, false, LAST_IN_PKT), 8);
+				strncpy(hi_pi->text_postfix, get_pkt_indicator(state->utf8_enabled, sdk_form, false, LAST_IN_PKT), 8);
 			}
 
 			switch (hex_get_loop_flag(pkt)) {
 			default:
 				break;
 			case HEX_LOOP_01:
-				strncat(hi_pi->text_postfix, get_pkt_indicator(rz_asm->utf8, sdk_form, false, ELOOP_01_PKT), 23 - strlen(hi_pi->text_postfix));
+				strncat(hi_pi->text_postfix, get_pkt_indicator(state->utf8_enabled, sdk_form, false, ELOOP_01_PKT), 23 - strlen(hi_pi->text_postfix));
 				break;
 			case HEX_LOOP_0:
-				strncat(hi_pi->text_postfix, get_pkt_indicator(rz_asm->utf8, sdk_form, false, ELOOP_0_PKT), 23 - strlen(hi_pi->text_postfix));
+				strncat(hi_pi->text_postfix, get_pkt_indicator(state->utf8_enabled, sdk_form, false, ELOOP_0_PKT), 23 - strlen(hi_pi->text_postfix));
 				break;
 			case HEX_LOOP_1:
-				strncat(hi_pi->text_postfix, get_pkt_indicator(rz_asm->utf8, sdk_form, false, ELOOP_1_PKT), 23 - strlen(hi_pi->text_postfix));
+				strncat(hi_pi->text_postfix, get_pkt_indicator(state->utf8_enabled, sdk_form, false, ELOOP_1_PKT), 23 - strlen(hi_pi->text_postfix));
 				break;
 			}
 		} else {
@@ -573,7 +588,7 @@ static void hex_set_pkt_info(const RzAsm *rz_asm, RZ_INOUT HexInsnContainer *hic
 		hi_pi->first_insn = false;
 		hi_pi->last_insn = false;
 		if (pkt->is_valid) {
-			strncpy(hi_pi->text_prefix, get_pkt_indicator(rz_asm->utf8, sdk_form, true, MID_IN_PKT), 8);
+			strncpy(hi_pi->text_prefix, get_pkt_indicator(state->utf8_enabled, sdk_form, true, MID_IN_PKT), 8);
 		} else {
 			strncpy(hi_pi->text_prefix, HEX_PKT_UNK, 8);
 		}
@@ -627,7 +642,7 @@ static void make_packet_valid(RZ_BORROW HexState *state, RZ_BORROW HexPkt *pkt) 
 	ut8 i = 0;
 	ut8 slot = 0;
 	rz_list_foreach (pkt->bin, it, hi) {
-		hex_set_pkt_info(&state->rz_asm, hi, pkt, i, true);
+		hex_set_pkt_info(hi, pkt, i, true, state);
 		if (hi->is_duplex) {
 			hi->bin.sub[0]->slot = 0;
 			hi->bin.sub[1]->slot = 1;
@@ -720,10 +735,10 @@ static HexInsnContainer *hex_add_to_pkt(HexState *state, const HexInsnContainer 
 	}
 	pkt->last_instr_present |= is_last_instr(hic->parse_bits);
 	ut32 p_l = rz_list_length(pkt->bin);
-	hex_set_pkt_info(&state->rz_asm, hic, pkt, k, false);
+	hex_set_pkt_info(hic, pkt, k, false, state);
 	if (k == 0 && p_l > 1) {
 		// Update the instruction which was previously the first one.
-		hex_set_pkt_info(&state->rz_asm, rz_list_get_n(pkt->bin, 1), pkt, 1, true);
+		hex_set_pkt_info(rz_list_get_n(pkt->bin, 1), pkt, 1, true, state);
 	}
 	pkt->last_access = rz_time_now_mono();
 	if (pkt->last_instr_present) {
@@ -755,7 +770,7 @@ static HexInsnContainer *hex_to_new_pkt(HexState *state, const HexInsnContainer 
 	new_pkt->is_valid = (pkt->is_valid || pkt->last_instr_present);
 	new_pkt->pkt_addr = hic->addr;
 	new_pkt->last_access = rz_time_now_mono();
-	hex_set_pkt_info(&state->rz_asm, hic, new_pkt, 0, false);
+	hex_set_pkt_info(hic, new_pkt, 0, false, state);
 	if (new_pkt->last_instr_present) {
 		make_next_packet_valid(state, new_pkt);
 	}
@@ -781,7 +796,7 @@ static HexInsnContainer *hex_add_to_stale_pkt(HexState *state, const HexInsnCont
 	pkt->pkt_addr = new_hic->addr;
 	// p->is_valid = true; // Setting it true also detects a lot of data as valid assembly.
 	pkt->last_access = rz_time_now_mono();
-	hex_set_pkt_info(&state->rz_asm, hic, pkt, 0, false);
+	hex_set_pkt_info(hic, pkt, 0, false, state);
 	if (pkt->last_instr_present) {
 		make_next_packet_valid(state, pkt);
 	}
@@ -1050,8 +1065,9 @@ RZ_API void hex_extend_op(HexState *state, RZ_INOUT HexOp *op, const bool set_ne
 	}
 }
 
-static void copy_asm_ana_ops(const HexState *state, RZ_BORROW HexReversedOpcode *rz_reverse, RZ_BORROW HexInsnContainer *hic) {
+static void copy_asm_ana_ops(HexState *state, RZ_BORROW HexReversedOpcode *rz_reverse, RZ_BORROW HexInsnContainer *hic) {
 	rz_return_if_fail(state && rz_reverse && hic);
+	rz_reverse->state = state;
 	switch (rz_reverse->action) {
 	default:
 		memcpy(rz_reverse->asm_op, &hic->asm_op, sizeof(RzAsmOp));
@@ -1121,6 +1137,119 @@ RZ_IPI void hexagon_pkt_mark_tail_calls(HexPkt *pkt) {
 	hic->ana_op.type = RZ_ANALYSIS_OP_TYPE_TAIL | RZ_ANALYSIS_OP_TYPE_RET;
 }
 
+static RZ_BORROW HexInsnContainer *decode_hic(HexState *state, HexReversedOpcode *rz_reverse, RZ_BORROW RzBuffer *buffer, const ut64 addr) {
+	ut8 tmp[HEX_INSN_SIZE] = { 0 };
+	ut32 bytes = rz_buf_read(buffer, tmp, 4);
+	if (bytes != HEX_INSN_SIZE) {
+		RZ_LOG_DEBUG("Failed to read from buffer!\n");
+		return NULL;
+	}
+	ut32 data = rz_read_le32(tmp);
+	ut8 parse_bits = HEX_PARSE_BITS_FROM_UT32(data);
+	HexInsnContainer hic_new = { 0 };
+	setup_new_hic(&hic_new, rz_reverse, addr, parse_bits, data);
+
+	// Add to state as not yet fully decoded packet.
+	HexInsnContainer *hic = hex_add_hic_to_state(state, &hic_new);
+	if (!hic) {
+		RZ_LOG_ERROR("Could not add incsturction container to state.\n");
+		return NULL;
+	}
+	HexPkt *p = hex_get_pkt(state, hic->addr);
+
+	// Do disassembly and analysis
+	hexagon_disasm_instruction(state, data, hic, p);
+	return hic;
+}
+
+/**
+ * \brief Returns the address at which the decoding must start to get a valid packet at \p addr.
+ * The \p buffer seek is set to the position to start reading from.
+ *
+ * \param buffer The buffer to search in and update its seek.
+ * \param addr The address to start searching for the pre-decoding start.
+ *
+ * \return The address to start decoding. It always returns an address <= \p addr
+ * and with an offset with an multiple of HEX_INSN_SIZE.
+ */
+static ut64 get_pre_decoding_start(RZ_BORROW RzBuffer *buffer, ut64 addr) {
+	rz_return_val_if_fail(buffer, addr);
+	if (addr < HEX_INSN_SIZE) {
+		return addr;
+	}
+
+	size_t seek = rz_buf_tell(buffer);
+	size_t look_back = 0;
+	bool is_last_insn = false;
+	// Search until we cross a boundary or have found a last instruction.
+	while (addr >= HEX_INSN_SIZE && seek >= HEX_INSN_SIZE && look_back < 4 && !is_last_insn) {
+		seek = rz_buf_seek(buffer, -HEX_INSN_SIZE, RZ_BUF_CUR);
+		addr -= HEX_INSN_SIZE;
+		look_back++;
+		ut8 tmp[HEX_INSN_SIZE] = { 0 };
+		ut32 bytes = rz_buf_read(buffer, tmp, 4);
+		if (bytes != HEX_INSN_SIZE) {
+			return addr;
+		}
+		ut32 data = rz_read_le32(tmp);
+		is_last_insn = is_last_instr(HEX_PARSE_BITS_FROM_UT32(data));
+	}
+
+	return addr;
+}
+
+/**
+ * \brief Performs pointer passing hacks to set up the \p buffer and assign RzAsm::plugin_data to \p state.
+ * It will take either a valid RzAsm OR RzAnalysis pointer. It assumes that RzCore and RzAsm is initialized.
+ *
+ * If RzAnlysis is initialized and set in the current RzCore object, it will initialize the \p buffer with RzAnalysis::iob.
+ * If no RzAnalysis object is initialized, it sets up the \p buffer with the bytes given via \p rz_reverse.
+ *
+ * This function guarantees to set \p state, \p buffer and \p rz_asm to valid objects.
+ *
+ * This function does not return any status. It will do only asserts because every failure is critical and means memory miss-alignment.
+ */
+static void perform_hacks(RZ_NONNULL HexState **state,
+	RZ_NONNULL RzBuffer **buffer,
+	RZ_NONNULL RzAsm **rz_asm,
+	RZ_NONNULL RzAnalysis **rz_analysis,
+	RZ_NONNULL HexReversedOpcode *rz_reverse) {
+	if (*rz_analysis) {
+		*rz_asm = rz_analysis_to_rz_asm(*rz_analysis);
+		assert(*rz_asm && (*rz_asm)->cur && (*rz_analysis)->cur && RZ_STR_EQ((*rz_asm)->cur->arch, (*rz_analysis)->cur->arch));
+	} else if (*rz_asm) {
+		*rz_analysis = rz_asm_to_rz_analysis(*rz_asm);
+		if (*rz_analysis && (*rz_analysis)->cur) {
+			assert(RZ_STR_EQ((*rz_asm)->cur->arch, (*rz_analysis)->cur->arch));
+		}
+	} else {
+		assert(0 && "Requires either RzAsm or RzAnalysis");
+	}
+
+	// Set Buffer
+	if (!((*rz_analysis) && (*rz_analysis)->cur)) {
+		// Only RzAsm present (rz-test, rz-asm etc.). So also likely a test situation without IO.
+		*buffer = rz_buf_new_with_bytes(rz_reverse->bytes_buf, rz_reverse->bytes_buf_len);
+		assert(*buffer);
+	} else {
+		*buffer = rz_buf_new_with_io(&(*rz_analysis)->iob);
+		assert(*buffer);
+	}
+	*state = (*rz_asm)->plugin_data;
+	assert(*state);
+	(*state)->utf8_enabled = (*rz_asm)->utf8;
+	rz_reverse->state = *state;
+	return;
+}
+
+static inline bool do_decoding_loop(ut64 current_addr, ut64 requested_addr, const HexInsnContainer *prev_hic) {
+	// Loop as long as:
+	// - pre_addr < requested_addr: pre_decoding hasn't finished.
+	// - We have not seen a last instruction of a packet (max. check +4 insn after address).
+	return (current_addr <= requested_addr) ||
+		(prev_hic && ((current_addr < (requested_addr + (HEX_INSN_SIZE * HEX_MAX_INSN_PER_PKT))) && !prev_hic->pkt_info.last_insn));
+}
+
 /**
  * \brief Reverses a given opcode and copies the result into one of the rizin structs in rz_reverse
  * if \p copy_result is set.
@@ -1130,50 +1259,60 @@ RZ_IPI void hexagon_pkt_mark_tail_calls(HexPkt *pkt) {
  * \param addr The address of the current opcode.
  * \param copy_result If set, it copies the result. Otherwise it only buffers it in the internal state.
  */
-RZ_API void hexagon_reverse_opcode(const RzAsm *rz_asm, HexReversedOpcode *rz_reverse, const ut8 *buf, const ut64 addr, const bool copy_result) {
-	HexState *state = hexagon_state(false);
-	if (!state) {
-		RZ_LOG_FATAL("HexState was NULL.");
-		return;
-	}
-	if (rz_asm) {
-		memcpy(&state->rz_asm, rz_asm, sizeof(RzAsm));
-	}
-	HexInsnContainer *hic = hex_get_hic_at_addr(state, addr);
-	if (hic && !is_invalid_insn_data(hic->bytes)) {
-		// Code was already reversed and is still in the state. Copy the result and return.
-		//
-		// We never return buffered instructions of 0x00000000 and 0xffffffff.
-		// Because Rizin's IO layer is not a transparent view into the binary.
-		// Sometimes it passes a buffer for address `a` of size `n`, which has only
-		// `m` bytes of actual binary data set (where `m < n`).
-		// Although, there are still valid instructions bytes at `a + m` in the
-		// actual binary. So the IO layer only passes a certain window of `n - m` valid bytes
-		// and sets the rest to `0x0` or `0xff`.
-		// So previously we might have disassembled and buffered those invalid bytes
-		// at `a + m`. Although in the actual binary there are valid
-		// instructions at this address.
-		if (copy_result) {
-			copy_asm_ana_ops(state, rz_reverse, hic);
-		}
+RZ_API void hexagon_reverse_opcode(HexReversedOpcode *rz_reverse, const ut64 addr, RzAsm *rz_asm, RzAnalysis *rz_analysis) {
+	rz_return_if_fail(rz_reverse);
+	HexState *state;
+	RzBuffer *buffer;
+	perform_hacks(&state, &buffer, &rz_asm, &rz_analysis, rz_reverse);
+
+	// Seek to initial position for IO buffers.
+	// Only for IO buffers an address is a valid seek.
+	// For bytes buffers (e.g. given in case of `rz-asm`) the address is not a valid seek, but distinct.
+	if (buffer->type == RZ_BUFFER_IO && rz_buf_seek(buffer, addr, RZ_BUF_SET) != addr) {
+		RZ_LOG_DEBUG("Could not seek to address: 0x%" PFMT64x ". Attempting to read out of mapped memory region?\n", addr);
 		return;
 	}
 
-	ut32 data = rz_read_le32(buf);
-	ut8 parse_bits = (data & HEX_PARSE_BITS_MASK) >> 14;
-	HexInsnContainer hic_new = { 0 };
-	setup_new_hic(&hic_new, rz_reverse, addr, parse_bits, data);
-	// Add to state
-	hic = hex_add_hic_to_state(state, &hic_new);
+	ut64 current_addr = get_pre_decoding_start(buffer, addr);
+
+	HexInsnContainer *hic = NULL;
+	// Do pre- and post-decoding to know the context.
+	while (do_decoding_loop(current_addr, addr, hic)) {
+		if (hex_get_hic_at_addr(state, current_addr)) {
+			// Already decoded and still in buffer.
+			rz_buf_seek(buffer, HEX_INSN_SIZE, RZ_BUF_CUR);
+			current_addr += HEX_INSN_SIZE;
+			continue;
+		}
+		hic = decode_hic(state, rz_reverse, buffer, current_addr);
+		if (rz_buf_tell(buffer) == current_addr + HEX_INSN_SIZE) {
+			// Update current_addr only if it read successful.
+			current_addr += HEX_INSN_SIZE;
+		}
+		if (!hic) {
+			break;
+		}
+	}
+
+	if (current_addr > addr) {
+		// Go back to bytes of the actual instruction.
+		rz_buf_seek(buffer, -(current_addr - addr), RZ_BUF_CUR);
+	}
+
+	hic = hex_get_hic_at_addr(state, addr);
 	if (!hic) {
+		// Should have been decoded before. Maybe a race condition
+		// if the same RzCore is used by several threads via a plugin and
+		// the hic was already pushed out of the buffer by other decodings.
+		hic = decode_hic(state, rz_reverse, buffer, addr);
+	}
+	if (!hic) {
+		RZ_LOG_DEBUG("Could not decode packet.\n");
+		rz_buf_free(buffer);
 		return;
 	}
 	HexPkt *p = hex_get_pkt(state, hic->addr);
-
-	// Do disassembly and analysis
-	hexagon_disasm_instruction(state, data, hic, p);
-
-	if (copy_result) {
-		copy_asm_ana_ops(state, rz_reverse, hic);
-	}
+	rz_reverse->pkt_fully_decoded = p && p->is_valid;
+	copy_asm_ana_ops(state, rz_reverse, hic);
+	rz_buf_free(buffer);
 }

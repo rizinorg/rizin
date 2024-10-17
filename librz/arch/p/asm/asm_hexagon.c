@@ -116,10 +116,7 @@ static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns() {
  */
 static bool hex_cfg_set(void *user, void *data) {
 	rz_return_val_if_fail(user && data, false);
-	HexState *state = hexagon_state(false);
-	if (!state) {
-		return false;
-	}
+	HexState *state = user;
 	RzConfig *pcfg = state->cfg;
 
 	RzConfigNode *cnode = (RzConfigNode *)data; // Config node from core.
@@ -129,30 +126,21 @@ static bool hex_cfg_set(void *user, void *data) {
 	}
 	if (cnode) {
 		pnode->i_value = cnode->i_value;
+		free(pnode->value);
 		pnode->value = rz_str_dup(cnode->value);
 		return true;
 	}
 	return false;
 }
 
-RZ_IPI void hexagon_state_fini(HexState *state) {
-	if (!state) {
-		return;
-	}
-	rz_config_free(state->cfg);
-	rz_pvector_free(state->token_patterns);
-	rz_list_free(state->const_ext_l);
-	return;
-}
-
 static bool hexagon_fini(void *user) {
-	hexagon_state_fini(hexagon_state(false));
-	hexagon_state(true);
+	hexagon_state_fini(user);
+	free(user);
 	return true;
 }
 
-static bool hexagon_init(void **user) {
-	HexState *state = hexagon_state(false);
+static bool hexagon_init(void **plugin_data) {
+	HexState *state = hexagon_state_new();
 	rz_return_val_if_fail(state, false);
 
 	state->cfg = rz_config_new(state);
@@ -170,13 +158,14 @@ static bool hexagon_init(void **user) {
 	}
 	rz_asm_compile_token_patterns(state->token_patterns);
 
+	*plugin_data = state;
 	return true;
 }
 
-RZ_API RZ_BORROW RzConfig *hexagon_get_config() {
-	HexState *state = hexagon_state(false);
-	rz_return_val_if_fail(state, NULL);
-	return state->cfg;
+RZ_API RZ_OWN RzConfig *hexagon_get_config(void *plugin_data) {
+	rz_return_val_if_fail(plugin_data, NULL);
+	HexState *state = plugin_data;
+	return rz_config_clone(state->cfg);
 }
 
 /**
@@ -189,27 +178,14 @@ RZ_API RZ_BORROW RzConfig *hexagon_get_config() {
  * \return int Size of the reversed opcode.
  */
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int l) {
-	rz_return_val_if_fail(a && op && buf, -1);
+	rz_return_val_if_fail(a && op, -1);
 	if (l < HEX_INSN_SIZE) {
 		return -1;
 	}
-	ut32 addr = (ut32)a->pc;
-	// Disassemble as many instructions as possible from the buffer.
-	ut32 buf_offset = 0;
-	while (buf_offset + HEX_INSN_SIZE <= l && buf_offset <= HEX_INSN_SIZE * HEX_MAX_INSN_PER_PKT) {
-		const ut32 buf_ptr = rz_read_at_le32(buf, buf_offset);
-		if (buf_offset > 0 && (buf_ptr == HEX_INVALID_INSN_0 || buf_ptr == HEX_INVALID_INSN_F)) {
-			// Do not disassemble invalid instructions, if we already have a valid one.
-			break;
-		}
 
-		HexReversedOpcode rev = { .action = HEXAGON_DISAS, .ana_op = NULL, .asm_op = op };
-		hexagon_reverse_opcode(a, &rev, buf + buf_offset, addr + buf_offset, false);
-		buf_offset += HEX_INSN_SIZE;
-	}
-	// Copy operation actually requested.
-	HexReversedOpcode rev = { .action = HEXAGON_DISAS, .ana_op = NULL, .asm_op = op };
-	hexagon_reverse_opcode(a, &rev, buf, addr, true);
+	ut32 addr = (ut32)a->pc;
+	HexReversedOpcode rev = { .action = HEXAGON_DISAS, .ana_op = NULL, .asm_op = op, .state = NULL, .pkt_fully_decoded = false, .bytes_buf = buf, .bytes_buf_len = l };
+	hexagon_reverse_opcode(&rev, addr, a, NULL);
 	return HEX_INSN_SIZE;
 }
 

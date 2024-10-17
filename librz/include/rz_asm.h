@@ -95,13 +95,17 @@ typedef struct {
 
 #define _RzAsmPlugin struct rz_asm_plugin_t
 typedef struct rz_asm_t {
+	void *core;
+	ut8 ptr_alignment_I;
+	void *plugin_data;
+	ut8 ptr_alignment_II;
+	// NOTE: Do not change the order of fields above!
+	// They are used in pointer passing hacks in rz_types.h.
 	char *cpu;
 	int bits;
 	int big_endian;
 	int syntax;
 	ut64 pc;
-	void *core;
-	void *plugin_data;
 	_RzAsmPlugin *cur;
 	_RzAsmPlugin *acur;
 	RzList /*<RzAsmPlugin *>*/ *plugins;
@@ -140,7 +144,7 @@ typedef struct rz_asm_plugin_t {
 	int (*disassemble)(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len);
 	int (*assemble)(RzAsm *a, RzAsmOp *op, const char *buf);
 	char *(*mnemonics)(RzAsm *a, int id, bool json);
-	RzConfig *(*get_config)(void);
+	RZ_OWN RzConfig *(*get_config)(void *plugin_data);
 	const char *features;
 	const char *platforms;
 } RzAsmPlugin;

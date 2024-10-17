@@ -266,9 +266,9 @@ typedef struct {
 	bool just_init; ///< Flag indicates if IL VM was just initialized.
 	HexPkt pkts[HEXAGON_STATE_PKTS]; // buffered instructions
 	RzList /*<HexConstExt *>*/ *const_ext_l; // Constant extender values.
-	RzAsm rz_asm; // Copy of RzAsm struct. Holds certain flags of interesed for disassembly formatting.
 	RzConfig *cfg;
 	RzPVector /*<RzAsmTokenPattern *>*/ *token_patterns; ///< PVector with token patterns. Priority ordered.
+	bool utf8_enabled; ///< If set, print UTF-8 characters.
 } HexState;
 
 /**
@@ -833,7 +833,7 @@ const char *hex_get_sys_regs(int reg_num, bool get_alias, bool get_new, bool reg
 const char *hex_get_sys_regs64(int reg_num, bool get_alias, bool get_new, bool reg_num_is_enum);
 RZ_API const char *hex_get_reg_in_class(HexRegClass cls, int reg_num, bool get_alias, bool get_new, bool reg_num_is_enum);
 
-RZ_API RZ_BORROW RzConfig *hexagon_get_config();
+RZ_API RZ_OWN RzConfig *hexagon_get_config(void *plugin_data);
 RZ_API void hex_extend_op(HexState *state, RZ_INOUT HexOp *op, const bool set_new_extender, const ut32 addr);
 int resolve_n_register(const int reg_num, const ut32 addr, const HexPkt *p);
 int hexagon_disasm_instruction(HexState *state, const ut32 hi_u32, RZ_INOUT HexInsnContainer *hi, HexPkt *pkt);

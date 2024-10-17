@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_config.h>
+#include <rz_util/ht_sp.h>
 #include <rz_util/rz_regex.h>
 #include <rz_vector.h>
 #include <rz_core.h>
@@ -1506,6 +1508,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->cmdremote = 0;
 	core->incomment = false;
 	core->config = NULL;
+	core->plugin_configs = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_config_free);
 	core->http_up = false;
 	ZERO_FILL(core->root_cmd_descriptor);
 	core->print = rz_print_new();

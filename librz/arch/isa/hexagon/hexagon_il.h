@@ -56,7 +56,7 @@ static const ut64 hex_ctr_immut_masks[32] = {
 };
 
 RZ_IPI bool hex_shuffle_insns(RZ_INOUT HexPkt *p);
-RZ_IPI RzILOpEffect *hex_get_il_op(const ut32 addr, const bool get_pkt_op);
+RZ_IPI RZ_OWN RzILOpEffect *hex_get_il_op(const ut32 addr, const bool get_pkt_op, RZ_NONNULL HexState *state);
 RZ_IPI RZ_OWN RzILOpPure *hex_get_rf_property_val(const HexRegFieldProperty property, const HexRegField field);
 RZ_IPI RZ_OWN RzILOpEffect *hex_get_npc(const HexPkt *pkt);
 RZ_IPI RZ_OWN RzILOpEffect *hex_il_op_jump_flag_init(HexInsnPktBundle *bundle);
@@ -65,7 +65,9 @@ RZ_IPI RZ_OWN RzILOpEffect *hex_commit_packet(HexInsnPktBundle *bundle);
 RZ_IPI RZ_OWN RzILOpEffect *hex_write_reg(RZ_BORROW HexInsnPktBundle *bundle, const HexOp *op, RzILOpPure *val);
 RZ_IPI RZ_OWN RzILOpPure *hex_read_reg(RZ_BORROW HexPkt *pkt, const HexOp *op, bool tmp_reg);
 RZ_IPI RZ_OWN RzILOpEffect *hex_cancel_slot(RZ_BORROW HexPkt *pkt, ut8 slot);
-RZ_IPI void hex_reset_il_pkt_stats(HexILExecData *stats);
+RZ_IPI void hex_il_pkt_stats_reset(HexILExecData *stats);
+RZ_IPI void hex_il_pkt_stats_init(HexILExecData *stats);
+RZ_IPI void hex_il_pkt_stats_fini(HexILExecData *stats);
 RzILOpPure *hex_get_corresponding_cs(RZ_BORROW HexPkt *pkt, const HexOp *Mu);
 RzILOpEffect *hex_il_op_a2_abs(HexInsnPktBundle *bundle);
 RzILOpEffect *hex_il_op_a2_absp(HexInsnPktBundle *bundle);

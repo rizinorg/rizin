@@ -532,22 +532,22 @@ static bool test_rz_colorize_generic_4(void) {
 }
 
 static bool test_rz_colorize_custom_hexagon_0(void) {
-	RzAnalysis *a = setup_hexagon_analysis();
 	RzAsm *d = setup_hexagon_asm();
-	ut32 pc = hexagon_set_next_pc(d);
+	struct dummy_rz_core_t core = { 0 };
+	core.rasm = d;
+	d->core = &core;
 
 	RzPrint *p = setup_print();
 	RzAsmOp *asmop = rz_asm_op_new();
 	RzAnalysisOp *anaop = rz_analysis_op_new();
-	// "\   if (P0.new) jump:nt 0x18
+	// "?   if (P0.new) jump:nt 0x18
 	ut8 buf[] = "\x08\xe8\x00\x5c";
 
 	rz_asm_disassemble(d, asmop, buf, sizeof(buf));
-	rz_analysis_op(a, anaop, pc, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_ALL);
 
 	RzStrBuf *colored_asm = rz_print_colorize_asm_str(p, asmop->asm_toks);
 
-	RzStrBuf *expected = rz_strbuf_new("\x1b[90m\\\x1b[0m\x1b[37m   \x1b[0m\x1b[32mif\x1b[0m\x1b[37m \x1b[0m\x1b[37m(\x1b[0m\x1b[36mP0\x1b[0m\x1b[90m.new\x1b[0m\x1b[37m)\x1b[0m\x1b[37m \x1b[0m\x1b[32mjump\x1b[0m\x1b[90m:nt\x1b[0m\x1b[37m \x1b[0m\x1b[33m0x218\x1b[0m");
+	RzStrBuf *expected = rz_strbuf_new("\x1b[90m?\x1b[0m\x1b[37m   \x1b[0m\x1b[32mif\x1b[0m\x1b[37m \x1b[0m\x1b[37m(\x1b[0m\x1b[36mP0\x1b[0m\x1b[90m.new\x1b[0m\x1b[37m)\x1b[0m\x1b[37m \x1b[0m\x1b[32mjump\x1b[0m\x1b[90m:nt\x1b[0m\x1b[37m \x1b[0m\x1b[33m0x210\x1b[0m");
 	char err_msg[2048];
 	snprintf(err_msg, sizeof(err_msg), "Colors of \"%s\" are incorrect. Should be \"%s\"\n.", rz_strbuf_get(colored_asm), rz_strbuf_get(expected));
 	mu_assert_true(rz_strbuf_equals(colored_asm, expected), err_msg);
@@ -562,28 +562,26 @@ static bool test_rz_colorize_custom_hexagon_0(void) {
 }
 
 static bool test_rz_colorize_custom_hexagon_1(void) {
-	RzAnalysis *a = setup_hexagon_analysis();
 	RzAsm *d = setup_hexagon_asm();
-	ut32 pc = hexagon_set_next_pc(d);
+	struct dummy_rz_core_t core = { 0 };
+	core.rasm = d;
+	d->core = &core;
 
 	RzPrint *p = setup_print();
 	RzAsmOp *asmop = rz_asm_op_new();
-	RzAnalysisOp *anaop = rz_analysis_op_new();
 	// "[   LR:FP = dealloc_return(FP):raw" 1ec01e96
 	ut8 buf[] = "\x1e\xc0\x1e\x96";
 
 	rz_asm_disassemble(d, asmop, buf, sizeof(buf));
-	rz_analysis_op(a, anaop, pc, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_ALL);
 
 	RzStrBuf *colored_asm = rz_print_colorize_asm_str(p, asmop->asm_toks);
 
-	RzStrBuf *expected = rz_strbuf_new("\x1b[90m[\x1b[0m\x1b[37m   \x1b[0m\x1b[36mLR\x1b[0m\x1b[37m:\x1b[0m\x1b[36mFP\x1b[0m\x1b[37m \x1b[0m\x1b[37m=\x1b[0m\x1b[37m \x1b[0m\x1b[31mdealloc_return\x1b[0m\x1b[37m(\x1b[0m\x1b[36mFP\x1b[0m\x1b[37m)\x1b[0m\x1b[90m:raw\x1b[0m");
+	RzStrBuf *expected = rz_strbuf_new("\x1b[90m?\x1b[0m\x1b[37m   \x1b[0m\x1b[36mLR\x1b[0m\x1b[37m:\x1b[0m\x1b[36mFP\x1b[0m\x1b[37m \x1b[0m\x1b[37m=\x1b[0m\x1b[37m \x1b[0m\x1b[31mdealloc_return\x1b[0m\x1b[37m(\x1b[0m\x1b[36mFP\x1b[0m\x1b[37m)\x1b[0m\x1b[90m:raw\x1b[0m");
 	char err_msg[2048];
 	snprintf(err_msg, sizeof(err_msg), "Colors of \"%s\" are incorrect. Should be \"%s\"\n.", rz_strbuf_get(colored_asm), rz_strbuf_get(expected));
 	mu_assert_true(rz_strbuf_equals(colored_asm, expected), err_msg);
 
 	rz_asm_op_fini(asmop);
-	rz_analysis_op_free(anaop);
 	rz_cons_context_free(p->cons->context);
 	rz_print_free(p);
 	rz_strbuf_free(expected);
@@ -592,13 +590,14 @@ static bool test_rz_colorize_custom_hexagon_1(void) {
 }
 
 static bool test_rz_colorize_custom_hexagon_2(void) {
-	RzAnalysis *a = setup_hexagon_analysis();
 	RzAsm *d = setup_hexagon_asm();
 	d->utf8 = true;
+	struct dummy_rz_core_t core = { 0 };
+	core.rasm = d;
+	d->core = &core;
 
 	RzPrint *p = setup_print();
 	RzAsmOp *asmop;
-	RzAnalysisOp *anaop;
 	RzStrBuf *colored_asm;
 	RzStrBuf *expected;
 	char err_msg[2048];
@@ -609,7 +608,7 @@ static bool test_rz_colorize_custom_hexagon_2(void) {
 	// └   memd(R0++#0x8) = R7:6     ∎ endloop0
 	ut8 buf[] = "\x08\xd2\xc0\xab\x46\x8c\x0a\xc2\x20\x40\x84\x75\x2a\x40\xc1\x9b\x08\xc6\xc0\xab";
 	const char *expected_str[] = {
-		"\x1b[90m[\x1b[0m\x1b[37m   \x1b[0m\x1b[37mmemd\x1b[0m\x1b[37m(\x1b[0m\x1b[36mR0\x1b[0m\x1b[37m++\x1b[0m\x1b[90m#\x1b[0m\x1b[33m0x8\x1b[0m\x1b[37m)\x1b[0m\x1b[37m \x1b[0m\x1b[37m=\x1b[0m\x1b[37m \x1b[0m\x1b[36mR19:18\x1b[0m",
+		"\x1b[90m?\x1b[0m\x1b[37m   \x1b[0m\x1b[37mmemd\x1b[0m\x1b[37m(\x1b[0m\x1b[36mR0\x1b[0m\x1b[37m++\x1b[0m\x1b[90m#\x1b[0m\x1b[33m0x8\x1b[0m\x1b[37m)\x1b[0m\x1b[37m \x1b[0m\x1b[37m=\x1b[0m\x1b[37m \x1b[0m\x1b[36mR19:18\x1b[0m",
 		"\x1b[90m┌\x1b[0m\x1b[37m   \x1b[0m\x1b[36mR7:6\x1b[0m\x1b[37m \x1b[0m\x1b[37m=\x1b[0m\x1b[37m \x1b[0m\x1b[37mvalignb\x1b[0m\x1b[37m(\x1b[0m\x1b[36mR13:12\x1b[0m\x1b[37m,\x1b[0m\x1b[36mR11:10\x1b[0m\x1b[37m,\x1b[0m\x1b[36mP2\x1b[0m\x1b[37m)\x1b[0m",
 		"\x1b[90m│\x1b[0m\x1b[37m   \x1b[0m\x1b[36mP0\x1b[0m\x1b[37m \x1b[0m\x1b[37m=\x1b[0m\x1b[37m \x1b[0m\x1b[37mcmp\x1b[0m\x1b[37m.\x1b[0m\x1b[37mgtu\x1b[0m\x1b[37m(\x1b[0m\x1b[36mR4\x1b[0m\x1b[37m,\x1b[0m\x1b[90m##\x1b[0m\x1b[33m0x1\x1b[0m\x1b[37m)\x1b[0m",
 		"\x1b[90m│\x1b[0m\x1b[37m   \x1b[0m\x1b[36mR11:10\x1b[0m\x1b[37m \x1b[0m\x1b[37m=\x1b[0m\x1b[37m \x1b[0m\x1b[37mmemd\x1b[0m\x1b[37m(\x1b[0m\x1b[36mR1\x1b[0m\x1b[37m++\x1b[0m\x1b[90m#\x1b[0m\x1b[33m0x8\x1b[0m\x1b[37m)\x1b[0m",
@@ -617,11 +616,9 @@ static bool test_rz_colorize_custom_hexagon_2(void) {
 	};
 
 	for (int i = 0; i < 0x14; i += 4) {
-		ut32 pc = hexagon_set_next_pc(d);
 		asmop = rz_asm_op_new();
-		anaop = rz_analysis_op_new();
+		rz_asm_set_pc(d, i);
 		rz_asm_disassemble(d, asmop, buf + i, 4);
-		rz_analysis_op(a, anaop, pc, buf + i, 4, RZ_ANALYSIS_OP_MASK_ALL);
 		colored_asm = rz_print_colorize_asm_str(p, asmop->asm_toks);
 		expected = rz_strbuf_new(expected_str[i / 4]);
 		snprintf(err_msg, sizeof(err_msg), "Colors of \"%s\" are incorrect. Should be \"%s\"\n.", rz_strbuf_get(colored_asm), rz_strbuf_get(expected));
@@ -631,38 +628,44 @@ static bool test_rz_colorize_custom_hexagon_2(void) {
 	}
 
 	rz_asm_op_fini(asmop);
-	rz_analysis_op_free(anaop);
 	rz_cons_context_free(p->cons->context);
 	rz_print_free(p);
 	mu_end;
 }
 
 static bool test_rz_colorize_custom_hexagon_3(void) {
-	RzAnalysis *a = setup_hexagon_analysis();
 	RzAsm *d = setup_hexagon_asm();
 	d->utf8 = true;
+	struct dummy_rz_core_t core = { 0 };
+	core.rasm = d;
+	d->core = &core;
 
 	RzPrint *p = setup_print();
 	RzAsmOp *asmop;
-	RzAnalysisOp *anaop;
 	RzStrBuf *colored_asm;
 	RzStrBuf *expected;
 	char err_msg[2048];
+	// {
+	// 	r25 = convert_df2w(r1:0):chop
+	// 	if (!p1) jump:nt 0x24
+	// }
+	// {
+	// 	r3:2 = convert_w2df(r25)
+	// 	r4 = p1
+	// }
 	ut8 buf[] = "\x39\x40\xe0\x88\x12\xc1\x20\x5c\x42\x40\x99\x84\x04\xc0\x41\x89";
 	const char *expected_str[] = {
-		"\x1b[90m┌\x1b[0m\x1b[37m   \x1b[0m\x1b[36mR25\x1b[0m\x1b[37m \x1b[0m\x1b[37m=\x1b[0m\x1b[37m \x1b[0m\x1b[37mconvert_df2w\x1b[0m\x1b[37m(\x1b[0m\x1b[36mR1:0\x1b[0m\x1b[37m)\x1b[0m\x1b[37m:\x1b[0m\x1b[37mchop\x1b[0m",
-		"\x1b[90m└\x1b[0m\x1b[37m   \x1b[0m\x1b[32mif\x1b[0m\x1b[37m \x1b[0m\x1b[37m(\x1b[0m\x1b[37m!\x1b[0m\x1b[36mP1\x1b[0m\x1b[37m)\x1b[0m\x1b[37m \x1b[0m\x1b[32mjump\x1b[0m\x1b[90m:nt\x1b[0m\x1b[37m \x1b[0m\x1b[33m0x4c\x1b[0m",
+		"\x1b[90m?\x1b[0m\x1b[37m   \x1b[0m\x1b[36mR25\x1b[0m\x1b[37m \x1b[0m\x1b[37m=\x1b[0m\x1b[37m \x1b[0m\x1b[37mconvert_df2w\x1b[0m\x1b[37m(\x1b[0m\x1b[36mR1:0\x1b[0m\x1b[37m)\x1b[0m\x1b[37m:\x1b[0m\x1b[37mchop\x1b[0m",
+		"\x1b[90m?\x1b[0m\x1b[37m   \x1b[0m\x1b[32mif\x1b[0m\x1b[37m \x1b[0m\x1b[37m(\x1b[0m\x1b[37m!\x1b[0m\x1b[36mP1\x1b[0m\x1b[37m)\x1b[0m\x1b[37m \x1b[0m\x1b[32mjump\x1b[0m\x1b[90m:nt\x1b[0m\x1b[37m \x1b[0m\x1b[33m0x24\x1b[0m",
 		"\x1b[90m┌\x1b[0m\x1b[37m   \x1b[0m\x1b[36mR3:2\x1b[0m\x1b[37m \x1b[0m\x1b[37m=\x1b[0m\x1b[37m \x1b[0m\x1b[37mconvert_W2df\x1b[0m\x1b[37m(\x1b[0m\x1b[36mR25\x1b[0m\x1b[37m)\x1b[0m",
 		"\x1b[90m└\x1b[0m\x1b[37m   \x1b[0m\x1b[36mR4\x1b[0m\x1b[37m \x1b[0m\x1b[37m=\x1b[0m\x1b[37m \x1b[0m\x1b[36mP1\x1b[0m",
 
 	};
 
 	for (int i = 0; i < 0x10; i += 4) {
-		ut32 pc = hexagon_set_next_pc(d);
 		asmop = rz_asm_op_new();
-		anaop = rz_analysis_op_new();
+		rz_asm_set_pc(d, i);
 		rz_asm_disassemble(d, asmop, buf + i, 4);
-		rz_analysis_op(a, anaop, pc, buf + i, 4, RZ_ANALYSIS_OP_MASK_ALL);
 
 		colored_asm = rz_print_colorize_asm_str(p, asmop->asm_toks);
 		expected = rz_strbuf_new(expected_str[i / 4]);
@@ -673,7 +676,6 @@ static bool test_rz_colorize_custom_hexagon_3(void) {
 	}
 
 	rz_asm_op_fini(asmop);
-	rz_analysis_op_free(anaop);
 	rz_cons_context_free(p->cons->context);
 	rz_print_free(p);
 	mu_end;

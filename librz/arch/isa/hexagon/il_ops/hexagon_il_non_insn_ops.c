@@ -945,7 +945,7 @@ RZ_IPI RZ_OWN RzILOpEffect *hex_commit_packet(HexInsnPktBundle *bundle) {
 		commit_seq = SEQ2(commit_seq, SETG(dest_reg, VARG(src_reg)));
 	}
 
-	hex_reset_il_pkt_stats(stats);
+	hex_il_pkt_stats_reset(stats);
 	return commit_seq;
 }
 
