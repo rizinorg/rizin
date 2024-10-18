@@ -294,12 +294,12 @@ static void bfm(RzAnalysisOp *op, csh *handle, cs_insn *insn) {
 	switch (insn->alias_id) {
 	default:
 		return;
-	case AArch64_INS_ALIAS_BFI: // bfi w8, w8, 2, 1
+	case AARCH64_INS_ALIAS_BFI: // bfi w8, w8, 2, 1
 		width += 1;
 		// TODO Mod depends on (sf && N) bits
 		lsb = -lsb % 32;
 		break;
-	case AArch64_INS_ALIAS_BFXIL:
+	case AARCH64_INS_ALIAS_BFXIL:
 		width = width - lsb + 1;
 		break;
 	}
@@ -314,25 +314,25 @@ static void bfm(RzAnalysisOp *op, csh *handle, cs_insn *insn) {
 static void subfm(RzAnalysisOp *op, csh *handle, cs_insn *insn) {
 	ut64 lsb = IMM64(2);
 	ut64 width = IMM64(3);
-	if (insn->alias_id == AArch64_INS_ALIAS_SBFIZ) {
+	if (insn->alias_id == AARCH64_INS_ALIAS_SBFIZ) {
 		width += 1;
 		lsb = -lsb % 64;
 		rz_strbuf_appendf(&op->esil, "%" PFMT64d ",%" PFMT64d ",%s,%" PFMT64u ",&,~,<<,%s,=",
 			lsb, IMM64(3), REG64(1), rz_num_bitmask((ut8)width), REG64(0));
-	} else if (insn->alias_id == AArch64_INS_ALIAS_UBFIZ) {
+	} else if (insn->alias_id == AARCH64_INS_ALIAS_UBFIZ) {
 		width += 1;
 		lsb = -lsb % 64;
 		rz_strbuf_appendf(&op->esil, "%" PFMT64d ",%s,%" PFMT64u ",&,<<,%s,=",
 			lsb, REG64(1), rz_num_bitmask((ut8)width), REG64(0));
-	} else if (insn->alias_id == AArch64_INS_ALIAS_SBFX) {
+	} else if (insn->alias_id == AARCH64_INS_ALIAS_SBFX) {
 		width = width - lsb + 1;
 		rz_strbuf_appendf(&op->esil, "%" PFMT64d ",%" PFMT64d ",%s,%" PFMT64d ",%" PFMT64u ",<<,&,>>,~,%s,=",
 			IMM64(3), IMM64(2), REG64(1), IMM64(2), rz_num_bitmask((ut8)IMM64(3)), REG64(0));
-	} else if (insn->alias_id == AArch64_INS_ALIAS_UBFX) {
+	} else if (insn->alias_id == AARCH64_INS_ALIAS_UBFX) {
 		width = width - lsb + 1;
 		rz_strbuf_appendf(&op->esil, "%" PFMT64d ",%s,%" PFMT64d ",%" PFMT64u ",<<,&,>>,%s,=",
 			lsb, REG64(1), lsb, rz_num_bitmask((ut8)width), REG64(0));
-	} else if (insn->alias_id == AArch64_INS_ALIAS_LSL) {
+	} else if (insn->alias_id == AARCH64_INS_ALIAS_LSL) {
 		// imms != 0x1f => mod 32
 		// imms != 0x3f => mod 64
 		ut32 m = IMM64(3) != 0x1f ? 32 : 64;
@@ -352,7 +352,7 @@ static void subfm(RzAnalysisOp *op, csh *handle, cs_insn *insn) {
 			ut64 i2 = IMM64(2) % m;
 			rz_strbuf_setf(&op->esil, "%" PFMT64d ",%s,<<,%s,=", i2 % (ut64)size, r1, r0);
 		}
-	} else if (insn->alias_id == AArch64_INS_ALIAS_LSR) {
+	} else if (insn->alias_id == AARCH64_INS_ALIAS_LSR) {
 		const char *r0 = REG64(0);
 		const char *r1 = REG64(1);
 		const int size = REGSIZE64(0) * 8;
@@ -369,7 +369,7 @@ static void subfm(RzAnalysisOp *op, csh *handle, cs_insn *insn) {
 			ut64 i2 = IMM64(2);
 			rz_strbuf_setf(&op->esil, "%" PFMT64d ",%s,>>,%s,=", i2 % (ut64)size, r1, r0);
 		}
-	} else if (insn->alias_id == AArch64_INS_ALIAS_ASR) {
+	} else if (insn->alias_id == AARCH64_INS_ALIAS_ASR) {
 		const char *r0 = REG64(0);
 		const char *r1 = REG64(1);
 		const int size = REGSIZE64(0) * 8;
@@ -883,9 +883,9 @@ RZ_IPI int rz_arm_cs_analysis_op_64_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 a
 		break;
 	}
 #if CS_NEXT_VERSION >= 6
-	case AArch64_INS_SUBS:
-		if (insn->alias_id != AArch64_INS_ALIAS_CMP &&
-			insn->alias_id != AArch64_INS_ALIAS_CMN) {
+	case AARCH64_INS_SUBS:
+		if (insn->alias_id != AARCH64_INS_ALIAS_CMP &&
+			insn->alias_id != AARCH64_INS_ALIAS_CMN) {
 			cmp(op, handle, insn);
 			break;
 		}
@@ -926,13 +926,13 @@ RZ_IPI int rz_arm_cs_analysis_op_64_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 a
 			rz_strbuf_appendf(&op->esil, "%s,}{,1,%s,+,},%s,=", REG64(1), REG64(2), REG64(0));
 			postfix = "";
 			break;
-		case AArch64_INS_ALIAS_CSET: // cset Wd --> Wd := (cond) ? 1 : 0
+		case AARCH64_INS_ALIAS_CSET: // cset Wd --> Wd := (cond) ? 1 : 0
 			rz_strbuf_drain_nofree(&op->esil);
 			rz_arm64_cs_esil_prefix_cond(op, AArch64CC_getInvertedCondCode(insn->detail->CS_aarch64_.cc));
 			rz_strbuf_appendf(&op->esil, "1,}{,0,},%s,=", REG64(0));
 			postfix = "";
 			break;
-		case AArch64_INS_ALIAS_CINC: // cinc Wd, Wn --> Wd := (cond) ? (Wn+1) : Wn
+		case AARCH64_INS_ALIAS_CINC: // cinc Wd, Wn --> Wd := (cond) ? (Wn+1) : Wn
 			rz_strbuf_drain_nofree(&op->esil);
 			rz_arm64_cs_esil_prefix_cond(op, AArch64CC_getInvertedCondCode(insn->detail->CS_aarch64_.cc));
 			rz_strbuf_appendf(&op->esil, "1,%s,+,}{,%s,},%s,=", REG64(1), REG64(1), REG64(0));
@@ -1322,11 +1322,11 @@ RZ_IPI int rz_arm_cs_analysis_op_64_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 a
 		}
 		break;
 #else
-	case AArch64_INS_BFM:
+	case AARCH64_INS_BFM:
 		bfm(op, handle, insn);
 		break;
-	case AArch64_INS_UBFM:
-	case AArch64_INS_SBFM:
+	case AARCH64_INS_UBFM:
+	case AARCH64_INS_SBFM:
 		subfm(op, handle, insn);
 		break;
 #endif

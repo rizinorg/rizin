@@ -467,6 +467,7 @@ typedef struct rz_analysis_t {
 	// NOTE: Do not change the order of fields above!
 	// They are used in pointer passing hacks in rz_types.h.
 	char *cpu; // analysis.cpu
+	char *features; // analysis.features
 	char *os; // asm.os
 	int bits; // asm.bits
 	int lineswidth; // asm.lines.width
