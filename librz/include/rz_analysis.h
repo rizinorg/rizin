@@ -1435,7 +1435,7 @@ typedef int (*RzAnalysisOpCallback)(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, 
  * \return true On successful decoding.
  * \return false One failure
  */
-typedef bool (*RzAnalysisIWordCallback)(RzAnalysis *a, RZ_OUT RzAnalysisInsnWord *iword, ut64 addr, const ut8 *buf, size_t len, size_t buf_off_iword);
+typedef bool (*RzAnalysisIWordCallback)(RzAnalysis *a, RZ_OUT RzAnalysisInsnWord *iword, ut64 addr, RzBuffer *buffer);
 
 typedef bool (*RzAnalysisRegProfCallback)(RzAnalysis *a);
 typedef char *(*RzAnalysisRegProfGetCallback)(RzAnalysis *a);

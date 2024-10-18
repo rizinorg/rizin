@@ -38,11 +38,11 @@ RZ_API int hexagon_v6_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, cons
 	return HEX_INSN_SIZE;
 }
 
-RZ_API bool rz_hexagon_decode_iword(RzAnalysis *a, RZ_OUT RzAnalysisInsnWord *iword, ut64 addr, const ut8 *buf, size_t len, size_t buf_off_iword) {
-	rz_return_val_if_fail(a && iword && buf, false);
+RZ_API bool rz_hexagon_decode_iword(RzAnalysis *a, RZ_OUT RzAnalysisInsnWord *iword, ut64 addr, RzBuffer *buffer) {
+	rz_return_val_if_fail(a && iword, false);
 
 	RzAnalysisOp aop = { 0 };
-	HexReversedOpcode rev = { .action = HEXAGON_ANALYSIS, .ana_op = &aop, .asm_op = NULL, .state = NULL, .pkt_fully_decoded = false, .bytes_buf = buf, .bytes_buf_len = len };
+	HexReversedOpcode rev = { .action = HEXAGON_ANALYSIS, .ana_op = &aop, .asm_op = NULL, .state = NULL, .pkt_fully_decoded = false, .bytes_buf = NULL, .bytes_buf_len = 0 };
 	bool success = hexagon_decode_iword(a, &rev, iword, addr);
 	if (success) {
 		iword->il_op = hex_get_il_op(addr, true, rev.state);
