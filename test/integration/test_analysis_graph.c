@@ -259,7 +259,7 @@ bool test_analysis_graph_cfg() {
 	rz_core_analysis_everything(core, false, "esil");
 	rz_core_analysis_flag_every_function(core);
 
-	RzGraph *g = rz_core_graph_cfg(core, 0x117a); // main()
+	RzGraph *g = rz_core_graph_cfg(core, 0x117a, true); // main()
 	mu_assert_notnull(g, "Graph was NULL");
 	mu_assert_eq(g->n_nodes, 24, "data graph node count");
 	mu_assert_eq(g->n_edges, 25, "data graph edge count");
@@ -275,31 +275,31 @@ bool test_analysis_graph_cfg() {
 	// (because they might have been added in different order).
 	RzGraphNodeInfo *info = rz_graph_get_node_info_data(rz_graph_get_node(g, 0)->data);
 	mu_assert_eq(info->type, RZ_GRAPH_NODE_TYPE_CFG, "info type");
-	mu_assert_eq(info->subtype, RZ_GRAPH_NODE_SUBTYPE_CFG_ENTRY, "info subtype");
+	mu_assert_eq(info->cfg.subtype, RZ_GRAPH_NODE_SUBTYPE_CFG_ENTRY, "info subtype");
 	mu_assert_eq(info->cfg.address, 0x117a, "info address");
 	mu_assert_eq(info->cfg.call_address, UT64_MAX, "info call address");
 
 	info = rz_graph_get_node_info_data(rz_graph_get_node(g, 3)->data);
 	mu_assert_eq(info->type, RZ_GRAPH_NODE_TYPE_CFG, "info type");
-	mu_assert_eq(info->subtype, RZ_GRAPH_NODE_SUBTYPE_CFG_CALL, "info subtype");
+	mu_assert_eq(info->cfg.subtype, RZ_GRAPH_NODE_SUBTYPE_CFG_CALL, "info subtype");
 	mu_assert_eq(info->cfg.address, 0x1182, "info address");
 	mu_assert_eq(info->cfg.call_address, 0x1050, "info call address");
 
 	info = rz_graph_get_node_info_data(rz_graph_get_node(g, 10)->data);
 	mu_assert_eq(info->type, RZ_GRAPH_NODE_TYPE_CFG, "info type");
-	mu_assert_eq(info->subtype, RZ_GRAPH_NODE_SUBTYPE_CFG_COND, "info subtype");
+	mu_assert_eq(info->cfg.subtype, RZ_GRAPH_NODE_SUBTYPE_CFG_COND, "info subtype");
 	mu_assert_eq(info->cfg.address, 0x11a7, "info address");
 	mu_assert_eq(info->cfg.call_address, UT64_MAX, "info call address");
 
 	info = rz_graph_get_node_info_data(rz_graph_get_node(g, 23)->data);
 	mu_assert_eq(info->type, RZ_GRAPH_NODE_TYPE_CFG, "info type");
-	mu_assert_eq(info->subtype, RZ_GRAPH_NODE_SUBTYPE_CFG_CALL, "info subtype");
+	mu_assert_eq(info->cfg.subtype, RZ_GRAPH_NODE_SUBTYPE_CFG_CALL, "info subtype");
 	mu_assert_eq(info->cfg.address, 0x11cd, "info address");
 	mu_assert_eq(info->cfg.call_address, UT64_MAX, "info call address");
 
 	info = rz_graph_get_node_info_data(rz_graph_get_node(g, 18)->data);
 	mu_assert_eq(info->type, RZ_GRAPH_NODE_TYPE_CFG, "info type");
-	mu_assert_eq(info->subtype, RZ_GRAPH_NODE_SUBTYPE_CFG_RETURN, "info subtype");
+	mu_assert_eq(info->cfg.subtype, RZ_GRAPH_NODE_SUBTYPE_CFG_RETURN, "info subtype");
 	mu_assert_eq(info->cfg.address, 0x11d3, "info address");
 	mu_assert_eq(info->cfg.call_address, UT64_MAX, "info call address");
 
