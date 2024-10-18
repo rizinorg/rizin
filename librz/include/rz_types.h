@@ -14,6 +14,10 @@
 #include <inttypes.h>
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // TODO: fix this to make it crosscompile-friendly: RZ_SYS_OSTYPE ?
 /* operating system */
 #undef __BSD__
@@ -663,5 +667,9 @@ typedef int RzRef;
 	}
 
 typedef struct rz_core_t RzCore;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // RZ_TYPES_H

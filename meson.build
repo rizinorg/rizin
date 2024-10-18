@@ -114,9 +114,9 @@ add_project_arguments(['-DRZ_PLUGIN_INCORE=1'], language: 'c')
 b_sanitize_opt = get_option('b_sanitize')
 if (b_sanitize_opt.contains('address') or b_sanitize_opt.contains('undefined')) and cc.get_id() == 'clang'
   add_project_arguments('-shared-libasan', language: 'c')
-  add_global_link_arguments('-shared-libasan', language: 'c')
+  add_project_link_arguments('-shared-libasan', language: 'c')
   add_project_arguments('-shared-libasan', language: 'c', native: true)
-  add_global_link_arguments('-shared-libasan', language: 'c', native: true)
+  add_project_link_arguments('-shared-libasan', language: 'c', native: true)
 endif
 
 fs = import('fs')
@@ -508,7 +508,7 @@ if git_exe.found() and fs.exists('.git')
     build_always_stale: true,
     build_by_default: true,
     output: 'gittip',
-    command: [py3_exe, git_exe_repo_py, git_exe, repo, 'rev-parse', 'HEAD'],
+    command: [py3_exe, git_exe_repo_py, git_exe, repo, '@OUTPUT@', 'rev-parse', 'HEAD'],
     install: true,
     install_dir: rizin_datdir_rz
   )
