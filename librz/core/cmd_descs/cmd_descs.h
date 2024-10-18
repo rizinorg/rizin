@@ -2314,6 +2314,8 @@ RZ_IPI RzCmdStatus rz_type_print_handler(RzCore *core, int argc, const char **ar
 RZ_IPI RzCmdStatus rz_type_print_value_handler(RzCore *core, int argc, const char **argv);
 // "tpx"
 RZ_IPI RzCmdStatus rz_type_print_hexstring_handler(RzCore *core, int argc, const char **argv);
+// "tr"
+RZ_IPI RzCmdStatus rz_type_rename_handler(RzCore *core, int argc, const char **argv);
 // "ts"
 RZ_IPI RzCmdStatus rz_type_list_structure_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "tsc"

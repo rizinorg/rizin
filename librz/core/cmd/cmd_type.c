@@ -284,6 +284,10 @@ RZ_IPI RzCmdStatus rz_type_del_all_handler(RzCore *core, int argc, const char **
 	return RZ_CMD_STATUS_OK;
 }
 
+RZ_IPI RzCmdStatus rz_type_rename_handler(RzCore *core, int argc, const char **argv) {
+	return bool2status(rz_type_db_rename_base_type(core->analysis->typedb, argv[1], argv[2]));
+}
+
 RZ_IPI RzCmdStatus rz_type_cc_list_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	const char *cc = argc > 1 ? argv[1] : NULL;
 	if (cc) {

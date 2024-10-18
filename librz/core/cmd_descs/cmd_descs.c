@@ -765,6 +765,7 @@ static const RzCmdDescArg type_open_sdb_args[2];
 static const RzCmdDescArg type_print_args[3];
 static const RzCmdDescArg type_print_value_args[3];
 static const RzCmdDescArg type_print_hexstring_args[3];
+static const RzCmdDescArg type_rename_args[3];
 static const RzCmdDescArg type_list_structure_args[2];
 static const RzCmdDescArg type_structure_c_args[2];
 static const RzCmdDescArg type_structure_c_nl_args[2];
@@ -16946,6 +16947,25 @@ static const RzCmdDescHelp type_print_hexstring_help = {
 	.args = type_print_hexstring_args,
 };
 
+static const RzCmdDescArg type_rename_args[] = {
+	{
+		.name = "oldname",
+		.type = RZ_CMD_ARG_TYPE_ANY_TYPE,
+
+	},
+	{
+		.name = "newname",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp type_rename_help = {
+	.summary = "Rename the type",
+	.args = type_rename_args,
+};
+
 static const RzCmdDescHelp ts_help = {
 	.summary = "List loaded structures",
 };
@@ -22547,6 +22567,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *type_print_hexstring_cd = rz_cmd_desc_argv_new(core->rcmd, tp_cd, "tpx", rz_type_print_hexstring_handler, &type_print_hexstring_help);
 	rz_warn_if_fail(type_print_hexstring_cd);
+
+	RzCmdDesc *type_rename_cd = rz_cmd_desc_argv_new(core->rcmd, t_cd, "tr", rz_type_rename_handler, &type_rename_help);
+	rz_warn_if_fail(type_rename_cd);
 
 	RzCmdDesc *ts_cd = rz_cmd_desc_group_modes_new(core->rcmd, t_cd, "ts", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_LONG, rz_type_list_structure_handler, &type_list_structure_help, &ts_help);
 	rz_warn_if_fail(ts_cd);

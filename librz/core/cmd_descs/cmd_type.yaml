@@ -227,6 +227,14 @@ commands:
             type: RZ_CMD_ARG_TYPE_ANY_TYPE
           - name: hexpairs
             type: RZ_CMD_ARG_TYPE_STRING
+  - name: tr
+    cname: type_rename
+    summary: Rename the type
+    args:
+      - name: oldname
+        type: RZ_CMD_ARG_TYPE_ANY_TYPE
+      - name: newname
+        type: RZ_CMD_ARG_TYPE_STRING
   - name: ts
     summary: List loaded structures
     subcommands:
