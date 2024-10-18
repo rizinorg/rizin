@@ -1,5 +1,5 @@
 project('libzip', 'c',
-  version: '1.9.2')
+  version: '1.10.1')
 
 py3_exe = import('python').find_installation()
 cc = meson.get_compiler('c')
@@ -328,6 +328,7 @@ zip_files = [
   'lib/zip_source_is_deleted.c',
   'lib/zip_source_layered.c',
   'lib/zip_source_open.c',
+  'lib/zip_source_pass_to_lower_layer.c',
   'lib/zip_source_pkware_decode.c',
   'lib/zip_source_pkware_encode.c',
   'lib/zip_source_read.c',
