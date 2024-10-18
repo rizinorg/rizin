@@ -30,7 +30,9 @@ RZ_API int hexagon_v6_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, cons
 
 	// Disassemble as many instructions as possible from the buffer.
 	HexReversedOpcode rev = { .action = HEXAGON_ANALYSIS, .ana_op = op, .asm_op = NULL, .state = NULL, .pkt_fully_decoded = false, .bytes_buf = buf, .bytes_buf_len = len };
-	hexagon_reverse_opcode(&rev, addr, NULL, analysis);
+	if (!hexagon_reverse_opcode(&rev, addr, NULL, analysis)) {
+		return -1;
+	}
 	if (mask & RZ_ANALYSIS_OP_MASK_IL) {
 		op->il_op = hex_get_il_op(addr, rev.pkt_fully_decoded, rev.state);
 	}

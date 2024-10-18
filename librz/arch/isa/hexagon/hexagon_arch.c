@@ -291,7 +291,7 @@ RZ_API HexPkt *hex_get_pkt(RZ_BORROW HexState *state, const ut32 addr) {
 			}
 		}
 	}
-	RZ_LOG_DEBUG("Failed to get packet at 0x%" PFMT32x, addr);
+	RZ_LOG_DEBUG("Failed to get packet at 0x%" PFMT32x "\n", addr);
 	return NULL;
 }
 
@@ -1152,7 +1152,7 @@ static RZ_BORROW HexInsnContainer *decode_hic(HexState *state, HexReversedOpcode
 	// Add to state as not yet fully decoded packet.
 	HexInsnContainer *hic = hex_add_hic_to_state(state, &hic_new);
 	if (!hic) {
-		RZ_LOG_ERROR("Could not add incsturction container to state.\n");
+		RZ_LOG_ERROR("Could not add instruction container to state.\n");
 		return NULL;
 	}
 	HexPkt *p = hex_get_pkt(state, hic->addr);
