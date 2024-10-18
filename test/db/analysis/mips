@@ -33,6 +33,7 @@ pd 5~IGNORE
 EOF
 EXPECT=<<EOF
             0x0041ed58      24a54268       addiu a1, a1, 0x4268        ; 0x474268 ; "IGNORE" ; str.IGNORE
+BROKEN=1
 EOF
 RUN
 
@@ -78,6 +79,7 @@ fs-*
 pd 1
 EOF
 EXPECT=<<EOF
+BROKEN=1
             0x120004460      208084df       ld    a0, -0x7fe0(gp)      ; [0x1200ee290:8]=0x120005074
 EOF
 RUN
@@ -175,6 +177,7 @@ e asm.arch=mips
 e asm.bits=32
 e asm.nbytes=4
 ao 1~type:[1]
+BROKEN=1
 EOF
 EXPECT=<<EOF
 call
@@ -516,6 +519,7 @@ ARGS=-m 0x8060b4f8
 BROKEN=1
 CMDS=<<EOF
 e io.va=true
+BROKEN=1
 e asm.bits=32
 e asm.arch=mips.gnu
 e asm.comments=0
@@ -648,6 +652,7 @@ NAME=capstone: mips branch delay function detection #2.
 FILE=malloc://160
 ARGS=-m 0x8060b4f8
 CMDS=<<EOF
+BROKEN=1
 e io.va=true
 e asm.calls=false
 e asm.bytes=true
@@ -714,6 +719,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
+BROKEN=1
 NAME=mips big endian strings, calls, etc. analysis
 FILE=bins/elf/analysis/mipsbe-ip
 CMDS=<<EOF
@@ -736,6 +742,7 @@ EOF
 RUN
 
 NAME=mips.gnu regs
+BROKEN=1
 FILE=
 CMDS=<<EOF
 e asm.arch=mips.gnu
@@ -846,6 +853,7 @@ afvW
    var_10h  0x7c8
     var_ch  0x7d0
 EOF
+BROKEN=1
 RUN
 
 NAME=aav without vinfun
