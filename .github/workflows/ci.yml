@@ -661,15 +661,53 @@ jobs:
 
   build-osx-pkg:
     name: Build OSX package
-    runs-on: macos-12
+    runs-on: macos-14
     if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'osx') || contains(github.head_ref, 'mac') || ((contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') && github.event_name == 'push') || github.event_name == 'schedule'
-    needs: [ build-and-test ]
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
       - name: Install pkg-config with Homebrew
         run: brew install pkg-config
       - name: Install meson and ninja
         run: pip3 install meson ninja PyYAML
+      - name: Checkout rzpipe
+        uses: actions/checkout@v4
+        with:
+          repository: rizinorg/rz-pipe
+          path: test/rz-pipe
+      - name: Install test dependencies
+        run: pip3 install --user "file://$GITHUB_WORKSPACE/test/rz-pipe#egg=rzpipe&subdirectory=python" requests
+      - name: Build with Meson
+        run: meson setup --prefix=${HOME} -Dbuildtype=release --werror build && ninja -C build
+      - name: Install with meson
+        run: ninja -C build install
+      - name: Disable user authentication for debugging
+        run: sudo security authorizationdb write system.privilege.taskport allow
+      - name: Run unit tests
+        run: meson test -C build --suite unit
+      - name: Checkout our Testsuite Binaries
+        uses: actions/checkout@v4
+        with:
+          repository: rizinorg/rizin-testbins
+          path: test/bins
+      - name: Checkout fuzz targets # TODO: this can be removed as soon as the fuzztargets repo is public
+        uses: actions/checkout@v4
+        with:
+          repository: rizinorg/rizin-fuzztargets
+          path: test/fuzz/targets
+      - name: Run integration tests and rz-test
+        run: |
+          meson test -C build --suite integration
+          cd test
+          rz-test -j `sysctl -n hw.activecpu` -L -o results.json
+      - name: Run fuzz tests
+        run: |
+          cd test
+          rz-test -LF bins/fuzzed @fuzz
+          # some fuzzed bins are mem hungry and are killed by the runner.
+          # running them one threaded allows to be check them
+          rz-test -j1 -LF bins/fuzzed-memhungry @fuzz
       - name: Install ImageMagick
         run: brew install imagemagick
       - name: Create OSX package
