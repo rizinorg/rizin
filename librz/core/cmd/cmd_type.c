@@ -780,3 +780,76 @@ RZ_IPI RzCmdStatus rz_type_xrefs_list_all_handler(RzCore *core, int argc, const 
 	types_xrefs_all(core);
 	return RZ_CMD_STATUS_OK;
 }
+
+RZ_IPI RzCmdStatus rz_type_class_show_handler(RzCore *core, int argc, const char **argv) {
+	RzBaseType *btype = rz_type_db_get_base_type(core->analysis->typedb, argv[1]);
+	if (!btype) {
+		RZ_LOG_ERROR("Cannot find \"%s\" type\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (btype->kind != RZ_BASE_TYPE_KIND_ATOMIC && btype->kind != RZ_BASE_TYPE_KIND_TYPEDEF) {
+		RZ_LOG_ERROR("\"%s\" type is not atomic or typedef\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzTypeTypeclass tclass = rz_base_type_typeclass(core->analysis->typedb, btype);
+	rz_cons_println(rz_type_typeclass_as_string(tclass));
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_type_class_set_handler(RzCore *core, int argc, const char **argv) {
+	RzBaseType *btype = rz_type_db_get_base_type(core->analysis->typedb, argv[1]);
+	if (!btype) {
+		RZ_LOG_ERROR("Cannot find \"%s\" type\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (btype->kind != RZ_BASE_TYPE_KIND_ATOMIC && btype->kind != RZ_BASE_TYPE_KIND_TYPEDEF) {
+		RZ_LOG_ERROR("\"%s\" type is not atomic\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzTypeTypeclass tclass = rz_type_typeclass_from_string(argv[2]);
+	rz_cons_println(rz_type_typeclass_as_string(tclass));
+	return RZ_CMD_STATUS_OK;
+}
+
+static void typeclass_print_all(RzCore *core, RzCmdStateOutput *state, RzTypeTypeclass typeclass) {
+	const char *tclassname = rz_type_typeclass_as_string(typeclass);
+	RzList *btypes = rz_type_typeclass_get_all(core->analysis->typedb, typeclass);
+	RzListIter *iter;
+	RzBaseType *btype;
+	rz_list_foreach (btypes, iter, btype) {
+		switch (state->mode) {
+			case RZ_OUTPUT_MODE_STANDARD:
+				rz_cons_printf("%s : %s\n", btype->name, tclassname);
+				break;
+			case RZ_OUTPUT_MODE_JSON:
+				pj_o(state->d.pj);
+				pj_ks(state->d.pj, "name", btype->name);
+				pj_ks(state->d.pj, "typeclass", tclassname);
+				break;
+			case RZ_OUTPUT_MODE_TABLE:
+				rz_table_add_rowf(state->d.t, "ss", btype->name, tclassname);
+				break;
+			default:
+				rz_warn_if_reached();
+				break;
+		}
+	}
+	rz_list_free(btypes);
+}
+
+RZ_IPI RzCmdStatus rz_type_class_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	rz_cmd_state_output_array_start(state);
+	rz_cmd_state_output_set_columnsf(state, "ss", "type name", "typeclass");
+	if (state->mode == RZ_OUTPUT_MODE_TABLE) {
+		state->d.t->showFancy = true;
+	}
+
+	typeclass_print_all(core, state, RZ_TYPE_TYPECLASS_ADDRESS);
+	typeclass_print_all(core, state, RZ_TYPE_TYPECLASS_INTEGRAL_SIGNED);
+	typeclass_print_all(core, state, RZ_TYPE_TYPECLASS_INTEGRAL_UNSIGNED);
+	typeclass_print_all(core, state, RZ_TYPE_TYPECLASS_INTEGRAL);
+	typeclass_print_all(core, state, RZ_TYPE_TYPECLASS_FLOATING);
+	typeclass_print_all(core, state, RZ_TYPE_TYPECLASS_NUM);
+	rz_cmd_state_output_array_end(state);
+	return RZ_CMD_STATUS_OK;
+}

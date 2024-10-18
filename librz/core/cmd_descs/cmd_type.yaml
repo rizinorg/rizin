@@ -328,3 +328,36 @@ commands:
         cname: type_xrefs_list_all
         summary: List all types used by any function
         args: []
+  - name: tk
+    summary: Typeclasses
+    subcommands:
+      - name: tk
+        cname: type_class_show
+        summary: Show typeclass for a specified type
+        description: >
+          Typeclasses are named categories of the atomic numerical types,
+          describing different properties of numbers. For example,
+          Num typeclass contains all kinds of numbers, while Signed Integral - 
+          only signed integers. Typeclasses have weak hierarchy, thus every
+          type that belongs to Unsigned Integral, automatically belongs to both
+          Integral and Num typeclasses.
+        args:
+          - name: type
+            type: RZ_CMD_ARG_TYPE_ANY_TYPE
+      - name: tks
+        cname: type_class_set
+        summary: Set a typeclass for a specified type
+        args:
+          - name: type
+            type: RZ_CMD_ARG_TYPE_ANY_TYPE
+          - name: typeclass
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: tkl
+        cname: type_class_list
+        summary: List typeclasses and types within them
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_TABLE
+        args: []
