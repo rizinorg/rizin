@@ -197,39 +197,34 @@ RZ_API bool rz_core_extend_at(RzCore *core, ut64 addr, ut64 size) {
  * \return true if the shift operation was succesful, false otherwise
  */
 RZ_API bool rz_core_shift_block(RzCore *core, ut64 addr, ut64 b_size, st64 dist) {
-	// bstart - block start, fstart file start
-	ut64 fend = 0, fstart = 0, bstart = 0, file_sz = 0;
 	ut8 *shift_buf = NULL;
+	ut64 file_sz = 0;
 	int res = false;
 
 	if (!core->io || !core->file) {
 		return false;
 	}
 
-	if (b_size == 0 || b_size == (ut64)-1) {
-		rz_io_use_fd(core->io, core->file->fd);
-		file_sz = rz_io_size(core->io);
-		if (file_sz == UT64_MAX) {
-			file_sz = 0;
-		}
-		bstart = 0;
-		fend = file_sz;
-		fstart = file_sz - fend;
-		b_size = fend > bstart ? fend - bstart : 0;
-	}
-
-	if ((st64)b_size < 1) {
+	rz_io_use_fd(core->io, core->file->fd);
+	file_sz = rz_io_size(core->io);
+	if (file_sz == UT64_MAX) {
 		return false;
 	}
+	if (b_size == 0 || b_size == (ut64)-1) {
+		b_size = file_sz;
+	} else if ((st64)b_size < 1) {
+		return false;
+	}
+
 	shift_buf = calloc(b_size, 1);
 	if (!shift_buf) {
 		RZ_LOG_ERROR("core: cannot allocate %d byte(s)\n", (int)b_size);
 		return false;
 	}
 
-	if (addr + dist < fstart) {
+	if (addr + dist < 0) {
 		res = false;
-	} else if ((addr) + dist > fend) {
+	} else if (addr + dist > file_sz) {
 		res = false;
 	} else {
 		rz_io_use_fd(core->io, core->file->fd);
