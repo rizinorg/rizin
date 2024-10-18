@@ -62,29 +62,35 @@ jobs:
 
     - name: Install dependencies
       run: |
-          sudo apt-get --assume-yes install python3-wheel python3-setuptools
+          sudo apt-get --assume-yes install python3-wheel python3-setuptools pkgconf libcurl4-openssl-dev libpkgconf-dev libarchive-dev
           sudo python3 -m pip install ninja
 
-    - name: Checkout meson from ret2libc git
+    - name: Checkout Muon repository
       run: |
-          git clone https://github.com/ret2libc/meson.git
-          cd meson
-          git checkout tiny-cc
-          python3 setup.py build
-          sudo python3 setup.py install
+          git clone https://git.sr.ht/~lattis/muon
+
+    - name: Compiling and installing Muon
+      working-directory: muon
+      run: |
+          ./bootstrap.sh build
+          build/muon setup build
+          ninja -C build
+          sudo cp build/muon /usr/bin/muon
 
     - name: Checkout our Testsuite Binaries
       uses: actions/checkout@v4
       with:
           repository: rizinorg/rizin-testbins
           path: test/bins
-
-    - name: Meson setup
+    
+    - name: Muon setup
       env:
           CC: tcc
-      run: meson setup --prefix=/usr build
-    - name: Meson compile and install
-      run: ninja -C build && sudo ninja -C build install
+      run: muon setup -Dprefix=/usr build
+
+    - name: Ninja compile and install
+      run: ninja -C build && sudo muon -C build install
+
     - name: Run unit tests
       run: ninja -C build test
 
