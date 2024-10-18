@@ -667,8 +667,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 2
-      - name: Install pkg-config with Homebrew
-        run: brew install pkg-config
       - name: Install meson and ninja
         run: pip3 install meson ninja PyYAML
       - name: Checkout rzpipe
