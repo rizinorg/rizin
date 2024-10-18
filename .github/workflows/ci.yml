@@ -668,14 +668,14 @@ jobs:
         with:
           fetch-depth: 2
       - name: Install meson and ninja
-        run: pip3 install meson ninja PyYAML
+        run: pip3 install --break-system-packages --user meson ninja PyYAML
       - name: Checkout rzpipe
         uses: actions/checkout@v4
         with:
           repository: rizinorg/rz-pipe
           path: test/rz-pipe
       - name: Install test dependencies
-        run: pip3 install --user "file://$GITHUB_WORKSPACE/test/rz-pipe#egg=rzpipe&subdirectory=python" requests
+        run: pip3 install --break-system-packages --user "file://$GITHUB_WORKSPACE/test/rz-pipe#egg=rzpipe&subdirectory=python" requests
       - name: Build with Meson
         run: meson setup --prefix=${HOME} -Dbuildtype=release --werror build && ninja -C build
       - name: Install with meson
