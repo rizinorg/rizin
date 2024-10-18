@@ -678,17 +678,17 @@ jobs:
         run: pip3 install --break-system-packages --user "file://$GITHUB_WORKSPACE/test/rz-pipe#egg=rzpipe&subdirectory=python" requests
       - name: Build with Meson
         run: |
-          export PATH=${HOME}/.local/bin:${PATH}
+          export PATH=$(python3 -m site --user-base)/bin:${PATH}
           meson setup --prefix=${HOME} -Dbuildtype=release --werror build && ninja -C build
       - name: Install with meson
         run: |
-          export PATH=${HOME}/.local/bin:${PATH}
+          export PATH=$(python3 -m site --user-base)/bin:${PATH}
           ninja -C build install
       - name: Disable user authentication for debugging
         run: sudo security authorizationdb write system.privilege.taskport allow
       - name: Run unit tests
         run: |
-          export PATH=${HOME}/.local/bin:${PATH}
+          export PATH=$(python3 -m site --user-base)/bin:${PATH}
           meson test -C build --suite unit
       - name: Checkout our Testsuite Binaries
         uses: actions/checkout@v4
@@ -702,7 +702,7 @@ jobs:
           path: test/fuzz/targets
       - name: Run integration tests and rz-test
         run: |
-          export PATH=${HOME}/.local/bin:${PATH}
+          export PATH=$(python3 -m site --user-base)/bin:${PATH}
           meson test -C build --suite integration
           cd test
           rz-test -j `sysctl -n hw.activecpu` -L -o results.json
