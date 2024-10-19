@@ -325,14 +325,14 @@ RZ_API RzCmdStatus rz_core_debug_plugins_print(RzCore *core, RzCmdStateOutput *s
 	memset(spaces, ' ', 15);
 	spaces[15] = 0;
 	RzDebug *dbg = core->dbg;
-	RzListIter *iter;
+	RzIterator *iter = ht_sp_as_iter(dbg->plugins);
 	RzDebugPlugin *plugin;
 	RzCmdStatus status;
 	if (!dbg) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_cmd_state_output_array_start(state);
-	rz_list_foreach (dbg->plugins, iter, plugin) {
+	rz_iterator_foreach(iter, plugin) {
 		int sp = 8 - strlen(plugin->name);
 		spaces[sp] = 0;
 		status = rz_core_debug_plugin_print(dbg, plugin, state, count, spaces);
@@ -342,6 +342,7 @@ RZ_API RzCmdStatus rz_core_debug_plugins_print(RzCore *core, RzCmdStateOutput *s
 		spaces[sp] = ' ';
 		count++;
 	}
+	rz_iterator_free(iter);
 	rz_cmd_state_output_array_end(state);
 	return RZ_CMD_STATUS_OK;
 }

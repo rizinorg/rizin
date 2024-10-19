@@ -99,7 +99,7 @@ typedef struct rz_egg_t {
 	RzSyscall *syscall;
 	RzEggLang lang;
 	Sdb *db;
-	RzList /*<RzEggPlugin *>*/ *plugins;
+	HtSP /*<RzEggPlugin *>*/ *plugins;
 	RzList /*<struct egg_patch_t *>*/ *patches; // <RzBuffer>
 	struct rz_egg_emit_t *remit;
 	int arch;

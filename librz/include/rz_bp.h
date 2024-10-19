@@ -84,7 +84,7 @@ typedef struct rz_bp_t {
 	RzIOBind iob; // compile time dependency
 	RzBreakpointPlugin *cur;
 	RzList /*<RzBreakpointTrace *>*/ *traces; // XXX
-	RzList /*<RzBreakpointPlugin *>*/ *plugins;
+	HtSP /*<RzBreakpointPlugin *>*/ *plugins;
 	PrintfCallback cb_printf;
 	RzBreakpointCallback breakpoint;
 	/* storage of breakpoints */

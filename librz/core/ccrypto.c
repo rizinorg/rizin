@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
+#include <rz_util/rz_iterator.h>
 
 static RzCmdStatus core_crypto_plugin_print(RzCmdStateOutput *state, const RzCryptoPlugin *plugin) {
 	PJ *pj = state->d.pj;
@@ -36,17 +37,18 @@ RZ_API RzCmdStatus rz_core_crypto_plugins_print(RzCrypto *cry, RzCmdStateOutput 
 
 	const RzCryptoPlugin *plugin = NULL;
 	RzCmdStatus status;
-	RzListIter *it;
+	RzIterator *it = ht_sp_as_iter(cry->plugins);
 	rz_cmd_state_output_array_start(state);
 	if (state->mode == RZ_OUTPUT_MODE_STANDARD) {
 		rz_cons_println("algorithm      license    author");
 	}
-	rz_list_foreach (cry->plugins, it, plugin) {
+	rz_iterator_foreach(it, plugin) {
 		status = core_crypto_plugin_print(state, plugin);
 		if (status != RZ_CMD_STATUS_OK) {
 			return status;
 		}
 	}
+	rz_iterator_free(it);
 	if (state->mode == RZ_OUTPUT_MODE_QUIET) {
 		rz_cons_newline();
 	}

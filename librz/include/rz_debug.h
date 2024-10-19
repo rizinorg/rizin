@@ -292,7 +292,7 @@ typedef struct rz_debug_t {
 
 	struct rz_debug_plugin_t *cur;
 	void *plugin_data;
-	RzList /*<RzDebugPlugin *>*/ *plugins;
+	HtSP /*<RzDebugPlugin *>*/ *plugins;
 
 	bool pc_at_bp; /* after a breakpoint, is the pc at the bp? */
 	bool pc_at_bp_set; /* is the pc_at_bp variable set already? */

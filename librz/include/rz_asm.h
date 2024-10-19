@@ -108,7 +108,7 @@ typedef struct rz_asm_t {
 	ut64 pc;
 	_RzAsmPlugin *cur;
 	_RzAsmPlugin *acur;
-	RzList /*<RzAsmPlugin *>*/ *plugins;
+	HtSP /*<RzAsmPlugin *>*/ *plugins;
 	RzBinBind binb;
 	RzParse *ifilter;
 	RzParse *ofilter;
@@ -180,7 +180,7 @@ RZ_API ut8 *rz_asm_from_string(RzAsm *a, ut64 addr, const char *b, int *l);
 RZ_API int rz_asm_sub_names_input(RzAsm *a, const char *f);
 RZ_API int rz_asm_sub_names_output(RzAsm *a, const char *f);
 RZ_API char *rz_asm_describe(RzAsm *a, const char *str);
-RZ_API RzList /*<RzAsmPlugin *>*/ *rz_asm_get_plugins(RzAsm *a);
+RZ_API RZ_BORROW HtSP /*<RzAsmPlugin *>*/ *rz_asm_get_plugins(RZ_BORROW RZ_NONNULL RzAsm *a);
 RZ_API void rz_asm_list_directives(void);
 
 /* code.c */

@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2011-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include "rz_util/rz_iterator.h"
 #include <rz_egg.h>
 #include <rz_bin.h>
 #include <rz_main.h>
@@ -68,20 +69,23 @@ static int usage(int v) {
 }
 
 static void list(RzEgg *egg) {
-	RzListIter *iter;
+	RzIterator *iter = ht_sp_as_iter(egg->plugins);
 	RzEggPlugin *p;
 	printf("shellcodes:\n");
-	rz_list_foreach (egg->plugins, iter, p) {
+	rz_iterator_foreach(iter, p) {
 		if (p->type == RZ_EGG_PLUGIN_SHELLCODE) {
 			printf("%10s : %s\n", p->name, p->desc);
 		}
 	}
+	rz_iterator_free(iter);
+	iter = ht_sp_as_iter(egg->plugins);
 	printf("encoders:\n");
-	rz_list_foreach (egg->plugins, iter, p) {
+	rz_iterator_foreach(iter, p) {
 		if (p->type == RZ_EGG_PLUGIN_ENCODER) {
 			printf("%10s : %s\n", p->name, p->desc);
 		}
 	}
+	rz_iterator_free(iter);
 }
 
 static bool create(const char *format, const char *arch, int bits, const ut8 *code, int codelen) {

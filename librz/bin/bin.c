@@ -11,8 +11,9 @@
 #include "i/private.h"
 
 // include both generated plugin lists.
-#include "rz_bin_plugins.h"
-#include "rz_bin_xtr_plugins.h"
+#include <rz_bin_plugins.h>
+#include <rz_bin_xtr_plugins.h>
+#include <rz_util/rz_iterator.h>
 
 RZ_LIB_VERSION(rz_bin);
 
@@ -257,7 +258,7 @@ RZ_API RzBinFile *rz_bin_reload(RzBin *bin, RzBinFile *bf, ut64 baseaddr) {
 RZ_API RzBinFile *rz_bin_open_buf(RzBin *bin, RzBuffer *buf, RzBinOptions *opt) {
 	rz_return_val_if_fail(bin && opt, NULL);
 
-	RzListIter *it;
+	RzIterator *it = ht_sp_as_iter(bin->binxtrs);
 	RzBinXtrPlugin *xtr;
 
 	bin->file = opt->filename;
@@ -270,7 +271,7 @@ RZ_API RzBinFile *rz_bin_open_buf(RzBin *bin, RzBuffer *buf, RzBinOptions *opt) 
 		// XXX - for the time being this is fine, but we may want to
 		// change the name to something like
 		// <xtr_name>:<bin_type_name>
-		rz_list_foreach (bin->binxtrs, it, xtr) {
+		rz_iterator_foreach(it, xtr) {
 			if (!xtr->check_buffer) {
 				RZ_LOG_ERROR("Missing check_buffer callback for '%s'\n", xtr->name);
 				continue;
@@ -285,6 +286,7 @@ RZ_API RzBinFile *rz_bin_open_buf(RzBin *bin, RzBuffer *buf, RzBinOptions *opt) 
 			}
 		}
 	}
+	rz_iterator_free(it);
 	if (!bf) {
 		// Uncomment for this speedup: 20s vs 22s
 		// RzBuffer *buf = rz_buf_new_slurp (bin->file);
@@ -352,73 +354,66 @@ RZ_API RzBinFile *rz_bin_open_io(RzBin *bin, RzBinOptions *opt) {
 }
 
 RZ_IPI RzBinPlugin *rz_bin_get_binplugin_by_name(RzBin *bin, const char *name) {
-	RzBinPlugin *plugin;
-	RzListIter *it;
-
 	rz_return_val_if_fail(bin && name, NULL);
 
-	rz_list_foreach (bin->plugins, it, plugin) {
-		if (!strcmp(plugin->name, name)) {
-			return plugin;
-		}
+	bool found = false;
+	RzBinPlugin *plugin = ht_sp_find(bin->plugins, name, &found);
+	if (found) {
+		return plugin;
 	}
 	return NULL;
 }
 
 RZ_API RzBinPlugin *rz_bin_get_binplugin_by_buffer(RzBin *bin, RzBuffer *buf) {
 	RzBinPlugin *plugin;
-	RzListIter *it;
+	RzIterator *it = ht_sp_as_iter(bin->plugins);
 
 	rz_return_val_if_fail(bin && buf, NULL);
 
-	rz_list_foreach (bin->plugins, it, plugin) {
+	rz_iterator_foreach(it, plugin) {
 		if (plugin->check_buffer) {
 			if (plugin->check_buffer(buf)) {
 				return plugin;
 			}
 		}
 	}
+	rz_iterator_free(it);
 	return NULL;
 }
 
 RZ_IPI RzBinPlugin *rz_bin_get_binplugin_by_filename(RzBin *bin) {
 	RzBinPlugin *plugin;
-	RzListIter *it;
+	RzIterator *it = ht_sp_as_iter(bin->plugins);
 
 	rz_return_val_if_fail(bin, NULL);
 
 	const char *filename = strrchr(bin->file, RZ_SYS_DIR[0]);
 	filename = filename ? filename + 1 : bin->file;
-	rz_list_foreach (bin->plugins, it, plugin) {
+	rz_iterator_foreach(it, plugin) {
 		if (plugin->check_filename) {
 			if (plugin->check_filename(filename)) {
 				return plugin;
 			}
 		}
 	}
+	rz_iterator_free(it);
 	return NULL;
 }
 
 RZ_IPI RzBinXtrPlugin *rz_bin_get_xtrplugin_by_name(RzBin *bin, const char *name) {
-	RzBinXtrPlugin *xtr;
-	RzListIter *it;
-
 	rz_return_val_if_fail(bin && name, NULL);
 
-	// TODO: use a hashtable here
-	rz_list_foreach (bin->binxtrs, it, xtr) {
-		if (!strcmp(xtr->name, name)) {
-			return xtr;
-		}
-		// must be set to null
-		xtr = NULL;
+	bool found = false;
+	RzBinXtrPlugin *xtr = ht_sp_find(bin->binxtrs, name, &found);
+	if (found) {
+		return xtr;
 	}
 	return NULL;
 }
 
 RZ_API bool rz_bin_plugin_add(RzBin *bin, RZ_NONNULL RzBinPlugin *plugin) {
 	rz_return_val_if_fail(bin && plugin, false);
-	RZ_PLUGIN_CHECK_AND_ADD(bin->plugins, plugin, RzBinPlugin);
+	ht_sp_insert(bin->plugins, plugin->name, plugin);
 	return true;
 }
 
@@ -433,13 +428,13 @@ RZ_API bool rz_bin_plugin_del(RzBin *bin, RZ_NONNULL RzBinPlugin *plugin) {
 			rz_bin_file_delete(bin, bf);
 		}
 	}
-	return rz_list_delete_data(bin->plugins, plugin);
+	return ht_sp_delete(bin->plugins, plugin->name);
 }
 
 RZ_API bool rz_bin_xtr_plugin_add(RzBin *bin, RZ_NONNULL RzBinXtrPlugin *plugin) {
 	rz_return_val_if_fail(bin && plugin, false);
 
-	RZ_PLUGIN_CHECK_AND_ADD(bin->binxtrs, plugin, RzBinXtrPlugin);
+	ht_sp_insert(bin->binxtrs, plugin->name, plugin);
 	if (plugin->init) {
 		plugin->init(bin->user);
 	}
@@ -464,7 +459,7 @@ RZ_API bool rz_bin_xtr_plugin_del(RzBin *bin, RZ_NONNULL RzBinXtrPlugin *plugin)
 			}
 		}
 	}
-	return rz_list_delete_data(bin->binxtrs, plugin);
+	return ht_sp_delete(bin->binxtrs, plugin->name);
 }
 
 RZ_API void rz_bin_free(RZ_NULLABLE RzBin *bin) {
@@ -477,13 +472,14 @@ RZ_API void rz_bin_free(RZ_NULLABLE RzBin *bin) {
 	// rz_bin_free_bin_files (bin);
 	rz_list_free(bin->binfiles);
 
-	RzListIter *it, *tmp;
+	RzIterator *it = ht_sp_as_iter(bin->binxtrs);
 	RzBinXtrPlugin *p;
-	rz_list_foreach_safe (bin->binxtrs, it, tmp, p) {
+	rz_iterator_foreach(it, p) {
 		plugin_fini(bin, p);
 	}
-	rz_list_free(bin->binxtrs);
-	rz_list_free(bin->plugins);
+	rz_iterator_free(it);
+	ht_sp_free(bin->binxtrs);
+	ht_sp_free(bin->plugins);
 	rz_list_free(bin->default_hashes);
 	sdb_free(bin->sdb);
 	rz_id_storage_free(bin->ids);
@@ -544,22 +540,18 @@ static void __printXtrPluginDetails(RzBin *bin, RzBinXtrPlugin *bx, int json) {
 }
 
 RZ_API bool rz_bin_list_plugin(RzBin *bin, const char *name, PJ *pj, int json) {
-	RzListIter *it;
 	RzBinPlugin *bp;
 	RzBinXtrPlugin *bx;
 
 	rz_return_val_if_fail(bin && name, false);
 
-	rz_list_foreach (bin->plugins, it, bp) {
-		if (rz_str_cmp(name, bp->name, strlen(name))) {
-			continue;
-		}
+	bool found = false;
+	bp = ht_sp_find(bin->plugins, name, &found);
+	if (found) {
 		return rz_bin_print_plugin_details(bin, bp, pj, json);
 	}
-	rz_list_foreach (bin->binxtrs, it, bx) {
-		if (rz_str_cmp(name, bx->name, strlen(name))) {
-			continue;
-		}
+	bx = ht_sp_find(bin->binxtrs, name, &found);
+	if (found) {
 		__printXtrPluginDetails(bin, bx, json);
 		return true;
 	}
@@ -763,9 +755,16 @@ RZ_API RzBin *rz_bin_new(void) {
 
 	/* bin parsers */
 	bin->binfiles = rz_list_newf((RzListFree)rz_bin_file_free);
-	bin->plugins = rz_list_new_from_array((const void **)bin_static_plugins, RZ_ARRAY_SIZE(bin_static_plugins));
+
+	bin->plugins = ht_sp_new(HT_STR_DUP, NULL, NULL);
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(bin_static_plugins); ++i) {
+		ht_sp_insert(bin->plugins, bin_static_plugins[i]->name, bin_static_plugins[i]);
+	}
 	/* extractors */
-	bin->binxtrs = rz_list_new_from_array((const void **)bin_xtr_static_plugins, RZ_ARRAY_SIZE(bin_xtr_static_plugins));
+	bin->binxtrs = ht_sp_new(HT_STR_DUP, NULL, NULL);
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(bin_xtr_static_plugins); ++i) {
+		ht_sp_insert(bin->plugins, bin_xtr_static_plugins[i]->name, bin_xtr_static_plugins[i]);
+	}
 
 	return bin;
 
@@ -1266,13 +1265,10 @@ RZ_API void rz_bin_trycatch_free(RzBinTrycatch *tc) {
 RZ_API const RzBinPlugin *rz_bin_plugin_get(RZ_NONNULL RzBin *bin, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(bin && name, NULL);
 
-	RzListIter *iter;
-	RzBinPlugin *bp;
-
-	rz_list_foreach (bin->plugins, iter, bp) {
-		if (!strcmp(bp->name, name)) {
-			return bp;
-		}
+	bool found = false;
+	RzBinPlugin *bp = ht_sp_find(bin->plugins, name, &found);
+	if (found) {
+		return bp;
 	}
 	return NULL;
 }
@@ -1282,14 +1278,10 @@ RZ_API const RzBinPlugin *rz_bin_plugin_get(RZ_NONNULL RzBin *bin, RZ_NONNULL co
  */
 RZ_API const RzBinXtrPlugin *rz_bin_xtrplugin_get(RZ_NONNULL RzBin *bin, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(bin && name, NULL);
-
-	RzListIter *iter;
-	RzBinXtrPlugin *bp;
-
-	rz_list_foreach (bin->binxtrs, iter, bp) {
-		if (!strcmp(bp->name, name)) {
-			return bp;
-		}
+	bool found = false;
+	RzBinXtrPlugin *bp = ht_sp_find(bin->plugins, name, &found);
+	if (found) {
+		return bp;
 	}
 	return NULL;
 }
