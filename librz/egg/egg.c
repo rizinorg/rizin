@@ -79,7 +79,7 @@ RZ_API RzEgg *rz_egg_new(void) {
 	if (!egg->patches) {
 		goto beach;
 	}
-	egg->plugins = rz_list_new();
+	egg->plugins = ht_sp_new(HT_STR_DUP, NULL, NULL);
 	for (i = 0; i < RZ_ARRAY_SIZE(egg_static_plugins); i++) {
 		rz_egg_plugin_add(egg, egg_static_plugins[i]);
 	}
@@ -92,13 +92,13 @@ beach:
 
 RZ_API bool rz_egg_plugin_add(RzEgg *a, RZ_NONNULL RzEggPlugin *plugin) {
 	rz_return_val_if_fail(a && plugin && plugin->name, false);
-	RZ_PLUGIN_CHECK_AND_ADD(a->plugins, plugin, RzEggPlugin);
+	ht_sp_insert(a->plugins, plugin->name, plugin);
 	return true;
 }
 
 RZ_API bool rz_egg_plugin_del(RzEgg *a, RZ_NONNULL RzEggPlugin *plugin) {
 	rz_return_val_if_fail(a && plugin, false);
-	return rz_list_delete_data(a->plugins, plugin);
+	return ht_sp_delete(a->plugins, plugin->name);
 }
 
 RZ_API char *rz_egg_to_string(RzEgg *egg) {
@@ -115,7 +115,7 @@ RZ_API void rz_egg_free(RzEgg *egg) {
 	rz_asm_free(egg->rasm);
 	rz_syscall_free(egg->syscall);
 	sdb_free(egg->db);
-	rz_list_free(egg->plugins);
+	ht_sp_free(egg->plugins);
 	rz_list_free(egg->patches);
 	rz_egg_lang_free(egg);
 	free(egg);
@@ -533,9 +533,9 @@ RZ_API char *rz_egg_option_get(RzEgg *egg, const char *key) {
 
 RZ_API int rz_egg_shellcode(RzEgg *egg, const char *name) {
 	RzEggPlugin *p;
-	RzListIter *iter;
+	RzIterator *iter = ht_sp_as_iter(egg->plugins);
 	RzBuffer *b;
-	rz_list_foreach (egg->plugins, iter, p) {
+	rz_iterator_foreach(iter, p) {
 		if (p->type == RZ_EGG_PLUGIN_SHELLCODE && !strcmp(name, p->name)) {
 			b = p->build(egg);
 			if (!b) {
@@ -548,14 +548,15 @@ RZ_API int rz_egg_shellcode(RzEgg *egg, const char *name) {
 			return true;
 		}
 	}
+	rz_iterator_free(iter);
 	return false;
 }
 
 RZ_API int rz_egg_encode(RzEgg *egg, const char *name) {
 	RzEggPlugin *p;
-	RzListIter *iter;
+	RzIterator *iter = ht_sp_as_iter(egg->plugins);
 	RzBuffer *b;
-	rz_list_foreach (egg->plugins, iter, p) {
+	rz_iterator_foreach(iter, p) {
 		if (p->type == RZ_EGG_PLUGIN_ENCODER && !strcmp(name, p->name)) {
 			b = p->build(egg);
 			if (!b) {
@@ -566,6 +567,7 @@ RZ_API int rz_egg_encode(RzEgg *egg, const char *name) {
 			return true;
 		}
 	}
+	rz_iterator_free(iter);
 	return false;
 }
 

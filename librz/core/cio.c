@@ -480,15 +480,16 @@ RZ_API RzCmdStatus rz_core_io_plugin_print(RzIOPlugin *plugin, RzCmdStateOutput 
  */
 RZ_API RzCmdStatus rz_core_io_plugins_print(RzIO *io, RzCmdStateOutput *state) {
 	RzIOPlugin *plugin;
-	RzListIter *iter;
+	RzIterator *iter = ht_sp_as_iter(io->plugins);
 	if (!io) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_cmd_state_output_array_start(state);
 	rz_cmd_state_output_set_columnsf(state, "sssss", "perm", "license", "name", "uri", "description");
-	rz_list_foreach (io->plugins, iter, plugin) {
+	rz_iterator_foreach(iter, plugin) {
 		rz_core_io_plugin_print(plugin, state);
 	}
+	rz_iterator_free(iter);
 	rz_cmd_state_output_array_end(state);
 	return RZ_CMD_STATUS_OK;
 }

@@ -131,10 +131,12 @@ static void rz_hash_show_algorithms(RzHashContext *ctx) {
 	printf("flags  algorithm      license    author\n");
 
 	const RzHashPlugin *rmdp;
-	for (size_t i = 0; (rmdp = rz_hash_plugin_by_index(ctx->rh, i)); ++i) {
+	RzIterator *it = ht_sp_as_iter(ctx->rh->plugins);
+	rz_iterator_foreach(it, rmdp) {
 		snprintf(flags, sizeof(flags), "____h%c", rmdp->support_hmac ? 'm' : '_');
 		printf("%6s %-14s %-10s %s\n", flags, rmdp->name, rmdp->license, rmdp->author);
 	}
+	rz_iterator_free(it);
 
 	const RzCryptoPlugin *rcp;
 	for (size_t i = 0; (rcp = rz_crypto_plugin_by_index(ctx->rc, i)); i++) {
@@ -809,9 +811,11 @@ static RzList /*<char *>*/ *parse_hash_algorithms(RzHashContext *ctx) {
 		if (!list) {
 			return NULL;
 		}
-		for (ut64 i = 0; (plugin = rz_hash_plugin_by_index(ctx->rh, i)); ++i) {
+		RzIterator *it = ht_sp_as_iter(ctx->rh->plugins);
+		rz_iterator_foreach(it, plugin) {
 			rz_list_append(list, (void *)plugin->name);
 		}
+		rz_iterator_free(it);
 		return list;
 	}
 	return rz_str_split_list(ctx->algorithm, ",", 0);

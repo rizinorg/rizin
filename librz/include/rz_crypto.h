@@ -1,9 +1,9 @@
 #ifndef RZ_CRYPTO_H
 #define RZ_CRYPTO_H
 
-#include "rz_types.h"
-#include "rz_list.h"
-#include "rz_crypto/rz_des.h"
+#include <rz_types.h>
+#include <rz_util/ht_sp.h>
+#include <rz_crypto/rz_des.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,7 +34,7 @@ typedef struct rz_crypto_t {
 	int output_size;
 	int dir;
 	void *user;
-	RzList /*<RzCryptoPlugin *>*/ *plugins;
+	HtSP /*<RzCryptoPlugin *>*/ *plugins;
 } RzCrypto;
 
 typedef struct rz_crypto_plugin_t {

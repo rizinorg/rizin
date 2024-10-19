@@ -249,13 +249,14 @@ static bool cb_analysis_hpskip(void *user, void *data) {
 
 static void update_analysis_arch_options(RzCore *core, RzConfigNode *node) {
 	RzAnalysisPlugin *h;
-	RzListIter *it;
+	RzIterator *it = ht_sp_as_iter(core->analysis->plugins);
 	if (core && core->analysis && node) {
 		rz_list_purge(node->options);
-		rz_list_foreach (core->analysis->plugins, it, h) {
+		rz_iterator_foreach(it, h) {
 			SETOPTIONS(node, h->name, NULL);
 		}
 	}
+	rz_iterator_free(it);
 }
 
 static bool cb_analysis_arch(void *user, void *data) {
@@ -373,14 +374,14 @@ static bool cb_asmassembler(void *user, void *data) {
 
 static void update_asmcpu_options(RzCore *core, RzConfigNode *node) {
 	RzAsmPlugin *h;
-	RzListIter *iter;
+	RzIterator *it = ht_sp_as_iter(core->rasm->plugins);
 	rz_return_if_fail(core && core->rasm);
 	const char *arch = rz_config_get(core->config, "asm.arch");
 	if (!arch || !*arch) {
 		return;
 	}
 	rz_list_purge(node->options);
-	rz_list_foreach (core->rasm->plugins, iter, h) {
+	rz_iterator_foreach(it, h) {
 		if (h->cpus && !strcmp(arch, h->name)) {
 			char *c = rz_str_dup(h->cpus);
 			int i, n = rz_str_split(c, ',');
@@ -394,6 +395,7 @@ static void update_asmcpu_options(RzCore *core, RzConfigNode *node) {
 			free(c);
 		}
 	}
+	rz_iterator_free(it);
 }
 
 static bool cb_asmcpu(void *user, void *data) {
@@ -425,13 +427,14 @@ static bool cb_asmcpu(void *user, void *data) {
 
 static void update_asmarch_options(RzCore *core, RzConfigNode *node) {
 	RzAsmPlugin *h;
-	RzListIter *iter;
+	RzIterator *it = ht_sp_as_iter(core->rasm->plugins);
 	if (core && node && core->rasm) {
 		rz_list_purge(node->options);
-		rz_list_foreach (core->rasm->plugins, iter, h) {
+		rz_iterator_foreach(it, h) {
 			SETOPTIONS(node, h->name, NULL);
 		}
 	}
+	rz_iterator_free(it);
 }
 
 static void update_asmbits_options(RzCore *core, RzConfigNode *node) {

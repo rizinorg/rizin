@@ -65,10 +65,10 @@ RZ_API char *rz_core_asm_search(RzCore *core, const char *input) {
 }
 
 static const char *has_esil(RzCore *core, const char *name) {
-	RzListIter *iter;
+	RzIterator *iter = ht_sp_as_iter(core->analysis->plugins);
 	RzAnalysisPlugin *h;
 	rz_return_val_if_fail(core && core->analysis && name, NULL);
-	rz_list_foreach (core->analysis->plugins, iter, h) {
+	rz_iterator_foreach(iter, h) {
 		if (!h->name || strcmp(name, h->name)) {
 			continue;
 		}
@@ -85,6 +85,7 @@ static const char *has_esil(RzCore *core, const char *name) {
 		// Only the analysis plugin.
 		return "A__";
 	}
+	rz_iterator_free(iter);
 	return "___";
 }
 
@@ -163,10 +164,10 @@ RZ_API RzCmdStatus rz_core_asm_plugins_print(RzCore *core, const char *arch, RzC
 	int i;
 	RzAsm *a = core->rasm;
 	RzAsmPlugin *ap;
-	RzListIter *iter;
+	RzIterator *iter = ht_sp_as_iter(a->plugins);
 	RzCmdStatus status;
 	if (arch) {
-		rz_list_foreach (a->plugins, iter, ap) {
+		rz_iterator_foreach(iter, ap) {
 			if (ap->cpus && !strcmp(arch, ap->name)) {
 				char *c = rz_str_dup(ap->cpus);
 				int n = rz_str_split(c, ',');
@@ -179,17 +180,19 @@ RZ_API RzCmdStatus rz_core_asm_plugins_print(RzCore *core, const char *arch, RzC
 		}
 	} else {
 		rz_cmd_state_output_array_start(state);
-		rz_list_foreach (a->plugins, iter, ap) {
+		rz_iterator_foreach(iter, ap) {
 			const char *license = ap->license
 				? ap->license
 				: "unknown";
 			status = rz_core_asm_plugin_print(core, ap, arch, state, license);
 			if (status != RZ_CMD_STATUS_OK) {
+				rz_iterator_free(iter);
 				return status;
 			}
 		}
 		rz_cmd_state_output_array_end(state);
 	}
+	rz_iterator_free(iter);
 	return RZ_CMD_STATUS_OK;
 }
 

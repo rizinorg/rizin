@@ -36,17 +36,19 @@ RZ_API RzCmdStatus rz_core_hash_plugins_print(RzHash *hash, RzCmdStateOutput *st
 
 	const RzHashPlugin *plugin = NULL;
 	RzCmdStatus status;
-	RzListIter *it;
+	RzIterator *it = ht_sp_as_iter(hash->plugins);
 	rz_cmd_state_output_array_start(state);
 	if (state->mode == RZ_OUTPUT_MODE_STANDARD) {
 		rz_cons_println("algorithm      license    author");
 	}
-	rz_list_foreach (hash->plugins, it, plugin) {
+	rz_iterator_foreach(it, plugin) {
 		status = rz_core_hash_plugin_print(state, plugin);
 		if (status != RZ_CMD_STATUS_OK) {
+			rz_iterator_free(it);
 			return status;
 		}
 	}
+	rz_iterator_free(it);
 	if (state->mode == RZ_OUTPUT_MODE_QUIET) {
 		rz_cons_newline();
 	}

@@ -252,7 +252,7 @@ struct rz_core_t {
 	// NOTE: Do not change the order of fields above!
 	// They are used in pointer passing hacks in rz_types.h.
 	RzIO *io;
-	RzList /*<RzCorePlugin *>*/ *plugins; ///< List of registered core plugins
+	HtSP /*<RzCorePlugin *>*/ *plugins; ///< List of registered core plugins
 	RzConfig *config;
 	HtSP /*<plugins.<plugin_name>: RzConfig>*/ *plugin_configs; ///< Pointers to plugin configurations. Indexed by "plugins.<name>"
 	ut64 offset; // current seek

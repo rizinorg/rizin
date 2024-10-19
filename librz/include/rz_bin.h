@@ -367,8 +367,8 @@ struct rz_bin_t {
 	int rawstr;
 	RZ_DEPRECATE Sdb *sdb;
 	RzIDStorage *ids;
-	RzList /*<RzBinPlugin *>*/ *plugins;
-	RzList /*<RzBinXtrPlugin *>*/ *binxtrs;
+	HtSP /*<RzBinPlugin *>*/ *plugins;
+	HtSP /*<RzBinXtrPlugin *>*/ *binxtrs;
 	RzList /*<RzBinFile *>*/ *binfiles;
 	PrintfCallback cb_printf;
 	int loadany;

@@ -10,6 +10,7 @@
 #include <rz_util/rz_time.h>
 #include <rz_basefind.h>
 #include <rz_vector.h>
+#include <rz_util/rz_iterator.h>
 
 #include "../bin/dwarf/dwarf_private.h"
 #include "core_private.h"
@@ -4904,22 +4905,25 @@ RZ_API RzCmdStatus rz_core_bin_plugins_print(RzBin *bin, RzCmdStateOutput *state
 
 	RzBinPlugin *bp;
 	RzBinXtrPlugin *bx;
-	RzListIter *iter;
 	RzCmdStatus status;
+	RzIterator *iter = ht_sp_as_iter(bin->plugins);
 
 	rz_cmd_state_output_array_start(state);
-	rz_list_foreach (bin->plugins, iter, bp) {
+	rz_iterator_foreach(iter, bp) {
 		status = rz_core_bin_plugin_print(bp, state);
 		if (status != RZ_CMD_STATUS_OK) {
 			return status;
 		}
 	}
-	rz_list_foreach (bin->binxtrs, iter, bx) {
+	rz_iterator_free(iter);
+	iter = ht_sp_as_iter(bin->binxtrs);
+	rz_iterator_foreach(iter, bx) {
 		status = rz_core_binxtr_plugin_print(bx, state);
 		if (status != RZ_CMD_STATUS_OK) {
 			return status;
 		}
 	}
+	rz_iterator_free(iter);
 	rz_cmd_state_output_array_end(state);
 	return RZ_CMD_STATUS_OK;
 }
