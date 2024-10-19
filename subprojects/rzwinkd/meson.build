@@ -1,9 +1,6 @@
 project('rzwinkd', 'c',
   license: 'LGPL-3.0-only',
   meson_version: '>=0.55.0',
-  default_options: [
-    'c_std=c99',
-  ]
 )
 
 cc = meson.get_compiler('c')
@@ -15,6 +12,12 @@ winkd_files = [
   'transport.c',
   'winkd.c',
 ]
+
+if cc.has_argument('--std=gnu99')
+  add_project_arguments('--std=gnu99', language: ['c', 'cpp'])
+else
+  add_project_arguments('--std=c99', language: ['c', 'cpp'])
+endif
 
 winkd_inc = [include_directories('.')]
 
