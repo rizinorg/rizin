@@ -930,12 +930,10 @@ jobs:
     strategy:
       matrix:
         system:
-          - macos-12
+          - macos-14
     runs-on: ${{ matrix.system }}
     needs: [ build-osx-pkg ]
     steps:
-      - name: Install pkg-config with Homebrew
-        run: brew install pkg-config
       - uses: actions/download-artifact@v4
         with:
           name: rizin.pkg
