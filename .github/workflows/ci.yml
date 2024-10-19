@@ -679,6 +679,7 @@ jobs:
       - name: Build with Meson
         run: |
           export PATH=$(python3 -m site --user-base)/bin:${PATH}
+          export CFLAGS=-Wno-deprecated-non-prototype
           meson setup --prefix=${HOME} -Dbuildtype=release --werror build && ninja -C build
       - name: Install with meson
         run: |
