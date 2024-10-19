@@ -718,6 +718,7 @@ jobs:
         run: brew install imagemagick
       - name: Create OSX package
         run: |
+          export PATH=$(python3 -m site --user-base)/bin:${PATH}
           ./dist/osx/build_osx_package.sh
           mv rizin-*.pkg rizin.pkg
       - name: Upload .pkg file
