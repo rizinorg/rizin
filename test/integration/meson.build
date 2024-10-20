@@ -1,6 +1,10 @@
 if get_option('enable_tests')
   test_conf_data = configuration_data()
-  test_conf_data.set_quoted('RIZIN_BUILD_PATH', rizin_exe.full_path())
+  if cli_enabled
+    test_conf_data.set_quoted('RIZIN_BUILD_PATH', rizin_exe.full_path())
+  else
+    test_conf_data.set_quoted('RIZIN_BUILD_PATH', meson.current_build_dir())
+  endif
   test_config_h = configure_file(
     input: 'test_config.h.in',
     output: 'test_config.h',
