@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_analysis.h>
+#pragma GCC diagnostic ignored "-Wenum-compare"
+#pragma GCC diagnostic ignored "-Wenum-conversion"
+#define CAPSTONE_AARCH64_COMPAT_HEADER
 #include <capstone/capstone.h>
 
 #include "arm_cs.h"
@@ -34,7 +37,9 @@ static const char *decode_shift(arm_shifter shift) {
 	case ARM_SFT_ROR:
 	case ARM_SFT_RRX:
 	case ARM_SFT_ROR_REG:
+#if CS_NEXT_VERSION < 6
 	case ARM_SFT_RRX_REG:
+#endif
 		return E_OP_RR;
 
 	default:

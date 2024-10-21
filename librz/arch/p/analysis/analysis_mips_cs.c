@@ -246,9 +246,11 @@ static int analyze_op_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8
 				ARG(0), ARG(1));
 			break;
 		case MIPS_INS_CMP:
+#if CS_NEXT_VERSION < 6
 		case MIPS_INS_CMPU:
 		case MIPS_INS_CMPGU:
 		case MIPS_INS_CMPGDU:
+#endif
 		case MIPS_INS_CMPI:
 			rz_strbuf_appendf(&op->esil, "%s,%s,==", ARG(1), ARG(0));
 			break;
@@ -257,6 +259,7 @@ static int analyze_op_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8
 				"%s,%s,>>,31,%s,>>,?{,32,%s,32,-,0xffffffff,<<,0xffffffff,&,<<,}{,0,},|,%s,=",
 				ARG(2), ARG(1), ARG(1), ARG(2), ARG(0));
 			break;
+#if CS_NEXT_VERSION < 6
 		case MIPS_INS_SHRAV:
 		case MIPS_INS_SHRAV_R:
 		case MIPS_INS_SHRA:
@@ -272,6 +275,7 @@ static int analyze_op_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8
 		case MIPS_INS_SRL:
 			rz_strbuf_appendf(&op->esil, "%s,%s,>>,%s,=", ARG(2), ARG(1), ARG(0));
 			break;
+#endif
 		case MIPS_INS_SLLV:
 		case MIPS_INS_SLL:
 			rz_strbuf_appendf(&op->esil, "%s,%s,<<,%s,=", ARG(2), ARG(1), ARG(0));
@@ -320,7 +324,9 @@ static int analyze_op_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8
 			rz_strbuf_appendf(&op->esil, ES_TRAP_DS() "%s,%s,==,$z,?{," ES_J("%s") ",}",
 				ARG(0), ARG(1), ARG(2));
 			break;
+#if CS_NEXT_VERSION < 6
 		case MIPS_INS_BZ:
+#endif
 		case MIPS_INS_BEQZ:
 		case MIPS_INS_BEQZC:
 			rz_strbuf_appendf(&op->esil, ES_TRAP_DS() "%s,0,==,$z,?{," ES_J("%s") ",}",
@@ -383,7 +389,9 @@ static int analyze_op_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8
 		case MIPS_INS_BTNEZ:
 			rz_strbuf_appendf(&op->esil, ES_TRAP_DS() "0,t,==,$z,!,?{," ES_J("%s") ",}", ARG(0));
 			break;
+#if CS_NEXT_VERSION < 6
 		case MIPS_INS_MOV:
+#endif
 		case MIPS_INS_MOVE:
 			PROTECT_ZERO() {
 				rz_strbuf_appendf(&op->esil, "%s,%s,=", ARG(1), REG(0));
@@ -402,7 +410,9 @@ static int analyze_op_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8
 					ARG(2), ARG(1), REG(0));
 			}
 			break;
+#if CS_NEXT_VERSION < 6
 		case MIPS_INS_FSUB:
+#endif
 		case MIPS_INS_SUB:
 		case MIPS_INS_SUBU:
 		case MIPS_INS_DSUB:
@@ -413,7 +423,9 @@ static int analyze_op_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8
 			}
 			break;
 		case MIPS_INS_NEG:
+#if CS_NEXT_VERSION < 6
 		case MIPS_INS_NEGU:
+#endif
 			rz_strbuf_appendf(&op->esil, "%s,0,-,%s,=,",
 				ARG(1), ARG(0));
 			break;
@@ -452,7 +464,9 @@ static int analyze_op_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8
 			}
 		} break;
 		case MIPS_INS_LI:
+#if CS_NEXT_VERSION < 6
 		case MIPS_INS_LDI:
+#endif
 			rz_strbuf_appendf(&op->esil, "0x%" PFMT64x ",%s,=", (ut64)IMM(1), ARG(0));
 			break;
 		case MIPS_INS_LUI:
@@ -859,11 +873,20 @@ static int analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const u
 	case MIPS_INS_JALR:
 		op->type = RZ_ANALYSIS_OP_TYPE_UCALL;
 		op->delay = 1;
+#if CS_NEXT_VERSION < 6
 		if (REGID(0) == MIPS_REG_25) {
 			op->jump = t9_pre;
 			t9_pre = UT64_MAX;
 			op->type = RZ_ANALYSIS_OP_TYPE_RCALL;
 		}
+#else
+		if (REGID(0) == MIPS_REG_T9 ||
+			REGID(0) == MIPS_REG_T9_64) {
+			op->jump = t9_pre;
+			t9_pre = UT64_MAX;
+			op->type = RZ_ANALYSIS_OP_TYPE_RCALL;
+		}
+#endif
 		break;
 	case MIPS_INS_JAL:
 	case MIPS_INS_JALS:
@@ -927,26 +950,30 @@ static int analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const u
 			op->stackptr = -IMM(2);
 		}
 		break;
-	case MIPS_INS_SUB:
+#if CS_NEXT_VERSION < 6
 	case MIPS_INS_SUBV:
 	case MIPS_INS_SUBVI:
-	case MIPS_INS_DSUBU:
 	case MIPS_INS_FSUB:
 	case MIPS_INS_FMSUB:
-	case MIPS_INS_SUBU:
-	case MIPS_INS_DSUB:
 	case MIPS_INS_SUBS_S:
 	case MIPS_INS_SUBS_U:
 	case MIPS_INS_SUBUH:
 	case MIPS_INS_SUBUH_R:
+#endif
+	case MIPS_INS_SUB:
+	case MIPS_INS_DSUBU:
+	case MIPS_INS_SUBU:
+	case MIPS_INS_DSUB:
 		SET_VAL(op, 2);
 		op->sign = insn->id == MIPS_INS_SUB;
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 		break;
+#if CS_NEXT_VERSION < 6
 	case MIPS_INS_MULV:
-	case MIPS_INS_MULT:
 	case MIPS_INS_MULSA:
 	case MIPS_INS_FMUL:
+#endif
+	case MIPS_INS_MULT:
 	case MIPS_INS_MUL:
 	case MIPS_INS_DMULT:
 	case MIPS_INS_DMULTU:
@@ -977,28 +1004,34 @@ static int analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const u
 	case MIPS_INS_DIVU:
 	case MIPS_INS_DDIV:
 	case MIPS_INS_DDIVU:
-	case MIPS_INS_FDIV:
 	case MIPS_INS_DIV_S:
+#if CS_NEXT_VERSION < 6
+	case MIPS_INS_FDIV:
 	case MIPS_INS_DIV_U:
+#endif
 		op->type = RZ_ANALYSIS_OP_TYPE_DIV;
 		break;
+#if CS_NEXT_VERSION < 6
 	case MIPS_INS_CMPGDU:
 	case MIPS_INS_CMPGU:
 	case MIPS_INS_CMPU:
+#endif
 	case MIPS_INS_CMPI:
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 		break;
+#if CS_NEXT_VERSION < 6
+	case MIPS_INS_BZ:
+	case MIPS_INS_BNZ:
+	case MIPS_INS_BNEG:
+	case MIPS_INS_BNEGI:
+#endif
 	case MIPS_INS_J:
 	case MIPS_INS_B:
-	case MIPS_INS_BZ:
 	case MIPS_INS_BEQ:
-	case MIPS_INS_BNZ:
 	case MIPS_INS_BNE:
 	case MIPS_INS_BNEL:
 	case MIPS_INS_BEQL:
 	case MIPS_INS_BEQZ:
-	case MIPS_INS_BNEG:
-	case MIPS_INS_BNEGI:
 	case MIPS_INS_BNEZ:
 	case MIPS_INS_BTEQZ:
 	case MIPS_INS_BTNEZ:
@@ -1053,10 +1086,19 @@ static int analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const u
 			op->type = RZ_ANALYSIS_OP_TYPE_RET;
 			t9_pre = UT64_MAX;
 		}
+#if CS_NEXT_VERSION < 6
 		if (REGID(0) == MIPS_REG_25) {
 			op->jump = t9_pre;
 			t9_pre = UT64_MAX;
 		}
+#else
+		if (REGID(0) == MIPS_REG_T9 ||
+			REGID(0) == MIPS_REG_T9_64) {
+			op->jump = t9_pre;
+			t9_pre = UT64_MAX;
+			op->type = RZ_ANALYSIS_OP_TYPE_RCALL;
+		}
+#endif
 
 		break;
 	case MIPS_INS_SLT:
@@ -1067,6 +1109,7 @@ static int analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const u
 	case MIPS_INS_SLTIU:
 		SET_VAL(op, 2);
 		break;
+#if CS_NEXT_VERSION < 6
 	case MIPS_INS_SHRAV:
 	case MIPS_INS_SHRAV_R:
 	case MIPS_INS_SHRA:
@@ -1076,8 +1119,9 @@ static int analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const u
 		SET_VAL(op, 2);
 		break;
 	case MIPS_INS_SHRL:
-	case MIPS_INS_SRLV:
 	case MIPS_INS_SRL:
+#endif
+	case MIPS_INS_SRLV:
 		op->type = RZ_ANALYSIS_OP_TYPE_SHR;
 		SET_VAL(op, 2);
 		break;

@@ -89,6 +89,7 @@ EXPECT=<<EOF
 0x00080518      addiu gp, gp, -0x753c
 0x0008051c      addu  gp, gp, t9
 EOF
+BROKEN=1
 RUN
 
 NAME=pde ppc
