@@ -89,6 +89,7 @@ RZ_API size_t rz_str_utf8_charsize(const char *str);
 RZ_API size_t rz_str_utf8_charsize_prev(const char *str, int prev_len);
 RZ_API size_t rz_str_utf8_charsize_last(const char *str);
 RZ_API void rz_str_filter_zeroline(char *str, int len);
+RZ_API RZ_OWN char *rz_str_filter_apply(RZ_NONNULL const char *str, const char *filter);
 RZ_API size_t rz_str_utf8_codepoint(const char *s, size_t left);
 RZ_API bool rz_str_char_fullwidth(const char *s, size_t left);
 RZ_API int rz_str_write(int fd, const char *b);
