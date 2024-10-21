@@ -193,6 +193,7 @@ RZ_API bool rz_analysis_op_nonlinear(int t) {
 	switch (t) {
 	// call
 	case RZ_ANALYSIS_OP_TYPE_CALL:
+	case RZ_ANALYSIS_OP_TYPE_CTX_SWITCH:
 	case RZ_ANALYSIS_OP_TYPE_RCALL:
 	case RZ_ANALYSIS_OP_TYPE_ICALL:
 	case RZ_ANALYSIS_OP_TYPE_UCALL:
@@ -401,6 +402,7 @@ RZ_API char *rz_analysis_op_to_string(RzAnalysis *analysis, RzAnalysisOp *op) {
 	case RZ_ANALYSIS_OP_TYPE_IRCALL:
 		snprintf(ret, sizeof(ret), "%s()", r0);
 		break;
+	case RZ_ANALYSIS_OP_TYPE_CTX_SWITCH:
 	case RZ_ANALYSIS_OP_TYPE_CALL:
 		f = rz_analysis_get_fcn_in(analysis, op->jump, RZ_ANALYSIS_FCN_TYPE_NULL);
 		if (f) {
