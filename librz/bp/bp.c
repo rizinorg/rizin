@@ -36,7 +36,7 @@ RZ_API RzBreakpoint *rz_bp_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *ctx) {
 	bp->traces = rz_bp_traptrace_new();
 	bp->cb_printf = (PrintfCallback)printf;
 	bp->bps = rz_list_newf((RzListFree)rz_bp_item_free);
-	bp->plugins = rz_list_new();
+	bp->plugins = ht_sp_new(HT_STR_DUP, NULL, NULL);
 	bp->nhwbps = 0;
 	for (i = 0; i < RZ_ARRAY_SIZE(bp_static_plugins); i++) {
 		rz_bp_plugin_add(bp, bp_static_plugins[i]);
@@ -47,7 +47,7 @@ RZ_API RzBreakpoint *rz_bp_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *ctx) {
 
 RZ_API RzBreakpoint *rz_bp_free(RzBreakpoint *bp) {
 	rz_list_free(bp->bps);
-	rz_list_free(bp->plugins);
+	ht_sp_free(bp->plugins);
 	rz_list_free(bp->traces);
 	free(bp->bps_idx);
 	free(bp);

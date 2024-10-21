@@ -733,7 +733,7 @@ RZ_API int rz_io_fini(RzIO *io) {
 	rz_io_desc_cache_fini_all(io);
 	rz_io_desc_fini(io);
 	rz_io_map_fini(io);
-	rz_list_free(io->plugins);
+	ht_sp_free(io->plugins);
 	rz_io_cache_fini(io);
 	if (io->runprofile) {
 		RZ_FREE(io->runprofile);

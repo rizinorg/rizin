@@ -497,7 +497,7 @@ typedef struct rz_analysis_t {
 	RzAnalysisILVM *il_vm; ///< user-faced VM, NEVER use this for any analysis passes!
 	struct rz_analysis_plugin_t *cur;
 	RzAnalysisRange *limit; // analysis.from, analysis.to
-	RzList /*<RzAnalysisPlugin *>*/ *plugins;
+	HtSP /*<RzAnalysisPlugin *>*/ *plugins;
 	Sdb *sdb_noret;
 	Sdb *sdb_fmts;
 	HtUP *ht_xrefs_from;
