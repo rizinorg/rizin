@@ -1,0 +1,11 @@
+NAME=hppa analysis graph
+FILE=bins/hppa/elf-Linux-hppa-bash
+CMDS=<<EOF
+aaa
+s sym.array_keys_to_word_list
+pdf
+agf
+EOF
+EXPECT=<<EOF
+EOF
+RUN
