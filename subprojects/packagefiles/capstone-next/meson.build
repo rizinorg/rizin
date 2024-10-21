@@ -1,4 +1,10 @@
-project('capstone', 'c', version: 'next', meson_version: '>=0.55.0')
+project('capstone', 'c',
+  version: 'next',
+  meson_version: '>=0.55.0',
+  default_options: [
+    'c_std=c99',
+  ]
+)
 
 cs_files = [
   'arch/Alpha/AlphaDisassembler.c',

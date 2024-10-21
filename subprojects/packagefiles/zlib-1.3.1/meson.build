@@ -1,4 +1,11 @@
-project('zlib', 'c', version : '1.3.1', license : 'zlib')
+project('zlib', 'c',
+  version : '1.3.1',
+  license : 'zlib',
+  meson_version: '>=0.55.0',
+  default_options: [
+    'c_std=c99',
+  ]
+)
 
 cc = meson.get_compiler('c')
 

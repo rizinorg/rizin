@@ -1,5 +1,9 @@
 project('rizin-shell-parser', 'c',
-  license : [ 'LGPL']
+  license: 'LGPL-3.0-only',
+  meson_version: '>=0.55.0',
+  default_options: [
+    'c_std=c99',
+  ]
 )
 
 tree_sitter_dep = dependency('tree-sitter')
