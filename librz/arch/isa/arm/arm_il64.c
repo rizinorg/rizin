@@ -246,7 +246,7 @@ static RzILOpBitVector *read_reg(CS_aarch64_reg() reg) {
 	}
 	const char *var = reg_var_name(reg);
 	if (!var) {
-		return NULL;
+		return U64(0);
 	}
 	if (is_wreg(reg)) {
 		return UNSIGNED(32, VARG(var));
@@ -596,8 +596,8 @@ static RzILOpEffect *shift(cs_insn *insn) {
 		res = LOGOR(SHIFTR0(a, b), SHIFTL0(DUP(a), NEG(DUP(b))));
 		break;
 #if CS_NEXT_VERSION >= 6
-	case AArch64_INS_EXTR:
-		if (insn->alias_id != AArch64_INS_ALIAS_ROR) {
+	case AARCH64_INS_EXTR:
+		if (insn->alias_id != AARCH64_INS_ALIAS_ROR) {
 			return NULL;
 		}
 		b = ARG(3, &bits);
@@ -682,14 +682,14 @@ static RzILOpEffect *bfm(cs_insn *insn) {
 #else
 	ut64 lsb = IMM(2);
 	ut64 width = IMM(3);
-	if (insn->alias_id == AArch64_INS_ALIAS_BFI) {
+	if (insn->alias_id == AARCH64_INS_ALIAS_BFI) {
 		width += 1;
 		// TODO Mod depends on (sf && N) bits
 		lsb = -lsb % 32;
 		ut64 mask_base = rz_num_bitmask(width);
 		ut64 mask = mask_base << RZ_MIN(63, lsb);
 		return write_reg(REGID(0), LOGOR(LOGAND(a, UN(bits, ~mask)), SHIFTL0(LOGAND(b, UN(bits, mask_base)), UN(6, lsb))));
-	} else if (insn->alias_id == AArch64_INS_ALIAS_BFXIL) {
+	} else if (insn->alias_id == AARCH64_INS_ALIAS_BFXIL) {
 		width = width - lsb + 1;
 		ut64 mask_base = rz_num_bitmask(width);
 		ut64 mask = mask_base << RZ_MIN(63, lsb);
@@ -853,8 +853,8 @@ static RzILOpEffect *cmp(cs_insn *insn) {
 #else
 	RzILOpBitVector *a;
 	RzILOpBitVector *b;
-	if (insn->alias_id == AArch64_INS_ALIAS_CMP ||
-		insn->alias_id == AArch64_INS_ALIAS_CMN) {
+	if (insn->alias_id == AARCH64_INS_ALIAS_CMP ||
+		insn->alias_id == AARCH64_INS_ALIAS_CMN) {
 		// Reg at 0 is zero register
 		a = ARG(1, &bits);
 		b = ARG(2, &bits);
@@ -871,7 +871,7 @@ static RzILOpEffect *cmp(cs_insn *insn) {
 #if CS_NEXT_VERSION < 6
 	bool is_neg = insn->id == CS_AARCH64(_INS_CMN) || insn->id == CS_AARCH64(_INS_CCMN);
 #else
-	bool is_neg = insn->alias_id == AArch64_INS_ALIAS_CMN || insn->id == CS_AARCH64(_INS_CCMN);
+	bool is_neg = insn->alias_id == AARCH64_INS_ALIAS_CMN || insn->id == CS_AARCH64(_INS_CCMN);
 #endif
 	RzILOpEffect *eff = SEQ6(
 		SETL("a", a),
@@ -917,9 +917,9 @@ static RzILOpEffect *csinc(cs_insn *insn) {
 	RzILOpBool *c = cond(insn->detail->CS_aarch64_.cc);
 #else
 	AArch64CC_CondCode cc;
-	if (insn->alias_id == AArch64_INS_ALIAS_CINV ||
-		insn->alias_id == AArch64_INS_ALIAS_CNEG ||
-		insn->alias_id == AArch64_INS_ALIAS_CINC) {
+	if (insn->alias_id == AARCH64_INS_ALIAS_CINV ||
+		insn->alias_id == AARCH64_INS_ALIAS_CNEG ||
+		insn->alias_id == AARCH64_INS_ALIAS_CINC) {
 		cc = AArch64CC_getInvertedCondCode(insn->detail->CS_aarch64_.cc);
 	} else {
 		cc = insn->detail->CS_aarch64_.cc;
@@ -996,8 +996,8 @@ static RzILOpEffect *cset(cs_insn *insn) {
 #if CS_NEXT_VERSION < 6
 	c = cond(insn->detail->CS_aarch64_.cc);
 #else
-	if (insn->alias_id == AArch64_INS_ALIAS_CSET ||
-		insn->alias_id == AArch64_INS_ALIAS_CSETM) {
+	if (insn->alias_id == AARCH64_INS_ALIAS_CSET ||
+		insn->alias_id == AARCH64_INS_ALIAS_CSETM) {
 		c = cond(AArch64CC_getInvertedCondCode(insn->detail->CS_aarch64_.cc));
 	} else {
 		c = cond(insn->detail->CS_aarch64_.cc);
@@ -1010,7 +1010,7 @@ static RzILOpEffect *cset(cs_insn *insn) {
 #if CS_NEXT_VERSION < 6
 	return write_reg(REGID(0), ITE(c, SN(bits, insn->id == CS_AARCH64(_INS_CSETM) ? -1 : 1), SN(bits, 0)));
 #else
-	return write_reg(REGID(0), ITE(c, SN(bits, insn->alias_id == AArch64_INS_ALIAS_CSETM ? -1 : 1), SN(bits, 0)));
+	return write_reg(REGID(0), ITE(c, SN(bits, insn->alias_id == AARCH64_INS_ALIAS_CSETM ? -1 : 1), SN(bits, 0)));
 #endif
 }
 
@@ -1792,7 +1792,7 @@ static RzILOpEffect *mul(cs_insn *insn) {
 		res = NEG(res);
 	}
 #else
-	if (insn->alias_id == AArch64_INS_ALIAS_MNEG) {
+	if (insn->alias_id == AARCH64_INS_ALIAS_MNEG) {
 		res = NEG(res);
 	}
 #endif
@@ -1824,8 +1824,8 @@ static RzILOpEffect *mov(cs_insn *insn) {
 	RzILOpBitVector *src = ARG(1, &bits);
 #else
 	RzILOpBitVector *src = NULL;
-	if ((insn->alias_id == AArch64_INS_ALIAS_MOV || insn->alias_id == AArch64_INS_ALIAS_MOVZ) &&
-		(REGID(1) == AArch64_REG_XZR || REGID(1) == AArch64_REG_WZR)) {
+	if ((insn->alias_id == AARCH64_INS_ALIAS_MOV || insn->alias_id == AARCH64_INS_ALIAS_MOVZ) &&
+		(REGID(1) == AARCH64_REG_XZR || REGID(1) == AARCH64_REG_WZR)) {
 		// Sometimes regs are ORed with the zero register for the MOV alias.
 		// Sometimes not.
 		src = ARG(2, &bits);
@@ -1971,29 +1971,29 @@ static RzILOpEffect *usbfm(cs_insn *insn) {
 	}
 	bool is_signed = insn->id == CS_AARCH64(_INS_SBFX) || insn->id == CS_AARCH64(_INS_SBFIZ);
 #else
-	if (insn->alias_id == AArch64_INS_ALIAS_SBFIZ || insn->alias_id == AArch64_INS_ALIAS_UBFIZ) {
+	if (insn->alias_id == AARCH64_INS_ALIAS_SBFIZ || insn->alias_id == AARCH64_INS_ALIAS_UBFIZ) {
 		// TODO: modulo usage depends on N and SF bit.
 		// sf == 0 && N == 0 => mod 32.
 		// sf == 1 && N == 1 => mod 64.
 		width += 1;
 		lsb = -lsb % 64;
 		res = SHIFTL0(UNSIGNED(width + lsb, src), UN(6, lsb));
-	} else if (insn->alias_id == AArch64_INS_ALIAS_SBFX || insn->alias_id == AArch64_INS_ALIAS_UBFX) {
+	} else if (insn->alias_id == AARCH64_INS_ALIAS_SBFX || insn->alias_id == AARCH64_INS_ALIAS_UBFX) {
 		width = width - lsb + 1;
 		res = UNSIGNED(width, SHIFTR0(src, UN(6, lsb)));
-	} else if (insn->alias_id == AArch64_INS_ALIAS_LSL) {
+	} else if (insn->alias_id == AARCH64_INS_ALIAS_LSL) {
 		// imms != 0x1f => mod 32
 		// imms != 0x3f => mod 64
 		ut32 m = IMM(3) != 0x1f ? 32 : 64;
 		return write_reg(REGID(0), SHIFTL0(src, UN(6, -IMM(2) % m)));
-	} else if (insn->alias_id == AArch64_INS_ALIAS_LSR) {
+	} else if (insn->alias_id == AARCH64_INS_ALIAS_LSR) {
 		return write_reg(REGID(0), SHIFTR0(src, UN(6, IMM(2))));
-	} else if (insn->alias_id == AArch64_INS_ALIAS_ASR) {
+	} else if (insn->alias_id == AARCH64_INS_ALIAS_ASR) {
 		return write_reg(REGID(0), SHIFTR(MSB(src), DUP(src), UN(6, IMM(2))));
 	} else {
 		return NULL;
 	}
-	bool is_signed = insn->alias_id == AArch64_INS_ALIAS_SBFX || insn->alias_id == AArch64_INS_ALIAS_SBFIZ;
+	bool is_signed = insn->alias_id == AARCH64_INS_ALIAS_SBFX || insn->alias_id == AARCH64_INS_ALIAS_SBFIZ;
 #endif
 	res = LET("res", res, is_signed ? SIGNED(bits, VARLP("res")) : UNSIGNED(bits, VARLP("res")));
 	return write_reg(REGID(0), res);
@@ -2067,15 +2067,15 @@ static RzILOpEffect *mvn(cs_insn *insn) {
 	}
 #else
 	switch (insn->alias_id) {
-	case AArch64_INS_ALIAS_NEG:
-	case AArch64_INS_ALIAS_NEGS:
+	case AARCH64_INS_ALIAS_NEG:
+	case AARCH64_INS_ALIAS_NEGS:
 		res = NEG(val);
 		break;
-	case AArch64_INS_ALIAS_NGC:
-	case AArch64_INS_ALIAS_NGCS:
+	case AARCH64_INS_ALIAS_NGC:
+	case AARCH64_INS_ALIAS_NGCS:
 		res = NEG(ADD(val, ITE(VARG("cf"), UN(bits, 0), UN(bits, 1))));
 		break;
-	case AArch64_INS_ALIAS_MVN:
+	case AARCH64_INS_ALIAS_MVN:
 		res = LOGNOT(val);
 		break;
 	default:
@@ -2092,7 +2092,7 @@ static RzILOpEffect *mvn(cs_insn *insn) {
 #if CS_NEXT_VERSION < 6
 		RzILOpEffect *set_cf = SETG("cf", sub_carry(UN(bits, 0), VARL("b"), insn->id == CS_AARCH64(_INS_NGC), bits));
 #else
-		RzILOpEffect *set_cf = SETG("cf", sub_carry(UN(bits, 0), VARL("b"), insn->alias_id == AArch64_INS_ALIAS_NGC, bits));
+		RzILOpEffect *set_cf = SETG("cf", sub_carry(UN(bits, 0), VARL("b"), insn->alias_id == AARCH64_INS_ALIAS_NGC, bits));
 #endif
 		return SEQ5(
 			SETL("b", DUP(val)),
@@ -2316,7 +2316,7 @@ static RzILOpEffect *smull(cs_insn *insn) {
 #if CS_NEXT_VERSION < 6
 	bool is_signed = insn->id == CS_AARCH64(_INS_SMULL) || insn->id == CS_AARCH64(_INS_SMNEGL);
 #else
-	bool is_signed = insn->alias_id == AArch64_INS_ALIAS_SMULL || insn->alias_id == AArch64_INS_ALIAS_SMNEGL;
+	bool is_signed = insn->alias_id == AARCH64_INS_ALIAS_SMULL || insn->alias_id == AARCH64_INS_ALIAS_SMNEGL;
 #endif
 	RzILOpBitVector *res = MUL(is_signed ? SIGNED(64, x) : UNSIGNED(64, x), is_signed ? SIGNED(64, y) : UNSIGNED(64, y));
 #if CS_NEXT_VERSION < 6
@@ -2324,7 +2324,7 @@ static RzILOpEffect *smull(cs_insn *insn) {
 		res = NEG(res);
 	}
 #else
-	if (insn->alias_id == AArch64_INS_ALIAS_SMNEGL || insn->alias_id == AArch64_INS_ALIAS_UMNEGL) {
+	if (insn->alias_id == AARCH64_INS_ALIAS_SMNEGL || insn->alias_id == AARCH64_INS_ALIAS_UMNEGL) {
 		res = NEG(res);
 	}
 #endif
@@ -2444,19 +2444,19 @@ static RzILOpEffect *sxt(cs_insn *insn) {
 	switch (insn->alias_id) {
 	default:
 		return NULL;
-	case AArch64_INS_ALIAS_UXTB:
+	case AARCH64_INS_ALIAS_UXTB:
 		is_signed = false;
 		// fallthrough
-	case AArch64_INS_ALIAS_SXTB:
+	case AARCH64_INS_ALIAS_SXTB:
 		bits = 8;
 		break;
-	case AArch64_INS_ALIAS_UXTH:
+	case AARCH64_INS_ALIAS_UXTH:
 		is_signed = false;
 		// fallthrough
-	case AArch64_INS_ALIAS_SXTH:
+	case AARCH64_INS_ALIAS_SXTH:
 		bits = 16;
 		break;
-	case AArch64_INS_ALIAS_SXTW:
+	case AARCH64_INS_ALIAS_SXTW:
 		bits = 32;
 		break;
 	}
@@ -2612,16 +2612,16 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case CS_AARCH64(_INS_SBCS):
 #endif
 #if CS_NEXT_VERSION >= 6
-		if (insn->alias_id == AArch64_INS_ALIAS_MOV ||
-			insn->alias_id == AArch64_INS_ALIAS_MOVZ) {
+		if (insn->alias_id == AARCH64_INS_ALIAS_MOV ||
+			insn->alias_id == AARCH64_INS_ALIAS_MOVZ) {
 			return mov(insn);
-		} else if (insn->alias_id == AArch64_INS_ALIAS_CMP ||
-			insn->alias_id == AArch64_INS_ALIAS_CMN) {
+		} else if (insn->alias_id == AARCH64_INS_ALIAS_CMP ||
+			insn->alias_id == AARCH64_INS_ALIAS_CMN) {
 			return cmp(insn);
-		} else if (insn->alias_id == AArch64_INS_ALIAS_NEG ||
-			insn->alias_id == AArch64_INS_ALIAS_NGC ||
-			insn->alias_id == AArch64_INS_ALIAS_NEGS ||
-			insn->alias_id == AArch64_INS_ALIAS_NGCS) {
+		} else if (insn->alias_id == AARCH64_INS_ALIAS_NEG ||
+			insn->alias_id == AARCH64_INS_ALIAS_NGC ||
+			insn->alias_id == AARCH64_INS_ALIAS_NEGS ||
+			insn->alias_id == AARCH64_INS_ALIAS_NGCS) {
 			return mvn(insn);
 		}
 #endif
@@ -2638,12 +2638,12 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case CS_AARCH64(_INS_ORN):
 	case CS_AARCH64(_INS_ORR):
 #if CS_NEXT_VERSION >= 6
-		if (insn->alias_id == AArch64_INS_ALIAS_MOV ||
-			insn->alias_id == AArch64_INS_ALIAS_MOVZ) {
+		if (insn->alias_id == AARCH64_INS_ALIAS_MOV ||
+			insn->alias_id == AARCH64_INS_ALIAS_MOVZ) {
 			return mov(insn);
-		} else if (insn->alias_id == AArch64_INS_ALIAS_TST) {
+		} else if (insn->alias_id == AARCH64_INS_ALIAS_TST) {
 			return tst(insn);
-		} else if (insn->alias_id == AArch64_INS_ALIAS_MVN) {
+		} else if (insn->alias_id == AARCH64_INS_ALIAS_MVN) {
 			return mvn(insn);
 		}
 #endif
@@ -2728,8 +2728,8 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case CS_AARCH64(_INS_CINV):
 	case CS_AARCH64(_INS_CNEG):
 #else
-		if (insn->alias_id == AArch64_INS_ALIAS_CSET ||
-			insn->alias_id == AArch64_INS_ALIAS_CSETM) {
+		if (insn->alias_id == AARCH64_INS_ALIAS_CSET ||
+			insn->alias_id == AARCH64_INS_ALIAS_CSETM) {
 			return cset(insn);
 		}
 #endif
@@ -2745,7 +2745,7 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 		return clz(insn);
 	case CS_AARCH64(_INS_EXTR):
 #if CS_NEXT_VERSION >= 6
-		if (insn->alias_id == AArch64_INS_ALIAS_ROR) {
+		if (insn->alias_id == AARCH64_INS_ALIAS_ROR) {
 			return shift(insn);
 		}
 #endif
@@ -2969,8 +2969,8 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case CS_AARCH64(_INS_MADD):
 	case CS_AARCH64(_INS_MSUB):
 #if CS_NEXT_VERSION >= 6
-		if (insn->alias_id == AArch64_INS_ALIAS_MUL ||
-			insn->alias_id == AArch64_INS_ALIAS_MNEG) {
+		if (insn->alias_id == AARCH64_INS_ALIAS_MUL ||
+			insn->alias_id == AARCH64_INS_ALIAS_MNEG) {
 			return mul(insn);
 		}
 #endif
@@ -3017,11 +3017,11 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case CS_AARCH64(_INS_UBFIZ):
 	case CS_AARCH64(_INS_UBFX):
 #else
-		if (insn->alias_id == AArch64_INS_ALIAS_UXTH ||
-			insn->alias_id == AArch64_INS_ALIAS_UXTB ||
-			insn->alias_id == AArch64_INS_ALIAS_SXTH ||
-			insn->alias_id == AArch64_INS_ALIAS_SXTB ||
-			insn->alias_id == AArch64_INS_ALIAS_SXTW) {
+		if (insn->alias_id == AARCH64_INS_ALIAS_UXTH ||
+			insn->alias_id == AARCH64_INS_ALIAS_UXTB ||
+			insn->alias_id == AARCH64_INS_ALIAS_SXTH ||
+			insn->alias_id == AARCH64_INS_ALIAS_SXTB ||
+			insn->alias_id == AARCH64_INS_ALIAS_SXTW) {
 			return sxt(insn);
 		}
 #endif
@@ -3038,10 +3038,10 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case CS_AARCH64(_INS_UMADDL):
 	case CS_AARCH64(_INS_UMSUBL):
 #if CS_NEXT_VERSION >= 6
-		if (insn->alias_id == AArch64_INS_ALIAS_SMULL ||
-			insn->alias_id == AArch64_INS_ALIAS_UMULL ||
-			insn->alias_id == AArch64_INS_ALIAS_SMNEGL ||
-			insn->alias_id == AArch64_INS_ALIAS_UMNEGL) {
+		if (insn->alias_id == AARCH64_INS_ALIAS_SMULL ||
+			insn->alias_id == AARCH64_INS_ALIAS_UMULL ||
+			insn->alias_id == AARCH64_INS_ALIAS_SMNEGL ||
+			insn->alias_id == AARCH64_INS_ALIAS_UMNEGL) {
 			return smull(insn);
 		}
 #endif

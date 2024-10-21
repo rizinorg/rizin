@@ -4,6 +4,7 @@ CMDS=iI ; omlt ; iS ; ie
 EXPECT=<<EOF
 arch     arm
 cpu      N/A
+features N/A
 baddr    0x02000000
 binsz    0x001ce803
 bintype  N/A

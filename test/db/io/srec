@@ -88,6 +88,7 @@ EOF
 EXPECT=<<EOF
 arch     arm
 cpu      N/A
+features N/A
 baddr    0x00008000
 binsz    0x0008b9c8
 bintype  elf

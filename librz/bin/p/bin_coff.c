@@ -416,11 +416,20 @@ static RzBinInfo *info(RzBinFile *bf) {
 
 	switch (obj->hdr.f_magic) {
 	case COFF_FILE_MACHINE_R4000:
+		ret->cpu = rz_str_dup("mips4");
+		/* fall-thru */
 	case COFF_FILE_MACHINE_MIPS16:
+		if (!ret->cpu) {
+			ret->cpu = rz_str_dup("mips16");
+		}
+		/* fall-thru */
 	case COFF_FILE_MACHINE_MIPSFPU:
 	case COFF_FILE_MACHINE_MIPSFPU16:
 		ret->machine = rz_str_dup("mips");
 		ret->arch = rz_str_dup("mips");
+		if (!ret->cpu) {
+			ret->cpu = rz_str_dup("mips32");
+		}
 		ret->bits = 32;
 		break;
 	case COFF_FILE_MACHINE_I386:

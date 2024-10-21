@@ -253,7 +253,7 @@ static bool subvar(RzParse *p, RzAnalysisFunction *f, RzAnalysisOp *op, char *da
 	return ret;
 }
 
-RzParsePlugin rz_parse_plugin_mips_cs_pseudo = {
+RzParsePlugin rz_parse_plugin_mips_pseudo = {
 	.name = "mips.pseudo",
 	.desc = "MIPS pseudo syntax",
 	.init = NULL,

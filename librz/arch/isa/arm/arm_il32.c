@@ -348,7 +348,9 @@ static bool is_reg_shift(arm_shifter type) {
 	case ARM_SFT_LSL_REG:
 	case ARM_SFT_LSR_REG:
 	case ARM_SFT_ROR_REG:
+#if CS_NEXT_VERSION < 6
 	case ARM_SFT_RRX_REG:
+#endif
 		return true;
 	default:
 		return false;
@@ -401,7 +403,9 @@ shift(RzILOpBitVector *val, RZ_NULLABLE RzILOpBool **carry_out, arm_shifter type
 			SHIFTR0(val, dist),
 			SHIFTL0(DUP(val), NEG(DUP(dist))));
 	case ARM_SFT_RRX:
+#if CS_NEXT_VERSION < 6
 	case ARM_SFT_RRX_REG:
+#endif
 		if (carry_out) {
 			*carry_out = LSB(DUP(val));
 		}

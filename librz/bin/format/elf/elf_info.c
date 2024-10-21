@@ -6,10 +6,6 @@
 
 #include "elf.h"
 
-#define EF_MIPS_ABI_O32 0x00001000 /* O32 ABI.  */
-#define EF_MIPS_ABI_O64 0x00002000 /* O32 extended for 64 bit.  */
-#define EF_MIPS_ABI     0x0000f000
-
 #define VERSYM_VERSION 0x7fff
 
 struct mips_bits_translation {
@@ -47,18 +43,6 @@ struct ver_flags_translation {
 	const char *name;
 };
 
-static const struct mips_bits_translation mips_bits_translation_table[] = {
-	{ EF_MIPS_ARCH_1, 32 },
-	{ EF_MIPS_ARCH_2, 32 },
-	{ EF_MIPS_ARCH_3, 32 },
-	{ EF_MIPS_ARCH_4, 32 },
-	{ EF_MIPS_ARCH_5, 32 },
-	{ EF_MIPS_ARCH_32, 32 },
-	{ EF_MIPS_ARCH_64, 64 },
-	{ EF_MIPS_ARCH_32R2, 32 },
-	{ EF_MIPS_ARCH_64R2, 64 }
-};
-
 static const struct section_note_osabi_translation section_note_osabi_translation_table[] = {
 	{ ".note.openbsd.ident", "openbsd" },
 	{ ".note.minix.ident", "minix" },
@@ -74,7 +58,7 @@ static const struct machine_name_translation machine_name_translation_table[] = 
 	{ EM_68K, "Motorola m68k family" },
 	{ EM_88K, "Motorola m88k family" },
 	{ EM_860, "Intel 80860" },
-	{ EM_MIPS, "MIPS R3000" },
+	{ EM_MIPS, "MIPS R3000 big-endian" },
 	{ EM_S370, "IBM System/370" },
 	{ EM_MIPS_RS3_LE, "MIPS R3000 little-endian" },
 	{ EM_PARISC, "HPPA" },
@@ -229,8 +213,51 @@ static const struct class_translation class_translation_table[] = {
 	{ ELFCLASS64, "ELF64" }
 };
 
-static const struct cpu_mips_translation cpu_mips_translation_table[] = {
-	{ EF_MIPS_ARCH_1, "mips1" },
+static const struct cpu_mips_translation gnu_mips_mach_translation_table[] = {
+	{ EF_MIPS_MACH_3900, "3900 " },
+	{ EF_MIPS_MACH_4010, "4010 " },
+	{ EF_MIPS_MACH_4100, "4100 " },
+	{ EF_MIPS_MACH_ALLEGREX, "allegrex " },
+	{ EF_MIPS_MACH_4650, "4650 " },
+	{ EF_MIPS_MACH_4120, "4120 " },
+	{ EF_MIPS_MACH_4111, "4111 " },
+	{ EF_MIPS_MACH_SB1, "sb1 " },
+	{ EF_MIPS_MACH_OCTEON, "octeon " },
+	{ EF_MIPS_MACH_XLR, "xlr " },
+	{ EF_MIPS_MACH_OCTEON2, "octeon2 " },
+	{ EF_MIPS_MACH_OCTEON3, "octeon3 " },
+	{ EF_MIPS_MACH_5400, "5400 " },
+	{ EF_MIPS_MACH_5900, "5900 " },
+	{ EF_MIPS_MACH_IAMR2, "iamr2 " },
+	{ EF_MIPS_MACH_5500, "5500 " },
+	{ EF_MIPS_MACH_9000, "9000 " },
+	{ EF_MIPS_MACH_LS2E, "ls2e " },
+	{ EF_MIPS_MACH_LS2F, "ls2f " },
+	{ EF_MIPS_MACH_GS464, "gs464 " },
+	{ EF_MIPS_MACH_GS464E, "gs464e " },
+	{ EF_MIPS_MACH_GS264E, "gs264e " },
+};
+
+static const struct cpu_mips_translation gnu_mips_ase_translation_table[] = {
+	{ EF_MIPS_ARCH_ASE_MDMX, "mdmx " },
+	{ EF_MIPS_ARCH_ASE_M16, "mips16 " },
+	{ EF_MIPS_ARCH_ASE_MICROMIPS, "micromips " },
+};
+
+static const struct mips_bits_translation mips_bits_translation_table[] = {
+	{ EF_MIPS_ARCH_1, 32 },
+	{ EF_MIPS_ARCH_2, 32 },
+	{ EF_MIPS_ARCH_3, 32 },
+	{ EF_MIPS_ARCH_4, 32 },
+	{ EF_MIPS_ARCH_5, 32 },
+	{ EF_MIPS_ARCH_32, 32 },
+	{ EF_MIPS_ARCH_64, 64 },
+	{ EF_MIPS_ARCH_32R2, 32 },
+	{ EF_MIPS_ARCH_64R2, 64 }
+};
+
+static const struct cpu_mips_translation gnu_mips_arch_translation_table[] = {
+	{ EF_MIPS_ARCH_1, "mips5" }, // also used for generic mips, so we default to mips5
 	{ EF_MIPS_ARCH_2, "mips2" },
 	{ EF_MIPS_ARCH_3, "mips3" },
 	{ EF_MIPS_ARCH_4, "mips4" },
@@ -632,16 +659,8 @@ static int get_bits_mips_common(Elf_(Word) mips_type) {
 	return 32;
 }
 
-static int is_playstation_hack(ELFOBJ *bin, Elf_(Word) mips_type) {
-	return Elf_(rz_bin_elf_is_executable)(bin) && Elf_(rz_bin_elf_is_static)(bin) && mips_type == EF_MIPS_ARCH_3;
-}
-
 static int get_bits_mips(ELFOBJ *bin) {
 	const Elf_(Word) mips_type = bin->ehdr.e_flags & EF_MIPS_ARCH;
-
-	if (is_playstation_hack(bin, mips_type)) {
-		return 64;
-	}
 
 	return get_bits_mips_common(mips_type);
 }
@@ -836,62 +855,114 @@ static char *get_file_type_basic(RZ_NONNULL ELFOBJ *bin) {
 
 static char *get_cpu_mips(ELFOBJ *bin) {
 	Elf_(Word) mips_arch = bin->ehdr.e_flags & EF_MIPS_ARCH;
+	Elf_(Word) mips_ase = bin->ehdr.e_flags & EF_MIPS_ARCH_ASE;
+	Elf_(Word) mips_mach = bin->ehdr.e_flags & EF_MIPS_MACH;
 
-	for (size_t i = 0; i < RZ_ARRAY_SIZE(cpu_mips_translation_table); i++) {
-		if (mips_arch == cpu_mips_translation_table[i].arch) {
-			return rz_str_dup(cpu_mips_translation_table[i].name);
+	RzStrBuf sb;
+	rz_strbuf_init(&sb);
+
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(gnu_mips_mach_translation_table); i++) {
+		if (mips_mach == gnu_mips_mach_translation_table[i].arch) {
+			rz_strbuf_append(&sb, gnu_mips_mach_translation_table[i].name);
+			break;
 		}
 	}
 
-	return rz_str_dup(" Unknown mips ISA");
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(gnu_mips_ase_translation_table); i++) {
+		if (mips_ase == gnu_mips_ase_translation_table[i].arch) {
+			rz_strbuf_append(&sb, gnu_mips_ase_translation_table[i].name);
+			break;
+		}
+	}
+
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(gnu_mips_arch_translation_table); i++) {
+		if (mips_arch == gnu_mips_arch_translation_table[i].arch) {
+			rz_strbuf_append(&sb, gnu_mips_arch_translation_table[i].name);
+			break;
+		}
+	}
+
+	if (rz_strbuf_is_empty(&sb)) {
+		return rz_str_dup("Unknown ISA");
+	}
+
+	return rz_strbuf_drain_nofree(&sb);
 }
 
 static bool is_elf_class64(ELFOBJ *bin) {
 	return bin->ehdr.e_ident[EI_CLASS] == ELFCLASS64;
 }
 
-static bool is_mips_o32(ELFOBJ *bin) {
-	if (bin->ehdr.e_ident[EI_CLASS] != ELFCLASS32) {
-		return false;
-	}
-
-	if ((bin->ehdr.e_flags & EF_MIPS_ABI2) != 0) {
-		return false;
-	}
-
-	if ((bin->ehdr.e_flags & EF_MIPS_ABI) != 0 && (bin->ehdr.e_flags & EF_MIPS_ABI) != EF_MIPS_ABI_O32) {
-		return false;
-	}
-
-	return true;
-}
-
-static bool is_mips_n32(ELFOBJ *bin) {
-	if (bin->ehdr.e_ident[EI_CLASS] != ELFCLASS32) {
-		return false;
-	}
-
-	if ((bin->ehdr.e_flags & EF_MIPS_ABI2) == 0 || (bin->ehdr.e_flags & EF_MIPS_ABI) != 0) {
-		return false;
-	}
-
-	return true;
+static bool is_elf_class32(ELFOBJ *bin) {
+	return bin->ehdr.e_ident[EI_CLASS] == ELFCLASS32;
 }
 
 static char *get_abi_mips(ELFOBJ *bin) {
+	Elf_(Word) mips_eflags = bin->ehdr.e_flags;
+	Elf_(Word) mips_abi = mips_eflags & EF_MIPS_ABI;
+
+	RzStrBuf sb;
+	rz_strbuf_init(&sb);
+
+	if (mips_eflags & EF_MIPS_NOREORDER) {
+		rz_strbuf_append(&sb, "noreorder ");
+	}
+
+	if (mips_eflags & EF_MIPS_PIC) {
+		rz_strbuf_append(&sb, "pic ");
+	}
+
+	if (mips_eflags & EF_MIPS_CPIC) {
+		rz_strbuf_append(&sb, "cpic ");
+	}
+
+	if (mips_eflags & EF_MIPS_XGOT) {
+		rz_strbuf_append(&sb, "xgot ");
+	}
+
+	if (mips_eflags & EF_MIPS_UCODE) {
+		rz_strbuf_append(&sb, "ucode ");
+	}
+
+	if (mips_eflags & EF_MIPS_ABI2) {
+		rz_strbuf_append(&sb, "abi2 ");
+	}
+
+	if (mips_eflags & EF_MIPS_FP64) {
+		rz_strbuf_append(&sb, "fp64 ");
+	}
+
+	if (mips_eflags & EF_MIPS_NAN2008) {
+		rz_strbuf_append(&sb, "nan2008 ");
+	}
+
+	if (mips_abi == EF_MIPS_ABI_O32) {
+		rz_strbuf_append(&sb, "o32 ");
+	}
+
+	if (mips_abi == EF_MIPS_ABI_O64) {
+		rz_strbuf_append(&sb, "o64 ");
+	}
+
+	if (mips_abi == EF_MIPS_ABI_EABI32) {
+		rz_strbuf_append(&sb, "eabi32 ");
+	}
+
+	if (mips_abi == EF_MIPS_ABI_EABI64) {
+		rz_strbuf_append(&sb, "eabi64 ");
+	}
+
 	if (is_elf_class64(bin)) {
-		return rz_str_dup("n64");
+		rz_strbuf_append(&sb, "n64");
+	} else if (is_elf_class32(bin)) {
+		rz_strbuf_append(&sb, "n32");
 	}
 
-	if (is_mips_n32(bin)) {
-		return rz_str_dup("n32");
+	if (rz_strbuf_is_empty(&sb)) {
+		return rz_str_dup("Unknown ABI");
 	}
 
-	if (is_mips_o32(bin)) {
-		return rz_str_dup("o32");
-	}
-
-	return NULL;
+	return rz_strbuf_drain_nofree(&sb);
 }
 
 /**
@@ -1465,10 +1536,6 @@ RZ_OWN char *Elf_(rz_bin_elf_get_arch)(RZ_NONNULL ELFOBJ *bin) {
  */
 RZ_OWN char *Elf_(rz_bin_elf_get_cpu)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, NULL);
-
-	if (!Elf_(rz_bin_elf_has_segments)(bin)) {
-		return NULL;
-	}
 
 	if (bin->ehdr.e_machine == EM_MIPS) {
 		return get_cpu_mips(bin);

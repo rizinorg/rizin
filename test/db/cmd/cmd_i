@@ -126,6 +126,7 @@ type
 [Info]
 arch     N/A
 cpu      N/A
+features N/A
 baddr    0x00000000
 binsz    0x00000401
 bintype  N/A
@@ -224,6 +225,7 @@ block   0x100
 type    
 arch     N/A
 cpu      N/A
+features N/A
 baddr    0x00000000
 binsz    0x00000400
 bintype  N/A
@@ -273,6 +275,7 @@ iorw     false
 block    0x100
 arch     x86
 cpu      N/A
+features N/A
 baddr    0x08048000
 binsz    0x00001323
 bintype  elf
@@ -375,6 +378,7 @@ block    0x100
 type     JAVA CLASS
 arch     java
 cpu      N/A
+features N/A
 baddr    0x00000000
 binsz    0x00000400
 bintype  class
@@ -1782,6 +1786,7 @@ CMDS=iI
 EXPECT=<<EOF
 arch     x86
 cpu      N/A
+features N/A
 baddr    0x08048000
 binsz    0x00001323
 bintype  elf
@@ -3297,6 +3302,7 @@ block    0x100
 type     EXEC (Executable file)
 arch     x86
 cpu      N/A
+features N/A
 baddr    0x00400000
 binsz    0x00001a36
 bintype  elf
@@ -3393,6 +3399,7 @@ CMDS=iI
 EXPECT=<<EOF
 arch     x86
 cpu      N/A
+features N/A
 baddr    0x00400000
 binsz    0x00001a36
 bintype  elf
