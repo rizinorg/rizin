@@ -4,7 +4,9 @@
 // SPDX-FileCopyrightText: 2008-2020 alvaro_fe <alvaro.felipe91@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include "core/core_private.h"
 #include "elf.h"
+#include "rz_types_base.h"
 
 #define EF_MIPS_ABI_O32 0x00001000 /* O32 ABI.  */
 #define EF_MIPS_ABI_O64 0x00002000 /* O32 extended for 64 bit.  */
@@ -34,6 +36,11 @@ struct class_translation {
 
 struct cpu_mips_translation {
 	Elf_(Word) arch;
+	const char *name;
+};
+
+struct cpu_arm_translation {
+	Elf_(Half) arch;
 	const char *name;
 };
 
@@ -239,6 +246,32 @@ static const struct cpu_mips_translation cpu_mips_translation_table[] = {
 	{ EF_MIPS_ARCH_64, "mips64" },
 	{ EF_MIPS_ARCH_32R2, "mips32r2" },
 	{ EF_MIPS_ARCH_64R2, "mips64r2" },
+};
+
+static const struct cpu_arm_translation cpu_arm_translation_table[] = {
+	{ ARM_VER_PRE_V4, "ARM Pre-v4"},
+	{ ARM_VER_V4, "ARM v4"},
+	{ ARM_VER_V4T, "ARM v4T"},
+	{ ARM_VER_V5T, "ARM v5T"},
+	{ ARM_VER_V5TE, "ARM v5TE"},
+	{ ARM_VER_V5TEJ, "ARM v5TEJ"},
+	{ ARM_VER_V6, "ARM v6"},
+	{ ARM_VER_V6KZ, "ARM v6KZ"},
+	{ ARM_VER_V6T2, "ARM v6T2"},
+	{ ARM_VER_V6K, "ARM v6K"},
+	{ ARM_VER_V7, "ARM v7"},
+	{ ARM_VER_V6_M, "ARM v6-M"},
+	{ ARM_VER_V6S_M, "ARM v6S-M"},
+	{ ARM_VER_V7E_M, "ARM v7E-M"},
+	{ ARM_VER_V8_A, "ARM v8-A"},
+	{ ARM_VER_V8_R, "ARM v8-R"},
+	{ ARM_VER_V8_M_BASELINE, "ARM v8-M.baseline"},
+	{ ARM_VER_V8_M_MAINLINE, "ARM v8-M.mainline"},
+	{ ARM_VER_V8_1_A, "ARM v8.1-A"},
+	{ ARM_VER_V8_2_A, "ARM v8.2-A"},
+	{ ARM_VER_V8_3_A, "ARM v8.3-A"},
+	{ ARM_VER_V8_1_M_MAINLINE, "ARM v8.1-M.mainline"},
+	{ ARM_VER_V9_A, "ARM v9-A"},
 };
 
 static const struct arch_translation arch_translation_table[] = {
@@ -844,6 +877,143 @@ static char *get_cpu_mips(ELFOBJ *bin) {
 	}
 
 	return rz_str_dup(" Unknown mips ISA");
+}
+
+static char *read_arm_build_attributes(char *ptr, ut32 bytes_to_read, bool isbig) {
+	while (bytes_to_read > 0) {
+		ut64 arm_tag = 0;
+		int len = 0;
+		rz_uleb128_decode((ut8 *)ptr, &len, &arm_tag);
+		ptr += len;
+		bytes_to_read -= len;
+		arm_tag = arm_tag % 128;
+		switch (arm_tag) {
+		case TAG_CPU_ARCH: {
+			ut64 cpu_arch = 0;
+			rz_uleb128_decode((ut8 *)ptr, &len, &cpu_arch);
+			ptr += len;
+			bytes_to_read -= len;
+			for (size_t i = 0; i < RZ_ARRAY_SIZE(cpu_arm_translation_table); i++) {
+				if (cpu_arch == cpu_arm_translation_table[i].arch) {
+					return strdup(cpu_arm_translation_table[i].name);
+				}
+			}
+			break;
+		}
+		case TAG_CPU_ARCH_PROFILE:
+			return strdup("Tag_CPU_ARCH_PROFILE");
+		case TAG_CPU_RAW_NAME:
+		case TAG_CPU_NAME:
+		case TAG_COMPATIBILITY:
+			len = strlen(ptr) + 1;
+			bytes_to_read -= len;
+			ptr += len;
+			break;
+		case TAG_ARM_ISA_USE:
+		case TAG_THUMB_ISA_USE:
+		case TAG_FP_ARCH:
+		case TAG_WMMX_ARCH:
+		case TAG_ADVANCED_SIMD_ARCH:
+		case TAG_PCS_CONFIG:
+		case TAG_ABI_PCS_R9_USE:
+		case TAG_ABI_PCS_RW_DATA:
+		case TAG_ABI_PCS_RO_DATA:
+		case TAG_ABI_PCS_GOT_USE:
+		case TAG_ABI_PCS_WCHAR_T:
+		case TAG_ABI_ENUM_SIZE:
+		case TAG_ABI_ALIGN_NEEDED:
+		case TAG_ABI_ALIGN_PRESERVED:
+		case TAG_ABI_FP_ROUNDING:
+		case TAG_ABI_FP_DENORMAL:
+		case TAG_ABI_FP_EXCEPTIONS:
+		case TAG_ABI_FP_USER_EXCEPTIONS:
+		case TAG_ABI_FP_NUMBER_MODEL:
+		case TAG_ABI_HARDFP_USE:
+		case TAG_ABI_VFP_ARGS:
+		case TAG_ABI_WMMX_ARGS:
+		case TAG_ABI_OPTIMIZATION_GOALS:
+		case TAG_ABI_FP_OPTIMIZATION_GOALS:
+			rz_uleb128_decode((ut8 *)ptr, &len, NULL);
+			ptr += len;
+			bytes_to_read -= len;
+			break;
+		default:
+			if (arm_tag > 32) {
+				if (arm_tag & 1) {
+					len = strlen(ptr) + 1;
+					bytes_to_read -= len;
+					ptr += len;
+				} else {
+					rz_uleb128_decode((ut8 *)ptr, &len, NULL);
+					ptr += len;
+					bytes_to_read -= len;
+				}
+			}
+		}
+	}
+	return strdup(" Unknown arm ISA");
+}
+
+static char *read_arm_aeabi_section(char *ptr, ut32 bytes_to_read, bool isbig) {
+	while (bytes_to_read > 0) {
+		ut8 sub_subsection = rz_read_ble8(ptr); // Will always be 1, 2 or 3, hence no need for uleb128 decoding.
+		ut32 sub_subsection_size = rz_read_ble32(ptr + 1, isbig);
+
+		if (sub_subsection == ARM_TAG_FILE) {
+			char *str = read_arm_build_attributes(ptr + 5, sub_subsection_size - 5, isbig);
+			if (strcmp(str, " Unknown arm ISA")) {
+				return str;
+			}
+		}
+		ptr += sub_subsection_size;
+		bytes_to_read -= sub_subsection_size;
+	}
+	return strdup(" Unknown arm ISA");
+}
+
+/**
+ * Processor-specific section types explained in:
+ * 1. https://github.com/ARM-software/abi-aa/blob/main/aaelf32/aaelf32.rst
+ * 2. https://github.com/ARM-software/abi-aa/blob/main/addenda32/addenda32.rst
+ */
+static char *get_cpu_arm(ELFOBJ *bin) {
+	RzBinElfSection *section = Elf_(rz_bin_elf_get_section_with_name)(bin, ".ARM.attributes");
+	if (!section) {
+		return strdup(" Unknown arm ISA");
+	}
+
+	ut64 offset = section->offset;
+	ut64 size = section->size;
+	if (size < 1) {
+		return strdup(" Unknown arm ISA");
+	}
+
+	char *result = malloc(size + 1);
+	if (!result) {
+		return strdup(" Unknown arm ISA");
+	}
+
+	if (rz_buf_read_at(bin->b, offset, (ut8 *)result, size) < 1) {
+		free(result);
+		return strdup(" Unknown arm ISA");
+	}
+
+	char *subsection_ptr = result + 1; // Point to the first subsection (first byte is the format-version)
+	bool isbig = Elf_(rz_bin_elf_is_big_endian)(bin);
+
+	while (subsection_ptr - result < size) {
+		char *ptr = subsection_ptr;
+		ut32 subsection_size = rz_read_ble32(ptr, isbig);
+		ptr += 4;
+
+		if (!strcmp(ptr, "aeabi")) {
+			ptr += strlen("aeabi") + 1; // +1 for the null byte
+			return read_arm_aeabi_section(ptr, subsection_size - 10, isbig);
+		}
+		subsection_ptr += subsection_size;
+	}
+
+	return strdup(" Unknown arm ISA");
 }
 
 static bool is_elf_class64(ELFOBJ *bin) {
@@ -1461,7 +1631,7 @@ RZ_OWN char *Elf_(rz_bin_elf_get_arch)(RZ_NONNULL ELFOBJ *bin) {
  * \param elf type
  * \return allocated string
  *
- * Only work on mips right now. Use the elf header to deduce the cpu
+ * Only work on mips and arm right now. Use the elf header to deduce the cpu
  */
 RZ_OWN char *Elf_(rz_bin_elf_get_cpu)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, NULL);
@@ -1472,6 +1642,8 @@ RZ_OWN char *Elf_(rz_bin_elf_get_cpu)(RZ_NONNULL ELFOBJ *bin) {
 
 	if (bin->ehdr.e_machine == EM_MIPS) {
 		return get_cpu_mips(bin);
+	} else if (bin->ehdr.e_machine == EM_ARM) {
+		return get_cpu_arm(bin);
 	}
 
 	return NULL;
