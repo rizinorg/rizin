@@ -365,6 +365,8 @@ pdf
 EOF
 EXPECT=<<EOF
 0x80080020    1 10           entry0
+0x8008245a    1 6            fcn.8008245a
+0x80082564    1 12           fcn.80082564
 0x80082d14    1 206          fcn.80082d14
 0x80082de2    1 84           fcn.80082de2
 0x800830d8   42 3622         fcn.800830d8
@@ -469,6 +471,7 @@ EXPECT=<<EOF
 0x8008a77a    4 38   -> 24   fcn.8008a77a
 0x8008a78c    1 4            fcn.8008a78c
 0x8008a790    1 10           fcn.8008a790
+0xc0000000    4 28           fcn.c0000000
             ;-- section..start_tc0:
             ;-- segment.LOAD6:
 / entry0();
