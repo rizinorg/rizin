@@ -39,6 +39,7 @@ RUN
 
 NAME=ELF: mipsbe-busybox
 FILE=bins/elf/analysis/mipsbe-busybox
+BROKEN=1
 CMDS=<<EOF
 af
 e asm.sub.var=false

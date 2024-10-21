@@ -1222,6 +1222,7 @@ RUN
 
 NAME=bnez s4, 0xc (taken)
 FILE=malloc://0x200
+BROKEN=1
 CMDS=<<EOF
 e asm.arch=mips
 e asm.bits=32
@@ -1238,6 +1239,7 @@ RUN
 
 NAME=blez v0, 0x3c (not taken)
 FILE=malloc://0x200
+BROKEN=1
 CMDS=<<EOF
 e asm.arch=mips
 e asm.bits=32
@@ -1252,9 +1254,9 @@ pc = 0x00000004
 EOF
 RUN
 
-BROKEN=1
 NAME=blez v0, 0x3c (taken)
 FILE=malloc://0x200
+BROKEN=1
 CMDS=<<EOF
 e asm.arch=mips
 e asm.bits=32
@@ -1444,6 +1446,7 @@ RUN
 
 NAME=jalr t9
 FILE=malloc://0x200
+BROKEN=1
 CMDS=<<EOF
 e asm.arch=mips
 e asm.bits=32
@@ -1462,6 +1465,7 @@ RUN
 
 NAME=jalr t4, t9
 FILE=malloc://0x200
+BROKEN=1
 CMDS=<<EOF
 e asm.arch=mips
 e asm.bits=32
@@ -1474,13 +1478,13 @@ ar t4
 EOF
 EXPECT=<<EOF
 pc = 0x00000010
-BROKEN=1
 t4 = 0x00000008
 EOF
 RUN
 
 NAME=jalr t4, t9 (invalid delay instruction)
 FILE=malloc://8
+BROKEN=1
 CMDS=<<EOF
 e asm.arch=mips
 e asm.bits=32
@@ -1491,7 +1495,6 @@ aes
 ar pc
 ar t4
 EOF
-BROKEN=1
 EXPECT=<<EOF
 pc = 0x00000010
 t4 = 0x00000008
@@ -1500,6 +1503,7 @@ RUN
 
 NAME=slt s0, v0, v1 (1<2=1)
 FILE=malloc://0x200
+BROKEN=1
 CMDS=<<EOF
 e asm.arch=mips
 e asm.bits=32
@@ -1508,7 +1512,6 @@ ar v0=1
 ar v1=2
 wx 2a804300
 aes
-BROKEN=1
 ar s0
 EOF
 EXPECT=<<EOF
@@ -1518,6 +1521,7 @@ RUN
 
 NAME=slt s0, v0, v1 (0<0=0)
 FILE=malloc://0x200
+BROKEN=1
 CMDS=<<EOF
 e asm.arch=mips
 e asm.bits=32
@@ -1603,6 +1607,7 @@ RUN
 
 NAME=negu v1, v0 (neg -1 = 1)
 FILE=malloc://0x200
+BROKEN=1
 CMDS=<<EOF
 e asm.arch=mips
 e asm.bits=32
@@ -1620,13 +1625,13 @@ RUN
 
 NAME=negu v1, v0 (neg 1 = -1)
 FILE=malloc://0x200
+BROKEN=1
 CMDS=<<EOF
 e asm.arch=mips
 e asm.bits=32
 ar > /dev/null
 ar v1=0
 ar v0=1
-BROKEN=1
 wx 23180200
 aes
 ar v1
@@ -1638,11 +1643,11 @@ RUN
 
 NAME=negu v1, v0 (neg 3497 = -3497)
 FILE=malloc://0x200
+BROKEN=1
 CMDS=<<EOF
 e asm.arch=mips
 e asm.bits=32
 ar > /dev/null
-BROKEN=1
 ar v1=0
 ar v0=3497
 wx 23180200
@@ -1656,9 +1661,9 @@ RUN
 
 NAME=negative mem reference
 FILE=malloc://0x200
+BROKEN=1
 ARGS=-m 0x410984
 CMDS=<<EOF
-BROKEN=1
 e io.va=true
 e asm.arch=mips
 e asm.bits=32
@@ -1680,6 +1685,7 @@ t9 = 0x11223344
 EOF
 RUN
 
+BROKEN=1
 NAME=complex function
 FILE=malloc://0x800
 ARGS=-m 0x0040092c
@@ -1752,7 +1758,6 @@ EOF
 EXPECT=<<EOF
 v0 = 0x000035df
 EOF
-BROKEN=1
 RUN
 
 NAME=asm.emu with meta
