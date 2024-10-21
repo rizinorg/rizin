@@ -169,7 +169,7 @@ jobs:
             enabled: ${{ (github.event_name != 'pull_request' || contains(github.head_ref, 'capstone')) && needs.changes.outputs.edited == 'true' }}
             timeout: 45
             cflags: "-Wno-cpp"
-            allow_failure: true
+            allow_failure: false
           - name: no-gpl-code
             os: ubuntu-22.04
             build_system: meson
