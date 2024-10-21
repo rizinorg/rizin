@@ -775,6 +775,8 @@ static const RzCmdDescArg type_union_c_args[2];
 static const RzCmdDescArg type_union_c_nl_args[2];
 static const RzCmdDescArg type_xrefs_list_args[2];
 static const RzCmdDescArg type_xrefs_function_args[2];
+static const RzCmdDescArg type_class_show_args[2];
+static const RzCmdDescArg type_class_set_args[3];
 static const RzCmdDescArg write_args[2];
 static const RzCmdDescArg write_bits_args[2];
 static const RzCmdDescArg write_unset_bits_args[2];
@@ -17115,6 +17117,50 @@ static const RzCmdDescHelp type_xrefs_list_all_help = {
 	.args = type_xrefs_list_all_args,
 };
 
+static const RzCmdDescHelp tk_help = {
+	.summary = "Typeclasses",
+};
+static const RzCmdDescArg type_class_show_args[] = {
+	{
+		.name = "type",
+		.type = RZ_CMD_ARG_TYPE_ANY_TYPE,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp type_class_show_help = {
+	.summary = "Show typeclass for a specified type",
+	.description = "Typeclasses are named categories of the atomic numerical types, describing different properties of numbers. For example, Num typeclass contains all kinds of numbers, while Signed Integral -  only signed integers. Typeclasses have weak hierarchy, thus every type that belongs to Unsigned Integral, automatically belongs to both Integral and Num typeclasses.",
+	.args = type_class_show_args,
+};
+
+static const RzCmdDescArg type_class_set_args[] = {
+	{
+		.name = "type",
+		.type = RZ_CMD_ARG_TYPE_ANY_TYPE,
+
+	},
+	{
+		.name = "typeclass",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp type_class_set_help = {
+	.summary = "Set a typeclass for a specified type",
+	.args = type_class_set_args,
+};
+
+static const RzCmdDescArg type_class_list_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp type_class_list_help = {
+	.summary = "List typeclasses and types within them",
+	.args = type_class_list_args,
+};
+
 static const RzCmdDescHelp cmd_visual_help = {
 	.summary = "Enter visual mode",
 };
@@ -22579,6 +22625,14 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *type_xrefs_list_all_cd = rz_cmd_desc_argv_new(core->rcmd, tx_cd, "txl", rz_type_xrefs_list_all_handler, &type_xrefs_list_all_help);
 	rz_warn_if_fail(type_xrefs_list_all_cd);
+
+	RzCmdDesc *tk_cd = rz_cmd_desc_group_new(core->rcmd, t_cd, "tk", rz_type_class_show_handler, &type_class_show_help, &tk_help);
+	rz_warn_if_fail(tk_cd);
+	RzCmdDesc *type_class_set_cd = rz_cmd_desc_argv_new(core->rcmd, tk_cd, "tks", rz_type_class_set_handler, &type_class_set_help);
+	rz_warn_if_fail(type_class_set_cd);
+
+	RzCmdDesc *type_class_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, tk_cd, "tkl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_TABLE, rz_type_class_list_handler, &type_class_list_help);
+	rz_warn_if_fail(type_class_list_cd);
 
 	RzCmdDesc *cmd_visual_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "V", rz_cmd_visual, &cmd_visual_help);
 	rz_warn_if_fail(cmd_visual_cd);
