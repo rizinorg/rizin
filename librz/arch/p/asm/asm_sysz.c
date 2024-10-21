@@ -7,6 +7,7 @@
 #include <rz_lib.h>
 
 #include "cs_helper.h"
+#include <rz_util/rz_log.h>
 
 CAPSTONE_DEFINE_PLUGIN_FUNCTIONS(sysz);
 
@@ -25,6 +26,7 @@ static int sysz_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	if (!ctx->handle) {
 		ret = cs_open(CS_ARCH_SYSZ, mode, &ctx->handle);
 		if (ret) {
+			RZ_LOG_ERROR("Failed to initialize Capstone: '%s'\n", cs_strerror(ret));
 			return -1;
 		}
 		ctx->omode = mode;
