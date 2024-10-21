@@ -25,7 +25,7 @@ concurrency:
 
 jobs:
   changes:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     outputs:
       edited: ${{ steps.filter.outputs.edited }}
     steps:
@@ -67,7 +67,7 @@ jobs:
           ]
         include:
           - name: linux-meson-clang-tests
-            os: ubuntu-22.04
+            os: ubuntu-24.04
             build_system: meson
             compiler: clang
             run_tests: true
@@ -76,7 +76,7 @@ jobs:
             timeout: 45
             allow_failure: false
           - name: linux-meson-gcc-tests
-            os: ubuntu-22.04
+            os: ubuntu-24.04
             build_system: meson
             compiler: gcc
             run_tests: true
@@ -96,9 +96,9 @@ jobs:
             cflags: "-Wno-deprecated-non-prototype"
             allow_failure: false
           - name: linux-gcc-tests-asan
-            os: ubuntu-22.04
+            os: ubuntu-24.04
             build_system: meson
-            compiler: gcc-12
+            compiler: gcc-14
             cflags: "-DRZ_ASSERT_STDOUT=1 -Wno-cpp -ftrivial-auto-var-init=pattern -funsigned-char"
             meson_options: -Dbuildtype=debugoptimized -Db_sanitize=address,undefined --werror
             asan: true
@@ -108,7 +108,7 @@ jobs:
             timeout: 120
             allow_failure: false
           - name: linux-clang-tests-asan
-            os: ubuntu-22.04
+            os: ubuntu-24.04
             build_system: meson
             compiler: clang
             cflags: "-DRZ_ASSERT_STDOUT=1 -Wno-cpp"
@@ -120,7 +120,7 @@ jobs:
             timeout: 115
             allow_failure: false
           - name: linux-gcc-tests-codecov
-            os: ubuntu-22.04
+            os: ubuntu-24.04
             build_system: meson
             compiler: gcc
             run_tests: true
@@ -131,7 +131,7 @@ jobs:
             cflags: "-Wno-cpp"
             allow_failure: false
           - name: capstone-sys
-            os: ubuntu-22.04
+            os: ubuntu-24.04
             build_system: meson
             compiler: gcc
             meson_options: -Dbuildtype=release -Duse_sys_capstone=enabled --werror
@@ -141,7 +141,7 @@ jobs:
             cflags: "-Wno-cpp"
             allow_failure: false
           - name: capstone-v4
-            os: ubuntu-22.04
+            os: ubuntu-24.04
             build_system: meson
             compiler: gcc
             meson_options: -Dbuildtype=release -Duse_capstone_version=v4 --werror
@@ -151,7 +151,7 @@ jobs:
             cflags: "-Wno-cpp"
             allow_failure: true
           - name: capstone-v5
-            os: ubuntu-22.04
+            os: ubuntu-24.04
             build_system: meson
             compiler: gcc
             meson_options: -Dbuildtype=release -Duse_capstone_version=v5 --werror
@@ -161,7 +161,7 @@ jobs:
             cflags: "-Wno-cpp"
             allow_failure: true
           - name: capstone-v6
-            os: ubuntu-22.04
+            os: ubuntu-24.04
             build_system: meson
             compiler: gcc
             meson_options: -Dbuildtype=release -Duse_capstone_version=v6 --werror
@@ -171,7 +171,7 @@ jobs:
             cflags: "-Wno-cpp"
             allow_failure: false
           - name: no-gpl-code
-            os: ubuntu-22.04
+            os: ubuntu-24.04
             build_system: meson
             compiler: gcc
             meson_options: -Dbuildtype=release -Duse_gpl=false --werror
@@ -210,14 +210,14 @@ jobs:
           sudo apt-get update
           sudo apt-get --assume-yes install libc6 libc6-i386 libc6-dev debuginfod
       - name: Install gdbserver dependency
-        if: matrix.run_tests && matrix.enabled && matrix.os == 'ubuntu-22.04'
+        if: matrix.run_tests && matrix.enabled && matrix.os == 'ubuntu-24.04'
         run: sudo apt-get --assume-yes install gdbserver
       - name: Install clang
-        if: matrix.compiler == 'clang' && matrix.os == 'ubuntu-22.04' && matrix.enabled
+        if: matrix.compiler == 'clang' && matrix.os == 'ubuntu-24.04' && matrix.enabled
         run: sudo apt-get --assume-yes install clang
-      - name: Install gcc-12
-        if: matrix.compiler == 'gcc-12' && matrix.os == 'ubuntu-22.04' && matrix.enabled
-        run: sudo apt-get --assume-yes install gcc-12
+      - name: Install gcc-14
+        if: matrix.compiler == 'gcc-14' && matrix.os == 'ubuntu-24.04' && matrix.enabled
+        run: sudo apt-get --assume-yes install gcc-14
       - name: Build with Meson
         if: matrix.build_system == 'meson' && matrix.enabled
         run: |
@@ -342,7 +342,7 @@ jobs:
 
   build-centos7:
     name: Build on CentOS 7
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'centos') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable' || github.event_name == 'schedule'
     container: centos:7
     steps:
@@ -388,7 +388,7 @@ jobs:
           - debian:jessie
           - debian:stretch
 
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     container: ${{ matrix.container }}
 
     steps:
@@ -563,7 +563,7 @@ jobs:
   build-static:
     name: Build static
     if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'static') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable' || github.event_name == 'schedule'
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     container:
       image: alpine:3.19
       options: --cap-add=SYS_PTRACE --security-opt seccomp=unconfined --security-opt apparmor=unconfined
@@ -614,7 +614,7 @@ jobs:
   create-tarball:
     name: Create source tarball
     if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'extras') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable'
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     outputs:
       version: ${{ steps.extract_version.outputs.version }}
     steps:
@@ -642,7 +642,7 @@ jobs:
   test-tarball:
     name: Test source tarball
     if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'extras') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable'
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: [ create-tarball ]
     steps:
       - name: Install python and other dependencies
@@ -747,7 +747,7 @@ jobs:
 
   build-android:
     name: Build Android ${{ matrix.name }} package
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'android') || ((contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') && github.event_name == 'push') || github.event_name == 'schedule'
     needs: [ build-and-test ]
     strategy:
@@ -776,7 +776,7 @@ jobs:
 
   build-cpp-linux:
     name: Include Rizin headers from C++ program (Linux)
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'cpp') || ((contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') && github.event_name == 'push') || github.event_name == 'schedule'
     needs: [ build-and-test ]
     steps:
@@ -802,7 +802,7 @@ jobs:
 
   test-extra-prefix:
     name: Test EXTRA_PREFIX works well
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     if: contains(github.head_ref, 'dist') || ((contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') && github.event_name == 'push') || github.event_name == 'schedule'
     needs: [ build-and-test ]
     steps:
@@ -833,7 +833,7 @@ jobs:
     name: Build rizin rzpipe
     if: contains(github.head_ref, 'dist') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable' || github.event_name == 'schedule'
     needs: [ test-tarball ]
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     env:
       RZPIPE_TESTS: "rz-pipe-py rz-pipe-go"
     steps:
@@ -862,7 +862,7 @@ jobs:
     name: Build rz-bindgen
     if: contains(github.head_ref, 'dist') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable' || github.event_name == 'schedule'
     needs: [ test-tarball ]
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -981,7 +981,7 @@ jobs:
 
   create-release:
     name: Create draft release and upload artifacts
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     if: github.event_name == 'push' && (contains(github.ref, 'release-') || github.ref == 'refs/heads/stable')
     needs:
       [
@@ -1037,7 +1037,7 @@ jobs:
   publish-docker-image:
     name: Publish Docker image on Docker Hub
     needs: [ build-and-test ]
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && contains(github.head_ref, 'container'))
     steps:
       - uses: actions/checkout@v4
