@@ -66,6 +66,7 @@ RZ_API RzIOPlugin *rz_io_plugin_resolve(RzIO *io, const char *filename, bool man
 			continue;
 		}
 		if (ret->check(io, filename, many)) {
+			rz_iterator_free(iter);
 			return ret;
 		}
 	}
@@ -80,6 +81,7 @@ RZ_API RzIOPlugin *rz_io_plugin_byname(RzIO *io, const char *name) {
 	rz_iterator_foreach(iter, val) {
 		RzIOPlugin *iop = *val;
 		if (!strcmp(name, iop->name)) {
+			rz_iterator_free(iter);
 			return iop;
 		}
 	}

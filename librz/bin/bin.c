@@ -370,12 +370,11 @@ RZ_API RzBinPlugin *rz_bin_get_binplugin_by_buffer(RzBin *bin, RzBuffer *buf) {
 	RzIterator *it = ht_sp_as_iter(bin->plugins);
 	RzBinPlugin **val;
 
-	rz_return_val_if_fail(bin && buf, NULL);
-
 	rz_iterator_foreach(it, val) {
 		RzBinPlugin *plugin = *val;
 		if (plugin->check_buffer) {
 			if (plugin->check_buffer(buf)) {
+				rz_iterator_free(it);
 				return plugin;
 			}
 		}
@@ -396,6 +395,7 @@ RZ_IPI RzBinPlugin *rz_bin_get_binplugin_by_filename(RzBin *bin) {
 		RzBinPlugin *plugin = *val;
 		if (plugin->check_filename) {
 			if (plugin->check_filename(filename)) {
+				rz_iterator_free(it);
 				return plugin;
 			}
 		}

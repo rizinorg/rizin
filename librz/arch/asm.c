@@ -375,14 +375,16 @@ RZ_API bool rz_asm_plugin_del(RzAsm *a, RZ_NONNULL RzAsmPlugin *p) {
 }
 
 RZ_API bool rz_asm_is_valid(RzAsm *a, const char *name) {
-	RzIterator *iter = ht_sp_as_iter(a->plugins);
-	RzAsmPlugin **val;
 	if (!name || !*name) {
 		return false;
 	}
+
+	RzIterator *iter = ht_sp_as_iter(a->plugins);
+	RzAsmPlugin **val;
 	rz_iterator_foreach(iter, val) {
 		RzAsmPlugin *h = *val;
 		if (!strcmp(h->name, name)) {
+			rz_iterator_free(iter);
 			return true;
 		}
 	}
@@ -470,6 +472,7 @@ RZ_API bool rz_asm_use(RzAsm *a, RZ_NULLABLE const char *name) {
 			}
 			if (h->init && !h->init(&a->plugin_data)) {
 				RZ_LOG_ERROR("asm plugin '%s' failed to initialize.\n", h->name);
+				rz_iterator_free(iter);
 				return false;
 			}
 
@@ -480,6 +483,7 @@ RZ_API bool rz_asm_use(RzAsm *a, RZ_NULLABLE const char *name) {
 				set_plugin_configs(core, h->name, h->get_config(a->plugin_data));
 			}
 			a->cur = h;
+			rz_iterator_free(iter);
 			return true;
 		}
 	}

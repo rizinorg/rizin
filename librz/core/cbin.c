@@ -4913,6 +4913,7 @@ RZ_API RzCmdStatus rz_core_bin_plugins_print(RzBin *bin, RzCmdStateOutput *state
 		RzBinPlugin *bp = *bp_val;
 		status = rz_core_bin_plugin_print(bp, state);
 		if (status != RZ_CMD_STATUS_OK) {
+			rz_iterator_free(iter);
 			return status;
 		}
 	}
@@ -4922,6 +4923,7 @@ RZ_API RzCmdStatus rz_core_bin_plugins_print(RzBin *bin, RzCmdStateOutput *state
 		RzBinXtrPlugin *bx = *bx_val;
 		status = rz_core_binxtr_plugin_print(bx, state);
 		if (status != RZ_CMD_STATUS_OK) {
+			rz_iterator_free(iter);
 			return status;
 		}
 	}

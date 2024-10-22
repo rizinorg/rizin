@@ -51,6 +51,7 @@ RZ_API int rz_bp_use(RZ_NONNULL RzBreakpoint *bp, RZ_NONNULL const char *name) {
 		RzBreakpointPlugin *h = *val;
 		if (!strcmp(h->name, name)) {
 			bp->cur = h;
+			rz_iterator_free(iter);
 			return true;
 		}
 	}
