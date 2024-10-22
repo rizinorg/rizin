@@ -58,6 +58,7 @@ jobs:
           [
             linux-meson-clang-tests,
             linux-meson-gcc-tests,
+            macos-meson-clang-tests,
             linux-gcc-tests-asan,
             linux-clang-tests-asan,
             linux-gcc-tests-codecov,
@@ -83,6 +84,15 @@ jobs:
             enabled: ${{ needs.changes.outputs.edited == 'true' }}
             timeout: 45
             cflags: "-DRZ_ASSERT_STDOUT=1 -Wno-cpp"
+            allow_failure: false
+          - name: macos-meson-clang-tests
+            os: macos-12
+            build_system: meson
+            compiler: clang
+            run_tests: true
+            meson_options: -Dbuildtype=release --werror
+            enabled: ${{ needs.changes.outputs.edited == 'true' }}
+            timeout: 60
             allow_failure: false
           - name: linux-gcc-tests-asan
             os: ubuntu-22.04
