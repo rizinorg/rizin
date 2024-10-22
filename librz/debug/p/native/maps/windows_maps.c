@@ -96,11 +96,11 @@ RZ_API RzList *rz_w32_dbg_modules(RzDebug *dbg) {
 	}
 	do {
 		ut64 baddr = (ut64)(size_t)me.modBaseAddr;
-		char *mod_name = rz_sys_conv_win_to_utf8(me.szModule);
+		char *mod_name = rz_utf16_to_utf8(me.szModule);
 		RzDebugMap *dbgmap = rz_debug_map_new(mod_name, baddr, baddr + me.modBaseSize, 0, 0);
 		free(mod_name);
 		if (dbgmap) {
-			dbgmap->file = rz_sys_conv_win_to_utf8(me.szExePath);
+			dbgmap->file = rz_utf16_to_utf8(me.szExePath);
 			if (dbgmap->file) {
 				rz_list_append(list, dbgmap);
 			}
