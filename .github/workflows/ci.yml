@@ -173,7 +173,7 @@ jobs:
 
     steps:
       - name: Show available memory on Linux
-        if: !contains(matrix.os, 'macos') && matrix.enabled
+        if: contains(matrix.os, 'macos') != true && matrix.enabled
         run: free -h
       - uses: actions/checkout@v4
         if: matrix.enabled
@@ -183,7 +183,7 @@ jobs:
         if: contains(matrix.os, 'macos') && matrix.enabled
         run: brew install pkg-config
       - name: Install python and other dependencies
-        if: (matrix.run_tests || matrix.build_system == 'meson') && !contains(matrix.os, 'macos') && matrix.enabled
+        if: (matrix.run_tests || matrix.build_system == 'meson') && contains(matrix.os, 'macos') != true && matrix.enabled
         run: sudo apt-get --assume-yes install python3-wheel python3-setuptools libcapstone4 libcapstone-dev
       - name: Install meson and ninja
         if: matrix.build_system == 'meson' && matrix.enabled
@@ -198,7 +198,7 @@ jobs:
         if: matrix.run_tests && matrix.enabled
         run: pip3 install --user "file://$GITHUB_WORKSPACE/test/rz-pipe#egg=rzpipe&subdirectory=python" requests
       - name: Install Linux test dependencies
-        if: matrix.run_tests && matrix.enabled && !contains(matrix.os, 'macos')
+        if: matrix.run_tests && matrix.enabled && contains(matrix.os, 'macos') != true
         run: |
           sudo apt-get update
           sudo apt-get --assume-yes install libc6 libc6-i386 libc6-dev debuginfod
