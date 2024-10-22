@@ -130,9 +130,10 @@ static void rz_hash_show_algorithms(RzHashContext *ctx) {
 
 	printf("flags  algorithm      license    author\n");
 
-	const RzHashPlugin *rmdp;
 	RzIterator *it = ht_sp_as_iter(ctx->rh->plugins);
-	rz_iterator_foreach(it, rmdp) {
+	const RzHashPlugin **val;
+	rz_iterator_foreach(it, val) {
+		const RzHashPlugin *rmdp = *val;
 		snprintf(flags, sizeof(flags), "____h%c", rmdp->support_hmac ? 'm' : '_');
 		printf("%6s %-14s %-10s %s\n", flags, rmdp->name, rmdp->license, rmdp->author);
 	}
@@ -806,13 +807,14 @@ static void hash_context_compare_hashes(RzHashContext *ctx, size_t filesize, boo
 
 static RzList /*<char *>*/ *parse_hash_algorithms(RzHashContext *ctx) {
 	if (!strcmp(ctx->algorithm, "all")) {
-		const RzHashPlugin *plugin;
 		RzList *list = rz_list_newf(NULL);
 		if (!list) {
 			return NULL;
 		}
 		RzIterator *it = ht_sp_as_iter(ctx->rh->plugins);
-		rz_iterator_foreach(it, plugin) {
+		RzHashPlugin **val;
+		rz_iterator_foreach(it, val) {
+			const RzHashPlugin *plugin = *val;
 			rz_list_append(list, (void *)plugin->name);
 		}
 		rz_iterator_free(it);

@@ -70,9 +70,10 @@ static int usage(int v) {
 
 static void list(RzEgg *egg) {
 	RzIterator *iter = ht_sp_as_iter(egg->plugins);
-	RzEggPlugin *p;
+	RzEggPlugin **val;
 	printf("shellcodes:\n");
-	rz_iterator_foreach(iter, p) {
+	rz_iterator_foreach(iter, val) {
+		RzEggPlugin *p = *val;
 		if (p->type == RZ_EGG_PLUGIN_SHELLCODE) {
 			printf("%10s : %s\n", p->name, p->desc);
 		}
@@ -80,7 +81,8 @@ static void list(RzEgg *egg) {
 	rz_iterator_free(iter);
 	iter = ht_sp_as_iter(egg->plugins);
 	printf("encoders:\n");
-	rz_iterator_foreach(iter, p) {
+	rz_iterator_foreach(iter, val) {
+		RzEggPlugin *p = *val;
 		if (p->type == RZ_EGG_PLUGIN_ENCODER) {
 			printf("%10s : %s\n", p->name, p->desc);
 		}

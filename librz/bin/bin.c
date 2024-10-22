@@ -259,7 +259,7 @@ RZ_API RzBinFile *rz_bin_open_buf(RzBin *bin, RzBuffer *buf, RzBinOptions *opt) 
 	rz_return_val_if_fail(bin && opt, NULL);
 
 	RzIterator *it = ht_sp_as_iter(bin->binxtrs);
-	RzBinXtrPlugin *xtr;
+	RzBinXtrPlugin **val;
 
 	bin->file = opt->filename;
 	if (opt->obj_opts.loadaddr == UT64_MAX) {
@@ -271,7 +271,8 @@ RZ_API RzBinFile *rz_bin_open_buf(RzBin *bin, RzBuffer *buf, RzBinOptions *opt) 
 		// XXX - for the time being this is fine, but we may want to
 		// change the name to something like
 		// <xtr_name>:<bin_type_name>
-		rz_iterator_foreach(it, xtr) {
+		rz_iterator_foreach(it, val) {
+			RzBinXtrPlugin *xtr = *val;
 			if (!xtr->check_buffer) {
 				RZ_LOG_ERROR("Missing check_buffer callback for '%s'\n", xtr->name);
 				continue;
@@ -365,12 +366,14 @@ RZ_IPI RzBinPlugin *rz_bin_get_binplugin_by_name(RzBin *bin, const char *name) {
 }
 
 RZ_API RzBinPlugin *rz_bin_get_binplugin_by_buffer(RzBin *bin, RzBuffer *buf) {
-	RzBinPlugin *plugin;
+	rz_return_val_if_fail(bin && buf, NULL);
 	RzIterator *it = ht_sp_as_iter(bin->plugins);
+	RzBinPlugin **val;
 
 	rz_return_val_if_fail(bin && buf, NULL);
 
-	rz_iterator_foreach(it, plugin) {
+	rz_iterator_foreach(it, val) {
+		RzBinPlugin *plugin = *val;
 		if (plugin->check_buffer) {
 			if (plugin->check_buffer(buf)) {
 				return plugin;
@@ -382,14 +385,15 @@ RZ_API RzBinPlugin *rz_bin_get_binplugin_by_buffer(RzBin *bin, RzBuffer *buf) {
 }
 
 RZ_IPI RzBinPlugin *rz_bin_get_binplugin_by_filename(RzBin *bin) {
-	RzBinPlugin *plugin;
 	RzIterator *it = ht_sp_as_iter(bin->plugins);
+	RzBinPlugin **val;
 
 	rz_return_val_if_fail(bin, NULL);
 
 	const char *filename = strrchr(bin->file, RZ_SYS_DIR[0]);
 	filename = filename ? filename + 1 : bin->file;
-	rz_iterator_foreach(it, plugin) {
+	rz_iterator_foreach(it, val) {
+		RzBinPlugin *plugin = *val;
 		if (plugin->check_filename) {
 			if (plugin->check_filename(filename)) {
 				return plugin;
@@ -473,8 +477,9 @@ RZ_API void rz_bin_free(RZ_NULLABLE RzBin *bin) {
 	rz_list_free(bin->binfiles);
 
 	RzIterator *it = ht_sp_as_iter(bin->binxtrs);
-	RzBinXtrPlugin *p;
-	rz_iterator_foreach(it, p) {
+	RzBinXtrPlugin **val;
+	rz_iterator_foreach(it, val) {
+		RzBinXtrPlugin *p = *val;
 		plugin_fini(bin, p);
 	}
 	rz_iterator_free(it);

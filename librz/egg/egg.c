@@ -532,10 +532,12 @@ RZ_API char *rz_egg_option_get(RzEgg *egg, const char *key) {
 }
 
 RZ_API int rz_egg_shellcode(RzEgg *egg, const char *name) {
-	RzEggPlugin *p;
+	rz_return_val_if_fail(egg && name, false);
 	RzIterator *iter = ht_sp_as_iter(egg->plugins);
+	RzEggPlugin **val;
 	RzBuffer *b;
-	rz_iterator_foreach(iter, p) {
+	rz_iterator_foreach(iter, val) {
+		RzEggPlugin *p = *val;
 		if (p->type == RZ_EGG_PLUGIN_SHELLCODE && !strcmp(name, p->name)) {
 			b = p->build(egg);
 			if (!b) {
@@ -553,10 +555,12 @@ RZ_API int rz_egg_shellcode(RzEgg *egg, const char *name) {
 }
 
 RZ_API int rz_egg_encode(RzEgg *egg, const char *name) {
-	RzEggPlugin *p;
+	rz_return_val_if_fail(egg && name, false);
 	RzIterator *iter = ht_sp_as_iter(egg->plugins);
+	RzEggPlugin **val;
 	RzBuffer *b;
-	rz_iterator_foreach(iter, p) {
+	rz_iterator_foreach(iter, val) {
+		RzEggPlugin *p = *val;
 		if (p->type == RZ_EGG_PLUGIN_ENCODER && !strcmp(name, p->name)) {
 			b = p->build(egg);
 			if (!b) {

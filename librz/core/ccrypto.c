@@ -35,14 +35,15 @@ static RzCmdStatus core_crypto_plugin_print(RzCmdStateOutput *state, const RzCry
 RZ_API RzCmdStatus rz_core_crypto_plugins_print(RzCrypto *cry, RzCmdStateOutput *state) {
 	rz_return_val_if_fail(cry, RZ_CMD_STATUS_ERROR);
 
-	const RzCryptoPlugin *plugin = NULL;
 	RzCmdStatus status;
 	RzIterator *it = ht_sp_as_iter(cry->plugins);
+	RzCryptoPlugin **val;
 	rz_cmd_state_output_array_start(state);
 	if (state->mode == RZ_OUTPUT_MODE_STANDARD) {
 		rz_cons_println("algorithm      license    author");
 	}
-	rz_iterator_foreach(it, plugin) {
+	rz_iterator_foreach(it, val) {
+		const RzCryptoPlugin *plugin = *val;
 		status = core_crypto_plugin_print(state, plugin);
 		if (status != RZ_CMD_STATUS_OK) {
 			return status;

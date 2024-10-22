@@ -308,9 +308,10 @@ RZ_API bool rz_hash_cfg_configure(RZ_NONNULL RzHashCfg *md, RZ_NONNULL const cha
 
 	HashCfgConfig *mdc = NULL;
 	RzIterator *it = ht_sp_as_iter(md->hash->plugins);
-	const RzHashPlugin *plugin;
+	const RzHashPlugin **val;
 
-	rz_iterator_foreach(it, plugin) {
+	rz_iterator_foreach(it, val) {
+		const RzHashPlugin *plugin = *val;
 		if (is_all || !strcmp(plugin->name, name)) {
 			mdc = hash_cfg_config_new(plugin);
 			if (!mdc) {

@@ -479,14 +479,17 @@ RZ_API RzCmdStatus rz_core_io_plugin_print(RzIOPlugin *plugin, RzCmdStateOutput 
  * \param state Specify how plugins shall be printed
  */
 RZ_API RzCmdStatus rz_core_io_plugins_print(RzIO *io, RzCmdStateOutput *state) {
-	RzIOPlugin *plugin;
+	rz_return_val_if_fail(io && state, RZ_CMD_STATUS_ERROR);
 	RzIterator *iter = ht_sp_as_iter(io->plugins);
+	RzIOPlugin **val;
+
 	if (!io) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_cmd_state_output_array_start(state);
 	rz_cmd_state_output_set_columnsf(state, "sssss", "perm", "license", "name", "uri", "description");
-	rz_iterator_foreach(iter, plugin) {
+	rz_iterator_foreach(iter, val) {
+		RzIOPlugin *plugin = *val;
 		rz_core_io_plugin_print(plugin, state);
 	}
 	rz_iterator_free(iter);

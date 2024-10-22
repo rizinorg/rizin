@@ -2461,13 +2461,14 @@ RZ_API RzCmdStatus rz_core_core_plugin_print(RzCorePlugin *cp, RzCmdStateOutput 
 
 RZ_API RzCmdStatus rz_core_core_plugins_print(RzCore *core, RzCmdStateOutput *state) {
 	RzIterator *iter = ht_sp_as_iter(core->plugins);
-	RzCorePlugin *cp;
+	RzCorePlugin **val;
 	RzCmdStatus status;
 	if (!core) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_cmd_state_output_array_start(state);
-	rz_iterator_foreach(iter, cp) {
+	rz_iterator_foreach(iter, val) {
+		RzCorePlugin *cp = *val;
 		const char *license = cp->license
 			? cp->license
 			: "???";

@@ -66,9 +66,10 @@ RZ_API char *rz_core_asm_search(RzCore *core, const char *input) {
 
 static const char *has_esil(RzCore *core, const char *name) {
 	RzIterator *iter = ht_sp_as_iter(core->analysis->plugins);
-	RzAnalysisPlugin *h;
+	RzAnalysisPlugin **val;
 	rz_return_val_if_fail(core && core->analysis && name, NULL);
-	rz_iterator_foreach(iter, h) {
+	rz_iterator_foreach(iter, val) {
+		RzAnalysisPlugin *h = *val;
 		if (!h->name || strcmp(name, h->name)) {
 			continue;
 		}
@@ -163,11 +164,12 @@ RZ_API RzCmdStatus rz_core_asm_plugin_print(RzCore *core, RzAsmPlugin *ap, const
 RZ_API RzCmdStatus rz_core_asm_plugins_print(RzCore *core, const char *arch, RzCmdStateOutput *state) {
 	int i;
 	RzAsm *a = core->rasm;
-	RzAsmPlugin *ap;
 	RzIterator *iter = ht_sp_as_iter(a->plugins);
+	RzAsmPlugin **val;
 	RzCmdStatus status;
 	if (arch) {
-		rz_iterator_foreach(iter, ap) {
+		rz_iterator_foreach(iter, val) {
+			RzAsmPlugin *ap = *val;
 			if (ap->cpus && !strcmp(arch, ap->name)) {
 				char *c = rz_str_dup(ap->cpus);
 				int n = rz_str_split(c, ',');
@@ -180,7 +182,8 @@ RZ_API RzCmdStatus rz_core_asm_plugins_print(RzCore *core, const char *arch, RzC
 		}
 	} else {
 		rz_cmd_state_output_array_start(state);
-		rz_iterator_foreach(iter, ap) {
+		rz_iterator_foreach(iter, val) {
+			RzAsmPlugin *ap = *val;
 			const char *license = ap->license
 				? ap->license
 				: "unknown";

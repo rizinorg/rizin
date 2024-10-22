@@ -193,14 +193,15 @@ static void autocmplt_arch(RzCore *core, RzLineNSCompletionResult *res, const ch
 
 	HtSP *asm_plugins = rz_asm_get_plugins(core->rasm);
 	RzIterator *it = ht_sp_as_iter(asm_plugins);
-	RzAsmPlugin *plugin;
+	RzAsmPlugin **val;
 
 	// @a: can either be used with @a:arch or @a:arch:bits
 	// Check for `:` to determine where we are
 	const char *delim = rz_sub_str_rchr(s, 0, len, ':');
 	if (!delim) {
 		// We autocomplete just the architecture part
-		rz_iterator_foreach(it, plugin) {
+		rz_iterator_foreach(it, val) {
+			RzAsmPlugin *plugin = *val;
 			if (!strncmp(plugin->name, s, len)) {
 				rz_line_ns_completion_result_add(res, plugin->name);
 			}
@@ -209,7 +210,8 @@ static void autocmplt_arch(RzCore *core, RzLineNSCompletionResult *res, const ch
 	} else {
 		// We autocomplete the bits part
 		res->start += delim + 1 - s;
-		rz_iterator_foreach(it, plugin) {
+		rz_iterator_foreach(it, val) {
+			RzAsmPlugin *plugin = *val;
 			if (!strncmp(plugin->name, s, delim - s)) {
 				autocmplt_bits_plugin(plugin, res, delim + 1, len - (delim + 1 - s));
 				break;

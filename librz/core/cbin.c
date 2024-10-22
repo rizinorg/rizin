@@ -4903,13 +4903,14 @@ RZ_IPI RzCmdStatus rz_core_binxtr_plugin_print(const RzBinXtrPlugin *bx, RzCmdSt
 RZ_API RzCmdStatus rz_core_bin_plugins_print(RzBin *bin, RzCmdStateOutput *state) {
 	rz_return_val_if_fail(bin && state, RZ_CMD_STATUS_ERROR);
 
-	RzBinPlugin *bp;
-	RzBinXtrPlugin *bx;
 	RzCmdStatus status;
 	RzIterator *iter = ht_sp_as_iter(bin->plugins);
+	RzBinPlugin **bp_val;
+	RzBinXtrPlugin **bx_val;
 
 	rz_cmd_state_output_array_start(state);
-	rz_iterator_foreach(iter, bp) {
+	rz_iterator_foreach(iter, bp_val) {
+		RzBinPlugin *bp = *bp_val;
 		status = rz_core_bin_plugin_print(bp, state);
 		if (status != RZ_CMD_STATUS_OK) {
 			return status;
@@ -4917,7 +4918,8 @@ RZ_API RzCmdStatus rz_core_bin_plugins_print(RzBin *bin, RzCmdStateOutput *state
 	}
 	rz_iterator_free(iter);
 	iter = ht_sp_as_iter(bin->binxtrs);
-	rz_iterator_foreach(iter, bx) {
+	rz_iterator_foreach(iter, bx_val) {
+		RzBinXtrPlugin *bx = *bx_val;
 		status = rz_core_binxtr_plugin_print(bx, state);
 		if (status != RZ_CMD_STATUS_OK) {
 			return status;

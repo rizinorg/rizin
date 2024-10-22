@@ -46,8 +46,9 @@ RZ_API bool rz_bp_plugin_del(RzBreakpoint *bp, RZ_BORROW RZ_NONNULL RzBreakpoint
 RZ_API int rz_bp_use(RZ_NONNULL RzBreakpoint *bp, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(bp && name, false);
 	RzIterator *iter = ht_sp_as_iter(bp->plugins);
-	RzBreakpointPlugin *h;
-	rz_iterator_foreach(iter, h) {
+	RzBreakpointPlugin **val;
+	rz_iterator_foreach(iter, val) {
+		RzBreakpointPlugin *h = *val;
 		if (!strcmp(h->name, name)) {
 			bp->cur = h;
 			return true;
@@ -60,8 +61,9 @@ RZ_API int rz_bp_use(RZ_NONNULL RzBreakpoint *bp, RZ_NONNULL const char *name) {
 // TODO: deprecate
 RZ_API void rz_bp_plugin_list(RzBreakpoint *bp) {
 	RzIterator *iter = ht_sp_as_iter(bp->plugins);
-	RzBreakpointPlugin *b;
-	rz_iterator_foreach(iter, b) {
+	RzBreakpointPlugin **val;
+	rz_iterator_foreach(iter, val) {
+		RzBreakpointPlugin *b = *val;
 		bp->cb_printf("bp %c %s\n",
 			(bp->cur && !strcmp(bp->cur->name, b->name)) ? '*' : '-',
 			b->name);

@@ -212,13 +212,14 @@ RZ_API bool rz_analysis_plugin_del(RzAnalysis *analysis, RZ_NONNULL RzAnalysisPl
 
 RZ_API bool rz_analysis_use(RzAnalysis *analysis, const char *name) {
 	RzIterator *it = ht_sp_as_iter(analysis->plugins);
-	RzAnalysisPlugin *h;
+	RzAnalysisPlugin **val;
 
 	if (analysis) {
 		if (analysis->cur && !strcmp(analysis->cur->name, name)) {
 			return true;
 		}
-		rz_iterator_foreach(it, h) {
+		rz_iterator_foreach(it, val) {
+			RzAnalysisPlugin *h = *val;
 			if (!h || !h->name || strcmp(h->name, name)) {
 				continue;
 			}

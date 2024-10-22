@@ -375,12 +375,13 @@ RZ_API bool rz_asm_plugin_del(RzAsm *a, RZ_NONNULL RzAsmPlugin *p) {
 }
 
 RZ_API bool rz_asm_is_valid(RzAsm *a, const char *name) {
-	RzAsmPlugin *h;
 	RzIterator *iter = ht_sp_as_iter(a->plugins);
+	RzAsmPlugin **val;
 	if (!name || !*name) {
 		return false;
 	}
-	rz_iterator_foreach(iter, h) {
+	rz_iterator_foreach(iter, val) {
+		RzAsmPlugin *h = *val;
 		if (!strcmp(h->name, name)) {
 			return true;
 		}
@@ -442,8 +443,9 @@ static void remove_plugin_config(RZ_BORROW RzCore *core, const char *plugin_name
  * \return false Asm plugin failed to be enabled.
  */
 RZ_API bool rz_asm_use(RzAsm *a, const char *name) {
-	RzAsmPlugin *h;
+	rz_return_val_if_fail(a && name, false);
 	RzIterator *iter = ht_sp_as_iter(a->plugins);
+	RzAsmPlugin **val;
 	if (!a || !name) {
 		return false;
 	}
@@ -451,7 +453,8 @@ RZ_API bool rz_asm_use(RzAsm *a, const char *name) {
 	if (a->cur && !strcmp(a->cur->arch, name)) {
 		return true;
 	}
-	rz_iterator_foreach(iter, h) {
+	rz_iterator_foreach(iter, val) {
+		RzAsmPlugin *h = *val;
 		if (h->arch && h->name && !strcmp(h->name, name)) {
 			if (!a->cur || (a->cur && strcmp(a->cur->arch, h->arch))) {
 				plugin_fini(a);
@@ -632,12 +635,13 @@ static bool assemblerMatches(RzAsm *a, RzAsmPlugin *h) {
 
 static Ase findAssembler(RzAsm *a, const char *kw) {
 	Ase ase = NULL;
-	RzAsmPlugin *h;
 	RzIterator *iter = ht_sp_as_iter(a->plugins);
+	RzAsmPlugin **val;
 	if (a->acur && a->acur->assemble) {
 		return a->acur->assemble;
 	}
-	rz_iterator_foreach(iter, h) {
+	rz_iterator_foreach(iter, val) {
+		RzAsmPlugin *h = *val;
 		if (assemblerMatches(a, h)) {
 			if (kw) {
 				if (strstr(h->name, kw)) {

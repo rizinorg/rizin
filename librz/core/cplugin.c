@@ -14,8 +14,9 @@ RZ_API bool rz_core_plugin_fini(RzCore *core) {
 	rz_return_val_if_fail(core->plugins, false);
 
 	RzIterator *iter = ht_sp_as_iter(core->plugins);
-	RzCorePlugin *plugin;
-	rz_iterator_foreach(iter, plugin) {
+	RzCorePlugin **val;
+	rz_iterator_foreach(iter, val) {
+		RzCorePlugin *plugin = *val;
 		if (plugin->fini) {
 			plugin->fini(core);
 		}
