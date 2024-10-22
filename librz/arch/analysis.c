@@ -5,6 +5,7 @@
 #include <rz_analysis.h>
 #include <rz_util.h>
 #include <rz_list.h>
+#include <rz_util/rz_assert.h>
 #include <rz_util/rz_path.h>
 #include <rz_arch.h>
 #include <rz_lib.h>
@@ -211,32 +212,33 @@ RZ_API bool rz_analysis_plugin_del(RzAnalysis *analysis, RZ_NONNULL RzAnalysisPl
 }
 
 RZ_API bool rz_analysis_use(RzAnalysis *analysis, const char *name) {
+	rz_return_val_if_fail(analysis && name, false);
+	if (analysis->cur && !strcmp(analysis->cur->name, name)) {
+		return true;
+	}
+
 	RzIterator *it = ht_sp_as_iter(analysis->plugins);
 	RzAnalysisPlugin **val;
-
-	if (analysis) {
-		if (analysis->cur && !strcmp(analysis->cur->name, name)) {
-			return true;
+	rz_iterator_foreach(it, val) {
+		RzAnalysisPlugin *h = *val;
+		if (!h || !h->name || strcmp(h->name, name)) {
+			continue;
 		}
-		rz_iterator_foreach(it, val) {
-			RzAnalysisPlugin *h = *val;
-			if (!h || !h->name || strcmp(h->name, name)) {
-				continue;
-			}
-			plugin_fini(analysis);
-			analysis->cur = h;
-			if (h->init && !h->init(&analysis->plugin_data)) {
-				RZ_LOG_ERROR("analysis plugin '%s' failed to initialize.\n", h->name);
-				return false;
-			}
-			rz_analysis_set_reg_profile(analysis);
-			if (analysis->il_vm) {
-				rz_analysis_il_vm_setup(analysis);
-			}
-			return true;
+		plugin_fini(analysis);
+		analysis->cur = h;
+		if (h->init && !h->init(&analysis->plugin_data)) {
+			RZ_LOG_ERROR("analysis plugin '%s' failed to initialize.\n", h->name);
+			rz_iterator_free(it);
+			return false;
+		}
+		rz_analysis_set_reg_profile(analysis);
+		if (analysis->il_vm) {
+			rz_analysis_il_vm_setup(analysis);
 		}
 		rz_iterator_free(it);
+		return true;
 	}
+	rz_iterator_free(it);
 	return false;
 }
 

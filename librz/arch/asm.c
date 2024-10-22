@@ -393,17 +393,19 @@ RZ_API bool rz_asm_is_valid(RzAsm *a, const char *name) {
 }
 
 RZ_API bool rz_asm_use_assembler(RzAsm *a, const char *name) {
-	RzAsmPlugin *h;
-	RzIterator *iter = ht_sp_as_iter(a->plugins);
 	if (!a) {
 		return false;
 	}
 	if (!(name && *name)) {
 		a->acur = NULL;
 	}
-	rz_iterator_foreach(iter, h) {
+	RzIterator *iter = ht_sp_as_iter(a->plugins);
+	RzAsmPlugin **val;
+	rz_iterator_foreach(iter, val) {
+		RzAsmPlugin *h = *val;
 		if (h->assemble && !strcmp(h->name, name)) {
 			a->acur = h;
+			rz_iterator_free(iter);
 			return true;
 		}
 	}
@@ -449,12 +451,12 @@ RZ_API bool rz_asm_use(RzAsm *a, RZ_NULLABLE const char *name) {
 	if (!name) {
 		return false;
 	}
-	RzIterator *iter = ht_sp_as_iter(a->plugins);
-	RzAsmPlugin **val;
-	RzCore *core = a->core;
 	if (a->cur && !strcmp(a->cur->arch, name)) {
 		return true;
 	}
+	RzIterator *iter = ht_sp_as_iter(a->plugins);
+	RzAsmPlugin **val;
+	RzCore *core = a->core;
 	rz_iterator_foreach(iter, val) {
 		RzAsmPlugin *h = *val;
 		if (h->arch && h->name && !strcmp(h->name, name)) {

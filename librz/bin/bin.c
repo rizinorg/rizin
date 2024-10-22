@@ -768,7 +768,7 @@ RZ_API RzBin *rz_bin_new(void) {
 	/* extractors */
 	bin->binxtrs = ht_sp_new(HT_STR_DUP, NULL, NULL);
 	for (size_t i = 0; i < RZ_ARRAY_SIZE(bin_xtr_static_plugins); ++i) {
-		ht_sp_insert(bin->plugins, bin_xtr_static_plugins[i]->name, bin_xtr_static_plugins[i]);
+		ht_sp_insert(bin->binxtrs, bin_xtr_static_plugins[i]->name, bin_xtr_static_plugins[i]);
 	}
 
 	return bin;
