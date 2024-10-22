@@ -676,6 +676,8 @@ jobs:
     needs: [ build-and-test ]
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
       - name: Install pkg-config with Homebrew
         run: brew install pkg-config
       - name: Install meson and ninja
