@@ -81,12 +81,8 @@ endif
 
 if cc.has_argument('--std=gnu99')
   add_project_arguments('--std=gnu99', language: ['c', 'cpp'])
-  lang_opt = ['c_std=gnu99']
 elif cc.has_argument('--std=c99')
   add_project_arguments('--std=c99', language: ['c', 'cpp'])
-  lang_opt = ['c_std=c99']
-else
-  lang_opt = []
 endif
 
 # Sanitize correct usage of rz_strf()
@@ -179,7 +175,7 @@ cmake_package_relative_path = run_command(py3_exe, cmake_package_prefix_dir_py, 
 subproject_clean_error_msg = 'Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.'
 
 # handle capstone dependency
-capstone_dep = dependency('capstone', version: '>=4.0.2', required: get_option('use_sys_capstone'), static: is_static_build, default_options: lang_opt)
+capstone_dep = dependency('capstone', version: '>=4.0.2', required: get_option('use_sys_capstone'), static: is_static_build)
 if not capstone_dep.found()
   capstone_version = get_option('use_capstone_version')
   if fs.is_file('subprojects/capstone-' + capstone_version + '.wrap')
@@ -187,7 +183,7 @@ if not capstone_dep.found()
     if r.returncode() == 1 and get_option('subprojects_check')
       error(subproject_clean_error_msg)
     endif
-    capstone_proj = subproject('capstone-' + capstone_version, default_options: ['default_library=static'] + lang_opt)
+    capstone_proj = subproject('capstone-' + capstone_version, default_options: ['default_library=static'])
   else
     error('Wrong capstone version selected. Please use one of the supported versions.')
   endif
@@ -635,13 +631,13 @@ if r.returncode() == 1 and get_option('subprojects_check')
   error(subproject_clean_error_msg)
 endif
 
-libzip_dep = dependency('libzip', required: get_option('use_sys_libzip'), static: is_static_build, default_options: lang_opt)
+libzip_dep = dependency('libzip', required: get_option('use_sys_libzip'), static: is_static_build)
 if not libzip_dep.found()
   libzip_proj = subproject('libzip', default_options: [
     'default_library=static',
     'static_runtime=@0@'.format(is_static_build),
     'use_sys_openssl=@0@'.format(get_option('use_sys_libzip_openssl')),
-  ] + lang_opt)
+  ])
   libzip_dep = libzip_proj.get_variable('libzip_dep')
 endif
 

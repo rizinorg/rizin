@@ -14,9 +14,9 @@ winkd_files = [
 ]
 
 if cc.has_argument('--std=gnu99')
-  add_project_arguments('--std=gnu99', language: ['c', 'cpp'])
+  add_project_arguments('--std=gnu99', language: ['c'])
 elif cc.has_argument('--std=c99')
-  add_project_arguments('--std=c99', language: ['c', 'cpp'])
+  add_project_arguments('--std=c99', language: ['c'])
 endif
 
 winkd_inc = [include_directories('.')]

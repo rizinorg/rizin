@@ -11,9 +11,9 @@ ar_files = [
 cc = meson.get_compiler('c')
 
 if cc.has_argument('--std=gnu99')
-  add_project_arguments('--std=gnu99', language: ['c', 'cpp'])
+  add_project_arguments('--std=gnu99', language: ['c'])
 elif cc.has_argument('--std=c99')
-  add_project_arguments('--std=c99', language: ['c', 'cpp'])
+  add_project_arguments('--std=c99', language: ['c'])
 endif
 
 rz_util_dep = dependency('rz_util')

@@ -1,12 +1,15 @@
 project('tree-sitter', 'c',
   license: 'MIT',
   meson_version: '>=0.55.0',
-  default_options: [
-    'c_std=c99',
-  ]
 )
 
 cc = meson.get_compiler('c')
+
+if cc.has_argument('--std=gnu99')
+  add_project_arguments('--std=gnu99', language: ['c'])
+elif cc.has_argument('--std=c99')
+  add_project_arguments('--std=c99', language: ['c'])
+endif
 
 tree_sitter_path = 'tree-sitter'
 

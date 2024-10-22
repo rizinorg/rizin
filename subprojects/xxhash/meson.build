@@ -3,10 +3,13 @@ project('xxhash', 'c',
   version : '0.6.5',
   license: 'BSD-2-Clause AND GPL-2.0-or-later',
   meson_version: '>=0.55.0',
-  default_options: [
-    'c_std=c99',
-  ]
 )
+
+cc = meson.get_compiler('c')
+
+if cc.has_argument('--std=c99')
+  add_project_arguments('--std=c99', language: ['c'])
+endif
 
 inc = include_directories('.')
 
