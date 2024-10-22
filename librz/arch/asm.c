@@ -442,13 +442,13 @@ static void remove_plugin_config(RZ_BORROW RzCore *core, const char *plugin_name
  * \return true Put Asm plugin successfully in use.
  * \return false Asm plugin failed to be enabled.
  */
-RZ_API bool rz_asm_use(RzAsm *a, const char *name) {
-	rz_return_val_if_fail(a && name, false);
-	RzIterator *iter = ht_sp_as_iter(a->plugins);
-	RzAsmPlugin **val;
-	if (!a || !name) {
+RZ_API bool rz_asm_use(RzAsm *a, RZ_NULLABLE const char *name) {
+	rz_return_val_if_fail(a, false);
+	if (!name) {
 		return false;
 	}
+	RzIterator *iter = ht_sp_as_iter(a->plugins);
+	RzAsmPlugin **val;
 	RzCore *core = a->core;
 	if (a->cur && !strcmp(a->cur->arch, name)) {
 		return true;

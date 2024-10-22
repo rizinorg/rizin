@@ -159,7 +159,7 @@ RZ_API bool rz_asm_plugin_add(RzAsm *a, RZ_NONNULL RzAsmPlugin *foo);
 RZ_API bool rz_asm_plugin_del(RzAsm *a, RZ_NONNULL RzAsmPlugin *foo);
 RZ_API bool rz_asm_setup(RzAsm *a, const char *arch, int bits, int big_endian);
 RZ_API bool rz_asm_is_valid(RzAsm *a, const char *name);
-RZ_API bool rz_asm_use(RzAsm *a, const char *name);
+RZ_API bool rz_asm_use(RzAsm *a, RZ_NULLABLE const char *name);
 RZ_API bool rz_asm_use_assembler(RzAsm *a, const char *name);
 RZ_API bool rz_asm_set_arch(RzAsm *a, const char *name, int bits);
 RZ_DEPRECATE RZ_API int rz_asm_set_bits(RzAsm *a, int bits);
