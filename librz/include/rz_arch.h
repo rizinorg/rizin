@@ -284,9 +284,20 @@ typedef struct rz_arch_plugin_t {
 } RzArchPlugin;
 
 typedef struct rz_arch_t {
-	RzPVector /*<RzArchPlugin*>*/ *plugins;
-	HtSP /*<char*, RzConfig*>*/ plugins_config;
+	HtSP /*<char*, RzArchPlugin*>*/ *plugins; ///< Existing RzArch plugins. NOT initialized.
+	HtUP /*<ut32, RzArchPlugin*>*/ *in_use_plugins; ///< Initialized RzArch plugins in use.
+	HtUP /*<ut32, RzConfig*>*/ *plugins_config; ///< Configurations of initialized plugins.
+	HtUP /*<ut32, void*>*/ *plugins_data; ///< Private data of each initialized plugin.
 } RzArch;
+
+/**
+ * \brief Initializes an instance of the plugin \p name.
+ * It also initializes a private configuration and data for this instance.
+ *
+ * \return The ID of the plugin instance, or UT32_MAX in case of failure.
+ */
+RZ_API RZ_BORROW ut32 rz_arch_init_plugin(RZ_BORROW RzArch *rz_arch, const char *name);
+RZ_API RZ_BORROW RzArchPlugin *rz_arch_get_plugin_instance(const RzArch *rz_arch, ut32 instance_id);
 
 RZ_DEPRECATE RZ_API const size_t rz_arch_get_n_plugins();
 RZ_DEPRECATE RZ_API RZ_BORROW RzAsmPlugin *rz_arch_get_asm_plugin(size_t index);
