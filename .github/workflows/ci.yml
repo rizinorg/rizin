@@ -58,6 +58,7 @@ jobs:
           [
             linux-meson-clang-tests,
             linux-meson-gcc-tests,
+            macos-meson-clang-tests,
             linux-gcc-tests-asan,
             linux-clang-tests-asan,
             linux-gcc-tests-codecov,
@@ -83,6 +84,16 @@ jobs:
             enabled: ${{ needs.changes.outputs.edited == 'true' }}
             timeout: 45
             cflags: "-DRZ_ASSERT_STDOUT=1 -Wno-cpp"
+            allow_failure: false
+          - name: macos-meson-clang-tests
+            os: macos-13
+            build_system: meson
+            compiler: clang
+            run_tests: true
+            meson_options: -Dbuildtype=release --werror
+            enabled: ${{ needs.changes.outputs.edited == 'true' }}
+            timeout: 60
+            cflags: "-Wno-deprecated-non-prototype"
             allow_failure: false
           - name: linux-gcc-tests-asan
             os: ubuntu-22.04
@@ -162,17 +173,17 @@ jobs:
 
     steps:
       - name: Show available memory on Linux
-        if: matrix.os != 'macos-12' && matrix.enabled
+        if: contains(matrix.os, 'macos') != true && matrix.enabled
         run: free -h
       - uses: actions/checkout@v4
         if: matrix.enabled
         with:
           fetch-depth: 2
       - name: Install pkg-config with Homebrew
-        if: matrix.os == 'macos-12' && matrix.enabled
+        if: contains(matrix.os, 'macos') && matrix.enabled
         run: brew install pkg-config
       - name: Install python and other dependencies
-        if: (matrix.run_tests || matrix.build_system == 'meson') && matrix.os != 'macos-12' && matrix.enabled
+        if: (matrix.run_tests || matrix.build_system == 'meson') && contains(matrix.os, 'macos') != true && matrix.enabled
         run: sudo apt-get --assume-yes install python3-wheel python3-setuptools libcapstone4 libcapstone-dev
       - name: Install meson and ninja
         if: matrix.build_system == 'meson' && matrix.enabled
@@ -187,7 +198,7 @@ jobs:
         if: matrix.run_tests && matrix.enabled
         run: pip3 install --user "file://$GITHUB_WORKSPACE/test/rz-pipe#egg=rzpipe&subdirectory=python" requests
       - name: Install Linux test dependencies
-        if: matrix.run_tests && matrix.enabled && matrix.os != 'macos-12'
+        if: matrix.run_tests && matrix.enabled && contains(matrix.os, 'macos') != true
         run: |
           sudo apt-get update
           sudo apt-get --assume-yes install libc6 libc6-i386 libc6-dev debuginfod
@@ -226,7 +237,7 @@ jobs:
           export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
           ninja -C build install
       - name: Disable user authentication for debugging (macOS)
-        if: matrix.os == 'macos-12' && matrix.enabled
+        if: contains(matrix.os, 'macos') && matrix.enabled
         run: |
           sudo security authorizationdb write system.privilege.taskport allow
       - name: Run unit tests (meson)
@@ -661,64 +672,21 @@ jobs:
 
   build-osx-pkg:
     name: Build OSX package
-    runs-on: macos-14
+    runs-on: macos-13
     if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'osx') || contains(github.head_ref, 'mac') || ((contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') && github.event_name == 'push') || github.event_name == 'schedule'
+    needs: [ build-and-test ]
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 2
+      - name: Install pkg-config with Homebrew
+        run: brew install pkg-config
       - name: Install meson and ninja
-        run: pip3 install --break-system-packages --user meson ninja PyYAML
-      - name: Checkout rzpipe
-        uses: actions/checkout@v4
-        with:
-          repository: rizinorg/rz-pipe
-          path: test/rz-pipe
-      - name: Install test dependencies
-        run: pip3 install --break-system-packages --user "file://$GITHUB_WORKSPACE/test/rz-pipe#egg=rzpipe&subdirectory=python" requests
-      - name: Build with Meson
-        run: |
-          export PATH=$(python3 -m site --user-base)/bin:${PATH}
-          export CFLAGS=-Wno-deprecated-non-prototype
-          meson setup --prefix=${HOME} -Dbuildtype=release --werror build && ninja -C build
-      - name: Install with meson
-        run: |
-          export PATH=$(python3 -m site --user-base)/bin:${PATH}
-          ninja -C build install
-      - name: Disable user authentication for debugging
-        run: sudo security authorizationdb write system.privilege.taskport allow
-      - name: Run unit tests
-        run: |
-          export PATH=$(python3 -m site --user-base)/bin:${PATH}
-          meson test -C build --suite unit
-      - name: Checkout our Testsuite Binaries
-        uses: actions/checkout@v4
-        with:
-          repository: rizinorg/rizin-testbins
-          path: test/bins
-      - name: Checkout fuzz targets # TODO: this can be removed as soon as the fuzztargets repo is public
-        uses: actions/checkout@v4
-        with:
-          repository: rizinorg/rizin-fuzztargets
-          path: test/fuzz/targets
-      - name: Run integration tests and rz-test
-        run: |
-          export PATH=$(python3 -m site --user-base)/bin:${PATH}
-          meson test -C build --suite integration
-          cd test
-          rz-test -j `sysctl -n hw.activecpu` -L -o results.json
-      - name: Run fuzz tests
-        run: |
-          cd test
-          rz-test -LF bins/fuzzed @fuzz
-          # some fuzzed bins are mem hungry and are killed by the runner.
-          # running them one threaded allows to be check them
-          rz-test -j1 -LF bins/fuzzed-memhungry @fuzz
+        run: pip3 install meson ninja PyYAML
       - name: Install ImageMagick
         run: brew install imagemagick
       - name: Create OSX package
         run: |
-          export PATH=$(python3 -m site --user-base)/bin:${PATH}
           ./dist/osx/build_osx_package.sh
           mv rizin-*.pkg rizin.pkg
       - name: Upload .pkg file
@@ -930,10 +898,12 @@ jobs:
     strategy:
       matrix:
         system:
-          - macos-14
+          - macos-13
     runs-on: ${{ matrix.system }}
     needs: [ build-osx-pkg ]
     steps:
+      - name: Install pkg-config with Homebrew
+        run: brew install pkg-config
       - uses: actions/download-artifact@v4
         with:
           name: rizin.pkg
