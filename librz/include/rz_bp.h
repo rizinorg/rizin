@@ -106,6 +106,20 @@ typedef struct rz_bp_trace_t {
 	int bitlen;
 } RzBreakpointTrace;
 
+/**
+ * \brief Compare plugins by name (via strcmp).
+ */
+static inline int rz_breakpoint_plugin_cmp(RZ_NULLABLE const RzBreakpointPlugin *a, RZ_NULLABLE const RzBreakpointPlugin *b) {
+	if (!a && !b) {
+		return 0;
+	} else if (!a) {
+		return -1;
+	} else if (!b) {
+		return 1;
+	}
+	return rz_str_cmp(a->name, b->name, -1);
+}
+
 #ifdef RZ_API
 RZ_API RzBreakpoint *rz_bp_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *ctx);
 RZ_API RzBreakpoint *rz_bp_free(RzBreakpoint *bp);

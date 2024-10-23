@@ -165,6 +165,20 @@ typedef struct rz_egg_emit_t {
 	void (*get_while_end)(RzEgg *egg, char *out, const char *ctxpush, const char *label);
 } RzEggEmit;
 
+/**
+ * \brief Compare plugins by name (via strcmp).
+ */
+static inline int rz_egg_plugin_cmp(RZ_NULLABLE const RzEggPlugin *a, RZ_NULLABLE const RzEggPlugin *b) {
+	if (!a && !b) {
+		return 0;
+	} else if (!a) {
+		return -1;
+	} else if (!b) {
+		return 1;
+	}
+	return rz_str_cmp(a->name, b->name, -1);
+}
+
 #ifdef RZ_API
 RZ_API RzEgg *rz_egg_new(void);
 RZ_API void rz_egg_lang_init(RzEgg *egg);

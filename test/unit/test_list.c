@@ -234,7 +234,7 @@ bool test_rz_list_from_iter(void) {
 	RzListIter *it;
 	const char *elem;
 	size_t i = 0;
-	rz_list_foreach_enum(list, it, elem, i) {
+	rz_list_foreach_enum (list, it, elem, i) {
 		mu_assert_streq(elem, lower[i], "Value mismatched.");
 	}
 	ht_up_free(alpha_ht);

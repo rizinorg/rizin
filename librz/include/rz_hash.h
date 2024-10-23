@@ -8,6 +8,7 @@
 #include <rz_list.h>
 #include <rz_util/ht_sp.h>
 #include <rz_util/rz_mem.h>
+#include <rz_util/rz_str.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,6 +49,20 @@ typedef struct rz_hash_cfg_t {
 	RzHashStatus status;
 	RzHash *hash;
 } RzHashCfg;
+
+/**
+ * \brief Compare plugins by name (via strcmp).
+ */
+static inline int rz_hash_plugin_cmp(RZ_NULLABLE const RzHashPlugin *a, RZ_NULLABLE const RzHashPlugin *b) {
+	if (!a && !b) {
+		return 0;
+	} else if (!a) {
+		return -1;
+	} else if (!b) {
+		return 1;
+	}
+	return rz_str_cmp(a->name, b->name, -1);
+}
 
 #ifdef RZ_API
 
