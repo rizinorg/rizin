@@ -2,6 +2,10 @@ project('pcre2', 'c', version: '10.44')
 
 cc = meson.get_compiler('c')
 
+if cc.has_argument('--std=c99')
+  add_project_arguments('--std=c99', language: ['c'])
+endif
+
 conf_data = configuration_data()
 
 pcre2_chartables = configure_file(input : 'src/pcre2_chartables.c.dist',

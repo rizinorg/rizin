@@ -14,6 +14,10 @@
 #include <inttypes.h>
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // TODO: fix this to make it crosscompile-friendly: RZ_SYS_OSTYPE ?
 /* operating system */
 #undef __BSD__
@@ -728,5 +732,9 @@ static inline void *rz_asm_plugin_data_from_rz_analysis(RZ_NONNULL void /*<RzAna
 	assert(rasm && "This function can only be used if RzAnalysis and RzAsm were set up before.");
 	return rasm->plugin_data;
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // RZ_TYPES_H

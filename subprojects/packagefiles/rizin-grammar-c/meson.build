@@ -1,4 +1,16 @@
-project('rizin-grammar-c', 'c', default_options: ['werror=false'])
+project('rizin-grammar-c', 'c',
+  license: 'MIT',
+  meson_version: '>=0.55.0',
+  default_options: [
+    'werror=false'
+  ]
+)
+
+cc = meson.get_compiler('c')
+
+if cc.has_argument('--std=c99')
+  add_project_arguments('--std=c99', language: ['c'])
+endif
 
 ts_c_files = [
   'src/parser.c'
