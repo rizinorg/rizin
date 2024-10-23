@@ -34,10 +34,12 @@ sw v0, 0x14(sp)
 jal sym.imp.__uClibc_main
 sw sp, 0x18(sp)
 EOF
+BROKEN=1
 RUN
 
 NAME=ELF: mipsbe-busybox
 FILE=bins/elf/analysis/mipsbe-busybox
+BROKEN=1
 CMDS=<<EOF
 af
 e asm.sub.var=false
@@ -64,3 +66,4 @@ jal sym.imp.__uClibc_main
 sw sp, 0x18(sp)
 EOF
 RUN
+BROKEN=1

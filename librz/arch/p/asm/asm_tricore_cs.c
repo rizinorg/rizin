@@ -106,6 +106,7 @@ static bool fini(void *u) {
 RzAsmPlugin rz_asm_plugin_tricore_cs = {
 	.name = "tricore",
 	.arch = "tricore",
+	.cpus = "tricore",
 	.author = "billow",
 	.license = "BSD",
 	.bits = 32,

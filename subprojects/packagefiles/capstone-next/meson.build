@@ -39,6 +39,7 @@ cs_files = [
   'arch/Sparc/SparcInstPrinter.c',
   'arch/Sparc/SparcMapping.c',
   'arch/Sparc/SparcModule.c',
+  'arch/SystemZ/SystemZDisassemblerExtension.c',
   'arch/SystemZ/SystemZDisassembler.c',
   'arch/SystemZ/SystemZInstPrinter.c',
   'arch/SystemZ/SystemZMapping.c',
@@ -63,6 +64,10 @@ cs_files = [
   'arch/TriCore/TriCoreInstPrinter.c',
   'arch/TriCore/TriCoreMapping.c',
   'arch/TriCore/TriCoreModule.c',
+  'arch/Xtensa/XtensaDisassembler.c',
+  'arch/Xtensa/XtensaInstPrinter.c',
+  'arch/Xtensa/XtensaMapping.c',
+  'arch/Xtensa/XtensaModule.c',
   'cs.c',
   'Mapping.c',
   'MCInst.c',
@@ -89,11 +94,12 @@ libcapstone_c_args = [
   '-DCAPSTONE_HAS_MIPS',
   '-DCAPSTONE_HAS_POWERPC',
   '-DCAPSTONE_HAS_SPARC',
-  '-DCAPSTONE_HAS_SYSZ',
+  '-DCAPSTONE_HAS_SYSTEMZ',
   '-DCAPSTONE_HAS_X86',
   '-DCAPSTONE_HAS_XCORE',
   '-DCAPSTONE_HAS_TMS320C64X',
   '-DCAPSTONE_HAS_TRICORE',
+  '-DCAPSTONE_HAS_XTENSA',
 ]
 
 if meson.get_compiler('c').has_argument('-Wmaybe-uninitialized')
