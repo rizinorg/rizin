@@ -417,7 +417,9 @@ RZ_IPI RzBinXtrPlugin *rz_bin_get_xtrplugin_by_name(RzBin *bin, const char *name
 
 RZ_API bool rz_bin_plugin_add(RzBin *bin, RZ_NONNULL RzBinPlugin *plugin) {
 	rz_return_val_if_fail(bin && plugin, false);
-	ht_sp_insert(bin->plugins, plugin->name, plugin);
+	if (!ht_sp_insert(bin->plugins, plugin->name, plugin)) {
+		RZ_LOG_WARN("Plugin '%s' was already added.\n", plugin->name);
+	}
 	return true;
 }
 
@@ -438,7 +440,9 @@ RZ_API bool rz_bin_plugin_del(RzBin *bin, RZ_NONNULL RzBinPlugin *plugin) {
 RZ_API bool rz_bin_xtr_plugin_add(RzBin *bin, RZ_NONNULL RzBinXtrPlugin *plugin) {
 	rz_return_val_if_fail(bin && plugin, false);
 
-	ht_sp_insert(bin->binxtrs, plugin->name, plugin);
+	if (!ht_sp_insert(bin->binxtrs, plugin->name, plugin)) {
+		RZ_LOG_WARN("Plugin '%s' was already added.\n", plugin->name);
+	}
 	if (plugin->init) {
 		plugin->init(bin->user);
 	}
@@ -763,12 +767,16 @@ RZ_API RzBin *rz_bin_new(void) {
 
 	bin->plugins = ht_sp_new(HT_STR_DUP, NULL, NULL);
 	for (size_t i = 0; i < RZ_ARRAY_SIZE(bin_static_plugins); ++i) {
-		ht_sp_insert(bin->plugins, bin_static_plugins[i]->name, bin_static_plugins[i]);
+		if (!ht_sp_insert(bin->plugins, bin_static_plugins[i]->name, bin_static_plugins[i])) {
+			RZ_LOG_WARN("Plugin '%s' was already added.\n", bin_static_plugins[i]->name);
+		}
 	}
 	/* extractors */
 	bin->binxtrs = ht_sp_new(HT_STR_DUP, NULL, NULL);
 	for (size_t i = 0; i < RZ_ARRAY_SIZE(bin_xtr_static_plugins); ++i) {
-		ht_sp_insert(bin->binxtrs, bin_xtr_static_plugins[i]->name, bin_xtr_static_plugins[i]);
+		if (!ht_sp_insert(bin->binxtrs, bin_xtr_static_plugins[i]->name, bin_xtr_static_plugins[i])) {
+			RZ_LOG_WARN("Plugin '%s' was already added.\n", bin_xtr_static_plugins[i]->name);
+		}
 	}
 
 	return bin;

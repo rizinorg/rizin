@@ -92,7 +92,9 @@ beach:
 
 RZ_API bool rz_egg_plugin_add(RzEgg *a, RZ_NONNULL RzEggPlugin *plugin) {
 	rz_return_val_if_fail(a && plugin && plugin->name, false);
-	ht_sp_insert(a->plugins, plugin->name, plugin);
+	if (!ht_sp_insert(a->plugins, plugin->name, plugin)) {
+		RZ_LOG_WARN("Plugin '%s' was already added.\n", plugin->name);
+	}
 	return true;
 }
 

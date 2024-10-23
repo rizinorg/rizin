@@ -84,7 +84,9 @@ RZ_API RZ_BORROW const RzCryptoPlugin *rz_crypto_plugin_by_index(RZ_NONNULL RzCr
 
 RZ_API bool rz_crypto_plugin_add(RZ_NONNULL RzCrypto *cry, RZ_NONNULL RzCryptoPlugin *plugin) {
 	rz_return_val_if_fail(cry && plugin, false);
-	ht_sp_insert(cry->plugins, plugin->name, plugin);
+	if (!ht_sp_insert(cry->plugins, plugin->name, plugin)) {
+		RZ_LOG_WARN("Plugin '%s' was already added.\n", plugin->name);
+	}
 	return true;
 }
 
@@ -112,7 +114,9 @@ RZ_API RZ_OWN RzCrypto *rz_crypto_new(void) {
 
 	cry->plugins = ht_sp_new(HT_STR_DUP, NULL, NULL);
 	for (size_t i = 0; i < RZ_ARRAY_SIZE(crypto_static_plugins); ++i) {
-		ht_sp_insert(cry->plugins, crypto_static_plugins[i]->name, crypto_static_plugins[i]);
+		if (!ht_sp_insert(cry->plugins, crypto_static_plugins[i]->name, crypto_static_plugins[i])) {
+			RZ_LOG_WARN("Plugin '%s' was already added.\n", crypto_static_plugins[i]->name);
+		}
 	}
 	if (!cry->plugins) {
 		goto rz_crypto_new_bad;

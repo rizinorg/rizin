@@ -24,7 +24,9 @@ RZ_API int rz_bp_plugin_del_byname(RzBreakpoint *bp, RZ_NONNULL const char *name
 
 RZ_API bool rz_bp_plugin_add(RzBreakpoint *bp, RZ_BORROW RZ_NONNULL RzBreakpointPlugin *plugin) {
 	rz_return_val_if_fail(bp && plugin, false);
-	ht_sp_insert(bp->plugins, plugin->name, plugin);
+	if (!ht_sp_insert(bp->plugins, plugin->name, plugin)) {
+		RZ_LOG_WARN("Plugin '%s' was already added.\n", plugin->name);
+	}
 	return true;
 }
 

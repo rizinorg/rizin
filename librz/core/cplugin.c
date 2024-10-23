@@ -32,7 +32,9 @@ RZ_API bool rz_core_plugin_add(RzCore *core, RZ_NONNULL RzCorePlugin *plugin) {
 	rz_return_val_if_fail(core, false);
 	rz_return_val_if_fail(plugin && plugin->init && plugin->name && plugin->author && plugin->license, false);
 	// TODO: Add config from core plugin.
-	ht_sp_insert(core->plugins, plugin->name, plugin);
+	if (!ht_sp_insert(core->plugins, plugin->name, plugin)) {
+		RZ_LOG_WARN("Plugin '%s' was already added.\n", plugin->name);
+	}
 	if (!plugin->init(core)) {
 		ht_sp_delete(core->plugins, plugin->name);
 		return false;

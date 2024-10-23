@@ -718,7 +718,9 @@ RZ_API void rz_hash_free(RZ_NULLABLE RzHash *rh) {
  */
 RZ_API bool rz_hash_plugin_add(RZ_NONNULL RzHash *rh, RZ_NONNULL RZ_OWN RzHashPlugin *plugin) {
 	rz_return_val_if_fail(rh && plugin && plugin->name, false);
-	ht_sp_insert(rh->plugins, plugin->name, plugin);
+	if (!ht_sp_insert(rh->plugins, plugin->name, plugin)) {
+		RZ_LOG_WARN("Plugin '%s' was already added.\n", plugin->name);
+	}
 	return true;
 }
 

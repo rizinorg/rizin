@@ -52,7 +52,9 @@ RZ_API bool rz_debug_use(RzDebug *dbg, const char *name) {
 
 RZ_API bool rz_debug_plugin_add(RzDebug *dbg, RZ_NONNULL RzDebugPlugin *plugin) {
 	rz_return_val_if_fail(dbg && plugin && plugin->name, false);
-	ht_sp_insert(dbg->plugins, plugin->name, plugin);
+	if (!ht_sp_insert(dbg->plugins, plugin->name, plugin)) {
+		RZ_LOG_WARN("Plugin '%s' was already added.\n", plugin->name);
+	}
 	return true;
 }
 

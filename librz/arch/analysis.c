@@ -198,7 +198,9 @@ RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *a) {
 
 RZ_API bool rz_analysis_plugin_add(RzAnalysis *analysis, RZ_NONNULL RzAnalysisPlugin *p) {
 	rz_return_val_if_fail(analysis && p, false);
-	ht_sp_insert(analysis->plugins, p->name, p);
+	if (!ht_sp_insert(analysis->plugins, p->name, p)) {
+		RZ_LOG_WARN("Plugin '%s' was already added.\n", p->name);
+	}
 	return true;
 }
 

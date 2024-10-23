@@ -15,7 +15,9 @@ static RzIOPlugin *io_static_plugins[] = { RZ_IO_STATIC_PLUGINS };
 
 RZ_API bool rz_io_plugin_add(RzIO *io, RZ_NONNULL RZ_BORROW RzIOPlugin *plugin) {
 	rz_return_val_if_fail(io && plugin && plugin->name, false);
-	ht_sp_insert(io->plugins, plugin->name, plugin);
+	if (!ht_sp_insert(io->plugins, plugin->name, plugin)) {
+		RZ_LOG_WARN("Plugin '%s' was already added.\n", plugin->name);
+	}
 	return true;
 }
 
