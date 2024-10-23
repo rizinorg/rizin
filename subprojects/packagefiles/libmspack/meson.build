@@ -1,6 +1,14 @@
-project('libmspack', 'c', version: '0.10.1alpha', license : ['LGPL2'], meson_version: '>=0.55.0')
+project('libmspack', 'c',
+  version: '0.10.1alpha',
+  license : 'LGPL2',
+  meson_version: '>=0.55.0',
+)
 
 cc = meson.get_compiler('c')
+
+if cc.has_argument('--std=c99')
+  add_project_arguments('--std=c99', language: ['c'])
+endif
 
 # handle libmspack dependency
 libmspack_files = [

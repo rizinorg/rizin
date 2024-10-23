@@ -1,9 +1,18 @@
 project('libzip', 'c',
-  version: '1.9.2')
+  version: '1.9.2',
+  license: 'BSD-3-clause',
+  meson_version: '>=0.55.0',
+)
 
 py3_exe = import('python').find_installation()
 cc = meson.get_compiler('c')
 is_static_build = get_option('static_runtime')
+
+if cc.has_argument('--std=gnu99')
+  add_project_arguments('--std=gnu99', language: ['c'])
+elif cc.has_argument('--std=c99')
+  add_project_arguments('--std=c99', language: ['c'])
+endif
 
 # Create config.h file
 conf_data = configuration_data()

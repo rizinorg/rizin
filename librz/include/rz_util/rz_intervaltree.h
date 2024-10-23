@@ -7,6 +7,10 @@
 #include "rz_rbtree.h"
 #include "../rz_types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * RzIntervalTree is a special RBTree (augmented red-black tree)
  * that holds its entries, each associated with a interval,
@@ -99,5 +103,9 @@ static inline bool rz_interval_tree_empty(RzIntervalTree *tree) {
 #define rz_interval_tree_foreach_prev(tree, it, dat) \
 	if ((tree)->root) \
 		for ((it) = rz_rbtree_last(&(tree)->root->node); rz_rbtree_iter_has(&it) && (dat = rz_rbtree_iter_get(&it, RzIntervalNode, node)->data); rz_rbtree_iter_prev(&(it)))
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // RZ_INTERVALTREE_H

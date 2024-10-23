@@ -1,6 +1,6 @@
 project('rizin', 'c',
   version: 'v0.8.0',
-  license: 'LGPL3',
+  license: 'LGPL-3.0-only',
   meson_version: '>=0.57.0',
   default_options: [
     'buildtype=debugoptimized',
@@ -80,14 +80,14 @@ if is_static_build
 endif
 
 if cc.has_argument('--std=gnu99')
-  add_global_arguments('--std=gnu99', language: ['c', 'cpp'])
+  add_project_arguments('--std=gnu99', language: ['c', 'cpp'])
 elif cc.has_argument('--std=c99')
-  add_global_arguments('--std=c99', language: ['c', 'cpp'])
+  add_project_arguments('--std=c99', language: ['c', 'cpp'])
 endif
 
 # Sanitize correct usage of rz_strf()
 if cc.has_argument('-Werror=sizeof-pointer-memaccess')
-  add_global_arguments('-Werror=sizeof-pointer-memaccess', language: ['c', 'cpp'])
+  add_project_arguments('-Werror=sizeof-pointer-memaccess', language: ['c', 'cpp'])
 endif
 
 if cc.has_argument('-Wimplicit-fallthrough=3')
@@ -106,17 +106,17 @@ endif
 
 if get_option('default_library') == 'shared'
   if cc.has_argument('-fvisibility=hidden')
-    add_global_arguments('-fvisibility=hidden', language: 'c')
+    add_project_arguments('-fvisibility=hidden', language: 'c')
   endif
 endif
 
 add_project_arguments(['-DRZ_PLUGIN_INCORE=1'], language: 'c')
 b_sanitize_opt = get_option('b_sanitize')
 if (b_sanitize_opt.contains('address') or b_sanitize_opt.contains('undefined')) and cc.get_id() == 'clang'
-  add_global_arguments('-shared-libasan', language: 'c')
-  add_global_link_arguments('-shared-libasan', language: 'c')
-  add_global_arguments('-shared-libasan', language: 'c', native: true)
-  add_global_link_arguments('-shared-libasan', language: 'c', native: true)
+  add_project_arguments('-shared-libasan', language: 'c')
+  add_project_link_arguments('-shared-libasan', language: 'c')
+  add_project_arguments('-shared-libasan', language: 'c', native: true)
+  add_project_link_arguments('-shared-libasan', language: 'c', native: true)
 endif
 
 fs = import('fs')
@@ -355,7 +355,7 @@ foreach it : ccs
   have_pthread = it_th.found() and it_machine.system() != 'windows'
   if it_machine.system() == 'sunos'
     # workaround for Solaris until https://github.com/mesonbuild/meson/issues/4328 is fixed
-    it_mth = declare_dependency(link_args: '-lm', native: it_native)
+    it_mth = declare_dependency(link_args: '-lm')
   else
     it_mth = it_cc.find_library('m', required: false, static: is_static_build)
   endif
@@ -558,7 +558,7 @@ if git_exe.found() and fs.exists('.git')
     build_always_stale: true,
     build_by_default: true,
     output: 'gittip',
-    command: [py3_exe, git_exe_repo_py, git_exe, repo, 'rev-parse', 'HEAD'],
+    command: [py3_exe, git_exe_repo_py, git_exe, repo, '@OUTPUT@', 'rev-parse', 'HEAD'],
     install: true,
     install_dir: rizin_datdir_rz
   )

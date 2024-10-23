@@ -1,7 +1,14 @@
 project('lz4', ['c'],
-  license: ['BSD', 'GPLv2'],
+  license: 'BSD-2-Clause-Patent AND GPL-2.0-or-later',
   version: '1.9.4',
-  meson_version: '>=0.47.0')
+  meson_version: '>=0.55.0',
+)
+
+cc = meson.get_compiler('c')
+
+if cc.has_argument('--std=c99')
+  add_project_arguments('--std=c99', language: ['c'])
+endif
 
 lz4_files = [
   'lib/lz4.c',
