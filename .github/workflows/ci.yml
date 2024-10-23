@@ -179,9 +179,6 @@ jobs:
         if: matrix.enabled
         with:
           fetch-depth: 2
-      - name: Install pkg-config with Homebrew
-        if: contains(matrix.os, 'macos') && matrix.enabled
-        run: brew install pkg-config
       - name: Install python and other dependencies
         if: (matrix.run_tests || matrix.build_system == 'meson') && contains(matrix.os, 'macos') != true && matrix.enabled
         run: sudo apt-get --assume-yes install python3-wheel python3-setuptools libcapstone4 libcapstone-dev
@@ -679,8 +676,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 2
-      - name: Install pkg-config with Homebrew
-        run: brew install pkg-config
       - name: Install meson and ninja
         run: pip3 install meson ninja PyYAML
       - name: Install ImageMagick
@@ -902,8 +897,6 @@ jobs:
     runs-on: ${{ matrix.system }}
     needs: [ build-osx-pkg ]
     steps:
-      - name: Install pkg-config with Homebrew
-        run: brew install pkg-config
       - uses: actions/download-artifact@v4
         with:
           name: rizin.pkg
