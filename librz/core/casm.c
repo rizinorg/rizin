@@ -65,9 +65,9 @@ RZ_API char *rz_core_asm_search(RzCore *core, const char *input) {
 }
 
 static const char *has_esil(RzCore *core, const char *name) {
+	rz_return_val_if_fail(core && core->analysis && name, NULL);
 	RzIterator *iter = ht_sp_as_iter(core->analysis->plugins);
 	RzAnalysisPlugin **val;
-	rz_return_val_if_fail(core && core->analysis && name, NULL);
 	rz_iterator_foreach(iter, val) {
 		RzAnalysisPlugin *h = *val;
 		if (!h->name || strcmp(name, h->name)) {
@@ -75,15 +75,19 @@ static const char *has_esil(RzCore *core, const char *name) {
 		}
 		if (h->il_config && h->esil) {
 			// Analysis with RzIL and ESIL
+			rz_iterator_free(iter);
 			return "AeI";
 		} else if (h->il_config) {
 			// Analysis with RzIL
+			rz_iterator_free(iter);
 			return "A_I";
 		} else if (h->esil) {
 			// Analysis with ESIL
+			rz_iterator_free(iter);
 			return "Ae_";
 		}
 		// Only the analysis plugin.
+		rz_iterator_free(iter);
 		return "A__";
 	}
 	rz_iterator_free(iter);

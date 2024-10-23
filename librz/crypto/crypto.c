@@ -73,6 +73,7 @@ RZ_API RZ_BORROW const RzCryptoPlugin *rz_crypto_plugin_by_index(RZ_NONNULL RzCr
 	rz_iterator_foreach(it, val) {
 		const RzCryptoPlugin *plugin = *val;
 		if (i == index) {
+			rz_iterator_free(it);
 			return plugin;
 		}
 		i++;
@@ -171,10 +172,12 @@ RZ_API bool rz_crypto_use(RZ_NONNULL RzCrypto *cry, RZ_NONNULL const char *algo)
 		if (h && h->use(algo)) {
 			if (h->init && !h->init(cry)) {
 				RZ_LOG_ERROR("[!] crypto: error initializing '%s' plugin\n", cry->h->name);
+				rz_iterator_free(it);
 				return false;
 			}
 
 			cry->h = h;
+			rz_iterator_free(it);
 			return true;
 		}
 	}

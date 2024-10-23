@@ -509,6 +509,7 @@ static void hash_parse_cmdline(int argc, const char **argv, RzHashContext *ctx) 
 }
 
 static void hash_context_fini(RzHashContext *ctx) {
+	free(ctx->key.buf);
 	free(ctx->algorithm);
 	free(ctx->compare);
 	free(ctx->iv);
