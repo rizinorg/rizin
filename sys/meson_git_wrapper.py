@@ -23,12 +23,10 @@ def isCArgSupported(executable, path):
         return False
 
 
-def simple_git_execution(args, gittip_dir=None):
+def simple_git_execution(args, output_path=None):
     try:
         called = subprocess.run(args, check=True, stdout=subprocess.PIPE)
-        if gittip_dir is not None:
-            os.chdir(gittip_dir)
-        with open("gittip", "w", encoding="utf8") as f:
+        with open(output_path, "w", encoding="utf8") as f:
             f.write(called.stdout.decode("utf8").strip())
         sys.exit(called.returncode)
     except subprocess.CalledProcessError as e:
@@ -38,7 +36,7 @@ def simple_git_execution(args, gittip_dir=None):
 def parse():
     if len(sys.argv) <= 3:
         print(
-            "Usage: {} <git_executable_path> <repo_path> [git_args...]".format(
+            "Usage: {} <git_executable_path> <repo_path> <output_path> [git_args...]".format(
                 sys.argv[0]
             )
         )
@@ -46,20 +44,21 @@ def parse():
 
     git_exe = sys.argv[1]
     repo_path = sys.argv[2]
-    args = sys.argv[3:]
+    output_path = sys.argv[3]
+    args = sys.argv[4:]
 
-    return git_exe, repo_path, args
+    return git_exe, repo_path, output_path, args
 
 
 def main():
-    git_exe, repo_path, args = parse()
+    git_exe, repo_path, output_path, args = parse()
 
     if isCArgSupported(git_exe, repo_path):
-        simple_git_execution([git_exe, "-C", repo_path] + args)
+        simple_git_execution([git_exe, "-C", repo_path] + args, output_path=output_path)
     else:
-        gittip_dir = os.getcwd()
+        out_abs_path = os.path.abspath(output_path)
         os.chdir(repo_path)
-        simple_git_execution([git_exe] + args, gittip_dir)
+        simple_git_execution([git_exe] + args, out_abs_path)
 
 
 if __name__ == "__main__":
