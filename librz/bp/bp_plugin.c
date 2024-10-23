@@ -64,12 +64,15 @@ RZ_API int rz_bp_use(RZ_NONNULL RzBreakpoint *bp, RZ_NONNULL const char *name) {
 // TODO: deprecate
 RZ_API void rz_bp_plugin_list(RzBreakpoint *bp) {
 	RzIterator *iter = ht_sp_as_iter(bp->plugins);
-	RzBreakpointPlugin **val;
-	rz_iterator_foreach(iter, val) {
-		RzBreakpointPlugin *b = *val;
+	RzList *plugin_list = rz_list_new_from_iterator(iter);
+	rz_list_sort(plugin_list, (RzListComparator)rz_breakpoint_plugin_cmp, NULL);
+	RzListIter *it;
+	RzBreakpointPlugin *b;
+	rz_list_foreach (plugin_list, it, b) {
 		bp->cb_printf("bp %c %s\n",
 			(bp->cur && !strcmp(bp->cur->name, b->name)) ? '*' : '-',
 			b->name);
 	}
+	rz_list_free(plugin_list);
 	rz_iterator_free(iter);
 }

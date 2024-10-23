@@ -149,6 +149,20 @@ typedef struct rz_asm_plugin_t {
 	const char *platforms;
 } RzAsmPlugin;
 
+/**
+ * \brief Compare plugins by name (via strcmp).
+ */
+static inline int rz_asm_plugin_cmp(RZ_NULLABLE const RzAsmPlugin *a, RZ_NULLABLE const RzAsmPlugin *b) {
+	if (!a && !b) {
+		return 0;
+	} else if (!a) {
+		return -1;
+	} else if (!b) {
+		return 1;
+	}
+	return rz_str_cmp(a->name, b->name, -1);
+}
+
 #ifdef RZ_API
 /* asm.c */
 RZ_API RzAsm *rz_asm_new(void);

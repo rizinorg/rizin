@@ -36,20 +36,26 @@ RZ_API RzCmdStatus rz_core_crypto_plugins_print(RzCrypto *cry, RzCmdStateOutput 
 	rz_return_val_if_fail(cry, RZ_CMD_STATUS_ERROR);
 
 	RzCmdStatus status;
-	RzIterator *it = ht_sp_as_iter(cry->plugins);
-	RzCryptoPlugin **val;
 	rz_cmd_state_output_array_start(state);
 	if (state->mode == RZ_OUTPUT_MODE_STANDARD) {
 		rz_cons_println("algorithm      license    author");
 	}
-	rz_iterator_foreach(it, val) {
-		const RzCryptoPlugin *plugin = *val;
+	RzIterator *iter = ht_sp_as_iter(cry->plugins);
+	RzList *plugin_list = rz_list_new_from_iterator(iter);
+	rz_list_sort(plugin_list, (RzListComparator)rz_crypto_plugin_cmp, NULL);
+	RzListIter *it;
+	RzCryptoPlugin *plugin;
+	rz_list_foreach (plugin_list, it, plugin) {
 		status = core_crypto_plugin_print(state, plugin);
 		if (status != RZ_CMD_STATUS_OK) {
+			rz_list_free(plugin_list);
+			rz_iterator_free(iter);
 			return status;
 		}
 	}
-	rz_iterator_free(it);
+	rz_list_free(plugin_list);
+	rz_iterator_free(iter);
+
 	if (state->mode == RZ_OUTPUT_MODE_QUIET) {
 		rz_cons_newline();
 	}

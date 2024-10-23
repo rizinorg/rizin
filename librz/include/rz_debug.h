@@ -15,6 +15,8 @@
 
 #include <rz_config.h>
 #include "rz_bind.h"
+#include "rz_util/rz_assert.h"
+#include "rz_util/rz_str.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -430,6 +432,21 @@ typedef struct rz_debug_esil_watchpoint_t {
 } RzDebugEsilWatchpoint;
 
 #ifdef RZ_API
+
+/**
+ * \brief Compare plugins by name (via strcmp).
+ */
+static inline int rz_debug_plugin_cmp(RZ_NULLABLE const RzDebugPlugin *a, RZ_NULLABLE const RzDebugPlugin *b) {
+	if (!a && !b) {
+		return 0;
+	} else if (!a) {
+		return -1;
+	} else if (!b) {
+		return 1;
+	}
+	return rz_str_cmp(a->name, b->name, -1);
+}
+
 RZ_API RZ_OWN RzDebug *rz_debug_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *bp_ctx);
 RZ_API RzDebug *rz_debug_free(RzDebug *dbg);
 

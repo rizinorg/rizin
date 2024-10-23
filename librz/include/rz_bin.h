@@ -770,6 +770,34 @@ typedef struct rz_bin_bind_t {
 	ut32 visibility;
 } RzBinBind;
 
+/**
+ * \brief Compare plugins by name (via strcmp).
+ */
+static inline int rz_bin_plugin_cmp(RZ_NULLABLE const RzBinPlugin *a, RZ_NULLABLE const RzBinPlugin *b) {
+	if (!a && !b) {
+		return 0;
+	} else if (!a) {
+		return -1;
+	} else if (!b) {
+		return 1;
+	}
+	return rz_str_cmp(a->name, b->name, -1);
+}
+
+/**
+ * \brief Compare plugins by name (via strcmp).
+ */
+static inline int rz_bin_xtr_plugin_cmp(RZ_NULLABLE const RzBinXtrPlugin *a, RZ_NULLABLE const RzBinXtrPlugin *b) {
+	if (!a && !b) {
+		return 0;
+	} else if (!a) {
+		return -1;
+	} else if (!b) {
+		return 1;
+	}
+	return rz_str_cmp(a->name, b->name, -1);
+}
+
 RZ_API RzBinField *rz_bin_field_new(ut64 paddr, ut64 vaddr, int size, const char *name, const char *comment, const char *format, bool format_named);
 RZ_API void rz_bin_field_free(RZ_NULLABLE RzBinField *field);
 RZ_API RzBinClassField *rz_bin_class_field_new(ut64 vaddr, ut64 paddr, const char *name, const char *classname, const char *libname, const char *type);

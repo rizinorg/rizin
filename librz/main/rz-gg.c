@@ -69,24 +69,25 @@ static int usage(int v) {
 }
 
 static void list(RzEgg *egg) {
-	RzIterator *iter = ht_sp_as_iter(egg->plugins);
-	RzEggPlugin **val;
 	printf("shellcodes:\n");
-	rz_iterator_foreach(iter, val) {
-		RzEggPlugin *p = *val;
+	RzIterator *iter = ht_sp_as_iter(egg->plugins);
+	RzList *plugin_list = rz_list_new_from_iterator(iter);
+	rz_list_sort(plugin_list, (RzListComparator)rz_egg_plugin_cmp, NULL);
+	RzListIter *it;
+	RzEggPlugin *p;
+	rz_list_foreach (plugin_list, it, p) {
 		if (p->type == RZ_EGG_PLUGIN_SHELLCODE) {
 			printf("%10s : %s\n", p->name, p->desc);
 		}
 	}
-	rz_iterator_free(iter);
-	iter = ht_sp_as_iter(egg->plugins);
+
 	printf("encoders:\n");
-	rz_iterator_foreach(iter, val) {
-		RzEggPlugin *p = *val;
+	rz_list_foreach (plugin_list, it, p) {
 		if (p->type == RZ_EGG_PLUGIN_ENCODER) {
 			printf("%10s : %s\n", p->name, p->desc);
 		}
 	}
+	rz_list_free(plugin_list);
 	rz_iterator_free(iter);
 }
 
