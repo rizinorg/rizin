@@ -20,6 +20,7 @@ block    0x100
 type     production
 arch     arm
 cpu      N/A
+features N/A
 baddr    0x180000000
 binsz    0x00034000
 bintype  N/A
@@ -184,6 +185,7 @@ block    0x100
 type     production
 arch     arm
 cpu      N/A
+features N/A
 baddr    0x180000000
 binsz    0x00034000
 bintype  N/A
@@ -346,6 +348,7 @@ block    0x100
 type     production
 arch     arm
 cpu      N/A
+features N/A
 baddr    0x180000000
 binsz    0x00098000
 bintype  N/A
@@ -438,6 +441,7 @@ block    0x100
 type     production
 arch     arm
 cpu      N/A
+features N/A
 baddr    0x180000000
 binsz    0x000a8000
 bintype  N/A
@@ -621,6 +625,7 @@ block    0x100
 type     development
 arch     arm
 cpu      N/A
+features N/A
 baddr    0x180000000
 binsz    0x00020000
 bintype  N/A

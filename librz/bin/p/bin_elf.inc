@@ -2034,6 +2034,10 @@ static RzBinInfo *info(RzBinFile *bf) {
 	}
 	if ((str = Elf_(rz_bin_elf_get_abi)(obj))) {
 		ret->features = str;
+		if (!ret->has_pi) {
+			// Elf MIPS PIE flag is in features.
+			ret->has_pi = (strstr(str, "pic ")) ? 1 : 0;
+		}
 	}
 
 	ret->rclass = rz_str_dup("elf");

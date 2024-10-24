@@ -7,7 +7,18 @@
 #include <capstone/systemz.h>
 // instruction set: http://www.tachyonsoft.com/inst390m.htm
 
-#define INSOP(n) insn->detail->sysz.operands[n]
+#if CS_NEXT_VERSION < 6
+#define SYSTEMZ(x)    SYSZ_##x
+#define SYSTEMZ_ARCH  CS_ARCH_SYSZ
+#define cs_systemz    cs_sysz
+#define cs_systemz_op cs_sysz_op
+#define systemz       sysz
+#define INSOP(n)      insn->detail->sysz.operands[n]
+#else
+#define SYSTEMZ(x)   SYSTEMZ_##x
+#define SYSTEMZ_ARCH CS_ARCH_SYSTEMZ
+#define INSOP(n)     insn->detail->systemz.operands[n]
+#endif
 
 static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
@@ -17,22 +28,22 @@ static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
 	}
 	pj_o(pj);
 	pj_ka(pj, "operands");
-	cs_sysz *x = &insn->detail->sysz;
+	cs_systemz *x = &insn->detail->systemz;
 	for (i = 0; i < x->op_count; i++) {
-		cs_sysz_op *op = x->operands + i;
+		cs_systemz_op *op = x->operands + i;
 		pj_o(pj);
 		switch (op->type) {
-		case SYSZ_OP_REG:
+		case SYSTEMZ(OP_REG):
 			pj_ks(pj, "type", "reg");
 			pj_ks(pj, "value", cs_reg_name(handle, op->reg));
 			break;
-		case SYSZ_OP_IMM:
+		case SYSTEMZ(OP_IMM):
 			pj_ks(pj, "type", "imm");
 			pj_kN(pj, "value", op->imm);
 			break;
-		case SYSZ_OP_MEM:
+		case SYSTEMZ(OP_MEM):
 			pj_ks(pj, "type", "mem");
-			if (op->mem.base != SYSZ_REG_INVALID) {
+			if (op->mem.base != SYSTEMZ(REG_INVALID)) {
 				pj_ks(pj, "base", cs_reg_name(handle, op->mem.base));
 			}
 			pj_kN(pj, "disp", op->mem.disp);
@@ -55,7 +66,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	csh handle;
 	cs_insn *insn;
 	int mode = CS_MODE_BIG_ENDIAN;
-	int ret = cs_open(CS_ARCH_SYSZ, mode, &handle);
+	int ret = cs_open(SYSTEMZ_ARCH, mode, &handle);
 	if (ret == CS_ERR_OK) {
 		cs_option(handle, CS_OPT_DETAIL, CS_OPT_ON);
 		// capstone-next
@@ -68,68 +79,112 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			}
 			op->size = insn->size;
 			switch (insn->id) {
-			case SYSZ_INS_BRCL:
-			case SYSZ_INS_BRASL:
+			case SYSTEMZ(INS_BRCL):
+			case SYSTEMZ(INS_BRASL):
 				op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 				break;
-			case SYSZ_INS_BR:
+			case SYSTEMZ(INS_BR):
 				op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 				break;
-			case SYSZ_INS_BRC:
-			case SYSZ_INS_BER:
-			case SYSZ_INS_BHR:
-			case SYSZ_INS_BHER:
-			case SYSZ_INS_BLR:
-			case SYSZ_INS_BLER:
-			case SYSZ_INS_BLHR:
-			case SYSZ_INS_BNER:
-			case SYSZ_INS_BNHR:
-			case SYSZ_INS_BNHER:
-			case SYSZ_INS_BNLR:
-			case SYSZ_INS_BNLER:
-			case SYSZ_INS_BNLHR:
-			case SYSZ_INS_BNOR:
-			case SYSZ_INS_BOR:
-			case SYSZ_INS_BASR:
-			case SYSZ_INS_BRAS:
-			case SYSZ_INS_BRCT:
-			case SYSZ_INS_BRCTG:
+			case SYSTEMZ(INS_BRC):
+			case SYSTEMZ(INS_BER):
+			case SYSTEMZ(INS_BHR):
+			case SYSTEMZ(INS_BHER):
+			case SYSTEMZ(INS_BLR):
+			case SYSTEMZ(INS_BLER):
+			case SYSTEMZ(INS_BLHR):
+			case SYSTEMZ(INS_BNER):
+			case SYSTEMZ(INS_BNHR):
+			case SYSTEMZ(INS_BNHER):
+			case SYSTEMZ(INS_BNLR):
+			case SYSTEMZ(INS_BNLER):
+			case SYSTEMZ(INS_BNLHR):
+			case SYSTEMZ(INS_BNOR):
+			case SYSTEMZ(INS_BOR):
+			case SYSTEMZ(INS_BASR):
+			case SYSTEMZ(INS_BRAS):
+			case SYSTEMZ(INS_BRCT):
+			case SYSTEMZ(INS_BRCTG):
 				op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 				break;
-			case SYSZ_INS_JE:
-			case SYSZ_INS_JGE:
-			case SYSZ_INS_JHE:
-			case SYSZ_INS_JGHE:
-			case SYSZ_INS_JH:
-			case SYSZ_INS_JGH:
-			case SYSZ_INS_JLE:
-			case SYSZ_INS_JGLE:
-			case SYSZ_INS_JLH:
-			case SYSZ_INS_JGLH:
-			case SYSZ_INS_JL:
-			case SYSZ_INS_JGL:
-			case SYSZ_INS_JNE:
-			case SYSZ_INS_JGNE:
-			case SYSZ_INS_JNHE:
-			case SYSZ_INS_JGNHE:
-			case SYSZ_INS_JNH:
-			case SYSZ_INS_JGNH:
-			case SYSZ_INS_JNLE:
-			case SYSZ_INS_JGNLE:
-			case SYSZ_INS_JNLH:
-			case SYSZ_INS_JGNLH:
-			case SYSZ_INS_JNL:
-			case SYSZ_INS_JGNL:
-			case SYSZ_INS_JNO:
-			case SYSZ_INS_JGNO:
-			case SYSZ_INS_JO:
-			case SYSZ_INS_JGO:
-			case SYSZ_INS_JG:
+#if CS_NEXT_VERSION < 6
+			case SYSTEMZ(INS_JE):
+			case SYSTEMZ(INS_JGE):
+			case SYSTEMZ(INS_JHE):
+			case SYSTEMZ(INS_JGHE):
+			case SYSTEMZ(INS_JH):
+			case SYSTEMZ(INS_JGH):
+			case SYSTEMZ(INS_JLE):
+			case SYSTEMZ(INS_JGLE):
+			case SYSTEMZ(INS_JLH):
+			case SYSTEMZ(INS_JGLH):
+			case SYSTEMZ(INS_JL):
+			case SYSTEMZ(INS_JGL):
+			case SYSTEMZ(INS_JNE):
+			case SYSTEMZ(INS_JGNE):
+			case SYSTEMZ(INS_JNHE):
+			case SYSTEMZ(INS_JGNHE):
+			case SYSTEMZ(INS_JNH):
+			case SYSTEMZ(INS_JGNH):
+			case SYSTEMZ(INS_JNLE):
+			case SYSTEMZ(INS_JGNLE):
+			case SYSTEMZ(INS_JNLH):
+			case SYSTEMZ(INS_JGNLH):
+			case SYSTEMZ(INS_JNL):
+			case SYSTEMZ(INS_JGNL):
+			case SYSTEMZ(INS_JNO):
+			case SYSTEMZ(INS_JGNO):
+			case SYSTEMZ(INS_JO):
+			case SYSTEMZ(INS_JGO):
+			case SYSTEMZ(INS_JG):
+#else
+			case SYSTEMZ(INS_JE):
+			case SYSTEMZ(INS_JH):
+			case SYSTEMZ(INS_JHE):
+			case SYSTEMZ(INS_JL):
+			case SYSTEMZ(INS_JLE):
+			case SYSTEMZ(INS_JLH):
+			case SYSTEMZ(INS_JM):
+			case SYSTEMZ(INS_JNE):
+			case SYSTEMZ(INS_JNH):
+			case SYSTEMZ(INS_JNHE):
+			case SYSTEMZ(INS_JNL):
+			case SYSTEMZ(INS_JNLE):
+			case SYSTEMZ(INS_JNLH):
+			case SYSTEMZ(INS_JNM):
+			case SYSTEMZ(INS_JNO):
+			case SYSTEMZ(INS_JNP):
+			case SYSTEMZ(INS_JNZ):
+			case SYSTEMZ(INS_JO):
+			case SYSTEMZ(INS_JP):
+			case SYSTEMZ(INS_JZ):
+			case SYSTEMZ(INS_J_G_LU_):
+			case SYSTEMZ(INS_J_G_L_E):
+			case SYSTEMZ(INS_J_G_L_H):
+			case SYSTEMZ(INS_J_G_L_HE):
+			case SYSTEMZ(INS_J_G_L_L):
+			case SYSTEMZ(INS_J_G_L_LE):
+			case SYSTEMZ(INS_J_G_L_LH):
+			case SYSTEMZ(INS_J_G_L_M):
+			case SYSTEMZ(INS_J_G_L_NE):
+			case SYSTEMZ(INS_J_G_L_NH):
+			case SYSTEMZ(INS_J_G_L_NHE):
+			case SYSTEMZ(INS_J_G_L_NL):
+			case SYSTEMZ(INS_J_G_L_NLE):
+			case SYSTEMZ(INS_J_G_L_NLH):
+			case SYSTEMZ(INS_J_G_L_NM):
+			case SYSTEMZ(INS_J_G_L_NO):
+			case SYSTEMZ(INS_J_G_L_NP):
+			case SYSTEMZ(INS_J_G_L_NZ):
+			case SYSTEMZ(INS_J_G_L_O):
+			case SYSTEMZ(INS_J_G_L_P):
+			case SYSTEMZ(INS_J_G_L_Z):
+#endif
 				op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 				op->jump = INSOP(0).imm;
 				op->fail = addr + op->size;
 				break;
-			case SYSZ_INS_J:
+			case SYSTEMZ(INS_J):
 				op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 				op->jump = INSOP(0).imm;
 				op->fail = UT64_MAX;

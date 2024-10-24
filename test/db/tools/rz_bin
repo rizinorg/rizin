@@ -401,6 +401,7 @@ EXPECT=<<EOF
 [Info]
 arch     x86
 cpu      N/A
+features N/A
 baddr    0x08048000
 binsz    0x00001323
 bintype  elf
@@ -670,6 +671,7 @@ EXPECT=<<EOF
 [Info]
 arch     x86
 cpu      N/A
+features N/A
 baddr    0x00000000
 binsz    0x00001b8b
 bintype  elf
@@ -715,6 +717,7 @@ EXPECT=<<EOF
 [Info]
 arch     x86
 cpu      N/A
+features N/A
 baddr    0x00400000
 binsz    0x001876b7
 bintype  elf
@@ -760,6 +763,7 @@ EXPECT=<<EOF
 [Info]
 arch     x86
 cpu      N/A
+features N/A
 baddr    0x100000000
 binsz    0x00002664
 bintype  mach0
