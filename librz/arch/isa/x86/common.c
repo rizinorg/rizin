@@ -739,9 +739,9 @@ RZ_IPI RzILOpPure *x86_il_get_operand_bits(X86Op op, int analysis_bits, ut64 pc,
 		return x86_il_get_reg_bits(op.reg, analysis_bits, pc);
 	case X86_OP_IMM:
 		/* Immediate values are always sign extended */
-		return SN(op.size * BITS_PER_BYTE, op.imm);
+		return SN((op.size != 0 ? op.size : implicit_size) * BITS_PER_BYTE, op.imm);
 	case X86_OP_MEM:
-		return LOADW(BITS_PER_BYTE * op.size, x86_il_get_memaddr_bits(op.mem, analysis_bits, pc));
+		return LOADW((op.size != 0 ? op.size : implicit_size) * BITS_PER_BYTE, x86_il_get_memaddr_bits(op.mem, analysis_bits, pc));
 	default:
 		return NULL;
 	}

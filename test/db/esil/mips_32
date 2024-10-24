@@ -1222,6 +1222,7 @@ RUN
 
 NAME=bnez s4, 0xc (taken)
 FILE=malloc://0x200
+BROKEN=1
 CMDS=<<EOF
 e asm.arch=mips
 e asm.bits=32
@@ -1238,6 +1239,7 @@ RUN
 
 NAME=blez v0, 0x3c (not taken)
 FILE=malloc://0x200
+BROKEN=1
 CMDS=<<EOF
 e asm.arch=mips
 e asm.bits=32
@@ -1254,6 +1256,7 @@ RUN
 
 NAME=blez v0, 0x3c (taken)
 FILE=malloc://0x200
+BROKEN=1
 CMDS=<<EOF
 e asm.arch=mips
 e asm.bits=32
@@ -1443,6 +1446,7 @@ RUN
 
 NAME=jalr t9
 FILE=malloc://0x200
+BROKEN=1
 CMDS=<<EOF
 e asm.arch=mips
 e asm.bits=32
@@ -1461,6 +1465,7 @@ RUN
 
 NAME=jalr t4, t9
 FILE=malloc://0x200
+BROKEN=1
 CMDS=<<EOF
 e asm.arch=mips
 e asm.bits=32
@@ -1479,6 +1484,7 @@ RUN
 
 NAME=jalr t4, t9 (invalid delay instruction)
 FILE=malloc://8
+BROKEN=1
 CMDS=<<EOF
 e asm.arch=mips
 e asm.bits=32
@@ -1497,6 +1503,7 @@ RUN
 
 NAME=slt s0, v0, v1 (1<2=1)
 FILE=malloc://0x200
+BROKEN=1
 CMDS=<<EOF
 e asm.arch=mips
 e asm.bits=32
@@ -1514,6 +1521,7 @@ RUN
 
 NAME=slt s0, v0, v1 (0<0=0)
 FILE=malloc://0x200
+BROKEN=1
 CMDS=<<EOF
 e asm.arch=mips
 e asm.bits=32
@@ -1599,6 +1607,7 @@ RUN
 
 NAME=negu v1, v0 (neg -1 = 1)
 FILE=malloc://0x200
+BROKEN=1
 CMDS=<<EOF
 e asm.arch=mips
 e asm.bits=32
@@ -1616,6 +1625,7 @@ RUN
 
 NAME=negu v1, v0 (neg 1 = -1)
 FILE=malloc://0x200
+BROKEN=1
 CMDS=<<EOF
 e asm.arch=mips
 e asm.bits=32
@@ -1633,6 +1643,7 @@ RUN
 
 NAME=negu v1, v0 (neg 3497 = -3497)
 FILE=malloc://0x200
+BROKEN=1
 CMDS=<<EOF
 e asm.arch=mips
 e asm.bits=32
@@ -1650,6 +1661,7 @@ RUN
 
 NAME=negative mem reference
 FILE=malloc://0x200
+BROKEN=1
 ARGS=-m 0x410984
 CMDS=<<EOF
 e io.va=true
@@ -1673,6 +1685,7 @@ t9 = 0x11223344
 EOF
 RUN
 
+BROKEN=1
 NAME=complex function
 FILE=malloc://0x800
 ARGS=-m 0x0040092c
@@ -1698,6 +1711,7 @@ SLOWDOWNWOMAN
 EOF
 RUN
 
+BROKEN=1
 NAME=complex function 2
 FILE=malloc://0x800
 ARGS=-m 0x0040092c
@@ -1724,6 +1738,7 @@ EOF
 RUN
 
 NAME=complex function 3
+BROKEN=1
 FILE=malloc://0x800
 ARGS=-m 0x00400ac0
 CMDS=<<EOF

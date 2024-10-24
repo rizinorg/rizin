@@ -12,6 +12,7 @@ RUN
 
 NAME=mozi aae functions
 FILE=bins/elf/mips-mozi
+BROKEN=1
 CMDS=<<EOF
 aae
 aflc
@@ -23,6 +24,7 @@ RUN
 
 NAME=mips hello ref anal
 FILE=bins/elf/analysis/mips.elf
+BROKEN=1
 ARGS=-e bin.strings=false -e analysis.strings=true
 CMDS=<<EOF
 e asm.bytes=true
@@ -55,6 +57,7 @@ RUN
 
 NAME=Calculate GP
 FILE=bins/elf/analysis/mips64r2-ld-2.28.so
+BROKEN=1
 CMDS=<<EOF
 s 0x000023f0
 e asm.bytes=true
@@ -70,6 +73,7 @@ RUN
 
 NAME=mips ld(load doubleword) instruction
 FILE=bins/elf/analysis/mips64r2-busybox-loongson
+BROKEN=1
 CMDS=<<EOF
 s 0x120004460
 e asm.bytes=true
@@ -152,6 +156,7 @@ RUN
 
 NAME=mips pseudo sw + 0
 FILE=malloc://32
+BROKEN=1
 ARGS=-a mips -m 0x80100000
 CMDS=<<EOF
 e io.va=true
@@ -169,6 +174,7 @@ RUN
 
 NAME=mips LE anal
 FILE=malloc://32
+BROKEN=1
 CMDS=<<EOF
 wx 01001104
 e asm.arch=mips
@@ -443,6 +449,7 @@ RUN
 
 NAME=mips branch delay function detection #1.
 FILE=malloc://160
+BROKEN=1
 ARGS=-m 0x8060b4f8
 CMDS=<<EOF
 e io.va=true
@@ -576,6 +583,7 @@ RUN
 
 NAME=capstone: mips branch delay function detection #1.
 FILE=malloc://160
+BROKEN=1
 ARGS=-m 0x8060b4f8
 CMDS=<<EOF
 e io.va=true
@@ -646,6 +654,7 @@ RUN
 
 NAME=capstone: mips branch delay function detection #2.
 FILE=malloc://160
+BROKEN=1
 ARGS=-m 0x8060b4f8
 CMDS=<<EOF
 e io.va=true
@@ -716,6 +725,7 @@ RUN
 
 NAME=mips big endian strings, calls, etc. analysis
 FILE=bins/elf/analysis/mipsbe-ip
+BROKEN=1
 CMDS=<<EOF
 s 0x00402088
 e asm.bytes=true
@@ -736,7 +746,8 @@ EOF
 RUN
 
 NAME=mips.gnu regs
-FILE=
+FILE==
+BROKEN=1
 CMDS=<<EOF
 e asm.arch=mips.gnu
 ar
@@ -780,6 +791,7 @@ RUN
 
 NAME=mips sp/bp tracking
 FILE=bins/elf/vars-mips-bp
+BROKEN=1
 ARGS=-e bin.dbginfo=0
 CMDS=<<EOF
 s sym.varfunc

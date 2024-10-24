@@ -1,6 +1,15 @@
 NAME=ELF: m68k.elf
+BROKEN=1
 FILE=bins/elf/analysis/busybox.m68k
 CMDS=<<EOF
+# This test is broken. The reason is that Rizin can't distinguish
+# CPU models. Each M68k model has a different address mask (32-24 bits).
+# It defaults to one which has only 24bits.
+# Hence, the subi.l instruction decodes to
+# `subi.l 0x15b119, d0` instead of `subi.l 0x8015b119, d0`
+# Should be fixable with RzArch (if anyone is still intereses).
+# See: https://github.com/rizinorg/rizin/issues/4334
+# And https://github.com/rizinorg/rizin/issues/4681
 f sym.init @ 0x80001a30
 f sym.fini @ 0x800019b0
 f sub.exit @ 0x80001450

@@ -108,7 +108,7 @@ pseudo: asm("irg x8, sp, x8")
 mnemonic: irg
 mask: ffffffff
 prefix: 0
-id: 455
+id: 495
 bytes: e813c89a
 refptr: 0
 size: 4
@@ -190,7 +190,7 @@ pseudo: asm("irg x8, sp, x8")
 mnemonic: irg
 mask: ffffffff
 prefix: 0
-id: 455
+id: 495
 bytes: 9ac813e8
 refptr: 0
 size: 4

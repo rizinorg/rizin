@@ -21,7 +21,7 @@ option('rizin_bindings', type: 'string', value: '', description: 'Path where riz
 
 option('checks_level', type: 'integer', value: 9999, description: 'Value between 0 and 3 to enable different level of assert (see RZ_CHECKS_LEVEL). By default its value depends on buildtype (2 on debug, 1 on release).')
 option('use_sys_capstone', type: 'feature', value: 'disabled')
-option('use_capstone_version', type: 'combo', choices: ['v4', 'v5', 'next'], value: 'next', description: 'Specify which version of capstone to use')
+option('use_capstone_version', type: 'combo', choices: ['v4', 'v5', 'v6', 'next'], value: 'next', description: 'Specify which version of capstone to use')
 option('use_sys_magic', type: 'feature', value: 'disabled')
 option('use_sys_libzip', type: 'feature', value: 'disabled')
 option('use_sys_libzip_openssl', type: 'boolean', value: false, description: 'Whether to use or not system openssl dependency to build libzip')
