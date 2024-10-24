@@ -96,10 +96,10 @@ jobs:
             cflags: "-Wno-deprecated-non-prototype"
             allow_failure: false
           - name: linux-gcc-tests-asan
-            os: ubuntu-22.04
+            os: ubuntu-24.04
             build_system: meson
-            compiler: gcc-12
-            cflags: "-DRZ_ASSERT_STDOUT=1 -Wno-cpp -ftrivial-auto-var-init=pattern -funsigned-char"
+            compiler: gcc-14
+            cflags: "-DRZ_ASSERT_STDOUT=1 -Wno-cpp -Wtype-limits -Wwrite-strings -Warray-bounds -Wshadow=local -fsanitize=bounds -fsanitize-undefined-trap-on-error -ftrivial-auto-var-init=pattern -funsigned-char"
             meson_options: -Dbuildtype=debugoptimized -Db_sanitize=address,undefined --werror
             asan: true
             asan_options: "detect_leaks=0,detect_odr_violation=0,allocator_may_return_null=1"
@@ -108,7 +108,7 @@ jobs:
             timeout: 120
             allow_failure: false
           - name: linux-clang-tests-asan
-            os: ubuntu-22.04
+            os: ubuntu-24.04
             build_system: meson
             compiler: clang
             cflags: "-DRZ_ASSERT_STDOUT=1 -Wno-cpp"
@@ -182,8 +182,11 @@ jobs:
       - name: Install python and other dependencies
         if: (matrix.run_tests || matrix.build_system == 'meson') && contains(matrix.os, 'macos') != true && matrix.enabled
         run: sudo apt-get --assume-yes install python3-wheel python3-setuptools libcapstone4 libcapstone-dev
-      - name: Install meson and ninja
-        if: matrix.build_system == 'meson' && matrix.enabled
+      - name: Install meson and ninja (Modern PIP)
+        if: matrix.build_system == 'meson' && matrix.enabled && matrix.os == 'ubuntu-24.04'
+        run: pip3 install --break-system-packages --user meson ninja PyYAML
+      - name: Install meson and ninja (Old PIP)
+        if: matrix.build_system == 'meson' && matrix.enabled && matrix.os != 'ubuntu-24.04'
         run: pip3 install --user meson ninja PyYAML
       - name: Checkout rzpipe
         if: matrix.enabled
@@ -191,8 +194,11 @@ jobs:
         with:
           repository: rizinorg/rz-pipe
           path: test/rz-pipe
-      - name: Install test dependencies
-        if: matrix.run_tests && matrix.enabled
+      - name: Install test dependencies (Modern PIP)
+        if: matrix.run_tests && matrix.enabled && matrix.os == 'ubuntu-24.04'
+        run: pip3 install --break-system-packages --user "file://$GITHUB_WORKSPACE/test/rz-pipe#egg=rzpipe&subdirectory=python" requests
+      - name: Install test dependencies (Old PIP)
+        if: matrix.run_tests && matrix.enabled && matrix.os != 'ubuntu-24.04'
         run: pip3 install --user "file://$GITHUB_WORKSPACE/test/rz-pipe#egg=rzpipe&subdirectory=python" requests
       - name: Install Linux test dependencies
         if: matrix.run_tests && matrix.enabled && contains(matrix.os, 'macos') != true
