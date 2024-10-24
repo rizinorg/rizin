@@ -32,7 +32,7 @@ struct class_translation {
 	const char *name;
 };
 
-struct cpu_mips_translation {
+struct cpu_arch_translation {
 	Elf_(Word) arch;
 	const char *name;
 };
@@ -229,7 +229,7 @@ static const struct class_translation class_translation_table[] = {
 	{ ELFCLASS64, "ELF64" }
 };
 
-static const struct cpu_mips_translation cpu_mips_translation_table[] = {
+static const struct cpu_arch_translation cpu_mips_translation_table[] = {
 	{ EF_MIPS_ARCH_1, "mips1" },
 	{ EF_MIPS_ARCH_2, "mips2" },
 	{ EF_MIPS_ARCH_3, "mips3" },
@@ -239,6 +239,12 @@ static const struct cpu_mips_translation cpu_mips_translation_table[] = {
 	{ EF_MIPS_ARCH_64, "mips64" },
 	{ EF_MIPS_ARCH_32R2, "mips32r2" },
 	{ EF_MIPS_ARCH_64R2, "mips64r2" },
+};
+
+static const struct cpu_arch_translation cpu_hppa_translation_table[] = {
+	{ EFA_PARISC_1_0, "hppa1.0" },
+	{ EFA_PARISC_1_1, "hppa1.1" },
+	{ EFA_PARISC_2_0, "hppa2.0" },
 };
 
 static const struct arch_translation arch_translation_table[] = {
@@ -844,6 +850,18 @@ static char *get_cpu_mips(ELFOBJ *bin) {
 	}
 
 	return rz_str_dup(" Unknown mips ISA");
+}
+
+static char *get_cpu_hppa(ELFOBJ *bin) {
+	Elf_(Word) hppa_arch = bin->ehdr.e_flags & EF_PARISC_ARCH;
+
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(cpu_hppa_translation_table); i++) {
+		if (hppa_arch == cpu_hppa_translation_table[i].arch) {
+			return strdup(cpu_hppa_translation_table[i].name);
+		}
+	}
+
+	return strdup(" Unknown HP PARISC ISA");
 }
 
 static bool is_elf_class64(ELFOBJ *bin) {
@@ -1470,8 +1488,13 @@ RZ_OWN char *Elf_(rz_bin_elf_get_cpu)(RZ_NONNULL ELFOBJ *bin) {
 		return NULL;
 	}
 
-	if (bin->ehdr.e_machine == EM_MIPS) {
-		return get_cpu_mips(bin);
+	switch (bin->ehdr.e_machine) {
+		case EM_MIPS:
+			return get_cpu_mips(bin);
+		case EM_PARISC:
+			return get_cpu_hppa(bin);
+		default:
+			break;
 	}
 
 	return NULL;
