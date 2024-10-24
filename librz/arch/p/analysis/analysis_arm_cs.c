@@ -1268,7 +1268,6 @@ static void anop32(RzAnalysis *a, csh handle, RzAnalysisOp *op, cs_insn *insn, b
 	const ut64 addr = op->addr;
 	const int pcdelta = thumb ? 4 : 8;
 	int i;
-
 	op->cond = cond_cs2rz_32(insn->detail->arm.cc);
 	if (op->cond == RZ_TYPE_COND_NV) {
 		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
@@ -1709,7 +1708,16 @@ jmp $$ + 4 + ( [delta] * 2 )
 			op->reg = cs_reg_name(handle, REGID(0));
 		} else {
 			/* blx label */
-			op->type = RZ_ANALYSIS_OP_TYPE_CALL;
+			// Extract opcode from bytes
+			int byte_to_compare = (a->big_endian & CS_MODE_BIG_ENDIAN) ? 3 : 0;
+			// If 5th bit of opcode is 1, then encoding is A2.
+			// Only then can the mode switch!
+			// Compare to immediate bit 1 - if set, is a THUMB CTX switch
+			if (IMM(0) && 1 && (insn->bytes[byte_to_compare] && 8)) {
+				op->type = RZ_ANALYSIS_OP_TYPE_CTX_SWITCH;
+			} else {
+				op->type = RZ_ANALYSIS_OP_TYPE_CALL;
+			}
 			op->jump = IMM(0) & UT32_MAX;
 			op->fail = addr + op->size;
 			op->hint.new_bits = (a->bits == 32) ? 16 : 32;
@@ -1760,7 +1768,8 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_BX:
 	case ARM_INS_BXJ:
 		/* bx reg */
-		op->cycles = 4;
+		if (op->val)
+			op->cycles = 4;
 		op->reg = cs_reg_name(handle, REGID(0));
 		switch (REGID(0)) {
 		case ARM_REG_LR:
@@ -1906,6 +1915,7 @@ static void set_opdir(RzAnalysisOp *op) {
 	case RZ_ANALYSIS_OP_TYPE_JMP:
 	case RZ_ANALYSIS_OP_TYPE_UJMP:
 	case RZ_ANALYSIS_OP_TYPE_UCALL:
+	case RZ_ANALYSIS_OP_TYPE_CTX_SWITCH:
 		op->direction = RZ_ANALYSIS_OP_DIR_EXEC;
 		break;
 	default:
@@ -2061,7 +2071,6 @@ static void patch_capstone_bugs(cs_insn *insn, int bits, bool big_endian) {
 
 static int analysis_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	AnalysisArmCSContext *ctx = (AnalysisArmCSContext *)a->plugin_data;
-
 	cs_insn *insn = NULL;
 	int mode = (a->bits == 16) ? CS_MODE_THUMB : CS_MODE_ARM;
 	int n, ret;
@@ -2572,7 +2581,6 @@ static ut8 *analysis_mask(RzAnalysis *analysis, int size, const ut8 *data, ut64 
 	if (!data) {
 		return NULL;
 	}
-
 	op = rz_analysis_op_new();
 	ret = malloc(size);
 	memset(ret, 0xff, size);
