@@ -297,6 +297,24 @@ RZ_API RZ_OWN RzList *rz_list_new_from_array(RZ_NONNULL const void **arr, size_t
 }
 
 /**
+ * \brief Allocates a new RzList and adds all elements of the iterator \p iter to it.
+ * \p iter keeps the ownership over the values.
+ *
+ * \return The produced list. Or NULL in case of failure.
+ **/
+RZ_API RZ_OWN RzList *rz_list_new_from_iterator(RZ_BORROW RZ_NONNULL RzIterator *iter) {
+	RzList *l = rz_list_new();
+	if (!l) {
+		return NULL;
+	}
+	void **val;
+	rz_iterator_foreach(iter, val) {
+		rz_list_append(l, (void *)*val);
+	}
+	return l;
+}
+
+/**
  * \brief Creates a RzListIter element that can be inserted into a RzList
  *
  **/

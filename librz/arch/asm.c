@@ -283,7 +283,7 @@ RZ_API RzAsm *rz_asm_new(void) {
 	a->bits = RZ_SYS_BITS;
 	a->bitshift = 0;
 	a->syntax = RZ_ASM_SYNTAX_INTEL;
-	a->plugins = rz_list_new();
+	a->plugins = ht_sp_new(HT_STR_DUP, NULL, NULL);
 	if (!a->plugins) {
 		free(a);
 		return NULL;
@@ -338,7 +338,7 @@ RZ_API void rz_asm_free(RzAsm *a) {
 	}
 	plugin_fini(a);
 	if (a->plugins) {
-		rz_list_free(a->plugins);
+		ht_sp_free(a->plugins);
 		a->plugins = NULL;
 	}
 	rz_syscall_free(a->syscall);
@@ -358,7 +358,9 @@ RZ_API bool rz_asm_plugin_add(RzAsm *a, RZ_NONNULL RzAsmPlugin *p) {
 	if (rz_asm_is_valid(a, p->name)) {
 		return false;
 	}
-	RZ_PLUGIN_CHECK_AND_ADD(a->plugins, p, RzAsmPlugin);
+	if (!ht_sp_insert(a->plugins, p->name, p)) {
+		RZ_LOG_WARN("Plugin '%s' was already added.\n", p->name);
+	}
 	return true;
 }
 
@@ -371,37 +373,46 @@ RZ_API bool rz_asm_plugin_del(RzAsm *a, RZ_NONNULL RzAsmPlugin *p) {
 	if (a->acur == p) {
 		a->acur = NULL;
 	}
-	return rz_list_delete_data(a->plugins, p);
+	return ht_sp_delete(a->plugins, p->name);
 }
 
 RZ_API bool rz_asm_is_valid(RzAsm *a, const char *name) {
-	RzAsmPlugin *h;
-	RzListIter *iter;
 	if (!name || !*name) {
 		return false;
 	}
-	rz_list_foreach (a->plugins, iter, h) {
+
+	RzIterator *iter = ht_sp_as_iter(a->plugins);
+	RzAsmPlugin **val;
+	rz_iterator_foreach(iter, val) {
+		RzAsmPlugin *h = *val;
 		if (!strcmp(h->name, name)) {
+			rz_iterator_free(iter);
 			return true;
 		}
 	}
+	rz_iterator_free(iter);
 	return false;
 }
 
 RZ_API bool rz_asm_use_assembler(RzAsm *a, const char *name) {
-	RzAsmPlugin *h;
-	RzListIter *iter;
-	if (a) {
-		if (name && *name) {
-			rz_list_foreach (a->plugins, iter, h) {
-				if (h->assemble && !strcmp(h->name, name)) {
-					a->acur = h;
-					return true;
-				}
-			}
-		}
+	if (!a) {
+		return false;
+	}
+	if (!(name && *name)) {
 		a->acur = NULL;
 	}
+	RzIterator *iter = ht_sp_as_iter(a->plugins);
+	RzAsmPlugin **val;
+	rz_iterator_foreach(iter, val) {
+		RzAsmPlugin *h = *val;
+		if (h->assemble && !strcmp(h->name, name)) {
+			a->acur = h;
+			rz_iterator_free(iter);
+			return true;
+		}
+	}
+	rz_iterator_free(iter);
+	a->acur = NULL;
 	return false;
 }
 
@@ -414,7 +425,9 @@ RZ_API bool rz_asm_use_assembler(RzAsm *a, const char *name) {
 static void set_plugin_configs(RZ_BORROW RzCore *core, const char *plugin_name, RZ_OWN RzConfig *pcfg) {
 	rz_return_if_fail(pcfg && core);
 	rz_config_lock(pcfg, 1);
-	ht_sp_insert(core->plugin_configs, plugin_name, pcfg);
+	if (!ht_sp_insert(core->plugins_config, plugin_name, pcfg)) {
+		RZ_LOG_WARN("Plugin '%s' was already added.\n", plugin_name);
+	}
 }
 
 /**
@@ -425,7 +438,7 @@ static void set_plugin_configs(RZ_BORROW RzCore *core, const char *plugin_name, 
  */
 static void remove_plugin_config(RZ_BORROW RzCore *core, const char *plugin_name) {
 	rz_return_if_fail(core && plugin_name);
-	ht_sp_delete(core->plugin_configs, plugin_name);
+	ht_sp_delete(core->plugins_config, plugin_name);
 }
 
 // TODO: this can be optimized using rz_str_hash()
@@ -437,17 +450,19 @@ static void remove_plugin_config(RZ_BORROW RzCore *core, const char *plugin_name
  * \return true Put Asm plugin successfully in use.
  * \return false Asm plugin failed to be enabled.
  */
-RZ_API bool rz_asm_use(RzAsm *a, const char *name) {
-	RzAsmPlugin *h;
-	RzListIter *iter;
-	if (!a || !name) {
+RZ_API bool rz_asm_use(RzAsm *a, RZ_NULLABLE const char *name) {
+	rz_return_val_if_fail(a, false);
+	if (!name) {
 		return false;
 	}
-	RzCore *core = a->core;
 	if (a->cur && !strcmp(a->cur->arch, name)) {
 		return true;
 	}
-	rz_list_foreach (a->plugins, iter, h) {
+	RzIterator *iter = ht_sp_as_iter(a->plugins);
+	RzAsmPlugin **val;
+	RzCore *core = a->core;
+	rz_iterator_foreach(iter, val) {
+		RzAsmPlugin *h = *val;
 		if (h->arch && h->name && !strcmp(h->name, name)) {
 			if (!a->cur || (a->cur && strcmp(a->cur->arch, h->arch))) {
 				plugin_fini(a);
@@ -463,6 +478,7 @@ RZ_API bool rz_asm_use(RzAsm *a, const char *name) {
 			}
 			if (h->init && !h->init(&a->plugin_data)) {
 				RZ_LOG_ERROR("asm plugin '%s' failed to initialize.\n", h->name);
+				rz_iterator_free(iter);
 				return false;
 			}
 
@@ -473,9 +489,11 @@ RZ_API bool rz_asm_use(RzAsm *a, const char *name) {
 				set_plugin_configs(core, h->name, h->get_config(a->plugin_data));
 			}
 			a->cur = h;
+			rz_iterator_free(iter);
 			return true;
 		}
 	}
+	rz_iterator_free(iter);
 	sdb_free(a->pair);
 	a->pair = NULL;
 	return false;
@@ -627,12 +645,13 @@ static bool assemblerMatches(RzAsm *a, RzAsmPlugin *h) {
 
 static Ase findAssembler(RzAsm *a, const char *kw) {
 	Ase ase = NULL;
-	RzAsmPlugin *h;
-	RzListIter *iter;
+	RzIterator *iter = ht_sp_as_iter(a->plugins);
+	RzAsmPlugin **val;
 	if (a->acur && a->acur->assemble) {
 		return a->acur->assemble;
 	}
-	rz_list_foreach (a->plugins, iter, h) {
+	rz_iterator_foreach(iter, val) {
+		RzAsmPlugin *h = *val;
 		if (assemblerMatches(a, h)) {
 			if (kw) {
 				if (strstr(h->name, kw)) {
@@ -643,6 +662,7 @@ static Ase findAssembler(RzAsm *a, const char *kw) {
 			}
 		}
 	}
+	rz_iterator_free(iter);
 	return ase;
 }
 
@@ -1193,7 +1213,8 @@ RZ_API char *rz_asm_describe(RzAsm *a, const char *str) {
 	return (a && a->pair) ? sdb_get(a->pair, str) : NULL;
 }
 
-RZ_API RzList /*<RzAsmPlugin *>*/ *rz_asm_get_plugins(RzAsm *a) {
+RZ_API RZ_BORROW HtSP /*<RzAsmPlugin *>*/ *rz_asm_get_plugins(RZ_BORROW RZ_NONNULL RzAsm *a) {
+	rz_return_val_if_fail(a, NULL);
 	return a->plugins;
 }
 

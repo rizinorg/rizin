@@ -5,6 +5,7 @@
 #include <rz_analysis.h>
 #include <rz_util.h>
 #include <rz_list.h>
+#include <rz_util/rz_assert.h>
 #include <rz_util/rz_path.h>
 #include <rz_arch.h>
 #include <rz_lib.h>
@@ -117,7 +118,7 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 	analysis->leaddrs = NULL;
 	analysis->imports = rz_list_newf(free);
 	rz_analysis_set_bits(analysis, 32);
-	analysis->plugins = rz_list_new();
+	analysis->plugins = ht_sp_new(HT_STR_DUP, NULL, NULL);
 	if (analysis->plugins) {
 		const size_t n_plugins = rz_arch_get_n_plugins();
 		for (size_t i = 0; i < n_plugins; i++) {
@@ -189,7 +190,7 @@ RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *a) {
 	rz_str_constpool_fini(&a->constpool);
 	ht_sp_free(a->ht_global_var);
 	ht_up_free(a->ht_rop_semantics);
-	rz_list_free(a->plugins);
+	ht_sp_free(a->plugins);
 	rz_analysis_debug_info_free(a->debug_info);
 	free(a);
 	return NULL;
@@ -197,7 +198,9 @@ RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *a) {
 
 RZ_API bool rz_analysis_plugin_add(RzAnalysis *analysis, RZ_NONNULL RzAnalysisPlugin *p) {
 	rz_return_val_if_fail(analysis && p, false);
-	RZ_PLUGIN_CHECK_AND_ADD(analysis->plugins, p, RzAnalysisPlugin);
+	if (!ht_sp_insert(analysis->plugins, p->name, p)) {
+		RZ_LOG_WARN("Plugin '%s' was already added.\n", p->name);
+	}
 	return true;
 }
 
@@ -207,34 +210,37 @@ RZ_API bool rz_analysis_plugin_del(RzAnalysis *analysis, RZ_NONNULL RzAnalysisPl
 		plugin_fini(analysis);
 		analysis->cur = NULL;
 	}
-	return rz_list_delete_data(analysis->plugins, p);
+	return ht_sp_delete(analysis->plugins, p->name);
 }
 
 RZ_API bool rz_analysis_use(RzAnalysis *analysis, const char *name) {
-	RzListIter *it;
-	RzAnalysisPlugin *h;
-
-	if (analysis) {
-		if (analysis->cur && !strcmp(analysis->cur->name, name)) {
-			return true;
-		}
-		rz_list_foreach (analysis->plugins, it, h) {
-			if (!h || !h->name || strcmp(h->name, name)) {
-				continue;
-			}
-			plugin_fini(analysis);
-			analysis->cur = h;
-			if (h->init && !h->init(&analysis->plugin_data)) {
-				RZ_LOG_ERROR("analysis plugin '%s' failed to initialize.\n", h->name);
-				return false;
-			}
-			rz_analysis_set_reg_profile(analysis);
-			if (analysis->il_vm) {
-				rz_analysis_il_vm_setup(analysis);
-			}
-			return true;
-		}
+	rz_return_val_if_fail(analysis && name, false);
+	if (analysis->cur && !strcmp(analysis->cur->name, name)) {
+		return true;
 	}
+
+	RzIterator *it = ht_sp_as_iter(analysis->plugins);
+	RzAnalysisPlugin **val;
+	rz_iterator_foreach(it, val) {
+		RzAnalysisPlugin *h = *val;
+		if (!h || !h->name || strcmp(h->name, name)) {
+			continue;
+		}
+		plugin_fini(analysis);
+		analysis->cur = h;
+		if (h->init && !h->init(&analysis->plugin_data)) {
+			RZ_LOG_ERROR("analysis plugin '%s' failed to initialize.\n", h->name);
+			rz_iterator_free(it);
+			return false;
+		}
+		rz_analysis_set_reg_profile(analysis);
+		if (analysis->il_vm) {
+			rz_analysis_il_vm_setup(analysis);
+		}
+		rz_iterator_free(it);
+		return true;
+	}
+	rz_iterator_free(it);
 	return false;
 }
 

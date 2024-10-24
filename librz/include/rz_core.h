@@ -95,7 +95,24 @@ typedef enum {
 	RZ_CORE_WRITE_OP_SHIFT_RIGHT, ///< Write the shift right of existing byte and argument value
 } RzCoreWriteOp;
 
-typedef bool (*RzCorePluginCallback)(RzCore *core);
+/**
+ * \brief RzCore plugin callback.
+ *
+ * \param core the Core this plugin is assigned to.
+ * \param plugin_data Memory location to place the plugins private data pointer.
+ *
+ * \example
+ * ```
+ * void plugin_init(RzCore *core, void **plugin_data) {
+ *     *plugin_data = malloc(sizeof(PrivatePluginData));
+ * }
+ *
+ * void plugin_fini(RzCore *core, void **plugin_data) {
+ *     free(*plugin_data);
+ * }
+ * ```
+ */
+typedef bool (*RzCorePluginCallback)(RzCore *core, void **plugin_data);
 
 typedef struct rz_core_plugin_t {
 	const char *name;
@@ -106,6 +123,7 @@ typedef struct rz_core_plugin_t {
 	RzCorePluginCallback init; ///< Is called when the plugin is loaded by rizin
 	RzCorePluginCallback fini; ///< Is called when the plugin is unloaded by rizin
 	RzCorePluginCallback analysis; ///< Is called when automatic analysis is performed.
+	RZ_OWN RzConfig *(*get_config)(void *plugin_data); ///< Return private configuration of this plugin.
 } RzCorePlugin;
 
 typedef struct rz_core_rtr_host_t RzCoreRtrHost;
@@ -252,9 +270,10 @@ struct rz_core_t {
 	// NOTE: Do not change the order of fields above!
 	// They are used in pointer passing hacks in rz_types.h.
 	RzIO *io;
-	RzList /*<RzCorePlugin *>*/ *plugins; ///< List of registered core plugins
+	HtSP /*<RzCorePlugin *>*/ *plugins; ///< List of registered core plugins
+	HtSP /*<RZ_BORROW void *>*/ *plugins_data; ///< Core plugins private data.
+	HtSP /*<plugins.<plugin_name>: RzConfig>*/ *plugins_config; ///< Pointers to plugin configurations. Indexed by "plugins.<name>"
 	RzConfig *config;
-	HtSP /*<plugins.<plugin_name>: RzConfig>*/ *plugin_configs; ///< Pointers to plugin configurations. Indexed by "plugins.<name>"
 	ut64 offset; // current seek
 	ut64 prompt_offset; // temporarily set to offset to have $$ in expressions always stay the same during temp seeks
 	ut32 blocksize;
@@ -793,6 +812,7 @@ typedef enum {
 	RZ_CORE_GRAPH_TYPE_IL, ///< RzIL graph
 	RZ_CORE_GRAPH_TYPE_ICFG, ///< Inter-procedual control flow graph
 	RZ_CORE_GRAPH_TYPE_CFG, ///< control flow graph (without calls)
+	RZ_CORE_GRAPH_TYPE_CFG_FCN, ///< control flow graph (without calls) of a function.
 	RZ_CORE_GRAPH_TYPE_UNK ///< Unknown graph
 } RzCoreGraphType;
 
@@ -806,7 +826,8 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_line(RzCore *core, 
 RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_il(RZ_NONNULL RzCore *core, ut64 addr);
 RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph(RzCore *core, RzCoreGraphType type, ut64 addr);
 RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_icfg(RZ_NONNULL RzCore *core);
-RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg(RZ_NONNULL RzCore *core, ut64 addr);
+RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg(RZ_NONNULL RzCore *core, ut64 addr, bool within_fcn);
+RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg_iwords(RZ_NONNULL RzCore *core, ut64 addr, bool within_fcn);
 
 RZ_API RzCoreGraphFormat rz_core_graph_format_from_string(RZ_NULLABLE const char *x);
 RZ_API RzCoreGraphType rz_core_graph_type_from_string(RZ_NULLABLE const char *x);

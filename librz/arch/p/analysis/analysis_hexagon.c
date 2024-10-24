@@ -30,12 +30,26 @@ RZ_API int hexagon_v6_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, cons
 
 	// Disassemble as many instructions as possible from the buffer.
 	HexReversedOpcode rev = { .action = HEXAGON_ANALYSIS, .ana_op = op, .asm_op = NULL, .state = NULL, .pkt_fully_decoded = false, .bytes_buf = buf, .bytes_buf_len = len };
-	hexagon_reverse_opcode(&rev, addr, NULL, analysis);
+	if (!hexagon_reverse_opcode(&rev, addr, NULL, analysis)) {
+		return -1;
+	}
 	if (mask & RZ_ANALYSIS_OP_MASK_IL) {
 		op->il_op = hex_get_il_op(addr, rev.pkt_fully_decoded, rev.state);
 	}
 
 	return HEX_INSN_SIZE;
+}
+
+RZ_API bool rz_hexagon_decode_iword(RzAnalysis *a, RZ_OUT RzAnalysisInsnWord *iword, ut64 addr, RzBuffer *buffer) {
+	rz_return_val_if_fail(a && iword, false);
+
+	RzAnalysisOp *aop = RZ_NEW0(RzAnalysisOp);
+	HexReversedOpcode rev = { .action = HEXAGON_ANALYSIS, .ana_op = aop, .asm_op = NULL, .state = NULL, .pkt_fully_decoded = false, .bytes_buf = NULL, .bytes_buf_len = 0 };
+	bool success = hexagon_decode_iword(a, &rev, iword, addr);
+	if (success) {
+		iword->il_op = hex_get_il_op(addr, true, rev.state);
+	}
+	return success;
 }
 
 static RzAnalysisILConfig *rz_hexagon_il_config(RzAnalysis *a) {
@@ -749,4 +763,5 @@ RzAnalysisPlugin rz_analysis_plugin_hexagon = {
 	.esil = false,
 	.get_reg_profile = get_reg_profile,
 	.il_config = rz_hexagon_il_config,
+	.decode_iword = rz_hexagon_decode_iword,
 };

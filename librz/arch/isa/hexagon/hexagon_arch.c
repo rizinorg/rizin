@@ -225,6 +225,7 @@ RZ_API ut8 hexagon_get_pkt_index_of_addr(const ut32 addr, const HexPkt *p) {
 		}
 		++i;
 	}
+	RZ_LOG_WARN("Failed to find index in packet for %" PFMT32x, addr);
 	return UT8_MAX;
 }
 
@@ -241,8 +242,6 @@ static void hex_clear_pkt(RZ_NONNULL HexPkt *p) {
 	p->hw_loop0_addr = 0;
 	p->hw_loop1_addr = 0;
 	p->pkt_addr = 0;
-	p->last_instr_present = false;
-	p->is_valid = false;
 	p->last_access = 0;
 	rz_list_purge(p->bin);
 	rz_pvector_clear(p->il_ops);
@@ -265,6 +264,7 @@ static HexPkt *hex_get_stale_pkt(HexState *state) {
 			stale_state_pkt = &state->pkts[i];
 		}
 	}
+	hex_clear_pkt(stale_state_pkt);
 	return stale_state_pkt;
 }
 
@@ -291,6 +291,7 @@ RZ_API HexPkt *hex_get_pkt(RZ_BORROW HexState *state, const ut32 addr) {
 			}
 		}
 	}
+	RZ_LOG_DEBUG("Failed to get packet at 0x%" PFMT32x "\n", addr);
 	return NULL;
 }
 
@@ -352,6 +353,7 @@ static ut8 get_state_pkt_index(HexState *state, const HexPkt *p) {
 			return i;
 		}
 	}
+	RZ_LOG_WARN("Failed to find state packet index");
 	return UT8_MAX;
 }
 
@@ -891,9 +893,7 @@ static void print_state_pkt(const HexState *state, st32 index, HexBufferAction a
  * \return The pointer to the added instruction. Null if the instruction could not be copied.
  */
 static HexInsnContainer *hex_add_hic_to_state(HexState *state, const HexInsnContainer *new_hic) {
-	if (!new_hic) {
-		return NULL;
-	}
+	rz_return_val_if_fail(state && new_hic, NULL);
 	bool add_to_pkt = false;
 	bool new_pkt = false;
 	bool write_to_stale_pkt = false;
@@ -1152,7 +1152,7 @@ static RZ_BORROW HexInsnContainer *decode_hic(HexState *state, HexReversedOpcode
 	// Add to state as not yet fully decoded packet.
 	HexInsnContainer *hic = hex_add_hic_to_state(state, &hic_new);
 	if (!hic) {
-		RZ_LOG_ERROR("Could not add incsturction container to state.\n");
+		RZ_LOG_ERROR("Could not add instruction container to state.\n");
 		return NULL;
 	}
 	HexPkt *p = hex_get_pkt(state, hic->addr);
@@ -1258,9 +1258,12 @@ static inline bool do_decoding_loop(ut64 current_addr, ut64 requested_addr, cons
  * \param buf The buffer which stores the current opcode.
  * \param addr The address of the current opcode.
  * \param copy_result If set, it copies the result. Otherwise it only buffers it in the internal state.
+ *
+ * \return true If the decoded instruction was the last instruction in a _valid_ packet.
+ * \return false Otherwise.
  */
-RZ_API void hexagon_reverse_opcode(HexReversedOpcode *rz_reverse, const ut64 addr, RzAsm *rz_asm, RzAnalysis *rz_analysis) {
-	rz_return_if_fail(rz_reverse);
+RZ_API RZ_OWN HexInsnContainer *hexagon_reverse_opcode(HexReversedOpcode *rz_reverse, const ut64 addr, RzAsm *rz_asm, RzAnalysis *rz_analysis) {
+	rz_return_val_if_fail(rz_reverse, NULL);
 	HexState *state;
 	RzBuffer *buffer;
 	perform_hacks(&state, &buffer, &rz_asm, &rz_analysis, rz_reverse);
@@ -1270,7 +1273,7 @@ RZ_API void hexagon_reverse_opcode(HexReversedOpcode *rz_reverse, const ut64 add
 	// For bytes buffers (e.g. given in case of `rz-asm`) the address is not a valid seek, but distinct.
 	if (buffer->type == RZ_BUFFER_IO && rz_buf_seek(buffer, addr, RZ_BUF_SET) != addr) {
 		RZ_LOG_DEBUG("Could not seek to address: 0x%" PFMT64x ". Attempting to read out of mapped memory region?\n", addr);
-		return;
+		return NULL;
 	}
 
 	ut64 current_addr = get_pre_decoding_start(buffer, addr);
@@ -1309,10 +1312,83 @@ RZ_API void hexagon_reverse_opcode(HexReversedOpcode *rz_reverse, const ut64 add
 	if (!hic) {
 		RZ_LOG_DEBUG("Could not decode packet.\n");
 		rz_buf_free(buffer);
-		return;
+		return NULL;
 	}
 	HexPkt *p = hex_get_pkt(state, hic->addr);
 	rz_reverse->pkt_fully_decoded = p && p->is_valid;
 	copy_asm_ana_ops(state, rz_reverse, hic);
 	rz_buf_free(buffer);
+	return hic;
+}
+
+static void set_iword_properties(ut32 anaop_type, RzAnalysisInsnWord *iword) {
+	rz_return_if_fail(iword);
+	switch (anaop_type & ~RZ_ANALYSIS_OP_HINT_MASK) {
+	default:
+		break;
+	case RZ_ANALYSIS_OP_TYPE_CALL:
+	case RZ_ANALYSIS_OP_TYPE_UCALL:
+	case RZ_ANALYSIS_OP_TYPE_RCALL:
+	case RZ_ANALYSIS_OP_TYPE_ICALL:
+	case RZ_ANALYSIS_OP_TYPE_IRCALL:
+	case RZ_ANALYSIS_OP_TYPE_CCALL:
+	case RZ_ANALYSIS_OP_TYPE_UCCALL:
+		iword->props |= RZ_ANALYSIS_IWORD_CALL;
+		break;
+	case RZ_ANALYSIS_OP_TYPE_JMP:
+	case RZ_ANALYSIS_OP_TYPE_UJMP:
+	case RZ_ANALYSIS_OP_TYPE_RJMP:
+	case RZ_ANALYSIS_OP_TYPE_IJMP:
+	case RZ_ANALYSIS_OP_TYPE_IRJMP:
+	case RZ_ANALYSIS_OP_TYPE_CJMP:
+	case RZ_ANALYSIS_OP_TYPE_RCJMP:
+	case RZ_ANALYSIS_OP_TYPE_MJMP:
+	case RZ_ANALYSIS_OP_TYPE_MCJMP:
+	case RZ_ANALYSIS_OP_TYPE_UCJMP:
+		iword->props |= RZ_ANALYSIS_IWORD_JUMP;
+		break;
+	case RZ_ANALYSIS_OP_TYPE_RET:
+		iword->props |= RZ_ANALYSIS_IWORD_RET;
+		break;
+	}
+
+	switch (anaop_type & RZ_ANALYSIS_OP_HINT_MASK) {
+	default:
+		break;
+	case RZ_ANALYSIS_OP_TYPE_TAIL:
+		iword->props |= RZ_ANALYSIS_IWORD_TAIL;
+		break;
+	case RZ_ANALYSIS_OP_TYPE_COND:
+		iword->props |= RZ_ANALYSIS_IWORD_COND;
+		break;
+	}
+}
+
+RZ_API bool hexagon_decode_iword(RzAnalysis *analysis, HexReversedOpcode *rev, RZ_OUT RzAnalysisInsnWord *iword, ut64 addr) {
+	rz_return_val_if_fail(rev && iword, false);
+	iword->addr = addr;
+	HexInsnContainer *hic = NULL;
+	do {
+		hic = hexagon_reverse_opcode(rev, addr, NULL, analysis);
+		rz_pvector_push(iword->insns, rev->ana_op);
+		rz_strbuf_appendf(iword->asm_str, "%s\n", hic->text);
+		iword->size_bytes += 4;
+		iword->size_bits += 32;
+
+		set_iword_properties(rev->ana_op->type, iword);
+		if (iword->props & RZ_ANALYSIS_IWORD_CALL && rev->ana_op->jump != UT64_MAX) {
+			rz_set_u_add(iword->call_targets, rev->ana_op->jump);
+		} else if (rev->ana_op->jump != UT64_MAX) {
+			rz_set_u_add(iword->jump_targets, rev->ana_op->jump);
+		}
+
+		if (hic->pkt_info.last_insn) {
+			if (rev->ana_op->type != RZ_ANALYSIS_OP_TYPE_RET && !rz_analysis_op_is_jump(rev->ana_op)) {
+				ut64 next_iword_addr = addr + iword->size_bytes;
+				rz_set_u_add(iword->jump_targets, next_iword_addr);
+			}
+			return true;
+		}
+	} while (!hic->pkt_info.last_insn);
+	return true;
 }

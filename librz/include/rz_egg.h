@@ -99,7 +99,7 @@ typedef struct rz_egg_t {
 	RzSyscall *syscall;
 	RzEggLang lang;
 	Sdb *db;
-	RzList /*<RzEggPlugin *>*/ *plugins;
+	HtSP /*<RzEggPlugin *>*/ *plugins;
 	RzList /*<struct egg_patch_t *>*/ *patches; // <RzBuffer>
 	struct rz_egg_emit_t *remit;
 	int arch;
@@ -164,6 +164,20 @@ typedef struct rz_egg_emit_t {
 	void (*mathop)(RzEgg *egg, int ch, int sz, int type, const char *eq, const char *p);
 	void (*get_while_end)(RzEgg *egg, char *out, const char *ctxpush, const char *label);
 } RzEggEmit;
+
+/**
+ * \brief Compare plugins by name (via strcmp).
+ */
+static inline int rz_egg_plugin_cmp(RZ_NULLABLE const RzEggPlugin *a, RZ_NULLABLE const RzEggPlugin *b) {
+	if (!a && !b) {
+		return 0;
+	} else if (!a) {
+		return -1;
+	} else if (!b) {
+		return 1;
+	}
+	return rz_str_cmp(a->name, b->name, -1);
+}
 
 #ifdef RZ_API
 RZ_API RzEgg *rz_egg_new(void);

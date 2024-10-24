@@ -291,7 +291,7 @@ static const RzCmdDescHelp name_help(javar) = {
 	.args = name_args(javar),
 };
 
-static bool rz_cmd_java_init_handler(RzCore *core) {
+static bool rz_cmd_java_init_handler(RzCore *core, void **private_data) {
 	RzCmd *rcmd = core->rcmd;
 	RzCmdDesc *root_cd = rz_cmd_get_root(rcmd);
 	if (!root_cd) {
@@ -315,7 +315,7 @@ static bool rz_cmd_java_init_handler(RzCore *core) {
 	return true;
 }
 
-static bool rz_cmd_java_fini_handler(RzCore *core) {
+static bool rz_cmd_java_fini_handler(RzCore *core, void **private_data) {
 	RzCmd *rcmd = core->rcmd;
 	RzCmdDesc *cd = rz_cmd_get_desc(rcmd, "java");
 	rz_return_val_if_fail(cd, false);
@@ -330,6 +330,7 @@ RzCorePlugin rz_core_plugin_java = {
 	.version = "1.0",
 	.init = rz_cmd_java_init_handler,
 	.fini = rz_cmd_java_fini_handler,
+	.get_config = NULL,
 };
 
 #ifndef RZ_PLUGIN_INCORE

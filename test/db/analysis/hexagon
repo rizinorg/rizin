@@ -1460,6 +1460,29 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=hexagon instructions buffer edge cases. 3 instr.
+FILE=bins/elf/analysis/hexagon-hello-loop
+CMDS=<<EOF
+# There is a three instruction packet at 0x00000091c0.
+# We first disassemble the last instruction IL op at aoi @ 0x00000091c8 (buffering it in its own packet).
+# Then disassemble from the first instruction. Both should give a valid IL instr.
+# Although they were buffered in different packets initially.
+# They should be merged.
+pi 1 @ 0x00000091c8
+pi 3 @ 0x00000091c0
+aoi @ 0x00000091c8
+aoi @ 0x00000091c0
+EOF
+EXPECT=<<EOF
+\   R1 = R17 ; R0 = memw(R16+#0x4)
+/   call sym.write
+|   R2 = sub(R3,R17)
+\   R1 = R17 ; R0 = memw(R16+#0x4)
+0x91c8 empty
+0x91c0 (seq empty (set jump_flag false) (set jump_target (bv 32 0xffffffff)) (set r (bv 32 0x290)) (set r (& (var r) (bv 32 0xfffffffc))) (set ret_val (bv 64 0x91cc)) (set h_tmp157 (cast 32 false (var ret_val))) (set R31_tmp (cast 32 false (cast 32 false (& (var h_tmp157) (cast 32 false (bv 32 0xfffffffe)))))) (set jump_flag true) (set jump_target (+ (bv 32 0x91c0) (cast 32 false (var r)))) (set R2_tmp (cast 32 false (cast 32 false (- (var R3) (var R17))))) (set R1_tmp (cast 32 false (cast 32 false (var R17)))) (set u (bv 32 0x4)) (set EA (+ (cast 32 false (var R16)) (var u))) (set R0_tmp (cast 32 false (cast 32 false (cast 32 false (cast 32 false (loadw 0 32 (var EA))))))) empty (set R0 (var R0_tmp)) (set R1 (var R1_tmp)) (set R2 (var R2_tmp)) (set R31 (var R31_tmp)) (branch (var jump_flag) (jmp (var jump_target)) (jmp (bv 32 0x91cc))))
+EOF
+RUN
+
 NAME=hexagon instructions buffer edge cases. 4 instr.
 FILE=bins/elf/analysis/hexagon-hello-loop
 CMDS=<<EOF

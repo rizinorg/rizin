@@ -65,26 +65,32 @@ RZ_API char *rz_core_asm_search(RzCore *core, const char *input) {
 }
 
 static const char *has_esil(RzCore *core, const char *name) {
-	RzListIter *iter;
-	RzAnalysisPlugin *h;
 	rz_return_val_if_fail(core && core->analysis && name, NULL);
-	rz_list_foreach (core->analysis->plugins, iter, h) {
+	RzIterator *iter = ht_sp_as_iter(core->analysis->plugins);
+	RzAnalysisPlugin **val;
+	rz_iterator_foreach(iter, val) {
+		RzAnalysisPlugin *h = *val;
 		if (!h->name || strcmp(name, h->name)) {
 			continue;
 		}
 		if (h->il_config && h->esil) {
 			// Analysis with RzIL and ESIL
+			rz_iterator_free(iter);
 			return "AeI";
 		} else if (h->il_config) {
 			// Analysis with RzIL
+			rz_iterator_free(iter);
 			return "A_I";
 		} else if (h->esil) {
 			// Analysis with ESIL
+			rz_iterator_free(iter);
 			return "Ae_";
 		}
 		// Only the analysis plugin.
+		rz_iterator_free(iter);
 		return "A__";
 	}
+	rz_iterator_free(iter);
 	return "___";
 }
 
@@ -162,11 +168,14 @@ RZ_API RzCmdStatus rz_core_asm_plugin_print(RzCore *core, RzAsmPlugin *ap, const
 RZ_API RzCmdStatus rz_core_asm_plugins_print(RzCore *core, const char *arch, RzCmdStateOutput *state) {
 	int i;
 	RzAsm *a = core->rasm;
+	RzIterator *iter = ht_sp_as_iter(a->plugins);
+	RzList *plugin_list = rz_list_new_from_iterator(iter);
+	rz_list_sort(plugin_list, (RzListComparator)rz_asm_plugin_cmp, NULL);
+	RzListIter *it;
 	RzAsmPlugin *ap;
-	RzListIter *iter;
 	RzCmdStatus status;
 	if (arch) {
-		rz_list_foreach (a->plugins, iter, ap) {
+		rz_list_foreach (plugin_list, it, ap) {
 			if (ap->cpus && !strcmp(arch, ap->name)) {
 				char *c = rz_str_dup(ap->cpus);
 				int n = rz_str_split(c, ',');
@@ -179,17 +188,21 @@ RZ_API RzCmdStatus rz_core_asm_plugins_print(RzCore *core, const char *arch, RzC
 		}
 	} else {
 		rz_cmd_state_output_array_start(state);
-		rz_list_foreach (a->plugins, iter, ap) {
+		rz_list_foreach (plugin_list, it, ap) {
 			const char *license = ap->license
 				? ap->license
 				: "unknown";
 			status = rz_core_asm_plugin_print(core, ap, arch, state, license);
 			if (status != RZ_CMD_STATUS_OK) {
+				rz_iterator_free(iter);
+				rz_list_free(plugin_list);
 				return status;
 			}
 		}
 		rz_cmd_state_output_array_end(state);
 	}
+	rz_list_free(plugin_list);
+	rz_iterator_free(iter);
 	return RZ_CMD_STATUS_OK;
 }
 

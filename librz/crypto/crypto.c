@@ -6,11 +6,11 @@
 #include <rz_util.h>
 #include "rz_crypto_plugins.h"
 
+static RzCryptoPlugin *crypto_static_plugins[] = { &rz_crypto_plugin_aes, &rz_crypto_plugin_aes_cbc, &rz_crypto_plugin_base64, &rz_crypto_plugin_base91, &rz_crypto_plugin_blowfish, &rz_crypto_plugin_cps2, &rz_crypto_plugin_des, &rz_crypto_plugin_punycode, &rz_crypto_plugin_rc2, &rz_crypto_plugin_rc4, &rz_crypto_plugin_rc6, &rz_crypto_plugin_rol, &rz_crypto_plugin_ror, &rz_crypto_plugin_rot, &rz_crypto_plugin_serpent, &rz_crypto_plugin_xor, &rz_crypto_plugin_sm4_ecb };
+
 #define RZ_CRYPTO_OUTPUT_SIZE 4096
 
 RZ_LIB_VERSION(rz_crypto);
-
-static RzCryptoPlugin *crypto_static_plugins[] = { RZ_CRYPTO_STATIC_PLUGINS };
 
 static const struct {
 	const char *name;
@@ -66,22 +66,27 @@ RZ_API RZ_BORROW const char *rz_crypto_codec_name(const RzCryptoSelector bit) {
 RZ_API RZ_BORROW const RzCryptoPlugin *rz_crypto_plugin_by_index(RZ_NONNULL RzCrypto *cry, size_t index) {
 	rz_return_val_if_fail(cry, NULL);
 
-	RzListIter *it;
-	const RzCryptoPlugin *plugin;
+	RzIterator *it = ht_sp_as_iter(cry->plugins);
+	RzCryptoPlugin **val;
 	size_t i = 0;
 
-	rz_list_foreach (cry->plugins, it, plugin) {
+	rz_iterator_foreach(it, val) {
+		const RzCryptoPlugin *plugin = *val;
 		if (i == index) {
+			rz_iterator_free(it);
 			return plugin;
 		}
 		i++;
 	}
+	rz_iterator_free(it);
 	return NULL;
 }
 
 RZ_API bool rz_crypto_plugin_add(RZ_NONNULL RzCrypto *cry, RZ_NONNULL RzCryptoPlugin *plugin) {
 	rz_return_val_if_fail(cry && plugin, false);
-	RZ_PLUGIN_CHECK_AND_ADD(cry->plugins, plugin, RzCryptoPlugin);
+	if (!ht_sp_insert(cry->plugins, plugin->name, plugin)) {
+		RZ_LOG_WARN("Plugin '%s' was already added.\n", plugin->name);
+	}
 	return true;
 }
 
@@ -91,7 +96,7 @@ RZ_API bool rz_crypto_plugin_del(RZ_NONNULL RzCrypto *cry, RZ_NONNULL RzCryptoPl
 		cry->h->fini(cry);
 		cry->h = NULL;
 	}
-	rz_list_delete_data(cry->plugins, plugin);
+	ht_sp_delete(cry->plugins, plugin->name);
 	return true;
 }
 
@@ -107,7 +112,12 @@ RZ_API RZ_OWN RzCrypto *rz_crypto_new(void) {
 		goto rz_crypto_new_bad;
 	}
 
-	cry->plugins = rz_list_new_from_array((const void **)crypto_static_plugins, RZ_ARRAY_SIZE(crypto_static_plugins));
+	cry->plugins = ht_sp_new(HT_STR_DUP, NULL, NULL);
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(crypto_static_plugins); ++i) {
+		if (!ht_sp_insert(cry->plugins, crypto_static_plugins[i]->name, crypto_static_plugins[i])) {
+			RZ_LOG_WARN("Plugin '%s' was already added.\n", crypto_static_plugins[i]->name);
+		}
+	}
 	if (!cry->plugins) {
 		goto rz_crypto_new_bad;
 	}
@@ -126,7 +136,7 @@ RZ_API void rz_crypto_free(RZ_NULLABLE RzCrypto *cry) {
 	if (cry->h && cry->h->fini && !cry->h->fini(cry)) {
 		RZ_LOG_ERROR("[!] crypto: error terminating '%s' plugin\n", cry->h->name);
 	}
-	rz_list_free(cry->plugins);
+	ht_sp_free(cry->plugins);
 	free(cry->output);
 	free(cry->key);
 	free(cry->iv);
@@ -155,23 +165,27 @@ RZ_API void rz_crypto_reset(RZ_NONNULL RzCrypto *cry) {
 
 RZ_API bool rz_crypto_use(RZ_NONNULL RzCrypto *cry, RZ_NONNULL const char *algo) {
 	rz_return_val_if_fail(cry && algo, false);
-	RzListIter *iter;
-	RzCryptoPlugin *h;
+	RzIterator *it = ht_sp_as_iter(cry->plugins);
+	RzCryptoPlugin **val;
 	if (cry->h && cry->h->fini && !cry->h->fini(cry)) {
 		RZ_LOG_ERROR("[!] crypto: error terminating '%s' plugin\n", cry->h->name);
 	}
-	rz_list_foreach (cry->plugins, iter, h) {
+	rz_iterator_foreach(it, val) {
+		RzCryptoPlugin *h = *val;
 		rz_warn_if_fail(h && h->use);
 		if (h && h->use(algo)) {
 			if (h->init && !h->init(cry)) {
 				RZ_LOG_ERROR("[!] crypto: error initializing '%s' plugin\n", cry->h->name);
+				rz_iterator_free(it);
 				return false;
 			}
 
 			cry->h = h;
+			rz_iterator_free(it);
 			return true;
 		}
 	}
+	rz_iterator_free(it);
 	return false;
 }
 

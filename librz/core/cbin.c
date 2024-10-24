@@ -10,6 +10,7 @@
 #include <rz_util/rz_time.h>
 #include <rz_basefind.h>
 #include <rz_vector.h>
+#include <rz_util/rz_iterator.h>
 
 #include "../bin/dwarf/dwarf_private.h"
 #include "core_private.h"
@@ -4902,24 +4903,40 @@ RZ_IPI RzCmdStatus rz_core_binxtr_plugin_print(const RzBinXtrPlugin *bx, RzCmdSt
 RZ_API RzCmdStatus rz_core_bin_plugins_print(RzBin *bin, RzCmdStateOutput *state) {
 	rz_return_val_if_fail(bin && state, RZ_CMD_STATUS_ERROR);
 
+	RzCmdStatus status;
+	rz_cmd_state_output_array_start(state);
+
+	RzIterator *iter = ht_sp_as_iter(bin->plugins);
+	RzList *plugin_list = rz_list_new_from_iterator(iter);
+	rz_list_sort(plugin_list, (RzListComparator)rz_bin_plugin_cmp, NULL);
+	RzListIter *it;
 	RzBinPlugin *bp;
 	RzBinXtrPlugin *bx;
-	RzListIter *iter;
-	RzCmdStatus status;
 
-	rz_cmd_state_output_array_start(state);
-	rz_list_foreach (bin->plugins, iter, bp) {
+	rz_list_foreach (plugin_list, it, bp) {
 		status = rz_core_bin_plugin_print(bp, state);
 		if (status != RZ_CMD_STATUS_OK) {
+			rz_iterator_free(iter);
+			rz_list_free(plugin_list);
 			return status;
 		}
 	}
-	rz_list_foreach (bin->binxtrs, iter, bx) {
+	rz_list_free(plugin_list);
+	rz_iterator_free(iter);
+
+	iter = ht_sp_as_iter(bin->binxtrs);
+	plugin_list = rz_list_new_from_iterator(iter);
+	rz_list_sort(plugin_list, (RzListComparator)rz_bin_xtr_plugin_cmp, NULL);
+	rz_list_foreach (plugin_list, it, bx) {
 		status = rz_core_binxtr_plugin_print(bx, state);
 		if (status != RZ_CMD_STATUS_OK) {
+			rz_iterator_free(iter);
+			rz_list_free(plugin_list);
 			return status;
 		}
 	}
+	rz_list_free(plugin_list);
+	rz_iterator_free(iter);
 	rz_cmd_state_output_array_end(state);
 	return RZ_CMD_STATUS_OK;
 }

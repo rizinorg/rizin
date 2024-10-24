@@ -1,6 +1,7 @@
 #ifndef RZ_LIST_H
 #define RZ_LIST_H
 
+#include <rz_util/rz_iterator.h>
 #include <rz_types.h>
 
 #ifdef __cplusplus
@@ -33,6 +34,9 @@ typedef int (*RzListComparator)(const void *value, const void *list_data, void *
 #define rz_list_foreach(list, it, pos) \
 	if (list) \
 		for (it = list->head; it && (pos = it->elem, 1); it = it->next)
+#define rz_list_foreach_enum(list, it, pos, i) \
+	if (list) \
+		for (it = list->head, i = 0; it && (pos = it->elem, 1); it = it->next, ++i)
 #define rz_list_foreach_iter(iter, it, pos) \
 	for (it = iter; it && (pos = it->elem, 1); it = it->next)
 /* Safe when calling rz_list_delete() while iterating over the list. */
@@ -62,6 +66,7 @@ typedef int (*RzListComparator)(const void *value, const void *list_data, void *
 RZ_API RZ_OWN RzList *rz_list_new(void);
 RZ_API RZ_OWN RzList *rz_list_newf(RZ_NULLABLE RzListFree f);
 RZ_API RZ_OWN RzList *rz_list_new_from_array(RZ_NONNULL const void **arr, size_t arr_size);
+RZ_API RZ_OWN RzList *rz_list_new_from_iterator(RZ_BORROW RZ_NONNULL RzIterator *iter);
 RZ_API RZ_BORROW RzListIter *rz_list_iter_get_prev(RZ_NONNULL RzListIter *iter);
 RZ_API RZ_BORROW RzListIter *rz_list_iter_get_next(RZ_NONNULL RzListIter *iter);
 RZ_API RZ_BORROW void *rz_list_iter_get_prev_data(RZ_NONNULL RzListIter *iter);

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_list.h>
+#include <rz_util/ht_up.h>
 #include "minunit.h"
 #define BUF_LENGTH 100
 
@@ -214,6 +215,30 @@ bool test_rz_list_sort5(void) {
 	rz_list_sort(list, (RzListComparator)strcmp, NULL);
 	mu_assert_streq((char *)list->head->elem, upper[0], "First element");
 	mu_assert_streq((char *)list->tail->elem, lower[25], "Last element");
+	rz_list_free(list);
+	mu_end;
+}
+
+bool test_rz_list_from_iter(void) {
+	HtUP *alpha_ht = ht_up_new(NULL, NULL);
+	char *unordered_alphabeth[] = { "b", "w", "k", "a", "c", "d", "e", "f", "g", "h", "i", "j", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "x", "y", "z" };
+	char *lower[] = { "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z" };
+
+	for (size_t i = 0; i < 26; i++) {
+		ht_up_insert(alpha_ht, i, (void *)unordered_alphabeth[i]);
+	}
+	RzIterator *iter = ht_up_as_iter(alpha_ht);
+	RzList *list = rz_list_new_from_iterator(iter);
+	rz_list_sort(list, (RzListComparator)strcmp, NULL);
+	mu_assert_eq(rz_list_length(list), 26, "Number of elements are off");
+	RzListIter *it;
+	const char *elem;
+	size_t i = 0;
+	rz_list_foreach_enum (list, it, elem, i) {
+		mu_assert_streq(elem, lower[i], "Value mismatched.");
+	}
+	ht_up_free(alpha_ht);
+	rz_iterator_free(iter);
 	rz_list_free(list);
 	mu_end;
 }
@@ -501,6 +526,7 @@ int all_tests() {
 	mu_run_test(test_rz_list_reverse);
 	mu_run_test(test_rz_list_clone);
 	mu_run_test(test_rz_list_find_ptr);
+	mu_run_test(test_rz_list_from_iter);
 	return tests_passed != tests_run;
 }
 

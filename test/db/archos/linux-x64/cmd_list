@@ -9,11 +9,11 @@ EXPECT=<<EOF
 2  ---  dmp      LGPL3
 3  ---  gdb      LGPL3
 4  ---  io       MIT
-5  ---  null     MIT
-6  ---  rap      LGPL3
-7  ---  winkd    LGPL3
-8  ---  qnx      LGPL3
-9  dbg  native   LGPL3
+5  dbg  native   LGPL3
+6  ---  null     MIT
+7  ---  qnx      LGPL3
+8  ---  rap      LGPL3
+9  ---  winkd    LGPL3
 EOF
 RUN
 
@@ -38,11 +38,11 @@ EXPECT=<<EOF
 {"arch":"x86,arm","name":"dmp","license":"LGPL3"}
 {"arch":"x86,arm,sh,mips,avr,lm32,v850,ba2,tricore","name":"gdb","license":"LGPL3"}
 {"arch":"any","name":"io","license":"MIT"}
+{"arch":"x86","name":"native","license":"LGPL3"}
 {"arch":"any","name":"null","license":"MIT"}
-{"arch":"any","name":"rap","license":"LGPL3"}
-{"arch":"x86","name":"winkd","license":"LGPL3"}
 {"arch":"x86,arm","name":"qnx","license":"LGPL3"}
-native
+{"arch":"any","name":"rap","license":"LGPL3"}
+winkd
 LGPL3
 EOF
 RUN
