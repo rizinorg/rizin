@@ -4,12 +4,12 @@
 #include <rz_types.h>
 #include <rz_util.h>
 
-static const char *const regs[33] = {
+static const char *const regs[34] = {
 	"zero", "at", "v0", "v1", "a0", "a1", "a2", "a3",
 	"t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7",
 	"s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7",
 	"t8", "t9", "k0", "k1", "gp", "sp", "s8", "ra",
-	NULL
+	"fp", NULL
 };
 
 static struct {
@@ -25,6 +25,7 @@ static struct {
 	{ "sh", 'I', 3, 41, 0 },
 	{ "sb", 'I', 3, 40, 0 },
 	{ "lw", 'I', 3, 35, 0 },
+	{ "lwl", 'I', 3, 34, 0 },
 	{ "lh", 'I', 3, 33, 0 },
 	{ "lb", 'I', 3, 32, 0 },
 	{ "ori", 'I', 3, 13, 0 },
@@ -37,6 +38,7 @@ static struct {
 	{ "bal", 'B', -1, -1, 17 },
 	{ "bne", 'B', 3, 5, 0 },
 	{ "beq", 'B', 3, 4, 0 },
+	{ "beqz", 'B', 2, 1, 4 },
 	{ "bgez", 'B', -2, -1, 1 },
 	{ "bgezal", 'B', -2, -1, 17 },
 	{ "bltzal", 'B', -2, -1, 16 },
@@ -53,6 +55,7 @@ static struct {
 	{ "sllv", 'R', 3, 4, 0 },
 	{ "slt", 'R', 3, 42, 0 },
 	{ "slti", 'I', 3, 10, 0 },
+	{ "sltiu", 'I', 3, 11, 0 },
 	{ "sltu", 'R', 3, 43, 0 },
 	{ "sra", 'R', -3, 3, 0 },
 	{ "srl", 'R', -3, 2, 0 },
@@ -128,7 +131,7 @@ static int getreg(const char *p) {
 	}
 	/* check if it's a register */
 	for (n = 0; regs[n]; n++) {
-		if (!strcmp(p, regs[n])) {
+		if (!strcmp(p, regs[n]) || (p[0] == '$' && !strcmp(p + 1, regs[n]))) {
 			return n;
 		}
 	}
@@ -182,7 +185,12 @@ RZ_IPI int mips_assemble_opcode(const char *str, ut64 pc, ut8 *out) {
 		for (i = 0; ops[i].name; i++) {
 			if (!strcmp(ops[i].name, w0)) {
 				switch (ops[i].args) {
-				case 3: sscanf(s, "%31s %31s %31s %31s", w0, w1, w2, w3); break;
+				case 3:
+					if (sscanf(s, "%31s %31s %31s %31s", w0, w1, w2, w3) == 3) {
+						// Assume offset is 0 if not provided
+						strcpy(w3, "0");
+					}
+					break;
 				case -3: sscanf(s, "%31s %31s %31s %31s", w0, w1, w2, w3); break;
 				case 2: sscanf(s, "%31s %31s %31s", w0, w1, w2); break;
 				case -2: sscanf(s, "%31s %31s %31s", w0, w1, w2); break;
@@ -258,9 +266,16 @@ RZ_IPI int mips_assemble_opcode(const char *str, ut64 pc, ut8 *out) {
 					int op = 0, rs = 0, rt = 0, imm = 0, is_branch = ops[i].type == 'B';
 					switch (ops[i].args) {
 					case 2:
-						op = ops[i].n;
-						rt = getreg(w1);
-						imm = getreg(w2);
+						if (!strcmp(w0, "beqz")) {
+							op = 4; // op code for beq
+							rs = getreg(w1);
+							rt = 0; // zero register
+							imm = (int)strtol(w2, NULL, 0);
+						} else {
+							op = ops[i].n;
+							rt = getreg(w1);
+							imm = getreg(w2);
+						}
 						break;
 					case 3:
 						op = ops[i].n;
