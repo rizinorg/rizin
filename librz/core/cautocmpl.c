@@ -557,7 +557,7 @@ static void autocmplt_cmd_arg_eval_key(RzCore *core, RzLineNSCompletionResult *r
 		}
 	}
 	RzConfig **plugin_cfg;
-	RzIterator *it = ht_sp_as_iter(core->plugin_configs);
+	RzIterator *it = ht_sp_as_iter(core->plugins_config);
 	rz_iterator_foreach(it, plugin_cfg) {
 		rz_list_foreach ((*plugin_cfg)->nodes, iter, bt) {
 			if (!strncmp(bt->name, s, len)) {

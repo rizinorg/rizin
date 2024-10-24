@@ -95,7 +95,24 @@ typedef enum {
 	RZ_CORE_WRITE_OP_SHIFT_RIGHT, ///< Write the shift right of existing byte and argument value
 } RzCoreWriteOp;
 
-typedef bool (*RzCorePluginCallback)(RzCore *core);
+/**
+ * \brief RzCore plugin callback.
+ *
+ * \param core the Core this plugin is assigned to.
+ * \param plugin_data Memory location to place the plugins private data pointer.
+ *
+ * \example
+ * ```
+ * void plugin_init(RzCore *core, void **plugin_data) {
+ *     *plugin_data = malloc(sizeof(PrivatePluginData));
+ * }
+ *
+ * void plugin_fini(RzCore *core, void **plugin_data) {
+ *     free(*plugin_data);
+ * }
+ * ```
+ */
+typedef bool (*RzCorePluginCallback)(RzCore *core, void **plugin_data);
 
 typedef struct rz_core_plugin_t {
 	const char *name;
@@ -106,6 +123,7 @@ typedef struct rz_core_plugin_t {
 	RzCorePluginCallback init; ///< Is called when the plugin is loaded by rizin
 	RzCorePluginCallback fini; ///< Is called when the plugin is unloaded by rizin
 	RzCorePluginCallback analysis; ///< Is called when automatic analysis is performed.
+	RZ_OWN RzConfig *(*get_config)(void *plugin_data); ///< Return private configuration of this plugin.
 } RzCorePlugin;
 
 typedef struct rz_core_rtr_host_t RzCoreRtrHost;
@@ -253,8 +271,9 @@ struct rz_core_t {
 	// They are used in pointer passing hacks in rz_types.h.
 	RzIO *io;
 	HtSP /*<RzCorePlugin *>*/ *plugins; ///< List of registered core plugins
+	HtSP /*<RZ_BORROW void *>*/ *plugins_data; ///< Core plugins private data.
+	HtSP /*<plugins.<plugin_name>: RzConfig>*/ *plugins_config; ///< Pointers to plugin configurations. Indexed by "plugins.<name>"
 	RzConfig *config;
-	HtSP /*<plugins.<plugin_name>: RzConfig>*/ *plugin_configs; ///< Pointers to plugin configurations. Indexed by "plugins.<name>"
 	ut64 offset; // current seek
 	ut64 prompt_offset; // temporarily set to offset to have $$ in expressions always stay the same during temp seeks
 	ut32 blocksize;
