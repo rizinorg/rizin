@@ -211,7 +211,7 @@ jobs:
       - name: Build with Meson
         if: matrix.build_system == 'meson' && matrix.enabled
         run: |
-          export PATH=${HOME}/Library/Python/3.9/bin:${HOME}/Library/Python/3.10/bin:${HOME}/Library/Python/3.11/bin:${HOME}/Library/Python/3.12/bin:${HOME}/.local/bin:${PATH}
+          export PATH=${HOME}/Library/Python/3.11/bin:${HOME}/Library/Python/3.12/bin:${HOME}/Library/Python/3.13/bin:${HOME}/.local/bin:${PATH}
           if [ "$ASAN" == "true" ]; then
             # Work-around ASAN bug https://github.com/google/sanitizers/issues/1716
             sudo sysctl vm.mmap_rnd_bits=28
@@ -229,7 +229,7 @@ jobs:
         if: matrix.build_system == 'meson' && matrix.enabled
         run: |
           # Install the rizin
-          export PATH=${HOME}/bin:${HOME}/Library/Python/3.9/bin:${HOME}/Library/Python/3.10/bin:${HOME}/Library/Python/3.11/bin:${HOME}/Library/Python/3.12/bin:${HOME}/.local/bin:${PATH}
+          export PATH=${HOME}/bin:${HOME}/Library/Python/3.11/bin:${HOME}/Library/Python/3.12/bin:${HOME}/Library/Python/3.13/bin:${HOME}/.local/bin:${PATH}
           export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
           export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
           ninja -C build install
@@ -241,7 +241,7 @@ jobs:
         continue-on-error: ${{ matrix.allow_failure }}
         if: matrix.build_system == 'meson' && matrix.enabled
         run: |
-          export PATH=${HOME}/bin:${HOME}/Library/Python/3.9/bin:${HOME}/Library/Python/3.10/bin:${HOME}/Library/Python/3.11/bin:${HOME}/Library/Python/3.12/bin:${HOME}/.local/bin:${PATH}
+          export PATH=${HOME}/bin:${HOME}/Library/Python/3.11/bin:${HOME}/Library/Python/3.12/bin:${HOME}/Library/Python/3.13/bin:${HOME}/.local/bin:${PATH}
           export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
           export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
           if [ "$ASAN" == "true" ]; then
@@ -275,7 +275,7 @@ jobs:
         if: matrix.run_tests && matrix.enabled
         run: |
           # Running the test suite
-          export PATH=${HOME}/bin:${HOME}/Library/Python/3.9/bin:${HOME}/Library/Python/3.10/bin:${HOME}/Library/Python/3.11/bin:${HOME}/Library/Python/3.12/bin:${HOME}/.local/bin:${PATH}
+          export PATH=${HOME}/bin:${HOME}/Library/Python/3.11/bin:${HOME}/Library/Python/3.12/bin:${HOME}/Library/Python/3.13/bin:${HOME}/.local/bin:${PATH}
           export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
           export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
           if [ "$ASAN" == "true" ]; then
