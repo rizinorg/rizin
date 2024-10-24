@@ -12,6 +12,8 @@
 
 #include <h8300/h8300_disas.h>
 
+#include <h8300/h8300_il.h>
+
 #define emit(frag) rz_strbuf_appendf(&op->esil, frag)
 #define emitf(...) rz_strbuf_appendf(&op->esil, __VA_ARGS__)
 // setting the appropriate flags, NOTE: semicolon included
@@ -535,6 +537,10 @@ static int analyze_op_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8
 
 static int h8300_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	const ut8 *buf, int len, RzAnalysisOpMask mask) {
+
+	H8300Op aop = { 0 };
+	H8300Op next_op = { 0 };
+
 	int ret;
 	ut8 opcode = buf[0];
 	struct h8300_cmd cmd;
@@ -672,6 +678,9 @@ static int h8300_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
 		analyze_op_esil(analysis, op, addr, buf);
 	}
+	if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+		rz_h8300_il_opcode(analysis, op, addr, &aop, &next_op);
+	}
 	return ret;
 }
 
@@ -717,13 +726,32 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 	return rz_str_dup(p);
 }
 
+static int h8300_archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
+	switch (query) {
+	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
+		/* fall-thru */
+	case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE:
+		/* fall-thru */
+	case RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN:
+		/* fall-thru */
+	case RZ_ANALYSIS_ARCHINFO_DATA_ALIGN:
+		return 2;
+	case RZ_ANALYSIS_ARCHINFO_CAN_USE_POINTERS:
+		return true;
+	default:
+		return -1;
+	}
+}
+
 RzAnalysisPlugin rz_analysis_plugin_h8300 = {
 	.name = "h8300",
 	.desc = "H8300 code analysis plugin",
 	.license = "LGPL3",
 	.arch = "h8300",
+	.archinfo = h8300_archinfo,
 	.bits = 16,
 	.op = &h8300_op,
 	.esil = true,
 	.get_reg_profile = get_reg_profile,
+	.il_config = rz_h8300_il_config,
 };
