@@ -132,6 +132,10 @@ static void rz_hash_show_algorithms(RzHashContext *ctx) {
 
 	RzIterator *iter = ht_sp_as_iter(ctx->rh->plugins);
 	RzList *plugin_list = rz_list_new_from_iterator(iter);
+	if (!plugin_list) {
+		rz_iterator_free(iter);
+		return;
+	}
 	rz_list_sort(plugin_list, (RzListComparator)rz_hash_plugin_cmp, NULL);
 	RzListIter *it;
 	const RzHashPlugin *rmdp;
@@ -820,6 +824,10 @@ static RzList /*<char *>*/ *parse_hash_algorithms(RzHashContext *ctx) {
 	}
 	RzIterator *iter = ht_sp_as_iter(ctx->rh->plugins);
 	RzList *plugin_list = rz_list_new_from_iterator(iter);
+	if (!plugin_list) {
+		rz_iterator_free(iter);
+		return NULL;
+	}
 	rz_list_sort(plugin_list, (RzListComparator)rz_hash_plugin_cmp, NULL);
 	RzListIter *it;
 	const RzHashPlugin *rmdp;

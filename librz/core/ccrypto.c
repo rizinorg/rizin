@@ -42,6 +42,10 @@ RZ_API RzCmdStatus rz_core_crypto_plugins_print(RzCrypto *cry, RzCmdStateOutput 
 	}
 	RzIterator *iter = ht_sp_as_iter(cry->plugins);
 	RzList *plugin_list = rz_list_new_from_iterator(iter);
+	if (!plugin_list) {
+		rz_iterator_free(iter);
+		return RZ_CMD_STATUS_ERROR;
+	}
 	rz_list_sort(plugin_list, (RzListComparator)rz_crypto_plugin_cmp, NULL);
 	RzListIter *it;
 	RzCryptoPlugin *plugin;

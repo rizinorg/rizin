@@ -533,7 +533,7 @@ RZ_API char *rz_egg_option_get(RzEgg *egg, const char *key) {
 	return sdb_get(egg->db, key);
 }
 
-RZ_API int rz_egg_shellcode(RzEgg *egg, const char *name) {
+RZ_API int rz_egg_shellcode(RZ_NONNULL RZ_BORROW RzEgg *egg, const char *name) {
 	rz_return_val_if_fail(egg && name, false);
 	RzIterator *iter = ht_sp_as_iter(egg->plugins);
 	RzEggPlugin **val;
@@ -544,11 +544,13 @@ RZ_API int rz_egg_shellcode(RzEgg *egg, const char *name) {
 			b = p->build(egg);
 			if (!b) {
 				RZ_LOG_ERROR("egg: %s Shellcode has failed\n", p->name);
+				rz_iterator_free(iter);
 				return false;
 			}
 			ut64 tmpsz;
 			const ut8 *tmp = rz_buf_data(b, &tmpsz);
 			rz_egg_raw(egg, tmp, tmpsz);
+			rz_iterator_free(iter);
 			return true;
 		}
 	}
@@ -556,7 +558,7 @@ RZ_API int rz_egg_shellcode(RzEgg *egg, const char *name) {
 	return false;
 }
 
-RZ_API int rz_egg_encode(RzEgg *egg, const char *name) {
+RZ_API int rz_egg_encode(RZ_NONNULL RZ_BORROW RzEgg *egg, const char *name) {
 	rz_return_val_if_fail(egg && name, false);
 	RzIterator *iter = ht_sp_as_iter(egg->plugins);
 	RzEggPlugin **val;
@@ -566,10 +568,12 @@ RZ_API int rz_egg_encode(RzEgg *egg, const char *name) {
 		if (p->type == RZ_EGG_PLUGIN_ENCODER && !strcmp(name, p->name)) {
 			b = p->build(egg);
 			if (!b) {
+				rz_iterator_free(iter);
 				return false;
 			}
 			rz_buf_free(egg->bin);
 			egg->bin = b;
+			rz_iterator_free(iter);
 			return true;
 		}
 	}

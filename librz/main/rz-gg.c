@@ -72,6 +72,10 @@ static void list(RzEgg *egg) {
 	printf("shellcodes:\n");
 	RzIterator *iter = ht_sp_as_iter(egg->plugins);
 	RzList *plugin_list = rz_list_new_from_iterator(iter);
+	if (!plugin_list) {
+		rz_iterator_free(iter);
+		return;
+	}
 	rz_list_sort(plugin_list, (RzListComparator)rz_egg_plugin_cmp, NULL);
 	RzListIter *it;
 	RzEggPlugin *p;
