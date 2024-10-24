@@ -478,7 +478,7 @@ RZ_API RzCmdStatus rz_core_io_plugin_print(RzIOPlugin *plugin, RzCmdStateOutput 
  * \param io Reference to RzIO instance
  * \param state Specify how plugins shall be printed
  */
-RZ_API RzCmdStatus rz_core_io_plugins_print(RzIO *io, RzCmdStateOutput *state) {
+RZ_API RzCmdStatus rz_core_io_plugins_print(RZ_NONNULL RZ_BORROW RzIO *io, RzCmdStateOutput *state) {
 	rz_return_val_if_fail(io && state, RZ_CMD_STATUS_ERROR);
 
 	if (!io) {
@@ -489,6 +489,10 @@ RZ_API RzCmdStatus rz_core_io_plugins_print(RzIO *io, RzCmdStateOutput *state) {
 
 	RzIterator *iter = ht_sp_as_iter(io->plugins);
 	RzList *plugin_list = rz_list_new_from_iterator(iter);
+	if (!plugin_list) {
+		rz_iterator_free(iter);
+		return RZ_CMD_STATUS_ERROR;
+	}
 	rz_list_sort(plugin_list, (RzListComparator)rz_io_plugin_cmp, NULL);
 	RzListIter *it;
 	RzIOPlugin *plugin;

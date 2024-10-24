@@ -229,6 +229,7 @@ bool test_rz_list_from_iter(void) {
 	}
 	RzIterator *iter = ht_up_as_iter(alpha_ht);
 	RzList *list = rz_list_new_from_iterator(iter);
+	mu_assert_notnull(list, "List init failed.");
 	rz_list_sort(list, (RzListComparator)strcmp, NULL);
 	mu_assert_eq(rz_list_length(list), 26, "Number of elements are off");
 	RzListIter *it;

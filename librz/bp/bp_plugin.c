@@ -61,10 +61,14 @@ RZ_API int rz_bp_use(RZ_NONNULL RzBreakpoint *bp, RZ_NONNULL const char *name) {
 	return false;
 }
 
-// TODO: deprecate
-RZ_API void rz_bp_plugin_list(RzBreakpoint *bp) {
+RZ_DEPRECATE RZ_API void rz_bp_plugin_print(RZ_NONNULL RzBreakpoint *bp) {
+	rz_return_if_fail(bp);
 	RzIterator *iter = ht_sp_as_iter(bp->plugins);
 	RzList *plugin_list = rz_list_new_from_iterator(iter);
+	if (!plugin_list) {
+		rz_iterator_free(iter);
+		return;
+	}
 	rz_list_sort(plugin_list, (RzListComparator)rz_breakpoint_plugin_cmp, NULL);
 	RzListIter *it;
 	RzBreakpointPlugin *b;

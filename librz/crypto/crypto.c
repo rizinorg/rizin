@@ -6,11 +6,11 @@
 #include <rz_util.h>
 #include "rz_crypto_plugins.h"
 
-static RzCryptoPlugin *crypto_static_plugins[] = { &rz_crypto_plugin_aes, &rz_crypto_plugin_aes_cbc, &rz_crypto_plugin_base64, &rz_crypto_plugin_base91, &rz_crypto_plugin_blowfish, &rz_crypto_plugin_cps2, &rz_crypto_plugin_des, &rz_crypto_plugin_punycode, &rz_crypto_plugin_rc2, &rz_crypto_plugin_rc4, &rz_crypto_plugin_rc6, &rz_crypto_plugin_rol, &rz_crypto_plugin_ror, &rz_crypto_plugin_rot, &rz_crypto_plugin_serpent, &rz_crypto_plugin_xor, &rz_crypto_plugin_sm4_ecb };
-
 #define RZ_CRYPTO_OUTPUT_SIZE 4096
 
 RZ_LIB_VERSION(rz_crypto);
+
+static RzCryptoPlugin *crypto_static_plugins[] = { RZ_CRYPTO_STATIC_PLUGINS };
 
 static const struct {
 	const char *name;

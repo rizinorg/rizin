@@ -197,8 +197,8 @@ RZ_API void rz_egg_syscall(RzEgg *egg, const char *arg, ...) RZ_PRINTF_CHECK(2, 
 RZ_API void rz_egg_alloc(RzEgg *egg, int n);
 RZ_API void rz_egg_label(RzEgg *egg, const char *name);
 RZ_API int rz_egg_raw(RzEgg *egg, const ut8 *b, int len);
-RZ_API int rz_egg_encode(RzEgg *egg, const char *name);
-RZ_API int rz_egg_shellcode(RzEgg *egg, const char *name);
+RZ_API int rz_egg_encode(RZ_NONNULL RZ_BORROW RzEgg *egg, const char *name);
+RZ_API int rz_egg_shellcode(RZ_NONNULL RZ_BORROW RzEgg *egg, const char *name);
 #define rz_egg_get_shellcodes(x) x->plugins
 RZ_API void rz_egg_option_set(RzEgg *egg, const char *k, const char *v);
 RZ_API char *rz_egg_option_get(RzEgg *egg, const char *k);

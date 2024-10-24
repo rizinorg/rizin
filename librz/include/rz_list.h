@@ -65,7 +65,7 @@ typedef int (*RzListComparator)(const void *value, const void *list_data, void *
 
 RZ_API RZ_OWN RzList *rz_list_new(void);
 RZ_API RZ_OWN RzList *rz_list_newf(RZ_NULLABLE RzListFree f);
-RZ_API RZ_OWN RzList *rz_list_new_from_array(RZ_NONNULL const void **arr, size_t arr_size);
+RZ_API RZ_OWN RzList *rz_list_new_from_array(const void **arr, size_t arr_size);
 RZ_API RZ_OWN RzList *rz_list_new_from_iterator(RZ_BORROW RZ_NONNULL RzIterator *iter);
 RZ_API RZ_BORROW RzListIter *rz_list_iter_get_prev(RZ_NONNULL RzListIter *iter);
 RZ_API RZ_BORROW RzListIter *rz_list_iter_get_next(RZ_NONNULL RzListIter *iter);
