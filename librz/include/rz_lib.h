@@ -106,23 +106,6 @@ typedef struct rz_lib_t {
 	HtSU *opened_dirs; ///< Hashtable to keep track of already opened directories
 } RzLib;
 
-#define RZ_PLUGIN_CHECK_AND_ADD(plugins, plugin, py_type) \
-	do { \
-		RzListIter *_it; \
-		py_type *_p; \
-		rz_list_foreach ((plugins), _it, _p) { \
-			if (!strcmp(_p->name, (plugin)->name)) { \
-				return false; \
-			} \
-		} \
-		rz_list_append(plugins, plugin); \
-	} while (0)
-
-#define RZ_PLUGIN_REMOVE(plugins, plugin) \
-	do { \
-		rz_list_delete_data(plugins, plugin); \
-	} while (0)
-
 #ifdef RZ_API
 RZ_API RzLib *rz_lib_new(RZ_NULLABLE const char *symname, RZ_NULLABLE const char *symnamefunc);
 RZ_API void rz_lib_free(RzLib *lib);

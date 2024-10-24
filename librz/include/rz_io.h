@@ -77,7 +77,7 @@ typedef struct rz_io_t {
 	RzSkyline cache_skyline;
 	ut8 *write_mask;
 	int write_mask_len;
-	RzList /*<RzIOPlugin *>*/ *plugins;
+	HtSP /*<RzIOPlugin *>*/ *plugins;
 	char *runprofile;
 	char *envprofile;
 #if USE_PTRACE_WRAP
@@ -269,6 +269,20 @@ typedef struct rz_io_bind_t {
 	RzIOGetW32DbgWrap get_w32dbg_wrap;
 #endif
 } RzIOBind;
+
+/**
+ * \brief Compare plugins by name (via strcmp).
+ */
+static inline int rz_io_plugin_cmp(RZ_NULLABLE const RzIOPlugin *a, RZ_NULLABLE const RzIOPlugin *b) {
+	if (!a && !b) {
+		return 0;
+	} else if (!a) {
+		return -1;
+	} else if (!b) {
+		return 1;
+	}
+	return rz_str_cmp(a->name, b->name, -1);
+}
 
 // map.c
 RZ_API RzIOMap *rz_io_map_new(RzIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size);

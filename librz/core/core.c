@@ -2460,14 +2460,15 @@ RZ_API RzCmdStatus rz_core_core_plugin_print(RzCorePlugin *cp, RzCmdStateOutput 
 }
 
 RZ_API RzCmdStatus rz_core_core_plugins_print(RzCore *core, RzCmdStateOutput *state) {
-	RzListIter *iter;
-	RzCorePlugin *cp;
+	RzIterator *iter = ht_sp_as_iter(core->plugins);
+	RzCorePlugin **val;
 	RzCmdStatus status;
 	if (!core) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_cmd_state_output_array_start(state);
-	rz_list_foreach (core->plugins, iter, cp) {
+	rz_iterator_foreach(iter, val) {
+		RzCorePlugin *cp = *val;
 		const char *license = cp->license
 			? cp->license
 			: "???";
@@ -2476,6 +2477,7 @@ RZ_API RzCmdStatus rz_core_core_plugins_print(RzCore *core, RzCmdStateOutput *st
 			return status;
 		}
 	}
+	rz_iterator_free(iter);
 	rz_cmd_state_output_array_end(state);
 	return RZ_CMD_STATUS_OK;
 }

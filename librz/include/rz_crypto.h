@@ -1,9 +1,10 @@
 #ifndef RZ_CRYPTO_H
 #define RZ_CRYPTO_H
 
-#include "rz_types.h"
-#include "rz_list.h"
-#include "rz_crypto/rz_des.h"
+#include <rz_types.h>
+#include <rz_util/ht_sp.h>
+#include <rz_crypto/rz_des.h>
+#include <rz_util/rz_str.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,7 +35,7 @@ typedef struct rz_crypto_t {
 	int output_size;
 	int dir;
 	void *user;
-	RzList /*<RzCryptoPlugin *>*/ *plugins;
+	HtSP /*<RzCryptoPlugin *>*/ *plugins;
 } RzCrypto;
 
 typedef struct rz_crypto_plugin_t {
@@ -52,6 +53,20 @@ typedef struct rz_crypto_plugin_t {
 } RzCryptoPlugin;
 
 typedef ut64 RzCryptoSelector;
+
+/**
+ * \brief Compare plugins by name (via strcmp).
+ */
+static inline int rz_crypto_plugin_cmp(RZ_NULLABLE const RzCryptoPlugin *a, RZ_NULLABLE const RzCryptoPlugin *b) {
+	if (!a && !b) {
+		return 0;
+	} else if (!a) {
+		return -1;
+	} else if (!b) {
+		return 1;
+	}
+	return rz_str_cmp(a->name, b->name, -1);
+}
 
 #ifdef RZ_API
 RZ_API bool rz_crypto_plugin_add(RZ_NONNULL RzCrypto *cry, RZ_NONNULL RzCryptoPlugin *h);

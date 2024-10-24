@@ -284,14 +284,36 @@ RZ_API RZ_OWN RzList *rz_list_newf(RZ_NULLABLE RzListFree f) {
  * \brief Allocates a new RzList and adds an array elements to it
  *
  **/
-RZ_API RZ_OWN RzList *rz_list_new_from_array(RZ_NONNULL const void **arr, size_t arr_size) {
+RZ_API RZ_OWN RzList *rz_list_new_from_array(const void **arr, size_t arr_size) {
 	RzList *l = rz_list_new();
 	if (!l) {
 		return NULL;
 	}
+	if (!arr) {
+		return l;
+	}
 	size_t i;
 	for (i = 0; i < arr_size; i++) {
 		rz_list_append(l, (void *)arr[i]);
+	}
+	return l;
+}
+
+/**
+ * \brief Allocates a new RzList and adds all elements of the iterator \p iter to it.
+ * \p iter keeps the ownership over the values.
+ *
+ * \return The produced list. Or NULL in case of failure.
+ **/
+RZ_API RZ_OWN RzList *rz_list_new_from_iterator(RZ_BORROW RZ_NONNULL RzIterator *iter) {
+	rz_return_val_if_fail(iter, NULL);
+	RzList *l = rz_list_new();
+	if (!l) {
+		return NULL;
+	}
+	void **val;
+	rz_iterator_foreach(iter, val) {
+		rz_list_append(l, (void *)*val);
 	}
 	return l;
 }

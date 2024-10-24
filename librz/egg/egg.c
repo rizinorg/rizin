@@ -79,7 +79,7 @@ RZ_API RzEgg *rz_egg_new(void) {
 	if (!egg->patches) {
 		goto beach;
 	}
-	egg->plugins = rz_list_new();
+	egg->plugins = ht_sp_new(HT_STR_DUP, NULL, NULL);
 	for (i = 0; i < RZ_ARRAY_SIZE(egg_static_plugins); i++) {
 		rz_egg_plugin_add(egg, egg_static_plugins[i]);
 	}
@@ -92,13 +92,15 @@ beach:
 
 RZ_API bool rz_egg_plugin_add(RzEgg *a, RZ_NONNULL RzEggPlugin *plugin) {
 	rz_return_val_if_fail(a && plugin && plugin->name, false);
-	RZ_PLUGIN_CHECK_AND_ADD(a->plugins, plugin, RzEggPlugin);
+	if (!ht_sp_insert(a->plugins, plugin->name, plugin)) {
+		RZ_LOG_WARN("Plugin '%s' was already added.\n", plugin->name);
+	}
 	return true;
 }
 
 RZ_API bool rz_egg_plugin_del(RzEgg *a, RZ_NONNULL RzEggPlugin *plugin) {
 	rz_return_val_if_fail(a && plugin, false);
-	return rz_list_delete_data(a->plugins, plugin);
+	return ht_sp_delete(a->plugins, plugin->name);
 }
 
 RZ_API char *rz_egg_to_string(RzEgg *egg) {
@@ -115,7 +117,7 @@ RZ_API void rz_egg_free(RzEgg *egg) {
 	rz_asm_free(egg->rasm);
 	rz_syscall_free(egg->syscall);
 	sdb_free(egg->db);
-	rz_list_free(egg->plugins);
+	ht_sp_free(egg->plugins);
 	rz_list_free(egg->patches);
 	rz_egg_lang_free(egg);
 	free(egg);
@@ -531,41 +533,51 @@ RZ_API char *rz_egg_option_get(RzEgg *egg, const char *key) {
 	return sdb_get(egg->db, key);
 }
 
-RZ_API int rz_egg_shellcode(RzEgg *egg, const char *name) {
-	RzEggPlugin *p;
-	RzListIter *iter;
+RZ_API int rz_egg_shellcode(RZ_NONNULL RZ_BORROW RzEgg *egg, const char *name) {
+	rz_return_val_if_fail(egg && name, false);
+	RzIterator *iter = ht_sp_as_iter(egg->plugins);
+	RzEggPlugin **val;
 	RzBuffer *b;
-	rz_list_foreach (egg->plugins, iter, p) {
+	rz_iterator_foreach(iter, val) {
+		RzEggPlugin *p = *val;
 		if (p->type == RZ_EGG_PLUGIN_SHELLCODE && !strcmp(name, p->name)) {
 			b = p->build(egg);
 			if (!b) {
 				RZ_LOG_ERROR("egg: %s Shellcode has failed\n", p->name);
+				rz_iterator_free(iter);
 				return false;
 			}
 			ut64 tmpsz;
 			const ut8 *tmp = rz_buf_data(b, &tmpsz);
 			rz_egg_raw(egg, tmp, tmpsz);
+			rz_iterator_free(iter);
 			return true;
 		}
 	}
+	rz_iterator_free(iter);
 	return false;
 }
 
-RZ_API int rz_egg_encode(RzEgg *egg, const char *name) {
-	RzEggPlugin *p;
-	RzListIter *iter;
+RZ_API int rz_egg_encode(RZ_NONNULL RZ_BORROW RzEgg *egg, const char *name) {
+	rz_return_val_if_fail(egg && name, false);
+	RzIterator *iter = ht_sp_as_iter(egg->plugins);
+	RzEggPlugin **val;
 	RzBuffer *b;
-	rz_list_foreach (egg->plugins, iter, p) {
+	rz_iterator_foreach(iter, val) {
+		RzEggPlugin *p = *val;
 		if (p->type == RZ_EGG_PLUGIN_ENCODER && !strcmp(name, p->name)) {
 			b = p->build(egg);
 			if (!b) {
+				rz_iterator_free(iter);
 				return false;
 			}
 			rz_buf_free(egg->bin);
 			egg->bin = b;
+			rz_iterator_free(iter);
 			return true;
 		}
 	}
+	rz_iterator_free(iter);
 	return false;
 }
 

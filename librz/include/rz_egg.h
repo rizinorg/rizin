@@ -99,7 +99,7 @@ typedef struct rz_egg_t {
 	RzSyscall *syscall;
 	RzEggLang lang;
 	Sdb *db;
-	RzList /*<RzEggPlugin *>*/ *plugins;
+	HtSP /*<RzEggPlugin *>*/ *plugins;
 	RzList /*<struct egg_patch_t *>*/ *patches; // <RzBuffer>
 	struct rz_egg_emit_t *remit;
 	int arch;
@@ -165,6 +165,20 @@ typedef struct rz_egg_emit_t {
 	void (*get_while_end)(RzEgg *egg, char *out, const char *ctxpush, const char *label);
 } RzEggEmit;
 
+/**
+ * \brief Compare plugins by name (via strcmp).
+ */
+static inline int rz_egg_plugin_cmp(RZ_NULLABLE const RzEggPlugin *a, RZ_NULLABLE const RzEggPlugin *b) {
+	if (!a && !b) {
+		return 0;
+	} else if (!a) {
+		return -1;
+	} else if (!b) {
+		return 1;
+	}
+	return rz_str_cmp(a->name, b->name, -1);
+}
+
 #ifdef RZ_API
 RZ_API RzEgg *rz_egg_new(void);
 RZ_API void rz_egg_lang_init(RzEgg *egg);
@@ -183,8 +197,8 @@ RZ_API void rz_egg_syscall(RzEgg *egg, const char *arg, ...) RZ_PRINTF_CHECK(2, 
 RZ_API void rz_egg_alloc(RzEgg *egg, int n);
 RZ_API void rz_egg_label(RzEgg *egg, const char *name);
 RZ_API int rz_egg_raw(RzEgg *egg, const ut8 *b, int len);
-RZ_API int rz_egg_encode(RzEgg *egg, const char *name);
-RZ_API int rz_egg_shellcode(RzEgg *egg, const char *name);
+RZ_API int rz_egg_encode(RZ_NONNULL RZ_BORROW RzEgg *egg, const char *name);
+RZ_API int rz_egg_shellcode(RZ_NONNULL RZ_BORROW RzEgg *egg, const char *name);
 #define rz_egg_get_shellcodes(x) x->plugins
 RZ_API void rz_egg_option_set(RzEgg *egg, const char *k, const char *v);
 RZ_API char *rz_egg_option_get(RzEgg *egg, const char *k);
