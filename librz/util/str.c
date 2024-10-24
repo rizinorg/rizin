@@ -2418,6 +2418,12 @@ RZ_API size_t rz_str_utf8_charsize_last(const char *str) {
 	return rz_str_utf8_charsize_prev(str + len, len);
 }
 
+/**
+ * \brief Filters out non-printable characters and newlines from the given string.
+ *
+ * \param str The string to be filtered. This string is modified in-place.
+ * \param len The maximum length of the string to consider for filtering.
+ */
 RZ_API void rz_str_filter_zeroline(char *str, int len) {
 	int i;
 	for (i = 0; i < len && str[i]; i++) {
@@ -4299,4 +4305,32 @@ RZ_API const char *rz_str_indent(int indent) {
 		return "";
 	}
 	return indent_tbl[indent];
+}
+
+/**
+ * \brief Filters the given string based on the provided filter.
+ *
+ * \param str The string to be filtered.
+ * \param filter The filter string to be used for filtering the str.
+ * \return char* The filtered string. The caller is responsible for freeing this string.
+ */
+RZ_API RZ_OWN char *rz_str_filter_apply(RZ_NONNULL const char *str, const char *filter) {
+	rz_return_val_if_fail(str, NULL);
+	char *filtered_str = NULL;
+	char *str_copy = rz_str_dup(str);
+	RzList *lines = rz_str_split_list(str_copy, "\n", 0);
+	RzListIter *iter;
+	char *line;
+	rz_list_foreach (lines, iter, line) {
+		if (strstr(line, filter)) {
+			if (filtered_str) {
+				filtered_str = rz_str_append(filtered_str, "\n");
+			} else {
+				filtered_str = rz_str_dup("");
+			}
+			filtered_str = rz_str_append(filtered_str, line);
+		}
+	}
+	RZ_FREE(str_copy);
+	return filtered_str;
 }

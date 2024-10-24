@@ -1909,6 +1909,73 @@ static bool insert_mode_enabled(RzCore *core) {
 	return true;
 }
 
+static char *function_basic_blocks_string(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnalysisFunction *fcn) {
+	rz_return_val_if_fail(core && fcn, NULL);
+	RzCmdStateOutput state;
+	state.mode = RZ_OUTPUT_MODE_STANDARD;
+	char *fcn_info = rz_core_analysis_bbs_as_string(core, fcn, &state);
+	return fcn_info;
+}
+
+/**
+ * \brief Seeks to any basic block of the current function.
+ *
+ * \param core The RzCore instance.
+ */
+static void view_and_seek_to_bb(RZ_NONNULL RzCore *core) {
+	rz_return_if_fail(core);
+	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
+	if (!fcn) {
+		return;
+	}
+	char *bbs_string = function_basic_blocks_string(core, fcn);
+	char *output = rz_str_filter_apply(bbs_string, "");
+	RZ_FREE(bbs_string);
+	if (!output) {
+		return;
+	}
+	rz_cons_println(output);
+	rz_cons_flush();
+	char *input = rz_cons_input("Seek to address: ");
+	if (RZ_STR_ISEMPTY(input)) {
+		return;
+	}
+	ut64 addr = strtoull(input, NULL, 16);
+	RZ_FREE(input);
+	RZ_FREE(output);
+	RzAnalysisBlock *bb;
+	void **iter;
+	rz_pvector_foreach (fcn->bbs, iter) {
+		bb = *iter;
+		if (bb->addr <= addr && addr < bb->addr + bb->size) {
+			rz_core_seek(core, addr, true);
+			break;
+		}
+	}
+}
+
+/**
+ * \brief Displays the available themes and sets the chosen theme.
+ *
+ * \param core The RzCore instance.
+ */
+static void view_and_set_theme(RZ_NONNULL RzCore *core) {
+	rz_return_if_fail(core);
+	RzList *themes = rz_core_theme_list(core);
+	char *themes_str = rz_str_list_join(themes, "\n");
+	themes_str = rz_str_append(themes_str, "\n");
+	rz_list_free(themes);
+	rz_cons_println(themes_str);
+	rz_cons_flush();
+	RZ_FREE(themes_str);
+	char *input = rz_cons_input("Choose A Theme: ");
+	if (RZ_STR_ISEMPTY(input)) {
+		return;
+	}
+	rz_core_theme_load(core, input);
+	RZ_FREE(input);
+}
+
 RZ_IPI void rz_core_visual_browse(RzCore *core, const char *input) {
 	const char *browsemsg =
 		"Browse stuff:\n"
@@ -1989,13 +2056,13 @@ RZ_IPI void rz_core_visual_browse(RzCore *core, const char *input) {
 			rz_core_visual_comments(core);
 			break;
 		case 'T': // "vbT"
-			rz_core_cmd0(core, "eco $(eco~...)");
+			view_and_set_theme(core);
 			break;
 		case 'p':
 			rz_debug_switch_to_first_thread(core->dbg);
 			break;
 		case 'b':
-			rz_core_cmd0(core, "s $(afb~...)");
+			view_and_seek_to_bb(core);
 			break;
 		case 'i':
 			// XXX ii shows index first and iiq shows no offset :(

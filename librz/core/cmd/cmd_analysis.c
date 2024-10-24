@@ -2095,7 +2095,11 @@ RZ_IPI RzCmdStatus rz_analysis_function_blocks_list_handler(RzCore *core, int ar
 	if (!fcn) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_core_analysis_bbs_info_print(core, fcn, state);
+	char *info = rz_core_analysis_bbs_as_string(core, fcn, state);
+	if (info) {
+		rz_cons_println(info);
+		RZ_FREE(info);
+	}
 	return RZ_CMD_STATUS_OK;
 }
 
