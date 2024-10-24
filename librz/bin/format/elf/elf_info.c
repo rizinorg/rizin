@@ -221,6 +221,7 @@ static const struct machine_name_translation machine_name_translation_table[] = 
 	{ EM_AMDGPU, "AMD GPU architecture" },
 	{ EM_BPF, "Linux BPF" },
 	{ EM_KVX, "Kalray VLIW core of the MPPA processor family" },
+	{ EM_ALPHA, "DEC Alpha" },
 };
 
 static const struct class_translation class_translation_table[] = {
@@ -242,6 +243,7 @@ static const struct cpu_mips_translation cpu_mips_translation_table[] = {
 };
 
 static const struct arch_translation arch_translation_table[] = {
+	{ EM_ALPHA, "alpha" },
 	{ EM_ARC, "arc" },
 	{ EM_ARC_A5, "arc" },
 	{ EM_AVR, "avr" },

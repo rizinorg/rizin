@@ -271,6 +271,24 @@ static ut64 get_import_addr_arm(ELFOBJ *bin, RzBinElfReloc *rel) {
 	return UT64_MAX;
 }
 
+static ut64 get_import_addr_alpha(ELFOBJ *bin, RzBinElfReloc *rel) {
+	if (rel->type != RZ_ALPHA_JMP_SLOT) {
+		RZ_LOG_WARN("Unknown alpha reloc type %d\n", rel->type);
+		return UT64_MAX;
+	}
+	ut64 got_addr;
+	if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_PLTGOT, &got_addr)) {
+		return UT64_MAX;
+	}
+	ut64 plt_addr = get_got_entry(bin, rel);
+	if (plt_addr == UT64_MAX) {
+		return UT64_MAX;
+	}
+
+	const ut64 pos = COMPUTE_PLTGOT_POSITION(rel, got_addr, 0x3);
+	return plt_addr + pos * 16 + 32;
+}
+
 /**
  * \brief Determines and returns the import address for the given relocation.
  *
@@ -284,6 +302,8 @@ static ut64 get_import_addr_aux(ELFOBJ *bin, RzBinElfReloc *reloc) {
 	case EM_ARM:
 	case EM_AARCH64:
 		return get_import_addr_arm(bin, reloc);
+	case EM_ALPHA:
+		return get_import_addr_alpha(bin, reloc);
 	case EM_MIPS: // MIPS32 BIG ENDIAN relocs
 		return get_import_addr_mips(bin, reloc);
 	case EM_RISCV:
