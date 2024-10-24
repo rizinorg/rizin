@@ -290,7 +290,7 @@ static const RzCmdDescHelp dex_usage = {
 static_description_without_args(dexs, "prints the dex structure");
 static_description_without_args(dexe, "prints the dex exported methods");
 
-static bool rz_cmd_dex_init_handler(RzCore *core) {
+static bool rz_cmd_dex_init_handler(RzCore *core, void **private_data) {
 	RzCmd *rcmd = core->rcmd;
 	RzCmdDesc *root_cd = rz_cmd_get_root(rcmd);
 	if (!root_cd) {
@@ -309,7 +309,7 @@ static bool rz_cmd_dex_init_handler(RzCore *core) {
 	return true;
 }
 
-static bool rz_cmd_dex_fini_handler(RzCore *core) {
+static bool rz_cmd_dex_fini_handler(RzCore *core, void **private_data) {
 	RzCmd *rcmd = core->rcmd;
 	RzCmdDesc *cd = rz_cmd_get_desc(rcmd, "dex");
 	rz_return_val_if_fail(cd, false);
@@ -324,6 +324,7 @@ RzCorePlugin rz_core_plugin_dex = {
 	.version = "1.0",
 	.init = rz_cmd_dex_init_handler,
 	.fini = rz_cmd_dex_fini_handler,
+	.get_config = NULL,
 };
 
 #ifndef RZ_PLUGIN_INCORE

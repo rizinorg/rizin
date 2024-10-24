@@ -352,7 +352,7 @@ static void print_all_plugin_configs(const RzCore *core) {
 	RzConfig **cfg;
 	RzCmdStateOutput state = { 0 };
 	rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET);
-	RzIterator *it = ht_sp_as_iter(core->plugin_configs);
+	RzIterator *it = ht_sp_as_iter(core->plugins_config);
 	rz_iterator_foreach(it, cfg) {
 		rz_core_config_print_all(*cfg, "", &state);
 	}
@@ -376,10 +376,10 @@ static RZ_BORROW RzConfig *eval_get_config_obj_by_key(const RzCore *core, const 
 	const char *second_dot = strchr(first_dot + 1, '.');
 	bool cfg_found = false;
 	if (!second_dot) {
-		cfg = ht_sp_find(core->plugin_configs, first_dot + 1, &cfg_found);
+		cfg = ht_sp_find(core->plugins_config, first_dot + 1, &cfg_found);
 	} else {
 		char *config_name = rz_sub_str_ptr(config_str, first_dot + 1, second_dot - 1);
-		cfg = ht_sp_find(core->plugin_configs, config_name, &cfg_found);
+		cfg = ht_sp_find(core->plugins_config, config_name, &cfg_found);
 		free(config_name);
 	}
 	if (!cfg_found) {

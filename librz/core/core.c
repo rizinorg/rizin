@@ -1508,7 +1508,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->cmdremote = 0;
 	core->incomment = false;
 	core->config = NULL;
-	core->plugin_configs = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_config_free);
+	core->plugins_config = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_config_free);
 	core->http_up = false;
 	ZERO_FILL(core->root_cmd_descriptor);
 	core->print = rz_print_new();
