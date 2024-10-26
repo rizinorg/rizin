@@ -79,6 +79,17 @@ if is_static_build
   endif
 endif
 
+# These two warnings enum compare and conversion are necessary for the Capstone compatibility header.
+# Newer compilers will warn about the comparison of different enums (arm64 and aarch64) in the header.
+# Hence, we have to disable them for the newer once.
+# Older compilers don't have these warnings and should not be included with #pragma
+if cc.has_argument('-Wenum-conversion')
+  add_global_arguments('-DCC_SUPPORTS_W_ENUM_CONVERION', language: ['c', 'cpp'])
+endif
+if cc.has_argument('-Wenum-compare')
+  add_global_arguments('-DCC_SUPPORTS_W_ENUM_COMPARE', language: ['c', 'cpp'])
+endif
+
 if cc.has_argument('--std=gnu99')
   add_global_arguments('--std=gnu99', language: ['c', 'cpp'])
 elif cc.has_argument('--std=c99')
