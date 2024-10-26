@@ -15,6 +15,12 @@ commands:
       - name: perm
         type: RZ_CMD_ARG_TYPE_STRING
         optional: true
+    details:
+      - name: Examples
+        entries:
+          - text: "o"
+            arg_str: " myfile.exe"
+            comment: Open myfile.exe file in read-only mode
   - name: o+
     cname: open_write
     summary: Open <file> in write mode
@@ -27,6 +33,12 @@ commands:
       - name: perm
         type: RZ_CMD_ARG_TYPE_STRING
         optional: true
+    details:
+      - name: Examples
+        entries:
+          - text: "o+"
+            arg_str: " myfile.exe"
+            comment: Open myfile.exe file in read-write mode
   - name: ol
     cname: open_list
     summary: List opened files
@@ -37,6 +49,13 @@ commands:
       - RZ_OUTPUT_MODE_QUIET
       - RZ_OUTPUT_MODE_JSON
       - RZ_OUTPUT_MODE_TABLE
+    details:
+      - name: Examples
+        entries:
+          - text: "ol"
+            comment: List all opened files
+          - text: "olj"
+            comment: List all opened files in JSON mode
   - name: ol.
     cname: open_show_current
     summary: Show currently opened file
@@ -47,12 +66,23 @@ commands:
       - RZ_OUTPUT_MODE_QUIET
       - RZ_OUTPUT_MODE_JSON
       - RZ_OUTPUT_MODE_TABLE
+    details:
+      - name: Examples
+        entries:
+          - text: "ol.j"
+            comment: Show currently opened file in JSON mode
   - name: o-
     cname: open_close
     summary: Close file descriptor
     args:
       - name: fd
         type: RZ_CMD_ARG_TYPE_NUM
+    details:
+      - name: Examples
+        entries:
+          - text: "o-"
+            arg_str: " 3"
+            comment: Close the file with file descriptor 3
   - name: o--
     cname: open_close_all
     summary: Close all files
@@ -69,6 +99,12 @@ commands:
     args:
       - name: len
         type: RZ_CMD_ARG_TYPE_RZNUM
+    details:
+      - name: Examples
+        entries:
+          - text: "oC"
+            arg_str: " 100"
+            comment: Open a `malloc://100` file, copying first 100 bytes from current file offset
   - name: "on"
     summary: Open files without parsing binary info
     subcommands:
@@ -84,6 +120,12 @@ commands:
           - name: perm
             type: RZ_CMD_ARG_TYPE_STRING
             optional: true
+        details:
+          - name: Examples
+            entries:
+              - text: "on"
+                arg_str: " myfile.exe"
+                comment: Open myfile.exe without parsing binary info
       - name: on+
         cname: open_nobin_write
         summary: Open <file> in write mode, without parsing binary info
@@ -96,6 +138,21 @@ commands:
           - name: perm
             type: RZ_CMD_ARG_TYPE_STRING
             optional: true
+        details:
+          - name: Examples
+            entries:
+              - text: "on+"
+                arg_str: " myfile.exe"
+                comment: Open myfile.exe in write mode, without parsing binary info
+    details:
+      - name: Examples
+        entries:
+          - text: "on"
+            arg_str: " myfile.exe"
+            comment: Open myfile.exe without parsing binary info
+          - text: "on+"
+            arg_str: " myfile.exe"
+            comment: Open myfile.exe in write mode, without parsing binary info
   - name: oo
     summary: Reopen current file
     subcommands:
@@ -106,6 +163,12 @@ commands:
           - name: fd
             type: RZ_CMD_ARG_TYPE_NUM
             optional: true
+        details:
+          - name: Examples
+            entries:
+              - text: "oo"
+                arg_str: " 3"
+                comment: Open file with file descriptor 3
       - name: oo+
         cname: reopen_write
         summary: Reopen current file or file <fd> in write mode
@@ -113,6 +176,12 @@ commands:
           - name: fd
             type: RZ_CMD_ARG_TYPE_NUM
             optional: true
+        details:
+          - name: Examples
+            entries:
+              - text: "oo+"
+                arg_str: " 3"
+                comment: Open file with file descriptor 3 in write mode
       - name: oob
         cname: reopen_binary
         summary: Reopen current file and reload binary information
@@ -120,10 +189,20 @@ commands:
           - name: baddr
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
+        details:
+          - name: Examples
+            entries:
+              - text: "oob"
+                comment: Reopen current file and reload binary information
       - name: ooc
         cname: reopen_core
         summary: Reopen current file as if restarting rizin
         args: []
+        details:
+          - name: Examples
+            entries:
+              - text: "ooc"
+                comment: Reopen current file as if restarting rizin
       - name: ood
         summary: Reopen current file in debug mode
         subcommands:
@@ -135,6 +214,11 @@ commands:
                 type: RZ_CMD_ARG_TYPE_STRING
                 flags: RZ_CMD_ARG_FLAG_ARRAY
                 optional: true
+            details:
+            - name: Examples
+              entries:
+                - text: "ood"
+                  comment: Reopen current file in debug mode
           - name: oodf
             cname: reopen_debug_file
             summary: Open <uri> in debug mode
@@ -144,16 +228,33 @@ commands:
               - name: addr
                 type: RZ_CMD_ARG_TYPE_RZNUM
                 optional: true
+            details:
+            - name: Examples
+              entries:
+                - text: "oodf"
+                  arg_str: " gdb://file"
+                  comment: Open gdb://file in debug mode
           - name: oodr
             cname: reopen_debug_rzrun
             summary: Reopen current file in debug mode with given rz-run directives
             args:
               - name: rz-run-directives
                 type: RZ_CMD_ARG_TYPE_STRING
+            details:
+            - name: Examples
+              entries:
+                - text: "oodr"
+                  arg_str: " stdin=myfile.txt"
+                  comment: Reopen current file in debug mode with given "stdin" rz-run directive
       - name: oom
         cname: reopen_malloc
         summary: Reopen curent file in malloc://
         args: []
+        details:
+          - name: Examples
+            entries:
+              - text: "oom"
+                comment: Reopen curent file in malloc://
       - name: oon
         cname: reopen_nobin
         summary: Reopen curent file without loading binary information
@@ -170,6 +271,14 @@ commands:
         cname: reopen_nobin_write_headers
         summary: Reopen curent file in write-mode without loading binary information but with header flags
         args: []
+    details:
+      - name: Examples
+        entries:
+          - text: "oo"
+            comment: Reopen current file
+          - text: "oo"
+            arg_str: " 3"
+            comment: Open file with file descriptor 3
   - name: oL
     cname: open_plugins
     handler: plugins_io_print
@@ -184,6 +293,11 @@ commands:
       - RZ_OUTPUT_MODE_TABLE
       - RZ_OUTPUT_MODE_JSON
       - RZ_OUTPUT_MODE_QUIET
+    details:
+      - name: Examples
+        entries:
+          - text: "oLj"
+            comment: List all IO plugins in JSON format
   - name: o=
     cname: open_list_ascii
     summary: List opened files in ASCII-art bars
@@ -199,6 +313,12 @@ commands:
       - name: filename
         type: RZ_CMD_ARG_TYPE_FILE
         optional: true
+    details:
+      - name: Examples
+        entries:
+          - text: "oa"
+            arg_str: " arm 64"
+            comment: specify arm64 for the current open file
   - name: ob
     summary: Handle binary files
     subcommands:
@@ -208,18 +328,36 @@ commands:
         args:
           - name: id
             type: RZ_CMD_ARG_TYPE_NUM
+        details:
+          - name: Examples
+            entries:
+              - text: "ob"
+                arg_str: " 1"
+                comment: Switch to binary file with id 1
       - name: obo
         cname: open_binary_select_fd
         summary: Switch to binary file with the given <fd>
         args:
           - name: fd
             type: RZ_CMD_ARG_TYPE_NUM
+        details:
+          - name: Examples
+            entries:
+              - text: "obo"
+                arg_str: " 3"
+                comment: Switch to binary file with file descriptor 3
       - name: ob-
         cname: open_binary_del
         summary: Delete binary file with the given <id>
         args:
           - name: id
             type: RZ_CMD_ARG_TYPE_NUM
+        details:
+          - name: Examples
+            entries:
+              - text: "ob-"
+                arg_str: " 1"
+                comment: Delete binary file with id 1
       - name: ob-*
         cname: open_binary_del_all
         summary: Delete all binary files
@@ -249,6 +387,12 @@ commands:
           - name: loadaddr
             type: RZ_CMD_ARG_TYPE_RZNUM
             default_value: 0
+        details:
+          - name: Examples
+            entries:
+              - text: "oba"
+                arg_str: " <0xaddr>"
+                comment: Open binary file for current file and load binary info with baseaddr at <0xaddr>
       - name: obf
         cname: open_binary_file
         summary: Load binary info for the given file or current one with baseaddr at current offset
@@ -256,12 +400,24 @@ commands:
           - name: file
             type: RZ_CMD_ARG_TYPE_FILE
             optional: true
+        details:
+          - name: Examples
+            entries:
+              - text: "obf"
+                arg_str: " myfile.exe"
+                comment: Load binary info for myfile.exe with baseaddr at current offset
       - name: obr
         cname: open_binary_rebase
         summary: Rebase current bin object
         args:
           - name: baddr
             type: RZ_CMD_ARG_TYPE_RZNUM
+        details:
+          - name: Examples
+            entries:
+              - text: "obr"
+                arg_str: " <0xaddr>"
+                comment: Rebase current bin object with baseaddr <0xaddr>
       - name: obR
         cname: open_binary_reload
         summary: Reload the current buffer for setting of the bin (use once only)
@@ -269,12 +425,29 @@ commands:
           - name: baddr
             type: RZ_CMD_ARG_TYPE_RZNUM
             default_value: 0
+        details:
+          - name: Examples
+            entries:
+              - text: "obR"
+                comment: Reload the current buffer for setting of the bin (use once only)
+    details:
+      - name: Examples
+        entries:
+          - text: "ob"
+            arg_str: " 1"
+            comment: Switch to binary file with id 1
   - name: ou
     cname: open_use
     summary: Use specified <fd>
     args:
       - name: fd
         type: RZ_CMD_ARG_TYPE_NUM
+    details:
+      - name: Examples
+        entries:
+          - text: "ou"
+            arg_str: " 6"
+            comment: Use file descriptor 6
   - name: op
     summary: Select prioritized file
     subcommands:
@@ -284,6 +457,12 @@ commands:
         args:
           - name: fd
             type: RZ_CMD_ARG_TYPE_NUM
+        details:
+          - name: Examples
+            entries:
+              - text: "op"
+                arg_str: " 6"
+                comment: Prioritize file with file descriptor 6
       - name: opn
         cname: open_prioritize_next
         summary: Prioritize next file in the list
@@ -296,6 +475,12 @@ commands:
         cname: open_prioritize_next_rotate
         summary: Prioritize next file in the list (go back to first if on the last)
         args: []
+    details:
+      - name: Examples
+        entries:
+          - text: "op"
+            arg_str: " 6"
+            comment: Prioritize file with file descriptor 6
   - name: om
     summary: Handle IO maps
     subcommands:
@@ -319,9 +504,15 @@ commands:
           - name: name
             type: RZ_CMD_ARG_TYPE_STRING
             optional: true
+        details:
+          - name: Examples
+            entries:
+              - text: "om"
+                arg_str: " 3 0x75000000 0x200 0x200 r--"
+                comment: Create a new map for file descriptor 3 with vaddr->0x75000000 size->0x200 paddr->0x200 and flags->r--
       - name: oml
         cname: open_maps_list
-        summary: List maps of all file descriptor or only the specified <fd>
+        summary: List maps of all file descriptors or only the specified <fd>
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
           - RZ_OUTPUT_MODE_QUIET
@@ -333,6 +524,11 @@ commands:
           - name: fd
             type: RZ_CMD_ARG_TYPE_NUM
             optional: true
+        details:
+          - name: Examples
+            entries:
+              - text: "oml"
+                comment: List maps of all file descriptors
       - name: oml.
         cname: open_maps_list_cur
         summary: Show map at the current offset
@@ -354,6 +550,12 @@ commands:
         args:
           - name: id
             type: RZ_CMD_ARG_TYPE_NUM
+        details:
+          - name: Examples
+            entries:
+              - text: "om-"
+                arg_str: " 4"
+                comment: Remove the IO map with id 4
       - name: om-*
         cname: open_maps_remove_all
         summary: Remove all IO maps
@@ -365,6 +567,12 @@ commands:
           - name: fd
             type: RZ_CMD_ARG_TYPE_NUM
             optional: true
+        details:
+          - name: Examples
+            entries:
+              - text: "oma"
+                arg_str: " 3"
+                comment: Create a IO map covering all VA for file descriptor 3
       - name: omb
         cname: open_maps_relocate
         summary: Relocate map with corresponding <id> to <addr>
@@ -373,12 +581,24 @@ commands:
             type: RZ_CMD_ARG_TYPE_NUM
           - name: addr
             type: RZ_CMD_ARG_TYPE_RZNUM
+        details:
+          - name: Examples
+            entries:
+              - text: "omb"
+                arg_str: " 4 0x200400000"
+                comment: Relocate map with id 4 to address 0x200400000
       - name: omb.
         cname: open_maps_relocate_current
         summary: Relocate map at current offset to <addr>
         args:
           - name: addr
             type: RZ_CMD_ARG_TYPE_RZNUM
+        details:
+          - name: Examples
+            entries:
+              - text: "omb."
+                arg_str: " 0x200400000"
+                comment: Relocate map at current offset to address 0x200400000
       - name: omf
         cname: open_maps_flags
         summary: Change flags/perms for map with given <id> or current one
@@ -388,6 +608,12 @@ commands:
           - name: id
             type: RZ_CMD_ARG_TYPE_NUM
             optional: true
+        details:
+          - name: Examples
+            entries:
+              - text: "omf"
+                arg_str: " w 1"
+                comment: Change flags/perms for map with id 1
       - name: omfg
         cname: open_maps_flags_global
         summary: Change flags/perms for all maps
@@ -399,6 +625,12 @@ commands:
         args:
           - name: flags
             type: RZ_CMD_ARG_TYPE_STRING
+        details:
+          - name: Examples
+            entries:
+              - text: "omfg"
+                arg_str: " w"
+                comment: Change flags/perms for all maps to -w-
       - name: omm
         cname: open_maps_map_fd
         summary: Create default map for given <fd> or current one
@@ -406,6 +638,12 @@ commands:
           - name: fd
             type: RZ_CMD_ARG_TYPE_NUM
             optional: true
+        details:
+          - name: Examples
+            entries:
+              - text: "omm"
+                arg_str: " 3"
+                comment: Create default map for file descriptor 3
       - name: omn
         summary: Handle maps names
         subcommands:
@@ -415,6 +653,12 @@ commands:
             args:
               - name: name
                 type: RZ_CMD_ARG_TYPE_STRING
+            details:
+              - name: Examples
+                entries:
+                  - text: "omn"
+                    arg_str: " mymap"
+                    comment: Set name of map which spans current seek to mymap
           - name: omn-
             cname: open_maps_name_del
             summary: Delete name of map which spans current seek
@@ -427,12 +671,33 @@ commands:
                 type: RZ_CMD_ARG_TYPE_NUM
               - name: name
                 type: RZ_CMD_ARG_TYPE_STRING
+            details:
+              - name: Examples
+                entries:
+                  - text: "omni"
+                    arg_str: " 4 mymap"
+                    comment: Set name of map with id 4 to mymap
           - name: omni-
             cname: open_maps_name_id_del
             summary: Delete name of map with map <id>
             args:
               - name: id
                 type: RZ_CMD_ARG_TYPE_NUM
+            details:
+              - name: Examples
+                entries:
+                  - text: "omni-"
+                    arg_str: " 4"
+                    comment: Delete name of map with id 4
+        details:
+          - name: Examples
+            entries:
+              - text: "omni"
+                arg_str: " 4 mymap"
+                comment: Set name of map with id 4 to mymap
+              - text: "omni-"
+                arg_str: " 4"
+                comment: Delete name of map with id 4
       - name: omr
         cname: open_maps_resize
         summary: Resize map with corresponding <id>
@@ -441,6 +706,12 @@ commands:
             type: RZ_CMD_ARG_TYPE_NUM
           - name: newsize
             type: RZ_CMD_ARG_TYPE_RZNUM
+        details:
+          - name: Examples
+            entries:
+              - text: "omr"
+                arg_str: " 4 0x1000"
+                comment: Resize map with id 4
       - name: omp
         summary: Prioritize maps
         subcommands:
@@ -450,24 +721,60 @@ commands:
             args:
               - name: id
                 type: RZ_CMD_ARG_TYPE_NUM
+            details:
+              - name: Examples
+                entries:
+                  - text: "omp"
+                    arg_str: " 4"
+                    comment: Prioritize map with id 4
           - name: ompb
             cname: open_maps_prioritize_binid
             summary: Prioritize maps of the bin associated with the binid
             args:
               - name: fd
                 type: RZ_CMD_ARG_TYPE_NUM
+            details:
+              - name: Examples
+                entries:
+                  - text: "ompb"
+                    arg_str: " 1"
+                    comment: Prioritize maps of the bin associated with the binid 1
           - name: ompd
             cname: open_maps_deprioritize
             summary: Deprioritize map with the corresponding id
             args:
               - name: id
                 type: RZ_CMD_ARG_TYPE_NUM
+            details:
+              - name: Examples
+                entries:
+                  - text: "ompd"
+                    arg_str: " 1"
+                    comment: Deprioritize map with id 1
           - name: ompf
             cname: open_maps_prioritize_fd
             summary: Prioritize map by fd
             args:
               - name: fd
                 type: RZ_CMD_ARG_TYPE_NUM
+            details:
+              - name: Examples
+                entries:
+                  - text: "ompf"
+                    arg_str: " 7"
+                    comment: Prioritize map by file descriptor 7
+        details:
+          - name: Examples
+            entries:
+              - text: "omp"
+                arg_str: " 4"
+                comment: Prioritize map with id 4
+    details:
+      - name: Examples
+        entries:
+          - text: "om"
+            arg_str: " 3 0x75000000 0x200 0x200 r--"
+            comment: Create a new map for file descriptor 3 with vaddr->0x75000000 size->0x200 paddr->0x200 and flags->r--
   - name: ox
     cname: open_exchange
     summary: Exchange the descs of <fd> and <fdx> and keep the mapping
@@ -476,3 +783,9 @@ commands:
         type: RZ_CMD_ARG_TYPE_NUM
       - name: fdx
         type: RZ_CMD_ARG_TYPE_NUM
+    details:
+      - name: Examples
+        entries:
+          - text: "ox"
+            arg_str: " 3 7"
+            comment: Exchange the descs of 3 and 7 and keep the mapping
