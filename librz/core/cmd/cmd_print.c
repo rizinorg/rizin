@@ -3275,16 +3275,22 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_n_bytes_handler(RzCore *core, int argc, co
 }
 
 RZ_IPI RzCmdStatus rz_cmd_disassembly_n_instructions_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	int n_instrs = 0;
 	if (argc <= 1) {
-		RZ_LOG_ERROR("Invalid number of arguments\n");
-		return RZ_CMD_STATUS_ERROR;
+		// when no arg, we always use the rows number of the terminal
+		// no args must be always positive, if is not we use 16
+		n_instrs = rz_num_get(core->num, "$r");
+		if (n_instrs < 1) {
+			n_instrs = 16;
+		}
+	} else {
+		n_instrs = (int)rz_num_math(core->num, argv[1]);
+		if (n_instrs == 0) {
+			RZ_LOG_ERROR("The argument cannot be zero\n");
+			return RZ_CMD_STATUS_ERROR;
+		}
 	}
-	int n_instrs = (int)rz_num_math(core->num, argv[1]);
-	if (n_instrs == 0) {
-		RZ_LOG_ERROR("The argument cannot be zero\n");
-		return RZ_CMD_STATUS_ERROR;
-	}
-	return bool2status(core_disassembly(core, argc > 1 && n_instrs == 0 ? 0 : (int)core->blocksize, n_instrs, state, false));
+	return bool2status(core_disassembly(core, argc > 1 ? (int)core->blocksize : 0, n_instrs, state, false));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_disassembly_all_possible_opcodes_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
