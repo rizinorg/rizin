@@ -3,8 +3,15 @@
 
 #include <rz_analysis.h>
 #include <rz_lib.h>
+
+#if CC_SUPPORTS_W_ENUM_COMPARE
 #pragma GCC diagnostic ignored "-Wenum-compare"
+#endif
+
+#ifdef CC_SUPPORTS_W_ENUM_CONVERION
 #pragma GCC diagnostic ignored "-Wenum-conversion"
+#endif
+
 #define CAPSTONE_SYSTEMZ_COMPAT_HEADER
 #include <capstone/capstone.h>
 #include <capstone/systemz.h>
