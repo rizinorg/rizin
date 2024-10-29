@@ -6,7 +6,9 @@
 
 #include <rz_types.h>
 #include <rz_list.h>
+#include <rz_util/ht_sp.h>
 #include <rz_util/rz_mem.h>
+#include <rz_util/rz_str.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,7 +41,7 @@ typedef struct rz_hash_plugin_t {
 } RzHashPlugin;
 
 typedef struct rz_hash_t {
-	RzList /*<RzHashPlugin *>*/ *plugins;
+	HtSP /*<RzHashPlugin *>*/ *plugins;
 } RzHash;
 
 typedef struct rz_hash_cfg_t {
@@ -48,13 +50,26 @@ typedef struct rz_hash_cfg_t {
 	RzHash *hash;
 } RzHashCfg;
 
+/**
+ * \brief Compare plugins by name (via strcmp).
+ */
+static inline int rz_hash_plugin_cmp(RZ_NULLABLE const RzHashPlugin *a, RZ_NULLABLE const RzHashPlugin *b) {
+	if (!a && !b) {
+		return 0;
+	} else if (!a) {
+		return -1;
+	} else if (!b) {
+		return 1;
+	}
+	return rz_str_cmp(a->name, b->name, -1);
+}
+
 #ifdef RZ_API
 
 RZ_API RzHash *rz_hash_new(void);
 RZ_API void rz_hash_free(RZ_NULLABLE RzHash *rh);
 RZ_API bool rz_hash_plugin_add(RZ_NONNULL RzHash *rh, RZ_NONNULL RZ_OWN RzHashPlugin *plugin);
 RZ_API bool rz_hash_plugin_del(RZ_NONNULL RzHash *rh, RZ_NONNULL RzHashPlugin *plugin);
-RZ_API RZ_BORROW const RzHashPlugin *rz_hash_plugin_by_index(RZ_NONNULL RzHash *rh, size_t index);
 RZ_API RZ_BORROW const RzHashPlugin *rz_hash_plugin_by_name(RZ_NONNULL RzHash *rh, RZ_NONNULL const char *name);
 
 RZ_API RZ_OWN RzHashCfg *rz_hash_cfg_new(RZ_NONNULL RzHash *rh);

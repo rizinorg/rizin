@@ -7,10 +7,10 @@ EXPECT=<<EOF
 2  ---  dmp      LGPL3
 3  ---  gdb      LGPL3
 4  ---  io       MIT
-5  ---  null     MIT
-6  ---  rap      LGPL3
-7  ---  winkd    LGPL3
-8  ---  qnx      LGPL3
-9  dbg  native   LGPL3
+5  dbg  native   LGPL3
+6  ---  null     MIT
+7  ---  qnx      LGPL3
+8  ---  rap      LGPL3
+9  ---  winkd    LGPL3
 EOF
 RUN

@@ -108,7 +108,7 @@ typedef struct rz_asm_t {
 	ut64 pc;
 	_RzAsmPlugin *cur;
 	_RzAsmPlugin *acur;
-	RzList /*<RzAsmPlugin *>*/ *plugins;
+	HtSP /*<RzAsmPlugin *>*/ *plugins;
 	RzBinBind binb;
 	RzParse *ifilter;
 	RzParse *ofilter;
@@ -149,6 +149,20 @@ typedef struct rz_asm_plugin_t {
 	const char *platforms;
 } RzAsmPlugin;
 
+/**
+ * \brief Compare plugins by name (via strcmp).
+ */
+static inline int rz_asm_plugin_cmp(RZ_NULLABLE const RzAsmPlugin *a, RZ_NULLABLE const RzAsmPlugin *b) {
+	if (!a && !b) {
+		return 0;
+	} else if (!a) {
+		return -1;
+	} else if (!b) {
+		return 1;
+	}
+	return rz_str_cmp(a->name, b->name, -1);
+}
+
 #ifdef RZ_API
 /* asm.c */
 RZ_API RzAsm *rz_asm_new(void);
@@ -159,7 +173,7 @@ RZ_API bool rz_asm_plugin_add(RzAsm *a, RZ_NONNULL RzAsmPlugin *foo);
 RZ_API bool rz_asm_plugin_del(RzAsm *a, RZ_NONNULL RzAsmPlugin *foo);
 RZ_API bool rz_asm_setup(RzAsm *a, const char *arch, int bits, int big_endian);
 RZ_API bool rz_asm_is_valid(RzAsm *a, const char *name);
-RZ_API bool rz_asm_use(RzAsm *a, const char *name);
+RZ_API bool rz_asm_use(RzAsm *a, RZ_NULLABLE const char *name);
 RZ_API bool rz_asm_use_assembler(RzAsm *a, const char *name);
 RZ_API bool rz_asm_set_arch(RzAsm *a, const char *name, int bits);
 RZ_DEPRECATE RZ_API int rz_asm_set_bits(RzAsm *a, int bits);
@@ -180,7 +194,7 @@ RZ_API ut8 *rz_asm_from_string(RzAsm *a, ut64 addr, const char *b, int *l);
 RZ_API int rz_asm_sub_names_input(RzAsm *a, const char *f);
 RZ_API int rz_asm_sub_names_output(RzAsm *a, const char *f);
 RZ_API char *rz_asm_describe(RzAsm *a, const char *str);
-RZ_API RzList /*<RzAsmPlugin *>*/ *rz_asm_get_plugins(RzAsm *a);
+RZ_API RZ_BORROW HtSP /*<RzAsmPlugin *>*/ *rz_asm_get_plugins(RZ_BORROW RZ_NONNULL RzAsm *a);
 RZ_API void rz_asm_list_directives(void);
 
 /* code.c */

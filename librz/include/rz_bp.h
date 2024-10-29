@@ -84,7 +84,7 @@ typedef struct rz_bp_t {
 	RzIOBind iob; // compile time dependency
 	RzBreakpointPlugin *cur;
 	RzList /*<RzBreakpointTrace *>*/ *traces; // XXX
-	RzList /*<RzBreakpointPlugin *>*/ *plugins;
+	HtSP /*<RzBreakpointPlugin *>*/ *plugins;
 	PrintfCallback cb_printf;
 	RzBreakpointCallback breakpoint;
 	/* storage of breakpoints */
@@ -106,6 +106,20 @@ typedef struct rz_bp_trace_t {
 	int bitlen;
 } RzBreakpointTrace;
 
+/**
+ * \brief Compare plugins by name (via strcmp).
+ */
+static inline int rz_breakpoint_plugin_cmp(RZ_NULLABLE const RzBreakpointPlugin *a, RZ_NULLABLE const RzBreakpointPlugin *b) {
+	if (!a && !b) {
+		return 0;
+	} else if (!a) {
+		return -1;
+	} else if (!b) {
+		return 1;
+	}
+	return rz_str_cmp(a->name, b->name, -1);
+}
+
 #ifdef RZ_API
 RZ_API RzBreakpoint *rz_bp_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *ctx);
 RZ_API RzBreakpoint *rz_bp_free(RzBreakpoint *bp);
@@ -117,7 +131,7 @@ RZ_API bool rz_bp_plugin_add(RzBreakpoint *bp, RZ_BORROW RZ_NONNULL RzBreakpoint
 RZ_API bool rz_bp_plugin_del(RzBreakpoint *bp, RZ_BORROW RZ_NONNULL RzBreakpointPlugin *plugin);
 RZ_API int rz_bp_use(RZ_NONNULL RzBreakpoint *bp, RZ_NONNULL const char *name);
 RZ_API int rz_bp_plugin_del_byname(RzBreakpoint *bp, RZ_NONNULL const char *name);
-RZ_API void rz_bp_plugin_list(RzBreakpoint *bp);
+RZ_DEPRECATE RZ_API void rz_bp_plugin_print(RZ_NONNULL RzBreakpoint *bp);
 
 RZ_API int rz_bp_size(RZ_NONNULL RzBreakpoint *bp, int bits);
 RZ_API int rz_bp_size_at(RZ_NONNULL RzBreakpoint *bp, ut64 addr);

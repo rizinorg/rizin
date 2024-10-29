@@ -1017,8 +1017,18 @@ RZ_API bool rz_str_cmp_list(const char *list, const char *item, char sep) {
 	return true;
 }
 
-// like strncmp, but checking for null pointers
-RZ_API int rz_str_cmp(const char *a, const char *b, int len) {
+/**
+ * \brief Like strncmp, but checking for null pointers.
+ *
+ * \param a String a.
+ * \param b String b.
+ * \param len The number of characters to compare. If -1 it compares until the end.
+ *
+ * \return Negative value, if a < b
+ * \return 0, if a == b.
+ * \return Positive value, if a > b
+ */
+RZ_API int rz_str_cmp(RZ_NULLABLE const char *a, RZ_NULLABLE const char *b, int len) {
 	if ((a == b) || (!a && !b)) {
 		return 0;
 	}

@@ -3,8 +3,14 @@
 
 #include <rz_analysis.h>
 
+#if CC_SUPPORTS_W_ENUM_COMPARE
 #pragma GCC diagnostic ignored "-Wenum-compare"
+#endif
+
+#ifdef CC_SUPPORTS_W_ENUM_CONVERION
 #pragma GCC diagnostic ignored "-Wenum-conversion"
+#endif
+
 #define CAPSTONE_AARCH64_COMPAT_HEADER
 #include <capstone/capstone.h>
 
@@ -15,71 +21,71 @@
 #define MEMBASE64(x)  rz_str_get_null(cs_reg_name(*handle, insn->detail->arm64.operands[x].mem.base))
 #define MEMINDEX64(x) rz_str_get_null(cs_reg_name(*handle, insn->detail->arm64.operands[x].mem.index))
 
-RZ_IPI const char *rz_arm64_cs_esil_prefix_cond(RzAnalysisOp *op, ARM64CC_CondCode cond_type) {
+RZ_IPI const char *rz_arm64_cs_esil_prefix_cond(RzAnalysisOp *op, arm64_cc cond_type) {
 	const char *close_cond[2];
 	close_cond[0] = "";
 	close_cond[1] = ",}";
 	int close_type = 0;
 	switch (cond_type) {
-	case ARM64CC_EQ:
+	case ARM64_CC_EQ:
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "zf,?{,");
 		break;
-	case ARM64CC_NE:
+	case ARM64_CC_NE:
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "zf,!,?{,");
 		break;
-	case ARM64CC_HS:
+	case ARM64_CC_HS:
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "cf,?{,");
 		break;
-	case ARM64CC_LO:
+	case ARM64_CC_LO:
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "cf,!,?{,");
 		break;
-	case ARM64CC_MI:
+	case ARM64_CC_MI:
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "nf,?{,");
 		break;
-	case ARM64CC_PL:
+	case ARM64_CC_PL:
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "nf,!,?{,");
 		break;
-	case ARM64CC_VS:
+	case ARM64_CC_VS:
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "vf,?{,");
 		break;
-	case ARM64CC_VC:
+	case ARM64_CC_VC:
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "vf,!,?{,");
 		break;
-	case ARM64CC_HI:
+	case ARM64_CC_HI:
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "cf,zf,!,&,?{,");
 		break;
-	case ARM64CC_LS:
+	case ARM64_CC_LS:
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "cf,!,zf,|,?{,");
 		break;
-	case ARM64CC_GE:
+	case ARM64_CC_GE:
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "nf,vf,^,!,?{,");
 		break;
-	case ARM64CC_LT:
+	case ARM64_CC_LT:
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "nf,vf,^,?{,");
 		break;
-	case ARM64CC_GT:
+	case ARM64_CC_GT:
 		// zf == 0 && nf == vf
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "zf,!,nf,vf,^,!,&,?{,");
 		break;
-	case ARM64CC_LE:
+	case ARM64_CC_LE:
 		// zf == 1 || nf != vf
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "zf,nf,vf,^,|,?{,");
 		break;
-	case ARM64CC_AL:
+	case ARM64_CC_AL:
 		// always executed
 		break;
 	default:
@@ -129,7 +135,7 @@ static int arm64_reg_width(int reg) {
 	return 64;
 }
 
-static int decode_sign_ext(aarch64_extender extender) {
+static int decode_sign_ext(arm64_extender extender) {
 	switch (extender) {
 	case ARM64_EXT_UXTB:
 	case ARM64_EXT_UXTH:
@@ -153,7 +159,7 @@ static int decode_sign_ext(aarch64_extender extender) {
 
 #define EXT64(x) decode_sign_ext(insn->detail->arm64.operands[x].ext)
 
-static const char *decode_shift_64(aarch64_shifter shift) {
+static const char *decode_shift_64(arm64_shifter shift) {
 	const char *E_OP_SR = ">>";
 	const char *E_OP_SL = "<<";
 	const char *E_OP_RR = ">>>";

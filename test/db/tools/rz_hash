@@ -206,21 +206,48 @@ FILE==
 CMDS=!rz-hash -L
 EXPECT=<<EOF
 flags  algorithm      license    author
-____hm md2            LGPL3      swedenspy
-____hm md4            LGPL3      deroad
-____hm md5            LGPL2      Alan DeKok
-____hm sha1           LGPL3      deroad
-____hm sha256         BSD-3      Aaron D. Gifford
-____hm sha384         BSD-3      Aaron D. Gifford
-____hm sha512         BSD-3      Aaron D. Gifford
-____hm sm3            LGPL2      FSF/deroad
-____h_ blake3         CC0        Samuel Neves,Jack O'Connor
-____h_ fletcher8      LGPL3      deroad
-____h_ fletcher16     LGPL3      deroad
-____h_ fletcher32     LGPL3      deroad
-____h_ fletcher64     LGPL3      deroad
 ____h_ adler32        LGPL3      deroad
-____h_ crc8smbus      LGPL3      deroad
+____h_ blake3         CC0        Samuel Neves,Jack O'Connor
+____h_ crc15can       LGPL3      deroad
+____h_ crc16          LGPL3      deroad
+____h_ crc16augccitt  LGPL3      deroad
+____h_ crc16buypass   LGPL3      deroad
+____h_ crc16cdma2000  LGPL3      deroad
+____h_ crc16citt      LGPL3      deroad
+____h_ crc16dds110    LGPL3      deroad
+____h_ crc16dectr     LGPL3      deroad
+____h_ crc16dectx     LGPL3      deroad
+____h_ crc16dnp       LGPL3      deroad
+____h_ crc16en13757   LGPL3      deroad
+____h_ crc16genibus   LGPL3      deroad
+____h_ crc16hdlc      LGPL3      deroad
+____h_ crc16kermit    LGPL3      deroad
+____h_ crc16maxim     LGPL3      deroad
+____h_ crc16mcrf4xx   LGPL3      deroad
+____h_ crc16modbus    LGPL3      deroad
+____h_ crc16riello    LGPL3      deroad
+____h_ crc16t10dif    LGPL3      deroad
+____h_ crc16teledisk  LGPL3      deroad
+____h_ crc16tms37157  LGPL3      deroad
+____h_ crc16usb       LGPL3      deroad
+____h_ crc16x25       LGPL3      deroad
+____h_ crc16xmodem    LGPL3      deroad
+____h_ crc24          LGPL3      deroad
+____h_ crc32          LGPL3      deroad
+____h_ crc32bzip2     LGPL3      deroad
+____h_ crc32c         LGPL3      deroad
+____h_ crc32d         LGPL3      deroad
+____h_ crc32ecma267   LGPL3      deroad
+____h_ crc32jamcrc    LGPL3      deroad
+____h_ crc32mpeg2     LGPL3      deroad
+____h_ crc32posix     LGPL3      deroad
+____h_ crc32q         LGPL3      deroad
+____h_ crc32xfer      LGPL3      deroad
+____h_ crc64          LGPL3      deroad
+____h_ crc64ecma182   LGPL3      deroad
+____h_ crc64iso       LGPL3      deroad
+____h_ crc64we        LGPL3      deroad
+____h_ crc64xz        LGPL3      deroad
 ____h_ crc8cdma2000   LGPL3      deroad
 ____h_ crc8darc       LGPL3      deroad
 ____h_ crc8dvbs2      LGPL3      deroad
@@ -229,72 +256,45 @@ ____h_ crc8icode      LGPL3      deroad
 ____h_ crc8itu        LGPL3      deroad
 ____h_ crc8maxim      LGPL3      deroad
 ____h_ crc8rohc       LGPL3      deroad
+____h_ crc8smbus      LGPL3      deroad
 ____h_ crc8wcdma      LGPL3      deroad
-____h_ crc15can       LGPL3      deroad
-____h_ crc16          LGPL3      deroad
-____h_ crc16citt      LGPL3      deroad
-____h_ crc16usb       LGPL3      deroad
-____h_ crc16hdlc      LGPL3      deroad
-____h_ crc16augccitt  LGPL3      deroad
-____h_ crc16buypass   LGPL3      deroad
-____h_ crc16cdma2000  LGPL3      deroad
-____h_ crc16dds110    LGPL3      deroad
-____h_ crc16dectr     LGPL3      deroad
-____h_ crc16dectx     LGPL3      deroad
-____h_ crc16dnp       LGPL3      deroad
-____h_ crc16en13757   LGPL3      deroad
-____h_ crc16genibus   LGPL3      deroad
-____h_ crc16maxim     LGPL3      deroad
-____h_ crc16mcrf4xx   LGPL3      deroad
-____h_ crc16riello    LGPL3      deroad
-____h_ crc16t10dif    LGPL3      deroad
-____h_ crc16teledisk  LGPL3      deroad
-____h_ crc16tms37157  LGPL3      deroad
 ____h_ crca           LGPL3      deroad
-____h_ crc16kermit    LGPL3      deroad
-____h_ crc16modbus    LGPL3      deroad
-____h_ crc16x25       LGPL3      deroad
-____h_ crc16xmodem    LGPL3      deroad
-____h_ crc24          LGPL3      deroad
-____h_ crc32          LGPL3      deroad
-____h_ crc32ecma267   LGPL3      deroad
-____h_ crc32c         LGPL3      deroad
-____h_ crc32bzip2     LGPL3      deroad
-____h_ crc32d         LGPL3      deroad
-____h_ crc32mpeg2     LGPL3      deroad
-____h_ crc32posix     LGPL3      deroad
-____h_ crc32q         LGPL3      deroad
-____h_ crc32jamcrc    LGPL3      deroad
-____h_ crc32xfer      LGPL3      deroad
-____h_ crc64          LGPL3      deroad
-____h_ crc64ecma182   LGPL3      deroad
-____h_ crc64we        LGPL3      deroad
-____h_ crc64xz        LGPL3      deroad
-____h_ crc64iso       LGPL3      deroad
-____h_ xor8           LGPL3      deroad
-____h_ xor16          LGPL3      deroad
-____h_ xxhash32       LGPL3      deroad
-____h_ ssdeep         LGPL3      deroad
-____h_ parity         LGPL3      deroad
 ____h_ entropy        LGPL3      deroad
 ____h_ entropy_fract  LGPL3      deroad
-ED____ aes-ecb        LGPL3      Nettle project (algorithm implementation), pancake (plugin)
-ED____ aes-cbc        LGPL-3     rakholiyajenish.07
-__ed__ base64         LGPL-3     rakholiyajenish.07
-__ed__ base91         LGPL-3     rakholiyajenish.07
-ED____ blowfish       LGPL3      kishorbhat
-ED____ cps2           LGPL-3     pancake,esanfelix,pof
-ED____ des-ecb        LGPL-3     deroad
-__ed__ punycode       LGPL-3     pancake
-ED____ rc2            LGPL-3     lionaneesh
+____h_ fletcher16     LGPL3      deroad
+____h_ fletcher32     LGPL3      deroad
+____h_ fletcher64     LGPL3      deroad
+____h_ fletcher8      LGPL3      deroad
+____hm md2            LGPL3      swedenspy
+____hm md4            LGPL3      deroad
+____hm md5            LGPL2      Alan DeKok
+____h_ parity         LGPL3      deroad
+____hm sha1           LGPL3      deroad
+____hm sha256         BSD-3      Aaron D. Gifford
+____hm sha384         BSD-3      Aaron D. Gifford
+____hm sha512         BSD-3      Aaron D. Gifford
+____hm sm3            LGPL2      FSF/deroad
+____h_ ssdeep         LGPL3      deroad
+____h_ xor16          LGPL3      deroad
+____h_ xor8           LGPL3      deroad
+____h_ xxhash32       LGPL3      deroad
 ED____ rc4            LGPL-3     pancake
 ED____ rc6            LGPL-3     rakholiyajenish.07
-E_____ rol            LGPL-3     pancake
 _D____ ror            LGPL-3     pancake
-ED____ rot            LGPL-3     pancake
-ED____ serpent-ecb    LGPL-3     NicsTr
+__ed__ base64         LGPL-3     rakholiyajenish.07
 ED____ xor            LGPL-3     pancake
+ED____ rc2            LGPL-3     lionaneesh
+ED____ cps2           LGPL-3     pancake,esanfelix,pof
+ED____ rot            LGPL-3     pancake
+__ed__ punycode       LGPL-3     pancake
+ED____ serpent-ecb    LGPL-3     NicsTr
 ED____ sm4-ecb        LGPL-3     0xSh4dy
+ED____ aes-cbc        LGPL-3     rakholiyajenish.07
+E_____ rol            LGPL-3     pancake
+ED____ aes-ecb        LGPL3      Nettle project (algorithm implementation), pancake (plugin)
+ED____ des-ecb        LGPL-3     deroad
+ED____ blowfish       LGPL3      kishorbhat
+__ed__ base91         LGPL-3     rakholiyajenish.07
 
 flags legenda:
     E = encryption, D = decryption
@@ -676,21 +676,48 @@ NAME=rz-hash -c with all hash algorithms
 FILE==
 CMDS=!rz-hash -a all -s "admin" -c 21232f297a57a5a743894a0e4a801fc3
 EXPECT=<<EOF
-string: 0x00000000-0x00000005 md2: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 md4: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 md5: computed hash matches the expected one
-string: 0x00000000-0x00000005 sha1: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 sha256: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 sha384: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 sha512: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 sm3: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 blake3: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 fletcher8: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 fletcher16: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 fletcher32: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 fletcher64: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 adler32: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 crc8smbus: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 blake3: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 crc15can: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 crc16: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 crc16augccitt: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 crc16buypass: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 crc16cdma2000: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 crc16citt: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 crc16dds110: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 crc16dectr: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 crc16dectx: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 crc16dnp: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 crc16en13757: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 crc16genibus: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 crc16hdlc: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 crc16kermit: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 crc16maxim: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 crc16mcrf4xx: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 crc16modbus: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 crc16riello: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 crc16t10dif: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 crc16teledisk: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 crc16tms37157: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 crc16usb: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 crc16x25: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 crc16xmodem: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 crc24: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 crc32: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 crc32bzip2: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 crc32c: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 crc32d: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 crc32ecma267: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 crc32jamcrc: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 crc32mpeg2: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 crc32posix: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 crc32q: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 crc32xfer: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 crc64: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 crc64ecma182: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 crc64iso: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 crc64we: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 crc64xz: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 crc8cdma2000: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 crc8darc: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 crc8dvbs2: computed hash doesn't match the expected one
@@ -699,55 +726,28 @@ string: 0x00000000-0x00000005 crc8icode: computed hash doesn't match the expecte
 string: 0x00000000-0x00000005 crc8itu: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 crc8maxim: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 crc8rohc: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 crc8smbus: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 crc8wcdma: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 crc15can: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 crc16: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 crc16citt: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 crc16usb: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 crc16hdlc: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 crc16augccitt: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 crc16buypass: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 crc16cdma2000: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 crc16dds110: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 crc16dectr: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 crc16dectx: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 crc16dnp: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 crc16en13757: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 crc16genibus: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 crc16maxim: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 crc16mcrf4xx: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 crc16riello: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 crc16t10dif: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 crc16teledisk: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 crc16tms37157: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 crca: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 crc16kermit: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 crc16modbus: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 crc16x25: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 crc16xmodem: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 crc24: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 crc32: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 crc32ecma267: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 crc32c: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 crc32bzip2: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 crc32d: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 crc32mpeg2: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 crc32posix: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 crc32q: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 crc32jamcrc: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 crc32xfer: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 crc64: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 crc64ecma182: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 crc64we: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 crc64xz: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 crc64iso: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 xor8: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 xor16: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 xxhash32: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 ssdeep: computed hash doesn't match the expected one
-string: 0x00000000-0x00000005 parity: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 entropy: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 entropy_fract: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 fletcher16: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 fletcher32: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 fletcher64: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 fletcher8: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 md2: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 md4: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 md5: computed hash matches the expected one
+string: 0x00000000-0x00000005 parity: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 sha1: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 sha256: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 sha384: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 sha512: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 sm3: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 ssdeep: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 xor16: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 xor8: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 xxhash32: computed hash doesn't match the expected one
 EOF
 RUN
 

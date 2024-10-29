@@ -3,8 +3,14 @@
 
 #include <rz_analysis.h>
 
+#if CC_SUPPORTS_W_ENUM_COMPARE
 #pragma GCC diagnostic ignored "-Wenum-compare"
+#endif
+
+#ifdef CC_SUPPORTS_W_ENUM_CONVERION
 #pragma GCC diagnostic ignored "-Wenum-conversion"
+#endif
+
 #define CAPSTONE_AARCH64_COMPAT_HEADER
 #include <capstone/capstone.h>
 
@@ -39,35 +45,35 @@ static const char *regs_bound[] = {
  * IL for arm64 condition
  * unconditional is returned as NULL (rather than true), for simpler code
  */
-static RzILOpBool *cond(ARM64CC_CondCode c) {
+static RzILOpBool *cond(arm64_cc c) {
 	switch (c) {
-	case ARM64CC_EQ:
+	case ARM64_CC_EQ:
 		return VARG("zf");
-	case ARM64CC_NE:
+	case ARM64_CC_NE:
 		return INV(VARG("zf"));
-	case ARM64CC_HS:
+	case ARM64_CC_HS:
 		return VARG("cf");
-	case ARM64CC_LO:
+	case ARM64_CC_LO:
 		return INV(VARG("cf"));
-	case ARM64CC_MI:
+	case ARM64_CC_MI:
 		return VARG("nf");
-	case ARM64CC_PL:
+	case ARM64_CC_PL:
 		return INV(VARG("nf"));
-	case ARM64CC_VS:
+	case ARM64_CC_VS:
 		return VARG("vf");
-	case ARM64CC_VC:
+	case ARM64_CC_VC:
 		return INV(VARG("vf"));
-	case ARM64CC_HI:
+	case ARM64_CC_HI:
 		return AND(VARG("cf"), INV(VARG("zf")));
-	case ARM64CC_LS:
+	case ARM64_CC_LS:
 		return OR(INV(VARG("cf")), VARG("zf"));
-	case ARM64CC_GE:
+	case ARM64_CC_GE:
 		return INV(XOR(VARG("nf"), VARG("vf")));
-	case ARM64CC_LT:
+	case ARM64_CC_LT:
 		return XOR(VARG("nf"), VARG("vf"));
-	case ARM64CC_GT:
+	case ARM64_CC_GT:
 		return INV(OR(XOR(VARG("nf"), VARG("vf")), VARG("zf")));
-	case ARM64CC_LE:
+	case ARM64_CC_LE:
 		return OR(XOR(VARG("nf"), VARG("vf")), VARG("zf"));
 	default:
 		return NULL;

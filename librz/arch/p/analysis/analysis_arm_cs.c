@@ -5,8 +5,14 @@
 #include <rz_lib.h>
 #include <rz_util/ht_uu.h>
 
+#if CC_SUPPORTS_W_ENUM_COMPARE
 #pragma GCC diagnostic ignored "-Wenum-compare"
+#endif
+
+#ifdef CC_SUPPORTS_W_ENUM_CONVERION
 #pragma GCC diagnostic ignored "-Wenum-conversion"
+#endif
+
 #define CAPSTONE_AARCH64_COMPAT_HEADER
 #include <capstone/capstone.h>
 #include <capstone/arm.h>
@@ -187,11 +193,11 @@ static const char *vector_data_type_name(arm_vectordata_type type) {
 	}
 }
 
-static bool cc_holds_cond(ARM64CC_CondCode cc) {
+static bool cc_holds_cond(arm64_cc cc) {
 #if CS_NEXT_VERSION >= 6
 	return (cc != ARM64CC_Invalid && cc != ARM64CC_AL && cc != ARM64CC_NV);
 #else
-	return (cc != ARM64CC_INVALID && cc != ARM64CC_AL && cc != ARM64CC_NV);
+	return (cc != ARM64_CC_INVALID && cc != ARM64_CC_AL && cc != ARM64_CC_NV);
 #endif
 }
 
@@ -344,42 +350,42 @@ static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
 	pj_free(pj);
 }
 
-static const char *cc_name64(ARM64CC_CondCode cc) {
+static const char *cc_name64(arm64_cc cc) {
 	switch (cc) {
-	case ARM64CC_EQ: // Equal
+	case ARM64_CC_EQ: // Equal
 		return "eq";
-	case ARM64CC_NE: // Not equal:                 Not equal, or unordered
+	case ARM64_CC_NE: // Not equal:                 Not equal, or unordered
 		return "ne";
-	case ARM64CC_HS: // Unsigned higher or same:   >, ==, or unordered
+	case ARM64_CC_HS: // Unsigned higher or same:   >, ==, or unordered
 		return "hs";
-	case ARM64CC_LO: // Unsigned lower or same:    Less than
+	case ARM64_CC_LO: // Unsigned lower or same:    Less than
 		return "lo";
-	case ARM64CC_MI: // Minus, negative:           Less than
+	case ARM64_CC_MI: // Minus, negative:           Less than
 		return "mi";
-	case ARM64CC_PL: // Plus, positive or zero:    >, ==, or unordered
+	case ARM64_CC_PL: // Plus, positive or zero:    >, ==, or unordered
 		return "pl";
-	case ARM64CC_VS: // Overflow:                  Unordered
+	case ARM64_CC_VS: // Overflow:                  Unordered
 		return "vs";
-	case ARM64CC_VC: // No overflow:               Ordered
+	case ARM64_CC_VC: // No overflow:               Ordered
 		return "vc";
-	case ARM64CC_HI: // Unsigned higher:           Greater than, or unordered
+	case ARM64_CC_HI: // Unsigned higher:           Greater than, or unordered
 		return "hi";
-	case ARM64CC_LS: // Unsigned lower or same:    Less than or equal
+	case ARM64_CC_LS: // Unsigned lower or same:    Less than or equal
 		return "ls";
-	case ARM64CC_GE: // Greater than or equal:     Greater than or equal
+	case ARM64_CC_GE: // Greater than or equal:     Greater than or equal
 		return "ge";
-	case ARM64CC_LT: // Less than:                 Less than, or unordered
+	case ARM64_CC_LT: // Less than:                 Less than, or unordered
 		return "lt";
-	case ARM64CC_GT: // Signed greater than:       Greater than
+	case ARM64_CC_GT: // Signed greater than:       Greater than
 		return "gt";
-	case ARM64CC_LE: // Signed less than or equal: <, ==, or unordered
+	case ARM64_CC_LE: // Signed less than or equal: <, ==, or unordered
 		return "le";
 	default:
 		return "";
 	}
 }
 
-static const char *extender_name(aarch64_extender extender) {
+static const char *extender_name(arm64_extender extender) {
 	switch (extender) {
 	case ARM64_EXT_UXTB:
 		return "uxtb";
@@ -402,36 +408,36 @@ static const char *extender_name(aarch64_extender extender) {
 	}
 }
 
-static const char *vas_name(ARM64Layout_VectorLayout vas) {
+static const char *vas_name(arm64_vas vas) {
 	switch (vas) {
-	case ARM64LAYOUT_VL_8B:
+	case ARM64_VAS_8B:
 		return "8b";
-	case ARM64LAYOUT_VL_16B:
+	case ARM64_VAS_16B:
 		return "16b";
-	case ARM64LAYOUT_VL_4H:
+	case ARM64_VAS_4H:
 		return "4h";
-	case ARM64LAYOUT_VL_8H:
+	case ARM64_VAS_8H:
 		return "8h";
-	case ARM64LAYOUT_VL_2S:
+	case ARM64_VAS_2S:
 		return "2s";
-	case ARM64LAYOUT_VL_4S:
+	case ARM64_VAS_4S:
 		return "4s";
-	case ARM64LAYOUT_VL_2D:
+	case ARM64_VAS_2D:
 		return "2d";
-	case ARM64LAYOUT_VL_1D:
+	case ARM64_VAS_1D:
 		return "1d";
-	case ARM64LAYOUT_VL_1Q:
+	case ARM64_VAS_1Q:
 		return "1q";
 #if CS_API_MAJOR > 4 && CS_NEXT_VERSION < 6
-	case ARM64LAYOUT_VL_1B:
+	case ARM64_VAS_1B:
 		return "8b";
-	case ARM64LAYOUT_VL_4B:
+	case ARM64_VAS_4B:
 		return "8b";
-	case ARM64LAYOUT_VL_2H:
+	case ARM64_VAS_2H:
 		return "2h";
-	case ARM64LAYOUT_VL_1H:
+	case ARM64_VAS_1H:
 		return "1h";
-	case ARM64LAYOUT_VL_1S:
+	case ARM64_VAS_1S:
 		return "1s";
 #endif
 	default:
@@ -605,12 +611,12 @@ static void opex64(RzStrBuf *buf, csh handle, cs_insn *insn) {
 			pj_ki(pj, "vector_index", op->vector_index);
 		}
 #if CS_NEXT_VERSION < 6
-		if (op->vas != ARM64LAYOUT_VL_INVALID)) {
+		if (op->vas != ARM64_VAS_INVALID) {
 #else
 		if (op->vas != AARCH64LAYOUT_INVALID) {
 #endif
-				pj_ks(pj, "vas", vas_name(op->vas));
-			}
+			pj_ks(pj, "vas", vas_name(op->vas));
+		}
 #if CS_API_MAJOR == 4
 		if (op->vess != ARM64_VESS_INVALID) {
 			pj_ks(pj, "vess", vess_name(op->vess));
@@ -668,26 +674,26 @@ static int cond_cs2rz_32(int cc) {
 }
 
 static int cond_cs2rz_64(int cc) {
-	if (cc == ARM64CC_AL || cc < 0) {
+	if (cc == ARM64_CC_AL || cc < 0) {
 		cc = RZ_TYPE_COND_AL;
 	} else {
 		switch (cc) {
-		case ARM64CC_EQ: cc = RZ_TYPE_COND_EQ; break;
-		case ARM64CC_NE: cc = RZ_TYPE_COND_NE; break;
-		case ARM64CC_HS: cc = RZ_TYPE_COND_HS; break;
-		case ARM64CC_LO: cc = RZ_TYPE_COND_LO; break;
-		case ARM64CC_MI: cc = RZ_TYPE_COND_MI; break;
-		case ARM64CC_PL: cc = RZ_TYPE_COND_PL; break;
-		case ARM64CC_VS: cc = RZ_TYPE_COND_VS; break;
-		case ARM64CC_VC: cc = RZ_TYPE_COND_VC; break;
-		case ARM64CC_HI: cc = RZ_TYPE_COND_HI; break;
-		case ARM64CC_LS: cc = RZ_TYPE_COND_LS; break;
-		case ARM64CC_GE: cc = RZ_TYPE_COND_GE; break;
-		case ARM64CC_LT: cc = RZ_TYPE_COND_LT; break;
-		case ARM64CC_GT: cc = RZ_TYPE_COND_GT; break;
-		case ARM64CC_LE: cc = RZ_TYPE_COND_LE; break;
-		case ARM64CC_NV: cc = RZ_TYPE_COND_AL; break;
+		case ARM64_CC_EQ: cc = RZ_TYPE_COND_EQ; break;
+		case ARM64_CC_NE: cc = RZ_TYPE_COND_NE; break;
+		case ARM64_CC_HS: cc = RZ_TYPE_COND_HS; break;
+		case ARM64_CC_LO: cc = RZ_TYPE_COND_LO; break;
+		case ARM64_CC_MI: cc = RZ_TYPE_COND_MI; break;
+		case ARM64_CC_PL: cc = RZ_TYPE_COND_PL; break;
+		case ARM64_CC_VS: cc = RZ_TYPE_COND_VS; break;
+		case ARM64_CC_VC: cc = RZ_TYPE_COND_VC; break;
+		case ARM64_CC_HI: cc = RZ_TYPE_COND_HI; break;
+		case ARM64_CC_LS: cc = RZ_TYPE_COND_LS; break;
+		case ARM64_CC_GE: cc = RZ_TYPE_COND_GE; break;
+		case ARM64_CC_LT: cc = RZ_TYPE_COND_LT; break;
+		case ARM64_CC_GT: cc = RZ_TYPE_COND_GT; break;
+		case ARM64_CC_LE: cc = RZ_TYPE_COND_LE; break;
 #if CS_NEXT_VERSION >= 6
+		case ARM64CC_NV: cc = RZ_TYPE_COND_AL; break;
 		case ARM64CC_Invalid: cc = RZ_TYPE_COND_AL; break;
 #endif
 		}
@@ -764,10 +770,10 @@ static void anop64(AnalysisArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 	}
 
 	switch (insn->detail->arm64.cc) {
-	case ARM64CC_GE:
-	case ARM64CC_GT:
-	case ARM64CC_LE:
-	case ARM64CC_LT:
+	case ARM64_CC_GE:
+	case ARM64_CC_GT:
+	case ARM64_CC_LE:
+	case ARM64_CC_LT:
 		op->sign = true;
 		break;
 	default:

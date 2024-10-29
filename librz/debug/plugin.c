@@ -9,25 +9,19 @@ static RzDebugPlugin *debug_static_plugins[] = { RZ_DEBUG_STATIC_PLUGINS };
 
 RZ_API void rz_debug_plugin_init(RzDebug *dbg) {
 	int i;
-	dbg->plugins = rz_list_new();
+	dbg->plugins = ht_sp_new(HT_STR_DUP, NULL, NULL);
 	for (i = 0; i < RZ_ARRAY_SIZE(debug_static_plugins); i++) {
 		rz_debug_plugin_add(dbg, debug_static_plugins[i]);
 	}
 }
 
-RZ_API bool rz_debug_use(RzDebug *dbg, const char *str) {
+RZ_API bool rz_debug_use(RzDebug *dbg, const char *name) {
 	rz_return_val_if_fail(dbg, false);
 	RzDebugPlugin *new_plugin = NULL;
-	if (str) {
-		RzDebugPlugin *h;
-		RzListIter *iter;
-		rz_list_foreach (dbg->plugins, iter, h) {
-			if (h->name && !strcmp(str, h->name)) {
-				new_plugin = h;
-				break;
-			}
-		}
-		if (!new_plugin) {
+	if (name) {
+		bool found = false;
+		new_plugin = ht_sp_find(dbg->plugins, name, &found);
+		if (!found) {
 			return false;
 		}
 	}
@@ -58,7 +52,9 @@ RZ_API bool rz_debug_use(RzDebug *dbg, const char *str) {
 
 RZ_API bool rz_debug_plugin_add(RzDebug *dbg, RZ_NONNULL RzDebugPlugin *plugin) {
 	rz_return_val_if_fail(dbg && plugin && plugin->name, false);
-	RZ_PLUGIN_CHECK_AND_ADD(dbg->plugins, plugin, RzDebugPlugin);
+	if (!ht_sp_insert(dbg->plugins, plugin->name, plugin)) {
+		RZ_LOG_WARN("Plugin '%s' was already added.\n", plugin->name);
+	}
 	return true;
 }
 
@@ -69,7 +65,7 @@ RZ_API bool rz_debug_plugin_del(RzDebug *dbg, RZ_NONNULL RzDebugPlugin *plugin) 
 		dbg->cur = NULL;
 		dbg->plugin_data = NULL;
 	}
-	return rz_list_delete_data(dbg->plugins, plugin);
+	return ht_sp_delete(dbg->plugins, plugin->name);
 }
 
 RZ_API bool rz_debug_plugin_set_reg_profile(RzDebug *dbg, const char *profile) {

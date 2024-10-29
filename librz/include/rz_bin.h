@@ -367,8 +367,8 @@ struct rz_bin_t {
 	int rawstr;
 	RZ_DEPRECATE Sdb *sdb;
 	RzIDStorage *ids;
-	RzList /*<RzBinPlugin *>*/ *plugins;
-	RzList /*<RzBinXtrPlugin *>*/ *binxtrs;
+	HtSP /*<RzBinPlugin *>*/ *plugins;
+	HtSP /*<RzBinXtrPlugin *>*/ *binxtrs;
 	RzList /*<RzBinFile *>*/ *binfiles;
 	PrintfCallback cb_printf;
 	int loadany;
@@ -769,6 +769,34 @@ typedef struct rz_bin_bind_t {
 	RzBinDemangle demangle;
 	ut32 visibility;
 } RzBinBind;
+
+/**
+ * \brief Compare plugins by name (via strcmp).
+ */
+static inline int rz_bin_plugin_cmp(RZ_NULLABLE const RzBinPlugin *a, RZ_NULLABLE const RzBinPlugin *b) {
+	if (!a && !b) {
+		return 0;
+	} else if (!a) {
+		return -1;
+	} else if (!b) {
+		return 1;
+	}
+	return rz_str_cmp(a->name, b->name, -1);
+}
+
+/**
+ * \brief Compare plugins by name (via strcmp).
+ */
+static inline int rz_bin_xtr_plugin_cmp(RZ_NULLABLE const RzBinXtrPlugin *a, RZ_NULLABLE const RzBinXtrPlugin *b) {
+	if (!a && !b) {
+		return 0;
+	} else if (!a) {
+		return -1;
+	} else if (!b) {
+		return 1;
+	}
+	return rz_str_cmp(a->name, b->name, -1);
+}
 
 RZ_API RzBinField *rz_bin_field_new(ut64 paddr, ut64 vaddr, int size, const char *name, const char *comment, const char *format, bool format_named);
 RZ_API void rz_bin_field_free(RZ_NULLABLE RzBinField *field);

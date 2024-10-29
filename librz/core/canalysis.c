@@ -14,6 +14,7 @@
 #include <rz_util/rz_path.h>
 
 #include "core_private.h"
+#include "rz_util/rz_iterator.h"
 
 HEAPTYPE(ut64);
 
@@ -3938,13 +3939,15 @@ static bool is_apple_target(RzCore *core) {
 }
 
 static void core_analysis_using_plugins(RzCore *core) {
-	RzListIter *it;
-	const RzCorePlugin *plugin;
-	rz_list_foreach (core->plugins, it, plugin) {
+	RzIterator *it = ht_sp_as_iter(core->plugins);
+	RzCorePlugin **val;
+	rz_iterator_foreach(it, val) {
+		RzCorePlugin *plugin = *val;
 		if (plugin->analysis) {
 			plugin->analysis(core);
 		}
 	}
+	rz_iterator_free(it);
 }
 
 /**

@@ -5,8 +5,15 @@
 #define RZ_ARM_CS_H
 
 #include <rz_analysis.h>
+
+#if CC_SUPPORTS_W_ENUM_COMPARE
 #pragma GCC diagnostic ignored "-Wenum-compare"
+#endif
+
+#ifdef CC_SUPPORTS_W_ENUM_CONVERION
 #pragma GCC diagnostic ignored "-Wenum-conversion"
+#endif
+
 #define CAPSTONE_AARCH64_COMPAT_HEADER
 #include <capstone/capstone.h>
 
@@ -21,7 +28,7 @@ RZ_IPI const char *rz_arm32_cs_esil_prefix_cond(RzAnalysisOp *op, ARMCC_CondCode
 #else
 RZ_IPI const char *rz_arm32_cs_esil_prefix_cond(RzAnalysisOp *op, arm_cc cond_type);
 #endif
-RZ_IPI const char *rz_arm64_cs_esil_prefix_cond(RzAnalysisOp *op, ARM64CC_CondCode cond_type);
+RZ_IPI const char *rz_arm64_cs_esil_prefix_cond(RzAnalysisOp *op, arm64_cc cond_type);
 
 RZ_IPI RzILOpEffect *rz_arm_cs_32_il(csh *handle, cs_insn *insn, bool thumb);
 RZ_IPI RzAnalysisILConfig *rz_arm_cs_32_il_config(bool big_endian);

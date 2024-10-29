@@ -8,7 +8,6 @@
 #include <rz_drx.h>
 #include <rz_core.h>
 #include <rz_windows.h>
-#include <signal.h>
 
 RZ_LIB_VERSION(rz_debug);
 
@@ -435,7 +434,7 @@ RZ_API RzDebug *rz_debug_free(RzDebug *dbg) {
 		sdb_free(dbg->sgnls);
 		rz_tree_free(dbg->tree);
 		ht_up_free(dbg->tracenodes);
-		rz_list_free(dbg->plugins);
+		ht_sp_free(dbg->plugins);
 		rz_list_free(dbg->call_frames);
 		free(dbg->btalgo);
 		rz_debug_trace_free(dbg->trace);
