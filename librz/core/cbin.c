@@ -25,14 +25,14 @@
 
 #define LOAD_BSS_MALLOC 0
 
-#define IS_MODE_SET(mode)       ((mode)&RZ_MODE_SET)
-#define IS_MODE_SIMPLE(mode)    ((mode)&RZ_MODE_SIMPLE)
-#define IS_MODE_SIMPLEST(mode)  ((mode)&RZ_MODE_SIMPLEST)
-#define IS_MODE_JSON(mode)      ((mode)&RZ_MODE_JSON)
-#define IS_MODE_RZCMD(mode)     ((mode)&RZ_MODE_RIZINCMD)
-#define IS_MODE_EQUAL(mode)     ((mode)&RZ_MODE_EQUAL)
+#define IS_MODE_SET(mode)       ((mode) & RZ_MODE_SET)
+#define IS_MODE_SIMPLE(mode)    ((mode) & RZ_MODE_SIMPLE)
+#define IS_MODE_SIMPLEST(mode)  ((mode) & RZ_MODE_SIMPLEST)
+#define IS_MODE_JSON(mode)      ((mode) & RZ_MODE_JSON)
+#define IS_MODE_RZCMD(mode)     ((mode) & RZ_MODE_RIZINCMD)
+#define IS_MODE_EQUAL(mode)     ((mode) & RZ_MODE_EQUAL)
 #define IS_MODE_NORMAL(mode)    (!(mode))
-#define IS_MODE_CLASSDUMP(mode) ((mode)&RZ_MODE_CLASSDUMP)
+#define IS_MODE_CLASSDUMP(mode) ((mode) & RZ_MODE_CLASSDUMP)
 
 // dup from cmd_info
 #define PAIR_WIDTH "9"
@@ -1854,6 +1854,9 @@ RZ_API void rz_core_bin_print_source_line_info(RzCore *core, const RzBinSourceLi
 }
 
 static const char *bin_reloc_type_name(RzBinReloc *reloc) {
+	if (reloc->print_name != NULL) {
+		return reloc->print_name;
+	}
 #define CASE(T) \
 	case RZ_BIN_RELOC_##T: return reloc->additive ? "ADD_" #T : "SET_" #T
 	switch (reloc->type) {

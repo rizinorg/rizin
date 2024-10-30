@@ -1023,7 +1023,7 @@ static void patch_reloc_hexagon(RZ_INOUT RzBuffer *buf_patched, const ut64 patch
 // AARCH64-specific defines
 // Take the PAGE component of an address or offset.
 #define PG(x)         ((x) & ~0xFFFULL)
-#define PG_OFFSET(x)  ((x)&0xFFFULL)
+#define PG_OFFSET(x)  ((x) & 0xFFFULL)
 #define ADR_IMM_MASK1 (((1U << 2) - 1) << 29)
 #define ADR_IMM_MASK2 (((1U << 19) - 1) << 5)
 #define ADR_IMM_MASK3 (((1U << 19) - 1) << 2)
@@ -1389,33 +1389,33 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 		r->section_vaddr = section->rva;
 	}
 
-#define SET(T) \
-	r->type = RZ_BIN_RELOC_##T; \
-	r->additive = 0; \
+#define SET(BIT_SIZE, RELOC_NAME) \
+	r->type = RZ_BIN_RELOC_##BIT_SIZE; \
+	r->print_name = (RELOC_NAME); \
 	return r
-#define ADD(T, A) \
-	r->type = RZ_BIN_RELOC_##T; \
-	r->addend += (A); \
-	r->additive = rel->mode == DT_RELA; \
-	return r
+#define ADD(BIT_SIZE, ADDEND, RELOC_NAME) \
+	r->addend += (ADDEND); \
+	SET(BIT_SIZE, RELOC_NAME)
 
 	switch (bin->ehdr.e_machine) {
 	case EM_386:
+		// TODO: We're missing a lot of architectures!
 		switch (rel->type) {
 		case RZ_386_NONE: break; // malloc then free. meh. then again, there's no real world use for _NONE.
-		case RZ_386_32: ADD(32, 0);
-		case RZ_386_PC32: ADD(32, -P);
-		case RZ_386_GLOB_DAT: SET(32);
-		case RZ_386_JMP_SLOT: SET(32);
-		case RZ_386_RELATIVE: ADD(32, B);
-		case RZ_386_GOTOFF: ADD(32, -GOT);
-		case RZ_386_GOTPC: ADD(32, GOT - P);
-		case RZ_386_16: ADD(16, 0);
-		case RZ_386_PC16: ADD(16, -P);
-		case RZ_386_8: ADD(8, 0);
-		case RZ_386_PC8: ADD(8, -P);
-		case RZ_386_COPY: ADD(32, 0); // copy symbol at runtime
-		case RZ_386_IRELATIVE: r->is_ifunc = true; SET(32);
+		case RZ_386_32: ADD(32, 0, "R_386_32");
+		case RZ_386_PC32: ADD(32, -P, "R_386_PC32");
+		case RZ_386_GLOB_DAT: SET(32, "R_386_GLOB_DAT");
+		case RZ_386_JMP_SLOT: SET(32, "R_386_JMP_SLOT");
+		case RZ_386_RELATIVE: ADD(32, B, "R_386_RELATIVE");
+		case RZ_386_GOTOFF: ADD(32, -GOT, "R_386_GOTOFF");
+		case RZ_386_GOTPC: ADD(32, GOT - P, "R_386_GOTPC");
+		case RZ_386_16: ADD(16, 0, "R_386_16");
+		case RZ_386_PC16: ADD(16, -P, "R_386_PC16");
+		case RZ_386_8: ADD(8, 0, "R_386_8");
+		case RZ_386_PC8: ADD(8, -P, "R_386_PC8");
+		case RZ_386_COPY: ADD(32, 0, "R_386_COPY"); // copy symbol at runtime
+		case RZ_386_IRELATIVE: r->is_ifunc = true; SET(32, "R_386_IRELATIVE");
+		// FIXME: Quite a few relocatons missing here.
 		default:
 			RZ_LOG_WARN("unimplemented ELF/X86_32 reloc type %d\n", rel->type);
 			break;
@@ -1424,22 +1424,23 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 	case EM_X86_64:
 		switch (rel->type) {
 		case RZ_X86_64_NONE: break; // malloc then free. meh. then again, there's no real world use for _NONE.
-		case RZ_X86_64_64: ADD(64, 0);
-		case RZ_X86_64_PLT32: ADD(32, -P /* +L */);
-		case RZ_X86_64_GOT32: ADD(32, GOT);
-		case RZ_X86_64_PC32: ADD(32, -P);
-		case RZ_X86_64_GLOB_DAT: r->vaddr -= rel->sto; SET(64);
-		case RZ_X86_64_JUMP_SLOT: r->vaddr -= rel->sto; SET(64);
-		case RZ_X86_64_RELATIVE: ADD(64, B);
-		case RZ_X86_64_32: ADD(32, 0);
-		case RZ_X86_64_32S: ADD(32, 0);
-		case RZ_X86_64_16: ADD(16, 0);
-		case RZ_X86_64_PC16: ADD(16, -P);
-		case RZ_X86_64_8: ADD(8, 0);
-		case RZ_X86_64_PC8: ADD(8, -P);
-		case RZ_X86_64_GOTPCREL: ADD(64, GOT - P);
-		case RZ_X86_64_COPY: ADD(64, 0); // copy symbol at runtime
-		case RZ_X86_64_IRELATIVE: r->is_ifunc = true; SET(64);
+		case RZ_X86_64_64: ADD(64, 0, "R_X86_64_64");
+		case RZ_X86_64_PLT32: ADD(32, -P /* +L */, "R_X86_64_PLT32");
+		case RZ_X86_64_GOT32: ADD(32, GOT, "R_X86_64_GOT32");
+		case RZ_X86_64_PC32: ADD(32, -P, "R_X86_64_PC32");
+		case RZ_X86_64_GLOB_DAT: r->vaddr -= rel->sto; SET(64, "R_X86_64_GLOB_DAT");
+		case RZ_X86_64_JUMP_SLOT: r->vaddr -= rel->sto; SET(64, "R_X86_64_JUMP_SLOT");
+		case RZ_X86_64_RELATIVE: ADD(64, B, "R_X86_64_RELATIVE");
+		case RZ_X86_64_32: ADD(32, 0, "R_X86_64_32");
+		case RZ_X86_64_32S: ADD(32, 0, "R_X86_64_32S");
+		case RZ_X86_64_16: ADD(16, 0, "R_X86_64_16");
+		case RZ_X86_64_PC16: ADD(16, -P, "R_X86_64_PC16");
+		case RZ_X86_64_8: ADD(8, 0, "R_X86_64_8");
+		case RZ_X86_64_PC8: ADD(8, -P, "R_X86_64_PC8");
+		case RZ_X86_64_GOTPCREL: ADD(64, GOT - P, "R_X86_64_GOTPCREL");
+		case RZ_X86_64_COPY: ADD(64, 0, "R_X86_64_COPY"); // copy symbol at runtime
+		case RZ_X86_64_IRELATIVE: r->is_ifunc = true; SET(64, "R_X86_64_IRELATIVE");
+		// FIXME: Quite a few relocatons missing here.
 		default:
 			RZ_LOG_WARN("unimplemented ELF/X86_64 reloc type %d\n", rel->type);
 			break;
@@ -1448,73 +1449,76 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 	case EM_ARM:
 		switch (rel->type) {
 		case RZ_ARM_NONE: break;
-		case RZ_ARM_ABS32: ADD(32, 0);
-		case RZ_ARM_REL32: ADD(32, -P);
-		case RZ_ARM_ABS16: ADD(16, 0);
-		case RZ_ARM_ABS8: ADD(8, 0);
-		case RZ_ARM_SBREL32: ADD(32, -B);
-		case RZ_ARM_GLOB_DAT: ADD(32, 0);
-		case RZ_ARM_JUMP_SLOT: ADD(32, 0);
-		case RZ_ARM_COPY: ADD(32, 0); // copy symbol at runtime
-		case RZ_ARM_RELATIVE: ADD(32, B);
-		case RZ_ARM_GOTOFF: ADD(32, -GOT);
-		case RZ_ARM_GOTPC: ADD(32, GOT - P);
-		case RZ_ARM_CALL: ADD(24, -P);
-		case RZ_ARM_JUMP24: ADD(24, -P);
-		case RZ_ARM_THM_JUMP24: ADD(24, -P);
-		case RZ_ARM_THM_PC22: ADD(24, -P);
-		case RZ_ARM_PREL31: ADD(32, -P);
-		case RZ_ARM_MOVW_PREL_NC: ADD(16, -P);
-		case RZ_ARM_MOVT_PREL: ADD(32, -P);
-		case RZ_ARM_THM_MOVW_PREL_NC: ADD(16, -P);
-		case RZ_ARM_REL32_NOI: ADD(32, -P);
-		case RZ_ARM_ABS32_NOI: ADD(32, 0);
-		case RZ_ARM_ALU_PC_G0_NC: ADD(32, -P);
-		case RZ_ARM_ALU_PC_G0: ADD(32, -P);
-		case RZ_ARM_ALU_PC_G1_NC: ADD(32, -P);
-		case RZ_ARM_ALU_PC_G1: ADD(32, -P);
-		case RZ_ARM_ALU_PC_G2: ADD(32, -P);
-		case RZ_ARM_LDR_PC_G1: ADD(32, -P);
-		case RZ_ARM_LDR_PC_G2: ADD(32, -P);
-		case RZ_ARM_LDRS_PC_G0: ADD(32, -P);
-		case RZ_ARM_LDRS_PC_G1: ADD(32, -P);
-		case RZ_ARM_LDRS_PC_G2: ADD(32, -P);
-		case RZ_ARM_LDC_PC_G0: ADD(32, -P);
-		case RZ_ARM_LDC_PC_G1: ADD(32, -P);
-		case RZ_ARM_LDC_PC_G2: ADD(32, -P);
-		default: ADD(32, GOT); break; // reg relocations
+		case RZ_ARM_ABS32: ADD(32, 0, "R_ARM_ABS32");
+		case RZ_ARM_REL32: ADD(32, -P, "R_ARM_REL32");
+		case RZ_ARM_ABS16: ADD(16, 0, "R_ARM_ABS16");
+		case RZ_ARM_ABS8: ADD(8, 0, "R_ARM_ABS8");
+		case RZ_ARM_SBREL32: ADD(32, -B, "R_ARM_SBREL32");
+		case RZ_ARM_GLOB_DAT: ADD(32, 0, "R_ARM_GLOB_DAT");
+		case RZ_ARM_JUMP_SLOT: ADD(32, 0, "R_ARM_JUMP_SLOT");
+		case RZ_ARM_COPY: ADD(32, 0, "R_ARM_COPY"); // copy symbol at runtime
+		case RZ_ARM_RELATIVE: ADD(32, B, "R_ARM_RELATIVE");
+		case RZ_ARM_GOTOFF: ADD(32, -GOT, "R_ARM_GOTOFF");
+		case RZ_ARM_GOTPC: ADD(32, GOT - P, "R_ARM_GOTPC");
+		case RZ_ARM_CALL: ADD(24, -P, "R_ARM_CALL");
+		case RZ_ARM_JUMP24: ADD(24, -P, "R_ARM_JUMP24");
+		case RZ_ARM_THM_JUMP24: ADD(24, -P, "R_ARM_THM_JUMP24");
+		case RZ_ARM_THM_PC22: ADD(24, -P, "R_ARM_THM_PC22");
+		case RZ_ARM_PREL31: ADD(32, -P, "R_ARM_PREL31");
+		case RZ_ARM_MOVW_PREL_NC: ADD(16, -P, "R_ARM_MOVW_PREL_NC");
+		case RZ_ARM_MOVT_PREL: ADD(32, -P, "R_ARM_MOVT_PREL");
+		case RZ_ARM_THM_MOVW_PREL_NC: ADD(16, -P, "R_ARM_THM_MOVW_PREL_NC");
+		case RZ_ARM_REL32_NOI: ADD(32, -P, "R_ARM_REL32_NOI");
+		case RZ_ARM_ABS32_NOI: ADD(32, 0, "R_ARM_ABS32_NOI");
+		case RZ_ARM_ALU_PC_G0_NC: ADD(32, -P, "R_ARM_ALU_PC_G0_NC");
+		case RZ_ARM_ALU_PC_G0: ADD(32, -P, "R_ARM_ALU_PC_G0");
+		case RZ_ARM_ALU_PC_G1_NC: ADD(32, -P, "R_ARM_ALU_PC_G1_NC");
+		case RZ_ARM_ALU_PC_G1: ADD(32, -P, "R_ARM_ALU_PC_G1");
+		case RZ_ARM_ALU_PC_G2: ADD(32, -P, "R_ARM_ALU_PC_G2");
+		case RZ_ARM_LDR_PC_G1: ADD(32, -P, "R_ARM_LDR_PC_G1");
+		case RZ_ARM_LDR_PC_G2: ADD(32, -P, "R_ARM_LDR_PC_G2");
+		case RZ_ARM_LDRS_PC_G0: ADD(32, -P, "R_ARM_LDRS_PC_G0");
+		case RZ_ARM_LDRS_PC_G1: ADD(32, -P, "R_ARM_LDRS_PC_G1");
+		case RZ_ARM_LDRS_PC_G2: ADD(32, -P, "R_ARM_LDRS_PC_G2");
+		case RZ_ARM_LDC_PC_G0: ADD(32, -P, "R_ARM_LDC_PC_G0");
+		case RZ_ARM_LDC_PC_G1: ADD(32, -P, "R_ARM_LDC_PC_G1");
+		case RZ_ARM_LDC_PC_G2: ADD(32, -P, "R_ARM_LDC_PC_G2");
+		// FIXME: Quite a few relocatons missing here. It's incorrect to place them all under "reg relocations".
+		default: ADD(32, GOT, "ARM REG RELOC"); break;
 		}
 		break;
 	case EM_RISCV:
 		switch (rel->type) {
 		case RZ_RISCV_NONE: break;
-		case RZ_RISCV_JUMP_SLOT: ADD(64, 0);
-		case RZ_RISCV_RELATIVE: ADD(64, B);
-		default: ADD(64, GOT); break; // reg relocations
+		case RZ_RISCV_JUMP_SLOT: ADD(64, 0, "R_RISCV_JUMP_SLOT");
+		case RZ_RISCV_RELATIVE: ADD(64, B, "R_RISCV_RELATIVE");
+		// FIXME: Quite a few relocatons missing here. It's incorrect to place them all under "reg relocations".
+		default: ADD(64, GOT, "RISC-V REG RELOC"); break; // reg relocations
 		}
 		break;
 	case EM_AARCH64:
 		switch (rel->type) {
 		case RZ_AARCH64_NONE: break;
-		case RZ_AARCH64_ABS64: ADD(64, 0);
-		case RZ_AARCH64_ABS32: ADD(32, 0);
-		case RZ_AARCH64_ABS16: ADD(16, 0);
-		case RZ_AARCH64_PREL64: ADD(64, 0);
-		case RZ_AARCH64_PREL32: ADD(32, 0);
-		case RZ_AARCH64_PREL16: ADD(16, 0);
-		case RZ_AARCH64_GLOB_DAT: SET(64);
-		case RZ_AARCH64_JUMP_SLOT: SET(64);
-		case RZ_AARCH64_RELATIVE: ADD(64, B);
-		case RZ_AARCH64_LDST8_ABS_LO12_NC: ADD(16, 0);
-		case RZ_AARCH64_ADD_ABS_LO12_NC: ADD(16, 0);
-		case RZ_AARCH64_JUMP26: ADD(32, 0);
-		case RZ_AARCH64_CALL26: ADD(32, 0);
-		case RZ_AARCH64_LDST64_ABS_LO12_NC: ADD(32, 0);
-		case RZ_AARCH64_LD64_GOT_LO12_NC: ADD(32, 0);
+		case RZ_AARCH64_ABS64: ADD(64, 0, "R_AARCH64_ABS64");
+		case RZ_AARCH64_ABS32: ADD(32, 0, "R_AARCH64_ABS32");
+		case RZ_AARCH64_ABS16: ADD(16, 0, "R_AARCH64_ABS16");
+		case RZ_AARCH64_PREL64: ADD(64, 0, "R_AARCH64_PREL64");
+		case RZ_AARCH64_PREL32: ADD(32, 0, "R_AARCH64_PREL32");
+		case RZ_AARCH64_PREL16: ADD(16, 0, "R_AARCH64_PREL16");
+		case RZ_AARCH64_GLOB_DAT: SET(64, "R_AARCH64_GLOB_DAT");
+		case RZ_AARCH64_JUMP_SLOT: SET(64, "R_AARCH64_JUMP_SLOT");
+		case RZ_AARCH64_RELATIVE: ADD(64, B, "R_AARCH64_RELATIVE");
+		case RZ_AARCH64_LDST8_ABS_LO12_NC: ADD(16, 0, "R_AARCH64_LDST8_ABS_LO12_NC");
+		case RZ_AARCH64_ADD_ABS_LO12_NC: ADD(16, 0, "R_AARCH64_ADD_ABS_LO12_NC");
+		case RZ_AARCH64_JUMP26: ADD(32, 0, "R_AARCH64_JUMP26");
+		case RZ_AARCH64_CALL26: ADD(32, 0, "R_AARCH64_CALL26");
+		case RZ_AARCH64_LDST64_ABS_LO12_NC: ADD(32, 0, "R_AARCH64_LDST64_ABS_LO12_NC");
+		case RZ_AARCH64_LD64_GOT_LO12_NC: ADD(32, 0, "R_AARCH64_LD64_GOT_LO12_NC");
 		// Page-relative relocations
-		case RZ_AARCH64_ADR_GOT_PAGE: ADD(32, 0);
-		case RZ_AARCH64_ADR_PREL_PG_HI21: ADD(32, 0);
-		case RZ_AARCH64_ADR_PREL_PG_HI21_NC: ADD(32, 0);
+		case RZ_AARCH64_ADR_GOT_PAGE: ADD(32, 0, "R_AARCH64_ADR_GOT_PAGE");
+		case RZ_AARCH64_ADR_PREL_PG_HI21: ADD(32, 0, "R_AARCH64_ADR_PREL_PG_HI21");
+		case RZ_AARCH64_ADR_PREL_PG_HI21_NC: ADD(32, 0, "R_AARCH64_ADR_PREL_PG_HI21_NC");
+		// FIXME: Quite a few relocations missing here
 		default:
 			RZ_LOG_WARN("unimplemented ELF/AARCH64 reloc type %d\n", rel->type);
 			break;
@@ -1523,16 +1527,17 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 	case EM_PPC:
 		switch (rel->type) {
 		case RZ_PPC_NONE: break;
-		case RZ_PPC_GLOB_DAT: ADD(32, 0);
-		case RZ_PPC_JMP_SLOT: ADD(32, 0);
-		case RZ_PPC_COPY: ADD(32, 0); // copy symbol at runtime
-		case RZ_PPC_REL24: ADD(24, -P);
-		case RZ_PPC_REL14: ADD(16, -P);
-		case RZ_PPC_REL32: ADD(32, -P);
-		case RZ_PPC_RELATIVE: ADD(32, -P);
-		case RZ_PPC_PLT32: ADD(32, -P);
-		case RZ_PPC_ADDR16: ADD(16, 0);
-		case RZ_PPC_ADDR32: ADD(32, 0);
+		case RZ_PPC_GLOB_DAT: ADD(32, 0, "R_PPC_GLOB_DAT");
+		case RZ_PPC_JMP_SLOT: ADD(32, 0, "R_PPC_JMP_SLOT");
+		case RZ_PPC_COPY: ADD(32, 0, "R_PPC_COPY"); // copy symbol at runtime
+		case RZ_PPC_REL24: ADD(24, -P, "R_PPC_REL24");
+		case RZ_PPC_REL14: ADD(16, -P, "R_PPC_REL14");
+		case RZ_PPC_REL32: ADD(32, -P, "R_PPC_REL32");
+		case RZ_PPC_RELATIVE: ADD(32, -P, "R_PPC_RELATIVE");
+		case RZ_PPC_PLT32: ADD(32, -P, "R_PPC_PLT32");
+		case RZ_PPC_ADDR16: ADD(16, 0, "R_PPC_ADDR16");
+		case RZ_PPC_ADDR32: ADD(32, 0, "R_PPC_ADDR32");
+		// FIXME: Quite a few relocatons missing here.
 		default:
 			RZ_LOG_WARN("unimplemented ELF/PPC reloc type %d\n", rel->type);
 			break;
@@ -1541,13 +1546,15 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 	case EM_RX:
 		switch (rel->type) {
 		case R_RX_NONE: break;
-		case R_RX_DIR24S_PCREL: ADD(24, -P);
-		case R_RX_DIR32: SET(32);
+		case R_RX_DIR24S_PCREL: ADD(24, -P, "RX_DIR24S_PCREL");
+		case R_RX_DIR32: SET(32, "RX_DIR32");
+		// FIXME: Quite a few relocatons missing here.
 		default:
 			RZ_LOG_WARN("unimplemented ELF/RX reloc type %d\n", rel->type);
 			break;
 		}
-	default: break;
+	default:
+		break;
 	}
 
 #undef SET

@@ -165,7 +165,7 @@ typedef enum {
 } RzBinLanguage;
 
 #define RZ_BIN_LANGUAGE_MASK(x)       ((x) & ~RZ_BIN_LANGUAGE_BLOCKS)
-#define RZ_BIN_LANGUAGE_HAS_BLOCKS(x) ((x)&RZ_BIN_LANGUAGE_BLOCKS)
+#define RZ_BIN_LANGUAGE_HAS_BLOCKS(x) ((x) & RZ_BIN_LANGUAGE_BLOCKS)
 
 enum {
 	RZ_BIN_CLASS_PRIVATE,
@@ -666,7 +666,8 @@ typedef struct rz_bin_reloc_t {
 	ut64 target_vaddr; ///< the target address that the patched reloc points to
 	ut64 section_vaddr; ///< the subsection address
 	ut32 visibility;
-	bool additive;
+	bool additive; ///< Name of the relocation type. NULL if none is specified. Not setting this field is deprecated.
+	const char *print_name;
 	/* is_ifunc: indirect function, `addend` points to a resolver function
 	 * that returns the actual relocation value, e.g. chooses
 	 * an optimized version depending on the CPU.
