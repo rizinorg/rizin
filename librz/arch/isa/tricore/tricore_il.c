@@ -1125,7 +1125,7 @@ static RzAnalysisLiftedILOp ld_sc(RzAsmTriCoreContext *ctx, ut8 B, RzILOpPure *(
 }
 static RzAnalysisLiftedILOp st_sc(RzAsmTriCoreContext *ctx, ut8 B) {
 	TriCoreMem m = M(0);
-	return STOREW(ADD(VARG(m.reg), U32(B / 8 * m.disp)), UNSIGNED(B, VARG(R(1))));
+	return STOREW(ADD(VARG(m.reg), U32((unsigned long long)(B / 8) * m.disp)), UNSIGNED(B, VARG(R(1))));
 }
 
 static RzAnalysisLiftedILOp ld_slr(RzAsmTriCoreContext *ctx, ut8 B, RzILOpPure *(*f)(RzILOpPure *, ut32)) {
