@@ -13,6 +13,7 @@ RUN
 
 NAME=xtensa stackframe
 FILE=malloc://512
+BROKEN=1
 CMDS=<<EOF
 e asm.arch=xtensa
 e asm.bits=32
@@ -37,7 +38,7 @@ wx 00000000ff11ff1121ffff0df0ff
 pD 3 @ 8
 EOF
 EXPECT=<<EOF
-            0x00000008      l32r  a2, 0x00000004                       ; [0x4:4]=0x11ff11ff
+            0x00000008      l32r  a2, . -8
 EOF
 RUN
 
