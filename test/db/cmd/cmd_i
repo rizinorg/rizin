@@ -3106,12 +3106,12 @@ NAME=ir (file x86)
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=ir
 EXPECT=<<EOF
-vaddr      paddr      type   name              
------------------------------------------------
-0x08049690 0x00000690 SET_32 __gmon_start__
-0x080496a0 0x000006a0 SET_32 puts
-0x080496a4 0x000006a4 SET_32 __gmon_start__
-0x080496a8 0x000006a8 SET_32 __libc_start_main
+vaddr      paddr      type           name              
+-------------------------------------------------------
+0x08049690 0x00000690 R_386_GLOB_DAT __gmon_start__
+0x080496a0 0x000006a0 R_386_JMP_SLOT puts
+0x080496a4 0x000006a4 R_386_JMP_SLOT __gmon_start__
+0x080496a8 0x000006a8 R_386_JMP_SLOT __libc_start_main
 EOF
 RUN
 
@@ -3501,12 +3501,12 @@ NAME=ir (file x86_64)
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=ir
 EXPECT=<<EOF
-vaddr      paddr      type   name              
------------------------------------------------
-0x006008c8 0x000008c8 SET_64 __gmon_start__
-0x006008e8 0x000008e8 SET_64 puts
-0x006008f0 0x000008f0 SET_64 __libc_start_main
-0x006008f8 0x000008f8 SET_64 __gmon_start__
+vaddr      paddr      type               name              
+-----------------------------------------------------------
+0x006008c8 0x000008c8 R_X86_64_GLOB_DAT  __gmon_start__
+0x006008e8 0x000008e8 R_X86_64_JUMP_SLOT puts
+0x006008f0 0x000008f0 R_X86_64_JUMP_SLOT __libc_start_main
+0x006008f8 0x000008f8 R_X86_64_JUMP_SLOT __gmon_start__
 EOF
 RUN
 
@@ -3514,18 +3514,18 @@ NAME=ir (file x86_64, ifunc)
 FILE=bins/elf/ifunc_rel64
 CMDS=ir
 EXPECT=<<EOF
-vaddr      paddr      type   name                            
--------------------------------------------------------------
-0x006b17d0 0x000b17d0 SET_64 ifunc_416530 0x00416530 (ifunc)
-0x006b17d8 0x000b17d8 SET_64 ifunc_4193a0 0x004193a0 (ifunc)
-0x006b17e0 0x000b17e0 SET_64 ifunc_4199b0 0x004199b0 (ifunc)
-0x006b17e8 0x000b17e8 SET_64 ifunc_418a50 0x00418a50 (ifunc)
-0x006b17f0 0x000b17f0 SET_64 ifunc_418de0 0x00418de0 (ifunc)
-0x006b17f8 0x000b17f8 SET_64 ifunc_419ad0 0x00419ad0 (ifunc)
-0x006b1800 0x000b1800 SET_64 ifunc_4193f0 0x004193f0 (ifunc)
-0x006b1808 0x000b1808 SET_64 ifunc_414300 0x00414300 (ifunc)
-0x006b1810 0x000b1810 SET_64 ifunc_479800 0x00479800 (ifunc)
-0x006b1818 0x000b1818 SET_64 ifunc_4140b0 0x004140b0 (ifunc)
+vaddr      paddr      type               name                            
+-------------------------------------------------------------------------
+0x006b17d0 0x000b17d0 R_X86_64_IRELATIVE ifunc_416530 0x00416530 (ifunc)
+0x006b17d8 0x000b17d8 R_X86_64_IRELATIVE ifunc_4193a0 0x004193a0 (ifunc)
+0x006b17e0 0x000b17e0 R_X86_64_IRELATIVE ifunc_4199b0 0x004199b0 (ifunc)
+0x006b17e8 0x000b17e8 R_X86_64_IRELATIVE ifunc_418a50 0x00418a50 (ifunc)
+0x006b17f0 0x000b17f0 R_X86_64_IRELATIVE ifunc_418de0 0x00418de0 (ifunc)
+0x006b17f8 0x000b17f8 R_X86_64_IRELATIVE ifunc_419ad0 0x00419ad0 (ifunc)
+0x006b1800 0x000b1800 R_X86_64_IRELATIVE ifunc_4193f0 0x004193f0 (ifunc)
+0x006b1808 0x000b1808 R_X86_64_IRELATIVE ifunc_414300 0x00414300 (ifunc)
+0x006b1810 0x000b1810 R_X86_64_IRELATIVE ifunc_479800 0x00479800 (ifunc)
+0x006b1818 0x000b1818 R_X86_64_IRELATIVE ifunc_4140b0 0x004140b0 (ifunc)
 EOF
 RUN
 
@@ -4179,19 +4179,19 @@ nth paddr      vaddr      bind   type   size lib name
 5   0x00000400 0x00000400 GLOBAL FUNC   16       imp.__libc_start_main
 6   ---------- ---------- WEAK   NOTYPE 0        imp._Jv_RegisterClasses
 7   ---------- ---------- WEAK   NOTYPE 0        imp._ITM_registerTMCloneTable
-vaddr      paddr      target     type   name                        
---------------------------------------------------------------------
-0x00001eec 0x00000eec 0x00000000 SET_32 
-0x00001ef0 0x00000ef0 0x00000000 SET_32 
-0x00001fe8 0x00000fe8 0x00002030 SET_32 _ITM_deregisterTMCloneTable
-0x00001fec 0x00000fec 0x00002034 SET_32 __cxa_finalize
-0x00001ff0 0x00000ff0 0x00002038 SET_32 __gmon_start__
-0x00001ff4 0x00000ff4 0x00000000 SET_32 
-0x00001ff8 0x00000ff8 0x0000203c SET_32 _Jv_RegisterClasses
-0x00001ffc 0x00000ffc 0x00002040 SET_32 _ITM_registerTMCloneTable
-0x0000200c 0x0000100c 0x00002028 SET_32 puts
-0x00002010 0x00001010 0x0000202c SET_32 __libc_start_main
-0x00002018 0x00001018 0x00000000 SET_32 
+vaddr      paddr      target     type           name                        
+----------------------------------------------------------------------------
+0x00001eec 0x00000eec 0x00000000 R_386_RELATIVE 
+0x00001ef0 0x00000ef0 0x00000000 R_386_RELATIVE 
+0x00001fe8 0x00000fe8 0x00002030 R_386_GLOB_DAT _ITM_deregisterTMCloneTable
+0x00001fec 0x00000fec 0x00002034 R_386_GLOB_DAT __cxa_finalize
+0x00001ff0 0x00000ff0 0x00002038 R_386_GLOB_DAT __gmon_start__
+0x00001ff4 0x00000ff4 0x00000000 R_386_RELATIVE 
+0x00001ff8 0x00000ff8 0x0000203c R_386_GLOB_DAT _Jv_RegisterClasses
+0x00001ffc 0x00000ffc 0x00002040 R_386_GLOB_DAT _ITM_registerTMCloneTable
+0x0000200c 0x0000100c 0x00002028 R_386_JMP_SLOT puts
+0x00002010 0x00001010 0x0000202c R_386_JMP_SLOT __libc_start_main
+0x00002018 0x00001018 0x00000000 R_386_RELATIVE 
 0x00000000 1936 segment.LOAD0
 0x00000000 0 segment.GNU_STACK
 0x00000000 52 segment.ehdr

@@ -581,12 +581,12 @@ vaddr      paddr
 
 [Dwarf]
 [Relocs]
-vaddr      paddr      type   name              
------------------------------------------------
-0x08049690 0x00000690 SET_32 __gmon_start__
-0x080496a0 0x000006a0 SET_32 puts
-0x080496a4 0x000006a4 SET_32 __gmon_start__
-0x080496a8 0x000006a8 SET_32 __libc_start_main
+vaddr      paddr      type           name              
+-------------------------------------------------------
+0x08049690 0x00000690 R_386_GLOB_DAT __gmon_start__
+0x080496a0 0x000006a0 R_386_JMP_SLOT puts
+0x080496a4 0x000006a4 R_386_JMP_SLOT __gmon_start__
+0x080496a8 0x000006a8 R_386_JMP_SLOT __libc_start_main
 
 [Fields]
 paddr      name       vaddr      comment                                         
