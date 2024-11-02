@@ -510,26 +510,25 @@ static bool cb_asmarch(void *user, void *data) {
 		RZ_LOG_ERROR("core: asm.arch: cannot find (%s)\n", node->value);
 		return false;
 	}
-	// we should rz_str_dup here otherwise will crash if any rz_config_set
-	// free the old value
-	char *asm_cpu = rz_str_dup(rz_config_get(core->config, "asm.cpu"));
+
+	RzConfigNode *asm_cpu_node = rz_config_node_get(core->config, "asm.cpu");
 	if (core->rasm->cur) {
-		const char *newAsmCPU = core->rasm->cur->cpus;
-		if (newAsmCPU) {
-			if (*newAsmCPU) {
-				char *nac = rz_str_dup(newAsmCPU);
-				char *comma = strchr(nac, ',');
-				if (comma) {
-					if (!*asm_cpu || (*asm_cpu && !strstr(nac, asm_cpu))) {
-						*comma = 0;
-						rz_config_set(core->config, "asm.cpu", nac);
-					}
-				}
-				free(nac);
-			} else {
-				rz_config_set(core->config, "asm.cpu", "");
+		const char *cpus = core->rasm->cur->cpus;
+		if (RZ_STR_ISNOTEMPTY(cpus)) {
+			char *cpu0 = rz_str_dup(cpus);
+			char *comma = strchr(cpu0, ',');
+			if (comma) {
+				*comma = 0;
 			}
+
+			if (!*asm_cpu_node->value || (*asm_cpu_node->value && RZ_STR_NE(cpu0, asm_cpu_node->value))) {
+				rz_config_set(core->config, "asm.cpu", cpu0);
+			}
+			free(cpu0);
+		} else {
+			rz_config_set(core->config, "asm.cpu", "");
 		}
+
 		bits = core->rasm->cur->bits;
 		if (8 & bits) {
 			bits = 8;
@@ -587,11 +586,9 @@ static bool cb_asmarch(void *user, void *data) {
 	// set endian of display to match binary
 	core->print->big_endian = big_endian;
 
-	rz_asm_set_cpu(core->rasm, asm_cpu);
-	free(asm_cpu);
-	RzConfigNode *asmcpu = rz_config_node_get(core->config, "asm.cpu");
-	if (asmcpu) {
-		update_asmcpu_options(core, asmcpu);
+	rz_asm_set_cpu(core->rasm, asm_cpu_node->value);
+	if (asm_cpu_node) {
+		update_asmcpu_options(core, asm_cpu_node);
 	}
 	{
 		int v = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN);
@@ -614,11 +611,11 @@ static bool cb_asmarch(void *user, void *data) {
 	rz_core_analysis_cc_init(core);
 
 	const char *platform = rz_config_get(core->config, "asm.platform");
-	if (asmcpu) {
+	if (asm_cpu_node) {
 		char *platforms_dir = rz_path_system(RZ_SDB_ARCH_PLATFORMS);
 		char *cpus_dir = rz_path_system(RZ_SDB_ARCH_CPUS);
-		rz_platform_target_index_init(core->analysis->platform_target, node->value, asmcpu->value, platform, platforms_dir);
-		rz_platform_profiles_init(core->analysis->arch_target, asmcpu->value, node->value, cpus_dir);
+		rz_platform_target_index_init(core->analysis->platform_target, node->value, asm_cpu_node->value, platform, platforms_dir);
+		rz_platform_profiles_init(core->analysis->arch_target, asm_cpu_node->value, node->value, cpus_dir);
 		free(cpus_dir);
 		free(platforms_dir);
 	}
