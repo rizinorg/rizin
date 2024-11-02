@@ -1125,7 +1125,7 @@ static RzAnalysisLiftedILOp ld_sc(RzAsmTriCoreContext *ctx, ut8 B, RzILOpPure *(
 }
 static RzAnalysisLiftedILOp st_sc(RzAsmTriCoreContext *ctx, ut8 B) {
 	TriCoreMem m = M(0);
-	return STOREW(ADD(VARG(m.reg), U32((unsigned long long)(B / 8) * m.disp)), UNSIGNED(B, VARG(R(1))));
+	return STOREW(ADD(VARG(m.reg), U32((ut64)B / 8 * m.disp)), UNSIGNED(B, VARG(R(1))));
 }
 
 static RzAnalysisLiftedILOp ld_slr(RzAsmTriCoreContext *ctx, ut8 B, RzILOpPure *(*f)(RzILOpPure *, ut32)) {
@@ -1158,7 +1158,7 @@ static RzAnalysisLiftedILOp st_sro(RzAsmTriCoreContext *ctx, ut8 B) {
 	TriCoreMem m = M(0);
 	const char *b = m.reg;
 	unsigned const4 = m.disp;
-	return STOREW(ADD(VARG(b), U32(B / 8 * const4)), UNSIGNED(B, VARG("a15")));
+	return STOREW(ADD(VARG(b), U32((ut64)B / 8 * const4)), UNSIGNED(B, VARG("a15")));
 }
 
 static RzAnalysisLiftedILOp st_ssr(RzAsmTriCoreContext *ctx, ut8 B) {
@@ -1175,7 +1175,7 @@ static RzAnalysisLiftedILOp st_ssr_post_incr(RzAsmTriCoreContext *ctx, ut8 B) {
 }
 static RzAnalysisLiftedILOp st_ssro(RzAsmTriCoreContext *ctx, ut8 B) {
 	TriCoreMem m = M(0);
-	return STOREW(ADD(VARG(m.reg), U32(B / 8 * m.disp)), UNSIGNED(B, VARG(R(1))));
+	return STOREW(ADD(VARG(m.reg), U32((ut64)B / 8 * m.disp)), UNSIGNED(B, VARG(R(1))));
 }
 
 static RzAnalysisLiftedILOp load_lower_context() {
