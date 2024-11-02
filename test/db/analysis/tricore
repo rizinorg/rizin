@@ -540,7 +540,7 @@ EXPECT=<<EOF
 |           0x800843a4      ld.w  d15, [a14]#-0x64
 |           0x800843a8      mov   d3, d2
 |           0x800843aa      mov.a a15, d15
-|           0x800843ac      st.w  [a15]#0x14, d3                       ; 20
+|           0x800843ac      st.w  [a15]#0x14, d3
 |           0x800843ae      ld.w  d15, [a14]#-0x64
 |           0x800843b2      mov.a a15, d15
 |           0x800843b4      ld.w  d15, [a15]#4
@@ -642,7 +642,7 @@ EXPECT=<<EOF
 |    || `-> 0x800844ca      ld.w  d15, [a14]#-0x64
 |    ||     0x800844ce      mov   d2, #0
 |    ||     0x800844d0      mov.a a15, d15
-|    ||     0x800844d2      st.b  [a15]#0xc, d2                        ; 12
+|    ||     0x800844d2      st.b  [a15]#0xc, d2
 |    ||     ; CODE XREFS from fcn.800842f0 @ 0x800843de, 0x800844c8
 \    ``---> 0x800844d4      ret
 EOF
@@ -893,12 +893,10 @@ EXPECT=<<EOF
 | ; SFtype __truncdfsf2(DFtype arg_a)                         |       |
 | call dbg.__truncdfsf2                                       |       |
 | mov d15, d2                                                 |       |
-| ; 12                                                        |       |
 | st.w [a15]#0xc, d15                                         |       |
 | ld.a a15, [a14]#-0x18                                       |       |
 | ld.a a15, [a15]#0                                           |       |
 | ld.w d15, [a14]#-0x14                                       |       |
-| ; 16                                                        |       |
 | st.w [a15]#0x10, d15                                        |       |
 | mov d15, #1                                                 |       |
 `-------------------------------------------------------------'       |
@@ -974,11 +972,11 @@ EXPECT=<<EOF
 | 0x80000532      ld.d  e4, [a14]#-0x10
 | 0x80000536      call  dbg.__truncdfsf2                               ; SFtype __truncdfsf2(DFtype arg_a)
 | 0x8000053a      mov   d15, d2
-| 0x8000053c      st.w  [a15]#0xc, d15                                 ; 12
+| 0x8000053c      st.w  [a15]#0xc, d15
 | 0x8000053e      ld.a  a15, [a14]#-0x18
 | 0x80000542      ld.a  a15, [a15]#0
 | 0x80000544      ld.w  d15, [a14]#-0x14
-| 0x80000548      st.w  [a15]#0x10, d15                                ; 16
+| 0x80000548      st.w  [a15]#0x10, d15
 | 0x8000054a      mov   d15, #1
 | ----------- true: 0x8000054c
 | ; CODE XREF from sym.fn1 @ 0x800004f4
