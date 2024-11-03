@@ -1061,3 +1061,31 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.docker_meta.outputs.tags }}
           labels: ${{ steps.docker_meta.outputs.labels }}
+  meson-subproject:
+    name: Test use as meson subproject
+    needs: [ build-and-test ]
+    runs-on: ubuntu-22.04
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install dependencies
+      run: |
+        sudo apt-get --assume-yes update
+        sudo apt-get --assume-yes install python3-wheel python3-setuptools pkgconf libcurl4-openssl-dev libpkgconf-dev libarchive-dev
+        sudo python3 -m pip install ninja meson
+    - name: Replace branch in wrap-file
+      run: |
+        # NOTE: This is a workaround, as meson wrap files cannot be used on remote tracking
+        git checkout -b "_ci_local_branch"
+        sed -i 's@\${REPOSITORY}@file://'"$PWD"'@' .github/subproject_test/subprojects/rizin.wrap
+        sed -i 's@\${BRANCH}@_ci_local_branch@' .github/subproject_test/subprojects/rizin.wrap
+    - name: Meson setup
+      run: meson setup build .github/subproject_test/
+    - name: Checkout our Testsuite Binaries
+      uses: actions/checkout@v4
+      with:
+          repository: rizinorg/rizin-testbins
+          path: .github/subproject_teyt/subprojects/rizin/test/bins
+    - name: Ninja compile and install
+      run: ninja -C build && sudo meson install -C build
+    - name: Run unit tests
+      run: meson test -C build

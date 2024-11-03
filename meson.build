@@ -84,10 +84,10 @@ endif
 # Hence, we have to disable them for the newer once.
 # Older compilers don't have these warnings and should not be included with #pragma
 if cc.has_argument('-Wenum-conversion')
-  add_global_arguments('-DCC_SUPPORTS_W_ENUM_CONVERION', language: ['c', 'cpp'])
+  add_project_arguments('-DCC_SUPPORTS_W_ENUM_CONVERION', language: ['c', 'cpp'])
 endif
 if cc.has_argument('-Wenum-compare')
-  add_global_arguments('-DCC_SUPPORTS_W_ENUM_COMPARE', language: ['c', 'cpp'])
+  add_project_arguments('-DCC_SUPPORTS_W_ENUM_COMPARE', language: ['c', 'cpp'])
 endif
 
 if cc.has_argument('--std=gnu99')
