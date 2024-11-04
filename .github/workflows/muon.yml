@@ -55,7 +55,7 @@ jobs:
       working-directory: muon
       run: |
           ./bootstrap.sh build
-          build/muon setup build
+          build/muon-bootstrap setup build
           ninja -C build
           sudo cp build/muon /usr/bin/muon
 
