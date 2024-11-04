@@ -667,7 +667,7 @@ typedef struct rz_bin_reloc_t {
 	ut64 section_vaddr; ///< the subsection address
 	ut32 visibility;
 	bool additive; ///< Name of the relocation type. NULL if none is specified. Not setting this field is deprecated.
-	const char *print_name;
+	const char *print_name; ///< Name of the relocation type. NULL if none is specified. Not setting this field is deprecated.
 	/* is_ifunc: indirect function, `addend` points to a resolver function
 	 * that returns the actual relocation value, e.g. chooses
 	 * an optimized version depending on the CPU.
