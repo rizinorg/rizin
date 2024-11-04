@@ -1854,7 +1854,7 @@ RZ_API void rz_core_bin_print_source_line_info(RzCore *core, const RzBinSourceLi
 }
 
 static const char *bin_reloc_type_name(RzBinReloc *reloc) {
-	if (reloc->print_name != NULL) {
+	if (RZ_STR_ISNOTEMPTY(reloc->print_name)) {
 		return reloc->print_name;
 	}
 #define CASE(T) \
