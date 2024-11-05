@@ -115,6 +115,7 @@ static void xtensa_analyze_op(RzAnalysis *a, RzAnalysisOp *op, XtensaContext *ct
 	case XTENSA_INS_ADDX4: /* addx4 */
 	case XTENSA_INS_ADDX8: /* addx8 */
 	case XTENSA_INS_ADD_N:
+	case XTENSA_INS_ADD_S:
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		break;
 	case XTENSA_INS_SUB: /* sub */
@@ -139,11 +140,19 @@ static void xtensa_analyze_op(RzAnalysis *a, RzAnalysisOp *op, XtensaContext *ct
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 		break;
 	case XTENSA_INS_ADDI: /* addi */
-	case XTENSA_INS_ADDI_N:
-	case XTENSA_INS_ADD_S:
+	case XTENSA_INS_ADDI_N: {
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
+		// a1 = stack
+		if (REGI(0) == XTENSA_REG_SP && REGI(1) == XTENSA_REG_SP) {
+			op->val = IMM(2);
+			op->stackptr = -IMM(2);
+			op->stackop = RZ_ANALYSIS_STACK_INC;
+		}
 		break;
+	}
 	case XTENSA_INS_RET: /* ret */
+	case XTENSA_INS_RET_N:
+	case XTENSA_INS_RETW_N:
 		op->eob = true;
 		op->type = RZ_ANALYSIS_OP_TYPE_RET;
 		break;
@@ -208,7 +217,7 @@ static void xtensa_analyze_op(RzAnalysis *a, RzAnalysisOp *op, XtensaContext *ct
 		break;
 	case XTENSA_INS_CALLX0: /* callx0 */
 		op->type = RZ_ANALYSIS_OP_TYPE_RCALL;
-		op->reg = REGO(0);
+		op->reg = REGN(0);
 		break;
 	case XTENSA_INS_MOVEQZ: /* moveqz */
 	case XTENSA_INS_MOVNEZ: /* movnez */

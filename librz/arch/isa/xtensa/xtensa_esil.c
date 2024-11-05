@@ -78,7 +78,7 @@ static void esil_load_imm(XtensaContext *ctx, RzAnalysisOp *op) {
 		// offset
 		MEM(1)->disp,
 		// address
-		REG(MEM(1)->base),
+		cs_reg_name(ctx->handle, MEM(1)->base),
 		// size
 		data_size);
 
@@ -91,7 +91,7 @@ static void esil_load_imm(XtensaContext *ctx, RzAnalysisOp *op) {
 		"%s" CM
 		"=",
 		// data
-		REGO(0));
+		REGN(0));
 }
 
 static void esil_load_relative(XtensaContext *ctx, RzAnalysisOp *op) {
@@ -112,21 +112,21 @@ static void esil_load_relative(XtensaContext *ctx, RzAnalysisOp *op) {
 		// offset
 		L32R(1),
 		// data
-		REGO(0));
+		REGN(0));
 }
 
 static void esil_add_imm(XtensaContext *ctx, RzAnalysisOp *op) {
 	// example: addi a3, a4, 0x01
 	//          a4,0x01,+,a3,=
 
-	rz_strbuf_appendf(&op->esil, "%s" CM, REGO(1));
+	rz_strbuf_appendf(&op->esil, "%s" CM, REGN(1));
 	esil_push_signed_imm(&op->esil, IMM(2));
 	rz_strbuf_appendf(
 		&op->esil,
 		"+" CM
 		"%s" CM
 		"=",
-		REGO(0));
+		REGN(0));
 }
 
 static void esil_store_imm(XtensaContext *ctx, RzAnalysisOp *op) { // example: s32i a2, a1, 0x10
@@ -149,9 +149,9 @@ static void esil_store_imm(XtensaContext *ctx, RzAnalysisOp *op) { // example: s
 		"+" CM
 		"=[%d]",
 		// data
-		REGO(0),
+		REGN(0),
 		// address
-		REG(MEM(1)->base),
+		cs_reg_name(ctx->handle, MEM(1)->base),
 		// offset
 		MEM(1)->disp,
 		// size
@@ -164,7 +164,7 @@ static void esil_move_imm(XtensaContext *ctx, RzAnalysisOp *op) {
 		&op->esil,
 		"%s" CM
 		"=",
-		REGO(0));
+		REGN(0));
 }
 
 static void esil_move(XtensaContext *ctx, RzAnalysisOp *op) {
@@ -173,8 +173,8 @@ static void esil_move(XtensaContext *ctx, RzAnalysisOp *op) {
 		"%s" CM
 		"%s" CM
 		"=",
-		REGO(1),
-		REGO(0));
+		REGN(1),
+		REGN(0));
 }
 
 static void esil_move_conditional(XtensaContext *ctx, RzAnalysisOp *op) {
@@ -215,10 +215,10 @@ static void esil_move_conditional(XtensaContext *ctx, RzAnalysisOp *op) {
 		"%s" CM
 		"=" CM
 		"}",
-		REGO(2),
+		REGN(2),
 		compare_op,
-		REGO(1),
-		REGO(0));
+		REGN(1),
+		REGN(0));
 }
 
 static ut8 add_sub_shift(XtensaContext *ctx) {
@@ -260,11 +260,11 @@ static void esil_add_sub(XtensaContext *ctx, RzAnalysisOp *op) {
 		"%s" CM
 		"%s" CM
 		"=",
-		REGO(2),
+		REGN(2),
 		add_sub_shift(ctx),
-		REGO(1),
+		REGN(1),
 		(add_sub_is_add(ctx) ? "+" : "-"),
-		REGO(0));
+		REGN(0));
 }
 
 static void esil_branch_compare_imm(XtensaContext *ctx, RzAnalysisOp *op) {
@@ -302,7 +302,7 @@ static void esil_branch_compare_imm(XtensaContext *ctx, RzAnalysisOp *op) {
 		&op->esil,
 		"%s" CM,
 		// data reg
-		REGO(0));
+		REGN(0));
 
 	esil_push_signed_imm(&op->esil, IMM(1));
 
@@ -351,8 +351,8 @@ static void esil_branch_compare(XtensaContext *ctx, RzAnalysisOp *op) {
 		"%s" CM
 		"%s" CM
 		"?{" CM,
-		REGO(1),
-		REGO(0),
+		REGN(1),
+		REGN(0),
 		compare_op);
 
 	esil_push_signed_imm(&op->esil, IMM(2) - INSN_SIZE);
@@ -396,7 +396,7 @@ static void esil_branch_compare_single(XtensaContext *ctx, RzAnalysisOp *op) {
 		"%s" CM
 		"%s" CM
 		"?{" CM,
-		REGO(0),
+		REGN(0),
 		compare_op);
 
 	esil_push_signed_imm(&op->esil, IMM(1) - INSN_SIZE);
@@ -426,7 +426,7 @@ static void esil_branch_check_mask(XtensaContext *ctx, RzAnalysisOp *op) {
 			compare_val,
 			sizeof(compare_val),
 			"%s",
-			REGO(1));
+			REGN(1));
 		break;
 	}
 
@@ -450,9 +450,9 @@ static void esil_branch_check_mask(XtensaContext *ctx, RzAnalysisOp *op) {
 		"%s" CM
 		"%s" CM
 		"?{" CM,
-		REGO(0),
-		REGO(1),
-		REGO(1),
+		REGN(0),
+		REGN(1),
+		REGN(1),
 		compare_op);
 
 	esil_push_signed_imm(&op->esil, IMM(2) - INSN_SIZE);
@@ -484,10 +484,10 @@ static void esil_bitwise_op(XtensaContext *ctx, RzAnalysisOp *op) {
 		"%c" CM
 		"%s" CM
 		"=",
-		REGO(1),
-		REGO(2),
+		REGN(1),
+		REGN(2),
 		bop,
-		REGO(0));
+		REGN(0));
 }
 
 static void esil_branch_check_bit_imm(XtensaContext *ctx, RzAnalysisOp *op) {
@@ -517,7 +517,7 @@ static void esil_branch_check_bit_imm(XtensaContext *ctx, RzAnalysisOp *op) {
 		"0" CM
 		"%s" CM
 		"?{" CM,
-		REGO(0),
+		REGN(0),
 		IMM(1),
 		cmp_op);
 
@@ -562,8 +562,8 @@ static void esil_branch_check_bit(XtensaContext *ctx, RzAnalysisOp *op) {
 		"0" CM
 		"%s" CM
 		"?{" CM,
-		REGO(1),
-		REGO(0),
+		REGN(1),
+		REGN(0),
 		cmp_op);
 
 	esil_push_signed_imm(&op->esil, IMM(2) - INSN_SIZE);
@@ -596,24 +596,24 @@ static void esil_abs_neg(XtensaContext *ctx, RzAnalysisOp *op) {
 			"?{" CM
 			"%s" CM
 			"}" CM,
-			REGO(0),
-			REGO(0),
-			REGO(0),
-			REGO(0));
+			REGN(0),
+			REGN(0),
+			REGN(0),
+			REGN(0));
 	} else {
 		rz_strbuf_appendf(
 			&op->esil,
 			"0" CM
 			"%s" CM
 			"-" CM,
-			REGO(0));
+			REGN(0));
 	}
 
 	rz_strbuf_appendf(
 		&op->esil,
 		"%s" CM
 		"=" CM,
-		REGO(1));
+		REGN(1));
 }
 
 static void esil_call(XtensaContext *ctx, RzAnalysisOp *op) {
@@ -635,7 +635,7 @@ static void esil_callx(XtensaContext *ctx, RzAnalysisOp *op) {
 	rz_strbuf_appendf(
 		&op->esil,
 		"%s" CM "0" CM "+" CM,
-		REGO(0));
+		REGN(0));
 
 	if (callx) {
 		rz_strbuf_append(
@@ -654,7 +654,7 @@ static void esil_set_shift_amount(XtensaContext *ctx, RzAnalysisOp *op) {
 		"%s" CM
 		"sar" CM
 		"=",
-		REGO(0));
+		REGN(0));
 }
 
 static void esil_set_shift_amount_imm(XtensaContext *ctx, RzAnalysisOp *op) {
@@ -684,9 +684,9 @@ static void esil_shift_logic_imm(XtensaContext *ctx, RzAnalysisOp *op) {
 		"%s" CM
 		"=",
 		IMM(2),
-		REGO(1),
+		REGN(1),
 		shift_op,
-		REGO(0));
+		REGN(0));
 }
 
 static void esil_shift_logic_sar(XtensaContext *ctx, RzAnalysisOp *op) {
@@ -705,9 +705,9 @@ static void esil_shift_logic_sar(XtensaContext *ctx, RzAnalysisOp *op) {
 		"%s" CM
 		"%s" CM
 		"=",
-		REGO(1),
+		REGN(1),
 		shift_op,
-		REGO(0));
+		REGN(0));
 }
 
 static void esil_extract_unsigned(XtensaContext *ctx, RzAnalysisOp *op) {
@@ -721,9 +721,9 @@ static void esil_extract_unsigned(XtensaContext *ctx, RzAnalysisOp *op) {
 		"%s" CM
 		"=",
 		IMM(2),
-		REGO(1),
+		REGN(1),
 		(1 << IMM(3)) - 1,
-		REGO(0));
+		REGN(0));
 }
 
 void xtensa_analyze_op_esil(XtensaContext *ctx, RzAnalysisOp *op) {
