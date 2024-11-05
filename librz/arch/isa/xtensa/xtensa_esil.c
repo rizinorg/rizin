@@ -617,8 +617,7 @@ static void esil_abs_neg(XtensaContext *ctx, RzAnalysisOp *op) {
 }
 
 static void esil_call(XtensaContext *ctx, RzAnalysisOp *op) {
-	bool call = opcode == XTENSA_GRP_CALL;
-	if (call) {
+	if (opcode == XTENSA_INS_CALL0) {
 		rz_strbuf_append(
 			&op->esil,
 			"pc" CM
