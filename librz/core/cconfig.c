@@ -514,20 +514,21 @@ static bool cb_asmarch(void *user, void *data) {
 	RzConfigNode *asm_cpu_node = rz_config_node_get(core->config, "asm.cpu");
 	if (core->rasm->cur) {
 		const char *cpus = core->rasm->cur->cpus;
-		if (cpus && asm_cpu_node &&
-			((asm_cpu_node->value && strstr(cpus, asm_cpu_node->value) == NULL) || RZ_STR_ISEMPTY(asm_cpu_node->value))) {
+		if (asm_cpu_node) {
 			if (RZ_STR_ISNOTEMPTY(cpus)) {
-				char *cpu0 = rz_str_dup(cpus);
-				char *comma = strchr(cpu0, ',');
-				if (comma) {
-					*comma = 0;
-				}
+				if ((asm_cpu_node->value && strstr(cpus, asm_cpu_node->value) == NULL) || RZ_STR_ISEMPTY(asm_cpu_node->value)) {
+					char *cpu0 = rz_str_dup(cpus);
+					char *comma = strchr(cpu0, ',');
+					if (comma) {
+						*comma = 0;
+					}
 
-				if (!*asm_cpu_node->value || (*asm_cpu_node->value && RZ_STR_NE(cpu0, asm_cpu_node->value))) {
-					rz_config_set(core->config, "asm.cpu", cpu0);
+					if (!*asm_cpu_node->value || (*asm_cpu_node->value && RZ_STR_NE(cpu0, asm_cpu_node->value))) {
+						rz_config_set(core->config, "asm.cpu", cpu0);
+					}
+					free(cpu0);
 				}
-				free(cpu0);
-			} else {
+			} else if (cpus && !*cpus) {
 				rz_config_set(core->config, "asm.cpu", "");
 			}
 		}
