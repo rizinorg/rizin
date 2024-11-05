@@ -106,12 +106,6 @@ static void esil_load_relative(XtensaContext *ctx, RzAnalysisOp *op) {
 	rz_strbuf_appendf(
 		&op->esil,
 		"0x%x" CM
-		"$$" CM
-		"3" CM
-		"+" CM
-		"0xFFFFFFFC" CM
-		"&" CM
-		"-" CM
 		"[4]" CM
 		"%s" CM
 		"=",
