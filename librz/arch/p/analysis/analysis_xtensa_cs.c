@@ -158,30 +158,35 @@ static void xtensa_analyze_op(RzAnalysis *a, RzAnalysisOp *op, XtensaContext *ct
 	case XTENSA_INS_XOR: /* xor */
 		op->type = RZ_ANALYSIS_OP_TYPE_COND;
 		break;
+	case XTENSA_INS_BEQZ: /* beqz */
+	case XTENSA_INS_BNEZ: /* bnez */
+	case XTENSA_INS_BGEZ: /* bgez */
+	case XTENSA_INS_BLTZ: /* bltz */
+		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
+		op->jump = ctx->insn->address + IMM(1);
+		op->fail = ctx->insn->address + ctx->insn->size;
+		op->cond = xtensa_cond(ctx->insn->id);
+		break;
+	case XTENSA_INS_BEQ:
+	case XTENSA_INS_BNE:
+	case XTENSA_INS_BGE:
+	case XTENSA_INS_BLT:
+	case XTENSA_INS_BGEU: /* bgeu */
+	case XTENSA_INS_BLTU: /* bltu */
 	case XTENSA_INS_BEQI: /* beqi */
 	case XTENSA_INS_BNEI: /* bnei */
 	case XTENSA_INS_BGEI: /* bgei */
 	case XTENSA_INS_BLTI: /* blti */
 	case XTENSA_INS_BGEUI: /* bgeui */
 	case XTENSA_INS_BLTUI: /* bltui */
-	case XTENSA_INS_BBCI: /* bbci */
-	case XTENSA_INS_BBSI: /* bbsi */
-	case XTENSA_INS_BEQ: /* beq */
-	case XTENSA_INS_BNE: /* bne */
-	case XTENSA_INS_BGE: /* bge */
-	case XTENSA_INS_BLT: /* blt */
-	case XTENSA_INS_BGEU: /* bgeu */
-	case XTENSA_INS_BLTU: /* bltu */
 	case XTENSA_INS_BANY: /* bany */
 	case XTENSA_INS_BNONE: /* bnone */
 	case XTENSA_INS_BALL: /* ball */
 	case XTENSA_INS_BNALL: /* bnall */
+	case XTENSA_INS_BBCI: /* bbci */
+	case XTENSA_INS_BBSI: /* bbsi */
 	case XTENSA_INS_BBC: /* bbc */
 	case XTENSA_INS_BBS: /* bbs */
-	case XTENSA_INS_BEQZ: /* beqz */
-	case XTENSA_INS_BNEZ: /* bnez */
-	case XTENSA_INS_BGEZ: /* bgez */
-	case XTENSA_INS_BLTZ: /* bltz */
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 		op->jump = ctx->insn->address + IMM(2);
 		op->fail = ctx->insn->address + ctx->insn->size;
