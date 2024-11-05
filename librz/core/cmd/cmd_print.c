@@ -3218,6 +3218,11 @@ static void disassembly_as_table(RzTable *t, RzCore *core, ut64 addr, int n_inst
 static bool core_disassembly(RzCore *core, int n_bytes, int n_instrs, RzCmdStateOutput *state, bool cbytes) {
 	ut64 offset = rz_core_backward_offset(core, core->offset, &n_instrs, &n_bytes);
 
+	if (n_bytes == 0) {
+		const int max_op_size = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE);
+		n_bytes = max_op_size * n_instrs;
+	}
+
 	RZ_LOG_VERBOSE("disassembly at: 0x%" PFMT64x " "
 		       "blocksize: %" PFMT32d " "
 		       "n_bytes: %" PFMT32d " "
@@ -3226,6 +3231,7 @@ static bool core_disassembly(RzCore *core, int n_bytes, int n_instrs, RzCmdState
 	RzCoreDisasmOptions disasm_options = {
 		.cbytes = cbytes,
 	};
+
 	ut8 *buf = malloc(n_bytes + 1);
 	if (!buf) {
 		RZ_LOG_ERROR("Failed to allocate memory\n");
