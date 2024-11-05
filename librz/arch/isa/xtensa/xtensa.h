@@ -49,5 +49,6 @@ static inline int32_t xtensa_op_l32r(cs_insn *insn, unsigned int index) {
 #define REGO(I) REG(xtensa_op_reg(ctx->insn, I))
 #define IMM(I)  xtensa_op_imm(ctx->insn, I)
 #define L32R(I) xtensa_op_l32r(ctx->insn, I)
+#define INSN_SIZE (ctx->insn->size)
 
 #endif // RIZIN_XTENSA_H

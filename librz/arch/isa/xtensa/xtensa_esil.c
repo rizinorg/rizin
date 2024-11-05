@@ -318,7 +318,7 @@ static void esil_branch_compare_imm(XtensaContext *ctx, RzAnalysisOp *op) {
 	// ISA defines branch target as offset + 4,
 	// but at the time of ESIL evaluation
 	// PC will be already incremented by 3
-	esil_push_signed_imm(&op->esil, IMM(2) + 4 - 3);
+	esil_push_signed_imm(&op->esil, IMM(2) - INSN_SIZE);
 
 	rz_strbuf_appendf(&op->esil, "pc" CM "+=" CM "}");
 }
@@ -361,7 +361,7 @@ static void esil_branch_compare(XtensaContext *ctx, RzAnalysisOp *op) {
 		REGO(0),
 		compare_op);
 
-	esil_push_signed_imm(&op->esil, IMM(2));
+	esil_push_signed_imm(&op->esil, IMM(2) - INSN_SIZE);
 
 	rz_strbuf_append(&op->esil, "pc" CM "+=" CM "}");
 }
@@ -405,7 +405,7 @@ static void esil_branch_compare_single(XtensaContext *ctx, RzAnalysisOp *op) {
 		REGO(0),
 		compare_op);
 
-	esil_push_signed_imm(&op->esil, IMM(1));
+	esil_push_signed_imm(&op->esil, IMM(1) - INSN_SIZE);
 
 	rz_strbuf_append(&op->esil, "pc" CM "+=" CM "}");
 }
@@ -461,7 +461,7 @@ static void esil_branch_check_mask(XtensaContext *ctx, RzAnalysisOp *op) {
 		REGO(1),
 		compare_op);
 
-	esil_push_signed_imm(&op->esil, IMM(2));
+	esil_push_signed_imm(&op->esil, IMM(2) - INSN_SIZE);
 
 	rz_strbuf_append(&op->esil, "pc" CM "+=" CM "}");
 }
@@ -527,7 +527,7 @@ static void esil_branch_check_bit_imm(XtensaContext *ctx, RzAnalysisOp *op) {
 		IMM(1),
 		cmp_op);
 
-	esil_push_signed_imm(&op->esil, IMM(2));
+	esil_push_signed_imm(&op->esil, IMM(2) - INSN_SIZE);
 
 	rz_strbuf_appendf(
 		&op->esil,
@@ -572,7 +572,7 @@ static void esil_branch_check_bit(XtensaContext *ctx, RzAnalysisOp *op) {
 		REGO(0),
 		cmp_op);
 
-	esil_push_signed_imm(&op->esil, IMM(2));
+	esil_push_signed_imm(&op->esil, IMM(2) - INSN_SIZE);
 
 	rz_strbuf_appendf(
 		&op->esil,
@@ -632,7 +632,7 @@ static void esil_call(XtensaContext *ctx, RzAnalysisOp *op) {
 			"=" CM);
 	}
 
-	esil_push_signed_imm(&op->esil, IMM(0));
+	esil_push_signed_imm(&op->esil, IMM(0) - INSN_SIZE);
 
 	rz_strbuf_append(&op->esil, "pc" CM "+=");
 }
@@ -835,9 +835,9 @@ void xtensa_analyze_op_esil(XtensaContext *ctx, RzAnalysisOp *op) {
 	case XTENSA_INS_EXTUI: /* extui */
 		esil_extract_unsigned(ctx, op);
 		break;
-		//	case 79: /* ill */
-		//		rz_strbuf_setf(&op->esil, "%s", "");
-		//		break;
+	case XTENSA_INS_ILL: /* ill */
+		rz_strbuf_setf(&op->esil, "%s", "");
+		break;
 		// TODO: windowed calls?
 	case XTENSA_INS_CALL4:
 		break;

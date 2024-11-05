@@ -114,6 +114,7 @@ static void xtensa_analyze_op(RzAnalysis *a, RzAnalysisOp *op, XtensaContext *ct
 	case XTENSA_INS_ADDX2: /* addx2 */
 	case XTENSA_INS_ADDX4: /* addx4 */
 	case XTENSA_INS_ADDX8: /* addx8 */
+	case XTENSA_INS_ADD_N:
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		break;
 	case XTENSA_INS_SUB: /* sub */
@@ -126,15 +127,20 @@ static void xtensa_analyze_op(RzAnalysis *a, RzAnalysisOp *op, XtensaContext *ct
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		break;
 		//	case 0: /* excw */
+	case XTENSA_INS_EXCW:
 	case XTENSA_INS_NOP: /* nop.n */
 		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 		break;
 	case XTENSA_INS_S32I: /* s32i */
 	case XTENSA_INS_S16I: /* s16i */
 	case XTENSA_INS_S8I: /* s8i */
+	case XTENSA_INS_S32I_N:
+	case XTENSA_INS_S32C1I:
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 		break;
 	case XTENSA_INS_ADDI: /* addi */
+	case XTENSA_INS_ADDI_N:
+	case XTENSA_INS_ADD_S:
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		break;
 	case XTENSA_INS_RET: /* ret */
@@ -145,9 +151,9 @@ static void xtensa_analyze_op(RzAnalysis *a, RzAnalysisOp *op, XtensaContext *ct
 	case XTENSA_INS_L16SI: /* l16si */
 	case XTENSA_INS_L32I: /* l32i */
 	case XTENSA_INS_L8UI: /* l8ui */
-		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
-		break;
-	case XTENSA_INS_L32R: /* l32r */
+	case XTENSA_INS_L32I_N:
+	case XTENSA_INS_L32R:
+	case XTENSA_INS_L32E:
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		break;
 	case XTENSA_INS_ADDMI: /* addmi */
@@ -211,6 +217,7 @@ static void xtensa_analyze_op(RzAnalysis *a, RzAnalysisOp *op, XtensaContext *ct
 		op->type = RZ_ANALYSIS_OP_TYPE_CMOV;
 		break;
 	case XTENSA_INS_ABS: /* abs */
+	case XTENSA_INS_ABS_S:
 		op->type = RZ_ANALYSIS_OP_TYPE_ABS;
 		break;
 	case XTENSA_INS_NEG: /* neg */
