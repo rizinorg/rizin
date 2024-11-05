@@ -12,7 +12,7 @@ static int xtensa_archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
 	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
 		return 3;
 	case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE:
-		return 8;
+		return 6;
 		//	case RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN:
 		//		return 2;
 		//	case RZ_ANALYSIS_ARCHINFO_DATA_ALIGN:
