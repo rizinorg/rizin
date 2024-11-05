@@ -722,7 +722,7 @@ static void esil_extract_unsigned(XtensaContext *ctx, RzAnalysisOp *op) {
 		"=",
 		IMM(2),
 		REGO(1),
-		IMM(3),
+		(1 << IMM(3)) - 1,
 		REGO(0));
 }
 
