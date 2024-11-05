@@ -514,7 +514,8 @@ static bool cb_asmarch(void *user, void *data) {
 	RzConfigNode *asm_cpu_node = rz_config_node_get(core->config, "asm.cpu");
 	if (core->rasm->cur) {
 		const char *cpus = core->rasm->cur->cpus;
-		if (strstr(cpus, asm_cpu_node->value) == NULL) {
+		if (cpus && asm_cpu_node &&
+			((asm_cpu_node->value && strstr(cpus, asm_cpu_node->value) == NULL) || RZ_STR_ISEMPTY(asm_cpu_node->value))) {
 			if (RZ_STR_ISNOTEMPTY(cpus)) {
 				char *cpu0 = rz_str_dup(cpus);
 				char *comma = strchr(cpu0, ',');
