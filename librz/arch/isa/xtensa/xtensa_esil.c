@@ -57,15 +57,15 @@ static void esil_load_imm(XtensaContext *ctx, RzAnalysisOp *op) {
 	sign_extend_bit = 0;
 	switch (opcode) {
 	case XTENSA_INS_L32I: // l32i
-		//	case 31: // l32i.n
+	case XTENSA_INS_L32I_N: // l32i.n
 		data_size = 4;
 		break;
 	case XTENSA_INS_L16SI: // l16si
 		sign_extend_bit = 15;
 		data_size = 2;
-		// fallthrough
-	case XTENSA_INS_L16UI:
-		// l16ui
+		break;
+	case XTENSA_INS_L16UI: // l16ui
+		data_size = 2;
 		break;
 	}
 
@@ -144,16 +144,16 @@ static void esil_store_imm(XtensaContext *ctx, RzAnalysisOp *op) { // example: s
 	rz_strbuf_appendf(
 		&op->esil,
 		"%s" CM
-		"0x%x" CM
 		"%s" CM
+		"0x%x" CM
 		"+" CM
 		"=[%d]",
 		// data
+		REGO(0),
+		// address
 		REG(MEM(1)->base),
 		// offset
 		MEM(1)->disp,
-		// address
-		REGO(0),
 		// size
 		data_size);
 }
