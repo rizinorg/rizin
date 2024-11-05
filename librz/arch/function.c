@@ -258,7 +258,22 @@ RZ_API bool rz_analysis_function_relocate(RzAnalysisFunction *fcn, ut64 addr) {
 	return true;
 }
 
+/**
+ * @b Rename given function.
+ * This method will fail if a function with same name as `name`
+ * already exists in rizin's analysis.
+ *
+ * @param fcn Rizin analysis function.
+ * @param name A unique name
+ *
+ * @return `true` on success.
+ * @return `false` otherwiese.
+ *
+ * @sa rz_analysis_function_force_rename
+ * */
 RZ_API bool rz_analysis_function_rename(RzAnalysisFunction *fcn, const char *name) {
+	rz_return_val_if_fail(fcn && name, false);
+
 	RzAnalysis *analysis = fcn->analysis;
 	RzAnalysisFunction *existing = ht_sp_find(analysis->ht_name_fun, name, NULL);
 	if (existing) {
@@ -280,6 +295,38 @@ RZ_API bool rz_analysis_function_rename(RzAnalysisFunction *fcn, const char *nam
 		ht_sp_insert(analysis->ht_name_fun, fcn->name, fcn);
 	}
 	return true;
+}
+
+/**
+ * @b Force rename a function.
+ * This will make sure a function with non-unique name gets renamed by
+ * adding a numeric suffix to it.
+ *
+ * @param fcn
+ * @param name
+ *
+ * @return New name on success.
+ * @return `NULL` otherwise.
+ *
+ * @sa rz_analysis_function_rename
+ * */
+RZ_API const char *rz_analysis_function_force_rename(RzAnalysisFunction *fcn, const char *name) {
+	rz_return_val_if_fail(fcn && name, NULL);
+
+	const char *final_name = strdup(name);
+	ut32 retries = 100;
+	ut32 suffix = 0;
+	while ((retries--) && !rz_analysis_function_rename(fcn, final_name)) {
+		if (final_name) {
+			free((void *)final_name);
+			final_name = NULL;
+		}
+
+		ut32 strsz = snprintf(NULL, 0, "%s_%u", name, suffix) + 1;
+		final_name = malloc(strsz);
+		snprintf((char *)final_name, strsz, "%s_%u", name, suffix++);
+	}
+	return retries ? fcn->name : NULL;
 }
 
 RZ_API void rz_analysis_function_add_block(RzAnalysisFunction *fcn, RzAnalysisBlock *bb) {
