@@ -38,7 +38,7 @@ wx 00000000ff11ff1121ffff0df0ff
 pD 3 @ 8
 EOF
 EXPECT=<<EOF
-            0x00000008      l32r  a2, . -8
+            0x00000008      l32r  a2, . 4
 EOF
 RUN
 
