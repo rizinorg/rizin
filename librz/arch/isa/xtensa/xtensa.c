@@ -30,6 +30,7 @@ bool xtensa_open(XtensaContext *ctx, const char *cpu, bool big_endian) {
 		return false;
 	}
 	cs_mode mode = big_endian ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN;
+	mode |= CS_MODE_XTENSA_ESP32;
 	if (cs_open(CS_ARCH_XTENSA, mode, &ctx->handle) != CS_ERR_OK) {
 		return false;
 	}

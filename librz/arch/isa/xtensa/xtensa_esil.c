@@ -7,8 +7,8 @@
 #include <xtensa/xtensa.h>
 #include <capstone/xtensa.h>
 
-#define CM      ","
-#define opcode  (ctx->insn->id)
+#define CM     ","
+#define opcode (ctx->insn->id)
 
 static void esil_push_signed_imm(RzStrBuf *esil, st32 imm) {
 	if (imm >= 0) {
@@ -173,15 +173,15 @@ static void esil_move_imm(XtensaContext *ctx, RzAnalysisOp *op) {
 		REGO(0));
 }
 
-// static void esil_move(XtensaContext *ctx, RzAnalysisOp *op) {
-//	rz_strbuf_appendf(
-//		&op->esil,
-//		"%s" CM
-//		"%s" CM
-//		"=",
-//		REGO(1),
-//		REGO(0));
-// }
+static void esil_move(XtensaContext *ctx, RzAnalysisOp *op) {
+	rz_strbuf_appendf(
+		&op->esil,
+		"%s" CM
+		"%s" CM
+		"=",
+		REGO(1),
+		REGO(0));
+}
 
 static void esil_move_conditional(XtensaContext *ctx, RzAnalysisOp *op) {
 	const char *compare_op = "";
@@ -735,7 +735,7 @@ static void esil_extract_unsigned(XtensaContext *ctx, RzAnalysisOp *op) {
 
 void xtensa_analyze_op_esil(XtensaContext *ctx, RzAnalysisOp *op) {
 	switch (opcode) {
-		//	case 26: /* add.n */
+	case XTENSA_INS_ADD_N: /* add.n */
 	case XTENSA_INS_ADD: /* add */
 	case XTENSA_INS_ADDX2: /* addx2 */
 	case XTENSA_INS_ADDX4: /* addx4 */
@@ -746,38 +746,38 @@ void xtensa_analyze_op_esil(XtensaContext *ctx, RzAnalysisOp *op) {
 	case XTENSA_INS_SUBX8: /* subx8 */
 		esil_add_sub(ctx, op);
 		break;
-		//	case 32: /* mov.n */
-		//		esil_move(ctx, op);
-		//		break;
+	case XTENSA_INS_MOV_N:
+		esil_move(ctx, op);
+		break;
 	case XTENSA_INS_MOVI: /* movi */
-		//	case 33: /* movi.n */
+	case XTENSA_INS_MOVI_N:
 		esil_move_imm(ctx, op);
 		break;
-		//	case 0: /* excw */
+	case XTENSA_INS_EXCW:
 	case XTENSA_INS_NOP: /* nop.n */
 		rz_strbuf_setf(&op->esil, "%s", "");
 		break;
 		// TODO: s32cli (s32c1i) is conditional (CAS)
 		// should it be handled here?
-		//	case 453: /* s32c1i */
-		//	case 36: /* s32i.n */
+	case XTENSA_INS_S32C1I:
+	case XTENSA_INS_S32I_N:
 	case XTENSA_INS_S32I: /* s32i */
 	case XTENSA_INS_S16I: /* s16i */
 	case XTENSA_INS_S8I: /* s8i */
 		esil_store_imm(ctx, op);
 		break;
-		//	case 27: /* addi.n */
+	case XTENSA_INS_ADDI_N:
 	case XTENSA_INS_ADDI: /* addi */
 		esil_add_imm(ctx, op);
 		break;
 	case XTENSA_INS_RET: /* ret */
-		//	case 35: /* ret.n */
+	case XTENSA_INS_RET_N:
 		rz_strbuf_setf(&op->esil, "a0,pc,=");
 		break;
 	case XTENSA_INS_L16UI: /* l16ui */
 	case XTENSA_INS_L16SI: /* l16si */
 	case XTENSA_INS_L32I: /* l32i */
-		//	case 31: /* l32i.n */
+	case XTENSA_INS_L32I_N:
 	case XTENSA_INS_L8UI: /* l8ui */
 		esil_load_imm(ctx, op);
 		break;
@@ -839,13 +839,13 @@ void xtensa_analyze_op_esil(XtensaContext *ctx, RzAnalysisOp *op) {
 		//		rz_strbuf_setf(&op->esil, "%s", "");
 		//		break;
 		// TODO: windowed calls?
-		//	case 7: /* call4 */
-		//		break;
-		//	case 76: /* call0 */
+	case XTENSA_INS_CALL4:
+		break;
+	case XTENSA_INS_CALL0:
 	case XTENSA_INS_J: /* j */
 		esil_call(ctx, op);
 		break;
-		//	case 81: /* jx */
+	case XTENSA_INS_JX:
 	case XTENSA_INS_CALLX0: /* callx0 */
 		esil_callx(ctx, op);
 		break;
