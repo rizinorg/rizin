@@ -468,6 +468,25 @@ bool test_noreturn_functions_list() {
 	mu_end;
 }
 
+bool test_analysis_function_rename() {
+	RzAnalysis *analysis = rz_analysis_new();
+	RzAnalysisFunction *a = rz_analysis_create_function(analysis, "a", 0xcafe, RZ_ANALYSIS_FCN_TYPE_FCN);
+	// we know b does not exist, rename a to b
+	mu_assert_true(rz_analysis_function_rename(a, "b"), "function rename");
+	mu_end;
+}
+
+bool test_analysis_function_force_rename() {
+	RzAnalysis *analysis = rz_analysis_new();
+
+	RzAnalysisFunction *a = rz_analysis_create_function(analysis, "a", 0xcafe, RZ_ANALYSIS_FCN_TYPE_FCN);
+	rz_analysis_create_function(analysis, "b", 0xbabe, RZ_ANALYSIS_FCN_TYPE_FCN);
+
+	// rename a to b, but b already exists, so we force rename
+	mu_assert_notnull(rz_analysis_function_force_rename(a, "b"), "function force rename");
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_rz_analysis_function_relocate);
 	mu_run_test(test_rz_analysis_function_labels);
@@ -478,6 +497,8 @@ int all_tests() {
 	mu_run_test(test_initial_underscore);
 	mu_run_test(test_rz_analysis_function_set_type);
 	mu_run_test(test_noreturn_functions_list);
+	mu_run_test(test_analysis_function_rename);
+	mu_run_test(test_analysis_function_force_rename);
 	return tests_passed != tests_run;
 }
 

@@ -271,7 +271,7 @@ RZ_API bool rz_analysis_function_relocate(RzAnalysisFunction *fcn, ut64 addr) {
  *
  * @sa rz_analysis_function_force_rename
  * */
-RZ_API bool rz_analysis_function_rename(RzAnalysisFunction *fcn, const char *name) {
+RZ_API bool rz_analysis_function_rename(RZ_NONNULL RzAnalysisFunction *fcn, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(fcn && name, false);
 
 	RzAnalysis *analysis = fcn->analysis;
@@ -310,23 +310,18 @@ RZ_API bool rz_analysis_function_rename(RzAnalysisFunction *fcn, const char *nam
  *
  * @sa rz_analysis_function_rename
  * */
-RZ_API const char *rz_analysis_function_force_rename(RzAnalysisFunction *fcn, const char *name) {
+RZ_API const char *rz_analysis_function_force_rename(RZ_NONNULL RzAnalysisFunction *fcn, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(fcn && name, NULL);
 
-	const char *final_name = strdup(name);
-	ut32 retries = 100;
-	ut32 suffix = 0;
-	while ((retries--) && !rz_analysis_function_rename(fcn, final_name)) {
-		if (final_name) {
-			free((void *)final_name);
-			final_name = NULL;
-		}
-
-		ut32 strsz = snprintf(NULL, 0, "%s_%u", name, suffix) + 1;
-		final_name = malloc(strsz);
-		snprintf((char *)final_name, strsz, "%s_%u", name, suffix++);
+	if (rz_analysis_function_rename(fcn, name)) {
+		return fcn->name;
+	} else {
+		// assuming final name can never be bigger than 255 bytes
+		char final_name[256];
+		// {name}_{addr} is guaranteed to be unique
+		rz_strf(final_name, "%s_%llx", name, fcn->addr);
+		return rz_analysis_function_rename(fcn, final_name) ? fcn->name : NULL;
 	}
-	return retries ? fcn->name : NULL;
 }
 
 RZ_API void rz_analysis_function_add_block(RzAnalysisFunction *fcn, RzAnalysisBlock *bb) {
