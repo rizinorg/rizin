@@ -310,7 +310,7 @@ RZ_API bool rz_analysis_function_rename(RZ_NONNULL RzAnalysisFunction *fcn, RZ_N
  *
  * @sa rz_analysis_function_rename
  * */
-RZ_API const char *rz_analysis_function_force_rename(RZ_NONNULL RzAnalysisFunction *fcn, RZ_NONNULL const char *name) {
+RZ_API RZ_BORROW const char *rz_analysis_function_force_rename(RZ_NONNULL RzAnalysisFunction *fcn, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(fcn && name, NULL);
 
 	if (rz_analysis_function_rename(fcn, name)) {
