@@ -104,7 +104,58 @@ static RzTypeCond xtensa_cond(xtensa_insn insn) {
 	return RZ_TYPE_COND_AL;
 }
 
+static void xop_to_rval(RzAnalysis *a, XtensaContext *ctx, cs_xtensa_op *xop, RzAnalysisValue **prv) {
+	RzAnalysisValue *rv = rz_analysis_value_new();
+	if (!rv) {
+		return;
+	}
+
+	if (xop->access & CS_AC_WRITE) {
+		rv->access |= RZ_ANALYSIS_ACC_W;
+	} else if (xop->access & CS_AC_READ) {
+		rv->access |= RZ_ANALYSIS_ACC_R;
+	}
+	switch (xop->type) {
+	case XTENSA_OP_REG:
+		rv->reg = rz_reg_get(a->reg, cs_reg_name(ctx->handle, xop->reg), RZ_REG_TYPE_ANY);
+		rv->type = RZ_ANALYSIS_VAL_REG;
+		break;
+	case XTENSA_OP_IMM:
+		rv->imm = xop->imm;
+		rv->type = RZ_ANALYSIS_VAL_IMM;
+		break;
+	case XTENSA_OP_MEM:
+		rv->reg = rz_reg_get(a->reg, cs_reg_name(ctx->handle, xop->mem.base), RZ_REG_TYPE_ANY);
+		rv->delta = xop->mem.disp;
+		rv->type = RZ_ANALYSIS_VAL_MEM;
+		break;
+	case XTENSA_OP_L32R:
+		rv->reg = rz_reg_get(a->reg, "pc", RZ_REG_TYPE_ANY);
+		rv->delta = xop->imm;
+		rv->type = RZ_ANALYSIS_VAL_MEM;
+		break;
+	default:
+		rv->type = RZ_ANALYSIS_VAL_UNK;
+		break;
+	}
+	if (*prv) {
+		rz_analysis_value_free(*prv);
+	}
+	*prv = rv;
+}
+
 static void xtensa_analyze_op(RzAnalysis *a, RzAnalysisOp *op, XtensaContext *ctx) {
+	int src_count = 0;
+	for (int i = 0; i < ctx->insn->detail->xtensa.op_count; ++i) {
+		cs_xtensa_op *xop = XOP(i);
+		if (xop->access & CS_AC_WRITE) {
+			xop_to_rval(a, ctx, xop, &op->dst);
+		}
+		if (xop->access & CS_AC_READ) {
+			xop_to_rval(a, ctx, xop, &op->src[src_count++]);
+		}
+	}
+
 	switch (ctx->insn->id) {
 	case XTENSA_INS_ADD: /* add */
 	case XTENSA_INS_ADDX2: /* addx2 */
