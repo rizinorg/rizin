@@ -1,13 +1,25 @@
 // SPDX-FileCopyrightText: 2024 billow <billow.fun@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#ifndef RIZIN_XTENSA_H
-#define RIZIN_XTENSA_H
+#ifndef RZ_XTENSA_H
+#define RZ_XTENSA_H
 
 #include <capstone/capstone.h>
 #include <rz_asm.h>
 
+typedef struct {
+	const char *cpu;
+	cs_mode mode;
+} XtensaCPUMode;
+
+static const XtensaCPUMode xtensa_cpu_modes[] = {
+	{ .cpu = "esp32", .mode = CS_MODE_XTENSA_ESP32 },
+	{ .cpu = "esp32s2", .mode = CS_MODE_XTENSA_ESP32S2 },
+	{ .cpu = "esp8266", .mode = CS_MODE_XTENSA_ESP8266 },
+};
+
 typedef struct xtensa_context_t {
+	cs_mode mode;
 	csh handle;
 	cs_insn *insn;
 	size_t count;
@@ -51,4 +63,4 @@ static inline int32_t xtensa_op_l32r(cs_insn *insn, unsigned int index) {
 #define L32R(I)   xtensa_op_l32r(ctx->insn, I)
 #define INSN_SIZE (ctx->insn->size)
 
-#endif // RIZIN_XTENSA_H
+#endif // RZ_XTENSA_H

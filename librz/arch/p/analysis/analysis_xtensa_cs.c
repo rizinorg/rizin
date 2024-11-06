@@ -10,15 +10,11 @@
 static int xtensa_archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
 	switch (query) {
 	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
-		return 3;
+		return 2;
 	case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE:
 		return 6;
-		//	case RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN:
-		//		return 2;
-		//	case RZ_ANALYSIS_ARCHINFO_DATA_ALIGN:
-		//		return 0;
 	case RZ_ANALYSIS_ARCHINFO_CAN_USE_POINTERS:
-		return true;
+		return 1;
 	default:
 		return -1;
 	}
@@ -293,12 +289,13 @@ beach:
 RzAnalysisPlugin rz_analysis_plugin_xtensa_cs = {
 	.name = "xtensa",
 	.desc = "Capstone Xtensa analysis plugin",
+	.author = "billow",
 	.license = "LGPL3",
 	.preludes = xtensa_preludes,
 	.arch = "xtensa",
-	.bits = 32,
+	.bits = 8,
 	.op = xtensa_op,
-	.esil = false,
+	.esil = true,
 	.archinfo = xtensa_archinfo,
 	.get_reg_profile = xtensa_get_reg_profile,
 	.il_config = xtensa_il_config,

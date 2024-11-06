@@ -26,14 +26,24 @@ bool xtensa_open(XtensaContext *ctx, const char *cpu, bool big_endian) {
 	if (!ctx) {
 		return false;
 	}
-	if (RZ_STR_ISNOTEMPTY(cpu) && RZ_STR_NE(cpu, "xtensa")) {
-		return false;
-	}
 	cs_mode mode = big_endian ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN;
-	mode |= CS_MODE_XTENSA_ESP32;
+	if (RZ_STR_ISEMPTY(cpu)) {
+		mode |= xtensa_cpu_modes[0].mode;
+	} else {
+		for (int i = 0; i < RZ_ARRAY_SIZE(xtensa_cpu_modes); ++i) {
+			if (RZ_STR_EQ(cpu, xtensa_cpu_modes[i].cpu)) {
+				mode |= xtensa_cpu_modes[i].mode;
+				break;
+			}
+		}
+	}
+	if (mode == ctx->mode) {
+		return true;
+	}
 	if (cs_open(CS_ARCH_XTENSA, mode, &ctx->handle) != CS_ERR_OK) {
 		return false;
 	}
+	ctx->mode = mode;
 	if (cs_option(ctx->handle, CS_OPT_DETAIL, CS_OPT_ON) != CS_ERR_OK) {
 		return false;
 	}
@@ -49,8 +59,9 @@ bool xtensa_disassemble(XtensaContext *self, const ut8 *buf, int len, ut64 addr)
 }
 
 void xtensa_disassemble_fini(XtensaContext *self) {
-	if (!self->insn)
+	if (!self->insn) {
 		return;
+	}
 	cs_free(self->insn, self->count);
 	self->insn = NULL;
 	self->count = 0;
