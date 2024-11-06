@@ -186,6 +186,7 @@ static void xtensa_analyze_op(RzAnalysis *a, RzAnalysisOp *op, XtensaContext *ct
 	case XTENSA_INS_S32I_N:
 	case XTENSA_INS_S32C1I:
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
+		op->direction = RZ_ANALYSIS_OP_DIR_WRITE;
 		if (XOP(1)->type == XTENSA_OP_MEM && MEM(1)->base == XTENSA_REG_SP) {
 			op->type = RZ_ANALYSIS_OP_TYPE_PUSH;
 		}
@@ -215,6 +216,7 @@ static void xtensa_analyze_op(RzAnalysis *a, RzAnalysisOp *op, XtensaContext *ct
 	case XTENSA_INS_L32R:
 	case XTENSA_INS_L32E:
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
+		op->direction = RZ_ANALYSIS_OP_DIR_READ;
 		if (XOP(1)->type == XTENSA_OP_MEM && MEM(1)->base == XTENSA_REG_SP) {
 			op->type = RZ_ANALYSIS_OP_TYPE_POP;
 		}
