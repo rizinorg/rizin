@@ -1550,8 +1550,8 @@ RZ_API bool rz_analysis_function_relocate(RzAnalysisFunction *fcn, ut64 addr);
 
 // rename the given function
 // This can fail (and return false) if there is another function with the name given
-RZ_API bool rz_analysis_function_rename(RzAnalysisFunction *fcn, const char *name);
-RZ_API const char *rz_analysis_function_force_rename(RzAnalysisFunction *fcn, const char *name);
+RZ_API bool rz_analysis_function_rename(RZ_NONNULL RzAnalysisFunction *fcn, RZ_NONNULL const char *name);
+RZ_API const char *rz_analysis_function_force_rename(RZ_NONNULL RzAnalysisFunction *fcn, RZ_NONNULL const char *name);
 
 RZ_API void rz_analysis_function_add_block(RzAnalysisFunction *fcn, RzAnalysisBlock *bb);
 RZ_API void rz_analysis_function_remove_block(RzAnalysisFunction *fcn, RzAnalysisBlock *bb);
