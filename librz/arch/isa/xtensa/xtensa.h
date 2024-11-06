@@ -56,6 +56,7 @@ static inline int32_t xtensa_op_l32r(cs_insn *insn, unsigned int index) {
 	return op->imm;
 }
 
+#define XOP(I)    (ctx->insn->detail->xtensa.operands + I)
 #define MEM(I)    xtensa_op_mem(ctx->insn, I)
 #define REGI(I)   xtensa_op_reg(ctx->insn, I)
 #define REGN(I)   cs_reg_name(ctx->handle, (xtensa_op_reg(ctx->insn, I)))
