@@ -61,18 +61,6 @@ static char *xtensa_get_reg_profile(RzAnalysis *analysis) {
 		"gpr	sar	.32	72	0\n");
 }
 
-RzAnalysisILConfig *xtensa_il_config(RzAnalysis *a) {
-	rz_return_val_if_fail(a, NULL);
-
-	RzAnalysisILConfig *cfg = rz_analysis_il_config_new(32, false, 32);
-	//	cfg->reg_bindings = xtensa_registers;
-	return cfg;
-}
-
-static RzList /*<RzSearchKeyword *>*/ *xtensa_preludes(RzAnalysis *analysis) {
-	return NULL;
-}
-
 static RzTypeCond xtensa_cond(xtensa_insn insn) {
 	switch (insn) {
 	case XTENSA_INS_BEQI: return RZ_TYPE_COND_EQ;
@@ -362,14 +350,12 @@ RzAnalysisPlugin rz_analysis_plugin_xtensa_cs = {
 	.desc = "Capstone Xtensa analysis plugin",
 	.author = "billow",
 	.license = "LGPL3",
-	.preludes = xtensa_preludes,
 	.arch = "xtensa",
 	.bits = 8,
 	.op = xtensa_op,
 	.esil = true,
 	.archinfo = xtensa_archinfo,
 	.get_reg_profile = xtensa_get_reg_profile,
-	.il_config = xtensa_il_config,
 	.init = xtensa_init,
 	.fini = xtensa_fini,
 };
