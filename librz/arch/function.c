@@ -313,15 +313,16 @@ RZ_API bool rz_analysis_function_rename(RZ_NONNULL RzAnalysisFunction *fcn, RZ_N
 RZ_API RZ_BORROW const char *rz_analysis_function_force_rename(RZ_NONNULL RzAnalysisFunction *fcn, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(fcn && name, NULL);
 
+	// first attempt to rename normally, if that fails we try force rename
 	if (rz_analysis_function_rename(fcn, name)) {
 		return fcn->name;
-	} else {
-		// assuming final name can never be bigger than 255 bytes
-		char final_name[256];
-		// {name}_{addr} is guaranteed to be unique
-		rz_strf(final_name, "%s_%llx", name, fcn->addr);
-		return rz_analysis_function_rename(fcn, final_name) ? fcn->name : NULL;
 	}
+
+	// {name}_{addr} is guaranteed to be unique
+	const char *new_name = rz_str_newf("%s_%" PFMT64x, name, fcn->addr);
+	bool ok = rz_analysis_function_rename(fcn, new_name);
+	RZ_FREE(new_name);
+	return ok ? fcn->name : NULL;
 }
 
 RZ_API void rz_analysis_function_add_block(RzAnalysisFunction *fcn, RzAnalysisBlock *bb) {

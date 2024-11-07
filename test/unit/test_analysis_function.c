@@ -470,9 +470,15 @@ bool test_noreturn_functions_list() {
 
 bool test_analysis_function_rename() {
 	RzAnalysis *analysis = rz_analysis_new();
-	RzAnalysisFunction *a = rz_analysis_create_function(analysis, "a", 0xcafe, RZ_ANALYSIS_FCN_TYPE_FCN);
+
 	// we know b does not exist, rename a to b
-	mu_assert_true(rz_analysis_function_rename(a, "b"), "function rename");
+	RzAnalysisFunction *a = rz_analysis_create_function(analysis, "a", 0xcafe, RZ_ANALYSIS_FCN_TYPE_FCN);
+	mu_assert_true(rz_analysis_function_rename(a, "b"), "rename a to b");
+
+	// we know b does exist, so rename must fail
+	RzAnalysisFunction *c = rz_analysis_create_function(analysis, "c", 0xbbbb, RZ_ANALYSIS_FCN_TYPE_FCN);
+	mu_assert_false(rz_analysis_function_rename(c, "b"), "rename c to b");
+
 	mu_end;
 }
 
