@@ -494,9 +494,11 @@ bool test_analysis_function_force_rename() {
 	rz_analysis_create_function(analysis, "b", 0xbabe, RZ_ANALYSIS_FCN_TYPE_FCN);
 
 	// rename a to b, but b already exists, so we force rename
-	mu_assert_notnull(rz_analysis_function_force_rename(a, "b"), "function force rename");
-	// check whether the name begins with originally provided one
-	mu_assert_true(rz_str_startswith(a->name, "b"), "function renamed incorrectly");
+	const char *expected_name = "b_cafe";
+	const char *new_name = rz_analysis_function_force_rename(a, "b");
+	mu_assert_notnull(new_name, "function force rename");
+	mu_assert_streq(new_name, expected_name, "incorrect force rename result");
+	mu_assert_streq(a->name, expected_name, "incorrenct force rename");
 
 	rz_analysis_free(analysis);
 
