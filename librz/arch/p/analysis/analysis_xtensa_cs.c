@@ -37,6 +37,10 @@ static char *xtensa_get_reg_profile(RzAnalysis *analysis) {
 		"=A3	a5\n"
 		"=A4	a6\n"
 		"=A5	a7\n"
+		"=R0	a2\n"
+		"=R1	a3\n"
+		"=R2	a4\n"
+		"=R3	a5\n"
 		"gpr	a0	.32	0	0\n"
 		"gpr	a1	.32	4	0\n"
 		"gpr	a2	.32	8	0\n"
@@ -100,7 +104,8 @@ static void xop_to_rval(RzAnalysis *a, XtensaContext *ctx, cs_xtensa_op *xop, Rz
 
 	if (xop->access & CS_AC_WRITE) {
 		rv->access |= RZ_ANALYSIS_ACC_W;
-	} else if (xop->access & CS_AC_READ) {
+	}
+	if (xop->access & CS_AC_READ) {
 		rv->access |= RZ_ANALYSIS_ACC_R;
 	}
 	switch (xop->type) {
