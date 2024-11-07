@@ -3,6 +3,7 @@
 
 #include <rz_analysis.h>
 #include "minunit.h"
+#include "rz_util/rz_str.h"
 #include "test_config.h"
 
 #include "test_analysis_block_invars.inl"
@@ -474,10 +475,14 @@ bool test_analysis_function_rename() {
 	// we know b does not exist, rename a to b
 	RzAnalysisFunction *a = rz_analysis_create_function(analysis, "a", 0xcafe, RZ_ANALYSIS_FCN_TYPE_FCN);
 	mu_assert_true(rz_analysis_function_rename(a, "b"), "rename a to b");
+	mu_assert_streq(a->name, "b", "rename a to b failed");
 
 	// we know b does exist, so rename must fail
 	RzAnalysisFunction *c = rz_analysis_create_function(analysis, "c", 0xbbbb, RZ_ANALYSIS_FCN_TYPE_FCN);
-	mu_assert_false(rz_analysis_function_rename(c, "b"), "rename c to b");
+	mu_assert_false(rz_analysis_function_rename(c, "b"), "rename c to b"); // try renaming
+	mu_assert_streq(c->name, "c", "c rename succeded"); // whether it actually failed
+
+	rz_analysis_free(analysis);
 
 	mu_end;
 }
@@ -490,6 +495,11 @@ bool test_analysis_function_force_rename() {
 
 	// rename a to b, but b already exists, so we force rename
 	mu_assert_notnull(rz_analysis_function_force_rename(a, "b"), "function force rename");
+	// check whether the name begins with originally provided one
+	mu_assert_true(rz_str_startswith(a->name, "b"), "function renamed incorrectly");
+
+	rz_analysis_free(analysis);
+
 	mu_end;
 }
 
