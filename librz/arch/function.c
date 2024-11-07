@@ -259,17 +259,17 @@ RZ_API bool rz_analysis_function_relocate(RzAnalysisFunction *fcn, ut64 addr) {
 }
 
 /**
- * @b Rename given function.
+ * \b Rename given function.
  * This method will fail if a function with same name as `name`
  * already exists in rizin's analysis.
  *
- * @param fcn Rizin analysis function.
- * @param name A unique name
+ * \param fcn Rizin analysis function.
+ * \param name A unique name
  *
- * @return `true` on success.
- * @return `false` otherwiese.
+ * \return `true` on success.
+ * \return `false` otherwiese.
  *
- * @sa rz_analysis_function_force_rename
+ * \sa rz_analysis_function_force_rename
  * */
 RZ_API bool rz_analysis_function_rename(RZ_NONNULL RzAnalysisFunction *fcn, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(fcn && name, false);
@@ -298,17 +298,17 @@ RZ_API bool rz_analysis_function_rename(RZ_NONNULL RzAnalysisFunction *fcn, RZ_N
 }
 
 /**
- * @b Force rename a function.
+ * \b Force rename a function.
  * This will make sure a function with non-unique name gets renamed by
  * adding a numeric suffix to it.
  *
- * @param fcn
- * @param name
+ * \param fcn
+ * \param name
  *
- * @return New name on success.
- * @return `NULL` otherwise.
+ * \return New name on success.
+ * \return `NULL` otherwise.
  *
- * @sa rz_analysis_function_rename
+ * \sa rz_analysis_function_rename
  * */
 RZ_API RZ_BORROW const char *rz_analysis_function_force_rename(RZ_NONNULL RzAnalysisFunction *fcn, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(fcn && name, NULL);
