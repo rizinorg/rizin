@@ -180,7 +180,7 @@ RZ_API RZ_BORROW RzConfigNode *rz_config_set_cb(RZ_BORROW RzConfig *cfg, const c
 	return node;
 }
 
-RZ_API RZ_BORROW RzConfigNode *rz_config_set_i_cb(RZ_BORROW RzConfig *cfg, const char *name, int ivalue, RzConfigCallback cb) {
+RZ_API RZ_BORROW RzConfigNode *rz_config_set_i_cb(RZ_BORROW RzConfig *cfg, const char *name, st64 ivalue, RzConfigCallback cb) {
 	RzConfigNode *node = rz_config_set_i(cfg, name, ivalue);
 	if (node && (node->setter = cb)) {
 		if (!node->setter(cfg->user, node)) {
