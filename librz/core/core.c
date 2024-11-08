@@ -1606,7 +1606,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	rz_event_hook(core->io->event, RZ_EVENT_IO_DESC_CLOSE, ev_iodescclose_cb, core);
 	rz_event_hook(core->io->event, RZ_EVENT_IO_MAP_DEL, ev_iomapdel_cb, core);
 	core->io->ff = 1;
-	core->search = rz_search_new(RZ_SEARCH_KEYWORD);
+	core->search = rz_search_new(RZ_SEARCH_MODE_KEYWORD);
 	core->flags = rz_flag_new();
 	core->graph = rz_agraph_new(rz_cons_canvas_new(1, 1));
 	core->graph->need_reload_nodes = false;

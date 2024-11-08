@@ -105,6 +105,7 @@ static const RzCmdDescArg interpret_output_args[2];
 static const RzCmdDescArg interpret_pipe_args[2];
 static const RzCmdDescArg interpret_macro_args[4];
 static const RzCmdDescArg interpret_macro_multiple_args[4];
+static const RzCmdDescArg cmd_utf8_string_search_args[2];
 static const RzCmdDescArg cmd_info_gadget_args[2];
 static const RzCmdDescArg cmd_search_gadget_args[2];
 static const RzCmdDescArg cmd_query_gadget_args[2];
@@ -1376,11 +1377,29 @@ static const RzCmdDescHelp interpret_macro_multiple_help = {
 	.args = interpret_macro_multiple_args,
 };
 
-static const RzCmdDescHelp cmd_search_help = {
+static const RzCmdDescHelp slash__help = {
 	.summary = "Search for bytes, regexps, patterns, ..",
 };
+static const RzCmdDescArg cmd_utf8_string_search_args[] = {
+	{
+		.name = "utf8-string",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_utf8_string_search_help = {
+	.summary = "Raw utf-8 string search",
+	.args = cmd_utf8_string_search_args,
+};
+
+static const RzCmdDescHelp cmd_search_help = {
+	.summary = "Search for bytes, regexps, patterns, .. (old command)",
+};
+
 static const RzCmdDescHelp slash_R_help = {
-	.summary = "List ROP Gadgets",
+	.summary = "Search, List, Query for ROP Gadgets",
 };
 static const RzCmdDescArg cmd_info_gadget_args[] = {
 	{
@@ -19767,9 +19786,13 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *interpret_macro_multiple_cd = rz_cmd_desc_argv_new(core->rcmd, dot__cd, "..(", rz_interpret_macro_multiple_handler, &interpret_macro_multiple_help);
 	rz_warn_if_fail(interpret_macro_multiple_cd);
 
-	RzCmdDesc *cmd_search_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "/", rz_cmd_search, &cmd_search_help);
+	RzCmdDesc *slash__cd = rz_cmd_desc_group_state_new(core->rcmd, root_cd, "/", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_utf8_string_search_handler, &cmd_utf8_string_search_help, &slash__help);
+	rz_warn_if_fail(slash__cd);
+	rz_cmd_desc_set_default_mode(slash__cd, RZ_OUTPUT_MODE_STANDARD);
+	RzCmdDesc *cmd_search_cd = rz_cmd_desc_oldinput_new(core->rcmd, slash__cd, "//", rz_cmd_search, &cmd_search_help);
 	rz_warn_if_fail(cmd_search_cd);
-	RzCmdDesc *slash_R_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_search_cd, "/R", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_info_gadget_handler, &cmd_info_gadget_help, &slash_R_help);
+
+	RzCmdDesc *slash_R_cd = rz_cmd_desc_group_state_new(core->rcmd, slash__cd, "/R", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_info_gadget_handler, &cmd_info_gadget_help, &slash_R_help);
 	rz_warn_if_fail(slash_R_cd);
 	rz_cmd_desc_set_default_mode(slash_R_cd, RZ_OUTPUT_MODE_STANDARD);
 	RzCmdDesc *cmd_search_gadget_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_R_cd, "/R/", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_gadget_handler, &cmd_search_gadget_help);

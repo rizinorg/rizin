@@ -12,21 +12,27 @@ extern "C" {
 
 RZ_LIB_VERSION_HEADER(rz_search);
 
-enum {
-	RZ_SEARCH_ESIL,
-	RZ_SEARCH_KEYWORD,
-	RZ_SEARCH_REGEXP,
-	RZ_SEARCH_PATTERN,
-	RZ_SEARCH_STRING,
-	RZ_SEARCH_XREFS,
-	RZ_SEARCH_AES,
-	RZ_SEARCH_PRIV_KEY,
-	RZ_SEARCH_DELTAKEY,
-	RZ_SEARCH_MAGIC,
-	RZ_SEARCH_LAST
-};
+typedef enum {
+	RZ_SEARCH_MODE_PATTERN = 0,
+	RZ_SEARCH_MODE_KEYWORD,
+	RZ_SEARCH_MODE_REGEXP,
+	RZ_SEARCH_MODE_STRING,
+	RZ_SEARCH_MODE_XREFS,
+	RZ_SEARCH_MODE_AES,
+	RZ_SEARCH_MODE_PRIV_KEY,
+	RZ_SEARCH_MODE_DELTAKEY,
+	RZ_SEARCH_MODE_MAGIC,
+	RZ_SEARCH_MODE_ESIL,
+	/* enum size */
+	RZ_SEARCH_MODE_LAST
+} rz_search_mode;
 
-#define RZ_SEARCH_DISTANCE_MAX 10
+#define RZ_SEARCH_DISTANCE_MAX       10
+#define RZ_SEARCH_DEFAULT_STRING_MAX 255
+#define RZ_SEARCH_DEFAULT_STRING_MIN 3
+
+#define RZ_SEARCH_AES_LENGTH         40
+#define RZ_SEARCH_PRIVATE_KEY_LENGTH 11
 
 #define RZ_SEARCH_KEYWORD_TYPE_BINARY 'i'
 #define RZ_SEARCH_KEYWORD_TYPE_STRING 's'
@@ -52,35 +58,52 @@ typedef struct rz_search_hit_t {
 typedef int (*RzSearchCallback)(RzSearchKeyword *kw, void *user, ut64 where);
 
 typedef struct rz_search_t {
-	int n_kws; // hit${n_kws}_${count}
-	int mode;
-	ut32 pattern_size;
-	ut32 string_min; // max length of strings for RZ_SEARCH_STRING
-	ut32 string_max; // min length of strings for RZ_SEARCH_STRING
-	void *data; // data used by search algorithm
-	void *user; // user data passed to callback
-	RzSearchCallback callback;
-	ut64 nhits;
-	ut64 maxhits; // search.maxhits
-	RzList /*<RzSearchHit *>*/ *hits;
-	int distance;
-	int inverse;
-	bool overlap; // whether two matches can overlap
-	int contiguous;
-	int align;
+	// internal data structures.
+	RzIOBind iob; ///< RzIO bindings
+	void *data; ///< Pointer to data owned by search algorithm
 	int (*update)(struct rz_search_t *s, ut64 from, const ut8 *buf, int len);
-	RzList /*<RzSearchKeyword *>*/ *kws; // TODO: Use rz_search_kw_new ()
-	RzIOBind iob;
-	char bckwrds;
+
+	// User defined functions.
+	void *user; ///< Pointer to user data passed to callback
+	RzSearchCallback callback; ///< Callback called on hit
+
+	// variables
+	int n_kws; ///< Counter used to define the number of keywords in list hit${n_kws}_${nhits}
+	RzList /*<RzSearchKeyword *>*/ *kws; ///< List of keywords matched.
+	ut64 nhits; ///< Number of hits from last search.
+	RzList /*<RzSearchHit *>*/ *hits; ///< List of matches.
+	int prelude_counter; ///< Prelude counter
+
+	// options
+	rz_search_mode mode; ///< Search mode
+	ut32 string_min; ///< Max length of strings for RZ_SEARCH_MODE_STRING
+	ut32 string_max; ///< Min length of strings for RZ_SEARCH_MODE_STRING
+	ut64 maxhits; ///< Maximum number of hits (0: no limit)
+	ut32 distance; ///< Max distance between matches.
+	bool overlap; ///< When true, looks for overlapped search hits.
+	bool contiguous; ///< When true, accepts contiguous/adjacent search hits.
+	ut64 align; ///< Address alignment required to perform the search.
+	bool backwards; ///< When true, preforms the search backwards.
+	ut64 from_addr; ///< Begin search address
+	ut64 to_addr; ///< End search address
+	char *prefix; ///< Name prefix to use on new flags on hit
+	char *command; ///< Command to execute on hit
+	bool show; ///< When true, shows all the matches details.
+
+	// unknown
+	ut32 pattern_size; ///< ?????
+	bool inverse; ///< ?????
+	bool flags; ///< ?????
 } RzSearch;
 
 #ifdef RZ_API
 
 #define RZ_SEARCH_AES_BOX_SIZE 31
 
-RZ_API RzSearch *rz_search_new(int mode);
-RZ_API int rz_search_set_mode(RzSearch *s, int mode);
-RZ_API RzSearch *rz_search_free(RzSearch *s);
+RZ_API bool rz_search_init(RZ_NONNULL RzSearch *s);
+RZ_API void rz_search_fini(RZ_NONNULL RzSearch *s);
+RZ_API RZ_OWN RzSearch *rz_search_new(rz_search_mode mode);
+RZ_API void rz_search_free(RZ_NULLABLE RzSearch *s);
 
 /* keyword management */
 RZ_API RzList /*<RzSearchHit *>*/ *rz_search_find(RzSearch *s, ut64 addr, const ut8 *buf, int len);
@@ -96,8 +119,8 @@ RZ_API RzSearchKeyword *rz_search_keyword_new_hexmask(const char *kwstr, const c
 RZ_API RzSearchKeyword *rz_search_keyword_new_regexp(const char *str, const char *data);
 
 RZ_API int rz_search_kw_add(RzSearch *s, RzSearchKeyword *kw);
-RZ_API void rz_search_reset(RzSearch *s, int mode);
-RZ_API void rz_search_kw_reset(RzSearch *s);
+RZ_API void rz_search_reset(RZ_NONNULL RzSearch *s, rz_search_mode mode);
+RZ_API void rz_search_kw_reset(RZ_NONNULL RzSearch *s);
 RZ_API void rz_search_string_prepare_backward(RzSearch *s);
 
 // TODO: is this an internal API?
@@ -110,14 +133,28 @@ RZ_API int rz_search_strings_update(RzSearch *s, ut64 from, const ut8 *buf, int 
 RZ_API int rz_search_regexp_update(RzSearch *s, ut64 from, const ut8 *buf, int len);
 // Returns 2 if search.maxhits is reached, 0 on error, otherwise 1
 RZ_API int rz_search_hit_new(RzSearch *s, RzSearchKeyword *kw, ut64 addr);
-RZ_API void rz_search_set_distance(RzSearch *s, int dist);
-RZ_API int rz_search_set_string_limits(RzSearch *s, ut32 min, ut32 max); // dup again?
-// RZ_API int rz_search_set_callback(RzSearch *s, int (*callback)(struct rz_search_kw_t *, void *, ut64), void *user);
-RZ_API void rz_search_set_callback(RzSearch *s, RzSearchCallback(callback), void *user);
+
+RZ_API bool rz_search_set_mode(RZ_NONNULL RzSearch *s, rz_search_mode mode);
+RZ_API bool rz_search_set_pattern_size(RZ_NONNULL RzSearch *s, ut32 pattern_size);
+RZ_API bool rz_search_set_string_limits(RZ_NONNULL RzSearch *s, ut32 min, ut32 max);
+RZ_API bool rz_search_set_maxhits(RZ_NONNULL RzSearch *s, ut64 maxhits);
+RZ_API bool rz_search_set_distance(RZ_NONNULL RzSearch *s, ut32 distance);
+RZ_API bool rz_search_set_inverse(RZ_NONNULL RzSearch *s, bool inverse);
+RZ_API bool rz_search_set_overlap(RZ_NONNULL RzSearch *s, bool overlap);
+RZ_API bool rz_search_set_contiguous(RZ_NONNULL RzSearch *s, bool contiguous);
+RZ_API bool rz_search_set_align(RZ_NONNULL RzSearch *s, ut64 align);
+RZ_API bool rz_search_set_backwards(RZ_NONNULL RzSearch *s, bool backwards);
+RZ_API bool rz_search_set_flags(RZ_NONNULL RzSearch *s, bool flags);
+RZ_API bool rz_search_set_show(RZ_NONNULL RzSearch *s, bool show);
+RZ_API bool rz_search_set_from_addr(RZ_NONNULL RzSearch *s, ut64 from_addr);
+RZ_API bool rz_search_set_to_addr(RZ_NONNULL RzSearch *s, ut64 to_addr);
+RZ_API bool rz_search_set_prefix(RZ_NONNULL RzSearch *s, RZ_NULLABLE const char *prefix);
+RZ_API bool rz_search_set_command(RZ_NONNULL RzSearch *s, RZ_NULLABLE const char *command);
+RZ_API bool rz_search_set_callback(RZ_NONNULL RzSearch *s, RZ_NULLABLE RzSearchCallback(callback), RZ_NULLABLE void *user);
+
 RZ_API int rz_search_begin(RzSearch *s);
 
 /* pattern search */
-RZ_API void rz_search_pattern_size(RzSearch *s, int size);
 RZ_API int rz_search_pattern(RzSearch *s, ut64 from, ut64 to);
 
 #ifdef __cplusplus

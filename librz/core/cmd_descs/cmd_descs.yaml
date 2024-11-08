@@ -148,12 +148,10 @@ commands:
           - text: "*"
             arg_str: "entry0"
             comment: read the value contained at the entrypoint
-  - name: .
+  - name: "."
     summary: Interpret commands
     subcommands: cmd_interpret
-  - name: /
-    cname: cmd_search
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: "/"
     summary: Search for bytes, regexps, patterns, ..
     subcommands: cmd_search
   - name: "R"

@@ -10,9 +10,6 @@
 
 #include "cmd_search_rop.c"
 
-#define AES_SEARCH_LENGTH         40
-#define PRIVATE_KEY_SEARCH_LENGTH 11
-
 static const char *help_msg_search_esil[] = {
 	"/E", " [esil-expr]", "search offsets matching a specific esil expression",
 	"/Ej", " [esil-expr]", "same as above but using the given magic file",
@@ -124,7 +121,7 @@ static int searchflags = 0;
 static int searchshow = 0;
 static const char *searchprefix = NULL;
 
-struct search_parameters {
+typedef struct search_parameters {
 	RzCore *core;
 	RzList /*<RzIOMap *>*/ *boundaries;
 	const char *mode;
@@ -134,9 +131,10 @@ struct search_parameters {
 	bool inverse;
 	bool aes_search;
 	bool privkey_search;
-};
+	RzCmdStateOutput *state;
+} search_parameters_t;
 
-static int search_hash(RzCore *core, const char *hashname, const char *hashstr, ut32 minlen, ut32 maxlen, struct search_parameters *param) {
+static int search_hash(RzCore *core, const char *hashname, const char *hashstr, ut32 minlen, ut32 maxlen, search_parameters_t *param) {
 	RzIOMap *map;
 	ut8 *buf;
 	int i, j;
@@ -313,7 +311,7 @@ RZ_API int rz_core_search_prelude(RzCore *core, ut64 from, ut64 to, const ut8 *b
 		free(b);
 		return 0;
 	}
-	rz_search_reset(core->search, RZ_SEARCH_KEYWORD);
+	rz_search_reset(core->search, RZ_SEARCH_MODE_KEYWORD);
 	rz_search_kw_add(core->search, rz_search_keyword_new(buf, blen, mask, mlen, NULL));
 	rz_search_begin(core->search);
 	rz_search_set_callback(core->search, &__prelude_cb_hit, core);
@@ -419,12 +417,12 @@ static char *getstring(char *b, int l) {
 }
 
 static int _cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
-	struct search_parameters *param = user;
+	search_parameters_t *param = user;
 	RzCore *core = param->core;
 	const RzSearch *search = core->search;
 	ut64 base_addr = 0;
 	bool use_color = core->print->flags & RZ_PRINT_FLAGS_COLOR;
-	int keyword_len = kw ? kw->keyword_length + (search->mode == RZ_SEARCH_DELTAKEY) : 0;
+	int keyword_len = kw ? kw->keyword_length + (search->mode == RZ_SEARCH_MODE_DELTAKEY) : 0;
 	char tmpbuf[128];
 
 	if (searchshow && kw && kw->keyword_length > 0) {
@@ -538,7 +536,7 @@ static int _cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 
 static int c = 0;
 
-static inline void print_search_progress(ut64 at, ut64 to, int n, struct search_parameters *param) {
+static inline void print_search_progress(ut64 at, ut64 to, int n, search_parameters_t *param) {
 	if ((++c % 64) || (param->outmode == RZ_MODE_JSON)) {
 		return;
 	}
@@ -566,7 +564,7 @@ static bool esil_addrinfo(RzAnalysisEsil *esil) {
 	return true;
 }
 
-static void do_esil_search(RzCore *core, struct search_parameters *param, const char *input) {
+static void do_esil_search(RzCore *core, search_parameters_t *param, const char *input) {
 	const int hit_combo_limit = rz_config_get_i(core->config, "search.esilcombo");
 	const bool cfgDebug = rz_config_get_b(core->config, "cfg.debug");
 	RzSearch *search = core->search;
@@ -694,7 +692,7 @@ static void do_esil_search(RzCore *core, struct search_parameters *param, const 
 		(res) += (arr)[--(size)]; \
 	while ((size))
 
-static void do_syscall_search(RzCore *core, struct search_parameters *param) {
+static void do_syscall_search(RzCore *core, search_parameters_t *param) {
 	RzSearch *search = core->search;
 	ut64 at;
 	ut8 *buf;
@@ -827,7 +825,7 @@ beach:
 	free(previnstr);
 }
 
-static void do_ref_search(RzCore *core, ut64 addr, ut64 from, ut64 to, struct search_parameters *param) {
+static void do_ref_search(RzCore *core, ut64 addr, ut64 from, ut64 to, search_parameters_t *param) {
 	const int size = 12;
 	char str[512];
 	RzAnalysisFunction *fcn;
@@ -872,7 +870,7 @@ static void do_ref_search(RzCore *core, ut64 addr, ut64 from, ut64 to, struct se
 	rz_list_free(list);
 }
 
-static bool do_analysis_search(RzCore *core, struct search_parameters *param, const char *input) {
+static bool do_analysis_search(RzCore *core, search_parameters_t *param, const char *input) {
 	RzSearch *search = core->search;
 	ut64 at;
 	RzAnalysisOp aop = { 0 };
@@ -1061,7 +1059,7 @@ done:
 	return false;
 }
 
-static void do_section_search(RzCore *core, struct search_parameters *param, const char *input) {
+static void do_section_search(RzCore *core, search_parameters_t *param, const char *input) {
 	double threshold = 1;
 	bool r2mode = false;
 	if (input && *input) {
@@ -1129,7 +1127,7 @@ static void do_section_search(RzCore *core, struct search_parameters *param, con
 	free(buf);
 }
 
-static void do_asm_search(RzCore *core, struct search_parameters *param, const char *input, int mode, RzInterval search_itv) {
+static void do_asm_search(RzCore *core, search_parameters_t *param, const char *input, int mode, RzInterval search_itv) {
 	RzCoreAsmHit *hit;
 	RzListIter *iter, *itermap;
 	int count = 0, maxhits = 0, filter = 0;
@@ -1233,7 +1231,7 @@ static void do_asm_search(RzCore *core, struct search_parameters *param, const c
 	rz_cons_break_pop();
 }
 
-static void do_string_search(RzCore *core, RzInterval search_itv, struct search_parameters *param) {
+static void do_string_search(RzCore *core, RzInterval search_itv, search_parameters_t *param) {
 	ut64 at;
 	ut8 *buf;
 	RzSearch *search = core->search;
@@ -1261,7 +1259,7 @@ static void do_string_search(RzCore *core, RzInterval search_itv, struct search_
 		if (!(buf = malloc(core->blocksize))) {
 			return;
 		}
-		if (search->bckwrds) {
+		if (search->backwards) {
 			rz_search_string_prepare_backward(search);
 		}
 		rz_cons_break_push(NULL, NULL);
@@ -1282,7 +1280,7 @@ static void do_string_search(RzCore *core, RzInterval search_itv, struct search_
 				eprintf("Searching %d %s in [0x%" PFMT64x "-0x%" PFMT64x "]\n",
 					kw ? kw->keyword_length : 0, bytestr, itv.addr, rz_itv_end(itv));
 			}
-			if (!core->search->bckwrds) {
+			if (!core->search->backwards) {
 				RzListIter *it;
 				RzSearchKeyword *kw;
 				rz_list_foreach (core->search->kws, it, kw) {
@@ -1291,16 +1289,16 @@ static void do_string_search(RzCore *core, RzInterval search_itv, struct search_
 			}
 
 			const ut64 from = itv.addr, to = rz_itv_end(itv),
-				   from1 = search->bckwrds ? to : from,
-				   to1 = search->bckwrds ? from : to;
+				   from1 = search->backwards ? to : from,
+				   to1 = search->backwards ? from : to;
 			ut64 len;
-			for (at = from1; at != to1; at = search->bckwrds ? at - len : at + len) {
+			for (at = from1; at != to1; at = search->backwards ? at - len : at + len) {
 				print_search_progress(at, to1, search->nhits, param);
 				if (rz_cons_is_breaked()) {
 					eprintf("\n\n");
 					break;
 				}
-				if (search->bckwrds) {
+				if (search->backwards) {
 					len = RZ_MIN(core->blocksize, at - from);
 					// TODO prefix_read_at
 					if (!rz_io_is_valid_offset(core->io, at - len, 0)) {
@@ -1318,12 +1316,12 @@ static void do_string_search(RzCore *core, RzInterval search_itv, struct search_
 				if (param->aes_search) {
 					// Adjust length to search between blocks.
 					if (len == core->blocksize) {
-						len -= AES_SEARCH_LENGTH - 1;
+						len -= RZ_SEARCH_AES_LENGTH - 1;
 					}
 				} else if (param->privkey_search) {
 					// Adjust length to search between blocks.
 					if (len == core->blocksize) {
-						len -= PRIVATE_KEY_SEARCH_LENGTH - 1;
+						len -= RZ_SEARCH_PRIVATE_KEY_LENGTH - 1;
 					}
 				}
 				if (core->search->maxhits > 0 && core->search->nhits >= core->search->maxhits) {
@@ -1403,7 +1401,7 @@ static void search_similar_pattern_in(RzCore *core, int count, ut64 from, ut64 t
 	free(block);
 }
 
-static void search_similar_pattern(RzCore *core, int count, struct search_parameters *param) {
+static void search_similar_pattern(RzCore *core, int count, search_parameters_t *param) {
 	RzIOMap *p;
 	RzListIter *iter;
 
@@ -1427,7 +1425,7 @@ static bool isArm(RzCore *core) {
 }
 
 void _CbInRangeSearchV(RzCore *core, ut64 from, ut64 to, int vsize, void *user) {
-	struct search_parameters *param = user;
+	search_parameters_t *param = user;
 	bool isarm = isArm(core);
 	// this is expensive operation that could be cached but is a callback
 	// and for not messing adding a new param
@@ -1722,12 +1720,112 @@ static void __core_cmd_search_asm_byteswap(RzCore *core, int nth) {
 		}
 	}
 }
+static bool core_get_interval(RzCore *core, RzInterval *itv) {
+	const ut64 search_from = core->search->from_addr;
+	const ut64 search_to = core->search->to_addr;
+	if (search_from > search_to) {
+		RZ_LOG_ERROR("core: cannot perform search when 'search.from' is greater than 'search.to'\n");
+		return false;
+	} else if (search_from == search_to && search_from != UT64_MAX) {
+		RZ_LOG_ERROR("core: cannot perform search when 'search.from' is equal to 'search.to'\n");
+		return false;
+	}
+
+	itv->addr = search_from;
+	itv->size = search_to - search_from;
+	if (itv->addr == UT64_MAX && !itv->size) {
+		RZ_LOG_WARN("core: 'search.from' and 'search.to' are equal to 0x%" PFMT64x "\n", UT64_MAX);
+		RZ_LOG_WARN("core: search will be performed from address 0 to address 0x%" PFMT64x "\n", UT64_MAX);
+		itv->addr = 0;
+		itv->size = UT64_MAX;
+	}
+
+	return true;
+}
+
+static RzCmdStatus core_run_search(RzCore *core, search_parameters_t *param, const char *search_arg) {
+	RzCmdStatus status = RZ_CMD_STATUS_ERROR;
+	RzInterval itv = { 0 };
+	if (RZ_STR_ISEMPTY(search_arg)) {
+		RZ_LOG_ERROR("core: invalid utf8 string: empty string.\n");
+		return RZ_CMD_STATUS_WRONG_ARGS;
+	} else if (!core->io) {
+		RZ_LOG_ERROR("core: Can't search when there is no open file.\n");
+		return RZ_CMD_STATUS_ERROR;
+	} else if (core->in_search) {
+		RZ_LOG_ERROR("core: detected recursive search.\n");
+		return RZ_CMD_STATUS_ERROR;
+	} else if (!core_get_interval(core, &itv)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	// initialize in_search and flagspace.
+	core->in_search = true;
+	rz_flag_space_push(core->flags, "search");
+	rz_search_set_command(core->search, rz_config_get(core->config, "cmd.hit"));
+
+	// setup core.
+	param->core = core;
+
+	// setup param with core and cmd.hit
+	param->mode = rz_config_get(core->config, "search.in");
+	param->boundaries = rz_core_get_boundaries_prot(core, -1, param->mode, "search");
+
+	// ensure to update the lastsearch variable with the search arg
+	free(core->lastsearch);
+	core->lastsearch = rz_str_dup(search_arg);
+
+	// perform the actual search.
+	rz_search_begin(core->search);
+	do_string_search(core, itv, param);
+
+	// set return value to the number of hits.
+	core->num->value = core->search->nhits;
+
+	rz_flag_space_pop(core->flags);
+	core->in_search = false;
+	return status;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_utf8_string_search_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	char *search_arg = rz_str_dup(argv[1]);
+	if (!search_arg) {
+		RZ_LOG_ERROR("core: invalid utf8 string: failed to unescape.\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	int len = rz_str_unescape(search_arg);
+	if (len < 1) {
+		RZ_LOG_ERROR("core: invalid utf8 string: failed to unescape.\n");
+		return RZ_CMD_STATUS_WRONG_ARGS;
+	}
+
+	RzSearchKeyword *search_kw = rz_search_keyword_new((const ut8 *)search_arg, len, NULL, 0, NULL);
+	free(search_arg);
+	if (!search_kw) {
+		RZ_LOG_ERROR("core: failed to create new RzSearchKeyword\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	search_kw->icase = false;
+	search_kw->type = RZ_SEARCH_KEYWORD_TYPE_STRING;
+	rz_search_kw_add(core->search, search_kw);
+
+	// setup search mode and direction
+	rz_search_reset(core->search, RZ_SEARCH_MODE_KEYWORD);
+	rz_search_set_backwards(core->search, false);
+
+	search_parameters_t param = { 0 };
+	param.state = state;
+	RzCmdStatus status = core_run_search(core, &param, argv[1]);
+	return status;
+}
 
 RZ_IPI int rz_cmd_search(void *data, const char *input) {
 	bool dosearch = false;
 	int ret = true;
 	RzCore *core = (RzCore *)data;
-	struct search_parameters param = {
+	search_parameters_t param = {
 		.core = core,
 		.cmd_hit = rz_config_get(core->config, "cmd.hit"),
 		.outmode = 0,
@@ -1808,7 +1906,7 @@ RZ_IPI int rz_cmd_search(void *data, const char *input) {
 	core->search->maxhits = rz_config_get_i(core->config, "search.maxhits");
 	searchprefix = rz_config_get(core->config, "search.prefix");
 	core->search->overlap = rz_config_get_i(core->config, "search.overlap");
-	core->search->bckwrds = false;
+	core->search->backwards = false;
 
 	/* Quick & dirty check for json output */
 	if (input[0] && (input[1] == 'j') && (input[0] != ' ')) {
@@ -1828,7 +1926,7 @@ reread:
 			RZ_LOG_ERROR("core: Usage: /b<command> [value] backward search, see '/?'\n");
 			goto beach;
 		}
-		search->bckwrds = true;
+		search->backwards = true;
 		if (core->offset) {
 			RzInterval itv = { 0, core->offset };
 			if (!rz_itv_overlap(search_itv, itv)) {
@@ -1973,7 +2071,7 @@ reread:
 					goto beach;
 				}
 				dosearch = true;
-				rz_search_reset(core->search, RZ_SEARCH_KEYWORD);
+				rz_search_reset(core->search, RZ_SEARCH_MODE_KEYWORD);
 				rz_search_set_distance(core->search, (int)rz_config_get_i(core->config, "search.distance"));
 				rz_search_kw_add(core->search,
 					rz_search_keyword_new_hexmask(kwd, NULL));
@@ -2050,7 +2148,7 @@ reread:
 			RzSearchKeyword *kw_2 = rz_search_keyword_new_hex("3082000030820000A0030201", "ffff0000fffc0000ffffffff", NULL);
 			// Certificate with serial number
 			RzSearchKeyword *kw_3 = rz_search_keyword_new_hex("308200003082000002", "ffff0000fffc0000ff", NULL);
-			rz_search_reset(core->search, RZ_SEARCH_KEYWORD);
+			rz_search_reset(core->search, RZ_SEARCH_MODE_KEYWORD);
 			if (kw_1 && kw_2 && kw_3) {
 				rz_search_kw_add(core->search, kw_1);
 				rz_search_kw_add(core->search, kw_2);
@@ -2066,8 +2164,8 @@ reread:
 			RzSearchKeyword *kw;
 			kw = rz_search_keyword_new_hexmask("00", NULL);
 			// AES search is done over 40 bytes
-			kw->keyword_length = AES_SEARCH_LENGTH;
-			rz_search_reset(core->search, RZ_SEARCH_AES);
+			kw->keyword_length = RZ_SEARCH_AES_LENGTH;
+			rz_search_reset(core->search, RZ_SEARCH_MODE_AES);
 			rz_search_kw_add(search, kw);
 			rz_search_begin(core->search);
 			param.aes_search = true;
@@ -2078,8 +2176,8 @@ reread:
 			RzSearchKeyword *kw;
 			kw = rz_search_keyword_new_hexmask("00", NULL);
 			// Private key search is at least 11 bytes
-			kw->keyword_length = PRIVATE_KEY_SEARCH_LENGTH;
-			rz_search_reset(core->search, RZ_SEARCH_PRIV_KEY);
+			kw->keyword_length = RZ_SEARCH_PRIVATE_KEY_LENGTH;
+			rz_search_reset(core->search, RZ_SEARCH_MODE_PRIV_KEY);
 			rz_search_kw_add(search, kw);
 			rz_search_begin(core->search);
 			param.privkey_search = true;
@@ -2153,7 +2251,7 @@ reread:
 				rz_list_foreach (param.boundaries, iter, map) {
 					eprintf("-- %llx %llx\n", map->itv.addr, rz_itv_end(map->itv));
 					rz_cons_break_push(NULL, NULL);
-					rz_search_pattern_size(core->search, ps);
+					rz_search_set_pattern_size(core->search, ps);
 					rz_search_pattern(core->search, map->itv.addr, rz_itv_end(map->itv));
 					rz_cons_break_pop();
 				}
@@ -2219,7 +2317,7 @@ reread:
 				param_offset++;
 			}
 		}
-		rz_search_reset(core->search, RZ_SEARCH_KEYWORD);
+		rz_search_reset(core->search, RZ_SEARCH_MODE_KEYWORD);
 		rz_search_set_distance(core->search, (int)rz_config_get_i(core->config, "search.distance"));
 		char *v_str = (char *)rz_str_trim_head_ro(input + param_offset);
 		RzList *nums = rz_num_str_split_list(v_str);
@@ -2301,7 +2399,7 @@ reread:
 			}
 			p[1] = 0;
 		}
-		rz_search_reset(core->search, RZ_SEARCH_KEYWORD);
+		rz_search_reset(core->search, RZ_SEARCH_MODE_KEYWORD);
 		rz_search_set_distance(core->search, (int)rz_config_get_i(core->config, "search.distance"));
 		RzSearchKeyword *skw;
 		skw = rz_search_keyword_new((const ut8 *)inp, len * 2, NULL, 0, NULL);
@@ -2332,7 +2430,7 @@ reread:
 	case ' ': // "/ " search string
 		inp = rz_str_dup(input + 1 + ignorecase + (param.outmode == RZ_MODE_JSON ? 1 : 0));
 		len = rz_str_unescape(inp);
-		rz_search_reset(core->search, RZ_SEARCH_KEYWORD);
+		rz_search_reset(core->search, RZ_SEARCH_MODE_KEYWORD);
 		rz_search_set_distance(core->search, (int)rz_config_get_i(core->config, "search.distance"));
 		{
 			RzSearchKeyword *skw;
@@ -2360,7 +2458,7 @@ reread:
 				RZ_LOG_ERROR("core: Invalid regexp specified\n");
 				break;
 			}
-			rz_search_reset(core->search, RZ_SEARCH_REGEXP);
+			rz_search_reset(core->search, RZ_SEARCH_MODE_REGEXP);
 			// TODO distance is unused
 			rz_search_set_distance(core->search, (int)rz_config_get_i(core->config, "search.distance"));
 			rz_search_kw_add(core->search, kw);
@@ -2378,7 +2476,7 @@ reread:
 		goto beach;
 	case 'd': // "/d" search delta key
 		if (input[1]) {
-			rz_search_reset(core->search, RZ_SEARCH_DELTAKEY);
+			rz_search_reset(core->search, RZ_SEARCH_MODE_DELTAKEY);
 			rz_search_kw_add(core->search,
 				rz_search_keyword_new_hexmask(input + param_offset, NULL));
 			rz_search_begin(core->search);
@@ -2483,7 +2581,7 @@ reread:
 				len = size - offset;
 			}
 			RzSearchKeyword *kw;
-			rz_search_reset(core->search, RZ_SEARCH_KEYWORD);
+			rz_search_reset(core->search, RZ_SEARCH_MODE_KEYWORD);
 			rz_search_set_distance(core->search, (int)rz_config_get_i(core->config, "search.distance"));
 			kw = rz_search_keyword_new(buf + offset, len, NULL, 0, NULL);
 			if (kw) {
@@ -2511,7 +2609,7 @@ reread:
 		} else {
 			RzSearchKeyword *kw;
 			char *s, *p = rz_str_dup(input + param_offset);
-			rz_search_reset(core->search, RZ_SEARCH_KEYWORD);
+			rz_search_reset(core->search, RZ_SEARCH_MODE_KEYWORD);
 			rz_search_set_distance(core->search, (int)rz_config_get_i(core->config, "search.distance"));
 			s = strchr(p, ':');
 			if (s) {
@@ -2592,7 +2690,7 @@ reread:
 			RZ_LOG_ERROR("core: min must be lower than max\n");
 			break;
 		}
-		rz_search_reset(core->search, RZ_SEARCH_STRING);
+		rz_search_reset(core->search, RZ_SEARCH_MODE_STRING);
 		rz_search_set_distance(core->search, (int)rz_config_get_i(core->config, "search.distance"));
 		{
 			RzSearchKeyword *kw = rz_search_keyword_new_hexmask("00", NULL);

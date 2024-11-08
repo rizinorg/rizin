@@ -3,8 +3,27 @@
 ---
 name: cmd_search
 commands:
+  - name: "/"
+    summary: Raw utf-8 string search
+    cname: cmd_utf8_string_search
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    default_mode: RZ_OUTPUT_MODE_STANDARD
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_QUIET
+      - RZ_OUTPUT_MODE_TABLE
+    args:
+      - name: utf8-string
+        type: RZ_CMD_ARG_TYPE_STRING
+
+  - name: "//"
+    cname: cmd_search
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    summary: Search for bytes, regexps, patterns, .. (old command)
+
   - name: "/R"
-    summary: List ROP Gadgets
+    summary: Search, List, Query for ROP Gadgets
     subcommands:
       - name: "/R"
         cname: cmd_info_gadget

@@ -1885,7 +1885,7 @@ RZ_API int rz_core_analysis_search(RzCore *core, ut64 from, ut64 to, ut64 ref, i
 	// TODO: get current section range here
 	// ???
 	// XXX must read bytes correctly
-	do_bckwrd_srch = bckwrds = core->search->bckwrds;
+	do_bckwrd_srch = bckwrds = core->search->backwards;
 	if (core->file) {
 		rz_io_use_fd(core->io, core->file->fd);
 	}
