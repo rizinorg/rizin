@@ -867,62 +867,6 @@ static bool esil_xoreq(RzAnalysisEsil *esil) {
 	return ret;
 }
 
-#if 0
-static int esil_interrupt_linux_i386(RzAnalysisEsil *esil) { 		//move this into a plugin
-	ut32 sn, ret = 0;
-	char *usn = rz_analysis_esil_pop (esil);
-	if (usn) {
-		sn = (ut32) rz_num_get (NULL, usn);
-	} else sn = 0x80;
-
-	if (sn == 3) {
-		// trap
-		esil->trap = RZ_ANALYSIS_TRAP_BREAKPOINT;
-		esil->trap_code = 3;
-		return -1;
-	}
-
-	if (sn != 0x80) {
-		RZ_LOG_ERROR("Interrupt 0x%x not handled.\n", sn);
-		esil->trap = RZ_ANALYSIS_TRAP_UNHANDLED;
-		esil->trap_code = sn;
-		return -1;
-	}
-#undef r
-#define r(x) rz_reg_getv(esil->analysis->reg, "##x##")
-#undef rs
-#define rs(x, y) rz_reg_setv(esil->analysis->reg, "##x##", y)
-	switch (r(eax)) {
-	case 1:
-		printf ("exit(%d)\n", (int)r(ebx));
-		rs(eax, -1);
-		// never return. stop execution somehow, throw an exception
-		break;
-	case 3:
-		ret = r(edx);
-		printf ("ret:%d = read(fd:%"PFMT64d", ptr:0x%08"PFMT64x", len:%"PFMT64d")\n",
-			(int)ret, r(ebx), r(ecx), r(edx));
-		rs(eax, ret);
-		break;
-	case 4:
-		ret = r(edx);
-		printf ("ret:%d = write(fd:%"PFMT64d", ptr:0x%08"PFMT64x", len:%"PFMT64d")\n",
-			(int)ret, r(ebx), r(ecx), r(edx));
-		rs(eax, ret);
-		break;
-	case 5:
-		ret = -1;
-		printf ("fd:%d = open(file:0x%08"PFMT64x", mode:%"PFMT64d", perm:%"PFMT64d")\n",
-			(int)ret, r(ebx), r(ecx), r(edx));
-		rs(eax, ret);
-		break;
-	}
-#undef r
-#undef rs
-	return 0;
-}
-#endif
-
 static bool esil_trap(RzAnalysisEsil *esil) {
 	ut64 s, d;
 	if (popRN(esil, &s) && popRN(esil, &d)) {
@@ -980,64 +924,25 @@ static bool esil_cmp(RzAnalysisEsil *esil) {
 	return ret;
 }
 
-#if 0
-x86 documentation:
-CF - carry flag -- Set on high-order bit carry or borrow; cleared otherwise
-	num>>63
-PF - parity flag
-	(num&0xff)
-    Set if low-order eight bits of result contain an even number of "1" bits; cleared otherwise
-ZF - zero flags
-    Set if result is zero; cleared otherwise
-	zf = num?0:1;
-SF - sign flag
-    Set equal to high-order bit of result (0 if positive 1 if negative)
-	sf = ((st64)num)<0)?1:0;
-OF - overflow flag
-	if (a>0&&b>0 && (a+b)<0)
-    Set if result is too large a positive number or too small a negative number (excluding sign bit) to fit in destination operand; cleared otherwise
-
-JBE: CF = 1 || ZF = 1
-
-#endif
-
 /*
- * Expects a string in the stack. Each char of the string represents a CPU flag.
- * Those relations are associated by the CPU itself and are used to move values
- * from the internal ESIL into the RzReg instance.
+ * x86 documentation:
+ * CF - carry flag -- Set on high-order bit carry or borrow; cleared otherwise
+ * 	num>>63
+ * PF - parity flag
+ * 	(num&0xff)
+ *     Set if low-order eight bits of result contain an even number of "1" bits; cleared otherwise
+ * ZF - zero flags
+ *     Set if result is zero; cleared otherwise
+ * 	zf = num?0:1;
+ * SF - sign flag
+ *     Set equal to high-order bit of result (0 if positive 1 if negative)
+ * 	sf = ((st64)num)<0)?1:0;
+ * OF - overflow flag
+ * 	if (a>0&&b>0 && (a+b)<0)
+ *     Set if result is too large a positive number or too small a negative number (excluding sign bit) to fit in destination operand; cleared otherwise
  *
- * For example:
- *   zco,?=     # update zf, cf and of
- *
- * If we want to update the esil value of a specific flag we use the =? command
- *
- *    zf,z,=?    # esil[zf] = rz_reg[zf]
- *
- * Defining new cpu flags
+ * JBE: CF = 1 || ZF = 1
  */
-#if 0
-static int esil_ifset(RzAnalysisEsil *esil) {
-	char *s, *src = rz_analysis_esil_pop (esil);
-	for (s=src; *s; s++) {
-		switch (*s) {
-		case 'z':
-			rz_analysis_esil_reg_write (esil, "zf", RZ_BIT_CHK(&esil->flags, FLG(ZERO)));
-			break;
-		case 'c':
-			rz_analysis_esil_reg_write (esil, "cf", RZ_BIT_CHK(&esil->flags, FLG(CARRY)));
-			break;
-		case 'o':
-			rz_analysis_esil_reg_write (esil, "of", RZ_BIT_CHK(&esil->flags, FLG(OVERFLOW)));
-			break;
-		case 'p':
-			rz_analysis_esil_reg_write (esil, "pf", RZ_BIT_CHK(&esil->flags, FLG(PARITY)));
-			break;
-		}
-	}
-	free (src);
-	return 0;
-}
-#endif
 
 static bool esil_if(RzAnalysisEsil *esil) {
 	bool ret = false;

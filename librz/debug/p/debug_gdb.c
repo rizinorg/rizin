@@ -125,15 +125,6 @@ static int rz_debug_gdb_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 	memcpy((void *)(volatile void *)buf, ctx->desc->data, RZ_MIN(copy_size, size));
 	memset((void *)(volatile void *)ctx->reg_buf, 0, buflen);
 	memcpy((void *)(volatile void *)ctx->reg_buf, ctx->desc->data, copy_size);
-#if 0
-	int i;
-	//for(i=0;i<168;i++) {
-	for(i=0;i<copy_size;i++) {
-		if (!(i%16)) printf ("\n0x%08x  ", i);
-		printf ("%02x ", buf[i]); //(ut8)desc->data[i]);
-	}
-	printf("\n");
-#endif
 	return ctx->desc->data_len;
 }
 

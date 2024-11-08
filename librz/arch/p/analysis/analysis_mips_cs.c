@@ -592,18 +592,6 @@ static int analyze_op_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8
 			rz_strbuf_appendf(&op->esil, "%s,hi,=", REG(0));
 			ES_SIGN32_64("hi");
 			break;
-#if 0
-	// could not test div
-	case MIPS_INS_DIV:
-	case MIPS_INS_DIVU:
-	case MIPS_INS_DDIV:
-	case MIPS_INS_DDIVU:
-		PROTECT_ZERO () {
-			// 32 bit needs sign extend
-			rz_strbuf_appendf (&op->esil, "%s,%s,/,lo,=,%s,%s,%%,hi,=", REG(1), REG(0), REG(1), REG(0));
-		}
-		break;
-#endif
 		default:
 			return -1;
 		}
@@ -681,33 +669,6 @@ static void op_fillval(RzAnalysis *analysis, RzAnalysisOp *op, csh *handle, cs_i
 		}
 		break;
 	case RZ_ANALYSIS_OP_TYPE_DIV: // UDIV
-#if 0
-capstone bug
-------------
-	$ r2 -a mips -e cfg.bigendian=1 -c "wx 0083001b" -
-	// should be 3 regs, right?
-	[0x00000000]> aoj~{}
-	[
-	  {
-	    "opcode": "divu zero, a0, v1",
-	    "disasm": "divu zero, a0, v1",
-	    "mnemonic": "divu",
-	    "sign": false,
-	    "prefix": 0,
-	    "id": 192,
-	    "opex": {
-	      "operands": [
-		{
-		  "type": "reg",
-		  "value": "a0"
-		},
-		{
-		  "type": "reg",
-		  "value": "v1"
-		}
-	      ]
-	    },
-#endif
 		if (OPERAND(0).type == MIPS_OP_REG && OPERAND(1).type == MIPS_OP_REG && OPERAND(2).type == MIPS_OP_REG) {
 			SET_SRC_DST_3_REGS(op);
 		} else if (OPERAND(0).type == MIPS_OP_REG && OPERAND(1).type == MIPS_OP_REG) {

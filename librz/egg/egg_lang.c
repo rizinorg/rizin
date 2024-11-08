@@ -190,35 +190,6 @@ static void rcc_reset_callname(RzEgg *egg) {
 #define FRAME_END_FMT "__%d_%d_end_frame%d"
 #endif
 
-#if 0
-static char *get_frame_label(int type) {
-	static char label[128];
-	int nf = egg->lang.nfunctions;
-	int nb = egg->lang.nbrackets;
-	int ct = context;
-	/* TODO: this type hack to substruct nb and ctx looks weird */
-#if 1
-	if (type == 1) {
-		nb--;
-	} else if (type == 2) {
-		ct--;
-	}
-#endif
-	/* THIS IS GAS_ONLY */
-	snprintf (label, sizeof (label), FRAME_FMT, nf, nb, ct);
-	return label;
-}
-
-static char *get_end_frame_label(RzEgg *egg) {
-	static char label[128];
-	snprintf (label, sizeof (label) - 1, FRAME_END_FMT,
-		egg->lang.nfunctions, egg->lang.nbrackets, context - 1);
-// eprintf ("--> (egg->lang.endframe: %d %d %d)\n", egg->lang.nfunctions, egg->lang.nbrackets, context);
-	// snprintf (label, sizeof (label)-1, "frame_end_%d_%d", egg->lang.nfunctions, egg->lang.nbrackets);
-	return label;
-}
-#endif
-
 static const char *find_alias(RzEgg *egg, const char *str) {
 	// do not forget to free return strings to avoid memory leak
 	char *p = (char *)str;
@@ -734,17 +705,6 @@ static void rcc_fun(RzEgg *egg, const char *str) {
 	}
 }
 
-#if 0
-static void shownested(void) {
-	int i;
-	eprintf ("[[[NESTED %d]]] ", context);
-	for (i = 0; egg->lang.nested[i]; i++) {
-		eprintf ("%s ", egg->lang.nested[i]);
-	}
-	eprintf ("\n");
-}
-#endif
-
 static void set_nested(RzEgg *egg, const char *s) {
 	int i = 0;
 	if (CTX < 1) {
@@ -798,24 +758,7 @@ static void rcc_context(RzEgg *egg, int delta) {
 		const char *elm = skipspaces(egg->lang.elem);
 		// const char *cn = callname;
 		// seems cn is useless in nowadays content
-// if (egg->lang.nested[context-1])
-#if 0
-		if (delta < 0 && context > 0) {
-			eprintf ("close bracket foo!!!\n");
-			shownested ();
-			cn = rz_str_dup (egg->lang.nested[context - 1]);
-			eprintf ("STATEMENT cn=(%s) idx=%d (%s)\n", cn, context - 1, egg->lang.nested[context - 1]);
-			eprintf ("CNTXXXPUSH (%s)\n", egg->lang.ctxpush[context - 1]);
-#if 0
-			if (!strcmp (cn, "while")) {
-				emit->while_end (egg, get_frame_label (context - 1));
-				// char *var = get_frame_label (0);
-				// emit->jmp (egg, var, 0);
-				return;
-			}
-#endif
-		}
-#endif
+		// if (egg->lang.nested[context-1])
 		// eprintf ("ELEM (%s)\n", elm);
 		// eprintf ("END BLOCK %d, (%s)\n", context, egg->lang.nested[context-1]);
 		// eprintf ("CN = (%s) %d (%s) delta=%d\n", cn, context, egg->lang.nested[context-1], delta);
@@ -1056,24 +999,6 @@ static void rcc_next(RzEgg *egg) {
 			}
 			sprintf(var, "__begin_%d_%d_%d\n", egg->lang.nfunctions, CTX, egg->lang.nestedi[CTX - 1]);
 			e->while_end(egg, var); // get_frame_label (1));
-#if 0
-			eprintf ("------------------------------------------ lastctx: %d\n", egg->lang.lastctxdelta);
-			// TODO: the pushvar is required for the if(){}while(); constructions
-			// char *pushvar = egg->lang.ctxpush[context+egg->lang.nbrackets-1];
-			/* TODO: support to compare more than one expression (LOGICAL OR) */
-			rcc_printf ("  pop %%eax\n");
-			rcc_printf ("  cmp $0, %%eax\n");	// XXX MUST SUPPORT != 0 COMPARE HERE
-			/* TODO : Simplify!! */
-			// if (pushvar)
-			// printf("  push %s /* while push */\n", pushvar);
-			if (egg->lang.lastctxdelta < 0) {
-				rcc_printf ("  jnz %s\n", get_frame_label (1));
-			} else {
-				rcc_printf ("  jnz %s\n", get_frame_label (0));
-			}
-			// if (pushvar)
-			// printf("  pop %%"RZ_AX" /* while pop */\n");
-#endif
 			egg->lang.nargs = 0;
 		} else {
 			for (i = 0; i < egg->lang.nsyscalls; i++) {

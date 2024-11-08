@@ -16,12 +16,7 @@ static int arch_xap_disasm(RzStrBuf *asm_buf, const unsigned char *buf, ut64 add
 	if (xap_read_instruction(&s, &d) > 0) {
 		xap_decode(&s, &d);
 	}
-#if 0
-	if (s->s_ff_quirk) {
-		sprintf(d->d_asm, "DC\t0x%x", i2u16(&d->d_inst));
-		s->s_ff_quirk = 0;
-	}
-#endif
+
 	return 0;
 }
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {

@@ -227,14 +227,7 @@ static bool is_delta_pointer_table(ReadAhead *ra, RzAnalysis *analysis, ut64 add
 			*casetbl_addr += omov_aop.disp;
 		}
 	}
-#if 0
-	// required for the last jmptbl.. but seems to work without it and breaks other tests
-	if (mov_aop.type && mov_aop.ptr) {
-		*jmptbl_addr += mov_aop.ptr;
-		// absjmptbl
-		lea_ptr = mov_aop.ptr;
-	}
-#endif
+
 	/* check if jump table contains valid deltas */
 	read_ahead(ra, analysis, *jmptbl_addr, (ut8 *)&jmptbl, 64);
 	for (i = 0; i < 3; i++) {
@@ -479,21 +472,19 @@ static const char *retpoline_reg(RzAnalysis *analysis, ut64 addr) {
 			return thunk + strlen(token);
 		}
 	}
-#if 0
-// TODO: implement following code analysis check for stripped binaries:
-// 1) op(addr).type == CALL
-// 2) call_dest = op(addr).addr
-// 3) op(call_dest).type == STORE
-// 4) op(call_dest + op(call_dest).size).type == RET
-[0x00000a65]> pid 6
-0x00000a65  sym.__x86_indirect_thunk_rax:
-0x00000a65  .------- e807000000  call 0xa71
-0x00000a6a  |              f390  pause
-0x00000a6c  |            0faee8  lfence
-0x00000a6f  |              ebf9  jmp 0xa6a
-0x00000a71  `---->     48890424  mov qword [rsp], rax
-0x00000a75                   c3  ret
-#endif
+	// TODO: implement following code analysis check for stripped binaries:
+	// 1) op(addr).type == CALL
+	// 2) call_dest = op(addr).addr
+	// 3) op(call_dest).type == STORE
+	// 4) op(call_dest + op(call_dest).size).type == RET
+	// [0x00000a65]> pid 6
+	// 0x00000a65  sym.__x86_indirect_thunk_rax:
+	// 0x00000a65  .------- e807000000  call 0xa71
+	// 0x00000a6a  |              f390  pause
+	// 0x00000a6c  |            0faee8  lfence
+	// 0x00000a6f  |              ebf9  jmp 0xa6a
+	// 0x00000a71  `---->     48890424  mov qword [rsp], rax
+	// 0x00000a75                   c3  ret
 	return NULL;
 }
 

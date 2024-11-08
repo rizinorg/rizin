@@ -3119,17 +3119,6 @@ void MACH0_(mach_headerfields)(RzBinFile *bf) {
 #endif
 		} break;
 		case LC_SYMTAB:
-#if 0
-			{
-			char *id = rz_buf_get_string (buf, addr + 20);
-			cb_printf ("0x%08"PFMT64x"  id         0x%x\n", addr + 20, id? id: "");
-			cb_printf ("0x%08"PFMT64x"  symooff    0x%x\n", addr + 20, id? id: "");
-			cb_printf ("0x%08"PFMT64x"  nsyms      %d\n", addr + 20, id? id: "");
-			cb_printf ("0x%08"PFMT64x"  stroff     0x%x\n", addr + 20, id? id: "");
-			cb_printf ("0x%08"PFMT64x"  strsize    0x%x\n", addr + 20, id? id: "");
-			free (id);
-			}
-#endif
 			break;
 		case LC_ID_DYLIB: { // install_name_tool
 			ut32 str_off;
@@ -3419,12 +3408,6 @@ struct MACH0_(mach_header) * MACH0_(get_hdr)(RzBuffer *buf) {
 		big_endian = false;
 	} else if (rz_read_be32(magicbytes) == 0xfeedfacf) {
 		big_endian = true;
-	} else {
-		/* also extract non-mach0s */
-#if 0
-		free (macho_hdr);
-		return NULL;
-#endif
 	}
 	len = rz_buf_read_at(buf, 0, machohdrbytes, sizeof(machohdrbytes));
 	if (len != sizeof(struct MACH0_(mach_header))) {

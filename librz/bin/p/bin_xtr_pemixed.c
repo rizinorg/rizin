@@ -47,7 +47,7 @@ static bool check_buffer(RzBuffer *b) {
 #endif
 }
 
-// TODO RzBufferify
+// TODO RzBufferify
 static RzList /*<RzBinXtrData *>*/ *oneshotall(RzBin *bin, const ut8 *buf, ut64 size) {
 	// extract dos componenent first
 	RzBinXtrData *data = oneshot(bin, buf, size, SUB_BIN_DOS);

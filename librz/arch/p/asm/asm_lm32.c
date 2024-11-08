@@ -408,24 +408,6 @@ static int rz_asm_lm32_stringify(RzAsmLm32Instruction *instr, char *str) {
 	return 0;
 }
 
-#if 0
-
-static int rz_asm_lm32_destringify(const char *string, RzAsmLm32Instruction *instr) {
-	//TODO
-	return -1;
-}
-
-static int rz_asm_lm32_encode(RzAsmLm32Instruction *instr, ut32 *val) {
-	//TODO
-	return -1;
-}
-
-static int assemble(RzAsm *a, RzAsmOp *ao, const char *str) {
-	//TODO
-	return -1;
-}
-#endif
-
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	RzAsmLm32Instruction instr = { 0 };
 	instr.value = buf[0] << 24 | buf[1] << 16 | buf[2] << 8 | buf[3];

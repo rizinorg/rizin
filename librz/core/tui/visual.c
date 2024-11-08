@@ -3315,21 +3315,6 @@ RZ_IPI void rz_core_visual_title(RzCore *core, int color) {
 				title = rz_str_append(title, tabstring);
 				free(tabstring);
 			}
-#if 0
-			// TODO: add an option to show this tab mode instead?
-			const int curTab = core->visual.tab;
-			rz_cons_printf ("[");
-			int i;
-			for (i = 0; i < tabsCount; i++) {
-				if (i == curTab) {
-					rz_cons_printf ("%d", curTab + 1);
-				} else {
-					rz_cons_printf (".");
-				}
-			}
-			rz_cons_printf ("]");
-			rz_cons_printf ("[tab:%d/%d]", core->visual.tab, tabsCount);
-#endif
 		}
 		rz_cons_print(title);
 		free(title);
@@ -3715,12 +3700,6 @@ static void visual_refresh(RzCore *core) {
 		}
 	}
 	core->print->cur_enabled = ce;
-#if 0
-	if (core->print->screen_bounds != 1LL) {
-		rz_cons_printf ("[0x%08"PFMT64x "..0x%08"PFMT64x "]\n",
-			core->offset, core->print->screen_bounds);
-	}
-#endif
 
 	// get the address in the line at the bottom of the screen to calculate the percentage
 	char *bottom_addr = screen_bottom_address(core);

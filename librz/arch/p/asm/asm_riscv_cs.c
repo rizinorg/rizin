@@ -26,13 +26,7 @@ static int riscv_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		ctx->omode = mode;
 		// cs_option (ctx->handle, CS_OPT_DETAIL, CS_OPT_OFF);
 	}
-#if 0
-	if (a->syntax == RZ_ASM_SYNTAX_REGNUM) {
-		cs_option (ctx->handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_NOREGNAME);
-	} else {
-		cs_option (ctx->handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_DEFAULT);
-	}
-#endif
+
 	int n = cs_disasm(ctx->handle, (ut8 *)buf, len, a->pc, 1, &insn);
 	if (n < 1) {
 		rz_asm_op_set_asm(op, "invalid");

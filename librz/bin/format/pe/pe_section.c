@@ -320,44 +320,44 @@ int PE_(bin_pe_init_sections)(RzBinPEObj *bin) {
 			goto out_error;
 		}
 	}
-#if 0
-	Each symbol table entry includes a name, storage class, type, value and section number.Short names (8 characters or fewer) are stored directly in the symbol table;
-	longer names are stored as an paddr into the string table at the end of the COFF object.
+	/*
+	 * Each symbol table entry includes a name, storage class, type, value and section number.Short names (8 characters or fewer) are stored directly in the symbol table;
+	 * longer names are stored as an paddr into the string table at the end of the COFF object.
+	 *
+	 * ================================================================
+	 * COFF SYMBOL TABLE RECORDS (18 BYTES)
+	 * ================================================================
+	 * record
+	 * paddr
+	 *
+	 * struct symrec {
+	 * 	union {
+	 * 		char string[8]; // short name
+	 * 		struct {
+	 * 			ut32 seros;
+	 * 			ut32 stridx;
+	 * 		} stridx;
+	 * 	} name;
+	 * 	ut32 value;
+	 * 	ut16 secnum;
+	 * 	ut16 symtype;
+	 * 	ut8 symclass;
+	 * 	ut8 numaux;
+	 * }
+	 * ------------------------------------------------------ -
+	 * 0 | 8 - char symbol name |
+	 * | or 32 - bit zeroes followed by 32 - bit |
+	 * | index into string table |
+	 * ------------------------------------------------------ -
+	 * 8 | symbol value |
+	 * ------------------------------------------------------ -
+	 * 0Ch | section number | symbol type |
+	 * ------------------------------------------------------ -
+	 * 10h | sym class | num aux |
+	 * -------------------------- -
+	 * 12h
+	 */
 
-	================================================================
-	COFF SYMBOL TABLE RECORDS (18 BYTES)
-	================================================================
-	record
-	paddr
-
-	struct symrec {
-		union {
-			char string[8]; // short name
-			struct {
-				ut32 seros;
-				ut32 stridx;
-			} stridx;
-		} name;
-		ut32 value;
-		ut16 secnum;
-		ut16 symtype;
-		ut8 symclass;
-		ut8 numaux;
-	}
-	------------------------------------------------------ -
-	0 | 8 - char symbol name |
-	| or 32 - bit zeroes followed by 32 - bit |
-	| index into string table |
-	------------------------------------------------------ -
-	8 | symbol value |
-	------------------------------------------------------ -
-	0Ch | section number | symbol type |
-	------------------------------------------------------ -
-	10h | sym class | num aux |
-	-------------------------- -
-	12h
-
-#endif
 	return true;
 out_error:
 	bin->num_sections = 0;

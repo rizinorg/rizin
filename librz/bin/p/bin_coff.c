@@ -504,17 +504,14 @@ static ut64 size(RzBinFile *bf) {
 }
 
 static bool check_buffer(RzBuffer *buf) {
-#if 0
-TODO: do more checks here to avoid false positives
-
-ut16 MACHINE
-ut16 NSECTIONS
-ut32 DATE
-ut32 PTRTOSYMTABLE
-ut32 NUMOFSYMS
-ut16 OPTHDRSIZE
-ut16 CHARACTERISTICS
-#endif
+	// TODO: do more checks here to avoid false positives
+	// ut16 MACHINE
+	// ut16 NSECTIONS
+	// ut32 DATE
+	// ut32 PTRTOSYMTABLE
+	// ut32 NUMOFSYMS
+	// ut16 OPTHDRSIZE
+	// ut16 CHARACTERISTICS
 
 	ut8 tmp[20];
 	int r = rz_buf_read_at(buf, 0, tmp, sizeof(tmp));

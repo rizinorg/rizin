@@ -32,11 +32,6 @@ RZ_IPI int rz_core_seek_opcode_backward(RzCore *core, int numinstr, bool silent)
 	if (rz_core_prevop_addr(core, core->offset, numinstr, &addr)) {
 		ret = core->offset - addr;
 	} else {
-#if 0
-		// core_asm_bwdis_len is really buggy and we should remove it. seems like prevop_addr
-		// works as expected, because is the one used from visual
-		ret = rz_core_asm_bwdis_len (core, &instr_len, &addr, numinstr);
-#endif
 		addr = core->offset;
 		const int mininstrsize = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
 		for (i = 0; i < numinstr; i++) {

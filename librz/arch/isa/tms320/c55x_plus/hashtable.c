@@ -443,24 +443,22 @@ st32 get_hashfunc_10(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_11(st32 arg1, st32 arg2) {
-#if 0
 	// The following code is wrong because it will always produce 244
 	// since `hash_const_05` is always 0 and as result it will always
 	// jump into the else scope.
 	// The code is kept because this is the product of RE.
-	st32 result;
 
-	if ((ut32)hash_const_05 & arg2) {
-		if (((ut32)hash_const_05 & arg2) == 524288) {
-			result = 460;
-		} else {
-			result = arg1;
-		}
-	} else {
-		result = 244;
-	}
-	return result;
-#endif
+	// st32 result;
+	// if ((ut32)hash_const_05 & arg2) {
+	// 	if (((ut32)hash_const_05 & arg2) == 524288) {
+	// 		result = 460;
+	// 	} else {
+	// 		result = arg1;
+	// 	}
+	// } else {
+	// 	result = 244;
+	// }
+	// return result;
 	return 244;
 }
 

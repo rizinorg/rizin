@@ -174,49 +174,6 @@ static RzList /*<RzBinWasmSection *>*/ *rz_bin_wasm_get_sections_by_id(RzList /*
 	return ret;
 }
 
-#if 0
-const char *rz_bin_wasm_valuetype_to_string (rz_bin_wasm_value_type_t type) {
-	switch (type) {
-	case RZ_BIN_WASM_VALUETYPE_i32:
-		return "i32";
-	case RZ_BIN_WASM_VALUETYPE_i64:
-		return "i62";
-	case RZ_BIN_WASM_VALUETYPE_f32:
-		return "f32";
-	case RZ_BIN_WASM_VALUETYPE_f64:
-		return "f64";
-	case RZ_BIN_WASM_VALUETYPE_ANYFUNC:
-		return "ANYFUNC";
-	case RZ_BIN_WASM_VALUETYPE_FUNC:
-		return "FUNC";
-	default:
-		return "<?>";
-	}
-}
-
-static char *rz_bin_wasm_type_entry_to_string(RzBinWasmTypeEntry *ptr) {
-	if (!ptr) {
-		return NULL;
-	}
-	char *buf = (char*)calloc (ptr->param_count, 5);
-	if (!buf) {
-		return NULL;
-	}
-	int p;
-	for (p = 0; p < ptr->param_count; p++) {
-		strcat (buf, rz_bin_wasm_valuetype_to_string (ptr->param_types[p]));
-		if (p < ptr->param_count - 1) {
-			strcat (buf, ", ");
-		}
-	}
-	snprintf (ptr->to_str, RZ_BIN_WASM_STRING_LENGTH, "(%s) -> (%s)",
-		(ptr->param_count > 0? buf: ""),
-		(ptr->return_count == 1? rz_bin_wasm_valuetype_to_string (ptr->return_type): ""));
-	free (buf);
-	return ptr->to_str;
-}
-#endif
-
 // Free
 static void rz_bin_wasm_free_types(RzBinWasmTypeEntry *ptr) {
 	if (ptr) {

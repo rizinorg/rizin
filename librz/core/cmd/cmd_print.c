@@ -1462,12 +1462,6 @@ static bool cmd_print_pxA(RzCore *core, int len, RzOutputMode mode) {
 			fgcolor = Color_WHITE;
 			text = "XX";
 			break;
-#if 0
-		default:
-			color = Color_BGCYAN;
-			fgcolor = Color_BLACK;
-			break;
-#endif
 		}
 		int opsz = RZ_MAX(op.size, 1);
 		if (show_cursor) {

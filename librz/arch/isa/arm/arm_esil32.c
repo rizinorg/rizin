@@ -380,16 +380,16 @@ RZ_IPI int rz_arm_cs_analysis_op_32_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 a
 		rz_strbuf_setf(&op->esil, "%s,$", ARG(0));
 		break;
 	case ARM_INS_PUSH:
-#if 0
-PUSH { r4, r5, r6, r7, lr }
-4,sp,-=,lr,sp,=[4],
-4,sp,-=,r7,sp,=[4],
-4,sp,-=,r6,sp,=[4],
-4,sp,-=,r5,sp,=[4],
-4,sp,-=,r4,sp,=[4]
-
-20,sp,-=,lr,r7,r6,r5,r4,5,sp,=[*]
-#endif
+		/*
+		 * PUSH { r4, r5, r6, r7, lr }
+		 * 4,sp,-=,lr,sp,=[4],
+		 * 4,sp,-=,r7,sp,=[4],
+		 * 4,sp,-=,r6,sp,=[4],
+		 * 4,sp,-=,r5,sp,=[4],
+		 * 4,sp,-=,r4,sp,=[4]
+		 *
+		 * 20,sp,-=,lr,r7,r6,r5,r4,5,sp,=[*]
+		 */
 		rz_strbuf_appendf(&op->esil, "%d,sp,-=,",
 			4 * insn->detail->arm.op_count);
 		for (i = insn->detail->arm.op_count; i > 0; i--) {
@@ -485,10 +485,8 @@ PUSH { r4, r5, r6, r7, lr }
 		}
 		break;
 	case ARM_INS_POP:
-#if 0
-POP { r4,r5, r6}
-r6,r5,r4,3,sp,[*],12,sp,+=
-#endif
+		// POP { r4,r5, r6}
+		// r6,r5,r4,3,sp,[*],12,sp,+=
 		for (i = insn->detail->arm.op_count; i > 0; i--) {
 			rz_strbuf_appendf(&op->esil, "%s,", REG(i - 1));
 		}

@@ -1563,12 +1563,6 @@ RZ_API int rz_debug_continue_syscalls(RzDebug *dbg, int *sc, int n_sc) {
 		if (reason == RZ_DEBUG_REASON_DEAD || rz_debug_is_dead(dbg)) {
 			break;
 		}
-#if 0
-		if (reason != RZ_DEBUG_REASON_STEP) {
-			eprintf ("astep\n");
-			break;
-		}
-#endif
 		if (!rz_debug_reg_sync(dbg, RZ_REG_TYPE_GPR, false)) {
 			eprintf("--> cannot sync regs, process is probably dead\n");
 			return -1;

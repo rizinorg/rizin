@@ -843,14 +843,7 @@ static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 				}
 				return fcn->addr;
 			}
-#if 0
-			ut64 addr = rz_analysis_fcn_label_get (core->analysis, core->offset, str);
-			if (addr != 0) {
-				ret = addr;
-			} else {
-				...
-			}
-#endif
+
 			if ((flag = rz_flag_get(core->flags, str))) {
 				ret = flag->offset;
 				if (ok) {

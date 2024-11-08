@@ -417,18 +417,6 @@ RZ_IPI int rz_arm_cs_analysis_op_64_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 a
 			const char *r0 = REG64(0);
 			const char *r1 = REG64(1);
 			int size = REGSIZE64(1);
-#if 0
-		rz_strbuf_setf (&op->esil,
-			"0,%s,=,"                        // dst = 0
-			"%d,"                            // initial counter = size
-			"DUP,"                           // counter: size -> 0 (repeat here)
-				"DUP,1,SWAP,-,8,*,"          // counter to bits in source
-					"DUP,0xff,<<,%s,&,>>,"   // src byte moved to LSB
-				"SWAP,%d,-,8,*,"             // invert counter, calc dst bit
-				"SWAP,<<,%s,|=,"             // shift left to there and insert
-			"4,REPEAT",                      // goto 5th instruction
-			r0, size, r1, size, r0);
-#endif
 			if (size == 8) {
 				rz_strbuf_setf(&op->esil,
 					"56,0xff,%s,&,<<,tmp,=,"

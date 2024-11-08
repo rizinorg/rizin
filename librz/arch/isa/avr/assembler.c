@@ -507,24 +507,22 @@ static ut32 avr_lds(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut64 pc
 	parse_register_or_error(Rd, tokens[1]);
 	parse_unsigned_or_error(k, tokens[2], 0xFFFF);
 
-#if 0
 	// The STS (16-bit) and LDS (16-bit) instructions only exist in the reduced AVR cores.
 	// This includes only the ATtiny4/5/9/10 family, and the ATtiny20/40 family.
 	// They also lack some features like the lack of CPU registers R0 to R15.
 	// On rizin these platforms are not supported, therefore this code is commented, but works as intended.
-	if (k <= 127 && Rd >= 16) {
-		/* lds Rd, k | 16 <= d <= 31 | 0 <= k <= 127 */
-		/* 10100kkkddddkkkk */
-		cbins = 0xA000;
-		Rd -= 16;
-		cbins |= k & 0x000F;
-		cbins |= ((k << 4) & 0x0700);
-		cbins |= ((Rd << 4) & 0x00F0);
+	// if (k <= 127 && Rd >= 16) {
+	// 	/* lds Rd, k | 16 <= d <= 31 | 0 <= k <= 127 */
+	// 	/* 10100kkkddddkkkk */
+	// 	cbins = 0xA000;
+	// 	Rd -= 16;
+	// 	cbins |= k & 0x000F;
+	// 	cbins |= ((k << 4) & 0x0700);
+	// 	cbins |= ((Rd << 4) & 0x00F0);
+	// 	auto_write16(data, cbins, be);
+	// 	return 2;
+	// }
 
-		auto_write16(data, cbins, be);
-		return 2;
-	}
-#endif
 	/* lds Rd, k | 0 <= d <= 31 | 0 <= k <= 0xFFFF */
 	/* 1001000ddddd0000 kkkkkkkkkkkkkkkk */
 	cbins = 0x9000;
@@ -793,24 +791,22 @@ static ut32 avr_sts(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut64 pc
 	parse_unsigned_or_error(k, tokens[1], 0xFFFF);
 	parse_register_or_error(Rr, tokens[2]);
 
-#if 0
 	// The STS (16-bit) and LDS (16-bit) instructions only exist in the reduced AVR cores.
 	// This includes only the ATtiny4/5/9/10 family, and the ATtiny20/40 family.
 	// They also lack some features like the lack of CPU registers R0 to R15.
 	// On rizin these platforms are not supported, therefore this code is commented, but works as intended.
-	if (k <= 127 && Rr >= 16) {
-		/* sts k, Rr | 16 <= d <= 31 | 0 <= k <= 127 */
-		/* 10101kkkddddkkkk */
-		cbins = 0xA800;
-		Rr -= 16;
-		cbins |= k & 0x000F;
-		cbins |= ((k << 4) & 0x0700);
-		cbins |= ((Rr << 4) & 0x00F0);
+	// if (k <= 127 && Rr >= 16) {
+	// 	/* sts k, Rr | 16 <= d <= 31 | 0 <= k <= 127 */
+	// 	/* 10101kkkddddkkkk */
+	// 	cbins = 0xA800;
+	// 	Rr -= 16;
+	// 	cbins |= k & 0x000F;
+	// 	cbins |= ((k << 4) & 0x0700);
+	// 	cbins |= ((Rr << 4) & 0x00F0);
+	// 	auto_write16(data, cbins, be);
+	// 	return 2;
+	// }
 
-		auto_write16(data, cbins, be);
-		return 2;
-	}
-#endif
 	/* sts k, Rr | 0 <= d <= 31 | 0 <= k <= 0xFFFF */
 	/* 1001001ddddd0000 kkkkkkkkkkkkkkkk */
 	cbins = 0x9200;

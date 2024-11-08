@@ -597,11 +597,9 @@ static int get_omf_infos(rz_bin_omf_obj *obj) {
 }
 
 static void free_pubdef(OMF_multi_datas *datas) {
-#if 0
-	while (ct_rec < datas->nb_elem) {
-		RZ_FREE (((OMF_symbol *)(datas->elems + ct_rec++))->name);
+	if (!datas) {
+		return;
 	}
-#endif
 	RZ_FREE(datas->elems);
 	RZ_FREE(datas);
 }

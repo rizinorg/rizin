@@ -8,16 +8,14 @@
 #include <libgdbr.h>
 #include <gdbserver/core.h>
 
-#if 0
-SECURITY IMPLICATIONS
-=====================
-- no ssl
-- no auth
-- commands can be executed by anyone
-- default is to listen on localhost
-- can access full filesystem
-- follow symlinks
-#endif
+// SECURITY IMPLICATIONS
+// =====================
+// - no ssl
+// - no auth
+// - commands can be executed by anyone
+// - default is to listen on localhost
+// - can access full filesystem
+// - follow symlinks
 
 #define rtr_n    core->rtr_n
 #define rtr_host core->rtr_host

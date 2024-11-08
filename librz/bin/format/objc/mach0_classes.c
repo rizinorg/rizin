@@ -464,27 +464,6 @@ static void get_objc_property_list(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzB
 			property->name = rz_str_newf("%s::(property)%s", klass->name, name);
 			RZ_FREE(name);
 		}
-#if 0
-		r = va2pa (op.attributes, NULL, &left, bf);
-		if (r != 0) {
-			struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t) *) bf->o->bin_obj;
-			int is_crypted = bin->has_crypto;
-
-			if (r > bf->size || r + left > bf->size) goto error;
-			if (r + left < r) goto error;
-
-			if (is_crypted == 1) {
-				name = rz_str_dup ("some_encrypted_data");
-				left = strlen (name) + 1;
-			} else {
-				name = malloc (left);
-				len = rz_buf_read_at (buf, r, (ut8 *)name, left);
-				if (len == 0 || len == -1) goto error;
-			}
-
-			RZ_FREE (name);
-		}
-#endif
 		rz_list_append(klass->fields, property);
 
 		p += sizeof(struct MACH0_(SObjcProperty));
@@ -1189,42 +1168,6 @@ RZ_API void MACH0_(get_class_t)(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinC
 		klass->addr = tmp;
 	}
 }
-
-#if 0
-static RzList *parse_swift_classes(RzBinFile *bf) {
-	bool is_swift = false;
-	RzBinString *str;
-	RzListIter *iter;
-	RzBinClass *cls;
-	RzList *ret;
-	char *lib;
-
-	rz_list_foreach (bf->o->libs, iter, lib) {
-		if (strstr (lib, "libswift")) {
-			is_swift = true;
-			break;
-		}
-	}
-	if (!is_swift) {
-		return NULL;
-	}
-
-	int idx = 0;
-	ret = rz_list_newf (rz_bin_string_free);
-	rz_list_foreach (bf->o->strings, iter, str) {
-		if (!strncmp (str->string, "_TtC", 4)) {
-			char *msg = rz_str_dup (str->string + 4);
-			cls = RZ_NEW0 (RzBinClass);
-			cls->name = rz_str_dup (msg);
-			cls->super = rz_str_dup (msg);
-			cls->index = idx++;
-			rz_list_append (ret, cls);
-			free (msg);
-		}
-	}
-	return ret;
-}
-#endif
 
 RZ_API RZ_OWN RzPVector /*<RzBinClass *>*/ *MACH0_(parse_classes)(RzBinFile *bf, objc_cache_opt_info *oi) {
 	RzPVector /*<RzBinClass *>*/ *ret = NULL;

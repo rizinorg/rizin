@@ -10,8 +10,6 @@
 
 #include "cmd_search_rop.c"
 
-#define USE_EMULATION 0
-
 #define AES_SEARCH_LENGTH         40
 #define PRIVATE_KEY_SEARCH_LENGTH 11
 
@@ -70,15 +68,6 @@ static const char *help_msg_slash[] = {
 	"/x", " ff43:ffd0", "search for hexpair with mask",
 	"/z", " min max", "search for strings of given size",
 	"/*", " [comment string]", "add multiline comment, end it with '*/'",
-#if 0
-	"\nConfiguration:", "", " (type `e??search.` for a complete list)",
-	"e", " cmd.hit = x", "command to execute on every search hit",
-	"e", " search.in = ?", "specify where to search stuff (depends on .from/.to)",
-	"e", " search.align = 4", "only catch aligned search hits",
-	"e", " search.from = 0", "start address",
-	"e", " search.to = 0", "end address",
-	"e", " search.flags = true", "if enabled store flags on keyword hits",
-#endif
 	NULL
 };
 
@@ -1056,17 +1045,7 @@ static void do_esil_search(RzCore *core, struct search_parameters *param, const 
 					continue;
 				}
 			}
-#if 0
-			// we need a way to retrieve info from a speicif address, and make it accessible from the esil search
-			// maybe we can just do it like this: 0x804840,AddressType,3,&, ... bitmask
-			// executable = 1
-			// writable = 2
-			// inprogram
-			// instack
-			// inlibrary
-			// inheap
-			rz_analysis_esil_set_op (core->analysis->esil, "AddressInfo", esil_search_address_info);
-#endif
+
 			if (rz_cons_is_breaked()) {
 				RZ_LOG_WARN("core: Breaked at 0x%08" PFMT64x "\n", addr);
 				break;
@@ -1138,63 +1117,9 @@ static void do_esil_search(RzCore *core, struct search_parameters *param, const 
 		(res) += (arr)[--(size)]; \
 	while ((size))
 
-#if USE_EMULATION
-// IMHO This code must be deleted
-static int emulateSyscallPrelude(RzCore *core, ut64 at, ut64 curpc) {
-	int i, inslen, bsize = RZ_MIN(64, core->blocksize);
-	ut8 *arr;
-	RzAnalysisOp aop = { 0 };
-	const int mininstrsz = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
-	const int minopcode = RZ_MAX(1, mininstrsz);
-	const char *a0 = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_SN);
-	const char *pc = rz_reg_get_name(core->dbg->reg, RZ_REG_NAME_PC);
-	RzRegItem *r = rz_reg_get(core->dbg->reg, pc, -1);
-	RzRegItem *reg_a0 = rz_reg_get(core->dbg->reg, a0, -1);
-
-	arr = malloc(bsize);
-	if (!arr) {
-		RZ_LOG_ERROR("core: Cannot allocate %d byte(s)\n", bsize);
-		free(arr);
-		return -1;
-	}
-	rz_reg_set_value(core->dbg->reg, r, curpc);
-	for (i = 0; curpc < at; curpc++, i++) {
-		if (i >= (bsize - 32)) {
-			i = 0;
-		}
-		if (!i) {
-			rz_io_read_at(core->io, curpc, arr, bsize);
-		}
-		rz_analysis_op_init(&aop);
-		inslen = rz_analysis_op(core->analysis, &aop, curpc, arr + i, bsize - i, RZ_ANALYSIS_OP_MASK_BASIC);
-		if (inslen > 0) {
-			int incr = (core->search->align > 0) ? core->search->align - 1 : inslen - 1;
-			if (incr < 0) {
-				incr = minopcode;
-			}
-			i += incr;
-			curpc += incr;
-			if (rz_analysis_op_nonlinear(aop.type)) { // skip the instr
-				rz_reg_set_value(core->dbg->reg, r, curpc + 1);
-			} else { // step instr
-				rz_core_esil_step(core, UT64_MAX, NULL, NULL);
-			}
-		}
-		rz_analysis_op_fini(&aop);
-	}
-	free(arr);
-	int sysno = rz_debug_reg_get(core->dbg, a0);
-	rz_reg_set_value(core->dbg->reg, reg_a0, -2); // clearing register A0
-	return sysno;
-}
-#endif
-
 static void do_syscall_search(RzCore *core, struct search_parameters *param) {
 	RzSearch *search = core->search;
 	ut64 at;
-#if USE_EMULATION
-	ut64 curpc;
-#endif
 	ut8 *buf;
 	int curpos, idx = 0, count = 0;
 	RzAnalysisOp aop = { 0 };
@@ -1280,16 +1205,7 @@ static void do_syscall_search(RzCore *core, struct search_parameters *param) {
 			if ((aop.type == RZ_ANALYSIS_OP_TYPE_SWI) && ret) { // && (aop.val > 10)) {
 				int scVector = -1; // int 0x80, svc 0x70, ...
 				int scNumber = 0; // r0/eax/...
-#if USE_EMULATION
-				// This for calculating no of bytes to be subtracted , to get n instr above syscall
-				int nbytes = 0;
-				int nb_opcodes = MAXINSTR;
-				SUMARRAY(previnstr, nb_opcodes, nbytes);
-				curpc = at - (nbytes - previnstr[curpos]);
-				scNumber = emulateSyscallPrelude(core, at, curpc);
-#else
 				scNumber = syscallNumber;
-#endif
 				scVector = (aop.val > 0) ? aop.val : -1; // int 0x80 (aop.val = 0x80)
 				RzSyscallItem *item = rz_syscall_get(core->analysis->syscall, scNumber, scVector);
 				if (item) {

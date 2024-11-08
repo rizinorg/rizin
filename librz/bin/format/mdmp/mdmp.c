@@ -312,12 +312,6 @@ static void mdmp_obj_sdb_init(MiniDmpObj *obj) {
 	sdb_set(obj->kv, "mdmp_memory_descriptor64.format", "qq "
 							    "StartOfMemoryRange DataSize");
 
-#if 0
-	/* TODO: Flag dependent thus not fully implemented */
-	sdb_set (obj->kv, "mdmp_context.format", "[4]B "
-		"(mdmp_context_flags)ContextFlags");
-#endif
-
 	sdb_set(obj->kv, "mdmp_vs_fixedfileinfo.format", "ddddddddddddd "
 							 "dwSignature dwStrucVersion dwFileVersionMs "
 							 "dwFileVersionLs dwProductVersionMs "

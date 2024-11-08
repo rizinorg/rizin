@@ -1286,10 +1286,10 @@ RZ_API void rz_cons_newline(void) {
 		rz_cons_strcat("\n");
 	}
 #if 0
-This place is wrong to manage the color reset, can interfire with rzpipe output sending resetchars
-and break json output appending extra chars.
-this code now is managed into output.c:118 at function rz_cons_w32_print
-now the console color is reset with each \n (same stuff do it here but in correct place ... i think)
+	// This place is wrong to manage the color reset, can interfire with rzpipe output sending resetchars
+	// and break json output appending extra chars.
+	// this code now is managed into output.c:118 at function rz_cons_w32_print
+	// now the console color is reset with each \n (same stuff do it here but in correct place ... i think)
 
 #if __WINDOWS__
 	rz_cons_reset_colors();

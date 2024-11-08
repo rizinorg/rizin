@@ -2117,12 +2117,6 @@ static bool cb_iova(void *user, void *data) {
 		if (core->io->desc) {
 			rz_core_block_read(core);
 		}
-#if 0
-		/* reload symbol information */
-		if (rz_list_length (rz_bin_get_sections (core->bin)) > 0) {
-			rz_core_cmd0 (core, ".ia*");
-		}
-#endif
 	}
 	return true;
 }

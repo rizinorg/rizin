@@ -146,20 +146,6 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	return ret;
 }
 
-#if 0
-static RzList* relocs(RzBinFile *bf) {
-	RzList *ret = NULL;
-	RzBinReloc *ptr = NULL;
-	ut64 got_addr;
-	int i;
-
-	if (!(ret = rz_list_new ()))
-		return NULL;
-	ret->free = free;
-	return ret;
-}
-#endif
-
 static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	RzBinAddr *ptr = NULL;
 	RzPVector *ret;

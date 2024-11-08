@@ -172,10 +172,6 @@ static int rz_core_magic_at(RzCore *core, const char *file, ut64 addr, int depth
 	}
 	adelta++;
 	delta++;
-#if 0
-	rz_magic_free (ck);
-	ck = NULL;
-#endif
 	{
 		int mod = core->search->align;
 		if (mod) {

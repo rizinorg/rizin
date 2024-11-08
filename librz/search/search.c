@@ -288,51 +288,6 @@ RZ_API int rz_search_deltakey_update(RzSearch *s, ut64 from, const ut8 *buf, int
 	return s->nhits - old_nhits;
 }
 
-#if 0
-// Boyer-Moore-Horspool pattern matching
-// Supported search variants: icase, overlap
-static int rz_search_horspool(RzSearch *s, RzSearchKeyword *kw, ut64 from, const ut8 *buf, int len) {
-	ut64 bad_char_shift[UT8_MAX + 1];
-	int i, j, m = kw->keyword_length - 1, count = 0;
-	ut8 ch;
-
-	for (i = 0; i < RZ_ARRAY_SIZE (bad_char_shift); i++) {
-		bad_char_shift[i] = kw->keyword_length;
-	}
-	for (i = 0; i < m; i++) {
-		ch = kw->bin_keyword[i];
-		bad_char_shift[kw->icase ? tolower (ch) : ch] = m - i;
-	}
-
-	for (i = 0; i + m < len; ) {
-	next:
-		for (j = m; ; j--) {
-			ut8 a = buf[i + j], b = kw->bin_keyword[j];
-			if (kw->icase) {
-				a = tolower (a);
-				b = tolower (b);
-			}
-			if (a != b) break;
-			if (i == 0) {
-				if (!rz_search_hit_new (s, kw, from + i)) {
-					return -1;
-				}
-				kw->count++;
-				count++;
-				if (!s->overlap) {
-					i += kw->keyword_length;
-					goto next;
-				}
-			}
-		}
-		ch = buf[i + m];
-		i += bad_char_shift[kw->icase ? tolower (ch) : ch];
-	}
-
-	return false;
-}
-#endif
-
 static bool brute_force_match(RzSearch *s, RzSearchKeyword *kw, const ut8 *buf, int i) {
 	int j = 0;
 	if (s->distance) { // slow path, more work in the loop

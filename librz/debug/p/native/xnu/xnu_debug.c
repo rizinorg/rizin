@@ -525,14 +525,6 @@ RzList *xnu_thread_list(RzDebug *dbg, int pid, RzList *list) {
 	return list;
 }
 
-#if 0
-static vm_prot_t unix_prot_to_darwin(int prot) {
-		return ((prot & 1 << 4) ? VM_PROT_READ : 0 |
-				(prot & 1 << 2) ? VM_PROT_WRITE : 0 |
-				(prot & 1 << 1) ? VM_PROT_EXECUTE : 0);
-}
-#endif
-
 int xnu_map_protect(RzDebug *dbg, ut64 addr, int size, int perms) {
 	rz_return_val_if_fail(dbg && dbg->plugin_data, false);
 	task_t task = pid_to_task(dbg->plugin_data, dbg->tid);
@@ -770,10 +762,6 @@ static int xnu_write_mem_maps_to_buffer(RzXnuDebug *ctx, RzBuffer *buffer, RzLis
 		}
 
 		/* Acording to osxbook, the check should be like this: */
-#if 0
-		if ((maxprot & VM_PROT_READ) == VM_PROT_READ &&
-			(vbr.user_tag != VM_MEMORY_IOKIT)) {
-#endif
 		if ((curr_map->perm & VM_PROT_READ) == VM_PROT_READ) {
 			vm_map_size_t tmp_size = curr_map->size;
 
@@ -969,16 +957,6 @@ RzDebugPid *xnu_get_pid(int pid) {
 	char *curr_arg, *start_args, *iter_args, *end_args;
 	char *procargs = NULL;
 	char psname[4096];
-#if 0
-	/* Get the maximum process arguments size. */
-	mib[0] = CTL_KERN;
-	mib[1] = KERN_ARGMAX;
-	size = sizeof(argmax);
-	if (sysctl (mib, 2, &argmax, &size, NULL, 0) == -1) {
-		eprintf ("sysctl() error on getting argmax\n");
-		return NULL;
-	}
-#endif
 	uid = uidFromPid(pid);
 
 	/* Allocate space for the arguments. */
@@ -1019,13 +997,6 @@ RzDebugPid *xnu_get_pid(int pid) {
 		return NULL;
 	}
 
-	// TODO: save the environment variables to envlist as well
-	//  Skip over the exec_path and '\0' characters.
-	//  XXX: fix parsing
-#if 0
-	while (iter_args < end_args && *iter_args != '\0') { iter_args++; }
-	while (iter_args < end_args && *iter_args == '\0') { iter_args++; }
-#endif
 	if (iter_args == end_args) {
 		free(procargs);
 		return NULL;
@@ -1313,13 +1284,6 @@ RzList *xnu_dbg_maps(RzDebug *dbg, int only_modules) {
 	size = osize = 16384;
 #else
 	size = osize = 4096;
-#endif
-#if 0
-	if (dbg->pid == 0) {
-		vm_address_t base = get_kernel_base (task);
-		eprintf ("Kernel Base Address: 0x%"PFMT64x"\n", (ut64)base);
-		return NULL;
-	}
 #endif
 	RzList *list = rz_list_new();
 	if (!list) {

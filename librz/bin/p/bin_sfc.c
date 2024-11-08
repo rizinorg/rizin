@@ -108,20 +108,6 @@ static void addrom(RzPVector /*<RzBinSection *>*/ *ret, const char *name, int i,
 	rz_pvector_push(ret, ptr);
 }
 
-#if 0
-static void addsym(RzList *ret, const char *name, ut64 addr, ut32 size) {
-	RzBinSymbol *ptr = RZ_NEW0 (RzBinSymbol);
-	if (!ptr) {
-		return;
-	}
-	ptr->name = rz_str_dup (name? name: "");
-	ptr->paddr = ptr->vaddr = addr;
-	ptr->size = size;
-	ptr->ordinal = 0;
-	rz_list_append (ret, ptr);
-}
-#endif
-
 static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	return NULL;
 }
