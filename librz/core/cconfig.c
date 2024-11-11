@@ -2415,19 +2415,60 @@ static bool cb_scrrows(void *user, void *data) {
 	return true;
 }
 
-static bool cb_contiguous(void *user, void *data) {
+static bool cb_search_contiguous(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->search->contiguous = node->i_value;
+	core->search->contiguous = node->i_value ? true : false;
 	return true;
 }
 
-static bool cb_searchalign(void *user, void *data) {
+static bool cb_search_align(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->search->align = node->i_value;
 	core->print->addrmod = node->i_value;
-	return true;
+	return rz_search_set_align(core->search, node->i_value);
+}
+
+static bool cb_search_distance(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	return rz_search_set_distance(core->search, node->i_value);
+}
+
+static bool cb_search_flags(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	return rz_search_set_flags(core->search, node->i_value ? true : false);
+}
+
+static bool cb_search_overlap(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	return rz_search_set_overlap(core->search, node->i_value ? true : false);
+}
+
+static bool cb_search_maxhits(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	return rz_search_set_maxhits(core->search, node->i_value);
+}
+
+static bool cb_search_from(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	return rz_search_set_from_addr(core->search, node->i_value);
+}
+
+static bool cb_search_to(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	return rz_search_set_to_addr(core->search, node->i_value);
+}
+
+static bool cb_search_prefix(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	return rz_search_set_prefix(core->search, node->value);
 }
 
 static bool cb_segoff(void *user, void *data) {
@@ -3757,16 +3798,17 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETOPTIONS(n, "auto", "rosections", "raw", NULL);
 
 	/* search */
-	SETCB("search.contiguous", "true", &cb_contiguous, "Accept contiguous/adjacent search hits");
-	SETICB("search.align", 0, &cb_searchalign, "Only catch aligned search hits");
+	SETB("search.progress", false, "Shows search progress (true: enable, false: disable)");
+	SETICB("search.contiguous", true, &cb_search_contiguous, "Accept contiguous/adjacent search hits");
+	SETICB("search.align", 0, &cb_search_align, "Only catch aligned search hits");
 	SETI("search.chunk", 0, "Chunk size for /+ (default size is asm.bits/8");
 	SETI("search.esilcombo", 8, "Stop search after N consecutive hits");
-	SETI("search.distance", 0, "Search string distance");
-	SETBPREF("search.flags", "true", "All search results are flagged, otherwise only printed");
-	SETBPREF("search.overlap", "false", "Look for overlapped search hits");
-	SETI("search.maxhits", 0, "Maximum number of hits (0: no limit)");
-	SETI("search.from", 0, "Search start address");
-	SETI("search.to", UT64_MAX, "Search end address");
+	SETICB("search.distance", 0, &cb_search_distance, "Search string distance");
+	SETICB("search.flags", true, &cb_search_flags, "All search results are flagged, otherwise only printed");
+	SETICB("search.overlap", false, &cb_search_overlap, "Look for overlapped search hits");
+	SETICB("search.maxhits", 0, &cb_search_maxhits, "Maximum number of hits (0: no limit)");
+	SETICB("search.from", 0, &cb_search_from, "Search start address");
+	SETICB("search.to", UT64_MAX, &cb_search_to, "Search end address");
 	n = NODECB("search.in", "io.maps", &cb_search_in);
 	SETDESC(n, "Specify search boundaries");
 	SETOPTIONS(n, "raw", "block",
@@ -3777,9 +3819,8 @@ RZ_API int rz_core_config_init(RzCore *core) {
 		"analysis.fcn", "analysis.bb",
 		NULL);
 	SETICB("search.kwidx", 0, &cb_search_kwidx, "Store last search index count");
-	SETPREF("search.prefix", "hit", "Prefix name in search hits label");
+	SETCB("search.prefix", "hit", &cb_search_prefix, "Prefix name in search hits label");
 	SETBPREF("search.show", "true", "Show search results");
-	SETI("search.to", -1, "Search end address");
 	n = NODECB("search.case_sensitive", "smart", &cb_search_case_sensitive);
 	SETDESC(n, "Set grep(~) as case smart/sensitive/insensitive");
 	SETOPTIONS(n, "smart", "sensitive", "insensitive", NULL);
