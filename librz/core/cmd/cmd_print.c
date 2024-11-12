@@ -3262,7 +3262,7 @@ static bool core_disassembly(RzCore *core, int n_bytes, int n_instrs, RzCmdState
 }
 
 RZ_IPI RzCmdStatus rz_cmd_disassembly_n_bytes_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	int n_bytes = argc > 1 ? (int)rz_num_math(core->num, argv[1]) : core->blocksize;
+	ut64 n_bytes = argc > 1 ? (int)rz_num_math(core->num, argv[1]) : core->blocksize;
 	if (n_bytes == 0) {
 		RZ_LOG_ERROR("The argument cannot be zero\n");
 		return RZ_CMD_STATUS_ERROR;
