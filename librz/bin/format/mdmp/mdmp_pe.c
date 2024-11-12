@@ -90,25 +90,19 @@ static void filter_import(ut8 *n) {
 
 RzPVector /*<RzBinImport *>*/ *PE_(rz_bin_mdmp_pe_get_imports)(struct PE_(rz_bin_mdmp_pe_bin) * pe_bin) {
 	int i;
-	ut64 offset;
 	struct rz_bin_pe_import_t *imports = NULL;
 	RzBinImport *ptr = NULL;
-	RzBinReloc *rel;
 	RzPVector *ret;
-	RzPVector *relocs;
 
 	imports = PE_(rz_bin_pe_get_imports)(pe_bin->bin);
 	ret = rz_pvector_new(NULL);
-	relocs = rz_pvector_new(free);
 
-	if (!imports || !ret || !relocs) {
+	if (!imports || !ret) {
 		free(imports);
 		free(ret);
-		free(relocs);
 		return NULL;
 	}
 
-	pe_bin->bin->relocs = relocs;
 	for (i = 0; !imports[i].last; i++) {
 		if (!(ptr = RZ_NEW0(RzBinImport))) {
 			break;
@@ -120,25 +114,6 @@ RzPVector /*<RzBinImport *>*/ *PE_(rz_bin_mdmp_pe_get_imports)(struct PE_(rz_bin
 		ptr->type = RZ_BIN_TYPE_FUNC_STR;
 		ptr->ordinal = imports[i].ordinal;
 		rz_pvector_push(ret, ptr);
-
-		if (!(rel = RZ_NEW0(RzBinReloc))) {
-			break;
-		}
-#ifdef RZ_BIN_PE64
-		rel->type = RZ_BIN_RELOC_64;
-#else
-		rel->type = RZ_BIN_RELOC_32;
-#endif
-		offset = imports[i].vaddr;
-		if (offset > pe_bin->vaddr) {
-			offset -= pe_bin->vaddr;
-		}
-		rel->additive = 0;
-		rel->import = ptr;
-		rel->addend = 0;
-		rel->vaddr = offset + pe_bin->vaddr;
-		rel->paddr = imports[i].paddr + pe_bin->paddr;
-		rz_pvector_push(relocs, rel);
 	}
 	free(imports);
 

@@ -376,33 +376,6 @@ static RzPVector /*<RzBinMem *>*/ *mdmp_mem(RzBinFile *bf) {
 	return ret;
 }
 
-static RzPVector /*<RzBinReloc *>*/ *mdmp_relocs(RzBinFile *bf) {
-	MiniDmpObj *obj;
-	struct Pe32_rz_bin_mdmp_pe_bin *pe32_bin;
-	struct Pe64_rz_bin_mdmp_pe_bin *pe64_bin;
-	RzListIter *it;
-
-	RzPVector *ret = rz_pvector_new(free);
-	if (!ret) {
-		return NULL;
-	}
-
-	obj = (MiniDmpObj *)bf->o->bin_obj;
-
-	rz_list_foreach (obj->pe32_bins, it, pe32_bin) {
-		if (pe32_bin->bin && pe32_bin->bin->relocs) {
-			rz_pvector_join(ret, pe32_bin->bin->relocs);
-		}
-	}
-	rz_list_foreach (obj->pe64_bins, it, pe64_bin) {
-		if (pe64_bin->bin && pe64_bin->bin->relocs) {
-			rz_pvector_join(ret, pe64_bin->bin->relocs);
-		}
-	}
-
-	return ret;
-}
-
 static RzPVector /*<RzBinImport *>*/ *mdmp_imports(RzBinFile *bf) {
 	MiniDmpObj *obj;
 	struct Pe32_rz_bin_mdmp_pe_bin *pe32_bin;
@@ -491,7 +464,6 @@ RzBinPlugin rz_bin_plugin_mdmp = {
 	.load_buffer = &mdmp_load_buffer,
 	.check_buffer = &mdmp_check_buffer,
 	.mem = &mdmp_mem,
-	.relocs = &mdmp_relocs,
 	.maps = &mdmp_maps,
 	.sections = &mdmp_sections,
 	.symbols = &mdmp_symbols,

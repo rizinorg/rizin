@@ -304,42 +304,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=mdmp 32bit - relocs count
-FILE=bins/mdmp/hello.dmp
-CMDS=ir:quiet~?
-EXPECT=<<EOF
-2028
-EOF
-RUN
-
-NAME=mdmp 32bit - relocs resolving
-FILE=bins/mdmp/hello.dmp
-CMDS=ir~__dllonexit
-EXPECT=<<EOF
-0x00406160 0x0009dd32 SET_32 msvcrt.dll___dllonexit
-EOF
-RUN
-
-NAME=mdmp 32bit - relocs following
-FILE=bins/mdmp/hello.dmp
-CMDS=e asm.bytes=true;pd 12 @ [0x004061cc];
-EXPECT=<<EOF
-            ;-- vfprintf:
-            0x773e7430      8bff           mov   edi, edi
-            0x773e7432      55             push  rbp
-            0x773e7433      8bec           mov   ebp, esp
-            0x773e7435      ff7510         push  qword [rbp + 0x10]
-            0x773e7438      6a00           push  0
-            0x773e743a      ff750c         push  qword [rbp + 0xc]
-            0x773e743d      ff7508         push  qword [rbp + 8]
-            0x773e7440      68fdcc3777     push  0x7737ccfd
-            0x773e7445      e800feffff     call  0x773e724a
-            0x773e744a      83c414         add   esp, 0x14
-            0x773e744d      5d             pop   rbp
-            0x773e744e      c3             ret
-EOF
-RUN
-
 NAME=mdmp 32bit - strings
 FILE=bins/mdmp/hello.dmp
 CMDS=<<EOF
@@ -471,39 +435,6 @@ FILE=bins/mdmp/hello64.dmp
 CMDS=iE~CsrVerifyRegion
 EXPECT=<<EOF
 39   0x0029513f 0x777d24b0    GLOBAL FUNC 0    ntdll.dll      CsrVerifyRegion
-EOF
-RUN
-
-NAME=mdmp 64bit - relocs count
-FILE=bins/mdmp/hello64.dmp
-CMDS=ir:quiet~?
-EXPECT=<<EOF
-1509
-EOF
-RUN
-
-NAME=mdmp 64bit - relocs resolving
-FILE=bins/mdmp/hello64.dmp
-CMDS=ir~KERNEL32.dll_DeleteCriticalSection
-EXPECT=<<EOF
-0x004081fc    0x0009ae8b SET_64 KERNEL32.dll_DeleteCriticalSection
-EOF
-RUN
-
-NAME=mdmp 64bit - relocs following
-FILE=bins/mdmp/hello64.dmp
-CMDS=e asm.bytes=true; pd 9 @ [0x004083ac];
-EXPECT=<<EOF
-            ;-- vfprintf:
-            0x7fefdb0a1a4      4883ec38       sub   rsp, 0x38
-            0x7fefdb0a1a8      4c89442420     mov   qword [rsp + 0x20], r8
-            0x7fefdb0a1ad      4c8bc2         mov   r8, rdx
-            0x7fefdb0a1b0      488bd1         mov   rdx, rcx
-            0x7fefdb0a1b3      488d0dea7ffa.  lea   rcx, [0x7fefdab21a4]
-            0x7fefdb0a1ba      4533c9         xor   r9d, r9d
-            0x7fefdb0a1bd      e87efdffff     call  0x7fefdb09f40
-            0x7fefdb0a1c2      4883c438       add   rsp, 0x38
-            0x7fefdb0a1c6      c3             ret
 EOF
 RUN
 
