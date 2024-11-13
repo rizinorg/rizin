@@ -177,8 +177,9 @@ RZ_API RZ_OWN RzBitVector *rz_bv_dup(const RZ_NONNULL RzBitVector *bv) {
 }
 
 /**
- * Copy from source bitvector to destination bitvector
- * the maximum copied size depends on MIN(src_len, dst_len)
+ * Copy from source bitvector to destination bitvector.
+ * The bitvectors must have the same length.
+ *
  * \param src RzBitVector, the source bitvector
  * \param dst RzBitVector, the destination bitvector
  * \return Actual size of copy
