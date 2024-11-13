@@ -422,9 +422,7 @@ static void filter_import(ut8 *n) {
 }
 
 static RzPVector /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
-	RzPVector *relocs = NULL;
 	RzBinImport *ptr = NULL;
-	RzBinReloc *rel = NULL;
 	struct rz_bin_pe_import_t *imports = NULL;
 	int i;
 
@@ -435,17 +433,6 @@ static RzPVector /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 	if (!ret) {
 		return NULL;
 	}
-
-	// XXX: has_canary is causing problems! thus we need to check and clean here until it is fixed!
-	if (((struct PE_(rz_bin_pe_obj_t) *)bf->o->bin_obj)->relocs) {
-		rz_pvector_free(((struct PE_(rz_bin_pe_obj_t) *)bf->o->bin_obj)->relocs);
-	}
-
-	if (!(relocs = rz_pvector_new(free))) {
-		rz_pvector_free(ret);
-		return NULL;
-	}
-	((struct PE_(rz_bin_pe_obj_t) *)bf->o->bin_obj)->relocs = relocs;
 
 	if (!(imports = PE_(rz_bin_pe_get_imports)(bf->o->bin_obj))) {
 		return ret;
@@ -464,37 +451,134 @@ static RzPVector /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 		// index for the import. There is no point in exposing it.
 		// ptr->hint = imports[i].hint;
 		rz_pvector_push(ret, ptr);
-
-		if (!(rel = RZ_NEW0(RzBinReloc))) {
-			break;
-		}
-#ifdef RZ_BIN_PE64
-		rel->type = RZ_BIN_RELOC_64;
-#else
-		rel->type = RZ_BIN_RELOC_32;
-#endif
-		rel->additive = 0;
-		rel->import = ptr;
-		rel->addend = 0;
-		{
-			ut8 addr[4];
-			rz_buf_read_at(bf->buf, imports[i].paddr, addr, 4);
-			ut64 newaddr = (ut64)rz_read_le32(&addr);
-			rel->vaddr = newaddr;
-		}
-		rel->paddr = imports[i].paddr;
-		rz_pvector_push(relocs, rel);
 	}
 	free(imports);
 	return ret;
 }
 
-static RzPVector /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
-	struct PE_(rz_bin_pe_obj_t) *obj = bf->o->bin_obj;
-	if (obj) {
-		return obj->relocs;
+static const char *get_reloc_type_name(const ut8 reloc_type, const ut32 machine_type) {
+	switch (reloc_type) {
+	case PE_IMAGE_REL_BASED_ABSOLUTE:
+		return "IMAGE_REL_BASED_ABSOLUTE";
+	case PE_IMAGE_REL_BASED_HIGH:
+		return "IMAGE_REL_BASED_HIGH";
+	case PE_IMAGE_REL_BASED_LOW:
+		return "IMAGE_REL_BASED_LOW";
+	case PE_IMAGE_REL_BASED_HIGHLOW:
+		return "IMAGE_REL_BASED_HIGHLOW";
+	case PE_IMAGE_REL_BASED_HIGHADJ:
+		return "IMAGE_REL_BASED_HIGHADJ";
+	case PE_IMAGE_REL_BASED_MIPS_JMPADDR_ARM_MOV32_RISCV_HIGH20:
+		switch (machine_type) {
+		case PE_IMAGE_FILE_MACHINE_MIPS16:
+		case PE_IMAGE_FILE_MACHINE_MIPSFPU:
+		case PE_IMAGE_FILE_MACHINE_MIPSFPU16:
+		case PE_IMAGE_FILE_MACHINE_R4000:
+		case PE_IMAGE_FILE_MACHINE_WCEMIPSV2:
+			return "IMAGE_REL_BASED_MIPS_JMPADDR";
+		case PE_IMAGE_FILE_MACHINE_ARM:
+		case PE_IMAGE_FILE_MACHINE_ARM64:
+		case PE_IMAGE_FILE_MACHINE_ARMNT:
+		case PE_IMAGE_FILE_MACHINE_THUMB:
+			return "IMAGE_REL_BASED_ARM_MOV32";
+		case PE_IMAGE_FILE_MACHINE_RISCV32:
+		case PE_IMAGE_FILE_MACHINE_RISCV64:
+		case PE_IMAGE_FILE_MACHINE_RISCV128:
+			return "IMAGE_REL_BASED_RISCV_HIGH20";
+		default:
+			RZ_LOG_WARN("Unknown machine type for PE relocation type number: %d\n", reloc_type);
+			return "IMAGE_REL_BASED_UNKNOWN";
+		}
+
+	case PE_IMAGE_REL_BASED_THUMB_MOV32_RISCV_LOW12I:
+		switch (machine_type) {
+		case PE_IMAGE_FILE_MACHINE_THUMB:
+			return "IMAGE_REL_BASED_THUMB_MOV32";
+		case PE_IMAGE_FILE_MACHINE_RISCV32:
+		case PE_IMAGE_FILE_MACHINE_RISCV64:
+		case PE_IMAGE_FILE_MACHINE_RISCV128:
+			return "IMAGE_REL_BASED_RISCV_LOW12I";
+		default:
+			RZ_LOG_WARN("Unknown machine type for PE relocation type number: %d\n", reloc_type);
+			return "IMAGE_REL_BASED_UNKNOWN";
+		}
+	case PE_IMAGE_REL_BASED_RISCV_LOW12S_LOONGARCH32_MARK_LA:
+		switch (machine_type) {
+		case PE_IMAGE_FILE_MACHINE_RISCV32:
+		case PE_IMAGE_FILE_MACHINE_RISCV64:
+		case PE_IMAGE_FILE_MACHINE_RISCV128:
+			return "IMAGE_REL_BASED_RISCV_LOW12S";
+		case PE_IMAGE_FILE_MACHINE_LOONGARCH32:
+		case PE_IMAGE_FILE_MACHINE_LOONGARCH64:
+			return "IMAGE_REL_BASED_LOONGARCH32_MARK_LA";
+		default:
+			RZ_LOG_WARN("Unknown machine type for PE relocation type number: %d\n", reloc_type);
+			return "IMAGE_REL_BASED_UNKNOWN";
+		}
+	case PE_IMAGE_REL_BASED_MIPS_JMPADDR16:
+		switch (machine_type) {
+		case PE_IMAGE_FILE_MACHINE_MIPS16:
+		case PE_IMAGE_FILE_MACHINE_MIPSFPU:
+		case PE_IMAGE_FILE_MACHINE_MIPSFPU16:
+		case PE_IMAGE_FILE_MACHINE_R4000:
+		case PE_IMAGE_FILE_MACHINE_WCEMIPSV2:
+			return "IMAGE_REL_BASED_MIPS_JMPADDR16";
+		default:
+			RZ_LOG_WARN("Unknown machine type for PE relocation type number: %d\n", reloc_type);
+			return "IMAGE_REL_BASED_UNKNOWN";
+		}
+	case PE_IMAGE_REL_BASED_DIR64:
+		return "IMAGE_REL_BASED_DIR64";
+	default:
+		RZ_LOG_WARN("Unknown PE relocation type number: %d\n", reloc_type);
+		return "IMAGE_REL_BASED_UNKNOWN";
 	}
-	return NULL;
+}
+
+// NOTE: No patching is needed because base relocations (as their name suggests) patch relocations based off the delta
+// between the executable expected load address, and the actual load address. And since Rizin always loads
+// the binaries at their preferred base address, the delta is always 0 and so no patching is needed.
+static RzPVector /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
+	RzBinPEObj *bin = bf->o->bin_obj;
+
+	if (!bin->relocs) {
+		return NULL;
+	}
+
+	RzPVector *ret = NULL;
+	if (!(ret = rz_pvector_new((RzPVectorFree)rz_bin_reloc_free))) {
+		return NULL;
+	}
+
+	if (!PE_(bin_pe_has_base_relocs)(bin)) {
+		rz_pvector_free(ret);
+		return NULL;
+	}
+
+	RzBinPeRelocEnt *pe_reloc;
+	rz_vector_foreach (bin->relocs, pe_reloc) {
+		RzBinReloc *general_reloc = RZ_NEW0(RzBinReloc);
+		if (!general_reloc) {
+			RZ_LOG_ERROR("Failed to allocate PE RzBinReloc\n");
+			return ret;
+		}
+
+		general_reloc->vaddr = PE_RELOC_ENT_OFFSET(pe_reloc->raw_val) + pe_reloc->page_rva;
+		general_reloc->paddr = PE_(bin_pe_rva_to_paddr(bin, general_reloc->vaddr));
+		general_reloc->type = PE_RELOC_ENT_TYPE(pe_reloc->raw_val);
+		general_reloc->print_name = get_reloc_type_name(PE_RELOC_ENT_TYPE(pe_reloc->raw_val), bin->nt_headers->file_header.Machine);
+
+		// Allocating symbol just so we can have a name for the reloc
+		general_reloc->symbol = RZ_NEW0(RzBinSymbol);
+		general_reloc->symbol->name = rz_str_newf("pe_%08" PFMT64x, general_reloc->vaddr);
+
+		rz_pvector_push(ret, general_reloc);
+	}
+
+	rz_vector_free(bin->relocs);
+
+	return ret;
 }
 
 static RzPVector /*<char *>*/ *libs(RzBinFile *bf) {
@@ -554,30 +638,17 @@ err:
 }
 
 static int has_canary(RzBinFile *bf) {
-	// XXX: We only need imports here but this causes leaks, we need to wait for the below. This is a horrible solution!
-	// TODO: use O(1) when imports sdbized
-	struct PE_(rz_bin_pe_obj_t) *bin = bf->o->bin_obj;
 	void **it;
-	if (bin) {
-		const RzPVector *relocs_vec = bin->relocs;
-		RzBinReloc *rel;
-		if (relocs_vec) {
-			rz_pvector_foreach (relocs_vec, it) {
-				rel = *it;
-				if (!strcmp(rel->import->name, "__security_init_cookie")) {
-					return true;
-				}
-			}
-		}
-	} else { // rz_bin needs this as it will not initialise bin
-		const RzPVector *imports_vec = imports(bf);
-		RzBinImport *imp;
-		if (imports_vec) {
-			rz_pvector_foreach (imports_vec, it) {
-				imp = *it;
-				if (!strcmp(imp->name, "__security_init_cookie")) {
-					return true;
-				}
+	const RzPVector *imports_vec = imports(bf);
+	RzBinImport *imp;
+	if (imports_vec) {
+		rz_pvector_foreach (imports_vec, it) {
+			imp = *it;
+			// __security_init_cookie is a function imported from msvcrt.dll (libc) that when called
+			// initiliazes the stack canary. So if the function is imported, we can
+			// assume the binary uses stack canary.
+			if (!strcmp(imp->name, "__security_init_cookie")) {
+				return true;
 			}
 		}
 	}

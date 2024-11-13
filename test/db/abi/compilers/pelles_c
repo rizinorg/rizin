@@ -24,7 +24,7 @@ EXPECT=<<EOF
     0 * registers
     0 * registers.extended
     0 * registers.mmio
-   38 * relocs
+  916 * relocs
     4 * sections
     0 * segments
   173 * strings
@@ -68,7 +68,7 @@ EXPECT=<<EOF
     0 * registers
     0 * registers.extended
     0 * registers.mmio
-   38 * relocs
+  420 * relocs
     5 * sections
     0 * segments
   124 * strings

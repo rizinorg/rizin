@@ -861,8 +861,8 @@ e asm.cmt.right=false
 pd 1 @ 0x004010fa
 EOF
 EXPECT=<<EOF
-            0x004010fa      8b3500204000   mov   esi, dword [sym.imp.KERNEL32.dll_GetLastError] ; [0x402000:4]=0x29f4 reloc.KERNEL32.dll_GetLastError
-            ; [0x402000:4]=0x29f4 reloc.KERNEL32.dll_GetLastError
+            0x004010fa      8b3500204000   mov   esi, dword [sym.imp.KERNEL32.dll_GetLastError] ; [0x402000:4]=0x29f4
+            ; [0x402000:4]=0x29f4
             0x004010fa      8b3500204000   mov esi, dword [sym.imp.KERNEL32.dll_GetLastError]
 EOF
 RUN
@@ -879,8 +879,8 @@ e asm.cmt.right=false
 pd 1 @ 0x004010fa
 EOF
 EXPECT=<<EOF
-            0x004010fa      8b3500204000   mov   esi, dword [ptr_GetLastError] ; [0x402000:4]=0x29f4 reloc.KERNEL32.dll_GetLastError
-            ; [0x402000:4]=0x29f4 reloc.KERNEL32.dll_GetLastError
+            0x004010fa      8b3500204000   mov   esi, dword [ptr_GetLastError] ; [0x402000:4]=0x29f4
+            ; [0x402000:4]=0x29f4
             0x004010fa      8b3500204000   mov esi, dword [ptr_GetLastError]
 EOF
 RUN

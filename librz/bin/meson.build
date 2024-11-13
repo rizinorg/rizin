@@ -236,6 +236,8 @@ rz_bin_sources = [
   'format/pe/pe64_hdr.c',
   'format/pe/pe_imports.c',
   'format/pe/pe64_imports.c',
+  'format/pe/pe_relocs.c',
+  'format/pe/pe64_relocs.c',
   'format/pe/pe_exports.c',
   'format/pe/pe64_exports.c',
   'format/pe/pe_rsrc.c',

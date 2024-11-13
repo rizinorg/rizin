@@ -69,6 +69,22 @@
 
 #define PE_SCN_ALIGN_MASK 0x00F00000
 
+// For the following relocation structs,
+// See: https://learn.microsoft.com/en-us/windows/win32/debug/pe-format#the-reloc-section-image-only
+typedef struct rz_bin_pe_reloc_block_t {
+	ut32 page_rva; ///< RVA of the block
+	ut32 block_size; ///< Size of the block
+} RzBinPeRelocBlock;
+
+// encoding is 12 bits for type and 4 bits for offset.
+#define PE_RELOC_ENT_TYPE(val)   ((val) >> 12)
+#define PE_RELOC_ENT_OFFSET(val) ((val)&0xfff)
+
+typedef struct rz_bin_pe_reloc_ent_t {
+	ut16 raw_val; ///< Type + Offset of the relocation entry
+	ut32 page_rva; ///< RVA of the block to which the relocation entry belongs
+} RzBinPeRelocEnt;
+
 struct rz_bin_pe_addr_t {
 	ut64 vaddr;
 	ut64 paddr;
@@ -165,12 +181,11 @@ struct PE_(rz_bin_pe_obj_t) {
 	int import_directory_size;
 	ut64 size;
 	int num_sections;
-	int endian;
 	bool verbose;
 	int big_endian;
 	RzList /*<Pe_image_rich_entry *>*/ *rich_entries;
-	RzPVector /*<RzBinReloc *>*/ *relocs;
 	RzList /*<rz_pe_resource *>*/ *resources;
+	RzVector /*<RzBinPeRelocEnt>*/ *relocs;
 	const char *file;
 	RzBuffer *b;
 	Sdb *kv;
@@ -182,9 +197,10 @@ struct PE_(rz_bin_pe_obj_t) {
 	RzHash *hash;
 };
 
-#define MAX_METADATA_STRING_LENGTH                          256
-#define COFF_SYMBOL_SIZE                                    18
-#define PE_READ_STRUCT_FIELD(var, struct_type, field, size) var->field = rz_read_le##size(buf + offsetof(struct_type, field))
+#define MAX_METADATA_STRING_LENGTH                                 256
+#define COFF_SYMBOL_SIZE                                           18
+#define PE_READ_STRUCT_FIELD(var, struct_type, field, size)        var->field = rz_read_le##size(buf + offsetof(struct_type, field))
+#define PE_READ_STRUCT_FIELD_L(buf, var, struct_type, field, size) var.field = rz_read_le##size(buf + offsetof(struct_type, field))
 
 // pe_clr.c
 RZ_OWN RzList /*<RzBinSymbol *>*/ *PE_(rz_bin_pe_get_clr_symbols)(RzBinPEObj *bin);
@@ -206,6 +222,10 @@ int PE_(bin_pe_init_imports)(RzBinPEObj *bin);
 int PE_(read_image_import_directory)(RzBuffer *b, ut64 addr, PE_(image_import_directory) * import_dir);
 int PE_(read_image_delay_import_directory)(RzBuffer *b, ut64 addr, PE_(image_delay_import_directory) * directory);
 struct rz_bin_pe_import_t *PE_(rz_bin_pe_get_imports)(RzBinPEObj *bin);
+
+// pe_relocs.c
+int PE_(bin_pe_init_relocs)(RZ_NONNULL RzBinPEObj *bin);
+bool PE_(bin_pe_has_base_relocs)(RZ_NONNULL RzBinPEObj *bin);
 
 // pe_info.c
 char *PE_(rz_bin_pe_get_arch)(RzBinPEObj *bin);
