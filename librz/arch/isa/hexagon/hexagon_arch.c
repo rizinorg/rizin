@@ -1152,7 +1152,7 @@ static RZ_BORROW HexInsnContainer *decode_hic(HexState *state, HexReversedOpcode
 	// Add to state as not yet fully decoded packet.
 	HexInsnContainer *hic = hex_add_hic_to_state(state, &hic_new);
 	if (!hic) {
-		RZ_LOG_ERROR("Could not add incsturction container to state.\n");
+		RZ_LOG_ERROR("Could not add instruction container to state.\n");
 		return NULL;
 	}
 	HexPkt *p = hex_get_pkt(state, hic->addr);
@@ -1189,7 +1189,8 @@ static ut64 get_pre_decoding_start(RZ_BORROW RzBuffer *buffer, ut64 addr) {
 		ut8 tmp[HEX_INSN_SIZE] = { 0 };
 		ut32 bytes = rz_buf_read(buffer, tmp, 4);
 		if (bytes != HEX_INSN_SIZE) {
-			return addr;
+			// Read over the mapped buffer.
+			return addr + HEX_INSN_SIZE;
 		}
 		ut32 data = rz_read_le32(tmp);
 		is_last_insn = is_last_instr(HEX_PARSE_BITS_FROM_UT32(data));
@@ -1272,8 +1273,9 @@ RZ_API void hexagon_reverse_opcode(HexReversedOpcode *rz_reverse, const ut64 add
 		RZ_LOG_DEBUG("Could not seek to address: 0x%" PFMT64x ". Attempting to read out of mapped memory region?\n", addr);
 		return;
 	}
-
+	ut64 initial_buffer_offset = rz_buf_tell(buffer);
 	ut64 current_addr = get_pre_decoding_start(buffer, addr);
+	rz_buf_seek(buffer, current_addr, RZ_BUF_SET);
 
 	HexInsnContainer *hic = NULL;
 	// Do pre- and post-decoding to know the context.
@@ -1294,16 +1296,12 @@ RZ_API void hexagon_reverse_opcode(HexReversedOpcode *rz_reverse, const ut64 add
 		}
 	}
 
-	if (current_addr > addr) {
-		// Go back to bytes of the actual instruction.
-		rz_buf_seek(buffer, -(current_addr - addr), RZ_BUF_CUR);
-	}
-
 	hic = hex_get_hic_at_addr(state, addr);
 	if (!hic) {
 		// Should have been decoded before. Maybe a race condition
 		// if the same RzCore is used by several threads via a plugin and
 		// the hic was already pushed out of the buffer by other decodings.
+		rz_buf_seek(buffer, initial_buffer_offset, RZ_BUF_SET);
 		hic = decode_hic(state, rz_reverse, buffer, addr);
 	}
 	if (!hic) {
