@@ -1591,7 +1591,8 @@ RZ_API RzCmdStatus rz_core_rop_search(RZ_NONNULL RzCore *core, RZ_NONNULL RzRopS
 		status = handle_rop_search_address(core, context, rx_list);
 		goto cleanup;
 	}
-	RzList *boundaries = rz_core_get_boundaries_prot(core, -1, context->search_addr, "search");
+
+	RzList *boundaries = rz_core_get_boundaries_select(core, "search.from", "search.to", "search.in");
 	if (!boundaries && context->state) {
 		rz_cmd_state_output_array_end(context->state);
 	}

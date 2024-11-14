@@ -4762,7 +4762,7 @@ static RzCoreAnalysisStatsRange *analysis_stats_range(RzCore *core, int width) {
 	ut64 from = UT64_MAX;
 	ut64 to = 0;
 
-	RzList *list = rz_core_get_boundaries_prot(core, -1, NULL, "search");
+	RzList *list = rz_core_get_boundaries_select(core, "search.from", "search.to", "search.in");
 	if (rz_list_empty(list)) {
 		RZ_LOG_ERROR("No range to calculate stats for.\n");
 		rz_list_free(list);
@@ -5284,7 +5284,7 @@ static CoreBlockRange *calculate_blocks_range(RzCore *core, ut64 from, ut64 to, 
 	st64 blocksize = core->blocksize;
 	// If we are not in the debug mode - use only current mapped ranges
 	if (!rz_config_get_b(core->config, "cfg.debug")) {
-		RzList *boundaries = rz_core_get_boundaries_prot(core, -1, NULL, "zoom");
+		RzList *boundaries = rz_core_get_boundaries_select(core, "zoom.from", "zoom.to", "zoom.in");
 		if (!boundaries) {
 			free(brange);
 			return NULL;

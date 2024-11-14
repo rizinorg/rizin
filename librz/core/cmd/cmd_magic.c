@@ -30,13 +30,11 @@ static int rz_core_magic_at(RzCore *core, const char *file, ut64 addr, int depth
 		goto seek_exit;
 	}
 	if (addr != core->offset) {
-#if 1
 		if (addr >= core->offset && (addr + NAH) < (core->offset + core->blocksize)) {
 			delta = addr - core->offset;
 		} else {
 			rz_core_seek(core, addr, true);
 		}
-#endif
 	}
 	if (core->search->align) {
 		int mod = addr % core->search->align;

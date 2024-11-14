@@ -162,9 +162,6 @@ RZ_API const char *rz_config_node_type(RzConfigNode *node) {
 		return "str";
 	}
 	if (rz_config_node_is_int(node)) {
-		if (!strncmp(node->value, "0x", 2)) {
-			return "addr";
-		}
 		return "int";
 	}
 	return "";

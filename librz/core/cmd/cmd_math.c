@@ -289,18 +289,42 @@ RZ_IPI RzCmdStatus rz_check_between_handler(RzCore *core, int argc, const char *
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_print_boundaries_prot_handler(RzCore *core, int argc, const char **argv) {
-	const char *mode = rz_str_trim_head_ro(argv[1]);
-	RzList *list = rz_core_get_boundaries_prot(core, -1, mode, "search");
+RZ_IPI RzCmdStatus rz_print_boundaries_prot_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+
+	RzList *list = rz_core_get_boundaries_select(core, "search.from", "search.to", "search.in");
 	if (!list) {
 		RZ_LOG_ERROR("Failed to get boundaries protection values in RzList\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
+
+	rz_cmd_state_output_array_start(state);
+	rz_cmd_state_output_set_columnsf(state, "xxns", "from", "to", "size", "perms");
 	RzListIter *iter;
 	RzIOMap *map;
 	rz_list_foreach (list, iter, map) {
-		rz_cons_printf("0x%" PFMT64x " 0x%" PFMT64x "\n", map->itv.addr, rz_itv_end(map->itv));
+		ut64 from = map->itv.addr;
+		ut64 to = rz_itv_end(map->itv);
+		ut64 size = map->itv.size;
+		const char *perm = rz_str_rwx_i(map->perm);
+		switch (state->mode) {
+		default:
+			rz_cons_printf("0x%" PFMT64x " 0x%" PFMT64x "\n", from, to);
+			break;
+		case RZ_OUTPUT_MODE_JSON:
+			pj_o(state->d.pj);
+			pj_kn(state->d.pj, "from", from);
+			pj_kn(state->d.pj, "to", to);
+			pj_kn(state->d.pj, "size", size);
+			pj_ks(state->d.pj, "perms", perm);
+			pj_end(state->d.pj);
+			break;
+		case RZ_OUTPUT_MODE_TABLE:
+			rz_table_add_rowf(state->d.t, "xxns", from, to, size, perm);
+			break;
+		}
 	}
+
+	rz_cmd_state_output_array_end(state);
 	rz_list_free(list);
 	return RZ_CMD_STATUS_OK;
 }

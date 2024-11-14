@@ -409,7 +409,7 @@ RZ_IPI int rz_core_analysis_set_reg(RzCore *core, const char *regname, ut64 val)
 RZ_IPI void rz_core_analysis_esil_default(RzCore *core) {
 	RzIOMap *map;
 	RzListIter *iter;
-	RzList *list = rz_core_get_boundaries_prot(core, -1, NULL, "analysis");
+	RzList *list = rz_core_get_boundaries_select(core, "analysis.from", "analysis.to", "analysis.in");
 	if (!list) {
 		return;
 	}

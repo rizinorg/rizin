@@ -122,7 +122,6 @@ static const RzCmdDescArg print_binary_args[2];
 static const RzCmdDescArg base64_encode_args[2];
 static const RzCmdDescArg base64_decode_args[2];
 static const RzCmdDescArg check_between_args[4];
-static const RzCmdDescArg print_boundaries_prot_args[2];
 static const RzCmdDescArg print_djb2_hash_args[2];
 static const RzCmdDescArg print_bitstring_args[3];
 static const RzCmdDescArg eval_expr_print_octal_args[2];
@@ -1763,8 +1762,8 @@ static const RzCmdDescHelp check_between_help = {
 };
 
 static const RzCmdDescDetailEntry print_boundaries_prot_Examples_detail_entries[] = {
-	{ .text = "%B ", .arg_str = "file", .comment = "Prints boundary of this file" },
-	{ .text = "%B ", .arg_str = "io.maps", .comment = "Prints boundaries of all io maps" },
+	{ .text = "%B ", .arg_str = "@e:search.in=file", .comment = "Prints boundary of this file" },
+	{ .text = "%Bt ", .arg_str = "@e:search.in=io.maps", .comment = "Prints boundaries of all io maps" },
 	{ 0 },
 };
 static const RzCmdDescDetail print_boundaries_prot_details[] = {
@@ -1772,16 +1771,10 @@ static const RzCmdDescDetail print_boundaries_prot_details[] = {
 	{ 0 },
 };
 static const RzCmdDescArg print_boundaries_prot_args[] = {
-	{
-		.name = "mode",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-
-	},
 	{ 0 },
 };
 static const RzCmdDescHelp print_boundaries_prot_help = {
-	.summary = "Get boundaries (start addr, stop addr) of different modes in Core.",
+	.summary = "Prints the search boundaries based on the search.in mode.",
 	.description = "There are multiple search modes in Rizin that can be listed using the command `e search.in=?`. This command can be used to get boundaries of those search modes.",
 	.details = print_boundaries_prot_details,
 	.args = print_boundaries_prot_args,
@@ -19321,8 +19314,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *check_between_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_math_cd, "%btw", rz_check_between_handler, &check_between_help);
 	rz_warn_if_fail(check_between_cd);
 
-	RzCmdDesc *print_boundaries_prot_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_math_cd, "%B", rz_print_boundaries_prot_handler, &print_boundaries_prot_help);
+	RzCmdDesc *print_boundaries_prot_cd = rz_cmd_desc_argv_state_new(core->rcmd, cmd_math_cd, "%B", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_TABLE, rz_print_boundaries_prot_handler, &print_boundaries_prot_help);
 	rz_warn_if_fail(print_boundaries_prot_cd);
+	rz_cmd_desc_set_default_mode(print_boundaries_prot_cd, RZ_OUTPUT_MODE_TABLE);
 
 	RzCmdDesc *print_djb2_hash_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_math_cd, "%h", rz_print_djb2_hash_handler, &print_djb2_hash_help);
 	rz_warn_if_fail(print_djb2_hash_cd);

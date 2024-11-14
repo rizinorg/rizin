@@ -449,7 +449,6 @@ RZ_API RZ_OWN RzRopSearchContext *rz_core_rop_search_context_new(RZ_NONNULL cons
 	}
 
 	context->greparg = rz_str_dup(greparg);
-	context->search_addr = rz_config_get(core->config, "search.in");
 	context->arch = rz_config_get(core->config, "asm.arch");
 	context->regexp = regexp;
 	context->mask = mask;

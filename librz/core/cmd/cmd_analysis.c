@@ -6146,9 +6146,9 @@ RZ_IPI RzCmdStatus rz_analyze_all_consecutive_functions_in_section_handler(RzCor
 	ut64 old_offset = core->offset;
 	RzListIter *iter;
 	RzIOMap *map;
-	RzList *list = rz_core_get_boundaries_prot(core, RZ_PERM_X, NULL, "analysis");
+	RzList *list = rz_core_get_boundaries_select(core, "analysis.from", "analysis.to", "analysis.in");
 	if (!list) {
-		RZ_LOG_ERROR("Cannot find maps with exec permisions.\n");
+		RZ_LOG_ERROR("Cannot get boundaries when analysis.in=%s.\n", rz_config_get(core->config, "analysis.in"));
 		return RZ_CMD_STATUS_ERROR;
 	}
 

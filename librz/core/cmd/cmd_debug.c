@@ -1354,8 +1354,7 @@ static void trace_traverse(RTree *t) {
 }
 
 static void do_debug_trace_calls(RzCore *core, ut64 from, ut64 to, ut64 final_addr) {
-	bool trace_libs = rz_config_get_i(core->config, "dbg.trace.libs");
-	bool shallow_trace = rz_config_get_i(core->config, "dbg.trace.inrange");
+	bool shallow_trace = rz_config_get_b(core->config, "dbg.trace.inrange");
 	HtUP *tracenodes = core->dbg->tracenodes;
 	RTree *tr = core->dbg->tree;
 	RzDebug *dbg = core->dbg;
@@ -1363,13 +1362,6 @@ static void do_debug_trace_calls(RzCore *core, ut64 from, ut64 to, ut64 final_ad
 	RTreeNode *cur;
 	ut64 addr = 0;
 	int n = 0;
-
-	if (!trace_libs) {
-#if NOOP
-		RzList *bounds = rz_core_get_boundaries_prot(core, -1, "dbg.program", "search");
-		rz_list_free(bounds);
-#endif
-	}
 
 	/* set root if not already present */
 	rz_tree_add_node(tr, NULL, NULL);

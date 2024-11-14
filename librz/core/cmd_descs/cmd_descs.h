@@ -121,7 +121,7 @@ RZ_IPI RzCmdStatus rz_base64_decode_handler(RzCore *core, int argc, const char *
 // "%btw"
 RZ_IPI RzCmdStatus rz_check_between_handler(RzCore *core, int argc, const char **argv);
 // "%B"
-RZ_IPI RzCmdStatus rz_print_boundaries_prot_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_print_boundaries_prot_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "%h"
 RZ_IPI RzCmdStatus rz_print_djb2_hash_handler(RzCore *core, int argc, const char **argv);
 // "%f"

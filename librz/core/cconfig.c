@@ -10,6 +10,11 @@
 
 #include "core_private.h"
 
+typedef struct config_opt_descr {
+	const char *option;
+	const char *description;
+} ConfigOptDescr;
+
 static bool boolify_var_cb(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
 	if (node->i_value || rz_str_is_false(node->value)) {
@@ -2622,41 +2627,72 @@ static bool cb_binprefix(void *user, void *data) {
 	return true;
 }
 
-static bool cb_searchin(void *user, void *data) {
+static ConfigOptDescr search_in_opts[] = {
+	{ "raw", "all raw memory (behaves as 'file')" },
+	{ "file", "all the file" },
+	{ "block", "current read block" },
+	{ "range", "search only within the range" },
+	{ "analysis.bb", "current basic-block" },
+	{ "analysis.fcn", "current function" },
+	{ "bin.section", "current section" },
+	{ "bin.sections[.rwx]", "all bin sections (with matching perm)" },
+	{ "bin.segment", "current segment" },
+	{ "bin.segments[.rwx]", "all bin segments (with matching perm)" },
+	{ "dbg.heap", "debugger heap" },
+	{ "dbg.stack", "debugger stack" },
+	{ "dbg.program", "debugger program (exec only)" },
+	{ "dbg.map", "current debugger memory map" },
+	{ "dbg.maps[.rwx]", "all debugger memory maps (with matching perm)" },
+	{ "io.map", "current io map" },
+	{ "io.maps[.rwx]", "all io maps (with matching perm)" },
+	{ "io.sky[.rwx]", "all skyline segments (with matching perm)" },
+};
+
+static bool cb_search_in(void *user, void *data) {
+	RzConfigNode *node = (RzConfigNode *)data;
+	if (node->value[0] != '?') {
+		return true;
+	} else if (strlen(node->value) > 1 && node->value[1] == '?') {
+		rz_cons_printf("Valid values for search.in (depends on .from/.to and io.va):\n");
+		for (size_t i = 0; i < RZ_ARRAY_SIZE(search_in_opts); ++i) {
+			rz_cons_printf("%-18s - %s\n", search_in_opts[i].option, search_in_opts[i].description);
+		}
+	} else {
+		print_node_options(node);
+	}
+	return false;
+}
+
+static bool cb_analysis_in(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (node->value[0] == '?') {
-		if (strlen(node->value) > 1 && node->value[1] == '?') {
-			rz_cons_printf("Valid values for search.in (depends on .from/.to and io.va):\n"
-				       "raw                search in raw io (ignoring bounds)\n"
-				       "block              search in the current block\n"
-				       "io.map             search in current map\n"
-				       "io.sky.[rwx]       search in all skyline segments\n"
-				       "io.maps            search in all maps\n"
-				       "io.maps.[rwx]      search in all r-w-x io maps\n"
-				       "bin.segment        search in current mapped segment\n"
-				       "bin.segments       search in all mapped segments\n"
-				       "bin.segments.[rwx] search in all r-w-x segments\n"
-				       "bin.section        search in current mapped section\n"
-				       "bin.sections       search in all mapped sections\n"
-				       "bin.sections.[rwx] search in all r-w-x sections\n"
-				       "dbg.stack          search in the stack\n"
-				       "dbg.heap           search in the heap\n"
-				       "dbg.map            search in current memory map\n"
-				       "dbg.maps           search in all memory maps\n"
-				       "dbg.maps.[rwx]     search in all executable marked memory maps\n"
-				       "analysis.fcn           search in the current function\n"
-				       "analysis.bb            search in the current basic-block\n");
-		} else {
-			print_node_options(node);
-		}
-		return false;
-	}
-	// Set analysis.noncode if exec bit set in analysis.in
-	if (rz_str_startswith(node->name, "analysis")) {
+	if (node->value[0] != '?') {
 		core->analysis->opt.noncode = (strchr(node->value, 'x') == NULL);
+		return true;
+	} else if (strlen(node->value) > 1 && node->value[1] == '?') {
+		rz_cons_printf("Valid values for analysis.in (depends on .from/.to and io.va):\n");
+		for (size_t i = 0; i < RZ_ARRAY_SIZE(search_in_opts); ++i) {
+			rz_cons_printf("%-18s - %s\n", search_in_opts[i].option, search_in_opts[i].description);
+		}
+	} else {
+		print_node_options(node);
 	}
-	return true;
+	return false;
+}
+
+static bool cb_zoom_in(void *user, void *data) {
+	RzConfigNode *node = (RzConfigNode *)data;
+	if (node->value[0] != '?') {
+		return true;
+	} else if (strlen(node->value) > 1 && node->value[1] == '?') {
+		rz_cons_printf("Valid values for zoom.in (depends on .from/.to and io.va):\n");
+		for (size_t i = 0; i < RZ_ARRAY_SIZE(search_in_opts); ++i) {
+			rz_cons_printf("%-18s - %s\n", search_in_opts[i].option, search_in_opts[i].description);
+		}
+	} else {
+		print_node_options(node);
+	}
+	return false;
 }
 
 static int __dbg_swstep_getter(void *user, RzConfigNode *node) {
@@ -2702,9 +2738,16 @@ static bool cb_analysis_gp(RzCore *core, RzConfigNode *node) {
 
 static bool cb_analysis_from(RzCore *core, RzConfigNode *node) {
 	if (rz_config_get_i(core->config, "analysis.limits")) {
-		rz_analysis_set_limits(core->analysis,
-			rz_config_get_i(core->config, "analysis.from"),
-			rz_config_get_i(core->config, "analysis.to"));
+		ut64 to = rz_config_get_i(core->config, "analysis.to");
+		rz_analysis_set_limits(core->analysis, node->i_value, to);
+	}
+	return true;
+}
+
+static bool cb_analysis_to(RzCore *core, RzConfigNode *node) {
+	if (rz_config_get_i(core->config, "analysis.limits")) {
+		ut64 from = rz_config_get_i(core->config, "analysis.from");
+		rz_analysis_set_limits(core->analysis, from, node->i_value);
 	}
 	return true;
 }
@@ -2718,13 +2761,13 @@ static bool cb_analysis_limits(void *user, RzConfigNode *node) {
 	} else {
 		rz_analysis_unset_limits(core->analysis);
 	}
-	return 1;
+	return true;
 }
 
 static bool cb_analysis_rnr(void *user, RzConfigNode *node) {
 	RzCore *core = (RzCore *)user;
 	core->analysis->recursive_noreturn = node->i_value;
-	return 1;
+	return true;
 }
 
 static bool cb_analysis_jmptbl(void *user, void *data) {
@@ -2985,9 +3028,9 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB("analysis.limits", "false", (RzConfigCallback)&cb_analysis_limits, "Restrict analysis to address range [analysis.from:analysis.to]");
 	SETCB("analysis.rnr", "false", (RzConfigCallback)&cb_analysis_rnr, "Recursive no return checks (EXPERIMENTAL)");
 	SETCB("analysis.limits", "false", (RzConfigCallback)&cb_analysis_limits, "Restrict analysis to address range [analysis.from:analysis.to]");
-	SETICB("analysis.from", -1, (RzConfigCallback)&cb_analysis_from, "Lower limit on the address range for analysis");
-	SETICB("analysis.to", -1, (RzConfigCallback)&cb_analysis_from, "Upper limit on the address range for analysis");
-	n = NODECB("analysis.in", "io.maps.x", &cb_searchin);
+	SETICB("analysis.from", UT64_MAX, (RzConfigCallback)&cb_analysis_from, "Lower limit on the address range for analysis");
+	SETICB("analysis.to", UT64_MAX, (RzConfigCallback)&cb_analysis_to, "Upper limit on the address range for analysis");
+	n = NODECB("analysis.in", "io.maps.x", &cb_analysis_in);
 	SETDESC(n, "Specify search boundaries for analysis");
 	SETOPTIONS(n, "range", "block",
 		"bin.segment", "bin.segments", "bin.segments.x", "bin.segments.r", "bin.section", "bin.sections", "bin.sections.rwx", "bin.sections.r", "bin.sections.rw", "bin.sections.rx", "bin.sections.wx", "bin.sections.x",
@@ -3709,8 +3752,9 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("search.flags", "true", "All search results are flagged, otherwise only printed");
 	SETBPREF("search.overlap", "false", "Look for overlapped search hits");
 	SETI("search.maxhits", 0, "Maximum number of hits (0: no limit)");
-	SETI("search.from", -1, "Search start address");
-	n = NODECB("search.in", "io.maps", &cb_searchin);
+	SETI("search.from", 0, "Search start address");
+	SETI("search.to", UT64_MAX, "Search end address");
+	n = NODECB("search.in", "io.maps", &cb_search_in);
 	SETDESC(n, "Specify search boundaries");
 	SETOPTIONS(n, "raw", "block",
 		"bin.section", "bin.sections", "bin.sections.rwx", "bin.sections.r", "bin.sections.rw", "bin.sections.rx", "bin.sections.wx", "bin.sections.x",
@@ -3794,7 +3838,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETI("zoom.from", 0, "Zoom start address");
 	SETI("zoom.maxsz", 512, "Zoom max size of block");
 	SETI("zoom.to", 0, "Zoom end address");
-	n = NODECB("zoom.in", "io.map", &cb_searchin);
+	n = NODECB("zoom.in", "io.map", &cb_zoom_in);
 	SETDESC(n, "Specify  boundaries for zoom");
 	SETOPTIONS(n, "raw", "block",
 		"bin.section", "bin.sections", "bin.sections.rwx", "bin.sections.r", "bin.sections.rw", "bin.sections.rx", "bin.sections.wx", "bin.sections.x",

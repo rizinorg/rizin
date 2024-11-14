@@ -605,19 +605,48 @@ RZ_API void rz_bin_set_baddr(RzBin *bin, ut64 baddr) {
  *
  * \param o Reference to the \p RzBinObject instance
  * \param off Address to search
- * \param va When 0 the offset \p off is considered a physical address, otherwise a virtual address
+ * \param va When false the offset \p off is considered a physical address, otherwise a virtual address
  * \return Pointer to a \p RzBinSection containing the address
  */
-RZ_API RZ_BORROW RzBinSection *rz_bin_get_section_at(RzBinObject *o, ut64 off, int va) {
+RZ_API RZ_BORROW RzBinSection *rz_bin_get_section_at(RZ_NONNULL RzBinObject *o, ut64 off, bool va) {
+	rz_return_val_if_fail(o, NULL);
+
 	RzBinSection *section;
 	void **iter;
 	ut64 from, to;
 
-	rz_return_val_if_fail(o, NULL);
-	// TODO: must be O(1) .. use sdb here
 	rz_pvector_foreach (o->sections, iter) {
 		section = *iter;
 		if (section->is_segment) {
+			continue;
+		}
+		from = va ? rz_bin_object_addr_with_base(o, section->vaddr) : section->paddr;
+		to = from + (va ? section->vsize : section->size);
+		if (off >= from && off < to) {
+			return section;
+		}
+	}
+	return NULL;
+}
+
+/**
+ * \brief Find the binary segment at offset \p off.
+ *
+ * \param o Reference to the \p RzBinObject instance
+ * \param off Address to search
+ * \param va When false the offset \p off is considered a physical address, otherwise a virtual address
+ * \return Pointer to a \p RzBinSection containing the address
+ */
+RZ_API RZ_BORROW RzBinSection *rz_bin_get_segment_at(RZ_NONNULL RzBinObject *o, ut64 off, bool va) {
+	rz_return_val_if_fail(o, NULL);
+
+	RzBinSection *section;
+	void **iter;
+	ut64 from, to;
+
+	rz_pvector_foreach (o->sections, iter) {
+		section = *iter;
+		if (!section->is_segment) {
 			continue;
 		}
 		from = va ? rz_bin_object_addr_with_base(o, section->vaddr) : section->paddr;

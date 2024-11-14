@@ -106,7 +106,6 @@ typedef struct rz_rop_search_context_t {
 	ut8 subchain; ///< Display every length gadget from rop.len=X to 2 in /Rl.
 	ut8 crop; ///< Include conditional jump, calls and returns in ropsearch.
 	char *greparg; ///< Grep argument string.
-	const char *search_addr; ///< specify where to search stuff.
 	const char *arch; ///< Architecture of the binary.
 	bool regexp; ///< Regular expression argument flag.
 	bool cache; ///< Cache the search results.

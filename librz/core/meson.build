@@ -24,6 +24,7 @@ rz_core_sources = [
   'casm.c',
   'cautocmpl.c',
   'cbin.c',
+  'cbounds.c',
   'cconfig.c',
   'ccrypto.c',
   'cdebug.c',

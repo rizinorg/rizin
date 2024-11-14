@@ -1084,7 +1084,39 @@ RZ_API int rz_core_rtr_gdb(RzCore *core, int launch, const char *path);
 
 RZ_API int rz_core_search_preludes(RzCore *core, bool log);
 RZ_API int rz_core_search_prelude(RzCore *core, ut64 from, ut64 to, const ut8 *buf, int blen, const ut8 *mask, int mlen);
-RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries_prot(RzCore *core, int protection, const char *mode, const char *prefix);
+
+#define RZ_CORE_BOUNDARIES_PERMS_ANY 0
+#define RZ_CORE_BOUNDARIES_MASK_NONE 0
+RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries_raw(RZ_NONNULL RzCore *core, const RzInterval interval);
+RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries_block(RZ_NONNULL RzCore *core, const RzInterval interval);
+RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries_current_function(RZ_NONNULL RzCore *core, const RzInterval interval);
+RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries_current_function_bb(RZ_NONNULL RzCore *core, const RzInterval interval);
+RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries_current_io_map(RZ_NONNULL RzCore *core, const RzInterval interval);
+RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries_current_bin_section(RZ_NONNULL RzCore *core, const RzInterval interval);
+RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries_current_bin_segment(RZ_NONNULL RzCore *core, const RzInterval interval);
+#define rz_core_get_boundaries_range rz_core_get_boundaries_all_io_maps
+#define rz_core_get_boundaries_all_io_maps(core, interval) \
+	rz_core_get_boundaries_io_maps(core, interval, RZ_CORE_BOUNDARIES_PERMS_ANY, RZ_CORE_BOUNDARIES_MASK_NONE)
+RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries_io_maps(RZ_NONNULL RzCore *core, const RzInterval interval, int perms, int perms_mask);
+#define rz_core_get_boundaries_all_io_skyline(core, interval) \
+	rz_core_get_boundaries_io_skyline(core, interval, RZ_CORE_BOUNDARIES_PERMS_ANY, RZ_CORE_BOUNDARIES_MASK_NONE)
+RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries_io_skyline(RZ_NONNULL RzCore *core, const RzInterval interval, int perms, int perms_mask);
+#define rz_core_get_boundaries_all_bin_segments(core, interval) \
+	rz_core_get_boundaries_bin_segments(core, interval, RZ_CORE_BOUNDARIES_PERMS_ANY, RZ_CORE_BOUNDARIES_MASK_NONE)
+RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries_bin_segments(RZ_NONNULL RzCore *core, const RzInterval interval, int perms, int perms_mask);
+#define rz_core_get_boundaries_all_bin_sections(core, interval) \
+	rz_core_get_boundaries_bin_sections(core, interval, RZ_CORE_BOUNDARIES_PERMS_ANY, RZ_CORE_BOUNDARIES_MASK_NONE)
+RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries_bin_sections(RZ_NONNULL RzCore *core, const RzInterval interval, int perms, int perms_mask);
+RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries_code_only(RZ_NONNULL RzCore *core, const RzInterval interval);
+#define rz_core_get_boundaries_current_debug_map(core, interval) \
+	rz_core_get_boundaries_debug_maps(core, interval, RZ_CORE_BOUNDARIES_PERMS_ANY, RZ_CORE_BOUNDARIES_MASK_NONE, true)
+#define rz_core_get_boundaries_all_debug_maps(core, interval) \
+	rz_core_get_boundaries_debug_maps(core, interval, RZ_CORE_BOUNDARIES_PERMS_ANY, RZ_CORE_BOUNDARIES_MASK_NONE, false)
+RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries_debug_maps(RZ_NONNULL RzCore *core, const RzInterval interval, int perms, int perms_mask, bool current);
+RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries_debug_heap(RZ_NONNULL RzCore *core, const RzInterval interval);
+RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries_debug_stack(RZ_NONNULL RzCore *core, const RzInterval interval);
+RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries_debug_program(RZ_NONNULL RzCore *core, const RzInterval interval);
+RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries_select(RZ_NONNULL RzCore *core, RZ_NONNULL const char *from_key, RZ_NONNULL const char *to_key, RZ_NONNULL const char *in_key);
 
 RZ_API void rz_core_hack_help(const RzCore *core);
 RZ_API bool rz_core_hack(RzCore *core, const char *op);

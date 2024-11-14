@@ -2091,11 +2091,11 @@ RZ_API bool rz_core_analysis_refs(RZ_NONNULL RzCore *core, size_t nbytes) {
 		return core_search_for_xrefs_in_boundaries(core, from, to);
 	}
 
-	RzList *list = rz_core_get_boundaries_prot(core, RZ_PERM_X, NULL, "analysis");
+	RzList *list = rz_core_get_boundaries_select(core, "analysis.from", "analysis.to", "analysis.in");
 	RzListIter *iter;
 	RzIOMap *map;
 	if (!list) {
-		RZ_LOG_ERROR("cannot find maps with exec permisions\n");
+		RZ_LOG_ERROR("Cannot get xrefs boundaries when analysis.in=%s.\n", rz_config_get(core->config, "analysis.in"));
 		return false;
 	}
 
@@ -4772,7 +4772,11 @@ RZ_IPI void rz_core_analysis_value_pointers(RzCore *core, RzOutputMode mode) {
 	rz_core_notify_done(core, "Analyze value pointers (aav)");
 	rz_cons_break_push(NULL, NULL);
 	if (is_debug) {
-		RzList *list = rz_core_get_boundaries_prot(core, 0, "dbg.map", "analysis");
+		RzInterval interval;
+		interval.addr = rz_config_get_i(core->config, "analysis.from");
+		interval.size = rz_config_get_i(core->config, "analysis.to") - interval.addr;
+
+		RzList *list = rz_core_get_boundaries_all_debug_maps(core, interval);
 		RzListIter *iter;
 		RzIOMap *map;
 		if (!list) {
@@ -4788,7 +4792,7 @@ RZ_IPI void rz_core_analysis_value_pointers(RzCore *core, RzOutputMode mode) {
 		}
 		rz_list_free(list);
 	} else {
-		RzList *list = rz_core_get_boundaries_prot(core, 0, NULL, "analysis");
+		RzList *list = rz_core_get_boundaries_select(core, "analysis.from", "analysis.to", "analysis.in");
 		if (!list) {
 			goto beach;
 		}
@@ -5825,14 +5829,14 @@ RZ_API void rz_core_analysis_calls(RZ_NONNULL RzCore *core, bool imports_only) {
 	RzBinFile *binfile = rz_bin_cur(core->bin);
 	addr = core->offset;
 	if (binfile) {
-		ranges = rz_core_get_boundaries_prot(core, RZ_PERM_X, NULL, "analysis");
+		ranges = rz_core_get_boundaries_select(core, "analysis.from", "analysis.to", "analysis.in");
 	}
 	rz_cons_break_push(NULL, NULL);
 	if (!binfile || rz_list_length(ranges) < 1) {
 		RzListIter *iter;
 		RzIOMap *map;
 		rz_list_free(ranges);
-		ranges = rz_core_get_boundaries_prot(core, 0, NULL, "analysis");
+		ranges = rz_core_get_boundaries_select(core, "analysis.from", "analysis.to", "analysis.in");
 		if (ranges) {
 			rz_list_foreach (ranges, iter, map) {
 				ut64 addr = map->itv.addr;

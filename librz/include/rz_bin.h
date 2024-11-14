@@ -991,7 +991,8 @@ RZ_API void rz_bin_demangle_with_flags(RZ_NONNULL RzBin *bin, RzDemanglerFlag fl
 RZ_API RZ_OWN char *rz_bin_demangle(RZ_NULLABLE RzBin *bin, RZ_NULLABLE const char *language, RZ_NULLABLE const char *mangled);
 RZ_API const char *rz_bin_get_meth_flag_string(ut64 flag, bool compact);
 
-RZ_API RZ_BORROW RzBinSection *rz_bin_get_section_at(RzBinObject *o, ut64 off, int va);
+RZ_API RZ_BORROW RzBinSection *rz_bin_get_section_at(RZ_NONNULL RzBinObject *o, ut64 off, bool va);
+RZ_API RZ_BORROW RzBinSection *rz_bin_get_segment_at(RZ_NONNULL RzBinObject *o, ut64 off, bool va);
 
 /* filter.c */
 RZ_API void rz_bin_load_filter(RzBin *bin, ut64 rules);
