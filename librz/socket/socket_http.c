@@ -208,6 +208,7 @@ static char *socket_http_get_recursive(const char *url, int *code, int *rlen, ut
 		free(curl_env);
 		if (err) {
 			eprintf("%s", err);
+			free(err);
 		}
 		if (!ret || !res) {
 			return NULL;
