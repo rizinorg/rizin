@@ -199,12 +199,17 @@ static char *socket_http_get_recursive(const char *url, int *code, int *rlen, ut
 	if (!RZ_STR_ISEMPTY(curl_env) && atoi(curl_env)) {
 		int len;
 		char *escaped_url = rz_str_escape_sh(url);
-		char *command = rz_str_newf("curl -sfL -o - \"%s\"", escaped_url);
-		char *res = rz_sys_cmd_str(command, NULL, &len);
+		char *command = rz_str_newf("curl -sSfL -o - \"%s\"", escaped_url);
+		char *res = NULL;
+		char *err = NULL;
+		int ret = rz_sys_cmd_str_full(command, NULL, &res, &len, &err);
 		free(escaped_url);
 		free(command);
 		free(curl_env);
-		if (!res) {
+		if (err) {
+			eprintf("%s", err);
+		}
+		if (!ret || !res) {
 			return NULL;
 		}
 		if (res) {
