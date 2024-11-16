@@ -83,7 +83,7 @@ jobs:
             meson_options: -Dbuildtype=release --werror
             enabled: ${{ needs.changes.outputs.edited == 'true' }}
             timeout: 45
-            cflags: "-DRZ_ASSERT_STDOUT=1 -Wno-cpp"
+            cflags: -DRZ_ASSERT_STDOUT=1
             allow_failure: false
           - name: macos-meson-clang-tests
             os: macos-13
@@ -99,7 +99,7 @@ jobs:
             os: ubuntu-22.04
             build_system: meson
             compiler: gcc-12
-            cflags: "-DRZ_ASSERT_STDOUT=1 -Wno-cpp -ftrivial-auto-var-init=pattern -funsigned-char"
+            cflags: "-DRZ_ASSERT_STDOUT=1 -ftrivial-auto-var-init=pattern -funsigned-char"
             meson_options: -Dbuildtype=debugoptimized -Db_sanitize=address,undefined --werror
             asan: true
             asan_options: "detect_leaks=0,detect_odr_violation=0,allocator_may_return_null=1"
@@ -111,7 +111,7 @@ jobs:
             os: ubuntu-22.04
             build_system: meson
             compiler: clang
-            cflags: "-DRZ_ASSERT_STDOUT=1 -Wno-cpp"
+            cflags: -DRZ_ASSERT_STDOUT=1
             meson_options: -Dbuildtype=debugoptimized -Db_lundef=false -Db_sanitize=address,undefined --werror
             asan: true
             asan_options: "detect_leaks=0,detect_odr_violation=0,allocator_may_return_null=1"
@@ -128,7 +128,6 @@ jobs:
             coverage: true
             enabled: ${{ github.event_name != 'pull_request' && needs.changes.outputs.edited == 'true' }}
             timeout: 60
-            cflags: "-Wno-cpp"
             allow_failure: false
           - name: capstone-sys
             os: ubuntu-22.04
@@ -138,7 +137,6 @@ jobs:
             run_tests: false
             enabled: ${{ (github.event_name != 'pull_request' || contains(github.head_ref, 'capstone')) && needs.changes.outputs.edited == 'true' }}
             timeout: 45
-            cflags: "-Wno-cpp"
             allow_failure: false
           - name: capstone-v4
             os: ubuntu-22.04
@@ -148,7 +146,6 @@ jobs:
             run_tests: false
             enabled: ${{ (github.event_name != 'pull_request' || contains(github.head_ref, 'capstone')) && needs.changes.outputs.edited == 'true' }}
             timeout: 45
-            cflags: "-Wno-cpp"
             allow_failure: true
           - name: capstone-v5
             os: ubuntu-22.04
@@ -158,7 +155,6 @@ jobs:
             run_tests: false
             enabled: ${{ (github.event_name != 'pull_request' || contains(github.head_ref, 'capstone')) && needs.changes.outputs.edited == 'true' }}
             timeout: 45
-            cflags: "-Wno-cpp"
             allow_failure: true
           - name: no-gpl-code
             os: ubuntu-22.04
@@ -168,7 +164,6 @@ jobs:
             run_tests: false
             enabled: ${{ (github.event_name != 'pull_request' || contains(github.head_ref, 'gpl')) && needs.changes.outputs.edited == 'true' }}
             timeout: 45
-            cflags: "-Wno-cpp"
             allow_failure: false
 
     steps:
@@ -486,7 +481,7 @@ jobs:
         run: meson setup --prefix=/usr -Dbuildtype=debugoptimized -Db_sanitize=address,undefined --werror build && ninja -C build
         working-directory: rizin
         env:
-          CFLAGS: -DASAN=1 -DRZ_ASSERT_STDOUT=1 -Wno-cpp
+          CFLAGS: -DASAN=1 -DRZ_ASSERT_STDOUT=1
       - name: Install with Ninja
         run: sudo ninja -C build install
         working-directory: rizin
@@ -539,8 +534,6 @@ jobs:
       - name: Build with Meson + Ninja
         run: meson setup --prefix=/usr -Dbuildtype=release --werror build && ninja -C build
         working-directory: rizin
-        env:
-          CFLAGS: -Wno-cpp
       - name: Install with Ninja
         run: sudo ninja -C build install
         working-directory: rizin
