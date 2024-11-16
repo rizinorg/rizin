@@ -245,7 +245,9 @@ static RzPVector /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 			rz_pvector_free(ret);
 			return NULL;
 		}
-		rel->type = RZ_BIN_RELOC_16;
+		// relocations are 16 bit, structured as a 'segment_number:offset' pair. Suppose the start
+		// segment address is 0x500, the value at address 'segment_number*16 + offset' will have 0x500 added to it.
+		rel->print_name = "SET_16";
 		rel->vaddr = relocs[i].vaddr;
 		rel->paddr = relocs[i].paddr;
 		rz_pvector_push(ret, rel);
