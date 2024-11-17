@@ -33,7 +33,7 @@ FILE==
 CMDS=<<EOF
 b 2
 wx 0xff
-e zoom.in=raw
+e zoom.in=block
 p= 2 2@ 0
 EOF
 EXPECT=<<EOF

@@ -135,6 +135,7 @@ FILE=bins/elf/ioli/crackme0x00
 CMDS=<<EOF
 e io.va=false
 s 0
+e search.in=file
 e search.from=0
 e search.to=0x00000050
 / ELF
@@ -150,6 +151,7 @@ CMDS=<<EOF
 e scr.color=false
 e io.va=false
 s 0x1000
+e search.in=file
 e search.from=0
 e search.to=0x50
 / ELF
@@ -236,6 +238,7 @@ FILE=bins/elf/ioli/crackme0x00
 CMDS=<<EOF
 e io.va=false
 s 0
+e search.in=file
 e search.from=0
 e search.to=0x50
 /a xor al, 0x80
@@ -251,6 +254,7 @@ FILE=bins/elf/ioli/crackme0x00
 CMDS=<<EOF
 e io.va=false
 s 0
+e search.in=file
 e search.from=0
 e search.to=0x50
 /a xor al, 0x80
@@ -343,6 +347,7 @@ FILE=bins/elf/ioli/crackme0x00
 CMDS=<<EOF
 e io.va=false
 s 0x1000
+e search.in=file
 e search.from=0
 e search.to=0x00000050
 /a xor al, 0x80
@@ -358,6 +363,7 @@ FILE=bins/elf/ioli/crackme0x00
 CMDS=<<EOF
 e io.va=false
 s 0x1000
+e search.in=file
 e search.from=0
 e search.to=0x00000050
 /x 3480
@@ -387,6 +393,7 @@ FILE=bins/elf/ioli/crackme0x00
 CMDS=<<EOF
 e io.va=false
 s 0
+e search.in=file
 e search.from=0
 e search.to=0x00000050
 /at xor
@@ -402,6 +409,7 @@ FILE=bins/elf/ioli/crackme0x00
 CMDS=<<EOF
 e io.va=false
 s 0x1000
+e search.in=file
 e search.from=0
 e search.to=0x00000050
 /at xor
@@ -560,6 +568,7 @@ FILE=bins/pe/standard.exe
 CMDS=<<EOF
 e io.va=false
 s 0
+e search.in=file
 e search.from=0
 e search.to=0x10
 /m
@@ -574,6 +583,7 @@ FILE=bins/pe/standard.exe
 CMDS=<<EOF
 e io.va=false
 s 0x1000
+e search.in=file
 e search.from=0
 e search.to=0x10
 /m
@@ -619,6 +629,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 w ABCD @ 0x100
 s 0x1000
+e search.in=raw
 e search.from=0
 e search.to=0x200
 /x 41424344
@@ -632,6 +643,7 @@ NAME=/m search seek
 FILE=bins/pe/standard.exe
 CMDS=<<EOF
 e io.va=false
+e search.in=file
 s 0x1000
 /m~[0]
 s
@@ -798,6 +810,7 @@ NAME=/x search seek
 FILE=bins/pe/standard.exe
 CMDS=<<EOF
 e io.va=false
+e search.in=file
 s 0x1000
 /x 9090cd80
 s

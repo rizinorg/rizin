@@ -4,13 +4,11 @@ CMDS=<<EOF
 et asm.slow
 et asm.bits
 et asm.arch
-et search.from
 EOF
 EXPECT=<<EOF
 bool
 int
 str
-addr
 EOF
 RUN
 

@@ -1,7 +1,7 @@
 NAME=t/va
 FILE=bins/elf/analysis/x86-simple
 CMDS=<<EOF
-e search.in=io.section
+e search.in=bin.section
 /x 5b
 pi 1 @ hit0_0
 EOF
