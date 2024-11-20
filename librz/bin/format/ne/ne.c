@@ -118,6 +118,46 @@ static void ne_sanitize_name(char *name, ut16 count) {
 	}
 }
 
+static const char *get_reloc_type_name(const ut8 src_type, const ut8 flag) {
+#define CONCAT(a, b) a b
+#define NE_RELOC_TARGET_TYPE(src_type_name, flag) \
+	switch (flag) { \
+	case INTERNAL_REF: \
+		return CONCAT(src_type_name, "_INTERNAL_REF"); \
+	case IMPORTED_ORD: \
+		return CONCAT(src_type_name, "_IMPORTED_ORD"); \
+	case IMPORTED_NAME: \
+		return CONCAT(src_type_name, "_IMPORTED_NAME"); \
+	case OSFIXUP: \
+		return CONCAT(src_type_name, "_OSFIXUP"); \
+	case ADDITIVE: \
+		return CONCAT(src_type_name, "_ADDITIVE"); \
+	default: \
+		RZ_LOG_ERROR("Unknown NE relocation target flag %d\n", flag); \
+		return CONCAT(src_type_name, "_UNKNOWN"); \
+	}
+
+	switch (src_type) {
+	case LOBYTE:
+		NE_RELOC_TARGET_TYPE("LOBYTE", flag);
+	case SEL_16:
+		NE_RELOC_TARGET_TYPE("SEL_16", flag);
+	case POI_32:
+		NE_RELOC_TARGET_TYPE("POI_32", flag);
+	case OFF_16:
+		NE_RELOC_TARGET_TYPE("OFF_16", flag);
+	case POI_48:
+		NE_RELOC_TARGET_TYPE("POI_48", flag);
+	case OFF_32:
+		NE_RELOC_TARGET_TYPE("OFF_32", flag);
+	default:
+		RZ_LOG_ERROR("Unknown NE relocation source type %d\n", flag);
+		NE_RELOC_TARGET_TYPE("UNKNOWN", flag);
+	}
+#undef NE_RELOC_TARGET_TYPE
+#undef CONCAT
+}
+
 RzPVector /*<RzBinSymbol *>*/ *rz_bin_ne_get_symbols(rz_bin_ne_obj_t *bin) {
 	RzBinSymbol *sym;
 	ut16 off = bin->ne_header->ResidNamTable + bin->header_offset;
@@ -537,22 +577,7 @@ RzPVector /*<RzBinReloc *>*/ *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 			rz_buf_read_le16_offset(bin->buf, &offset, &rel.align1);
 			rz_buf_read_le16_offset(bin->buf, &offset, &rel.func_ord);
 			reloc->paddr = seg->paddr + rel.offset;
-			switch (rel.type) {
-			case LOBYTE:
-				reloc->type = RZ_BIN_RELOC_8;
-				break;
-			case SEL_16:
-			case OFF_16:
-				reloc->type = RZ_BIN_RELOC_16;
-				break;
-			case POI_32:
-			case OFF_32:
-				reloc->type = RZ_BIN_RELOC_32;
-				break;
-			case POI_48:
-				reloc->type = RZ_BIN_RELOC_64;
-				break;
-			}
+			reloc->print_name = get_reloc_type_name(rel.type & NE_RELOC_SRC_MASK, rel.flags & NE_RELOC_TARGET_MASK);
 
 			if (rel.flags & (IMPORTED_ORD | IMPORTED_NAME)) {
 				RzBinImport *imp = RZ_NEW0(RzBinImport);
