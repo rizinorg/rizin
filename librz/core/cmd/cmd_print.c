@@ -9,7 +9,7 @@
 #include <rz_types.h>
 
 #include "../core_private.h"
-#include "rz_util/rz_strbuf.h"
+#include <rz_util/rz_strbuf.h>
 
 #define PF_USAGE_STR "pf[.k[.f[=v]]|[v]]|[n]|[0|cnt][fmt] [a0 a1 ...]"
 
@@ -131,7 +131,6 @@ static const char *help_msg_p[] = {
 	"ph", "[?][=|hash] ([len])", "calculate hash for a block",
 	"pi", "[?][bdefrj] [num]", "print instructions",
 	"pI", "[?][iI][df] [len]", "print N instructions/bytes (f=func)",
-	"pj", "[?] [len]", "print as indented JSON",
 	"pm", "[?] [magic]", "print libmagic data (see pm? and /m?)",
 	"po", "[?] hex", "print operation applied to block (see po?)",
 	"pp", "[?][sz] [len]", "print patterns, see pp? for more help",
@@ -142,14 +141,6 @@ static const char *help_msg_p[] = {
 	"pv", "[?][jh] [mode]", "show variable/pointer/value in memory",
 	"px", "[?][owq] [len]", "hexdump of N bytes (o=octal, w=32bit, q=64bit)",
 	"plf", "", "print the RzIL output of the function",
-	NULL
-};
-
-static const char *help_msg_pj[] = {
-	"Usage:", "pj[..] [size]", "",
-	"pj", "", "print current block as indented JSON",
-	"pj.", "", "print as indented JSON from 0 to the current offset",
-	"pj..", "", "print JSON path from 0 to the current offset",
 	NULL
 };
 
@@ -2507,21 +2498,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 		rz_core_block_read(core);
 	}
 	switch (*input) {
-	case 'j': // "pj"
-		if (input[1] == '?') {
-			rz_core_cmd_help(core, help_msg_pj);
-		} else if (input[1] == '.') {
-			rz_core_cmdf(core, "pj %" PFMT64u " @ 0", core->offset);
-		} else {
-			if (core->blocksize < 4 || !memcmp(core->block, "\xff\xff\xff\xff", 4)) {
-				RZ_LOG_ERROR("core: Cannot read\n");
-			} else {
-				char *res = rz_print_json_indent((const char *)core->block, true, "  ", NULL);
-				rz_cons_printf("%s\n", res);
-				free(res);
-			}
-		}
-		break;
 	case 'x': // "px"
 	{
 		bool show_offset = rz_config_get_i(core->config, "hex.offset");
@@ -3495,6 +3471,19 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_function_handler(RzCore *core, int argc, c
 	free(bytes);
 
 	rz_core_block_size(core, old_blocksize);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_current_block_json_handler(RzCore *core, int argc, const char **argv) {
+	rz_return_val_if_fail(core, RZ_CMD_STATUS_ERROR);
+	bool enable_color = rz_config_get_i(core->config, "escr.color") != 0;
+	char *res = rz_print_json_indent((const char *)core->block, enable_color, "  ", NULL);
+	if (RZ_STR_ISEMPTY(res)) {
+		rz_cons_printf("Couldn't find a JSON string.\n");
+	} else {
+		rz_cons_printf("%s\n", res);
+	}
+	free(res);
 	return RZ_CMD_STATUS_OK;
 }
 

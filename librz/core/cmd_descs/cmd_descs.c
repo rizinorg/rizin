@@ -13994,6 +13994,14 @@ static const RzCmdDescHelp print_instructions_function_help = {
 	.args = print_instructions_function_args,
 };
 
+static const RzCmdDescArg print_current_block_json_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp print_current_block_json_help = {
+	.summary = "Print formatted JSON at current offset.",
+	.args = print_current_block_json_args,
+};
+
 static const RzCmdDescArg print_function_rzil_args[] = {
 	{ 0 },
 };
@@ -21974,6 +21982,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(pI_cd);
 	RzCmdDesc *print_instructions_function_cd = rz_cmd_desc_argv_new(core->rcmd, pI_cd, "pIf", rz_print_instructions_function_handler, &print_instructions_function_help);
 	rz_warn_if_fail(print_instructions_function_cd);
+
+	RzCmdDesc *print_current_block_json_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_cd, "pj", rz_print_current_block_json_handler, &print_current_block_json_help);
+	rz_warn_if_fail(print_current_block_json_cd);
 
 	RzCmdDesc *print_function_rzil_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_cd, "plf", rz_print_function_rzil_handler, &print_function_rzil_help);
 	rz_warn_if_fail(print_function_rzil_cd);

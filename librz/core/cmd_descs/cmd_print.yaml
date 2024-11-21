@@ -864,6 +864,10 @@ commands:
         summary: Print all instructions at the current function
         cname: print_instructions_function
         args: []
+  - name: pj
+    summary: Print formatted JSON at current offset.
+    cname: print_current_block_json
+    args: []
   - name: plf
     summary: Print the RzIL of the function
     cname: print_function_rzil

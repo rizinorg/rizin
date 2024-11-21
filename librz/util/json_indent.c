@@ -141,7 +141,18 @@ RZ_API char *rz_print_json_human(const char *s) {
 	return O;
 }
 
-RZ_API char *rz_print_json_indent(const char *s, bool color, const char *tab, const char **palette) {
+/**
+ * \brief Formats the JSON string at \p s with indentation.
+ *
+ * \param s The JSON string to format.
+ * \param color Format with color?
+ * \param tab The string to use as indentation tab.
+ * \param palette The color palette to use. If NULL and \p color == true, a default color palatte is used.
+ *
+ * \return The formatted JSON string or NULL in case of failure.
+ */
+RZ_API RZ_OWN char *rz_print_json_indent(RZ_NULLABLE const char *s, bool color, const char *tab, RZ_NULLABLE const char **palette) {
+	rz_return_val_if_fail(tab, NULL);
 	int indent = 0;
 	const int indentSize = strlen(tab);
 	int instr = 0;
@@ -156,7 +167,7 @@ RZ_API char *rz_print_json_indent(const char *s, bool color, const char *tab, co
 		return NULL;
 	}
 
-	char *O = malloc(osz);
+	char *O = RZ_NEWS0(char, osz);
 	if (!O) {
 		return NULL;
 	}
