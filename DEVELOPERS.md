@@ -463,3 +463,11 @@ int main() {
 
 If you need to find the logic for a given command run `./sys/rzshell_which.py <command>` to get the
 handler's function name.
+
+## Add a new command
+
+Do the following steps to add a new command:
+
+1. Add command description to one of the `cmd_<GROUP>.yaml` files.
+2. Generate declarations of the command handler: `cd librz/core/cmd_descs && ./cmd_descs_generate.py --output-dir ./ ./*.yaml`
+3. Implement the handler logic in `librz/core/cmd_descs/cmd_<GROUP>.c`>
