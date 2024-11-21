@@ -31,7 +31,10 @@ enum {
 	JC_RESET,
 };
 
-static const char *origColors[] = {
+/**
+ * \brief Default colors for json printing.
+ */
+static const char *default_colors[] = {
 	"\x1b[31m",
 	"\x1b[32m",
 	"\x1b[33m",
@@ -147,7 +150,7 @@ RZ_API char *rz_print_json_indent(const char *s, bool color, const char *tab, co
 	if (!s) {
 		return NULL;
 	}
-	const char **colors = palette ? palette : origColors;
+	const char **colors = palette ? palette : default_colors;
 	int osz = (1 + strlen(s)) * 20;
 	if (osz < 1) {
 		return NULL;
