@@ -456,3 +456,10 @@ int main() {
 - You should use these modifiers consistently in both function definition and declaration.
 - You should use these modifiers when and only when it makes sense. For example, if your function returns `const char *`, the caller should not free it because of the `const`. So specifying `RZ_BORROW` in this case is probably redundant.
 - Since they are used as indications to developers with no special compiler-time restrictions, there is no good way to check if you have used them correctly.
+
+# Useful utilities
+
+## Finding command handler
+
+If you need to find the logic for a given command run `./sys/rzshell_which.py <command>` to get the
+handler's function name.
