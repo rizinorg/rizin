@@ -2511,26 +2511,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 		if (input[1] == '?') {
 			rz_core_cmd_help(core, help_msg_pj);
 		} else if (input[1] == '.') {
-			if (input[2] == '.') {
-				ut8 *data = calloc(core->offset + 1, 1);
-				if (data) {
-					data[core->offset] = 0;
-					(void)rz_io_read_at(core->io, 0, data, core->offset);
-					char *res = rz_print_json_path((const char *)data, core->offset);
-					if (res) {
-						rz_cons_printf("-> res(%s)\n", res);
-					}
-					/*
-					char *res = rz_print_json_indent ((char*)data, false, "  ", NULL);
-					print_json_path (core, res);
-					free (res);
-*/
-				} else {
-					RZ_LOG_ERROR("core: Cannot allocate %d\n", (int)(core->offset));
-				}
-			} else {
-				rz_core_cmdf(core, "pj %" PFMT64u " @ 0", core->offset);
-			}
+			rz_core_cmdf(core, "pj %" PFMT64u " @ 0", core->offset);
 		} else {
 			if (core->blocksize < 4 || !memcmp(core->block, "\xff\xff\xff\xff", 4)) {
 				RZ_LOG_ERROR("core: Cannot read\n");
