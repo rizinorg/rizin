@@ -191,6 +191,7 @@ struct PE_(rz_bin_pe_obj_t) {
 	Sdb *kv;
 	RzCMS *cms;
 	RzSpcIndirectDataContent *spcinfo;
+	bool has_canary;
 	char *authentihash;
 	bool is_authhash_valid;
 	bool is_signed;
@@ -244,6 +245,7 @@ int PE_(rz_bin_pe_is_stripped_local_syms)(RzBinPEObj *bin);
 int PE_(rz_bin_pe_is_stripped_debug)(RzBinPEObj *bin);
 int PE_(bin_pe_get_claimed_checksum)(RzBinPEObj *bin);
 int PE_(bin_pe_get_actual_checksum)(RzBinPEObj *bin);
+bool PE_(rz_bin_pe_has_canary)(const RzBinPEObj *bin);
 struct rz_bin_pe_addr_t *PE_(check_unknow)(RzBinPEObj *bin);
 struct rz_bin_pe_addr_t *PE_(check_msvcseh)(RzBinPEObj *bin);
 struct rz_bin_pe_addr_t *PE_(check_mingw)(RzBinPEObj *bin);

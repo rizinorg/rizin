@@ -21,6 +21,10 @@ static inline int is_arm(RzBinPEObj *bin) {
 	return 0;
 }
 
+bool PE_(rz_bin_pe_has_canary)(const RzBinPEObj *bin) {
+	return bin->has_canary;
+}
+
 // TODO: make it const! like in elf
 char *PE_(rz_bin_pe_get_machine)(RzBinPEObj *bin) {
 	char *machine = NULL;

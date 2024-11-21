@@ -429,14 +429,17 @@ static RzPVector /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
+	RzBinPEObj *bin = (RzBinPEObj *)bf->o->bin_obj;
+	bin->has_canary = false;
 	RzPVector *ret = rz_pvector_new((RzListFree)rz_bin_import_free);
 	if (!ret) {
 		return NULL;
 	}
 
-	if (!(imports = PE_(rz_bin_pe_get_imports)(bf->o->bin_obj))) {
+	if (!(imports = PE_(rz_bin_pe_get_imports)(bin))) {
 		return ret;
 	}
+	bool has_canary = false;
 	for (i = 0; !imports[i].last; i++) {
 		if (!(ptr = RZ_NEW0(RzBinImport))) {
 			break;
@@ -451,7 +454,15 @@ static RzPVector /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 		// index for the import. There is no point in exposing it.
 		// ptr->hint = imports[i].hint;
 		rz_pvector_push(ret, ptr);
+
+		// __security_init_cookie is a function imported from msvcrt.dll (libc) that when called
+		// initiliazes the stack canary. So if the function is imported, we can
+		// conclude the binary uses stack canary.
+		if (!has_canary && !strcmp(ptr->name, "__security_init_cookie")) {
+			has_canary = true;
+		}
 	}
+	bin->has_canary = has_canary;
 	free(imports);
 	return ret;
 }
@@ -637,24 +648,6 @@ err:
 	return NULL;
 }
 
-static int has_canary(RzBinFile *bf) {
-	void **it;
-	const RzPVector *imports_vec = imports(bf);
-	RzBinImport *imp;
-	if (imports_vec) {
-		rz_pvector_foreach (imports_vec, it) {
-			imp = *it;
-			// __security_init_cookie is a function imported from msvcrt.dll (libc) that when called
-			// initiliazes the stack canary. So if the function is imported, we can
-			// assume the binary uses stack canary.
-			if (!strcmp(imp->name, "__security_init_cookie")) {
-				return true;
-			}
-		}
-	}
-	return false;
-}
-
 static inline bool haschr(const struct PE_(rz_bin_pe_obj_t) * bin, ut16 dllCharacteristic) {
 	return bin->nt_headers->optional_header.DllCharacteristics & dllCharacteristic;
 }
@@ -703,7 +696,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->bits = PE_(rz_bin_pe_get_bits)(bf->o->bin_obj);
 	ret->big_endian = PE_(rz_bin_pe_is_big_endian)(bf->o->bin_obj);
 	ret->dbg_info = 0;
-	ret->has_canary = has_canary(bf);
+	ret->has_canary = PE_(rz_bin_pe_has_canary)(bf->o->bin_obj);
 	ret->has_nx = haschr(bin, IMAGE_DLL_CHARACTERISTICS_NX_COMPAT);
 	ret->has_pi = haschr(bin, IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE);
 	ret->claimed_checksum = rz_str_newf("0x%08x", claimed_checksum);
@@ -711,7 +704,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->pe_overlay = pe_overlay > 0;
 	ret->signature = bin ? bin->is_signed : false;
 	Sdb *db = sdb_ns(bf->sdb, "pe", true);
-	sdb_bool_set(db, "canary", has_canary(bf));
+	sdb_bool_set(db, "canary", ret->has_canary);
 	sdb_bool_set(db, "highva", haschr(bin, IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA));
 	sdb_bool_set(db, "aslr", haschr(bin, IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE));
 	sdb_bool_set(db, "forceintegrity", haschr(bin, IMAGE_DLL_CHARACTERISTICS_FORCE_INTEGRITY));

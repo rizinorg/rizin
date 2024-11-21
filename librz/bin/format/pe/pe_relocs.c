@@ -61,7 +61,7 @@ int PE_(bin_pe_init_relocs)(RZ_NONNULL RzBinPEObj *bin) {
 	}
 
 	if (PE_(rz_bin_pe_is_stripped_relocs)(bin) || !get_relocs_from_data_dir(bin, ret)) {
-		rz_vector_free(bin->relocs);
+		rz_vector_free(ret);
 		bin->relocs = NULL;
 		return false;
 	}
