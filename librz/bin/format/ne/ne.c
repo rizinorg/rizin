@@ -119,22 +119,22 @@ static void ne_sanitize_name(char *name, ut16 count) {
 }
 
 static const char *get_reloc_type_name(const ut8 src_type, const ut8 flag) {
-#define CONCAT(a, b) a b
+#define CONCAT_RELOC_STR(a, b) a b
 #define NE_RELOC_TARGET_TYPE(src_type_name, flag) \
 	switch (flag) { \
 	case INTERNAL_REF: \
-		return CONCAT(src_type_name, "_INTERNAL_REF"); \
+		return CONCAT_RELOC_STR(src_type_name, "_INTERNAL_REF"); \
 	case IMPORTED_ORD: \
-		return CONCAT(src_type_name, "_IMPORTED_ORD"); \
+		return CONCAT_RELOC_STR(src_type_name, "_IMPORTED_ORD"); \
 	case IMPORTED_NAME: \
-		return CONCAT(src_type_name, "_IMPORTED_NAME"); \
+		return CONCAT_RELOC_STR(src_type_name, "_IMPORTED_NAME"); \
 	case OSFIXUP: \
-		return CONCAT(src_type_name, "_OSFIXUP"); \
+		return CONCAT_RELOC_STR(src_type_name, "_OSFIXUP"); \
 	case ADDITIVE: \
-		return CONCAT(src_type_name, "_ADDITIVE"); \
+		return CONCAT_RELOC_STR(src_type_name, "_ADDITIVE"); \
 	default: \
 		RZ_LOG_ERROR("Unknown NE relocation target flag %d\n", flag); \
-		return CONCAT(src_type_name, "_UNKNOWN"); \
+		return CONCAT_RELOC_STR(src_type_name, "_UNKNOWN"); \
 	}
 
 	switch (src_type) {
@@ -155,7 +155,7 @@ static const char *get_reloc_type_name(const ut8 src_type, const ut8 flag) {
 		NE_RELOC_TARGET_TYPE("UNKNOWN", flag);
 	}
 #undef NE_RELOC_TARGET_TYPE
-#undef CONCAT
+#undef CONCAT_RELOC_STR
 }
 
 RzPVector /*<RzBinSymbol *>*/ *rz_bin_ne_get_symbols(rz_bin_ne_obj_t *bin) {
