@@ -1443,12 +1443,6 @@ static void __analysis_esil_function(RzCore *core, ut64 addr) {
 
 static void cmd_analysis_esil(RzCore *core, const char *input) {
 	RzAnalysisEsil *esil = core->analysis->esil;
-	int stacksize = rz_config_get_i(core->config, "esil.stack.depth");
-	int iotrap = rz_config_get_i(core->config, "esil.iotrap");
-	int romem = rz_config_get_i(core->config, "esil.romem");
-	int stats = rz_config_get_i(core->config, "esil.stats");
-	int noNULL = rz_config_get_i(core->config, "esil.noNULL");
-	unsigned int addrsize = rz_config_get_i(core->config, "esil.addr.size");
 
 	switch (input[0]) {
 	case 'p':
@@ -1475,17 +1469,6 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 		} else {
 			RZ_LOG_ERROR("core: esil vm not initialized. run `aei`\n");
 		}
-		break;
-	case ' ': // "ae "
-		// rz_analysis_esil_eval (core->analysis, input+1);
-		if (!esil && !(core->analysis->esil = esil = rz_analysis_esil_new(stacksize, iotrap, addrsize))) {
-			return;
-		}
-		rz_analysis_esil_setup(esil, core->analysis, romem, stats, noNULL); // setup io
-		rz_analysis_esil_set_pc(esil, core->offset);
-		rz_analysis_esil_parse(esil, input + 1);
-		rz_core_esil_dumpstack(esil);
-		rz_analysis_esil_stack_free(esil);
 		break;
 	case 'k': // "aek"
 		switch (input[1]) {
@@ -6562,4 +6545,29 @@ RZ_IPI RzCmdStatus rz_analysis_data_trampoline_handler(RzCore *core, int argc, c
 	int bits = rz_config_get_i(core->config, "asm.bits");
 	print_trampolines(core, minimum, maximum, bits / 8);
 	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analyze_esil_eval_expr_handler(RzCore *core, int argc, const char **argv) {
+	int stacksize = rz_config_get_i(core->config, "esil.stack.depth");
+	int iotrap = rz_config_get_i(core->config, "esil.iotrap");
+	int romem = rz_config_get_i(core->config, "esil.romem");
+	int stats = rz_config_get_i(core->config, "esil.stats");
+	int noNULL = rz_config_get_i(core->config, "esil.noNULL");
+	unsigned int addrsize = rz_config_get_i(core->config, "esil.addr.size");
+
+	RzAnalysisEsil *esil = core->analysis->esil;
+
+	if (!esil && !(core->analysis->esil = esil = rz_analysis_esil_new(stacksize, iotrap, addrsize))) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_analysis_esil_setup(esil, core->analysis, romem, stats, noNULL); // setup io
+	rz_analysis_esil_set_pc(esil, core->offset);
+	rz_analysis_esil_parse(esil, argv[1]);
+	rz_core_esil_dumpstack(esil);
+	rz_analysis_esil_stack_free(esil);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analyze_esil_set_pc_handler(RzCore *core, int argc, const char **argv) {
+	
 }

@@ -2402,3 +2402,13 @@ commands:
     modes:
       - RZ_OUTPUT_MODE_STANDARD
       - RZ_OUTPUT_MODE_JSON
+  - name: cmd_esil
+    summary: ESIL analysis commands
+    subcommands:
+      - name: ae
+        summary: Analyze all flags starting with sym. and entry
+        cname: analyze_esil_eval_expr
+        args:
+          - name: expr
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
