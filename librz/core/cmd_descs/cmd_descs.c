@@ -46,6 +46,7 @@ static const RzCmdDescDetail analysis_hint_set_val_details[2];
 static const RzCmdDescDetail analysis_hint_set_optype_details[2];
 static const RzCmdDescDetail analysis_hint_set_immbase_details[3];
 static const RzCmdDescDetail analysis_hint_set_offset_details[2];
+static const RzCmdDescDetail analyze_esil_insn_access_details[4];
 static const RzCmdDescDetail cmd_cmp_unified_details[2];
 static const RzCmdDescDetail cw_details[2];
 static const RzCmdDescDetail cmd_debug_list_bp_details[2];
@@ -324,6 +325,7 @@ static const RzCmdDescArg analyze_esil_emu_fcn_args[2];
 static const RzCmdDescArg analyze_esil_emu_fcn_find_args_args[2];
 static const RzCmdDescArg analyze_esil_int_list_load_args[2];
 static const RzCmdDescArg analyze_esil_int_remove_args[2];
+static const RzCmdDescArg analyze_esil_insn_access_args[4];
 static const RzCmdDescArg block_args[2];
 static const RzCmdDescArg block_decrease_args[2];
 static const RzCmdDescArg block_increase_args[2];
@@ -6595,6 +6597,71 @@ static const RzCmdDescArg analyze_esil_int_remove_args[] = {
 static const RzCmdDescHelp analyze_esil_int_remove_help = {
 	.summary = "Remove ESIL interrupt and free it if needed.",
 	.args = analyze_esil_int_remove_args,
+};
+
+static const RzCmdDescHelp aea_help = {
+	.summary = "Emulate to retrieve arguments.",
+};
+static const RzCmdDescDetailEntry analyze_esil_insn_access_Flag_detail_entries[] = {
+	{ .text = "A", .arg_str = NULL, .comment = "Interpret the [len] parameter as number of bytes. Not as number of instructions." },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry analyze_esil_insn_access_Options_detail_entries[] = {
+	{ .text = "*", .arg_str = NULL, .comment = "Create mem.* flags for memory accesses." },
+	{ .text = "r", .arg_str = NULL, .comment = "Show regs read in N instructions." },
+	{ .text = "w", .arg_str = NULL, .comment = "Show regs written in N instructions." },
+	{ .text = "n", .arg_str = NULL, .comment = "Show regs not written in N instructions." },
+	{ .text = "b", .arg_str = NULL, .comment = "Show regs used in current basic block. The [len] parameter, if not 0, is interpreted as address." },
+	{ .text = "f", .arg_str = NULL, .comment = "Show regs used in current function." },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry analyze_esil_insn_access_Legend_detail_entries[] = {
+	{ .text = "I", .arg_str = NULL, .comment = "input registers (read before being set)" },
+	{ .text = "A", .arg_str = NULL, .comment = "all regs accessed" },
+	{ .text = "R", .arg_str = NULL, .comment = "register values read" },
+	{ .text = "W", .arg_str = NULL, .comment = "registers written" },
+	{ .text = "N", .arg_str = NULL, .comment = "read but never written" },
+	{ .text = "V", .arg_str = NULL, .comment = "values" },
+	{ .text = "@R", .arg_str = NULL, .comment = "memreads" },
+	{ .text = "@W", .arg_str = NULL, .comment = "memwrites" },
+	{ .text = "NOTE:", .arg_str = NULL, .comment = "mem{reads,writes} with PIC only fetch the offset" },
+	{ 0 },
+};
+static const RzCmdDescDetail analyze_esil_insn_access_details[] = {
+	{ .name = "Flag", .entries = analyze_esil_insn_access_Flag_detail_entries },
+	{ .name = "Options", .entries = analyze_esil_insn_access_Options_detail_entries },
+	{ .name = "Legend", .entries = analyze_esil_insn_access_Legend_detail_entries },
+	{ 0 },
+};
+static const char *analyze_esil_insn_access_type_choices[] = { "d", "*", "r", "w", "n", "b", "f", NULL };
+static const RzCmdDescArg analyze_esil_insn_access_args[] = {
+	{
+		.name = "type",
+		.type = RZ_CMD_ARG_TYPE_CHOICES,
+		.default_value = "d",
+		.choices.choices = analyze_esil_insn_access_type_choices,
+
+	},
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.default_value = "0",
+
+	},
+	{
+		.name = "A",
+		.type = RZ_CMD_ARG_TYPE_OPTION,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analyze_esil_insn_access_help = {
+	.summary = "Show register and memory access of the next [len] instructions or bytes.",
+	.details = analyze_esil_insn_access_details,
+	.args = analyze_esil_insn_access_args,
 };
 
 static const RzCmdDescHelp b_help = {
@@ -20467,6 +20534,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *analyze_esil_int_remove_cd = rz_cmd_desc_argv_new(core->rcmd, ael_cd, "aelir", rz_analyze_esil_int_remove_handler, &analyze_esil_int_remove_help);
 	rz_warn_if_fail(analyze_esil_int_remove_cd);
+
+	RzCmdDesc *aea_cd = rz_cmd_desc_group_modes_new(core->rcmd, ae_cd, "aea", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analyze_esil_insn_access_handler, &analyze_esil_insn_access_help, &aea_help);
+	rz_warn_if_fail(aea_cd);
 
 	RzCmdDesc *b_cd = rz_cmd_desc_group_state_new(core->rcmd, root_cd, "b", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_block_handler, &block_help, &b_help);
 	rz_warn_if_fail(b_cd);

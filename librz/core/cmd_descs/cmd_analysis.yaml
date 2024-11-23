@@ -2479,3 +2479,62 @@ commands:
             args:
               - name: interrupt number
                 type: RZ_CMD_ARG_TYPE_NUM
+      - name: aea
+        summary: Emulate to retrieve arguments.
+        subcommands:
+          - name: aea
+            summary: Show register and memory access of the next [len] instructions or bytes.
+            cname: analyze_esil_insn_access
+            args:
+              - name: type
+                type: RZ_CMD_ARG_TYPE_CHOICES
+                choices: ["d", "*", "r", "w", "n", "b", "f"]
+                default_value: "d"
+              - name: len
+                type: RZ_CMD_ARG_TYPE_NUM
+                default_value: 0
+              - name: A
+                type: RZ_CMD_ARG_TYPE_OPTION
+                optional: true
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
+            details:
+              - name: "Flag"
+                entries:
+                  - text: "A"
+                    comment: "Interpret the [len] parameter as number of bytes. Not as number of instructions."
+              - name: "Options"
+                entries:
+                  - text: "*"
+                    comment: "Create mem.* flags for memory accesses."
+                  - text: "r"
+                    comment: "Show regs read in N instructions."
+                  - text: "w"
+                    comment: "Show regs written in N instructions."
+                  - text: "n"
+                    comment: "Show regs not written in N instructions."
+                  - text: "b"
+                    comment: "Show regs used in current basic block. The [len] parameter, if not 0, is interpreted as address."
+                  - text: "f"
+                    comment: "Show regs used in current function."
+              - name: Legend
+                entries:
+                  - text: "I"
+                    comment: "input registers (read before being set)"
+                  - text: "A"
+                    comment: "all regs accessed"
+                  - text: "R"
+                    comment: "register values read"
+                  - text: "W"
+                    comment: "registers written"
+                  - text: "N"
+                    comment: "read but never written"
+                  - text: "V"
+                    comment: "values"
+                  - text: "@R"
+                    comment: "memreads"
+                  - text: "@W"
+                    comment: "memwrites"
+                  - text: "NOTE:"
+                    comment: "mem{reads,writes} with PIC only fetch the offset"

@@ -4,6 +4,8 @@
 
 #include <rz_cmd.h>
 #include <rz_core.h>
+#include <rz_util/rz_assert.h>
+#include <rz_util/rz_num.h>
 #include <rz_util/rz_graph_drawable.h>
 
 #include "../core_private.h"
@@ -146,16 +148,6 @@ static const char *help_detail_ae[] = {
 };
 
 static const char *help_msg_aea[] = {
-	"Examples:", "aea", " show regs and memory accesses used in a range",
-	"aea", "  [ops]", "Show regs/memory accesses used in N instructions ",
-	"aea*", " [ops]", "Create mem.* flags for memory accesses",
-	"aeab", "", "Show regs used in current basic block",
-	"aeaf", "", "Show regs used in current function",
-	"aear", " [ops]", "Show regs read in N instructions",
-	"aeaw", " [ops]", "Show regs written in N instructions",
-	"aean", " [ops]", "Show regs not written in N instructions",
-	"aeaj", " [ops]", "Show aea output in JSON format",
-	"aeA", "  [len]", "Show regs used in N bytes (subcommands are the same)",
 	"Legend:", "", "",
 	"I", "", "input registers (read before being set)",
 	"A", "", "all regs accessed",
@@ -6552,4 +6544,74 @@ RZ_IPI RzCmdStatus rz_analyze_esil_int_remove_handler(RzCore *core, int argc, co
 	if (esil && esil->interrupts) {
 		ht_up_delete(esil->interrupts, rz_num_math(core->num, argv[1]));
 	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analyze_esil_insn_access_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	int aea_mode = ((mode == RZ_OUTPUT_MODE_JSON) ? (1 << 4) : 0);
+	int len = rz_num_math(core->num, argv[2]);
+	bool is_aeA = argc == 4;
+	if (is_aeA) {
+		aea_mode |= 1;
+	}
+
+	// Don't ask me why this has to be done. I am just the janitor.
+	RzReg *reg = core->analysis->reg;
+	ut64 pc = rz_reg_getv(reg, "PC");
+	if (!is_aeA) {
+		RzAnalysisOp *op = rz_core_analysis_op(core, pc, 0);
+		if (!op) {
+			RZ_LOG_ERROR("Failed to decode at current pc.\n");
+			return RZ_CMD_STATUS_ERROR;
+		}
+		ut64 newPC = core->offset + op->size;
+		rz_reg_setv(reg, "PC", newPC);
+	}
+
+	const char cmd_type = argv[1][0];
+	switch (cmd_type) {
+	default:
+		rz_return_val_if_reached(RZ_CMD_STATUS_ERROR);
+	case 'r':
+		aea_mode |= (1 << 1);
+		break;
+	case 'w':
+		aea_mode |= (1 << 2);
+		break;
+	case 'n':
+		aea_mode |= (1 << 3);
+		break;
+	case '*':
+		aea_mode |= (1 << 5);
+		break;
+	case 'b': {
+		ut64 addr = len != 0 ? len : core->offset;
+		aea_mode |= (1 << 1);
+		RzAnalysisBlock *b;
+		RzListIter *iter;
+		RzList *l = rz_analysis_get_blocks_in(core->analysis, addr);
+		rz_list_foreach (l, iter, b) {
+			cmd_aea(core, aea_mode, b->addr, b->size);
+			break;
+		}
+		return RZ_CMD_STATUS_OK;
+	}
+	case 'f': {
+		aea_mode |= (1 << 1);
+		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
+		if (!fcn) {
+			RZ_LOG_ERROR("Failed to decode function at 0x%" PFMT64x "\n", core->offset)
+			return RZ_CMD_STATUS_ERROR;
+		}
+		cmd_aea(core, aea_mode, rz_analysis_function_min_addr(fcn), rz_analysis_function_linear_size(fcn));
+		return RZ_CMD_STATUS_OK;
+	}
+	case 'd':
+		break;
+	}
+	cmd_aea(core, aea_mode, core->offset, len);
+	if (!is_aeA) {
+		rz_reg_setv(reg, "PC", pc);
+	}
+	return RZ_CMD_STATUS_OK;
 }
