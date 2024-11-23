@@ -1446,15 +1446,6 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 	RzAnalysisEsil *esil = core->analysis->esil;
 
 	switch (input[0]) {
-	case '*': // "ae*"
-		// XXX: this is wip, not working atm
-		if (core->analysis->esil) {
-			rz_cons_printf("trap: %d\n", core->analysis->esil->trap);
-			rz_cons_printf("trap-code: %d\n", core->analysis->esil->trap_code);
-		} else {
-			RZ_LOG_ERROR("core: esil vm not initialized. run `aei`\n");
-		}
-		break;
 	case 'l': // ael commands
 		switch (input[1]) {
 		case 'i': // aeli interrupts

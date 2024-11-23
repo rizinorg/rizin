@@ -74,12 +74,9 @@ NAME=div by zero 3 / 0
 FILE==
 CMDS=<<EOF
 ae 0,3,/
-ae*
 EOF
 EXPECT=<<EOF
 ESIL TRAP type 3 code 0x00000000 divbyzero
-trap: 3
-trap-code: 0
 EOF
 RUN
 
@@ -87,12 +84,9 @@ NAME=div 0 / 3
 FILE==
 CMDS=<<EOF
 ae 3,0,/
-ae*
 EOF
 EXPECT=<<EOF
 0x0
-trap: 0
-trap-code: 0
 EOF
 RUN
 
