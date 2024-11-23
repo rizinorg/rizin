@@ -865,7 +865,7 @@ commands:
         cname: print_instructions_function
         args: []
   - name: pj
-    summary: Print formatted JSON at current offset.
+    summary: Parse, format and print JSON at current offset.
     cname: print_current_block_json
     args: []
   - name: plf

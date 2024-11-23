@@ -13998,7 +13998,7 @@ static const RzCmdDescArg print_current_block_json_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp print_current_block_json_help = {
-	.summary = "Print formatted JSON at current offset.",
+	.summary = "Parse, format and print JSON at current offset.",
 	.args = print_current_block_json_args,
 };
 
