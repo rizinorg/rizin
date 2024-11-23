@@ -322,6 +322,8 @@ static const RzCmdDescArg analyze_esil_sdb_query_args[2];
 static const RzCmdDescArg analyze_esil_eval_opcode_expr_args[2];
 static const RzCmdDescArg analyze_esil_emu_fcn_args[2];
 static const RzCmdDescArg analyze_esil_emu_fcn_find_args_args[2];
+static const RzCmdDescArg analyze_esil_int_list_load_args[2];
+static const RzCmdDescArg analyze_esil_int_remove_args[2];
 static const RzCmdDescArg block_args[2];
 static const RzCmdDescArg block_decrease_args[2];
 static const RzCmdDescArg block_increase_args[2];
@@ -6562,6 +6564,37 @@ static const RzCmdDescArg analyze_esil_emu_fcn_find_args_args[] = {
 static const RzCmdDescHelp analyze_esil_emu_fcn_find_args_help = {
 	.summary = "Emulate function at given or current offset to find arguments.",
 	.args = analyze_esil_emu_fcn_find_args_args,
+};
+
+static const RzCmdDescHelp ael_help = {
+	.summary = "ESIL interrupt commands.",
+};
+static const RzCmdDescArg analyze_esil_int_list_load_args[] = {
+	{
+		.name = "file",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analyze_esil_int_list_load_help = {
+	.summary = "List ESIL interrupts or load them from the given shared object.",
+	.args = analyze_esil_int_list_load_args,
+};
+
+static const RzCmdDescArg analyze_esil_int_remove_args[] = {
+	{
+		.name = "interrupt number",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analyze_esil_int_remove_help = {
+	.summary = "Remove ESIL interrupt and free it if needed.",
+	.args = analyze_esil_int_remove_args,
 };
 
 static const RzCmdDescHelp b_help = {
@@ -20426,6 +20459,14 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(aef_cd);
 	RzCmdDesc *analyze_esil_emu_fcn_find_args_cd = rz_cmd_desc_argv_new(core->rcmd, aef_cd, "aefa", rz_analyze_esil_emu_fcn_find_args_handler, &analyze_esil_emu_fcn_find_args_help);
 	rz_warn_if_fail(analyze_esil_emu_fcn_find_args_cd);
+
+	RzCmdDesc *ael_cd = rz_cmd_desc_group_new(core->rcmd, ae_cd, "ael", NULL, NULL, &ael_help);
+	rz_warn_if_fail(ael_cd);
+	RzCmdDesc *analyze_esil_int_list_load_cd = rz_cmd_desc_argv_new(core->rcmd, ael_cd, "aeli", rz_analyze_esil_int_list_load_handler, &analyze_esil_int_list_load_help);
+	rz_warn_if_fail(analyze_esil_int_list_load_cd);
+
+	RzCmdDesc *analyze_esil_int_remove_cd = rz_cmd_desc_argv_new(core->rcmd, ael_cd, "aelir", rz_analyze_esil_int_remove_handler, &analyze_esil_int_remove_help);
+	rz_warn_if_fail(analyze_esil_int_remove_cd);
 
 	RzCmdDesc *b_cd = rz_cmd_desc_group_state_new(core->rcmd, root_cd, "b", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_block_handler, &block_help, &b_help);
 	rz_warn_if_fail(b_cd);

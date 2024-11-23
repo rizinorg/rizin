@@ -795,6 +795,10 @@ RZ_IPI RzCmdStatus rz_analyze_esil_eval_opcode_expr_handler(RzCore *core, int ar
 RZ_IPI RzCmdStatus rz_analyze_esil_emu_fcn_handler(RzCore *core, int argc, const char **argv);
 // "aefa"
 RZ_IPI RzCmdStatus rz_analyze_esil_emu_fcn_find_args_handler(RzCore *core, int argc, const char **argv);
+// "aeli"
+RZ_IPI RzCmdStatus rz_analyze_esil_int_list_load_handler(RzCore *core, int argc, const char **argv);
+// "aelir"
+RZ_IPI RzCmdStatus rz_analyze_esil_int_remove_handler(RzCore *core, int argc, const char **argv);
 // "a"
 RZ_IPI int rz_cmd_analysis(void *data, const char *input);
 // "b"

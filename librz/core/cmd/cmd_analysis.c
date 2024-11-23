@@ -1442,31 +1442,7 @@ static void __analysis_esil_function(RzCore *core, ut64 addr) {
 }
 
 static void cmd_analysis_esil(RzCore *core, const char *input) {
-	RzAnalysisEsil *esil = core->analysis->esil;
-
 	switch (input[0]) {
-	case 'l': // ael commands
-		switch (input[1]) {
-		case 'i': // aeli interrupts
-			switch (input[2]) {
-			case ' ': // "aeli" with arguments
-				if (!rz_analysis_esil_load_interrupts_from_lib(esil, input + 3)) {
-					RZ_LOG_ERROR("core: Failed to load interrupts from '%s'.\n", input + 3);
-				}
-				break;
-			case 0: // "aeli" with no args
-				if (esil && esil->interrupts) {
-					ht_up_foreach(esil->interrupts, _aeli_iter, NULL);
-				}
-				break;
-			case 'r': // "aelir"
-				if (esil && esil->interrupts) {
-					ht_up_delete(esil->interrupts, rz_num_math(core->num, input + 3));
-				}
-				break;
-			}
-		}
-		break;
 	case 'A': // "aeA"
 		if (input[1] == '?') {
 			rz_core_cmd_help(core, help_msg_aea);
@@ -6547,4 +6523,33 @@ RZ_IPI RzCmdStatus rz_analyze_esil_emu_fcn_find_args_handler(RzCore *core, int a
 RZ_IPI RzCmdStatus rz_analyze_esil_expr_help_handler(RzCore *core, int argc, const char **argv) {
 	rz_core_cmd_help(core, help_detail_ae);
 	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analyze_esil_int_list_load_handler(RzCore *core, int argc, const char **argv) {
+	RzAnalysisEsil *esil = core->analysis->esil;
+	if (!esil) {
+		RZ_LOG_ERROR("ESIL VM is not initialized. Did you run 'aei'?\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	if (argc == 1) {
+		// List interrupts
+		if (esil->interrupts) {
+			ht_up_foreach(esil->interrupts, _aeli_iter, NULL);
+		}
+		return RZ_CMD_STATUS_OK;
+	}
+
+	// Load interrupts
+	if (!rz_analysis_esil_load_interrupts_from_lib(esil, argv[1])) {
+		RZ_LOG_ERROR("Failed to load interrupts from '%s'.\n", argv[1]);
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analyze_esil_int_remove_handler(RzCore *core, int argc, const char **argv) {
+	RzAnalysisEsil *esil = core->analysis->esil;
+	if (esil && esil->interrupts) {
+		ht_up_delete(esil->interrupts, rz_num_math(core->num, argv[1]));
+	}
 }

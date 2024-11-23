@@ -2463,3 +2463,19 @@ commands:
               - name: addr
                 type: RZ_CMD_ARG_TYPE_NUM
                 optional: true
+      - name: ael
+        summary: ESIL interrupt commands.
+        subcommands:
+          - name: aeli
+            summary: List ESIL interrupts or load them from the given shared object.
+            cname: analyze_esil_int_list_load
+            args:
+              - name: file
+                type: RZ_CMD_ARG_TYPE_STRING
+                optional: true
+          - name: aelir
+            summary: Remove ESIL interrupt and free it if needed.
+            cname: analyze_esil_int_remove
+            args:
+              - name: interrupt number
+                type: RZ_CMD_ARG_TYPE_NUM
