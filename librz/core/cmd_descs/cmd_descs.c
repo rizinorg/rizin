@@ -6443,7 +6443,7 @@ static const RzCmdDescHelp list_plugins_help = {
 	.args = list_plugins_args,
 };
 
-static const RzCmdDescHelp cmd_esil_help = {
+static const RzCmdDescHelp ae_help = {
 	.summary = "ESIL analysis commands",
 };
 static const RzCmdDescArg analyze_esil_eval_expr_args[] = {
@@ -6474,7 +6474,7 @@ static const RzCmdDescHelp analyze_esil_set_pc_help = {
 	.args = analyze_esil_set_pc_args,
 };
 
-static const RzCmdDescHelp cmd_aek_help = {
+static const RzCmdDescHelp aek_help = {
 	.summary = "SDB queries on ESIL.info.",
 };
 static const RzCmdDescArg analyze_esil_sdb_query_args[] = {
@@ -20339,20 +20339,14 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *list_plugins_cd = rz_cmd_desc_argv_state_new(core->rcmd, cmd_analysis_cd, "aL", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_list_plugins_handler, &list_plugins_help);
 	rz_warn_if_fail(list_plugins_cd);
 
-	RzCmdDesc *cmd_esil_cd = rz_cmd_desc_group_new(core->rcmd, cmd_analysis_cd, "cmd_esil", NULL, NULL, &cmd_esil_help);
-	rz_warn_if_fail(cmd_esil_cd);
-	RzCmdDesc *analyze_esil_eval_expr_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_esil_cd, "ae", rz_analyze_esil_eval_expr_handler, &analyze_esil_eval_expr_help);
-	rz_warn_if_fail(analyze_esil_eval_expr_cd);
-
-	RzCmdDesc *analyze_esil_set_pc_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_esil_cd, "aepc", rz_analyze_esil_set_pc_handler, &analyze_esil_set_pc_help);
+	RzCmdDesc *ae_cd = rz_cmd_desc_group_new(core->rcmd, cmd_analysis_cd, "ae", rz_analyze_esil_eval_expr_handler, &analyze_esil_eval_expr_help, &ae_help);
+	rz_warn_if_fail(ae_cd);
+	RzCmdDesc *analyze_esil_set_pc_cd = rz_cmd_desc_argv_new(core->rcmd, ae_cd, "aepc", rz_analyze_esil_set_pc_handler, &analyze_esil_set_pc_help);
 	rz_warn_if_fail(analyze_esil_set_pc_cd);
 
-	RzCmdDesc *cmd_aek_cd = rz_cmd_desc_group_new(core->rcmd, cmd_esil_cd, "cmd_aek", NULL, NULL, &cmd_aek_help);
-	rz_warn_if_fail(cmd_aek_cd);
-	RzCmdDesc *analyze_esil_sdb_query_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_aek_cd, "aek", rz_analyze_esil_sdb_query_handler, &analyze_esil_sdb_query_help);
-	rz_warn_if_fail(analyze_esil_sdb_query_cd);
-
-	RzCmdDesc *analyze_esil_sdb_reset_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_aek_cd, "aek-", rz_analyze_esil_sdb_reset_handler, &analyze_esil_sdb_reset_help);
+	RzCmdDesc *aek_cd = rz_cmd_desc_group_new(core->rcmd, ae_cd, "aek", rz_analyze_esil_sdb_query_handler, &analyze_esil_sdb_query_help, &aek_help);
+	rz_warn_if_fail(aek_cd);
+	RzCmdDesc *analyze_esil_sdb_reset_cd = rz_cmd_desc_argv_new(core->rcmd, aek_cd, "aek-", rz_analyze_esil_sdb_reset_handler, &analyze_esil_sdb_reset_help);
 	rz_warn_if_fail(analyze_esil_sdb_reset_cd);
 
 	RzCmdDesc *b_cd = rz_cmd_desc_group_state_new(core->rcmd, root_cd, "b", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_block_handler, &block_help, &b_help);

@@ -2402,7 +2402,7 @@ commands:
     modes:
       - RZ_OUTPUT_MODE_STANDARD
       - RZ_OUTPUT_MODE_JSON
-  - name: cmd_esil
+  - name: ae
     summary: ESIL analysis commands
     subcommands:
       - name: ae
@@ -2418,7 +2418,7 @@ commands:
         args:
           - name: addr
             type: RZ_CMD_ARG_TYPE_NUM
-      - name: cmd_aek
+      - name: aek
         summary: SDB queries on ESIL.info.
         subcommands:
           - name: aek
