@@ -787,6 +787,8 @@ RZ_IPI RzCmdStatus rz_analyze_esil_set_pc_handler(RzCore *core, int argc, const 
 RZ_IPI RzCmdStatus rz_analyze_esil_sdb_query_handler(RzCore *core, int argc, const char **argv);
 // "aek-"
 RZ_IPI RzCmdStatus rz_analyze_esil_sdb_reset_handler(RzCore *core, int argc, const char **argv);
+// "aex"
+RZ_IPI RzCmdStatus rz_analyze_esil_eval_opcode_expr_handler(RzCore *core, int argc, const char **argv);
 // "a"
 RZ_IPI int rz_cmd_analysis(void *data, const char *input);
 // "b"

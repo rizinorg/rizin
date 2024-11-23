@@ -1573,30 +1573,6 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 		}
 		rz_reg_setv(reg, "PC", pc);
 	} break;
-	case 'x': { // "aex"
-		char *hex;
-		int ret, bufsz;
-
-		input = rz_str_trim_head_ro(input + 1);
-		hex = rz_str_dup(input);
-		if (!hex) {
-			break;
-		}
-
-		RzAnalysisOp aop = RZ_EMPTY;
-		bufsz = rz_hex_str2bin(hex, (ut8 *)hex);
-		rz_analysis_op_init(&aop);
-		ret = rz_analysis_op(core->analysis, &aop, core->offset,
-			(const ut8 *)hex, bufsz, RZ_ANALYSIS_OP_MASK_ESIL);
-		if (ret > 0) {
-			const char *str = RZ_STRBUF_SAFEGET(&aop.esil);
-			char *str2 = rz_str_newf(" %s", str);
-			cmd_analysis_esil(core, str2);
-			free(str2);
-		}
-		rz_analysis_op_fini(&aop);
-		break;
-	}
 	case '?': // "ae?"
 		if (input[1] == '?') {
 			rz_core_cmd_help(core, help_detail_ae);
@@ -6557,5 +6533,24 @@ RZ_IPI RzCmdStatus rz_analyze_esil_sdb_reset_handler(RzCore *core, int argc, con
 
 RZ_IPI RzCmdStatus rz_analyze_esil_emulate_block_handler(RzCore *core, int argc, const char **argv) {
 	rz_core_analysis_esil_emulate_bb(core);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analyze_esil_eval_opcode_expr_handler(RzCore *core, int argc, const char **argv) {
+	const char *hex = argv[1];
+
+	RzAnalysisOp aop = RZ_EMPTY;
+	rz_analysis_op_init(&aop);
+
+	int bufsz = rz_hex_str2bin(hex, (ut8 *)hex);
+	int ret = rz_analysis_op(core->analysis, &aop, core->offset,
+		(const ut8 *)hex, bufsz, RZ_ANALYSIS_OP_MASK_ESIL);
+	if (ret > 0) {
+		const char *str = RZ_STRBUF_SAFEGET(&aop.esil);
+		char *str2 = rz_str_newf(" %s", str);
+		cmd_analysis_esil(core, str2);
+		free(str2);
+	}
+	rz_analysis_op_fini(&aop);
 	return RZ_CMD_STATUS_OK;
 }
