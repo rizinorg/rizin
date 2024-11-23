@@ -779,6 +779,8 @@ RZ_IPI RzCmdStatus rz_analysis_syscall_number_handler(RzCore *core, int argc, co
 RZ_IPI RzCmdStatus rz_list_plugins_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "ae"
 RZ_IPI RzCmdStatus rz_analyze_esil_eval_expr_handler(RzCore *core, int argc, const char **argv);
+// "aeb"
+RZ_IPI RzCmdStatus rz_analyze_esil_emulate_block_handler(RzCore *core, int argc, const char **argv);
 // "aepc"
 RZ_IPI RzCmdStatus rz_analyze_esil_set_pc_handler(RzCore *core, int argc, const char **argv);
 // "aek"

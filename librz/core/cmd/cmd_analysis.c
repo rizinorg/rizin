@@ -1477,9 +1477,6 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 			}
 		}
 		break;
-	case 'b': // "aeb"
-		rz_core_analysis_esil_emulate_bb(core);
-		break;
 	case 'f': // "aef"
 		if (input[1] == 'a') { // "aefa"
 			rz_analysis_aefa(core, rz_str_trim_head_ro(input + 2));
@@ -6555,5 +6552,10 @@ RZ_IPI RzCmdStatus rz_analyze_esil_sdb_reset_handler(RzCore *core, int argc, con
 	if (esil) {
 		sdb_reset(esil->stats);
 	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analyze_esil_emulate_block_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_analysis_esil_emulate_bb(core);
 	return RZ_CMD_STATUS_OK;
 }

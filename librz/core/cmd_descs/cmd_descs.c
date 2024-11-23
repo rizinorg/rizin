@@ -6461,6 +6461,14 @@ static const RzCmdDescHelp analyze_esil_eval_expr_help = {
 	.args = analyze_esil_eval_expr_args,
 };
 
+static const RzCmdDescArg analyze_esil_emulate_block_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analyze_esil_emulate_block_help = {
+	.summary = "Emulate current block.",
+	.args = analyze_esil_emulate_block_args,
+};
+
 static const RzCmdDescArg analyze_esil_set_pc_args[] = {
 	{
 		.name = "addr",
@@ -20341,6 +20349,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *ae_cd = rz_cmd_desc_group_new(core->rcmd, cmd_analysis_cd, "ae", rz_analyze_esil_eval_expr_handler, &analyze_esil_eval_expr_help, &ae_help);
 	rz_warn_if_fail(ae_cd);
+	RzCmdDesc *analyze_esil_emulate_block_cd = rz_cmd_desc_argv_new(core->rcmd, ae_cd, "aeb", rz_analyze_esil_emulate_block_handler, &analyze_esil_emulate_block_help);
+	rz_warn_if_fail(analyze_esil_emulate_block_cd);
+
 	RzCmdDesc *analyze_esil_set_pc_cd = rz_cmd_desc_argv_new(core->rcmd, ae_cd, "aepc", rz_analyze_esil_set_pc_handler, &analyze_esil_set_pc_help);
 	rz_warn_if_fail(analyze_esil_set_pc_cd);
 
