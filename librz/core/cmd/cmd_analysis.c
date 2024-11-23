@@ -6533,13 +6533,13 @@ RZ_IPI RzCmdStatus rz_analyze_esil_eval_opcode_expr_handler(RzCore *core, int ar
 }
 
 RZ_IPI RzCmdStatus rz_analyze_esil_emu_fcn_handler(RzCore *core, int argc, const char **argv) {
-	ut64 addr = argc == 0 ? core->offset : rz_num_math(core->num, argv[1]);
+	ut64 addr = argc == 1 ? core->offset : rz_num_math(core->num, argv[1]);
 	__analysis_esil_function(core, addr);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_analyze_esil_emu_fcn_find_args_handler(RzCore *core, int argc, const char **argv) {
-	ut64 addr = argc == 0 ? core->offset : rz_num_math(core->num, argv[1]);
+	ut64 addr = argc == 1 ? core->offset : rz_num_math(core->num, argv[1]);
 	rz_analysis_aefa(core, addr);
 	return RZ_CMD_STATUS_OK;
 }
