@@ -317,6 +317,7 @@ static const RzCmdDescArg analysis_syscall_dump_c_args[2];
 static const RzCmdDescArg analysis_syscall_name_args[2];
 static const RzCmdDescArg analysis_syscall_number_args[2];
 static const RzCmdDescArg analyze_esil_eval_expr_args[2];
+static const RzCmdDescArg analyze_esil_set_pc_args[2];
 static const RzCmdDescArg block_args[2];
 static const RzCmdDescArg block_decrease_args[2];
 static const RzCmdDescArg block_increase_args[2];
@@ -6457,6 +6458,19 @@ static const RzCmdDescArg analyze_esil_eval_expr_args[] = {
 static const RzCmdDescHelp analyze_esil_eval_expr_help = {
 	.summary = "Analyze all flags starting with sym. and entry",
 	.args = analyze_esil_eval_expr_args,
+};
+
+static const RzCmdDescArg analyze_esil_set_pc_args[] = {
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analyze_esil_set_pc_help = {
+	.summary = "Set ESIL PC to given address.",
+	.args = analyze_esil_set_pc_args,
 };
 
 static const RzCmdDescHelp b_help = {
@@ -20302,6 +20316,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(cmd_esil_cd);
 	RzCmdDesc *analyze_esil_eval_expr_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_esil_cd, "ae", rz_analyze_esil_eval_expr_handler, &analyze_esil_eval_expr_help);
 	rz_warn_if_fail(analyze_esil_eval_expr_cd);
+
+	RzCmdDesc *analyze_esil_set_pc_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_esil_cd, "aepc", rz_analyze_esil_set_pc_handler, &analyze_esil_set_pc_help);
+	rz_warn_if_fail(analyze_esil_set_pc_cd);
 
 	RzCmdDesc *b_cd = rz_cmd_desc_group_state_new(core->rcmd, root_cd, "b", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_block_handler, &block_help, &b_help);
 	rz_warn_if_fail(b_cd);

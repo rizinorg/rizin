@@ -1445,22 +1445,6 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 	RzAnalysisEsil *esil = core->analysis->esil;
 
 	switch (input[0]) {
-	case 'p':
-		switch (input[1]) {
-		case 'c': // "aepc"
-			if (input[2] == ' ' || input[2] == '=') {
-				// seek to this address
-				ut64 pc_val = rz_num_math(core->num, rz_str_trim_head_ro(input + 3));
-				rz_core_analysis_set_reg(core, "PC", pc_val);
-			} else {
-				RZ_LOG_ERROR("core: Missing argument\n");
-			}
-			break;
-		default:
-			rz_core_cmd_help(core, help_msg_ae);
-			break;
-		}
-		break;
 	case '*': // "ae*"
 		// XXX: this is wip, not working atm
 		if (core->analysis->esil) {
@@ -6569,5 +6553,7 @@ RZ_IPI RzCmdStatus rz_analyze_esil_eval_expr_handler(RzCore *core, int argc, con
 }
 
 RZ_IPI RzCmdStatus rz_analyze_esil_set_pc_handler(RzCore *core, int argc, const char **argv) {
-	
+	ut64 pc_val = rz_num_math(core->num, argv[1]);
+	rz_core_analysis_set_reg(core, "PC", pc_val);
+	return RZ_CMD_STATUS_OK;
 }

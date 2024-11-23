@@ -2412,3 +2412,9 @@ commands:
           - name: expr
             type: RZ_CMD_ARG_TYPE_STRING
             optional: true
+      - name: aepc
+        summary: Set ESIL PC to given address.
+        cname: analyze_esil_set_pc
+        args:
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_NUM
