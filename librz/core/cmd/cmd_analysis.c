@@ -1556,12 +1556,6 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 		}
 		rz_reg_setv(reg, "PC", pc);
 	} break;
-	case '?': // "ae?"
-		if (input[1] == '?') {
-			rz_core_cmd_help(core, help_detail_ae);
-			break;
-		}
-		/* fallthrough */
 	default:
 		rz_core_cmd_help(core, help_msg_ae);
 		break;
@@ -6547,5 +6541,10 @@ RZ_IPI RzCmdStatus rz_analyze_esil_emu_fcn_handler(RzCore *core, int argc, const
 RZ_IPI RzCmdStatus rz_analyze_esil_emu_fcn_find_args_handler(RzCore *core, int argc, const char **argv) {
 	ut64 addr = argc == 0 ? core->offset : rz_num_math(core->num, argv[1]);
 	rz_analysis_aefa(core, addr);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analyze_esil_expr_help_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_cmd_help(core, help_detail_ae);
 	return RZ_CMD_STATUS_OK;
 }

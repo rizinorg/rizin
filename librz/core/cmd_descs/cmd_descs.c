@@ -6464,6 +6464,14 @@ static const RzCmdDescHelp analyze_esil_eval_expr_help = {
 	.args = analyze_esil_eval_expr_args,
 };
 
+static const RzCmdDescArg analyze_esil_expr_help_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analyze_esil_expr_help_help = {
+	.summary = "Show ESIL help.",
+	.args = analyze_esil_expr_help_args,
+};
+
 static const RzCmdDescArg analyze_esil_emulate_block_args[] = {
 	{ 0 },
 };
@@ -6532,6 +6540,7 @@ static const RzCmdDescArg analyze_esil_emu_fcn_args[] = {
 	{
 		.name = "addr",
 		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
 
 	},
 	{ 0 },
@@ -6545,6 +6554,7 @@ static const RzCmdDescArg analyze_esil_emu_fcn_find_args_args[] = {
 	{
 		.name = "addr",
 		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
 
 	},
 	{ 0 },
@@ -20395,6 +20405,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *ae_cd = rz_cmd_desc_group_new(core->rcmd, cmd_analysis_cd, "ae", rz_analyze_esil_eval_expr_handler, &analyze_esil_eval_expr_help, &ae_help);
 	rz_warn_if_fail(ae_cd);
+	RzCmdDesc *analyze_esil_expr_help_cd = rz_cmd_desc_argv_new(core->rcmd, ae_cd, "aeH", rz_analyze_esil_expr_help_handler, &analyze_esil_expr_help_help);
+	rz_warn_if_fail(analyze_esil_expr_help_cd);
+
 	RzCmdDesc *analyze_esil_emulate_block_cd = rz_cmd_desc_argv_new(core->rcmd, ae_cd, "aeb", rz_analyze_esil_emulate_block_handler, &analyze_esil_emulate_block_help);
 	rz_warn_if_fail(analyze_esil_emulate_block_cd);
 
