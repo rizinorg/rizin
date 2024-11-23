@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2009-2021 maijin <maijin21@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_cmd.h>
 #include <rz_core.h>
 #include <rz_util/rz_graph_drawable.h>
 
@@ -1452,29 +1453,6 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 			rz_cons_printf("trap-code: %d\n", core->analysis->esil->trap_code);
 		} else {
 			RZ_LOG_ERROR("core: esil vm not initialized. run `aei`\n");
-		}
-		break;
-	case 'k': // "aek"
-		switch (input[1]) {
-		case '\0': // "aek"
-			input = "123*";
-			/* fall through */
-		case ' ': // "aek "
-			if (esil && esil->stats) {
-				char *out = sdb_querys(esil->stats, NULL, 0, input + 2);
-				if (out) {
-					rz_cons_println(out);
-					free(out);
-				}
-			} else {
-				RZ_LOG_ERROR("core: esil.stats is empty. Run 'aei'\n");
-			}
-			break;
-		case '-': // "aek-"
-			if (esil) {
-				sdb_reset(esil->stats);
-			}
-			break;
 		}
 		break;
 	case 'l': // ael commands
@@ -6555,5 +6533,27 @@ RZ_IPI RzCmdStatus rz_analyze_esil_eval_expr_handler(RzCore *core, int argc, con
 RZ_IPI RzCmdStatus rz_analyze_esil_set_pc_handler(RzCore *core, int argc, const char **argv) {
 	ut64 pc_val = rz_num_math(core->num, argv[1]);
 	rz_core_analysis_set_reg(core, "PC", pc_val);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analyze_esil_sdb_query_handler(RzCore *core, int argc, const char **argv) {
+	RzAnalysisEsil *esil = core->analysis->esil;
+	if (!esil || !esil->stats) {
+		RZ_LOG_ERROR("core: esil.stats is empty. Run 'aei'\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	char *out = sdb_querys(esil->stats, NULL, 0, argv[1]);
+	if (out) {
+		rz_cons_println(out);
+		free(out);
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analyze_esil_sdb_reset_handler(RzCore *core, int argc, const char **argv) {
+	RzAnalysisEsil *esil = core->analysis->esil;
+	if (esil) {
+		sdb_reset(esil->stats);
+	}
 	return RZ_CMD_STATUS_OK;
 }
