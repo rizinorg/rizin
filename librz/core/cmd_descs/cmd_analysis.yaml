@@ -2442,3 +2442,20 @@ commands:
         args:
           - name: bytes
             type: RZ_CMD_ARG_TYPE_STRING
+      - name: aef
+        summary: Emulate functions.
+        subcommands:
+          - name: aef
+            summary: Emulate function at given or current offset.
+            cname: analyze_esil_emu_fcn
+            args:
+              - name: addr
+                type: RZ_CMD_ARG_TYPE_NUM
+                optional: true
+          - name: aefa
+            summary: Emulate function at given or current offset to find arguments.
+            cname: analyze_esil_emu_fcn_find_args
+            args:
+              - name: addr
+                type: RZ_CMD_ARG_TYPE_NUM
+                optional: true

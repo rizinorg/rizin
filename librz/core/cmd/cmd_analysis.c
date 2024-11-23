@@ -1346,8 +1346,7 @@ static bool _aeli_iter(void *user, const ut64 key, const void *value) {
 	return true;
 }
 
-static void rz_analysis_aefa(RzCore *core, const char *arg) {
-	ut64 to = rz_num_math(core->num, arg);
+static void rz_analysis_aefa(RzCore *core, ut64 to) {
 	ut64 at, from = core->offset;
 	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, to, -1);
 	if (!from || from == UT64_MAX) {
@@ -1466,13 +1465,6 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 				}
 				break;
 			}
-		}
-		break;
-	case 'f': // "aef"
-		if (input[1] == 'a') { // "aefa"
-			rz_analysis_aefa(core, rz_str_trim_head_ro(input + 2));
-		} else { // This should be aefb -> because its emulating all the bbs
-			__analysis_esil_function(core, core->offset);
 		}
 		break;
 	case 'A': // "aeA"
@@ -6543,5 +6535,17 @@ RZ_IPI RzCmdStatus rz_analyze_esil_eval_opcode_expr_handler(RzCore *core, int ar
 		free(str2);
 	}
 	rz_analysis_op_fini(&aop);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analyze_esil_emu_fcn_handler(RzCore *core, int argc, const char **argv) {
+	ut64 addr = argc == 0 ? core->offset : rz_num_math(core->num, argv[1]);
+	__analysis_esil_function(core, addr);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analyze_esil_emu_fcn_find_args_handler(RzCore *core, int argc, const char **argv) {
+	ut64 addr = argc == 0 ? core->offset : rz_num_math(core->num, argv[1]);
+	rz_analysis_aefa(core, addr);
 	return RZ_CMD_STATUS_OK;
 }

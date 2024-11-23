@@ -320,6 +320,8 @@ static const RzCmdDescArg analyze_esil_eval_expr_args[2];
 static const RzCmdDescArg analyze_esil_set_pc_args[2];
 static const RzCmdDescArg analyze_esil_sdb_query_args[2];
 static const RzCmdDescArg analyze_esil_eval_opcode_expr_args[2];
+static const RzCmdDescArg analyze_esil_emu_fcn_args[2];
+static const RzCmdDescArg analyze_esil_emu_fcn_find_args_args[2];
 static const RzCmdDescArg block_args[2];
 static const RzCmdDescArg block_decrease_args[2];
 static const RzCmdDescArg block_increase_args[2];
@@ -6521,6 +6523,35 @@ static const RzCmdDescArg analyze_esil_eval_opcode_expr_args[] = {
 static const RzCmdDescHelp analyze_esil_eval_opcode_expr_help = {
 	.summary = "Emulate instruction encoded in the given bytes.",
 	.args = analyze_esil_eval_opcode_expr_args,
+};
+
+static const RzCmdDescHelp aef_help = {
+	.summary = "Emulate functions.",
+};
+static const RzCmdDescArg analyze_esil_emu_fcn_args[] = {
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analyze_esil_emu_fcn_help = {
+	.summary = "Emulate function at given or current offset.",
+	.args = analyze_esil_emu_fcn_args,
+};
+
+static const RzCmdDescArg analyze_esil_emu_fcn_find_args_args[] = {
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analyze_esil_emu_fcn_find_args_help = {
+	.summary = "Emulate function at given or current offset to find arguments.",
+	.args = analyze_esil_emu_fcn_find_args_args,
 };
 
 static const RzCmdDescHelp b_help = {
@@ -20377,6 +20408,11 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *analyze_esil_eval_opcode_expr_cd = rz_cmd_desc_argv_new(core->rcmd, ae_cd, "aex", rz_analyze_esil_eval_opcode_expr_handler, &analyze_esil_eval_opcode_expr_help);
 	rz_warn_if_fail(analyze_esil_eval_opcode_expr_cd);
+
+	RzCmdDesc *aef_cd = rz_cmd_desc_group_new(core->rcmd, ae_cd, "aef", rz_analyze_esil_emu_fcn_handler, &analyze_esil_emu_fcn_help, &aef_help);
+	rz_warn_if_fail(aef_cd);
+	RzCmdDesc *analyze_esil_emu_fcn_find_args_cd = rz_cmd_desc_argv_new(core->rcmd, aef_cd, "aefa", rz_analyze_esil_emu_fcn_find_args_handler, &analyze_esil_emu_fcn_find_args_help);
+	rz_warn_if_fail(analyze_esil_emu_fcn_find_args_cd);
 
 	RzCmdDesc *b_cd = rz_cmd_desc_group_state_new(core->rcmd, root_cd, "b", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_block_handler, &block_help, &b_help);
 	rz_warn_if_fail(b_cd);
