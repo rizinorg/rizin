@@ -3479,7 +3479,9 @@ RZ_IPI RzCmdStatus rz_print_current_block_json_handler(RzCore *core, int argc, c
 	bool enable_color = rz_config_get_i(core->config, "escr.color") != 0;
 	char *res = rz_print_json_indent((const char *)core->block, enable_color, "  ", NULL);
 	if (RZ_STR_ISEMPTY(res)) {
-		rz_cons_printf("Couldn't find a JSON string.\n");
+		free(res);
+		RZ_LOG_ERROR("Couldn't find a JSON string.\n");
+		return RZ_CMD_STATUS_ERROR;
 	} else {
 		rz_cons_printf("%s\n", res);
 	}

@@ -310,6 +310,5 @@ EXPECT=<<EOF
     "b": 0
   }
 }
-Couldn't find a JSON string.
-EOF 
+EOF
 RUN
