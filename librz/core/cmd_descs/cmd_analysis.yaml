@@ -2514,7 +2514,9 @@ commands:
                   - text: "n"
                     comment: "Show regs not written in N instructions."
                   - text: "b"
-                    comment: "Show regs used in current basic block. The [len] parameter, if not 0, is interpreted as address."
+                    comment: >
+                      Show regs used in current basic block. The [len] parameter,
+                      if not 0, is interpreted as address.
                   - text: "f"
                     comment: "Show regs used in current function."
                   - text: "d"
