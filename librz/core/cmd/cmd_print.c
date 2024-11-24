@@ -4371,6 +4371,36 @@ RZ_IPI RzCmdStatus rz_print_pattern8_handler(RzCore *core, int argc, const char 
 	return RZ_CMD_STATUS_OK;
 }
 
+static void incAlphaBuffer(ut8 *buf, int bufsz) {
+	int i = 0;
+	while (i < bufsz) {
+		buf[i]++;
+		if (buf[i] && isalpha(buf[i])) {
+			break;
+		}
+		if (!buf[i]) {
+			i++;
+			continue;
+		}
+	}
+	// may overflow/hang/end/stop/whatever here
+}
+
+static void incDigitBuffer(ut8 *buf, int bufsz) {
+	int i = 0;
+	while (i < bufsz) {
+		buf[i]++;
+		if (buf[i] && isdigit(buf[i])) {
+			break;
+		}
+		if (!buf[i]) {
+			i++;
+			continue;
+		}
+	}
+	// may overflow/hang/end/stop/whatever here
+}
+
 RZ_IPI RzCmdStatus rz_print_pattern_latin_alphabet_handler(RzCore *core, int argc, const char **argv) {
 	st64 len = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize;
 	if (len < 1) {
