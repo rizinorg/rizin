@@ -6458,7 +6458,6 @@ static const RzCmdDescArg analyze_esil_eval_expr_args[] = {
 		.name = "expr",
 		.type = RZ_CMD_ARG_TYPE_STRING,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
 
 	},
 	{ 0 },

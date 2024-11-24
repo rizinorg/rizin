@@ -2411,7 +2411,6 @@ commands:
         args:
           - name: expr
             type: RZ_CMD_ARG_TYPE_STRING
-            optional: true
       - name: aeH
         summary: Show ESIL help.
         cname: analyze_esil_expr_help
