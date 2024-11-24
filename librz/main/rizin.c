@@ -1272,10 +1272,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			ret = 1;
 			goto beach;
 		}
-		if (r->bin->cur && r->bin->cur->o && r->bin->cur->o->info && r->bin->cur->o->info->rclass && !strcmp("fs", r->bin->cur->o->info->rclass)) {
-			const char *fstype = r->bin->cur->o->info->bclass;
-			rz_core_cmdf(r, "m /root %s @ 0", fstype);
-		}
 		// initalize io subsystem
 		char *res = rz_io_system(r->io, NULL);
 		if (res) {
