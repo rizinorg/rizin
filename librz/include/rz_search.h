@@ -55,17 +55,21 @@ typedef struct rz_search_hit_t {
 	ut64 addr;
 } RzSearchHit;
 
-typedef bool (*RzSearchCallback)(RzSearchKeyword *kw, void *user, ut64 where);
+typedef bool (*RzSearchCancelCallback)(void *user);
+typedef bool (*RzSearchHitCallback)(RzSearchKeyword *kw, void *user, ut64 where);
+typedef int (*RzSearchUpdate)(struct rz_search_t *s, ut64 from, const ut8 *buf, int len);
 
 typedef struct rz_search_t {
 	// internal data structures.
 	RzIOBind iob; ///< RzIO bindings
 	void *data; ///< Pointer to data owned by search algorithm
-	int (*update)(struct rz_search_t *s, ut64 from, const ut8 *buf, int len);
+	RzSearchUpdate update; ///< Update callback
 
 	// User defined functions.
-	void *user; ///< Pointer to user data passed to callback
-	RzSearchCallback callback; ///< Callback called on hit
+	void *hit_user; ///< Pointer to user data passed to callback
+	RzSearchHitCallback hit_callback; ///< Callback called on hit
+	void *cancel_user; ///< Pointer to user data passed to callback
+	RzSearchCancelCallback cancel_callback; ///< Callback called on hit
 
 	// variables
 	int n_kws; ///< Counter used to define the number of keywords in list hit${n_kws}_${nhits}
@@ -107,8 +111,7 @@ RZ_API void rz_search_free(RZ_NULLABLE RzSearch *s);
 
 /* keyword management */
 RZ_API RzList /*<RzSearchHit *>*/ *rz_search_find(RzSearch *s, ut64 addr, const ut8 *buf, int len);
-RZ_API int rz_search_update(RzSearch *s, ut64 from, const ut8 *buf, long len);
-RZ_API int rz_search_update_i(RzSearch *s, ut64 from, const ut8 *buf, long len);
+RZ_API int rz_search_update(RzSearch *s, ut64 from, const ut8 *buf, size_t len);
 
 RZ_API void rz_search_keyword_free(RzSearchKeyword *kw);
 RZ_API RZ_OWN RzSearchKeyword *rz_search_keyword_new(const ut8 *kw_buf, int kw_len, RZ_NULLABLE const ut8 *bm_buf, int bm_buf_len, RZ_NULLABLE const char *data);
@@ -150,7 +153,8 @@ RZ_API bool rz_search_set_from_addr(RZ_NONNULL RzSearch *s, ut64 from_addr);
 RZ_API bool rz_search_set_to_addr(RZ_NONNULL RzSearch *s, ut64 to_addr);
 RZ_API bool rz_search_set_prefix(RZ_NONNULL RzSearch *s, RZ_NULLABLE const char *prefix);
 RZ_API bool rz_search_set_command(RZ_NONNULL RzSearch *s, RZ_NULLABLE const char *command);
-RZ_API bool rz_search_set_callback(RZ_NONNULL RzSearch *s, RZ_NULLABLE RzSearchCallback(callback), RZ_NULLABLE void *user);
+RZ_API bool rz_search_set_hit_callback(RZ_NONNULL RzSearch *s, RZ_NULLABLE RzSearchHitCallback callback, RZ_NULLABLE void *user);
+RZ_API bool rz_search_set_cancel_callback(RZ_NONNULL RzSearch *s, RZ_NULLABLE RzSearchCancelCallback callback, RZ_NULLABLE void *user);
 
 RZ_API int rz_search_begin(RzSearch *s);
 

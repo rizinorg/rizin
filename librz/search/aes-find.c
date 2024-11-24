@@ -40,7 +40,7 @@ static bool aes128_key_test(const unsigned char *buf) {
 	return word1 && word2;
 }
 
-RZ_API int rz_search_aes_update(RzSearch *s, ut64 from, const ut8 *buf, int len) {
+RZ_API int rz_search_aes_update(RzSearch *s, ut64 from, const ut8 *buf, size_t len) {
 	int i, t, last = len - AES128_SEARCH_LENGTH;
 	RzListIter *iter;
 	RzSearchKeyword *kw;

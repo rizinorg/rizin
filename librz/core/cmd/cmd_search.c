@@ -14,10 +14,7 @@ typedef struct search_parameters {
 	RzCore *core; ///< RzCore instance to use
 	RzCmdStateOutput *state; ///< RzCmdStateOutput to use to print data.
 	RzList /*<RzIOMap *>*/ *boundaries;
-	const char *cmd_hit;
-	bool inverse;
-	bool aes_search;
-	bool privkey_search;
+	bool progress;
 } search_parameters_t;
 
 RZ_IPI RzCmdStatus rz_cmd_info_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
@@ -189,6 +186,184 @@ RZ_API int rz_core_search_preludes(RzCore *core, bool log) {
 	return ret;
 }
 
+static bool core_get_interval(RzCore *core, RzInterval *itv) {
+	const ut64 search_from = core->search->from_addr;
+	const ut64 search_to = core->search->to_addr;
+	if (search_from > search_to) {
+		RZ_LOG_ERROR("core: cannot perform search when 'search.from' is greater than 'search.to'\n");
+		return false;
+	} else if (search_from == search_to && search_from != UT64_MAX) {
+		RZ_LOG_ERROR("core: cannot perform search when 'search.from' is equal to 'search.to'\n");
+		return false;
+	}
+
+	itv->addr = search_from;
+	itv->size = search_to - search_from;
+	if (itv->addr == UT64_MAX && !itv->size) {
+		RZ_LOG_WARN("core: 'search.from' and 'search.to' are equal to 0x%" PFMT64x "\n", UT64_MAX);
+		RZ_LOG_WARN("core: search will be performed from address 0 to address 0x%" PFMT64x "\n", UT64_MAX);
+		itv->addr = 0;
+		itv->size = UT64_MAX;
+	}
+
+	return true;
+}
+
+
+static bool search_hit_callback_string(RzSearchKeyword *kw, void *user, ut64 where) {
+	return true;
+}
+
+typedef struct search_progress_ctx {
+	bool show_progress;
+	search_parameters_t *param;
+} search_progress_ctx_t;
+
+static inline void print_search_progress(ut64 at, ut64 to, int n, search_parameters_t *param) {
+	if ((++c % 64) || (param->state->mode == RZ_OUTPUT_MODE_JSON)) {
+		return;
+	}
+	if (rz_cons_singleton()->columns < 50) {
+		eprintf("\r[  ]  0x%08" PFMT64x "  hits = %d   \r%s",
+			at, n, (c % 2) ? "[ #]" : "[# ]");
+	} else {
+		eprintf("\r[  ]  0x%08" PFMT64x " < 0x%08" PFMT64x "  hits = %d   \r%s",
+			at, to, n, (c % 2) ? "[ #]" : "[# ]");
+	}
+}
+
+static RzCmdStatus do_string_search(RzCore *core, search_parameters_t *param) {
+	ut8 *buf;
+	RzSearch *search = core->search;
+	bool is_json = param->state->mode == RZ_OUTPUT_MODE_JSON;
+
+	RzListIter *iter;
+	RzIOMap *map;
+
+	if (search->n_kws < 1) {
+		RZ_LOG_ERROR("search: No keywords defined\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	rz_cmd_state_output_array_start(param->state);
+	rz_cmd_state_output_set_columnsf(param->state, "xss", "offset", "type", "data");
+
+	rz_search_set_callback(search, &search_hit_callback, param);
+	rz_search_set_cancel_callback(search, &search_hit_callback, param);
+	if (search->backwards) {
+		rz_search_string_prepare_backward(search);
+	}
+
+	rz_cons_break_push(NULL, NULL);
+	rz_list_foreach (param->boundaries, iter, map) {
+		const ut64 saved_nhits = search->nhits;
+		if (rz_cons_is_breaked()) {
+			break;
+		}
+		if (!is_json) {
+			RzSearchKeyword *kw = rz_list_first(search->kws);
+			ut32 lenstr = kw ? kw->keyword_length : 0;
+			eprintf("Searching %u bytes in [0x%" PFMT64x "-0x%" PFMT64x "]\n", lenstr, map->itv.addr, rz_itv_end(map->itv));
+		}
+		if (!search->backwards) {
+			RzListIter *it;
+			RzSearchKeyword *kw;
+			rz_list_foreach (search->kws, it, kw) {
+				kw->last = 0;
+			}
+		}
+
+		const ut64 from = search->backwards ? rz_itv_end(map->itv) : map->itv.addr;
+		const ut64 to = search->backwards ? map->itv.addr : rz_itv_end(map->itv);
+		ut64 len = 0;
+		for (ut64 at = from; at != to; at = search->backwards ? at - len : at + len) {
+			print_search_progress(at, to, search->nhits, param);
+			if (rz_cons_is_breaked()) {
+				eprintf("\n\n");
+				break;
+			}
+			if (search->backwards) {
+				len = RZ_MIN(core->blocksize, at - from);
+				// TODO prefix_read_at
+				if (!rz_io_is_valid_offset(core->io, at - len, 0)) {
+					break;
+				}
+				(void)rz_io_read_at(core->io, at - len, buf, len);
+			} else {
+				len = RZ_MIN(core->blocksize, to - at);
+				if (!rz_io_is_valid_offset(core->io, at, 0)) {
+					break;
+				}
+				(void)rz_io_read_at(core->io, at, buf, len);
+			}
+			rz_search_update(search, at, buf, len);
+			if (search->maxhits > 0 && search->nhits >= search->maxhits) {
+				goto done;
+			}
+		}
+		print_search_progress(at, to1, search->nhits, param);
+		rz_cons_clear_line(1);
+		core->num->value = search->nhits;
+		if (!is_json) {
+			eprintf("hits: %" PFMT64d "\n", search->nhits - saved_nhits);
+		}
+	}
+done:
+	rz_cons_break_pop();
+	free(buf);
+
+	rz_cmd_state_output_array_end(param->state);
+	return RZ_CMD_STATUS_OK;
+}
+
+static RzCmdStatus core_run_string_search(RzCore *core, RzCmdStateOutput *state, const char *search_arg) {
+	RzCmdStatus status = RZ_CMD_STATUS_ERROR;
+	RzInterval itv = { 0 };
+	search_parameters_t param = { 0 };
+
+	if (RZ_STR_ISEMPTY(search_arg)) {
+		RZ_LOG_ERROR("core: invalid utf8 string: empty string.\n");
+		return RZ_CMD_STATUS_WRONG_ARGS;
+	} else if (!core->io) {
+		RZ_LOG_ERROR("core: Can't search when there is no open file.\n");
+		return RZ_CMD_STATUS_ERROR;
+	} else if (core->in_search) {
+		RZ_LOG_ERROR("core: detected recursive search.\n");
+		return RZ_CMD_STATUS_ERROR;
+	} else if (!core_get_interval(core, &itv)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	// initialize in_search and flagspace.
+	core->in_search = true;
+	rz_flag_space_push(core->flags, "search");
+	rz_search_set_command(core->search, rz_config_get(core->config, "cmd.hit"));
+
+	// setup core.
+	param.core = core;
+	param.state = state;
+
+	// setup param with core and cmd.hit
+	param.progress = rz_config_get_b(core->config, "search.progress");
+	param.progress = rz_config_get_b(core->config, "search.progress");
+	param.boundaries = rz_core_get_boundaries_select(core, "search.from", "search.to", "search.in");
+
+	// ensure to update the lastsearch variable with the search arg
+	free(core->lastsearch);
+	core->lastsearch = rz_str_dup(search_arg);
+
+	// perform the actual search.
+	rz_search_begin(core->search);
+	status = do_string_search(core, itv, param);
+
+	// set return value to the number of hits.
+	core->num->value = core->search->nhits;
+
+	rz_flag_space_pop(core->flags);
+	core->in_search = false;
+	return status;
+}
+
 RZ_IPI RzCmdStatus rz_cmd_utf8_string_search_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	char *search_arg = rz_str_dup(argv[1]);
 	if (!search_arg) {
@@ -217,10 +392,7 @@ RZ_IPI RzCmdStatus rz_cmd_utf8_string_search_handler(RzCore *core, int argc, con
 	rz_search_reset(core->search, RZ_SEARCH_MODE_KEYWORD);
 	rz_search_set_backwards(core->search, false);
 
-	search_parameters_t param = { 0 };
-	param.state = state;
-	// RzCmdStatus status = core_run_search(core, &param, argv[1]);
-	return RZ_CMD_STATUS_ERROR; // status;
+	return core_run_string_search(core, state, argv[1]);
 }
 
 RZ_IPI RzCmdStatus rz_cmd_wide_string_search_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {

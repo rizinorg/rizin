@@ -2447,6 +2447,12 @@ static bool cb_search_overlap(void *user, void *data) {
 	return rz_search_set_overlap(core->search, node->i_value ? true : false);
 }
 
+static bool cb_search_inverse(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	return rz_search_set_inverse(core->search, node->i_value ? true : false);
+}
+
 static bool cb_search_maxhits(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
@@ -3806,6 +3812,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETICB("search.distance", 0, &cb_search_distance, "Search string distance");
 	SETICB("search.flags", true, &cb_search_flags, "All search results are flagged, otherwise only printed");
 	SETICB("search.overlap", false, &cb_search_overlap, "Look for overlapped search hits");
+	SETICB("search.inverse", false, &cb_search_inverse, "Shows search progress (true: enable, false: disable)");
 	SETICB("search.maxhits", 0, &cb_search_maxhits, "Maximum number of hits (0: no limit)");
 	SETICB("search.from", 0, &cb_search_from, "Search start address");
 	SETICB("search.to", UT64_MAX, &cb_search_to, "Search end address");

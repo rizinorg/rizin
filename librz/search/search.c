@@ -713,7 +713,7 @@ RZ_API bool rz_search_set_command(RZ_NONNULL RzSearch *s, RZ_NULLABLE const char
 }
 
 /**
- * \brief      Sets the prefix keyword of the flag created on hit.
+ * \brief      Sets the callback to invoke on hit.
  *
  * \param      s        The RzSearch structure to use
  * \param      callback The callback pointer to set
@@ -721,30 +721,40 @@ RZ_API bool rz_search_set_command(RZ_NONNULL RzSearch *s, RZ_NULLABLE const char
  *
  * \return     True on success
  */
-RZ_API bool rz_search_set_callback(RZ_NONNULL RzSearch *s, RZ_NULLABLE RzSearchCallback(callback), RZ_NULLABLE void *user) {
+RZ_API bool rz_search_set_hit_callback(RZ_NONNULL RzSearch *s, RZ_NULLABLE RzSearchHitCallback callback, RZ_NULLABLE void *user) {
 	rz_return_val_if_fail(s, false);
-	s->callback = callback;
-	s->user = user;
+	s->hit_callback = callback;
+	s->hit_user = user;
+	return true;
+}
+
+/**
+ * \brief      Sets the callback to invoke to check if the user has cancelled the search operation.
+ *
+ * \param      s        The RzSearch structure to use
+ * \param      callback The callback pointer to set
+ * \param      user     The user pointer to set
+ *
+ * \return     True on success
+ */
+RZ_API bool rz_search_set_cancel_callback(RZ_NONNULL RzSearch *s, RZ_NULLABLE RzSearchCancelCallback callback, RZ_NULLABLE void *user) {
+	rz_return_val_if_fail(s, false);
+	s->cancel_callback = callback;
+	s->cancel_user = user;
 	return true;
 }
 
 // backward search: from points to the right endpoint
 // forward search: from points to the left endpoint
-RZ_API int rz_search_update(RzSearch *s, ut64 from, const ut8 *buf, long len) {
-	int ret = -1;
+RZ_API int rz_search_update(RzSearch *s, ut64 from, const ut8 *buf, size_t len) {
 	if (s->update) {
 		if (s->maxhits && s->nhits >= s->maxhits) {
 			return 0;
 		}
-		ret = s->update(s, from, buf, len);
-	} else {
-		eprintf("rz_search_update: No search method defined\n");
+		return s->update(s, from, buf, len);
 	}
-	return ret;
-}
-
-RZ_API int rz_search_update_i(RzSearch *s, ut64 from, const ut8 *buf, long len) {
-	return rz_search_update(s, from, buf, len);
+	RZ_LOG_ERROR("search: No 'update' search method defined\n");
+	return -1;
 }
 
 static bool listcb(RzSearchKeyword *k, void *user, ut64 addr) {
@@ -813,3 +823,6 @@ RZ_API void rz_search_kw_reset(RzSearch *s) {
 	rz_list_purge(s->hits);
 	RZ_FREE(s->data);
 }
+
+
+
