@@ -67,40 +67,52 @@ RZ_IPI RzCmdStatus rz_cmd_detail_gadget_handler(RzCore *core, int argc, const ch
 	return status;
 }
 
-static int __prelude_cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
-	RzCore *core = (RzCore *)user;
-	int depth = rz_config_get_i(core->config, "analysis.depth");
-	// eprintf ("ap: Found function prelude %d at 0x%08"PFMT64x"\n", preludecnt, addr);
-	rz_core_analysis_fcn(core, addr, -1, RZ_ANALYSIS_XREF_TYPE_NULL, depth);
-	preludecnt++;
-	return 1;
+typedef struct search_prelude_cb_ctx {
+	int counter; ///< Number of preludes found
+	RzCore *core; ///< RzCore to use
+	int depth; ///< analysis.depth value
+} search_prelude_cb_ctx_t;
+
+static bool search_prelude_cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
+	search_prelude_cb_ctx_t *ctx = (search_prelude_cb_ctx_t *)user;
+	ctx->counter++;
+	rz_core_analysis_fcn(ctx->core, addr, -1, RZ_ANALYSIS_XREF_TYPE_NULL, ctx->depth);
+	return true;
 }
 
 RZ_API int rz_core_search_prelude(RzCore *core, ut64 from, ut64 to, const ut8 *buf, int blen, const ut8 *mask, int mlen) {
-	ut64 at;
-	ut8 *b = (ut8 *)malloc(core->blocksize);
-	if (!b) {
-		return 0;
-	}
+	search_prelude_cb_ctx_t ctx = { 0 };
+	ut8 *b = NULL;
+
 	// TODO: handle sections ?
 	if (from >= to) {
 		RZ_LOG_ERROR("core: Invalid search range 0x%08" PFMT64x " - 0x%08" PFMT64x "\n", from, to);
-		free(b);
 		return 0;
 	}
+
+	b = (ut8 *)malloc(core->blocksize);
+	if (!b) {
+		RZ_LOG_ERROR("core: failed to allocate prelude search buffer with size %u\n", core->blocksize);
+		return 0;
+	}
+
+	// set RzCore.
+	ctx.core = core;
+	ctx.depth = rz_config_get_i(core->config, "analysis.depth");
+
 	rz_search_reset(core->search, RZ_SEARCH_MODE_KEYWORD);
 	rz_search_kw_add(core->search, rz_search_keyword_new(buf, blen, mask, mlen, NULL));
 	rz_search_begin(core->search);
-	rz_search_set_callback(core->search, &__prelude_cb_hit, core);
-	preludecnt = 0;
-	for (at = from; at < to; at += core->blocksize) {
-		if (rz_cons_is_breaked()) {
+	rz_search_set_callback(core->search, &search_prelude_cb_hit, &ctx);
+	for (ut64 at = from; at < to; at += core->blocksize) {
+		if (rz_cons_is_breaked() ||
+			!rz_io_is_valid_offset(core->io, at, 0)) {
 			break;
 		}
-		if (!rz_io_is_valid_offset(core->io, at, 0)) {
+		if (rz_io_read_at(core->io, at, b, core->blocksize)) {
+			RZ_LOG_ERROR("core: failed to read at 0x%08" PFMT64x "\n", at);
 			break;
 		}
-		(void)rz_io_read_at(core->io, at, b, core->blocksize);
 		if (rz_search_update(core->search, at, b, core->blocksize) == -1) {
 			RZ_LOG_ERROR("core: update read error at 0x%08" PFMT64x "\n", at);
 			break;
@@ -111,7 +123,7 @@ RZ_API int rz_core_search_prelude(RzCore *core, ut64 from, ut64 to, const ut8 *b
 	// For now we will just use rz_search_kw_reset
 	rz_search_kw_reset(core->search);
 	free(b);
-	return preludecnt;
+	return ctx.counter;
 }
 
 RZ_API int rz_core_search_preludes(RzCore *core, bool log) {

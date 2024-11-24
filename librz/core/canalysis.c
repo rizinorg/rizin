@@ -1505,7 +1505,7 @@ static bool is_skippable_addr(RzCore *core, ut64 addr) {
 RZ_API int rz_core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, int depth) {
 	if (from == UT64_MAX && is_skippable_addr(core, at)) {
 		RZ_LOG_DEBUG("invalid address for function 0x%08" PFMT64x "\n", at);
-		return 0;
+		return false;
 	}
 
 	const bool use_esil = rz_config_get_i(core->config, "analysis.esil");
