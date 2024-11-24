@@ -61,10 +61,30 @@ RZ_IPI RzCmdStatus rz_interpret_pipe_handler(RzCore *core, int argc, const char 
 RZ_IPI RzCmdStatus rz_interpret_macro_handler(RzCore *core, int argc, const char **argv);
 // "..("
 RZ_IPI RzCmdStatus rz_interpret_macro_multiple_handler(RzCore *core, int argc, const char **argv);
-// "/"
-RZ_IPI RzCmdStatus rz_cmd_utf8_string_search_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "//"
 RZ_IPI int rz_cmd_search(void *data, const char *input);
+// "/a"
+RZ_IPI RzCmdStatus rz_cmd_assemble_search_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/c"
+RZ_IPI RzCmdStatus rz_cmd_cryptographic_material_search_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/e"
+RZ_IPI RzCmdStatus rz_cmd_regex_raw_search_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/g"
+RZ_IPI RzCmdStatus rz_cmd_graph_path_search_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/gg"
+RZ_IPI RzCmdStatus rz_cmd_graph_path_follow_jumps_search_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/h"
+RZ_IPI RzCmdStatus rz_cmd_hash_block_search_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/m"
+RZ_IPI RzCmdStatus rz_cmd_magic_const_search_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/p"
+RZ_IPI RzCmdStatus rz_cmd_pattern_raw_search_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/P"
+RZ_IPI RzCmdStatus rz_cmd_similarity_raw_search_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/s"
+RZ_IPI RzCmdStatus rz_cmd_entropy_section_search_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/r"
+RZ_IPI RzCmdStatus rz_cmd_reference_search_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/R"
 RZ_IPI RzCmdStatus rz_cmd_info_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/R/"
@@ -73,6 +93,28 @@ RZ_IPI RzCmdStatus rz_cmd_search_gadget_handler(RzCore *core, int argc, const ch
 RZ_IPI RzCmdStatus rz_cmd_query_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/Rg"
 RZ_IPI RzCmdStatus rz_cmd_detail_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/v1"
+RZ_IPI RzCmdStatus rz_cmd_value_8_search_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/v2"
+RZ_IPI RzCmdStatus rz_cmd_value_16_search_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/v4"
+RZ_IPI RzCmdStatus rz_cmd_value_32_search_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/v8"
+RZ_IPI RzCmdStatus rz_cmd_value_64_search_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/x"
+RZ_IPI RzCmdStatus rz_cmd_hex_search_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/x!"
+RZ_IPI RzCmdStatus rz_cmd_non_matching_hex_search_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/z"
+RZ_IPI RzCmdStatus rz_cmd_utf8_string_search_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/zi"
+RZ_IPI RzCmdStatus rz_cmd_utf8_string_insensitive_search_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/zs"
+RZ_IPI RzCmdStatus rz_cmd_size_string_search_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/zw"
+RZ_IPI RzCmdStatus rz_cmd_wide_string_search_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/zwi"
+RZ_IPI RzCmdStatus rz_cmd_wide_string_insensitive_search_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "R"
 RZ_IPI RzCmdStatus rz_remote_handler(RzCore *core, int argc, const char **argv);
 // "R<"

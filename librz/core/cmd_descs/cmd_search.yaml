@@ -3,9 +3,14 @@
 ---
 name: cmd_search
 commands:
-  - name: "/"
-    summary: Raw utf-8 string search
-    cname: cmd_utf8_string_search
+  - name: "//"
+    summary: Repeat the last seach
+    cname: cmd_search
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+
+  - name: "/a"
+    summary: Assemble the opcodes and search its bytes
+    cname: cmd_assemble_search
     type: RZ_CMD_DESC_TYPE_ARGV_STATE
     default_mode: RZ_OUTPUT_MODE_STANDARD
     modes:
@@ -14,13 +19,155 @@ commands:
       - RZ_OUTPUT_MODE_QUIET
       - RZ_OUTPUT_MODE_TABLE
     args:
-      - name: utf8-string
+      - name: opcodes
         type: RZ_CMD_ARG_TYPE_STRING
 
-  - name: "//"
-    cname: cmd_search
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
-    summary: Search for bytes, regexps, patterns, .. (old command)
+  - name: "/c"
+    summary: Cryptographic material search
+    cname: cmd_cryptographic_material_search
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    default_mode: RZ_OUTPUT_MODE_STANDARD
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_QUIET
+      - RZ_OUTPUT_MODE_TABLE
+    args: []
+
+  - name: "/e"
+    summary: Raw regular expression search.
+    cname: cmd_regex_raw_search
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    default_mode: RZ_OUTPUT_MODE_STANDARD
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_QUIET
+      - RZ_OUTPUT_MODE_TABLE
+    args:
+      - name: regex
+        type: RZ_CMD_ARG_TYPE_STRING
+
+  - name: "/g"
+    summary: Search for all graph paths A to B (/gg follow jumps, see search.count and analysis.depth).
+    subcommands:
+    - name: "/g"
+      summary: Search for all graph paths A to B (does not follow jumps).
+      cname: cmd_graph_path_search
+      type: RZ_CMD_DESC_TYPE_ARGV_STATE
+      default_mode: RZ_OUTPUT_MODE_STANDARD
+      modes:
+        - RZ_OUTPUT_MODE_STANDARD
+        - RZ_OUTPUT_MODE_JSON
+        - RZ_OUTPUT_MODE_QUIET
+        - RZ_OUTPUT_MODE_TABLE
+      args:
+        - name: from
+          type: RZ_CMD_ARG_TYPE_RZNUM
+        - name: to
+          type: RZ_CMD_ARG_TYPE_RZNUM
+    - name: "/gg"
+      summary: Search for all graph paths A to B (follow jumps, see `search.count` and `analysis.depth`).
+      cname: cmd_graph_path_follow_jumps_search
+      type: RZ_CMD_DESC_TYPE_ARGV_STATE
+      default_mode: RZ_OUTPUT_MODE_STANDARD
+      modes:
+        - RZ_OUTPUT_MODE_STANDARD
+        - RZ_OUTPUT_MODE_JSON
+        - RZ_OUTPUT_MODE_QUIET
+        - RZ_OUTPUT_MODE_TABLE
+      args:
+        - name: from
+          type: RZ_CMD_ARG_TYPE_RZNUM
+        - name: to
+          type: RZ_CMD_ARG_TYPE_RZNUM
+
+  - name: "/h"
+    summary: Search for blocks that has the same given hash (see also command `ph`).
+    cname: cmd_hash_block_search
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    default_mode: RZ_OUTPUT_MODE_STANDARD
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_QUIET
+      - RZ_OUTPUT_MODE_TABLE
+    args:
+      - name: algo
+        type: RZ_CMD_ARG_TYPE_STRING
+      - name: hash
+        type: RZ_CMD_ARG_TYPE_STRING
+    details:
+      - name: Usage example
+        entries:
+          - text: "MD5 hash search within blocks of 512 bytes."
+            comment: "/h md5 0bc8f8c426b74ffaedac8330a7464014 @! 512"
+
+  - name: "/m"
+    summary: Magic constants search.
+    cname: cmd_magic_const_search
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    default_mode: RZ_OUTPUT_MODE_STANDARD
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_QUIET
+      - RZ_OUTPUT_MODE_TABLE
+    args: []
+
+  - name: "/p"
+    summary: Pattern search.
+    cname: cmd_pattern_raw_search
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    default_mode: RZ_OUTPUT_MODE_STANDARD
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_QUIET
+      - RZ_OUTPUT_MODE_TABLE
+    args:
+      - name: pattern
+        type: RZ_CMD_ARG_TYPE_STRING
+
+  - name: "/P"
+    summary: Similarity search.
+    cname: cmd_similarity_raw_search
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    default_mode: RZ_OUTPUT_MODE_STANDARD
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_QUIET
+      - RZ_OUTPUT_MODE_TABLE
+    args: []
+
+  - name: "/s"
+    summary: Entropy search on sections by grouping in blocks.
+    cname: cmd_entropy_section_search
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    default_mode: RZ_OUTPUT_MODE_STANDARD
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_QUIET
+      - RZ_OUTPUT_MODE_TABLE
+    args:
+      - name: threshold
+        type: RZ_CMD_ARG_TYPE_STRING
+
+  - name: "/r"
+    summary: Reference search.
+    cname: cmd_reference_search
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    default_mode: RZ_OUTPUT_MODE_STANDARD
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_QUIET
+      - RZ_OUTPUT_MODE_TABLE
+    args:
+      - name: address
+        type: RZ_CMD_ARG_TYPE_RZNUM
 
   - name: "/R"
     summary: Search, List, Query for ROP Gadgets
@@ -80,3 +227,207 @@ commands:
           - name: Gadget address
             type: RZ_CMD_ARG_TYPE_STRING
             optional: true
+
+  - name: "/v"
+    summary: Value search.
+    subcommands:
+    - name: "/v1"
+      summary: 8-bit value search.
+      cname: cmd_value_8_search
+      type: RZ_CMD_DESC_TYPE_ARGV_STATE
+      default_mode: RZ_OUTPUT_MODE_STANDARD
+      modes:
+        - RZ_OUTPUT_MODE_STANDARD
+        - RZ_OUTPUT_MODE_JSON
+        - RZ_OUTPUT_MODE_QUIET
+        - RZ_OUTPUT_MODE_TABLE
+      args:
+        - name: value8
+          type: RZ_CMD_ARG_TYPE_NUM
+        - name: type
+          type: RZ_CMD_ARG_TYPE_CHOICES
+          optional: true
+          choices: ["unsigned", "signed"]
+
+    - name: "/v2"
+      summary: 16-bit size value search.
+      cname: cmd_value_16_search
+      type: RZ_CMD_DESC_TYPE_ARGV_STATE
+      default_mode: RZ_OUTPUT_MODE_STANDARD
+      modes:
+        - RZ_OUTPUT_MODE_STANDARD
+        - RZ_OUTPUT_MODE_JSON
+        - RZ_OUTPUT_MODE_QUIET
+        - RZ_OUTPUT_MODE_TABLE
+      args:
+        - name: value16
+          type: RZ_CMD_ARG_TYPE_NUM
+        - name: type
+          type: RZ_CMD_ARG_TYPE_CHOICES
+          optional: true
+          choices: ["unsigned", "signed"]
+
+    - name: "/v4"
+      summary: 32-bit size value search.
+      cname: cmd_value_32_search
+      type: RZ_CMD_DESC_TYPE_ARGV_STATE
+      default_mode: RZ_OUTPUT_MODE_STANDARD
+      modes:
+        - RZ_OUTPUT_MODE_STANDARD
+        - RZ_OUTPUT_MODE_JSON
+        - RZ_OUTPUT_MODE_QUIET
+        - RZ_OUTPUT_MODE_TABLE
+      args:
+        - name: value32
+          type: RZ_CMD_ARG_TYPE_NUM
+        - name: type
+          type: RZ_CMD_ARG_TYPE_CHOICES
+          optional: true
+          choices: ["unsigned", "signed"]
+
+    - name: "/v8"
+      summary: 64-bit size value search.
+      cname: cmd_value_64_search
+      type: RZ_CMD_DESC_TYPE_ARGV_STATE
+      default_mode: RZ_OUTPUT_MODE_STANDARD
+      modes:
+        - RZ_OUTPUT_MODE_STANDARD
+        - RZ_OUTPUT_MODE_JSON
+        - RZ_OUTPUT_MODE_QUIET
+        - RZ_OUTPUT_MODE_TABLE
+      args:
+        - name: value64
+          type: RZ_CMD_ARG_TYPE_NUM
+        - name: type
+          type: RZ_CMD_ARG_TYPE_CHOICES
+          optional: true
+          choices: ["unsigned", "signed"]
+    details:
+      - name: Usage example
+        entries:
+          - text: "512 value search of its 32-bit representation"
+            comment: "/v4 512"
+
+  - name: "/x"
+    summary: Raw hexadecimal search.
+    subcommands:
+    - name: "/x"
+      summary: Raw hexadecimal search.
+      cname: cmd_hex_search
+      type: RZ_CMD_DESC_TYPE_ARGV_STATE
+      default_mode: RZ_OUTPUT_MODE_STANDARD
+      modes:
+        - RZ_OUTPUT_MODE_STANDARD
+        - RZ_OUTPUT_MODE_JSON
+        - RZ_OUTPUT_MODE_QUIET
+        - RZ_OUTPUT_MODE_TABLE
+      args:
+        - name: bytes
+          type: RZ_CMD_ARG_TYPE_STRING
+      details:
+        - name: Usage example
+          entries:
+            - text: "Hexadecimal search of the exact bytes"
+              comment: "/x ffcc33"
+            - text: "Hexadecimal search of the bytes with ignored nibbles"
+              comment: "/x ff..33"
+            - text: "Hexadecimal search of the bytes with bytes mask"
+              comment: "/x ff43:ffd0"
+    - name: "/x!"
+      summary: Find the first not-matching occurrence of a hexadecimal buffer
+      cname: cmd_non_matching_hex_search
+      type: RZ_CMD_DESC_TYPE_ARGV_STATE
+      default_mode: RZ_OUTPUT_MODE_STANDARD
+      modes:
+        - RZ_OUTPUT_MODE_STANDARD
+        - RZ_OUTPUT_MODE_JSON
+        - RZ_OUTPUT_MODE_QUIET
+        - RZ_OUTPUT_MODE_TABLE
+      args:
+        - name: bytes
+          type: RZ_CMD_ARG_TYPE_STRING
+      details:
+        - name: Usage example
+          entries:
+            - text: "Hexadecimal search of the exact bytes"
+              comment: "/x ffcc33"
+            - text: "Hexadecimal search of the bytes with ignored nibbles"
+              comment: "/x ff..33"
+            - text: "Hexadecimal search of the bytes with bytes mask"
+              comment: "/x ff43:ffd0"
+
+  - name: "/z"
+    summary: String search.
+    subcommands:
+    - name: "/z"
+      summary: Raw utf-8 string search (case-sensitive).
+      cname: cmd_utf8_string_search
+      type: RZ_CMD_DESC_TYPE_ARGV_STATE
+      default_mode: RZ_OUTPUT_MODE_STANDARD
+      modes:
+        - RZ_OUTPUT_MODE_STANDARD
+        - RZ_OUTPUT_MODE_JSON
+        - RZ_OUTPUT_MODE_QUIET
+        - RZ_OUTPUT_MODE_TABLE
+      args:
+        - name: string
+          type: RZ_CMD_ARG_TYPE_STRING
+
+    - name: "/zi"
+      summary: Raw utf-8 string search (case-insensitive).
+      summary: Raw utf-8 string search (case-insensitive).
+      cname: cmd_utf8_string_insensitive_search
+      type: RZ_CMD_DESC_TYPE_ARGV_STATE
+      default_mode: RZ_OUTPUT_MODE_STANDARD
+      modes:
+        - RZ_OUTPUT_MODE_STANDARD
+        - RZ_OUTPUT_MODE_JSON
+        - RZ_OUTPUT_MODE_QUIET
+        - RZ_OUTPUT_MODE_TABLE
+      args:
+        - name: string
+          type: RZ_CMD_ARG_TYPE_STRING
+
+    - name: "/zs"
+      summary: Size based string search.
+      cname: cmd_size_string_search
+      type: RZ_CMD_DESC_TYPE_ARGV_STATE
+      default_mode: RZ_OUTPUT_MODE_STANDARD
+      modes:
+        - RZ_OUTPUT_MODE_STANDARD
+        - RZ_OUTPUT_MODE_JSON
+        - RZ_OUTPUT_MODE_QUIET
+        - RZ_OUTPUT_MODE_TABLE
+      args:
+        - name: min
+          type: RZ_CMD_ARG_TYPE_NUM
+        - name: max
+          type: RZ_CMD_ARG_TYPE_NUM
+
+    - name: "/zw"
+      summary: Raw wide string search (case-sensitive).
+      cname: cmd_wide_string_search
+      type: RZ_CMD_DESC_TYPE_ARGV_STATE
+      default_mode: RZ_OUTPUT_MODE_STANDARD
+      modes:
+        - RZ_OUTPUT_MODE_STANDARD
+        - RZ_OUTPUT_MODE_JSON
+        - RZ_OUTPUT_MODE_QUIET
+        - RZ_OUTPUT_MODE_TABLE
+      args:
+        - name: string
+          type: RZ_CMD_ARG_TYPE_STRING
+
+    - name: "/zwi"
+      summary: Raw wide string search (case-insensitive).
+      cname: cmd_wide_string_insensitive_search
+      type: RZ_CMD_DESC_TYPE_ARGV_STATE
+      default_mode: RZ_OUTPUT_MODE_STANDARD
+      modes:
+        - RZ_OUTPUT_MODE_STANDARD
+        - RZ_OUTPUT_MODE_JSON
+        - RZ_OUTPUT_MODE_QUIET
+        - RZ_OUTPUT_MODE_TABLE
+      args:
+        - name: string
+          type: RZ_CMD_ARG_TYPE_STRING
