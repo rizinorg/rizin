@@ -55,7 +55,7 @@ typedef struct rz_search_hit_t {
 	ut64 addr;
 } RzSearchHit;
 
-typedef int (*RzSearchCallback)(RzSearchKeyword *kw, void *user, ut64 where);
+typedef bool (*RzSearchCallback)(RzSearchKeyword *kw, void *user, ut64 where);
 
 typedef struct rz_search_t {
 	// internal data structures.

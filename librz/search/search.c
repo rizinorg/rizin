@@ -747,15 +747,15 @@ RZ_API int rz_search_update_i(RzSearch *s, ut64 from, const ut8 *buf, long len) 
 	return rz_search_update(s, from, buf, len);
 }
 
-static int listcb(RzSearchKeyword *k, void *user, ut64 addr) {
+static bool listcb(RzSearchKeyword *k, void *user, ut64 addr) {
 	RzSearchHit *hit = RZ_NEW0(RzSearchHit);
 	if (!hit) {
-		return 0;
+		return false;
 	}
 	hit->kw = k;
 	hit->addr = addr;
 	rz_list_append(user, hit);
-	return 1;
+	return true;
 }
 
 RZ_API RzList /*<RzSearchHit *>*/ *rz_search_find(RzSearch *s, ut64 addr, const ut8 *buf, int len) {

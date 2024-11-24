@@ -57,7 +57,7 @@ static void rzfind_options_init(RzfindOptions *ro) {
 
 static int rzfind_open(RzfindOptions *ro, const char *file);
 
-static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
+static bool hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 	RzfindOptions *ro = (RzfindOptions *)user;
 	int delta = addr - ro->cur;
 	if (ro->cur > addr && (ro->cur - addr == kw->keyword_length - 1)) {
@@ -66,7 +66,7 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 	}
 	if (delta < 0 || delta >= ro->bsize) {
 		eprintf("Invalid delta\n");
-		return 0;
+		return false;
 	}
 	char _str[128];
 	char *str = _str;
@@ -149,9 +149,8 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 			RZ_LOG_ERROR("Failed to execute command: %s\n", command);
 		}
 		free(command);
-		return 1;
 	}
-	return 1;
+	return true;
 }
 
 static void print_bin_string(RzBinFile *bf, RzBinString *string, PJ *pj) {
