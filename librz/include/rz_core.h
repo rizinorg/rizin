@@ -1330,7 +1330,6 @@ typedef bool (*RzCmdRegSync)(RzCore *core, RzRegisterType type, bool write);
 RZ_API bool rz_core_reg_assign_sync(RZ_NONNULL RzCore *core, RZ_NONNULL RzReg *reg, RzCmdRegSync sync_cb, RZ_NONNULL const char *name, ut64 val);
 RZ_API RZ_OWN RzList /*<RzRegItem *>*/ *rz_core_reg_filter_items_sync(RZ_NONNULL RzCore *core, RZ_NONNULL RzReg *reg, RzCmdRegSync sync_cb, RZ_NULLABLE const char *filter);
 
-RZ_API void rz_core_cmd_show_analysis_help(RZ_NONNULL RzCore *core);
 RZ_API void rz_core_rtr_enable(RZ_NONNULL RzCore *core, const char *cmdremote);
 
 RZ_API RZ_OWN char *rz_core_analysis_var_to_string(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnalysisVar *var);

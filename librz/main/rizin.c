@@ -1410,7 +1410,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		case 1: rz_core_perform_auto_analysis(r, RZ_CORE_ANALYSIS_SIMPLE); break;
 		case 2: rz_core_perform_auto_analysis(r, RZ_CORE_ANALYSIS_DEEP); break;
 		case 3: rz_core_perform_auto_analysis(r, RZ_CORE_ANALYSIS_EXPERIMENTAL); break;
-		default: rz_core_cmd_show_analysis_help(r); break;
+		default: break;
 		}
 		rz_cons_flush();
 	}
