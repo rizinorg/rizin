@@ -7,6 +7,7 @@
 #include <rz_util/rz_assert.h>
 #include <rz_util/rz_num.h>
 #include <rz_util/rz_graph_drawable.h>
+#include <rz_util/rz_log.h>
 
 #include "../core_private.h"
 
@@ -6382,7 +6383,7 @@ RZ_IPI RzCmdStatus rz_analyze_esil_int_remove_handler(RzCore *core, int argc, co
 
 RZ_IPI RzCmdStatus rz_analyze_esil_insn_access_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	int aea_mode = ((mode == RZ_OUTPUT_MODE_JSON) ? (1 << 4) : 0);
-	int len = rz_num_math(core->num, argv[2]);
+	int len = rz_num_math(core->num, argv[1]);
 	bool is_aeA = argc == 4;
 	if (is_aeA) {
 		aea_mode |= 1;
@@ -6401,10 +6402,11 @@ RZ_IPI RzCmdStatus rz_analyze_esil_insn_access_handler(RzCore *core, int argc, c
 		rz_reg_setv(reg, "PC", newPC);
 	}
 
-	const char cmd_type = argv[1][0];
+	const char cmd_type = argv[2][0];
 	switch (cmd_type) {
 	default:
-		rz_return_val_if_reached(RZ_CMD_STATUS_ERROR);
+		RZ_LOG_ERROR("Unhandled option: '%c'\n", cmd_type);
+		return RZ_CMD_STATUS_ERROR;
 	case 'r':
 		aea_mode |= (1 << 1);
 		break;

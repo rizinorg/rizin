@@ -70,7 +70,7 @@ RUN
 NAME=aea 15 -A
 FILE==
 ARGS=-a x86 -b64
-CMDS=wx 4889e5b8ffff000089c2c1ea1f01d0;aea 15 -A
+CMDS=wx 4889e5b8ffff000089c2c1ea1f01d0;aea 15 d -A
 EXPECT=<<EOF
  I: rsp eax edx
  A: rsp rbp rax eax rdx cf edx zf pf sf of af

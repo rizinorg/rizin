@@ -6613,6 +6613,7 @@ static const RzCmdDescDetailEntry analyze_esil_insn_access_Options_detail_entrie
 	{ .text = "n", .arg_str = NULL, .comment = "Show regs not written in N instructions." },
 	{ .text = "b", .arg_str = NULL, .comment = "Show regs used in current basic block. The [len] parameter, if not 0, is interpreted as address." },
 	{ .text = "f", .arg_str = NULL, .comment = "Show regs used in current function." },
+	{ .text = "d", .arg_str = NULL, .comment = "Show memory and register access." },
 	{ 0 },
 };
 
@@ -6637,16 +6638,16 @@ static const RzCmdDescDetail analyze_esil_insn_access_details[] = {
 static const char *analyze_esil_insn_access_type_choices[] = { "d", "*", "r", "w", "n", "b", "f", NULL };
 static const RzCmdDescArg analyze_esil_insn_access_args[] = {
 	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.default_value = "0",
+
+	},
+	{
 		.name = "type",
 		.type = RZ_CMD_ARG_TYPE_CHOICES,
 		.default_value = "d",
 		.choices.choices = analyze_esil_insn_access_type_choices,
-
-	},
-	{
-		.name = "len",
-		.type = RZ_CMD_ARG_TYPE_NUM,
-		.default_value = "0",
 
 	},
 	{

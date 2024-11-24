@@ -2485,13 +2485,13 @@ commands:
             summary: Show register and memory access of the next [len] instructions or bytes.
             cname: analyze_esil_insn_access
             args:
-              - name: type
-                type: RZ_CMD_ARG_TYPE_CHOICES
-                choices: ["d", "*", "r", "w", "n", "b", "f"]
-                default_value: "d"
               - name: len
                 type: RZ_CMD_ARG_TYPE_NUM
                 default_value: 0
+              - name: type
+                type: RZ_CMD_ARG_TYPE_CHOICES
+                choices: ['d', '*', 'r', 'w', 'n', 'b', 'f']
+                default_value: 'd'
               - name: A
                 type: RZ_CMD_ARG_TYPE_OPTION
                 optional: true
@@ -2517,6 +2517,8 @@ commands:
                     comment: "Show regs used in current basic block. The [len] parameter, if not 0, is interpreted as address."
                   - text: "f"
                     comment: "Show regs used in current function."
+                  - text: "d"
+                    comment: "Show memory and register access."
               - name: Legend
                 entries:
                   - text: "I"
