@@ -6480,7 +6480,7 @@ static const RzCmdDescArg analyze_esil_emulate_block_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp analyze_esil_emulate_block_help = {
-	.summary = "Emulate current block.",
+	.summary = "Emulate current block with ESIL.",
 	.args = analyze_esil_emulate_block_args,
 };
 
@@ -6498,7 +6498,7 @@ static const RzCmdDescHelp analyze_esil_set_pc_help = {
 };
 
 static const RzCmdDescHelp aek_help = {
-	.summary = "SDB queries on ESIL.info.",
+	.summary = "SDB queries on ESIL info (emulation statistics).",
 };
 static const RzCmdDescArg analyze_esil_sdb_query_args[] = {
 	{
@@ -6511,7 +6511,7 @@ static const RzCmdDescArg analyze_esil_sdb_query_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp analyze_esil_sdb_query_help = {
-	.summary = "Perform sdb query on ESIL.info.",
+	.summary = "Perform sdb query on ESIL info.",
 	.args = analyze_esil_sdb_query_args,
 };
 
@@ -6519,7 +6519,7 @@ static const RzCmdDescArg analyze_esil_sdb_reset_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp analyze_esil_sdb_reset_help = {
-	.summary = "Resets the ESIL.info sdb instance.",
+	.summary = "Resets the ESIL info sdb instance.",
 	.args = analyze_esil_sdb_reset_args,
 };
 
@@ -6533,12 +6533,12 @@ static const RzCmdDescArg analyze_esil_eval_opcode_expr_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp analyze_esil_eval_opcode_expr_help = {
-	.summary = "Emulate instruction encoded in the given bytes.",
+	.summary = "Emulate the instruction encoded in the given bytes with ESIL.",
 	.args = analyze_esil_eval_opcode_expr_args,
 };
 
 static const RzCmdDescHelp aef_help = {
-	.summary = "Emulate functions.",
+	.summary = "Emulate functions with ESIL.",
 };
 static const RzCmdDescArg analyze_esil_emu_fcn_args[] = {
 	{
@@ -6550,7 +6550,7 @@ static const RzCmdDescArg analyze_esil_emu_fcn_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp analyze_esil_emu_fcn_help = {
-	.summary = "Emulate function at given or current offset.",
+	.summary = "Emulate the function at given or current offset with ESIL.",
 	.args = analyze_esil_emu_fcn_args,
 };
 
@@ -6564,7 +6564,7 @@ static const RzCmdDescArg analyze_esil_emu_fcn_find_args_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp analyze_esil_emu_fcn_find_args_help = {
-	.summary = "Emulate function at given or current offset to find arguments.",
+	.summary = "Emulate function at given or current offset to find arguments with ESIL.",
 	.args = analyze_esil_emu_fcn_find_args_args,
 };
 
@@ -6600,7 +6600,7 @@ static const RzCmdDescHelp analyze_esil_int_remove_help = {
 };
 
 static const RzCmdDescHelp aea_help = {
-	.summary = "Emulate to retrieve arguments.",
+	.summary = "ESIL emulation to retrieve arguments.",
 };
 static const RzCmdDescDetailEntry analyze_esil_insn_access_Flag_detail_entries[] = {
 	{ .text = "A", .arg_str = NULL, .comment = "Interpret the [len] parameter as number of bytes. Not as number of instructions." },

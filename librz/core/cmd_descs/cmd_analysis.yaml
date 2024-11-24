@@ -2417,7 +2417,7 @@ commands:
         cname: analyze_esil_expr_help
         args: []
       - name: aeb
-        summary: Emulate current block.
+        summary: Emulate current block with ESIL.
         cname: analyze_esil_emulate_block
         args: []
       - name: aepc
@@ -2427,37 +2427,37 @@ commands:
           - name: addr
             type: RZ_CMD_ARG_TYPE_NUM
       - name: aek
-        summary: SDB queries on ESIL.info.
+        summary: SDB queries on ESIL info (emulation statistics).
         subcommands:
           - name: aek
-            summary: Perform sdb query on ESIL.info.
+            summary: Perform sdb query on ESIL info.
             cname: analyze_esil_sdb_query
             args:
               - name: query
                 type: RZ_CMD_ARG_TYPE_STRING
                 default_value: "123*"
           - name: aek-
-            summary: Resets the ESIL.info sdb instance.
+            summary: Resets the ESIL info sdb instance.
             cname: analyze_esil_sdb_reset
             args: []
       - name: aex
-        summary: Emulate instruction encoded in the given bytes.
+        summary: Emulate the instruction encoded in the given bytes with ESIL.
         cname: analyze_esil_eval_opcode_expr
         args:
           - name: bytes
             type: RZ_CMD_ARG_TYPE_STRING
       - name: aef
-        summary: Emulate functions.
+        summary: Emulate functions with ESIL.
         subcommands:
           - name: aef
-            summary: Emulate function at given or current offset.
+            summary: Emulate the function at given or current offset with ESIL.
             cname: analyze_esil_emu_fcn
             args:
               - name: addr
                 type: RZ_CMD_ARG_TYPE_NUM
                 optional: true
           - name: aefa
-            summary: Emulate function at given or current offset to find arguments.
+            summary: Emulate function at given or current offset to find arguments with ESIL.
             cname: analyze_esil_emu_fcn_find_args
             args:
               - name: addr
@@ -2480,7 +2480,7 @@ commands:
               - name: interrupt number
                 type: RZ_CMD_ARG_TYPE_NUM
       - name: aea
-        summary: Emulate to retrieve arguments.
+        summary: ESIL emulation to retrieve arguments.
         subcommands:
           - name: aea
             summary: Show register and memory access of the next [len] instructions or bytes.
