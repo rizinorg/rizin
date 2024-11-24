@@ -1744,7 +1744,6 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			rz_strbuf_fini(&op->esil);
 		}
 		cs_free(insn, n);
-		// cs_close (&handle);
 	}
 	return op->size;
 }
@@ -1780,6 +1779,7 @@ static RzAnalysisILConfig *il_config(RzAnalysis *analysis) {
 
 static bool ppc_fini(void *user) {
 	PPCContext *ctx = (PPCContext *)user;
+	cs_close(&ctx->handle);
 	if (ctx) {
 		RZ_FREE(ctx);
 	}
