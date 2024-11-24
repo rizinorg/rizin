@@ -19646,7 +19646,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *push_escaped_cd = rz_cmd_desc_argv_new(core->rcmd, root_cd, "<", rz_push_escaped_handler, &push_escaped_help);
 	rz_warn_if_fail(push_escaped_cd);
 
-	RzCmdDesc *cmd_analysis_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "a", rz_cmd_analysis, &cmd_analysis_help);
+	RzCmdDesc *cmd_analysis_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "a", NULL, NULL, &cmd_analysis_help);
 	rz_warn_if_fail(cmd_analysis_cd);
 	RzCmdDesc *aa_cd = rz_cmd_desc_group_new(core->rcmd, cmd_analysis_cd, "aa", rz_analyze_simple_handler, &analyze_simple_help, &aa_help);
 	rz_warn_if_fail(aa_cd);

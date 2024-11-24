@@ -5568,7 +5568,6 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		RzCmdCb cb;
 	} cmds[] = {
 		{ "/", "search kw, pattern aes", rz_cmd_search },
-		{ "a", "analysis", rz_cmd_analysis },
 		{ "k", "perform sdb query", rz_cmd_kuery },
 		{ "p", "print current block", rz_cmd_print },
 		{ "V", "enter visual mode", rz_cmd_visual },

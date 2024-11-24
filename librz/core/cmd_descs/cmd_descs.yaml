@@ -184,7 +184,6 @@ commands:
   - name: a
     cname: cmd_analysis
     summary: Analysis commands
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
     subcommands: cmd_analysis
   - name: b
     summary: Display or change the block size
