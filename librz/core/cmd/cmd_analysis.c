@@ -1935,11 +1935,6 @@ RZ_IPI int rz_cmd_analysis(void *data, const char *input) {
 	ut32 tbs = core->blocksize;
 	switch (input[0]) {
 	case 'e': cmd_analysis_esil(core, input + 1); break; // "ae"
-	case '*': // "a*"
-		rz_core_cmd0_rzshell(core, "afl*");
-		rz_core_cmd0_rzshell(core, "ah*");
-		rz_core_cmd0_rzshell(core, "ax*");
-		break;
 	default:
 		rz_core_cmd_help(core, help_msg_a);
 		break;
