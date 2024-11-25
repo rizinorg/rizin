@@ -19,6 +19,7 @@
 #define RIZIN_CMD_DEFAULT      "rizin"
 #define RZ_ASM_CMD_DEFAULT     "rz-asm"
 #define JSON_TEST_FILE_DEFAULT "bins/elf/crackme0x00b"
+#define TEST_DIR_DEFAULT       "."
 #define TIMEOUT_DEFAULT        960
 
 #define STRV(x)             #x
@@ -78,7 +79,7 @@ static int help(bool verbose) {
 			"-r",           "[rizin]",        "Path to rizin executable (default is " RIZIN_CMD_DEFAULT ")",
 			"-m",           "[rz-asm]",       "Path to rz-asm executable (default is " RZ_ASM_CMD_DEFAULT ")",
 			"-f",           "[file]",         "File to use for JSON tests (default is " JSON_TEST_FILE_DEFAULT ")",
-			"-C",           "[dir]",          "Chdir before running rz-test (default follows executable symlink + test/new)",
+			"-C",           "[dir]",          "Chdir before running rz-test (default is '" TEST_DIR_DEFAULT "')",
 			"-t",           "[seconds]",      "Timeout per test (default is " TIMEOUT_DEFAULT_STR " seconds)",
 			"-o",           "[file]",         "Output test run information in JSON format to file",
 			"-e",           "[dir]",          "Exclude a particular directory while testing (this option can appear many times)",
@@ -106,93 +107,8 @@ static int help(bool verbose) {
 	return 1;
 }
 
-static bool rz_test_chdir(const char *argv0) {
-#if __UNIX__
-	if (rz_file_is_directory("db")) {
-		return true;
-	}
-	char src_path[PATH_MAX];
-	char *rz_test_path = rz_file_path(argv0);
-	bool found = false;
-
-	ssize_t linklen = readlink(rz_test_path, src_path, sizeof(src_path) - 1);
-	if (linklen != -1) {
-		src_path[linklen] = '\0';
-		char *p = strstr(src_path, RZ_SYS_DIR "binrz" RZ_SYS_DIR "rz-test" RZ_SYS_DIR "rz-test");
-		if (p) {
-			*p = 0;
-			strcat(src_path, RZ_SYS_DIR "test" RZ_SYS_DIR);
-			if (rz_file_is_directory(src_path)) {
-				if (chdir(src_path) != -1) {
-					eprintf("Running from %s\n", src_path);
-					found = true;
-				} else {
-					eprintf("Cannot find '%s' directory\n", src_path);
-				}
-			}
-		}
-	} else {
-		eprintf("Cannot follow the link %s\n", src_path);
-	}
-	free(rz_test_path);
-	return found;
-#else
-	return false;
-#endif
-}
-
 static bool rz_test_test_run_unit(void) {
 	return rz_sys_system("make -C unit all run") == 0;
-}
-
-static bool rz_test_chdir_fromtest(const char *test_path) {
-	if (!test_path || *test_path == '@') {
-		test_path = "";
-	}
-	char *abs_test_path = rz_file_abspath(test_path);
-	if (!rz_file_is_directory(abs_test_path)) {
-		char *last_slash = (char *)rz_str_lchr(abs_test_path, RZ_SYS_DIR[0]);
-		if (last_slash) {
-			*last_slash = 0;
-		}
-	}
-	if (chdir(abs_test_path) == -1) {
-		free(abs_test_path);
-		return false;
-	}
-	free(abs_test_path);
-	bool found = false;
-	char *cwd = NULL;
-	char *old_cwd = NULL;
-	while (true) {
-		cwd = rz_sys_getdir();
-		if (old_cwd && !strcmp(old_cwd, cwd)) {
-			break;
-		}
-		if (rz_file_is_directory("test")) {
-			rz_sys_chdir("test");
-			if (rz_file_is_directory("db")) {
-				found = true;
-				eprintf("Running from %s\n", cwd);
-				break;
-			}
-			rz_sys_chdir("..");
-		}
-		if (rz_file_is_directory("db")) {
-			found = true;
-			eprintf("Running from %s\n", cwd);
-			break;
-		}
-		free(old_cwd);
-		old_cwd = cwd;
-		cwd = NULL;
-		if (chdir("..") == -1) {
-			break;
-		}
-	}
-	free(old_cwd);
-	free(cwd);
-	return found;
 }
 
 static bool log_mode = false;
@@ -338,14 +254,7 @@ int rz_test_main(int argc, const char **argv) {
 			goto beach;
 		}
 	} else {
-		bool dir_found = (opt.ind < argc && argv[opt.ind][0] != '.')
-			? rz_test_chdir_fromtest(argv[opt.ind])
-			: rz_test_chdir(argv[0]);
-		if (!dir_found) {
-			eprintf("Cannot find db/ directory related to the given test.\n");
-			ret = -1;
-			goto beach;
-		}
+		rz_test_dir = TEST_DIR_DEFAULT;
 	}
 
 	if (fuzz_dir) {
