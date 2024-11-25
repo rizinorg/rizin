@@ -282,7 +282,7 @@ struct rz_core_t {
 	RzLang *lang;
 	RzDebug *dbg;
 	RzFlag *flags;
-	RzSearch *search;
+	RzSearchOpt *search;
 	RzEgg *egg;
 	RzCrypto *crypto;
 	RzAGraph *graph;

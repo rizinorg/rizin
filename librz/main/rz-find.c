@@ -233,7 +233,7 @@ static int show_help(const char *argv0, int line) {
 
 static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data, int datalen) {
 	RzListIter *iter;
-	RzSearch *rs = NULL;
+	RzSearchOpt *rs = NULL;
 	const char *kw;
 	bool last = false;
 	int ret, result = 0;

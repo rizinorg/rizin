@@ -1,828 +1,177 @@
-// SPDX-FileCopyrightText: 2008-2016 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2024 RizinOrg <info@rizin.re>
+// SPDX-FileCopyrightText: 2024 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_search.h>
-#include <rz_list.h>
-#include <ctype.h>
-
-// Experimental search engine (fails, because stops at first hit of every block read
-#define USE_BMH 0
+#include "search_internal.h"
 
 RZ_LIB_VERSION(rz_search);
 
-typedef struct {
-	ut64 end;
-	int len;
-	ut8 data[];
-} SearchLeftover;
+typedef struct search_ctx {
+	RzIO *io; ///< the RzIO struct to use
+	RzSearchCollection *col; ///< collection to use
+	RzSearchOpt *opt; ///< User options
+	RzThreadQueue *hits; ///< Hits list
+	RzAtomicBool *loop; ///< used to stop or not the execution
+} search_ctx_t;
 
-/**
- * \param   s  The RzSearch structure to initialize
- *
- * \return  True on correct initialization
- */
-RZ_API bool rz_search_init(RZ_NONNULL RzSearch *s) {
-	rz_return_val_if_fail(s, false);
+static void *search_cancel_th(void *user) {
+	search_ctx_t *ctx = (search_ctx_t *)user;
+	RzSearchOpt *opt = ctx->opt;
 
-	s->mode = RZ_SEARCH_MODE_LAST; // ensures it is always invalid
-	s->string_max = RZ_SEARCH_DEFAULT_STRING_MAX;
-	s->string_min = RZ_SEARCH_DEFAULT_STRING_MIN;
-	s->hits = rz_list_newf(free);
-	s->kws = rz_list_newf((RzListFree)rz_search_keyword_free);
-	return s->kws && s->hits;
+	do {
+		size_t n_hits = rz_th_queue_size(ctx->hits);
+		if (!opt->cancel_cb(opt->cancel_usr, n_hits)) {
+			rz_atomic_bool_set(ctx->loop, false);
+			break;
+		}
+		rz_sys_usleep(100000);
+	} while (rz_atomic_bool_get(ctx->loop));
+
+	return NULL;
+}
+
+static bool search_iterator_cb(void *element, void *user) {
+	search_ctx_t *ctx = (search_ctx_t *)user;
+	RzIOMap *map = (RzIOMap *)element;
+	if (!map) {
+		return rz_atomic_bool_get(ctx->loop);
+	}
+
+	RzSearchOpt *opt = ctx->opt;
+	RzSearchCollection *col = ctx->col;
+
+	ut8 *buffer = malloc(opt->buffer_size);
+	if (!buffer) {
+		rz_atomic_bool_set(ctx->loop, false);
+		return false;
+	}
+
+	const ut64 from = rz_itv_begin(map->itv);
+	const ut64 to = rz_itv_end(map->itv);
+
+	for (ut64 at = from; at < to; at += opt->buffer_size) {
+		if (!rz_atomic_bool_get(ctx->loop)) {
+			break;
+		}
+		// calculate the buffer size
+		size_t size = opt->buffer_size;
+		if ((at + opt->buffer_size) > to) {
+			size = to - at;
+		}
+		// read the buffer
+		if (!rz_io_read_at(ctx->io, at, buffer, size)) {
+			RZ_LOG_ERROR("search: failed to read at 0x%08" PFMT64x " (%" PFMTSZu " bytes)\n", at, size);
+			break;
+		} else if (!col->search_over(col->collection, at, buffer, size, ctx->hits)) {
+			RZ_LOG_ERROR("search: failed search at 0x%08" PFMT64x "\n", at);
+			break;
+		}
+	}
+
+	free(buffer);
+	return rz_atomic_bool_get(ctx->loop);
 }
 
 /**
- * \param   s  The RzSearch structure to finalize
- */
-RZ_API void rz_search_fini(RZ_NONNULL RzSearch *s) {
-	rz_return_if_fail(s);
-
-	RZ_FREE_CUSTOM(s->hits, rz_list_free);
-	RZ_FREE_CUSTOM(s->kws, rz_list_free);
-	// iob.io is supposed to be a weak reference
-	// RZ_FREE_CUSTOM(s->iob.io, rz_io_free);
-	RZ_FREE(s->data);
-	RZ_FREE(s->prefix);
-}
-
-/**
- * \brief      Allocates and initialize RzSearch
+ * \brief      Perform a search within the given search maps of a collection
  *
- * \param      mode  The RzSearch mode
+ * \param      opt        The RzSearchOpt to use
+ * \param      col        The RzSearchCollection to use
+ * \param      io         The RzIO layer to use
+ * \param      search_in  The search maps for the boundaries
  *
- * \return     On success returns a valid pointer, otherwise NULL.
+ * \return     On success returns all the hits.
  */
-RZ_API RZ_OWN RzSearch *rz_search_new(rz_search_mode mode) {
-	RzSearch *s = RZ_NEW0(RzSearch);
-	if (!s ||
-		!rz_search_init(s) ||
-		!rz_search_set_mode(s, mode)) {
-		rz_search_free(s);
+RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_search_run(RZ_NONNULL RzSearchOpt *opt, RZ_NONNULL RzSearchCollection *col, RZ_NONNULL RzIO *io, RZ_NONNULL RzList /*<RzIOMap *>*/ *search_in) {
+	rz_return_val_if_fail(opt && col && io && search_in, NULL);
+	search_ctx_t ctx = { 0 };
+	RzList *results = NULL;
+	RzThreadQueue *hits = NULL;
+	RzThread *cancel_th = NULL;
+
+	if (opt->buffer_size < 1) {
+		RZ_LOG_ERROR("search: cannot search when buffer size is less than %u bytes.\n", RZ_SEARCH_MIN_BUFFER_SIZE);
 		return NULL;
 	}
-	return s;
-}
 
-/**
- * \brief      Deallocates a RzSearch struct.
- *
- * \param      s     The struct to deallocate
- */
-RZ_API void rz_search_free(RZ_NULLABLE RzSearch *s) {
-	if (!s) {
-		return;
-	}
-	rz_list_free(s->hits);
-	rz_list_free(s->kws);
-	// rz_io_free(s->iob.io); this is supposed to be a weak reference
-	free(s->data);
-	free(s);
-}
-
-RZ_API int rz_search_strings_update(RzSearch *s, ut64 from, const ut8 *buf, int len) {
-	rz_return_val_if_fail(s && buf && len, -1);
-
-	RzUtilStrScanOptions scan_opt = {
-		.buf_size = len,
-		.max_uni_blocks = s->string_max,
-		.min_str_length = s->string_min,
-		.prefer_big_endian = false,
-	};
-	RzList *str_list = rz_list_new();
-	if (!str_list) {
-		return 0;
+	if (rz_list_empty(search_in)) {
+		RZ_LOG_ERROR("search: cannot search in an empty RzIOMap list.\n");
+		return NULL;
 	}
 
-	int count = rz_scan_strings_raw(buf, str_list, &scan_opt, from, from + len, RZ_STRING_ENC_GUESS);
-	if (count <= 0) {
-		rz_list_free(str_list);
-		return false;
+	if (rz_search_collection_is_empty(col)) {
+		RZ_LOG_ERROR("search: cannot perform the search when the search collection is empty.\n");
+		return NULL;
 	}
 
-	RzListIter *iter, *iter2;
-	RzSearchKeyword *kw;
+	hits = rz_th_queue_new(RZ_THREAD_QUEUE_UNLIMITED, (RzListFree)rz_search_hit_free);
+	if (!hits) {
+		RZ_LOG_ERROR("search: cannot allocate RzSearchHit queue.\n");
+		return NULL;
+	}
 
-	int matches = 0;
-	rz_list_foreach (s->kws, iter, kw) {
-		RzDetectedString *dstr;
-		rz_list_foreach (str_list, iter2, dstr) {
-			rz_search_hit_new(s, kw, dstr->addr);
-			matches++;
+	ctx.col = col;
+	ctx.opt = opt;
+	ctx.io = io;
+	ctx.loop = rz_atomic_bool_new(true);
+
+	if (opt->cancel_cb) {
+		// create cancel thread
+		cancel_th = rz_th_new(search_cancel_th, &ctx);
+		if (!cancel_th) {
+			RZ_LOG_ERROR("search: cannot allocate cancel thread.\n");
+			rz_th_queue_free(hits);
+			return NULL;
 		}
 	}
-	RZ_FREE_CUSTOM(str_list, rz_list_free);
-	return matches;
-}
 
-RZ_API int rz_search_magic_update(RzSearch *s, ut64 from, const ut8 *buf, int len) {
-	eprintf("TODO: import librz/core/cmd_search.c /m implementation into rsearch\n");
-	return false;
-}
-
-RZ_API int rz_search_begin(RzSearch *s) {
-	RzListIter *iter;
-	RzSearchKeyword *kw;
-	rz_list_foreach (s->kws, iter, kw) {
-		kw->count = 0;
-		kw->last = 0;
-	}
-	return true;
-}
-
-// Returns 2 if search.maxhits is reached, 0 on error, otherwise 1
-RZ_API int rz_search_hit_new(RzSearch *s, RzSearchKeyword *kw, ut64 addr) {
-	if (s->align && (addr % s->align)) {
-		eprintf("0x%08" PFMT64x " unaligned\n", addr);
-		return 1;
-	}
-	if (!s->contiguous) {
-		if (kw->last && addr == kw->last) {
-			kw->count--;
-			kw->last = s->backwards ? addr : addr + kw->keyword_length;
-			eprintf("0x%08" PFMT64x " Sequential hit ignored.\n", addr);
-			return 1;
-		}
-	}
-	// kw->last is used by string search, the right endpoint of last match (forward search), to honor search.overlap
-	kw->last = s->backwards ? addr : addr + kw->keyword_length;
-
-	if (s->callback) {
-		int ret = s->callback(kw, s->user, addr);
-		kw->count++;
-		s->nhits++;
-		// If callback returns 0 or larger than 1, forwards it; otherwise returns 2 if search.maxhits is reached
-		return !ret || ret > 1 ? ret : s->maxhits && s->nhits >= s->maxhits ? 2
-										    : 1;
-	}
-	kw->count++;
-	s->nhits++;
-	RzSearchHit *hit = RZ_NEW0(RzSearchHit);
-	if (hit) {
-		hit->kw = kw;
-		hit->addr = addr;
-		rz_list_append(s->hits, hit);
-	}
-	return s->maxhits && s->nhits >= s->maxhits ? 2 : 1;
-}
-
-// TODO support search across block boundaries
-// Supported search variants: backward, overlap
-RZ_API int rz_search_deltakey_update(RzSearch *s, ut64 from, const ut8 *buf, int len) {
-	RzListIter *iter;
-	int longest = 0, i, j;
-	RzSearchKeyword *kw;
-	SearchLeftover *left;
-	const int old_nhits = s->nhits;
-	rz_list_foreach (s->kws, iter, kw) {
-		longest = RZ_MAX(longest, kw->keyword_length + 1);
-	}
-	if (!longest) {
-		return 0;
-	}
-	if (s->data) {
-		left = s->data;
-		if (left->end != from) {
-			left->len = 0;
-		}
+	if (!rz_th_iterate_list(search_in, search_iterator_cb, opt->max_threads, &ctx)) {
+		RZ_LOG_ERROR("search: cannot iterate over list.\n");
 	} else {
-		left = malloc(sizeof(SearchLeftover) + (size_t)2 * (longest - 1));
-		if (!left) {
-			return -1;
-		}
-		s->data = left;
-		left->len = 0;
-		if (s->backwards) {
-			rz_list_foreach (s->kws, iter, kw) {
-				ut8 *i = kw->bin_keyword, *j = kw->bin_keyword + kw->keyword_length;
-				for (; i < j; i++) {
-					*i = -*i;
-				}
-			}
-		}
-	}
-	if (s->backwards) {
-		// XXX Change function signature from const ut8 * to ut8 *
-		ut8 *i = (ut8 *)buf, *j = i + len;
-		while (i < j) {
-			ut8 t = *i;
-			*i++ = *--j;
-			*j = t;
-		}
+		results = rz_th_queue_pop_all(hits);
 	}
 
-	ut64 len1 = left->len + RZ_MIN(longest - 1, len);
-	memcpy(left->data + left->len, buf, len1 - left->len);
-	rz_list_foreach (s->kws, iter, kw) {
-		ut8 *a = kw->bin_keyword;
-		i = s->overlap || !kw->count ? 0 : s->backwards ? kw->last - from < left->len ? from + left->len - kw->last : 0
-			: from - kw->last < left->len           ? kw->last + left->len - from
-								: 0;
-		for (; i + kw->keyword_length < len1 && i < left->len; i++) {
-			if ((ut8)(left->data[i + 1] - left->data[i]) == a[0]) {
-				j = 1;
-				while (j < kw->keyword_length && (ut8)(left->data[i + j + 1] - left->data[i + j]) == a[j]) {
-					j++;
-				}
-				if (j == kw->keyword_length) {
-					int t = rz_search_hit_new(s, kw, s->backwards ? from - kw->keyword_length - 1 - i + left->len : from + i - left->len);
-					kw->last += s->backwards ? 0 : 1;
-					if (!t) {
-						return -1;
-					}
-					if (t > 1) {
-						return s->nhits - old_nhits;
-					}
-					if (!s->overlap) {
-						i += kw->keyword_length;
-					}
-				}
-			}
-		}
-		i = s->overlap || !kw->count ? 0 : s->backwards ? from > kw->last ? from - kw->last : 0
-			: from < kw->last                       ? kw->last - from
-								: 0;
-		for (; i + kw->keyword_length < len; i++) {
-			if ((ut8)(buf[i + 1] - buf[i]) == a[0]) {
-				j = 1;
-				while (j < kw->keyword_length && (ut8)(buf[i + j + 1] - buf[i + j]) == a[j]) {
-					j++;
-				}
-				if (j == kw->keyword_length) {
-					int t = rz_search_hit_new(s, kw, s->backwards ? from - kw->keyword_length - 1 - i : from + i);
-					kw->last += s->backwards ? 0 : 1;
-					if (!t) {
-						return -1;
-					}
-					if (t > 1) {
-						return s->nhits - old_nhits;
-					}
-					if (!s->overlap) {
-						i += kw->keyword_length;
-					}
-				}
-			}
-		}
-	}
-	if (len < longest - 1) {
-		if (len1 < longest) {
-			left->len = len1;
-		} else {
-			left->len = longest - 1;
-			memmove(left->data, left->data + len1 - longest + 1, longest - 1);
-		}
-	} else {
-		left->len = longest - 1;
-		memcpy(left->data, buf + len - longest + 1, longest - 1);
-	}
-	left->end = s->backwards ? from - len : from + len;
-
-	return s->nhits - old_nhits;
-}
-
-static bool brute_force_match(RzSearch *s, RzSearchKeyword *kw, const ut8 *buf, int i) {
-	int j = 0;
-	if (s->distance) { // slow path, more work in the loop
-		int dist = 0;
-		if (kw->binmask_length > 0) {
-			for (; j < kw->keyword_length; j++) {
-				int k = j % kw->binmask_length;
-				ut8 a = buf[i + j], b = kw->bin_keyword[j];
-				if (kw->icase) {
-					a = tolower(a);
-					b = tolower(b);
-				}
-				if ((a & kw->bin_binmask[k]) != (b & kw->bin_binmask[k])) {
-					dist++;
-				}
-			}
-		} else if (kw->icase) {
-			for (; j < kw->keyword_length; j++) {
-				if (tolower(buf[i + j]) != tolower(kw->bin_keyword[j])) {
-					dist++;
-				}
-			}
-		} else {
-			for (; j < kw->keyword_length; j++) {
-				if (buf[i + j] != kw->bin_keyword[j]) {
-					dist++;
-				}
-			}
-		}
-		return dist <= s->distance;
+	if (cancel_th) {
+		// stop & free cancel thread.
+		rz_atomic_bool_set(ctx.loop, false);
+		rz_th_wait(cancel_th);
+		rz_th_free(cancel_th);
 	}
 
-	if (kw->binmask_length > 0) {
-		for (; j < kw->keyword_length; j++) {
-			int k = j % kw->binmask_length;
-			ut8 a = buf[i + j], b = kw->bin_keyword[j];
-			if (kw->icase) {
-				a = tolower(a);
-				b = tolower(b);
-			}
-			if ((a & kw->bin_binmask[k]) != (b & kw->bin_binmask[k])) {
-				break;
-			}
-		}
-	} else if (kw->icase) {
-		while (j < kw->keyword_length &&
-			tolower(buf[i + j]) == tolower(kw->bin_keyword[j])) {
-			j++;
-		}
-	} else {
-		while (j < kw->keyword_length && buf[i + j] == kw->bin_keyword[j]) {
-			j++;
-		}
-	}
-	return j == kw->keyword_length;
-}
-
-// Supported search variants: backward, binmask, icase, inverse, overlap
-RZ_API int rz_search_mybinparse_update(RzSearch *s, ut64 from, const ut8 *buf, int len) {
-	RzSearchKeyword *kw;
-	RzListIter *iter;
-	SearchLeftover *left;
-	int longest = 0, i;
-	const int old_nhits = s->nhits;
-
-	rz_list_foreach (s->kws, iter, kw) {
-		longest = RZ_MAX(longest, kw->keyword_length);
-	}
-	if (!longest) {
-		return 0;
-	}
-	if (s->data) {
-		left = s->data;
-		if (left->end != from) {
-			left->len = 0;
-		}
-	} else {
-		left = malloc(sizeof(SearchLeftover) + (size_t)2 * (longest - 1));
-		if (!left) {
-			return -1;
-		}
-		s->data = left;
-		left->len = 0;
-	}
-	if (s->backwards) {
-		// XXX Change function signature from const ut8 * to ut8 *
-		ut8 *i = (ut8 *)buf, *j = i + len;
-		while (i < j) {
-			ut8 t = *i;
-			*i++ = *--j;
-			*j = t;
-		}
-	}
-
-	ut64 len1 = left->len + RZ_MIN(longest - 1, len);
-	memcpy(left->data + left->len, buf, len1 - left->len);
-	rz_list_foreach (s->kws, iter, kw) {
-		i = s->overlap || !kw->count ? 0 : s->backwards ? kw->last - from < left->len ? from + left->len - kw->last : 0
-			: from - kw->last < left->len           ? kw->last + left->len - from
-								: 0;
-		for (; i + kw->keyword_length <= len1 && i < left->len; i++) {
-			if (brute_force_match(s, kw, left->data, i) != s->inverse) {
-				int t = rz_search_hit_new(s, kw, s->backwards ? from - kw->keyword_length - i + left->len : from + i - left->len);
-				if (!t) {
-					return -1;
-				}
-				if (t > 1) {
-					return s->nhits - old_nhits;
-				}
-				if (!s->overlap) {
-					i += kw->keyword_length - 1;
-				}
-			}
-		}
-		i = s->overlap || !kw->count ? 0 : s->backwards ? from > kw->last ? from - kw->last : 0
-			: from < kw->last                       ? kw->last - from
-								: 0;
-		for (; i + kw->keyword_length <= len; i++) {
-			if (brute_force_match(s, kw, buf, i) != s->inverse) {
-				int t = rz_search_hit_new(s, kw, s->backwards ? from - kw->keyword_length - i : from + i);
-				if (!t) {
-					return -1;
-				}
-				if (t > 1) {
-					return s->nhits - old_nhits;
-				}
-				if (!s->overlap) {
-					i += kw->keyword_length - 1;
-				}
-			}
-		}
-	}
-	if (len < longest - 1) {
-		if (len1 < longest) {
-			left->len = len1;
-		} else {
-			left->len = longest - 1;
-			memmove(left->data, left->data + len1 - longest + 1, longest - 1);
-		}
-	} else {
-		left->len = longest - 1;
-		memcpy(left->data, buf + len - longest + 1, longest - 1);
-	}
-	left->end = s->backwards ? from - len : from + len;
-
-	return s->nhits - old_nhits;
+	rz_th_queue_free(hits);
+	return results;
 }
 
 /**
- * \brief      Sets the search mode.
+ * \brief      Allocate and initialize a new RzSearchHit
  *
- * \param      s    The RzSearch structure to use
- * \param      mode The search mode to set
+ * \param[in]  metadata  The metadata linked to the hit (can be NULL)
+ * \param[in]  address   The address where the hit happened
+ * \param[in]  size      The size of the hit data (can be 0)
  *
- * \return     True on success
+ * \return     On success returns a valid pointer, otherwise NULL
  */
-RZ_API bool rz_search_set_mode(RZ_NONNULL RzSearch *s, rz_search_mode mode) {
-	rz_return_val_if_fail(s, false);
-
-	switch (mode) {
-	case RZ_SEARCH_MODE_PATTERN:
-		s->update = NULL;
-		break;
-	case RZ_SEARCH_MODE_KEYWORD:
-		s->update = rz_search_mybinparse_update;
-		break;
-	case RZ_SEARCH_MODE_REGEXP:
-		s->update = rz_search_regexp_update;
-		break;
-	case RZ_SEARCH_MODE_STRING:
-		s->update = rz_search_strings_update;
-		break;
-	case RZ_SEARCH_MODE_XREFS:
-		s->update = NULL;
-		break;
-	case RZ_SEARCH_MODE_AES:
-		s->update = rz_search_aes_update;
-		break;
-	case RZ_SEARCH_MODE_PRIV_KEY:
-		s->update = rz_search_privkey_update;
-		break;
-	case RZ_SEARCH_MODE_DELTAKEY:
-		s->update = rz_search_deltakey_update;
-		break;
-	case RZ_SEARCH_MODE_MAGIC:
-		s->update = NULL;
-		break;
-	case RZ_SEARCH_MODE_ESIL:
-		s->update = NULL;
-		break;
-	default:
-		RZ_LOG_ERROR("search: cannot set mode: unknown %d\n", mode);
-		return false;
-	}
-
-	s->mode = mode;
-	return true;
-}
-
-/**
- * \brief      Sets the max pattern size.
- *
- * \param      s            The RzSearch structure to use
- * \param      pattern_size The pattern size variable to set
- *
- * \return     True on success
- */
-RZ_API bool rz_search_set_pattern_size(RZ_NONNULL RzSearch *s, ut32 pattern_size) {
-	rz_return_val_if_fail(s, false);
-	s->pattern_size = pattern_size;
-	return true;
-}
-
-/**
- * \brief      Sets the string limits.
- *
- * \param      s   The RzSearch structure to use
- * \param      min The min variable to set
- * \param      max The max variable to set
- *
- * \return     True on success
- */
-RZ_API bool rz_search_set_string_limits(RZ_NONNULL RzSearch *s, ut32 min, ut32 max) {
-	rz_return_val_if_fail(s, false);
-	if (max < min) {
-		RZ_LOG_ERROR("search: cannot set string limits: max < min\n");
-		return false;
-	}
-	s->string_min = min;
-	s->string_max = max;
-	return true;
-}
-
-/**
- * \brief      Sets the max hits variable.
- *
- * \param      s       The RzSearch structure to use
- * \param      maxhits The max hits variable to set
- *
- * \return     True on success
- */
-RZ_API bool rz_search_set_maxhits(RZ_NONNULL RzSearch *s, ut64 maxhits) {
-	rz_return_val_if_fail(s, false);
-	s->maxhits = maxhits;
-	return true;
-}
-
-/**
- * \brief      Sets the max distance.
- *
- * \param      s        The RzSearch structure to use
- * \param      distance The distance variable to set
- *
- * \return     True on success
- */
-RZ_API bool rz_search_set_distance(RZ_NONNULL RzSearch *s, ut32 distance) {
-	rz_return_val_if_fail(s, false);
-
-	if (distance >= RZ_SEARCH_DISTANCE_MAX) {
-		RZ_LOG_ERROR("search: cannot set distance: exeeds max (%d)\n", RZ_SEARCH_DISTANCE_MAX);
-		return false;
-	}
-	s->distance = distance;
-	return true;
-}
-
-/**
- * \brief      Sets the inverse variable.
- *
- * \param      s       The RzSearch structure to use
- * \param      inverse The inverse variable to set
- *
- * \return     True on success
- */
-RZ_API bool rz_search_set_inverse(RZ_NONNULL RzSearch *s, bool inverse) {
-	rz_return_val_if_fail(s, false);
-	s->inverse = inverse;
-	return true;
-}
-
-/**
- * \brief      Sets the overlap variable.
- *
- * \param      s       The RzSearch structure to use
- * \param      overlap The overlap variable to set
- *
- * \return     True on success
- */
-RZ_API bool rz_search_set_overlap(RZ_NONNULL RzSearch *s, bool overlap) {
-	rz_return_val_if_fail(s, false);
-	s->overlap = overlap;
-	return true;
-}
-
-/**
- * \brief      Sets the contiguous variable.
- *
- * \param      s          The RzSearch structure to use
- * \param      contiguous The contiguous variable to set
- *
- * \return     True on success
- */
-RZ_API bool rz_search_set_contiguous(RZ_NONNULL RzSearch *s, bool contiguous) {
-	rz_return_val_if_fail(s, false);
-	s->contiguous = contiguous;
-	return true;
-}
-
-/**
- * \brief      Sets the align variable.
- *
- * \param      s     The RzSearch structure to use
- * \param      align The align variable to set
- *
- * \return     True on success
- */
-RZ_API bool rz_search_set_align(RZ_NONNULL RzSearch *s, ut64 align) {
-	rz_return_val_if_fail(s, false);
-	s->align = align;
-	return true;
-}
-
-/**
- * \brief      Sets the backwards variable.
- *
- * \param      s         The RzSearch structure to use
- * \param      backwards The backwards variable to set
- *
- * \return     True on success
- */
-RZ_API bool rz_search_set_backwards(RZ_NONNULL RzSearch *s, bool backwards) {
-	rz_return_val_if_fail(s, false);
-	s->backwards = backwards;
-	return true;
-}
-
-/**
- * \brief      Sets the flags variable.
- *
- * \param      s     The RzSearch structure to use
- * \param      flags The flags variable to set
- *
- * \return     True on success
- */
-RZ_API bool rz_search_set_flags(RZ_NONNULL RzSearch *s, bool flags) {
-	rz_return_val_if_fail(s, false);
-	s->flags = flags;
-	return true;
-}
-
-/**
- * \brief      Sets the show variable.
- *
- * \param      s    The RzSearch structure to use
- * \param      show The show variable to set
- *
- * \return     True on success
- */
-RZ_API bool rz_search_set_show(RZ_NONNULL RzSearch *s, bool show) {
-	rz_return_val_if_fail(s, false);
-	s->show = show;
-	return true;
-}
-
-/**
- * \brief      Sets the from address.
- *
- * \param      s         The RzSearch structure to use
- * \param      from_addr The from address to set (must be > to address)
- *
- * \return     True on success
- */
-RZ_API bool rz_search_set_from_addr(RZ_NONNULL RzSearch *s, ut64 from_addr) {
-	rz_return_val_if_fail(s, false);
-
-	if (from_addr > s->to_addr) {
-		RZ_LOG_ERROR("search: cannot set from address; 'search.from' is greater than 'search.to'.\n");
-		return false;
-	}
-	s->from_addr = from_addr;
-	return true;
-}
-
-/**
- * \brief      Sets the to address.
- *
- * \param      s       The RzSearch structure to use
- * \param      to_addr The to address to set (must be < from address)
- *
- * \return     True on success
- */
-RZ_API bool rz_search_set_to_addr(RZ_NONNULL RzSearch *s, ut64 to_addr) {
-	rz_return_val_if_fail(s, false);
-
-	if (s->from_addr > to_addr) {
-		RZ_LOG_ERROR("search: cannot set to address; 'search.to' is less than 'search.from'.\n");
-		return false;
-	}
-	s->to_addr = to_addr;
-	return true;
-}
-
-/**
- * \brief      Sets the prefix keyword of the flag created on hit.
- *
- * \param      s      The RzSearch structure to use
- * \param      prefix The prefix to use (when NULL, prefix is set to "hit")
- *
- * \return     True when the string is correctly allocated.
- */
-RZ_API bool rz_search_set_prefix(RZ_NONNULL RzSearch *s, RZ_NULLABLE const char *prefix) {
-	rz_return_val_if_fail(s, false);
-	free(s->prefix);
-	s->prefix = rz_str_dup(prefix ? prefix : "hit");
-	return s->prefix != NULL;
-}
-
-/**
- * \brief      Sets the command to execute on hit.
- *
- * \param      s       The RzSearch structure to use
- * \param      command The command to use
- *
- * \return     True on success
- */
-RZ_API bool rz_search_set_command(RZ_NONNULL RzSearch *s, RZ_NULLABLE const char *command) {
-	rz_return_val_if_fail(s, false);
-	free(s->command);
-	s->command = rz_str_dup(command);
-	return true;
-}
-
-/**
- * \brief      Sets the callback to invoke on hit.
- *
- * \param      s        The RzSearch structure to use
- * \param      callback The callback pointer to set
- * \param      user     The user pointer to set
- *
- * \return     True on success
- */
-RZ_API bool rz_search_set_hit_callback(RZ_NONNULL RzSearch *s, RZ_NULLABLE RzSearchHitCallback callback, RZ_NULLABLE void *user) {
-	rz_return_val_if_fail(s, false);
-	s->hit_callback = callback;
-	s->hit_user = user;
-	return true;
-}
-
-/**
- * \brief      Sets the callback to invoke to check if the user has cancelled the search operation.
- *
- * \param      s        The RzSearch structure to use
- * \param      callback The callback pointer to set
- * \param      user     The user pointer to set
- *
- * \return     True on success
- */
-RZ_API bool rz_search_set_cancel_callback(RZ_NONNULL RzSearch *s, RZ_NULLABLE RzSearchCancelCallback callback, RZ_NULLABLE void *user) {
-	rz_return_val_if_fail(s, false);
-	s->cancel_callback = callback;
-	s->cancel_user = user;
-	return true;
-}
-
-// backward search: from points to the right endpoint
-// forward search: from points to the left endpoint
-RZ_API int rz_search_update(RzSearch *s, ut64 from, const ut8 *buf, size_t len) {
-	if (s->update) {
-		if (s->maxhits && s->nhits >= s->maxhits) {
-			return 0;
-		}
-		return s->update(s, from, buf, len);
-	}
-	RZ_LOG_ERROR("search: No 'update' search method defined\n");
-	return -1;
-}
-
-static bool listcb(RzSearchKeyword *k, void *user, ut64 addr) {
+RZ_IPI RZ_OWN RzSearchHit *rz_search_hit_new(const char *metadata, ut64 address, size_t size) {
 	RzSearchHit *hit = RZ_NEW0(RzSearchHit);
 	if (!hit) {
-		return false;
+		return NULL;
 	}
-	hit->kw = k;
-	hit->addr = addr;
-	rz_list_append(user, hit);
-	return true;
-}
-
-RZ_API RzList /*<RzSearchHit *>*/ *rz_search_find(RzSearch *s, ut64 addr, const ut8 *buf, int len) {
-	RzList *ret = rz_list_new();
-	rz_search_set_callback(s, listcb, ret);
-	rz_search_update(s, addr, buf, len);
-	return ret;
-}
-
-/* --- keywords --- */
-RZ_API int rz_search_kw_add(RzSearch *s, RzSearchKeyword *kw) {
-	if (!kw || !kw->keyword_length) {
-		return false;
-	}
-	kw->kwidx = s->n_kws++;
-	rz_list_append(s->kws, kw);
-	return true;
-}
-
-// Reverse bin_keyword & bin_binmask for backward search
-RZ_API void rz_search_string_prepare_backward(RzSearch *s) {
-	RzListIter *iter;
-	RzSearchKeyword *kw;
-	// Precondition: !kw->binmask_length || kw->keyword_length % kw->binmask_length == 0
-	rz_list_foreach (s->kws, iter, kw) {
-		ut8 *i = kw->bin_keyword, *j = kw->bin_keyword + kw->keyword_length;
-		while (i < j) {
-			ut8 t = *i;
-			*i++ = *--j;
-			*j = t;
-		}
-		i = kw->bin_binmask;
-		j = kw->bin_binmask + kw->binmask_length;
-		while (i < j) {
-			ut8 t = *i;
-			*i++ = *--j;
-			*j = t;
-		}
-	}
+	hit->metadata = rz_str_dup(metadata);
+	hit->address = address;
+	hit->size = size;
+	return hit;
 }
 
 /**
- * \brief      Resets the search nhits and mode.
+ * \brief      Frees a RzSearchHit structure
  *
- * \param      s      The RzSearch structure to use
+ * \param      hit  The RzSearchHit pointer to free
  */
-RZ_API void rz_search_reset(RZ_NONNULL RzSearch *s, rz_search_mode mode) {
-	rz_return_if_fail(s);
-	s->nhits = 0;
-	rz_search_set_mode(s, mode);
+RZ_API void rz_search_hit_free(RZ_NULLABLE RzSearchHit *hit) {
+	if (!hit) {
+		return;
+	}
+	free(hit->metadata);
+	free(hit);
 }
-
-RZ_API void rz_search_kw_reset(RzSearch *s) {
-	rz_list_purge(s->kws);
-	rz_list_purge(s->hits);
-	RZ_FREE(s->data);
-}
-
-
-

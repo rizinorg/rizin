@@ -421,38 +421,42 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 /**
  * All preludes are guessed by looking at the instruction at the beginning of the function
  */
-static RzList /*<RzSearchKeyword *>*/ *analysis_preludes(RzAnalysis *analysis) {
-#define KW(d, ds, m, ms) rz_list_append(l, rz_search_keyword_new((const ut8 *)d, ds, (const ut8 *)m, ms, NULL))
-	RzList *l = rz_list_newf((RzListFree)rz_search_keyword_free);
+
+static RzSearchCollection *analysis_preludes(RzAnalysis *analysis) {
+	RzSearchCollection *sc = rz_search_collection_bytes();
+	if (!sc) {
+		return NULL;
+	}
+#define ADD_PRELUDE(d, m, l) rz_search_collection_bytes_add(sc, NULL, (const ut8 *)d, (const ut8 *)m, l)
 
 	// movea 0xff, r0, r20
-	KW("\x20\xa6\xff\x00", 4, "\xff\xff\xff\xff", 4);
+	ADD_PRELUDE("\x20\xa6\xff\x00", "\xff\xff\xff\xff", 4);
 
 	// mov r6, r7
 	// ld.w ?[gp], r6
 	// prepare {lp}, 0
-	KW("\x06\x38\x24\x37\x01\x00\x80\x07\x21\x00", 10, "\xff\xff\xff\xff\x01\x00\xff\xff\xff\xff", 10);
+	ADD_PRELUDE("\x06\x38\x24\x37\x01\x00\x80\x07\x21\x00", "\xff\xff\xff\xff\x01\x00\xff\xff\xff\xff", 10);
 
 	// ld.w ?[gp], r6
 	// prepare {lp}, 0
-	KW("\x24\x37\x01\x00\x80\x07\x21\x00", 8, "\xff\xff\x01\x00\xff\xff\xff\xff", 8);
+	ADD_PRELUDE("\x24\x37\x01\x00\x80\x07\x21\x00", "\xff\xff\x01\x00\xff\xff\xff\xff", 8);
 
 	// prepare
-	KW("\x80\x07\x01\x00", 4, "\xc0\xff\x1f\x00", 4);
-	KW("\x80\x07\x03\x00", 4, "\xc0\xff\x1f\x00", 4);
-	KW("\x80\x07\x0b\x00\x00\x00", 6, "\xc0\xff\x1f\x00\x00\x00", 6);
-	KW("\x80\x07\x13\x00\x00\x00", 6, "\xc0\xff\x1f\x00\x00\x00", 6);
-	KW("\x80\x07\x1b\x00\x00\x00\x00\x00", 8, "\xc0\xff\x1f\x00\x00\x00\x00\x00", 8);
+	ADD_PRELUDE("\x80\x07\x01\x00", "\xc0\xff\x1f\x00", 4);
+	ADD_PRELUDE("\x80\x07\x03\x00", "\xc0\xff\x1f\x00", 4);
+	ADD_PRELUDE("\x80\x07\x0b\x00\x00\x00", "\xc0\xff\x1f\x00\x00\x00", 6);
+	ADD_PRELUDE("\x80\x07\x13\x00\x00\x00", "\xc0\xff\x1f\x00\x00\x00", 6);
+	ADD_PRELUDE("\x80\x07\x1b\x00\x00\x00\x00\x00", "\xc0\xff\x1f\x00\x00\x00\x00\x00", 8);
 
 	// trap
-	KW("\xe0\x07\x00\x01", 4, "\xe0\xff\xff\xff", 4);
+	ADD_PRELUDE("\xe0\x07\x00\x01", "\xe0\xff\xff\xff", 4);
 
 	// addi ?, sp, sp
-	KW("\x03\x1e\xd0\xff", 4, "\xff\xff\xff\xff", 4);
+	ADD_PRELUDE("\x03\x1e\xd0\xff", "\xff\xff\xff\xff", 4);
 
 	// add ?, sp
-	KW("\x50\x1a", 2, "\xf0\xff", 2);
-	return l;
+	ADD_PRELUDE("\x50\x1a", "\xf0\xff", 2);
+	return sc;
 }
 
 static int archinfo(RzAnalysis *a, RzAnalysisInfoType query) {

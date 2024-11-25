@@ -1234,11 +1234,14 @@ static int archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
 	}
 }
 
-static RzList /*<RzSearchKeyword *>*/ *analysis_preludes(RzAnalysis *analysis) {
-#define KW(d, ds, m, ms) rz_list_append(l, rz_search_keyword_new((const ut8 *)d, ds, (const ut8 *)m, ms, NULL))
-	RzList *l = rz_list_newf((RzListFree)rz_search_keyword_free);
-	KW("\x27\xbd\x00", 3, NULL, 0);
-	return l;
+static RzSearchCollection *analysis_preludes(RzAnalysis *analysis) {
+	RzSearchCollection *sc = rz_search_collection_bytes();
+	if (!sc) {
+		return NULL;
+	}
+#define ADD_PRELUDE(d, m, l) rz_search_collection_bytes_add(sc, NULL, (const ut8 *)d, (const ut8 *)m, l)
+	ADD_PRELUDE("\x27\xbd\x00", NULL, 3);
+	return sc;
 }
 
 static bool mips_fini(void *user) {

@@ -1,15 +1,17 @@
 rz_search_sources = [
-  'aes-find.c',
-  'bytepat.c',
-  'keyword.c',
-  'regexp.c',
-  'privkey-find.c',
+  'aes_search.c',
+  'bytes_search.c',
+  'collection.c',
+  'magic_search.c',
+  'options.c',
+  'pkey_search.c',
+  'regex_search.c',
   'search.c',
 ]
 
 rz_search = library('rz_search', rz_search_sources,
   include_directories: [platform_inc],
-  dependencies: [rz_util_dep],
+  dependencies: [rz_util_dep, rz_io_dep],
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
@@ -25,5 +27,5 @@ meson.override_dependency('rz_search', rz_search_dep)
 
 modules += { 'rz_search': {
     'target': rz_search,
-    'dependencies': ['rz_util']
+    'dependencies': ['rz_util', 'rz_io']
 }}

@@ -1372,7 +1372,7 @@ typedef struct rz_analysis_plugin_t {
 	// int (*reset_counter) (RzAnalysis *analysis, ut64 start_addr);
 	int (*archinfo)(RzAnalysis *analysis, RzAnalysisInfoType query);
 	ut8 *(*analysis_mask)(RzAnalysis *analysis, int size, const ut8 *data, ut64 at);
-	RzList /*<RzSearchKeyword *>*/ *(*preludes)(RzAnalysis *analysis);
+	RzSearchCollection *(*preludes)(RzAnalysis *analysis);
 
 	/**
 	 * The actual bit-size of an address for given analysis.bits.
@@ -2275,7 +2275,7 @@ RZ_API void rz_analysis_rtti_print_at_vtable(RzAnalysis *analysis, ut64 addr, Rz
 RZ_API void rz_analysis_rtti_print_all(RzAnalysis *analysis, RzOutputMode mode);
 RZ_API void rz_analysis_rtti_recover_all(RzAnalysis *analysis);
 
-RZ_API RzList /*<RzSearchKeyword *>*/ *rz_analysis_preludes(RzAnalysis *analysis);
+RZ_API RzSearchCollection *rz_analysis_preludes(RzAnalysis *analysis);
 RZ_API bool rz_analysis_is_prelude(RzAnalysis *analysis, const ut8 *data, int len);
 
 /* classes */

@@ -2701,29 +2701,32 @@ static ut8 *analysis_mask(RzAnalysis *analysis, int size, const ut8 *data, ut64 
 	return ret;
 }
 
-static RzList /*<RzSearchKeyword *>*/ *analysis_preludes(RzAnalysis *analysis) {
-#define KW(d, ds, m, ms) rz_list_append(l, rz_search_keyword_new((const ut8 *)d, ds, (const ut8 *)m, ms, NULL))
-	RzList *l = rz_list_newf((RzListFree)rz_search_keyword_free);
+static RzSearchCollection *analysis_preludes(RzAnalysis *analysis) {
+	RzSearchCollection *sc = rz_search_collection_bytes();
+	if (!sc) {
+		return NULL;
+	}
+#define ADD_PRELUDE(d, m, l) rz_search_collection_bytes_add(sc, NULL, (const ut8 *)d, (const ut8 *)m, l)
 	switch (analysis->bits) {
 	case 16:
-		KW("\x00\xb5", 2, "\x0f\xff", 2);
-		KW("\x08\xb5", 2, "\x0f\xff", 2);
+		ADD_PRELUDE("\x00\xb5", "\x0f\xff", 2);
+		ADD_PRELUDE("\x08\xb5", "\x0f\xff", 2);
 		break;
 	case 32:
-		KW("\x00\x00\x2d\xe9", 4, "\x0f\x0f\xff\xff", 4);
+		ADD_PRELUDE("\x00\x00\x2d\xe9", "\x0f\x0f\xff\xff", 4);
 		break;
 	case 64:
-		KW("\x7f\x23\x03\xd5", 4, "\xff\xff\xff\xff", 4); // pacibsp - Pointer auth
-		KW("\xf0\x0f\x00\xf8", 4, "\xf0\x0f\x00\xff", 4);
-		KW("\xf0\x00\x00\xd1", 4, "\xf0\x00\x00\xff", 4);
-		KW("\xf0\x00\x00\xa9", 4, "\xf0\x00\x00\xff", 4);
-		KW("\x7f\x23\x03\xd5\xff", 5, NULL, 0);
+		ADD_PRELUDE("\x7f\x23\x03\xd5", "\xff\xff\xff\xff", 4); // pacibsp - Pointer auth
+		ADD_PRELUDE("\xf0\x0f\x00\xf8", "\xf0\x0f\x00\xff", 4);
+		ADD_PRELUDE("\xf0\x00\x00\xd1", "\xf0\x00\x00\xff", 4);
+		ADD_PRELUDE("\xf0\x00\x00\xa9", "\xf0\x00\x00\xff", 4);
+		ADD_PRELUDE("\x7f\x23\x03\xd5\xff", NULL, 5);
 		break;
 	default:
-		rz_list_free(l);
-		l = NULL;
+		rz_search_collection_free(sc);
+		sc = NULL;
 	}
-	return l;
+	return sc;
 }
 
 static int address_bits(RzAnalysis *analysis, int bits) {

@@ -3702,27 +3702,29 @@ static int archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
 	}
 }
 
-static RzList /*<RzSearchKeyword *>*/ *analysis_preludes(RzAnalysis *analysis) {
-#define KW(d, ds, m, ms) rz_list_append(l, rz_search_keyword_new((const ut8 *)d, ds, (const ut8 *)m, ms, NULL))
-	RzList *l = rz_list_newf((RzListFree)rz_search_keyword_free);
+static RzSearchCollection *analysis_preludes(RzAnalysis *analysis) {
+	RzSearchCollection *sc = rz_search_collection_bytes();
+	if (!sc) {
+		return NULL;
+	}
+#define ADD_PRELUDE(d, m, l) rz_search_collection_bytes_add(sc, NULL, (const ut8 *)d, (const ut8 *)m, l)
 	switch (analysis->bits) {
 	case 32:
-		KW("\x8b\xff\x55\x8b\xec", 5, NULL, 0);
-		KW("\x55\x89\xe5", 3, NULL, 0);
-		KW("\x55\x8b\xec", 3, NULL, 0);
-		KW("\xf3\x0f\x1e\xfb", 4, NULL, 0); // endbr32
+		ADD_PRELUDE("\x8b\xff\x55\x8b\xec", NULL, 5);
+		ADD_PRELUDE("\x55\x89\xe5", NULL, 3);
+		ADD_PRELUDE("\x55\x8b\xec", NULL, 3);
+		ADD_PRELUDE("\xf3\x0f\x1e\xfb", NULL, 4); // endbr32
 		break;
 	case 64:
-		KW("\x55\x48\x89\xe5", 4, NULL, 0);
-		KW("\x55\x48\x8b\xec", 4, NULL, 0);
-		KW("\xf3\x0f\x1e\xfa", 4, NULL, 0); // endbr64
+		ADD_PRELUDE("\x55\x48\x89\xe5", NULL, 4);
+		ADD_PRELUDE("\x55\x48\x8b\xec", NULL, 4);
+		ADD_PRELUDE("\xf3\x0f\x1e\xfa", NULL, 4); // endbr64
 		break;
 	default:
-		rz_list_free(l);
-		l = NULL;
-		break;
+		rz_search_collection_free(sc);
+		sc = NULL;
 	}
-	return l;
+	return sc;
 }
 
 RzAnalysisPlugin rz_analysis_plugin_x86_cs = {

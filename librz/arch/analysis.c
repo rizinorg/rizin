@@ -795,7 +795,7 @@ RZ_API void rz_analysis_bind(RzAnalysis *analysis, RzAnalysisBind *b) {
 	}
 }
 
-RZ_API RzList /*<RzSearchKeyword *>*/ *rz_analysis_preludes(RzAnalysis *analysis) {
+RZ_API RzSearchCollection *rz_analysis_preludes(RzAnalysis *analysis) {
 	if (analysis->cur && analysis->cur->preludes) {
 		return analysis->cur->preludes(analysis);
 	}
@@ -803,20 +803,15 @@ RZ_API RzList /*<RzSearchKeyword *>*/ *rz_analysis_preludes(RzAnalysis *analysis
 }
 
 RZ_API bool rz_analysis_is_prelude(RzAnalysis *analysis, const ut8 *data, int len) {
-	RzList *l = rz_analysis_preludes(analysis);
-	if (l) {
-		RzSearchKeyword *kw;
-		RzListIter *iter;
-		rz_list_foreach (l, iter, kw) {
-			int ks = kw->keyword_length;
-			if (len >= ks && !memcmp(data, kw->bin_keyword, ks)) {
-				rz_list_free(l);
-				return true;
-			}
-		}
-		rz_list_free(l);
+	RzSearchCollection *col = rz_analysis_preludes(analysis);
+	if (!col || len < 1) {
+		rz_search_collection_free(col);
+		return false;
 	}
-	return false;
+
+	bool any = rz_search_collection_match_any(col, data, len);
+	rz_search_collection_free(col);
+	return any;
 }
 
 RZ_API void rz_analysis_add_import(RzAnalysis *analysis, const char *imp) {
