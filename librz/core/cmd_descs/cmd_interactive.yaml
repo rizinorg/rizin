@@ -37,7 +37,22 @@ commands:
           - text: "V"
             arg_str: " p"
             comment: Enter interactive visual mode and select the next printing mode.
-  - name: V!
-    cname: interactive_panel
-    summary: Enter interactive panel mode
-    args: []
+  - name: v
+    summary: Interactive panel mode
+    subcommands:
+      - name: v
+        summary: Enter interactive panel mode
+        cname: interactive_panel
+        args: []
+      - name: vl
+        summary: Load panel layout
+        cname: interactive_panel_load
+        args:
+          - name: name
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: vs
+        summary: Store panel layout
+        cname: interactive_panel_store
+        args:
+          - name: name
+            type: RZ_CMD_ARG_TYPE_STRING

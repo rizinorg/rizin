@@ -73,6 +73,8 @@ typedef struct rz_panel_t {
 typedef void (*RzPanelAlmightyCallback)(void *user, RzPanel *panel, const RzPanelLayout dir, RZ_NULLABLE const char *title);
 
 RZ_IPI void rz_panel_free(RZ_NULLABLE RzPanel *panel);
+RZ_IPI void rz_save_panels_layout(RzCore *core, const char *_name);
+RZ_IPI bool rz_load_panels_layout(RzCore *core, const char *_name);
 
 #ifdef __cplusplus
 }

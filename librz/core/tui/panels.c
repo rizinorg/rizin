@@ -366,8 +366,6 @@ static void __panel_prompt(const char *prompt, char *buf, int len);
 static void __panels_layout_refresh(RzCore *core);
 static void __panels_layout(RzPanelsTab *tab);
 static void __layout_default(RzPanelsTab *tab);
-RZ_IPI void rz_save_panels_layout(RzCore *core, const char *_name);
-RZ_IPI bool rz_load_panels_layout(RzCore *core, const char *_name);
 static void __split_panel_vertical(RzCore *core, RzPanel *p, const char *name, const char *cmd);
 static void __split_panel_horizontal(RzCore *core, RzPanel *p, const char *name, const char *cmd);
 static void __panel_print(RzCore *core, RzConsCanvas *can, RzPanel *panel, int color);

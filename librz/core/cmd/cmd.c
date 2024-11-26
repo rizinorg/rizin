@@ -44,15 +44,6 @@ static const char *help_msg_vertical_bar[] = {
 	NULL
 };
 
-static const char *help_msg_v[] = {
-	"Usage:", "v[*i]", "",
-	"v", "", "open visual panels",
-	"v", " test", "load saved layout with name test",
-	"v=", " test", "save current layout with name test",
-	"vi", " test", "open the file test in 'cfg.editor'",
-	NULL
-};
-
 RZ_API void rz_core_cmd_help(const RzCore *core, const char *help[]) {
 	rz_cons_cmd_help(help, core->print->flags & RZ_PRINT_FLAGS_COLOR);
 }
@@ -385,6 +376,7 @@ RZ_IPI void rz_core_kuery_print(RzCore *core, const char *k) {
 	free(out);
 }
 
+<<<<<<< HEAD
 RZ_IPI int rz_cmd_panels(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	RzCoreVisual *visual = core->visual;
@@ -425,6 +417,213 @@ RZ_IPI int rz_cmd_panels(void *data, const char *input) {
 		rz_core_cmd_help(core, help_msg_v);
 		return false;
 	}
+=======
+RZ_IPI int rz_cmd_kuery(void *data, const char *input) {
+	char buf[1024], *out, *tofree;
+	RzCore *core = (RzCore *)data;
+	const char *sp, *p = "[sdb]> ";
+	Sdb *s = core->sdb;
+
+	char *cur_pos = NULL, *cur_cmd = NULL, *next_cmd = NULL;
+	char *temp_pos = NULL, *temp_cmd = NULL;
+
+	switch (input[0]) {
+	case 'j':
+		tofree = out = sdb_querys(s, NULL, 0, "analysis/**");
+		if (!out) {
+			rz_cons_println("No Output from sdb");
+			break;
+		}
+		PJ *pj = pj_new();
+		if (!pj) {
+			free(out);
+			break;
+		}
+		pj_o(pj);
+		pj_ko(pj, "analysis");
+		pj_ka(pj, "cur_cmd");
+
+		while (*out) {
+			cur_pos = strchr(out, '\n');
+			if (!cur_pos) {
+				break;
+			}
+			cur_cmd = rz_str_ndup(out, cur_pos - out);
+			pj_s(pj, cur_cmd);
+
+			free(next_cmd);
+			next_cmd = rz_str_newf("analysis/%s/*", cur_cmd);
+			char *query_result = sdb_querys(s, NULL, 0, next_cmd);
+
+			if (!query_result) {
+				out = cur_pos + 1;
+				continue;
+			}
+
+			char *temp = query_result;
+			while (*temp) {
+				temp_pos = strchr(temp, '\n');
+				if (!temp_pos) {
+					break;
+				}
+				temp_cmd = rz_str_ndup(temp, temp_pos - temp);
+				pj_s(pj, temp_cmd);
+				free(temp_cmd);
+				temp = temp_pos + 1;
+			}
+			out = cur_pos + 1;
+			free(query_result);
+		}
+		pj_end(pj);
+		pj_end(pj);
+		pj_end(pj);
+		rz_cons_println(pj_string(pj));
+		pj_free(pj);
+		RZ_FREE(next_cmd);
+		free(next_cmd);
+		free(cur_cmd);
+		free(tofree);
+		break;
+
+	case ' ':
+		rz_core_kuery_print(core, input + 1);
+		break;
+	// case 's': rz_pair_save (s, input + 3); break;
+	// case 'l': rz_pair_load (sdb, input + 3); break;
+	case '\0':
+		sdb_foreach(s, callback_foreach_kv, NULL);
+		break;
+	// TODO: add command to list all namespaces // sdb_ns_foreach ?
+	case 's': // "ks"
+		if (core->http_up) {
+			return false;
+		}
+		if (!rz_cons_is_interactive()) {
+			return false;
+		}
+		if (input[1] == ' ') {
+			char *n, *o, *p = rz_str_dup(input + 2);
+			// TODO: slash split here? or inside sdb_ns ?
+			for (n = o = p; n; o = n) {
+				n = strchr(o, '/'); // SDB_NS_SEPARATOR NAMESPACE
+				if (n) {
+					*n++ = 0;
+				}
+				s = sdb_ns(s, o, 1);
+			}
+			free(p);
+		}
+		if (!s) {
+			s = core->sdb;
+		}
+		RzLine *line = core->cons->line;
+		if (!line->sdbshell_hist) {
+			line->sdbshell_hist = rz_list_newf(free);
+		}
+		RzList *sdb_hist = line->sdbshell_hist;
+		rz_line_set_hist_callback(line, &rz_line_hist_sdb_up, &rz_line_hist_sdb_down);
+		for (;;) {
+			rz_line_set_prompt(line, p);
+			if (rz_cons_fgets(buf, sizeof(buf), 0, NULL) < 1) {
+				break;
+			}
+			if (!*buf) {
+				break;
+			}
+			if (sdb_hist) {
+				if ((rz_list_length(sdb_hist) == 1) || (rz_list_length(sdb_hist) > 1 && strcmp(rz_list_get_n(sdb_hist, 1), buf))) {
+					rz_list_insert(sdb_hist, 1, rz_str_dup(buf));
+				}
+				line->sdbshell_hist_iter = sdb_hist->head;
+			}
+			out = sdb_querys(s, NULL, 0, buf);
+			if (out) {
+				rz_cons_println(out);
+				rz_cons_flush();
+			}
+		}
+		rz_line_set_hist_callback(core->cons->line, &rz_line_hist_cmd_up, &rz_line_hist_cmd_down);
+		break;
+	case 'o': // "ko"
+		if (input[1] == ' ') {
+			char *fn = rz_str_dup(input + 2);
+			if (!fn) {
+				RZ_LOG_ERROR("core: Unable to allocate memory\n");
+				return 0;
+			}
+			char *ns = strchr(fn, ' ');
+			if (ns) {
+				Sdb *db;
+				*ns++ = 0;
+				if (rz_file_exists(fn)) {
+					db = sdb_ns_path(core->sdb, ns, 1);
+					if (db) {
+						Sdb *newdb = sdb_new(NULL, fn, 0);
+						if (newdb) {
+							sdb_drain(db, newdb);
+						} else {
+							RZ_LOG_ERROR("core: Cannot open sdb '%s'\n", fn);
+						}
+					} else {
+						RZ_LOG_ERROR("core: Cannot find sdb '%s'\n", ns);
+					}
+				} else {
+					RZ_LOG_ERROR("core: Cannot open file\n");
+				}
+			} else {
+				RZ_LOG_ERROR("core: Missing sdb namespace\n");
+			}
+			free(fn);
+		} else {
+			RZ_LOG_ERROR("core: Usage: ko [file] [namespace]\n");
+		}
+		break;
+	case 'd': // "kd"
+		if (input[1] == ' ') {
+			char *fn = rz_str_dup(input + 2);
+			char *ns = strchr(fn, ' ');
+			if (ns) {
+				*ns++ = 0;
+				Sdb *db = sdb_ns_path(core->sdb, ns, 0);
+				if (db) {
+					sdb_file(db, fn);
+					sdb_sync(db);
+				} else {
+					RZ_LOG_ERROR("core: Cannot find sdb '%s'\n", ns);
+				}
+			} else {
+				RZ_LOG_ERROR("core: Missing sdb namespace\n");
+			}
+			free(fn);
+		} else {
+			RZ_LOG_ERROR("core: Usage: kd [file] [namespace]\n");
+		}
+		break;
+	case '?':
+		rz_core_cmd_help(core, help_msg_k);
+		break;
+	}
+
+	if (input[0] == '\0') {
+		/* nothing more to do, the command has been parsed. */
+		return 0;
+	}
+
+	sp = strchr(input + 1, ' ');
+	if (sp) {
+		char *inp = rz_str_dup(input);
+		inp[(size_t)(sp - input)] = 0;
+		s = sdb_ns(core->sdb, inp + 1, 1);
+		out = sdb_querys(s, NULL, 0, sp + 1);
+		if (out) {
+			rz_cons_println(out);
+			free(out);
+		}
+		free(inp);
+		return 0;
+	}
+	return 0;
+>>>>>>> c4eb32feb2 (Port v (panels) commands to RzShell and drop vi.)
 }
 
 RZ_IPI RzCmdStatus rz_push_escaped_handler(RzCore *core, int argc, const char **argv) {
@@ -5270,7 +5469,6 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 	} cmds[] = {
 		{ "/", "search kw, pattern aes", rz_cmd_search },
 		{ "p", "print current block", rz_cmd_print },
-		{ "v", "enter visual mode", rz_cmd_panels },
 		{ "x", "alias for px", rz_cmd_hexdump },
 	};
 

@@ -265,10 +265,6 @@ commands:
   - name: V
     summary: Interactive mode
     subcommands: cmd_interactive
-  - name: v
-    cname: cmd_panels
-    summary: Enter visual panel mode
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
   - name: w
     summary: Write commands
     subcommands: cmd_write
