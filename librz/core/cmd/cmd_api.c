@@ -162,12 +162,14 @@ static RzCmdDesc *create_cmd_desc(RzCmd *cmd, RzCmdDesc *parent, RzCmdDescType t
 	res->type = type;
 	res->name = rz_str_dup(name);
 	if (!res->name) {
+		RZ_LOG_ERROR("Failed to duplicate cmd name.\n");
 		goto err;
 	}
 	res->n_children = 0;
 	res->help = help ? help : &not_defined_help;
 	rz_pvector_init(&res->children, (RzPVectorFree)cmd_desc_free);
 	if (ht_insert && !ht_sp_insert(cmd->ht_cmds, name, res)) {
+		RZ_LOG_WARN("Command already in hash table. Previous command has been replaced.\n");
 		goto err;
 	}
 	cmd_desc_set_parent(cmd, res, parent);
