@@ -2371,7 +2371,9 @@ RZ_IPI RzCmdStatus rz_type_xrefs_graph_handler(RzCore *core, int argc, const cha
 // "txl"
 RZ_IPI RzCmdStatus rz_type_xrefs_list_all_handler(RzCore *core, int argc, const char **argv);
 // "V"
-RZ_IPI int rz_cmd_visual(void *data, const char *input);
+RZ_IPI RzCmdStatus rz_interactive_visual_handler(RzCore *core, int argc, const char **argv);
+// "V!"
+RZ_IPI RzCmdStatus rz_interactive_panel_handler(RzCore *core, int argc, const char **argv);
 // "v"
 RZ_IPI int rz_cmd_panels(void *data, const char *input);
 // "w"

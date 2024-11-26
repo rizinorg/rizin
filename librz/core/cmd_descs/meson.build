@@ -13,6 +13,7 @@ cmd_descs_yaml = files(
   'cmd_heap_glibc.yaml',
   'cmd_history.yaml',
   'cmd_info.yaml',
+  'cmd_interactive.yaml',
   'cmd_interpret.yaml',
   'cmd_macro.yaml',
   'cmd_math.yaml',

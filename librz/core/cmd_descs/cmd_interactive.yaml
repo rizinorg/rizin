@@ -1,0 +1,43 @@
+# SPDX-FileCopyrightText: 2024 RizinOrg <info@rizin.re>
+# SPDX-License-Identifier: LGPL-3.0-only
+---
+name: cmd_interactive
+commands:
+  - name: V
+    cname: interactive_visual
+    summary: Enter interactive visual mode
+    description: >
+      Use Rizin (mostly) without shell.
+      Scrolling disassembly, debugging, searching or graph views.
+      All with a few keyboard shortcuts.
+    args:
+      - name: visual-commands
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: true
+    details:
+      - name: Basic usage (in interactive visual mode)
+        entries:
+          - text: ""
+            arg_str: "Press: q"
+            comment: Quits the current view.
+          - text: ""
+            arg_str: "Press: ?"
+            comment: Opens the help.
+          - text: ""
+            arg_str: "Press: p"
+            comment: Switches between different printing modes (disassembly, hex view, etc.).
+          - text: ""
+            arg_str: "Press: <TAB>"
+            comment: Toggles different configurations of the current printing mode.
+      - name: Examples
+        entries:
+          - text: "V"
+            arg_str: " ?"
+            comment: Enter interactive visual mode and open the detailed help.
+          - text: "V"
+            arg_str: " p"
+            comment: Enter interactive visual mode and select the next printing mode.
+  - name: V!
+    cname: interactive_panel
+    summary: Enter interactive panel mode
+    args: []

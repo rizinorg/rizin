@@ -263,9 +263,8 @@ commands:
     summary: Types, noreturn, signatures, C parser and more
     subcommands: cmd_type
   - name: V
-    cname: cmd_visual
-    summary: Enter visual mode
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    summary: Interactive mode
+    subcommands: cmd_interactive
   - name: v
     cname: cmd_panels
     summary: Enter visual panel mode

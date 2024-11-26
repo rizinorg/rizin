@@ -427,18 +427,6 @@ RZ_IPI int rz_cmd_panels(void *data, const char *input) {
 	}
 }
 
-RZ_IPI int rz_cmd_visual(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	if (core->http_up) {
-		return false;
-	}
-	if (!rz_cons_is_interactive()) {
-		RZ_LOG_ERROR("core: Visual mode requires scr.interactive=true.\n");
-		return false;
-	}
-	return rz_core_visual((RzCore *)data, input);
-}
-
 RZ_IPI RzCmdStatus rz_push_escaped_handler(RzCore *core, int argc, const char **argv) {
 	char *input = rz_str_array_join(argv + 1, argc - 1, " ");
 	int len = rz_str_unescape(input);
@@ -5282,7 +5270,6 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 	} cmds[] = {
 		{ "/", "search kw, pattern aes", rz_cmd_search },
 		{ "p", "print current block", rz_cmd_print },
-		{ "V", "enter visual mode", rz_cmd_visual },
 		{ "v", "enter visual mode", rz_cmd_panels },
 		{ "x", "alias for px", rz_cmd_hexdump },
 	};

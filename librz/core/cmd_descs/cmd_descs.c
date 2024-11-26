@@ -66,6 +66,7 @@ static const RzCmdDescDetail query_sdb_get_set_details[2];
 static const RzCmdDescDetail cmd_print_byte_array_details[3];
 static const RzCmdDescDetail pf_details[3];
 static const RzCmdDescDetail print_rising_and_falling_entropy_details[2];
+static const RzCmdDescDetail interactive_visual_details[3];
 static const RzCmdDescDetail write_details[3];
 static const RzCmdDescDetail write_bits_details[2];
 static const RzCmdDescDetail wv_details[2];
@@ -789,6 +790,7 @@ static const RzCmdDescArg type_union_c_args[2];
 static const RzCmdDescArg type_union_c_nl_args[2];
 static const RzCmdDescArg type_xrefs_list_args[2];
 static const RzCmdDescArg type_xrefs_function_args[2];
+static const RzCmdDescArg interactive_visual_args[2];
 static const RzCmdDescArg write_args[2];
 static const RzCmdDescArg write_bits_args[2];
 static const RzCmdDescArg write_unset_bits_args[2];
@@ -17435,8 +17437,50 @@ static const RzCmdDescHelp type_xrefs_list_all_help = {
 	.args = type_xrefs_list_all_args,
 };
 
-static const RzCmdDescHelp cmd_visual_help = {
-	.summary = "Enter visual mode",
+static const RzCmdDescHelp V_help = {
+	.summary = "Interactive mode",
+};
+static const RzCmdDescDetailEntry interactive_visual_Basic_space_usage_space__oparen_in_space_interactive_space_visual_space_mode_cparen__detail_entries[] = {
+	{ .text = "", .arg_str = "Press: q", .comment = "Quits the current view." },
+	{ .text = "", .arg_str = "Press: ?", .comment = "Opens the help." },
+	{ .text = "", .arg_str = "Press: p", .comment = "Switches between different printing modes (disassembly, hex view, etc.)." },
+	{ .text = "", .arg_str = "Press: <TAB>", .comment = "Toggles different configurations of the current printing mode." },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry interactive_visual_Examples_detail_entries[] = {
+	{ .text = "V", .arg_str = " ?", .comment = "Enter interactive visual mode and open the detailed help." },
+	{ .text = "V", .arg_str = " p", .comment = "Enter interactive visual mode and select the next printing mode." },
+	{ 0 },
+};
+static const RzCmdDescDetail interactive_visual_details[] = {
+	{ .name = "Basic usage (in interactive visual mode)", .entries = interactive_visual_Basic_space_usage_space__oparen_in_space_interactive_space_visual_space_mode_cparen__detail_entries },
+	{ .name = "Examples", .entries = interactive_visual_Examples_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg interactive_visual_args[] = {
+	{
+		.name = "visual-commands",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp interactive_visual_help = {
+	.summary = "Enter interactive visual mode",
+	.description = "Use Rizin (mostly) without shell. Scrolling disassembly, debugging, searching or graph views. All with a few keyboard shortcuts.",
+	.details = interactive_visual_details,
+	.args = interactive_visual_args,
+};
+
+static const RzCmdDescArg interactive_panel_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp interactive_panel_help = {
+	.summary = "Enter interactive panel mode",
+	.args = interactive_panel_args,
 };
 
 static const RzCmdDescHelp cmd_panels_help = {
@@ -22950,8 +22994,10 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *type_xrefs_list_all_cd = rz_cmd_desc_argv_new(core->rcmd, tx_cd, "txl", rz_type_xrefs_list_all_handler, &type_xrefs_list_all_help);
 	rz_warn_if_fail(type_xrefs_list_all_cd);
 
-	RzCmdDesc *cmd_visual_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "V", rz_cmd_visual, &cmd_visual_help);
-	rz_warn_if_fail(cmd_visual_cd);
+	RzCmdDesc *V_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "V", rz_interactive_visual_handler, &interactive_visual_help, &V_help);
+	rz_warn_if_fail(V_cd);
+	RzCmdDesc *interactive_panel_cd = rz_cmd_desc_argv_new(core->rcmd, V_cd, "V!", rz_interactive_panel_handler, &interactive_panel_help);
+	rz_warn_if_fail(interactive_panel_cd);
 
 	RzCmdDesc *cmd_panels_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "v", rz_cmd_panels, &cmd_panels_help);
 	rz_warn_if_fail(cmd_panels_cd);

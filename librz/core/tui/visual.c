@@ -3813,16 +3813,8 @@ RZ_IPI int rz_core_visual(RzCore *core, const char *input) {
 		return 0;
 	}
 	visual->obs = core->blocksize;
-	// rz_cons_set_cup (true);
 
 	core->vmode = false;
-	/* honor vim */
-	if (!strncmp(input, "im", 2)) {
-		char *cmd = rz_str_newf("!v%s", input);
-		int ret = rz_core_cmd0(core, cmd);
-		free(cmd);
-		return ret;
-	}
 	while (*input) {
 		int len = *input == 'd' ? 2 : 1;
 		if (!rz_core_visual_cmd(core, input)) {
