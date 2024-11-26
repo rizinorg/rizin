@@ -103,8 +103,7 @@ CMDS=!rizin -i scripts/no-nl-at-eof.rz -Nq =
 EXPECT=<<EOF
 1
 EOF
-EXPECT_ERR=<<EOF
-EOF
+EXPECT_ERR=
 RUN
 
 NAME=rizin -i -Q with missing script
@@ -139,8 +138,7 @@ RUN
 NAME=rizin empty -R
 FILE==
 CMDS=!rizin -R ""
-EXPECT_ERR=<<EOF
-EOF
+EXPECT_ERR=
 RUN
 
 NAME=rizin project with explicit file

@@ -18,8 +18,7 @@ pdf
 EOF
 EXPECT=<<EOF
 EOF
-EXPECT_ERR=<<EOF
-EOF
+EXPECT_ERR=
 RUN
 
 NAME=LANGUAGES : freepascal detection

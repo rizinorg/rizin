@@ -879,8 +879,7 @@ RUN
 NAME=rz-bin -D Invalid
 FILE==
 CMDS=!rz-bin -D Invalid XXXXX
-EXPECT_ERR=<<EOF
-EOF
+EXPECT_ERR=
 EXPECT=<<EOF
 Language 'Invalid' is unsupported
 List of supported languages:

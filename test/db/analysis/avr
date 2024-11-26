@@ -778,8 +778,7 @@ aae
 EOF
 EXPECT=<<EOF
 EOF
-EXPECT_ERR=<<EOF
-EOF
+EXPECT_ERR=
 RUN
 
 NAME=avr stop analysis when invalid instruction is found

@@ -600,6 +600,5 @@ Gadget size: 12
 Gadget size: 10
 
 EOF
-EXPECT_ERR=<<EOF
-EOF
+EXPECT_ERR=
 RUN

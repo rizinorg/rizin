@@ -179,8 +179,7 @@ CMDS=!rz-hash -a luhn -s "5105105105105100"
 EXPECT=<<EOF
 string: 0x00000000-0x00000010 luhn: 0
 EOF
-EXPECT_ERR=<<EOF
-EOF
+EXPECT_ERR=
 RUN
 
 NAME=rz-hash -a luhn -s "4408041234567890"
@@ -189,8 +188,7 @@ CMDS=!rz-hash -a luhn -s "4408041234567890"
 EXPECT=<<EOF
 string: 0x00000000-0x00000010 luhn: 7
 EOF
-EXPECT_ERR=<<EOF
-EOF
+EXPECT_ERR=
 RUN
 
 NAME=rz-hash -a luhn -s "1567jdjaskldsa" INVALID
