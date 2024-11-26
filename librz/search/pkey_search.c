@@ -91,47 +91,54 @@ static int check_fields(const ut8 *start) {
 }
 
 // Finds and return index of a private key based on the asn1 bytes
-static bool search_over_pkeys(RzPVector /*<PKeyMarker *>*/ *collection, ut64 address, const ut8 *buffer, size_t size, RzThreadQueue *hits) {
-
-	void **it;
+static bool pkeys_find(void *user, ut64 address, const ut8 *buffer, size_t size, RzThreadQueue *hits) {
+	const char *metadata = NULL;
 	// always skip the first 2 bytes since they are the sequence identifier + size
 	for (size_t offset = 2; offset < (size - PRIVKEY_SEARCH_MIN_LENGTH); offset++) {
-		rz_pvector_foreach (collection, it) {
-			PKeyMarker *version = (PKeyMarker *)*it;
-			if (memcmp(buffer + offset, version->marker, sizeof(version->marker))) {
-				continue;
-			}
+		if (!memcmp(buffer + offset, rsa_version.marker, sizeof(rsa_version.marker))) {
+			metadata = rsa_version.metadata;
+		} else if (!memcmp(buffer + offset, ecc_version.marker, sizeof(ecc_version.marker))) {
+			metadata = ecc_version.metadata;
+		} else if (!memcmp(buffer + offset, safecurves_version.marker, sizeof(safecurves_version.marker))) {
+			metadata = safecurves_version.metadata;
+		} else {
+			continue;
+		}
 
-			size_t key_len = 0;
-			size_t max = 5;
-			ssize_t index = -1;
-			// Going backward maximum up to 5 characters.
-			if (offset < 5) {
-				max = offset;
+		size_t key_len = 0;
+		size_t max = 5;
+		ssize_t index = -1;
+		// Going backward maximum up to 5 characters.
+		if (offset < 5) {
+			max = offset;
+		}
+		for (size_t k = offset - 2; k >= offset - max; k--) {
+			if (buffer[k] == 0x30) { // The asn1 sequence identifier is 0x30
+				index = k;
+				break;
 			}
-			for (size_t k = offset - 2; k >= offset - max; k--) {
-				if (buffer[k] == 0x30) { // The asn1 sequence identifier is 0x30
-					index = k;
-					break;
-				}
-			}
+		}
 
-			if (index == -1) {
-				continue;
-			}
+		if (index == -1) {
+			continue;
+		}
 
-			if (check_fields(buffer + index)) {
-				parse_next_field(buffer + index, &key_len);
+		if (check_fields(buffer + index)) {
+			parse_next_field(buffer + index, &key_len);
 
-				RzSearchHit *hit = rz_search_hit_new(version->metadata, address + index, key_len);
-				if (!hit || !rz_th_queue_push(hits, hit, true)) {
-					rz_search_hit_free(hit);
-					return false;
-				}
+			RzSearchHit *hit = rz_search_hit_new(metadata, address + index, key_len);
+			if (!hit || !rz_th_queue_push(hits, hit, true)) {
+				rz_search_hit_free(hit);
+				return false;
 			}
 		}
 	}
 	return true;
+}
+
+static bool pkeys_is_empty(void *user) {
+	// we always return false.
+	return false;
 }
 
 /**
@@ -140,16 +147,5 @@ static bool search_over_pkeys(RzPVector /*<PKeyMarker *>*/ *collection, ut64 add
  * \return     On success returns a valid pointer, otherwise NULL
  */
 RZ_API RZ_OWN RzSearchCollection *rz_search_collection_private_keys() {
-	RzSearchCollection *sc = rz_search_collection_new(search_over_pkeys, NULL);
-	if (!sc) {
-		return NULL;
-	}
-	if (!rz_pvector_push(sc->collection, &rsa_version) ||
-		!rz_pvector_push(sc->collection, &ecc_version) ||
-		!rz_pvector_push(sc->collection, &safecurves_version)) {
-		RZ_LOG_ERROR("search: failed to initialize pkey search collection\n");
-		rz_search_collection_free(sc);
-		return NULL;
-	}
-	return sc;
+	return rz_search_collection_new(pkeys_find, pkeys_is_empty, NULL, NULL);
 }

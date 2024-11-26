@@ -7,12 +7,13 @@
 
 #include "search_internal.h"
 
-static bool search_over_regex(RzPVector /*<RzRegex *>*/ *collection, ut64 address, const ut8 *buffer, size_t size, RzThreadQueue *hits) {
+static bool regex_find(void *user, ut64 address, const ut8 *buffer, size_t size, RzThreadQueue *hits) {
 	void **it_c = NULL;
+	RzPVector *pvec = (RzPVector *)user;
 	RzPVector *matches = NULL;
 	RzRegex *compiled = NULL;
 
-	rz_pvector_foreach (collection, it_c) {
+	rz_pvector_foreach (pvec, it_c) {
 		compiled = (RzRegex *)*it_c;
 		matches = rz_regex_match_all_not_grouped(compiled, (char *)buffer, size, 0, RZ_REGEX_DEFAULT);
 		void **it_m = NULL;
@@ -30,13 +31,22 @@ static bool search_over_regex(RzPVector /*<RzRegex *>*/ *collection, ut64 addres
 	return true;
 }
 
+static bool regex_is_empty(void *user) {
+	return rz_pvector_empty((RzPVector *)user);
+}
+
 /**
  * \brief      Allocates and initialize a regex RzSearchCollection
  *
  * \return     On success returns a valid pointer, otherwise NULL
  */
 RZ_API RZ_OWN RzSearchCollection *rz_search_collection_regex() {
-	return rz_search_collection_new(search_over_regex, rz_regex_free);
+	RzPVector /*<RzRegex *>*/ *pvec = rz_pvector_new((RzPVectorFree)rz_regex_free);
+	if (!pvec) {
+		RZ_LOG_ERROR("search: failed to initialize regex collection\n");
+		return NULL;
+	}
+	return rz_search_collection_new(regex_find, regex_is_empty, (RzSearchFreeCallback)rz_pvector_free, pvec);
 }
 
 /**
@@ -51,7 +61,7 @@ RZ_API RZ_OWN RzSearchCollection *rz_search_collection_regex() {
 RZ_API bool rz_search_collection_regex_add(RZ_NONNULL RzSearchCollection *col, RZ_NONNULL const char *regex, bool caseless) {
 	rz_return_val_if_fail(col && regex, false);
 
-	if (!rz_search_collection_has_callback(col, search_over_regex)) {
+	if (!rz_search_collection_has_find_callback(col, regex_find)) {
 		RZ_LOG_ERROR("search: cannot add regex to non-regex collection\n");
 		return false;
 	} else if (RZ_STR_ISEMPTY(regex)) {
@@ -68,7 +78,7 @@ RZ_API bool rz_search_collection_regex_add(RZ_NONNULL RzSearchCollection *col, R
 	if (!compiled) {
 		RZ_LOG_ERROR("search: cannot compile '%s' regexp.\n", regex);
 		return false;
-	} else if (!rz_pvector_push(col->collection, compiled)) {
+	} else if (!rz_pvector_push((RzPVector *)col->user, compiled)) {
 		RZ_LOG_ERROR("search: cannot add '%s' regexp.\n", regex);
 		rz_regex_free(compiled);
 		return false;

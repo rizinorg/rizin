@@ -63,7 +63,7 @@ static bool search_iterator_cb(void *element, void *user) {
 		if (!rz_io_read_at(ctx->io, at, buffer, size)) {
 			RZ_LOG_ERROR("search: failed to read at 0x%08" PFMT64x " (%" PFMTSZu " bytes)\n", at, size);
 			break;
-		} else if (!col->search_over(col->collection, at, buffer, size, ctx->hits)) {
+		} else if (!col->find(col->user, at, buffer, size, ctx->hits)) {
 			RZ_LOG_ERROR("search: failed search at 0x%08" PFMT64x "\n", at);
 			break;
 		}

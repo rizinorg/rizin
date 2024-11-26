@@ -46,9 +46,9 @@ static bool aes128_key_test(const ut8 *buf) {
 	return word1 && word2;
 }
 
-#define SEARCH_OVER_AES_KEY_FCN(name) search_over_aes_##name
-#define SEARCH_OVER_AES_KEY(bits) \
-	static bool SEARCH_OVER_AES_KEY_FCN(bits)(ut64 address, const ut8 *buffer, size_t size, RzThreadQueue *hits) { \
+#define AES_KEY_FIND_FCN(name) aes##name##_key_find_in_buffer
+#define AES_KEY_FIND(bits) \
+	static bool AES_KEY_FIND_FCN(bits)(ut64 address, const ut8 *buffer, size_t size, RzThreadQueue *hits) { \
 		for (size_t offset = 0; offset < size; offset += AES##bits##_SEARCH_LENGTH) { \
 			if (aes##bits##_key_test(buffer + offset)) { \
 				RzSearchHit *hit = rz_search_hit_new("aes", address + offset, AES##bits##_KEY_LENGTH); \
@@ -61,19 +61,24 @@ static bool aes128_key_test(const ut8 *buf) {
 		return true; \
 	}
 
-SEARCH_OVER_AES_KEY(128)
-SEARCH_OVER_AES_KEY(192)
-SEARCH_OVER_AES_KEY(256)
+AES_KEY_FIND(128)
+AES_KEY_FIND(192)
+AES_KEY_FIND(256)
 
-bool search_over_aes(RzPVector /*<SearchAesKey *>*/ *collection, ut64 address, const ut8 *buffer, size_t size, RzThreadQueue *hits) {
-	void **it;
-	rz_pvector_foreach (collection, it) {
-		SearchAesKey search_key = (SearchAesKey)*it;
-		if (!search_key(address, buffer, size, hits)) {
-			return false;
-		}
+static bool aes_keys_find(void *user, ut64 address, const ut8 *buffer, size_t size, RzThreadQueue *hits) {
+	if (!AES_KEY_FIND_FCN(128)(address, buffer, size, hits)) {
+		return false;
+	} else if (!AES_KEY_FIND_FCN(192)(address, buffer, size, hits)) {
+		return false;
+	} else if (!AES_KEY_FIND_FCN(256)(address, buffer, size, hits)) {
+		return false;
 	}
 	return true;
+}
+
+static bool aes_keys_is_empty(void *user) {
+	// we always return false.
+	return false;
 }
 
 /**
@@ -82,16 +87,5 @@ bool search_over_aes(RzPVector /*<SearchAesKey *>*/ *collection, ut64 address, c
  * \return     On success returns a valid pointer, otherwise NULL
  */
 RZ_API RZ_OWN RzSearchCollection *rz_search_collection_aes_keys() {
-	RzSearchCollection *sc = rz_search_collection_new(search_over_aes, NULL);
-	if (!sc) {
-		return NULL;
-	}
-	if (!rz_pvector_push(sc->collection, SEARCH_OVER_AES_KEY_FCN(128)) ||
-		!rz_pvector_push(sc->collection, SEARCH_OVER_AES_KEY_FCN(192)) ||
-		!rz_pvector_push(sc->collection, SEARCH_OVER_AES_KEY_FCN(256))) {
-		RZ_LOG_ERROR("search: failed to initialize AES search collection\n");
-		rz_search_collection_free(sc);
-		return NULL;
-	}
-	return sc;
+	return rz_search_collection_new(aes_keys_find, aes_keys_is_empty, NULL, NULL);
 }

@@ -14,12 +14,15 @@
 #define RZ_SEARCH_MIN_BUFFER_SIZE    512u
 #define RZ_SEARCH_MAX_HEX_PATTERN    UT16_MAX
 
-typedef void (*RzSearchFiniCallback)(void *user);
-typedef bool (*RzSearchOverCallback)(RzPVector /*<void *>*/ *collection, ut64 address, const ut8 *buffer, size_t size, RzThreadQueue *hits);
+typedef void (*RzSearchFreeCallback)(void *user);
+typedef bool (*RzSearchIsEmptyCallback)(void *user);
+typedef bool (*RzSearchFindCallback)(void *user, ut64 address, const ut8 *buffer, size_t size, RzThreadQueue *hits);
 
 struct rz_search_collection_t {
-	RzPVector /*<void *>*/ *collection; ///< Collection of elements to search in a buffer
-	RzSearchOverCallback search_over; ///< Collection search over the collection callback
+	void *user; ///< Context defined by the various collections
+	RzSearchFindCallback find; ///< Callback used for finding the data requested by the user
+	RzSearchIsEmptyCallback is_empty; ///< Callback used to check if the collection is empty.
+	RzSearchFreeCallback free; ///< Callback used to free the collection.
 };
 
 struct rz_search_opt_t {
@@ -36,8 +39,8 @@ struct rz_search_opt_t {
 
 RZ_IPI RZ_OWN RzSearchHit *rz_search_hit_new(const char *metadata, ut64 address, size_t size);
 
-RZ_IPI RZ_OWN RzSearchCollection *rz_search_collection_new(RZ_NONNULL RzSearchOverCallback search_over, RZ_NULLABLE RzPVectorFree free);
-RZ_IPI bool rz_search_collection_has_callback(RZ_NONNULL RzSearchCollection *col, RZ_NONNULL RzSearchOverCallback expected);
+RZ_IPI RZ_OWN RzSearchCollection *rz_search_collection_new(RZ_NONNULL RzSearchFindCallback find, RZ_NONNULL RzSearchIsEmptyCallback is_empty, RZ_NULLABLE RzSearchFreeCallback free, RZ_NULLABLE void *user);
+RZ_IPI bool rz_search_collection_has_find_callback(RZ_NONNULL RzSearchCollection *col, RZ_NONNULL RzSearchFindCallback expected);
 RZ_IPI bool rz_search_collection_is_empty(RZ_NONNULL RzSearchCollection *col);
 
 #endif /* RZ_SEARCH_INTERNAL_H */

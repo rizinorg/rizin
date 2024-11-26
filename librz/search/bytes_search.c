@@ -9,14 +9,14 @@
 
 #define IS_PATBYTE(c) (IS_HEXCHAR(c) || (c) == '.')
 
-typedef struct hex_pattern {
+typedef struct bytes_pattern {
 	const char *metadata; ///< Pattern metadata
 	ut8 *bytes; ///< Pattern bytes
 	ut8 *mask; ///< Pattern mask (when NULL full match)
 	ut32 length; ///< Pattern & mask length
-} HexPattern;
+} BytesPattern;
 
-static void bytes_pattern_free(HexPattern *hp) {
+static void bytes_pattern_free(BytesPattern *hp) {
 	if (!hp) {
 		return;
 	}
@@ -54,10 +54,10 @@ static inline ut8 decode_mask(char high, char low) {
 }
 
 // copy from given bytes
-static HexPattern *hex_pattern_copy(const char *metadata, const ut8 *bytes, const ut8 *mask, size_t length) {
-	HexPattern *hp = RZ_NEW0(HexPattern);
+static BytesPattern *bytes_pattern_copy(const char *metadata, const ut8 *bytes, const ut8 *mask, size_t length) {
+	BytesPattern *hp = RZ_NEW0(BytesPattern);
 	if (!hp) {
-		RZ_LOG_ERROR("search: cannot allocate HexPattern struct\n");
+		RZ_LOG_ERROR("search: cannot allocate BytesPattern struct\n");
 		return NULL;
 	}
 
@@ -88,14 +88,14 @@ static HexPattern *hex_pattern_copy(const char *metadata, const ut8 *bytes, cons
 	return hp;
 }
 
-static HexPattern *hex_pattern_parse(const char *hex_pattern) {
-	HexPattern *hp = RZ_NEW0(HexPattern);
+static BytesPattern *bytes_pattern_parse(const char *bytes_pattern) {
+	BytesPattern *hp = RZ_NEW0(BytesPattern);
 	if (!hp) {
-		RZ_LOG_ERROR("search: cannot allocate HexPattern struct\n");
+		RZ_LOG_ERROR("search: cannot allocate BytesPattern struct\n");
 		return NULL;
 	}
 
-	size_t length = strlen(hex_pattern);
+	size_t length = strlen(bytes_pattern);
 	if (length & 1) {
 		RZ_LOG_ERROR("search: hex pattern length is a multiple of 2\n");
 		return NULL;
@@ -125,8 +125,8 @@ static HexPattern *hex_pattern_parse(const char *hex_pattern) {
 
 	for (ut32 i = 0; i < hp->length; ++i) {
 		ut32 p = i << 1;
-		char high = hex_pattern[p];
-		char low = hex_pattern[p + 1];
+		char high = bytes_pattern[p];
+		char low = bytes_pattern[p + 1];
 		if (!IS_PATBYTE(high)) {
 			RZ_LOG_ERROR("search: invalid hex '%c' at char %u\n", high, p);
 			bytes_pattern_free(hp);
@@ -153,7 +153,7 @@ static HexPattern *hex_pattern_parse(const char *hex_pattern) {
 	return hp;
 }
 
-static bool hex_pattern_compare(HexPattern *hp, const ut8 *buffer, size_t buffer_size) {
+static bool bytes_pattern_compare(BytesPattern *hp, const ut8 *buffer, size_t buffer_size) {
 	size_t i = 0;
 	if (buffer_size < hp->length) {
 		return false;
@@ -181,17 +181,18 @@ static bool hex_pattern_compare(HexPattern *hp, const ut8 *buffer, size_t buffer
 	return true;
 }
 
-static bool search_over_bytes(RzPVector /*<HexPattern *>*/ *collection, ut64 address, const ut8 *buffer, size_t size, RzThreadQueue *hits) {
+static bool bytes_find(void *user, ut64 address, const ut8 *buffer, size_t size, RzThreadQueue *hits) {
+	RzPVector /*<BytesPattern *>*/ *patterns = (RzPVector *)user;
 	void **it = NULL;
-	HexPattern *hp = NULL;
+	BytesPattern *hp = NULL;
 
-	rz_pvector_foreach (collection, it) {
-		hp = (HexPattern *)*it;
+	rz_pvector_foreach (patterns, it) {
+		hp = (BytesPattern *)*it;
 		for (size_t offset = 0; offset < size;) {
 			size_t leftovers = size - offset;
 			if (hp->length > leftovers) {
 				break;
-			} else if (!hex_pattern_compare(hp, buffer + offset, leftovers)) {
+			} else if (!bytes_pattern_compare(hp, buffer + offset, leftovers)) {
 				offset++;
 				continue;
 			}
@@ -206,39 +207,48 @@ static bool search_over_bytes(RzPVector /*<HexPattern *>*/ *collection, ut64 add
 	return true;
 }
 
+static bool bytes_is_empty(void *user) {
+	return rz_pvector_empty((RzPVector *)user);
+}
+
 /**
  * \brief      Allocates and initialize a bytes RzSearchCollection
  *
  * \return     On success returns a valid pointer, otherwise NULL
  */
 RZ_API RZ_OWN RzSearchCollection *rz_search_collection_bytes() {
-	return rz_search_collection_new(search_over_bytes, (RzPVectorFree)bytes_pattern_free);
+	RzPVector /*<BytesPattern *>*/ *patterns = rz_pvector_new((RzPVectorFree)bytes_pattern_free);
+	if (!patterns) {
+		RZ_LOG_ERROR("search: failed to initialize bytes collection\n");
+		return NULL;
+	}
+	return rz_search_collection_new(bytes_find, bytes_is_empty, (RzSearchFreeCallback)rz_pvector_free, patterns);
 }
 
 /**
  * \brief      Parses and adds a hex pattern into a bytes RzSearchCollection
  *
  * \param[in]  col          The RzSearchCollection to use
- * \param[in]  hex_pattern  The hexadecimal pattern to add
+ * \param[in]  bytes_pattern  The hexadecimal pattern to add
  *
  * \return     On success returns true, otherwise false
  */
-RZ_API bool rz_search_collection_bytes_add_pattern(RZ_NONNULL RzSearchCollection *col, RZ_NONNULL const char *hex_pattern) {
-	rz_return_val_if_fail(col && hex_pattern, false);
+RZ_API bool rz_search_collection_bytes_add_pattern(RZ_NONNULL RzSearchCollection *col, RZ_NONNULL const char *bytes_pattern) {
+	rz_return_val_if_fail(col && bytes_pattern, false);
 
-	if (!rz_search_collection_has_callback(col, search_over_bytes)) {
-		RZ_LOG_ERROR("search: cannot add hex to non-hex collection\n");
+	if (!rz_search_collection_has_find_callback(col, bytes_find)) {
+		RZ_LOG_ERROR("search: cannot add hex to non-bytes collection\n");
 		return false;
-	} else if (RZ_STR_ISEMPTY(hex_pattern)) {
-		RZ_LOG_ERROR("search: cannot add an empty string to a hex collection\n");
+	} else if (RZ_STR_ISEMPTY(bytes_pattern)) {
+		RZ_LOG_ERROR("search: cannot parse an empty string as bytes pattern\n");
 		return false;
 	}
 
-	HexPattern *hp = hex_pattern_parse(hex_pattern);
+	BytesPattern *hp = bytes_pattern_parse(bytes_pattern);
 	if (!hp) {
 		return false;
-	} else if (!rz_pvector_push(col->collection, hp)) {
-		RZ_LOG_ERROR("search: cannot add '%s' hex pattern.\n", hex_pattern);
+	} else if (!rz_pvector_push((RzPVector *)col->user, hp)) {
+		RZ_LOG_ERROR("search: cannot add '%s' hex pattern.\n", bytes_pattern);
 		bytes_pattern_free(hp);
 		return false;
 	}
@@ -259,7 +269,7 @@ RZ_API bool rz_search_collection_bytes_add_pattern(RZ_NONNULL RzSearchCollection
 RZ_API bool rz_search_collection_bytes_add(RZ_NONNULL RzSearchCollection *col, RZ_NONNULL const char *metadata, RZ_NONNULL const ut8 *bytes, RZ_NULLABLE const ut8 *mask, size_t length) {
 	rz_return_val_if_fail(col && metadata && bytes, false);
 
-	if (!rz_search_collection_has_callback(col, search_over_bytes)) {
+	if (!rz_search_collection_has_find_callback(col, bytes_find)) {
 		RZ_LOG_ERROR("search: cannot add bytes to non-bytes collection\n");
 		return false;
 	} else if (length < 1) {
@@ -270,10 +280,10 @@ RZ_API bool rz_search_collection_bytes_add(RZ_NONNULL RzSearchCollection *col, R
 		return false;
 	}
 
-	HexPattern *hp = hex_pattern_copy(metadata, bytes, mask, length);
+	BytesPattern *hp = bytes_pattern_copy(metadata, bytes, mask, length);
 	if (!hp) {
 		return false;
-	} else if (!rz_pvector_push(col->collection, hp)) {
+	} else if (!rz_pvector_push((RzPVector *)col->user, hp)) {
 		RZ_LOG_ERROR("search: cannot add bytes pattern.\n");
 		bytes_pattern_free(hp);
 		return false;

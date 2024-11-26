@@ -14,10 +14,10 @@ extern "C" {
  * Represent a detected string.
  */
 typedef struct {
-	char *string; ///< Pointer to the string
+	char *string; ///< Pointer to the decoded utf-8 string
 	ut64 addr; ///< Address of the string in the RzBuffer
-	ut32 size; ///< Size of buffer containing the string in bytes
-	ut32 length; ///< Length of string in chars
+	ut32 size; ///< Raw size of buffer containing the string in bytes
+	ut32 length; ///< Decoded length of string in utf-8 chars
 	RzStrEnc type; ///< String type
 } RzDetectedString;
 

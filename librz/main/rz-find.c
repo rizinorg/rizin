@@ -15,6 +15,18 @@
 #include <rz_io.h>
 #include <rz_bin.h>
 
+typedef enum {
+	SEARCH_MODE_BYTES = 0,
+	SEARCH_MODE_REGEXP,
+	SEARCH_MODE_STRING,
+	SEARCH_MODE_AES,
+	SEARCH_MODE_PRIVATE_KEY,
+	SEARCH_MODE_MAGIC,
+	SEARCH_MODE_XREFS,
+	/* enum size */
+	SEARCH_MODE_LAST
+} search_mode;
+
 typedef struct {
 	bool showstr;
 	bool rad;
@@ -26,7 +38,7 @@ typedef struct {
 	bool widestr;
 	bool nonstop;
 	bool json;
-	int mode;
+	search_mode mode;
 	int align;
 	ut8 *buf;
 	ut64 bsize;
@@ -48,7 +60,7 @@ static void rzfind_options_fini(RzfindOptions *ro) {
 
 static void rzfind_options_init(RzfindOptions *ro) {
 	memset(ro, 0, sizeof(RzfindOptions));
-	ro->mode = RZ_SEARCH_MODE_STRING;
+	ro->mode = SEARCH_MODE_STRING;
 	ro->bsize = 4096;
 	ro->to = UT64_MAX;
 	ro->keywords = rz_list_newf(NULL);
@@ -370,7 +382,7 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 	io->cb_printf = printf;
 	RzBinFile *bf = rz_bin_open(bin, file, &opt);
 
-	if (ro->mode == RZ_SEARCH_MODE_STRING) {
+	if (ro->mode == SEARCH_MODE_STRING) {
 		PJ *pj = NULL;
 		if (ro->json) {
 			pj = pj_new();
@@ -402,7 +414,7 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 		goto done;
 	}
 
-	if (ro->mode == RZ_SEARCH_MODE_MAGIC) {
+	if (ro->mode == SEARCH_MODE_MAGIC) {
 		/* TODO: implement using api */
 		char *tostr = (to && to != UT64_MAX) ? rz_str_newf("-e search.to=%" PFMT64d, to) : rz_str_dup("");
 		rz_sys_cmdf("rizin"
@@ -414,14 +426,14 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 		free(tostr);
 		goto done;
 	}
-	if (ro->mode == RZ_SEARCH_MODE_ESIL) {
+	if (ro->mode == SEARCH_MODE_ESIL) {
 		/* TODO: implement using api */
 		rz_list_foreach (ro->keywords, iter, kw) {
 			rz_sys_cmdf("rizin -qc \"/E %s\" \"%s\"", kw, efile);
 		}
 		goto done;
 	}
-	if (ro->mode == RZ_SEARCH_MODE_KEYWORD) {
+	if (ro->mode == SEARCH_MODE_KEYWORD) {
 		rz_list_foreach (ro->keywords, iter, kw) {
 			if (ro->hexstr) {
 				if (ro->mask) {
@@ -435,7 +447,7 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 				rz_search_kw_add(rs, rz_search_keyword_new_str(kw, ro->mask, NULL, 0));
 			}
 		}
-	} else if (ro->mode == RZ_SEARCH_MODE_STRING) {
+	} else if (ro->mode == SEARCH_MODE_STRING) {
 		rz_search_kw_add(rs, rz_search_keyword_new_hexmask("00", NULL)); // XXX
 	}
 
@@ -543,10 +555,10 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 			ro.nonstop = 1;
 			break;
 		case 'm':
-			ro.mode = RZ_SEARCH_MODE_MAGIC;
+			ro.mode = SEARCH_MODE_MAGIC;
 			break;
 		case 'e':
-			ro.mode = RZ_SEARCH_MODE_REGEXP;
+			ro.mode = SEARCH_MODE_REGEXP;
 			ro.hexstr = 0;
 			rz_list_append(ro.keywords, (void *)opt.arg);
 			break;
@@ -555,13 +567,13 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 			ro.exec_command = opt.arg;
 			break;
 		case 's':
-			ro.mode = RZ_SEARCH_MODE_KEYWORD;
+			ro.mode = SEARCH_MODE_KEYWORD;
 			ro.hexstr = false;
 			ro.widestr = false;
 			rz_list_append(ro.keywords, (void *)opt.arg);
 			break;
 		case 'w':
-			ro.mode = RZ_SEARCH_MODE_KEYWORD;
+			ro.mode = SEARCH_MODE_KEYWORD;
 			ro.hexstr = false;
 			ro.widestr = true;
 			rz_list_append(ro.keywords, (void *)opt.arg);
@@ -593,7 +605,7 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 			}
 			char *hexdata = rz_hex_bin2strdup((ut8 *)data, data_size);
 			if (hexdata) {
-				ro.mode = RZ_SEARCH_MODE_KEYWORD;
+				ro.mode = SEARCH_MODE_KEYWORD;
 				ro.hexstr = true;
 				ro.widestr = false;
 				rz_list_append(ro.keywords, (void *)hexdata);
@@ -604,7 +616,7 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 			ro.to = rz_num_math(NULL, opt.arg);
 			break;
 		case 'x':
-			ro.mode = RZ_SEARCH_MODE_KEYWORD;
+			ro.mode = SEARCH_MODE_KEYWORD;
 			ro.hexstr = 1;
 			ro.widestr = 0;
 			rz_list_append(ro.keywords, (void *)opt.arg);
@@ -620,7 +632,7 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 		case 'h':
 			return show_help(argv[0], 0);
 		case 'z':
-			ro.mode = RZ_SEARCH_MODE_STRING;
+			ro.mode = SEARCH_MODE_STRING;
 			break;
 		case 'Z':
 			ro.showstr = true;
