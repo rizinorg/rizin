@@ -11,11 +11,12 @@
 
 RZ_IPI RzCmdStatus rz_interactive_visual_handler(RzCore *core, int argc, const char **argv) {
 	if (core->http_up) {
-		return false;
+		RZ_LOG_ERROR("core->http_up=false.\n");
+		return RZ_CMD_STATUS_ERROR;
 	}
 	if (!rz_cons_is_interactive()) {
 		RZ_LOG_ERROR("Visual mode requires scr.interactive=true.\n");
-		return false;
+		return RZ_CMD_STATUS_ERROR;
 	}
 	const char *v_commands = argc > 1 ? argv[1] : "";
 	rz_core_visual(core, v_commands);
