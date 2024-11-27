@@ -152,7 +152,7 @@ def strip(s):
 class Arg:
     def __init__(self, cd, c):
         if "name" not in c or "type" not in c:
-            print("Argument of %s should have `name`/`type` fields" % (cd.name,))
+            print("Argument of '%s' should have `name`/`type` fields" % (cd.name,))
             sys.exit(1)
 
         self.cd = cd
@@ -169,14 +169,14 @@ class Arg:
         self.choices_cb = c.pop("choices_cb", None)
         if c.keys():
             print(
-                "Argument %s for command %s has unrecognized properties: %s."
+                "Argument '%s' for command '%s' has unrecognized properties: '%s'."
                 % (self.name, self.cd.name, c.keys())
             )
             sys.exit(1)
 
         if self.default_value is not None and self.optional is not None:
             print(
-                "Argument %s for command %s has both optional and default_value."
+                "Argument '%s' for command '%s' has both optional and default_value."
                 % (self.name, self.cd.name)
             )
             sys.exit(1)
@@ -283,7 +283,7 @@ class Detail:
         self.entries = [format_detail_entry(x) for x in c.pop("entries")]
         if c.keys():
             print(
-                "Detail %s for command %s has unrecognized properties: %s."
+                "Detail '%s' for command '%s' has unrecognized properties: %s."
                 % (self.name, self.cd.name, c.keys())
             )
             sys.exit(1)
@@ -352,7 +352,7 @@ class CmdDesc:
             subcommands_name = c.pop("subcommands")
             if subcommands_name not in yamls:
                 print(
-                    "Command %s referenced another YAML file (%s) that is not passed as arg to cmd_descs_generate.py."
+                    "Command '%s' referenced another YAML file (%s) that is not passed as arg to cmd_descs_generate.py."
                     % (self.name, subcommands_name)
                 )
                 sys.exit(1)
@@ -428,11 +428,11 @@ class CmdDesc:
 
     def _validate(self, c):
         if c.keys():
-            print("Command %s has unrecognized properties: %s." % (self.name, c.keys()))
+            print("Command '%s' has unrecognized properties: %s." % (self.name, c.keys()))
             sys.exit(1)
 
         if self.type not in CD_VALID_TYPES:
-            print("Command %s does not have a valid type." % (self.name,))
+            print("Command '%s' does not have a valid type." % (self.name,))
             sys.exit(1)
 
         if (
@@ -440,7 +440,7 @@ class CmdDesc:
             in [CD_TYPE_ARGV, CD_TYPE_ARGV_MODES, CD_TYPE_ARGV_STATE, CD_TYPE_OLDINPUT]
             and not self.cname
         ):
-            print("Command %s does not have cname field" % (self.name,))
+            print("Command '%s' does not have cname field" % (self.name,))
             sys.exit(1)
 
         if (
@@ -460,7 +460,7 @@ class CmdDesc:
             CD_TYPE_INNER,
             CD_TYPE_OLDINPUT,
         ]:
-            print("The parent of %s is of the wrong type" % (self.cname,))
+            print("The parent of '%s' is of the wrong type" % (self.cname,))
             sys.exit(1)
 
         if self.cname in CmdDesc.c_cds:
