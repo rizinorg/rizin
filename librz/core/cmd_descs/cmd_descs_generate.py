@@ -428,7 +428,9 @@ class CmdDesc:
 
     def _validate(self, c):
         if c.keys():
-            print("Command '%s' has unrecognized properties: %s." % (self.name, c.keys()))
+            print(
+                "Command '%s' has unrecognized properties: %s." % (self.name, c.keys())
+            )
             sys.exit(1)
 
         if self.type not in CD_VALID_TYPES:
