@@ -21,6 +21,7 @@ cmd_descs_yaml = files(
   'cmd_plugins.yaml',
   'cmd_print.yaml',
   'cmd_project.yaml',
+  'cmd_query.yaml',
   'cmd_quit.yaml',
   'cmd_remote.yaml',
   'cmd_resize.yaml',

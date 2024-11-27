@@ -91,6 +91,7 @@ rz_core_sources = [
   'cmd/cmd_plugins.c',
   #'cmd/cmd_print.c',
   'cmd/cmd_project.c',
+  'cmd/cmd_query.c',
   'cmd/cmd_quit.c',
   'cmd/cmd_remote.c',
   'cmd/cmd_resize.c',

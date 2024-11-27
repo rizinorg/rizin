@@ -1617,7 +1617,15 @@ RZ_IPI RzCmdStatus rz_cmd_info_purge_string_handler(RzCore *core, int argc, cons
 // "iZ"
 RZ_IPI RzCmdStatus rz_cmd_info_guess_size_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "k"
-RZ_IPI int rz_cmd_kuery(void *data, const char *input);
+RZ_IPI RzCmdStatus rz_query_sdb_get_set_handler(RzCore *core, int argc, const char **argv);
+// "kj"
+RZ_IPI RzCmdStatus rz_query_dump_json_handler(RzCore *core, int argc, const char **argv);
+// "ks"
+RZ_IPI RzCmdStatus rz_query_shell_sdb_handler(RzCore *core, int argc, const char **argv);
+// "kd"
+RZ_IPI RzCmdStatus rz_sdb_namespace_dump_handler(RzCore *core, int argc, const char **argv);
+// "ko"
+RZ_IPI RzCmdStatus rz_sdb_namespace_load_handler(RzCore *core, int argc, const char **argv);
 // "L"
 RZ_IPI RzCmdStatus rz_plugins_load_handler(RzCore *core, int argc, const char **argv);
 // "L-"

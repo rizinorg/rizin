@@ -1,0 +1,64 @@
+# SPDX-FileCopyrightText: 2024 RizinOrg <info@rizin.re>
+# SPDX-License-Identifier: LGPL-3.0-only
+---
+name: cmd_query
+commands:
+  - name: k
+    summary: Get or set a value from the SDB.
+    cname: query_sdb_get_set
+    args_str: " [<key>[=<val>]]"
+    args:
+      - name: key=value
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: true
+    details:
+      - name: "Examples"
+        entries:
+          - text: "k"
+            comment: "List all keys in root namespace."
+          - text: "k"
+            arg_str: " **"
+            comment: "List namespaces under root."
+          - text: "k"
+            arg_str: " analysis/**"
+            comment: "List namespaces under 'analysis'."
+          - text: "k"
+            arg_str: " analysis/meta/*"
+            comment: "List key-value pairs under the 'analysis.meta' namespace."
+          - text: "k"
+            arg_str: " analysis/meta/meta.0x80404"
+            comment: "Show value of key 'meta.0x80404'."
+          - text: "k"
+            arg_str: " foo"
+            comment: "Show value of key 'foo'."
+          - text: "k"
+            arg_str: " foo=bar"
+            comment: "Set key 'foo' to value 'bar'"
+  - name: kj
+    summary: List all namespaces under 'analysis/' and sdb databases in JSON format (SDB).
+    cname: query_dump_json
+    args: []
+  - name: ks
+    summary: Enter query shell (SDB).
+    cname: query_shell_sdb
+    args:
+      - name: namespace
+        type: RZ_CMD_ARG_TYPE_STRING
+  - name: kd
+    summary: Dump namespace to file (SDB).
+    cname: sdb_namespace_dump
+    args:
+      - name: filename
+        type: RZ_CMD_ARG_TYPE_FILE
+      - name: namespace
+        type: RZ_CMD_ARG_TYPE_STRING
+  - name: ko
+    summary: Load namespace from file (SDB).
+    cname: sdb_namespace_load
+    args:
+      - name: filename
+        type: RZ_CMD_ARG_TYPE_FILE
+      - name: namespace
+        type: RZ_CMD_ARG_TYPE_STRING
+
+

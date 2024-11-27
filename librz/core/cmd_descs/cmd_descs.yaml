@@ -234,9 +234,8 @@ commands:
     summary: Get info about opened binary file
     subcommands: cmd_info
   - name: k
-    cname: cmd_kuery
-    summary: Run sdb-query
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    summary: Run query (SDB)
+    subcommands: cmd_query
   - name: L
     summary: List, unload, load rizin plugins
     subcommands: cmd_plugins

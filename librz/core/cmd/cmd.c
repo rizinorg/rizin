@@ -25,42 +25,6 @@ TSLanguage *tree_sitter_rzcmd();
 RZ_IPI void rz_save_panels_layout(RzCore *core, const char *_name);
 RZ_IPI bool rz_load_panels_layout(RzCore *core, const char *_name);
 
-static RzCmdDescriptor *cmd_descriptor(const char *cmd, const char *help[]) {
-	RzCmdDescriptor *d = RZ_NEW0(RzCmdDescriptor);
-	if (d) {
-		d->cmd = cmd;
-		d->help_msg = help;
-	}
-	return d;
-}
-
-#define DEPRECATED_DEFINE_CMD_DESCRIPTOR(core, cmd_) \
-	{ \
-		RzCmdDescriptor *d = cmd_descriptor(#cmd_, help_msg_##cmd_); \
-		if (d) { \
-			rz_list_append((core)->cmd_descriptors, d); \
-		} \
-	}
-
-#define DEPRECATED_DEFINE_CMD_DESCRIPTOR_WITH_DETAIL(core, cmd_) \
-	{ \
-		RzCmdDescriptor *d = cmd_descriptor(#cmd_, help_msg##cmd_); \
-		if (d) { \
-			d->help_detail = help_detail_##cmd_; \
-			rz_list_append((core)->cmd_descriptors, d); \
-		} \
-	}
-
-#define DEPRECATED_DEFINE_CMD_DESCRIPTOR_WITH_DETAIL2(core, cmd_) \
-	{ \
-		RzCmdDescriptor *d = cmd_descriptor(#cmd_, help_msg_##cmd_); \
-		if (d) { \
-			d->help_detail = help_detail_##cmd_; \
-			d->help_detail2 = help_detail2_##cmd_; \
-			rz_list_append((core)->cmd_descriptors, d); \
-		} \
-	}
-
 static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpseek);
 
 #include "cmd_debug.c"
@@ -69,45 +33,6 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 #include "cmd_search.c" // defines incDigitBuffer... used by cmd_print
 #include "cmd_print.c"
 #include "cmd_math.c"
-
-static const char *help_msg_k[] = {
-	"Usage:",
-	"k[s] [key[=value]]",
-	"Sdb Query",
-	"k",
-	" analysis/**",
-	"list namespaces under analysis",
-	"k",
-	" analysis/meta/*",
-	"list kv from analysis > meta namespaces",
-	"k",
-	" analysis/meta/meta.0x80404",
-	"get value for meta.0x80404 key",
-	"k",
-	" foo",
-	"show value",
-	"k",
-	" foo=bar",
-	"set value",
-	"k",
-	"",
-	"list keys",
-	"kd",
-	" [file.sdb] [ns]",
-	"dump namespace to disk",
-	"kj",
-	"",
-	"List all namespaces and sdb databases in JSON format",
-	"ko",
-	" [file.sdb] [ns]",
-	"open file into namespace",
-	"ks",
-	" [ns]",
-	"enter the sdb query shell",
-	//"kl", " ha.sdb", "load keyvalue from ha.sdb",
-	//"ks", " ha.sdb", "save keyvalue to ha.sdb",
-	NULL,
-};
 
 static const char *help_msg_vertical_bar[] = {
 	"Usage:", "[cmd] | [program|H|T|.|]", "",
@@ -432,11 +357,6 @@ RZ_API bool rz_core_run_script(RzCore *core, RZ_NONNULL const char *file) {
 	return ret;
 }
 
-static bool callback_foreach_kv(void *user, const SdbKv *kv) {
-	rz_cons_printf("%s=%s\n", sdbkv_key(kv), sdbkv_value(kv));
-	return true;
-}
-
 RZ_API int rz_line_hist_sdb_up(RzLine *line) {
 	if (!rz_list_iter_get_next(line->sdbshell_hist_iter)) {
 		return false;
@@ -463,213 +383,6 @@ RZ_IPI void rz_core_kuery_print(RzCore *core, const char *k) {
 		rz_cons_print(out);
 	}
 	free(out);
-}
-
-RZ_IPI int rz_cmd_kuery(void *data, const char *input) {
-	char buf[1024], *out, *tofree;
-	RzCore *core = (RzCore *)data;
-	const char *sp, *p = "[sdb]> ";
-	Sdb *s = core->sdb;
-
-	char *cur_pos = NULL, *cur_cmd = NULL, *next_cmd = NULL;
-	char *temp_pos = NULL, *temp_cmd = NULL;
-
-	switch (input[0]) {
-	case 'j':
-		tofree = out = sdb_querys(s, NULL, 0, "analysis/**");
-		if (!out) {
-			rz_cons_println("No Output from sdb");
-			break;
-		}
-		PJ *pj = pj_new();
-		if (!pj) {
-			free(out);
-			break;
-		}
-		pj_o(pj);
-		pj_ko(pj, "analysis");
-		pj_ka(pj, "cur_cmd");
-
-		while (*out) {
-			cur_pos = strchr(out, '\n');
-			if (!cur_pos) {
-				break;
-			}
-			cur_cmd = rz_str_ndup(out, cur_pos - out);
-			pj_s(pj, cur_cmd);
-
-			free(next_cmd);
-			next_cmd = rz_str_newf("analysis/%s/*", cur_cmd);
-			char *query_result = sdb_querys(s, NULL, 0, next_cmd);
-
-			if (!query_result) {
-				out = cur_pos + 1;
-				continue;
-			}
-
-			char *temp = query_result;
-			while (*temp) {
-				temp_pos = strchr(temp, '\n');
-				if (!temp_pos) {
-					break;
-				}
-				temp_cmd = rz_str_ndup(temp, temp_pos - temp);
-				pj_s(pj, temp_cmd);
-				free(temp_cmd);
-				temp = temp_pos + 1;
-			}
-			out = cur_pos + 1;
-			free(query_result);
-		}
-		pj_end(pj);
-		pj_end(pj);
-		pj_end(pj);
-		rz_cons_println(pj_string(pj));
-		pj_free(pj);
-		RZ_FREE(next_cmd);
-		free(next_cmd);
-		free(cur_cmd);
-		free(tofree);
-		break;
-
-	case ' ':
-		rz_core_kuery_print(core, input + 1);
-		break;
-	// case 's': rz_pair_save (s, input + 3); break;
-	// case 'l': rz_pair_load (sdb, input + 3); break;
-	case '\0':
-		sdb_foreach(s, callback_foreach_kv, NULL);
-		break;
-	// TODO: add command to list all namespaces // sdb_ns_foreach ?
-	case 's': // "ks"
-		if (core->http_up) {
-			return false;
-		}
-		if (!rz_cons_is_interactive()) {
-			return false;
-		}
-		if (input[1] == ' ') {
-			char *n, *o, *p = rz_str_dup(input + 2);
-			// TODO: slash split here? or inside sdb_ns ?
-			for (n = o = p; n; o = n) {
-				n = strchr(o, '/'); // SDB_NS_SEPARATOR NAMESPACE
-				if (n) {
-					*n++ = 0;
-				}
-				s = sdb_ns(s, o, 1);
-			}
-			free(p);
-		}
-		if (!s) {
-			s = core->sdb;
-		}
-		RzLine *line = core->cons->line;
-		if (!line->sdbshell_hist) {
-			line->sdbshell_hist = rz_list_newf(free);
-		}
-		RzList *sdb_hist = line->sdbshell_hist;
-		rz_line_set_hist_callback(line, &rz_line_hist_sdb_up, &rz_line_hist_sdb_down);
-		for (;;) {
-			rz_line_set_prompt(line, p);
-			if (rz_cons_fgets(buf, sizeof(buf), 0, NULL) < 1) {
-				break;
-			}
-			if (!*buf) {
-				break;
-			}
-			if (sdb_hist) {
-				if ((rz_list_length(sdb_hist) == 1) || (rz_list_length(sdb_hist) > 1 && strcmp(rz_list_get_n(sdb_hist, 1), buf))) {
-					rz_list_insert(sdb_hist, 1, rz_str_dup(buf));
-				}
-				line->sdbshell_hist_iter = sdb_hist->head;
-			}
-			out = sdb_querys(s, NULL, 0, buf);
-			if (out) {
-				rz_cons_println(out);
-				rz_cons_flush();
-			}
-		}
-		rz_line_set_hist_callback(core->cons->line, &rz_line_hist_cmd_up, &rz_line_hist_cmd_down);
-		break;
-	case 'o': // "ko"
-		if (input[1] == ' ') {
-			char *fn = rz_str_dup(input + 2);
-			if (!fn) {
-				RZ_LOG_ERROR("core: Unable to allocate memory\n");
-				return 0;
-			}
-			char *ns = strchr(fn, ' ');
-			if (ns) {
-				Sdb *db;
-				*ns++ = 0;
-				if (rz_file_exists(fn)) {
-					db = sdb_ns_path(core->sdb, ns, 1);
-					if (db) {
-						Sdb *newdb = sdb_new(NULL, fn, 0);
-						if (newdb) {
-							sdb_drain(db, newdb);
-						} else {
-							RZ_LOG_ERROR("core: Cannot open sdb '%s'\n", fn);
-						}
-					} else {
-						RZ_LOG_ERROR("core: Cannot find sdb '%s'\n", ns);
-					}
-				} else {
-					RZ_LOG_ERROR("core: Cannot open file\n");
-				}
-			} else {
-				RZ_LOG_ERROR("core: Missing sdb namespace\n");
-			}
-			free(fn);
-		} else {
-			RZ_LOG_ERROR("core: Usage: ko [file] [namespace]\n");
-		}
-		break;
-	case 'd': // "kd"
-		if (input[1] == ' ') {
-			char *fn = rz_str_dup(input + 2);
-			char *ns = strchr(fn, ' ');
-			if (ns) {
-				*ns++ = 0;
-				Sdb *db = sdb_ns_path(core->sdb, ns, 0);
-				if (db) {
-					sdb_file(db, fn);
-					sdb_sync(db);
-				} else {
-					RZ_LOG_ERROR("core: Cannot find sdb '%s'\n", ns);
-				}
-			} else {
-				RZ_LOG_ERROR("core: Missing sdb namespace\n");
-			}
-			free(fn);
-		} else {
-			RZ_LOG_ERROR("core: Usage: kd [file] [namespace]\n");
-		}
-		break;
-	case '?':
-		rz_core_cmd_help(core, help_msg_k);
-		break;
-	}
-
-	if (input[0] == '\0') {
-		/* nothing more to do, the command has been parsed. */
-		return 0;
-	}
-
-	sp = strchr(input + 1, ' ');
-	if (sp) {
-		char *inp = rz_str_dup(input);
-		inp[(size_t)(sp - input)] = 0;
-		s = sdb_ns(core->sdb, inp + 1, 1);
-		out = sdb_querys(s, NULL, 0, sp + 1);
-		if (out) {
-			rz_cons_println(out);
-			free(out);
-		}
-		free(inp);
-		return 0;
-	}
-	return 0;
 }
 
 RZ_IPI int rz_cmd_panels(void *data, const char *input) {
@@ -5568,7 +5281,6 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		RzCmdCb cb;
 	} cmds[] = {
 		{ "/", "search kw, pattern aes", rz_cmd_search },
-		{ "k", "perform sdb query", rz_cmd_kuery },
 		{ "p", "print current block", rz_cmd_print },
 		{ "V", "enter visual mode", rz_cmd_visual },
 		{ "v", "enter visual mode", rz_cmd_panels },
@@ -5586,7 +5298,6 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		}
 	}
 
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR(core, k);
 	cmd_descriptor_init(core);
 	rzshell_cmddescs_init(core);
 }

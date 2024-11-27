@@ -62,6 +62,7 @@ static const RzCmdDescDetail cmd_debug_inject_syscall_details[2];
 static const RzCmdDescDetail eval_getset_details[2];
 static const RzCmdDescDetail egg_config_details[2];
 static const RzCmdDescDetail history_list_or_exec_details[2];
+static const RzCmdDescDetail query_sdb_get_set_details[2];
 static const RzCmdDescDetail cmd_print_byte_array_details[3];
 static const RzCmdDescDetail pf_details[3];
 static const RzCmdDescDetail print_rising_and_falling_entropy_details[2];
@@ -535,6 +536,10 @@ static const RzCmdDescArg cmd_info_plugins_args[2];
 static const RzCmdDescArg cmd_info_resources_args[2];
 static const RzCmdDescArg cmd_info_sections_args[2];
 static const RzCmdDescArg cmd_info_segments_args[2];
+static const RzCmdDescArg query_sdb_get_set_args[2];
+static const RzCmdDescArg query_shell_sdb_args[2];
+static const RzCmdDescArg sdb_namespace_dump_args[3];
+static const RzCmdDescArg sdb_namespace_load_args[3];
 static const RzCmdDescArg plugins_load_args[2];
 static const RzCmdDescArg plugins_unload_args[2];
 static const RzCmdDescArg plugins_debug_print_args[2];
@@ -11901,8 +11906,98 @@ static const RzCmdDescHelp cmd_info_guess_size_help = {
 	.args = cmd_info_guess_size_args,
 };
 
-static const RzCmdDescHelp cmd_kuery_help = {
-	.summary = "Run sdb-query",
+static const RzCmdDescHelp k_help = {
+	.summary = "Run query (SDB)",
+};
+static const RzCmdDescDetailEntry query_sdb_get_set_Examples_detail_entries[] = {
+	{ .text = "k", .arg_str = NULL, .comment = "List all keys in root namespace." },
+	{ .text = "k", .arg_str = " **", .comment = "List namespaces under root." },
+	{ .text = "k", .arg_str = " analysis/**", .comment = "List namespaces under 'analysis'." },
+	{ .text = "k", .arg_str = " analysis/meta/*", .comment = "List key-value pairs under the 'analysis.meta' namespace." },
+	{ .text = "k", .arg_str = " analysis/meta/meta.0x80404", .comment = "Show value of key 'meta.0x80404'." },
+	{ .text = "k", .arg_str = " foo", .comment = "Show value of key 'foo'." },
+	{ .text = "k", .arg_str = " foo=bar", .comment = "Set key 'foo' to value 'bar'" },
+	{ 0 },
+};
+static const RzCmdDescDetail query_sdb_get_set_details[] = {
+	{ .name = "Examples", .entries = query_sdb_get_set_Examples_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg query_sdb_get_set_args[] = {
+	{
+		.name = "key=value",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp query_sdb_get_set_help = {
+	.summary = "Get or set a value from the SDB.",
+	.args_str = " [<key>[=<val>]]",
+	.details = query_sdb_get_set_details,
+	.args = query_sdb_get_set_args,
+};
+
+static const RzCmdDescArg query_dump_json_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp query_dump_json_help = {
+	.summary = "List all namespaces under 'analysis/' and sdb databases in JSON format (SDB).",
+	.args = query_dump_json_args,
+};
+
+static const RzCmdDescArg query_shell_sdb_args[] = {
+	{
+		.name = "namespace",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp query_shell_sdb_help = {
+	.summary = "Enter query shell (SDB).",
+	.args = query_shell_sdb_args,
+};
+
+static const RzCmdDescArg sdb_namespace_dump_args[] = {
+	{
+		.name = "filename",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+
+	},
+	{
+		.name = "namespace",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp sdb_namespace_dump_help = {
+	.summary = "Dump namespace to file (SDB).",
+	.args = sdb_namespace_dump_args,
+};
+
+static const RzCmdDescArg sdb_namespace_load_args[] = {
+	{
+		.name = "filename",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+
+	},
+	{
+		.name = "namespace",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp sdb_namespace_load_help = {
+	.summary = "Load namespace from file (SDB).",
+	.args = sdb_namespace_load_args,
 };
 
 static const RzCmdDescHelp L_help = {
@@ -21766,8 +21861,19 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_info_guess_size_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "iZ", RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN, rz_cmd_info_guess_size_handler, &cmd_info_guess_size_help);
 	rz_warn_if_fail(cmd_info_guess_size_cd);
 
-	RzCmdDesc *cmd_kuery_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "k", rz_cmd_kuery, &cmd_kuery_help);
-	rz_warn_if_fail(cmd_kuery_cd);
+	RzCmdDesc *k_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "k", rz_query_sdb_get_set_handler, &query_sdb_get_set_help, &k_help);
+	rz_warn_if_fail(k_cd);
+	RzCmdDesc *query_dump_json_cd = rz_cmd_desc_argv_new(core->rcmd, k_cd, "kj", rz_query_dump_json_handler, &query_dump_json_help);
+	rz_warn_if_fail(query_dump_json_cd);
+
+	RzCmdDesc *query_shell_sdb_cd = rz_cmd_desc_argv_new(core->rcmd, k_cd, "ks", rz_query_shell_sdb_handler, &query_shell_sdb_help);
+	rz_warn_if_fail(query_shell_sdb_cd);
+
+	RzCmdDesc *sdb_namespace_dump_cd = rz_cmd_desc_argv_new(core->rcmd, k_cd, "kd", rz_sdb_namespace_dump_handler, &sdb_namespace_dump_help);
+	rz_warn_if_fail(sdb_namespace_dump_cd);
+
+	RzCmdDesc *sdb_namespace_load_cd = rz_cmd_desc_argv_new(core->rcmd, k_cd, "ko", rz_sdb_namespace_load_handler, &sdb_namespace_load_help);
+	rz_warn_if_fail(sdb_namespace_load_cd);
 
 	RzCmdDesc *L_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "L", rz_plugins_load_handler, &plugins_load_help, &L_help);
 	rz_warn_if_fail(L_cd);
