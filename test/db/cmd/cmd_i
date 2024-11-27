@@ -4692,8 +4692,7 @@ RUN
 NAME=isq. (malloc)
 FILE=malloc://512
 CMDS=isq.
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=isq. (file x86)
@@ -4771,8 +4770,7 @@ RUN
 NAME=icqq (file x86)
 FILE=bins/elf/ls
 CMDS=icqq
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=iqqc (file Java)
@@ -4788,8 +4786,7 @@ NAME=iqqc (file x86)
 BROKEN=1
 FILE=bins/elf/ls
 CMDS=iqqc
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=iqcq (file Java)
@@ -4805,8 +4802,7 @@ NAME=iqcq (file x86)
 BROKEN=1
 FILE=bins/elf/ls
 CMDS=iqcq
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=auto entry (lib)

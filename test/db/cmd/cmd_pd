@@ -92,22 +92,19 @@ RUN
 NAME=pd 0
 FILE=malloc://128
 CMDS=pd 0
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=pd 1-1
 FILE=malloc://128
 CMDS=pd 1-1
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=pd foo-33
 FILE=malloc://128
 CMDS=f foo @ 33;pd foo-33
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=pd 1
@@ -1538,8 +1535,7 @@ CMDS=<<EOF
 e scr.null=true
 pd0~{}
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=pI - crash
@@ -1548,8 +1544,7 @@ CMDS=<<EOF
 e scr.null=true
 pI 0x200
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=pd bin.str.purge
@@ -2287,8 +2282,7 @@ e asm.arch=x86
 e asm.bits=64
 wx 90905152539090 ; pd 7 ~ 5 ~ push
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=print fcn header without asm.flags.real

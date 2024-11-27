@@ -685,8 +685,7 @@ e search.from=0x08048060
 e search.to=0x0804806b
 /s
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=/v{2,4,8} value search LE
@@ -860,8 +859,7 @@ e search.from=0x50
 e search.to=0x90
 /x 41424344
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=search range hex
@@ -887,8 +885,7 @@ e search.from=0x101
 e search.to=0x104
 /x 41424344
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=search range hex
@@ -900,8 +897,7 @@ e search.from=0x100
 e search.to=0x103
 /x 41424344
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=search range hex @(A..B)
@@ -923,8 +919,7 @@ w ABCD @ 0x100
 b 0x100
 /x 41424344 @(0x50 0x90)
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=backward search hex
@@ -950,8 +945,7 @@ e search.to=0x150
 b 0x100
 /bx 41424344
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=backward search hex
@@ -977,8 +971,7 @@ e search.to=0x103
 b 0x100
 /bx 41424344
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=backward search hex
@@ -990,8 +983,7 @@ e search.to=0x104
 b 0x100
 /bx 41424344
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=/x with bin mask

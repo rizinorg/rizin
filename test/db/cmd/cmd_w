@@ -94,8 +94,7 @@ NAME=wu
 FILE==
 CMDS=<<EOF
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=wr
@@ -104,16 +103,14 @@ CMDS=<<EOF
 wr 4
 pv4~0x00000000
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=wA
 FILE==
 CMDS=<<EOF
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=wc
@@ -327,8 +324,7 @@ FILE==
 CMDS=<<EOF
 wv8\@10
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 EXPECT_ERR=<<EOF
 ERROR: Command 'wv8@10' does not exist.
 ERROR: Displaying the help of command 'wv8'.

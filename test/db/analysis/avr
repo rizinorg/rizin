@@ -59,8 +59,7 @@ s 0x2d0
 wx 9093c007
 ao 1~jump
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=avr DISasm: negative baddr
@@ -776,8 +775,7 @@ s 0x2ee8
 af
 aae
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 EXPECT_ERR=
 RUN
 

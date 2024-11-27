@@ -53,8 +53,7 @@ NAME=rz-bin -k file
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=!rz-bin -k ${RZ_FILE}
 ARGS=-e log.level=3
-EXPECT=<<EOF
-EOF
+EXPECT=
 EXPECT_ERR=<<EOF
 WARNING: Neither hash nor gnu_hash exist. Falling back to heuristics for deducing the number of dynamic symbols...
 WARNING: Neither hash nor gnu_hash exist. Falling back to heuristics for deducing the number of dynamic symbols...
@@ -346,8 +345,7 @@ CMDS=<<EOF
 !rz-bin -qOr/.data/-1 ${FILE}
 !rz-bin -qOr/.data/-1 ${FILE}
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=rz-bin -ee -j
@@ -1217,8 +1215,7 @@ NAME=rz_bin_prefix is used in symbols
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=<<EOF
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=rz-bin broken MZ file

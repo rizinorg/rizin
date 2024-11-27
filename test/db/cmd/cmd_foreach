@@ -128,16 +128,14 @@ NAME=iter dbt
 FILE==
 CMDS=<<EOF
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=iter threads
 FILE==
 CMDS=<<EOF
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=iter bbs
@@ -316,8 +314,7 @@ NAME=iter dbgmap
 FILE==
 CMDS=<<EOF
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=iter register

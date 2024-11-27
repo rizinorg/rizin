@@ -502,8 +502,7 @@ RUN
 NAME=rz-hash -c with missing nibble
 FILE==
 CMDS=!rz-hash -a md2 -s "admin" -c 21232f297a57a5a743894a0e4a801fc
-EXPECT=<<EOF
-EOF
+EXPECT=
 EXPECT_ERR=<<EOF
 ERROR: rz-hash: error, option -c is not a valid hexadecimal (len is not pair: 31).
 EOF
@@ -574,8 +573,7 @@ RUN
 NAME=rz-hash -c with missing nibble
 FILE==
 CMDS=!rz-hash -a md4 -s "admin" -c 21232f297a57a5a743894a0e4a801fc
-EXPECT=<<EOF
-EOF
+EXPECT=
 EXPECT_ERR=<<EOF
 ERROR: rz-hash: error, option -c is not a valid hexadecimal (len is not pair: 31).
 EOF
@@ -638,8 +636,7 @@ RUN
 NAME=rz-hash -c with missing nibble
 FILE==
 CMDS=!rz-hash -a md5 -s "admin" -c 21232f297a57a5a743894a0e4a801fc
-EXPECT=<<EOF
-EOF
+EXPECT=
 EXPECT_ERR=<<EOF
 ERROR: rz-hash: error, option -c is not a valid hexadecimal (len is not pair: 31).
 EOF
@@ -752,8 +749,7 @@ RUN
 NAME=rz-hash -c with custom block size and per-block hash
 FILE==
 CMDS=!rz-hash -a sha256 -b 1 -B -s "admin" -c 21232f297a57a5a743894a0e4a801f
-EXPECT=<<EOF
-EOF
+EXPECT=
 EXPECT_ERR=<<EOF
 ERROR: rz-hash: error, option -B is incompatible with -c option.
 EOF
@@ -762,8 +758,7 @@ RUN
 NAME=rz-hash -c with base64 encoding
 FILE==
 CMDS=!rz-hash -qqE base64 -s "admin" -c 21232f297a57a5a743894a0e4a801f
-EXPECT=<<EOF
-EOF
+EXPECT=
 EXPECT_ERR=<<EOF
 ERROR: rz-hash: error, option -c is incompatible with -E or -D with algorithm base64 or base91.
 EOF
@@ -772,8 +767,7 @@ RUN
 NAME=rz-hash -c with base64 decoding
 FILE==
 CMDS=!rz-hash -qqD base64 -s "admin" -c 21232f297a57a5a743894a0e4a801f
-EXPECT=<<EOF
-EOF
+EXPECT=
 EXPECT_ERR=<<EOF
 ERROR: rz-hash: error, option -c is incompatible with -E or -D with algorithm base64 or base91.
 EOF
@@ -893,8 +887,7 @@ RUN
 NAME=rz-hash -qqE aes-ecb 128 bit
 FILE==
 CMDS=!rz-hash -qqE aes-ecb -K "11111111111111111111111111111111" -s "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA") <(echo -en "\xff\x6f\xb5\xd9\x27\x6d\xe8\x38\x8e\x4b\x82\xa7\x73\xd0\xb5\x21\xff\x6f\xb5\xd9\x27\x6d\xe8\x38\x8e\x4b\x82\xa7\x73\xd0\xb5\x21\xff\x6f\xb5\xd9\x27\x6d\xe8\x38\x8e\x4b\x82\xa7\x73\xd0\xb5\x21\xff\x6f\xb5\xd9\x27\x6d\xe8\x38\x8e\x4b\x82\xa7\x73\xd0\xb5\x21")"
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=rz-hash -qqD aes-ecb 128 bit
@@ -1278,8 +1271,7 @@ RUN
 NAME=rz-hash empty second path
 FILE==
 CMDS=!rz-hash -a md5 bins/elf/analysis/hello-linux-x86_64 ""
-EXPECT=<<EOF
-EOF
+EXPECT=
 EXPECT_ERR=<<EOF
 ERROR: rz-hash: error, cannot open a file without a name.
 EOF

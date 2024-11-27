@@ -551,8 +551,7 @@ aezse 5~var_write
 aezs
 aezse 2~var_write
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=ppc div and mul instructions
@@ -747,8 +746,7 @@ aezse 2 # nop, xnor
 aezs 3
 aezse 2 # isel
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 BROKEN=1
 RUN
 

@@ -68,8 +68,7 @@ RUN
 NAME=rz-gg -p n80 -w 79:c3 -x
 FILE==
 CMDS=!rz-gg -p n80 -w 79:c3 -x
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=rz-gg -q 0x45414146
@@ -84,8 +83,7 @@ RUN
 NAME=rz-gg -q 45414146
 FILE==
 CMDS=!rz-gg -q 45414146
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=rz-gg -k linux -a x86 -b32 simple_cmp.r
@@ -100,8 +98,7 @@ RUN
 NAME=rz-gg bugg8.r
 FILE==
 CMDS=!rz-gg bins/other/rz-gg/bugg8.r > /dev/null
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 #CLANG=e900000000488d3524000000bf01000000b80400000248c7c2070000000f05b80100000248c7c7000000000f0531c0c348656c6c6f210a00

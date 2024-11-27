@@ -16,8 +16,7 @@ CMDS=<<EOF
 s main
 pdf
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 EXPECT_ERR=
 RUN
 

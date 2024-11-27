@@ -1,8 +1,7 @@
 NAME=WASM: Wasm - open
 FILE=bins/wasm/basic.wasm
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=WASM: Wasm - detection

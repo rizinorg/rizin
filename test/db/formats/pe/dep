@@ -1,8 +1,7 @@
 NAME=PE: corkami dep.exe - open
 FILE=bins/pe/dep.exe
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=PE: corkami dep.exe - dep enabled

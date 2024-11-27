@@ -30,8 +30,7 @@ e asm.functions=false
 e asm.flags=false
 pd 1@0x401820~!imp
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=pe relocs [rz-bin x.dll]

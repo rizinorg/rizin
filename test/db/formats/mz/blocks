@@ -2,8 +2,7 @@ NAME=MZ: blocks.exe - open
 FILE=bins/mz/blocks.exe
 ARGS=-A
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=MZ: blocks.exe - entrypoint

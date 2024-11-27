@@ -73,15 +73,13 @@ RUN
 NAME=o-[0]
 FILE=malloc://1024
 CMDS=o- `o~[0]`;o
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=oj-
 FILE=malloc://1024
 CMDS=o- `oj~{[0].fd}`;o
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=o =
@@ -120,8 +118,7 @@ RUN
 NAME=omn - crash
 FILE==
 CMDS=omn
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=oob 10
@@ -585,8 +582,7 @@ pd 3
 oa arm 64
 pd 3
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=open priority

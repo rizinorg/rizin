@@ -112,8 +112,7 @@ CMDS=<<EOF
 # Should not hang
 !rizin -i script/missing.rz -Nq =
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 EXPECT_ERR=<<EOF
 ERROR: Script 'script/missing.rz' not found.
 EOF

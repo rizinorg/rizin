@@ -15,8 +15,7 @@ RUN
 NAME=ELF: Spurious relocations
 FILE=bins/elf/analysis/spurious-relocs
 CMDS=ir~vaddr=0x0000003a
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=ELF: .plt/.plt.sec sections

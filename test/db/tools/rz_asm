@@ -413,8 +413,7 @@ NAME=rz-asm -k
 BROKEN=1
 FILE==
 CMDS=!rz-asm -k darwin 0x90
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=rz-asm -a x86 -b 64 -E 0x55

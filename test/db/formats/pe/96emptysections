@@ -2,8 +2,7 @@ NAME=PE: corkami 96emptysections.exe - open and analyse
 FILE=bins/pe/96emptysections.exe
 ARGS=-A
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=PE: corkami 96emptysections.exe - entrypoint

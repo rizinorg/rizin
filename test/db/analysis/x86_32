@@ -202,8 +202,7 @@ RUN
 NAME=adf bug #16215
 FILE==
 CMDS=adf
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=adf analysis on an obfuscated executable
@@ -1364,8 +1363,7 @@ CMDS=<<EOF
 aaa
 afb @ sym.imp.kernel32.dll_ExitProcess
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=xref aar on op.val

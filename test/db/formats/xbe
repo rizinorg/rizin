@@ -1,8 +1,7 @@
 NAME=loading an xbe file
 FILE=bins/xbe/default.xbe
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=entrypoint decoding
@@ -63,8 +62,7 @@ RUN
 NAME=loading crashy xbe file
 FILE=bins/xbe/crash.xbe
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=xbe library versions

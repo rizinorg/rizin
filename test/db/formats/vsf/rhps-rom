@@ -2,8 +2,7 @@ NAME=VSF: Rocky Horror Picture Show- open
 FILE=bins/vsf/c128-rhps-rom.vsf
 ARGS=-A
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=VSF: Rocky Horror Picture Show- detection

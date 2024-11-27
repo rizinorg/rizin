@@ -105,16 +105,14 @@ FILE=bins/luac/big53.luac
 CMDS=<<EOF
 pd 10 >/dev/null
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=LUAC: broken file
 FILE=bins/luac/random53.luac
 CMDS=<<EOF
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 REGEXP_FILTER_ERR=<<EOF
 ERROR:.+
 EOF

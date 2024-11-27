@@ -1,8 +1,7 @@
 NAME=PE: corkami debug.exe - open
 FILE=bins/pe/debug.exe
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=PE: corkami debug.exe - entrypoint

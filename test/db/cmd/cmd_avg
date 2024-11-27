@@ -105,8 +105,7 @@ FILE==
 CMDS=<<EOF
 avgl foo
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 EXPECT_ERR=<<EOF
 ERROR: Global variable 'foo' does not exist!
 EOF

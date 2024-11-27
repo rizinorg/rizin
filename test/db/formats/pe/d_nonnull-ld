@@ -1,8 +1,7 @@
 NAME=PE: corkami d_nonnull-ld.exe - open
 FILE=bins/pe/d_nonnull-ld.exe
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=PE: corkami d_nonnull-ld - entrypoint

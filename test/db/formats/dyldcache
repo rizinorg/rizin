@@ -596,8 +596,7 @@ CMDS=<<EOF
 aaa
 q
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=dyldcache 1042.1 header

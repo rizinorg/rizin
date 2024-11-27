@@ -46,8 +46,7 @@ e emu.str=1
 s 0x100011130
 pd 2~addChild
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=adrp string

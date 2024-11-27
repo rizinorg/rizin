@@ -1,8 +1,7 @@
 NAME=PE: seh_x64.exe - open
 FILE=bins/pe/seh_x64.exe
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=PE: seh_x64.exe - Get trycatchs

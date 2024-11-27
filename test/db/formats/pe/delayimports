@@ -1,8 +1,7 @@
 NAME=PE: corkami delayimports.exe - open
 FILE=bins/pe/delayimports.exe
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=PE: corkami delayimports.exe - entrypoint

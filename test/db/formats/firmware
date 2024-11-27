@@ -1,8 +1,7 @@
 NAME=loading a BIOS file [64k]
 FILE=bins/firmware/bios_64k.bin
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=entrypoint decoding [64k]
@@ -48,8 +47,7 @@ RUN
 NAME=loading a BIOS file [128k]
 FILE=bins/firmware/bios_128k.bin
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=entrypoint decoding [128k]
@@ -73,8 +71,7 @@ RUN
 NAME=loading a BIOS file [256k]
 FILE=bins/firmware/bios_256k.bin
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=entrypoint decoding [256k]
@@ -98,8 +95,7 @@ RUN
 NAME=loading a BIOS file [512k]
 FILE=bins/firmware/bios_512k.bin
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=entrypoint decoding [512k]
@@ -123,8 +119,7 @@ RUN
 NAME=loading a BIOS file [1M]
 FILE=bins/firmware/bios_1M.bin
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=entrypoint decoding [1M]
@@ -148,8 +143,7 @@ RUN
 NAME=loading a BIOS file [2M]
 FILE=bins/firmware/bios_2M.bin
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=entrypoint decoding [2M]
@@ -173,8 +167,7 @@ RUN
 NAME=loading a BIOS file [4M]
 FILE=bins/firmware/bios_4M.bin
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=entrypoint decoding [4M]
@@ -198,8 +191,7 @@ RUN
 NAME=loading a BIOS file [8M]
 FILE=bins/firmware/bios_8M.bin
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=entrypoint decoding [8M]

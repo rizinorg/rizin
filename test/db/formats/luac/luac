@@ -132,8 +132,7 @@ FILE=bins/luac/big.luac
 CMDS=<<EOF
 pd 10 >/dev/null
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 # see https://travis-ci.com/github/rizinorg/rizin/jobs/492588616
@@ -141,8 +140,7 @@ NAME=LUAC: broken file
 FILE=bins/luac/random.luac
 CMDS=<<EOF
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 REGEXP_FILTER_ERR=<<EOF
 ERROR:.+
 EOF

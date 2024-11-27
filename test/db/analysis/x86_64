@@ -650,8 +650,7 @@ CMDS=<<EOF
 aa > /dev/null
 afl~sym.__mh_execute_header[0]
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 
@@ -744,8 +743,7 @@ aa
 af-*
 afl
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=iS. and iSj. implementation
@@ -1358,8 +1356,7 @@ tfc CRTStartup THE_CC_THAT_NEVER_EXISTED
 aei
 aeim
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=2: Wrong calling convention
@@ -1622,8 +1619,7 @@ af
 afvr-*
 afvr-*
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=analysis vars crash 2
@@ -2738,8 +2734,7 @@ CMDS=<<EOF
 aaa
 fl~strlen~390
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=no function split without overlapping blocks
@@ -4077,8 +4072,7 @@ s 0x780
 af
 pdr~- case[2]
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=lea pseudo improvements (pseudo disabled)
@@ -4246,8 +4240,7 @@ FILE=bins/elf/dwarf_attr_check
 CMDS=<<EOF
 aaa
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=x86_64 int64_t variable overlapping removal

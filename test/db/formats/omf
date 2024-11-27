@@ -141,27 +141,23 @@ RUN
 NAME=invalide index segment omf
 FILE=bins/omf/invalid_idx
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=invalide string size pubdef record omf
 FILE=bins/omf/invalid_str_pubdef
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=invalide string size lnames record omf
 FILE=bins/omf/invalid_str_lname
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=invalide record size omf
 FILE=bins/omf/invalid_size
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN

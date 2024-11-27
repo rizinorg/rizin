@@ -31,8 +31,7 @@ RUN
 NAME=rz-find -f 0x00010000 -t 0x00020000 -X -s
 FILE==
 CMDS=!rz-find -f 0x00010000 -t 0x00020000 -r -X -s 250382 bins/elf/ioli/crackme0x00
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=rz-find -r -X -x
@@ -144,8 +143,7 @@ RUN
 NAME=rz-find -a -b 0x3
 FILE==
 CMDS=!rz-find -X -s 250382 -b 0x3 bins/elf/ioli/crackme0x00
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=rz-find -q

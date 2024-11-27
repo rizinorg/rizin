@@ -4,8 +4,7 @@ CMDS=<<EOF
 0
 ~[[0
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=sum flags

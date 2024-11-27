@@ -33,8 +33,7 @@ RUN
 NAME=p- without any file
 FILE=--
 CMDS=p-
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=p- with malloc://512

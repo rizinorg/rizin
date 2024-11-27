@@ -16,8 +16,7 @@ CMDS=<<EOF
 pfs cat_sat_on_keyboard
 pfs CAT_SAT_ON_KEYBOARD
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 EXPECT_ERR=<<EOF
 ERROR: Format "cat_sat_on_keyboard" could not be found
 ERROR: Format "CAT_SAT_ON_KEYBOARD" could not be found

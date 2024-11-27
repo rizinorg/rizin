@@ -1,8 +1,7 @@
 NAME=PE: corkami copyright.exe - open
 FILE=bins/pe/copyright.exe
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=PE: corkami copyright.exe - entrypoint

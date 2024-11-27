@@ -2,8 +2,7 @@ NAME=NES: Pong - open
 FILE=bins/nes/Pong.nes
 ARGS=-A
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=NES: Pong - detection

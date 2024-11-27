@@ -12,8 +12,7 @@ CMDS=<<EOF
 aezi
 aezsu loc.pass
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=Run test_vpmpyh
@@ -23,8 +22,7 @@ CMDS=<<EOF
 aezi
 aezsu loc.pass
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=Run test_vminh
@@ -34,8 +32,7 @@ CMDS=<<EOF
 aezi
 aezsu loc.pass
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=Run test_vmaxh
@@ -45,8 +42,7 @@ CMDS=<<EOF
 aezi
 aezsu loc.pass
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=Run test_vlsrw
@@ -56,8 +52,7 @@ CMDS=<<EOF
 aezi
 aezsu loc.pass
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=Run test_vcmpw
@@ -67,8 +62,7 @@ CMDS=<<EOF
 aezi
 aezsu loc.pass
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=Run test_vcmpb
@@ -78,8 +72,7 @@ CMDS=<<EOF
 aezi
 aezsu loc.pass
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=Run test_vavgw
@@ -89,8 +82,7 @@ CMDS=<<EOF
 aezi
 aezsu loc.pass
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=Run test_round
@@ -100,8 +92,7 @@ CMDS=<<EOF
 aezi
 aezsu loc.pass
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=Run test_reorder
@@ -111,8 +102,7 @@ CMDS=<<EOF
 aezi
 aezsu loc.pass
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=Run test_packet
@@ -122,8 +112,7 @@ CMDS=<<EOF
 aezi
 aezsu loc.pass
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=Run test_mpyi
@@ -133,8 +122,7 @@ CMDS=<<EOF
 aezi
 aezsu loc.pass
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=Run test_lsr
@@ -144,8 +132,7 @@ CMDS=<<EOF
 aezi
 aezsu loc.pass
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=Run test_jmp
@@ -155,8 +142,7 @@ CMDS=<<EOF
 aezi
 aezsu loc.pass
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=Run test_hwloops
@@ -166,8 +152,7 @@ CMDS=<<EOF
 aezi
 aezsu loc.pass
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=Run test_hl
@@ -177,8 +162,7 @@ CMDS=<<EOF
 aezi
 aezsu loc.pass
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=Run test_fibonacci
@@ -188,8 +172,7 @@ CMDS=<<EOF
 aezi
 aezsu loc.pass
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=Run test_ext
@@ -199,8 +182,7 @@ CMDS=<<EOF
 aezi
 aezsu loc.pass
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=Run test_dotnew
@@ -211,8 +193,7 @@ e io.cache=1
 aezi
 aezsu loc.pass
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=Run test_cmp
@@ -222,8 +203,7 @@ CMDS=<<EOF
 aezi
 aezsu loc.pass
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=Run test_clobber
@@ -234,8 +214,7 @@ e io.cache=1
 aezi
 aezsu loc.pass
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=Run test_call
@@ -245,8 +224,7 @@ CMDS=<<EOF
 aezi
 aezsu loc.pass
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=Run test_bitsplit
@@ -256,8 +234,7 @@ CMDS=<<EOF
 aezi
 aezsu loc.pass
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=Run test_bitcnt
@@ -267,8 +244,7 @@ CMDS=<<EOF
 aezi
 aezsu loc.pass
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=Run test_abs
@@ -278,8 +254,7 @@ CMDS=<<EOF
 aezi
 aezsu loc.pass
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=Run first
@@ -289,8 +264,7 @@ CMDS=<<EOF
 aezi
 aezsu loc.pass
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 
@@ -302,8 +276,7 @@ e io.cache=1
 aezi
 aezsu 0x000210b0 # End of main
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=Run v73_scalar
@@ -314,8 +287,7 @@ e io.cache=1
 aezi
 aezsu 0x00020e40 End of main
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=Run test-vma
@@ -326,8 +298,7 @@ e io.cache=1
 aezi
 aezsu 0x00020214 # End of main
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=Run load_align
@@ -338,8 +309,7 @@ e io.cache=1
 aezi
 aezsu 0x000227e0 # End of main
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=Run mem_noshuf
@@ -350,8 +320,7 @@ e io.cache=1
 aezi
 aezsu 0x00021a38 # End of main
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=Run preg_alias
@@ -362,8 +331,7 @@ e io.cache=1
 aezi
 aezsu 0x00021784 # End of main
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=Run dual_stores
@@ -374,8 +342,7 @@ e io.cache=1
 aezi
 aezsu 0x00020eac # End of main
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=Run read_write_overlap
@@ -386,6 +353,5 @@ e io.cache=1
 aezi
 aezsu 0x000211dc # End of main
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN

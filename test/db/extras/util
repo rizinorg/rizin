@@ -15,8 +15,7 @@ RUN
 NAME=Missing Sort Params
 FILE==
 CMDS=sort 
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=Uniq command
@@ -35,8 +34,7 @@ RUN
 NAME=Missing Uniq Params
 FILE==
 CMDS=uniq 
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=Join command
@@ -53,6 +51,5 @@ RUN
 NAME=Missing join Params
 FILE==
 CMDS=join bins/other/test_file
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN

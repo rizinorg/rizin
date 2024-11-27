@@ -65,8 +65,7 @@ RUN
 NAME=Cf main
 FILE==
 CMDS=Cf main;C*
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=Cf 1 n2

@@ -25,8 +25,7 @@ w Test@444
 /e m
 /e m
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME="/e /t\wst\d\d\d\s\w\w/i" - rzshell

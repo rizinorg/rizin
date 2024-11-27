@@ -86,8 +86,7 @@ agn- title1
 agg k~nodes=
 agg k~nodes.title1
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=remove node with title that contain spaces
@@ -98,8 +97,7 @@ agn- "Title with spaces"
 agg k~nodes=
 agg k~nodes.Title with spaces
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=remove non-existent node
@@ -225,8 +223,7 @@ age title3 title1
 agg k~agraph.w=0x35
 agg | head -2 | tail -1 | tr -d " " | grep "=----------------="
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=graph size with self-referenced bb
@@ -237,8 +234,7 @@ age title1 title1
 agg k~agraph.w=0x16
 agg k~agraph.h=0x4
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=graph title
@@ -304,8 +300,7 @@ aaa
 s 0x00011390
 agf > /dev/null
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=super mario block (#8788)
@@ -348,8 +343,7 @@ CMDS=<<EOF
 af
 agf > /dev/null
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=Test iCFG generation

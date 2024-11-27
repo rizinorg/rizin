@@ -9,8 +9,7 @@ RUN
 NAME=avrD msvc empty
 FILE=--
 CMDS=e analysis.cpp.abi=msvc;avrD ".?AV@@"
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=avrD msvc namespaces

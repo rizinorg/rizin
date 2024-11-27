@@ -2,8 +2,7 @@ NAME=PE: corkami virtsectblXP.exe - open
 FILE=bins/pe/virtsectblXP.exe
 ARGS=-A
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=PE: corkami virtsectblXP.exe - entrypoint

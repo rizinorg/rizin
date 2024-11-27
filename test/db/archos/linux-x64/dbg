@@ -31,8 +31,7 @@ CMDS=<<EOF
 . scripts/set-LD_PRELOAD.rz
 !python3 scripts/dk_9.py
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 EXPECT_ERR=<<EOF
 child received signal 9
 EOF

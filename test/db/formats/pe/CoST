@@ -2,8 +2,7 @@ NAME=PE: corkami CoST.exe - open and analyze
 FILE=bins/pe/CoST.exe
 ARGS=-A
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=PE: corkami CoST.exe - entrypoint VA

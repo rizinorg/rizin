@@ -300,8 +300,7 @@ e search.from=0x00005c20
 e search.to=0x00005c44
 /r sym.imp.__cxa_finalize
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=cmd.hit for /s
@@ -346,8 +345,7 @@ e search.from=0x00000000
 e search.to=0x00000000
 /v1 1
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=from/to /V
@@ -377,6 +375,5 @@ e search.from=0x00000000
 e search.to=0x00000000
 /V1 1 5
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN

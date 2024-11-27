@@ -40,15 +40,13 @@ RUN
 NAME=no flags
 FILE==
 CMDS=f
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=no flags*
 FILE==
 CMDS=f*
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=1: fs *
@@ -282,8 +280,7 @@ f a
 f-*
 fl
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=f.

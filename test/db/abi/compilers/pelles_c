@@ -38,8 +38,7 @@ ARGS=-A
 CMDS=<<EOF
 pdf~main
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=ELF_ABI : Pelles C 64 load
@@ -82,7 +81,6 @@ ARGS=-A
 CMDS=<<EOF
 pdf~main
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
