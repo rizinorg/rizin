@@ -45,4 +45,3 @@ RZ_IPI RzCmdStatus rz_interactive_panel_store_handler(RzCore *core, int argc, co
 	rz_config_set(core->config, "scr.layout", argv[1]);
 	return RZ_CMD_STATUS_OK;
 }
-

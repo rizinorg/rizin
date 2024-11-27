@@ -11,37 +11,30 @@ commands:
       Scrolling disassembly, debugging, searching or graph views.
       All with a few keyboard shortcuts.
     args:
-      - name: visual-commands
+      - name: key-sequence
         type: RZ_CMD_ARG_TYPE_STRING
         optional: true
     details:
-      - name: Basic usage (in interactive visual mode)
-        entries:
-          - text: ""
-            arg_str: "Press: q"
-            comment: Quits the current view.
-          - text: ""
-            arg_str: "Press: ?"
-            comment: Opens the help.
-          - text: ""
-            arg_str: "Press: p"
-            comment: Switches between different printing modes (disassembly, hex view, etc.).
-          - text: ""
-            arg_str: "Press: <TAB>"
-            comment: Toggles different configurations of the current printing mode.
-      - name: Examples
+      - name: Parameters
         entries:
           - text: "V"
-            arg_str: " ?"
-            comment: Enter interactive visual mode and open the detailed help.
-          - text: "V"
-            arg_str: " p"
-            comment: Enter interactive visual mode and select the next printing mode.
+            arg_str: " <key_sequence>"
+            comment: >
+              The <key-sequence> argument is a string of keys to press directly after entering the visual mode.
+              See 'VH' or 'VHH' for a full list of valid keys.
+  - name: VH
+    cname: interactive_visual_help
+    summary: Show most common keys shortcuts of the visual mode.
+    args: []
+  - name: VHH
+    cname: interactive_visual_help_detail
+    summary: Show all keys shortcuts of the visual mode.
+    args: []
   - name: Vp
     cname: interactive_visual_disas
-    summary: Enter interactive visual mode and select next mode.
+    summary: Enter interactive visual mode and select next mode (alias for 'V p').
     args: []
   - name: Vpp
     cname: interactive_visual_emu
-    summary: Enter interactive visual mode and select the mode after next.
+    summary: Enter interactive visual mode and select the mode after next (alias for 'V pp').
     args: []

@@ -32,3 +32,15 @@ RZ_IPI RzCmdStatus rz_interactive_visual_emu_handler(RzCore *core, int argc, con
 	rz_core_visual(core, "pp");
 	return RZ_CMD_STATUS_OK;
 }
+
+RZ_IPI RzCmdStatus rz_interactive_visual_help_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_cmd_help(core, rz_core_visual_get_short_help());
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_interactive_visual_help_detail_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_cmd_help(core, rz_core_visual_get_long_help());
+	rz_cons_printf("%s\n", "Function Keys: (See 'e key.'), defaults to");
+	rz_core_cmd_help(core, rz_core_visual_get_fcn_help());
+	return RZ_CMD_STATUS_OK;
+}

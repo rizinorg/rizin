@@ -254,84 +254,96 @@ static bool __core_visual_gogo(RzCore *core, int ch) {
 }
 
 static const char *help_visual[] = {
-	"?", "full help",
-	"!", "enter panels",
-	"a", "code analysis",
-	"b", "browse mode",
-	"c", "toggle cursor",
-	"d", "debugger / emulator",
-	"e", "toggle configurations",
-	"i", "insert / write",
-	"m", "moving around (seeking)",
-	"p", "print commands and modes",
-	"v", "view management",
+	"?", "", "full help",
+	"!", "", "enter panels",
+	"a", "", "code analysis",
+	"b", "", "browse mode",
+	"c", "", "toggle cursor",
+	"d", "", "debugger / emulator",
+	"e", "", "toggle configurations",
+	"i", "", "insert / write",
+	"m", "", "moving around (seeking)",
+	"p", "", "print commands and modes",
+	"v", "", "view management",
 	NULL
 };
 
 static const char *help_msg_visual[] = {
-	"?", "show visual help menu",
-	"??", "show this help",
-	"$", "set the program counter to the current offset + cursor",
-	"&", "rotate asm.bits between 8, 16, 32 and 64 applying hints",
-	"%", "in cursor mode finds matching pair, otherwise toggle autoblocksz",
-	"^", "seek to the beginning of the function",
-	"!", "enter into the visual panels mode",
-	"TAB", "switch to the next print mode (or element in cursor mode)",
-	"_", "enter the flag/comment/functions/.. hud (same as VF_)",
-	"=", "set cmd.vprompt (top row)",
-	"|", "set cmd.cprompt (right column)",
-	".", "seek to program counter",
-	"#", "toggle decompiler comments in disasm (see pdd* from jsdec)",
-	"\\", "toggle visual split mode",
-	"\"", "toggle the column mode (uses pC..)",
-	"/", "in cursor mode search in current block",
-	")", "toggle emu.str",
-	":cmd", "run rizin command",
-	";[-]cmt", "add/remove comment",
-	"0", "seek to beginning of current function",
-	"[1-9]", "follow jmp/call identified by shortcut (like ;[1])",
-	",file", "add a link to the text file",
-	"/*+-[]", "change block size, [] = resize hex.cols",
-	"<,>", "seek aligned to block size (in cursor slurp or dump files)",
-	"a/A", "(a)ssemble code, visual (A)ssembler",
-	"b", "browse evals, symbols, flags, evals, classes, ...",
-	"B", "toggle breakpoint",
-	"c/C", "toggle (c)ursor and (C)olors",
-	"d[f?]", "define function, data, code, ..",
-	"D", "enter visual diff mode (set diff.from/to)",
-	"f/F", "set/unset or browse flags. f- to unset, F to browse, ..",
-	"hjkl", "move around (left-down-up-right)",
-	"HJKL", "select in cursor mode (left-down-up-right)",
-	"i", "insert hex or string (in hexdump) use tab to toggle",
-	"I", "insert hexpair block ",
-	"mK/'K", "mark/go to Key (any key)",
-	"n/N", "seek next/prev function/flag/hit (scr.nkey)",
-	"g", "go/seek to given offset (g[g/G]<enter> to seek begin/end of file)",
-	"o/O", "rotate between different formats (next/prev)",
-	"p/P", "rotate print modes (hex, disasm, debug, words, buf)",
-	"q", "back to rizin shell",
-	"r", "toggle call/jmp/lea hints",
-	"R", "changes the theme or randomizes colors if scr.randpal option is true.",
-	"sS", "step / step over",
-	"tT", "tt new tab, t[1-9] switch to nth tab, t= name tab, t- close tab",
-	"uU", "undo/redo seek",
-	"v", "visual function/vars code analysis menu",
-	"V", "(V)iew interactive ascii art graph (agfv)",
-	"wW", "seek cursor to next/prev word",
-	"xX", "show xrefs/refs of current function from/to data/code",
-	"yY", "copy and paste selection",
-	"Enter", "follow address of jump/call",
+	"?", "", "show visual help menu",
+	"??", "", "show this help",
+	"$", "", "set the program counter to the current offset + cursor",
+	"&", "", "rotate asm.bits between 8, 16, 32 and 64 applying hints",
+	"%", "", "in cursor mode finds matching pair, otherwise toggle autoblocksz",
+	"^", "", "seek to the beginning of the function",
+	"!", "", "enter into the visual panels mode",
+	"TAB", "", "switch to the next print mode (or element in cursor mode)",
+	"_", "", "enter the flag/comment/functions/.. hud (same as VF_)",
+	"=", "", "set cmd.vprompt (top row)",
+	"|", "", "set cmd.cprompt (right column)",
+	".", "", "seek to program counter",
+	"#", "", "toggle decompiler comments in disasm (see pdd* from jsdec)",
+	"\\", "", "toggle visual split mode",
+	"\"", "", "toggle the column mode (uses pC..)",
+	"/", "", "in cursor mode search in current block",
+	")", "", "toggle emu.str",
+	":cmd", "", "run rizin command",
+	";[-]cmt", "", "add/remove comment",
+	"0", "", "seek to beginning of current function",
+	"[1-9]", "", "follow jmp/call identified by shortcut (like ;[1])",
+	",file", "", "add a link to the text file",
+	"/*+-[]", "", "change block size, [] = resize hex.cols",
+	"<,>", "", "seek aligned to block size (in cursor slurp or dump files)",
+	"a/A", "", "(a)ssemble code, visual (A)ssembler",
+	"b", "", "browse evals, symbols, flags, evals, classes, ...",
+	"B", "", "toggle breakpoint",
+	"c/C", "", "toggle (c)ursor and (C)olors",
+	"d[f?]", "", "define function, data, code, ..",
+	"D", "", "enter visual diff mode (set diff.from/to)",
+	"f/F", "", "set/unset or browse flags. f- to unset, F to browse, ..",
+	"hjkl", "", "move around (left-down-up-right)",
+	"HJKL", "", "select in cursor mode (left-down-up-right)",
+	"i", "", "insert hex or string (in hexdump) use tab to toggle",
+	"I", "", "insert hexpair block",
+	"mK/'K", "", "mark/go to Key (any key)",
+	"n/N", "", "seek next/prev function/flag/hit (scr.nkey)",
+	"g", "", "go/seek to given offset (g[g/G]<enter> to seek begin/end of file)",
+	"o/O", "", "rotate between different formats (next/prev)",
+	"p/P", "", "rotate print modes (hex, disasm, debug, words, buf)",
+	"q", "", "back to rizin shell",
+	"r", "", "toggle call/jmp/lea hints",
+	"R", "", "changes the theme or randomizes colors if scr.randpal option is true.",
+	"sS", "", "step / step over",
+	"tT", "", "tt new tab, t[1-9] switch to nth tab, t= name tab, t- close tab",
+	"uU", "", "undo/redo seek",
+	"v", "", "visual function/vars code analysis menu",
+	"V", "", "(V)iew interactive ascii art graph (agfv)",
+	"wW", "", "seek cursor to next/prev word",
+	"xX", "", "show xrefs/refs of current function from/to data/code",
+	"yY", "", "copy and paste selection",
+	"Enter", "", "follow address of jump/call",
 	NULL
 };
 
 static const char *help_msg_visual_fn[] = {
-	"F2", "toggle breakpoint",
-	"F4", "run to cursor",
-	"F7", "single step",
-	"F8", "step over",
-	"F9", "continue",
+	"F2", "", "toggle breakpoint",
+	"F4", "", "run to cursor",
+	"F7", "", "single step",
+	"F8", "", "step over",
+	"F9", "", "continue",
 	NULL
 };
+
+RZ_IPI const char **rz_core_visual_get_short_help() {
+	return help_visual;
+}
+
+RZ_IPI const char **rz_core_visual_get_long_help() {
+	return help_msg_visual;
+}
+
+RZ_IPI const char **rz_core_visual_get_fcn_help() {
+	return help_msg_visual_fn;
+}
 
 static void rotateAsmBits(RzCore *core) {
 	RzAnalysisHint *hint = rz_analysis_hint_get(core->analysis, core->offset);
@@ -443,17 +455,17 @@ RZ_IPI void rz_core_visual_append_help(RzStrBuf *p, const char *title, const cha
 	const char *pal_args_color = cons_ctx->color_mode ? cons_ctx->pal.args : "",
 		   *pal_help_color = cons_ctx->color_mode ? cons_ctx->pal.help : "",
 		   *pal_reset = cons_ctx->color_mode ? cons_ctx->pal.reset : "";
-	for (i = 0; help[i]; i += 2) {
+	for (i = 0; help[i]; i += 3) {
 		max_length = RZ_MAX(max_length, strlen(help[i]));
 	}
 	rz_strbuf_appendf(p, "|%s:\n", title);
 
-	for (i = 0; help[i]; i += 2) {
+	for (i = 0; help[i]; i += 3) {
 		padding = max_length - (strlen(help[i]));
 		rz_strbuf_appendf(p, "| %s%s%*s  %s%s%s\n",
 			pal_args_color, help[i],
 			padding, "",
-			pal_help_color, help[i + 1], pal_reset);
+			pal_help_color, help[i + 2], pal_reset);
 	}
 }
 

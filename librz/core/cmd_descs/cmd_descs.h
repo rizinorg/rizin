@@ -2372,6 +2372,10 @@ RZ_IPI RzCmdStatus rz_type_xrefs_graph_handler(RzCore *core, int argc, const cha
 RZ_IPI RzCmdStatus rz_type_xrefs_list_all_handler(RzCore *core, int argc, const char **argv);
 // "V"
 RZ_IPI RzCmdStatus rz_interactive_visual_handler(RzCore *core, int argc, const char **argv);
+// "VH"
+RZ_IPI RzCmdStatus rz_interactive_visual_help_handler(RzCore *core, int argc, const char **argv);
+// "VHH"
+RZ_IPI RzCmdStatus rz_interactive_visual_help_detail_handler(RzCore *core, int argc, const char **argv);
 // "Vp"
 RZ_IPI RzCmdStatus rz_interactive_visual_disas_handler(RzCore *core, int argc, const char **argv);
 // "Vpp"

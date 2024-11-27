@@ -66,7 +66,7 @@ static const RzCmdDescDetail query_sdb_get_set_details[2];
 static const RzCmdDescDetail cmd_print_byte_array_details[3];
 static const RzCmdDescDetail pf_details[3];
 static const RzCmdDescDetail print_rising_and_falling_entropy_details[2];
-static const RzCmdDescDetail interactive_visual_details[3];
+static const RzCmdDescDetail interactive_visual_details[2];
 static const RzCmdDescDetail write_details[3];
 static const RzCmdDescDetail write_bits_details[2];
 static const RzCmdDescDetail wv_details[2];
@@ -17442,27 +17442,17 @@ static const RzCmdDescHelp type_xrefs_list_all_help = {
 static const RzCmdDescHelp V_help = {
 	.summary = "Interactive mode",
 };
-static const RzCmdDescDetailEntry interactive_visual_Basic_space_usage_space__oparen_in_space_interactive_space_visual_space_mode_cparen__detail_entries[] = {
-	{ .text = "", .arg_str = "Press: q", .comment = "Quits the current view." },
-	{ .text = "", .arg_str = "Press: ?", .comment = "Opens the help." },
-	{ .text = "", .arg_str = "Press: p", .comment = "Switches between different printing modes (disassembly, hex view, etc.)." },
-	{ .text = "", .arg_str = "Press: <TAB>", .comment = "Toggles different configurations of the current printing mode." },
-	{ 0 },
-};
-
-static const RzCmdDescDetailEntry interactive_visual_Examples_detail_entries[] = {
-	{ .text = "V", .arg_str = " ?", .comment = "Enter interactive visual mode and open the detailed help." },
-	{ .text = "V", .arg_str = " p", .comment = "Enter interactive visual mode and select the next printing mode." },
+static const RzCmdDescDetailEntry interactive_visual_Parameters_detail_entries[] = {
+	{ .text = "V", .arg_str = " <key_sequence>", .comment = "The <key-sequence> argument is a string of keys to press directly after entering the visual mode. See 'VH' or 'VHH' for a full list of valid keys." },
 	{ 0 },
 };
 static const RzCmdDescDetail interactive_visual_details[] = {
-	{ .name = "Basic usage (in interactive visual mode)", .entries = interactive_visual_Basic_space_usage_space__oparen_in_space_interactive_space_visual_space_mode_cparen__detail_entries },
-	{ .name = "Examples", .entries = interactive_visual_Examples_detail_entries },
+	{ .name = "Parameters", .entries = interactive_visual_Parameters_detail_entries },
 	{ 0 },
 };
 static const RzCmdDescArg interactive_visual_args[] = {
 	{
-		.name = "visual-commands",
+		.name = "key-sequence",
 		.type = RZ_CMD_ARG_TYPE_STRING,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
@@ -17477,11 +17467,27 @@ static const RzCmdDescHelp interactive_visual_help = {
 	.args = interactive_visual_args,
 };
 
+static const RzCmdDescArg interactive_visual_help_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp interactive_visual_help_help = {
+	.summary = "Show most common keys shortcuts of the visual mode.",
+	.args = interactive_visual_help_args,
+};
+
+static const RzCmdDescArg interactive_visual_help_detail_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp interactive_visual_help_detail_help = {
+	.summary = "Show all keys shortcuts of the visual mode.",
+	.args = interactive_visual_help_detail_args,
+};
+
 static const RzCmdDescArg interactive_visual_disas_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp interactive_visual_disas_help = {
-	.summary = "Enter interactive visual mode and select next mode.",
+	.summary = "Enter interactive visual mode and select next mode (alias for 'V p').",
 	.args = interactive_visual_disas_args,
 };
 
@@ -17489,7 +17495,7 @@ static const RzCmdDescArg interactive_visual_emu_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp interactive_visual_emu_help = {
-	.summary = "Enter interactive visual mode and select the mode after next.",
+	.summary = "Enter interactive visual mode and select the mode after next (alias for 'V pp').",
 	.args = interactive_visual_emu_args,
 };
 
@@ -23041,6 +23047,12 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *V_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "V", rz_interactive_visual_handler, &interactive_visual_help, &V_help);
 	rz_warn_if_fail(V_cd);
+	RzCmdDesc *interactive_visual_help_cd = rz_cmd_desc_argv_new(core->rcmd, V_cd, "VH", rz_interactive_visual_help_handler, &interactive_visual_help_help);
+	rz_warn_if_fail(interactive_visual_help_cd);
+
+	RzCmdDesc *interactive_visual_help_detail_cd = rz_cmd_desc_argv_new(core->rcmd, V_cd, "VHH", rz_interactive_visual_help_detail_handler, &interactive_visual_help_detail_help);
+	rz_warn_if_fail(interactive_visual_help_detail_cd);
+
 	RzCmdDesc *interactive_visual_disas_cd = rz_cmd_desc_argv_new(core->rcmd, V_cd, "Vp", rz_interactive_visual_disas_handler, &interactive_visual_disas_help);
 	rz_warn_if_fail(interactive_visual_disas_cd);
 

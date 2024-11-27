@@ -444,6 +444,9 @@ RZ_IPI void rz_core_visual_nexttab(RzCore *core);
 RZ_IPI void rz_core_visual_prevtab(RzCore *core);
 RZ_IPI void rz_core_visual_closetab(RzCore *core);
 
+RZ_IPI const char **rz_core_visual_get_short_help();
+RZ_IPI const char **rz_core_visual_get_long_help();
+RZ_IPI const char **rz_core_visual_get_fcn_help();
 RZ_IPI int rz_core_visual(RzCore *core, const char *input);
 RZ_IPI int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_fcn, int is_interactive);
 RZ_IPI bool rz_core_visual_panels_root(RzCore *core, RzPanelsRoot *panels_root);
