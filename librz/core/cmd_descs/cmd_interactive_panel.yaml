@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: 2024 RizinOrg <info@rizin.re>
+# SPDX-License-Identifier: LGPL-3.0-only
+---
+name: cmd_interactive_panel
+commands:
+  - name: v
+    summary: Enter interactive panel mode
+    cname: interactive_panel
+    args: []
+  - name: vl
+    summary: Load panel layout
+    cname: interactive_panel_load
+    args:
+      - name: name
+        type: RZ_CMD_ARG_TYPE_STRING
+  - name: vs
+    summary: Store panel layout
+    cname: interactive_panel_store
+    args:
+      - name: name
+        type: RZ_CMD_ARG_TYPE_STRING
+

@@ -265,6 +265,9 @@ commands:
   - name: V
     summary: Interactive mode
     subcommands: cmd_interactive
+  - name: v
+    summary: Interactive panel mode
+    subcommands: cmd_interactive_panel
   - name: w
     summary: Write commands
     subcommands: cmd_write

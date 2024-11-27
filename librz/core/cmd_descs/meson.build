@@ -14,6 +14,7 @@ cmd_descs_yaml = files(
   'cmd_history.yaml',
   'cmd_info.yaml',
   'cmd_interactive.yaml',
+  'cmd_interactive_panel.yaml',
   'cmd_interpret.yaml',
   'cmd_macro.yaml',
   'cmd_math.yaml',
