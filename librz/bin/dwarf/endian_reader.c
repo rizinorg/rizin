@@ -6,6 +6,15 @@
 #include "dwarf_private.h"
 #include "../format/elf/elf.h"
 
+typedef struct {
+	const char *name;
+	const char *alias[8];
+} SectionAlias;
+
+static const SectionAlias section_alias[] = {
+	{ .name = ".debug_str_offsets", .alias = { ".__DWARF.__debug_str_offs", NULL } }
+};
+
 RZ_IPI RzBinSection *rz_bin_dwarf_section_by_name(RzBinFile *binfile, const char *sn, bool is_dwo) {
 	rz_return_val_if_fail(binfile && sn, NULL);
 	void **iter = NULL;
@@ -30,6 +39,23 @@ RZ_IPI RzBinSection *rz_bin_dwarf_section_by_name(RzBinFile *binfile, const char
 			break;
 		}
 	}
+	for (int i = 0; i < RZ_ARRAY_SIZE(section_alias); ++i) {
+		const SectionAlias *alias = section_alias + i;
+		if (RZ_STR_NE(sn, alias->name)) {
+			break;
+		}
+		rz_pvector_foreach (o->sections, iter) {
+			section = *iter;
+			for (const char **x = (const char **)alias->alias; RZ_STR_ISNOTEMPTY(*x); ++x) {
+				if (RZ_STR_EQ(section->name, *x) || rz_str_endswith(section->name, *x)) {
+					result_section = section;
+					goto beach;
+				}
+			}
+		}
+	}
+
+beach:
 	free(name);
 	return result_section;
 }
