@@ -4,7 +4,8 @@ CMDS=<<EOF
 k
 k abc=123
 k abc
-k **
+# BSDs don't have a syscall namespace.
+k **~!syscall
 k analysis/**
 e asm.arch=x86
 k analysis/cc/*
@@ -15,7 +16,6 @@ orig_baddr=0
 analysis
 bin
 debug
-syscall
 spec
 cc
 classes
