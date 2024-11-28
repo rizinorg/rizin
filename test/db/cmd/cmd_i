@@ -3891,7 +3891,16 @@ no
 EOF
 RUN
 
-NAME=ibk use after free
+NAME=ik nothing
+CMDS=<<EOF
+ik
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=ik normal query
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF
 obR
@@ -3899,6 +3908,16 @@ ik *~?elf.relro
 EOF
 EXPECT=<<EOF
 1
+EOF
+RUN
+
+NAME=ik*
+FILE=bins/elf/analysis/x86-helloworld-gcc
+CMDS=<<EOF
+ik*~?elf_header
+EOF
+EXPECT=<<EOF
+3
 EOF
 RUN
 
@@ -4466,28 +4485,11 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=ikv
+NAME=ik
 FILE=bins/mach0/fatmach0-3true
-CMDS=ikv mach0.entry.vaddr
+CMDS=ik mach0.entry.vaddr
 EXPECT=<<EOF
 0x100000ef8
-EOF
-RUN
-
-NAME=ik.
-FILE=bins/mach0/fatmach0-3true
-CMDS=ik. mach0.entry.vaddr
-EXPECT=<<EOF
-0x100000ef8
-EOF
-RUN
-
-NAME=ik?
-BROKEN=1
-FILE=bins/mach0/fatmach0-3true
-CMDS=ik?~?Usage
-EXPECT=<<EOF
-1
 EOF
 RUN
 

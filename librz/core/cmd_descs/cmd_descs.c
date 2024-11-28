@@ -62,6 +62,7 @@ static const RzCmdDescDetail cmd_debug_inject_syscall_details[2];
 static const RzCmdDescDetail eval_getset_details[2];
 static const RzCmdDescDetail egg_config_details[2];
 static const RzCmdDescDetail history_list_or_exec_details[2];
+static const RzCmdDescDetail cmd_info_query_details[2];
 static const RzCmdDescDetail query_sdb_get_set_details[2];
 static const RzCmdDescDetail cmd_print_byte_array_details[3];
 static const RzCmdDescDetail pf_details[3];
@@ -531,7 +532,7 @@ static const RzCmdDescArg cmd_info_pdb_load_args[2];
 static const RzCmdDescArg cmd_info_pdb_show_args[2];
 static const RzCmdDescArg cmd_pdb_extract_args[3];
 static const RzCmdDescArg cmd_info_demangle_args[3];
-static const RzCmdDescArg cmd_info_kuery_args[2];
+static const RzCmdDescArg cmd_info_query_args[2];
 static const RzCmdDescArg cmd_info_plugins_args[2];
 static const RzCmdDescArg cmd_info_resources_args[2];
 static const RzCmdDescArg cmd_info_sections_args[2];
@@ -11677,9 +11678,22 @@ static const RzCmdDescHelp cmd_info_binary_help = {
 	.args = cmd_info_binary_args,
 };
 
-static const RzCmdDescArg cmd_info_kuery_args[] = {
+static const RzCmdDescHelp ik_help = {
+	.summary = "Query key-value database from RzBinObject",
+};
+static const RzCmdDescDetailEntry cmd_info_query_Examples_detail_entries[] = {
+	{ .text = "ik", .arg_str = NULL, .comment = "Show all key value pairs in the root namespace (same as 'ik *')." },
+	{ .text = "ik", .arg_str = " **", .comment = "Show all namespaces under root" },
+	{ .text = "ik", .arg_str = " versioninfo/versym/*", .comment = "Show all key value pairs in the 'versioninfo/versym/' namespace." },
+	{ 0 },
+};
+static const RzCmdDescDetail cmd_info_query_details[] = {
+	{ .name = "Examples", .entries = cmd_info_query_Examples_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg cmd_info_query_args[] = {
 	{
-		.name = "query",
+		.name = "sdb-query",
 		.type = RZ_CMD_ARG_TYPE_STRING,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
@@ -11687,9 +11701,18 @@ static const RzCmdDescArg cmd_info_kuery_args[] = {
 	},
 	{ 0 },
 };
-static const RzCmdDescHelp cmd_info_kuery_help = {
-	.summary = "Key-value database from RzBinObject",
-	.args = cmd_info_kuery_args,
+static const RzCmdDescHelp cmd_info_query_help = {
+	.summary = "Query key-value database from RzBinObject",
+	.details = cmd_info_query_details,
+	.args = cmd_info_query_args,
+};
+
+static const RzCmdDescArg cmd_info_show_header_info_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_show_header_info_help = {
+	.summary = "Show all binary header information.",
+	.args = cmd_info_show_header_info_args,
 };
 
 static const RzCmdDescArg cmd_info_libs_args[] = {
@@ -21776,8 +21799,10 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(cmd_info_binary_cd);
 	rz_cmd_desc_set_default_mode(cmd_info_binary_cd, RZ_OUTPUT_MODE_TABLE);
 
-	RzCmdDesc *cmd_info_kuery_cd = rz_cmd_desc_oldinput_new(core->rcmd, i_cd, "ik", rz_cmd_info_kuery, &cmd_info_kuery_help);
-	rz_warn_if_fail(cmd_info_kuery_cd);
+	RzCmdDesc *ik_cd = rz_cmd_desc_group_new(core->rcmd, i_cd, "ik", rz_cmd_info_query_handler, &cmd_info_query_help, &ik_help);
+	rz_warn_if_fail(ik_cd);
+	RzCmdDesc *cmd_info_show_header_info_cd = rz_cmd_desc_argv_new(core->rcmd, ik_cd, "ik*", rz_cmd_info_show_header_info_handler, &cmd_info_show_header_info_help);
+	rz_warn_if_fail(cmd_info_show_header_info_cd);
 
 	RzCmdDesc *cmd_info_libs_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "il", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_libs_handler, &cmd_info_libs_help);
 	rz_warn_if_fail(cmd_info_libs_cd);

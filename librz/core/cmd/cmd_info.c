@@ -135,49 +135,26 @@ static bool print_source_info(RzCore *core, PrintSourceInfoType type, RzCmdState
 	return true;
 }
 
-RZ_IPI int rz_cmd_info_kuery(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	RzBinObject *o = rz_bin_cur_object(core->bin);
-	Sdb *db = o ? o->kv : NULL;
-	switch (input[0]) {
-	case 'v':
-		if (db) {
-			char *o = sdb_querys(db, NULL, 0, input + 2);
-			if (o && *o) {
-				rz_cons_print(o);
-			}
-			free(o);
-		}
-		break;
-	case '*':
-		rz_core_bin_export_info(core, RZ_MODE_RIZINCMD);
-		break;
-	case '.':
-	case ' ':
-		if (db) {
-			char *o = sdb_querys(db, NULL, 0, input + 1);
-			if (o && *o) {
-				rz_cons_print(o);
-			}
-			free(o);
-		}
-		break;
-	case '\0':
-		if (db) {
-			char *o = sdb_querys(db, NULL, 0, "*");
-			if (o && *o) {
-				rz_cons_print(o);
-			}
-			free(o);
-		}
-		break;
-	case '?':
-	default:
-		RZ_LOG_ERROR("core: Usage: ik [sdb-query]\n");
-		RZ_LOG_ERROR("core: Usage: ik*    # load all header information\n");
-		return 1;
+RZ_IPI RzCmdStatus rz_cmd_info_query_handler(RzCore *core, int argc, const char **argv) {
+	RzBinObject *obj = rz_bin_cur_object(core->bin);
+	if (!obj || !obj->kv) {
+		RZ_LOG_ERROR("No object file loaded to query.\n");
+		return RZ_CMD_STATUS_ERROR;
 	}
-	return 0;
+	char *query_result = sdb_querys(obj->kv, NULL, 0, argc > 1 ? argv[1] : "*");
+	rz_cons_print(query_result);
+	free(query_result);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_info_show_header_info_handler(RzCore *core, int argc, const char **argv) {
+	RzBinObject *obj = rz_bin_cur_object(core->bin);
+	if (!obj || !obj->kv) {
+		RZ_LOG_ERROR("No object file loaded to query.\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_core_bin_export_info(core, RZ_MODE_RIZINCMD);
+	return RZ_CMD_STATUS_OK;
 }
 
 #define GET_CHECK_CUR_BINFILE(core) \

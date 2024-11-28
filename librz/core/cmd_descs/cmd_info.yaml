@@ -244,13 +244,30 @@ commands:
       - RZ_OUTPUT_MODE_QUIET
     args: []
   - name: ik
-    cname: cmd_info_kuery
-    summary: Key-value database from RzBinObject
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
-    args:
-      - name: query
-        type: RZ_CMD_ARG_TYPE_STRING
-        optional: true
+    summary: Query key-value database from RzBinObject
+    subcommands:
+      - name: ik
+        summary: Query key-value database from RzBinObject
+        cname: cmd_info_query
+        args:
+          - name: sdb-query
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+        details:
+          - name: "Examples"
+            entries:
+              - text: "ik"
+                comment: "Show all key value pairs in the root namespace (same as 'ik *')."
+              - text: "ik"
+                arg_str: " **"
+                comment: "Show all namespaces under root"
+              - text: "ik"
+                arg_str: " versioninfo/versym/*"
+                comment: "Show all key value pairs in the 'versioninfo/versym/' namespace."
+      - name: ik*
+        summary: Show all binary header information.
+        cname: cmd_info_show_header_info
+        args: []
   - name: il
     cname: cmd_info_libs
     summary: List libraries
