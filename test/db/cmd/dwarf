@@ -9603,14 +9603,14 @@ paddr      size  vaddr      vsize align perm name                type       flag
 	DW_AT_comp_dir [DW_FORM_strx1]	: (index 0x0): /tmp
 	DW_AT_dwo_name [DW_FORM_strx1]	: (index 0x1): demo_dwo-demo.dwo
 ---
-	DW_AT_producer [DW_FORM_strx1]	: (index 0x5): main
-	DW_AT_name [DW_FORM_strx1]	: (index 0x6): int
-	DW_AT_dwo_name [DW_FORM_strx1]	: (index 0x7): clang version 18.1.8
-	DW_AT_name [DW_FORM_strx1]	: (index 0x0): 
+	DW_AT_producer [DW_FORM_strx1]	: (index 0x5): clang version 18.1.8
+	DW_AT_name [DW_FORM_strx1]	: (index 0x6): demo.c
+	DW_AT_dwo_name [DW_FORM_strx1]	: (index 0x7): demo_dwo-demo.dwo
+	DW_AT_name [DW_FORM_strx1]	: (index 0x0): char
 	DW_AT_name [DW_FORM_strx1]	: (index 0x1): __ARRAY_SIZE_TYPE__
-	DW_AT_name [DW_FORM_strx1]	: (index 0x2): char
-	DW_AT_name [DW_FORM_strx1]	: (index 0x3): __ARRAY_SIZE_TYPE__
-	DW_AT_name [DW_FORM_strx1]	: (index 0x4): global_data
+	DW_AT_name [DW_FORM_strx1]	: (index 0x2): global_data
+	DW_AT_name [DW_FORM_strx1]	: (index 0x3): main
+	DW_AT_name [DW_FORM_strx1]	: (index 0x4): int
 EOF
 RUN
 
@@ -9621,14 +9621,14 @@ CMDS=<<EOF
 id~DW_FORM_strx1]
 EOF
 EXPECT=<<EOF
-	DW_AT_producer [DW_FORM_strx1]	: (index 0x5): main
-	DW_AT_name [DW_FORM_strx1]	: (index 0x6): int
-	DW_AT_dwo_name [DW_FORM_strx1]	: (index 0x7): clang version 18.1.8
-	DW_AT_name [DW_FORM_strx1]	: (index 0x0): 
+	DW_AT_producer [DW_FORM_strx1]	: (index 0x5): clang version 18.1.8
+	DW_AT_name [DW_FORM_strx1]	: (index 0x6): demo.c
+	DW_AT_dwo_name [DW_FORM_strx1]	: (index 0x7): demo_dwo-demo.dwo
+	DW_AT_name [DW_FORM_strx1]	: (index 0x0): char
 	DW_AT_name [DW_FORM_strx1]	: (index 0x1): __ARRAY_SIZE_TYPE__
-	DW_AT_name [DW_FORM_strx1]	: (index 0x2): char
-	DW_AT_name [DW_FORM_strx1]	: (index 0x3): __ARRAY_SIZE_TYPE__
-	DW_AT_name [DW_FORM_strx1]	: (index 0x4): global_data
+	DW_AT_name [DW_FORM_strx1]	: (index 0x2): global_data
+	DW_AT_name [DW_FORM_strx1]	: (index 0x3): main
+	DW_AT_name [DW_FORM_strx1]	: (index 0x4): int
 EOF
 RUN
 

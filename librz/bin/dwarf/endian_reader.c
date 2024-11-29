@@ -27,7 +27,7 @@ static const SectionAlias section_alias[] = {
 
 };
 
-RZ_IPI RzBinSection *rz_bin_dwarf_section_by_name(RzBinFile *binfile, const char *sn, bool is_dwo) {
+RZ_IPI RzBinSection *rz_bin_dwarf_section_by_name(RzBinFile *binfile, const char *sn) {
 	rz_return_val_if_fail(binfile && sn, NULL);
 	void **iter = NULL;
 	RzBinSection *section = NULL;
@@ -173,9 +173,9 @@ static inline void add_relocations(
 	}
 }
 
-RZ_IPI RzBinEndianReader *RzBinEndianReader_from_file(RzBinFile *binfile, const char *sect_name, bool is_dwo) {
+RZ_IPI RzBinEndianReader *RzBinEndianReader_from_file(RzBinFile *binfile, const char *sect_name) {
 	rz_return_val_if_fail(binfile && sect_name, NULL);
-	RzBinSection *section = rz_bin_dwarf_section_by_name(binfile, sect_name, is_dwo);
+	RzBinSection *section = rz_bin_dwarf_section_by_name(binfile, sect_name);
 	OK_OR(section, return NULL);
 	RzBinEndianReader *R = rz_bin_dwarf_section_reader(binfile, section);
 	OK_OR(R, return NULL);

@@ -286,11 +286,10 @@ RZ_API RZ_OWN RzBinDwarfRngLists *rz_bin_dwarf_rnglists_new(
  * \param dw the RzBinDWARF instance
  * \return the RzBinDwarfRngListTable instance on success, NULL otherwise
  */
-RZ_API RZ_OWN RzBinDwarfRngLists *rz_bin_dwarf_rnglists_new_from_file(
-	RZ_BORROW RZ_NONNULL RzBinFile *bf, bool is_dwo) {
+RZ_API RZ_OWN RzBinDwarfRngLists *rz_bin_dwarf_rnglists_new_from_file(RZ_BORROW RZ_NONNULL RzBinFile *bf) {
 	RET_NULL_IF_FAIL(bf);
-	RzBinEndianReader *rnglists = RzBinEndianReader_from_file(bf, ".debug_rnglists", is_dwo);
-	RzBinEndianReader *ranges = RzBinEndianReader_from_file(bf, ".debug_ranges", is_dwo);
+	RzBinEndianReader *rnglists = RzBinEndianReader_from_file(bf, ".debug_rnglists");
+	RzBinEndianReader *ranges = RzBinEndianReader_from_file(bf, ".debug_ranges");
 	if (!(rnglists || ranges)) {
 		R_free(rnglists);
 		R_free(ranges);

@@ -23,12 +23,12 @@ typedef RzBinDwarfLocation Location;
 
 RZ_IPI bool ListsHdr_parse(RzBinDwarfListsHdr *hdr, RzBinEndianReader *R);
 
-RZ_IPI RzBinSection *rz_bin_dwarf_section_by_name(RzBinFile *binfile, const char *sn, bool is_dwo);
+RZ_IPI RzBinSection *rz_bin_dwarf_section_by_name(RzBinFile *binfile, const char *sn);
 
 RZ_IPI bool RzBinDwarfAttr_parse(RzBinEndianReader *R, RzBinDwarfAttr *attr, AttrOption *opt);
 
 RZ_IPI RzBinEndianReader *RzBinEndianReader_from_file(
-	RzBinFile *binfile, const char *sect_name, bool is_dwo);
+	RzBinFile *binfile, const char *sect_name);
 
 static inline bool bf_bigendian(RzBinFile *bf) {
 	return bf->o && bf->o->info && bf->o->info->big_endian;

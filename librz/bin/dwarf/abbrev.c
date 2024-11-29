@@ -168,9 +168,9 @@ RZ_API RZ_OWN RzBinDwarfAbbrev *rz_bin_dwarf_abbrev_new(RZ_OWN RZ_NONNULL RzBinE
  * \return RzBinDwarfAbbrevs object
  */
 RZ_API RZ_OWN RzBinDwarfAbbrev *rz_bin_dwarf_abbrev_from_file(
-	RZ_BORROW RZ_NONNULL RzBinFile *bf, bool is_dwo) {
+	RZ_BORROW RZ_NONNULL RzBinFile *bf) {
 	rz_return_val_if_fail(bf, NULL);
-	RzBinEndianReader *r = RzBinEndianReader_from_file(bf, ".debug_abbrev", is_dwo);
+	RzBinEndianReader *r = RzBinEndianReader_from_file(bf, ".debug_abbrev");
 	RET_NULL_IF_FAIL(r);
 	return rz_bin_dwarf_abbrev_new(r);
 }

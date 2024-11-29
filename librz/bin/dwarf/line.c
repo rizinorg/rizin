@@ -726,16 +726,15 @@ RZ_API RZ_OWN RzBinDwarfLine *rz_bin_dwarf_line_new(
  * \return RzBinDwarfLineInfo or NULL if failed
  */
 RZ_API RZ_OWN RzBinDwarfLine *rz_bin_dwarf_line_from_file(
-	RZ_BORROW RZ_NONNULL RzBinFile *bf,
-	RZ_BORROW RZ_NULLABLE RzBinDWARF *dw,
-	bool is_dwo) {
+	RZ_NULLABLE RZ_BORROW RzBinDWARF *dw,
+	RZ_BORROW RZ_NONNULL RzBinFile *bf) {
 	rz_return_val_if_fail(bf, NULL);
 	RzBinDwarfEncoding encoding = { 0 };
 	if (!RzBinDwarfEncoding_from_file(&encoding, bf)) {
 		return NULL;
 	}
 
-	RzBinEndianReader *R = RzBinEndianReader_from_file(bf, ".debug_line", is_dwo);
+	RzBinEndianReader *R = RzBinEndianReader_from_file(bf, ".debug_line");
 	RET_NULL_IF_FAIL(R);
 	return Line_parse(R, &encoding, dw);
 }

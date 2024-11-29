@@ -22,10 +22,10 @@ err:
 }
 
 RZ_API RZ_OWN RzBinDwarfStrOffsets *rz_bin_dwarf_str_offsets_from_file(
-	RZ_NONNULL RZ_BORROW RzBinFile *bf, bool is_dwo) {
+	RZ_NONNULL RZ_BORROW RzBinFile *bf) {
 	rz_return_val_if_fail(bf, NULL);
 	RzBinEndianReader *r = RzBinEndianReader_from_file(
-		bf, ".debug_str_offsets", is_dwo);
+		bf, ".debug_str_offsets");
 	RET_NULL_IF_FAIL(r);
 	return rz_bin_dwarf_str_offsets_from_buf(r);
 }

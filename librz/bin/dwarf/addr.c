@@ -34,7 +34,7 @@ RZ_API RZ_OWN RzBinDwarfAddr *rz_bin_dwarf_addr_new(RZ_OWN RZ_NONNULL RzBinEndia
 
 RZ_API RZ_OWN RzBinDwarfAddr *rz_bin_dwarf_addr_from_file(RZ_BORROW RZ_NONNULL RzBinFile *bf) {
 	rz_return_val_if_fail(bf, NULL);
-	RzBinEndianReader *r = RzBinEndianReader_from_file(bf, ".debug_addr", false);
+	RzBinEndianReader *r = RzBinEndianReader_from_file(bf, ".debug_addr");
 	RET_NULL_IF_FAIL(r);
 	return rz_bin_dwarf_addr_new(r);
 }

@@ -21,26 +21,27 @@ RZ_IPI bool RzBinDwarfEncoding_from_file(RzBinDwarfEncoding *encoding, RzBinFile
 }
 
 static inline RZ_OWN RzBinDWARF *dwarf_from_file(
-	RZ_BORROW RZ_NONNULL RzBinFile *bf, bool is_dwo) {
+	RZ_BORROW RZ_NONNULL RzBinFile *bf, RZ_BORROW RZ_NULLABLE RzBinDWARF *parent) {
 	rz_return_val_if_fail(bf, NULL);
 	RzBinDWARF *dw = RZ_NEW0(RzBinDWARF);
 	RET_NULL_IF_FAIL(dw);
 
+	dw->parent = parent;
 	dw->addr = rz_bin_dwarf_addr_from_file(bf);
 	dw->line_str = rz_bin_dwarf_line_str_from_file(bf);
 	dw->aranges = rz_bin_dwarf_aranges_from_file(bf);
 
-	dw->str = rz_bin_dwarf_str_from_file(bf, is_dwo);
-	dw->str_offsets = rz_bin_dwarf_str_offsets_from_file(bf, is_dwo);
-	dw->loclists = rz_bin_dwarf_loclists_new_from_file(bf, is_dwo);
-	dw->rnglists = rz_bin_dwarf_rnglists_new_from_file(bf, is_dwo);
-	dw->abbrev = rz_bin_dwarf_abbrev_from_file(bf, is_dwo);
+	dw->str = rz_bin_dwarf_str_from_file(bf);
+	dw->str_offsets = rz_bin_dwarf_str_offsets_from_file(bf);
+	dw->loclists = rz_bin_dwarf_loclists_new_from_file(bf);
+	dw->rnglists = rz_bin_dwarf_rnglists_new_from_file(bf);
+	dw->abbrev = rz_bin_dwarf_abbrev_from_file(bf);
 
 	if (dw->abbrev) {
-		dw->info = rz_bin_dwarf_info_from_file(bf, dw, is_dwo);
+		dw->info = rz_bin_dwarf_info_from_file(dw, bf);
 	}
 	if (dw->info) {
-		dw->line = rz_bin_dwarf_line_from_file(bf, dw, is_dwo);
+		dw->line = rz_bin_dwarf_line_from_file(dw, bf);
 	}
 	if (!(dw->addr || dw->line_str || dw->aranges || dw->str || dw->str_offsets || dw->loclists || dw->rnglists || dw->abbrev)) {
 		rz_bin_dwarf_free(dw);
@@ -54,7 +55,7 @@ static inline char *read_debuglink(RzBinFile *binfile) {
 	const char *name = NULL;
 	RzBinEndianReader *R = NULL;
 	RET_NULL_IF_FAIL(
-		(sect = rz_bin_dwarf_section_by_name(binfile, ".gnu_debuglink", false)) &&
+		(sect = rz_bin_dwarf_section_by_name(binfile, ".gnu_debuglink")) &&
 		(R = rz_bin_dwarf_section_reader(binfile, sect)) &&
 		R_read_cstring(R, &name));
 	// TODO: Verification the CRC
@@ -64,7 +65,7 @@ static inline char *read_debuglink(RzBinFile *binfile) {
 }
 
 static inline char *read_build_id(RzBinFile *binfile) {
-	RzBinSection *sect = rz_bin_dwarf_section_by_name(binfile, ".note.gnu.build-id", false);
+	RzBinSection *sect = rz_bin_dwarf_section_by_name(binfile, ".note.gnu.build-id");
 	RET_NULL_IF_FAIL(sect);
 	RzBinEndianReader *R = rz_bin_dwarf_section_reader(binfile, sect);
 	RET_NULL_IF_FAIL(R);
@@ -129,7 +130,7 @@ static inline RzBinDWARF *dwarf_from_debuglink(
 	free(file_dir);
 	return NULL;
 ok:
-	dw = rz_bin_dwarf_from_path(path, false);
+	dw = rz_bin_dwarf_from_path(path, NULL);
 	free(dir);
 	free(path);
 	free(file_dir);
@@ -145,7 +146,7 @@ static inline RzBinDWARF *dwarf_from_build_id(
 		char *dir = rz_file_path_join(debug_file_directory, ".build-id");
 		char *path = rz_file_path_join(dir, build_id_path);
 		if (rz_file_exists(path)) {
-			RzBinDWARF *dw = rz_bin_dwarf_from_path(path, false);
+			RzBinDWARF *dw = rz_bin_dwarf_from_path(path, NULL);
 			free(dir);
 			free(path);
 			return dw;
@@ -288,7 +289,7 @@ RZ_API RZ_OWN RzBinDWARF *rz_bin_dwarf_from_debuginfod(
 		if (!url) {
 			break;
 		}
-		dw = rz_bin_dwarf_from_path(url, false);
+		dw = rz_bin_dwarf_from_path(url, NULL);
 		free(url);
 		if (dw) {
 			break;
@@ -304,24 +305,24 @@ RZ_API RZ_OWN RzBinDWARF *rz_bin_dwarf_from_debuginfod(
  * \return RzBinDWARF pointer or NULL if failed
  */
 RZ_API RZ_OWN RzBinDWARF *rz_bin_dwarf_from_path(
-	RZ_BORROW RZ_NONNULL const char *filepath, bool is_dwo) {
+	RZ_BORROW RZ_NONNULL const char *filepath, RZ_BORROW RZ_NULLABLE RzBinDWARF *parent) {
 	rz_return_val_if_fail(filepath, NULL);
 
-	RzBinDWARF *dwo = NULL;
+	RzBinDWARF *dw = NULL;
 	DwBinary binary = { 0 };
 	if (!binary_from_path(&binary, filepath)) {
 		goto beach;
 	}
-	dwo = dwarf_from_file(binary.bf, is_dwo);
+	dw = dwarf_from_file(binary.bf, parent);
 
 beach:
 	binary_close(&binary);
-	return dwo;
+	return dw;
 }
 
 RZ_API RZ_OWN RzBinDWARF *rz_bin_dwarf_from_file(
 	RZ_BORROW RZ_NONNULL RzBinFile *bf) {
-	return dwarf_from_file(bf, false);
+	return dwarf_from_file(bf, NULL);
 }
 
 RZ_API void rz_bin_dwarf_free(RZ_OWN RZ_NULLABLE RzBinDWARF *dw) {

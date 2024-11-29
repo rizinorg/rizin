@@ -312,11 +312,10 @@ RZ_API RZ_OWN RzBinDwarfLocLists *rz_bin_dwarf_loclists_new(RzBinEndianReader *l
  * \param dw RzBinDwarf instance
  * \return RzBinDwarfLocListTable instance on success, NULL otherwise
  */
-RZ_API RZ_OWN RzBinDwarfLocLists *rz_bin_dwarf_loclists_new_from_file(
-	RZ_BORROW RZ_NONNULL RzBinFile *bf, bool is_dwo) {
+RZ_API RZ_OWN RzBinDwarfLocLists *rz_bin_dwarf_loclists_new_from_file(RZ_BORROW RZ_NONNULL RzBinFile *bf) {
 	RET_NULL_IF_FAIL(bf);
-	RzBinEndianReader *loclists = RzBinEndianReader_from_file(bf, ".debug_loclists", is_dwo);
-	RzBinEndianReader *loc = RzBinEndianReader_from_file(bf, ".debug_loc", is_dwo);
+	RzBinEndianReader *loclists = RzBinEndianReader_from_file(bf, ".debug_loclists");
+	RzBinEndianReader *loc = RzBinEndianReader_from_file(bf, ".debug_loc");
 	if (!(loclists || loc)) {
 		R_free(loclists);
 		R_free(loc);
