@@ -1119,7 +1119,7 @@ static bool Evaluation_evaluate_one_operation(
 	}
 	case OPERATION_KIND_ADDRESS_INDEX: {
 		ut64 addr = 0;
-		if (self->dw && self->unit && rz_bin_dwarf_addr_get(self->dw->addr, &addr, self->unit->hdr.encoding.address_size, self->unit->addr_base, operation.address_index.index)) {
+		if (self->dw && self->unit && rz_bin_dwarf_addr_get(rz_bin_dwarf_addr(self->dw), &addr, self->unit->hdr.encoding.address_size, self->unit->addr_base, operation.address_index.index)) {
 			out->kind = OperationEvaluationResult_COMPLETE;
 			out->complete.kind = RzBinDwarfLocationKind_ADDRESS;
 			out->complete.address = addr;

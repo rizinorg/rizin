@@ -1443,6 +1443,19 @@ typedef struct rz_core_bin_dwarf_t {
 	RzBinDwarfLineStr *line_str;
 } RzBinDWARF;
 
+#define DWARF_FIELD_IMPL(T, F) \
+	static inline T *rz_bin_dwarf_##F( \
+		RZ_BORROW RZ_NONNULL const RzBinDWARF *dw) { \
+		rz_return_val_if_fail(dw, NULL); \
+		return dw->F ? dw->F : (dw->parent ? dw->parent->F : NULL); \
+	}
+
+DWARF_FIELD_IMPL(RzBinDwarfAddr, addr);
+DWARF_FIELD_IMPL(RzBinDwarfLine, line);
+DWARF_FIELD_IMPL(RzBinDwarfLineStr, line_str);
+
+#undef DWARF_FIELD_IMPL
+
 RZ_API const char *rz_bin_dwarf_tag(DW_TAG tag);
 RZ_API const char *rz_bin_dwarf_attr(DW_AT attr_code);
 RZ_API const char *rz_bin_dwarf_form(DW_FORM form_code);
@@ -1858,7 +1871,7 @@ static inline ut64 rz_bin_dwarf_attr_addr(
 		return attr->value.u64;
 	} else if (v->kind == RzBinDwarfAttr_AddrIndex) {
 		ut64 addr = 0;
-		if (dw && rz_bin_dwarf_addr_get(dw->addr, &addr, addr_size, base, attr->value.u64)) {
+		if (dw && rz_bin_dwarf_addr_get(rz_bin_dwarf_addr(dw), &addr, addr_size, base, attr->value.u64)) {
 			return addr;
 		}
 		rz_warn_if_reached();

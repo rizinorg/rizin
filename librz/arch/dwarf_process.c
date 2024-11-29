@@ -1365,7 +1365,7 @@ static RzBinDwarfLocation *location_parse(
 			return NULL;
 		}
 		ut64 offset = rz_bin_dwarf_attr_udata(attr);
-		RzBinDwarfLocList *loclist = rz_bin_dwarf_loclists_get(ctx->dw->loclists, ctx->dw->addr, ctx->unit, offset);
+		RzBinDwarfLocList *loclist = rz_bin_dwarf_loclists_get(ctx->dw->loclists, rz_bin_dwarf_addr(ctx->dw), ctx->unit, offset);
 		if (!loclist) { /* for some reason offset isn't there, wrong parsing or malformed dwarf */
 			goto err_find;
 		}
@@ -1672,7 +1672,8 @@ static bool try_create_var_global(
 
 	RzBinDwarfAttr *attr = NULL;
 	attr = rz_bin_dwarf_die_get_attr(die, DW_AT_decl_file);
-	RzBinDwarfLineUnit *lu = ctx->unit ? rz_pvector_at(ctx->dw->line->units, ctx->unit->index) : NULL;
+	RzBinDwarfLine *dw_line = rz_bin_dwarf_line(ctx->dw);
+	RzBinDwarfLineUnit *lu = ctx->unit && dw_line ? rz_pvector_at(dw_line->units, ctx->unit->index) : NULL;
 	ut64 file_index = attr ? rz_bin_dwarf_attr_udata(attr) : UT64_MAX;
 	const char *file = file_index != 0 && lu ? rz_bin_dwarf_file_path(ctx->dw, lu, file_index) : NULL;
 

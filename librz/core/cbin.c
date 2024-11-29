@@ -711,7 +711,7 @@ RZ_API bool rz_core_bin_apply_dwarf(RzCore *core, RzBinFile *binfile) {
 		rz_analysis_dwarf_process_info(core->analysis, dw);
 	}
 
-	if (dw->line) {
+	if ((rz_bin_dwarf_line(dw))) {
 		// move all produced rows line info out (TODO: bin loading should do that)
 		if (!binfile->o->lines) {
 			binfile->o->lines = RZ_NEW0(RzBinSourceLineInfo);
@@ -720,7 +720,7 @@ RZ_API bool rz_core_bin_apply_dwarf(RzCore *core, RzBinFile *binfile) {
 			}
 			rz_str_constpool_init(&binfile->o->lines->filename_pool);
 		}
-		rz_bin_source_line_info_merge(binfile->o->lines, dw->line->lines);
+		rz_bin_source_line_info_merge(binfile->o->lines, (rz_bin_dwarf_line(dw))->lines);
 	}
 	return true;
 }
@@ -1794,8 +1794,9 @@ static bool bin_dwarf(RzCore *core, RzBinFile *binfile, RzCmdStateOutput *state)
 		rz_bin_dwarf_dump(dw, &sb);
 		rz_cons_strcat(rz_strbuf_drain_nofree(&sb));
 	}
-	if (dw->line && dw->line->lines) {
-		rz_core_bin_print_source_line_info(core, dw->line->lines, state);
+	RzBinDwarfLine *line = rz_bin_dwarf_line(dw);
+	if (line && line->lines) {
+		rz_core_bin_print_source_line_info(core, line->lines, state);
 	}
 	if (dw != core->analysis->debug_info->dw) {
 		rz_bin_dwarf_free(dw);

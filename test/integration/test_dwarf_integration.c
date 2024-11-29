@@ -240,7 +240,7 @@ static bool test_dwarf_function_parsing_rust(void) {
 
 	RzBinDwarfCompUnit *cu = ht_up_find(dw->info->unit_by_offset, 0x4151, NULL);
 	mu_assert_notnull(cu, "Couldn't get compunit");
-	RzBinDwarfLocList *loclist = rz_bin_dwarf_loclists_get(dw->loclists, dw->addr, cu, 0xd973);
+	RzBinDwarfLocList *loclist = rz_bin_dwarf_loclists_get(dw->loclists, rz_bin_dwarf_addr(dw), cu, 0xd973);
 	mu_assert_notnull(loclist, "Couldn't get loclist");
 	RzBinDwarfLocListEntry *entry = rz_pvector_at(&loclist->entries, 0);
 	mu_assert_notnull(entry, "Couldn't get entry");

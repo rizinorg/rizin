@@ -363,7 +363,7 @@ RZ_API void rz_bin_dwarf_dump(
 	if (dw->rnglists) {
 		rz_bin_dwarf_rnglists_dump(dw->rnglists, sb);
 	}
-	if (dw->line) {
-		rz_bin_dwarf_line_units_dump(dw->line, sb);
+	if (rz_bin_dwarf_line(dw)) {
+		rz_bin_dwarf_line_units_dump(rz_bin_dwarf_line(dw), sb);
 	}
 }

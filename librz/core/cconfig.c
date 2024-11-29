@@ -2603,6 +2603,18 @@ static bool cb_bindbginfo(void *user, void *data) {
 	return true;
 }
 
+static bool cb_dwo_path(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	if (!(core && core->bin && node)) {
+		return false;
+	}
+	if (RZ_STR_ISNOTEMPTY(node->value)) {
+		rz_core_bin_apply_dwarf(core, rz_bin_cur(core->bin));
+	}
+	return true;
+}
+
 static bool cb_binprefix(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
@@ -3331,7 +3343,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETI("bin.baddr", -1, "Base address of the binary");
 	SETI("bin.laddr", 0, "Base address for loading library ('*.so')");
 	SETCB("bin.dbginfo", "true", &cb_bindbginfo, "Load debug information at startup if available");
-	SETCB("bin.dbginfo.dwo_path", "", NULL, "Load separate debug information (DWARF) file if available");
+	SETCB("bin.dbginfo.dwo_path", "", &cb_dwo_path, "Load separate debug information (DWARF) file if available");
 	SETCB("bin.dbginfo.debug_file_directory", "/usr/lib/debug", NULL,
 		"Set the directories which searches for separate debugging information files to directory");
 	SETCB("bin.dbginfo.debuginfod", "false", NULL,

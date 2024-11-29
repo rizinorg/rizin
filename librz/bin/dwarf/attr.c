@@ -232,7 +232,7 @@ RZ_API const char *rz_bin_dwarf_attr_string(
 	} else if (v->kind == RzBinDwarfAttr_StrOffsetIndex && dw) {
 		orig = rz_bin_dwarf_str_offsets_get(dw->str, dw->str_offsets, str_offsets_base, v->u64);
 	} else if (v->kind == RzBinDwarfAttr_LineStrRef && dw) {
-		orig = rz_bin_dwarf_line_str_get(dw->line_str, v->u64);
+		orig = rz_bin_dwarf_line_str_get(rz_bin_dwarf_line_str(dw), v->u64);
 	}
 	return orig;
 }

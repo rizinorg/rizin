@@ -1367,7 +1367,7 @@ bool test_dwarf5_loclists(void) {
 	RzBinDwarfCompUnit *cu = rz_vector_head(&dw->info->units);
 	mu_assert_notnull(cu, ".debug_info unit");
 	RzBinDwarfLocList *loclist =
-		rz_bin_dwarf_loclists_get(dw->loclists, dw->addr, cu, 0x00000012);
+		rz_bin_dwarf_loclists_get(dw->loclists, rz_bin_dwarf_addr(dw), cu, 0x00000012);
 	mu_assert_notnull(loclist, "loclist");
 
 	{
@@ -1432,7 +1432,7 @@ bool test_dwarf4_loclists(void) {
 
 	RzBinDwarfCompUnit *cu = rz_vector_index_ptr(&dw->info->units, 0);
 	RzBinDwarfLocList *loclist =
-		rz_bin_dwarf_loclists_get(dw->loclists, dw->addr, cu, 0);
+		rz_bin_dwarf_loclists_get(dw->loclists, rz_bin_dwarf_addr(dw), cu, 0);
 	mu_assert_notnull(loclist, "loclist");
 
 	{
