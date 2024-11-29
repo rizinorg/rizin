@@ -26,7 +26,6 @@ commands:
     summary: >
       Display double linked list for bins in an arena.
       Use dmhbg command for graphical representation.
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
     args:
       - name: bin_num|bin_num:malloc_state
         type: RZ_CMD_ARG_TYPE_STRING

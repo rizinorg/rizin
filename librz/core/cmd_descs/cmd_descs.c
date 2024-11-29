@@ -21360,7 +21360,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_arena_print_cd = rz_cmd_desc_argv_new(core->rcmd, dmh_cd, "dmha", rz_cmd_arena_print_handler, &cmd_arena_print_help);
 	rz_warn_if_fail(cmd_arena_print_cd);
 
-	RzCmdDesc *cmd_heap_bins_list_print_cd = rz_cmd_desc_oldinput_new(core->rcmd, dmh_cd, "dmhb", rz_cmd_heap_bins_list_print, &cmd_heap_bins_list_print_help);
+	RzCmdDesc *cmd_heap_bins_list_print_cd = rz_cmd_desc_argv_new(core->rcmd, dmh_cd, "dmhb", rz_cmd_heap_bins_list_print_handler, &cmd_heap_bins_list_print_help);
 	rz_warn_if_fail(cmd_heap_bins_list_print_cd);
 
 	RzCmdDesc *cmd_heap_chunk_print_cd = rz_cmd_desc_argv_new(core->rcmd, dmh_cd, "dmhc", rz_cmd_heap_chunk_print_handler, &cmd_heap_chunk_print_help);

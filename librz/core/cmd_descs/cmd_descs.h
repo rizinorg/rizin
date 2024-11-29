@@ -1216,7 +1216,7 @@ RZ_IPI RzCmdStatus rz_cmd_heap_chunks_print_handler(RzCore *core, int argc, cons
 // "dmha"
 RZ_IPI RzCmdStatus rz_cmd_arena_print_handler(RzCore *core, int argc, const char **argv);
 // "dmhb"
-RZ_IPI int rz_cmd_heap_bins_list_print(void *data, const char *input);
+RZ_IPI RzCmdStatus rz_cmd_heap_bins_list_print_handler(RzCore *core, int argc, const char **argv);
 // "dmhc"
 RZ_IPI RzCmdStatus rz_cmd_heap_chunk_print_handler(RzCore *core, int argc, const char **argv);
 // "dmhd"

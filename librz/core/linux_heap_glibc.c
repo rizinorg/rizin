@@ -3,6 +3,7 @@
 // SPDX-FileCopyrightText: 2016-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_cmd.h>
 #include <rz_core.h>
 #include <rz_config.h>
 #include <rz_types.h>
@@ -2722,7 +2723,7 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_tcache_print_handler)(RzCore *core, int argc, 
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI int GH(rz_cmd_heap_bins_list_print)(RzCore *core, const char *input) {
+RZ_IPI RzCmdStatus GH(rz_cmd_heap_bins_list_print_handler)(RzCore *core, const char *input) {
 	GHT m_arena = GHT_MAX, m_state = GHT_MAX;
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 	MallocState *main_arena = RZ_NEW0(MallocState);
