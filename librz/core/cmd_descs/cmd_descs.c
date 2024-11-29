@@ -396,6 +396,7 @@ static const RzCmdDescArg cmd_debug_continue_execution_args[2];
 static const RzCmdDescArg cmd_debug_continue_send_signal_args[3];
 static const RzCmdDescArg cmd_debug_continue_syscall_args[2];
 static const RzCmdDescArg cmd_debug_continue_traptrace_args[2];
+static const RzCmdDescArg cmd_debug_continue_until_args[2];
 static const RzCmdDescArg cmd_debug_descriptor_open_args[2];
 static const RzCmdDescArg cmd_debug_descriptor_close_args[2];
 static const RzCmdDescArg cmd_debug_descriptor_seek_args[3];
@@ -8374,8 +8375,19 @@ static const RzCmdDescHelp cmd_debug_continue_traptrace_help = {
 	.args = cmd_debug_continue_traptrace_args,
 };
 
+static const RzCmdDescArg cmd_debug_continue_until_args[] = {
+	{
+		.name = "address",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.default_value = "$$",
+
+	},
+	{ 0 },
+};
 static const RzCmdDescHelp cmd_debug_continue_until_help = {
 	.summary = "Debug continue until",
+	.args = cmd_debug_continue_until_args,
 };
 
 static const RzCmdDescHelp dd_help = {
@@ -21149,7 +21161,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_debug_continue_traptrace_cd = rz_cmd_desc_argv_new(core->rcmd, dc_cd, "dct", rz_cmd_debug_continue_traptrace_handler, &cmd_debug_continue_traptrace_help);
 	rz_warn_if_fail(cmd_debug_continue_traptrace_cd);
 
-	RzCmdDesc *cmd_debug_continue_until_cd = rz_cmd_desc_oldinput_new(core->rcmd, dc_cd, "dcu", rz_cmd_debug_continue_until, &cmd_debug_continue_until_help);
+	RzCmdDesc *cmd_debug_continue_until_cd = rz_cmd_desc_argv_new(core->rcmd, dc_cd, "dcu", rz_cmd_debug_continue_until_handler, &cmd_debug_continue_until_help);
 	rz_warn_if_fail(cmd_debug_continue_until_cd);
 
 	RzCmdDesc *dd_cd = rz_cmd_desc_group_new(core->rcmd, d_cd, "dd", rz_cmd_debug_descriptor_open_handler, &cmd_debug_descriptor_open_help, &dd_help);

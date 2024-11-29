@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_util/rz_num.h>
 #include <rz_util/rz_regex.h>
 #include <rz_core.h>
 #include <rz_debug.h>
@@ -24,15 +25,6 @@
 			return RZ_CMD_STATUS_ERROR; \
 		} \
 	} while (0)
-
-static const char *help_msg_dcu[] = {
-	"Usage:", "dcu", " Continue until address",
-	"dcu.", "", "Alias for dcu $$ (continue until current address",
-	"dcu", " address", "Continue until address",
-	"dcu", " [..tail]", "Continue until the range",
-	"dcu", " [from] [to]", "Continue until the range",
-	NULL
-};
 
 static const char *help_msg_dmi[] = {
 	"Usage: dmi", "", " # List/Load Symbols",
@@ -1476,69 +1468,6 @@ static void debug_trace_calls(RzCore *core, ut64 from, ut64 to, ut64 final_addr)
 	rz_cons_break_pop();
 }
 
-static bool cmd_dcu(RzCore *core, const char *input) {
-	const char *ptr = NULL;
-	ut64 from, to, pc;
-	bool dcu_range = false;
-	bool invalid = (!input[0] || !input[1] || !input[2]);
-	if (invalid || (input[2] != ' ' && input[2] != '.')) {
-		rz_core_cmd_help(core, help_msg_dcu);
-		return false;
-	}
-	to = UT64_MAX;
-	if (input[2] == '.') {
-		ptr = strchr(input + 3, ' ');
-		if (ptr) { // TODO: put '\0' in *ptr to avoid
-			from = rz_num_tail(core->num, core->offset, input + 2);
-			if (ptr[1] == '.') {
-				to = rz_num_tail(core->num, core->offset, ptr + 2);
-			} else {
-				to = rz_num_math(core->num, ptr + 1);
-			}
-			dcu_range = true;
-		} else {
-			from = rz_num_tail(core->num, core->offset, input + 2);
-		}
-	} else {
-		ptr = strchr(input + 3, ' ');
-		if (ptr) { // TODO: put '\0' in *ptr to avoid
-			from = rz_num_math(core->num, input + 3);
-			if (ptr[1] == '.') {
-				to = rz_num_tail(core->num, core->offset, ptr + 2);
-			} else {
-				to = rz_num_math(core->num, ptr + 1);
-			}
-			dcu_range = true;
-		} else {
-			from = rz_num_math(core->num, input + 3);
-		}
-	}
-	if (core->num->nc.errors && rz_cons_is_interactive()) {
-		RZ_LOG_ERROR("core: Cannot continue until unknown address '%s'\n", core->num->nc.calc_buf);
-		return false;
-	}
-	if (to == UT64_MAX) {
-		to = from;
-	}
-	if (dcu_range) {
-		rz_cons_break_push(NULL, NULL);
-		do {
-			if (rz_cons_is_breaked()) {
-				break;
-			}
-			rz_debug_step(core->dbg, 1);
-			rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_GPR, false);
-			pc = rz_debug_reg_get(core->dbg, "PC");
-			RZ_LOG_WARN("core: Continue 0x%08" PFMT64x " > 0x%08" PFMT64x " < 0x%08" PFMT64x "\n",
-				from, pc, to);
-		} while (pc < from || pc > to);
-		rz_cons_break_pop();
-	} else {
-		return rz_core_debug_continue_until(core, from);
-	}
-	return true;
-}
-
 // dsu
 RZ_IPI RzCmdStatus rz_cmd_debug_step_until_handler(RzCore *core, int argc, const char **argv) {
 	rz_reg_arena_swap(core->dbg->reg, true);
@@ -2550,22 +2479,15 @@ RZ_IPI RzCmdStatus rz_cmd_debug_continue_syscall_handler(RzCore *core, int argc,
 }
 
 // dcu
-RZ_IPI int rz_cmd_debug_continue_until(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
+RZ_IPI RzCmdStatus rz_cmd_debug_continue_until_handler(RzCore *core, int argc, const char **argv) {
 	CMD_CHECK_DEBUG_DEAD(core);
 	rz_cons_break_push(rz_core_static_debug_stop, core->dbg);
-	if (input[0] == '?') {
-		rz_core_cmd_help(core, help_msg_dcu);
-	} else if (input[0] == '.' || input[0] == '\0') {
-		cmd_dcu(core, "cu $$");
-	} else {
-		char *tmpinp = rz_str_newf("cu %s", input + 1);
-		cmd_dcu(core, tmpinp);
-		free(tmpinp);
-	}
+	ut64 addr = rz_num_math(core->num, argv[1]);
+	RZ_LOG_INFO("Continue until 0x%" PFMT64x "\n", addr);
+	bool success = rz_core_debug_continue_until(core, addr);
 	rz_cons_break_pop();
 	rz_core_dbg_follow_seek_register(core);
-	return RZ_CMD_STATUS_OK;
+	return success ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_debug_handler_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {

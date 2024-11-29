@@ -331,7 +331,10 @@ commands:
       - name: dcu
         summary: Debug continue until
         cname: cmd_debug_continue_until
-        type: RZ_CMD_DESC_TYPE_OLDINPUT
+        args:
+          - name: address
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            default_value: "$$"
   - name: dd
     summary: Debug file descriptors commands
     subcommands:

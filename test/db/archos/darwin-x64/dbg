@@ -33,7 +33,6 @@ mov rax, qword [rax]
 lea rsi, reloc.objc_msgSend_fixup
 EOF
 EXPECT_ERR=<<EOF
-Continue until 0x100000bf8
 hit breakpoint at: 0x100000bf8
 EOF
 RUN
@@ -90,7 +89,6 @@ rdi = 0x0000000100000f30
 Hello World
 EOF
 EXPECT_ERR=<<EOF
-Continue until 0x100000f0c
 hit breakpoint at: 0x100000f0c
 EOF
 RUN
