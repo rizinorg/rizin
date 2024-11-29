@@ -9547,3 +9547,106 @@ Line table statements:
 0x000013af	-	0	0
 EOF
 RUN
+
+NAME="Debugging Information in dwo"
+FILE=bins/dwarf/demo_dwo
+CMDS=<<EOF
+iS
+id~DW_FORM_strx1]
+echo "---"
+e bin.dbginfo.dwo_path=bins/dwarf/demo_dwo-demo.dwo
+id~DW_FORM_strx1]
+EOF
+EXPECT=<<EOF
+paddr      size  vaddr      vsize align perm name                type       flags                    
+-----------------------------------------------------------------------------------------------------
+0x00000000 0x0   ---------- 0x0   0x0   ----                     NULL       
+0x00000318 0x1c  0x00000318 0x1c  0x0   -r-- .interp             PROGBITS   alloc
+0x00000334 0x20  0x00000334 0x20  0x0   -r-- .note.ABI-tag       NOTE       alloc
+0x00000358 0x20  0x00000358 0x20  0x0   -r-- .note.gnu.property  NOTE       alloc
+0x00000378 0xa8  0x00000378 0xa8  0x0   -r-- .dynsym             DYNSYM     alloc
+0x00000420 0xe   0x00000420 0xe   0x0   -r-- .gnu.version        VERSYM     alloc
+0x00000430 0x30  0x00000430 0x30  0x0   -r-- .gnu.version_r      VERNEED    alloc
+0x00000460 0x1c  0x00000460 0x1c  0x0   -r-- .gnu.hash           GNU_HASH   alloc
+0x0000047c 0x87  0x0000047c 0x87  0x0   -r-- .dynstr             STRTAB     alloc
+0x00000508 0xd8  0x00000508 0xd8  0x0   -r-- .rela.dyn           RELA       alloc
+0x000005e0 0x60  0x000005e0 0x60  0x0   -r-- .rela.plt           RELA       alloc,info
+0x00000640 0x23  0x00000640 0x23  0x0   -r-- .rodata             PROGBITS   alloc,merge,strings
+0x00000664 0x2c  0x00000664 0x2c  0x0   -r-- .eh_frame_hdr       PROGBITS   alloc
+0x00000690 0x80  0x00000690 0x80  0x0   -r-- .eh_frame           PROGBITS   alloc
+0x00000710 0xf0  0x00001710 0xf0  0x0   -r-x .text               PROGBITS   alloc,execute
+0x00000800 0x1b  0x00001800 0x1b  0x0   -r-x .init               PROGBITS   alloc,execute
+0x0000081c 0xd   0x0000181c 0xd   0x0   -r-x .fini               PROGBITS   alloc,execute
+0x00000830 0x50  0x00001830 0x50  0x0   -r-x .plt                PROGBITS   alloc,execute
+0x00000880 0x40  0x00001880 0x40  0x0   -r-x .plt.sec            PROGBITS   alloc,execute
+0x000008c0 0x8   0x000028c0 0x8   0x0   -rw- .init_array         INIT_ARRAY write,alloc
+0x000008c8 0x8   0x000028c8 0x8   0x0   -rw- .fini_array         FINI_ARRAY write,alloc
+0x000008d0 0x1b0 0x000028d0 0x1b0 0x0   -rw- .dynamic            DYNAMIC    write,alloc
+0x00000a80 0x28  0x00002a80 0x28  0x0   -rw- .got                PROGBITS   write,alloc
+0x00000aa8 0x38  0x00002aa8 0x38  0x0   -rw- .got.plt            PROGBITS   write,alloc
+0x00000ae0 0x0   0x00002ae0 0x520 0x0   -rw- .relro_padding      NOBITS     write,alloc
+0x00000ae0 0x18  0x00003ae0 0x18  0x0   -rw- .data               PROGBITS   write,alloc
+0x00000af8 0x0   0x00003af8 0x49  0x0   -rw- .bss                NOBITS     write,alloc
+0x00000af8 0x64  ---------- 0x64  0x0   ---- .comment            PROGBITS   merge,strings
+0x00000b5c 0x38  ---------- 0x38  0x0   ---- .debug_abbrev       PROGBITS   compressed
+0x00000b94 0x49  ---------- 0x49  0x0   ---- .debug_info         PROGBITS   compressed
+0x00000bdd 0x31  ---------- 0x31  0x0   ---- .debug_str_offsets  PROGBITS   compressed
+0x00000c0e 0x38  ---------- 0x38  0x0   ---- .debug_str          PROGBITS   merge,strings,compressed
+0x00000c46 0x42  ---------- 0x42  0x0   ---- .debug_addr         PROGBITS   compressed
+0x00000c88 0x54  ---------- 0x54  0x0   ---- .debug_gnu_pubnames PROGBITS   compressed
+0x00000cdc 0x46  ---------- 0x46  0x0   ---- .debug_gnu_pubtypes PROGBITS   compressed
+0x00000d22 0x80  ---------- 0x80  0x0   ---- .debug_line         PROGBITS   compressed
+0x00000da2 0x2d  ---------- 0x2d  0x0   ---- .debug_line_str     PROGBITS   merge,strings,compressed
+0x00000dd0 0x1c8 ---------- 0x1c8 0x0   ---- .symtab             SYMTAB     
+0x00000f98 0x1a8 ---------- 0x1a8 0x0   ---- .shstrtab           STRTAB     
+0x00001140 0xe4  ---------- 0xe4  0x0   ---- .strtab             STRTAB     
+	DW_AT_comp_dir [DW_FORM_strx1]	: (index 0x0): /tmp
+	DW_AT_dwo_name [DW_FORM_strx1]	: (index 0x1): demo_dwo-demo.dwo
+---
+	DW_AT_producer [DW_FORM_strx1]	: (index 0x5): main
+	DW_AT_name [DW_FORM_strx1]	: (index 0x6): int
+	DW_AT_dwo_name [DW_FORM_strx1]	: (index 0x7): clang version 18.1.8
+	DW_AT_name [DW_FORM_strx1]	: (index 0x0): 
+	DW_AT_name [DW_FORM_strx1]	: (index 0x1): __ARRAY_SIZE_TYPE__
+	DW_AT_name [DW_FORM_strx1]	: (index 0x2): char
+	DW_AT_name [DW_FORM_strx1]	: (index 0x3): __ARRAY_SIZE_TYPE__
+	DW_AT_name [DW_FORM_strx1]	: (index 0x4): global_data
+EOF
+RUN
+
+NAME="Debugging Information in dwo"
+FILE=bins/dwarf/demo_dwo
+ARGS=-e bin.dbginfo.dwo_path=bins/dwarf/demo_dwo-demo.dwo
+CMDS=<<EOF
+id~DW_FORM_strx1]
+EOF
+EXPECT=<<EOF
+	DW_AT_producer [DW_FORM_strx1]	: (index 0x5): main
+	DW_AT_name [DW_FORM_strx1]	: (index 0x6): int
+	DW_AT_dwo_name [DW_FORM_strx1]	: (index 0x7): clang version 18.1.8
+	DW_AT_name [DW_FORM_strx1]	: (index 0x0): 
+	DW_AT_name [DW_FORM_strx1]	: (index 0x1): __ARRAY_SIZE_TYPE__
+	DW_AT_name [DW_FORM_strx1]	: (index 0x2): char
+	DW_AT_name [DW_FORM_strx1]	: (index 0x3): __ARRAY_SIZE_TYPE__
+	DW_AT_name [DW_FORM_strx1]	: (index 0x4): global_data
+EOF
+RUN
+
+NAME="Debugging Information with '.__DWARF.__debug_str_offs'"
+FILE=bins/dwarf/demo_mach0
+CMDS=<<EOF
+id~DW_FORM_strx]
+EOF
+EXPECT=<<EOF
+	DW_AT_producer [DW_FORM_strx]	: (index 0x0): Apple clang version 16.0.0 (clang-1600.0.26.4)
+	DW_AT_name [DW_FORM_strx]	: (index 0x1): demo.c
+	DW_AT_LLVM_isysroot [DW_FORM_strx]	: (index 0x2): /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk
+	DW_AT_APPLE_sdk [DW_FORM_strx]	: (index 0x3): MacOSX.sdk
+	DW_AT_comp_dir [DW_FORM_strx]	: (index 0x4): /tmp
+	DW_AT_name [DW_FORM_strx]	: (index 0x5): char
+	DW_AT_name [DW_FORM_strx]	: (index 0x6): __ARRAY_SIZE_TYPE__
+	DW_AT_name [DW_FORM_strx]	: (index 0x7): global_data
+	DW_AT_name [DW_FORM_strx]	: (index 0x8): main
+	DW_AT_name [DW_FORM_strx]	: (index 0x9): int
+EOF
+RUN

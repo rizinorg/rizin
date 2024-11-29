@@ -2609,7 +2609,7 @@ static bool cb_dwo_path(void *user, void *data) {
 	if (!(core && core->bin && node)) {
 		return false;
 	}
-	if (RZ_STR_ISNOTEMPTY(node->value)) {
+	if (RZ_STR_ISNOTEMPTY(node->value) && rz_bin_cur(core->bin)) {
 		rz_core_bin_apply_dwarf(core, rz_bin_cur(core->bin));
 	}
 	return true;
