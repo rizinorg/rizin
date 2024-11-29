@@ -58,8 +58,8 @@ RZ_IPI RzCmdStatus rz_cmd_heap_tcache_print_handler(RzCore *core, int argc, cons
 	call_handler(rz_cmd_heap_tcache_print_handler, argc, argv);
 }
 
-RZ_IPI RzCmdStatus rz_cmd_heap_bins_list_print_handler(RzCore *core, int argc, const char **argv) {
-	call_handler(rz_cmd_heap_bins_list_print_handler, argc == 1 ? "" : argv[1]);
+RZ_IPI RzCmdStatus rz_cmd_heap_bins_list_print_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	call_handler(rz_cmd_heap_bins_list_print_handler, argc == 1 ? "" : argv[1], mode);
 }
 
 RZ_IPI RzCmdStatus rz_cmd_heap_fastbins_print_handler(RzCore *core, int argc, const char **argv) {

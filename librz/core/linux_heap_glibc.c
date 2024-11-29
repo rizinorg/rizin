@@ -1295,8 +1295,7 @@ static int GH(print_double_linked_list_bin)(RzCore *core, MallocState *main_aren
 	return ret;
 }
 
-static void GH(print_heap_bin)(RzCore *core, GHT m_arena, MallocState *main_arena, const char *input) {
-	int i, j = 2;
+static void GH(print_heap_bin)(RzCore *core, GHT m_arena, MallocState *main_arena, const char *input, bool print_graph) {
 	GHT num_bin = GHT_MAX;
 	GHT offset;
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
@@ -1308,30 +1307,25 @@ static void GH(print_heap_bin)(RzCore *core, GHT m_arena, MallocState *main_aren
 		offset = 12 * SZ + sizeof(int) * 2;
 	}
 
-	switch (input[0]) {
-	case '\0': // dmhb
+	if (!input[0]) {
 		PRINT_YA("Bins {\n");
-		for (i = 0; i < NBINS - 1; i++) {
+		for (int i= 0; i < NBINS - 1; i++) {
 			PRINTF_YA(" Bin %03d:\n", i);
 			GH(print_double_linked_list_bin)
-			(core, main_arena, m_arena, offset, i, 0);
+			(core, main_arena, m_arena, offset, i, print_graph);
 		}
 		PRINT_YA("\n}\n");
-		break;
-	case ' ': // dmhb [bin_num]
-		j--; // for spaces after input
-		// fallthrough
-	case 'g': // dmhbg [bin_num]
-		num_bin = rz_num_get(NULL, input + j);
+	} else {
+		num_bin = rz_num_get(NULL, input);
 		if (num_bin > NBINS - 2) {
-			RZ_LOG_ERROR("core: the number of bins is greater than %d\n", NBINS - 2);
-			break;
+			RZ_LOG_ERROR("The number of bins is greater than %d\n", NBINS - 2);
+			return;
 		}
 		PRINTF_YA("  Bin %03" PFMT64u ":\n", (ut64)num_bin);
 		GH(print_double_linked_list_bin)
-		(core, main_arena, m_arena, offset, num_bin, j);
-		break;
+		(core, main_arena, m_arena, offset, num_bin, print_graph);
 	}
+	return;
 }
 
 void GH(rz_heap_chunk_free)(RzHeapChunkListItem *item) {
@@ -1428,8 +1422,7 @@ void GH(print_heap_fastbin)(RzCore *core, GHT m_arena, MallocState *main_arena, 
 	int global_max_fast_idx = fastbin_index(global_max_fast);
 	int fastbin_count = fastbins_max < global_max_fast_idx ? fastbins_max : global_max_fast_idx;
 	int bin_to_print = 0;
-	switch (input[0]) {
-	case ' ':
+	if (input[0]) {
 		bin_to_print = (int)rz_num_get(NULL, input);
 		if (bin_to_print <= 0 || bin_to_print - 1 > fastbin_count) {
 			RZ_LOG_ERROR("core: the number of bins is greater than %d\n", fastbin_count + 1);
@@ -2723,7 +2716,7 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_tcache_print_handler)(RzCore *core, int argc, 
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus GH(rz_cmd_heap_bins_list_print_handler)(RzCore *core, const char *input) {
+RZ_IPI RzCmdStatus GH(rz_cmd_heap_bins_list_print_handler)(RzCore *core, const char *input, RzOutputMode mode) {
 	GHT m_arena = GHT_MAX, m_state = GHT_MAX;
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 	MallocState *main_arena = RZ_NEW0(MallocState);
@@ -2753,7 +2746,7 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_bins_list_print_handler)(RzCore *core, const c
 			return RZ_CMD_STATUS_ERROR;
 		}
 		GH(print_heap_bin)
-		(core, m_state, main_arena, dup);
+		(core, m_state, main_arena, dup, mode == RZ_OUTPUT_MODE_GRAPH);
 	} else {
 		PRINT_RA("This address is not part of the arenas\n");
 		free(main_arena);
