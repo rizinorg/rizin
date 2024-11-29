@@ -49,7 +49,6 @@ commands:
         choices: ["small", "large", "fast", "unsorted", "tcache"]
   - name: dmhf
     cname: cmd_heap_fastbins_print
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
     summary: >
       Display all parsed fastbins of main_arena's or a particular
       arena fastbinY instance

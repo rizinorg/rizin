@@ -356,8 +356,8 @@ RZ_API RzList /*<RzHeapChunkListItem *>*/ *rz_heap_chunks_list_wrapper_32(RzCore
 RZ_API RzList /*<RzArenaListItem *>*/ *rz_heap_arena_list_wrapper_64(RzCore *core);
 RZ_API RzList /*<RzArenaListItem *>*/ *rz_heap_arena_list_wrapper_32(RzCore *core);
 
-RZ_IPI int rz_cmd_heap_fastbins_print_64(void *data, const char *input);
-RZ_IPI int rz_cmd_heap_fastbins_print_32(void *data, const char *input);
+RZ_IPI RzCmdStatus rz_cmd_heap_fastbins_print_handler_64(void *data, const char *input);
+RZ_IPI RzCmdStatus rz_cmd_heap_fastbins_print_handler_32(void *data, const char *input);
 
 RZ_IPI RzCmdStatus rz_cmd_heap_bins_list_print_handler_64(RzCore *core, const char *input);
 RZ_IPI RzCmdStatus rz_cmd_heap_bins_list_print_handler_32(RzCore *core, const char *input);

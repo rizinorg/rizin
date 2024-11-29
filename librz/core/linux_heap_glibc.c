@@ -2765,7 +2765,7 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_bins_list_print_handler)(RzCore *core, const c
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI int GH(rz_cmd_heap_fastbins_print)(void *data, const char *input) {
+RZ_IPI RzCmdStatus GH(rz_cmd_heap_fastbins_print_handler)(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	GHT m_arena = GHT_MAX, m_state = GHT_MAX;
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;

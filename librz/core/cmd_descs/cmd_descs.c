@@ -21369,7 +21369,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_heap_arena_bins_print_cd = rz_cmd_desc_argv_modes_new(core->rcmd, dmh_cd, "dmhd", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_heap_arena_bins_print_handler, &cmd_heap_arena_bins_print_help);
 	rz_warn_if_fail(cmd_heap_arena_bins_print_cd);
 
-	RzCmdDesc *cmd_heap_fastbins_print_cd = rz_cmd_desc_oldinput_new(core->rcmd, dmh_cd, "dmhf", rz_cmd_heap_fastbins_print, &cmd_heap_fastbins_print_help);
+	RzCmdDesc *cmd_heap_fastbins_print_cd = rz_cmd_desc_argv_new(core->rcmd, dmh_cd, "dmhf", rz_cmd_heap_fastbins_print_handler, &cmd_heap_fastbins_print_help);
 	rz_warn_if_fail(cmd_heap_fastbins_print_cd);
 
 	RzCmdDesc *cmd_heap_chunks_graph_cd = rz_cmd_desc_argv_new(core->rcmd, dmh_cd, "dmhg", rz_cmd_heap_chunks_graph_handler, &cmd_heap_chunks_graph_help);
