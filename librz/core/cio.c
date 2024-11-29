@@ -35,10 +35,10 @@ RZ_API int rz_core_setup_debugger(RzCore *r, const char *debugbackend, bool atta
 				/* do nothing here */
 			} else if (!strcmp(bep, "entry")) {
 				address = rz_num_math(r->num, "entry0");
-				rz_core_debug_continue_until(r, address, address);
+				rz_core_debug_continue_until(r, address);
 			} else {
 				address = rz_num_math(r->num, bep);
-				rz_core_debug_continue_until(r, address, address);
+				rz_core_debug_continue_until(r, address);
 			}
 		}
 	}

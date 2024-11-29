@@ -1534,7 +1534,7 @@ static bool cmd_dcu(RzCore *core, const char *input) {
 		} while (pc < from || pc > to);
 		rz_cons_break_pop();
 	} else {
-		return rz_core_debug_continue_until(core, from, to);
+		return rz_core_debug_continue_until(core, from);
 	}
 	return true;
 }

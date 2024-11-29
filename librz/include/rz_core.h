@@ -572,7 +572,7 @@ RZ_API void rz_core_reg_update_flags(RzCore *core);
 /* cdebug.c */
 RZ_API bool rz_core_is_debug(RzCore *core);
 RZ_API bool rz_core_debug_step_one(RzCore *core, int times);
-RZ_API bool rz_core_debug_continue_until(RzCore *core, ut64 addr, ut64 to);
+RZ_API bool rz_core_debug_continue_until(RzCore *core, ut64 addr);
 RZ_API void rz_core_debug_bp_add_noreturn_func(RzCore *core);
 RZ_API void rz_core_debug_breakpoint_toggle(RZ_NONNULL RzCore *core, ut64 addr);
 

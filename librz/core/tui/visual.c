@@ -749,7 +749,7 @@ static int visual_nkey(RzCore *core, int ch) {
 			ch = rz_core_cmd0(core, cmd);
 		} else {
 			if (core->print->cur_enabled) {
-				rz_core_debug_continue_until(core, core->offset, core->offset + core->print->cur);
+				rz_core_debug_continue_until(core, core->offset);
 				core->print->cur_enabled = 0;
 			}
 		}
