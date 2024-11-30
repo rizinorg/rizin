@@ -103,15 +103,17 @@ RZ_IPI void rz_core_debug_continue(RzCore *core) {
  * \param addr The address to execute to.
  *
  * \return true On success.
- * \return false On otherwise.
+ * \return false Otherwise.
  */
 RZ_API bool rz_core_debug_continue_until(RzCore *core, ut64 addr) {
+#if RZ_BUILD_DEBUG
+	long level = 0;
+	ut64 prev_pc = UT64_MAX;
+#endif
 	ut64 pc;
 	if (!strcmp(core->dbg->btalgo, "trace") && core->dbg->arch && !strcmp(core->dbg->arch, "x86") && core->dbg->bits == 4) {
 		unsigned long steps = 0;
-		long level = 0;
 		const char *pc_name = core->dbg->reg->name[RZ_REG_NAME_PC];
-		ut64 prev_pc = UT64_MAX;
 		bool prev_call = false;
 		bool prev_ret = false;
 		const char *sp_name = core->dbg->reg->name[RZ_REG_NAME_SP];
@@ -137,8 +139,7 @@ RZ_API bool rz_core_debug_continue_until(RzCore *core, ut64 addr) {
 				frame->bp = old_sp;
 				rz_list_prepend(core->dbg->call_frames, frame);
 				RZ_LOG_DEBUG("%ld Call from 0x%08" PFMT64x " to 0x%08" PFMT64x " ret 0x%08" PFMT32x "\n",
-					level, prev_pc, pc, ret_addr);
-				level++;
+					level++, prev_pc, pc, ret_addr);
 				old_sp = cur_sp;
 				prev_call = false;
 			} else if (prev_ret) {
@@ -147,8 +148,7 @@ RZ_API bool rz_core_debug_continue_until(RzCore *core, ut64 addr) {
 					RZ_LOG_DEBUG("*");
 				} else {
 					rz_list_pop_head(core->dbg->call_frames);
-					RZ_LOG_DEBUG("%ld", level);
-					level--;
+					RZ_LOG_DEBUG("%ld", level--);
 				}
 				RZ_LOG_DEBUG(" Ret from 0x%08" PFMT64x " to 0x%08" PFMT64x "\n",
 					prev_pc, pc);
@@ -161,10 +161,14 @@ RZ_API bool rz_core_debug_continue_until(RzCore *core, ut64 addr) {
 				break;
 			}
 			if (is_x86_call(core->dbg, pc)) {
+#if RZ_BUILD_DEBUG
 				prev_pc = pc;
+#endif
 				prev_call = true;
 			} else if (is_x86_ret(core->dbg, pc)) {
+#if RZ_BUILD_DEBUG
 				prev_pc = pc;
+#endif
 				prev_ret = true;
 			}
 			rz_debug_step(core->dbg, 1);
