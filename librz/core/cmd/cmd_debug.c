@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_cmd.h>
+#include <rz_util/rz_log.h>
 #include <rz_util/rz_num.h>
 #include <rz_util/rz_regex.h>
 #include <rz_core.h>
@@ -25,16 +27,6 @@
 			return RZ_CMD_STATUS_ERROR; \
 		} \
 	} while (0)
-
-static const char *help_msg_dmi[] = {
-	"Usage: dmi", "", " # List/Load Symbols",
-	"dmi", "[j|q|*] [libname] [symname]", "List symbols of target lib",
-	"dmia", "[j|q|*] [libname]", "List all info of target lib",
-	"dmi*", "", "List symbols of target lib in rizin commands",
-	"dmi.", "", "List closest symbol to the current address",
-	"dmiv", "", "Show address of given symbol for given lib",
-	NULL
-};
 
 struct dot_trace_ght {
 	RzGraph /*<struct trace_node *>*/ *graph;
@@ -675,26 +667,17 @@ static RzDebugMap *get_closest_map(RzCore *core, ut64 addr) {
 	return NULL;
 }
 
-static RzOutputMode rad2mode(int mode) {
-	switch (mode) {
-	case RZ_MODE_PRINT:
-	default:
-		return RZ_OUTPUT_MODE_STANDARD;
-	case RZ_MODE_JSON:
-		return RZ_OUTPUT_MODE_JSON;
-	case RZ_MODE_SIMPLE:
-		return RZ_OUTPUT_MODE_QUIET;
-	case RZ_MODE_SIMPLEST:
-		return RZ_OUTPUT_MODE_QUIETEST;
-	case RZ_MODE_RIZINCMD:
-		return RZ_OUTPUT_MODE_RIZIN;
-	}
-}
-
-static bool get_bin_info(RzCore *core, const char *file, ut64 baseaddr, PJ *pj,
-	int mode, bool symbols_only, RzCoreBinFilter *filter) {
+/**
+ * \brief Hacky way to get the binary information of a file.
+ * It opens \p file into the current core->bin (backing up the previous pointer)
+ * and reads the information.
+ * Then closes it again and restores the old core-bin pointer.
+ */
+static bool get_bin_info(RzCore *core, const char *file, ut64 baseaddr,
+	RzCmdStateOutput *state, int action, RzCoreBinFilter *filter) {
 	int fd;
 	if ((fd = rz_io_fd_open(core->io, file, RZ_PERM_R, 0)) == -1) {
+		RZ_LOG_ERROR("Failed to open file: %s\n", file);
 		return false;
 	}
 	RzBinOptions opt = { 0 };
@@ -707,24 +690,11 @@ static bool get_bin_info(RzCore *core, const char *file, ut64 baseaddr, PJ *pj,
 	RzBinFile *obf = rz_bin_cur(core->bin);
 	RzBinFile *bf = rz_bin_open_io(core->bin, &opt);
 	if (!bf) {
+		RZ_LOG_ERROR("Failed to create RzBinFile for: %s\n", file);
 		rz_io_fd_close(core->io, fd);
 		return false;
 	}
-	int action = RZ_CORE_BIN_ACC_ALL & ~RZ_CORE_BIN_ACC_INFO;
-	if (symbols_only || filter->name) {
-		action = RZ_CORE_BIN_ACC_SYMBOLS;
-	} else if (mode == RZ_MODE_SET || mode == RZ_MODE_RIZINCMD) {
-		action &= ~RZ_CORE_BIN_ACC_ENTRIES & ~RZ_CORE_BIN_ACC_MAIN & ~RZ_CORE_BIN_ACC_MAPS;
-	}
-	if (mode == RZ_MODE_SET) {
-		rz_core_bin_apply_info(core, core->bin->cur, action);
-	} else {
-		RzCmdStateOutput state;
-		rz_cmd_state_output_init(&state, rad2mode(mode));
-		rz_core_bin_print(core, bf, action, filter, &state, NULL);
-		rz_cmd_state_output_print(&state);
-		rz_cmd_state_output_fini(&state);
-	}
+	rz_core_bin_print(core, bf, action, filter, state, NULL);
 	rz_bin_file_delete(core->bin, bf);
 	rz_bin_file_set_cur_binfile(core->bin, obf);
 	rz_io_fd_close(core->io, fd);
@@ -827,176 +797,114 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dump_maps_writable_handler(RzCore *core, int arg
 	return RZ_CMD_STATUS_OK;
 }
 
-// dmi
-RZ_IPI int rz_cmd_debug_dmi(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
+static RzDebugMap *get_debug_map_from_lib_name(RzCore *core, const char *lib_name) {
+	ut64 addr = addroflib(core, rz_file_basename(lib_name));
+	if (addr == UT64_MAX) {
+		RZ_LOG_ERROR("Unknown library '%s' not found\n", lib_name);
+		return NULL;
+	}
+
+	RzDebugMap *map = get_closest_map(core, addr);
+	if (!map) {
+		RZ_LOG_ERROR("Didn't find library map at 0x%" PFMT64x "\n", addr);
+		return NULL;
+	}
+	return map;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_dmi_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	CMD_CHECK_DEBUG_DEAD(core);
-	RzDebugMap *map;
-	ut64 addr = core->offset;
-	switch (input[0]) {
-	case '\0': // "dmi" alias of "dmm"
-	{
-		RzCmdStateOutput state = { 0 };
-		rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD);
-		cmd_debug_modules(core, &state);
-		rz_cmd_state_output_print(&state);
-		rz_cmd_state_output_fini(&state);
+	if (argc == 1) {
+		// Effectively an alias for 'dmm'
+		cmd_debug_modules(core, state);
+		rz_cmd_state_output_print(state);
 		rz_cons_flush();
-		break;
+		return RZ_CMD_STATUS_OK;
 	}
-	case ' ': // "dmi "
-	case '*': // "dmi*"
-	case 'v': // "dmiv"
-	case 'j': // "dmij"
-	case 'q': // "dmiq"
-	case 'a': // "dmia"
-	{
-		const char *libname = NULL, *symname = NULL, *a0;
-		int mode;
-		ut64 baddr = 0LL;
-		char *ptr;
-		int i = 1;
-		bool symbols_only = true;
-		if (input[0] == 'a') {
-			symbols_only = false;
-			input++;
-		}
-		PJ *pj = NULL;
-		switch (input[0]) {
-		case 's':
-			mode = RZ_MODE_SET;
-			break;
-		case '*':
-			mode = RZ_MODE_RIZINCMD;
-			break;
-		case 'j':
-			mode = RZ_MODE_JSON;
-			pj = pj_new();
-			if (!pj) {
-				return false;
-			}
-			break;
-		case 'q':
-			mode = input[1] == 'q' ? input++, RZ_MODE_SIMPLEST : RZ_MODE_SIMPLE;
-			break;
-		default:
-			mode = RZ_MODE_PRINT;
-			break;
-		}
-		ptr = rz_str_dup(input[0] ? rz_str_trim_head_ro(input + 1) : "");
-		if (!ptr || !*ptr) {
-			rz_core_cmd(core, "dmm", 0);
-			free(ptr);
-			pj_free(pj);
-			break;
-		}
-		if (symbols_only) {
-			i = rz_str_word_set0(ptr);
-		}
-		switch (i) {
-		case 2:
-			symname = rz_str_word_get0(ptr, 1);
-			// fall through
-		case 1:
-			a0 = rz_str_word_get0(ptr, 0);
-			addr = rz_num_get(core->num, a0);
-			if (!addr || addr == UT64_MAX) {
-				libname = rz_str_word_get0(ptr, 0);
-			}
-			break;
-		}
-		if (libname && !addr) {
-			addr = addroflib(core, rz_file_basename(libname));
-			if (addr == UT64_MAX) {
-				RZ_LOG_ERROR("core: Unknown library, or not found in dm\n");
-			}
-		}
-		map = get_closest_map(core, addr);
-		if (map) {
-			RzCoreBinFilter filter;
-			filter.offset = UT64_MAX;
-			filter.name = (char *)symname;
-			baddr = map->addr;
 
-			if (libname) {
-				const char *file = map->file ? map->file : map->name;
-				char *newfile = NULL;
-				if (!rz_file_exists(file)) {
-					newfile = rz_file_temp("memlib");
-					if (newfile) {
-						file = newfile;
-						rz_core_dump(core, file, baddr, map->size, false);
-					}
-				}
-				get_bin_info(core, file, baddr, pj, mode, symbols_only, &filter);
-				if (newfile) {
-					if (!rz_file_rm(newfile)) {
-						RZ_LOG_ERROR("core: Error when removing %s\n", newfile);
-					}
-					free(newfile);
-				}
-			} else {
-				RzBinFile *bf = rz_bin_cur(core->bin);
-				if (bf) {
-					rz_bin_set_baddr(core->bin, map->addr);
-					RzCmdStateOutput state;
-					rz_cmd_state_output_init(&state, rad2mode(mode));
-					rz_core_bin_print(core, bf, RZ_CORE_BIN_ACC_SYMBOLS, &filter, &state, NULL);
-					rz_cmd_state_output_print(&state);
-					rz_cmd_state_output_fini(&state);
-					rz_bin_set_baddr(core->bin, baddr);
-				}
-			}
-		}
-		if (mode == RZ_MODE_JSON) {
-			rz_cons_println(pj_string(pj));
-			pj_free(pj);
-		}
-		free(ptr);
-	} break;
-	case '.': // "dmi."
-	{
-		map = get_closest_map(core, addr);
-		if (map) {
-			ut64 closest_addr = UT64_MAX;
-			RzBinObject *o = rz_bin_cur_object(core->bin);
-			RzPVector *symbols = o ? (RzPVector *)rz_bin_object_get_symbols(o) : NULL;
-			RzBinSymbol *symbol, *closest_symbol = NULL;
-			void **iter;
+	const char *lib_name = argc >= 2 ? argv[1] : NULL;
+	const char *sym_name = argc == 3 ? argv[2] : NULL;
 
-			rz_pvector_foreach (symbols, iter) {
-				symbol = *iter;
-				if (symbol->vaddr > addr) {
-					if (symbol->vaddr - addr < closest_addr) {
-						closest_addr = symbol->vaddr - addr;
-						closest_symbol = symbol;
-					}
-				} else {
-					if (addr - symbol->vaddr < closest_addr) {
-						closest_addr = addr - symbol->vaddr;
-						closest_symbol = symbol;
-					}
-				}
-			}
-			RzBinFile *bf = rz_bin_cur(core->bin);
-			if (closest_symbol && bf) {
-				RzCoreBinFilter filter;
-				filter.offset = UT64_MAX;
-				filter.name = (char *)closest_symbol->name;
+	RzCoreBinFilter filter = { .offset = UT64_MAX, .name = sym_name };
+	int action = RZ_CORE_BIN_ACC_SYMBOLS;
 
-				rz_bin_set_baddr(core->bin, map->addr);
-				RzCmdStateOutput state;
-				rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD);
-				rz_core_bin_print(core, bf, RZ_CORE_BIN_ACC_SYMBOLS, &filter, &state, NULL);
-				rz_cmd_state_output_print(&state);
-				rz_cmd_state_output_fini(&state);
-			}
-		}
-	} break;
-	default:
-		rz_core_cmd_help(core, help_msg_dmi);
-		break;
+	RzDebugMap *map = get_debug_map_from_lib_name(core, lib_name);
+	if (!map) {
+		RZ_LOG_ERROR("Failed to get map from %s\n", lib_name);
+		return RZ_CMD_STATUS_ERROR;
 	}
+	const char *file = map->file ? map->file : map->name;
+	if (!get_bin_info(core, file, map->addr, state, action, &filter)) {
+		RZ_LOG_ERROR("Failed to get binary information for map: '%s' in file: '%s'\n", map->name, file);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_dmi_all_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	CMD_CHECK_DEBUG_DEAD(core);
+	if (argc == 1) {
+		cmd_debug_modules(core, state);
+		rz_cmd_state_output_print(state);
+		rz_cons_flush();
+		return RZ_CMD_STATUS_OK;
+	}
+	const char *lib_name = argv[1];
+	RzDebugMap *map = get_debug_map_from_lib_name(core, lib_name);
+	if (!map) {
+		RZ_LOG_ERROR("Failed to get map from %s\n", lib_name);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	const char *file = map->file ? map->file : map->name;
+	RzCoreBinFilter filter = { .offset = UT64_MAX, .name = NULL };
+	int action = RZ_CORE_BIN_ACC_ALL & ~RZ_CORE_BIN_ACC_INFO;
+	if (!get_bin_info(core, file, map->addr, state, action, &filter)) {
+		RZ_LOG_ERROR("Failed to get binary information for map: '%s' in file: '%s'\n", map->name, file);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_dmi_closest_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzBinObject *obj = rz_bin_cur_object(core->bin);
+	if (!obj) {
+		RZ_LOG_ERROR("No object present.\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	const RzPVector *symbols = rz_bin_object_get_symbols(obj);
+	if (!symbols) {
+		RZ_LOG_ERROR("Failed to get symbols from object.\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	ut64 addr = core->offset;
+	ut64 closest_addr = UT64_MAX;
+	RzBinSymbol *symbol, *closest_symbol = NULL;
+	void **iter;
+	rz_pvector_foreach (symbols, iter) {
+		symbol = *iter;
+		if (symbol->vaddr > addr) {
+			if (symbol->vaddr - addr < closest_addr) {
+				closest_addr = symbol->vaddr - addr;
+				closest_symbol = symbol;
+			}
+		} else {
+			if (addr - symbol->vaddr < closest_addr) {
+				closest_addr = addr - symbol->vaddr;
+				closest_symbol = symbol;
+			}
+		}
+	}
+	if (!closest_symbol) {
+		RZ_LOG_ERROR("Did not found any symbol close to 0x%" PFMT64x "\n", addr);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzBinFile *bf = rz_bin_cur(core->bin);
+	if (!bf) {
+		RZ_LOG_ERROR("Failed to get current binary file.\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzCoreBinFilter filter = { .offset = UT64_MAX, .name = closest_symbol->name };
+	rz_core_bin_print(core, bf, RZ_CORE_BIN_ACC_SYMBOLS, &filter, state, NULL);
 	return RZ_CMD_STATUS_OK;
 }
 

@@ -855,8 +855,43 @@ commands:
         subcommands: cmd_heap_glibc
       - name: dmi
         summary: List/Load symbols
-        cname: cmd_debug_dmi
-        type: RZ_CMD_DESC_TYPE_OLDINPUT
+        subcommands:
+          - name: "dmi"
+            summary: List libraries and library symbols.
+            cname: cmd_debug_dmi
+            args:
+              - name: lib_name
+                type: RZ_CMD_ARG_TYPE_STRING
+                optional: true
+              - name: symbol_name
+                type: RZ_CMD_ARG_TYPE_STRING
+                optional: true
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_RIZIN
+              - RZ_OUTPUT_MODE_JSON
+          - name: "dmia"
+            summary: List all info of target library.
+            cname: cmd_debug_dmi_all
+            args:
+              - name: lib_name
+                type: RZ_CMD_ARG_TYPE_STRING
+                optional: true
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_RIZIN
+              - RZ_OUTPUT_MODE_JSON
+          - name: "dmi."
+            summary: List closest symbol to the current address.
+            cname: cmd_debug_dmi_closest
+            args: []
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_RIZIN
+              - RZ_OUTPUT_MODE_JSON
       - name: dml
         summary: Load contents of file into current map region
         cname: cmd_debug_dml
