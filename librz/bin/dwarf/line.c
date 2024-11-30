@@ -726,7 +726,7 @@ RZ_API RZ_OWN RzBinDwarfLine *rz_bin_dwarf_line_new(
  * \return RzBinDwarfLineInfo or NULL if failed
  */
 RZ_API RZ_OWN RzBinDwarfLine *rz_bin_dwarf_line_from_file(
-	RZ_NULLABLE RZ_BORROW RzBinDWARF *dw,
+	RZ_BORROW RZ_NULLABLE RzBinDWARF *dw,
 	RZ_BORROW RZ_NONNULL RzBinFile *bf) {
 	rz_return_val_if_fail(bf, NULL);
 	RzBinDwarfEncoding encoding = { 0 };
