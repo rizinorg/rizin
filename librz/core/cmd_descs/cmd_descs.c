@@ -448,6 +448,9 @@ static const RzCmdDescArg debug_memory_permission_args[3];
 static const RzCmdDescArg cmd_debug_dmL_args[2];
 static const RzCmdDescArg cmd_debug_dmS_args[3];
 static const RzCmdDescArg cmd_debug_process_heap_block_args[2];
+static const RzCmdDescArg cmd_debug_heap_jemalloc_a_args[2];
+static const RzCmdDescArg cmd_debug_heap_jemalloc_b_args[2];
+static const RzCmdDescArg cmd_debug_heap_jemalloc_c_args[2];
 static const RzCmdDescArg cmd_debug_pid_list_args[2];
 static const RzCmdDescArg cmd_debug_pid_attach_args[2];
 static const RzCmdDescArg cmd_debug_pid_detach_args[2];
@@ -9565,12 +9568,51 @@ static const RzCmdDescHelp cmd_debug_heap_block_flag_help = {
 	.args = cmd_debug_heap_block_flag_args,
 };
 
-static const RzCmdDescArg cmd_debug_heap_jemalloc_args[] = {
+static const RzCmdDescHelp dmx_help = {
+	.summary = "Jemalloc heap commands",
+};
+static const RzCmdDescArg cmd_debug_heap_jemalloc_a_args[] = {
+	{
+		.name = "arena_type",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
 	{ 0 },
 };
-static const RzCmdDescHelp cmd_debug_heap_jemalloc_help = {
-	.summary = "Jemalloc heap commands",
-	.args = cmd_debug_heap_jemalloc_args,
+static const RzCmdDescHelp cmd_debug_heap_jemalloc_a_help = {
+	.summary = "Show all arenas created, or print arena_type structure for given arena.",
+	.args = cmd_debug_heap_jemalloc_a_args,
+};
+
+static const RzCmdDescArg cmd_debug_heap_jemalloc_b_args[] = {
+	{
+		.name = "arena_type",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_heap_jemalloc_b_help = {
+	.summary = "Show all arenas created, or print arena_type structure for given arena.",
+	.args = cmd_debug_heap_jemalloc_b_args,
+};
+
+static const RzCmdDescArg cmd_debug_heap_jemalloc_c_args[] = {
+	{
+		.name = "*|arena_type",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_heap_jemalloc_c_help = {
+	.summary = "Show all chunks created in all arenas, or show all chunks created for a given arena_t instanc.",
+	.args = cmd_debug_heap_jemalloc_c_args,
 };
 
 static const RzCmdDescHelp dp_help = {
@@ -21469,8 +21511,16 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_debug_heap_block_flag_cd = rz_cmd_desc_argv_new(core->rcmd, dmw_cd, "dmwbf", rz_cmd_debug_heap_block_flag_handler, &cmd_debug_heap_block_flag_help);
 	rz_warn_if_fail(cmd_debug_heap_block_flag_cd);
 
-	RzCmdDesc *cmd_debug_heap_jemalloc_cd = rz_cmd_desc_oldinput_new(core->rcmd, dm_cd, "dmx", rz_cmd_debug_heap_jemalloc, &cmd_debug_heap_jemalloc_help);
-	rz_warn_if_fail(cmd_debug_heap_jemalloc_cd);
+	RzCmdDesc *dmx_cd = rz_cmd_desc_group_new(core->rcmd, dm_cd, "dmx", NULL, NULL, &dmx_help);
+	rz_warn_if_fail(dmx_cd);
+	RzCmdDesc *cmd_debug_heap_jemalloc_a_cd = rz_cmd_desc_argv_new(core->rcmd, dmx_cd, "dmwa", rz_cmd_debug_heap_jemalloc_a_handler, &cmd_debug_heap_jemalloc_a_help);
+	rz_warn_if_fail(cmd_debug_heap_jemalloc_a_cd);
+
+	RzCmdDesc *cmd_debug_heap_jemalloc_b_cd = rz_cmd_desc_argv_new(core->rcmd, dmx_cd, "dmwb", rz_cmd_debug_heap_jemalloc_b_handler, &cmd_debug_heap_jemalloc_b_help);
+	rz_warn_if_fail(cmd_debug_heap_jemalloc_b_cd);
+
+	RzCmdDesc *cmd_debug_heap_jemalloc_c_cd = rz_cmd_desc_argv_new(core->rcmd, dmx_cd, "dmwc", rz_cmd_debug_heap_jemalloc_c_handler, &cmd_debug_heap_jemalloc_c_help);
+	rz_warn_if_fail(cmd_debug_heap_jemalloc_c_cd);
 
 	RzCmdDesc *dp_cd = rz_cmd_desc_group_state_new(core->rcmd, d_cd, "dp", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_TABLE, rz_cmd_debug_pid_list_handler, &cmd_debug_pid_list_help, &dp_help);
 	rz_warn_if_fail(dp_cd);

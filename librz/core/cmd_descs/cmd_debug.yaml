@@ -955,9 +955,27 @@ commands:
             args: []
       - name: dmx
         summary: Jemalloc heap commands
-        cname: cmd_debug_heap_jemalloc
-        type: RZ_CMD_DESC_TYPE_OLDINPUT
-        args: []
+        subcommands:
+          - name: dmwa
+            summary: Show all arenas created, or print arena_type structure for given arena.
+            cname: cmd_debug_heap_jemalloc_a
+            args:
+              - name: arena_type
+                type: RZ_CMD_ARG_TYPE_STRING
+                optional: true
+          - name: dmwb
+            summary: Show all arenas created, or print arena_type structure for given arena.
+            cname: cmd_debug_heap_jemalloc_b
+            args:
+              - name: arena_type
+                type: RZ_CMD_ARG_TYPE_STRING
+                optional: true
+          - name: dmwc
+            summary: Show all chunks created in all arenas, or show all chunks created for a given arena_t instanc.
+            cname: cmd_debug_heap_jemalloc_c
+            args:
+              - name: "*|arena_type"
+                type: RZ_CMD_ARG_TYPE_STRING
   - name: dp
     summary: List or attach to process or thread
     subcommands:

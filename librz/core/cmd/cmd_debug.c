@@ -1036,18 +1036,33 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dmL_handler(RzCore *core, int argc, const char *
 	return RZ_CMD_STATUS_OK;
 }
 
-// dmx
-RZ_IPI int rz_cmd_debug_heap_jemalloc(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
+static RzCmdStatus call_map_jemalloc(RzCore *core, char type, const char *arg) {
 	CMD_CHECK_DEBUG_DEAD(core);
 #if HAVE_JEMALLOC
 	if (core->rasm->bits == 64) {
-		return cmd_dbg_map_jemalloc_64(core, input);
+		cmd_dbg_map_jemalloc_64(core, type, arg);
 	} else {
-		return cmd_dbg_map_jemalloc_32(core, input);
+		cmd_dbg_map_jemalloc_32(core, type, arg);
 	}
+	return RZ_CMD_STATUS_OK;
 #endif
+	RZ_LOG_ERROR("JEMALLOC not supported.\n");
 	return RZ_CMD_STATUS_ERROR;
+}
+
+// "dmwa"
+RZ_IPI RzCmdStatus rz_cmd_debug_heap_jemalloc_a_handler(RzCore *core, int argc, const char **argv) {
+	return call_map_jemalloc(core, 'a', argc == 1 ? "" : argv[1]);
+}
+
+// "dmwb"
+RZ_IPI RzCmdStatus rz_cmd_debug_heap_jemalloc_b_handler(RzCore *core, int argc, const char **argv) {
+	return call_map_jemalloc(core, 'b', argc == 1 ? "" : argv[1]);
+}
+
+// "dmwc"
+RZ_IPI RzCmdStatus rz_cmd_debug_heap_jemalloc_c_handler(RzCore *core, int argc, const char **argv) {
+	return call_map_jemalloc(core, 'c', argv[1]);
 }
 
 static void backtrace_vars(RzCore *core, RzList /*<RzDebugFrame *>*/ *frames) {
