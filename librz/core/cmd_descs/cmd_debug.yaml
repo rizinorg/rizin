@@ -956,21 +956,21 @@ commands:
       - name: dmx
         summary: Jemalloc heap commands
         subcommands:
-          - name: dmwa
+          - name: dmxa
             summary: Show all arenas created, or print arena_type structure for given arena.
             cname: cmd_debug_heap_jemalloc_a
             args:
               - name: arena_type
                 type: RZ_CMD_ARG_TYPE_STRING
                 optional: true
-          - name: dmwb
+          - name: dmxb
             summary: Show all arenas created, or print arena_type structure for given arena.
             cname: cmd_debug_heap_jemalloc_b
             args:
               - name: arena_type
                 type: RZ_CMD_ARG_TYPE_STRING
                 optional: true
-          - name: dmwc
+          - name: dmxc
             summary: Show all chunks created in all arenas, or show all chunks created for a given arena_t instanc.
             cname: cmd_debug_heap_jemalloc_c
             args:

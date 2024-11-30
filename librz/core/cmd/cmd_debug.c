@@ -1050,17 +1050,17 @@ static RzCmdStatus call_map_jemalloc(RzCore *core, char type, const char *arg) {
 	return RZ_CMD_STATUS_ERROR;
 }
 
-// "dmwa"
+// "dmxa"
 RZ_IPI RzCmdStatus rz_cmd_debug_heap_jemalloc_a_handler(RzCore *core, int argc, const char **argv) {
 	return call_map_jemalloc(core, 'a', argc == 1 ? "" : argv[1]);
 }
 
-// "dmwb"
+// "dmxb"
 RZ_IPI RzCmdStatus rz_cmd_debug_heap_jemalloc_b_handler(RzCore *core, int argc, const char **argv) {
 	return call_map_jemalloc(core, 'b', argc == 1 ? "" : argv[1]);
 }
 
-// "dmwc"
+// "dmxc"
 RZ_IPI RzCmdStatus rz_cmd_debug_heap_jemalloc_c_handler(RzCore *core, int argc, const char **argv) {
 	return call_map_jemalloc(core, 'c', argv[1]);
 }
