@@ -613,10 +613,6 @@ commands:
         summary: Reset traces (instruction/calls)
         cname: cmd_debug_traces_reset
         args: []
-      - name: dta
-        summary: Only trace given addresses
-        cname: cmd_debug_trace_addr
-        type: RZ_CMD_DESC_TYPE_OLDINPUT
       - name: dtc
         summary: Trace call/ret
         cname: cmd_debug_trace_calls

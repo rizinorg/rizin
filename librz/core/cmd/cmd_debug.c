@@ -1508,13 +1508,6 @@ RZ_IPI RzCmdStatus rz_cmd_debug_traces_reset_handler(RzCore *core, int argc, con
 	return RZ_CMD_STATUS_OK;
 }
 
-// dta
-RZ_IPI int rz_cmd_debug_trace_addr(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	rz_debug_trace_at(core->dbg, input);
-	return 0;
-}
-
 // dtc
 RZ_IPI RzCmdStatus rz_cmd_debug_trace_calls_handler(RzCore *core, int argc, const char **argv) {
 	ut64 from = argc > 1 ? rz_num_math(core->num, argv[1]) : 0;

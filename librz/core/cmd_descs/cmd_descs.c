@@ -8912,10 +8912,6 @@ static const RzCmdDescHelp cmd_debug_traces_reset_help = {
 	.args = cmd_debug_traces_reset_args,
 };
 
-static const RzCmdDescHelp cmd_debug_trace_addr_help = {
-	.summary = "Only trace given addresses",
-};
-
 static const RzCmdDescArg cmd_debug_trace_calls_args[] = {
 	{
 		.name = "from",
@@ -21359,9 +21355,6 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_debug_traces_reset_cd = rz_cmd_desc_argv_new(core->rcmd, dt_cd, "dt-", rz_cmd_debug_traces_reset_handler, &cmd_debug_traces_reset_help);
 	rz_warn_if_fail(cmd_debug_traces_reset_cd);
-
-	RzCmdDesc *cmd_debug_trace_addr_cd = rz_cmd_desc_oldinput_new(core->rcmd, dt_cd, "dta", rz_cmd_debug_trace_addr, &cmd_debug_trace_addr_help);
-	rz_warn_if_fail(cmd_debug_trace_addr_cd);
 
 	RzCmdDesc *cmd_debug_trace_calls_cd = rz_cmd_desc_argv_new(core->rcmd, dt_cd, "dtc", rz_cmd_debug_trace_calls_handler, &cmd_debug_trace_calls_help);
 	rz_warn_if_fail(cmd_debug_trace_calls_cd);

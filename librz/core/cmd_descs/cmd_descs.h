@@ -1147,8 +1147,6 @@ RZ_IPI RzCmdStatus rz_cmd_debug_trace_add_handler(RzCore *core, int argc, const 
 RZ_IPI RzCmdStatus rz_cmd_debug_trace_add_addrs_handler(RzCore *core, int argc, const char **argv);
 // "dt-"
 RZ_IPI RzCmdStatus rz_cmd_debug_traces_reset_handler(RzCore *core, int argc, const char **argv);
-// "dta"
-RZ_IPI int rz_cmd_debug_trace_addr(void *data, const char *input);
 // "dtc"
 RZ_IPI RzCmdStatus rz_cmd_debug_trace_calls_handler(RzCore *core, int argc, const char **argv);
 // "dte"

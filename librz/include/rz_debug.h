@@ -222,11 +222,8 @@ typedef struct rz_debug_trace_t {
 	RzList /*<RzDebugTracepoint *>*/ *traces;
 	int count;
 	int enabled;
-	// int changed;
 	int tag;
 	int dup;
-	char *addresses;
-	// TODO: add range here
 	HtSP *ht;
 } RzDebugTrace;
 
@@ -564,7 +561,6 @@ RZ_API void rz_debug_tracenodes_reset(RzDebug *dbg);
 RZ_API void rz_debug_trace_reset(RzDebug *dbg);
 RZ_API int rz_debug_trace_pc(RzDebug *dbg, ut64 pc);
 RZ_API void rz_debug_trace_op(RzDebug *dbg, RzAnalysisOp *op);
-RZ_API void rz_debug_trace_at(RzDebug *dbg, const char *str);
 RZ_API RzDebugTracepoint *rz_debug_trace_get(RzDebug *dbg, ut64 addr);
 RZ_API void rz_debug_trace_print(RzDebug *dbg, RzCmdStateOutput *state, ut64 offset);
 RZ_API RZ_OWN RzList /*<RzListInfo *>*/ *rz_debug_traces_info(RzDebug *dbg, ut64 offset);

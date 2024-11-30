@@ -10,7 +10,6 @@ RZ_API RzDebugTrace *rz_debug_trace_new(void) {
 		return NULL;
 	}
 	t->tag = 1; // UT32_MAX;
-	t->addresses = NULL;
 	t->enabled = false;
 	t->traces = rz_list_new();
 	if (!t->traces) {
@@ -205,12 +204,6 @@ RZ_API void rz_debug_trace_op(RzDebug *dbg, RzAnalysisOp *op) {
 	oldpc = op->addr;
 }
 
-RZ_API void rz_debug_trace_at(RzDebug *dbg, const char *str) {
-	// TODO: parse offsets and so use ut64 instead of strstr()
-	free(dbg->trace->addresses);
-	dbg->trace->addresses = (str && *str) ? rz_str_dup(str) : NULL;
-}
-
 RZ_API RzDebugTracepoint *rz_debug_trace_get(RzDebug *dbg, ut64 addr) {
 	char tmpbuf[64];
 	int tag = dbg->trace->tag;
@@ -261,25 +254,10 @@ RZ_API RZ_OWN RzList /*<RzListInfo *>*/ *rz_debug_traces_info(RzDebug *dbg, ut64
 	return info_list;
 }
 
-// XXX: find better name, make it public?
-static int rz_debug_trace_is_traceable(RzDebug *dbg, ut64 addr) {
-	if (dbg->trace->addresses) {
-		char addr_str[32];
-		snprintf(addr_str, sizeof(addr_str), "0x%08" PFMT64x, addr);
-		if (!strstr(dbg->trace->addresses, addr_str)) {
-			return false;
-		}
-	}
-	return true;
-}
-
 RZ_API RzDebugTracepoint *rz_debug_trace_add(RzDebug *dbg, ut64 addr, int size) {
 	RzDebugTracepoint *tp;
 	char tmpbuf[64];
 	int tag = dbg->trace->tag;
-	if (!rz_debug_trace_is_traceable(dbg, addr)) {
-		return NULL;
-	}
 	rz_analysis_trace_bb(dbg->analysis, addr);
 	tp = RZ_NEW0(RzDebugTracepoint);
 	if (!tp) {
