@@ -21476,12 +21476,12 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_heap_tcache_print_cd = rz_cmd_desc_argv_new(core->rcmd, dmh_cd, "dmht", rz_cmd_heap_tcache_print_handler, &cmd_heap_tcache_print_help);
 	rz_warn_if_fail(cmd_heap_tcache_print_cd);
 
-	RzCmdDesc *dmi_cd = rz_cmd_desc_group_state_new(core->rcmd, dm_cd, "dmi", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_cmd_debug_dmi_handler, &cmd_debug_dmi_help, &dmi_help);
+	RzCmdDesc *dmi_cd = rz_cmd_desc_group_state_new(core->rcmd, dm_cd, "dmi", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_QUIETEST, rz_cmd_debug_dmi_handler, &cmd_debug_dmi_help, &dmi_help);
 	rz_warn_if_fail(dmi_cd);
-	RzCmdDesc *cmd_debug_dmi_all_cd = rz_cmd_desc_argv_state_new(core->rcmd, dmi_cd, "dmia", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_cmd_debug_dmi_all_handler, &cmd_debug_dmi_all_help);
+	RzCmdDesc *cmd_debug_dmi_all_cd = rz_cmd_desc_argv_state_new(core->rcmd, dmi_cd, "dmia", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_QUIETEST, rz_cmd_debug_dmi_all_handler, &cmd_debug_dmi_all_help);
 	rz_warn_if_fail(cmd_debug_dmi_all_cd);
 
-	RzCmdDesc *cmd_debug_dmi_closest_cd = rz_cmd_desc_argv_state_new(core->rcmd, dmi_cd, "dmi.", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_cmd_debug_dmi_closest_handler, &cmd_debug_dmi_closest_help);
+	RzCmdDesc *cmd_debug_dmi_closest_cd = rz_cmd_desc_argv_state_new(core->rcmd, dmi_cd, "dmi.", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_QUIETEST, rz_cmd_debug_dmi_closest_handler, &cmd_debug_dmi_closest_help);
 	rz_warn_if_fail(cmd_debug_dmi_closest_cd);
 
 	RzCmdDesc *cmd_debug_dml_cd = rz_cmd_desc_argv_new(core->rcmd, dm_cd, "dml", rz_cmd_debug_dml_handler, &cmd_debug_dml_help);

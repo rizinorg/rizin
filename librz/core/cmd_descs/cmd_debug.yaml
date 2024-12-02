@@ -867,6 +867,8 @@ commands:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_RIZIN
               - RZ_OUTPUT_MODE_JSON
+              - RZ_OUTPUT_MODE_QUIET
+              - RZ_OUTPUT_MODE_QUIETEST
           - name: "dmia"
             summary: List all info of target library.
             cname: cmd_debug_dmi_all
@@ -879,6 +881,8 @@ commands:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_RIZIN
               - RZ_OUTPUT_MODE_JSON
+              - RZ_OUTPUT_MODE_QUIET
+              - RZ_OUTPUT_MODE_QUIETEST
           - name: "dmi."
             summary: List closest symbol to the current address.
             cname: cmd_debug_dmi_closest
@@ -888,6 +892,8 @@ commands:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_RIZIN
               - RZ_OUTPUT_MODE_JSON
+              - RZ_OUTPUT_MODE_QUIET
+              - RZ_OUTPUT_MODE_QUIETEST
       - name: dml
         summary: Load contents of file into current map region
         cname: cmd_debug_dml
