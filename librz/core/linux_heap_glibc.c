@@ -1309,8 +1309,8 @@ static void GH(print_heap_bin)(RzCore *core, GHT m_arena, MallocState *main_aren
 
 	if (!input[0]) {
 		PRINT_YA("Bins {\n");
-		for (int i = 0; i < NBINS - 1; i++) {
-			PRINTF_YA(" Bin %03d:\n", i);
+		for (size_t i = 0; i < NBINS - 1; i++) {
+			PRINTF_YA(" Bin %03" PFMTSZu ":\n", i);
 			GH(print_double_linked_list_bin)
 			(core, main_arena, m_arena, offset, i, print_graph);
 		}
