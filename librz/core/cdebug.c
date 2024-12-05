@@ -109,10 +109,10 @@ RZ_API bool rz_core_debug_continue_until(RzCore *core, ut64 addr) {
 #if RZ_BUILD_DEBUG
 	long level = 0;
 	ut64 prev_pc = UT64_MAX;
+	unsigned long steps = 0;
 #endif
 	ut64 pc;
 	if (!strcmp(core->dbg->btalgo, "trace") && core->dbg->arch && !strcmp(core->dbg->arch, "x86") && core->dbg->bits == 4) {
-		unsigned long steps = 0;
 		const char *pc_name = core->dbg->reg->name[RZ_REG_NAME_PC];
 		bool prev_call = false;
 		bool prev_ret = false;
@@ -154,9 +154,11 @@ RZ_API bool rz_core_debug_continue_until(RzCore *core, ut64 addr) {
 					prev_pc, pc);
 				prev_ret = false;
 			}
+#if RZ_BUILD_DEBUG
 			if (steps % 500 == 0 || pc == addr) {
 				RZ_LOG_DEBUG("At 0x%08" PFMT64x " after %lu steps\n", pc, steps);
 			}
+#endif
 			if (rz_cons_is_breaked() || rz_debug_is_dead(core->dbg) || pc == addr) {
 				break;
 			}
@@ -172,7 +174,9 @@ RZ_API bool rz_core_debug_continue_until(RzCore *core, ut64 addr) {
 				prev_ret = true;
 			}
 			rz_debug_step(core->dbg, 1);
+#if RZ_BUILD_DEBUG
 			steps++;
+#endif
 		}
 		rz_core_reg_update_flags(core);
 		rz_cons_break_pop();
