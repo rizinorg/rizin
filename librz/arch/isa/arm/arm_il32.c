@@ -1947,10 +1947,10 @@ static RzILOpEffect *revsh(cs_insn *insn, bool is_thumb) {
  * ARM: rfeda, rfedb, rfaia, rfeib
  */
 static RzILOpEffect *rfe(cs_insn *insn, bool is_thumb) {
-	if (!ISREG(0)) {
+	if (!ISMEM(0)) {
 		return NULL;
 	}
-	RzILOpBitVector *base = REG(0);
+	RzILOpBitVector *base = MEMBASE(0);
 	if (!base) {
 		return NULL;
 	}
