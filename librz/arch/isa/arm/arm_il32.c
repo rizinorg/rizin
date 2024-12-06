@@ -3623,12 +3623,12 @@ RZ_IPI bool rz_arm_cs_is_float_insn(const cs_insn *insn) {
 		switch (group_it) {
 		default:
 			break;
-		case ARM_FEATURE_HasNEON:
-		case ARM_FEATURE_HasVFP2:
-		case ARM_FEATURE_HasVFP3:
-		case ARM_FEATURE_HasVFP4:
-		case ARM_FEATURE_HasDPVFP:
-		case ARM_FEATURE_HasMVEFloat:
+		case ARM_FEATURE_HASNEON:
+		case ARM_FEATURE_HASVFP2:
+		case ARM_FEATURE_HASVFP3:
+		case ARM_FEATURE_HASVFP4:
+		case ARM_FEATURE_HASDPVFP:
+		case ARM_FEATURE_HASMVEFLOAT:
 			return true;
 		}
 		group_it = insn->detail->groups[++i];
@@ -3653,7 +3653,7 @@ static RzILOpEffect *try_as_int_cvt(cs_insn *insn, bool is_thumb, bool *success)
 	ut32 fl_sz = rz_float_get_format_info(is_f2i ? from_fmt : to_fmt, RZ_FLOAT_INFO_TOTAL_LEN);
 
 #if CS_NEXT_VERSION >= 6
-	if (!rz_arm_cs_is_group_member(insn, ARM_FEATURE_HasNEON)) {
+	if (!rz_arm_cs_is_group_member(insn, ARM_FEATURE_HASNEON)) {
 #else
 	if (!rz_arm_cs_is_group_member(insn, ARM_GRP_NEON)) {
 #endif
@@ -3890,7 +3890,7 @@ static RzILOpEffect *vadd(cs_insn *insn, bool is_thumb) {
 	bool is_float_vec = fmt == RZ_FLOAT_UNK ? false : true;
 
 #if CS_NEXT_VERSION >= 6
-	if (!rz_arm_cs_is_group_member(insn, ARM_FEATURE_HasNEON)) {
+	if (!rz_arm_cs_is_group_member(insn, ARM_FEATURE_HASNEON)) {
 #else
 	if (!rz_arm_cs_is_group_member(insn, ARM_GRP_NEON)) {
 #endif
@@ -3941,7 +3941,7 @@ static RzILOpEffect *vsub(cs_insn *insn, bool is_thumb) {
 	bool is_float_vec = fmt == RZ_FLOAT_UNK ? false : true;
 
 #if CS_NEXT_VERSION >= 6
-	if (!rz_arm_cs_is_group_member(insn, ARM_FEATURE_HasNEON)) {
+	if (!rz_arm_cs_is_group_member(insn, ARM_FEATURE_HASNEON)) {
 #else
 	if (!rz_arm_cs_is_group_member(insn, ARM_GRP_NEON)) {
 #endif
@@ -3990,7 +3990,7 @@ static RzILOpEffect *vmul(cs_insn *insn, bool is_thumb) {
 	RzFloatFormat fmt = dt2fmt(dt);
 
 #if CS_NEXT_VERSION >= 6
-	if (!rz_arm_cs_is_group_member(insn, ARM_FEATURE_HasNEON)) {
+	if (!rz_arm_cs_is_group_member(insn, ARM_FEATURE_HASNEON)) {
 #else
 	if (!rz_arm_cs_is_group_member(insn, ARM_GRP_NEON)) {
 #endif

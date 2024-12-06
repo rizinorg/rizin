@@ -1292,20 +1292,20 @@ static void anop32(RzAnalysis *a, csh handle, RzAnalysisOp *op, cs_insn *insn, b
 
 	/* grab family */
 #if CS_NEXT_VERSION >= 6
-	if (cs_insn_group(handle, insn, ARM_FEATURE_HasAES)) {
+	if (cs_insn_group(handle, insn, ARM_FEATURE_HASAES)) {
 		op->family = RZ_ANALYSIS_OP_FAMILY_CRYPTO;
-	} else if (cs_insn_group(handle, insn, ARM_FEATURE_HasCRC)) {
+	} else if (cs_insn_group(handle, insn, ARM_FEATURE_HASCRC)) {
 		op->family = RZ_ANALYSIS_OP_FAMILY_CRYPTO;
 	} else if (cs_insn_group(handle, insn, ARM_GRP_PRIVILEGE)) {
 		op->family = RZ_ANALYSIS_OP_FAMILY_PRIV;
-	} else if (cs_insn_group(handle, insn, ARM_FEATURE_HasVirtualization)) {
+	} else if (cs_insn_group(handle, insn, ARM_FEATURE_HASVIRTUALIZATION)) {
 		op->family = RZ_ANALYSIS_OP_FAMILY_VIRT;
-	} else if (cs_insn_group(handle, insn, ARM_FEATURE_HasNEON)) {
+	} else if (cs_insn_group(handle, insn, ARM_FEATURE_HASNEON)) {
 		op->family = RZ_ANALYSIS_OP_FAMILY_MMX;
-	} else if (cs_insn_group(handle, insn, ARM_FEATURE_HasFPARMv8)) {
+	} else if (cs_insn_group(handle, insn, ARM_FEATURE_HASFPARMV8)) {
 		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
-	} else if (cs_insn_group(handle, insn, ARM_FEATURE_HasDSP) &&
-		cs_insn_group(handle, insn, ARM_FEATURE_HasDSP)) {
+	} else if (cs_insn_group(handle, insn, ARM_FEATURE_HASDSP) &&
+		cs_insn_group(handle, insn, ARM_FEATURE_HASDSP)) {
 		op->family = RZ_ANALYSIS_OP_FAMILY_MMX;
 	} else {
 		op->family = RZ_ANALYSIS_OP_FAMILY_CPU;

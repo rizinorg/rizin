@@ -41,9 +41,9 @@ static bool check_features(RzAsm *a, cs_insn *insn) {
 		int id = insn->detail->groups[i];
 		switch (id) {
 #if CS_NEXT_VERSION >= 6
-		case ARM_FEATURE_IsARM:
-		case ARM_FEATURE_IsThumb:
-		case ARM_FEATURE_IsThumb2:
+		case ARM_FEATURE_ISARM:
+		case ARM_FEATURE_ISTHUMB:
+		case ARM_FEATURE_ISTHUMB2:
 #else
 		case ARM_GRP_ARM:
 		case ARM_GRP_THUMB:
