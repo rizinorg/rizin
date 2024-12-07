@@ -106,6 +106,21 @@ static int help(bool verbose) {
 	return 1;
 }
 
+/**
+ * \brief Find test dir for rz-test symbolic link
+ * \param argv0 A symbolic link to an rz-test binary
+ * \return True if test dir exists
+ *
+ * This function seemingly is to support an easy way to test different core
+ * binaries with their own test sets, via symbolic links to their respective
+ * rz-test binaries. It can be triggered by adding `./` in front of the
+ * testfile name, and needs the rz-test binary to be in `binrz/rz-test/`
+ * relative to its root dir for it to work.
+ *
+ * \deprecated The core binaries are probably different in terms of arch and
+ * os. Such differences should be coverable by archos tests, and so this
+ * function is slated for removal.
+ */
 static bool rz_test_chdir(const char *argv0) {
 #if __UNIX__
 	if (rz_file_is_directory("db")) {
