@@ -160,6 +160,14 @@ static bool rz_test_test_run_unit(void) {
 	return rz_sys_system("make -C unit all run") == 0;
 }
 
+/**
+ * \brief Change cwd to test root dir (containing the `db/` dir)
+ * \param test_path Test pathname
+ * \return True if test root dir is found
+ *
+ * The cwd change is done so that tests can find their test binaries stored in
+ * the `<test root dir>/bins` dir no matter what the old cwd was.
+ */
 static bool rz_test_chdir_fromtest(const char *test_path) {
 	if (!test_path || *test_path == '@') {
 		test_path = "";
