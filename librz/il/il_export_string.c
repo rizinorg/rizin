@@ -152,6 +152,22 @@ static void il_op_effect_string_resolve(RzILOpEffect *op, RzStrBuf *sb, int pad)
 		} \
 	} while (0)
 
+#define il_op_param_1_with_fexcept(name, opx, v0, e) \
+	do { \
+		const char *str = rz_il_float_stringify_exception(opx.e); \
+		if (pad < 0) { \
+			rz_strbuf_append(sb, "(" name " "); \
+			rz_strbuf_append(sb, str); \
+			rz_strbuf_append(sb, " "); \
+			il_op_pure_string_resolve(opx.v0, sb, pad); \
+			rz_strbuf_append(sb, ")"); \
+		} else { \
+			rz_strbuf_appendf(sb, "%*.s(" name " %s\n", pad, "", str); \
+			il_op_pure_string_resolve(opx.v0, sb, pad + PRETTY_PAD); \
+			rz_strbuf_append(sb, ")"); \
+		} \
+	} while (0)
+
 static void il_opdmp_var(RzILOpPure *op, RzStrBuf *sb, int pad) {
 	RzILOpArgsVar *opx = &op->op.var;
 	if (pad < 0) {
@@ -523,6 +539,10 @@ static void il_opdmp_fsqrt(RzILOpPure *op, RzStrBuf *sb, int pad) {
 
 static void il_opdmp_frsqrt(RzILOpPure *op, RzStrBuf *sb, int pad) {
 	il_op_param_1_with_rmode("frsqrt", op->op.frsqrt, f, rmode);
+}
+
+static void il_opdmp_fexcept(RzILOpPure *op, RzStrBuf *sb, int pad) {
+	il_op_param_1_with_fexcept("fexcept", op->op.fexcept, x, e);
 }
 
 static void il_opdmp_fadd(RzILOpPure *op, RzStrBuf *sb, int pad) {
@@ -899,6 +919,9 @@ static void il_op_pure_string_resolve(RzILOpPure *op, RzStrBuf *sb, int pad) {
 	case RZ_IL_OP_FRSQRT:
 		il_opdmp_frsqrt(op, sb, pad);
 		return;
+	case RZ_IL_OP_FEXCEPT:
+		il_opdmp_fexcept(op, sb, pad);
+		return;
 	case RZ_IL_OP_FADD:
 		il_opdmp_fadd(op, sb, pad);
 		return;
@@ -1203,6 +1226,8 @@ RZ_API RZ_NONNULL const char *rz_il_op_pure_code_stringify(RzILOpPureCode code) 
 		return "fsqrt";
 	case RZ_IL_OP_FRSQRT:
 		return "frsqrt";
+	case RZ_IL_OP_FEXCEPT:
+		return "fexcept";
 	case RZ_IL_OP_FADD:
 		return "fadd";
 	case RZ_IL_OP_FSUB:

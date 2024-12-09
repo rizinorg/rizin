@@ -631,6 +631,17 @@ VALIDATOR_PURE(float_uop_with_round) {
 	return true;
 }
 
+VALIDATOR_PURE(float_uop_except) {
+	RzILOpArgsFexcept *args = &op->op.fexcept;
+	RzILSortPure sort;
+
+	VALIDATOR_DESCEND(args->x, &sort);
+	VALIDATOR_ASSERT(sort.type == RZ_IL_TYPE_PURE_FLOAT, "operand of %s op is not a float.\n", rz_il_op_pure_code_stringify(op->code));
+
+	*sort_out = rz_il_sort_pure_bool();
+	return true;
+}
+
 VALIDATOR_PURE(float_binop_with_round) {
 	RzILOpArgsFadd *args = &op->op.fadd;
 	RzILSortPure sx, sy;
@@ -739,6 +750,7 @@ static ValidatePureFn validate_pure_table[RZ_IL_OP_PURE_MAX] = {
 	[RZ_IL_OP_FROUND] = VALIDATOR_PURE_NAME(float_uop_with_round),
 	[RZ_IL_OP_FSQRT] = VALIDATOR_PURE_NAME(float_uop_with_round),
 	[RZ_IL_OP_FRSQRT] = VALIDATOR_PURE_NAME(float_uop_with_round),
+	[RZ_IL_OP_FEXCEPT] = VALIDATOR_PURE_NAME(float_uop_except),
 	[RZ_IL_OP_FADD] = VALIDATOR_PURE_NAME(float_binop_with_round),
 	[RZ_IL_OP_FSUB] = VALIDATOR_PURE_NAME(float_binop_with_round),
 	[RZ_IL_OP_FMUL] = VALIDATOR_PURE_NAME(float_binop_with_round),

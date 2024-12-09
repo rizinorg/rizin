@@ -64,6 +64,28 @@ RZ_API const char *rz_il_float_stringify_rmode(RzFloatRMode mode) {
 }
 
 /**
+ * convert RzFloatException into const string for exporting info
+ * \param e RzFloatException
+ * \return RzFloatException string
+ */
+RZ_API const char *rz_il_float_stringify_exception(RzFloatException e) {
+	switch (e) {
+	case RZ_FLOAT_E_DIV_ZERO:
+		return "e_div_zero";
+	case RZ_FLOAT_E_INEXACT:
+		return "e_inexact";
+	case RZ_FLOAT_E_OVERFLOW:
+		return "e_overflow";
+	case RZ_FLOAT_E_INVALID_OP:
+		return "e_invalid_op";
+	case RZ_FLOAT_E_UNDERFLOW:
+		return "e_underflow";
+	default:
+		return "e_unk";
+	}
+}
+
+/**
  * convert format to human readable string
  * \param format float format
  * \return float format string

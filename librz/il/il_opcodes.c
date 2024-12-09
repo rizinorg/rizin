@@ -945,6 +945,13 @@ RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_frsqrt(RzFloatRMode rmode, RZ_NONNULL Rz
 	return ret;
 }
 
+RZ_API RZ_OWN RzILOpBool * rz_il_op_new_fexcept(RzFloatException e, RZ_NONNULL RzILOpFloat *x) {
+	rz_return_val_if_fail(x, NULL);
+	RzILOpBool *ret;
+	rz_il_op_new_2(Bool, RZ_IL_OP_FEXCEPT, RzILOpArgsFexcept, fexcept, e, x);
+	return ret;
+}
+
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fadd(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y) {
 	rz_return_val_if_fail(x && y, NULL);
 	RzILOpFloat *ret;
@@ -1262,6 +1269,10 @@ RZ_API RzILOpPure *rz_il_op_pure_dup(RZ_NONNULL RzILOpPure *op) {
 		CONST_CP1(frsqrt, rmode);
 		DUP_OP1(frsqrt, f);
 		break;
+	case RZ_IL_OP_FEXCEPT:
+		CONST_CP1(fexcept, e);
+		DUP_OP1(fexcept, x);
+		break;
 	case RZ_IL_OP_FADD:
 		CONST_CP1(fadd, rmode);
 		DUP_OP2(fadd, x, y);
@@ -1464,6 +1475,9 @@ RZ_API void rz_il_op_pure_free(RZ_NULLABLE RzILOpPure *op) {
 	case RZ_IL_OP_FSQRT:
 	case RZ_IL_OP_FRSQRT:
 		rz_il_op_free_1(pure, fsqrt, f);
+		break;
+	case RZ_IL_OP_FEXCEPT:
+		rz_il_op_free_1(pure, fexcept, x);
 		break;
 	case RZ_IL_OP_FADD:
 	case RZ_IL_OP_FSUB:

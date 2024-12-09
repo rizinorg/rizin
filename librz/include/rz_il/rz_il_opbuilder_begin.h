@@ -82,6 +82,7 @@
 #define FROUND(rmode, fl)          rz_il_op_new_fround(rmode, fl)
 #define FSQRT(rmode, fl)           rz_il_op_new_fsqrt(rmode, fl)
 #define FRSQRT(rmode, fl)          rz_il_op_new_frsqrt(rmode, fl)
+#define FEXCEPT(e, fl)             rz_il_op_new_fexcept(e, fl)
 #define FADD(rmode, flx, fly)      rz_il_op_new_fadd(rmode, flx, fly)
 #define FSUB(rmode, flx, fly)      rz_il_op_new_fsub(rmode, flx, fly)
 #define FMUL(rmode, flx, fly)      rz_il_op_new_fmul(rmode, flx, fly)

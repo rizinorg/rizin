@@ -467,6 +467,11 @@ typedef struct rz_il_op_args_float_alg_unop_t RzILOpArgsFround;
 typedef struct rz_il_op_args_float_alg_unop_t RzILOpArgsFsqrt;
 typedef struct rz_il_op_args_float_alg_unop_t RzILOpArgsFrsqrt;
 
+typedef struct rz_il_op_args_float_expect_t {
+	RzFloatException e;
+	RzILOpFloat *x;
+} RzILOpArgsFexcept;
+
 /**
  * \brief op structure for float basic arithmetic operations (binary op with rmode)
  * rmode -> 'f float -> 'f float -> 'f float
@@ -588,6 +593,7 @@ typedef enum {
 	RZ_IL_OP_FROOTN,
 	RZ_IL_OP_FPOWN,
 	RZ_IL_OP_FCOMPOUND,
+	RZ_IL_OP_FEXCEPT,
 	// ...
 
 	// Memory
@@ -667,6 +673,7 @@ struct rz_il_op_pure_t {
 		RzILOpArgsFround fround;
 		RzILOpArgsFsqrt fsqrt;
 		RzILOpArgsFrsqrt frsqrt;
+		RzILOpArgsFexcept fexcept;
 		RzILOpArgsFadd fadd;
 		RzILOpArgsFsub fsub;
 		RzILOpArgsFmul fmul;
@@ -759,6 +766,7 @@ RZ_API RZ_OWN RzILOpBool *rz_il_op_new_forder(RZ_NONNULL RzILOpFloat *x, RZ_NONN
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fround(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fsqrt(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_frsqrt(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpBool * rz_il_op_new_fexcept(RzFloatException e, RZ_NONNULL RzILOpFloat *x);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fadd(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fsub(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fmul(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y);
