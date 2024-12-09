@@ -1236,6 +1236,16 @@ static void replace_cmd_kv_file(const char *path, ut64 line_begin, ut64 line_end
 	free(newc);
 }
 
+static char *get_matched_str(const char *regexp, const char *str) {
+	RzStrBuf *match_str = rz_regex_full_match_str(regexp, str, RZ_REGEX_ZERO_TERMINATED, RZ_REGEX_EXTENDED,
+		RZ_REGEX_DEFAULT, "\n");
+	int len = rz_strbuf_length(match_str);
+	if (len && rz_strbuf_get(match_str)[len - 1] != '\n') { // empty matches are not changed
+		rz_strbuf_append(match_str, "\n");
+	}
+	return rz_strbuf_drain(match_str);
+}
+
 static bool interact_fix_cmd(RzTestResultInfo *result, RzPVector /*<RzTestResultInfo *>*/ *fixup_results) {
 	assert(result->test->type == RZ_TEST_TYPE_CMD);
 	if (result->run_failed || result->proc_out->ret != 0) {
@@ -1244,10 +1254,22 @@ static bool interact_fix_cmd(RzTestResultInfo *result, RzPVector /*<RzTestResult
 	RzCmdTest *test = result->test->cmd_test;
 	RzSubprocessOutput *out = result->proc_out;
 	if (test->expect.value && out->out) {
-		replace_cmd_kv_file(result->test->path, test->expect.line_begin, test->expect.line_end, "EXPECT", (char *)out->out, fixup_results);
+		const char *out_str = (char *)out->out;
+		const char *regexp = test->regexp_out.value;
+		if (regexp) {
+			out_str = get_matched_str(regexp, out_str);
+		}
+		replace_cmd_kv_file(result->test->path, test->expect.line_begin, test->expect.line_end, "EXPECT",
+			out_str, fixup_results);
 	}
 	if (test->expect_err.value && out->err) {
-		replace_cmd_kv_file(result->test->path, test->expect_err.line_begin, test->expect_err.line_end, "EXPECT_ERR", (char *)out->err, fixup_results);
+		const char *err_str = (char *)out->err;
+		const char *regexp = test->regexp_err.value;
+		if (regexp) {
+			err_str = get_matched_str(regexp, err_str);
+		}
+		replace_cmd_kv_file(result->test->path, test->expect_err.line_begin, test->expect_err.line_end, "EXPECT_ERR",
+			err_str, fixup_results);
 	}
 	return true;
 }
