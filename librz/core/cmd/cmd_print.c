@@ -1586,12 +1586,12 @@ RZ_IPI RzCmdStatus rz_cmd_print_hash_cfg_algo_list_handler(RzCore *core, int arg
 RZ_IPI RzCmdStatus rz_cmd_print_magic_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	if (mode == RZ_OUTPUT_MODE_JSON) {
 		PJ *pj = pj_new();
-		rz_core_magic(core, argv[1], true, pj);
+		core_find_magic(core, argv[1], true, pj);
 		rz_cons_println(pj_string(pj));
 		pj_free(pj);
 	} else {
-		// XXX: need cmd_magic header for rz_core_magic
-		rz_core_magic(core, argv[1], true, NULL);
+		// XXX: need cmd_magic header for core_find_magic
+		core_find_magic(core, argv[1], true, NULL);
 	}
 	return RZ_CMD_STATUS_OK;
 }

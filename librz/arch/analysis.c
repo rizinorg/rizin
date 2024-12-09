@@ -795,14 +795,16 @@ RZ_API void rz_analysis_bind(RzAnalysis *analysis, RzAnalysisBind *b) {
 	}
 }
 
-RZ_API RzSearchCollection *rz_analysis_preludes(RzAnalysis *analysis) {
+RZ_API RZ_OWN RzSearchCollection *rz_analysis_preludes(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, NULL);
 	if (analysis->cur && analysis->cur->preludes) {
 		return analysis->cur->preludes(analysis);
 	}
 	return NULL;
 }
 
-RZ_API bool rz_analysis_is_prelude(RzAnalysis *analysis, const ut8 *data, int len) {
+RZ_API bool rz_analysis_is_prelude(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL const ut8 *data, size_t len) {
+	rz_return_val_if_fail(analysis && data, false);
 	RzSearchCollection *col = rz_analysis_preludes(analysis);
 	if (!col || len < 1) {
 		rz_search_collection_free(col);

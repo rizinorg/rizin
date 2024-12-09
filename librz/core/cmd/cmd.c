@@ -30,7 +30,8 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 #include "cmd_debug.c"
 #include "cmd_analysis.c"
 #include "cmd_magic.c"
-#include "cmd_search.c" // defines incDigitBuffer... used by cmd_print
+#include "cmd_search_rop.c"
+#include "cmd_search.c"
 #include "cmd_print.c"
 #include "cmd_math.c"
 

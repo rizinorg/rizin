@@ -314,6 +314,7 @@ RZ_IPI void rz_core_analysis_esil_emulate(RzCore *core, ut64 addr, ut64 until_ad
 	int stacksize = rz_config_get_i(core->config, "esil.stack.depth");
 	int iotrap = rz_config_get_i(core->config, "esil.iotrap");
 	ut64 addrsize = rz_config_get_i(core->config, "esil.addr.size");
+	size_t align = rz_config_get_i(core->config, "esil.align");
 
 	if (!esil) {
 		RZ_LOG_WARN("core: cmd_espc: creating new esil instance\n");
@@ -364,7 +365,7 @@ RZ_IPI void rz_core_analysis_esil_emulate(RzCore *core, ut64 addr, ut64 until_ad
 				(void)rz_analysis_esil_parse(esil, e);
 			}
 		}
-		int inc = (core->search->align > 0) ? core->search->align - 1 : ret - 1;
+		int inc = (align > 0) ? align - 1 : ret - 1;
 		if (inc < 0) {
 			inc = minopcode;
 		}

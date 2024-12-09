@@ -1831,39 +1831,6 @@ RZ_API RzList /*<RzAnalysisBlock *>*/ *rz_core_analysis_graph_to(RzCore *core, u
 	return paths;
 }
 
-static int core_analysis_followptr(RzCore *core, int type, ut64 at, ut64 ptr, ut64 ref, int code, int depth) {
-	// SLOW Operation try to reduce as much as possible
-	if (!ptr) {
-		return false;
-	}
-	if (ref == UT64_MAX || ptr == ref) {
-		const RzAnalysisXRefType t = code ? type ? type : RZ_ANALYSIS_XREF_TYPE_CODE : RZ_ANALYSIS_XREF_TYPE_DATA;
-		rz_analysis_xrefs_set(core->analysis, at, ptr, t);
-		return true;
-	}
-	if (depth < 1) {
-		return false;
-	}
-	int wordsize = (int)(core->analysis->bits / 8);
-	ut64 dataptr;
-	if (!rz_io_read_i(core->io, ptr, &dataptr, wordsize, false)) {
-		// RZ_LOG_ERROR("core_analysis_followptr: Cannot read word at destination\n");
-		return false;
-	}
-	return core_analysis_followptr(core, type, at, dataptr, ref, code, depth - 1);
-}
-
-static bool opiscall(RzCore *core, RzAnalysisOp *aop, ut64 addr, const ut8 *buf, int len, int arch) {
-	if (rz_analysis_op(core->analysis, aop, addr, buf, len, RZ_ANALYSIS_OP_MASK_BASIC) > 0) {
-		switch (aop->type & RZ_ANALYSIS_OP_TYPE_MASK) {
-		case RZ_ANALYSIS_OP_TYPE_CALL:
-		case RZ_ANALYSIS_OP_TYPE_CCALL:
-			return true;
-		}
-	}
-	return false;
-}
-
 static bool core_search_for_xrefs_in_boundaries(RzCore *core, ut64 from, ut64 to) {
 	if ((from == UT64_MAX && to == UT64_MAX) ||
 		(!from && !to) ||
@@ -2793,7 +2760,8 @@ RZ_IPI void rz_core_add_string_ref(RzCore *core, ut64 xref_from, ut64 xref_to) {
 
 RZ_API int rz_core_search_value_in_range(RzCore *core, RzInterval search_itv, ut64 vmin,
 	ut64 vmax, int vsize, inRangeCb cb, void *cb_user) {
-	int i, align = core->search->align, hitctr = 0;
+	int i, hitctr = 0;
+	int align = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN);
 	bool vinfun = rz_config_get_b(core->config, "analysis.vinfun");
 	bool vinfunr = rz_config_get_b(core->config, "analysis.vinfunrange");
 	bool analyze_strings = rz_config_get_b(core->config, "analysis.strings");
@@ -2806,6 +2774,9 @@ RZ_API int rz_core_search_value_in_range(RzCore *core, RzInterval search_itv, ut
 	if (from >= to) {
 		RZ_LOG_ERROR("core: `from` must be lower than `to`\n");
 		return -1;
+	}
+	if (align < 1) {
+		align = 0;
 	}
 	bool maybeThumb = false;
 	if (align && core->analysis->cur && core->analysis->cur->arch) {
@@ -4555,10 +4526,8 @@ static bool archIsThumbable(RzCore *core) {
 
 static void _CbInRangeAav(RzCore *core, ut64 from, ut64 to, int vsize, void *user) {
 	bool pretend = (user && *(RzOutputMode *)user == RZ_OUTPUT_MODE_RIZIN);
-	int arch_align = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN);
+	int align = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN);
 	bool vinfun = rz_config_get_b(core->config, "analysis.vinfun");
-	int searchAlign = rz_config_get_i(core->config, "search.align");
-	int align = (searchAlign > 0) ? searchAlign : arch_align;
 	if (align > 1) {
 		if ((from % align) || (to % align)) {
 			bool itsFine = false;
@@ -4595,12 +4564,9 @@ static void _CbInRangeAav(RzCore *core, ut64 from, ut64 to, int vsize, void *use
 }
 
 RZ_IPI void rz_core_analysis_value_pointers(RzCore *core, RzOutputMode mode) {
-	ut64 o_align = rz_config_get_i(core->config, "search.align");
 	const char *analysisin = rz_config_get(core->config, "analysis.in");
 	char *tmp = rz_str_dup(analysisin);
 	bool is_debug = rz_config_get_b(core->config, "cfg.debug");
-	int archAlign = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN);
-	rz_config_set_i(core->config, "search.align", archAlign);
 	rz_config_set(core->config, "analysis.in", "io.maps.x");
 	rz_core_notify_done(core, "Finding xrefs in noncode section with analysis.in=io.maps");
 
@@ -4675,7 +4641,6 @@ beach:
 	// end
 	rz_config_set(core->config, "analysis.in", tmp);
 	free(tmp);
-	rz_config_set_i(core->config, "search.align", o_align);
 }
 
 RZ_API int rz_core_get_stacksz(RzCore *core, ut64 from, ut64 to) {

@@ -87,7 +87,7 @@ RZ_API RZ_OWN RzSearchCollection *rz_search_collection_strings(RZ_NONNULL RzUtil
 
 	StringSearch *ss = RZ_NEW0(StringSearch);
 	if (!ss) {
-		RZ_LOG_ERROR("search: failed to initialize strings collection\n");
+		RZ_LOG_ERROR("search: failed to allocate StringSearch\n");
 		return NULL;
 	}
 

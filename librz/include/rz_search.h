@@ -5,12 +5,15 @@
 #include <rz_util.h>
 #include <rz_list.h>
 #include <rz_io.h>
+#include <rz_th.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 RZ_LIB_VERSION_HEADER(rz_search);
+
+#define RZ_SEARCH_MIN_BUFFER_SIZE 512u
 
 typedef struct rz_search_opt_t RzSearchOpt;
 
@@ -24,11 +27,12 @@ typedef struct rz_search_hit_t {
 
 typedef bool (*RzSearchCancelCallback)(void *user, size_t n_hits);
 
-RZ_API bool rz_search_opt_set_backwards(RZ_NONNULL RzSearchOpt *opt, bool backwards);
-RZ_API bool rz_search_opt_set_allow_overlaps(RZ_NONNULL RzSearchOpt *opt, bool allow_overlaps);
+RZ_API RZ_OWN RzSearchOpt *rz_search_opt_new();
+RZ_API void rz_search_opt_free(RZ_NULLABLE RzSearchOpt *opt);
 RZ_API bool rz_search_opt_set_inverse_match(RZ_NONNULL RzSearchOpt *opt, bool inverse_match);
 RZ_API bool rz_search_opt_set_buffer_size(RZ_NONNULL RzSearchOpt *opt, size_t buffer_size);
-RZ_API bool rz_search_opt_set_max_threads(RZ_NONNULL RzSearchOpt *opt, size_t max_threads);
+RZ_API bool rz_search_opt_set_max_hits(RZ_NONNULL RzSearchOpt *opt, size_t max_hits);
+RZ_API bool rz_search_opt_set_max_threads(RZ_NONNULL RzSearchOpt *opt, RzThreadNCores max_threads);
 RZ_API bool rz_search_opt_set_cancel_cb(RZ_NONNULL RzSearchOpt *opt, RzSearchCancelCallback callback, void *user);
 
 RZ_API RZ_OWN RzSearchCollection *rz_search_collection_aes_keys();

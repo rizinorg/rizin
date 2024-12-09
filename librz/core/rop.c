@@ -1447,7 +1447,7 @@ static bool process_disassembly(RzCore *core, ut8 *buf, const int idx, RzRopSear
 		goto fini;
 	}
 
-	if (core->search->align && (context->from + idx) % core->search->align != 0) {
+	if (context->alignment && (context->from + idx) % context->alignment != 0) {
 		rz_list_free(hitlist);
 		goto fini;
 	}
@@ -1557,7 +1557,7 @@ static int handle_rop_search_address(RzCore *core, RzRopSearchContext *context, 
  * the provided state object.
  */
 RZ_API RzCmdStatus rz_core_rop_search(RZ_NONNULL RzCore *core, RZ_NONNULL RzRopSearchContext *context) {
-	rz_return_val_if_fail(core && core->search && context, RZ_CMD_STATUS_ERROR);
+	rz_return_val_if_fail(core && context, RZ_CMD_STATUS_ERROR);
 
 	RzInterval search_itv = { 0 };
 	if (!fetch_search_itv(core, &search_itv)) {

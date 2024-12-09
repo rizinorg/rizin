@@ -61,14 +61,16 @@ RZ_IPI RzCmdStatus rz_interpret_pipe_handler(RzCore *core, int argc, const char 
 RZ_IPI RzCmdStatus rz_interpret_macro_handler(RzCore *core, int argc, const char **argv);
 // "..("
 RZ_IPI RzCmdStatus rz_interpret_macro_multiple_handler(RzCore *core, int argc, const char **argv);
-// "//"
-RZ_IPI int rz_cmd_search(void *data, const char *input);
 // "/a"
 RZ_IPI RzCmdStatus rz_cmd_assemble_search_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
-// "/c"
-RZ_IPI RzCmdStatus rz_cmd_cryptographic_material_search_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/ca"
+RZ_IPI RzCmdStatus rz_cmd_aes_key_search_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/cp"
+RZ_IPI RzCmdStatus rz_cmd_private_key_search_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/e"
-RZ_IPI RzCmdStatus rz_cmd_regex_raw_search_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+RZ_IPI RzCmdStatus rz_cmd_regex_raw_sensitive_search_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/ei"
+RZ_IPI RzCmdStatus rz_cmd_regex_raw_insensitive_search_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/g"
 RZ_IPI RzCmdStatus rz_cmd_graph_path_search_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/gg"
@@ -77,11 +79,7 @@ RZ_IPI RzCmdStatus rz_cmd_graph_path_follow_jumps_search_handler(RzCore *core, i
 RZ_IPI RzCmdStatus rz_cmd_hash_block_search_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/m"
 RZ_IPI RzCmdStatus rz_cmd_magic_const_search_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
-// "/p"
-RZ_IPI RzCmdStatus rz_cmd_pattern_raw_search_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
-// "/P"
-RZ_IPI RzCmdStatus rz_cmd_similarity_raw_search_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
-// "/s"
+// "/E"
 RZ_IPI RzCmdStatus rz_cmd_entropy_section_search_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/r"
 RZ_IPI RzCmdStatus rz_cmd_reference_search_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
@@ -103,18 +101,10 @@ RZ_IPI RzCmdStatus rz_cmd_value_32_search_handler(RzCore *core, int argc, const 
 RZ_IPI RzCmdStatus rz_cmd_value_64_search_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/x"
 RZ_IPI RzCmdStatus rz_cmd_hex_search_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
-// "/x!"
-RZ_IPI RzCmdStatus rz_cmd_non_matching_hex_search_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/z"
-RZ_IPI RzCmdStatus rz_cmd_utf8_string_search_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+RZ_IPI RzCmdStatus rz_cmd_string_sensitive_search_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/zi"
-RZ_IPI RzCmdStatus rz_cmd_utf8_string_insensitive_search_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
-// "/zs"
-RZ_IPI RzCmdStatus rz_cmd_size_string_search_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
-// "/zw"
-RZ_IPI RzCmdStatus rz_cmd_wide_string_search_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
-// "/zwi"
-RZ_IPI RzCmdStatus rz_cmd_wide_string_insensitive_search_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+RZ_IPI RzCmdStatus rz_cmd_string_insensitive_search_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "R"
 RZ_IPI RzCmdStatus rz_remote_handler(RzCore *core, int argc, const char **argv);
 // "R<"
@@ -2322,8 +2312,6 @@ RZ_IPI RzCmdStatus rz_seek_redo_handler(RzCore *core, int argc, const char **arg
 RZ_IPI RzCmdStatus rz_seek_undo_handler(RzCore *core, int argc, const char **argv);
 // "sh-"
 RZ_IPI RzCmdStatus rz_seek_undo_reset_handler(RzCore *core, int argc, const char **argv);
-// "s/"
-RZ_IPI int rz_seek_search(void *data, const char *input);
 // "sa"
 RZ_IPI RzCmdStatus rz_seek_asz_handler(RzCore *core, int argc, const char **argv);
 // "sb"

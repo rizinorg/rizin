@@ -1494,7 +1494,6 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->max_cmd_depth = RZ_CONS_CMD_DEPTH + 1;
 	core->sdb = sdb_new(NULL, "rzkv.sdb", 0); // XXX: path must be in home?
 	rz_core_seek_reset(core);
-	core->lastsearch = NULL;
 	core->cmdfilter = NULL;
 	core->curtheme = rz_str_dup("default");
 	core->switch_file_view = 0;
@@ -1606,7 +1605,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	rz_event_hook(core->io->event, RZ_EVENT_IO_DESC_CLOSE, ev_iodescclose_cb, core);
 	rz_event_hook(core->io->event, RZ_EVENT_IO_MAP_DEL, ev_iomapdel_cb, core);
 	core->io->ff = 1;
-	core->search = rz_search_new(RZ_SEARCH_MODE_KEYWORD);
+	core->search_opts = rz_search_opt_new();
 	core->flags = rz_flag_new();
 	core->graph = rz_agraph_new(rz_cons_canvas_new(1, 1));
 	core->graph->need_reload_nodes = false;
@@ -1623,7 +1622,6 @@ RZ_API bool rz_core_init(RzCore *core) {
 	rz_bin_bind(core->bin, &(core->analysis->binb));
 	rz_bin_bind(core->bin, &(core->analysis->binb));
 
-	rz_io_bind(core->io, &(core->search->iob));
 	rz_io_bind(core->io, &(core->print->iob));
 	rz_io_bind(core->io, &(core->analysis->iob));
 	rz_io_bind(core->io, &(core->analysis->typedb->iob));
@@ -1735,7 +1733,6 @@ RZ_API void rz_core_fini(RzCore *c) {
 	RZ_FREE_CUSTOM(c->ropchain, rz_list_free);
 	RZ_FREE_CUSTOM(c->ev, rz_event_free);
 	RZ_FREE(c->cmdlog);
-	RZ_FREE(c->lastsearch);
 	RZ_FREE(c->cons->pager);
 	RZ_FREE(c->cmdqueue);
 	RZ_FREE(c->lastcmd);
@@ -1764,7 +1761,7 @@ RZ_API void rz_core_fini(RzCore *c) {
 	should probably need to add a rz_config_free_payload callback */
 	rz_cons_free();
 	rz_cons_singleton()->teefile = NULL; // HACK
-	RZ_FREE_CUSTOM(c->search, rz_search_free);
+	RZ_FREE_CUSTOM(c->search_opts, rz_search_opt_free);
 	RZ_FREE_CUSTOM(c->flags, rz_flag_free);
 	RZ_FREE_CUSTOM(c->egg, rz_egg_free);
 	RZ_FREE_CUSTOM(c->crypto, rz_crypto_free);

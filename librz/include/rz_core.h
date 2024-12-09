@@ -282,7 +282,7 @@ struct rz_core_t {
 	RzLang *lang;
 	RzDebug *dbg;
 	RzFlag *flags;
-	RzSearchOpt *search;
+	RzSearchOpt *search_opts;
 	RzEgg *egg;
 	RzCrypto *crypto;
 	RzAGraph *graph;
@@ -318,7 +318,6 @@ struct rz_core_t {
 	int curtab; // current tab
 	int seltab; // selected tab
 	char *cmdremote;
-	char *lastsearch;
 	char *cmdfilter;
 	char *curtheme;
 	bool break_loop;
@@ -1081,8 +1080,14 @@ RZ_API void rz_core_rtr_cmd(RzCore *core, const char *input);
 RZ_API int rz_core_rtr_http(RzCore *core, int launch, int browse, const char *path);
 RZ_API int rz_core_rtr_gdb(RzCore *core, int launch, const char *path);
 
-RZ_API int rz_core_search_preludes(RzCore *core, bool log);
-RZ_API int rz_core_search_prelude(RzCore *core, ut64 from, ut64 to, const ut8 *buf, int blen, const ut8 *mask, int mlen);
+RZ_API bool rz_core_search_preludes(RZ_NONNULL RzCore *core, bool log);
+RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_string(RZ_NONNULL RzCore *core, RZ_NONNULL RzSearchOpt *opt, RZ_NONNULL const char *string, RzStrEnc expected, bool caseless);
+RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_aes_keys(RZ_NONNULL RzCore *core, RZ_NONNULL RzSearchOpt *opt);
+RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_private_keys(RZ_NONNULL RzCore *core, RZ_NONNULL RzSearchOpt *opt);
+RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_magic(RZ_NONNULL RzCore *core, RZ_NONNULL RzSearchOpt *opt);
+RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_regex(RZ_NONNULL RzCore *core, RZ_NONNULL RzSearchOpt *opt, RZ_NONNULL const char *regex, bool caseless);
+RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_bytes(RZ_NONNULL RzCore *core, RZ_NONNULL RzSearchOpt *opt, RZ_NONNULL const ut8 *bytes, RZ_NULLABLE const ut8 *mask, size_t size);
+RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_hex_pattern(RZ_NONNULL RzCore *core, RZ_NONNULL RzSearchOpt *opt, RZ_NONNULL const char *hex_pattern);
 
 #define RZ_CORE_BOUNDARIES_PERMS_ANY 0
 #define RZ_CORE_BOUNDARIES_MASK_NONE 0

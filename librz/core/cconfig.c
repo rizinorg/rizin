@@ -82,7 +82,7 @@ static int compareSize(const RzAnalysisFunction *a, const RzAnalysisFunction *b,
 	return (sa > sb) - (sa < sb);
 }
 
-static bool cb_search_case_sensitive(void *_core, void *_node) {
+static bool cb_grep_case_sensitive(void *_core, void *_node) {
 	RzConfigNode *node = _node;
 	const char *case_sensitive = node->value;
 	RzCore *core = _core;
@@ -2049,13 +2049,6 @@ static bool cb_hexstride(void *user, void *data) {
 	return true;
 }
 
-static bool cb_search_kwidx(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	core->search->n_kws = node->i_value;
-	return true;
-}
-
 static bool cb_io_cache_mode(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
@@ -2415,10 +2408,10 @@ static bool cb_scrrows(void *user, void *data) {
 	return true;
 }
 
-static bool cb_search_contiguous(void *user, void *data) {
+static bool cb_print_align(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->search->contiguous = node->i_value ? true : false;
+	core->print->addrmod = node->i_value;
 	return true;
 }
 
@@ -2426,55 +2419,31 @@ static bool cb_search_align(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	core->print->addrmod = node->i_value;
-	return rz_search_set_align(core->search, node->i_value);
+	return rz_search_opt_set_buffer_size(core->search_opts, node->i_value);
 }
 
-static bool cb_search_distance(void *user, void *data) {
+static bool cb_search_inverse_match(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	return rz_search_set_distance(core->search, node->i_value);
+	return rz_search_opt_set_inverse_match(core->search_opts, node->i_value ? true : false);
 }
 
-static bool cb_search_flags(void *user, void *data) {
+static bool cb_search_max_hits(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	return rz_search_set_flags(core->search, node->i_value ? true : false);
+	return rz_search_opt_set_max_hits(core->search_opts, node->i_value);
 }
 
-static bool cb_search_overlap(void *user, void *data) {
+static bool cb_search_max_threads(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	return rz_search_set_overlap(core->search, node->i_value ? true : false);
+	return rz_search_opt_set_max_threads(core->search_opts, node->i_value);
 }
 
-static bool cb_search_inverse(void *user, void *data) {
+static bool cb_search_buffer_size(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	return rz_search_set_inverse(core->search, node->i_value ? true : false);
-}
-
-static bool cb_search_maxhits(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	return rz_search_set_maxhits(core->search, node->i_value);
-}
-
-static bool cb_search_from(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	return rz_search_set_from_addr(core->search, node->i_value);
-}
-
-static bool cb_search_to(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	return rz_search_set_to_addr(core->search, node->i_value);
-}
-
-static bool cb_search_prefix(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	return rz_search_set_prefix(core->search, node->value);
+	return rz_search_opt_set_buffer_size(core->search_opts, node->i_value);
 }
 
 static bool cb_segoff(void *user, void *data) {
@@ -3099,6 +3068,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 		"dbg.map", "dbg.maps", "dbg.maps.rwx", "dbg.maps.r", "dbg.maps.rw", "dbg.maps.rx", "dbg.maps.wx", "dbg.maps.x",
 		"analysis.fcn", "analysis.bb",
 		NULL);
+	SETB("analysis.backwards", false, "Stop analyzing after a couple of seconds");
 	SETI("analysis.timeout", 0, "Stop analyzing after a couple of seconds");
 	SETCB("analysis.jmp.retpoline", "true", &cb_analysis_jmpretpoline, "Analyze retpolines, may be slower if not needed");
 
@@ -3129,8 +3099,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETDESC(n, "Select the architecture to use");
 	update_analysis_arch_options(core, n);
 	SETCB("analysis.cpu", RZ_SYS_ARCH, &cb_analysis_cpu, "Specify the analysis.cpu to use");
-	SETPREF("analysis.prelude", "", "Specify an hexpair to find preludes in code");
-	SETI("analysis.prelude.limit", 1024 * 1024 * 20, "Maximum size of the range to scan for preludes");
 	SETCB("analysis.recont", "false", &cb_analysis_recont, "End block after splitting a basic block instead of error"); // testing
 	SETCB("analysis.jmp.indir", "false", &cb_analysis_ijmp, "Follow the indirect jumps in function analysis"); // testing
 	SETI("analysis.ptrdepth", 3, "Maximum number of nested pointers to follow in analysis");
@@ -3190,6 +3158,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETI("esil.addr.size", 64, "Maximum address size in accessed by the ESIL VM");
 	SETBPREF("esil.breakoninvalid", "false", "Break esil execution when instruction is invalid");
 	SETI("esil.timeout", 0, "A timeout (in seconds) for when we should give up emulating");
+	SETI("esil.align", 0, "ESIL memory align");
 	/* asm */
 	// asm.os needs to be first, since other asm.* depend on it
 	n = NODECB("asm.os", "none", &cb_asmos);
@@ -3708,6 +3677,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB("esil.mdev.range", "", &cb_mdevrange, "Specify a range of memory to be handled by cmd.esil.mdev");
 
 	/* scr */
+	SETICB("scr.print.align", 0, &cb_print_align, "Aligns the formatting when printing to a defined number of elements per line.");
 #if __EMSCRIPTEN__
 	rz_config_set_cb(cfg, "scr.fgets", "true", cb_scrfgets);
 #else
@@ -3805,17 +3775,13 @@ RZ_API int rz_core_config_init(RzCore *core) {
 
 	/* search */
 	SETB("search.progress", false, "Shows search progress (true: enable, false: disable)");
-	SETICB("search.contiguous", true, &cb_search_contiguous, "Accept contiguous/adjacent search hits");
-	SETICB("search.align", 0, &cb_search_align, "Only catch aligned search hits");
-	SETI("search.chunk", 0, "Chunk size for /+ (default size is asm.bits/8");
-	SETI("search.esilcombo", 8, "Stop search after N consecutive hits");
-	SETICB("search.distance", 0, &cb_search_distance, "Search string distance");
-	SETICB("search.flags", true, &cb_search_flags, "All search results are flagged, otherwise only printed");
-	SETICB("search.overlap", false, &cb_search_overlap, "Look for overlapped search hits");
-	SETICB("search.inverse", false, &cb_search_inverse, "Shows search progress (true: enable, false: disable)");
-	SETICB("search.maxhits", 0, &cb_search_maxhits, "Maximum number of hits (0: no limit)");
-	SETICB("search.from", 0, &cb_search_from, "Search start address");
-	SETICB("search.to", UT64_MAX, &cb_search_to, "Search end address");
+	SETPREF("search.prefix", "hit", "Prefix used flagnames for each match.");
+	SETICB("search.max_threads", RZ_THREAD_N_CORES_ALL_AVAILABLE, &cb_search_max_threads, "Maximum core number (0 for all cores).");
+	SETICB("search.buffer_size", 0, &cb_search_buffer_size, "Only catch aligned search hits");
+	SETICB("search.inverse_match", false, &cb_search_inverse_match, "Only search for non-matching results (true: enable, false: disable)");
+	SETICB("search.max_hits", 0, &cb_search_max_hits, "Maximum number of hits (0: no limit)");
+	SETI("search.from", 0, "Search start address");
+	SETI("search.to", UT64_MAX, "Search end address");
 	n = NODECB("search.in", "io.maps", &cb_search_in);
 	SETDESC(n, "Specify search boundaries");
 	SETOPTIONS(n, "raw", "block",
@@ -3825,15 +3791,16 @@ RZ_API int rz_core_config_init(RzCore *core) {
 		"dbg.map", "dbg.maps", "dbg.maps.rwx", "dbg.maps.r", "dbg.maps.rw", "dbg.maps.rx", "dbg.maps.wx", "dbg.maps.x",
 		"analysis.fcn", "analysis.bb",
 		NULL);
-	SETICB("search.kwidx", 0, &cb_search_kwidx, "Store last search index count");
-	SETCB("search.prefix", "hit", &cb_search_prefix, "Prefix name in search hits label");
-	SETBPREF("search.show", "true", "Show search results");
-	n = NODECB("search.case_sensitive", "smart", &cb_search_case_sensitive);
+
+	/* grep */
+	n = NODECB("grep.case_sensitive", "smart", &cb_grep_case_sensitive);
 	SETDESC(n, "Set grep(~) as case smart/sensitive/insensitive");
 	SETOPTIONS(n, "smart", "sensitive", "insensitive", NULL);
 
 	/* rop */
 	SETI("rop.len", 5, "Maximum ROP gadget length");
+	SETI("rop.alignment", 0, "ROP gadget memory alignment");
+	SETI("rop.max_count", 0, "ROP gadget max number of results");
 	SETBPREF("rop.cache", "false", "Cache rop gadget results(experimental)");
 	SETBPREF("rop.subchains", "false", "Display every length gadget from rop.len=X to 2 in /Rl");
 	SETBPREF("rop.conditional", "false", "Include conditional jump, calls and returns in ropsearch");

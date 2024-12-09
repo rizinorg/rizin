@@ -39,6 +39,7 @@ static bool magic_find(void *user, ut64 address, const ut8 *buffer, size_t size,
  * \return     On success returns a valid pointer, otherwise NULL
  */
 RZ_API RZ_OWN RzSearchCollection *rz_search_collection_magic(RZ_NONNULL const char *magic_dir) {
+	rz_return_val_if_fail(magic_dir, NULL);
 	if (RZ_STR_ISEMPTY(magic_dir)) {
 		RZ_LOG_ERROR("search: cannot initialize RzMagic without a valid magic dir\n");
 		return NULL;

@@ -697,7 +697,7 @@ RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries_debug_program(RZ_NO
 }
 
 /**
- * \brief      Returns a list of boundaries (as RzIOMap), based on the selected mode; see [search/analysis/zoom/[in/from/to]] for available modes.
+ * \brief      Returns a list of boundaries (as RzIOMap), based on the selected mode; see [search/analysis/zoom].in for available modes.
  *
  * \param      core      The RzCore to use
  * \param      from_key  The [search|analysis|zoom].from keyword to use in RzConfig
@@ -710,12 +710,25 @@ RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries_select(RZ_NONNULL R
 	rz_return_val_if_fail(core && from_key && to_key && in_key, NULL);
 
 	RzInterval interval;
+	const char *use_mode = rz_config_get(core->config, in_key);
 	ut64 from = rz_config_get_i(core->config, from_key);
 	ut64 to = rz_config_get_i(core->config, to_key);
-	const char *use_mode = rz_config_get(core->config, in_key);
+
+	if (from > to) {
+		RZ_LOG_ERROR("core: cannot find boundaries when '%s' is greater than '%s'\n", from_key, to_key);
+		return NULL;
+	} else if (from == to && from != UT64_MAX) {
+		RZ_LOG_ERROR("core: cannot find boundaries when '%s' is equal to '%s'\n", from_key, to_key);
+		return NULL;
+	}
 
 	interval.addr = from;
 	interval.size = to - from;
+	if (interval.addr == UT64_MAX && !interval.size) {
+		RZ_LOG_WARN("core: '%s' and '%s' are invalid so boundaries will be searched between [0, 0x%" PFMT64x "]\n", from_key, to_key, UT64_MAX);
+		interval.addr = 0;
+		interval.size = UT64_MAX;
+	}
 
 	if (!strcmp(use_mode, "raw") || !strcmp(use_mode, "file")) {
 		return rz_core_get_boundaries_raw(core, interval);

@@ -115,6 +115,7 @@ typedef struct rz_rop_search_context_t {
 	ut64 max_count; ///< Maximum number of hits (0: no limit).
 	ut64 from; ///< Start address to start rop search.
 	ut64 to; ///< End address to stop rop search.
+	ut64 alignment; ///< Memory alignment
 	RzList /*<RzRopEndListPair *>*/ *end_list; ///< List of end gadgets.
 	HtSU *unique_hitlists; ///< Cache unique ROP hitlists.
 	bool ret_val; ///< Flag to indicate return the search results.

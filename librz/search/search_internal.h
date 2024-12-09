@@ -11,7 +11,6 @@
 
 #define RZ_SEARCH_AES_LENGTH         40
 #define RZ_SEARCH_PRIVATE_KEY_LENGTH 11
-#define RZ_SEARCH_MIN_BUFFER_SIZE    512u
 #define RZ_SEARCH_MAX_HEX_PATTERN    UT16_MAX
 
 typedef void (*RzSearchFreeCallback)(void *user);
@@ -26,11 +25,10 @@ struct rz_search_collection_t {
 };
 
 struct rz_search_opt_t {
-	bool backwards;
-	bool allow_overlaps;
 	bool inverse_match;
 	size_t buffer_size;
-	size_t max_threads;
+	size_t max_hits;
+	RzThreadNCores max_threads;
 
 	// cancel callback
 	void *cancel_usr;

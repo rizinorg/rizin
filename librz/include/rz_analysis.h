@@ -2275,8 +2275,8 @@ RZ_API void rz_analysis_rtti_print_at_vtable(RzAnalysis *analysis, ut64 addr, Rz
 RZ_API void rz_analysis_rtti_print_all(RzAnalysis *analysis, RzOutputMode mode);
 RZ_API void rz_analysis_rtti_recover_all(RzAnalysis *analysis);
 
-RZ_API RzSearchCollection *rz_analysis_preludes(RzAnalysis *analysis);
-RZ_API bool rz_analysis_is_prelude(RzAnalysis *analysis, const ut8 *data, int len);
+RZ_API RZ_OWN RzSearchCollection *rz_analysis_preludes(RZ_NONNULL RzAnalysis *analysis);
+RZ_API bool rz_analysis_is_prelude(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL const ut8 *data, size_t len);
 
 /* classes */
 typedef enum {

@@ -90,7 +90,7 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_search_run(RZ_NONNULL RzSearchOpt *
 	RzThreadQueue *hits = NULL;
 	RzThread *cancel_th = NULL;
 
-	if (opt->buffer_size < 1) {
+	if (opt->buffer_size < RZ_SEARCH_MIN_BUFFER_SIZE) {
 		RZ_LOG_ERROR("search: cannot search when buffer size is less than %u bytes.\n", RZ_SEARCH_MIN_BUFFER_SIZE);
 		return NULL;
 	}

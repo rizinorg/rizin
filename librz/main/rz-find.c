@@ -27,9 +27,8 @@ typedef enum {
 	SEARCH_MODE_LAST
 } search_mode;
 
-typedef struct {
+typedef struct rz_find_options {
 	bool showstr;
-	bool rad;
 	bool identify;
 	bool import; /* search within import table */
 	bool symbol; /* search within symbol table */
@@ -51,15 +50,15 @@ typedef struct {
 	const char *curfile;
 	const char *comma;
 	const char *exec_command;
-} RzfindOptions;
+} RzFindOptions;
 
-static void rzfind_options_fini(RzfindOptions *ro) {
+static void rzfind_options_fini(RzFindOptions *ro) {
 	free(ro->buf);
 	ro->cur = 0;
 }
 
-static void rzfind_options_init(RzfindOptions *ro) {
-	memset(ro, 0, sizeof(RzfindOptions));
+static void rzfind_options_init(RzFindOptions *ro) {
+	memset(ro, 0, sizeof(RzFindOptions));
 	ro->mode = SEARCH_MODE_STRING;
 	ro->bsize = 4096;
 	ro->to = UT64_MAX;
@@ -67,12 +66,12 @@ static void rzfind_options_init(RzfindOptions *ro) {
 	ro->exec_command = NULL;
 }
 
-static int rzfind_open(RzfindOptions *ro, const char *file);
+static int rzfind_open(RzFindOptions *ro, const char *file);
 
-static bool hit(RzSearchKeyword *kw, void *user, ut64 addr) {
-	RzfindOptions *ro = (RzfindOptions *)user;
+static bool hit(RzFindOptions *ro, RzSearchHit *hit) {
+	ut64 addr = hit->address;
 	int delta = addr - ro->cur;
-	if (ro->cur > addr && (ro->cur - addr == kw->keyword_length - 1)) {
+	if (ro->cur > addr && (ro->cur - addr == hit->size - 1)) {
 		// This case occurs when there is hit in search left over
 		delta = ro->cur - addr;
 	}
@@ -140,8 +139,6 @@ static bool hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 		printf("%s{\"offset\":%" PFMT64d ",\"type\":\"%s\",\"data\":\"%s\"}",
 			ro->comma, addr, type, str);
 		ro->comma = ",";
-	} else if (ro->rad) {
-		printf("f hit%d_%d @ 0x%08" PFMT64x " ; %s\n", 0, kw->count, addr, ro->curfile);
 	} else {
 		if (ro->showstr) {
 			printf("0x%" PFMT64x " %s\n", addr, str);
@@ -163,6 +160,17 @@ static bool hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 		free(command);
 	}
 	return true;
+}
+
+static void rz_find_run_search(RzFindOptions *ro, RzList *hits) {
+	RzListIter *it = NULL;
+	RzSearchHit *hit = NULL;
+	rz_list_foreach (hits, it, hit) {
+		if (!hit(ro, hit) && !ro.nonstop) {
+			break;
+		}
+	}
+
 }
 
 static void print_bin_string(RzBinFile *bf, RzBinString *string, PJ *pj) {
@@ -200,7 +208,6 @@ static int show_help(const char *argv0, int line) {
 	}
 	const char *options[] = {
 		// clang-format off
-		"-a",    "[align]", "Only accept aligned hits",
 		"-b",    "[size]",  "Set block size",
 		"-e",    "[regex]", "Search for regex matches (can be used multiple times)",
 		"-E",    "[cmd]",   "Execute command for each file found",
@@ -212,9 +219,8 @@ static int show_help(const char *argv0, int line) {
 		"-m",    "",        "Magic search, file-type carver",
 		"-M",    "[str]",   "Set a binary mask to be applied on keywords",
 		"-n",    "",        "Do not stop on read errors",
-		"-r",    "",        "Print using rizin commands",
 		"-s",    "[str]",   "Search for a specific string (can be used multiple times)",
-		"-w",    "[str]",   "Search for a specific wide string (can be used multiple times). Assumes str is UTF-8.",
+		"-w",    "[enc]",   "Forces a specific string encoding.",
 		"-I",    "[str]",   "Search for an entry in import table.",
 		"-S",    "[str]",   "Search for a symbol in symbol table.",
 		"-t",    "[to]",    "Stop search at address 'to'",
@@ -226,24 +232,50 @@ static int show_help(const char *argv0, int line) {
 		"-Z",    "",        "Show string found on each search hit",
 		// clang-format on
 	};
-	size_t maxOptionAndArgLength = 0;
-	for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
+	size_t max_arg_len = 0;
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(options); i += 3) {
 		size_t optionLength = strlen(options[i]);
 		size_t argLength = strlen(options[i + 1]);
 		size_t totalLength = optionLength + argLength;
-		if (totalLength > maxOptionAndArgLength) {
-			maxOptionAndArgLength = totalLength;
+		if (totalLength > max_arg_len) {
+			max_arg_len = totalLength;
 		}
 	}
-	for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
-		if (i + 1 < sizeof(options) / sizeof(options[0])) {
-			rz_print_colored_help_option(options[i], options[i + 1], options[i + 2], maxOptionAndArgLength);
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(options); i += 3) {
+		rz_print_colored_help_option(options[i], options[i + 1], options[i + 2], max_arg_len);
+	}
+
+	printf("Supported encodings (-w option):\n");
+	const char *encodings[] = {
+		// clang-format off
+		"ascii", "ASCII from 0 to 0x7f"
+		"mutf8", "modified utf8"
+		"utf8", "utf-8"
+		"utf16le", "utf-16 little endian"
+		"utf32le", "utf-32 little endian"
+		"utf16be", "utf-16 big endian"
+		"utf32be", "utf-32 big endian"
+		"ibm037", "ibm037"
+		"ibm290", "ibm290"
+		"ebcdices", "ebcdic ES"
+		"ebcdicuk", "ebcdic UK"
+		"ebcdicus", "ebcdic US"
+		// clang-format on
+	}
+	max_arg_len = 0;
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(encodings); i += 2) {
+		size_t encoding = strlen(encodings[i]);
+		if (encoding > max_arg_len) {
+			max_arg_len = encoding;
 		}
+	}
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(encodings); i += 2) {
+		rz_print_colored_help_option(encodings[i], "", encodings[i + 1], max_arg_len);
 	}
 	return 0;
 }
 
-static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data, int datalen) {
+static int rzfind_open_file(RzFindOptions *ro, const char *file, const ut8 *data, int datalen) {
 	RzListIter *iter;
 	RzSearchOpt *rs = NULL;
 	const char *kw;
@@ -351,7 +383,7 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 		rz_io_write_at(io, 0, data, datalen);
 	}
 
-	rs = rz_search_new(ro->mode);
+	rs = rz_search_opt_new();
 	if (!rs) {
 		result = 1;
 		goto err;
@@ -363,7 +395,7 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 		result = 1;
 		goto err;
 	}
-	rs->align = ro->align;
+
 	rz_search_set_callback(rs, &hit, ro);
 	ut64 to = ro->to;
 	if (to == -1) {
@@ -426,13 +458,6 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 		free(tostr);
 		goto done;
 	}
-	if (ro->mode == SEARCH_MODE_ESIL) {
-		/* TODO: implement using api */
-		rz_list_foreach (ro->keywords, iter, kw) {
-			rz_sys_cmdf("rizin -qc \"/E %s\" \"%s\"", kw, efile);
-		}
-		goto done;
-	}
 	if (ro->mode == SEARCH_MODE_KEYWORD) {
 		rz_list_foreach (ro->keywords, iter, kw) {
 			if (ro->hexstr) {
@@ -488,7 +513,7 @@ err:
 	return result;
 }
 
-static int rzfind_open_dir(RzfindOptions *ro, const char *dir) {
+static int rzfind_open_dir(RzFindOptions *ro, const char *dir) {
 	RzListIter *iter;
 	char *fullpath;
 	char *fname = NULL;
@@ -510,7 +535,7 @@ static int rzfind_open_dir(RzfindOptions *ro, const char *dir) {
 	return 0;
 }
 
-static int rzfind_open(RzfindOptions *ro, const char *file) {
+static int rzfind_open(RzFindOptions *ro, const char *file) {
 	if (!strcmp(file, "-")) {
 		int sz = 0;
 		ut8 *buf = (ut8 *)rz_stdin_slurp(&sz);
@@ -529,7 +554,7 @@ static int rzfind_open(RzfindOptions *ro, const char *file) {
 }
 
 RZ_API int rz_main_rz_find(int argc, const char **argv) {
-	RzfindOptions ro;
+	RzFindOptions ro;
 	rzfind_options_init(&ro);
 
 	int c;
@@ -539,12 +564,6 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 	rz_getopt_init(&opt, argc, argv, "a:ie:b:jmM:s:w:S:I:x:Xzf:F:t:E:rqnhvZ");
 	while ((c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
-		case 'a':
-			ro.align = rz_num_math(NULL, opt.arg);
-			break;
-		case 'r':
-			ro.rad = true;
-			break;
 		case 'i':
 			ro.identify = true;
 			break;
