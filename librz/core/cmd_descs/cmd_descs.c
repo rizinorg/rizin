@@ -14,6 +14,9 @@ static const RzCmdDescDetail alias_details[2];
 static const RzCmdDescDetail oparen__details[2];
 static const RzCmdDescDetail pointer_details[2];
 static const RzCmdDescDetail interpret_macro_multiple_details[2];
+static const RzCmdDescDetail cmd_search_hash_block_details[2];
+static const RzCmdDescDetail slash_v_details[2];
+static const RzCmdDescDetail cmd_search_hex_details[2];
 static const RzCmdDescDetail base64_encode_details[2];
 static const RzCmdDescDetail base64_decode_details[2];
 static const RzCmdDescDetail print_boundaries_prot_details[2];
@@ -105,10 +108,25 @@ static const RzCmdDescArg interpret_output_args[2];
 static const RzCmdDescArg interpret_pipe_args[2];
 static const RzCmdDescArg interpret_macro_args[4];
 static const RzCmdDescArg interpret_macro_multiple_args[4];
+static const RzCmdDescArg cmd_search_assemble_args[2];
+static const RzCmdDescArg cmd_search_regex_raw_sensitive_args[2];
+static const RzCmdDescArg cmd_search_regex_raw_insensitive_args[2];
+static const RzCmdDescArg cmd_search_graph_path_args[3];
+static const RzCmdDescArg cmd_search_graph_path_follow_jumps_args[3];
+static const RzCmdDescArg cmd_search_hash_block_args[3];
+static const RzCmdDescArg cmd_search_entropy_section_args[2];
+static const RzCmdDescArg cmd_search_reference_args[2];
 static const RzCmdDescArg cmd_info_gadget_args[2];
 static const RzCmdDescArg cmd_search_gadget_args[2];
 static const RzCmdDescArg cmd_query_gadget_args[2];
 static const RzCmdDescArg cmd_detail_gadget_args[2];
+static const RzCmdDescArg cmd_search_value_8_args[2];
+static const RzCmdDescArg cmd_search_value_16_args[2];
+static const RzCmdDescArg cmd_search_value_32_args[2];
+static const RzCmdDescArg cmd_search_value_64_args[2];
+static const RzCmdDescArg cmd_search_hex_args[2];
+static const RzCmdDescArg cmd_search_string_sensitive_args[3];
+static const RzCmdDescArg cmd_search_string_insensitive_args[3];
 static const RzCmdDescArg remote_args[3];
 static const RzCmdDescArg remote_send_args[3];
 static const RzCmdDescArg remote_add_args[2];
@@ -1378,11 +1396,180 @@ static const RzCmdDescHelp interpret_macro_multiple_help = {
 	.args = interpret_macro_multiple_args,
 };
 
-static const RzCmdDescHelp cmd_search_help = {
+static const RzCmdDescHelp slash__help = {
 	.summary = "Search for bytes, regexps, patterns, ..",
 };
+static const RzCmdDescArg cmd_search_assemble_args[] = {
+	{
+		.name = "opcodes",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_search_assemble_help = {
+	.summary = "Assemble the opcodes and search its bytes",
+	.args = cmd_search_assemble_args,
+};
+
+static const RzCmdDescHelp slash_c_help = {
+	.summary = "Cryptographic material search",
+};
+static const RzCmdDescArg cmd_search_aes_key_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_search_aes_key_help = {
+	.summary = "Search for AES keys",
+	.args = cmd_search_aes_key_args,
+};
+
+static const RzCmdDescArg cmd_search_private_key_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_search_private_key_help = {
+	.summary = "Search for private RSA/ECC/EdDSA keys",
+	.args = cmd_search_private_key_args,
+};
+
+static const RzCmdDescHelp slash_e_help = {
+	.summary = "Raw regular expression search.",
+};
+static const RzCmdDescArg cmd_search_regex_raw_sensitive_args[] = {
+	{
+		.name = "regex",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_search_regex_raw_sensitive_help = {
+	.summary = "Raw regular expression search (case-sensitive).",
+	.args = cmd_search_regex_raw_sensitive_args,
+};
+
+static const RzCmdDescArg cmd_search_regex_raw_insensitive_args[] = {
+	{
+		.name = "regex",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_search_regex_raw_insensitive_help = {
+	.summary = "Raw regular expression search (case-insensitive).",
+	.args = cmd_search_regex_raw_insensitive_args,
+};
+
+static const RzCmdDescHelp slash_g_help = {
+	.summary = "Search for all graph paths A to B (/gg follow jumps, see search.count and analysis.depth).",
+};
+static const RzCmdDescArg cmd_search_graph_path_args[] = {
+	{
+		.name = "from",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "to",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_search_graph_path_help = {
+	.summary = "Search for all graph paths A to B (does not follow jumps).",
+	.args = cmd_search_graph_path_args,
+};
+
+static const RzCmdDescArg cmd_search_graph_path_follow_jumps_args[] = {
+	{
+		.name = "from",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "to",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_search_graph_path_follow_jumps_help = {
+	.summary = "Search for all graph paths A to B (follow jumps, see `search.count` and `analysis.depth`).",
+	.args = cmd_search_graph_path_follow_jumps_args,
+};
+
+static const RzCmdDescDetailEntry cmd_search_hash_block_Usage_space_example_detail_entries[] = {
+	{ .text = "MD5 hash search within blocks of 512 bytes.", .arg_str = NULL, .comment = "/h md5 0bc8f8c426b74ffaedac8330a7464014 @! 512" },
+	{ 0 },
+};
+static const RzCmdDescDetail cmd_search_hash_block_details[] = {
+	{ .name = "Usage example", .entries = cmd_search_hash_block_Usage_space_example_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg cmd_search_hash_block_args[] = {
+	{
+		.name = "algo",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "hash",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_search_hash_block_help = {
+	.summary = "Search for blocks that have the same hash (see also command `ph`).",
+	.details = cmd_search_hash_block_details,
+	.args = cmd_search_hash_block_args,
+};
+
+static const RzCmdDescArg cmd_search_magic_const_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_search_magic_const_help = {
+	.summary = "Magic constants search.",
+	.args = cmd_search_magic_const_args,
+};
+
+static const RzCmdDescArg cmd_search_entropy_section_args[] = {
+	{
+		.name = "threshold",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_search_entropy_section_help = {
+	.summary = "Entropy search on sections by grouping in blocks.",
+	.args = cmd_search_entropy_section_args,
+};
+
+static const RzCmdDescArg cmd_search_reference_args[] = {
+	{
+		.name = "address",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_search_reference_help = {
+	.summary = "Reference search.",
+	.args = cmd_search_reference_args,
+};
+
 static const RzCmdDescHelp slash_R_help = {
-	.summary = "List ROP Gadgets",
+	.summary = "Search, List, Query for ROP Gadgets",
 };
 static const RzCmdDescArg cmd_info_gadget_args[] = {
 	{
@@ -1443,6 +1630,140 @@ static const RzCmdDescArg cmd_detail_gadget_args[] = {
 static const RzCmdDescHelp cmd_detail_gadget_help = {
 	.summary = "Gadget detail info",
 	.args = cmd_detail_gadget_args,
+};
+
+static const RzCmdDescDetailEntry slash_v_Usage_space_example_detail_entries[] = {
+	{ .text = "512 value search of its 32-bit representation", .arg_str = NULL, .comment = "/v4 512" },
+	{ 0 },
+};
+static const RzCmdDescDetail slash_v_details[] = {
+	{ .name = "Usage example", .entries = slash_v_Usage_space_example_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescHelp slash_v_help = {
+	.summary = "Value search.",
+	.details = slash_v_details,
+};
+static const RzCmdDescArg cmd_search_value_8_args[] = {
+	{
+		.name = "value8",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_search_value_8_help = {
+	.summary = "8-bit value search.",
+	.args = cmd_search_value_8_args,
+};
+
+static const RzCmdDescArg cmd_search_value_16_args[] = {
+	{
+		.name = "value16",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_search_value_16_help = {
+	.summary = "16-bit size value search.",
+	.args = cmd_search_value_16_args,
+};
+
+static const RzCmdDescArg cmd_search_value_32_args[] = {
+	{
+		.name = "value32",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_search_value_32_help = {
+	.summary = "32-bit size value search.",
+	.args = cmd_search_value_32_args,
+};
+
+static const RzCmdDescArg cmd_search_value_64_args[] = {
+	{
+		.name = "value64",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_search_value_64_help = {
+	.summary = "64-bit size value search.",
+	.args = cmd_search_value_64_args,
+};
+
+static const RzCmdDescDetailEntry cmd_search_hex_Usage_space_example_detail_entries[] = {
+	{ .text = "Hexadecimal search of the exact bytes", .arg_str = NULL, .comment = "/x ffcc33" },
+	{ .text = "Hexadecimal search of the bytes with ignored nibbles", .arg_str = NULL, .comment = "/x ff..33" },
+	{ .text = "Hexadecimal search of the bytes with bytes mask", .arg_str = NULL, .comment = "/x ff43:ffd0" },
+	{ 0 },
+};
+static const RzCmdDescDetail cmd_search_hex_details[] = {
+	{ .name = "Usage example", .entries = cmd_search_hex_Usage_space_example_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg cmd_search_hex_args[] = {
+	{
+		.name = "bytes",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_search_hex_help = {
+	.summary = "Raw hexadecimal search.",
+	.details = cmd_search_hex_details,
+	.args = cmd_search_hex_args,
+};
+
+static const RzCmdDescHelp slash_z_help = {
+	.summary = "String search.",
+};
+static const char *cmd_search_string_sensitive_encoding_choices[] = { "ascii", "8bit", "mutf8", "utf8", "utf16le", "utf32le", "utf16be", "utf32be", "ibm037", "ibm290", "ebcdices", "ebcdicuk", "ebcdicus", NULL };
+static const RzCmdDescArg cmd_search_string_sensitive_args[] = {
+	{
+		.name = "string",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "encoding",
+		.type = RZ_CMD_ARG_TYPE_CHOICES,
+		.optional = true,
+		.choices.choices = cmd_search_string_sensitive_encoding_choices,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_search_string_sensitive_help = {
+	.summary = "String search (case-sensitive).",
+	.args = cmd_search_string_sensitive_args,
+};
+
+static const char *cmd_search_string_insensitive_encoding_choices[] = { "ascii", "8bit", "mutf8", "utf8", "utf16le", "utf32le", "utf16be", "utf32be", "ibm037", "ibm290", "ebcdices", "ebcdicuk", "ebcdicus", NULL };
+static const RzCmdDescArg cmd_search_string_insensitive_args[] = {
+	{
+		.name = "string",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "encoding",
+		.type = RZ_CMD_ARG_TYPE_CHOICES,
+		.optional = true,
+		.choices.choices = cmd_search_string_insensitive_encoding_choices,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_search_string_insensitive_help = {
+	.summary = "String search (case-insensitive).",
+	.args = cmd_search_string_insensitive_args,
 };
 
 static const RzCmdDescHelp R_help = {
@@ -16869,10 +17190,6 @@ static const RzCmdDescHelp seek_undo_reset_help = {
 	.args = seek_undo_reset_args,
 };
 
-static const RzCmdDescHelp seek_search_help = {
-	.summary = "Seek to the first hit of a search",
-};
-
 static const RzCmdDescArg seek_asz_args[] = {
 	{
 		.name = "align",
@@ -19817,9 +20134,53 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *interpret_macro_multiple_cd = rz_cmd_desc_argv_new(core->rcmd, dot__cd, "..(", rz_interpret_macro_multiple_handler, &interpret_macro_multiple_help);
 	rz_warn_if_fail(interpret_macro_multiple_cd);
 
-	RzCmdDesc *cmd_search_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "/", rz_cmd_search, &cmd_search_help);
-	rz_warn_if_fail(cmd_search_cd);
-	RzCmdDesc *slash_R_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_search_cd, "/R", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_info_gadget_handler, &cmd_info_gadget_help, &slash_R_help);
+	RzCmdDesc *slash__cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "/", NULL, NULL, &slash__help);
+	rz_warn_if_fail(slash__cd);
+	RzCmdDesc *cmd_search_assemble_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash__cd, "/a", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_assemble_handler, &cmd_search_assemble_help);
+	rz_warn_if_fail(cmd_search_assemble_cd);
+	rz_cmd_desc_set_default_mode(cmd_search_assemble_cd, RZ_OUTPUT_MODE_STANDARD);
+
+	RzCmdDesc *slash_c_cd = rz_cmd_desc_group_new(core->rcmd, slash__cd, "/c", NULL, NULL, &slash_c_help);
+	rz_warn_if_fail(slash_c_cd);
+	RzCmdDesc *cmd_search_aes_key_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_c_cd, "/ca", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_aes_key_handler, &cmd_search_aes_key_help);
+	rz_warn_if_fail(cmd_search_aes_key_cd);
+	rz_cmd_desc_set_default_mode(cmd_search_aes_key_cd, RZ_OUTPUT_MODE_STANDARD);
+
+	RzCmdDesc *cmd_search_private_key_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_c_cd, "/cp", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_private_key_handler, &cmd_search_private_key_help);
+	rz_warn_if_fail(cmd_search_private_key_cd);
+	rz_cmd_desc_set_default_mode(cmd_search_private_key_cd, RZ_OUTPUT_MODE_STANDARD);
+
+	RzCmdDesc *slash_e_cd = rz_cmd_desc_group_state_new(core->rcmd, slash__cd, "/e", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_regex_raw_sensitive_handler, &cmd_search_regex_raw_sensitive_help, &slash_e_help);
+	rz_warn_if_fail(slash_e_cd);
+	rz_cmd_desc_set_default_mode(slash_e_cd, RZ_OUTPUT_MODE_STANDARD);
+	RzCmdDesc *cmd_search_regex_raw_insensitive_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_e_cd, "/ei", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_regex_raw_insensitive_handler, &cmd_search_regex_raw_insensitive_help);
+	rz_warn_if_fail(cmd_search_regex_raw_insensitive_cd);
+	rz_cmd_desc_set_default_mode(cmd_search_regex_raw_insensitive_cd, RZ_OUTPUT_MODE_STANDARD);
+
+	RzCmdDesc *slash_g_cd = rz_cmd_desc_group_state_new(core->rcmd, slash__cd, "/g", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_graph_path_handler, &cmd_search_graph_path_help, &slash_g_help);
+	rz_warn_if_fail(slash_g_cd);
+	rz_cmd_desc_set_default_mode(slash_g_cd, RZ_OUTPUT_MODE_STANDARD);
+	RzCmdDesc *cmd_search_graph_path_follow_jumps_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_g_cd, "/gg", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_graph_path_follow_jumps_handler, &cmd_search_graph_path_follow_jumps_help);
+	rz_warn_if_fail(cmd_search_graph_path_follow_jumps_cd);
+	rz_cmd_desc_set_default_mode(cmd_search_graph_path_follow_jumps_cd, RZ_OUTPUT_MODE_STANDARD);
+
+	RzCmdDesc *cmd_search_hash_block_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash__cd, "/h", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_hash_block_handler, &cmd_search_hash_block_help);
+	rz_warn_if_fail(cmd_search_hash_block_cd);
+	rz_cmd_desc_set_default_mode(cmd_search_hash_block_cd, RZ_OUTPUT_MODE_STANDARD);
+
+	RzCmdDesc *cmd_search_magic_const_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash__cd, "/m", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_magic_const_handler, &cmd_search_magic_const_help);
+	rz_warn_if_fail(cmd_search_magic_const_cd);
+	rz_cmd_desc_set_default_mode(cmd_search_magic_const_cd, RZ_OUTPUT_MODE_STANDARD);
+
+	RzCmdDesc *cmd_search_entropy_section_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash__cd, "/E", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_entropy_section_handler, &cmd_search_entropy_section_help);
+	rz_warn_if_fail(cmd_search_entropy_section_cd);
+	rz_cmd_desc_set_default_mode(cmd_search_entropy_section_cd, RZ_OUTPUT_MODE_STANDARD);
+
+	RzCmdDesc *cmd_search_reference_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash__cd, "/r", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_reference_handler, &cmd_search_reference_help);
+	rz_warn_if_fail(cmd_search_reference_cd);
+	rz_cmd_desc_set_default_mode(cmd_search_reference_cd, RZ_OUTPUT_MODE_STANDARD);
+
+	RzCmdDesc *slash_R_cd = rz_cmd_desc_group_state_new(core->rcmd, slash__cd, "/R", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_info_gadget_handler, &cmd_info_gadget_help, &slash_R_help);
 	rz_warn_if_fail(slash_R_cd);
 	rz_cmd_desc_set_default_mode(slash_R_cd, RZ_OUTPUT_MODE_STANDARD);
 	RzCmdDesc *cmd_search_gadget_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_R_cd, "/R/", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_gadget_handler, &cmd_search_gadget_help);
@@ -19833,6 +20194,35 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_detail_gadget_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_R_cd, "/Rg", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_detail_gadget_handler, &cmd_detail_gadget_help);
 	rz_warn_if_fail(cmd_detail_gadget_cd);
 	rz_cmd_desc_set_default_mode(cmd_detail_gadget_cd, RZ_OUTPUT_MODE_STANDARD);
+
+	RzCmdDesc *slash_v_cd = rz_cmd_desc_group_new(core->rcmd, slash__cd, "/v", NULL, NULL, &slash_v_help);
+	rz_warn_if_fail(slash_v_cd);
+	RzCmdDesc *cmd_search_value_8_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_v_cd, "/v1", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_value_8_handler, &cmd_search_value_8_help);
+	rz_warn_if_fail(cmd_search_value_8_cd);
+	rz_cmd_desc_set_default_mode(cmd_search_value_8_cd, RZ_OUTPUT_MODE_STANDARD);
+
+	RzCmdDesc *cmd_search_value_16_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_v_cd, "/v2", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_value_16_handler, &cmd_search_value_16_help);
+	rz_warn_if_fail(cmd_search_value_16_cd);
+	rz_cmd_desc_set_default_mode(cmd_search_value_16_cd, RZ_OUTPUT_MODE_STANDARD);
+
+	RzCmdDesc *cmd_search_value_32_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_v_cd, "/v4", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_value_32_handler, &cmd_search_value_32_help);
+	rz_warn_if_fail(cmd_search_value_32_cd);
+	rz_cmd_desc_set_default_mode(cmd_search_value_32_cd, RZ_OUTPUT_MODE_STANDARD);
+
+	RzCmdDesc *cmd_search_value_64_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_v_cd, "/v8", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_value_64_handler, &cmd_search_value_64_help);
+	rz_warn_if_fail(cmd_search_value_64_cd);
+	rz_cmd_desc_set_default_mode(cmd_search_value_64_cd, RZ_OUTPUT_MODE_STANDARD);
+
+	RzCmdDesc *cmd_search_hex_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash__cd, "/x", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_hex_handler, &cmd_search_hex_help);
+	rz_warn_if_fail(cmd_search_hex_cd);
+	rz_cmd_desc_set_default_mode(cmd_search_hex_cd, RZ_OUTPUT_MODE_STANDARD);
+
+	RzCmdDesc *slash_z_cd = rz_cmd_desc_group_state_new(core->rcmd, slash__cd, "/z", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_string_sensitive_handler, &cmd_search_string_sensitive_help, &slash_z_help);
+	rz_warn_if_fail(slash_z_cd);
+	rz_cmd_desc_set_default_mode(slash_z_cd, RZ_OUTPUT_MODE_STANDARD);
+	RzCmdDesc *cmd_search_string_insensitive_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_z_cd, "/zi", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_string_insensitive_handler, &cmd_search_string_insensitive_help);
+	rz_warn_if_fail(cmd_search_string_insensitive_cd);
+	rz_cmd_desc_set_default_mode(cmd_search_string_insensitive_cd, RZ_OUTPUT_MODE_STANDARD);
 
 	RzCmdDesc *R_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "R", rz_remote_handler, &remote_help, &R_help);
 	rz_warn_if_fail(R_cd);
@@ -23088,9 +23478,6 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *seek_undo_reset_cd = rz_cmd_desc_argv_new(core->rcmd, sh_cd, "sh-", rz_seek_undo_reset_handler, &seek_undo_reset_help);
 	rz_warn_if_fail(seek_undo_reset_cd);
-
-	RzCmdDesc *seek_search_cd = rz_cmd_desc_oldinput_new(core->rcmd, s_cd, "s/", rz_seek_search, &seek_search_help);
-	rz_warn_if_fail(seek_search_cd);
 
 	RzCmdDesc *seek_asz_cd = rz_cmd_desc_argv_new(core->rcmd, s_cd, "sa", rz_seek_asz_handler, &seek_asz_help);
 	rz_warn_if_fail(seek_asz_cd);
