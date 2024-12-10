@@ -193,9 +193,14 @@ RZ_API RzSubprocessOutput *rz_test_run_cmd_test(RzTestRunConfig *config, RzCmdTe
 	return out;
 }
 
+RZ_API RZ_OWN RzStrBuf *rz_test_regex_full_match_str(RZ_NONNULL const char *pattern, RZ_NONNULL const char *text) {
+	return rz_regex_full_match_str(pattern, text, RZ_REGEX_ZERO_TERMINATED, RZ_REGEX_EXTENDED, RZ_REGEX_DEFAULT,
+		"\n");
+}
+
 RZ_API bool rz_test_cmp_cmd_output(const char *output, const char *expect, const char *regexp) {
 	if (regexp) {
-		RzStrBuf *match_str = rz_regex_full_match_str(regexp, output, RZ_REGEX_ZERO_TERMINATED, RZ_REGEX_EXTENDED, RZ_REGEX_DEFAULT, "\n");
+		RzStrBuf *match_str = rz_test_regex_full_match_str(regexp, output);
 		bool equal = false;
 		ut32 expect_len = strlen(expect);
 		if (expect_len > 0 && expect[expect_len - 1] == '\n') {

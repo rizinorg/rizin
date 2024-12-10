@@ -206,6 +206,7 @@ RZ_API RzSubprocessOutput *rz_test_run_cmd_test(RzTestRunConfig *config, RzCmdTe
 RZ_API bool rz_test_check_cmd_test(RzSubprocessOutput *out, RzCmdTest *test);
 RZ_API bool rz_test_cmp_cmd_output(const char *output, const char *expect, const char *regexp);
 RZ_API bool rz_test_check_jq_available(void);
+RZ_API RZ_OWN RzStrBuf *rz_test_regex_full_match_str(RZ_NONNULL const char *pattern, RZ_NONNULL const char *text);
 RZ_API RzSubprocessOutput *rz_test_run_json_test(RzTestRunConfig *config, RzJsonTest *test, RzTestCmdRunner runner, void *user);
 RZ_API bool rz_test_check_json_test(RzSubprocessOutput *out, RzJsonTest *test);
 RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest *test);
