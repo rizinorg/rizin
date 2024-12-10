@@ -2415,13 +2415,6 @@ static bool cb_print_align(void *user, void *data) {
 	return true;
 }
 
-static bool cb_search_align(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	core->print->addrmod = node->i_value;
-	return rz_search_opt_set_buffer_size(core->search_opts, node->i_value);
-}
-
 static bool cb_search_inverse_match(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;

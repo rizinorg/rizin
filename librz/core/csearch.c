@@ -155,11 +155,15 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_string(RZ_NONNULL RzCor
 	}
 
 	// Copy RzUtilStrScanOptions from RzBin
-	RzUtilStrScanOptions str_opts;
-	memcpy(&str_opts, &core->bin->str_search_cfg, sizeof(str_opts));
-	str_opts.buf_size = rz_config_get_i(core->config, "search.buffer_size");
+	RzUtilStrScanOptions scan_opt = {
+		.buf_size = rz_config_get_i(core->config, "search.buffer_size"),
+		.max_uni_blocks = core->bin->str_search_cfg.max_uni_blocks,
+		.min_str_length = core->bin->str_search_cfg.min_length,
+		.prefer_big_endian = core->analysis->big_endian,
+		.check_ascii_freq = core->bin->str_search_cfg.check_ascii_freq,
+	};
 
-	RzSearchCollection *collection = rz_search_collection_strings(&str_opts, expected, caseless);
+	RzSearchCollection *collection = rz_search_collection_strings(&scan_opt, expected, caseless);
 	if (!collection ||
 		!rz_search_collection_string_add(collection, string)) {
 		rz_search_collection_free(collection);
@@ -312,6 +316,21 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_hex_pattern(RZ_NONNULL 
 		rz_search_collection_free(collection);
 		return NULL;
 	}
+
+	return core_run_search(core, opt, collection);
+}
+
+/**
+ * \brief      Uses the given RzSearchCollection to find matches within the search.in boundaries
+ *
+ * \param      core        The RzCore core
+ * \param      opt         The search options to apply
+ * \param[in]  collection  The RzSearchCollection to use
+ *
+ * \return     On success returns a valid pointer, otherwise NULL
+ */
+RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_collection(RZ_NONNULL RzCore *core, RZ_NONNULL RzSearchOpt *opt, RZ_NONNULL RzSearchCollection *collection) {
+	rz_return_val_if_fail(core && opt && collection, NULL);
 
 	return core_run_search(core, opt, collection);
 }

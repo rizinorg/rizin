@@ -1088,6 +1088,7 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_magic(RZ_NONNULL RzCore
 RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_regex(RZ_NONNULL RzCore *core, RZ_NONNULL RzSearchOpt *opt, RZ_NONNULL const char *regex, bool caseless);
 RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_bytes(RZ_NONNULL RzCore *core, RZ_NONNULL RzSearchOpt *opt, RZ_NONNULL const ut8 *bytes, RZ_NULLABLE const ut8 *mask, size_t size);
 RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_hex_pattern(RZ_NONNULL RzCore *core, RZ_NONNULL RzSearchOpt *opt, RZ_NONNULL const char *hex_pattern);
+RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_collection(RZ_NONNULL RzCore *core, RZ_NONNULL RzSearchOpt *opt, RZ_NONNULL RzSearchCollection *collection);
 
 #define RZ_CORE_BOUNDARIES_PERMS_ANY 0
 #define RZ_CORE_BOUNDARIES_MASK_NONE 0
