@@ -282,7 +282,9 @@ struct rz_core_t {
 	RzLang *lang;
 	RzDebug *dbg;
 	RzFlag *flags;
-	RzSearch *search;
+	char *lastsearch; ///< Legacy search. Will be removed
+	RzSearch *search; ///< Legacy search. Will be removed
+	RzSearchOpt *search_opts;
 	RzEgg *egg;
 	RzCrypto *crypto;
 	RzAGraph *graph;
@@ -318,7 +320,6 @@ struct rz_core_t {
 	int curtab; // current tab
 	int seltab; // selected tab
 	char *cmdremote;
-	char *lastsearch;
 	char *cmdfilter;
 	char *curtheme;
 	bool break_loop;
@@ -1083,6 +1084,7 @@ RZ_API void rz_core_rtr_cmd(RzCore *core, const char *input);
 RZ_API int rz_core_rtr_http(RzCore *core, int launch, int browse, const char *path);
 RZ_API int rz_core_rtr_gdb(RzCore *core, int launch, const char *path);
 
+/// Legacy search
 RZ_API int rz_core_search_preludes(RzCore *core, bool log);
 RZ_API int rz_core_search_prelude(RzCore *core, ut64 from, ut64 to, const ut8 *buf, int blen, const ut8 *mask, int mlen);
 

@@ -37,7 +37,7 @@ RZ_API int rz_search_regexp_update(RzSearch *s, ut64 from, const ut8 *buf, int l
 		rz_pvector_foreach (matches, it) {
 			RzRegexMatch *m = *it;
 			kw->keyword_length = m->len; // For a regex search, the keyword can be of variable length
-			int t = rz_search_hit_new(s, kw, from + m->start);
+			int t = rz_search_legacy_hit_new(s, kw, from + m->start);
 			if (t == 0) {
 				ret = -1;
 				rz_pvector_free(matches);
