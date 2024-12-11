@@ -51,7 +51,7 @@ RZ_API int rz_search_aes_update(RzSearch *s, ut64 from, const ut8 *buf, int len)
 			for (i = 0; i < last; i++) {
 				if (aes128_key_test(buf + i)) {
 					kw->keyword_length = AES128_KEY_LENGTH;
-					t = rz_search_hit_new(s, kw, from + i);
+					t = rz_search_legacy_hit_new(s, kw, from + i);
 					if (!t) {
 						return -1;
 					}
@@ -62,7 +62,7 @@ RZ_API int rz_search_aes_update(RzSearch *s, ut64 from, const ut8 *buf, int len)
 				}
 				if (len - i - AES192_SEARCH_LENGTH >= 0 && aes192_key_test(buf + i)) {
 					kw->keyword_length = AES192_KEY_LENGTH;
-					t = rz_search_hit_new(s, kw, from + i);
+					t = rz_search_legacy_hit_new(s, kw, from + i);
 					if (!t) {
 						return -1;
 					}
@@ -73,7 +73,7 @@ RZ_API int rz_search_aes_update(RzSearch *s, ut64 from, const ut8 *buf, int len)
 				}
 				if (len - i - AES256_SEARCH_LENGTH >= 0 && aes256_key_test(buf + i)) {
 					kw->keyword_length = AES256_KEY_LENGTH;
-					t = rz_search_hit_new(s, kw, from + i);
+					t = rz_search_legacy_hit_new(s, kw, from + i);
 					if (!t) {
 						return -1;
 					}

@@ -110,7 +110,7 @@ RZ_API int rz_search_privkey_update(RzSearch *s, ut64 from, const ut8 *buf, int 
 
 			if (check_fields(buf + index)) {
 				parse_next_field(buf + index, &kw->keyword_length);
-				t = rz_search_hit_new(s, kw, from + index);
+				t = rz_search_legacy_hit_new(s, kw, from + index);
 				if (t > 1) {
 					return s->nhits - old_nhits;
 				}
