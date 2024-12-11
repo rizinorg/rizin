@@ -755,14 +755,22 @@ static void *worker_th(RzTestState *state) {
 	return NULL;
 }
 
+static char *get_matched_str(const char *regexp, const char *str) {
+	RzStrBuf *match_str = rz_test_regex_full_match_str(regexp, str);
+	int len = rz_strbuf_length(match_str);
+	if (len && rz_strbuf_get(match_str)[len - 1] != '\n') { // empty matches are not changed
+		rz_strbuf_append(match_str, "\n");
+	}
+	return rz_strbuf_drain(match_str);
+}
+
 static void print_diff(const char *actual, const char *expected, const char *regexp) {
 	RzDiff *d = NULL;
 	char *uni = NULL;
 	const char *output = actual;
 
 	if (regexp) {
-		RzStrBuf *match_str = rz_test_regex_full_match_str(regexp, actual);
-		output = rz_strbuf_drain(match_str);
+		output = get_matched_str(regexp, actual);
 	}
 
 	d = rz_diff_lines_new(expected, output, NULL);
@@ -1234,15 +1242,6 @@ static void replace_cmd_kv_file(const char *path, ut64 line_begin, ut64 line_end
 	}
 	save_test_file_for_fix(path, newc);
 	free(newc);
-}
-
-static char *get_matched_str(const char *regexp, const char *str) {
-	RzStrBuf *match_str = rz_test_regex_full_match_str(regexp, str);
-	int len = rz_strbuf_length(match_str);
-	if (len && rz_strbuf_get(match_str)[len - 1] != '\n') { // empty matches are not changed
-		rz_strbuf_append(match_str, "\n");
-	}
-	return rz_strbuf_drain(match_str);
 }
 
 static bool interact_fix_cmd(RzTestResultInfo *result, RzPVector /*<RzTestResultInfo *>*/ *fixup_results) {
