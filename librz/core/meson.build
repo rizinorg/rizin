@@ -44,6 +44,7 @@ rz_core_sources = [
   'cplugin.c',
   'cprint.c',
   'creg.c',
+  'csearch.c',
   'csign.c',
   'ctypes.c',
   'cvfile.c',
