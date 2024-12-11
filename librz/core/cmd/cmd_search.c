@@ -6,10 +6,15 @@
 #include <rz_core.h>
 #include <rz_io.h>
 #include <rz_list.h>
+#include <rz_search.h>
 #include <rz_types_base.h>
 #include "../core_private.h"
 
 #include "cmd_search_rop.c"
+#include "rz_cons.h"
+#include <rz_util/rz_str.h>
+#include <rz_util/rz_assert.h>
+#include <rz_vector.h>
 
 #define AES_SEARCH_LENGTH         40
 #define PRIVATE_KEY_SEARCH_LENGTH 11
@@ -1782,7 +1787,127 @@ static void __core_cmd_search_asm_byteswap(RzCore *core, int nth) {
 	}
 }
 
-RZ_IPI int rz_cmd_search(void *data, const char *input) { return RZ_CMD_STATUS_ERROR; }
+RZ_IPI int rz_cmd_search(void *data, const char *input) {
+	return RZ_CMD_STATUS_ERROR;
+}
+
+// New search
+
+#define CMD_SEARCH_BEGIN() \
+	if (core->in_search) { \
+		RZ_LOG_ERROR("core: recursive search is forbidden.\n"); \
+		return RZ_CMD_STATUS_ERROR; \
+	} \
+	rz_cons_break_push(NULL, NULL); \
+	RzSearchOpt *search_opts = rz_search_opt_new(); \
+	bool opt_applid = rz_search_opt_set_max_hits(search_opts, rz_config_get_i(core->config, "search.maxhits")); \
+	opt_applid &= rz_search_opt_set_max_threads(search_opts, rz_th_max_threads(rz_config_get_i(core->config, "search.max_threads"))); \
+	RzSearchFindOpt *fopts = rz_core_setup_default_search_find_opts(core); \
+	if (!fopts) { \
+		RZ_LOG_ERROR("Failed setup find options.\n"); \
+		return RZ_CMD_STATUS_ERROR; \
+	} \
+	rz_search_opt_set_find_options(search_opts, fopts); \
+	core->in_search = true;
+
+#define CMD_SEARCH_END() \
+	do { \
+		rz_search_opt_free(search_opts); \
+		rz_cons_break_pop(); \
+		core->in_search = false; \
+	} while (0)
+
+static bool cmd_search_progress_cancel(void *user, size_t n_hits, RzSearchCancelReason invoke_reason) {
+	if (user) {
+		// we have RzCmdStateOutput state
+		rz_cons_printf("Searching... hits: %" PFMTSZu "\r", n_hits);
+	}
+	return rz_cons_is_breaked();
+}
+
+static void cmd_search_output_to_state(RzCmdStateOutput *state, RzSearchHit *hit, const char *flag_name) {
+	switch (state->mode) {
+	case RZ_OUTPUT_MODE_QUIET:
+		rz_cons_printf("%08" PFMT64x "\n", hit->address);
+		break;
+	case RZ_OUTPUT_MODE_STANDARD:
+		rz_cons_printf("%08" PFMT64x " %" PFMTSZu " %s\n", hit->address, hit->size, flag_name);
+		break;
+	case RZ_OUTPUT_MODE_JSON:
+		pj_o(state->d.pj);
+		pj_kn(state->d.pj, "address", hit->address);
+		pj_kn(state->d.pj, "size", hit->size);
+		pj_ks(state->d.pj, "flag", flag_name);
+		pj_end(state->d.pj);
+		break;
+	case RZ_OUTPUT_MODE_TABLE:
+		rz_table_add_rowf(state->d.t, "xXs", hit->address, hit->size, flag_name);
+		break;
+	default:
+		rz_warn_if_reached();
+		break;
+	}
+}
+
+static void cmd_search_call_command(RzCore *core, RzSearchHit *hit, const char *command) {
+	ut64 old_offset = core->offset;
+	rz_core_seek(core, hit->address, true);
+	rz_core_cmd(core, command, false);
+	rz_core_seek(core, old_offset, true);
+}
+
+static RzCmdStatus cmd_core_handle_search_hits(RzCore *core, RzCmdStateOutput *state, RZ_OWN RzList *hits) {
+	if (!hits) {
+		core->num->value = 0;
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	RzListIter *it = NULL;
+	RzSearchHit *hit = NULL;
+	const char *cmd_hit = NULL;
+	const char *search_prefix = NULL;
+	size_t counter = 0;
+
+	cmd_hit = rz_config_get(core->config, "cmd.hit");
+	search_prefix = rz_config_get(core->config, "search.prefix");
+	if (RZ_STR_ISEMPTY(search_prefix)) {
+		// ensure thre prefix is always set.
+		search_prefix = "hit";
+	}
+
+	if (RZ_STR_ISEMPTY(cmd_hit)) {
+		// setup output and flagspace
+		rz_cmd_state_output_array_start(state);
+		rz_cmd_state_output_set_columnsf(state, "xXs", "offset", "size", "flag");
+		rz_flag_space_push(core->flags, "search");
+	}
+
+	rz_list_foreach (hits, it, hit) {
+		if (RZ_STR_ISNOTEMPTY(cmd_hit)) {
+			cmd_search_call_command(core, hit, cmd_hit);
+			continue;
+		}
+
+		// only output & add flag when cmd.hit is not set.
+		const char *meta = hit->hit_desc ? hit->hit_desc : "match";
+		char *flag = rz_str_newf("%s.%s.%" PFMTSZu, search_prefix, meta, counter);
+		rz_flag_set(core->flags, flag, hit->address, hit->size);
+		cmd_search_output_to_state(state, hit, flag);
+		free(flag);
+		counter++;
+	}
+
+	if (RZ_STR_ISEMPTY(cmd_hit)) {
+		// terminating output and flagspace
+		rz_flag_space_pop(core->flags);
+		rz_cmd_state_output_array_end(state);
+	}
+
+	// set return value to the number of hits before returning
+	core->num->value = rz_list_length(hits);
+	rz_list_free(hits);
+	return RZ_CMD_STATUS_OK;
+}
 
 // "/a"
 RZ_IPI RzCmdStatus rz_cmd_search_assemble_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
@@ -1861,7 +1986,35 @@ RZ_IPI RzCmdStatus rz_cmd_search_value_64_handler(RzCore *core, int argc, const 
 
 // "/x"
 RZ_IPI RzCmdStatus rz_cmd_search_hex_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return RZ_CMD_STATUS_NONEXISTINGCMD;
+	CMD_SEARCH_BEGIN();
+
+	RzList *hits = NULL;
+	RzSearchBytesPattern *pattern = rz_search_parse_byte_pattern(argv[1], NULL);
+
+	if (!pattern) {
+		RZ_LOG_ERROR("Failed to parse given pattern.\n");
+		goto error;
+	}
+
+	bool progress = rz_config_get_b(core->config, "search.show_progress");
+	opt_applid &= rz_search_opt_set_cancel_cb(search_opts, cmd_search_progress_cancel, progress ? state : NULL);
+	if (!opt_applid) {
+		RZ_LOG_ERROR("code: Failed to setup default search options.\n");
+		goto error;
+	}
+	hits = rz_core_search_bytes(core, search_opts, pattern);
+	if (!hits) {
+		RZ_LOG_ERROR("Failed to perform search.\n");
+		goto error;
+	}
+
+	CMD_SEARCH_END();
+	return cmd_core_handle_search_hits(core, state, hits);
+
+error:
+	rz_list_free(hits);
+	CMD_SEARCH_END();
+	return RZ_CMD_STATUS_ERROR;
 }
 
 // "/z"
