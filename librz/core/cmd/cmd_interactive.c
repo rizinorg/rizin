@@ -28,6 +28,11 @@ RZ_IPI RzCmdStatus rz_interactive_visual_disas_handler(RzCore *core, int argc, c
 	return RZ_CMD_STATUS_OK;
 }
 
+RZ_IPI RzCmdStatus rz_interactive_visual_management_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_visual(core, "v");
+	return RZ_CMD_STATUS_OK;
+}
+
 RZ_IPI RzCmdStatus rz_interactive_visual_emu_handler(RzCore *core, int argc, const char **argv) {
 	rz_core_visual(core, "pp");
 	return RZ_CMD_STATUS_OK;

@@ -17617,6 +17617,14 @@ static const RzCmdDescHelp interactive_visual_emu_help = {
 	.args = interactive_visual_emu_args,
 };
 
+static const RzCmdDescArg interactive_visual_management_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp interactive_visual_management_help = {
+	.summary = "Enter interactive visual mode and select the view management (alias for 'V v').",
+	.args = interactive_visual_management_args,
+};
+
 static const RzCmdDescHelp v_help = {
 	.summary = "Interactive panel mode",
 };
@@ -23188,6 +23196,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *interactive_visual_emu_cd = rz_cmd_desc_argv_new(core->rcmd, V_cd, "Vpp", rz_interactive_visual_emu_handler, &interactive_visual_emu_help);
 	rz_warn_if_fail(interactive_visual_emu_cd);
+
+	RzCmdDesc *interactive_visual_management_cd = rz_cmd_desc_argv_new(core->rcmd, V_cd, "Vv", rz_interactive_visual_management_handler, &interactive_visual_management_help);
+	rz_warn_if_fail(interactive_visual_management_cd);
 
 	RzCmdDesc *v_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "v", rz_interactive_panel_handler, &interactive_panel_help, &v_help);
 	rz_warn_if_fail(v_cd);

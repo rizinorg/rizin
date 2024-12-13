@@ -38,3 +38,7 @@ commands:
     cname: interactive_visual_emu
     summary: Enter interactive visual mode and select the mode after next (alias for 'V pp').
     args: []
+  - name: Vv
+    cname: interactive_visual_management
+    summary: Enter interactive visual mode and select the view management (alias for 'V v').
+    args: []
