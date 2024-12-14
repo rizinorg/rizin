@@ -78,7 +78,7 @@ static int help(bool verbose) {
 			"-r",           "[rizin]",        "Path to rizin executable (default is " RIZIN_CMD_DEFAULT ")",
 			"-m",           "[rz-asm]",       "Path to rz-asm executable (default is " RZ_ASM_CMD_DEFAULT ")",
 			"-f",           "[file]",         "File to use for JSON tests (default is " JSON_TEST_FILE_DEFAULT ")",
-			"-C",           "[dir]",          "Chdir before running rz-test (default follows executable symlink + test/new)",
+			"-C",           "[dir]",          "Chdir before running rz-test (default follows test pathname/cwd)",
 			"-t",           "[seconds]",      "Timeout per test (default is " TIMEOUT_DEFAULT_STR " seconds)",
 			"-o",           "[file]",         "Output test run information in JSON format to file",
 			"-e",           "[dir]",          "Exclude a particular directory while testing (this option can appear many times)",
@@ -106,67 +106,17 @@ static int help(bool verbose) {
 	return 1;
 }
 
-/**
- * \brief Find test dir for rz-test symbolic link
- * \param argv0 A symbolic link to an rz-test binary
- * \return True if test dir exists
- *
- * This function seemingly is to support an easy way to test different core
- * binaries with their own test sets, via symbolic links to their respective
- * rz-test binaries. It can be triggered by adding `./` in front of the
- * testfile name, and needs the rz-test binary to be in `binrz/rz-test/`
- * relative to its root dir for it to work.
- *
- * \deprecated The core binaries are probably different in terms of arch and
- * os. Such differences should be coverable by archos tests, and so this
- * function is slated for removal.
- */
-static bool rz_test_chdir(const char *argv0) {
-#if __UNIX__
-	if (rz_file_is_directory("db")) {
-		return true;
-	}
-	char src_path[PATH_MAX];
-	char *rz_test_path = rz_file_path(argv0);
-	bool found = false;
-
-	ssize_t linklen = readlink(rz_test_path, src_path, sizeof(src_path) - 1);
-	if (linklen != -1) {
-		src_path[linklen] = '\0';
-		char *p = strstr(src_path, RZ_SYS_DIR "binrz" RZ_SYS_DIR "rz-test" RZ_SYS_DIR "rz-test");
-		if (p) {
-			*p = 0;
-			strcat(src_path, RZ_SYS_DIR "test" RZ_SYS_DIR);
-			if (rz_file_is_directory(src_path)) {
-				if (chdir(src_path) != -1) {
-					eprintf("Running from %s\n", src_path);
-					found = true;
-				} else {
-					eprintf("Cannot find '%s' directory\n", src_path);
-				}
-			}
-		}
-	} else {
-		eprintf("Cannot follow the link %s\n", src_path);
-	}
-	free(rz_test_path);
-	return found;
-#else
-	return false;
-#endif
-}
-
 static bool rz_test_test_run_unit(void) {
 	return rz_sys_system("make -C unit all run") == 0;
 }
 
 /**
- * \brief Change cwd to test root dir (containing the `db/` dir)
- * \param test_path Test pathname
- * \return True if test root dir is found
+ * \brief Change cwd to test root dir (that has the `db/` dir) by checking dirs of test_path.
+ * \param test_path Test pathname. If NULL, empty, or starts with `@`, cwd is used.
+ * \return True if test root dir is found.
  *
- * The cwd change is done so that tests can find their test binaries stored in
- * the `<test root dir>/bins` dir no matter what the old cwd was.
+ * The cwd change is done so that tests can find their test binaries stored in the
+ * `<test root dir>/bins` dir no matter what the old cwd was.
  */
 static bool rz_test_chdir_fromtest(const char *test_path) {
 	if (!test_path || *test_path == '@') {
@@ -361,9 +311,7 @@ int rz_test_main(int argc, const char **argv) {
 			goto beach;
 		}
 	} else {
-		bool dir_found = (opt.ind < argc && argv[opt.ind][0] != '.')
-			? rz_test_chdir_fromtest(argv[opt.ind])
-			: rz_test_chdir(argv[0]);
+		bool dir_found = rz_test_chdir_fromtest(opt.ind < argc ? argv[opt.ind] : NULL);
 		if (!dir_found) {
 			eprintf("Cannot find db/ directory related to the given test.\n");
 			ret = -1;
