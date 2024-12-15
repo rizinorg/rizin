@@ -8,7 +8,6 @@
 #include <rz_util.h>
 #include <rz_main.h>
 
-#define MEGABYTE(x)        (x << 20)
 #define SAFE_STR_DEF(x, y) (x ? x : y)
 #define SAFE_STR(x)        (x ? x : "")
 #define IF_STRCMP_S(ret, x, y) \
@@ -485,11 +484,6 @@ static ut8 *rz_diff_slurp_file(const char *file, size_t *size) {
 
 	dio = rz_diff_io_open(file);
 	if (!dio) {
-		goto rz_diff_slurp_file_end;
-	}
-
-	if (dio->filesize > MEGABYTE(5)) {
-		rz_diff_error("cannot open file '%s' because its size is above 5Mb\n", file);
 		goto rz_diff_slurp_file_end;
 	}
 
