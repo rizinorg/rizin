@@ -313,9 +313,8 @@ int rz_test_main(int argc, const char **argv) {
 	} else {
 		bool dir_found = rz_test_chdir_fromtest(opt.ind < argc ? argv[opt.ind] : NULL);
 		if (!dir_found) {
-			eprintf("Cannot find db/ directory related to the given test.\n");
-			ret = -1;
-			goto beach;
+			eprintf("Cannot find db/ directory related to the given test. Assuming '-C .'.\n");
+			rz_test_dir = ".";
 		}
 	}
 
