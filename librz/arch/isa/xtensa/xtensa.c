@@ -27,16 +27,16 @@ bool xtensa_open(XtensaContext *ctx, const char *cpu, bool big_endian) {
 		return false;
 	}
 	cs_mode mode = big_endian ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN;
-	if (RZ_STR_ISEMPTY(cpu)) {
-		mode |= xtensa_cpu_modes[0].mode;
-	} else {
+	cs_mode mcpu = xtensa_cpu_modes[0].mode;
+	if (RZ_STR_ISNOTEMPTY(cpu)) {
 		for (int i = 0; i < RZ_ARRAY_SIZE(xtensa_cpu_modes); ++i) {
 			if (RZ_STR_EQ(cpu, xtensa_cpu_modes[i].cpu)) {
-				mode |= xtensa_cpu_modes[i].mode;
+				mcpu = xtensa_cpu_modes[i].mode;
 				break;
 			}
 		}
 	}
+	mode |= mcpu;
 	if (mode == ctx->mode) {
 		return true;
 	}

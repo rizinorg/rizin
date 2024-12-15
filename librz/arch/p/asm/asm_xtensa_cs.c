@@ -22,7 +22,9 @@ static int asm_xtensa_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len
 	op->size = ctx->insn->size;
 	xtensa_disassemble_fini(ctx);
 	return op->size;
+
 beach:
+	rz_asm_op_set_asm(op, "illegal");
 	xtensa_disassemble_fini(ctx);
 	return -1;
 }
