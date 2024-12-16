@@ -945,7 +945,7 @@ RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_frsqrt(RzFloatRMode rmode, RZ_NONNULL Rz
 	return ret;
 }
 
-RZ_API RZ_OWN RzILOpBool * rz_il_op_new_fexcept(RzFloatException e, RZ_NONNULL RzILOpFloat *x) {
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_fexcept(RzFloatException e, RZ_NONNULL RzILOpFloat *x) {
 	rz_return_val_if_fail(x, NULL);
 	RzILOpBool *ret;
 	rz_il_op_new_2(Bool, RZ_IL_OP_FEXCEPT, RzILOpArgsFexcept, fexcept, e, x);
