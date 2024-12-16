@@ -153,7 +153,6 @@ f38
 
 rax
 064
-
 EOF
 REGEXP_FILTER_ERR=((hit\sbreakpoint\sat:)|([0-9a-f][0-9a-f][0-9a-f]\n))
 EXPECT_ERR=<<EOF
@@ -165,7 +164,6 @@ f34
 
 hit breakpoint at:
 f38
-
 EOF
 RUN
 
@@ -203,7 +201,6 @@ ee3
 
 rax
 0a0
-
 EOF
 REGEXP_FILTER_ERR=((hit\sbreakpoint\sat:)|([0-9a-f][0-9a-f][0-9a-f]\n))
 EXPECT_ERR=<<EOF
@@ -215,6 +212,5 @@ edd
 
 hit breakpoint at:
 ee3
-
 EOF
 RUN
