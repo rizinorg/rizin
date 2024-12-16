@@ -59,6 +59,7 @@ static void interact(RzTestState *state);
 static bool interact_fix(RzTestResultInfo *result, RzPVector /*<RzTestResultInfo *>*/ *fixup_results);
 static void interact_break(RzTestResultInfo *result, RzPVector /*<RzTestResultInfo *>*/ *fixup_results);
 static void interact_commands(RzTestResultInfo *result, RzPVector /*<RzTestResultInfo *>*/ *fixup_results);
+static void accept_all(RzTestState *state);
 
 static int help(bool verbose) {
 	printf("%s%s%s", Color_CYAN, "Usage: ", Color_RESET);
@@ -176,6 +177,7 @@ int rz_test_main(int argc, const char **argv) {
 	bool nothing = false;
 	bool quiet = false;
 	bool interactive = false;
+	bool accept = false;
 	char *rizin_cmd = NULL;
 	char *rz_asm_cmd = NULL;
 	char *json_test_file = NULL;
@@ -209,7 +211,7 @@ int rz_test_main(int argc, const char **argv) {
 #endif
 
 	RzGetopt opt;
-	rz_getopt_init(&opt, argc, (const char **)argv, "hqvj:r:m:f:C:LnVt:F:io:e:s:x:");
+	rz_getopt_init(&opt, argc, (const char **)argv, "hqvj:r:m:f:C:LnVt:F:io:e:s:x:y");
 
 	int c;
 	while ((c = rz_getopt_next(&opt)) != -1) {
@@ -235,6 +237,9 @@ int rz_test_main(int argc, const char **argv) {
 			break;
 		case 'i':
 			interactive = true;
+			break;
+		case 'y':
+			accept = true;
 			break;
 		case 'L':
 			log_mode = true;
@@ -559,6 +564,10 @@ int rz_test_main(int argc, const char **argv) {
 
 	if (interactive) {
 		interact(&state);
+	}
+
+	if (accept) {
+		accept_all(&state);
 	}
 
 	if (expect_succ > 0 && expect_succ != state.ok_count) {
@@ -1043,6 +1052,40 @@ static void interact(RzTestState *state) {
 			goto beach;
 		default:
 			goto menu;
+		}
+	}
+
+beach:
+	rz_pvector_clear(&failed_results);
+}
+
+static void accept_all(RzTestState *state) {
+	void **it;
+	RzPVector failed_results;
+	rz_pvector_init(&failed_results, NULL);
+	rz_pvector_foreach (&state->results, it) {
+		RzTestResultInfo *result = *it;
+		if (result->result == RZ_TEST_RESULT_FAILED) {
+			rz_pvector_push(&failed_results, result);
+		}
+	}
+	if (rz_pvector_empty(&failed_results)) {
+		goto beach;
+	}
+
+#if __WINDOWS__
+	(void)SetConsoleOutputCP(65001); // UTF-8
+#endif
+
+	rz_pvector_foreach (&failed_results, it) {
+		RzTestResultInfo *result = *it;
+		if (result->test->type != RZ_TEST_TYPE_CMD && result->test->type != RZ_TEST_TYPE_ASM) {
+			continue;
+		}
+		if (!interact_fix(result, &failed_results)) {
+			char *name = rz_test_test_name(result->test);
+			printf("This test %s has failed too hard to be fixed.\n", name ? name : "");
+			free(name);
 		}
 	}
 
