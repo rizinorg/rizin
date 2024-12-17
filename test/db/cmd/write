@@ -61,18 +61,17 @@ RUN
 
 NAME=labels replacements (common prefix)
 FILE=malloc://1024
-BROKEN=1
+ARGS=-a x86 -b 32
 CMDS=<<EOF
-e asm.arch=x86
-e asm.bits=32
+p8 7 @ 0
 waf bins/other/asm/multiline_prefix.asm
-p8 7@0
+p8 7 @ 0
 EOF
 EXPECT=<<EOF
-9090e8fbffffff
+00000000000000
+9090e803000000
 EOF
 RUN
-
 
 NAME=wa
 FILE=malloc://1024
@@ -280,9 +279,8 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=wx 0x should behave like wv? imho nope
+NAME=wx 0x
 FILE=malloc://1024
-BROKEN=1
 CMDS=<<EOF
 e cfg.bigendian=false
 wx 0x1234
@@ -291,29 +289,33 @@ wx 0x12345678
 p8 4
 EOF
 EXPECT=<<EOF
-3412
-78563412
+1234
+12345678
 EOF
 RUN
 
 NAME=wci should commit the changes to the file
 FILE=malloc://1024
-BROKEN=1
 CMDS=<<EOF
 mkdir .tmp
-cp -f bins/pe/b.exe .tmp/.b.exe.orig
-cp -f bins/pe/b.exe .tmp/.b.exe.new
+cp bins/pe/b.exe .tmp/.b.exe.orig
+cp bins/pe/b.exe .tmp/.b.exe.new
 o+ .tmp/.b.exe.new
 wx ff
 wci
-e.src.null=true
-!!rz-diff .tmp/.b.exe.orig .tmp/.b.exe.new
+!!rz-diff -C -t command -0 "px 10" -1 "px 10" .tmp/.b.exe.orig .tmp/.b.exe.new
 o--
 rm .tmp/.b.exe.orig
 rm .tmp/.b.exe.new
 EOF
 EXPECT=<<EOF
-File size
+--- .tmp/.b.exe.orig
++++ .tmp/.b.exe.new
+@@ --1,4 +-1,4 @@
+ - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+-0x00401280  5589 e583 ec08 c704 2401                 U.......$.
++0x00401280  ff89 e583 ec08 c704 2401                 ........$.
+
 EOF
 RUN
 
@@ -335,9 +337,7 @@ RUN
 
 NAME=wx pcache
 FILE=bins/pe/b.exe
-
 CMDS=<<EOF
-
 e io.va=0
 e io.pcache=true
 s 0
