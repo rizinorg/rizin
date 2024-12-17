@@ -174,7 +174,6 @@ f44
 
 hit breakpoint at:
 f48
-
 EOF
 RUN
 
@@ -238,6 +237,5 @@ f44
 
 hit breakpoint at:
 f48
-
 EOF
 RUN
