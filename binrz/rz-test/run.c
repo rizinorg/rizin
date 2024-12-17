@@ -206,7 +206,7 @@ RZ_API bool rz_test_cmp_cmd_output(const char *output, const char *expect, const
 		if (expect_len > 0 && expect[expect_len - 1] == '\n') {
 			// Ignore newline in expect
 			expect_len--;
-			int match_str_len = rz_strbuf_length(match_str);
+			size_t match_str_len = rz_strbuf_length(match_str);
 			if (match_str_len && rz_strbuf_get(match_str)[match_str_len - 1] == '\n') {
 				// Ignore newline in match_str
 				match_str_len--;

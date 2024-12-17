@@ -25,7 +25,7 @@ RZ_API bool rz_strbuf_is_empty(RzStrBuf *sb) {
 	return sb->len == 0;
 }
 
-RZ_API int rz_strbuf_length(RzStrBuf *sb) {
+RZ_API size_t rz_strbuf_length(RzStrBuf *sb) {
 	rz_return_val_if_fail(sb, 0);
 	return sb->len;
 }

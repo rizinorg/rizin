@@ -30,7 +30,7 @@ RZ_API bool rz_strbuf_vappendf(RzStrBuf *sb, const char *fmt, va_list ap);
 RZ_API char *rz_strbuf_get(RzStrBuf *sb);
 RZ_API RZ_OWN char *rz_strbuf_drain(RzStrBuf *sb);
 RZ_API RZ_OWN char *rz_strbuf_drain_nofree(RzStrBuf *sb);
-RZ_API int rz_strbuf_length(RzStrBuf *sb);
+RZ_API size_t rz_strbuf_length(RzStrBuf *sb);
 RZ_API void rz_strbuf_free(RzStrBuf *sb);
 RZ_API void rz_strbuf_fini(RzStrBuf *sb);
 RZ_API void rz_strbuf_init(RzStrBuf *sb);

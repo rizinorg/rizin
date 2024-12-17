@@ -704,7 +704,7 @@ static void *worker_th(RzTestState *state) {
 
 static char *get_matched_str(const char *regexp, const char *str) {
 	RzStrBuf *match_str = rz_test_regex_full_match_str(regexp, str);
-	int len = rz_strbuf_length(match_str);
+	size_t len = rz_strbuf_length(match_str);
 	if (len && rz_strbuf_get(match_str)[len - 1] != '\n') { // empty matches are not changed
 		rz_strbuf_append(match_str, "\n");
 	}
