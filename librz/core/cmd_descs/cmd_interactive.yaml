@@ -42,3 +42,7 @@ commands:
     cname: interactive_visual_management
     summary: Enter interactive visual mode and select the view management (alias for 'V v').
     args: []
+  - name: Ve
+    cname: interactive_visual_config
+    summary: Enter interactive visual mode and select the configurations toggle (alias for 'V e').
+    args: []
