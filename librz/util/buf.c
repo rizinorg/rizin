@@ -28,27 +28,51 @@ static void buf_whole_buf_free(RzBuffer *b) {
 }
 
 static bool buf_init(RzBuffer *b, const void *user) {
-	rz_return_val_if_fail(b && b->methods, false);
+	rz_return_val_if_fail(b, false);
 
-	return b->methods->init ? b->methods->init(b, user) : true;
+	if (b->type == RZ_BUFFER_BYTES) {
+		return buf_bytes_init(b, user);
+	} else if (b->type == RZ_BUFFER_MMAP) {
+		return buf_mmap_init(b, user);
+	} else {
+		rz_return_val_if_fail(b->methods, false);
+		return b->methods->init ? b->methods->init(b, user) : true;
+	}
 }
 
 static bool buf_fini(RzBuffer *b) {
-	rz_return_val_if_fail(b && b->methods, false);
+	rz_return_val_if_fail(b, false);
 
-	return b->methods->fini ? b->methods->fini(b) : true;
+	if (b->type == RZ_BUFFER_BYTES) {
+		return buf_bytes_fini(b);
+	} else if (b->type == RZ_BUFFER_MMAP) {
+		return buf_mmap_fini(b);
+	} else {
+		rz_return_val_if_fail(b->methods, false);
+		return b->methods->fini ? b->methods->fini(b) : true;
+	}
 }
 
 static ut64 buf_get_size(RzBuffer *b) {
-	rz_return_val_if_fail(b && b->methods, UT64_MAX);
+	rz_return_val_if_fail(b, UT64_MAX);
 
-	return b->methods->get_size ? b->methods->get_size(b) : 0;
+	if (b->type == RZ_BUFFER_BYTES || b->type == RZ_BUFFER_MMAP) {
+		return buf_bytes_get_size(b);
+	} else {
+		rz_return_val_if_fail(b->methods, UT64_MAX);
+		return b->methods->get_size ? b->methods->get_size(b) : 0;
+	}
 }
 
 static st64 buf_read(RzBuffer *b, ut8 *buf, size_t len) {
-	rz_return_val_if_fail(b && b->methods, -1);
+	rz_return_val_if_fail(b, -1);
 
-	return b->methods->read ? b->methods->read(b, buf, len) : -1;
+	if (b->type == RZ_BUFFER_BYTES || b->type == RZ_BUFFER_MMAP) {
+		return buf_bytes_read(b, buf, len);
+	} else {
+		rz_return_val_if_fail(b->methods, -1);
+		return b->methods->read ? b->methods->read(b, buf, len) : -1;
+	}
 }
 
 static st64 buf_write(RzBuffer *b, const ut8 *buf, size_t len) {
@@ -60,15 +84,27 @@ static st64 buf_write(RzBuffer *b, const ut8 *buf, size_t len) {
 }
 
 static st64 buf_seek(RzBuffer *b, st64 addr, int whence) {
-	rz_return_val_if_fail(b && b->methods, -1);
+	rz_return_val_if_fail(b, -1);
 
-	return b->methods->seek ? b->methods->seek(b, addr, whence) : -1;
+	if (b->type == RZ_BUFFER_BYTES || b->type == RZ_BUFFER_MMAP) {
+		return buf_bytes_seek(b, addr, whence);
+	} else {
+		rz_return_val_if_fail(b->methods, -1);
+		return b->methods->seek ? b->methods->seek(b, addr, whence) : -1;
+	}
 }
 
 static bool buf_resize(RzBuffer *b, ut64 newsize) {
-	rz_return_val_if_fail(b && b->methods, -1);
+	rz_return_val_if_fail(b, -1);
 
-	return b->methods->resize ? b->methods->resize(b, newsize) : false;
+	if (b->type == RZ_BUFFER_BYTES) {
+		return buf_bytes_resize(b, newsize);
+	} else if (b->type == RZ_BUFFER_MMAP) {
+		return buf_mmap_resize(b, newsize);
+	} else {
+		rz_return_val_if_fail(b->methods, -1);
+		return b->methods->resize ? b->methods->resize(b, newsize) : false;
+	}
 }
 
 typedef struct {
@@ -244,33 +280,40 @@ err:
 }
 
 static ut8 *get_whole_buf(RzBuffer *b, ut64 *size) {
-	rz_return_val_if_fail(b && size && b->methods, NULL);
+	rz_return_val_if_fail(b && size, NULL);
 
 	buf_whole_buf_free(b);
 
-	if (b->methods->get_whole_buf) {
-		return b->methods->get_whole_buf(b, size);
+	if (b->type == RZ_BUFFER_BYTES) {
+		return buf_bytes_get_whole_buf(b, size);
+	} else if (b->type == RZ_BUFFER_MMAP) {
+		return buf_mmap_get_whole_buf(b, size);
+	} else {
+
+		rz_return_val_if_fail(b && size && b->methods, NULL);
+		if (b->methods->get_whole_buf) {
+			return b->methods->get_whole_buf(b, size);
+		}
+
+		ut64 buf_size = rz_buf_size(b);
+		if (buf_size == UT64_MAX) {
+			return NULL;
+		}
+
+		b->whole_buf = RZ_NEWS(ut8, buf_size);
+		if (!b->whole_buf) {
+			return NULL;
+		}
+
+		if (rz_buf_read_at(b, 0, b->whole_buf, buf_size) < 0) {
+			RZ_FREE(b->whole_buf);
+			return NULL;
+		}
+
+		*size = buf_size;
+
+		return b->whole_buf;
 	}
-
-	ut64 buf_size = rz_buf_size(b);
-	// bsz = 4096; // FAKE MINIMUM SIZE TO READ THE BIN HEADER
-	if (buf_size == UT64_MAX) {
-		return NULL;
-	}
-
-	b->whole_buf = RZ_NEWS(ut8, buf_size);
-	if (!b->whole_buf) {
-		return NULL;
-	}
-
-	if (rz_buf_read_at(b, 0, b->whole_buf, buf_size) < 0) {
-		RZ_FREE(b->whole_buf);
-		return NULL;
-	}
-
-	*size = buf_size;
-
-	return b->whole_buf;
 }
 
 static RzBuffer *new_buffer(RzBufferType type, void *user) {
@@ -1370,11 +1413,18 @@ RZ_API ut64 rz_buf_fwd_scan(RZ_NONNULL RzBuffer *b, ut64 start, ut64 amount, RZ_
 	}
 	if (b->methods->get_whole_buf) {
 		ut64 sz;
-		const ut8 *buf = b->methods->get_whole_buf(b, &sz);
+		ut8 *buf = NULL;
+		if (b->type == RZ_BUFFER_BYTES) {
+			buf = buf_bytes_get_whole_buf(b, &sz);
+		} else if (b->type == RZ_BUFFER_MMAP) {
+			buf = buf_mmap_get_whole_buf(b, &sz);
+		} else {
+			b->methods->get_whole_buf(b, &sz);
+		}
+		if (buf && (sz <= start)) {
+			return 0;
+		}
 		if (buf) {
-			if (sz <= start) {
-				return 0;
-			}
 			return fwd_scan(buf + start, RZ_MIN(sz - start, amount), user);
 		}
 	}
@@ -1404,6 +1454,19 @@ RZ_API ut64 rz_buf_fwd_scan(RZ_NONNULL RzBuffer *b, ut64 start, ut64 amount, RZ_
 	}
 	free(buf);
 	return addr - start;
+}
+
+/**
+ * \brief Get the whole buffer for scanning in hot paths.
+ * Please use `rz_buf_fwd_scan()` or `rz_buf_read()`, if your use case is NOT performance critical.
+ *
+ * \param buffer RzBuffer to read.
+ * \param sz Size of returned data in bytes.
+ * \return Immutable pointer to the whole buffer or NULL in case of failure.
+ */
+RZ_API RZ_BORROW const ut8 *rz_buf_get_whole_hot_paths(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut64 *sz) {
+	rz_return_val_if_fail(b && b->methods && b->methods->get_whole_buf, NULL);
+	return b->methods->get_whole_buf(b, sz);
 }
 
 /**

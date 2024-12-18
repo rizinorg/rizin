@@ -155,6 +155,7 @@ RZ_API ut64 rz_buf_tell(RZ_NONNULL RzBuffer *b);
 RZ_API void rz_buf_free(RzBuffer *b);
 RZ_API void rz_buf_set_overflow_byte(RZ_NONNULL RzBuffer *b, ut8 Oxff);
 RZ_DEPRECATE RZ_API RZ_BORROW ut8 *rz_buf_data(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut64 *size);
+RZ_API RZ_BORROW const ut8 *rz_buf_get_whole_hot_paths(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut64 *sz);
 
 typedef ut64 (*RzBufferFwdScan)(RZ_BORROW RZ_NONNULL const ut8 *buf, ut64 len, RZ_NULLABLE void *user);
 RZ_API ut64 rz_buf_fwd_scan(RZ_NONNULL RzBuffer *b, ut64 start, ut64 amount, RZ_NONNULL RzBufferFwdScan fwd_scan, RZ_NULLABLE void *user);
