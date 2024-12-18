@@ -202,8 +202,8 @@ RZ_API bool rz_test_cmp_cmd_output(const char *output, const char *expect, const
 	if (regexp) {
 		RzStrBuf *match_str = rz_test_regex_full_match_str(regexp, output);
 		bool equal = false;
-		ut32 expect_len = strlen(expect);
-		if (expect_len > 0 && expect[expect_len - 1] == '\n') {
+		size_t expect_len = strlen(expect);
+		if (expect_len && expect[expect_len - 1] == '\n') {
 			// Ignore newline in expect
 			expect_len--;
 			size_t match_str_len = rz_strbuf_length(match_str);
@@ -214,14 +214,14 @@ RZ_API bool rz_test_cmp_cmd_output(const char *output, const char *expect, const
 			if (expect_len != match_str_len) {
 				return false;
 			}
-			equal = (rz_str_cmp(expect, rz_strbuf_get(match_str), expect_len) == 0);
+			equal = rz_str_cmp(expect, rz_strbuf_get(match_str), expect_len) == 0;
 		} else {
 			equal = RZ_STR_EQ(expect, rz_strbuf_get(match_str));
 		}
 		rz_strbuf_free(match_str);
 		return equal;
 	}
-	return (0 == strcmp(expect, output));
+	return 0 == strcmp(expect, output);
 }
 
 RZ_API bool rz_test_check_cmd_test(RzSubprocessOutput *out, RzCmdTest *test) {
