@@ -862,11 +862,12 @@ jobs:
           export PATH=$PATH:/usr/local/bin
           meson setup --prefix=/usr --buildtype=release build && ninja -C build && sudo ninja -C build install
         working-directory: rizin
-      - name: Checkout rz-bindgen
-        uses: actions/checkout@v4
-        with:
-          repository: rizinorg/rz-bindgen
-          path: rz-bindgen
+      - name: Checkout rz-bindgen (stable)
+        if: github.ref == 'refs/heads/stable'
+        run: git clone -b stable https://github.com/rizinorg/rz-bindgen
+      - name: Checkout rz-bindgen (dev)
+        if: github.ref != 'refs/heads/stable'
+        run: git clone -b dev https://github.com/rizinorg/rz-bindgen
       - name: Build rz-bindgen
         run: |
           meson setup --prefix=/usr -Dplugin=enabled build
