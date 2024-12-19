@@ -19,8 +19,7 @@ from cmd_descs_util import (
 
 
 def get_yaml_files(basedir):
-    for file in glob.glob(os.path.join(basedir, "*.yaml")):
-        yield file
+    yield from glob.glob(os.path.join(basedir, "*.yaml")):
 
 
 def find_entry(commands, rzcommand):

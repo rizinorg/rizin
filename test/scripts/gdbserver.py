@@ -22,8 +22,7 @@ def execute(cmd):
     with subprocess.Popen(
         cmd, stderr=subprocess.PIPE, universal_newlines=True
     ) as popen:
-        for stderr_line in iter(popen.stderr.readline, ""):
-            yield stderr_line
+        yield from iter(popen.stderr.readline, ""):
 
 
 def main():
