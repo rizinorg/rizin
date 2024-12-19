@@ -301,7 +301,6 @@ static bool step_until_inst(RzCore *core, const char *instr, bool regex) {
 			const char *buf_asm = rz_asm_op_get_asm(&asmop);
 			if (regex) {
 				if (rz_regex_contains(instr, buf_asm, RZ_REGEX_ZERO_TERMINATED, RZ_REGEX_EXTENDED, RZ_REGEX_DEFAULT)) {
-					RZ_LOG_ERROR("core: esil: stop.\n");
 					break;
 				}
 			} else {
