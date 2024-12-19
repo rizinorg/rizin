@@ -86,7 +86,7 @@ jobs:
             cflags: "-DRZ_ASSERT_STDOUT=1 -Wno-cpp"
             allow_failure: false
           - name: macos-meson-clang-tests
-            os: macos-12
+            os: macos-13
             build_system: meson
             compiler: clang
             run_tests: true
@@ -172,17 +172,17 @@ jobs:
 
     steps:
       - name: Show available memory on Linux
-        if: matrix.os != 'macos-12' && matrix.enabled
+        if: matrix.os != 'macos-13' && matrix.enabled
         run: free -h
       - uses: actions/checkout@v4
         if: matrix.enabled
         with:
           fetch-depth: 2
       - name: Install pkg-config with Homebrew
-        if: matrix.os == 'macos-12' && matrix.enabled
+        if: matrix.os == 'macos-13' && matrix.enabled
         run: brew install pkg-config
       - name: Install python and other dependencies
-        if: (matrix.run_tests || matrix.build_system == 'meson') && matrix.os != 'macos-12' && matrix.enabled
+        if: (matrix.run_tests || matrix.build_system == 'meson') && matrix.os != 'macos-13' && matrix.enabled
         run: sudo apt-get --assume-yes install python3-wheel python3-setuptools libcapstone4 libcapstone-dev
       - name: Install meson and ninja
         if: matrix.build_system == 'meson' && matrix.enabled
@@ -197,7 +197,7 @@ jobs:
         if: matrix.run_tests && matrix.enabled
         run: pip3 install --user "file://$GITHUB_WORKSPACE/test/rz-pipe#egg=rzpipe&subdirectory=python" requests
       - name: Install Linux test dependencies
-        if: matrix.run_tests && matrix.enabled && matrix.os != 'macos-12'
+        if: matrix.run_tests && matrix.enabled && matrix.os != 'macos-13'
         run: |
           sudo apt-get update
           sudo apt-get --assume-yes install libc6 libc6-i386 libc6-dev debuginfod
@@ -213,7 +213,7 @@ jobs:
       - name: Build with Meson
         if: matrix.build_system == 'meson' && matrix.enabled
         run: |
-          export PATH=${HOME}/Library/Python/3.9/bin:${HOME}/Library/Python/3.10/bin:${HOME}/Library/Python/3.11/bin:${HOME}/Library/Python/3.12/bin:${HOME}/.local/bin:${PATH}
+          export PATH=${HOME}/Library/Python/3.9/bin:${HOME}/Library/Python/3.10/bin:${HOME}/Library/Python/3.11/bin:${HOME}/Library/Python/3.12/bin:${HOME}/Library/Python/3.13/bin:$${HOME}/.local/bin:${PATH}
           if [ "$ASAN" == "true" ]; then
             export CFLAGS="-DASAN=1 ${CFLAGS}"
             if [ "$CC" == "clang" ]; then
@@ -229,19 +229,19 @@ jobs:
         if: matrix.build_system == 'meson' && matrix.enabled
         run: |
           # Install the rizin
-          export PATH=${HOME}/bin:${HOME}/Library/Python/3.9/bin:${HOME}/Library/Python/3.10/bin:${HOME}/Library/Python/3.11/bin:${HOME}/Library/Python/3.12/bin:${HOME}/.local/bin:${PATH}
+          export PATH=${HOME}/bin:${HOME}/Library/Python/3.9/bin:${HOME}/Library/Python/3.10/bin:${HOME}/Library/Python/3.11/bin:${HOME}/Library/Python/3.12/bin:${HOME}/Library/Python/3.13/bin:$${HOME}/.local/bin:${PATH}
           export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
           export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
           ninja -C build install
       - name: Disable user authentication for debugging (macOS)
-        if: matrix.os == 'macos-12' && matrix.enabled
+        if: matrix.os == 'macos-13' && matrix.enabled
         run: |
           sudo security authorizationdb write system.privilege.taskport allow
       - name: Run unit tests (meson)
         continue-on-error: ${{ matrix.allow_failure }}
         if: matrix.build_system == 'meson' && matrix.enabled
         run: |
-          export PATH=${HOME}/bin:${HOME}/Library/Python/3.9/bin:${HOME}/Library/Python/3.10/bin:${HOME}/Library/Python/3.11/bin:${HOME}/Library/Python/3.12/bin:${HOME}/.local/bin:${PATH}
+          export PATH=${HOME}/bin:${HOME}/Library/Python/3.9/bin:${HOME}/Library/Python/3.10/bin:${HOME}/Library/Python/3.11/bin:${HOME}/Library/Python/3.12/bin:${HOME}/Library/Python/3.13/bin:$${HOME}/.local/bin:${PATH}
           export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
           export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
           if [ "$ASAN" == "true" ]; then
@@ -273,7 +273,7 @@ jobs:
         if: matrix.run_tests && matrix.enabled
         run: |
           # Running the test suite
-          export PATH=${HOME}/bin:${HOME}/Library/Python/3.9/bin:${HOME}/Library/Python/3.10/bin:${HOME}/Library/Python/3.11/bin:${HOME}/Library/Python/3.12/bin:${HOME}/.local/bin:${PATH}
+          export PATH=${HOME}/bin:${HOME}/Library/Python/3.9/bin:${HOME}/Library/Python/3.10/bin:${HOME}/Library/Python/3.11/bin:${HOME}/Library/Python/3.12/bin:${HOME}/Library/Python/3.13/bin:$${HOME}/.local/bin:${PATH}
           export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
           export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
           if [ "$ASAN" == "true" ]; then
@@ -657,7 +657,7 @@ jobs:
 
   build-osx-pkg:
     name: Build OSX package
-    runs-on: macos-12
+    runs-on: macos-13
     if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'osx') || contains(github.head_ref, 'mac') || ((contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') && github.event_name == 'push') || github.event_name == 'schedule'
     needs: [ build-and-test ]
     steps:
@@ -876,7 +876,7 @@ jobs:
     strategy:
       matrix:
         system:
-          - macos-12
+          - macos-13
     runs-on: ${{ matrix.system }}
     needs: [ build-osx-pkg ]
     steps:
