@@ -61,7 +61,7 @@ echo ----
 dsui call; ds
 dbt~[6-]  # dbtt here would be nice
 echo ----
-dsuir .*l+; ds
+dsuir "^(call|ret)\b"; ds
 dbt~[6-]  # ditto
 EOF
 REGEXP_FILTER_OUT=((loc\.[^_]\S*)|(main\s?\S*)|(entry0\+\d+)|(----))
