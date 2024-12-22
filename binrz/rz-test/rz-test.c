@@ -72,6 +72,7 @@ static int help(bool verbose) {
 			"-q",           "",               "Quiet mode",
 			"-V",           "",               "Be verbose",
 			"-i",           "",               "Interactive mode",
+			"-y",           "",               "Accept all interactive changes",
 			"-n",           "",               "Do nothing (don't run any test, just load/parse them)",
 			"-L",           "",               "Log mode (better printing for CI, logfiles, etc.)",
 			"-F",           "[dir]",          "Run fuzz tests (open and default analysis) on all files in the given dir",
