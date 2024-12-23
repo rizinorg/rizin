@@ -1079,7 +1079,11 @@ RZ_API void rz_il_event_stringify(RZ_NONNULL const RzILEvent *evt, RZ_NONNULL Rz
 	case RZ_IL_EVENT_MEM_READ:
 		tmp0 = rz_bv_as_hex_string(evt->data.mem_read.address, false);
 		tmp1 = evt->data.mem_read.value ? rz_bv_as_hex_string(evt->data.mem_read.value, false) : NULL;
-		rz_strbuf_appendf(sb, "mem_read(addr: %s, value: %s)", tmp0, tmp1 ? tmp1 : "uninitialized memory");
+		if (evt->data.mem_read.index == 0) {
+			rz_strbuf_appendf(sb, "mem_read(addr: %s, value: %s)", tmp0, tmp1 ? tmp1 : "uninitialized memory");
+		} else {
+			rz_strbuf_appendf(sb, "mem_read(index: %u, addr: %s, value: %s)", evt->data.mem_read.index, tmp0, tmp1 ? tmp1 : "uninitialized memory");
+		}
 		break;
 	case RZ_IL_EVENT_VAR_READ:
 		tmp1 = rz_il_value_stringify(evt->data.var_read.value);
@@ -1089,7 +1093,11 @@ RZ_API void rz_il_event_stringify(RZ_NONNULL const RzILEvent *evt, RZ_NONNULL Rz
 		tmp0 = rz_bv_as_hex_string(evt->data.mem_write.address, false);
 		tmp1 = evt->data.mem_write.old_value ? rz_bv_as_hex_string(evt->data.mem_write.old_value, false) : NULL;
 		tmp2 = rz_bv_as_hex_string(evt->data.mem_write.new_value, false);
-		rz_strbuf_appendf(sb, "mem_write(addr: %s, old: %s, new: %s)", tmp0, tmp1 ? tmp1 : "uninitialized memory", tmp2);
+		if (evt->data.mem_write.index == 0) {
+			rz_strbuf_appendf(sb, "mem_write(addr: %s, old: %s, new: %s)", tmp0, tmp1 ? tmp1 : "uninitialized memory", tmp2);
+		} else {
+			rz_strbuf_appendf(sb, "mem_write(index: %u, addr: %s, old: %s, new: %s)", evt->data.mem_write.index, tmp0, tmp1 ? tmp1 : "uninitialized memory", tmp2);
+		}
 		break;
 	case RZ_IL_EVENT_VAR_WRITE:
 		tmp1 = rz_il_value_stringify(evt->data.var_write.old_value);

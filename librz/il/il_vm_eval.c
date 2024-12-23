@@ -204,7 +204,7 @@ RZ_API RzBitVector *rz_il_vm_mem_load(RzILVM *vm, RzILMemIndex index, RzBitVecto
 		return NULL;
 	}
 	RzBitVector *value = rz_il_mem_load(mem, key);
-	rz_il_vm_event_add(vm, rz_il_event_mem_read_new(key, value));
+	rz_il_vm_event_add(vm, rz_il_event_mem_read_new(index, key, value));
 	return value;
 }
 
@@ -225,7 +225,7 @@ RZ_API void rz_il_vm_mem_store(RzILVM *vm, RzILMemIndex index, RzBitVector *key,
 	}
 	RzBitVector *old_value = rz_il_mem_load(mem, key);
 	rz_il_mem_store(mem, key, value);
-	rz_il_vm_event_add(vm, rz_il_event_mem_write_new(key, old_value, value));
+	rz_il_vm_event_add(vm, rz_il_event_mem_write_new(index, key, old_value, value));
 	rz_bv_free(old_value);
 }
 
@@ -243,7 +243,7 @@ RZ_API RzBitVector *rz_il_vm_mem_loadw(RzILVM *vm, RzILMemIndex index, RzBitVect
 		return NULL;
 	}
 	RzBitVector *value = rz_il_mem_loadw(mem, key, n_bits, vm->big_endian);
-	rz_il_vm_event_add(vm, rz_il_event_mem_read_new(key, value));
+	rz_il_vm_event_add(vm, rz_il_event_mem_read_new(index, key, value));
 	return value;
 }
 
@@ -251,6 +251,7 @@ RZ_API RzBitVector *rz_il_vm_mem_loadw(RzILVM *vm, RzILMemIndex index, RzBitVect
  * Store data to memory by key, will create a key-value pair
  * or update the key-value pair if key existed; also generates
  * an RZ_IL_EVENT_MEM_WRITE event
+ * \param  index RzILMemIndex, index of the memory to store data
  * \param  vm    RzILVM* pointer to VM
  * \param  key   RzBitVector, aka address, a key to store data from memory
  * \param  value RzBitVector, aka value to store in memory
@@ -267,7 +268,7 @@ RZ_API void rz_il_vm_mem_storew(RzILVM *vm, RzILMemIndex index, RzBitVector *key
 		RZ_LOG_ERROR("StoreW mem %u 0x%llx failed\n", (unsigned int)index, rz_bv_to_ut64(key));
 		goto end;
 	}
-	rz_il_vm_event_add(vm, rz_il_event_mem_write_new(key, old_value, value));
+	rz_il_vm_event_add(vm, rz_il_event_mem_write_new(index, key, old_value, value));
 end:
 	rz_bv_free(old_value);
 }
