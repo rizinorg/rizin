@@ -1322,7 +1322,7 @@ else
 static RzAnalysisLiftedILOp op_retw(XtensaContext *ctx) {
 	return SEQ5(
 		SETL("n", EXTRACT32(VARG("a0"), U32(30), U32(2))),
-		SETL("nextPC", LOGOR(U32(PC & (0x3 << 30)), LOGAND(VARG("a0"), U32(0x3fffffff)))),
+		SETL("nextPC", LOGOR(U32(PC & (0x3U << 30)), LOGAND(VARG("a0"), U32(0x3fffffff)))),
 		SETL("owb", VARG("windowbase")),
 		SETL("m",
 			ITE(EQ(
