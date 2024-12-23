@@ -71,8 +71,8 @@ EXPECT=<<EOF
 main loc.func_6+6
 entry0+41 
 ----
-"mainloc.func_6+6"
-"entry0+41(null)"
+"main loc.func_6+6"
+"entry0+41 (null)"
 ----
 loc.func_0
 main+8
