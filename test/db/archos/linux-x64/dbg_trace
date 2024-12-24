@@ -56,20 +56,20 @@ FILE=bins/elf/analysis/calls_x64
 ARGS=-d
 CMDS=<<EOF
 dcu main
-dbt
+dbt~[6-]  # dbtt here would be nice
 echo ----
 dbtj
 echo ----
 dsui call; ds
-dbt~[6-]  # dbtt here would be nice
+dbt~[6-]  # ditto
 echo ----
 dsuir "^(call|ret)\b"; ds
-dbt~[6-]  # ditto
+dbt~[6-]
 EOF
 REGEXP_FILTER_OUT=("?main[^\n"]*"?)|("?entry0[^\n"]*"?)|(loc\.[^_][^\n]*)|(----)
 EXPECT=<<EOF
 main loc.func_6+6
-entry0+41 
+entry0+41
 ----
 "main loc.func_6+6"
 "entry0+41 (null)"
