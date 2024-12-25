@@ -137,21 +137,6 @@ static const RegFieldTbl ps_field_tbl = {
 	.width = 32,
 };
 
-// static const RegFieldTbl fcr_field_tbl = {
-// 	.tbl = {
-// 		{ FCR_RM, 0, 2 },
-// 		{ FCR_EI, 2, 1 },
-// 		{ FCR_EU, 3, 1 },
-// 		{ FCR_EO, 4, 1 },
-// 		{ FCR_EZ, 5, 1 },
-// 		{ FCR_EV, 6, 1 },
-// 		{ FCR_IGNORE, 7, 5 },
-// 		{ FCR_MBZ, 12, 20 },
-// 	},
-// 	.size = 8,
-// 	.width = 32,
-// };
-
 static const RegFieldTbl fsr_field_tbl = {
 	.tbl = {
 		{ FSR_IGNORE, 0, 7 },
@@ -254,26 +239,27 @@ static RzILOpEffect *FSR_set(ut16 fs, RzILOpPure *v) {
 }
 
 static RzILOpEffect *ARi_set(RzILOpPure *i, RzILOpPure *v) {
-	return BRANCH(
-		ULT(i, U32(16)),
+	RzILOpEffect *eff03 =
+		BRANCH(EQ(DUP(i), U32(3)), SETG("a3", DUP(v)),
+			BRANCH(EQ(DUP(i), U32(2)), SETG("a2", DUP(v)),
+				BRANCH(EQ(DUP(i), U32(1)), SETG("a1", DUP(v)),
+					BRANCH(EQ(DUP(i), U32(0)), SETG("a0", DUP(v)),
+						NOP() // Error: Invalid register index
+						))));
+	RzILOpEffect *eff07 = BRANCH(EQ(DUP(i), U32(7)), SETG("a7", DUP(v)),
+		BRANCH(EQ(DUP(i), U32(6)), SETG("a6", DUP(v)),
+			BRANCH(EQ(DUP(i), U32(5)), SETG("a5", DUP(v)),
+				BRANCH(EQ(DUP(i), U32(4)), SETG("a4", DUP(v)), eff03))));
+	RzILOpEffect *eff011 = BRANCH(EQ(DUP(i), U32(11)), SETG("a11", DUP(v)),
+		BRANCH(EQ(DUP(i), U32(10)), SETG("a10", DUP(v)),
+			BRANCH(EQ(DUP(i), U32(9)), SETG("a9", DUP(v)),
+				BRANCH(EQ(DUP(i), U32(8)), SETG("a8", DUP(v)), eff07))));
+	return BRANCH(ULT(i, U32(16)),
 		BRANCH(EQ(DUP(i), U32(15)), SETG("a15", v),
 			BRANCH(EQ(DUP(i), U32(14)), SETG("a14", DUP(v)),
 				BRANCH(EQ(DUP(i), U32(13)), SETG("a13", DUP(v)),
 					BRANCH(EQ(DUP(i), U32(12)), SETG("a12", DUP(v)),
-						BRANCH(EQ(DUP(i), U32(11)), SETG("a11", DUP(v)),
-							BRANCH(EQ(DUP(i), U32(10)), SETG("a10", DUP(v)),
-								BRANCH(EQ(DUP(i), U32(9)), SETG("a9", DUP(v)),
-									BRANCH(EQ(DUP(i), U32(8)), SETG("a8", DUP(v)),
-										BRANCH(EQ(DUP(i), U32(7)), SETG("a7", DUP(v)),
-											BRANCH(EQ(DUP(i), U32(6)), SETG("a6", DUP(v)),
-												BRANCH(EQ(DUP(i), U32(5)), SETG("a5", DUP(v)),
-													BRANCH(EQ(DUP(i), U32(4)), SETG("a4", DUP(v)),
-														BRANCH(EQ(DUP(i), U32(3)), SETG("a3", DUP(v)),
-															BRANCH(EQ(DUP(i), U32(2)), SETG("a2", DUP(v)),
-																BRANCH(EQ(DUP(i), U32(1)), SETG("a1", DUP(v)),
-																	BRANCH(EQ(DUP(i), U32(0)), SETG("a0", DUP(v)),
-																		NOP() // Error: Invalid register index
-																		)))))))))))))))),
+						eff011)))),
 		NOP() // Error: Register index out of range
 	);
 }
@@ -350,8 +336,9 @@ static RzAnalysisLiftedILOp op_binary4(XtensaContext *ctx, fn_op2 f) {
 
 static RzAnalysisLiftedILOp op_binary8(XtensaContext *ctx, fn_op2 f) {
 	rz_return_val_if_fail(FORMAT == XTENSA_INSN_FORM_RRR && RRR_s(ctx) % 8 == 0, NULL);
-	return SETG(REGN(0),
-		f(f(f(f(f(f(f(IREGi(1, 0), IREGi(1, 1)), IREGi(1, 2)), IREGi(1, 3)), IREGi(1, 4)), IREGi(1, 5)), IREGi(1, 6)), IREGi(1, 7)));
+	RzILOpPure *res03 = f(f(f(IREGi(1, 0), IREGi(1, 1)), IREGi(1, 2)), IREGi(1, 3));
+	RzILOpPure *res47 = f(f(f(IREGi(1, 4), IREGi(1, 5)), IREGi(1, 6)), IREGi(1, 7));
+	return SETG(REGN(0), f(res03, res47));
 }
 
 static RzAnalysisLiftedILOp op_all4(XtensaContext *ctx) {
@@ -1191,47 +1178,50 @@ static RzAnalysisLiftedILOp op_nop(XtensaContext *ctx) {
 }
 
 static RzAnalysisLiftedILOp op_nsa(XtensaContext *ctx) {
+	RzILOpPure *res01 =
+		LET("t1", ITE(VARLP("b2"), LO4(VARLP("t2")), HI4(VARLP("t2"))),
+			LET("b1", EQ(VARL("sign"), EXTRACT32(VARLP("t1"), U32(2), U32(2))),
+				LET("b0", ITE(VARLP("b1"), EQ(EXTRACT32(VARLP("t1"), U32(0), U32(1)), VARL("sign")), EQ(EXTRACT32(VARLP("t1"), U32(3), U32(1)), VARL("sign"))),
+					SUB(LOGOR(
+						    SHIFTL0(BOOL_TO_BV(VARLP("b4"), 32), U32(4)),
+						    LOGOR(SHIFTL0(BOOL_TO_BV(VARLP("b3"), 32), U32(3)),
+							    LOGOR(SHIFTL0(BOOL_TO_BV(VARLP("b2"), 32), U32(2)),
+								    LOGOR(SHIFTL0(BOOL_TO_BV(VARLP("b1"), 32), U32(1)),
+									    BOOL_TO_BV(VARLP("b0"), 32))))),
+						U32(1)))));
+	RzILOpPure *res03 =
+		ITE(EQ(VARL("sign"), EXTRACT32(VARL("ars"), U32(0), U32(31))), U32(31),
+			LET("b4", EQ(VARL("sign"), EXTRACT32(VARL("ars"), U32(16), U32(15))),
+				LET("t3", ITE(VARLP("b4"), LO16(VARL("ars")), HI16(VARL("ars"))),
+					LET("b3", EQ(VARL("sign"), EXTRACT32(VARLP("t3"), U32(8), U32(8))),
+						LET("t2", ITE(VARLP("b3"), LO8(VARLP("t3")), HI8(VARLP("t3"))),
+							LET("b2", EQ(VARL("sign"), EXTRACT32(VARLP("t2"), U32(4), U32(4))), res01))))));
 	return SEQ3(
 		SETL("ars", IREG(1)),
 		SETL("sign", EXTRACT32(VARL("ars"), U32(31), U32(1))),
-		SETG(REGN(0),
-			ITE(EQ(VARL("sign"), EXTRACT32(VARL("ars"), U32(0), U32(31))), U32(31),
-				LET("b4", EQ(VARL("sign"), EXTRACT32(VARL("ars"), U32(16), U32(15))),
-					LET("t3", ITE(VARLP("b4"), LO16(VARL("ars")), HI16(VARL("ars"))),
-						LET("b3", EQ(VARL("sign"), EXTRACT32(VARLP("t3"), U32(8), U32(8))),
-							LET("t2", ITE(VARLP("b3"), LO8(VARLP("t3")), HI8(VARLP("t3"))),
-								LET("b2", EQ(VARL("sign"), EXTRACT32(VARLP("t2"), U32(4), U32(4))),
-									LET("t1", ITE(VARLP("b2"), LO4(VARLP("t2")), HI4(VARLP("t2"))),
-										LET("b1", EQ(VARL("sign"), EXTRACT32(VARLP("t1"), U32(2), U32(2))),
-											LET("b0", ITE(VARLP("b1"), EQ(EXTRACT32(VARLP("t1"), U32(0), U32(1)), VARL("sign")), EQ(EXTRACT32(VARLP("t1"), U32(3), U32(1)), VARL("sign"))),
-												SUB(LOGOR(
-													    SHIFTL0(BOOL_TO_BV(VARLP("b4"), 32), U32(4)),
-													    LOGOR(SHIFTL0(BOOL_TO_BV(VARLP("b3"), 32), U32(3)),
-														    LOGOR(SHIFTL0(BOOL_TO_BV(VARLP("b2"), 32), U32(2)),
-															    LOGOR(SHIFTL0(BOOL_TO_BV(VARLP("b1"), 32), U32(1)),
-																    BOOL_TO_BV(VARLP("b0"), 32))))),
-													U32(1)))))))))))));
+		SETG(REGN(0), res03));
 }
 
 static RzAnalysisLiftedILOp op_nsau(XtensaContext *ctx) {
+	RzILOpPure *res01 =
+		LET("t1", ITE(VARLP("b2"), LO4(VARLP("t2")), HI4(VARLP("t2"))),
+			LET("b1", EQ(VARL("sign"), EXTRACT32(VARLP("t1"), U32(2), U32(2))),
+				LET("b0", ITE(VARLP("b1"), EQ(EXTRACT32(VARLP("t1"), U32(0), U32(1)), VARL("sign")), EQ(EXTRACT32(VARLP("t1"), U32(3), U32(1)), VARL("sign"))),
+					LOGOR(SHIFTL0(BOOL_TO_BV(VARLP("b4"), 32), U32(4)),
+						LOGOR(SHIFTL0(BOOL_TO_BV(VARLP("b3"), 32), U32(3)),
+							LOGOR(SHIFTL0(BOOL_TO_BV(VARLP("b2"), 32), U32(2)),
+								LOGOR(SHIFTL0(BOOL_TO_BV(VARLP("b1"), 32), U32(1)),
+									BOOL_TO_BV(VARLP("b0"), 32))))))));
+	RzILOpPure *res03 = ITE(EQ(VARL("sign"), VARL("ars")), U32(32),
+		LET("b4", EQ(VARL("sign"), EXTRACT32(VARL("ars"), U32(16), U32(16))),
+			LET("t3", ITE(VARLP("b4"), LO16(VARL("ars")), HI16(VARL("ars"))),
+				LET("b3", EQ(VARL("sign"), EXTRACT32(VARLP("t3"), U32(8), U32(8))),
+					LET("t2", ITE(VARLP("b3"), LO8(VARLP("t3")), HI8(VARLP("t3"))),
+						LET("b2", EQ(VARL("sign"), EXTRACT32(VARLP("t2"), U32(4), U32(4))), ))))));
 	return SEQ3(
 		SETL("ars", IREG(1)),
 		SETL("sign", U32(0)),
-		SETG(REGN(0),
-			ITE(EQ(VARL("sign"), VARL("ars")), U32(32),
-				LET("b4", EQ(VARL("sign"), EXTRACT32(VARL("ars"), U32(16), U32(16))),
-					LET("t3", ITE(VARLP("b4"), LO16(VARL("ars")), HI16(VARL("ars"))),
-						LET("b3", EQ(VARL("sign"), EXTRACT32(VARLP("t3"), U32(8), U32(8))),
-							LET("t2", ITE(VARLP("b3"), LO8(VARLP("t3")), HI8(VARLP("t3"))),
-								LET("b2", EQ(VARL("sign"), EXTRACT32(VARLP("t2"), U32(4), U32(4))),
-									LET("t1", ITE(VARLP("b2"), LO4(VARLP("t2")), HI4(VARLP("t2"))),
-										LET("b1", EQ(VARL("sign"), EXTRACT32(VARLP("t1"), U32(2), U32(2))),
-											LET("b0", ITE(VARLP("b1"), EQ(EXTRACT32(VARLP("t1"), U32(0), U32(1)), VARL("sign")), EQ(EXTRACT32(VARLP("t1"), U32(3), U32(1)), VARL("sign"))),
-												LOGOR(SHIFTL0(BOOL_TO_BV(VARLP("b4"), 32), U32(4)),
-													LOGOR(SHIFTL0(BOOL_TO_BV(VARLP("b3"), 32), U32(3)),
-														LOGOR(SHIFTL0(BOOL_TO_BV(VARLP("b2"), 32), U32(2)),
-															LOGOR(SHIFTL0(BOOL_TO_BV(VARLP("b1"), 32), U32(1)),
-																BOOL_TO_BV(VARLP("b0"), 32))))))))))))))));
+		SETG(REGN(0), res03));
 }
 
 static RzAnalysisLiftedILOp f_bool_op2(XtensaContext *ctx, fn_op2 f) {
