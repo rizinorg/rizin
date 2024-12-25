@@ -564,7 +564,7 @@ commands:
     options: "[?]"
     summary: Command specifiers (table-output only for now)
     type: RZ_CMD_DESC_TYPE_FAKE
-    usage: "<command>[:<table_spec>:<table_spec>...][:<output_spec>]"
+    usage: "<command>[:<table_spec>[:<table_spec>...]][:<output_spec>]"
     details:
       - name: Table format specifiers (<table_spec>)
         entries:
@@ -572,7 +572,7 @@ commands:
             comment: Sort table by column <col> in increasing or decreasing order.
           - text: "<col>/sortlen/<inc|dec>"
             comment: Sort table length of column <col> in increasing or decreasing order.
-          - text: "<col>/cols[/<col2>/<col3>...]"
+          - text: "<col>/cols[/<col2>[/<col3>...]]"
             comment: Show only specified columns in the table.
           - text: "<col>"
             comment: Show only column <col> (it must not have the same name as an output format specifier).

@@ -19195,7 +19195,7 @@ static const RzCmdDescHelp grep_help = {
 static const RzCmdDescDetailEntry specifiers_Table_space_format_space_specifiers_space__oparen__minor_table_spec_greater__cparen__detail_entries[] = {
 	{ .text = "<col>/sort/<inc|dec>", .arg_str = NULL, .comment = "Sort table by column <col> in increasing or decreasing order." },
 	{ .text = "<col>/sortlen/<inc|dec>", .arg_str = NULL, .comment = "Sort table length of column <col> in increasing or decreasing order." },
-	{ .text = "<col>/cols[/<col2>/<col3>...]", .arg_str = NULL, .comment = "Show only specified columns in the table." },
+	{ .text = "<col>/cols[/<col2>[/<col3>...]]", .arg_str = NULL, .comment = "Show only specified columns in the table." },
 	{ .text = "<col>", .arg_str = NULL, .comment = "Show only column <col> (it must not have the same name as an output format specifier)." },
 	{ .text = "<col>/gt/<val>", .arg_str = NULL, .comment = "Grep rows where column <col> is greater than <val>." },
 	{ .text = "<col>/ge/<val>", .arg_str = NULL, .comment = "Grep rows where column <col> is greater than or equal to <val>." },
@@ -19236,7 +19236,7 @@ static const RzCmdDescDetail specifiers_details[] = {
 };
 static const RzCmdDescHelp specifiers_help = {
 	.summary = "Command specifiers (table-output only for now)",
-	.usage = "<command>[:<table_spec>:<table_spec>...][:<output_spec>]",
+	.usage = "<command>[:<table_spec>[:<table_spec>...]][:<output_spec>]",
 	.options = "[?]",
 	.details = specifiers_details,
 };
