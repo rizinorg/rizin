@@ -1,3 +1,39 @@
+NAME="DWARF with unicode"
+FILE=bins/dwarf/demo_utf8
+CMDS=<<EOF
+id~DW_AT_name
+avgl
+EOF
+EXPECT=<<EOF
+	DW_AT_name	DW_FORM_strp
+	DW_AT_name	DW_FORM_string
+	DW_AT_name	DW_FORM_line_ptr
+	DW_AT_name	DW_FORM_string
+	DW_AT_name	DW_FORM_strp
+	DW_AT_name [DW_FORM_line_ptr]	: (.debug_line_str+0xa): demo_utf8.c
+	DW_AT_name [DW_FORM_strp]	: (.debug_str+0x0): 🕐
+	DW_AT_name [DW_FORM_string]	: int
+	DW_AT_name [DW_FORM_strp]	: (.debug_str+0x19): 💀
+	DW_AT_name [DW_FORM_strp]	: (.debug_str+0x5): 👊
+	DW_AT_name [DW_FORM_strp]	: (.debug_str+0xf): 🚀
+	DW_AT_name [DW_FORM_strp]	: (.debug_str+0x14): 😀
+	DW_AT_name [DW_FORM_string]	: À
+	DW_AT_name [DW_FORM_string]	: À
+	DW_AT_name [DW_FORM_string]	: gv1
+	DW_AT_name [DW_FORM_string]	: gv2
+	DW_AT_name [DW_FORM_strp]	: (.debug_str+0xa): main
+global int 👊 @ 0x2003c /tmp/lima/demo_utf8.c:85
+global int 🕐 @ 0x20034 /tmp/lima/demo_utf8.c:25
+global int 💀 @ 0x20038 /tmp/lima/demo_utf8.c:55
+global const int À @ 0x734 /tmp/lima/demo_utf8.c:1611
+global const int À @ 0x738 /tmp/lima/demo_utf8.c:1711
+global int 😀 @ 0x20044 /tmp/lima/demo_utf8.c:145
+global int 🚀 @ 0x20040 /tmp/lima/demo_utf8.c:115
+global const int gv1 @ 0x73c /tmp/lima/demo_utf8.c:1811
+global const int gv2 @ 0x740 /tmp/lima/demo_utf8.c:1911
+EOF
+RUN
+
 NAME="DWARF in machO dSYM"
 FILE=bins/mach0/hello-macos-arm64
 CMDS=<<EOF
