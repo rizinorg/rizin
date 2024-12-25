@@ -1217,7 +1217,8 @@ static RzAnalysisLiftedILOp op_nsau(XtensaContext *ctx) {
 			LET("t3", ITE(VARLP("b4"), LO16(VARL("ars")), HI16(VARL("ars"))),
 				LET("b3", EQ(VARL("sign"), EXTRACT32(VARLP("t3"), U32(8), U32(8))),
 					LET("t2", ITE(VARLP("b3"), LO8(VARLP("t3")), HI8(VARLP("t3"))),
-						LET("b2", EQ(VARL("sign"), EXTRACT32(VARLP("t2"), U32(4), U32(4))), ))))));
+						LET("b2", EQ(VARL("sign"), EXTRACT32(VARLP("t2"), U32(4), U32(4))),
+							res01))))));
 	return SEQ3(
 		SETL("ars", IREG(1)),
 		SETL("sign", U32(0)),
