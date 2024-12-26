@@ -995,7 +995,8 @@ RZ_API RZ_OWN RzList /*<RzBacktrace *>*/ *rz_core_debug_backtraces(RzCore *core)
 		get_backtrace_info(core, frame, UT64_MAX, &bt->flagdesc, &bt->flagdesc2, &bt->pcstr, &bt->spstr);
 		bt->fcn = rz_analysis_get_fcn_in(core->analysis, frame->addr, 0);
 		bt->frame = RZ_NEWCOPY(RzDebugFrame, frame);
-		bt->desc = rz_str_newf("%s %s", rz_str_get_null(bt->flagdesc), rz_str_get_null(bt->flagdesc2));
+		bt->desc = rz_str_newf("%s%s%s", rz_str_get(bt->flagdesc), bt->flagdesc2 ? " " : "",
+			rz_str_get(bt->flagdesc2));
 	}
 	rz_list_free(list);
 	return bts;

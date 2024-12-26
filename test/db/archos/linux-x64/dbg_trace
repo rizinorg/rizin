@@ -72,7 +72,7 @@ main loc.func_6+6
 entry0+41
 ----
 "main loc.func_6+6"
-"entry0+41 (null)"
+"entry0+41"
 ----
 loc.func_0
 main+8
