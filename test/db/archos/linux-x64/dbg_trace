@@ -69,7 +69,7 @@ EOF
 REGEXP_FILTER_OUT=("?main[^\n"]*"?)|("?entry0[^\n"]*"?)|(loc\.[^_][^\n]*)|(----)
 EXPECT=<<EOF
 main loc.func_6+6
-entry0+41 
+entry0+41
 ----
 "main loc.func_6+6"
 "entry0+41"

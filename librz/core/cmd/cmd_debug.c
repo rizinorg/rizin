@@ -2020,8 +2020,10 @@ RZ_IPI RzCmdStatus rz_cmd_debug_display_bt_handler(RzCore *core, int argc, const
 		switch (mode) {
 		case RZ_OUTPUT_MODE_STANDARD: {
 			rz_cons_printf("%d  %s sp: %s  %-5d"
-				       "[%s]  %s %s\n",
-				i++, bt->pcstr, bt->spstr, bt->frame->size, bt->fcn ? bt->fcn->name : "??", rz_str_get(bt->flagdesc), rz_str_get(bt->flagdesc2));
+				       "[%s]%s%s%s%s\n",
+				i++, bt->pcstr, bt->spstr, bt->frame->size, bt->fcn ? bt->fcn->name : "??",
+				bt->flagdesc ? "  " : "", rz_str_get(bt->flagdesc),
+				bt->flagdesc2 ? " " : "", rz_str_get(bt->flagdesc2));
 			break;
 		}
 		case RZ_OUTPUT_MODE_RIZIN: {
