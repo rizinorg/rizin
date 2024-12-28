@@ -304,7 +304,7 @@ RZ_API bool rz_core_bin_apply_all_info(RzCore *r, RzBinFile *binfile) {
 	rz_config_set(r->config, "asm.arch", arch);
 	rz_config_set_i(r->config, "asm.bits", bits);
 	rz_config_set(r->config, "analysis.arch", arch);
-	if (info->cpu && *info->cpu) {
+	if (RZ_STR_ISNOTEMPTY(info->cpu)) {
 		rz_config_set(r->config, "analysis.cpu", info->cpu);
 	} else {
 		rz_config_set(r->config, "analysis.cpu", arch);
@@ -585,10 +585,10 @@ RZ_API bool rz_core_bin_apply_config(RzCore *r, RzBinFile *binfile) {
 		rz_config_set(r->config, "analysis.cpp.abi", "itanium");
 	}
 	rz_config_set(r->config, "asm.arch", info->arch);
-	if (info->cpu && *info->cpu) {
+	if (RZ_STR_ISNOTEMPTY(info->cpu)) {
 		rz_config_set(r->config, "asm.cpu", info->cpu);
 	}
-	if (info->features && *info->features) {
+	if (RZ_STR_ISNOTEMPTY(info->features)) {
 		rz_config_set(r->config, "asm.features", info->features);
 	}
 	rz_config_set(r->config, "analysis.arch", info->arch);
@@ -3092,6 +3092,7 @@ RZ_API bool rz_core_bin_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile
 	case RZ_OUTPUT_MODE_QUIET:
 		rz_cons_printf("arch %s\n", info->arch);
 		rz_cons_printf("cpu %s\n", str2na(info->cpu));
+		rz_cons_printf("features %s\n", str2na(info->features));
 		rz_cons_printf("bits %d\n", bits);
 		rz_cons_printf("os %s\n", info->os);
 		rz_cons_printf("endian %s\n", info->big_endian ? "big" : "little");
@@ -3115,6 +3116,9 @@ RZ_API bool rz_core_bin_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile
 		}
 		if (RZ_STR_ISNOTEMPTY(info->cpu)) {
 			pj_ks(pj, "cpu", info->cpu);
+		}
+		if (RZ_STR_ISNOTEMPTY(info->features)) {
+			pj_ks(pj, "features", info->features);
 		}
 		pj_kn(pj, "baddr", rz_bin_get_baddr(core->bin));
 		pj_kn(pj, "binsz", rz_bin_get_size(core->bin));
@@ -3249,6 +3253,7 @@ RZ_API bool rz_core_bin_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile
 
 		rz_table_add_rowf(t, "ss", "arch", str2na(info->arch));
 		rz_table_add_rowf(t, "ss", "cpu", str2na(info->cpu));
+		rz_table_add_rowf(t, "ss", "features", str2na(info->features));
 		rz_table_add_rowf(t, "sX", "baddr", rz_bin_get_baddr(core->bin));
 		rz_table_add_rowf(t, "sX", "binsz", rz_bin_get_size(core->bin));
 		rz_table_add_rowf(t, "ss", "bintype", str2na(info->rclass));
@@ -5265,9 +5270,9 @@ static void print_arch(RzBin *bin, RzCmdStateOutput *state, struct arch_ctx *ctx
 		pj_ki(state->d.pj, "bits", ctx->bits);
 		pj_kn(state->d.pj, "offset", ctx->offset);
 		pj_kn(state->d.pj, "size", ctx->size);
-		if (info && !strcmp(ctx->arch, "mips")) {
-			pj_ks(state->d.pj, "isa", info->cpu);
-			pj_ks(state->d.pj, "features", info->features);
+		if (info) {
+			pj_ks(state->d.pj, "cpu", rz_str_get(info->cpu));
+			pj_ks(state->d.pj, "features", rz_str_get(info->features));
 		}
 		if (ctx->machine) {
 			pj_ks(state->d.pj, "machine", ctx->machine);

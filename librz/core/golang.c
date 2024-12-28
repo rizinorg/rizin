@@ -1870,6 +1870,7 @@ RZ_API void rz_core_analysis_resolve_golang_strings(RzCore *core) {
 			recover_cb = &golang_recover_string_x64;
 			break;
 		default:
+			RZ_LOG_WARN("golang: string recovery for %s bits %d is not implemented.\n", asm_arch, asm_bits);
 			break;
 		}
 	} else if (!strcmp(asm_arch, "arm")) {
@@ -1881,6 +1882,7 @@ RZ_API void rz_core_analysis_resolve_golang_strings(RzCore *core) {
 			recover_cb = &golang_recover_string_arm64;
 			break;
 		default:
+			RZ_LOG_WARN("golang: string recovery for %s bits %d is not implemented.\n", asm_arch, asm_bits);
 			break;
 		}
 	} else if (!strcmp(asm_arch, "mips")) {
@@ -1892,6 +1894,7 @@ RZ_API void rz_core_analysis_resolve_golang_strings(RzCore *core) {
 			recover_cb = &golang_recover_string_mips64;
 			break;
 		default:
+			RZ_LOG_WARN("golang: string recovery for %s bits %d is not implemented.\n", asm_arch, asm_bits);
 			break;
 		}
 	} else if (!strcmp(asm_arch, "riscv")) {
@@ -1900,6 +1903,7 @@ RZ_API void rz_core_analysis_resolve_golang_strings(RzCore *core) {
 			recover_cb = &golang_recover_string_riscv64;
 			break;
 		default:
+			RZ_LOG_WARN("golang: string recovery for %s bits %d is not implemented.\n", asm_arch, asm_bits);
 			break;
 		}
 	} else if (!strcmp(asm_arch, "ppc")) {
@@ -1908,6 +1912,7 @@ RZ_API void rz_core_analysis_resolve_golang_strings(RzCore *core) {
 			recover_cb = &golang_recover_string_ppc64;
 			break;
 		default:
+			RZ_LOG_WARN("golang: string recovery for %s bits %d is not implemented.\n", asm_arch, asm_bits);
 			break;
 		}
 	} else if (!strcmp(asm_arch, "sysz")) {

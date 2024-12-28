@@ -42,7 +42,7 @@ vaddr      paddr      hvaddr     haddr      type
 0x004006a0 0x000006a0 0x00400018 0x00000018 program
 arch     mips
 bits     32
-machine  MIPS R3000
+machine  MIPS R3000 big-endian
 EOF
 RUN
 
@@ -58,7 +58,7 @@ vaddr       paddr      hvaddr      haddr      type
 0x120000af0 0x00000af0 0x120000018 0x00000018 program
 arch     mips
 bits     64
-machine  MIPS R3000
+machine  MIPS R3000 big-endian
 EOF
 RUN
 

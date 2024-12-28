@@ -251,7 +251,7 @@ typedef struct
 #define EM_MN10300      89 /* Matsushita MN10300 */
 #define EM_MN10200      90 /* Matsushita MN10200 */
 #define EM_PJ           91 /* picoJava */
-#define EM_OPENRISC     92 /* OpenRISC 32-bit embedded processor */
+#define EM_OR1K         92 /* OpenRISC 1000 32-bit embedded processor */
 #define EM_ARC_COMPACT  93 /* ARC International ARCompact */
 #define EM_XTENSA       94 /* Tensilica Xtensa Architecture */
 #define EM_VIDEOCORE    95 /* Alphamosaic VideoCore */
@@ -342,28 +342,127 @@ typedef struct
 #define EM_XCORE       203 /* XMOS xCORE */
 #define EM_MCHP_PIC    204 /* Microchip 8-bit PIC(r) */
 /* reserved 205-209 */
-#define EM_KM32        210 /* KM211 KM32 */
-#define EM_KMX32       211 /* KM211 KMX32 */
-#define EM_EMX16       212 /* KM211 KMX16 */
-#define EM_EMX8        213 /* KM211 KMX8 */
-#define EM_KVARC       214 /* KM211 KVARC */
-#define EM_CDP         215 /* Paneve CDP */
-#define EM_COGE        216 /* Cognitive Smart Memory Processor */
-#define EM_COOL        217 /* Bluechip CoolEngine */
-#define EM_NORC        218 /* Nanoradio Optimized RISC */
-#define EM_CSR_KALIMBA 219 /* CSR Kalimba */
-#define EM_Z80         220 /* Zilog Z80 */
-#define EM_VISIUM      221 /* Controls and Data Services VISIUMcore */
-#define EM_FT32        222 /* FTDI Chip FT32 */
-#define EM_MOXIE       223 /* Moxie processor */
-#define EM_AMDGPU      224 /* AMD GPU */
-/* reserved 225-242 */
-#define EM_RISCV 243 /* RISC-V */
+#define EM_KM32            210 /* KM211 KM32 */
+#define EM_KMX32           211 /* KM211 KMX32 */
+#define EM_EMX16           212 /* KM211 KMX16 */
+#define EM_EMX8            213 /* KM211 KMX8 */
+#define EM_KVARC           214 /* KM211 KVARC */
+#define EM_CDP             215 /* Paneve CDP */
+#define EM_COGE            216 /* Cognitive Smart Memory Processor */
+#define EM_COOL            217 /* Bluechip CoolEngine */
+#define EM_NORC            218 /* Nanoradio Optimized RISC */
+#define EM_CSR_KALIMBA     219 /* CSR Kalimba */
+#define EM_Z80             220 /* Zilog Z80 */
+#define EM_VISIUM          221 /* Controls and Data Services VISIUMcore */
+#define EM_FT32            222 /* FTDI Chip FT32 */
+#define EM_MOXIE           223 /* Moxie processor */
+#define EM_AMDGPU          224 /* AMD GPU */
+#define EM_RISCV           243 /* RISC-V */
+#define EM_LANAI_OLD       244 /* Lanai 32-bit processor.  */
+#define EM_CEVA            245 /* CEVA Processor Architecture Family */
+#define EM_CEVA_X2         246 /* CEVA X2 Processor Family */
+#define EM_BPF             247 /* Linux BPF – in-kernel virtual machine.  */
+#define EM_GRAPHCORE_IPU   248 /* Graphcore Intelligent Processing Unit */
+#define EM_IMG1            249 /* Imagination Technologies */
+#define EM_NFP             250 /* Netronome Flow Processor.  */
+#define EM_VE              251 /* NEC Vector Engine */
+#define EM_CSKY            252 /* C-SKY processor family.  */
+#define EM_ARC_COMPACT3_64 253 /* Synopsys ARCv2.3 64-bit */
+#define EM_MCS6502         254 /* MOS Technology MCS 6502 processor */
+#define EM_ARC_COMPACT3    255 /* Synopsys ARCv2.3 32-bit */
+#define EM_KVX             256 /* Kalray VLIW core of the MPPA processor family */
+#define EM_65816           257 /* WDC 65816/65C816 */
+#define EM_LOONGARCH       258 /* LoongArch */
+#define EM_KF32            259 /* ChipON KungFu32 */
+#define EM_U16_U8CORE      260 /* LAPIS nX-U16/U8 */
+#define EM_TACHYUM         261 /* Tachyum */
+#define EM_56800EF         262 /* NXP 56800EF Digital Signal Controller (DSC) */
 
-#define EM_BPF  247 /* Linux BPF -- in-kernel virtual machine */
-#define EM_CSKY 252 /* C-SKY */
+/* AVR magic number.  Written in the absense of an ABI.  */
+#define EM_AVR_OLD 0x1057
 
-#define EM_NUM 253
+/* MSP430 magic number.  Written in the absense of everything.  */
+#define EM_MSP430_OLD 0x1059
+
+/* Morpho MT.   Written in the absense of an ABI.  */
+#define EM_MT 0x2530
+
+/* FR30 magic number - no EABI available.  */
+#define EM_CYGNUS_FR30 0x3330
+
+/* Unofficial value for Web Assembly binaries, as used by LLVM.  */
+#define EM_WEBASSEMBLY 0x4157
+
+/* Freescale S12Z.   The Freescale toolchain generates elf files with this value.  */
+#define EM_S12Z 0x4DEF
+
+/* DLX magic number.  Written in the absense of an ABI.  */
+#define EM_DLX 0x5aa5
+
+/* FRV magic number - no EABI available??.  */
+#define EM_CYGNUS_FRV 0x5441
+
+/* Infineon Technologies 16-bit microcontroller with C166-V2 core.  */
+#define EM_XC16X 0x4688
+
+/* D10V backend magic number.  Written in the absence of an ABI.  */
+#define EM_CYGNUS_D10V 0x7650
+
+/* D30V backend magic number.  Written in the absence of an ABI.  */
+#define EM_CYGNUS_D30V 0x7676
+
+/* Ubicom IP2xxx;   Written in the absense of an ABI.  */
+#define EM_IP2K_OLD 0x8217
+
+/* Cygnus PowerPC ELF backend.  Written in the absence of an ABI.  */
+#define EM_CYGNUS_POWERPC 0x9025
+
+/* Alpha backend magic number.  Written in the absence of an ABI.  */
+#define EM_ALPHA 0x9026
+
+/* Cygnus M32R ELF backend.  Written in the absence of an ABI.  */
+#define EM_CYGNUS_M32R 0x9041
+
+/* V850 backend magic number.  Written in the absense of an ABI.  */
+#define EM_CYGNUS_V850 0x9080
+
+/* old S/390 backend magic number. Written in the absence of an ABI.  */
+#define EM_S390_OLD 0xa390
+
+/* Old, unofficial value for Xtensa.  */
+#define EM_XTENSA_OLD 0xabc7
+
+#define EM_XSTORMY16 0xad45
+
+/* mn10200 and mn10300 backend magic numbers.
+   Written in the absense of an ABI.  */
+#define EM_CYGNUS_MN10300 0xbeef
+#define EM_CYGNUS_MN10200 0xdead
+
+/* Renesas M32C and M16C.  */
+#define EM_M32C_OLD 0xFEB0
+
+/* Vitesse IQ2000.  */
+#define EM_IQ2000 0xFEBA
+
+/* NIOS magic number - no EABI available.  */
+#define EM_NIOS32 0xFEBB
+
+#define EM_CYGNUS_MEP 0xF00D /* Toshiba MeP */
+
+/* Old, unofficial value for Moxie.  */
+#define EM_MOXIE_OLD 0xFEED
+
+#define EM_MICROBLAZE_OLD 0xbaab /* Old MicroBlaze */
+
+#define EM_ADAPTEVA_EPIPHANY 0x1223 /* Adapteva's Epiphany architecture.  */
+
+/* Old constant that might be in use by some software. */
+#define EM_OPENRISC EM_OR1K
+
+/* C-SKY historically used 39, the same value as MCORE, from which the
+   architecture was derived.  */
+#define EM_CSKY_OLD EM_MCORE
 
 /* Old spellings/synonyms.  */
 
@@ -1624,18 +1723,38 @@ typedef struct
 
 /* MIPS R3000 specific definitions.  */
 
-/* Legal values for e_flags field of Elf32_Ehdr.  */
-
-#define EF_MIPS_NOREORDER   1 /* A .noreorder directive was used.  */
-#define EF_MIPS_PIC         2 /* Contains PIC code.  */
-#define EF_MIPS_CPIC        4 /* Uses PIC calling sequence.  */
-#define EF_MIPS_XGOT        8
-#define EF_MIPS_64BIT_WHIRL 16
-#define EF_MIPS_ABI2        32
-#define EF_MIPS_ABI_ON32    64
-#define EF_MIPS_FP64        512 /* Uses FP64 (12 callee-saved).  */
-#define EF_MIPS_NAN2008     1024 /* Uses IEEE 754-2008 NaN encoding.  */
-#define EF_MIPS_ARCH        0xf0000000 /* MIPS architecture level.  */
+/* Processor specific flags for the ELF header e_flags field.  */
+#define EF_MIPS_NOREORDER          0x00000001 /* At least one .noreorder directive appears in the source.  */
+#define EF_MIPS_PIC                0x00000002 /* File contains position independent code.  */
+#define EF_MIPS_CPIC               0x00000004 /* Code in file uses the standard calling sequence for calling position independent code.  */
+#define EF_MIPS_XGOT               0x00000008 /* ???  Unknown flag, set in IRIX 6's BSDdup2.o in libbsd.a.  */
+#define EF_MIPS_UCODE              0x00000010 /* Code in file uses UCODE (obsolete) */
+#define EF_MIPS_ABI2               0x00000020 /* Code in file uses new ABI (-n32 on Irix 6).  */
+#define EF_MIPS_OPTIONS_FIRST      0x00000080 /* Process the .MIPS.options section first by ld */
+#define EF_MIPS_32BITMODE          0x00000100 /* Indicates code compiled for a 64-bit machine in 32-bit mode (regs are 32-bits wide).  */
+#define EF_MIPS_FP64               0x00000200 /* 32-bit machine but FP registers are 64 bit (-mfp64).  */
+#define EF_MIPS_NAN2008            0x00000400 /* Code in file uses the IEEE 754-2008 NaN encoding convention.  */
+#define EF_MIPS_ARCH_ASE           0x0f000000 /* Architectural Extensions used by this file */
+#define EF_MIPS_ARCH_ASE_MDMX      0x08000000 /* Use MDMX multimedia extensions */
+#define EF_MIPS_ARCH_ASE_M16       0x04000000 /* Use MIPS-16 ISA extensions */
+#define EF_MIPS_ARCH_ASE_MICROMIPS 0x02000000 /* Use MICROMIPS ISA extensions.  */
+#define EF_MIPS_ARCH               0xf0000000 /* Four bit MIPS architecture field.  */
+#define EF_MIPS_ARCH_1             0x00000000 /* -mips1 code.  */
+#define EF_MIPS_ARCH_2             0x10000000 /* -mips2 code.  */
+#define EF_MIPS_ARCH_3             0x20000000 /* -mips3 code.  */
+#define EF_MIPS_ARCH_4             0x30000000 /* -mips4 code.  */
+#define EF_MIPS_ARCH_5             0x40000000 /* -mips5 code.  */
+#define EF_MIPS_ARCH_32            0x50000000 /* -mips32 code.  */
+#define EF_MIPS_ARCH_64            0x60000000 /* -mips64 code.  */
+#define EF_MIPS_ARCH_32R2          0x70000000 /* -mips32r2 code.  */
+#define EF_MIPS_ARCH_64R2          0x80000000 /* -mips64r2 code.  */
+#define EF_MIPS_ARCH_32R6          0x90000000 /* -mips32r6 code.  */
+#define EF_MIPS_ARCH_64R6          0xa0000000 /* -mips64r6 code.  */
+#define EF_MIPS_ABI                0x0000F000 /* The ABI of the file.  Also see EF_MIPS_ABI2 above. */
+#define EF_MIPS_ABI_O32            0x00001000 /* The original o32 abi. */
+#define EF_MIPS_ABI_O64            0x00002000 /* O32 extended to work on 64 bit architectures */
+#define EF_MIPS_ABI_EABI32         0x00003000 /* EABI in 32 bit mode */
+#define EF_MIPS_ABI_EABI64         0x00004000 /* EABI in 64 bit mode */
 
 /* Legal values for MIPS architecture level.  */
 
@@ -1649,15 +1768,80 @@ typedef struct
 #define EF_MIPS_ARCH_32R2 0x70000000 /* MIPS32r2 code.  */
 #define EF_MIPS_ARCH_64R2 0x80000000 /* MIPS64r2 code.  */
 
-/* The following are unofficial names and should not be used.  */
+/*In order to support backwards compatibility we also
+			define the old versions of some of these constants. */
+#define E_MIPS_ARCH_1     EF_MIPS_ARCH_1
+#define E_MIPS_ARCH_2     EF_MIPS_ARCH_2
+#define E_MIPS_ARCH_3     EF_MIPS_ARCH_3
+#define E_MIPS_ARCH_4     EF_MIPS_ARCH_4
+#define E_MIPS_ARCH_5     EF_MIPS_ARCH_5
+#define E_MIPS_ARCH_32    EF_MIPS_ARCH_32
+#define E_MIPS_ARCH_64    EF_MIPS_ARCH_64
+#define E_MIPS_ARCH_32R2  EF_MIPS_ARCH_32R2
+#define E_MIPS_ARCH_64R2  EF_MIPS_ARCH_64R2
+#define E_MIPS_ARCH_32R6  EF_MIPS_ARCH_32R6
+#define E_MIPS_ARCH_64R6  EF_MIPS_ARCH_64R6
+#define E_MIPS_ABI_O32    EF_MIPS_ABI_O32
+#define E_MIPS_ABI_O64    EF_MIPS_ABI_O64
+#define E_MIPS_ABI_EABI32 EF_MIPS_ABI_EABI32
+#define E_MIPS_ABI_EABI64 EF_MIPS_ABI_EABI64
 
-#define E_MIPS_ARCH_1  EF_MIPS_ARCH_1
-#define E_MIPS_ARCH_2  EF_MIPS_ARCH_2
-#define E_MIPS_ARCH_3  EF_MIPS_ARCH_3
-#define E_MIPS_ARCH_4  EF_MIPS_ARCH_4
-#define E_MIPS_ARCH_5  EF_MIPS_ARCH_5
-#define E_MIPS_ARCH_32 EF_MIPS_ARCH_32
-#define E_MIPS_ARCH_64 EF_MIPS_ARCH_64
+/* Machine variant if we know it.  This field was invented at Cygnus,
+   but it is hoped that other vendors will adopt it.  If some standard
+   is developed, this code should be changed to follow it. */
+#define EF_MIPS_MACH 0x00FF0000
+
+/* Cygnus is choosing values between 80 and 9F;
+   00 - 7F should be left for a future standard;
+   the rest are open. */
+
+#define EF_MIPS_MACH_3900     0x00810000
+#define EF_MIPS_MACH_4010     0x00820000
+#define EF_MIPS_MACH_4100     0x00830000
+#define EF_MIPS_MACH_ALLEGREX 0x00840000
+#define EF_MIPS_MACH_4650     0x00850000
+#define EF_MIPS_MACH_4120     0x00870000
+#define EF_MIPS_MACH_4111     0x00880000
+#define EF_MIPS_MACH_SB1      0x008a0000
+#define EF_MIPS_MACH_OCTEON   0x008b0000
+#define EF_MIPS_MACH_XLR      0x008c0000
+#define EF_MIPS_MACH_OCTEON2  0x008d0000
+#define EF_MIPS_MACH_OCTEON3  0x008e0000
+#define EF_MIPS_MACH_5400     0x00910000
+#define EF_MIPS_MACH_5900     0x00920000
+#define EF_MIPS_MACH_IAMR2    0x00930000
+#define EF_MIPS_MACH_5500     0x00980000
+#define EF_MIPS_MACH_9000     0x00990000
+#define EF_MIPS_MACH_LS2E     0x00A00000
+#define EF_MIPS_MACH_LS2F     0x00A10000
+#define EF_MIPS_MACH_GS464    0x00A20000
+#define EF_MIPS_MACH_GS464E   0x00A30000
+#define EF_MIPS_MACH_GS264E   0x00A40000
+
+/* In order to support backwards compatibility we also
+   define the old versions of some of these constants.  */
+#define E_MIPS_MACH_3900     EF_MIPS_MACH_3900
+#define E_MIPS_MACH_4010     EF_MIPS_MACH_4010
+#define E_MIPS_MACH_4100     EF_MIPS_MACH_4100
+#define E_MIPS_MACH_ALLEGREX EF_MIPS_MACH_ALLEGREX
+#define E_MIPS_MACH_4650     EF_MIPS_MACH_4650
+#define E_MIPS_MACH_4120     EF_MIPS_MACH_4120
+#define E_MIPS_MACH_4111     EF_MIPS_MACH_4111
+#define E_MIPS_MACH_SB1      EF_MIPS_MACH_SB1
+#define E_MIPS_MACH_OCTEON   EF_MIPS_MACH_OCTEON
+#define E_MIPS_MACH_XLR      EF_MIPS_MACH_XLR
+#define E_MIPS_MACH_OCTEON2  EF_MIPS_MACH_OCTEON2
+#define E_MIPS_MACH_OCTEON3  EF_MIPS_MACH_OCTEON3
+#define E_MIPS_MACH_5400     EF_MIPS_MACH_5400
+#define E_MIPS_MACH_5900     EF_MIPS_MACH_5900
+#define E_MIPS_MACH_IAMR2    EF_MIPS_MACH_IAMR2
+#define E_MIPS_MACH_5500     EF_MIPS_MACH_5500
+#define E_MIPS_MACH_9000     EF_MIPS_MACH_9000
+#define E_MIPS_MACH_LS2E     EF_MIPS_MACH_LS2E
+#define E_MIPS_MACH_LS2F     EF_MIPS_MACH_LS2F
+#define E_MIPS_MACH_GS464    EF_MIPS_MACH_GS464
+#define E_MIPS_MACH_GS464E   EF_MIPS_MACH_GS464E
+#define E_MIPS_MACH_GS264E   EF_MIPS_MACH_GS264E
 
 /* Special section indices.  */
 
@@ -1667,21 +1851,20 @@ typedef struct
 #define SHN_MIPS_SCOMMON    0xff03 /* Small common symbols.  */
 #define SHN_MIPS_SUNDEFINED 0xff04 /* Small undefined symbols.  */
 
-/* Legal values for sh_type field of Elf32_Shdr.  */
-
-#define SHT_MIPS_LIBLIST       0x70000000 /* Shared objects used in link.  */
-#define SHT_MIPS_MSYM          0x70000001
-#define SHT_MIPS_CONFLICT      0x70000002 /* Conflicting symbols.  */
-#define SHT_MIPS_GPTAB         0x70000003 /* Global data area sizes.  */
-#define SHT_MIPS_UCODE         0x70000004 /* Reserved for SGI/MIPS compilers */
-#define SHT_MIPS_DEBUG         0x70000005 /* MIPS ECOFF debugging info.  */
-#define SHT_MIPS_REGINFO       0x70000006 /* Register usage information.  */
+/* Processor specific section types. Legal values for sh_type field of Elf32_Shdr. */
+#define SHT_MIPS_LIBLIST       0x70000000 /* Section contains the set of dynamic shared objects used when statically linking.  */
+#define SHT_MIPS_MSYM          0x70000001 /* I'm not sure what this is, but it's used on Irix 5.  */
+#define SHT_MIPS_CONFLICT      0x70000002 /* Section contains list of symbols whose definitions conflict with symbols defined in shared objects.  */
+#define SHT_MIPS_GPTAB         0x70000003 /* Section contains the global pointer table.  */
+#define SHT_MIPS_UCODE         0x70000004 /* Section contains microcode information.  The exact format is unspecified.  */
+#define SHT_MIPS_DEBUG         0x70000005 /* Section contains some sort of debugging information.  The exact format is unspecified.  It's probably ECOFF symbols.  */
+#define SHT_MIPS_REGINFO       0x70000006 /* Section contains register usage information.  */
 #define SHT_MIPS_PACKAGE       0x70000007
 #define SHT_MIPS_PACKSYM       0x70000008
 #define SHT_MIPS_RELD          0x70000009
-#define SHT_MIPS_IFACE         0x7000000b
-#define SHT_MIPS_CONTENT       0x7000000c
-#define SHT_MIPS_OPTIONS       0x7000000d /* Miscellaneous options.  */
+#define SHT_MIPS_IFACE         0x7000000b /* Section contains interface information.  */
+#define SHT_MIPS_CONTENT       0x7000000c /* Section contains description of contents of another section.  */
+#define SHT_MIPS_OPTIONS       0x7000000d /* Section contains miscellaneous options.  */
 #define SHT_MIPS_SHDR          0x70000010
 #define SHT_MIPS_FDESC         0x70000011
 #define SHT_MIPS_EXTSYM        0x70000012
@@ -1693,33 +1876,33 @@ typedef struct
 #define SHT_MIPS_LOCSTR        0x70000018
 #define SHT_MIPS_LINE          0x70000019
 #define SHT_MIPS_RFDESC        0x7000001a
-#define SHT_MIPS_DELTASYM      0x7000001b
-#define SHT_MIPS_DELTAINST     0x7000001c
-#define SHT_MIPS_DELTACLASS    0x7000001d
-#define SHT_MIPS_DWARF         0x7000001e /* DWARF debugging information.  */
-#define SHT_MIPS_DELTADECL     0x7000001f
-#define SHT_MIPS_SYMBOL_LIB    0x70000020
-#define SHT_MIPS_EVENTS        0x70000021 /* Event section.  */
+#define SHT_MIPS_DELTASYM      0x7000001b /* Delta C++: symbol table */
+#define SHT_MIPS_DELTAINST     0x7000001c /* Delta C++: instance table */
+#define SHT_MIPS_DELTACLASS    0x7000001d /* Delta C++: class table */
+#define SHT_MIPS_DWARF         0x7000001e /* DWARF debugging section.  */
+#define SHT_MIPS_DELTADECL     0x7000001f /* Delta C++: declarations */
+#define SHT_MIPS_SYMBOL_LIB    0x70000020 /* List of libraries the binary depends on.  Includes a time stamp, version number.  */
+#define SHT_MIPS_EVENTS        0x70000021 /* Events section.  */
 #define SHT_MIPS_TRANSLATE     0x70000022
-#define SHT_MIPS_PIXIE         0x70000023
-#define SHT_MIPS_XLATE         0x70000024
-#define SHT_MIPS_XLATE_DEBUG   0x70000025
-#define SHT_MIPS_WHIRL         0x70000026
-#define SHT_MIPS_EH_REGION     0x70000027
-#define SHT_MIPS_XLATE_OLD     0x70000028
-#define SHT_MIPS_PDR_EXCEPTION 0x70000029
-#define SHT_MIPS_XHASH         0x7000002b
+#define SHT_MIPS_PIXIE         0x70000023 /* Special pixie sections */
+#define SHT_MIPS_XLATE         0x70000024 /* Address translation table (for debug info) */
+#define SHT_MIPS_XLATE_DEBUG   0x70000025 /* SGI internal address translation table (for debug info) */
+#define SHT_MIPS_WHIRL         0x70000026 /* Intermediate code */
+#define SHT_MIPS_EH_REGION     0x70000027 /* C++ exception handling region info */
+#define SHT_MIPS_XLATE_OLD     0x70000028 /* Obsolete address translation table (for debug info) */
+#define SHT_MIPS_PDR_EXCEPTION 0x70000029 /* Runtime procedure descriptor table exception information (ucode) ??? */
+#define SHT_MIPS_ABIFLAGS      0x7000002a /* ABI related flags section.  */
+#define SHT_MIPS_XHASH         0x7000002b /* GNU style symbol hash table with xlat.  */
 
 /* Legal values for sh_flags field of Elf32_Shdr.  */
-
-#define SHF_MIPS_GPREL   0x10000000 /* Must be in global data area.  */
-#define SHF_MIPS_MERGE   0x20000000
-#define SHF_MIPS_ADDR    0x40000000
-#define SHF_MIPS_STRINGS 0x80000000
-#define SHF_MIPS_NOSTRIP 0x08000000
-#define SHF_MIPS_LOCAL   0x04000000
-#define SHF_MIPS_NAMES   0x02000000
-#define SHF_MIPS_NODUPE  0x01000000
+#define SHF_MIPS_GPREL   0x10000000 /* This section must be in the global data area.  */
+#define SHF_MIPS_MERGE   0x20000000 /* This section should be merged.  */
+#define SHF_MIPS_ADDR    0x40000000 /* This section contains address data of size implied by section element size.  */
+#define SHF_MIPS_STRING  0x80000000 /* This section contains string data.  */
+#define SHF_MIPS_NOSTRIP 0x08000000 /* This section may not be stripped.  */
+#define SHF_MIPS_LOCAL   0x04000000 /* This section is local to threads.  */
+#define SHF_MIPS_NAMES   0x02000000 /* Linker should generate implicit weak names for this section.  */
+#define SHF_MIPS_NODUPES 0x01000000 /* Section contais text/data which may be replicated in other sections. Linker should retain only one copy.  */
 
 /* Symbol tables.  */
 

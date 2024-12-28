@@ -200,7 +200,7 @@ repeat:
 					// branches are illegal in a delay slot
 					esil->trap = RZ_ANALYSIS_TRAP_EXEC_ERR;
 					esil->trap_code = addr;
-					RZ_LOG_WARN("core: ESIL: Trap, trying to execute a branch in a delay slot\n");
+					RZ_LOG_INFO("core: ESIL: Trap, trying to execute a branch in a delay slot\n");
 					return_tail(1);
 					break;
 				}

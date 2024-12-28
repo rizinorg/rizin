@@ -305,6 +305,9 @@ static ut64 get_import_addr_aux(ELFOBJ *bin, RzBinElfReloc *reloc) {
 	case EM_ALPHA:
 		return get_import_addr_alpha(bin, reloc);
 	case EM_MIPS: // MIPS32 BIG ENDIAN relocs
+	case EM_MIPS_RS3_LE:
+	case EM_MIPS_X:
+	case EM_IMG1:
 		return get_import_addr_mips(bin, reloc);
 	case EM_RISCV:
 		return get_import_addr_riscv(bin, reloc);
