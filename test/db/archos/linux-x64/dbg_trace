@@ -61,7 +61,7 @@ echo ----
 dbtj
 echo ----
 dsui call; ds
-dbt~[6-]  # dbtt here would be nice
+dbtt:desc:quiet
 echo ----
 dsuir "^(call|ret)\b"; ds
 dbt~[6-]

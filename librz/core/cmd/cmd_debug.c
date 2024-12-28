@@ -2016,6 +2016,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_display_bt_handler(RzCore *core, int argc, const
 	RzBacktrace *bt;
 	PJ *pj = state->d.pj;
 	rz_cmd_state_output_array_start(state);
+	rz_cmd_state_output_set_columnsf(state, "dxxdss", "idx", "pc", "sp", "frame_size", "fname", "desc");
 	rz_list_foreach (list, iter, bt) {
 		switch (mode) {
 		case RZ_OUTPUT_MODE_STANDARD: {
@@ -2041,6 +2042,12 @@ RZ_IPI RzCmdStatus rz_cmd_debug_display_bt_handler(RzCore *core, int argc, const
 			pj_ks(pj, "fname", bt->fcn ? bt->fcn->name : "");
 			pj_ks(pj, "desc", bt->desc);
 			pj_end(pj);
+			i++;
+			break;
+		}
+		case RZ_OUTPUT_MODE_TABLE: {
+			rz_table_add_rowf(state->d.t, "dxxdss", i, bt->frame->addr, bt->frame->sp, bt->frame->size,
+				bt->fcn ? bt->fcn->name : "", bt->desc);
 			i++;
 			break;
 		}

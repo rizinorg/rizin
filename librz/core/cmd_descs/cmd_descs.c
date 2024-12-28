@@ -21204,7 +21204,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_debug_remove_bp_plugin_cd = rz_cmd_desc_argv_new(core->rcmd, db_cd, "dbh-", rz_cmd_debug_remove_bp_plugin_handler, &cmd_debug_remove_bp_plugin_help);
 	rz_warn_if_fail(cmd_debug_remove_bp_plugin_cd);
 
-	RzCmdDesc *dbt_cd = rz_cmd_desc_group_state_new(core->rcmd, db_cd, "dbt", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_QUIET, rz_cmd_debug_display_bt_handler, &cmd_debug_display_bt_help, &dbt_help);
+	RzCmdDesc *dbt_cd = rz_cmd_desc_group_state_new(core->rcmd, db_cd, "dbt", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_QUIET, rz_cmd_debug_display_bt_handler, &cmd_debug_display_bt_help, &dbt_help);
 	rz_warn_if_fail(dbt_cd);
 	RzCmdDesc *cmd_debug_display_bt_oneline_cd = rz_cmd_desc_argv_new(core->rcmd, dbt_cd, "dbt=", rz_cmd_debug_display_bt_oneline_handler, &cmd_debug_display_bt_oneline_help);
 	rz_warn_if_fail(cmd_debug_display_bt_oneline_cd);
