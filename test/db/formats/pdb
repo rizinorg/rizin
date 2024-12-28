@@ -44,53 +44,53 @@ idp bins/pdb/Project1.pdb
 avgl
 EOF
 EXPECT=<<EOF
-global struct IMAGE_LOAD_CONFIG_DIRECTORY32_2 _load_config_used @ 0x165b0
-global int32_t (*type_0x1450)(char *arg0, const char *arg1) wsprintffp @ 0x1815c
-global void (*type_0x1093)() [4] __rtc_izz @ 0x16ae8
-global wchar_t [26] mspdbName @ 0x1640c
-global char ** argv @ 0x18140
-global void (**type_0x1093)() __onexitbegin @ 0x1856c
-global uint32_t __security_cookie @ 0x18024
-global void (*type_0x1093)() [4] __rtc_iaa @ 0x168e0
-global int32_t __defaultmatherr @ 0x18018
-global void * __native_startup_lock @ 0x18548
-global int32_t has_cctor @ 0x18138
-global int32_t __native_startup_state @ 0x18558
-global uint32_t __native_dllmain_reason @ 0x18020
-global int32_t _dowildcard @ 0x18170
-global struct _EXCEPTION_RECORD GS_ExceptionRecord @ 0x18188
 global void (*type_0x1093)() [4] __xc_a @ 0x15000
-global void (*type_0x1093)() [4] __xi_a @ 0x1530c
-global bool init @ 0x18130
-global int32_t argret @ 0x18148
-global int32_t argc @ 0x1813c
-global int32_t (*type_0x1028)() pinit @ 0x15514
-global wchar_t [8] dllExt @ 0x1654c
-global int32_t managedapp @ 0x1814c
-global struct HINSTANCE__ * mspdb @ 0x1817c
-global void (*type_0x1093)() [4] __xi_z @ 0x1571c
-global struct _EXCEPTION_POINTERS GS_ExceptionPointers @ 0x165a0
-global int32_t __globallocalestatus @ 0x1801c
-global int32_t _commode @ 0x1816c
-global int32_t DebuggerWasPresent @ 0x184a4
 global void (*type_0x1093)() pcppinit @ 0x15104
-global int32_t _newmode @ 0x18174
-global int32_t mainret @ 0x18134
 global void (*type_0x1093)() [4] __xc_z @ 0x15208
-global int32_t [20] _RTC_ErrorLevels @ 0x18000
-global int32_t (*type_0x1028)() (*type_0x1097)(int32_t (*type_0x1028)()) _imp___onexit @ 0x19248
+global void (*type_0x1093)() [4] __xi_a @ 0x1530c
 global int32_t (*type_0x1028)() pcinit @ 0x15410
-global const char *[20] _RTC_errlist @ 0x16034
-global int32_t * _imp___commode @ 0x1927c
-global uint32_t __security_cookie_complement @ 0x18028
-global int32_t _fmode @ 0x18178
-global struct _startupinfo startinfo @ 0x18150
-global int32_t (*type_0x1141)(int32_t arg0, const char *arg1, int32_t arg2, const char *arg3, const char *arg4) _RTC_ErrorReportFunc @ 0x18160
+global int32_t (*type_0x1028)() pinit @ 0x15514
+global void (*type_0x1093)() [4] __xi_z @ 0x1571c
 global const char *[24] _RTC_ErrorMessages @ 0x1594c
-global int32_t * _imp___fmode @ 0x19280
-global void (*type_0x1093)() [4] __rtc_tzz @ 0x16df4
-global void (**type_0x1093)() __onexitend @ 0x1855c
+global const char *[20] _RTC_errlist @ 0x16034
+global wchar_t [26] mspdbName @ 0x1640c
+global wchar_t [8] dllExt @ 0x1654c
+global struct _EXCEPTION_POINTERS GS_ExceptionPointers @ 0x165a0
+global struct IMAGE_LOAD_CONFIG_DIRECTORY32_2 _load_config_used @ 0x165b0
+global void (*type_0x1093)() [4] __rtc_iaa @ 0x168e0
+global void (*type_0x1093)() [4] __rtc_izz @ 0x16ae8
 global void (*type_0x1093)() [4] __rtc_taa @ 0x16bec
+global void (*type_0x1093)() [4] __rtc_tzz @ 0x16df4
+global int32_t [20] _RTC_ErrorLevels @ 0x18000
+global int32_t __defaultmatherr @ 0x18018
+global int32_t __globallocalestatus @ 0x1801c
+global uint32_t __native_dllmain_reason @ 0x18020
+global uint32_t __security_cookie @ 0x18024
+global uint32_t __security_cookie_complement @ 0x18028
+global bool init @ 0x18130
+global int32_t mainret @ 0x18134
+global int32_t has_cctor @ 0x18138
+global int32_t argc @ 0x1813c
+global char ** argv @ 0x18140
+global int32_t argret @ 0x18148
+global int32_t managedapp @ 0x1814c
+global struct _startupinfo startinfo @ 0x18150
+global int32_t (*type_0x1450)(char *arg0, const char *arg1) wsprintffp @ 0x1815c
+global int32_t (*type_0x1141)(int32_t arg0, const char *arg1, int32_t arg2, const char *arg3, const char *arg4) _RTC_ErrorReportFunc @ 0x18160
+global int32_t _commode @ 0x1816c
+global int32_t _dowildcard @ 0x18170
+global int32_t _newmode @ 0x18174
+global int32_t _fmode @ 0x18178
+global struct HINSTANCE__ * mspdb @ 0x1817c
+global struct _EXCEPTION_RECORD GS_ExceptionRecord @ 0x18188
+global int32_t DebuggerWasPresent @ 0x184a4
+global void * __native_startup_lock @ 0x18548
+global int32_t __native_startup_state @ 0x18558
+global void (**type_0x1093)() __onexitend @ 0x1855c
+global void (**type_0x1093)() __onexitbegin @ 0x1856c
+global int32_t (*type_0x1028)() (*type_0x1097)(int32_t (*type_0x1028)()) _imp___onexit @ 0x19248
+global int32_t * _imp___commode @ 0x1927c
+global int32_t * _imp___fmode @ 0x19280
 EOF
 RUN
 
@@ -109,69 +109,69 @@ avgx __dyn_tls_init_callback
 pdr @ fcn.140001316
 EOF
 EXPECT=<<EOF
-global int32_t (*type_0x1d02)(int32_t arg0, wchar_t *arg1, int32_t arg2, wchar_t *arg3, wchar_t *arg4) _RTC_ErrorReportFuncW @ 0x140011490
-global int32_t __isa_available @ 0x140011038
-global unsigned char $xdatasym @ 0x14000ff40
+global const unsigned char _guard_dispatch_icall_nop @ 0x140009a80
 global const unsigned char _guard_xfg_dispatch_icall_nop @ 0x140009aa0
-global struct _EXCEPTION_POINTERS GS_ExceptionPointers @ 0x14000e060
-global bool module_local_atexit_table_initialized @ 0x140011b39
-global uint64_t __security_cookie @ 0x140011008
-global void * __guard_dispatch_icall_fptr @ 0x140015020
-global void (*type_0x1001)() [24] std::runtime_error::`vftable' @ 0x14000d808
-global const int32_t __scrt_ucrt_dll_is_in_use @ 0x140011060
-global void (*type_0x1001)() [24] std::exception::`vftable' @ 0x14000d530
-global void (*type_0x1de8)(void *arg0, uint32_t arg1, void *arg2) __dyn_tls_dtor_callback @ 0x140011bc8
-global int64_t __memset_nt_iters @ 0x140011048
-global int32_t (*type_0x1015)() pre_c_initializer @ 0x14000c440
-global void (*type_0x1001)() [8] __xp_z @ 0x14000c880
 global void (*type_0x1001)() [8] __xc_a @ 0x14000c000
-global struct _onexit_table_t module_local_at_quick_exit_table @ 0x140011b58
-global int32_t __isa_enabled @ 0x14001103c
-global int32_t __scrt_default_matherr @ 0x140011034
-global struct HINSTANCE__ * mspdb @ 0x140011bb8
-global void * __scrt_native_startup_lock @ 0x140011b30
+global void (*type_0x1001)() pre_cpp_initializer @ 0x14000c110
+global void (*type_0x1001)() [8] __xc_z @ 0x14000c220
+global int32_t (*type_0x1015)() [8] __xi_a @ 0x14000c330
+global int32_t (*type_0x1015)() pre_c_initializer @ 0x14000c440
+global int32_t (*type_0x1015)() post_pgo_initializer @ 0x14000c550
+global int32_t (*type_0x1015)() [8] __xi_z @ 0x14000c660
 global void (*type_0x1001)() [8] __xp_a @ 0x14000c770
-global void (*type_0x1001)() [8] __rtc_taa @ 0x14000f0b8
+global void (*type_0x1001)() [8] __xp_z @ 0x14000c880
+global void (*type_0x1001)() [8] __xt_a @ 0x14000c990
+global void (*type_0x1001)() [8] __xt_z @ 0x14000caa0
+global void (*type_0x1001)() [24] std::exception::`vftable' @ 0x14000d530
+global void (*type_0x1001)() [24] std::runtime_error::`vftable' @ 0x14000d808
 global const char [15] uninit_premsg @ 0x14000d8d0
 global const char [43] uninit_postmsg @ 0x14000d8e0
-global bool PDBOK @ 0x140011bc2
-global int64_t __memcpy_nt_iters @ 0x140011040
-global int32_t [20] _RTC_ErrorLevels @ 0x140011018
-global void (*type_0x1001)() [8] __rtc_tzz @ 0x14000f2d8
 global const char *[40] _RTC_errlist @ 0x14000df58
-global void * __guard_xfg_dispatch_icall_fptr @ 0x140015030
-global bool is_initialized_as_dll @ 0x140011b38
-global void * __guard_xfg_table_dispatch_icall_fptr @ 0x140015040
-global void (*type_0x1001)() [8] __rtc_iaa @ 0x14000ed88
-global struct _onexit_table_t module_local_atexit_table @ 0x140011b40
+global struct _EXCEPTION_POINTERS GS_ExceptionPointers @ 0x14000e060
 global wchar_t [46] mspdbName @ 0x14000e078
-global void (*type_0x1001)() [8] __xt_z @ 0x14000caa0
-global bool init @ 0x140011470
-global void (*type_0x1001)() pre_cpp_initializer @ 0x14000c110
-global struct _RS5_IMAGE_LOAD_CONFIG_DIRECTORY64 _load_config_used @ 0x14000e2d0
-global struct __type_info_node __type_info_root_node @ 0x140011b80
-global void * __guard_check_icall_fptr @ 0x140015000
-global void (*type_0x1001)() [8] __xc_z @ 0x14000c220
-global bool alreadyTried @ 0x140011bc1
-global void (*type_0x1001)() [8] __rtc_izz @ 0x14000efa8
-global void (*type_0x1079)(void *arg0) __castguard_check_failure_os_handled_fptr @ 0x140011ba8
-global struct _EXCEPTION_RECORD GS_ExceptionRecord @ 0x1400114a0
-global int32_t (*type_0x1015)() [8] __xi_a @ 0x14000c330
-global void (*type_0x1001)() [8] __xt_a @ 0x14000c990
-global const unsigned char _guard_dispatch_icall_nop @ 0x140009a80
-global int32_t __scrt_debugger_hook_flag @ 0x140011ba4
-global int32_t (*type_0x1015)() [8] __xi_z @ 0x14000c660
-global int32_t __scrt_current_native_startup_state @ 0x140011b28
-global void (*type_0x1de8)(void *arg0, uint32_t arg1, void *arg2) __dyn_tls_init_callback @ 0x140011be0
-global uint64_t _OptionsStorage @ 0x140011478
 global wchar_t [8] dllExt @ 0x14000e240
-global int32_t (*type_0x1d1a)(int32_t arg0, const char *arg1, int32_t arg2, const char *arg3, const char *arg4) _RTC_ErrorReportFunc @ 0x140011488
-global int32_t (*type_0x1015)() post_pgo_initializer @ 0x14000c550
+global struct _RS5_IMAGE_LOAD_CONFIG_DIRECTORY64 _load_config_used @ 0x14000e2d0
 global void * __CastGuardVftablesStart @ 0x14000e600
-global int32_t __favor @ 0x140011bc4
 global void * __CastGuardVftablesEnd @ 0x14000e710
+global void (*type_0x1001)() [8] __rtc_iaa @ 0x14000ed88
+global void (*type_0x1001)() [8] __rtc_izz @ 0x14000efa8
+global void (*type_0x1001)() [8] __rtc_taa @ 0x14000f0b8
+global void (*type_0x1001)() [8] __rtc_tzz @ 0x14000f2d8
+global unsigned char $xdatasym @ 0x14000ff40
 global uint64_t __security_cookie_complement @ 0x140011000
+global uint64_t __security_cookie @ 0x140011008
+global int32_t [20] _RTC_ErrorLevels @ 0x140011018
+global int32_t __scrt_default_matherr @ 0x140011034
+global int32_t __isa_available @ 0x140011038
+global int32_t __isa_enabled @ 0x14001103c
+global int64_t __memcpy_nt_iters @ 0x140011040
+global int64_t __memset_nt_iters @ 0x140011048
+global const int32_t __scrt_ucrt_dll_is_in_use @ 0x140011060
+global bool init @ 0x140011470
+global uint64_t _OptionsStorage @ 0x140011478
+global int32_t (*type_0x1d1a)(int32_t arg0, const char *arg1, int32_t arg2, const char *arg3, const char *arg4) _RTC_ErrorReportFunc @ 0x140011488
+global int32_t (*type_0x1d02)(int32_t arg0, wchar_t *arg1, int32_t arg2, wchar_t *arg3, wchar_t *arg4) _RTC_ErrorReportFuncW @ 0x140011490
+global struct _EXCEPTION_RECORD GS_ExceptionRecord @ 0x1400114a0
+global int32_t __scrt_current_native_startup_state @ 0x140011b28
+global void * __scrt_native_startup_lock @ 0x140011b30
+global bool is_initialized_as_dll @ 0x140011b38
+global bool module_local_atexit_table_initialized @ 0x140011b39
+global struct _onexit_table_t module_local_atexit_table @ 0x140011b40
+global struct _onexit_table_t module_local_at_quick_exit_table @ 0x140011b58
+global struct __type_info_node __type_info_root_node @ 0x140011b80
+global int32_t __scrt_debugger_hook_flag @ 0x140011ba4
+global void (*type_0x1079)(void *arg0) __castguard_check_failure_os_handled_fptr @ 0x140011ba8
+global struct HINSTANCE__ * mspdb @ 0x140011bb8
+global bool alreadyTried @ 0x140011bc1
+global bool PDBOK @ 0x140011bc2
+global int32_t __favor @ 0x140011bc4
+global void (*type_0x1de8)(void *arg0, uint32_t arg1, void *arg2) __dyn_tls_dtor_callback @ 0x140011bc8
+global void (*type_0x1de8)(void *arg0, uint32_t arg1, void *arg2) __dyn_tls_init_callback @ 0x140011be0
+global void * __guard_check_icall_fptr @ 0x140015000
 global void * __guard_xfg_check_icall_fptr @ 0x140015010
+global void * __guard_dispatch_icall_fptr @ 0x140015020
+global void * __guard_xfg_dispatch_icall_fptr @ 0x140015030
+global void * __guard_xfg_table_dispatch_icall_fptr @ 0x140015040
 ---
 (nofunc) 0x140007344 [DATA] lea rcx, pdb.exceptions_test.__guard_check_icall_fptr
             0x140007344      lea   rcx, pdb.exceptions_test.__guard_check_icall_fptr ; 0x140015000
