@@ -20,6 +20,7 @@ EXPECT=<<EOF
             0xfff4000f      mvtc  #loc.__vectors, intb,                ; crt0.S:41
 arch     rx
 cpu      N/A
+features N/A
 baddr    0xfff40000
 binsz    0x0000a623
 bintype  elf

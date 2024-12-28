@@ -194,6 +194,7 @@ block    0x100
 type     JAVA CLASS
 arch     java
 cpu      N/A
+features N/A
 baddr    0x00000000
 binsz    0x00000400
 bintype  class

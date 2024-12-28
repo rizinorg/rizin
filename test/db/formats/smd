@@ -12,6 +12,7 @@ block    0x100
 type     ROM
 arch     m68k
 cpu      N/A
+features N/A
 baddr    0x00000000
 binsz    0x000272f8
 bintype  N/A
