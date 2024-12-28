@@ -4489,18 +4489,6 @@ static void var_global_show(RzAnalysis *analysis, RzAnalysisVarGlobal *glob, RzC
 	free(var_type);
 }
 
-typedef struct {
-	RzAnalysis *analysis;
-	RzCmdStateOutput *state;
-} VarGlobalShowContext;
-
-static bool var_global_show_cb(void *user, RZ_UNUSED const char *k, const void *v) {
-	VarGlobalShowContext *ctx = user;
-	RzAnalysisVarGlobal *glob = (RzAnalysisVarGlobal *)v;
-	var_global_show(ctx->analysis, glob, ctx->state);
-	return true;
-}
-
 RZ_IPI bool rz_analysis_var_global_list_show(RzAnalysis *analysis, RzCmdStateOutput *state, RZ_NULLABLE const char *name) {
 	rz_return_val_if_fail(analysis && state, false);
 	rz_cmd_state_output_array_start(state);
@@ -4514,11 +4502,11 @@ RZ_IPI bool rz_analysis_var_global_list_show(RzAnalysis *analysis, RzCmdStateOut
 		}
 		var_global_show(analysis, glob, state);
 	} else {
-		VarGlobalShowContext context = {
-			.analysis = analysis,
-			.state = state
-		};
-		ht_sp_foreach(analysis->ht_global_var, var_global_show_cb, &context);
+		RBIter it;
+		RzAnalysisVarGlobal *var;
+		rz_rbtree_foreach (analysis->global_var_tree, it, var, RzAnalysisVarGlobal, rb) {
+			var_global_show(analysis, var, state);
+		}
 	}
 
 beach:

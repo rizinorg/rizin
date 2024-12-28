@@ -22,15 +22,15 @@ EXPECT=<<EOF
 	DW_AT_name [DW_FORM_string]	: gv1
 	DW_AT_name [DW_FORM_string]	: gv2
 	DW_AT_name [DW_FORM_strp]	: (.debug_str+0xa): main
-global int 👊 @ 0x2003c /tmp/lima/demo_utf8.c:85
-global int 🕐 @ 0x20034 /tmp/lima/demo_utf8.c:25
-global int 💀 @ 0x20038 /tmp/lima/demo_utf8.c:55
 global const int À @ 0x734 /tmp/lima/demo_utf8.c:1611
 global const int À @ 0x738 /tmp/lima/demo_utf8.c:1711
-global int 😀 @ 0x20044 /tmp/lima/demo_utf8.c:145
-global int 🚀 @ 0x20040 /tmp/lima/demo_utf8.c:115
 global const int gv1 @ 0x73c /tmp/lima/demo_utf8.c:1811
 global const int gv2 @ 0x740 /tmp/lima/demo_utf8.c:1911
+global int 🕐 @ 0x20034 /tmp/lima/demo_utf8.c:25
+global int 💀 @ 0x20038 /tmp/lima/demo_utf8.c:55
+global int 👊 @ 0x2003c /tmp/lima/demo_utf8.c:85
+global int 🚀 @ 0x20040 /tmp/lima/demo_utf8.c:115
+global int 😀 @ 0x20044 /tmp/lima/demo_utf8.c:145
 EOF
 RUN
 
@@ -565,10 +565,10 @@ echo "main"
 afvll @ dbg.main
 EOF
 EXPECT=<<EOF
+global char [5] anonymous_var_0x59 @ 0x2010
 global char [19] anonymous_var_0xb4 @ 0x2021
 global const float qwe @ 0x2034
 global char * bla @ 0x4088
-global char [5] anonymous_var_0x59 @ 0x2010
 dbg.fn2 0x11b4 [DATA] lea rax, obj.fn2.qwe
 dbg.fn1 0x116a [DATA] mov qword [obj.fn1.bla], rax
 dbg.fn1 0x1171 [DATA] mov rsi, qword [obj.fn1.bla]
@@ -593,578 +593,578 @@ aaa
 avgl
 EOF
 EXPECT=<<EOF
-global error internal/oserror.ErrClosed @ 0x565370
-global error internal/oserror.ErrPermission @ 0x5653b0
-global unicode.RangeTable * unicode.Mende_Kikakui @ 0x55e448
-global error io.ErrShortBuffer @ 0x565430
-global uintptr runtime.physHugePageSize @ 0x58eca0
-global uint32 runtime.traceback_env @ 0x58ebd0
-global unicode.RangeTable * unicode.Caucasian_Albanian @ 0x55e190
-global void * _cgo_mmap @ 0x5651d0
-global struct string os.executablePath @ 0x565500
-global error os.ErrInvalid @ 0x5654a0
-global unicode.RangeTable * unicode.Ogham @ 0x55e4f8
-global int runtime.MemProfileRate @ 0x550108
-global uintptr runtime.netpollBreakWr @ 0x58ec80
-global unicode.RangeTable * unicode.Gunjala_Gondi @ 0x55e288
-global unicode.RangeTable * unicode.Tai_Le @ 0x55e700
-global map[string]*unicode.RangeTable unicode.Categories @ 0x565310
-global int syscall.Stderr @ 0x550168
-global uint32 runtime.fingCreate @ 0x58eb90
-global interface {} runtime.uint16Eface @ 0x55e970
-global unicode.RangeTable * unicode.Marchen @ 0x55e418
-global uint [6] runtime.levelShift @ 0x551620
-global runtime.mutex runtime.netpollInitLock @ 0x58ec88
-global struct struct { runtime.lock runtime.mutex; runtime.next int32; runtime.m map[int32]unsafe.Pointer; runtime.minv map[unsafe.Pointer]int32 } runtime.reflectOffs @ 0x5657a0
-global struct []string runtime.envs @ 0x5656a0
-global unicode.RangeTable * unicode.Takri @ 0x55e718
-global bool runtime.throwOnGCWork @ 0x58eb72
-global unicode.RangeTable * unicode.Cyrillic @ 0x55e1f0
-global unicode.RangeTable * unicode.Manichaean @ 0x55e410
-global runtime.sigTabT [66] runtime.sigtable @ 0x563320
-global unicode.RangeTable * unicode.Khudawadi @ 0x55e360
-global error os.ErrExist @ 0x565490
-global runtime.bucket * runtime.xbuckets @ 0x5652f8
-global uint32 runtime.extraMWaiters @ 0x58eb8c
-global error time.badData @ 0x565580
-global runtime.sigset runtime.sigset_all @ 0x550138
-global unicode.RangeTable * unicode.Telugu @ 0x55e730
-global struct []string runtime.mSpanStateNames @ 0x55ea40
-global unicode.RangeTable * unicode.Thai @ 0x55e748
-global uintptr runtime.allglen @ 0x58ebe8
-global unicode.RangeTable * unicode.Dash @ 0x55e1f8
-global error os.ErrClosed @ 0x565480
-global unicode.RangeTable * unicode.Anatolian_Hieroglyphs @ 0x55e0f8
-global error io.errWhence @ 0x565470
-global unicode.RangeTable * unicode.Tibetan @ 0x55e750
-global runtime.mspan runtime.emptymspan @ 0x565920
-global unicode.RangeTable * unicode.Inscriptional_Pahlavi @ 0x55e308
-global struct []uint16 strconv.isGraphic @ 0x55eb00
-global bool runtime.x86HasFMA @ 0x58eb76
-global struct string runtime.badmorestackgsignalMsg @ 0x55e8d0
-global unicode.RangeTable * unicode.Other_Uppercase @ 0x55e598
-global bool runtime.fingRunning @ 0x58eb67
-global bool runtime.inForkedChild @ 0x58eb6a
-global runtime.gcControllerState runtime.gcController @ 0x58f160
-global bool runtime.signalsOK @ 0x58eb71
-global uint8 [65] runtime/internal/sys.deBruijn64tab @ 0x551ea0
-global <unspecified> internal/bytealg..inittask @ 0x550da0
-global unicode.RangeTable * unicode.Grantha @ 0x55e270
-global uint32 runtime.netpollWaiters @ 0x58ebb4
-global error os.executablePathErr @ 0x565510
+global uint8 [2] runtime.oneptrmask @ 0x550020
 global bool strconv.optimize @ 0x550021
-global unicode.RangeTable * unicode.Zl @ 0x55e7b8
-global unicode.RangeTable * unicode.Arabic @ 0x55e100
-global unicode.RangeTable * unicode.Carian @ 0x55e188
-global uintptr internal/syscall/unix.FcntlSyscall @ 0x550100
-global uint8 [65] runtime.finptrmask @ 0x58ee00
-global unicode.RangeTable * unicode.Soft_Dotted @ 0x55e6b8
-global runtime._type * runtime.uint32Type @ 0x5652e8
-global runtime.bucket * runtime.mbuckets @ 0x565298
-global uint8 [68] runtime.class_to_allocnpages @ 0x552080
-global struct struct { runtime.mutex; runtime.persistentAlloc } runtime.globalAlloc @ 0x5656e0
-global float64 runtime.inf @ 0x58ec50
-global runtime.mutex runtime.finlock @ 0x58ec48
-global uint32 runtime.sigprofCallersUse @ 0x58ebc8
-global struct struct { runtime.enabled bool; runtime.pad [3]uint8; runtime.needed bool; runtime.cgo bool; runtime.alignme uint64 } runtime.writeBarrier @ 0x58ed40
-global internal/reflectlite.Type errors.errorType @ 0x565340
-global bool runtime.useCheckmark @ 0x58eb75
-global unicode.RangeTable * unicode.Quotation_Mark @ 0x55e628
-global unicode.RangeTable * unicode.Hatran @ 0x55e2b8
-global struct []internal/cpu.option internal/cpu.options @ 0x5655c0
-global struct []*runtime.g runtime.allgs @ 0x565640
-global unicode.RangeTable * unicode.Zanabazar_Square @ 0x55e7b0
-global unicode.RangeTable * unicode.Vai @ 0x55e778
-global unicode/utf8.acceptRange [17] unicode/utf8.acceptRanges @ 0x550ec0
-global uint32 [66] runtime.handlingSig @ 0x58f300
 global uint32 runtime.adviseUnused @ 0x550024
-global unicode.RangeTable * unicode.Zs @ 0x55e7c8
-global unicode.RangeTable * unicode.Cherokee @ 0x55e1b8
-global unicode.RangeTable * unicode.Zp @ 0x55e7c0
-global unicode.RangeTable * unicode.Armenian @ 0x55e108
-global error runtime.floatError @ 0x55e910
-global bool runtime.lfenceBeforeRdtsc @ 0x58eb6f
-global unicode.RangeTable * unicode.Nabataean @ 0x55e4a0
-global unicode.RangeTable * unicode.Newa @ 0x55e4c0
-global interface {} runtime.uint64Eface @ 0x55e990
-global uintptr runtime.vdsoClockgettimeSym @ 0x58ecf8
-global runtime.itabTableType * runtime.itabTable @ 0x55e0d8
-global error time.atoiError @ 0x565570
-global unicode.RangeTable * unicode.Masaram_Gondi @ 0x55e420
-global error os.ErrNotExist @ 0x5654c0
-global <unspecified> internal/fmtsort..inittask @ 0x551520
-global unicode.RangeTable * unicode.Hebrew @ 0x55e2c0
-global bool runtime.isIntel @ 0x58eb6b
-global <unspecified> internal/poll..inittask @ 0x552980
-global unicode.RangeTable * unicode.Ol_Chiki @ 0x55e500
-global <unspecified> internal/syscall/execenv..inittask @ 0x550de0
-global unicode.RangeTable * unicode.Braille @ 0x55e160
-global struct struct { runtime.signalLock uint32; runtime.hz int32 } runtime.prof @ 0x58ecb8
-global unicode.RangeTable * unicode.Noncharacter_Code_Point @ 0x55e4e0
-global error runtime.overflowError @ 0x55e930
-global unicode.RangeTable * unicode.foldInherited @ 0x55e7e0
-global struct []string syscall.envs @ 0x565780
-global unicode.RangeTable * unicode.Other_Lowercase @ 0x55e588
-global unicode.RangeTable * unicode.Variation_Selector @ 0x55e780
-global uintptr runtime.skipPC @ 0x58ecd0
-global unicode.RangeTable * unicode.Canadian_Aboriginal @ 0x55e180
-global unicode.RangeTable * unicode.Latin @ 0x55e378
-global struct []*runtime.moduledata * runtime.modulesSlice @ 0x5652a0
-global unicode.RangeTable * unicode.Malayalam @ 0x55e400
-global error os.ErrNoDeadline @ 0x5654b0
-global unicode.RangeTable * unicode.Adlam @ 0x55e0e8
-global unicode.RangeTable * unicode.Coptic @ 0x55e1d0
-global internal/cpu.x86 internal/cpu.X86 @ 0x58f020
-global uint32 runtime.netpollInited @ 0x58ebb0
-global os.File * os.Stdin @ 0x565208
-global unicode.RangeTable * unicode.IDS_Binary_Operator @ 0x55e2e0
-global <unspecified> internal/syscall/unix..inittask @ 0x550e00
-global struct string runtime.badsystemstackMsg @ 0x55e8e0
-global unicode.RangeTable * unicode.Regional_Indicator @ 0x55e638
-global unicode.RangeTable * unicode.Pattern_Syntax @ 0x55e5b8
-global strconv.floatInfo strconv.float64info @ 0x550720
-global struct []*sync.Pool sync.oldPools @ 0x565760
-global unicode.RangeTable * unicode.Makasar @ 0x55e3f8
-global unicode.RangeTable * unicode.Khmer @ 0x55e350
-global runtime.mutex runtime.paniclk @ 0x58ec90
-global runtime.initTask main..inittask @ 0x550e20
-global unicode.RangeTable * unicode.Pau_Cin_Hau @ 0x55e5c8
-global unicode.RangeTable * unicode.Javanese @ 0x55e318
-global struct struct { runtime.note runtime.note; runtime.mask [3]uint32; runtime.wanted [3]uint32; runtime.ignored [3]uint32; runtime.recv [3]uint32; runtime.state uint32; runtime.delivering uint32; runtime.inuse bool } runtime.sig @ 0x58eea0
-global struct string runtime.modinfo @ 0x565530
-global unicode.RangeTable * unicode.Elbasan @ 0x55e238
-global struct string [11] runtime.gStatusStrings @ 0x5627a0
-global unicode.RangeTable * unicode.Egyptian_Hieroglyphs @ 0x55e230
-global unicode.RangeTable * unicode.Meetei_Mayek @ 0x55e440
-global struct struct { runtime.lock runtime.mutex; runtime.lockOwner *runtime.g; runtime.enabled bool; runtime.shutdown bool; runtime.headerWritten bool; runtime.footerWritten bool; runtime.shutdownSema uint32; runtime.seqStart uint64; runtime.ticksStart int64; runtime.ticksEnd int64; runtime.timeStart int64; runtime.timeEnd int64; runtime.seqGC uint64; runtime.reading runtime.traceBufPtr; runtime.empty runtime.traceBufPtr; runtime.fullHead runtime.traceBufPtr; runtime.fullTail runtime.traceBufPtr; runtime.reader runtime.guintptr; runtime.stackTab runtime.traceStackTable; runtime.stringsLock runtime.mutex; runtime.strings map[string]uint64; runtime.stringSeq uint64; runtime.markWorkerLabels [3]uint64; runtime.bufLock runtime.mutex; runtime.buf runtime.traceBufPtr } runtime.trace @ 0x56c320
-global unicode.RangeTable * unicode.Mahajani @ 0x55e3f0
-global unicode.RangeTable * unicode.White_Space @ 0x55e798
-global unicode.RangeTable * unicode.Nko @ 0x55e4c8
-global uintptr runtime.chanrecvpc @ 0x58ec10
-global uint8 [129] runtime.aeskeysched @ 0x58ef00
-global unicode.RangeTable * unicode.Shavian @ 0x55e680
-global unicode.RangeTable * unicode.Limbu @ 0x55e388
-global unicode.RangeTable * unicode.Syriac @ 0x55e6e8
-global uintptr runtime.extram @ 0x58ec30
-global unicode.RangeTable * unicode.Samaritan @ 0x55e658
-global unicode.RangeTable * unicode.Hangul @ 0x55e2a0
-global struct []string reflect.kindNames @ 0x55e9e0
-global struct []*runtime.p runtime.allp @ 0x565660
-global unicode.RangeTable * unicode.Ugaritic @ 0x55e768
-global unicode.RangeTable * unicode.Myanmar @ 0x55e490
-global unicode.RangeTable * unicode.Kharoshthi @ 0x55e348
-global struct []map[runtime.typeOff]*runtime._type runtime.pinnedTypemaps @ 0x565700
-global unicode.RangeTable * unicode.SignWriting @ 0x55e690
-global int32 runtime.argc @ 0x58eb80
-global int64 runtime.starttime @ 0x58ecd8
-global unicode.RangeTable * unicode.Old_Turkic @ 0x55e540
-global runtime.mutex runtime.tracelock @ 0x58ecf0
-global unicode.RangeTable * unicode.Han @ 0x55e298
-global unicode.RangeTable * unicode.Old_North_Arabian @ 0x55e518
-global unicode.RangeTable * unicode.Medefaidrin @ 0x55e438
-global uint8 [257] runtime.oneBitCount @ 0x553ca0
-global unicode.RangeTable * unicode.Lydian @ 0x55e3e0
-global unicode.RangeTable * unicode.Rejang @ 0x55e640
-global uintptr syscall._zero @ 0x58ed18
-global unicode.RangeTable * unicode.foldM @ 0x55e808
-global runtime.m * runtime.allm @ 0x565238
-global unicode.RangeTable * unicode.foldL @ 0x55e7e8
-global unicode.RangeTable * unicode.Pahawh_Hmong @ 0x55e5a8
-global uint8 ** runtime.argv @ 0x565240
-global interface {} runtime.stringEface @ 0x55e960
-global unicode.RangeTable * unicode.Ahom @ 0x55e0f0
-global uint8 [257] runtime/internal/sys.len8tab @ 0x553ea0
-global unicode.RangeTable * unicode.IDS_Trinary_Operator @ 0x55e2e8
-global unicode.RangeTable * unicode.Gujarati @ 0x55e280
-global unicode.RangeTable * unicode.Gurmukhi @ 0x55e290
-global void * runtime._cgo_unsetenv @ 0x565228
-global sync.Map reflect.layoutCache @ 0x565820
-global unicode.RangeTable * unicode.Meroitic_Cursive @ 0x55e450
-global runtime.schedt runtime.sched @ 0x565ac0
-global unicode.RangeTable * unicode.Bidi_Control @ 0x55e148
+global int32 runtime.epfd @ 0x550028
+global uint32 runtime.traceback_cache @ 0x55002c
+global uint32 runtime.worldsema @ 0x550030
+global uint8 [6] runtime.finalizer1 @ 0x550034
+global uintptr internal/cpu.CacheLineSize @ 0x5500e0
+global uintptr internal/syscall/unix.FcntlSyscall @ 0x550100
+global int runtime.MemProfileRate @ 0x550108
+global uintptr runtime.asyncPreemptStack @ 0x550110
+global int64 runtime.forcegcperiod @ 0x550118
+global uint64 runtime.heapminimum @ 0x550120
+global uintptr runtime.maxstacksize @ 0x550130
+global runtime.sigset runtime.sigset_all @ 0x550138
+global uintptr runtime.sizeof_C_MStats @ 0x550140
 global uintptr runtime.vdsoGettimeofdaySym @ 0x550148
-global uint32 runtime.gcphase @ 0x58eba4
-global unicode.RangeTable * unicode.Old_Italic @ 0x55e510
-global unicode.RangeTable * unicode.Tangut @ 0x55e728
-global error io.EOF @ 0x565400
-global unicode.RangeTable * unicode.Bopomofo @ 0x55e150
-global uintptr [5] runtime.hashkey @ 0x58ed60
-global void * runtime.cgoSymbolizer @ 0x565258
-global error runtime.divideError @ 0x55e900
-global error io.ErrUnexpectedEOF @ 0x565450
-global unicode.RangeTable * unicode.Linear_B @ 0x55e398
-global error runtime.shiftError @ 0x55e940
-global unicode.RangeTable * unicode.Syloti_Nagri @ 0x55e6e0
-global unicode.RangeTable * unicode.Linear_A @ 0x55e390
-global struct []uint8 runtime.startupRandomData @ 0x565720
-global uint [6] runtime.levelLogPages @ 0x5515e0
-global uint64 runtime.test_z64 @ 0x58ece8
-global unicode.RangeTable * unicode.Osage @ 0x55e550
-global runtime.sigset runtime.initSigmask @ 0x58ec58
-global error os.ErrPermission @ 0x5654d0
-global unicode.RangeTable * unicode.Other_Alphabetic @ 0x55e560
-global func() runtime.poolcleanup @ 0x5652b0
-global unicode.RangeTable * unicode.Extender @ 0x55e250
-global error internal/oserror.ErrNotExist @ 0x5653a0
-global runtime.mutex runtime.deadlock @ 0x58ec20
+global int syscall.Stderr @ 0x550168
+global int syscall.Stdout @ 0x550170
+global <unspecified> runtime..gobytes.6 @ 0x550518
+global <unspecified> runtime..gobytes.4 @ 0x550530
+global strconv.floatInfo strconv.float32info @ 0x550700
+global strconv.floatInfo strconv.float64info @ 0x550720
+global <unspecified> internal/bytealg..inittask @ 0x550da0
+global <unspecified> internal/reflectlite..inittask @ 0x550dc0
+global <unspecified> internal/syscall/execenv..inittask @ 0x550de0
+global <unspecified> internal/syscall/unix..inittask @ 0x550e00
+global runtime.initTask main..inittask @ 0x550e20
+global <unspecified> math..inittask @ 0x550e40
+global <unspecified> sort..inittask @ 0x550e60
+global <unspecified> unicode..inittask @ 0x550ea0
+global unicode/utf8.acceptRange [17] unicode/utf8.acceptRanges @ 0x550ec0
+global <unspecified> errors..inittask @ 0x5514e0
+global <unspecified> internal/fmtsort..inittask @ 0x551520
+global <unspecified> internal/oserror..inittask @ 0x551560
 global uint [6] runtime.levelBits @ 0x5515a0
-global struct struct { runtime.allocfreetrace int32; runtime.cgocheck int32; runtime.clobberfree int32; runtime.efence int32; runtime.gccheckmark int32; runtime.gcpacertrace int32; runtime.gcshrinkstackoff int32; runtime.gcstoptheworld int32; runtime.gctrace int32; runtime.invalidptr int32; runtime.madvdontneed int32; runtime.sbrk int32; runtime.scavenge int32; runtime.scavtrace int32; runtime.scheddetail int32; runtime.schedtrace int32; runtime.tracebackancestors int32; runtime.asyncpreemptoff int32 } runtime.debug @ 0x58ee40
-global bool runtime.useAVXmemmove @ 0x58eb73
-global runtime.mstats runtime.memstats @ 0x58fc40
-global uint64 [21] strconv.uint64pow10 @ 0x553300
-global unicode.RangeTable * unicode.Pd @ 0x55e5d8
-global unicode.RangeTable * unicode.Mn @ 0x55e468
-global void * sync.expunged @ 0x565300
-global unicode.RangeTable * unicode.Pe @ 0x55e5e0
-global error internal/poll.ErrNetClosing @ 0x5653d0
-global unicode.RangeTable * unicode.Pf @ 0x55e5e8
-global unicode.RangeTable * unicode.Mc @ 0x55e428
-global unicode.RangeTable * unicode.Me @ 0x55e430
-global error internal/poll.errENOENT @ 0x55e850
-global runtime._type * runtime.uint16Type @ 0x5652e0
-global unicode.RangeTable * unicode.Lao @ 0x55e370
-global unicode.RangeTable * unicode.Pc @ 0x55e5d0
-global void * _cgo_sigaction @ 0x5651e8
-global unicode.RangeTable * unicode.Warang_Citi @ 0x55e790
-global unicode.RangeTable * unicode.Po @ 0x55e608
-global unicode.RangeTable * unicode.Pi @ 0x55e600
-global uint8 [257] unicode/utf8.first @ 0x5540a0
-global unicode.RangeTable * unicode.Buhid @ 0x55e170
-global bool math.useFMA @ 0x58eb61
-global error syscall.errENOENT @ 0x55e9d0
-global unicode.RangeTable * unicode.Osmanya @ 0x55e558
-global bool runtime.armHasVFPv4 @ 0x58eb64
-global unicode.RangeTable * unicode.Elymaic @ 0x55e240
-global bool runtime.fingwait @ 0x58eb68
-global unicode.RangeTable * unicode.Other_Math @ 0x55e590
-global unicode.RangeTable * unicode.Lt @ 0x55e3c8
-global sync.Pool fmt.ppFree @ 0x55ebe0
-global unicode.RangeTable * unicode.Khojki @ 0x55e358
-global unicode.RangeTable * unicode.Lu @ 0x55e3d0
-global unicode.RangeTable * unicode.Ps @ 0x55e618
-global unicode.RangeTable * unicode.Hiragana @ 0x55e2d0
-global struct []runtime.dbgVar runtime.dbgvars @ 0x55ea00
+global uint [6] runtime.levelLogPages @ 0x5515e0
+global uint [6] runtime.levelShift @ 0x551620
+global <unspecified> runtime..gobytes.7 @ 0x551660
+global <unspecified> io..inittask @ 0x551860
+global <unspecified> runtime..gobytes.5 @ 0x551aa0
+global <unspecified> strconv..inittask @ 0x551b60
+global <unspecified> sync..inittask @ 0x551ba0
+global uint8 [65] runtime/internal/sys.deBruijn64tab @ 0x551ea0
+global <unspecified> syscall..inittask @ 0x551ee0
+global <unspecified> time..inittask @ 0x551f20
+global uint8 [68] runtime.class_to_allocnpages @ 0x552080
+global <unspecified> reflect..inittask @ 0x5520e0
+global runtime.initTask runtime..inittask @ 0x5525c0
+global <unspecified> internal/poll..inittask @ 0x552980
+global <unspecified> fmt..inittask @ 0x552aa0
 global <unspecified> os..inittask @ 0x552da0
+global uint8 [130] runtime.size_to_class8 @ 0x552ea0
+global uint16 [68] runtime.class_to_size @ 0x552fe0
+global uint64 [21] strconv.uint64pow10 @ 0x553300
+global uint8 [250] runtime.size_to_class128 @ 0x553ba0
+global uint8 [257] runtime.oneBitCount @ 0x553ca0
+global uint8 [257] runtime.staticbytes @ 0x553da0
+global uint8 [257] runtime/internal/sys.len8tab @ 0x553ea0
+global uint8 [257] runtime/internal/sys.ntz8tab @ 0x553fa0
+global uint8 [257] unicode/utf8.first @ 0x5540a0
+global float64 [34] runtime.fastlog2Table @ 0x5542c0
+global runtime.divMagic [68] runtime.class_to_divmagic @ 0x554ce0
+global runtime.moduledata runtime.firstmoduledata @ 0x555540
+global uint [257] runtime.consec8tab @ 0x55b5c0
+global strconv.extFloat [88] strconv.powersOfTen @ 0x55c5e0
+global bool runtime.framepointer_enabled @ 0x55e0c0
+global func(int) error internal/poll.CloseFunc @ 0x55e0c8
+global void ** runtime.cgo_yield @ 0x55e0d0
+global runtime.itabTableType * runtime.itabTable @ 0x55e0d8
+global unicode.RangeTable * unicode.ASCII_Hex_Digit @ 0x55e0e0
+global unicode.RangeTable * unicode.Adlam @ 0x55e0e8
+global unicode.RangeTable * unicode.Ahom @ 0x55e0f0
+global unicode.RangeTable * unicode.Anatolian_Hieroglyphs @ 0x55e0f8
+global unicode.RangeTable * unicode.Arabic @ 0x55e100
+global unicode.RangeTable * unicode.Armenian @ 0x55e108
+global unicode.RangeTable * unicode.Avestan @ 0x55e110
+global unicode.RangeTable * unicode.Balinese @ 0x55e118
+global unicode.RangeTable * unicode.Bamum @ 0x55e120
+global unicode.RangeTable * unicode.Bassa_Vah @ 0x55e128
+global unicode.RangeTable * unicode.Batak @ 0x55e130
+global unicode.RangeTable * unicode.Bengali @ 0x55e138
+global unicode.RangeTable * unicode.Bhaiksuki @ 0x55e140
+global unicode.RangeTable * unicode.Bidi_Control @ 0x55e148
+global unicode.RangeTable * unicode.Bopomofo @ 0x55e150
+global unicode.RangeTable * unicode.Brahmi @ 0x55e158
+global unicode.RangeTable * unicode.Braille @ 0x55e160
+global unicode.RangeTable * unicode.Buginese @ 0x55e168
+global unicode.RangeTable * unicode.Buhid @ 0x55e170
+global unicode.RangeTable * unicode.C @ 0x55e178
+global unicode.RangeTable * unicode.Canadian_Aboriginal @ 0x55e180
+global unicode.RangeTable * unicode.Carian @ 0x55e188
+global unicode.RangeTable * unicode.Caucasian_Albanian @ 0x55e190
+global unicode.RangeTable * unicode.Cc @ 0x55e198
+global unicode.RangeTable * unicode.Cf @ 0x55e1a0
+global unicode.RangeTable * unicode.Chakma @ 0x55e1a8
+global unicode.RangeTable * unicode.Cham @ 0x55e1b0
+global unicode.RangeTable * unicode.Cherokee @ 0x55e1b8
+global unicode.RangeTable * unicode.Co @ 0x55e1c0
+global unicode.RangeTable * unicode.Common @ 0x55e1c8
+global unicode.RangeTable * unicode.Coptic @ 0x55e1d0
+global unicode.RangeTable * unicode.Cs @ 0x55e1d8
+global unicode.RangeTable * unicode.Cuneiform @ 0x55e1e0
+global unicode.RangeTable * unicode.Cypriot @ 0x55e1e8
+global unicode.RangeTable * unicode.Cyrillic @ 0x55e1f0
+global unicode.RangeTable * unicode.Dash @ 0x55e1f8
+global unicode.RangeTable * unicode.Deprecated @ 0x55e200
+global unicode.RangeTable * unicode.Deseret @ 0x55e208
+global unicode.RangeTable * unicode.Devanagari @ 0x55e210
+global unicode.RangeTable * unicode.Diacritic @ 0x55e218
+global unicode.RangeTable * unicode.Dogra @ 0x55e220
+global unicode.RangeTable * unicode.Duployan @ 0x55e228
+global unicode.RangeTable * unicode.Egyptian_Hieroglyphs @ 0x55e230
+global unicode.RangeTable * unicode.Elbasan @ 0x55e238
+global unicode.RangeTable * unicode.Elymaic @ 0x55e240
+global unicode.RangeTable * unicode.Ethiopic @ 0x55e248
+global unicode.RangeTable * unicode.Extender @ 0x55e250
+global unicode.RangeTable * unicode.Georgian @ 0x55e258
+global unicode.RangeTable * unicode.Glagolitic @ 0x55e260
+global unicode.RangeTable * unicode.Gothic @ 0x55e268
+global unicode.RangeTable * unicode.Grantha @ 0x55e270
+global unicode.RangeTable * unicode.Greek @ 0x55e278
+global unicode.RangeTable * unicode.Gujarati @ 0x55e280
+global unicode.RangeTable * unicode.Gunjala_Gondi @ 0x55e288
+global unicode.RangeTable * unicode.Gurmukhi @ 0x55e290
+global unicode.RangeTable * unicode.Han @ 0x55e298
+global unicode.RangeTable * unicode.Hangul @ 0x55e2a0
+global unicode.RangeTable * unicode.Hanifi_Rohingya @ 0x55e2a8
+global unicode.RangeTable * unicode.Hanunoo @ 0x55e2b0
+global unicode.RangeTable * unicode.Hatran @ 0x55e2b8
+global unicode.RangeTable * unicode.Hebrew @ 0x55e2c0
+global unicode.RangeTable * unicode.Hex_Digit @ 0x55e2c8
+global unicode.RangeTable * unicode.Hiragana @ 0x55e2d0
+global unicode.RangeTable * unicode.Hyphen @ 0x55e2d8
+global unicode.RangeTable * unicode.IDS_Binary_Operator @ 0x55e2e0
+global unicode.RangeTable * unicode.IDS_Trinary_Operator @ 0x55e2e8
+global unicode.RangeTable * unicode.Ideographic @ 0x55e2f0
+global unicode.RangeTable * unicode.Imperial_Aramaic @ 0x55e2f8
+global unicode.RangeTable * unicode.Inherited @ 0x55e300
+global unicode.RangeTable * unicode.Inscriptional_Pahlavi @ 0x55e308
+global unicode.RangeTable * unicode.Inscriptional_Parthian @ 0x55e310
+global unicode.RangeTable * unicode.Javanese @ 0x55e318
+global unicode.RangeTable * unicode.Join_Control @ 0x55e320
+global unicode.RangeTable * unicode.Kaithi @ 0x55e328
+global unicode.RangeTable * unicode.Kannada @ 0x55e330
+global unicode.RangeTable * unicode.Katakana @ 0x55e338
+global unicode.RangeTable * unicode.Kayah_Li @ 0x55e340
+global unicode.RangeTable * unicode.Kharoshthi @ 0x55e348
+global unicode.RangeTable * unicode.Khmer @ 0x55e350
+global unicode.RangeTable * unicode.Khojki @ 0x55e358
+global unicode.RangeTable * unicode.Khudawadi @ 0x55e360
+global unicode.RangeTable * unicode.L @ 0x55e368
+global unicode.RangeTable * unicode.Lao @ 0x55e370
+global unicode.RangeTable * unicode.Latin @ 0x55e378
+global unicode.RangeTable * unicode.Lepcha @ 0x55e380
+global unicode.RangeTable * unicode.Limbu @ 0x55e388
+global unicode.RangeTable * unicode.Linear_A @ 0x55e390
+global unicode.RangeTable * unicode.Linear_B @ 0x55e398
+global unicode.RangeTable * unicode.Lisu @ 0x55e3a0
 global unicode.RangeTable * unicode.Ll @ 0x55e3a8
-global unicode.RangeTable * unicode.Tirhuta @ 0x55e760
 global unicode.RangeTable * unicode.Lm @ 0x55e3b0
 global unicode.RangeTable * unicode.Lo @ 0x55e3b8
-global bool runtime.iscgo @ 0x58eb6d
-global unicode.RangeTable * unicode.Deprecated @ 0x55e200
-global void * _cgo_notify_runtime_init_done @ 0x5651e0
-global uintptr runtime.zerobase @ 0x58ed00
-global uint32 runtime.gcMarkDoneFlushed @ 0x58eb9c
-global int32 runtime.newprocs @ 0x58ebb8
-global unicode.RangeTable * unicode.Greek @ 0x55e278
-global unicode.RangeTable * unicode.Bamum @ 0x55e120
-global bool runtime.islibrary @ 0x58eb6e
-global void * _cgo_yield @ 0x5651f8
-global unicode.RangeTable * unicode.Sentence_Terminal @ 0x55e670
-global unicode.RangeTable * unicode.Cs @ 0x55e1d8
-global unicode.RangeTable * unicode.Brahmi @ 0x55e158
-global uint8 [1025] runtime.zeroVal @ 0x58f840
-global unicode.RangeTable * unicode.Gothic @ 0x55e268
-global runtime.pollCache runtime.pollcache @ 0x565540
-global unicode.RangeTable * unicode.Unified_Ideograph @ 0x55e770
-global unicode.RangeTable * unicode.Inherited @ 0x55e300
-global uintptr runtime.bucketmem @ 0x58ec08
-global uintptr runtime.physPageSize @ 0x58eca8
-global void * _cgo_thread_start @ 0x5651f0
-global struct struct { runtime.item runtime.stackpoolItem; _ [40]uint8 } [5] runtime.stackpool @ 0x5659c0
-global <unspecified> math..inittask @ 0x550e40
-global unicode.RangeTable * unicode.Devanagari @ 0x55e210
-global func(*runtime.g) runtime.gsignalInitQuirk @ 0x565288
-global unicode.RangeTable * unicode.Siddham @ 0x55e688
-global uint8 [2] runtime.oneptrmask @ 0x550020
-global func(int) error internal/poll.CloseFunc @ 0x55e0c8
-global unicode.RangeTable * unicode.Cf @ 0x55e1a0
-global runtime.cgoCallers runtime.sigprofCallers @ 0x58f200
-global struct string runtime.buildVersion @ 0x55e8f0
-global int32 runtime.epfd @ 0x550028
-global unicode.RangeTable * unicode.Cc @ 0x55e198
-global sync.Map reflect.ptrMap @ 0x565860
-global map[string]int64 time.unitMap @ 0x565308
-global unicode.RangeTable * unicode.Co @ 0x55e1c0
-global bool runtime.useAeshash @ 0x58eb74
-global uintptr runtime.netpollBreakRd @ 0x58ec78
-global <unspecified> unicode..inittask @ 0x550ea0
-global runtime.finblock * runtime.finq @ 0x565280
-global bool runtime.fingwake @ 0x58eb69
-global uintptr runtime.sizeof_C_MStats @ 0x550140
-global runtime.mutex runtime.itabLock @ 0x58ec60
-global int64 runtime.faketime @ 0x58ec38
-global unicode.RangeTable * unicode.Psalter_Pahlavi @ 0x55e620
-global error fmt.boolError @ 0x565350
-global <unspecified> sort..inittask @ 0x550e60
-global runtime._type * runtime.stringType @ 0x5652c0
-global runtime.g * runtime.fing @ 0x565278
-global unicode.RangeTable * unicode.Sogdian @ 0x55e6c0
-global <unspecified> errors..inittask @ 0x5514e0
-global unicode.RangeTable * unicode.ASCII_Hex_Digit @ 0x55e0e0
-global struct struct { runtime.full runtime.lfstack; runtime.empty runtime.lfstack; runtime.pad0 internal/cpu.CacheLinePad; runtime.wbufSpans struct { runtime.lock runtime.mutex; runtime.free runtime.mSpanList; runtime.busy runtime.mSpanList }; _ uint32; runtime.bytesMarked uint64; runtime.markrootNext uint32; runtime.markrootJobs uint32; runtime.nproc uint32; runtime.tstart int64; runtime.nwait uint32; runtime.ndone uint32; runtime.nFlushCacheRoots int; runtime.nDataRoots int; runtime.nBSSRoots int; runtime.nSpanRoots int; runtime.nStackRoots int; runtime.startSema uint32; runtime.markDoneSema uint32; runtime.bgMarkReady runtime.note; runtime.bgMarkDone uint32; runtime.mode runtime.gcMode; runtime.userForced bool; runtime.totaltime int64; runtime.initialHeapLive uint64; runtime.assistQueue struct { runtime.lock runtime.mutex; runtime.q runtime.gQueue }; runtime.sweepWaiters struct { runtime.lock runtime.mutex; runtime.list runtime.gList }; runtime.cycles uint32; runtime.stwprocs int32; runtime.maxprocs int32; runtime.tSweepTerm int64; runtime.tMark int64; runtime.tMarkTerm int64; runtime.tEnd int64; runtime.pauseNS int64; runtime.pauseStart int64; runtime.heap0 uint64; runtime.heap1 uint64; runtime.heap2 uint64; runtime.heapGoal uint64 } runtime.work @ 0x565da0
-global runtime.m runtime.m0 @ 0x566180
-global strconv.extFloat [88] strconv.powersOfTen @ 0x55c5e0
-global runtime.finblock * runtime.finc @ 0x565270
-global int syscall.Stdin @ 0x58ed10
-global internal/cpu.arm internal/cpu.ARM @ 0x58ef80
-global struct struct { runtime.cycle uint32; runtime.flushed bool } runtime.mProf @ 0x58ec68
-global int32 runtime.gcpercent @ 0x58eba0
-global runtime.mheap runtime.mheap_ @ 0x57c400
-global error time.errLeadingInt @ 0x5655a0
-global error os.errWriteAtInAppendMode @ 0x5654f0
-global uint64 runtime.heapminimum @ 0x550120
-global int runtime.printBacklogIndex @ 0x58ecb0
-global uintptr internal/cpu.CacheLineSize @ 0x5500e0
-global bool runtime.x86HasSSE41 @ 0x58eb78
-global unicode.RangeTable * unicode.Ethiopic @ 0x55e248
-global struct string [9] runtime.boundsNegErrorFmts @ 0x562720
-global unicode.RangeTable * unicode.Bhaiksuki @ 0x55e140
-global bool internal/cpu.DebugOptions @ 0x58eb60
-global bool runtime.cgoHasExtraM @ 0x58eb65
-global runtime.forcegcstate runtime.forcegc @ 0x5656c0
-global struct struct { runtime.lock runtime.mutex; runtime.free [35]runtime.mSpanList } runtime.stackLarge @ 0x565f40
-global unicode.RangeTable * unicode.Tagbanwa @ 0x55e6f8
-global struct string [134] syscall.errors @ 0x563940
-global <unspecified> fmt..inittask @ 0x552aa0
-global <unspecified> runtime..gobytes.6 @ 0x550518
-global unicode.RangeTable * unicode.Hanifi_Rohingya @ 0x55e2a8
-global <unspecified> runtime..gobytes.7 @ 0x551660
-global <unspecified> internal/oserror..inittask @ 0x551560
-global <unspecified> runtime..gobytes.4 @ 0x550530
-global unicode.RangeTable * unicode.Tai_Viet @ 0x55e710
-global float64 [34] runtime.fastlog2Table @ 0x5542c0
-global <unspecified> runtime..gobytes.5 @ 0x551aa0
-global uint32 runtime.freezing @ 0x58eb94
-global unicode.RangeTable * unicode.Batak @ 0x55e130
-global unicode.RangeTable * unicode.Common @ 0x55e1c8
 global unicode.RangeTable * unicode.Logical_Order_Exception @ 0x55e3c0
-global unicode.RangeTable * unicode.Old_Persian @ 0x55e528
-global int32 runtime.gomaxprocs @ 0x58eba8
-global error syscall.errEINVAL @ 0x55e9c0
-global unicode.RangeTable * unicode.Other_Default_Ignorable_Code_Point @ 0x55e568
-global unicode.RangeTable * unicode.New_Tai_Lue @ 0x55e4b8
-global internal/cpu.arm64 internal/cpu.ARM64 @ 0x58f0c0
-global runtime.rwmutex runtime.execLock @ 0x58edc0
-global error time.errBad @ 0x565590
-global unicode.RangeTable * unicode.Sharada @ 0x55e678
-global <unspecified> reflect..inittask @ 0x5520e0
-global uint64 runtime.test_x64 @ 0x58ece0
-global void * runtime._cgo_setenv @ 0x565220
-global unicode.RangeTable * unicode.Tai_Tham @ 0x55e708
-global unicode.RangeTable * unicode.Meroitic_Hieroglyphs @ 0x55e458
-global unicode.RangeTable * unicode.P @ 0x55e5a0
-global error io.ErrClosedPipe @ 0x565410
-global unicode.RangeTable * unicode.S @ 0x55e650
-global struct []*sync.Pool sync.allPools @ 0x565740
-global os.File * os.Stdout @ 0x565210
-global unicode.RangeTable * unicode.Kaithi @ 0x55e328
-global unicode.RangeTable * unicode.Cham @ 0x55e1b0
-global unicode.RangeTable * unicode.Hex_Digit @ 0x55e2c8
-global unicode.RangeTable * unicode.Z @ 0x55e7a8
-global interface {} runtime.sliceEface @ 0x55e950
-global sync.Once internal/poll.serverInit @ 0x58ed28
-global runtime.mutex runtime.debuglock @ 0x58ec28
-global unicode.RangeTable * unicode.Old_Sogdian @ 0x55e530
-global <unspecified> io..inittask @ 0x551860
-global runtime.finblock * runtime.allfin @ 0x565230
-global unicode.RangeTable * unicode.Katakana @ 0x55e338
-global unicode.RangeTable * unicode.Old_South_Arabian @ 0x55e538
-global unicode.RangeTable * unicode.C @ 0x55e178
-global unicode.RangeTable * unicode.Pattern_White_Space @ 0x55e5c0
-global unicode.RangeTable * unicode.L @ 0x55e368
-global uint32 runtime.touchStackBeforeSignal @ 0x58ebcc
-global unicode.RangeTable * unicode.M @ 0x55e3e8
-global unicode.RangeTable * unicode.N @ 0x55e498
-global uint32 runtime.extraMCount @ 0x58eb88
-global void * runtime.cgoTraceback @ 0x565260
-global runtime._type * runtime.sliceType @ 0x5652b8
-global func() runtime.throwReportQuirk @ 0x5652d8
-global unicode.RangeTable * unicode.Bassa_Vah @ 0x55e128
-global unicode.RangeTable * unicode.Oriya @ 0x55e548
-global strconv.floatInfo strconv.float32info @ 0x550700
-global uint8 [257] runtime/internal/sys.ntz8tab @ 0x553fa0
-global unicode.RangeTable * unicode.Sc @ 0x55e668
-global unicode.RangeTable * unicode.Multani @ 0x55e488
-global struct string runtime.badmorestackg0Msg @ 0x55e8c0
-global unicode.RangeTable * unicode.So @ 0x55e6b0
-global error syscall.errEAGAIN @ 0x55e9b0
-global unicode.RangeTable * unicode.Sm @ 0x55e6a8
-global runtime.vdsoVersionKey runtime.vdsoLinuxVersion @ 0x55eac0
-global unicode.RangeTable * unicode.Balinese @ 0x55e118
-global unicode.RangeTable * unicode.Sk @ 0x55e6a0
-global unicode.RangeTable * unicode.Radical @ 0x55e630
-global runtime.mutex runtime.proflock @ 0x58ecc0
-global void * _cgo_callers @ 0x5651c0
-global uintptr [66] runtime.fwdSig @ 0x58f620
-global unicode.RangeTable * unicode.Palmyrene @ 0x55e5b0
-global runtime.initTask runtime..inittask @ 0x5525c0
-global unicode.RangeTable * unicode.foldGreek @ 0x55e7d8
-global struct struct { runtime.root runtime.semaRoot; runtime.pad [40]uint8 } [252] runtime.semtable @ 0x568460
-global struct []uint16 strconv.isPrint16 @ 0x55eb60
-global bool runtime.x86HasPOPCNT @ 0x58eb77
-global error internal/poll.ErrNotPollable @ 0x5653f0
-global runtime.cpuProfile runtime.cpuprof @ 0x5664e0
-global os.File * os.Stderr @ 0x565200
-global unicode.RangeTable * unicode.Nandinagari @ 0x55e4a8
-global unicode.RangeTable * unicode.Other_ID_Continue @ 0x55e578
-global <unspecified> internal/reflectlite..inittask @ 0x550dc0
-global int32 runtime.crashing @ 0x58eb84
-global unicode.RangeTable * unicode.foldLu @ 0x55e800
-global chan bool runtime.main_init_done @ 0x565290
-global unicode.RangeTable * unicode.foldLt @ 0x55e7f8
-global uint8 [250] runtime.size_to_class128 @ 0x553ba0
-global uint32 runtime.panicking @ 0x58ebbc
-global int syscall.Stdout @ 0x550170
-global unicode.RangeTable * unicode.foldLl @ 0x55e7f0
-global uint64 runtime.mutexprofilerate @ 0x58ec70
-global uint8 [257] runtime.staticbytes @ 0x553da0
-global unicode.RangeTable * unicode.No @ 0x55e4d8
-global unicode.RangeTable * unicode.Phags_Pa @ 0x55e5f0
-global unicode.RangeTable * unicode.Nl @ 0x55e4d0
-global bool runtime.mainStarted @ 0x58eb70
-global uint8 [513] runtime.printBacklog @ 0x58f420
-global struct string runtime.badginsignalMsg @ 0x55e8b0
-global unicode.RangeTable * unicode.Ideographic @ 0x55e2f0
-global <unspecified> strconv..inittask @ 0x551b60
-global unicode.RangeTable * unicode.Runic @ 0x55e648
-global unicode.RangeTable * unicode.Yi @ 0x55e7a0
-global struct struct { runtime.lock runtime.mutex; runtime.g *runtime.g; runtime.parked bool; runtime.timer *runtime.timer } runtime.scavenge @ 0x5657c0
-global error internal/poll.ErrFileClosing @ 0x5653c0
-global runtime.mutex runtime.allpLock @ 0x58ebf8
-global unicode.RangeTable * unicode.Nd @ 0x55e4b0
-global func(*runtime.siginfo, *runtime.sigctxt, *runtime.g) bool runtime.testSigtrap @ 0x5652c8
+global unicode.RangeTable * unicode.Lt @ 0x55e3c8
+global unicode.RangeTable * unicode.Lu @ 0x55e3d0
 global unicode.RangeTable * unicode.Lycian @ 0x55e3d8
-global unicode.RangeTable * unicode.Nyiakeng_Puachue_Hmong @ 0x55e4f0
-global error internal/poll.errEINVAL @ 0x55e840
-global unicode.RangeTable * unicode.Miao @ 0x55e460
-global error io.ErrShortWrite @ 0x565440
-global struct []uint16 strconv.isNotPrint16 @ 0x55eb20
-global unicode.RangeTable * unicode.Old_Hungarian @ 0x55e508
-global map[string]*unicode.RangeTable unicode.FoldCategory @ 0x565318
-global struct string runtime/internal/sys.DefaultGoroot @ 0x55e9a0
-global runtime.bucket * runtime.bbuckets @ 0x565248
-global unicode.RangeTable * unicode.Hanunoo @ 0x55e2b0
-global <unspecified> syscall..inittask @ 0x551ee0
-global error io.errOffset @ 0x565460
-global runtime._type * runtime.deferType @ 0x565268
-global unicode.RangeTable * unicode.Sinhala @ 0x55e698
-global unicode.RangeTable * unicode.Wancho @ 0x55e788
-global uint16 [68] runtime.class_to_size @ 0x552fe0
-global error fmt.complexError @ 0x565360
-global unicode.RangeTable * unicode.Cypriot @ 0x55e1e8
-global unicode.RangeTable * unicode.foldMn @ 0x55e810
-global struct []uint32 strconv.isPrint32 @ 0x55eb80
-global unicode.RangeTable * unicode.Sora_Sompeng @ 0x55e6c8
-global error internal/poll.ErrNoDeadline @ 0x5653e0
-global <unspecified> sync..inittask @ 0x551ba0
-global unicode.RangeTable * unicode.Thaana @ 0x55e740
-global runtime.moduledata runtime.firstmoduledata @ 0x555540
-global uint8 [6] runtime.finalizer1 @ 0x550034
-global uint8 [130] runtime.size_to_class8 @ 0x552ea0
-global struct string [27] runtime.waitReasonStrings @ 0x562840
-global struct struct { runtime.lock runtime.mutex; runtime.free *runtime.gcBitsArena; runtime.next *runtime.gcBitsArena; runtime.current *runtime.gcBitsArena; runtime.previous *runtime.gcBitsArena } runtime.gcBitsArenas @ 0x5658a0
-global struct []strconv.leftCheat strconv.leftcheats @ 0x55eba0
-global runtime.mutex runtime.allglock @ 0x58ebf0
-global unicode.RangeTable * unicode.Tamil @ 0x55e720
-global unicode.RangeTable * unicode.Soyombo @ 0x55e6d0
-global error internal/poll.ErrTimeout @ 0x55e820
-global unicode.RangeTable * unicode.Old_Permic @ 0x55e520
-global unicode.RangeTable * unicode.Prepended_Concatenation_Mark @ 0x55e610
-global unicode.RangeTable * unicode.Inscriptional_Parthian @ 0x55e310
-global unicode.RangeTable * unicode.Kayah_Li @ 0x55e340
-global uint32 runtime.processorVersionInfo @ 0x58ebc0
-global runtime.notInHeap * runtime.persistentChunks @ 0x5652a8
-global uint64 runtime.blockprofilerate @ 0x58ec00
-global uintptr runtime.fastrandseed @ 0x58ec40
-global unicode.RangeTable * unicode.Tagalog @ 0x55e6f0
-global <unspecified> time..inittask @ 0x551f20
-global func(*runtime.g) bool runtime.testSigusr1 @ 0x5652d0
-global uintptr runtime.maxstacksize @ 0x550130
-global unicode.RangeTable * unicode.Other_Grapheme_Extend @ 0x55e570
-global runtime.randomOrder runtime.stealOrder @ 0x5657e0
-global uintptr runtime.chansendpc @ 0x58ec18
-global unicode.RangeTable * unicode.Sundanese @ 0x55e6d8
-global void ** runtime.cgo_yield @ 0x55e0d0
-global unicode.RangeTable * unicode.Modi @ 0x55e470
-global error strconv.ErrRange @ 0x565550
-global struct []uint8 runtime.earlycgocallback @ 0x55ea20
-global map[string]*unicode.RangeTable unicode.Properties @ 0x565328
-global error internal/oserror.ErrExist @ 0x565380
-global error io.ErrNoProgress @ 0x565420
-global uint32 runtime.worldsema @ 0x550030
-global unicode.RangeTable * unicode.Buginese @ 0x55e168
-global map[string]*unicode.RangeTable unicode.Scripts @ 0x565330
-global interface {} runtime.uint32Eface @ 0x55e980
-global struct string [9] runtime.boundsErrorFmts @ 0x5626a0
-global runtime.bucket **[180000] runtime.buckhash @ 0x565250
-global uint32 runtime.runningPanicDefers @ 0x58ebc4
-global struct []uint16 strconv.isNotPrint32 @ 0x55eb40
-global unicode.RangeTable * unicode.Other_ID_Start @ 0x55e580
-global runtime._type * runtime.uint64Type @ 0x5652f0
-global error time.errLocation @ 0x5655b0
-global reflect.rtype * reflect.uint8Type @ 0x565218
-global error runtime.memoryError @ 0x55e920
-global struct struct { runtime.lock runtime.mutex; runtime.newm runtime.muintptr; runtime.waiting bool; runtime.wake runtime.note; runtime.haveTemplateThread uint32 } runtime.newmHandoff @ 0x58ed80
-global unicode.RangeTable * unicode.foldCommon @ 0x55e7d0
-global unicode.RangeTable * unicode.Mro @ 0x55e480
-global unicode.RangeTable * unicode.Cuneiform @ 0x55e1e0
-global unicode.RangeTable * unicode.Lisu @ 0x55e3a0
-global uintptr runtime.asyncPreemptStack @ 0x550110
-global runtime.itabTableType runtime.itabTableInit @ 0x5641a0
-global bool runtime.didothers @ 0x58eb66
-global unicode.RangeTable * unicode.Kannada @ 0x55e330
-global struct []uint8 runtime.sysTHPSizePath @ 0x55ea80
-global unicode.RangeTable * unicode.Dogra @ 0x55e220
-global struct []uint8 runtime.urandom_dev @ 0x55eaa0
-global struct []uint8 runtime.procAuxv @ 0x55ea60
-global unicode.RangeTable * unicode.Bengali @ 0x55e138
-global unicode.RangeTable * unicode.Hyphen @ 0x55e2d8
-global void * _cgo_init @ 0x5651c8
-global int64 runtime.runtimeInitTime @ 0x58ecc8
-global unicode.RangeTable * unicode.Avestan @ 0x55e110
-global struct struct { reflect.b bool; reflect.x interface {} } reflect.dummy @ 0x565600
-global sync.Mutex sync.allPoolsMu @ 0x58ed08
-global map[string]*unicode.RangeTable unicode.FoldScript @ 0x565320
-global unicode.RangeTable * unicode.Mongolian @ 0x55e478
-global unicode.RangeTable * unicode.Imperial_Aramaic @ 0x55e2f8
-global int64 time.startNano @ 0x58ed20
-global unicode.RangeTable * unicode.Lepcha @ 0x55e380
-global error internal/poll.errEAGAIN @ 0x55e830
-global uint runtime.physHugePageShift @ 0x58ec98
-global error os.errFinished @ 0x5654e0
-global bool runtime.framepointer_enabled @ 0x55e0c0
-global struct []string os.Args @ 0x5655e0
-global unicode.RangeTable * unicode.Diacritic @ 0x55e218
-global unicode.RangeTable * unicode.Saurashtra @ 0x55e660
-global struct []string runtime.argslice @ 0x565680
-global unicode.RangeTable * unicode.Nushu @ 0x55e4e8
-global error internal/oserror.ErrInvalid @ 0x565390
-global runtime.sweepdata runtime.sweep @ 0x565800
-global unicode.RangeTable * unicode.Phoenician @ 0x55e5f8
-global unicode.RangeTable * unicode.Georgian @ 0x55e258
-global void * _cgo_munmap @ 0x5651d8
-global uint32 runtime.gcBlackenEnabled @ 0x58eb98
-global struct struct { sync.Mutex; reflect.m sync.Map } reflect.funcLookupCache @ 0x5658e0
-global int internal/bytealg.MaxLen @ 0x58ebd8
-global struct []runtime.vdsoSymbolKey runtime.vdsoSymbolKeys @ 0x55eae0
-global bool runtime.isarchive @ 0x58eb6c
-global int32 runtime.ncpu @ 0x58ebac
-global int64 runtime.forcegcperiod @ 0x550118
-global unicode.RangeTable * unicode.Glagolitic @ 0x55e260
-global unicode.RangeTable * unicode.Terminal_Punctuation @ 0x55e738
-global bool runtime.arm64HasATOMICS @ 0x58eb63
-global uint32 runtime.traceback_cache @ 0x55002c
+global unicode.RangeTable * unicode.Lydian @ 0x55e3e0
+global unicode.RangeTable * unicode.M @ 0x55e3e8
+global unicode.RangeTable * unicode.Mahajani @ 0x55e3f0
+global unicode.RangeTable * unicode.Makasar @ 0x55e3f8
+global unicode.RangeTable * unicode.Malayalam @ 0x55e400
 global unicode.RangeTable * unicode.Mandaic @ 0x55e408
-global unicode.RangeTable * unicode.Duployan @ 0x55e228
-global unicode.RangeTable * unicode.Chakma @ 0x55e1a8
-global uint8 [2] runtime.addrspace_vec @ 0x58eb62
-global runtime.g runtime.g0 @ 0x565c20
-global unicode.RangeTable * unicode.Deseret @ 0x55e208
-global unicode.RangeTable * unicode.Join_Control @ 0x55e320
-global uint [257] runtime.consec8tab @ 0x55b5c0
-global runtime.divMagic [68] runtime.class_to_divmagic @ 0x554ce0
+global unicode.RangeTable * unicode.Manichaean @ 0x55e410
+global unicode.RangeTable * unicode.Marchen @ 0x55e418
+global unicode.RangeTable * unicode.Masaram_Gondi @ 0x55e420
+global unicode.RangeTable * unicode.Mc @ 0x55e428
+global unicode.RangeTable * unicode.Me @ 0x55e430
+global unicode.RangeTable * unicode.Medefaidrin @ 0x55e438
+global unicode.RangeTable * unicode.Meetei_Mayek @ 0x55e440
+global unicode.RangeTable * unicode.Mende_Kikakui @ 0x55e448
+global unicode.RangeTable * unicode.Meroitic_Cursive @ 0x55e450
+global unicode.RangeTable * unicode.Meroitic_Hieroglyphs @ 0x55e458
+global unicode.RangeTable * unicode.Miao @ 0x55e460
+global unicode.RangeTable * unicode.Mn @ 0x55e468
+global unicode.RangeTable * unicode.Modi @ 0x55e470
+global unicode.RangeTable * unicode.Mongolian @ 0x55e478
+global unicode.RangeTable * unicode.Mro @ 0x55e480
+global unicode.RangeTable * unicode.Multani @ 0x55e488
+global unicode.RangeTable * unicode.Myanmar @ 0x55e490
+global unicode.RangeTable * unicode.N @ 0x55e498
+global unicode.RangeTable * unicode.Nabataean @ 0x55e4a0
+global unicode.RangeTable * unicode.Nandinagari @ 0x55e4a8
+global unicode.RangeTable * unicode.Nd @ 0x55e4b0
+global unicode.RangeTable * unicode.New_Tai_Lue @ 0x55e4b8
+global unicode.RangeTable * unicode.Newa @ 0x55e4c0
+global unicode.RangeTable * unicode.Nko @ 0x55e4c8
+global unicode.RangeTable * unicode.Nl @ 0x55e4d0
+global unicode.RangeTable * unicode.No @ 0x55e4d8
+global unicode.RangeTable * unicode.Noncharacter_Code_Point @ 0x55e4e0
+global unicode.RangeTable * unicode.Nushu @ 0x55e4e8
+global unicode.RangeTable * unicode.Nyiakeng_Puachue_Hmong @ 0x55e4f0
+global unicode.RangeTable * unicode.Ogham @ 0x55e4f8
+global unicode.RangeTable * unicode.Ol_Chiki @ 0x55e500
+global unicode.RangeTable * unicode.Old_Hungarian @ 0x55e508
+global unicode.RangeTable * unicode.Old_Italic @ 0x55e510
+global unicode.RangeTable * unicode.Old_North_Arabian @ 0x55e518
+global unicode.RangeTable * unicode.Old_Permic @ 0x55e520
+global unicode.RangeTable * unicode.Old_Persian @ 0x55e528
+global unicode.RangeTable * unicode.Old_Sogdian @ 0x55e530
+global unicode.RangeTable * unicode.Old_South_Arabian @ 0x55e538
+global unicode.RangeTable * unicode.Old_Turkic @ 0x55e540
+global unicode.RangeTable * unicode.Oriya @ 0x55e548
+global unicode.RangeTable * unicode.Osage @ 0x55e550
+global unicode.RangeTable * unicode.Osmanya @ 0x55e558
+global unicode.RangeTable * unicode.Other_Alphabetic @ 0x55e560
+global unicode.RangeTable * unicode.Other_Default_Ignorable_Code_Point @ 0x55e568
+global unicode.RangeTable * unicode.Other_Grapheme_Extend @ 0x55e570
+global unicode.RangeTable * unicode.Other_ID_Continue @ 0x55e578
+global unicode.RangeTable * unicode.Other_ID_Start @ 0x55e580
+global unicode.RangeTable * unicode.Other_Lowercase @ 0x55e588
+global unicode.RangeTable * unicode.Other_Math @ 0x55e590
+global unicode.RangeTable * unicode.Other_Uppercase @ 0x55e598
+global unicode.RangeTable * unicode.P @ 0x55e5a0
+global unicode.RangeTable * unicode.Pahawh_Hmong @ 0x55e5a8
+global unicode.RangeTable * unicode.Palmyrene @ 0x55e5b0
+global unicode.RangeTable * unicode.Pattern_Syntax @ 0x55e5b8
+global unicode.RangeTable * unicode.Pattern_White_Space @ 0x55e5c0
+global unicode.RangeTable * unicode.Pau_Cin_Hau @ 0x55e5c8
+global unicode.RangeTable * unicode.Pc @ 0x55e5d0
+global unicode.RangeTable * unicode.Pd @ 0x55e5d8
+global unicode.RangeTable * unicode.Pe @ 0x55e5e0
+global unicode.RangeTable * unicode.Pf @ 0x55e5e8
+global unicode.RangeTable * unicode.Phags_Pa @ 0x55e5f0
+global unicode.RangeTable * unicode.Phoenician @ 0x55e5f8
+global unicode.RangeTable * unicode.Pi @ 0x55e600
+global unicode.RangeTable * unicode.Po @ 0x55e608
+global unicode.RangeTable * unicode.Prepended_Concatenation_Mark @ 0x55e610
+global unicode.RangeTable * unicode.Ps @ 0x55e618
+global unicode.RangeTable * unicode.Psalter_Pahlavi @ 0x55e620
+global unicode.RangeTable * unicode.Quotation_Mark @ 0x55e628
+global unicode.RangeTable * unicode.Radical @ 0x55e630
+global unicode.RangeTable * unicode.Regional_Indicator @ 0x55e638
+global unicode.RangeTable * unicode.Rejang @ 0x55e640
+global unicode.RangeTable * unicode.Runic @ 0x55e648
+global unicode.RangeTable * unicode.S @ 0x55e650
+global unicode.RangeTable * unicode.Samaritan @ 0x55e658
+global unicode.RangeTable * unicode.Saurashtra @ 0x55e660
+global unicode.RangeTable * unicode.Sc @ 0x55e668
+global unicode.RangeTable * unicode.Sentence_Terminal @ 0x55e670
+global unicode.RangeTable * unicode.Sharada @ 0x55e678
+global unicode.RangeTable * unicode.Shavian @ 0x55e680
+global unicode.RangeTable * unicode.Siddham @ 0x55e688
+global unicode.RangeTable * unicode.SignWriting @ 0x55e690
+global unicode.RangeTable * unicode.Sinhala @ 0x55e698
+global unicode.RangeTable * unicode.Sk @ 0x55e6a0
+global unicode.RangeTable * unicode.Sm @ 0x55e6a8
+global unicode.RangeTable * unicode.So @ 0x55e6b0
+global unicode.RangeTable * unicode.Soft_Dotted @ 0x55e6b8
+global unicode.RangeTable * unicode.Sogdian @ 0x55e6c0
+global unicode.RangeTable * unicode.Sora_Sompeng @ 0x55e6c8
+global unicode.RangeTable * unicode.Soyombo @ 0x55e6d0
+global unicode.RangeTable * unicode.Sundanese @ 0x55e6d8
+global unicode.RangeTable * unicode.Syloti_Nagri @ 0x55e6e0
+global unicode.RangeTable * unicode.Syriac @ 0x55e6e8
+global unicode.RangeTable * unicode.Tagalog @ 0x55e6f0
+global unicode.RangeTable * unicode.Tagbanwa @ 0x55e6f8
+global unicode.RangeTable * unicode.Tai_Le @ 0x55e700
+global unicode.RangeTable * unicode.Tai_Tham @ 0x55e708
+global unicode.RangeTable * unicode.Tai_Viet @ 0x55e710
+global unicode.RangeTable * unicode.Takri @ 0x55e718
+global unicode.RangeTable * unicode.Tamil @ 0x55e720
+global unicode.RangeTable * unicode.Tangut @ 0x55e728
+global unicode.RangeTable * unicode.Telugu @ 0x55e730
+global unicode.RangeTable * unicode.Terminal_Punctuation @ 0x55e738
+global unicode.RangeTable * unicode.Thaana @ 0x55e740
+global unicode.RangeTable * unicode.Thai @ 0x55e748
+global unicode.RangeTable * unicode.Tibetan @ 0x55e750
 global unicode.RangeTable * unicode.Tifinagh @ 0x55e758
+global unicode.RangeTable * unicode.Tirhuta @ 0x55e760
+global unicode.RangeTable * unicode.Ugaritic @ 0x55e768
+global unicode.RangeTable * unicode.Unified_Ideograph @ 0x55e770
+global unicode.RangeTable * unicode.Vai @ 0x55e778
+global unicode.RangeTable * unicode.Variation_Selector @ 0x55e780
+global unicode.RangeTable * unicode.Wancho @ 0x55e788
+global unicode.RangeTable * unicode.Warang_Citi @ 0x55e790
+global unicode.RangeTable * unicode.White_Space @ 0x55e798
+global unicode.RangeTable * unicode.Yi @ 0x55e7a0
+global unicode.RangeTable * unicode.Z @ 0x55e7a8
+global unicode.RangeTable * unicode.Zanabazar_Square @ 0x55e7b0
+global unicode.RangeTable * unicode.Zl @ 0x55e7b8
+global unicode.RangeTable * unicode.Zp @ 0x55e7c0
+global unicode.RangeTable * unicode.Zs @ 0x55e7c8
+global unicode.RangeTable * unicode.foldCommon @ 0x55e7d0
+global unicode.RangeTable * unicode.foldGreek @ 0x55e7d8
+global unicode.RangeTable * unicode.foldInherited @ 0x55e7e0
+global unicode.RangeTable * unicode.foldL @ 0x55e7e8
+global unicode.RangeTable * unicode.foldLl @ 0x55e7f0
+global unicode.RangeTable * unicode.foldLt @ 0x55e7f8
+global unicode.RangeTable * unicode.foldLu @ 0x55e800
+global unicode.RangeTable * unicode.foldM @ 0x55e808
+global unicode.RangeTable * unicode.foldMn @ 0x55e810
+global error internal/poll.ErrTimeout @ 0x55e820
+global error internal/poll.errEAGAIN @ 0x55e830
+global error internal/poll.errEINVAL @ 0x55e840
+global error internal/poll.errENOENT @ 0x55e850
+global struct string runtime.badginsignalMsg @ 0x55e8b0
+global struct string runtime.badmorestackg0Msg @ 0x55e8c0
+global struct string runtime.badmorestackgsignalMsg @ 0x55e8d0
+global struct string runtime.badsystemstackMsg @ 0x55e8e0
+global struct string runtime.buildVersion @ 0x55e8f0
+global error runtime.divideError @ 0x55e900
+global error runtime.floatError @ 0x55e910
+global error runtime.memoryError @ 0x55e920
+global error runtime.overflowError @ 0x55e930
+global error runtime.shiftError @ 0x55e940
+global interface {} runtime.sliceEface @ 0x55e950
+global interface {} runtime.stringEface @ 0x55e960
+global interface {} runtime.uint16Eface @ 0x55e970
+global interface {} runtime.uint32Eface @ 0x55e980
+global interface {} runtime.uint64Eface @ 0x55e990
+global struct string runtime/internal/sys.DefaultGoroot @ 0x55e9a0
+global error syscall.errEAGAIN @ 0x55e9b0
+global error syscall.errEINVAL @ 0x55e9c0
+global error syscall.errENOENT @ 0x55e9d0
+global struct []string reflect.kindNames @ 0x55e9e0
+global struct []runtime.dbgVar runtime.dbgvars @ 0x55ea00
+global struct []uint8 runtime.earlycgocallback @ 0x55ea20
+global struct []string runtime.mSpanStateNames @ 0x55ea40
+global struct []uint8 runtime.procAuxv @ 0x55ea60
+global struct []uint8 runtime.sysTHPSizePath @ 0x55ea80
+global struct []uint8 runtime.urandom_dev @ 0x55eaa0
+global runtime.vdsoVersionKey runtime.vdsoLinuxVersion @ 0x55eac0
+global struct []runtime.vdsoSymbolKey runtime.vdsoSymbolKeys @ 0x55eae0
+global struct []uint16 strconv.isGraphic @ 0x55eb00
+global struct []uint16 strconv.isNotPrint16 @ 0x55eb20
+global struct []uint16 strconv.isNotPrint32 @ 0x55eb40
+global struct []uint16 strconv.isPrint16 @ 0x55eb60
+global struct []uint32 strconv.isPrint32 @ 0x55eb80
+global struct []strconv.leftCheat strconv.leftcheats @ 0x55eba0
+global sync.Pool fmt.ppFree @ 0x55ebe0
+global struct string [9] runtime.boundsErrorFmts @ 0x5626a0
+global struct string [9] runtime.boundsNegErrorFmts @ 0x562720
+global struct string [11] runtime.gStatusStrings @ 0x5627a0
+global struct string [27] runtime.waitReasonStrings @ 0x562840
+global runtime.sigTabT [66] runtime.sigtable @ 0x563320
+global struct string [134] syscall.errors @ 0x563940
+global runtime.itabTableType runtime.itabTableInit @ 0x5641a0
+global void * _cgo_callers @ 0x5651c0
+global void * _cgo_init @ 0x5651c8
+global void * _cgo_mmap @ 0x5651d0
+global void * _cgo_munmap @ 0x5651d8
+global void * _cgo_notify_runtime_init_done @ 0x5651e0
+global void * _cgo_sigaction @ 0x5651e8
+global void * _cgo_thread_start @ 0x5651f0
+global void * _cgo_yield @ 0x5651f8
+global os.File * os.Stderr @ 0x565200
+global os.File * os.Stdin @ 0x565208
+global os.File * os.Stdout @ 0x565210
+global reflect.rtype * reflect.uint8Type @ 0x565218
+global void * runtime._cgo_setenv @ 0x565220
+global void * runtime._cgo_unsetenv @ 0x565228
+global runtime.finblock * runtime.allfin @ 0x565230
+global runtime.m * runtime.allm @ 0x565238
+global uint8 ** runtime.argv @ 0x565240
+global runtime.bucket * runtime.bbuckets @ 0x565248
+global runtime.bucket **[180000] runtime.buckhash @ 0x565250
+global void * runtime.cgoSymbolizer @ 0x565258
+global void * runtime.cgoTraceback @ 0x565260
+global runtime._type * runtime.deferType @ 0x565268
+global runtime.finblock * runtime.finc @ 0x565270
+global runtime.g * runtime.fing @ 0x565278
+global runtime.finblock * runtime.finq @ 0x565280
+global func(*runtime.g) runtime.gsignalInitQuirk @ 0x565288
+global chan bool runtime.main_init_done @ 0x565290
+global runtime.bucket * runtime.mbuckets @ 0x565298
+global struct []*runtime.moduledata * runtime.modulesSlice @ 0x5652a0
+global runtime.notInHeap * runtime.persistentChunks @ 0x5652a8
+global func() runtime.poolcleanup @ 0x5652b0
+global runtime._type * runtime.sliceType @ 0x5652b8
+global runtime._type * runtime.stringType @ 0x5652c0
+global func(*runtime.siginfo, *runtime.sigctxt, *runtime.g) bool runtime.testSigtrap @ 0x5652c8
+global func(*runtime.g) bool runtime.testSigusr1 @ 0x5652d0
+global func() runtime.throwReportQuirk @ 0x5652d8
+global runtime._type * runtime.uint16Type @ 0x5652e0
+global runtime._type * runtime.uint32Type @ 0x5652e8
+global runtime._type * runtime.uint64Type @ 0x5652f0
+global runtime.bucket * runtime.xbuckets @ 0x5652f8
+global void * sync.expunged @ 0x565300
+global map[string]int64 time.unitMap @ 0x565308
+global map[string]*unicode.RangeTable unicode.Categories @ 0x565310
+global map[string]*unicode.RangeTable unicode.FoldCategory @ 0x565318
+global map[string]*unicode.RangeTable unicode.FoldScript @ 0x565320
+global map[string]*unicode.RangeTable unicode.Properties @ 0x565328
+global map[string]*unicode.RangeTable unicode.Scripts @ 0x565330
+global internal/reflectlite.Type errors.errorType @ 0x565340
+global error fmt.boolError @ 0x565350
+global error fmt.complexError @ 0x565360
+global error internal/oserror.ErrClosed @ 0x565370
+global error internal/oserror.ErrExist @ 0x565380
+global error internal/oserror.ErrInvalid @ 0x565390
+global error internal/oserror.ErrNotExist @ 0x5653a0
+global error internal/oserror.ErrPermission @ 0x5653b0
+global error internal/poll.ErrFileClosing @ 0x5653c0
+global error internal/poll.ErrNetClosing @ 0x5653d0
+global error internal/poll.ErrNoDeadline @ 0x5653e0
+global error internal/poll.ErrNotPollable @ 0x5653f0
+global error io.EOF @ 0x565400
+global error io.ErrClosedPipe @ 0x565410
+global error io.ErrNoProgress @ 0x565420
+global error io.ErrShortBuffer @ 0x565430
+global error io.ErrShortWrite @ 0x565440
+global error io.ErrUnexpectedEOF @ 0x565450
+global error io.errOffset @ 0x565460
+global error io.errWhence @ 0x565470
+global error os.ErrClosed @ 0x565480
+global error os.ErrExist @ 0x565490
+global error os.ErrInvalid @ 0x5654a0
+global error os.ErrNoDeadline @ 0x5654b0
+global error os.ErrNotExist @ 0x5654c0
+global error os.ErrPermission @ 0x5654d0
+global error os.errFinished @ 0x5654e0
+global error os.errWriteAtInAppendMode @ 0x5654f0
+global struct string os.executablePath @ 0x565500
+global error os.executablePathErr @ 0x565510
+global struct string runtime.modinfo @ 0x565530
+global runtime.pollCache runtime.pollcache @ 0x565540
+global error strconv.ErrRange @ 0x565550
 global error strconv.ErrSyntax @ 0x565560
+global error time.atoiError @ 0x565570
+global error time.badData @ 0x565580
+global error time.errBad @ 0x565590
+global error time.errLeadingInt @ 0x5655a0
+global error time.errLocation @ 0x5655b0
+global struct []internal/cpu.option internal/cpu.options @ 0x5655c0
+global struct []string os.Args @ 0x5655e0
+global struct struct { reflect.b bool; reflect.x interface {} } reflect.dummy @ 0x565600
+global struct []*runtime.g runtime.allgs @ 0x565640
+global struct []*runtime.p runtime.allp @ 0x565660
+global struct []string runtime.argslice @ 0x565680
+global struct []string runtime.envs @ 0x5656a0
+global runtime.forcegcstate runtime.forcegc @ 0x5656c0
+global struct struct { runtime.mutex; runtime.persistentAlloc } runtime.globalAlloc @ 0x5656e0
+global struct []map[runtime.typeOff]*runtime._type runtime.pinnedTypemaps @ 0x565700
+global struct []uint8 runtime.startupRandomData @ 0x565720
+global struct []*sync.Pool sync.allPools @ 0x565740
+global struct []*sync.Pool sync.oldPools @ 0x565760
+global struct []string syscall.envs @ 0x565780
+global struct struct { runtime.lock runtime.mutex; runtime.next int32; runtime.m map[int32]unsafe.Pointer; runtime.minv map[unsafe.Pointer]int32 } runtime.reflectOffs @ 0x5657a0
+global struct struct { runtime.lock runtime.mutex; runtime.g *runtime.g; runtime.parked bool; runtime.timer *runtime.timer } runtime.scavenge @ 0x5657c0
+global runtime.randomOrder runtime.stealOrder @ 0x5657e0
+global runtime.sweepdata runtime.sweep @ 0x565800
+global sync.Map reflect.layoutCache @ 0x565820
+global sync.Map reflect.ptrMap @ 0x565860
+global struct struct { runtime.lock runtime.mutex; runtime.free *runtime.gcBitsArena; runtime.next *runtime.gcBitsArena; runtime.current *runtime.gcBitsArena; runtime.previous *runtime.gcBitsArena } runtime.gcBitsArenas @ 0x5658a0
+global struct struct { sync.Mutex; reflect.m sync.Map } reflect.funcLookupCache @ 0x5658e0
+global runtime.mspan runtime.emptymspan @ 0x565920
+global struct struct { runtime.item runtime.stackpoolItem; _ [40]uint8 } [5] runtime.stackpool @ 0x5659c0
+global runtime.schedt runtime.sched @ 0x565ac0
+global runtime.g runtime.g0 @ 0x565c20
+global struct struct { runtime.full runtime.lfstack; runtime.empty runtime.lfstack; runtime.pad0 internal/cpu.CacheLinePad; runtime.wbufSpans struct { runtime.lock runtime.mutex; runtime.free runtime.mSpanList; runtime.busy runtime.mSpanList }; _ uint32; runtime.bytesMarked uint64; runtime.markrootNext uint32; runtime.markrootJobs uint32; runtime.nproc uint32; runtime.tstart int64; runtime.nwait uint32; runtime.ndone uint32; runtime.nFlushCacheRoots int; runtime.nDataRoots int; runtime.nBSSRoots int; runtime.nSpanRoots int; runtime.nStackRoots int; runtime.startSema uint32; runtime.markDoneSema uint32; runtime.bgMarkReady runtime.note; runtime.bgMarkDone uint32; runtime.mode runtime.gcMode; runtime.userForced bool; runtime.totaltime int64; runtime.initialHeapLive uint64; runtime.assistQueue struct { runtime.lock runtime.mutex; runtime.q runtime.gQueue }; runtime.sweepWaiters struct { runtime.lock runtime.mutex; runtime.list runtime.gList }; runtime.cycles uint32; runtime.stwprocs int32; runtime.maxprocs int32; runtime.tSweepTerm int64; runtime.tMark int64; runtime.tMarkTerm int64; runtime.tEnd int64; runtime.pauseNS int64; runtime.pauseStart int64; runtime.heap0 uint64; runtime.heap1 uint64; runtime.heap2 uint64; runtime.heapGoal uint64 } runtime.work @ 0x565da0
+global struct struct { runtime.lock runtime.mutex; runtime.free [35]runtime.mSpanList } runtime.stackLarge @ 0x565f40
+global runtime.m runtime.m0 @ 0x566180
+global runtime.cpuProfile runtime.cpuprof @ 0x5664e0
+global struct struct { runtime.root runtime.semaRoot; runtime.pad [40]uint8 } [252] runtime.semtable @ 0x568460
+global struct struct { runtime.lock runtime.mutex; runtime.lockOwner *runtime.g; runtime.enabled bool; runtime.shutdown bool; runtime.headerWritten bool; runtime.footerWritten bool; runtime.shutdownSema uint32; runtime.seqStart uint64; runtime.ticksStart int64; runtime.ticksEnd int64; runtime.timeStart int64; runtime.timeEnd int64; runtime.seqGC uint64; runtime.reading runtime.traceBufPtr; runtime.empty runtime.traceBufPtr; runtime.fullHead runtime.traceBufPtr; runtime.fullTail runtime.traceBufPtr; runtime.reader runtime.guintptr; runtime.stackTab runtime.traceStackTable; runtime.stringsLock runtime.mutex; runtime.strings map[string]uint64; runtime.stringSeq uint64; runtime.markWorkerLabels [3]uint64; runtime.bufLock runtime.mutex; runtime.buf runtime.traceBufPtr } runtime.trace @ 0x56c320
+global runtime.mheap runtime.mheap_ @ 0x57c400
+global bool internal/cpu.DebugOptions @ 0x58eb60
+global bool math.useFMA @ 0x58eb61
+global uint8 [2] runtime.addrspace_vec @ 0x58eb62
+global bool runtime.arm64HasATOMICS @ 0x58eb63
+global bool runtime.armHasVFPv4 @ 0x58eb64
+global bool runtime.cgoHasExtraM @ 0x58eb65
+global bool runtime.didothers @ 0x58eb66
+global bool runtime.fingRunning @ 0x58eb67
+global bool runtime.fingwait @ 0x58eb68
+global bool runtime.fingwake @ 0x58eb69
+global bool runtime.inForkedChild @ 0x58eb6a
+global bool runtime.isIntel @ 0x58eb6b
+global bool runtime.isarchive @ 0x58eb6c
+global bool runtime.iscgo @ 0x58eb6d
+global bool runtime.islibrary @ 0x58eb6e
+global bool runtime.lfenceBeforeRdtsc @ 0x58eb6f
+global bool runtime.mainStarted @ 0x58eb70
+global bool runtime.signalsOK @ 0x58eb71
+global bool runtime.throwOnGCWork @ 0x58eb72
+global bool runtime.useAVXmemmove @ 0x58eb73
+global bool runtime.useAeshash @ 0x58eb74
+global bool runtime.useCheckmark @ 0x58eb75
+global bool runtime.x86HasFMA @ 0x58eb76
+global bool runtime.x86HasPOPCNT @ 0x58eb77
+global bool runtime.x86HasSSE41 @ 0x58eb78
+global int32 runtime.argc @ 0x58eb80
+global int32 runtime.crashing @ 0x58eb84
+global uint32 runtime.extraMCount @ 0x58eb88
+global uint32 runtime.extraMWaiters @ 0x58eb8c
+global uint32 runtime.fingCreate @ 0x58eb90
+global uint32 runtime.freezing @ 0x58eb94
+global uint32 runtime.gcBlackenEnabled @ 0x58eb98
+global uint32 runtime.gcMarkDoneFlushed @ 0x58eb9c
+global int32 runtime.gcpercent @ 0x58eba0
+global uint32 runtime.gcphase @ 0x58eba4
+global int32 runtime.gomaxprocs @ 0x58eba8
+global int32 runtime.ncpu @ 0x58ebac
+global uint32 runtime.netpollInited @ 0x58ebb0
+global uint32 runtime.netpollWaiters @ 0x58ebb4
+global int32 runtime.newprocs @ 0x58ebb8
+global uint32 runtime.panicking @ 0x58ebbc
+global uint32 runtime.processorVersionInfo @ 0x58ebc0
+global uint32 runtime.runningPanicDefers @ 0x58ebc4
+global uint32 runtime.sigprofCallersUse @ 0x58ebc8
+global uint32 runtime.touchStackBeforeSignal @ 0x58ebcc
+global uint32 runtime.traceback_env @ 0x58ebd0
+global int internal/bytealg.MaxLen @ 0x58ebd8
+global uintptr runtime.allglen @ 0x58ebe8
+global runtime.mutex runtime.allglock @ 0x58ebf0
+global runtime.mutex runtime.allpLock @ 0x58ebf8
+global uint64 runtime.blockprofilerate @ 0x58ec00
+global uintptr runtime.bucketmem @ 0x58ec08
+global uintptr runtime.chanrecvpc @ 0x58ec10
+global uintptr runtime.chansendpc @ 0x58ec18
+global runtime.mutex runtime.deadlock @ 0x58ec20
+global runtime.mutex runtime.debuglock @ 0x58ec28
+global uintptr runtime.extram @ 0x58ec30
+global int64 runtime.faketime @ 0x58ec38
+global uintptr runtime.fastrandseed @ 0x58ec40
+global runtime.mutex runtime.finlock @ 0x58ec48
+global float64 runtime.inf @ 0x58ec50
+global runtime.sigset runtime.initSigmask @ 0x58ec58
+global runtime.mutex runtime.itabLock @ 0x58ec60
+global struct struct { runtime.cycle uint32; runtime.flushed bool } runtime.mProf @ 0x58ec68
+global uint64 runtime.mutexprofilerate @ 0x58ec70
+global uintptr runtime.netpollBreakRd @ 0x58ec78
+global uintptr runtime.netpollBreakWr @ 0x58ec80
+global runtime.mutex runtime.netpollInitLock @ 0x58ec88
+global runtime.mutex runtime.paniclk @ 0x58ec90
+global uint runtime.physHugePageShift @ 0x58ec98
+global uintptr runtime.physHugePageSize @ 0x58eca0
+global uintptr runtime.physPageSize @ 0x58eca8
+global int runtime.printBacklogIndex @ 0x58ecb0
+global struct struct { runtime.signalLock uint32; runtime.hz int32 } runtime.prof @ 0x58ecb8
+global runtime.mutex runtime.proflock @ 0x58ecc0
+global int64 runtime.runtimeInitTime @ 0x58ecc8
+global uintptr runtime.skipPC @ 0x58ecd0
+global int64 runtime.starttime @ 0x58ecd8
+global uint64 runtime.test_x64 @ 0x58ece0
+global uint64 runtime.test_z64 @ 0x58ece8
+global runtime.mutex runtime.tracelock @ 0x58ecf0
+global uintptr runtime.vdsoClockgettimeSym @ 0x58ecf8
+global uintptr runtime.zerobase @ 0x58ed00
+global sync.Mutex sync.allPoolsMu @ 0x58ed08
+global int syscall.Stdin @ 0x58ed10
+global uintptr syscall._zero @ 0x58ed18
+global int64 time.startNano @ 0x58ed20
+global sync.Once internal/poll.serverInit @ 0x58ed28
+global struct struct { runtime.enabled bool; runtime.pad [3]uint8; runtime.needed bool; runtime.cgo bool; runtime.alignme uint64 } runtime.writeBarrier @ 0x58ed40
+global uintptr [5] runtime.hashkey @ 0x58ed60
+global struct struct { runtime.lock runtime.mutex; runtime.newm runtime.muintptr; runtime.waiting bool; runtime.wake runtime.note; runtime.haveTemplateThread uint32 } runtime.newmHandoff @ 0x58ed80
+global runtime.rwmutex runtime.execLock @ 0x58edc0
+global uint8 [65] runtime.finptrmask @ 0x58ee00
+global struct struct { runtime.allocfreetrace int32; runtime.cgocheck int32; runtime.clobberfree int32; runtime.efence int32; runtime.gccheckmark int32; runtime.gcpacertrace int32; runtime.gcshrinkstackoff int32; runtime.gcstoptheworld int32; runtime.gctrace int32; runtime.invalidptr int32; runtime.madvdontneed int32; runtime.sbrk int32; runtime.scavenge int32; runtime.scavtrace int32; runtime.scheddetail int32; runtime.schedtrace int32; runtime.tracebackancestors int32; runtime.asyncpreemptoff int32 } runtime.debug @ 0x58ee40
+global struct struct { runtime.note runtime.note; runtime.mask [3]uint32; runtime.wanted [3]uint32; runtime.ignored [3]uint32; runtime.recv [3]uint32; runtime.state uint32; runtime.delivering uint32; runtime.inuse bool } runtime.sig @ 0x58eea0
+global uint8 [129] runtime.aeskeysched @ 0x58ef00
+global internal/cpu.arm internal/cpu.ARM @ 0x58ef80
+global internal/cpu.x86 internal/cpu.X86 @ 0x58f020
+global internal/cpu.arm64 internal/cpu.ARM64 @ 0x58f0c0
+global runtime.gcControllerState runtime.gcController @ 0x58f160
+global runtime.cgoCallers runtime.sigprofCallers @ 0x58f200
+global uint32 [66] runtime.handlingSig @ 0x58f300
+global uint8 [513] runtime.printBacklog @ 0x58f420
+global uintptr [66] runtime.fwdSig @ 0x58f620
+global uint8 [1025] runtime.zeroVal @ 0x58f840
+global runtime.mstats runtime.memstats @ 0x58fc40
 EOF
 RUN
 
