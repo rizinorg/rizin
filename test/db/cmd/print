@@ -76,19 +76,19 @@ RUN
 NAME=MIPS new abi
 FILE=bins/elf/analysis/mips64r2-busybox-loongson
 CMDS=<<EOF
-e asm.arch=mips.gnu
+e asm.arch=mips
 e asm.bytes=true
 e cfg.bigendian=false
 s 0x120005978
 pd 6
 EOF
 EXPECT=<<EOF
-            0x120005978      1800bfff       sd    ra, 24(sp)
-            0x12000597c      3800a7ff       sd    a3, 56(sp)
-            0x120005980      4000a8ff       sd    a4, 64(sp)
-            0x120005984      4800a9ff       sd    a5, 72(sp)
-            0x120005988      5000aaff       sd    a6, 80(sp)
-            0x12000598c      5800abff       sd    a7, 88(sp)
+            0x120005978      1800bfff       sd    ra, 0x18(sp)
+            0x12000597c      3800a7ff       sd    a3, 0x38(sp)
+            0x120005980      4000a8ff       sd    t0, 0x40(sp)
+            0x120005984      4800a9ff       sd    t1, 0x48(sp)
+            0x120005988      5000aaff       sd    t2, 0x50(sp)
+            0x12000598c      5800abff       sd    t3, 0x58(sp)
 EOF
 RUN
 

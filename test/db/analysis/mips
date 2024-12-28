@@ -100,7 +100,7 @@ RUN
 NAME=assembler
 FILE==
 CMDS=<<EOF
-e asm.arch=mips.gnu
+e asm.arch=mips
 e asm.bits=32
 e cfg.bigendian=0
 pa lui t9, 0x41
@@ -122,7 +122,7 @@ RUN
 NAME=with-spaces
 FILE==
 CMDS=<<EOF
-e asm.arch=mips.gnu
+e asm.arch=mips
 e asm.bits=32
 e cfg.bigendian=0
 pa addiu v0, v1, 33
@@ -524,7 +524,7 @@ BROKEN=1
 CMDS=<<EOF
 e io.va=true
 e asm.bits=32
-e asm.arch=mips.gnu
+e asm.arch=mips
 e asm.comments=0
 e analysis.hasnext=1
 e analysis.nopskip=1
@@ -745,11 +745,11 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=mips.gnu regs
+NAME=mips regs
 FILE==
 BROKEN=1
 CMDS=<<EOF
-e asm.arch=mips.gnu
+e asm.arch=mips
 ar
 EOF
 EXPECT=<<EOF
