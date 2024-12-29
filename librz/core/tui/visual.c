@@ -316,7 +316,7 @@ static const char *help_msg_visual[] = {
 	"tT", "", "tt new tab, t[1-9] switch to nth tab, t= name tab, t- close tab",
 	"uU", "", "undo/redo seek",
 	"v", "", "visual function/vars code analysis menu",
-	"V", "", "(V)iew interactive ascii art graph (agfv)",
+	"V", "", "(V)iew interactive ascii art function graph (agfv)",
 	"wW", "", "seek cursor to next/prev word",
 	"xX", "", "show xrefs/refs of current function from/to data/code",
 	"yY", "", "copy and paste selection",

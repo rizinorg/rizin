@@ -63,7 +63,7 @@ EXPECT=<<EOF
 | tT       tt new tab, t[1-9] switch to nth tab, t= name tab, t- close tab
 | uU       undo/redo seek
 | v        visual function/vars code analysis menu
-| V        (V)iew interactive ascii art graph (agfv)
+| V        (V)iew interactive ascii art function graph (agfv)
 | wW       seek cursor to next/prev word
 | xX       show xrefs/refs of current function from/to data/code
 | yY       copy and paste selection
@@ -217,5 +217,48 @@ EXPECT=<<EOF
 [11;0H[0m
 [12;0H[Linked[0m
 [0m[u[?25h[0m[2J[0;0H
+EOF
+RUN
+
+NAME=initial Visual function graph view
+FILE=malloc://2
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e scr.interactive=true
+e scr.columns=80
+e scr.rows=12
+aF
+< qq; VV
+echo
+EOF
+EXPECT=<<EOF
+[0m[2J[0;0H[0x00000000]> 0x0 # fcn.00000000();                                            [0m[2J[0;0H[0x00000000]> 0x0 # fcn.00000000();
+                                                                               
+                                                                               
+                                                                               
+                          .---------------------------.                         
+                          | [0x0]                     |                         
+                          | fcn.00000000();           |                         
+                          | add byte [rax], al        |                         
+                          `---------------------------'                                                                                                                                                                                                                                                                         [0m[2J[0;0H[0x00000000]> 0x0 # fcn.00000000();                                            [0m[2J[0;0H[0x00000000]> 0x0 # fcn.00000000();
+                                                                               
+                                                                               
+                                                                               
+                          .---------------------------.                         
+                          | [0x0]                     |                         
+                          | fcn.00000000();           |                         
+                          | add byte [rax], al        |                         
+                          `---------------------------'                                                                                                                                                                                                                                                                         [?25l[?25l[0;0H[0m[0x00000000 [Xadvc]0 0% 192 malloc://2]> xc @ fcn.00000000                      
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF  comment  
+0x00000000  0000 ffff ffff ffff ffff ffff ffff ffff  ................  ; fcn.000[0J[0m
+0x00000010  ffff ffff ffff ffff ffff ffff ffff ffff  ................           
+0x00000020  ffff ffff ffff ffff ffff ffff ffff ffff  ................           
+0x00000030  ffff ffff ffff ffff ffff ffff ffff ffff  ................           
+0x00000040  ffff ffff ffff ffff ffff ffff ffff ffff  ................           
+0x00000050  ffff ffff ffff ffff ffff ffff ffff ffff  ................           
+0x00000060  ffff ffff ffff ffff ffff ffff ffff ffff  ................           
+0x00000070  ffff ffff ffff ffff ffff ffff ffff ffff  ................           
+0x00000080  ffff ffff ffff ffff ffff ffff ffff ffff  ................           
+0x00000090  ffff ffff ffff ffff ffff ffff ffff ffff  ................           [?25h[0m[2J[0;0H
 EOF
 RUN

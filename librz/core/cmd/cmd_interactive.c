@@ -39,6 +39,10 @@ RZ_IPI RzCmdStatus rz_interactive_visual_config_handler(RzCore *core, int argc, 
 	return rz_core_visual(core, "e");
 }
 
+RZ_IPI RzCmdStatus rz_interactive_visual_graph_handler(RzCore *core, int argc, const char **argv) {
+	return rz_core_visual(core, "V");
+}
+
 RZ_IPI RzCmdStatus rz_interactive_visual_help_handler(RzCore *core, int argc, const char **argv) {
 	rz_core_cmd_help(core, rz_core_visual_get_short_help());
 	return RZ_CMD_STATUS_OK;

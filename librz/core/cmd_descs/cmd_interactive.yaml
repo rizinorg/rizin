@@ -46,3 +46,7 @@ commands:
     cname: interactive_visual_config
     summary: Enter interactive visual mode and select the configurations toggle (alias for 'V e').
     args: []
+  - name: VV
+    cname: interactive_visual_graph
+    summary: Enter interactive visual mode and select the function graph (alias for 'V V').
+    args: []

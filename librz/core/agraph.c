@@ -4436,7 +4436,7 @@ RZ_IPI int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 			break;
 		case '?':
 			rz_cons_clear00();
-			rz_cons_printf("Visual Ascii Art graph keybindings:\n"
+			rz_cons_printf("Visual Ascii Art function graph keybindings:\n"
 				       " :e cmd.gprompt = agf   - show graph in one side\n"
 				       " +/-/0        - zoom in/out/default\n"
 				       " ;            - add comment in current basic block\n"

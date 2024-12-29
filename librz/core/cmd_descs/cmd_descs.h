@@ -2392,6 +2392,8 @@ RZ_IPI RzCmdStatus rz_interactive_visual_emu_handler(RzCore *core, int argc, con
 RZ_IPI RzCmdStatus rz_interactive_visual_management_handler(RzCore *core, int argc, const char **argv);
 // "Ve"
 RZ_IPI RzCmdStatus rz_interactive_visual_config_handler(RzCore *core, int argc, const char **argv);
+// "VV"
+RZ_IPI RzCmdStatus rz_interactive_visual_graph_handler(RzCore *core, int argc, const char **argv);
 // "v"
 RZ_IPI RzCmdStatus rz_interactive_panel_handler(RzCore *core, int argc, const char **argv);
 // "vl"
