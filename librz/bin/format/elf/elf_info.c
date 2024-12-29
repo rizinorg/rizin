@@ -725,7 +725,7 @@ static int get_bits_mips(ELFOBJ *bin) {
 	return get_bits_mips_common(mips_type);
 }
 
-inline bool arch_is_nanomips(ELFOBJ *bin) {
+static inline bool arch_is_nanomips(ELFOBJ *bin) {
 	return bin->ehdr.e_machine == EM_IMG1;
 }
 
