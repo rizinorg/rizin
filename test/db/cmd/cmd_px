@@ -390,3 +390,14 @@ EXPECT=<<EOF
 0x000000f0 👩 👪 👮 👯 👺 👻 👼 👽 👾 👿 💀 💁 💂 💃 💄 💅  ................
 EOF
 RUN
+
+NAME=pxi
+FILE=malloc://0xd+0x30
+CMDS=pxi @!0x10+0x30 @x:f30f1efa554889e5ebfe
+EXPECT=<<EOF
+           0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
+       0: f3 0f 1e fa .U .H 89 e5 eb fe                  
+      30:                                        ## ## ##
+      40 ]
+EOF
+RUN
