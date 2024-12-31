@@ -339,7 +339,7 @@ RZ_API void rz_print_hexii(RzPrint *rp, ut64 addr, const ut8 *buf, int len, int 
 		}
 		p("\n");
 	}
-	p("%8" PFMT64x " ]\n", addr + i);
+	p("%8" PFMT64x ": ]\n", addr + i);
 }
 
 /**
