@@ -4,7 +4,7 @@ packages:
     - pkgconf
     - gmake
     - clang
-    - python38
+    - python39
 environment:
     CXX: clang++
     CC: clang
@@ -14,8 +14,8 @@ sources:
 hottub_trigger: '^(dev|stable|bsd-.+|dist-.+)$'
 tasks:
     - rzpipe: |
-        python3.8 -m ensurepip --user
-        python3.8 -m pip install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
+        python3.9 -m ensurepip --user
+        python3.9 -m pip install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
     - build: |
         cd rizin
         # Workaround to avoid test/unit/test_file.c fail due to the insufficient memory
@@ -42,7 +42,7 @@ tasks:
         # Running the unit tests
         MALLOC_OPTIONS=S ninja -C build test
     - test: |
-        python3.8 -m pip install --user requests
+        python3.9 -m pip install --user requests
         cd rizin
         export PATH=${HOME}/bin:/usr/local/bin:${PATH}
         export LD_LIBRARY_PATH=${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
