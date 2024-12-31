@@ -7,6 +7,9 @@
 #include "elf.h"
 
 #define MIPS_PLT_OFFSET                      0x20
+#define LOONGARCH_PLT_OFFSET                 0x20
+#define LOONGARCH_PLT_ENTRY_SIZE             0x10
+#define RISCV_PLT_OFFSET                     0x20
 #define RISCV_PLT_ENTRY_SIZE                 0x10
 #define RISCV_PLT_OFFSET                     0x20
 #define SPARC_OFFSET_PLT_ENTRY_FROM_GOT_ADDR -0x6
@@ -87,6 +90,22 @@ static ut64 get_import_addr_hexagon(ELFOBJ *eo, RzBinElfReloc *rel) {
 	case R_HEX_JMP_SLOT:
 		return plt_addr + pos * 16 + 32;
 	}
+}
+
+static ut64 get_import_addr_loongarch(ELFOBJ *bin, RzBinElfReloc *rel) {
+	ut64 got_addr;
+
+	if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_PLTGOT, &got_addr)) {
+		return UT64_MAX;
+	}
+
+	ut64 plt_addr = get_got_entry(bin, rel);
+	if (plt_addr == UT64_MAX) {
+		return UT64_MAX;
+	}
+
+	ut64 pos = COMPUTE_PLTGOT_POSITION(rel, got_addr, 0x2);
+	return plt_addr + LOONGARCH_PLT_OFFSET + pos * LOONGARCH_PLT_ENTRY_SIZE;
 }
 
 static ut64 get_import_addr_riscv(ELFOBJ *bin, RzBinElfReloc *rel) {
@@ -323,6 +342,8 @@ static ut64 get_import_addr_aux(ELFOBJ *bin, RzBinElfReloc *reloc) {
 		return get_import_addr_x86(bin, reloc);
 	case EM_QDSP6:
 		return get_import_addr_hexagon(bin, reloc);
+	case EM_LOONGARCH:
+		return get_import_addr_loongarch(bin, reloc);
 	default:
 		RZ_LOG_WARN("Unsupported relocs type %" PFMT64u " for arch %d\n",
 			(ut64)reloc->type, bin->ehdr.e_machine);

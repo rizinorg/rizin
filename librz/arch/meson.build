@@ -326,12 +326,14 @@ if capstone_dep.version() == 'next'
   # plugins
   arch_plugins_list += [
     'alpha_cs',
+    'loongarch_cs',
     'xtensa_cs',
   ]
 
   # plugins sources
   arch_plugin_sources += [
     'p/arch_alpha.c',
+    'p/arch_loongarch_cs.c',
     'p/arch_xtensa_cs.c',
   ]
 
