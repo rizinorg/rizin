@@ -256,3 +256,17 @@ EOF
 EXPECT=<<EOF
 EOF
 RUN
+
+NAME=Search library maps.
+FILE=bins/elf/arch-x86_64-ls
+CMDS=<<EOF
+e search.in=io.maps
+e search.show_progress=false
+# This equals the string: "ISO-10646/UCS4/".
+# It should only be present if libc is loaded.
+/x 49534f2d31303634362f554353342f~?
+EOF
+EXPECT=<<EOF
+0
+EOF
+RUN
