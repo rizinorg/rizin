@@ -307,26 +307,26 @@ static bool parse_reg_profile_str(RZ_OUT RzList /*<RzRegProfileAlias *>*/ *alias
 		}
 		ut32 toks_len = rz_list_length(toks);
 		if (rz_list_empty(toks)) {
-			continue;
+			goto free_toks_continue;
 		}
 
 		const char *first_tok = rz_list_get_n(toks, 0);
 		if (first_tok[0] == '#') { // Comment line
-			continue;
+			goto free_toks_continue;
 		} else if (first_tok[0] == '=') { // Alias
 			if (toks_len != 2) {
 				RZ_LOG_WARN("Invalid number of %d columns in alias \"%s\" at line %d. 2 needed.\n", toks_len, line, l);
-				continue;
+				goto free_toks_continue;
 			}
 			is_alias = true;
 		} else if (isalpha(first_tok[0])) {
 			if (toks_len != 5 && toks_len != 6) {
 				RZ_LOG_WARN("Invalid number of %d columns in definition \"%s\" at line %d. 5 or 6 needed.\n", toks_len, line, l);
-				continue;
+				goto free_toks_continue;
 			}
 		} else {
 			RZ_LOG_WARN("Invalid line \"%s\" at register profiles line %d.\n", line, l);
-			continue;
+			goto free_toks_continue;
 		}
 		bool success = is_alias
 			? parse_alias(alias_list, toks)
@@ -338,6 +338,7 @@ static bool parse_reg_profile_str(RZ_OUT RzList /*<RzRegProfileAlias *>*/ *alias
 			return false;
 		}
 		is_alias = false;
+	free_toks_continue:
 		rz_list_free(toks);
 	}
 	rz_list_free(def_lines);
