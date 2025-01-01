@@ -153,17 +153,14 @@ typedef enum {
 	RZ_SEARCH_CANCEL_SIGINT, ///< Interrupt signal (likely ctrl + c).
 } RzSearchCancelReason;
 
-typedef struct bytes_pattern {
-	const char *pattern_desc; ///< Pattern metadata
-	ut8 *bytes; ///< Pattern bytes.
-	ut8 *mask; ///< Pattern mask (when NULL full match)
-	size_t length; ///< Pattern & mask length
-} RzSearchBytesPattern;
+typedef struct rz_search_bytes_pattern_t RzSearchBytesPattern;
 
 RZ_API void rz_search_bytes_pattern_free(RZ_NULLABLE RZ_OWN RzSearchBytesPattern *hp);
 RZ_API RZ_OWN RzSearchBytesPattern *rz_search_bytes_pattern_copy(RZ_NONNULL RZ_BORROW RzSearchBytesPattern *hp);
-RZ_API RZ_OWN RzSearchBytesPattern *rz_search_bytes_pattern_new(RZ_OWN ut8 *bytes, RZ_OWN ut8 *mask, size_t length, const char *pattern_desc);
+RZ_API RZ_OWN RzSearchBytesPattern *rz_search_bytes_pattern_new(RZ_OWN ut8 *bytes, RZ_NULLABLE RZ_OWN ut8 *mask, size_t length, RZ_NULLABLE const char *pattern_desc);
 RZ_API RZ_OWN RzSearchBytesPattern *rz_search_parse_byte_pattern(const char *byte_pattern, RZ_NULLABLE const char *pattern_desc);
+RZ_API size_t rz_search_bytes_pattern_len(RZ_NONNULL const RzSearchBytesPattern *hp);
+RZ_API const char *rz_search_bytes_pattern_desc(RZ_NONNULL const RzSearchBytesPattern *bp);
 
 /**
  * \brief The cancel callback. It is invoked to check, if the search should be stopped.

@@ -98,6 +98,13 @@ struct rz_search_collection_t {
 	RzSearchFreeCallback free; ///< Callback used to free the collection.
 };
 
+struct rz_search_bytes_pattern_t {
+	const char *pattern_desc; ///< Pattern description string.
+	ut8 *bytes; ///< Pattern bytes.
+	ut8 *mask; ///< Pattern mask (when NULL full match)
+	size_t length; ///< Pattern & mask length
+};
+
 struct rz_search_opt_t {
 	RzSearchFindOpt *find_opts;
 	size_t max_hits;

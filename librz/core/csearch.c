@@ -96,8 +96,8 @@ static bool default_search_no_cancel(void *user, size_t n_hits, RzSearchCancelRe
  */
 RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_bytes(RZ_NONNULL RzCore *core, RZ_BORROW RZ_NULLABLE RzSearchOpt *user_opts, RZ_NONNULL RZ_OWN RzSearchBytesPattern *pattern) {
 	rz_return_val_if_fail(core && core->config && pattern, NULL);
-	if (pattern->length < 1) {
-		RZ_LOG_ERROR("core: Cannot search for byte pattern if 'length' < 1.\n");
+	if (rz_search_bytes_pattern_len(pattern) == 0) {
+		RZ_LOG_ERROR("core: Cannot search for byte pattern if 'length' == 0.\n");
 		rz_search_bytes_pattern_free(pattern);
 		return NULL;
 	}
@@ -129,7 +129,7 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_bytes(RZ_NONNULL RzCore
 		RZ_LOG_ERROR("core: Setting up search from core failed.\n");
 		goto quit;
 	}
-	if (!rz_search_opt_set_elemet_size(user_opts ? user_opts : search_opts, pattern->length)) {
+	if (!rz_search_opt_set_elemet_size(user_opts ? user_opts : search_opts, rz_search_bytes_pattern_len(pattern))) {
 		RZ_LOG_ERROR("search: Failed to update chunk size in the search options.\n");
 		goto quit;
 	}

@@ -11,9 +11,21 @@
 #include <rz_util/rz_regex.h>
 #include "search_internal.h"
 
+/**
+ * \brief Initialize a new search bytes pattern and return it.
+ *
+ * \param bytes The bytes to search for.
+ * \param mask The mask to apply to the pattern and the data before comparison. (optional)
+ * \param length Length of \p bytes and \p mask (if not NULL).
+ * \param pattern_desc An optional description string of the pattern.
+ *
+ * \return The initalized pattern or NULL in case of failure.
+ */
 RZ_API RZ_OWN RzSearchBytesPattern *rz_search_bytes_pattern_new(RZ_OWN ut8 *bytes, RZ_NULLABLE RZ_OWN ut8 *mask, size_t length, RZ_NULLABLE const char *pattern_desc) {
+	rz_return_val_if_fail(bytes && length > 0, NULL);
 	RzSearchBytesPattern *pat = RZ_NEW0(RzSearchBytesPattern);
 	if (!pat) {
+		RZ_LOG_ERROR("Failed to allocate pattern struct.\n");
 		return NULL;
 	}
 	pat->bytes = bytes;
@@ -30,6 +42,26 @@ RZ_API void rz_search_bytes_pattern_free(RZ_NULLABLE RZ_OWN RzSearchBytesPattern
 	free(hp->bytes);
 	free(hp->mask);
 	free(hp);
+}
+
+/**
+ * \brief Return the pattern description if any.
+ *
+ * \return The pattern description string or NULL if there is none.
+ */
+RZ_API const char *rz_search_bytes_pattern_desc(RZ_NONNULL const RzSearchBytesPattern *bp) {
+	rz_return_val_if_fail(bp, 0);
+	return bp->pattern_desc;
+}
+
+/**
+ * \brief Return the pattern length in number of bytes.
+ *
+ * \return Return the pattern length in number of bytes or 0 in case of failure.
+ */
+RZ_API size_t rz_search_bytes_pattern_len(RZ_NONNULL const RzSearchBytesPattern *bp) {
+	rz_return_val_if_fail(bp, 0);
+	return bp->length;
 }
 
 RZ_API RZ_OWN RzSearchBytesPattern *rz_search_bytes_pattern_copy(RZ_NONNULL RZ_BORROW RzSearchBytesPattern *hp) {
