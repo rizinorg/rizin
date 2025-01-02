@@ -590,11 +590,9 @@ static bool search_iterator_io_map_cb(void *element, void *user) {
 	ut64 at = window->addr;
 	ut64 size = window->size;
 
-	// read the buffer
-	ut8 *buffer = malloc(size);
 	rz_th_lock_enter(ctx->io_lock);
-	int read = rz_io_nread_at(ctx->io, at, buffer, size);
-	if (!buffer || read != size) {
+	RzBuffer *buffer = rz_io_nread_at_new_buf(ctx->io, at, size);
+	if (!buffer || rz_buf_size(buffer) != size) {
 		RZ_LOG_ERROR("search: failed to read at 0x%08" PFMT64x " (0x%08" PFMT64x " bytes)\n", at, size);
 		rz_th_lock_leave(ctx->io_lock);
 		goto failure;
@@ -602,16 +600,16 @@ static bool search_iterator_io_map_cb(void *element, void *user) {
 	rz_th_lock_leave(ctx->io_lock);
 
 	RzSearchFindBytesCallback find = col->find;
-	if (!find(ctx->opt->find_opts, col->user, at, buffer, size, ctx->hits)) {
+	if (!find(ctx->opt->find_opts, col->user, at, buffer, ctx->hits)) {
 		RZ_LOG_ERROR("search: failed search at 0x%08" PFMT64x "\n", at);
 		goto failure;
 	}
 
-	free(buffer);
+	rz_buf_free(buffer);
 	return rz_atomic_bool_get(ctx->loop);
 
 failure:
-	free(buffer);
+	rz_buf_free(buffer);
 	rz_atomic_bool_set(ctx->loop, false);
 	return false;
 }
