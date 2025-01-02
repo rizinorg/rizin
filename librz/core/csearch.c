@@ -2,7 +2,8 @@
 // SPDX-FileCopyrightText: 2024 Rot127 <unisono@quyllur.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "rz_config.h"
+#include <rz_config.h>
+#include <rz_util/rz_str.h>
 #include <rz_util/rz_log.h>
 #include <rz_core.h>
 #include <rz_search.h>
@@ -85,6 +86,18 @@ static bool default_search_no_cancel(void *user, size_t n_hits, RzSearchCancelRe
 	return rz_cons_is_breaked();
 }
 
+static RzList *perform_search_on_core_io(RzCore *core, RZ_BORROW RzSearchOpt *search_opts, RZ_BORROW RzList *boundaries, RZ_BORROW RzSearchCollection *collection) {
+	RzList *hits = NULL;
+
+	hits = rz_search_on_io(search_opts, collection, core->io, boundaries);
+	if (!hits) {
+		ut64 from = rz_config_get_i(core->config, "search.from");
+		ut64 to = rz_config_get_i(core->config, "search.to");
+		RZ_LOG_ERROR("core: Failed to search within [0x%" PFMT64x ", 0x%" PFMT64x "].\n", from, to);
+	}
+	return hits;
+}
+
 /**
  * \brief      Finds a byte array in the IO layer of the given core and core configuration.
  *
@@ -134,12 +147,65 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_bytes(RZ_NONNULL RzCore
 		goto quit;
 	}
 
-	hits = rz_search_on_io(user_opts ? user_opts : search_opts, collection, core->io, boundaries);
-	if (!hits) {
-		ut64 from = rz_config_get_i(core->config, "search.from");
-		ut64 to = rz_config_get_i(core->config, "search.to");
-		RZ_LOG_ERROR("core: Failed to search within [0x%" PFMT64x ", 0x%" PFMT64x "].\n", from, to);
+	hits = perform_search_on_core_io(core, user_opts ? user_opts : search_opts, boundaries, collection);
+
+quit:
+	rz_list_free(boundaries);
+	rz_search_opt_free(search_opts);
+	rz_search_collection_free(collection);
+	return hits;
+}
+
+/**
+ * \brief      Finds a string within the search.in boundaries.
+ *
+ * \param      core      The RzCore core.
+ * \param      opt       The search options to apply. If NULL, a default set of options is used.
+ * \param[in]  string    The string to search.
+ * \param[in]  expected  The expected encoding.
+ * \param[in]  caseless  When true, caseless match.
+ *
+ * \return     On success returns a valid pointer to a list of search hits, otherwise NULL.
+ */
+RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_string(RZ_NONNULL RzCore *core, RZ_BORROW RZ_NONNULL RzSearchOpt *user_opts, RZ_NONNULL const char *string, RzStrEnc expected, bool caseless) {
+	rz_return_val_if_fail(core && user_opts && string, NULL);
+
+	if (!RZ_STR_ISEMPTY(string)) {
+		RZ_LOG_ERROR("core: invalid string: empty string.\n");
+		return NULL;
 	}
+
+	// Copy RzUtilStrScanOptions from RzBin
+	RzUtilStrScanOptions scan_opt = {
+		.buf_size = rz_config_get_i(core->config, "search.buffer_size"),
+		.max_uni_blocks = core->bin->str_search_cfg.max_uni_blocks,
+		.min_str_length = core->bin->str_search_cfg.min_length,
+		.prefer_big_endian = core->analysis->big_endian,
+		.check_ascii_freq = core->bin->str_search_cfg.check_ascii_freq,
+	};
+
+	RzList *hits = NULL;
+	RzList *boundaries = NULL;
+	RzSearchOpt *search_opts = NULL;
+
+	RzSearchCollection *collection = rz_search_collection_strings(&scan_opt, expected, caseless);
+	if (!collection ||
+		!rz_search_collection_string_add(collection, string)) {
+		rz_search_collection_free(collection);
+		RZ_LOG_ERROR("core: Failed to initialize search collection.\n");
+		return NULL;
+	}
+	boundaries = rz_core_setup_io_search_parameters(core, user_opts ? NULL : search_opts);
+	if (!boundaries) {
+		RZ_LOG_ERROR("core: Setting up search from core failed.\n");
+		goto quit;
+	}
+	if (!rz_search_opt_set_elemet_size(user_opts ? user_opts : search_opts, strlen(string))) {
+		RZ_LOG_ERROR("search: Failed to update chunk size in the search options.\n");
+		goto quit;
+	}
+
+	hits = perform_search_on_core_io(core, user_opts ? user_opts : search_opts, boundaries, collection);
 
 quit:
 	rz_list_free(boundaries);

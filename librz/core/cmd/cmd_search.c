@@ -1759,20 +1759,10 @@ RZ_IPI int rz_cmd_search(void *data, const char *input) {
 		return RZ_CMD_STATUS_ERROR; \
 	} \
 	rz_cons_break_push(NULL, NULL); \
-	RzSearchOpt *search_opts = rz_search_opt_new(); \
-	bool opt_applid = rz_search_opt_set_max_hits(search_opts, rz_config_get_i(core->config, "search.maxhits")); \
-	opt_applid &= rz_search_opt_set_max_threads(search_opts, rz_th_max_threads(rz_config_get_i(core->config, "search.max_threads"))); \
-	RzSearchFindOpt *fopts = rz_core_setup_default_search_find_opts(core); \
-	if (!fopts) { \
-		RZ_LOG_ERROR("Failed setup find options.\n"); \
-		return RZ_CMD_STATUS_ERROR; \
-	} \
-	rz_search_opt_set_find_options(search_opts, fopts); \
 	core->in_search = true;
 
 #define CMD_SEARCH_END() \
 	do { \
-		rz_search_opt_free(search_opts); \
 		rz_cons_break_pop(); \
 		core->in_search = false; \
 	} while (0)
@@ -1944,8 +1934,33 @@ RZ_IPI RzCmdStatus rz_cmd_search_value_64_handler(RzCore *core, int argc, const 
 	return RZ_CMD_STATUS_NONEXISTINGCMD;
 }
 
+static RzSearchOpt *setup_search_options(RzCore *core) {
+	RzSearchOpt *search_opts = rz_search_opt_new();
+	if (!(rz_search_opt_set_max_hits(search_opts, rz_config_get_i(core->config, "search.maxhits")) &&
+		    rz_search_opt_set_max_threads(search_opts, rz_th_max_threads(rz_config_get_i(core->config, "search.max_threads"))))) {
+		RZ_LOG_ERROR("Failed setup find options.\n");
+		return NULL;
+	}
+
+	RzSearchFindOpt *fopts = rz_core_setup_default_search_find_opts(core);
+	if (!fopts) {
+		RZ_LOG_ERROR("Failed init find options.\n");
+		return NULL;
+	}
+	if (!rz_search_opt_set_find_options(search_opts, fopts)) {
+		RZ_LOG_ERROR("Failed add find options to the search optoins.\n");
+		return NULL;
+	}
+	return search_opts;
+}
+
 // "/x"
 RZ_IPI RzCmdStatus rz_cmd_search_hex_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzSearchOpt *search_opts = setup_search_options(core);
+	if (!search_opts) {
+		goto error;
+	}
+
 	CMD_SEARCH_BEGIN();
 
 	RzList *hits = NULL;
@@ -1957,8 +1972,7 @@ RZ_IPI RzCmdStatus rz_cmd_search_hex_handler(RzCore *core, int argc, const char 
 	}
 
 	bool progress = rz_config_get_b(core->config, "search.show_progress");
-	opt_applid &= rz_search_opt_set_cancel_cb(search_opts, cmd_search_progress_cancel, progress ? state : NULL);
-	if (!opt_applid) {
+	if (!rz_search_opt_set_cancel_cb(search_opts, cmd_search_progress_cancel, progress ? state : NULL)) {
 		RZ_LOG_ERROR("code: Failed to setup default search options.\n");
 		goto error;
 	}
@@ -1969,20 +1983,73 @@ RZ_IPI RzCmdStatus rz_cmd_search_hex_handler(RzCore *core, int argc, const char 
 	}
 
 	CMD_SEARCH_END();
+	rz_search_opt_free(search_opts);
 	return cmd_core_handle_search_hits(core, state, hits);
 
 error:
 	rz_list_free(hits);
+	rz_search_opt_free(search_opts);
 	CMD_SEARCH_END();
 	return RZ_CMD_STATUS_ERROR;
 }
 
+static RzCmdStatus cmd_string_search_generic(RzCore *core, const char *string, const char *encoding, bool caseless, RzCmdStateOutput *state) {
+	RzSearchOpt *search_opts = setup_search_options(core);
+	if (!search_opts) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	CMD_SEARCH_BEGIN();
+
+	RzStrEnc expected = RZ_STRING_ENC_GUESS;
+	char *search_str = rz_str_dup(string);
+	if (!RZ_STR_ISEMPTY(search_str)) {
+		RZ_LOG_ERROR("core: invalid string: empty string.\n");
+		free(search_str);
+		return RZ_CMD_STATUS_WRONG_ARGS;
+	}
+
+	if (rz_str_unescape(search_str) < 1) {
+		RZ_LOG_ERROR("core: invalid string: failed to unescape.\n");
+		free(search_str);
+		return RZ_CMD_STATUS_WRONG_ARGS;
+	}
+
+	if (RZ_STR_ISNOTEMPTY(encoding)) {
+		expected = rz_str_enc_string_as_type(encoding);
+		if (expected == RZ_STRING_ENC_GUESS) {
+			RZ_LOG_ERROR("core: invalid encoding %s.\n", encoding);
+			free(search_str);
+			return RZ_CMD_STATUS_WRONG_ARGS;
+		}
+	}
+
+	bool progress = rz_config_get_b(core->config, "search.show_progress");
+	if (!rz_search_opt_set_cancel_cb(search_opts, cmd_search_progress_cancel, progress ? state : NULL)) {
+		RZ_LOG_ERROR("code: Failed to setup default search options.\n");
+		free(search_str);
+		rz_search_opt_free(search_opts);
+		CMD_SEARCH_END();
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzList *hits = rz_core_search_string(core, search_opts, search_str, expected, caseless);
+	free(search_str);
+
+	CMD_SEARCH_END();
+	rz_search_opt_free(search_opts);
+	return cmd_core_handle_search_hits(core, state, hits);
+}
+
 // "/z"
 RZ_IPI RzCmdStatus rz_cmd_search_string_sensitive_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return RZ_CMD_STATUS_NONEXISTINGCMD;
+	const char *encoding = argc > 2 ? argv[2] : NULL;
+	RzCmdStatus res = cmd_string_search_generic(core, argv[1], encoding, false, state);
+	return res;
 }
 
 // "/zi"
 RZ_IPI RzCmdStatus rz_cmd_search_string_insensitive_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return RZ_CMD_STATUS_NONEXISTINGCMD;
+	const char *encoding = argc > 2 ? argv[2] : NULL;
+	RzCmdStatus res = cmd_string_search_generic(core, argv[1], encoding, true, state);
+	return res;
 }

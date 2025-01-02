@@ -15,7 +15,7 @@ extern "C" {
  */
 typedef struct {
 	char *string; ///< Pointer to the string
-	ut64 addr; ///< Address of the string in the RzBuffer
+	ut64 addr; ///< Address/offset of the string in the RzBuffer
 	ut32 size; ///< Size of buffer containing the string in bytes
 	ut32 length; ///< Length of string in chars
 	RzStrEnc type; ///< String type
