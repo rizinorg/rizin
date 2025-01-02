@@ -1696,12 +1696,14 @@ static bool variable_from_die(
 	RZ_BORROW RZ_IN RZ_NONNULL DwContext *ctx,
 	RZ_BORROW RZ_IN RZ_NONNULL const RzBinDwarfDie *die) {
 	RzAnalysisDwarfVariable v = { 0 };
+	bool res = false;
 	if (!function_var_parse(ctx, NULL, NULL, &v, die, NULL)) {
-		variable_fini(&v);
-		return false;
+		goto beach;
 	}
-
-	return try_create_var_global(ctx, die, &v);
+	res = try_create_var_global(ctx, die, &v);
+beach:
+	variable_fini(&v);
+	return res;
 }
 
 static void die_parse(DwContext *ctx, RzBinDwarfDie *die) {
