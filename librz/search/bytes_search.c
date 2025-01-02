@@ -190,15 +190,17 @@ static inline bool bytes_pattern_compare_masked(RZ_BORROW RZ_NONNULL const ut8 *
 	return true;
 }
 
-static bool bytes_find(RzSearchFindOpt *fopts, void *user, ut64 address, ut8 *buffer, size_t size, RzThreadQueue *hits) {
+static bool bytes_find(RzSearchFindOpt *fopts, void *user, ut64 address, const RzBuffer *buffer, RzThreadQueue *hits) {
 	if (!fopts) {
 		RZ_LOG_ERROR("bytes_find requires valid find options.\n");
 		return false;
 	}
 
-	RzPVector /*<BytesPattern *>*/ *patterns = (RzPVector *)user;
+	ut64 size = 0;
+	// Remove const classifier. Because the buffer API is not constified, unfortunately.
+	const ut8 *raw_buf = rz_buf_get_whole_hot_paths((RzBuffer *)buffer, &size);
 	void **it = NULL;
-
+	RzPVector /*<BytesPattern *>*/ *patterns = (RzPVector *)user;
 	rz_pvector_foreach (patterns, it) {
 		RzSearchBytesPattern *hp = (RzSearchBytesPattern *)*it;
 		for (size_t offset = 0; offset < size;) {
@@ -207,12 +209,12 @@ static bool bytes_find(RzSearchFindOpt *fopts, void *user, ut64 address, ut8 *bu
 				break;
 			}
 			if (!hp->mask) {
-				if (!bytes_pattern_compare_no_mask(buffer + offset, hp)) {
+				if (!bytes_pattern_compare_no_mask(raw_buf + offset, hp)) {
 					offset++;
 					continue;
 				}
 			} else {
-				if (!bytes_pattern_compare_masked(buffer + offset, hp)) {
+				if (!bytes_pattern_compare_masked(raw_buf + offset, hp)) {
 					offset++;
 					continue;
 				}
