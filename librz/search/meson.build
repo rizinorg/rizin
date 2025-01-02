@@ -7,6 +7,7 @@ rz_search_sources = [
   'collection.c',
   'options.c',
   'bytes_search.c',
+  'string_search.c',
 ]
 
 rz_search = library('rz_search', rz_search_sources,
