@@ -19070,8 +19070,8 @@ static const RzCmdDescDetail tmp_modifiers_details[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp tmp_modifiers_help = {
-	.summary = "'@' help, temporary modifiers",
-	.usage = "<cmd> <@> <args>",
+	.summary = "'@' help, temporary modifiers, applied right-to-left",
+	.usage = "<cmd> <@> <args> [<@> <args> ...]",
 	.options = "[?]",
 	.details = tmp_modifiers_details,
 };
