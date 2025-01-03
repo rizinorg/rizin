@@ -1855,8 +1855,8 @@ static inline char cmd_pxb_p(char input) {
 	return IS_PRINTABLE(input) ? input : '.';
 }
 
-static inline int cmd_pxb_k(const ut8 *buffer, int x) {
-	return buffer[3 - x] << (8 * x);
+static inline ut32 cmd_pxb_k(const ut8 *buffer, int x) {
+	return ((ut32)buffer[3 - x]) << (8 * x);
 }
 
 static void print_json_string(RzCore *core, const ut8 *block, ut32 len, RzStrEnc encoding, bool stop_at_nil) {
@@ -2767,10 +2767,10 @@ RZ_IPI RzCmdStatus rz_print_hexdump_bits_handler(RzCore *core, int argc, const c
 		print_cursor(core->print, i, 1, 0);
 		if (c == 3) {
 			const ut8 *b = core->block + i - 3;
-			int (*k)(const ut8 *, int) = cmd_pxb_k;
+			ut32 (*k)(const ut8 *, int) = cmd_pxb_k;
 			char (*p)(char) = cmd_pxb_p;
 
-			int n = k(b, 0) | k(b, 1) | k(b, 2) | k(b, 3);
+			ut32 n = k(b, 0) | k(b, 1) | k(b, 2) | k(b, 3);
 			rz_cons_printf("0x%08x  %c%c%c%c\n",
 				n, p(b[0]), p(b[1]), p(b[2]), p(b[3]));
 			c = -1;
