@@ -66,6 +66,20 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=Search hex bytes - limits
+FILE=bins/cmd/search/hex_bytes
+CMDS=<<EOF
+e search.show_progress=false
+e search.prefix="all"
+/x 6162636465666741424344454647f09f8d8d2092ff7211016162636465666741424344454647f09f8d8d2092ff7211016162636465666741424344454647f09f8d8d2092ff720a
+e search.prefix="overlimit"
+/x 6162636465666741424344454647f09f8d8d2092ff7211016162636465666741424344454647f09f8d8d2092ff7211016162636465666741424344454647f09f8d8d2092ff720aff
+EOF
+EXPECT=<<EOF
+00000000 71 all.match.0
+EOF
+RUN
+
 NAME=Search hex byte search - wildcard search - no overlap
 FILE=bins/cmd/search/hex_bytes
 CMDS=<<EOF
