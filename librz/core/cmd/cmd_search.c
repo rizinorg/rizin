@@ -2007,18 +2007,20 @@ static RzCmdStatus cmd_string_search_generic(RzCore *core, const char *string, c
 		RZ_LOG_ERROR("core: invalid string: empty string.\n");
 		goto invalid_args;
 	}
+	if (RZ_STR_ISEMPTY(encoding)) {
+		RZ_LOG_ERROR("core: invalid encoding: empty encoding.\n");
+		goto invalid_args;
+	}
 
 	if (rz_str_unescape(search_str) < 1) {
 		RZ_LOG_ERROR("core: invalid string: failed to unescape.\n");
 		goto invalid_args;
 	}
 
-	if (RZ_STR_ISNOTEMPTY(encoding)) {
-		expected = rz_str_enc_string_as_type(encoding);
-		if (expected == RZ_STRING_ENC_GUESS) {
-			RZ_LOG_ERROR("core: invalid encoding '%s'.\n", encoding);
-			goto invalid_args;
-		}
+	expected = rz_str_enc_string_as_type(encoding);
+	if (!RZ_STR_EQ(encoding, "guess") && expected == RZ_STRING_ENC_GUESS) {
+		RZ_LOG_ERROR("core: invalid encoding '%s'.\n", encoding);
+		goto invalid_args;
 	}
 
 	bool progress = rz_config_get_b(core->config, "search.show_progress");
@@ -2045,14 +2047,12 @@ invalid_args:
 
 // "/z"
 RZ_IPI RzCmdStatus rz_cmd_search_string_sensitive_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	const char *encoding = argc > 2 ? argv[2] : NULL;
-	RzCmdStatus res = cmd_string_search_generic(core, argv[1], encoding, false, state);
+	RzCmdStatus res = cmd_string_search_generic(core, argv[1], argv[2], false, state);
 	return res;
 }
 
 // "/zi"
 RZ_IPI RzCmdStatus rz_cmd_search_string_insensitive_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	const char *encoding = argc > 2 ? argv[2] : NULL;
-	RzCmdStatus res = cmd_string_search_generic(core, argv[1], encoding, true, state);
+	RzCmdStatus res = cmd_string_search_generic(core, argv[1], argv[2], true, state);
 	return res;
 }
