@@ -207,6 +207,10 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 	RzStrEnc str_type, bool ascii_only, const RzUtilStrScanOptions *opt, ut8 *strbuf) {
 
 	rz_return_val_if_fail(str_type != RZ_STRING_ENC_GUESS, NULL);
+	if (opt->buf_size < 5) {
+		RZ_LOG_ERROR("This function assumes a buffer size of at least 5 bytes.");
+		return NULL;
+	}
 
 	ut64 str_addr = needle;
 	int rc = 0, i = 0, runes = 0;
