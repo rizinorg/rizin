@@ -204,12 +204,16 @@ static ut64 adjust_offset(RzStrEnc str_type, const ut8 *buf, const ut64 str_star
 }
 
 static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut64 needle, const ut64 to,
-	RzStrEnc str_type, bool ascii_only, const RzUtilStrScanOptions *opt, ut8 *strbuf) {
-
+	RzStrEnc str_type, bool ascii_only, const RzUtilStrScanOptions *opt) {
 	rz_return_val_if_fail(str_type != RZ_STRING_ENC_GUESS, NULL);
 	if (opt->buf_size < 5) {
 		RZ_LOG_ERROR("This function assumes a buffer size of at least 5 bytes.");
 		return NULL;
+	}
+
+	ut8 *strbuf = RZ_NEWS0(ut8, opt->buf_size);
+	if (!strbuf) {
+		goto error;
 	}
 
 	ut64 str_addr = needle;
@@ -301,14 +305,15 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 	if (runes >= opt->min_str_length) {
 		FalsePositiveResult false_positive_result = reduce_false_positives(opt, strbuf, strbuf_size, str_type);
 		if (false_positive_result == SKIP_STRING) {
-			return NULL;
+			goto error;
 		} else if (false_positive_result == RETRY_ASCII) {
-			return process_one_string(buf, from, str_addr, to, str_type, true, opt, strbuf);
+			free(strbuf);
+			return process_one_string(buf, from, str_addr, to, str_type, true, opt);
 		}
 
 		RzDetectedString *ds = RZ_NEW0(RzDetectedString);
 		if (!ds) {
-			return NULL;
+			goto error;
 		}
 		ds->type = str_type;
 		ds->length = runes;
@@ -320,9 +325,12 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 		ds->size += off_adj;
 
 		ds->string = rz_str_ndup((const char *)strbuf, strbuf_size);
+		free(strbuf);
 		return ds;
 	}
 
+error:
+	free(strbuf);
 	return NULL;
 }
 
@@ -415,11 +423,6 @@ RZ_API int rz_scan_strings_raw(RZ_NONNULL const ut8 *buf, RZ_NONNULL RzList /*<R
 	int count = 0;
 	RzStrEnc str_type = type;
 
-	ut8 *strbuf = calloc(opt->buf_size, 1);
-	if (!strbuf) {
-		return -1;
-	}
-
 	needle = from;
 	const ut8 *ptr = NULL;
 	ut64 size = 0;
@@ -436,8 +439,8 @@ RZ_API int rz_scan_strings_raw(RZ_NONNULL const ut8 *buf, RZ_NONNULL RzList /*<R
 			} else if (can_be_utf32_be(ptr, size)) {
 				if (to - needle > 3 && can_be_utf32_le(ptr + 3, size - 3)) {
 					// The string can be either utf32-le or utf32-be
-					RzDetectedString *ds_le = process_one_string(buf, from, needle + 3, to, RZ_STRING_ENC_UTF32LE, false, opt, strbuf);
-					RzDetectedString *ds_be = process_one_string(buf, from, needle, to, RZ_STRING_ENC_UTF32BE, false, opt, strbuf);
+					RzDetectedString *ds_le = process_one_string(buf, from, needle + 3, to, RZ_STRING_ENC_UTF32LE, false, opt);
+					RzDetectedString *ds_be = process_one_string(buf, from, needle, to, RZ_STRING_ENC_UTF32BE, false, opt);
 
 					RzDetectedString *to_add = NULL;
 					RzDetectedString *to_delete = NULL;
@@ -472,8 +475,8 @@ RZ_API int rz_scan_strings_raw(RZ_NONNULL const ut8 *buf, RZ_NONNULL RzList /*<R
 			} else if (can_be_utf16_be(ptr, size)) {
 				if (to - needle > 1 && can_be_utf16_le(ptr + 1, size - 1)) {
 					// The string can be either utf16-le or utf16-be
-					RzDetectedString *ds_le = process_one_string(buf, from, needle + 1, to, RZ_STRING_ENC_UTF16LE, false, opt, strbuf);
-					RzDetectedString *ds_be = process_one_string(buf, from, needle, to, RZ_STRING_ENC_UTF16BE, false, opt, strbuf);
+					RzDetectedString *ds_le = process_one_string(buf, from, needle + 1, to, RZ_STRING_ENC_UTF16LE, false, opt);
+					RzDetectedString *ds_be = process_one_string(buf, from, needle, to, RZ_STRING_ENC_UTF16BE, false, opt);
 
 					RzDetectedString *to_add = NULL;
 					RzDetectedString *to_delete = NULL;
@@ -535,7 +538,7 @@ RZ_API int rz_scan_strings_raw(RZ_NONNULL const ut8 *buf, RZ_NONNULL RzList /*<R
 			str_type = RZ_STRING_ENC_8BIT; // initial assumption
 		}
 
-		RzDetectedString *ds = process_one_string(buf, from, needle, to, str_type, false, opt, strbuf);
+		RzDetectedString *ds = process_one_string(buf, from, needle, to, str_type, false, opt);
 		if (!ds) {
 			needle++;
 			continue;
@@ -548,7 +551,6 @@ RZ_API int rz_scan_strings_raw(RZ_NONNULL const ut8 *buf, RZ_NONNULL RzList /*<R
 		rz_list_append(list, ds);
 		needle += ds->size;
 	}
-	free(strbuf);
 	return count;
 }
 
