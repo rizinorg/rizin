@@ -170,14 +170,14 @@ quit:
 RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_string(RZ_NONNULL RzCore *core, RZ_BORROW RZ_NONNULL RzSearchOpt *user_opts, RZ_NONNULL const char *string, RzStrEnc expected, bool caseless) {
 	rz_return_val_if_fail(core && user_opts && string, NULL);
 
-	if (!RZ_STR_ISEMPTY(string)) {
+	if (RZ_STR_ISEMPTY(string)) {
 		RZ_LOG_ERROR("core: invalid string: empty string.\n");
 		return NULL;
 	}
 
 	// Copy RzUtilStrScanOptions from RzBin
 	RzUtilStrScanOptions scan_opt = {
-		.buf_size = rz_config_get_i(core->config, "search.buffer_size"),
+		.buf_size = strlen(string),
 		.max_uni_blocks = core->bin->str_search_cfg.max_uni_blocks,
 		.min_str_length = core->bin->str_search_cfg.min_length,
 		.prefer_big_endian = core->analysis->big_endian,
