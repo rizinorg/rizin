@@ -2003,24 +2003,21 @@ static RzCmdStatus cmd_string_search_generic(RzCore *core, const char *string, c
 
 	RzStrEnc expected = RZ_STRING_ENC_GUESS;
 	char *search_str = rz_str_dup(string);
-	if (!RZ_STR_ISEMPTY(search_str)) {
+	if (RZ_STR_ISEMPTY(search_str)) {
 		RZ_LOG_ERROR("core: invalid string: empty string.\n");
-		free(search_str);
-		return RZ_CMD_STATUS_WRONG_ARGS;
+		goto invalid_args;
 	}
 
 	if (rz_str_unescape(search_str) < 1) {
 		RZ_LOG_ERROR("core: invalid string: failed to unescape.\n");
-		free(search_str);
-		return RZ_CMD_STATUS_WRONG_ARGS;
+		goto invalid_args;
 	}
 
 	if (RZ_STR_ISNOTEMPTY(encoding)) {
 		expected = rz_str_enc_string_as_type(encoding);
 		if (expected == RZ_STRING_ENC_GUESS) {
 			RZ_LOG_ERROR("core: invalid encoding %s.\n", encoding);
-			free(search_str);
-			return RZ_CMD_STATUS_WRONG_ARGS;
+			goto invalid_args;
 		}
 	}
 
@@ -2033,11 +2030,17 @@ static RzCmdStatus cmd_string_search_generic(RzCore *core, const char *string, c
 		return RZ_CMD_STATUS_ERROR;
 	}
 	RzList *hits = rz_core_search_string(core, search_opts, search_str, expected, caseless);
-	free(search_str);
 
-	CMD_SEARCH_END();
+	free(search_str);
 	rz_search_opt_free(search_opts);
+	CMD_SEARCH_END();
 	return cmd_core_handle_search_hits(core, state, hits);
+
+invalid_args:
+	free(search_str);
+	rz_search_opt_free(search_opts);
+	CMD_SEARCH_END();
+	return RZ_CMD_STATUS_WRONG_ARGS;
 }
 
 // "/z"
