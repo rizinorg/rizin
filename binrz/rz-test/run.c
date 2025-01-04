@@ -212,6 +212,7 @@ RZ_API bool rz_test_cmp_cmd_output(const char *output, const char *expect, const
 				match_str_len--;
 			}
 			if (expect_len != match_str_len) {
+				rz_strbuf_free(match_str);
 				return false;
 			}
 			equal = !rz_str_cmp(expect, rz_strbuf_get(match_str), expect_len);

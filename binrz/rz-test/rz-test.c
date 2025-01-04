@@ -191,6 +191,7 @@ int rz_test_main(int argc, const char **argv) {
 	st64 expect_fail = -1;
 	int ret = 0;
 	char *cwd = NULL;
+	RzTestState state = { 0 };
 
 	if (!except_dir) {
 		RZ_LOG_ERROR("Fail to create RzPVector\n");
@@ -340,7 +341,6 @@ int rz_test_main(int argc, const char **argv) {
 
 	rz_sys_setenv("TZ", "UTC");
 	ut64 time_start = rz_time_now_mono();
-	RzTestState state = { 0 };
 	// Avoid PATH search for each process launched
 	if (!rizin_cmd) {
 		rizin_cmd = rz_file_path(RIZIN_CMD_DEFAULT);
