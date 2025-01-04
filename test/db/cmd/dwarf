@@ -8845,8 +8845,7 @@ var double c @ ...
 |       ,=< 0x0000803e      cbnz  r3, 0x804e
 |       |   0x00008040      ldr   r3, [data.00008054]                  ; [0x8054:4]=0
 |      ,==< 0x00008042      cbz   r3, 0x804a
-|      ||   0x00008044      ldr   r0,                                  ; data.00008058
-|      ||                                                              ; [0x8058:4]=0x977c obj.__FRAME_END
+|      ||   0x00008044      ldr   r0, unknown_34                       ; [data.00008058:4]=0x977c obj.__FRAME_END
 |      ||   0x00008046      nop.w
 |      `--> 0x0000804a      movs  r3, 1
 |       |   0x0000804c      strb  r3, [r4]

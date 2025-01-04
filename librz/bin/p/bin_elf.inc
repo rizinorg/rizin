@@ -496,7 +496,11 @@ static RzBinSymbol *convert_symbol(ELFOBJ *bin, RzBinElfSymbol *elf_symbol) {
 
 	result->paddr = elf_symbol->paddr;
 	result->vaddr = elf_symbol->vaddr;
-	result->name = rz_str_dup(elf_symbol->name);
+	if (RZ_STR_ISNOTEMPTY(elf_symbol->name)) {
+		result->name = rz_str_dup(elf_symbol->name);
+	} else {
+		result->name = rz_str_newf("unknown_%u", elf_symbol->ordinal);
+	}
 	result->forwarder = "NONE";
 	result->bind = elf_symbol->bind;
 	result->type = elf_symbol->type;
