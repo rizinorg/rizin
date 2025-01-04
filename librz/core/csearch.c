@@ -177,7 +177,8 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_string(RZ_NONNULL RzCor
 
 	// Copy RzUtilStrScanOptions from RzBin
 	RzUtilStrScanOptions scan_opt = {
-		.buf_size = strlen(string),
+		 // This value is irrelevant in our case. Because we read the whole buffer.
+		.buf_size = 999,
 		.max_uni_blocks = core->bin->str_search_cfg.max_uni_blocks,
 		.min_str_length = core->bin->str_search_cfg.min_length,
 		.prefer_big_endian = core->analysis->big_endian,
