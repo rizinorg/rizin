@@ -551,6 +551,7 @@ RZ_API int rz_scan_strings_raw(RZ_NONNULL const ut8 *buf, RZ_NONNULL RzList /*<R
 	free(strbuf);
 	return count;
 }
+
 /**
  * \brief Look for strings in an RzBuffer.
  * \param buf_to_scan Pointer to a RzBuffer to scan
@@ -588,5 +589,33 @@ RZ_API int rz_scan_strings(RZ_NONNULL RzBuffer *buf_to_scan, RZ_NONNULL RzList /
 	int count = rz_scan_strings_raw(buf, list, opt, from, to, type);
 
 	free(buf);
+	return count;
+}
+
+/**
+ * \brief Look for strings in an RzBuffer. The whole buffer is scanned.
+ * This function is suited for usage on hot paths.
+ *
+ * \param buf_to_scan Pointer to a RzBuffer to scan.
+ * \param list Pointer to a list that will be populated with the found strings
+ * \param opt Pointer to a RzUtilStrScanOptions that specifies search parameters
+ * \param type Type of strings to search
+ *
+ * \return Number of strings found or -1 in case of faliure.
+ */
+RZ_API int rz_scan_strings_whole_buf(RZ_NONNULL const RzBuffer *buf_to_scan, RZ_NONNULL RzList /*<RzDetectedString *>*/ *list, RZ_NONNULL const RzUtilStrScanOptions *opt, RzStrEnc type) {
+	rz_return_val_if_fail(opt && list && buf_to_scan, -1);
+	if (type == RZ_STRING_ENC_MUTF8 || type == RZ_STRING_ENC_BASE64) {
+		RZ_LOG_ERROR("rz_scan_strings_whole_buf: '%s' search type is not supported.\n", rz_str_enc_as_string(type));
+		return -1;
+	}
+
+	ut64 size;
+	const ut8 *raw_buf = rz_buf_get_whole_hot_paths((RzBuffer *) buf_to_scan, &size);
+	if (!raw_buf) {
+		RZ_LOG_ERROR("Failed to get whole buffer.");
+		return -1;
+	}
+	int count = rz_scan_strings_raw(raw_buf, list, opt, 0, size, type);
 	return count;
 }
