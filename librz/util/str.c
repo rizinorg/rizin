@@ -115,7 +115,7 @@ RZ_API RzStrEnc rz_str_enc_string_as_type(RZ_NULLABLE const char *encoding) {
 		return RZ_STRING_ENC_BASE64;
 	}
 
-	RZ_LOG_ERROR("rz_str: encoding %s not supported\n", encoding);
+	RZ_LOG_ERROR("rz_str: encoding '%s' not supported\n", encoding);
 	return RZ_STRING_ENC_GUESS;
 }
 

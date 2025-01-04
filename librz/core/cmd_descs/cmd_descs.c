@@ -1756,7 +1756,7 @@ static const RzCmdDescArg cmd_search_string_sensitive_args[] = {
 	{
 		.name = "encoding",
 		.type = RZ_CMD_ARG_TYPE_CHOICES,
-		.optional = true,
+		.default_value = "guess",
 		.choices.choices = cmd_search_string_sensitive_encoding_choices,
 
 	},
@@ -1777,7 +1777,7 @@ static const RzCmdDescArg cmd_search_string_insensitive_args[] = {
 	{
 		.name = "encoding",
 		.type = RZ_CMD_ARG_TYPE_CHOICES,
-		.optional = true,
+		.default_value = "guess",
 		.choices.choices = cmd_search_string_insensitive_encoding_choices,
 
 	},

@@ -359,7 +359,7 @@ commands:
           type: RZ_CMD_ARG_TYPE_STRING
         - name: encoding
           type: RZ_CMD_ARG_TYPE_CHOICES
-          optional: true
+          default_value: "guess"
           choices:
             - "ascii"
             - "8bit"
@@ -389,7 +389,7 @@ commands:
           type: RZ_CMD_ARG_TYPE_STRING
         - name: encoding
           type: RZ_CMD_ARG_TYPE_CHOICES
-          optional: true
+          default_value: "guess"
           choices:
             - "ascii"
             - "8bit"
