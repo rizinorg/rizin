@@ -2056,7 +2056,7 @@ static RzCmdStatus cmd_string_search_generic(RzCore *core, const char *string, c
 	if (RZ_STR_ISNOTEMPTY(encoding)) {
 		expected = rz_str_enc_string_as_type(encoding);
 		if (expected == RZ_STRING_ENC_GUESS) {
-			RZ_LOG_ERROR("core: invalid encoding %s.\n", encoding);
+			RZ_LOG_ERROR("core: invalid encoding '%s'.\n", encoding);
 			goto invalid_args;
 		}
 	}

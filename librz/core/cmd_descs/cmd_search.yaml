@@ -314,6 +314,35 @@ commands:
             comment: "/x ffd0:ff43"
   - name: "/z"
     summary: String search.
+    details:
+    - name: "Encodings"
+      entries:
+        - text: "ascii"
+          comment: "ASCII encoding"
+        - text: "8bit"
+          comment: "8bit encoding. Alias: ASCII"
+        - text: "mutf8"
+          comment: "mutf8 encoding"
+        - text: "UTF-8"
+          comment: "UTF-8 encoding"
+        - text: "utf16le"
+          comment: "UTF-16 little endian encoding"
+        - text: "utf32le"
+          comment: "UTF-32 little endian encoding"
+        - text: "utf16be"
+          comment: "UTF-16 big endian encoding"
+        - text: "utf32be"
+          comment: "UTF-32 big endian encoding"
+        - text: "ibm037"
+          comment: "ibm037 encoding. Alias: cp037, ebcdic-cp-us, ebcdic-cp-ca, ebcdic-cp-wt, ebcdic-cp-nl, csIBM037"
+        - text: "ibm290"
+          comment: "ibm290 encoding. Alias: cp290, EBCDIC-JP-kana, csIBM290"
+        - text: "ebcdices"
+          comment: "EBCDIC-ES encoding. Alias: csEBCDICES"
+        - text: "ebcdicuk"
+          comment: "EBCDIC-UK encoding. Alias: csEBCDICUK"
+        - text: "ebcdicus"
+          comment: "EBCDIC-US encoding. Alias: csEBCDICUS"
     subcommands:
     - name: "/z"
       summary: String search (case-sensitive).
@@ -345,7 +374,6 @@ commands:
             - "ebcdices"
             - "ebcdicuk"
             - "ebcdicus"
-
     - name: "/zi"
       summary: String search (case-insensitive).
       cname: cmd_search_string_insensitive
