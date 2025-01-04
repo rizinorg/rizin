@@ -118,6 +118,7 @@ static RzDetectedString *string_copy(const char *string) {
 		free(copy);
 		return NULL;
 	}
+	ds->string = copy;
 	ds->length = strlen(copy);
 	return ds;
 }
