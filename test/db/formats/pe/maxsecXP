@@ -3,5 +3,4 @@ FILE=bins/pe/maxsecXP.exe
 ARGS=-A
 CMDS=q!
 EXPECT=
-BROKEN=1
 RUN

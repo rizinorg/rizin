@@ -91,7 +91,6 @@ EOF
 RUN
 
 NAME=rz-find -i
-BROKEN=1
 FILE==
 CMDS=!!rz-find -i bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
@@ -100,7 +99,6 @@ EOF
 RUN
 
 NAME=rz-find -m
-BROKEN=1
 FILE==
 CMDS=!!rz-find -m bins/elf/ioli/crackme0x00
 EXPECT=<<EOF

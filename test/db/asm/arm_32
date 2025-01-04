@@ -18,7 +18,7 @@ a "blx 0xa" 000000fb
 a "blx 0xc" 010000fa
 aB "bxeq Lr" 1eff2f01
 aB "bxne Lr" 1eff2f11
-aB "clzne r5, sl" 1a5f6f11
+a "clzne r5, sl" 1a5f6f11
 aB "cmpeq sl, r4" 40005a01
 ad "cmpne r7, r6" 06005711
 a "eoreq r2, r2, 1" 01202202
@@ -67,7 +67,7 @@ a "popeq {r4, r5, r6, r7, pc}" f080bd08
 a "popeq {r3, r4, r5, r6, r7, pc}" f880bd08
 a "popeq {r3, r4, r5, r6, r7, r8, sl, pc}" f885bd08
 a "popeq {r3, r4, r5, r6, r7, r8, r9, sl, fp, pc}" f88fbd08
-aB "reveq r3, r3" 333fbf06
+a "reveq r3, r3" 333fbf06
 a "rsbeq ip, r1, r7" 07c06100
 a "rsbne r6, r0, r6" 06606010
 aB "stmeq r0, {r2, r3}" 0c008008
@@ -253,12 +253,12 @@ a "andne ip, ip, r7" 07c00c10
 aB "asreq r0, ip, 0x1f" cc0fa001
 aB "asrne r0, r4, 0x1f" c40fa011
 aB "biceq r3, r3, 7" 0730c303
-aB "blne 0x1900" 3E06001B
+a "blne 0x1900" 3E06001B
 a "bl 0x1900" 3e0600eb
 a "b 0x1900" 3e0600ea
 aB "bxeq lr" 1eff2f01
 aB "bxne lr" 1eff2f11
-aB "clzne r5, sl" 1a5f6f11
+a "clzne r5, sl" 1a5f6f11
 aB "cmpeq sl, r0, asr 32" 40005a01
 a "cmpne r7, r6" 06005711
 a "eoreq r2, r2, 1" 01202202
@@ -277,7 +277,7 @@ aB "lsreq r0, r0, 0x10" 2008a001
 aB "lsrne r0, r0, 9" a004a011
 aB "mlaeq r7, r5, r7, r0" 95072700
 aB "mlane r3, r1, r3, r2" 91232310
-aB "movne r0, sb" 0900a011
+a "movne r0, sb" 0900a011
 aB "mulne r3, r3, r0" 93000310
 a "mvneq r0, 0x15" 1500e003
 a "mvneq r0, 0x80000000" 0201e003
@@ -293,8 +293,8 @@ a "popeq {r3, r4, r5, pc}" 3880bd08
 a "popeq {r4, r5, r6, r7, pc}" f080bd08
 a "popeq {r3, r4, r5, r6, r7, pc}" f880bd08
 a "popeq {r3, r4, r5, r6, r7, r8, sl, pc}" f885bd08
-aB "popeq {r3, r4, r5, r6, r7, r8, sb, sl, fp, pc}" f88fbd08
-aB "reveq r3, r3" 333fbf06
+a "popeq {r3, r4, r5, r6, r7, r8, sb, sl, fp, pc}" f88fbd08
+a "reveq r3, r3" 333fbf06
 a "rsbeq ip, r1, r7" 07c06100
 a "rsbne r6, r0, r6" 06606010
 aB "stmeq r0, {r2, r3}" 0c008008
@@ -648,8 +648,8 @@ d "vmov r0, r1, d1" 110b51ec 0x0 (seq (set r0 (cast 32 false (var d1))) (set r1 
 d "vmov d0, r1, r2" 101b42ec 0x0 (set d0 (append (var r2) (var r1)))
 d "vmov s0, s1, r0, r1" 100a41ec 0x0 (seq (set d0 (| (& (var d0) (bv 64 0xffffffff00000000)) (cast 64 false (var r0)))) (set d0 (| (& (var d0) (bv 64 0xffffffff)) (<< (cast 64 false (var r1)) (bv 6 0x20) false))))
 d "vmov r0, r1, s0, s1" 100a51ec 0x0 (seq (set r0 (cast 32 false (var d0))) (set r1 (cast 32 false (>> (var d0) (bv 7 0x20) false))))
-dB "vmov.f32 s0, 5.000000e-01" 000ab6ee 0x0 (set d0 (| (& (var d0) (bv 64 0xffffffff00000000)) (cast 64 false (bv 32 0x3f000000))))
-dB "vmov.f64 d0, 1.250000e+00" 040bb7ee 0x0 (set d0 (bv 64 0x3fa00000))
+d "vmov.f32 s0, 5.000000e-01" 000ab6ee 0x0 (set d0 (| (& (var d0) (bv 64 0xffffffff00000000)) (cast 64 false (bv 32 0x3f000000))))
+d "vmov.f64 d0, 1.250000e+00" 040bb7ee 0x0 (set d0 (bv 64 0x3fa00000))
 d "vmov.f32 s0, s1" 600ab0ee 0x0 (set d0 (| (& (var d0) (bv 64 0xffffffff00000000)) (cast 64 false (cast 32 false (>> (var d0) (bv 7 0x20) false)))))
 d "vorr d0, d1, d1" 110121f2 0x0 (set d0 (| (var d1) (var d1)))
 d "vmrs r0, fpscr" 100af1ee 0x0 (set r0 (var fpscr))
@@ -745,7 +745,7 @@ d "vadd.i64 d0, d1, d2" 020831f2 0x0 (seq empty (set d0 (<< (cast 64 false (+ (c
 d "vadd.f32 d0, d1, d2" 020d01f2 0x0 (seq empty (set d0 (<< (cast 64 false (fbits (+. rne (float 0 (cast 32 false (>> (var d1) (bv 8 0x0) false)) ) (float 0 (cast 32 false (>> (var d2) (bv 8 0x0) false)) )))) (bv 8 0x0) false)) (set d0 (<< (cast 64 false (fbits (+. rne (float 0 (cast 32 false (>> (var d1) (bv 8 0x20) false)) ) (float 0 (cast 32 false (>> (var d2) (bv 8 0x20) false)) )))) (bv 8 0x20) false)))
 d "vadd.f32 q0, q1, q2" 440d02f2 0x0 (seq empty (set d0 (cast 64 false (<< (cast 128 false (fbits (+. rne (float 0 (cast 32 false (>> (append (var d3) (var d2)) (bv 8 0x0) false)) ) (float 0 (cast 32 false (>> (append (var d5) (var d4)) (bv 8 0x0) false)) )))) (bv 8 0x0) false))) (set d1 (cast 64 false (>> (<< (cast 128 false (fbits (+. rne (float 0 (cast 32 false (>> (append (var d3) (var d2)) (bv 8 0x0) false)) ) (float 0 (cast 32 false (>> (append (var d5) (var d4)) (bv 8 0x0) false)) )))) (bv 8 0x0) false) (bv 8 0x40) false))) (set d0 (cast 64 false (<< (cast 128 false (fbits (+. rne (float 0 (cast 32 false (>> (append (var d3) (var d2)) (bv 8 0x20) false)) ) (float 0 (cast 32 false (>> (append (var d5) (var d4)) (bv 8 0x20) false)) )))) (bv 8 0x20) false))) (set d1 (cast 64 false (>> (<< (cast 128 false (fbits (+. rne (float 0 (cast 32 false (>> (append (var d3) (var d2)) (bv 8 0x20) false)) ) (float 0 (cast 32 false (>> (append (var d5) (var d4)) (bv 8 0x20) false)) )))) (bv 8 0x20) false) (bv 8 0x40) false))) (set d0 (cast 64 false (<< (cast 128 false (fbits (+. rne (float 0 (cast 32 false (>> (append (var d3) (var d2)) (bv 8 0x40) false)) ) (float 0 (cast 32 false (>> (append (var d5) (var d4)) (bv 8 0x40) false)) )))) (bv 8 0x40) false))) (set d1 (cast 64 false (>> (<< (cast 128 false (fbits (+. rne (float 0 (cast 32 false (>> (append (var d3) (var d2)) (bv 8 0x40) false)) ) (float 0 (cast 32 false (>> (append (var d5) (var d4)) (bv 8 0x40) false)) )))) (bv 8 0x40) false) (bv 8 0x40) false))) (set d0 (cast 64 false (<< (cast 128 false (fbits (+. rne (float 0 (cast 32 false (>> (append (var d3) (var d2)) (bv 8 0x60) false)) ) (float 0 (cast 32 false (>> (append (var d5) (var d4)) (bv 8 0x60) false)) )))) (bv 8 0x60) false))) (set d1 (cast 64 false (>> (<< (cast 128 false (fbits (+. rne (float 0 (cast 32 false (>> (append (var d3) (var d2)) (bv 8 0x60) false)) ) (float 0 (cast 32 false (>> (append (var d5) (var d4)) (bv 8 0x60) false)) )))) (bv 8 0x60) false) (bv 8 0x40) false))))
 d "vadd.f32 s0, s1, s3" a10a30ee 0x0 (set d0 (| (& (var d0) (bv 64 0xffffffff00000000)) (cast 64 false (fbits (+. rne (float 0 (cast 32 false (>> (var d0) (bv 7 0x20) false)) ) (float 0 (cast 32 false (>> (var d1) (bv 7 0x20) false)) ))))))
-dB "vadd.f64 d0, d1, d2" 020b31ee 0x0 (set d0 (fbits (+. rne (float 1 (var d1) ) (float 1 (var d2) ))))
+d "vadd.f64 d0, d1, d2" 020b31ee 0x0 (set d0 (fbits (+. rne (float 1 (var d1) ) (float 1 (var d2) ))))
 d "vsub.i8 d0, d1, d2" 020801f3 0x0 (seq empty (set d0 (<< (cast 64 false (- (cast 8 false (>> (var d1) (bv 8 0x0) false)) (cast 8 false (>> (var d2) (bv 8 0x0) false)))) (bv 8 0x0) false)) (set d0 (<< (cast 64 false (- (cast 8 false (>> (var d1) (bv 8 0x8) false)) (cast 8 false (>> (var d2) (bv 8 0x8) false)))) (bv 8 0x8) false)) (set d0 (<< (cast 64 false (- (cast 8 false (>> (var d1) (bv 8 0x10) false)) (cast 8 false (>> (var d2) (bv 8 0x10) false)))) (bv 8 0x10) false)) (set d0 (<< (cast 64 false (- (cast 8 false (>> (var d1) (bv 8 0x18) false)) (cast 8 false (>> (var d2) (bv 8 0x18) false)))) (bv 8 0x18) false)) (set d0 (<< (cast 64 false (- (cast 8 false (>> (var d1) (bv 8 0x20) false)) (cast 8 false (>> (var d2) (bv 8 0x20) false)))) (bv 8 0x20) false)) (set d0 (<< (cast 64 false (- (cast 8 false (>> (var d1) (bv 8 0x28) false)) (cast 8 false (>> (var d2) (bv 8 0x28) false)))) (bv 8 0x28) false)) (set d0 (<< (cast 64 false (- (cast 8 false (>> (var d1) (bv 8 0x30) false)) (cast 8 false (>> (var d2) (bv 8 0x30) false)))) (bv 8 0x30) false)) (set d0 (<< (cast 64 false (- (cast 8 false (>> (var d1) (bv 8 0x38) false)) (cast 8 false (>> (var d2) (bv 8 0x38) false)))) (bv 8 0x38) false)))
 d "vsub.i16 d0, d1, d2" 020811f3 0x0 (seq empty (set d0 (<< (cast 64 false (- (cast 16 false (>> (var d1) (bv 8 0x0) false)) (cast 16 false (>> (var d2) (bv 8 0x0) false)))) (bv 8 0x0) false)) (set d0 (<< (cast 64 false (- (cast 16 false (>> (var d1) (bv 8 0x10) false)) (cast 16 false (>> (var d2) (bv 8 0x10) false)))) (bv 8 0x10) false)) (set d0 (<< (cast 64 false (- (cast 16 false (>> (var d1) (bv 8 0x20) false)) (cast 16 false (>> (var d2) (bv 8 0x20) false)))) (bv 8 0x20) false)) (set d0 (<< (cast 64 false (- (cast 16 false (>> (var d1) (bv 8 0x30) false)) (cast 16 false (>> (var d2) (bv 8 0x30) false)))) (bv 8 0x30) false)))
 d "vsub.i32 d0, d1, d2" 020821f3 0x0 (seq empty (set d0 (<< (cast 64 false (- (cast 32 false (>> (var d1) (bv 8 0x0) false)) (cast 32 false (>> (var d2) (bv 8 0x0) false)))) (bv 8 0x0) false)) (set d0 (<< (cast 64 false (- (cast 32 false (>> (var d1) (bv 8 0x20) false)) (cast 32 false (>> (var d2) (bv 8 0x20) false)))) (bv 8 0x20) false)))
@@ -753,14 +753,14 @@ d "vsub.i64 d0, d1, d2" 020831f3 0x0 (seq empty (set d0 (<< (cast 64 false (- (c
 d "vsub.f32 d0, d1, d2" 020d21f2 0x0 (seq empty (set d0 (<< (cast 64 false (fbits (-. rne (float 0 (cast 32 false (>> (var d1) (bv 8 0x0) false)) ) (float 0 (cast 32 false (>> (var d2) (bv 8 0x0) false)) )))) (bv 8 0x0) false)) (set d0 (<< (cast 64 false (fbits (-. rne (float 0 (cast 32 false (>> (var d1) (bv 8 0x20) false)) ) (float 0 (cast 32 false (>> (var d2) (bv 8 0x20) false)) )))) (bv 8 0x20) false)))
 d "vsub.f32 q0, q1, q2" 440d22f2 0x0 (seq empty (set d0 (cast 64 false (<< (cast 128 false (fbits (-. rne (float 0 (cast 32 false (>> (append (var d3) (var d2)) (bv 8 0x0) false)) ) (float 0 (cast 32 false (>> (append (var d5) (var d4)) (bv 8 0x0) false)) )))) (bv 8 0x0) false))) (set d1 (cast 64 false (>> (<< (cast 128 false (fbits (-. rne (float 0 (cast 32 false (>> (append (var d3) (var d2)) (bv 8 0x0) false)) ) (float 0 (cast 32 false (>> (append (var d5) (var d4)) (bv 8 0x0) false)) )))) (bv 8 0x0) false) (bv 8 0x40) false))) (set d0 (cast 64 false (<< (cast 128 false (fbits (-. rne (float 0 (cast 32 false (>> (append (var d3) (var d2)) (bv 8 0x20) false)) ) (float 0 (cast 32 false (>> (append (var d5) (var d4)) (bv 8 0x20) false)) )))) (bv 8 0x20) false))) (set d1 (cast 64 false (>> (<< (cast 128 false (fbits (-. rne (float 0 (cast 32 false (>> (append (var d3) (var d2)) (bv 8 0x20) false)) ) (float 0 (cast 32 false (>> (append (var d5) (var d4)) (bv 8 0x20) false)) )))) (bv 8 0x20) false) (bv 8 0x40) false))) (set d0 (cast 64 false (<< (cast 128 false (fbits (-. rne (float 0 (cast 32 false (>> (append (var d3) (var d2)) (bv 8 0x40) false)) ) (float 0 (cast 32 false (>> (append (var d5) (var d4)) (bv 8 0x40) false)) )))) (bv 8 0x40) false))) (set d1 (cast 64 false (>> (<< (cast 128 false (fbits (-. rne (float 0 (cast 32 false (>> (append (var d3) (var d2)) (bv 8 0x40) false)) ) (float 0 (cast 32 false (>> (append (var d5) (var d4)) (bv 8 0x40) false)) )))) (bv 8 0x40) false) (bv 8 0x40) false))) (set d0 (cast 64 false (<< (cast 128 false (fbits (-. rne (float 0 (cast 32 false (>> (append (var d3) (var d2)) (bv 8 0x60) false)) ) (float 0 (cast 32 false (>> (append (var d5) (var d4)) (bv 8 0x60) false)) )))) (bv 8 0x60) false))) (set d1 (cast 64 false (>> (<< (cast 128 false (fbits (-. rne (float 0 (cast 32 false (>> (append (var d3) (var d2)) (bv 8 0x60) false)) ) (float 0 (cast 32 false (>> (append (var d5) (var d4)) (bv 8 0x60) false)) )))) (bv 8 0x60) false) (bv 8 0x40) false))))
 d "vsub.f32 s0, s1, s2" c10a30ee 0x0 (set d0 (| (& (var d0) (bv 64 0xffffffff00000000)) (cast 64 false (fbits (-. rne (float 0 (cast 32 false (>> (var d0) (bv 7 0x20) false)) ) (float 0 (cast 32 false (var d1)) ))))))
-dB "vsub.f64 d0, d1, d2" 420b31ee 0x0 (set d0 (fbits (-. rne (float 1 (var d1) ) (float 1 (var d2) ))))
+d "vsub.f64 d0, d1, d2" 420b31ee 0x0 (set d0 (fbits (-. rne (float 1 (var d1) ) (float 1 (var d2) ))))
 d "vmul.f32 s4, s12, s13" 262a26ee 0x0 (set d2 (| (& (var d2) (bv 64 0xffffffff00000000)) (cast 64 false (fbits (*. rne (float 0 (cast 32 false (var d6)) ) (float 0 (cast 32 false (>> (var d6) (bv 7 0x20) false)) ))))))
 d "vldr s0, [fp, -0x14]" 050a1bed 0x0 (set d0 (| (& (var d0) (bv 64 0xffffffff00000000)) (cast 64 false (loadw 0 32 (- (var r11) (bv 32 0x14))))))
 d "vstr s1, [fp, 0x30]" 0c0acbed 0x0 (storew 0 (+ (var r11) (bv 32 0x30)) (cast 32 false (>> (var d0) (bv 7 0x20) false)))
 d "vldr s0, [sp, 8]" 020a9ded 0x0 (set d0 (| (& (var d0) (bv 64 0xffffffff00000000)) (cast 64 false (loadw 0 32 (+ (var sp) (bv 32 0x8))))))
 d "vldr d0, [r2]" 000b92ed 0x0 (set d0 (loadw 0 64 (var r2)))
 d "vabs.f32 s0, s15" e70ab0ee 0x0 (set d0 (| (& (var d0) (bv 64 0xffffffff00000000)) (cast 64 false (fbits (fpos (float 0 (cast 32 false (>> (var d7) (bv 7 0x20) false)) ))))))
-dB "vabs.f64 d1, d8" c81bb0ee 0x0 (set d1 (fbits (fpos (float 1 (var d8) ))))
+d "vabs.f64 d1, d8" c81bb0ee 0x0 (set d1 (fbits (fpos (float 1 (var d8) ))))
 d "vswp d0, d1" 0100b2f3 0x0 (seq (set d0 (var d1)) (set d1 (var d0)))
 d "vswp q2, q3" 4640b2f3 0x0 (seq (set d4 (cast 64 false (append (var d7) (var d6)))) (set d5 (cast 64 false (>> (append (var d7) (var d6)) (bv 8 0x40) false))) (set d6 (cast 64 false (append (var d5) (var d4)))) (set d7 (cast 64 false (>> (append (var d5) (var d4)) (bv 8 0x40) false))))
 d "vzip.8 d0, d1" 8101b2f3 0x0 (seq (set d0 (cast 64 false (| (| (| (| (| (| (| (| (bv 128 0x0) (<< (| (<< (cast 128 false (cast 8 false (>> (var d1) (bv 8 0x0) false))) (bv 8 0x8) false) (cast 128 false (cast 8 false (>> (var d0) (bv 8 0x0) false)))) (bv 32 0x10) false)) (<< (| (<< (cast 128 false (cast 8 false (>> (var d1) (bv 8 0x8) false))) (bv 8 0x8) false) (cast 128 false (cast 8 false (>> (var d0) (bv 8 0x8) false)))) (bv 32 0x10) false)) (<< (| (<< (cast 128 false (cast 8 false (>> (var d1) (bv 8 0x10) false))) (bv 8 0x8) false) (cast 128 false (cast 8 false (>> (var d0) (bv 8 0x10) false)))) (bv 32 0x10) false)) (<< (| (<< (cast 128 false (cast 8 false (>> (var d1) (bv 8 0x18) false))) (bv 8 0x8) false) (cast 128 false (cast 8 false (>> (var d0) (bv 8 0x18) false)))) (bv 32 0x10) false)) (<< (| (<< (cast 128 false (cast 8 false (>> (var d1) (bv 8 0x20) false))) (bv 8 0x8) false) (cast 128 false (cast 8 false (>> (var d0) (bv 8 0x20) false)))) (bv 32 0x10) false)) (<< (| (<< (cast 128 false (cast 8 false (>> (var d1) (bv 8 0x28) false))) (bv 8 0x8) false) (cast 128 false (cast 8 false (>> (var d0) (bv 8 0x28) false)))) (bv 32 0x10) false)) (<< (| (<< (cast 128 false (cast 8 false (>> (var d1) (bv 8 0x30) false))) (bv 8 0x8) false) (cast 128 false (cast 8 false (>> (var d0) (bv 8 0x30) false)))) (bv 32 0x10) false)) (<< (| (<< (cast 128 false (cast 8 false (>> (var d1) (bv 8 0x38) false))) (bv 8 0x8) false) (cast 128 false (cast 8 false (>> (var d0) (bv 8 0x38) false)))) (bv 32 0x10) false)))) (set d1 (cast 64 false (>> (| (| (| (| (| (| (| (| (bv 128 0x0) (<< (| (<< (cast 128 false (cast 8 false (>> (var d1) (bv 8 0x0) false))) (bv 8 0x8) false) (cast 128 false (cast 8 false (>> (var d0) (bv 8 0x0) false)))) (bv 32 0x10) false)) (<< (| (<< (cast 128 false (cast 8 false (>> (var d1) (bv 8 0x8) false))) (bv 8 0x8) false) (cast 128 false (cast 8 false (>> (var d0) (bv 8 0x8) false)))) (bv 32 0x10) false)) (<< (| (<< (cast 128 false (cast 8 false (>> (var d1) (bv 8 0x10) false))) (bv 8 0x8) false) (cast 128 false (cast 8 false (>> (var d0) (bv 8 0x10) false)))) (bv 32 0x10) false)) (<< (| (<< (cast 128 false (cast 8 false (>> (var d1) (bv 8 0x18) false))) (bv 8 0x8) false) (cast 128 false (cast 8 false (>> (var d0) (bv 8 0x18) false)))) (bv 32 0x10) false)) (<< (| (<< (cast 128 false (cast 8 false (>> (var d1) (bv 8 0x20) false))) (bv 8 0x8) false) (cast 128 false (cast 8 false (>> (var d0) (bv 8 0x20) false)))) (bv 32 0x10) false)) (<< (| (<< (cast 128 false (cast 8 false (>> (var d1) (bv 8 0x28) false))) (bv 8 0x8) false) (cast 128 false (cast 8 false (>> (var d0) (bv 8 0x28) false)))) (bv 32 0x10) false)) (<< (| (<< (cast 128 false (cast 8 false (>> (var d1) (bv 8 0x30) false))) (bv 8 0x8) false) (cast 128 false (cast 8 false (>> (var d0) (bv 8 0x30) false)))) (bv 32 0x10) false)) (<< (| (<< (cast 128 false (cast 8 false (>> (var d1) (bv 8 0x38) false))) (bv 8 0x8) false) (cast 128 false (cast 8 false (>> (var d0) (bv 8 0x38) false)))) (bv 32 0x10) false)) (bv 8 0x8) false))))

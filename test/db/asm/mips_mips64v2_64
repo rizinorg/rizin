@@ -67,14 +67,14 @@ d "swc1 f0, 0(zero)" 000000e4 0x4
 d "swl zero, 0(zero)" 000000a8 0x4
 d "swr zero, 0(zero)" 000000b8 0x4
 d "xori zero, zero, 0" 00000038 0x4
-dB "beqzl zero, 8" 00000050 0x4
-dB "bnezl t0, 8" 00000055 0x4
+d "beqzl zero, 8" 00000050 0x4
+d "bnezl t0, 8" 00000055 0x4
 dB "c0 0x0" 00000042 0x4
 dB "c1 0x1000000" 00000047 0x4
 dB "c2 0x0" 0000004a 0x4
-dB "ld zero, 0(zero)" 000000dc 0x4
-dB "ldc2 0, 0(zero)" 000000d8 0x4
-dB "lwc2 0, 0(zero)" 000000c8 0x4
+d "ld zero, 0(zero)" 000000dc 0x4
+d "ldc2 0, 0(zero)" 000000d8 0x4
+d "lwc2 0, 0(zero)" 000000c8 0x4
 dB "paddsh f0, f0, f0" 0000004b 0x4
-dB "sdc2 0, 0(zero)" 000000f8 0x4
-dB "swc2 0, 0(zero)" 000000e8 0x4
+d "sdc2 0, 0(zero)" 000000f8 0x4
+d "swc2 0, 0(zero)" 000000e8 0x4

@@ -570,7 +570,7 @@ dB "pextrq dword [eax], xmm0, 0" 660f3a16
 dB "pinsrq xmm0, dword [eax], 0" 660f3a22
 dB "pmovmskb eax, mm0" 0fd7
 dB "popcnt eax, qword [eax]" f30fb8
-dB "prefetch byte [eax]" 0f0d00
+d "prefetch byte [eax]" 0f0d00
 d "rep movsb byte es:[edi], byte ptr [esi]" f3a4
 dB "retw" 66c3
 dB "skinit" 0f01de
@@ -636,7 +636,7 @@ d "movbe eax, dword [eax]" 0f38f000
 d "mulsd xmm7, xmm7" 66f3f20f59ff
 dB "mulss xmm7, xmm7" 66f2f0f59ff0
 d "mulpd xmm7, xmm7" 660f59ff
-dB "mulsd xmm7, xmm7" f2660f59ff
+d "mulsd xmm7, xmm7" f2660f59ff
 d "mulps xmm7, xmm7" 0f59ff
 d "mpsadbw xmm0, xmm0, 0" 660f3a42c000
 d "pcmpestrm xmm0, xmm0, 0" 660f3a60c000
@@ -1527,7 +1527,7 @@ a "mov [eax], ebx" 8918 0x0 (storew 0 (+ (var eax) (bv 32 0x0)) (var ebx))
 a "mov eax, ebx" 89d8 0x0 (set eax (var ebx))
 a "mov eax, [ebx]" 8b03 0x0 (set eax (loadw 0 32 (+ (var ebx) (bv 32 0x0))))
 a "mov eax,[ecx*8+64]" 8b04cd40000000 0x0 (set eax (loadw 0 32 (+ (* (var ecx) (bv 32 0x8)) (bv 32 0x40))))
-aB "mov [ecx*8+64], eax" 8904CD40000000
+a "mov [ecx*8+64], eax" 8904CD40000000
 a "mov [eax+ecx], eax" 890408 0x0 (storew 0 (+ (+ (var eax) (* (var ecx) (bv 32 0x1))) (bv 32 0x0)) (var eax))
 a "mov eax, [esi]" 8b06 0x0 (set eax (loadw 0 32 (+ (var esi) (bv 32 0x0))))
 a "mov eax, [esp+4]" 8b442404 0x0 (set eax (loadw 0 32 (+ (var esp) (bv 32 0x4))))
