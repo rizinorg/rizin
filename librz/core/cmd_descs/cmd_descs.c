@@ -17,6 +17,7 @@ static const RzCmdDescDetail interpret_macro_multiple_details[2];
 static const RzCmdDescDetail cmd_search_hash_block_details[2];
 static const RzCmdDescDetail slash_v_details[2];
 static const RzCmdDescDetail cmd_search_hex_details[2];
+static const RzCmdDescDetail slash_z_details[2];
 static const RzCmdDescDetail base64_encode_details[2];
 static const RzCmdDescDetail base64_decode_details[2];
 static const RzCmdDescDetail print_boundaries_prot_details[2];
@@ -1721,8 +1722,29 @@ static const RzCmdDescHelp cmd_search_hex_help = {
 	.args = cmd_search_hex_args,
 };
 
+static const RzCmdDescDetailEntry slash_z_Encodings_detail_entries[] = {
+	{ .text = "ascii", .arg_str = NULL, .comment = "ASCII encoding" },
+	{ .text = "8bit", .arg_str = NULL, .comment = "8bit encoding. Alias: ASCII" },
+	{ .text = "mutf8", .arg_str = NULL, .comment = "mutf8 encoding" },
+	{ .text = "UTF-8", .arg_str = NULL, .comment = "UTF-8 encoding" },
+	{ .text = "utf16le", .arg_str = NULL, .comment = "UTF-16 little endian encoding" },
+	{ .text = "utf32le", .arg_str = NULL, .comment = "UTF-32 little endian encoding" },
+	{ .text = "utf16be", .arg_str = NULL, .comment = "UTF-16 big endian encoding" },
+	{ .text = "utf32be", .arg_str = NULL, .comment = "UTF-32 big endian encoding" },
+	{ .text = "ibm037", .arg_str = NULL, .comment = "ibm037 encoding. Alias: cp037, ebcdic-cp-us, ebcdic-cp-ca, ebcdic-cp-wt, ebcdic-cp-nl, csIBM037" },
+	{ .text = "ibm290", .arg_str = NULL, .comment = "ibm290 encoding. Alias: cp290, EBCDIC-JP-kana, csIBM290" },
+	{ .text = "ebcdices", .arg_str = NULL, .comment = "EBCDIC-ES encoding. Alias: csEBCDICES" },
+	{ .text = "ebcdicuk", .arg_str = NULL, .comment = "EBCDIC-UK encoding. Alias: csEBCDICUK" },
+	{ .text = "ebcdicus", .arg_str = NULL, .comment = "EBCDIC-US encoding. Alias: csEBCDICUS" },
+	{ 0 },
+};
+static const RzCmdDescDetail slash_z_details[] = {
+	{ .name = "Encodings", .entries = slash_z_Encodings_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescHelp slash_z_help = {
 	.summary = "String search.",
+	.details = slash_z_details,
 };
 static const char *cmd_search_string_sensitive_encoding_choices[] = { "ascii", "8bit", "mutf8", "utf8", "utf16le", "utf32le", "utf16be", "utf32be", "ibm037", "ibm290", "ebcdices", "ebcdicuk", "ebcdicus", NULL };
 static const RzCmdDescArg cmd_search_string_sensitive_args[] = {
