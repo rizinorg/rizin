@@ -26,12 +26,11 @@ static bool string_find(RZ_NULLABLE RzSearchFindOpt *fopt, void *user, ut64 offs
 		return false;
 	}
 
-	ut64 size;
-	const ut8 *buffer_raw = rz_buf_get_whole_hot_paths((RzBuffer *)buffer, &size);
-	const ut64 end = offset + size;
-	if (rz_scan_strings_raw(buffer_raw, found, &ss->options, offset, end, ss->encoding) <= 0) {
+	int n_str_in_buf = rz_scan_strings_whole_buf(buffer, found, &ss->options, ss->encoding);
+	if (n_str_in_buf < 0) {
+		RZ_LOG_ERROR("Failed to scan buffer for strings.\n");
 		rz_list_free(found);
-		return true;
+		return false;
 	}
 
 	rz_list_foreach (found, it_s, detected) {
