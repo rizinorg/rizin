@@ -168,7 +168,7 @@
         },
         {
           "type": "SYMBOL",
-          "name": "_tmp_stmt"
+          "name": "tmp_stmt"
         },
         {
           "type": "SYMBOL",
@@ -187,6 +187,26 @@
           "name": "legacy_quoted_stmt"
         }
       ]
+    },
+    "tmp_stmt": {
+      "type": "PREC_RIGHT",
+      "value": 0,
+      "content": {
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "SYMBOL",
+            "name": "_simple_stmt"
+          },
+          {
+            "type": "REPEAT1",
+            "content": {
+              "type": "SYMBOL",
+              "name": "_tmp_stmt"
+            }
+          }
+        ]
+      }
     },
     "_tmp_stmt": {
       "type": "CHOICE",
@@ -1087,10 +1107,6 @@
         "type": "SEQ",
         "members": [
           {
-            "type": "SYMBOL",
-            "name": "_simple_stmt"
-          },
-          {
             "type": "STRING",
             "value": "@ "
           },
@@ -1108,10 +1124,6 @@
         "type": "SEQ",
         "members": [
           {
-            "type": "SYMBOL",
-            "name": "_simple_stmt"
-          },
-          {
             "type": "STRING",
             "value": "@!"
           },
@@ -1128,10 +1140,6 @@
       "content": {
         "type": "SEQ",
         "members": [
-          {
-            "type": "SYMBOL",
-            "name": "_simple_stmt"
-          },
           {
             "type": "STRING",
             "value": "@("
@@ -1154,10 +1162,6 @@
         "type": "SEQ",
         "members": [
           {
-            "type": "SYMBOL",
-            "name": "_simple_stmt"
-          },
-          {
             "type": "STRING",
             "value": "@a:"
           },
@@ -1174,10 +1178,6 @@
       "content": {
         "type": "SEQ",
         "members": [
-          {
-            "type": "SYMBOL",
-            "name": "_simple_stmt"
-          },
           {
             "type": "STRING",
             "value": "@b:"
@@ -1196,10 +1196,6 @@
         "type": "SEQ",
         "members": [
           {
-            "type": "SYMBOL",
-            "name": "_simple_stmt"
-          },
-          {
             "type": "STRING",
             "value": "@B:"
           },
@@ -1216,10 +1212,6 @@
       "content": {
         "type": "SEQ",
         "members": [
-          {
-            "type": "SYMBOL",
-            "name": "_simple_stmt"
-          },
           {
             "type": "STRING",
             "value": "@e:"
@@ -1243,10 +1235,6 @@
         "type": "SEQ",
         "members": [
           {
-            "type": "SYMBOL",
-            "name": "_simple_stmt"
-          },
-          {
             "type": "STRING",
             "value": "@F:"
           },
@@ -1263,10 +1251,6 @@
       "content": {
         "type": "SEQ",
         "members": [
-          {
-            "type": "SYMBOL",
-            "name": "_simple_stmt"
-          },
           {
             "type": "STRING",
             "value": "@i:"
@@ -1285,10 +1269,6 @@
         "type": "SEQ",
         "members": [
           {
-            "type": "SYMBOL",
-            "name": "_simple_stmt"
-          },
-          {
             "type": "STRING",
             "value": "@k:"
           },
@@ -1305,10 +1285,6 @@
       "content": {
         "type": "SEQ",
         "members": [
-          {
-            "type": "SYMBOL",
-            "name": "_simple_stmt"
-          },
           {
             "type": "STRING",
             "value": "@o:"
@@ -1327,10 +1303,6 @@
         "type": "SEQ",
         "members": [
           {
-            "type": "SYMBOL",
-            "name": "_simple_stmt"
-          },
-          {
             "type": "STRING",
             "value": "@r:"
           },
@@ -1347,10 +1319,6 @@
       "content": {
         "type": "SEQ",
         "members": [
-          {
-            "type": "SYMBOL",
-            "name": "_simple_stmt"
-          },
           {
             "type": "STRING",
             "value": "@f:"
@@ -1369,10 +1337,6 @@
         "type": "SEQ",
         "members": [
           {
-            "type": "SYMBOL",
-            "name": "_simple_stmt"
-          },
-          {
             "type": "STRING",
             "value": "@s:"
           },
@@ -1390,10 +1354,6 @@
         "type": "SEQ",
         "members": [
           {
-            "type": "SYMBOL",
-            "name": "_simple_stmt"
-          },
-          {
             "type": "STRING",
             "value": "@v:"
           },
@@ -1410,10 +1370,6 @@
       "content": {
         "type": "SEQ",
         "members": [
-          {
-            "type": "SYMBOL",
-            "name": "_simple_stmt"
-          },
           {
             "type": "STRING",
             "value": "@x:"

@@ -7,11 +7,16 @@ echo $(p8 10)
 ---
 
 (statements
-  (arged_stmt command: (cmd_identifier)
+  (arged_stmt
+    command: (cmd_identifier)
     args: (args
-            (arg (cmd_substitution_arg
-	      (arged_stmt command: (cmd_identifier)
-	        args: (args (arg (arg_identifier)))))))))
+      (arg
+        (cmd_substitution_arg
+          (arged_stmt
+            command: (cmd_identifier)
+            args: (args
+              (arg
+                (arg_identifier)))))))))
 
 =======================================
 Command substitution with multiple statements
@@ -22,17 +27,26 @@ echo $(p8 10; p8 4 @ 0xdeadbeef)
 ---
 
 (statements
-  (arged_stmt command: (cmd_identifier)
+  (arged_stmt
+    command: (cmd_identifier)
     args: (args
-            (arg (cmd_substitution_arg
-	      (arged_stmt command: (cmd_identifier)
-	        args: (args (arg (arg_identifier))))
-	      (tmp_seek_stmt
-	        (arged_stmt command: (cmd_identifier)
-	          args: (args (arg (arg_identifier))))
-		(args (arg (arg_identifier)))))))))
-
-
+      (arg
+        (cmd_substitution_arg
+          (arged_stmt
+            command: (cmd_identifier)
+            args: (args
+              (arg
+                (arg_identifier))))
+          (tmp_stmt
+            (arged_stmt
+              command: (cmd_identifier)
+              args: (args
+                (arg
+                  (arg_identifier))))
+            (tmp_seek_stmt
+              (args
+                (arg
+                  (arg_identifier))))))))))
 
 =======================================
 Command substitution used as simple arg `
@@ -43,12 +57,16 @@ echo `p8 10`
 ---
 
 (statements
-  (arged_stmt command: (cmd_identifier)
+  (arged_stmt
+    command: (cmd_identifier)
     args: (args
-            (arg (cmd_substitution_arg
-	      (arged_stmt command: (cmd_identifier)
-	        args: (args (arg (arg_identifier)))))))))
-
+      (arg
+        (cmd_substitution_arg
+          (arged_stmt
+            command: (cmd_identifier)
+            args: (args
+              (arg
+                (arg_identifier)))))))))
 
 =======================================
 Nested command substitution
@@ -59,13 +77,21 @@ echo $(p8 $(echo 10))
 ---
 
 (statements
-  (arged_stmt command: (cmd_identifier)
-    args: (args (arg (cmd_substitution_arg
-	         (arged_stmt command: (cmd_identifier)
-	           args: (args (arg (cmd_substitution_arg
-		           (arged_stmt command: (cmd_identifier)
-			     args: (args (arg (arg_identifier)))))))))))))
-
+  (arged_stmt
+    command: (cmd_identifier)
+    args: (args
+      (arg
+        (cmd_substitution_arg
+          (arged_stmt
+            command: (cmd_identifier)
+            args: (args
+              (arg
+                (cmd_substitution_arg
+                  (arged_stmt
+                    command: (cmd_identifier)
+                    args: (args
+                      (arg
+                        (arg_identifier)))))))))))))
 
 =======================================
 Nested command substitution 2
@@ -76,13 +102,22 @@ echo Hello$(echo Wor$(echo ld))
 ---
 
 (statements
-  (arged_stmt (cmd_identifier)
-    (args (arg (concatenation
-                 (arg_identifier)
-                 (cmd_substitution_arg
-                   (arged_stmt (cmd_identifier)
-                     (args (arg (concatenation
-		                  (arg_identifier)
-				  (cmd_substitution_arg
-				    (arged_stmt (cmd_identifier)
-				      (args (arg (arg_identifier)))))))))))))))
+  (arged_stmt
+    (cmd_identifier)
+    (args
+      (arg
+        (concatenation
+          (arg_identifier)
+          (cmd_substitution_arg
+            (arged_stmt
+              (cmd_identifier)
+              (args
+                (arg
+                  (concatenation
+                    (arg_identifier)
+                    (cmd_substitution_arg
+                      (arged_stmt
+                        (cmd_identifier)
+                        (args
+                          (arg
+                            (arg_identifier)))))))))))))))
