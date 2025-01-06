@@ -7,11 +7,12 @@
 #include <unistd.h>
 #endif
 
-#include <stdio.h>
-// FILE *popen(const char *command, const char *type);
-// int pclose(FILE *stream);
-#include <stdlib.h>
-// void srandom(unsigned seed);
+// The #includes -- they do nothing!
+// #include <stdio.h>
+FILE *popen(const char *command, const char *type);
+int pclose(FILE *stream);
+// #include <stdlib.h>
+void srandom(unsigned seed);
 
 static char *spp_var_get(char *var) {
 	return rz_sys_getenv (var);
