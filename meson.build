@@ -5,6 +5,7 @@ project('rizin', 'c',
   default_options: [
     'buildtype=debugoptimized',
     'b_vscrt=from_buildtype',
+    'c_std=c99',
     'warning_level=1',
   ]
 )
@@ -88,12 +89,6 @@ if cc.has_argument('-Wenum-conversion')
 endif
 if cc.has_argument('-Wenum-compare')
   add_project_arguments('-DCC_SUPPORTS_W_ENUM_COMPARE', language: ['c', 'cpp'])
-endif
-
-if cc.has_argument('--std=gnu99')
-  add_project_arguments('--std=gnu99', language: ['c', 'cpp'])
-elif cc.has_argument('--std=c99')
-  add_project_arguments('--std=c99', language: ['c', 'cpp'])
 endif
 
 # Sanitize correct usage of rz_strf()
