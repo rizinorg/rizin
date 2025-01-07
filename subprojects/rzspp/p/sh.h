@@ -1,8 +1,7 @@
 /* SH */
 
-// strdup? Is that really true?
-// #include <string.h>
-char *strdup(const char *s);
+#include <string.h>
+// char *strdup(const char *s);
 
 // TODO: use popen for {{pipe/endpipe}}
 
