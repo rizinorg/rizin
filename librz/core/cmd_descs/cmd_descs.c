@@ -10996,7 +10996,6 @@ static const RzCmdDescArg flag_ordinals_args[] = {
 		.name = "glob",
 		.type = RZ_CMD_ARG_TYPE_STRING,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
 
 	},
 	{ 0 },
