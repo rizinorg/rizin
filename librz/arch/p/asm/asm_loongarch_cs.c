@@ -29,12 +29,6 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	rz_asm_op_setf_asm(op, "%s%s%s",
 		ctx->insn->mnemonic, RZ_STR_ISNOTEMPTY(ctx->insn->op_str) ? " " : "", ctx->insn->op_str);
 
-	char *str = rz_asm_op_get_asm(op);
-	if (str) {
-		// remove the '$'<registername> in the string
-		rz_str_replace_char(str, '$', 0);
-	}
-
 beach:
 	cs_free(ctx->insn, ctx->count);
 	ctx->insn = NULL;
