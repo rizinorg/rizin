@@ -1,8 +1,5 @@
 /* SH */
 
-#include <string.h>
-// char *strdup(const char *s);
-
 // TODO: use popen for {{pipe/endpipe}}
 
 static TAG_CALLBACK(sh_default) {
