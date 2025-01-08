@@ -3542,27 +3542,31 @@ err_else:
 	return res;
 }
 
-static uint32_t tmp_child_idx = 0;
-
 static TSNode tmp_get_next_node(TSNode cur) {
 	TSNode next = ts_node_next_named_sibling(cur);
-	tmp_child_idx++;
 	if (ts_node_is_null(next)) {
 		next = ts_node_named_child(ts_node_parent(cur), 0);
-		tmp_child_idx = 0;
 	}
 	return next;
 }
 
+static uint32_t tmp_get_idx(TSNode node) {
+	uint32_t cnt = 0;
+	while (!ts_node_is_null(node)) {
+		node = ts_node_prev_named_sibling(node);
+		cnt++;
+	}
+	return cnt - 1;
+}
+
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_stmt) {
 	TSNode first_tmp = ts_node_named_child(node, 1);
-	tmp_child_idx = 1;
 	return handle_ts_stmt(state, first_tmp);
 }
 
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_seek_stmt) {
 	TSNode offset = ts_node_named_child(node, 0);
-	char *offset_string = ts_node_handle_arg(state, ts_node_parent(node), offset, tmp_child_idx, true);
+	char *offset_string = ts_node_handle_arg(state, ts_node_parent(node), offset, tmp_get_idx(node), true);
 	if (!offset_string) {
 		return RZ_CMD_STATUS_INVALID;
 	}
@@ -3589,7 +3593,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_seek_stmt) {
 
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_blksz_stmt) {
 	TSNode blksz = ts_node_named_child(node, 0);
-	char *blksz_string = ts_node_handle_arg(state, ts_node_parent(node), blksz, tmp_child_idx, true);
+	char *blksz_string = ts_node_handle_arg(state, ts_node_parent(node), blksz, tmp_get_idx(node), true);
 	if (!blksz_string) {
 		return RZ_CMD_STATUS_INVALID;
 	}
@@ -3606,7 +3610,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_blksz_stmt) {
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_fromto_stmt) {
 	RzCore *core = state->core;
 	TSNode fromto = ts_node_named_child(node, 0);
-	RzCmdParsedArgs *a = ts_node_handle_arg_prargs(state, ts_node_parent(node), fromto, tmp_child_idx,
+	RzCmdParsedArgs *a = ts_node_handle_arg_prargs(state, ts_node_parent(node), fromto, tmp_get_idx(node),
 		true, NULL, true);
 	if (!a || a->argc != 2 + 1) {
 		rz_cmd_parsed_args_free(a);
@@ -3648,7 +3652,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_fromto_stmt) {
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_arch_stmt) {
 	RzCore *core = state->core;
 	TSNode arg = ts_node_named_child(node, 0);
-	char *arg_str = ts_node_handle_arg(state, ts_node_parent(node), arg, tmp_child_idx, true);
+	char *arg_str = ts_node_handle_arg(state, ts_node_parent(node), arg, tmp_get_idx(node), true);
 	if (!arg_str) {
 		return RZ_CMD_STATUS_INVALID;
 	}
@@ -3691,7 +3695,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_arch_stmt) {
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_bits_stmt) {
 	RzCore *core = state->core;
 	TSNode arg = ts_node_named_child(node, 0);
-	char *arg_str = ts_node_handle_arg(state, ts_node_parent(node), arg, tmp_child_idx, true);
+	char *arg_str = ts_node_handle_arg(state, ts_node_parent(node), arg, tmp_get_idx(node), true);
 	if (!arg_str) {
 		return RZ_CMD_STATUS_INVALID;
 	}
@@ -3717,7 +3721,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_bits_stmt) {
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_nthi_stmt) {
 	RzCore *core = state->core;
 	TSNode arg = ts_node_named_child(node, 0);
-	char *arg_str = ts_node_handle_arg(state, ts_node_parent(node), arg, tmp_child_idx, true);
+	char *arg_str = ts_node_handle_arg(state, ts_node_parent(node), arg, tmp_get_idx(node), true);
 	if (!arg_str) {
 		return RZ_CMD_STATUS_INVALID;
 	}
@@ -3769,7 +3773,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_eval_stmt) {
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_fs_stmt) {
 	RzCore *core = state->core;
 	TSNode arg = ts_node_named_child(node, 0);
-	char *arg_str = ts_node_handle_arg(state, ts_node_parent(node), arg, tmp_child_idx, true);
+	char *arg_str = ts_node_handle_arg(state, ts_node_parent(node), arg, tmp_get_idx(node), true);
 	if (!arg_str) {
 		return RZ_CMD_STATUS_INVALID;
 	}
@@ -3784,7 +3788,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_fs_stmt) {
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_reli_stmt) {
 	RzCore *core = state->core;
 	TSNode arg = ts_node_named_child(node, 0);
-	char *arg_str = ts_node_handle_arg(state, ts_node_parent(node), arg, tmp_child_idx, true);
+	char *arg_str = ts_node_handle_arg(state, ts_node_parent(node), arg, tmp_get_idx(node), true);
 	if (!arg_str) {
 		return RZ_CMD_STATUS_INVALID;
 	}
@@ -3803,7 +3807,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_reli_stmt) {
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_kuery_stmt) {
 	RzCore *core = state->core;
 	TSNode arg = ts_node_named_child(node, 0);
-	char *arg_str = ts_node_handle_arg(state, ts_node_parent(node), arg, tmp_child_idx, true);
+	char *arg_str = ts_node_handle_arg(state, ts_node_parent(node), arg, tmp_get_idx(node), true);
 	if (!arg_str) {
 		return RZ_CMD_STATUS_INVALID;
 	}
@@ -3823,7 +3827,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_kuery_stmt) {
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_fd_stmt) {
 	RzCore *core = state->core;
 	TSNode arg = ts_node_named_child(node, 0);
-	char *arg_str = ts_node_handle_arg(state, ts_node_parent(node), arg, tmp_child_idx, true);
+	char *arg_str = ts_node_handle_arg(state, ts_node_parent(node), arg, tmp_get_idx(node), true);
 	if (!arg_str) {
 		return RZ_CMD_STATUS_INVALID;
 	}
@@ -3839,7 +3843,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_fd_stmt) {
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_reg_stmt) {
 	RzCore *core = state->core;
 	TSNode arg = ts_node_named_child(node, 0);
-	char *arg_str = ts_node_handle_arg(state, ts_node_parent(node), arg, tmp_child_idx, true);
+	char *arg_str = ts_node_handle_arg(state, ts_node_parent(node), arg, tmp_get_idx(node), true);
 	if (!arg_str) {
 		return RZ_CMD_STATUS_INVALID;
 	}
@@ -3891,7 +3895,7 @@ out_buf:
 
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_file_stmt) {
 	TSNode arg = ts_node_named_child(node, 0);
-	char *arg_str = ts_node_handle_arg(state, ts_node_parent(node), arg, tmp_child_idx, true);
+	char *arg_str = ts_node_handle_arg(state, ts_node_parent(node), arg, tmp_get_idx(node), true);
 	if (!arg_str) {
 		return RZ_CMD_STATUS_INVALID;
 	}
@@ -3915,7 +3919,7 @@ out:
 
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_string_stmt) {
 	TSNode arg = ts_node_named_child(node, 0);
-	char *arg_str = ts_node_handle_arg(state, ts_node_parent(node), arg, tmp_child_idx, true);
+	char *arg_str = ts_node_handle_arg(state, ts_node_parent(node), arg, tmp_get_idx(node), true);
 	if (!arg_str) {
 		return RZ_CMD_STATUS_INVALID;
 	}
@@ -3934,7 +3938,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_string_stmt) {
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_value_stmt) {
 	RzCore *core = state->core;
 	TSNode arg = ts_node_named_child(node, 0);
-	char *arg_str = ts_node_handle_arg(state, ts_node_parent(node), arg, tmp_child_idx, true);
+	char *arg_str = ts_node_handle_arg(state, ts_node_parent(node), arg, tmp_get_idx(node), true);
 	if (!arg_str) {
 		return RZ_CMD_STATUS_INVALID;
 	}
@@ -3956,7 +3960,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_value_stmt) {
 
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_hex_stmt) {
 	TSNode arg = ts_node_named_child(node, 0);
-	char *arg_str = ts_node_handle_arg(state, ts_node_parent(node), arg, tmp_child_idx, true);
+	char *arg_str = ts_node_handle_arg(state, ts_node_parent(node), arg, tmp_get_idx(node), true);
 	if (!arg_str) {
 		return RZ_CMD_STATUS_INVALID;
 	}
