@@ -34,7 +34,13 @@ loongarch_setup_cs_handle(RzAsmLoongArchContext *ctx, bool is_64_bits, bool big_
 	err = cs_option(ctx->h, CS_OPT_DETAIL, CS_OPT_ON);
 	if (err) {
 		const char *error_str = cs_strerror(err);
-		RZ_LOG_ERROR("Failed on cs_option() with error returned: %u: %s\n", err, error_str);
+		RZ_LOG_ERROR("Failed on cs_option(CS_OPT_DETAIL, CS_OPT_ON) with error returned: %u: %s\n", err, error_str);
+		return false;
+	}
+	err = cs_option(ctx->h, CS_OPT_SYNTAX, CS_OPT_SYNTAX_NO_DOLLAR);
+	if (err) {
+		const char *error_str = cs_strerror(err);
+		RZ_LOG_ERROR("Failed on cs_option(CS_OPT_SYNTAX, CS_OPT_SYNTAX_NO_DOLLAR) with error returned: %u: %s\n", err, error_str);
 		return false;
 	}
 	return true;
