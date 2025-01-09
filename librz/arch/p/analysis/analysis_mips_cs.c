@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 deroad <deroad@kumo.xn--q9jyb4c>
+// SPDX-FileCopyrightText: 2024-2025 deroad <deroad@kumo.xn--q9jyb4c>
 // SPDX-FileCopyrightText: 2013-2019 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
@@ -7,16 +7,6 @@
 #include <mips/mips_internal.h>
 
 // http://www.mrc.uidaho.edu/mrc/people/jff/digital/MIPSir.html
-
-#define OPERAND(x)  insn->detail->mips.operands[x]
-#define REGID(x)    insn->detail->mips.operands[x].reg
-#define REG(x)      cs_reg_name(*handle, insn->detail->mips.operands[x].reg)
-#define IMM(x)      insn->detail->mips.operands[x].imm
-#define MEMBASE(x)  cs_reg_name(*handle, insn->detail->mips.operands[x].mem.base)
-#define MEMINDEX(x) insn->detail->mips.operands[x].mem.index
-#define MEMDISP(x)  insn->detail->mips.operands[x].mem.disp
-#define OPCOUNT()   insn->detail->mips.op_count
-// TODO scale and disp
 
 #define SET_VAL(op, i) \
 	if ((i) < OPCOUNT() && OPERAND(i).type == MIPS_OP_IMM) { \
@@ -247,6 +237,10 @@ static int mips_analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, co
 			insn->op_str[0] ? " " : "",
 			insn->op_str);
 	}
+	if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+		op->il_op = mips_il(insn);
+	}
+
 	op->id = insn->id;
 	opsize = op->size = insn->size;
 	op->refptr = 0;
@@ -1021,7 +1015,7 @@ static bool mips_fini(void *user) {
 RzAnalysisPlugin rz_analysis_plugin_mips_cs = {
 	.name = "mips",
 	.desc = "Capstone MIPS analyzer",
-	.license = "BSD",
+	.license = "LGPL3",
 	.esil = true,
 	.arch = "mips",
 	.get_reg_profile = mips_get_reg_profile,
@@ -1031,6 +1025,7 @@ RzAnalysisPlugin rz_analysis_plugin_mips_cs = {
 	.op = &mips_analyze_op,
 	.init = mips_init,
 	.fini = mips_fini,
+	.il_config = mips_il_config,
 };
 
 #ifndef RZ_PLUGIN_INCORE
