@@ -209,7 +209,8 @@ static int mips_analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, co
 	csh hndl = 0;
 	cs_insn *insn = NULL;
 	cs_mode mode = 0;
-	if (!cs_mode_from_cpu(analysis->cpu, analysis->bits, analysis->big_endian, &mode)) {
+	ut32 gpr_size = 0;
+	if (!cs_mode_from_cpu(analysis->cpu, analysis->bits, analysis->big_endian, &mode, &gpr_size)) {
 		return -1;
 	}
 
@@ -238,7 +239,7 @@ static int mips_analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, co
 			insn->op_str);
 	}
 	if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-		op->il_op = mips_il(insn);
+		op->il_op = mips_il(&hndl, insn, gpr_size);
 	}
 
 	op->id = insn->id;
@@ -873,8 +874,14 @@ beach:
 }
 
 static char *mips_get_reg_profile(RzAnalysis *analysis) {
+	cs_mode mode = 0;
+	ut32 gpr_size = 0;
+	if (!cs_mode_from_cpu(analysis->cpu, analysis->bits, analysis->big_endian, &mode, &gpr_size)) {
+		return NULL;
+	}
+
 	const char *p = NULL;
-	switch (analysis->bits) {
+	switch (gpr_size) {
 	default:
 	case 32:
 		p =

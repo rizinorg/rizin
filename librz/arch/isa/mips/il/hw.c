@@ -1,0 +1,144 @@
+// SPDX-FileCopyrightText: 2025 deroad <deroad@kumo.xn--q9jyb4c>
+// SPDX-FileCopyrightText: 2023 Siddharth Mishra <admin@brightprogrammer.in>
+// SPDX-License-Identifier: LGPL-3.0-only
+
+/** \file hw.c
+ * RzIL implementation of MIPS hardware functions like breakpoint, debug, etc..
+ **/
+
+#define REG_CAUSE_EXCEPTION             "CAUSE_EXC"
+#define IL_REG_CAUSE_EXCEPTION()        VARG(REG_CAUSE_EXCEPTION)
+#define IL_CAUSE_CLEAR()                SETG(REG_CAUSE_EXCEPTION, U8(0));
+#define IL_CAUSE_INTERRUPT()            SETG(REG_CAUSE_EXCEPTION, U8(0x00))
+#define IL_CAUSE_ADDRESS_LOAD_ERROR()   SETG(REG_CAUSE_EXCEPTION, U8(0x04))
+#define IL_CAUSE_ADDRESS_STORE_ERROR()  SETG(REG_CAUSE_EXCEPTION, U8(0x05))
+#define IL_CAUSE_SYSCALL()              SETG(REG_CAUSE_EXCEPTION, U8(0x08))
+#define IL_CAUSE_BREAKPOINT()           SETG(REG_CAUSE_EXCEPTION, U8(0x09))
+#define IL_CAUSE_OVERFLOW()             SETG(REG_CAUSE_EXCEPTION, U8(0x0C))
+#define IL_CAUSE_RESERVED_INSTRUCTION() SETG(REG_CAUSE_EXCEPTION, U8(0x0A))
+#define IL_CAUSE_TRAP()                 SETG(REG_CAUSE_EXCEPTION, U8(0x0D))
+
+static RzILOpEffect *mips_il_break(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// HW breakpoint
+	NOT_IMPLEMENTED;
+}
+
+static RzILOpEffect *mips_il_deret(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Debug Exception Return
+	// PC = DEPC
+	NOT_IMPLEMENTED;
+}
+
+static RzILOpEffect *mips_il_eret(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Exception Return
+	NOT_IMPLEMENTED;
+}
+
+static RzILOpEffect *mips_il_eretnc(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Exception Return No Clear
+	NOT_IMPLEMENTED;
+}
+
+static RzILOpEffect *mips_il_mfc0(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Move from Coprocessor 0
+	NOT_IMPLEMENTED;
+}
+
+static RzILOpEffect *mips_il_mfhc0(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Move from High Coprocessor 0
+	NOT_IMPLEMENTED;
+}
+
+static RzILOpEffect *mips_il_mtc0(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Move to Coprocessor 0
+	NOT_IMPLEMENTED;
+}
+
+static RzILOpEffect *mips_il_mthc0(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Move to High Coprocessor 0
+	NOT_IMPLEMENTED;
+}
+
+static RzILOpEffect *mips_il_rdhwr(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Read Hardware Register
+	NOT_IMPLEMENTED;
+}
+
+static RzILOpEffect *mips_il_rdpgpr(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Read GPR from Previous Shadow Set
+	NOT_IMPLEMENTED;
+}
+
+static RzILOpEffect *mips_il_sdbbp(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Software Debug Breakpoint
+	NOT_IMPLEMENTED;
+}
+
+static RzILOpEffect *mips_il_syscall(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	NOT_IMPLEMENTED;
+}
+
+static RzILOpEffect *mips_il_teq(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Trap if Equal
+	NOT_IMPLEMENTED;
+}
+
+static RzILOpEffect *mips_il_teqi(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Trap if Equal Immediate
+	NOT_IMPLEMENTED;
+}
+
+static RzILOpEffect *mips_il_tge(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Trap if Greater or Equal
+	NOT_IMPLEMENTED;
+}
+
+static RzILOpEffect *mips_il_tgei(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Trap if Greater or Equal Immediate Signed
+	NOT_IMPLEMENTED;
+}
+
+static RzILOpEffect *mips_il_tgeiu(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Trap if Greater or Equal Immediate Unsigned
+	NOT_IMPLEMENTED;
+}
+
+static RzILOpEffect *mips_il_tgeu(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Trap if Greater or Equal Unsigned
+	NOT_IMPLEMENTED;
+}
+
+static RzILOpEffect *mips_il_tlt(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Trap if Less Than
+	NOT_IMPLEMENTED;
+}
+
+static RzILOpEffect *mips_il_tlti(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Trap if Less Than Immediate Signed
+	NOT_IMPLEMENTED;
+}
+
+static RzILOpEffect *mips_il_tltiu(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Trap if Less Than Immediate Unsigned
+	NOT_IMPLEMENTED;
+}
+
+static RzILOpEffect *mips_il_tltu(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Trap if Less Than Unsigned
+	NOT_IMPLEMENTED;
+}
+
+static RzILOpEffect *mips_il_tne(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Trap if Not Equal
+	NOT_IMPLEMENTED;
+}
+
+static RzILOpEffect *mips_il_tnei(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Trap if Not Equal Immediate
+	NOT_IMPLEMENTED;
+}
+
+static RzILOpEffect *mips_il_wrpgpr(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Write to GPR in Previous Shadow Set
+	NOT_IMPLEMENTED;
+}

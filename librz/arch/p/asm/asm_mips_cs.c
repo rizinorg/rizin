@@ -20,7 +20,7 @@ static int mips_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		return 0;
 	}
 
-	if (!cs_mode_from_cpu(a->cpu, a->bits, a->big_endian, &mode)) {
+	if (!cs_mode_from_cpu(a->cpu, a->bits, a->big_endian, &mode, NULL)) {
 		rz_asm_op_set_asm(op, "invalid");
 		return -1;
 	}

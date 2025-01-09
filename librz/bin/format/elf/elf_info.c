@@ -272,7 +272,7 @@ static const struct mips_bits_translation mips_bits_translation_table[] = {
 };
 
 static const struct cpu_mips_translation gnu_mips_arch_translation_table32[] = {
-	{ EF_MIPS_ARCH_1, "mips3" }, // also used for generic mips, so we default to mips3 at 32 bits mode.
+	{ EF_MIPS_ARCH_1, "mips32" },
 	{ EF_MIPS_ARCH_2, "mips2" },
 	{ EF_MIPS_ARCH_3, "mips3" },
 	{ EF_MIPS_ARCH_4, "mips4" },
