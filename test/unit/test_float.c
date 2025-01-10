@@ -150,10 +150,10 @@ bool f32_ieee_sub_test(void) {
 
 	RzFloat *f3 = rz_float_new_from_f32(1.3f);
 	RzFloat *f4 = rz_float_new_from_f32(1.7f);
-	RzFloat *f5 = rz_float_new_from_f32(1.3f - 1.7f);
+	RzFloat *f5 = rz_float_new_from_f32((float)1.3 - (float)1.7);
 	RzFloat *f5_calc = rz_float_sub(f3, f4, RZ_FLOAT_RMODE_RNE);
 	mu_assert_true(is_equal_bv(f5->s, f5_calc->s), "test calculating bv value of 1.3f - 1.7f");
-	RzFloat *f6 = rz_float_new_from_f32(1.7f - 1.3f);
+	RzFloat *f6 = rz_float_new_from_f32((float)1.7 - (float)1.3);
 	RzFloat *f6_calc = rz_float_sub(f4, f3, RZ_FLOAT_RMODE_RNE);
 	mu_assert_true(is_equal_bv(f6->s, f6_calc->s), "test calculating bv value of 1.7f - 1.3f");
 
