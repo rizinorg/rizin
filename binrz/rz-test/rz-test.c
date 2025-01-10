@@ -190,6 +190,8 @@ int rz_test_main(int argc, const char **argv) {
 	st64 expect_succ = -1;
 	st64 expect_fail = -1;
 	int ret = 0;
+	char *cwd = NULL;
+	RzTestState state = { 0 };
 
 	if (!except_dir) {
 		RZ_LOG_ERROR("Fail to create RzPVector\n");
@@ -309,7 +311,7 @@ int rz_test_main(int argc, const char **argv) {
 		}
 	}
 
-	char *cwd = rz_sys_getdir();
+	cwd = rz_sys_getdir();
 	if (rz_test_dir) {
 		if (chdir(rz_test_dir) == -1) {
 			eprintf("Cannot find %s directory.\n", rz_test_dir);
@@ -339,7 +341,6 @@ int rz_test_main(int argc, const char **argv) {
 
 	rz_sys_setenv("TZ", "UTC");
 	ut64 time_start = rz_time_now_mono();
-	RzTestState state = { 0 };
 	// Avoid PATH search for each process launched
 	if (!rizin_cmd) {
 		rizin_cmd = rz_file_path(RIZIN_CMD_DEFAULT);
@@ -457,7 +458,6 @@ int rz_test_main(int argc, const char **argv) {
 		}
 	}
 
-	RZ_FREE(cwd);
 	uint32_t loaded_tests = rz_pvector_len(&state.db->tests);
 	printf("Loaded %u tests.\n", loaded_tests);
 	if (nothing) {
@@ -588,8 +588,6 @@ coast:
 	rz_pvector_clear(&state.results);
 	rz_pvector_clear(&state.completed_paths);
 	rz_test_test_database_free(state.db);
-	rz_th_lock_free(state.lock);
-	rz_th_cond_free(state.cond);
 	ht_sp_free(state.path_left);
 beach:
 	free(output_file);
@@ -597,6 +595,9 @@ beach:
 	free(rz_asm_cmd);
 	free(json_test_file);
 	free(fuzz_dir);
+	RZ_FREE(cwd);
+	rz_th_lock_free(state.lock);
+	rz_th_cond_free(state.cond);
 	rz_pvector_free(except_dir);
 #if __WINDOWS__
 	if (old_cp) {

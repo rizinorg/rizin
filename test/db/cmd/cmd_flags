@@ -728,3 +728,17 @@ EXPECT=<<EOF
 0x00000100 1 (🎈️)
 EOF
 RUN
+
+NAME=fO Fix #4829
+FILE==
+CMDS=<<EOF
+fO
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Wrong number of arguments passed to `fO`, see its help with `fO?`
+
+ERROR: Usage: fO <glob>   # Flag as ordinals (sym.* func.* method.*)
+EOF
+RUN

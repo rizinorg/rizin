@@ -196,6 +196,7 @@ RZ_API RZ_OWN RzBaseType *rz_base_type_clone(RZ_NULLABLE RZ_BORROW RzBaseType *b
 		return NULL;
 	}
 	if (!rz_base_type_clone_into(type, b)) {
+		rz_type_base_type_free(type);
 		return NULL;
 	}
 	return type;

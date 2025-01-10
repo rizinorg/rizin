@@ -60,12 +60,14 @@ module.exports = grammar({
         $.repeat_stmt,
         $.arged_stmt,
         $.macro_stmt,
-        $._tmp_stmt,
+        $.tmp_stmt,
         $._iter_stmt,
         $._pipe_stmt,
         $.grep_stmt,
         $.legacy_quoted_stmt,
       ),
+
+    tmp_stmt: ($) => prec.right(seq($._simple_stmt, repeat1($._tmp_stmt))),
 
     _tmp_stmt: ($) =>
       choice(
@@ -163,22 +165,22 @@ module.exports = grammar({
     iter_step_stmt: ($) => prec.right(1, seq($._simple_stmt, "@@s:", $.args)),
 
     // tmp changes statements
-    tmp_seek_stmt: ($) => prec.right(1, seq($._simple_stmt, "@ ", $.args)),
-    tmp_blksz_stmt: ($) => prec.right(1, seq($._simple_stmt, "@!", $.args)),
-    tmp_fromto_stmt: ($) => prec.right(1, seq($._simple_stmt, "@(", $.args, ")")),
-    tmp_arch_stmt: ($) => prec.right(1, seq($._simple_stmt, "@a:", $.arg)),
-    tmp_bits_stmt: ($) => prec.right(1, seq($._simple_stmt, "@b:", $.args)),
-    tmp_nthi_stmt: ($) => prec.right(1, seq($._simple_stmt, "@B:", $.arg)),
-    tmp_eval_stmt: ($) => prec.right(1, seq($._simple_stmt, "@e:", alias($.tmp_eval_args, $.args))),
-    tmp_fs_stmt: ($) => prec.right(1, seq($._simple_stmt, "@F:", $.arg)),
-    tmp_reli_stmt: ($) => prec.right(1, seq($._simple_stmt, "@i:", $.args)),
-    tmp_kuery_stmt: ($) => prec.right(1, seq($._simple_stmt, "@k:", $.arg)),
-    tmp_fd_stmt: ($) => prec.right(1, seq($._simple_stmt, "@o:", $.args)),
-    tmp_reg_stmt: ($) => prec.right(1, seq($._simple_stmt, "@r:", $.arg)),
-    tmp_file_stmt: ($) => prec.right(1, seq($._simple_stmt, "@f:", $.arg)),
-    tmp_string_stmt: ($) => prec.right(1, seq($._simple_stmt, "@s:", $.arg)),
-    tmp_value_stmt: ($) => prec.right(1, seq($._simple_stmt, "@v:", $.arg)),
-    tmp_hex_stmt: ($) => prec.right(1, seq($._simple_stmt, "@x:", $.arg)),
+    tmp_seek_stmt: ($) => prec.right(1, seq("@ ", $.args)),
+    tmp_blksz_stmt: ($) => prec.right(1, seq("@!", $.args)),
+    tmp_fromto_stmt: ($) => prec.right(1, seq("@(", $.args, ")")),
+    tmp_arch_stmt: ($) => prec.right(1, seq("@a:", $.arg)),
+    tmp_bits_stmt: ($) => prec.right(1, seq("@b:", $.args)),
+    tmp_nthi_stmt: ($) => prec.right(1, seq("@B:", $.arg)),
+    tmp_eval_stmt: ($) => prec.right(1, seq("@e:", alias($.tmp_eval_args, $.args))),
+    tmp_fs_stmt: ($) => prec.right(1, seq("@F:", $.arg)),
+    tmp_reli_stmt: ($) => prec.right(1, seq("@i:", $.args)),
+    tmp_kuery_stmt: ($) => prec.right(1, seq("@k:", $.arg)),
+    tmp_fd_stmt: ($) => prec.right(1, seq("@o:", $.args)),
+    tmp_reg_stmt: ($) => prec.right(1, seq("@r:", $.arg)),
+    tmp_file_stmt: ($) => prec.right(1, seq("@f:", $.arg)),
+    tmp_string_stmt: ($) => prec.right(1, seq("@s:", $.arg)),
+    tmp_value_stmt: ($) => prec.right(1, seq("@v:", $.arg)),
+    tmp_hex_stmt: ($) => prec.right(1, seq("@x:", $.arg)),
 
     // basic statements
     help_stmt: ($) =>

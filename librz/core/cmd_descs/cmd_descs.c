@@ -10996,7 +10996,6 @@ static const RzCmdDescArg flag_ordinals_args[] = {
 		.name = "glob",
 		.type = RZ_CMD_ARG_TYPE_STRING,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
 
 	},
 	{ 0 },
@@ -19070,7 +19069,7 @@ static const RzCmdDescDetail tmp_modifiers_details[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp tmp_modifiers_help = {
-	.summary = "'@' help, temporary modifiers, applied right-to-left",
+	.summary = "'@' help, temporary modifiers, applied left-to-right",
 	.usage = "<cmd> <@> <args> [<@> <args> ...]",
 	.options = "[?]",
 	.details = tmp_modifiers_details,

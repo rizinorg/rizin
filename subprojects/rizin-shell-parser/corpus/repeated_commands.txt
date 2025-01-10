@@ -9,9 +9,11 @@ One digit repeat statements
 (statements
   (repeat_stmt
     (number)
-    (arged_stmt (cmd_identifier)
-      (args (arg (arg_identifier))))))
-
+    (arged_stmt
+      (cmd_identifier)
+      (args
+        (arg
+          (arg_identifier))))))
 
 =========================
 Multiple digits repeat statements
@@ -24,9 +26,11 @@ Multiple digits repeat statements
 (statements
   (repeat_stmt
     (number)
-    (arged_stmt (cmd_identifier)
-      (args (arg (arg_identifier))))))
-
+    (arged_stmt
+      (cmd_identifier)
+      (args
+        (arg
+          (arg_identifier))))))
 
 =======================
 Repeat with redirection
@@ -40,11 +44,14 @@ Repeat with redirection
   (redirect_stmt
     (repeat_stmt
       (number)
-      (arged_stmt (cmd_identifier)
-	(args (arg (arg_identifier)))))
+      (arged_stmt
+        (cmd_identifier)
+        (args
+          (arg
+            (arg_identifier)))))
     (fdn_redirect_operator)
-    (arg (arg_identifier))))
-
+    (arg
+      (arg_identifier))))
 
 ====================
 Repeat with tmp seek
@@ -55,9 +62,15 @@ Repeat with tmp seek
 ---
 
 (statements
-  (tmp_seek_stmt
+  (tmp_stmt
     (repeat_stmt
       (number)
-      (arged_stmt (cmd_identifier)
-        (args (arg (arg_identifier)))))
-    (args (arg (arg_identifier)))))
+      (arged_stmt
+        (cmd_identifier)
+        (args
+          (arg
+            (arg_identifier)))))
+    (tmp_seek_stmt
+      (args
+        (arg
+          (arg_identifier))))))

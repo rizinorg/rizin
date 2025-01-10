@@ -237,7 +237,6 @@ commands:
     args:
       - name: glob
         type: RZ_CMD_ARG_TYPE_STRING
-        optional: true
   - name: fr
     cname: flag_rename
     summary: Rename flag

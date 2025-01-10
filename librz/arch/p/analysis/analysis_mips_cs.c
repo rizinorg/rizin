@@ -6,7 +6,6 @@
 #include <rz_lib.h>
 #include <mips/mips_internal.h>
 
-static ut64 t9_pre = UT64_MAX;
 // http://www.mrc.uidaho.edu/mrc/people/jff/digital/MIPSir.html
 
 #define OPERAND(x)  insn->detail->mips.operands[x]
@@ -125,11 +124,13 @@ static int parse_reg_name(RzRegItem *reg, csh handle, cs_insn *insn, int reg_num
 
 typedef struct {
 	RzRegItem reg;
+	ut64 t9_pre;
 } MIPSContext;
 
 static bool mips_init(void **user) {
 	MIPSContext *ctx = RZ_NEW0(MIPSContext);
 	rz_return_val_if_fail(ctx, false);
+	ctx->t9_pre = UT64_MAX;
 	*user = ctx;
 	return true;
 }
@@ -211,7 +212,9 @@ static void set_opdir(RzAnalysisOp *op) {
 	}
 }
 
-static int analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
+static int mips_analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
+	MIPSContext *ctx = (MIPSContext *)analysis->plugin_data;
+
 	int n = 0, opsize = -1;
 	csh hndl = 0;
 	cs_insn *insn = NULL;
@@ -283,10 +286,10 @@ static int analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const u
 			if (OPERAND(1).mem.base == MIPS_REG_GP) {
 				op->ptr = analysis->gp + OPERAND(1).mem.disp;
 				if (REGID(0) == MIPS_REG_T9) {
-					t9_pre = op->ptr;
+					ctx->t9_pre = op->ptr;
 				}
 			} else if (REGID(0) == MIPS_REG_T9) {
-				t9_pre = UT64_MAX;
+				ctx->t9_pre = UT64_MAX;
 			}
 #else
 			if (OPERAND(1).mem.base == MIPS_REG_GP ||
@@ -294,11 +297,11 @@ static int analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const u
 				op->ptr = analysis->gp + OPERAND(1).mem.disp;
 				if (REGID(0) == MIPS_REG_T9 ||
 					REGID(0) == MIPS_REG_T9_64) {
-					t9_pre = op->ptr;
+					ctx->t9_pre = op->ptr;
 				}
 			} else if (REGID(0) == MIPS_REG_T9 ||
 				REGID(0) == MIPS_REG_T9_64) {
-				t9_pre = UT64_MAX;
+				ctx->t9_pre = UT64_MAX;
 			}
 #endif
 			break;
@@ -344,15 +347,15 @@ static int analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const u
 		op->type = RZ_ANALYSIS_OP_TYPE_UCALL;
 #if CS_NEXT_VERSION < 6
 		if (REGID(0) == MIPS_REG_25) {
-			op->jump = t9_pre;
-			t9_pre = UT64_MAX;
+			op->jump = ctx->t9_pre;
+			ctx->t9_pre = UT64_MAX;
 			op->type = RZ_ANALYSIS_OP_TYPE_RCALL;
 		}
 #else
 		if (REGID(0) == MIPS_REG_T9 ||
 			REGID(0) == MIPS_REG_T9_64) {
-			op->jump = t9_pre;
-			t9_pre = UT64_MAX;
+			op->jump = ctx->t9_pre;
+			ctx->t9_pre = UT64_MAX;
 			op->type = RZ_ANALYSIS_OP_TYPE_RCALL;
 		}
 #endif
@@ -428,7 +431,7 @@ static int analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const u
 		op->sign = (insn->id == MIPS_INS_ADDI || insn->id == MIPS_INS_ADD || insn->id == MIPS_INS_DADD);
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		if (REGID(0) == MIPS_REG_T9) {
-			t9_pre += IMM(2);
+			ctx->t9_pre += IMM(2);
 		}
 		if (REGID(0) == MIPS_REG_SP) {
 			op->stackop = RZ_ANALYSIS_STACK_INC;
@@ -770,7 +773,7 @@ static int analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const u
 		// register is $ra, so jmp is a return
 		if (insn->detail->mips.operands[0].reg == MIPS_REG_RA) {
 			op->type = RZ_ANALYSIS_OP_TYPE_RET;
-			t9_pre = UT64_MAX;
+			ctx->t9_pre = UT64_MAX;
 		}
 #if CS_NEXT_VERSION < 6
 		if (REGID(0) == MIPS_REG_25) {
@@ -778,8 +781,8 @@ static int analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const u
 		if (REGID(0) == MIPS_REG_T9 ||
 			REGID(0) == MIPS_REG_T9_64) {
 #endif
-			op->jump = t9_pre;
-			t9_pre = UT64_MAX;
+			op->jump = ctx->t9_pre;
+			ctx->t9_pre = UT64_MAX;
 		}
 
 		break;
@@ -875,7 +878,7 @@ beach:
 	return opsize;
 }
 
-static char *get_reg_profile(RzAnalysis *analysis) {
+static char *mips_get_reg_profile(RzAnalysis *analysis) {
 	const char *p = NULL;
 	switch (analysis->bits) {
 	default:
@@ -981,7 +984,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 	return rz_str_dup(p);
 }
 
-static int archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
+static int mips_archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
 	switch (query) {
 	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
 		// mips-16, micromips, nanomips uses 16-bits
@@ -1000,7 +1003,7 @@ static int archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
 	}
 }
 
-static RzList /*<RzSearchKeyword *>*/ *analysis_preludes(RzAnalysis *analysis) {
+static RzList /*<RzSearchKeyword *>*/ *mips_analysis_preludes(RzAnalysis *analysis) {
 #define KW(d, ds, m, ms) rz_list_append(l, rz_search_keyword_new((const ut8 *)d, ds, (const ut8 *)m, ms, NULL))
 	RzList *l = rz_list_newf((RzListFree)rz_search_keyword_free);
 	KW("\x27\xbd\x00", 3, NULL, 0);
@@ -1021,11 +1024,11 @@ RzAnalysisPlugin rz_analysis_plugin_mips_cs = {
 	.license = "BSD",
 	.esil = true,
 	.arch = "mips",
-	.get_reg_profile = get_reg_profile,
-	.archinfo = archinfo,
-	.preludes = analysis_preludes,
+	.get_reg_profile = mips_get_reg_profile,
+	.archinfo = mips_archinfo,
+	.preludes = mips_analysis_preludes,
 	.bits = 16 | 32 | 64,
-	.op = &analyze_op,
+	.op = &mips_analyze_op,
 	.init = mips_init,
 	.fini = mips_fini,
 };

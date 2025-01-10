@@ -281,7 +281,7 @@ commands:
   - name: "@"
     cname: tmp_modifiers
     options: "[?]"
-    summary: "'@' help, temporary modifiers, applied right-to-left"
+    summary: "'@' help, temporary modifiers, applied left-to-right"
     type: RZ_CMD_DESC_TYPE_FAKE
     usage: "<cmd> <@> <args> [<@> <args> ...]"
     details:
