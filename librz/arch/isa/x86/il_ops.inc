@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2023 Dhruv Maroo <dhruvmaru007@gmail.com>
+// SPDX-FileCopyrightText: 2024 tushar3q34 <tushar3q34@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 /**
@@ -11,7 +12,7 @@
  */
 
 #include "common.h"
-#include "x86/x86_il.h"
+#include "x86_il.h"
 #include <rz_il/rz_il_opbuilder_begin.h>
 
 /**
@@ -44,11 +45,11 @@ IL_LIFTER(unimpl) {
  * 37 | Invalid | Valid
  */
 IL_LIFTER(aaa) {
-	RzILOpPure *low_al = LOGAND(x86_il_get_reg(X86_REG_AL), U8(0x0f));
+	RzILOpPure *low_al = LOGAND(x86_il_get_reg(ZYDIS_REGISTER_AL), U8(0x0f));
 	RzILOpPure *al_ovf = UGT(low_al, U8(9));
 	RzILOpPure *cond = OR(al_ovf, VARG(EFLAGS(AF)));
 
-	RzILOpEffect *set_ax = x86_il_set_reg(X86_REG_AX, ADD(x86_il_get_reg(X86_REG_AX), U16(0x106)));
+	RzILOpEffect *set_ax = x86_il_set_reg(ZYDIS_REGISTER_AX, ADD(x86_il_get_reg(ZYDIS_REGISTER_AX), U16(0x106)));
 	RzILOpEffect *set_af = SETG(EFLAGS(AF), IL_TRUE);
 	RzILOpEffect *set_cf = SETG(EFLAGS(CF), IL_TRUE);
 	RzILOpEffect *true_cond = SEQ3(set_ax, set_af, set_cf);
@@ -58,7 +59,7 @@ IL_LIFTER(aaa) {
 	RzILOpEffect *false_cond = SEQ2(set_af, set_cf);
 
 	RzILOpEffect *final_cond = BRANCH(cond, true_cond, false_cond);
-	RzILOpEffect *set_al = x86_il_set_reg(X86_REG_AL, LOGAND(x86_il_get_reg(X86_REG_AL), U8(0x0f)));
+	RzILOpEffect *set_al = x86_il_set_reg(ZYDIS_REGISTER_AL, LOGAND(x86_il_get_reg(ZYDIS_REGISTER_AL), U8(0x0f)));
 
 	return SEQ2(final_cond, set_al);
 }
@@ -70,11 +71,11 @@ IL_LIFTER(aaa) {
  */
 IL_LIFTER(aad) {
 
-	RzILOpEffect *temp_al = SETL("temp_al", x86_il_get_reg(X86_REG_AL));
-	RzILOpEffect *temp_ah = SETL("temp_ah", x86_il_get_reg(X86_REG_AH));
+	RzILOpEffect *temp_al = SETL("temp_al", x86_il_get_reg(ZYDIS_REGISTER_AL));
+	RzILOpEffect *temp_ah = SETL("temp_ah", x86_il_get_reg(ZYDIS_REGISTER_AH));
 
 	RzILOpPure *imm;
-	if (ins->structure->op_count == 0) {
+	if (ins->structure->operand_count_visible == 0) {
 		// Use base 10 if none specified
 		imm = SN(8, 0x0a);
 	} else {
@@ -87,7 +88,7 @@ IL_LIFTER(aad) {
 
 	RzILOpEffect *set_flags = x86_il_set_result_flags(VARL("adjusted"));
 
-	return SEQ6(temp_al, temp_ah, adjusted_set, x86_il_set_reg(X86_REG_AL, VARL("adjusted")), x86_il_set_reg(X86_REG_AH, U8(0)), set_flags);
+	return SEQ6(temp_al, temp_ah, adjusted_set, x86_il_set_reg(ZYDIS_REGISTER_AL, VARL("adjusted")), x86_il_set_reg(ZYDIS_REGISTER_AH, U8(0)), set_flags);
 }
 
 /**
@@ -97,18 +98,18 @@ IL_LIFTER(aad) {
  */
 IL_LIFTER(aam) {
 
-	RzILOpEffect *temp_al = SETL("temp_al", x86_il_get_reg(X86_REG_AL));
+	RzILOpEffect *temp_al = SETL("temp_al", x86_il_get_reg(ZYDIS_REGISTER_AL));
 
 	RzILOpPure *imm;
-	if (ins->structure->op_count == 0) {
+	if (ins->structure->operand_count_visible == 0) {
 		imm = SN(8, 0xa);
 	} else {
 		imm = x86_il_get_op(0);
 	}
 
-	RzILOpEffect *ah = x86_il_set_reg(X86_REG_AH, DIV(VARL("temp_al"), imm));
+	RzILOpEffect *ah = x86_il_set_reg(ZYDIS_REGISTER_AH, DIV(VARL("temp_al"), imm));
 	RzILOpEffect *adjusted = SETL("adjusted", MOD(VARL("temp_al"), DUP(imm)));
-	RzILOpEffect *al = x86_il_set_reg(X86_REG_AL, VARL("adjusted"));
+	RzILOpEffect *al = x86_il_set_reg(ZYDIS_REGISTER_AL, VARL("adjusted"));
 	RzILOpEffect *set_flags = x86_il_set_result_flags(VARL("adjusted"));
 
 	return SEQ5(temp_al, ah, adjusted, al, set_flags);
@@ -121,12 +122,12 @@ IL_LIFTER(aam) {
  */
 IL_LIFTER(aas) {
 
-	RzILOpPure *low_al = LOGAND(x86_il_get_reg(X86_REG_AL), U8(0x0f));
+	RzILOpPure *low_al = LOGAND(x86_il_get_reg(ZYDIS_REGISTER_AL), U8(0x0f));
 	RzILOpPure *al_ovf = UGT(low_al, U8(9));
 	RzILOpPure *cond = OR(al_ovf, VARG(EFLAGS(AF)));
 
-	RzILOpEffect *set_ax = x86_il_set_reg(X86_REG_AX, SUB(x86_il_get_reg(X86_REG_AX), U16(0x6)));
-	RzILOpEffect *set_ah = x86_il_set_reg(X86_REG_AH, SUB(x86_il_get_reg(X86_REG_AH), U8(0x1)));
+	RzILOpEffect *set_ax = x86_il_set_reg(ZYDIS_REGISTER_AX, SUB(x86_il_get_reg(ZYDIS_REGISTER_AX), U16(0x6)));
+	RzILOpEffect *set_ah = x86_il_set_reg(ZYDIS_REGISTER_AH, SUB(x86_il_get_reg(ZYDIS_REGISTER_AH), U8(0x1)));
 	RzILOpEffect *set_af = SETG(EFLAGS(AF), IL_TRUE);
 	RzILOpEffect *set_cf = SETG(EFLAGS(CF), IL_TRUE);
 	RzILOpEffect *true_cond = SEQ4(set_ax, set_ah, set_af, set_cf);
@@ -136,7 +137,7 @@ IL_LIFTER(aas) {
 	RzILOpEffect *false_cond = SEQ2(set_af, set_cf);
 
 	RzILOpEffect *final_cond = BRANCH(cond, true_cond, false_cond);
-	RzILOpEffect *set_al = x86_il_set_reg(X86_REG_AL, LOGAND(x86_il_get_reg(X86_REG_AL), U8(0x0f)));
+	RzILOpEffect *set_al = x86_il_set_reg(ZYDIS_REGISTER_AL, LOGAND(x86_il_get_reg(ZYDIS_REGISTER_AL), U8(0x0f)));
 
 	return SEQ2(final_cond, set_al);
 }
@@ -157,7 +158,7 @@ IL_LIFTER(adc) {
 	RzILOpEffect *op2 = SETL("op2", x86_il_get_op(1));
 	RzILOpPure *cf = VARG(EFLAGS(CF));
 
-	RzILOpEffect *sum = SETL("sum", ADD(ADD(VARL("op1"), VARL("op2")), BOOL_TO_BV(cf, ins->structure->operands[0].size * BITS_PER_BYTE)));
+	RzILOpEffect *sum = SETL("sum", ADD(ADD(VARL("op1"), VARL("op2")), BOOL_TO_BV(cf, ins->operands[0].size * BITS_PER_BYTE)));
 	RzILOpEffect *set_dest = x86_il_set_op(0, VARL("sum"));
 	RzILOpEffect *set_res_flags = x86_il_set_result_flags(VARL("sum"));
 	RzILOpEffect *set_arith_flags = x86_il_set_arithmetic_flags(VARL("sum"), VARL("op1"), VARL("op2"), true);
@@ -222,7 +223,7 @@ IL_LIFTER(bsf) {
 
 	RzILOpEffect *set_zf = SETG(EFLAGS(ZF), IL_FALSE);
 
-	uint8_t op_size = ins->structure->operands[0].size * BITS_PER_BYTE;
+	uint8_t op_size = ins->operands[0].size * BITS_PER_BYTE;
 	RzILOpEffect *tmp_var = SETL("tmpvar", UN(op_size, 0));
 
 	RzILOpEffect *calc = REPEAT(INV(LSB(SHIFTR0(src, VARL("tmpvar")))), SETL("tmpvar", ADD(VARL("tmpvar"), UN(op_size, 1))));
@@ -241,7 +242,7 @@ IL_LIFTER(bsf) {
 IL_LIFTER(cbw) {
 	/* The UNSIGNED(16, ...) cast is useless in case of 32 bits,
 	but removing it will cause issues for 16-bit */
-	return x86_il_set_reg(X86_REG_AX, UNSIGNED(16, x86_il_get_reg(X86_REG_AL)));
+	return x86_il_set_reg(ZYDIS_REGISTER_AX, UNSIGNED(16, x86_il_get_reg(ZYDIS_REGISTER_AL)));
 }
 
 /**
@@ -305,14 +306,14 @@ IL_LIFTER(cmp) {
 
 RzILOpEffect *x86_il_cmp_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis, ut8 size) {
 	if (analysis->bits == 64) {
-		X86Reg mem_reg1 = X86_REG_RSI;
-		X86Reg mem_reg2 = X86_REG_RDI;
+		X86Reg mem_reg1 = ZYDIS_REGISTER_RSI;
+		X86Reg mem_reg2 = ZYDIS_REGISTER_RDI;
 		ut8 mem_size = 64;
 
 		/* Address override prefix: 67H */
-		if (ins->structure->prefix[3]) {
-			mem_reg1 = X86_REG_ESI;
-			mem_reg2 = X86_REG_EDI;
+		if (ins->structure->raw.prefixes[3].value) {
+			mem_reg1 = ZYDIS_REGISTER_ESI;
+			mem_reg2 = ZYDIS_REGISTER_EDI;
 			mem_size = 32;
 		}
 
@@ -329,30 +330,30 @@ RzILOpEffect *x86_il_cmp_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analys
 
 		return SEQ6(src1, src2, temp, arith_flags, res_flags, BRANCH(VARG(EFLAGS(DF)), decrement, increment));
 	} else {
-		X86Reg mem_reg1 = X86_REG_ESI;
-		X86Reg mem_reg2 = X86_REG_EDI;
+		X86Reg mem_reg1 = ZYDIS_REGISTER_ESI;
+		X86Reg mem_reg2 = ZYDIS_REGISTER_EDI;
 		ut8 mem_size = 32;
 
 		/* Address override prefix: 67H */
-		if (analysis->bits == 16 || ins->structure->prefix[3]) {
-			mem_reg1 = X86_REG_SI;
-			mem_reg2 = X86_REG_DI;
+		if (analysis->bits == 16 || ins->structure->raw.prefixes[3].value) {
+			mem_reg1 = ZYDIS_REGISTER_SI;
+			mem_reg2 = ZYDIS_REGISTER_DI;
 			mem_size = 16;
 		}
 
 		X86Mem src_mem1 = {
 			.base = mem_reg1,
 			.disp = 0,
-			.index = X86_REG_INVALID,
+			.index = ZYDIS_REGISTER_NONE,
 			.scale = 1,
-			.segment = X86_REG_DS
+			.segment = ZYDIS_REGISTER_DS
 		};
 		X86Mem src_mem2 = {
 			.base = mem_reg2,
 			.disp = 0,
-			.index = X86_REG_INVALID,
+			.index = ZYDIS_REGISTER_NONE,
 			.scale = 1,
-			.segment = X86_REG_ES
+			.segment = ZYDIS_REGISTER_ES
 		};
 
 		/* No need for casting memaddr here since the casting will be done while calculating the segmented address */
@@ -372,63 +373,63 @@ RzILOpEffect *x86_il_cmp_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analys
 
 RzILOpPure *get_cmov_cond(X86InsMnem ins) {
 	switch (ins) {
-	case X86_INS_CMOVA:
-		/* Same as CMOVNBE */
-		/* CF = 0 and ZF = 0 */
-		return AND(INV(VARG(EFLAGS(CF))), INV(VARG(EFLAGS(ZF))));
-	case X86_INS_CMOVAE:
-		/* Same as CMOVNB, CMOVNC */
-		/* CF = 0 */
-		return INV(VARG(EFLAGS(CF)));
-	case X86_INS_CMOVB:
+	// case ZYDIS_MNEMONIC_CMOVA:
+	//	/* Same as CMOVNBE */
+	//	/* CF = 0 and ZF = 0 */
+	//	return AND(INV(VARG(EFLAGS(CF))), INV(VARG(EFLAGS(ZF))));
+	// case ZYDIS_MNEMONIC_CMOVAE:
+	//	/* Same as CMOVNB, CMOVNC */
+	//	/* CF = 0 */
+	//	return INV(VARG(EFLAGS(CF)));
+	case ZYDIS_MNEMONIC_CMOVB:
 		/* Same as CMOVC, CMOVNAE */
 		/* CF = 1 */
 		return VARG(EFLAGS(CF));
-	case X86_INS_CMOVBE:
-		/* Same as CMOVNA */
-		/* CF = 1 or ZF = 1*/
-		return OR(VARG(EFLAGS(CF)), VARG(EFLAGS(ZF)));
-	case X86_INS_CMOVE:
-		/* Same as CMOVZ */
-		/* ZF = 1 */
-		return VARG(EFLAGS(ZF));
-	case X86_INS_CMOVG:
-		/* Same as CMOVNLE */
-		/* ZF = 0 and SF = OF */
-		return AND(INV(VARG(EFLAGS(ZF))), INV(XOR(VARG(EFLAGS(SF)), VARG(EFLAGS(OF)))));
-	case X86_INS_CMOVGE:
-		/* Same CMOVNL */
-		/* SF = OF */
-		return INV(XOR(VARG(EFLAGS(SF)), VARG(EFLAGS(OF))));
-	case X86_INS_CMOVL:
+	// case ZYDIS_MNEMONIC_CMOVBE:
+	//	/* Same as CMOVNA */
+	//	/* CF = 1 or ZF = 1*/
+	//	return OR(VARG(EFLAGS(CF)), VARG(EFLAGS(ZF)));
+	// case ZYDIS_MNEMONIC_CMOVE:
+	//	/* Same as CMOVZ */
+	//	/* ZF = 1 */
+	//	return VARG(EFLAGS(ZF));
+	// case ZYDIS_MNEMONIC_CMOVG:
+	//	/* Same as CMOVNLE */
+	//	/* ZF = 0 and SF = OF */
+	//	return AND(INV(VARG(EFLAGS(ZF))), INV(XOR(VARG(EFLAGS(SF)), VARG(EFLAGS(OF)))));
+	// case ZYDIS_MNEMONIC_CMOVGE:
+	//	/* Same CMOVNL */
+	//	/* SF = OF */
+	//	return INV(XOR(VARG(EFLAGS(SF)), VARG(EFLAGS(OF))));
+	case ZYDIS_MNEMONIC_CMOVL:
 		/* SF != OF */
 		return XOR(VARG(EFLAGS(SF)), VARG(EFLAGS(OF)));
-	case X86_INS_CMOVLE:
+	case ZYDIS_MNEMONIC_CMOVLE:
 		/* Same as CMOVNG */
 		/* ZF = 1 or SF != OF */
 		return OR(VARG(EFLAGS(ZF)), XOR(VARG(EFLAGS(SF)), VARG(EFLAGS(OF))));
-	case X86_INS_CMOVNE:
-		/* Same as CMOVNZ */
-		/* ZF = 0 */
-		return INV(VARG(EFLAGS(ZF)));
-	case X86_INS_CMOVNO:
+	// case ZYDIS_MNEMONIC_CMOVNE:
+	//	/* Same as CMOVNZ */
+	//	/* ZF = 0 */
+	//	return INV(VARG(EFLAGS(ZF)));
+	case ZYDIS_MNEMONIC_CMOVNO:
 		/* OF = 0 */
 		return INV(VARG(EFLAGS(OF)));
-	case X86_INS_CMOVNP:
+	case ZYDIS_MNEMONIC_CMOVNP:
 		/* Same as CMOVPO */
 		/* PF = 0 */
 		return INV(VARG(EFLAGS(PF)));
-	case X86_INS_CMOVNS:
+	case ZYDIS_MNEMONIC_CMOVNS:
 		/* SF = 0 */
 		return INV(VARG(EFLAGS(SF)));
-	case X86_INS_CMOVO:
+	case ZYDIS_MNEMONIC_CMOVO:
 		/* OF = 1 */
 		return VARG(EFLAGS(OF));
-	case X86_INS_CMOVP:
+	case ZYDIS_MNEMONIC_CMOVP:
 		/* Same as CMOVPE */
 		/* PF = 1 */
 		return VARG(EFLAGS(PF));
-	case X86_INS_CMOVS:
+	case ZYDIS_MNEMONIC_CMOVS:
 		/* SF = 1 */
 		return VARG(EFLAGS(SF));
 	default:
@@ -493,28 +494,28 @@ IL_LIFTER(cmpsq) {
  */
 IL_LIFTER(daa) {
 
-	RzILOpEffect *old_al = SETL("old_al", x86_il_get_reg(X86_REG_AL));
+	RzILOpEffect *old_al = SETL("old_al", x86_il_get_reg(ZYDIS_REGISTER_AL));
 	RzILOpEffect *old_cf = SETL("old_cf", VARG(EFLAGS(CF)));
 
 	RzILOpEffect *set_cf = SETL(EFLAGS(CF), IL_FALSE);
 
-	RzILOpBool *cond = UGT(LOGAND(x86_il_get_reg(X86_REG_AL), UN(8, 0xf)), UN(8, 9));
+	RzILOpBool *cond = UGT(LOGAND(x86_il_get_reg(ZYDIS_REGISTER_AL), UN(8, 0xf)), UN(8, 9));
 	cond = OR(cond, VARG(EFLAGS(AF)));
 
-	RzILOpEffect *set_al = SETL("_al", x86_il_get_reg(X86_REG_AL));
+	RzILOpEffect *set_al = SETL("_al", x86_il_get_reg(ZYDIS_REGISTER_AL));
 	RzILOpEffect *sum = SETL("_sum", ADD(VARL("_al"), UN(8, 6)));
-	RzILOpEffect *true_cond = SEQ3(set_al, sum, x86_il_set_reg(X86_REG_AL, VARL("_sum")));
+	RzILOpEffect *true_cond = SEQ3(set_al, sum, x86_il_set_reg(ZYDIS_REGISTER_AL, VARL("_sum")));
 	RzILOpPure *new_cf = OR(VARL("old_cf"), x86_il_is_sub_borrow(VARL("_sum"), VARL("_al"), UN(8, 6)));
 
 	RzILOpEffect *ret = SEQ4(old_al, old_cf, set_cf, BRANCH(cond, SEQ3(true_cond, SETG(EFLAGS(CF), new_cf), SETG(EFLAGS(AF), IL_TRUE)), SETG(EFLAGS(AF), IL_FALSE)));
 
 	cond = OR(UGT(VARL("old_al"), UN(8, 0x99)), VARL("old_cf"));
 
-	set_al = SETL("_al", x86_il_get_reg(X86_REG_AL));
+	set_al = SETL("_al", x86_il_get_reg(ZYDIS_REGISTER_AL));
 	sum = SETL("_sum", ADD(VARL("_al"), UN(8, 0x60)));
-	true_cond = SEQ3(set_al, sum, x86_il_set_reg(X86_REG_AL, VARL("_sum")));
+	true_cond = SEQ3(set_al, sum, x86_il_set_reg(ZYDIS_REGISTER_AL, VARL("_sum")));
 
-	ret = SEQ3(ret, BRANCH(cond, SEQ2(true_cond, SETG(EFLAGS(CF), IL_TRUE)), SETG(EFLAGS(CF), IL_FALSE)), x86_il_set_result_flags(x86_il_get_reg(X86_REG_AL)));
+	ret = SEQ3(ret, BRANCH(cond, SEQ2(true_cond, SETG(EFLAGS(CF), IL_TRUE)), SETG(EFLAGS(CF), IL_FALSE)), x86_il_set_result_flags(x86_il_get_reg(ZYDIS_REGISTER_AL)));
 
 	return ret;
 }
@@ -526,28 +527,28 @@ IL_LIFTER(daa) {
  */
 IL_LIFTER(das) {
 
-	RzILOpEffect *old_al = SETL("old_al", x86_il_get_reg(X86_REG_AL));
+	RzILOpEffect *old_al = SETL("old_al", x86_il_get_reg(ZYDIS_REGISTER_AL));
 	RzILOpEffect *old_cf = SETL("old_cf", VARG(EFLAGS(CF)));
 
 	RzILOpEffect *set_cf = SETL(EFLAGS(CF), IL_FALSE);
 
-	RzILOpBool *cond = UGT(LOGAND(x86_il_get_reg(X86_REG_AL), UN(8, 0xf)), UN(8, 9));
+	RzILOpBool *cond = UGT(LOGAND(x86_il_get_reg(ZYDIS_REGISTER_AL), UN(8, 0xf)), UN(8, 9));
 	cond = OR(cond, VARG(EFLAGS(AF)));
 
-	RzILOpEffect *set_al = SETL("_al", x86_il_get_reg(X86_REG_AL));
+	RzILOpEffect *set_al = SETL("_al", x86_il_get_reg(ZYDIS_REGISTER_AL));
 	RzILOpEffect *sum = SETL("_sum", SUB(VARL("_al"), UN(8, 6)));
-	RzILOpEffect *true_cond = SEQ3(set_al, sum, x86_il_set_reg(X86_REG_AL, VARL("_sum")));
+	RzILOpEffect *true_cond = SEQ3(set_al, sum, x86_il_set_reg(ZYDIS_REGISTER_AL, VARL("_sum")));
 	RzILOpPure *new_cf = OR(VARL("old_cf"), x86_il_is_sub_borrow(VARL("_sum"), VARL("_al"), UN(8, 6)));
 
 	RzILOpEffect *ret = SEQ4(old_al, old_cf, set_cf, BRANCH(cond, SEQ3(true_cond, SETG(EFLAGS(CF), new_cf), SETG(EFLAGS(AF), IL_TRUE)), SETG(EFLAGS(AF), IL_FALSE)));
 
 	cond = OR(UGT(VARL("old_al"), UN(8, 0x99)), VARL("old_cf"));
 
-	set_al = SETL("_al", x86_il_get_reg(X86_REG_AL));
+	set_al = SETL("_al", x86_il_get_reg(ZYDIS_REGISTER_AL));
 	sum = SETL("_sum", SUB(VARL("_al"), UN(8, 0x60)));
-	true_cond = SEQ3(set_al, sum, x86_il_set_reg(X86_REG_AL, VARL("_sum")));
+	true_cond = SEQ3(set_al, sum, x86_il_set_reg(ZYDIS_REGISTER_AL, VARL("_sum")));
 
-	ret = SEQ3(ret, BRANCH(cond, SEQ2(true_cond, SETG(EFLAGS(CF), IL_TRUE)), NOP()), x86_il_set_result_flags(x86_il_get_reg(X86_REG_AL)));
+	ret = SEQ3(ret, BRANCH(cond, SEQ2(true_cond, SETG(EFLAGS(CF), IL_TRUE)), NOP()), x86_il_set_result_flags(x86_il_get_reg(ZYDIS_REGISTER_AL)));
 
 	return ret;
 }
@@ -559,12 +560,12 @@ IL_LIFTER(das) {
  */
 IL_LIFTER(dec) {
 	RzILOpEffect *op = SETL("_op", x86_il_get_op(0));
-	RzILOpEffect *dec = SETL("_dec", SUB(VARL("_op"), UN(ins->structure->operands[0].size * BITS_PER_BYTE, 1)));
+	RzILOpEffect *dec = SETL("_dec", SUB(VARL("_op"), UN(ins->operands[0].size * BITS_PER_BYTE, 1)));
 
 	RzILOpEffect *set_result = x86_il_set_op(0, VARL("_dec"));
 	RzILOpEffect *res_flags = x86_il_set_result_flags(VARL("_dec"));
 
-	RzILOpEffect *arith_flags = x86_il_set_arithmetic_flags_except_cf(VARL("_dec"), VARL("_op"), UN(ins->structure->operands[0].size * BITS_PER_BYTE, 1), false);
+	RzILOpEffect *arith_flags = x86_il_set_arithmetic_flags_except_cf(VARL("_dec"), VARL("_op"), UN(ins->operands[0].size * BITS_PER_BYTE, 1), false);
 
 	return SEQ5(op, dec, set_result, res_flags, arith_flags);
 }
@@ -577,47 +578,47 @@ IL_LIFTER(dec) {
 IL_LIFTER(div) {
 	RzILOpEffect *ret = NULL;
 
-	switch (ins->structure->operands[0].size) {
+	switch (ins->operands[0].size) {
 	case 1: {
 		/* Word/Byte operation */
-		RzILOpEffect *ax = SETL("_ax", x86_il_get_reg(X86_REG_AX));
+		RzILOpEffect *ax = SETL("_ax", x86_il_get_reg(ZYDIS_REGISTER_AX));
 		RzILOpEffect *temp = SETL("_temp", UNSIGNED(8, DIV(VARL("_ax"), VARL("_src"))));
 
 		RzILOpPure *cond = UGT(VARL("_temp"), UN(8, 0xff));
-		RzILOpEffect *else_cond = SEQ2(x86_il_set_reg(X86_REG_AL, VARL("_temp")), x86_il_set_reg(X86_REG_AH, MOD(VARL("_ax"), VARL("_src"))));
+		RzILOpEffect *else_cond = SEQ2(x86_il_set_reg(ZYDIS_REGISTER_AL, VARL("_temp")), x86_il_set_reg(ZYDIS_REGISTER_AH, MOD(VARL("_ax"), VARL("_src"))));
 
 		ret = SEQ3(ax, temp, BRANCH(cond, NULL, else_cond));
 		break;
 	}
 	case 2: {
 		/* Doubleword/Word operation */
-		RzILOpEffect *dxax = SETL("_dxax", LOGOR(SHIFTL0(UNSIGNED(32, x86_il_get_reg(X86_REG_DX)), UN(8, 16)), UNSIGNED(32, x86_il_get_reg(X86_REG_AX))));
+		RzILOpEffect *dxax = SETL("_dxax", LOGOR(SHIFTL0(UNSIGNED(32, x86_il_get_reg(ZYDIS_REGISTER_DX)), UN(8, 16)), UNSIGNED(32, x86_il_get_reg(ZYDIS_REGISTER_AX))));
 		RzILOpEffect *temp = SETL("_temp", UNSIGNED(16, DIV(VARL("_dxax"), VARL("_src"))));
 
 		RzILOpPure *cond = UGT(VARL("_temp"), UN(16, 0xffff));
-		RzILOpEffect *else_cond = SEQ2(x86_il_set_reg(X86_REG_AX, VARL("_temp")), x86_il_set_reg(X86_REG_DX, MOD(VARL("_dxax"), VARL("_src"))));
+		RzILOpEffect *else_cond = SEQ2(x86_il_set_reg(ZYDIS_REGISTER_AX, VARL("_temp")), x86_il_set_reg(ZYDIS_REGISTER_DX, MOD(VARL("_dxax"), VARL("_src"))));
 
 		ret = SEQ3(dxax, temp, BRANCH(cond, NULL, else_cond));
 		break;
 	}
 	case 4: {
 		/* Quadword/Doubleword operation */
-		RzILOpEffect *edxeax = SETL("_edxeax", LOGOR(SHIFTL0(UNSIGNED(64, x86_il_get_reg(X86_REG_EDX)), UN(8, 32)), UNSIGNED(64, x86_il_get_reg(X86_REG_EAX))));
+		RzILOpEffect *edxeax = SETL("_edxeax", LOGOR(SHIFTL0(UNSIGNED(64, x86_il_get_reg(ZYDIS_REGISTER_EDX)), UN(8, 32)), UNSIGNED(64, x86_il_get_reg(ZYDIS_REGISTER_EAX))));
 		RzILOpEffect *temp = SETL("_temp", UNSIGNED(32, DIV(VARL("_edxeax"), VARL("_src"))));
 
 		RzILOpPure *cond = UGT(VARL("_temp"), UN(32, 0xffffffffULL));
-		RzILOpEffect *else_cond = SEQ2(x86_il_set_reg(X86_REG_AX, VARL("_temp")), x86_il_set_reg(X86_REG_DX, MOD(VARL("_edxeax"), VARL("_src"))));
+		RzILOpEffect *else_cond = SEQ2(x86_il_set_reg(ZYDIS_REGISTER_AX, VARL("_temp")), x86_il_set_reg(ZYDIS_REGISTER_DX, MOD(VARL("_edxeax"), VARL("_src"))));
 
 		ret = SEQ3(edxeax, temp, BRANCH(cond, NULL, else_cond));
 		break;
 	}
 	case 8: {
 		/* Doublequadword/Quadword operation */
-		RzILOpEffect *rdxrax = SETL("_rdxrax", LOGOR(SHIFTL0(UNSIGNED(128, x86_il_get_reg(X86_REG_RDX)), UN(8, 64)), UNSIGNED(128, x86_il_get_reg(X86_REG_RAX))));
+		RzILOpEffect *rdxrax = SETL("_rdxrax", LOGOR(SHIFTL0(UNSIGNED(128, x86_il_get_reg(ZYDIS_REGISTER_RDX)), UN(8, 64)), UNSIGNED(128, x86_il_get_reg(ZYDIS_REGISTER_RAX))));
 		RzILOpEffect *temp = SETL("_temp", UNSIGNED(64, DIV(VARL("_rdxrax"), VARL("_src"))));
 
 		RzILOpPure *cond = UGT(VARL("_temp"), UN(64, 0xffffffffffffffffULL));
-		RzILOpEffect *else_cond = SEQ2(x86_il_set_reg(X86_REG_AX, VARL("_temp")), x86_il_set_reg(X86_REG_DX, MOD(VARL("_rdxrax"), VARL("_src"))));
+		RzILOpEffect *else_cond = SEQ2(x86_il_set_reg(ZYDIS_REGISTER_AX, VARL("_temp")), x86_il_set_reg(ZYDIS_REGISTER_DX, MOD(VARL("_rdxrax"), VARL("_src"))));
 
 		ret = SEQ3(rdxrax, temp, BRANCH(cond, NULL, else_cond));
 		break;
@@ -628,7 +629,7 @@ IL_LIFTER(div) {
 	}
 
 	/* We need the divisor to be as wide as the operand, since the sizes of the dividend and the divisor need to match */
-	RzILOpEffect *op = SETL("_src", UNSIGNED(ins->structure->operands[0].size * 2 * BITS_PER_BYTE, x86_il_get_op(0)));
+	RzILOpEffect *op = SETL("_src", UNSIGNED(ins->operands[0].size * 2 * BITS_PER_BYTE, x86_il_get_op(0)));
 
 	/* Check if the operand is zero, return NULL if it is (to avoid divide by zero) */
 	return SEQ2(op, BRANCH(IS_ZERO(VARL("_src")), NULL, ret));
@@ -663,47 +664,47 @@ void label_halt(RzILVM *vm, RzILOpEffect *op) {
 IL_LIFTER(idiv) {
 	RzILOpEffect *ret = NULL;
 
-	switch (ins->structure->operands[0].size) {
+	switch (ins->operands[0].size) {
 	case 1: {
 		/* Word/Byte operation */
-		RzILOpEffect *ax = SETL("_ax", x86_il_get_reg(X86_REG_AX));
+		RzILOpEffect *ax = SETL("_ax", x86_il_get_reg(ZYDIS_REGISTER_AX));
 		RzILOpEffect *temp = SETL("_temp", UNSIGNED(8, SDIV(VARL("_ax"), VARL("_src"))));
 
 		RzILOpPure *cond = OR(SGT(VARL("_temp"), UN(8, 0x7f)), SLT(VARL("_temp"), UN(8, 0x80)));
-		RzILOpEffect *else_cond = SEQ2(x86_il_set_reg(X86_REG_AL, VARL("_temp")), x86_il_set_reg(X86_REG_AH, SMOD(VARL("_ax"), VARL("_src"))));
+		RzILOpEffect *else_cond = SEQ2(x86_il_set_reg(ZYDIS_REGISTER_AL, VARL("_temp")), x86_il_set_reg(ZYDIS_REGISTER_AH, SMOD(VARL("_ax"), VARL("_src"))));
 
 		ret = SEQ3(ax, temp, BRANCH(cond, NULL, else_cond));
 		break;
 	}
 	case 2: {
 		/* Doubleword/Word operation */
-		RzILOpEffect *dxax = SETL("_dxax", LOGOR(SHIFTL0(UNSIGNED(32, x86_il_get_reg(X86_REG_DX)), UN(8, 16)), UNSIGNED(32, x86_il_get_reg(X86_REG_AX))));
+		RzILOpEffect *dxax = SETL("_dxax", LOGOR(SHIFTL0(UNSIGNED(32, x86_il_get_reg(ZYDIS_REGISTER_DX)), UN(8, 16)), UNSIGNED(32, x86_il_get_reg(ZYDIS_REGISTER_AX))));
 		RzILOpEffect *temp = SETL("_temp", UNSIGNED(16, SDIV(VARL("_dxax"), VARL("_src"))));
 
 		RzILOpPure *cond = OR(SGT(VARL("_temp"), UN(16, 0x7fff)), SLT(VARL("_temp"), UN(16, 0x8000)));
-		RzILOpEffect *else_cond = SEQ2(x86_il_set_reg(X86_REG_AX, VARL("_temp")), x86_il_set_reg(X86_REG_DX, SMOD(VARL("_dxax"), VARL("_src"))));
+		RzILOpEffect *else_cond = SEQ2(x86_il_set_reg(ZYDIS_REGISTER_AX, VARL("_temp")), x86_il_set_reg(ZYDIS_REGISTER_DX, SMOD(VARL("_dxax"), VARL("_src"))));
 
 		ret = SEQ3(dxax, temp, BRANCH(cond, NULL, else_cond));
 		break;
 	}
 	case 4: {
 		/* Quadword/Doubleword operation */
-		RzILOpEffect *edxeax = SETL("_edxeax", LOGOR(SHIFTL0(UNSIGNED(64, x86_il_get_reg(X86_REG_EDX)), UN(8, 32)), UNSIGNED(64, x86_il_get_reg(X86_REG_EAX))));
+		RzILOpEffect *edxeax = SETL("_edxeax", LOGOR(SHIFTL0(UNSIGNED(64, x86_il_get_reg(ZYDIS_REGISTER_EDX)), UN(8, 32)), UNSIGNED(64, x86_il_get_reg(ZYDIS_REGISTER_EAX))));
 		RzILOpEffect *temp = SETL("_temp", UNSIGNED(32, SDIV(VARL("_edxeax"), VARL("_src"))));
 
 		RzILOpPure *cond = OR(SGT(VARL("_temp"), UN(32, 0x7fffffffULL)), SLT(VARL("_temp"), UN(32, 0x80000000ULL)));
-		RzILOpEffect *else_cond = SEQ2(x86_il_set_reg(X86_REG_AX, VARL("_temp")), x86_il_set_reg(X86_REG_DX, SMOD(VARL("_edxeax"), VARL("_src"))));
+		RzILOpEffect *else_cond = SEQ2(x86_il_set_reg(ZYDIS_REGISTER_AX, VARL("_temp")), x86_il_set_reg(ZYDIS_REGISTER_DX, SMOD(VARL("_edxeax"), VARL("_src"))));
 
 		ret = SEQ3(edxeax, temp, BRANCH(cond, NULL, else_cond));
 		break;
 	}
 	case 8: {
 		/* Doublequadword/Quadword operation */
-		RzILOpEffect *rdxrax = SETL("_rdxrax", LOGOR(SHIFTL0(UNSIGNED(128, x86_il_get_reg(X86_REG_EDX)), UN(8, 64)), UNSIGNED(128, x86_il_get_reg(X86_REG_EAX))));
+		RzILOpEffect *rdxrax = SETL("_rdxrax", LOGOR(SHIFTL0(UNSIGNED(128, x86_il_get_reg(ZYDIS_REGISTER_EDX)), UN(8, 64)), UNSIGNED(128, x86_il_get_reg(ZYDIS_REGISTER_EAX))));
 		RzILOpEffect *temp = SETL("_temp", UNSIGNED(64, SDIV(VARL("_rdxrax"), VARL("_src"))));
 
 		RzILOpPure *cond = OR(SGT(VARL("_temp"), UN(64, 0x7fffffffffffffffULL)), SLT(VARL("_temp"), UN(64, 0x8000000000000000ULL)));
-		RzILOpEffect *else_cond = SEQ2(x86_il_set_reg(X86_REG_AX, VARL("_temp")), x86_il_set_reg(X86_REG_DX, SMOD(VARL("_rdxrax"), VARL("_src"))));
+		RzILOpEffect *else_cond = SEQ2(x86_il_set_reg(ZYDIS_REGISTER_AX, VARL("_temp")), x86_il_set_reg(ZYDIS_REGISTER_DX, SMOD(VARL("_rdxrax"), VARL("_src"))));
 
 		ret = SEQ3(rdxrax, temp, BRANCH(cond, NULL, else_cond));
 		break;
@@ -714,7 +715,7 @@ IL_LIFTER(idiv) {
 	}
 
 	/* We need the divisor to be as wide as the operand, since the sizes of the dividend and the divisor need to match */
-	RzILOpEffect *op = SETL("_src", UNSIGNED(ins->structure->operands[0].size * 2 * BITS_PER_BYTE, x86_il_get_op(0)));
+	RzILOpEffect *op = SETL("_src", UNSIGNED(ins->operands[0].size * 2 * BITS_PER_BYTE, x86_il_get_op(0)));
 
 	/* Check if the operand is zero, return NULL if it is (to avoid divide by zero) */
 	return SEQ2(op, BRANCH(IS_ZERO(VARL("_src")), NULL, ret));
@@ -729,12 +730,12 @@ IL_LIFTER(idiv) {
  *  - Three operands (Encoding: RMI)
  */
 IL_LIFTER(imul) {
-	switch (ins->structure->op_count) {
+	switch (ins->structure->operand_count_visible) {
 	case 1: {
-		switch (ins->structure->operands[0].size) {
+		switch (ins->operands[0].size) {
 		case 1: {
-			RzILOpEffect *tmp_xp = SETL("_tmp_xp", MUL(SIGNED(16, x86_il_get_reg(X86_REG_AL)), SIGNED(16, x86_il_get_op(0))));
-			RzILOpEffect *set_ax = x86_il_set_reg(X86_REG_AX, VARL("_tmp_xp"));
+			RzILOpEffect *tmp_xp = SETL("_tmp_xp", MUL(SIGNED(16, x86_il_get_reg(ZYDIS_REGISTER_AL)), SIGNED(16, x86_il_get_op(0))));
+			RzILOpEffect *set_ax = x86_il_set_reg(ZYDIS_REGISTER_AX, VARL("_tmp_xp"));
 
 			/* Check if the result fits in a byte */
 			RzILOpPure *cond = EQ(SIGNED(16, UNSIGNED(8, VARL("_tmp_xp"))), VARL("_tmp_xp"));
@@ -744,9 +745,9 @@ IL_LIFTER(imul) {
 			return SEQ3(tmp_xp, set_ax, BRANCH(cond, true_branch, false_branch));
 		}
 		case 2: {
-			RzILOpEffect *tmp_xp = SETL("_tmp_xp", MUL(SIGNED(32, x86_il_get_reg(X86_REG_AX)), SIGNED(32, x86_il_get_op(0))));
-			RzILOpEffect *set_ax = x86_il_set_reg(X86_REG_AX, UNSIGNED(16, VARL("_tmp_xp")));
-			RzILOpEffect *set_dx = x86_il_set_reg(X86_REG_DX, UNSIGNED(32, SHIFTR0(VARL("_tmp_xp"), UN(8, 16))));
+			RzILOpEffect *tmp_xp = SETL("_tmp_xp", MUL(SIGNED(32, x86_il_get_reg(ZYDIS_REGISTER_AX)), SIGNED(32, x86_il_get_op(0))));
+			RzILOpEffect *set_ax = x86_il_set_reg(ZYDIS_REGISTER_AX, UNSIGNED(16, VARL("_tmp_xp")));
+			RzILOpEffect *set_dx = x86_il_set_reg(ZYDIS_REGISTER_DX, UNSIGNED(32, SHIFTR0(VARL("_tmp_xp"), UN(8, 16))));
 
 			/* Check if the result fits in a word */
 			RzILOpPure *cond = EQ(SIGNED(32, UNSIGNED(16, VARL("_tmp_xp"))), VARL("_tmp_xp"));
@@ -756,9 +757,9 @@ IL_LIFTER(imul) {
 			return SEQ4(tmp_xp, set_ax, set_dx, BRANCH(cond, true_branch, false_branch));
 		}
 		case 4: {
-			RzILOpEffect *tmp_xp = SETL("_tmp_xp", MUL(SIGNED(64, x86_il_get_reg(X86_REG_EAX)), SIGNED(64, x86_il_get_op(0))));
-			RzILOpEffect *set_eax = x86_il_set_reg(X86_REG_EAX, UNSIGNED(32, VARL("_tmp_xp")));
-			RzILOpEffect *set_edx = x86_il_set_reg(X86_REG_EDX, UNSIGNED(32, SHIFTR0(VARL("_tmp_xp"), UN(8, 32))));
+			RzILOpEffect *tmp_xp = SETL("_tmp_xp", MUL(SIGNED(64, x86_il_get_reg(ZYDIS_REGISTER_EAX)), SIGNED(64, x86_il_get_op(0))));
+			RzILOpEffect *set_eax = x86_il_set_reg(ZYDIS_REGISTER_EAX, UNSIGNED(32, VARL("_tmp_xp")));
+			RzILOpEffect *set_edx = x86_il_set_reg(ZYDIS_REGISTER_EDX, UNSIGNED(32, SHIFTR0(VARL("_tmp_xp"), UN(8, 32))));
 
 			/* Check if the result fits in a doubleword */
 			RzILOpPure *cond = EQ(SIGNED(64, UNSIGNED(32, VARL("_tmp_xp"))), VARL("_tmp_xp"));
@@ -768,9 +769,9 @@ IL_LIFTER(imul) {
 			return SEQ4(tmp_xp, set_eax, set_edx, BRANCH(cond, true_branch, false_branch));
 		}
 		case 8: {
-			RzILOpEffect *tmp_xp = SETL("_tmp_xp", MUL(SIGNED(128, x86_il_get_reg(X86_REG_RAX)), SIGNED(128, x86_il_get_op(0))));
-			RzILOpEffect *set_rax = x86_il_set_reg(X86_REG_RAX, UNSIGNED(64, VARL("_tmp_xp")));
-			RzILOpEffect *set_rdx = x86_il_set_reg(X86_REG_RDX, UNSIGNED(64, SHIFTR0(VARL("_tmp_xp"), UN(8, 64))));
+			RzILOpEffect *tmp_xp = SETL("_tmp_xp", MUL(SIGNED(128, x86_il_get_reg(ZYDIS_REGISTER_RAX)), SIGNED(128, x86_il_get_op(0))));
+			RzILOpEffect *set_rax = x86_il_set_reg(ZYDIS_REGISTER_RAX, UNSIGNED(64, VARL("_tmp_xp")));
+			RzILOpEffect *set_rdx = x86_il_set_reg(ZYDIS_REGISTER_RDX, UNSIGNED(64, SHIFTR0(VARL("_tmp_xp"), UN(8, 64))));
 
 			/* Check if the result fits in a quadword */
 			RzILOpPure *cond = EQ(SIGNED(128, UNSIGNED(64, VARL("_tmp_xp"))), VARL("_tmp_xp"));
@@ -786,24 +787,24 @@ IL_LIFTER(imul) {
 	}
 	case 2: {
 		RzILOpEffect *dest = SETL("_dest", x86_il_get_op(0));
-		RzILOpEffect *tmp_xp = SETL("_tmp_xp", MUL(SIGNED(ins->structure->operands[0].size * 2 * BITS_PER_BYTE, VARL("_dest")), SIGNED(ins->structure->operands[0].size * 2 * BITS_PER_BYTE, x86_il_get_op(1))));
-		RzILOpEffect *set_dest = SETL("_dest", UNSIGNED(ins->structure->operands[0].size * BITS_PER_BYTE, VARL("_tmp_xp")));
+		RzILOpEffect *tmp_xp = SETL("_tmp_xp", MUL(SIGNED(ins->operands[0].size * 2 * BITS_PER_BYTE, VARL("_dest")), SIGNED(ins->operands[0].size * 2 * BITS_PER_BYTE, x86_il_get_op(1))));
+		RzILOpEffect *set_dest = SETL("_dest", UNSIGNED(ins->operands[0].size * BITS_PER_BYTE, VARL("_tmp_xp")));
 		RzILOpEffect *set_operand = x86_il_set_op(0, VARL("_dest"));
 
 		/* Check if the result fits in the destination */
-		RzILOpPure *cond = EQ(SIGNED(ins->structure->operands[0].size * 2 * BITS_PER_BYTE, VARL("_dest")), VARL("_tmp_xp"));
+		RzILOpPure *cond = EQ(SIGNED(ins->operands[0].size * 2 * BITS_PER_BYTE, VARL("_dest")), VARL("_tmp_xp"));
 		RzILOpEffect *true_branch = SEQ2(SETG(EFLAGS(CF), IL_FALSE), SETG(EFLAGS(OF), IL_FALSE));
 		RzILOpEffect *false_branch = SEQ2(SETG(EFLAGS(CF), IL_TRUE), SETG(EFLAGS(OF), IL_TRUE));
 
 		return SEQ5(dest, tmp_xp, set_dest, set_operand, BRANCH(cond, true_branch, false_branch));
 	}
 	case 3: {
-		RzILOpEffect *tmp_xp = SETL("_tmp_xp", MUL(SIGNED(ins->structure->operands[1].size * 2 * BITS_PER_BYTE, x86_il_get_op(1)), SIGNED(ins->structure->operands[1].size * 2 * BITS_PER_BYTE, x86_il_get_op(2))));
-		RzILOpEffect *set_dest = SETL("_dest", UNSIGNED(ins->structure->operands[0].size * BITS_PER_BYTE, VARL("_tmp_xp")));
+		RzILOpEffect *tmp_xp = SETL("_tmp_xp", MUL(SIGNED(ins->operands[1].size * 2 * BITS_PER_BYTE, x86_il_get_op(1)), SIGNED(ins->operands[1].size * 2 * BITS_PER_BYTE, x86_il_get_op(2))));
+		RzILOpEffect *set_dest = SETL("_dest", UNSIGNED(ins->operands[0].size * BITS_PER_BYTE, VARL("_tmp_xp")));
 		RzILOpEffect *set_operand = x86_il_set_op(0, VARL("_dest"));
 
 		/* Check if the result fits in the destination */
-		RzILOpPure *cond = EQ(SIGNED(ins->structure->operands[0].size * 2 * BITS_PER_BYTE, VARL("_dest")), VARL("_tmp_xp"));
+		RzILOpPure *cond = EQ(SIGNED(ins->operands[0].size * 2 * BITS_PER_BYTE, VARL("_dest")), VARL("_tmp_xp"));
 		RzILOpEffect *true_branch = SEQ2(SETG(EFLAGS(CF), IL_FALSE), SETG(EFLAGS(OF), IL_FALSE));
 		RzILOpEffect *false_branch = SEQ2(SETG(EFLAGS(CF), IL_TRUE), SETG(EFLAGS(OF), IL_TRUE));
 
@@ -839,10 +840,10 @@ void label_port(RzILVM *vm, RzILOpEffect *op) {
  */
 IL_LIFTER(inc) {
 	RzILOpEffect *op = SETL("_op", x86_il_get_op(0));
-	RzILOpEffect *result = SETL("_result", ADD(VARL("_op"), UN(ins->structure->operands[0].size * BITS_PER_BYTE, 1)));
+	RzILOpEffect *result = SETL("_result", ADD(VARL("_op"), UN(ins->operands[0].size * BITS_PER_BYTE, 1)));
 	RzILOpEffect *set_result = x86_il_set_op(0, VARL("_result"));
 
-	RzILOpEffect *arith_flags = x86_il_set_arithmetic_flags_except_cf(VARL("_result"), VARL("_op"), UN(ins->structure->operands[0].size * BITS_PER_BYTE, 1), true);
+	RzILOpEffect *arith_flags = x86_il_set_arithmetic_flags_except_cf(VARL("_result"), VARL("_op"), UN(ins->operands[0].size * BITS_PER_BYTE, 1), true);
 	RzILOpEffect *res_flags = x86_il_set_result_flags(VARL("_result"));
 
 	return SEQ5(op, result, set_result, arith_flags, res_flags);
@@ -879,8 +880,8 @@ IL_LIFTER(into) {
 
 #define JUMP_IL() \
 	do { \
-		RzILOpPure *jmp_addr = UN(analysis->bits, ins->structure->operands[0].imm); \
-		if (ins->structure->operands[0].size == 16 && analysis->bits != 64) { \
+		RzILOpPure *jmp_addr = UN(analysis->bits, imm_value(ins->operands[0], pc, ins->ins_size)); \
+		if (ins->operands[0].size == 16 && analysis->bits != 64) { \
 			jmp_addr = LOGAND(jmp_addr, UN(analysis->bits, 0x0000ffff)); \
 		} \
 		return BRANCH(cond, JMP(jmp_addr), NOP()); \
@@ -932,7 +933,7 @@ IL_LIFTER(jbe) {
  * Encoding: D
  */
 IL_LIFTER(jcxz) {
-	RzILOpBool *cond = IS_ZERO(x86_il_get_reg(X86_REG_CX));
+	RzILOpBool *cond = IS_ZERO(x86_il_get_reg(ZYDIS_REGISTER_CX));
 	JUMP_IL();
 }
 
@@ -942,7 +943,7 @@ IL_LIFTER(jcxz) {
  * Encoding: D
  */
 IL_LIFTER(jecxz) {
-	RzILOpBool *cond = IS_ZERO(x86_il_get_reg(X86_REG_ECX));
+	RzILOpBool *cond = IS_ZERO(x86_il_get_reg(ZYDIS_REGISTER_ECX));
 	JUMP_IL();
 }
 
@@ -952,7 +953,7 @@ IL_LIFTER(jecxz) {
  * Encoding: D
  */
 IL_LIFTER(jrcxz) {
-	RzILOpBool *cond = IS_ZERO(x86_il_get_reg(X86_REG_RCX));
+	RzILOpBool *cond = IS_ZERO(x86_il_get_reg(ZYDIS_REGISTER_RCX));
 	JUMP_IL();
 }
 
@@ -1097,7 +1098,7 @@ IL_LIFTER(jmp) {
  * No operands
  */
 IL_LIFTER(lahf) {
-	return x86_il_set_reg(X86_REG_AH, x86_il_get_flags(8));
+	return x86_il_set_reg(ZYDIS_REGISTER_AH, x86_il_get_flags(8));
 }
 
 /**
@@ -1106,7 +1107,7 @@ IL_LIFTER(lahf) {
  * Encoding: RM
  */
 IL_LIFTER(lds) {
-	return x86_il_set_op(0, x86_il_get_memaddr_segment(ins->structure->operands[1].mem, X86_REG_DS));
+	return x86_il_set_op(0, x86_il_get_memaddr_segment(ins->operands[1].mem, ZYDIS_REGISTER_DS));
 }
 
 /**
@@ -1116,7 +1117,7 @@ IL_LIFTER(lds) {
  * Cast the M to R in an unsigned cast
  */
 IL_LIFTER(lea) {
-	return x86_il_set_op(0, UNSIGNED(ins->structure->operands[1].size * BITS_PER_BYTE, x86_il_get_memaddr(ins->structure->operands[1].mem)));
+	return x86_il_set_op(0, UNSIGNED(ins->operands[1].size * BITS_PER_BYTE, x86_il_get_memaddr(ins->operands[1].mem)));
 }
 
 /**
@@ -1125,23 +1126,23 @@ IL_LIFTER(lea) {
  * Encoding: RM
  */
 IL_LIFTER(les) {
-	return x86_il_set_op(0, x86_il_get_memaddr_segment(ins->structure->operands[1].mem, X86_REG_ES));
+	return x86_il_set_op(0, x86_il_get_memaddr_segment(ins->operands[1].mem, ZYDIS_REGISTER_ES));
 }
 
 RzILOpEffect *x86_il_lods_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis, ut8 size) {
 	X86Reg reg;
 	switch (size) {
 	case 8:
-		reg = X86_REG_AL;
+		reg = ZYDIS_REGISTER_AL;
 		break;
 	case 16:
-		reg = X86_REG_AX;
+		reg = ZYDIS_REGISTER_AX;
 		break;
 	case 32:
-		reg = X86_REG_EAX;
+		reg = ZYDIS_REGISTER_EAX;
 		break;
 	case 64:
-		reg = X86_REG_RAX;
+		reg = ZYDIS_REGISTER_RAX;
 		break;
 	default:
 		rz_warn_if_reached();
@@ -1149,11 +1150,11 @@ RzILOpEffect *x86_il_lods_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analy
 	}
 
 	if (analysis->bits == 64) {
-		X86Reg mem_reg = X86_REG_RSI;
+		X86Reg mem_reg = ZYDIS_REGISTER_RSI;
 		ut8 mem_size = 64;
 		/* Address override prefix: 67H */
-		if (ins->structure->prefix[3]) {
-			mem_reg = X86_REG_ESI;
+		if (ins->structure->raw.prefixes[3].value) {
+			mem_reg = ZYDIS_REGISTER_ESI;
 			mem_size = 32;
 		}
 
@@ -1166,20 +1167,20 @@ RzILOpEffect *x86_il_lods_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analy
 		return SEQ2(x86_il_set_reg(reg, val), update_rsi);
 
 	} else {
-		X86Reg mem_reg = X86_REG_ESI;
+		X86Reg mem_reg = ZYDIS_REGISTER_ESI;
 		ut8 mem_size = 32;
 		/* Address override prefix: 67H */
-		if (analysis->bits == 16 || ins->structure->prefix[3]) {
-			mem_reg = X86_REG_SI;
+		if (analysis->bits == 16 || ins->structure->raw.prefixes[3].value) {
+			mem_reg = ZYDIS_REGISTER_SI;
 			mem_size = 16;
 		}
 
 		X86Mem src_mem;
 		src_mem.base = mem_reg;
-		src_mem.disp = 0;
-		src_mem.index = X86_REG_INVALID;
+		src_mem.disp.value = 0;
+		src_mem.index = ZYDIS_REGISTER_NONE;
 		src_mem.scale = 1;
-		src_mem.segment = X86_REG_DS;
+		src_mem.segment = ZYDIS_REGISTER_DS;
 
 		/* No need for casting memaddr here since the casting will be done while calculating the segmented address */
 		RzILOpPure *val = LOADW(size, x86_il_get_memaddr(src_mem));
@@ -1231,17 +1232,17 @@ IL_LIFTER(lodsq) {
 #define LOOP_HELPER(cond) \
 	do { \
 		/* Will automatically be resolved to the widest CX register */ \
-		X86Reg count_reg = X86_REG_RCX; \
+		X86Reg count_reg = ZYDIS_REGISTER_RCX; \
 \
 		uint8_t addr_size = analysis->bits; \
 		/* Check address override prefix (67H) */ \
-		if (analysis->bits == 64 && ins->structure->prefix[3]) { \
+		if (analysis->bits == 64 && ins->structure->raw.prefixes[3].value) { \
 			addr_size >>= 1; \
-			count_reg = X86_REG_ECX; \
+			count_reg = ZYDIS_REGISTER_ECX; \
 		} \
 \
 		RzILOpEffect *dec_counter = x86_il_set_reg(count_reg, SUB(x86_il_get_reg(count_reg), UN(addr_size, 1))); \
-		RzILOpEffect *true_cond = JMP(UN(analysis->bits, pc + ins->structure->operands[0].imm)); \
+		RzILOpEffect *true_cond = JMP(UN(analysis->bits, pc + imm_value(ins->operands[0], pc, ins->ins_size))); \
 		RzILOpEffect *branch = BRANCH(cond, true_cond, NOP()); \
 \
 		return SEQ2(dec_counter, branch); \
@@ -1294,14 +1295,14 @@ IL_LIFTER(mov) {
 
 RzILOpEffect *x86_il_movs_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis, ut8 size) {
 	if (analysis->bits == 64) {
-		X86Reg mem_reg1 = X86_REG_RSI;
-		X86Reg mem_reg2 = X86_REG_RDI;
+		X86Reg mem_reg1 = ZYDIS_REGISTER_RSI;
+		X86Reg mem_reg2 = ZYDIS_REGISTER_RDI;
 		ut8 mem_size = 64;
 
 		/* Address override prefix: 67H */
-		if (ins->structure->prefix[3]) {
-			mem_reg1 = X86_REG_ESI;
-			mem_reg2 = X86_REG_EDI;
+		if (ins->structure->raw.prefixes[3].value) {
+			mem_reg1 = ZYDIS_REGISTER_ESI;
+			mem_reg2 = ZYDIS_REGISTER_EDI;
 			mem_size = 32;
 		}
 
@@ -1314,30 +1315,30 @@ RzILOpEffect *x86_il_movs_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analy
 		return SEQ2(STOREW((mem_size == 64 ? x86_il_get_reg(mem_reg2) : UNSIGNED(64, x86_il_get_reg(mem_reg2))), val), update);
 
 	} else {
-		X86Reg src_reg = X86_REG_ESI;
-		X86Reg dst_reg = X86_REG_EDI;
+		X86Reg src_reg = ZYDIS_REGISTER_ESI;
+		X86Reg dst_reg = ZYDIS_REGISTER_EDI;
 		ut8 mem_size = 32;
 
 		/* Address override prefix: 67H */
-		if (analysis->bits == 16 || ins->structure->prefix[3]) {
-			src_reg = X86_REG_SI;
-			dst_reg = X86_REG_DI;
+		if (analysis->bits == 16 || ins->structure->raw.prefixes[3].value) {
+			src_reg = ZYDIS_REGISTER_SI;
+			dst_reg = ZYDIS_REGISTER_DI;
 			mem_size = 16;
 		}
 
 		X86Mem src_mem = {
 			.base = src_reg,
 			.disp = 0,
-			.index = X86_REG_INVALID,
+			.index = ZYDIS_REGISTER_NONE,
 			.scale = 1,
-			.segment = X86_REG_DS
+			.segment = ZYDIS_REGISTER_DS
 		};
 		X86Mem dst_mem = {
 			.base = dst_reg,
 			.disp = 0,
-			.index = X86_REG_INVALID,
+			.index = ZYDIS_REGISTER_NONE,
 			.scale = 1,
-			.segment = X86_REG_ES
+			.segment = ZYDIS_REGISTER_ES
 		};
 
 		RzILOpEffect *inc = SEQ2(x86_il_set_reg(src_reg, ADD(x86_il_get_reg(src_reg), UN(mem_size, size / BITS_PER_BYTE))), x86_il_set_reg(dst_reg, ADD(x86_il_get_reg(dst_reg), UN(mem_size, size / BITS_PER_BYTE))));
@@ -1392,7 +1393,7 @@ IL_LIFTER(movsq) {
  * Encoding: RM
  */
 IL_LIFTER(movsx) {
-	return x86_il_set_op(0, SIGNED(ins->structure->operands[0].size * BITS_PER_BYTE, x86_il_get_op(1)));
+	return x86_il_set_op(0, SIGNED(ins->operands[0].size * BITS_PER_BYTE, x86_il_get_op(1)));
 }
 
 /**
@@ -1401,7 +1402,7 @@ IL_LIFTER(movsx) {
  * Encoding: RM
  */
 IL_LIFTER(movzx) {
-	return x86_il_set_op(0, UNSIGNED(ins->structure->operands[0].size * BITS_PER_BYTE, x86_il_get_op(1)));
+	return x86_il_set_op(0, UNSIGNED(ins->operands[0].size * BITS_PER_BYTE, x86_il_get_op(1)));
 }
 
 /**
@@ -1410,38 +1411,38 @@ IL_LIFTER(movzx) {
  * Encoding: M
  */
 IL_LIFTER(mul) {
-	RzILOpPure *op = UNSIGNED(ins->structure->operands[0].size * BITS_PER_BYTE * 2, x86_il_get_op(0));
+	RzILOpPure *op = UNSIGNED(ins->operands[0].size * BITS_PER_BYTE * 2, x86_il_get_op(0));
 	RzILOpEffect *true_cond = SEQ2(SETG(EFLAGS(OF), IL_FALSE), SETG(EFLAGS(CF), IL_FALSE));
 	RzILOpEffect *false_cond = SEQ2(SETG(EFLAGS(OF), IL_TRUE), SETG(EFLAGS(CF), IL_TRUE));
 
-	switch (ins->structure->operands[0].size) {
+	switch (ins->operands[0].size) {
 	case 1: {
-		RzILOpEffect *set = SETL("_mul", MUL(UNSIGNED(16, x86_il_get_reg(X86_REG_AL)), op));
-		RzILOpEffect *ax = x86_il_set_reg(X86_REG_AX, VARL("_mul"));
+		RzILOpEffect *set = SETL("_mul", MUL(UNSIGNED(16, x86_il_get_reg(ZYDIS_REGISTER_AL)), op));
+		RzILOpEffect *ax = x86_il_set_reg(ZYDIS_REGISTER_AX, VARL("_mul"));
 		RzILOpEffect *flags = BRANCH(IS_ZERO(SHIFTR0(VARL("_mul"), U8(8))), true_cond, false_cond);
 
 		return SEQ3(set, ax, flags);
 	}
 	case 2: {
-		RzILOpEffect *set = SETL("_mul", MUL(UNSIGNED(32, x86_il_get_reg(X86_REG_AX)), op));
-		RzILOpEffect *dx = x86_il_set_reg(X86_REG_DX, UNSIGNED(16, SHIFTR0(VARL("_mul"), U8(16))));
-		RzILOpEffect *ax = x86_il_set_reg(X86_REG_AX, UNSIGNED(16, VARL("_mul")));
+		RzILOpEffect *set = SETL("_mul", MUL(UNSIGNED(32, x86_il_get_reg(ZYDIS_REGISTER_AX)), op));
+		RzILOpEffect *dx = x86_il_set_reg(ZYDIS_REGISTER_DX, UNSIGNED(16, SHIFTR0(VARL("_mul"), U8(16))));
+		RzILOpEffect *ax = x86_il_set_reg(ZYDIS_REGISTER_AX, UNSIGNED(16, VARL("_mul")));
 		RzILOpEffect *flags = BRANCH(IS_ZERO(SHIFTR0(VARL("_mul"), U8(16))), true_cond, false_cond);
 
 		return SEQ4(set, dx, ax, flags);
 	}
 	case 4: {
-		RzILOpEffect *set = SETL("_mul", MUL(UNSIGNED(64, x86_il_get_reg(X86_REG_EAX)), op));
-		RzILOpEffect *edx = x86_il_set_reg(X86_REG_EDX, UNSIGNED(32, SHIFTR0(VARL("_mul"), U8(32))));
-		RzILOpEffect *eax = x86_il_set_reg(X86_REG_EAX, UNSIGNED(32, VARL("_mul")));
+		RzILOpEffect *set = SETL("_mul", MUL(UNSIGNED(64, x86_il_get_reg(ZYDIS_REGISTER_EAX)), op));
+		RzILOpEffect *edx = x86_il_set_reg(ZYDIS_REGISTER_EDX, UNSIGNED(32, SHIFTR0(VARL("_mul"), U8(32))));
+		RzILOpEffect *eax = x86_il_set_reg(ZYDIS_REGISTER_EAX, UNSIGNED(32, VARL("_mul")));
 		RzILOpEffect *flags = BRANCH(IS_ZERO(SHIFTR0(VARL("_mul"), U8(32))), true_cond, false_cond);
 
 		return SEQ4(set, edx, eax, flags);
 	}
 	case 8: {
-		RzILOpEffect *set = SETL("_mul", MUL(UNSIGNED(128, x86_il_get_reg(X86_REG_RAX)), op));
-		RzILOpEffect *rdx = x86_il_set_reg(X86_REG_RDX, UNSIGNED(64, SHIFTR0(VARL("_mul"), U8(64))));
-		RzILOpEffect *rax = x86_il_set_reg(X86_REG_RAX, UNSIGNED(64, VARL("_mul")));
+		RzILOpEffect *set = SETL("_mul", MUL(UNSIGNED(128, x86_il_get_reg(ZYDIS_REGISTER_RAX)), op));
+		RzILOpEffect *rdx = x86_il_set_reg(ZYDIS_REGISTER_RDX, UNSIGNED(64, SHIFTR0(VARL("_mul"), U8(64))));
+		RzILOpEffect *rax = x86_il_set_reg(ZYDIS_REGISTER_RAX, UNSIGNED(64, VARL("_mul")));
 		RzILOpEffect *flags = BRANCH(IS_ZERO(SHIFTR0(VARL("_mul"), U8(64))), true_cond, false_cond);
 
 		return SEQ4(set, rdx, rax, flags);
@@ -1484,7 +1485,7 @@ IL_LIFTER(nop) {
  * One's complement negation
  * Encoding: M
  */
-IL_LIFTER(not ) {
+IL_LIFTER(not) {
 	return x86_il_set_op(0, LOGNOT(x86_il_get_op(0)));
 }
 
@@ -1500,7 +1501,7 @@ IL_LIFTER(not ) {
 IL_LIFTER(or) {
 	RzILOpPure *op1 = x86_il_get_op(0);
 	RzILOpPure *op2 = x86_il_get_op(1);
-	RzILOpEffect * or = SETL("_or", LOGOR(op1, op2));
+	RzILOpEffect *or = SETL("_or", LOGOR(op1, op2));
 
 	RzILOpEffect *set_dest = x86_il_set_op(0, VARL("_or"));
 	RzILOpEffect *clear_of = SETG(EFLAGS(OF), IL_FALSE);
@@ -1528,16 +1529,16 @@ typedef struct pop_helper_t {
 PopHelper x86_pop_helper_bits(unsigned int op_size, unsigned int bitness, ut64 pc) {
 	X86Mem stack_mem;
 	/* The correct register will automatically be chosen if we use RSP */
-	stack_mem.base = X86_REG_RSP;
-	stack_mem.disp = 0;
-	stack_mem.index = X86_REG_INVALID;
+	stack_mem.base = ZYDIS_REGISTER_RSP;
+	stack_mem.disp.value = 0;
+	stack_mem.index = ZYDIS_REGISTER_NONE;
 	stack_mem.scale = 1;
-	stack_mem.segment = X86_REG_SS;
+	stack_mem.segment = ZYDIS_REGISTER_SS;
 
 	PopHelper ret;
 
 	ret.val = LOADW(op_size * BITS_PER_BYTE, x86_il_get_memaddr_bits(stack_mem, bitness, pc));
-	ret.eff = x86_il_set_reg_bits(X86_REG_RSP, ADD(x86_il_get_reg_bits(X86_REG_RSP, bitness, pc), UN(bitness, op_size)), bitness);
+	ret.eff = x86_il_set_reg_bits(ZYDIS_REGISTER_RSP, ADD(x86_il_get_reg_bits(ZYDIS_REGISTER_RSP, bitness, pc), UN(bitness, op_size)), bitness);
 
 	return ret;
 }
@@ -1556,7 +1557,7 @@ IL_LIFTER(pop) {
 	/* Ideally, we should use the stack size instead of the address size (analysis->bits),
 	but there seems to be no way to do that using Capstone */
 	/* Also, it is very rare to use have a different stack size and address size */
-	PopHelper pop = x86_pop_helper(ins->structure->operands[0].size);
+	PopHelper pop = x86_pop_helper(ins->operands[0].size);
 	RzILOpEffect *copy = x86_il_set_op(0, pop.val);
 
 	return SEQ2(copy, pop.eff);
@@ -1595,6 +1596,8 @@ IL_LIFTER(popfq) {
 	return SEQ2(x86_il_set_flags(pop.val, 64), pop.eff);
 }
 
+#define CALCULATE_REX_PREFIX(rex) ((rex).W << 3 | (rex).R << 2 | (rex).X << 1 | (rex).B)
+
 RzILOpEffect *x86_push_helper_impl(RzILOpPure *val, unsigned int user_op_size, unsigned int bitness, const X86ILIns *ins, ut64 pc) {
 	unsigned int dflag = user_op_size;
 	unsigned int op_size;
@@ -1602,12 +1605,12 @@ RzILOpEffect *x86_push_helper_impl(RzILOpPure *val, unsigned int user_op_size, u
 
 	if (ins) {
 		if (bitness == 64) {
-			dflag = ins->structure->rex ? 8 : ins->structure->prefix[2] ? 2
-										    : 4; /* in bytes */
+			dflag = CALCULATE_REX_PREFIX(ins->structure->raw.rex) ? 8 : ins->structure->raw.prefixes[2].value ? 2
+															  : 4; /* in bytes */
 			stack_size = 8; /* in bytes */
 		} else {
 			/* We use the other operand and address size if the prefix is set */
-			if ((bitness == 32) ^ ins->structure->prefix[2]) {
+			if ((bitness == 32) ^ ins->structure->raw.prefixes[2].value) {
 				dflag = 4;
 			} else {
 				dflag = 2;
@@ -1623,11 +1626,9 @@ RzILOpEffect *x86_push_helper_impl(RzILOpPure *val, unsigned int user_op_size, u
 		op_size = dflag;
 	}
 
-	RzILOpEffect *final_stack = SETL("final", SUB(x86_il_get_reg_bits(X86_REG_RSP, bitness, pc), UN(bitness, stack_size)));
-
+	RzILOpEffect *final_stack = SETL("final", SUB(x86_il_get_reg_bits(ZYDIS_REGISTER_RSP, bitness, pc), UN(bitness, stack_size)));
 	RzILOpEffect *ret = STOREW(VARL("final"), UNSIGNED(op_size * BITS_PER_BYTE, val));
-	ret = SEQ3(final_stack, ret, x86_il_set_reg_bits(X86_REG_RSP, VARL("final"), bitness));
-
+	ret = SEQ3(final_stack, ret, x86_il_set_reg_bits(ZYDIS_REGISTER_RSP, VARL("final"), bitness));
 	return ret;
 }
 
@@ -1664,7 +1665,7 @@ IL_LIFTER(call) {
  *  - ZO
  */
 IL_LIFTER(push) {
-	return x86_push_helper_impl(x86_il_get_op(0), ins->structure->operands->size, analysis->bits, ins, pc);
+	return x86_push_helper_impl(x86_il_get_op(0), ins->operands->size, analysis->bits, ins, pc);
 }
 
 /**
@@ -1704,15 +1705,15 @@ IL_LIFTER(pushaw) {
 		return NULL;
 	}
 
-	RzILOpEffect *temp = SETL("_sp", x86_il_get_reg(X86_REG_SP));
-	RzILOpEffect *push = x86_push_helper(x86_il_get_reg(X86_REG_AX), 2);
-	push = SEQ2(push, x86_push_helper(x86_il_get_reg(X86_REG_CX), 2));
-	push = SEQ2(push, x86_push_helper(x86_il_get_reg(X86_REG_DX), 2));
-	push = SEQ2(push, x86_push_helper(x86_il_get_reg(X86_REG_BX), 2));
+	RzILOpEffect *temp = SETL("_sp", x86_il_get_reg(ZYDIS_REGISTER_SP));
+	RzILOpEffect *push = x86_push_helper(x86_il_get_reg(ZYDIS_REGISTER_AX), 2);
+	push = SEQ2(push, x86_push_helper(x86_il_get_reg(ZYDIS_REGISTER_CX), 2));
+	push = SEQ2(push, x86_push_helper(x86_il_get_reg(ZYDIS_REGISTER_DX), 2));
+	push = SEQ2(push, x86_push_helper(x86_il_get_reg(ZYDIS_REGISTER_BX), 2));
 	push = SEQ2(push, x86_push_helper(VARL("_sp"), 2));
-	push = SEQ2(push, x86_push_helper(x86_il_get_reg(X86_REG_BP), 2));
-	push = SEQ2(push, x86_push_helper(x86_il_get_reg(X86_REG_SI), 2));
-	push = SEQ2(push, x86_push_helper(x86_il_get_reg(X86_REG_DI), 2));
+	push = SEQ2(push, x86_push_helper(x86_il_get_reg(ZYDIS_REGISTER_BP), 2));
+	push = SEQ2(push, x86_push_helper(x86_il_get_reg(ZYDIS_REGISTER_SI), 2));
+	push = SEQ2(push, x86_push_helper(x86_il_get_reg(ZYDIS_REGISTER_DI), 2));
 
 	return SEQ2(temp, push);
 }
@@ -1727,23 +1728,23 @@ IL_LIFTER(pushal) {
 		return NULL;
 	}
 
-	RzILOpEffect *temp = SETL("_esp", x86_il_get_reg(X86_REG_ESP));
-	RzILOpEffect *push = x86_push_helper(x86_il_get_reg(X86_REG_EAX), 4);
-	push = SEQ2(push, x86_push_helper(x86_il_get_reg(X86_REG_ECX), 4));
-	push = SEQ2(push, x86_push_helper(x86_il_get_reg(X86_REG_EDX), 4));
-	push = SEQ2(push, x86_push_helper(x86_il_get_reg(X86_REG_EBX), 4));
+	RzILOpEffect *temp = SETL("_esp", x86_il_get_reg(ZYDIS_REGISTER_ESP));
+	RzILOpEffect *push = x86_push_helper(x86_il_get_reg(ZYDIS_REGISTER_EAX), 4);
+	push = SEQ2(push, x86_push_helper(x86_il_get_reg(ZYDIS_REGISTER_ECX), 4));
+	push = SEQ2(push, x86_push_helper(x86_il_get_reg(ZYDIS_REGISTER_EDX), 4));
+	push = SEQ2(push, x86_push_helper(x86_il_get_reg(ZYDIS_REGISTER_EBX), 4));
 	push = SEQ2(push, x86_push_helper(VARL("_esp"), 4));
-	push = SEQ2(push, x86_push_helper(x86_il_get_reg(X86_REG_EBP), 4));
-	push = SEQ2(push, x86_push_helper(x86_il_get_reg(X86_REG_ESI), 4));
-	push = SEQ2(push, x86_push_helper(x86_il_get_reg(X86_REG_EDI), 4));
+	push = SEQ2(push, x86_push_helper(x86_il_get_reg(ZYDIS_REGISTER_EBP), 4));
+	push = SEQ2(push, x86_push_helper(x86_il_get_reg(ZYDIS_REGISTER_ESI), 4));
+	push = SEQ2(push, x86_push_helper(x86_il_get_reg(ZYDIS_REGISTER_EDI), 4));
 
 	return SEQ2(temp, push);
 }
 
 #define RCX_MACRO() \
-	ut8 size_in_bytes = ins->structure->operands[0].size; \
+	ut8 size_in_bytes = ins->operands[0].size; \
 	ut8 size = size_in_bytes * BITS_PER_BYTE; \
-	ut8 shift_size = (size_in_bytes == 8 || (analysis->bits == 64 && ins->structure->rex)) ? 6 : 5; \
+	ut8 shift_size = (size_in_bytes == 8 || (analysis->bits == 64 && CALCULATE_REX_PREFIX(ins->structure->raw.rex))) ? 6 : 5; \
 	ut8 shift_max = size + 1; \
 	RzILOpEffect *pre_dest = SETL("_pre_dest", x86_il_get_op(0)); \
 	RzILOpEffect *shift = NULL; \
@@ -1818,9 +1819,9 @@ IL_LIFTER(rcr) {
 #undef RCX_MACRO
 
 #define ROX_MACRO() \
-	ut8 size_in_bytes = ins->structure->operands[0].size; \
+	ut8 size_in_bytes = ins->operands[0].size; \
 	ut8 size = size_in_bytes * BITS_PER_BYTE; \
-	ut8 shift_size = (size_in_bytes == 8 || (analysis->bits == 64 && ins->structure->rex)) ? 6 : 5; \
+	ut8 shift_size = (size_in_bytes == 8 || (analysis->bits == 64 && CALCULATE_REX_PREFIX(ins->structure->raw.rex))) ? 6 : 5; \
 	ut8 shift_max = size; \
 	RzILOpEffect *pre_dest = SETL("_pre_dest", x86_il_get_op(0)); \
 	RzILOpEffect *shift = SETL("_shift", MOD(UNSIGNED(shift_size, x86_il_get_op_implicit(1, size_in_bytes)), UN(shift_size, shift_max)));
@@ -1890,10 +1891,10 @@ IL_LIFTER(ret) {
 
 	RzILOpEffect *ret = SEQ2(SETL("tgt", ph.val), ph.eff);
 
-	if (ins->structure->op_count == 1) {
+	if (ins->structure->operand_count_visible == 1) {
 		/* Immediate operand (Encoding: I)
 		 * Reduce RSP by that many bytes. */
-		ret = SEQ2(ret, x86_il_set_reg(X86_REG_RSP, ADD(x86_il_get_reg(X86_REG_RSP), UN(analysis->bits, ins->structure->operands[0].imm))));
+		ret = SEQ2(ret, x86_il_set_reg(ZYDIS_REGISTER_RSP, ADD(x86_il_get_reg(ZYDIS_REGISTER_RSP), UN(analysis->bits, imm_value(ins->operands[0], pc, ins->ins_size)))));
 	}
 
 	return SEQ2(ret, JMP(VARL("tgt")));
@@ -1919,13 +1920,13 @@ IL_LIFTER(ret) {
  * Encoding: ZO
  */
 IL_LIFTER(sahf) {
-	return x86_il_set_flags(x86_il_get_reg(X86_REG_AH), 8);
+	return x86_il_set_flags(x86_il_get_reg(ZYDIS_REGISTER_AH), 8);
 }
 
 #define SHIFT_MACRO() \
-	ut8 size = ins->structure->operands[0].size * BITS_PER_BYTE; \
-	ut8 shift_size = ins->structure->operands[1].size * BITS_PER_BYTE; \
-	ut8 shift_mask = (analysis->bits == 64 && ins->structure->rex) ? 0x3f : 0x1f; \
+	ut8 size = ins->operands[0].size * BITS_PER_BYTE; \
+	ut8 shift_size = ins->operands[1].size * BITS_PER_BYTE; \
+	ut8 shift_mask = (analysis->bits == 64 && CALCULATE_REX_PREFIX(ins->structure->raw.rex)) ? 0x3f : 0x1f; \
 	RzILOpEffect *pre_dest = SETL("_pre_dest", x86_il_get_op(0)); \
 	RzILOpEffect *shift = SETL("_shift", LOGAND(x86_il_get_op(1), UN(shift_size, shift_mask))); \
 	RzILOpEffect *set_dest = x86_il_set_op(0, VARL("_dest")); \
@@ -2034,7 +2035,7 @@ IL_LIFTER(sbb) {
 	RzILOpEffect *op2 = SETL("_op2", x86_il_get_op(1));
 	RzILOpPure *cf = VARG(EFLAGS(CF));
 
-	RzILOpEffect *diff = SETL("_diff", SUB(SUB(VARL("_op1"), VARL("_op2")), BOOL_TO_BV(cf, ins->structure->operands[0].size * BITS_PER_BYTE)));
+	RzILOpEffect *diff = SETL("_diff", SUB(SUB(VARL("_op1"), VARL("_op2")), BOOL_TO_BV(cf, ins->operands[0].size * BITS_PER_BYTE)));
 	RzILOpEffect *set_dest = x86_il_set_op(0, VARL("_diff"));
 	RzILOpEffect *set_res_flags = x86_il_set_result_flags(VARL("_diff"));
 	RzILOpEffect *set_arith_flags = x86_il_set_arithmetic_flags(VARL("_diff"), VARL("_op1"), VARL("_op2"), false);
@@ -2047,16 +2048,16 @@ RzILOpEffect *x86_il_scas_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analy
 
 	switch (size) {
 	case 8:
-		sub_reg = X86_REG_AL;
+		sub_reg = ZYDIS_REGISTER_AL;
 		break;
 	case 16:
-		sub_reg = X86_REG_AX;
+		sub_reg = ZYDIS_REGISTER_AX;
 		break;
 	case 32:
-		sub_reg = X86_REG_EAX;
+		sub_reg = ZYDIS_REGISTER_EAX;
 		break;
 	case 64:
-		sub_reg = X86_REG_RAX;
+		sub_reg = ZYDIS_REGISTER_RAX;
 		break;
 	default:
 		rz_warn_if_reached();
@@ -2064,11 +2065,11 @@ RzILOpEffect *x86_il_scas_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analy
 	}
 
 	if (analysis->bits == 64) {
-		X86Reg mem_reg = X86_REG_RDI;
+		X86Reg mem_reg = ZYDIS_REGISTER_RDI;
 		ut8 mem_size = 64;
 		/* Address override prefix: 67H */
-		if (ins->structure->prefix[3]) {
-			mem_reg = X86_REG_EDI;
+		if (ins->structure->raw.prefixes[3].value) {
+			mem_reg = ZYDIS_REGISTER_EDI;
 			mem_size = 32;
 		}
 
@@ -2086,20 +2087,20 @@ RzILOpEffect *x86_il_scas_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analy
 	} else {
 		RzILOpEffect *reg = SETL("_reg", x86_il_get_reg(sub_reg));
 
-		X86Reg mem_reg = X86_REG_EDI;
+		X86Reg mem_reg = ZYDIS_REGISTER_EDI;
 		ut8 mem_size = 32;
 		/* Check bitness and address override prefix: 67H */
-		if (analysis->bits == 16 || ins->structure->prefix[3]) {
-			mem_reg = X86_REG_DI;
+		if (analysis->bits == 16 || ins->structure->raw.prefixes[3].value) {
+			mem_reg = ZYDIS_REGISTER_DI;
 			mem_size = 16;
 		}
 
 		X86Mem src_mem;
 		src_mem.base = mem_reg;
-		src_mem.disp = 0;
-		src_mem.index = X86_REG_INVALID;
+		src_mem.disp.value = 0;
+		src_mem.index = ZYDIS_REGISTER_NONE;
 		src_mem.scale = 1;
-		src_mem.segment = X86_REG_ES;
+		src_mem.segment = ZYDIS_REGISTER_ES;
 
 		/* No need for casting memaddr here since the casting will be done while calculating the segmented address */
 		RzILOpEffect *src = SETL("_src", LOADW(size, x86_il_get_memaddr(src_mem)));
@@ -2191,16 +2192,16 @@ RzILOpEffect *x86_il_stos_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analy
 
 	switch (size) {
 	case 8:
-		store_reg = X86_REG_AL;
+		store_reg = ZYDIS_REGISTER_AL;
 		break;
 	case 16:
-		store_reg = X86_REG_AX;
+		store_reg = ZYDIS_REGISTER_AX;
 		break;
 	case 32:
-		store_reg = X86_REG_EAX;
+		store_reg = ZYDIS_REGISTER_EAX;
 		break;
 	case 64:
-		store_reg = X86_REG_RAX;
+		store_reg = ZYDIS_REGISTER_RAX;
 		break;
 	default:
 		rz_warn_if_reached();
@@ -2208,11 +2209,11 @@ RzILOpEffect *x86_il_stos_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analy
 	}
 
 	if (analysis->bits == 64) {
-		X86Reg mem_reg = X86_REG_RDI;
+		X86Reg mem_reg = ZYDIS_REGISTER_RDI;
 		ut8 mem_size = 64;
 		/* Address override prefix: 67H */
-		if (ins->structure->prefix[3]) {
-			mem_reg = X86_REG_EDI;
+		if (ins->structure->raw.prefixes[3].value) {
+			mem_reg = ZYDIS_REGISTER_EDI;
 			mem_size = 32;
 		}
 
@@ -2224,20 +2225,20 @@ RzILOpEffect *x86_il_stos_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analy
 
 		return SEQ2(store, BRANCH(VARG(EFLAGS(DF)), decrement, increment));
 	} else {
-		X86Reg mem_reg = X86_REG_EDI;
+		X86Reg mem_reg = ZYDIS_REGISTER_EDI;
 		ut8 mem_size = 32;
 		/* Check bitness and address override prefix: 67H */
-		if (analysis->bits == 16 || ins->structure->prefix[3]) {
-			mem_reg = X86_REG_DI;
+		if (analysis->bits == 16 || ins->structure->raw.prefixes[3].value) {
+			mem_reg = ZYDIS_REGISTER_DI;
 			mem_size = 16;
 		}
 
 		X86Mem src_mem;
 		src_mem.base = mem_reg;
-		src_mem.disp = 0;
-		src_mem.index = X86_REG_INVALID;
+		src_mem.disp.value = 0;
+		src_mem.index = ZYDIS_REGISTER_NONE;
 		src_mem.scale = 1;
-		src_mem.segment = X86_REG_ES;
+		src_mem.segment = ZYDIS_REGISTER_ES;
 
 		/* No need for casting memaddr here since the casting will be done while calculating the segmented address */
 		RzILOpEffect *store = x86_il_set_mem(src_mem, x86_il_get_reg(store_reg));
@@ -2348,20 +2349,20 @@ IL_LIFTER(xchg) {
  */
 IL_LIFTER(xlatb) {
 	X86Mem mem;
-	mem.disp = 0;
-	mem.index = X86_REG_INVALID;
+	mem.disp.value = 0;
+	mem.index = ZYDIS_REGISTER_NONE;
 	mem.scale = 1;
-	mem.segment = X86_REG_DS;
-	mem.base = X86_REG_EBX;
+	mem.segment = ZYDIS_REGISTER_DS;
+	mem.base = ZYDIS_REGISTER_EBX;
 
 	if (analysis->bits == 64) {
-		mem.segment = X86_REG_INVALID;
-		mem.base = X86_REG_RBX;
+		mem.segment = ZYDIS_REGISTER_NONE;
+		mem.base = ZYDIS_REGISTER_RBX;
 	} else if (analysis->bits == 16) {
-		mem.base = X86_REG_BX;
+		mem.base = ZYDIS_REGISTER_BX;
 	}
 
-	return x86_il_set_reg(X86_REG_AL, LOADW(8, ADD(x86_il_get_memaddr(mem), UNSIGNED(analysis->bits, x86_il_get_reg(X86_REG_AL)))));
+	return x86_il_set_reg(ZYDIS_REGISTER_AL, LOADW(8, ADD(x86_il_get_memaddr(mem), UNSIGNED(analysis->bits, x86_il_get_reg(ZYDIS_REGISTER_AL)))));
 }
 
 /**
@@ -2372,7 +2373,7 @@ IL_LIFTER(xlatb) {
 IL_LIFTER(xor) {
 	RzILOpPure *op1 = x86_il_get_op(0);
 	RzILOpPure *op2 = x86_il_get_op(1);
-	RzILOpEffect * xor = SETL("_xor", LOGXOR(op1, op2));
+	RzILOpEffect *xor = SETL("_xor", LOGXOR(op1, op2));
 
 	RzILOpEffect *set_dest = x86_il_set_op(0, VARL("_xor"));
 	RzILOpEffect *clear_of = SETG(EFLAGS(OF), IL_FALSE);
@@ -2391,10 +2392,10 @@ IL_LIFTER(xor) {
 IL_LIFTER(bound) {
 	RzILOpEffect *index = SETL("_index", x86_il_get_op(0));
 
-	X86Mem mem = ins->structure->operands[1].mem;
-	RzILOpEffect *lower = SETL("_lower", LOADW(ins->structure->operands[0].size * BITS_PER_BYTE, x86_il_get_memaddr(mem)));
-	mem.disp += ins->structure->operands[1].size / mem.scale;
-	RzILOpEffect *upper = SETL("_upper", LOADW(ins->structure->operands[0].size * BITS_PER_BYTE, x86_il_get_memaddr(mem)));
+	X86Mem mem = ins->operands[1].mem;
+	RzILOpEffect *lower = SETL("_lower", LOADW(ins->operands[0].size * BITS_PER_BYTE, x86_il_get_memaddr(mem)));
+	mem.disp.value += ins->operands[1].size / mem.scale;
+	RzILOpEffect *upper = SETL("_upper", LOADW(ins->operands[0].size * BITS_PER_BYTE, x86_il_get_memaddr(mem)));
 
 	RzILOpBool *cond = OR(ULT(VARL("_index"), VARL("_lower")), UGT(VARL("_index"), VARL("_upper")));
 
@@ -2412,35 +2413,35 @@ IL_LIFTER(enter) {
 	RzILOpEffect *nesting_level = SETL("_nest_lvl", MOD(UNSIGNED(8, x86_il_get_op(1)), U8(32)));
 
 	/* Will get resolved correctly to the largest SP reg */
-	X86Reg sp_reg = X86_REG_RSP;
+	X86Reg sp_reg = ZYDIS_REGISTER_RSP;
 
 	/* Default value initialization (useless, but need to avoid warnings) */
-	X86Reg bp_reg = X86_REG_RBP;
+	X86Reg bp_reg = ZYDIS_REGISTER_RBP;
 	unsigned short bp_size = analysis->bits / BITS_PER_BYTE;
 
 	switch (analysis->bits) {
 	case 64:
 		/* Operand-size override (66H) */
-		if (ins->structure->prefix[2]) {
-			bp_reg = X86_REG_EBP;
+		if (ins->structure->raw.prefixes[2].value) {
+			bp_reg = ZYDIS_REGISTER_EBP;
 			bp_size = 4;
 		} else {
-			bp_reg = X86_REG_RBP;
+			bp_reg = ZYDIS_REGISTER_RBP;
 			bp_size = 8;
 		}
 		break;
 	case 32:
 		/* Operand-size override (66H) */
-		if (ins->structure->prefix[2]) {
-			bp_reg = X86_REG_BP;
+		if (ins->structure->raw.prefixes[2].value) {
+			bp_reg = ZYDIS_REGISTER_BP;
 			bp_size = 2;
 		} else {
-			bp_reg = X86_REG_EBP;
+			bp_reg = ZYDIS_REGISTER_EBP;
 			bp_size = 4;
 		}
 		break;
 	case 16:
-		bp_reg = X86_REG_BP;
+		bp_reg = ZYDIS_REGISTER_BP;
 		bp_size = 2;
 		break;
 	default:
@@ -2453,7 +2454,7 @@ IL_LIFTER(enter) {
 	RzILOpEffect *itr = SETL("_itr", U8(1));
 
 	/* RBP will be dynamically resolved to the correct BP register */
-	RzILOpEffect *loop_body = SEQ3(x86_il_set_reg(X86_REG_RBP, SUB(x86_il_get_reg(X86_REG_RBP), UN(analysis->bits, bp_size))), x86_push_helper(LOADW(bp_size * BITS_PER_BYTE, x86_il_get_reg(X86_REG_RBP)), bp_size), SETL("_itr", ADD(VARL("_itr"), U8(1))));
+	RzILOpEffect *loop_body = SEQ3(x86_il_set_reg(ZYDIS_REGISTER_RBP, SUB(x86_il_get_reg(ZYDIS_REGISTER_RBP), UN(analysis->bits, bp_size))), x86_push_helper(LOADW(bp_size * BITS_PER_BYTE, x86_il_get_reg(ZYDIS_REGISTER_RBP)), bp_size), SETL("_itr", ADD(VARL("_itr"), U8(1))));
 	RzILOpEffect *loop = REPEAT(ULT(VARL("_itr"), VARL("_nest_lvl")), loop_body);
 
 	RzILOpEffect *nesting_lvl1 = x86_push_helper(VARL("_frame_tmp"), bp_size);
@@ -2474,35 +2475,35 @@ IL_LIFTER(enter) {
  * Encoding: ZO
  */
 IL_LIFTER(leave) {
-	RzILOpEffect *set_sp = x86_il_set_reg(X86_REG_RSP, x86_il_get_reg(X86_REG_RBP));
+	RzILOpEffect *set_sp = x86_il_set_reg(ZYDIS_REGISTER_RSP, x86_il_get_reg(ZYDIS_REGISTER_RBP));
 
 	/* Default value initialization (useless, but need to avoid warnings) */
-	X86Reg bp_reg = X86_REG_RBP;
+	X86Reg bp_reg = ZYDIS_REGISTER_RBP;
 	unsigned short bp_size = analysis->bits / BITS_PER_BYTE;
 
 	switch (analysis->bits) {
 	case 64:
 		/* Operand-size override (66H) */
-		if (ins->structure->prefix[2]) {
-			bp_reg = X86_REG_EBP;
+		if (ins->structure->raw.prefixes[2].value) {
+			bp_reg = ZYDIS_REGISTER_EBP;
 			bp_size = 4;
 		} else {
-			bp_reg = X86_REG_RBP;
+			bp_reg = ZYDIS_REGISTER_RBP;
 			bp_size = 8;
 		}
 		break;
 	case 32:
 		/* Operand-size override (66H) */
-		if (ins->structure->prefix[2]) {
-			bp_reg = X86_REG_BP;
+		if (ins->structure->raw.prefixes[2].value) {
+			bp_reg = ZYDIS_REGISTER_BP;
 			bp_size = 2;
 		} else {
-			bp_reg = X86_REG_EBP;
+			bp_reg = ZYDIS_REGISTER_EBP;
 			bp_size = 4;
 		}
 		break;
 	case 16:
-		bp_reg = X86_REG_BP;
+		bp_reg = ZYDIS_REGISTER_BP;
 		bp_size = 2;
 		break;
 	default:
