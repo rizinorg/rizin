@@ -28,7 +28,7 @@
 
 #define VPCEXT2(y, x) ((y)[2] == (x))
 
-void decompile_vm(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static inline void decompile_vm(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	if (len > 3 && buf[0] == 0x0F && buf[1] == 0x3F && (VPCEXT2(buf, 0x01) || VPCEXT2(buf, 0x05) || VPCEXT2(buf, 0x07) || VPCEXT2(buf, 0x0D) || VPCEXT2(buf, 0x10))) {
 		if (a->syntax == RZ_ASM_SYNTAX_ATT) {
 			rz_asm_op_setf_asm(op, "vpcext $0x%x, $0x%x", buf[3], buf[2]);

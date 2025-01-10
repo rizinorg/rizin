@@ -461,7 +461,7 @@ static bool subvar(RzParse *p, RzAnalysisFunction *f, RzAnalysisOp *op, char *da
 	return ret;
 }
 
-RzParsePlugin rz_parse_plugin_x86_cs_pseudo = {
+RzParsePlugin rz_parse_plugin_x86_zydis_pseudo = {
 	.name = "x86.pseudo",
 	.desc = "X86 pseudo syntax",
 	.parse = &parse,
