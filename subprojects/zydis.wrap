@@ -1,0 +1,6 @@
+[wrap-git]
+url = https://github.com/zyantific/zydis.git
+directory = zydis
+patch-directory = zydis
+depth = 1
+revision = master
