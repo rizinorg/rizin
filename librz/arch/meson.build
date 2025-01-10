@@ -53,11 +53,11 @@ arch_plugins_list = [
   'v850',
   'wasm',
   'x86_as',
-  'x86_cs',
   'x86_nasm',
   'x86_nz',
   'xap',
   'xcore_cs',
+  'x86_zydis'
 ]
 
 arch_plugin_sources = [
@@ -110,11 +110,11 @@ arch_plugin_sources = [
   'p/arch_v850.c',
   'p/arch_wasm.c',
   'p/arch_x86_as.c',
-  'p/arch_x86_cs.c',
   'p/arch_x86_nasm.c',
   'p/arch_x86_nz.c',
   'p/arch_xap.c',
   'p/arch_xcore_cs.c',
+  'p/arch_x86_zydis.c'
 ]
 
 arch_esil_sources = [
@@ -478,6 +478,7 @@ rz_arch = library('rz_arch', rz_arch_sources,
     rz_type_dep,
     rz_il_dep,
     capstone_dep,
+    zydis_dep,
     mth,
     dependency('rzspp'),
   ],
