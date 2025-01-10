@@ -242,6 +242,21 @@ if sys_magic_opt.enabled() or sys_magic_opt.auto()
   endif
 endif
 
+# Handle Zydis library
+sys_zydis_opt = get_option('use_sys_zydis')
+zydis_dep = disabler()
+if sys_zydis_opt.enabled() or sys_zydis_opt.auto()
+  zydis_dep = dependency('zydis', required: false, static: is_static_build)
+  if not zydis_dep.found()
+    zydis_dep = cc.find_library('zydis', required: sys_zydis_opt, static: is_static_build)
+  endif
+endif
+if (sys_zydis_opt.auto() and not zydis_dep.found()) or sys_zydis_opt.disabled()
+  zydis_proj = subproject('zydis', default_options: ['default_library=static'])
+  zydis_dep = zydis_proj.get_variable('zydis_dep')
+endif
+
+
 # handle libmspack library
 sys_libmspack_opt = get_option('use_sys_libmspack')
 libmspack_dep = disabler()
@@ -819,6 +834,7 @@ summary({
   'System libmspack library': libmspack_dep.found() and libmspack_dep.type_name() != 'internal',
   'System openssl library': sys_openssl.found() and sys_openssl.type_name() != 'internal',
   'System capstone library': capstone_dep.found() and capstone_dep.type_name() != 'internal',
+  'System zydis library': zydis_dep.found() and zydis_dep.type_name() != 'internal',
   'System tree-sitter library': tree_sitter_dep.found() and tree_sitter_dep.type_name() != 'internal',
   'System lz4 library': lz4_dep.found() and lz4_dep.type_name() != 'internal',
   'System lzma library': liblzma_dep.found() and liblzma_dep.type_name() != 'internal',
