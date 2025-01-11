@@ -98,10 +98,10 @@ jobs:
             os: ubuntu-22.04
             build_system: meson
             compiler: gcc-12
-            cflags: "-DRZ_ASSERT_STDOUT=1 -ftrivial-auto-var-init=pattern -funsigned-char"
+            cflags: "-DASAN=1 -DRZ_ASSERT_STDOUT=1 -ftrivial-auto-var-init=pattern -funsigned-char"
             meson_options: -Dbuildtype=debugoptimized -Db_sanitize=address,undefined --werror
             asan: true
-            asan_options: "detect_leaks=0,detect_odr_violation=0,allocator_may_return_null=1"
+            asan_options: detect_leaks=0,detect_odr_violation=0,allocator_may_return_null=1
             run_tests: true
             enabled: ${{ needs.changes.outputs.edited == 'true' }}
             timeout: 120
@@ -110,10 +110,10 @@ jobs:
             os: ubuntu-22.04
             build_system: meson
             compiler: clang
-            cflags: -DRZ_ASSERT_STDOUT=1
+            cflags: "-DASAN=1 -DRZ_ASSERT_STDOUT=1"
             meson_options: -Dbuildtype=debugoptimized -Db_lundef=false -Db_sanitize=address,undefined --werror
             asan: true
-            asan_options: "detect_leaks=0,detect_odr_violation=0,allocator_may_return_null=1"
+            asan_options: detect_leaks=0,detect_odr_violation=0,allocator_may_return_null=1
             run_tests: true
             enabled: ${{ needs.changes.outputs.edited == 'true' }}
             timeout: 115
@@ -209,7 +209,6 @@ jobs:
           if [ "$ASAN" == "true" ]; then
             # Work-around ASAN bug https://github.com/google/sanitizers/issues/1716
             sudo sysctl vm.mmap_rnd_bits=28
-            export CFLAGS="-DASAN=1 ${CFLAGS}"
             if [ "$CC" == "clang" ]; then
               export LD_LIBRARY_PATH=$(dirname $(clang -print-file-name=libclang_rt.asan-x86_64.so)):${LD_LIBRARY_PATH}
             fi
