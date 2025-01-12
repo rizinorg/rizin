@@ -142,7 +142,8 @@ meson.override_dependency('rz_util', rz_util_dep)
 if meson.is_cross_build()
   # this is a bit messy, it duplicates most of the code required to get the
   # regular dependencies but for the build_system. This is required to build
-  # sdb_native, used at build time to compile .sdb.txt files into .sdb ones.
+  # sdb_gen natively, used at build time to compile .sdb.txt files into .sdb
+  # ones.
   platform_native_deps = []
   if build_machine.system() == 'windows'
     platform_native_deps = [
@@ -196,10 +197,10 @@ modules += { 'rz_util': {
     'include_subdirs_extra': ['librz/sdb']
 }}
 
-sdb_exe = executable('sdb_native', 'sdb/src/main.c',
+sdb_exe = executable('sdb_gen', 'sdb/src/main.c',
   dependencies: rz_util_native_dep,
   install: false,
-  native: true,
+  native: meson.is_cross_build(),
   implicit_include_directories: false,
   install_rpath: rpath_exe,
 )
