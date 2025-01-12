@@ -2042,7 +2042,7 @@ RZ_API size_t rz_str_nlen(const char *str, size_t n) {
 	return strnlen(str, n);
 #else
 	size_t len = 0;
-	while (*str && n) {
+	while (n && *str) {
 		len++;
 		str++;
 		n--;
