@@ -43,7 +43,7 @@ echo $(p8 10; p8 4 @ 0xdeadbeef)
               args: (args
                 (arg
                   (arg_identifier))))
-            (tmp_seek_stmt
+            (tmp_seek_op
               (args
                 (arg
                   (arg_identifier))))))))))

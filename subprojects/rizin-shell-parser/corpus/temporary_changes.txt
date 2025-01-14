@@ -26,7 +26,7 @@ p8 10 @ flag
       (args
         (arg
           (arg_identifier))))
-    (tmp_seek_stmt
+    (tmp_seek_op
       (args
         (arg
           (arg_identifier)))))
@@ -36,7 +36,7 @@ p8 10 @ flag
       (args
         (arg
           (arg_identifier))))
-    (tmp_seek_stmt
+    (tmp_seek_op
       (args
         (arg
           (arg_identifier))))))
@@ -56,7 +56,7 @@ p8 10 @! 30
       (args
         (arg
           (arg_identifier))))
-    (tmp_blksz_stmt
+    (tmp_blksz_op
       (args
         (arg
           (arg_identifier))))))
@@ -76,7 +76,7 @@ Temporary from/to
       (args
         (arg
           (arg_identifier))))
-    (tmp_fromto_stmt
+    (tmp_fromto_op
       (args
         (arg
           (arg_identifier))
@@ -98,7 +98,7 @@ pd 2 @a:x86
       (args
         (arg
           (arg_identifier))))
-    (tmp_arch_stmt
+    (tmp_arch_op
       (arg
         (arg_identifier)))))
 
@@ -117,7 +117,7 @@ pd 2 @b:16
       (args
         (arg
           (arg_identifier))))
-    (tmp_bits_stmt
+    (tmp_bits_op
       (args
         (arg
           (arg_identifier))))))
@@ -137,7 +137,7 @@ pd 2 @B:3
       (args
         (arg
           (arg_identifier))))
-    (tmp_nthi_stmt
+    (tmp_nthi_op
       (arg
         (arg_identifier)))))
 
@@ -157,7 +157,7 @@ pd 2 @e:asm.arch=x86,scr.utf8=true
       args: (args
         (arg
           (arg_identifier))))
-    (tmp_eval_stmt
+    (tmp_eval_op
       (args
         (arg
           (arg_identifier)))))
@@ -167,7 +167,7 @@ pd 2 @e:asm.arch=x86,scr.utf8=true
       args: (args
         (arg
           (arg_identifier))))
-    (tmp_eval_stmt
+    (tmp_eval_op
       (args
         (arg
           (arg_identifier))
@@ -186,7 +186,7 @@ f @F:symbols
   (tmp_stmt
     (arged_stmt
       (cmd_identifier))
-    (tmp_fs_stmt
+    (tmp_fs_op
       (arg
         (arg_identifier)))))
 
@@ -205,7 +205,7 @@ pd 2 @i:4
       (args
         (arg
           (arg_identifier))))
-    (tmp_reli_stmt
+    (tmp_reli_op
       (args
         (arg
           (arg_identifier))))))
@@ -222,7 +222,7 @@ pd @k:key
   (tmp_stmt
     (arged_stmt
       (cmd_identifier))
-    (tmp_kuery_stmt
+    (tmp_kuery_op
       (arg
         (arg_identifier)))))
 
@@ -238,7 +238,7 @@ pd @o:3
   (tmp_stmt
     (arged_stmt
       (cmd_identifier))
-    (tmp_fd_stmt
+    (tmp_fd_op
       (args
         (arg
           (arg_identifier))))))
@@ -255,7 +255,7 @@ pd @r:rax
   (tmp_stmt
     (arged_stmt
       (cmd_identifier))
-    (tmp_reg_stmt
+    (tmp_reg_op
       (arg
         (arg_identifier)))))
 
@@ -271,7 +271,7 @@ pd @f:myfile
   (tmp_stmt
     (arged_stmt
       (cmd_identifier))
-    (tmp_file_stmt
+    (tmp_file_op
       (arg
         (arg_identifier)))))
 
@@ -287,7 +287,7 @@ pd @s:mystring
   (tmp_stmt
     (arged_stmt
       (cmd_identifier))
-    (tmp_string_stmt
+    (tmp_string_op
       (arg
         (arg_identifier)))))
 
@@ -303,7 +303,7 @@ pd @x:90deadbeef
   (tmp_stmt
     (arged_stmt
       (cmd_identifier))
-    (tmp_hex_stmt
+    (tmp_hex_op
       (arg
         (arg_identifier)))))
 
@@ -323,11 +323,11 @@ p8 4 @ 0xdead @a:x86 > /tmp/out.txt
         (args
           (arg
             (arg_identifier))))
-      (tmp_seek_stmt
+      (tmp_seek_op
         (args
           (arg
             (arg_identifier))))
-      (tmp_arch_stmt
+      (tmp_arch_op
         (arg
           (arg_identifier))))
     (fdn_redirect_operator)
@@ -347,7 +347,7 @@ wx  0x68a0a@ entry0
       (args
         (arg
           (arg_identifier))))
-    (tmp_seek_stmt
+    (tmp_seek_op
       (args
         (arg
           (arg_identifier))))))
@@ -364,7 +364,7 @@ pd @ entry0 + 2
   (tmp_stmt
     (arged_stmt
       (cmd_identifier))
-    (tmp_seek_stmt
+    (tmp_seek_op
       (args
         (arg
           (arg_identifier))
@@ -385,6 +385,6 @@ pv4 @v:0xdeadbeef
   (tmp_stmt
     (arged_stmt
       (cmd_identifier))
-    (tmp_value_stmt
+    (tmp_value_op
       (arg
         (arg_identifier)))))

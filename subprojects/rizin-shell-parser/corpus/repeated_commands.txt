@@ -70,7 +70,7 @@ Repeat with tmp seek
         (args
           (arg
             (arg_identifier)))))
-    (tmp_seek_stmt
+    (tmp_seek_op
       (args
         (arg
           (arg_identifier))))))

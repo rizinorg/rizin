@@ -104,7 +104,7 @@ Macro statements
             (args
               (arg
                 (arg_identifier))))
-          (tmp_seek_stmt
+          (tmp_seek_op
             (args
               (arg
                 (arg_identifier))))))))
@@ -129,7 +129,7 @@ Macro statements
             (args
               (arg
                 (arg_identifier))))
-          (tmp_seek_stmt
+          (tmp_seek_op
             (args
               (arg
                 (arg_identifier)))))))

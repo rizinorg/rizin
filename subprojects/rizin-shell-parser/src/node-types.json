@@ -5428,7 +5428,7 @@
     }
   },
   {
-    "type": "tmp_arch_stmt",
+    "type": "tmp_arch_op",
     "named": true,
     "fields": {},
     "children": {
@@ -5443,7 +5443,7 @@
     }
   },
   {
-    "type": "tmp_bits_stmt",
+    "type": "tmp_bits_op",
     "named": true,
     "fields": {},
     "children": {
@@ -5458,7 +5458,7 @@
     }
   },
   {
-    "type": "tmp_blksz_stmt",
+    "type": "tmp_blksz_op",
     "named": true,
     "fields": {},
     "children": {
@@ -5473,7 +5473,7 @@
     }
   },
   {
-    "type": "tmp_eval_stmt",
+    "type": "tmp_eval_op",
     "named": true,
     "fields": {},
     "children": {
@@ -5488,7 +5488,7 @@
     }
   },
   {
-    "type": "tmp_fd_stmt",
+    "type": "tmp_fd_op",
     "named": true,
     "fields": {},
     "children": {
@@ -5503,7 +5503,7 @@
     }
   },
   {
-    "type": "tmp_file_stmt",
+    "type": "tmp_file_op",
     "named": true,
     "fields": {},
     "children": {
@@ -5518,7 +5518,7 @@
     }
   },
   {
-    "type": "tmp_fromto_stmt",
+    "type": "tmp_fromto_op",
     "named": true,
     "fields": {},
     "children": {
@@ -5533,7 +5533,7 @@
     }
   },
   {
-    "type": "tmp_fs_stmt",
+    "type": "tmp_fs_op",
     "named": true,
     "fields": {},
     "children": {
@@ -5548,7 +5548,7 @@
     }
   },
   {
-    "type": "tmp_hex_stmt",
+    "type": "tmp_hex_op",
     "named": true,
     "fields": {},
     "children": {
@@ -5563,7 +5563,7 @@
     }
   },
   {
-    "type": "tmp_kuery_stmt",
+    "type": "tmp_kuery_op",
     "named": true,
     "fields": {},
     "children": {
@@ -5578,7 +5578,7 @@
     }
   },
   {
-    "type": "tmp_nthi_stmt",
+    "type": "tmp_nthi_op",
     "named": true,
     "fields": {},
     "children": {
@@ -5593,7 +5593,7 @@
     }
   },
   {
-    "type": "tmp_reg_stmt",
+    "type": "tmp_reg_op",
     "named": true,
     "fields": {},
     "children": {
@@ -5608,7 +5608,7 @@
     }
   },
   {
-    "type": "tmp_reli_stmt",
+    "type": "tmp_reli_op",
     "named": true,
     "fields": {},
     "children": {
@@ -5623,7 +5623,7 @@
     }
   },
   {
-    "type": "tmp_seek_stmt",
+    "type": "tmp_seek_op",
     "named": true,
     "fields": {},
     "children": {
@@ -5778,59 +5778,59 @@
           "named": true
         },
         {
-          "type": "tmp_arch_stmt",
+          "type": "tmp_arch_op",
           "named": true
         },
         {
-          "type": "tmp_bits_stmt",
+          "type": "tmp_bits_op",
           "named": true
         },
         {
-          "type": "tmp_blksz_stmt",
+          "type": "tmp_blksz_op",
           "named": true
         },
         {
-          "type": "tmp_eval_stmt",
+          "type": "tmp_eval_op",
           "named": true
         },
         {
-          "type": "tmp_fd_stmt",
+          "type": "tmp_fd_op",
           "named": true
         },
         {
-          "type": "tmp_file_stmt",
+          "type": "tmp_file_op",
           "named": true
         },
         {
-          "type": "tmp_fromto_stmt",
+          "type": "tmp_fromto_op",
           "named": true
         },
         {
-          "type": "tmp_fs_stmt",
+          "type": "tmp_fs_op",
           "named": true
         },
         {
-          "type": "tmp_hex_stmt",
+          "type": "tmp_hex_op",
           "named": true
         },
         {
-          "type": "tmp_kuery_stmt",
+          "type": "tmp_kuery_op",
           "named": true
         },
         {
-          "type": "tmp_nthi_stmt",
+          "type": "tmp_nthi_op",
           "named": true
         },
         {
-          "type": "tmp_reg_stmt",
+          "type": "tmp_reg_op",
           "named": true
         },
         {
-          "type": "tmp_reli_stmt",
+          "type": "tmp_reli_op",
           "named": true
         },
         {
-          "type": "tmp_seek_stmt",
+          "type": "tmp_seek_op",
           "named": true
         },
         {
@@ -5838,18 +5838,18 @@
           "named": true
         },
         {
-          "type": "tmp_string_stmt",
+          "type": "tmp_string_op",
           "named": true
         },
         {
-          "type": "tmp_value_stmt",
+          "type": "tmp_value_op",
           "named": true
         }
       ]
     }
   },
   {
-    "type": "tmp_string_stmt",
+    "type": "tmp_string_op",
     "named": true,
     "fields": {},
     "children": {
@@ -5864,7 +5864,7 @@
     }
   },
   {
-    "type": "tmp_value_stmt",
+    "type": "tmp_value_op",
     "named": true,
     "fields": {},
     "children": {

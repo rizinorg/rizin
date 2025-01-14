@@ -974,21 +974,21 @@ static bool find_autocmplt_type_quoted_arg(struct autocmplt_data_t *ad, RzCore *
 
 static bool find_autocmplt_type_arg_identifier(struct autocmplt_data_t *ad, RzCore *core, TSNode root, RzLineBuffer *buf, ut32 lstart, ut32 lend) {
 	TSNode parent = get_arg_parent(root);
-	if (!ts_node_is_null(parent) && !strcmp(ts_node_type(parent), "tmp_seek_stmt")) {
+	if (!ts_node_is_null(parent) && !strcmp(ts_node_type(parent), "tmp_seek_op")) {
 		return fill_autocmplt_data(ad, AUTOCMPLT_RZNUM, lstart, lend);
-	} else if (!ts_node_is_null(parent) && !strcmp(ts_node_type(parent), "tmp_fromto_stmt")) {
+	} else if (!ts_node_is_null(parent) && !strcmp(ts_node_type(parent), "tmp_fromto_op")) {
 		return fill_autocmplt_data(ad, AUTOCMPLT_RZNUM, lstart, lend);
-	} else if (!ts_node_is_null(parent) && !strcmp(ts_node_type(parent), "tmp_arch_stmt")) {
+	} else if (!ts_node_is_null(parent) && !strcmp(ts_node_type(parent), "tmp_arch_op")) {
 		return fill_autocmplt_data(ad, AUTOCMPLT_ARCH, lstart, lend);
-	} else if (!ts_node_is_null(parent) && !strcmp(ts_node_type(parent), "tmp_bits_stmt")) {
+	} else if (!ts_node_is_null(parent) && !strcmp(ts_node_type(parent), "tmp_bits_op")) {
 		return fill_autocmplt_data(ad, AUTOCMPLT_BITS, lstart, lend);
-	} else if (!ts_node_is_null(parent) && !strcmp(ts_node_type(parent), "tmp_file_stmt")) {
+	} else if (!ts_node_is_null(parent) && !strcmp(ts_node_type(parent), "tmp_file_op")) {
 		return fill_autocmplt_data(ad, AUTOCMPLT_FILE, lstart, lend);
-	} else if (!ts_node_is_null(parent) && !strcmp(ts_node_type(parent), "tmp_fs_stmt")) {
+	} else if (!ts_node_is_null(parent) && !strcmp(ts_node_type(parent), "tmp_fs_op")) {
 		return fill_autocmplt_data(ad, AUTOCMPLT_FLAG_SPACE, lstart, lend);
-	} else if (!ts_node_is_null(parent) && !strcmp(ts_node_type(parent), "tmp_reg_stmt")) {
+	} else if (!ts_node_is_null(parent) && !strcmp(ts_node_type(parent), "tmp_reg_op")) {
 		return fill_autocmplt_data(ad, AUTOCMPLT_REG, lstart, lend);
-	} else if (!ts_node_is_null(parent) && !strcmp(ts_node_type(parent), "tmp_eval_stmt")) {
+	} else if (!ts_node_is_null(parent) && !strcmp(ts_node_type(parent), "tmp_eval_op")) {
 		return fill_autocmplt_data(ad, AUTOCMPLT_EVAL_FULL, lstart, lend);
 	} else {
 		return fill_autocmplt_data_cmdarg(ad, lstart, lend, buf->data, root, core);
@@ -1049,21 +1049,21 @@ static bool find_autocmplt_type(struct autocmplt_data_t *ad, RzCore *core, TSNod
 	} else if (find_autocmplt_type_quoted_arg(ad, core, buf, "'", "single_quoted_arg")) {
 		ad->res->end_string = "' ";
 		return true;
-	} else if (find_autocmplt_type_at_stmt_op(ad, core, buf, "tmp_seek_stmt", "a", AUTOCMPLT_RZNUM)) {
+	} else if (find_autocmplt_type_at_stmt_op(ad, core, buf, "tmp_seek_op", "a", AUTOCMPLT_RZNUM)) {
 		return true;
-	} else if (find_autocmplt_type_at_stmt_op(ad, core, buf, "tmp_fromto_stmt", "a b)", AUTOCMPLT_RZNUM)) {
+	} else if (find_autocmplt_type_at_stmt_op(ad, core, buf, "tmp_fromto_op", "a b)", AUTOCMPLT_RZNUM)) {
 		return true;
-	} else if (find_autocmplt_type_at_stmt_op(ad, core, buf, "tmp_arch_stmt", "a", AUTOCMPLT_ARCH)) {
+	} else if (find_autocmplt_type_at_stmt_op(ad, core, buf, "tmp_arch_op", "a", AUTOCMPLT_ARCH)) {
 		return true;
-	} else if (find_autocmplt_type_at_stmt_op(ad, core, buf, "tmp_bits_stmt", "1", AUTOCMPLT_BITS)) {
+	} else if (find_autocmplt_type_at_stmt_op(ad, core, buf, "tmp_bits_op", "1", AUTOCMPLT_BITS)) {
 		return true;
-	} else if (find_autocmplt_type_at_stmt_op(ad, core, buf, "tmp_file_stmt", "a", AUTOCMPLT_FILE)) {
+	} else if (find_autocmplt_type_at_stmt_op(ad, core, buf, "tmp_file_op", "a", AUTOCMPLT_FILE)) {
 		return true;
-	} else if (find_autocmplt_type_at_stmt_op(ad, core, buf, "tmp_fs_stmt", "a", AUTOCMPLT_FLAG_SPACE)) {
+	} else if (find_autocmplt_type_at_stmt_op(ad, core, buf, "tmp_fs_op", "a", AUTOCMPLT_FLAG_SPACE)) {
 		return true;
-	} else if (find_autocmplt_type_at_stmt_op(ad, core, buf, "tmp_reg_stmt", "a", AUTOCMPLT_REG)) {
+	} else if (find_autocmplt_type_at_stmt_op(ad, core, buf, "tmp_reg_op", "a", AUTOCMPLT_REG)) {
 		return true;
-	} else if (find_autocmplt_type_at_stmt_op(ad, core, buf, "tmp_eval_stmt", "a", AUTOCMPLT_EVAL_FULL)) {
+	} else if (find_autocmplt_type_at_stmt_op(ad, core, buf, "tmp_eval_op", "a", AUTOCMPLT_EVAL_FULL)) {
 		return true;
 	} else if (find_autocmplt_type_at_stmt_op(ad, core, buf, "iter_offsets_stmt", "a", AUTOCMPLT_RZNUM)) {
 		return true;
