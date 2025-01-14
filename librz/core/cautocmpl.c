@@ -847,7 +847,7 @@ static bool is_arg_identifier_in_tmp_stmt(TSNode node) {
 	}
 	const char *node_type = ts_node_type(node);
 	bool is_iter_or_tmp = rz_str_startswith(node_type, "tmp_") || rz_str_startswith(node_type, "iter_");
-	return is_iter_or_tmp && rz_str_endswith(node_type, "_stmt");
+	return is_iter_or_tmp && rz_str_endswith(node_type, "_op");
 }
 
 static bool find_autocmplt_type_at_stmt(struct autocmplt_data_t *ad, RzCore *core, RzLineBuffer *buf) {
