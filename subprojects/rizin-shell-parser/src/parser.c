@@ -124,7 +124,7 @@ enum ts_symbol_identifiers {
   sym_legacy_quoted_stmt = 105,
   sym__simple_stmt = 106,
   sym_tmp_stmt = 107,
-  sym__tmp_stmt = 108,
+  sym__tmp_op = 108,
   sym__iter_stmt = 109,
   sym__pipe_stmt = 110,
   sym_grep_stmt = 111,
@@ -343,7 +343,7 @@ static const char * const ts_symbol_names[] = {
   [sym_legacy_quoted_stmt] = "legacy_quoted_stmt",
   [sym__simple_stmt] = "_simple_stmt",
   [sym_tmp_stmt] = "tmp_stmt",
-  [sym__tmp_stmt] = "_tmp_stmt",
+  [sym__tmp_op] = "_tmp_op",
   [sym__iter_stmt] = "_iter_stmt",
   [sym__pipe_stmt] = "_pipe_stmt",
   [sym_grep_stmt] = "grep_stmt",
@@ -562,7 +562,7 @@ static const TSSymbol ts_symbol_map[] = {
   [sym_legacy_quoted_stmt] = sym_legacy_quoted_stmt,
   [sym__simple_stmt] = sym__simple_stmt,
   [sym_tmp_stmt] = sym_tmp_stmt,
-  [sym__tmp_stmt] = sym__tmp_stmt,
+  [sym__tmp_op] = sym__tmp_op,
   [sym__iter_stmt] = sym__iter_stmt,
   [sym__pipe_stmt] = sym__pipe_stmt,
   [sym_grep_stmt] = sym_grep_stmt,
@@ -1105,7 +1105,7 @@ static const TSSymbolMetadata ts_symbol_metadata[] = {
     .visible = true,
     .named = true,
   },
-  [sym__tmp_stmt] = {
+  [sym__tmp_op] = {
     .visible = false,
     .named = true,
   },
@@ -6041,7 +6041,7 @@ static const uint16_t ts_parse_table[LARGE_STATE_COUNT][SYMBOL_COUNT] = {
     [sym__help_stmt] = ACTIONS(69),
   },
   [26] = {
-    [sym__tmp_stmt] = STATE(45),
+    [sym__tmp_op] = STATE(45),
     [sym_tmp_seek_stmt] = STATE(45),
     [sym_tmp_blksz_stmt] = STATE(45),
     [sym_tmp_fromto_stmt] = STATE(45),
@@ -6273,7 +6273,7 @@ static const uint16_t ts_parse_table[LARGE_STATE_COUNT][SYMBOL_COUNT] = {
     [sym__help_stmt] = ACTIONS(49),
   },
   [29] = {
-    [sym__tmp_stmt] = STATE(45),
+    [sym__tmp_op] = STATE(45),
     [sym_tmp_seek_stmt] = STATE(45),
     [sym_tmp_blksz_stmt] = STATE(45),
     [sym_tmp_fromto_stmt] = STATE(45),
@@ -6577,7 +6577,7 @@ static const uint16_t ts_parse_table[LARGE_STATE_COUNT][SYMBOL_COUNT] = {
     [sym_file_descriptor] = ACTIONS(213),
   },
   [33] = {
-    [sym__tmp_stmt] = STATE(45),
+    [sym__tmp_op] = STATE(45),
     [sym_tmp_seek_stmt] = STATE(45),
     [sym_tmp_blksz_stmt] = STATE(45),
     [sym_tmp_fromto_stmt] = STATE(45),
@@ -6957,7 +6957,7 @@ static const uint16_t ts_parse_table[LARGE_STATE_COUNT][SYMBOL_COUNT] = {
     [sym_file_descriptor] = ACTIONS(231),
   },
   [38] = {
-    [sym__tmp_stmt] = STATE(38),
+    [sym__tmp_op] = STATE(38),
     [sym_tmp_seek_stmt] = STATE(38),
     [sym_tmp_blksz_stmt] = STATE(38),
     [sym_tmp_fromto_stmt] = STATE(38),
@@ -7033,7 +7033,7 @@ static const uint16_t ts_parse_table[LARGE_STATE_COUNT][SYMBOL_COUNT] = {
     [sym_file_descriptor] = ACTIONS(235),
   },
   [39] = {
-    [sym__tmp_stmt] = STATE(57),
+    [sym__tmp_op] = STATE(57),
     [sym_tmp_seek_stmt] = STATE(57),
     [sym_tmp_blksz_stmt] = STATE(57),
     [sym_tmp_fromto_stmt] = STATE(57),
@@ -7185,7 +7185,7 @@ static const uint16_t ts_parse_table[LARGE_STATE_COUNT][SYMBOL_COUNT] = {
     [sym_file_descriptor] = ACTIONS(313),
   },
   [41] = {
-    [sym__tmp_stmt] = STATE(45),
+    [sym__tmp_op] = STATE(45),
     [sym_tmp_seek_stmt] = STATE(45),
     [sym_tmp_blksz_stmt] = STATE(45),
     [sym_tmp_fromto_stmt] = STATE(45),
@@ -7413,7 +7413,7 @@ static const uint16_t ts_parse_table[LARGE_STATE_COUNT][SYMBOL_COUNT] = {
     [sym_file_descriptor] = ACTIONS(325),
   },
   [44] = {
-    [sym__tmp_stmt] = STATE(45),
+    [sym__tmp_op] = STATE(45),
     [sym_tmp_seek_stmt] = STATE(45),
     [sym_tmp_blksz_stmt] = STATE(45),
     [sym_tmp_fromto_stmt] = STATE(45),
@@ -7489,7 +7489,7 @@ static const uint16_t ts_parse_table[LARGE_STATE_COUNT][SYMBOL_COUNT] = {
     [sym_file_descriptor] = ACTIONS(329),
   },
   [45] = {
-    [sym__tmp_stmt] = STATE(38),
+    [sym__tmp_op] = STATE(38),
     [sym_tmp_seek_stmt] = STATE(38),
     [sym_tmp_blksz_stmt] = STATE(38),
     [sym_tmp_fromto_stmt] = STATE(38),
@@ -7565,7 +7565,7 @@ static const uint16_t ts_parse_table[LARGE_STATE_COUNT][SYMBOL_COUNT] = {
     [sym_file_descriptor] = ACTIONS(333),
   },
   [46] = {
-    [sym__tmp_stmt] = STATE(45),
+    [sym__tmp_op] = STATE(45),
     [sym_tmp_seek_stmt] = STATE(45),
     [sym_tmp_blksz_stmt] = STATE(45),
     [sym_tmp_fromto_stmt] = STATE(45),
@@ -8241,7 +8241,7 @@ static const uint16_t ts_parse_table[LARGE_STATE_COUNT][SYMBOL_COUNT] = {
     [sym_file_descriptor] = ACTIONS(366),
   },
   [55] = {
-    [sym__tmp_stmt] = STATE(57),
+    [sym__tmp_op] = STATE(57),
     [sym_tmp_seek_stmt] = STATE(57),
     [sym_tmp_blksz_stmt] = STATE(57),
     [sym_tmp_fromto_stmt] = STATE(57),
@@ -8314,7 +8314,7 @@ static const uint16_t ts_parse_table[LARGE_STATE_COUNT][SYMBOL_COUNT] = {
     [sym_file_descriptor] = ACTIONS(329),
   },
   [56] = {
-    [sym__tmp_stmt] = STATE(57),
+    [sym__tmp_op] = STATE(57),
     [sym_tmp_seek_stmt] = STATE(57),
     [sym_tmp_blksz_stmt] = STATE(57),
     [sym_tmp_fromto_stmt] = STATE(57),
@@ -8387,7 +8387,7 @@ static const uint16_t ts_parse_table[LARGE_STATE_COUNT][SYMBOL_COUNT] = {
     [sym_file_descriptor] = ACTIONS(187),
   },
   [57] = {
-    [sym__tmp_stmt] = STATE(58),
+    [sym__tmp_op] = STATE(58),
     [sym_tmp_seek_stmt] = STATE(58),
     [sym_tmp_blksz_stmt] = STATE(58),
     [sym_tmp_fromto_stmt] = STATE(58),
@@ -8460,7 +8460,7 @@ static const uint16_t ts_parse_table[LARGE_STATE_COUNT][SYMBOL_COUNT] = {
     [sym_file_descriptor] = ACTIONS(333),
   },
   [58] = {
-    [sym__tmp_stmt] = STATE(58),
+    [sym__tmp_op] = STATE(58),
     [sym_tmp_seek_stmt] = STATE(58),
     [sym_tmp_blksz_stmt] = STATE(58),
     [sym_tmp_fromto_stmt] = STATE(58),
@@ -8533,7 +8533,7 @@ static const uint16_t ts_parse_table[LARGE_STATE_COUNT][SYMBOL_COUNT] = {
     [sym_file_descriptor] = ACTIONS(235),
   },
   [59] = {
-    [sym__tmp_stmt] = STATE(57),
+    [sym__tmp_op] = STATE(57),
     [sym_tmp_seek_stmt] = STATE(57),
     [sym_tmp_blksz_stmt] = STATE(57),
     [sym_tmp_fromto_stmt] = STATE(57),
@@ -8606,7 +8606,7 @@ static const uint16_t ts_parse_table[LARGE_STATE_COUNT][SYMBOL_COUNT] = {
     [sym_file_descriptor] = ACTIONS(317),
   },
   [60] = {
-    [sym__tmp_stmt] = STATE(57),
+    [sym__tmp_op] = STATE(57),
     [sym_tmp_seek_stmt] = STATE(57),
     [sym_tmp_blksz_stmt] = STATE(57),
     [sym_tmp_fromto_stmt] = STATE(57),

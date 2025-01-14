@@ -202,13 +202,13 @@
             "type": "REPEAT1",
             "content": {
               "type": "SYMBOL",
-              "name": "_tmp_stmt"
+              "name": "_tmp_op"
             }
           }
         ]
       }
     },
-    "_tmp_stmt": {
+    "_tmp_op": {
       "type": "CHOICE",
       "members": [
         {

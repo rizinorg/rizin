@@ -67,9 +67,9 @@ module.exports = grammar({
         $.legacy_quoted_stmt,
       ),
 
-    tmp_stmt: ($) => prec.right(seq($._simple_stmt, repeat1($._tmp_stmt))),
+    tmp_stmt: ($) => prec.right(seq($._simple_stmt, repeat1($._tmp_op))),
 
-    _tmp_stmt: ($) =>
+    _tmp_op: ($) =>
       choice(
         $.tmp_seek_stmt,
         $.tmp_blksz_stmt,
