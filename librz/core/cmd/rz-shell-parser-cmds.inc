@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2020 ret2libc <sirmy15@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 //
-// mark with HANDLER_RULE_OP every rule that is a _stmt
+// mark with HANDLER_RULE_OP every rule that is a _stmt or _op
 // mark with RULE_OP every rule that you use with DEFINE_IS_TS_FCN or with its TSSymbol (e.g. ts_##name##_symbol)
 HANDLER_RULE_OP(statements)
 HANDLER_RULE_OP(arged_stmt)
