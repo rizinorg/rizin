@@ -367,7 +367,7 @@ EXPECT=<<EOF
   0x00000002      49             dec   ecx
   0x00000003  ~   89d1           mov   ecx, edx
   ;-- mid.flag:
-  0x00000004      d15e48         rcr   dword [esi + 0x48], 1
+  0x00000004      d15e48         rcr   dword [esi+0x48], 0x01
 EOF
 RUN
 
@@ -413,7 +413,7 @@ EXPECT=<<EOF
 |           ; CODE XREF from fcn.00000003 @ 0x5
 |           ;-- (0x00000003) fcn.00000003:
 |           0x00000000  ~   b821c10010     mov   eax, 0x1000c121
-|           0x00000005      ebf9           jmp   0
+|           0x00000005      ebf9           jmp   0x0
             0x00000007  ~   b8210011c1     mov   eax, 0xc1110021       ; '!'
             ;-- sym.dummy:
             0x00000009      0011           add   byte [rcx], dl

@@ -39,7 +39,7 @@ f. foobar @ 0x100001216
 pd 20~foo
 EOF
 EXPECT=<<EOF
-|       ,=< 0x10000120f      7f05           jg    .foobar              ; main.foobar
+|       ,=< 0x10000120f      7f05           jnle  .foobar              ; main.foobar
 |       |    .foobar:
 EOF
 RUN
@@ -129,15 +129,15 @@ EXPECT=<<EOF
 / sym.register_tm_clones();
 |           0x08048410      mov   eax, obj.completed.6891
 |           0x08048415      sub   eax, obj.completed.6891
-|           0x0804841a      sar   eax, 2
+|           0x0804841a      sar   eax, 0x02
 |           0x0804841d      mov   edx, eax
 |           0x0804841f      shr   edx, 0x1f
 |           0x08048422      add   eax, edx
-|           0x08048424      sar   eax, 1
-|       ,=< 0x08048426      je    0x8048448
-|       |   0x08048428      mov   edx, 0
+|           0x08048424      sar   eax, 0x01
+|       ,=< 0x08048426      jz    0x8048448
+|       |   0x08048428      mov   edx, 0x00
 |       |   0x0804842d      test  edx, edx
-|      ,==< 0x0804842f      je    0x8048448
+|      ,==< 0x0804842f      jz    0x8048448
 |      ||   0x08048431      push  ebp
 |      ||   0x08048432      mov   ebp, esp
 |      ||   0x08048434      sub   esp, 0x10
@@ -185,7 +185,7 @@ size: 13
 / fcn2.0x004017c0();
 |           0x004017c0      51             push  ecx
 |           0x004017c1      89e1           mov   ecx, esp
-|           0x004017c3      83c108         add   ecx, 8
+|           0x004017c3      83c108         add   ecx, 0x08
 |           0x004017c6      3d00100000     cmp   eax, 0x1000
 \       ,=< 0x004017cb      7210           jb    0x4017dd
 
@@ -195,7 +195,7 @@ size: 6
 / fcn2.0x004017c0();
 |           0x004017c0      51             push  ecx
 |           0x004017c1      89e1           mov   ecx, esp
-\           0x004017c3      83c108         add   ecx, 8
+\           0x004017c3      83c108         add   ecx, 0x08
 
 size: 11
 0x004017c0 0x004017cb 00:0000 11 j 0x004017dd f 0x004017cd
@@ -203,7 +203,7 @@ size: 11
 / fcn2.0x004017c0();
 |           0x004017c0      51             push  ecx
 |           0x004017c1      89e1           mov   ecx, esp
-|           0x004017c3      83c108         add   ecx, 8
+|           0x004017c3      83c108         add   ecx, 0x08
 \           0x004017c6      3d00100000     cmp   eax, 0x1000
 EOF
 EXPECT_ERR=

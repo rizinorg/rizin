@@ -1161,15 +1161,15 @@ echo ---
 pd 4
 EOF
 EXPECT=<<EOF
-mov eax, dword [eax + foo.b]
-mov dword [ecx + foo.b], edx
-lea edx, [eax + foo.c]
-cmp dword [eax + foo.c], 0
+mov eax, dword [eax+foo.b]
+mov dword [ecx+foo.b], edx
+lea edx, dword [eax+foo.c]
+cmp dword [eax+foo.c], 0x00
 ---
-            0x00000000      8b4004         mov   eax, dword [eax + foo.b]
-            0x00000003      895104         mov   dword [ecx + foo.b], edx
-            0x00000006      8d5008         lea   edx, [eax + foo.c]
-            0x00000009      83780800       cmp   dword [eax + foo.c], 0
+            0x00000000      8b4004         mov   eax, dword [eax+foo.b]
+            0x00000003      895104         mov   dword [ecx+foo.b], edx
+            0x00000006      8d5008         lea   edx, dword [eax+foo.c]
+            0x00000009      83780800       cmp   dword [eax+foo.c], 0x00
 EOF
 RUN
 
@@ -1239,11 +1239,11 @@ EOF
 EXPECT=<<EOF
 / fcn.00000000();
 |           0x00000000      48c7c0000100.  mov   rax, 0x100
-|           0x00000007      488b5008       mov   rdx, qword [rax + foo.c]
-|           0x0000000b      488b4804       mov   rcx, qword [rax + foo.b]
+|           0x00000007      488b5008       mov   rdx, qword [rax+foo.c]
+|           0x0000000b      488b4804       mov   rcx, qword [rax+foo.b]
 |           0x0000000f      48c7c0000200.  mov   rax, 0x200
-|           0x00000016      488b5008       mov   rdx, qword [rax + bar.z]
-|           0x0000001a      488b4804       mov   rcx, qword [rax + bar.y]
+|           0x00000016      488b5008       mov   rdx, qword [rax+bar.z]
+|           0x0000001a      488b4804       mov   rcx, qword [rax+bar.y]
 |           0x0000001e      90             nop
 |           0x0000001f      90             nop
 \           0x00000020      c3             ret
@@ -1263,14 +1263,15 @@ pdf~Books
 EOF
 EXPECT=<<EOF
 |           ; var struct Books Books @ stack - 0xe8
-|           0x00000684      488d8520ffff.  lea   rax, [Books.title]
+|           0x00000684      488d8520ffff.  lea   rax, qword [Books.title]
 |           0x00000695      488910         mov   qword [rax], rdx      ; Books.title[0]
-|           0x00000698      488d8520ffff.  lea   rax, [Books.title]
+|           0x00000698      488d8520ffff.  lea   rax, qword [Books.title]
 |           0x000006ad      488908         mov   qword [rax], rcx      ; Books.author[0]
-|           0x000006b0      488d8520ffff.  lea   rax, [Books.title]
+|           0x000006b0      488d8520ffff.  lea   rax, qword [Books.title]
 |           0x000006c5      488930         mov   qword [rax], rsi      ; Books.subject[0]
-|           0x000006c8      66c740086700   mov   word [rax + Books.subject[8]], 0x67 ; 'g'
-|           0x000006d5      b800000000     mov   eax, 0                ; Books.subject[0]
+|           0x000006c8      66c740086700   mov   word [rax+Books.subject[8]], 0x67 ; 'g'
+|           0x000006d5      b800000000     mov   eax, 0x00             ; Books.subject[0]
+|       `-> 0x000006ee      c9             leave                       ; Books.title[0]
 EOF
 RUN
 
@@ -1288,9 +1289,9 @@ s 0x000005a8
 pd 3
 EOF
 EXPECT=<<EOF
-|           0x000005a8      c70206000000   mov   dword [edx], 6        ; Test.a
+|           0x000005a8      c70206000000   mov   dword [edx], 0x06     ; Test.a
 |           0x000005ae      8b55f4         mov   edx, dword [Test.a]   ; Test.a
-|           0x000005b1      c74204070000.  mov   dword [edx + Test.b], 7
+|           0x000005b1      c74204070000.  mov   dword [edx+Test.b], 0x07
 EOF
 RUN
 
@@ -1311,7 +1312,7 @@ EOF
 EXPECT=<<EOF
 pf "0[50]c[50]c[100]c title author subject"
 var union Books books @ stack - 0x78
-|           0x000006d2      488d4590       lea   rax, [books.title]
+|           0x000006d2      488d4590       lea   rax, qword [books.title]
 EOF
 RUN
 
@@ -1611,40 +1612,41 @@ CMDS=<<EOF
 aaa
 s 0x4070
 afvl
-afvt var_70h "char [20]"
+afvt arg_70h "char [20]"
 afvl
 ar bp=0x98
-afvd var_70h
+afvd arg_70h
 EOF
 EXPECT=<<EOF
-var unsigned long long var_80h @ stack - 0x80
-var unsigned long long var_71h @ stack - 0x71
-var int64_t var_70h @ stack - 0x70
-var char *var_60h @ stack - 0x60
-var int64_t var_58h @ stack - 0x58
-var int64_t var_56h @ stack - 0x56
-var int64_t var_50h @ stack - 0x50
-var int64_t var_43h @ stack - 0x43
-var int64_t var_42h @ stack - 0x42
-var int64_t var_41h @ stack - 0x41
-var int64_t var_40h @ stack - 0x40
 arg int64_t arg_5h @ stack + 0x5
+arg unsigned long long arg_30h @ stack + 0x30
+arg unsigned long long arg_3fh @ stack + 0x3f
+arg int64_t arg_40h @ stack + 0x40
+arg char *arg_50h @ stack + 0x50
+arg int64_t arg_58h @ stack + 0x58
+arg int64_t arg_5ah @ stack + 0x5a
+arg int64_t arg_60h @ stack + 0x60
+arg int64_t arg_6dh @ stack + 0x6d
+arg int64_t arg_6eh @ stack + 0x6e
+arg int64_t arg_6fh @ stack + 0x6f
+arg int64_t arg_70h @ stack + 0x70
 arg int argc @ rdi
 arg char **argv @ rsi
-var unsigned long long var_80h @ stack - 0x80
-var unsigned long long var_71h @ stack - 0x71
-var char [20] var_70h @ stack - 0x70
-var int64_t var_58h @ stack - 0x58
-var int64_t var_56h @ stack - 0x56
-var int64_t var_50h @ stack - 0x50
-var int64_t var_43h @ stack - 0x43
-var int64_t var_42h @ stack - 0x42
-var int64_t var_41h @ stack - 0x41
-var int64_t var_40h @ stack - 0x40
 arg int64_t arg_5h @ stack + 0x5
+arg unsigned long long arg_30h @ stack + 0x30
+arg unsigned long long arg_3fh @ stack + 0x3f
+arg int64_t arg_40h @ stack + 0x40
+arg char *arg_50h @ stack + 0x50
+arg int64_t arg_58h @ stack + 0x58
+arg int64_t arg_5ah @ stack + 0x5a
+arg int64_t arg_60h @ stack + 0x60
+arg int64_t arg_6dh @ stack + 0x6d
+arg int64_t arg_6eh @ stack + 0x6e
+arg int64_t arg_6fh @ stack + 0x6f
+arg char [20] arg_70h @ stack + 0x70
 arg int argc @ rdi
 arg char **argv @ rsi
-var var_70h = 0x00000028 = [ 'h', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '@', '.', '8', '.', '.', '.', '@', '.' ]
+arg arg_70h = 0x00000028 = [ 'h', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '@', '.', '8', '.', '.', '.', '@', '.' ]
 EOF
 RUN
 
@@ -1737,14 +1739,13 @@ EXPECT=<<EOF
             ; DATA XREF from entry0 @ 0x8048e5b
             ;-- section..text:
 / int main(int argc, char **argv, char **envp);
-|           ; var int32_t var_40h @ stack - 0x40
-|           ; var int32_t var_24h @ stack - 0x24
-|           ; var int32_t var_20h @ stack - 0x20
-|           ; var int32_t var_1ch @ stack - 0x1c
-|           ; var int32_t var_18h @ stack - 0x18
-|           ; var int32_t var_14h @ stack - 0x14
 |           ; arg int argc @ stack + 0x4
 |           ; arg char **argv @ stack + 0x8
+|           ; arg int32_t arg_1ch @ stack + 0x1c
+|           ; arg int32_t arg_20h @ stack + 0x20
+|           ; arg int32_t arg_24h @ stack + 0x24
+|           ; arg int32_t arg_28h @ stack + 0x28
+|           ; arg int32_t arg_2ch @ stack + 0x2c
 |           0x08048d60      push  ebp                                  ; [13] -r-x section size 9756 named .text
 EOF
 RUN
@@ -2154,7 +2155,7 @@ afs "char type(int a, char **b);"
 afs
 EOF
 EXPECT=<<EOF
-void fcn.004e2420(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg5, int64_t arg6, int64_t arg_8h);
+void fcn.004e2420(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg5, int64_t arg6, int64_t arg_80h, int64_t arg_74h, int64_t arg_78h, int64_t arg_128h, int64_t arg_88h, int64_t arg_d0h, int64_t arg_d8h);
 void no_type(int a, char **b);
 char type(int a, char **b);
 EOF
@@ -2329,9 +2330,9 @@ const char *
 unsigned long long
 const void *
 size_t
+size_t *
 mbstate_t *
 wint_t
-size_t *
 =
 fcn.00011b90
 fcn.0000e780

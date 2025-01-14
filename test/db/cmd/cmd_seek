@@ -235,30 +235,30 @@ EXPECT=<<EOF
 --- From 0x560e7d ---
 
 -- 1 --
-            0x00560e7a  ~   0085965e5052   add   byte [ebp + 0x52505e96], al
+            0x00560e7a  ~   0085965e5052   add   byte [ebp+0x52505e96], al
 0x560e7a
-            0x00560e7a  ~   0085965e5052   add   byte [ebp + 0x52505e96], al
+            0x00560e7a  ~   0085965e5052   add   byte [ebp+0x52505e96], al
 
 -- 2 --
             0x00560e78      d41b           aam   0x1b
-            0x00560e7a  ~   0085965e5052   add   byte [ebp + 0x52505e96], al
+            0x00560e7a  ~   0085965e5052   add   byte [ebp+0x52505e96], al
 0x560e78
             0x00560e78      d41b           aam   0x1b
-            0x00560e7a  ~   0085965e5052   add   byte [ebp + 0x52505e96], al
+            0x00560e7a  ~   0085965e5052   add   byte [ebp+0x52505e96], al
 
 --- From 0x560e7c ---
 
 -- 1 --
-            0x00560e7a  ~   0085965e5052   add   byte [ebp + 0x52505e96], al
+            0x00560e7a  ~   0085965e5052   add   byte [ebp+0x52505e96], al
 0x560e7a
-            0x00560e7a  ~   0085965e5052   add   byte [ebp + 0x52505e96], al
+            0x00560e7a  ~   0085965e5052   add   byte [ebp+0x52505e96], al
 
 -- 2 --
             0x00560e78      d41b           aam   0x1b
-            0x00560e7a  ~   0085965e5052   add   byte [ebp + 0x52505e96], al
+            0x00560e7a  ~   0085965e5052   add   byte [ebp+0x52505e96], al
 0x560e78
             0x00560e78      d41b           aam   0x1b
-            0x00560e7a  ~   0085965e5052   add   byte [ebp + 0x52505e96], al
+            0x00560e7a  ~   0085965e5052   add   byte [ebp+0x52505e96], al
 
 --- From 0x560e7a ---
 

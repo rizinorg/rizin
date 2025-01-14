@@ -158,7 +158,7 @@ e asm.bytes=true
 pd 2 @ sym.main+6
 EOF
 EXPECT=<<EOF
-            0x00000006      4c8d05230000.  lea   r8, [0x00000030]      ; sym..data ; "Win64 assembly"; RELOC 32 .data @ 0x00000030
-            0x0000000d      488d152b0000.  lea   rdx, [0x0000003f]     ; str.Coffee_time ; "Coffee time!"; RELOC 32 .data @ 0x00000030 + 0xf
+            0x00000006      4c8d05230000.  lea   r8, qword [0x30]      ; sym..data ; "Win64 assembly"; RELOC 32 .data @ 0x00000030
+            0x0000000d      488d152b0000.  lea   rdx, qword [0x3f]     ; str.Coffee_time ; "Coffee time!"; RELOC 32 .data @ 0x00000030 + 0xf
 EOF
 RUN

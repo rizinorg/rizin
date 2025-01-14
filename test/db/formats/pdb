@@ -173,11 +173,11 @@ global void * __guard_dispatch_icall_fptr @ 0x140015020
 global void * __guard_xfg_dispatch_icall_fptr @ 0x140015030
 global void * __guard_xfg_table_dispatch_icall_fptr @ 0x140015040
 ---
-(nofunc) 0x140007344 [DATA] lea rcx, pdb.exceptions_test.__guard_check_icall_fptr
-            0x140007344      lea   rcx, pdb.exceptions_test.__guard_check_icall_fptr ; 0x140015000
+(nofunc) 0x140007344 [DATA] lea rcx, qword pdb.exceptions_test.__guard_check_icall_fptr
+            0x140007344      lea   rcx, qword pdb.exceptions_test.__guard_check_icall_fptr ; 0x140015000
             0x14000734b      call  fcn.1400011db
-            0x140007350      lea   rcx, [0x14000101e]
-fcn.140001366 0x140006a64 [DATA] mov dword [pdb.exceptions_test.__scrt_debugger_hook_flag], 0
+            0x140007350      lea   rcx, qword [0x14000101e]
+fcn.140001366 0x140006a64 [DATA] mov dword [pdb.exceptions_test.__scrt_debugger_hook_flag], 0x00
   ; CALL XREFS from fcn.140001398 @ 0x140006aab, 0x140006c04
 / fcn.140001366(int64_t arg1);
 | ; arg int64_t arg1 @ rcx
@@ -187,17 +187,17 @@ fcn.140001366 0x140006a64 [DATA] mov dword [pdb.exceptions_test.__scrt_debugger_
 | ; CODE XREF from fcn.140001366 @ 0x140001366
 | ;-- __crt_debugger_hook:
 | 0x140006a60      mov   dword [var_8h], ecx                           ; arg1
-| 0x140006a64      mov   dword [pdb.exceptions_test.__scrt_debugger_hook_flag], 0 ; [0x140011ba4:4]=0
+| 0x140006a64      mov   dword [pdb.exceptions_test.__scrt_debugger_hook_flag], 0x00 ; [0x140011ba4:4]=0
 \ 0x140006a6e      ret
 
-fcn.140001316 0x140006a40 [DATA] lea rax, pdb.exceptions_test.__dyn_tls_init_callback
+fcn.140001316 0x140006a40 [DATA] lea rax, qword pdb.exceptions_test.__dyn_tls_init_callback
   ; CALL XREF from fcn.1400049a0 @ 0x140004a44
 / fcn.140001316();
 | 0x140001316      jmp   pdb.exceptions_test.__scrt_get_dyn_tls_init_callback
 | ----------- true: 0x140006a40
 | ; CODE XREF from fcn.140001316 @ 0x140001316
 | ;-- __scrt_get_dyn_tls_init_callback:
-| 0x140006a40      lea   rax, pdb.exceptions_test.__dyn_tls_init_callback ; 0x140011be0
+| 0x140006a40      lea   rax, qword pdb.exceptions_test.__dyn_tls_init_callback ; 0x140011be0
 \ 0x140006a47      ret
 
 EOF

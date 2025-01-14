@@ -123,7 +123,7 @@ e asm.comments=false
 pD 6@x:8d15d0830408
 EOF
 EXPECT=<<EOF
-  0x00000000      8d15d0830408   lea   edx, [0x80483d0]
+  0x00000000      8d15d0830408   lea   edx, dword [0x80483d0]
 EOF
 RUN
 

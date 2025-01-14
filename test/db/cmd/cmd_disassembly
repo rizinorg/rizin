@@ -151,7 +151,7 @@ EOF
 EXPECT=<<EOF
 movs r0, r0
 movs r0, r0
-add byte [bx + si], al
+add byte [bx+si*1], al
 EOF
 RUN
 

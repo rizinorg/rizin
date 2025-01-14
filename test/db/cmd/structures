@@ -38,15 +38,15 @@ afvt s1 "struct S1"
 pi 4 @ 0x004004be
 EOF
 EXPECT=<<EOF
-mov dword [s1], 1
-mov dword [var_114h], 2
-mov dword [var_110h], 3
-lea rax, [s1]
+mov dword [s1], 0x01
+mov dword [var_114h], 0x02
+mov dword [var_110h], 0x03
+lea rax, qword [s1]
 ---
-mov dword [s1.a], 1
-mov dword [s1.b], 2
-mov dword [s1.c], 3
-lea rax, [s1.a]
+mov dword [s1.a], 0x01
+mov dword [s1.b], 0x02
+mov dword [s1.c], 0x03
+lea rax, qword [s1.a]
 EOF
 RUN
 
@@ -65,13 +65,13 @@ td "struct S1 { int x; int y; int c; char d[256]; short e; }"
 pi 4 @ 0x004004be
 EOF
 EXPECT=<<EOF
-mov dword [s1.a], 1
-mov dword [s1.b], 2
-mov dword [s1.c], 3
-lea rax, [s1.a]
-mov dword [s1.x], 1
-mov dword [s1.y], 2
-mov dword [s1.c], 3
-lea rax, [s1.x]
+mov dword [s1.a], 0x01
+mov dword [s1.b], 0x02
+mov dword [s1.c], 0x03
+lea rax, qword [s1.a]
+mov dword [s1.x], 0x01
+mov dword [s1.y], 0x02
+mov dword [s1.c], 0x03
+lea rax, qword [s1.x]
 EOF
 RUN

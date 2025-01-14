@@ -7,7 +7,7 @@
 
 #include <rz_lib.h>
 #include <rz_analysis.h>
-#include <Zydis/Zydis.h>
+#include <Zydis.h>
 
 #define BITS_PER_BYTE    8
 #define GPR_FAMILY_COUNT 10
@@ -36,6 +36,6 @@ typedef struct x86_il_context_t {
 RZ_IPI bool rz_x86_il_opcode(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisOp *aop, ut64 pc, RZ_BORROW RZ_NONNULL const X86ILIns *ins);
 RZ_IPI RzAnalysisILConfig *rz_x86_il_config(RZ_NONNULL RzAnalysis *analysis);
 
-#define imm_value(op, pc, ins_size) (ut64)((op.imm.is_relative) ? (op.imm.value.s + pc + ins_size) : (op.imm.value.u))
+#define imm_value(op, pc) (ut64)((op.imm.is_relative) ? (op.imm.value.s + pc) : (op.imm.value.u))
 
 #endif /* RZIL_ANALYSIS_X86_IL_H */

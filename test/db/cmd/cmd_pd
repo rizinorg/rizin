@@ -13,13 +13,13 @@ e asm.sub.rel=0
 pd 1
 EOF
 EXPECT=<<EOF
-            0x100001232      c70594420000.  mov   dword [rip + 0x4294], 0x50 ; 'P' ; section.10.__DATA.__data
+            0x100001232      c70594420000.  mov   dword [section.10.__DATA.__data], 0x50 ; 'P'
                                                                        ; [0x1000054d0:4]=80 ; U"P."
             0x100001232      c70594420000.  mov   dword [section.10.__DATA.__data], 0x50 ; 'P'
                                                                        ; [0x1000054d0:4]=80 ; U"P."
             0x100001232      c70594420000.  mov   dword [fin.dus], 0x50 ; 'P'
                                                                        ; [0x1000054d0:4]=80 ; U"P."
-            0x100001232      c70594420000.  mov   dword [rip + 0x4294], 0x50 ; 'P' ; fin.dus
+            0x100001232      c70594420000.  mov   dword [fin.dus], 0x50 ; 'P'
                                                                        ; [0x1000054d0:4]=80 ; U"P."
 EOF
 RUN
@@ -322,7 +322,7 @@ wx c6852fffffff61
 pd 1
 EOF
 EXPECT=<<EOF
-            0x00000000      c6852fffffff.  mov   byte [ebp - 0xd1], 0x61 ; 'a'
+            0x00000000      c6852fffffff.  mov   byte [ebp-0xd1], 0x61 ; 'a'
 EOF
 RUN
 
@@ -437,10 +437,10 @@ EXPECT=<<EOF
                  and rsp, 0xfffffffffffffff0
                  push rax
                  push rsp
-                 lea r8, [0x000011e0]
-                 lea rcx, [0x00001170]
+                 lea r8, qword [0x11e0]
+                 lea rcx, qword [0x1170]
                  ; 0xd7c
-                 lea rdi, main
+                 lea rdi, qword main
 EOF
 RUN
 
@@ -577,17 +577,17 @@ e asm.nbytes=6
 pd 3
 EOF
 EXPECT=<<EOF
-  0x00000000      488d85c0f9ff.  lea   rax, [rbp - 0x640]
-  0x00000007      488985b8f9ff.  mov   qword [rbp - 0x648], rax
+  0x00000000      488d85c0f9ff.  lea   rax, qword [rbp-0x640]
+  0x00000007      488985b8f9ff.  mov   qword [rbp-0x648], rax
   0x0000000e      4585f6         test  r14d, r14d
-  0x00000000      488d85c0f9ffff         lea   rax, [rbp - 0x640]
-  0x00000007      488985b8f9ffff         mov   qword [rbp - 0x648], rax
+  0x00000000      488d85c0f9ffff         lea   rax, qword [rbp-0x640]
+  0x00000007      488985b8f9ffff         mov   qword [rbp-0x648], rax
   0x0000000e      4585f6                 test  r14d, r14d
-  0x00000000              488d85c0f9ffff  lea   rax, [rbp - 0x640]
-  0x00000007              488985b8f9ffff  mov   qword [rbp - 0x648], rax
+  0x00000000              488d85c0f9ffff  lea   rax, qword [rbp-0x640]
+  0x00000007              488985b8f9ffff  mov   qword [rbp-0x648], rax
   0x0000000e                      4585f6  test  r14d, r14d
-  0x00000000       488d85c0f9ff.  lea   rax, [rbp - 0x640]
-  0x00000007       488985b8f9ff.  mov   qword [rbp - 0x648], rax
+  0x00000000       488d85c0f9ff.  lea   rax, qword [rbp-0x640]
+  0x00000007       488985b8f9ff.  mov   qword [rbp-0x648], rax
   0x0000000e              4585f6  test  r14d, r14d
 EOF
 RUN
@@ -724,14 +724,14 @@ EXPECT=<<EOF
 / fcn2.0x004017c0();
 |           0x004017c0      51             push  ecx
 |           0x004017c1      89e1           mov   ecx, esp
-|           0x004017c3      83c108         add   ecx, 8
+|           0x004017c3      83c108         add   ecx, 0x08
 |           0x004017c6      3d00100000     cmp   eax, 0x1000
 \       ,=< 0x004017cb      7210           jb    0x4017dd
 
 fcn2.0x004017c0();
           0x004017c0      51             push  ecx
           0x004017c1      89e1           mov   ecx, esp
-          0x004017c3      83c108         add   ecx, 8
+          0x004017c3      83c108         add   ecx, 0x08
           0x004017c6      3d00100000     cmp   eax, 0x1000
       ,=< 0x004017cb      7210           jb    0x4017dd
 EOF
@@ -755,14 +755,14 @@ EXPECT=<<EOF
 / fcn2.0x004017c0();
 |           0x004017c0      51             push  ecx
 |           0x004017c1      89e1           mov   ecx, esp
-|           0x004017c3      83c108         add   ecx, 8
+|           0x004017c3      83c108         add   ecx, 0x08
 |           0x004017c6      3d00100000     cmp   eax, 0x1000
 \       ,=< 0x004017cb      7210           jb    0x4017dd
 
 13: fcn2.0x004017c0();
           0x004017c0      51             push  ecx
           0x004017c1      89e1           mov   ecx, esp
-          0x004017c3      83c108         add   ecx, 8
+          0x004017c3      83c108         add   ecx, 0x08
           0x004017c6      3d00100000     cmp   eax, 0x1000
       ,=< 0x004017cb      7210           jb    0x4017dd
 EOF
@@ -787,8 +787,8 @@ pd 1 @ 0x140001034
 pd 1 @ 0x140001070
 EOF
 EXPECT=<<EOF
-            0x140001034      488d05495001.  lea   rax, [0x140016084]   ; "\r"
-            0x140001070      488d053d5001.  lea   rax, [0x1400160b4]   ; "a"
+            0x140001034      488d05495001.  lea   rax, qword [0x140016084] ; "\r"
+            0x140001070      488d053d5001.  lea   rax, qword [0x1400160b4] ; "a"
 EOF
 RUN
 
@@ -813,10 +813,10 @@ e asm.cmt.right=false
 pd 1 @ 0x0001145f
 EOF
 EXPECT=<<EOF
-            0x0001145f      488d3d72a100.  lea   rdi, str.A_NULL_argv_0__was_passed_through_an_exec_system_call. ; 0x1b5d8 ; "A NULL argv[0] was passed through an exec system call.\n"
+            0x0001145f      488d3d72a100.  lea   rdi, qword str.A_NULL_argv_0__was_passed_through_an_exec_system_call. ; 0x1b5d8 ; "A NULL argv[0] was passed through an exec system call.\n"
             ; 0x1b5d8
             ; "A NULL argv[0] was passed through an exec system call.\n"
-            0x0001145f      488d3d72a100.  lea rdi, str.A_NULL_argv_0__was_passed_through_an_exec_system_call.
+            0x0001145f      488d3d72a100.  lea rdi, qword str.A_NULL_argv_0__was_passed_through_an_exec_system_call.
 EOF
 RUN
 
@@ -832,10 +832,10 @@ e asm.cmt.right=false
 pd 1 @ 0x0001145f
 EOF
 EXPECT=<<EOF
-            0x0001145f      488d3d72a100.  lea   rdi, [NULL_error]     ; 0x1b5d8 ; "A NULL argv[0] was passed through an exec system call.\n"
+            0x0001145f      488d3d72a100.  lea   rdi, qword [NULL_error] ; 0x1b5d8 ; "A NULL argv[0] was passed through an exec system call.\n"
             ; 0x1b5d8
             ; "A NULL argv[0] was passed through an exec system call.\n"
-            0x0001145f      488d3d72a100.  lea rdi, [NULL_error]
+            0x0001145f      488d3d72a100.  lea rdi, qword [NULL_error]
 EOF
 RUN
 
@@ -885,8 +885,7 @@ e asm.cmt.right=false
 pd 1 @ 0x004010fa
 EOF
 EXPECT=<<EOF
-            0x004010fa      8b3500204000   mov   esi, dword [sym.imp.KERNEL32.dll_GetLastError] ; [0x402000:4]=0x29f4
-            ; [0x402000:4]=0x29f4
+            0x004010fa      8b3500204000   mov   esi, dword [sym.imp.KERNEL32.dll_GetLastError]
             0x004010fa      8b3500204000   mov esi, dword [sym.imp.KERNEL32.dll_GetLastError]
 EOF
 RUN
@@ -903,8 +902,7 @@ e asm.cmt.right=false
 pd 1 @ 0x004010fa
 EOF
 EXPECT=<<EOF
-            0x004010fa      8b3500204000   mov   esi, dword [ptr_GetLastError] ; [0x402000:4]=0x29f4
-            ; [0x402000:4]=0x29f4
+            0x004010fa      8b3500204000   mov   esi, dword [ptr_GetLastError]
             0x004010fa      8b3500204000   mov esi, dword [ptr_GetLastError]
 EOF
 RUN
@@ -941,14 +939,14 @@ pd 1 @ 0x140001010
 pd 1 @ 0x14000101c
 EOF
 EXPECT=<<EOF
-            0x140001004      488d05f54f01.  lea   rax, str.ANSI_esc:___33m ; section..data
+            0x140001004      488d05f54f01.  lea   rax, qword str.ANSI_esc:___33m ; section..data
                                                                        ; 0x140016000 ; "\tANSI\esc: \e[33m\r\n"
             0x140001010      488d05015001.  lea   rax, str.wide_esc:___0m ; 0x140016018 ; u"\twide\esc: \e[0m¡\r\n"
             0x14000101c      488d051d5001.  lea   rax, str.wide__in_Arabic: ; 0x140016040 ; u"\"wide\" in Arabic: واسع"
             ; section..data
             ; 0x140016000
             ; "\tANSI\esc: \e[33m\r\n"
-            0x140001004      488d05f54f01.  lea rax, str.ANSI_esc:___33m
+            0x140001004      488d05f54f01.  lea rax, qword str.ANSI_esc:___33m
             ; 0x140016018
             ; u"\twide\esc: \e[0m¡\r\n"
             0x140001010      488d05015001.  lea rax, str.wide_esc:___0m
@@ -1069,7 +1067,7 @@ EXPECT=<<EOF
             0x004016c0      mov   edi, 0x40230c
             0x004016c0      mov   edi, 0x40230c                        ; u"┠╂──╂┨ is a fence with embedded zeros\n"
             0x004016ca      mov   edi, 0x40235a                        ; 'Z#@' ; u"┠╂-─-─╂┨ is a fence with embedded double zeros\n"
-            0x004016d4      mov   edi, str.e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k ; u"╥╥╥╥╥╥╥╥╥╫╥╥╥╥╥╥╥╥╥╫╥╥╥╥╥╥╥╥╥╫╥╥╥╥╥╥╥╥╥╫╥╥�"
+            0x004016d4      mov   edi, str.e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k ; u"╥╥╥╥╥╥╥╥╥╫╥╥╥╥╥╥╥╥╥╫╥╥╥╥╥╥╥╥╥╫╥╥╥╥╥╥╥╥╥╫╥╥�"
 EOF
 RUN
 
@@ -1098,7 +1096,7 @@ EXPECT=<<EOF
             0x004016ed      mov   edi, 0x40258c                        ; U"utf32le> \\u00a2\\u20ac\\U00010348 in cyan:\e[36m ¢€𐍈 \e[0m\n"
             0x004016f7      mov   edi, 0x40266c                        ; U"Mountain range with embedded quad zeros: 𐌀A𐌀A𐌀A\n"
             0x00401701      mov   edi, 0x402730                        ; '0'@' ; "e%"
-            0x00401701      mov   edi, 0x402730                        ; '0'@' ; U"╥╥╥╥╥╥╥╥╥╫╥╥╥╥╥╥╥╥╥╫╥╥╥╥╥╥╥╥╥╫╥╥╥╥╥╥╥╥╥╫╥╥�"
+            0x00401701      mov   edi, 0x402730                        ; '0'@' ; U"╥╥╥╥╥╥╥╥╥╫╥╥╥╥╥╥╥╥╥╫╥╥╥╥╥╥╥╥╥╫╥╥╥╥╥╥╥╥╥╫╥╥�"
 EOF
 RUN
 
@@ -1324,12 +1322,12 @@ pdf
 EOF
 EXPECT=<<EOF
 / int main(int argc, char **argv, char **envp);
-| 0x0000061a      pushq %rbp
-| 0x0000061b      movq  %rsp, %rbp
-| 0x0000061e      movl  $1, obj.sa
-| 0x00000628      movl  $0, %eax
-| 0x0000062d      popq  %rbp
-\ 0x0000062e      retq
+| 0x0000061a      push  %rbp
+| 0x0000061b      mov   %rsp, %rbp
+| 0x0000061e      movl  $0x01, obj.sa
+| 0x00000628      mov   $0x00, %eax
+| 0x0000062d      pop   %rbp
+\ 0x0000062e      ret
 EOF
 RUN
 
@@ -1689,10 +1687,10 @@ pd 1 @B:-1
 pd 1 @B:-2
 EOF
 EXPECT=<<EOF
-0x00000000      83f803         cmp   eax, 3
-0x00000003      740e           je    0x13
-0x00000003      740e           je    0x13
-0x00000000      83f803         cmp   eax, 3
+0x00000000      83f803         cmp   eax, 0x03
+0x00000003      740e           jz    0x13
+0x00000003      740e           jz    0x13
+0x00000000      83f803         cmp   eax, 0x03
 EOF
 RUN
 
@@ -1710,19 +1708,19 @@ s 0x0040294b
 pd 10
 EOF
 EXPECT=<<EOF
-|           0x0040294b      c6059ea72100.  mov   byte [0x0061d0f0], 0
-|           0x00402952      83f802         cmp   eax, 2
-|       ,=< 0x00402955      0f8483080000   je    0x4031de
+|           0x0040294b      c6059ea72100.  mov   byte [0x61d0f0], 0x00
+|           0x00402952      83f802         cmp   eax, 0x02
+|       ,=< 0x00402955      0f8483080000   jz    0x4031de
 |       |   |
-|       |   0x0040295b      83f803         cmp   eax, 3
-|      ,==< 0x0040295e      742f           je    0x40298f
+|       |   0x0040295b      83f803         cmp   eax, 0x03
+|      ,==< 0x0040295e      742f           jz    0x40298f
 |      ||   |
-|      ||   0x00402960      83e801         sub   eax, 1
-|     ,===< 0x00402963      7405           je    0x40296a
+|      ||   0x00402960      83e801         sub   eax, 0x01
+|     ,===< 0x00402963      7405           jz    0x40296a
 |     |||   |
 |     |||   0x00402965      e8b6f8ffff     call  sym.imp.abort
 |     |||   |
-|     `---> 0x0040296a      bf01000000     mov   edi, 1
+|     `---> 0x0040296a      bf01000000     mov   edi, 0x01
 |      ||   0x0040296f      e80cf9ffff     call  sym.imp.isatty
 EOF
 RUN
@@ -1851,8 +1849,8 @@ pd 1 @ 0x161d
 pd 1 @ 0x1447
 EOF
 EXPECT=<<EOF
-            0x0000161d      lea   eax, [esi - 0x21f7]                  ; "\n  Blue Pill" str.Blue_Pill
-            0x0000161d      lea   eax, [esi - 0x21f7]                  ; "\n  Blue Pill"
+            0x0000161d      lea   eax, dword [esi-0x21f7]              ; "\n  Blue Pill" str.Blue_Pill
+            0x0000161d      lea   eax, dword [esi-0x21f7]              ; "\n  Blue Pill"
             0x00001447      add   esi, 0x2bb9                          ; section..got.plt
 EOF
 RUN
@@ -2131,9 +2129,9 @@ pd 1 @ 0x9a9
 pd 1 @ 0x9b3
 EOF
 EXPECT=<<EOF
-            0x000009a2      mov   dword [rbp - 0x30], 0x3c3c2b3e       ; '>+<<'
-            0x000009a9      mov   word [rbp - 0x2c], 0x3e5d            ; ']>'
-            0x000009b3      movabs rax, 0x3c2b3c3c5b3e3e3e             ; '>>>[<<+<'
+            0x000009a2      mov   dword [rbp-0x30], 0x3c3c2b3e         ; '>+<<'
+            0x000009a9      mov   word [rbp-0x2c], 0x3e5d              ; ']>'
+            0x000009b3      mov   rax, 0x3c2b3c3c5b3e3e3e              ; '>>>[<<+<'
 EOF
 RUN
 
@@ -2149,9 +2147,9 @@ pdJ 1 @ 0x9b3
 EOF
 EXPECT=<<EOF
             ; '>>>[<<+<'
-            0x000009b3      48b83e3e3e5b.  movabs rax, 0x3c2b3c3c5b3e3e3e
+            0x000009b3      48b83e3e3e5b.  mov rax, 0x3c2b3c3c5b3e3e3e
 
-[{"offset":2483,"text":"            ; '>>>[<<+<'"},{"offset":2483,"text":"            0x000009b3      48b83e3e3e5b.  movabs rax, 0x3c2b3c3c5b3e3e3e"}]
+[{"offset":2483,"text":"            ; '>>>[<<+<'"},{"offset":2483,"text":"            0x000009b3      48b83e3e3e5b.  mov rax, 0x3c2b3c3c5b3e3e3e"}]
 EOF
 RUN
 
@@ -2194,7 +2192,7 @@ pd 1 @ 0xe78
 EOF
 EXPECT=<<EOF
             ; 'f'
-            0x00000e78      mov byte [rbp - 0x274e], 0x66
+            0x00000e78      mov byte [rbp-0x274e], 0x66
 EOF
 RUN
 
@@ -2254,9 +2252,9 @@ call 0x401836
 jmp 0x401322
 push ebp
 mov ebp, esp
-push 0
+push 0x00
 call dword [SetUnhandledExceptionFilter]
-push dword [ebp + 8]
+push dword [ebp+0x08]
 call dword [UnhandledExceptionFilter]
 push 0xc0000409
 call dword [GetCurrentProcess]
@@ -2321,7 +2319,7 @@ aaa
 pdf @ 0x08048484~:1
 EOF
 EXPECT=<<EOF
-sym.parell(const char *s);
+sym.parell(const char *s, const char *format, va_list args);
 EOF
 RUN
 
@@ -2335,7 +2333,7 @@ aaa
 pdf @ 0x08048484~:1
 EOF
 EXPECT=<<EOF
-parell(const char *s);
+parell(const char *s, const char *format, va_list args);
 EOF
 RUN
 
@@ -2750,24 +2748,24 @@ EXPECT=<<EOF
 | 0x08048541      mov   ebp, esp
 | 0x08048543      sub   esp, 0x88
 | 0x08048549      and   esp, 0xfffffff0
-| 0x0804854c      mov   eax, 0
-| 0x08048551      add   eax, 0xf                                       ; 15
-| 0x08048554      add   eax, 0xf                                       ; 15
-| 0x08048557      shr   eax, 4
-| 0x0804855a      shl   eax, 4
+| 0x0804854c      mov   eax, 0x00
+| 0x08048551      add   eax, 0x0f                                      ; 0xf ; 15
+| 0x08048554      add   eax, 0x0f                                      ; 0xf ; 15
+| 0x08048557      shr   eax, 0x04
+| 0x0804855a      shl   eax, 0x04
 | 0x0804855d      sub   esp, eax
 | 0x0804855f      mov   dword [esp], str.IOLI_Crackme_Level_0x05       ; [0x804868e:4]=0x494c4f49 ; "IOLI Crackme Level 0x05\n" ; const char *format
 | 0x08048566      call  sym.imp.printf                                 ; int printf(const char *format)
 | 0x0804856b      mov   dword [esp], str.Password:                     ; [0x80486a7:4]=0x73736150 ; "Password: " ; const char *format
 | 0x08048572      call  sym.imp.printf                                 ; int printf(const char *format)
-| 0x08048577      lea   eax, [var_7ch]
-| 0x0804857a      mov   dword [var_88h], eax
+| 0x08048577      lea   eax, dword [var_7ch]
+| 0x0804857a      mov   dword [arg_88h], eax
 | 0x0804857e      mov   dword [esp], data.080486b2                     ; [0x80486b2:4]=0x7325 ; "%s" ; const char *format
 | 0x08048585      call  sym.imp.scanf                                  ; int scanf(const char *format)
-| 0x0804858a      lea   eax, [var_7ch]
+| 0x0804858a      lea   eax, dword [var_7ch]
 | 0x0804858d      mov   dword [esp], eax                               ; int32_t arg_4h
 | 0x08048590      call  sym.check
-| 0x08048595      mov   eax, 0
+| 0x08048595      mov   eax, 0x00
 | 0x0804859a      leave
 \ 0x0804859b      ret
 

@@ -127,12 +127,12 @@ EXPECT=<<EOF
 |     ||:   0x00560eb9      mov   dword [esp], 0x4b7dbaf4
 |     ||:   0x00560ec0      mov   dword [esp], ebx
 |     ||:   0x00560ec3      mov   ebx, 0x60
-|     ||:   0x00560ec8      mov   dword [esp + 4], ebx
+|     ||:   0x00560ec8      mov   dword [esp+0x04], ebx
 |     ||:   0x00560ecc      pop   ebx
 |     ||:   0x00560ecd      push  ecx
 |     ||:   0x00560ece      mov   dword [esp], 0x7fdd7312
 |     ||:   0x00560ed5      or    dword [esp], 0x76fe6216
-|      |:   0x00560edc      shl   dword [esp], 1
+|      |:   0x00560edc      shl   dword [esp], 0x01
 |      |:   0x00560ee0      or    dword [esp], 0x5677e157
 |      |:   0x00560ee7      sub   dword [esp], 0x66a97007
 |      |:   0x00560eee      add   dword [esp], 0xd4a8fad4
@@ -143,8 +143,8 @@ EXPECT=<<EOF
 |      |:   0x00560f00      sub   dword [esp], 0x91ea8610
 |      |:   0x00560f07      push  ebp
 |      |:   0x00560f08      mov   ebp, esp
-|      |:   0x00560f0a      add   ebp, 4
-|      |:   0x00560f10      sub   ebp, 4
+|      |:   0x00560f0a      add   ebp, 0x04
+|      |:   0x00560f10      sub   ebp, 0x04
 |      |:   0x00560f16      xchg  dword [esp], ebp
 |      |:   0x00560f19      pop   esp
 |      |:   0x00560f1a      mov   dword [esp], ecx
@@ -153,16 +153,16 @@ EXPECT=<<EOF
 |      |:   0x00560f25      mov   dword [esp], ecx
 |      |:   0x00560f28      mov   ecx, esp
 |       :   0x00560f2a      push  ebx
-|       :   0x00560f2b      mov   ebx, 4
+|       :   0x00560f2b      mov   ebx, 0x04
 |       :   0x00560f30      add   ecx, ebx
 |       :   0x00560f32      pop   ebx
-|       :   0x00560f33      sub   ecx, 4
+|       :   0x00560f33      sub   ecx, 0x04
 |       :   0x00560f36      xor   ecx, dword [esp]
 |       :   0x00560f39      xor   dword [esp], ecx
 |       :   0x00560f3c      xor   ecx, dword [esp]
 |       :   0x00560f3f      pop   esp
 |       :   0x00560f40      mov   dword [esp], ebx
-|       :   0x00560f43      push  dword [esp + 0x10]
+|       :   0x00560f43      push  dword [esp+0x10]
 |       :   0x00560f47      mov   eax, dword [esp]
 |       :   0x00560f4a      push  esi
 |       :   0x00560f4b      mov   esi, esp
@@ -172,30 +172,30 @@ EXPECT=<<EOF
 |       :   0x00560f59      xor   edx, 0x745d0117
 |       :   0x00560f5f      add   esi, edx
 |       :   0x00560f61      mov   edx, dword [esp]
-|       :   0x00560f64      add   esp, 4
-|       :   0x00560f67      add   esi, 4
+|       :   0x00560f64      add   esp, 0x04
+|       :   0x00560f67      add   esi, 0x04
 |       :   0x00560f6d      xchg  dword [esp], esi
 |       :   0x00560f70      pop   esp
-|       :   0x00560f71      push  dword [esp + 8]
+|       :   0x00560f71      push  dword [esp+0x08]
 |       :   0x00560f75      push  dword [esp]
 |       :   0x00560f78      mov   ebx, dword [esp]
 |       :   0x00560f7b      push  ebx
 |       :   0x00560f7c      mov   ebx, esp
-|       :   0x00560f7e      add   ebx, 4
-|       :   0x00560f84      add   ebx, 4
+|       :   0x00560f7e      add   ebx, 0x04
+|       :   0x00560f84      add   ebx, 0x04
 |       :   0x00560f8a      xchg  dword [esp], ebx
 |       :   0x00560f8d      pop   esp
-|       :   0x00560f8e      add   esp, 4
-|       :   0x00560f91      mov   dword [esp + 8], eax
-|       :   0x00560f95      mov   dword [esp + 0x10], ebx
+|       :   0x00560f8e      add   esp, 0x04
+|       :   0x00560f91      mov   dword [esp+0x08], eax
+|       :   0x00560f95      mov   dword [esp+0x10], ebx
 |       :   0x00560f99      push  dword [esp]
 |       :   0x00560f9c      pop   ebx
 |       :   0x00560f9d      push  ebx
 |       :   0x00560f9e      mov   ebx, esp
-|       :   0x00560fa0      add   ebx, 4
-|       :   0x00560fa6      add   ebx, 4
+|       :   0x00560fa0      add   ebx, 0x04
+|       :   0x00560fa6      add   ebx, 0x04
 |       :   0x00560fa9      push  ebx
-|       :   0x00560faa      push  dword [esp + 4]
+|       :   0x00560faa      push  dword [esp+0x04]
 |       :   0x00560fae      pop   ebx
 |       :   0x00560faf      pop   dword [esp]
 |       :   0x00560fb2      mov   esp, dword [esp]
@@ -204,8 +204,8 @@ EXPECT=<<EOF
 |       :   0x00560fb9      mov   dword [esp], 0x1e8e43e4
 |       :   0x00560fc0      mov   dword [esp], eax
 |       :   0x00560fc3      mov   eax, esp
-|       :   0x00560fc5      add   eax, 4
-|       :   0x00560fca      add   eax, 4
+|       :   0x00560fc5      add   eax, 0x04
+|       :   0x00560fca      add   eax, 0x04
 |       :   0x00560fcf      xchg  dword [esp], eax
 |       :   0x00560fd2      mov   esp, dword [esp]
 \       `=< 0x00560fd5      jmp   0x43d3f7
@@ -338,8 +338,8 @@ wx 7d0a7f08eb00 @ 0x5b02
 pd 4 @ 0x5b02
 EOF
 EXPECT=<<EOF
-        ,=< 0x00005b02      7d0a           jge   0x5b0e                ; rip=0x5b0e -> 0x8d4890f4 ; likely
-       ,==< 0x00005b04      7f08           jg    0x5b0e                ; rip=0x5b0e -> 0x8d4890f4 ; likely
+        ,=< 0x00005b02      7d0a           jnl   0x5b0e                ; rip=0x5b0e -> 0x8d4890f4 ; likely
+       ,==< 0x00005b04      7f08           jnle  0x5b0e                ; rip=0x5b0e -> 0x8d4890f4 ; likely
       ,===< 0x00005b06      eb00           jmp   0x5b08                ; rip=0x5b08 -> 0xc30a15ff
       `---> 0x00005b08      ff150ac30100   call  qword [reloc.__libc_start_main] ; [reloc.__libc_start_main:8]=0x23708 reloc.target.__libc_start_main ; rsp=0xfffffffffffffff8 ; rip=0x23708 -> 0x464c457f reloc.target.__libc_start_main
 EOF
@@ -360,8 +360,8 @@ e asm.cmt.right=false
 pd 1
 EOF
 EXPECT=<<EOF
-            0x00000000      488b4608       mov   rax, qword [rsi + ms.member1]
-            0x00000000      488b4608       mov rax, qword [rsi + ms.member1]
+            0x00000000      488b4608       mov   rax, qword [rsi+ms.member1]
+            0x00000000      488b4608       mov rax, qword [rsi+ms.member1]
 EOF
 RUN
 
@@ -395,13 +395,13 @@ EXPECT=<<EOF
 |           0x080483f6      ret
             |
             0x080483f7      mov   esi, esi
-            0x080483f9      lea   edi, [edi]
+            0x080483f9      lea   edi, dword [edi]
             |
 \           0x08048400      ret
 
 |           0x08048470      ret
             |
-            0x08048471      lea   esi, [esi]
+            0x08048471      lea   esi, dword [esi]
             |
 \           0x08048478      ret
 EOF
@@ -423,16 +423,16 @@ s 0x08048598
 pd 11
 EOF
 EXPECT=<<EOF
-        ,=< 0x08048598      jg    0x804859e
-        |   0x0804859a      cmp   al, byte [esp + 0x27]
-       ,`-> 0x0804859e      je    0x80485b3
+        ,=< 0x08048598      jnle  0x804859e
+        |   0x0804859a      cmp   al, byte [esp+0x27]
+       ,`-> 0x0804859e      jz    0x80485b3
        |    0x080485a0      mov   dword [esp], str.Wrong
        |    0x080485a7      call  sym.imp.puts
-       |    0x080485ac      mov   eax, 1
+       |    0x080485ac      mov   eax, 0x01
       ,=.-> 0x080485b1      jmp   0x80485f9
-      |`--> 0x080485b3      add   dword [esp + 0x20], 1
-      | :   0x080485b8      mov   ebx, dword [esp + 0x20]
-      | `=< 0x080485bc      jne   0x80485b1
+      |`--> 0x080485b3      add   dword [esp+0x20], 0x01
+      | :   0x080485b8      mov   ebx, dword [esp+0x20]
+      | `=< 0x080485bc      jnz   0x80485b1
       |     0x080485be      nop
 EOF
 RUN
@@ -454,17 +454,17 @@ echo
 pdJ 9~{}
 EOF
 EXPECT=<<EOF
-|       ,=< 0x00004233      jg    0x4238
+|       ,=< 0x00004233      jnle  0x4238
 |       |   |
 |       |   0x00004235      test  rax, rax
 |       |   |
-|      ,`-> 0x00004238      je    0x4243
+|      ,`-> 0x00004238      jz    0x4243
 |      |    |
-|      |    0x0000423a      cmp   byte [rax], 0
+|      |    0x0000423a      cmp   byte [rax], 0x00
 |      |    |
-|     ,=.-> 0x0000423d      jne   0x4b1c
+|     ,=.-> 0x0000423d      jnz   0x4b1c
 |     ||:   |
-|     |`--> 0x00004243      lea   r12, [var_58h]
+|     |`--> 0x00004243      lea   r12, qword [arg_58h]
 |     | :   0x00004248      xor   eax, eax
 |     | `=< 0x0000424a      jb    0x423d
 |     |     |
@@ -474,7 +474,7 @@ EXPECT=<<EOF
   {
     "offset": 16947,
     "arrow": 16952,
-    "text": "|       ,=< 0x00004233      jg    0x4238"
+    "text": "|       ,=< 0x00004233      jnle  0x4238"
   },
   {
     "offset": 16949,
@@ -492,7 +492,7 @@ EXPECT=<<EOF
   {
     "offset": 16952,
     "arrow": 16963,
-    "text": "|      ,`-> 0x00004238      je    0x4243"
+    "text": "|      ,`-> 0x00004238      jz    0x4243"
   },
   {
     "offset": 16954,
@@ -500,7 +500,7 @@ EXPECT=<<EOF
   },
   {
     "offset": 16954,
-    "text": "|      |    0x0000423a      cmp   byte [rax], 0"
+    "text": "|      |    0x0000423a      cmp   byte [rax], 0x00"
   },
   {
     "offset": 16957,
@@ -510,7 +510,7 @@ EXPECT=<<EOF
   {
     "offset": 16957,
     "arrow": 19228,
-    "text": "|     ,=.-> 0x0000423d      jne   0x4b1c"
+    "text": "|     ,=.-> 0x0000423d      jnz   0x4b1c"
   },
   {
     "offset": 16963,
@@ -518,7 +518,7 @@ EXPECT=<<EOF
   },
   {
     "offset": 16963,
-    "text": "|     |`--> 0x00004243      lea   r12, [var_58h]"
+    "text": "|     |`--> 0x00004243      lea   r12, qword [arg_58h]"
   },
   {
     "offset": 16968,
@@ -589,26 +589,25 @@ wx 483b3df6470100 @ 0x00004225  # cmp rdi, [rip + 0x147f6]
 .(insn_tests)
 EOF
 EXPECT=<<EOF
-        ,=< 0x000041e0      je    0x421a
-        |   0x000041e2      mov   ecx, 4
-        |   0x000041e7      lea   rdx, [0x0001b980]
-        |   0x000041ee      lea   rsi, [0x00021a40]
+        ,=< 0x000041e0      jz    0x421a
+        |   0x000041e2      mov   ecx, 0x04
+        |   0x000041e7      lea   rdx, qword [0x1b980]
+        |   0x000041ee      lea   rsi, qword [0x21a40]
         |   0x000041f5      mov   rdi, rax
         |   0x000041f8      call  0xc660
         |   0x000041fe      test  eax, eax
        ,==< 0x00004200      js    0x4ae5
        ||   0x00004206      cdqe
-       ||   0x00004208      lea   rdx, [0x0001b980]
+       ||   0x00004208      lea   rdx, qword [0x1b980]
        ||   0x0000420f      xor   edi, edi
        ||   0x00004211      mov   esi, dword [rdx + rax*4]
        ||   0x00004214      call  0x13c50
-       |`-> 0x0000421a      mov   qword [0x000232b0], 0x50             ; 'P'
+       |`-> 0x0000421a      mov   qword [0x232b0], 0x50                ; 'P'
        |                                                               ; [0x232b0:8]=0
-       |    0x00004225      lea   rdi, str.COLUMNS                     ; 0x18a22 ; "COLUMNS"
+       |    0x00004225      lea   rdi, qword str.COLUMNS               ; 0x18a22 ; "COLUMNS"
 
-            0x000041ee      lea   rsi, [rip + 0x1d84b]                 ; 0x21a40
-            0x00004225      lea   rdi, [rip + 0x147f6]                 ; str.COLUMNS
-                                                                       ; 0x18a22 ; "COLUMNS"
+            0x000041ee      lea   rsi, qword [0x21a40]
+            0x00004225      lea   rdi, qword [str.COLUMNS]             ; 0x18a22 ; "COLUMNS"
 
         [36m,[0m[36m=[0m[36m<[0m [32m0x000041e0[0m      [32mje[0m[37m    [0m[33m0x421a[0m[0m[0m
         [36m|[0m   [32m0x000041e2[0m      [37mmov[0m[37m   [0m[36mecx[0m[37m, [0m[33m4[0m[0m[0m
@@ -741,21 +740,21 @@ s 0x000041e0
 pi 15
 EOF
 EXPECT=<<EOF
-je 0x421a
-mov ecx, 4
-lea rdx, [0x0001b980]
-lea rsi, [0x00021a40]
+jz 0x421a
+mov ecx, 0x04
+lea rdx, qword [0x1b980]
+lea rsi, qword [0x21a40]
 mov rdi, rax
 call 0xc660
 test eax, eax
 js 0x4ae5
 cdqe
-lea rdx, [0x0001b980]
+lea rdx, qword [0x1b980]
 xor edi, edi
-mov esi, dword [rdx + rax*4]
+mov esi, dword [rdx+rax*4]
 call 0x13c50
-mov qword [0x000232b0], 0x50
-lea rdi, str.COLUMNS
+mov qword [0x232b0], 0x50
+lea rdi, qword str.COLUMNS
 EOF
 RUN
 
@@ -848,7 +847,7 @@ EXPECT=<<EOF
    entry0 + 2                   xor   eax, eax
    entry0 + 4                   inc   eax
 
-   segment.LOAD0 + 83              ~   add   byte [ebx + 0x40c0312a], dh
+   segment.LOAD0 + 83              ~   add   byte [ebx+0x40c0312a], dh
    entry0 + 0                   ;-- entry0:
    entry0 + 0                   mov   bl, 0x2a
    entry0 + 2                   xor   eax, eax
@@ -899,8 +898,8 @@ EXPECT=<<EOF
             ;-- .text:
 / int main(int argc, char **argv, char **envp);
 |           0x00001040      f30f1efa       endbr64                     ; [13] -r-x section size 389 named .text
-|           0x00001044      8005f52f0000.  add   byte [obj.array], 1   ; [0x4040:1]=0
-|       ,=< 0x0000104b      7403           je    0x1050
+|           0x00001044      8005f52f0000.  add   byte [obj.array], 0x01 ; [0x4040:1]=0
+|       ,=< 0x0000104b      7403           jz    0x1050
 |      @=-> 0x0000104d      ebfe           jmp   0x104d
 ..
 |       `-> 0x00001050      31c0           xor   eax, eax
@@ -921,12 +920,12 @@ e scr.utf8.curvy=1
 pd 4 @ 0x104b
 EOF
 EXPECT=<<EOF
-│       ┌─< 0x0000104b      je    0x1050
+│       ┌─< 0x0000104b      jz    0x1050
 │      @──> 0x0000104d      jmp   0x104d
         │   0x0000104f      nop
 │       └─> 0x00001050      xor   eax, eax
 
-│       ╭─< 0x0000104b      je    0x1050
+│       ╭─< 0x0000104b      jz    0x1050
 │      @──> 0x0000104d      jmp   0x104d
         │   0x0000104f      nop
 │       ╰─> 0x00001050      xor   eax, eax

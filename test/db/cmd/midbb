@@ -13,7 +13,7 @@ e asm.bb.middle=false
 pD 0x560eb3-$$
 EOF
 EXPECT=<<EOF
-/ fcn.00560e67(int32_t arg_4h, int32_t arg_7fbf5070h);
+/ fcn.00560e67(int32_t arg_4h, int32_t arg_8h, int32_t arg_ch, int32_t arg_10h, int32_t arg_14h, int32_t arg_18h, int32_t arg_1ch, int32_t arg_28h, int32_t arg_7fbf50c8h);
 |           0x00560e67      push  esi
 |       ,=< 0x00560e68      jmp   0x560e7d
         |   0x00560e6d      push  ecx
@@ -22,7 +22,7 @@ EXPECT=<<EOF
         |   0x00560e75      push  es
         |   0x00560e76      cmp   edx, esp
         |   0x00560e78      aam   0x1b
-        |   0x00560e7a  ~   add   byte [ebp + 0x52505e96], al
+        |   0x00560e7a  ~   add   byte [ebp+0x52505e96], al
 |       `-> 0x00560e7d      pop   esi
 |           0x00560e7e      push  eax
 |           0x00560e7f      push  edx
@@ -30,26 +30,26 @@ EXPECT=<<EOF
         |   0x00560e85      mov   ebx, 0x4fd160dd
         |   0x00560e8a      in    al, dx
         |   0x00560e8b      mov   esp, 0x60bdf441
-        |   0x00560e90      lodsd eax, dword [esi]
-       ,==< 0x00560e91      ja    0x560ed9
+        |   0x00560e90      lodsd
+       ,==< 0x00560e91      jnbe  0x560ed9
        ||   0x00560e93      aaa
        ||   0x00560e94      sahf
        ||   0x00560e95  ~   mov   edx, 0x14e9310f
 |      |`-> 0x00560e96      rdtsc
 |      |    0x00560e98      jmp   0x560eb1
        |    0x00560e9d      test  al, 0x36
-       |    0x00560e9f      fcom  qword [edx + 0x64]
-       |    0x00560ea2      xlatb
+       |    0x00560e9f      fcom  qword [edx+0x64]
+       |    0x00560ea2      xlat
        |    0x00560ea3      push  0x27
        |    0x00560ea5      sub   esp, edx
        |    0x00560ea7      mov   eax, dword [0xe8c1cf5d]
        |,=< 0x00560eac      jle   0x560f29
        ||   0x00560eae      inc   ecx
-       ||   0x00560eaf  ~   mov   byte [eax + 0x5a], dl
+       ||   0x00560eaf  ~   mov   byte [eax+0x5a], dl
 |      ||   0x00560eb1      pop   edx
 |      ||   0x00560eb2      pop   eax
 
-/ fcn.00560e67(int32_t arg_4h, int32_t arg_7fbf5070h);
+/ fcn.00560e67(int32_t arg_4h, int32_t arg_8h, int32_t arg_ch, int32_t arg_10h, int32_t arg_14h, int32_t arg_18h, int32_t arg_1ch, int32_t arg_28h, int32_t arg_7fbf50c8h);
 |           0x00560e67      push  esi
 |       ,=< 0x00560e68      jmp   0x560e7d
         |   0x00560e6d      push  ecx
@@ -58,25 +58,25 @@ EXPECT=<<EOF
         |   0x00560e75      push  es
         |   0x00560e76      cmp   edx, esp
         |   0x00560e78      aam   0x1b
-        |   0x00560e7a      add   byte [ebp + 0x52505e96], al
+        |   0x00560e7a      add   byte [ebp+0x52505e96], al
 |       ,=< 0x00560e80      jmp   0x560e96
         |   0x00560e85      mov   ebx, 0x4fd160dd
         |   0x00560e8a      in    al, dx
         |   0x00560e8b      mov   esp, 0x60bdf441
-        |   0x00560e90      lodsd eax, dword [esi]
-       ,==< 0x00560e91      ja    0x560ed9
+        |   0x00560e90      lodsd
+       ,==< 0x00560e91      jnbe  0x560ed9
        ||   0x00560e93      aaa
        ||   0x00560e94      sahf
        ||   0x00560e95      mov   edx, 0x14e9310f
 |      |    0x00560e9a      add   byte [eax], al
-|      |    0x00560e9c      add   byte [eax + 0x6452dc36], ch
-       |    0x00560ea2      xlatb
+|      |    0x00560e9c      add   byte [eax+0x6452dc36], ch
+       |    0x00560ea2      xlat
        |    0x00560ea3      push  0x27
        |    0x00560ea5      sub   esp, edx
        |    0x00560ea7      mov   eax, dword [0xe8c1cf5d]
        |,=< 0x00560eac      jle   0x560f29
        ||   0x00560eae      inc   ecx
-       ||   0x00560eaf      mov   byte [eax + 0x5a], dl
+       ||   0x00560eaf      mov   byte [eax+0x5a], dl
 |      ||   0x00560eb2      pop   eax
 EOF
 RUN
@@ -536,19 +536,19 @@ pdq 6
 EOF
 EXPECT=<<EOF
 0x00000000   fcn.00000000:
-0x00000000           0f1f440000  nop dword [rax + rax]
+0x00000000           0f1f440000  nop dword [rax+rax*1], eax
 0x00000003                 0000  add byte [rax], al
 0x00000005           b8210000c1  mov eax, 0xc1000021
 0x00000009               c1ebfd  shr ebx, 0xfd
 0x0000000c           bb2c000000  mov ebx, 0x2c
-0x00000011                 ebf0  jmp 3
+0x00000011                 ebf0  jmp 0x3
 
 0x00000000   fcn.00000000:
-0x00000000           0f1f440000  nop dword [rax + rax]
+0x00000000           0f1f440000  nop dword [rax+rax*1], eax
 0x00000005           b8210000c1  mov eax, 0xc1000021
-0x0000000a                 ebfd  jmp 9
+0x0000000a                 ebfd  jmp 0x9
 0x0000000c           bb2c000000  mov ebx, 0x2c
-0x00000011                 ebf0  jmp 3
+0x00000011                 ebf0  jmp 0x3
 0x00000013                 0000  add byte [rax], al
 EOF
 RUN
@@ -569,18 +569,18 @@ e asm.bb.middle=false
 pif
 EOF
 EXPECT=<<EOF
-nop dword [rax + rax]
+nop dword [rax+rax*1], eax
 add byte [rax], al
 mov eax, 0xc1000021
 shr ebx, 0xfd
 mov ebx, 0x2c
-jmp 3
+jmp 0x3
 
-nop dword [rax + rax]
+nop dword [rax+rax*1], eax
 mov eax, 0xc1000021
-jmp 9
+jmp 0x9
 mov ebx, 0x2c
-jmp 3
+jmp 0x3
 EOF
 RUN
 

@@ -25,7 +25,7 @@ EXPECT=<<EOF
             ;-- section..text:
             0x08048060      call  0x8048065                            ; [00] -r-x section size 18 named .text
             0x08048065      pop   ebx
-            0x08048066      mov   eax, 1
+            0x08048066      mov   eax, 0x01
             0x0804806b      mov   ebx, 0x2a                            ; '*' ; 42
             0x08048070      int   0x80
 EOF

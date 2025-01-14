@@ -18,7 +18,7 @@ NAME=corrupted section data
 FILE=bins/firmware/bios_64k.bin
 CMDS=pi 1
 EXPECT=<<EOF
-ljmp 0xf000:0xffaa
+jmp far 0xf000:0xffaa
 EOF
 RUN
 
@@ -64,7 +64,7 @@ NAME=corrupted section data
 FILE=bins/firmware/bios_128k.bin
 CMDS=pi 1
 EXPECT=<<EOF
-ljmp 0xf000:0xffaa
+jmp far 0xf000:0xffaa
 EOF
 RUN
 
@@ -88,7 +88,7 @@ NAME=corrupted section data
 FILE=bins/firmware/bios_256k.bin
 CMDS=pi 1
 EXPECT=<<EOF
-ljmp 0xf000:0xffaa
+jmp far 0xf000:0xffaa
 EOF
 RUN
 
@@ -112,7 +112,7 @@ NAME=corrupted section data
 FILE=bins/firmware/bios_512k.bin
 CMDS=pi 1
 EXPECT=<<EOF
-ljmp 0xf000:0xffaa
+jmp far 0xf000:0xffaa
 EOF
 RUN
 
@@ -136,7 +136,7 @@ NAME=corrupted section data
 FILE=bins/firmware/bios_1M.bin
 CMDS=pi 1
 EXPECT=<<EOF
-ljmp 0xf000:0xffaa
+jmp far 0xf000:0xffaa
 EOF
 RUN
 
@@ -160,7 +160,7 @@ NAME=corrupted section data
 FILE=bins/firmware/bios_2M.bin
 CMDS=pi 1
 EXPECT=<<EOF
-ljmp 0xf000:0xffaa
+jmp far 0xf000:0xffaa
 EOF
 RUN
 
@@ -184,7 +184,7 @@ NAME=corrupted section data
 FILE=bins/firmware/bios_4M.bin
 CMDS=pi 1
 EXPECT=<<EOF
-ljmp 0xf000:0xffaa
+jmp far 0xf000:0xffaa
 EOF
 RUN
 
@@ -208,7 +208,7 @@ NAME=corrupted section data
 FILE=bins/firmware/bios_8M.bin
 CMDS=pi 1
 EXPECT=<<EOF
-ljmp 0xf000:0xffaa
+jmp far 0xf000:0xffaa
 EOF
 RUN
 

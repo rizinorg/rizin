@@ -51,7 +51,6 @@ EXPECT=<<EOF
 (nofunc); [00] -r-x section size 4096 named .text 0x69681000 [DATA] push dword [0x69682004]
 (nofunc); [00] -r-x section size 4096 named .text 0x69681000 [DATA] push dword [0x69682004]
 (nofunc) 0x69681006 [DATA] push 0x69682004
-(nofunc) 0x6968100b [DATA] mov eax, dword [0x69682004]
 (nofunc) 0x69681010 [DATA] mov eax, 0x69682004
 EOF
 RUN
@@ -366,19 +365,19 @@ e scr.color=false
 q
 EOF
 EXPECT=<<EOF
-  0x00000000             83c408  add esp, 8
+  0x00000000             83c408  add esp, 0x08
   0x00000003                 5b  pop ebx
   0x00000004                 5d  pop ebp
   0x00000005                 c3  ret
 Gadget size: 6
 
-  0x00000001               c408  les ecx, [eax]
+  0x00000001               c408  les ecx, fword [eax]
   0x00000003                 5b  pop ebx
   0x00000004                 5d  pop ebp
   0x00000005                 c3  ret
 Gadget size: 5
 
-  0x00000002             085b5d  or byte [ebx + 0x5d], bl
+  0x00000002             085b5d  or byte [ebx+0x5d], bl
   0x00000005                 c3  ret
 Gadget size: 4
 
@@ -409,7 +408,7 @@ e scr.color=false
 q
 EOF
 EXPECT=<<EOF
-  0x00000002             085b5d  or byte [ebx + 0x5d], bl
+  0x00000002             085b5d  or byte [ebx+0x5d], bl
   0x00000005                 c3  ret
 Gadget size: 4
 
@@ -492,7 +491,7 @@ q
 EOF
 EXPECT=<<EOF
 0x004019d2   # 2: ror esp, cl
-0x004019d5   # 2: ror bh, 1
+0x004019d5   # 2: ror bh, 0x01
 0x004019da   # 3: ror ebp, 0xe5
 EOF
 RUN

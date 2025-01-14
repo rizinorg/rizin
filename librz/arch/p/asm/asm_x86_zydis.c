@@ -4,7 +4,7 @@
 
 #include <rz_asm.h>
 #include <rz_lib.h>
-#include <Zydis/Zydis.h>
+#include <Zydis.h>
 
 #include "asm_x86_vm.c"
 
@@ -35,11 +35,10 @@ static bool x86_zydis_asm_fini(void *p) {
 }
 
 static char *x86_zydis_asm_mnemonics(RzAsm *a, int id, bool json) {
+	rz_return_val_if_fail(a && a->cur, NULL);
 	if (!a->plugin_data) {
 		return NULL;
 	}
-	ZydisContext *zydx = (ZydisContext *)a->plugin_data;
-	int i;
 	a->cur->disassemble(a, NULL, NULL, -1);
 	if (id != -1) {
 		const char *vname = ZydisMnemonicGetString(id);
@@ -52,7 +51,7 @@ static char *x86_zydis_asm_mnemonics(RzAsm *a, int id, bool json) {
 	if (json) {
 		rz_strbuf_append(buf, "[");
 	}
-	for (i = 1;; i++) {
+	for (int i = 1;; i++) {
 		const char *op = ZydisMnemonicGetString(i);
 		if (!op) {
 			break;
@@ -75,8 +74,8 @@ static char *x86_zydis_asm_mnemonics(RzAsm *a, int id, bool json) {
 }
 
 static int x86_zydis_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+	rz_return_val_if_fail(a, 0);
 	ZydisContext *zydx = (ZydisContext *)a->plugin_data;
-	int ret, n;
 	ut64 off = a->pc;
 
 	ZydisMachineMode mode = (a->bits == 64) ? ZYDIS_MACHINE_MODE_LONG_64 : (a->bits == 32) ? ZYDIS_MACHINE_MODE_LONG_COMPAT_32
@@ -122,7 +121,7 @@ static int x86_zydis_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len)
 	if (op->size == 0 && check && zydecode.length > 0) {
 		char *ptrstr;
 		op->size = zydecode.length;
-		char buf_asm[256];
+		char buf_asm[256] = { 0 };
 		ZydisFormatterFormatInstruction(&format, &zydecode, zydeop,
 			zydecode.operand_count_visible, buf_asm, sizeof(buf_asm), off, ZYAN_NULL);
 		ptrstr = strstr(buf_asm, "ptr ");
@@ -132,14 +131,6 @@ static int x86_zydis_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len)
 		rz_asm_op_set_asm(op, buf_asm);
 	} else {
 		decompile_vm(a, op, buf, len);
-	}
-	if (a->syntax == RZ_ASM_SYNTAX_JZ) {
-		char *buf_asm = rz_strbuf_get(&op->buf_asm);
-		if (!strncmp(buf_asm, "je ", 3)) {
-			memcpy(buf_asm, "jz", 2);
-		} else if (!strncmp(buf_asm, "jne ", 4)) {
-			memcpy(buf_asm, "jnz", 3);
-		}
 	}
 	return op->size;
 }
@@ -155,9 +146,16 @@ RzAsmPlugin rz_asm_plugin_x86_zydis = {
 	.fini = x86_zydis_asm_fini,
 	.mnemonics = x86_zydis_asm_mnemonics,
 	.disassemble = &x86_zydis_disassemble,
-	.features = "vm,3dnow,aes,adx,avx,avx2,avx512,bmi,bmi2,cmov,"
-		    "f16c,fma,fma4,fsgsbase,hle,mmx,rtm,sha,sse1,sse2,"
-		    "sse3,sse41,sse42,sse4a,ssse3,pclmul,xop"
+	.features = "adox_adcx,aes,amd3dnow,amd3dnow_prefetch,amd_invlpgb,amx_bf16,"
+		    "amx_fp16,amx_int8,amx_tile,avx,avx2,avx2gather,avx512evex,avx512vex,avxaes,"
+		    "avx_ifma,avx_ne_convert,avx_vnni,avx_vnni_int16,avx_vnni_int8,base,bmi1,bmi2,"
+		    "cet,cldemote,clflushopt,clfsh,clwb,clzero,enqcmd,f16c,fma,fma4,fred,gfni,"
+		    "hreset,icache_prefetch,invpcid,keylocker,keylocker_wide,knc,knce,kncv,lkgs,"
+		    "longmode,lzcnt,mcommit,mmx,monitor,monitorx,movbe,movdir,mpx,msrlist,padlock,"
+		    "pause,pbndkb,pclmulqdq,pcommit,pconfig,pku,prefetchwt1,pt,rao_int,rdpid,rdpru,"
+		    "rdrand,rdseed,rdtscp,rdwrfsgs,rtm,serialize,sgx,sgx_enclv,sha,sha512,sm3,sm4,"
+		    "smap,smx,snp,sse,sse2,sse3,sse4,sse4a,ssse3,svm,tbm,tdx,tsx_ldtrk,uintr,vaes,"
+		    "vmfunc,vpclmulqdq,vtx,waitpkg,wrmsrns,x87,xop,xsave,xsavec,xsaveopt,xsaves"
 };
 
 #ifndef RZ_PLUGIN_INCORE
