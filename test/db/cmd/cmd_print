@@ -280,9 +280,9 @@ wx b8010000004839ca7f
 pi 3
 EOF
 EXPECT=<<EOF
-mov eax, 1
+mov eax, 0x01
 cmp rdx, rcx
-jg 0xa
+jnle 0xa
 EOF
 RUN
 
@@ -295,7 +295,7 @@ wx b8010000004839ca7f
 pdj 3
 EOF
 EXPECT=<<EOF
-[{"offset":0,"val":1,"esil":"1,rax,=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":5,"opcode":"mov eax, 1","disasm":"mov eax, 1","bytes":"b801000000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":5,"esil":"rcx,rdx,==,$z,zf,:=,64,$b,cf,:=,$p,pf,:=,63,$s,sf,:=,rcx,0x8000000000000000,-,!,63,$o,^,of,:=,3,$b,af,:=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":3,"opcode":"cmp rdx, rcx","disasm":"cmp rdx, rcx","bytes":"4839ca","family":"cpu","type":"cmp","reloc":false,"type_num":15,"type2_num":0},{"offset":8,"esil":"sf,of,!,^,zf,!,&,?{,10,rip,=,}","refptr":false,"fcn_addr":0,"fcn_last":0,"size":2,"opcode":"jg 0xa","disasm":"jg 0xa","bytes":"7f00","family":"cpu","type":"cjmp","reloc":false,"type_num":2147483649,"type2_num":0,"jump":10,"fail":10}]
+[{"offset":0,"val":1,"esil":"1,rax,=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":5,"opcode":"mov eax, 0x01","disasm":"mov eax, 0x01","bytes":"b801000000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":5,"esil":"rcx,rdx,==,$z,zf,:=,64,$b,cf,:=,$p,pf,:=,63,$s,sf,:=,rcx,0x8000000000000000,-,!,63,$o,^,of,:=,3,$b,af,:=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":3,"opcode":"cmp rdx, rcx","disasm":"cmp rdx, rcx","bytes":"4839ca","family":"cpu","type":"cmp","reloc":false,"type_num":15,"type2_num":0},{"offset":8,"esil":"sf,of,!,^,zf,!,&,?{,10,rip,=,}","refptr":false,"fcn_addr":0,"fcn_last":0,"size":2,"opcode":"jnle 0xa","disasm":"jnle 0xa","bytes":"7f00","family":"cpu","type":"cjmp","reloc":false,"type_num":2147483649,"type2_num":0,"jump":10,"fail":10}]
 EOF
 RUN
 
@@ -308,12 +308,12 @@ wx b8010000004839ca7f00b8010000004839ca7f00
 pi 6
 EOF
 EXPECT=<<EOF
-mov eax, 1
+mov eax, 0x01
 cmp rdx, rcx
-jg 0xa
-mov eax, 1
+jnle 0xa
+mov eax, 0x01
 cmp rdx, rcx
-jg 0x14
+jnle 0x14
 EOF
 RUN
 
@@ -451,9 +451,9 @@ wx b8010000004839ca7f
 pi 3
 EOF
 EXPECT=<<EOF
-mov eax, 1
+mov eax, 0x01
 cmp rdx, rcx
-jg 0xa
+jnle 0xa
 EOF
 RUN
 
@@ -466,7 +466,7 @@ wx b8010000004839ca7f
 pdj 3
 EOF
 EXPECT=<<EOF
-[{"offset":0,"val":1,"esil":"1,rax,=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":5,"opcode":"mov eax, 1","disasm":"mov eax, 1","bytes":"b801000000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":5,"esil":"rcx,rdx,==,$z,zf,:=,64,$b,cf,:=,$p,pf,:=,63,$s,sf,:=,rcx,0x8000000000000000,-,!,63,$o,^,of,:=,3,$b,af,:=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":3,"opcode":"cmp rdx, rcx","disasm":"cmp rdx, rcx","bytes":"4839ca","family":"cpu","type":"cmp","reloc":false,"type_num":15,"type2_num":0},{"offset":8,"esil":"sf,of,!,^,zf,!,&,?{,10,rip,=,}","refptr":false,"fcn_addr":0,"fcn_last":0,"size":2,"opcode":"jg 0xa","disasm":"jg 0xa","bytes":"7f00","family":"cpu","type":"cjmp","reloc":false,"type_num":2147483649,"type2_num":0,"jump":10,"fail":10}]
+[{"offset":0,"val":1,"esil":"1,rax,=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":5,"opcode":"mov eax, 0x01","disasm":"mov eax, 0x01","bytes":"b801000000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":5,"esil":"rcx,rdx,==,$z,zf,:=,64,$b,cf,:=,$p,pf,:=,63,$s,sf,:=,rcx,0x8000000000000000,-,!,63,$o,^,of,:=,3,$b,af,:=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":3,"opcode":"cmp rdx, rcx","disasm":"cmp rdx, rcx","bytes":"4839ca","family":"cpu","type":"cmp","reloc":false,"type_num":15,"type2_num":0},{"offset":8,"esil":"sf,of,!,^,zf,!,&,?{,10,rip,=,}","refptr":false,"fcn_addr":0,"fcn_last":0,"size":2,"opcode":"jnle 0xa","disasm":"jnle 0xa","bytes":"7f00","family":"cpu","type":"cjmp","reloc":false,"type_num":2147483649,"type2_num":0,"jump":10,"fail":10}]
 EOF
 RUN
 
@@ -479,12 +479,12 @@ wx b8010000004839ca7f00b8010000004839ca7f00
 pi 6
 EOF
 EXPECT=<<EOF
-mov eax, 1
+mov eax, 0x01
 cmp rdx, rcx
-jg 0xa
-mov eax, 1
+jnle 0xa
+mov eax, 0x01
 cmp rdx, rcx
-jg 0x14
+jnle 0x14
 EOF
 RUN
 
@@ -497,9 +497,9 @@ wx b8010000004839ca7f00
 pi -3 @ 10
 EOF
 EXPECT=<<EOF
-mov eax, 1
+mov eax, 0x01
 cmp rdx, rcx
-jg 0xa
+jnle 0xa
 EOF
 RUN
 
@@ -521,8 +521,8 @@ EXPECT=<<EOF
     "fcn_addr": 0,
     "fcn_last": 0,
     "size": 5,
-    "opcode": "mov eax, 1",
-    "disasm": "mov eax, 1",
+    "opcode": "mov eax, 0x01",
+    "disasm": "mov eax, 0x01",
     "bytes": "b801000000",
     "family": "cpu",
     "type": "mov",
@@ -553,8 +553,8 @@ EXPECT=<<EOF
     "fcn_addr": 0,
     "fcn_last": 0,
     "size": 2,
-    "opcode": "jg 0xa",
-    "disasm": "jg 0xa",
+    "opcode": "jnle 0xa",
+    "disasm": "jnle 0xa",
     "bytes": "7f00",
     "family": "cpu",
     "type": "cjmp",
@@ -758,7 +758,7 @@ mov rbp, rsp
 sub rsp, 0x20
 mov dword [var_1ch], edi
 mov qword [var_28h], rsi
-mov dword [var_ch], 0
+mov dword [var_ch], 0x00
 jmp 0x400523
 EOF
 RUN
@@ -775,7 +775,7 @@ EXPECT=<<EOF
 sub rsp, 0x20
 mov dword [var_1ch], edi
 mov qword [var_28h], rsi
-mov dword [var_ch], 0
+mov dword [var_ch], 0x00
 jmp 0x400523
 EOF
 RUN

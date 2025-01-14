@@ -25,8 +25,8 @@ Disassembly of entry0:
 / entry0();
 |           0x08049020      push  ebp                                  ; [09] -r-x section size 16 named .text
 |           0x08049021      mov   ebp, esp
-|           0x08049023      sub   esp, 8
-|           0x08049026      sub   esp, 0xc
+|           0x08049023      sub   esp, 0x08
+|           0x08049026      sub   esp, 0x0c
 |           0x08049029      push  0x2a                                 ; '*' ; 42
 \           0x0804902b      call  sym.imp._Exit                        ; void _Exit(int status)
 
@@ -70,8 +70,8 @@ Shared buffer size 0x360c
 / entry0();
 |           0x08049020      push  ebp                                  ; [09] -r-x section size 16 named .text
 |           0x08049021      mov   ebp, esp
-|           0x08049023      sub   esp, 8
-|           0x08049026      sub   esp, 0xc
+|           0x08049023      sub   esp, 0x08
+|           0x08049026      sub   esp, 0x0c
 |           0x08049029      push  0x2a                                 ; '*' ; 42 ; int status
 \           0x0804902b      call  sym.imp._Exit                        ; void _Exit(int status)
 
@@ -98,7 +98,7 @@ Shared buffer size 0x400
 |           0x00401028      call  dword [sym.imp.msvcrt.dll_printf]    ; 0x4011bc ; int printf(const char *format)
 |           0x0040102e      add   esp, 0x10
 |           0x00401031      nop
-|           0x00401032      push  0                                    ; UINT uExitCode
+|           0x00401032      push  0x00                                 ; UINT uExitCode
 \           0x00401034      call  dword [sym.imp.kernel32.dll_ExitProcess] ; 0x4011b0 ; VOID ExitProcess(UINT uExitCode)
 
 Copying bins/mach0/mach0_2-x86_64...
@@ -110,7 +110,7 @@ Shared buffer size 0x10e8
 - offset -    0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x100000f70  5548 89e5 4883 ec10 c745 fc00 0000 0089  UH..H....E......
 
-0x1000001d5    1 171          fcn.1000001d5
+0x1000001d5    1 172          fcn.1000001d5
 0x1000002e0   13 3088 -> 3110 fcn.1000002e0
 0x100000ef0    4 65           sym._bar
 0x100000f40    1 45           sym._foo
@@ -128,7 +128,7 @@ Shared buffer size 0x10e8
 |           0x100000f70      push  rbp
 |           0x100000f71      mov   rbp, rsp
 |           0x100000f74      sub   rsp, 0x10
-|           0x100000f78      mov   dword [var_ch], 0
+|           0x100000f78      mov   dword [var_ch], 0x00
 |           0x100000f7f      mov   dword [var_10h], edi                ; arg1
 |           0x100000f82      mov   qword [var_18h], rsi                ; arg2
 |           0x100000f86      mov   edi, dword [var_10h]                ; int64_t arg1

@@ -26,8 +26,8 @@ EOF
 EXPECT=<<EOF
 / (loc) entry0(int32_t arg_31h, int32_t arg_44h);
 |           0x006453a1      e8d8170000     call  fcn.00646b7e
-|           0x006453a6      8d642444       lea   esp, [arg_44h]
-|       ,=< 0x006453aa      0f85a6300000   jne   0x648456
+|           0x006453a6      8d642444       lea   esp, dword [arg_44h]
+|       ,=< 0x006453aa      0f85a6300000   jnz   0x648456
 EOF
 RUN
 
@@ -2759,7 +2759,7 @@ EXPECT=<<EOF
 | ----------- true: 0x0000118a
 int main(int argc, char **argv, char **envp);
 0x00001184      31c0           xor   eax, eax
-0x00001186      75f8           jne   loc.start2
+0x00001186      75f8           jnz   loc.start2
 | ----------- true: 0x00001180  false: 0x00001188
 0x00001188      ebf6           jmp   loc.start2
 | ----------- true: 0x00001180
@@ -2864,7 +2864,7 @@ b 0x80
 pIf
 EOF
 EXPECT=<<EOF
-push 0
+push 0x00
 dec eax
 mov ebp, esp
 dec eax
@@ -2872,22 +2872,22 @@ and esp, 0xfffffff0
 dec eax
 mov edi, dword [arg_4h]
 dec eax
-lea esi, [arg_ch]
+lea esi, dword [arg_ch]
 mov edx, edi
-add edx, 1
-shl edx, 3
+add edx, 0x01
+shl edx, 0x03
 dec eax
 add edx, esi
 dec eax
 mov ecx, edx
 jmp 0x25
 dec eax
-add ecx, 8
+add ecx, 0x08
 dec eax
-cmp dword [ecx], 0
-jne 0x21
+cmp dword [ecx], 0x00
+jnz 0x21
 dec eax
-add ecx, 8
+add ecx, 0x08
 call 0xf8c
 mov edi, eax
 call 0x3956
@@ -2911,7 +2911,7 @@ af
 pIf @ 0
 EOF
 EXPECT=<<EOF
-push 0
+push 0x00
 dec eax
 mov ebp, esp
 dec eax
@@ -2919,22 +2919,22 @@ and esp, 0xfffffff0
 dec eax
 mov edi, dword [arg_4h]
 dec eax
-lea esi, [arg_ch]
+lea esi, dword [arg_ch]
 mov edx, edi
-add edx, 1
-shl edx, 3
+add edx, 0x01
+shl edx, 0x03
 dec eax
 add edx, esi
 dec eax
 mov ecx, edx
 jmp 0x25
 dec eax
-add ecx, 8
+add ecx, 0x08
 dec eax
-cmp dword [ecx], 0
-jne 0x21
+cmp dword [ecx], 0x00
+jnz 0x21
 dec eax
-add ecx, 8
+add ecx, 0x08
 call 0xf8c
 mov edi, eax
 call 0x3956
@@ -3728,19 +3728,19 @@ aa > /dev/null
 pd 38
 EOF
 EXPECT=<<EOF
-┌ fcn.00000000(int32_t arg_4h, int32_t arg_1ch, int32_t arg_2ch);
-│           ; var int32_t var_30h @ stack - 0x30
-│           ; var int32_t var_20h @ stack - 0x20
+┌ fcn.00000000(int32_t arg_4h, int32_t arg_1ch, int32_t arg_2ch, int32_t arg_48h, int32_t arg_58h);
 │           ; arg int32_t arg_4h @ stack + 0x4
 │           ; arg int32_t arg_1ch @ stack + 0x1c
 │           ; arg int32_t arg_2ch @ stack + 0x2c
+│           ; arg int32_t arg_48h @ stack + 0x48
+│           ; arg int32_t arg_58h @ stack + 0x58
 │           0x00000000      xor   eax, eax
 │           0x00000002      cmp   esi, edx
 │       ┌─< 0x00000004      jb    0x50
 │      ┌──< 0x00000006      jmp   0x7a
        ││   0x00000008      nop
-       ││   0x00000009      lea   esi, [esi]
-│     ┌───> 0x00000010      lea   edi, [esi + 1]
+       ││   0x00000009      lea   esi, dword [esi]
+│     ┌───> 0x00000010      lea   edi, dword [esi+0x01]
 │     ╎││   0x00000013      xor   edx, edx
 │     ╎││   0x00000015      mov   eax, ebp
 │     ╎││   0x00000017      div   ecx
@@ -3750,14 +3750,14 @@ EXPECT=<<EOF
 │     ╎││   0x00000021      div   ecx
 │     ╎││   0x00000023      cmp   dword [arg_1ch], eax
 │    ┌────< 0x00000027      jbe   0x90
-│    │╎││   0x00000029      mov   edx, dword [ebx + 0x208]
+│    │╎││   0x00000029      mov   edx, dword [ebx+0x208]
 │    │╎││   0x0000002f      mov   eax, dword [edx]
-│    │╎││   0x00000031      mov   edx, dword [eax + 0x14]
-│    │╎││   0x00000034      cmp   edx, dword [eax + 0x18]
-│   ┌─────< 0x00000037      jae   0xa6
-│   ││╎││   0x00000039      mov   byte [edx], 9
-│   ││╎││   0x0000003c      add   edx, 1
-│   ││╎││   0x0000003f      mov   dword [eax + 0x14], edx
+│    │╎││   0x00000031      mov   edx, dword [eax+0x14]
+│    │╎││   0x00000034      cmp   edx, dword [eax+0x18]
+│   ┌─────< 0x00000037      jnb   0xa6
+│   ││╎││   0x00000039      mov   byte [edx], 0x09
+│   ││╎││   0x0000003c      add   edx, 0x01
+│   ││╎││   0x0000003f      mov   dword [eax+0x14], edx
 │   ││╎││   0x00000042      mov   eax, esi
 │   ││╎││   0x00000044      xor   edx, edx
 │   ││╎││   0x00000046      add   esi, ecx
@@ -3765,13 +3765,13 @@ EXPECT=<<EOF
 │   ││╎││   0x0000004a      sub   esi, edx
 │   ││╎││   0x0000004c      cmp   ebp, esi
 │  ┌──────< 0x0000004e      jbe   0x7a
-│  │││╎│└─> 0x00000050      mov   ecx, dword [ebx + 0x58c]
+│  │││╎│└─> 0x00000050      mov   ecx, dword [ebx+0x58c]
 │  │││╎│    0x00000056      test  ecx, ecx
-│  │││└───< 0x00000058      jne   0x10
-│  │││ │    0x0000005a      add   esi, 1
-│  │││ │    0x0000005d      mov   edx, dword [ebx + 0x208]
+│  │││└───< 0x00000058      jnz   0x10
+│  │││ │    0x0000005a      add   esi, 0x01
+│  │││ │    0x0000005d      mov   edx, dword [ebx+0x208]
 │  │││ │    0x00000063      mov   eax, dword [edx]
-│  │││ │    0x00000065      mov   edx, dword [eax + 0x14]
+│  │││ │    0x00000065      mov   edx, dword [eax+0x14]
 EOF
 RUN
 
@@ -3791,19 +3791,19 @@ aa >/dev/null
 pd 38
 EOF
 EXPECT=<<EOF
-/ fcn.00000000(int32_t arg_4h, int32_t arg_1ch, int32_t arg_2ch);
-|           ; var int32_t var_30h @ stack - 0x30
-|           ; var int32_t var_20h @ stack - 0x20
+/ fcn.00000000(int32_t arg_4h, int32_t arg_1ch, int32_t arg_2ch, int32_t arg_48h, int32_t arg_58h);
 |           ; arg int32_t arg_4h @ stack + 0x4
 |           ; arg int32_t arg_1ch @ stack + 0x1c
 |           ; arg int32_t arg_2ch @ stack + 0x2c
+|           ; arg int32_t arg_48h @ stack + 0x48
+|           ; arg int32_t arg_58h @ stack + 0x58
 |           0x00000000      xor   eax, eax
 |           0x00000002      cmp   esi, edx
 |       ,=< 0x00000004      jb    0x50
 |      ,==< 0x00000006      jmp   0x7a
        ||   0x00000008      nop
-       ||   0x00000009      lea   esi, [esi]
-|     .---> 0x00000010      lea   edi, [esi + 1]
+       ||   0x00000009      lea   esi, dword [esi]
+|     .---> 0x00000010      lea   edi, dword [esi+0x01]
 |     :||   0x00000013      xor   edx, edx
 |     :||   0x00000015      mov   eax, ebp
 |     :||   0x00000017      div   ecx
@@ -3813,14 +3813,14 @@ EXPECT=<<EOF
 |     :||   0x00000021      div   ecx
 |     :||   0x00000023      cmp   dword [arg_1ch], eax
 |    ,====< 0x00000027      jbe   0x90
-|    |:||   0x00000029      mov   edx, dword [ebx + 0x208]
+|    |:||   0x00000029      mov   edx, dword [ebx+0x208]
 |    |:||   0x0000002f      mov   eax, dword [edx]
-|    |:||   0x00000031      mov   edx, dword [eax + 0x14]
-|    |:||   0x00000034      cmp   edx, dword [eax + 0x18]
-|   ,=====< 0x00000037      jae   0xa6
-|   ||:||   0x00000039      mov   byte [edx], 9
-|   ||:||   0x0000003c      add   edx, 1
-|   ||:||   0x0000003f      mov   dword [eax + 0x14], edx
+|    |:||   0x00000031      mov   edx, dword [eax+0x14]
+|    |:||   0x00000034      cmp   edx, dword [eax+0x18]
+|   ,=====< 0x00000037      jnb   0xa6
+|   ||:||   0x00000039      mov   byte [edx], 0x09
+|   ||:||   0x0000003c      add   edx, 0x01
+|   ||:||   0x0000003f      mov   dword [eax+0x14], edx
 |   ||:||   0x00000042      mov   eax, esi
 |   ||:||   0x00000044      xor   edx, edx
 |   ||:||   0x00000046      add   esi, ecx
@@ -3828,13 +3828,13 @@ EXPECT=<<EOF
 |   ||:||   0x0000004a      sub   esi, edx
 |   ||:||   0x0000004c      cmp   ebp, esi
 |  ,======< 0x0000004e      jbe   0x7a
-|  |||:|`-> 0x00000050      mov   ecx, dword [ebx + 0x58c]
+|  |||:|`-> 0x00000050      mov   ecx, dword [ebx+0x58c]
 |  |||:|    0x00000056      test  ecx, ecx
-|  |||`===< 0x00000058      jne   0x10
-|  ||| |    0x0000005a      add   esi, 1
-|  ||| |    0x0000005d      mov   edx, dword [ebx + 0x208]
+|  |||`===< 0x00000058      jnz   0x10
+|  ||| |    0x0000005a      add   esi, 0x01
+|  ||| |    0x0000005d      mov   edx, dword [ebx+0x208]
 |  ||| |    0x00000063      mov   eax, dword [edx]
-|  ||| |    0x00000065      mov   edx, dword [eax + 0x14]
+|  ||| |    0x00000065      mov   edx, dword [eax+0x14]
 EOF
 RUN
 
@@ -3870,42 +3870,42 @@ afva
 pdf
 EOF
 EXPECT=<<EOF
-/ fcn.00000000(int32_t arg_4h, int32_t arg_8h, int32_t arg_ch, int32_t arg_10h, int32_t arg_18h, int32_t arg_1ch);
-|           ; var int32_t var_ch @ stack - 0xc
-|           ; var int32_t var_8h @ stack - 0x8
-|           ; var int32_t var_4h @ stack - 0x4
-|           ; arg int32_t arg_4h @ stack + 0x4
-|           ; arg int32_t arg_8h @ stack + 0x8
-|           ; arg int32_t arg_ch @ stack + 0xc
-|           ; arg int32_t arg_10h @ stack + 0x10
+/ fcn.00000000(int32_t arg_14h, int32_t arg_18h, int32_t arg_1ch, int32_t arg_24h, int32_t arg_28h, int32_t arg_2ch, int32_t arg_30h, int32_t arg_38h, int32_t arg_3ch);
+|           ; arg int32_t arg_14h @ stack + 0x14
 |           ; arg int32_t arg_18h @ stack + 0x18
 |           ; arg int32_t arg_1ch @ stack + 0x1c
+|           ; arg int32_t arg_24h @ stack + 0x24
+|           ; arg int32_t arg_28h @ stack + 0x28
+|           ; arg int32_t arg_2ch @ stack + 0x2c
+|           ; arg int32_t arg_30h @ stack + 0x30
+|           ; arg int32_t arg_38h @ stack + 0x38
+|           ; arg int32_t arg_3ch @ stack + 0x3c
 |           0x00000000      83ec10         sub   esp, 0x10
-|           0x00000003      8b442418       mov   eax, dword [arg_8h]
+|           0x00000003      8b442418       mov   eax, dword [arg_28h]
 |           0x00000007      99             cdq
-|           0x00000008      f77c241c       idiv  dword [arg_ch]
-|           0x0000000c      8b442414       mov   eax, dword [arg_4h]
+|           0x00000008      f77c241c       idiv  dword [arg_2ch]
+|           0x0000000c      8b442414       mov   eax, dword [arg_24h]
 |           0x00000010      01d0           add   eax, edx
-|           0x00000012      8944240c       mov   dword [var_4h], eax
-|           0x00000016      8b442420       mov   eax, dword [arg_10h]
+|           0x00000012      8944240c       mov   dword [arg_1ch], eax
+|           0x00000016      8b442420       mov   eax, dword [arg_30h]
 |           0x0000001a      99             cdq
-|           0x0000001b      f77c2428       idiv  dword [arg_18h]
-|           0x0000001f      8b44240c       mov   eax, dword [var_4h]
+|           0x0000001b      f77c2428       idiv  dword [arg_38h]
+|           0x0000001f      8b44240c       mov   eax, dword [arg_1ch]
 |           0x00000023      01d0           add   eax, edx
-|           0x00000025      89442408       mov   dword [var_8h], eax
-|           0x00000029      8b542414       mov   edx, dword [arg_4h]
-|           0x0000002d      8b44240c       mov   eax, dword [var_4h]
-|           0x00000031      8d0c02         lea   ecx, [edx + eax]
-|           0x00000034      8b44242c       mov   eax, dword [arg_1ch]
+|           0x00000025      89442408       mov   dword [arg_18h], eax
+|           0x00000029      8b542414       mov   edx, dword [arg_24h]
+|           0x0000002d      8b44240c       mov   eax, dword [arg_1ch]
+|           0x00000031      8d0c02         lea   ecx, dword [edx+eax*1]
+|           0x00000034      8b44242c       mov   eax, dword [arg_3ch]
 |           0x00000038      99             cdq
 |           0x00000039      f7f9           idiv  ecx
-|           0x0000003b      8b442408       mov   eax, dword [var_8h]
+|           0x0000003b      8b442408       mov   eax, dword [arg_18h]
 |           0x0000003f      01d0           add   eax, edx
-|           0x00000041      89442404       mov   dword [var_ch], eax
-|           0x00000045      8b54240c       mov   edx, dword [var_4h]
-|           0x00000049      8b442408       mov   eax, dword [var_8h]
+|           0x00000041      89442404       mov   dword [arg_14h], eax
+|           0x00000045      8b54240c       mov   edx, dword [arg_1ch]
+|           0x00000049      8b442408       mov   eax, dword [arg_18h]
 |           0x0000004d      01c2           add   edx, eax
-|           0x0000004f      8b442404       mov   eax, dword [var_ch]
+|           0x0000004f      8b442404       mov   eax, dword [arg_14h]
 |           0x00000053      01d0           add   eax, edx
 |           0x00000055      83c410         add   esp, 0x10
 \           0x00000058      c3             ret
@@ -3954,7 +3954,7 @@ s 0x00402130
 axt
 EOF
 EXPECT=<<EOF
-(nofunc) 0x4010d1 [DATA] lea edx, [ebx*4 + str.Y_B]
+(nofunc) 0x4010d1 [DATA] lea edx, dword [ebx*4+str.Y_B]
 EOF
 RUN
 
@@ -4104,17 +4104,17 @@ af
 pdf
 EOF
 EXPECT=<<EOF
-/ fcn.00000000();
-|           ; var int32_t var_40h @ stack - 0x40
-|           ; var int32_t var_3ch @ stack - 0x3c
-|           ; var int32_t var_38h @ stack - 0x38
+/ fcn.00000000(int32_t arg_40h, int32_t arg_44h, int32_t arg_48h);
+|           ; arg int32_t arg_40h @ stack + 0x40
+|           ; arg int32_t arg_44h @ stack + 0x44
+|           ; arg int32_t arg_48h @ stack + 0x48
 |           0x00000000      push  ebp
 |           0x00000001      mov   esp, ebp
 |           0x00000003      sub   esp, 0x40
-|           0x00000006      mov   dword [var_40h], 4
-|           0x0000000e      mov   dword [var_3ch], 8
-|           0x00000016      mov   dword [var_38h], 0xc                 ; [0xc:4]=0x44c70000
-|           0x0000001e      push  dword [var_3ch]
+|           0x00000006      mov   dword [arg_40h], 0x04
+|           0x0000000e      mov   dword [arg_44h], 0x08
+|           0x00000016      mov   dword [arg_48h], 0x0c                ; [0xc:4]=0x44c70000
+|           0x0000001e      push  dword [arg_44h]
 \           0x00000022      ret
 EOF
 RUN
@@ -4153,7 +4153,7 @@ EXPECT=<<EOF
 / int main(int argc, char **argv, char **envp);
 |           0x080491ca     0            lea   ecx, [argc]
 |           0x080491ce     0            and   esp, 0xfffffff0
-|           0x080491d1     0 -= 4       push  dword [ecx - 4]
+|           0x080491d1     0 -= 4       push  dword [ecx-0x04]
 |           0x080491d4    -4 -= 4       push  ebp
 |           0x080491d5    -8            mov   ebp, esp
 |           0x080491d7    -8 -= 4       push  ecx
@@ -4211,25 +4211,25 @@ EXPECT=<<EOF
 |       ,=< 0x00401000      jmp   0x401012                             ; [00] -r-x section size 65536 named .text
 ..
 |      ||   ; CODE XREF from entry0 @ 0x401000
-|      |`-> 0x00401012      mov   eax, dword [0x411133]                ; [0x411133:4]=0
-|      |    0x00401017      shl   eax, 2
-|      |    0x0040101a      mov   dword [0x411137], eax                ; [0x411137:4]=0
+|      |`-> 0x00401012      mov   eax, dword [0x411133]
+|      |    0x00401017      shl   eax, 0x02
+|      |    0x0040101a      mov   dword [0x411137], eax
 |      |    0x0040101f      push  edx
-|      |    0x00401020      push  0
+|      |    0x00401020      push  0x00
 |      |    0x00401022      call  sub.KERNEL32.DLL_GetModuleHandleA
 |      |    0x00401027      mov   edx, eax
 |      |    0x00401029      call  fcn.0040710c
 |      |    0x0040102e      pop   edx
 |      |    0x0040102f      call  fcn.004064a8
 |      |    0x00401034      call  fcn.00407110
-|      |    0x00401039      push  0
+|      |    0x00401039      push  0x00
 |      |    0x0040103b      call  fcn.00408058
 |      |    0x00401040      pop   ecx
 |      |    0x00401041      push  0x4110dc
-|      |    0x00401046      push  0
+|      |    0x00401046      push  0x00
 |      |    0x00401048      call  sub.KERNEL32.DLL_GetModuleHandleA
-|      |    0x0040104d      mov   dword [0x41113b], eax                ; [0x41113b:4]=0
-|      |    0x00401052      push  0
+|      |    0x0040104d      mov   dword [0x41113b], eax
+|      |    0x00401052      push  0x00
 \      |,=< 0x00401054      jmp   fcn.0040dfd0
 EOF
 RUN

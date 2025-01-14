@@ -689,19 +689,19 @@ _dAe_ 32 64      riscv.cs    BSD     RISC-V Capstone-based disassembler
 adA__ 32         rl78        LGPL3   Renesas RL78 disassembler (by Bastian Engel)
 _dA__ 32         rsp         LGPL3   Nintendo N64 Reality Signal Processor disassembler
 _dA__ 32         rx          LGPL3   Renesas RX Family disassembler (by Heersin)
-adAeI 32         sh          LGPL3   Hitachi/Renesas SuperH-4 disassembler (by DMaroo)
-_dA__ 8 16       snes        LGPL3   SuperNES CPU disassembler
-_dA__ 32 64      sparc       BSD     Sun SPARC Capstone-based disassembler
-_dA__ 32 64      sparc.gnu   GPL3    Sun SPARC disassembler
-_dA__ 16         spc700      LGPL3   Sony SPC700 (Nintendo SuperNES sound-chip) disassembler
-_dA__ 32 64      sysz        BSD     IBM SystemZ (S/390) Capstone-based disassembler
-_dA__ 32         tms320      LGPL3   Texas Instruments TMS320 DSP family (c54x,c55x,c55x+,c64x) disassembler
-_dA_I 32         tricore     BSD     Siemens TriCore Capstone-based disassembler (by billow)
-_dAeI 32         v810        LGPL3   NEC V810 disassembler (by pancake)
-_dAeI 32         v850        LGPL3   NEC/Renesas V850 disassembler
-_dA__ 8 32       vax         GPL3    DEC VAX disassembler
-adA__ 32         wasm        MIT     WebAssembly disassembler (by cgvwzq) v0.1.0
-_dAeI 16 32 64   x86         BSD     X86/X86_64 Capstone-based disassembler
+adAeI 32         sh          LGPL3   SuperH-4 CPU (by DMaroo)
+_dA__ 8 16       snes        LGPL3   SuperNES CPU
+_dA__ 32 64      sparc       BSD     Capstone SPARC disassembler
+_dA__ 32 64      sparc.gnu   GPL3    Scalable Processor Architecture
+_dA__ 16         spc700      LGPL3   spc700, snes' sound-chip
+_dA__ 32 64      sysz        BSD     SystemZ CPU disassembler
+_dA__ 32         tms320      LGPL3   TMS320 DSP family (c54x,c55x,c55x+,c64x)
+_dA_I 32         tricore     BSD     Siemens TriCore CPU (by billow)
+_dAeI 32         v810        LGPL3   v810 disassembly plugin (by pancake)
+_dAeI 32         v850        LGPL3   v850 disassembly plugin
+_dA__ 8 32       vax         GPL3    VAX
+adA__ 32         wasm        MIT     WebAssembly (by cgvwzq) v0.1.0
+_dAeI 16 32 64   x86         MIT     Zydis X86 disassembler
 a____ 16 32 64   x86.as      LGPL3   Intel X86 GNU Assembler (Use RZ_X86_AS env)
 a____ 16 32 64   x86.nasm    LGPL3   X86 nasm assembler
 a____ 16 32 64   x86.nz      LGPL3   x86 handmade assembler

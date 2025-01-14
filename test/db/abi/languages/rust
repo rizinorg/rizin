@@ -22,8 +22,8 @@ mov rdx, rsp
 and rsp, 0xfffffffffffffff0
 push rax
 push rsp
-lea r8, sym.__libc_csu_fini
-lea rcx, sym.__libc_csu_init
-lea rdi, main
+lea r8, qword sym.__libc_csu_fini
+lea rcx, qword sym.__libc_csu_init
+lea rdi, qword main
 EOF
 RUN

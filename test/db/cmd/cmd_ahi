@@ -92,7 +92,7 @@ ahi 2
 pi 1
 EOF
 EXPECT=<<EOF
-cmp rax, 0xe
+cmp rax, 0x0e
 cmp rax, 1110b
 EOF
 RUN
@@ -109,7 +109,7 @@ ahi 2
 pi 1
 EOF
 EXPECT=<<EOF
-cmp rax, 4
+cmp rax, 0x04
 cmp rax, 100b
 EOF
 RUN
@@ -288,9 +288,9 @@ ahi 10; pd 1
 EOF
 EXPECT=<<EOF
 true
-            0x100001000      c7055f440000.  mov   dword [rip + 0x445f], 0 ; [0x100005469:4]=-1
-            0x100001000      c7055f440000.  mov   dword [0x100005469], 0 ; [0x100005469:4]=-1
-            0x100001000      c7055f440000.  mov   dword [4294988905], 0 ; [0x100005469:4]=-1
+            0x100001000      c7055f440000.  mov   dword [0x100005469], 0x00 ; [0x100005469:4]=-1
+            0x100001000      c7055f440000.  mov   dword [0x100005469], 0x00 ; [0x100005469:4]=-1
+            0x100001000      c7055f440000.  mov   dword [4294988905], 0x00 ; [0x100005469:4]=-1
 EOF
 RUN
 
@@ -305,8 +305,8 @@ ahi s 1
 pi 1
 EOF
 EXPECT=<<EOF
-mov dword [esp + 0x68], 0x72656164
-mov dword [esp + 0x68], 'read'
+mov dword [esp+0x68], 0x72656164
+mov dword [esp+0x68], 'read'
 EOF
 RUN
 
@@ -339,8 +339,8 @@ e scr.color=1
 pd 1
 EOF
 EXPECT=<<EOF
-            0x00000000      mov   dword [esp + 0x68], 'm0[\x1b'
-            [32m[7m0x00000000[0m      [37mmov[0m[37m   [0m[37mdword[0m[37m [[0m[36mesp[0m[37m [0m[37m+[0m[37m [0m[33m0x68[0m[37m], [0m[33m'm0[\x1b'[0m[0m
+            0x00000000      mov   dword [esp+0x68], 'm0[\x1b'
+            [32m[7m0x00000000[0m      [37mmov[0m[37m   [0m[37mdword[0m[37m [[0m[36mesp[0m[37m[0m[37m+[0m[37m[0m[33m0x68[0m[37m], [0m[33m'm0[\x1b'[0m[0m
 EOF
 RUN
 
@@ -359,9 +359,9 @@ ahi 10 1
 pdq 1
 EOF
 EXPECT=<<EOF
-0x00000000 mov dword [rbp - 0x78], 0xffc643
-0x00000000 mov dword [rbp - 120], 0xffc643
-0x00000000 mov dword [rbp - 0x78], 16762435
+0x00000000 mov dword [rbp-0x78], 0xffc643
+0x00000000 mov dword [rbp-120], 0xffc643
+0x00000000 mov dword [rbp-0x78], 16762435
 EOF
 RUN
 

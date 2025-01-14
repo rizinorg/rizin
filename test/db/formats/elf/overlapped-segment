@@ -26,7 +26,7 @@ EXPECT=<<EOF
             ;-- segment.GNU_STACK:
             ;-- segment.ehdr:
             0x00000000      endbr64
-            0x00000004      sub   rsp, 8
-            0x00000008      mov   rax, qword [0x00002fe8]              ; [0x2fe8:8]=-1
+            0x00000004      sub   rsp, 0x08
+            0x00000008      mov   rax, qword [0x2fe8]                  ; [0x2fe8:8]=-1
 EOF
 RUN

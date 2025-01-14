@@ -10,8 +10,8 @@ pi 1
 pdq 1
 EOF
 EXPECT=<<EOF
-movabs rcx, 'ld.lldtn'
-0x00000000 48b96e74646c6c2e646c  movabs rcx, 'ld.lldtn'
+mov rcx, 'ld.lldtn'
+0x00000000 48b96e74646c6c2e646c  mov rcx, 'ld.lldtn'
 EOF
 RUN
 
@@ -33,10 +33,10 @@ ia > /dev/null
 pdq 1
 EOF
 EXPECT=<<EOF
-movabs rcx, 110.116.100.108
-movabs rcx, 'ld.lldtn'
-0x00000000 48b96e74646c6c2e646c  movabs rcx, 'ld.lldtn'
-0x00000000 48b96e74646c6c2e646c  movabs rcx, 'ld.lldtn'
-0x00000000 48b96e74646c6c2e646c  movabs rcx, 'ld.lldtn'
+mov rcx, 110.116.100.108
+mov rcx, 'ld.lldtn'
+0x00000000 48b96e74646c6c2e646c  mov rcx, 'ld.lldtn'
+0x00000000 48b96e74646c6c2e646c  mov rcx, 'ld.lldtn'
+0x00000000 48b96e74646c6c2e646c  mov rcx, 'ld.lldtn'
 EOF
 RUN

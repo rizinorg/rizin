@@ -16,9 +16,9 @@ EOF
 EXPECT=<<EOF
 0x08000060   section..text:
 0x08000060           b990000008  mov ecx, 0x8000090
-0x08000065           ba0d000000  mov edx, 0xd
-0x0800006a           bb01000000  mov ebx, 1
-0x0800006f           b804000000  mov eax, 4
+0x08000065           ba0d000000  mov edx, 0x0d
+0x0800006a           bb01000000  mov ebx, 0x01
+0x0800006f           b804000000  mov eax, 0x04
 EOF
 RUN
 

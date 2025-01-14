@@ -28,7 +28,7 @@ CMDS=pi 5
 EXPECT=<<EOF
 push str.Exiting_TLS_with_no_EP:_____1st_TLS_call__ExitProcess___called
 call dword [sym.imp.msvcrt.dll_printf]
-add esp, 4
+add esp, 0x04
 nop
 mov dword [0x401184], 0x401070
 EOF

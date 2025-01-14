@@ -25,9 +25,9 @@ EOF
 EXPECT=<<EOF
 push str.executed_via_imported_TLS
 call dword [printf]
-add esp, 4
+add esp, 0x04
 nop
-push 0
+push 0x00
 call dword [ExitProcess]
 EOF
 RUN

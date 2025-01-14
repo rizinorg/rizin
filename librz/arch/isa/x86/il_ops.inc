@@ -343,14 +343,14 @@ RzILOpEffect *x86_il_cmp_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analys
 
 		X86Mem src_mem1 = {
 			.base = mem_reg1,
-			.disp = 0,
+			.disp = { 0 },
 			.index = ZYDIS_REGISTER_NONE,
 			.scale = 1,
 			.segment = ZYDIS_REGISTER_DS
 		};
 		X86Mem src_mem2 = {
 			.base = mem_reg2,
-			.disp = 0,
+			.disp = { 0 },
 			.index = ZYDIS_REGISTER_NONE,
 			.scale = 1,
 			.segment = ZYDIS_REGISTER_ES
@@ -880,7 +880,7 @@ IL_LIFTER(into) {
 
 #define JUMP_IL() \
 	do { \
-		RzILOpPure *jmp_addr = UN(analysis->bits, imm_value(ins->operands[0], pc, ins->ins_size)); \
+		RzILOpPure *jmp_addr = UN(analysis->bits, imm_value(ins->operands[0], pc)); \
 		if (ins->operands[0].size == 16 && analysis->bits != 64) { \
 			jmp_addr = LOGAND(jmp_addr, UN(analysis->bits, 0x0000ffff)); \
 		} \
@@ -1242,7 +1242,7 @@ IL_LIFTER(lodsq) {
 		} \
 \
 		RzILOpEffect *dec_counter = x86_il_set_reg(count_reg, SUB(x86_il_get_reg(count_reg), UN(addr_size, 1))); \
-		RzILOpEffect *true_cond = JMP(UN(analysis->bits, pc + imm_value(ins->operands[0], pc, ins->ins_size))); \
+		RzILOpEffect *true_cond = JMP(UN(analysis->bits, pc + imm_value(ins->operands[0], pc))); \
 		RzILOpEffect *branch = BRANCH(cond, true_cond, NOP()); \
 \
 		return SEQ2(dec_counter, branch); \
@@ -1328,14 +1328,14 @@ RzILOpEffect *x86_il_movs_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analy
 
 		X86Mem src_mem = {
 			.base = src_reg,
-			.disp = 0,
+			.disp = { 0 },
 			.index = ZYDIS_REGISTER_NONE,
 			.scale = 1,
 			.segment = ZYDIS_REGISTER_DS
 		};
 		X86Mem dst_mem = {
 			.base = dst_reg,
-			.disp = 0,
+			.disp = { 0 },
 			.index = ZYDIS_REGISTER_NONE,
 			.scale = 1,
 			.segment = ZYDIS_REGISTER_ES
@@ -1485,7 +1485,7 @@ IL_LIFTER(nop) {
  * One's complement negation
  * Encoding: M
  */
-IL_LIFTER(not) {
+IL_LIFTER(not ) {
 	return x86_il_set_op(0, LOGNOT(x86_il_get_op(0)));
 }
 
@@ -1501,7 +1501,7 @@ IL_LIFTER(not) {
 IL_LIFTER(or) {
 	RzILOpPure *op1 = x86_il_get_op(0);
 	RzILOpPure *op2 = x86_il_get_op(1);
-	RzILOpEffect *or = SETL("_or", LOGOR(op1, op2));
+	RzILOpEffect * or = SETL("_or", LOGOR(op1, op2));
 
 	RzILOpEffect *set_dest = x86_il_set_op(0, VARL("_or"));
 	RzILOpEffect *clear_of = SETG(EFLAGS(OF), IL_FALSE);
@@ -1596,7 +1596,7 @@ IL_LIFTER(popfq) {
 	return SEQ2(x86_il_set_flags(pop.val, 64), pop.eff);
 }
 
-#define CALCULATE_REX_PREFIX(rex) ((rex).W << 3 | (rex).R << 2 | (rex).X << 1 | (rex).B)
+#define CALCULATE_REX_PREFIX(rex) ((rex).W << 3 | (rex).R << 2 | (rex).X << 1 | (rex).B) /* in bytes */
 
 RzILOpEffect *x86_push_helper_impl(RzILOpPure *val, unsigned int user_op_size, unsigned int bitness, const X86ILIns *ins, ut64 pc) {
 	unsigned int dflag = user_op_size;
@@ -1606,7 +1606,7 @@ RzILOpEffect *x86_push_helper_impl(RzILOpPure *val, unsigned int user_op_size, u
 	if (ins) {
 		if (bitness == 64) {
 			dflag = CALCULATE_REX_PREFIX(ins->structure->raw.rex) ? 8 : ins->structure->raw.prefixes[2].value ? 2
-															  : 4; /* in bytes */
+															  : 4;
 			stack_size = 8; /* in bytes */
 		} else {
 			/* We use the other operand and address size if the prefix is set */
@@ -1723,23 +1723,23 @@ IL_LIFTER(pushaw) {
  * Push all general-purpose registers (32-bits)
  * Encoding: ZO
  */
-IL_LIFTER(pushal) {
-	if (analysis->bits != 32) {
-		return NULL;
-	}
-
-	RzILOpEffect *temp = SETL("_esp", x86_il_get_reg(ZYDIS_REGISTER_ESP));
-	RzILOpEffect *push = x86_push_helper(x86_il_get_reg(ZYDIS_REGISTER_EAX), 4);
-	push = SEQ2(push, x86_push_helper(x86_il_get_reg(ZYDIS_REGISTER_ECX), 4));
-	push = SEQ2(push, x86_push_helper(x86_il_get_reg(ZYDIS_REGISTER_EDX), 4));
-	push = SEQ2(push, x86_push_helper(x86_il_get_reg(ZYDIS_REGISTER_EBX), 4));
-	push = SEQ2(push, x86_push_helper(VARL("_esp"), 4));
-	push = SEQ2(push, x86_push_helper(x86_il_get_reg(ZYDIS_REGISTER_EBP), 4));
-	push = SEQ2(push, x86_push_helper(x86_il_get_reg(ZYDIS_REGISTER_ESI), 4));
-	push = SEQ2(push, x86_push_helper(x86_il_get_reg(ZYDIS_REGISTER_EDI), 4));
-
-	return SEQ2(temp, push);
-}
+// IL_LIFTER(pushal) {
+//	if (analysis->bits != 32) {
+//		return NULL;
+//	}
+//
+//	RzILOpEffect *temp = SETL("_esp", x86_il_get_reg(ZYDIS_REGISTER_ESP));
+//	RzILOpEffect *push = x86_push_helper(x86_il_get_reg(ZYDIS_REGISTER_EAX), 4);
+//	push = SEQ2(push, x86_push_helper(x86_il_get_reg(ZYDIS_REGISTER_ECX), 4));
+//	push = SEQ2(push, x86_push_helper(x86_il_get_reg(ZYDIS_REGISTER_EDX), 4));
+//	push = SEQ2(push, x86_push_helper(x86_il_get_reg(ZYDIS_REGISTER_EBX), 4));
+//	push = SEQ2(push, x86_push_helper(VARL("_esp"), 4));
+//	push = SEQ2(push, x86_push_helper(x86_il_get_reg(ZYDIS_REGISTER_EBP), 4));
+//	push = SEQ2(push, x86_push_helper(x86_il_get_reg(ZYDIS_REGISTER_ESI), 4));
+//	push = SEQ2(push, x86_push_helper(x86_il_get_reg(ZYDIS_REGISTER_EDI), 4));
+//
+//	return SEQ2(temp, push);
+// }
 
 #define RCX_MACRO() \
 	ut8 size_in_bytes = ins->operands[0].size; \
@@ -1894,7 +1894,7 @@ IL_LIFTER(ret) {
 	if (ins->structure->operand_count_visible == 1) {
 		/* Immediate operand (Encoding: I)
 		 * Reduce RSP by that many bytes. */
-		ret = SEQ2(ret, x86_il_set_reg(ZYDIS_REGISTER_RSP, ADD(x86_il_get_reg(ZYDIS_REGISTER_RSP), UN(analysis->bits, imm_value(ins->operands[0], pc, ins->ins_size)))));
+		ret = SEQ2(ret, x86_il_set_reg(ZYDIS_REGISTER_RSP, ADD(x86_il_get_reg(ZYDIS_REGISTER_RSP), UN(analysis->bits, imm_value(ins->operands[0], pc)))));
 	}
 
 	return SEQ2(ret, JMP(VARL("tgt")));
@@ -1938,22 +1938,22 @@ IL_LIFTER(sahf) {
  * Encoding: M1, MC, MI
  * (Functionally the same as SHL)
  */
-IL_LIFTER(sal) {
-	SHIFT_MACRO();
-
-	RzILOpEffect *shifted = SETL("_shifted", SHIFTL0(UNSIGNED(size + 1, VARL("_pre_dest")), VARL("_shift")));
-
-	RzILOpEffect *result = SETL("_dest", UNSIGNED(size, VARL("_shifted")));
-
-	// if _shift == 0, CF is unaffected.
-	RzILOpEffect *set_cf = SETG(EFLAGS(CF), MSB(VARL("_shifted")));
-
-	// if _shift == 1, OF is set to 'CF xor MSB (after shift)'.
-	// otherwise, OF is undefined.
-	RzILOpEffect *set_of = SETG(EFLAGS(OF), XOR(VARG(EFLAGS(CF)), MSB(VARL("_dest"))));
-
-	return SEQ8(pre_dest, shift, shifted, result, set_cf, set_of, set_flags, set_dest);
-}
+// IL_LIFTER(sal) {
+//	SHIFT_MACRO();
+//
+//	RzILOpEffect *shifted = SETL("_shifted", SHIFTL0(UNSIGNED(size + 1, VARL("_pre_dest")), VARL("_shift")));
+//
+//	RzILOpEffect *result = SETL("_dest", UNSIGNED(size, VARL("_shifted")));
+//
+//	// if _shift == 0, CF is unaffected.
+//	RzILOpEffect *set_cf = SETG(EFLAGS(CF), MSB(VARL("_shifted")));
+//
+//	// if _shift == 1, OF is set to 'CF xor MSB (after shift)'.
+//	// otherwise, OF is undefined.
+//	RzILOpEffect *set_of = SETG(EFLAGS(OF), XOR(VARG(EFLAGS(CF)), MSB(VARL("_dest"))));
+//
+//	return SEQ8(pre_dest, shift, shifted, result, set_cf, set_of, set_flags, set_dest);
+// }
 
 /**
  * SAR
@@ -2324,46 +2324,46 @@ IL_LIFTER(test) {
  * Wait until not busy
  * ZO
  */
-IL_LIFTER(wait) {
-	/* NOP seems to be a reasonable implementation */
-	return NOP();
-}
+// IL_LIFTER(wait) {
+//	/* NOP seems to be a reasonable implementation */
+//	return NOP();
+// }
 
 /**
  * XCHG
  * Exchange data
  * Encoding: O, MR, RM
  */
-IL_LIFTER(xchg) {
-	RzILOpEffect *temp = SETL("_temp", x86_il_get_op(0));
-	RzILOpEffect *xchg = x86_il_set_op(0, x86_il_get_op(1));
-	RzILOpEffect *set_src = x86_il_set_op(1, VARL("_temp"));
-
-	return SEQ3(temp, xchg, set_src);
-}
+// IL_LIFTER(xchg) {
+//	RzILOpEffect *temp = SETL("_temp", x86_il_get_op(0));
+//	RzILOpEffect *xchg = x86_il_set_op(0, x86_il_get_op(1));
+//	RzILOpEffect *set_src = x86_il_set_op(1, VARL("_temp"));
+//
+//	return SEQ3(temp, xchg, set_src);
+// }
 
 /**
  * XLATB
  * Table look-up translation
  * Encoding: ZO
  */
-IL_LIFTER(xlatb) {
-	X86Mem mem;
-	mem.disp.value = 0;
-	mem.index = ZYDIS_REGISTER_NONE;
-	mem.scale = 1;
-	mem.segment = ZYDIS_REGISTER_DS;
-	mem.base = ZYDIS_REGISTER_EBX;
-
-	if (analysis->bits == 64) {
-		mem.segment = ZYDIS_REGISTER_NONE;
-		mem.base = ZYDIS_REGISTER_RBX;
-	} else if (analysis->bits == 16) {
-		mem.base = ZYDIS_REGISTER_BX;
-	}
-
-	return x86_il_set_reg(ZYDIS_REGISTER_AL, LOADW(8, ADD(x86_il_get_memaddr(mem), UNSIGNED(analysis->bits, x86_il_get_reg(ZYDIS_REGISTER_AL)))));
-}
+// IL_LIFTER(xlatb) {
+//	X86Mem mem;
+//	mem.disp.value = 0;
+//	mem.index = ZYDIS_REGISTER_NONE;
+//	mem.scale = 1;
+//	mem.segment = ZYDIS_REGISTER_DS;
+//	mem.base = ZYDIS_REGISTER_EBX;
+//
+//	if (analysis->bits == 64) {
+//		mem.segment = ZYDIS_REGISTER_NONE;
+//		mem.base = ZYDIS_REGISTER_RBX;
+//	} else if (analysis->bits == 16) {
+//		mem.base = ZYDIS_REGISTER_BX;
+//	}
+//
+//	return x86_il_set_reg(ZYDIS_REGISTER_AL, LOADW(8, ADD(x86_il_get_memaddr(mem), UNSIGNED(analysis->bits, x86_il_get_reg(ZYDIS_REGISTER_AL)))));
+// }
 
 /**
  * XOR
@@ -2373,7 +2373,7 @@ IL_LIFTER(xlatb) {
 IL_LIFTER(xor) {
 	RzILOpPure *op1 = x86_il_get_op(0);
 	RzILOpPure *op2 = x86_il_get_op(1);
-	RzILOpEffect *xor = SETL("_xor", LOGXOR(op1, op2));
+	RzILOpEffect * xor = SETL("_xor", LOGXOR(op1, op2));
 
 	RzILOpEffect *set_dest = x86_il_set_op(0, VARL("_xor"));
 	RzILOpEffect *clear_of = SETG(EFLAGS(OF), IL_FALSE);

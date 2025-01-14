@@ -9,9 +9,9 @@ wx b8010000004839ca7f00
 pD -10 @ 0xa
 EOF
 EXPECT=<<EOF
-            0x00000000      b801000000     mov   eax, 1
+            0x00000000      b801000000     mov   eax, 0x01
             0x00000005      4839ca         cmp   rdx, rcx
-        ,=< 0x00000008      7f00           jg    0xa
+        ,=< 0x00000008      7f00           jnle  0xa
 EOF
 RUN
 
@@ -26,9 +26,9 @@ wx b8010000004839ca7f00
 pD -10 @ 10
 EOF
 EXPECT=<<EOF
-            0x00000000      b801000000     mov   eax, 1
+            0x00000000      b801000000     mov   eax, 0x01
             0x00000005      4839ca         cmp   rdx, rcx
-        ,=< 0x00000008      7f00           jg    0xa
+        ,=< 0x00000008      7f00           jnle  0xa
 EOF
 RUN
 
@@ -43,7 +43,7 @@ wx b8010000004839ca7f00
 pD 5
 EOF
 EXPECT=<<EOF
-            0x00000000      b801000000     mov   eax, 1
+            0x00000000      b801000000     mov   eax, 0x01
 EOF
 RUN
 
@@ -57,7 +57,7 @@ wx b8010000004839ca7f00
 pDj 5 @ 0
 EOF
 EXPECT=<<EOF
-[{"offset":0,"val":1,"esil":"1,rax,=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":5,"opcode":"mov eax, 1","disasm":"mov eax, 1","bytes":"b801000000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0}]
+[{"offset":0,"val":1,"esil":"1,rax,=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":5,"opcode":"mov eax, 0x01","disasm":"mov eax, 0x01","bytes":"b801000000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0}]
 EOF
 RUN
 

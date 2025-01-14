@@ -232,6 +232,7 @@ static char *getarg(RzAnalysis *a, struct Getarg *gop, int n, int set, char *set
 		}
 		snprintf(out, BUF_SZ, "%" PFMT64u, get_imm_reg_value(&op, addr, zydx->zydecode->length));
 		return out;
+	default: break;
 	}
 	case ZYDIS_OPERAND_TYPE_MEMORY: {
 		char buf_[BUF_SZ] = { 0 };
@@ -246,7 +247,7 @@ static char *getarg(RzAnalysis *a, struct Getarg *gop, int n, int set, char *set
 			component_count++;
 		}
 
-		if (index != "none") {
+		if (rz_str_cmp("none", index, -1) != 0) {
 			if (scale > 1) {
 				rz_strf(buf_, "%s%s,%d,*,", out, index, scale);
 			} else {
@@ -256,7 +257,7 @@ static char *getarg(RzAnalysis *a, struct Getarg *gop, int n, int set, char *set
 			component_count++;
 		}
 
-		if (base != "none") {
+		if (rz_str_cmp("none", base, -1) != 0) {
 			rz_strf(buf_, "%s%s,", out, base);
 			strncpy(out, buf_, BUF_SZ);
 			component_count++;
@@ -329,6 +330,7 @@ static int cond_x862r2(ZydisMnemonic mnemonic) {
 	case ZYDIS_MNEMONIC_JCXZ:
 	case ZYDIS_MNEMONIC_JECXZ:
 		break;
+	default: break;
 	}
 	return 0;
 }
@@ -518,6 +520,7 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		case ZYDIS_MNEMONIC_SETNL: esilprintf(op, "sf,of,^,!,%s", dst); break;
 		case ZYDIS_MNEMONIC_SETNBE: esilprintf(op, "cf,zf,|,!,%s", dst); break;
 		case ZYDIS_MNEMONIC_SETBE: esilprintf(op, "cf,zf,|,%s", dst); break;
+		default: break;
 		}
 	} break;
 	// cmov
@@ -614,6 +617,7 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			// mov if SF = 1
 			conditional = "sf";
 			break;
+		default: break;
 		}
 		if (src && dst && conditional) {
 			esilprintf(op, "%s,?{,%s,%s,}", conditional, src, dst);
@@ -1049,7 +1053,7 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	case ZYDIS_MNEMONIC_SYSRET: {
 		int cleanup = 0;
 		if (INSOPS > 0) {
-			cleanup = (int)get_imm_reg_value(op, addr, zydecode->length);
+			cleanup = (int)get_imm_reg_value(&INSOP(0), addr, zydecode->length);
 		}
 		esilprintf(op, "%s,[%d],%s,=,%d,%s,+=",
 			sp, rs, pc, rs + cleanup, sp);
@@ -1167,6 +1171,7 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			esilprintf(op, "1,%s,-=,%s,?{,zf,!,?{,%s,%s,=,},}",
 				cnt, cnt, dst, pc);
 			break;
+		default: break;
 		}
 	} break;
 	case ZYDIS_MNEMONIC_CALL: {
@@ -1773,6 +1778,7 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 				rz_strbuf_appendf(&op->esil, ",%d,%s,%%,1,<<,-1,^,%d,%s,/,%s,+,&=[%d]",
 					width * 8, src, width * 8, src, dst_r, width);
 				break;
+			default: break;
 			}
 		} else {
 			int width = INSOP(0).size;
@@ -1790,9 +1796,11 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 				dst_w = getarg(a, &gop, 0, 1, "&", DST_R_AR, NULL, addr);
 				rz_strbuf_appendf(&op->esil, ",%d,%s,%%,1,<<,-1,^,%s", width * 8, src, dst_w);
 				break;
+			default: break;
 			}
 		}
 		break;
+	default: break;
 	}
 
 	if (op->prefix & RZ_ANALYSIS_OP_PREFIX_REP) {
@@ -1837,7 +1845,8 @@ static void set_access_info(RzReg *reg, RzAnalysisOp *op, ZydisDecodedInstructio
 	rz_list_append(ret, val);
 
 	// Register access info
-	ZydisRegister *regs_read, *regs_write;
+	ZydisRegister regs_read[zydecode->operand_count];
+	ZydisRegister regs_write[zydecode->operand_count];
 	ut8 read_count = 0;
 	ut8 write_count = 0;
 	for (int i = 0; i < zydecode->operand_count; i++) {
@@ -1983,7 +1992,7 @@ static void set_src_dst(RzReg *reg, RzAnalysisValue *val, ZydisDecodedInstructio
 	}
 }
 
-static void op_fillval(RzAnalysis *a, RzAnalysisOp *op, ZydisDecodedInstruction *zydecode, ZydisDecodedInstruction *zydeop, int mode, ut64 addr) {
+static void op_fillval(RzAnalysis *a, RzAnalysisOp *op, ZydisDecodedInstruction *zydecode, ZydisDecodedOperand *zydeop, int mode, ut64 addr) {
 	set_access_info(a->reg, op, zydecode, zydeop, mode);
 	switch (op->type & RZ_ANALYSIS_OP_TYPE_MASK) {
 	case RZ_ANALYSIS_OP_TYPE_MOV:
@@ -2130,11 +2139,6 @@ static void set_opdir(RzAnalysisOp *op, ZydisDecodedInstruction *zydecode, Zydis
 }
 
 static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, ZydisDecodedInstruction *zydecode, ZydisDecodedOperand *zydeop) {
-	struct Getarg gop = {
-		.bits = a->bits,
-		.zydecode = zydecode,
-		.zydeop = zydeop
-	};
 	int regsz = 4;
 	switch (a->bits) {
 	case 64: regsz = 8; break;
@@ -2617,9 +2621,6 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 		break;
 	case ZYDIS_MNEMONIC_UD0:
 	case ZYDIS_MNEMONIC_UD2:
-#if CS_API_MAJOR == 4
-	case ZYDIS_MNEMONIC_UD2B:
-#endif
 	case ZYDIS_MNEMONIC_INT3:
 		op->type = RZ_ANALYSIS_OP_TYPE_TRAP; // TRAP
 		break;
@@ -2683,6 +2684,7 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 		case ZYDIS_MNEMONIC_JNL:
 			op->sign = true;
 			break;
+		default: break;
 		}
 		break;
 	case ZYDIS_MNEMONIC_CALL:
@@ -2964,9 +2966,7 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 		op->family = RZ_ANALYSIS_OP_FAMILY_CPU;
 		break;
 	case ZYDIS_MNEMONIC_FADD:
-#if CS_API_MAJOR == 4
 	case ZYDIS_MNEMONIC_FADDP:
-#endif
 		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		break;
@@ -3003,6 +3003,7 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 	case ZYDIS_MNEMONIC_SUBSD: // cvtss2sd
 	case ZYDIS_MNEMONIC_CVTSS2SD: // cvtss2sd
 		break;
+	default: break;
 	}
 
 	switch (zydecode->mnemonic) {
@@ -3131,7 +3132,6 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 
 	ZydisMachineMode mode = select_mode(a);
 	ZydisStackWidth st_mode;
-	int n, ret;
 
 	zydx->omode = mode;
 	switch (mode) {
@@ -3147,7 +3147,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	}
 
 	ZydisDecoder decoder;
-	ret = ZydisDecoderInit(&decoder, mode, st_mode);
+	ZyanStatus ret = ZydisDecoderInit(&decoder, mode, st_mode);
 	if (!ZYAN_SUCCESS(ret)) {
 		return 0;
 	}
@@ -3168,6 +3168,9 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	}
 	for (int i = 0; i < zydx->zydecode->operand_count; i++) {
 		zydx->zydeop[i].size = zydx->zydeop[i].size / 8; // Convert from bits to bytes
+		if (zydx->zydeop[i].type == ZYDIS_OPERAND_TYPE_IMMEDIATE) {
+			zydx->zydeop[i].size = (a->bits) / 8;
+		}
 	}
 	if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
 		ZydisFormatter formatter;

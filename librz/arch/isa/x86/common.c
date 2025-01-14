@@ -730,7 +730,7 @@ RZ_IPI RzILOpEffect *x86_il_set_mem_bits(X86Mem mem, RZ_OWN RZ_NONNULL RzILOpPur
  * \param op
  * \param analysis_bits bitness
  */
-RZ_IPI RzILOpPure *x86_il_get_operand_bits(X86Op op, int analysis_bits, ut64 pc, int implicit_size, X86ILIns *ins) {
+RZ_IPI RzILOpPure *x86_il_get_operand_bits(X86Op op, int analysis_bits, ut64 pc, int implicit_size, const X86ILIns *ins) {
 	switch (op.type) {
 	// case X86_OP_INVALID:
 	//	if (implicit_size) {
@@ -742,7 +742,7 @@ RZ_IPI RzILOpPure *x86_il_get_operand_bits(X86Op op, int analysis_bits, ut64 pc,
 		return x86_il_get_reg_bits(op.reg.value, analysis_bits, pc);
 	case ZYDIS_OPERAND_TYPE_IMMEDIATE:
 		/* Immediate values are always sign extended */
-		return SN((op.size != 0 ? op.size : implicit_size) * BITS_PER_BYTE, imm_value(op, pc, ins->ins_size));
+		return SN((op.size != 0 ? op.size : implicit_size) * BITS_PER_BYTE, imm_value(op, pc));
 	case ZYDIS_OPERAND_TYPE_MEMORY:
 		return LOADW((op.size != 0 ? op.size : implicit_size) * BITS_PER_BYTE, x86_il_get_memaddr_bits(op.mem, analysis_bits, pc));
 	default:
@@ -805,7 +805,7 @@ RZ_IPI RzILOpBool *x86_il_is_add_carry(RZ_OWN RZ_NONNULL RzILOpPure *res, RZ_OWN
 	RzILOpBool *xr = AND(DUP(xmsb), DUP(nres));
 
 	// bit = xy | ry | xr
-	RzILOpBool *or = OR(xy, ry);
+	RzILOpBool * or = OR(xy, ry);
 	or = OR(or, xr);
 
 	return or ;
@@ -836,7 +836,7 @@ RZ_IPI RzILOpBool *x86_il_is_sub_borrow(RZ_OWN RZ_NONNULL RzILOpPure *res, RZ_OW
 	RzILOpBool *rnx = AND(DUP(resmsb), DUP(nx));
 
 	// bit = nxy | rny | rnx
-	RzILOpBool *or = OR(nxy, rny);
+	RzILOpBool * or = OR(nxy, rny);
 	or = OR(or, rnx);
 
 	return or ;
@@ -862,7 +862,7 @@ RZ_IPI RzILOpBool *x86_il_is_add_overflow(RZ_OWN RZ_NONNULL RzILOpPure *res, RZ_
 	// res & !x & !y
 	RzILOpBool *rnxny = AND(AND(DUP(resmsb), INV(DUP(xmsb))), INV(DUP(ymsb)));
 	// or = nrxy | rnxny
-	RzILOpBool *or = OR(nrxy, rnxny);
+	RzILOpBool * or = OR(nrxy, rnxny);
 
 	return or ;
 }
@@ -887,7 +887,7 @@ RZ_IPI RzILOpBool *x86_il_is_sub_underflow(RZ_OWN RZ_NONNULL RzILOpPure *res, RZ
 	// res & !x & y
 	RzILOpBool *rnxy = AND(AND(DUP(resmsb), INV(DUP(xmsb))), DUP(ymsb));
 	// or = nrxny | rnxy
-	RzILOpBool *or = OR(nrxny, rnxy);
+	RzILOpBool * or = OR(nrxny, rnxy);
 
 	return or ;
 }
@@ -1476,7 +1476,7 @@ RZ_IPI RzILOpPure *x86_il_get_floating_operand_bits(X86Op op, int bits, ut64 pc)
 		if (x86_il_is_st_reg(op.reg.value)) {
 			return x86_il_get_st_reg(op.reg.value);
 		} else {
-			RZ_LOG_ERROR("x86: RzIL: Invalid register passed as a floating point operand: %d\n", op.reg);
+			RZ_LOG_ERROR("x86: RzIL: Invalid register passed as a floating point operand: %d\n", op.reg.value);
 		}
 		break;
 	case ZYDIS_OPERAND_TYPE_MEMORY:
