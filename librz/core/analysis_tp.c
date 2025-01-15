@@ -733,6 +733,9 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, RzAnalys
 				RzAnalysisOp *jmp_op = { 0 };
 				ut64 jmp_addr = next_op->jump;
 				RzAnalysisBlock *jmpbb = rz_analysis_fcn_bbget_in(core->analysis, fcn, jmp_addr);
+				if (!jmpbb) {
+					continue;
+				}
 
 				// Check exit status of jmp branch
 				int i;
