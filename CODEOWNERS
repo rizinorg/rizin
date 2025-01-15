@@ -1,6 +1,6 @@
-* @wargio @XVilka @kazarmy @thestr4ng3r @ret2libc
+* @wargio @XVilka @kazarmy @thestr4ng3r @ret2libc @Rot127
 *.js @wargio
-CODEOWNERS @wargio @XVilka @kazarmy @thestr4ng3r @ret2libc
+CODEOWNERS @wargio @XVilka @kazarmy @thestr4ng3r @ret2libc @Rot127
 librz/arch/ @thestr4ng3r
 librz/arch/esil* @wargio
 librz/arch/xrefs.c @ret2libc
