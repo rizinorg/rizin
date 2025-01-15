@@ -537,6 +537,63 @@ static bool test_autocmplt_tmp_operators(void) {
 	mu_end;
 }
 
+static bool test_autocmplt_iter_operators(void) {
+	RzCore *core = fake_core_new();
+	mu_assert_notnull(core, "core should be created");
+	RzLineBuffer *buf = &core->cons->line->buffer;
+
+	const char *s = "pd @@";
+	strcpy(buf->data, s);
+	buf->length = strlen(s);
+	buf->index = buf->length;
+	RzLineNSCompletionResult *r = rz_core_autocomplete_rzshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
+
+	mu_assert_notnull(r, "r should not be null");
+	mu_assert_eq(r->start, strlen("pd "), "should autocomplete the @@ operator");
+	mu_assert_eq(r->end, buf->length, "should autocomplete ending at end of buffer");
+
+	const char *iter_ops[] = {
+		"@@.",
+		"@@=",
+		"@@@=",
+		"@@",
+		"@@c:",
+		"@@@c:",
+		"@@C",
+		"@@C:",
+		"@@dbt",
+		"@@dbtb",
+		"@@dbts",
+		"@@t",
+		"@@b",
+		"@@i",
+		"@@ii",
+		"@@iS",
+		"@@iSS",
+		"@@is",
+		"@@iz",
+		"@@f",
+		"@@f:",
+		"@@F",
+		"@@F:",
+		"@@om",
+		"@@dm",
+		"@@r",
+		"@@s:",
+	};
+	mu_assert_eq(rz_pvector_len(&r->options), RZ_ARRAY_SIZE(iter_ops), "there are all @@/@@ operators (see @@?)");
+	int i;
+	for (i = 0; i < RZ_ARRAY_SIZE(iter_ops); i++) {
+		char msg[100];
+		rz_strf(msg, "%d-th should be %s", i, iter_ops[i]);
+		mu_assert_streq(rz_pvector_at(&r->options, i), iter_ops[i], msg);
+	}
+	rz_line_ns_completion_result_free(r);
+
+	rz_core_free(core);
+	mu_end;
+}
+
 static bool test_autocmplt_tmp_seek(void) {
 	RzCore *core = fake_core_new();
 	mu_assert_notnull(core, "core should be created");
@@ -649,6 +706,7 @@ bool all_tests() {
 	mu_run_test(test_autocmplt_seek);
 	mu_run_test(test_autocmplt_global);
 	mu_run_test(test_autocmplt_tmp_operators);
+	mu_run_test(test_autocmplt_iter_operators);
 	mu_run_test(test_autocmplt_tmp_seek);
 	mu_run_test(test_autocmplt_tmp_config);
 	mu_run_test(test_autocmplt_tmp_arch);
