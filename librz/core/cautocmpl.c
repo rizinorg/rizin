@@ -837,7 +837,7 @@ static TSNode get_arg_parent(TSNode node) {
 	return node;
 }
 
-static bool is_arg_identifier_in_tmp_op(TSNode node) {
+static bool is_arg_identifier_in_at_op(TSNode node) {
 	if (!is_arg_type(ts_node_type(node))) {
 		return false;
 	}
@@ -863,7 +863,7 @@ static bool find_autocmplt_type_at_op(struct autocmplt_data_t *ad, RzCore *core,
 				start--;
 				node_start--;
 			}
-			if (is_arg_identifier_in_tmp_op(g->node) && node_start > 3) {
+			if (is_arg_identifier_in_at_op(g->node) && node_start > 3) {
 				res = fill_autocmplt_data_at_op(ad, start, node_end - 2);
 			}
 			guess_data_free(g);
@@ -873,7 +873,7 @@ static bool find_autocmplt_type_at_op(struct autocmplt_data_t *ad, RzCore *core,
 		if (g) {
 			ut32 node_start = ts_node_start_byte(g->node);
 			ut32 node_end = ts_node_end_byte(g->node);
-			if (is_arg_identifier_in_tmp_op(g->node) && node_start > 2) {
+			if (is_arg_identifier_in_at_op(g->node) && node_start > 2) {
 				res = fill_autocmplt_data_at_op(ad, node_start - 2, node_end - 2);
 			}
 			guess_data_free(g);
@@ -902,7 +902,7 @@ static bool find_autocmplt_type_at_op(struct autocmplt_data_t *ad, RzCore *core,
 		buf->data[buf->index - 1] = last_char;
 		buf->index = idx;
 		if (g) {
-			if (is_arg_identifier_in_tmp_op(g->node)) {
+			if (is_arg_identifier_in_at_op(g->node)) {
 				res = fill_autocmplt_data_at_op(ad, p - buf->data - 3, buf->index);
 			}
 			guess_data_free(g);
@@ -929,7 +929,7 @@ static bool find_autocmplt_type_at_op(struct autocmplt_data_t *ad, RzCore *core,
 		if (g) {
 			ut32 node_start = ts_node_start_byte(g->node);
 			ut32 node_end = ts_node_end_byte(g->node);
-			if (is_arg_identifier_in_tmp_op(g->node) && node_start > 3 && node_end > 2) {
+			if (is_arg_identifier_in_at_op(g->node) && node_start > 3 && node_end > 2) {
 				res = fill_autocmplt_data_at_op(ad, node_start - 3, node_end - 2);
 			}
 			guess_data_free(g);
@@ -939,7 +939,7 @@ static bool find_autocmplt_type_at_op(struct autocmplt_data_t *ad, RzCore *core,
 }
 
 static bool find_autocmplt_type_at_stmt_op(struct autocmplt_data_t *ad, RzCore *core, RzLineBuffer *buf,
-	const char *tmp_op, const char *newtext, enum autocmplt_type_t ad_type) {
+	const char *at_op, const char *newtext, enum autocmplt_type_t ad_type) {
 	bool res = false;
 	struct guess_data_t *g = guess_next_autocmplt_token(core, buf, newtext, 0);
 	if (g) {
@@ -949,7 +949,7 @@ static bool find_autocmplt_type_at_stmt_op(struct autocmplt_data_t *ad, RzCore *
 		TSNode parent = get_arg_parent(g->node);
 		if (!ts_node_is_null(parent)) {
 			const char *parent_type = ts_node_type(parent);
-			if (!strcmp(node_type, "arg_identifier") && !strcmp(parent_type, tmp_op)) {
+			if (!strcmp(node_type, "arg_identifier") && !strcmp(parent_type, at_op)) {
 				res = fill_autocmplt_data(ad, ad_type, node_start, node_end - 1);
 			}
 		}
