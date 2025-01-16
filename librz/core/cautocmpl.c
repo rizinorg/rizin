@@ -13,7 +13,7 @@ enum autocmplt_type_t {
 	AUTOCMPLT_UNKNOWN = 0, ///< Unknown, nothing will be autocompleted
 	AUTOCMPLT_CMD_ID, ///< A command identifier (aka command name) needs to be autocompleted
 	AUTOCMPLT_CMD_ARG, ///< The argument of an arged_stmt (see grammar.js) needs to be autocompleted
-	AUTOCMPLT_AT_STMT, ///< A temporary modifier operator like `@ `, `@a:`, `@v:` or a iter operator like `@@.`, `@@`, `@@i`, etc.
+	AUTOCMPLT_AT_OP, ///< A temporary modifier operator like `@ `, `@a:`, `@v:` or a iter operator like `@@.`, `@@`, `@@i`, etc.
 	AUTOCMPLT_RZNUM, ///< A expression that can be parsed by RzNum (e.g. "flag+3")
 	AUTOCMPLT_ARCH, ///< An architecture supported by Rizin (e.g. x86, arm, etc.)
 	AUTOCMPLT_BITS, ///< A bits value supported by the currently selected architecture (e asm.bits=?)
@@ -796,7 +796,7 @@ static bool fill_autocmplt_data_cmdarg(struct autocmplt_data_t *ad, ut32 start, 
  * stmt (@, @(, @a:, etc.) or a iter stmt (@@, @@., @@i, etc.)
  */
 static bool fill_autocmplt_data_at_stmt(struct autocmplt_data_t *ad, ut32 start, ut32 end) {
-	return fill_autocmplt_data(ad, AUTOCMPLT_AT_STMT, start, end);
+	return fill_autocmplt_data(ad, AUTOCMPLT_AT_OP, start, end);
 }
 
 static bool find_autocmplt_type_newcmd_or_arg(struct autocmplt_data_t *ad, RzCore *core, RzLineBuffer *buf) {
@@ -1130,7 +1130,7 @@ RZ_API RzLineNSCompletionResult *rz_core_autocomplete_rzshell(RzCore *core, RzLi
 		case AUTOCMPLT_CMD_ARG:
 			autocmplt_cmd_arg(core, ad.res, ad.cd, ad.i_arg, buf->data + ad.res->start, ad.res->end - ad.res->start);
 			break;
-		case AUTOCMPLT_AT_STMT:
+		case AUTOCMPLT_AT_OP:
 			autocmplt_at_stmt(core, ad.res, buf->data + ad.res->start, ad.res->end - ad.res->start);
 			break;
 		case AUTOCMPLT_RZNUM:
