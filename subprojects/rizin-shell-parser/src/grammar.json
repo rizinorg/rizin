@@ -1101,285 +1101,221 @@
       }
     },
     "tmp_seek_op": {
-      "type": "PREC_RIGHT",
-      "value": 1,
-      "content": {
-        "type": "SEQ",
-        "members": [
-          {
-            "type": "STRING",
-            "value": "@ "
-          },
-          {
-            "type": "SYMBOL",
-            "name": "args"
-          }
-        ]
-      }
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "@ "
+        },
+        {
+          "type": "SYMBOL",
+          "name": "args"
+        }
+      ]
     },
     "tmp_blksz_op": {
-      "type": "PREC_RIGHT",
-      "value": 1,
-      "content": {
-        "type": "SEQ",
-        "members": [
-          {
-            "type": "STRING",
-            "value": "@!"
-          },
-          {
-            "type": "SYMBOL",
-            "name": "args"
-          }
-        ]
-      }
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "@!"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "args"
+        }
+      ]
     },
     "tmp_fromto_op": {
-      "type": "PREC_RIGHT",
-      "value": 1,
-      "content": {
-        "type": "SEQ",
-        "members": [
-          {
-            "type": "STRING",
-            "value": "@("
-          },
-          {
-            "type": "SYMBOL",
-            "name": "args"
-          },
-          {
-            "type": "STRING",
-            "value": ")"
-          }
-        ]
-      }
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "@("
+        },
+        {
+          "type": "SYMBOL",
+          "name": "args"
+        },
+        {
+          "type": "STRING",
+          "value": ")"
+        }
+      ]
     },
     "tmp_arch_op": {
-      "type": "PREC_RIGHT",
-      "value": 1,
-      "content": {
-        "type": "SEQ",
-        "members": [
-          {
-            "type": "STRING",
-            "value": "@a:"
-          },
-          {
-            "type": "SYMBOL",
-            "name": "arg"
-          }
-        ]
-      }
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "@a:"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "arg"
+        }
+      ]
     },
     "tmp_bits_op": {
-      "type": "PREC_RIGHT",
-      "value": 1,
-      "content": {
-        "type": "SEQ",
-        "members": [
-          {
-            "type": "STRING",
-            "value": "@b:"
-          },
-          {
-            "type": "SYMBOL",
-            "name": "args"
-          }
-        ]
-      }
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "@b:"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "args"
+        }
+      ]
     },
     "tmp_nthi_op": {
-      "type": "PREC_RIGHT",
-      "value": 1,
-      "content": {
-        "type": "SEQ",
-        "members": [
-          {
-            "type": "STRING",
-            "value": "@B:"
-          },
-          {
-            "type": "SYMBOL",
-            "name": "arg"
-          }
-        ]
-      }
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "@B:"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "arg"
+        }
+      ]
     },
     "tmp_eval_op": {
-      "type": "PREC_RIGHT",
-      "value": 1,
-      "content": {
-        "type": "SEQ",
-        "members": [
-          {
-            "type": "STRING",
-            "value": "@e:"
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "@e:"
+        },
+        {
+          "type": "ALIAS",
+          "content": {
+            "type": "SYMBOL",
+            "name": "tmp_eval_args"
           },
-          {
-            "type": "ALIAS",
-            "content": {
-              "type": "SYMBOL",
-              "name": "tmp_eval_args"
-            },
-            "named": true,
-            "value": "args"
-          }
-        ]
-      }
+          "named": true,
+          "value": "args"
+        }
+      ]
     },
     "tmp_fs_op": {
-      "type": "PREC_RIGHT",
-      "value": 1,
-      "content": {
-        "type": "SEQ",
-        "members": [
-          {
-            "type": "STRING",
-            "value": "@F:"
-          },
-          {
-            "type": "SYMBOL",
-            "name": "arg"
-          }
-        ]
-      }
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "@F:"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "arg"
+        }
+      ]
     },
     "tmp_reli_op": {
-      "type": "PREC_RIGHT",
-      "value": 1,
-      "content": {
-        "type": "SEQ",
-        "members": [
-          {
-            "type": "STRING",
-            "value": "@i:"
-          },
-          {
-            "type": "SYMBOL",
-            "name": "args"
-          }
-        ]
-      }
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "@i:"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "args"
+        }
+      ]
     },
     "tmp_kuery_op": {
-      "type": "PREC_RIGHT",
-      "value": 1,
-      "content": {
-        "type": "SEQ",
-        "members": [
-          {
-            "type": "STRING",
-            "value": "@k:"
-          },
-          {
-            "type": "SYMBOL",
-            "name": "arg"
-          }
-        ]
-      }
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "@k:"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "arg"
+        }
+      ]
     },
     "tmp_fd_op": {
-      "type": "PREC_RIGHT",
-      "value": 1,
-      "content": {
-        "type": "SEQ",
-        "members": [
-          {
-            "type": "STRING",
-            "value": "@o:"
-          },
-          {
-            "type": "SYMBOL",
-            "name": "args"
-          }
-        ]
-      }
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "@o:"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "args"
+        }
+      ]
     },
     "tmp_reg_op": {
-      "type": "PREC_RIGHT",
-      "value": 1,
-      "content": {
-        "type": "SEQ",
-        "members": [
-          {
-            "type": "STRING",
-            "value": "@r:"
-          },
-          {
-            "type": "SYMBOL",
-            "name": "arg"
-          }
-        ]
-      }
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "@r:"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "arg"
+        }
+      ]
     },
     "tmp_file_op": {
-      "type": "PREC_RIGHT",
-      "value": 1,
-      "content": {
-        "type": "SEQ",
-        "members": [
-          {
-            "type": "STRING",
-            "value": "@f:"
-          },
-          {
-            "type": "SYMBOL",
-            "name": "arg"
-          }
-        ]
-      }
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "@f:"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "arg"
+        }
+      ]
     },
     "tmp_string_op": {
-      "type": "PREC_RIGHT",
-      "value": 1,
-      "content": {
-        "type": "SEQ",
-        "members": [
-          {
-            "type": "STRING",
-            "value": "@s:"
-          },
-          {
-            "type": "SYMBOL",
-            "name": "arg"
-          }
-        ]
-      }
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "@s:"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "arg"
+        }
+      ]
     },
     "tmp_value_op": {
-      "type": "PREC_RIGHT",
-      "value": 1,
-      "content": {
-        "type": "SEQ",
-        "members": [
-          {
-            "type": "STRING",
-            "value": "@v:"
-          },
-          {
-            "type": "SYMBOL",
-            "name": "arg"
-          }
-        ]
-      }
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "@v:"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "arg"
+        }
+      ]
     },
     "tmp_hex_op": {
-      "type": "PREC_RIGHT",
-      "value": 1,
-      "content": {
-        "type": "SEQ",
-        "members": [
-          {
-            "type": "STRING",
-            "value": "@x:"
-          },
-          {
-            "type": "SYMBOL",
-            "name": "arg"
-          }
-        ]
-      }
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "@x:"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "arg"
+        }
+      ]
     },
     "help_stmt": {
       "type": "PREC_LEFT",
