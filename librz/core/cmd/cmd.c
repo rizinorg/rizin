@@ -3965,14 +3965,20 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_hex_op) {
 		return RZ_CMD_STATUS_INVALID;
 	}
 	int sz;
+	RzCmdStatus res = RZ_CMD_STATUS_INVALID;
 
 	size_t len = strlen(arg_str);
 	ut8 *buf = RZ_NEWS(ut8, len + 1);
 	sz = rz_hex_str2bin(arg_str, buf);
+	if (!sz) {
+		RZ_LOG_ERROR("core: Invalid hexpair for @x:\n");
+		goto out;
+	}
 
 	TSNode next = tmp_get_next_node(node);
-	RzCmdStatus res = handle_tmp_desc(state, next, buf, sz);
+	res = handle_tmp_desc(state, next, buf, sz);
 
+out:
 	free(buf);
 	free(arg_str);
 	return res;

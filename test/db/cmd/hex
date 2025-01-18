@@ -138,3 +138,13 @@ EXPECT=<<EOF
 0x00000100 hit0_0 41424344
 EOF
 RUN
+
+NAME=invalid @x: hexpair
+FILE==
+CMDS=px @x:abcdefgh
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: core: Invalid hexpair for @x:
+ERROR: core: Error while executing command: px @x:abcdefgh
+EOF
+RUN
