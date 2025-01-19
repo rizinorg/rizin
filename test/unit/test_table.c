@@ -56,9 +56,9 @@ bool test_rz_table_column_type(void) {
 	mu_assert_streq(s,
 		"ascii code \n"
 		"-----------\n"
-		"a     97\n"
-		"b     98\n"
-		"c     99\n",
+		"a       97\n"
+		"b       98\n"
+		"c       99\n",
 		"not sorted by second column due to undefined type");
 	free(s);
 	rz_table_free(t);
@@ -76,9 +76,9 @@ bool test_rz_table_tostring(void) {
 		mu_assert_streq(s,
 			"ascii code \n"
 			"-----------\n"
-			"a     97\n"
-			"b     98\n"
-			"c     99\n",
+			"a       97\n"
+			"b       98\n"
+			"c       99\n",
 			buf);
 		free(s);
 	}
@@ -94,9 +94,9 @@ bool test_rz_table_sort1(void) {
 	mu_assert_streq(strd,
 		"ascii code \n"
 		"-----------\n"
-		"c     99\n"
-		"b     98\n"
-		"a     97\n",
+		"c       99\n"
+		"b       98\n"
+		"a       97\n",
 		"sort decreasing second column using number type");
 	free(strd);
 
@@ -105,9 +105,9 @@ bool test_rz_table_sort1(void) {
 	mu_assert_streq(stri,
 		"ascii code \n"
 		"-----------\n"
-		"a     97\n"
-		"b     98\n"
-		"c     99\n",
+		"a       97\n"
+		"b       98\n"
+		"c       99\n",
 		"sort increasing second column using number type");
 	free(stri);
 	rz_table_free(t);
@@ -122,9 +122,9 @@ bool test_rz_table_uniq(void) {
 	mu_assert_streq(strd,
 		"ascii code \n"
 		"-----------\n"
-		"a     97\n"
-		"b     98\n"
-		"c     99\n",
+		"a       97\n"
+		"b       98\n"
+		"c       99\n",
 		"uniq delete nothing");
 	free(strd);
 
@@ -145,11 +145,11 @@ bool test_rz_table_uniq(void) {
 	mu_assert_streq(stri,
 		"ascii code \n"
 		"-----------\n"
-		"a     97\n"
-		"b     98\n"
-		"c     99\n"
-		"d     99\n"
-		"c     100\n",
+		"a       97\n"
+		"b       98\n"
+		"c       99\n"
+		"d       99\n"
+		"c      100\n",
 		"uniq delete some rows");
 	free(stri);
 	rz_table_free(t);
@@ -191,9 +191,9 @@ bool test_rz_table_group(void) {
 	mu_assert_streq(str,
 		"ascii code \n"
 		"-----------\n"
-		"a     97\n"
-		"b     98\n"
-		"c     99\n",
+		"a       97\n"
+		"b       98\n"
+		"c       99\n",
 		"group delete nothing");
 	free(str);
 
@@ -215,10 +215,10 @@ bool test_rz_table_group(void) {
 	mu_assert_streq(str,
 		"ascii code \n"
 		"-----------\n"
-		"a     97\n"
-		"b     98\n"
-		"c     99\n"
-		"d     1\n",
+		"a       97\n"
+		"b       98\n"
+		"c       99\n"
+		"d        1\n",
 		"group delete some rows");
 	free(str);
 
@@ -232,10 +232,10 @@ bool test_rz_table_group(void) {
 	mu_assert_streq(str,
 		"ascii code \n"
 		"-----------\n"
-		"a | e 97\n"
-		"b | f 98\n"
-		"c | h 99\n"
-		"d | g 1\n",
+		"a | e   97\n"
+		"b | f   98\n"
+		"c | h   99\n"
+		"d | g    1\n",
 		"group delete some rows");
 	free(str);
 
@@ -338,10 +338,10 @@ bool test_rz_table_add_row_columnsf() {
 	mu_assert_streq(table,
 		"ascii code \n"
 		"-----------\n"
-		"a     97\n"
-		"b     98\n"
-		"c     99\n"
-		"e     10\n",
+		"a       97\n"
+		"b       98\n"
+		"c       99\n"
+		"e       10\n",
 		"rz_table_add_row_columnsf");
 	free(table);
 	rz_table_free(t);

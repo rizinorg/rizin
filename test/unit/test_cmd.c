@@ -1165,10 +1165,10 @@ bool test_state_output_concat_table(void) {
 	const char *s = rz_cons_get_buffer();
 	const char *exp = "val \n"
 			  "----\n"
-			  "33\n"
+			  " 33\n"
 			  "name   val \n"
 			  "-----------\n"
-			  "second 55\n";
+			  "second  55\n";
 	mu_assert_streq(s, exp, "tables output was printed");
 	rz_cons_pop();
 	rz_cmd_state_output_fini(&state);
@@ -1192,7 +1192,7 @@ bool test_state_output_concat_mix(void) {
 	const char *s = rz_cons_get_buffer();
 	const char *exp = "val \n"
 			  "----\n"
-			  "33\n"
+			  " 33\n"
 			  "second=55\n";
 	mu_assert_streq(s, exp, "table+quiet output was printed");
 	rz_cons_pop();
