@@ -10,7 +10,7 @@ NAME=ELF: arm64 relocs crashing
 FILE=bins/elf/librsjni_androix.so
 CMDS=ir
 EXPECT=<<EOF
-vaddr      paddr      target     type                name                                    
+     vaddr      paddr     target type                name                                    
 ---------------------------------------------------------------------------------------------
 0x0000e210 0x0000e210 0x0000f740 R_AARCH64_JUMP_SLOT __cxa_finalize
 0x0000e218 0x0000e218 0x0000f748 R_AARCH64_JUMP_SLOT __stack_chk_fail
@@ -36,23 +36,23 @@ NAME=ELF: arm64 imports crashing
 FILE=bins/elf/librsjni_androix.so
 CMDS=ii
 EXPECT=<<EOF
-nth vaddr      bind   type lib name                       
+nth      vaddr bind   type lib name                       
 ----------------------------------------------------------
-1   0x0000b7c0 GLOBAL FUNC     __cxa_finalize
-2   0x0000b880 GLOBAL FUNC     AndroidBitmap_getInfo
-3   0x0000b870 GLOBAL FUNC     AndroidBitmap_lockPixels
-4   0x0000b890 GLOBAL FUNC     AndroidBitmap_unlockPixels
-5   0x0000b810 GLOBAL FUNC     __android_log_print
-6   0x0000b7d0 GLOBAL FUNC     __stack_chk_fail
-7   0x0000b850 GLOBAL FUNC     calloc
-8   0x0000b820 GLOBAL FUNC     dlclose
-9   0x0000b800 GLOBAL FUNC     dlerror
-10  0x0000b7e0 GLOBAL FUNC     dlopen
-11  0x0000b8c0 GLOBAL FUNC     dlsym
-12  0x0000b860 GLOBAL FUNC     free
-13  0x0000b840 GLOBAL FUNC     malloc
-14  0x0000b8a0 GLOBAL FUNC     memcpy
-15  0x0000b8b0 GLOBAL FUNC     memset
+  1 0x0000b7c0 GLOBAL FUNC     __cxa_finalize
+  2 0x0000b880 GLOBAL FUNC     AndroidBitmap_getInfo
+  3 0x0000b870 GLOBAL FUNC     AndroidBitmap_lockPixels
+  4 0x0000b890 GLOBAL FUNC     AndroidBitmap_unlockPixels
+  5 0x0000b810 GLOBAL FUNC     __android_log_print
+  6 0x0000b7d0 GLOBAL FUNC     __stack_chk_fail
+  7 0x0000b850 GLOBAL FUNC     calloc
+  8 0x0000b820 GLOBAL FUNC     dlclose
+  9 0x0000b800 GLOBAL FUNC     dlerror
+ 10 0x0000b7e0 GLOBAL FUNC     dlopen
+ 11 0x0000b8c0 GLOBAL FUNC     dlsym
+ 12 0x0000b860 GLOBAL FUNC     free
+ 13 0x0000b840 GLOBAL FUNC     malloc
+ 14 0x0000b8a0 GLOBAL FUNC     memcpy
+ 15 0x0000b8b0 GLOBAL FUNC     memset
 EOF
 RUN
 
@@ -60,8 +60,8 @@ NAME=ELF: corkami elf-relro - sections
 FILE=bins/elf/analysis/elf-relro
 CMDS=iS~rel
 EXPECT=<<EOF
-0x0000027c 0x8   0x0804827c 0x8   0x0   -r-- .rel.dyn           REL        alloc
-0x00000284 0x10  0x08048284 0x10  0x0   -r-- .rel.plt           REL        alloc
+0x0000027c   0x8 0x0804827c   0x8 0x0   -r-- .rel.dyn           REL        alloc
+0x00000284  0x10 0x08048284  0x10 0x0   -r-- .rel.plt           REL        alloc
 EOF
 RUN
 
@@ -81,106 +81,106 @@ ii
 EOF
 EXPECT=<<EOF
 elf.relro=full
-nth vaddr      bind   type   lib name                        
+nth      vaddr bind   type   lib name                        
 -------------------------------------------------------------
-2   0x00051f60 GLOBAL FUNC       __ctype_toupper_loc
-3   0x00051f68 GLOBAL FUNC       __strcat_chk
-4   0x00051f70 GLOBAL FUNC       getenv
-5   0x00051f78 GLOBAL FUNC       utime
-6   0x00051f80 GLOBAL FUNC       sigprocmask
-7   0x00051f88 GLOBAL FUNC       free
-8   0x00051f90 GLOBAL FUNC       putchar
-9   0x00051f98 GLOBAL FUNC       is_selinux_enabled
-10  0x00051fa0 GLOBAL FUNC       strcasecmp
-11  0x00051fa8 GLOBAL FUNC       Gpm_Open
-12  0x00051fb0 GLOBAL FUNC       localtime
-13  0x00051fb8 GLOBAL FUNC       mblen
-14  0x00051fc0 GLOBAL FUNC       __errno_location
-15  0x00051fc8 GLOBAL FUNC       unlink
-16  0x00051fd0 GLOBAL FUNC       strncpy
-17  0x00051fd8 GLOBAL FUNC       strncmp
-18  ---------- WEAK   NOTYPE     _ITM_deregisterTMCloneTable
-19  0x00051fe0 GLOBAL FUNC       _exit
-20  0x00051fe8 GLOBAL FUNC       strcpy
-21  0x00051ff0 GLOBAL FUNC       mkdir
-22  0x00051ff8 GLOBAL FUNC       tputs
-23  0x00052000 GLOBAL FUNC       iconv
-24  0x00052008 GLOBAL FUNC       ferror
-25  0x00052010 GLOBAL FUNC       qsort
-26  0x00052018 GLOBAL FUNC       isatty
-27  0x00052020 GLOBAL FUNC       sigaction
-28  0x00052028 GLOBAL FUNC       fread
-29  0x00052030 GLOBAL FUNC       strtod
-30  0x00052038 GLOBAL FUNC       exp
-31  0x00052040 GLOBAL FUNC       readlink
-32  0x00052048 GLOBAL FUNC       fcntl
-33  0x00052050 GLOBAL FUNC       setenv
-34  0x00052058 GLOBAL FUNC       write
-35  0x00052060 GLOBAL FUNC       getpid
-36  0x00052068 GLOBAL FUNC       textdomain
-37  0x00052070 GLOBAL FUNC       atan
-38  0x00052078 GLOBAL FUNC       tgoto
-39  0x00052080 GLOBAL FUNC       fclose
-40  0x00052088 GLOBAL FUNC       __xstat64
-41  0x00052090 GLOBAL FUNC       opendir
-42  0x00052098 GLOBAL FUNC       getpwuid
-43  0x000520a0 GLOBAL FUNC       ctime
-44  0x000520a8 GLOBAL FUNC       bindtextdomain
-45  0x000520b0 GLOBAL FUNC       stpcpy
-46  0x000520b8 GLOBAL FUNC       rmdir
-47  0x000520c0 GLOBAL FUNC       dcgettext
-48  0x000520c8 GLOBAL FUNC       strlen
-49  0x000520d0 GLOBAL FUNC       chdir
-50  0x000520d8 GLOBAL FUNC       __stack_chk_fail
-51  0x000520e0 GLOBAL FUNC       getuid
-52  0x000520e8 GLOBAL FUNC       dup2
-53  0x000520f0 GLOBAL FUNC       tcflush
-54  0x000520f8 GLOBAL FUNC       strchr
-55  0x00052100 GLOBAL FUNC       printf
-56  0x00052108 GLOBAL FUNC       rewind
-57  0x00052110 GLOBAL FUNC       _IO_putc
-58  0x00052118 GLOBAL FUNC       __fdelt_chk
-59  0x00052120 GLOBAL FUNC       nanosleep
-60  0x00052128 GLOBAL FUNC       strrchr
-61  0x00052130 GLOBAL FUNC       uname
-62  0x00052138 GLOBAL FUNC       dup
-63  0x00052140 GLOBAL FUNC       gettimeofday
-64  0x00052148 GLOBAL FUNC       __assert_fail
-65  0x00052150 GLOBAL FUNC       fputs
-66  0x00052158 GLOBAL FUNC       memset
-67  0x00052160 GLOBAL FUNC       tgetflag
-68  0x00052168 GLOBAL FUNC       pow
-69  0x00052170 GLOBAL FUNC       ioctl
-70  0x00052178 GLOBAL FUNC       getcwd
-71  0x00052180 GLOBAL FUNC       log
-72  0x00052188 GLOBAL FUNC       strncat
-73  0x00052190 GLOBAL FUNC       alarm
-74  0x00052198 GLOBAL FUNC       close
-75  0x000521a0 GLOBAL FUNC       tgetent
-76  0x000521a8 GLOBAL FUNC       pipe
-77  0x000521b0 GLOBAL FUNC       setsid
-78  0x000521b8 GLOBAL FUNC       fmod
-79  0x000521c0 GLOBAL FUNC       closedir
-80  0x000521c8 GLOBAL FUNC       cos
-81  0x000521d0 GLOBAL FUNC       fputc
-82  0x000521d8 GLOBAL FUNC       memchr
-83  0x000521e0 GLOBAL FUNC       ftello64
-84  0x000521e8 GLOBAL FUNC       acos
-85  0x000521f0 GLOBAL FUNC       read
-86  ---------- GLOBAL FUNC       __libc_start_main
-87  0x000521f8 GLOBAL FUNC       srand
-88  0x00052200 GLOBAL FUNC       memcmp
-89  0x00052208 GLOBAL FUNC       fgets
-90  0x00052210 GLOBAL FUNC       tgetnum
-91  0x00052218 GLOBAL FUNC       getsockopt
-92  0x00052220 GLOBAL FUNC       _setjmp
-93  0x00052228 GLOBAL FUNC       acl_set_file
-94  0x00052230 GLOBAL FUNC       __fxstat64
-95  0x00052238 GLOBAL FUNC       strcmp
-96  0x00052240 GLOBAL FUNC       signal
-97  0x00052248 GLOBAL FUNC       getpwnam
-98  0x00052250 GLOBAL FUNC       gethostbyname
-99  0x00052258 GLOBAL FUNC       log10
+  2 0x00051f60 GLOBAL FUNC       __ctype_toupper_loc
+  3 0x00051f68 GLOBAL FUNC       __strcat_chk
+  4 0x00051f70 GLOBAL FUNC       getenv
+  5 0x00051f78 GLOBAL FUNC       utime
+  6 0x00051f80 GLOBAL FUNC       sigprocmask
+  7 0x00051f88 GLOBAL FUNC       free
+  8 0x00051f90 GLOBAL FUNC       putchar
+  9 0x00051f98 GLOBAL FUNC       is_selinux_enabled
+ 10 0x00051fa0 GLOBAL FUNC       strcasecmp
+ 11 0x00051fa8 GLOBAL FUNC       Gpm_Open
+ 12 0x00051fb0 GLOBAL FUNC       localtime
+ 13 0x00051fb8 GLOBAL FUNC       mblen
+ 14 0x00051fc0 GLOBAL FUNC       __errno_location
+ 15 0x00051fc8 GLOBAL FUNC       unlink
+ 16 0x00051fd0 GLOBAL FUNC       strncpy
+ 17 0x00051fd8 GLOBAL FUNC       strncmp
+ 18 ---------- WEAK   NOTYPE     _ITM_deregisterTMCloneTable
+ 19 0x00051fe0 GLOBAL FUNC       _exit
+ 20 0x00051fe8 GLOBAL FUNC       strcpy
+ 21 0x00051ff0 GLOBAL FUNC       mkdir
+ 22 0x00051ff8 GLOBAL FUNC       tputs
+ 23 0x00052000 GLOBAL FUNC       iconv
+ 24 0x00052008 GLOBAL FUNC       ferror
+ 25 0x00052010 GLOBAL FUNC       qsort
+ 26 0x00052018 GLOBAL FUNC       isatty
+ 27 0x00052020 GLOBAL FUNC       sigaction
+ 28 0x00052028 GLOBAL FUNC       fread
+ 29 0x00052030 GLOBAL FUNC       strtod
+ 30 0x00052038 GLOBAL FUNC       exp
+ 31 0x00052040 GLOBAL FUNC       readlink
+ 32 0x00052048 GLOBAL FUNC       fcntl
+ 33 0x00052050 GLOBAL FUNC       setenv
+ 34 0x00052058 GLOBAL FUNC       write
+ 35 0x00052060 GLOBAL FUNC       getpid
+ 36 0x00052068 GLOBAL FUNC       textdomain
+ 37 0x00052070 GLOBAL FUNC       atan
+ 38 0x00052078 GLOBAL FUNC       tgoto
+ 39 0x00052080 GLOBAL FUNC       fclose
+ 40 0x00052088 GLOBAL FUNC       __xstat64
+ 41 0x00052090 GLOBAL FUNC       opendir
+ 42 0x00052098 GLOBAL FUNC       getpwuid
+ 43 0x000520a0 GLOBAL FUNC       ctime
+ 44 0x000520a8 GLOBAL FUNC       bindtextdomain
+ 45 0x000520b0 GLOBAL FUNC       stpcpy
+ 46 0x000520b8 GLOBAL FUNC       rmdir
+ 47 0x000520c0 GLOBAL FUNC       dcgettext
+ 48 0x000520c8 GLOBAL FUNC       strlen
+ 49 0x000520d0 GLOBAL FUNC       chdir
+ 50 0x000520d8 GLOBAL FUNC       __stack_chk_fail
+ 51 0x000520e0 GLOBAL FUNC       getuid
+ 52 0x000520e8 GLOBAL FUNC       dup2
+ 53 0x000520f0 GLOBAL FUNC       tcflush
+ 54 0x000520f8 GLOBAL FUNC       strchr
+ 55 0x00052100 GLOBAL FUNC       printf
+ 56 0x00052108 GLOBAL FUNC       rewind
+ 57 0x00052110 GLOBAL FUNC       _IO_putc
+ 58 0x00052118 GLOBAL FUNC       __fdelt_chk
+ 59 0x00052120 GLOBAL FUNC       nanosleep
+ 60 0x00052128 GLOBAL FUNC       strrchr
+ 61 0x00052130 GLOBAL FUNC       uname
+ 62 0x00052138 GLOBAL FUNC       dup
+ 63 0x00052140 GLOBAL FUNC       gettimeofday
+ 64 0x00052148 GLOBAL FUNC       __assert_fail
+ 65 0x00052150 GLOBAL FUNC       fputs
+ 66 0x00052158 GLOBAL FUNC       memset
+ 67 0x00052160 GLOBAL FUNC       tgetflag
+ 68 0x00052168 GLOBAL FUNC       pow
+ 69 0x00052170 GLOBAL FUNC       ioctl
+ 70 0x00052178 GLOBAL FUNC       getcwd
+ 71 0x00052180 GLOBAL FUNC       log
+ 72 0x00052188 GLOBAL FUNC       strncat
+ 73 0x00052190 GLOBAL FUNC       alarm
+ 74 0x00052198 GLOBAL FUNC       close
+ 75 0x000521a0 GLOBAL FUNC       tgetent
+ 76 0x000521a8 GLOBAL FUNC       pipe
+ 77 0x000521b0 GLOBAL FUNC       setsid
+ 78 0x000521b8 GLOBAL FUNC       fmod
+ 79 0x000521c0 GLOBAL FUNC       closedir
+ 80 0x000521c8 GLOBAL FUNC       cos
+ 81 0x000521d0 GLOBAL FUNC       fputc
+ 82 0x000521d8 GLOBAL FUNC       memchr
+ 83 0x000521e0 GLOBAL FUNC       ftello64
+ 84 0x000521e8 GLOBAL FUNC       acos
+ 85 0x000521f0 GLOBAL FUNC       read
+ 86 ---------- GLOBAL FUNC       __libc_start_main
+ 87 0x000521f8 GLOBAL FUNC       srand
+ 88 0x00052200 GLOBAL FUNC       memcmp
+ 89 0x00052208 GLOBAL FUNC       fgets
+ 90 0x00052210 GLOBAL FUNC       tgetnum
+ 91 0x00052218 GLOBAL FUNC       getsockopt
+ 92 0x00052220 GLOBAL FUNC       _setjmp
+ 93 0x00052228 GLOBAL FUNC       acl_set_file
+ 94 0x00052230 GLOBAL FUNC       __fxstat64
+ 95 0x00052238 GLOBAL FUNC       strcmp
+ 96 0x00052240 GLOBAL FUNC       signal
+ 97 0x00052248 GLOBAL FUNC       getpwnam
+ 98 0x00052250 GLOBAL FUNC       gethostbyname
+ 99 0x00052258 GLOBAL FUNC       log10
 100 0x00052260 GLOBAL FUNC       __memmove_chk
 101 0x00052268 GLOBAL FUNC       setpwent
 102 0x00052270 GLOBAL FUNC       __memcpy_chk

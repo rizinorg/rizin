@@ -56,34 +56,34 @@ NAME=mdmp sections
 FILE=bins/mdmp/calc.dmp
 CMDS=iS
 EXPECT=<<EOF
-paddr      size     vaddr         vsize    align perm name                                  type flags 
+     paddr     size         vaddr    vsize align perm name                                  type flags 
 -------------------------------------------------------------------------------------------------------
-0x00000000 0xe3000  0xfffe0000    0xe3000  0x0   ---- C:_Windows_System32_calc.exe               
-0x00000000 0x1aa000 0x77720000    0x1aa000 0x0   ---- C:_Windows_System32__tdll.dll              
-0x00000000 0x11f000 0x77500000    0x11f000 0x0   ---- C:_Windows_System32_kernel32.dll           
-0x00000000 0x6a000  0x7fefd4a0000 0x6a000  0x0   ---- C:_Windows_System32_KERNELBASE.dll         
+0x00000000  0xe3000    0xfffe0000  0xe3000 0x0   ---- C:_Windows_System32_calc.exe               
+0x00000000 0x1aa000    0x77720000 0x1aa000 0x0   ---- C:_Windows_System32__tdll.dll              
+0x00000000 0x11f000    0x77500000 0x11f000 0x0   ---- C:_Windows_System32_kernel32.dll           
+0x00000000  0x6a000 0x7fefd4a0000  0x6a000 0x0   ---- C:_Windows_System32_KERNELBASE.dll         
 0x00000000 0xd8a000 0x7fefeca0000 0xd8a000 0x0   ---- C:_Windows_System32_shell32.dll            
-0x00000000 0x9f000  0x7fefdab0000 0x9f000  0x0   ---- C:_Windows_System32_msvcrt.dll             
-0x00000000 0x71000  0x7fefd890000 0x71000  0x0   ---- C:_Windows_System32_shlwapi.dll            
-0x00000000 0x67000  0x7fefdb50000 0x67000  0x0   ---- C:_Windows_System32_gdi32.dll              
-0x00000000 0xfa000  0x77620000    0xfa000  0x0   ---- C:_Windows_System32_user32.dll             
-0x00000000 0xe000   0x7fefdbc0000 0xe000   0x0   ---- C:_Windows_System32_lpk.dll                
-0x00000000 0xca000  0x7fefe450000 0xca000  0x0   ---- C:_Windows_System32_usp10.dll              
+0x00000000  0x9f000 0x7fefdab0000  0x9f000 0x0   ---- C:_Windows_System32_msvcrt.dll             
+0x00000000  0x71000 0x7fefd890000  0x71000 0x0   ---- C:_Windows_System32_shlwapi.dll            
+0x00000000  0x67000 0x7fefdb50000  0x67000 0x0   ---- C:_Windows_System32_gdi32.dll              
+0x00000000  0xfa000    0x77620000  0xfa000 0x0   ---- C:_Windows_System32_user32.dll             
+0x00000000   0xe000 0x7fefdbc0000   0xe000 0x0   ---- C:_Windows_System32_lpk.dll                
+0x00000000  0xca000 0x7fefe450000  0xca000 0x0   ---- C:_Windows_System32_usp10.dll              
 0x00000000 0x203000 0x7fefea90000 0x203000 0x0   ---- C:_Windows_System32_ole32.dll              
 0x00000000 0x12d000 0x7fefe8d0000 0x12d000 0x0   ---- C:_Windows_System32__pcrt4.dll             
-0x00000000 0xdb000  0x7fefd9d0000 0xdb000  0x0   ---- C:_Windows_System32__dvapi32.dll           
-0x00000000 0x1f000  0x7fefdff0000 0x1f000  0x0   ---- C:_Windows_System32_sechost.dll            
-0x00000000 0xda000  0x7fefe520000 0xda000  0x0   ---- C:_Windows_System32_oleaut32.dll           
-0x00000000 0x56000  0x7fefbb40000 0x56000  0x0   ---- C:_Windows_System32_uxtheme.dll            
-0x00000000 0x3b000  0x7fefa140000 0x3b000  0x0   ---- C:_Windows_System32_winmm.dll              
-0x00000000 0xc000   0x7fefc330000 0xc000   0x0   ---- C:_Windows_System32__ersion.dll            
-0x00000000 0x2e000  0x7fefea00000 0x2e000  0x0   ---- C:_Windows_System32_imm32.dll              
+0x00000000  0xdb000 0x7fefd9d0000  0xdb000 0x0   ---- C:_Windows_System32__dvapi32.dll           
+0x00000000  0x1f000 0x7fefdff0000  0x1f000 0x0   ---- C:_Windows_System32_sechost.dll            
+0x00000000  0xda000 0x7fefe520000  0xda000 0x0   ---- C:_Windows_System32_oleaut32.dll           
+0x00000000  0x56000 0x7fefbb40000  0x56000 0x0   ---- C:_Windows_System32_uxtheme.dll            
+0x00000000  0x3b000 0x7fefa140000  0x3b000 0x0   ---- C:_Windows_System32_winmm.dll              
+0x00000000   0xc000 0x7fefc330000   0xc000 0x0   ---- C:_Windows_System32__ersion.dll            
+0x00000000  0x2e000 0x7fefea00000  0x2e000 0x0   ---- C:_Windows_System32_imm32.dll              
 0x00000000 0x109000 0x7fefe340000 0x109000 0x0   ---- C:_Windows_System32_msctf.dll              
 0x00000000 0x161000 0x7fefb560000 0x161000 0x0   ---- C:_Windows_System32_WindowsCodecs.dll      
-0x00000000 0x18000  0x7fefb710000 0x18000  0x0   ---- C:_Windows_System32_dwmapi.dll             
-0x00000000 0xf000   0x7fefd2b0000 0xf000   0x0   ---- C:_Windows_System32_CRYPTBASE.dll          
-0x00000000 0x99000  0x7fefddb0000 0x99000  0x0   ---- C:_Windows_System32_clbcatq.dll            
-0x00000000 0x54000  0x7fef62b0000 0x54000  0x0   ---- C:_Windows_System32_oleacc.dll             
+0x00000000  0x18000 0x7fefb710000  0x18000 0x0   ---- C:_Windows_System32_dwmapi.dll             
+0x00000000   0xf000 0x7fefd2b0000   0xf000 0x0   ---- C:_Windows_System32_CRYPTBASE.dll          
+0x00000000  0x99000 0x7fefddb0000  0x99000 0x0   ---- C:_Windows_System32_clbcatq.dll            
+0x00000000  0x54000 0x7fef62b0000  0x54000 0x0   ---- C:_Windows_System32_oleacc.dll             
 EOF
 RUN
 
@@ -261,7 +261,7 @@ NAME=mdmp 32bit - symbols resolving 1
 FILE=bins/mdmp/hello.dmp
 CMDS=is~DeleteCriticalSection:0
 EXPECT=<<EOF
-1    0x0009dcda 0x00406108 NONE   FUNC 0    KERNEL32.dll                                  imp.DeleteCriticalSection
+   1 0x0009dcda 0x00406108 NONE   FUNC    0 KERNEL32.dll                                  imp.DeleteCriticalSection
 EOF
 RUN
 
@@ -269,7 +269,7 @@ NAME=mdmp 32bit - symbols resolving 2
 FILE=bins/mdmp/hello.dmp
 CMDS=is~RtlDeleteCriticalSection:0
 EXPECT=<<EOF
-358  0x001c2176 0x76fb05a4 NONE   FUNC 0    ntdll.dll                                     imp.RtlDeleteCriticalSection
+ 358 0x001c2176 0x76fb05a4 NONE   FUNC    0 ntdll.dll                                     imp.RtlDeleteCriticalSection
 EOF
 RUN
 
@@ -285,7 +285,7 @@ NAME=mdmp 32bit - imports resolving
 FILE=bins/mdmp/hello.dmp
 CMDS=ii~TerminateProcess~KERNEL32.dll
 EXPECT=<<EOF
-17  0x00406148 NONE FUNC KERNEL32.dll                                  TerminateProcess
+ 17 0x00406148 NONE FUNC KERNEL32.dll                                  TerminateProcess
 EOF
 RUN
 
@@ -301,7 +301,7 @@ NAME=mdmp 32bit - exports resolving
 FILE=bins/mdmp/hello.dmp
 CMDS=iE~Ordinal_1
 EXPECT=<<EOF
-1    0x0041f1f2 0x77802620 GLOBAL FUNC 0    ntdll.dll      Ordinal_1
+   1 0x0041f1f2 0x77802620 GLOBAL FUNC    0 ntdll.dll      Ordinal_1
 EOF
 RUN
 
@@ -379,7 +379,7 @@ NAME=mdmp 64bit - entrypoints resolving
 FILE=bins/mdmp/hello64.dmp
 CMDS=ie~0x00401500
 EXPECT=<<EOF
-0x00401500    0x0009418f ---------- 0x00092d37 program
+   0x00401500 0x0009418f ---------- 0x00092d37 program
 EOF
 RUN
 
@@ -395,7 +395,7 @@ NAME=mdmp 64bit - symbols resolving 1
 FILE=bins/mdmp/hello64.dmp
 CMDS=is~imp.DeleteCriticalSection~KERNEL32.dll
 EXPECT=<<EOF
-1    0x0009ae8b 0x004081fc    NONE   FUNC 0    KERNEL32.dll                                  imp.DeleteCriticalSection
+   1 0x0009ae8b    0x004081fc NONE   FUNC    0 KERNEL32.dll                                  imp.DeleteCriticalSection
 EOF
 RUN
 
@@ -403,7 +403,7 @@ NAME=mdmp 64bit - symbols resolving 2
 FILE=bins/mdmp/hello64.dmp
 CMDS=is~A_SHAFinal
 EXPECT=<<EOF
-9    0x001eb87f 0x77728bf0    GLOBAL FUNC 0    ntdll.dll                                     A_SHAFinal
+   9 0x001eb87f    0x77728bf0 GLOBAL FUNC    0 ntdll.dll                                     A_SHAFinal
 EOF
 RUN
 
@@ -419,7 +419,7 @@ NAME=mdmp 64bit - imports resolving
 FILE=bins/mdmp/hello64.dmp
 CMDS=ii~KERNEL32.dll~GetCurrentProcessId
 EXPECT=<<EOF
-4   0x00408214    NONE FUNC KERNEL32.dll                                  GetCurrentProcessId
+  4    0x00408214 NONE FUNC KERNEL32.dll                                  GetCurrentProcessId
 EOF
 RUN
 
@@ -435,7 +435,7 @@ NAME=mdmp 64bit - exports resolving
 FILE=bins/mdmp/hello64.dmp
 CMDS=iE~CsrVerifyRegion
 EXPECT=<<EOF
-39   0x0029513f 0x777d24b0    GLOBAL FUNC 0    ntdll.dll      CsrVerifyRegion
+  39 0x0029513f    0x777d24b0 GLOBAL FUNC    0 ntdll.dll      CsrVerifyRegion
 EOF
 RUN
 

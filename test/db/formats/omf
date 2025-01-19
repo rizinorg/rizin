@@ -18,9 +18,9 @@ NAME=symbols 16 bits omf
 FILE=bins/omf/hello_world
 CMDS=is
 EXPECT=<<EOF
-nth paddr      vaddr      bind type size lib name   
+nth      paddr      vaddr bind type size lib name   
 ----------------------------------------------------
-1   0x00000073 0x00001000 NONE NONE 0        _start
+  1 0x00000073 0x00001000 NONE NONE    0     _start
 EOF
 RUN
 
@@ -28,10 +28,10 @@ NAME=sections 16 bits omf
 FILE=bins/omf/hello_world
 CMDS=iS
 EXPECT=<<EOF
-paddr      size vaddr      vsize align perm name   type flags 
+     paddr size      vaddr vsize align perm name   type flags 
 --------------------------------------------------------------
-0x00000073 0x13 0x00001000 0x13  0x0   -rwx text_1      
-0x00000095 0xe  0x00001013 0xe   0x0   -rwx data_1      
+0x00000073 0x13 0x00001000  0x13 0x0   -rwx text_1      
+0x00000095  0xe 0x00001013   0xe 0x0   -rwx data_1      
 EOF
 RUN
 
@@ -83,9 +83,9 @@ NAME=symbols 32 bits omf
 FILE=bins/omf/hello_world32
 CMDS=is
 EXPECT=<<EOF
-nth paddr      vaddr      bind type size lib name   
+nth      paddr      vaddr bind type size lib name   
 ----------------------------------------------------
-1   0x00000074 0x00001000 NONE NONE 0        _start
+  1 0x00000074 0x00001000 NONE NONE    0     _start
 EOF
 RUN
 
@@ -93,10 +93,10 @@ NAME=sections 32 bits omf
 FILE=bins/omf/hello_world32
 CMDS=iS
 EXPECT=<<EOF
-paddr      size vaddr      vsize align perm name    type flags 
+     paddr size      vaddr vsize align perm name    type flags 
 ---------------------------------------------------------------
-0x00000074 0x1d 0x00001000 0x1d  0x0   -rwx .text_1      
-0x000000a3 0xe  0x0000101d 0xe   0x0   -rwx .data_1      
+0x00000074 0x1d 0x00001000  0x1d 0x0   -rwx .text_1      
+0x000000a3  0xe 0x0000101d   0xe 0x0   -rwx .data_1      
 EOF
 RUN
 
@@ -121,10 +121,10 @@ NAME=multiple symbols omf
 FILE=bins/omf/multi_pubdef
 CMDS=is
 EXPECT=<<EOF
-nth paddr      vaddr      bind type size lib name          
+nth      paddr      vaddr bind type size lib name          
 -----------------------------------------------------------
-1   0x00000084 0x00001000 NONE NONE 0        _start
-2   0x00000097 0x00001013 NONE NONE 0        second_symbol
+  1 0x00000084 0x00001000 NONE NONE    0     _start
+  2 0x00000097 0x00001013 NONE NONE    0     second_symbol
 EOF
 RUN
 
@@ -132,9 +132,9 @@ NAME=null checksum omf
 FILE=bins/omf/null_checks
 CMDS=is
 EXPECT=<<EOF
-nth paddr      vaddr      bind type size lib name   
+nth      paddr      vaddr bind type size lib name   
 ----------------------------------------------------
-1   0x00000073 0x00001000 NONE NONE 0        _start
+  1 0x00000073 0x00001000 NONE NONE    0     _start
 EOF
 RUN
 

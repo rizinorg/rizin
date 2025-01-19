@@ -25,7 +25,7 @@ NAME=MZ: cblp0.exe segments
 FILE=bins/mz/cblp0.exe
 CMDS=iS
 EXPECT=<<EOF
-paddr      size  vaddr      vsize align perm name    type flags 
+     paddr  size      vaddr vsize align perm name    type flags 
 ----------------------------------------------------------------
 0x00000200 0x200 0x00000000 0x200 0x0   -rwx seg_000      
 EOF

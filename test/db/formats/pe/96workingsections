@@ -27,7 +27,7 @@ ARGS=-n
 CMDS=!rz-bin -S bins/pe/96workingsections.exe
 EXPECT=<<EOF
 [Sections]
-paddr      size  vaddr      vsize  align perm name    type flags       
+     paddr  size      vaddr  vsize align perm name    type flags       
 -----------------------------------------------------------------------
 0x00001200 0x200 0x00402000 0x1000 0x0   -rwx sect_0       MEM_NO_READ
 0x00001400 0x200 0x00403000 0x1000 0x0   -rwx sect_1       MEM_NO_READ
@@ -135,7 +135,7 @@ ARGS=-n
 CMDS=!rz-bin -uS bins/pe/96workingsections.exe
 EXPECT=<<EOF
 [Sections]
-paddr      size  vaddr      vsize  align perm name    type flags       
+     paddr  size      vaddr  vsize align perm name    type flags       
 -----------------------------------------------------------------------
 0x00001200 0x200 0x00402000 0x1000 0x0   -rwx sect_0       MEM_NO_READ
 0x00001400 0x200 0x00403000 0x1000 0x0   -rwx sect_1       MEM_NO_READ

@@ -7,19 +7,19 @@ icm Person
 icfj Person
 EOF
 EXPECT=<<EOF
-address     min         max         name   super    
+    address         min         max name   super    
 ----------------------------------------------------
 0x100001180 0x100000da0 0x100000e20 Person NSObject
-address     index class  flags name                   type                
+    address index class  flags name                   type                
 --------------------------------------------------------------------------
-----------  0     Person       Person::(property)name 
-----------  1     Person       isa                    struct objc_class *
-0x100001178 2     Person       Person::(ivar)name     *
-address     index class  flags name     
+ ----------     0 Person       Person::(property)name 
+ ----------     1 Person       isa                    struct objc_class *
+0x100001178     2 Person       Person::(ivar)name     *
+    address index class  flags name     
 ----------------------------------------
-0x100000da0 0     Person       sayHello
-0x100000df0 1     Person       name
-0x100000e20 2     Person       setName:
+0x100000da0     0 Person       sayHello
+0x100000df0     1 Person       name
+0x100000e20     2 Person       setName:
 [{"name":"Person::(property)name","class":"Person","addr":18446744073709551615},{"type":"struct objc_class *","name":"isa","class":"Person","addr":18446744073709551615},{"type":"*","name":"Person::(ivar)name","class":"Person","addr":4294971768}]
 EOF
 RUN
@@ -32,14 +32,14 @@ icf MyCustomClass
 icm MyCustomClass
 EOF
 EXPECT=<<EOF
-address     min         max         name          super    
+    address         min         max name          super    
 -----------------------------------------------------------
 0x100001120 0x100000e70 0x100000e70 MyCustomClass NSObject
 address index class flags name type 
 ------------------------------------
-address     index class         flags name                    
+    address index class         flags name                    
 --------------------------------------------------------------
-0x100000e70 0     MyCustomClass       doSomethingWithGeneric:
+0x100000e70     0 MyCustomClass       doSomethingWithGeneric:
 EOF
 RUN
 
@@ -52,12 +52,12 @@ EOF
 EXPECT=<<EOF
 address index class flags name type 
 ------------------------------------
-address     index class          flags name                    
+    address index class          flags name                    
 ---------------------------------------------------------------
-0x10000676c 0     ViewController       viewDidLoad
-0x1000067bc 1     ViewController c     thisIsAClassMethod
-0x1000067d0 2     ViewController       didReceiveMemoryWarning
-0x100006820 3     ViewController c     andAnotherOne
+0x10000676c     0 ViewController       viewDidLoad
+0x1000067bc     1 ViewController c     thisIsAClassMethod
+0x1000067d0     2 ViewController       didReceiveMemoryWarning
+0x100006820     3 ViewController c     andAnotherOne
 EOF
 RUN
 
@@ -86,11 +86,11 @@ EOF
 EXPECT=<<EOF
 address index class flags name type 
 ------------------------------------
-address    index class                                flags name                                              
+   address index class                                flags name                                              
 --------------------------------------------------------------------------------------------------------------
-0x00048e14 0     Alamofire.SessionDelegate(Alamofire)       URLSession:didBecomeInvalidWithError:
-0x0004990c 1     Alamofire.SessionDelegate(Alamofire)       URLSession:didReceiveChallenge:completionHandler:
-0x000499c8 2     Alamofire.SessionDelegate(Alamofire)       URLSessionDidFinishEventsForBackgroundURLSession:
+0x00048e14     0 Alamofire.SessionDelegate(Alamofire)       URLSession:didBecomeInvalidWithError:
+0x0004990c     1 Alamofire.SessionDelegate(Alamofire)       URLSession:didReceiveChallenge:completionHandler:
+0x000499c8     2 Alamofire.SessionDelegate(Alamofire)       URLSessionDidFinishEventsForBackgroundURLSession:
 EOF
 RUN
 
@@ -104,7 +104,7 @@ NAME=objc categories (swift)
 FILE=bins/mach0/TestSwiftObjc
 CMDS=ic
 EXPECT=<<EOF
-address     min         max         name                                  super    
+    address         min         max name                                  super    
 -----------------------------------------------------------------------------------
 0x100003078 0x100001ad0 0x100001ad0 TestSwiftObjc.ThisIsASwiftClass(TEST) 
 0x1000031e8 0x100001d80 0x100001d80 TestSwiftObjc.ThisIsASwiftClass       NSObject

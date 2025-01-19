@@ -2,7 +2,7 @@ NAME=pe64 msvc main
 FILE=bins/pe/testapp-msvc64.exe
 CMDS=iM
 EXPECT=<<EOF
-vaddr       paddr      
+      vaddr      paddr 
 -----------------------
 0x140001000 0x00000400
 EOF
@@ -28,7 +28,7 @@ NAME=pe64 msvc vs2019 debug main
 FILE=bins/pe/rizin_vs2019_debug.exe
 CMDS=iM
 EXPECT=<<EOF
-vaddr       paddr      
+      vaddr      paddr 
 -----------------------
 0x140001620 0x00000a20
 EOF

@@ -181,7 +181,7 @@ iA
 iAj
 EOF
 EXPECT=<<EOF
-offset     size  arch   machine    
+    offset  size arch   machine    
 -----------------------------------
 0x00001000 13792 x86_64 x86 64 all
 0x00005000 13760 x86_32 386
@@ -198,7 +198,7 @@ CMDS=<<EOF
 EOF
 EXPECT=<<EOF
 [Archs]
-offset     size  arch   machine    
+    offset  size arch   machine    
 -----------------------------------
 0x00001000 13792 x86_64 x86 64 all
 0x00005000 13760 x86_32 386
@@ -233,11 +233,11 @@ FILE=bins/mach0/fatmach0-3true
 ARGS=-a x86 -b32 -B 0x90000000
 CMDS=is
 EXPECT=<<EOF
-nth paddr      vaddr      bind   type size lib name                
+nth      paddr      vaddr bind   type size lib name                
 -------------------------------------------------------------------
-0   0x00005000 0x90000000 GLOBAL FUNC 0        __mh_execute_header
-1   0x00005000 0x95613542 LOCAL  FUNC 0        radr://5614542
-2   0x00005f94 0x90000f94 LOCAL  FUNC 0        imp.exit
+  0 0x00005000 0x90000000 GLOBAL FUNC    0     __mh_execute_header
+  1 0x00005000 0x95613542 LOCAL  FUNC    0     radr://5614542
+  2 0x00005f94 0x90000f94 LOCAL  FUNC    0     imp.exit
 EOF
 RUN
 
@@ -254,48 +254,48 @@ icf SceneDelegate
 icm SceneDelegate
 EOF
 EXPECT=<<EOF
-address     min         max         name           super            
+    address         min         max name           super            
 --------------------------------------------------------------------
 0x100009298 0x100001e90 0x100001e90 ViewController UIViewController
 0x1000092c0 0x100001ee4 0x1000020a4 AppDelegate    UIResponder
 0x100009310 0x1000021d0 0x100002494 SceneDelegate  UIResponder
 address index class flags name type 
 ------------------------------------
-address     index class          flags name        
+    address index class          flags name        
 ---------------------------------------------------
-0x100001e90 0     ViewController       viewDidLoad
-address    index class       flags name                                    type 
+0x100001e90     0 ViewController       viewDidLoad
+   address index class       flags name                                    type 
 --------------------------------------------------------------------------------
----------- 0     AppDelegate       AppDelegate::(property)debugDescription 
----------- 1     AppDelegate       AppDelegate::(property)description      
----------- 2     AppDelegate       AppDelegate::(property)hash             
----------- 3     AppDelegate       AppDelegate::(property)superclass       
----------- 4     AppDelegate       AppDelegate::(property)window           
-address     index class       flags name                                                        
+----------     0 AppDelegate       AppDelegate::(property)debugDescription 
+----------     1 AppDelegate       AppDelegate::(property)description      
+----------     2 AppDelegate       AppDelegate::(property)hash             
+----------     3 AppDelegate       AppDelegate::(property)superclass       
+----------     4 AppDelegate       AppDelegate::(property)window           
+    address index class       flags name                                                        
 ------------------------------------------------------------------------------------------------
-0x100001ee4 0     AppDelegate       application:didFinishLaunchingWithOptions:
-0x100001f74 1     AppDelegate       application:configurationForConnectingSceneSession:options:
-0x1000020a4 2     AppDelegate       application:didDiscardSceneSessions:
-address     index class         flags name                                      type                
+0x100001ee4     0 AppDelegate       application:didFinishLaunchingWithOptions:
+0x100001f74     1 AppDelegate       application:configurationForConnectingSceneSession:options:
+0x1000020a4     2 AppDelegate       application:didDiscardSceneSessions:
+    address index class         flags name                                      type                
 ----------------------------------------------------------------------------------------------------
-----------  0     SceneDelegate       SceneDelegate::(property)debugDescription 
-----------  1     SceneDelegate       SceneDelegate::(property)description      
-----------  2     SceneDelegate       SceneDelegate::(property)hash             
-----------  3     SceneDelegate       SceneDelegate::(property)superclass       
-----------  4     SceneDelegate       SceneDelegate::(property)window           
-----------  5     SceneDelegate       isa                                       struct objc_class *
-0x100009268 6     SceneDelegate       SceneDelegate::(ivar)_window              @"UIWindow"
-address     index class         flags name                                
+ ----------     0 SceneDelegate       SceneDelegate::(property)debugDescription 
+ ----------     1 SceneDelegate       SceneDelegate::(property)description      
+ ----------     2 SceneDelegate       SceneDelegate::(property)hash             
+ ----------     3 SceneDelegate       SceneDelegate::(property)superclass       
+ ----------     4 SceneDelegate       SceneDelegate::(property)window           
+ ----------     5 SceneDelegate       isa                                       struct objc_class *
+0x100009268     6 SceneDelegate       SceneDelegate::(ivar)_window              @"UIWindow"
+    address index class         flags name                                
 --------------------------------------------------------------------------
-0x1000021d0 0     SceneDelegate       scene:willConnectToSession:options:
-0x100002280 1     SceneDelegate       sceneDidDisconnect:
-0x1000022d4 2     SceneDelegate       sceneDidBecomeActive:
-0x100002328 3     SceneDelegate       sceneWillResignActive:
-0x10000237c 4     SceneDelegate       sceneWillEnterForeground:
-0x1000023d0 5     SceneDelegate       sceneDidEnterBackground:
-0x100002424 6     SceneDelegate       window
-0x100002450 7     SceneDelegate       setWindow:
-0x100002494 8     SceneDelegate       .cxx_destruct
+0x1000021d0     0 SceneDelegate       scene:willConnectToSession:options:
+0x100002280     1 SceneDelegate       sceneDidDisconnect:
+0x1000022d4     2 SceneDelegate       sceneDidBecomeActive:
+0x100002328     3 SceneDelegate       sceneWillResignActive:
+0x10000237c     4 SceneDelegate       sceneWillEnterForeground:
+0x1000023d0     5 SceneDelegate       sceneDidEnterBackground:
+0x100002424     6 SceneDelegate       window
+0x100002450     7 SceneDelegate       setWindow:
+0x100002494     8 SceneDelegate       .cxx_destruct
 EOF
 RUN
 

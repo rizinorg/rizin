@@ -2,7 +2,7 @@ NAME=ELF: dynamic p_offset
 FILE=bins/elf/analysis/dynamic-poffset
 CMDS=ir
 EXPECT=<<EOF
-vaddr      paddr      type               name              
+     vaddr      paddr type               name              
 -----------------------------------------------------------
 0x00600988 0x00000988 R_X86_64_GLOB_DAT  __gmon_start__
 0x006009a8 0x000009a8 R_X86_64_JUMP_SLOT write

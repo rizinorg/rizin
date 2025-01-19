@@ -73,34 +73,34 @@ FILE=bins/elf/demangle-test-cpp
 ARGS=-e bin.demangle=false
 CMDS=is~vector
 EXPECT=<<EOF
-46  0x000012fc 0x000012fc WEAK   FUNC   27       _ZNSt12_Vector_baseIiSaIiEE12_Vector_implD2Ev
-47  0x00001a48 0x00001a48 WEAK   FUNC   51       _ZNSt12_Vector_baseIiSaIiEE11_M_allocateEm
-52  0x00001462 0x00001462 WEAK   FUNC   62       _ZNSt12_Vector_baseIiSaIiEE12_Vector_implC2Ev
-60  0x00001286 0x00001286 WEAK   FUNC   68       _ZNSt6vectorIiSaIiEED1Ev
-62  0x000012ca 0x000012ca WEAK   FUNC   49       _ZNSt6vectorIiSaIiEE9push_backEOi
-67  0x00001a08 0x00001a08 WEAK   FUNC   64       _ZN9__gnu_cxxmiIPiSt6vectorIiSaIiEEEENS_17__normal_iteratorIT_T0_E15difference_typeERKS8_SB_
-69  0x00001318 0x00001318 WEAK   FUNC   27       _ZNSt12_Vector_baseIiSaIiEEC1Ev
-70  0x000019c0 0x000019c0 WEAK   FUNC   72       _ZNSt6vectorIiSaIiEE5beginEv
-76  0x000013c8 0x000013c8 WEAK   FUNC   154      _ZNSt6vectorIiSaIiEE12emplace_backIJiEEEvDpOT_
-78  0x00001334 0x00001334 WEAK   FUNC   77       _ZNSt12_Vector_baseIiSaIiEED1Ev
-79  0x00001462 0x00001462 WEAK   FUNC   62       _ZNSt12_Vector_baseIiSaIiEE12_Vector_implC1Ev
-81  0x000018b6 0x000018b6 WEAK   FUNC   29       _ZN9__gnu_cxx17__normal_iteratorIPiSt6vectorIiSaIiEEEC2ERKS1_
-83  0x000012fc 0x000012fc WEAK   FUNC   27       _ZNSt12_Vector_baseIiSaIiEE12_Vector_implD1Ev
-85  0x0000155e 0x0000155e WEAK   FUNC   76       _ZNSt6vectorIiSaIiEE3endEv
-86  0x000014bc 0x000014bc WEAK   FUNC   53       _ZNSt12_Vector_baseIiSaIiEE13_M_deallocateEPim
-87  0x00001286 0x00001286 WEAK   FUNC   68       _ZNSt6vectorIiSaIiEED2Ev
-99  0x00001334 0x00001334 WEAK   FUNC   77       _ZNSt12_Vector_baseIiSaIiEED2Ev
-100 0x00001c72 0x00001c72 WEAK   FUNC   14       _ZNKSt12_Vector_baseIiSaIiEE19_M_get_Tp_allocatorEv
-103 0x00001b34 0x00001b34 WEAK   FUNC   34       _ZNKSt6vectorIiSaIiEE8max_sizeEv
-107 0x00001382 0x00001382 WEAK   FUNC   14       _ZNSt12_Vector_baseIiSaIiEE19_M_get_Tp_allocatorEv
-113 0x00001a7c 0x00001a7c WEAK   FUNC   14       _ZNK9__gnu_cxx17__normal_iteratorIPiSt6vectorIiSaIiEEE4baseEv
-116 0x000018b6 0x000018b6 WEAK   FUNC   29       _ZN9__gnu_cxx17__normal_iteratorIPiSt6vectorIiSaIiEEEC1ERKS1_
-117 0x0000126a 0x0000126a WEAK   FUNC   27       _ZNSt6vectorIiSaIiEEC2Ev
-118 0x00001318 0x00001318 WEAK   FUNC   27       _ZNSt12_Vector_baseIiSaIiEEC2Ev
-122 0x000015aa 0x000015aa WEAK   FUNC   617      _ZNSt6vectorIiSaIiEE17_M_realloc_insertIJiEEEvN9__gnu_cxx17__normal_iteratorIPiS1_EEDpOT_
-128 0x000018d4 0x000018d4 WEAK   FUNC   236      _ZNKSt6vectorIiSaIiEE12_M_check_lenEmPKc
-129 0x0000126a 0x0000126a WEAK   FUNC   27       _ZNSt6vectorIiSaIiEEC1Ev
-144 0x00001b56 0x00001b56 WEAK   FUNC   35       _ZNKSt6vectorIiSaIiEE4sizeEv
+ 46 0x000012fc 0x000012fc WEAK   FUNC     27     _ZNSt12_Vector_baseIiSaIiEE12_Vector_implD2Ev
+ 47 0x00001a48 0x00001a48 WEAK   FUNC     51     _ZNSt12_Vector_baseIiSaIiEE11_M_allocateEm
+ 52 0x00001462 0x00001462 WEAK   FUNC     62     _ZNSt12_Vector_baseIiSaIiEE12_Vector_implC2Ev
+ 60 0x00001286 0x00001286 WEAK   FUNC     68     _ZNSt6vectorIiSaIiEED1Ev
+ 62 0x000012ca 0x000012ca WEAK   FUNC     49     _ZNSt6vectorIiSaIiEE9push_backEOi
+ 67 0x00001a08 0x00001a08 WEAK   FUNC     64     _ZN9__gnu_cxxmiIPiSt6vectorIiSaIiEEEENS_17__normal_iteratorIT_T0_E15difference_typeERKS8_SB_
+ 69 0x00001318 0x00001318 WEAK   FUNC     27     _ZNSt12_Vector_baseIiSaIiEEC1Ev
+ 70 0x000019c0 0x000019c0 WEAK   FUNC     72     _ZNSt6vectorIiSaIiEE5beginEv
+ 76 0x000013c8 0x000013c8 WEAK   FUNC    154     _ZNSt6vectorIiSaIiEE12emplace_backIJiEEEvDpOT_
+ 78 0x00001334 0x00001334 WEAK   FUNC     77     _ZNSt12_Vector_baseIiSaIiEED1Ev
+ 79 0x00001462 0x00001462 WEAK   FUNC     62     _ZNSt12_Vector_baseIiSaIiEE12_Vector_implC1Ev
+ 81 0x000018b6 0x000018b6 WEAK   FUNC     29     _ZN9__gnu_cxx17__normal_iteratorIPiSt6vectorIiSaIiEEEC2ERKS1_
+ 83 0x000012fc 0x000012fc WEAK   FUNC     27     _ZNSt12_Vector_baseIiSaIiEE12_Vector_implD1Ev
+ 85 0x0000155e 0x0000155e WEAK   FUNC     76     _ZNSt6vectorIiSaIiEE3endEv
+ 86 0x000014bc 0x000014bc WEAK   FUNC     53     _ZNSt12_Vector_baseIiSaIiEE13_M_deallocateEPim
+ 87 0x00001286 0x00001286 WEAK   FUNC     68     _ZNSt6vectorIiSaIiEED2Ev
+ 99 0x00001334 0x00001334 WEAK   FUNC     77     _ZNSt12_Vector_baseIiSaIiEED2Ev
+100 0x00001c72 0x00001c72 WEAK   FUNC     14     _ZNKSt12_Vector_baseIiSaIiEE19_M_get_Tp_allocatorEv
+103 0x00001b34 0x00001b34 WEAK   FUNC     34     _ZNKSt6vectorIiSaIiEE8max_sizeEv
+107 0x00001382 0x00001382 WEAK   FUNC     14     _ZNSt12_Vector_baseIiSaIiEE19_M_get_Tp_allocatorEv
+113 0x00001a7c 0x00001a7c WEAK   FUNC     14     _ZNK9__gnu_cxx17__normal_iteratorIPiSt6vectorIiSaIiEEE4baseEv
+116 0x000018b6 0x000018b6 WEAK   FUNC     29     _ZN9__gnu_cxx17__normal_iteratorIPiSt6vectorIiSaIiEEEC1ERKS1_
+117 0x0000126a 0x0000126a WEAK   FUNC     27     _ZNSt6vectorIiSaIiEEC2Ev
+118 0x00001318 0x00001318 WEAK   FUNC     27     _ZNSt12_Vector_baseIiSaIiEEC2Ev
+122 0x000015aa 0x000015aa WEAK   FUNC    617     _ZNSt6vectorIiSaIiEE17_M_realloc_insertIJiEEEvN9__gnu_cxx17__normal_iteratorIPiS1_EEDpOT_
+128 0x000018d4 0x000018d4 WEAK   FUNC    236     _ZNKSt6vectorIiSaIiEE12_M_check_lenEmPKc
+129 0x0000126a 0x0000126a WEAK   FUNC     27     _ZNSt6vectorIiSaIiEEC1Ev
+144 0x00001b56 0x00001b56 WEAK   FUNC     35     _ZNKSt6vectorIiSaIiEE4sizeEv
 EOF
 RUN
 
@@ -124,10 +124,10 @@ NAME=C++ demangle exported GLIBCXX symbols
 FILE=bins/elf/libstdc++.so.6
 CMDS=iE~0x0008ce50
 EXPECT=<<EOF
-3770 0x0008ce50 0x0008ce50 GLOBAL FUNC 609      std::istream::ignore(long)
-3771 0x0008ce50 0x0008ce50 GLOBAL FUNC 609      std::istream::ignore(long)
-5087 0x0008ce50 0x0008ce50 GLOBAL FUNC 609      std::istream::ignore(long)
-5345 0x0008ce50 0x0008ce50 GLOBAL FUNC 609      std::istream::ignore(long)
+3770 0x0008ce50 0x0008ce50 GLOBAL FUNC  609     std::istream::ignore(long)
+3771 0x0008ce50 0x0008ce50 GLOBAL FUNC  609     std::istream::ignore(long)
+5087 0x0008ce50 0x0008ce50 GLOBAL FUNC  609     std::istream::ignore(long)
+5345 0x0008ce50 0x0008ce50 GLOBAL FUNC  609     std::istream::ignore(long)
 EOF
 RUN
 
@@ -277,7 +277,7 @@ aa
 ic
 EOF
 EXPECT=<<EOF
-address    min        max        name                                                                                                                                                                                    super 
+   address        min        max name                                                                                                                                                                                    super 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ---------- 0x00005c60 0x0001a8a0 <&'a T as core::fmt::Debug>::fmt                                                                                                                                                        
 ---------- 0x000064b0 0x00016df0 <&'a T as core::fmt::Display>::fmt                                                                                                                                                      
@@ -528,7 +528,7 @@ CMDS=<<EOF
 ic
 EOF
 EXPECT=<<EOF
-address    min        max        name                     super 
+   address        min        max name                     super 
 ----------------------------------------------------------------
 ---------- 0x00001c4e 0x00001c4e std                      
 ---------- 0x00001e00 0x00001e06 std::ios_base::Init      

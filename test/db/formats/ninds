@@ -40,16 +40,16 @@ PIE      false
 RELROCS  false
 NX       false
 .-------------------------------------------------------------------------------------.
-| id | fd | pa       | pa_end   | size     | va        | va_end    | perm | name      |
+| id | fd |       pa |   pa_end |     size |        va |    va_end | perm | name      |
 )-------------------------------------------------------------------------------------(
-| 1  | 3  | 0x200    | 0x1b0a64 | 0x1b0864 | 0x2000000 | 0x21b0864 | r-x  | fmap.arm9 |
-| 2  | 3  | 0x1b0c00 | 0x1be750 | 0xdb50   | 0x37f8000 | 0x3805b50 | r-x  | fmap.arm7 |
+|  1 |  3 |    0x200 | 0x1b0a64 | 0x1b0864 | 0x2000000 | 0x21b0864 | r-x  | fmap.arm9 |
+|  2 |  3 | 0x1b0c00 | 0x1be750 |   0xdb50 | 0x37f8000 | 0x3805b50 | r-x  | fmap.arm7 |
 `-------------------------------------------------------------------------------------'
-paddr      size     vaddr      vsize    align perm name type flags 
+     paddr     size      vaddr    vsize align perm name type flags 
 -------------------------------------------------------------------
 0x00000200 0x1b0864 0x02000000 0x1b0864 0x0   -rwx arm9      
-0x001b0c00 0xdb50   0x037f8000 0xdb50   0x0   -rwx arm7      
-vaddr      paddr      hvaddr     haddr      type    
+0x001b0c00   0xdb50 0x037f8000   0xdb50 0x0   -rwx arm7      
+     vaddr      paddr     hvaddr      haddr type    
 ----------------------------------------------------
 0x02000000 0x00000200 ---------- ---------- program
 0x037f8000 0x001b0c00 ---------- ---------- program

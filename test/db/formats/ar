@@ -2,7 +2,7 @@ NAME=ar file sections
 FILE=ar://bins/ar/libgdbr.a//responses.o
 CMDS=iS~:5
 EXPECT=<<EOF
-0x000014be 0x0    0x080014be 0x0    0x0   -rw- .data               PROGBITS write,alloc
+0x000014be    0x0 0x080014be    0x0 0x0   -rw- .data               PROGBITS write,alloc
 EOF
 RUN
 
@@ -10,9 +10,9 @@ NAME=ar file symbols
 FILE=ar://bins/ar/libgdbr.a//xml.o
 CMDS=is~xml
 EXPECT=<<EOF
-1   ---------- 0x00000000 LOCAL  FILE   0        xml.c
-7   0x000009b3 0x080009b3 LOCAL  FUNC   5373     gdbr_parse_target_xml
-17  0x00000040 0x08000040 GLOBAL FUNC   152      gdbr_read_target_xml
+  1 ---------- 0x00000000 LOCAL  FILE      0     xml.c
+  7 0x000009b3 0x080009b3 LOCAL  FUNC   5373     gdbr_parse_target_xml
+ 17 0x00000040 0x08000040 GLOBAL FUNC    152     gdbr_read_target_xml
 EOF
 RUN
 
@@ -92,188 +92,188 @@ EXPECT=<<EOF
 30 - r-x 0x00013b38 vfile://8/patched
 31 - r-x 0x000008b8 vfile://9/reloc-targets
 32 - r-x 0x000036c0 vfile://9/patched
-nth paddr      vaddr      bind   type   size lib name                      
+nth      paddr      vaddr bind   type   size lib name                      
 ---------------------------------------------------------------------------
-1   ---------- 0x00000000 LOCAL  FILE   0        libgdbr.c
-2   0x00000040 0x08000040 LOCAL  SECT   0        .text
-3   0x00000444 0x08000444 LOCAL  SECT   0        .data
-4   0x00000444 0x08000444 LOCAL  SECT   0        .bss
-5   0x00000450 0x08000450 LOCAL  SECT   0        .rodata
-6   0x000004b0 0x080004b0 LOCAL  OBJ    22       __func__.6092
-7   0x000004c6 0x080004c6 LOCAL  SECT   0        .debug_info
-8   0x00000a5f 0x08000a5f LOCAL  SECT   0        .debug_abbrev
-9   0x00000b41 0x08000b41 LOCAL  SECT   0        .debug_aranges
-10  0x00000b71 0x08000b71 LOCAL  SECT   0        .debug_line
-11  0x00000cd7 0x08000cd7 LOCAL  SECT   0        .debug_str
-12  0x00001217 0x08001217 LOCAL  SECT   0        .note.GNU-stack
-13  0x00001218 0x08001218 LOCAL  SECT   0        .eh_frame
-14  0x000011fc 0x080011fc LOCAL  SECT   0        .comment
-15  0x00000040 0x08000040 GLOBAL FUNC   484      gdbr_init
-21  0x00000224 0x08000224 GLOBAL FUNC   452      gdbr_set_architecture
-32  0x000003e8 0x080003e8 GLOBAL FUNC   92       gdbr_cleanup
-16  ---------- ---------- GLOBAL NOTYPE 0        imp._GLOBAL_OFFSET_TABLE_
-17  ---------- ---------- GLOBAL NOTYPE 0        imp.memset
-18  ---------- ---------- GLOBAL NOTYPE 0        imp.calloc
-19  ---------- ---------- GLOBAL NOTYPE 0        imp.free
-20  ---------- ---------- GLOBAL NOTYPE 0        imp.r_socket_new
-22  ---------- ---------- GLOBAL NOTYPE 0        imp.strcmp
-23  ---------- ---------- GLOBAL NOTYPE 0        imp.gdb_regs_mips
-24  ---------- ---------- GLOBAL NOTYPE 0        imp.gdb_regs_lm32
-25  ---------- ---------- GLOBAL NOTYPE 0        imp.gdb_regs_avr
-26  ---------- ---------- GLOBAL NOTYPE 0        imp.gdb_regs_x86_32
-27  ---------- ---------- GLOBAL NOTYPE 0        imp.gdb_regs_x86_64
-28  ---------- ---------- GLOBAL NOTYPE 0        imp.stderr
-29  ---------- ---------- GLOBAL NOTYPE 0        imp.fprintf
-30  ---------- ---------- GLOBAL NOTYPE 0        imp.gdb_regs_arm32
-31  ---------- ---------- GLOBAL NOTYPE 0        imp.gdb_regs_aarch64
-nth paddr      vaddr      bind   type size lib name             
+  1 ---------- 0x00000000 LOCAL  FILE      0     libgdbr.c
+  2 0x00000040 0x08000040 LOCAL  SECT      0     .text
+  3 0x00000444 0x08000444 LOCAL  SECT      0     .data
+  4 0x00000444 0x08000444 LOCAL  SECT      0     .bss
+  5 0x00000450 0x08000450 LOCAL  SECT      0     .rodata
+  6 0x000004b0 0x080004b0 LOCAL  OBJ      22     __func__.6092
+  7 0x000004c6 0x080004c6 LOCAL  SECT      0     .debug_info
+  8 0x00000a5f 0x08000a5f LOCAL  SECT      0     .debug_abbrev
+  9 0x00000b41 0x08000b41 LOCAL  SECT      0     .debug_aranges
+ 10 0x00000b71 0x08000b71 LOCAL  SECT      0     .debug_line
+ 11 0x00000cd7 0x08000cd7 LOCAL  SECT      0     .debug_str
+ 12 0x00001217 0x08001217 LOCAL  SECT      0     .note.GNU-stack
+ 13 0x00001218 0x08001218 LOCAL  SECT      0     .eh_frame
+ 14 0x000011fc 0x080011fc LOCAL  SECT      0     .comment
+ 15 0x00000040 0x08000040 GLOBAL FUNC    484     gdbr_init
+ 21 0x00000224 0x08000224 GLOBAL FUNC    452     gdbr_set_architecture
+ 32 0x000003e8 0x080003e8 GLOBAL FUNC     92     gdbr_cleanup
+ 16 ---------- ---------- GLOBAL NOTYPE    0     imp._GLOBAL_OFFSET_TABLE_
+ 17 ---------- ---------- GLOBAL NOTYPE    0     imp.memset
+ 18 ---------- ---------- GLOBAL NOTYPE    0     imp.calloc
+ 19 ---------- ---------- GLOBAL NOTYPE    0     imp.free
+ 20 ---------- ---------- GLOBAL NOTYPE    0     imp.r_socket_new
+ 22 ---------- ---------- GLOBAL NOTYPE    0     imp.strcmp
+ 23 ---------- ---------- GLOBAL NOTYPE    0     imp.gdb_regs_mips
+ 24 ---------- ---------- GLOBAL NOTYPE    0     imp.gdb_regs_lm32
+ 25 ---------- ---------- GLOBAL NOTYPE    0     imp.gdb_regs_avr
+ 26 ---------- ---------- GLOBAL NOTYPE    0     imp.gdb_regs_x86_32
+ 27 ---------- ---------- GLOBAL NOTYPE    0     imp.gdb_regs_x86_64
+ 28 ---------- ---------- GLOBAL NOTYPE    0     imp.stderr
+ 29 ---------- ---------- GLOBAL NOTYPE    0     imp.fprintf
+ 30 ---------- ---------- GLOBAL NOTYPE    0     imp.gdb_regs_arm32
+ 31 ---------- ---------- GLOBAL NOTYPE    0     imp.gdb_regs_aarch64
+nth      paddr      vaddr bind   type size lib name             
 ----------------------------------------------------------------
-1   ---------- 0x00000000 LOCAL  FILE 0        arch.c
-2   0x00000040 0x08020040 LOCAL  SECT 0        .text
-3   0x00000040 0x08020040 LOCAL  SECT 0        .data
-4   0x000036b0 0x080236b0 LOCAL  SECT 0        .bss
-5   0x000036b0 0x080236b0 LOCAL  SECT 0        .debug_info
-6   0x00003781 0x08023781 LOCAL  SECT 0        .debug_abbrev
-7   0x00003805 0x08023805 LOCAL  SECT 0        .debug_aranges
-8   0x00003825 0x08023825 LOCAL  SECT 0        .debug_line
-9   0x0000387b 0x0802387b LOCAL  SECT 0        .debug_str
-10  0x00003985 0x08023985 LOCAL  SECT 0        .note.GNU-stack
-11  0x0000396a 0x0802396a LOCAL  SECT 0        .comment
-12  0x00000040 0x08020040 GLOBAL OBJ  1200     gdb_regs_x86_64
-13  0x00000500 0x08020500 GLOBAL OBJ  816      gdb_regs_x86_32
-14  0x00000840 0x08020840 GLOBAL OBJ  1296     gdb_regs_arm32
-15  0x00000d60 0x08020d60 GLOBAL OBJ  3312     gdb_regs_aarch64
-16  0x00001a60 0x08021a60 GLOBAL OBJ  1920     gdb_regs_lm32
-17  0x000021e0 0x080221e0 GLOBAL OBJ  3552     gdb_regs_mips
-18  0x00002fc0 0x08022fc0 GLOBAL OBJ  1776     gdb_regs_avr
-nth paddr      vaddr      bind   type   size lib name                        
+  1 ---------- 0x00000000 LOCAL  FILE    0     arch.c
+  2 0x00000040 0x08020040 LOCAL  SECT    0     .text
+  3 0x00000040 0x08020040 LOCAL  SECT    0     .data
+  4 0x000036b0 0x080236b0 LOCAL  SECT    0     .bss
+  5 0x000036b0 0x080236b0 LOCAL  SECT    0     .debug_info
+  6 0x00003781 0x08023781 LOCAL  SECT    0     .debug_abbrev
+  7 0x00003805 0x08023805 LOCAL  SECT    0     .debug_aranges
+  8 0x00003825 0x08023825 LOCAL  SECT    0     .debug_line
+  9 0x0000387b 0x0802387b LOCAL  SECT    0     .debug_str
+ 10 0x00003985 0x08023985 LOCAL  SECT    0     .note.GNU-stack
+ 11 0x0000396a 0x0802396a LOCAL  SECT    0     .comment
+ 12 0x00000040 0x08020040 GLOBAL OBJ  1200     gdb_regs_x86_64
+ 13 0x00000500 0x08020500 GLOBAL OBJ   816     gdb_regs_x86_32
+ 14 0x00000840 0x08020840 GLOBAL OBJ  1296     gdb_regs_arm32
+ 15 0x00000d60 0x08020d60 GLOBAL OBJ  3312     gdb_regs_aarch64
+ 16 0x00001a60 0x08021a60 GLOBAL OBJ  1920     gdb_regs_lm32
+ 17 0x000021e0 0x080221e0 GLOBAL OBJ  3552     gdb_regs_mips
+ 18 0x00002fc0 0x08022fc0 GLOBAL OBJ  1776     gdb_regs_avr
+nth      paddr      vaddr bind   type   size lib name                        
 -----------------------------------------------------------------------------
-1   ---------- 0x00000000 LOCAL  FILE   0        core.c
-2   0x00000040 0x08070040 LOCAL  SECT   0        .text
-3   0x00003c3c 0x08073c3c LOCAL  SECT   0        .data
-4   0x00003c40 0x08073c40 LOCAL  SECT   0        .bss
-5   0x00000040 0x08070040 LOCAL  FUNC   276      set_interface_attribs
-6   0x00003c40 0x08073c40 LOCAL  OBJ    32       reg_cache
-7   0x00000154 0x08070154 LOCAL  FUNC   96       reg_cache_init
-8   0x00003c40 0x08073c40 LOCAL  SECT   0        .rodata
-9   0x000001b4 0x080701b4 LOCAL  FUNC   177      gdbr_connect_lldb
-10  0x00000f87 0x08070f87 LOCAL  FUNC   157      gdbr_read_registers_lldb
-11  0x00004080 0x08074080 LOCAL  OBJ    17       __func__.10461
-12  0x00003c3c 0x08073c3c LOCAL  OBJ    4        P.10515
-13  0x00003c60 0x08073c60 LOCAL  OBJ    8        cur_desc
-14  0x000021cb 0x080721cb LOCAL  FUNC   57       _sigint_handler
-15  0x00004098 0x08074098 LOCAL  OBJ    15       __func__.10626
-16  0x000040a8 0x080740a8 LOCAL  OBJ    15       __func__.10638
-17  0x000040c0 0x080740c0 LOCAL  OBJ    16       __func__.10645
-18  0x000040d0 0x080740d0 LOCAL  SECT   0        .debug_info
-19  0x00007b54 0x08077b54 LOCAL  SECT   0        .debug_abbrev
-20  0x00007cdd 0x08077cdd LOCAL  SECT   0        .debug_aranges
-21  0x00007d0d 0x08077d0d LOCAL  SECT   0        .debug_line
-22  0x00008339 0x08078339 LOCAL  SECT   0        .debug_str
-23  0x0000a1b2 0x0807a1b2 LOCAL  SECT   0        .note.GNU-stack
-24  0x0000a1b8 0x0807a1b8 LOCAL  SECT   0        .eh_frame
-25  0x0000a197 0x0807a197 LOCAL  SECT   0        .comment
-38  0x00000265 0x08070265 GLOBAL FUNC   1105     gdbr_connect
-48  0x00000879 0x08070879 GLOBAL FUNC   390      gdbr_check_vcont
-49  0x0000073e 0x0807073e GLOBAL FUNC   315      gdbr_select
-51  0x000006b6 0x080706b6 GLOBAL FUNC   136      gdbr_disconnect
-56  0x000009ff 0x080709ff GLOBAL FUNC   79       gdbr_stop_reason
-58  0x00000a4e 0x08070a4e GLOBAL FUNC   167      gdbr_check_extended_mode
-59  0x00000af5 0x08070af5 GLOBAL FUNC   298      gdbr_attach
-62  0x00000c1f 0x08070c1f GLOBAL FUNC   95       gdbr_detach
-63  0x00000c7e 0x08070c7e GLOBAL FUNC   313      gdbr_detach_pid
-64  0x00000db7 0x08070db7 GLOBAL FUNC   144      gdbr_kill
-65  0x00000e47 0x08070e47 GLOBAL FUNC   320      gdbr_kill_pid
-68  0x00001024 0x08071024 GLOBAL FUNC   314      gdbr_read_registers
-70  0x0000115e 0x0807115e GLOBAL FUNC   954      gdbr_read_memory
-75  0x00001518 0x08071518 GLOBAL FUNC   709      gdbr_write_memory
-78  0x000017dd 0x080717dd GLOBAL FUNC   149      gdbr_step
-79  0x00002204 0x08072204 GLOBAL FUNC   870      send_vcont
-80  0x00001872 0x08071872 GLOBAL FUNC   309      gdbr_continue
-82  0x000019a7 0x080719a7 GLOBAL FUNC   251      gdbr_write_bin_registers
-84  0x00001aa2 0x08071aa2 GLOBAL FUNC   365      gdbr_write_register
-86  0x00001c0f 0x08071c0f GLOBAL FUNC   395      gdbr_write_reg
-87  0x00001d9a 0x08071d9a GLOBAL FUNC   970      gdbr_write_registers
-92  0x00002164 0x08072164 GLOBAL FUNC   103      test_command
-97  0x0000256a 0x0807256a GLOBAL FUNC   426      set_bp
-99  0x00002714 0x08072714 GLOBAL FUNC   47       gdbr_set_bp
-100 0x00002743 0x08072743 GLOBAL FUNC   47       gdbr_set_hwbp
-101 0x00002772 0x08072772 GLOBAL FUNC   42       gdbr_remove_bp
-102 0x000027c6 0x080727c6 GLOBAL FUNC   419      remove_bp
-103 0x0000279c 0x0807279c GLOBAL FUNC   42       gdbr_remove_hwbp
-105 0x00002969 0x08072969 GLOBAL FUNC   453      gdbr_open_file
-107 0x00002b2e 0x08072b2e GLOBAL FUNC   496      gdbr_read_file
-109 0x00002d1e 0x08072d1e GLOBAL FUNC   249      gdbr_close_file
-111 0x00002e17 0x08072e17 GLOBAL FUNC   14       gdbr_invalidate_reg_cache
-112 0x00002e25 0x08072e25 GLOBAL FUNC   729      gdbr_send_qRcmd
-115 0x000030fe 0x080730fe GLOBAL FUNC   655      gdbr_exec_file_read
-117 0x0000338d 0x0807338d GLOBAL FUNC   467      gdbr_is_thread_dead
-118 0x00003560 0x08073560 GLOBAL FUNC   842      gdbr_threads_list
-124 0x000038aa 0x080738aa GLOBAL FUNC   912      gdbr_get_baddr
-26  ---------- ---------- GLOBAL NOTYPE 0        imp._GLOBAL_OFFSET_TABLE_
-27  ---------- ---------- GLOBAL NOTYPE 0        imp.memset
-28  ---------- ---------- GLOBAL NOTYPE 0        imp.tcgetattr
-29  ---------- ---------- GLOBAL NOTYPE 0        imp.cfsetospeed
-30  ---------- ---------- GLOBAL NOTYPE 0        imp.cfsetispeed
-31  ---------- ---------- GLOBAL NOTYPE 0        imp.tcsetattr
-32  ---------- ---------- GLOBAL NOTYPE 0        imp.__stack_chk_fail
-33  ---------- ---------- GLOBAL NOTYPE 0        imp.malloc
-34  ---------- ---------- GLOBAL NOTYPE 0        imp.gdbr_read_target_xml
-35  ---------- ---------- GLOBAL NOTYPE 0        imp.send_msg
-36  ---------- ---------- GLOBAL NOTYPE 0        imp.read_packet
-37  ---------- ---------- GLOBAL NOTYPE 0        imp.send_ack
-39  ---------- ---------- GLOBAL NOTYPE 0        imp.r_strbuf_init
-40  ---------- ---------- GLOBAL NOTYPE 0        imp.getenv
-41  ---------- ---------- GLOBAL NOTYPE 0        imp.strtoul
-42  ---------- ---------- GLOBAL NOTYPE 0        imp.snprintf
-43  ---------- ---------- GLOBAL NOTYPE 0        imp.r_socket_connect_serial
-44  ---------- ---------- GLOBAL NOTYPE 0        imp.r_socket_connect
-45  ---------- ---------- GLOBAL NOTYPE 0        imp.handle_qSupported
-46  ---------- ---------- GLOBAL NOTYPE 0        imp.strncmp
-47  ---------- ---------- GLOBAL NOTYPE 0        imp.handle_qC
-50  ---------- ---------- GLOBAL NOTYPE 0        imp.strcmp
-52  ---------- ---------- GLOBAL NOTYPE 0        imp.r_socket_close
-53  ---------- ---------- GLOBAL NOTYPE 0        imp.free
-54  ---------- ---------- GLOBAL NOTYPE 0        imp.write_thread_id
-55  ---------- ---------- GLOBAL NOTYPE 0        imp.strtok
-57  ---------- ---------- GLOBAL NOTYPE 0        imp.handle_stop_reason
-60  ---------- ---------- GLOBAL NOTYPE 0        imp.calloc
-61  ---------- ---------- GLOBAL NOTYPE 0        imp.handle_attach
-66  ---------- ---------- GLOBAL NOTYPE 0        imp.handle_lldb_read_reg
-67  ---------- ---------- GLOBAL NOTYPE 0        imp.memcpy
-69  ---------- ---------- GLOBAL NOTYPE 0        imp.handle_g
-71  ---------- ---------- GLOBAL NOTYPE 0        imp.stderr
-72  ---------- ---------- GLOBAL NOTYPE 0        imp.fprintf
-73  ---------- ---------- GLOBAL NOTYPE 0        imp.handle_m
-74  ---------- ---------- GLOBAL NOTYPE 0        imp.memmove
-76  ---------- ---------- GLOBAL NOTYPE 0        imp.pack_hex
-77  ---------- ---------- GLOBAL NOTYPE 0        imp.handle_M
-81  ---------- ---------- GLOBAL NOTYPE 0        imp.strncpy
-83  ---------- ---------- GLOBAL NOTYPE 0        imp.handle_G
-85  ---------- ---------- GLOBAL NOTYPE 0        imp.handle_P
-88  ---------- ---------- GLOBAL NOTYPE 0        imp.strlen
-89  ---------- ---------- GLOBAL NOTYPE 0        imp.strchr
-90  ---------- ---------- GLOBAL NOTYPE 0        imp.strcpy
-91  ---------- ---------- GLOBAL NOTYPE 0        imp.hex2char
-93  ---------- ---------- GLOBAL NOTYPE 0        imp.hexdump
-94  ---------- ---------- GLOBAL NOTYPE 0        imp.r_socket_write
-95  ---------- ---------- GLOBAL NOTYPE 0        imp.signal
-96  ---------- ---------- GLOBAL NOTYPE 0        imp.handle_cont
-98  ---------- ---------- GLOBAL NOTYPE 0        imp.handle_setbp
-104 ---------- ---------- GLOBAL NOTYPE 0        imp.handle_removebp
-106 ---------- ---------- GLOBAL NOTYPE 0        imp.handle_vFile_open
-108 ---------- ---------- GLOBAL NOTYPE 0        imp.handle_vFile_pread
-110 ---------- ---------- GLOBAL NOTYPE 0        imp.handle_vFile_close
-113 ---------- ---------- GLOBAL NOTYPE 0        imp.__ctype_b_loc
-114 ---------- ---------- GLOBAL NOTYPE 0        imp.unpack_hex
-116 ---------- ---------- GLOBAL NOTYPE 0        imp.r_str_append
-119 ---------- ---------- GLOBAL NOTYPE 0        imp.r_list_new
-120 ---------- ---------- GLOBAL NOTYPE 0        imp.read_thread_id
-121 ---------- ---------- GLOBAL NOTYPE 0        imp.strdup
-122 ---------- ---------- GLOBAL NOTYPE 0        imp.r_list_free
-123 ---------- ---------- GLOBAL NOTYPE 0        imp.r_list_append
-125 ---------- ---------- GLOBAL NOTYPE 0        imp.r_str_startswith
-126 ---------- ---------- GLOBAL NOTYPE 0        imp.strtoull
+  1 ---------- 0x00000000 LOCAL  FILE      0     core.c
+  2 0x00000040 0x08070040 LOCAL  SECT      0     .text
+  3 0x00003c3c 0x08073c3c LOCAL  SECT      0     .data
+  4 0x00003c40 0x08073c40 LOCAL  SECT      0     .bss
+  5 0x00000040 0x08070040 LOCAL  FUNC    276     set_interface_attribs
+  6 0x00003c40 0x08073c40 LOCAL  OBJ      32     reg_cache
+  7 0x00000154 0x08070154 LOCAL  FUNC     96     reg_cache_init
+  8 0x00003c40 0x08073c40 LOCAL  SECT      0     .rodata
+  9 0x000001b4 0x080701b4 LOCAL  FUNC    177     gdbr_connect_lldb
+ 10 0x00000f87 0x08070f87 LOCAL  FUNC    157     gdbr_read_registers_lldb
+ 11 0x00004080 0x08074080 LOCAL  OBJ      17     __func__.10461
+ 12 0x00003c3c 0x08073c3c LOCAL  OBJ       4     P.10515
+ 13 0x00003c60 0x08073c60 LOCAL  OBJ       8     cur_desc
+ 14 0x000021cb 0x080721cb LOCAL  FUNC     57     _sigint_handler
+ 15 0x00004098 0x08074098 LOCAL  OBJ      15     __func__.10626
+ 16 0x000040a8 0x080740a8 LOCAL  OBJ      15     __func__.10638
+ 17 0x000040c0 0x080740c0 LOCAL  OBJ      16     __func__.10645
+ 18 0x000040d0 0x080740d0 LOCAL  SECT      0     .debug_info
+ 19 0x00007b54 0x08077b54 LOCAL  SECT      0     .debug_abbrev
+ 20 0x00007cdd 0x08077cdd LOCAL  SECT      0     .debug_aranges
+ 21 0x00007d0d 0x08077d0d LOCAL  SECT      0     .debug_line
+ 22 0x00008339 0x08078339 LOCAL  SECT      0     .debug_str
+ 23 0x0000a1b2 0x0807a1b2 LOCAL  SECT      0     .note.GNU-stack
+ 24 0x0000a1b8 0x0807a1b8 LOCAL  SECT      0     .eh_frame
+ 25 0x0000a197 0x0807a197 LOCAL  SECT      0     .comment
+ 38 0x00000265 0x08070265 GLOBAL FUNC   1105     gdbr_connect
+ 48 0x00000879 0x08070879 GLOBAL FUNC    390     gdbr_check_vcont
+ 49 0x0000073e 0x0807073e GLOBAL FUNC    315     gdbr_select
+ 51 0x000006b6 0x080706b6 GLOBAL FUNC    136     gdbr_disconnect
+ 56 0x000009ff 0x080709ff GLOBAL FUNC     79     gdbr_stop_reason
+ 58 0x00000a4e 0x08070a4e GLOBAL FUNC    167     gdbr_check_extended_mode
+ 59 0x00000af5 0x08070af5 GLOBAL FUNC    298     gdbr_attach
+ 62 0x00000c1f 0x08070c1f GLOBAL FUNC     95     gdbr_detach
+ 63 0x00000c7e 0x08070c7e GLOBAL FUNC    313     gdbr_detach_pid
+ 64 0x00000db7 0x08070db7 GLOBAL FUNC    144     gdbr_kill
+ 65 0x00000e47 0x08070e47 GLOBAL FUNC    320     gdbr_kill_pid
+ 68 0x00001024 0x08071024 GLOBAL FUNC    314     gdbr_read_registers
+ 70 0x0000115e 0x0807115e GLOBAL FUNC    954     gdbr_read_memory
+ 75 0x00001518 0x08071518 GLOBAL FUNC    709     gdbr_write_memory
+ 78 0x000017dd 0x080717dd GLOBAL FUNC    149     gdbr_step
+ 79 0x00002204 0x08072204 GLOBAL FUNC    870     send_vcont
+ 80 0x00001872 0x08071872 GLOBAL FUNC    309     gdbr_continue
+ 82 0x000019a7 0x080719a7 GLOBAL FUNC    251     gdbr_write_bin_registers
+ 84 0x00001aa2 0x08071aa2 GLOBAL FUNC    365     gdbr_write_register
+ 86 0x00001c0f 0x08071c0f GLOBAL FUNC    395     gdbr_write_reg
+ 87 0x00001d9a 0x08071d9a GLOBAL FUNC    970     gdbr_write_registers
+ 92 0x00002164 0x08072164 GLOBAL FUNC    103     test_command
+ 97 0x0000256a 0x0807256a GLOBAL FUNC    426     set_bp
+ 99 0x00002714 0x08072714 GLOBAL FUNC     47     gdbr_set_bp
+100 0x00002743 0x08072743 GLOBAL FUNC     47     gdbr_set_hwbp
+101 0x00002772 0x08072772 GLOBAL FUNC     42     gdbr_remove_bp
+102 0x000027c6 0x080727c6 GLOBAL FUNC    419     remove_bp
+103 0x0000279c 0x0807279c GLOBAL FUNC     42     gdbr_remove_hwbp
+105 0x00002969 0x08072969 GLOBAL FUNC    453     gdbr_open_file
+107 0x00002b2e 0x08072b2e GLOBAL FUNC    496     gdbr_read_file
+109 0x00002d1e 0x08072d1e GLOBAL FUNC    249     gdbr_close_file
+111 0x00002e17 0x08072e17 GLOBAL FUNC     14     gdbr_invalidate_reg_cache
+112 0x00002e25 0x08072e25 GLOBAL FUNC    729     gdbr_send_qRcmd
+115 0x000030fe 0x080730fe GLOBAL FUNC    655     gdbr_exec_file_read
+117 0x0000338d 0x0807338d GLOBAL FUNC    467     gdbr_is_thread_dead
+118 0x00003560 0x08073560 GLOBAL FUNC    842     gdbr_threads_list
+124 0x000038aa 0x080738aa GLOBAL FUNC    912     gdbr_get_baddr
+ 26 ---------- ---------- GLOBAL NOTYPE    0     imp._GLOBAL_OFFSET_TABLE_
+ 27 ---------- ---------- GLOBAL NOTYPE    0     imp.memset
+ 28 ---------- ---------- GLOBAL NOTYPE    0     imp.tcgetattr
+ 29 ---------- ---------- GLOBAL NOTYPE    0     imp.cfsetospeed
+ 30 ---------- ---------- GLOBAL NOTYPE    0     imp.cfsetispeed
+ 31 ---------- ---------- GLOBAL NOTYPE    0     imp.tcsetattr
+ 32 ---------- ---------- GLOBAL NOTYPE    0     imp.__stack_chk_fail
+ 33 ---------- ---------- GLOBAL NOTYPE    0     imp.malloc
+ 34 ---------- ---------- GLOBAL NOTYPE    0     imp.gdbr_read_target_xml
+ 35 ---------- ---------- GLOBAL NOTYPE    0     imp.send_msg
+ 36 ---------- ---------- GLOBAL NOTYPE    0     imp.read_packet
+ 37 ---------- ---------- GLOBAL NOTYPE    0     imp.send_ack
+ 39 ---------- ---------- GLOBAL NOTYPE    0     imp.r_strbuf_init
+ 40 ---------- ---------- GLOBAL NOTYPE    0     imp.getenv
+ 41 ---------- ---------- GLOBAL NOTYPE    0     imp.strtoul
+ 42 ---------- ---------- GLOBAL NOTYPE    0     imp.snprintf
+ 43 ---------- ---------- GLOBAL NOTYPE    0     imp.r_socket_connect_serial
+ 44 ---------- ---------- GLOBAL NOTYPE    0     imp.r_socket_connect
+ 45 ---------- ---------- GLOBAL NOTYPE    0     imp.handle_qSupported
+ 46 ---------- ---------- GLOBAL NOTYPE    0     imp.strncmp
+ 47 ---------- ---------- GLOBAL NOTYPE    0     imp.handle_qC
+ 50 ---------- ---------- GLOBAL NOTYPE    0     imp.strcmp
+ 52 ---------- ---------- GLOBAL NOTYPE    0     imp.r_socket_close
+ 53 ---------- ---------- GLOBAL NOTYPE    0     imp.free
+ 54 ---------- ---------- GLOBAL NOTYPE    0     imp.write_thread_id
+ 55 ---------- ---------- GLOBAL NOTYPE    0     imp.strtok
+ 57 ---------- ---------- GLOBAL NOTYPE    0     imp.handle_stop_reason
+ 60 ---------- ---------- GLOBAL NOTYPE    0     imp.calloc
+ 61 ---------- ---------- GLOBAL NOTYPE    0     imp.handle_attach
+ 66 ---------- ---------- GLOBAL NOTYPE    0     imp.handle_lldb_read_reg
+ 67 ---------- ---------- GLOBAL NOTYPE    0     imp.memcpy
+ 69 ---------- ---------- GLOBAL NOTYPE    0     imp.handle_g
+ 71 ---------- ---------- GLOBAL NOTYPE    0     imp.stderr
+ 72 ---------- ---------- GLOBAL NOTYPE    0     imp.fprintf
+ 73 ---------- ---------- GLOBAL NOTYPE    0     imp.handle_m
+ 74 ---------- ---------- GLOBAL NOTYPE    0     imp.memmove
+ 76 ---------- ---------- GLOBAL NOTYPE    0     imp.pack_hex
+ 77 ---------- ---------- GLOBAL NOTYPE    0     imp.handle_M
+ 81 ---------- ---------- GLOBAL NOTYPE    0     imp.strncpy
+ 83 ---------- ---------- GLOBAL NOTYPE    0     imp.handle_G
+ 85 ---------- ---------- GLOBAL NOTYPE    0     imp.handle_P
+ 88 ---------- ---------- GLOBAL NOTYPE    0     imp.strlen
+ 89 ---------- ---------- GLOBAL NOTYPE    0     imp.strchr
+ 90 ---------- ---------- GLOBAL NOTYPE    0     imp.strcpy
+ 91 ---------- ---------- GLOBAL NOTYPE    0     imp.hex2char
+ 93 ---------- ---------- GLOBAL NOTYPE    0     imp.hexdump
+ 94 ---------- ---------- GLOBAL NOTYPE    0     imp.r_socket_write
+ 95 ---------- ---------- GLOBAL NOTYPE    0     imp.signal
+ 96 ---------- ---------- GLOBAL NOTYPE    0     imp.handle_cont
+ 98 ---------- ---------- GLOBAL NOTYPE    0     imp.handle_setbp
+104 ---------- ---------- GLOBAL NOTYPE    0     imp.handle_removebp
+106 ---------- ---------- GLOBAL NOTYPE    0     imp.handle_vFile_open
+108 ---------- ---------- GLOBAL NOTYPE    0     imp.handle_vFile_pread
+110 ---------- ---------- GLOBAL NOTYPE    0     imp.handle_vFile_close
+113 ---------- ---------- GLOBAL NOTYPE    0     imp.__ctype_b_loc
+114 ---------- ---------- GLOBAL NOTYPE    0     imp.unpack_hex
+116 ---------- ---------- GLOBAL NOTYPE    0     imp.r_str_append
+119 ---------- ---------- GLOBAL NOTYPE    0     imp.r_list_new
+120 ---------- ---------- GLOBAL NOTYPE    0     imp.read_thread_id
+121 ---------- ---------- GLOBAL NOTYPE    0     imp.strdup
+122 ---------- ---------- GLOBAL NOTYPE    0     imp.r_list_free
+123 ---------- ---------- GLOBAL NOTYPE    0     imp.r_list_append
+125 ---------- ---------- GLOBAL NOTYPE    0     imp.r_str_startswith
+126 ---------- ---------- GLOBAL NOTYPE    0     imp.strtoull
 EOF
 RUN
 

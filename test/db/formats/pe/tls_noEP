@@ -12,10 +12,10 @@ iee
 ie
 EOF
 EXPECT=<<EOF
-vaddr      paddr      hvaddr     haddr      type 
+     vaddr      paddr     hvaddr      haddr type 
 -------------------------------------------------
 0x00401000 0x00000200 ---------- 0x00000384 tls
-vaddr      paddr      hvaddr     haddr      type    
+     vaddr      paddr     hvaddr      haddr type    
 ----------------------------------------------------
 0x00401000 0x00000200 ---------- 0x00000068 program
 EOF

@@ -37,7 +37,7 @@ NAME=pe relocs [rz-bin x.dll]
 FILE=bins/pe/x.dll
 CMDS=ir
 EXPECT=<<EOF
-vaddr      paddr      type                    name        
+     vaddr      paddr type                    name        
 ----------------------------------------------------------
 0x00001002 0x00000402 IMAGE_REL_BASED_HIGHLOW pe_00001002
 0x00001007 0x00000407 IMAGE_REL_BASED_HIGHLOW pe_00001007
@@ -50,7 +50,7 @@ NAME=pe relocs [rz-bin echo_32_pelleC.exe]
 FILE=bins/abi_bins/pe/compilers/echo_32_pelleC.exe
 CMDS=ir
 EXPECT=<<EOF
-vaddr      paddr      type                     name        
+     vaddr      paddr type                     name        
 -----------------------------------------------------------
 0x00001000 0x00000400 IMAGE_REL_BASED_ABSOLUTE pe_00001000
 0x00001010 0x00000410 IMAGE_REL_BASED_HIGHLOW  pe_00001010
@@ -975,7 +975,7 @@ NAME=pe relocs [rz-bin echo_64_pelleC.exe]
 FILE=bins/abi_bins/pe/compilers/echo_64_pelleC.exe
 CMDS=ir
 EXPECT=<<EOF
-vaddr      paddr      type                     name        
+     vaddr      paddr type                     name        
 -----------------------------------------------------------
 0x00009000 0x00007a00 IMAGE_REL_BASED_ABSOLUTE pe_00009000
 0x00009550 0x00007f50 IMAGE_REL_BASED_DIR64    pe_00009550
@@ -1435,134 +1435,134 @@ NAME=pe32 imported functions (ii)
 FILE=bins/pe/imports_1210.exe
 CMDS=ii
 EXPECT=<<EOF
-nth vaddr      bind type lib          name                      
+nth      vaddr bind type lib          name                      
 ----------------------------------------------------------------
-1   0x0041217c NONE FUNC kernel32.dll DeleteCriticalSection
-2   0x00412180 NONE FUNC kernel32.dll LeaveCriticalSection
-3   0x00412184 NONE FUNC kernel32.dll EnterCriticalSection
-4   0x00412188 NONE FUNC kernel32.dll InitializeCriticalSection
-5   0x0041218c NONE FUNC kernel32.dll VirtualFree
-6   0x00412190 NONE FUNC kernel32.dll VirtualAlloc
-7   0x00412194 NONE FUNC kernel32.dll LocalFree
-8   0x00412198 NONE FUNC kernel32.dll LocalAlloc
-9   0x0041219c NONE FUNC kernel32.dll GetVersion
-10  0x004121a0 NONE FUNC kernel32.dll GetCurrentThreadId
-11  0x004121a4 NONE FUNC kernel32.dll WideCharToMultiByte
-12  0x004121a8 NONE FUNC kernel32.dll MultiByteToWideChar
-13  0x004121ac NONE FUNC kernel32.dll GetThreadLocale
-14  0x004121b0 NONE FUNC kernel32.dll GetStartupInfoA
-15  0x004121b4 NONE FUNC kernel32.dll GetModuleFileNameA
-16  0x004121b8 NONE FUNC kernel32.dll GetLocaleInfoA
-17  0x004121bc NONE FUNC kernel32.dll GetCommandLineA
-18  0x004121c0 NONE FUNC kernel32.dll FreeLibrary
-19  0x004121c4 NONE FUNC kernel32.dll ExitProcess
-20  0x004121c8 NONE FUNC kernel32.dll WriteFile
-21  0x004121cc NONE FUNC kernel32.dll UnhandledExceptionFilter
-22  0x004121d0 NONE FUNC kernel32.dll RtlUnwind
-23  0x004121d4 NONE FUNC kernel32.dll RaiseException
-24  0x004121d8 NONE FUNC kernel32.dll GetStdHandle
-1   0x004121e0 NONE FUNC user32.dll   GetKeyboardType
-2   0x004121e4 NONE FUNC user32.dll   MessageBoxA
-3   0x004121e8 NONE FUNC user32.dll   CharNextA
-1   0x004121f0 NONE FUNC advapi32.dll RegQueryValueExA
-2   0x004121f4 NONE FUNC advapi32.dll RegOpenKeyExA
-3   0x004121f8 NONE FUNC advapi32.dll RegCloseKey
-1   0x00412200 NONE FUNC oleaut32.dll SysFreeString
-2   0x00412204 NONE FUNC oleaut32.dll SysReAllocStringLen
-3   0x00412208 NONE FUNC oleaut32.dll SysAllocStringLen
-1   0x00412210 NONE FUNC kernel32.dll TlsSetValue
-2   0x00412214 NONE FUNC kernel32.dll TlsGetValue
-3   0x00412198 NONE FUNC kernel32.dll LocalAlloc
-4   0x0041221c NONE FUNC kernel32.dll GetModuleHandleA
-1   0x00412224 NONE FUNC advapi32.dll RegSetValueExA
-2   0x004121f0 NONE FUNC advapi32.dll RegQueryValueExA
-3   0x004121f4 NONE FUNC advapi32.dll RegOpenKeyExA
-4   0x00412230 NONE FUNC advapi32.dll RegEnumValueA
-5   0x00412234 NONE FUNC advapi32.dll RegDeleteKeyA
-6   0x00412238 NONE FUNC advapi32.dll RegCreateKeyExA
-7   0x0041223c NONE FUNC advapi32.dll RegCreateKeyA
-8   0x004121f8 NONE FUNC advapi32.dll RegCloseKey
-9   0x00412244 NONE FUNC advapi32.dll OpenProcessToken
-10  0x00412248 NONE FUNC advapi32.dll LookupAccountNameA
-11  0x0041224c NONE FUNC advapi32.dll IsValidSid
-12  0x00412250 NONE FUNC advapi32.dll GetUserNameA
-1   0x00412258 NONE FUNC kernel32.dll lstrlenA
-2   0x0041225c NONE FUNC kernel32.dll lstrcmpiA
-3   0x00412260 NONE FUNC kernel32.dll WriteProcessMemory
-4   0x004121c8 NONE FUNC kernel32.dll WriteFile
-5   0x00412268 NONE FUNC kernel32.dll WaitForSingleObject
-6   0x0041226c NONE FUNC kernel32.dll VirtualProtect
-7   0x0041218c NONE FUNC kernel32.dll VirtualFree
-8   0x00412274 NONE FUNC kernel32.dll VirtualAllocEx
-9   0x00412190 NONE FUNC kernel32.dll VirtualAlloc
-10  0x0041227c NONE FUNC kernel32.dll Sleep
-11  0x00412280 NONE FUNC kernel32.dll SizeofResource
-12  0x00412284 NONE FUNC kernel32.dll SetFilePointer
-13  0x00412288 NONE FUNC kernel32.dll SetFileAttributesA
-14  0x0041228c NONE FUNC kernel32.dll ReadProcessMemory
-15  0x00412290 NONE FUNC kernel32.dll ReadFile
-16  0x00412294 NONE FUNC kernel32.dll OpenProcess
-17  0x00412298 NONE FUNC kernel32.dll LockResource
-18  0x0041229c NONE FUNC kernel32.dll LoadResource
-19  0x004122a0 NONE FUNC kernel32.dll LoadLibraryA
-20  0x004122a4 NONE FUNC kernel32.dll GlobalFree
-21  0x004122a8 NONE FUNC kernel32.dll GetVersionExA
-22  0x004122ac NONE FUNC kernel32.dll GetTickCount
-23  0x004122b0 NONE FUNC kernel32.dll GetProcAddress
-24  0x004122b4 NONE FUNC kernel32.dll GetPrivateProfileStringA
-25  0x004122b8 NONE FUNC kernel32.dll GetPrivateProfileIntA
-26  0x0041221c NONE FUNC kernel32.dll GetModuleHandleA
-27  0x004122c0 NONE FUNC kernel32.dll GetLastError
-28  0x004122c4 NONE FUNC kernel32.dll GetFileSize
-29  0x004122c8 NONE FUNC kernel32.dll GetFileAttributesA
-30  0x004122cc NONE FUNC kernel32.dll GetExitCodeThread
-31  0x004122d0 NONE FUNC kernel32.dll GetCurrentProcess
-32  0x004122d4 NONE FUNC kernel32.dll FreeResource
-33  0x004121c0 NONE FUNC kernel32.dll FreeLibrary
-34  0x004122dc NONE FUNC kernel32.dll FindResourceA
-35  0x004122e0 NONE FUNC kernel32.dll FindFirstFileA
-36  0x004122e4 NONE FUNC kernel32.dll FindClose
-37  0x004121c4 NONE FUNC kernel32.dll ExitProcess
-38  0x004122ec NONE FUNC kernel32.dll DeleteFileA
-39  0x004122f0 NONE FUNC kernel32.dll CreateRemoteThread
-40  0x004122f4 NONE FUNC kernel32.dll CreateProcessA
-41  0x004122f8 NONE FUNC kernel32.dll CreateMutexA
-42  0x004122fc NONE FUNC kernel32.dll CreateFileA
-43  0x00412300 NONE FUNC kernel32.dll CreateDirectoryA
-44  0x00412304 NONE FUNC kernel32.dll CopyFileA
-45  0x00412308 NONE FUNC kernel32.dll CloseHandle
-1   0x00412310 NONE FUNC user32.dll   wvsprintfA
-2   0x00412314 NONE FUNC user32.dll   TranslateMessage
-3   0x00412318 NONE FUNC user32.dll   ToAscii
-4   0x0041231c NONE FUNC user32.dll   SetWindowsHookExA
-5   0x00412320 NONE FUNC user32.dll   PeekMessageA
-6   0x00412324 NONE FUNC user32.dll   GetWindowThreadProcessId
-7   0x00412328 NONE FUNC user32.dll   GetKeyboardState
-8   0x0041232c NONE FUNC user32.dll   FindWindowA
-9   0x00412330 NONE FUNC user32.dll   DispatchMessageA
-10  0x00412334 NONE FUNC user32.dll   CharLowerA
-11  0x00412338 NONE FUNC user32.dll   CharUpperA
-1   0x00412340 NONE FUNC ole32.dll    OleInitialize
-2   0x00412344 NONE FUNC ole32.dll    CoCreateInstance
-1   0x0041234c NONE FUNC ole32.dll    CoTaskMemFree
-1   0x00412354 NONE FUNC pstorec.dll  PStoreCreateInstance
-1   0x0041235c NONE FUNC ole32.dll    StringFromCLSID
-1   0x00412364 NONE FUNC rasapi32.dll RasGetEntryDialParamsA
-2   0x00412368 NONE FUNC rasapi32.dll RasEnumEntriesA
-1   0x00412370 NONE FUNC shell32.dll  SHGetSpecialFolderPathA
-1   0x00412378 NONE FUNC advapi32.dll LsaFreeMemory
-2   0x0041237c NONE FUNC advapi32.dll LsaClose
-3   0x00412380 NONE FUNC advapi32.dll LsaRetrievePrivateData
-4   0x00412384 NONE FUNC advapi32.dll LsaOpenPolicy
-5   0x00412388 NONE FUNC advapi32.dll ConvertSidToStringSidA
-1   0x00412390 NONE FUNC crypt32.dll  CryptUnprotectData
-1   0x00412398 NONE FUNC advapi32.dll CredEnumerateA
-1   0x004123a0 NONE FUNC advapi32.dll CryptDestroyHash
-2   0x004123a4 NONE FUNC advapi32.dll CryptHashData
-3   0x004123a8 NONE FUNC advapi32.dll CryptCreateHash
-4   0x004123ac NONE FUNC advapi32.dll CryptGetHashParam
-5   0x004123b0 NONE FUNC advapi32.dll CryptReleaseContext
-6   0x004123b4 NONE FUNC advapi32.dll CryptAcquireContextA
+  1 0x0041217c NONE FUNC kernel32.dll DeleteCriticalSection
+  2 0x00412180 NONE FUNC kernel32.dll LeaveCriticalSection
+  3 0x00412184 NONE FUNC kernel32.dll EnterCriticalSection
+  4 0x00412188 NONE FUNC kernel32.dll InitializeCriticalSection
+  5 0x0041218c NONE FUNC kernel32.dll VirtualFree
+  6 0x00412190 NONE FUNC kernel32.dll VirtualAlloc
+  7 0x00412194 NONE FUNC kernel32.dll LocalFree
+  8 0x00412198 NONE FUNC kernel32.dll LocalAlloc
+  9 0x0041219c NONE FUNC kernel32.dll GetVersion
+ 10 0x004121a0 NONE FUNC kernel32.dll GetCurrentThreadId
+ 11 0x004121a4 NONE FUNC kernel32.dll WideCharToMultiByte
+ 12 0x004121a8 NONE FUNC kernel32.dll MultiByteToWideChar
+ 13 0x004121ac NONE FUNC kernel32.dll GetThreadLocale
+ 14 0x004121b0 NONE FUNC kernel32.dll GetStartupInfoA
+ 15 0x004121b4 NONE FUNC kernel32.dll GetModuleFileNameA
+ 16 0x004121b8 NONE FUNC kernel32.dll GetLocaleInfoA
+ 17 0x004121bc NONE FUNC kernel32.dll GetCommandLineA
+ 18 0x004121c0 NONE FUNC kernel32.dll FreeLibrary
+ 19 0x004121c4 NONE FUNC kernel32.dll ExitProcess
+ 20 0x004121c8 NONE FUNC kernel32.dll WriteFile
+ 21 0x004121cc NONE FUNC kernel32.dll UnhandledExceptionFilter
+ 22 0x004121d0 NONE FUNC kernel32.dll RtlUnwind
+ 23 0x004121d4 NONE FUNC kernel32.dll RaiseException
+ 24 0x004121d8 NONE FUNC kernel32.dll GetStdHandle
+  1 0x004121e0 NONE FUNC user32.dll   GetKeyboardType
+  2 0x004121e4 NONE FUNC user32.dll   MessageBoxA
+  3 0x004121e8 NONE FUNC user32.dll   CharNextA
+  1 0x004121f0 NONE FUNC advapi32.dll RegQueryValueExA
+  2 0x004121f4 NONE FUNC advapi32.dll RegOpenKeyExA
+  3 0x004121f8 NONE FUNC advapi32.dll RegCloseKey
+  1 0x00412200 NONE FUNC oleaut32.dll SysFreeString
+  2 0x00412204 NONE FUNC oleaut32.dll SysReAllocStringLen
+  3 0x00412208 NONE FUNC oleaut32.dll SysAllocStringLen
+  1 0x00412210 NONE FUNC kernel32.dll TlsSetValue
+  2 0x00412214 NONE FUNC kernel32.dll TlsGetValue
+  3 0x00412198 NONE FUNC kernel32.dll LocalAlloc
+  4 0x0041221c NONE FUNC kernel32.dll GetModuleHandleA
+  1 0x00412224 NONE FUNC advapi32.dll RegSetValueExA
+  2 0x004121f0 NONE FUNC advapi32.dll RegQueryValueExA
+  3 0x004121f4 NONE FUNC advapi32.dll RegOpenKeyExA
+  4 0x00412230 NONE FUNC advapi32.dll RegEnumValueA
+  5 0x00412234 NONE FUNC advapi32.dll RegDeleteKeyA
+  6 0x00412238 NONE FUNC advapi32.dll RegCreateKeyExA
+  7 0x0041223c NONE FUNC advapi32.dll RegCreateKeyA
+  8 0x004121f8 NONE FUNC advapi32.dll RegCloseKey
+  9 0x00412244 NONE FUNC advapi32.dll OpenProcessToken
+ 10 0x00412248 NONE FUNC advapi32.dll LookupAccountNameA
+ 11 0x0041224c NONE FUNC advapi32.dll IsValidSid
+ 12 0x00412250 NONE FUNC advapi32.dll GetUserNameA
+  1 0x00412258 NONE FUNC kernel32.dll lstrlenA
+  2 0x0041225c NONE FUNC kernel32.dll lstrcmpiA
+  3 0x00412260 NONE FUNC kernel32.dll WriteProcessMemory
+  4 0x004121c8 NONE FUNC kernel32.dll WriteFile
+  5 0x00412268 NONE FUNC kernel32.dll WaitForSingleObject
+  6 0x0041226c NONE FUNC kernel32.dll VirtualProtect
+  7 0x0041218c NONE FUNC kernel32.dll VirtualFree
+  8 0x00412274 NONE FUNC kernel32.dll VirtualAllocEx
+  9 0x00412190 NONE FUNC kernel32.dll VirtualAlloc
+ 10 0x0041227c NONE FUNC kernel32.dll Sleep
+ 11 0x00412280 NONE FUNC kernel32.dll SizeofResource
+ 12 0x00412284 NONE FUNC kernel32.dll SetFilePointer
+ 13 0x00412288 NONE FUNC kernel32.dll SetFileAttributesA
+ 14 0x0041228c NONE FUNC kernel32.dll ReadProcessMemory
+ 15 0x00412290 NONE FUNC kernel32.dll ReadFile
+ 16 0x00412294 NONE FUNC kernel32.dll OpenProcess
+ 17 0x00412298 NONE FUNC kernel32.dll LockResource
+ 18 0x0041229c NONE FUNC kernel32.dll LoadResource
+ 19 0x004122a0 NONE FUNC kernel32.dll LoadLibraryA
+ 20 0x004122a4 NONE FUNC kernel32.dll GlobalFree
+ 21 0x004122a8 NONE FUNC kernel32.dll GetVersionExA
+ 22 0x004122ac NONE FUNC kernel32.dll GetTickCount
+ 23 0x004122b0 NONE FUNC kernel32.dll GetProcAddress
+ 24 0x004122b4 NONE FUNC kernel32.dll GetPrivateProfileStringA
+ 25 0x004122b8 NONE FUNC kernel32.dll GetPrivateProfileIntA
+ 26 0x0041221c NONE FUNC kernel32.dll GetModuleHandleA
+ 27 0x004122c0 NONE FUNC kernel32.dll GetLastError
+ 28 0x004122c4 NONE FUNC kernel32.dll GetFileSize
+ 29 0x004122c8 NONE FUNC kernel32.dll GetFileAttributesA
+ 30 0x004122cc NONE FUNC kernel32.dll GetExitCodeThread
+ 31 0x004122d0 NONE FUNC kernel32.dll GetCurrentProcess
+ 32 0x004122d4 NONE FUNC kernel32.dll FreeResource
+ 33 0x004121c0 NONE FUNC kernel32.dll FreeLibrary
+ 34 0x004122dc NONE FUNC kernel32.dll FindResourceA
+ 35 0x004122e0 NONE FUNC kernel32.dll FindFirstFileA
+ 36 0x004122e4 NONE FUNC kernel32.dll FindClose
+ 37 0x004121c4 NONE FUNC kernel32.dll ExitProcess
+ 38 0x004122ec NONE FUNC kernel32.dll DeleteFileA
+ 39 0x004122f0 NONE FUNC kernel32.dll CreateRemoteThread
+ 40 0x004122f4 NONE FUNC kernel32.dll CreateProcessA
+ 41 0x004122f8 NONE FUNC kernel32.dll CreateMutexA
+ 42 0x004122fc NONE FUNC kernel32.dll CreateFileA
+ 43 0x00412300 NONE FUNC kernel32.dll CreateDirectoryA
+ 44 0x00412304 NONE FUNC kernel32.dll CopyFileA
+ 45 0x00412308 NONE FUNC kernel32.dll CloseHandle
+  1 0x00412310 NONE FUNC user32.dll   wvsprintfA
+  2 0x00412314 NONE FUNC user32.dll   TranslateMessage
+  3 0x00412318 NONE FUNC user32.dll   ToAscii
+  4 0x0041231c NONE FUNC user32.dll   SetWindowsHookExA
+  5 0x00412320 NONE FUNC user32.dll   PeekMessageA
+  6 0x00412324 NONE FUNC user32.dll   GetWindowThreadProcessId
+  7 0x00412328 NONE FUNC user32.dll   GetKeyboardState
+  8 0x0041232c NONE FUNC user32.dll   FindWindowA
+  9 0x00412330 NONE FUNC user32.dll   DispatchMessageA
+ 10 0x00412334 NONE FUNC user32.dll   CharLowerA
+ 11 0x00412338 NONE FUNC user32.dll   CharUpperA
+  1 0x00412340 NONE FUNC ole32.dll    OleInitialize
+  2 0x00412344 NONE FUNC ole32.dll    CoCreateInstance
+  1 0x0041234c NONE FUNC ole32.dll    CoTaskMemFree
+  1 0x00412354 NONE FUNC pstorec.dll  PStoreCreateInstance
+  1 0x0041235c NONE FUNC ole32.dll    StringFromCLSID
+  1 0x00412364 NONE FUNC rasapi32.dll RasGetEntryDialParamsA
+  2 0x00412368 NONE FUNC rasapi32.dll RasEnumEntriesA
+  1 0x00412370 NONE FUNC shell32.dll  SHGetSpecialFolderPathA
+  1 0x00412378 NONE FUNC advapi32.dll LsaFreeMemory
+  2 0x0041237c NONE FUNC advapi32.dll LsaClose
+  3 0x00412380 NONE FUNC advapi32.dll LsaRetrievePrivateData
+  4 0x00412384 NONE FUNC advapi32.dll LsaOpenPolicy
+  5 0x00412388 NONE FUNC advapi32.dll ConvertSidToStringSidA
+  1 0x00412390 NONE FUNC crypt32.dll  CryptUnprotectData
+  1 0x00412398 NONE FUNC advapi32.dll CredEnumerateA
+  1 0x004123a0 NONE FUNC advapi32.dll CryptDestroyHash
+  2 0x004123a4 NONE FUNC advapi32.dll CryptHashData
+  3 0x004123a8 NONE FUNC advapi32.dll CryptCreateHash
+  4 0x004123ac NONE FUNC advapi32.dll CryptGetHashParam
+  5 0x004123b0 NONE FUNC advapi32.dll CryptReleaseContext
+  6 0x004123b4 NONE FUNC advapi32.dll CryptAcquireContextA
 EOF
 RUN
 
@@ -1596,23 +1596,23 @@ NAME=pe sections
 FILE=bins/pe/hello_world_not_stripped.exe
 CMDS=iS
 EXPECT=<<EOF
-paddr      size    vaddr      vsize   align perm name           type flags                                             
+     paddr    size      vaddr   vsize align perm name           type flags                                             
 -----------------------------------------------------------------------------------------------------------------------
-0x00000400 0x1800  0x00401000 0x2000  0x0   -r-x .text               CNT_CODE,CNT_INITIALIZED_DATA,ALIGN_16BYTES
-0x00001c00 0x200   0x00403000 0x1000  0x0   -rw- .data               CNT_INITIALIZED_DATA,ALIGN_4BYTES
-0x00001e00 0x600   0x00404000 0x1000  0x0   -r-- .rdata              CNT_INITIALIZED_DATA,ALIGN_4BYTES
-0x00000000 0x0     0x00405000 0x1000  0x0   -rw- .bss                CNT_UNINITIALIZED_DATA,ALIGN_32BYTES
-0x00002400 0x600   0x00406000 0x1000  0x0   -rw- .idata              CNT_INITIALIZED_DATA,ALIGN_4BYTES
-0x00002a00 0x200   0x00407000 0x1000  0x0   -rw- .CRT                CNT_INITIALIZED_DATA,ALIGN_4BYTES
-0x00002c00 0x200   0x00408000 0x1000  0x0   -rw- .tls                CNT_INITIALIZED_DATA,ALIGN_4BYTES
-0x00002e00 0x400   0x00409000 0x1000  0x0   -r-- .debug_aranges      CNT_INITIALIZED_DATA,ALIGN_8BYTES,MEM_DISCARDABLE
+0x00000400  0x1800 0x00401000  0x2000 0x0   -r-x .text               CNT_CODE,CNT_INITIALIZED_DATA,ALIGN_16BYTES
+0x00001c00   0x200 0x00403000  0x1000 0x0   -rw- .data               CNT_INITIALIZED_DATA,ALIGN_4BYTES
+0x00001e00   0x600 0x00404000  0x1000 0x0   -r-- .rdata              CNT_INITIALIZED_DATA,ALIGN_4BYTES
+0x00000000     0x0 0x00405000  0x1000 0x0   -rw- .bss                CNT_UNINITIALIZED_DATA,ALIGN_32BYTES
+0x00002400   0x600 0x00406000  0x1000 0x0   -rw- .idata              CNT_INITIALIZED_DATA,ALIGN_4BYTES
+0x00002a00   0x200 0x00407000  0x1000 0x0   -rw- .CRT                CNT_INITIALIZED_DATA,ALIGN_4BYTES
+0x00002c00   0x200 0x00408000  0x1000 0x0   -rw- .tls                CNT_INITIALIZED_DATA,ALIGN_4BYTES
+0x00002e00   0x400 0x00409000  0x1000 0x0   -r-- .debug_aranges      CNT_INITIALIZED_DATA,ALIGN_8BYTES,MEM_DISCARDABLE
 0x00003200 0x4ba00 0x0040a000 0x4c000 0x0   -r-- .debug_info         CNT_INITIALIZED_DATA,ALIGN_1BYTES,MEM_DISCARDABLE
-0x0004ec00 0x2a00  0x00456000 0x3000  0x0   -r-- .debug_abbrev       CNT_INITIALIZED_DATA,ALIGN_1BYTES,MEM_DISCARDABLE
-0x00051600 0x3600  0x00459000 0x4000  0x0   -r-- .debug_line         CNT_INITIALIZED_DATA,ALIGN_1BYTES,MEM_DISCARDABLE
-0x00054c00 0x800   0x0045d000 0x1000  0x0   -r-- .debug_frame        CNT_INITIALIZED_DATA,ALIGN_4BYTES,MEM_DISCARDABLE
-0x00055400 0x800   0x0045e000 0x1000  0x0   -r-- .debug_str          CNT_INITIALIZED_DATA,ALIGN_1BYTES,MEM_DISCARDABLE
-0x00055c00 0x1400  0x0045f000 0x2000  0x0   -r-- .debug_loc          CNT_INITIALIZED_DATA,ALIGN_1BYTES,MEM_DISCARDABLE
-0x00057000 0x400   0x00461000 0x1000  0x0   -r-- .debug_ranges       CNT_INITIALIZED_DATA,ALIGN_1BYTES,MEM_DISCARDABLE
+0x0004ec00  0x2a00 0x00456000  0x3000 0x0   -r-- .debug_abbrev       CNT_INITIALIZED_DATA,ALIGN_1BYTES,MEM_DISCARDABLE
+0x00051600  0x3600 0x00459000  0x4000 0x0   -r-- .debug_line         CNT_INITIALIZED_DATA,ALIGN_1BYTES,MEM_DISCARDABLE
+0x00054c00   0x800 0x0045d000  0x1000 0x0   -r-- .debug_frame        CNT_INITIALIZED_DATA,ALIGN_4BYTES,MEM_DISCARDABLE
+0x00055400   0x800 0x0045e000  0x1000 0x0   -r-- .debug_str          CNT_INITIALIZED_DATA,ALIGN_1BYTES,MEM_DISCARDABLE
+0x00055c00  0x1400 0x0045f000  0x2000 0x0   -r-- .debug_loc          CNT_INITIALIZED_DATA,ALIGN_1BYTES,MEM_DISCARDABLE
+0x00057000   0x400 0x00461000  0x1000 0x0   -r-- .debug_ranges       CNT_INITIALIZED_DATA,ALIGN_1BYTES,MEM_DISCARDABLE
 EOF
 RUN
 

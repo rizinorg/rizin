@@ -2,12 +2,12 @@ NAME=NE Symbols
 FILE=bins/ne/anim8.exe
 CMDS=is
 EXPECT=<<EOF
-nth paddr      vaddr      bind   type size lib name       
+nth      paddr      vaddr bind   type size lib name       
 ----------------------------------------------------------
-0   0x00000a00 0x00000a00 NONE   NONE 0        ANIM8
-1   0x00000d8e 0x00000d8e GLOBAL NONE 0        WNDPROC
-2   0x00002b5a 0x00002b5a GLOBAL NONE 0        DIAL_ABOUT
-0   0x00000a00 0x00000a00 NONE   NONE 0        ANIM8
+  0 0x00000a00 0x00000a00 NONE   NONE    0     ANIM8
+  1 0x00000d8e 0x00000d8e GLOBAL NONE    0     WNDPROC
+  2 0x00002b5a 0x00002b5a GLOBAL NONE    0     DIAL_ABOUT
+  0 0x00000a00 0x00000a00 NONE   NONE    0     ANIM8
 EOF
 RUN
 
@@ -15,7 +15,7 @@ NAME=NE Segments
 FILE=bins/ne/anim8.exe
 CMDS=iSS
 EXPECT=<<EOF
-paddr      size   vaddr      vsize  align perm name           
+     paddr   size      vaddr  vsize align perm name           
 --------------------------------------------------------------
 0x00000a00 0x54ee 0x00000a00 0x54ee 0x0   ---x MOVEABLE.2560
 0x00007600 0x3ec4 0x00007600 0x3ec4 0x0   -rwx MOVEABLE.30208
@@ -26,12 +26,12 @@ NAME=NE Module imports
 FILE=bins/ne/anim8.exe
 CMDS=ii
 EXPECT=<<EOF
-nth vaddr      bind type lib name    
+nth      vaddr bind type lib name    
 -------------------------------------
-1   ---------- NONE NONE     KERNEL
-2   ---------- NONE NONE     USER
-3   ---------- NONE NONE     GDI
-4   ---------- NONE NONE     WIN87EM
+  1 ---------- NONE NONE     KERNEL
+  2 ---------- NONE NONE     USER
+  3 ---------- NONE NONE     GDI
+  4 ---------- NONE NONE     WIN87EM
 EOF
 RUN
 
@@ -59,7 +59,7 @@ EXPECT=<<EOF
 0x000056a0 0x000056a0 OFF_16_OSFIXUP      WIN87EM.0
 0x000056b3 0x000056b3 OFF_16_OSFIXUP      WIN87EM.0
 0x00005891 0x00005891 OFF_16_OSFIXUP      WIN87EM.0
-vaddr      paddr      type                name                             
+     vaddr      paddr type                name                             
 ---------------------------------------------------------------------------
 0x00000a01 0x00000a01 POI_32_IMPORTED_ORD KERNEL.INITTASK
 0x00000a25 0x00000a25 POI_32_IMPORTED_ORD KERNEL.LOCKSEGMENT
@@ -92,7 +92,7 @@ NAME=Chips Challenge relocs
 FILE=bins/ne/CHIPS.EXE
 CMDS=ir
 EXPECT=<<EOF
-vaddr      paddr      type                name                             
+     vaddr      paddr type                name                             
 ---------------------------------------------------------------------------
 0x00000a10 0x00000a10 OFF_16_IMPORTED_ORD KERNEL.__WINFLAGS
 0x00000a18 0x00000a18 SEL_16_INTERNAL_REF INFOWNDPROC - 0x00000001

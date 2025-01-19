@@ -12,13 +12,13 @@ endian   LE
 os       Linux
 subsys   uClinux
 PIE      true
-paddr      size   vaddr      vsize  align perm name   type flags 
+     paddr   size      vaddr  vsize align perm name   type flags 
 -----------------------------------------------------------------
-0x00000000 0x40   0x00000000 0x40   0x0   -rwx header      
+0x00000000   0x40 0x00000000   0x40 0x0   -rwx header      
 0x00000040 0x2dfc 0x00000040 0x2dfc 0x0   -rwx text        
-0x00002e3c 0x188  0x00002e40 0x188  0x0   -rwx data        
-0x00002fc4 0x0    0x00002fc8 0x202c 0x0   -rwx bss         
-paddr      size   vaddr      vsize  align perm name 
+0x00002e3c  0x188 0x00002e40  0x188 0x0   -rwx data        
+0x00002fc4    0x0 0x00002fc8 0x202c 0x0   -rwx bss         
+     paddr   size      vaddr  vsize align perm name 
 ----------------------------------------------------
 0x00000000 0x2e3c 0x00000000 0x2e3c 0x0   -rwx TEXT
 0x00002e3c 0x2e3c 0x00002e40 0x21b4 0x0   -rwx DATA
@@ -41,7 +41,7 @@ pv4 @ 0x2fb8 # data -> data reloc
 pi 1 @ 0x0000016c
 EOF
 EXPECT=<<EOF
-vaddr      paddr      target     type   name 
+     vaddr      paddr     target type   name 
 ---------------------------------------------
 0x00000074 0x00000074 0x00002e0c SET_32 
 0x00000078 0x00000078 0x00000150 SET_32 
@@ -162,20 +162,20 @@ pv4 @ 0x6908000+0x2fb8 # data -> data reloc
 pi 1 @ 0x6908000+0x0000016c
 EOF
 EXPECT=<<EOF
-paddr      size   vaddr      vsize  align perm name   type flags 
+     paddr   size      vaddr  vsize align perm name   type flags 
 -----------------------------------------------------------------
-0x00000000 0x40   0x06908000 0x40   0x0   -rwx header      
+0x00000000   0x40 0x06908000   0x40 0x0   -rwx header      
 0x00000040 0x2dfc 0x06908040 0x2dfc 0x0   -rwx text        
-0x00002e3c 0x188  0x0690ae40 0x188  0x0   -rwx data        
-0x00002fc4 0x0    0x0690afc8 0x202c 0x0   -rwx bss         
-paddr      size   vaddr      vsize  align perm name 
+0x00002e3c  0x188 0x0690ae40  0x188 0x0   -rwx data        
+0x00002fc4    0x0 0x0690afc8 0x202c 0x0   -rwx bss         
+     paddr   size      vaddr  vsize align perm name 
 ----------------------------------------------------
 0x00000000 0x2e3c 0x06908000 0x2e3c 0x0   -rwx TEXT
 0x00002e3c 0x2e3c 0x0690ae40 0x21b4 0x0   -rwx DATA
  1 fd: 4 +0x00000000 0x06908000 * 0x0690ae3b r-x vmap.hdr+text
  2 fd: 5 +0x00000000 0x0690afc8 - 0x0690cff3 rwx mmap.data+bss
  3 fd: 4 +0x00002e3c 0x0690ae40 - 0x0690afc7 r-x vmap.data+bss
-vaddr      paddr      target     type   name 
+     vaddr      paddr     target type   name 
 ---------------------------------------------
 0x06908074 0x00000074 0x0690ae0c SET_32 
 0x06908078 0x00000078 0x06908150 SET_32 
@@ -293,7 +293,7 @@ pv4 @ 0x2fb8 # data -> data reloc
 pi 1 @ 0x0000016c
 EOF
 EXPECT=<<EOF
-vaddr      paddr      target     type   name 
+     vaddr      paddr     target type   name 
 ---------------------------------------------
 0x00000074 0x00000074 0x00002e0c SET_32 
 0x00000078 0x00000078 0x00000150 SET_32 
@@ -414,20 +414,20 @@ pv4 @ 0x6908000+0x2fb8 # data -> data reloc
 pi 1 @ 0x6908000+0x0000016c
 EOF
 EXPECT=<<EOF
-paddr      size   vaddr      vsize  align perm name   type flags 
+     paddr   size      vaddr  vsize align perm name   type flags 
 -----------------------------------------------------------------
-0x00000000 0x40   0x06908000 0x40   0x0   -rwx header      
+0x00000000   0x40 0x06908000   0x40 0x0   -rwx header      
 0x00000040 0x2dfc 0x06908040 0x2dfc 0x0   -rwx text        
-0x00002e3c 0x188  0x0690ae40 0x188  0x0   -rwx data        
-0x00002fc4 0x0    0x0690afc8 0x202c 0x0   -rwx bss         
-paddr      size   vaddr      vsize  align perm name 
+0x00002e3c  0x188 0x0690ae40  0x188 0x0   -rwx data        
+0x00002fc4    0x0 0x0690afc8 0x202c 0x0   -rwx bss         
+     paddr   size      vaddr  vsize align perm name 
 ----------------------------------------------------
 0x00000000 0x2e3c 0x06908000 0x2e3c 0x0   -rwx TEXT
 0x00002e3c 0x2e3c 0x0690ae40 0x21b4 0x0   -rwx DATA
  1 fd: 4 +0x00000000 0x06908000 * 0x0690ae3b r-x vmap.hdr+text
  2 fd: 5 +0x00000000 0x0690afc8 - 0x0690cff3 rwx mmap.data+bss
  3 fd: 4 +0x00002e3c 0x0690ae40 - 0x0690afc7 r-x vmap.data+bss
-vaddr      paddr      target     type   name 
+     vaddr      paddr     target type   name 
 ---------------------------------------------
 0x06908074 0x00000074 0x0690ae0c SET_32 
 0x06908078 0x00000078 0x06908150 SET_32 
@@ -583,7 +583,7 @@ os       Linux
 subsys   uClinux
 PIE      true
 ------ got relocs (begin)
-vaddr      paddr      target     type   name 
+     vaddr      paddr     target type   name 
 ---------------------------------------------
 0x41e6a8a0 0x0002a88c 0x00000000 SET_32 
 0x41e6a8a4 0x0002a890 0x00000000 SET_32 

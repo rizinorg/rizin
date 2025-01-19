@@ -21,7 +21,7 @@ EXPECT=<<EOF
 arch     x86
 type     Kernel extension bundle file
 bintype  mach0
-vaddr      paddr      target     type    name                                                                                                                              
+     vaddr      paddr     target type    name                                                                                                                              
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 0x00000aac 0x00000aac 0x0000d008 UNKNOWN OSMetaClass::~OSMetaClass()
 0x00000ae3 0x00000ae3 0x0000d010 UNKNOWN IOService::IOService(OSMetaClass const*)
@@ -370,7 +370,7 @@ EXPECT=<<EOF
 arch     x86
 type     Kernel extension bundle file
 bintype  mach0
-vaddr      paddr      target     type    name                                                                                                                              
+     vaddr      paddr     target type    name                                                                                                                              
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 0x00000aac 0x00000aac 0x0000d008 UNKNOWN OSMetaClass::~OSMetaClass()
 0x00000ae3 0x00000ae3 0x0000d010 UNKNOWN IOService::IOService(OSMetaClass const*)
@@ -715,7 +715,7 @@ EXPECT=<<EOF
 arch     arm
 type     Kernel extension bundle file
 bintype  mach0
-vaddr      paddr      target     type    name                                                                                                                              
+     vaddr      paddr     target type    name                                                                                                                              
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 0x000080b4 0x000080b4 0x0001c008 UNKNOWN _start
 0x000080bc 0x000080bc 0x0001c010 UNKNOWN _stop
@@ -1059,7 +1059,7 @@ EXPECT=<<EOF
 arch     arm
 type     Kernel extension bundle file
 bintype  mach0
-vaddr      paddr      target     type    name                                                                                                                              
+     vaddr      paddr     target type    name                                                                                                                              
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 0x000080b4 0x000080b4 0x0001c008 UNKNOWN _start
 0x000080bc 0x000080bc 0x0001c010 UNKNOWN _stop
@@ -1398,7 +1398,7 @@ EXPECT=<<EOF
 arch     arm
 type     Kernel extension bundle file
 bintype  mach0
-vaddr      paddr      type   name 
+     vaddr      paddr type   name 
 ----------------------------------
 0x000080b4 0x000080b4 SET_64 
 0x000080bc 0x000080bc SET_64 
@@ -1433,7 +1433,7 @@ EXPECT=<<EOF
 arch     arm
 type     Executable file
 bintype  mach0
-vaddr      paddr      target     type    name                             
+     vaddr      paddr     target type    name                             
 --------------------------------------------------------------------------
 0x00000000 0x00000000 0x00000000 SET_32  NSAutoreleasePool
 0x00003020 0x00002020 0x00000000 SET_32  exit

@@ -8,12 +8,12 @@ af
 pdsf
 EOF
 EXPECT=<<EOF
-nth vaddr      bind   type   lib name              
+nth      vaddr bind   type   lib name              
 ---------------------------------------------------
-1   ---------- GLOBAL FUNC       printf
-2   ---------- WEAK   NOTYPE     __gmon_start__
-3   ---------- GLOBAL FUNC       __libc_start_main
-vaddr      paddr      type           name              
+  1 ---------- GLOBAL FUNC       printf
+  2 ---------- WEAK   NOTYPE     __gmon_start__
+  3 ---------- GLOBAL FUNC       __libc_start_main
+     vaddr      paddr type           name              
 -------------------------------------------------------
 0x10020008 0x00010008 R_PPC_GLOB_DAT __gmon_start__
 0x10020064 0x10020064 R_PPC_JMP_SLOT printf

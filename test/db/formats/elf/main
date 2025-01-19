@@ -114,7 +114,7 @@ EXPECT=<<EOF
 0x8370
 0x00008370
 [Main]
-vaddr      paddr      
+     vaddr      paddr 
 ----------------------
 0x00008370 0x00000370
 
@@ -133,7 +133,7 @@ EXPECT=<<EOF
 0x82ec
 0x000082ec
 [Main]
-vaddr      paddr      
+     vaddr      paddr 
 ----------------------
 0x000082ec 0x000002ec
 
@@ -152,7 +152,7 @@ EXPECT=<<EOF
 0x10310
 0x00010310
 [Main]
-vaddr      paddr      
+     vaddr      paddr 
 ----------------------
 0x00010310 0x00000310
 

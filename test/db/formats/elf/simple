@@ -86,8 +86,8 @@ NAME=ELF: phdr override 2
 FILE=bins/elf/busybox-phdr-shdr
 CMDS=ii~OBJ
 EXPECT=<<EOF
-7   ---------- GLOBAL OBJ      __environ
-43  ---------- GLOBAL OBJ      __ctype_tolower
+  7 ---------- GLOBAL OBJ      __environ
+ 43 ---------- GLOBAL OBJ      __ctype_tolower
 145 ---------- GLOBAL OBJ      __stdout
 189 ---------- GLOBAL OBJ      stderr
 409 ---------- GLOBAL OBJ      stdin
@@ -108,12 +108,12 @@ is~getpid
 fl~getpid
 EOF
 EXPECT=<<EOF
-581  0x000c9420 0x000c9420 WEAK   FUNC   12        getpid
-965  0x000c9420 0x000c9420 GLOBAL FUNC   12        __getpid
-3577 0x000c9420 0x000c9420 LOCAL  FUNC   12        __GI___getpid
-3807 0x000c9420 0x000c9420 LOCAL  FUNC   12        __GI_getpid
-6267 0x000c9420 0x000c9420 WEAK   FUNC   12        getpid
-8102 0x000c9420 0x000c9420 GLOBAL FUNC   12        __getpid
+ 581 0x000c9420 0x000c9420 WEAK   FUNC      12     getpid
+ 965 0x000c9420 0x000c9420 GLOBAL FUNC      12     __getpid
+3577 0x000c9420 0x000c9420 LOCAL  FUNC      12     __GI___getpid
+3807 0x000c9420 0x000c9420 LOCAL  FUNC      12     __GI_getpid
+6267 0x000c9420 0x000c9420 WEAK   FUNC      12     getpid
+8102 0x000c9420 0x000c9420 GLOBAL FUNC      12     __getpid
 0x000c9420 12 sym.getpid
 0x000c9420 12 sym.__getpid
 0x000c9420 12 sym.__GI___getpid

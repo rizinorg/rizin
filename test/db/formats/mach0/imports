@@ -8,21 +8,21 @@ pD 0x10 @ section.15.__DATA.__objc_classrefs
 ic
 EOF
 EXPECT=<<EOF
-nth vaddr       bind type           lib name                     
+nth       vaddr bind type           lib name                     
 -----------------------------------------------------------------
-0   ----------  NONE OBJC_CLASS         NSObject
-1   ----------  NONE OBJC_CLASS         NSString
-2   ----------  NONE OBJC_METACLASS     NSObject
-3   ----------  NONE FUNC               _objc_empty_cache
-4   0x100003ee8 NONE FUNC               objc_alloc
-5   0x100003ef4 NONE FUNC               objc_alloc_init
-6   0x100003f00 NONE FUNC               objc_autoreleasePoolPop
-7   0x100003f0c NONE FUNC               objc_autoreleasePoolPush
-8   ----------  NONE FUNC               objc_msgSend
-9   ----------  NONE FUNC               dyld_stub_binder
-vaddr       paddr      type   name                     
+  0  ---------- NONE OBJC_CLASS         NSObject
+  1  ---------- NONE OBJC_CLASS         NSString
+  2  ---------- NONE OBJC_METACLASS     NSObject
+  3  ---------- NONE FUNC               _objc_empty_cache
+  4 0x100003ee8 NONE FUNC               objc_alloc
+  5 0x100003ef4 NONE FUNC               objc_alloc_init
+  6 0x100003f00 NONE FUNC               objc_autoreleasePoolPop
+  7 0x100003f0c NONE FUNC               objc_autoreleasePoolPush
+  8  ---------- NONE FUNC               objc_msgSend
+  9  ---------- NONE FUNC               dyld_stub_binder
+      vaddr      paddr type   name                     
 -------------------------------------------------------
-0x00000000  0x00000000 SET_64 NSObject
+ 0x00000000 0x00000000 SET_64 NSObject
 0x100004000 0x00004000 SET_64 objc_msgSend
 0x100004008 0x00004008 SET_64 dyld_stub_binder
 0x100004010 0x00004010 SET_64 objc_alloc
@@ -46,7 +46,7 @@ vaddr       paddr      type   name
             0x1000080e4      udf   1
             ;-- NSString:
             0x1000080e8      .qword 0x0000000000000000                 ; RELOC 64 NSString
-address     min         max         name super    
+    address         min         max name super    
 --------------------------------------------------
 0x1000080f8 0x1000080f8 0x1000080f8 Stub NSObject
 EOF
@@ -62,49 +62,49 @@ pD 0x10 @ section.13.__DATA.__objc_classrefs
 ic
 EOF
 EXPECT=<<EOF
-nth vaddr       bind type           lib name                     
+nth       vaddr bind type           lib name                     
 -----------------------------------------------------------------
-0   0x100003f30 NONE FUNC               objc_alloc
-1   0x100003f3c NONE FUNC               objc_alloc_init
-2   0x100003f48 NONE FUNC               objc_autoreleasePoolPop
-3   0x100003f54 NONE FUNC               objc_autoreleasePoolPush
-4   ----------  NONE FUNC               objc_msgSend
-5   ----------  NONE OBJC_CLASS         NSString
-6   ----------  NONE FUNC               _objc_empty_cache
-7   ----------  NONE OBJC_METACLASS     NSObject
-8   ----------  NONE OBJC_CLASS         NSObject
-vaddr       paddr      target      type   name                     
+  0 0x100003f30 NONE FUNC               objc_alloc
+  1 0x100003f3c NONE FUNC               objc_alloc_init
+  2 0x100003f48 NONE FUNC               objc_autoreleasePoolPop
+  3 0x100003f54 NONE FUNC               objc_autoreleasePoolPush
+  4  ---------- NONE FUNC               objc_msgSend
+  5  ---------- NONE OBJC_CLASS         NSString
+  6  ---------- NONE FUNC               _objc_empty_cache
+  7  ---------- NONE OBJC_METACLASS     NSObject
+  8  ---------- NONE OBJC_CLASS         NSObject
+      vaddr      paddr      target type   name                     
 -------------------------------------------------------------------
 0x100004000 0x00004000 0x100010008 SET_64 objc_alloc
 0x100004008 0x00004008 0x100010010 SET_64 objc_alloc_init
 0x100004010 0x00004010 0x100010018 SET_64 objc_autoreleasePoolPop
 0x100004018 0x00004018 0x100010020 SET_64 objc_autoreleasePoolPush
 0x100004020 0x00004020 0x100010028 SET_64 objc_msgSend
-0x100004028 0x00004028 0x00000000  SET_64 
-0x100008018 0x00008018 0x00000000  SET_64 
-0x100008050 0x00008050 0x00000000  SET_64 
-0x100008058 0x00008058 0x00000000  SET_64 
-0x100008060 0x00008060 0x00000000  SET_64 
-0x100008088 0x00008088 0x00000000  SET_64 
-0x1000080a0 0x000080a0 0x00000000  SET_64 
-0x1000080b8 0x000080b8 0x00000000  SET_64 
-0x1000080c0 0x000080c0 0x00000000  SET_64 
+0x100004028 0x00004028  0x00000000 SET_64 
+0x100008018 0x00008018  0x00000000 SET_64 
+0x100008050 0x00008050  0x00000000 SET_64 
+0x100008058 0x00008058  0x00000000 SET_64 
+0x100008060 0x00008060  0x00000000 SET_64 
+0x100008088 0x00008088  0x00000000 SET_64 
+0x1000080a0 0x000080a0  0x00000000 SET_64 
+0x1000080b8 0x000080b8  0x00000000 SET_64 
+0x1000080c0 0x000080c0  0x00000000 SET_64 
 0x1000080c8 0x000080c8 0x100010030 SET_64 NSString
 0x1000080d8 0x000080d8 0x100010038 SET_64 NSObject
 0x1000080e0 0x000080e0 0x100010038 SET_64 NSObject
 0x1000080e8 0x000080e8 0x100010040 SET_64 _objc_empty_cache
-0x1000080f8 0x000080f8 0x00000000  SET_64 
-0x100008100 0x00008100 0x00000000  SET_64 
+0x1000080f8 0x000080f8  0x00000000 SET_64 
+0x100008100 0x00008100  0x00000000 SET_64 
 0x100008108 0x00008108 0x100010048 SET_64 NSObject
 0x100008110 0x00008110 0x100010040 SET_64 _objc_empty_cache
-0x100008120 0x00008120 0x00000000  SET_64 
+0x100008120 0x00008120  0x00000000 SET_64 
 0x1000080c0 0x0000000100008100   ........ @ section.13.__DATA.__objc_classrefs 4295000320 15.__DATA.__objc_data class Stub R 0x1000080d8
 0x1000080c8 0x0000000100010030   0....... @ reloc.NSString 4295032880 NSString R 0x0
             ;-- section.13.__DATA.__objc_classrefs:
             0x1000080c0      .qword 0x0000000100008100 ; sym.class_Stub; RELOC 64  ; [13] -rw- section size 16 named 13.__DATA.__objc_classrefs
             ;-- NSString:
             0x1000080c8      .qword 0x0000000100010030 ; reloc.target.NSString; RELOC 64 NSString
-address     min         max         name super    
+    address         min         max name super    
 --------------------------------------------------
 0x1000080d8 0x1000080d8 0x1000080d8 Stub NSObject
 EOF
@@ -121,49 +121,49 @@ pD 0x10 @ section.13.__DATA.__objc_classrefs
 ic
 EOF
 EXPECT=<<EOF
-nth vaddr       bind type           lib name                     
+nth       vaddr bind type           lib name                     
 -----------------------------------------------------------------
-0   ----------  NONE OBJC_CLASS         NSString
-1   ----------  NONE OBJC_CLASS         NSObject
-2   ----------  NONE OBJC_METACLASS     NSObject
-3   ----------  NONE FUNC               _objc_empty_cache
-4   0x100003f20 NONE FUNC               objc_alloc
-5   0x100003f30 NONE FUNC               objc_alloc_init
-6   0x100003f40 NONE FUNC               objc_autoreleasePoolPop
-7   0x100003f50 NONE FUNC               objc_autoreleasePoolPush
-8   ----------  NONE FUNC               objc_msgSend
-vaddr       paddr      target      type   name                     
+  0  ---------- NONE OBJC_CLASS         NSString
+  1  ---------- NONE OBJC_CLASS         NSObject
+  2  ---------- NONE OBJC_METACLASS     NSObject
+  3  ---------- NONE FUNC               _objc_empty_cache
+  4 0x100003f20 NONE FUNC               objc_alloc
+  5 0x100003f30 NONE FUNC               objc_alloc_init
+  6 0x100003f40 NONE FUNC               objc_autoreleasePoolPop
+  7 0x100003f50 NONE FUNC               objc_autoreleasePoolPush
+  8  ---------- NONE FUNC               objc_msgSend
+      vaddr      paddr      target type   name                     
 -------------------------------------------------------------------
 0x100004000 0x00004000 0x100010008 SET_64 objc_alloc
 0x100004008 0x00004008 0x100010010 SET_64 objc_alloc_init
 0x100004010 0x00004010 0x100010018 SET_64 objc_autoreleasePoolPop
 0x100004018 0x00004018 0x100010020 SET_64 objc_autoreleasePoolPush
 0x100004020 0x00004020 0x100010028 SET_64 objc_msgSend
-0x100004028 0x00004028 0x00000000  SET_64 
-0x100008018 0x00008018 0x00000000  SET_64 
-0x100008050 0x00008050 0x00000000  SET_64 
-0x100008058 0x00008058 0x00000000  SET_64 
-0x100008060 0x00008060 0x00000000  SET_64 
-0x100008088 0x00008088 0x00000000  SET_64 
-0x1000080a0 0x000080a0 0x00000000  SET_64 
-0x1000080b8 0x000080b8 0x00000000  SET_64 
-0x1000080c0 0x000080c0 0x00000000  SET_64 
+0x100004028 0x00004028  0x00000000 SET_64 
+0x100008018 0x00008018  0x00000000 SET_64 
+0x100008050 0x00008050  0x00000000 SET_64 
+0x100008058 0x00008058  0x00000000 SET_64 
+0x100008060 0x00008060  0x00000000 SET_64 
+0x100008088 0x00008088  0x00000000 SET_64 
+0x1000080a0 0x000080a0  0x00000000 SET_64 
+0x1000080b8 0x000080b8  0x00000000 SET_64 
+0x1000080c0 0x000080c0  0x00000000 SET_64 
 0x1000080c8 0x000080c8 0x100010030 SET_64 NSString
 0x1000080d8 0x000080d8 0x100010038 SET_64 NSObject
 0x1000080e0 0x000080e0 0x100010038 SET_64 NSObject
 0x1000080e8 0x000080e8 0x100010040 SET_64 _objc_empty_cache
-0x1000080f8 0x000080f8 0x00000000  SET_64 
-0x100008100 0x00008100 0x00000000  SET_64 
+0x1000080f8 0x000080f8  0x00000000 SET_64 
+0x100008100 0x00008100  0x00000000 SET_64 
 0x100008108 0x00008108 0x100010048 SET_64 NSObject
 0x100008110 0x00008110 0x100010040 SET_64 _objc_empty_cache
-0x100008120 0x00008120 0x00000000  SET_64 
+0x100008120 0x00008120  0x00000000 SET_64 
 0x1000080c0 0x0000000100008100   ........ @ section.13.__DATA.__objc_classrefs 4295000320 15.__DATA.__objc_data class Stub R 0x1000080d8
 0x1000080c8 0x0000000100010030   0....... @ reloc.NSString 4295032880 NSString R 0x0
             ;-- section.13.__DATA.__objc_classrefs:
             0x1000080c0      .qword 0x0000000100008100 ; sym.class_Stub; RELOC 64  ; [13] -rw- section size 16 named 13.__DATA.__objc_classrefs
             ;-- NSString:
             0x1000080c8      .qword 0x0000000100010030 ; reloc.target.NSString; RELOC 64 NSString
-address     min         max         name super    
+    address         min         max name super    
 --------------------------------------------------
 0x1000080d8 0x1000080d8 0x1000080d8 Stub NSObject
 EOF
@@ -180,49 +180,49 @@ pD 0x10 @ section.13.__DATA.__objc_classrefs
 ic
 EOF
 EXPECT=<<EOF
-nth vaddr       bind type           lib name                     
+nth       vaddr bind type           lib name                     
 -----------------------------------------------------------------
-0   0x100003f20 NONE FUNC               objc_alloc
-1   0x100003f30 NONE FUNC               objc_alloc_init
-2   0x100003f40 NONE FUNC               objc_autoreleasePoolPop
-3   0x100003f50 NONE FUNC               objc_autoreleasePoolPush
-4   ----------  NONE FUNC               objc_msgSend
-5   ----------  NONE OBJC_CLASS         NSString
-6   ----------  NONE FUNC               _objc_empty_cache
-7   ----------  NONE OBJC_METACLASS     NSObject
-8   ----------  NONE OBJC_CLASS         NSObject
-vaddr       paddr      target      type   name                     
+  0 0x100003f20 NONE FUNC               objc_alloc
+  1 0x100003f30 NONE FUNC               objc_alloc_init
+  2 0x100003f40 NONE FUNC               objc_autoreleasePoolPop
+  3 0x100003f50 NONE FUNC               objc_autoreleasePoolPush
+  4  ---------- NONE FUNC               objc_msgSend
+  5  ---------- NONE OBJC_CLASS         NSString
+  6  ---------- NONE FUNC               _objc_empty_cache
+  7  ---------- NONE OBJC_METACLASS     NSObject
+  8  ---------- NONE OBJC_CLASS         NSObject
+      vaddr      paddr      target type   name                     
 -------------------------------------------------------------------
 0x100004000 0x00004000 0x100010008 SET_64 objc_alloc
 0x100004008 0x00004008 0x100010010 SET_64 objc_alloc_init
 0x100004010 0x00004010 0x100010018 SET_64 objc_autoreleasePoolPop
 0x100004018 0x00004018 0x100010020 SET_64 objc_autoreleasePoolPush
 0x100004020 0x00004020 0x100010028 SET_64 objc_msgSend
-0x100004028 0x00004028 0x00000000  SET_64 
-0x100008018 0x00008018 0x00000000  SET_64 
-0x100008050 0x00008050 0x00000000  SET_64 
-0x100008058 0x00008058 0x00000000  SET_64 
-0x100008060 0x00008060 0x00000000  SET_64 
-0x100008088 0x00008088 0x00000000  SET_64 
-0x1000080a0 0x000080a0 0x00000000  SET_64 
-0x1000080b8 0x000080b8 0x00000000  SET_64 
-0x1000080c0 0x000080c0 0x00000000  SET_64 
+0x100004028 0x00004028  0x00000000 SET_64 
+0x100008018 0x00008018  0x00000000 SET_64 
+0x100008050 0x00008050  0x00000000 SET_64 
+0x100008058 0x00008058  0x00000000 SET_64 
+0x100008060 0x00008060  0x00000000 SET_64 
+0x100008088 0x00008088  0x00000000 SET_64 
+0x1000080a0 0x000080a0  0x00000000 SET_64 
+0x1000080b8 0x000080b8  0x00000000 SET_64 
+0x1000080c0 0x000080c0  0x00000000 SET_64 
 0x1000080c8 0x000080c8 0x100010030 SET_64 NSString
 0x1000080d8 0x000080d8 0x100010038 SET_64 NSObject
 0x1000080e0 0x000080e0 0x100010038 SET_64 NSObject
 0x1000080e8 0x000080e8 0x100010040 SET_64 _objc_empty_cache
-0x1000080f8 0x000080f8 0x00000000  SET_64 
-0x100008100 0x00008100 0x00000000  SET_64 
+0x1000080f8 0x000080f8  0x00000000 SET_64 
+0x100008100 0x00008100  0x00000000 SET_64 
 0x100008108 0x00008108 0x100010048 SET_64 NSObject
 0x100008110 0x00008110 0x100010040 SET_64 _objc_empty_cache
-0x100008120 0x00008120 0x00000000  SET_64 
+0x100008120 0x00008120  0x00000000 SET_64 
 0x1000080c0 0x0000000100008100   ........ @ section.13.__DATA.__objc_classrefs 4295000320 15.__DATA.__objc_data class Stub R 0x1000080d8
 0x1000080c8 0x0000000100010030   0....... @ reloc.NSString 4295032880 NSString R 0x0
             ;-- section.13.__DATA.__objc_classrefs:
             0x1000080c0      .qword 0x0000000100008100 ; sym.class_Stub; RELOC 64  ; [13] -rw- section size 16 named 13.__DATA.__objc_classrefs
             ;-- NSString:
             0x1000080c8      .qword 0x0000000100010030 ; reloc.target.NSString; RELOC 64 NSString
-address     min         max         name super    
+    address         min         max name super    
 --------------------------------------------------
 0x1000080d8 0x1000080d8 0x1000080d8 Stub NSObject
 EOF

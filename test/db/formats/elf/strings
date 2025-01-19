@@ -21,7 +21,7 @@ aar
 fl@F:strings
 EOF
 EXPECT=<<EOF
-0   0x000005e8 0x004005e8 11  26   .rodata utf16le Hello World
+  0 0x000005e8 0x004005e8  11   26 .rodata utf16le Hello World
 0x004005e8 26 str.Hello_World
 0x00400608 16 str.S
 |           0x0040052e      mov   qword [var_10h], str.Hello_World     ; 0x4005e8 ; u"\ufeffHello World\ufeff\n"
@@ -42,7 +42,7 @@ aar
 fl@F:strings
 EOF
 EXPECT=<<EOF
-0   0x000005e8 0x004005e8 11  52   .rodata utf32le Hello World
+  0 0x000005e8 0x004005e8  11   52 .rodata utf32le Hello World
 0x004005e8 52 str.Hello_World
 0x00400628 32 str.S
 |           0x0040052e      mov   qword [var_10h], str.Hello_World     ; 0x4005e8 ; U"\ufeffHello World\ufeff\n"
@@ -63,7 +63,7 @@ aar
 fl@F:strings
 EOF
 EXPECT=<<EOF
-0   0x000005e4 0x004005e4 12  26   .rodata utf16le Hello World\n
+  0 0x000005e4 0x004005e4  12   26 .rodata utf16le Hello World\n
 0x004005e4 26 str.Hello_World
 0x00400600 16 str.S
 |           0x0040052e      mov   qword [var_10h], str.Hello_World     ; 0x4005e4 ; u"Hello World\n"
@@ -84,7 +84,7 @@ aar
 fl@F:strings
 EOF
 EXPECT=<<EOF
-0   0x000005e8 0x004005e8 12  52   .rodata utf32le Hello World\n
+  0 0x000005e8 0x004005e8  12   52 .rodata utf32le Hello World\n
 0x004005e8 52 str.Hello_World
 0x00400620 32 str.S
 |           0x0040052e      mov   qword [var_10h], str.Hello_World     ; 0x4005e8 ; U"Hello World\n"

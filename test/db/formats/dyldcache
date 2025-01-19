@@ -55,18 +55,18 @@ canary   false
 PIE      false
 RELROCS  false
 NX       false
-nth paddr      vaddr       bind   type size lib name          
+nth      paddr       vaddr bind   type size lib name          
 --------------------------------------------------------------
-0   0x00004f60 0x180004f60 GLOBAL FUNC 0        _func_in_liba
-1   0x00004f9c 0x180004f9c GLOBAL FUNC 0        _what_is_cool
-0   0x00008fa0 0x180008fa0 GLOBAL FUNC 0        _func_in_libb
-paddr      size vaddr       vsize align perm name                                      type flags 
+  0 0x00004f60 0x180004f60 GLOBAL FUNC    0     _func_in_liba
+  1 0x00004f9c 0x180004f9c GLOBAL FUNC    0     _what_is_cool
+  0 0x00008fa0 0x180008fa0 GLOBAL FUNC    0     _func_in_libb
+     paddr size       vaddr vsize align perm name                                      type flags 
 --------------------------------------------------------------------------------------------------
-0x00004f60 0x48 0x180004f60 0x48  0x0   -r-x lib_liba-1.0.dylib.0.__TEXT.__text             
-0x00004fa8 0x6  0x180004fa8 0x6   0x0   -r-x lib_liba-1.0.dylib.1.__TEXT.__cstring          
-0x00004fb0 0x50 0x180004fb0 0x50  0x0   -r-x lib_liba-1.0.dylib.2.__TEXT.__unwind_info      
-0x00008fa0 0x18 0x180008fa0 0x18  0x0   -r-x lib_libb-1.0.dylib.0.__TEXT.__text             
-0x00008fb8 0x48 0x180008fb8 0x48  0x0   -r-x lib_libb-1.0.dylib.1.__TEXT.__unwind_info      
+0x00004f60 0x48 0x180004f60  0x48 0x0   -r-x lib_liba-1.0.dylib.0.__TEXT.__text             
+0x00004fa8  0x6 0x180004fa8   0x6 0x0   -r-x lib_liba-1.0.dylib.1.__TEXT.__cstring          
+0x00004fb0 0x50 0x180004fb0  0x50 0x0   -r-x lib_liba-1.0.dylib.2.__TEXT.__unwind_info      
+0x00008fa0 0x18 0x180008fa0  0x18 0x0   -r-x lib_libb-1.0.dylib.0.__TEXT.__text             
+0x00008fb8 0x48 0x180008fb8  0x48 0x0   -r-x lib_libb-1.0.dylib.1.__TEXT.__unwind_info      
 {
   "version": "<940",
   "header": {
@@ -220,15 +220,15 @@ canary   false
 PIE      false
 RELROCS  false
 NX       false
-nth paddr      vaddr       bind   type size lib name          
+nth      paddr       vaddr bind   type size lib name          
 --------------------------------------------------------------
-0   0x00004f60 0x180004f60 GLOBAL FUNC 0        _func_in_liba
-1   0x00004f9c 0x180004f9c GLOBAL FUNC 0        _what_is_cool
-paddr      size vaddr       vsize align perm name                                      type flags 
+  0 0x00004f60 0x180004f60 GLOBAL FUNC    0     _func_in_liba
+  1 0x00004f9c 0x180004f9c GLOBAL FUNC    0     _what_is_cool
+     paddr size       vaddr vsize align perm name                                      type flags 
 --------------------------------------------------------------------------------------------------
-0x00004f60 0x48 0x180004f60 0x48  0x0   -r-x lib_liba-1.0.dylib.0.__TEXT.__text             
-0x00004fa8 0x6  0x180004fa8 0x6   0x0   -r-x lib_liba-1.0.dylib.1.__TEXT.__cstring          
-0x00004fb0 0x50 0x180004fb0 0x50  0x0   -r-x lib_liba-1.0.dylib.2.__TEXT.__unwind_info      
+0x00004f60 0x48 0x180004f60  0x48 0x0   -r-x lib_liba-1.0.dylib.0.__TEXT.__text             
+0x00004fa8  0x6 0x180004fa8   0x6 0x0   -r-x lib_liba-1.0.dylib.1.__TEXT.__cstring          
+0x00004fb0 0x50 0x180004fb0  0x50 0x0   -r-x lib_liba-1.0.dylib.2.__TEXT.__unwind_info      
 {
   "version": "<940",
   "header": {
@@ -384,7 +384,7 @@ PIE      false
 RELROCS  false
 NX       false
 --
-address     min         max         name                          super    
+    address         min         max name                          super    
 ---------------------------------------------------------------------------
 0x182068040 0x1800189f8 0x180018b90 Test                          NSObject
 0x18206a028 0x18003aa78 0x18003aa94 Object                        Object
@@ -392,25 +392,25 @@ address     min         max         name                          super
 0x18206a0a0 0x18003aa98 0x18003ab98 Protocol                      NSObject
 0x18206a140 0x18003e8dc 0x18003e8e4 __NSUnrecognizedTaggedPointer NSObject
 0x18206a0f0 0x18003cfc4 0x18003d788 NSObject                      NSObject
-address     index class flags name                  type                
+    address index class flags name                  type                
 ------------------------------------------------------------------------
-----------  0     Test        isa                   struct objc_class *
-0x182068038 1     Test        Test::(ivar)someField i
-address     index class flags name                         
+ ----------     0 Test        isa                   struct objc_class *
+0x182068038     1 Test        Test::(ivar)someField i
+    address index class flags name                         
 -----------------------------------------------------------
-0x1800189f8 0     Test        init
-0x180018a1c 1     Test  c     someStaticMethod
-0x180018a58 2     Test        methodWithoutArgs
-0x180018ab0 3     Test        methodWithOneArg:
-0x180018b0c 4     Test        methodWithTwoArgs:secondArg:
-0x180018b90 5     Test        methodWithReturn
+0x1800189f8     0 Test        init
+0x180018a1c     1 Test  c     someStaticMethod
+0x180018a58     2 Test        methodWithoutArgs
+0x180018ab0     3 Test        methodWithOneArg:
+0x180018b0c     4 Test        methodWithTwoArgs:secondArg:
+0x180018b90     5 Test        methodWithReturn
 address index class flags name type 
 ------------------------------------
-address     index class                         flags name        
+    address index class                         flags name        
 ------------------------------------------------------------------
-0x18003e8dc 0     __NSUnrecognizedTaggedPointer       retain
-0x18003e8e0 1     __NSUnrecognizedTaggedPointer       release
-0x18003e8e4 2     __NSUnrecognizedTaggedPointer       autorelease
+0x18003e8dc     0 __NSUnrecognizedTaggedPointer       retain
+0x18003e8e0     1 __NSUnrecognizedTaggedPointer       release
+0x18003e8e4     2 __NSUnrecognizedTaggedPointer       autorelease
 --
 0x182064028 0x0000000182068068   h....... @ section.lib_libhello_1.0.dylib.11.__DATA_CONST.__objc_classlist 6476431464 lib_libhello-1.0.dylib.17.__DATA.__objc_data class Test R 0x182068040
 EOF
@@ -477,7 +477,7 @@ PIE      false
 RELROCS  false
 NX       false
 --
-address     min         max         name                          super    
+    address         min         max name                          super    
 ---------------------------------------------------------------------------
 0x184078000 0x180018a14 0x180018bbc Test                          NSObject
 0x184079098 0x18003e224 0x18003e240 Object                        Object
@@ -485,110 +485,110 @@ address     min         max         name                          super
 0x184079110 0x18003e244 0x18003e3b4 Protocol                      NSObject
 0x1840791b0 0x180042ac8 0x180042ad0 __NSUnrecognizedTaggedPointer NSObject
 0x184079160 0x180040eb8 0x180042ac4 NSObject                      NSObject
-address     index class flags name                  type                
+    address index class flags name                  type                
 ------------------------------------------------------------------------
-----------  0     Test        isa                   struct objc_class *
-0x18206c038 1     Test        Test::(ivar)someField i
-address     index class flags name                         
+ ----------     0 Test        isa                   struct objc_class *
+0x18206c038     1 Test        Test::(ivar)someField i
+    address index class flags name                         
 -----------------------------------------------------------
-0x180018a14 0     Test        init
-0x180018a38 1     Test  c     someStaticMethod
-0x180018a78 2     Test        methodWithoutArgs
-0x180018ad4 3     Test        methodWithOneArg:
-0x180018b34 4     Test        methodWithTwoArgs:secondArg:
-0x180018bbc 5     Test        methodWithReturn
-address     index class    flags name                                 type                
+0x180018a14     0 Test        init
+0x180018a38     1 Test  c     someStaticMethod
+0x180018a78     2 Test        methodWithoutArgs
+0x180018ad4     3 Test        methodWithOneArg:
+0x180018b34     4 Test        methodWithTwoArgs:secondArg:
+0x180018bbc     5 Test        methodWithReturn
+    address index class    flags name                                 type                
 ------------------------------------------------------------------------------------------
-0x18206d1c4 0     NSObject       NSObject::(ivar)isa                  #
-----------  1     NSObject       NSObject::(property)debugDescription 
-----------  2     NSObject       NSObject::(property)description      
-----------  3     NSObject       NSObject::(property)hash             
-----------  4     NSObject       NSObject::(property)superclass       
-----------  5     NSObject       isa                                  struct objc_class *
-address     index class    flags name                                   
+0x18206d1c4     0 NSObject       NSObject::(ivar)isa                  #
+ ----------     1 NSObject       NSObject::(property)debugDescription 
+ ----------     2 NSObject       NSObject::(property)description      
+ ----------     3 NSObject       NSObject::(property)hash             
+ ----------     4 NSObject       NSObject::(property)superclass       
+ ----------     5 NSObject       isa                                  struct objc_class *
+    address index class    flags name                                   
 ------------------------------------------------------------------------
-0x180040eb8 0     NSObject c     mutableCopyWithZone:
-0x180040ebc 1     NSObject c     mutableCopy
-0x180040ec0 2     NSObject c     copyWithZone:
-0x180040ec4 3     NSObject c     copy
-0x180040ec8 4     NSObject c     zone
-0x180040ecc 5     NSObject c     dealloc
-0x180040ed0 6     NSObject c     init
-0x180040ed4 7     NSObject c     allocWithZone:
-0x180040ed8 8     NSObject c     alloc
-0x180040ee0 9     NSObject c     retainCount
-0x180040ee8 10    NSObject c     autorelease
-0x180040eec 11    NSObject c     release
-0x180040ef0 12    NSObject c     retainWeakReference
-0x180040ef8 13    NSObject c     allowsWeakReference
-0x180040f00 14    NSObject c     _isDeallocating
-0x180040f08 15    NSObject c     _tryRetain
-0x180040f10 16    NSObject c     retain
-0x180040f14 17    NSObject c     new
-0x180040f64 18    NSObject c     debugDescription
-0x180040f70 19    NSObject c     description
-0x180040f78 20    NSObject c     forwardingTargetForSelector:
-0x180040f80 21    NSObject c     forwardInvocation:
-0x180040fd4 22    NSObject c     methodSignatureForSelector:
-0x180040fec 23    NSObject c     instanceMethodSignatureForSelector:
-0x180041004 24    NSObject c     performSelector:withObject:withObject:
-0x18004106c 25    NSObject c     performSelector:withObject:
-0x1800410cc 26    NSObject c     performSelector:
-0x18004111c 27    NSObject c     doesNotRecognizeSelector:
-0x180041160 28    NSObject c     resolveInstanceMethod:
-0x180041168 29    NSObject c     resolveClassMethod:
-0x180041170 30    NSObject c     methodForSelector:
-0x1800411ac 31    NSObject c     instanceMethodForSelector:
-0x1800411e8 32    NSObject c     isProxy
-0x1800411f0 33    NSObject c     isFault
-0x1800411f8 34    NSObject c     isEqual:
-0x180041204 35    NSObject c     hash
-0x180041208 36    NSObject c     conformsToProtocol:
-0x180041284 37    NSObject c     respondsToSelector:
-0x180041294 38    NSObject c     instancesRespondToSelector:
-0x1800412a4 39    NSObject c     isAncestorOfObject:
-0x180041320 40    NSObject c     isSubclassOfClass:
-0x180041370 41    NSObject c     isKindOfClass:
-0x1800413c4 42    NSObject c     isMemberOfClass:
-0x1800413d8 43    NSObject c     superclass
-0x180041410 44    NSObject c     class
-0x180041414 45    NSObject c     self
-0x180041418 46    NSObject c     initialize
-0x18004141c 47    NSObject       mutableCopy
-0x18004142c 48    NSObject       copy
-0x18004143c 49    NSObject       zone
-0x180041440 50    NSObject       finalize
-0x180041444 51    NSObject       dealloc
-0x18004144c 52    NSObject       init
-0x180041450 53    NSObject       retainCount
-0x1800415d4 54    NSObject       autorelease
-0x180041adc 55    NSObject       release
-0x180042250 56    NSObject       retainWeakReference
-0x18004225c 57    NSObject       allowsWeakReference
-0x180042280 58    NSObject       _isDeallocating
-0x18004233c 59    NSObject       _tryRetain
-0x180042658 60    NSObject       retain
-0x180042664 61    NSObject       debugDescription
-0x180042670 62    NSObject       description
-0x180042678 63    NSObject       forwardingTargetForSelector:
-0x180042680 64    NSObject       forwardInvocation:
-0x1800426d4 65    NSObject       methodSignatureForSelector:
-0x1800426ec 66    NSObject       performSelector:withObject:withObject:
-0x180042754 67    NSObject       performSelector:withObject:
-0x1800427b4 68    NSObject       performSelector:
-0x180042804 69    NSObject       doesNotRecognizeSelector:
-0x180042848 70    NSObject       methodForSelector:
-0x180042884 71    NSObject       isProxy
-0x18004288c 72    NSObject       isFault
-0x180042894 73    NSObject       isEqual:
-0x1800428a0 74    NSObject       hash
-0x1800428a4 75    NSObject       conformsToProtocol:
-0x180042928 76    NSObject       respondsToSelector:
-0x180042974 77    NSObject       isKindOfClass:
-0x1800429ec 78    NSObject       isMemberOfClass:
-0x180042a20 79    NSObject       superclass
-0x180042a74 80    NSObject       class
-0x180042ac4 81    NSObject       self
+0x180040eb8     0 NSObject c     mutableCopyWithZone:
+0x180040ebc     1 NSObject c     mutableCopy
+0x180040ec0     2 NSObject c     copyWithZone:
+0x180040ec4     3 NSObject c     copy
+0x180040ec8     4 NSObject c     zone
+0x180040ecc     5 NSObject c     dealloc
+0x180040ed0     6 NSObject c     init
+0x180040ed4     7 NSObject c     allocWithZone:
+0x180040ed8     8 NSObject c     alloc
+0x180040ee0     9 NSObject c     retainCount
+0x180040ee8    10 NSObject c     autorelease
+0x180040eec    11 NSObject c     release
+0x180040ef0    12 NSObject c     retainWeakReference
+0x180040ef8    13 NSObject c     allowsWeakReference
+0x180040f00    14 NSObject c     _isDeallocating
+0x180040f08    15 NSObject c     _tryRetain
+0x180040f10    16 NSObject c     retain
+0x180040f14    17 NSObject c     new
+0x180040f64    18 NSObject c     debugDescription
+0x180040f70    19 NSObject c     description
+0x180040f78    20 NSObject c     forwardingTargetForSelector:
+0x180040f80    21 NSObject c     forwardInvocation:
+0x180040fd4    22 NSObject c     methodSignatureForSelector:
+0x180040fec    23 NSObject c     instanceMethodSignatureForSelector:
+0x180041004    24 NSObject c     performSelector:withObject:withObject:
+0x18004106c    25 NSObject c     performSelector:withObject:
+0x1800410cc    26 NSObject c     performSelector:
+0x18004111c    27 NSObject c     doesNotRecognizeSelector:
+0x180041160    28 NSObject c     resolveInstanceMethod:
+0x180041168    29 NSObject c     resolveClassMethod:
+0x180041170    30 NSObject c     methodForSelector:
+0x1800411ac    31 NSObject c     instanceMethodForSelector:
+0x1800411e8    32 NSObject c     isProxy
+0x1800411f0    33 NSObject c     isFault
+0x1800411f8    34 NSObject c     isEqual:
+0x180041204    35 NSObject c     hash
+0x180041208    36 NSObject c     conformsToProtocol:
+0x180041284    37 NSObject c     respondsToSelector:
+0x180041294    38 NSObject c     instancesRespondToSelector:
+0x1800412a4    39 NSObject c     isAncestorOfObject:
+0x180041320    40 NSObject c     isSubclassOfClass:
+0x180041370    41 NSObject c     isKindOfClass:
+0x1800413c4    42 NSObject c     isMemberOfClass:
+0x1800413d8    43 NSObject c     superclass
+0x180041410    44 NSObject c     class
+0x180041414    45 NSObject c     self
+0x180041418    46 NSObject c     initialize
+0x18004141c    47 NSObject       mutableCopy
+0x18004142c    48 NSObject       copy
+0x18004143c    49 NSObject       zone
+0x180041440    50 NSObject       finalize
+0x180041444    51 NSObject       dealloc
+0x18004144c    52 NSObject       init
+0x180041450    53 NSObject       retainCount
+0x1800415d4    54 NSObject       autorelease
+0x180041adc    55 NSObject       release
+0x180042250    56 NSObject       retainWeakReference
+0x18004225c    57 NSObject       allowsWeakReference
+0x180042280    58 NSObject       _isDeallocating
+0x18004233c    59 NSObject       _tryRetain
+0x180042658    60 NSObject       retain
+0x180042664    61 NSObject       debugDescription
+0x180042670    62 NSObject       description
+0x180042678    63 NSObject       forwardingTargetForSelector:
+0x180042680    64 NSObject       forwardInvocation:
+0x1800426d4    65 NSObject       methodSignatureForSelector:
+0x1800426ec    66 NSObject       performSelector:withObject:withObject:
+0x180042754    67 NSObject       performSelector:withObject:
+0x1800427b4    68 NSObject       performSelector:
+0x180042804    69 NSObject       doesNotRecognizeSelector:
+0x180042848    70 NSObject       methodForSelector:
+0x180042884    71 NSObject       isProxy
+0x18004288c    72 NSObject       isFault
+0x180042894    73 NSObject       isEqual:
+0x1800428a0    74 NSObject       hash
+0x1800428a4    75 NSObject       conformsToProtocol:
+0x180042928    76 NSObject       respondsToSelector:
+0x180042974    77 NSObject       isKindOfClass:
+0x1800429ec    78 NSObject       isMemberOfClass:
+0x180042a20    79 NSObject       superclass
+0x180042a74    80 NSObject       class
+0x180042ac4    81 NSObject       self
 --
 0x182068000 0x0000000184078028   (....... @ section.lib_libhello_1.0.dylib.8.__DATA_CONST.__objc_classlist 6510051368 lib_libhello-1.0.dylib.18.__AUTH.__objc_data class Test R 0x184078000
 EOF
@@ -659,24 +659,24 @@ canary   false
 PIE      false
 RELROCS  false
 NX       false
-nth paddr      vaddr       bind   type size lib name                      
+nth      paddr       vaddr bind   type size lib name                      
 --------------------------------------------------------------------------
-0   0x00007fb4 0x180007fb4 GLOBAL FUNC 0        _i_am_libSystem
-0   0x0000bfb0 0x18000bfb0 GLOBAL FUNC 0        _say_hello
-0   0x0000ff38 0x18000ff38 GLOBAL FUNC 0        dyld3::entryVectorForDyld
-1   0x0000ff34 0x18000ff34 GLOBAL FUNC 0        _i_am_libdyld
-0   0x00013fb4 0x180013fb4 GLOBAL FUNC 0        _i_am_libsystem_kernel
-paddr      size vaddr       vsize align perm name                                                 type flags 
+  0 0x00007fb4 0x180007fb4 GLOBAL FUNC    0     _i_am_libSystem
+  0 0x0000bfb0 0x18000bfb0 GLOBAL FUNC    0     _say_hello
+  0 0x0000ff38 0x18000ff38 GLOBAL FUNC    0     dyld3::entryVectorForDyld
+  1 0x0000ff34 0x18000ff34 GLOBAL FUNC    0     _i_am_libdyld
+  0 0x00013fb4 0x180013fb4 GLOBAL FUNC    0     _i_am_libsystem_kernel
+     paddr size       vaddr vsize align perm name                                                 type flags 
 -------------------------------------------------------------------------------------------------------------
-0x00007fb4 0x4  0x180007fb4 0x4   0x0   -r-x lib_libSystem.B.dylib.0.__TEXT.__text                     
-0x00007fb8 0x48 0x180007fb8 0x48  0x0   -r-x lib_libSystem.B.dylib.1.__TEXT.__unwind_info              
-0x0000bfb0 0x8  0x18000bfb0 0x8   0x0   -r-x lib_libhello.dylib.0.__TEXT.__text                        
-0x0000bfb8 0x48 0x18000bfb8 0x48  0x0   -r-x lib_libhello.dylib.1.__TEXT.__unwind_info                 
-0x0000ff34 0x4  0x18000ff34 0x4   0x0   -r-x system_libdyld.dylib.0.__TEXT.__text                      
-0x0000ff38 0x80 0x18000ff38 0x80  0x0   -r-x system_libdyld.dylib.1.__TEXT.__const                     
-0x0000ffb8 0x48 0x18000ffb8 0x48  0x0   -r-x system_libdyld.dylib.2.__TEXT.__unwind_info               
-0x00013fb4 0x4  0x180013fb4 0x4   0x0   -r-x system_libsystem_kernel.dylib.0.__TEXT.__text             
-0x00013fb8 0x48 0x180013fb8 0x48  0x0   -r-x system_libsystem_kernel.dylib.1.__TEXT.__unwind_info      
+0x00007fb4  0x4 0x180007fb4   0x4 0x0   -r-x lib_libSystem.B.dylib.0.__TEXT.__text                     
+0x00007fb8 0x48 0x180007fb8  0x48 0x0   -r-x lib_libSystem.B.dylib.1.__TEXT.__unwind_info              
+0x0000bfb0  0x8 0x18000bfb0   0x8 0x0   -r-x lib_libhello.dylib.0.__TEXT.__text                        
+0x0000bfb8 0x48 0x18000bfb8  0x48 0x0   -r-x lib_libhello.dylib.1.__TEXT.__unwind_info                 
+0x0000ff34  0x4 0x18000ff34   0x4 0x0   -r-x system_libdyld.dylib.0.__TEXT.__text                      
+0x0000ff38 0x80 0x18000ff38  0x80 0x0   -r-x system_libdyld.dylib.1.__TEXT.__const                     
+0x0000ffb8 0x48 0x18000ffb8  0x48 0x0   -r-x system_libdyld.dylib.2.__TEXT.__unwind_info               
+0x00013fb4  0x4 0x180013fb4   0x4 0x0   -r-x system_libsystem_kernel.dylib.0.__TEXT.__text             
+0x00013fb8 0x48 0x180013fb8  0x48 0x0   -r-x system_libsystem_kernel.dylib.1.__TEXT.__unwind_info      
 {
   "version": "1042.1",
   "header": {

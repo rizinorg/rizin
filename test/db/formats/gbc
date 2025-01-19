@@ -10,7 +10,7 @@ NAME=Gameboy: Sections
 FILE=bins/gbc/a.gb
 CMDS=iS
 EXPECT=<<EOF
-paddr      size   vaddr      vsize  align perm name      type flags 
+     paddr   size      vaddr  vsize align perm name      type flags 
 --------------------------------------------------------------------
 0x00000000 0x4000 0x00000000 0x4000 0x0   -r-x rombank00      
 0x00004000 0x4000 0x00004000 0x4000 0x0   -r-x rombank01      
