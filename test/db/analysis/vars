@@ -5,13 +5,13 @@ aaa
 avglt
 EOF
 EXPECT=<<EOF
-name       type        size address  decl_file                                                   decl_line decl_col 
+name       type        size  address decl_file                                                   decl_line decl_col 
 --------------------------------------------------------------------------------------------------------------------
-bb         const float 0x4  0x402010 /home/xvilka/rizin/rizin-testbins/elf/float_ex1/float_ex1.c 16        13
-b          const float 0x4  0x402068 /home/xvilka/rizin/rizin-testbins/elf/float_ex1/float_ex1.c 39        21
-aa         double      0x8  0x404038 /home/xvilka/rizin/rizin-testbins/elf/float_ex1/float_ex1.c 17        8
-a          float       0x4  0x404040 /home/xvilka/rizin/rizin-testbins/elf/float_ex1/float_ex1.c 38        15
-staticsome some_t      0x16 0x404060 /home/xvilka/rizin/rizin-testbins/elf/float_ex1/float_ex1.c 15        15
+bb         const float  0x4 0x402010 /home/xvilka/rizin/rizin-testbins/elf/float_ex1/float_ex1.c        16       13
+b          const float  0x4 0x402068 /home/xvilka/rizin/rizin-testbins/elf/float_ex1/float_ex1.c        39       21
+aa         double       0x8 0x404038 /home/xvilka/rizin/rizin-testbins/elf/float_ex1/float_ex1.c        17        8
+a          float        0x4 0x404040 /home/xvilka/rizin/rizin-testbins/elf/float_ex1/float_ex1.c        38       15
+staticsome some_t      0x16 0x404060 /home/xvilka/rizin/rizin-testbins/elf/float_ex1/float_ex1.c        15       15
 EOF
 RUN
 

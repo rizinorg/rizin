@@ -757,9 +757,9 @@ s 0x760
 iS.j
 EOF
 EXPECT=<<EOF
-paddr      size vaddr      vsize align perm name               type flags 
+     paddr size      vaddr vsize align perm name               type flags 
 --------------------------------------------------------------------------
-0x00000188 0x24 0x08048188 0x24  0x0   -r-- .note.gnu.build-id NOTE alloc
+0x00000188 0x24 0x08048188  0x24 0x0   -r-- .note.gnu.build-id NOTE alloc
 paddr size vaddr vsize align perm name type flags 
 --------------------------------------------------
 [{"name":".plt","size":240,"vsize":240,"perm":"-r-x","type":"PROGBITS","flags":["alloc","execute"],"paddr":1888,"vaddr":134514528}]
@@ -776,9 +776,9 @@ sd +5
 is.j
 EOF
 EXPECT=<<EOF
-nth paddr      vaddr      bind   type size lib name    
+nth      paddr      vaddr bind   type size lib name    
 -------------------------------------------------------
-22  0x000009b7 0x080489b7 GLOBAL FUNC 189      decrypt
+ 22 0x000009b7 0x080489b7 GLOBAL FUNC  189     decrypt
 [{"name":"prog_timeout","flagname":"sym.prog_timeout","realname":"prog_timeout","ordinal":35,"bind":"GLOBAL","size":17,"type":"FUNC","vaddr":134515110,"paddr":2470,"is_imported":false,"lib":""}]
 EOF
 RUN
@@ -3326,9 +3326,9 @@ EXPECT=<<EOF
 |                                  |
 `----------------------------------'
 
-addr       name         size xrefsTo xrefsFrom calls nbbs edges cc cost noreturn min bound  range max bound  locals args frame loops 
+      addr name         size xrefsTo xrefsFrom calls nbbs edges cc cost noreturn  min bound range  max bound locals args frame loops 
 -------------------------------------------------------------------------------------------------------------------------------------
-0x00000003 fcn.00000003 9    1       1         0     3    3     0  4    false    0x00000000 7     0x00000007 0      0    0     1
+0x00000003 fcn.00000003    9       1         1     0    3     3  0    4 false    0x00000000     7 0x00000007      0    0     0     1
 EOF
 RUN
 
@@ -4309,10 +4309,10 @@ EOF
 EXPECT=<<EOF
 addr size jump fail 
 --------------------
-0x0  2    0x23 0x2
-0x2  2    0x1e -1
-0x1e 5    0x23 -1
-0x23 7    -1   -1
+ 0x0    2 0x23  0x2
+ 0x2    2 0x1e   -1
+0x1e    5 0x23   -1
+0x23    7   -1   -1
 EOF
 RUN
 
@@ -4324,39 +4324,39 @@ af
 afbt
 EOF
 EXPECT=<<EOF
-addr    size jump    fail    
+   addr size    jump    fail 
 -----------------------------
-0xa3a20 17   0xa3b4b 0xa3a31
-0xa3a31 10   0xa3b9a 0xa3a3b
-0xa3a3b 17   -1      -1
-0xa3b4a 1    -1      -1
-0xa3b4b 5    0xa3b62 0xa3b50
-0xa3b50 5    0xa3b73 0xa3b55
-0xa3b55 5    0xa3b80 0xa3b5a
-0xa3b5a 2    0xa3b61 0xa3b5c
-0xa3b5c 5    0xa3b61 -1
-0xa3b61 1    -1      -1
-0xa3b62 17   -1      -1
-0xa3b73 13   -1      -1
-0xa3b80 17   -1      -1
-0xa3b9a 9    0xa3c13 0xa3ba3
-0xa3ba3 6    0xa3bf0 0xa3ba9
-0xa3ba9 71   -1      -1
-0xa3bf0 35   -1      -1
-0xa3c13 9    0xa3ca8 0xa3c1c
-0xa3c1c 6    0xa3b4a 0xa3c22
-0xa3c22 65   0xa3d2f 0xa3c63
-0xa3c63 48   0xa3c63 0xa3c93
-0xa3c93 21   -1      -1
-0xa3ca8 63   0xa3d96 0xa3ce7
-0xa3ce7 52   0xa3ce7 0xa3d1b
-0xa3d1b 20   -1      -1
-0xa3d2f 13   0xa3c63 0xa3d3c
-0xa3d3c 66   0xa3d3c 0xa3d7e
-0xa3d7e 24   -1      -1
-0xa3d96 13   0xa3ce7 0xa3da3
-0xa3da3 67   0xa3da3 0xa3de6
-0xa3de6 23   -1      -1
+0xa3a20   17 0xa3b4b 0xa3a31
+0xa3a31   10 0xa3b9a 0xa3a3b
+0xa3a3b   17      -1      -1
+0xa3b4a    1      -1      -1
+0xa3b4b    5 0xa3b62 0xa3b50
+0xa3b50    5 0xa3b73 0xa3b55
+0xa3b55    5 0xa3b80 0xa3b5a
+0xa3b5a    2 0xa3b61 0xa3b5c
+0xa3b5c    5 0xa3b61      -1
+0xa3b61    1      -1      -1
+0xa3b62   17      -1      -1
+0xa3b73   13      -1      -1
+0xa3b80   17      -1      -1
+0xa3b9a    9 0xa3c13 0xa3ba3
+0xa3ba3    6 0xa3bf0 0xa3ba9
+0xa3ba9   71      -1      -1
+0xa3bf0   35      -1      -1
+0xa3c13    9 0xa3ca8 0xa3c1c
+0xa3c1c    6 0xa3b4a 0xa3c22
+0xa3c22   65 0xa3d2f 0xa3c63
+0xa3c63   48 0xa3c63 0xa3c93
+0xa3c93   21      -1      -1
+0xa3ca8   63 0xa3d96 0xa3ce7
+0xa3ce7   52 0xa3ce7 0xa3d1b
+0xa3d1b   20      -1      -1
+0xa3d2f   13 0xa3c63 0xa3d3c
+0xa3d3c   66 0xa3d3c 0xa3d7e
+0xa3d7e   24      -1      -1
+0xa3d96   13 0xa3ce7 0xa3da3
+0xa3da3   67 0xa3da3 0xa3de6
+0xa3de6   23      -1      -1
 EOF
 RUN
 
