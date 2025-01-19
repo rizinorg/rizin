@@ -13,9 +13,9 @@ EOF
 EXPECT=<<EOF
 [{"score":4,"candidate":134217728}]
 4 0x8000000
-score candidate  
+score  candidate 
 -----------------
-4     0x08000000
+    4 0x08000000
 EOF
 EXPECT_ERR=<<EOF
 INFO: basefind: located 6 strings

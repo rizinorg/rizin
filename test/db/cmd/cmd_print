@@ -202,19 +202,19 @@ CMDS=<<EOF
 p=rt 0.73 0.06
 EOF
 EXPECT=<<EOF
-addr    index edge_type            entropy_value 
+   addr index edge_type            entropy_value 
 -------------------------------------------------
-0x10a00 266   rising entropy edge  0.730819
-0x17200 370   rising entropy edge  0.730736
-0x17f00 383   rising entropy edge  0.733761
-0x4a800 1192  rising entropy edge  0.730632
-0x5f000 1520  rising entropy edge  0.757028
-0x63d00 1597  falling entropy edge 0.042506
-0x64000 1600  falling entropy edge 0.000000
-0x6cd00 1741  falling entropy edge 0.058047
-0x70200 1794  rising entropy edge  0.760109
-0x73200 1842  falling entropy edge 0.000000
-0x74300 1859  falling entropy edge 0.024685
+0x10a00   266 rising entropy edge       0.730819
+0x17200   370 rising entropy edge       0.730736
+0x17f00   383 rising entropy edge       0.733761
+0x4a800  1192 rising entropy edge       0.730632
+0x5f000  1520 rising entropy edge       0.757028
+0x63d00  1597 falling entropy edge      0.042506
+0x64000  1600 falling entropy edge      0.000000
+0x6cd00  1741 falling entropy edge      0.058047
+0x70200  1794 rising entropy edge       0.760109
+0x73200  1842 falling entropy edge      0.000000
+0x74300  1859 falling entropy edge      0.024685
 EOF
 RUN
 

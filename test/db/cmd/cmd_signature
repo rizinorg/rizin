@@ -508,8 +508,8 @@ EOF
 EXPECT=<<EOF
 bin arch bits name          modules details                
 -----------------------------------------------------------
-elf x86  64   match.sig     1       Built with rizin 0.5.0
-elf x86  64   not-match.pat 1       
+elf x86    64 match.sig           1 Built with rizin 0.5.0
+elf x86    64 not-match.pat       1 
 EOF
 RUN
 

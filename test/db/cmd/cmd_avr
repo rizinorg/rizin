@@ -149,23 +149,23 @@ Complete Object Locator at 0x004178f4:
 --
 [Album]
   (vtable at 0x412164)
-nth addr         vt_offset type    name      
----------------------------------------------
-1   0x0040105d  0x00000000 VIRTUAL virtual_0
-2   0x004010a7  0x00000004 VIRTUAL virtual_4
+nth       addr  vt_offset type    name      
+--------------------------------------------
+  1 0x0040105d 0x00000000 VIRTUAL virtual_0
+  2 0x004010a7 0x00000004 VIRTUAL virtual_4
 
 [InAbsentia: Album]
   (vtable at 0x4121a4)
-nth addr         vt_offset type    name      
----------------------------------------------
-1   0x00401088  0x00000000 VIRTUAL virtual_0
-2   0x004010b3  0x00000004 VIRTUAL virtual_4
+nth       addr  vt_offset type    name      
+--------------------------------------------
+  1 0x00401088 0x00000000 VIRTUAL virtual_0
+  2 0x004010b3 0x00000004 VIRTUAL virtual_4
 
 [type_info]
   (vtable at 0x4121fc)
-nth addr         vt_offset type    name      
----------------------------------------------
-1   0x00401136  0x00000000 VIRTUAL virtual_0
+nth       addr  vt_offset type    name      
+--------------------------------------------
+  1 0x00401136 0x00000000 VIRTUAL virtual_0
 
 EOF
 RUN

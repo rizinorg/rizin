@@ -627,15 +627,15 @@ EOF
 EXPECT=<<EOF
 0x0000000b 10 blah
 [{"name":"blah","realname":"blah","size":10,"offset":11}]
-addr       size space name realname 
+      addr size space name realname 
 ------------------------------------
-0x0000000b 10         blah blah
+0x0000000b   10       blah blah
 blah
 0x00000002 3 bloh
 [{"name":"bloh","realname":"bloh","size":3,"offset":2}]
-addr       size space name realname 
+      addr size space name realname 
 ------------------------------------
-0x00000002 3          bloh bloh
+0x00000002    3       bloh bloh
 bloh
 EOF
 RUN

@@ -1254,35 +1254,35 @@ iSt:perm/str/x
 %Bt @e:search.in=raw
 EOF
 EXPECT=<<EOF
-paddr      size  vaddr      vsize align perm name     type     flags         
+     paddr  size      vaddr vsize align perm name     type     flags         
 -----------------------------------------------------------------------------
-0x00000608 0x17  0x00000608 0x17  0x0   -r-x .init    PROGBITS alloc,execute
-0x00000620 0x70  0x00000620 0x70  0x0   -r-x .plt     PROGBITS alloc,execute
-0x00000690 0x8   0x00000690 0x8   0x0   -r-x .plt.got PROGBITS alloc,execute
+0x00000608  0x17 0x00000608  0x17 0x0   -r-x .init    PROGBITS alloc,execute
+0x00000620  0x70 0x00000620  0x70 0x0   -r-x .plt     PROGBITS alloc,execute
+0x00000690   0x8 0x00000690   0x8 0x0   -r-x .plt.got PROGBITS alloc,execute
 0x000006a0 0x222 0x000006a0 0x222 0x0   -r-x .text    PROGBITS alloc,execute
-0x000008c4 0x9   0x000008c4 0x9   0x0   -r-x .fini    PROGBITS alloc,execute
-from  to    size perms 
+0x000008c4   0x9 0x000008c4   0x9 0x0   -r-x .fini    PROGBITS alloc,execute
+ from    to size perms 
 -----------------------
-0x608 0x61f 23   r-x
-0x620 0x690 112  r-x
-0x690 0x698 8    r-x
-0x6a0 0x8c2 546  r-x
-0x8c4 0x8cd 9    r-x
-from  to    size perms 
+0x608 0x61f   23 r-x
+0x620 0x690  112 r-x
+0x690 0x698    8 r-x
+0x6a0 0x8c2  546 r-x
+0x8c4 0x8cd    9 r-x
+ from    to size perms 
 -----------------------
-0x608 0x61f 23   r-x
-0x620 0x690 112  r-x
-0x690 0x698 8    r-x
-0x6a0 0x8c2 546  r-x
-0x8c4 0x8cd 9    r-x
-from to    size perms 
+0x608 0x61f   23 r-x
+0x620 0x690  112 r-x
+0x690 0x698    8 r-x
+0x6a0 0x8c2  546 r-x
+0x8c4 0x8cd    9 r-x
+from    to size perms 
 ----------------------
-0x0  0xa28 2600 r-x
-from  to    size perms 
+ 0x0 0xa28 2600 r-x
+ from    to size perms 
 -----------------------
-0x6a0 0x8a0 512  rwx
-from to     size perms 
+0x6a0 0x8a0  512 rwx
+from     to size perms 
 -----------------------
-0x0  0x2148 8520 rwx
+ 0x0 0x2148 8520 rwx
 EOF
 RUN
