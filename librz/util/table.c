@@ -148,6 +148,9 @@ RZ_API void rz_table_add_column(RzTable *t, RzTableColumnType *type, const char 
 		int itemLength = rz_str_len_utf8_ansi(name) + 1;
 		c->width = itemLength;
 		c->total = -1;
+		if (c->type == &rz_table_type_number) {
+			c->align = RZ_TABLE_ALIGN_RIGHT;
+		}
 		rz_vector_push(t->cols, c);
 	}
 	RZ_FREE(c);
@@ -407,7 +410,8 @@ static int __strbuf_append_col_aligned_fancy(RzTable *t, RzStrBuf *sb, RzTableCo
 		rz_strbuf_appendf(sb, "%*s", pad, "");
 		break;
 	case RZ_TABLE_ALIGN_RIGHT:
-		rz_strbuf_appendf(sb, "%s%*s%*s", v_line, pad, " ", col->width, str);
+		rz_strbuf_appendf(sb, "%s%*s ", v_line, col->width, str);
+		rz_strbuf_appendf(sb, "%*s", pad, "");
 		break;
 	case RZ_TABLE_ALIGN_CENTER: {
 		pad = (col->width - len) / 2;
@@ -531,8 +535,9 @@ static int __strbuf_append_col_aligned(RzStrBuf *sb, RzTableColumn *col, const c
 			free(pad);
 			break;
 		case RZ_TABLE_ALIGN_RIGHT:
+			padlen++;
 			pad = rz_str_repeat(" ", padlen);
-			rz_strbuf_appendf(sb, "%s%*s ", pad, col->width, str);
+			rz_strbuf_appendf(sb, "%*s%s", col->width - 1, str, pad);
 			free(pad);
 			break;
 		case RZ_TABLE_ALIGN_CENTER: {

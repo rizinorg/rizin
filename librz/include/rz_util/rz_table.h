@@ -15,7 +15,7 @@ typedef struct {
 typedef struct {
 	char *name;
 	RzTableColumnType *type;
-	int align; // left, right, center (TODO: unused)
+	int align; // left, right, center
 	int width; // computed
 	int maxWidth;
 	bool forceUppercase;
