@@ -4,7 +4,7 @@ CMDS=<<EOF
 flt:size/sum
 EOF
 EXPECT=<<EOF
-size  
+ size 
 ------
 12.9K
 EOF
@@ -18,50 +18,50 @@ EOF
 EXPECT=<<EOF
 size 
 -----
-0
-1
-2
-3
-4
-6
-8
-9
-13
-16
-21
-23
-24
-26
-28
-32
-36
-42
-43
-52
-56
-62
-64
-66
-68
-80
-88
-96
-101
-104
-124
-158
-176
-203
-240
-256
-272
-432
-448
-464
-497
-512
-540
-978
+   0
+   1
+   2
+   3
+   4
+   6
+   8
+   9
+  13
+  16
+  21
+  23
+  24
+  26
+  28
+  32
+  36
+  42
+  43
+  52
+  56
+  62
+  64
+  66
+  68
+  80
+  88
+  96
+ 101
+ 104
+ 124
+ 158
+ 176
+ 203
+ 240
+ 256
+ 272
+ 432
+ 448
+ 464
+ 497
+ 512
+ 540
+ 978
 1160
 4132
 EOF
@@ -111,17 +111,17 @@ segments         segment.NOTE
 .------------------------------------------------------.
 | space            | size | name                       |
 )------------------------------------------------------(
-| sections         | 497  | section..dynstr            |
-| sections         | 432  | section..dynsym            |
-| sections         | 56   | section..gnu.hash          |
-| sections         | 36   | section..gnu.version       |
-| sections         | 36   | section..note.gnu.build_id |
-| segments         | 68   | segment.NOTE               |
-| symbols.sections | 0    | sym..dynstr                |
-| symbols.sections | 0    | sym..dynsym                |
-| symbols.sections | 0    | sym..gnu.hash              |
-| symbols.sections | 0    | sym..note.ABI_tag          |
-| symbols.sections | 0    | sym..note.gnu.build_id     |
+| sections         |  497 | section..dynstr            |
+| sections         |  432 | section..dynsym            |
+| sections         |   56 | section..gnu.hash          |
+| sections         |   36 | section..gnu.version       |
+| sections         |   36 | section..note.gnu.build_id |
+| segments         |   68 | segment.NOTE               |
+| symbols.sections |    0 | sym..dynstr                |
+| symbols.sections |    0 | sym..dynsym                |
+| symbols.sections |    0 | sym..gnu.hash              |
+| symbols.sections |    0 | sym..note.ABI_tag          |
+| symbols.sections |    0 | sym..note.gnu.build_id     |
 `------------------------------------------------------'
 EOF
 RUN
@@ -134,15 +134,15 @@ af
 aflt:simple
 EOF
 EXPECT=<<EOF
-addr       name           size xrefsTo xrefsFrom calls nbbs edges cc cost noreturn 
+      addr name           size xrefsTo xrefsFrom calls nbbs edges cc cost noreturn 
 -----------------------------------------------------------------------------------
-0x00000630 sym.imp.free   6    1       1         0     1    0     1  3    false
-0x00000640 sym.imp.strcpy 6    1       1         0     1    0     1  3    false
-0x00000650 sym.imp.puts   6    1       1         0     1    0     1  3    false
-0x00000660 sym.imp.strlen 6    2       1         0     1    0     1  3    false
-0x00000670 sym.imp.malloc 6    1       1         0     1    0     1  3    false
-0x00000680 sym.imp.strcat 6    1       1         0     1    0     1  3    false
-0x000007aa main           157  0       9         6     3    3     2  61   false
+0x00000630 sym.imp.free      6       1         1     0    1     0  1    3 false
+0x00000640 sym.imp.strcpy    6       1         1     0    1     0  1    3 false
+0x00000650 sym.imp.puts      6       1         1     0    1     0  1    3 false
+0x00000660 sym.imp.strlen    6       2         1     0    1     0  1    3 false
+0x00000670 sym.imp.malloc    6       1         1     0    1     0  1    3 false
+0x00000680 sym.imp.strcat    6       1         1     0    1     0  1    3 false
+0x000007aa main            157       0         9     6    3     3  2   61 false
 EOF
 RUN
 
@@ -156,23 +156,23 @@ afbt:fancy
 afbt:size/sort/inc:simple
 EOF
 EXPECT=<<EOF
-addr  size jump  fail  
+ addr size  jump  fail 
 -----------------------
-0x7aa 92   0x844 0x806
-0x806 62   0x844 -1
-0x844 3    -1    -1
+0x7aa   92 0x844 0x806
+0x806   62 0x844    -1
+0x844    3    -1    -1
 .------------------------------.
-| addr  | size | jump  | fail  |
+|  addr | size |  jump |  fail |
 )------------------------------(
-| 0x7aa | 92   | 0x844 | 0x806 |
-| 0x806 | 62   | 0x844 | -1    |
-| 0x844 | 3    | -1    | -1    |
+| 0x7aa |   92 | 0x844 | 0x806 |
+| 0x806 |   62 | 0x844 |    -1 |
+| 0x844 |    3 |    -1 |    -1 |
 `------------------------------'
-addr  size jump  fail  
+ addr size  jump  fail 
 -----------------------
-0x844 3    -1    -1
-0x806 62   0x844 -1
-0x7aa 92   0x844 0x806
+0x844    3    -1    -1
+0x806   62 0x844    -1
+0x7aa   92 0x844 0x806
 EOF
 RUN
 
@@ -189,26 +189,26 @@ omlt:size/lt/0x3480:size/cols:quiet
 EOF
 EXPECT=<<EOF
 .---------.
-| size    |
+|    size |
 )---------(
-| 0x3480  |
+|  0x3480 |
 | 0x12791 |
-| 0x87c0  |
+|  0x87c0 |
 `---------'
 
 .---------.
-| size    |
+|    size |
 )---------(
 | 0x12791 |
-| 0x87c0  |
+|  0x87c0 |
 `---------'
 
-0x9b8
+ 0x9b8
 0x3480
 0x12f0
 0x1218
 
-0x9b8
+ 0x9b8
 0x12f0
 0x1218
 EOF
