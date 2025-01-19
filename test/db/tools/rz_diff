@@ -177,77 +177,77 @@ NAME=rz-diff functions comparison
 FILE==
 CMDS=!rz-diff -C -q -t functions -e flirt.sigdb.load.system=false -e flirt.sigdb.load.home=false bins/other/rz-diff/true bins/other/rz-diff/false
 EXPECT=<<EOF
-                   fcn.00401050 26    0x00401050 COMPLETE 1.000000   0x00401050 26    fcn.00401050
-                sym.imp.__uflow 6     0x00401080 COMPLETE 1.000000   0x00401080 6     sym.imp.__uflow
-                 sym.imp.getenv 6     0x00401090 COMPLETE 1.000000   0x00401090 6     sym.imp.getenv
-                   sym.imp.free 6     0x004010a0 COMPLETE 1.000000   0x004010a0 6     sym.imp.free
-                  sym.imp.abort 6     0x004010b0 COMPLETE 1.000000   0x004010b0 6     sym.imp.abort
-       sym.imp.__errno_location 6     0x004010c0 COMPLETE 1.000000   0x004010c0 6     sym.imp.__errno_location
-                sym.imp.strncmp 6     0x004010d0 COMPLETE 1.000000   0x004010d0 6     sym.imp.strncmp
-                  sym.imp._exit 6     0x004010e0 COMPLETE 1.000000   0x004010e0 6     sym.imp._exit
-                 sym.imp.strcpy 6     0x004010f0 COMPLETE 1.000000   0x004010f0 6     sym.imp.strcpy
-             sym.imp.__fpending 6     0x00401100 COMPLETE 1.000000   0x00401100 6     sym.imp.__fpending
-             sym.imp.textdomain 6     0x00401110 COMPLETE 1.000000   0x00401110 6     sym.imp.textdomain
-                 sym.imp.fclose 6     0x00401120 COMPLETE 1.000000   0x00401120 6     sym.imp.fclose
-         sym.imp.bindtextdomain 6     0x00401130 COMPLETE 1.000000   0x00401130 6     sym.imp.bindtextdomain
-              sym.imp.dcgettext 6     0x00401140 COMPLETE 1.000000   0x00401140 6     sym.imp.dcgettext
- sym.imp.__ctype_get_mb_cur_max 6     0x00401150 COMPLETE 1.000000   0x00401150 6     sym.imp.__ctype_get_mb_cur_max
-                 sym.imp.strlen 6     0x00401160 COMPLETE 1.000000   0x00401160 6     sym.imp.strlen
-       sym.imp.__stack_chk_fail 6     0x00401170 COMPLETE 1.000000   0x00401170 6     sym.imp.__stack_chk_fail
-                sym.imp.strrchr 6     0x00401190 COMPLETE 1.000000   0x00401190 6     sym.imp.strrchr
-                  sym.imp.lseek 6     0x004011a0 COMPLETE 1.000000   0x004011a0 6     sym.imp.lseek
-                 sym.imp.memset 6     0x004011b0 COMPLETE 1.000000   0x004011b0 6     sym.imp.memset
-                 sym.imp.fscanf 6     0x004011c0 COMPLETE 1.000000   0x004011c0 6     sym.imp.fscanf
-                  sym.imp.close 6     0x004011d0 COMPLETE 1.000000   0x004011d0 6     sym.imp.close
-      sym.imp.__libc_start_main 6     0x004011e0 COMPLETE 1.000000   0x004011e0 6     sym.imp.__libc_start_main
-                 sym.imp.memcmp 6     0x004011f0 COMPLETE 1.000000   0x004011f0 6     sym.imp.memcmp
-         sym.imp.fputs_unlocked 6     0x00401200 COMPLETE 1.000000   0x00401200 6     sym.imp.fputs_unlocked
-                 sym.imp.calloc 6     0x00401210 COMPLETE 1.000000   0x00401210 6     sym.imp.calloc
-                 sym.imp.strcmp 6     0x00401220 COMPLETE 1.000000   0x00401220 6     sym.imp.strcmp
-           loc.imp.__gmon_start 6     0x00401230 COMPLETE 1.000000   0x00401230 6     loc.imp.__gmon_start
-                 sym.imp.memcpy 6     0x00401240 COMPLETE 1.000000   0x00401240 6     sym.imp.memcpy
-                 sym.imp.fileno 6     0x00401250 COMPLETE 1.000000   0x00401250 6     sym.imp.fileno
-                 sym.imp.malloc 6     0x00401260 COMPLETE 1.000000   0x00401260 6     sym.imp.malloc
-            sym.imp.nl_langinfo 6     0x00401280 COMPLETE 1.000000   0x00401280 6     sym.imp.nl_langinfo
-                 sym.imp.ungetc 6     0x00401290 COMPLETE 1.000000   0x00401290 6     sym.imp.ungetc
-             sym.imp.__freading 6     0x004012a0 COMPLETE 1.000000   0x004012a0 6     sym.imp.__freading
-                sym.imp.realloc 6     0x004012b0 COMPLETE 1.000000   0x004012b0 6     sym.imp.realloc
-                 sym.imp.fdopen 6     0x004012c0 COMPLETE 1.000000   0x004012c0 6     sym.imp.fdopen
-              sym.imp.setlocale 6     0x004012d0 COMPLETE 1.000000   0x004012d0 6     sym.imp.setlocale
-           sym.imp.__printf_chk 6     0x004012e0 COMPLETE 1.000000   0x004012e0 6     sym.imp.__printf_chk
-                  sym.imp.error 6     0x004012f0 COMPLETE 1.000000   0x004012f0 6     sym.imp.error
-                   sym.imp.open 6     0x00401300 COMPLETE 1.000000   0x00401300 6     sym.imp.open
-                   sym.imp.exit 6     0x00401330 COMPLETE 1.000000   0x00401330 6     sym.imp.exit
-                 sym.imp.fwrite 6     0x00401340 COMPLETE 1.000000   0x00401340 6     sym.imp.fwrite
-          sym.imp.__fprintf_chk 6     0x00401350 COMPLETE 1.000000   0x00401350 6     sym.imp.__fprintf_chk
-                sym.imp.mbsinit 6     0x00401360 COMPLETE 1.000000   0x00401360 6     sym.imp.mbsinit
-               sym.imp.iswprint 6     0x00401370 COMPLETE 1.000000   0x00401370 6     sym.imp.iswprint
-          sym.imp.__ctype_b_loc 6     0x00401380 COMPLETE 1.000000   0x00401380 6     sym.imp.__ctype_b_loc
-                   fcn.00401460 41    0x00401460 COMPLETE 1.000000   0x00401470 41    fcn.00401470
-                   fcn.00401530 745   0x00401530 PARTIAL  0.879195   0x00401540 745   fcn.00401540
-                   fcn.004018f0 147   0x004018f0 PARTIAL  0.931973   0x00401900 147   fcn.00401900
-                   fcn.00401990 137   0x00401990 PARTIAL  0.985401   0x004019a0 137   fcn.004019a0
-                   fcn.00401a20 162   0x00401a20 COMPLETE 1.000000   0x00401a30 162   fcn.00401a30
-                   fcn.00401ae0 228   0x00401ae0 PARTIAL  0.964912   0x00401af0 228   fcn.00401af0
-                   fcn.00401be0 2728  0x00401be0 PARTIAL  0.991569   0x00401bf0 2728  fcn.00401bf0
-                   fcn.00402730 425   0x00402730 PARTIAL  0.971765   0x00402740 425   fcn.00402740
-                   fcn.004029a0 50    0x004029a0 PARTIAL  0.980000   0x004029b0 50    fcn.004029b0
-                   fcn.00402e20 204   0x00402e20 PARTIAL  0.960784   0x00402e30 204   fcn.00402e30
-                   fcn.00402fc0 944   0x00402fc0 PARTIAL  0.952331   0x00402fd0 944   fcn.00402fd0
-                   fcn.004033d0 131   0x004033d0 PARTIAL  0.992366   0x004033e0 131   fcn.004033e0
-                   fcn.00403460 167   0x00403460 PARTIAL  0.994012   0x00403470 167   fcn.00403470
-                   fcn.00403590 26    0x00403590 PARTIAL  0.961538   0x004035a0 26    fcn.004035a0
-                   fcn.004035e0 48    0x004035e0 PARTIAL  0.958333   0x004035f0 48    fcn.004035f0
-                   fcn.00403750 40    0x00403750 PARTIAL  0.975000   0x00403760 40    fcn.00403760
-                   fcn.004037a0 49    0x004037a0 PARTIAL  0.857143   0x004037b0 49    fcn.004037b0
-                   fcn.004037e0 35    0x004037e0 PARTIAL  0.914286   0x004037f0 35    fcn.004037f0
-                   fcn.00403810 67    0x00403810 COMPLETE 1.000000   0x00403820 67    fcn.00403820
-                   fcn.00403860 108   0x00403860 PARTIAL  0.972222   0x00403870 108   fcn.00403870
-                   fcn.004038e0 1015  0x004038e0 PARTIAL  0.958621   0x004038f0 1015  fcn.004038f0
-                   fcn.00403cf0 118   0x00403cf0 PARTIAL  0.932203   0x00403d00 118   fcn.00403d00
-                   fcn.00403d70 59    0x00403d70 PARTIAL  0.949153   0x00403d80 59    fcn.00403d80
-                   fcn.00403db0 86    0x00403db0 PARTIAL  0.965116   0x00403dc0 86    fcn.00403dc0
-                   fcn.00403e90 26    0x00403e90 PARTIAL  0.923077   0x00403ea0 26    fcn.00403ea0
+                  fcn.00401050    26 0x00401050 COMPLETE 1.000000   0x00401050    26 fcn.00401050
+               sym.imp.__uflow     6 0x00401080 COMPLETE 1.000000   0x00401080     6 sym.imp.__uflow
+                sym.imp.getenv     6 0x00401090 COMPLETE 1.000000   0x00401090     6 sym.imp.getenv
+                  sym.imp.free     6 0x004010a0 COMPLETE 1.000000   0x004010a0     6 sym.imp.free
+                 sym.imp.abort     6 0x004010b0 COMPLETE 1.000000   0x004010b0     6 sym.imp.abort
+      sym.imp.__errno_location     6 0x004010c0 COMPLETE 1.000000   0x004010c0     6 sym.imp.__errno_location
+               sym.imp.strncmp     6 0x004010d0 COMPLETE 1.000000   0x004010d0     6 sym.imp.strncmp
+                 sym.imp._exit     6 0x004010e0 COMPLETE 1.000000   0x004010e0     6 sym.imp._exit
+                sym.imp.strcpy     6 0x004010f0 COMPLETE 1.000000   0x004010f0     6 sym.imp.strcpy
+            sym.imp.__fpending     6 0x00401100 COMPLETE 1.000000   0x00401100     6 sym.imp.__fpending
+            sym.imp.textdomain     6 0x00401110 COMPLETE 1.000000   0x00401110     6 sym.imp.textdomain
+                sym.imp.fclose     6 0x00401120 COMPLETE 1.000000   0x00401120     6 sym.imp.fclose
+        sym.imp.bindtextdomain     6 0x00401130 COMPLETE 1.000000   0x00401130     6 sym.imp.bindtextdomain
+             sym.imp.dcgettext     6 0x00401140 COMPLETE 1.000000   0x00401140     6 sym.imp.dcgettext
+sym.imp.__ctype_get_mb_cur_max     6 0x00401150 COMPLETE 1.000000   0x00401150     6 sym.imp.__ctype_get_mb_cur_max
+                sym.imp.strlen     6 0x00401160 COMPLETE 1.000000   0x00401160     6 sym.imp.strlen
+      sym.imp.__stack_chk_fail     6 0x00401170 COMPLETE 1.000000   0x00401170     6 sym.imp.__stack_chk_fail
+               sym.imp.strrchr     6 0x00401190 COMPLETE 1.000000   0x00401190     6 sym.imp.strrchr
+                 sym.imp.lseek     6 0x004011a0 COMPLETE 1.000000   0x004011a0     6 sym.imp.lseek
+                sym.imp.memset     6 0x004011b0 COMPLETE 1.000000   0x004011b0     6 sym.imp.memset
+                sym.imp.fscanf     6 0x004011c0 COMPLETE 1.000000   0x004011c0     6 sym.imp.fscanf
+                 sym.imp.close     6 0x004011d0 COMPLETE 1.000000   0x004011d0     6 sym.imp.close
+     sym.imp.__libc_start_main     6 0x004011e0 COMPLETE 1.000000   0x004011e0     6 sym.imp.__libc_start_main
+                sym.imp.memcmp     6 0x004011f0 COMPLETE 1.000000   0x004011f0     6 sym.imp.memcmp
+        sym.imp.fputs_unlocked     6 0x00401200 COMPLETE 1.000000   0x00401200     6 sym.imp.fputs_unlocked
+                sym.imp.calloc     6 0x00401210 COMPLETE 1.000000   0x00401210     6 sym.imp.calloc
+                sym.imp.strcmp     6 0x00401220 COMPLETE 1.000000   0x00401220     6 sym.imp.strcmp
+          loc.imp.__gmon_start     6 0x00401230 COMPLETE 1.000000   0x00401230     6 loc.imp.__gmon_start
+                sym.imp.memcpy     6 0x00401240 COMPLETE 1.000000   0x00401240     6 sym.imp.memcpy
+                sym.imp.fileno     6 0x00401250 COMPLETE 1.000000   0x00401250     6 sym.imp.fileno
+                sym.imp.malloc     6 0x00401260 COMPLETE 1.000000   0x00401260     6 sym.imp.malloc
+           sym.imp.nl_langinfo     6 0x00401280 COMPLETE 1.000000   0x00401280     6 sym.imp.nl_langinfo
+                sym.imp.ungetc     6 0x00401290 COMPLETE 1.000000   0x00401290     6 sym.imp.ungetc
+            sym.imp.__freading     6 0x004012a0 COMPLETE 1.000000   0x004012a0     6 sym.imp.__freading
+               sym.imp.realloc     6 0x004012b0 COMPLETE 1.000000   0x004012b0     6 sym.imp.realloc
+                sym.imp.fdopen     6 0x004012c0 COMPLETE 1.000000   0x004012c0     6 sym.imp.fdopen
+             sym.imp.setlocale     6 0x004012d0 COMPLETE 1.000000   0x004012d0     6 sym.imp.setlocale
+          sym.imp.__printf_chk     6 0x004012e0 COMPLETE 1.000000   0x004012e0     6 sym.imp.__printf_chk
+                 sym.imp.error     6 0x004012f0 COMPLETE 1.000000   0x004012f0     6 sym.imp.error
+                  sym.imp.open     6 0x00401300 COMPLETE 1.000000   0x00401300     6 sym.imp.open
+                  sym.imp.exit     6 0x00401330 COMPLETE 1.000000   0x00401330     6 sym.imp.exit
+                sym.imp.fwrite     6 0x00401340 COMPLETE 1.000000   0x00401340     6 sym.imp.fwrite
+         sym.imp.__fprintf_chk     6 0x00401350 COMPLETE 1.000000   0x00401350     6 sym.imp.__fprintf_chk
+               sym.imp.mbsinit     6 0x00401360 COMPLETE 1.000000   0x00401360     6 sym.imp.mbsinit
+              sym.imp.iswprint     6 0x00401370 COMPLETE 1.000000   0x00401370     6 sym.imp.iswprint
+         sym.imp.__ctype_b_loc     6 0x00401380 COMPLETE 1.000000   0x00401380     6 sym.imp.__ctype_b_loc
+                  fcn.00401460    41 0x00401460 COMPLETE 1.000000   0x00401470    41 fcn.00401470
+                  fcn.00401530   745 0x00401530 PARTIAL  0.879195   0x00401540   745 fcn.00401540
+                  fcn.004018f0   147 0x004018f0 PARTIAL  0.931973   0x00401900   147 fcn.00401900
+                  fcn.00401990   137 0x00401990 PARTIAL  0.985401   0x004019a0   137 fcn.004019a0
+                  fcn.00401a20   162 0x00401a20 COMPLETE 1.000000   0x00401a30   162 fcn.00401a30
+                  fcn.00401ae0   228 0x00401ae0 PARTIAL  0.964912   0x00401af0   228 fcn.00401af0
+                  fcn.00401be0  2728 0x00401be0 PARTIAL  0.991569   0x00401bf0  2728 fcn.00401bf0
+                  fcn.00402730   425 0x00402730 PARTIAL  0.971765   0x00402740   425 fcn.00402740
+                  fcn.004029a0    50 0x004029a0 PARTIAL  0.980000   0x004029b0    50 fcn.004029b0
+                  fcn.00402e20   204 0x00402e20 PARTIAL  0.960784   0x00402e30   204 fcn.00402e30
+                  fcn.00402fc0   944 0x00402fc0 PARTIAL  0.952331   0x00402fd0   944 fcn.00402fd0
+                  fcn.004033d0   131 0x004033d0 PARTIAL  0.992366   0x004033e0   131 fcn.004033e0
+                  fcn.00403460   167 0x00403460 PARTIAL  0.994012   0x00403470   167 fcn.00403470
+                  fcn.00403590    26 0x00403590 PARTIAL  0.961538   0x004035a0    26 fcn.004035a0
+                  fcn.004035e0    48 0x004035e0 PARTIAL  0.958333   0x004035f0    48 fcn.004035f0
+                  fcn.00403750    40 0x00403750 PARTIAL  0.975000   0x00403760    40 fcn.00403760
+                  fcn.004037a0    49 0x004037a0 PARTIAL  0.857143   0x004037b0    49 fcn.004037b0
+                  fcn.004037e0    35 0x004037e0 PARTIAL  0.914286   0x004037f0    35 fcn.004037f0
+                  fcn.00403810    67 0x00403810 COMPLETE 1.000000   0x00403820    67 fcn.00403820
+                  fcn.00403860   108 0x00403860 PARTIAL  0.972222   0x00403870   108 fcn.00403870
+                  fcn.004038e0  1015 0x004038e0 PARTIAL  0.958621   0x004038f0  1015 fcn.004038f0
+                  fcn.00403cf0   118 0x00403cf0 PARTIAL  0.932203   0x00403d00   118 fcn.00403d00
+                  fcn.00403d70    59 0x00403d70 PARTIAL  0.949153   0x00403d80    59 fcn.00403d80
+                  fcn.00403db0    86 0x00403db0 PARTIAL  0.965116   0x00403dc0    86 fcn.00403dc0
+                  fcn.00403e90    26 0x00403e90 PARTIAL  0.923077   0x00403ea0    26 fcn.00403ea0
 EOF
 RUN
 
@@ -948,16 +948,16 @@ FILE==
 CMDS=!rz-diff -e 'analysis.fcnprefix=test' -e 'analysis.limits=true' -e 'analysis.from=0x401460' -e 'analysis.to=0x4033d0' -C -t functions bins/other/rz-diff/true bins/other/rz-diff/false
 EXPECT=<<EOF
 .-------------------------------------------------------------------------------------------------.
-| name0         | size0 | addr0      | type     | similarity | addr1      | size1 | name1         |
+| name0         | size0 |      addr0 | type     | similarity |      addr1 | size1 | name1         |
 )-------------------------------------------------------------------------------------------------(
-| test.00401460 | 41    | 0x00401460 | COMPLETE | 1.000000   | 0x00401470 | 41    | test.00401470 |
-| test.00401990 | 137   | 0x00401990 | PARTIAL  | 0.985401   | 0x004019a0 | 137   | test.004019a0 |
-| test.00401a20 | 162   | 0x00401a20 | COMPLETE | 1.000000   | 0x00401a30 | 162   | test.00401a30 |
-| test.00401ae0 | 228   | 0x00401ae0 | PARTIAL  | 0.964912   | 0x00401af0 | 228   | test.00401af0 |
-| test.00401be0 | 2728  | 0x00401be0 | PARTIAL  | 0.991569   | 0x00401bf0 | 2728  | test.00401bf0 |
-| test.00402730 | 425   | 0x00402730 | PARTIAL  | 0.971765   | 0x00402740 | 425   | test.00402740 |
-| test.004029a0 | 50    | 0x004029a0 | PARTIAL  | 0.980000   | 0x004029b0 | 50    | test.004029b0 |
-| test.00402e20 | 204   | 0x00402e20 | PARTIAL  | 0.960784   | 0x00402e30 | 204   | test.00402e30 |
+| test.00401460 |    41 | 0x00401460 | COMPLETE | 1.000000   | 0x00401470 |    41 | test.00401470 |
+| test.00401990 |   137 | 0x00401990 | PARTIAL  | 0.985401   | 0x004019a0 |   137 | test.004019a0 |
+| test.00401a20 |   162 | 0x00401a20 | COMPLETE | 1.000000   | 0x00401a30 |   162 | test.00401a30 |
+| test.00401ae0 |   228 | 0x00401ae0 | PARTIAL  | 0.964912   | 0x00401af0 |   228 | test.00401af0 |
+| test.00401be0 |  2728 | 0x00401be0 | PARTIAL  | 0.991569   | 0x00401bf0 |  2728 | test.00401bf0 |
+| test.00402730 |   425 | 0x00402730 | PARTIAL  | 0.971765   | 0x00402740 |   425 | test.00402740 |
+| test.004029a0 |    50 | 0x004029a0 | PARTIAL  | 0.980000   | 0x004029b0 |    50 | test.004029b0 |
+| test.00402e20 |   204 | 0x00402e20 | PARTIAL  | 0.960784   | 0x00402e30 |   204 | test.00402e30 |
 `-------------------------------------------------------------------------------------------------'
 EOF
 RUN
@@ -967,16 +967,16 @@ FILE==
 CMDS=!rz-diff -e 'analysis.fcnprefix=test' -e 'analysis.limits=true' -e 'analysis.from=0x401460' -e 'analysis.to=0x4033d0' -t functions bins/other/rz-diff/true bins/other/rz-diff/false
 EXPECT=<<EOF
 .-------------------------------------------------------------------------------------------------.
-| name0         | size0 | addr0      | type     | similarity | addr1      | size1 | name1         |
+| name0         | size0 |      addr0 | type     | similarity |      addr1 | size1 | name1         |
 )-------------------------------------------------------------------------------------------------(
-| test.00401460 | 41    | 0x00401460 | [92mCOMPLETE[0m | [92m1.000000[0m   | 0x00401470 | 41    | test.00401470 |
-| test.00401990 | 137   | 0x00401990 | [93mPARTIAL [0m | [93m0.985401[0m   | 0x004019a0 | 137   | test.004019a0 |
-| test.00401a20 | 162   | 0x00401a20 | [92mCOMPLETE[0m | [92m1.000000[0m   | 0x00401a30 | 162   | test.00401a30 |
-| test.00401ae0 | 228   | 0x00401ae0 | [93mPARTIAL [0m | [93m0.964912[0m   | 0x00401af0 | 228   | test.00401af0 |
-| test.00401be0 | 2728  | 0x00401be0 | [93mPARTIAL [0m | [93m0.991569[0m   | 0x00401bf0 | 2728  | test.00401bf0 |
-| test.00402730 | 425   | 0x00402730 | [93mPARTIAL [0m | [93m0.971765[0m   | 0x00402740 | 425   | test.00402740 |
-| test.004029a0 | 50    | 0x004029a0 | [93mPARTIAL [0m | [93m0.980000[0m   | 0x004029b0 | 50    | test.004029b0 |
-| test.00402e20 | 204   | 0x00402e20 | [93mPARTIAL [0m | [93m0.960784[0m   | 0x00402e30 | 204   | test.00402e30 |
+| test.00401460 |    41 | 0x00401460 | [92mCOMPLETE[0m | [92m1.000000[0m   | 0x00401470 |    41 | test.00401470 |
+| test.00401990 |   137 | 0x00401990 | [93mPARTIAL [0m | [93m0.985401[0m   | 0x004019a0 |   137 | test.004019a0 |
+| test.00401a20 |   162 | 0x00401a20 | [92mCOMPLETE[0m | [92m1.000000[0m   | 0x00401a30 |   162 | test.00401a30 |
+| test.00401ae0 |   228 | 0x00401ae0 | [93mPARTIAL [0m | [93m0.964912[0m   | 0x00401af0 |   228 | test.00401af0 |
+| test.00401be0 |  2728 | 0x00401be0 | [93mPARTIAL [0m | [93m0.991569[0m   | 0x00401bf0 |  2728 | test.00401bf0 |
+| test.00402730 |   425 | 0x00402730 | [93mPARTIAL [0m | [93m0.971765[0m   | 0x00402740 |   425 | test.00402740 |
+| test.004029a0 |    50 | 0x004029a0 | [93mPARTIAL [0m | [93m0.980000[0m   | 0x004029b0 |    50 | test.004029b0 |
+| test.00402e20 |   204 | 0x00402e20 | [93mPARTIAL [0m | [93m0.960784[0m   | 0x00402e30 |   204 | test.00402e30 |
 `-------------------------------------------------------------------------------------------------'
 EOF
 RUN
@@ -986,16 +986,16 @@ FILE==
 CMDS=!rz-diff -e 'analysis.fcnprefix=test' -e 'analysis.limits=true' -e 'analysis.from=0x401460' -e 'analysis.to=0x4033d0' -C -t functions -0 test.00401ae0 bins/other/rz-diff/true bins/other/rz-diff/false
 EXPECT=<<EOF
 .-------------------------------------------------------------------------------------------------.
-| name0         | size0 | addr0      | type     | similarity | addr1      | size1 | name1         |
+| name0         | size0 |      addr0 | type     | similarity |      addr1 | size1 | name1         |
 )-------------------------------------------------------------------------------------------------(
-| test.00401470 | 41    | 0x00401470 | UNLIKE   | 0.0746     | 0x00401ae0 | 228   | test.00401ae0 |
-| test.004019a0 | 137   | 0x004019a0 | UNLIKE   | 0.1228     | 0x00401ae0 | 228   | test.00401ae0 |
-| test.00401a30 | 162   | 0x00401a30 | UNLIKE   | 0.0746     | 0x00401ae0 | 228   | test.00401ae0 |
-| test.00401af0 | 228   | 0x00401af0 | PARTIAL  | 0.964912   | 0x00401ae0 | 228   | test.00401ae0 |
-| test.00401bf0 | 2728  | 0x00401bf0 | UNLIKE   | 0.0433     | 0x00401ae0 | 228   | test.00401ae0 |
-| test.00402740 | 425   | 0x00402740 | UNLIKE   | 0.1106     | 0x00401ae0 | 228   | test.00401ae0 |
-| test.004029b0 | 50    | 0x004029b0 | UNLIKE   | 0.0702     | 0x00401ae0 | 228   | test.00401ae0 |
-| test.00402e30 | 204   | 0x00402e30 | UNLIKE   | 0.1140     | 0x00401ae0 | 228   | test.00401ae0 |
+| test.00401470 |    41 | 0x00401470 | UNLIKE   | 0.0746     | 0x00401ae0 |   228 | test.00401ae0 |
+| test.004019a0 |   137 | 0x004019a0 | UNLIKE   | 0.1228     | 0x00401ae0 |   228 | test.00401ae0 |
+| test.00401a30 |   162 | 0x00401a30 | UNLIKE   | 0.0746     | 0x00401ae0 |   228 | test.00401ae0 |
+| test.00401af0 |   228 | 0x00401af0 | PARTIAL  | 0.964912   | 0x00401ae0 |   228 | test.00401ae0 |
+| test.00401bf0 |  2728 | 0x00401bf0 | UNLIKE   | 0.0433     | 0x00401ae0 |   228 | test.00401ae0 |
+| test.00402740 |   425 | 0x00402740 | UNLIKE   | 0.1106     | 0x00401ae0 |   228 | test.00401ae0 |
+| test.004029b0 |    50 | 0x004029b0 | UNLIKE   | 0.0702     | 0x00401ae0 |   228 | test.00401ae0 |
+| test.00402e30 |   204 | 0x00402e30 | UNLIKE   | 0.1140     | 0x00401ae0 |   228 | test.00401ae0 |
 `-------------------------------------------------------------------------------------------------'
 EOF
 RUN
