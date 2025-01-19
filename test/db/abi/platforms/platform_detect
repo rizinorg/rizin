@@ -5,7 +5,7 @@ ie
 iI~arch,machine,bits,vaddr
 EOF
 EXPECT=<<EOF
-vaddr      paddr      hvaddr     haddr      type    
+     vaddr      paddr     hvaddr      haddr type    
 ----------------------------------------------------
 0x00008440 0x00000440 0x00008018 0x00000018 program
 arch     arm
@@ -21,7 +21,7 @@ ie
 iI~arch,machine,bits,vaddr
 EOF
 EXPECT=<<EOF
-vaddr      paddr      hvaddr     haddr      type    
+     vaddr      paddr     hvaddr      haddr type    
 ----------------------------------------------------
 0x00008438 0x00000438 0x00008018 0x00000018 program
 arch     arm
@@ -37,7 +37,7 @@ ie
 iI~arch,machine,bits,vaddr
 EOF
 EXPECT=<<EOF
-vaddr      paddr      hvaddr     haddr      type    
+     vaddr      paddr     hvaddr      haddr type    
 ----------------------------------------------------
 0x004006a0 0x000006a0 0x00400018 0x00000018 program
 arch     mips
@@ -53,7 +53,7 @@ ie
 iI~arch,machine,bits,vaddr
 EOF
 EXPECT=<<EOF
-vaddr       paddr      hvaddr      haddr      type    
+      vaddr      paddr      hvaddr      haddr type    
 ------------------------------------------------------
 0x120000af0 0x00000af0 0x120000018 0x00000018 program
 arch     mips
@@ -69,7 +69,7 @@ ie
 iI~arch,machine,bits,vaddr
 EOF
 EXPECT=<<EOF
-vaddr      paddr      hvaddr     haddr      type    
+     vaddr      paddr     hvaddr      haddr type    
 ----------------------------------------------------
 0x10000320 0x00000320 0x10000018 0x00000018 program
 arch     ppc
@@ -85,7 +85,7 @@ ie
 iI~arch,machine,bits,vaddr
 EOF
 EXPECT=<<EOF
-vaddr      paddr      hvaddr     haddr      type    
+     vaddr      paddr     hvaddr      haddr type    
 ----------------------------------------------------
 0x10000420 0x00000420 0x10000018 0x00000018 program
 arch     ppc
@@ -101,7 +101,7 @@ ie;
 iI~arch,machine,bits,vaddr
 EOF
 EXPECT=<<EOF
-vaddr      paddr      hvaddr     haddr      type    
+     vaddr      paddr     hvaddr      haddr type    
 ----------------------------------------------------
 0x00400600 0x00000600 0x00400018 0x00000018 program
 arch     x86
@@ -117,7 +117,7 @@ ie;
 iI~arch,machine,bits,vaddr
 EOF
 EXPECT=<<EOF
-vaddr       paddr      hvaddr     haddr      type    
+      vaddr      paddr     hvaddr      haddr type    
 -----------------------------------------------------
 0x100000e50 0x00000e50 ---------- 0x000004b8 program
 arch     x86
@@ -133,7 +133,7 @@ ie
 iI~arch,machine,bits,vaddr
 EOF
 EXPECT=<<EOF
-vaddr      paddr      hvaddr     haddr      type    
+     vaddr      paddr     hvaddr      haddr type    
 ----------------------------------------------------
 0x08048440 0x00000440 0x08048018 0x00000018 program
 arch     x86
@@ -149,7 +149,7 @@ ie
 iI~arch,machine,bits,vaddr
 EOF
 EXPECT=<<EOF
-vaddr      paddr      hvaddr     haddr      type    
+     vaddr      paddr     hvaddr      haddr type    
 ----------------------------------------------------
 0x004014e0 0x000008e0 ---------- 0x000000a8 program
 arch     x86
@@ -165,7 +165,7 @@ ie
 iI~arch,machine,bits,vaddr
 EOF
 EXPECT=<<EOF
-vaddr      paddr      hvaddr     haddr      type    
+     vaddr      paddr     hvaddr      haddr type    
 ----------------------------------------------------
 0x004014d0 0x00000ad0 ---------- 0x000000a8 program
 arch     x86

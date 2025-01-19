@@ -38,176 +38,176 @@ is~unit wrpr.system.
 is~tc.system
 EOF
 EXPECT=<<EOF
-231  0x00031760 0x00431760 GLOBAL FUNC   102       unit unix selecttext(text,longint)longint
-258  0x000312d0 0x004312d0 GLOBAL FUNC   75        unit unix readtimezonefile(shortstring_)::decode(longint)
-354  0x00030ad0 0x00430ad0 GLOBAL FUNC   442       unit unix getlocaltimezone(longint,longint,longint)
-385  0x00031240 0x00431240 GLOBAL FUNC   74        unit unix readtimezonefile(shortstring_)::readbufbyte()byte
-439  0x00030160 0x00430160 GLOBAL FUNC   122       unit unix fpstatfs(ansistring,pstatfs)longint
-465  0x00032200 0x00432200 GLOBAL FUNC   138       unit unix popen(text,unicodestring,char)longint
-515  0x00030a30 0x00430a30 GLOBAL FUNC   152       unit unix find_transition(longint)pttinfo
-580  0x00030690 0x00430690 GLOBAL FUNC   17        unit unix fpexecle(ansistring,array_of_ansistring,ppchar)longint
-608  0x000335d0 0x004335d0 GLOBAL FUNC   252       unit unixutil epochtolocal(longint,word,word,word,word,word,word)
-695  0x00033740 0x00433740 GLOBAL FUNC   158       unit unixutil gregoriantojulian(longint,longint,longint)longint
-739  0x00031820 0x00431820 GLOBAL FUNC   75        unit unix telldir(pdir)int64
-745  0x000302a0 0x004302a0 GLOBAL FUNC   70        unit unix pclose(text)longint
-769  0x00030210 0x00430210 GLOBAL FUNC   32        unit unix fpfstatfs(longint,pstatfs)longint
-822  0x000306b0 0x004306b0 GLOBAL FUNC   27        unit unix fpexecl(ansistring,array_of_ansistring)longint
-833  0x00032a70 0x00432a70 GLOBAL FUNC   881       unit unix fsearch(ansistring,ansistring,tfsearchoption)ansistring
-839  0x000329d0 0x004329d0 GLOBAL FUNC   55        unit unix getdomainname()shortstring
-869  0x00032320 0x00432320 GLOBAL FUNC   678       unit unix assignstream(text,text,ansistring,array_of_ansistring)longint
-897  0x00030770 0x00430770 GLOBAL FUNC   122       unit unix fpsystem(shortstring)longint
-919  0x00032e80 0x00432e80 GLOBAL FUNC   16        unit unix finalize()
-930  0x000325d0 0x004325d0 GLOBAL FUNC   1016      unit unix assignstream(text,text,text,ansistring,array_of_ansistring)longint
-984  0x000336d0 0x004336d0 GLOBAL FUNC   112       unit unixutil localtoepoch(word,word,word,word,word,word)longint
-1000 0x00030230 0x00430230 GLOBAL FUNC   32        unit unix fpstatfs(pchar,pstatfs)longint
-1031 0x000331e0 0x004331e0 GLOBAL FUNC   213       unit unixutil arraystringtoppchar(array_of_ansistring,longint)ppchar
-1095 0x00032290 0x00432290 GLOBAL FUNC   138       unit unix popen(file,unicodestring,char)longint
-1119 0x00032e70 0x00432e70 GLOBAL FUNC   16        unit unix init()
-1151 0x00030cb0 0x00430cb0 GLOBAL FUNC   143       unit unix timezonedir()shortstring
-1163 0x00031650 0x00431650 GLOBAL FUNC   21        unit unix rereadlocaltime()
-1253 0x00030710 0x00430710 GLOBAL FUNC   31        unit unix fpexecv(ansistring,ppchar)longint
-1266 0x00031990 0x00431990 GLOBAL FUNC   226       unit unix assignpipe(text,text)longint
-1286 0x00031a80 0x00431a80 GLOBAL FUNC   148       unit unix assignpipe(file,file)longint
-1313 0x000302f0 0x004302f0 GLOBAL FUNC   70        unit unix pclose(file)longint
-1343 0x000303d0 0x004303d0 GLOBAL FUNC   440       unit unix intfpexecvemaybep(ansistring,ppchar,ppchar,boolean)longint
-1358 0x00030250 0x00430250 GLOBAL FUNC   31        unit unix fpfsync(longint)longint
-1481 0x000317d0 0x004317d0 GLOBAL FUNC   72        unit unix seekdir(pdir,int64)
-1492 0x00030730 0x00430730 GLOBAL FUNC   31        unit unix fpexecvp(ansistring,ppchar)longint
-1531 0x00033490 0x00433490 GLOBAL FUNC   19        unit unixutil getfs(text)longint
-1616 0x00030340 0x00430340 GLOBAL FUNC   142       unit unix waitprocess(longint)longint
-1646 0x00030a20 0x00430a20 GLOBAL FUNC   16        unit unix w_stopcode(smallint)smallint
-1686 0x00032a50 0x00432a50 GLOBAL FUNC   21        unit unix sigraise(smallint)
-1699 0x000334d0 0x004334d0 GLOBAL FUNC   250       unit unixutil juliantogregorian(longint,word,word,word)
-1703 0x000316b0 0x004316b0 GLOBAL FUNC   169       unit unix selecttext(text,ptimeval)longint
-1734 0x000309e0 0x004309e0 GLOBAL FUNC   19        unit unix wifstopped(smallint)boolean
-1759 0x00030c90 0x00430c90 GLOBAL FUNC   28        unit unix getlocaltimezone(longint)
-1777 0x00031530 0x00431530 GLOBAL FUNC   52        unit unix initlocaltime()
-1792 0x00030590 0x00430590 GLOBAL FUNC   246       unit unix intfpexecl(ansistring,array_of_ansistring,ppchar,boolean)longint
-1807 0x000318c0 0x004318c0 GLOBAL FUNC   109       unit unix iopipe(text)longint
-1893 0x000301e0 0x004301e0 GLOBAL FUNC   34        unit unix fpflock(longint,longint)longint
-1923 0x000332c0 0x004332c0 GLOBAL FUNC   34        unit unixutil stringtoppchar(ansistring,smallint)ppchar
-1927 0x00031b30 0x00431b30 GLOBAL FUNC   774       unit unix popen_internal(text,rawbytestring,char)longint
-1936 0x00031870 0x00431870 GLOBAL FUNC   65        unit unix openpipe(text)
-2012 0x00031190 0x00431190 GLOBAL FUNC   161       unit unix readtimezonefile(shortstring_)::readbuf(formal,smallint)smallint
-2099 0x00031930 0x00431930 GLOBAL FUNC   64        unit unix flushpipe(text)longint
-2107 0x000306f0 0x004306f0 GLOBAL FUNC   17        unit unix fpexeclpe(ansistring,array_of_ansistring,ppchar)longint
-2136 0x00031290 0x00431290 GLOBAL FUNC   63        unit unix readtimezonefile(shortstring_)::readfilebuf()
-2279 0x00030a00 0x00430a00 GLOBAL FUNC   18        unit unix w_exitcode(smallint,smallint)smallint
-2308 0x00031570 0x00431570 GLOBAL FUNC   209       unit unix donelocaltime()
-2335 0x00031320 0x00431320 GLOBAL FUNC   514       unit unix gettimezonefile()shortstring
-2337 0x00030270 0x00430270 GLOBAL FUNC   44        unit unix assignpipe(longint,longint)longint
-2384 0x00031670 0x00431670 GLOBAL FUNC   18        unit unix fpflock(text,longint)longint
-2407 0x000334b0 0x004334b0 GLOBAL FUNC   19        unit unixutil getfs(file)longint
-2477 0x00032df0 0x00432df0 GLOBAL FUNC   121       unit unix fsearch(ansistring,ansistring)ansistring
-2496 0x00032170 0x00432170 GLOBAL FUNC   138       unit unix popen(file,rawbytestring,char)longint
-2537 0x00032a10 0x00432a10 GLOBAL FUNC   53        unit unix gethostname()shortstring
-2545 0x00030d40 0x00430d40 GLOBAL FUNC   1094      unit unix readtimezonefile(shortstring)
-2561 0x00031970 0x00431970 GLOBAL FUNC   25        unit unix closepipe(text)longint
-2628 0x000320e0 0x004320e0 GLOBAL FUNC   138       unit unix popen(text,rawbytestring,char)longint
-2656 0x000307f0 0x004307f0 GLOBAL FUNC   483       unit unix fpsystem(ansistring)longint
-2660 0x00031e40 0x00431e40 GLOBAL FUNC   669       unit unix popen_internal(file,rawbytestring,char)longint
-2690 0x00031b20 0x00431b20 GLOBAL FUNC   16        unit unix pclosetext(text)longint
-2713 0x00030750 0x00430750 GLOBAL FUNC   21        unit unix fpexecvpe(ansistring,ppchar,ppchar)longint
-2776 0x000306d0 0x004306d0 GLOBAL FUNC   27        unit unix fpexeclp(ansistring,array_of_ansistring)longint
-2910 0x000332f0 0x004332f0 GLOBAL FUNC   408       unit unixutil stringtoppchar(pchar,smallint)ppchar
-2928 0x00031690 0x00431690 GLOBAL FUNC   18        unit unix fpflock(file,longint)longint
-356  0x0002ab30 0x0042ab30 GLOBAL FUNC   9         unit wrpr.system.tcontainedobject.iunknown.1.system taggregatedobject._addref()longint
-406  0x0002ab10 0x0042ab10 GLOBAL FUNC   9         unit wrpr.system.tinterfacedobject.iunknown.2.system tinterfacedobject._release()longint
-569  0x0002ab20 0x0042ab20 GLOBAL FUNC   13        unit wrpr.system.tcontainedobject.iunknown.0.system tcontainedobject.queryinterface(tguid,formal)longint
-2170 0x0002ab00 0x0042ab00 GLOBAL FUNC   9         unit wrpr.system.tinterfacedobject.iunknown.1.system tinterfacedobject._addref()longint
-2511 0x0002aaf0 0x0042aaf0 GLOBAL FUNC   9         unit wrpr.system.tinterfacedobject.iunknown.0.system tinterfacedobject.queryinterface(tguid,formal)longint
-2513 0x0002ab40 0x0042ab40 GLOBAL FUNC   9         unit wrpr.system.tcontainedobject.iunknown.2.system taggregatedobject._release()longint
-97   0x000369d0 0x004369d0 LOCAL  OBJ    8         unit tc.system calculated_cmdline()
-98   0x000369e0 0x004369e0 LOCAL  OBJ    4         unit tc.system oldrandseed()
-99   0x00036a00 0x00436a00 LOCAL  OBJ    16        unit tc.system popcntdata()
-100  0x00036a30 0x00436a30 LOCAL  OBJ    8         unit tc.system fpc_exp_real(extended)extended::ln2hi()
-101  0x00036a40 0x00436a40 LOCAL  OBJ    8         unit tc.system fpc_exp_real(extended)extended::ln2lo()
-102  0x00036a50 0x00436a50 LOCAL  OBJ    4         unit tc.system fpc_exp_real(extended)extended::large()
-103  0x00036a60 0x00436a60 LOCAL  OBJ    4         unit tc.system fpc_exp_real(extended)extended::two()
-104  0x00036a70 0x00436a70 LOCAL  OBJ    4         unit tc.system fpc_exp_real(extended)extended::half()
-105  0x00036a80 0x00436a80 LOCAL  OBJ    8         unit tc.system h2_54()
-106  0x00036a90 0x00436a90 LOCAL  OBJ    8         unit tc.system huge()
-107  0x00036aa0 0x00436aa0 LOCAL  OBJ    8         unit tc.system one()
-108  0x00036ab0 0x00436ab0 LOCAL  OBJ    8         unit tc.system zero()
-109  0x00036ac0 0x00436ac0 LOCAL  OBJ    64        unit tc.system pio2chunked()
-110  0x00036b00 0x00436b00 LOCAL  OBJ    264       unit tc.system ipio2()
-111  0x00036c10 0x00436c10 LOCAL  OBJ    8         unit tc.system init_jk()
-112  0x00036c20 0x00436c20 LOCAL  OBJ    8         unit tc.system two24()
-113  0x00036c30 0x00436c30 LOCAL  OBJ    8         unit tc.system twon24()
-114  0x00036c40 0x00436c40 LOCAL  OBJ    8         unit tc.system rem_pio2(double,double)int64::tol()
-115  0x00036c50 0x00436c50 LOCAL  OBJ    320       unit tc.system fpower10(extended,longint)extended::pow32()
-116  0x00036d90 0x00436d90 LOCAL  OBJ    160       unit tc.system fpower10(extended,longint)extended::pow512()
-117  0x00036e30 0x00436e30 LOCAL  OBJ    100       unit tc.system fpower10(extended,longint)extended::pow4096()
-118  0x00036ea0 0x00436ea0 LOCAL  OBJ    320       unit tc.system fpower10(extended,longint)extended::negpow32()
-119  0x00036fe0 0x00436fe0 LOCAL  OBJ    160       unit tc.system fpower10(extended,longint)extended::negpow512()
-120  0x00037080 0x00437080 LOCAL  OBJ    100       unit tc.system fpower10(extended,longint)extended::negpow4096()
-121  0x000370f0 0x004370f0 LOCAL  OBJ    8         unit tc.system textended80rec.specialtype()tfloatspecial::denormal()
-122  0x00037100 0x00437100 LOCAL  OBJ    8         unit tc.system tdoublerec.specialtype()tfloatspecial::denormal()
-123  0x00037110 0x00437110 LOCAL  OBJ    8         unit tc.system tsinglerec.specialtype()tfloatspecial::denormal()
-124  0x00037120 0x00437120 LOCAL  OBJ    16        unit tc.system hextbl()
-125  0x00037130 0x00437130 LOCAL  OBJ    28        unit tc.system float_format()
-126  0x00037150 0x00437150 LOCAL  OBJ    4         unit tc.system c_str_inf()
-127  0x00037160 0x00437160 LOCAL  OBJ    4         unit tc.system c_str_qnan()
-128  0x00037170 0x00437170 LOCAL  OBJ    384       unit tc.system diy_fp_cached_power10(smallint,tdiy_fp_power_of_10_)::base()
-129  0x000372f0 0x004372f0 LOCAL  OBJ    192       unit tc.system diy_fp_cached_power10(smallint,tdiy_fp_power_of_10_)::factor_plus()
-130  0x000373b0 0x004373b0 LOCAL  OBJ    192       unit tc.system diy_fp_cached_power10(smallint,tdiy_fp_power_of_10_)::factor_minus()
-131  0x00037470 0x00437470 LOCAL  OBJ    272       unit tc.system diy_fp_cached_power10(smallint,tdiy_fp_power_of_10_)::corrector()
-132  0x00037580 0x00437580 LOCAL  OBJ    40        unit tc.system str_real(crcedbaa446_gen_digits_32,crc66c340fe_)::digits()
-133  0x000375b0 0x004375b0 LOCAL  OBJ    8         unit tc.system str_real(crcedbaa446_k_comp,smallint,smallint)smallint::d_log10_2()
-134  0x000375c0 0x004375c0 LOCAL  OBJ    888       unit tc.system val_real(shortstring,int64)extended_factor_10_inexact$crcddb8d7aa::factor()
-135  0x00037940 0x00437940 LOCAL  OBJ    8         unit tc.system fpc_val_currency_shortstr(shortstring,int64)currency::minint64()
-136  0x00037950 0x00437950 LOCAL  OBJ    8         unit tc.system fpc_val_currency_shortstr(shortstring,int64)currency::minint64edge()
-137  0x00037960 0x00437960 LOCAL  OBJ    4         unit tc.system mti()
-138  0x00037970 0x00437970 LOCAL  OBJ    8         unit tc.system genrand_mt19937()longint::mag01()
-139  0x00037980 0x00437980 LOCAL  OBJ    8         unit tc.system exitproclist()
-140  0x00037990 0x00437990 LOCAL  OBJ    96        unit tc.system memorymanager()
-141  0x000379f0 0x004379f0 LOCAL  OBJ    296       unit tc.system nothreadmanager()
-142  0x00037b20 0x00437b20 LOCAL  OBJ    88        unit tc.system resourcemanager()
-143  0x00037b80 0x00437b80 LOCAL  OBJ    8         unit tc.system ctrlbreakhandler()
-217  0x00036940 0x00436940 GLOBAL OBJ    32        unit tc.system allowdirectoryseparators()
-294  0x00036720 0x00436720 GLOBAL OBJ    1         unit tc.system stackerror()
-296  0x00036920 0x00436920 GLOBAL OBJ    8         unit tc.system growheapsize1()
-338  0x000368b0 0x004368b0 GLOBAL OBJ    8         unit tc.system varclearproc()
-453  0x00036880 0x00436880 GLOBAL OBJ    8         unit tc.system raiseproc()
-524  0x00036700 0x00436700 GLOBAL OBJ    4         unit tc.system ismultithread()
-587  0x00036900 0x00436900 GLOBAL OBJ    4         unit tc.system maxkeptoschunks()
-719  0x000367b0 0x004367b0 GLOBAL OBJ    1         unit tc.system writeerrorstostderr()
-838  0x00036760 0x00436760 GLOBAL OBJ    1         unit tc.system moduleiscpp()
-880  0x00036910 0x00436910 GLOBAL OBJ    8         unit tc.system growheapsizesmall()
-920  0x000368f0 0x004368f0 GLOBAL OBJ    8         unit tc.system vartowstrproc()
-935  0x000366f0 0x004366f0 GLOBAL OBJ    1         unit tc.system filemode()
-996  0x000367c0 0x004367c0 GLOBAL OBJ    2         unit tc.system default8087cw()
-998  0x00036790 0x00436790 GLOBAL OBJ    1         unit tc.system noerrmsg()
-1072 0x000368c0 0x004368c0 GLOBAL OBJ    8         unit tc.system varaddrefproc()
-1081 0x00036740 0x00436740 GLOBAL OBJ    1         unit tc.system moduleislib()
-1122 0x00036980 0x00436980 GLOBAL OBJ    1         unit tc.system filenamecasesensitive()
-1143 0x000369b0 0x004369b0 GLOBAL OBJ    4         unit tc.system defaulttextlinebreakstyle()
-1193 0x00036750 0x00436750 GLOBAL OBJ    1         unit tc.system moduleispackage()
-1339 0x000367d0 0x004367d0 GLOBAL OBJ    4         unit tc.system defaultmxcsr()
-1397 0x00036890 0x00436890 GLOBAL OBJ    4         unit tc.system raisemaxframecount()
-1405 0x00036960 0x00436960 GLOBAL OBJ    32        unit tc.system allowdriveseparators()
-1470 0x00036710 0x00436710 GLOBAL OBJ    1         unit tc.system threadingalreadyused()
-1653 0x00036870 0x00436870 GLOBAL OBJ    8         unit tc.system exceptproc()
-1671 0x000366d0 0x004366d0 GLOBAL OBJ    8         unit tc.system erroraddr()
-1774 0x000368e0 0x004368e0 GLOBAL OBJ    8         unit tc.system vartolstrproc()
-1821 0x000367a0 0x004367a0 GLOBAL OBJ    1         unit tc.system firstdotatfilenamestartisextension()
-1906 0x00036830 0x00436830 GLOBAL OBJ    8         unit tc.system asserterrorproc()
-1973 0x000368d0 0x004368d0 GLOBAL OBJ    8         unit tc.system varcopyproc()
-1987 0x00036860 0x00436860 GLOBAL OBJ    8         unit tc.system exceptclsproc()
-2005 0x000369c0 0x004369c0 GLOBAL OBJ    8         unit tc.system unixgetmodulebyaddrhook()
-2063 0x00036730 0x00436730 GLOBAL OBJ    8         unit tc.system initproc()
-2119 0x000369a0 0x004369a0 GLOBAL OBJ    1         unit tc.system ctrlzmarkseof()
-2219 0x00036840 0x00436840 GLOBAL OBJ    8         unit tc.system safecallerrorproc()
-2328 0x00036930 0x00436930 GLOBAL OBJ    8         unit tc.system growheapsize2()
-2381 0x00036850 0x00436850 GLOBAL OBJ    8         unit tc.system exceptobjproc()
-2395 0x00036810 0x00436810 GLOBAL OBJ    8         unit tc.system errorproc()
-2470 0x000368a0 0x004368a0 GLOBAL OBJ    16        unit tc.system iobjectinstance()
-2523 0x000367e0 0x004367e0 GLOBAL OBJ    27        unit tc.system runtimeerrorexitcodes()
-2535 0x000366c0 0x004366c0 GLOBAL OBJ    8         unit tc.system exitproc()
-2649 0x00036800 0x00436800 GLOBAL OBJ    8         unit tc.system backtracestrfunc()
-2693 0x000366b0 0x004366b0 GLOBAL OBJ    2         unit tc.system max_frame_dump()
-2863 0x000366e0 0x004366e0 GLOBAL OBJ    2         unit tc.system errorcode()
-2927 0x00036820 0x00436820 GLOBAL OBJ    8         unit tc.system abstracterrorproc()
-2937 0x00036990 0x00436990 GLOBAL OBJ    1         unit tc.system filenamecasepreserving()
+ 231 0x00031760 0x00431760 GLOBAL FUNC     102     unit unix selecttext(text,longint)longint
+ 258 0x000312d0 0x004312d0 GLOBAL FUNC      75     unit unix readtimezonefile(shortstring_)::decode(longint)
+ 354 0x00030ad0 0x00430ad0 GLOBAL FUNC     442     unit unix getlocaltimezone(longint,longint,longint)
+ 385 0x00031240 0x00431240 GLOBAL FUNC      74     unit unix readtimezonefile(shortstring_)::readbufbyte()byte
+ 439 0x00030160 0x00430160 GLOBAL FUNC     122     unit unix fpstatfs(ansistring,pstatfs)longint
+ 465 0x00032200 0x00432200 GLOBAL FUNC     138     unit unix popen(text,unicodestring,char)longint
+ 515 0x00030a30 0x00430a30 GLOBAL FUNC     152     unit unix find_transition(longint)pttinfo
+ 580 0x00030690 0x00430690 GLOBAL FUNC      17     unit unix fpexecle(ansistring,array_of_ansistring,ppchar)longint
+ 608 0x000335d0 0x004335d0 GLOBAL FUNC     252     unit unixutil epochtolocal(longint,word,word,word,word,word,word)
+ 695 0x00033740 0x00433740 GLOBAL FUNC     158     unit unixutil gregoriantojulian(longint,longint,longint)longint
+ 739 0x00031820 0x00431820 GLOBAL FUNC      75     unit unix telldir(pdir)int64
+ 745 0x000302a0 0x004302a0 GLOBAL FUNC      70     unit unix pclose(text)longint
+ 769 0x00030210 0x00430210 GLOBAL FUNC      32     unit unix fpfstatfs(longint,pstatfs)longint
+ 822 0x000306b0 0x004306b0 GLOBAL FUNC      27     unit unix fpexecl(ansistring,array_of_ansistring)longint
+ 833 0x00032a70 0x00432a70 GLOBAL FUNC     881     unit unix fsearch(ansistring,ansistring,tfsearchoption)ansistring
+ 839 0x000329d0 0x004329d0 GLOBAL FUNC      55     unit unix getdomainname()shortstring
+ 869 0x00032320 0x00432320 GLOBAL FUNC     678     unit unix assignstream(text,text,ansistring,array_of_ansistring)longint
+ 897 0x00030770 0x00430770 GLOBAL FUNC     122     unit unix fpsystem(shortstring)longint
+ 919 0x00032e80 0x00432e80 GLOBAL FUNC      16     unit unix finalize()
+ 930 0x000325d0 0x004325d0 GLOBAL FUNC    1016     unit unix assignstream(text,text,text,ansistring,array_of_ansistring)longint
+ 984 0x000336d0 0x004336d0 GLOBAL FUNC     112     unit unixutil localtoepoch(word,word,word,word,word,word)longint
+1000 0x00030230 0x00430230 GLOBAL FUNC      32     unit unix fpstatfs(pchar,pstatfs)longint
+1031 0x000331e0 0x004331e0 GLOBAL FUNC     213     unit unixutil arraystringtoppchar(array_of_ansistring,longint)ppchar
+1095 0x00032290 0x00432290 GLOBAL FUNC     138     unit unix popen(file,unicodestring,char)longint
+1119 0x00032e70 0x00432e70 GLOBAL FUNC      16     unit unix init()
+1151 0x00030cb0 0x00430cb0 GLOBAL FUNC     143     unit unix timezonedir()shortstring
+1163 0x00031650 0x00431650 GLOBAL FUNC      21     unit unix rereadlocaltime()
+1253 0x00030710 0x00430710 GLOBAL FUNC      31     unit unix fpexecv(ansistring,ppchar)longint
+1266 0x00031990 0x00431990 GLOBAL FUNC     226     unit unix assignpipe(text,text)longint
+1286 0x00031a80 0x00431a80 GLOBAL FUNC     148     unit unix assignpipe(file,file)longint
+1313 0x000302f0 0x004302f0 GLOBAL FUNC      70     unit unix pclose(file)longint
+1343 0x000303d0 0x004303d0 GLOBAL FUNC     440     unit unix intfpexecvemaybep(ansistring,ppchar,ppchar,boolean)longint
+1358 0x00030250 0x00430250 GLOBAL FUNC      31     unit unix fpfsync(longint)longint
+1481 0x000317d0 0x004317d0 GLOBAL FUNC      72     unit unix seekdir(pdir,int64)
+1492 0x00030730 0x00430730 GLOBAL FUNC      31     unit unix fpexecvp(ansistring,ppchar)longint
+1531 0x00033490 0x00433490 GLOBAL FUNC      19     unit unixutil getfs(text)longint
+1616 0x00030340 0x00430340 GLOBAL FUNC     142     unit unix waitprocess(longint)longint
+1646 0x00030a20 0x00430a20 GLOBAL FUNC      16     unit unix w_stopcode(smallint)smallint
+1686 0x00032a50 0x00432a50 GLOBAL FUNC      21     unit unix sigraise(smallint)
+1699 0x000334d0 0x004334d0 GLOBAL FUNC     250     unit unixutil juliantogregorian(longint,word,word,word)
+1703 0x000316b0 0x004316b0 GLOBAL FUNC     169     unit unix selecttext(text,ptimeval)longint
+1734 0x000309e0 0x004309e0 GLOBAL FUNC      19     unit unix wifstopped(smallint)boolean
+1759 0x00030c90 0x00430c90 GLOBAL FUNC      28     unit unix getlocaltimezone(longint)
+1777 0x00031530 0x00431530 GLOBAL FUNC      52     unit unix initlocaltime()
+1792 0x00030590 0x00430590 GLOBAL FUNC     246     unit unix intfpexecl(ansistring,array_of_ansistring,ppchar,boolean)longint
+1807 0x000318c0 0x004318c0 GLOBAL FUNC     109     unit unix iopipe(text)longint
+1893 0x000301e0 0x004301e0 GLOBAL FUNC      34     unit unix fpflock(longint,longint)longint
+1923 0x000332c0 0x004332c0 GLOBAL FUNC      34     unit unixutil stringtoppchar(ansistring,smallint)ppchar
+1927 0x00031b30 0x00431b30 GLOBAL FUNC     774     unit unix popen_internal(text,rawbytestring,char)longint
+1936 0x00031870 0x00431870 GLOBAL FUNC      65     unit unix openpipe(text)
+2012 0x00031190 0x00431190 GLOBAL FUNC     161     unit unix readtimezonefile(shortstring_)::readbuf(formal,smallint)smallint
+2099 0x00031930 0x00431930 GLOBAL FUNC      64     unit unix flushpipe(text)longint
+2107 0x000306f0 0x004306f0 GLOBAL FUNC      17     unit unix fpexeclpe(ansistring,array_of_ansistring,ppchar)longint
+2136 0x00031290 0x00431290 GLOBAL FUNC      63     unit unix readtimezonefile(shortstring_)::readfilebuf()
+2279 0x00030a00 0x00430a00 GLOBAL FUNC      18     unit unix w_exitcode(smallint,smallint)smallint
+2308 0x00031570 0x00431570 GLOBAL FUNC     209     unit unix donelocaltime()
+2335 0x00031320 0x00431320 GLOBAL FUNC     514     unit unix gettimezonefile()shortstring
+2337 0x00030270 0x00430270 GLOBAL FUNC      44     unit unix assignpipe(longint,longint)longint
+2384 0x00031670 0x00431670 GLOBAL FUNC      18     unit unix fpflock(text,longint)longint
+2407 0x000334b0 0x004334b0 GLOBAL FUNC      19     unit unixutil getfs(file)longint
+2477 0x00032df0 0x00432df0 GLOBAL FUNC     121     unit unix fsearch(ansistring,ansistring)ansistring
+2496 0x00032170 0x00432170 GLOBAL FUNC     138     unit unix popen(file,rawbytestring,char)longint
+2537 0x00032a10 0x00432a10 GLOBAL FUNC      53     unit unix gethostname()shortstring
+2545 0x00030d40 0x00430d40 GLOBAL FUNC    1094     unit unix readtimezonefile(shortstring)
+2561 0x00031970 0x00431970 GLOBAL FUNC      25     unit unix closepipe(text)longint
+2628 0x000320e0 0x004320e0 GLOBAL FUNC     138     unit unix popen(text,rawbytestring,char)longint
+2656 0x000307f0 0x004307f0 GLOBAL FUNC     483     unit unix fpsystem(ansistring)longint
+2660 0x00031e40 0x00431e40 GLOBAL FUNC     669     unit unix popen_internal(file,rawbytestring,char)longint
+2690 0x00031b20 0x00431b20 GLOBAL FUNC      16     unit unix pclosetext(text)longint
+2713 0x00030750 0x00430750 GLOBAL FUNC      21     unit unix fpexecvpe(ansistring,ppchar,ppchar)longint
+2776 0x000306d0 0x004306d0 GLOBAL FUNC      27     unit unix fpexeclp(ansistring,array_of_ansistring)longint
+2910 0x000332f0 0x004332f0 GLOBAL FUNC     408     unit unixutil stringtoppchar(pchar,smallint)ppchar
+2928 0x00031690 0x00431690 GLOBAL FUNC      18     unit unix fpflock(file,longint)longint
+ 356 0x0002ab30 0x0042ab30 GLOBAL FUNC       9     unit wrpr.system.tcontainedobject.iunknown.1.system taggregatedobject._addref()longint
+ 406 0x0002ab10 0x0042ab10 GLOBAL FUNC       9     unit wrpr.system.tinterfacedobject.iunknown.2.system tinterfacedobject._release()longint
+ 569 0x0002ab20 0x0042ab20 GLOBAL FUNC      13     unit wrpr.system.tcontainedobject.iunknown.0.system tcontainedobject.queryinterface(tguid,formal)longint
+2170 0x0002ab00 0x0042ab00 GLOBAL FUNC       9     unit wrpr.system.tinterfacedobject.iunknown.1.system tinterfacedobject._addref()longint
+2511 0x0002aaf0 0x0042aaf0 GLOBAL FUNC       9     unit wrpr.system.tinterfacedobject.iunknown.0.system tinterfacedobject.queryinterface(tguid,formal)longint
+2513 0x0002ab40 0x0042ab40 GLOBAL FUNC       9     unit wrpr.system.tcontainedobject.iunknown.2.system taggregatedobject._release()longint
+  97 0x000369d0 0x004369d0 LOCAL  OBJ        8     unit tc.system calculated_cmdline()
+  98 0x000369e0 0x004369e0 LOCAL  OBJ        4     unit tc.system oldrandseed()
+  99 0x00036a00 0x00436a00 LOCAL  OBJ       16     unit tc.system popcntdata()
+ 100 0x00036a30 0x00436a30 LOCAL  OBJ        8     unit tc.system fpc_exp_real(extended)extended::ln2hi()
+ 101 0x00036a40 0x00436a40 LOCAL  OBJ        8     unit tc.system fpc_exp_real(extended)extended::ln2lo()
+ 102 0x00036a50 0x00436a50 LOCAL  OBJ        4     unit tc.system fpc_exp_real(extended)extended::large()
+ 103 0x00036a60 0x00436a60 LOCAL  OBJ        4     unit tc.system fpc_exp_real(extended)extended::two()
+ 104 0x00036a70 0x00436a70 LOCAL  OBJ        4     unit tc.system fpc_exp_real(extended)extended::half()
+ 105 0x00036a80 0x00436a80 LOCAL  OBJ        8     unit tc.system h2_54()
+ 106 0x00036a90 0x00436a90 LOCAL  OBJ        8     unit tc.system huge()
+ 107 0x00036aa0 0x00436aa0 LOCAL  OBJ        8     unit tc.system one()
+ 108 0x00036ab0 0x00436ab0 LOCAL  OBJ        8     unit tc.system zero()
+ 109 0x00036ac0 0x00436ac0 LOCAL  OBJ       64     unit tc.system pio2chunked()
+ 110 0x00036b00 0x00436b00 LOCAL  OBJ      264     unit tc.system ipio2()
+ 111 0x00036c10 0x00436c10 LOCAL  OBJ        8     unit tc.system init_jk()
+ 112 0x00036c20 0x00436c20 LOCAL  OBJ        8     unit tc.system two24()
+ 113 0x00036c30 0x00436c30 LOCAL  OBJ        8     unit tc.system twon24()
+ 114 0x00036c40 0x00436c40 LOCAL  OBJ        8     unit tc.system rem_pio2(double,double)int64::tol()
+ 115 0x00036c50 0x00436c50 LOCAL  OBJ      320     unit tc.system fpower10(extended,longint)extended::pow32()
+ 116 0x00036d90 0x00436d90 LOCAL  OBJ      160     unit tc.system fpower10(extended,longint)extended::pow512()
+ 117 0x00036e30 0x00436e30 LOCAL  OBJ      100     unit tc.system fpower10(extended,longint)extended::pow4096()
+ 118 0x00036ea0 0x00436ea0 LOCAL  OBJ      320     unit tc.system fpower10(extended,longint)extended::negpow32()
+ 119 0x00036fe0 0x00436fe0 LOCAL  OBJ      160     unit tc.system fpower10(extended,longint)extended::negpow512()
+ 120 0x00037080 0x00437080 LOCAL  OBJ      100     unit tc.system fpower10(extended,longint)extended::negpow4096()
+ 121 0x000370f0 0x004370f0 LOCAL  OBJ        8     unit tc.system textended80rec.specialtype()tfloatspecial::denormal()
+ 122 0x00037100 0x00437100 LOCAL  OBJ        8     unit tc.system tdoublerec.specialtype()tfloatspecial::denormal()
+ 123 0x00037110 0x00437110 LOCAL  OBJ        8     unit tc.system tsinglerec.specialtype()tfloatspecial::denormal()
+ 124 0x00037120 0x00437120 LOCAL  OBJ       16     unit tc.system hextbl()
+ 125 0x00037130 0x00437130 LOCAL  OBJ       28     unit tc.system float_format()
+ 126 0x00037150 0x00437150 LOCAL  OBJ        4     unit tc.system c_str_inf()
+ 127 0x00037160 0x00437160 LOCAL  OBJ        4     unit tc.system c_str_qnan()
+ 128 0x00037170 0x00437170 LOCAL  OBJ      384     unit tc.system diy_fp_cached_power10(smallint,tdiy_fp_power_of_10_)::base()
+ 129 0x000372f0 0x004372f0 LOCAL  OBJ      192     unit tc.system diy_fp_cached_power10(smallint,tdiy_fp_power_of_10_)::factor_plus()
+ 130 0x000373b0 0x004373b0 LOCAL  OBJ      192     unit tc.system diy_fp_cached_power10(smallint,tdiy_fp_power_of_10_)::factor_minus()
+ 131 0x00037470 0x00437470 LOCAL  OBJ      272     unit tc.system diy_fp_cached_power10(smallint,tdiy_fp_power_of_10_)::corrector()
+ 132 0x00037580 0x00437580 LOCAL  OBJ       40     unit tc.system str_real(crcedbaa446_gen_digits_32,crc66c340fe_)::digits()
+ 133 0x000375b0 0x004375b0 LOCAL  OBJ        8     unit tc.system str_real(crcedbaa446_k_comp,smallint,smallint)smallint::d_log10_2()
+ 134 0x000375c0 0x004375c0 LOCAL  OBJ      888     unit tc.system val_real(shortstring,int64)extended_factor_10_inexact$crcddb8d7aa::factor()
+ 135 0x00037940 0x00437940 LOCAL  OBJ        8     unit tc.system fpc_val_currency_shortstr(shortstring,int64)currency::minint64()
+ 136 0x00037950 0x00437950 LOCAL  OBJ        8     unit tc.system fpc_val_currency_shortstr(shortstring,int64)currency::minint64edge()
+ 137 0x00037960 0x00437960 LOCAL  OBJ        4     unit tc.system mti()
+ 138 0x00037970 0x00437970 LOCAL  OBJ        8     unit tc.system genrand_mt19937()longint::mag01()
+ 139 0x00037980 0x00437980 LOCAL  OBJ        8     unit tc.system exitproclist()
+ 140 0x00037990 0x00437990 LOCAL  OBJ       96     unit tc.system memorymanager()
+ 141 0x000379f0 0x004379f0 LOCAL  OBJ      296     unit tc.system nothreadmanager()
+ 142 0x00037b20 0x00437b20 LOCAL  OBJ       88     unit tc.system resourcemanager()
+ 143 0x00037b80 0x00437b80 LOCAL  OBJ        8     unit tc.system ctrlbreakhandler()
+ 217 0x00036940 0x00436940 GLOBAL OBJ       32     unit tc.system allowdirectoryseparators()
+ 294 0x00036720 0x00436720 GLOBAL OBJ        1     unit tc.system stackerror()
+ 296 0x00036920 0x00436920 GLOBAL OBJ        8     unit tc.system growheapsize1()
+ 338 0x000368b0 0x004368b0 GLOBAL OBJ        8     unit tc.system varclearproc()
+ 453 0x00036880 0x00436880 GLOBAL OBJ        8     unit tc.system raiseproc()
+ 524 0x00036700 0x00436700 GLOBAL OBJ        4     unit tc.system ismultithread()
+ 587 0x00036900 0x00436900 GLOBAL OBJ        4     unit tc.system maxkeptoschunks()
+ 719 0x000367b0 0x004367b0 GLOBAL OBJ        1     unit tc.system writeerrorstostderr()
+ 838 0x00036760 0x00436760 GLOBAL OBJ        1     unit tc.system moduleiscpp()
+ 880 0x00036910 0x00436910 GLOBAL OBJ        8     unit tc.system growheapsizesmall()
+ 920 0x000368f0 0x004368f0 GLOBAL OBJ        8     unit tc.system vartowstrproc()
+ 935 0x000366f0 0x004366f0 GLOBAL OBJ        1     unit tc.system filemode()
+ 996 0x000367c0 0x004367c0 GLOBAL OBJ        2     unit tc.system default8087cw()
+ 998 0x00036790 0x00436790 GLOBAL OBJ        1     unit tc.system noerrmsg()
+1072 0x000368c0 0x004368c0 GLOBAL OBJ        8     unit tc.system varaddrefproc()
+1081 0x00036740 0x00436740 GLOBAL OBJ        1     unit tc.system moduleislib()
+1122 0x00036980 0x00436980 GLOBAL OBJ        1     unit tc.system filenamecasesensitive()
+1143 0x000369b0 0x004369b0 GLOBAL OBJ        4     unit tc.system defaulttextlinebreakstyle()
+1193 0x00036750 0x00436750 GLOBAL OBJ        1     unit tc.system moduleispackage()
+1339 0x000367d0 0x004367d0 GLOBAL OBJ        4     unit tc.system defaultmxcsr()
+1397 0x00036890 0x00436890 GLOBAL OBJ        4     unit tc.system raisemaxframecount()
+1405 0x00036960 0x00436960 GLOBAL OBJ       32     unit tc.system allowdriveseparators()
+1470 0x00036710 0x00436710 GLOBAL OBJ        1     unit tc.system threadingalreadyused()
+1653 0x00036870 0x00436870 GLOBAL OBJ        8     unit tc.system exceptproc()
+1671 0x000366d0 0x004366d0 GLOBAL OBJ        8     unit tc.system erroraddr()
+1774 0x000368e0 0x004368e0 GLOBAL OBJ        8     unit tc.system vartolstrproc()
+1821 0x000367a0 0x004367a0 GLOBAL OBJ        1     unit tc.system firstdotatfilenamestartisextension()
+1906 0x00036830 0x00436830 GLOBAL OBJ        8     unit tc.system asserterrorproc()
+1973 0x000368d0 0x004368d0 GLOBAL OBJ        8     unit tc.system varcopyproc()
+1987 0x00036860 0x00436860 GLOBAL OBJ        8     unit tc.system exceptclsproc()
+2005 0x000369c0 0x004369c0 GLOBAL OBJ        8     unit tc.system unixgetmodulebyaddrhook()
+2063 0x00036730 0x00436730 GLOBAL OBJ        8     unit tc.system initproc()
+2119 0x000369a0 0x004369a0 GLOBAL OBJ        1     unit tc.system ctrlzmarkseof()
+2219 0x00036840 0x00436840 GLOBAL OBJ        8     unit tc.system safecallerrorproc()
+2328 0x00036930 0x00436930 GLOBAL OBJ        8     unit tc.system growheapsize2()
+2381 0x00036850 0x00436850 GLOBAL OBJ        8     unit tc.system exceptobjproc()
+2395 0x00036810 0x00436810 GLOBAL OBJ        8     unit tc.system errorproc()
+2470 0x000368a0 0x004368a0 GLOBAL OBJ       16     unit tc.system iobjectinstance()
+2523 0x000367e0 0x004367e0 GLOBAL OBJ       27     unit tc.system runtimeerrorexitcodes()
+2535 0x000366c0 0x004366c0 GLOBAL OBJ        8     unit tc.system exitproc()
+2649 0x00036800 0x00436800 GLOBAL OBJ        8     unit tc.system backtracestrfunc()
+2693 0x000366b0 0x004366b0 GLOBAL OBJ        2     unit tc.system max_frame_dump()
+2863 0x000366e0 0x004366e0 GLOBAL OBJ        2     unit tc.system errorcode()
+2927 0x00036820 0x00436820 GLOBAL OBJ        8     unit tc.system abstracterrorproc()
+2937 0x00036990 0x00436990 GLOBAL OBJ        1     unit tc.system filenamecasepreserving()
 EOF
 RUN
