@@ -2463,7 +2463,7 @@ static void sections_headers_setup(RzCore *core, RzCmdStateOutput *state, RzList
 	RzListIter *iter;
 	char *hashname;
 
-	rz_cmd_state_output_set_columnsf(state, "XxXxssssx", "paddr", "size", "vaddr", "vsize", "align", "perm", "name", "type", "flags");
+	rz_cmd_state_output_set_columnsf(state, "XxXxsssss", "paddr", "size", "vaddr", "vsize", "align", "perm", "name", "type", "flags");
 
 	rz_list_foreach (hashes, iter, hashname) {
 		const RzHashPlugin *msg_plugin = rz_hash_plugin_by_name(core->hash, hashname);
