@@ -2398,7 +2398,7 @@ commands:
     summary: List all asm/analysis plugins (e asm.arch=?)
     subcommands: 
       - name: aL
-        summary: List all asm/analysis plugins (e asm.arch=?) or details of cpu for a plugin
+        summary: List all asm/analysis plugins (e asm.arch=?) or CPU details for a plugin.
         cname: list_plugins
         args: []
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
@@ -2406,7 +2406,7 @@ commands:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
       - name: aLc
-        summary: Show details of CPU for a specific plugin
+        summary: Show CPU details for a specific plugin.
         cname: list_cpu_details
         args: 
           - name: plugin_name
