@@ -4,12 +4,13 @@
 
 #include <rz_search.h>
 #include <rz_util.h>
+#include <rz_util/rz_regex.h>
+#include <rz_vector.h>
 #include "search_internal.h"
 
 typedef struct string_search {
 	RzUtilStrScanOptions options; ///< String scan options
 	RzStrEnc encoding; ///< Expected encoding
-	bool caseless; ///< Caseless search.
 	RzPVector /*<RzDetectedString *>*/ *strings; ///< Strings to search
 } StringSearch;
 
@@ -35,23 +36,24 @@ static bool string_find(RZ_NULLABLE RzSearchFindOpt *fopt, void *user, ut64 offs
 		void **it_m = NULL;
 		rz_pvector_foreach (ss->strings, it_m) {
 			RzDetectedString *find = *it_m;
-			if (detected->length < find->length) {
-				// Ignore strings that are smaller than the one we are looking for.
-				continue;
+			RzPVector *matches = rz_regex_match_all(find->regex, detected->string, detected->size, 0, RZ_REGEX_DEFAULT);
+			void **it;
+			rz_pvector_foreach (matches, it) {
+				RzPVector *match = *it;
+				RzRegexMatch *group0 = rz_pvector_at(match, 0);
+				if (!group0) {
+					RZ_LOG_ERROR("search: Failed to get group of match.\n");
+					rz_list_free(found);
+					return false;
+				}
+				RzSearchHit *hit = rz_search_hit_new("string", detected->addr + group0->start, group0->len);
+				if (!hit || !rz_th_queue_push(hits, hit, true)) {
+					rz_search_hit_free(hit);
+					rz_list_free(found);
+					return false;
+				}
 			}
-			size_t len = RZ_MIN(detected->length, find->length);
-			if ((ss->caseless && rz_str_ncasecmp(detected->string, find->string, len)) ||
-				(!ss->caseless && strncmp(detected->string, find->string, len))) {
-				// Ignore strings that are not matching till len.
-				continue;
-			}
-
-			RzSearchHit *hit = rz_search_hit_new("string", detected->addr, detected->size);
-			if (!hit || !rz_th_queue_push(hits, hit, true)) {
-				rz_search_hit_free(hit);
-				rz_list_free(found);
-				return false;
-			}
+			rz_pvector_free(matches);
 		}
 	}
 
@@ -78,11 +80,11 @@ static void string_free(void *user) {
  *
  * \param      opts      The RzUtilStrScanOptions options to use
  * \param[in]  expected  The expected encoding
- * \param[in]  caseless  When true performs a caseless compare
+ * \param[in]  flags     The regex flags to the \p re_pattern.
  *
  * \return     On success returns a valid pointer, otherwise NULL
  */
-RZ_API RZ_OWN RzSearchCollection *rz_search_collection_strings(RZ_NONNULL RzUtilStrScanOptions *opts, RzStrEnc expected, bool caseless) {
+RZ_API RZ_OWN RzSearchCollection *rz_search_collection_strings(RZ_NONNULL RzUtilStrScanOptions *opts, RzStrEnc expected, RzRegexFlags flags) {
 	rz_return_val_if_fail(opts, NULL);
 
 	StringSearch *ss = RZ_NEW0(StringSearch);
@@ -100,49 +102,59 @@ RZ_API RZ_OWN RzSearchCollection *rz_search_collection_strings(RZ_NONNULL RzUtil
 
 	ss->options = *opts; // Copy the values
 	ss->encoding = expected;
-	ss->caseless = caseless;
 
 	return rz_search_collection_new_bytes_space(string_find, string_is_empty, string_free, ss);
 }
 
-static RzDetectedString *string_copy(const char *string) {
-	char *copy = rz_str_dup(string);
-	if (!copy) {
+static RzDetectedString *setup_str_regex(const char *re_pattern, RzRegexFlags flags) {
+	char *re_pattern_clone = rz_str_dup(re_pattern);
+	if (!re_pattern_clone) {
+		RZ_LOG_ERROR("Failed to clone regex pattern\n");
+		return NULL;
+	}
+	RzRegex *re = rz_regex_new(re_pattern, flags, RZ_REGEX_DEFAULT);
+	if (!re) {
+		RZ_LOG_ERROR("Failed to compile regex pattern: '%s'\n", re_pattern);
+		free(re_pattern_clone);
 		return NULL;
 	}
 	RzDetectedString *ds = RZ_NEW0(RzDetectedString);
 	if (!ds) {
-		free(copy);
+		RZ_LOG_ERROR("Failed allocate memory for RzDetectedString\n");
+		free(re_pattern_clone);
+		rz_regex_free(re);
 		return NULL;
 	}
-	ds->string = copy;
-	ds->length = strlen(copy);
+	ds->string = re_pattern_clone;
+	ds->regex = re;
+	ds->length = strlen(re_pattern_clone);
 	return ds;
 }
 
 /**
- * \brief      Adds a new string into a string RzSearchCollection
+ * \brief      Adds a new regex pattern into a string RzSearchCollection.
  *
- * \param[in]  col     The RzSearchCollection to use
- * \param[in]  string  The regular expression to add
+ * \param[in]  col            The RzSearchCollection to use.
+ * \param[in]  regex_pattern  The regular expression to add.
+ * \param[in]  flags          The regular expression flags.
  *
- * \return     On success returns true, otherwise false
+ * \return     On success returns true, otherwise false.
  */
-RZ_API bool rz_search_collection_string_add(RZ_NONNULL RzSearchCollection *col, RZ_NONNULL const char *string) {
-	rz_return_val_if_fail(col && string, false);
+RZ_API bool rz_search_collection_string_add(RZ_NONNULL RzSearchCollection *col, RZ_NONNULL const char *regex_pattern, RzRegexFlags flags) {
+	rz_return_val_if_fail(col && regex_pattern, false);
 
 	if (!rz_search_collection_has_find_callback(col, string_find)) {
 		RZ_LOG_ERROR("search: cannot add string to non-string collection\n");
 		return false;
-	} else if (RZ_STR_ISEMPTY(string)) {
+	} else if (RZ_STR_ISEMPTY(regex_pattern)) {
 		RZ_LOG_ERROR("search: cannot add an empty string to a string collection\n");
 		return false;
 	}
 	StringSearch *ss = (StringSearch *)col->user;
 
-	RzDetectedString *s = string_copy(string);
+	RzDetectedString *s = setup_str_regex(regex_pattern, flags);
 	if (!s || !rz_pvector_push(ss->strings, s)) {
-		RZ_LOG_ERROR("search: cannot add the string '%s'.\n", string);
+		RZ_LOG_ERROR("search: cannot add the string '%s'.\n", regex_pattern);
 		rz_detected_string_free(s);
 		return false;
 	}

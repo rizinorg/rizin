@@ -17,7 +17,7 @@ static const RzCmdDescDetail interpret_macro_multiple_details[2];
 static const RzCmdDescDetail cmd_search_hash_block_details[2];
 static const RzCmdDescDetail slash_v_details[2];
 static const RzCmdDescDetail cmd_search_hex_details[2];
-static const RzCmdDescDetail slash_z_details[2];
+static const RzCmdDescDetail slash_z_details[3];
 static const RzCmdDescDetail base64_encode_details[2];
 static const RzCmdDescDetail base64_decode_details[2];
 static const RzCmdDescDetail print_boundaries_prot_details[2];
@@ -126,8 +126,7 @@ static const RzCmdDescArg cmd_search_value_16_args[2];
 static const RzCmdDescArg cmd_search_value_32_args[2];
 static const RzCmdDescArg cmd_search_value_64_args[2];
 static const RzCmdDescArg cmd_search_hex_args[2];
-static const RzCmdDescArg cmd_search_string_sensitive_args[3];
-static const RzCmdDescArg cmd_search_string_insensitive_args[3];
+static const RzCmdDescArg cmd_search_string_sensitive_args[4];
 static const RzCmdDescArg remote_args[3];
 static const RzCmdDescArg remote_send_args[3];
 static const RzCmdDescArg remote_add_args[2];
@@ -1738,8 +1737,18 @@ static const RzCmdDescDetailEntry slash_z_Encodings_detail_entries[] = {
 	{ .text = "ebcdicus", .arg_str = NULL, .comment = "EBCDIC-US encoding. Alias: csEBCDICUS" },
 	{ 0 },
 };
+
+static const RzCmdDescDetailEntry slash_z_Regex_space_Flags_detail_entries[] = {
+	{ .text = "d", .arg_str = NULL, .comment = "Default (No flag, Unicode is matched)" },
+	{ .text = "i", .arg_str = NULL, .comment = "Caseless (equivalent: PCRE2_CASELESS)" },
+	{ .text = "e", .arg_str = NULL, .comment = "Extended (equivalent: PCRE2_EXTENDED)" },
+	{ .text = "E", .arg_str = NULL, .comment = "Extended More (equivalent: PCRE2_EXTENDED_MORE)" },
+	{ .text = "m", .arg_str = NULL, .comment = "Multiline (equivalent: PCRE2_MULTILINE)" },
+	{ 0 },
+};
 static const RzCmdDescDetail slash_z_details[] = {
 	{ .name = "Encodings", .entries = slash_z_Encodings_detail_entries },
+	{ .name = "Regex Flags", .entries = slash_z_Regex_space_Flags_detail_entries },
 	{ 0 },
 };
 static const RzCmdDescHelp slash_z_help = {
@@ -1754,6 +1763,12 @@ static const RzCmdDescArg cmd_search_string_sensitive_args[] = {
 
 	},
 	{
+		.name = "regex_flags",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.default_value = "d",
+
+	},
+	{
 		.name = "encoding",
 		.type = RZ_CMD_ARG_TYPE_CHOICES,
 		.default_value = "guess",
@@ -1763,29 +1778,8 @@ static const RzCmdDescArg cmd_search_string_sensitive_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_search_string_sensitive_help = {
-	.summary = "String search (case-sensitive).",
+	.summary = "String search.",
 	.args = cmd_search_string_sensitive_args,
-};
-
-static const char *cmd_search_string_insensitive_encoding_choices[] = { "ascii", "8bit", "mutf8", "utf8", "utf16le", "utf32le", "utf16be", "utf32be", "ibm037", "ibm290", "ebcdices", "ebcdicuk", "ebcdicus", NULL };
-static const RzCmdDescArg cmd_search_string_insensitive_args[] = {
-	{
-		.name = "string",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-
-	},
-	{
-		.name = "encoding",
-		.type = RZ_CMD_ARG_TYPE_CHOICES,
-		.default_value = "guess",
-		.choices.choices = cmd_search_string_insensitive_encoding_choices,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_search_string_insensitive_help = {
-	.summary = "String search (case-insensitive).",
-	.args = cmd_search_string_insensitive_args,
 };
 
 static const RzCmdDescHelp R_help = {
@@ -20242,9 +20236,6 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *slash_z_cd = rz_cmd_desc_group_state_new(core->rcmd, slash__cd, "/z", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_string_sensitive_handler, &cmd_search_string_sensitive_help, &slash_z_help);
 	rz_warn_if_fail(slash_z_cd);
 	rz_cmd_desc_set_default_mode(slash_z_cd, RZ_OUTPUT_MODE_STANDARD);
-	RzCmdDesc *cmd_search_string_insensitive_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_z_cd, "/zi", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_string_insensitive_handler, &cmd_search_string_insensitive_help);
-	rz_warn_if_fail(cmd_search_string_insensitive_cd);
-	rz_cmd_desc_set_default_mode(cmd_search_string_insensitive_cd, RZ_OUTPUT_MODE_STANDARD);
 
 	RzCmdDesc *R_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "R", rz_remote_handler, &remote_help, &R_help);
 	rz_warn_if_fail(R_cd);

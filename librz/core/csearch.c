@@ -6,6 +6,7 @@
 #include <rz_config.h>
 #include <rz_util/rz_str.h>
 #include <rz_util/rz_log.h>
+#include <rz_util/rz_regex.h>
 #include <rz_core.h>
 #include <rz_search.h>
 #include <rz_util/rz_assert.h>
@@ -160,27 +161,31 @@ quit:
 /**
  * \brief      Finds a string within the `search.in` boundaries.
  *
- * \param      core      The RzCore core.
- * \param      opt       The search options to apply. If NULL, a default set of options is used.
- * \param[in]  string    The string to search.
- * \param[in]  expected  The expected encoding.
- * \param[in]  caseless  When true, caseless match.
+ * \param      core        The RzCore core.
+ * \param      opt         The search options to apply. If NULL, a default set of options is used.
+ * \param[in]  re_pattern  The regex pattern to search.
+ * \param[in]  flags       The regex flags to the \p re_pattern.
+ * \param[in]  expected    The expected encoding.
  *
  * \return     On success returns a valid pointer to a list of search hits, otherwise NULL.
  */
-RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_string(RZ_NONNULL RzCore *core, RZ_BORROW RZ_NONNULL RzSearchOpt *user_opts, RZ_NONNULL const char *string, RzStrEnc expected, bool caseless) {
-	rz_return_val_if_fail(core && user_opts && string, NULL);
+RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_string(RZ_NONNULL RzCore *core, RZ_BORROW RZ_NONNULL RzSearchOpt *user_opts, RZ_NONNULL const char *re_pattern, RzRegexFlags flags, RzStrEnc expected) {
+	rz_return_val_if_fail(core && user_opts && re_pattern, NULL);
 
-	if (RZ_STR_ISEMPTY(string)) {
+	if (RZ_STR_ISEMPTY(re_pattern)) {
 		RZ_LOG_ERROR("core: invalid string: empty string.\n");
+		return NULL;
+	}
+	if (strlen(re_pattern) >= core->bin->str_search_cfg.buffer_size) {
+		RZ_LOG_ERROR("core: String to search is larger then str.search.buffer_size.\n");
 		return NULL;
 	}
 
 	// Copy RzUtilStrScanOptions from RzBin
 	RzUtilStrScanOptions scan_opt = {
-		 // This value is effectively the maximum string length.
-		 // Gets removed with the refactor.
-		.buf_size = RZ_BIN_STRING_SEARCH_BUFFER_SIZE,
+		// buf_size is effectively the maximum string length.
+		// Gets renamed with the refactor.
+		.buf_size = core->bin->str_search_cfg.buffer_size,
 		.max_uni_blocks = core->bin->str_search_cfg.max_uni_blocks,
 		.min_str_length = core->bin->str_search_cfg.min_length,
 		.prefer_big_endian = core->analysis->big_endian,
@@ -191,9 +196,9 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_string(RZ_NONNULL RzCor
 	RzList *boundaries = NULL;
 	RzSearchOpt *search_opts = NULL;
 
-	RzSearchCollection *collection = rz_search_collection_strings(&scan_opt, expected, caseless);
+	RzSearchCollection *collection = rz_search_collection_strings(&scan_opt, expected, flags);
 	if (!collection ||
-		!rz_search_collection_string_add(collection, string)) {
+		!rz_search_collection_string_add(collection, re_pattern, flags)) {
 		rz_search_collection_free(collection);
 		RZ_LOG_ERROR("core: Failed to initialize search collection.\n");
 		return NULL;
@@ -203,7 +208,7 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_string(RZ_NONNULL RzCor
 		RZ_LOG_ERROR("core: Setting up search from core failed.\n");
 		goto quit;
 	}
-	if (!rz_search_opt_set_elemet_size(user_opts ? user_opts : search_opts, strlen(string))) {
+	if (!rz_search_opt_set_elemet_size(user_opts ? user_opts : search_opts, scan_opt.buf_size)) {
 		RZ_LOG_ERROR("search: Failed to update chunk size in the search options.\n");
 		goto quit;
 	}
