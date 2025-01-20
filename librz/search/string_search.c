@@ -4,8 +4,6 @@
 
 #include <rz_search.h>
 #include <rz_util.h>
-
-#include "rz_util/rz_buf.h"
 #include "search_internal.h"
 
 typedef struct string_search {
@@ -38,13 +36,13 @@ static bool string_find(RZ_NULLABLE RzSearchFindOpt *fopt, void *user, ut64 offs
 		rz_pvector_foreach (ss->strings, it_m) {
 			RzDetectedString *find = *it_m;
 			if (detected->length < find->length) {
-				// ignore strings that are smaller than the one we are looking for.
+				// Ignore strings that are smaller than the one we are looking for.
 				continue;
 			}
 			size_t len = RZ_MIN(detected->length, find->length);
 			if ((ss->caseless && rz_str_ncasecmp(detected->string, find->string, len)) ||
 				(!ss->caseless && strncmp(detected->string, find->string, len))) {
-				// ignore strings that are not matching till len.
+				// Ignore strings that are not matching till len.
 				continue;
 			}
 
@@ -100,7 +98,7 @@ RZ_API RZ_OWN RzSearchCollection *rz_search_collection_strings(RZ_NONNULL RzUtil
 		return NULL;
 	}
 
-	ss->options = *opts; // copy the values
+	ss->options = *opts; // Copy the values
 	ss->encoding = expected;
 	ss->caseless = caseless;
 

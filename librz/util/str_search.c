@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2021 borzacchiello <lucaborza@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_util/rz_buf.h>
 #include <rz_util/rz_str_search.h>
 #include <rz_util/rz_utf8.h>
 #include <rz_util/rz_utf16.h>
@@ -598,12 +599,12 @@ RZ_API int rz_scan_strings(RZ_NONNULL RzBuffer *buf_to_scan, RZ_NONNULL RzList /
  * \brief Look for strings in an RzBuffer. The whole buffer is scanned.
  * This function is suited for usage on hot paths.
  *
- * \param buf_to_scan Pointer to a RzBuffer to scan.
+ * \param buf_to_scan Pointer to an RzBuffer to scan.
  * \param list Pointer to a list that will be populated with the found strings
- * \param opt Pointer to a RzUtilStrScanOptions that specifies search parameters
+ * \param opt Pointer to an RzUtilStrScanOptions that specifies search parameters
  * \param type Type of strings to search
  *
- * \return Number of strings found or -1 in case of faliure.
+ * \return Number of strings found or -1 in case of failure.
  */
 RZ_API int rz_scan_strings_whole_buf(RZ_NONNULL const RzBuffer *buf_to_scan, RZ_NONNULL RzList /*<RzDetectedString *>*/ *list, RZ_NONNULL const RzUtilStrScanOptions *opt, RzStrEnc type) {
 	rz_return_val_if_fail(opt && list && buf_to_scan, -1);

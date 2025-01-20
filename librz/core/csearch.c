@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2024 Rot127 <unisono@quyllur.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_bin.h>
 #include <rz_config.h>
 #include <rz_util/rz_str.h>
 #include <rz_util/rz_log.h>
@@ -157,7 +158,7 @@ quit:
 }
 
 /**
- * \brief      Finds a string within the search.in boundaries.
+ * \brief      Finds a string within the `search.in` boundaries.
  *
  * \param      core      The RzCore core.
  * \param      opt       The search options to apply. If NULL, a default set of options is used.
