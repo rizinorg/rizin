@@ -6467,7 +6467,7 @@ static const RzCmdDescArg list_plugins_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp list_plugins_help = {
-	.summary = "List all asm/analysis plugins (e asm.arch=?) or details of cpu for a plugin",
+	.summary = "List all asm/analysis plugins (e asm.arch=?) or CPU details for a plugin.",
 	.args = list_plugins_args,
 };
 
@@ -6482,7 +6482,7 @@ static const RzCmdDescArg list_cpu_details_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp list_cpu_details_help = {
-	.summary = "Show details of CPU for a specific plugin",
+	.summary = "Show CPU details for a specific plugin.",
 	.args = list_cpu_details_args,
 };
 
