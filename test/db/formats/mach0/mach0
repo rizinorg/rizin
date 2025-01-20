@@ -317,16 +317,16 @@ CMDS=iS
 EXPECT=<<EOF
      paddr size       vaddr vsize align perm name                     type                     flags                               
 -----------------------------------------------------------------------------------------------------------------------------------
-0x00000ed0 0x53 0x100000ed0  0x53 0x4   -r-x 0.__TEXT.__text          REGULAR                  PURE_INSTRUCTIONS,SOME_INSTRUCTIONS
-0x00000f24  0xc 0x100000f24   0xc 0x2   -r-x 1.__TEXT.__symbol_stub1  SYMBOL_STUBS             PURE_INSTRUCTIONS,SOME_INSTRUCTIONS
-0x00000f30  0xc 0x100000f30   0xc 0x1   -r-x 2.__TEXT.__cstring       CSTRING_LITERALS         
-0x00000f3c 0x24 0x100000f3c  0x24 0x1   -r-x 3.__TEXT.__stub_helper   REGULAR                  PURE_INSTRUCTIONS,SOME_INSTRUCTIONS
-0x00000f60 0x54 0x100000f60  0x54 0x10  -r-x 4.__TEXT.__unwind_info   REGULAR                  
-0x00000fb8 0x48 0x100000fb8  0x48 0x8   -r-x 5.__TEXT.__eh_frame      COALESCED                NO_TOC,STRIP_STATIC_SYMS
-0x00001000 0x28 0x100001000  0x28 0x20  -rw- 6.__DATA.__program_vars  REGULAR                  
-0x00001028 0x10 0x100001028  0x10 0x4   -rw- 7.__DATA.__nl_symbol_ptr NON_LAZY_SYMBOL_POINTERS 
-0x00001038 0x10 0x100001038  0x10 0x4   -rw- 8.__DATA.__la_symbol_ptr LAZY_SYMBOL_POINTERS     
-0x00001048 0x20 0x100001048  0x20 0x8   -rw- 9.__DATA.__data          REGULAR                  
+0x00000ed0 0x53 0x100000ed0  0x53   0x4 -r-x 0.__TEXT.__text          REGULAR                  PURE_INSTRUCTIONS,SOME_INSTRUCTIONS
+0x00000f24  0xc 0x100000f24   0xc   0x2 -r-x 1.__TEXT.__symbol_stub1  SYMBOL_STUBS             PURE_INSTRUCTIONS,SOME_INSTRUCTIONS
+0x00000f30  0xc 0x100000f30   0xc   0x1 -r-x 2.__TEXT.__cstring       CSTRING_LITERALS         
+0x00000f3c 0x24 0x100000f3c  0x24   0x1 -r-x 3.__TEXT.__stub_helper   REGULAR                  PURE_INSTRUCTIONS,SOME_INSTRUCTIONS
+0x00000f60 0x54 0x100000f60  0x54  0x10 -r-x 4.__TEXT.__unwind_info   REGULAR                  
+0x00000fb8 0x48 0x100000fb8  0x48   0x8 -r-x 5.__TEXT.__eh_frame      COALESCED                NO_TOC,STRIP_STATIC_SYMS
+0x00001000 0x28 0x100001000  0x28  0x20 -rw- 6.__DATA.__program_vars  REGULAR                  
+0x00001028 0x10 0x100001028  0x10   0x4 -rw- 7.__DATA.__nl_symbol_ptr NON_LAZY_SYMBOL_POINTERS 
+0x00001038 0x10 0x100001038  0x10   0x4 -rw- 8.__DATA.__la_symbol_ptr LAZY_SYMBOL_POINTERS     
+0x00001048 0x20 0x100001048  0x20   0x8 -rw- 9.__DATA.__data          REGULAR                  
 EOF
 RUN
 
@@ -336,9 +336,9 @@ CMDS=iSS
 EXPECT=<<EOF
      paddr   size       vaddr  vsize align perm name     
 ---------------------------------------------------------
-0x00000000 0x1000 0x100000000 0x1000 0x0   -r-x TEXT
-0x00001000 0x1000 0x100001000 0x1000 0x0   -rw- DATA
-0x00002000 0x1000 0x100002000 0x1000 0x0   -r-- LINKEDIT
+0x00000000 0x1000 0x100000000 0x1000   0x0 -r-x TEXT
+0x00001000 0x1000 0x100001000 0x1000   0x0 -rw- DATA
+0x00002000 0x1000 0x100002000 0x1000   0x0 -r-- LINKEDIT
 EOF
 RUN
 

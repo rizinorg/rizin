@@ -23,7 +23,7 @@ CMDS=iS
 EXPECT=<<EOF
      paddr       size      vaddr      vsize align perm name type flags 
 -----------------------------------------------------------------------
-0x00000020 0x364a0701 0x00000020 0x364a0e02 0x0   -r-x text      
-0x364a0721 0x408a0500 0x364a0721 0x408a0a00 0x0   -rw- data      
+0x00000020 0x364a0701 0x00000020 0x364a0e02   0x0 -r-x text      
+0x364a0721 0x408a0500 0x364a0721 0x408a0a00   0x0 -rw- data      
 EOF
 RUN

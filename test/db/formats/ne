@@ -17,8 +17,8 @@ CMDS=iSS
 EXPECT=<<EOF
      paddr   size      vaddr  vsize align perm name           
 --------------------------------------------------------------
-0x00000a00 0x54ee 0x00000a00 0x54ee 0x0   ---x MOVEABLE.2560
-0x00007600 0x3ec4 0x00007600 0x3ec4 0x0   -rwx MOVEABLE.30208
+0x00000a00 0x54ee 0x00000a00 0x54ee   0x0 ---x MOVEABLE.2560
+0x00007600 0x3ec4 0x00007600 0x3ec4   0x0 -rwx MOVEABLE.30208
 EOF
 RUN
 

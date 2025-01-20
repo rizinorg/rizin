@@ -124,39 +124,39 @@ RELROCS  true
 NX       true
      paddr    size      vaddr   vsize align perm name              type              flags            
 ------------------------------------------------------------------------------------------------------
-0x00000000     0x0 ----------     0x0 0x0   ----                   NULL              
-0x00000114    0x20 0x00008114    0x20 0x0   -r-- .note.ABI-tag     NOTE              alloc
-0x00000134    0x14 0x00008134    0x14 0x0   -r-x .init             PROGBITS          alloc,execute
-0x00000150 0x5d3a8 0x00008150 0x5d3a8 0x0   -r-x .text             PROGBITS          alloc,execute
-0x0005d4f8   0xcac 0x000654f8   0xcac 0x0   -r-x libc_freeres_fn   PROGBITS          alloc,execute
-0x0005e1a4    0x10 0x000661a4    0x10 0x0   -r-x .fini             PROGBITS          alloc,execute
-0x0005e1b8 0x144e0 0x000661b8 0x144e0 0x0   -r-- .rodata           PROGBITS          alloc
-0x00072698     0x4 0x0007a698     0x4 0x0   -r-- libc_atexit       PROGBITS          alloc
-0x0007269c    0x2c 0x0007a69c    0x2c 0x0   -r-- libc_subfreeres   PROGBITS          alloc
-0x000726c8   0x30c 0x0007a6c8   0x30c 0x0   -r-- .ARM.extab        PROGBITS          alloc
-0x000729d4   0x768 0x0007a9d4   0x768 0x0   -r-- .ARM.exidx        LOPROC+0x00000001 alloc,link_order
-0x0007313c    0x80 0x0007b13c    0x80 0x0   -r-- .eh_frame         PROGBITS          alloc
-0x00073fb4    0x10 0x00083fb4    0x10 0x0   -rw- .tdata            PROGBITS          write,alloc,TLS
-0x00073fc4     0x0 0x00083fc4    0x18 0x0   -rw- .tbss             NOBITS            write,alloc,TLS
-0x00073fc4     0x4 0x00083fc4     0x4 0x0   -rw- .init_array       INIT_ARRAY        write,alloc
-0x00073fc8     0x8 0x00083fc8     0x8 0x0   -rw- .fini_array       FINI_ARRAY        write,alloc
-0x00073fd0     0x4 0x00083fd0     0x4 0x0   -rw- .jcr              PROGBITS          write,alloc
-0x00073fd4    0x2c 0x00083fd4    0x2c 0x0   -rw- .data.rel.ro      PROGBITS          write,alloc
-0x00074000    0x6c 0x00084000    0x6c 0x0   -rw- .got              PROGBITS          write,alloc
-0x00074070   0x6e4 0x00084070   0x6e4 0x0   -rw- .data             PROGBITS          write,alloc
-0x00074754     0x0 0x00084758  0x1880 0x0   -rw- .bss              NOBITS            write,alloc
-0x00074754     0x0 0x00085fd8    0x14 0x0   -rw- libc_freeres_ptrs NOBITS            write,alloc
-0x00074754  0x4472 ----------  0x4472 0x0   ---- .comment          PROGBITS          
-0x00078bc8    0x58 ----------    0x58 0x0   ---- .debug_aranges    PROGBITS          
-0x00078c20    0x25 ----------    0x25 0x0   ---- .debug_pubnames   PROGBITS          
-0x00078c45   0x17b ----------   0x17b 0x0   ---- .debug_info       PROGBITS          
-0x00078dc0    0x6f ----------    0x6f 0x0   ---- .debug_abbrev     PROGBITS          
-0x00078e2f   0x130 ----------   0x130 0x0   ---- .debug_line       PROGBITS          
-0x00078f5f    0xa4 ----------    0xa4 0x0   ---- .debug_str        PROGBITS          merge,strings
-0x00079008    0x48 ----------    0x48 0x0   ---- .debug_ranges     PROGBITS          
-0x00079050    0x2d ----------    0x2d 0x0   ---- .ARM.attributes   LOPROC+0x00000003 
-0x0007907d   0x167 ----------   0x167 0x0   ---- .shstrtab         STRTAB            
-0x00079734  0xbf00 ----------  0xbf00 0x0   ---- .symtab           SYMTAB            
-0x00085634  0x6394 ----------  0x6394 0x0   ---- .strtab           STRTAB            
+0x00000000     0x0 ----------     0x0   0x0 ----                   NULL              
+0x00000114    0x20 0x00008114    0x20   0x0 -r-- .note.ABI-tag     NOTE              alloc
+0x00000134    0x14 0x00008134    0x14   0x0 -r-x .init             PROGBITS          alloc,execute
+0x00000150 0x5d3a8 0x00008150 0x5d3a8   0x0 -r-x .text             PROGBITS          alloc,execute
+0x0005d4f8   0xcac 0x000654f8   0xcac   0x0 -r-x libc_freeres_fn   PROGBITS          alloc,execute
+0x0005e1a4    0x10 0x000661a4    0x10   0x0 -r-x .fini             PROGBITS          alloc,execute
+0x0005e1b8 0x144e0 0x000661b8 0x144e0   0x0 -r-- .rodata           PROGBITS          alloc
+0x00072698     0x4 0x0007a698     0x4   0x0 -r-- libc_atexit       PROGBITS          alloc
+0x0007269c    0x2c 0x0007a69c    0x2c   0x0 -r-- libc_subfreeres   PROGBITS          alloc
+0x000726c8   0x30c 0x0007a6c8   0x30c   0x0 -r-- .ARM.extab        PROGBITS          alloc
+0x000729d4   0x768 0x0007a9d4   0x768   0x0 -r-- .ARM.exidx        LOPROC+0x00000001 alloc,link_order
+0x0007313c    0x80 0x0007b13c    0x80   0x0 -r-- .eh_frame         PROGBITS          alloc
+0x00073fb4    0x10 0x00083fb4    0x10   0x0 -rw- .tdata            PROGBITS          write,alloc,TLS
+0x00073fc4     0x0 0x00083fc4    0x18   0x0 -rw- .tbss             NOBITS            write,alloc,TLS
+0x00073fc4     0x4 0x00083fc4     0x4   0x0 -rw- .init_array       INIT_ARRAY        write,alloc
+0x00073fc8     0x8 0x00083fc8     0x8   0x0 -rw- .fini_array       FINI_ARRAY        write,alloc
+0x00073fd0     0x4 0x00083fd0     0x4   0x0 -rw- .jcr              PROGBITS          write,alloc
+0x00073fd4    0x2c 0x00083fd4    0x2c   0x0 -rw- .data.rel.ro      PROGBITS          write,alloc
+0x00074000    0x6c 0x00084000    0x6c   0x0 -rw- .got              PROGBITS          write,alloc
+0x00074070   0x6e4 0x00084070   0x6e4   0x0 -rw- .data             PROGBITS          write,alloc
+0x00074754     0x0 0x00084758  0x1880   0x0 -rw- .bss              NOBITS            write,alloc
+0x00074754     0x0 0x00085fd8    0x14   0x0 -rw- libc_freeres_ptrs NOBITS            write,alloc
+0x00074754  0x4472 ----------  0x4472   0x0 ---- .comment          PROGBITS          
+0x00078bc8    0x58 ----------    0x58   0x0 ---- .debug_aranges    PROGBITS          
+0x00078c20    0x25 ----------    0x25   0x0 ---- .debug_pubnames   PROGBITS          
+0x00078c45   0x17b ----------   0x17b   0x0 ---- .debug_info       PROGBITS          
+0x00078dc0    0x6f ----------    0x6f   0x0 ---- .debug_abbrev     PROGBITS          
+0x00078e2f   0x130 ----------   0x130   0x0 ---- .debug_line       PROGBITS          
+0x00078f5f    0xa4 ----------    0xa4   0x0 ---- .debug_str        PROGBITS          merge,strings
+0x00079008    0x48 ----------    0x48   0x0 ---- .debug_ranges     PROGBITS          
+0x00079050    0x2d ----------    0x2d   0x0 ---- .ARM.attributes   LOPROC+0x00000003 
+0x0007907d   0x167 ----------   0x167   0x0 ---- .shstrtab         STRTAB            
+0x00079734  0xbf00 ----------  0xbf00   0x0 ---- .symtab           SYMTAB            
+0x00085634  0x6394 ----------  0x6394   0x0 ---- .strtab           STRTAB            
 EOF
 RUN

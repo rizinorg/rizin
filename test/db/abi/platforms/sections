@@ -4,9 +4,9 @@ CMDS=<<EOF
 iS~gold,plt
 EOF
 EXPECT=<<EOF
-0x00000378  0x48 0x00008378  0x48 0x0   -r-- .rel.plt               REL               alloc
-0x000003c0  0x80 0x000083c0  0x80 0x0   -r-x .plt                   PROGBITS          alloc,execute
-0x00000bac  0x1c ----------  0x1c 0x0   ---- .note.gnu.gold-version NOTE              
+0x00000378  0x48 0x00008378  0x48   0x0 -r-- .rel.plt               REL               alloc
+0x000003c0  0x80 0x000083c0  0x80   0x0 -r-x .plt                   PROGBITS          alloc,execute
+0x00000bac  0x1c ----------  0x1c   0x0 ---- .note.gnu.gold-version NOTE              
 EOF
 RUN
 
@@ -16,8 +16,8 @@ CMDS=<<EOF
 iS~gold,plt
 EOF
 EXPECT=<<EOF
-0x00000350  0x50 0x00008350  0x50 0x0   -r-- .rel.plt           REL               alloc
-0x000003ac  0x8c 0x000083ac  0x8c 0x0   -r-x .plt               PROGBITS          alloc,execute
+0x00000350  0x50 0x00008350  0x50   0x0 -r-- .rel.plt           REL               alloc
+0x000003ac  0x8c 0x000083ac  0x8c   0x0 -r-x .plt               PROGBITS          alloc,execute
 EOF
 RUN
 
@@ -27,8 +27,8 @@ CMDS=<<EOF
 iS~MIPS
 EOF
 EXPECT=<<EOF
-0x000001c8  0x18 0x004001c8  0x18 0x0   -r-- .MIPS.abiflags     LOPROC+0x0000002a alloc
-0x00000df0  0x90 0x00400df0  0x90 0x0   -r-x .MIPS.stubs        PROGBITS          alloc,execute
+0x000001c8  0x18 0x004001c8  0x18   0x0 -r-- .MIPS.abiflags     LOPROC+0x0000002a alloc
+0x00000df0  0x90 0x00400df0  0x90   0x0 -r-x .MIPS.stubs        PROGBITS          alloc,execute
 EOF
 RUN
 
@@ -38,9 +38,9 @@ CMDS=<<EOF
 iS~MIPS
 EOF
 EXPECT=<<EOF
-0x00000270  0x18 0x120000270  0x18 0x0   -r-- .MIPS.abiflags     LOPROC+0x0000002a alloc
-0x00000288 0x168 0x120000288 0x168 0x0   -r-- .MIPS.options      LOPROC+0x0000000d alloc
-0x000012a0  0x90 0x1200012a0  0x90 0x0   -r-x .MIPS.stubs        PROGBITS          alloc,execute
+0x00000270  0x18 0x120000270  0x18   0x0 -r-- .MIPS.abiflags     LOPROC+0x0000002a alloc
+0x00000288 0x168 0x120000288 0x168   0x0 -r-- .MIPS.options      LOPROC+0x0000000d alloc
+0x000012a0  0x90 0x1200012a0  0x90   0x0 -r-x .MIPS.stubs        PROGBITS          alloc,execute
 EOF
 RUN
 
@@ -50,8 +50,8 @@ CMDS=<<EOF
 iS~plt
 EOF
 EXPECT=<<EOF
-0x00000294  0x30 0x10000294  0x30 0x0   -r-- .rela.plt          RELA     alloc,info
-0x00010000  0x10 0x10020000  0x10 0x0   -rw- .plt               PROGBITS write,alloc
+0x00000294  0x30 0x10000294  0x30   0x0 -r-- .rela.plt          RELA     alloc,info
+0x00010000  0x10 0x10020000  0x10   0x0 -rw- .plt               PROGBITS write,alloc
 EOF
 RUN
 
@@ -61,8 +61,8 @@ CMDS=<<EOF
 iS~gold,plt
 EOF
 EXPECT=<<EOF
-0x00000350  0x78 0x10000350  0x78 0x0   -r-- .rela.plt          RELA     alloc,info
-0x00010000  0x28 0x10020000  0x28 0x0   -rw- .plt               PROGBITS write,alloc
+0x00000350  0x78 0x10000350  0x78   0x0 -r-- .rela.plt          RELA     alloc,info
+0x00010000  0x28 0x10020000  0x28   0x0 -rw- .plt               PROGBITS write,alloc
 EOF
 RUN
 
@@ -72,9 +72,9 @@ CMDS=<<EOF
 iS~gold,plt
 EOF
 EXPECT=<<EOF
-0x00000460  0xd8 0x00400460  0xd8 0x0   -r-- .rela.plt          RELA       alloc
-0x00000560  0xa0 0x00400560  0xa0 0x0   -r-x .plt               PROGBITS   alloc,execute
-0x00001000  0x60 0x00601000  0x60 0x0   -rw- .got.plt           PROGBITS   write,alloc
+0x00000460  0xd8 0x00400460  0xd8   0x0 -r-- .rela.plt          RELA       alloc
+0x00000560  0xa0 0x00400560  0xa0   0x0 -r-x .plt               PROGBITS   alloc,execute
+0x00001000  0x60 0x00601000  0x60   0x0 -rw- .got.plt           PROGBITS   write,alloc
 EOF
 RUN
 
@@ -84,8 +84,8 @@ CMDS=<<EOF
 iS~stub
 EOF
 EXPECT=<<EOF
-0x00000f4e  0x1e 0x100000f4e  0x1e 0x2   -r-x 1.__TEXT.__stubs         SYMBOL_STUBS             PURE_INSTRUCTIONS,SOME_INSTRUCTIONS
-0x00000f6c  0x42 0x100000f6c  0x42 0x4   -r-x 2.__TEXT.__stub_helper   REGULAR                  PURE_INSTRUCTIONS,SOME_INSTRUCTIONS
+0x00000f4e  0x1e 0x100000f4e  0x1e   0x2 -r-x 1.__TEXT.__stubs         SYMBOL_STUBS             PURE_INSTRUCTIONS,SOME_INSTRUCTIONS
+0x00000f6c  0x42 0x100000f6c  0x42   0x4 -r-x 2.__TEXT.__stub_helper   REGULAR                  PURE_INSTRUCTIONS,SOME_INSTRUCTIONS
 EOF
 RUN
 
@@ -95,9 +95,9 @@ CMDS=<<EOF
 iS~gold,plt
 EOF
 EXPECT=<<EOF
-0x00000330  0x48 0x08048330  0x48 0x0   -r-- .rel.plt           REL        alloc
-0x000003a0  0xa0 0x080483a0  0xa0 0x0   -r-x .plt               PROGBITS   alloc,execute
-0x00001000  0x30 0x0804a000  0x30 0x0   -rw- .got.plt           PROGBITS   write,alloc
+0x00000330  0x48 0x08048330  0x48   0x0 -r-- .rel.plt           REL        alloc
+0x000003a0  0xa0 0x080483a0  0xa0   0x0 -r-x .plt               PROGBITS   alloc,execute
+0x00001000  0x30 0x0804a000  0x30   0x0 -rw- .got.plt           PROGBITS   write,alloc
 EOF
 RUN
 
@@ -107,7 +107,7 @@ CMDS=<<EOF
 iS~tls
 EOF
 EXPECT=<<EOF
-0x00002e00  0x200 0x00408000 0x1000 0x0   -rw- .tls                CNT_INITIALIZED_DATA,ALIGN_4BYTES
+0x00002e00  0x200 0x00408000 0x1000   0x0 -rw- .tls                CNT_INITIALIZED_DATA,ALIGN_4BYTES
 EOF
 RUN
 
@@ -117,6 +117,6 @@ CMDS=<<EOF
 iS~tls
 EOF
 EXPECT=<<EOF
-0x00004400  0x200 0x0040a000 0x1000 0x0   -rw- .tls                CNT_INITIALIZED_DATA,ALIGN_32BYTES
+0x00004400  0x200 0x0040a000 0x1000   0x0 -rw- .tls                CNT_INITIALIZED_DATA,ALIGN_32BYTES
 EOF
 RUN

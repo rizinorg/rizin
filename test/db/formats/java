@@ -49,11 +49,11 @@ CMDS=iS ; s
 EXPECT=<<EOF
      paddr  size      vaddr vsize align perm name                           type flags 
 ---------------------------------------------------------------------------------------
-0x0000000a 0x201 0x0000000a 0x201 0x0   -r-- class.constant_pool                 
-0x0000020f  0x4e 0x0000020f  0x4e 0x0   -r-- class.methods                       
-0x0000020f  0x4e 0x0000020f  0x4e 0x0   -r-- class.methods.main.attr             
-0x00000225  0x31 0x00000225  0x31 0x0   -r-x class.methods.main.attr.0.code      
-0x0000025d  0x54 0x0000025d  0x54 0x0   -r-- class.attr                          
+0x0000000a 0x201 0x0000000a 0x201   0x0 -r-- class.constant_pool                 
+0x0000020f  0x4e 0x0000020f  0x4e   0x0 -r-- class.methods                       
+0x0000020f  0x4e 0x0000020f  0x4e   0x0 -r-- class.methods.main.attr             
+0x00000225  0x31 0x00000225  0x31   0x0 -r-x class.methods.main.attr.0.code      
+0x0000025d  0x54 0x0000025d  0x54   0x0 -r-- class.attr                          
 0x225
 EOF
 RUN
@@ -65,13 +65,13 @@ CMDS=iS ; s
 EXPECT=<<EOF
      paddr  size      vaddr vsize align perm name                             type flags 
 -----------------------------------------------------------------------------------------
-0x0000000a 0x315 0x0000000a 0x315 0x0   -r-- class.constant_pool                   
-0x00000323 0x124 0x00000323 0x124 0x0   -r-- class.methods                         
-0x00000323  0x2b 0x00000323  0x2b 0x0   -r-- class.methods._init_.attr             
-0x00000339  0x1d 0x00000339  0x1d 0x0   -r-x class.methods._init_.attr.0.code      
-0x0000034e  0xf9 0x0000034e  0xf9 0x0   -r-- class.methods.run.attr                
-0x00000364  0xe9 0x00000364  0xe9 0x0   -r-x class.methods.run.attr.0.code         
-0x00000447   0x8 0x00000447   0x8 0x0   -r-- class.attr                            
+0x0000000a 0x315 0x0000000a 0x315   0x0 -r-- class.constant_pool                   
+0x00000323 0x124 0x00000323 0x124   0x0 -r-- class.methods                         
+0x00000323  0x2b 0x00000323  0x2b   0x0 -r-- class.methods._init_.attr             
+0x00000339  0x1d 0x00000339  0x1d   0x0 -r-x class.methods._init_.attr.0.code      
+0x0000034e  0xf9 0x0000034e  0xf9   0x0 -r-- class.methods.run.attr                
+0x00000364  0xe9 0x00000364  0xe9   0x0 -r-x class.methods.run.attr.0.code         
+0x00000447   0x8 0x00000447   0x8   0x0 -r-- class.attr                            
 0x339
 EOF
 RUN
@@ -1114,7 +1114,7 @@ CMDS=iS
 EXPECT=<<EOF
      paddr size      vaddr vsize align perm name                type flags 
 ---------------------------------------------------------------------------
-0x0000000a 0x12 0x0000000a  0x12 0x0   -r-- class.constant_pool      
+0x0000000a 0x12 0x0000000a  0x12   0x0 -r-- class.constant_pool      
 EOF
 RUN
 
@@ -1125,17 +1125,17 @@ CMDS=iS
 EXPECT=<<EOF
      paddr  size      vaddr vsize align perm name                             type flags 
 -----------------------------------------------------------------------------------------
-0x0000000a 0x16c 0x0000000a 0x16c 0x0   -r-- class.constant_pool                   
-0x0000017a  0xb6 0x0000017a  0xb6 0x0   -r-- class.methods                         
-0x0000017a  0x29 0x0000017a  0x29 0x0   -r-- class.methods.fun.attr                
-0x00000190  0x1b 0x00000190  0x1b 0x0   -r-x class.methods.fun.attr.0.code         
-0x000001a3  0x2f 0x000001a3  0x2f 0x0   -r-- class.methods._init_.attr             
-0x000001b9  0x21 0x000001b9  0x21 0x0   -r-x class.methods._init_.attr.0.code      
-0x000001d2  0x29 0x000001d2  0x29 0x0   -r-- class.methods.res.attr                
-0x000001e8  0x1b 0x000001e8  0x1b 0x0   -r-x class.methods.res.attr.0.code         
-0x000001fb  0x35 0x000001fb  0x35 0x0   -r-- class.methods.main.attr               
-0x00000211  0x25 0x00000211  0x25 0x0   -r-x class.methods.main.attr.0.code        
-0x00000230   0x8 0x00000230   0x8 0x0   -r-- class.attr                            
+0x0000000a 0x16c 0x0000000a 0x16c   0x0 -r-- class.constant_pool                   
+0x0000017a  0xb6 0x0000017a  0xb6   0x0 -r-- class.methods                         
+0x0000017a  0x29 0x0000017a  0x29   0x0 -r-- class.methods.fun.attr                
+0x00000190  0x1b 0x00000190  0x1b   0x0 -r-x class.methods.fun.attr.0.code         
+0x000001a3  0x2f 0x000001a3  0x2f   0x0 -r-- class.methods._init_.attr             
+0x000001b9  0x21 0x000001b9  0x21   0x0 -r-x class.methods._init_.attr.0.code      
+0x000001d2  0x29 0x000001d2  0x29   0x0 -r-- class.methods.res.attr                
+0x000001e8  0x1b 0x000001e8  0x1b   0x0 -r-x class.methods.res.attr.0.code         
+0x000001fb  0x35 0x000001fb  0x35   0x0 -r-- class.methods.main.attr               
+0x00000211  0x25 0x00000211  0x25   0x0 -r-x class.methods.main.attr.0.code        
+0x00000230   0x8 0x00000230   0x8   0x0 -r-- class.attr                            
 EOF
 RUN
 
@@ -1146,25 +1146,25 @@ CMDS=iS
 EXPECT=<<EOF
      paddr  size      vaddr vsize align perm name                                            type flags 
 --------------------------------------------------------------------------------------------------------
-0x0000000a 0x440 0x0000000a 0x440 0x0   -r-- class.constant_pool                                  
-0x0000044e 0x920 0x0000044e 0x920 0x0   -r-- class.methods                                        
-0x0000044e  0x3d 0x0000044e  0x3d 0x0   -r-- class.methods._init_.attr                            
-0x00000464  0x2f 0x00000464  0x2f 0x0   -r-x class.methods._init_.attr.0.code                     
-0x0000048b 0x13e 0x0000048b 0x13e 0x0   -r-- class.methods.a.attr                                 
-0x000004a1 0x130 0x000004a1 0x130 0x0   -r-x class.methods.a.attr.0.code                          
-0x000005c9  0x44 0x000005c9  0x44 0x0   -r-- class.methods.a_1.attr                               
-0x000005df  0x36 0x000005df  0x36 0x0   -r-x class.methods.a_1.attr.0.code                        
-0x0000060d  0x3a 0x0000060d  0x3a 0x0   -r-- class.methods.a_1.attr_0x60d                         
-0x00000623  0x2c 0x00000623  0x2c 0x0   -r-x class.methods.a_1.attr.0.code_0x623                  
-0x00000647 0x1b9 0x00000647 0x1b9 0x0   -r-- class.methods.hopskip_line_switch.attr               
-0x0000065d 0x1ab 0x0000065d 0x1ab 0x0   -r-x class.methods.hopskip_line_switch.attr.0.code        
-0x00000800 0x1d4 0x00000800 0x1d4 0x0   -r-- class.methods.straight_line_switch.attr              
-0x00000816 0x1c6 0x00000816 0x1c6 0x0   -r-x class.methods.straight_line_switch.attr.0.code       
-0x000009d4 0x1cc 0x000009d4 0x1cc 0x0   -r-- class.methods.straight_line_switch_.attr             
-0x000009ea 0x1be 0x000009ea 0x1be 0x0   -r-x class.methods.straight_line_switch_.attr.0.code      
-0x00000ba0 0x1ce 0x00000ba0 0x1ce 0x0   -r-- class.methods.main.attr                              
-0x00000bb6 0x1be 0x00000bb6 0x1be 0x0   -r-x class.methods.main.attr.0.code                       
-0x00000d6e   0x8 0x00000d6e   0x8 0x0   -r-- class.attr                                           
+0x0000000a 0x440 0x0000000a 0x440   0x0 -r-- class.constant_pool                                  
+0x0000044e 0x920 0x0000044e 0x920   0x0 -r-- class.methods                                        
+0x0000044e  0x3d 0x0000044e  0x3d   0x0 -r-- class.methods._init_.attr                            
+0x00000464  0x2f 0x00000464  0x2f   0x0 -r-x class.methods._init_.attr.0.code                     
+0x0000048b 0x13e 0x0000048b 0x13e   0x0 -r-- class.methods.a.attr                                 
+0x000004a1 0x130 0x000004a1 0x130   0x0 -r-x class.methods.a.attr.0.code                          
+0x000005c9  0x44 0x000005c9  0x44   0x0 -r-- class.methods.a_1.attr                               
+0x000005df  0x36 0x000005df  0x36   0x0 -r-x class.methods.a_1.attr.0.code                        
+0x0000060d  0x3a 0x0000060d  0x3a   0x0 -r-- class.methods.a_1.attr_0x60d                         
+0x00000623  0x2c 0x00000623  0x2c   0x0 -r-x class.methods.a_1.attr.0.code_0x623                  
+0x00000647 0x1b9 0x00000647 0x1b9   0x0 -r-- class.methods.hopskip_line_switch.attr               
+0x0000065d 0x1ab 0x0000065d 0x1ab   0x0 -r-x class.methods.hopskip_line_switch.attr.0.code        
+0x00000800 0x1d4 0x00000800 0x1d4   0x0 -r-- class.methods.straight_line_switch.attr              
+0x00000816 0x1c6 0x00000816 0x1c6   0x0 -r-x class.methods.straight_line_switch.attr.0.code       
+0x000009d4 0x1cc 0x000009d4 0x1cc   0x0 -r-- class.methods.straight_line_switch_.attr             
+0x000009ea 0x1be 0x000009ea 0x1be   0x0 -r-x class.methods.straight_line_switch_.attr.0.code      
+0x00000ba0 0x1ce 0x00000ba0 0x1ce   0x0 -r-- class.methods.main.attr                              
+0x00000bb6 0x1be 0x00000bb6 0x1be   0x0 -r-x class.methods.main.attr.0.code                       
+0x00000d6e   0x8 0x00000d6e   0x8   0x0 -r-- class.attr                                           
 EOF
 RUN
 
@@ -1175,7 +1175,7 @@ CMDS=iS
 EXPECT=<<EOF
      paddr size      vaddr vsize align perm name                type flags 
 ---------------------------------------------------------------------------
-0x0000000a 0x41 0x0000000a  0x41 0x0   -r-- class.constant_pool      
+0x0000000a 0x41 0x0000000a  0x41   0x0 -r-- class.constant_pool      
 EOF
 RUN
 
@@ -1186,17 +1186,17 @@ CMDS=iS
 EXPECT=<<EOF
      paddr  size      vaddr vsize align perm name                             type flags 
 -----------------------------------------------------------------------------------------
-0x0000000a 0x1ff 0x0000000a 0x1ff 0x0   -r-- class.constant_pool                   
-0x0000020b   0xa 0x0000020b   0xa 0x0   -r-- class.fields.who.attr                 
-0x0000020b   0xa 0x0000020b   0xa 0x0   -r-- class.fields                          
-0x00000215  0xb8 0x00000215  0xb8 0x0   -r-- class.methods                         
-0x00000215  0x38 0x00000215  0x38 0x0   -r-- class.methods._init_.attr             
-0x0000022b  0x2a 0x0000022b  0x2a 0x0   -r-x class.methods._init_.attr.0.code      
-0x0000024d  0x47 0x0000024d  0x47 0x0   -r-- class.methods.say.attr                
-0x00000263  0x39 0x00000263  0x39 0x0   -r-x class.methods.say.attr.0.code         
-0x00000294  0x39 0x00000294  0x39 0x0   -r-- class.methods.main.attr               
-0x000002aa  0x29 0x000002aa  0x29 0x0   -r-x class.methods.main.attr.0.code        
-0x000002cd   0x8 0x000002cd   0x8 0x0   -r-- class.attr                            
+0x0000000a 0x1ff 0x0000000a 0x1ff   0x0 -r-- class.constant_pool                   
+0x0000020b   0xa 0x0000020b   0xa   0x0 -r-- class.fields.who.attr                 
+0x0000020b   0xa 0x0000020b   0xa   0x0 -r-- class.fields                          
+0x00000215  0xb8 0x00000215  0xb8   0x0 -r-- class.methods                         
+0x00000215  0x38 0x00000215  0x38   0x0 -r-- class.methods._init_.attr             
+0x0000022b  0x2a 0x0000022b  0x2a   0x0 -r-x class.methods._init_.attr.0.code      
+0x0000024d  0x47 0x0000024d  0x47   0x0 -r-- class.methods.say.attr                
+0x00000263  0x39 0x00000263  0x39   0x0 -r-x class.methods.say.attr.0.code         
+0x00000294  0x39 0x00000294  0x39   0x0 -r-- class.methods.main.attr               
+0x000002aa  0x29 0x000002aa  0x29   0x0 -r-x class.methods.main.attr.0.code        
+0x000002cd   0x8 0x000002cd   0x8   0x0 -r-- class.attr                            
 EOF
 RUN
 
@@ -1207,11 +1207,11 @@ CMDS=iS
 EXPECT=<<EOF
      paddr  size      vaddr vsize align perm name                           type flags 
 ---------------------------------------------------------------------------------------
-0x0000000a 0x201 0x0000000a 0x201 0x0   -r-- class.constant_pool                 
-0x0000020f  0x4e 0x0000020f  0x4e 0x0   -r-- class.methods                       
-0x0000020f  0x4e 0x0000020f  0x4e 0x0   -r-- class.methods.main.attr             
-0x00000225  0x31 0x00000225  0x31 0x0   -r-x class.methods.main.attr.0.code      
-0x0000025d  0x54 0x0000025d  0x54 0x0   -r-- class.attr                          
+0x0000000a 0x201 0x0000000a 0x201   0x0 -r-- class.constant_pool                 
+0x0000020f  0x4e 0x0000020f  0x4e   0x0 -r-- class.methods                       
+0x0000020f  0x4e 0x0000020f  0x4e   0x0 -r-- class.methods.main.attr             
+0x00000225  0x31 0x00000225  0x31   0x0 -r-x class.methods.main.attr.0.code      
+0x0000025d  0x54 0x0000025d  0x54   0x0 -r-- class.attr                          
 EOF
 RUN
 
@@ -1222,10 +1222,10 @@ CMDS=iS
 EXPECT=<<EOF
      paddr  size      vaddr vsize align perm name                           type flags 
 ---------------------------------------------------------------------------------------
-0x0000000a 0x100 0x0000000a 0x100 0x0   -r-- class.constant_pool                 
-0x0000010e  0x21 0x0000010e  0x21 0x0   -r-- class.methods                       
-0x0000010e  0x21 0x0000010e  0x21 0x0   -r-- class.methods.main.attr             
-0x00000120  0x11 0x00000120  0x11 0x0   -r-x class.methods.main.attr.0.code      
+0x0000000a 0x100 0x0000000a 0x100   0x0 -r-- class.constant_pool                 
+0x0000010e  0x21 0x0000010e  0x21   0x0 -r-- class.methods                       
+0x0000010e  0x21 0x0000010e  0x21   0x0 -r-- class.methods.main.attr             
+0x00000120  0x11 0x00000120  0x11   0x0 -r-x class.methods.main.attr.0.code      
 EOF
 RUN
 
@@ -1236,13 +1236,13 @@ CMDS=iS
 EXPECT=<<EOF
      paddr  size      vaddr vsize align perm name                             type flags 
 -----------------------------------------------------------------------------------------
-0x0000000a 0x315 0x0000000a 0x315 0x0   -r-- class.constant_pool                   
-0x00000323 0x124 0x00000323 0x124 0x0   -r-- class.methods                         
-0x00000323  0x2b 0x00000323  0x2b 0x0   -r-- class.methods._init_.attr             
-0x00000339  0x1d 0x00000339  0x1d 0x0   -r-x class.methods._init_.attr.0.code      
-0x0000034e  0xf9 0x0000034e  0xf9 0x0   -r-- class.methods.run.attr                
-0x00000364  0xe9 0x00000364  0xe9 0x0   -r-x class.methods.run.attr.0.code         
-0x00000447   0x8 0x00000447   0x8 0x0   -r-- class.attr                            
+0x0000000a 0x315 0x0000000a 0x315   0x0 -r-- class.constant_pool                   
+0x00000323 0x124 0x00000323 0x124   0x0 -r-- class.methods                         
+0x00000323  0x2b 0x00000323  0x2b   0x0 -r-- class.methods._init_.attr             
+0x00000339  0x1d 0x00000339  0x1d   0x0 -r-x class.methods._init_.attr.0.code      
+0x0000034e  0xf9 0x0000034e  0xf9   0x0 -r-- class.methods.run.attr                
+0x00000364  0xe9 0x00000364  0xe9   0x0 -r-x class.methods.run.attr.0.code         
+0x00000447   0x8 0x00000447   0x8   0x0 -r-- class.attr                            
 EOF
 RUN
 
@@ -1253,62 +1253,62 @@ CMDS=iS
 EXPECT=<<EOF
      paddr   size      vaddr  vsize align perm name                                            type flags 
 ----------------------------------------------------------------------------------------------------------
-0x0000000a 0x1c13 0x0000000a 0x1c13 0x0   -r-- class.constant_pool                                  
-0x00001c1f    0x8 0x00001c1f    0x8 0x0   -r-- class.fields.outputView.attr                         
-0x00001c27    0x8 0x00001c27    0x8 0x0   -r-- class.fields.handler.attr                            
-0x00001c2f    0x8 0x00001c2f    0x8 0x0   -r-- class.fields.remoteRunButton.attr                    
-0x00001c37    0x8 0x00001c37    0x8 0x0   -r-- class.fields.localRunButton.attr                     
-0x00001c3f    0x8 0x00001c3f    0x8 0x0   -r-- class.fields.context.attr                            
-0x00001c47    0x8 0x00001c47    0x8 0x0   -r-- class.fields.mUtils.attr                             
-0x00001c4f    0x8 0x00001c4f    0x8 0x0   -r-- class.fields.http_url_default.attr                   
-0x00001c57    0x8 0x00001c57    0x8 0x0   -r-- class.fields.onLocalRunButtonClick.attr              
-0x00001c5f    0x8 0x00001c5f    0x8 0x0   -r-- class.fields.thread.attr                             
-0x00001c67    0xa 0x00001c67    0xa 0x0   -r-- class.fields.onRemoteRunButtonClick.attr             
-0x00001c1f   0x52 0x00001c1f   0x52 0x0   -r-- class.fields                                         
-0x00001c71  0xd73 0x00001c71  0xd73 0x0   -r-- class.methods                                        
-0x00001c71   0x7f 0x00001c71   0x7f 0x0   -r-- class.methods._init_.attr                            
-0x00001c87   0x71 0x00001c87   0x71 0x0   -r-x class.methods._init_.attr.0.code                     
-0x00001cf0  0x1fc 0x00001cf0  0x1fc 0x0   -r-- class.methods.onCreate.attr                          
-0x00001d06  0x1ee 0x00001d06  0x1ee 0x0   -r-x class.methods.onCreate.attr.0.code                   
-0x00001eec   0x58 0x00001eec   0x58 0x0   -r-- class.methods.onCreateOptionsMenu.attr               
-0x00001f02   0x4a 0x00001f02   0x4a 0x0   -r-x class.methods.onCreateOptionsMenu.attr.0.code        
-0x00001f44   0x9d 0x00001f44   0x9d 0x0   -r-- class.methods.onOptionsItemSelected.attr             
-0x00001f5a   0x8f 0x00001f5a   0x8f 0x0   -r-x class.methods.onOptionsItemSelected.attr.0.code      
-0x00001fe1   0x55 0x00001fe1   0x55 0x0   -r-- class.methods.checkForRadare.attr                    
-0x00001ff7   0x47 0x00001ff7   0x47 0x0   -r-x class.methods.checkForRadare.attr.0.code             
-0x00002036   0x68 0x00002036   0x68 0x0   -r-- class.methods.output.attr                            
-0x0000204c   0x5a 0x0000204c   0x5a 0x0   -r-x class.methods.output.attr.0.code                     
-0x0000209e  0x1a0 0x0000209e  0x1a0 0x0   -r-- class.methods.unTarGz.attr                           
-0x000020b4  0x188 0x000020b4  0x188 0x0   -r-x class.methods.unTarGz.attr.0.code                    
-0x0000223e   0x5d 0x0000223e   0x5d 0x0   -r-- class.methods.resetButtons.attr                      
-0x00002254   0x4f 0x00002254   0x4f 0x0   -r-x class.methods.resetButtons.attr.0.code               
-0x0000229b  0x335 0x0000229b  0x335 0x0   -r-- class.methods.download.attr                          
-0x000022b1  0x327 0x000022b1  0x327 0x0   -r-x class.methods.download.attr.0.code                   
-0x000025d0  0x13a 0x000025d0  0x13a 0x0   -r-- class.methods.onResume.attr                          
-0x000025e6  0x12c 0x000025e6  0x12c 0x0   -r-x class.methods.onResume.attr.0.code                   
-0x0000270a   0x3d 0x0000270a   0x3d 0x0   -r-- class.methods.access_000.attr                        
-0x00002720   0x2f 0x00002720   0x2f 0x0   -r-x class.methods.access_000.attr.0.code                 
-0x00002747   0x48 0x00002747   0x48 0x0   -r-- class.methods.access_100.attr                        
-0x0000275d   0x3a 0x0000275d   0x3a 0x0   -r-x class.methods.access_100.attr.0.code                 
-0x0000278f   0x3d 0x0000278f   0x3d 0x0   -r-- class.methods.access_200.attr                        
-0x000027a5   0x2f 0x000027a5   0x2f 0x0   -r-x class.methods.access_200.attr.0.code                 
-0x000027cc   0x3d 0x000027cc   0x3d 0x0   -r-- class.methods.access_300.attr                        
-0x000027e2   0x2f 0x000027e2   0x2f 0x0   -r-x class.methods.access_300.attr.0.code                 
-0x00002809   0x49 0x00002809   0x49 0x0   -r-- class.methods.access_402.attr                        
-0x0000281f   0x3b 0x0000281f   0x3b 0x0   -r-x class.methods.access_402.attr.0.code                 
-0x00002852   0x3d 0x00002852   0x3d 0x0   -r-- class.methods.access_400.attr                        
-0x00002868   0x2f 0x00002868   0x2f 0x0   -r-x class.methods.access_400.attr.0.code                 
-0x0000288f   0x3d 0x0000288f   0x3d 0x0   -r-- class.methods.access_500.attr                        
-0x000028a5   0x2f 0x000028a5   0x2f 0x0   -r-x class.methods.access_500.attr.0.code                 
-0x000028cc   0x3d 0x000028cc   0x3d 0x0   -r-- class.methods.access_600.attr                        
-0x000028e2   0x2f 0x000028e2   0x2f 0x0   -r-x class.methods.access_600.attr.0.code                 
-0x00002909   0x49 0x00002909   0x49 0x0   -r-- class.methods.access_602.attr                        
-0x0000291f   0x3b 0x0000291f   0x3b 0x0   -r-x class.methods.access_602.attr.0.code                 
-0x00002952   0x3d 0x00002952   0x3d 0x0   -r-- class.methods.access_700.attr                        
-0x00002968   0x2f 0x00002968   0x2f 0x0   -r-x class.methods.access_700.attr.0.code                 
-0x0000298f   0x55 0x0000298f   0x55 0x0   -r-- class.methods.access_800.attr                        
-0x000029a5   0x45 0x000029a5   0x45 0x0   -r-x class.methods.access_800.attr.0.code                 
-0x000029e4   0x50 0x000029e4   0x50 0x0   -r-- class.attr                                           
+0x0000000a 0x1c13 0x0000000a 0x1c13   0x0 -r-- class.constant_pool                                  
+0x00001c1f    0x8 0x00001c1f    0x8   0x0 -r-- class.fields.outputView.attr                         
+0x00001c27    0x8 0x00001c27    0x8   0x0 -r-- class.fields.handler.attr                            
+0x00001c2f    0x8 0x00001c2f    0x8   0x0 -r-- class.fields.remoteRunButton.attr                    
+0x00001c37    0x8 0x00001c37    0x8   0x0 -r-- class.fields.localRunButton.attr                     
+0x00001c3f    0x8 0x00001c3f    0x8   0x0 -r-- class.fields.context.attr                            
+0x00001c47    0x8 0x00001c47    0x8   0x0 -r-- class.fields.mUtils.attr                             
+0x00001c4f    0x8 0x00001c4f    0x8   0x0 -r-- class.fields.http_url_default.attr                   
+0x00001c57    0x8 0x00001c57    0x8   0x0 -r-- class.fields.onLocalRunButtonClick.attr              
+0x00001c5f    0x8 0x00001c5f    0x8   0x0 -r-- class.fields.thread.attr                             
+0x00001c67    0xa 0x00001c67    0xa   0x0 -r-- class.fields.onRemoteRunButtonClick.attr             
+0x00001c1f   0x52 0x00001c1f   0x52   0x0 -r-- class.fields                                         
+0x00001c71  0xd73 0x00001c71  0xd73   0x0 -r-- class.methods                                        
+0x00001c71   0x7f 0x00001c71   0x7f   0x0 -r-- class.methods._init_.attr                            
+0x00001c87   0x71 0x00001c87   0x71   0x0 -r-x class.methods._init_.attr.0.code                     
+0x00001cf0  0x1fc 0x00001cf0  0x1fc   0x0 -r-- class.methods.onCreate.attr                          
+0x00001d06  0x1ee 0x00001d06  0x1ee   0x0 -r-x class.methods.onCreate.attr.0.code                   
+0x00001eec   0x58 0x00001eec   0x58   0x0 -r-- class.methods.onCreateOptionsMenu.attr               
+0x00001f02   0x4a 0x00001f02   0x4a   0x0 -r-x class.methods.onCreateOptionsMenu.attr.0.code        
+0x00001f44   0x9d 0x00001f44   0x9d   0x0 -r-- class.methods.onOptionsItemSelected.attr             
+0x00001f5a   0x8f 0x00001f5a   0x8f   0x0 -r-x class.methods.onOptionsItemSelected.attr.0.code      
+0x00001fe1   0x55 0x00001fe1   0x55   0x0 -r-- class.methods.checkForRadare.attr                    
+0x00001ff7   0x47 0x00001ff7   0x47   0x0 -r-x class.methods.checkForRadare.attr.0.code             
+0x00002036   0x68 0x00002036   0x68   0x0 -r-- class.methods.output.attr                            
+0x0000204c   0x5a 0x0000204c   0x5a   0x0 -r-x class.methods.output.attr.0.code                     
+0x0000209e  0x1a0 0x0000209e  0x1a0   0x0 -r-- class.methods.unTarGz.attr                           
+0x000020b4  0x188 0x000020b4  0x188   0x0 -r-x class.methods.unTarGz.attr.0.code                    
+0x0000223e   0x5d 0x0000223e   0x5d   0x0 -r-- class.methods.resetButtons.attr                      
+0x00002254   0x4f 0x00002254   0x4f   0x0 -r-x class.methods.resetButtons.attr.0.code               
+0x0000229b  0x335 0x0000229b  0x335   0x0 -r-- class.methods.download.attr                          
+0x000022b1  0x327 0x000022b1  0x327   0x0 -r-x class.methods.download.attr.0.code                   
+0x000025d0  0x13a 0x000025d0  0x13a   0x0 -r-- class.methods.onResume.attr                          
+0x000025e6  0x12c 0x000025e6  0x12c   0x0 -r-x class.methods.onResume.attr.0.code                   
+0x0000270a   0x3d 0x0000270a   0x3d   0x0 -r-- class.methods.access_000.attr                        
+0x00002720   0x2f 0x00002720   0x2f   0x0 -r-x class.methods.access_000.attr.0.code                 
+0x00002747   0x48 0x00002747   0x48   0x0 -r-- class.methods.access_100.attr                        
+0x0000275d   0x3a 0x0000275d   0x3a   0x0 -r-x class.methods.access_100.attr.0.code                 
+0x0000278f   0x3d 0x0000278f   0x3d   0x0 -r-- class.methods.access_200.attr                        
+0x000027a5   0x2f 0x000027a5   0x2f   0x0 -r-x class.methods.access_200.attr.0.code                 
+0x000027cc   0x3d 0x000027cc   0x3d   0x0 -r-- class.methods.access_300.attr                        
+0x000027e2   0x2f 0x000027e2   0x2f   0x0 -r-x class.methods.access_300.attr.0.code                 
+0x00002809   0x49 0x00002809   0x49   0x0 -r-- class.methods.access_402.attr                        
+0x0000281f   0x3b 0x0000281f   0x3b   0x0 -r-x class.methods.access_402.attr.0.code                 
+0x00002852   0x3d 0x00002852   0x3d   0x0 -r-- class.methods.access_400.attr                        
+0x00002868   0x2f 0x00002868   0x2f   0x0 -r-x class.methods.access_400.attr.0.code                 
+0x0000288f   0x3d 0x0000288f   0x3d   0x0 -r-- class.methods.access_500.attr                        
+0x000028a5   0x2f 0x000028a5   0x2f   0x0 -r-x class.methods.access_500.attr.0.code                 
+0x000028cc   0x3d 0x000028cc   0x3d   0x0 -r-- class.methods.access_600.attr                        
+0x000028e2   0x2f 0x000028e2   0x2f   0x0 -r-x class.methods.access_600.attr.0.code                 
+0x00002909   0x49 0x00002909   0x49   0x0 -r-- class.methods.access_602.attr                        
+0x0000291f   0x3b 0x0000291f   0x3b   0x0 -r-x class.methods.access_602.attr.0.code                 
+0x00002952   0x3d 0x00002952   0x3d   0x0 -r-- class.methods.access_700.attr                        
+0x00002968   0x2f 0x00002968   0x2f   0x0 -r-x class.methods.access_700.attr.0.code                 
+0x0000298f   0x55 0x0000298f   0x55   0x0 -r-- class.methods.access_800.attr                        
+0x000029a5   0x45 0x000029a5   0x45   0x0 -r-x class.methods.access_800.attr.0.code                 
+0x000029e4   0x50 0x000029e4   0x50   0x0 -r-- class.attr                                           
 EOF
 RUN
 
@@ -1319,13 +1319,13 @@ CMDS=iS
 EXPECT=<<EOF
      paddr  size      vaddr vsize align perm name                             type flags 
 -----------------------------------------------------------------------------------------
-0x0000000a 0x365 0x0000000a 0x365 0x0   -r-- class.constant_pool                   
-0x00000373 0x109 0x00000373 0x109 0x0   -r-- class.methods                         
-0x00000373  0x2b 0x00000373  0x2b 0x0   -r-- class.methods._init_.attr             
-0x00000389  0x1d 0x00000389  0x1d 0x0   -r-x class.methods._init_.attr.0.code      
-0x0000039e  0xde 0x0000039e  0xde 0x0   -r-- class.methods.main.attr               
-0x000003b4  0xce 0x000003b4  0xce 0x0   -r-x class.methods.main.attr.0.code        
-0x0000047c   0x8 0x0000047c   0x8 0x0   -r-- class.attr                            
+0x0000000a 0x365 0x0000000a 0x365   0x0 -r-- class.constant_pool                   
+0x00000373 0x109 0x00000373 0x109   0x0 -r-- class.methods                         
+0x00000373  0x2b 0x00000373  0x2b   0x0 -r-- class.methods._init_.attr             
+0x00000389  0x1d 0x00000389  0x1d   0x0 -r-x class.methods._init_.attr.0.code      
+0x0000039e  0xde 0x0000039e  0xde   0x0 -r-- class.methods.main.attr               
+0x000003b4  0xce 0x000003b4  0xce   0x0 -r-x class.methods.main.attr.0.code        
+0x0000047c   0x8 0x0000047c   0x8   0x0 -r-- class.attr                            
 EOF
 RUN
 
@@ -1346,29 +1346,29 @@ CMDS=iS
 EXPECT=<<EOF
      paddr  size      vaddr vsize align perm name                                             type flags 
 ---------------------------------------------------------------------------------------------------------
-0x0000000a 0x8bd 0x0000000a 0x8bd 0x0   -r-- class.constant_pool                                   
-0x000008c9   0x8 0x000008c9   0x8 0x0   -r-- class.fields._staticClassInfo.attr                    
-0x000008d1   0x8 0x000008d1   0x8 0x0   -r-- class.fields.___stMC.attr                             
-0x000008d9   0xa 0x000008d9   0xa 0x0   -r-- class.fields._callSiteArray.attr                      
-0x000008c9  0x1a 0x000008c9  0x1a 0x0   -r-- class.fields                                          
-0x000008e3 0x2e4 0x000008e3 0x2e4 0x0   -r-- class.methods                                         
-0x000008e3  0x35 0x000008e3  0x35 0x0   -r-- class.methods._init_.attr                             
-0x000008f9  0x27 0x000008f9  0x27 0x0   -r-x class.methods._init_.attr.0.code                      
-0x00000918  0x40 0x00000918  0x40 0x0   -r-- class.methods._init__1.attr                           
-0x0000092e  0x32 0x0000092e  0x32 0x0   -r-x class.methods._init__1.attr.0.code                    
-0x00000958  0x40 0x00000958  0x40 0x0   -r-- class.methods.main.attr                               
-0x0000096e  0x32 0x0000096e  0x32 0x0   -r-x class.methods.main.attr.0.code                        
-0x00000998 0x10c 0x00000998 0x10c 0x0   -r-- class.methods.run.attr                                
-0x000009ae  0xfe 0x000009ae  0xfe 0x0   -r-x class.methods.run.attr.0.code                         
-0x00000aa4  0x41 0x00000aa4  0x41 0x0   -r-- class.methods._getStaticMetaClass.attr                
-0x00000aba  0x33 0x00000aba  0x33 0x0   -r-x class.methods._getStaticMetaClass.attr.0.code         
-0x00000ae5  0x6f 0x00000ae5  0x6f 0x0   -r-- class.methods._createCallSiteArray_1.attr             
-0x00000afb  0x61 0x00000afb  0x61 0x0   -r-x class.methods._createCallSiteArray_1.attr.0.code      
-0x00000b54  0x2f 0x00000b54  0x2f 0x0   -r-- class.methods._createCallSiteArray.attr               
-0x00000b6a  0x21 0x00000b6a  0x21 0x0   -r-x class.methods._createCallSiteArray.attr.0.code        
-0x00000b83  0x44 0x00000b83  0x44 0x0   -r-- class.methods._getCallSiteArray.attr                  
-0x00000b99  0x34 0x00000b99  0x34 0x0   -r-x class.methods._getCallSiteArray.attr.0.code           
-0x00000bc7   0x8 0x00000bc7   0x8 0x0   -r-- class.attr                                            
+0x0000000a 0x8bd 0x0000000a 0x8bd   0x0 -r-- class.constant_pool                                   
+0x000008c9   0x8 0x000008c9   0x8   0x0 -r-- class.fields._staticClassInfo.attr                    
+0x000008d1   0x8 0x000008d1   0x8   0x0 -r-- class.fields.___stMC.attr                             
+0x000008d9   0xa 0x000008d9   0xa   0x0 -r-- class.fields._callSiteArray.attr                      
+0x000008c9  0x1a 0x000008c9  0x1a   0x0 -r-- class.fields                                          
+0x000008e3 0x2e4 0x000008e3 0x2e4   0x0 -r-- class.methods                                         
+0x000008e3  0x35 0x000008e3  0x35   0x0 -r-- class.methods._init_.attr                             
+0x000008f9  0x27 0x000008f9  0x27   0x0 -r-x class.methods._init_.attr.0.code                      
+0x00000918  0x40 0x00000918  0x40   0x0 -r-- class.methods._init__1.attr                           
+0x0000092e  0x32 0x0000092e  0x32   0x0 -r-x class.methods._init__1.attr.0.code                    
+0x00000958  0x40 0x00000958  0x40   0x0 -r-- class.methods.main.attr                               
+0x0000096e  0x32 0x0000096e  0x32   0x0 -r-x class.methods.main.attr.0.code                        
+0x00000998 0x10c 0x00000998 0x10c   0x0 -r-- class.methods.run.attr                                
+0x000009ae  0xfe 0x000009ae  0xfe   0x0 -r-x class.methods.run.attr.0.code                         
+0x00000aa4  0x41 0x00000aa4  0x41   0x0 -r-- class.methods._getStaticMetaClass.attr                
+0x00000aba  0x33 0x00000aba  0x33   0x0 -r-x class.methods._getStaticMetaClass.attr.0.code         
+0x00000ae5  0x6f 0x00000ae5  0x6f   0x0 -r-- class.methods._createCallSiteArray_1.attr             
+0x00000afb  0x61 0x00000afb  0x61   0x0 -r-x class.methods._createCallSiteArray_1.attr.0.code      
+0x00000b54  0x2f 0x00000b54  0x2f   0x0 -r-- class.methods._createCallSiteArray.attr               
+0x00000b6a  0x21 0x00000b6a  0x21   0x0 -r-x class.methods._createCallSiteArray.attr.0.code        
+0x00000b83  0x44 0x00000b83  0x44   0x0 -r-- class.methods._getCallSiteArray.attr                  
+0x00000b99  0x34 0x00000b99  0x34   0x0 -r-x class.methods._getCallSiteArray.attr.0.code           
+0x00000bc7   0x8 0x00000bc7   0x8   0x0 -r-- class.attr                                            
 EOF
 RUN
 
@@ -1379,28 +1379,28 @@ CMDS=iS
 EXPECT=<<EOF
      paddr   size      vaddr  vsize align perm name                                type flags 
 ----------------------------------------------------------------------------------------------
-0x0000000a  0x3eb 0x0000000a  0x3eb 0x0   -r-- class.constant_pool                      
-0x000003f5    0x4 0x000003f5    0x4 0x0   -r-- class.interfaces                         
-0x000003f9    0x8 0x000003f9    0x8 0x0   -r-- class.fields._.attr                      
-0x00000401    0xa 0x00000401    0xa 0x0   -r-- class.fields.i.attr                      
-0x000003f9   0x12 0x000003f9   0x12 0x0   -r-- class.fields                             
-0x0000040b 0x4b20 0x0000040b 0x4b20 0x0   -r-- class.methods                            
-0x0000040b   0x23 0x0000040b   0x23 0x0   -r-- class.methods._.attr                     
-0x00000421   0x15 0x00000421   0x15 0x0   -r-x class.methods._.attr.0.code              
-0x0000042e   0x40 0x0000042e   0x40 0x0   -r-- class.methods._init_.attr                
-0x00000444   0x32 0x00000444   0x32 0x0   -r-x class.methods._init_.attr.0.code         
-0x0000046e   0x4c 0x0000046e   0x4c 0x0   -r-- class.methods.close.attr                 
-0x00000484   0x3e 0x00000484   0x3e 0x0   -r-x class.methods.close.attr.0.code          
-0x000004ba   0x2b 0x000004ba   0x2b 0x0   -r-- class.methods.__1.attr                   
-0x000004d0   0x1d 0x000004d0   0x1d 0x0   -r-x class.methods.__1.attr.0.code            
-0x000004e5   0x22 0x000004e5   0x22 0x0   -r-- class.methods.__1.attr_0x4e5             
-0x000004fb   0x14 0x000004fb   0x14 0x0   -r-x class.methods.__1.attr.0.code_0x4fb      
-0x00000507   0x2f 0x00000507   0x2f 0x0   -r-- class.methods.main.attr                  
-0x0000051d   0x17 0x0000051d   0x17 0x0   -r-x class.methods.main.attr.0.code           
-0x00000536 0x49cd 0x00000536 0x49cd 0x0   -r-- class.methods.main_1.attr                
-0x0000054c 0x49bf 0x0000054c 0x49bf 0x0   -r-x class.methods.main_1.attr.0.code         
-0x00004f03   0x28 0x00004f03   0x28 0x0   -r-- class.methods._clinit_.attr              
-0x00004f19   0x18 0x00004f19   0x18 0x0   -r-x class.methods._clinit_.attr.0.code       
+0x0000000a  0x3eb 0x0000000a  0x3eb   0x0 -r-- class.constant_pool                      
+0x000003f5    0x4 0x000003f5    0x4   0x0 -r-- class.interfaces                         
+0x000003f9    0x8 0x000003f9    0x8   0x0 -r-- class.fields._.attr                      
+0x00000401    0xa 0x00000401    0xa   0x0 -r-- class.fields.i.attr                      
+0x000003f9   0x12 0x000003f9   0x12   0x0 -r-- class.fields                             
+0x0000040b 0x4b20 0x0000040b 0x4b20   0x0 -r-- class.methods                            
+0x0000040b   0x23 0x0000040b   0x23   0x0 -r-- class.methods._.attr                     
+0x00000421   0x15 0x00000421   0x15   0x0 -r-x class.methods._.attr.0.code              
+0x0000042e   0x40 0x0000042e   0x40   0x0 -r-- class.methods._init_.attr                
+0x00000444   0x32 0x00000444   0x32   0x0 -r-x class.methods._init_.attr.0.code         
+0x0000046e   0x4c 0x0000046e   0x4c   0x0 -r-- class.methods.close.attr                 
+0x00000484   0x3e 0x00000484   0x3e   0x0 -r-x class.methods.close.attr.0.code          
+0x000004ba   0x2b 0x000004ba   0x2b   0x0 -r-- class.methods.__1.attr                   
+0x000004d0   0x1d 0x000004d0   0x1d   0x0 -r-x class.methods.__1.attr.0.code            
+0x000004e5   0x22 0x000004e5   0x22   0x0 -r-- class.methods.__1.attr_0x4e5             
+0x000004fb   0x14 0x000004fb   0x14   0x0 -r-x class.methods.__1.attr.0.code_0x4fb      
+0x00000507   0x2f 0x00000507   0x2f   0x0 -r-- class.methods.main.attr                  
+0x0000051d   0x17 0x0000051d   0x17   0x0 -r-x class.methods.main.attr.0.code           
+0x00000536 0x49cd 0x00000536 0x49cd   0x0 -r-- class.methods.main_1.attr                
+0x0000054c 0x49bf 0x0000054c 0x49bf   0x0 -r-x class.methods.main_1.attr.0.code         
+0x00004f03   0x28 0x00004f03   0x28   0x0 -r-- class.methods._clinit_.attr              
+0x00004f19   0x18 0x00004f19   0x18   0x0 -r-x class.methods._clinit_.attr.0.code       
 EOF
 RUN
 

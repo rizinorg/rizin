@@ -759,7 +759,7 @@ EOF
 EXPECT=<<EOF
      paddr size      vaddr vsize align perm name               type flags 
 --------------------------------------------------------------------------
-0x00000188 0x24 0x08048188  0x24 0x0   -r-- .note.gnu.build-id NOTE alloc
+0x00000188 0x24 0x08048188  0x24   0x0 -r-- .note.gnu.build-id NOTE alloc
 paddr size vaddr vsize align perm name type flags 
 --------------------------------------------------
 [{"name":".plt","size":240,"vsize":240,"perm":"-r-x","type":"PROGBITS","flags":["alloc","execute"],"paddr":1888,"vaddr":134514528}]

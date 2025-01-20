@@ -400,7 +400,7 @@ s segment.LOAD1
 EOF
 EXPECT=<<EOF
 0x00000ed4 0x14c 0x08049ed4 0x150 0x1000 -rw- LOAD1
-0x00000ed4   0x8 0x08049ed4   0x8 0x0   -rw- .preinit_array     PREINIT_ARRAY write,alloc
+0x00000ed4   0x8 0x08049ed4   0x8   0x0 -rw- .preinit_array     PREINIT_ARRAY write,alloc
 
 336
 8

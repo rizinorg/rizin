@@ -20,8 +20,8 @@ CMDS=iS
 EXPECT=<<EOF
      paddr  size      vaddr vsize align perm name           type flags 
 -----------------------------------------------------------------------
-0x00000044  0xf6 0x00000044  0xf6 0x0   ---- LMF_LOAD            
-0x00000152 0x6c3 0x00000152 0x6c3 0x0   ---- LMF_LOAD_0x152      
+0x00000044  0xf6 0x00000044  0xf6   0x0 ---- LMF_LOAD            
+0x00000152 0x6c3 0x00000152 0x6c3   0x0 ---- LMF_LOAD_0x152      
 EOF
 RUN
 

@@ -35,17 +35,17 @@ nth      vaddr bind type lib name
  25 0x0000b758 NONE UNK      __fltused
      paddr   size      vaddr  vsize align perm name          type flags                                        
 ---------------------------------------------------------------------------------------------------------------
-0x000001cc   0x2f 0x00000000   0x2f 0x0   ---- .drectve           LNK_INFO,LNK_REMOVE,ALIGN_1BYTES,MEM_NO_READ
-0x000001fb 0x8670 0x00000030 0x8670 0x0   -r-- .debug_S           CNT_INIT_DATA,ALIGN_1BYTES,MEM_DISCARDABLE
-0x0000ad73   0x70 0x000086a0   0x70 0x0   -r-- .debug_T           CNT_INIT_DATA,ALIGN_1BYTES,MEM_DISCARDABLE
-0x0000ade3  0x625 0x00008710  0x625 0x0   -rw- .data              CNT_INIT_DATA,ALIGN_8BYTES
-0x0000b408   0x54 0x00008d40   0x54 0x0   -r-- .rdata             CNT_INIT_DATA,ALIGN_4BYTES
-0x00000000    0x8 0x00008da0    0x8 0x0   -rw- .bss               CNT_UNIN_DATA,ALIGN_4BYTES
-0x0000b45c 0x2895 0x00008db0 0x2895 0x0   -r-x .text_mn           CNT_CODE,ALIGN_16BYTES
-0x0000e967    0x8 0x0000b650    0x8 0x0   -r-- .rdata_0xe967      CNT_INIT_DATA,LNK_COMDAT,ALIGN_8BYTES
-0x0000e96f    0x4 0x0000b660    0x4 0x0   -r-- .rdata_0xe96f      CNT_INIT_DATA,LNK_COMDAT,ALIGN_4BYTES
-0x0000e973    0x8 0x0000b670    0x8 0x0   -r-- .rdata_0xe973      CNT_INIT_DATA,LNK_COMDAT,ALIGN_8BYTES
-0x0000e97b    0x4 0x0000b680    0x4 0x0   -r-- .rdata_0xe97b      CNT_INIT_DATA,LNK_COMDAT,ALIGN_4BYTES
+0x000001cc   0x2f 0x00000000   0x2f   0x0 ---- .drectve           LNK_INFO,LNK_REMOVE,ALIGN_1BYTES,MEM_NO_READ
+0x000001fb 0x8670 0x00000030 0x8670   0x0 -r-- .debug_S           CNT_INIT_DATA,ALIGN_1BYTES,MEM_DISCARDABLE
+0x0000ad73   0x70 0x000086a0   0x70   0x0 -r-- .debug_T           CNT_INIT_DATA,ALIGN_1BYTES,MEM_DISCARDABLE
+0x0000ade3  0x625 0x00008710  0x625   0x0 -rw- .data              CNT_INIT_DATA,ALIGN_8BYTES
+0x0000b408   0x54 0x00008d40   0x54   0x0 -r-- .rdata             CNT_INIT_DATA,ALIGN_4BYTES
+0x00000000    0x8 0x00008da0    0x8   0x0 -rw- .bss               CNT_UNIN_DATA,ALIGN_4BYTES
+0x0000b45c 0x2895 0x00008db0 0x2895   0x0 -r-x .text_mn           CNT_CODE,ALIGN_16BYTES
+0x0000e967    0x8 0x0000b650    0x8   0x0 -r-- .rdata_0xe967      CNT_INIT_DATA,LNK_COMDAT,ALIGN_8BYTES
+0x0000e96f    0x4 0x0000b660    0x4   0x0 -r-- .rdata_0xe96f      CNT_INIT_DATA,LNK_COMDAT,ALIGN_4BYTES
+0x0000e973    0x8 0x0000b670    0x8   0x0 -r-- .rdata_0xe973      CNT_INIT_DATA,LNK_COMDAT,ALIGN_8BYTES
+0x0000e97b    0x4 0x0000b680    0x4   0x0 -r-- .rdata_0xe97b      CNT_INIT_DATA,LNK_COMDAT,ALIGN_4BYTES
 EOF
 RUN
 
@@ -95,15 +95,15 @@ EXPECT=<<EOF
 10 fd: 5 +0x00001000 0x00000e50 - 0x00000e53 r-- vmap..rtc$TMZ
      paddr  size      vaddr vsize align perm name           type flags                                                 
 -----------------------------------------------------------------------------------------------------------------------
-0x0000017c  0xef 0x00000000  0xef 0x0   ---- .drectve            LNK_INFO,LNK_REMOVE,ALIGN_1BYTES,MEM_NO_READ
-0x0000026b 0xab0 0x000000f0 0xab0 0x0   -r-- .debug_S            CNT_INIT_DATA,ALIGN_1BYTES,MEM_DISCARDABLE
-0x00000d1b  0x74 0x00000ba0  0x74 0x0   -r-- .debug_T            CNT_INIT_DATA,ALIGN_1BYTES,MEM_DISCARDABLE
-0x00000d8f  0x2d 0x00000c20  0x2d 0x0   -r-x .text_mn            CNT_CODE,LNK_COMDAT,ALIGN_16BYTES
-0x00000dbc  0xd4 0x00000c50  0xd4 0x0   -r-- .debug_S_0xdbc      CNT_INIT_DATA,LNK_COMDAT,ALIGN_1BYTES,MEM_DISCARDABLE
-0x00000ec2  0x2a 0x00000d30  0x2a 0x0   -r-x .text_mn_0xec2      CNT_CODE,LNK_COMDAT,ALIGN_16BYTES
-0x00000eec  0xd4 0x00000d60  0xd4 0x0   -r-- .debug_S_0xeec      CNT_INIT_DATA,LNK_COMDAT,ALIGN_1BYTES,MEM_DISCARDABLE
-0x00000ff2   0x4 0x00000e40   0x4 0x0   -r-- .rtc_IMZ            CNT_INIT_DATA,LNK_COMDAT,ALIGN_4BYTES
-0x00001000   0x4 0x00000e50   0x4 0x0   -r-- .rtc_TMZ            CNT_INIT_DATA,LNK_COMDAT,ALIGN_4BYTES
+0x0000017c  0xef 0x00000000  0xef   0x0 ---- .drectve            LNK_INFO,LNK_REMOVE,ALIGN_1BYTES,MEM_NO_READ
+0x0000026b 0xab0 0x000000f0 0xab0   0x0 -r-- .debug_S            CNT_INIT_DATA,ALIGN_1BYTES,MEM_DISCARDABLE
+0x00000d1b  0x74 0x00000ba0  0x74   0x0 -r-- .debug_T            CNT_INIT_DATA,ALIGN_1BYTES,MEM_DISCARDABLE
+0x00000d8f  0x2d 0x00000c20  0x2d   0x0 -r-x .text_mn            CNT_CODE,LNK_COMDAT,ALIGN_16BYTES
+0x00000dbc  0xd4 0x00000c50  0xd4   0x0 -r-- .debug_S_0xdbc      CNT_INIT_DATA,LNK_COMDAT,ALIGN_1BYTES,MEM_DISCARDABLE
+0x00000ec2  0x2a 0x00000d30  0x2a   0x0 -r-x .text_mn_0xec2      CNT_CODE,LNK_COMDAT,ALIGN_16BYTES
+0x00000eec  0xd4 0x00000d60  0xd4   0x0 -r-- .debug_S_0xeec      CNT_INIT_DATA,LNK_COMDAT,ALIGN_1BYTES,MEM_DISCARDABLE
+0x00000ff2   0x4 0x00000e40   0x4   0x0 -r-- .rtc_IMZ            CNT_INIT_DATA,LNK_COMDAT,ALIGN_4BYTES
+0x00001000   0x4 0x00000e50   0x4   0x0 -r-- .rtc_TMZ            CNT_INIT_DATA,LNK_COMDAT,ALIGN_4BYTES
 nth      paddr      vaddr bind   type size lib name                   
 ----------------------------------------------------------------------
   0 ---------- ---------- LOCAL  ABS     4     @comp.id-0x01055e97
