@@ -2463,7 +2463,7 @@ static void sections_headers_setup(RzCore *core, RzCmdStateOutput *state, RzList
 	RzListIter *iter;
 	char *hashname;
 
-	rz_cmd_state_output_set_columnsf(state, "XxXxsssss", "paddr", "size", "vaddr", "vsize", "align", "perm", "name", "type", "flags");
+	rz_cmd_state_output_set_columnsf(state, "XxXxxssss", "paddr", "size", "vaddr", "vsize", "align", "perm", "name", "type", "flags");
 
 	rz_list_foreach (hashes, iter, hashname) {
 		const RzHashPlugin *msg_plugin = rz_hash_plugin_by_name(core->hash, hashname);
@@ -2649,7 +2649,7 @@ RZ_API bool rz_core_bin_segments_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBin
 	char *hashname;
 
 	rz_cmd_state_output_array_start(state);
-	rz_cmd_state_output_set_columnsf(state, "XxXxsss", "paddr", "size", "vaddr", "vsize", "align", "perm", "name");
+	rz_cmd_state_output_set_columnsf(state, "XxXxxss", "paddr", "size", "vaddr", "vsize", "align", "perm", "name");
 
 	rz_list_foreach (hashes, iter, hashname) {
 		const RzHashPlugin *msg_plugin = rz_hash_plugin_by_name(core->hash, hashname);

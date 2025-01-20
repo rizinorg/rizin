@@ -41,10 +41,10 @@ RELROCS  false
 NX       false
      paddr    size      vaddr   vsize align perm name             type                    flags 
 ------------------------------------------------------------------------------------------------
-0x00000200 0x17c00 0x18180000 0x17c00 0x0   -rwx sysmodule.arm11  Arm11 SysModule         xdma
-0x00017e00   0x600 0x1ff80000   0x600 0x0   -rwx entry.arm11      Arm11 Kernel            xdma
-0x00018400  0xfa00 0x08006000  0xfa00 0x0   -rwx entry.arm9       Arm9 Kernel             ndma
-0x00027e00  0x5a00 0x18000000  0x5a00 0x0   -rwx extensions.arm11 Arm11 Kernel Extensions xdma
+0x00000200 0x17c00 0x18180000 0x17c00   0x0 -rwx sysmodule.arm11  Arm11 SysModule         xdma
+0x00017e00   0x600 0x1ff80000   0x600   0x0 -rwx entry.arm11      Arm11 Kernel            xdma
+0x00018400  0xfa00 0x08006000  0xfa00   0x0 -rwx entry.arm9       Arm9 Kernel             ndma
+0x00027e00  0x5a00 0x18000000  0x5a00   0x0 -rwx extensions.arm11 Arm11 Kernel Extensions xdma
      vaddr      paddr     hvaddr      haddr type    
 ----------------------------------------------------
 0x08006000 0x00018400 ---------- ---------- program

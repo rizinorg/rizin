@@ -15,12 +15,12 @@ CMDS=<<EOF
 iS~none
 EOF
 EXPECT=<<EOF
-0x00000022 0x63 0x00000022  0x63 0x0   -r-- home_heersin_blackhole_lua53_src_none.lua.header        
-0x00000059  0x4 0x00000059   0x4 0x0   -r-x home_heersin_blackhole_lua53_src_none.lua.code          
-0x00000061  0x5 0x00000061   0x5 0x0   -r-- home_heersin_blackhole_lua53_src_none.lua.const         
-0x00000065  0x7 0x00000065   0x7 0x0   -r-- home_heersin_blackhole_lua53_src_none.lua.upvalues      
-0x0000006b  0x4 0x0000006b   0x4 0x0   -r-- home_heersin_blackhole_lua53_src_none.lua.protos        
-0x0000006f 0x16 0x0000006f  0x16 0x0   -r-- home_heersin_blackhole_lua53_src_none.lua.debug         
+0x00000022 0x63 0x00000022  0x63   0x0 -r-- home_heersin_blackhole_lua53_src_none.lua.header        
+0x00000059  0x4 0x00000059   0x4   0x0 -r-x home_heersin_blackhole_lua53_src_none.lua.code          
+0x00000061  0x5 0x00000061   0x5   0x0 -r-- home_heersin_blackhole_lua53_src_none.lua.const         
+0x00000065  0x7 0x00000065   0x7   0x0 -r-- home_heersin_blackhole_lua53_src_none.lua.upvalues      
+0x0000006b  0x4 0x0000006b   0x4   0x0 -r-- home_heersin_blackhole_lua53_src_none.lua.protos        
+0x0000006f 0x16 0x0000006f  0x16   0x0 -r-- home_heersin_blackhole_lua53_src_none.lua.debug         
 EOF
 RUN
 
@@ -50,21 +50,21 @@ CMDS=<<EOF
 iS~header
 EOF
 EXPECT=<<EOF
-0x00000022 0x14f4 0x00000022 0x14f4 0x0   -r-- home_heersin_blackhole_src_code_learnlua.lua.header        
-0x000007dd   0xb9 0x000007dd   0xb9 0x0   -r-- fcn.000007dd.header                                        
-0x00000895   0xa1 0x00000895   0xa1 0x0   -r-- fcn.00000895.header                                        
-0x000008bd   0x57 0x000008bd   0x57 0x0   -r-- fcn.000008bd.header                                        
-0x00000935   0xf3 0x00000935   0xf3 0x0   -r-- fcn.00000935.header                                        
-0x00000a27   0x4b 0x00000a27   0x4b 0x0   -r-- fcn.00000a27.header                                        
-0x00000a71   0x4b 0x00000a71   0x4b 0x0   -r-- fcn.00000a71.header                                        
-0x00000abb   0x75 0x00000abb   0x75 0x0   -r-- fcn.00000abb.header                                        
-0x00000b2f   0x75 0x00000b2f   0x75 0x0   -r-- fcn.00000b2f.header                                        
-0x00000ba3   0x67 0x00000ba3   0x67 0x0   -r-- fcn.00000ba3.header                                        
-0x00000c09   0xe9 0x00000c09   0xe9 0x0   -r-- fcn.00000c09.header                                        
-0x00000cf1   0xb9 0x00000cf1   0xb9 0x0   -r-- fcn.00000cf1.header                                        
-0x00000da9   0x83 0x00000da9   0x83 0x0   -r-- fcn.00000da9.header                                        
-0x00000e2b   0xa9 0x00000e2b   0xa9 0x0   -r-- fcn.00000e2b.header                                        
-0x00000ed3   0xa4 0x00000ed3   0xa4 0x0   -r-- fcn.00000ed3.header                                        
+0x00000022 0x14f4 0x00000022 0x14f4   0x0 -r-- home_heersin_blackhole_src_code_learnlua.lua.header        
+0x000007dd   0xb9 0x000007dd   0xb9   0x0 -r-- fcn.000007dd.header                                        
+0x00000895   0xa1 0x00000895   0xa1   0x0 -r-- fcn.00000895.header                                        
+0x000008bd   0x57 0x000008bd   0x57   0x0 -r-- fcn.000008bd.header                                        
+0x00000935   0xf3 0x00000935   0xf3   0x0 -r-- fcn.00000935.header                                        
+0x00000a27   0x4b 0x00000a27   0x4b   0x0 -r-- fcn.00000a27.header                                        
+0x00000a71   0x4b 0x00000a71   0x4b   0x0 -r-- fcn.00000a71.header                                        
+0x00000abb   0x75 0x00000abb   0x75   0x0 -r-- fcn.00000abb.header                                        
+0x00000b2f   0x75 0x00000b2f   0x75   0x0 -r-- fcn.00000b2f.header                                        
+0x00000ba3   0x67 0x00000ba3   0x67   0x0 -r-- fcn.00000ba3.header                                        
+0x00000c09   0xe9 0x00000c09   0xe9   0x0 -r-- fcn.00000c09.header                                        
+0x00000cf1   0xb9 0x00000cf1   0xb9   0x0 -r-- fcn.00000cf1.header                                        
+0x00000da9   0x83 0x00000da9   0x83   0x0 -r-- fcn.00000da9.header                                        
+0x00000e2b   0xa9 0x00000e2b   0xa9   0x0 -r-- fcn.00000e2b.header                                        
+0x00000ed3   0xa4 0x00000ed3   0xa4   0x0 -r-- fcn.00000ed3.header                                        
 EOF
 RUN
 

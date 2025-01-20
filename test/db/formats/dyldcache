@@ -62,11 +62,11 @@ nth      paddr       vaddr bind   type size lib name
   0 0x00008fa0 0x180008fa0 GLOBAL FUNC    0     _func_in_libb
      paddr size       vaddr vsize align perm name                                      type flags 
 --------------------------------------------------------------------------------------------------
-0x00004f60 0x48 0x180004f60  0x48 0x0   -r-x lib_liba-1.0.dylib.0.__TEXT.__text             
-0x00004fa8  0x6 0x180004fa8   0x6 0x0   -r-x lib_liba-1.0.dylib.1.__TEXT.__cstring          
-0x00004fb0 0x50 0x180004fb0  0x50 0x0   -r-x lib_liba-1.0.dylib.2.__TEXT.__unwind_info      
-0x00008fa0 0x18 0x180008fa0  0x18 0x0   -r-x lib_libb-1.0.dylib.0.__TEXT.__text             
-0x00008fb8 0x48 0x180008fb8  0x48 0x0   -r-x lib_libb-1.0.dylib.1.__TEXT.__unwind_info      
+0x00004f60 0x48 0x180004f60  0x48   0x0 -r-x lib_liba-1.0.dylib.0.__TEXT.__text             
+0x00004fa8  0x6 0x180004fa8   0x6   0x0 -r-x lib_liba-1.0.dylib.1.__TEXT.__cstring          
+0x00004fb0 0x50 0x180004fb0  0x50   0x0 -r-x lib_liba-1.0.dylib.2.__TEXT.__unwind_info      
+0x00008fa0 0x18 0x180008fa0  0x18   0x0 -r-x lib_libb-1.0.dylib.0.__TEXT.__text             
+0x00008fb8 0x48 0x180008fb8  0x48   0x0 -r-x lib_libb-1.0.dylib.1.__TEXT.__unwind_info      
 {
   "version": "<940",
   "header": {
@@ -226,9 +226,9 @@ nth      paddr       vaddr bind   type size lib name
   1 0x00004f9c 0x180004f9c GLOBAL FUNC    0     _what_is_cool
      paddr size       vaddr vsize align perm name                                      type flags 
 --------------------------------------------------------------------------------------------------
-0x00004f60 0x48 0x180004f60  0x48 0x0   -r-x lib_liba-1.0.dylib.0.__TEXT.__text             
-0x00004fa8  0x6 0x180004fa8   0x6 0x0   -r-x lib_liba-1.0.dylib.1.__TEXT.__cstring          
-0x00004fb0 0x50 0x180004fb0  0x50 0x0   -r-x lib_liba-1.0.dylib.2.__TEXT.__unwind_info      
+0x00004f60 0x48 0x180004f60  0x48   0x0 -r-x lib_liba-1.0.dylib.0.__TEXT.__text             
+0x00004fa8  0x6 0x180004fa8   0x6   0x0 -r-x lib_liba-1.0.dylib.1.__TEXT.__cstring          
+0x00004fb0 0x50 0x180004fb0  0x50   0x0 -r-x lib_liba-1.0.dylib.2.__TEXT.__unwind_info      
 {
   "version": "<940",
   "header": {
@@ -668,15 +668,15 @@ nth      paddr       vaddr bind   type size lib name
   0 0x00013fb4 0x180013fb4 GLOBAL FUNC    0     _i_am_libsystem_kernel
      paddr size       vaddr vsize align perm name                                                 type flags 
 -------------------------------------------------------------------------------------------------------------
-0x00007fb4  0x4 0x180007fb4   0x4 0x0   -r-x lib_libSystem.B.dylib.0.__TEXT.__text                     
-0x00007fb8 0x48 0x180007fb8  0x48 0x0   -r-x lib_libSystem.B.dylib.1.__TEXT.__unwind_info              
-0x0000bfb0  0x8 0x18000bfb0   0x8 0x0   -r-x lib_libhello.dylib.0.__TEXT.__text                        
-0x0000bfb8 0x48 0x18000bfb8  0x48 0x0   -r-x lib_libhello.dylib.1.__TEXT.__unwind_info                 
-0x0000ff34  0x4 0x18000ff34   0x4 0x0   -r-x system_libdyld.dylib.0.__TEXT.__text                      
-0x0000ff38 0x80 0x18000ff38  0x80 0x0   -r-x system_libdyld.dylib.1.__TEXT.__const                     
-0x0000ffb8 0x48 0x18000ffb8  0x48 0x0   -r-x system_libdyld.dylib.2.__TEXT.__unwind_info               
-0x00013fb4  0x4 0x180013fb4   0x4 0x0   -r-x system_libsystem_kernel.dylib.0.__TEXT.__text             
-0x00013fb8 0x48 0x180013fb8  0x48 0x0   -r-x system_libsystem_kernel.dylib.1.__TEXT.__unwind_info      
+0x00007fb4  0x4 0x180007fb4   0x4   0x0 -r-x lib_libSystem.B.dylib.0.__TEXT.__text                     
+0x00007fb8 0x48 0x180007fb8  0x48   0x0 -r-x lib_libSystem.B.dylib.1.__TEXT.__unwind_info              
+0x0000bfb0  0x8 0x18000bfb0   0x8   0x0 -r-x lib_libhello.dylib.0.__TEXT.__text                        
+0x0000bfb8 0x48 0x18000bfb8  0x48   0x0 -r-x lib_libhello.dylib.1.__TEXT.__unwind_info                 
+0x0000ff34  0x4 0x18000ff34   0x4   0x0 -r-x system_libdyld.dylib.0.__TEXT.__text                      
+0x0000ff38 0x80 0x18000ff38  0x80   0x0 -r-x system_libdyld.dylib.1.__TEXT.__const                     
+0x0000ffb8 0x48 0x18000ffb8  0x48   0x0 -r-x system_libdyld.dylib.2.__TEXT.__unwind_info               
+0x00013fb4  0x4 0x180013fb4   0x4   0x0 -r-x system_libsystem_kernel.dylib.0.__TEXT.__text             
+0x00013fb8 0x48 0x180013fb8  0x48   0x0 -r-x system_libsystem_kernel.dylib.1.__TEXT.__unwind_info      
 {
   "version": "1042.1",
   "header": {
