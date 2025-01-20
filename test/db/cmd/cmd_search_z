@@ -1,0 +1,195 @@
+NAME=String Search - Errors - Empty string
+FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ascii
+CMDS=<<EOF
+e search.show_progress=false
+/z ""
+EOF
+REGEXP_FILTER_ERR=ERROR.+
+EXPECT_ERR=<<EOF
+ERROR: core: invalid string: empty string.
+EOF
+RUN
+
+NAME=String Search - Errors - Invalid regex args
+FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ascii
+CMDS=<<EOF
+e search.show_progress=false
+/z "as" aa
+/z "as" dd
+EOF
+REGEXP_FILTER_ERR=ERROR.+
+EXPECT_ERR=<<EOF
+ERROR: Regex flags are invalid: 'aa'
+ERROR: Regex flags are invalid: 'dd'
+EOF
+RUN
+
+NAME=String Search - Errors - Invalid encoding
+FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ascii
+CMDS=<<EOF
+e search.show_progress=false
+/z as d aa
+EOF
+REGEXP_FILTER_ERR=ERROR.+
+EXPECT_ERR=<<EOF
+ERROR: rz_str: encoding 'aa' not supported
+ERROR: core: invalid encoding 'aa'.
+EOF
+RUN
+
+NAME=String Search - match all - Encoding: ascii - Latin
+FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ascii
+CMDS=<<EOF
+e search.show_progress=false
+/z "Lorem ipsum dolor sit amet, at eligendi adipisci ius, ex natum appetere officiis has, nibh quas torquatos pro te. Quo at deleniti repudiandae, et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et." d ascii
+EOF
+EXPECT=<<EOF
+hit.match.0
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=String Search - Encoding: ascii - Latin
+FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ascii
+CMDS=<<EOF
+e search.show_progress=false
+/z "placerat ut, eu etiam vitae nam" d ascii
+EOF
+EXPECT=<<EOF
+hit.match.0
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=String Search - Encoding: utf_8 - Arabic
+FILE=bins/cmd/search/string_encodings/Arabic-Lipsum.utf_8
+CMDS=<<EOF
+e search.show_progress=false
+/z "ا الأوضاع, لم بوابة المب" d utf8
+EOF
+EXPECT=<<EOF
+hit.match.0
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=String Search - Encoding: utf_8 - Armenian
+FILE=bins/cmd/search/string_encodings/Armenian-Lipsum.utf_8
+CMDS=<<EOF
+e search.show_progress=false
+/z "դեֆինիթիոնես ին վիս, ծասե պեռթինա" d utf8
+EOF
+EXPECT=<<EOF
+hit.match.0
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=String Search - Encoding: utf_8 - Chinese
+FILE=bins/cmd/search/string_encodings/Chinese-Lipsum.utf_8
+CMDS=<<EOF
+e search.show_progress=false
+/z "京確年禁読応米新報書了号活修佐。" d utf8
+EOF
+EXPECT=<<EOF
+hit.match.0
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=String Search - Encoding: utf_8 - Georgian
+FILE=bins/cmd/search/string_encodings/Georgian-Lipsum.utf_8
+CMDS=<<EOF
+e search.show_progress=false
+/z "რე, იუს ეა უთინამ დელიცათისსიმი. მელ ფერსეყუერის ლ" d utf8
+EOF
+EXPECT=<<EOF
+hit.match.0
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=String Search - Encoding: utf_8 - Greek
+FILE=bins/cmd/search/string_encodings/Greek-Lipsum.utf_8
+CMDS=<<EOF
+e search.show_progress=false
+/z "παρτεμ ποσιδονιθμ ατ. Ετ πρι περιcθλισ σπλενδιδε" d utf8
+EOF
+EXPECT=<<EOF
+hit.match.0
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=String Search - Encoding: utf_8 - Hebrew
+FILE=bins/cmd/search/string_encodings/Hebrew-Lipsum.utf_8
+CMDS=<<EOF
+e search.show_progress=false
+/z "μ ατ. Vιμ παρτεμ ποσιδονιθμ ατ. Ετ πρι περ" d utf8
+EOF
+EXPECT=<<EOF
+hit.match.0
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=String Search - Encoding: utf_8 - Hindi
+FILE=bins/cmd/search/string_encodings/Hindi-Lipsum.utf_8
+CMDS=<<EOF
+e search.show_progress=false
+/z "पहोचने वैश्विक एसलिये पुस्तक हुआआदी" d utf8
+EOF
+EXPECT=<<EOF
+hit.match.0
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=String Search - Encoding: utf_8 - Korean2
+FILE=bins/cmd/search/string_encodings/Korean2-Lipsum.utf_8
+CMDS=<<EOF
+e search.show_progress=false
+/z "생의 과실이 있으며." d utf8
+EOF
+EXPECT=<<EOF
+hit.match.0
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=String Search - Encoding: utf_8 - Morsecode
+FILE=bins/cmd/search/string_encodings/Morsecode-Lipsum.utf_8
+CMDS=<<EOF
+e search.show_progress=false
+/z " ·--· ·---- ··· - ···· --" d utf8
+EOF
+EXPECT=<<EOF
+hit.match.0
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=String Search - Encoding: utf_8 - Russian
+FILE=bins/cmd/search/string_encodings/Russian-Lipsum.utf_8
+CMDS=<<EOF
+e search.show_progress=false
+/z "тани ад. Цум хендрерит перс" d utf8
+EOF
+EXPECT=<<EOF
+hit.match.0
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
