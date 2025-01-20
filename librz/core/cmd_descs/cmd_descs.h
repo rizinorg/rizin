@@ -103,8 +103,6 @@ RZ_IPI RzCmdStatus rz_cmd_search_value_64_handler(RzCore *core, int argc, const 
 RZ_IPI RzCmdStatus rz_cmd_search_hex_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/z"
 RZ_IPI RzCmdStatus rz_cmd_search_string_sensitive_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
-// "/zi"
-RZ_IPI RzCmdStatus rz_cmd_search_string_insensitive_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "R"
 RZ_IPI RzCmdStatus rz_remote_handler(RzCore *core, int argc, const char **argv);
 // "R<"

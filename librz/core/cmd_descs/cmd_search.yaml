@@ -343,9 +343,21 @@ commands:
           comment: "EBCDIC-UK encoding. Alias: csEBCDICUK"
         - text: "ebcdicus"
           comment: "EBCDIC-US encoding. Alias: csEBCDICUS"
+    - name: "Regex Flags"
+      entries:
+        - text: "d"
+          comment: "Default (No flag, Unicode is matched)"
+        - text: "i"
+          comment: "Caseless (equivalent: PCRE2_CASELESS)"
+        - text: "e"
+          comment: "Extended (equivalent: PCRE2_EXTENDED)"
+        - text: "E"
+          comment: "Extended More (equivalent: PCRE2_EXTENDED_MORE)"
+        - text: "m"
+          comment: "Multiline (equivalent: PCRE2_MULTILINE)"
     subcommands:
     - name: "/z"
-      summary: String search (case-sensitive).
+      summary: String search.
       cname: cmd_search_string_sensitive
       type: RZ_CMD_DESC_TYPE_ARGV_STATE
       default_mode: RZ_OUTPUT_MODE_STANDARD
@@ -357,36 +369,9 @@ commands:
       args:
         - name: string
           type: RZ_CMD_ARG_TYPE_STRING
-        - name: encoding
-          type: RZ_CMD_ARG_TYPE_CHOICES
-          default_value: "guess"
-          choices:
-            - "ascii"
-            - "8bit"
-            - "mutf8"
-            - "utf8"
-            - "utf16le"
-            - "utf32le"
-            - "utf16be"
-            - "utf32be"
-            - "ibm037"
-            - "ibm290"
-            - "ebcdices"
-            - "ebcdicuk"
-            - "ebcdicus"
-    - name: "/zi"
-      summary: String search (case-insensitive).
-      cname: cmd_search_string_insensitive
-      type: RZ_CMD_DESC_TYPE_ARGV_STATE
-      default_mode: RZ_OUTPUT_MODE_STANDARD
-      modes:
-        - RZ_OUTPUT_MODE_STANDARD
-        - RZ_OUTPUT_MODE_JSON
-        - RZ_OUTPUT_MODE_QUIET
-        - RZ_OUTPUT_MODE_TABLE
-      args:
-        - name: string
+        - name: regex_flags
           type: RZ_CMD_ARG_TYPE_STRING
+          default_value: "d"
         - name: encoding
           type: RZ_CMD_ARG_TYPE_CHOICES
           default_value: "guess"

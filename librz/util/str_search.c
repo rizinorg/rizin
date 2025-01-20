@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util/rz_buf.h>
+#include <rz_util/rz_regex.h>
 #include <rz_util/rz_str_search.h>
 #include <rz_util/rz_utf8.h>
 #include <rz_util/rz_utf16.h>
@@ -76,6 +77,7 @@ RZ_API void rz_detected_string_free(RzDetectedString *str) {
 		return;
 	}
 	free(str->string);
+	rz_regex_free(str->regex);
 	free(str);
 }
 
@@ -292,7 +294,7 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 			if ((i + 32) < opt->buf_size && r < 93) {
 				rc = rz_utf8_encode(strbuf + i, r);
 			} else {
-				// string too long
+				// String too long
 				break;
 			}
 			runes++;

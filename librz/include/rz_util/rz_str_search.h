@@ -4,6 +4,7 @@
 #include <rz_util/rz_str.h>
 #include <rz_util/rz_assert.h>
 #include <rz_util/rz_buf.h>
+#include <rz_util/rz_regex.h>
 #include <rz_list.h>
 
 #ifdef __cplusplus
@@ -14,7 +15,8 @@ extern "C" {
  * Represent a detected string.
  */
 typedef struct {
-	char *string; ///< Pointer to the string
+	char *string; ///< Pointer to the string.
+	RzRegex *regex; ///< Regex matching the string. If set, the string member is the pattern.
 	ut64 addr; ///< Address/offset of the string in the RzBuffer
 	ut32 size; ///< Size of buffer containing the string in bytes
 	ut32 length; ///< Length of string in chars

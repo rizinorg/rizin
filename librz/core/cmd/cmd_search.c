@@ -12,6 +12,7 @@
 
 #include "cmd_search_rop.c"
 #include "rz_cons.h"
+#include <rz_util/rz_regex.h>
 #include <rz_util/rz_str.h>
 #include <rz_util/rz_assert.h>
 #include <rz_vector.h>
@@ -2033,7 +2034,7 @@ error:
 	return RZ_CMD_STATUS_ERROR;
 }
 
-static RzCmdStatus cmd_string_search_generic(RzCore *core, const char *string, const char *encoding, bool caseless, RzCmdStateOutput *state) {
+static RzCmdStatus cmd_string_search_generic(RzCore *core, const char *string, const char *encoding, RzRegexFlags flags, RzCmdStateOutput *state) {
 	RzSearchOpt *search_opts = setup_search_options(core);
 	if (!search_opts) {
 		return RZ_CMD_STATUS_ERROR;
@@ -2071,7 +2072,7 @@ static RzCmdStatus cmd_string_search_generic(RzCore *core, const char *string, c
 		CMD_SEARCH_END();
 		return RZ_CMD_STATUS_ERROR;
 	}
-	RzList *hits = rz_core_search_string(core, search_opts, search_str, expected, caseless);
+	RzList *hits = rz_core_search_string(core, search_opts, search_str, flags, expected);
 
 	free(search_str);
 	rz_search_opt_free(search_opts);
@@ -2082,17 +2083,48 @@ invalid_args:
 	free(search_str);
 	rz_search_opt_free(search_opts);
 	CMD_SEARCH_END();
-	return RZ_CMD_STATUS_WRONG_ARGS;
+	return RZ_CMD_STATUS_ERROR;
+}
+
+static RzRegexFlags parse_re_flag_desc(const char *re_flags_desc) {
+	RzRegexFlags flags = RZ_REGEX_DEFAULT;
+	if (RZ_STR_ISEMPTY(re_flags_desc)) {
+		return flags;
+	}
+	size_t fcount = 0;
+	if (strchr(re_flags_desc, 'd')) {
+		fcount++;
+		flags |= RZ_REGEX_CASELESS;
+	}
+	if (strchr(re_flags_desc, 'i')) {
+		fcount++;
+		flags |= RZ_REGEX_CASELESS;
+	}
+	if (strchr(re_flags_desc, 'e')) {
+		fcount++;
+		flags |= RZ_REGEX_EXTENDED;
+	}
+	if (strchr(re_flags_desc, 'E')) {
+		fcount++;
+		flags |= RZ_REGEX_EXTENDED_MORE;
+	}
+	if (strchr(re_flags_desc, 'm')) {
+		fcount++;
+		flags |= RZ_REGEX_MULTILINE;
+	}
+	if (fcount != strlen(re_flags_desc)) {
+		return ~RZ_REGEX_DEFAULT;
+	}
+	return flags;
 }
 
 // "/z"
 RZ_IPI RzCmdStatus rz_cmd_search_string_sensitive_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	RzCmdStatus res = cmd_string_search_generic(core, argv[1], argv[2], false, state);
-	return res;
-}
-
-// "/zi"
-RZ_IPI RzCmdStatus rz_cmd_search_string_insensitive_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	RzCmdStatus res = cmd_string_search_generic(core, argv[1], argv[2], true, state);
+	RzRegexFlags flags = parse_re_flag_desc(argv[2]);
+	if (flags == ~RZ_REGEX_DEFAULT) {
+		RZ_LOG_ERROR("Regex flags are invalid: '%s'\n", argv[2]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzCmdStatus res = cmd_string_search_generic(core, argv[1], argv[3], flags, state);
 	return res;
 }
