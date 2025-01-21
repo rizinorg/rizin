@@ -1725,7 +1725,7 @@ static const RzCmdDescDetailEntry slash_z_Encodings_detail_entries[] = {
 	{ .text = "ascii", .arg_str = NULL, .comment = "ASCII encoding" },
 	{ .text = "8bit", .arg_str = NULL, .comment = "8bit encoding. Alias: ASCII" },
 	{ .text = "mutf8", .arg_str = NULL, .comment = "mutf8 encoding" },
-	{ .text = "UTF-8", .arg_str = NULL, .comment = "UTF-8 encoding" },
+	{ .text = "utf8", .arg_str = NULL, .comment = "UTF-8 encoding" },
 	{ .text = "utf16le", .arg_str = NULL, .comment = "UTF-16 little endian encoding" },
 	{ .text = "utf32le", .arg_str = NULL, .comment = "UTF-32 little endian encoding" },
 	{ .text = "utf16be", .arg_str = NULL, .comment = "UTF-16 big endian encoding" },

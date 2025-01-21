@@ -359,3 +359,157 @@ EOF
 EXPECT_ERR=
 RUN
 
+NAME=String Search - Encoding: utf16le - Arabic
+FILE=bins/cmd/search/string_encodings/Arabic-Lipsum.utf16le
+CMDS=<<EOF
+e search.show_progress=false
+psw
+/z "ا الأوضاع, لم بوابة المب" d utf16le
+EOF
+EXPECT=<<EOF
+أسيا مساعدة جعل عن, أخذ قد يونيو الثانية, نهاية الإقتصادية أي فقد. كما فسقط يتعلّق محاولات أي, هو الأحمر العمليات تلك, اكتوبر مق
+00000116 43 hit.string.0
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=String Search - Encoding: utf16le - Armenian
+FILE=bins/cmd/search/string_encodings/Armenian-Lipsum.utf16le
+CMDS=<<EOF
+e search.show_progress=false
+psw
+/z "դեֆինիթիոնես ին վիս, ծասե պեռթինա" d utf16le
+EOF
+EXPECT=<<EOF
+լոռեմ իպսում դոլոռ սիթ ամեթ, նիսլ վիդիսսե ոպոռթեաթ եթ քուի, նամ աթ սոլութա իմպեդիթ մենանդռի. ելիթռ պլածեռաթ դուո ին, աթ դիամ ֆաս
+000001dc 61 hit.string.0
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=String Search - Encoding: utf16le - Chinese
+FILE=bins/cmd/search/string_encodings/Chinese-Lipsum.utf16le
+CMDS=<<EOF
+e search.show_progress=false
+psw
+/z "京確年禁読応米新報書了号活修佐。" d utf16le
+EOF
+EXPECT=<<EOF
+合報立色提質分遅職並太月険愛講提字築訓。平応数会渡亡幡事寄横関割更。進報医市認穫都投漂都学起田胸完見暮波。乗発死左写刊争作世開顔残訳剤記詳先天。哲記京確年禁読応米新報書了号活修佐。央良持著宣込警石寂益好独田接読仕。漂戦辺量食害恐人給景族缶掲価済教放。響城引
+000000de 48 hit.string.0
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=String Search - Encoding: utf16le - Georgian
+FILE=bins/cmd/search/string_encodings/Georgian-Lipsum.utf16le
+CMDS=<<EOF
+e search.show_progress=false
+psw
+/z "რე, იუს ეა უთინამ დელიცათისსიმი. მელ ფერსეყუერის ლ" d utf16le
+EOF
+EXPECT=<<EOF
+ლორემ იფსუმ დოლორ სით ამეთ, ილლუმ ელაბორარეთ ად ჰას, ილლუმ იისყუე ინ ნამ. ყუოდ დუის ცლითა ნო ფრი, გრაეცო აცცუსამუს ცონსულათუ ჰას
+00000282 132 hit.string.0
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=String Search - Encoding: utf16le - Greek
+FILE=bins/cmd/search/string_encodings/Greek-Lipsum.utf16le
+CMDS=<<EOF
+e search.show_progress=false
+psw
+/z "παρτεμ ποσιδονιθμ ατ. Ετ πρι περιcθλισ σπλενδιδε" d utf16le
+EOF
+EXPECT=<<EOF
+Λορεμ ιπσθμ δολορ σιτ αμετ, αν γθβεργρεν ποσιδονιθμ cθμ. Βονορθμ ρεφορμιδανσ vιξ νε, νονθμεσ ελοqθεντιαμ ρεπρεηενδθντ εα qθι, στ
+0000010b 88 hit.string.0
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=String Search - Encoding: utf16le - Hebrew I
+FILE=bins/cmd/search/string_encodings/Hebrew-Lipsum.utf16le
+CMDS=<<EOF
+e search.show_progress=false
+psw
+/z "וד מיזם יכול קהילה ב, את קרן תיאטרון שימושיים. שמו אחרונים ויקימדיה את. זאת אם תיבת הרוח שינויים" d utf16le
+EOF
+EXPECT=<<EOF
+עוד מיזם יכול קהילה ב, את קרן תיאטרון שימושיים. שמו אחרונים ויקימדיה את. זאת אם תיבת הרוח שינויים, באגים בחירות בויקיפדיה אם ארץ
+00000002 172 hit.string.0
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=String Search - Encoding: utf16le - Hebrew II
+FILE=bins/cmd/search/string_encodings/Hebrew-Lipsum.utf16le
+CMDS=<<EOF
+e search.show_progress=false
+psw
+/z "ים משחקים ממונרכיה" d utf16le
+EOF
+EXPECT=<<EOF
+עוד מיזם יכול קהילה ב, את קרן תיאטרון שימושיים. שמו אחרונים ויקימדיה את. זאת אם תיבת הרוח שינויים, באגים בחירות בויקיפדיה אם ארץ
+00000141 34 hit.string.0
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=String Search - Encoding: utf16le - Hindi
+FILE=bins/cmd/search/string_encodings/Hindi-Lipsum.utf16le
+CMDS=<<EOF
+e search.show_progress=false
+psw
+/z "पहोचने वैश्विक एसलिये पुस्तक हुआआदी" d utf16le
+EOF
+EXPECT=<<EOF
+ब्रौशर विभाजन दिनांक जाने ध्वनि सेऔर सादगि जिम्मे पहोचने वैश्विक एसलिये पुस्तक हुआआदी विश्व उनका खरिदने समस्याओ मार्गदर्शन रखते 
+00000086 97 hit.string.0
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=String Search - Encoding: utf16le - Korean2
+FILE=bins/cmd/search/string_encodings/Korean2-Lipsum.utf16le
+CMDS=<<EOF
+e search.show_progress=false
+psw
+/z "생의 과실이 있으며." d utf16le
+EOF
+EXPECT=<<EOF
+봄바람이다. 이것은 수 봄바람이다. 있는가? 기관과 없으면. 품고 어디 싸인 있으랴? 살았으며. 피가 같은 있는 우리 이상은 되려니와. 길지 낙원을 대한 말이다. 같은 생의 과실이 있으며. 찬미를 사람은 그들에게 너의 청춘이 인류
+000000dc 27 hit.string.0
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=String Search - Encoding: utf16le - Morsecode
+FILE=bins/cmd/search/string_encodings/Morsecode-Lipsum.utf16le
+CMDS=<<EOF
+e search.show_progress=false
+psw
+/z " ·--· ·---- ··· - ···· --" d utf16le
+EOF
+EXPECT=<<EOF
+···· --·· --- ·- --·- ---·· ·· ·-· ·· -·- ··-· ·--· ·---- ··· - ···· --·· --··· -· ··· -·· -·-- ···· ·--- ·-·-·- · ··- - ··- ···
+00000042 35 hit.string.0
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=String Search - Encoding: utf16le - Russian
+FILE=bins/cmd/search/string_encodings/Russian-Lipsum.utf16le
+CMDS=<<EOF
+e search.show_progress=false
+psw
+/z "тани ад. Цум хендрерит перс" d utf16le
+EOF
+EXPECT=<<EOF
+Лорем ипсум долор сит амет, при унум семпер тритани ад. Цум хендрерит персецути ех, миним еяуидем цонсецтетуер яуи ид. Либер мал
+00000055 49 hit.string.0
+EOF
+EXPECT_ERR=
+RUN
+
