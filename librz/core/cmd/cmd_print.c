@@ -4949,7 +4949,7 @@ RZ_IPI RzCmdStatus rz_print_minus_table_handler(RzCore *core, int argc, const ch
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_cmd_state_output_array_start(state);
-	rz_cmd_state_output_set_columnsf(state, "sddddd", "offset", "flags", "funcs", "cmts", "syms", "str");
+	rz_cmd_state_output_set_columnsf(state, "xddddd", "offset", "flags", "funcs", "cmts", "syms", "str");
 	state->d.t->showSum = true;
 	state->d.t->showFancy = true;
 	for (size_t i = 0; i < rz_vector_len(&srange->as->blocks); i++) {
