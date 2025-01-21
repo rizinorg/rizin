@@ -323,7 +323,7 @@ commands:
           comment: "8bit encoding. Alias: ASCII"
         - text: "mutf8"
           comment: "mutf8 encoding"
-        - text: "UTF-8"
+        - text: "utf8"
           comment: "UTF-8 encoding"
         - text: "utf16le"
           comment: "UTF-16 little endian encoding"
