@@ -6482,7 +6482,7 @@ static const RzCmdDescArg list_cpu_details_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp list_cpu_details_help = {
-	.summary = "Show CPU details for a specific plugin.",
+	.summary = "Shows the CPU details for a specific plugin.",
 	.args = list_cpu_details_args,
 };
 
