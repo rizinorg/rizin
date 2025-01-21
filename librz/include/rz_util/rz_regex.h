@@ -17,11 +17,18 @@
 #define RZ_REGEX_ERROR_NOMATCH (-1) /* PCRE2_ERROR_NOMATCH */
 #define RZ_REGEX_ERROR_PARTIAL (-2) /* PCRE2_ERROR_PARTIAL */
 
+/**
+ * \brief Regex compilation flags. They are only used for rz_regex_new()
+ * C   alters what is compiled by rz_regex_new()
+ * J   alters what is compiled by rz_regex_new() (with JIT enabled).
+ * M   is inspected during rz_regex_match() execution
+ * D   is inspected during pcre2_dfa_match() execution (not used).
+ */
 #define RZ_REGEX_DEFAULT       0
-#define RZ_REGEX_CASELESS      0x00000008u /* PCRE2_CASELESS */
-#define RZ_REGEX_EXTENDED      0x00000080u /* PCRE2_EXTENDED */
-#define RZ_REGEX_EXTENDED_MORE 0x01000000u /* PCRE2_EXTENDED_MORE */
-#define RZ_REGEX_MULTILINE     0x00000400u /* PCRE2_MULTILINE */
+#define RZ_REGEX_CASELESS      0x00000008u /* PCRE2_CASELESS      - C      */
+#define RZ_REGEX_EXTENDED      0x00000080u /* PCRE2_EXTENDED      - C      */
+#define RZ_REGEX_EXTENDED_MORE 0x01000000u /* PCRE2_EXTENDED_MORE - C      */
+#define RZ_REGEX_MULTILINE     0x00000400u /* PCRE2_MULTILINE     - C      */
 
 #define RZ_REGEX_JIT_PARTIAL_SOFT 0x00000002u /* PCRE2_JIT_PARTIAL_SOFT */
 #define RZ_REGEX_JIT_PARTIAL_HARD 0x00000004u /* PCRE2_JIT_PARTIAL_HARD */
