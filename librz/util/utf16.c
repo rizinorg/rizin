@@ -4,6 +4,22 @@
 #include <rz_types.h>
 #include <rz_util.h>
 
+// For high: Only d8-db
+// For low: Only dc-df
+static bool is_valid_surrogate_pair(ut8 high_byte_surrogate, ut8 low_byte_surrogate) {
+	bool high_ok = high_byte_surrogate >= 0xd8 && high_byte_surrogate <= 0xdb;
+	bool low_ok = low_byte_surrogate >= 0xdc && low_byte_surrogate <= 0xdf;
+	return high_ok && low_ok;
+}
+
+static RzRune utf16_surrogate_to_codepoint(ut16 high_surrogate, ut16 low_surrogate) {
+	ut32 high = (high_surrogate - 0xd800) * 0x400;
+	ut32 low = (low_surrogate - 0xdc00);
+	RzRune codepoint = high + low;
+	RzRune codepoint1 = 0x10000 + codepoint;
+	return codepoint1;
+}
+
 /* Convert an UTF-16 buf into a unicode RzRune */
 RZ_API int rz_utf16_decode(const ut8 *ptr, int ptrlen, RzRune *ch, bool bigendian) {
 	if (ptrlen < 1) {
@@ -11,9 +27,12 @@ RZ_API int rz_utf16_decode(const ut8 *ptr, int ptrlen, RzRune *ch, bool bigendia
 	}
 	int high = bigendian ? 0 : 1;
 	int low = bigendian ? 1 : 0;
-	if (ptrlen > 3 && (ptr[high] & 0xdc) == 0xd8 && (ptr[high + 2] & 0xdc) == 0xdc) {
+	if (ptrlen > 3) {
+		if (!is_valid_surrogate_pair(ptr[high], ptr[high + 2])) {
+			return 0;
+		}
 		if (ch) {
-			*ch = ((ptr[high] & 3) << 24 | ptr[low] << 16 | (ptr[high + 2] & 3) << 8 | ptr[low + 2]) + 0x10000;
+			*ch = utf16_surrogate_to_codepoint((ptr[high] << 8 | ptr[low]), (ptr[high + 2] << 8) | ptr[low + 2]);
 		}
 		return 4;
 	}

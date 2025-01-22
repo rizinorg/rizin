@@ -45,6 +45,7 @@ if get_option('enable_tests')
     'diff',
     'ebcdic',
     'endian',
+    'encodings',
     'event',
     'file',
     'flags',
