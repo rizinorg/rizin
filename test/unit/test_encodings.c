@@ -83,26 +83,34 @@ bool test_rz_utf16_decode(void) {
 	const ut8 utf16le_invalid_small_surr[] = { 0x00, 0xD7, 0x00, 0xDB };
 	const ut8 utf16be_invalid_small_surr[] = { 0xD7, 0x00, 0xDB, 0x00 };
 
+	// Fails to decode 4, should decode 2 bytes.
 	nbytes = rz_utf16_decode(utf16le_invalid_small_surr, 4, &codepoint, false);
-	mu_assert_eq(nbytes, 0, "Decoded number of bytes mismatch.");
+	mu_assert_eq(nbytes, 2, "Decoded number of bytes mismatch.");
+	mu_assert_eq_fmt(codepoint, 0xD700, "Character decode failed.", "0x%" PFMT64x);
+
 	nbytes = rz_utf16_decode(utf16be_invalid_small_surr, 4, &codepoint, true);
-	mu_assert_eq(nbytes, 0, "Decoded number of bytes mismatch.");
+	mu_assert_eq(nbytes, 2, "Decoded number of bytes mismatch.");
+	mu_assert_eq_fmt(codepoint, 0xD700, "Character decode failed.", "0x%" PFMT64x);
 
 	const ut8 utf16le_invalid_big_surr[] = { 0x01, 0xDC, 0x37, 0xE0 };
 	const ut8 utf16be_invalid_big_surr[] = { 0xDC, 0x01, 0xE0, 0x37 };
 
 	nbytes = rz_utf16_decode(utf16le_invalid_big_surr, 4, &codepoint, false);
-	mu_assert_eq(nbytes, 0, "Decoded number of bytes mismatch.");
+	mu_assert_eq(nbytes, 2, "Decoded number of bytes mismatch.");
+	mu_assert_eq_fmt(codepoint, 0xDC01, "Character decode failed.", "0x%" PFMT64x);
 	nbytes = rz_utf16_decode(utf16be_invalid_big_surr, 4, &codepoint, true);
-	mu_assert_eq(nbytes, 0, "Decoded number of bytes mismatch.");
+	mu_assert_eq(nbytes, 2, "Decoded number of bytes mismatch.");
+	mu_assert_eq_fmt(codepoint, 0xDC01, "Character decode failed.", "0x%" PFMT64x);
 
 	const ut8 utf16le_invalid[] = { 0xff, 0xff, 0xff, 0xff };
 	const ut8 utf16be_invalid[] = { 0xff, 0xff, 0xff, 0xff };
 
 	nbytes = rz_utf16_decode(utf16le_invalid, 4, &codepoint, false);
-	mu_assert_eq(nbytes, 0, "Decoded number of bytes mismatch.");
+	mu_assert_eq(nbytes, 2, "Decoded number of bytes mismatch.");
+	mu_assert_eq_fmt(codepoint, 0xFFFF, "Character decode failed.", "0x%" PFMT64x);
 	nbytes = rz_utf16_decode(utf16be_invalid, 4, &codepoint, true);
-	mu_assert_eq(nbytes, 0, "Decoded number of bytes mismatch.");
+	mu_assert_eq(nbytes, 2, "Decoded number of bytes mismatch.");
+	mu_assert_eq_fmt(codepoint, 0xFFFF, "Character decode failed.", "0x%" PFMT64x);
 
 	mu_end;
 }

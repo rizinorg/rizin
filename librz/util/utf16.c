@@ -37,10 +37,7 @@ RZ_API size_t rz_utf16_decode(const ut8 *buf, int buf_len, RZ_NONNULL RZ_OUT RzR
 	}
 	int high = bigendian ? 0 : 1;
 	int low = bigendian ? 1 : 0;
-	if (buf_len > 3) {
-		if (!is_valid_surrogate_pair(buf[high], buf[high + 2])) {
-			return 0;
-		}
+	if (buf_len > 3 && is_valid_surrogate_pair(buf[high], buf[high + 2])) {
 		*ch = utf16_surrogate_to_codepoint((buf[high] << 8 | buf[low]), (buf[high + 2] << 8) | buf[low + 2]);
 		return 4;
 	}
