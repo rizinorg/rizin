@@ -4,9 +4,9 @@
 /* For RzRune definition */
 #include "rz_utf8.h"
 
-RZ_API int rz_utf16_decode(const ut8 *ptr, int ptrlen, RzRune *ch, bool bigendian);
-RZ_API int rz_utf16le_decode(const ut8 *ptr, int ptrlen, RzRune *ch);
-RZ_API int rz_utf16be_decode(const ut8 *ptr, int ptrlen, RzRune *ch);
-RZ_API int rz_utf16le_encode(ut8 *ptr, RzRune ch);
+RZ_API size_t rz_utf16_decode(const ut8 *ptr, int ptrlen, RZ_NONNULL RZ_OUT RzRune *ch, bool bigendian);
+RZ_API size_t rz_utf16le_decode(const ut8 *ptr, int ptrlen, RZ_NONNULL RZ_OUT RzRune *ch);
+RZ_API size_t rz_utf16be_decode(const ut8 *ptr, int ptrlen, RZ_NONNULL RZ_OUT RzRune *ch);
+RZ_API size_t rz_utf16le_encode(RZ_NONNULL RZ_OUT ut8 *ptr, RzRune ch);
 
 #endif //  RZ_UTF16_H
