@@ -27,7 +27,7 @@ s rip-7
 pi 2
 EOF
 EXPECT=<<EOF
-lea rax, str.Hello
-mov qword [rbp - 0x18], rax
+lea rax, qword str.Hello
+mov qword [rbp-0x18], rax
 EOF
 RUN

@@ -254,6 +254,7 @@ endif
 if (sys_zydis_opt.auto() and not zydis_dep.found()) or sys_zydis_opt.disabled()
   zydis_proj = subproject('zydis', default_options: ['default_library=static'])
   zydis_dep = zydis_proj.get_variable('zydis_dep')
+  add_project_arguments(['-DZYDIS_STATIC_BUILD'], language: 'c')
 endif
 
 

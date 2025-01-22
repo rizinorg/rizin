@@ -480,25 +480,25 @@ EXPECT=<<EOF
     },
     "sign": false,
     "prefix": 0,
-    "id": 612,
+    "id": 668,
     "opex": {
       "operands": [
         {
           "size": 2,
           "rw": 1,
           "type": "reg",
-          "value": "flags"
+          "value": "eflags"
         }
       ]
     },
     "addr": 0,
     "bytes": "9c",
     "size": 1,
-    "type": "upush",
+    "type": "rpush",
     "esilcost": 0,
     "scale": 0,
     "refptr": 0,
-    "cycles": 2,
+    "cycles": 1,
     "failcycles": 0,
     "delay": 0,
     "stack": "inc",

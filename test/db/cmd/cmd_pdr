@@ -97,8 +97,8 @@ EXPECT=<<EOF
     "fcn_addr": 0,
     "fcn_last": 14,
     "size": 5,
-    "opcode": "nop dword [rax + rax]",
-    "disasm": "nop dword [rax + rax]",
+    "opcode": "nop dword [rax+rax*1], eax",
+    "disasm": "nop dword [rax+rax*1], eax",
     "bytes": "0f1f440000",
     "family": "cpu",
     "type": "nop",
@@ -133,9 +133,9 @@ EXPECT=<<EOF
   },
   {
     "offset": 5,
-    "ptr": 3238002721,
-    "val": 3238002721,
-    "esil": "3238002721,rax,=",
+    "ptr": 18446744072652587041,
+    "val": 18446744072652587041,
+    "esil": "18446744072652587041,rax,=",
     "refptr": false,
     "fcn_addr": 0,
     "fcn_last": 14,
@@ -156,8 +156,8 @@ EXPECT=<<EOF
     "fcn_addr": 0,
     "fcn_last": 17,
     "size": 2,
-    "opcode": "jmp 9",
-    "disasm": "jmp 9",
+    "opcode": "jmp 0x9",
+    "disasm": "jmp 0x9",
     "bytes": "ebfd",
     "family": "cpu",
     "type": "jmp",
@@ -226,8 +226,8 @@ EXPECT=<<EOF
     "fcn_addr": 0,
     "fcn_last": 17,
     "size": 2,
-    "opcode": "jmp 3",
-    "disasm": "jmp 3",
+    "opcode": "jmp 0x3",
+    "disasm": "jmp 0x3",
     "bytes": "ebf0",
     "family": "cpu",
     "type": "jmp",
@@ -244,13 +244,13 @@ EXPECT=<<EOF
   }
 ]
 
-nop dword [rax + rax]
+nop dword [rax+rax*1], eax
 add byte [rax], al
 mov eax, 0xc1000021
-jmp 9
+jmp 0x9
 shr ebx, 0xfd
 mov ebx, 0x2c
-jmp 3
+jmp 0x3
 
 [
   {
@@ -260,8 +260,8 @@ jmp 3
     "fcn_addr": 0,
     "fcn_last": 14,
     "size": 5,
-    "opcode": "nop dword [rax + rax]",
-    "disasm": "nop dword [rax + rax]",
+    "opcode": "nop dword [rax+rax*1], eax",
+    "disasm": "nop dword [rax+rax*1], eax",
     "bytes": "0f1f440000",
     "family": "cpu",
     "type": "nop",
@@ -296,9 +296,9 @@ jmp 3
   },
   {
     "offset": 5,
-    "ptr": 3238002721,
-    "val": 3238002721,
-    "esil": "3238002721,rax,=",
+    "ptr": 18446744072652587041,
+    "val": 18446744072652587041,
+    "esil": "18446744072652587041,rax,=",
     "refptr": false,
     "fcn_addr": 0,
     "fcn_last": 14,
@@ -319,8 +319,8 @@ jmp 3
     "fcn_addr": 0,
     "fcn_last": 17,
     "size": 2,
-    "opcode": "jmp 9",
-    "disasm": "jmp 9",
+    "opcode": "jmp 0x9",
+    "disasm": "jmp 0x9",
     "bytes": "ebfd",
     "family": "cpu",
     "type": "jmp",
@@ -389,8 +389,8 @@ jmp 3
     "fcn_addr": 0,
     "fcn_last": 17,
     "size": 2,
-    "opcode": "jmp 3",
-    "disasm": "jmp 3",
+    "opcode": "jmp 0x3",
+    "disasm": "jmp 0x3",
     "bytes": "ebf0",
     "family": "cpu",
     "type": "jmp",

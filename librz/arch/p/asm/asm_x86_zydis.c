@@ -102,7 +102,8 @@ static int x86_zydis_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len)
 	}
 	ZydisFormatterSetProperty(&format, ZYDIS_FORMATTER_PROP_FORCE_SIZE, ZYAN_TRUE);
 	ZydisFormatterSetProperty(&format, ZYDIS_FORMATTER_PROP_HEX_UPPERCASE, ZYAN_FALSE);
-	ZydisFormatterSetProperty(&format, ZYDIS_FORMATTER_PROP_ADDR_PADDING_ABSOLUTE, ZYAN_FALSE);
+	ZydisFormatterSetProperty(&format, ZYDIS_FORMATTER_PROP_FORCE_RELATIVE_RIPREL, ZYAN_TRUE);
+	ZydisFormatterSetProperty(&format, ZYDIS_FORMATTER_PROP_ADDR_PADDING_ABSOLUTE, ZYDIS_PADDING_DISABLED);
 	if (!op) {
 		return true;
 	}

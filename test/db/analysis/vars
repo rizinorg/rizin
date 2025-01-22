@@ -366,7 +366,6 @@ var int64_t var_8h @ stack + 0x8
 var int64_t var_10h @ stack + 0x10
 var int64_t var_18h @ stack + 0x18
 var int64_t var_20h @ stack + 0x20
-arg int64_t arg_60h @ stack + 0x60
 EOF
 RUN
 
@@ -385,38 +384,38 @@ pdf
 EOF
 EXPECT=<<EOF
 afvR
-   arg_c8h  0x18
-  arg_158h  0x21
+   var_98h  0x18
+    var_8h  0x21,0x38
     var_0h
    var_s8h  0x29
   var_s10h  0x2d
   var_s18h  0x31
-    var_8h  0x38
+   var_78h
 afvW
-   arg_c8h
-  arg_158h
+   var_98h  0x18
+    var_8h
     var_0h
    var_s8h  0x3
   var_s10h  0x7
   var_s18h  0xb
-    var_8h
-/ fcn.00000000(int64_t arg_c8h, int64_t arg_158h);
+   var_78h
+/ fcn.00000000();
+|           ; var int64_t var_98h @ stack - 0x98
+|           ; var int64_t var_78h @ stack - 0x78
 |           ; var int64_t var_8h @ stack - 0x8
 |           ; var int64_t var_0h @ stack + 0x0
 |           ; var int64_t var_s8h @ stack + 0x8
 |           ; var int64_t var_s10h @ stack + 0x10
 |           ; var int64_t var_s18h @ stack + 0x18
-|           ; arg int64_t arg_c8h @ stack + 0xc8
-|           ; arg int64_t arg_158h @ stack + 0x158
 |           0x00000000      488bc4         mov   rax, rsp
 |           0x00000003      48895808       mov   qword [var_s8h], rbx
 |           0x00000007      48897010       mov   qword [var_s10h], rsi
 |           0x0000000b      48897818       mov   qword [var_s18h], rdi
 |           0x0000000f      4157           push  r15
 |           0x00000011      4881ecb00000.  sub   rsp, 0xb0
-|           0x00000018      8364242000     and   dword [arg_c8h], 0x00
-|           0x0000001d      488d4888       lea   rcx, qword [rax-0x78]
-|           0x00000021      4c8d9c24b000.  lea   r11, qword [arg_158h]
+|           0x00000018      8364242000     and   dword [var_98h], 0x00
+|           0x0000001d      488d4888       lea   rcx, qword [var_78h]
+|           0x00000021      4c8d9c24b000.  lea   r11, qword [var_8h]
 |           0x00000029      498b5b10       mov   rbx, qword [var_s8h]
 |           0x0000002d      498b7318       mov   rsi, qword [var_s10h]
 |           0x00000031      498b7b20       mov   rdi, qword [var_s18h]
@@ -605,23 +604,19 @@ pdf
 EOF
 EXPECT=<<EOF
 / int varfunc()
-|           ; var int64_t arg_10h @ stack + 0x10
-|           ; var int64_t arg_14h @ stack + 0x14
-|           ; var int64_t arg_18h @ stack + 0x18
-|           ; var int64_t arg_1ch @ stack + 0x1c
 |           ; var int lightbulb @ stack - 0x10
 |           ; var int sun @ stack - 0xc
 |           ; var int last @ stack - 0x8
 |           ; var int chance @ stack - 0x4
 |           0x00001137      sub   rsp, 0x10                            ; main.c:9
 |           0x0000113b      mov   dword [rsp], 0x01                    ; main.c:15
-|           0x00001142      mov   dword [arg_14h], 0x02                ; main.c:16
-|           0x0000114a      mov   dword [arg_18h], 0x03                ; main.c:17
-|           0x00001152      mov   dword [arg_1ch], 0x04                ; main.c:18
+|           0x00001142      mov   dword [sun], 0x02                    ; main.c:16
+|           0x0000114a      mov   dword [last], 0x03                   ; main.c:17
+|           0x00001152      mov   dword [chance], 0x04                 ; main.c:18
 |           0x0000115a      mov   eax, 0x00                            ; main.c:20
 |           0x0000115f      call  dbg.leaffunc
-|           0x00001164      mov   eax, dword [arg_1ch]                 ; main.c:22
-|           0x00001168      mov   dword [arg_14h], eax
+|           0x00001164      mov   eax, dword [chance]                  ; main.c:22
+|           0x00001168      mov   dword [sun], eax
 |           0x0000116c      mov   eax, dword [rsp]                     ; main.c:23
 |           0x0000116f      add   rsp, 0x10                            ; main.c:24
 \           0x00001173      ret

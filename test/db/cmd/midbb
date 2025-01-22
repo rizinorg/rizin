@@ -13,7 +13,7 @@ e asm.bb.middle=false
 pD 0x560eb3-$$
 EOF
 EXPECT=<<EOF
-/ fcn.00560e67(int32_t arg_4h, int32_t arg_8h, int32_t arg_ch, int32_t arg_10h, int32_t arg_14h, int32_t arg_18h, int32_t arg_1ch, int32_t arg_28h, int32_t arg_7fbf50c8h);
+/ fcn.00560e67(int32_t arg_4h, int32_t arg_7fbf5070h);
 |           0x00560e67      push  esi
 |       ,=< 0x00560e68      jmp   0x560e7d
         |   0x00560e6d      push  ecx
@@ -49,7 +49,7 @@ EXPECT=<<EOF
 |      ||   0x00560eb1      pop   edx
 |      ||   0x00560eb2      pop   eax
 
-/ fcn.00560e67(int32_t arg_4h, int32_t arg_8h, int32_t arg_ch, int32_t arg_10h, int32_t arg_14h, int32_t arg_18h, int32_t arg_1ch, int32_t arg_28h, int32_t arg_7fbf50c8h);
+/ fcn.00560e67(int32_t arg_4h, int32_t arg_7fbf5070h);
 |           0x00560e67      push  esi
 |       ,=< 0x00560e68      jmp   0x560e7d
         |   0x00560e6d      push  ecx
@@ -118,8 +118,8 @@ EXPECT=<<EOF
     "fcn_addr": 0,
     "fcn_last": 16,
     "size": 5,
-    "opcode": "nop dword [rax + rax]",
-    "disasm": "nop dword [rax + rax]",
+    "opcode": "nop dword [rax+rax*1], eax",
+    "disasm": "nop dword [rax+rax*1], eax",
     "bytes": "0f1f440000",
     "family": "cpu",
     "type": "nop",
@@ -154,9 +154,9 @@ EXPECT=<<EOF
   },
   {
     "offset": 5,
-    "ptr": 3238002721,
-    "val": 3238002721,
-    "esil": "3238002721,rax,=",
+    "ptr": 18446744072652587041,
+    "val": 18446744072652587041,
+    "esil": "18446744072652587041,rax,=",
     "refptr": false,
     "fcn_addr": 0,
     "fcn_last": 15,
@@ -224,8 +224,8 @@ EXPECT=<<EOF
     "fcn_addr": 0,
     "fcn_last": 17,
     "size": 2,
-    "opcode": "jmp 3",
-    "disasm": "jmp 3",
+    "opcode": "jmp 0x3",
+    "disasm": "jmp 0x3",
     "bytes": "ebf0",
     "family": "cpu",
     "type": "jmp",
@@ -252,8 +252,8 @@ EXPECT=<<EOF
     "fcn_addr": 0,
     "fcn_last": 14,
     "size": 5,
-    "opcode": "nop dword [rax + rax]",
-    "disasm": "nop dword [rax + rax]",
+    "opcode": "nop dword [rax+rax*1], eax",
+    "disasm": "nop dword [rax+rax*1], eax",
     "bytes": "0f1f440000",
     "family": "cpu",
     "type": "nop",
@@ -266,9 +266,9 @@ EXPECT=<<EOF
   },
   {
     "offset": 5,
-    "ptr": 3238002721,
-    "val": 3238002721,
-    "esil": "3238002721,rax,=",
+    "ptr": 18446744072652587041,
+    "val": 18446744072652587041,
+    "esil": "18446744072652587041,rax,=",
     "refptr": false,
     "fcn_addr": 0,
     "fcn_last": 14,
@@ -289,8 +289,8 @@ EXPECT=<<EOF
     "fcn_addr": 0,
     "fcn_last": 17,
     "size": 2,
-    "opcode": "jmp 9",
-    "disasm": "jmp 9",
+    "opcode": "jmp 0x9",
+    "disasm": "jmp 0x9",
     "bytes": "ebfd",
     "family": "cpu",
     "type": "jmp",
@@ -336,8 +336,8 @@ EXPECT=<<EOF
     "fcn_addr": 0,
     "fcn_last": 17,
     "size": 2,
-    "opcode": "jmp 3",
-    "disasm": "jmp 3",
+    "opcode": "jmp 0x3",
+    "disasm": "jmp 0x3",
     "bytes": "ebf0",
     "family": "cpu",
     "type": "jmp",
@@ -368,8 +368,8 @@ EXPECT=<<EOF
       "fcn_addr": 0,
       "fcn_last": 14,
       "size": 5,
-      "opcode": "nop dword [rax + rax]",
-      "disasm": "nop dword [rax + rax]",
+      "opcode": "nop dword [rax+rax*1], eax",
+      "disasm": "nop dword [rax+rax*1], eax",
       "bytes": "0f1f440000",
       "family": "cpu",
       "type": "nop",
@@ -404,9 +404,9 @@ EXPECT=<<EOF
     },
     {
       "offset": 5,
-      "ptr": 3238002721,
-      "val": 3238002721,
-      "esil": "3238002721,rax,=",
+      "ptr": 18446744072652587041,
+      "val": 18446744072652587041,
+      "esil": "18446744072652587041,rax,=",
       "refptr": false,
       "fcn_addr": 0,
       "fcn_last": 14,
@@ -427,8 +427,8 @@ EXPECT=<<EOF
       "fcn_addr": 0,
       "fcn_last": 17,
       "size": 2,
-      "opcode": "jmp 9",
-      "disasm": "jmp 9",
+      "opcode": "jmp 0x9",
+      "disasm": "jmp 0x9",
       "bytes": "ebfd",
       "family": "cpu",
       "type": "jmp",
@@ -497,8 +497,8 @@ EXPECT=<<EOF
       "fcn_addr": 0,
       "fcn_last": 17,
       "size": 2,
-      "opcode": "jmp 3",
-      "disasm": "jmp 3",
+      "opcode": "jmp 0x3",
+      "disasm": "jmp 0x3",
       "bytes": "ebf0",
       "family": "cpu",
       "type": "jmp",
@@ -612,11 +612,11 @@ echo
 pd 3 @ 0x560e95 @e:scr.color=1
 EOF
 EXPECT=<<EOF
-            0x00560e7a  ~   0085965e5052   add   byte [ebp + 0x52505e96], al
+            0x00560e7a  ~   0085965e5052   add   byte [ebp+0x52505e96], al
 |           ;-- sym.dummy:
 |           0x00560e7d      5e             pop   esi
 
-            0x00560e7a  ~   0085965e5052   add   byte [ebp + 0x52505e96], al
+            0x00560e7a  ~   0085965e5052   add   byte [ebp+0x52505e96], al
             ;-- sym.dummy:
             0x00560e7c      96             xchg  esi, eax
 |           0x00560e7d      5e             pop   esi
@@ -634,12 +634,12 @@ EXPECT=<<EOF
 |           ;-- (0x00560e97) sym.dummy:
             0x00560e95  ~   ba0f31e914     mov   edx, 0x14e9310f
 |           0x00560e9a      0000           add   byte [eax], al
-|           0x00560e9c      00a836dc5264   add   byte [eax + 0x6452dc36], ch
+|           0x00560e9c      00a836dc5264   add   byte [eax+0x6452dc36], ch
 
             [36m;-- sym.real:[0m
 [36m|[0m           [36m;-- [32m(0x00560e97)[36m sym.dummy:[0m
             [32m0x00560e95[0m  ~   [37mba[37m0f[33m31[37me9[37m14[0m     [37mmov[0m[37m   [0m[36medx[0m[37m, [0m[33m0x14e9310f[0m[0m[0m
 [36m|[0m           [32m0x00560e9a[0m      [32m00[32m00[0m           [33madd[0m[37m   [0m[37mbyte[0m[37m [[0m[36meax[0m[37m], [0m[36mal[0m[0m[0m
-[36m|[0m           [32m0x00560e9c[0m      [32m00[37ma8[33m36[37mdc[33m52[33m64[0m   [33madd[0m[37m   [0m[37mbyte[0m[37m [[0m[36meax[0m[37m [0m[37m+[0m[37m [0m[33m0x6452dc36[0m[37m], [0m[36mch[0m[0m[0m
+[36m|[0m           [32m0x00560e9c[0m      [32m00[37ma8[33m36[37mdc[33m52[33m64[0m   [33madd[0m[37m   [0m[37mbyte[0m[37m [[0m[36meax[0m[37m+[0m[33m0x6452dc36[0m[37m], [0m[36mch[0m[0m[0m
 EOF
 RUN

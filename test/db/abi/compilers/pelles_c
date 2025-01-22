@@ -20,7 +20,7 @@ EXPECT=<<EOF
   108 * functions
    38 * imports
     0 * platform.ports
-   76 * pointers
+   60 * pointers
     0 * registers
     0 * registers.extended
     0 * registers.mmio

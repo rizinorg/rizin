@@ -51,6 +51,7 @@ EXPECT=<<EOF
 (nofunc); [00] -r-x section size 4096 named .text 0x69681000 [DATA] push dword [0x69682004]
 (nofunc); [00] -r-x section size 4096 named .text 0x69681000 [DATA] push dword [0x69682004]
 (nofunc) 0x69681006 [DATA] push 0x69682004
+(nofunc) 0x6968100b [DATA] mov eax, dword [0x69682004]
 (nofunc) 0x69681010 [DATA] mov eax, 0x69682004
 EOF
 RUN
@@ -627,7 +628,12 @@ e search.to=0x104
 /x 41424344
 EOF
 EXPECT=<<EOF
-0x00000100 4 hit.bytes.0
+0x00000100 hit0_0 41424344
+EOF
+EXPECT_ERR=<<EOF
+Searching 4 bytes in [0x100,0x104)
+[2K
+hits: 1
 EOF
 RUN
 
@@ -653,6 +659,11 @@ e search.to=0x103
 /x 41424344
 EOF
 EXPECT=
+EXPECT_ERR=<<EOF
+Searching 4 bytes in [0x100,0x103)
+[2K
+hits: 0
+EOF
 RUN
 
 NAME=search range hex @(A..B)

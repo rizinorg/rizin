@@ -122,8 +122,8 @@ bool test_rz_core_analysis_bytes() {
 	mu_assert_streq(ab->pseudo, "rbp = rsp", "rz_core_analysis_bytes pseudo");
 
 	ab = rz_iterator_next(iter);
-	mu_assert_streq(ab->opcode, "mov dword [rbp - 4], edi", "rz_core_analysis_bytes opcode");
-	mu_assert_streq(ab->pseudo, "dword [rbp - 4] = edi", "rz_core_analysis_bytes pseudo");
+	mu_assert_streq(ab->opcode, "mov dword [rbp-0x04], edi", "rz_core_analysis_bytes opcode");
+	mu_assert_streq(ab->pseudo, "dword [rbp-0x04] = edi", "rz_core_analysis_bytes pseudo");
 
 	rz_iterator_free(iter);
 	rz_core_free(core);
@@ -164,14 +164,14 @@ bool test_rz_core_print_disasm() {
 	mu_assert_eq(t->offset, 4, "rz_core_print_disasm offset");
 	mu_assert_eq(t->arrow, UT64_MAX, "rz_core_print_disasm arrow");
 	mu_assert_streq_free(rz_str_trim_dup(t->text),
-		"\x1b[32m0x00000004\x1b[0m      \x1b[37mmov\x1b[0m\x1b[37m   \x1b[0m\x1b[37mdword\x1b[0m\x1b[37m [\x1b[0m\x1b[36mrbp\x1b[0m\x1b[37m \x1b[0m\x1b[37m-\x1b[0m\x1b[37m \x1b[0m\x1b[33m4\x1b[0m\x1b[37m], \x1b[0m\x1b[36medi\x1b[0m\x1b[0m\x1b[0m",
+		"\x1b[32m0x00000004\x1b[0m      \x1b[37mmov\x1b[0m\x1b[37m   \x1b[0m\x1b[37mdword\x1b[0m\x1b[37m [\x1b[0m\x1b[36mrbp\x1b[0m\x1b[37m-\x1b[0m\x1b[33m0x04\x1b[0m\x1b[37m], \x1b[0m\x1b[36medi\x1b[0m\x1b[0m\x1b[0m",
 		"rz_core_print_disasm text");
 
 	t = rz_pvector_at(vec, 3);
 	mu_assert_eq(t->offset, 7, "rz_core_print_disasm offset");
 	mu_assert_eq(t->arrow, 1, "rz_core_print_disasm arrow");
 	mu_assert_streq_free(rz_str_trim_dup(t->text),
-		"\x1b[32m0x00000007\x1b[0m      \x1b[32mjmp\x1b[0m\x1b[37m   \x1b[0m\x1b[33m1\x1b[0m\x1b[0m\x1b[0m",
+		"\x1b[32m0x00000007\x1b[0m      \x1b[32mjmp\x1b[0m\x1b[37m   \x1b[0m\x1b[33m0x1\x1b[0m\x1b[0m\x1b[0m",
 		"rz_core_print_disasm text");
 
 	rz_core_free(core);

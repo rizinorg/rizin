@@ -6,6 +6,7 @@
 #include <rz_lib.h>
 #include <Zydis.h>
 #include <x86/x86_il.h>
+#include <x86/x86_mnemonics.h>
 
 // CYCLES:
 // ======
@@ -35,8 +36,8 @@
 #define opexprintf(op, fmt, ...) rz_strbuf_setf(&op->opex, fmt, ##__VA_ARGS__)
 #define INSOP(n)                 zydeop[n]
 #define INSOPS                   zydecode->operand_count_visible
-#define ISIMM(x)                 zydeop[x].type == ZYDIS_OPERAND_TYPE_IMMEDIATE
-#define ISMEM(x)                 zydeop[x].type == ZYDIS_OPERAND_TYPE_MEMORY
+#define ISIMM(x)                 zydeop[x].type == X86_OP_IMM
+#define ISMEM(x)                 zydeop[x].type == X86_OP_MEM
 
 typedef struct zydis_x86_context_t {
 	char buf[AR_DIM][BUF_SZ];
@@ -51,8 +52,14 @@ struct Getarg {
 	int bits;
 };
 
-static inline ut64 get_imm_reg_value(ZydisDecodedOperand *zydeop, ut64 addr, ut64 op_size) {
-	return (zydeop->imm.is_relative ? (zydeop->imm.value.s + addr + op_size) : zydeop->imm.value.u);
+static inline ut64 get_imm_reg_value(ZydisDecodedOperand *zydeop, ut64 addr, ut64 op_size, int bitness) {
+	ut64 value = (zydeop->imm.is_relative ? (zydeop->imm.value.s + addr + op_size) : zydeop->imm.value.u);
+	if (bitness == 32) {
+		value &= 0xFFFFFFFF;
+	} else if (bitness == 16) {
+		value &= 0xFFFF;
+	}
+	return value;
 }
 
 static void hidden_op(ZydisDecodedInstruction *zydecode, ZydisDecodedOperand *zydeop, int mode) {
@@ -71,21 +78,21 @@ static void hidden_op(ZydisDecodedInstruction *zydecode, ZydisDecodedOperand *zy
 	}
 
 	switch (mnemonic) {
-	case ZYDIS_MNEMONIC_PUSHF:
-	case ZYDIS_MNEMONIC_POPF:
-	case ZYDIS_MNEMONIC_PUSHFD:
-	case ZYDIS_MNEMONIC_POPFD:
-	case ZYDIS_MNEMONIC_PUSHFQ:
-	case ZYDIS_MNEMONIC_POPFQ:
-		zydecode->operand_count = 1;
-		ZydisDecodedOperand *op = &zydeop[0];
-		op->type = ZYDIS_OPERAND_TYPE_REGISTER;
-		op->reg.value = ZYDIS_REGISTER_EFLAGS;
+	case X86_INS_PUSHF:
+	case X86_INS_POPF:
+	case X86_INS_PUSHFD:
+	case X86_INS_POPFD:
+	case X86_INS_PUSHFQ:
+	case X86_INS_POPFQ:
+		zydecode->operand_count_visible = 1;
+		ZydisDecodedOperand *op = &INSOP(0);
+		op->type = X86_OP_REG;
+		op->reg.value = X86_REG_EFLAGS;
 		op->size = regsz;
-		if (mnemonic == ZYDIS_MNEMONIC_PUSHF || mnemonic == ZYDIS_MNEMONIC_PUSHFD || mnemonic == ZYDIS_MNEMONIC_PUSHFQ) {
-			op->visibility = ZYDIS_OPERAND_VISIBILITY_EXPLICIT;
+		if (mnemonic == X86_INS_PUSHF || mnemonic == X86_INS_PUSHFD || mnemonic == X86_INS_PUSHFQ) {
+			op->actions = 1;
 		} else {
-			op->visibility = ZYDIS_OPERAND_VISIBILITY_HIDDEN;
+			op->actions = 2;
 		}
 		break;
 	default:
@@ -93,7 +100,7 @@ static void hidden_op(ZydisDecodedInstruction *zydecode, ZydisDecodedOperand *zy
 	}
 }
 
-static void opex(RzStrBuf *buf, X86ZYDISContext *zydx, int mode, ut64 addr) {
+static void opex(RzStrBuf *buf, X86ZYDISContext *zydx, int mode, ut64 addr, int bitness) {
 	ZydisDecodedInstruction *zydecode = zydx->zydecode;
 	ZydisDecodedOperand *zydeop = zydx->zydeop;
 	int i;
@@ -102,35 +109,37 @@ static void opex(RzStrBuf *buf, X86ZYDISContext *zydx, int mode, ut64 addr) {
 		return;
 	}
 	pj_o(pj);
-	if (zydecode->operand_count == 0) {
+	if (zydecode->operand_count_visible == 0) {
 		hidden_op(zydecode, zydeop, mode);
 	}
 	pj_ka(pj, "operands");
-	for (i = 0; i < zydecode->operand_count; i++) {
-		ZydisDecodedOperand *op = zydeop + i;
+	for (i = 0; i < zydecode->operand_count_visible; i++) {
+		ZydisDecodedOperand *op = &zydeop[i];
 		pj_o(pj);
 		pj_ki(pj, "size", op->size);
-		pj_ki(pj, "rw", op->visibility);
+		pj_ki(pj, "rw", op->actions);
 		switch (op->type) {
-		case ZYDIS_OPERAND_TYPE_REGISTER:
+		case X86_OP_REG:
 			pj_ks(pj, "type", "reg");
 			pj_ks(pj, "value", ZydisRegisterGetString(op->reg.value));
 			break;
-		case ZYDIS_OPERAND_TYPE_IMMEDIATE:
+		case X86_OP_IMM:
 			pj_ks(pj, "type", "imm");
-			pj_kN(pj, "value", get_imm_reg_value(op, addr, zydecode->length));
+			pj_kN(pj, "value", get_imm_reg_value(op, addr, zydecode->length, bitness));
 			break;
-		case ZYDIS_OPERAND_TYPE_MEMORY:
+		case X86_OP_MEM:
 			pj_ks(pj, "type", "mem");
-			if (op->mem.segment != ZYDIS_REGISTER_NONE) {
+			if (op->mem.segment != X86_REG_NONE) {
 				pj_ks(pj, "segment", ZydisRegisterGetString(op->mem.segment));
 			}
-			if (op->mem.base != ZYDIS_REGISTER_NONE) {
+			if (op->mem.base != X86_REG_NONE) {
 				pj_ks(pj, "base", ZydisRegisterGetString(op->mem.base));
 			}
-			if (op->mem.index != ZYDIS_REGISTER_NONE) {
+			if (op->mem.index != X86_REG_NONE) {
 				pj_ks(pj, "index", ZydisRegisterGetString(op->mem.index));
 			}
+			pj_ki(pj, "scale", op->mem.scale);
+			pj_kN(pj, "disp", op->mem.disp.value);
 			break;
 		default:
 			pj_ks(pj, "type", "invalid");
@@ -151,50 +160,54 @@ static void opex(RzStrBuf *buf, X86ZYDISContext *zydx, int mode, ut64 addr) {
 	if (zydecode->raw.disp.value != 0) {
 		pj_ki(pj, "disp", zydecode->raw.disp.value);
 	}
-	if (zydecode->raw.sib.index != ZYDIS_REGISTER_NONE) {
+	if (zydecode->raw.sib.index != X86_REG_NONE) {
 		pj_ki(pj, "sib_scale", zydecode->raw.sib.scale);
 		pj_ks(pj, "sib_index", ZydisRegisterGetString(zydecode->raw.sib.index));
 	}
-	if (zydecode->raw.sib.base != ZYDIS_REGISTER_NONE) {
+	if (zydecode->raw.sib.base != X86_REG_NONE) {
 		pj_ks(pj, "sib_base", ZydisRegisterGetString(zydecode->raw.sib.base));
 	}
 	pj_end(pj);
+
+	rz_strbuf_init(buf);
+	rz_strbuf_append(buf, pj_string(pj));
+	pj_free(pj);
 }
 
 static bool is_xmm_reg(ZydisDecodedOperand op) {
 	switch (op.reg.value) {
-	case ZYDIS_REGISTER_XMM0:
-	case ZYDIS_REGISTER_XMM1:
-	case ZYDIS_REGISTER_XMM2:
-	case ZYDIS_REGISTER_XMM3:
-	case ZYDIS_REGISTER_XMM4:
-	case ZYDIS_REGISTER_XMM5:
-	case ZYDIS_REGISTER_XMM6:
-	case ZYDIS_REGISTER_XMM7:
-	case ZYDIS_REGISTER_XMM8:
-	case ZYDIS_REGISTER_XMM9:
-	case ZYDIS_REGISTER_XMM10:
-	case ZYDIS_REGISTER_XMM11:
-	case ZYDIS_REGISTER_XMM12:
-	case ZYDIS_REGISTER_XMM13:
-	case ZYDIS_REGISTER_XMM14:
-	case ZYDIS_REGISTER_XMM15:
-	case ZYDIS_REGISTER_XMM16:
-	case ZYDIS_REGISTER_XMM17:
-	case ZYDIS_REGISTER_XMM18:
-	case ZYDIS_REGISTER_XMM19:
-	case ZYDIS_REGISTER_XMM20:
-	case ZYDIS_REGISTER_XMM21:
-	case ZYDIS_REGISTER_XMM22:
-	case ZYDIS_REGISTER_XMM23:
-	case ZYDIS_REGISTER_XMM24:
-	case ZYDIS_REGISTER_XMM25:
-	case ZYDIS_REGISTER_XMM26:
-	case ZYDIS_REGISTER_XMM27:
-	case ZYDIS_REGISTER_XMM28:
-	case ZYDIS_REGISTER_XMM29:
-	case ZYDIS_REGISTER_XMM30:
-	case ZYDIS_REGISTER_XMM31: return true;
+	case X86_REG_XMM0:
+	case X86_REG_XMM1:
+	case X86_REG_XMM2:
+	case X86_REG_XMM3:
+	case X86_REG_XMM4:
+	case X86_REG_XMM5:
+	case X86_REG_XMM6:
+	case X86_REG_XMM7:
+	case X86_REG_XMM8:
+	case X86_REG_XMM9:
+	case X86_REG_XMM10:
+	case X86_REG_XMM11:
+	case X86_REG_XMM12:
+	case X86_REG_XMM13:
+	case X86_REG_XMM14:
+	case X86_REG_XMM15:
+	case X86_REG_XMM16:
+	case X86_REG_XMM17:
+	case X86_REG_XMM18:
+	case X86_REG_XMM19:
+	case X86_REG_XMM20:
+	case X86_REG_XMM21:
+	case X86_REG_XMM22:
+	case X86_REG_XMM23:
+	case X86_REG_XMM24:
+	case X86_REG_XMM25:
+	case X86_REG_XMM26:
+	case X86_REG_XMM27:
+	case X86_REG_XMM28:
+	case X86_REG_XMM29:
+	case X86_REG_XMM30:
+	case X86_REG_XMM31: return true;
 	default: return false;
 	}
 }
@@ -208,7 +221,7 @@ static char *getarg(RzAnalysis *a, struct Getarg *gop, int n, int set, char *set
 	if (!zydecode) {
 		return NULL;
 	}
-	if (n < 0 || n >= zydecode->operand_count) {
+	if (n < 0 || n >= zydecode->operand_count_visible) {
 		return NULL;
 	}
 	out[0] = 0;
@@ -217,24 +230,24 @@ static char *getarg(RzAnalysis *a, struct Getarg *gop, int n, int set, char *set
 		*bitsize = op.size * 8;
 	}
 	switch (op.type) {
-	case ZYDIS_REGISTER_NONE:
+	case X86_REG_NONE:
 		return "invalid";
-	case ZYDIS_OPERAND_TYPE_REGISTER:
+	case X86_OP_REG:
 		if (set == 1) {
 			snprintf(out, BUF_SZ, "%s,%s=", ZydisRegisterGetString(op.reg.value), setarg);
 			return out;
 		}
 		return (char *)ZydisRegisterGetString(op.reg.value);
-	case ZYDIS_OPERAND_TYPE_IMMEDIATE: {
+	case X86_OP_IMM: {
 		if (set == 1) {
-			snprintf(out, BUF_SZ, "%" PFMT64u ",%s=[%d]", get_imm_reg_value(&op, addr, zydx->zydecode->length), setarg, op.size);
+			snprintf(out, BUF_SZ, "%" PFMT64u ",%s=[%d]", get_imm_reg_value(&op, addr, zydx->zydecode->length, a->bits), setarg, op.size);
 			return out;
 		}
-		snprintf(out, BUF_SZ, "%" PFMT64u, get_imm_reg_value(&op, addr, zydx->zydecode->length));
+		snprintf(out, BUF_SZ, "%" PFMT64u, get_imm_reg_value(&op, addr, zydx->zydecode->length, a->bits));
 		return out;
 	default: break;
 	}
-	case ZYDIS_OPERAND_TYPE_MEMORY: {
+	case X86_OP_MEM: {
 		char buf_[BUF_SZ] = { 0 };
 		int component_count = 0;
 		const char *base = ZydisRegisterGetString(op.mem.base);
@@ -297,40 +310,46 @@ static char *getarg(RzAnalysis *a, struct Getarg *gop, int n, int set, char *set
 		out[BUF_SZ - 1] = 0;
 		return out;
 	}
+	case X86_OP_PTR: {
+		if (sel == ARG0_AR) {
+			snprintf(out, BUF_SZ, "%d", (int)(op.ptr.segment));
+		} else if (sel == ARG1_AR) {
+			snprintf(out, BUF_SZ, "%d", (int)(op.ptr.offset));
+		}
+		return out;
+	}
 	}
 	return NULL;
 }
 
 static int cond_x862r2(ZydisMnemonic mnemonic) {
-	// TODO : Some cases to be handled
 	switch (mnemonic) {
-	case ZYDIS_MNEMONIC_JZ: // Should be JE but JE is alias of JZ
+	case X86_INS_JE:
 		return RZ_TYPE_COND_EQ;
-	case ZYDIS_MNEMONIC_JNZ:
+	case X86_INS_JNE:
 		return RZ_TYPE_COND_NE;
-	case ZYDIS_MNEMONIC_JB:
-	case ZYDIS_MNEMONIC_JL:
+	case X86_INS_JB:
+	case X86_INS_JL:
 		return RZ_TYPE_COND_LT;
-	case ZYDIS_MNEMONIC_JBE:
-	case ZYDIS_MNEMONIC_JLE:
+	case X86_INS_JBE:
+	case X86_INS_JLE:
 		return RZ_TYPE_COND_LE;
-	case ZYDIS_MNEMONIC_JNBE:
+	case X86_INS_JG:
+	case X86_INS_JA:
 		return RZ_TYPE_COND_GT;
-	case ZYDIS_MNEMONIC_JNLE:
+	case X86_INS_JAE:
 		return RZ_TYPE_COND_GE;
-	case ZYDIS_MNEMONIC_JNB:
-		return RZ_TYPE_COND_GE;
-	case ZYDIS_MNEMONIC_JS:
-	case ZYDIS_MNEMONIC_JNS:
-	case ZYDIS_MNEMONIC_JO:
-	case ZYDIS_MNEMONIC_JNO:
-	case ZYDIS_MNEMONIC_JNL:
-	case ZYDIS_MNEMONIC_JP:
-	case ZYDIS_MNEMONIC_JNP:
-	case ZYDIS_MNEMONIC_JCXZ:
-	case ZYDIS_MNEMONIC_JECXZ:
+	case X86_INS_JS:
+	case X86_INS_JNS:
+	case X86_INS_JO:
+	case X86_INS_JNO:
+	case X86_INS_JGE:
+	case X86_INS_JP:
+	case X86_INS_JNP:
+	case X86_INS_JCXZ:
+	case X86_INS_JECXZ:
+	default:
 		break;
-	default: break;
 	}
 	return 0;
 }
@@ -376,244 +395,244 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	}
 
 	switch (zydecode->mnemonic) {
-	case ZYDIS_MNEMONIC_FNOP:
-	case ZYDIS_MNEMONIC_NOP:
-	case ZYDIS_MNEMONIC_PAUSE:
+	case X86_INS_FNOP:
+	case X86_INS_NOP:
+	case X86_INS_PAUSE:
 		esilprintf(op, ",");
 		break;
-	case ZYDIS_MNEMONIC_HLT:
+	case X86_INS_HLT:
 		break;
-	case ZYDIS_MNEMONIC_FBLD:
-	case ZYDIS_MNEMONIC_FBSTP:
-	case ZYDIS_MNEMONIC_FCOMPP:
-	case ZYDIS_MNEMONIC_FDECSTP:
-	case ZYDIS_MNEMONIC_FEMMS:
-	case ZYDIS_MNEMONIC_FFREE:
-	case ZYDIS_MNEMONIC_FICOM:
-	case ZYDIS_MNEMONIC_FICOMP:
-	case ZYDIS_MNEMONIC_FINCSTP:
-	case ZYDIS_MNEMONIC_FNCLEX:
-	case ZYDIS_MNEMONIC_FNINIT:
-	case ZYDIS_MNEMONIC_FNSTCW:
-	case ZYDIS_MNEMONIC_FNSTSW:
-	case ZYDIS_MNEMONIC_FPATAN:
-	case ZYDIS_MNEMONIC_FPREM:
-	case ZYDIS_MNEMONIC_FPREM1:
-	case ZYDIS_MNEMONIC_FPTAN:
-	case ZYDIS_MNEMONIC_FFREEP:
-	case ZYDIS_MNEMONIC_FRNDINT:
-	case ZYDIS_MNEMONIC_FRSTOR:
-	case ZYDIS_MNEMONIC_FNSAVE:
-	case ZYDIS_MNEMONIC_FSCALE:
-	case ZYDIS_MNEMONIC_FSETPM287_NOP:
-	case ZYDIS_MNEMONIC_FSINCOS:
-	case ZYDIS_MNEMONIC_FNSTENV:
-	case ZYDIS_MNEMONIC_FXAM:
-	case ZYDIS_MNEMONIC_FXSAVE:
-	case ZYDIS_MNEMONIC_FXSAVE64:
-	case ZYDIS_MNEMONIC_FXTRACT:
-	case ZYDIS_MNEMONIC_FYL2X:
-	case ZYDIS_MNEMONIC_FYL2XP1:
-	case ZYDIS_MNEMONIC_FISTTP:
-	case ZYDIS_MNEMONIC_FSQRT:
-	case ZYDIS_MNEMONIC_FXCH:
+	case X86_INS_FBLD:
+	case X86_INS_FBSTP:
+	case X86_INS_FCOMPP:
+	case X86_INS_FDECSTP:
+	case X86_INS_FEMMS:
+	case X86_INS_FFREE:
+	case X86_INS_FICOM:
+	case X86_INS_FICOMP:
+	case X86_INS_FINCSTP:
+	case X86_INS_FNCLEX:
+	case X86_INS_FNINIT:
+	case X86_INS_FNSTCW:
+	case X86_INS_FNSTSW:
+	case X86_INS_FPATAN:
+	case X86_INS_FPREM:
+	case X86_INS_FPREM1:
+	case X86_INS_FPTAN:
+	case X86_INS_FFREEP:
+	case X86_INS_FRNDINT:
+	case X86_INS_FRSTOR:
+	case X86_INS_FNSAVE:
+	case X86_INS_FSCALE:
+	case X86_INS_FSETPM287_NOP:
+	case X86_INS_FSINCOS:
+	case X86_INS_FNSTENV:
+	case X86_INS_FXAM:
+	case X86_INS_FXSAVE:
+	case X86_INS_FXSAVE64:
+	case X86_INS_FXTRACT:
+	case X86_INS_FYL2X:
+	case X86_INS_FYL2XP1:
+	case X86_INS_FISTTP:
+	case X86_INS_FSQRT:
+	case X86_INS_FXCH:
 		break;
-	case ZYDIS_MNEMONIC_FTST:
-	case ZYDIS_MNEMONIC_FUCOMI:
-	case ZYDIS_MNEMONIC_FUCOMPP:
-	case ZYDIS_MNEMONIC_FUCOMP:
-	case ZYDIS_MNEMONIC_FUCOM:
+	case X86_INS_FTST:
+	case X86_INS_FUCOMI:
+	case X86_INS_FUCOMPP:
+	case X86_INS_FUCOMP:
+	case X86_INS_FUCOM:
 		break;
-	case ZYDIS_MNEMONIC_FABS:
+	case X86_INS_FABS:
 		break;
-	case ZYDIS_MNEMONIC_FLDCW:
-	case ZYDIS_MNEMONIC_FLDENV:
-	case ZYDIS_MNEMONIC_FLDL2E:
-	case ZYDIS_MNEMONIC_FLDL2T:
-	case ZYDIS_MNEMONIC_FLDLG2:
-	case ZYDIS_MNEMONIC_FLDLN2:
-	case ZYDIS_MNEMONIC_FLDPI:
-	case ZYDIS_MNEMONIC_FLDZ:
-	case ZYDIS_MNEMONIC_FLD1:
-	case ZYDIS_MNEMONIC_FLD:
+	case X86_INS_FLDCW:
+	case X86_INS_FLDENV:
+	case X86_INS_FLDL2E:
+	case X86_INS_FLDL2T:
+	case X86_INS_FLDLG2:
+	case X86_INS_FLDLN2:
+	case X86_INS_FLDPI:
+	case X86_INS_FLDZ:
+	case X86_INS_FLD1:
+	case X86_INS_FLD:
 		break;
-	case ZYDIS_MNEMONIC_FIST:
-	case ZYDIS_MNEMONIC_FISTP:
-	case ZYDIS_MNEMONIC_FST:
-	case ZYDIS_MNEMONIC_FSTP:
-	case ZYDIS_MNEMONIC_FSTPNCE:
-	case ZYDIS_MNEMONIC_FXRSTOR:
-	case ZYDIS_MNEMONIC_FXRSTOR64:
+	case X86_INS_FIST:
+	case X86_INS_FISTP:
+	case X86_INS_FST:
+	case X86_INS_FSTP:
+	case X86_INS_FSTPNCE:
+	case X86_INS_FXRSTOR:
+	case X86_INS_FXRSTOR64:
 		break;
-	case ZYDIS_MNEMONIC_FIDIV:
-	case ZYDIS_MNEMONIC_FIDIVR:
-	case ZYDIS_MNEMONIC_FDIV:
-	case ZYDIS_MNEMONIC_FDIVP:
-	case ZYDIS_MNEMONIC_FDIVR:
-	case ZYDIS_MNEMONIC_FDIVRP:
+	case X86_INS_FIDIV:
+	case X86_INS_FIDIVR:
+	case X86_INS_FDIV:
+	case X86_INS_FDIVP:
+	case X86_INS_FDIVR:
+	case X86_INS_FDIVRP:
 		break;
-	case ZYDIS_MNEMONIC_FSUBR:
-	case ZYDIS_MNEMONIC_FISUBR:
-	case ZYDIS_MNEMONIC_FSUBRP:
-	case ZYDIS_MNEMONIC_FSUB:
-	case ZYDIS_MNEMONIC_FISUB:
-	case ZYDIS_MNEMONIC_FSUBP:
+	case X86_INS_FSUBR:
+	case X86_INS_FISUBR:
+	case X86_INS_FSUBRP:
+	case X86_INS_FSUB:
+	case X86_INS_FISUB:
+	case X86_INS_FSUBP:
 		break;
-	case ZYDIS_MNEMONIC_FMUL:
-	case ZYDIS_MNEMONIC_FIMUL:
-	case ZYDIS_MNEMONIC_FMULP:
+	case X86_INS_FMUL:
+	case X86_INS_FIMUL:
+	case X86_INS_FMULP:
 		break;
-	case ZYDIS_MNEMONIC_CLI:
+	case X86_INS_CLI:
 		esilprintf(op, "0,if,:=");
 		break;
-	case ZYDIS_MNEMONIC_STI:
+	case X86_INS_STI:
 		esilprintf(op, "1,if,:=");
 		break;
-	case ZYDIS_MNEMONIC_CLC:
+	case X86_INS_CLC:
 		esilprintf(op, "0,cf,:=");
 		break;
-	case ZYDIS_MNEMONIC_CMC:
+	case X86_INS_CMC:
 		esilprintf(op, "cf,!,cf,=");
 		break;
-	case ZYDIS_MNEMONIC_STC:
+	case X86_INS_STC:
 		esilprintf(op, "1,cf,:=");
 		break;
-	case ZYDIS_MNEMONIC_CLAC:
-	case ZYDIS_MNEMONIC_CLGI:
-	case ZYDIS_MNEMONIC_CLTS:
-	case ZYDIS_MNEMONIC_CLWB:
-	case ZYDIS_MNEMONIC_STAC:
-	case ZYDIS_MNEMONIC_STGI:
+	case X86_INS_CLAC:
+	case X86_INS_CLGI:
+	case X86_INS_CLTS:
+	case X86_INS_CLWB:
+	case X86_INS_STAC:
+	case X86_INS_STGI:
 		break;
 	// cmov
-	case ZYDIS_MNEMONIC_SETNZ:
-	case ZYDIS_MNEMONIC_SETNO:
-	case ZYDIS_MNEMONIC_SETNP:
-	case ZYDIS_MNEMONIC_SETNS:
-	case ZYDIS_MNEMONIC_SETO:
-	case ZYDIS_MNEMONIC_SETP:
-	case ZYDIS_MNEMONIC_SETS:
-	case ZYDIS_MNEMONIC_SETL:
-	case ZYDIS_MNEMONIC_SETLE:
-	case ZYDIS_MNEMONIC_SETB:
-	case ZYDIS_MNEMONIC_SETNLE:
-	case ZYDIS_MNEMONIC_SETNB:
-	case ZYDIS_MNEMONIC_SETNBE:
-	case ZYDIS_MNEMONIC_SETBE:
-	case ZYDIS_MNEMONIC_SETZ:
-	case ZYDIS_MNEMONIC_SETNL: {
+	case X86_INS_SETNZ:
+	case X86_INS_SETNO:
+	case X86_INS_SETNP:
+	case X86_INS_SETNS:
+	case X86_INS_SETO:
+	case X86_INS_SETP:
+	case X86_INS_SETS:
+	case X86_INS_SETL:
+	case X86_INS_SETLE:
+	case X86_INS_SETB:
+	case X86_INS_SETNLE:
+	case X86_INS_SETNB:
+	case X86_INS_SETNBE:
+	case X86_INS_SETBE:
+	case X86_INS_SETZ:
+	case X86_INS_SETNL: {
 		dst = getarg(a, &gop, 0, 1, NULL, DST_AR, NULL, addr);
 		switch (zydecode->mnemonic) {
-		case ZYDIS_MNEMONIC_SETZ: esilprintf(op, "zf,%s", dst); break;
-		case ZYDIS_MNEMONIC_SETNZ: esilprintf(op, "zf,!,%s", dst); break;
-		case ZYDIS_MNEMONIC_SETO: esilprintf(op, "of,%s", dst); break;
-		case ZYDIS_MNEMONIC_SETNO: esilprintf(op, "of,!,%s", dst); break;
-		case ZYDIS_MNEMONIC_SETP: esilprintf(op, "pf,%s", dst); break;
-		case ZYDIS_MNEMONIC_SETNP: esilprintf(op, "pf,!,%s", dst); break;
-		case ZYDIS_MNEMONIC_SETS: esilprintf(op, "sf,%s", dst); break;
-		case ZYDIS_MNEMONIC_SETNS: esilprintf(op, "sf,!,%s", dst); break;
-		case ZYDIS_MNEMONIC_SETB: esilprintf(op, "cf,%s", dst); break;
-		case ZYDIS_MNEMONIC_SETNB: esilprintf(op, "cf,!,%s", dst); break;
-		case ZYDIS_MNEMONIC_SETL: esilprintf(op, "sf,of,^,%s", dst); break;
-		case ZYDIS_MNEMONIC_SETLE: esilprintf(op, "zf,sf,of,^,|,%s", dst); break;
-		case ZYDIS_MNEMONIC_SETNLE: esilprintf(op, "zf,!,sf,of,^,!,&,%s", dst); break;
-		case ZYDIS_MNEMONIC_SETNL: esilprintf(op, "sf,of,^,!,%s", dst); break;
-		case ZYDIS_MNEMONIC_SETNBE: esilprintf(op, "cf,zf,|,!,%s", dst); break;
-		case ZYDIS_MNEMONIC_SETBE: esilprintf(op, "cf,zf,|,%s", dst); break;
+		case X86_INS_SETZ: esilprintf(op, "zf,%s", dst); break;
+		case X86_INS_SETNZ: esilprintf(op, "zf,!,%s", dst); break;
+		case X86_INS_SETO: esilprintf(op, "of,%s", dst); break;
+		case X86_INS_SETNO: esilprintf(op, "of,!,%s", dst); break;
+		case X86_INS_SETP: esilprintf(op, "pf,%s", dst); break;
+		case X86_INS_SETNP: esilprintf(op, "pf,!,%s", dst); break;
+		case X86_INS_SETS: esilprintf(op, "sf,%s", dst); break;
+		case X86_INS_SETNS: esilprintf(op, "sf,!,%s", dst); break;
+		case X86_INS_SETB: esilprintf(op, "cf,%s", dst); break;
+		case X86_INS_SETNB: esilprintf(op, "cf,!,%s", dst); break;
+		case X86_INS_SETL: esilprintf(op, "sf,of,^,%s", dst); break;
+		case X86_INS_SETLE: esilprintf(op, "zf,sf,of,^,|,%s", dst); break;
+		case X86_INS_SETNLE: esilprintf(op, "zf,!,sf,of,^,!,&,%s", dst); break;
+		case X86_INS_SETNL: esilprintf(op, "sf,of,^,!,%s", dst); break;
+		case X86_INS_SETNBE: esilprintf(op, "cf,zf,|,!,%s", dst); break;
+		case X86_INS_SETBE: esilprintf(op, "cf,zf,|,%s", dst); break;
 		default: break;
 		}
 	} break;
 	// cmov
-	case ZYDIS_MNEMONIC_FCMOVBE:
-	case ZYDIS_MNEMONIC_FCMOVB:
-	case ZYDIS_MNEMONIC_FCMOVNBE:
-	case ZYDIS_MNEMONIC_FCMOVNB:
-	case ZYDIS_MNEMONIC_FCMOVE:
-	case ZYDIS_MNEMONIC_FCMOVNE:
-	case ZYDIS_MNEMONIC_FCMOVNU:
-	case ZYDIS_MNEMONIC_FCMOVU:
+	case X86_INS_FCMOVBE:
+	case X86_INS_FCMOVB:
+	case X86_INS_FCMOVNBE:
+	case X86_INS_FCMOVNB:
+	case X86_INS_FCMOVE:
+	case X86_INS_FCMOVNE:
+	case X86_INS_FCMOVNU:
+	case X86_INS_FCMOVU:
 		break;
-	case ZYDIS_MNEMONIC_CMOVNBE:
-	case ZYDIS_MNEMONIC_CMOVNB:
-	case ZYDIS_MNEMONIC_CMOVB:
-	case ZYDIS_MNEMONIC_CMOVBE:
-	case ZYDIS_MNEMONIC_CMOVZ:
-	case ZYDIS_MNEMONIC_CMOVNLE:
-	case ZYDIS_MNEMONIC_CMOVNL:
-	case ZYDIS_MNEMONIC_CMOVL:
-	case ZYDIS_MNEMONIC_CMOVLE:
-	case ZYDIS_MNEMONIC_CMOVNZ:
-	case ZYDIS_MNEMONIC_CMOVNO:
-	case ZYDIS_MNEMONIC_CMOVNP:
-	case ZYDIS_MNEMONIC_CMOVNS:
-	case ZYDIS_MNEMONIC_CMOVO:
-	case ZYDIS_MNEMONIC_CMOVP:
-	case ZYDIS_MNEMONIC_CMOVS: {
+	case X86_INS_CMOVNBE:
+	case X86_INS_CMOVNB:
+	case X86_INS_CMOVB:
+	case X86_INS_CMOVBE:
+	case X86_INS_CMOVZ:
+	case X86_INS_CMOVNLE:
+	case X86_INS_CMOVNL:
+	case X86_INS_CMOVL:
+	case X86_INS_CMOVLE:
+	case X86_INS_CMOVNZ:
+	case X86_INS_CMOVNO:
+	case X86_INS_CMOVNP:
+	case X86_INS_CMOVNS:
+	case X86_INS_CMOVO:
+	case X86_INS_CMOVP:
+	case X86_INS_CMOVS: {
 		const char *conditional = NULL;
 		src = getarg(a, &gop, 1, 0, NULL, SRC_AR, NULL, addr);
 		dst = getarg(a, &gop, 0, 1, NULL, DST_AR, NULL, addr);
 		switch (zydecode->mnemonic) {
-		case ZYDIS_MNEMONIC_CMOVNBE:
+		case X86_INS_CMOVNBE:
 			// mov if CF = 0 *AND* ZF = 0
 			conditional = "cf,zf,|,!";
 			break;
-		case ZYDIS_MNEMONIC_CMOVNB:
+		case X86_INS_CMOVNB:
 			// mov if CF = 0
 			conditional = "cf,!";
 			break;
-		case ZYDIS_MNEMONIC_CMOVB:
+		case X86_INS_CMOVB:
 			// mov if CF = 1
 			conditional = "cf";
 			break;
-		case ZYDIS_MNEMONIC_CMOVBE:
+		case X86_INS_CMOVBE:
 			// mov if CF = 1 *OR* ZF = 1
 			conditional = "cf,zf,|";
 			break;
-		case ZYDIS_MNEMONIC_CMOVZ:
+		case X86_INS_CMOVZ:
 			// mov if ZF = 1
 			conditional = "zf";
 			break;
-		case ZYDIS_MNEMONIC_CMOVNLE:
+		case X86_INS_CMOVNLE:
 			// mov if ZF = 0 *AND* SF = OF
 			conditional = "zf,!,sf,of,^,!,&";
 			break;
-		case ZYDIS_MNEMONIC_CMOVNL:
+		case X86_INS_CMOVNL:
 			// mov if SF = OF
 			conditional = "sf,of,^,!";
 			break;
-		case ZYDIS_MNEMONIC_CMOVL:
+		case X86_INS_CMOVL:
 			// mov if SF != OF
 			conditional = "sf,of,^";
 			break;
-		case ZYDIS_MNEMONIC_CMOVLE:
+		case X86_INS_CMOVLE:
 			// mov if ZF = 1 *OR* SF != OF
 			conditional = "zf,sf,of,^,|";
 			break;
-		case ZYDIS_MNEMONIC_CMOVNZ:
+		case X86_INS_CMOVNZ:
 			// mov if ZF = 0
 			conditional = "zf,!";
 			break;
-		case ZYDIS_MNEMONIC_CMOVNO:
+		case X86_INS_CMOVNO:
 			// mov if OF = 0
 			conditional = "of,!";
 			break;
-		case ZYDIS_MNEMONIC_CMOVNP:
+		case X86_INS_CMOVNP:
 			// mov if PF = 0
 			conditional = "pf,!";
 			break;
-		case ZYDIS_MNEMONIC_CMOVNS:
+		case X86_INS_CMOVNS:
 			// mov if SF = 0
 			conditional = "sf,!";
 			break;
-		case ZYDIS_MNEMONIC_CMOVO:
+		case X86_INS_CMOVO:
 			// mov if OF = 1
 			conditional = "of";
 			break;
-		case ZYDIS_MNEMONIC_CMOVP:
+		case X86_INS_CMOVP:
 			// mov if PF = 1
 			conditional = "pf";
 			break;
-		case ZYDIS_MNEMONIC_CMOVS:
+		case X86_INS_CMOVS:
 			// mov if SF = 1
 			conditional = "sf";
 			break;
@@ -623,39 +642,39 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			esilprintf(op, "%s,?{,%s,%s,}", conditional, src, dst);
 		}
 	} break;
-	case ZYDIS_MNEMONIC_STOSB:
+	case X86_INS_STOSB:
 		if (a->bits < 32) {
 			rz_strbuf_appendf(&op->esil, "al,di,=[1],df,?{,1,di,-=,},df,!,?{,1,di,+=,}");
 		} else {
 			rz_strbuf_appendf(&op->esil, "al,edi,=[1],df,?{,1,edi,-=,},df,!,?{,1,edi,+=,}");
 		}
 		break;
-	case ZYDIS_MNEMONIC_STOSW:
+	case X86_INS_STOSW:
 		if (a->bits < 32) {
 			rz_strbuf_appendf(&op->esil, "ax,di,=[2],df,?{,2,di,-=,},df,!,?{,2,di,+=,}");
 		} else {
 			rz_strbuf_appendf(&op->esil, "ax,edi,=[2],df,?{,2,edi,-=,},df,!,?{,2,edi,+=,}");
 		}
 		break;
-	case ZYDIS_MNEMONIC_STOSD:
+	case X86_INS_STOSD:
 		rz_strbuf_appendf(&op->esil, "eax,edi,=[4],df,?{,4,edi,-=,},df,!,?{,4,edi,+=,}");
 		break;
-	case ZYDIS_MNEMONIC_STOSQ:
+	case X86_INS_STOSQ:
 		rz_strbuf_appendf(&op->esil, "rax,rdi,=[8],df,?{,8,edi,-=,},df,!,?{,8,edi,+=,}");
 		break;
-	case ZYDIS_MNEMONIC_LODSB:
+	case X86_INS_LODSB:
 		rz_strbuf_appendf(&op->esil, "%s,[1],al,=,df,?{,1,%s,-=,},df,!,?{,1,%s,+=,}", si, si, si);
 		break;
-	case ZYDIS_MNEMONIC_LODSW:
+	case X86_INS_LODSW:
 		rz_strbuf_appendf(&op->esil, "%s,[2],ax,=,df,?{,2,%s,-=,},df,!,?{,2,%s,+=,}", si, si, si);
 		break;
-	case ZYDIS_MNEMONIC_LODSD:
+	case X86_INS_LODSD:
 		rz_strbuf_appendf(&op->esil, "esi,[4],eax,=,df,?{,4,esi,-=,},df,!,?{,4,esi,+=,}");
 		break;
-	case ZYDIS_MNEMONIC_LODSQ:
+	case X86_INS_LODSQ:
 		rz_strbuf_appendf(&op->esil, "rsi,[8],rax,=,df,?{,8,rsi,-=,},df,!,?{,8,rsi,+=,}");
 		break;
-	case ZYDIS_MNEMONIC_PEXTRB:
+	case X86_INS_PEXTRB:
 		rz_strbuf_appendf(&op->esil, "TODO");
 		break;
 	// string mov
@@ -666,7 +685,7 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	// https://mudongliang.github.io/x86/html/file_module_x86_id_203.html
 	//               (vs)
 	// https://mudongliang.github.io/x86/html/file_module_x86_id_204.html
-	case ZYDIS_MNEMONIC_MOVSD:
+	case X86_INS_MOVSD:
 		// Handle "Move Scalar Double-Precision Floating-Point Value"
 		if (is_xmm_reg(INSOP(0)) || is_xmm_reg(INSOP(1))) {
 			src = getarg(a, &gop, 1, 0, NULL, SRC_AR, NULL, addr);
@@ -677,9 +696,9 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			break;
 		}
 		// fallthrough
-	case ZYDIS_MNEMONIC_MOVSB:
-	case ZYDIS_MNEMONIC_MOVSQ:
-	case ZYDIS_MNEMONIC_MOVSW:
+	case X86_INS_MOVSB:
+	case X86_INS_MOVSQ:
+	case X86_INS_MOVSW:
 		if (op->prefix & RZ_ANALYSIS_OP_PREFIX_REP) {
 			int width = INSOP(0).size;
 			src = (char *)ZydisRegisterGetString(INSOP(1).mem.base);
@@ -702,32 +721,32 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		}
 		break;
 	// comiss
-	case ZYDIS_MNEMONIC_COMISS:
-	case ZYDIS_MNEMONIC_UCOMISS:
-	case ZYDIS_MNEMONIC_VCOMISS:
-	case ZYDIS_MNEMONIC_VUCOMISS:
+	case X86_INS_COMISS:
+	case X86_INS_UCOMISS:
+	case X86_INS_VCOMISS:
+	case X86_INS_VUCOMISS:
 		op->type = RZ_ANALYSIS_OP_TYPE_SIMD | RZ_ANALYSIS_OP_TYPE_CMP;
 		break;
 	// mov
-	case ZYDIS_MNEMONIC_MOVSS:
-	case ZYDIS_MNEMONIC_MOV:
-	case ZYDIS_MNEMONIC_MOVAPS:
-	case ZYDIS_MNEMONIC_MOVAPD:
-	case ZYDIS_MNEMONIC_MOVZX:
-	case ZYDIS_MNEMONIC_MOVUPS:
-	case ZYDIS_MNEMONIC_MOVHPD:
-	case ZYDIS_MNEMONIC_MOVHPS:
-	case ZYDIS_MNEMONIC_MOVLPD:
-	case ZYDIS_MNEMONIC_MOVLPS:
-	case ZYDIS_MNEMONIC_MOVBE:
-	case ZYDIS_MNEMONIC_MOVSX:
-	case ZYDIS_MNEMONIC_MOVSXD:
-	case ZYDIS_MNEMONIC_MOVQ:
-	case ZYDIS_MNEMONIC_MOVDQU:
-	case ZYDIS_MNEMONIC_MOVDQA:
-	case ZYDIS_MNEMONIC_MOVDQ2Q: {
+	case X86_INS_MOVSS:
+	case X86_INS_MOV:
+	case X86_INS_MOVAPS:
+	case X86_INS_MOVAPD:
+	case X86_INS_MOVZX:
+	case X86_INS_MOVUPS:
+	case X86_INS_MOVHPD:
+	case X86_INS_MOVHPS:
+	case X86_INS_MOVLPD:
+	case X86_INS_MOVLPS:
+	case X86_INS_MOVBE:
+	case X86_INS_MOVSX:
+	case X86_INS_MOVSXD:
+	case X86_INS_MOVQ:
+	case X86_INS_MOVDQU:
+	case X86_INS_MOVDQA:
+	case X86_INS_MOVDQ2Q: {
 		switch (INSOP(0).type) {
-		case ZYDIS_OPERAND_TYPE_MEMORY:
+		case X86_OP_MEM:
 			if (op->prefix & RZ_ANALYSIS_OP_PREFIX_REP) {
 				int width = INSOP(0).size;
 				src = (char *)ZydisRegisterGetString(INSOP(1).mem.base);
@@ -747,12 +766,12 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 				esilprintf(op, "%s,%s", src, dst);
 			}
 			break;
-		case ZYDIS_OPERAND_TYPE_REGISTER:
+		case X86_OP_REG:
 		default:
-			if (INSOP(0).type == ZYDIS_OPERAND_TYPE_MEMORY) {
+			if (INSOP(0).type == X86_OP_MEM) {
 				op->direction = 1; // read
 			}
-			if (INSOP(1).type == ZYDIS_OPERAND_TYPE_MEMORY) {
+			if (INSOP(1).type == X86_OP_MEM) {
 				// MOV REG, [PTR + IREG*SCALE]
 				op->ireg = ZydisRegisterGetString(INSOP(1).mem.index);
 				op->disp = INSOP(1).mem.disp.value;
@@ -769,14 +788,14 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 					// Here it is still correct, because 'e** = X'
 					// turns into 'r** = X' (first one will keep higher bytes,
 					// second one will overwrite them with zeros).
-					if (zydecode->mnemonic == ZYDIS_MNEMONIC_MOVSX || zydecode->mnemonic == ZYDIS_MNEMONIC_MOVSXD) {
+					if (zydecode->mnemonic == X86_INS_MOVSX || zydecode->mnemonic == X86_INS_MOVSXD) {
 						esilprintf(op, "%d,%s,~,%s,=", width * 8, src, dst64);
 					} else {
 						esilprintf(op, "%s,%s,=", src, dst64);
 					}
 
 				} else {
-					if (zydecode->mnemonic == ZYDIS_MNEMONIC_MOVSX || zydecode->mnemonic == ZYDIS_MNEMONIC_MOVSXD) {
+					if (zydecode->mnemonic == X86_INS_MOVSX || zydecode->mnemonic == X86_INS_MOVSXD) {
 						esilprintf(op, "%d,%s,~,%s,=", width * 8, src, dst);
 					} else {
 						esilprintf(op, "%s,%s,=", src, dst);
@@ -786,7 +805,7 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			break;
 		}
 	} break;
-	case ZYDIS_MNEMONIC_MOVD:
+	case X86_INS_MOVD:
 		if (is_xmm_reg(INSOP(0))) {
 			if (!is_xmm_reg(INSOP(1))) {
 				src = getarg(a, &gop, 1, 0, NULL, SRC_AR, NULL, addr);
@@ -802,8 +821,8 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			}
 		}
 		break;
-	case ZYDIS_MNEMONIC_ROL:
-	case ZYDIS_MNEMONIC_RCL:
+	case X86_INS_ROL:
+	case X86_INS_RCL:
 		// TODO: RCL Still does not work as intended
 		//  - Set flags
 		{
@@ -812,8 +831,8 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			esilprintf(op, "%s,%s,<<<,%s,=", src, dst, dst);
 		}
 		break;
-	case ZYDIS_MNEMONIC_ROR:
-	case ZYDIS_MNEMONIC_RCR:
+	case X86_INS_ROR:
+	case X86_INS_RCR:
 		// TODO: RCR Still does not work as intended
 		//  - Set flags
 		{
@@ -822,13 +841,13 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			esilprintf(op, "%s,%s,>>>,%s,=", src, dst, dst);
 		}
 		break;
-	case ZYDIS_MNEMONIC_CPUID:
+	case X86_INS_CPUID:
 		// https://c9x.me/x86/html/file_module_x86_id_45.html
 		// GenuineIntel
 		esilprintf(op, "0xa,eax,=,0x756E6547,ebx,=,0x6C65746E,ecx,=,0x49656E69,edx,=");
 		break;
-	case ZYDIS_MNEMONIC_SHLD:
-	case ZYDIS_MNEMONIC_SHLX:
+	case X86_INS_SHLD:
+	case X86_INS_SHLX:
 		// TODO: SHLD is not implemented yet.
 		{
 			ut32 bitsize;
@@ -837,8 +856,8 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			esilprintf(op, "%s,%s,$z,zf,:=,$p,pf,:=,%d,$s,sf,:=", src, dst, bitsize - 1);
 		}
 		break;
-	case ZYDIS_MNEMONIC_SAR:
-		// TODO: Set CF. See case ZYDIS_MNEMONIC_SHL for more details.
+	case X86_INS_SAR:
+		// TODO: Set CF. See case X86_INS_SHL for more details.
 		{
 			ut32 bitsize;
 			src = getarg(a, &gop, 1, 0, NULL, SRC_AR, NULL, addr);
@@ -848,15 +867,15 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 				src, dst_r, src, dst_r, dst_w, bitsize - 1);
 		}
 		break;
-	case ZYDIS_MNEMONIC_SARX: {
+	case X86_INS_SARX: {
 		dst = getarg(a, &gop, 0, 1, NULL, 0, NULL, addr);
 		src = getarg(a, &gop, 1, 0, NULL, 1, NULL, addr);
 		src2 = getarg(a, &gop, 1, 0, NULL, 2, NULL, addr);
 		esilprintf(op, "%s,%s,>>>>,%s,=", src2, src, dst);
 	} break;
-	case ZYDIS_MNEMONIC_SHL: {
+	case X86_INS_SHL: {
 		ut64 val = 0;
-		switch (zydeop[0].size) {
+		switch (INSOP(0).size) {
 		case 1:
 			val = 0x80;
 			break;
@@ -870,7 +889,7 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			val = 0x8000000000000000;
 			break;
 		default:
-			RZ_LOG_ERROR("x86: unknown operand size: %d\n", zydeop[0].size);
+			RZ_LOG_ERROR("x86: unknown operand size: %d\n", INSOP(0).size);
 			val = 256;
 			break;
 		}
@@ -881,13 +900,13 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		esilprintf(op, "0,%s,!,!,?{,1,%s,-,%s,<<,0x%llx,&,!,!,^,},%s,%s,$z,zf,:=,$p,pf,:=,%d,$s,sf,:=,cf,=",
 			src, src, dst, val, src, dst2, bitsize - 1);
 	} break;
-	case ZYDIS_MNEMONIC_SALC:
+	case X86_INS_SALC:
 		esilprintf(op, "$z,DUP,zf,=,al,=");
 		break;
-	case ZYDIS_MNEMONIC_SHR:
-	case ZYDIS_MNEMONIC_SHRD:
-	case ZYDIS_MNEMONIC_SHRX:
-		// TODO: Set CF: See case ZYDIS_MNEMONIC_SAL for more details.
+	case X86_INS_SHR:
+	case X86_INS_SHRD:
+	case X86_INS_SHRX:
+		// TODO: Set CF: See case X86_INS_SAL for more details.
 		{
 			ut32 bitsize;
 			src = getarg(a, &gop, 1, 0, NULL, SRC_AR, NULL, addr);
@@ -897,41 +916,41 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 				src, dst_r, src, dst_r, dst_w, bitsize - 1);
 		}
 		break;
-	case ZYDIS_MNEMONIC_CBW:
+	case X86_INS_CBW:
 		esilprintf(op, "al,ax,=,7,ax,>>,?{,0xff00,ax,|=,}");
 		break;
-	case ZYDIS_MNEMONIC_CWDE:
+	case X86_INS_CWDE:
 		esilprintf(op, "ax,eax,=,15,eax,>>,?{,0xffff0000,eax,|=,}");
 		break;
-	case ZYDIS_MNEMONIC_CDQ:
+	case X86_INS_CDQ:
 		esilprintf(op, "0,edx,=,31,eax,>>,?{,0xffffffff,edx,=,}");
 		break;
-	case ZYDIS_MNEMONIC_CDQE:
+	case X86_INS_CDQE:
 		esilprintf(op, "eax,rax,=,31,rax,>>,?{,0xffffffff00000000,rax,|=,}");
 		break;
-	case ZYDIS_MNEMONIC_AAA:
+	case X86_INS_AAA:
 		esilprintf(op, "0,cf,:=,0,af,:=,9,al,>,?{,10,al,-=,1,ah,+=,1,cf,:=,1,af,:=,}"); // don't
 		break;
-	case ZYDIS_MNEMONIC_AAD:
+	case X86_INS_AAD:
 		arg0 = "0,zf,:=,0,sf,:=,0,pf,:=,10,ah,*,al,+,ax,=";
 		arg1 = "0,al,==,?{,1,zf,:=,},2,al,%,0,==,?{,1,pf,:=,},7,al,>>,?{,1,sf,:=,}";
 		esilprintf(op, "%s,%s", arg0, arg1);
 		break;
-	case ZYDIS_MNEMONIC_AAM:
+	case X86_INS_AAM:
 		arg0 = "0,zf,:=,0,sf,:=,0,pf,:=,10,al,/,ah,=,10,al,%,al,=";
 		arg1 = "0,al,==,?{,1,zf,:=,},2,al,%,0,==,?{,1,pf,:=,},7,al,>>,?{,1,sf,:=,}";
 		esilprintf(op, "%s,%s", arg0, arg1);
 		break;
-	// XXX: case ZYDIS_MNEMONIC_AAS: too tough to implement. BCD is deprecated anyways
-	case ZYDIS_MNEMONIC_CMP:
-	case ZYDIS_MNEMONIC_CMPPD:
-	case ZYDIS_MNEMONIC_CMPPS:
-	case ZYDIS_MNEMONIC_CMPSW:
-	case ZYDIS_MNEMONIC_CMPSD:
-	case ZYDIS_MNEMONIC_CMPSQ:
-	case ZYDIS_MNEMONIC_CMPSB:
-	case ZYDIS_MNEMONIC_CMPSS:
-	case ZYDIS_MNEMONIC_TEST: {
+	// XXX: case X86_INS_AAS: too tough to implement. BCD is deprecated anyways
+	case X86_INS_CMP:
+	case X86_INS_CMPPD:
+	case X86_INS_CMPPS:
+	case X86_INS_CMPSW:
+	case X86_INS_CMPSD:
+	case X86_INS_CMPSQ:
+	case X86_INS_CMPSB:
+	case X86_INS_CMPSS:
+	case X86_INS_TEST: {
 		ut32 bitsize;
 		src = getarg(a, &gop, 1, 0, NULL, SRC_AR, NULL, addr);
 		dst = getarg(a, &gop, 0, 0, NULL, DST_AR, &bitsize, addr);
@@ -940,10 +959,10 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			break;
 		}
 
-		if (zydecode->mnemonic == ZYDIS_MNEMONIC_TEST) {
+		if (zydecode->mnemonic == X86_INS_TEST) {
 			esilprintf(op, "0,%s,%s,&,==,$z,zf,:=,$p,pf,:=,%u,$s,sf,:=,0,cf,:=,0,of,:=",
 				src, dst, bitsize - 1);
-		} else if (zydecode->mnemonic == ZYDIS_MNEMONIC_CMP) {
+		} else if (zydecode->mnemonic == X86_INS_CMP) {
 			esilprintf(op,
 				"%s,%s,==,$z,zf,:=,%u,$b,cf,:=,$p,pf,:=,%u,$s,sf,:=,"
 				"%s,0x%" PFMT64x ",-,!,%u,$o,^,of,:=,3,$b,af,:=",
@@ -959,13 +978,13 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 				width, rsrc, width, rdst, width, rsrc, width, rdst);
 		}
 	} break;
-	case ZYDIS_MNEMONIC_LEA: {
+	case X86_INS_LEA: {
 		src = getarg(a, &gop, 1, 2, NULL, SRC_AR, NULL, addr);
 		dst = getarg(a, &gop, 0, 1, NULL, DST_AR, NULL, addr);
 		esilprintf(op, "%s,%s", src, dst);
 	} break;
 	// pushal, popal - push/pop EAX,EBX,ECX,EDX,ESP,EBP,ESI,EDI
-	case ZYDIS_MNEMONIC_PUSHAD: {
+	case X86_INS_PUSHAD: {
 		esilprintf(op,
 			"0,%s,+,"
 			"%d,%s,-=,%s,%s,=[%d],"
@@ -986,22 +1005,22 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			rs, sp, "esi", sp, rs,
 			rs, sp, "edi", sp, rs);
 	} break;
-	case ZYDIS_MNEMONIC_ENTER:
-	case ZYDIS_MNEMONIC_PUSH: {
+	case X86_INS_ENTER:
+	case X86_INS_PUSH: {
 		dst = getarg(a, &gop, 0, 0, NULL, DST_AR, NULL, addr);
 		esilprintf(op, "%s,%d,%s,-,=[%d],%d,%s,-=",
 			dst ? dst : "eax", rs, sp, rs, rs, sp);
 	} break;
-	case ZYDIS_MNEMONIC_PUSHF:
-	case ZYDIS_MNEMONIC_PUSHFD:
-	case ZYDIS_MNEMONIC_PUSHFQ:
+	case X86_INS_PUSHF:
+	case X86_INS_PUSHFD:
+	case X86_INS_PUSHFQ:
 		esilprintf(op, "%d,%s,-=,eflags,%s,=[%d]", rs, sp, sp, rs);
 		break;
-	case ZYDIS_MNEMONIC_LEAVE:
+	case X86_INS_LEAVE:
 		esilprintf(op, "%s,%s,=,%s,[%d],%s,=,%d,%s,+=",
 			bp, sp, sp, rs, bp, rs, sp);
 		break;
-	case ZYDIS_MNEMONIC_POPAD: {
+	case X86_INS_POPAD: {
 		esilprintf(op,
 			"%s,[%d],%d,%s,+=,%s,=,"
 			"%s,[%d],%d,%s,+=,%s,=,"
@@ -1022,16 +1041,16 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			sp, rs, rs, sp, "eax",
 			sp);
 	} break;
-	case ZYDIS_MNEMONIC_POP: {
+	case X86_INS_POP: {
 		switch (INSOP(0).type) {
-		case ZYDIS_OPERAND_TYPE_MEMORY: {
+		case X86_OP_MEM: {
 			dst = getarg(a, &gop, 0, 1, NULL, DST_AR, NULL, addr);
 			esilprintf(op,
 				"%s,[%d],%d,%s,+=,%s",
 				sp, rs, rs, sp, dst);
 			break;
 		}
-		case ZYDIS_OPERAND_TYPE_REGISTER:
+		case X86_OP_REG:
 		default: {
 			dst = getarg(a, &gop, 0, 0, NULL, DST_AR, NULL, addr);
 			esilprintf(op,
@@ -1041,143 +1060,161 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		}
 		}
 	} break;
-	case ZYDIS_MNEMONIC_POPF:
-	case ZYDIS_MNEMONIC_POPFD:
-	case ZYDIS_MNEMONIC_POPFQ:
+	case X86_INS_POPF:
+	case X86_INS_POPFD:
+	case X86_INS_POPFQ:
 		esilprintf(op, "%s,[%d],eflags,=", sp, rs);
 		break;
-	case ZYDIS_MNEMONIC_RET:
-	case ZYDIS_MNEMONIC_IRET:
-	case ZYDIS_MNEMONIC_IRETD:
-	case ZYDIS_MNEMONIC_IRETQ:
-	case ZYDIS_MNEMONIC_SYSRET: {
+	case X86_INS_RET:
+	case X86_INS_IRET:
+	case X86_INS_IRETD:
+	case X86_INS_IRETQ:
+	case X86_INS_SYSRET: {
 		int cleanup = 0;
 		if (INSOPS > 0) {
-			cleanup = (int)get_imm_reg_value(&INSOP(0), addr, zydecode->length);
+			cleanup = (int)get_imm_reg_value(&INSOP(0), addr, zydecode->length, a->bits);
 		}
 		esilprintf(op, "%s,[%d],%s,=,%d,%s,+=",
 			sp, rs, pc, rs + cleanup, sp);
 	} break;
-	case ZYDIS_MNEMONIC_INT3:
+	case X86_INS_INT3:
 		esilprintf(op, "3,$");
 		break;
-	case ZYDIS_MNEMONIC_INT1:
+	case X86_INS_INT1:
 		esilprintf(op, "1,$");
 		break;
-	case ZYDIS_MNEMONIC_INT:
+	case X86_INS_INT:
 		esilprintf(op, "%d,$",
-			RZ_ABS((int)get_imm_reg_value(&INSOP(0), addr, zydecode->length)));
+			RZ_ABS((int)get_imm_reg_value(&INSOP(0), addr, zydecode->length, a->bits)));
 		break;
-	case ZYDIS_MNEMONIC_SYSCALL:
-	case ZYDIS_MNEMONIC_SYSENTER:
-	case ZYDIS_MNEMONIC_SYSEXIT:
+	case X86_INS_SYSCALL:
+	case X86_INS_SYSENTER:
+	case X86_INS_SYSEXIT:
 		break;
-	case ZYDIS_MNEMONIC_INTO:
-	case ZYDIS_MNEMONIC_VMCALL:
-	case ZYDIS_MNEMONIC_VMMCALL:
-		esilprintf(op, "%d,$", (int)get_imm_reg_value(&INSOP(0), addr, zydecode->length));
+	case X86_INS_INTO:
+	case X86_INS_VMCALL:
+	case X86_INS_VMMCALL:
+		esilprintf(op, "%d,$", (int)get_imm_reg_value(&INSOP(0), addr, zydecode->length, a->bits));
 		break;
-	case ZYDIS_MNEMONIC_JL:
-	case ZYDIS_MNEMONIC_JLE:
-	case ZYDIS_MNEMONIC_JNBE:
-	case ZYDIS_MNEMONIC_JNB:
-	case ZYDIS_MNEMONIC_JB:
-	case ZYDIS_MNEMONIC_JBE:
-	case ZYDIS_MNEMONIC_JCXZ:
-	case ZYDIS_MNEMONIC_JECXZ:
-	case ZYDIS_MNEMONIC_JRCXZ:
-	case ZYDIS_MNEMONIC_JO:
-	case ZYDIS_MNEMONIC_JNO:
-	case ZYDIS_MNEMONIC_JS:
-	case ZYDIS_MNEMONIC_JNS:
-	case ZYDIS_MNEMONIC_JP:
-	case ZYDIS_MNEMONIC_JNP:
-	case ZYDIS_MNEMONIC_JZ:
-	case ZYDIS_MNEMONIC_JNZ:
-	case ZYDIS_MNEMONIC_JNLE:
-	case ZYDIS_MNEMONIC_JNL:
-	case ZYDIS_MNEMONIC_LOOP:
-	case ZYDIS_MNEMONIC_LOOPE:
-	case ZYDIS_MNEMONIC_LOOPNE: {
+	case X86_INS_JL:
+	case X86_INS_JLE:
+	case X86_INS_JA:
+	case X86_INS_JAE:
+	case X86_INS_JB:
+	case X86_INS_JBE:
+	case X86_INS_JCXZ:
+	case X86_INS_JECXZ:
+	case X86_INS_JRCXZ:
+	case X86_INS_JO:
+	case X86_INS_JNO:
+	case X86_INS_JS:
+	case X86_INS_JNS:
+	case X86_INS_JP:
+	case X86_INS_JNP:
+	case X86_INS_JE:
+	case X86_INS_JNE:
+	case X86_INS_JG:
+	case X86_INS_JGE:
+	case X86_INS_LOOP:
+	case X86_INS_LOOPE:
+	case X86_INS_LOOPNE: {
 		const char *cnt = (a->bits == 16) ? "cx" : (a->bits == 32) ? "ecx"
 									   : "rcx";
 		dst = getarg(a, &gop, 0, 2, NULL, DST_AR, NULL, addr);
 		switch (zydecode->mnemonic) {
-		case ZYDIS_MNEMONIC_JL:
+		case X86_INS_JL:
 			esilprintf(op, "of,sf,^,?{,%s,%s,=,}", dst, pc);
 			break;
-		case ZYDIS_MNEMONIC_JLE:
+		case X86_INS_JLE:
 			esilprintf(op, "of,sf,^,zf,|,?{,%s,%s,=,}", dst, pc);
 			break;
-		case ZYDIS_MNEMONIC_JNBE:
+		case X86_INS_JA:
 			esilprintf(op, "cf,zf,|,!,?{,%s,%s,=,}", dst, pc);
 			break;
-		case ZYDIS_MNEMONIC_JNB:
+		case X86_INS_JAE:
 			esilprintf(op, "cf,!,?{,%s,%s,=,}", dst, pc);
 			break;
-		case ZYDIS_MNEMONIC_JB:
+		case X86_INS_JB:
 			esilprintf(op, "cf,?{,%s,%s,=,}", dst, pc);
 			break;
-		case ZYDIS_MNEMONIC_JO:
+		case X86_INS_JO:
 			esilprintf(op, "of,?{,%s,%s,=,}", dst, pc);
 			break;
-		case ZYDIS_MNEMONIC_JNO:
+		case X86_INS_JNO:
 			esilprintf(op, "of,!,?{,%s,%s,=,}", dst, pc);
 			break;
-		case ZYDIS_MNEMONIC_JZ:
+		case X86_INS_JE:
 			esilprintf(op, "zf,?{,%s,%s,=,}", dst, pc);
 			break;
-		case ZYDIS_MNEMONIC_JNL:
+		case X86_INS_JGE:
 			esilprintf(op, "of,!,sf,^,?{,%s,%s,=,}", dst, pc);
 			break;
-		case ZYDIS_MNEMONIC_JNZ:
+		case X86_INS_JNE:
 			esilprintf(op, "zf,!,?{,%s,%s,=,}", dst, pc);
 			break;
-		case ZYDIS_MNEMONIC_JNLE:
+		case X86_INS_JG:
 			esilprintf(op, "sf,of,!,^,zf,!,&,?{,%s,%s,=,}", dst, pc);
 			break;
-		case ZYDIS_MNEMONIC_JS:
+		case X86_INS_JS:
 			esilprintf(op, "sf,?{,%s,%s,=,}", dst, pc);
 			break;
-		case ZYDIS_MNEMONIC_JNS:
+		case X86_INS_JNS:
 			esilprintf(op, "sf,!,?{,%s,%s,=,}", dst, pc);
 			break;
-		case ZYDIS_MNEMONIC_JP:
+		case X86_INS_JP:
 			esilprintf(op, "pf,?{,%s,%s,=,}", dst, pc);
 			break;
-		case ZYDIS_MNEMONIC_JNP:
+		case X86_INS_JNP:
 			esilprintf(op, "pf,!,?{,%s,%s,=,}", dst, pc);
 			break;
-		case ZYDIS_MNEMONIC_JBE:
+		case X86_INS_JBE:
 			esilprintf(op, "zf,cf,|,?{,%s,%s,=,}", dst, pc);
 			break;
-		case ZYDIS_MNEMONIC_JCXZ:
+		case X86_INS_JCXZ:
 			esilprintf(op, "cx,!,?{,%s,%s,=,}", dst, pc);
 			break;
-		case ZYDIS_MNEMONIC_JECXZ:
+		case X86_INS_JECXZ:
 			esilprintf(op, "ecx,!,?{,%s,%s,=,}", dst, pc);
 			break;
-		case ZYDIS_MNEMONIC_JRCXZ:
+		case X86_INS_JRCXZ:
 			esilprintf(op, "rcx,!,?{,%s,%s,=,}", dst, pc);
 			break;
-		case ZYDIS_MNEMONIC_LOOP:
+		case X86_INS_LOOP:
 			esilprintf(op, "1,%s,-=,%s,?{,%s,%s,=,}", cnt, cnt, dst, pc);
 			break;
-		case ZYDIS_MNEMONIC_LOOPE:
+		case X86_INS_LOOPE:
 			esilprintf(op, "1,%s,-=,%s,?{,zf,?{,%s,%s,=,},}",
 				cnt, cnt, dst, pc);
 			break;
-		case ZYDIS_MNEMONIC_LOOPNE:
+		case X86_INS_LOOPNE:
 			esilprintf(op, "1,%s,-=,%s,?{,zf,!,?{,%s,%s,=,},}",
 				cnt, cnt, dst, pc);
 			break;
 		default: break;
 		}
 	} break;
-	case ZYDIS_MNEMONIC_CALL: {
+	case X86_INS_CALL: {
+		if (zydecode->attributes & ZYDIS_ATTRIB_HAS_SEGMENT) { // far calls
+			arg0 = getarg(a, &gop, 0, 0, NULL, ARG0_AR, NULL, addr);
+			arg1 = getarg(a, &gop, 0, 0, NULL, ARG1_AR, NULL, addr);
+			if (arg1) {
+				esilprintf(op,
+					"2,%s,-=,cs,%s,=[2]," // push CS
+					"%d,%s,-=,%s,%s,=[]," // push IP/EIP
+					"%s,cs,=," // set CS
+					"%s,%s,=", // set IP/EIP
+					sp, sp, rs, sp, pc, sp, arg0, arg1, pc);
+			} else {
+				esilprintf(op,
+					"%s,%s,-=,%d,%s,=[]," // push IP/EIP
+					"%s,%s,=", // set IP/EIP
+					sp, sp, rs, sp, arg0, pc);
+			}
+			break;
+		}
 		if (a->read_at && a->bits != 16) {
 			ut8 thunk[4] = { 0 };
-			if (a->read_at(a, (ut64)get_imm_reg_value(&INSOP(0), addr, zydecode->length), thunk, sizeof(thunk))) {
+			if (a->read_at(a, (ut64)get_imm_reg_value(&INSOP(0), addr, zydecode->length, a->bits), thunk, sizeof(thunk))) {
 				/* 8b xx x4    mov <reg>, dword [esp]
 					   c3          ret
 					*/
@@ -1197,61 +1234,45 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			"=[],"
 			"%s,=",
 			arg0, pc, rs, sp, sp, pc);
-	} break;
-	// case ZYDIS_MNEMONIC_LCALL: {
-	//	arg0 = getarg(a, &gop, 0, 0, NULL, ARG0_AR, NULL,addr);
-	//	arg1 = getarg(a, &gop, 1, 0, NULL, ARG1_AR, NULL,addr);
-	//	if (arg1) {
-	//		esilprintf(op,
-	//			"2,%s,-=,cs,%s,=[2]," // push CS
-	//			"%d,%s,-=,%s,%s,=[]," // push IP/EIP
-	//			"%s,cs,=," // set CS
-	//			"%s,%s,=", // set IP/EIP
-	//			sp, sp, rs, sp, pc, sp, arg0, arg1, pc);
-	//	} else {
-	//		esilprintf(op,
-	//			"%s,%s,-=,%d,%s,=[]," // push IP/EIP
-	//			"%s,%s,=", // set IP/EIP
-	//			sp, sp, rs, sp, arg0, pc);
-	//	}
-	// } break;
-	case ZYDIS_MNEMONIC_JMP: {
+		break;
+	}
+	case X86_INS_JMP: {
 		src = getarg(a, &gop, 0, 0, NULL, SRC_AR, NULL, addr);
 		esilprintf(op, "%s,%s,=", src, pc);
 	}
 		// TODO: what if UJMP?
 		switch (INSOP(0).type) {
-		case ZYDIS_OPERAND_TYPE_IMMEDIATE:
-			if (INSOP(1).type == ZYDIS_OPERAND_TYPE_IMMEDIATE) {
-				ut64 seg = get_imm_reg_value(&INSOP(0), addr, zydecode->length);
-				ut64 off = get_imm_reg_value(&INSOP(1), addr, zydecode->length);
+		case X86_OP_IMM:
+			if (INSOP(1).type == X86_OP_IMM) {
+				ut64 seg = get_imm_reg_value(&INSOP(0), addr, zydecode->length, a->bits);
+				ut64 off = get_imm_reg_value(&INSOP(1), addr, zydecode->length, a->bits);
 				esilprintf(
 					op,
 					"0x%" PFMT64x ",cs,=,"
 					"0x%" PFMT64x ",%s,=",
 					seg, off, pc);
 			} else {
-				ut64 dst = get_imm_reg_value(&INSOP(0), addr, zydecode->length);
-				esilprintf(op, "0x%" PFMT64x ",%s,=", dst, pc);
+				ut64 dst = get_imm_reg_value(&INSOP(0), addr, zydecode->length, a->bits);
+				esilprintf(op, "0x%" PFMT64x ",%s,=", dst + (addr & 0xF0000), pc);
 			}
 			break;
-		case ZYDIS_OPERAND_TYPE_MEMORY:
-			if (INSOP(0).mem.base == ZYDIS_REGISTER_RIP) {
+		case X86_OP_MEM:
+			if (INSOP(0).mem.base == X86_REG_RIP) {
 				/* nothing here */
 			} else {
 				ZydisDecodedOperand in = INSOP(0);
 				if (in.mem.index == 0 && in.mem.base == 0 && in.mem.scale == 1) {
-					if (in.mem.segment != ZYDIS_REGISTER_NONE) {
+					if (in.mem.segment != X86_REG_NONE) {
 						esilprintf(
 							op,
 							"4,%s,<<,0x%" PFMT64x ",+,[],%s,=",
-							INSOP(0).mem.segment == ZYDIS_REGISTER_ES           ? "es"
-								: INSOP(0).mem.segment == ZYDIS_REGISTER_CS ? "cs"
-								: INSOP(0).mem.segment == ZYDIS_REGISTER_DS ? "ds"
-								: INSOP(0).mem.segment == ZYDIS_REGISTER_FS ? "fs"
-								: INSOP(0).mem.segment == ZYDIS_REGISTER_GS ? "gs"
-								: INSOP(0).mem.segment == ZYDIS_REGISTER_SS ? "ss"
-													    : "unknown_segment_register",
+							INSOP(0).mem.segment == X86_REG_ES           ? "es"
+								: INSOP(0).mem.segment == X86_REG_CS ? "cs"
+								: INSOP(0).mem.segment == X86_REG_DS ? "ds"
+								: INSOP(0).mem.segment == X86_REG_FS ? "fs"
+								: INSOP(0).mem.segment == X86_REG_GS ? "gs"
+								: INSOP(0).mem.segment == X86_REG_SS ? "ss"
+												     : "unknown_segment_register",
 							(ut64)INSOP(0).mem.disp.value,
 							pc);
 					} else {
@@ -1263,42 +1284,50 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 				}
 			}
 			break;
-		case ZYDIS_OPERAND_TYPE_REGISTER: {
+		case X86_OP_REG: {
 			src = getarg(a, &gop, 0, 0, NULL, SRC_AR, NULL, addr);
 			op->src[0] = rz_analysis_value_new();
 			op->src[0]->reg = rz_reg_get(a->reg, src, RZ_REG_TYPE_GPR);
-			// XXX fallthrough
+			break;
 		}
-		// case ZYDIS_OPERAND_TYPE_FP:
+		case X86_OP_PTR: {
+			ut64 seg = INSOP(0).ptr.segment;
+			ut64 off = INSOP(0).ptr.offset;
+			esilprintf(
+				op,
+				"0x%" PFMT64x ",cs,=,"
+				"0x%" PFMT64x ",%s,=",
+				seg, off, pc);
+		}
 		default: // other?
 			break;
 		}
 		break;
-	case ZYDIS_MNEMONIC_IN:
-	case ZYDIS_MNEMONIC_INSW:
-	case ZYDIS_MNEMONIC_INSD:
-	case ZYDIS_MNEMONIC_INSB:
+	case X86_INS_IN:
+	case X86_INS_INSW:
+	case X86_INS_INSD:
+	case X86_INS_INSB:
 		if (ISIMM(1)) {
-			op->val = get_imm_reg_value(&INSOP(1), addr, zydecode->length);
+			op->val = get_imm_reg_value(&INSOP(1), addr, zydecode->length, a->bits);
 		}
 		break;
-	case ZYDIS_MNEMONIC_OUT:
-	case ZYDIS_MNEMONIC_OUTSB:
-	case ZYDIS_MNEMONIC_OUTSD:
-	case ZYDIS_MNEMONIC_OUTSW:
+	case X86_INS_OUT:
+	case X86_INS_OUTSB:
+	case X86_INS_OUTSD:
+	case X86_INS_OUTSW:
 		if (ISIMM(0)) {
-			op->val = get_imm_reg_value(&INSOP(0), addr, zydecode->length);
+			op->val = get_imm_reg_value(&INSOP(0), addr, zydecode->length, a->bits);
 		}
 		break;
-	case ZYDIS_MNEMONIC_VXORPD:
-	case ZYDIS_MNEMONIC_VXORPS:
-	case ZYDIS_MNEMONIC_VPXORD:
-	case ZYDIS_MNEMONIC_VPXORQ:
-	case ZYDIS_MNEMONIC_VPXOR:
-	case ZYDIS_MNEMONIC_XORPS:
-	case ZYDIS_MNEMONIC_KXORW:
-	case ZYDIS_MNEMONIC_PXOR:
-	case ZYDIS_MNEMONIC_XOR: {
+	case X86_INS_VXORPD:
+	case X86_INS_VXORPS:
+	case X86_INS_VPXORD:
+	case X86_INS_VPXORQ:
+	case X86_INS_VPXOR:
+	case X86_INS_XORPS:
+	case X86_INS_KXORW:
+	case X86_INS_PXOR:
+	case X86_INS_XOR: {
 		ut32 bitsize;
 		src = getarg(a, &gop, 1, 0, NULL, SRC_AR, NULL, addr);
 		dst = getarg(a, &gop, 0, 1, "^", DST_AR, &bitsize, addr);
@@ -1314,7 +1343,7 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 				src, dst, bitsize - 1);
 		}
 	} break;
-	case ZYDIS_MNEMONIC_BSF: {
+	case X86_INS_BSF: {
 		src = getarg(a, &gop, 1, 0, NULL, SRC_AR, NULL, addr);
 		dst = getarg(a, &gop, 0, 0, NULL, DST_AR, NULL, addr);
 		int bits = INSOP(0).size * 8;
@@ -1329,7 +1358,7 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			       "%d,DUP,%d,-,1,<<,%s,&,?{,%d,-,%s,=,BREAK,},12,REPEAT",
 			src, bits, bits, src, bits, dst);
 	} break;
-	case ZYDIS_MNEMONIC_BSR: {
+	case X86_INS_BSR: {
 		src = getarg(a, &gop, 1, 0, NULL, SRC_AR, NULL, addr);
 		dst = getarg(a, &gop, 0, 0, NULL, DST_AR, NULL, addr);
 		int bits = INSOP(0).size * 8;
@@ -1343,7 +1372,7 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			       "%d,DUP,1,<<,%s,&,?{,%s,=,BREAK,},12,REPEAT",
 			src, bits, src, dst);
 	} break;
-	case ZYDIS_MNEMONIC_BSWAP: {
+	case X86_INS_BSWAP: {
 		dst = getarg(a, &gop, 0, 0, NULL, DST_AR, NULL, addr);
 		if (INSOP(0).size == 4) {
 			esilprintf(op, "0xff000000,24,%s,NUM,<<,&,24,%s,NUM,>>,|,"
@@ -1361,7 +1390,7 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 				dst, dst, dst, dst, dst, dst, dst, dst, dst);
 		}
 	} break;
-	case ZYDIS_MNEMONIC_OR:
+	case X86_INS_OR:
 		// The OF and CF flags are cleared; the SF, ZF, and PF flags are
 		// set according to the result. The state of the AF flag is
 		// undefined.
@@ -1373,7 +1402,7 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 				src, dst, bitsize - 1);
 		}
 		break;
-	case ZYDIS_MNEMONIC_INC:
+	case X86_INS_INC:
 		// The CF flag is not affected. The OF, SF, ZF, AF, and PF flags
 		// are set according to the result.
 		{
@@ -1382,7 +1411,7 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			esilprintf(op, "%s,%d,$o,of,:=,%d,$s,sf,:=,$z,zf,:=,$p,pf,:=,3,$c,af,:=", src, bitsize - 1, bitsize - 1);
 		}
 		break;
-	case ZYDIS_MNEMONIC_DEC:
+	case X86_INS_DEC:
 		// The CF flag is not affected. The OF, SF, ZF, AF, and PF flags
 		// are set according to the result.
 		{
@@ -1391,19 +1420,19 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			esilprintf(op, "%s,%d,$o,of,:=,%d,$s,sf,:=,$z,zf,:=,$p,pf,:=,3,$b,af,:=", src, bitsize - 1, bitsize - 1);
 		}
 		break;
-	case ZYDIS_MNEMONIC_PSUBB:
-	case ZYDIS_MNEMONIC_PSUBW:
-	case ZYDIS_MNEMONIC_PSUBD:
-	case ZYDIS_MNEMONIC_PSUBQ:
-	case ZYDIS_MNEMONIC_PSUBSB:
-	case ZYDIS_MNEMONIC_PSUBSW:
-	case ZYDIS_MNEMONIC_PSUBUSB:
-	case ZYDIS_MNEMONIC_PSUBUSW: {
+	case X86_INS_PSUBB:
+	case X86_INS_PSUBW:
+	case X86_INS_PSUBD:
+	case X86_INS_PSUBQ:
+	case X86_INS_PSUBSB:
+	case X86_INS_PSUBSW:
+	case X86_INS_PSUBUSB:
+	case X86_INS_PSUBUSW: {
 		src = getarg(a, &gop, 1, 0, NULL, SRC_AR, NULL, addr);
 		dst = getarg(a, &gop, 0, 1, "-", DST_AR, NULL, addr);
 		esilprintf(op, "%s,%s", src, dst);
 	} break;
-	case ZYDIS_MNEMONIC_SUB: {
+	case X86_INS_SUB: {
 		ut32 bitsize;
 		src = getarg(a, &gop, 1, 0, NULL, SRC_AR, NULL, addr);
 		dst = getarg(a, &gop, 0, 1, "-", DST_AR, &bitsize, addr);
@@ -1418,7 +1447,7 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		esilprintf(op, "%s,%s,%s,0x%" PFMT64x ",-,!,%u,$o,^,of,:=,%u,$s,sf,:=,$z,zf,:=,$p,pf,:=,%u,$b,cf,:=,3,$b,af,:=",
 			src, dst, src, 1ULL << (bitsize - 1), bitsize - 1, bitsize - 1, bitsize);
 	} break;
-	case ZYDIS_MNEMONIC_SBB:
+	case X86_INS_SBB:
 		// dst = dst - (src + cf)
 		{
 			ut32 bitsize;
@@ -1428,38 +1457,38 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 				src, dst, bitsize - 1, bitsize - 1, bitsize);
 		}
 		break;
-	case ZYDIS_MNEMONIC_LIDT:
+	case X86_INS_LIDT:
 		break;
-	case ZYDIS_MNEMONIC_SIDT:
+	case X86_INS_SIDT:
 		break;
-	case ZYDIS_MNEMONIC_RDRAND:
-	case ZYDIS_MNEMONIC_RDSEED:
-	case ZYDIS_MNEMONIC_RDMSR:
-	case ZYDIS_MNEMONIC_RDPMC:
-	case ZYDIS_MNEMONIC_RDTSC:
-	case ZYDIS_MNEMONIC_RDTSCP:
-	case ZYDIS_MNEMONIC_CRC32:
-	case ZYDIS_MNEMONIC_SHA1MSG1:
-	case ZYDIS_MNEMONIC_SHA1MSG2:
-	case ZYDIS_MNEMONIC_SHA1NEXTE:
-	case ZYDIS_MNEMONIC_SHA1RNDS4:
-	case ZYDIS_MNEMONIC_SHA256MSG1:
-	case ZYDIS_MNEMONIC_SHA256MSG2:
-	case ZYDIS_MNEMONIC_SHA256RNDS2:
-	case ZYDIS_MNEMONIC_AESDECLAST:
-	case ZYDIS_MNEMONIC_AESDEC:
-	case ZYDIS_MNEMONIC_AESENCLAST:
-	case ZYDIS_MNEMONIC_AESENC:
-	case ZYDIS_MNEMONIC_AESIMC:
-	case ZYDIS_MNEMONIC_AESKEYGENASSIST:
+	case X86_INS_RDRAND:
+	case X86_INS_RDSEED:
+	case X86_INS_RDMSR:
+	case X86_INS_RDPMC:
+	case X86_INS_RDTSC:
+	case X86_INS_RDTSCP:
+	case X86_INS_CRC32:
+	case X86_INS_SHA1MSG1:
+	case X86_INS_SHA1MSG2:
+	case X86_INS_SHA1NEXTE:
+	case X86_INS_SHA1RNDS4:
+	case X86_INS_SHA256MSG1:
+	case X86_INS_SHA256MSG2:
+	case X86_INS_SHA256RNDS2:
+	case X86_INS_AESDECLAST:
+	case X86_INS_AESDEC:
+	case X86_INS_AESENCLAST:
+	case X86_INS_AESENC:
+	case X86_INS_AESIMC:
+	case X86_INS_AESKEYGENASSIST:
 		// AES instructions
 		break;
-	case ZYDIS_MNEMONIC_AND:
-	case ZYDIS_MNEMONIC_ANDN:
-	case ZYDIS_MNEMONIC_ANDPD:
-	case ZYDIS_MNEMONIC_ANDPS:
-	case ZYDIS_MNEMONIC_ANDNPD:
-	case ZYDIS_MNEMONIC_ANDNPS: {
+	case X86_INS_AND:
+	case X86_INS_ANDN:
+	case X86_INS_ANDPD:
+	case X86_INS_ANDPS:
+	case X86_INS_ANDNPD:
+	case X86_INS_ANDNPS: {
 		ut32 bitsize;
 		src = getarg(a, &gop, 1, 0, NULL, SRC_AR, NULL, addr);
 		dst = getarg(a, &gop, 0, 1, "&", DST_AR, &bitsize, addr);
@@ -1474,7 +1503,7 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			esilprintf(op, "%s,%s,$z,zf,:=,$p,pf,:=,%d,$s,sf,:=,0,cf,:=,0,of,:=", src, dst, bitsize - 1);
 		}
 	} break;
-	case ZYDIS_MNEMONIC_IDIV: {
+	case X86_INS_IDIV: {
 		arg0 = getarg(a, &gop, 0, 0, NULL, ARG0_AR, NULL, addr);
 		arg1 = getarg(a, &gop, 1, 0, NULL, ARG1_AR, NULL, addr);
 		arg2 = getarg(a, &gop, 2, 0, NULL, ARG2_AR, NULL, addr);
@@ -1510,7 +1539,7 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			esilprintf(op, "%d,%s,~,%d,%s,~,~/,%s,=", width * 8, arg2, width * 8, arg1, arg0);
 		}
 	} break;
-	case ZYDIS_MNEMONIC_DIV: {
+	case X86_INS_DIV: {
 		int width = INSOP(0).size;
 		dst = getarg(a, &gop, 0, 0, NULL, DST_AR, NULL, addr);
 		const char *rz_quot = (width == 1) ? "al" : (width == 2) ? "ax"
@@ -1525,7 +1554,7 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		esilprintf(op, "%s,%d,%s,<<,%s,+,%%,%s,%d,%s,<<,%s,+,/,%s,=,%s,=",
 			dst, width * 8, rz_rema, rz_nume, dst, width * 8, rz_rema, rz_nume, rz_quot, rz_rema);
 	} break;
-	case ZYDIS_MNEMONIC_IMUL: {
+	case X86_INS_IMUL: {
 		arg0 = getarg(a, &gop, 0, 0, NULL, ARG0_AR, NULL, addr);
 		arg1 = getarg(a, &gop, 1, 0, NULL, ARG1_AR, NULL, addr);
 		arg2 = getarg(a, &gop, 2, 0, NULL, ARG2_AR, NULL, addr);
@@ -1561,7 +1590,7 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			}
 		}
 	} break;
-	case ZYDIS_MNEMONIC_MUL: {
+	case X86_INS_MUL: {
 		src = getarg(a, &gop, 0, 0, NULL, SRC_AR, NULL, addr);
 		if (src) {
 			int width = INSOP(0).size;
@@ -1584,11 +1613,11 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			/* should never happen */
 		}
 	} break;
-	case ZYDIS_MNEMONIC_MULX:
-	case ZYDIS_MNEMONIC_MULPD:
-	case ZYDIS_MNEMONIC_MULPS:
-	case ZYDIS_MNEMONIC_MULSD:
-	case ZYDIS_MNEMONIC_MULSS: {
+	case X86_INS_MULX:
+	case X86_INS_MULPD:
+	case X86_INS_MULPS:
+	case X86_INS_MULSD:
+	case X86_INS_MULSS: {
 		src = getarg(a, &gop, 1, 0, NULL, SRC_AR, NULL, addr);
 		dst = getarg(a, &gop, 0, 1, "*", DST_AR, NULL, addr);
 		if (!src && dst) {
@@ -1606,7 +1635,7 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		}
 		esilprintf(op, "%s,%s", src, dst);
 	} break;
-	case ZYDIS_MNEMONIC_NEG: {
+	case X86_INS_NEG: {
 		ut32 bitsize;
 		src = getarg(a, &gop, 0, 0, NULL, SRC_AR, NULL, addr);
 		dst = getarg(a, &gop, 0, 1, NULL, DST_AR, &bitsize, addr);
@@ -1631,26 +1660,26 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		esilprintf(op, "%s,!,!,cf,:=,%s,0x%" PFMT64x ",^,1,+,%s,$z,zf,:=,0,of,:=,%d,$s,sf,:=,%d,$o,pf,:=",
 			src, src, xor, dst, bitsize - 1, bitsize - 1);
 	} break;
-	case ZYDIS_MNEMONIC_NOT: {
+	case X86_INS_NOT: {
 		dst = getarg(a, &gop, 0, 1, "^", DST_AR, NULL, addr);
 		esilprintf(op, "-1,%s", dst);
 	} break;
-	case ZYDIS_MNEMONIC_PACKSSDW:
-	case ZYDIS_MNEMONIC_PACKSSWB:
-	case ZYDIS_MNEMONIC_PACKUSWB:
+	case X86_INS_PACKSSDW:
+	case X86_INS_PACKSSWB:
+	case X86_INS_PACKUSWB:
 		break;
-	case ZYDIS_MNEMONIC_PADDB:
-	case ZYDIS_MNEMONIC_PADDD:
-	case ZYDIS_MNEMONIC_PADDW:
-	case ZYDIS_MNEMONIC_PADDSB:
-	case ZYDIS_MNEMONIC_PADDSW:
-	case ZYDIS_MNEMONIC_PADDUSB:
-	case ZYDIS_MNEMONIC_PADDUSW:
+	case X86_INS_PADDB:
+	case X86_INS_PADDD:
+	case X86_INS_PADDW:
+	case X86_INS_PADDSB:
+	case X86_INS_PADDSW:
+	case X86_INS_PADDUSB:
+	case X86_INS_PADDUSW:
 		break;
-	case ZYDIS_MNEMONIC_XCHG: {
+	case X86_INS_XCHG: {
 		dst = getarg(a, &gop, 0, 0, NULL, DST_AR, NULL, addr);
 		src = getarg(a, &gop, 1, 0, NULL, SRC_AR, NULL, addr);
-		if (INSOP(0).type == ZYDIS_OPERAND_TYPE_MEMORY) {
+		if (INSOP(0).type == X86_OP_MEM) {
 			dst2 = getarg(a, &gop, 0, 1, NULL, DST2_AR, NULL, addr);
 			esilprintf(op,
 				"%s,%s,^,%s,=,"
@@ -1670,12 +1699,12 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			// esilprintf (op, "%s,%s,%s,=,%s", src, dst, src, dst);
 		}
 	} break;
-	case ZYDIS_MNEMONIC_XADD: /* xchg + add */
+	case X86_INS_XADD: /* xchg + add */
 	{
 		src = getarg(a, &gop, 1, 0, NULL, SRC_AR, NULL, addr);
 		dst = getarg(a, &gop, 0, 0, NULL, DST_AR, NULL, addr);
 		dstAdd = getarg(a, &gop, 0, 1, "+", DSTADD_AR, NULL, addr);
-		if (INSOP(0).type == ZYDIS_OPERAND_TYPE_MEMORY) {
+		if (INSOP(0).type == X86_OP_MEM) {
 			dst2 = getarg(a, &gop, 0, 1, NULL, DST2_AR, NULL, addr);
 			esilprintf(op,
 				"%s,%s,^,%s,=,"
@@ -1699,19 +1728,19 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			// esilprintf (op, "%s,%s,%s,=,%s", src, dst, src, dst);
 		}
 	} break;
-	case ZYDIS_MNEMONIC_FADD:
-	case ZYDIS_MNEMONIC_FADDP:
-	case ZYDIS_MNEMONIC_PFADD:
+	case X86_INS_FADD:
+	case X86_INS_FADDP:
+	case X86_INS_PFADD:
 		break;
-	case ZYDIS_MNEMONIC_ADDPS:
-	case ZYDIS_MNEMONIC_ADDSD:
-	case ZYDIS_MNEMONIC_ADDSS:
-	case ZYDIS_MNEMONIC_ADDSUBPD:
-	case ZYDIS_MNEMONIC_ADDSUBPS:
-	case ZYDIS_MNEMONIC_ADDPD:
+	case X86_INS_ADDPS:
+	case X86_INS_ADDSD:
+	case X86_INS_ADDSS:
+	case X86_INS_ADDSUBPD:
+	case X86_INS_ADDSUBPS:
+	case X86_INS_ADDPD:
 		// The OF, SF, ZF, AF, CF, and PF flags are set according to the
 		// result.
-		if (INSOP(0).type == ZYDIS_OPERAND_TYPE_MEMORY) {
+		if (INSOP(0).type == X86_OP_MEM) {
 			src = getarg(a, &gop, 1, 0, NULL, SRC_AR, NULL, addr);
 			src2 = getarg(a, &gop, 0, 0, NULL, SRC2_AR, NULL, addr);
 			dst = getarg(a, &gop, 0, 1, NULL, DST_AR, NULL, addr);
@@ -1722,7 +1751,7 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			esilprintf(op, "%s,%s", src, dst);
 		}
 		break;
-	case ZYDIS_MNEMONIC_ADD:
+	case X86_INS_ADD:
 		// The OF, SF, ZF, AF, CF, and PF flags are set according to the
 		// result.
 		{
@@ -1733,7 +1762,7 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 				src, dst, bitsize - 1, bitsize - 1, bitsize - 1);
 		}
 		break;
-	case ZYDIS_MNEMONIC_ADC: {
+	case X86_INS_ADC: {
 		ut32 bitsize;
 		src = getarg(a, &gop, 1, 0, NULL, SRC_AR, NULL, addr);
 		dst = getarg(a, &gop, 0, 1, "+", DST_AR, &bitsize, addr);
@@ -1747,33 +1776,33 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			src, dst, bitsize - 1, bitsize - 1, bitsize - 1);
 	} break;
 		/* Direction flag */
-	case ZYDIS_MNEMONIC_CLD:
+	case X86_INS_CLD:
 		esilprintf(op, "0,df,:=");
 		break;
-	case ZYDIS_MNEMONIC_STD:
+	case X86_INS_STD:
 		esilprintf(op, "1,df,:=");
 		break;
-	case ZYDIS_MNEMONIC_SUBSD: // cvtss2sd
-	case ZYDIS_MNEMONIC_CVTSS2SD: // cvtss2sd
+	case X86_INS_SUBSD: // cvtss2sd
+	case X86_INS_CVTSS2SD: // cvtss2sd
 		break;
-	case ZYDIS_MNEMONIC_BT:
-	case ZYDIS_MNEMONIC_BTC:
-	case ZYDIS_MNEMONIC_BTR:
-	case ZYDIS_MNEMONIC_BTS:
-		if (INSOP(0).type == ZYDIS_OPERAND_TYPE_MEMORY && INSOP(1).type == ZYDIS_OPERAND_TYPE_REGISTER) {
+	case X86_INS_BT:
+	case X86_INS_BTC:
+	case X86_INS_BTR:
+	case X86_INS_BTS:
+		if (INSOP(0).type == X86_OP_MEM && INSOP(1).type == X86_OP_REG) {
 			int width = INSOP(0).size;
 			src = getarg(a, &gop, 1, 0, NULL, SRC_AR, NULL, addr);
 			dst_r = getarg(a, &gop, 0, 2 /* use the address without loading */, NULL, DST_R_AR, NULL, addr);
 			esilprintf(op, "0,cf,:=,%d,%s,%%,1,<<,%d,%s,/,%s,+,[%d],&,?{,1,cf,:=,}",
 				width * 8, src, width * 8, src, dst_r, width);
 			switch (zydecode->mnemonic) {
-			case ZYDIS_MNEMONIC_BTS:
-			case ZYDIS_MNEMONIC_BTC:
+			case X86_INS_BTS:
+			case X86_INS_BTC:
 				rz_strbuf_appendf(&op->esil, ",%d,%s,%%,1,<<,%d,%s,/,%s,+,%c=[%d]",
 					width * 8, src, width * 8, src, dst_r,
-					(zydecode->mnemonic == ZYDIS_MNEMONIC_BTS) ? '|' : '^', width);
+					(zydecode->mnemonic == X86_INS_BTS) ? '|' : '^', width);
 				break;
-			case ZYDIS_MNEMONIC_BTR:
+			case X86_INS_BTR:
 				getarg(a, &gop, 0, 1, "&", DST_R_AR, NULL, addr);
 				rz_strbuf_appendf(&op->esil, ",%d,%s,%%,1,<<,-1,^,%d,%s,/,%s,+,&=[%d]",
 					width * 8, src, width * 8, src, dst_r, width);
@@ -1787,12 +1816,12 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			esilprintf(op, "0,cf,:=,%d,%s,%%,1,<<,%s,&,?{,1,cf,:=,}",
 				width * 8, src, dst_r);
 			switch (zydecode->mnemonic) {
-			case ZYDIS_MNEMONIC_BTS:
-			case ZYDIS_MNEMONIC_BTC:
-				dst_w = getarg(a, &gop, 0, 1, (zydecode->mnemonic == ZYDIS_MNEMONIC_BTS) ? "|" : "^", DST_R_AR, NULL, addr);
+			case X86_INS_BTS:
+			case X86_INS_BTC:
+				dst_w = getarg(a, &gop, 0, 1, (zydecode->mnemonic == X86_INS_BTS) ? "|" : "^", DST_R_AR, NULL, addr);
 				rz_strbuf_appendf(&op->esil, ",%d,%s,%%,1,<<,%s", width * 8, src, dst_w);
 				break;
-			case ZYDIS_MNEMONIC_BTR:
+			case X86_INS_BTR:
 				dst_w = getarg(a, &gop, 0, 1, "&", DST_R_AR, NULL, addr);
 				rz_strbuf_appendf(&op->esil, ",%d,%s,%%,1,<<,-1,^,%s", width * 8, src, dst_w);
 				break;
@@ -1809,7 +1838,7 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 }
 
 static RzRegItem *zydis_reg2reg(RzReg *reg, int type) {
-	if (type == ZYDIS_REGISTER_NONE) {
+	if (type == X86_REG_NONE) {
 		return NULL;
 	}
 	return rz_reg_get(reg, (char *)ZydisRegisterGetString(type), -1);
@@ -1823,13 +1852,13 @@ static void set_access_info(RzReg *reg, RzAnalysisOp *op, ZydisDecodedInstructio
 	switch (mode) {
 	case ZYDIS_MACHINE_MODE_LONG_64:
 		regsz = 8;
-		sp = ZYDIS_REGISTER_RSP;
-		ip = ZYDIS_REGISTER_RIP;
+		sp = X86_REG_RSP;
+		ip = X86_REG_RIP;
 		break;
 	default:
 		regsz = 4;
-		sp = ZYDIS_REGISTER_ESP;
-		ip = ZYDIS_REGISTER_EIP;
+		sp = X86_REG_ESP;
+		ip = X86_REG_EIP;
 		break;
 	}
 	RzList *ret = rz_list_newf((RzListFree)rz_analysis_value_free);
@@ -1845,13 +1874,13 @@ static void set_access_info(RzReg *reg, RzAnalysisOp *op, ZydisDecodedInstructio
 	rz_list_append(ret, val);
 
 	// Register access info
-	ZydisRegister regs_read[zydecode->operand_count];
-	ZydisRegister regs_write[zydecode->operand_count];
+	ZydisRegister regs_read[ZYDIS_MAX_OPERAND_COUNT];
+	ZydisRegister regs_write[ZYDIS_MAX_OPERAND_COUNT];
 	ut8 read_count = 0;
 	ut8 write_count = 0;
-	for (int i = 0; i < zydecode->operand_count; i++) {
+	for (int i = 0; i < zydecode->operand_count_visible; i++) {
 		ZydisDecodedOperand *operand = &zydeop[i];
-		if (operand->type != ZYDIS_OPERAND_TYPE_REGISTER) {
+		if (operand->type != X86_OP_REG) {
 			continue;
 		}
 		if (operand->actions & ZYDIS_OPERAND_ACTION_READ) {
@@ -1881,17 +1910,17 @@ static void set_access_info(RzReg *reg, RzAnalysisOp *op, ZydisDecodedInstructio
 	}
 
 	switch (zydecode->mnemonic) {
-	case ZYDIS_MNEMONIC_PUSH:
+	case X86_INS_PUSH:
 		val = rz_analysis_value_new();
 		val->type = RZ_ANALYSIS_VAL_MEM;
 		val->access = RZ_ANALYSIS_ACC_W;
 		val->reg = zydis_reg2reg(reg, sp);
-		val->delta = -zydeop[0].size;
-		val->memref = zydeop[0].size;
+		val->delta = -INSOP(0).size;
+		val->memref = INSOP(0).size;
 		rz_list_append(ret, val);
 		break;
-	case ZYDIS_MNEMONIC_PUSHAD:
-	case ZYDIS_MNEMONIC_PUSHF:
+	case X86_INS_PUSHAD:
+	case X86_INS_PUSHF:
 		val = rz_analysis_value_new();
 		val->type = RZ_ANALYSIS_VAL_MEM;
 		val->access = RZ_ANALYSIS_ACC_W;
@@ -1900,7 +1929,7 @@ static void set_access_info(RzReg *reg, RzAnalysisOp *op, ZydisDecodedInstructio
 		val->memref = 2;
 		rz_list_append(ret, val);
 		break;
-	case ZYDIS_MNEMONIC_PUSHFD:
+	case X86_INS_PUSHFD:
 		val = rz_analysis_value_new();
 		val->type = RZ_ANALYSIS_VAL_MEM;
 		val->access = RZ_ANALYSIS_ACC_W;
@@ -1909,7 +1938,7 @@ static void set_access_info(RzReg *reg, RzAnalysisOp *op, ZydisDecodedInstructio
 		val->memref = 4;
 		rz_list_append(ret, val);
 		break;
-	case ZYDIS_MNEMONIC_PUSHFQ:
+	case X86_INS_PUSHFQ:
 		val = rz_analysis_value_new();
 		val->type = RZ_ANALYSIS_VAL_MEM;
 		val->access = RZ_ANALYSIS_ACC_W;
@@ -1918,7 +1947,7 @@ static void set_access_info(RzReg *reg, RzAnalysisOp *op, ZydisDecodedInstructio
 		val->memref = 8;
 		rz_list_append(ret, val);
 		break;
-	case ZYDIS_MNEMONIC_CALL:
+	case X86_INS_CALL:
 		val = rz_analysis_value_new();
 		val->type = RZ_ANALYSIS_VAL_MEM;
 		val->access = RZ_ANALYSIS_ACC_W;
@@ -1933,7 +1962,7 @@ static void set_access_info(RzReg *reg, RzAnalysisOp *op, ZydisDecodedInstructio
 
 	// Memory access info based on operands
 	for (int i = 0; i < zydecode->operand_count; i++) {
-		if (zydeop[i].type == ZYDIS_OPERAND_TYPE_MEMORY) {
+		if (zydeop[i].type == X86_OP_MEM) {
 			val = rz_analysis_value_new();
 			val->type = RZ_ANALYSIS_VAL_MEM;
 			switch (zydeop[i].actions) {
@@ -1949,7 +1978,7 @@ static void set_access_info(RzReg *reg, RzAnalysisOp *op, ZydisDecodedInstructio
 			}
 			val->mul = zydeop[i].mem.scale;
 			val->delta = zydeop[i].mem.disp.value;
-			if (zydeop[0].mem.base == ZYDIS_REGISTER_RIP || zydeop[0].mem.base == ZYDIS_REGISTER_EIP) {
+			if (INSOP(0).mem.base == X86_REG_RIP || INSOP(0).mem.base == X86_REG_EIP) {
 				val->delta += zydecode->length;
 			}
 			val->memref = zydeop[i].size;
@@ -1968,9 +1997,9 @@ static void set_access_info(RzReg *reg, RzAnalysisOp *op, ZydisDecodedInstructio
 	(op)->src[2] = rz_analysis_value_new(); \
 	(op)->dst = rz_analysis_value_new();
 
-static void set_src_dst(RzReg *reg, RzAnalysisValue *val, ZydisDecodedInstruction *zydecode, ZydisDecodedOperand *zydeop, int x, ut64 addr) {
+static void set_src_dst(RzReg *reg, RzAnalysisValue *val, ZydisDecodedInstruction *zydecode, ZydisDecodedOperand *zydeop, int x, ut64 addr, int bitness) {
 	switch (zydeop[x].type) {
-	case ZYDIS_OPERAND_TYPE_MEMORY:
+	case X86_OP_MEM:
 		val->type = RZ_ANALYSIS_VAL_MEM;
 		val->mul = zydeop[x].mem.scale;
 		val->delta = zydeop[x].mem.disp.value;
@@ -1979,13 +2008,13 @@ static void set_src_dst(RzReg *reg, RzAnalysisValue *val, ZydisDecodedInstructio
 		val->reg = zydis_reg2reg(reg, zydeop[x].mem.base);
 		val->regdelta = zydis_reg2reg(reg, zydeop[x].mem.index);
 		break;
-	case ZYDIS_OPERAND_TYPE_REGISTER:
+	case X86_OP_REG:
 		val->type = RZ_ANALYSIS_VAL_REG;
 		val->reg = zydis_reg2reg(reg, zydeop[x].reg.value);
 		break;
-	case ZYDIS_OPERAND_TYPE_IMMEDIATE:
+	case X86_OP_IMM:
 		val->type = RZ_ANALYSIS_VAL_IMM;
-		val->imm = get_imm_reg_value(&zydeop[x], addr, zydecode->length);
+		val->imm = get_imm_reg_value(&zydeop[x], addr, zydecode->length, bitness);
 		break;
 	default:
 		break;
@@ -2015,15 +2044,15 @@ static void op_fillval(RzAnalysis *a, RzAnalysisOp *op, ZydisDecodedInstruction 
 	case RZ_ANALYSIS_OP_TYPE_NOT:
 	case RZ_ANALYSIS_OP_TYPE_ACMP:
 		CREATE_SRC_DST(op);
-		set_src_dst(a->reg, op->dst, zydecode, zydeop, 0, addr);
-		set_src_dst(a->reg, op->src[0], zydecode, zydeop, 1, addr);
-		set_src_dst(a->reg, op->src[1], zydecode, zydeop, 2, addr);
-		set_src_dst(a->reg, op->src[2], zydecode, zydeop, 3, addr);
+		set_src_dst(a->reg, op->dst, zydecode, zydeop, 0, addr, a->bits);
+		set_src_dst(a->reg, op->src[0], zydecode, zydeop, 1, addr, a->bits);
+		set_src_dst(a->reg, op->src[1], zydecode, zydeop, 2, addr, a->bits);
+		set_src_dst(a->reg, op->src[2], zydecode, zydeop, 3, addr, a->bits);
 		break;
 	case RZ_ANALYSIS_OP_TYPE_UPUSH:
 		if ((op->type & RZ_ANALYSIS_OP_TYPE_REG)) {
 			CREATE_SRC_DST(op);
-			set_src_dst(a->reg, op->src[0], zydecode, zydeop, 0, addr);
+			set_src_dst(a->reg, op->src[0], zydecode, zydeop, 0, addr, a->bits);
 		}
 		break;
 	default:
@@ -2031,36 +2060,36 @@ static void op_fillval(RzAnalysis *a, RzAnalysisOp *op, ZydisDecodedInstruction 
 	}
 }
 
-static void op0_memimmhandle(RzAnalysisOp *op, ZydisDecodedInstruction *zydecode, ZydisDecodedOperand *zydeop, ut64 addr, int regsz) {
+static void op0_memimmhandle(RzAnalysisOp *op, ZydisDecodedInstruction *zydecode, ZydisDecodedOperand *zydeop, ut64 addr, int regsz, int bitness) {
 	op->ptr = UT64_MAX;
-	switch (zydeop[0].type) {
-	case ZYDIS_OPERAND_TYPE_MEMORY:
+	switch (INSOP(0).type) {
+	case X86_OP_MEM:
 		op->cycles = CYCLE_MEM;
-		op->disp = zydeop[0].mem.disp.value;
+		op->disp = INSOP(0).mem.disp.value;
 		if (!op->disp) {
 			op->disp = UT64_MAX;
 		}
-		op->refptr = zydeop[0].size;
-		if (zydeop[0].mem.base == ZYDIS_REGISTER_RIP) {
+		op->refptr = INSOP(0).size;
+		if (INSOP(0).mem.base == X86_REG_RIP) {
 			op->ptr = addr + zydecode->length + op->disp;
-		} else if (zydeop[0].mem.base == ZYDIS_REGISTER_RBP || zydeop[0].mem.base == ZYDIS_REGISTER_EBP) {
+		} else if (INSOP(0).mem.base == X86_REG_RBP || INSOP(0).mem.base == X86_REG_EBP) {
 			op->type |= RZ_ANALYSIS_OP_TYPE_REG;
 			op->stackop = RZ_ANALYSIS_STACK_SET;
 			op->stackptr = regsz;
-		} else if (zydeop[0].mem.segment == ZYDIS_REGISTER_NONE && zydeop[0].mem.base == ZYDIS_REGISTER_NONE && zydeop[0].mem.index == ZYDIS_REGISTER_NONE && zydeop[0].mem.scale == 1) { // [<addr>]
+		} else if (INSOP(1).mem.segment == X86_REG_DS && INSOP(1).mem.base == X86_REG_NONE && INSOP(1).mem.index == X86_REG_NONE && INSOP(1).mem.scale == 0) { // [<addr>]
 			op->ptr = op->disp;
 			if (op->ptr < 0x1000) {
 				op->ptr = UT64_MAX;
 			}
 		}
-		if (zydeop[1].type == ZYDIS_OPERAND_TYPE_IMMEDIATE) {
-			op->val = get_imm_reg_value(&INSOP(1), addr, zydecode->length);
+		if (INSOP(1).type == X86_OP_IMM) {
+			op->val = get_imm_reg_value(&INSOP(1), addr, zydecode->length, bitness);
 		}
 		break;
-	case ZYDIS_OPERAND_TYPE_REGISTER:
-		if (zydeop[1].type == ZYDIS_OPERAND_TYPE_IMMEDIATE) {
-			//	(zydeop[0].reg != ZYDIS_REGISTER_RSP) && (zydeop[0].reg != ZYDIS_REGISTER_ESP)) {
-			op->val = get_imm_reg_value(&INSOP(1), addr, zydecode->length);
+	case X86_OP_REG:
+		if (INSOP(1).type == X86_OP_IMM) {
+			//	(INSOP(0).reg != X86_REG_RSP) && (INSOP(0).reg != X86_REG_ESP)) {
+			op->val = get_imm_reg_value(&INSOP(1), addr, zydecode->length, bitness);
 		}
 		break;
 	default:
@@ -2068,25 +2097,25 @@ static void op0_memimmhandle(RzAnalysisOp *op, ZydisDecodedInstruction *zydecode
 	}
 }
 
-static void op1_memimmhandle(RzAnalysisOp *op, ZydisDecodedInstruction *zydecode, ZydisDecodedOperand *zydeop, ut64 addr, int regsz) {
+static void op1_memimmhandle(RzAnalysisOp *op, ZydisDecodedInstruction *zydecode, ZydisDecodedOperand *zydeop, ut64 addr, int regsz, int bitness) {
 	if (op->refptr < 1 || op->ptr == UT64_MAX) {
-		switch (zydeop[1].type) {
-		case ZYDIS_OPERAND_TYPE_MEMORY:
-			op->disp = zydeop[1].mem.disp.value;
-			op->refptr = zydeop[1].size;
-			if (zydeop[1].mem.base == ZYDIS_REGISTER_RIP) {
+		switch (INSOP(1).type) {
+		case X86_OP_MEM:
+			op->disp = INSOP(1).mem.disp.value;
+			op->refptr = INSOP(1).size;
+			if (INSOP(1).mem.base == X86_REG_RIP) {
 				op->ptr = addr + zydecode->length + op->disp;
-			} else if (zydeop[1].mem.base == ZYDIS_REGISTER_RBP || zydeop[1].mem.base == ZYDIS_REGISTER_EBP) {
+			} else if (INSOP(1).mem.base == X86_REG_RBP || INSOP(1).mem.base == X86_REG_EBP) {
 				op->stackop = RZ_ANALYSIS_STACK_GET;
 				op->stackptr = regsz;
-			} else if (zydeop[1].mem.segment == ZYDIS_REGISTER_NONE && zydeop[1].mem.base == ZYDIS_REGISTER_NONE && zydeop[1].mem.index == ZYDIS_REGISTER_NONE && zydeop[1].mem.scale == 1) { // [<addr>]
+			} else if (INSOP(1).mem.segment == X86_REG_DS && INSOP(1).mem.base == X86_REG_NONE && INSOP(1).mem.index == X86_REG_NONE && INSOP(1).mem.scale == 0) { // [<addr>]
 				op->ptr = op->disp;
 			}
 			break;
-		case ZYDIS_OPERAND_TYPE_IMMEDIATE:
-			if ((get_imm_reg_value(&INSOP(1), addr, zydecode->length) > 10) &&
-				(zydeop[0].reg.value != ZYDIS_REGISTER_RSP) && (zydeop[0].reg.value != ZYDIS_REGISTER_ESP)) {
-				op->ptr = get_imm_reg_value(&INSOP(1), addr, zydecode->length);
+		case X86_OP_IMM:
+			if ((get_imm_reg_value(&INSOP(1), addr, zydecode->length, bitness) > 10) &&
+				(INSOP(0).reg.value != X86_REG_RSP) && (INSOP(0).reg.value != X86_REG_ESP)) {
+				op->ptr = get_imm_reg_value(&INSOP(1), addr, zydecode->length, bitness);
 			}
 			break;
 		default:
@@ -2095,14 +2124,14 @@ static void op1_memimmhandle(RzAnalysisOp *op, ZydisDecodedInstruction *zydecode
 	}
 }
 
-static void op_stackidx(RzAnalysisOp *op, ZydisDecodedInstruction *zydecode, ZydisDecodedOperand *zydeop, bool minus, ut64 addr) {
-	if (zydeop[0].type == ZYDIS_OPERAND_TYPE_REGISTER && zydeop[1].type == ZYDIS_OPERAND_TYPE_IMMEDIATE) {
-		if (zydeop[0].reg.value == ZYDIS_REGISTER_RSP || zydeop[0].reg.value == ZYDIS_REGISTER_ESP) {
+static void op_stackidx(RzAnalysisOp *op, ZydisDecodedInstruction *zydecode, ZydisDecodedOperand *zydeop, bool minus, ut64 addr, int bitness) {
+	if (INSOP(0).type == X86_OP_REG && INSOP(1).type == X86_OP_IMM) {
+		if (INSOP(0).reg.value == X86_REG_RSP || INSOP(0).reg.value == X86_REG_ESP) {
 			op->stackop = RZ_ANALYSIS_STACK_INC;
 			if (minus) {
-				op->stackptr = -1 * (int)get_imm_reg_value(&INSOP(1), addr, zydecode->length);
+				op->stackptr = -1 * (int)get_imm_reg_value(&INSOP(1), addr, zydecode->length, bitness);
 			} else {
-				op->stackptr = get_imm_reg_value(&INSOP(1), addr, zydecode->length);
+				op->stackptr = get_imm_reg_value(&INSOP(1), addr, zydecode->length, bitness);
 			}
 		}
 	}
@@ -2111,12 +2140,12 @@ static void op_stackidx(RzAnalysisOp *op, ZydisDecodedInstruction *zydecode, Zyd
 static void set_opdir(RzAnalysisOp *op, ZydisDecodedInstruction *zydecode, ZydisDecodedOperand *zydeop) {
 	switch (op->type & RZ_ANALYSIS_OP_TYPE_MASK) {
 	case RZ_ANALYSIS_OP_TYPE_MOV:
-		switch (zydeop[0].type) {
-		case ZYDIS_OPERAND_TYPE_MEMORY:
+		switch (INSOP(0).type) {
+		case X86_OP_MEM:
 			op->direction = RZ_ANALYSIS_OP_DIR_WRITE;
 			break;
-		case ZYDIS_OPERAND_TYPE_REGISTER:
-			if (zydeop[1].type == ZYDIS_OPERAND_TYPE_MEMORY) {
+		case X86_OP_REG:
+			if (INSOP(1).type == X86_OP_MEM) {
 				op->direction = RZ_ANALYSIS_OP_DIR_READ;
 			}
 			break;
@@ -2146,378 +2175,378 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 	default: regsz = 4; break; // 32
 	}
 	switch (zydecode->mnemonic) {
-	case ZYDIS_MNEMONIC_FNOP:
+	case X86_INS_FNOP:
 		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
 		/* fallthru */
-	case ZYDIS_MNEMONIC_NOP:
-	case ZYDIS_MNEMONIC_PAUSE:
+	case X86_INS_NOP:
+	case X86_INS_PAUSE:
 		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 		break;
-	case ZYDIS_MNEMONIC_HLT:
+	case X86_INS_HLT:
 		op->type = RZ_ANALYSIS_OP_TYPE_TRAP;
 		break;
-	case ZYDIS_MNEMONIC_FBLD:
-	case ZYDIS_MNEMONIC_FBSTP:
-	case ZYDIS_MNEMONIC_FCOMPP:
-	case ZYDIS_MNEMONIC_FDECSTP:
-	case ZYDIS_MNEMONIC_FEMMS:
-	case ZYDIS_MNEMONIC_FFREE:
-	case ZYDIS_MNEMONIC_FICOM:
-	case ZYDIS_MNEMONIC_FICOMP:
-	case ZYDIS_MNEMONIC_FINCSTP:
-	case ZYDIS_MNEMONIC_FNCLEX:
-	case ZYDIS_MNEMONIC_FNINIT:
-	case ZYDIS_MNEMONIC_FNSTCW:
-	case ZYDIS_MNEMONIC_FNSTSW:
-	case ZYDIS_MNEMONIC_FPATAN:
-	case ZYDIS_MNEMONIC_FPREM:
-	case ZYDIS_MNEMONIC_FPREM1:
-	case ZYDIS_MNEMONIC_FPTAN:
-	case ZYDIS_MNEMONIC_FFREEP:
-	case ZYDIS_MNEMONIC_FRNDINT:
-	case ZYDIS_MNEMONIC_FRSTOR:
-	case ZYDIS_MNEMONIC_FNSAVE:
-	case ZYDIS_MNEMONIC_FSCALE:
-	case ZYDIS_MNEMONIC_FSETPM287_NOP:
-	case ZYDIS_MNEMONIC_FSINCOS:
-	case ZYDIS_MNEMONIC_FNSTENV:
-	case ZYDIS_MNEMONIC_FXAM:
-	case ZYDIS_MNEMONIC_FXSAVE:
-	case ZYDIS_MNEMONIC_FXSAVE64:
-	case ZYDIS_MNEMONIC_FXTRACT:
-	case ZYDIS_MNEMONIC_FYL2X:
-	case ZYDIS_MNEMONIC_FYL2XP1:
-	case ZYDIS_MNEMONIC_FISTTP:
-	case ZYDIS_MNEMONIC_FSQRT:
-	case ZYDIS_MNEMONIC_FXCH:
+	case X86_INS_FBLD:
+	case X86_INS_FBSTP:
+	case X86_INS_FCOMPP:
+	case X86_INS_FDECSTP:
+	case X86_INS_FEMMS:
+	case X86_INS_FFREE:
+	case X86_INS_FICOM:
+	case X86_INS_FICOMP:
+	case X86_INS_FINCSTP:
+	case X86_INS_FNCLEX:
+	case X86_INS_FNINIT:
+	case X86_INS_FNSTCW:
+	case X86_INS_FNSTSW:
+	case X86_INS_FPATAN:
+	case X86_INS_FPREM:
+	case X86_INS_FPREM1:
+	case X86_INS_FPTAN:
+	case X86_INS_FFREEP:
+	case X86_INS_FRNDINT:
+	case X86_INS_FRSTOR:
+	case X86_INS_FNSAVE:
+	case X86_INS_FSCALE:
+	case X86_INS_FSETPM287_NOP:
+	case X86_INS_FSINCOS:
+	case X86_INS_FNSTENV:
+	case X86_INS_FXAM:
+	case X86_INS_FXSAVE:
+	case X86_INS_FXSAVE64:
+	case X86_INS_FXTRACT:
+	case X86_INS_FYL2X:
+	case X86_INS_FYL2XP1:
+	case X86_INS_FISTTP:
+	case X86_INS_FSQRT:
+	case X86_INS_FXCH:
 		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 		break;
-	case ZYDIS_MNEMONIC_FTST:
-	case ZYDIS_MNEMONIC_FUCOMI:
-	case ZYDIS_MNEMONIC_FUCOMPP:
-	case ZYDIS_MNEMONIC_FUCOMP:
-	case ZYDIS_MNEMONIC_FUCOM:
+	case X86_INS_FTST:
+	case X86_INS_FUCOMI:
+	case X86_INS_FUCOMPP:
+	case X86_INS_FUCOMP:
+	case X86_INS_FUCOM:
 		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 		break;
-	case ZYDIS_MNEMONIC_BT:
-	case ZYDIS_MNEMONIC_BTC:
-	case ZYDIS_MNEMONIC_BTR:
-	case ZYDIS_MNEMONIC_BTS:
+	case X86_INS_BT:
+	case X86_INS_BTC:
+	case X86_INS_BTR:
+	case X86_INS_BTS:
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 		break;
-	case ZYDIS_MNEMONIC_FABS:
+	case X86_INS_FABS:
 		op->type = RZ_ANALYSIS_OP_TYPE_ABS;
 		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
 		break;
-	case ZYDIS_MNEMONIC_FLDCW:
-	case ZYDIS_MNEMONIC_FLDENV:
-	case ZYDIS_MNEMONIC_FLDL2E:
-	case ZYDIS_MNEMONIC_FLDL2T:
-	case ZYDIS_MNEMONIC_FLDLG2:
-	case ZYDIS_MNEMONIC_FLDLN2:
-	case ZYDIS_MNEMONIC_FLDPI:
-	case ZYDIS_MNEMONIC_FLDZ:
-	case ZYDIS_MNEMONIC_FLD1:
-	case ZYDIS_MNEMONIC_FLD:
+	case X86_INS_FLDCW:
+	case X86_INS_FLDENV:
+	case X86_INS_FLDL2E:
+	case X86_INS_FLDL2T:
+	case X86_INS_FLDLG2:
+	case X86_INS_FLDLN2:
+	case X86_INS_FLDPI:
+	case X86_INS_FLDZ:
+	case X86_INS_FLD1:
+	case X86_INS_FLD:
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
 		break;
-	case ZYDIS_MNEMONIC_FIST:
-	case ZYDIS_MNEMONIC_FISTP:
-	case ZYDIS_MNEMONIC_FST:
-	case ZYDIS_MNEMONIC_FSTP:
-	case ZYDIS_MNEMONIC_FSTPNCE:
-	case ZYDIS_MNEMONIC_FXRSTOR:
-	case ZYDIS_MNEMONIC_FXRSTOR64:
+	case X86_INS_FIST:
+	case X86_INS_FISTP:
+	case X86_INS_FST:
+	case X86_INS_FSTP:
+	case X86_INS_FSTPNCE:
+	case X86_INS_FXRSTOR:
+	case X86_INS_FXRSTOR64:
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
 		break;
-	case ZYDIS_MNEMONIC_FDIV:
-	case ZYDIS_MNEMONIC_FIDIV:
-	case ZYDIS_MNEMONIC_FDIVP:
-	case ZYDIS_MNEMONIC_FDIVR:
-	case ZYDIS_MNEMONIC_FIDIVR:
-	case ZYDIS_MNEMONIC_FDIVRP:
+	case X86_INS_FDIV:
+	case X86_INS_FIDIV:
+	case X86_INS_FDIVP:
+	case X86_INS_FDIVR:
+	case X86_INS_FIDIVR:
+	case X86_INS_FDIVRP:
 		op->type = RZ_ANALYSIS_OP_TYPE_DIV;
 		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
 		break;
-	case ZYDIS_MNEMONIC_FSUBR:
-	case ZYDIS_MNEMONIC_FISUBR:
-	case ZYDIS_MNEMONIC_FSUBRP:
-	case ZYDIS_MNEMONIC_FSUB:
-	case ZYDIS_MNEMONIC_FISUB:
-	case ZYDIS_MNEMONIC_FSUBP:
+	case X86_INS_FSUBR:
+	case X86_INS_FISUBR:
+	case X86_INS_FSUBRP:
+	case X86_INS_FSUB:
+	case X86_INS_FISUB:
+	case X86_INS_FSUBP:
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
 		break;
-	case ZYDIS_MNEMONIC_FMUL:
-	case ZYDIS_MNEMONIC_FIMUL:
-	case ZYDIS_MNEMONIC_FMULP:
+	case X86_INS_FMUL:
+	case X86_INS_FIMUL:
+	case X86_INS_FMULP:
 		op->type = RZ_ANALYSIS_OP_TYPE_MUL;
 		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
 		break;
-	case ZYDIS_MNEMONIC_CLI:
-	case ZYDIS_MNEMONIC_STI:
+	case X86_INS_CLI:
+	case X86_INS_STI:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		op->family = RZ_ANALYSIS_OP_FAMILY_PRIV;
 		break;
-	case ZYDIS_MNEMONIC_CLC:
-	case ZYDIS_MNEMONIC_STC:
-	case ZYDIS_MNEMONIC_CLAC:
-	case ZYDIS_MNEMONIC_CLGI:
-	case ZYDIS_MNEMONIC_CLTS:
-	case ZYDIS_MNEMONIC_CLWB:
-	case ZYDIS_MNEMONIC_STAC:
-	case ZYDIS_MNEMONIC_STGI:
+	case X86_INS_CLC:
+	case X86_INS_STC:
+	case X86_INS_CLAC:
+	case X86_INS_CLGI:
+	case X86_INS_CLTS:
+	case X86_INS_CLWB:
+	case X86_INS_STAC:
+	case X86_INS_STGI:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		break;
 	// cmov
-	case ZYDIS_MNEMONIC_SETNZ:
-	case ZYDIS_MNEMONIC_SETNO:
-	case ZYDIS_MNEMONIC_SETNP:
-	case ZYDIS_MNEMONIC_SETNS:
-	case ZYDIS_MNEMONIC_SETO:
-	case ZYDIS_MNEMONIC_SETP:
-	case ZYDIS_MNEMONIC_SETS:
-	case ZYDIS_MNEMONIC_SETL:
-	case ZYDIS_MNEMONIC_SETLE:
-	case ZYDIS_MNEMONIC_SETB:
-	case ZYDIS_MNEMONIC_SETNLE:
-	case ZYDIS_MNEMONIC_SETNB:
-	case ZYDIS_MNEMONIC_SETNBE:
-	case ZYDIS_MNEMONIC_SETBE:
-	case ZYDIS_MNEMONIC_SETZ:
-	case ZYDIS_MNEMONIC_SETNL:
+	case X86_INS_SETNZ:
+	case X86_INS_SETNO:
+	case X86_INS_SETNP:
+	case X86_INS_SETNS:
+	case X86_INS_SETO:
+	case X86_INS_SETP:
+	case X86_INS_SETS:
+	case X86_INS_SETL:
+	case X86_INS_SETLE:
+	case X86_INS_SETB:
+	case X86_INS_SETNLE:
+	case X86_INS_SETNB:
+	case X86_INS_SETNBE:
+	case X86_INS_SETBE:
+	case X86_INS_SETZ:
+	case X86_INS_SETNL:
 		op->type = RZ_ANALYSIS_OP_TYPE_CMOV;
 		op->family = 0;
 		break;
 	// cmov
-	case ZYDIS_MNEMONIC_FCMOVBE:
-	case ZYDIS_MNEMONIC_FCMOVB:
-	case ZYDIS_MNEMONIC_FCMOVNBE:
-	case ZYDIS_MNEMONIC_FCMOVNB:
-	case ZYDIS_MNEMONIC_FCMOVE:
-	case ZYDIS_MNEMONIC_FCMOVNE:
-	case ZYDIS_MNEMONIC_FCMOVNU:
-	case ZYDIS_MNEMONIC_FCMOVU:
+	case X86_INS_FCMOVBE:
+	case X86_INS_FCMOVB:
+	case X86_INS_FCMOVNBE:
+	case X86_INS_FCMOVNB:
+	case X86_INS_FCMOVE:
+	case X86_INS_FCMOVNE:
+	case X86_INS_FCMOVNU:
+	case X86_INS_FCMOVU:
 		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
 		op->type = RZ_ANALYSIS_OP_TYPE_CMOV;
 		break;
-	case ZYDIS_MNEMONIC_CMOVNBE:
-	case ZYDIS_MNEMONIC_CMOVNB:
-	case ZYDIS_MNEMONIC_CMOVB:
-	case ZYDIS_MNEMONIC_CMOVBE:
-	case ZYDIS_MNEMONIC_CMOVZ:
-	case ZYDIS_MNEMONIC_CMOVNLE:
-	case ZYDIS_MNEMONIC_CMOVNL:
-	case ZYDIS_MNEMONIC_CMOVL:
-	case ZYDIS_MNEMONIC_CMOVLE:
-	case ZYDIS_MNEMONIC_CMOVNZ:
-	case ZYDIS_MNEMONIC_CMOVNO:
-	case ZYDIS_MNEMONIC_CMOVNP:
-	case ZYDIS_MNEMONIC_CMOVNS:
-	case ZYDIS_MNEMONIC_CMOVO:
-	case ZYDIS_MNEMONIC_CMOVP:
-	case ZYDIS_MNEMONIC_CMOVS:
+	case X86_INS_CMOVNBE:
+	case X86_INS_CMOVNB:
+	case X86_INS_CMOVB:
+	case X86_INS_CMOVBE:
+	case X86_INS_CMOVZ:
+	case X86_INS_CMOVNLE:
+	case X86_INS_CMOVNL:
+	case X86_INS_CMOVL:
+	case X86_INS_CMOVLE:
+	case X86_INS_CMOVNZ:
+	case X86_INS_CMOVNO:
+	case X86_INS_CMOVNP:
+	case X86_INS_CMOVNS:
+	case X86_INS_CMOVO:
+	case X86_INS_CMOVP:
+	case X86_INS_CMOVS:
 		op->type = RZ_ANALYSIS_OP_TYPE_CMOV;
 		break;
-	case ZYDIS_MNEMONIC_STOSB:
-	case ZYDIS_MNEMONIC_STOSD:
-	case ZYDIS_MNEMONIC_STOSQ:
-	case ZYDIS_MNEMONIC_STOSW:
+	case X86_INS_STOSB:
+	case X86_INS_STOSD:
+	case X86_INS_STOSQ:
+	case X86_INS_STOSW:
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 		break;
-	case ZYDIS_MNEMONIC_LODSB:
-	case ZYDIS_MNEMONIC_LODSD:
-	case ZYDIS_MNEMONIC_LODSQ:
-	case ZYDIS_MNEMONIC_LODSW:
+	case X86_INS_LODSB:
+	case X86_INS_LODSD:
+	case X86_INS_LODSQ:
+	case X86_INS_LODSW:
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		break;
-	case ZYDIS_MNEMONIC_PALIGNR:
-	case ZYDIS_MNEMONIC_VALIGND:
-	case ZYDIS_MNEMONIC_VALIGNQ:
-	case ZYDIS_MNEMONIC_VPALIGNR:
+	case X86_INS_PALIGNR:
+	case X86_INS_VALIGND:
+	case X86_INS_VALIGNQ:
+	case X86_INS_VPALIGNR:
 		op->type = RZ_ANALYSIS_OP_TYPE_AND;
 		op->family = RZ_ANALYSIS_OP_FAMILY_CPU;
 		break;
-	case ZYDIS_MNEMONIC_CPUID:
+	case X86_INS_CPUID:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		op->family = RZ_ANALYSIS_OP_FAMILY_CPU;
 		break;
-	case ZYDIS_MNEMONIC_SFENCE:
-	case ZYDIS_MNEMONIC_LFENCE:
-	case ZYDIS_MNEMONIC_MFENCE:
+	case X86_INS_SFENCE:
+	case X86_INS_LFENCE:
+	case X86_INS_MFENCE:
 		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 		op->family = RZ_ANALYSIS_OP_FAMILY_THREAD;
 		break;
 	// mov
-	case ZYDIS_MNEMONIC_MOVNTQ:
-	case ZYDIS_MNEMONIC_MOVNTDQA:
-	case ZYDIS_MNEMONIC_MOVNTDQ:
-	case ZYDIS_MNEMONIC_MOVNTI:
-	case ZYDIS_MNEMONIC_MOVNTPD:
-	case ZYDIS_MNEMONIC_MOVNTPS:
-	case ZYDIS_MNEMONIC_MOVNTSD:
-	case ZYDIS_MNEMONIC_MOVNTSS:
-	case ZYDIS_MNEMONIC_VMOVNTDQA:
-	case ZYDIS_MNEMONIC_VMOVNTDQ:
-	case ZYDIS_MNEMONIC_VMOVNTPD:
-	case ZYDIS_MNEMONIC_VMOVNTPS:
+	case X86_INS_MOVNTQ:
+	case X86_INS_MOVNTDQA:
+	case X86_INS_MOVNTDQ:
+	case X86_INS_MOVNTI:
+	case X86_INS_MOVNTPD:
+	case X86_INS_MOVNTPS:
+	case X86_INS_MOVNTSD:
+	case X86_INS_MOVNTSS:
+	case X86_INS_VMOVNTDQA:
+	case X86_INS_VMOVNTDQ:
+	case X86_INS_VMOVNTPD:
+	case X86_INS_VMOVNTPS:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		op->family = RZ_ANALYSIS_OP_FAMILY_SSE;
 		break;
-	case ZYDIS_MNEMONIC_PCMPEQB:
-	case ZYDIS_MNEMONIC_PCMPEQD:
-	case ZYDIS_MNEMONIC_PCMPEQW:
-	case ZYDIS_MNEMONIC_PCMPGTB:
-	case ZYDIS_MNEMONIC_PCMPGTD:
-	case ZYDIS_MNEMONIC_PCMPGTW:
-	case ZYDIS_MNEMONIC_PCMPEQQ:
-	case ZYDIS_MNEMONIC_PCMPESTRI:
-	case ZYDIS_MNEMONIC_PCMPESTRM:
-	case ZYDIS_MNEMONIC_PCMPGTQ:
-	case ZYDIS_MNEMONIC_PCMPISTRI:
-	case ZYDIS_MNEMONIC_PCMPISTRM:
-	case ZYDIS_MNEMONIC_VPCMPB:
-	case ZYDIS_MNEMONIC_VPCMPD:
-	case ZYDIS_MNEMONIC_VPCMPEQB:
-	case ZYDIS_MNEMONIC_VPCMPEQD:
-	case ZYDIS_MNEMONIC_VPCMPEQQ:
-	case ZYDIS_MNEMONIC_VPCMPEQW:
-	case ZYDIS_MNEMONIC_VPCMPESTRI:
-	case ZYDIS_MNEMONIC_VPCMPESTRM:
-	case ZYDIS_MNEMONIC_VPCMPGTB:
-	case ZYDIS_MNEMONIC_VPCMPGTD:
-	case ZYDIS_MNEMONIC_VPCMPGTQ:
-	case ZYDIS_MNEMONIC_VPCMPGTW:
-	case ZYDIS_MNEMONIC_VPCMPISTRI:
-	case ZYDIS_MNEMONIC_VPCMPISTRM:
-	case ZYDIS_MNEMONIC_VPCMPQ:
-	case ZYDIS_MNEMONIC_VPCMPUB:
-	case ZYDIS_MNEMONIC_VPCMPUD:
-	case ZYDIS_MNEMONIC_VPCMPUQ:
-	case ZYDIS_MNEMONIC_VPCMPUW:
-	case ZYDIS_MNEMONIC_VPCMPW:
+	case X86_INS_PCMPEQB:
+	case X86_INS_PCMPEQD:
+	case X86_INS_PCMPEQW:
+	case X86_INS_PCMPGTB:
+	case X86_INS_PCMPGTD:
+	case X86_INS_PCMPGTW:
+	case X86_INS_PCMPEQQ:
+	case X86_INS_PCMPESTRI:
+	case X86_INS_PCMPESTRM:
+	case X86_INS_PCMPGTQ:
+	case X86_INS_PCMPISTRI:
+	case X86_INS_PCMPISTRM:
+	case X86_INS_VPCMPB:
+	case X86_INS_VPCMPD:
+	case X86_INS_VPCMPEQB:
+	case X86_INS_VPCMPEQD:
+	case X86_INS_VPCMPEQQ:
+	case X86_INS_VPCMPEQW:
+	case X86_INS_VPCMPESTRI:
+	case X86_INS_VPCMPESTRM:
+	case X86_INS_VPCMPGTB:
+	case X86_INS_VPCMPGTD:
+	case X86_INS_VPCMPGTQ:
+	case X86_INS_VPCMPGTW:
+	case X86_INS_VPCMPISTRI:
+	case X86_INS_VPCMPISTRM:
+	case X86_INS_VPCMPQ:
+	case X86_INS_VPCMPUB:
+	case X86_INS_VPCMPUD:
+	case X86_INS_VPCMPUQ:
+	case X86_INS_VPCMPUW:
+	case X86_INS_VPCMPW:
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 		op->family = RZ_ANALYSIS_OP_FAMILY_SSE;
 		break;
-	case ZYDIS_MNEMONIC_MOVSS:
-	case ZYDIS_MNEMONIC_MOV:
-	case ZYDIS_MNEMONIC_MOVAPS:
-	case ZYDIS_MNEMONIC_MOVAPD:
-	case ZYDIS_MNEMONIC_MOVZX:
-	case ZYDIS_MNEMONIC_MOVUPS:
-	case ZYDIS_MNEMONIC_MOVHPD:
-	case ZYDIS_MNEMONIC_MOVHPS:
-	case ZYDIS_MNEMONIC_MOVLPD:
-	case ZYDIS_MNEMONIC_MOVLPS:
-	case ZYDIS_MNEMONIC_MOVBE:
-	case ZYDIS_MNEMONIC_MOVSB:
-	case ZYDIS_MNEMONIC_MOVSD:
-	case ZYDIS_MNEMONIC_MOVSQ:
-	case ZYDIS_MNEMONIC_MOVSX:
-	case ZYDIS_MNEMONIC_MOVSXD:
-	case ZYDIS_MNEMONIC_MOVSW:
-	case ZYDIS_MNEMONIC_MOVD:
-	case ZYDIS_MNEMONIC_MOVQ:
-	case ZYDIS_MNEMONIC_MOVDQ2Q: {
+	case X86_INS_MOVSS:
+	case X86_INS_MOV:
+	case X86_INS_MOVAPS:
+	case X86_INS_MOVAPD:
+	case X86_INS_MOVZX:
+	case X86_INS_MOVUPS:
+	case X86_INS_MOVHPD:
+	case X86_INS_MOVHPS:
+	case X86_INS_MOVLPD:
+	case X86_INS_MOVLPS:
+	case X86_INS_MOVBE:
+	case X86_INS_MOVSB:
+	case X86_INS_MOVSD:
+	case X86_INS_MOVSQ:
+	case X86_INS_MOVSX:
+	case X86_INS_MOVSXD:
+	case X86_INS_MOVSW:
+	case X86_INS_MOVD:
+	case X86_INS_MOVQ:
+	case X86_INS_MOVDQ2Q: {
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
-		op0_memimmhandle(op, zydecode, zydeop, addr, regsz);
-		op1_memimmhandle(op, zydecode, zydeop, addr, regsz);
+		op0_memimmhandle(op, zydecode, zydeop, addr, regsz, a->bits);
+		op1_memimmhandle(op, zydecode, zydeop, addr, regsz, a->bits);
 	} break;
-	case ZYDIS_MNEMONIC_ROL:
-	case ZYDIS_MNEMONIC_RCL:
+	case X86_INS_ROL:
+	case X86_INS_RCL:
 		// TODO: RCL Still does not work as intended
 		//  - Set flags
 		op->type = RZ_ANALYSIS_OP_TYPE_ROL;
 		break;
-	case ZYDIS_MNEMONIC_ROR:
-	case ZYDIS_MNEMONIC_RCR:
+	case X86_INS_ROR:
+	case X86_INS_RCR:
 		// TODO: RCR Still does not work as intended
 		//  - Set flags
 		op->type = RZ_ANALYSIS_OP_TYPE_ROR;
 		break;
-	case ZYDIS_MNEMONIC_SHL:
-	case ZYDIS_MNEMONIC_SHLD:
-	case ZYDIS_MNEMONIC_SHLX:
+	case X86_INS_SHL:
+	case X86_INS_SHLD:
+	case X86_INS_SHLX:
 		// TODO: Set CF: Carry flag is the last bit shifted out due to
 		// this operation. It is undefined for SHL and SHR where the
 		// number of bits shifted is greater than the size of the
 		// destination.
 		op->type = RZ_ANALYSIS_OP_TYPE_SHL;
 		break;
-	case ZYDIS_MNEMONIC_SAR:
-	case ZYDIS_MNEMONIC_SARX:
-		// TODO: Set CF. See case ZYDIS_MNEMONIC_SHL for more details.
+	case X86_INS_SAR:
+	case X86_INS_SARX:
+		// TODO: Set CF. See case X86_INS_SHL for more details.
 		op->type = RZ_ANALYSIS_OP_TYPE_SAR;
 		break;
-	// case ZYDIS_MNEMONIC_SAL:
-	case ZYDIS_MNEMONIC_SALC:
+	// case X86_INS_SAL:
+	case X86_INS_SALC:
 		op->type = RZ_ANALYSIS_OP_TYPE_SAL;
 		break;
-	case ZYDIS_MNEMONIC_SHR:
-	case ZYDIS_MNEMONIC_SHRD:
-	case ZYDIS_MNEMONIC_SHRX:
-		// TODO: Set CF: See case ZYDIS_MNEMONIC_SAL for more details.
+	case X86_INS_SHR:
+	case X86_INS_SHRD:
+	case X86_INS_SHRX:
+		// TODO: Set CF: See case X86_INS_SAL for more details.
 		op->type = RZ_ANALYSIS_OP_TYPE_SHR;
-		op->val = get_imm_reg_value(&INSOP(1), addr, zydecode->length);
+		op->val = get_imm_reg_value(&INSOP(1), addr, zydecode->length, a->bits);
 		// XXX this should be op->imm
 		// op->src[0] = rz_analysis_value_new ();
 		// op->src[0]->imm = get_imm_reg_value(&INSOP(1),addr,zydecode->length);
 		break;
-	case ZYDIS_MNEMONIC_CMP:
-	case ZYDIS_MNEMONIC_CMPPD:
-	case ZYDIS_MNEMONIC_CMPPS:
-	case ZYDIS_MNEMONIC_CMPSW:
-	case ZYDIS_MNEMONIC_CMPSD:
-	case ZYDIS_MNEMONIC_CMPSQ:
-	case ZYDIS_MNEMONIC_CMPSB:
-	case ZYDIS_MNEMONIC_CMPSS:
-	case ZYDIS_MNEMONIC_TEST:
-		if (zydecode->mnemonic == ZYDIS_MNEMONIC_TEST) {
+	case X86_INS_CMP:
+	case X86_INS_CMPPD:
+	case X86_INS_CMPPS:
+	case X86_INS_CMPSW:
+	case X86_INS_CMPSD:
+	case X86_INS_CMPSQ:
+	case X86_INS_CMPSB:
+	case X86_INS_CMPSS:
+	case X86_INS_TEST:
+		if (zydecode->mnemonic == X86_INS_TEST) {
 			op->type = RZ_ANALYSIS_OP_TYPE_ACMP; // compare via and
 		} else {
 			op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 		}
-		switch (zydeop[0].type) {
-		case ZYDIS_OPERAND_TYPE_MEMORY:
-			op->disp = zydeop[0].mem.disp.value;
-			op->refptr = zydeop[0].size;
-			if (zydeop[0].mem.base == ZYDIS_REGISTER_RIP) {
+		switch (INSOP(0).type) {
+		case X86_OP_MEM:
+			op->disp = INSOP(0).mem.disp.value;
+			op->refptr = INSOP(0).size;
+			if (INSOP(0).mem.base == X86_REG_RIP) {
 				op->ptr = addr + zydecode->length + op->disp;
-			} else if (zydeop[0].mem.base == ZYDIS_REGISTER_RBP || zydeop[0].mem.base == ZYDIS_REGISTER_EBP) {
+			} else if (INSOP(0).mem.base == X86_REG_RBP || INSOP(0).mem.base == X86_REG_EBP) {
 				op->stackop = RZ_ANALYSIS_STACK_SET;
 				op->stackptr = regsz;
 				op->type |= RZ_ANALYSIS_OP_TYPE_REG;
-			} else if (zydeop[0].mem.segment == ZYDIS_REGISTER_NONE && zydeop[0].mem.base == ZYDIS_REGISTER_NONE && zydeop[0].mem.index == ZYDIS_REGISTER_NONE && zydeop[0].mem.scale == 1) { // [<addr>]
+			} else if (INSOP(0).mem.segment == X86_REG_DS && INSOP(0).mem.base == X86_REG_NONE && INSOP(0).mem.index == X86_REG_NONE && INSOP(0).mem.scale == 0) { // [<addr>]
 				op->ptr = op->disp;
 			}
-			if (zydeop[1].type == ZYDIS_OPERAND_TYPE_IMMEDIATE) {
-				op->val = get_imm_reg_value(&INSOP(1), addr, zydecode->length);
+			if (INSOP(1).type == X86_OP_IMM) {
+				op->val = get_imm_reg_value(&INSOP(1), addr, zydecode->length, a->bits);
 			}
 			break;
 		default:
-			switch (zydeop[1].type) {
-			case ZYDIS_OPERAND_TYPE_MEMORY:
-				op->disp = zydeop[1].mem.disp.value;
-				op->refptr = zydeop[1].size;
-				if (zydeop[1].mem.base == ZYDIS_REGISTER_RIP) {
+			switch (INSOP(1).type) {
+			case X86_OP_MEM:
+				op->disp = INSOP(1).mem.disp.value;
+				op->refptr = INSOP(1).size;
+				if (INSOP(1).mem.base == X86_REG_RIP) {
 					op->ptr = addr + zydecode->length + op->disp;
-				} else if (zydeop[1].mem.base == ZYDIS_REGISTER_RBP || zydeop[1].mem.base == ZYDIS_REGISTER_EBP) {
+				} else if (INSOP(1).mem.base == X86_REG_RBP || INSOP(1).mem.base == X86_REG_EBP) {
 					op->type |= RZ_ANALYSIS_OP_TYPE_REG;
 					op->stackop = RZ_ANALYSIS_STACK_SET;
 					op->stackptr = regsz;
-				} else if (zydeop[1].mem.segment == ZYDIS_REGISTER_NONE && zydeop[1].mem.base == ZYDIS_REGISTER_NONE && zydeop[1].mem.index == ZYDIS_REGISTER_NONE && zydeop[1].mem.scale == 1) { // [<addr>]
+				} else if (INSOP(1).mem.segment == X86_REG_DS && INSOP(1).mem.base == X86_REG_NONE && INSOP(1).mem.index == X86_REG_NONE && INSOP(1).mem.scale == 0) { // [<addr>]
 					op->ptr = op->disp;
 				}
-				if (zydeop[0].type == ZYDIS_OPERAND_TYPE_IMMEDIATE) {
-					op->val = get_imm_reg_value(&INSOP(0), addr, zydecode->length);
+				if (INSOP(0).type == X86_OP_IMM) {
+					op->val = get_imm_reg_value(&INSOP(0), addr, zydecode->length, a->bits);
 				}
 				break;
-			case ZYDIS_OPERAND_TYPE_IMMEDIATE:
-				op->val = op->ptr = get_imm_reg_value(&INSOP(1), addr, zydecode->length);
+			case X86_OP_IMM:
+				op->val = op->ptr = get_imm_reg_value(&INSOP(1), addr, zydecode->length, a->bits);
 				break;
 			default:
 				break;
@@ -2525,19 +2554,19 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 			break;
 		}
 		break;
-	case ZYDIS_MNEMONIC_LEA:
+	case X86_INS_LEA:
 		op->type = RZ_ANALYSIS_OP_TYPE_LEA;
-		switch (zydeop[1].type) {
-		case ZYDIS_OPERAND_TYPE_MEMORY:
+		switch (INSOP(1).type) {
+		case X86_OP_MEM:
 			// op->type = RZ_ANALYSIS_OP_TYPE_ULEA;
-			op->disp = zydeop[1].mem.disp.value;
-			op->refptr = zydeop[1].size;
-			switch (zydeop[1].mem.base) {
-			case ZYDIS_REGISTER_RIP:
+			op->disp = INSOP(1).mem.disp.value;
+			op->refptr = INSOP(1).size;
+			switch (INSOP(1).mem.base) {
+			case X86_REG_RIP:
 				op->ptr = addr + op->size + op->disp;
 				break;
-			case ZYDIS_REGISTER_RBP:
-			case ZYDIS_REGISTER_EBP:
+			case X86_REG_RBP:
+			case X86_REG_EBP:
 				op->stackop = RZ_ANALYSIS_STACK_GET;
 				op->stackptr = regsz;
 				break;
@@ -2546,9 +2575,9 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 				break;
 			}
 			break;
-		case ZYDIS_OPERAND_TYPE_IMMEDIATE:
-			if (get_imm_reg_value(&INSOP(1), addr, zydecode->length) > 10) {
-				op->ptr = get_imm_reg_value(&INSOP(1), addr, zydecode->length);
+		case X86_OP_IMM:
+			if (get_imm_reg_value(&INSOP(1), addr, zydecode->length, a->bits) > 10) {
+				op->ptr = get_imm_reg_value(&INSOP(1), addr, zydecode->length, a->bits);
 			}
 			break;
 		default:
@@ -2556,28 +2585,28 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 		}
 		break;
 	// pushal, popal - push/pop EAX,EBX,ECX,EDX,ESP,EBP,ESI,EDI
-	case ZYDIS_MNEMONIC_PUSHAD:
-	case ZYDIS_MNEMONIC_ENTER:
-	case ZYDIS_MNEMONIC_PUSH:
-	case ZYDIS_MNEMONIC_PUSHF:
-	case ZYDIS_MNEMONIC_PUSHFD:
-	case ZYDIS_MNEMONIC_PUSHFQ:
-		switch (zydeop[0].type) {
-		case ZYDIS_OPERAND_TYPE_MEMORY:
-			if (zydeop[0].mem.disp.value && !zydeop[0].mem.base && !zydeop[0].mem.index) {
-				op->val = op->ptr = zydeop[0].mem.disp.value;
+	case X86_INS_PUSHAD:
+	case X86_INS_ENTER:
+	case X86_INS_PUSH:
+	case X86_INS_PUSHF:
+	case X86_INS_PUSHFD:
+	case X86_INS_PUSHFQ:
+		switch (INSOP(0).type) {
+		case X86_OP_MEM:
+			if (INSOP(0).mem.disp.value && !INSOP(0).mem.base && !INSOP(0).mem.index) {
+				op->val = op->ptr = INSOP(0).mem.disp.value;
 				op->type = RZ_ANALYSIS_OP_TYPE_PUSH;
 			} else {
 				op->type = RZ_ANALYSIS_OP_TYPE_UPUSH;
 			}
 			op->cycles = CYCLE_REG + CYCLE_MEM;
 			break;
-		case ZYDIS_OPERAND_TYPE_IMMEDIATE:
-			op->val = op->ptr = get_imm_reg_value(&INSOP(0), addr, zydecode->length);
+		case X86_OP_IMM:
+			op->val = op->ptr = get_imm_reg_value(&INSOP(0), addr, zydecode->length, a->bits);
 			op->type = RZ_ANALYSIS_OP_TYPE_PUSH;
 			op->cycles = CYCLE_REG + CYCLE_MEM;
 			break;
-		case ZYDIS_OPERAND_TYPE_REGISTER:
+		case X86_OP_REG:
 			op->type = RZ_ANALYSIS_OP_TYPE_RPUSH;
 			op->cycles = CYCLE_REG + CYCLE_MEM;
 			break;
@@ -2589,148 +2618,158 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 		op->stackop = RZ_ANALYSIS_STACK_INC;
 		op->stackptr = regsz;
 		break;
-	case ZYDIS_MNEMONIC_LEAVE:
+	case X86_INS_LEAVE:
 		op->type = RZ_ANALYSIS_OP_TYPE_POP;
 		// leave is mov rsp, rbp; pop rbp
 		// which may not be exactly a reset depending on the context,
 		// but usually it is and this is the best guess we can make here.
 		op->stackop = RZ_ANALYSIS_STACK_RESET;
 		break;
-	case ZYDIS_MNEMONIC_POP:
-	case ZYDIS_MNEMONIC_POPF:
-	case ZYDIS_MNEMONIC_POPFD:
-	case ZYDIS_MNEMONIC_POPFQ:
+	case X86_INS_POP:
+	case X86_INS_POPF:
+	case X86_INS_POPFD:
+	case X86_INS_POPFQ:
 		op->type = RZ_ANALYSIS_OP_TYPE_POP;
 		op->stackop = RZ_ANALYSIS_STACK_INC;
 		op->stackptr = -regsz;
 		break;
-	case ZYDIS_MNEMONIC_POPAD:
-	case ZYDIS_MNEMONIC_IRET:
-	case ZYDIS_MNEMONIC_IRETD:
-	case ZYDIS_MNEMONIC_IRETQ:
-	case ZYDIS_MNEMONIC_SYSRET:
+	case X86_INS_POPAD:
+	case X86_INS_IRET:
+	case X86_INS_IRETD:
+	case X86_INS_IRETQ:
+	case X86_INS_SYSRET:
 		op->family = RZ_ANALYSIS_OP_FAMILY_PRIV;
 		/* fallthrough */
-	case ZYDIS_MNEMONIC_RET:
-		// case ZYDIS_MNEMONIC_RETF:
-		// case ZYDIS_MNEMONIC_RETFQ:
+	case X86_INS_RET:
+		// case X86_INS_RETF:
+		// case X86_INS_RETFQ:
 		op->type = RZ_ANALYSIS_OP_TYPE_RET;
 		op->stackop = RZ_ANALYSIS_STACK_INC;
 		op->stackptr = -regsz;
 		op->cycles = CYCLE_MEM + CYCLE_JMP;
 		break;
-	case ZYDIS_MNEMONIC_UD0:
-	case ZYDIS_MNEMONIC_UD2:
-	case ZYDIS_MNEMONIC_INT3:
+	case X86_INS_UD0:
+	case X86_INS_UD2:
+	case X86_INS_INT3:
 		op->type = RZ_ANALYSIS_OP_TYPE_TRAP; // TRAP
 		break;
-	case ZYDIS_MNEMONIC_INT1:
+	case X86_INS_INT1:
 		op->type = RZ_ANALYSIS_OP_TYPE_SWI;
 		op->val = 1;
 		break;
-	case ZYDIS_MNEMONIC_INT:
+	case X86_INS_INT:
 		op->type = RZ_ANALYSIS_OP_TYPE_SWI;
-		op->val = (int)get_imm_reg_value(&INSOP(0), addr, zydecode->length);
+		op->val = (int)get_imm_reg_value(&INSOP(0), addr, zydecode->length, a->bits);
 		break;
-	case ZYDIS_MNEMONIC_SYSCALL:
-	case ZYDIS_MNEMONIC_SYSENTER:
+	case X86_INS_SYSCALL:
+	case X86_INS_SYSENTER:
 		op->type = RZ_ANALYSIS_OP_TYPE_SWI;
 		op->cycles = CYCLE_JMP;
 		break;
-	case ZYDIS_MNEMONIC_SYSEXIT:
+	case X86_INS_SYSEXIT:
 		op->type = RZ_ANALYSIS_OP_TYPE_SWI;
 		op->family = RZ_ANALYSIS_OP_FAMILY_PRIV;
 		break;
-	case ZYDIS_MNEMONIC_INTO:
+	case X86_INS_INTO:
 		op->type = RZ_ANALYSIS_OP_TYPE_SWI;
 		// int4 if overflow bit is set , so this is an optional swi
 		op->type |= RZ_ANALYSIS_OP_TYPE_COND;
 		break;
-	case ZYDIS_MNEMONIC_VMCALL:
-	case ZYDIS_MNEMONIC_VMMCALL:
+	case X86_INS_VMCALL:
+	case X86_INS_VMMCALL:
 		op->type = RZ_ANALYSIS_OP_TYPE_TRAP;
 		break;
-	case ZYDIS_MNEMONIC_JL:
-	case ZYDIS_MNEMONIC_JLE:
-	case ZYDIS_MNEMONIC_JNBE:
-	case ZYDIS_MNEMONIC_JNB:
-	case ZYDIS_MNEMONIC_JB:
-	case ZYDIS_MNEMONIC_JBE:
-	case ZYDIS_MNEMONIC_JCXZ:
-	case ZYDIS_MNEMONIC_JECXZ:
-	case ZYDIS_MNEMONIC_JRCXZ:
-	case ZYDIS_MNEMONIC_JO:
-	case ZYDIS_MNEMONIC_JNO:
-	case ZYDIS_MNEMONIC_JS:
-	case ZYDIS_MNEMONIC_JNS:
-	case ZYDIS_MNEMONIC_JP:
-	case ZYDIS_MNEMONIC_JNP:
-	case ZYDIS_MNEMONIC_JZ:
-	case ZYDIS_MNEMONIC_JNZ:
-	case ZYDIS_MNEMONIC_JNLE:
-	case ZYDIS_MNEMONIC_JNL:
-	case ZYDIS_MNEMONIC_LOOP:
-	case ZYDIS_MNEMONIC_LOOPE:
-	case ZYDIS_MNEMONIC_LOOPNE:
+	case X86_INS_JL:
+	case X86_INS_JLE:
+	case X86_INS_JA:
+	case X86_INS_JAE:
+	case X86_INS_JB:
+	case X86_INS_JBE:
+	case X86_INS_JCXZ:
+	case X86_INS_JECXZ:
+	case X86_INS_JRCXZ:
+	case X86_INS_JO:
+	case X86_INS_JNO:
+	case X86_INS_JS:
+	case X86_INS_JNS:
+	case X86_INS_JP:
+	case X86_INS_JNP:
+	case X86_INS_JE:
+	case X86_INS_JNE:
+	case X86_INS_JG:
+	case X86_INS_JGE:
+	case X86_INS_LOOP:
+	case X86_INS_LOOPE:
+	case X86_INS_LOOPNE:
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-		op->jump = addr + op->size + zydeop[0].imm.value.s;
+		op->jump = get_imm_reg_value(&INSOP(0), addr, op->size, a->bits);
 		op->fail = addr + op->size;
 		op->cycles = CYCLE_JMP;
 		switch (zydecode->mnemonic) {
-		case ZYDIS_MNEMONIC_JL:
-		case ZYDIS_MNEMONIC_JLE:
-		case ZYDIS_MNEMONIC_JS:
-		case ZYDIS_MNEMONIC_JNLE:
-		case ZYDIS_MNEMONIC_JNL:
+		case X86_INS_JL:
+		case X86_INS_JLE:
+		case X86_INS_JS:
+		case X86_INS_JG:
+		case X86_INS_JGE:
 			op->sign = true;
 			break;
 		default: break;
 		}
 		break;
-	case ZYDIS_MNEMONIC_CALL:
-		// case ZYDIS_MNEMONIC_LCALL:
+	case X86_INS_CALL:
+		// case X86_INS_LCALL:
 		op->cycles = CYCLE_JMP + CYCLE_MEM;
-		switch (zydeop[0].type) {
-		case ZYDIS_OPERAND_TYPE_IMMEDIATE:
+		switch (INSOP(0).type) {
+		case X86_OP_IMM:
 			op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 			// TODO: what if UCALL?
-			if (zydeop[1].type == ZYDIS_OPERAND_TYPE_IMMEDIATE) {
-				ut64 seg = get_imm_reg_value(&INSOP(0), addr, zydecode->length);
-				ut64 off = get_imm_reg_value(&INSOP(1), addr, zydecode->length);
-				op->ptr = zydeop[0].mem.disp.value;
+			if (INSOP(1).type == X86_OP_IMM) {
+				ut64 seg = get_imm_reg_value(&INSOP(0), addr, zydecode->length, a->bits);
+				ut64 off = get_imm_reg_value(&INSOP(1), addr, zydecode->length, a->bits);
+				op->ptr = INSOP(0).mem.disp.value;
 				op->jump = (seg << a->seggrn) + off;
 			} else {
-				op->jump = get_imm_reg_value(&INSOP(0), addr, zydecode->length);
+				op->jump = get_imm_reg_value(&INSOP(0), addr, zydecode->length, a->bits);
 			}
 			op->fail = addr + op->size;
 			break;
-		case ZYDIS_OPERAND_TYPE_MEMORY:
+		case X86_OP_MEM:
 			op->type = RZ_ANALYSIS_OP_TYPE_UCALL;
 			op->jump = UT64_MAX;
-			op->ptr = zydeop[0].mem.disp.value;
-			op->disp = zydeop[0].mem.disp.value;
+			op->ptr = INSOP(0).mem.disp.value;
+			op->disp = INSOP(0).mem.disp.value;
 			op->reg = NULL;
 			op->ireg = NULL;
 			op->cycles += CYCLE_MEM;
-			if (zydeop[0].mem.index == ZYDIS_REGISTER_NONE) {
-				if (zydeop[0].mem.base != ZYDIS_REGISTER_NONE) {
-					op->reg = ZydisRegisterGetString(zydeop[0].mem.base);
+			if (INSOP(0).mem.index == X86_REG_NONE) {
+				if (INSOP(0).mem.base != X86_REG_NONE) {
+					op->reg = ZydisRegisterGetString(INSOP(0).mem.base);
 					op->type = RZ_ANALYSIS_OP_TYPE_IRCALL;
 				}
 			} else {
-				op->ireg = ZydisRegisterGetString(zydeop[0].mem.index);
-				op->scale = zydeop[0].mem.scale;
+				op->ireg = ZydisRegisterGetString(INSOP(0).mem.index);
+				op->scale = INSOP(0).mem.scale;
 			}
-			if (zydeop[0].mem.base == ZYDIS_REGISTER_RIP) {
+			if (INSOP(0).mem.base == X86_REG_RIP) {
 				op->ptr += addr + zydecode->length;
 				op->refptr = 8;
 			}
 			break;
-		case ZYDIS_OPERAND_TYPE_REGISTER:
-			op->reg = ZydisRegisterGetString(zydeop[0].reg.value);
+		case X86_OP_REG:
+			op->reg = ZydisRegisterGetString(INSOP(0).reg.value);
 			op->type = RZ_ANALYSIS_OP_TYPE_RCALL;
 			op->ptr = UT64_MAX;
 			op->cycles += CYCLE_REG;
+			break;
+		case X86_OP_PTR:
+			op->type = RZ_ANALYSIS_OP_TYPE_UCALL;
+			op->jump = INSOP(0).ptr.segment * (a->bits) + INSOP(0).ptr.offset;
+			op->ptr = INSOP(0).ptr.segment * (a->bits) + INSOP(0).ptr.offset;
+			op->disp = INSOP(0).ptr.segment * (a->bits) + INSOP(0).ptr.offset;
+			op->reg = NULL;
+			op->ireg = NULL;
+			op->cycles += CYCLE_MEM;
+			op->fail = addr + op->size;
 			break;
 		default:
 			op->type = RZ_ANALYSIS_OP_TYPE_UCALL;
@@ -2738,17 +2777,17 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 			break;
 		}
 		break;
-	case ZYDIS_MNEMONIC_JMP:
+	case X86_INS_JMP:
 		//  TODO: what if UJMP?
-		switch (zydeop[0].type) {
-		case ZYDIS_OPERAND_TYPE_IMMEDIATE:
-			if (zydeop[1].type == ZYDIS_OPERAND_TYPE_IMMEDIATE) {
-				ut64 seg = get_imm_reg_value(&INSOP(0), addr, zydecode->length);
-				ut64 off = get_imm_reg_value(&INSOP(1), addr, zydecode->length);
-				op->ptr = zydeop[0].mem.disp.value;
+		switch (INSOP(0).type) {
+		case X86_OP_IMM:
+			if (INSOP(1).type == X86_OP_IMM) {
+				ut64 seg = get_imm_reg_value(&INSOP(0), addr, zydecode->length, a->bits);
+				ut64 off = get_imm_reg_value(&INSOP(1), addr, zydecode->length, a->bits);
+				op->ptr = INSOP(0).mem.disp.value;
 				op->jump = (seg << a->seggrn) + off;
 			} else {
-				op->jump = get_imm_reg_value(&INSOP(0), addr, zydecode->length);
+				op->jump = get_imm_reg_value(&INSOP(0), addr, zydecode->length, a->bits);
 				if (a->bits == 16) {
 					// https://github.com/capstone-engine/capstone/issues/111
 					// according to the x86 manual: the upper two bytes of the EIP register are cleared.
@@ -2759,355 +2798,360 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 			op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 			op->cycles = CYCLE_JMP;
 			break;
-		case ZYDIS_OPERAND_TYPE_MEMORY:
+		case X86_OP_MEM:
 			// op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
 			op->type = RZ_ANALYSIS_OP_TYPE_MJMP;
-			op->ptr = zydeop[0].mem.disp.value;
-			op->disp = zydeop[0].mem.disp.value;
+			op->ptr = INSOP(0).mem.disp.value;
+			op->disp = INSOP(0).mem.disp.value;
 			op->reg = NULL;
 			op->ireg = NULL;
 			op->cycles = CYCLE_JMP + CYCLE_MEM;
-			if (zydeop[0].mem.base != ZYDIS_REGISTER_NONE) {
-				if (zydeop[0].mem.base != ZYDIS_REGISTER_NONE) {
-					op->reg = ZydisRegisterGetString(zydeop[0].mem.base);
+			if (INSOP(0).mem.base != X86_REG_NONE) {
+				if (INSOP(0).mem.base != X86_REG_NONE) {
+					op->reg = ZydisRegisterGetString(INSOP(0).mem.base);
 					op->type = RZ_ANALYSIS_OP_TYPE_IRJMP;
 				}
 			}
-			if (zydeop[0].mem.index == ZYDIS_REGISTER_NONE) {
+			if (INSOP(0).mem.index == X86_REG_NONE) {
 				op->ireg = NULL;
 			} else {
 				op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
-				op->ireg = ZydisRegisterGetString(zydeop[0].mem.index);
-				op->scale = zydeop[0].mem.scale;
+				op->ireg = ZydisRegisterGetString(INSOP(0).mem.index);
+				op->scale = INSOP(0).mem.scale;
 			}
-			if (zydeop[0].mem.base == ZYDIS_REGISTER_RIP) {
+			if (INSOP(0).mem.base == X86_REG_RIP) {
 				op->ptr += addr + zydecode->length;
 				op->refptr = 8;
 			}
 			break;
-		case ZYDIS_OPERAND_TYPE_REGISTER: {
+		case X86_OP_REG: {
 			op->cycles = CYCLE_JMP + CYCLE_REG;
-			op->reg = ZydisRegisterGetString(zydeop[0].reg.value);
+			op->reg = ZydisRegisterGetString(INSOP(0).reg.value);
 			op->type = RZ_ANALYSIS_OP_TYPE_RJMP;
 			op->ptr = UT64_MAX;
 		} break;
-		// case ZYDIS_OPERAND_TYPE_FP:
+		case X86_OP_PTR: {
+			ut64 seg = INSOP(0).ptr.segment;
+			ut64 off = INSOP(0).ptr.offset;
+			op->ptr = INSOP(0).mem.disp.value;
+			op->jump = (seg << a->seggrn) + off;
+		} break;
 		default: // other?
 			op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
 			op->ptr = UT64_MAX;
 			break;
 		}
 		break;
-	case ZYDIS_MNEMONIC_IN:
-	case ZYDIS_MNEMONIC_INSW:
-	case ZYDIS_MNEMONIC_INSD:
-	case ZYDIS_MNEMONIC_INSB:
+	case X86_INS_IN:
+	case X86_INS_INSW:
+	case X86_INS_INSD:
+	case X86_INS_INSB:
 		op->type = RZ_ANALYSIS_OP_TYPE_IO;
 		op->type2 = 0;
 		break;
-	case ZYDIS_MNEMONIC_OUT:
-	case ZYDIS_MNEMONIC_OUTSB:
-	case ZYDIS_MNEMONIC_OUTSD:
-	case ZYDIS_MNEMONIC_OUTSW:
+	case X86_INS_OUT:
+	case X86_INS_OUTSB:
+	case X86_INS_OUTSD:
+	case X86_INS_OUTSW:
 		op->type = RZ_ANALYSIS_OP_TYPE_IO;
 		op->type2 = 1;
 		break;
-	case ZYDIS_MNEMONIC_VXORPD:
-	case ZYDIS_MNEMONIC_VXORPS:
-	case ZYDIS_MNEMONIC_VPXORD:
-	case ZYDIS_MNEMONIC_VPXORQ:
-	case ZYDIS_MNEMONIC_VPXOR:
-	case ZYDIS_MNEMONIC_XORPS:
-	case ZYDIS_MNEMONIC_KXORW:
-	case ZYDIS_MNEMONIC_PXOR:
+	case X86_INS_VXORPD:
+	case X86_INS_VXORPS:
+	case X86_INS_VPXORD:
+	case X86_INS_VPXORQ:
+	case X86_INS_VPXOR:
+	case X86_INS_XORPS:
+	case X86_INS_KXORW:
+	case X86_INS_PXOR:
 		op->type = RZ_ANALYSIS_OP_TYPE_XOR;
 		break;
-	case ZYDIS_MNEMONIC_XOR:
+	case X86_INS_XOR:
 		op->type = RZ_ANALYSIS_OP_TYPE_XOR;
 		// TODO: Add stack indexing handling chang
-		op0_memimmhandle(op, zydecode, zydeop, addr, regsz);
-		op1_memimmhandle(op, zydecode, zydeop, addr, regsz);
+		op0_memimmhandle(op, zydecode, zydeop, addr, regsz, a->bits);
+		op1_memimmhandle(op, zydecode, zydeop, addr, regsz, a->bits);
 		break;
-	case ZYDIS_MNEMONIC_OR:
+	case X86_INS_OR:
 		// The OF and CF flags are cleared; the SF, ZF, and PF flags are
 		// set according to the result. The state of the AF flag is
 		// undefined.
 		op->type = RZ_ANALYSIS_OP_TYPE_OR;
 		// TODO: Add stack indexing handling chang
-		op0_memimmhandle(op, zydecode, zydeop, addr, regsz);
-		op1_memimmhandle(op, zydecode, zydeop, addr, regsz);
+		op0_memimmhandle(op, zydecode, zydeop, addr, regsz, a->bits);
+		op1_memimmhandle(op, zydecode, zydeop, addr, regsz, a->bits);
 		break;
-	case ZYDIS_MNEMONIC_INC:
+	case X86_INS_INC:
 		// The CF flag is not affected. The OF, SF, ZF, AF, and PF flags
 		// are set according to the result.
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		op->val = 1;
 		break;
-	case ZYDIS_MNEMONIC_DEC:
+	case X86_INS_DEC:
 		// The CF flag is not affected. The OF, SF, ZF, AF, and PF flags
 		// are set according to the result.
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 		op->val = 1;
 		break;
-	case ZYDIS_MNEMONIC_NEG:
+	case X86_INS_NEG:
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 		op->family = RZ_ANALYSIS_OP_FAMILY_CPU;
 		break;
-	case ZYDIS_MNEMONIC_NOT:
+	case X86_INS_NOT:
 		op->type = RZ_ANALYSIS_OP_TYPE_NOT;
 		op->family = RZ_ANALYSIS_OP_FAMILY_CPU;
 		break;
-	case ZYDIS_MNEMONIC_PSUBB:
-	case ZYDIS_MNEMONIC_PSUBW:
-	case ZYDIS_MNEMONIC_PSUBD:
-	case ZYDIS_MNEMONIC_PSUBQ:
-	case ZYDIS_MNEMONIC_PSUBSB:
-	case ZYDIS_MNEMONIC_PSUBSW:
-	case ZYDIS_MNEMONIC_PSUBUSB:
-	case ZYDIS_MNEMONIC_PSUBUSW:
+	case X86_INS_PSUBB:
+	case X86_INS_PSUBW:
+	case X86_INS_PSUBD:
+	case X86_INS_PSUBQ:
+	case X86_INS_PSUBSB:
+	case X86_INS_PSUBSW:
+	case X86_INS_PSUBUSB:
+	case X86_INS_PSUBUSW:
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 		break;
-	case ZYDIS_MNEMONIC_SUB:
+	case X86_INS_SUB:
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
-		op_stackidx(op, zydecode, zydeop, true, addr);
-		op0_memimmhandle(op, zydecode, zydeop, addr, regsz);
-		op1_memimmhandle(op, zydecode, zydeop, addr, regsz);
+		op_stackidx(op, zydecode, zydeop, false, addr, a->bits);
+		op0_memimmhandle(op, zydecode, zydeop, addr, regsz, a->bits);
+		op1_memimmhandle(op, zydecode, zydeop, addr, regsz, a->bits);
 		break;
-	case ZYDIS_MNEMONIC_SBB:
+	case X86_INS_SBB:
 		// dst = dst - (src + cf)
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 		break;
-	case ZYDIS_MNEMONIC_LIDT:
+	case X86_INS_LIDT:
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		op->family = RZ_ANALYSIS_OP_FAMILY_PRIV;
 		break;
-	case ZYDIS_MNEMONIC_SIDT:
+	case X86_INS_SIDT:
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 		op->family = RZ_ANALYSIS_OP_FAMILY_PRIV;
 		break;
-	case ZYDIS_MNEMONIC_RDRAND:
-	case ZYDIS_MNEMONIC_RDSEED:
-	case ZYDIS_MNEMONIC_RDMSR:
-	case ZYDIS_MNEMONIC_RDPMC:
-	case ZYDIS_MNEMONIC_RDTSC:
-	case ZYDIS_MNEMONIC_RDTSCP:
-	case ZYDIS_MNEMONIC_CRC32:
-	case ZYDIS_MNEMONIC_SHA1MSG1:
-	case ZYDIS_MNEMONIC_SHA1MSG2:
-	case ZYDIS_MNEMONIC_SHA1NEXTE:
-	case ZYDIS_MNEMONIC_SHA1RNDS4:
-	case ZYDIS_MNEMONIC_SHA256MSG1:
-	case ZYDIS_MNEMONIC_SHA256MSG2:
-	case ZYDIS_MNEMONIC_SHA256RNDS2:
-	case ZYDIS_MNEMONIC_AESDECLAST:
-	case ZYDIS_MNEMONIC_AESDEC:
-	case ZYDIS_MNEMONIC_AESENCLAST:
-	case ZYDIS_MNEMONIC_AESENC:
-	case ZYDIS_MNEMONIC_AESIMC:
-	case ZYDIS_MNEMONIC_AESKEYGENASSIST:
+	case X86_INS_RDRAND:
+	case X86_INS_RDSEED:
+	case X86_INS_RDMSR:
+	case X86_INS_RDPMC:
+	case X86_INS_RDTSC:
+	case X86_INS_RDTSCP:
+	case X86_INS_CRC32:
+	case X86_INS_SHA1MSG1:
+	case X86_INS_SHA1MSG2:
+	case X86_INS_SHA1NEXTE:
+	case X86_INS_SHA1RNDS4:
+	case X86_INS_SHA256MSG1:
+	case X86_INS_SHA256MSG2:
+	case X86_INS_SHA256RNDS2:
+	case X86_INS_AESDECLAST:
+	case X86_INS_AESDEC:
+	case X86_INS_AESENCLAST:
+	case X86_INS_AESENC:
+	case X86_INS_AESIMC:
+	case X86_INS_AESKEYGENASSIST:
 		// AES instructions
 		op->family = RZ_ANALYSIS_OP_FAMILY_CRYPTO;
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV; // XXX
 		break;
-	case ZYDIS_MNEMONIC_ANDN:
-	case ZYDIS_MNEMONIC_ANDPD:
-	case ZYDIS_MNEMONIC_ANDPS:
-	case ZYDIS_MNEMONIC_ANDNPD:
-	case ZYDIS_MNEMONIC_ANDNPS:
+	case X86_INS_ANDN:
+	case X86_INS_ANDPD:
+	case X86_INS_ANDPS:
+	case X86_INS_ANDNPD:
+	case X86_INS_ANDNPS:
 		op->type = RZ_ANALYSIS_OP_TYPE_AND;
 		break;
-	case ZYDIS_MNEMONIC_AND:
+	case X86_INS_AND:
 		op->type = RZ_ANALYSIS_OP_TYPE_AND;
 		// TODO: Add stack register change operation
-		op0_memimmhandle(op, zydecode, zydeop, addr, regsz);
-		op1_memimmhandle(op, zydecode, zydeop, addr, regsz);
+		op0_memimmhandle(op, zydecode, zydeop, addr, regsz, a->bits);
+		op1_memimmhandle(op, zydecode, zydeop, addr, regsz, a->bits);
 		break;
-	case ZYDIS_MNEMONIC_IDIV:
+	case X86_INS_IDIV:
 		op->type = RZ_ANALYSIS_OP_TYPE_DIV;
 		break;
-	case ZYDIS_MNEMONIC_DIV:
+	case X86_INS_DIV:
 		op->type = RZ_ANALYSIS_OP_TYPE_DIV;
 		break;
-	case ZYDIS_MNEMONIC_IMUL:
+	case X86_INS_IMUL:
 		op->type = RZ_ANALYSIS_OP_TYPE_MUL;
 		op->sign = true;
 		break;
-	case ZYDIS_MNEMONIC_AAM:
-	case ZYDIS_MNEMONIC_MUL:
-	case ZYDIS_MNEMONIC_MULX:
-	case ZYDIS_MNEMONIC_MULPD:
-	case ZYDIS_MNEMONIC_MULPS:
-	case ZYDIS_MNEMONIC_MULSD:
-	case ZYDIS_MNEMONIC_MULSS:
+	case X86_INS_AAM:
+	case X86_INS_MUL:
+	case X86_INS_MULX:
+	case X86_INS_MULPD:
+	case X86_INS_MULPS:
+	case X86_INS_MULSD:
+	case X86_INS_MULSS:
 		op->type = RZ_ANALYSIS_OP_TYPE_MUL;
 		break;
-	case ZYDIS_MNEMONIC_PACKSSDW:
-	case ZYDIS_MNEMONIC_PACKSSWB:
-	case ZYDIS_MNEMONIC_PACKUSWB:
+	case X86_INS_PACKSSDW:
+	case X86_INS_PACKSSWB:
+	case X86_INS_PACKUSWB:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		op->family = RZ_ANALYSIS_OP_FAMILY_MMX;
 		break;
-	case ZYDIS_MNEMONIC_PADDB:
-	case ZYDIS_MNEMONIC_PADDD:
-	case ZYDIS_MNEMONIC_PADDW:
-	case ZYDIS_MNEMONIC_PADDSB:
-	case ZYDIS_MNEMONIC_PADDSW:
-	case ZYDIS_MNEMONIC_PADDUSB:
-	case ZYDIS_MNEMONIC_PADDUSW:
+	case X86_INS_PADDB:
+	case X86_INS_PADDD:
+	case X86_INS_PADDW:
+	case X86_INS_PADDSB:
+	case X86_INS_PADDSW:
+	case X86_INS_PADDUSB:
+	case X86_INS_PADDUSW:
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		op->family = RZ_ANALYSIS_OP_FAMILY_MMX;
 		break;
-	case ZYDIS_MNEMONIC_XCHG:
+	case X86_INS_XCHG:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		op->family = RZ_ANALYSIS_OP_FAMILY_CPU;
 		break;
-	case ZYDIS_MNEMONIC_XADD: /* xchg + add */
+	case X86_INS_XADD: /* xchg + add */
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		op->family = RZ_ANALYSIS_OP_FAMILY_CPU;
 		break;
-	case ZYDIS_MNEMONIC_FADD:
-	case ZYDIS_MNEMONIC_FADDP:
+	case X86_INS_FADD:
+	case X86_INS_FADDP:
 		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		break;
-	case ZYDIS_MNEMONIC_ADDPS:
-	case ZYDIS_MNEMONIC_ADDSD:
-	case ZYDIS_MNEMONIC_ADDSS:
-	case ZYDIS_MNEMONIC_ADDSUBPD:
-	case ZYDIS_MNEMONIC_ADDSUBPS:
-	case ZYDIS_MNEMONIC_ADDPD:
+	case X86_INS_ADDPS:
+	case X86_INS_ADDSD:
+	case X86_INS_ADDSS:
+	case X86_INS_ADDSUBPD:
+	case X86_INS_ADDSUBPS:
+	case X86_INS_ADDPD:
 		// The OF, SF, ZF, AF, CF, and PF flags are set according to the
 		// result.
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
-		op_stackidx(op, zydecode, zydeop, true, addr);
-		op->val = get_imm_reg_value(&INSOP(1), addr, zydecode->length);
+		op_stackidx(op, zydecode, zydeop, true, addr, a->bits);
+		op->val = get_imm_reg_value(&INSOP(1), addr, zydecode->length, a->bits);
 		break;
-	case ZYDIS_MNEMONIC_ADD:
+	case X86_INS_ADD:
 		// The OF, SF, ZF, AF, CF, and PF flags are set according to the
 		// result.
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
-		op_stackidx(op, zydecode, zydeop, true, addr);
-		op0_memimmhandle(op, zydecode, zydeop, addr, regsz);
-		op1_memimmhandle(op, zydecode, zydeop, addr, regsz);
+		op_stackidx(op, zydecode, zydeop, true, addr, a->bits);
+		op0_memimmhandle(op, zydecode, zydeop, addr, regsz, a->bits);
+		op1_memimmhandle(op, zydecode, zydeop, addr, regsz, a->bits);
 		break;
-	case ZYDIS_MNEMONIC_ADC:
+	case X86_INS_ADC:
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		break;
 		/* Direction flag */
-	case ZYDIS_MNEMONIC_CLD:
+	case X86_INS_CLD:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		break;
-	case ZYDIS_MNEMONIC_STD:
+	case X86_INS_STD:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		break;
-	case ZYDIS_MNEMONIC_SUBSD: // cvtss2sd
-	case ZYDIS_MNEMONIC_CVTSS2SD: // cvtss2sd
+	case X86_INS_SUBSD: // cvtss2sd
+	case X86_INS_CVTSS2SD: // cvtss2sd
 		break;
 	default: break;
 	}
 
 	switch (zydecode->mnemonic) {
-	case ZYDIS_MNEMONIC_PADDB:
-	case ZYDIS_MNEMONIC_PADDW:
-	case ZYDIS_MNEMONIC_PADDD:
-	case ZYDIS_MNEMONIC_PSUBB:
-	case ZYDIS_MNEMONIC_PSUBW:
-	case ZYDIS_MNEMONIC_PSUBD:
-	case ZYDIS_MNEMONIC_PMULHW:
-	case ZYDIS_MNEMONIC_PMULLW:
-	case ZYDIS_MNEMONIC_PMADDWD:
-	case ZYDIS_MNEMONIC_PAND:
-	case ZYDIS_MNEMONIC_PANDN:
-	case ZYDIS_MNEMONIC_POR:
-	case ZYDIS_MNEMONIC_PXOR:
-	case ZYDIS_MNEMONIC_PCMPEQB:
-	case ZYDIS_MNEMONIC_PCMPEQW:
-	case ZYDIS_MNEMONIC_PCMPEQD:
-	case ZYDIS_MNEMONIC_PSLLD:
-	case ZYDIS_MNEMONIC_PSLLW:
-	case ZYDIS_MNEMONIC_PSRLQ:
-	case ZYDIS_MNEMONIC_PSUBSB:
-	case ZYDIS_MNEMONIC_PSUBSW:
-	case ZYDIS_MNEMONIC_PADDQ:
+	case X86_INS_PADDB:
+	case X86_INS_PADDW:
+	case X86_INS_PADDD:
+	case X86_INS_PSUBB:
+	case X86_INS_PSUBW:
+	case X86_INS_PSUBD:
+	case X86_INS_PMULHW:
+	case X86_INS_PMULLW:
+	case X86_INS_PMADDWD:
+	case X86_INS_PAND:
+	case X86_INS_PANDN:
+	case X86_INS_POR:
+	case X86_INS_PXOR:
+	case X86_INS_PCMPEQB:
+	case X86_INS_PCMPEQW:
+	case X86_INS_PCMPEQD:
+	case X86_INS_PSLLD:
+	case X86_INS_PSLLW:
+	case X86_INS_PSRLQ:
+	case X86_INS_PSUBSB:
+	case X86_INS_PSUBSW:
+	case X86_INS_PADDQ:
 		op->family = RZ_ANALYSIS_OP_FAMILY_MMX;
 		break;
 	// SSE1 Instructions:
-	case ZYDIS_MNEMONIC_ADDPS:
-	case ZYDIS_MNEMONIC_ADDSS:
-	case ZYDIS_MNEMONIC_ANDPS:
-	case ZYDIS_MNEMONIC_CMPPS:
-	case ZYDIS_MNEMONIC_CMPSS:
-	case ZYDIS_MNEMONIC_DIVPS:
-	case ZYDIS_MNEMONIC_DIVSS:
-	case ZYDIS_MNEMONIC_MAXPS:
-	case ZYDIS_MNEMONIC_MAXSS:
-	case ZYDIS_MNEMONIC_MINPS:
-	case ZYDIS_MNEMONIC_MINSS:
-	case ZYDIS_MNEMONIC_MULPS:
-	case ZYDIS_MNEMONIC_MULSS:
-	case ZYDIS_MNEMONIC_ORPS:
-	// case ZYDIS_MNEMONIC_ORSS:
-	case ZYDIS_MNEMONIC_RSQRTPS:
-	case ZYDIS_MNEMONIC_RSQRTSS:
-	case ZYDIS_MNEMONIC_SUBPS:
-	case ZYDIS_MNEMONIC_SUBSS:
-	case ZYDIS_MNEMONIC_SQRTPS:
-	case ZYDIS_MNEMONIC_SQRTSS:
+	case X86_INS_ADDPS:
+	case X86_INS_ADDSS:
+	case X86_INS_ANDPS:
+	case X86_INS_CMPPS:
+	case X86_INS_CMPSS:
+	case X86_INS_DIVPS:
+	case X86_INS_DIVSS:
+	case X86_INS_MAXPS:
+	case X86_INS_MAXSS:
+	case X86_INS_MINPS:
+	case X86_INS_MINSS:
+	case X86_INS_MULPS:
+	case X86_INS_MULSS:
+	case X86_INS_ORPS:
+	// case X86_INS_ORSS:
+	case X86_INS_RSQRTPS:
+	case X86_INS_RSQRTSS:
+	case X86_INS_SUBPS:
+	case X86_INS_SUBSS:
+	case X86_INS_SQRTPS:
+	case X86_INS_SQRTSS:
 	// SSE2 Instructions:
-	// case ZYDIS_MNEMONIC_ADDPS:
-	// case ZYDIS_MNEMONIC_ADDSS:
-	// case ZYDIS_MNEMONIC_ADDPD:
-	// case ZYDIS_MNEMONIC_SUBPS:
-	// case ZYDIS_MNEMONIC_SUBSS:
-	// case ZYDIS_MNEMONIC_MULPS:
-	// case ZYDIS_MNEMONIC_MULSS:
-	// case ZYDIS_MNEMONIC_DIVPS:
-	// case ZYDIS_MNEMONIC_DIVSS:
-	// case ZYDIS_MNEMONIC_MAXPS:
-	// case ZYDIS_MNEMONIC_MAXSS:
-	// case ZYDIS_MNEMONIC_MINPS:
-	// case ZYDIS_MNEMONIC_MINSS:
-	// case ZYDIS_MNEMONIC_CMPPS:
-	// case ZYDIS_MNEMONIC_CMPSS:
-	case ZYDIS_MNEMONIC_CVTPI2PS:
-	case ZYDIS_MNEMONIC_CVTSS2SI:
-	case ZYDIS_MNEMONIC_CVTPS2PI:
-	case ZYDIS_MNEMONIC_CVTSI2SS:
-	case ZYDIS_MNEMONIC_CVTTPD2DQ:
-	case ZYDIS_MNEMONIC_CVTPD2PS:
-	case ZYDIS_MNEMONIC_CVTPS2PD:
-	case ZYDIS_MNEMONIC_CVTSD2SI:
-	case ZYDIS_MNEMONIC_CVTSS2SD:
-	case ZYDIS_MNEMONIC_CVTSD2SS:
-	case ZYDIS_MNEMONIC_MOVAPD:
-	case ZYDIS_MNEMONIC_MOVAPS:
-	case ZYDIS_MNEMONIC_MOVD:
-	case ZYDIS_MNEMONIC_MOVQ:
-	case ZYDIS_MNEMONIC_PMOVMSKB:
-	// case ZYDIS_MNEMONIC_PSHUFPS:
-	case ZYDIS_MNEMONIC_PSHUFD:
-	case ZYDIS_MNEMONIC_PSHUFHW:
-	case ZYDIS_MNEMONIC_PSHUFLW:
-	case ZYDIS_MNEMONIC_PTEST:
+	// case X86_INS_ADDPS:
+	// case X86_INS_ADDSS:
+	// case X86_INS_ADDPD:
+	// case X86_INS_SUBPS:
+	// case X86_INS_SUBSS:
+	// case X86_INS_MULPS:
+	// case X86_INS_MULSS:
+	// case X86_INS_DIVPS:
+	// case X86_INS_DIVSS:
+	// case X86_INS_MAXPS:
+	// case X86_INS_MAXSS:
+	// case X86_INS_MINPS:
+	// case X86_INS_MINSS:
+	// case X86_INS_CMPPS:
+	// case X86_INS_CMPSS:
+	case X86_INS_CVTPI2PS:
+	case X86_INS_CVTSS2SI:
+	case X86_INS_CVTPS2PI:
+	case X86_INS_CVTSI2SS:
+	case X86_INS_CVTTPD2DQ:
+	case X86_INS_CVTPD2PS:
+	case X86_INS_CVTPS2PD:
+	case X86_INS_CVTSD2SI:
+	case X86_INS_CVTSS2SD:
+	case X86_INS_CVTSD2SS:
+	case X86_INS_MOVAPD:
+	case X86_INS_MOVAPS:
+	case X86_INS_MOVD:
+	case X86_INS_MOVQ:
+	case X86_INS_PMOVMSKB:
+	// case X86_INS_PSHUFPS:
+	case X86_INS_PSHUFD:
+	case X86_INS_PSHUFHW:
+	case X86_INS_PSHUFLW:
+	case X86_INS_PTEST:
 	// SSE3 Instructions:
-	case ZYDIS_MNEMONIC_ADDPD:
-	// case ZYDIS_MNEMONIC_ADDPS:
-	// case ZYDIS_MNEMONIC_ANDPD:
-	// case ZYDIS_MNEMONIC_ANDPS:
-	case ZYDIS_MNEMONIC_CMPPD:
-	// case ZYDIS_MNEMONIC_CMPPS:
-	case ZYDIS_MNEMONIC_CVTDQ2PS:
-	case ZYDIS_MNEMONIC_CVTPS2DQ:
-	// case ZYDIS_MNEMONIC_CVTSS2SD:
-	// case ZYDIS_MNEMONIC_CVTSD2SS:
-	// case ZYDIS_MNEMONIC_CVTTPD2DQ:
-	// case ZYDIS_MNEMONIC_CVTPD2PS:
-	// case ZYDIS_MNEMONIC_MOVAPS:
-	case ZYDIS_MNEMONIC_MOVDDUP:
-	case ZYDIS_MNEMONIC_MOVSS:
-	// case ZYDIS_MNEMONIC_PSHUFPS:
-	case ZYDIS_MNEMONIC_RCPPS:
-		// case ZYDIS_MNEMONIC_RSQRTPS:
+	case X86_INS_ADDPD:
+	// case X86_INS_ADDPS:
+	// case X86_INS_ANDPD:
+	// case X86_INS_ANDPS:
+	case X86_INS_CMPPD:
+	// case X86_INS_CMPPS:
+	case X86_INS_CVTDQ2PS:
+	case X86_INS_CVTPS2DQ:
+	// case X86_INS_CVTSS2SD:
+	// case X86_INS_CVTSD2SS:
+	// case X86_INS_CVTTPD2DQ:
+	// case X86_INS_CVTPD2PS:
+	// case X86_INS_MOVAPS:
+	case X86_INS_MOVDDUP:
+	case X86_INS_MOVSS:
+	// case X86_INS_PSHUFPS:
+	case X86_INS_RCPPS:
+		// case X86_INS_RSQRTPS:
 		op->family = RZ_ANALYSIS_OP_FAMILY_SSE;
 		break;
 	default: break;
@@ -3121,9 +3165,33 @@ static inline ZydisMachineMode select_mode(RzAnalysis *a) {
 	case 32:
 		return ZYDIS_MACHINE_MODE_LONG_COMPAT_32;
 	case 16:
-		return ZYDIS_MACHINE_MODE_LONG_COMPAT_32;
+		return ZYDIS_MACHINE_MODE_LONG_COMPAT_16;
 	default:
 		return 0;
+	}
+}
+
+static void change_size(RzAnalysis *a, ZydisDecodedInstruction *zydecode, ZydisDecodedOperand *zydeop) {
+	for (int i = 0; i < zydecode->operand_count; i++) { // not operand_count_visible to change even the hidden operands
+		zydeop[i].size = zydeop[i].size / 8; // Convert from bits to bytes
+		if (zydeop->type == X86_OP_IMM) {
+			if (zydeop->imm.is_relative) {
+				zydeop->size = (a->bits) / 8;
+			}
+		}
+	}
+	if (INSOP(1).type == X86_OP_IMM) {
+		switch (zydecode->mnemonic) {
+		case X86_INS_XOR:
+		case X86_INS_ADD:
+		case X86_INS_AND:
+		case X86_INS_SUB:
+		case X86_INS_MOV:
+		case X86_INS_CMP:
+		case X86_INS_TEST:
+			INSOP(1).size = INSOP(0).size;
+		default: break;
+		}
 	}
 }
 
@@ -3164,14 +3232,9 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
 			op->mnemonic = rz_str_dup("invalid");
 		}
-		op->size = 0;
+		return 0;
 	}
-	for (int i = 0; i < zydx->zydecode->operand_count; i++) {
-		zydx->zydeop[i].size = zydx->zydeop[i].size / 8; // Convert from bits to bytes
-		if (zydx->zydeop[i].type == ZYDIS_OPERAND_TYPE_IMMEDIATE) {
-			zydx->zydeop[i].size = (a->bits) / 8;
-		}
-	}
+	change_size(a, zydx->zydecode, zydx->zydeop);
 	if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
 		ZydisFormatter formatter;
 		char mnemonic[256];
@@ -3182,24 +3245,19 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		op->mnemonic = rz_str_dup(mnemonic);
 	}
 	op->cycles = 1;
-	op->nopcode = zydx->zydecode->raw.prefix_count + zydx->zydecode->operand_count;
+	op->nopcode = zydx->zydecode->raw.prefix_count + zydx->zydecode->opcode_map;
 	op->size = zydx->zydecode->length;
 	op->id = zydx->zydecode->mnemonic;
 	op->family = RZ_ANALYSIS_OP_FAMILY_CPU; // Almost everything is CPU by default
 	op->prefix = 0;
 	op->cond = cond_x862r2(zydx->zydecode->mnemonic);
-	for (int i = 0; i < zydx->zydecode->raw.prefix_count; i++) {
-		if (zydx->zydecode->raw.prefixes[i].value == 0xF2) {
-			op->prefix |= RZ_ANALYSIS_OP_PREFIX_REPNE;
-			break;
-		} else if (zydx->zydecode->raw.prefixes[i].value == 0xF3) {
-			op->prefix |= RZ_ANALYSIS_OP_PREFIX_REP;
-			break;
-		} else if (zydx->zydecode->raw.prefixes[i].value == 0xF0) {
-			op->prefix |= RZ_ANALYSIS_OP_PREFIX_LOCK;
-			op->family = RZ_ANALYSIS_OP_FAMILY_THREAD; // XXX ?
-			break;
-		}
+	if (zydx->zydecode->raw.prefixes[0].value == 0xF2) {
+		op->prefix |= RZ_ANALYSIS_OP_PREFIX_REPNE;
+	} else if (zydx->zydecode->raw.prefixes[0].value == 0xF3) {
+		op->prefix |= RZ_ANALYSIS_OP_PREFIX_REP;
+	} else if (zydx->zydecode->raw.prefixes[0].value == 0xF0) {
+		op->prefix |= RZ_ANALYSIS_OP_PREFIX_LOCK;
+		op->family = RZ_ANALYSIS_OP_FAMILY_THREAD; // XXX ?
 	}
 	anop(a, op, addr, buf, len, zydx->zydecode, zydx->zydeop);
 	set_opdir(op, zydx->zydecode, zydx->zydeop);
@@ -3207,7 +3265,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		anop_esil(a, op, addr, buf, len, zydx->zydecode, zydx->zydeop);
 	}
 	if (mask & RZ_ANALYSIS_OP_MASK_OPEX) {
-		opex(&op->opex, zydx, mode, addr);
+		opex(&op->opex, zydx, mode, addr, a->bits);
 	}
 	if (mask & RZ_ANALYSIS_OP_MASK_VAL) {
 		op_fillval(a, op, zydx->zydecode, zydx->zydeop, mode, addr);
@@ -3216,13 +3274,12 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		// x86 RzIL uplifting
 		X86ILIns x86_il_ins = {
 			.structure = zydx->zydecode,
+			.operands = zydx->zydeop,
 			.mnem = zydx->zydecode->mnemonic,
 			.ins_size = op->size
 		};
 		rz_x86_il_opcode(a, op, addr + op->size, &x86_il_ins);
 	}
-	RZ_FREE(zydx->zydeop);
-	RZ_FREE(zydx->zydecode);
 	return op->size;
 }
 
@@ -3238,6 +3295,8 @@ static bool x86_init(void **user) {
 static bool x86_fini(void *user) {
 	rz_return_val_if_fail(user, false);
 	X86ZYDISContext *zydx = (X86ZYDISContext *)user;
+	RZ_FREE(zydx->zydeop);
+	RZ_FREE(zydx->zydecode);
 	free(zydx);
 	return true;
 }
@@ -3708,7 +3767,7 @@ static int archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
 	case RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN:
 		/* fall-thru */
 	case RZ_ANALYSIS_ARCHINFO_DATA_ALIGN:
-		return 0;
+		return 1;
 	case RZ_ANALYSIS_ARCHINFO_CAN_USE_POINTERS:
 		return true;
 	default:

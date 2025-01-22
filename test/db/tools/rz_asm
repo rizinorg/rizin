@@ -85,11 +85,11 @@ EXPECT=<<EOF
 push rbp
 mov ebp, esp
 sub esp, 0x20
-cmp eax, 0
-jne 0x16
-mov eax, 0
+cmp eax, 0x00
+jnz 0x16
+mov eax, 0x00
 jmp 0x1b
-mov eax, 1
+mov eax, 0x01
 add esp, 0x20
 pop rbp
 ret
@@ -219,7 +219,7 @@ NAME=rz-asm -s
 FILE==
 CMDS=!rz-asm -s att -a x86 -b 32 -D "31ed"
 EXPECT=<<EOF
-0x00000000   2                     31ed  xorl %ebp, %ebp
+0x00000000   2                     31ed  xor %ebp, %ebp
 EOF
 RUN
 
@@ -227,7 +227,7 @@ NAME=rz-asm -o
 FILE==
 CMDS=!rz-asm -s att -o 0xa -a x86 -b 32 -D "31ed"
 EXPECT=<<EOF
-0x0000000a   2                     31ed  xorl %ebp, %ebp
+0x0000000a   2                     31ed  xor %ebp, %ebp
 EOF
 RUN
 

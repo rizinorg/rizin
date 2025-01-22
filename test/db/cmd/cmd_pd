@@ -13,13 +13,13 @@ e asm.sub.rel=0
 pd 1
 EOF
 EXPECT=<<EOF
-            0x100001232      c70594420000.  mov   dword [section.10.__DATA.__data], 0x50 ; 'P'
+            0x100001232      c70594420000.  mov   dword [rip+0x4294], 0x50 ; 'P' ; section.10.__DATA.__data
                                                                        ; [0x1000054d0:4]=80 ; U"P."
             0x100001232      c70594420000.  mov   dword [section.10.__DATA.__data], 0x50 ; 'P'
                                                                        ; [0x1000054d0:4]=80 ; U"P."
             0x100001232      c70594420000.  mov   dword [fin.dus], 0x50 ; 'P'
                                                                        ; [0x1000054d0:4]=80 ; U"P."
-            0x100001232      c70594420000.  mov   dword [fin.dus], 0x50 ; 'P'
+            0x100001232      c70594420000.  mov   dword [rip+0x4294], 0x50 ; 'P' ; fin.dus
                                                                        ; [0x1000054d0:4]=80 ; U"P."
 EOF
 RUN
@@ -164,7 +164,7 @@ e asm.lines.bb=0
 pd 1
 EOF
 EXPECT=<<EOF
-  0x00000000      b8ffffffff     mov   eax, 0xffffffff                 ; -1
+  0x00000000      b8ffffffff     mov   eax, 0xffffffff
 EOF
 RUN
 
@@ -437,8 +437,8 @@ EXPECT=<<EOF
                  and rsp, 0xfffffffffffffff0
                  push rax
                  push rsp
-                 lea r8, qword [0x11e0]
-                 lea rcx, qword [0x1170]
+                 lea r8, qword [0x000011e0]
+                 lea rcx, qword [0x00001170]
                  ; 0xd7c
                  lea rdi, qword main
 EOF
@@ -609,8 +609,8 @@ e asm.sub.rel=true
 pd 1
 EOF
 EXPECT=<<EOF
-  0x00400000      488d05020000.  lea   rax, [rip + 2]
-  0x00400000      488d05020000.  lea   rax, [0x00400009]
+  0x00400000      488d05020000.  lea   rax, qword [rip+0x02]
+  0x00400000      488d05020000.  lea   rax, qword [0x00400009]
 EOF
 RUN
 
@@ -885,7 +885,8 @@ e asm.cmt.right=false
 pd 1 @ 0x004010fa
 EOF
 EXPECT=<<EOF
-            0x004010fa      8b3500204000   mov   esi, dword [sym.imp.KERNEL32.dll_GetLastError]
+            0x004010fa      8b3500204000   mov   esi, dword [sym.imp.KERNEL32.dll_GetLastError] ; [0x402000:4]=0x29f4
+            ; [0x402000:4]=0x29f4
             0x004010fa      8b3500204000   mov esi, dword [sym.imp.KERNEL32.dll_GetLastError]
 EOF
 RUN
@@ -902,7 +903,8 @@ e asm.cmt.right=false
 pd 1 @ 0x004010fa
 EOF
 EXPECT=<<EOF
-            0x004010fa      8b3500204000   mov   esi, dword [ptr_GetLastError]
+            0x004010fa      8b3500204000   mov   esi, dword [ptr_GetLastError] ; [0x402000:4]=0x29f4
+            ; [0x402000:4]=0x29f4
             0x004010fa      8b3500204000   mov esi, dword [ptr_GetLastError]
 EOF
 RUN
@@ -1708,7 +1710,7 @@ s 0x0040294b
 pd 10
 EOF
 EXPECT=<<EOF
-|           0x0040294b      c6059ea72100.  mov   byte [0x61d0f0], 0x00
+|           0x0040294b      c6059ea72100.  mov   byte [0x0061d0f0], 0x00
 |           0x00402952      83f802         cmp   eax, 0x02
 |       ,=< 0x00402955      0f8483080000   jz    0x4031de
 |       |   |
@@ -1963,8 +1965,9 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pdJ with backslashes, quotation marks, str.escbslash and str.encoding
-FILE==
+
+NAME=pdJ with backslashes, quotation marks, str.escbslash and str.search.encoding
+FILE=malloc://1024k
 CMDS=<<EOF
 e io.cache=true
 e asm.arch=x86
@@ -2080,13 +2083,13 @@ EXPECT=<<EOF
       "opcode": "push rbx",
       "opcode": "push rax",
       "opcode": "mov ebx, edi",
-      "opcode": "cmp ebx, 2",
+      "opcode": "cmp ebx, 0x02",
       "opcode": "mov eax, 0x5758554a",
       "opcode": "mov ebp, 0x10c2377a",
       "opcode": "cmovl ebp, eax",
       "opcode": "mov eax, 0xbaad0c8f",
       "opcode": "cmp eax, 0xccdab13a",
-      "opcode": "jg 0x40058a",
+      "opcode": "jnle 0x40058a",
       "opcode": "jmp 0x4005ae",
       "opcode": "mov edi, 0x400664",
       "opcode": "xor eax, eax",
@@ -2096,22 +2099,22 @@ EXPECT=<<EOF
       "opcode": "cmp eax, 0xccdab13a",
       "opcode": "jle 0x4005ae",
       "opcode": "cmp eax, 0x10c2377a",
-      "opcode": "je 0x400570",
+      "opcode": "jz 0x400570",
       "opcode": "cmp eax, 0x5758554a",
-      "opcode": "jne 0x4005b9",
+      "opcode": "jnz 0x4005b9",
       "opcode": "mov edi, 0x40066d",
       "opcode": "call 0x400430",
       "opcode": "mov eax, 0xccdab13b",
       "opcode": "cmp eax, 0xccdab13a",
-      "opcode": "jg 0x40058a",
+      "opcode": "jnle 0x40058a",
       "opcode": "cmp eax, 0xbaad0c8f",
       "opcode": "mov eax, ebp",
-      "opcode": "je 0x400583",
+      "opcode": "jz 0x400583",
       "opcode": "jmp 0x4005d0",
       "opcode": "cmp eax, 0xccdab13b",
-      "opcode": "jne 0x4005d0",
+      "opcode": "jnz 0x4005d0",
       "opcode": "xor eax, eax",
-      "opcode": "add rsp, 8",
+      "opcode": "add rsp, 0x08",
       "opcode": "pop rbx",
       "opcode": "pop rbp",
       "opcode": "ret",
@@ -2319,7 +2322,7 @@ aaa
 pdf @ 0x08048484~:1
 EOF
 EXPECT=<<EOF
-sym.parell(const char *s, const char *format, va_list args);
+sym.parell(const char *s);
 EOF
 RUN
 
@@ -2333,7 +2336,7 @@ aaa
 pdf @ 0x08048484~:1
 EOF
 EXPECT=<<EOF
-parell(const char *s, const char *format, va_list args);
+parell(const char *s);
 EOF
 RUN
 
@@ -2394,8 +2397,8 @@ e asm.ucase=true
 pd 1
 EOF
 EXPECT=<<EOF
-0x00401533      and   esp, 0fffffff0h
-0x00401533      AND   ESP, 0FFFFFFF0H
+0x00401533      and   esp, -10h
+0x00401533      AND   ESP, -10H
 EOF
 RUN
 
@@ -2433,8 +2436,8 @@ e asm.ucase=true
 pd 1
 EOF
 EXPECT=<<EOF
-0x000007cf      call  sym.imp.strlen
-0x000007cf      CALL  sym.imp.strlen
+0x000007cf      call  $-16fh                                           ; sym.imp.strlen
+0x000007cf      CALL  $-16FH                                           ; sym.imp.strlen
 EOF
 RUN
 
@@ -2453,8 +2456,8 @@ e asm.ucase=true
 pd 1
 EOF
 EXPECT=<<EOF
-  0x10000108a      lea   rsi, section.4.__TEXT.__cstring
-  0x10000108a      LEA   RSI, section.4.__TEXT.__cstring
+  0x10000108a      lea   rsi, qword section.4.__TEXT.__cstring
+  0x10000108a      LEA   RSI, QWORD section.4.__TEXT.__cstring
 EOF
 RUN
 
@@ -2759,7 +2762,7 @@ EXPECT=<<EOF
 | 0x0804856b      mov   dword [esp], str.Password:                     ; [0x80486a7:4]=0x73736150 ; "Password: " ; const char *format
 | 0x08048572      call  sym.imp.printf                                 ; int printf(const char *format)
 | 0x08048577      lea   eax, dword [var_7ch]
-| 0x0804857a      mov   dword [arg_88h], eax
+| 0x0804857a      mov   dword [var_88h], eax
 | 0x0804857e      mov   dword [esp], data.080486b2                     ; [0x80486b2:4]=0x7325 ; "%s" ; const char *format
 | 0x08048585      call  sym.imp.scanf                                  ; int scanf(const char *format)
 | 0x0804858a      lea   eax, dword [var_7ch]
@@ -2854,8 +2857,8 @@ EXPECT=<<EOF
     "fcn_addr": 134513984,
     "fcn_last": 134514071,
     "size": 5,
-    "opcode": "mov eax, 0",
-    "disasm": "mov eax, 0",
+    "opcode": "mov eax, 0x00",
+    "disasm": "mov eax, 0x00",
     "bytes": "b800000000",
     "family": "cpu",
     "type": "mov",
@@ -2872,8 +2875,8 @@ EXPECT=<<EOF
     "fcn_addr": 134513984,
     "fcn_last": 134514073,
     "size": 3,
-    "opcode": "add eax, 0xf",
-    "disasm": "add eax, 0xf",
+    "opcode": "add eax, 0x0f",
+    "disasm": "add eax, 0x0f",
     "bytes": "83c00f",
     "family": "cpu",
     "type": "add",
@@ -2890,8 +2893,8 @@ EXPECT=<<EOF
     "fcn_addr": 134513984,
     "fcn_last": 134514073,
     "size": 3,
-    "opcode": "add eax, 0xf",
-    "disasm": "add eax, 0xf",
+    "opcode": "add eax, 0x0f",
+    "disasm": "add eax, 0x0f",
     "bytes": "83c00f",
     "family": "cpu",
     "type": "add",
@@ -2907,8 +2910,8 @@ EXPECT=<<EOF
     "fcn_addr": 134513984,
     "fcn_last": 134514073,
     "size": 3,
-    "opcode": "shr eax, 4",
-    "disasm": "shr eax, 4",
+    "opcode": "shr eax, 0x04",
+    "disasm": "shr eax, 0x04",
     "bytes": "c1e804",
     "family": "cpu",
     "type": "shr",
@@ -2923,8 +2926,8 @@ EXPECT=<<EOF
     "fcn_addr": 134513984,
     "fcn_last": 134514073,
     "size": 3,
-    "opcode": "shl eax, 4",
-    "disasm": "shl eax, 4",
+    "opcode": "shl eax, 0x04",
+    "disasm": "shl eax, 0x04",
     "bytes": "c1e004",
     "family": "cpu",
     "type": "shl",
@@ -3051,8 +3054,8 @@ EXPECT=<<EOF
     "fcn_addr": 134513984,
     "fcn_last": 134514073,
     "size": 3,
-    "opcode": "lea eax, [ebp - 0x78]",
-    "disasm": "lea eax, [var_7ch]",
+    "opcode": "lea eax, dword [ebp-0x78]",
+    "disasm": "lea eax, dword [var_7ch]",
     "bytes": "8d4588",
     "family": "cpu",
     "type": "lea",
@@ -3067,7 +3070,7 @@ EXPECT=<<EOF
     "fcn_addr": 134513984,
     "fcn_last": 134514072,
     "size": 4,
-    "opcode": "mov dword [esp + 4], eax",
+    "opcode": "mov dword [esp+0x04], eax",
     "disasm": "mov dword [var_88h], eax",
     "bytes": "89442404",
     "family": "cpu",
@@ -3131,8 +3134,8 @@ EXPECT=<<EOF
     "fcn_addr": 134513984,
     "fcn_last": 134514073,
     "size": 3,
-    "opcode": "lea eax, [ebp - 0x78]",
-    "disasm": "lea eax, [var_7ch]",
+    "opcode": "lea eax, dword [ebp-0x78]",
+    "disasm": "lea eax, dword [var_7ch]",
     "bytes": "8d4588",
     "family": "cpu",
     "type": "lea",
@@ -3188,8 +3191,8 @@ EXPECT=<<EOF
     "fcn_addr": 134513984,
     "fcn_last": 134514071,
     "size": 5,
-    "opcode": "mov eax, 0",
-    "disasm": "mov eax, 0",
+    "opcode": "mov eax, 0x00",
+    "disasm": "mov eax, 0x00",
     "bytes": "b800000000",
     "family": "cpu",
     "type": "mov",

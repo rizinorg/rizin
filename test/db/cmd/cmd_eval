@@ -131,7 +131,7 @@ e asm.syntax=masm
 pi 1
 EOF
 EXPECT=<<EOF
-jmp 10h
+jmp $+10h
 EOF
 RUN
 

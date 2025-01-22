@@ -9,15 +9,15 @@ aoj~{}
 EOF
 EXPECT=<<EOF
 address: 0x0
-opcode: mov dword [rbp - 0xc], 0
+opcode: mov dword [rbp-0x0c], 0x00
 esilcost: 12
-disasm: mov dword [rbp - 0xc], 0
-pseudo: dword [rbp - 0xc] = 0
+disasm: mov dword [rbp-0x0c], 0x00
+pseudo: dword [rbp-0x0c] = 0x00
 mnemonic: mov
 description: moves data from src to dst
 mask: ffffffffffffff
 prefix: 0
-id: 460
+id: 436
 bytes: c745f400000000
 val: 0x00000000
 disp: 0xfffffffffffffff4
@@ -34,9 +34,9 @@ stackop: set
 stackptr: 8
 [
   {
-    "opcode": "mov dword [rbp - 0xc], 0",
-    "disasm": "mov dword [rbp - 0xc], 0",
-    "pseudo": "dword [rbp - 0xc] = 0",
+    "opcode": "mov dword [rbp-0x0c], 0x00",
+    "disasm": "mov dword [rbp-0x0c], 0x00",
+    "pseudo": "dword [rbp-0x0c] = 0x00",
     "description": "moves data from src to dst",
     "mnemonic": "mov",
     "mask": "ffffffffffffff",
@@ -64,20 +64,21 @@ stackptr: 8
     },
     "sign": false,
     "prefix": 0,
-    "id": 460,
+    "id": 436,
     "opex": {
       "operands": [
         {
           "size": 4,
           "rw": 2,
           "type": "mem",
+          "segment": "ss",
           "base": "rbp",
-          "scale": 1,
+          "scale": 0,
           "disp": -12
         },
         {
           "size": 4,
-          "rw": 0,
+          "rw": 1,
           "type": "imm",
           "value": 0
         }
@@ -126,16 +127,18 @@ FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-aom 3
+aom 4
 aom aam
+aoma~movnb
 aoma~mova
 EOF
 EXPECT=<<EOF
 aam
-3
-cmova           conditional move - above/not below nor equal (cf=0 and zf=0)
-cmovae          conditional move - above or equal/not below/not carry (cf=0)
-movabs          absolute data moves
+4
+cmovnb          conditional move - not below/above or equal/not carry (cf=0)
+cmovnbe         conditional move - not below nor equal/above (cf=0 and zf=0)
+fcmovnb         fp conditional move - not below (cf=0)
+fcmovnbe        fp conditional move - not below or equal (cf=0 and zf=0)
 movapd          move aligned packed double-fp values
 movaps          move aligned packed single-fp values
 vmovapd         move aligned packed double-precision floating-point values

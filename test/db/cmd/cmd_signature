@@ -4,20 +4,20 @@ CMDS=aa ; Fs bins/other/sigs/libc-v7.sig ; pd 10 @ flirt.libc_start_main
 EXPECT=<<EOF
 Found 1 FLIRT signatures via bins/other/sigs/libc-v7.sig
             ; CALL XREF from entry0 @ 0x401384
-/ flirt.libc_start_main(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg5, int64_t arg6, int64_t arg_74h, int64_t arg_78h, int64_t arg_80h, int64_t arg_88h, int64_t arg_d0h, int64_t arg_d8h, int64_t arg_128h);
+/ flirt.libc_start_main(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg5, int64_t arg6, int64_t arg_8h);
 |           ; arg int64_t arg1 @ rdi
 |           ; arg int64_t arg2 @ rsi
 |           ; arg int64_t arg3 @ rdx
 |           ; arg int64_t arg4 @ rcx
 |           ; arg int64_t arg5 @ r8
 |           ; arg int64_t arg6 @ r9
-|           ; arg int64_t arg_74h @ stack + 0x74
-|           ; arg int64_t arg_78h @ stack + 0x78
-|           ; arg int64_t arg_80h @ stack + 0x80
-|           ; arg int64_t arg_88h @ stack + 0x88
-|           ; arg int64_t arg_d0h @ stack + 0xd0
-|           ; arg int64_t arg_d8h @ stack + 0xd8
-|           ; arg int64_t arg_128h @ stack + 0x128
+|           ; var int64_t var_ach @ stack - 0xac
+|           ; var int64_t var_a8h @ stack - 0xa8
+|           ; var int64_t var_a0h @ stack - 0xa0
+|           ; var int64_t var_98h @ stack - 0x98
+|           ; var int64_t var_50h @ stack - 0x50
+|           ; var int64_t var_48h @ stack - 0x48
+|           ; arg int64_t arg_8h @ stack + 0x8
 |           0x004e2420      push  r14
 |           0x004e2422      push  r13
 |           0x004e2424      mov   eax, 0x00
@@ -555,14 +555,14 @@ Ff @ 0x00409c70
 EOF
 EXPECT=<<EOF
 pattern f30f1efa4881ecd80000004989fa4889742428488954243048894c24384c894424404c894c244884c074370f294424500f294c24600f295424700f299c24800000000f29a424900000000f29ac24a00000000f29b424b00000000f29bc24c000000064488b042528000000488944241831c0488b3d274a0a004889e231c9488d8424e00000004c89d6c70424080000004889442408488d442420c7442404300000004889442410e8842e0000488b54241864482b14252800000075084881c4d8000000c3e8b7e103000f1f8000000000
-mask ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00000000000000ffffffffffff00000000ffffffffffffffffffffffffffffff00ffffffffffffffffff00000000ffffffffffffff
-search f30f1efa4881ecd80000004989fa4889742428488954243048894c24384c894424404c894c244884c074..0f294424500f294c24600f295424700f299c24800000000f29a424900000000f29ac24a00000000f29b424b00000000f29bc24c000000064488b042528000000488944241831c048............4889e231c9488d8424e00000004c89d6c70424080000004889442408488d442420c7..............4889442410e8........488b54241864482b14252800000075..4881c4d8000000c3e8........0f1f8000000000
+mask ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000000000ffffffffffff00000000ffffffffffffffffffffffffffffff00ffffffffffffffffff00000000ffffffffffffff
+search f30f1efa4881ecd80000004989fa4889742428488954243048894c24384c894424404c894c244884c074..0f294424500f294c24600f295424700f299c24800000000f29a424900000000f29ac24a00000000f29b424b00000000f29bc24c000000064488b042528000000488944241831c0488b3d........4889e231c9488d8424e00000004c89d6c70424080000004889442408488d442420c744............4889442410e8........488b54241864482b14252800000075..4881c4d8000000c3e8........0f1f8000000000
 {
   "pattern": "f30f1efa4881ecd80000004989fa4889742428488954243048894c24384c894424404c894c244884c074370f294424500f294c24600f295424700f299c24800000000f29a424900000000f29ac24a00000000f29b424b00000000f29bc24c000000064488b042528000000488944241831c0488b3d274a0a004889e231c9488d8424e00000004c89d6c70424080000004889442408488d442420c7442404300000004889442410e8842e0000488b54241864482b14252800000075084881c4d8000000c3e8b7e103000f1f8000000000",
-  "mask": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00000000000000ffffffffffff00000000ffffffffffffffffffffffffffffff00ffffffffffffffffff00000000ffffffffffffff",
-  "search": "f30f1efa4881ecd80000004989fa4889742428488954243048894c24384c894424404c894c244884c074..0f294424500f294c24600f295424700f299c24800000000f29a424900000000f29ac24a00000000f29b424b00000000f29bc24c000000064488b042528000000488944241831c048............4889e231c9488d8424e00000004c89d6c70424080000004889442408488d442420c7..............4889442410e8........488b54241864482b14252800000075..4881c4d8000000c3e8........0f1f8000000000"
+  "mask": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000000000ffffffffffff00000000ffffffffffffffffffffffffffffff00ffffffffffffffffff00000000ffffffffffffff",
+  "search": "f30f1efa4881ecd80000004989fa4889742428488954243048894c24384c894424404c894c244884c074..0f294424500f294c24600f295424700f299c24800000000f29a424900000000f29ac24a00000000f29b424b00000000f29bc24c000000064488b042528000000488944241831c0488b3d........4889e231c9488d8424e00000004c89d6c70424080000004889442408488d442420c744............4889442410e8........488b54241864482b14252800000075..4881c4d8000000c3e8........0f1f8000000000"
 }
-F30F1EFA4881ECD80000004989FA4889742428488954243048894C24384C8944 0A CA1D 00D0 :0000 fcn.00409c70 ..0F294424500F294C24600F295424700F299C24800000000F29A424900000000F29AC24A00000000F29B424B00000000F29BC24C000000064488B042528000000488944241831C048............4889E231C9488D8424E00000004C89D6C70424080000004889442408488D442420C7..............4889442410E8........488B54241864482B14252800000075..4881C4D8000000C3E8........0F1F8000000000
+F30F1EFA4881ECD80000004989FA4889742428488954243048894C24384C8944 0A CA1D 00D0 :0000 fcn.00409c70 ..0F294424500F294C24600F295424700F299C24800000000F29A424900000000F29AC24A00000000F29B424B00000000F29BC24C000000064488B042528000000488944241831C0488B3D........4889E231C9488D8424E00000004C89D6C70424080000004889442408488D442420C744............4889442410E8........488B54241864482B14252800000075..4881C4D8000000C3E8........0F1F8000000000
 ---
 EOF
 RUN

@@ -5,4 +5,3 @@ source_filename = zydis-amalgamated.tar.gz
 source_hash = aa9b82be3a37a2998bd8e16cf583bbf2b6c3d80e97dc20504169dc32ca1ced59
 lead_directory_missing = true
 patch_directory = zydis
-depth = 1

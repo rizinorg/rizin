@@ -15,6 +15,8 @@ e search.in=bin.sections
 %v $$ @@c:/ad fs:[ra
 EOF
 EXPECT=<<EOF
+0x1000049d4
+0x1000049d5
 0x100005078
 EOF
 RUN
@@ -26,6 +28,8 @@ e search.in=bin.sections
 %v $$ @@c:/ao fs:[ra
 EOF
 EXPECT=<<EOF
+0x1000049d4
+0x1000049d5
 0x100004cd7
 0x100004d95
 0x100004e1d
