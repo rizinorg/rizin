@@ -275,12 +275,12 @@ EXPECT=<<EOF
      push  rbp
      mov   rbp, rsp
      sub   rsp, 0x20
-     mov   dword [rbp - 0x14], edi
-     mov   qword [rbp - 0x20], rsi
+     mov   dword [rbp-0x14], edi
+     mov   qword [rbp-0x20], rsi
 b    sub   rsp, 0x20
-     mov   dword [rbp - 0x14], edi
-     mov   qword [rbp - 0x20], rsi
-     mov   dword [rbp - 4], 0
+     mov   dword [rbp-0x14], edi
+     mov   qword [rbp-0x20], rsi
+     mov   dword [rbp-0x04], 0x00
      jmp   0x400523
 EOF
 RUN

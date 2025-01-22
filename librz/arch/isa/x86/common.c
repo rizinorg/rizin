@@ -8,248 +8,248 @@
 /**
  * \brief x86 registers
  */
-const char *x86_registers[ZYDIS_REGISTER_MAX_VALUE] = {
-	[ZYDIS_REGISTER_AH] = "ah",
-	[ZYDIS_REGISTER_AL] = "al",
-	[ZYDIS_REGISTER_AX] = "ax",
-	[ZYDIS_REGISTER_BH] = "bh",
-	[ZYDIS_REGISTER_BL] = "bl",
-	[ZYDIS_REGISTER_BP] = "bp",
-	[ZYDIS_REGISTER_BPL] = "bpl",
-	[ZYDIS_REGISTER_BX] = "bx",
-	[ZYDIS_REGISTER_CH] = "ch",
-	[ZYDIS_REGISTER_CL] = "cl",
-	[ZYDIS_REGISTER_CS] = "cs",
-	[ZYDIS_REGISTER_CX] = "cx",
-	[ZYDIS_REGISTER_DH] = "dh",
-	[ZYDIS_REGISTER_DI] = "di",
-	[ZYDIS_REGISTER_DIL] = "dil",
-	[ZYDIS_REGISTER_DL] = "dl",
-	[ZYDIS_REGISTER_DS] = "ds",
-	[ZYDIS_REGISTER_DX] = "dx",
-	[ZYDIS_REGISTER_EAX] = "eax",
-	[ZYDIS_REGISTER_EBP] = "ebp",
-	[ZYDIS_REGISTER_EBX] = "ebx",
-	[ZYDIS_REGISTER_ECX] = "ecx",
-	[ZYDIS_REGISTER_EDI] = "edi",
-	[ZYDIS_REGISTER_EDX] = "edx",
-	[ZYDIS_REGISTER_EFLAGS] = "eflags",
-	[ZYDIS_REGISTER_EIP] = "eip",
-	//[ZYDIS_REGISTER_EIZ] = "eiz",
-	[ZYDIS_REGISTER_ES] = "es",
-	[ZYDIS_REGISTER_ESI] = "esi",
-	[ZYDIS_REGISTER_ESP] = "esp",
-	//[ZYDIS_REGISTER_X87STATUS] = "swd",
-	[ZYDIS_REGISTER_FS] = "fs",
-	[ZYDIS_REGISTER_GS] = "gs",
-	[ZYDIS_REGISTER_IP] = "ip",
-	[ZYDIS_REGISTER_RAX] = "rax",
-	[ZYDIS_REGISTER_RBP] = "rbp",
-	[ZYDIS_REGISTER_RBX] = "rbx",
-	[ZYDIS_REGISTER_RCX] = "rcx",
-	[ZYDIS_REGISTER_RDI] = "rdi",
-	[ZYDIS_REGISTER_RDX] = "rdx",
-	[ZYDIS_REGISTER_RIP] = "rip",
-	//[ZYDIS_REGISTER_RIZ] = "riz",
-	[ZYDIS_REGISTER_RSI] = "rsi",
-	[ZYDIS_REGISTER_RSP] = "rsp",
-	[ZYDIS_REGISTER_SI] = "si",
-	[ZYDIS_REGISTER_SIL] = "sil",
-	[ZYDIS_REGISTER_SP] = "sp",
-	[ZYDIS_REGISTER_SPL] = "spl",
-	[ZYDIS_REGISTER_SS] = "ss",
-	[ZYDIS_REGISTER_CR0] = "cr0",
-	[ZYDIS_REGISTER_CR1] = "cr1",
-	[ZYDIS_REGISTER_CR2] = "cr2",
-	[ZYDIS_REGISTER_CR3] = "cr3",
-	[ZYDIS_REGISTER_CR4] = "cr4",
-	[ZYDIS_REGISTER_CR5] = "cr5",
-	[ZYDIS_REGISTER_CR6] = "cr6",
-	[ZYDIS_REGISTER_CR7] = "cr7",
-	[ZYDIS_REGISTER_CR8] = "cr8",
-	[ZYDIS_REGISTER_CR9] = "cr9",
-	[ZYDIS_REGISTER_CR10] = "cr10",
-	[ZYDIS_REGISTER_CR11] = "cr11",
-	[ZYDIS_REGISTER_CR12] = "cr12",
-	[ZYDIS_REGISTER_CR13] = "cr13",
-	[ZYDIS_REGISTER_CR14] = "cr14",
-	[ZYDIS_REGISTER_CR15] = "cr15",
-	[ZYDIS_REGISTER_DR0] = "dr0",
-	[ZYDIS_REGISTER_DR1] = "dr1",
-	[ZYDIS_REGISTER_DR2] = "dr2",
-	[ZYDIS_REGISTER_DR3] = "dr3",
-	[ZYDIS_REGISTER_DR4] = "dr4",
-	[ZYDIS_REGISTER_DR5] = "dr5",
-	[ZYDIS_REGISTER_DR6] = "dr6",
-	[ZYDIS_REGISTER_DR7] = "dr7",
-	[ZYDIS_REGISTER_DR8] = "dr8",
-	[ZYDIS_REGISTER_DR9] = "dr9",
-	[ZYDIS_REGISTER_DR10] = "dr10",
-	[ZYDIS_REGISTER_DR11] = "dr11",
-	[ZYDIS_REGISTER_DR12] = "dr12",
-	[ZYDIS_REGISTER_DR13] = "dr13",
-	[ZYDIS_REGISTER_DR14] = "dr14",
-	[ZYDIS_REGISTER_DR15] = "dr15",
-	//[ZYDIS_REGISTER_FP0] = "fp0",
-	//[ZYDIS_REGISTER_FP1] = "fp1",
-	//[ZYDIS_REGISTER_FP2] = "fp2",
-	//[ZYDIS_REGISTER_FP3] = "fp3",
-	//[ZYDIS_REGISTER_FP4] = "fp4",
-	//[ZYDIS_REGISTER_FP5] = "fp5",
-	//[ZYDIS_REGISTER_FP6] = "fp6",
-	//[ZYDIS_REGISTER_FP7] = "fp7",
-	[ZYDIS_REGISTER_K0] = "k0",
-	[ZYDIS_REGISTER_K1] = "k1",
-	[ZYDIS_REGISTER_K2] = "k2",
-	[ZYDIS_REGISTER_K3] = "k3",
-	[ZYDIS_REGISTER_K4] = "k4",
-	[ZYDIS_REGISTER_K5] = "k5",
-	[ZYDIS_REGISTER_K6] = "k6",
-	[ZYDIS_REGISTER_K7] = "k7",
-	[ZYDIS_REGISTER_MM0] = "mm0",
-	[ZYDIS_REGISTER_MM1] = "mm1",
-	[ZYDIS_REGISTER_MM2] = "mm2",
-	[ZYDIS_REGISTER_MM3] = "mm3",
-	[ZYDIS_REGISTER_MM4] = "mm4",
-	[ZYDIS_REGISTER_MM5] = "mm5",
-	[ZYDIS_REGISTER_MM6] = "mm6",
-	[ZYDIS_REGISTER_MM7] = "mm7",
-	[ZYDIS_REGISTER_R8] = "r8",
-	[ZYDIS_REGISTER_R9] = "r9",
-	[ZYDIS_REGISTER_R10] = "r10",
-	[ZYDIS_REGISTER_R11] = "r11",
-	[ZYDIS_REGISTER_R12] = "r12",
-	[ZYDIS_REGISTER_R13] = "r13",
-	[ZYDIS_REGISTER_R14] = "r14",
-	[ZYDIS_REGISTER_R15] = "r15",
-	[ZYDIS_REGISTER_ST0] = "st0",
-	[ZYDIS_REGISTER_ST1] = "st1",
-	[ZYDIS_REGISTER_ST2] = "st2",
-	[ZYDIS_REGISTER_ST3] = "st3",
-	[ZYDIS_REGISTER_ST4] = "st4",
-	[ZYDIS_REGISTER_ST5] = "st5",
-	[ZYDIS_REGISTER_ST6] = "st6",
-	[ZYDIS_REGISTER_ST7] = "st7",
-	[ZYDIS_REGISTER_XMM0] = "xmm0",
-	[ZYDIS_REGISTER_XMM1] = "xmm1",
-	[ZYDIS_REGISTER_XMM2] = "xmm2",
-	[ZYDIS_REGISTER_XMM3] = "xmm3",
-	[ZYDIS_REGISTER_XMM4] = "xmm4",
-	[ZYDIS_REGISTER_XMM5] = "xmm5",
-	[ZYDIS_REGISTER_XMM6] = "xmm6",
-	[ZYDIS_REGISTER_XMM7] = "xmm7",
-	[ZYDIS_REGISTER_XMM8] = "xmm8",
-	[ZYDIS_REGISTER_XMM9] = "xmm9",
-	[ZYDIS_REGISTER_XMM10] = "xmm10",
-	[ZYDIS_REGISTER_XMM11] = "xmm11",
-	[ZYDIS_REGISTER_XMM12] = "xmm12",
-	[ZYDIS_REGISTER_XMM13] = "xmm13",
-	[ZYDIS_REGISTER_XMM14] = "xmm14",
-	[ZYDIS_REGISTER_XMM15] = "xmm15",
-	[ZYDIS_REGISTER_XMM16] = "xmm16",
-	[ZYDIS_REGISTER_XMM17] = "xmm17",
-	[ZYDIS_REGISTER_XMM18] = "xmm18",
-	[ZYDIS_REGISTER_XMM19] = "xmm19",
-	[ZYDIS_REGISTER_XMM20] = "xmm20",
-	[ZYDIS_REGISTER_XMM21] = "xmm21",
-	[ZYDIS_REGISTER_XMM22] = "xmm22",
-	[ZYDIS_REGISTER_XMM23] = "xmm23",
-	[ZYDIS_REGISTER_XMM24] = "xmm24",
-	[ZYDIS_REGISTER_XMM25] = "xmm25",
-	[ZYDIS_REGISTER_XMM26] = "xmm26",
-	[ZYDIS_REGISTER_XMM27] = "xmm27",
-	[ZYDIS_REGISTER_XMM28] = "xmm28",
-	[ZYDIS_REGISTER_XMM29] = "xmm29",
-	[ZYDIS_REGISTER_XMM30] = "xmm30",
-	[ZYDIS_REGISTER_XMM31] = "xmm31",
-	[ZYDIS_REGISTER_YMM0] = "ymm0",
-	[ZYDIS_REGISTER_YMM1] = "ymm1",
-	[ZYDIS_REGISTER_YMM2] = "ymm2",
-	[ZYDIS_REGISTER_YMM3] = "ymm3",
-	[ZYDIS_REGISTER_YMM4] = "ymm4",
-	[ZYDIS_REGISTER_YMM5] = "ymm5",
-	[ZYDIS_REGISTER_YMM6] = "ymm6",
-	[ZYDIS_REGISTER_YMM7] = "ymm7",
-	[ZYDIS_REGISTER_YMM8] = "ymm8",
-	[ZYDIS_REGISTER_YMM9] = "ymm9",
-	[ZYDIS_REGISTER_YMM10] = "ymm10",
-	[ZYDIS_REGISTER_YMM11] = "ymm11",
-	[ZYDIS_REGISTER_YMM12] = "ymm12",
-	[ZYDIS_REGISTER_YMM13] = "ymm13",
-	[ZYDIS_REGISTER_YMM14] = "ymm14",
-	[ZYDIS_REGISTER_YMM15] = "ymm15",
-	[ZYDIS_REGISTER_YMM16] = "ymm16",
-	[ZYDIS_REGISTER_YMM17] = "ymm17",
-	[ZYDIS_REGISTER_YMM18] = "ymm18",
-	[ZYDIS_REGISTER_YMM19] = "ymm19",
-	[ZYDIS_REGISTER_YMM20] = "ymm20",
-	[ZYDIS_REGISTER_YMM21] = "ymm21",
-	[ZYDIS_REGISTER_YMM22] = "ymm22",
-	[ZYDIS_REGISTER_YMM23] = "ymm23",
-	[ZYDIS_REGISTER_YMM24] = "ymm24",
-	[ZYDIS_REGISTER_YMM25] = "ymm25",
-	[ZYDIS_REGISTER_YMM26] = "ymm26",
-	[ZYDIS_REGISTER_YMM27] = "ymm27",
-	[ZYDIS_REGISTER_YMM28] = "ymm28",
-	[ZYDIS_REGISTER_YMM29] = "ymm29",
-	[ZYDIS_REGISTER_YMM30] = "ymm30",
-	[ZYDIS_REGISTER_YMM31] = "ymm31",
-	[ZYDIS_REGISTER_ZMM0] = "zmm0",
-	[ZYDIS_REGISTER_ZMM1] = "zmm1",
-	[ZYDIS_REGISTER_ZMM2] = "zmm2",
-	[ZYDIS_REGISTER_ZMM3] = "zmm3",
-	[ZYDIS_REGISTER_ZMM4] = "zmm4",
-	[ZYDIS_REGISTER_ZMM5] = "zmm5",
-	[ZYDIS_REGISTER_ZMM6] = "zmm6",
-	[ZYDIS_REGISTER_ZMM7] = "zmm7",
-	[ZYDIS_REGISTER_ZMM8] = "zmm8",
-	[ZYDIS_REGISTER_ZMM9] = "zmm9",
-	[ZYDIS_REGISTER_ZMM10] = "zmm10",
-	[ZYDIS_REGISTER_ZMM11] = "zmm11",
-	[ZYDIS_REGISTER_ZMM12] = "zmm12",
-	[ZYDIS_REGISTER_ZMM13] = "zmm13",
-	[ZYDIS_REGISTER_ZMM14] = "zmm14",
-	[ZYDIS_REGISTER_ZMM15] = "zmm15",
-	[ZYDIS_REGISTER_ZMM16] = "zmm16",
-	[ZYDIS_REGISTER_ZMM17] = "zmm17",
-	[ZYDIS_REGISTER_ZMM18] = "zmm18",
-	[ZYDIS_REGISTER_ZMM19] = "zmm19",
-	[ZYDIS_REGISTER_ZMM20] = "zmm20",
-	[ZYDIS_REGISTER_ZMM21] = "zmm21",
-	[ZYDIS_REGISTER_ZMM22] = "zmm22",
-	[ZYDIS_REGISTER_ZMM23] = "zmm23",
-	[ZYDIS_REGISTER_ZMM24] = "zmm24",
-	[ZYDIS_REGISTER_ZMM25] = "zmm25",
-	[ZYDIS_REGISTER_ZMM26] = "zmm26",
-	[ZYDIS_REGISTER_ZMM27] = "zmm27",
-	[ZYDIS_REGISTER_ZMM28] = "zmm28",
-	[ZYDIS_REGISTER_ZMM29] = "zmm29",
-	[ZYDIS_REGISTER_ZMM30] = "zmm30",
-	[ZYDIS_REGISTER_ZMM31] = "zmm31",
-	[ZYDIS_REGISTER_R8B] = "r8b",
-	[ZYDIS_REGISTER_R9B] = "r9b",
-	[ZYDIS_REGISTER_R10B] = "r10b",
-	[ZYDIS_REGISTER_R11B] = "r11b",
-	[ZYDIS_REGISTER_R12B] = "r12b",
-	[ZYDIS_REGISTER_R13B] = "r13b",
-	[ZYDIS_REGISTER_R14B] = "r14b",
-	[ZYDIS_REGISTER_R15B] = "r15b",
-	[ZYDIS_REGISTER_R8D] = "r8d",
-	[ZYDIS_REGISTER_R9D] = "r9d",
-	[ZYDIS_REGISTER_R10D] = "r10d",
-	[ZYDIS_REGISTER_R11D] = "r11d",
-	[ZYDIS_REGISTER_R12D] = "r12d",
-	[ZYDIS_REGISTER_R13D] = "r13d",
-	[ZYDIS_REGISTER_R14D] = "r14d",
-	[ZYDIS_REGISTER_R15D] = "r15d",
-	[ZYDIS_REGISTER_R8W] = "r8w",
-	[ZYDIS_REGISTER_R9W] = "r9w",
-	[ZYDIS_REGISTER_R10W] = "r10w",
-	[ZYDIS_REGISTER_R11W] = "r11w",
-	[ZYDIS_REGISTER_R12W] = "r12w",
-	[ZYDIS_REGISTER_R13W] = "r13w",
-	[ZYDIS_REGISTER_R14W] = "r14w",
-	[ZYDIS_REGISTER_R15W] = "r15w"
+const char *x86_registers[X86_REG_MAX_VALUE] = {
+	[X86_REG_AH] = "ah",
+	[X86_REG_AL] = "al",
+	[X86_REG_AX] = "ax",
+	[X86_REG_BH] = "bh",
+	[X86_REG_BL] = "bl",
+	[X86_REG_BP] = "bp",
+	[X86_REG_BPL] = "bpl",
+	[X86_REG_BX] = "bx",
+	[X86_REG_CH] = "ch",
+	[X86_REG_CL] = "cl",
+	[X86_REG_CS] = "cs",
+	[X86_REG_CX] = "cx",
+	[X86_REG_DH] = "dh",
+	[X86_REG_DI] = "di",
+	[X86_REG_DIL] = "dil",
+	[X86_REG_DL] = "dl",
+	[X86_REG_DS] = "ds",
+	[X86_REG_DX] = "dx",
+	[X86_REG_EAX] = "eax",
+	[X86_REG_EBP] = "ebp",
+	[X86_REG_EBX] = "ebx",
+	[X86_REG_ECX] = "ecx",
+	[X86_REG_EDI] = "edi",
+	[X86_REG_EDX] = "edx",
+	[X86_REG_EFLAGS] = "eflags",
+	[X86_REG_EIP] = "eip",
+	//[X86_REG_EIZ] = "eiz",
+	[X86_REG_ES] = "es",
+	[X86_REG_ESI] = "esi",
+	[X86_REG_ESP] = "esp",
+	[X86_REG_X87STATUS] = "swd",
+	[X86_REG_FS] = "fs",
+	[X86_REG_GS] = "gs",
+	[X86_REG_IP] = "ip",
+	[X86_REG_RAX] = "rax",
+	[X86_REG_RBP] = "rbp",
+	[X86_REG_RBX] = "rbx",
+	[X86_REG_RCX] = "rcx",
+	[X86_REG_RDI] = "rdi",
+	[X86_REG_RDX] = "rdx",
+	[X86_REG_RIP] = "rip",
+	//[X86_REG_RIZ] = "riz",
+	[X86_REG_RSI] = "rsi",
+	[X86_REG_RSP] = "rsp",
+	[X86_REG_SI] = "si",
+	[X86_REG_SIL] = "sil",
+	[X86_REG_SP] = "sp",
+	[X86_REG_SPL] = "spl",
+	[X86_REG_SS] = "ss",
+	[X86_REG_CR0] = "cr0",
+	[X86_REG_CR1] = "cr1",
+	[X86_REG_CR2] = "cr2",
+	[X86_REG_CR3] = "cr3",
+	[X86_REG_CR4] = "cr4",
+	[X86_REG_CR5] = "cr5",
+	[X86_REG_CR6] = "cr6",
+	[X86_REG_CR7] = "cr7",
+	[X86_REG_CR8] = "cr8",
+	[X86_REG_CR9] = "cr9",
+	[X86_REG_CR10] = "cr10",
+	[X86_REG_CR11] = "cr11",
+	[X86_REG_CR12] = "cr12",
+	[X86_REG_CR13] = "cr13",
+	[X86_REG_CR14] = "cr14",
+	[X86_REG_CR15] = "cr15",
+	[X86_REG_DR0] = "dr0",
+	[X86_REG_DR1] = "dr1",
+	[X86_REG_DR2] = "dr2",
+	[X86_REG_DR3] = "dr3",
+	[X86_REG_DR4] = "dr4",
+	[X86_REG_DR5] = "dr5",
+	[X86_REG_DR6] = "dr6",
+	[X86_REG_DR7] = "dr7",
+	[X86_REG_DR8] = "dr8",
+	[X86_REG_DR9] = "dr9",
+	[X86_REG_DR10] = "dr10",
+	[X86_REG_DR11] = "dr11",
+	[X86_REG_DR12] = "dr12",
+	[X86_REG_DR13] = "dr13",
+	[X86_REG_DR14] = "dr14",
+	[X86_REG_DR15] = "dr15",
+	//[X86_REG_FP0] = "fp0",
+	//[X86_REG_FP1] = "fp1",
+	//[X86_REG_FP2] = "fp2",
+	//[X86_REG_FP3] = "fp3",
+	//[X86_REG_FP4] = "fp4",
+	//[X86_REG_FP5] = "fp5",
+	//[X86_REG_FP6] = "fp6",
+	//[X86_REG_FP7] = "fp7",
+	[X86_REG_K0] = "k0",
+	[X86_REG_K1] = "k1",
+	[X86_REG_K2] = "k2",
+	[X86_REG_K3] = "k3",
+	[X86_REG_K4] = "k4",
+	[X86_REG_K5] = "k5",
+	[X86_REG_K6] = "k6",
+	[X86_REG_K7] = "k7",
+	[X86_REG_MM0] = "mm0",
+	[X86_REG_MM1] = "mm1",
+	[X86_REG_MM2] = "mm2",
+	[X86_REG_MM3] = "mm3",
+	[X86_REG_MM4] = "mm4",
+	[X86_REG_MM5] = "mm5",
+	[X86_REG_MM6] = "mm6",
+	[X86_REG_MM7] = "mm7",
+	[X86_REG_R8] = "r8",
+	[X86_REG_R9] = "r9",
+	[X86_REG_R10] = "r10",
+	[X86_REG_R11] = "r11",
+	[X86_REG_R12] = "r12",
+	[X86_REG_R13] = "r13",
+	[X86_REG_R14] = "r14",
+	[X86_REG_R15] = "r15",
+	[X86_REG_ST0] = "st0",
+	[X86_REG_ST1] = "st1",
+	[X86_REG_ST2] = "st2",
+	[X86_REG_ST3] = "st3",
+	[X86_REG_ST4] = "st4",
+	[X86_REG_ST5] = "st5",
+	[X86_REG_ST6] = "st6",
+	[X86_REG_ST7] = "st7",
+	[X86_REG_XMM0] = "xmm0",
+	[X86_REG_XMM1] = "xmm1",
+	[X86_REG_XMM2] = "xmm2",
+	[X86_REG_XMM3] = "xmm3",
+	[X86_REG_XMM4] = "xmm4",
+	[X86_REG_XMM5] = "xmm5",
+	[X86_REG_XMM6] = "xmm6",
+	[X86_REG_XMM7] = "xmm7",
+	[X86_REG_XMM8] = "xmm8",
+	[X86_REG_XMM9] = "xmm9",
+	[X86_REG_XMM10] = "xmm10",
+	[X86_REG_XMM11] = "xmm11",
+	[X86_REG_XMM12] = "xmm12",
+	[X86_REG_XMM13] = "xmm13",
+	[X86_REG_XMM14] = "xmm14",
+	[X86_REG_XMM15] = "xmm15",
+	[X86_REG_XMM16] = "xmm16",
+	[X86_REG_XMM17] = "xmm17",
+	[X86_REG_XMM18] = "xmm18",
+	[X86_REG_XMM19] = "xmm19",
+	[X86_REG_XMM20] = "xmm20",
+	[X86_REG_XMM21] = "xmm21",
+	[X86_REG_XMM22] = "xmm22",
+	[X86_REG_XMM23] = "xmm23",
+	[X86_REG_XMM24] = "xmm24",
+	[X86_REG_XMM25] = "xmm25",
+	[X86_REG_XMM26] = "xmm26",
+	[X86_REG_XMM27] = "xmm27",
+	[X86_REG_XMM28] = "xmm28",
+	[X86_REG_XMM29] = "xmm29",
+	[X86_REG_XMM30] = "xmm30",
+	[X86_REG_XMM31] = "xmm31",
+	[X86_REG_YMM0] = "ymm0",
+	[X86_REG_YMM1] = "ymm1",
+	[X86_REG_YMM2] = "ymm2",
+	[X86_REG_YMM3] = "ymm3",
+	[X86_REG_YMM4] = "ymm4",
+	[X86_REG_YMM5] = "ymm5",
+	[X86_REG_YMM6] = "ymm6",
+	[X86_REG_YMM7] = "ymm7",
+	[X86_REG_YMM8] = "ymm8",
+	[X86_REG_YMM9] = "ymm9",
+	[X86_REG_YMM10] = "ymm10",
+	[X86_REG_YMM11] = "ymm11",
+	[X86_REG_YMM12] = "ymm12",
+	[X86_REG_YMM13] = "ymm13",
+	[X86_REG_YMM14] = "ymm14",
+	[X86_REG_YMM15] = "ymm15",
+	[X86_REG_YMM16] = "ymm16",
+	[X86_REG_YMM17] = "ymm17",
+	[X86_REG_YMM18] = "ymm18",
+	[X86_REG_YMM19] = "ymm19",
+	[X86_REG_YMM20] = "ymm20",
+	[X86_REG_YMM21] = "ymm21",
+	[X86_REG_YMM22] = "ymm22",
+	[X86_REG_YMM23] = "ymm23",
+	[X86_REG_YMM24] = "ymm24",
+	[X86_REG_YMM25] = "ymm25",
+	[X86_REG_YMM26] = "ymm26",
+	[X86_REG_YMM27] = "ymm27",
+	[X86_REG_YMM28] = "ymm28",
+	[X86_REG_YMM29] = "ymm29",
+	[X86_REG_YMM30] = "ymm30",
+	[X86_REG_YMM31] = "ymm31",
+	[X86_REG_ZMM0] = "zmm0",
+	[X86_REG_ZMM1] = "zmm1",
+	[X86_REG_ZMM2] = "zmm2",
+	[X86_REG_ZMM3] = "zmm3",
+	[X86_REG_ZMM4] = "zmm4",
+	[X86_REG_ZMM5] = "zmm5",
+	[X86_REG_ZMM6] = "zmm6",
+	[X86_REG_ZMM7] = "zmm7",
+	[X86_REG_ZMM8] = "zmm8",
+	[X86_REG_ZMM9] = "zmm9",
+	[X86_REG_ZMM10] = "zmm10",
+	[X86_REG_ZMM11] = "zmm11",
+	[X86_REG_ZMM12] = "zmm12",
+	[X86_REG_ZMM13] = "zmm13",
+	[X86_REG_ZMM14] = "zmm14",
+	[X86_REG_ZMM15] = "zmm15",
+	[X86_REG_ZMM16] = "zmm16",
+	[X86_REG_ZMM17] = "zmm17",
+	[X86_REG_ZMM18] = "zmm18",
+	[X86_REG_ZMM19] = "zmm19",
+	[X86_REG_ZMM20] = "zmm20",
+	[X86_REG_ZMM21] = "zmm21",
+	[X86_REG_ZMM22] = "zmm22",
+	[X86_REG_ZMM23] = "zmm23",
+	[X86_REG_ZMM24] = "zmm24",
+	[X86_REG_ZMM25] = "zmm25",
+	[X86_REG_ZMM26] = "zmm26",
+	[X86_REG_ZMM27] = "zmm27",
+	[X86_REG_ZMM28] = "zmm28",
+	[X86_REG_ZMM29] = "zmm29",
+	[X86_REG_ZMM30] = "zmm30",
+	[X86_REG_ZMM31] = "zmm31",
+	[X86_REG_R8B] = "r8b",
+	[X86_REG_R9B] = "r9b",
+	[X86_REG_R10B] = "r10b",
+	[X86_REG_R11B] = "r11b",
+	[X86_REG_R12B] = "r12b",
+	[X86_REG_R13B] = "r13b",
+	[X86_REG_R14B] = "r14b",
+	[X86_REG_R15B] = "r15b",
+	[X86_REG_R8D] = "r8d",
+	[X86_REG_R9D] = "r9d",
+	[X86_REG_R10D] = "r10d",
+	[X86_REG_R11D] = "r11d",
+	[X86_REG_R12D] = "r12d",
+	[X86_REG_R13D] = "r13d",
+	[X86_REG_R14D] = "r14d",
+	[X86_REG_R15D] = "r15d",
+	[X86_REG_R8W] = "r8w",
+	[X86_REG_R9W] = "r9w",
+	[X86_REG_R10W] = "r10w",
+	[X86_REG_R11W] = "r11w",
+	[X86_REG_R12W] = "r12w",
+	[X86_REG_R13W] = "r13w",
+	[X86_REG_R14W] = "r14w",
+	[X86_REG_R15W] = "r15w"
 };
 
 const char *x86_eflags_registers[X86_EFLAGS_ENDING] = {
@@ -269,70 +269,70 @@ const char *x86_eflags_registers[X86_EFLAGS_ENDING] = {
 };
 
 const X86Reg gpr_hregs[] = {
-	ZYDIS_REGISTER_AH, // rax
-	ZYDIS_REGISTER_BH, // rbx
-	ZYDIS_REGISTER_CH, // rcx
-	ZYDIS_REGISTER_DH, // rdx
-	ZYDIS_REGISTER_NONE, // rbp
-	ZYDIS_REGISTER_NONE, // rdi
-	ZYDIS_REGISTER_NONE, // rip
-	ZYDIS_REGISTER_NONE, // riz
-	ZYDIS_REGISTER_NONE, // rsi
-	ZYDIS_REGISTER_NONE // rsp
+	X86_REG_AH, // rax
+	X86_REG_BH, // rbx
+	X86_REG_CH, // rcx
+	X86_REG_DH, // rdx
+	X86_REG_NONE, // rbp
+	X86_REG_NONE, // rdi
+	X86_REG_NONE, // rip
+	X86_REG_NONE, // riz
+	X86_REG_NONE, // rsi
+	X86_REG_NONE // rsp
 };
 
 const X86Reg gpr_lregs[] = {
-	ZYDIS_REGISTER_AL, // rax
-	ZYDIS_REGISTER_BL, // rbx
-	ZYDIS_REGISTER_CL, // rcx
-	ZYDIS_REGISTER_DL, // rdx
-	ZYDIS_REGISTER_BPL, // rbp
-	ZYDIS_REGISTER_DIL, // rdi
-	ZYDIS_REGISTER_NONE, // rip
-	ZYDIS_REGISTER_NONE, // riz
-	ZYDIS_REGISTER_SIL, // rsi
-	ZYDIS_REGISTER_SPL, // rsp
+	X86_REG_AL, // rax
+	X86_REG_BL, // rbx
+	X86_REG_CL, // rcx
+	X86_REG_DL, // rdx
+	X86_REG_BPL, // rbp
+	X86_REG_DIL, // rdi
+	X86_REG_NONE, // rip
+	X86_REG_NONE, // riz
+	X86_REG_SIL, // rsi
+	X86_REG_SPL, // rsp
 };
 
 const X86Reg gpr_xregs[] = {
-	ZYDIS_REGISTER_AX, // rax
-	ZYDIS_REGISTER_BX, // rbx
-	ZYDIS_REGISTER_CX, // rcx
-	ZYDIS_REGISTER_DX, // rdx
-	ZYDIS_REGISTER_BP, // rbp
-	ZYDIS_REGISTER_DI, // rdi
-	ZYDIS_REGISTER_IP, // rip
-	ZYDIS_REGISTER_NONE, // riz
-	ZYDIS_REGISTER_SI, // rsi
-	ZYDIS_REGISTER_SP, // rsp
+	X86_REG_AX, // rax
+	X86_REG_BX, // rbx
+	X86_REG_CX, // rcx
+	X86_REG_DX, // rdx
+	X86_REG_BP, // rbp
+	X86_REG_DI, // rdi
+	X86_REG_IP, // rip
+	X86_REG_NONE, // riz
+	X86_REG_SI, // rsi
+	X86_REG_SP, // rsp
 };
 
 const X86Reg gpr_eregs[] = {
-	ZYDIS_REGISTER_EAX, // rax
-	ZYDIS_REGISTER_EBX, // rbx
-	ZYDIS_REGISTER_ECX, // rcx
-	ZYDIS_REGISTER_EDX, // rdx
-	ZYDIS_REGISTER_EBP, // rbp
-	ZYDIS_REGISTER_EDI, // rdi
-	ZYDIS_REGISTER_EIP, // rip
+	X86_REG_EAX, // rax
+	X86_REG_EBX, // rbx
+	X86_REG_ECX, // rcx
+	X86_REG_EDX, // rdx
+	X86_REG_EBP, // rbp
+	X86_REG_EDI, // rdi
+	X86_REG_EIP, // rip
 	0,
-	// ZYDIS_REGISTER_EIZ, // riz
-	ZYDIS_REGISTER_ESI, // rsi
-	ZYDIS_REGISTER_ESP, // rsp
+	// X86_REG_EIZ, // riz
+	X86_REG_ESI, // rsi
+	X86_REG_ESP, // rsp
 };
 
 const X86Reg gpr_rregs[] = {
-	ZYDIS_REGISTER_RAX,
-	ZYDIS_REGISTER_RBX,
-	ZYDIS_REGISTER_RCX,
-	ZYDIS_REGISTER_RDX,
-	ZYDIS_REGISTER_RBP,
-	ZYDIS_REGISTER_RDI,
-	ZYDIS_REGISTER_RIP,
+	X86_REG_RAX,
+	X86_REG_RBX,
+	X86_REG_RCX,
+	X86_REG_RDX,
+	X86_REG_RBP,
+	X86_REG_RDI,
+	X86_REG_RIP,
 	0,
-	// ZYDIS_REGISTER_RIZ,
-	ZYDIS_REGISTER_RSI,
-	ZYDIS_REGISTER_RSP
+	// X86_REG_RIZ,
+	X86_REG_RSI,
+	X86_REG_RSP
 };
 
 /**
@@ -501,7 +501,7 @@ RzILOpEffect *x86_il_set_gpr64(X86Reg reg, RzILOpPure *val, int bits) {
  */
 X86Reg get_bitness_reg(unsigned int index, int bits) {
 	if (index >= GPR_FAMILY_COUNT) {
-		return ZYDIS_REGISTER_NONE;
+		return X86_REG_NONE;
 	}
 	if (bits == 16) {
 		return gpr_xregs[index];
@@ -519,44 +519,44 @@ struct gpr_lookup_helper_t {
 };
 
 const struct gpr_lookup_helper_t gpr_lookup_table[] = {
-	[ZYDIS_REGISTER_AH] = { 0, x86_il_get_gprh, x86_il_set_gprh },
-	[ZYDIS_REGISTER_AL] = { 0, x86_il_get_gprl, x86_il_set_gprl },
-	[ZYDIS_REGISTER_AX] = { 0, x86_il_get_gpr16, x86_il_set_gpr16 },
-	[ZYDIS_REGISTER_EAX] = { 0, x86_il_get_gpr32, x86_il_set_gpr32 },
-	[ZYDIS_REGISTER_RAX] = { 0, x86_il_get_gpr64, x86_il_set_gpr64 },
-	[ZYDIS_REGISTER_BH] = { 1, x86_il_get_gprh, x86_il_set_gprh },
-	[ZYDIS_REGISTER_BL] = { 1, x86_il_get_gprl, x86_il_set_gprl },
-	[ZYDIS_REGISTER_BX] = { 1, x86_il_get_gpr16, x86_il_set_gpr16 },
-	[ZYDIS_REGISTER_EBX] = { 1, x86_il_get_gpr32, x86_il_set_gpr32 },
-	[ZYDIS_REGISTER_RBX] = { 1, x86_il_get_gpr64, x86_il_set_gpr64 },
-	[ZYDIS_REGISTER_CH] = { 2, x86_il_get_gprh, x86_il_set_gprh },
-	[ZYDIS_REGISTER_CL] = { 2, x86_il_get_gprl, x86_il_set_gprl },
-	[ZYDIS_REGISTER_CX] = { 2, x86_il_get_gpr16, x86_il_set_gpr16 },
-	[ZYDIS_REGISTER_ECX] = { 2, x86_il_get_gpr32, x86_il_set_gpr32 },
-	[ZYDIS_REGISTER_RCX] = { 2, x86_il_get_gpr64, x86_il_set_gpr64 },
-	[ZYDIS_REGISTER_DH] = { 3, x86_il_get_gprh, x86_il_set_gprh },
-	[ZYDIS_REGISTER_DL] = { 3, x86_il_get_gprl, x86_il_set_gprl },
-	[ZYDIS_REGISTER_DX] = { 3, x86_il_get_gpr16, x86_il_set_gpr16 },
-	[ZYDIS_REGISTER_EDX] = { 3, x86_il_get_gpr32, x86_il_set_gpr32 },
-	[ZYDIS_REGISTER_RDX] = { 3, x86_il_get_gpr64, x86_il_set_gpr64 },
-	[ZYDIS_REGISTER_BPL] = { 4, x86_il_get_gprl, x86_il_set_gprl },
-	[ZYDIS_REGISTER_BP] = { 4, x86_il_get_gpr16, x86_il_set_gpr16 },
-	[ZYDIS_REGISTER_EBP] = { 4, x86_il_get_gpr32, x86_il_set_gpr32 },
-	[ZYDIS_REGISTER_RBP] = { 4, x86_il_get_gpr64, x86_il_set_gpr64 },
-	[ZYDIS_REGISTER_DIL] = { 5, x86_il_get_gprl, x86_il_set_gprl },
-	[ZYDIS_REGISTER_DI] = { 5, x86_il_get_gpr16, x86_il_set_gpr16 },
-	[ZYDIS_REGISTER_EDI] = { 5, x86_il_get_gpr32, x86_il_set_gpr32 },
-	[ZYDIS_REGISTER_RDI] = { 5, x86_il_get_gpr64, x86_il_set_gpr64 },
-	//[ZYDIS_REGISTER_EIZ] = { 7, x86_il_get_gpr32, x86_il_set_gpr32 },
-	//[ZYDIS_REGISTER_RIZ] = { 7, x86_il_get_gpr64, x86_il_set_gpr64 },
-	[ZYDIS_REGISTER_SIL] = { 8, x86_il_get_gprl, x86_il_set_gprl },
-	[ZYDIS_REGISTER_SI] = { 8, x86_il_get_gpr16, x86_il_set_gpr16 },
-	[ZYDIS_REGISTER_ESI] = { 8, x86_il_get_gpr32, x86_il_set_gpr32 },
-	[ZYDIS_REGISTER_RSI] = { 8, x86_il_get_gpr64, x86_il_set_gpr64 },
-	[ZYDIS_REGISTER_SPL] = { 9, x86_il_get_gprl, x86_il_set_gprl },
-	[ZYDIS_REGISTER_SP] = { 9, x86_il_get_gpr16, x86_il_set_gpr16 },
-	[ZYDIS_REGISTER_ESP] = { 9, x86_il_get_gpr32, x86_il_set_gpr32 },
-	[ZYDIS_REGISTER_RSP] = { 9, x86_il_get_gpr64, x86_il_set_gpr64 }
+	[X86_REG_AH] = { 0, x86_il_get_gprh, x86_il_set_gprh },
+	[X86_REG_AL] = { 0, x86_il_get_gprl, x86_il_set_gprl },
+	[X86_REG_AX] = { 0, x86_il_get_gpr16, x86_il_set_gpr16 },
+	[X86_REG_EAX] = { 0, x86_il_get_gpr32, x86_il_set_gpr32 },
+	[X86_REG_RAX] = { 0, x86_il_get_gpr64, x86_il_set_gpr64 },
+	[X86_REG_BH] = { 1, x86_il_get_gprh, x86_il_set_gprh },
+	[X86_REG_BL] = { 1, x86_il_get_gprl, x86_il_set_gprl },
+	[X86_REG_BX] = { 1, x86_il_get_gpr16, x86_il_set_gpr16 },
+	[X86_REG_EBX] = { 1, x86_il_get_gpr32, x86_il_set_gpr32 },
+	[X86_REG_RBX] = { 1, x86_il_get_gpr64, x86_il_set_gpr64 },
+	[X86_REG_CH] = { 2, x86_il_get_gprh, x86_il_set_gprh },
+	[X86_REG_CL] = { 2, x86_il_get_gprl, x86_il_set_gprl },
+	[X86_REG_CX] = { 2, x86_il_get_gpr16, x86_il_set_gpr16 },
+	[X86_REG_ECX] = { 2, x86_il_get_gpr32, x86_il_set_gpr32 },
+	[X86_REG_RCX] = { 2, x86_il_get_gpr64, x86_il_set_gpr64 },
+	[X86_REG_DH] = { 3, x86_il_get_gprh, x86_il_set_gprh },
+	[X86_REG_DL] = { 3, x86_il_get_gprl, x86_il_set_gprl },
+	[X86_REG_DX] = { 3, x86_il_get_gpr16, x86_il_set_gpr16 },
+	[X86_REG_EDX] = { 3, x86_il_get_gpr32, x86_il_set_gpr32 },
+	[X86_REG_RDX] = { 3, x86_il_get_gpr64, x86_il_set_gpr64 },
+	[X86_REG_BPL] = { 4, x86_il_get_gprl, x86_il_set_gprl },
+	[X86_REG_BP] = { 4, x86_il_get_gpr16, x86_il_set_gpr16 },
+	[X86_REG_EBP] = { 4, x86_il_get_gpr32, x86_il_set_gpr32 },
+	[X86_REG_RBP] = { 4, x86_il_get_gpr64, x86_il_set_gpr64 },
+	[X86_REG_DIL] = { 5, x86_il_get_gprl, x86_il_set_gprl },
+	[X86_REG_DI] = { 5, x86_il_get_gpr16, x86_il_set_gpr16 },
+	[X86_REG_EDI] = { 5, x86_il_get_gpr32, x86_il_set_gpr32 },
+	[X86_REG_RDI] = { 5, x86_il_get_gpr64, x86_il_set_gpr64 },
+	//[X86_REG_EIZ] = { 7, x86_il_get_gpr32, x86_il_set_gpr32 },
+	//[X86_REG_RIZ] = { 7, x86_il_get_gpr64, x86_il_set_gpr64 },
+	[X86_REG_SIL] = { 8, x86_il_get_gprl, x86_il_set_gprl },
+	[X86_REG_SI] = { 8, x86_il_get_gpr16, x86_il_set_gpr16 },
+	[X86_REG_ESI] = { 8, x86_il_get_gpr32, x86_il_set_gpr32 },
+	[X86_REG_RSI] = { 8, x86_il_get_gpr64, x86_il_set_gpr64 },
+	[X86_REG_SPL] = { 9, x86_il_get_gprl, x86_il_set_gprl },
+	[X86_REG_SP] = { 9, x86_il_get_gpr16, x86_il_set_gpr16 },
+	[X86_REG_ESP] = { 9, x86_il_get_gpr32, x86_il_set_gpr32 },
+	[X86_REG_RSP] = { 9, x86_il_get_gpr64, x86_il_set_gpr64 }
 };
 
 /**
@@ -565,7 +565,7 @@ const struct gpr_lookup_helper_t gpr_lookup_table[] = {
  * \param reg
  */
 bool is_pc_reg(X86Reg reg) {
-	return (reg == ZYDIS_REGISTER_IP || reg == ZYDIS_REGISTER_EIP || reg == ZYDIS_REGISTER_RIP);
+	return (reg == X86_REG_IP || reg == X86_REG_EIP || reg == X86_REG_RIP);
 }
 
 struct extreg_lookup_helper_t {
@@ -676,13 +676,13 @@ RZ_IPI RzILOpEffect *x86_il_set_reg_bits(X86Reg reg, RZ_OWN RZ_NONNULL RzILOpPur
  */
 RZ_IPI RzILOpPure *x86_il_get_memaddr_segment_bits(X86Mem mem, X86Reg segment, int bits, ut64 pc) {
 	RzILOpPure *offset = NULL;
-	if (mem.base != ZYDIS_REGISTER_NONE) {
+	if (mem.base != X86_REG_NONE) {
 		offset = x86_il_get_reg_bits(mem.base, bits, pc);
 		if (x86_il_get_reg_size(mem.base) != bits) {
 			offset = UNSIGNED(bits, offset);
 		}
 	}
-	if (mem.index != ZYDIS_REGISTER_NONE) {
+	if (mem.index != X86_REG_NONE) {
 		RzILOpPure *reg = x86_il_get_reg_bits(mem.index, bits, pc);
 		if (x86_il_get_reg_size(mem.index) != bits) {
 			reg = UNSIGNED(bits, reg);
@@ -700,13 +700,15 @@ RZ_IPI RzILOpPure *x86_il_get_memaddr_segment_bits(X86Mem mem, X86Reg segment, i
 	}
 
 	/* Segmentation not present in x86-64 */
-	if (bits != 64 && segment != ZYDIS_REGISTER_NONE) {
+	if (bits != 64 && segment != X86_REG_NONE) {
 		// TODO: Implement segmentation
 		/* Currently the segmentation is only implemented for real mode
 		 Address = Segment * 0x10 + Offset */
 
 		/* Assuming real mode */
-		offset = ADD(offset, SHIFTL0(UNSIGNED(bits, x86_il_get_reg_bits(segment, bits, pc)), U8(4)));
+		if (segment != X86_REG_DS) {
+			offset = ADD(offset, SHIFTL0(UNSIGNED(bits, x86_il_get_reg_bits(segment, bits, pc)), U8(4)));
+		}
 	}
 
 	return offset;
@@ -738,13 +740,19 @@ RZ_IPI RzILOpPure *x86_il_get_operand_bits(X86Op op, int analysis_bits, ut64 pc,
 	//	}
 	//	RZ_LOG_ERROR("x86: RzIL: Invalid param type encountered\n");
 	//	return NULL;
-	case ZYDIS_OPERAND_TYPE_REGISTER:
+	case X86_OP_REG:
 		return x86_il_get_reg_bits(op.reg.value, analysis_bits, pc);
-	case ZYDIS_OPERAND_TYPE_IMMEDIATE:
+	case X86_OP_IMM:
 		/* Immediate values are always sign extended */
 		return SN((op.size != 0 ? op.size : implicit_size) * BITS_PER_BYTE, imm_value(op, pc));
-	case ZYDIS_OPERAND_TYPE_MEMORY:
+	case X86_OP_MEM:
 		return LOADW((op.size != 0 ? op.size : implicit_size) * BITS_PER_BYTE, x86_il_get_memaddr_bits(op.mem, analysis_bits, pc));
+	case X86_OP_PTR: {
+		RzILOpPure *offset = UN(analysis_bits, op.ptr.offset);
+		RzILOpPure *segment = UN(analysis_bits, op.ptr.segment);
+		offset = ADD(offset, SHIFTL0(UNSIGNED(analysis_bits, segment), U8(4)));
+		return LOADW((op.size != 0 ? op.size : implicit_size) * BITS_PER_BYTE, offset);
+	}
 	default:
 		return NULL;
 	}
@@ -764,13 +772,13 @@ RZ_IPI RzILOpEffect *x86_il_set_operand_bits(X86Op op, RZ_OWN RZ_NONNULL RzILOpP
 
 	RzILOpEffect *ret = NULL;
 	switch (op.type) {
-	case ZYDIS_OPERAND_TYPE_REGISTER:
+	case X86_OP_REG:
 		ret = x86_il_set_reg_bits(op.reg.value, val, bits);
 		break;
-	case ZYDIS_OPERAND_TYPE_MEMORY:
+	case X86_OP_MEM:
 		ret = x86_il_set_mem_bits(op.mem, val, bits, pc);
 		break;
-	case ZYDIS_OPERAND_TYPE_IMMEDIATE:
+	case X86_OP_IMM:
 		RZ_LOG_ERROR("x86: RzIL: Cannot set an immediate operand\n");
 		break;
 	default:
@@ -1074,7 +1082,7 @@ RZ_IPI RzILOpEffect *x86_il_set_flags(RZ_OWN RZ_NONNULL RzILOpPure *val, unsigne
  * \param reg
  */
 RZ_IPI bool x86_il_is_st_reg(X86Reg reg) {
-	return reg >= ZYDIS_REGISTER_ST0 && reg <= ZYDIS_REGISTER_ST7;
+	return reg >= X86_REG_ST0 && reg <= X86_REG_ST7;
 }
 
 /**
@@ -1084,7 +1092,7 @@ RZ_IPI bool x86_il_is_st_reg(X86Reg reg) {
  * \return RzILOpPure* 2 bit rounding mode
  */
 RZ_IPI RzILOpPure *x86_il_fpu_get_rmode() {
-	return UNSIGNED(2, SHIFTR0(VARG(ZYDIS_REGISTER_FPU_CW), UN(8, 10)));
+	return UNSIGNED(2, SHIFTR0(VARG(X86_REG_FPU_CW), UN(8, 10)));
 }
 
 /**
@@ -1346,7 +1354,7 @@ RZ_IPI RzILOpEffect *x86_il_set_st_reg_ctx(X86Reg reg, RZ_OWN RZ_NONNULL RzILOpF
  * \return RzILOpPure* Bitvector of length 3
  */
 RZ_IPI RzILOpPure *x86_il_get_fpu_stack_top() {
-	RzILOpPure *status_word = x86_il_get_reg_bits(ZYDIS_REGISTER_X87STATUS, 0, 0);
+	RzILOpPure *status_word = x86_il_get_reg_bits(X86_REG_X87STATUS, 0, 0);
 	return UNSIGNED(3, SHIFTR0(status_word, UN(8, 11)));
 }
 
@@ -1365,11 +1373,11 @@ RZ_IPI RzILOpEffect *x86_il_set_fpu_stack_top(RZ_OWN RZ_NONNULL RzILOpPure *top)
 	/* 0x3800 only has the 12, 13 & 14 bits set, so we take its negation for the
 	 * mask. */
 	RzILOpPure *mask = UN(16, ~(0x3800));
-	RzILOpPure *new_fpsw = LOGOR(shifted_top, LOGAND(mask, x86_il_get_reg_bits(ZYDIS_REGISTER_X87STATUS, 0, 0)));
-	return x86_il_set_reg_bits(ZYDIS_REGISTER_X87STATUS, new_fpsw, 0);
+	RzILOpPure *new_fpsw = LOGOR(shifted_top, LOGAND(mask, x86_il_get_reg_bits(X86_REG_X87STATUS, 0, 0)));
+	return x86_il_set_reg_bits(X86_REG_X87STATUS, new_fpsw, 0);
 }
 
-#define ST_MOVE_RIGHT(l, r) x86_il_set_st_reg(ZYDIS_REGISTER_ST##r, x86_il_get_st_reg(ZYDIS_REGISTER_ST##l), RZ_FLOAT_IEEE754_BIN_80)
+#define ST_MOVE_RIGHT(l, r) x86_il_set_st_reg(X86_REG_ST##r, x86_il_get_st_reg(X86_REG_ST##l), RZ_FLOAT_IEEE754_BIN_80)
 
 /**
  * \brief Push \p val on the FPU stack
@@ -1393,7 +1401,7 @@ RZ_IPI RzILOpEffect *x86_il_st_push_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *val, RzFl
 		ST_MOVE_RIGHT(2, 3),
 		ST_MOVE_RIGHT(1, 2),
 		ST_MOVE_RIGHT(0, 1),
-		x86_il_set_st_reg(ZYDIS_REGISTER_ST0, val, val_format));
+		x86_il_set_st_reg(X86_REG_ST0, val, val_format));
 
 	/* Set C1 if stack overflow. If stack overflow occurred, then the value of
 	 * stack TOP must be 0x7. */
@@ -1402,7 +1410,7 @@ RZ_IPI RzILOpEffect *x86_il_st_push_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *val, RzFl
 	return SEQ3(set_top, st_shift, set_overflow);
 }
 
-#define ST_MOVE_LEFT(l, r) x86_il_set_st_reg(ZYDIS_REGISTER_ST##l, x86_il_get_st_reg(ZYDIS_REGISTER_ST##r), RZ_FLOAT_IEEE754_BIN_80)
+#define ST_MOVE_LEFT(l, r) x86_il_set_st_reg(X86_REG_ST##l, x86_il_get_st_reg(X86_REG_ST##r), RZ_FLOAT_IEEE754_BIN_80)
 
 /**
  * \brief Pop a value from the FPU stack
@@ -1433,14 +1441,14 @@ RZ_IPI RzILOpEffect *x86_il_st_pop() {
 
 RZ_IPI ILPureEffectPair x86_il_st_pop_with_val() {
 	ILPureEffectPair ret;
-	ret.val = x86_il_get_st_reg(ZYDIS_REGISTER_ST0);
+	ret.val = x86_il_get_st_reg(X86_REG_ST0);
 	ret.eff = x86_il_st_pop();
 
 	return ret;
 }
 
 RZ_IPI RzILOpBool *x86_il_get_fpu_flag(X86FPUFlags flag) {
-	RzILOpPure *shifted_fpsw = SHIFTR0(x86_il_get_reg_bits(ZYDIS_REGISTER_X87STATUS, 0, 0), UN(8, flag));
+	RzILOpPure *shifted_fpsw = SHIFTR0(x86_il_get_reg_bits(X86_REG_X87STATUS, 0, 0), UN(8, flag));
 	return NON_ZERO(UNSIGNED(1, shifted_fpsw));
 }
 
@@ -1449,8 +1457,8 @@ RZ_IPI RzILOpEffect *x86_il_set_fpu_flag(X86FPUFlags flag, RZ_OWN RZ_NONNULL RzI
 
 	RzILOpPure *zero_mask = UN(16, ~(1 << flag));
 	RzILOpPure *value_mask = SHIFTL0(BOOL_TO_BV(value, 16), UN(8, flag));
-	RzILOpPure *new_fpsw = LOGOR(value_mask, LOGAND(zero_mask, x86_il_get_reg_bits(ZYDIS_REGISTER_X87STATUS, 0, 0)));
-	return x86_il_set_reg_bits(ZYDIS_REGISTER_X87STATUS, new_fpsw, 0);
+	RzILOpPure *new_fpsw = LOGOR(value_mask, LOGAND(zero_mask, x86_il_get_reg_bits(X86_REG_X87STATUS, 0, 0)));
+	return x86_il_set_reg_bits(X86_REG_X87STATUS, new_fpsw, 0);
 }
 
 #define FLOATING_OP_MEM_WIDTH_CASE(n) \
@@ -1472,14 +1480,14 @@ RZ_IPI RzILOpEffect *x86_il_set_fpu_flag(X86FPUFlags flag, RZ_OWN RZ_NONNULL RzI
  */
 RZ_IPI RzILOpPure *x86_il_get_floating_operand_bits(X86Op op, int bits, ut64 pc) {
 	switch (op.type) {
-	case ZYDIS_OPERAND_TYPE_REGISTER:
+	case X86_OP_REG:
 		if (x86_il_is_st_reg(op.reg.value)) {
 			return x86_il_get_st_reg(op.reg.value);
 		} else {
 			RZ_LOG_ERROR("x86: RzIL: Invalid register passed as a floating point operand: %d\n", op.reg.value);
 		}
 		break;
-	case ZYDIS_OPERAND_TYPE_MEMORY:
+	case X86_OP_MEM:
 		switch (op.size * BITS_PER_BYTE) {
 			/* ~Duff's~ DMaroo's device */
 			FLOATING_OP_MEM_WIDTH_CASE(32);
@@ -1490,7 +1498,7 @@ RZ_IPI RzILOpPure *x86_il_get_floating_operand_bits(X86Op op, int bits, ut64 pc)
 		}
 		break;
 	// case X86_OP_INVALID:
-	case ZYDIS_OPERAND_TYPE_IMMEDIATE:
+	case X86_OP_IMM:
 	default:
 		RZ_LOG_ERROR("x86: RzIL: Invalid param type encountered: %d\n", op.type);
 	}
@@ -1545,9 +1553,9 @@ RZ_IPI RzILOpEffect *x86_il_set_floating_operand_bits_ctx(X86Op op, RZ_OWN RZ_NO
 	RzILOpEffect *ret = NULL;
 
 	switch (op.type) {
-	case ZYDIS_OPERAND_TYPE_REGISTER:
+	case X86_OP_REG:
 		return x86_il_set_st_reg(op.reg.value, val, val_format);
-	case ZYDIS_OPERAND_TYPE_MEMORY: {
+	case X86_OP_MEM: {
 		ut64 required_format = x86_width_to_format(op.size * BITS_PER_BYTE);
 
 		RzILOpPure *resized_val;
@@ -1569,16 +1577,16 @@ RZ_IPI RzILOpEffect *x86_il_set_floating_operand_bits_ctx(X86Op op, RZ_OWN RZ_NO
 
 		return ret;
 	}
-	case ZYDIS_OPERAND_TYPE_IMMEDIATE:
+	case X86_OP_IMM:
 	default:
-		RZ_LOG_ERROR("x86: RzIL: Invalid param type encountered: %d\n", ZYDIS_OPERAND_TYPE_IMMEDIATE);
+		RZ_LOG_ERROR("x86: RzIL: Invalid param type encountered: %d\n", X86_OP_IMM);
 		return ret;
 	}
 }
 
 RZ_IPI RzILOpEffect *x86_il_clear_fpsw_flags() {
-	RzILOpPure *new_fpsw = LOGAND(x86_il_get_reg_bits(ZYDIS_REGISTER_X87STATUS, 0, 0), UN(16, 0x3f80));
-	return x86_il_set_reg_bits(ZYDIS_REGISTER_X87STATUS, new_fpsw, 0);
+	RzILOpPure *new_fpsw = LOGAND(x86_il_get_reg_bits(X86_REG_X87STATUS, 0, 0), UN(16, 0x3f80));
+	return x86_il_set_reg_bits(X86_REG_X87STATUS, new_fpsw, 0);
 }
 
 #include <rz_il/rz_il_opbuilder_end.h>

@@ -518,7 +518,7 @@ static bool test_rz_colorize_generic_2(void) {
 	RzStrBuf *colored_asm = rz_asm_colorize_asm_str(&asmop->buf_asm, p,
 		param, asmop->asm_toks);
 
-	RzStrBuf *expected = rz_strbuf_new("\x1b[37mmovabs\x1b[0m\x1b[37m \x1b[0m\x1b[36mrax\x1b[0m\x1b[37m, \x1b[0m\x1b[33m0x1122334455667788\x1b[0m");
+	RzStrBuf *expected = rz_strbuf_new("\x1b[37mmov\x1b[0m\x1b[37m \x1b[0m\x1b[36mrax\x1b[0m\x1b[37m, \x1b[0m\x1b[33m0x1122334455667788\x1b[0m");
 	char err_msg[2048];
 	snprintf(err_msg, sizeof(err_msg), "Colors of \"%s\" are incorrect. Should be \"%s\"\n.", rz_strbuf_get(colored_asm), rz_strbuf_get(expected));
 	mu_assert_true(rz_strbuf_equals(colored_asm, expected), err_msg);

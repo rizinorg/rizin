@@ -27,13 +27,13 @@ EOF
 EXPECT=<<EOF
 0x00004e98                 31c0  xor eax, eax
 0x00004e9a           e8a1e60000  call 0x13540
-0x00004e9f       488d351e4a0100  lea rsi, qword [0x198c4]
+0x00004e9f       488d351e4a0100  lea rsi, qword [rip+0x14a1e]
 0x00004ea6           bf06000000  mov edi, 0x06
 0x00004eab           e8b0fdffff  call sym.imp.setlocale
-0x00004eb0       488d35584b0100  lea rsi, qword [str.usr_share_locale]
-0x00004eb7       488d3d374b0100  lea rdi, qword [0x199f5]
+0x00004eb0       488d35584b0100  lea rsi, qword [rip+0x14b58]
+0x00004eb7       488d3d374b0100  lea rdi, qword [rip+0x14b37]
 0x00004ebe           e81dfaffff  call sym.imp.bindtextdomain
-0x00004ec3       488d3d2b4b0100  lea rdi, qword [0x199f5]
+0x00004ec3       488d3d2b4b0100  lea rdi, qword [rip+0x14b2b]
 0x00004eca           e8d1f9ffff  call sym.imp.textdomain
 EOF
 RUN

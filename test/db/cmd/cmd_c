@@ -192,63 +192,63 @@ ccd 0x5a8d
 EOF
 EXPECT=<<EOF
  0x00005ae0  endbr64                          ! 0x00005a8d  add dword [rax], eax
- 0x00005ae4  xor ebp, ebp                     ! 0x00005a8f  call qword [rip + 0x1c343]
- 0x00005ae6  mov r9, rdx                      ! 0x00005a95  lea rcx, [rip + 0x11cbe]
+ 0x00005ae4  xor ebp, ebp                     ! 0x00005a8f  call qword [rip+0x1c343]
+ 0x00005ae6  mov r9, rdx                      ! 0x00005a95  lea rcx, qword [rip+0x11cbe]
  0x00005ae9  pop rsi                          ! 0x00005a9c  mov edx, 0x670
- 0x00005aea  mov rdx, rsp                     ! 0x00005aa1  lea rsi, [rip + 0x12dcf]
- 0x00005aed  and rsp, 0xfffffffffffffff0      ! 0x00005aa8  lea rdi, [rip + 0x153b9]
- 0x00005af1  push rax                         ! 0x00005aaf  call qword [rip + 0x1c323]
- 0x00005af2  push rsp                         ! 0x00005ab5  lea rcx, [rip + 0x11bfc]
- 0x00005af3  lea r8, [rip + 0x10c66]          ! 0x00005abc  mov edx, 0x403
- 0x00005afa  lea rcx, [rip + 0x10bef]         ! 0x00005ac1  lea rsi, [rip + 0x12daf]
- 0x00005b01  lea rdi, [rip - 0x1a98]          ! 0x00005ac8  lea rdi, [rip + 0x15339]
- 0x00005b08  call qword [rip + 0x1c30a]       ! 0x00005acf  call qword [rip + 0x1c303]
- 0x00005b0e  hlt                              ! 0x00005ad5  nop word cs:[rax + rax]
+ 0x00005aea  mov rdx, rsp                     ! 0x00005aa1  lea rsi, qword [rip+0x12dcf]
+ 0x00005aed  and rsp, 0xfffffffffffffff0      ! 0x00005aa8  lea rdi, qword [rip+0x153b9]
+ 0x00005af1  push rax                         ! 0x00005aaf  call qword [rip+0x1c323]
+ 0x00005af2  push rsp                         ! 0x00005ab5  lea rcx, qword [rip+0x11bfc]
+ 0x00005af3  lea r8, qword [rip+0x10c66]      ! 0x00005abc  mov edx, 0x403
+ 0x00005afa  lea rcx, qword [rip+0x10bef]     ! 0x00005ac1  lea rsi, qword [rip+0x12daf]
+ 0x00005b01  lea rdi, qword [rip-0x1a98]      ! 0x00005ac8  lea rdi, qword [rip+0x15339]
+ 0x00005b08  call qword [rip+0x1c30a]         ! 0x00005acf  call qword [rip+0x1c303]
+ 0x00005b0e  hlt                              ! 0x00005ad5  nop word [rax+rax*1], ax
  0x00005b0f  nop                              = 0x00005adf  nop
- 0x00005b10  lea rdi, [rip + 0x1c751]         ! 0x00005ae0  endbr64
- 0x00005b17  lea rax, [rip + 0x1c74a]         ! 0x00005ae4  xor ebp, ebp
+ 0x00005b10  lea rdi, qword [rip+0x1c751]     ! 0x00005ae0  endbr64
+ 0x00005b17  lea rax, qword [rip+0x1c74a]     ! 0x00005ae4  xor ebp, ebp
  0x00005b1e  cmp rax, rdi                     ! 0x00005ae6  mov r9, rdx
- 0x00005b21  je 0x5b38                        ! 0x00005ae9  pop rsi
- 0x00005b23  mov rax, qword [rip + 0x1c196]   ! 0x00005aea  mov rdx, rsp
+ 0x00005b21  jz 0x5b38                        ! 0x00005ae9  pop rsi
+ 0x00005b23  mov rax, qword [rip+0x1c196]     ! 0x00005aea  mov rdx, rsp
  0x00005b2a  test rax, rax                    ! 0x00005aed  and rsp, 0xfffffffffffffff0
- 0x00005b2d  je 0x5b38                        ! 0x00005af1  push rax
+ 0x00005b2d  jz 0x5b38                        ! 0x00005af1  push rax
  0x00005b2f  jmp rax                          ! 0x00005af2  push rsp
- 0x00005b31  nop dword [rax]                  ! 0x00005af3  lea r8, [rip + 0x10c66]
- 0x00005b38  ret                              ! 0x00005afa  lea rcx, [rip + 0x10bef]
- 0x00005b39  nop dword [rax]                  ! 0x00005b01  lea rdi, [rip - 0x1a98]
- 0x00005b40  lea rdi, [rip + 0x1c721]         ! 0x00005b08  call qword [rip + 0x1c30a]
- 0x00005b47  lea rsi, [rip + 0x1c71a]         ! 0x00005b0e  hlt
+ 0x00005b31  nop dword [rax], eax             ! 0x00005af3  lea r8, qword [rip+0x10c66]
+ 0x00005b38  ret                              ! 0x00005afa  lea rcx, qword [rip+0x10bef]
+ 0x00005b39  nop dword [rax], eax             ! 0x00005b01  lea rdi, qword [rip-0x1a98]
+ 0x00005b40  lea rdi, qword [rip+0x1c721]     ! 0x00005b08  call qword [rip+0x1c30a]
+ 0x00005b47  lea rsi, qword [rip+0x1c71a]     ! 0x00005b0e  hlt
  0x00005b4e  sub rsi, rdi                     ! 0x00005b0f  nop
- 0x00005b51  sar rsi, 3                       ! 0x00005b10  lea rdi, [rip + 0x1c751]
- 0x00005b55  mov rax, rsi                     ! 0x00005b17  lea rax, [rip + 0x1c74a]
+ 0x00005b51  sar rsi, 0x03                    ! 0x00005b10  lea rdi, qword [rip+0x1c751]
+ 0x00005b55  mov rax, rsi                     ! 0x00005b17  lea rax, qword [rip+0x1c74a]
  0x00005b58  shr rax, 0x3f                    ! 0x00005b1e  cmp rax, rdi
- 0x00005b5c  add rsi, rax                     ! 0x00005b21  je 0x5b20
- 0x00005b5f  sar rsi, 1                       ! 0x00005b23  mov rax, qword [rip + 0x1c196]
- 0x00005b62  je 0x5b78                        ! 0x00005b2a  test rax, rax
- 0x00005b64  mov rax, qword [rip + 0x1c43d]   ! 0x00005b2d  je 0x5b1c
+ 0x00005b5c  add rsi, rax                     ! 0x00005b21  jz 0x5b20
+ 0x00005b5f  sar rsi, 0x01                    ! 0x00005b23  mov rax, qword [rip+0x1c196]
+ 0x00005b62  jz 0x5b78                        ! 0x00005b2a  test rax, rax
+ 0x00005b64  mov rax, qword [rip+0x1c43d]     ! 0x00005b2d  jz 0x5b1c
  0x00005b6b  test rax, rax                    ! 0x00005b2f  jmp rax
- 0x00005b6e  je 0x5b78                        ! 0x00005b31  nop dword [rax]
+ 0x00005b6e  jz 0x5b78                        ! 0x00005b31  nop dword [rax], eax
  0x00005b70  jmp rax                          ! 0x00005b38  ret
- 0x00005b72  nop word [rax + rax]             ! 0x00005b39  nop dword [rax]
- 0x00005b78  ret                              ! 0x00005b40  lea rdi, [rip + 0x1c721]
- 0x00005b79  nop dword [rax]                  ! 0x00005b47  lea rsi, [rip + 0x1c71a]
+ 0x00005b72  nop word [rax+rax*1], ax         ! 0x00005b39  nop dword [rax], eax
+ 0x00005b78  ret                              ! 0x00005b40  lea rdi, qword [rip+0x1c721]
+ 0x00005b79  nop dword [rax], eax             ! 0x00005b47  lea rsi, qword [rip+0x1c71a]
  0x00005b80  endbr64                          ! 0x00005b4e  sub rsi, rdi
- 0x00005b84  cmp byte [rip + 0x1c73d], 0      ! 0x00005b51  sar rsi, 3
- 0x00005b8b  jne 0x5bc0                       ! 0x00005b55  mov rax, rsi
+ 0x00005b84  cmp byte [rip+0x1c73d], 0x00     ! 0x00005b51  sar rsi, 0x03
+ 0x00005b8b  jnz 0x5bc0                       ! 0x00005b55  mov rax, rsi
  0x00005b8d  push rbp                         ! 0x00005b58  shr rax, 0x3f
- 0x00005b8e  cmp qword [rip + 0x1c432], 0     ! 0x00005b5c  add rsi, rax
- 0x00005b96  mov rbp, rsp                     ! 0x00005b5f  sar rsi, 1
- 0x00005b99  je 0x5ba8                        ! 0x00005b62  je 0x5b5c
- 0x00005b9b  mov rdi, qword [rip + 0x1c466]   ! 0x00005b64  mov rax, qword [rip + 0x1c43d]
- 0x00005ba2  call qword [rip + 0x1c420]       ! 0x00005b6b  test rax, rax
- 0x00005ba8  call 0x5b10                      ! 0x00005b6e  je 0x5b5f
- 0x00005bad  mov byte [rip + 0x1c714], 1      ! 0x00005b70  jmp rax
- 0x00005bb4  pop rbp                          ! 0x00005b72  nop word [rax + rax]
+ 0x00005b8e  cmp qword [rip+0x1c432], 0x00    ! 0x00005b5c  add rsi, rax
+ 0x00005b96  mov rbp, rsp                     ! 0x00005b5f  sar rsi, 0x01
+ 0x00005b99  jz 0x5ba8                        ! 0x00005b62  jz 0x5b5c
+ 0x00005b9b  mov rdi, qword [rip+0x1c466]     ! 0x00005b64  mov rax, qword [rip+0x1c43d]
+ 0x00005ba2  call qword [rip+0x1c420]         ! 0x00005b6b  test rax, rax
+ 0x00005ba8  call 0x5b10                      ! 0x00005b6e  jz 0x5b5f
+ 0x00005bad  mov byte [rip+0x1c714], 0x01     ! 0x00005b70  jmp rax
+ 0x00005bb4  pop rbp                          ! 0x00005b72  nop word [rax+rax*1], ax
  0x00005bb5  ret                              = 0x00005b78  ret
- 0x00005bb6  nop word cs:[rax + rax]          ! 0x00005b79  nop dword [rax]
+ 0x00005bb6  nop word [rax+rax*1], ax         ! 0x00005b79  nop dword [rax], eax
  0x00005bc0  ret                              ! 0x00005b80  endbr64
- 0x00005bc1  nop word cs:[rax + rax]          ! 0x00005b84  cmp byte [rip + 0x1c73d], 0
- 0x00005bcc  nop dword [rax]                  ! 0x00005b8b  jne 0x5bae
+ 0x00005bc1  nop word [rax+rax*1], ax         ! 0x00005b84  cmp byte [rip+0x1c73d], 0x00
+ 0x00005bcc  nop dword [rax], eax             ! 0x00005b8b  jnz 0x5bae
 EOF
 RUN
 
@@ -1111,117 +1111,117 @@ EXPECT=<<EOF
 -0x00005ae0  endbr64
 +0x00005a8d  add dword [rax], eax
 -0x00005ae4  xor ebp, ebp
-+0x00005a8f  call qword [rip + 0x1c343]
++0x00005a8f  call qword [rip+0x1c343]
 -0x00005ae6  mov r9, rdx
-+0x00005a95  lea rcx, [rip + 0x11cbe]
++0x00005a95  lea rcx, qword [rip+0x11cbe]
 -0x00005ae9  pop rsi
 +0x00005a9c  mov edx, 0x670
 -0x00005aea  mov rdx, rsp
-+0x00005aa1  lea rsi, [rip + 0x12dcf]
++0x00005aa1  lea rsi, qword [rip+0x12dcf]
 -0x00005aed  and rsp, 0xfffffffffffffff0
-+0x00005aa8  lea rdi, [rip + 0x153b9]
++0x00005aa8  lea rdi, qword [rip+0x153b9]
 -0x00005af1  push rax
-+0x00005aaf  call qword [rip + 0x1c323]
++0x00005aaf  call qword [rip+0x1c323]
 -0x00005af2  push rsp
-+0x00005ab5  lea rcx, [rip + 0x11bfc]
--0x00005af3  lea r8, [rip + 0x10c66]
++0x00005ab5  lea rcx, qword [rip+0x11bfc]
+-0x00005af3  lea r8, qword [rip+0x10c66]
 +0x00005abc  mov edx, 0x403
--0x00005afa  lea rcx, [rip + 0x10bef]
-+0x00005ac1  lea rsi, [rip + 0x12daf]
--0x00005b01  lea rdi, [rip - 0x1a98]
-+0x00005ac8  lea rdi, [rip + 0x15339]
--0x00005b08  call qword [rip + 0x1c30a]
-+0x00005acf  call qword [rip + 0x1c303]
+-0x00005afa  lea rcx, qword [rip+0x10bef]
++0x00005ac1  lea rsi, qword [rip+0x12daf]
+-0x00005b01  lea rdi, qword [rip-0x1a98]
++0x00005ac8  lea rdi, qword [rip+0x15339]
+-0x00005b08  call qword [rip+0x1c30a]
++0x00005acf  call qword [rip+0x1c303]
 -0x00005b0e  hlt
-+0x00005ad5  nop word cs:[rax + rax]
++0x00005ad5  nop word [rax+rax*1], ax
  0x00005b0f  nop
--0x00005b10  lea rdi, [rip + 0x1c751]
+-0x00005b10  lea rdi, qword [rip+0x1c751]
 +0x00005ae0  endbr64
--0x00005b17  lea rax, [rip + 0x1c74a]
+-0x00005b17  lea rax, qword [rip+0x1c74a]
 +0x00005ae4  xor ebp, ebp
 -0x00005b1e  cmp rax, rdi
 +0x00005ae6  mov r9, rdx
--0x00005b21  je 0x5b38
+-0x00005b21  jz 0x5b38
 +0x00005ae9  pop rsi
--0x00005b23  mov rax, qword [rip + 0x1c196]
+-0x00005b23  mov rax, qword [rip+0x1c196]
 +0x00005aea  mov rdx, rsp
 -0x00005b2a  test rax, rax
 +0x00005aed  and rsp, 0xfffffffffffffff0
--0x00005b2d  je 0x5b38
+-0x00005b2d  jz 0x5b38
 +0x00005af1  push rax
 -0x00005b2f  jmp rax
 +0x00005af2  push rsp
--0x00005b31  nop dword [rax]
-+0x00005af3  lea r8, [rip + 0x10c66]
+-0x00005b31  nop dword [rax], eax
++0x00005af3  lea r8, qword [rip+0x10c66]
 -0x00005b38  ret
-+0x00005afa  lea rcx, [rip + 0x10bef]
--0x00005b39  nop dword [rax]
-+0x00005b01  lea rdi, [rip - 0x1a98]
--0x00005b40  lea rdi, [rip + 0x1c721]
-+0x00005b08  call qword [rip + 0x1c30a]
--0x00005b47  lea rsi, [rip + 0x1c71a]
++0x00005afa  lea rcx, qword [rip+0x10bef]
+-0x00005b39  nop dword [rax], eax
++0x00005b01  lea rdi, qword [rip-0x1a98]
+-0x00005b40  lea rdi, qword [rip+0x1c721]
++0x00005b08  call qword [rip+0x1c30a]
+-0x00005b47  lea rsi, qword [rip+0x1c71a]
 +0x00005b0e  hlt
 -0x00005b4e  sub rsi, rdi
 +0x00005b0f  nop
--0x00005b51  sar rsi, 3
-+0x00005b10  lea rdi, [rip + 0x1c751]
+-0x00005b51  sar rsi, 0x03
++0x00005b10  lea rdi, qword [rip+0x1c751]
 -0x00005b55  mov rax, rsi
-+0x00005b17  lea rax, [rip + 0x1c74a]
++0x00005b17  lea rax, qword [rip+0x1c74a]
 -0x00005b58  shr rax, 0x3f
 +0x00005b1e  cmp rax, rdi
 -0x00005b5c  add rsi, rax
-+0x00005b21  je 0x5b20
--0x00005b5f  sar rsi, 1
-+0x00005b23  mov rax, qword [rip + 0x1c196]
--0x00005b62  je 0x5b78
++0x00005b21  jz 0x5b20
+-0x00005b5f  sar rsi, 0x01
++0x00005b23  mov rax, qword [rip+0x1c196]
+-0x00005b62  jz 0x5b78
 +0x00005b2a  test rax, rax
--0x00005b64  mov rax, qword [rip + 0x1c43d]
-+0x00005b2d  je 0x5b1c
+-0x00005b64  mov rax, qword [rip+0x1c43d]
++0x00005b2d  jz 0x5b1c
 -0x00005b6b  test rax, rax
 +0x00005b2f  jmp rax
--0x00005b6e  je 0x5b78
-+0x00005b31  nop dword [rax]
+-0x00005b6e  jz 0x5b78
++0x00005b31  nop dword [rax], eax
 -0x00005b70  jmp rax
 +0x00005b38  ret
--0x00005b72  nop word [rax + rax]
-+0x00005b39  nop dword [rax]
+-0x00005b72  nop word [rax+rax*1], ax
++0x00005b39  nop dword [rax], eax
 -0x00005b78  ret
-+0x00005b40  lea rdi, [rip + 0x1c721]
--0x00005b79  nop dword [rax]
-+0x00005b47  lea rsi, [rip + 0x1c71a]
++0x00005b40  lea rdi, qword [rip+0x1c721]
+-0x00005b79  nop dword [rax], eax
++0x00005b47  lea rsi, qword [rip+0x1c71a]
 -0x00005b80  endbr64
 +0x00005b4e  sub rsi, rdi
--0x00005b84  cmp byte [rip + 0x1c73d], 0
-+0x00005b51  sar rsi, 3
--0x00005b8b  jne 0x5bc0
+-0x00005b84  cmp byte [rip+0x1c73d], 0x00
++0x00005b51  sar rsi, 0x03
+-0x00005b8b  jnz 0x5bc0
 +0x00005b55  mov rax, rsi
 -0x00005b8d  push rbp
 +0x00005b58  shr rax, 0x3f
--0x00005b8e  cmp qword [rip + 0x1c432], 0
+-0x00005b8e  cmp qword [rip+0x1c432], 0x00
 +0x00005b5c  add rsi, rax
 -0x00005b96  mov rbp, rsp
-+0x00005b5f  sar rsi, 1
--0x00005b99  je 0x5ba8
-+0x00005b62  je 0x5b5c
--0x00005b9b  mov rdi, qword [rip + 0x1c466]
-+0x00005b64  mov rax, qword [rip + 0x1c43d]
--0x00005ba2  call qword [rip + 0x1c420]
++0x00005b5f  sar rsi, 0x01
+-0x00005b99  jz 0x5ba8
++0x00005b62  jz 0x5b5c
+-0x00005b9b  mov rdi, qword [rip+0x1c466]
++0x00005b64  mov rax, qword [rip+0x1c43d]
+-0x00005ba2  call qword [rip+0x1c420]
 +0x00005b6b  test rax, rax
 -0x00005ba8  call 0x5b10
-+0x00005b6e  je 0x5b5f
--0x00005bad  mov byte [rip + 0x1c714], 1
++0x00005b6e  jz 0x5b5f
+-0x00005bad  mov byte [rip+0x1c714], 0x01
 +0x00005b70  jmp rax
 -0x00005bb4  pop rbp
-+0x00005b72  nop word [rax + rax]
++0x00005b72  nop word [rax+rax*1], ax
  0x00005bb5  ret
--0x00005bb6  nop word cs:[rax + rax]
-+0x00005b79  nop dword [rax]
+-0x00005bb6  nop word [rax+rax*1], ax
++0x00005b79  nop dword [rax], eax
 -0x00005bc0  ret
 +0x00005b80  endbr64
--0x00005bc1  nop word cs:[rax + rax]
-+0x00005b84  cmp byte [rip + 0x1c73d], 0
--0x00005bcc  nop dword [rax]
-+0x00005b8b  jne 0x5bae
+-0x00005bc1  nop word [rax+rax*1], ax
++0x00005b84  cmp byte [rip+0x1c73d], 0x00
+-0x00005bcc  nop dword [rax], eax
++0x00005b8b  jnz 0x5bae
 EOF
 RUN
 

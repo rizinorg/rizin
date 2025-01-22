@@ -6,6 +6,7 @@
 #define X86_IL_COMMON_H
 
 #include "x86_il.h"
+#include "x86_mnemonics.h"
 
 #define X86_BIT(x)  UN(1, x)
 #define X86_TO32(x) UNSIGNED(32, x)
@@ -34,14 +35,14 @@
 #define EFLAGS(f) x86_eflags_registers[X86_EFLAGS_##f]
 
 #define extreg_lookup(suff, getter, setter) \
-	{ ZYDIS_REGISTER_R8##suff, ZYDIS_REGISTER_R8, getter, setter }, \
-		{ ZYDIS_REGISTER_R9##suff, ZYDIS_REGISTER_R9, getter, setter }, \
-		{ ZYDIS_REGISTER_R10##suff, ZYDIS_REGISTER_R10, getter, setter }, \
-		{ ZYDIS_REGISTER_R11##suff, ZYDIS_REGISTER_R11, getter, setter }, \
-		{ ZYDIS_REGISTER_R12##suff, ZYDIS_REGISTER_R12, getter, setter }, \
-		{ ZYDIS_REGISTER_R13##suff, ZYDIS_REGISTER_R13, getter, setter }, \
-		{ ZYDIS_REGISTER_R14##suff, ZYDIS_REGISTER_R14, getter, setter }, \
-		{ ZYDIS_REGISTER_R15##suff, ZYDIS_REGISTER_R15, getter, setter },
+	{ X86_REG_R8##suff, X86_REG_R8, getter, setter }, \
+		{ X86_REG_R9##suff, X86_REG_R9, getter, setter }, \
+		{ X86_REG_R10##suff, X86_REG_R10, getter, setter }, \
+		{ X86_REG_R11##suff, X86_REG_R11, getter, setter }, \
+		{ X86_REG_R12##suff, X86_REG_R12, getter, setter }, \
+		{ X86_REG_R13##suff, X86_REG_R13, getter, setter }, \
+		{ X86_REG_R14##suff, X86_REG_R14, getter, setter }, \
+		{ X86_REG_R15##suff, X86_REG_R15, getter, setter },
 
 #define x86_il_get_reg(reg)      x86_il_get_reg_bits(reg, analysis->bits, pc)
 #define x86_il_set_reg(reg, val) x86_il_set_reg_bits(reg, val, analysis->bits)
@@ -110,15 +111,15 @@ RZ_IPI RzILOpEffect *x86_il_set_flags(RZ_OWN RZ_NONNULL RzILOpPure *val, unsigne
 /* Capstone does not have the following FPU registers. */
 
 /* FPU control word */
-#define ZYDIS_REGISTER_FPU_CW "cwd"
+#define X86_REG_FPU_CW "cwd"
 /* FPU tag word */
-#define ZYDIS_REGISTER_FPU_TW "ftw"
+#define X86_REG_FPU_TW "ftw"
 /* FPU last instruction opcode */
-#define ZYDIS_REGISTER_FPU_OP "fop"
+#define X86_REG_FPU_OP "fop"
 /* FPU instruction pointer */
-#define ZYDIS_REGISTER_FPU_IP "frip"
+#define X86_REG_FPU_IP "frip"
 /* FPU data pointer */
-#define ZYDIS_REGISTER_FPU_DP "frdp"
+#define X86_REG_FPU_DP "frdp"
 
 typedef enum {
 	X86_FPU_C0 = 8,

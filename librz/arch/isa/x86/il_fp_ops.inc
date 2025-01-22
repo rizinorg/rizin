@@ -24,13 +24,13 @@
  * Initialize x87 FPU
  */
 IL_LIFTER(fninit) {
-	RzILOpEffect *set_cw = SETG(ZYDIS_REGISTER_FPU_CW, UN(16, 0x37f));
+	RzILOpEffect *set_cw = SETG(X86_REG_FPU_CW, UN(16, 0x37f));
 	/* No need to set C0-C3 flags to zero, since we are setting the FPSW to 0,
 	 * so all the flag bits will also be set to 0. */
-	RzILOpEffect *set_sw = x86_il_set_reg(ZYDIS_REGISTER_X87STATUS, UN(16, 0x0));
-	RzILOpEffect *set_tw = SETG(ZYDIS_REGISTER_FPU_TW, UN(16, 0xffff));
-	RzILOpEffect *set_ip = SETG(ZYDIS_REGISTER_FPU_IP, UN(32, 0x0));
-	RzILOpEffect *set_dp = SETG(ZYDIS_REGISTER_FPU_DP, UN(32, 0x0));
+	RzILOpEffect *set_sw = x86_il_set_reg(X86_REG_X87STATUS, UN(16, 0x0));
+	RzILOpEffect *set_tw = SETG(X86_REG_FPU_TW, UN(16, 0xffff));
+	RzILOpEffect *set_ip = SETG(X86_REG_FPU_IP, UN(32, 0x0));
+	RzILOpEffect *set_dp = SETG(X86_REG_FPU_DP, UN(32, 0x0));
 
 	return SEQ5(set_cw, set_sw, set_tw, set_ip, set_dp);
 }
@@ -40,7 +40,7 @@ IL_LIFTER(fninit) {
  * Load x87 FPU Control Word
  */
 IL_LIFTER(fldcw) {
-	return SETG(ZYDIS_REGISTER_FPU_CW, x86_il_get_op(0));
+	return SETG(X86_REG_FPU_CW, x86_il_get_op(0));
 }
 
 /**
@@ -48,7 +48,7 @@ IL_LIFTER(fldcw) {
  * Store x87 FPU Control Word
  */
 IL_LIFTER(fnstcw) {
-	return x86_il_set_op(0, VARG(ZYDIS_REGISTER_FPU_CW));
+	return x86_il_set_op(0, VARG(X86_REG_FPU_CW));
 }
 
 /**
@@ -56,7 +56,7 @@ IL_LIFTER(fnstcw) {
  * Store x87 FPU Status Word
  */
 IL_LIFTER(fnstsw) {
-	return x86_il_set_op(0, x86_il_get_reg(ZYDIS_REGISTER_X87STATUS));
+	return x86_il_set_op(0, x86_il_get_reg(X86_REG_X87STATUS));
 }
 
 /**
@@ -65,8 +65,8 @@ IL_LIFTER(fnstsw) {
  */
 IL_LIFTER(fnclex) {
 	/* Zero out the 15th bit and 0-7 bits. */
-	RzILOpPure *new_sw = LOGAND(x86_il_get_reg(ZYDIS_REGISTER_X87STATUS), UN(16, 0x7f00));
-	return SEQ2(x86_il_set_reg(ZYDIS_REGISTER_X87STATUS, new_sw), x86_il_clear_fpsw_flags());
+	RzILOpPure *new_sw = LOGAND(x86_il_get_reg(X86_REG_X87STATUS), UN(16, 0x7f00));
+	return SEQ2(x86_il_set_reg(X86_REG_X87STATUS, new_sw), x86_il_clear_fpsw_flags());
 }
 
 /**
@@ -84,7 +84,7 @@ IL_LIFTER(fld) {
  */
 IL_LIFTER(fst) {
 	// TODO: Set the C1 bit depending on floating-point inexact exception (#P).
-	return x86_il_set_floating_op(0, x86_il_get_st_reg(ZYDIS_REGISTER_ST0), RZ_FLOAT_IEEE754_BIN_80);
+	return x86_il_set_floating_op(0, x86_il_get_st_reg(X86_REG_ST0), RZ_FLOAT_IEEE754_BIN_80);
 }
 
 // TODO: Implement undocumented instructions, have a look at #4045 for more.
@@ -205,17 +205,17 @@ IL_LIFTER(fxch) {
 
 	if (ins->structure->operand_count_visible == 0) {
 		/* Use ST1 as the default reg in case no operand is provided. */
-		reg = ZYDIS_REGISTER_ST1;
+		reg = X86_REG_ST1;
 	} else {
-		reg = ins->operands[1].reg.value;
+		reg = ins->operands[0].reg.value;
 	}
 
 	/* TODO: The IL generated from the following code is too verbose because of
 	many rounding checks, there are ways to remove this sort of rounding checks,
 	but it doesn't matter for now so I'm not bothering with it. */
 	return SEQ4(
-		SETL("tmp", x86_il_get_st_reg(ZYDIS_REGISTER_ST0)),
-		x86_il_set_st_reg(ZYDIS_REGISTER_ST0, x86_il_get_st_reg(reg), RZ_FLOAT_IEEE754_BIN_80),
+		SETL("tmp", x86_il_get_st_reg(X86_REG_ST0)),
+		x86_il_set_st_reg(X86_REG_ST0, x86_il_get_st_reg(reg), RZ_FLOAT_IEEE754_BIN_80),
 		x86_il_set_st_reg(reg, VARL("tmp"), RZ_FLOAT_IEEE754_BIN_80),
 		x86_il_set_fpu_flag(X86_FPU_C1, IL_FALSE));
 }
@@ -236,7 +236,7 @@ IL_LIFTER(fild) {
  * Store float in ST(0) after rounding to integer
  */
 IL_LIFTER(fist) {
-	ILPureEffectPair int_val = x86_il_int_from_floating(x86_il_get_st_reg(ZYDIS_REGISTER_ST0), ins->operands[0].size * BITS_PER_BYTE);
+	ILPureEffectPair int_val = x86_il_int_from_floating(x86_il_get_st_reg(X86_REG_ST0), ins->operands[0].size * BITS_PER_BYTE);
 	return SEQ2(int_val.eff, x86_il_set_op(0, int_val.val));
 }
 
@@ -350,8 +350,8 @@ IL_LIFTER(fbstp) {
  * Clears the sign bit of ST(0) to create absolute value
  */
 IL_LIFTER(fabs) {
-	RzILOpFloat *abs_value = FABS(x86_il_get_st_reg(ZYDIS_REGISTER_ST0));
-	return SEQ2(x86_il_set_st_reg(ZYDIS_REGISTER_ST0, abs_value, RZ_FLOAT_IEEE754_BIN_80), x86_il_set_fpu_flag(X86_FPU_C1, IL_FALSE));
+	RzILOpFloat *abs_value = FABS(x86_il_get_st_reg(X86_REG_ST0));
+	return SEQ2(x86_il_set_st_reg(X86_REG_ST0, abs_value, RZ_FLOAT_IEEE754_BIN_80), x86_il_set_fpu_flag(X86_FPU_C1, IL_FALSE));
 }
 
 #define FLOATING_ARITHMETIC_IL(op) \
@@ -365,16 +365,19 @@ IL_LIFTER(fabs) {
 		switch (ins->structure->operand_count_visible) { \
 		case 1: \
 			/* Need to convert a 32-bit or 64-bit memory operand */ \
-			dest_reg = ZYDIS_REGISTER_ST0; \
+			dest_reg = X86_REG_ST0; \
 			ILPureEffectPair resized = x86_il_resize_floating(x86_il_get_floating_op(0), RZ_FLOAT_IEEE754_BIN_80); \
 			src = resized.val; \
 			src_eff = resized.eff; \
 			break; \
-		case 2: \
+		case 2: { \
 			/* ST(i) operand, so no need for resizing */ \
 			dest_reg = ins->operands[0].reg.value; \
-			src = x86_il_get_floating_op(0); \
+			ILPureEffectPair resized = x86_il_resize_floating(x86_il_get_floating_op(1), RZ_FLOAT_IEEE754_BIN_80); \
+			src = resized.val; \
+			src_eff = resized.eff; \
 			break; \
+		} \
 		default: \
 			rz_warn_if_reached(); \
 			return NULL; \
@@ -391,22 +394,22 @@ IL_LIFTER(fabs) {
 
 #define FLOATING_ARITHMETIC_POP_IL(op) \
 	do { \
-		X86Reg dest_reg = ZYDIS_REGISTER_ST1; \
+		X86Reg dest_reg = X86_REG_ST1; \
 \
 		if (ins->structure->operand_count_visible == 2) { \
 			/* Destination register passed in as the first operand */ \
 			dest_reg = ins->operands[0].reg.value; \
 		} \
 \
-		ILPureEffectPair result = x86_il_##op##_with_rmode(x86_il_get_st_reg(ZYDIS_REGISTER_ST0), x86_il_get_st_reg(dest_reg)); \
+		ILPureEffectPair result = x86_il_##op##_with_rmode(x86_il_get_st_reg(X86_REG_ST0), x86_il_get_st_reg(dest_reg)); \
 		return SEQ3(result.eff, x86_il_set_st_reg(dest_reg, result.val, RZ_FLOAT_IEEE754_BIN_80), x86_il_st_pop()); \
 	} while (0)
 
 #define FLOATING_INT_ARITHMETIC_IL(op) \
 	do { \
 		ILPureEffectPair float_val = x86_il_floating_from_int(x86_il_get_op(0), RZ_FLOAT_IEEE754_BIN_80); \
-		ILPureEffectPair result = x86_il_##op##_with_rmode(float_val.val, x86_il_get_st_reg(ZYDIS_REGISTER_ST0)); \
-		return SEQ3(float_val.eff, result.eff, x86_il_set_st_reg(ZYDIS_REGISTER_ST0, result.val, RZ_FLOAT_IEEE754_BIN_80)); \
+		ILPureEffectPair result = x86_il_##op##_with_rmode(float_val.val, x86_il_get_st_reg(X86_REG_ST0)); \
+		return SEQ3(float_val.eff, result.eff, x86_il_set_st_reg(X86_REG_ST0, result.val, RZ_FLOAT_IEEE754_BIN_80)); \
 	} while (0)
 
 /**
@@ -554,16 +557,19 @@ IL_LIFTER(fidivr) {
 }
 
 RzILOpEffect *fcom_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis, RzILOpPure *op1_override) {
-	RzILOpPure *st0 = x86_il_get_st_reg(ZYDIS_REGISTER_ST0);
+	RzILOpPure *st0 = x86_il_get_st_reg(X86_REG_ST0);
 	RzILOpPure *op1;
 
 	if (op1_override) {
 		op1 = op1_override;
 	} else if (ins->structure->operand_count_visible == 0) {
 		/* ST(1) is the default operand */
-		op1 = x86_il_get_st_reg(ZYDIS_REGISTER_ST1);
-	} else {
+		op1 = x86_il_get_st_reg(X86_REG_ST1);
+	} else if (ins->structure->operand_count_visible == 1) {
 		op1 = x86_il_get_floating_op(0);
+	} else {
+		st0 = x86_il_get_floating_op(0);
+		op1 = x86_il_get_floating_op(1);
 	}
 
 	// TODO: Set the C0, C2, C3 bits depending on invalid arithmetic operand exception (#IA).
@@ -605,7 +611,7 @@ IL_LIFTER(ficom) {
  */
 IL_LIFTER(fcompp) {
 	/* This function takes in no operands, so we pass in the [op1_override] argument in [fcom_helper]. */
-	return SEQ3(fcom_helper(ins, pc, analysis, x86_il_get_st_reg(ZYDIS_REGISTER_ST1)), x86_il_st_pop(), x86_il_st_pop());
+	return SEQ3(fcom_helper(ins, pc, analysis, x86_il_get_st_reg(X86_REG_ST1)), x86_il_st_pop(), x86_il_st_pop());
 }
 
 /**
@@ -618,7 +624,7 @@ IL_LIFTER(ficomp) {
 }
 
 RzILOpEffect *fcomi_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
-	RzILOpPure *st0 = x86_il_get_st_reg(ZYDIS_REGISTER_ST0);
+	RzILOpPure *st0 = x86_il_get_st_reg(X86_REG_ST0);
 	RzILOpPure *sti = x86_il_get_floating_op(0);
 
 	// TODO: Set the ZF, PF, CF depending on invalid arithmetic operand exception (#IA).
@@ -637,15 +643,13 @@ IL_LIFTER(fcomi) {
 	return fcomi_helper(ins, pc, analysis);
 }
 
-#if CS_API_MAJOR > 4
-/**
- * FCOMIP
- * Compare ST(0) and ST(i), set the EFLAGS accordingly and pop the stack
- */
-IL_LIFTER(fcomip) {
-	return SEQ2(fcomi_helper(ins, pc, analysis), x86_il_st_pop());
-}
-#endif
+///**
+// * FCOMIP
+// * Compare ST(0) and ST(i), set the EFLAGS accordingly and pop the stack
+// */
+// IL_LIFTER(fcomip) {
+//	return SEQ2(fcomi_helper(ins, pc, analysis), x86_il_st_pop());
+//}
 
 /**
  * FCHS
@@ -653,7 +657,7 @@ IL_LIFTER(fcomip) {
  */
 IL_LIFTER(fchs) {
 	return SEQ2(
-		x86_il_set_st_reg(ZYDIS_REGISTER_ST0, FNEG(x86_il_get_st_reg(ZYDIS_REGISTER_ST0)), RZ_FLOAT_IEEE754_BIN_80),
+		x86_il_set_st_reg(X86_REG_ST0, FNEG(x86_il_get_st_reg(X86_REG_ST0)), RZ_FLOAT_IEEE754_BIN_80),
 		x86_il_set_fpu_flag(X86_FPU_C1, IL_FALSE));
 }
 
@@ -671,11 +675,11 @@ IL_LIFTER(ftst) {
  * Round ST(0) to an integer
  */
 IL_LIFTER(frndint) {
-	ILPureEffectPair int_from_float = x86_il_int_from_floating(x86_il_get_st_reg(ZYDIS_REGISTER_ST0), 64);
+	ILPureEffectPair int_from_float = x86_il_int_from_floating(x86_il_get_st_reg(X86_REG_ST0), 64);
 	ILPureEffectPair float_from_int = x86_il_floating_from_int(int_from_float.val, RZ_FLOAT_IEEE754_BIN_80);
 
 	/* Not very sure about whether the rounded integer should be limited to 64 bits or not. */
-	return SEQ3(int_from_float.eff, float_from_int.eff, x86_il_set_st_reg(ZYDIS_REGISTER_ST0, float_from_int.val, RZ_FLOAT_IEEE754_BIN_80));
+	return SEQ3(int_from_float.eff, float_from_int.eff, x86_il_set_st_reg(X86_REG_ST0, float_from_int.val, RZ_FLOAT_IEEE754_BIN_80));
 }
 
 /**
@@ -683,8 +687,8 @@ IL_LIFTER(frndint) {
  * Calculate the square root of ST(0)
  */
 IL_LIFTER(fsqrt) {
-	ILPureEffectPair fsqrt_res = x86_il_fsqrt_with_rmode(x86_il_get_st_reg(ZYDIS_REGISTER_ST0));
-	return SEQ2(fsqrt_res.eff, x86_il_set_st_reg(ZYDIS_REGISTER_ST0, fsqrt_res.val, RZ_FLOAT_IEEE754_BIN_80));
+	ILPureEffectPair fsqrt_res = x86_il_fsqrt_with_rmode(x86_il_get_st_reg(X86_REG_ST0));
+	return SEQ2(fsqrt_res.eff, x86_il_set_st_reg(X86_REG_ST0, fsqrt_res.val, RZ_FLOAT_IEEE754_BIN_80));
 }
 
 /**
@@ -700,7 +704,7 @@ IL_LIFTER(fnop) {
  * Round ST(0) to an integer (using RZ_FLOAT_RMODE_RTZ), store the integer in the memory operand and pop the stack
  */
 IL_LIFTER(fisttp) {
-	ILPureEffectPair int_from_float = x86_il_int_from_floating(x86_il_get_st_reg(ZYDIS_REGISTER_ST0), ins->operands[0].size * BITS_PER_BYTE);
+	ILPureEffectPair int_from_float = x86_il_int_from_floating(x86_il_get_st_reg(X86_REG_ST0), ins->operands[0].size * BITS_PER_BYTE);
 	return SEQ3(int_from_float.eff, x86_il_set_op(0, int_from_float.val), x86_il_st_pop());
 }
 
