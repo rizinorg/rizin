@@ -4177,7 +4177,9 @@ RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NU
 			rsize = rz_utf8_decode(&buf[i], buflen - i, &code_point);
 		}
 
-		if (rsize == 0) {
+		if (rsize == 0 && option->stop_at_unprintable) {
+			break;
+		} else if (rsize == 0) {
 			switch (enc) {
 			case RZ_STRING_ENC_UTF32LE:
 				rsize = RZ_MIN(4, buflen - i);
@@ -4265,7 +4267,7 @@ RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NU
 				char tmp[5] = { 0 };
 				rz_utf8_encode((ut8 *)tmp, code_point);
 				rz_strbuf_appendf(&sb, "%s", tmp);
-			} else {
+			} else if (!option->stop_at_unprintable) {
 				ut8 tmp[4];
 				int n_enc = rz_utf8_encode((ut8 *)tmp, code_point);
 				for (int j = 0; j < n_enc; ++j) {
@@ -4278,7 +4280,9 @@ RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NU
 			line_runes = 0;
 		}
 	}
-	if (!option->json) {
+	if (!option->json && n_runes > 0) {
+		// Only add a newline, if a string was decoded.
+		// Otherwise, people might think there was a "newline" string.
 		rz_strbuf_appendf(&sb, "\n");
 	}
 	if (length) {
