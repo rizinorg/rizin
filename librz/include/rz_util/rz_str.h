@@ -270,6 +270,7 @@ typedef struct rz_str_stringify_opt_t {
 	bool escape_nl; ///< When enabled escapes new lines (\n).
 	bool json; ///< Encodes the output as a JSON string.
 	bool stop_at_nil; ///< When enabled stops printing when '\0' is found.
+	bool stop_at_unprintable; ///< When enabled stops printing at first non-printable character.
 	bool urlencode; ///< Encodes the output following RFC 3986.
 } RzStrStringifyOpt;
 

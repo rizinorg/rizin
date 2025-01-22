@@ -44,7 +44,7 @@ RZ_LIB_VERSION_HEADER(rz_core);
 #define RZ_CORE_CMD_INVALID -1
 #define RZ_CORE_CMD_EXIT    -2
 
-#define RZ_CORE_BLOCKSIZE     0x100
+#define RZ_CORE_BLOCKSIZE     0x1000
 #define RZ_CORE_BLOCKSIZE_MAX 0x3200000 /* 32MB */
 
 #define RZ_FLAGS_FS_CLASSES                 "classes"
