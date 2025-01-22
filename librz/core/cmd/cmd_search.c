@@ -42,7 +42,7 @@ static const char *help_msg_slash[] = {
 	"/b", "", "search backwards, command modifier, followed by other command",
 	"/c", "[?][adr]", "search for crypto materials",
 	"/d", " 101112", "search for a deltified sequence of bytes",
-	"/e", " /E.F/i", "match regular expression",
+	"/e", " /pattern/[i]", "match regular expression",
 	"/E", " esil-expr", "offset matching given esil expressions $$ = here",
 	"/f", "", "search forwards, (command modifier)",
 	"/F", " file [off] [sz]", "search contents of file with offset and size",
