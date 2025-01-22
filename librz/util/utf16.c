@@ -95,15 +95,15 @@ RZ_API size_t rz_utf16le_encode(RZ_NONNULL RZ_OUT ut8 *buf, RzRune codepoint) {
 		buf[1] = codepoint >> 8 & 0xff;
 		return 2;
 	}
-	if (codepoint < 0x110000) {
-		codepoint -= 0x10000;
-		RzRune high = 0xd800 + (codepoint >> 10 & 0x3ff);
-		RzRune low = 0xdc00 + (codepoint & 0x3ff);
-		buf[0] = high & 0xff;
-		buf[1] = high >> 8 & 0xff;
-		buf[2] = low & 0xff;
-		buf[3] = low >> 8 & 0xff;
-		return 4;
+	if (codepoint > 0x10FFFF) {
+		return 0;
 	}
-	return 0;
+	codepoint -= 0x10000;
+	RzRune high = 0xd800 + ((codepoint >> 10) & 0x3ff);
+	RzRune low = 0xdc00 + (codepoint & 0x3ff);
+	buf[0] = high & 0xff;
+	buf[1] = high >> 8 & 0xff;
+	buf[2] = low & 0xff;
+	buf[3] = low >> 8 & 0xff;
+	return 4;
 }
