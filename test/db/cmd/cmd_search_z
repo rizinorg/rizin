@@ -42,9 +42,12 @@ FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ascii
 CMDS=<<EOF
 e search.show_progress=false
 /z "Lorem ipsum dolor sit amet, at eligendi adipisci ius, ex natum appetere officiis has, nibh quas torquatos pro te. Quo at deleniti repudiandae, et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et." d ascii
+# Check string is actually at offset of the hit.
+ps @ hit.string.0
 EOF
 EXPECT=<<EOF
 00000000 376 hit.string.0
+Lorem ipsum dolor sit amet, at eligendi adipisci ius, ex natum appetere officiis has, nibh quas torquatos pro te. Quo at deleniti repudiandae, et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
 EOF
 EXPECT_ERR=
 RUN
@@ -65,9 +68,12 @@ FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ascii
 CMDS=<<EOF
 e search.show_progress=false
 /z "placerat ut, eu etiam vitae nam" d ascii
+# Check string is actually at offset of the hit.
+ps @ hit.string.0
 EOF
 EXPECT=<<EOF
 000000fa 31 hit.string.0
+placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
 EOF
 EXPECT_ERR=
 RUN
@@ -77,9 +83,12 @@ FILE=bins/cmd/search/string_encodings/Arabic-Lipsum.utf8
 CMDS=<<EOF
 e search.show_progress=false
 /z "ا الأوضاع, لم بوابة المب" d utf8
+# Check string is actually at offset of the hit.
+ps @ hit.string.0
 EOF
 EXPECT=<<EOF
 00000116 43 hit.string.0
+ا الأوضاع, لم بوابة المبرمة عرض. إبّان اسبوعين البشريةً تعد في. كنقطة إيطاليا قام بل, أضف أن وبغطاء الباهضة.
 EOF
 EXPECT_ERR=
 RUN
@@ -89,9 +98,12 @@ FILE=bins/cmd/search/string_encodings/Armenian-Lipsum.utf8
 CMDS=<<EOF
 e search.show_progress=false
 /z "դեֆինիթիոնես ին վիս, ծասե պեռթինա" d utf8
+# Check string is actually at offset of the hit.
+ps @ hit.string.0
 EOF
 EXPECT=<<EOF
 000001dc 61 hit.string.0
+դեֆինիթիոնես ին վիս, ծասե պեռթինածիա նե վիս. ին մելիուս ֆածիլիս եոս, եսթ եռոս պոպուլո թիմեամ թե. իուս նո ծոնսուլաթու.
 EOF
 EXPECT_ERR=
 RUN
@@ -101,9 +113,12 @@ FILE=bins/cmd/search/string_encodings/Chinese-Lipsum.utf8
 CMDS=<<EOF
 e search.show_progress=false
 /z "京確年禁読応米新報書了号活修佐。" d utf8
+# Check string is actually at offset of the hit.
+ps @ hit.string.0
 EOF
 EXPECT=<<EOF
 000000de 48 hit.string.0
+京確年禁読応米新報書了号活修佐。央良持著宣込警石寂益好独田接読仕。漂戦辺量食害恐人給景族缶掲価済教放。響城引真際通御芭情査男倍淺早住。金握崎利契事用鹿仮交体受寄終山率大。
 EOF
 EXPECT_ERR=
 RUN
@@ -113,9 +128,12 @@ FILE=bins/cmd/search/string_encodings/Georgian-Lipsum.utf8
 CMDS=<<EOF
 e search.show_progress=false
 /z "რე, იუს ეა უთინამ დელიცათისსიმი. მელ ფერსეყუერის ლ" d utf8
+# Check string is actually at offset of the hit.
+ps @ hit.string.0
 EOF
 EXPECT=<<EOF
 00000282 132 hit.string.0
+რე, იუს ეა უთინამ დელიცათისსიმი. მელ ფერსეყუერის ლიბერავისსე თე, გრაეცო ფრინციფეს ასსენთიორ სით ეუ. ჰის მალორუმ ანთიოფამ თჰეოფჰრასთუს ნე, ეუ ეუმ ყუას ეთიამ.
 EOF
 EXPECT_ERR=
 RUN
@@ -125,21 +143,12 @@ FILE=bins/cmd/search/string_encodings/Greek-Lipsum.utf8
 CMDS=<<EOF
 e search.show_progress=false
 /z "παρτεμ ποσιδονιθμ ατ. Ετ πρι περιcθλισ σπλενδιδε" d utf8
+# Check string is actually at offset of the hit.
+ps @ hit.string.0
 EOF
 EXPECT=<<EOF
 0000010b 88 hit.string.0
-EOF
-EXPECT_ERR=
-RUN
-
-NAME=String Search - Encoding: utf8 - Hebrew I
-FILE=bins/cmd/search/string_encodings/Hebrew-Lipsum.utf8
-CMDS=<<EOF
-e search.show_progress=false
-/z "וד מיזם יכול קהילה ב, את קרן תיאטרון שימושיים. שמו אחרונים ויקימדיה את. זאת אם תיבת הרוח שינויים" d utf8
-EOF
-EXPECT=<<EOF
-00000002 172 hit.string.0
+παρτεμ ποσιδονιθμ ατ. Ετ πρι περιcθλισ σπλενδιδε μνεσαρcηθμ, vελ ατ cονσεqθατ εξπετενδισ. Τε ηασ qθεμ πετεντιθμ.
 EOF
 EXPECT_ERR=
 RUN
@@ -149,9 +158,12 @@ FILE=bins/cmd/search/string_encodings/Hebrew-Lipsum.utf8
 CMDS=<<EOF
 e search.show_progress=false
 /z "ים משחקים ממונרכיה" d utf8
+# Check string is actually at offset of the hit.
+ps @ hit.string.0
 EOF
 EXPECT=<<EOF
 00000141 34 hit.string.0
+ים משחקים ממונרכיה אנא גם.
 EOF
 EXPECT_ERR=<<EOF
 EOF
@@ -162,9 +174,12 @@ FILE=bins/cmd/search/string_encodings/Hindi-Lipsum.utf8
 CMDS=<<EOF
 e search.show_progress=false
 /z "पहोचने वैश्विक एसलिये पुस्तक हुआआदी" d utf8
+# Check string is actually at offset of the hit.
+ps @ hit.string.0
 EOF
 EXPECT=<<EOF
 00000086 97 hit.string.0
+पहोचने वैश्विक एसलिये पुस्तक हुआआदी विश्व उनका खरिदने समस्याओ मार्गदर्शन रखते तरीके यायेका विश्लेषण पुष्टिकर्ता चुनने सकता बढाता वेबजाल गोपनीयता लिए। संपादक करेसाथ रचना नवंबर
 EOF
 EXPECT_ERR=
 RUN
@@ -174,9 +189,12 @@ FILE=bins/cmd/search/string_encodings/Korean2-Lipsum.utf8
 CMDS=<<EOF
 e search.show_progress=false
 /z "생의 과실이 있으며." d utf8
+# Check string is actually at offset of the hit.
+ps @ hit.string.0
 EOF
 EXPECT=<<EOF
 000000dc 27 hit.string.0
+생의 과실이 있으며. 찬미를 사람은 그들에게 너의 청춘이 인류의 그들의 칼이다.
 EOF
 EXPECT_ERR=
 RUN
@@ -186,9 +204,12 @@ FILE=bins/cmd/search/string_encodings/Morsecode-Lipsum.utf8
 CMDS=<<EOF
 e search.show_progress=false
 /z " ·--· ·---- ··· - ···· --" d utf8
+# Check string is actually at offset of the hit.
+ps @ hit.string.0
 EOF
 EXPECT=<<EOF
 00000042 35 hit.string.0
+ ·--· ·---- ··· - ···· --·· --··· -· ··· -·· -·-- ···· ·--- ·-·-·- · ··- - ··- ···- ··--- ·-·-·- -·- -··- ----- -·
 EOF
 EXPECT_ERR=
 RUN
@@ -198,9 +219,12 @@ FILE=bins/cmd/search/string_encodings/Russian-Lipsum.utf8
 CMDS=<<EOF
 e search.show_progress=false
 /z "тани ад. Цум хендрерит перс" d utf8
+# Check string is actually at offset of the hit.
+ps @ hit.string.0
 EOF
 EXPECT=<<EOF
 00000055 49 hit.string.0
+тани ад. Цум хендрерит персецути ех, миним еяуидем цонсецтетуер яуи ид. Либер малуиссет нам еа, еа граеце дефиниебас.
 EOF
 EXPECT_ERR=
 RUN
@@ -209,11 +233,11 @@ NAME=String Search - Encoding: utf16be - Arabic
 FILE=bins/cmd/search/string_encodings/Arabic-Lipsum.utf16be
 CMDS=<<EOF
 e search.show_progress=false
-psm
 /z "ا الأوضاع, لم بوابة المب" d utf16be
+# Check string is actually at offset of the hit.
+# ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-أسيا مساعدة جعل عن, أخذ قد يونيو الثانية, نهاية الإقتصادية أي فقد. كما فسقط يتعلّق محاولات أي, هو الأحمر العمليات تلك, اكتوبر مق
 00000116 43 hit.string.0
 EOF
 EXPECT_ERR=
@@ -223,11 +247,11 @@ NAME=String Search - Encoding: utf16be - Armenian
 FILE=bins/cmd/search/string_encodings/Armenian-Lipsum.utf16be
 CMDS=<<EOF
 e search.show_progress=false
-psm
 /z "դեֆինիթիոնես ին վիս, ծասե պեռթինա" d utf16be
+# Check string is actually at offset of the hit.
+# ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-լոռեմ իպսում դոլոռ սիթ ամեթ, նիսլ վիդիսսե ոպոռթեաթ եթ քուի, նամ աթ սոլութա իմպեդիթ մենանդռի. ելիթռ պլածեռաթ դուո ին, աթ դիամ ֆաս
 000001dc 61 hit.string.0
 EOF
 EXPECT_ERR=
@@ -237,11 +261,11 @@ NAME=String Search - Encoding: utf16be - Chinese
 FILE=bins/cmd/search/string_encodings/Chinese-Lipsum.utf16be
 CMDS=<<EOF
 e search.show_progress=false
-psm
 /z "京確年禁読応米新報書了号活修佐。" d utf16be
+# Check string is actually at offset of the hit.
+# ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-合報立色提質分遅職並太月険愛講提字築訓。平応数会渡亡幡事寄横関割更。進報医市認穫都投漂都学起田胸完見暮波。乗発死左写刊争作世開顔残訳剤記詳先天。哲記京確年禁読応米新報書了号活修佐。央良持著宣込警石寂益好独田接読仕。漂戦辺量食害恐人給景族缶掲価済教放。響城引
 000000de 48 hit.string.0
 EOF
 EXPECT_ERR=
@@ -251,11 +275,11 @@ NAME=String Search - Encoding: utf16be - Georgian
 FILE=bins/cmd/search/string_encodings/Georgian-Lipsum.utf16be
 CMDS=<<EOF
 e search.show_progress=false
-psm
 /z "რე, იუს ეა უთინამ დელიცათისსიმი. მელ ფერსეყუერის ლ" d utf16be
+# Check string is actually at offset of the hit.
+# ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-ლორემ იფსუმ დოლორ სით ამეთ, ილლუმ ელაბორარეთ ად ჰას, ილლუმ იისყუე ინ ნამ. ყუოდ დუის ცლითა ნო ფრი, გრაეცო აცცუსამუს ცონსულათუ ჰას
 00000282 132 hit.string.0
 EOF
 EXPECT_ERR=
@@ -265,11 +289,11 @@ NAME=String Search - Encoding: utf16be - Greek
 FILE=bins/cmd/search/string_encodings/Greek-Lipsum.utf16be
 CMDS=<<EOF
 e search.show_progress=false
-psm
 /z "παρτεμ ποσιδονιθμ ατ. Ετ πρι περιcθλισ σπλενδιδε" d utf16be
+# Check string is actually at offset of the hit.
+# ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-Λορεμ ιπσθμ δολορ σιτ αμετ, αν γθβεργρεν ποσιδονιθμ cθμ. Βονορθμ ρεφορμιδανσ vιξ νε, νονθμεσ ελοqθεντιαμ ρεπρεηενδθντ εα qθι, στ
 0000010b 88 hit.string.0
 EOF
 EXPECT_ERR=
@@ -279,11 +303,11 @@ NAME=String Search - Encoding: utf16be - Hebrew I
 FILE=bins/cmd/search/string_encodings/Hebrew-Lipsum.utf16be
 CMDS=<<EOF
 e search.show_progress=false
-psm
 /z "וד מיזם יכול קהילה ב, את קרן תיאטרון שימושיים. שמו אחרונים ויקימדיה את. זאת אם תיבת הרוח שינויים" d utf16be
+# Check string is actually at offset of the hit.
+# ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-עוד מיזם יכול קהילה ב, את קרן תיאטרון שימושיים. שמו אחרונים ויקימדיה את. זאת אם תיבת הרוח שינויים, באגים בחירות בויקיפדיה אם ארץ
 00000002 172 hit.string.0
 EOF
 EXPECT_ERR=
@@ -293,11 +317,11 @@ NAME=String Search - Encoding: utf16be - Hebrew II
 FILE=bins/cmd/search/string_encodings/Hebrew-Lipsum.utf16be
 CMDS=<<EOF
 e search.show_progress=false
-psm
 /z "ים משחקים ממונרכיה" d utf16be
+# Check string is actually at offset of the hit.
+# ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-עוד מיזם יכול קהילה ב, את קרן תיאטרון שימושיים. שמו אחרונים ויקימדיה את. זאת אם תיבת הרוח שינויים, באגים בחירות בויקיפדיה אם ארץ
 00000141 34 hit.string.0
 EOF
 EXPECT_ERR=
@@ -307,11 +331,11 @@ NAME=String Search - Encoding: utf16be - Hindi
 FILE=bins/cmd/search/string_encodings/Hindi-Lipsum.utf16be
 CMDS=<<EOF
 e search.show_progress=false
-psm
 /z "पहोचने वैश्विक एसलिये पुस्तक हुआआदी" d utf16be
+# Check string is actually at offset of the hit.
+# ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-ब्रौशर विभाजन दिनांक जाने ध्वनि सेऔर सादगि जिम्मे पहोचने वैश्विक एसलिये पुस्तक हुआआदी विश्व उनका खरिदने समस्याओ मार्गदर्शन रखते 
 00000086 97 hit.string.0
 EOF
 EXPECT_ERR=
@@ -321,11 +345,11 @@ NAME=String Search - Encoding: utf16be - Korean2
 FILE=bins/cmd/search/string_encodings/Korean2-Lipsum.utf16be
 CMDS=<<EOF
 e search.show_progress=false
-psm
 /z "생의 과실이 있으며." d utf16be
+# Check string is actually at offset of the hit.
+# ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-봄바람이다. 이것은 수 봄바람이다. 있는가? 기관과 없으면. 품고 어디 싸인 있으랴? 살았으며. 피가 같은 있는 우리 이상은 되려니와. 길지 낙원을 대한 말이다. 같은 생의 과실이 있으며. 찬미를 사람은 그들에게 너의 청춘이 인류
 000000dc 27 hit.string.0
 EOF
 EXPECT_ERR=
@@ -335,11 +359,11 @@ NAME=String Search - Encoding: utf16be - Morsecode
 FILE=bins/cmd/search/string_encodings/Morsecode-Lipsum.utf16be
 CMDS=<<EOF
 e search.show_progress=false
-psm
 /z " ·--· ·---- ··· - ···· --" d utf16be
+# Check string is actually at offset of the hit.
+# ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-···· --·· --- ·- --·- ---·· ·· ·-· ·· -·- ··-· ·--· ·---- ··· - ···· --·· --··· -· ··· -·· -·-- ···· ·--- ·-·-·- · ··- - ··- ···
 00000042 35 hit.string.0
 EOF
 EXPECT_ERR=
@@ -349,11 +373,11 @@ NAME=String Search - Encoding: utf16be - Russian
 FILE=bins/cmd/search/string_encodings/Russian-Lipsum.utf16be
 CMDS=<<EOF
 e search.show_progress=false
-psm
 /z "тани ад. Цум хендрерит перс" d utf16be
+# Check string is actually at offset of the hit.
+# ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-Лорем ипсум долор сит амет, при унум семпер тритани ад. Цум хендрерит персецути ех, миним еяуидем цонсецтетуер яуи ид. Либер мал
 00000055 49 hit.string.0
 EOF
 EXPECT_ERR=
@@ -363,11 +387,11 @@ NAME=String Search - Encoding: utf16le - Arabic
 FILE=bins/cmd/search/string_encodings/Arabic-Lipsum.utf16le
 CMDS=<<EOF
 e search.show_progress=false
-psw
 /z "ا الأوضاع, لم بوابة المب" d utf16le
+# Check string is actually at offset of the hit.
+# ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-أسيا مساعدة جعل عن, أخذ قد يونيو الثانية, نهاية الإقتصادية أي فقد. كما فسقط يتعلّق محاولات أي, هو الأحمر العمليات تلك, اكتوبر مق
 00000116 43 hit.string.0
 EOF
 EXPECT_ERR=
@@ -377,11 +401,11 @@ NAME=String Search - Encoding: utf16le - Armenian
 FILE=bins/cmd/search/string_encodings/Armenian-Lipsum.utf16le
 CMDS=<<EOF
 e search.show_progress=false
-psw
 /z "դեֆինիթիոնես ին վիս, ծասե պեռթինա" d utf16le
+# Check string is actually at offset of the hit.
+# ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-լոռեմ իպսում դոլոռ սիթ ամեթ, նիսլ վիդիսսե ոպոռթեաթ եթ քուի, նամ աթ սոլութա իմպեդիթ մենանդռի. ելիթռ պլածեռաթ դուո ին, աթ դիամ ֆաս
 000001dc 61 hit.string.0
 EOF
 EXPECT_ERR=
@@ -391,11 +415,11 @@ NAME=String Search - Encoding: utf16le - Chinese
 FILE=bins/cmd/search/string_encodings/Chinese-Lipsum.utf16le
 CMDS=<<EOF
 e search.show_progress=false
-psw
 /z "京確年禁読応米新報書了号活修佐。" d utf16le
+# Check string is actually at offset of the hit.
+# ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-合報立色提質分遅職並太月険愛講提字築訓。平応数会渡亡幡事寄横関割更。進報医市認穫都投漂都学起田胸完見暮波。乗発死左写刊争作世開顔残訳剤記詳先天。哲記京確年禁読応米新報書了号活修佐。央良持著宣込警石寂益好独田接読仕。漂戦辺量食害恐人給景族缶掲価済教放。響城引
 000000de 48 hit.string.0
 EOF
 EXPECT_ERR=
@@ -405,11 +429,11 @@ NAME=String Search - Encoding: utf16le - Georgian
 FILE=bins/cmd/search/string_encodings/Georgian-Lipsum.utf16le
 CMDS=<<EOF
 e search.show_progress=false
-psw
 /z "რე, იუს ეა უთინამ დელიცათისსიმი. მელ ფერსეყუერის ლ" d utf16le
+# Check string is actually at offset of the hit.
+# ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-ლორემ იფსუმ დოლორ სით ამეთ, ილლუმ ელაბორარეთ ად ჰას, ილლუმ იისყუე ინ ნამ. ყუოდ დუის ცლითა ნო ფრი, გრაეცო აცცუსამუს ცონსულათუ ჰას
 00000282 132 hit.string.0
 EOF
 EXPECT_ERR=
@@ -419,11 +443,11 @@ NAME=String Search - Encoding: utf16le - Greek
 FILE=bins/cmd/search/string_encodings/Greek-Lipsum.utf16le
 CMDS=<<EOF
 e search.show_progress=false
-psw
 /z "παρτεμ ποσιδονιθμ ατ. Ετ πρι περιcθλισ σπλενδιδε" d utf16le
+# Check string is actually at offset of the hit.
+# ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-Λορεμ ιπσθμ δολορ σιτ αμετ, αν γθβεργρεν ποσιδονιθμ cθμ. Βονορθμ ρεφορμιδανσ vιξ νε, νονθμεσ ελοqθεντιαμ ρεπρεηενδθντ εα qθι, στ
 0000010b 88 hit.string.0
 EOF
 EXPECT_ERR=
@@ -433,11 +457,11 @@ NAME=String Search - Encoding: utf16le - Hebrew I
 FILE=bins/cmd/search/string_encodings/Hebrew-Lipsum.utf16le
 CMDS=<<EOF
 e search.show_progress=false
-psw
 /z "וד מיזם יכול קהילה ב, את קרן תיאטרון שימושיים. שמו אחרונים ויקימדיה את. זאת אם תיבת הרוח שינויים" d utf16le
+# Check string is actually at offset of the hit.
+# ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-עוד מיזם יכול קהילה ב, את קרן תיאטרון שימושיים. שמו אחרונים ויקימדיה את. זאת אם תיבת הרוח שינויים, באגים בחירות בויקיפדיה אם ארץ
 00000002 172 hit.string.0
 EOF
 EXPECT_ERR=
@@ -447,11 +471,11 @@ NAME=String Search - Encoding: utf16le - Hebrew II
 FILE=bins/cmd/search/string_encodings/Hebrew-Lipsum.utf16le
 CMDS=<<EOF
 e search.show_progress=false
-psw
 /z "ים משחקים ממונרכיה" d utf16le
+# Check string is actually at offset of the hit.
+# ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-עוד מיזם יכול קהילה ב, את קרן תיאטרון שימושיים. שמו אחרונים ויקימדיה את. זאת אם תיבת הרוח שינויים, באגים בחירות בויקיפדיה אם ארץ
 00000141 34 hit.string.0
 EOF
 EXPECT_ERR=
@@ -461,11 +485,11 @@ NAME=String Search - Encoding: utf16le - Hindi
 FILE=bins/cmd/search/string_encodings/Hindi-Lipsum.utf16le
 CMDS=<<EOF
 e search.show_progress=false
-psw
 /z "पहोचने वैश्विक एसलिये पुस्तक हुआआदी" d utf16le
+# Check string is actually at offset of the hit.
+# ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-ब्रौशर विभाजन दिनांक जाने ध्वनि सेऔर सादगि जिम्मे पहोचने वैश्विक एसलिये पुस्तक हुआआदी विश्व उनका खरिदने समस्याओ मार्गदर्शन रखते 
 00000086 97 hit.string.0
 EOF
 EXPECT_ERR=
@@ -475,11 +499,11 @@ NAME=String Search - Encoding: utf16le - Korean2
 FILE=bins/cmd/search/string_encodings/Korean2-Lipsum.utf16le
 CMDS=<<EOF
 e search.show_progress=false
-psw
 /z "생의 과실이 있으며." d utf16le
+# Check string is actually at offset of the hit.
+# ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-봄바람이다. 이것은 수 봄바람이다. 있는가? 기관과 없으면. 품고 어디 싸인 있으랴? 살았으며. 피가 같은 있는 우리 이상은 되려니와. 길지 낙원을 대한 말이다. 같은 생의 과실이 있으며. 찬미를 사람은 그들에게 너의 청춘이 인류
 000000dc 27 hit.string.0
 EOF
 EXPECT_ERR=
@@ -489,11 +513,11 @@ NAME=String Search - Encoding: utf16le - Morsecode
 FILE=bins/cmd/search/string_encodings/Morsecode-Lipsum.utf16le
 CMDS=<<EOF
 e search.show_progress=false
-psw
 /z " ·--· ·---- ··· - ···· --" d utf16le
+# Check string is actually at offset of the hit.
+# ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-···· --·· --- ·- --·- ---·· ·· ·-· ·· -·- ··-· ·--· ·---- ··· - ···· --·· --··· -· ··· -·· -·-- ···· ·--- ·-·-·- · ··- - ··- ···
 00000042 35 hit.string.0
 EOF
 EXPECT_ERR=
@@ -503,11 +527,11 @@ NAME=String Search - Encoding: utf16le - Russian
 FILE=bins/cmd/search/string_encodings/Russian-Lipsum.utf16le
 CMDS=<<EOF
 e search.show_progress=false
-psw
 /z "тани ад. Цум хендрерит перс" d utf16le
+# Check string is actually at offset of the hit.
+# ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-Лорем ипсум долор сит амет, при унум семпер тритани ад. Цум хендрерит персецути ех, миним еяуидем цонсецтетуер яуи ид. Либер мал
 00000055 49 hit.string.0
 EOF
 EXPECT_ERR=
@@ -517,11 +541,11 @@ NAME=String Search - Encoding: utf32be - Arabic
 FILE=bins/cmd/search/string_encodings/Arabic-Lipsum.utf32be
 CMDS=<<EOF
 e search.show_progress=false
-psM
 /z "ا الأوضاع, لم بوابة المب" d utf32be
+# Check string is actually at offset of the hit.
+# ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-أسيا مساعدة جعل عن, أخذ قد يونيو الثانية, نهاية الإقتصادية أي فقد. كما فسقط يتعلّق محاولات أي, هو الأحمر العمليات تلك, اكتوبر مق
 00000116 43 hit.string.0
 EOF
 EXPECT_ERR=
@@ -531,11 +555,11 @@ NAME=String Search - Encoding: utf32be - Armenian
 FILE=bins/cmd/search/string_encodings/Armenian-Lipsum.utf32be
 CMDS=<<EOF
 e search.show_progress=false
-psM
 /z "դեֆինիթիոնես ին վիս, ծասե պեռթինա" d utf32be
+# Check string is actually at offset of the hit.
+# ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-լոռեմ իպսում դոլոռ սիթ ամեթ, նիսլ վիդիսսե ոպոռթեաթ եթ քուի, նամ աթ սոլութա իմպեդիթ մենանդռի. ելիթռ պլածեռաթ դուո ին, աթ դիամ ֆաս
 000001dc 61 hit.string.0
 EOF
 EXPECT_ERR=
@@ -545,11 +569,11 @@ NAME=String Search - Encoding: utf32be - Chinese
 FILE=bins/cmd/search/string_encodings/Chinese-Lipsum.utf32be
 CMDS=<<EOF
 e search.show_progress=false
-psM
 /z "京確年禁読応米新報書了号活修佐。" d utf32be
+# Check string is actually at offset of the hit.
+# ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-合報立色提質分遅職並太月険愛講提字築訓。平応数会渡亡幡事寄横関割更。進報医市認穫都投漂都学起田胸完見暮波。乗発死左写刊争作世開顔残訳剤記詳先天。哲記京確年禁読応米新報書了号活修佐。央良持著宣込警石寂益好独田接読仕。漂戦辺量食害恐人給景族缶掲価済教放。響城引
 000000de 48 hit.string.0
 EOF
 EXPECT_ERR=
@@ -559,11 +583,11 @@ NAME=String Search - Encoding: utf32be - Georgian
 FILE=bins/cmd/search/string_encodings/Georgian-Lipsum.utf32be
 CMDS=<<EOF
 e search.show_progress=false
-psM
 /z "რე, იუს ეა უთინამ დელიცათისსიმი. მელ ფერსეყუერის ლ" d utf32be
+# Check string is actually at offset of the hit.
+# ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-ლორემ იფსუმ დოლორ სით ამეთ, ილლუმ ელაბორარეთ ად ჰას, ილლუმ იისყუე ინ ნამ. ყუოდ დუის ცლითა ნო ფრი, გრაეცო აცცუსამუს ცონსულათუ ჰას
 00000282 132 hit.string.0
 EOF
 EXPECT_ERR=
@@ -573,11 +597,11 @@ NAME=String Search - Encoding: utf32be - Greek
 FILE=bins/cmd/search/string_encodings/Greek-Lipsum.utf32be
 CMDS=<<EOF
 e search.show_progress=false
-psM
 /z "παρτεμ ποσιδονιθμ ατ. Ετ πρι περιcθλισ σπλενδιδε" d utf32be
+# Check string is actually at offset of the hit.
+# ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-Λορεμ ιπσθμ δολορ σιτ αμετ, αν γθβεργρεν ποσιδονιθμ cθμ. Βονορθμ ρεφορμιδανσ vιξ νε, νονθμεσ ελοqθεντιαμ ρεπρεηενδθντ εα qθι, στ
 0000010b 88 hit.string.0
 EOF
 EXPECT_ERR=
@@ -587,11 +611,11 @@ NAME=String Search - Encoding: utf32be - Hebrew I
 FILE=bins/cmd/search/string_encodings/Hebrew-Lipsum.utf32be
 CMDS=<<EOF
 e search.show_progress=false
-psM
 /z "וד מיזם יכול קהילה ב, את קרן תיאטרון שימושיים. שמו אחרונים ויקימדיה את. זאת אם תיבת הרוח שינויים" d utf32be
+# Check string is actually at offset of the hit.
+# ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-עוד מיזם יכול קהילה ב, את קרן תיאטרון שימושיים. שמו אחרונים ויקימדיה את. זאת אם תיבת הרוח שינויים, באגים בחירות בויקיפדיה אם ארץ
 00000002 172 hit.string.0
 EOF
 EXPECT_ERR=
@@ -601,11 +625,11 @@ NAME=String Search - Encoding: utf32be - Hebrew II
 FILE=bins/cmd/search/string_encodings/Hebrew-Lipsum.utf32be
 CMDS=<<EOF
 e search.show_progress=false
-psM
 /z "ים משחקים ממונרכיה" d utf32be
+# Check string is actually at offset of the hit.
+# ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-עוד מיזם יכול קהילה ב, את קרן תיאטרון שימושיים. שמו אחרונים ויקימדיה את. זאת אם תיבת הרוח שינויים, באגים בחירות בויקיפדיה אם ארץ
 00000141 34 hit.string.0
 EOF
 EXPECT_ERR=
@@ -615,11 +639,11 @@ NAME=String Search - Encoding: utf32be - Hindi
 FILE=bins/cmd/search/string_encodings/Hindi-Lipsum.utf32be
 CMDS=<<EOF
 e search.show_progress=false
-psM
 /z "पहोचने वैश्विक एसलिये पुस्तक हुआआदी" d utf32be
+# Check string is actually at offset of the hit.
+# ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-ब्रौशर विभाजन दिनांक जाने ध्वनि सेऔर सादगि जिम्मे पहोचने वैश्विक एसलिये पुस्तक हुआआदी विश्व उनका खरिदने समस्याओ मार्गदर्शन रखते 
 00000086 97 hit.string.0
 EOF
 EXPECT_ERR=
@@ -629,11 +653,11 @@ NAME=String Search - Encoding: utf32be - Korean2
 FILE=bins/cmd/search/string_encodings/Korean2-Lipsum.utf32be
 CMDS=<<EOF
 e search.show_progress=false
-psM
 /z "생의 과실이 있으며." d utf32be
+# Check string is actually at offset of the hit.
+# ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-봄바람이다. 이것은 수 봄바람이다. 있는가? 기관과 없으면. 품고 어디 싸인 있으랴? 살았으며. 피가 같은 있는 우리 이상은 되려니와. 길지 낙원을 대한 말이다. 같은 생의 과실이 있으며. 찬미를 사람은 그들에게 너의 청춘이 인류
 000000dc 27 hit.string.0
 EOF
 EXPECT_ERR=
@@ -643,11 +667,11 @@ NAME=String Search - Encoding: utf32be - Morsecode
 FILE=bins/cmd/search/string_encodings/Morsecode-Lipsum.utf32be
 CMDS=<<EOF
 e search.show_progress=false
-psM
 /z " ·--· ·---- ··· - ···· --" d utf32be
+# Check string is actually at offset of the hit.
+# ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-···· --·· --- ·- --·- ---·· ·· ·-· ·· -·- ··-· ·--· ·---- ··· - ···· --·· --··· -· ··· -·· -·-- ···· ·--- ·-·-·- · ··- - ··- ···
 00000042 35 hit.string.0
 EOF
 EXPECT_ERR=
@@ -657,11 +681,11 @@ NAME=String Search - Encoding: utf32be - Russian
 FILE=bins/cmd/search/string_encodings/Russian-Lipsum.utf32be
 CMDS=<<EOF
 e search.show_progress=false
-psM
 /z "тани ад. Цум хендрерит перс" d utf32be
+# Check string is actually at offset of the hit.
+# ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-Лорем ипсум долор сит амет, при унум семпер тритани ад. Цум хендрерит персецути ех, миним еяуидем цонсецтетуер яуи ид. Либер мал
 00000055 49 hit.string.0
 EOF
 EXPECT_ERR=
@@ -672,11 +696,11 @@ NAME=String Search - Encoding: utf32le - Arabic
 FILE=bins/cmd/search/string_encodings/Arabic-Lipsum.utf32le
 CMDS=<<EOF
 e search.show_progress=false
-psW
 /z "ا الأوضاع, لم بوابة المب" d utf32le
+# Check string is actually at offset of the hit.
+# ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-أسيا مساعدة جعل عن, أخذ قد يونيو الثانية, نهاية الإقتصادية أي فقد. كما فسقط يتعلّق محاولات أي, هو الأحمر العمليات تلك, اكتوبر مق
 00000116 43 hit.string.0
 EOF
 EXPECT_ERR=
@@ -686,11 +710,11 @@ NAME=String Search - Encoding: utf32le - Armenian
 FILE=bins/cmd/search/string_encodings/Armenian-Lipsum.utf32le
 CMDS=<<EOF
 e search.show_progress=false
-psW
 /z "դեֆինիթիոնես ին վիս, ծասե պեռթինա" d utf32le
+# Check string is actually at offset of the hit.
+# ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-լոռեմ իպսում դոլոռ սիթ ամեթ, նիսլ վիդիսսե ոպոռթեաթ եթ քուի, նամ աթ սոլութա իմպեդիթ մենանդռի. ելիթռ պլածեռաթ դուո ին, աթ դիամ ֆաս
 000001dc 61 hit.string.0
 EOF
 EXPECT_ERR=
@@ -700,11 +724,11 @@ NAME=String Search - Encoding: utf32le - Chinese
 FILE=bins/cmd/search/string_encodings/Chinese-Lipsum.utf32le
 CMDS=<<EOF
 e search.show_progress=false
-psW
 /z "京確年禁読応米新報書了号活修佐。" d utf32le
+# Check string is actually at offset of the hit.
+# ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-合報立色提質分遅職並太月険愛講提字築訓。平応数会渡亡幡事寄横関割更。進報医市認穫都投漂都学起田胸完見暮波。乗発死左写刊争作世開顔残訳剤記詳先天。哲記京確年禁読応米新報書了号活修佐。央良持著宣込警石寂益好独田接読仕。漂戦辺量食害恐人給景族缶掲価済教放。響城引
 000000de 48 hit.string.0
 EOF
 EXPECT_ERR=
@@ -714,11 +738,11 @@ NAME=String Search - Encoding: utf32le - Georgian
 FILE=bins/cmd/search/string_encodings/Georgian-Lipsum.utf32le
 CMDS=<<EOF
 e search.show_progress=false
-psW
 /z "რე, იუს ეა უთინამ დელიცათისსიმი. მელ ფერსეყუერის ლ" d utf32le
+# Check string is actually at offset of the hit.
+# ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-ლორემ იფსუმ დოლორ სით ამეთ, ილლუმ ელაბორარეთ ად ჰას, ილლუმ იისყუე ინ ნამ. ყუოდ დუის ცლითა ნო ფრი, გრაეცო აცცუსამუს ცონსულათუ ჰას
 00000282 132 hit.string.0
 EOF
 EXPECT_ERR=
@@ -728,11 +752,11 @@ NAME=String Search - Encoding: utf32le - Greek
 FILE=bins/cmd/search/string_encodings/Greek-Lipsum.utf32le
 CMDS=<<EOF
 e search.show_progress=false
-psW
 /z "παρτεμ ποσιδονιθμ ατ. Ετ πρι περιcθλισ σπλενδιδε" d utf32le
+# Check string is actually at offset of the hit.
+# ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-Λορεμ ιπσθμ δολορ σιτ αμετ, αν γθβεργρεν ποσιδονιθμ cθμ. Βονορθμ ρεφορμιδανσ vιξ νε, νονθμεσ ελοqθεντιαμ ρεπρεηενδθντ εα qθι, στ
 0000010b 88 hit.string.0
 EOF
 EXPECT_ERR=
@@ -742,11 +766,11 @@ NAME=String Search - Encoding: utf32le - Hebrew I
 FILE=bins/cmd/search/string_encodings/Hebrew-Lipsum.utf32le
 CMDS=<<EOF
 e search.show_progress=false
-psW
 /z "וד מיזם יכול קהילה ב, את קרן תיאטרון שימושיים. שמו אחרונים ויקימדיה את. זאת אם תיבת הרוח שינויים" d utf32le
+# Check string is actually at offset of the hit.
+# ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-עוד מיזם יכול קהילה ב, את קרן תיאטרון שימושיים. שמו אחרונים ויקימדיה את. זאת אם תיבת הרוח שינויים, באגים בחירות בויקיפדיה אם ארץ
 00000002 172 hit.string.0
 EOF
 EXPECT_ERR=
@@ -756,11 +780,11 @@ NAME=String Search - Encoding: utf32le - Hebrew II
 FILE=bins/cmd/search/string_encodings/Hebrew-Lipsum.utf32le
 CMDS=<<EOF
 e search.show_progress=false
-psW
 /z "ים משחקים ממונרכיה" d utf32le
+# Check string is actually at offset of the hit.
+# ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-עוד מיזם יכול קהילה ב, את קרן תיאטרון שימושיים. שמו אחרונים ויקימדיה את. זאת אם תיבת הרוח שינויים, באגים בחירות בויקיפדיה אם ארץ
 00000141 34 hit.string.0
 EOF
 EXPECT_ERR=
@@ -770,11 +794,11 @@ NAME=String Search - Encoding: utf32le - Hindi
 FILE=bins/cmd/search/string_encodings/Hindi-Lipsum.utf32le
 CMDS=<<EOF
 e search.show_progress=false
-psW
 /z "पहोचने वैश्विक एसलिये पुस्तक हुआआदी" d utf32le
+# Check string is actually at offset of the hit.
+# ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-ब्रौशर विभाजन दिनांक जाने ध्वनि सेऔर सादगि जिम्मे पहोचने वैश्विक एसलिये पुस्तक हुआआदी विश्व उनका खरिदने समस्याओ मार्गदर्शन रखते 
 00000086 97 hit.string.0
 EOF
 EXPECT_ERR=
@@ -784,11 +808,11 @@ NAME=String Search - Encoding: utf32le - Korean2
 FILE=bins/cmd/search/string_encodings/Korean2-Lipsum.utf32le
 CMDS=<<EOF
 e search.show_progress=false
-psW
 /z "생의 과실이 있으며." d utf32le
+# Check string is actually at offset of the hit.
+# ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-봄바람이다. 이것은 수 봄바람이다. 있는가? 기관과 없으면. 품고 어디 싸인 있으랴? 살았으며. 피가 같은 있는 우리 이상은 되려니와. 길지 낙원을 대한 말이다. 같은 생의 과실이 있으며. 찬미를 사람은 그들에게 너의 청춘이 인류
 000000dc 27 hit.string.0
 EOF
 EXPECT_ERR=
@@ -798,11 +822,11 @@ NAME=String Search - Encoding: utf32le - Morsecode
 FILE=bins/cmd/search/string_encodings/Morsecode-Lipsum.utf32le
 CMDS=<<EOF
 e search.show_progress=false
-psW
 /z " ·--· ·---- ··· - ···· --" d utf32le
+# Check string is actually at offset of the hit.
+# ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-···· --·· --- ·- --·- ---·· ·· ·-· ·· -·- ··-· ·--· ·---- ··· - ···· --·· --··· -· ··· -·· -·-- ···· ·--- ·-·-·- · ··- - ··- ···
 00000042 35 hit.string.0
 EOF
 EXPECT_ERR=
@@ -812,11 +836,11 @@ NAME=String Search - Encoding: utf32le - Russian
 FILE=bins/cmd/search/string_encodings/Russian-Lipsum.utf32le
 CMDS=<<EOF
 e search.show_progress=false
-psW
 /z "тани ад. Цум хендрерит перс" d utf32le
+# Check string is actually at offset of the hit.
+# ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-Лорем ипсум долор сит амет, при унум семпер тритани ад. Цум хендрерит персецути ех, миним еяуидем цонсецтетуер яуи ид. Либер мал
 00000055 49 hit.string.0
 EOF
 EXPECT_ERR=
