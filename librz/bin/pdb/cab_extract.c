@@ -108,26 +108,26 @@ static char *sanitize_cab_filename(struct mscabd_file *file, const char *output_
 
 	if (file->attribs & MSCAB_ATTRIB_UTF_NAME) {
 		// sanitize utf-8 filename
-		RzRune rune;
+		RzCodePoint code_point;
 		for (; input < endp;) {
-			rune = 0;
-			int len = rz_utf8_decode(input, endp - input, &rune);
+			code_point = 0;
+			int len = rz_utf8_decode(input, endp - input, &code_point);
 			if (!len) {
 				len = 1;
-				rune = 0xFFFD;
-			} else if (rune <= 0 || rune > 0x10FFFF || (rune >= 0xD800 && rune <= 0xDFFF) || rune == 0xFFFE || rune == 0xFFFF) {
+				code_point = 0xFFFD;
+			} else if (code_point <= 0 || code_point > 0x10FFFF || (code_point >= 0xD800 && code_point <= 0xDFFF) || code_point == 0xFFFE || code_point == 0xFFFF) {
 				len = 1;
-				rune = 0xFFFD;
+				code_point = 0xFFFD;
 			}
 			input += len;
 
-			if (rune == separator) {
-				rune = '/';
-			} else if (rune == os_slash) {
-				rune = '\\';
+			if (code_point == separator) {
+				code_point = '/';
+			} else if (code_point == os_slash) {
+				code_point = '\\';
 			}
 
-			len = rz_utf8_encode(output, rune);
+			len = rz_utf8_encode(output, code_point);
 			output += len;
 		}
 		*output++ = '\0';

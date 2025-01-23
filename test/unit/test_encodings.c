@@ -10,7 +10,7 @@
  */
 bool test_rz_utf16_decode(void) {
 	char utf8_out[5] = { 0 };
-	RzRune codepoint = 0;
+	RzCodePoint codepoint = 0;
 	const ut8 utf16le[] = { 0xAC, 0x20 };
 	const ut8 utf16be[] = { 0x20, 0xAC };
 
@@ -122,7 +122,7 @@ bool test_rz_utf16_encode(void) {
 	ut8 utf16_out[5] = { 0 };
 
 	const ut8 utf16le[] = { 0xAC, 0x20 };
-	RzRune codepoint = 0x20AC;
+	RzCodePoint codepoint = 0x20AC;
 	int nbytes = rz_utf16le_encode(utf16_out, codepoint);
 	mu_assert_eq(nbytes, 2, "Decoded number of bytes mismatch.");
 	mu_assert_memeq(utf16_out, utf16le, sizeof(utf16le), "Encode failed.");

@@ -12,11 +12,11 @@ static bool is_valid_surrogate_pair(ut8 high_byte_surrogate, ut8 low_byte_surrog
 	return high_ok && low_ok;
 }
 
-static RzRune utf16_surrogate_to_codepoint(ut16 high_surrogate, ut16 low_surrogate) {
+static RzCodePoint utf16_surrogate_to_codepoint(ut16 high_surrogate, ut16 low_surrogate) {
 	ut32 high = (high_surrogate - 0xd800) * 0x400;
 	ut32 low = (low_surrogate - 0xdc00);
-	RzRune codepoint = high + low;
-	RzRune codepoint1 = 0x10000 + codepoint;
+	RzCodePoint codepoint = high + low;
+	RzCodePoint codepoint1 = 0x10000 + codepoint;
 	return codepoint1;
 }
 
@@ -30,7 +30,7 @@ static RzRune utf16_surrogate_to_codepoint(ut16 high_surrogate, ut16 low_surroga
  *
  * \return Number of bytes decoded.
  */
-RZ_API size_t rz_utf16_decode(const ut8 *buf, int buf_len, RZ_NONNULL RZ_OUT RzRune *ch, bool bigendian) {
+RZ_API size_t rz_utf16_decode(const ut8 *buf, int buf_len, RZ_NONNULL RZ_OUT RzCodePoint *ch, bool bigendian) {
 	rz_return_val_if_fail(buf && ch, 0);
 	if (buf_len <= 1) {
 		return 0;
@@ -58,7 +58,7 @@ RZ_API size_t rz_utf16_decode(const ut8 *buf, int buf_len, RZ_NONNULL RZ_OUT RzR
  *
  * \return Number of bytes decoded.
  */
-RZ_API size_t rz_utf16le_decode(const ut8 *buf, int buf_len, RZ_NONNULL RZ_OUT RzRune *codepoint) {
+RZ_API size_t rz_utf16le_decode(const ut8 *buf, int buf_len, RZ_NONNULL RZ_OUT RzCodePoint *codepoint) {
 	rz_return_val_if_fail(buf && codepoint, 0);
 	return rz_utf16_decode(buf, buf_len, codepoint, false);
 }
@@ -72,7 +72,7 @@ RZ_API size_t rz_utf16le_decode(const ut8 *buf, int buf_len, RZ_NONNULL RZ_OUT R
  *
  * \return Number of bytes decoded.
  */
-RZ_API size_t rz_utf16be_decode(const ut8 *buf, int buf_len, RZ_NONNULL RZ_OUT RzRune *codepoint) {
+RZ_API size_t rz_utf16be_decode(const ut8 *buf, int buf_len, RZ_NONNULL RZ_OUT RzCodePoint *codepoint) {
 	rz_return_val_if_fail(buf && codepoint, 0);
 	return rz_utf16_decode(buf, buf_len, codepoint, true);
 }
@@ -85,7 +85,7 @@ RZ_API size_t rz_utf16be_decode(const ut8 *buf, int buf_len, RZ_NONNULL RZ_OUT R
  *
  * \return Number of bytes encoded.
  */
-RZ_API size_t rz_utf16le_encode(RZ_NONNULL RZ_OUT ut8 *buf, RzRune codepoint) {
+RZ_API size_t rz_utf16le_encode(RZ_NONNULL RZ_OUT ut8 *buf, RzCodePoint codepoint) {
 	rz_return_val_if_fail(buf, 0);
 	if (codepoint < 0x10000) {
 		buf[0] = codepoint & 0xff;
@@ -96,8 +96,8 @@ RZ_API size_t rz_utf16le_encode(RZ_NONNULL RZ_OUT ut8 *buf, RzRune codepoint) {
 		return 0;
 	}
 	codepoint -= 0x10000;
-	RzRune high = 0xd800 + ((codepoint >> 10) & 0x3ff);
-	RzRune low = 0xdc00 + (codepoint & 0x3ff);
+	RzCodePoint high = 0xd800 + ((codepoint >> 10) & 0x3ff);
+	RzCodePoint low = 0xdc00 + (codepoint & 0x3ff);
 	buf[0] = high & 0xff;
 	buf[1] = high >> 8 & 0xff;
 	buf[2] = low & 0xff;

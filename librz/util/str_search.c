@@ -46,10 +46,10 @@ static inline int compute_index(ut8 x, ut8 y) {
 	return (x * 7 + y);
 }
 
-static st64 score(RzRune *buff, const int len) {
+static st64 score(RzCodePoint *buff, const int len) {
 	int score = 0;
-	for (RzRune *src = buff, *end = buff + len - 1; src < end; ++src) {
-		RzRune b1 = src[0], b2 = src[1];
+	for (RzCodePoint *src = buff, *end = buff + len - 1; src < end; ++src) {
+		RzCodePoint b1 = src[0], b2 = src[1];
 		ut8 c1 = LATIN1_CLASS[b1], c2 = LATIN1_CLASS[b2];
 		if (b1 > 0x7f) {
 			score -= 6;
@@ -91,7 +91,7 @@ static UTF8StringInfo calculate_utf8_string_info(ut8 *str, int size) {
 
 	const ut8 *str_ptr = str;
 	const ut8 *str_end = str + size;
-	RzRune ch = 0;
+	RzCodePoint ch = 0;
 	while (str_ptr < str_end) {
 		int ch_bytes = rz_utf8_decode(str_ptr, str_end - str_ptr, &ch);
 		if (!ch_bytes) {
@@ -213,7 +213,7 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 
 	/* Eat a whole C string */
 	for (i = 0; i < opt->buf_size - 4 && needle < to; i += rc) {
-		RzRune r = 0;
+		RzCodePoint r = 0;
 
 		if (str_type == RZ_STRING_ENC_UTF32LE) {
 			rc = rz_utf32le_decode(buf + needle - from, to - needle, &r);
@@ -260,7 +260,7 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 
 		needle += rc;
 
-		if (rz_rune_is_printable(r) && r != '\\') {
+		if (rz_code_point_is_printable(r) && r != '\\') {
 			if (str_type == RZ_STRING_ENC_UTF32LE || str_type == RZ_STRING_ENC_UTF32BE) {
 				if (r == 0xff) {
 					r = 0;
@@ -492,15 +492,15 @@ RZ_API int rz_scan_strings_raw(RZ_NONNULL const ut8 *buf, RZ_NONNULL RzList /*<R
 				str_type = RZ_STRING_ENC_UTF16BE;
 			} else if (can_be_ebcdic(ptr, size) && skip_ibm037 < 0) {
 				ut8 sz = RZ_MIN(size, 15);
-				RzRune runes[15] = { 0 };
+				RzCodePoint code_points[15] = { 0 };
 				int i = 0;
 				for (; i < sz; i++) {
-					rz_str_ibm037_to_unicode(ptr[i], &runes[i]);
-					if (!rz_rune_is_printable(runes[i])) {
+					rz_str_ibm037_to_unicode(ptr[i], &code_points[i]);
+					if (!rz_code_point_is_printable(code_points[i])) {
 						break;
 					}
 				}
-				int s = score(runes, i);
+				int s = score(code_points, i);
 				if (s >= 36) {
 					str_type = RZ_STRING_ENC_IBM037;
 				} else {

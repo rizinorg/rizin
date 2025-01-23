@@ -491,7 +491,7 @@ RZ_API const char *rz_utf_block_name(int idx) {
 }
 
 /* Convert an UTF-8 buf into a unicode RzRune */
-RZ_API int rz_utf8_decode(const ut8 *ptr, int ptrlen, RzRune *ch) {
+RZ_API int rz_utf8_decode(const ut8 *ptr, int ptrlen, RzCodePoint *ch) {
 	if (ptrlen < 1) {
 		return 0;
 	}
@@ -501,29 +501,29 @@ RZ_API int rz_utf8_decode(const ut8 *ptr, int ptrlen, RzRune *ch) {
 		}
 		return 1;
 	} else if (ptrlen > 1 && (ptr[0] & 0xe0) == 0xc0 && (ptr[1] & 0xc0) == 0x80) {
-		RzRune rune = (ptr[0] & 0x1f) << 6 | (ptr[1] & 0x3f);
+		RzCodePoint code_point = (ptr[0] & 0x1f) << 6 | (ptr[1] & 0x3f);
 		if (ch) {
-			*ch = rune;
+			*ch = code_point;
 		}
-		return rune < 0x80 ? 0 : 2;
+		return code_point < 0x80 ? 0 : 2;
 	} else if (ptrlen > 2 && (ptr[0] & 0xf0) == 0xe0 && (ptr[1] & 0xc0) == 0x80 && (ptr[2] & 0xc0) == 0x80) {
-		RzRune rune = (ptr[0] & 0xf) << 12 | (ptr[1] & 0x3f) << 6 | (ptr[2] & 0x3f);
+		RzCodePoint code_point = (ptr[0] & 0xf) << 12 | (ptr[1] & 0x3f) << 6 | (ptr[2] & 0x3f);
 		if (ch) {
-			*ch = rune;
+			*ch = code_point;
 		}
-		return rune < 0x800 ? 0 : 3;
+		return code_point < 0x800 ? 0 : 3;
 	} else if (ptrlen > 3 && (ptr[0] & 0xf8) == 0xf0 && (ptr[1] & 0xc0) == 0x80 && (ptr[2] & 0xc0) == 0x80 && (ptr[3] & 0xc0) == 0x80) {
-		RzRune rune = (ptr[0] & 7) << 18 | (ptr[1] & 0x3f) << 12 | (ptr[2] & 0x3f) << 6 | (ptr[3] & 0x3f);
+		RzCodePoint code_point = (ptr[0] & 7) << 18 | (ptr[1] & 0x3f) << 12 | (ptr[2] & 0x3f) << 6 | (ptr[3] & 0x3f);
 		if (ch) {
-			*ch = rune;
+			*ch = code_point;
 		}
-		return rune < 0x10000 ? 0 : 4;
+		return code_point < 0x10000 ? 0 : 4;
 	}
 	return 0;
 }
 
 /* Convert an MUTF-8 buf into a unicode RzRune */
-RZ_API int rz_mutf8_decode(const ut8 *ptr, int ptrlen, RzRune *ch) {
+RZ_API int rz_mutf8_decode(const ut8 *ptr, int ptrlen, RzCodePoint *ch) {
 	if (ptrlen > 1 && ptr[0] == 0xc0 && ptr[1] == 0x80) {
 		if (ch) {
 			*ch = 0;
@@ -534,7 +534,7 @@ RZ_API int rz_mutf8_decode(const ut8 *ptr, int ptrlen, RzRune *ch) {
 }
 
 /* Convert a unicode RzRune into an UTF-8 buf */
-RZ_API int rz_utf8_encode(ut8 *ptr, const RzRune ch) {
+RZ_API int rz_utf8_encode(ut8 *ptr, const RzCodePoint ch) {
 	if (ch < 0x80) {
 		ptr[0] = (ut8)ch;
 		return 1;
@@ -558,7 +558,7 @@ RZ_API int rz_utf8_encode(ut8 *ptr, const RzRune ch) {
 }
 
 /* Convert a unicode RzRune string into an utf-8 one */
-RZ_API int rz_utf8_encode_str(const RzRune *str, ut8 *dst, const int dst_length) {
+RZ_API int rz_utf8_encode_str(const RzCodePoint *str, ut8 *dst, const int dst_length) {
 	if (!str || !dst) {
 		return -1;
 	}
@@ -605,7 +605,7 @@ RZ_API int rz_utf8_strlen(const ut8 *str) {
  * \param  c RzRune value to test
  * \return   true if the rune is printable, otherwise false
  */
-RZ_API bool rz_rune_is_printable(const RzRune c) {
+RZ_API bool rz_code_point_is_printable(const RzCodePoint c) {
 	// RzRunes are most commonly single byte... We can early out with this common case.
 	if (c < 0x34F) {
 		/*
@@ -732,7 +732,7 @@ RZ_API char *rz_acp_to_utf8_l(const char *str, int len) {
 
 #endif // __WINDOWS__
 
-RZ_API int rz_utf_block_idx(RzRune ch) {
+RZ_API int rz_utf_block_idx(RzCodePoint ch) {
 	const int last = UTF_BLOCKS_COUNT;
 	int low = 0, hi = last - 1, mid = 0;
 
@@ -777,7 +777,7 @@ RZ_API int *rz_utf_block_list(const ut8 *str, int len, int **freq_list) {
 	int *list_ptr = list;
 	const ut8 *str_ptr = str;
 	const ut8 *str_end = str + len;
-	RzRune ch = 0;
+	RzCodePoint ch = 0;
 	while (str_ptr < str_end) {
 		int block_idx;
 		int ch_bytes = rz_utf8_decode(str_ptr, str_end - str_ptr, &ch);

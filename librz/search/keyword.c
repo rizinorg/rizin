@@ -112,7 +112,7 @@ RZ_API RzSearchKeyword *rz_search_keyword_new_wide(const char *kwbuf, const char
 	len = strlen(kwbuf);
 	str = malloc((len + 1) * 2);
 	for (p2 = kwbuf, p = str; *p2;) {
-		RzRune ch;
+		RzCodePoint ch;
 		int num_utf8_bytes = rz_utf8_decode((const ut8 *)p2, kwbuf + len - p2, &ch);
 		if (num_utf8_bytes < 1) {
 			eprintf("WARNING: Malformed UTF8 at pos %td\n", p2 - kwbuf);
