@@ -6,6 +6,8 @@
 #include <rz_util.h>
 #include <rz_util/rz_regex.h>
 #include <rz_vector.h>
+#include <rz_util/ht_uu.h>
+#include <rz_util/rz_str_search.h>
 #include "search_internal.h"
 
 typedef struct string_search {
@@ -13,6 +15,29 @@ typedef struct string_search {
 	RzStrEnc encoding; ///< Expected encoding
 	RzPVector /*<RzDetectedString *>*/ *strings; ///< Strings to search
 } StringSearch;
+
+/**
+ * \brief UTF-8 and the encoding of the real string (in memory) must not match.
+ * For example, if the real string is UTF-16 or UTF-32.
+ * Here we set the real (in memory encoded) string offsets and string length.
+ */
+static void align_offsets(StringSearch *ss, RzDetectedString *detected, RzRegexMatch *group0, ut64 *str_mem_offset, ut64 *str_mem_len) {
+	bool offset_found = false;
+	*str_mem_offset = ht_uu_find(ss->options.utf8_to_mem_offset_map, detected->addr + group0->start, &offset_found);
+	if (!offset_found) {
+		RZ_LOG_WARN("Could not determine memory offset of UTF-8 string in search. String offset will be off.\n");
+		*str_mem_offset = detected->addr + group0->start;
+	}
+	if (detected->size != group0->len) {
+		*str_mem_len = ht_uu_find(ss->options.utf8_to_mem_offset_map, detected->addr + group0->start + group0->len, &offset_found) - *str_mem_offset;
+	} else {
+		*str_mem_len = group0->len;
+	}
+	if (!offset_found) {
+		RZ_LOG_WARN("Could not determine length of string in memory. String length will be off.\n");
+		*str_mem_len = group0->len;
+	}
+}
 
 static bool string_find(RZ_NULLABLE RzSearchFindOpt *fopt, void *user, ut64 offset, const RzBuffer *buffer, RZ_OUT RzThreadQueue *hits) {
 	StringSearch *ss = (StringSearch *)user;
@@ -25,9 +50,11 @@ static bool string_find(RZ_NULLABLE RzSearchFindOpt *fopt, void *user, ut64 offs
 		return false;
 	}
 
+	ss->options.utf8_to_mem_offset_map = ht_uu_new();
 	int n_str_in_buf = rz_scan_strings_whole_buf(buffer, found, &ss->options, ss->encoding);
 	if (n_str_in_buf < 0) {
 		RZ_LOG_ERROR("Failed to scan buffer for strings.\n");
+		ht_uu_free(ss->options.utf8_to_mem_offset_map);
 		rz_list_free(found);
 		return false;
 	}
@@ -43,12 +70,17 @@ static bool string_find(RZ_NULLABLE RzSearchFindOpt *fopt, void *user, ut64 offs
 				RzRegexMatch *group0 = rz_pvector_at(match, 0);
 				if (!group0) {
 					RZ_LOG_ERROR("search: Failed to get group of match.\n");
+					ht_uu_free(ss->options.utf8_to_mem_offset_map);
 					rz_list_free(found);
 					return false;
 				}
-				RzSearchHit *hit = rz_search_hit_new("string", detected->addr + group0->start, group0->len);
+				ut64 str_mem_len;
+				ut64 str_mem_offset;
+				align_offsets(ss, detected, group0, &str_mem_offset, &str_mem_len);
+				RzSearchHit *hit = rz_search_hit_new("string", str_mem_offset, str_mem_len);
 				if (!hit || !rz_th_queue_push(hits, hit, true)) {
 					rz_search_hit_free(hit);
+					ht_uu_free(ss->options.utf8_to_mem_offset_map);
 					rz_list_free(found);
 					return false;
 				}
@@ -57,6 +89,7 @@ static bool string_find(RZ_NULLABLE RzSearchFindOpt *fopt, void *user, ut64 offs
 		}
 	}
 
+	ht_uu_free(ss->options.utf8_to_mem_offset_map);
 	rz_list_free(found);
 	return true;
 }

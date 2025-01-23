@@ -3,6 +3,7 @@
 
 #include <rz_util/rz_buf.h>
 #include <rz_util/rz_regex.h>
+#include <rz_util/ht_uu.h>
 #include <rz_util/rz_str_search.h>
 #include <rz_util/rz_utf8.h>
 #include <rz_util/rz_utf16.h>
@@ -278,6 +279,10 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 		if (!rc || (ascii_only && r > 0x7f)) {
 			needle++;
 			break;
+		}
+
+		if (opt->utf8_to_mem_offset_map) {
+			ht_uu_insert(opt->utf8_to_mem_offset_map, i, needle);
 		}
 
 		needle += rc;

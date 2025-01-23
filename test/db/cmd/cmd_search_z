@@ -153,7 +153,7 @@ EOF
 EXPECT_ERR=
 RUN
 
-NAME=String Search - Encoding: utf8 - Hebrew II
+NAME=String Search - Encoding: utf8 - Hebrew I
 FILE=bins/cmd/search/string_encodings/Hebrew-Lipsum.utf8
 CMDS=<<EOF
 e search.show_progress=false
@@ -235,10 +235,11 @@ CMDS=<<EOF
 e search.show_progress=false
 /z "ا الأوضاع, لم بوابة المب" d utf16be
 # Check string is actually at offset of the hit.
-# ps @ hit.string.0
+psm @ hit.string.0
 EOF
 EXPECT=<<EOF
-00000116 43 hit.string.0
+00000138 48 hit.string.0
+ا الأوضاع, لم بوابة المبرمة عرض. إبّان اسبوعين البشريةً تعد في. كنقطة إيطاليا قام بل, أضف أن وبغطاء الباهضة.
 EOF
 EXPECT_ERR=
 RUN
@@ -249,10 +250,11 @@ CMDS=<<EOF
 e search.show_progress=false
 /z "դեֆինիթիոնես ին վիս, ծասե պեռթինա" d utf16be
 # Check string is actually at offset of the hit.
-# ps @ hit.string.0
+psm @ hit.string.0
 EOF
 EXPECT=<<EOF
-000001dc 61 hit.string.0
+0000020c 66 hit.string.0
+դեֆինիթիոնես ին վիս, ծասե պեռթինածիա նե վիս. ին մելիուս ֆածիլիս եոս, եսթ եռոս պոպուլո թիմեամ թե. իուս նո ծոնսուլաթու.
 EOF
 EXPECT_ERR=
 RUN
@@ -263,10 +265,11 @@ CMDS=<<EOF
 e search.show_progress=false
 /z "京確年禁読応米新報書了号活修佐。" d utf16be
 # Check string is actually at offset of the hit.
-# ps @ hit.string.0
+psm @ hit.string.0
 EOF
 EXPECT=<<EOF
-000000de 48 hit.string.0
+00000094 32 hit.string.0
+京確年禁読応米新報書了号活修佐。央良持著宣込警石寂益好独田接読仕。漂戦辺量食害恐人給景族缶掲価済教放。響城引真際通御芭情査男倍淺早住。金握崎利契事用鹿仮交体受寄終山率大。
 EOF
 EXPECT_ERR=
 RUN
@@ -277,10 +280,11 @@ CMDS=<<EOF
 e search.show_progress=false
 /z "რე, იუს ეა უთინამ დელიცათისსიმი. მელ ფერსეყუერის ლ" d utf16be
 # Check string is actually at offset of the hit.
-# ps @ hit.string.0
+psm @ hit.string.0
 EOF
 EXPECT=<<EOF
-00000282 132 hit.string.0
+000001ec 100 hit.string.0
+რე, იუს ეა უთინამ დელიცათისსიმი. მელ ფერსეყუერის ლიბერავისსე თე, გრაეცო ფრინციფეს ასსენთიორ სით ეუ. ჰის მალორუმ ანთიოფამ თჰეოფჰრასთუს ნე, ეუ ეუმ ყუას ეთიამ.
 EOF
 EXPECT_ERR=
 RUN
@@ -291,10 +295,11 @@ CMDS=<<EOF
 e search.show_progress=false
 /z "παρτεμ ποσιδονιθμ ατ. Ετ πρι περιcθλισ σπλενδιδε" d utf16be
 # Check string is actually at offset of the hit.
-# ps @ hit.string.0
+psm @ hit.string.0
 EOF
 EXPECT=<<EOF
-0000010b 88 hit.string.0
+0000012c 96 hit.string.0
+παρτεμ ποσιδονιθμ ατ. Ετ πρι περιcθλισ σπλενδιδε μνεσαρcηθμ, vελ ατ cονσεqθατ εξπετενδισ. Τε ηασ qθεμ πετεντιθμ.
 EOF
 EXPECT_ERR=
 RUN
@@ -303,26 +308,13 @@ NAME=String Search - Encoding: utf16be - Hebrew I
 FILE=bins/cmd/search/string_encodings/Hebrew-Lipsum.utf16be
 CMDS=<<EOF
 e search.show_progress=false
-/z "וד מיזם יכול קהילה ב, את קרן תיאטרון שימושיים. שמו אחרונים ויקימדיה את. זאת אם תיבת הרוח שינויים" d utf16be
-# Check string is actually at offset of the hit.
-# ps @ hit.string.0
-EOF
-EXPECT=<<EOF
-00000002 172 hit.string.0
-EOF
-EXPECT_ERR=
-RUN
-
-NAME=String Search - Encoding: utf16be - Hebrew II
-FILE=bins/cmd/search/string_encodings/Hebrew-Lipsum.utf16be
-CMDS=<<EOF
-e search.show_progress=false
 /z "ים משחקים ממונרכיה" d utf16be
 # Check string is actually at offset of the hit.
-# ps @ hit.string.0
+psm @ hit.string.0
 EOF
 EXPECT=<<EOF
-00000141 34 hit.string.0
+00000168 36 hit.string.0
+ים משחקים ממונרכיה אנא גם.
 EOF
 EXPECT_ERR=
 RUN
@@ -333,10 +325,11 @@ CMDS=<<EOF
 e search.show_progress=false
 /z "पहोचने वैश्विक एसलिये पुस्तक हुआआदी" d utf16be
 # Check string is actually at offset of the hit.
-# ps @ hit.string.0
+psm @ hit.string.0
 EOF
 EXPECT=<<EOF
-00000086 97 hit.string.0
+00000064 70 hit.string.0
+पहोचने वैश्विक एसलिये पुस्तक हुआआदी विश्व उनका खरिदने समस्याओ मार्गदर्शन रखते तरीके यायेका विश्लेषण पुष्टिकर्ता चुनने सकता बढाता वेबजाल गोपनीयता लिए। संपादक करेसाथ रचना नवंबर
 EOF
 EXPECT_ERR=
 RUN
@@ -347,10 +340,11 @@ CMDS=<<EOF
 e search.show_progress=false
 /z "생의 과실이 있으며." d utf16be
 # Check string is actually at offset of the hit.
-# ps @ hit.string.0
+psm @ hit.string.0
 EOF
 EXPECT=<<EOF
-000000dc 27 hit.string.0
+000000bc 22 hit.string.0
+생의 과실이 있으며. 찬미를 사람은 그들에게 너의 청춘이 인류의 그들의 칼이다.
 EOF
 EXPECT_ERR=
 RUN
@@ -361,10 +355,11 @@ CMDS=<<EOF
 e search.show_progress=false
 /z " ·--· ·---- ··· - ···· --" d utf16be
 # Check string is actually at offset of the hit.
-# ps @ hit.string.0
+psm @ hit.string.0
 EOF
 EXPECT=<<EOF
-00000042 35 hit.string.0
+0000005c 50 hit.string.0
+ ·--· ·---- ··· - ···· --·· --··· -· ··· -·· -·-- ···· ·--- ·-·-·- · ··- - ··- ···- ··--- ·-·-·- -·- -··- ----- -·
 EOF
 EXPECT_ERR=
 RUN
@@ -375,10 +370,11 @@ CMDS=<<EOF
 e search.show_progress=false
 /z "тани ад. Цум хендрерит перс" d utf16be
 # Check string is actually at offset of the hit.
-# ps @ hit.string.0
+psm @ hit.string.0
 EOF
 EXPECT=<<EOF
-00000055 49 hit.string.0
+0000005e 54 hit.string.0
+тани ад. Цум хендрерит персецути ех, миним еяуидем цонсецтетуер яуи ид. Либер малуиссет нам еа, еа граеце дефиниебас.
 EOF
 EXPECT_ERR=
 RUN
@@ -392,7 +388,7 @@ e search.show_progress=false
 # ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-00000116 43 hit.string.0
+00000138 48 hit.string.0
 EOF
 EXPECT_ERR=
 RUN
@@ -403,10 +399,11 @@ CMDS=<<EOF
 e search.show_progress=false
 /z "դեֆինիթիոնես ին վիս, ծասե պեռթինա" d utf16le
 # Check string is actually at offset of the hit.
-# ps @ hit.string.0
+psw @ hit.string.0
 EOF
 EXPECT=<<EOF
-000001dc 61 hit.string.0
+0000020c 66 hit.string.0
+դեֆինիթիոնես ին վիս, ծասե պեռթինածիա նե վիս. ին մելիուս ֆածիլիս եոս, եսթ եռոս պոպուլո թիմեամ թե. իուս նո ծոնսուլաթու.
 EOF
 EXPECT_ERR=
 RUN
@@ -417,10 +414,11 @@ CMDS=<<EOF
 e search.show_progress=false
 /z "京確年禁読応米新報書了号活修佐。" d utf16le
 # Check string is actually at offset of the hit.
-# ps @ hit.string.0
+psw @ hit.string.0
 EOF
 EXPECT=<<EOF
-000000de 48 hit.string.0
+00000094 32 hit.string.0
+京確年禁読応米新報書了号活修佐。央良持著宣込警石寂益好独田接読仕。漂戦辺量食害恐人給景族缶掲価済教放。響城引真際通御芭情査男倍淺早住。金握崎利契事用鹿仮交体受寄終山率大。
 EOF
 EXPECT_ERR=
 RUN
@@ -431,10 +429,11 @@ CMDS=<<EOF
 e search.show_progress=false
 /z "რე, იუს ეა უთინამ დელიცათისსიმი. მელ ფერსეყუერის ლ" d utf16le
 # Check string is actually at offset of the hit.
-# ps @ hit.string.0
+psw @ hit.string.0
 EOF
 EXPECT=<<EOF
-00000282 132 hit.string.0
+000001ec 100 hit.string.0
+რე, იუს ეა უთინამ დელიცათისსიმი. მელ ფერსეყუერის ლიბერავისსე თე, გრაეცო ფრინციფეს ასსენთიორ სით ეუ. ჰის მალორუმ ანთიოფამ თჰეოფჰრასთუს ნე, ეუ ეუმ ყუას ეთიამ.
 EOF
 EXPECT_ERR=
 RUN
@@ -445,10 +444,11 @@ CMDS=<<EOF
 e search.show_progress=false
 /z "παρτεμ ποσιδονιθμ ατ. Ετ πρι περιcθλισ σπλενδιδε" d utf16le
 # Check string is actually at offset of the hit.
-# ps @ hit.string.0
+psw @ hit.string.0
 EOF
 EXPECT=<<EOF
-0000010b 88 hit.string.0
+0000012c 96 hit.string.0
+παρτεμ ποσιδονιθμ ατ. Ετ πρι περιcθλισ σπλενδιδε μνεσαρcηθμ, vελ ατ cονσεqθατ εξπετενδισ. Τε ηασ qθεμ πετεντιθμ.
 EOF
 EXPECT_ERR=
 RUN
@@ -457,26 +457,13 @@ NAME=String Search - Encoding: utf16le - Hebrew I
 FILE=bins/cmd/search/string_encodings/Hebrew-Lipsum.utf16le
 CMDS=<<EOF
 e search.show_progress=false
-/z "וד מיזם יכול קהילה ב, את קרן תיאטרון שימושיים. שמו אחרונים ויקימדיה את. זאת אם תיבת הרוח שינויים" d utf16le
-# Check string is actually at offset of the hit.
-# ps @ hit.string.0
-EOF
-EXPECT=<<EOF
-00000002 172 hit.string.0
-EOF
-EXPECT_ERR=
-RUN
-
-NAME=String Search - Encoding: utf16le - Hebrew II
-FILE=bins/cmd/search/string_encodings/Hebrew-Lipsum.utf16le
-CMDS=<<EOF
-e search.show_progress=false
 /z "ים משחקים ממונרכיה" d utf16le
 # Check string is actually at offset of the hit.
-# ps @ hit.string.0
+psw @ hit.string.0
 EOF
 EXPECT=<<EOF
-00000141 34 hit.string.0
+00000168 36 hit.string.0
+ים משחקים ממונרכיה אנא גם.
 EOF
 EXPECT_ERR=
 RUN
@@ -487,10 +474,11 @@ CMDS=<<EOF
 e search.show_progress=false
 /z "पहोचने वैश्विक एसलिये पुस्तक हुआआदी" d utf16le
 # Check string is actually at offset of the hit.
-# ps @ hit.string.0
+psw @ hit.string.0
 EOF
 EXPECT=<<EOF
-00000086 97 hit.string.0
+00000064 70 hit.string.0
+पहोचने वैश्विक एसलिये पुस्तक हुआआदी विश्व उनका खरिदने समस्याओ मार्गदर्शन रखते तरीके यायेका विश्लेषण पुष्टिकर्ता चुनने सकता बढाता वेबजाल गोपनीयता लिए। संपादक करेसाथ रचना नवंबर
 EOF
 EXPECT_ERR=
 RUN
@@ -501,10 +489,11 @@ CMDS=<<EOF
 e search.show_progress=false
 /z "생의 과실이 있으며." d utf16le
 # Check string is actually at offset of the hit.
-# ps @ hit.string.0
+psw @ hit.string.0
 EOF
 EXPECT=<<EOF
-000000dc 27 hit.string.0
+000000bc 22 hit.string.0
+생의 과실이 있으며. 찬미를 사람은 그들에게 너의 청춘이 인류의 그들의 칼이다.
 EOF
 EXPECT_ERR=
 RUN
@@ -515,10 +504,11 @@ CMDS=<<EOF
 e search.show_progress=false
 /z " ·--· ·---- ··· - ···· --" d utf16le
 # Check string is actually at offset of the hit.
-# ps @ hit.string.0
+psw @ hit.string.0
 EOF
 EXPECT=<<EOF
-00000042 35 hit.string.0
+0000005c 50 hit.string.0
+ ·--· ·---- ··· - ···· --·· --··· -· ··· -·· -·-- ···· ·--- ·-·-·- · ··- - ··- ···- ··--- ·-·-·- -·- -··- ----- -·
 EOF
 EXPECT_ERR=
 RUN
@@ -529,10 +519,11 @@ CMDS=<<EOF
 e search.show_progress=false
 /z "тани ад. Цум хендрерит перс" d utf16le
 # Check string is actually at offset of the hit.
-# ps @ hit.string.0
+psw @ hit.string.0
 EOF
 EXPECT=<<EOF
-00000055 49 hit.string.0
+0000005e 54 hit.string.0
+тани ад. Цум хендрерит персецути ех, миним еяуидем цонсецтетуер яуи ид. Либер малуиссет нам еа, еа граеце дефиниебас.
 EOF
 EXPECT_ERR=
 RUN
@@ -543,10 +534,11 @@ CMDS=<<EOF
 e search.show_progress=false
 /z "ا الأوضاع, لم بوابة المب" d utf32be
 # Check string is actually at offset of the hit.
-# ps @ hit.string.0
+psM @ hit.string.0
 EOF
 EXPECT=<<EOF
-00000116 43 hit.string.0
+00000270 96 hit.string.0
+ا الأوضاع, لم بوابة المبرمة عرض. إبّان اسبوعين البشريةً تعد في. كنقطة إيطاليا قام بل, أضف أن وبغطاء الباهضة.
 EOF
 EXPECT_ERR=
 RUN
@@ -557,10 +549,11 @@ CMDS=<<EOF
 e search.show_progress=false
 /z "դեֆինիթիոնես ին վիս, ծասե պեռթինա" d utf32be
 # Check string is actually at offset of the hit.
-# ps @ hit.string.0
+psM @ hit.string.0
 EOF
 EXPECT=<<EOF
-000001dc 61 hit.string.0
+00000418 132 hit.string.0
+դեֆինիթիոնես ին վիս, ծասե պեռթինածիա նե վիս. ին մելիուս ֆածիլիս եոս, եսթ եռոս պոպուլո թիմեամ թե. իուս նո ծոնսուլաթու.
 EOF
 EXPECT_ERR=
 RUN
@@ -571,10 +564,11 @@ CMDS=<<EOF
 e search.show_progress=false
 /z "京確年禁読応米新報書了号活修佐。" d utf32be
 # Check string is actually at offset of the hit.
-# ps @ hit.string.0
+psM @ hit.string.0
 EOF
 EXPECT=<<EOF
-000000de 48 hit.string.0
+00000128 64 hit.string.0
+京確年禁読応米新報書了号活修佐。央良持著宣込警石寂益好独田接読仕。漂戦辺量食害恐人給景族缶掲価済教放。響城引真際通御芭情査男倍淺早住。金握崎利契事用鹿仮交体受寄終山率大。
 EOF
 EXPECT_ERR=
 RUN
@@ -585,10 +579,11 @@ CMDS=<<EOF
 e search.show_progress=false
 /z "რე, იუს ეა უთინამ დელიცათისსიმი. მელ ფერსეყუერის ლ" d utf32be
 # Check string is actually at offset of the hit.
-# ps @ hit.string.0
+psM @ hit.string.0
 EOF
 EXPECT=<<EOF
-00000282 132 hit.string.0
+000003d8 200 hit.string.0
+რე, იუს ეა უთინამ დელიცათისსიმი. მელ ფერსეყუერის ლიბერავისსე თე, გრაეცო ფრინციფეს ასსენთიორ სით ეუ. ჰის მალორუმ ანთიოფამ თჰეოფჰრასთუს ნე, ეუ ეუმ ყუას ეთიამ.
 EOF
 EXPECT_ERR=
 RUN
@@ -599,10 +594,11 @@ CMDS=<<EOF
 e search.show_progress=false
 /z "παρτεμ ποσιδονιθμ ατ. Ετ πρι περιcθλισ σπλενδιδε" d utf32be
 # Check string is actually at offset of the hit.
-# ps @ hit.string.0
+psM @ hit.string.0
 EOF
 EXPECT=<<EOF
-0000010b 88 hit.string.0
+00000258 192 hit.string.0
+παρτεμ ποσιδονιθμ ατ. Ετ πρι περιcθλισ σπλενδιδε μνεσαρcηθμ, vελ ατ cονσεqθατ εξπετενδισ. Τε ηασ qθεμ πετεντιθμ.
 EOF
 EXPECT_ERR=
 RUN
@@ -611,26 +607,13 @@ NAME=String Search - Encoding: utf32be - Hebrew I
 FILE=bins/cmd/search/string_encodings/Hebrew-Lipsum.utf32be
 CMDS=<<EOF
 e search.show_progress=false
-/z "וד מיזם יכול קהילה ב, את קרן תיאטרון שימושיים. שמו אחרונים ויקימדיה את. זאת אם תיבת הרוח שינויים" d utf32be
-# Check string is actually at offset of the hit.
-# ps @ hit.string.0
-EOF
-EXPECT=<<EOF
-00000002 172 hit.string.0
-EOF
-EXPECT_ERR=
-RUN
-
-NAME=String Search - Encoding: utf32be - Hebrew II
-FILE=bins/cmd/search/string_encodings/Hebrew-Lipsum.utf32be
-CMDS=<<EOF
-e search.show_progress=false
 /z "ים משחקים ממונרכיה" d utf32be
 # Check string is actually at offset of the hit.
-# ps @ hit.string.0
+psM @ hit.string.0
 EOF
 EXPECT=<<EOF
-00000141 34 hit.string.0
+000002d0 72 hit.string.0
+ים משחקים ממונרכיה אנא גם.
 EOF
 EXPECT_ERR=
 RUN
@@ -641,10 +624,11 @@ CMDS=<<EOF
 e search.show_progress=false
 /z "पहोचने वैश्विक एसलिये पुस्तक हुआआदी" d utf32be
 # Check string is actually at offset of the hit.
-# ps @ hit.string.0
+psM @ hit.string.0
 EOF
 EXPECT=<<EOF
-00000086 97 hit.string.0
+000000c8 140 hit.string.0
+पहोचने वैश्विक एसलिये पुस्तक हुआआदी विश्व उनका खरिदने समस्याओ मार्गदर्शन रखते तरीके यायेका विश्लेषण पुष्टिकर्ता चुनने सकता बढाता वेबजाल गोपनीयता लिए। संपादक करेसाथ रचना नवंबर
 EOF
 EXPECT_ERR=
 RUN
@@ -655,10 +639,11 @@ CMDS=<<EOF
 e search.show_progress=false
 /z "생의 과실이 있으며." d utf32be
 # Check string is actually at offset of the hit.
-# ps @ hit.string.0
+psM @ hit.string.0
 EOF
 EXPECT=<<EOF
-000000dc 27 hit.string.0
+00000178 44 hit.string.0
+생의 과실이 있으며. 찬미를 사람은 그들에게 너의 청춘이 인류의 그들의 칼이다.
 EOF
 EXPECT_ERR=
 RUN
@@ -669,10 +654,11 @@ CMDS=<<EOF
 e search.show_progress=false
 /z " ·--· ·---- ··· - ···· --" d utf32be
 # Check string is actually at offset of the hit.
-# ps @ hit.string.0
+psM @ hit.string.0
 EOF
 EXPECT=<<EOF
-00000042 35 hit.string.0
+000000b8 100 hit.string.0
+ ·--· ·---- ··· - ···· --·· --··· -· ··· -·· -·-- ···· ·--- ·-·-·- · ··- - ··- ···- ··--- ·-·-·- -·- -··- ----- -·
 EOF
 EXPECT_ERR=
 RUN
@@ -683,10 +669,11 @@ CMDS=<<EOF
 e search.show_progress=false
 /z "тани ад. Цум хендрерит перс" d utf32be
 # Check string is actually at offset of the hit.
-# ps @ hit.string.0
+psM @ hit.string.0
 EOF
 EXPECT=<<EOF
-00000055 49 hit.string.0
+000000bc 108 hit.string.0
+тани ад. Цум хендрерит персецути ех, миним еяуидем цонсецтетуер яуи ид. Либер малуиссет нам еа, еа граеце дефиниебас.
 EOF
 EXPECT_ERR=
 RUN
@@ -701,7 +688,7 @@ e search.show_progress=false
 # ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-00000116 43 hit.string.0
+00000270 96 hit.string.0
 EOF
 EXPECT_ERR=
 RUN
@@ -712,10 +699,11 @@ CMDS=<<EOF
 e search.show_progress=false
 /z "դեֆինիթիոնես ին վիս, ծասե պեռթինա" d utf32le
 # Check string is actually at offset of the hit.
-# ps @ hit.string.0
+psW @ hit.string.0
 EOF
 EXPECT=<<EOF
-000001dc 61 hit.string.0
+00000418 132 hit.string.0
+դեֆինիթիոնես ին վիս, ծասե պեռթինածիա նե վիս. ին մելիուս ֆածիլիս եոս, եսթ եռոս պոպուլո թիմեամ թե. իուս նո ծոնսուլաթու.
 EOF
 EXPECT_ERR=
 RUN
@@ -726,10 +714,11 @@ CMDS=<<EOF
 e search.show_progress=false
 /z "京確年禁読応米新報書了号活修佐。" d utf32le
 # Check string is actually at offset of the hit.
-# ps @ hit.string.0
+psW @ hit.string.0
 EOF
 EXPECT=<<EOF
-000000de 48 hit.string.0
+00000128 64 hit.string.0
+京確年禁読応米新報書了号活修佐。央良持著宣込警石寂益好独田接読仕。漂戦辺量食害恐人給景族缶掲価済教放。響城引真際通御芭情査男倍淺早住。金握崎利契事用鹿仮交体受寄終山率大。
 EOF
 EXPECT_ERR=
 RUN
@@ -740,10 +729,11 @@ CMDS=<<EOF
 e search.show_progress=false
 /z "რე, იუს ეა უთინამ დელიცათისსიმი. მელ ფერსეყუერის ლ" d utf32le
 # Check string is actually at offset of the hit.
-# ps @ hit.string.0
+psW @ hit.string.0
 EOF
 EXPECT=<<EOF
-00000282 132 hit.string.0
+000003d8 200 hit.string.0
+რე, იუს ეა უთინამ დელიცათისსიმი. მელ ფერსეყუერის ლიბერავისსე თე, გრაეცო ფრინციფეს ასსენთიორ სით ეუ. ჰის მალორუმ ანთიოფამ თჰეოფჰრასთუს ნე, ეუ ეუმ ყუას ეთიამ.
 EOF
 EXPECT_ERR=
 RUN
@@ -754,10 +744,11 @@ CMDS=<<EOF
 e search.show_progress=false
 /z "παρτεμ ποσιδονιθμ ατ. Ετ πρι περιcθλισ σπλενδιδε" d utf32le
 # Check string is actually at offset of the hit.
-# ps @ hit.string.0
+psW @ hit.string.0
 EOF
 EXPECT=<<EOF
-0000010b 88 hit.string.0
+00000258 192 hit.string.0
+παρτεμ ποσιδονιθμ ατ. Ετ πρι περιcθλισ σπλενδιδε μνεσαρcηθμ, vελ ατ cονσεqθατ εξπετενδισ. Τε ηασ qθεμ πετεντιθμ.
 EOF
 EXPECT_ERR=
 RUN
@@ -766,26 +757,13 @@ NAME=String Search - Encoding: utf32le - Hebrew I
 FILE=bins/cmd/search/string_encodings/Hebrew-Lipsum.utf32le
 CMDS=<<EOF
 e search.show_progress=false
-/z "וד מיזם יכול קהילה ב, את קרן תיאטרון שימושיים. שמו אחרונים ויקימדיה את. זאת אם תיבת הרוח שינויים" d utf32le
-# Check string is actually at offset of the hit.
-# ps @ hit.string.0
-EOF
-EXPECT=<<EOF
-00000002 172 hit.string.0
-EOF
-EXPECT_ERR=
-RUN
-
-NAME=String Search - Encoding: utf32le - Hebrew II
-FILE=bins/cmd/search/string_encodings/Hebrew-Lipsum.utf32le
-CMDS=<<EOF
-e search.show_progress=false
 /z "ים משחקים ממונרכיה" d utf32le
 # Check string is actually at offset of the hit.
-# ps @ hit.string.0
+psW @ hit.string.0
 EOF
 EXPECT=<<EOF
-00000141 34 hit.string.0
+000002d0 72 hit.string.0
+ים משחקים ממונרכיה אנא גם.
 EOF
 EXPECT_ERR=
 RUN
@@ -796,10 +774,11 @@ CMDS=<<EOF
 e search.show_progress=false
 /z "पहोचने वैश्विक एसलिये पुस्तक हुआआदी" d utf32le
 # Check string is actually at offset of the hit.
-# ps @ hit.string.0
+psW @ hit.string.0
 EOF
 EXPECT=<<EOF
-00000086 97 hit.string.0
+000000c8 140 hit.string.0
+पहोचने वैश्विक एसलिये पुस्तक हुआआदी विश्व उनका खरिदने समस्याओ मार्गदर्शन रखते तरीके यायेका विश्लेषण पुष्टिकर्ता चुनने सकता बढाता वेबजाल गोपनीयता लिए। संपादक करेसाथ रचना नवंबर
 EOF
 EXPECT_ERR=
 RUN
@@ -810,10 +789,11 @@ CMDS=<<EOF
 e search.show_progress=false
 /z "생의 과실이 있으며." d utf32le
 # Check string is actually at offset of the hit.
-# ps @ hit.string.0
+psW @ hit.string.0
 EOF
 EXPECT=<<EOF
-000000dc 27 hit.string.0
+00000178 44 hit.string.0
+생의 과실이 있으며. 찬미를 사람은 그들에게 너의 청춘이 인류의 그들의 칼이다.
 EOF
 EXPECT_ERR=
 RUN
@@ -824,10 +804,11 @@ CMDS=<<EOF
 e search.show_progress=false
 /z " ·--· ·---- ··· - ···· --" d utf32le
 # Check string is actually at offset of the hit.
-# ps @ hit.string.0
+psW @ hit.string.0
 EOF
 EXPECT=<<EOF
-00000042 35 hit.string.0
+000000b8 100 hit.string.0
+ ·--· ·---- ··· - ···· --·· --··· -· ··· -·· -·-- ···· ·--- ·-·-·- · ··- - ··- ···- ··--- ·-·-·- -·- -··- ----- -·
 EOF
 EXPECT_ERR=
 RUN
@@ -838,10 +819,11 @@ CMDS=<<EOF
 e search.show_progress=false
 /z "тани ад. Цум хендрерит перс" d utf32le
 # Check string is actually at offset of the hit.
-# ps @ hit.string.0
+psW @ hit.string.0
 EOF
 EXPECT=<<EOF
-00000055 49 hit.string.0
+000000bc 108 hit.string.0
+тани ад. Цум хендрерит персецути ех, миним еяуидем цонсецтетуер яуи ид. Либер малуиссет нам еа, еа граеце дефиниебас.
 EOF
 EXPECT_ERR=
 RUN

@@ -5,6 +5,7 @@
 #include <rz_util/rz_assert.h>
 #include <rz_util/rz_buf.h>
 #include <rz_util/rz_regex.h>
+#include <rz_util/ht_uu.h>
 #include <rz_list.h>
 
 #ifdef __cplusplus
@@ -28,10 +29,19 @@ typedef struct {
  */
 typedef struct {
 	size_t buf_size; ///< Maximum size of a detected string
-	size_t max_uni_blocks; ///< Maximum number of unicode blocks
+	size_t max_uni_blocks; ///< Maximum number of Unicode blocks
 	size_t min_str_length; ///< Minimum string length
 	bool prefer_big_endian; ///< True if the preferred endianess for UTF strings is big-endian
 	bool check_ascii_freq; ///< If true, perform check on ASCII frequencies when looking for false positives
+	/**
+	 * \brief Map UTF-8 byte offsets to memory offsets.
+	 * The scan function always returns UTF-8 strings.
+	 * Independent what encoding the strings are in memory.
+	 * Sometimes it is necessary to know the offsets of the real encoding.
+	 * This maps a UTF-8 code point offset to the original code point offset (possibly of another encoding).
+	 * Indices are always aligned to code points.
+	 */
+	RZ_NULLABLE HtUU *utf8_to_mem_offset_map;
 } RzUtilStrScanOptions;
 
 RZ_API void rz_detected_string_free(RzDetectedString *str);
