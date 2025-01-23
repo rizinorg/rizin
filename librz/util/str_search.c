@@ -405,14 +405,14 @@ RZ_API bool rz_scan_strings_single_raw(RZ_NONNULL const ut8 *buf, ut64 size, RZ_
 /**
  * \brief Look for strings in a byte array.
  *
- * \param buf   Pointer to a raw buffer to scan
- * \param list  Pointer to a list that will be populated with the found strings
- * \param opt   Pointer to a RzUtilStrScanOptions that specifies search parameters
- * \param from  Minimum address to scan
- * \param to    Maximum address to scan
- * \param type  Type of strings to search
+ * \param buf   Pointer to a raw buffer to scan.
+ * \param list  Pointer to a list that will be populated with the found strings.
+ * \param opt   Pointer to an RzUtilStrScanOptions that specifies search parameters.
+ * \param from  Minimum address to scan.
+ * \param to    Maximum address to scan.
+ * \param type  Type of strings to search.
  *
- * \return Number of strings found
+ * \return Number of strings found. Or -1 in case of failure.
  *
  * Used to look for strings in a give RzBuffer. The function can also automatically detect string types.
  */
@@ -607,9 +607,9 @@ RZ_API int rz_scan_strings(RZ_NONNULL RzBuffer *buf_to_scan, RZ_NONNULL RzList /
  * This function is suited for usage on hot paths.
  *
  * \param buf_to_scan Pointer to an RzBuffer to scan.
- * \param list Pointer to a list that will be populated with the found strings
- * \param opt Pointer to an RzUtilStrScanOptions that specifies search parameters
- * \param type Type of strings to search
+ * \param list Pointer to a list that will be populated with the found strings. The strings are always cinverted as UTF-8.
+ * \param opt Pointer to an RzUtilStrScanOptions that specifies search parameters.
+ * \param type Type of strings to search.
  *
  * \return Number of strings found or -1 in case of failure.
  */
