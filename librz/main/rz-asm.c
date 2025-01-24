@@ -171,7 +171,7 @@ static int show_analinfo(RzAsmState *as, const char *arg, ut64 offset) {
 static int rasm_show_help(int v) {
 	if (v < 2) {
 		printf("%s%s", Color_CYAN, "Usage: ");
-		printf(Color_RESET "rz-asm [-ACdDehLBvw] [-a arch] [-b bits] [-o addr] [-s syntax]\n"
+		printf(Color_RESET "rz-asm [-ACdDehLBvw] [-a arch] [-b bits] [-m plugin] [-o addr] [-s syntax]\n"
 				   "             [-f file] [-F fil:ter] [-i skip] [-l len] 'code'|hex|-\n");
 	}
 	const char *options[] = {
@@ -194,6 +194,7 @@ static int rasm_show_help(int v) {
 		"-k",       "[kernel]",         "Select operating system (linux, windows, darwin, ..)",
 		"-l",       "[len]",            "Input/Output length",
 		"-L",       "",                 "List Asm plugins: (a=asm, d=disasm, A=analyze, e=ESIL)",
+		"-m",		"[plugin]",			"List supported CPUs for the chosen plugin",	
 		"-o, -@",   "[addr]",           "Set start address for code (default 0)",
 		"-O",       "[file]",           "Output file name (rz-asm -Bf a.asm -O a)",
 		"-p",       "",                 "Run SPP over input for assembly",
