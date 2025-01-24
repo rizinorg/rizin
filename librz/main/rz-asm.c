@@ -589,7 +589,7 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 	}
 
 	RzGetopt opt;
-	rz_getopt_init(&opt, argc, argv, "a:Ab:Bc:CdDeEIf:F:hi:jk:l:L@:o:O:pqrs:vwx");
+	rz_getopt_init(&opt, argc, argv, "a:Ab:Bc:CdDeEIf:F:hi:jk:l:Lm:@:o:O:pqrs:vwx");
 	while ((c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case 'a':
@@ -663,6 +663,16 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 			core->analysis = tmp_analysis;
 			rz_core_free(core);
 			ret = 1;
+			goto beach;
+		}
+		case 'm': {
+			RzCore *core = rz_core_new();
+			RzAsm *tmp_asm = core->rasm;
+			core->rasm = as->a;
+			rz_core_cpu_descs_print(core, opt.arg);
+			rz_cons_flush();
+			core->rasm = tmp_asm;
+			rz_core_free(core);
 			goto beach;
 		}
 		case '@':

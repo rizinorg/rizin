@@ -604,3 +604,108 @@ EXPECT_ERR=<<EOF
 Invalid instruction of lifting not implemented.
 EOF
 RUN
+
+NAME=rz-asm print cpus
+FILE=
+CMDS=<<EOF
+!rz-asm -m mips
+!rz-asm -m xtensa
+!rz-asm -m arm
+!rz-asm -m avr
+!rz-asm -m m680x
+!rz-asm -m m68k
+!rz-asm -m pic
+!rz-asm -m ppc
+!rz-asm -m sparc
+!rz-asm -m tms320
+!rz-asm -m tricore
+EOF
+EXPECT=<<EOF
+mips3           MIPS III architecture.
+mips1           MIPS I architecture
+mips2           MIPS II architecture
+mips32r2        MIPS32 Release 2 architecture
+mips32r3        MIPS32 Release 3 architecture
+mips32r5        MIPS32 Release 5 architecture
+mips32r6        MIPS32 Release 6 architecture
+mips4           MIPS IV architecture
+mips5           MIPS V architecture
+mips64r2        MIPS64 Release 2 architecture
+mips64r3        MIPS64 Release 3 architecture
+mips64r5        MIPS64 Release 5 architecture
+mips64r6        MIPS64 Release 6 architecture
+octeon          OCTEON architecture (also known as cnMIPS)
+octeonp         OCTEON+ architecture (also known as cnMIPS+)
+nanomips        nanoMIPS architecture
+nms1            nanoMIPS Release 1 architecture
+i7200           nanoMIPS i7200 architecture
+micromips       microMIPS architecture
+micro32r3       microMIPS32 Release 3 architecture
+micro32r6       microMIPS32 Release 6 architecture
+r2300           R2300 MIPS cpu
+r2600           R2600 MIPS cpu
+r2800           R2800 MIPS cpu
+r2000a          R2000A MIPS cpu
+r2000           R2000 MIPS cpu
+r3000a          R3000A MIPS cpu
+r3000           R3000 MIPS cpu
+r10000          R10000 MIPS cpu
+noptr64         Special MIPS configuration to disable support for 64-bit pointers
+nofloat         Special MIPS configuration to disable support for floating-points
+esp32           Xtensa microcontroller with Wi-Fi and Bluetooth capabilities
+esp32s2         Xtensa microcontroller with Wi-Fi and USB OTG support
+esp8266         Xtensa microcontroller with Wi-Fi support
+v8              ARMv8 version
+cortexm         ARM Cortex-M family
+arm1176         ARM1176JZ(F)-S processor, ARMv6 version
+cortexA72       ARM Cortex-A72 processor, ARMv8-A version
+cortexA8        ARM Cortex-A8, ARMv7-A version
+ATmega8         8-bit AVR microcontroller with 8KB Flash, 1KB SRAM
+ATmega1280      8-bit AVR microcontroller with 128KB Flash, 8KB SRAM
+ATmega1281      8-bit AVR microcontroller with 128KB Flash, 8KB SRAM
+ATmega16        8-bit AVR microcontroller with 16KB Flash, 1KB SRAM
+ATmega168       8-bit AVR microcontroller with 16KB Flash, 1KB SRAMs
+ATmega2560      8-bit AVR microcontroller with 256KB Flash, 8KB SRAM
+ATmega2561      8-bit AVR microcontroller with 256KB Flash, 8KB SRAM
+ATmega328p      8-bit AVR microcontroller with 32KB Flash, 2KB SRAM
+ATmega32u4      8-bit AVR microcontroller with 32KB Flash, 2.5KB SRAM
+ATmega48        8-bit AVR microcontroller with 4KB Flash, 512B SRAM
+ATmega640       8-bit AVR microcontroller with 64KB Flash, 8KB SRAM
+ATmega88        8-bit AVR microcontroller with 8KB Flash, 1KB SRAM
+ATxmega128a4u   8-bit AVR microcontroller with 128KB Flash, 8KB SRAM
+ATTiny48        8-bit AVR microcontroller with 4KB Flash, 256B SRAM
+ATTiny88        8-bit AVR microcontroller with 8KB Flash, 512B SRAM
+6800            Motorola 6800: 8-bit microprocessor launched in 1974
+6801            Motorola 6801: Enhanced version of the 6800 with additional features like on-chip RAM and timers.
+6805            Motorola 68HC05: 8-bit microcontroller
+6808            Motorola 6808: Variant of the 6800 microprocessor
+6809            Motorola 6809: Advanced 8-bit microprocessor
+6811            Motorola 68HC11: 8-bit microcontroller (also abbreviated as 6811 or HC11)
+cpu12           Motorola 68HC12: 16-bit microcontroller (also abbreviated as 6812 or HC12)
+6301            Hitachi 6301: 8-bit microcontroller, CMOS version of 6800
+6309            Hitachi 6309: CMOS version of 6809
+hcs08           Freescale HCS08: 8-bit microcontroller family
+68000           Motorola 68000: 16/32-bit CISC microprocessor
+68010           Motorola 68010: 16/32-bit microprocessors. Successor to Motoroloa 68000
+68020           Motorola 68020: 32-bit microprocessor with added instructions and additional addressing modes
+68030           Motorola 68030: Enhanced 32-bit microprocessor with integrated MMU
+68040           Motorola 68040: High-performance 32-bit microprocessor with integrated FPU
+68060           Motorola 68060: 32-bit microprocessor, highest performer in m68k series
+pic18           PIC18: High-performance 8-bit microcontroller family
+pic16           PIC16: Mid-range 8-bit microcontroller family
+pic14           PIC14: 14-bit instruction set microcontroller family
+highend         Alias for PIC18
+midrange        Alias for PIC16
+baseline        Alias for PIC14
+ppc             Generic PowerPC CPU
+vle             PowerPC with Variable Length Encoding extension
+ps              PowerPC with Paired Single SIMD extension
+qpx             PowerPC with Quad Processing eXtensions
+v9              SPARC V9: 64-bit RISC architecture specification
+c54x            Texas Instruments TMS320C54x DSP family
+c55x            Texas Instruments TMS320C55x DSP family
+c55x+           Texas Instruments TMS320C55x+ DSP family
+c64x            Texas Instruments TMS320C64x DSP family
+tricore         Generic TriCore CPU family by Infineon
+EOF
+RUN
