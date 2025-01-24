@@ -63,6 +63,20 @@ EOF
 EXPECT_ERR=
 RUN
 
+NAME=String Search - search - Encoding: ibm037 - Latin
+FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ibm037
+CMDS=<<EOF
+e search.show_progress=false
+/z "eligendi adipisci ius, e" d ibm037
+# String detection for ibm037 for ps doesn't work yet.
+# ps @ hit.string.0
+EOF
+EXPECT=<<EOF
+0000001f 24 hit.string.0
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=String Search - Encoding: ascii - Latin
 FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ascii
 CMDS=<<EOF
