@@ -19,7 +19,7 @@ bool exec_regex(RzRegex *regex, const char *str, RzRegexMatch **out) {
 }
 
 bool test_rz_regex_all_match(void) {
-	RzRegex *reg = rz_regex_new("push", RZ_REGEX_EXTENDED, 0);
+	RzRegex *reg = rz_regex_new("push", RZ_REGEX_EXTENDED, 0, NULL);
 	mu_assert_notnull(reg, "Regex was NULL");
 	RzRegexMatch *match = NULL;
 	mu_assert_true(exec_regex(reg, "push", &match), "Regex match failed");
@@ -32,7 +32,7 @@ bool test_rz_regex_all_match(void) {
 }
 
 bool test_rz_regex_posix_blank(void) {
-	RzRegex *reg = rz_regex_new("[[:blank:]]", RZ_REGEX_EXTENDED, 0);
+	RzRegex *reg = rz_regex_new("[[:blank:]]", RZ_REGEX_EXTENDED, 0, NULL);
 	mu_assert_notnull(reg, "Regex was NULL");
 	RzRegexMatch *match = NULL;
 	mu_assert_true(exec_regex(reg, "push\tpush", &match), "Regex match failed");
@@ -45,7 +45,7 @@ bool test_rz_regex_posix_blank(void) {
 }
 
 bool test_rz_regex_extend_space(void) {
-	RzRegex *reg = rz_regex_new("push esi", RZ_REGEX_DEFAULT, 0);
+	RzRegex *reg = rz_regex_new("push esi", RZ_REGEX_DEFAULT, 0, NULL);
 	mu_assert_notnull(reg, "Regex was NULL");
 	RzRegexMatch *match = NULL;
 	mu_assert_notnull(reg, "Regex was NULL");
@@ -59,7 +59,7 @@ bool test_rz_regex_extend_space(void) {
 }
 
 bool test_rz_regex_all_to_str(void) {
-	RzRegex *reg = rz_regex_new("123", RZ_REGEX_EXTENDED, 0);
+	RzRegex *reg = rz_regex_new("123", RZ_REGEX_EXTENDED, 0, NULL);
 	mu_assert_notnull(reg, "Regex was NULL");
 	RzStrBuf *res = rz_regex_full_match_str("(123)", "123 123 123", RZ_REGEX_ZERO_TERMINATED, RZ_REGEX_DEFAULT, RZ_REGEX_DEFAULT, "\n");
 	char *str = rz_strbuf_drain(res);
@@ -81,7 +81,7 @@ bool test_rz_regex_all_to_str(void) {
 
 bool test_rz_reg_exec(void) {
 	const char *p = "abc|123";
-	RzRegex *reg = rz_regex_new(p, RZ_REGEX_EXTENDED, 0);
+	RzRegex *reg = rz_regex_new(p, RZ_REGEX_EXTENDED, 0, NULL);
 	mu_assert_notnull(reg, "Regex was NULL");
 	RzRegexMatch *match = NULL;
 	mu_assert_true(exec_regex(reg, "abc", &match), "Regex match failed");
@@ -116,7 +116,7 @@ bool test_rz_reg_exec(void) {
 	free(match);
 	rz_regex_free(reg);
 	const char *p_big = "\\d+(([abc]*d[efg])+|[123]4[567]+)*|[zyx]+(test)+[mnb]";
-	reg = rz_regex_new(p_big, RZ_REGEX_EXTENDED, 0);
+	reg = rz_regex_new(p_big, RZ_REGEX_EXTENDED, 0, NULL);
 	mu_assert_true(exec_regex(reg, "z1abcde123z", &match), "Regex match failed");
 	mu_assert_notnull(match, "match was not set");
 	mu_assert_eq(match->start, 1, "Start of match is not 1");
@@ -134,7 +134,7 @@ bool test_rz_reg_exec(void) {
 bool test_rz_regex_capture(void) {
 	char *str = "abcd PrefixHello42s xyz";
 
-	RzRegex *re = rz_regex_new("[a-zA-Z]*(H[a-z]+)([0-9]*)s", RZ_REGEX_EXTENDED, 0);
+	RzRegex *re = rz_regex_new("[a-zA-Z]*(H[a-z]+)([0-9]*)s", RZ_REGEX_EXTENDED, 0, NULL);
 	mu_assert_notnull(re, "regex_new");
 
 	RzPVector *matches = rz_regex_match_all_not_grouped(re, str, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT);
@@ -180,7 +180,7 @@ bool test_rz_regex_find(void) {
 }
 
 bool test_rz_regex_named_matches(void) {
-	RzRegex *reg = rz_regex_new("(?<proto>^\\w+)(:\\/\\/)(?<domain>\\w+)\\.(?<tdomain>\\w+)", RZ_REGEX_EXTENDED, 0);
+	RzRegex *reg = rz_regex_new("(?<proto>^\\w+)(:\\/\\/)(?<domain>\\w+)\\.(?<tdomain>\\w+)", RZ_REGEX_EXTENDED, 0, NULL);
 	mu_assert_notnull(reg, "Regex was NULL");
 	mu_assert_streq((char *)rz_regex_get_match_name(reg, 1), "proto", "proto name not set.");
 	mu_assert_streq((char *)rz_regex_get_match_name(reg, 3), "domain", "domain name not set.");

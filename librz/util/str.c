@@ -3538,7 +3538,7 @@ RZ_API RzList /*<char *>*/ *rz_str_split_list(char *str, const char *c, int n) {
  */
 RZ_API RZ_OWN RzList /*<char *>*/ *rz_str_split_list_regex(RZ_NONNULL char *str, RZ_NONNULL const char *r, int n) {
 	rz_return_val_if_fail(str && r, NULL);
-	RzRegex *regex = rz_regex_new(r, RZ_REGEX_EXTENDED, 0);
+	RzRegex *regex = rz_regex_new(r, RZ_REGEX_EXTENDED, 0, NULL);
 	RzList *res = str_split_list_common_regex(str, regex, n, false, false);
 	rz_regex_free(regex);
 	return res;
@@ -3600,7 +3600,7 @@ RZ_API RzList /*<char *>*/ *rz_str_split_duplist_n(const char *_str, const char 
 RZ_API RZ_OWN RzList /*<char *>*/ *rz_str_split_duplist_n_regex(RZ_NONNULL const char *_str, RZ_NONNULL const char *r, int n, bool trim) {
 	rz_return_val_if_fail(_str && r, NULL);
 	char *str = rz_str_dup(_str);
-	RzRegex *regex = rz_regex_new(r, RZ_REGEX_EXTENDED, 0);
+	RzRegex *regex = rz_regex_new(r, RZ_REGEX_EXTENDED, 0, NULL);
 	RzList *res = str_split_list_common_regex(str, regex, n, trim, true);
 	free(str);
 	rz_regex_free(regex);

@@ -208,7 +208,7 @@ RZ_API double GH(rz_get_glibc_version)(RzCore *core, const char *libc_path, ut8 
 	}
 
 	const char *pattern = "release version (\\d.\\d\\d)";
-	RzRegex *re = rz_regex_new(pattern, RZ_REGEX_EXTENDED | RZ_REGEX_CASELESS, 0);
+	RzRegex *re = rz_regex_new(pattern, RZ_REGEX_EXTENDED | RZ_REGEX_CASELESS, 0, NULL);
 	if (!re) {
 		return version;
 	}
@@ -406,7 +406,7 @@ static bool GH(is_tcache)(RzCore *core) {
 	if (rz_config_get_b(core->config, "cfg.debug")) {
 		RzListIter *iter;
 		rz_debug_map_sync(core->dbg);
-		RzRegex *re = rz_regex_new(".*libc[.-]", RZ_REGEX_EXTENDED | RZ_REGEX_CASELESS, 0);
+		RzRegex *re = rz_regex_new(".*libc[.-]", RZ_REGEX_EXTENDED | RZ_REGEX_CASELESS, 0, NULL);
 		rz_list_foreach (core->dbg->maps, iter, map) {
 			// In case the binary is named *libc-*
 			if (strncmp(map->name, core->bin->file, strlen(map->name)) == 0) {

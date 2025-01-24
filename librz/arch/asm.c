@@ -1538,7 +1538,7 @@ RZ_API void rz_asm_compile_token_patterns(RZ_INOUT RzPVector /*<RzAsmTokenPatter
 	rz_pvector_foreach (patterns, it) {
 		RzAsmTokenPattern *pat = *it;
 		if (!pat->regex) {
-			pat->regex = rz_regex_new(pat->pattern, RZ_REGEX_EXTENDED, 0);
+			pat->regex = rz_regex_new(pat->pattern, RZ_REGEX_EXTENDED, 0, NULL);
 			if (!pat->regex) {
 				RZ_LOG_WARN("Did not compile regex pattern %s.\n", pat->pattern);
 				rz_warn_if_reached();

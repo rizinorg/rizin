@@ -37,6 +37,7 @@ typedef size_t RzRegexSize; ///< Size of a text or regex. This is the size measu
 typedef ut32 RzRegexFlags; ///< Regex flag bits.
 typedef uint8_t *RzRegexPattern; ///< A regex pattern string.
 typedef void RzRegex; ///< A regex expression.
+typedef void RzRegexCompContext; ///< A PCRE2 compile context.
 
 typedef struct {
 	RzRegexSize group_idx; ///< Index of the group. Used to determine name if any was given.
@@ -46,7 +47,8 @@ typedef struct {
 
 typedef void RzRegexMatchData; ///< PCRE2 internal match data type
 
-RZ_API RZ_OWN RzRegex *rz_regex_new(RZ_NONNULL const char *pattern, RzRegexFlags cflags, RzRegexFlags jflags);
+RZ_API RZ_OWN RzRegex *rz_regex_new(RZ_NONNULL const char *pattern, RzRegexFlags cflags, RzRegexFlags jflags,
+	RzRegexCompContext *ccontext);
 RZ_API void rz_regex_free(RZ_OWN RzRegex *regex);
 RZ_API void rz_regex_error_msg(RzRegexStatus errcode, RZ_OUT char *errbuf, RzRegexSize errbuf_size);
 RZ_API const ut8 *rz_regex_get_match_name(RZ_NONNULL const RzRegex *regex, ut32 name_idx);

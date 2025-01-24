@@ -103,7 +103,7 @@ static char *find_next_number(char *str) {
 				   // (e.g. case labels like: case.<switch-address>.<case-number>).
 			// See: https://github.com/rizinorg/rizin/issues/4238 for more details of this problem.
 			"(([^\\w.*]|^)(?<number>(0x[a-fA-F0-9]+)|\\d+))");
-	RzRegex *re = rz_regex_new(search, RZ_REGEX_EXTENDED, RZ_REGEX_DEFAULT);
+	RzRegex *re = rz_regex_new(search, RZ_REGEX_EXTENDED, RZ_REGEX_DEFAULT, NULL);
 	RzPVector *match = rz_regex_match_first(re, str, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT);
 	if (rz_pvector_empty(match)) {
 		rz_pvector_free(match);
@@ -152,7 +152,7 @@ static bool is_lea(const char *asm_str) {
 	if (!colored) {
 		return strlen(asm_str) > 4 && rz_str_startswith_icase(asm_str, "lea") && asm_str[3] == ' ';
 	}
-	RzRegex *re = rz_regex_new("(^\x1b\\[\\d{1,3}mlea\x1b\\[0m.+)", RZ_REGEX_EXTENDED | RZ_REGEX_CASELESS, 0);
+	RzRegex *re = rz_regex_new("(^\x1b\\[\\d{1,3}mlea\x1b\\[0m.+)", RZ_REGEX_EXTENDED | RZ_REGEX_CASELESS, 0, NULL);
 	if (!re) {
 		return false;
 	}

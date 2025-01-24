@@ -13,7 +13,7 @@
 #include <rz_util.h>
 
 typedef pcre2_general_context RzRegexGeneralContext; ///< General context.
-typedef pcre2_compile_context RzRegexCompContext; ///< The context for compiling.
+// typedef pcre2_compile_context RzRegexCompContext; ///< The context for compiling.
 typedef pcre2_match_context RzRegexMatchContext; ///< The context for matching.
 
 typedef struct {
@@ -38,10 +38,12 @@ static void print_pcre2_err(RZ_NULLABLE const char *pattern, RzRegexStatus err_n
  * \param jflags The compilation flags for the JIT compiler.
  * You can pass RZ_REGEX_JIT_PARTIAL_SOFT or RZ_REGEX_JIT_PARTIAL_HARD if you
  * intend to use the pattern for partial matching. Otherwise set it to 0.
+ * \param ccontext A compile context or NULL.
  *
  * \return The compiled regex or NULL in case of failure.
  */
-RZ_API RZ_OWN RzRegex *rz_regex_new(RZ_NONNULL const char *pattern, RzRegexFlags cflags, RzRegexFlags jflags) {
+RZ_API RZ_OWN RzRegex *rz_regex_new(RZ_NONNULL const char *pattern, RzRegexFlags cflags, RzRegexFlags jflags,
+	RzRegexCompContext *ccontext) {
 	rz_return_val_if_fail(pattern, NULL);
 
 	RzRegexStatus err_num;
@@ -73,7 +75,7 @@ RZ_API RZ_OWN RzRegex *rz_regex_new(RZ_NONNULL const char *pattern, RzRegexFlags
 		cflags | PCRE2_UTF | PCRE2_MATCH_INVALID_UTF,
 		&err_num,
 		&err_off,
-		NULL);
+		ccontext);
 	if (!regex) {
 		print_pcre2_err(pat, err_num, err_off);
 		free(fixed_pat);
@@ -390,7 +392,7 @@ RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all(
 RZ_API bool rz_regex_contains(RZ_NONNULL const char *pattern, RZ_NONNULL const char *text,
 	RzRegexSize text_size,
 	RzRegexFlags cflags, RzRegexFlags mflags) {
-	RzRegex *re = rz_regex_new(pattern, cflags, 0);
+	RzRegex *re = rz_regex_new(pattern, cflags, 0, NULL);
 	if (!re) {
 		return false;
 	}
@@ -420,7 +422,7 @@ RZ_API RZ_OWN RzStrBuf *rz_regex_full_match_str(RZ_NONNULL const char *pattern, 
 	RzRegexFlags cflags, RzRegexFlags mflags, RZ_NONNULL const char *separator) {
 	rz_return_val_if_fail(pattern && text && separator, NULL);
 
-	RzRegex *re = rz_regex_new(pattern, cflags, 0);
+	RzRegex *re = rz_regex_new(pattern, cflags, 0, NULL);
 	RzStrBuf *sbuf = rz_strbuf_new("");
 	RzPVector *matches = rz_regex_match_all(re, text, text_size, 0, mflags);
 	if (!matches || !sbuf) {
@@ -469,7 +471,7 @@ RZ_API RzRegexSize rz_regex_find(RZ_NONNULL const char *pattern, RZ_NONNULL RZ_B
 	RzRegexSize text_size, RzRegexSize text_offset,
 	RzRegexFlags cflags, RzRegexFlags mflags) {
 	rz_return_val_if_fail(pattern && text, SZT_MAX);
-	RzRegex *regex = rz_regex_new(pattern, cflags, RZ_REGEX_DEFAULT);
+	RzRegex *regex = rz_regex_new(pattern, cflags, RZ_REGEX_DEFAULT, NULL);
 	RzPVector *matches = rz_regex_match_first(regex, text, text_size, text_offset, mflags);
 	if (rz_pvector_empty(matches)) {
 		rz_pvector_free(matches);

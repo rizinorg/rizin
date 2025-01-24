@@ -3575,7 +3575,7 @@ static RZ_OWN char *screen_bottom_address(RzCore *core) {
 
 	// capture the address from the line at the bottom
 	char *regex_str = ((RzCoreVisual *)core->visual)->printidx == RZ_CORE_VISUAL_MODE_CD ? "[0-9abcdefABCDEF]+" : "0x[0-9ABCDEFabcdef]+";
-	RzRegex *re = rz_regex_new(regex_str, RZ_REGEX_EXTENDED, 0);
+	RzRegex *re = rz_regex_new(regex_str, RZ_REGEX_EXTENDED, 0, NULL);
 	RzPVector *matches = rz_regex_match_all_not_grouped(re, lastline, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT);
 	if (!matches || rz_pvector_empty(matches)) {
 		goto exit;
