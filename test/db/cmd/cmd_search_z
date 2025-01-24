@@ -48,6 +48,46 @@ EOF
 EXPECT_ERR=
 RUN
 
+NAME=String Search - minimal string - Encoding: ascii - Latin
+FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ascii
+CMDS=<<EOF
+e search.show_progress=false
+e str.search.min_length=2
+/z "et" d ascii
+# Check string is actually at offset of the hit.
+ps @ hit.string.0
+ps @ hit.string.1
+ps @ hit.string.2
+ps @ hit.string.3
+ps @ hit.string.4
+ps @ hit.string.5
+ps @ hit.string.6
+ps @ hit.string.7
+ps @ hit.string.8
+EOF
+EXPECT=<<EOF
+00000018 2 hit.string.0
+00000042 2 hit.string.1
+0000008f 2 hit.string.2
+000000be 2 hit.string.3
+0000010a 2 hit.string.4
+0000012b 2 hit.string.5
+0000013a 2 hit.string.6
+00000152 2 hit.string.7
+00000175 2 hit.string.8
+et, at eligendi adipisci ius, ex natum appetere officiis has, nibh quas torquatos pro te. Quo at deleniti repudiandae, et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
+etere officiis has, nibh quas torquatos pro te. Quo at deleniti repudiandae, et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
+et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
+et assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
+etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
+etenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
+et id, ea alia nostrud detraxit est, est eros intellegebat et.
+etraxit est, est eros intellegebat et.
+et.
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=String Search - match all - Encoding: ascii - Latin
 FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ascii
 CMDS=<<EOF
