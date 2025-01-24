@@ -84,5 +84,8 @@ RZ_API RzRegexSize rz_regex_find(RZ_NONNULL const char *pattern, RZ_NONNULL RZ_B
 RZ_API RZ_OWN RzStrBuf *rz_regex_full_match_str(RZ_NONNULL const char *pattern, RZ_NONNULL const char *text,
 	RzRegexSize text_size,
 	RzRegexFlags cflags, RzRegexFlags mflags, RZ_NONNULL const char *separator);
+RZ_API RZ_OWN RzRegexCompContext *rz_regex_compile_context_new();
+RZ_API void rz_regex_compile_context_free(RzRegexCompContext *ccontext);
+RZ_API void rz_regex_set_nul_as_newline(RZ_NONNULL RzRegexCompContext *ccontext);
 
 #endif /* RZ_REGEX_H */

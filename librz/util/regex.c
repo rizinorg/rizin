@@ -483,3 +483,30 @@ RZ_API RzRegexSize rz_regex_find(RZ_NONNULL const char *pattern, RZ_NONNULL RZ_B
 	rz_regex_free(regex);
 	return off;
 }
+
+/**
+ * \brief Returns a compile context.
+ *
+ * \return A PCRE2 compile context, or NULL in case of failure.
+ */
+RZ_API RZ_OWN RzRegexCompContext *rz_regex_compile_context_new() {
+	return pcre2_compile_context_create(NULL);
+}
+
+/**
+ * \brief Frees a compile context.
+ *
+ * \param A PCRE2 compile context.
+ */
+RZ_API void rz_regex_compile_context_free(RzRegexCompContext *ccontext) {
+	pcre2_compile_context_free(ccontext);
+}
+
+/**
+ * \brief Sets the newline convention of a compile context to the NUL character (\0).
+ *
+ * \param A PCRE2 compile context.
+ */
+RZ_API void rz_regex_set_nul_as_newline(RZ_NONNULL RzRegexCompContext *ccontext) {
+	pcre2_set_newline(ccontext, PCRE2_NEWLINE_NUL);
+}

@@ -16,6 +16,8 @@ RZ_API int rz_search_regexp_update(RzSearch *s, ut64 from, const ut8 *buf, int l
 	RzRegex *compiled = NULL;
 	const int old_nhits = s->nhits;
 	int ret = 0;
+	RzRegexCompContext *ccontext = rz_regex_compile_context_new();
+	rz_regex_set_nul_as_newline(ccontext);
 
 	rz_list_foreach (s->kws, iter, kw) {
 		int cflags = RZ_REGEX_EXTENDED;
@@ -24,7 +26,7 @@ RZ_API int rz_search_regexp_update(RzSearch *s, ut64 from, const ut8 *buf, int l
 			cflags |= RZ_REGEX_CASELESS;
 		}
 
-		compiled = rz_regex_new((char *)kw->bin_keyword, cflags, 0, NULL);
+		compiled = rz_regex_new((char *)kw->bin_keyword, cflags, 0, ccontext);
 		if (!compiled) {
 			eprintf("Cannot compile '%s' regexp\n", kw->bin_keyword);
 			return -1;
@@ -50,6 +52,7 @@ RZ_API int rz_search_regexp_update(RzSearch *s, ut64 from, const ut8 *buf, int l
 	}
 
 beach:
+	rz_regex_compile_context_free(ccontext);
 	rz_regex_free(compiled);
 	if (!ret) {
 		ret = s->nhits - old_nhits;

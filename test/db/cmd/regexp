@@ -54,5 +54,6 @@ w bcde @ 0x10
 EOF
 EXPECT=<<EOF
 0x00000001 hit0_0
+0x00000010 hit0_1
 EOF
 RUN
