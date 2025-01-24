@@ -44,3 +44,15 @@ EXPECT=<<EOF
 0x000001bd hit0_1 ""Test123 ab""
 EOF
 RUN
+
+NAME=/e with nul as newline
+FILE==
+CMDS=<<EOF
+w abcd
+w bcde @ 0x10
+/e /b.*d/~[0-1]
+EOF
+EXPECT=<<EOF
+0x00000001 hit0_0
+EOF
+RUN
