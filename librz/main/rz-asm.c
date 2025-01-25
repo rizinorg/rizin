@@ -171,7 +171,7 @@ static int show_analinfo(RzAsmState *as, const char *arg, ut64 offset) {
 static int rasm_show_help(int v) {
 	if (v < 2) {
 		printf("%s%s", Color_CYAN, "Usage: ");
-		printf(Color_RESET "rz-asm [-ACdDehLBvw] [-a arch] [-b bits] [-o addr] [-s syntax]\n"
+		printf(Color_RESET "rz-asm [-ACdDehLBvw] [-a arch] [-b bits] [-m plugin] [-o addr] [-s syntax]\n"
 				   "             [-f file] [-F fil:ter] [-i skip] [-l len] 'code'|hex|-\n");
 	}
 	const char *options[] = {
@@ -194,6 +194,7 @@ static int rasm_show_help(int v) {
 		"-k",       "[kernel]",         "Select operating system (linux, windows, darwin, ..)",
 		"-l",       "[len]",            "Input/Output length",
 		"-L",       "",                 "List Asm plugins: (a=asm, d=disasm, A=analyze, e=ESIL)",
+		"-m",       "[plugin]",         "List supported CPUs for the chosen plugin",
 		"-o, -@",   "[addr]",           "Set start address for code (default 0)",
 		"-O",       "[file]",           "Output file name (rz-asm -Bf a.asm -O a)",
 		"-p",       "",                 "Run SPP over input for assembly",
@@ -589,7 +590,7 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 	}
 
 	RzGetopt opt;
-	rz_getopt_init(&opt, argc, argv, "a:Ab:Bc:CdDeEIf:F:hi:jk:l:L@:o:O:pqrs:vwx");
+	rz_getopt_init(&opt, argc, argv, "a:Ab:Bc:CdDeEIf:F:hi:jk:l:Lm:@:o:O:pqrs:vwx");
 	while ((c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case 'a':
@@ -663,6 +664,16 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 			core->analysis = tmp_analysis;
 			rz_core_free(core);
 			ret = 1;
+			goto beach;
+		}
+		case 'm': {
+			RzCore *core = rz_core_new();
+			RzAsm *tmp_asm = core->rasm;
+			core->rasm = as->a;
+			rz_core_cpu_descs_print(core, opt.arg);
+			rz_cons_flush();
+			core->rasm = tmp_asm;
+			rz_core_free(core);
 			goto beach;
 		}
 		case '@':

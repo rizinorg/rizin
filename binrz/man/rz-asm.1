@@ -8,6 +8,7 @@
 .Op Fl ABCdDeIEhjLpqrvxw
 .Op Fl a Ar arch
 .Op Fl b Ar bits
+.Op Fl m Ar plugin
 .Op Fl c Ar CPU
 .Op Fl O Ar file
 .Op Fl o Ar addr
@@ -60,6 +61,8 @@ Select operating system (linux, windows, darwin, ..)
 Input/Output length
 .It Fl L
 List asm plugins: (a=asm, d=disasm, A=analyze, e=ESIL)
+.It Fl m Ar plugin
+List supported CPUs for the chosen plugin
 .It Fl o, @ Ar addr
 Set start address for code (default 0)
 .It Fl O Ar file
