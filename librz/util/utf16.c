@@ -30,7 +30,7 @@ static RzCodePoint utf16_surrogate_to_codepoint(ut16 high_surrogate, ut16 low_su
  *
  * \return Number of bytes decoded.
  */
-RZ_API size_t rz_utf16_decode(const ut8 *buf, int buf_len, RZ_NONNULL RZ_OUT RzCodePoint *ch, bool bigendian) {
+RZ_API size_t rz_utf16_decode(RZ_NONNULL const ut8 *buf, size_t buf_len, RZ_NONNULL RZ_OUT RzCodePoint *ch, bool bigendian) {
 	rz_return_val_if_fail(buf && ch, 0);
 	if (buf_len <= 1) {
 		return 0;
@@ -58,7 +58,7 @@ RZ_API size_t rz_utf16_decode(const ut8 *buf, int buf_len, RZ_NONNULL RZ_OUT RzC
  *
  * \return Number of bytes decoded.
  */
-RZ_API size_t rz_utf16le_decode(const ut8 *buf, int buf_len, RZ_NONNULL RZ_OUT RzCodePoint *codepoint) {
+RZ_API size_t rz_utf16le_decode(RZ_NONNULL const ut8 *buf, size_t buf_len, RZ_NONNULL RZ_OUT RzCodePoint *codepoint) {
 	rz_return_val_if_fail(buf && codepoint, 0);
 	return rz_utf16_decode(buf, buf_len, codepoint, false);
 }
@@ -72,7 +72,7 @@ RZ_API size_t rz_utf16le_decode(const ut8 *buf, int buf_len, RZ_NONNULL RZ_OUT R
  *
  * \return Number of bytes decoded.
  */
-RZ_API size_t rz_utf16be_decode(const ut8 *buf, int buf_len, RZ_NONNULL RZ_OUT RzCodePoint *codepoint) {
+RZ_API size_t rz_utf16be_decode(RZ_NONNULL const ut8 *buf, size_t buf_len, RZ_NONNULL RZ_OUT RzCodePoint *codepoint) {
 	rz_return_val_if_fail(buf && codepoint, 0);
 	return rz_utf16_decode(buf, buf_len, codepoint, true);
 }
