@@ -1689,7 +1689,7 @@ RZ_API char *rz_str_escape_8bit(const char *buf, bool colors, RzStrEscOptions *o
 static char *rz_str_escape_utf(const char *buf, int buf_size, RzStrEnc enc, bool show_asciidot, bool esc_bslash, bool esc_double_quotes, bool keep_printable) {
 	char *new_buf, *q;
 	const char *p, *end;
-	RzRune ch;
+	RzCodePoint ch;
 	int i, len, ch_bytes;
 
 	if (!buf) {
@@ -1813,7 +1813,7 @@ RZ_API char *rz_str_escape_utf32be(const char *buf, int buf_size, RzStrEscOption
 static char *escape_utf8_for_json(const char *buf, int buf_size, bool mutf8) {
 	char *new_buf, *q;
 	const ut8 *p, *end;
-	RzRune ch;
+	RzCodePoint ch;
 	int i, len, ch_bytes;
 
 	if (!buf) {
@@ -1874,13 +1874,13 @@ static char *escape_utf8_for_json(const char *buf, int buf_size, bool mutf8) {
 				}
 			}
 		} else if (ch_bytes == 4) {
-			if (rz_rune_is_printable(ch)) {
+			if (rz_code_point_is_printable(ch)) {
 				// Assumes buf is UTF8-encoded
 				for (i = 0; i < ch_bytes; i++) {
 					*q++ = *(p + i);
 				}
 			} else {
-				RzRune high, low;
+				RzCodePoint high, low;
 				ch -= 0x10000;
 				high = 0xd800 + (ch >> 10 & 0x3ff);
 				low = 0xdc00 + (ch & 0x3ff);
@@ -1898,7 +1898,7 @@ static char *escape_utf8_for_json(const char *buf, int buf_size, bool mutf8) {
 				}
 			}
 		} else if (ch_bytes > 1) {
-			if (rz_rune_is_printable(ch)) {
+			if (rz_code_point_is_printable(ch)) {
 				// Assumes buf is UTF8-encoded
 				for (i = 0; i < ch_bytes; i++) {
 					*q++ = *(p + i);
@@ -4134,47 +4134,47 @@ RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NU
 	ut32 buflen = option->length;
 	RzStrEnc enc = option->encoding;
 	ut32 wrap_at = option->wrap_at;
-	RzRune rune;
+	RzCodePoint code_point;
 	ut32 n_runes = 0;
 	int rsize = 1; // rune size
 
 	rz_strbuf_init(&sb);
 	for (ut32 i = 0, line_runes = 0; i < buflen; i += rsize) {
 		if (enc == RZ_STRING_ENC_UTF32LE) {
-			rsize = rz_utf32le_decode(&buf[i], buflen - i, &rune);
+			rsize = rz_utf32le_decode(&buf[i], buflen - i, &code_point);
 			if (rsize) {
 				rsize = 4;
 			}
 		} else if (enc == RZ_STRING_ENC_UTF16LE) {
-			rsize = rz_utf16le_decode(&buf[i], buflen - i, &rune);
+			rsize = rz_utf16le_decode(&buf[i], buflen - i, &code_point);
 			if (rsize == 1) {
 				rsize = 2;
 			}
 		} else if (enc == RZ_STRING_ENC_UTF32BE) {
-			rsize = rz_utf32be_decode(&buf[i], buflen - i, &rune);
+			rsize = rz_utf32be_decode(&buf[i], buflen - i, &code_point);
 			if (rsize) {
 				rsize = 4;
 			}
 		} else if (enc == RZ_STRING_ENC_UTF16BE) {
-			rsize = rz_utf16be_decode(&buf[i], buflen - i, &rune);
+			rsize = rz_utf16be_decode(&buf[i], buflen - i, &code_point);
 			if (rsize == 1) {
 				rsize = 2;
 			}
 		} else if (enc == RZ_STRING_ENC_IBM037) {
-			rsize = rz_str_ibm037_to_unicode(buf[i], &rune);
+			rsize = rz_str_ibm037_to_unicode(buf[i], &code_point);
 		} else if (enc == RZ_STRING_ENC_IBM290) {
-			rsize = rz_str_ibm290_to_unicode(buf[i], &rune);
+			rsize = rz_str_ibm290_to_unicode(buf[i], &code_point);
 		} else if (enc == RZ_STRING_ENC_EBCDIC_ES) {
-			rsize = rz_str_ebcdic_es_to_unicode(buf[i], &rune);
+			rsize = rz_str_ebcdic_es_to_unicode(buf[i], &code_point);
 		} else if (enc == RZ_STRING_ENC_EBCDIC_UK) {
-			rsize = rz_str_ebcdic_uk_to_unicode(buf[i], &rune);
+			rsize = rz_str_ebcdic_uk_to_unicode(buf[i], &code_point);
 		} else if (enc == RZ_STRING_ENC_EBCDIC_US) {
-			rsize = rz_str_ebcdic_us_to_unicode(buf[i], &rune);
+			rsize = rz_str_ebcdic_us_to_unicode(buf[i], &code_point);
 		} else if (enc == RZ_STRING_ENC_8BIT) {
-			rune = buf[i];
-			rsize = rune < 0x7F ? 1 : 0;
+			code_point = buf[i];
+			rsize = code_point < 0x7F ? 1 : 0;
 		} else {
-			rsize = rz_utf8_decode(&buf[i], buflen - i, &rune);
+			rsize = rz_utf8_decode(&buf[i], buflen - i, &code_point);
 		}
 
 		if (rsize == 0) {
@@ -4196,14 +4196,14 @@ RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NU
 				break;
 			}
 			for (int j = 0; j < rsize; ++j) {
-				rune = buf[i + j];
+				code_point = buf[i + j];
 				n_runes++;
 				if (option->urlencode) {
-					rz_strbuf_appendf(&sb, "%%%02x", rune);
+					rz_strbuf_appendf(&sb, "%%%02x", code_point);
 				} else if (option->json) {
-					rz_strbuf_appendf(&sb, "\\u%04x", rune);
+					rz_strbuf_appendf(&sb, "\\u%04x", code_point);
 				} else {
-					rz_strbuf_appendf(&sb, "\\x%02x", rune);
+					rz_strbuf_appendf(&sb, "\\x%02x", code_point);
 				}
 			}
 			if (wrap_at && line_runes + 1 >= wrap_at) {
@@ -4211,63 +4211,63 @@ RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NU
 				line_runes = 0;
 			}
 			continue;
-		} else if (rune == '\0' && option->stop_at_nil) {
+		} else if (code_point == '\0' && option->stop_at_nil) {
 			break;
-		} else if (rune == '\n') {
+		} else if (code_point == '\n') {
 			line_runes = 0;
 		}
 		line_runes++;
 		n_runes++;
 		if (option->urlencode) {
-			if (IS_DIGIT(rune) || IS_UPPER(rune) || IS_LOWER(rune) || rune == '-' || rune == '_' || rune == '.' || rune == '~') {
+			if (IS_DIGIT(code_point) || IS_UPPER(code_point) || IS_LOWER(code_point) || code_point == '-' || code_point == '_' || code_point == '.' || code_point == '~') {
 				// RFC 3986 section 2.3 Unreserved Characters
 				// A B C D E F G H I J K L M N O P Q R S T U V W X Y Z
 				// a b c d e f g h i j k l m n o p q r s t u v w x y z
 				// 0 1 2 3 4 5 6 7 8 9 - _ . ~
-				char ch = rune;
+				char ch = code_point;
 				rz_strbuf_appendf(&sb, "%c", ch);
 			} else {
 				ut8 tmp[4];
-				int n_enc = rz_utf8_encode((ut8 *)tmp, rune);
+				int n_enc = rz_utf8_encode((ut8 *)tmp, code_point);
 				for (int j = 0; j < n_enc; ++j) {
 					rz_strbuf_appendf(&sb, "%%%02x", tmp[j]);
 				}
 			}
 		} else if (option->json) {
-			if (IS_PRINTABLE(rune) && rune != '\"' && rune != '\\') {
-				char ch = rune;
+			if (IS_PRINTABLE(code_point) && code_point != '\"' && code_point != '\\') {
+				char ch = code_point;
 				rz_strbuf_appendf(&sb, "%c", ch);
-			} else if (rune == '\n') {
+			} else if (code_point == '\n') {
 				rz_strbuf_append(&sb, "\\n");
-			} else if (rune == '\r') {
+			} else if (code_point == '\r') {
 				rz_strbuf_append(&sb, "\\r");
-			} else if (rune == '\\') {
+			} else if (code_point == '\\') {
 				rz_strbuf_append(&sb, "\\\\");
-			} else if (rune == '\t') {
+			} else if (code_point == '\t') {
 				rz_strbuf_append(&sb, "\\t");
-			} else if (rune == '\f') {
+			} else if (code_point == '\f') {
 				rz_strbuf_append(&sb, "\\f");
-			} else if (rune == '\b') {
+			} else if (code_point == '\b') {
 				rz_strbuf_append(&sb, "\\b");
-			} else if (rune == '"') {
+			} else if (code_point == '"') {
 				rz_strbuf_append(&sb, "\\\"");
 			} else {
 				for (int j = 0; j < rsize; ++j) {
-					rune = buf[i + j];
-					rz_strbuf_appendf(&sb, "\\u%04x", rune);
+					code_point = buf[i + j];
+					rz_strbuf_appendf(&sb, "\\u%04x", code_point);
 				}
 				n_runes += rsize - 1;
 			}
 		} else {
-			if (rune == '\\') {
+			if (code_point == '\\') {
 				rz_strbuf_appendf(&sb, "\\\\");
-			} else if ((rune == '\n' && !option->escape_nl) || (rz_rune_is_printable(rune) && rune >= ' ')) {
+			} else if ((code_point == '\n' && !option->escape_nl) || (rz_code_point_is_printable(code_point) && code_point >= ' ')) {
 				char tmp[5] = { 0 };
-				rz_utf8_encode((ut8 *)tmp, rune);
+				rz_utf8_encode((ut8 *)tmp, code_point);
 				rz_strbuf_appendf(&sb, "%s", tmp);
 			} else {
 				ut8 tmp[4];
-				int n_enc = rz_utf8_encode((ut8 *)tmp, rune);
+				int n_enc = rz_utf8_encode((ut8 *)tmp, code_point);
 				for (int j = 0; j < n_enc; ++j) {
 					rz_strbuf_appendf(&sb, "\\x%02x", tmp[j]);
 				}

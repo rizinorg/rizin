@@ -3780,7 +3780,7 @@ static char *ds_esc_str(RzDisasmState *ds, const char *str, int len, const char 
 			prefix = "u";
 		} else if (str_len == 1 && len > 7 && !str[2] && !str[3] && str[4] && !str[5]) {
 			RzStrEnc enc = RZ_STRING_ENC_UTF32LE;
-			RzRune ch;
+			RzCodePoint ch;
 			const char *ptr, *end;
 			end = (const char *)rz_mem_mem_aligned((ut8 *)str, len, (ut8 *)"\0\0\0\0", 4, 4);
 			if (!end) {
