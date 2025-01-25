@@ -194,7 +194,7 @@ static int rasm_show_help(int v) {
 		"-k",       "[kernel]",         "Select operating system (linux, windows, darwin, ..)",
 		"-l",       "[len]",            "Input/Output length",
 		"-L",       "",                 "List Asm plugins: (a=asm, d=disasm, A=analyze, e=ESIL)",
-		"-m",		"[plugin]",			"List supported CPUs for the chosen plugin",	
+		"-m",       "[plugin]",         "List supported CPUs for the chosen plugin",
 		"-o, -@",   "[addr]",           "Set start address for code (default 0)",
 		"-O",       "[file]",           "Output file name (rz-asm -Bf a.asm -O a)",
 		"-p",       "",                 "Run SPP over input for assembly",
