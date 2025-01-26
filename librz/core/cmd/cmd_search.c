@@ -134,6 +134,7 @@ struct search_parameters {
 	bool inverse;
 	bool aes_search;
 	bool privkey_search;
+	bool regex_search;
 };
 
 static int search_hash(RzCore *core, const char *hashname, const char *hashstr, ut32 minlen, ut32 maxlen, struct search_parameters *param) {
@@ -1277,10 +1278,13 @@ static void do_string_search(RzCore *core, RzInterval search_itv, struct search_
 			}
 			if (param->outmode != RZ_MODE_JSON) {
 				RzSearchKeyword *kw = rz_list_first(core->search->kws);
-				int lenstr = kw ? kw->keyword_length : 0;
-				const char *bytestr = lenstr > 1 ? "bytes" : "byte";
-				eprintf("Searching %d %s in [0x%" PFMT64x "-0x%" PFMT64x "]\n",
-					kw ? kw->keyword_length : 0, bytestr, itv.addr, rz_itv_end(itv));
+				eprintf("Searching");
+				if (!param->regex_search) {
+					int lenstr = kw ? kw->keyword_length : 0;
+					const char *bytestr = lenstr > 1 ? "bytes" : "byte";
+					eprintf(" %d %s", kw ? kw->keyword_length : 0, bytestr);
+				}
+				eprintf(" in [0x%" PFMT64x "-0x%" PFMT64x "]\n", itv.addr, rz_itv_end(itv));
 			}
 			if (!core->search->bckwrds) {
 				RzListIter *it;
@@ -1734,6 +1738,7 @@ RZ_IPI int rz_cmd_search(void *data, const char *input) {
 		.inverse = false,
 		.aes_search = false,
 		.privkey_search = false,
+		.regex_search = false,
 	};
 	if (!param.cmd_hit) {
 		param.cmd_hit = "";
@@ -2366,6 +2371,7 @@ reread:
 			rz_search_kw_add(core->search, kw);
 			rz_search_begin(core->search);
 			dosearch = true;
+			param.regex_search = true;
 		} else {
 			RZ_LOG_ERROR("core: Missing regex\n");
 		}
