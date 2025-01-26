@@ -51,9 +51,25 @@ CMDS=<<EOF
 w abcd
 w bcde @ 0x10
 /e /b.*d/~[0-1]
+echo ----
+/e /b.*D/~[0-1]
+echo ----
+/e /b.*D/i~[0-1]
 EOF
 EXPECT=<<EOF
 0x00000001 hit0_0
 0x00000010 hit0_1
+----
+----
+0x00000001 hit2_0
+0x00000010 hit2_1
+EOF
+EXPECT_ERR=<<EOF
+Searching 4 bytes in [0x0-0x200]
+[2Khits: 2
+Searching 4 bytes in [0x0-0x200]
+[2Khits: 0
+Searching 4 bytes in [0x0-0x200]
+[2Khits: 2
 EOF
 RUN
