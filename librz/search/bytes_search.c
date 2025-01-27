@@ -124,7 +124,7 @@ RZ_API RZ_OWN RzSearchBytesPattern *rz_search_parse_byte_pattern(const char *byt
 		RZ_LOG_ERROR("Pattern contains forbitten characters. Allowed is only '0x', '0-9', 'a-f', 'A-F', '.' and ':'.\n");
 		goto error;
 	}
-	RzRegex *regex = rz_regex_new("^(0x)?([a-fA-F.0-9]+)(:(0x)?([a-fA-F0-9.]+))?", RZ_REGEX_DEFAULT, RZ_REGEX_DEFAULT);
+	RzRegex *regex = rz_regex_new("^(0x)?([a-fA-F.0-9]+)(:(0x)?([a-fA-F0-9.]+))?", RZ_REGEX_DEFAULT, RZ_REGEX_DEFAULT, NULL);
 	matches = rz_regex_match_all_not_grouped(regex, byte_pattern, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT);
 	rz_regex_free(regex);
 

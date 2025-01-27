@@ -159,50 +159,6 @@ bool test_rz_utf16_encode(void) {
 	mu_end;
 }
 
-/**
- * \brief Examples partially taken from: https://en.wikipedia.org/wiki/UTF-16#Examples
- */
-bool test_rz_utf16_encode(void) {
-	ut8 utf16_out[5] = { 0 };
-
-	const ut8 utf16le[] = { 0xAC, 0x20 };
-	RzRune codepoint = 0x20AC;
-	int nbytes = rz_utf16le_encode(utf16_out, codepoint);
-	mu_assert_eq(nbytes, 2, "Decoded number of bytes mismatch.");
-	mu_assert_memeq(utf16_out, utf16le, sizeof(utf16le), "Encode failed.");
-	memset(utf16_out, 0, sizeof(utf16_out));
-
-	// With surrogate
-	const ut8 utf16le_surr[] = { 0x01, 0xD8, 0x37, 0xDC };
-	codepoint = 0x10437;
-	nbytes = rz_utf16le_encode(utf16_out, codepoint);
-	mu_assert_eq(nbytes, 4, "Decoded number of bytes mismatch.");
-	mu_assert_memeq(utf16_out, utf16le_surr, sizeof(utf16le), "Encode failed.");
-	memset(utf16_out, 0, sizeof(utf16_out));
-
-	const ut8 utf16le_first_surr[] = { 0x00, 0xD8, 0x00, 0xDC };
-	codepoint = 0x10000;
-	nbytes = rz_utf16le_encode(utf16_out, codepoint);
-	mu_assert_eq(nbytes, 4, "Decoded number of bytes mismatch.");
-	mu_assert_memeq(utf16_out, utf16le_first_surr, sizeof(utf16le), "Encode failed.");
-	memset(utf16_out, 0, sizeof(utf16_out));
-
-	const ut8 utf16le_last_surr[] = { 0xFF, 0xDB, 0xFF, 0xDF };
-	codepoint = 0x10FFFF;
-	nbytes = rz_utf16le_encode(utf16_out, codepoint);
-	mu_assert_eq(nbytes, 4, "Decoded number of bytes mismatch.");
-	mu_assert_memeq(utf16_out, utf16le_last_surr, sizeof(utf16le), "Encode failed.");
-	memset(utf16_out, 0, sizeof(utf16_out));
-
-	ut8 zero[5] = { 0 };
-	codepoint = 0x110000;
-	nbytes = rz_utf16le_encode(utf16_out, codepoint);
-	mu_assert_eq(nbytes, 0, "Decoded number of bytes mismatch.");
-	mu_assert_memeq(utf16_out, zero, sizeof(utf16le), "Encode failed.");
-
-	mu_end;
-}
-
 bool all_tests() {
 	mu_run_test(test_rz_utf16_decode);
 	mu_run_test(test_rz_utf16_encode);
