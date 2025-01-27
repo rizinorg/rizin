@@ -358,22 +358,6 @@ static inline bool can_be_utf16_be(const ut8 *buf, ut64 size) {
 	return !buf[0] && buf[1] && !buf[2] && buf[3] && !buf[4] && buf[5] && !buf[6];
 }
 
-static inline bool can_be_utf32_le(const ut8 *buf, ut64 size) {
-	int rc = rz_utf8_decode(buf, size, NULL);
-	if (!rc || (size - rc) < 5) {
-		return false;
-	}
-	char *w = (char *)buf + rc;
-	return !w[0] && !w[1] && !w[2] && w[3] && !w[4];
-}
-
-static inline bool can_be_utf32_be(const ut8 *buf, ut64 size) {
-	if (size < 7) {
-		return false;
-	}
-	return !buf[0] && !buf[1] && !buf[2] && buf[3] && !buf[4] && !buf[5] && !buf[6];
-}
-
 static inline bool can_be_ebcdic(const ut8 *buf, ut64 size) {
 	return buf[0] < 0x20 || buf[0] > 0x3f;
 }
@@ -440,12 +424,12 @@ RZ_API int rz_scan_strings_raw(RZ_NONNULL const ut8 *buf, RZ_NONNULL RzList /*<R
 		size = to - needle;
 		--skip_ibm037;
 		if (type == RZ_STRING_ENC_GUESS) {
-			if (can_be_utf32_le(ptr, size)) {
+			if (rz_utf32_valid_cp(ptr, size, false)) {
 				str_type = RZ_STRING_ENC_UTF32LE;
 			} else if (can_be_utf16_le(ptr, size)) {
 				str_type = RZ_STRING_ENC_UTF16LE;
-			} else if (can_be_utf32_be(ptr, size)) {
-				if (to - needle > 3 && can_be_utf32_le(ptr + 3, size - 3)) {
+			} else if (rz_utf32_valid_cp(ptr, size, true)) {
+				if (to - needle > 3) {
 					// The string can be either utf32-le or utf32-be
 					RzDetectedString *ds_le = process_one_string(buf, from, needle + 3, to, RZ_STRING_ENC_UTF32LE, false, opt);
 					RzDetectedString *ds_be = process_one_string(buf, from, needle, to, RZ_STRING_ENC_UTF32BE, false, opt);
