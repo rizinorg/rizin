@@ -22,17 +22,35 @@ typedef struct string_search {
  * Here we set the real (in memory encoded) string offsets and string length.
  */
 static void align_offsets(StringSearch *ss, RzDetectedString *detected, RzRegexMatch *group0, ut64 *str_mem_offset, ut64 *str_mem_len) {
+	bool is_utf8_type = detected->type == RZ_STRING_ENC_UTF8 || detected->type == RZ_STRING_ENC_8BIT;
+	if (is_utf8_type) {
+		// The memory is aligned.
+		*str_mem_offset = detected->addr + group0->start;
+		*str_mem_len = group0->len;
+		// For UTF-8 types we have to free the offset map and set it to an empty one.
+		// Because the string scan does multiple attempts to parse the same offset in the memory
+		// with multiple encodings (although it already found a valid string).
+		// This messes up this naive offset map (index 0 is overwritten
+		// multiple times with an invalid index).
+		// Until the string parsing is cleared up, this work-around hopefully does
+		// its job.
+		// If you need to debug it, just remove this condition and
+		// run the cmd_search_z tests. You will see the warnings.
+		if (ss->options.utf8_to_mem_offset_map) {
+			ht_uu_free(ss->options.utf8_to_mem_offset_map);
+			ss->options.utf8_to_mem_offset_map = ht_uu_new();
+		}
+		return;
+	}
+
 	bool offset_found = false;
+
 	*str_mem_offset = ht_uu_find(ss->options.utf8_to_mem_offset_map, detected->addr + group0->start, &offset_found);
-	if (!offset_found) {
+	if (!offset_found && is_utf8_type) {
 		RZ_LOG_WARN("Could not determine memory offset of UTF-8 string in search. String offset will be off.\n");
 		*str_mem_offset = detected->addr + group0->start;
 	}
-	if (detected->size != group0->len) {
-		*str_mem_len = ht_uu_find(ss->options.utf8_to_mem_offset_map, detected->addr + group0->start + group0->len, &offset_found) - *str_mem_offset;
-	} else {
-		*str_mem_len = group0->len;
-	}
+	*str_mem_len = ht_uu_find(ss->options.utf8_to_mem_offset_map, detected->addr + group0->start + group0->len, &offset_found) - *str_mem_offset;
 	if (!offset_found) {
 		RZ_LOG_WARN("Could not determine length of string in memory. String length will be off.\n");
 		*str_mem_len = group0->len;

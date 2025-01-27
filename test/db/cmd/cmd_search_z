@@ -881,3 +881,22 @@ EXPECT=<<EOF
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=Regex Search case insensitive - Encoding: Unicode utf8, utf32le, utf16be - Russian
+FILE=bins/cmd/search/string_encodings/regex_search.russian.utf8.utf32le.utf16be
+CMDS=<<EOF
+e search.show_progress=false
+/z "ипсум" i utf8
+# Check string is actually at offset of the hit.
+psu @ hit.string.0
+psu @ hit.string.1
+EOF
+EXPECT=<<EOF
+0000000b 10 hit.string.0
+0000003f 10 hit.string.1
+ипсум долор сит амет
+ИПСУМ ДОЛОР СИТ АМЕТ
+
+EOF
+EXPECT_ERR=
+RUN
