@@ -217,10 +217,41 @@ bool test_rz_utf32_decode(void) {
 	mu_end;
 }
 
+bool test_rz_utf32_valid(void) {
+	const ut8 utf32le_invalid_size[] = { 0xAC, 0xAC, 0x20 };
+
+	const ut8 utf32be_valid_max_cp[] = { 0x00, 0x10, 0xff, 0xff };
+	const ut8 utf32be_invalid_max_cp[] = { 0x00, 0x11, 0x00, 0x00 };
+
+	const ut8 utf32le_valid_max_cp[] = { 0xff, 0xff, 0x10, 0x00 };
+	const ut8 utf32le_invalid_max_cp[] = { 0x00, 0x00, 0x11, 0x00 };
+
+	const ut8 utf32be_invalid_surrogate_I[] = { 0x00, 0x00, 0xd8, 0x00 };
+	const ut8 utf32be_invalid_surrogate_II[] = { 0x00, 0x00, 0xdf, 0xff };
+	const ut8 utf32be_invalid_surrogate_III[] = { 0x00, 0x00, 0xd7, 0xff };
+	const ut8 utf32be_invalid_surrogate_IV[] = { 0x00, 0x00, 0xe0, 0x00 };
+
+	mu_assert_false(rz_utf32_valid_cp(utf32le_invalid_size, sizeof(utf32le_invalid_size), false), "Length check failed");
+
+	mu_assert_false(rz_utf32_valid_cp(utf32be_invalid_max_cp, sizeof(utf32be_invalid_max_cp), true), "Invalid max failed");
+	mu_assert_true(rz_utf32_valid_cp(utf32be_valid_max_cp, sizeof(utf32be_valid_max_cp), true), "Valid max failed");
+
+	mu_assert_false(rz_utf32_valid_cp(utf32le_invalid_max_cp, sizeof(utf32le_invalid_max_cp), false), "Invalid max failed");
+	mu_assert_true(rz_utf32_valid_cp(utf32le_valid_max_cp, sizeof(utf32le_valid_max_cp), false), "Valid max failed");
+
+	mu_assert_false(rz_utf32_valid_cp(utf32be_invalid_surrogate_I, sizeof(utf32be_invalid_surrogate_I), true), "Surrogate failed");
+	mu_assert_false(rz_utf32_valid_cp(utf32be_invalid_surrogate_II, sizeof(utf32be_invalid_surrogate_II), true), "Surrogate failed");
+	mu_assert_true(rz_utf32_valid_cp(utf32be_invalid_surrogate_III, sizeof(utf32be_invalid_surrogate_III), true), "Surrogate failed");
+	mu_assert_true(rz_utf32_valid_cp(utf32be_invalid_surrogate_IV, sizeof(utf32be_invalid_surrogate_IV), true), "Surrogate failed");
+
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_utf16_decode);
 	mu_run_test(test_rz_utf16_encode);
 	mu_run_test(test_rz_utf32_decode);
+	mu_run_test(test_rz_utf32_valid);
 
 	return tests_passed != tests_run;
 }
