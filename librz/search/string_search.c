@@ -145,7 +145,7 @@ static RzDetectedString *setup_str_regex(const char *re_pattern, RzRegexFlags fl
 		RZ_LOG_ERROR("Failed to clone regex pattern\n");
 		return NULL;
 	}
-	RzRegex *re = rz_regex_new(re_pattern, flags, RZ_REGEX_DEFAULT);
+	RzRegex *re = rz_regex_new(re_pattern, flags, RZ_REGEX_DEFAULT, NULL);
 	if (!re) {
 		RZ_LOG_ERROR("Failed to compile regex pattern: '%s'\n", re_pattern);
 		free(re_pattern_clone);
