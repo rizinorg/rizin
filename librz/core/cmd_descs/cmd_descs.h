@@ -2080,6 +2080,8 @@ RZ_IPI RzCmdStatus rz_print_first_string_current_block_handler(RzCore *core, int
 RZ_IPI RzCmdStatus rz_print_pascal_string_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "pss"
 RZ_IPI RzCmdStatus rz_print_string_wrap_width_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+// "psu"
+RZ_IPI RzCmdStatus rz_print_utf8_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "psm"
 RZ_IPI RzCmdStatus rz_print_utf16be_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "psM"

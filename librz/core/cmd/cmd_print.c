@@ -2662,6 +2662,21 @@ RZ_API void rz_print_offset(RzPrint *p, ut64 off, int invert, int offseg, int of
 	rz_print_offset_sg(p, off, invert, offseg, 4, offdec, delta, label);
 }
 
+RZ_IPI RzCmdStatus rz_print_utf8_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
+		print_json_string(core, core->block, core->blocksize, RZ_STRING_ENC_UTF8, true, true);
+	} else {
+		RzStrStringifyOpt opt = { 0 };
+		opt.buffer = core->block;
+		opt.length = core->blocksize;
+		opt.encoding = RZ_STRING_ENC_UTF8;
+		opt.stop_at_nil = true;
+		opt.stop_at_unprintable = true;
+		core_print_raw_buffer(&opt);
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
 RZ_IPI RzCmdStatus rz_print_utf16le_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	if (mode == RZ_OUTPUT_MODE_JSON) {
 		print_json_string(core, core->block, core->blocksize, RZ_STRING_ENC_UTF16LE, true, true);
