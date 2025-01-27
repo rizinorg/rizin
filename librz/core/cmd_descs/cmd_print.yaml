@@ -1150,6 +1150,13 @@ commands:
         modes:
           - RZ_OUTPUT_MODE_STANDARD
         args: []
+      - name: psu
+        summary: Print buffer as a utf8 string
+        cname: print_utf8
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: []
       - name: psm
         summary: Print buffer as a utf16be string
         cname: print_utf16be

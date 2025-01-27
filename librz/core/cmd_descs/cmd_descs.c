@@ -15343,6 +15343,14 @@ static const RzCmdDescHelp print_string_wrap_width_help = {
 	.args = print_string_wrap_width_args,
 };
 
+static const RzCmdDescArg print_utf8_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp print_utf8_help = {
+	.summary = "Print buffer as a utf8 string",
+	.args = print_utf8_args,
+};
+
 static const RzCmdDescArg print_utf16be_args[] = {
 	{ 0 },
 };
@@ -23159,6 +23167,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *print_string_wrap_width_cd = rz_cmd_desc_argv_modes_new(core->rcmd, ps_cd, "pss", RZ_OUTPUT_MODE_STANDARD, rz_print_string_wrap_width_handler, &print_string_wrap_width_help);
 	rz_warn_if_fail(print_string_wrap_width_cd);
+
+	RzCmdDesc *print_utf8_cd = rz_cmd_desc_argv_modes_new(core->rcmd, ps_cd, "psu", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_utf8_handler, &print_utf8_help);
+	rz_warn_if_fail(print_utf8_cd);
 
 	RzCmdDesc *print_utf16be_cd = rz_cmd_desc_argv_modes_new(core->rcmd, ps_cd, "psm", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_utf16be_handler, &print_utf16be_help);
 	rz_warn_if_fail(print_utf16be_cd);
