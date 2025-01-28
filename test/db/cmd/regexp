@@ -58,12 +58,12 @@ echo ----
 /e /b.*D/i
 EOF
 EXPECT=<<EOF
-0x00000001 hit0_0 .a[33mbcd\u0000[0mbcccd.
-0x00000010 hit0_1 .abcd[33mbccc[0mde.
+0x00000001 hit0_0 .a[33mbcd[0mbccc.
+0x00000010 hit0_1 .abcd[33mbcccd[0me.
 ----
 ----
-0x00000001 hit2_0 .a[33mbcd\u0000[0mbcccd.
-0x00000010 hit2_1 .abcd[33mbccc[0mde.
+0x00000001 hit2_0 .a[33mbcd[0mbccc.
+0x00000010 hit2_1 .abcd[33mbcccd[0me.
 EOF
 EXPECT_ERR=<<EOF
 Searching in [0x0-0x200]
