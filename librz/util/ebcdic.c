@@ -684,4 +684,39 @@ RZ_API int rz_str_ebcdic_es_from_ascii(RZ_NONNULL RZ_OUT ut8 *dst, const ut8 src
 	return 1;
 }
 
+/**
+ * \brief Check if \p code_point is a supported EBCDIC character.
+ *
+ * \return True, if the \p code_point is a supported EBCDIC character. False otherwise.
+ */
+RZ_API bool rz_str_ebcdic_valid_cp(const RzCodePoint code_point) {
+	if (code_point == 0) {
+		// ASCII NUL byte is the same.
+		return true;
+	}
+
+	ut8 dst = 0;
+	rz_str_ibm037_from_unicode(&dst, code_point);
+	if (dst != 0) {
+		return true;
+	}
+	rz_str_ebcdic_us_from_unicode(&dst, code_point);
+	if (dst != 0) {
+		return true;
+	}
+	rz_str_ebcdic_uk_from_unicode(&dst, code_point);
+	if (dst != 0) {
+		return true;
+	}
+	rz_str_ibm290_from_unicode(&dst, code_point);
+	if (dst != 0) {
+		return true;
+	}
+	rz_str_ebcdic_es_from_unicode(&dst, code_point);
+	if (dst != 0) {
+		return true;
+	}
+	return false;
+}
+
 /// @}
