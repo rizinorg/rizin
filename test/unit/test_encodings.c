@@ -3,7 +3,8 @@
 
 #include <rz_util.h>
 #include "minunit.h"
-#include "rz_util/rz_utf8.h"
+#include <rz_util/rz_ebcdic.h>
+#include <rz_util/rz_utf8.h>
 
 /**
  * \brief Examples partially taken from: https://en.wikipedia.org/wiki/UTF-16#Examples
@@ -189,10 +190,33 @@ bool test_rz_utf32_valid(void) {
 	mu_end;
 }
 
+
+bool test_rz_ebcdic_valid(void) {
+	// General
+	mu_assert_true(rz_str_ebcdic_valid_cp(0x41), "A should be valid.");
+	mu_assert_true(rz_str_ebcdic_valid_cp(0), "\\0 should be valid.");
+	// EBCDIC-ES
+	mu_assert_true(rz_str_ebcdic_valid_cp(0xf1), "ñ should be valid.");
+	// EBCDIC-US
+	mu_assert_true(rz_str_ebcdic_valid_cp(0xa2), "¢ should be valid.");
+	// EBCDIC-UK
+	mu_assert_true(rz_str_ebcdic_valid_cp(0xa3), "£ should be valid.");
+	// IBM037
+	mu_assert_true(rz_str_ebcdic_valid_cp(0xe4), "ä should be valid.");
+	// IBM290
+	mu_assert_true(rz_str_ebcdic_valid_cp(0x30a5), "ゥshould be valid.");
+
+	// An unsopported one.
+	mu_assert_false(rz_str_ebcdic_valid_cp(0x1E4E), "Ṏ should not be valid.");
+
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_utf16_decode);
 	mu_run_test(test_rz_utf16_encode);
 	mu_run_test(test_rz_utf32_valid);
+	mu_run_test(test_rz_ebcdic_valid);
 
 	return tests_passed != tests_run;
 }
