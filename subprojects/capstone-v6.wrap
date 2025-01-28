@@ -1,6 +1,6 @@
-[wrap-git]
-url = https://github.com/capstone-engine/capstone.git
-revision = v6
-patch_directory = capstone-6.0.0-alpha1
-directory = capstone-6.0.0
-depth = 1
+[wrap-file]
+source_url = https://github.com/capstone-engine/capstone/releases/download/6.0.0-Alpha3/capstone-6.0.0-Alpha3.tar.xz
+source_filename = capstone-6.0.0-Alpha3.tar.xz
+source_hash = 2c6a91f4debc4c13ba9e83b3e841cd500beba84af3a596e06afd7d4c665da88e
+directory = capstone-6.0.0-Alpha3
+patch_directory = capstone-6.0.0-alpha3
