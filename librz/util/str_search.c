@@ -358,10 +358,6 @@ static inline bool can_be_utf16_be(const ut8 *buf, ut64 size) {
 	return !buf[0] && buf[1] && !buf[2] && buf[3] && !buf[4] && buf[5] && !buf[6];
 }
 
-static inline bool can_be_ebcdic(const ut8 *buf, ut64 size) {
-	return buf[0] < 0x20 || buf[0] > 0x3f;
-}
-
 /**
  * \brief Look for strings in a byte array, but returns only the first result.
  *
@@ -500,7 +496,7 @@ RZ_API int rz_scan_strings_raw(RZ_NONNULL const ut8 *buf, RZ_NONNULL RzList /*<R
 					continue;
 				}
 				str_type = RZ_STRING_ENC_UTF16BE;
-			} else if (can_be_ebcdic(ptr, size) && skip_ibm037 < 0) {
+			} else if (rz_str_ebcdic_valid_cp(ptr[0]) && skip_ibm037 < 0) {
 				ut8 sz = RZ_MIN(size, 15);
 				RzCodePoint code_points[15] = { 0 };
 				int i = 0;
