@@ -49,20 +49,21 @@ NAME=/e with nul as newline
 FILE==
 CMDS=<<EOF
 w abcd
-w bcde @ 0x10
-/e /b.*d/~[0-1]
+w bcccde @ 0x10
+e scr.color=1
+/e /b.*d/
 echo ----
-/e /b.*D/~[0-1]
+/e /b.*D/
 echo ----
-/e /b.*D/i~[0-1]
+/e /b.*D/i
 EOF
 EXPECT=<<EOF
-0x00000001 hit0_0
-0x00000010 hit0_1
+0x00000001 hit0_0 .a[33mbcd\u0000[0mbcccd.
+0x00000010 hit0_1 .abcd[33mbccc[0mde.
 ----
 ----
-0x00000001 hit2_0
-0x00000010 hit2_1
+0x00000001 hit2_0 .a[33mbcd\u0000[0mbcccd.
+0x00000010 hit2_1 .abcd[33mbccc[0mde.
 EOF
 EXPECT_ERR=<<EOF
 Searching in [0x0-0x200]
