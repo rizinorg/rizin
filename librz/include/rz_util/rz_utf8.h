@@ -9,6 +9,8 @@ typedef struct {
 	const char *name;
 } RUtfBlock;
 
+#define LAST_UNICODE_CODE_POINT 0x10ffff
+
 /**
  * \brief An Unicode code point.
  */

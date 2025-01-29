@@ -72,7 +72,7 @@ RZ_API bool rz_utf32_valid_cp(RZ_NONNULL const ut8 *buf, size_t buf_len, bool bi
 		// UTF-16 surrogates are forbitten code points as of RFC 3629.
 		bool is_utf16_surregate = cp >= 0xd800 && cp <= 0xdfff;
 		// Largest Unicode code point is 0x10ffff, also limited in RFC 3629.
-		bool above_max_code_point = cp > 0x10ffff;
+		bool above_max_code_point = cp > LAST_UNICODE_CODE_POINT;
 		if (is_utf16_surregate || above_max_code_point) {
 			return false;
 		}
