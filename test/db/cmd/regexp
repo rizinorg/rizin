@@ -51,19 +51,27 @@ CMDS=<<EOF
 w abcd
 w bcccde @ 0x10
 e scr.color=1
+echo -- 1 --
 /e /b.*d/
-echo ----
+echo -- 2 --
 /e /b.*D/
-echo ----
+echo -- 3 --
 /e /b.*D/i
+echo -- 4 --
+/e /b.*d$/
+echo -- 5 --
+/e /^b.*d/
 EOF
 EXPECT=<<EOF
+-- 1 --
 0x00000001 hit0_0 .a[33mbcd[0mbccc.
 0x00000010 hit0_1 .abcd[33mbcccd[0me.
-----
-----
+-- 2 --
+-- 3 --
 0x00000001 hit2_0 .a[33mbcd[0mbccc.
 0x00000010 hit2_1 .abcd[33mbcccd[0me.
+-- 4 --
+-- 5 --
 EOF
 EXPECT_ERR=<<EOF
 Searching in [0x0-0x200]
@@ -72,5 +80,9 @@ Searching in [0x0-0x200]
 [2Khits: 0
 Searching in [0x0-0x200]
 [2Khits: 2
+Searching in [0x0-0x200]
+[2Khits: 0
+Searching in [0x0-0x200]
+[2Khits: 0
 EOF
 RUN
