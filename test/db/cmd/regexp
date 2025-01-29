@@ -71,7 +71,9 @@ EXPECT=<<EOF
 0x00000001 hit2_0 .a[33mbcd[0mbccc.
 0x00000010 hit2_1 .abcd[33mbcccd[0me.
 -- 4 --
+0x00000001 hit3_0 .a[33mbcd[0mbccc.
 -- 5 --
+0x00000010 hit4_0 .abcd[33mbcccd[0me.
 EOF
 EXPECT_ERR=<<EOF
 Searching in [0x0-0x200]
@@ -81,8 +83,8 @@ Searching in [0x0-0x200]
 Searching in [0x0-0x200]
 [2Khits: 2
 Searching in [0x0-0x200]
-[2Khits: 0
+[2Khits: 1
 Searching in [0x0-0x200]
-[2Khits: 0
+[2Khits: 1
 EOF
 RUN
