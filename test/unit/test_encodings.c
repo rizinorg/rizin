@@ -12,10 +12,27 @@
 bool test_rz_utf16_decode(void) {
 	char utf8_out[5] = { 0 };
 	RzCodePoint codepoint = 0;
+	const ut8 utf16le_A[] = { 0x41, 0x00 };
+	const ut8 utf16be_A[] = { 0x00, 0x41 };
+
+	int nbytes = rz_utf16_decode(utf16le_A, 2, &codepoint, false);
+	mu_assert_eq(nbytes, 2, "Decoded number of bytes mismatch.");
+	mu_assert_eq_fmt(codepoint, 0x0041, "Character decode failed.", "0x%" PFMT64x);
+	rz_utf8_encode((ut8 *)utf8_out, codepoint);
+	mu_assert_streq(utf8_out, "A", "Encode failed.");
+	memset(utf8_out, 0, sizeof(utf8_out));
+
+	nbytes = rz_utf16_decode(utf16be_A, 2, &codepoint, true);
+	mu_assert_eq(nbytes, 2, "Decoded number of bytes mismatch.");
+	mu_assert_eq_fmt(codepoint, 0x0041, "Character decode failed.", "0x%" PFMT64x);
+	rz_utf8_encode((ut8 *)utf8_out, codepoint);
+	mu_assert_streq(utf8_out, "A", "Encode failed.");
+	memset(utf8_out, 0, sizeof(utf8_out));
+
 	const ut8 utf16le[] = { 0xAC, 0x20 };
 	const ut8 utf16be[] = { 0x20, 0xAC };
 
-	int nbytes = rz_utf16_decode(utf16le, 2, &codepoint, false);
+	nbytes = rz_utf16_decode(utf16le, 2, &codepoint, false);
 	mu_assert_eq(nbytes, 2, "Decoded number of bytes mismatch.");
 	mu_assert_eq_fmt(codepoint, 0x20AC, "Character decode failed.", "0x%" PFMT64x);
 	rz_utf8_encode((ut8 *)utf8_out, codepoint);
@@ -198,7 +215,6 @@ bool test_rz_utf32_valid(void) {
 	mu_end;
 }
 
-
 bool test_rz_ebcdic_valid(void) {
 	// General
 	mu_assert_true(rz_str_ebcdic_valid_cp(0x41), "A should be valid.");
@@ -220,10 +236,56 @@ bool test_rz_ebcdic_valid(void) {
 	mu_end;
 }
 
+
+bool test_rz_utf16_valid(void) {
+	const ut8 utf16be_one_byte[] = { 0x00 };
+	const ut8 utf16be_A[] = { 0x00, 0x41 };
+	const ut8 utf16be_EUR[] = { 0x20, 0xAC };
+	const ut8 utf16be_complex[] = { 0xD8, 0x01, 0xDC, 0x37 };
+	const ut8 utf16be_A_A[] = { 0x00, 0x41, 0x00,  0x41 };
+	const ut8 utf16be_complex_EUR_A[] = { 0xD8, 0x01, 0xDC, 0x37, 0x20, 0xAC, 0x00, 0x41 };
+	const ut8 utf16be_complex_A_EUR[] = { 0xD8, 0x01, 0xDC, 0x37, 0x00, 0x41, 0x20, 0xAC };
+	const ut8 utf16be_A_complex_EUR[] = { 0x00, 0x41, 0xD8, 0x01, 0xDC, 0x37, 0x20, 0xAC };
+
+	// Simple error cases
+	mu_assert_false(rz_utf16_valid_cp(utf16be_A, sizeof(utf16be_A), false, 0), "lookahead == 0 is not valid.");
+	mu_assert_false(rz_utf16_valid_cp(utf16be_one_byte, sizeof(utf16be_one_byte), false, 1), "Buffer too small.");
+
+	// Simple cases. One character in buffer.
+	mu_assert_true(rz_utf16_valid_cp(utf16be_A, sizeof(utf16be_A), true, 1), "Should be valid");
+	mu_assert_true(rz_utf16_valid_cp(utf16be_EUR, sizeof(utf16be_EUR), true, 1), "Should be valid");
+	mu_assert_true(rz_utf16_valid_cp(utf16be_complex, sizeof(utf16be_complex), true, 1), "Should be valid");
+
+	// Different width UTF-16 characters
+	mu_assert_true(rz_utf16_valid_cp(utf16be_complex_EUR_A, sizeof(utf16be_complex_EUR_A), true, 1), "Should true with 1 different characters.");
+	mu_assert_true(rz_utf16_valid_cp(utf16be_complex_A_EUR, sizeof(utf16be_complex_A_EUR), true, 1), "Should true with 1 different characters.");
+	mu_assert_true(rz_utf16_valid_cp(utf16be_A_complex_EUR, sizeof(utf16be_A_complex_EUR), true, 1), "Should true with 1 different characters.");
+	mu_assert_true(rz_utf16_valid_cp(utf16be_A_A, sizeof(utf16be_A_A), true, 1), "Should true with 1 different characters.");
+	mu_assert_true(rz_utf16_valid_cp(utf16be_complex_EUR_A, sizeof(utf16be_complex_EUR_A), true, 2), "Should true with 2 different characters.");
+	mu_assert_true(rz_utf16_valid_cp(utf16be_complex_A_EUR, sizeof(utf16be_complex_A_EUR), true, 2), "Should true with 2 different characters.");
+	mu_assert_true(rz_utf16_valid_cp(utf16be_A_complex_EUR, sizeof(utf16be_A_complex_EUR), true, 2), "Should true with 2 different characters.");
+	mu_assert_true(rz_utf16_valid_cp(utf16be_A_A, sizeof(utf16be_A_A), true, 2), "Should true with 2 different characters.");
+	mu_assert_true(rz_utf16_valid_cp(utf16be_complex_EUR_A, sizeof(utf16be_complex_EUR_A), true, 3), "Should true with 3 different characters.");
+	mu_assert_true(rz_utf16_valid_cp(utf16be_complex_A_EUR, sizeof(utf16be_complex_A_EUR), true, 3), "Should true with 3 different characters.");
+	mu_assert_true(rz_utf16_valid_cp(utf16be_A_complex_EUR, sizeof(utf16be_A_complex_EUR), true, 3), "Should true with 3 different characters.");
+
+	// Look ahead goes past buffer.
+	mu_assert_false(rz_utf16_valid_cp(utf16be_A, sizeof(utf16be_A), true, 2), "Too many code point checks for buffer.");
+	mu_assert_false(rz_utf16_valid_cp(utf16be_EUR, sizeof(utf16be_EUR), true, 2), "Too many code point checks for buffer.");
+	mu_assert_false(rz_utf16_valid_cp(utf16be_complex, sizeof(utf16be_complex), true, 2), "Too many code point checks for buffer.");
+	mu_assert_false(rz_utf16_valid_cp(utf16be_A_A, sizeof(utf16be_A_A), true, 3), "Too many code point checks for buffer.");
+	mu_assert_false(rz_utf16_valid_cp(utf16be_complex_EUR_A, sizeof(utf16be_complex_EUR_A), true, 4), "Too many code point checks for buffer.");
+	mu_assert_false(rz_utf16_valid_cp(utf16be_complex_A_EUR, sizeof(utf16be_complex_A_EUR), true, 4), "Too many code point checks for buffer.");
+	mu_assert_false(rz_utf16_valid_cp(utf16be_A_complex_EUR, sizeof(utf16be_A_complex_EUR), true, 4), "Too many code point checks for buffer.");
+
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_utf16_decode);
 	mu_run_test(test_rz_utf16_encode);
 	mu_run_test(test_rz_utf32_valid);
+	mu_run_test(test_rz_utf16_valid);
 	mu_run_test(test_rz_ebcdic_valid);
 
 	return tests_passed != tests_run;

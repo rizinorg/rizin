@@ -46,7 +46,7 @@ RZ_API size_t rz_utf16_decode(RZ_NONNULL const ut8 *buf, size_t buf_len, RZ_NONN
 		return 2;
 	}
 	*ch = (ut32)buf[low];
-	return 1;
+	return 2;
 }
 
 /**
@@ -103,4 +103,46 @@ RZ_API size_t rz_utf16le_encode(RZ_NONNULL RZ_OUT ut8 *buf, RzCodePoint codepoin
 	buf[2] = low & 0xff;
 	buf[3] = low >> 8 & 0xff;
 	return 4;
+}
+
+/**
+ * \brief Checks if there are valid UTF-16 code points at \p buf.
+ * This function does not check if the code points are defined.
+ * It just checks they are in a valid range according to RFC 3629.
+ *
+ * NOTE: Almost any byte sequence can be a valid UTF-16 code point.
+ * It is advisable to first check for UTF-32 and other encodings.
+ *
+ * \param buf The buffer to check the bytes from.
+ * \param buf_len The buffer length.
+ * \param big_endian Should be set if the bytes in the buffer are in big endian order.
+ * \param lookahead Number of code points to check.
+ * Note: if the buffer can't cover all \p lookahead code points, this returns false.
+ *
+ * \return True if the buffer \p lookahead valid UTF-32 code points.
+ * \return False otherwise.
+ */
+RZ_API bool rz_utf16_valid_cp(RZ_NONNULL const ut8 *buf, size_t buf_len, bool big_endian, size_t lookahead) {
+	rz_return_val_if_fail(buf && buf_len > 0, false);
+	// At least 2 bytes must be given.
+	// Buffer must cover all look aheads.
+	if (buf_len < 2 || buf_len < (lookahead * 2) || lookahead == 0) {
+		return false;
+	}
+	size_t offset = 0;
+	RzCodePoint cp = 0;
+	while (lookahead > 0) {
+		size_t dec_bytes = rz_utf16_decode(buf + offset, buf_len - offset, &cp, big_endian);
+		// Largest Unicode code point is 0x10ffff, limited in RFC 3629.
+		bool above_max_code_point = cp > 0x10ffff;
+		if (above_max_code_point || dec_bytes == 0) {
+			return false;
+		}
+		lookahead--;
+		offset += dec_bytes;
+		if (offset >= buf_len && lookahead > 0) {
+			return false;
+		}
+	}
+	return true;
 }
