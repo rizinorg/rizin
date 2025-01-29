@@ -22,16 +22,28 @@ typedef struct string_search {
  * Here we set the real (in memory encoded) string offsets and string length.
  */
 static void align_offsets(StringSearch *ss, RzDetectedString *detected, RzRegexMatch *group0, ut64 *str_mem_offset, ut64 *str_mem_len, ut64 found_idx) {
+	if (rz_string_enc_is_utf8_compatible(ss->encoding)) {
+		*str_mem_offset = detected->addr + group0->start;
+		*str_mem_len = group0->len;
+		return;
+	}
+
 	bool offset_found = false;
+	bool len_found = false;
 
 	*str_mem_offset = ht_uu_find(ss->options.utf8_to_mem_offset_map, found_idx | (group0->start), &offset_found);
 	if (!offset_found) {
 		RZ_LOG_WARN("Could not determine memory offset of UTF-8 string in search. String offset will be off.\n");
 		*str_mem_offset = detected->addr + group0->start;
 	}
-	*str_mem_len = ht_uu_find(ss->options.utf8_to_mem_offset_map, found_idx | (group0->start + group0->len), &offset_found) - *str_mem_offset;
-	if (!offset_found) {
-		RZ_LOG_WARN("Could not determine length of string in memory. String length will be off.\n");
+	*str_mem_len = ht_uu_find(ss->options.utf8_to_mem_offset_map, found_idx | (group0->start + group0->len), &len_found) - *str_mem_offset;
+	if (!len_found) {
+		if (!offset_found) {
+			// If the previous offset was not found, we know something is broken.
+			// If it was found on the ohter hand, the string is exactly as long as the whole buffer.
+			// So `start + len` is OOB and hence not in the hash table.
+			RZ_LOG_WARN("Could not determine length of string in memory. String length will be off.\n");
+		}
 		*str_mem_len = group0->len;
 	}
 }

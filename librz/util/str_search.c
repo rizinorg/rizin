@@ -297,7 +297,7 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 			break;
 		}
 
-		if (opt->utf8_to_mem_offset_map) {
+		if (opt->utf8_to_mem_offset_map && !rz_string_enc_is_utf8_compatible(str_type)) {
 			ut64 offset_id = ((str_list_idx) << 32) | i;
 			ht_uu_insert(opt->utf8_to_mem_offset_map, offset_id, needle);
 		}
