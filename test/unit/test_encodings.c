@@ -174,18 +174,26 @@ bool test_rz_utf32_valid(void) {
 	const ut8 utf32be_invalid_surrogate_III[] = { 0x00, 0x00, 0xd7, 0xff };
 	const ut8 utf32be_invalid_surrogate_IV[] = { 0x00, 0x00, 0xe0, 0x00 };
 
-	mu_assert_false(rz_utf32_valid_cp(utf32le_invalid_size, sizeof(utf32le_invalid_size), false), "Length check failed");
+	const ut8 utf32be_valid_invalid[] = { 0x00, 0x10, 0xff, 0xff, 0x00, 0x11, 0x00, 0x00 };
 
-	mu_assert_false(rz_utf32_valid_cp(utf32be_invalid_max_cp, sizeof(utf32be_invalid_max_cp), true), "Invalid max failed");
-	mu_assert_true(rz_utf32_valid_cp(utf32be_valid_max_cp, sizeof(utf32be_valid_max_cp), true), "Valid max failed");
+	mu_assert_false(rz_utf32_valid_cp(utf32le_invalid_size, sizeof(utf32le_invalid_size), false, 1), "Length check failed");
 
-	mu_assert_false(rz_utf32_valid_cp(utf32le_invalid_max_cp, sizeof(utf32le_invalid_max_cp), false), "Invalid max failed");
-	mu_assert_true(rz_utf32_valid_cp(utf32le_valid_max_cp, sizeof(utf32le_valid_max_cp), false), "Valid max failed");
+	mu_assert_false(rz_utf32_valid_cp(utf32be_invalid_max_cp, sizeof(utf32be_invalid_max_cp), true, 1), "Invalid max failed");
+	mu_assert_true(rz_utf32_valid_cp(utf32be_valid_max_cp, sizeof(utf32be_valid_max_cp), true, 1), "Valid max failed");
 
-	mu_assert_false(rz_utf32_valid_cp(utf32be_invalid_surrogate_I, sizeof(utf32be_invalid_surrogate_I), true), "Surrogate failed");
-	mu_assert_false(rz_utf32_valid_cp(utf32be_invalid_surrogate_II, sizeof(utf32be_invalid_surrogate_II), true), "Surrogate failed");
-	mu_assert_true(rz_utf32_valid_cp(utf32be_invalid_surrogate_III, sizeof(utf32be_invalid_surrogate_III), true), "Surrogate failed");
-	mu_assert_true(rz_utf32_valid_cp(utf32be_invalid_surrogate_IV, sizeof(utf32be_invalid_surrogate_IV), true), "Surrogate failed");
+	mu_assert_false(rz_utf32_valid_cp(utf32le_invalid_max_cp, sizeof(utf32le_invalid_max_cp), false, 1), "Invalid max failed");
+	mu_assert_true(rz_utf32_valid_cp(utf32le_valid_max_cp, sizeof(utf32le_valid_max_cp), false, 1), "Valid max failed");
+
+	mu_assert_false(rz_utf32_valid_cp(utf32be_invalid_surrogate_I, sizeof(utf32be_invalid_surrogate_I), true, 1), "Surrogate failed");
+	mu_assert_false(rz_utf32_valid_cp(utf32be_invalid_surrogate_II, sizeof(utf32be_invalid_surrogate_II), true, 1), "Surrogate failed");
+	mu_assert_true(rz_utf32_valid_cp(utf32be_invalid_surrogate_III, sizeof(utf32be_invalid_surrogate_III), true, 1), "Surrogate failed");
+	mu_assert_true(rz_utf32_valid_cp(utf32be_invalid_surrogate_IV, sizeof(utf32be_invalid_surrogate_IV), true, 1), "Surrogate failed");
+
+	mu_assert_false(rz_utf32_valid_cp(utf32be_invalid_surrogate_IV, sizeof(utf32be_invalid_surrogate_IV), true, 2), "Look ahead is not covered by buffer.");
+	mu_assert_false(rz_utf32_valid_cp(utf32be_invalid_surrogate_IV, sizeof(utf32be_invalid_surrogate_IV), true, 0), "Look ahead is 0.");
+
+	mu_assert_true(rz_utf32_valid_cp(utf32be_valid_invalid, sizeof(utf32be_valid_invalid), true, 1), "First is ok.");
+	mu_assert_false(rz_utf32_valid_cp(utf32be_valid_invalid, sizeof(utf32be_valid_invalid), true, 2), "But last one is not ok.");
 
 	mu_end;
 }

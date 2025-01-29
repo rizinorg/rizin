@@ -420,11 +420,11 @@ RZ_API int rz_scan_strings_raw(RZ_NONNULL const ut8 *buf, RZ_NONNULL RzList /*<R
 		size = to - needle;
 		--skip_ibm037;
 		if (type == RZ_STRING_ENC_GUESS) {
-			if (rz_utf32_valid_cp(ptr, size, false)) {
+			if (rz_utf32_valid_cp(ptr, size, false, 1)) {
 				str_type = RZ_STRING_ENC_UTF32LE;
 			} else if (can_be_utf16_le(ptr, size)) {
 				str_type = RZ_STRING_ENC_UTF16LE;
-			} else if (rz_utf32_valid_cp(ptr, size, true)) {
+			} else if (rz_utf32_valid_cp(ptr, size, true, 1)) {
 				if (to - needle > 3) {
 					// The string can be either utf32-le or utf32-be
 					RzDetectedString *ds_le = process_one_string(buf, from, needle + 3, to, RZ_STRING_ENC_UTF32LE, false, opt);
