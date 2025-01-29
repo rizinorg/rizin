@@ -407,46 +407,12 @@ RZ_API int rz_scan_strings_raw(RZ_NONNULL const ut8 *buf, RZ_NONNULL RzList /*<R
 			if (rz_utf32_valid_cp(ptr, size, false, 1)) {
 				str_type = RZ_STRING_ENC_UTF32LE;
 			} else if (rz_utf32_valid_cp(ptr, size, true, 1)) {
-				if (to - needle > 3) {
-					// The string can be either utf32-le or utf32-be
-					RzDetectedString *ds_le = process_one_string(buf, from, needle + 3, to, RZ_STRING_ENC_UTF32LE, false, opt);
-					RzDetectedString *ds_be = process_one_string(buf, from, needle, to, RZ_STRING_ENC_UTF32BE, false, opt);
-
-					RzDetectedString *to_add = NULL;
-					RzDetectedString *to_delete = NULL;
-					ut64 needle_offset = 0;
-
-					if (!ds_le && !ds_be) {
-						needle++;
-						continue;
-					} else if (!ds_be) {
-						to_add = ds_le;
-						needle_offset = ds_le->size + 3;
-					} else if (!ds_le) {
-						to_add = ds_be;
-						needle_offset = ds_be->size;
-					} else if (!opt->prefer_big_endian) {
-						to_add = ds_le;
-						to_delete = ds_be;
-						needle_offset = ds_le->size + 3;
-					} else {
-						to_add = ds_be;
-						to_delete = ds_le;
-						needle_offset = ds_le->size;
-					}
-
-					count++;
-					needle += needle_offset;
-					rz_list_append(list, to_add);
-					rz_detected_string_free(to_delete);
-					continue;
-				}
 				str_type = RZ_STRING_ENC_UTF32BE;
 			} else if (rz_utf16_is_printable_cp(ptr, size, false, 2)) {
 				str_type = RZ_STRING_ENC_UTF16LE;
 			} else if (rz_utf16_is_printable_cp(ptr, size, true, 2)) {
 				str_type = RZ_STRING_ENC_UTF16BE;
-			} else if (rz_str_ebcdic_valid_cp(ptr[0]) && skip_ibm037 < 0) {
+			} else if (skip_ibm037 < 0 && rz_str_ebcdic_valid_cp(ptr[0])) {
 				ut8 sz = RZ_MIN(size, 15);
 				RzCodePoint code_points[15] = { 0 };
 				int i = 0;
