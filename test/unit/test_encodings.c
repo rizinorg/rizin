@@ -240,43 +240,57 @@ bool test_rz_ebcdic_valid(void) {
 bool test_rz_utf16_valid(void) {
 	const ut8 utf16be_one_byte[] = { 0x00 };
 	const ut8 utf16be_A[] = { 0x00, 0x41 };
+	const ut8 utf16be_ff[] = { 0x00, 0x00 };
 	const ut8 utf16be_EUR[] = { 0x20, 0xAC };
 	const ut8 utf16be_complex[] = { 0xD8, 0x01, 0xDC, 0x37 };
 	const ut8 utf16be_A_A[] = { 0x00, 0x41, 0x00,  0x41 };
 	const ut8 utf16be_complex_EUR_A[] = { 0xD8, 0x01, 0xDC, 0x37, 0x20, 0xAC, 0x00, 0x41 };
 	const ut8 utf16be_complex_A_EUR[] = { 0xD8, 0x01, 0xDC, 0x37, 0x00, 0x41, 0x20, 0xAC };
 	const ut8 utf16be_A_complex_EUR[] = { 0x00, 0x41, 0xD8, 0x01, 0xDC, 0x37, 0x20, 0xAC };
+	const ut8 utf16be_invalid_complex_EUR[] = { 0x00, 0x00, 0xD8, 0x01, 0xDC, 0x37, 0x20, 0xAC };
+	const ut8 utf16be_complex_invalid_EUR[] = { 0xD8, 0x01, 0xDC, 0x37, 0x00, 0x00, 0x20, 0xAC };
+	const ut8 utf16be_complex_EUR_invalid[] = { 0xD8, 0x01, 0xDC, 0x37, 0x20, 0xAC, 0xD8, 0xff, 0xDC, 0xff };
 
 	// Simple error cases
-	mu_assert_false(rz_utf16_valid_cp(utf16be_A, sizeof(utf16be_A), false, 0), "lookahead == 0 is not valid.");
-	mu_assert_false(rz_utf16_valid_cp(utf16be_one_byte, sizeof(utf16be_one_byte), false, 1), "Buffer too small.");
+	mu_assert_false(rz_utf16_is_printable_cp(utf16be_A, sizeof(utf16be_A), true, 0), "lookahead == 0 is not valid.");
+	mu_assert_false(rz_utf16_is_printable_cp(utf16be_one_byte, sizeof(utf16be_one_byte), false, 1), "Buffer too small.");
+	mu_assert_false(rz_utf16_is_printable_cp(utf16be_ff, sizeof(utf16be_ff), true, 1), "Not printable.");
 
 	// Simple cases. One character in buffer.
-	mu_assert_true(rz_utf16_valid_cp(utf16be_A, sizeof(utf16be_A), true, 1), "Should be valid");
-	mu_assert_true(rz_utf16_valid_cp(utf16be_EUR, sizeof(utf16be_EUR), true, 1), "Should be valid");
-	mu_assert_true(rz_utf16_valid_cp(utf16be_complex, sizeof(utf16be_complex), true, 1), "Should be valid");
+	mu_assert_true(rz_utf16_is_printable_cp(utf16be_A, sizeof(utf16be_A), true, 1), "Should be valid");
+	mu_assert_true(rz_utf16_is_printable_cp(utf16be_EUR, sizeof(utf16be_EUR), true, 1), "Should be valid");
+	mu_assert_true(rz_utf16_is_printable_cp(utf16be_complex, sizeof(utf16be_complex), true, 1), "Should be valid");
 
 	// Different width UTF-16 characters
-	mu_assert_true(rz_utf16_valid_cp(utf16be_complex_EUR_A, sizeof(utf16be_complex_EUR_A), true, 1), "Should true with 1 different characters.");
-	mu_assert_true(rz_utf16_valid_cp(utf16be_complex_A_EUR, sizeof(utf16be_complex_A_EUR), true, 1), "Should true with 1 different characters.");
-	mu_assert_true(rz_utf16_valid_cp(utf16be_A_complex_EUR, sizeof(utf16be_A_complex_EUR), true, 1), "Should true with 1 different characters.");
-	mu_assert_true(rz_utf16_valid_cp(utf16be_A_A, sizeof(utf16be_A_A), true, 1), "Should true with 1 different characters.");
-	mu_assert_true(rz_utf16_valid_cp(utf16be_complex_EUR_A, sizeof(utf16be_complex_EUR_A), true, 2), "Should true with 2 different characters.");
-	mu_assert_true(rz_utf16_valid_cp(utf16be_complex_A_EUR, sizeof(utf16be_complex_A_EUR), true, 2), "Should true with 2 different characters.");
-	mu_assert_true(rz_utf16_valid_cp(utf16be_A_complex_EUR, sizeof(utf16be_A_complex_EUR), true, 2), "Should true with 2 different characters.");
-	mu_assert_true(rz_utf16_valid_cp(utf16be_A_A, sizeof(utf16be_A_A), true, 2), "Should true with 2 different characters.");
-	mu_assert_true(rz_utf16_valid_cp(utf16be_complex_EUR_A, sizeof(utf16be_complex_EUR_A), true, 3), "Should true with 3 different characters.");
-	mu_assert_true(rz_utf16_valid_cp(utf16be_complex_A_EUR, sizeof(utf16be_complex_A_EUR), true, 3), "Should true with 3 different characters.");
-	mu_assert_true(rz_utf16_valid_cp(utf16be_A_complex_EUR, sizeof(utf16be_A_complex_EUR), true, 3), "Should true with 3 different characters.");
+	mu_assert_true(rz_utf16_is_printable_cp(utf16be_complex_EUR_A, sizeof(utf16be_complex_EUR_A), true, 1), "Should true with 1 different characters.");
+	mu_assert_true(rz_utf16_is_printable_cp(utf16be_complex_A_EUR, sizeof(utf16be_complex_A_EUR), true, 1), "Should true with 1 different characters.");
+	mu_assert_true(rz_utf16_is_printable_cp(utf16be_A_complex_EUR, sizeof(utf16be_A_complex_EUR), true, 1), "Should true with 1 different characters.");
+	mu_assert_true(rz_utf16_is_printable_cp(utf16be_A_A, sizeof(utf16be_A_A), true, 1), "Should true with 1 different characters.");
+	mu_assert_true(rz_utf16_is_printable_cp(utf16be_complex_EUR_A, sizeof(utf16be_complex_EUR_A), true, 2), "Should true with 2 different characters.");
+	mu_assert_true(rz_utf16_is_printable_cp(utf16be_complex_A_EUR, sizeof(utf16be_complex_A_EUR), true, 2), "Should true with 2 different characters.");
+	mu_assert_true(rz_utf16_is_printable_cp(utf16be_A_complex_EUR, sizeof(utf16be_A_complex_EUR), true, 2), "Should true with 2 different characters.");
+	mu_assert_true(rz_utf16_is_printable_cp(utf16be_A_A, sizeof(utf16be_A_A), true, 2), "Should true with 2 different characters.");
+	mu_assert_true(rz_utf16_is_printable_cp(utf16be_complex_EUR_A, sizeof(utf16be_complex_EUR_A), true, 3), "Should true with 3 different characters.");
+	mu_assert_true(rz_utf16_is_printable_cp(utf16be_complex_A_EUR, sizeof(utf16be_complex_A_EUR), true, 3), "Should true with 3 different characters.");
+	mu_assert_true(rz_utf16_is_printable_cp(utf16be_A_complex_EUR, sizeof(utf16be_A_complex_EUR), true, 3), "Should true with 3 different characters.");
 
 	// Look ahead goes past buffer.
-	mu_assert_false(rz_utf16_valid_cp(utf16be_A, sizeof(utf16be_A), true, 2), "Too many code point checks for buffer.");
-	mu_assert_false(rz_utf16_valid_cp(utf16be_EUR, sizeof(utf16be_EUR), true, 2), "Too many code point checks for buffer.");
-	mu_assert_false(rz_utf16_valid_cp(utf16be_complex, sizeof(utf16be_complex), true, 2), "Too many code point checks for buffer.");
-	mu_assert_false(rz_utf16_valid_cp(utf16be_A_A, sizeof(utf16be_A_A), true, 3), "Too many code point checks for buffer.");
-	mu_assert_false(rz_utf16_valid_cp(utf16be_complex_EUR_A, sizeof(utf16be_complex_EUR_A), true, 4), "Too many code point checks for buffer.");
-	mu_assert_false(rz_utf16_valid_cp(utf16be_complex_A_EUR, sizeof(utf16be_complex_A_EUR), true, 4), "Too many code point checks for buffer.");
-	mu_assert_false(rz_utf16_valid_cp(utf16be_A_complex_EUR, sizeof(utf16be_A_complex_EUR), true, 4), "Too many code point checks for buffer.");
+	mu_assert_false(rz_utf16_is_printable_cp(utf16be_A, sizeof(utf16be_A), true, 2), "Too many code point checks for buffer.");
+	mu_assert_false(rz_utf16_is_printable_cp(utf16be_EUR, sizeof(utf16be_EUR), true, 2), "Too many code point checks for buffer.");
+	mu_assert_false(rz_utf16_is_printable_cp(utf16be_complex, sizeof(utf16be_complex), true, 2), "Too many code point checks for buffer.");
+	mu_assert_false(rz_utf16_is_printable_cp(utf16be_A_A, sizeof(utf16be_A_A), true, 3), "Too many code point checks for buffer.");
+	mu_assert_false(rz_utf16_is_printable_cp(utf16be_complex_EUR_A, sizeof(utf16be_complex_EUR_A), true, 4), "Too many code point checks for buffer.");
+	mu_assert_false(rz_utf16_is_printable_cp(utf16be_complex_A_EUR, sizeof(utf16be_complex_A_EUR), true, 4), "Too many code point checks for buffer.");
+	mu_assert_false(rz_utf16_is_printable_cp(utf16be_A_complex_EUR, sizeof(utf16be_A_complex_EUR), true, 4), "Too many code point checks for buffer.");
+
+	mu_assert_false(rz_utf16_is_printable_cp(utf16be_invalid_complex_EUR, sizeof(utf16be_invalid_complex_EUR), true, 3), "Should fail at first.");
+
+	mu_assert_true(rz_utf16_is_printable_cp(utf16be_complex_invalid_EUR, sizeof(utf16be_complex_invalid_EUR), true, 1), "The first is still valid.");
+	mu_assert_false(rz_utf16_is_printable_cp(utf16be_complex_invalid_EUR, sizeof(utf16be_complex_invalid_EUR), true, 3), "Should fail before EUR.");
+
+	mu_assert_true(rz_utf16_is_printable_cp(utf16be_complex_EUR_invalid, sizeof(utf16be_complex_EUR_invalid), true, 1), "The first is still valid.");
+	mu_assert_true(rz_utf16_is_printable_cp(utf16be_complex_EUR_invalid, sizeof(utf16be_complex_EUR_invalid), true, 2), "The second is still valid.");
+	mu_assert_false(rz_utf16_is_printable_cp(utf16be_complex_EUR_invalid, sizeof(utf16be_complex_EUR_invalid), true, 3), "Should be false.");
 
 	mu_end;
 }
