@@ -208,7 +208,7 @@ static ut64 adjust_offset(RzStrEnc str_type, const ut8 *buf, const ut64 str_star
 }
 
 static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut64 needle, const ut64 to,
-	RzStrEnc str_type, bool ascii_only, const RzUtilStrScanOptions *opt) {
+	RzStrEnc str_type, bool ascii_only, const RzUtilStrScanOptions *opt, ut64 str_list_idx) {
 	rz_return_val_if_fail(str_type != RZ_STRING_ENC_GUESS, NULL);
 	if (opt->buf_size < 5) {
 		RZ_LOG_ERROR("This function assumes a buffer size of at least 5 bytes.");
@@ -282,7 +282,8 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 		}
 
 		if (opt->utf8_to_mem_offset_map) {
-			ht_uu_insert(opt->utf8_to_mem_offset_map, i, needle);
+			ut64 offset_id = ((str_list_idx) << 32) | i;
+			ht_uu_insert(opt->utf8_to_mem_offset_map, offset_id, needle);
 		}
 
 		needle += rc;
@@ -316,7 +317,7 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 			goto error;
 		} else if (false_positive_result == RETRY_ASCII) {
 			free(strbuf);
-			return process_one_string(buf, from, str_addr, to, str_type, true, opt);
+			return process_one_string(buf, from, str_addr, to, str_type, true, opt, str_list_idx);
 		}
 
 		RzDetectedString *ds = RZ_NEW0(RzDetectedString);
@@ -442,7 +443,7 @@ RZ_API int rz_scan_strings_raw(RZ_NONNULL const ut8 *buf, RZ_NONNULL RzList /*<R
 			str_type = RZ_STRING_ENC_8BIT; // initial assumption
 		}
 
-		RzDetectedString *ds = process_one_string(buf, from, needle, to, str_type, false, opt);
+		RzDetectedString *ds = process_one_string(buf, from, needle, to, str_type, false, opt, rz_list_length(list));
 		if (!ds) {
 			needle++;
 			continue;
