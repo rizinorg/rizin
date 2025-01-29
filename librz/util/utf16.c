@@ -106,12 +106,13 @@ RZ_API size_t rz_utf16le_encode(RZ_NONNULL RZ_OUT ut8 *buf, RzCodePoint codepoin
 }
 
 /**
- * \brief Checks if there are valid UTF-16 code points at \p buf.
- * This function does not check if the code points are defined.
- * It just checks they are in a valid range according to RFC 3629.
+ * \brief Checks if there are \p lookahead number of printable UTF-16 code points in \p buf.
  *
- * NOTE: Almost any byte sequence can be a valid UTF-16 code point.
- * It is advisable to first check for UTF-32 and other encodings.
+ * NOTE: Any byte sequence >=2 bytes can be a valid UTF-16 code point.
+ * Hence this function checks if each code point is also printable.
+ *
+ * This takes O(lookahead * log(|Unicode Code Points|)) steps.
+ * It is advisable to first check for other encodings for this reason.
  *
  * \param buf The buffer to check the bytes from.
  * \param buf_len The buffer length.
@@ -119,10 +120,10 @@ RZ_API size_t rz_utf16le_encode(RZ_NONNULL RZ_OUT ut8 *buf, RzCodePoint codepoin
  * \param lookahead Number of code points to check.
  * Note: if the buffer can't cover all \p lookahead code points, this returns false.
  *
- * \return True if the buffer has \p lookahead valid UTF-32 code points.
+ * \return True if the buffer has \p lookahead number of printable UTF-16 characters.
  * \return False otherwise.
  */
-RZ_API bool rz_utf16_valid_cp(RZ_NONNULL const ut8 *buf, size_t buf_len, bool big_endian, size_t lookahead) {
+RZ_API bool rz_utf16_is_printable_cp(RZ_NONNULL const ut8 *buf, size_t buf_len, bool big_endian, size_t lookahead) {
 	rz_return_val_if_fail(buf && buf_len > 0, false);
 	// At least 2 bytes must be given.
 	// Buffer must cover all look aheads.
@@ -133,9 +134,7 @@ RZ_API bool rz_utf16_valid_cp(RZ_NONNULL const ut8 *buf, size_t buf_len, bool bi
 	RzCodePoint cp = 0;
 	while (lookahead > 0) {
 		size_t dec_bytes = rz_utf16_decode(buf + offset, buf_len - offset, &cp, big_endian);
-		// Largest Unicode code point is 0x10ffff, limited in RFC 3629.
-		bool above_max_code_point = cp > 0x10ffff;
-		if (above_max_code_point || dec_bytes == 0) {
+		if (!rz_code_point_is_printable(cp) || dec_bytes == 0) {
 			return false;
 		}
 		lookahead--;
