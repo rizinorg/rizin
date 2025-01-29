@@ -35,11 +35,26 @@ typedef struct {
 	bool check_ascii_freq; ///< If true, perform check on ASCII frequencies when looking for false positives
 	/**
 	 * \brief Map UTF-8 byte offsets to memory offsets.
-	 * The scan function always returns UTF-8 strings.
-	 * Independent what encoding the strings are in memory.
+	 * The string scan function always returns UTF-8 strings.
+	 * Independent what encoding the strings have in memory.
 	 * Sometimes it is necessary to know the offsets of the real encoding.
-	 * This maps a UTF-8 code point offset to the original code point offset (possibly of another encoding).
-	 * Indices are always aligned to code points.
+	 * This maps an UTF-8 code point offset to the original code point offset in memory.
+	 * The keys are ut64 values. With the upper 32bits holding the index into the
+	 * "detected string list" returned by rz_scan_strings_whole_buf().
+	 * The lower 32bits are the offset into the UTF-8 string.
+	 * The value is the offset into the memory. Relevant to the buffer
+	 * The string was found in.
+	 *
+	 * Example:
+	 *
+	 * Buffer (UTF-16): 0x00, 0x41, 0x00, 0x41, 0x00, 0x00, 0x00, 0x42, 0x00, 0x42
+	 * Found strings (UTF-8): [ "AA", "BB" ]
+	 * Map: {
+	 *   0x0000000000000000: 0,
+	 *   0x0000000000000001: 2,
+	 *   0x0000000100000000: 6,
+	 *   0x0000000100000001: 8
+	 * }
 	 */
 	RZ_NULLABLE HtUU *utf8_to_mem_offset_map;
 } RzUtilStrScanOptions;
