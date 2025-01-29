@@ -279,6 +279,10 @@ RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NU
 
 RZ_API const char *rz_str_indent(int indent);
 
+static inline bool rz_string_enc_is_utf8_compatible(RzStrEnc enc) {
+	return enc == RZ_STRING_ENC_UTF8 || enc == RZ_STRING_ENC_8BIT;
+}
+
 #ifdef __cplusplus
 }
 #endif
