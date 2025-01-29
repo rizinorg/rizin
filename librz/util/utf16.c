@@ -119,7 +119,7 @@ RZ_API size_t rz_utf16le_encode(RZ_NONNULL RZ_OUT ut8 *buf, RzCodePoint codepoin
  * \param lookahead Number of code points to check.
  * Note: if the buffer can't cover all \p lookahead code points, this returns false.
  *
- * \return True if the buffer \p lookahead valid UTF-32 code points.
+ * \return True if the buffer has \p lookahead valid UTF-32 code points.
  * \return False otherwise.
  */
 RZ_API bool rz_utf16_valid_cp(RZ_NONNULL const ut8 *buf, size_t buf_len, bool big_endian, size_t lookahead) {

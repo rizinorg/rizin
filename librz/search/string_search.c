@@ -46,7 +46,7 @@ static void align_offsets(StringSearch *ss, RzDetectedString *detected, RzRegexM
 	bool offset_found = false;
 
 	*str_mem_offset = ht_uu_find(ss->options.utf8_to_mem_offset_map, detected->addr + group0->start, &offset_found);
-	if (!offset_found && is_utf8_type) {
+	if (!offset_found) {
 		RZ_LOG_WARN("Could not determine memory offset of UTF-8 string in search. String offset will be off.\n");
 		*str_mem_offset = detected->addr + group0->start;
 	}
