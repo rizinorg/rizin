@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2021 borzacchiello <lucaborza@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_util/rz_assert.h>
+#include <rz_util/rz_str.h>
 #include <rz_util/rz_buf.h>
 #include <rz_util/rz_regex.h>
 #include <rz_util/ht_uu.h>
@@ -284,6 +286,10 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 		case RZ_STRING_ENC_EBCDIC_US:
 			rc = rz_str_ebcdic_us_to_unicode(*(buf + needle - from), &r);
 			break;
+		case RZ_STRING_ENC_SETTINGS:
+			rz_warn_if_reached();
+			RZ_LOG_ERROR("Illegal state reached. 'settings' encoding is not a valid value here.\n");
+			return NULL;
 		default:
 			rc = rz_utf8_decode(buf + needle - from, to - needle, &r);
 			if (rc > 1) {

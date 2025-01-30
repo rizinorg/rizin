@@ -1097,16 +1097,42 @@ commands:
     summary: Print string at the current offset
     subcommands:
       - name: ps
-        summary: Print the autodetected string at the current offset (null->zero-terminated, block->block-terminated)
-        cname: print_string_auto_detect
+        summary: Print the string at the current offset (null->zero-terminated, block->block-terminated).
+        cname: print_string
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
         args:
+          - name: encoding
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: "settings"
+            choices:
+              - "settings"
+              - "guess"
+              - "ascii"
+              - "utf8"
+              - "utf16le"
+              - "utf32le"
+              - "utf16be"
+              - "utf32be"
+              - "ibm037"
+              - "ibm290"
+              - "ebcdices"
+              - "ebcdicuk"
+              - "ebcdicus"
           - name: delimiter
             type: RZ_CMD_ARG_TYPE_CHOICES
             default_value: "null"
             choices: ["null", "block"]
+        details:
+          - name: Value details
+            entries:
+              - text: "encoding=settings"
+                comment: "Use encoding from 'str.search.encoding' option."
+              - text: "delimeter=null"
+                comment: "String is NUL terminated."
+              - text: "delimeter=block"
+                comment: "Print whole block as string."
       - name: ps+
         summary: Print libc++ std::string (same-endian, ascii, zero-terminated)
         cname: print_string_as_libcpp_string
@@ -1151,21 +1177,21 @@ commands:
           - RZ_OUTPUT_MODE_STANDARD
         args: []
       - name: psu
-        summary: Print buffer as a utf8 string
+        summary: Print buffer as a utf8 string (alias for 'ps utf8 null').
         cname: print_utf8
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
         args: []
       - name: psm
-        summary: Print buffer as a utf16be string
+        summary: Print buffer as a utf16be string (alias for 'ps utf16le null').
         cname: print_utf16be
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
         args: []
       - name: psM
-        summary: Print buffer as a utf32be string
+        summary: Print buffer as a utf32be string (alias for 'ps utf32be null').
         cname: print_utf32be
         modes:
           - RZ_OUTPUT_MODE_STANDARD
@@ -1179,14 +1205,14 @@ commands:
           - RZ_OUTPUT_MODE_JSON
         args: []
       - name: psw
-        summary: Print buffer as a utf16le string
+        summary: Print buffer as a utf16le string (alias for 'ps utf32le null').
         cname: print_utf16le
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
         args: []
       - name: psW
-        summary: Print buffer as a utf32le string
+        summary: Print buffer as a utf32le string (alias for 'ps utf32le null').
         cname: print_utf32le
         modes:
           - RZ_OUTPUT_MODE_STANDARD

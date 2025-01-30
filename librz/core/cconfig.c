@@ -7,6 +7,7 @@
 #include <rz_th.h>
 #include <rz_windows.h>
 #include <rz_config.h>
+#include <rz_util/rz_str.h>
 
 #include "core_private.h"
 
@@ -1252,13 +1253,14 @@ static bool cb_str_search_encoding(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	RzStrEnc encoding = RZ_STRING_ENC_GUESS;
+	bool found_enc = find_encoding(node, &encoding);
 	if (node->value[0] == '?') {
 		print_node_options(node);
 		rz_cons_printf("  -- if string's 2nd & 4th bytes are 0 then utf16le else "
 			       "if 2nd - 4th & 6th bytes are 0 & no char > 0x10ffff then utf32le else "
 			       "if utf8 char detected then utf8 else 8bit\n");
 		return false;
-	} else if (rz_str_casecmp("guess", node->value) && !find_encoding(node, &encoding)) {
+	} else if (RZ_STR_EQ("settings", node->value) || (rz_str_casecmp("guess", node->value) && !found_enc)) {
 		RZ_LOG_ERROR("Invalid value for str.search.encoding (%s).\n", node->value);
 		return false;
 	}
@@ -3757,7 +3759,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETICB("str.search.check_ascii_freq", RZ_BIN_STRING_SEARCH_CHECK_ASCII_FREQ, &cb_str_search_check_ascii_freq, "If true, perform check on ASCII frequencies when looking for false positives during string search");
 	n = NODECB("str.search.encoding", "guess", &cb_str_search_encoding);
 	SETDESC(n, "The default string encoding type (when set to guess, it is automatically guessed).");
-	SETOPTIONS(n, "ascii", "8bit", "utf8", "utf16le", "utf32le", "utf16be", "utf32be", "guess", NULL);
+	SETOPTIONS(n, "ascii", "8bit", "utf8", "utf16le", "utf32le", "utf16be", "utf32be", "ibm037", "ibm290", "ebcdices", "ebcdicuk", "ebcdicus", "guess", NULL);
 	n = NODECB("str.search.mode", "auto", &cb_str_search_mode);
 	SETDESC(n, "String search mode which can override how strings are found (auto, rosections or raw)");
 	SETOPTIONS(n, "auto", "rosections", "raw", NULL);

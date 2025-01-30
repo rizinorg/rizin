@@ -66,11 +66,11 @@ RUN
 NAME=ps N and initial nulls (#10037)
 FILE==
 CMDS=<<EOF
-ps block @! 1
-ps block @! 2
-ps block @! 3
-ps block @! 4
-ps block @! 8
+ps guess block @! 1
+ps guess block @! 2
+ps guess block @! 3
+ps guess block @! 4
+ps guess block @! 8
 EOF
 EXPECT=<<EOF
 \x00
@@ -140,14 +140,49 @@ wx 737472616e6765207468726561642066 ; sd +16
 wx 6c61766f72204025733a256400736861 ; sd +16
 wx 7265642e00646174612e007368617265 ; sd -256
 
-ps block
+ps guess block
 echo \n
-ps null
+ps guess null
 EOF
 EXPECT=<<EOF
 Just like pineapple on pizza, this task/thread port doesn't belong here. @%s:%d\x00com.apple.private.task_policy\x00strange task flavor @%s:%d\x00userspace has control access to a kernel map %p through task %p @%s:%d\x00strange thread flavor @%s:%d\x00shared.\x00data.\x00share
 
 
 Just like pineapple on pizza, this task/thread port doesn't belong here. @%s:%d
+EOF
+RUN
+
+NAME=Error case str.search.encoding
+FILE==
+CMDS=<<EOF
+e str.search.encoding=settings
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid value for str.search.encoding (settings).
+EOF
+RUN
+
+NAME=str.search.encoding
+FILE=bins/cmd/search/string_encodings/Japanese-Katakana-Lipsum.ibm290
+CMDS=<<EOF
+e str.search.encoding=ibm290
+ps
+ps settings
+EOF
+EXPECT=<<EOF
+。「」、・ヲァィゥェォャュョッーアイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン
+。「」、・ヲァィゥェォャュョッーアイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=ps select encoding
+FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ebcdic_es
+CMDS=<<EOF
+ps ebcdices
+EOF
+EXPECT=<<EOF
+Lorem ipsum dolor sit amet, at eligendi adipisci ius, ex natum appetere officiis has, nibh quas torquatos pro te. Quo at deleniti repudiandae, et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
 EOF
 RUN
