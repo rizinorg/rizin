@@ -1,7 +1,7 @@
 #ifndef RZ_UTF32_H
 #define RZ_UTF32_H
 
-/* For RzRune definition */
+/* For RzCodePoint definition */
 #include "rz_utf8.h"
 
 RZ_API int rz_utf32_decode(const ut8 *ptr, int ptrlen, RzCodePoint *ch, bool bigendian);

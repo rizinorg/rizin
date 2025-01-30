@@ -490,7 +490,7 @@ RZ_API const char *rz_utf_block_name(int idx) {
 	return utf_blocks[idx].name;
 }
 
-/* Convert an UTF-8 buf into a unicode RzRune */
+/* Convert an UTF-8 buf into a unicode RzCodePoint */
 RZ_API int rz_utf8_decode(const ut8 *ptr, int ptrlen, RzCodePoint *ch) {
 	if (ptrlen < 1) {
 		return 0;
@@ -522,7 +522,7 @@ RZ_API int rz_utf8_decode(const ut8 *ptr, int ptrlen, RzCodePoint *ch) {
 	return 0;
 }
 
-/* Convert an MUTF-8 buf into a unicode RzRune */
+/* Convert an MUTF-8 buf into a unicode RzCodePoint */
 RZ_API int rz_mutf8_decode(const ut8 *ptr, int ptrlen, RzCodePoint *ch) {
 	if (ptrlen > 1 && ptr[0] == 0xc0 && ptr[1] == 0x80) {
 		if (ch) {
@@ -533,7 +533,7 @@ RZ_API int rz_mutf8_decode(const ut8 *ptr, int ptrlen, RzCodePoint *ch) {
 	return rz_utf8_decode(ptr, ptrlen, ch);
 }
 
-/* Convert a unicode RzRune into an UTF-8 buf */
+/* Convert a unicode RzCodePoint into an UTF-8 buf */
 RZ_API int rz_utf8_encode(ut8 *ptr, const RzCodePoint ch) {
 	if (ch < 0x80) {
 		ptr[0] = (ut8)ch;
@@ -557,7 +557,7 @@ RZ_API int rz_utf8_encode(ut8 *ptr, const RzCodePoint ch) {
 	return 0;
 }
 
-/* Convert a unicode RzRune string into an utf-8 one */
+/* Convert a unicode RzCodePoint string into an utf-8 one */
 RZ_API int rz_utf8_encode_str(const RzCodePoint *str, ut8 *dst, const int dst_length) {
 	if (!str || !dst) {
 		return -1;
@@ -600,13 +600,13 @@ RZ_API int rz_utf8_strlen(const ut8 *str) {
 }
 
 /**
- * \brief Returns true when the RzRune is a printable symbol
+ * \brief Returns true when the RzCodePoint is a printable symbol
  *
- * \param  c RzRune value to test
+ * \param  c RzCodePoint value to test
  * \return   true if the rune is printable, otherwise false
  */
 RZ_API bool rz_code_point_is_printable(const RzCodePoint c) {
-	// RzRunes are most commonly single byte... We can early out with this common case.
+	// RzCodePoints are most commonly single byte... We can early out with this common case.
 	if (c < 0x34F) {
 		/*
 		manually copied from top, please update if this ever changes
