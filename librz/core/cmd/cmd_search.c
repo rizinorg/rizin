@@ -1236,7 +1236,7 @@ static void do_asm_search(RzCore *core, struct search_parameters *param, const c
 
 static void do_string_search(RzCore *core, RzInterval search_itv, struct search_parameters *param) {
 	ut64 at;
-	ut8 *buf;
+	ut8 *buf = NULL;
 	RzSearch *search = core->search;
 
 	if (param->outmode == RZ_MODE_JSON) {
@@ -1259,7 +1259,7 @@ static void do_string_search(RzCore *core, RzInterval search_itv, struct search_
 		/* TODO: launch search in background support */
 		// REMOVE OLD FLAGS rz_core_cmdf (core, "f-%s*", rz_config_get (core->config, "search.prefix"));
 		rz_search_set_callback(core->search, &_cb_hit, param);
-		if (!(buf = malloc(core->blocksize))) {
+		if (!param->regex_search && !(buf = malloc(core->blocksize))) {
 			return;
 		}
 		if (search->bckwrds) {
@@ -1312,7 +1312,21 @@ static void do_string_search(RzCore *core, RzInterval search_itv, struct search_
 					}
 					(void)rz_io_read_at(core->io, at - len, buf, len);
 				} else {
-					len = RZ_MIN(core->blocksize, to - at);
+					if (param->regex_search) {
+						// Since regex match length can be infinite, for 100% correctness
+						// it is not possible to chunk the search. This could be a problem
+						// for large binaries.
+						free(buf);
+						len = to - at;
+						if (!(buf = malloc(len))) {
+							RZ_LOG_ERROR("Cannot allocate search buffer"
+								     " of size 0x%" PFMT64x "\n",
+								len);
+							return;
+						}
+					} else {
+						len = RZ_MIN(core->blocksize, to - at);
+					}
 					if (!rz_io_is_valid_offset(core->io, at, 0)) {
 						break;
 					}
