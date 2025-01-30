@@ -2099,11 +2099,11 @@ static RzCmdStatus core_print_string_in_block(RzCore *core, bool stop_at_nil, ut
 		opt.length = length;
 		opt.encoding = encoding;
 		opt.stop_at_nil = stop_at_nil;
-		opt.stop_at_unprintable = true;
+		opt.stop_at_unprintable = stop_at_nil;
 		core_print_raw_buffer(&opt);
 		break;
 	case RZ_OUTPUT_MODE_JSON:
-		print_json_string(core, buffer, length, encoding, stop_at_nil, true);
+		print_json_string(core, buffer, length, encoding, stop_at_nil, stop_at_nil);
 		break;
 	default:
 		RZ_LOG_ERROR("core: unsupported output mode\n");
