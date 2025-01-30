@@ -1132,7 +1132,7 @@ static bool cb_str_search_max_threads(void *user, void *data) {
 
 static bool cb_search_max_threads(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
-	RzThreadNCores max_threads = rz_th_max_threads(node->i_value);
+	RzThreadNCores max_threads = rz_th_physical_core_number();;
 	if (node->value[0] == '?') {
 		rz_cons_printf("%d\n", max_threads);
 		return false;
