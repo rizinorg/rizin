@@ -88,3 +88,25 @@ Searching in [0x0-0x200]
 [2Khits: 1
 EOF
 RUN
+
+NAME=/e at block end
+FILE==
+CMDS=<<EOF
+b 0x100
+w bcccde @ 0xfe
+w bd @ 0x1fe
+e scr.color=1
+/e /b.*d/
+echo ----
+/e /b.*d$/
+EOF
+EXPECT=<<EOF
+----
+EOF
+EXPECT_ERR=<<EOF
+Searching in [0x0-0x200]
+[2Khits: 0
+Searching in [0x0-0x200]
+[2Khits: 0
+EOF
+RUN
