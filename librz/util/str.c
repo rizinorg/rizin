@@ -4,10 +4,9 @@
 #include <rz_util/rz_regex.h>
 #include "rz_list.h"
 #include "rz_types.h"
-#include "rz_util.h"
+#include <rz_util.h>
 #include "rz_cons.h"
 #include "rz_bin.h"
-#include "rz_util/rz_assert.h"
 #include <rz_vector.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -72,6 +71,8 @@ RZ_API const char *rz_str_enc_as_string(RzStrEnc enc) {
 		return "ebcdicus";
 	case RZ_STRING_ENC_GUESS:
 		return "guessed";
+	case RZ_STRING_ENC_SETTINGS:
+		return "str.search.encoding";
 	default:
 		rz_warn_if_reached();
 		return "unknown";
@@ -111,6 +112,8 @@ RZ_API RzStrEnc rz_str_enc_string_as_type(RZ_NULLABLE const char *encoding) {
 		return RZ_STRING_ENC_EBCDIC_UK;
 	} else if (!strcmp(encoding, "ebcdicus")) {
 		return RZ_STRING_ENC_EBCDIC_US;
+	} else if (!strcmp(encoding, "settings")) {
+		return RZ_STRING_ENC_SETTINGS;
 	} else if (!strcmp(encoding, "base64")) {
 		return RZ_STRING_ENC_BASE64;
 	}
