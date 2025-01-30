@@ -212,13 +212,14 @@ static inline size_t buf_look_ahead(const RzUtilStrScanOptions *opt, RzStrEnc en
 		return 0;
 	}
 	switch (enc) {
-	default:
+	case RZ_STRING_ENC_8BIT:
 		return 1;
 	case RZ_STRING_ENC_UTF16BE:
 	case RZ_STRING_ENC_UTF16LE:
 		return 2;
 	case RZ_STRING_ENC_UTF32BE:
 	case RZ_STRING_ENC_UTF32LE:
+	default:
 		return 4;
 	}
 }
