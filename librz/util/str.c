@@ -4177,9 +4177,10 @@ RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NU
 			rsize = rz_utf8_decode(&buf[i], buflen - i, &code_point);
 		}
 
-		if (rsize == 0 && option->stop_at_unprintable) {
-			break;
-		} else if (rsize == 0) {
+		if (rsize == 0) {
+			if (option->stop_at_unprintable) {
+				break;
+			}
 			switch (enc) {
 			case RZ_STRING_ENC_UTF32LE:
 				rsize = RZ_MIN(4, buflen - i);
