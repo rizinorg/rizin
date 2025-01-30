@@ -4,7 +4,7 @@
 #include <rz_types.h>
 #include <rz_util.h>
 
-/* Convert an UTF-32 buf into a unicode RzRune */
+/* Convert an UTF-32 buf into a unicode RzCodePoint */
 RZ_API int rz_utf32_decode(const ut8 *ptr, int ptrlen, RzCodePoint *ch, bool bigendian) {
 	if (ptrlen < 1) {
 		return 0;
@@ -35,12 +35,12 @@ RZ_API int rz_utf32_decode(const ut8 *ptr, int ptrlen, RzCodePoint *ch, bool big
 	return 0;
 }
 
-/* Convert an UTF-32LE buf into a unicode RzRune */
+/* Convert an UTF-32LE buf into a unicode RzCodePoint */
 RZ_API int rz_utf32le_decode(const ut8 *ptr, int ptrlen, RzCodePoint *ch) {
 	return rz_utf32_decode(ptr, ptrlen, ch, false);
 }
 
-/* Convert an UTF-32BE buf into a unicode RzRune */
+/* Convert an UTF-32BE buf into a unicode RzCodePoint */
 RZ_API int rz_utf32be_decode(const ut8 *ptr, int ptrlen, RzCodePoint *ch) {
 	return rz_utf32_decode(ptr, ptrlen, ch, true);
 }

@@ -447,10 +447,10 @@ static const ut8 ebcdic_es_page20[256] = {
 /// @{
 
 /**
- * \brief Convert an ibm037 char into an unicode RzRune
+ * \brief Convert an ibm037 char into an unicode RzCodePoint
  *
  * \param src ibm037 char
- * \param dst unicode RzRune
+ * \param dst unicode RzCodePoint
  * \retval 0 if \p dst is null
  * \retval 1 if convert successful
  */
@@ -461,10 +461,10 @@ RZ_API int rz_str_ibm037_to_unicode(const ut8 src, RZ_NONNULL RZ_OUT RzCodePoint
 }
 
 /**
- * \brief Convert an unicode RzRune into an ibm037 char
+ * \brief Convert an unicode RzCodePoint into an ibm037 char
  *
  * \param dst ibm037 char
- * \param src unicode RzRune
+ * \param src unicode RzCodePoint
  */
 RZ_API int rz_str_ibm037_from_unicode(RZ_NONNULL RZ_OUT ut8 *dst, const RzCodePoint src) {
 	rz_return_val_if_fail(dst, 0);
@@ -512,14 +512,14 @@ RZ_API int rz_str_ibm037_from_ascii(RZ_NONNULL RZ_OUT ut8 *dst, const ut8 src) {
 
 /// @{
 
-/// Convert an ibm290 char into an unicode RzRune
+/// Convert an ibm290 char into an unicode RzCodePoint
 RZ_API int rz_str_ibm290_to_unicode(const ut8 src, RZ_NONNULL RZ_OUT RzCodePoint *dst) {
 	rz_return_val_if_fail(dst, 0);
 	*dst = ibm290_to_uni[src];
 	return 1;
 }
 
-/// Convert an unicode RzRune into an ibm290 char
+/// Convert an unicode RzCodePoint into an ibm290 char
 RZ_API int rz_str_ibm290_from_unicode(RZ_NONNULL RZ_OUT ut8 *dst, const RzCodePoint src) {
 	rz_return_val_if_fail(dst, 0);
 	if (src <= 0xff) {
@@ -559,14 +559,14 @@ RZ_API int rz_str_ibm290_from_ascii(RZ_NONNULL RZ_OUT ut8 *dst, const ut8 src) {
 
 /// @{
 
-/// Convert an ebcdic_uk char into an unicode RzRune
+/// Convert an ebcdic_uk char into an unicode RzCodePoint
 RZ_API int rz_str_ebcdic_uk_to_unicode(const ut8 src, RZ_NONNULL RZ_OUT RzCodePoint *dst) {
 	rz_return_val_if_fail(dst, 0);
 	*dst = ebcdic_uk_to_uni[src];
 	return 1;
 }
 
-/// Convert an unicode RzRune into an ebcdic_uk char
+/// Convert an unicode RzCodePoint into an ebcdic_uk char
 RZ_API int rz_str_ebcdic_uk_from_unicode(RZ_NONNULL RZ_OUT ut8 *dst, const RzCodePoint src) {
 	rz_return_val_if_fail(dst, 0);
 	if (src <= 0xff) {
@@ -603,14 +603,14 @@ RZ_API int rz_str_ebcdic_uk_from_ascii(RZ_NONNULL RZ_OUT ut8 *dst, const ut8 src
 
 /// @{
 
-/// Convert an ebcdic_us char into an unicode RzRune
+/// Convert an ebcdic_us char into an unicode RzCodePoint
 RZ_API int rz_str_ebcdic_us_to_unicode(const ut8 src, RZ_NONNULL RZ_OUT RzCodePoint *dst) {
 	rz_return_val_if_fail(dst, 0);
 	*dst = ebcdic_us_to_uni[src];
 	return 1;
 }
 
-/// Convert an unicode RzRune into an ebcdic_us char
+/// Convert an unicode RzCodePoint into an ebcdic_us char
 RZ_API int rz_str_ebcdic_us_from_unicode(RZ_NONNULL RZ_OUT ut8 *dst, const RzCodePoint src) {
 	rz_return_val_if_fail(dst, 0);
 	if (src <= 0xff) {
@@ -646,14 +646,14 @@ RZ_API int rz_str_ebcdic_us_from_ascii(RZ_NONNULL RZ_OUT ut8 *dst, const ut8 src
  */
 /// @{
 
-/// Convert an ebcdic_es char into an unicode RzRune
+/// Convert an ebcdic_es char into an unicode RzCodePoint
 RZ_API int rz_str_ebcdic_es_to_unicode(const ut8 src, RZ_NONNULL RZ_OUT RzCodePoint *dst) {
 	rz_return_val_if_fail(dst, 0);
 	*dst = ebcdic_es_to_uni[src];
 	return 1;
 }
 
-/// Convert an unicode RzRune into an ebcdic_es char
+/// Convert an unicode RzCodePoint into an ebcdic_es char
 RZ_API int rz_str_ebcdic_es_from_unicode(RZ_NONNULL RZ_OUT ut8 *dst, const RzCodePoint src) {
 	rz_return_val_if_fail(dst, 0);
 	if (src <= 0xff) {
