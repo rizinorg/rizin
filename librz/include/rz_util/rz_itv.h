@@ -7,13 +7,16 @@
 extern "C" {
 #endif
 
-// An interval in 64-bit address space which is aware of address space wraparound
-// Precondition: 0 <= size < 2**64 and addr + size <= 2**64
-// range is [], [10, 5) => 10 <= x < (10 + 5)
+/**
+ * \brief An interval in 64-bit address space which is aware of address space wraparound.
+ *
+ * Precondition: 0 <= size < 2**64 and addr + size <= 2**64
+ * Interval range is [addr, addr + size)
+ * e.g. with addr = 10 and size = 5, interval range is [10, 15) where 10 <= x < (10 + 5).
+ */
 typedef struct rz_interval_t {
-	// public:
-	ut64 addr;
-	ut64 size;
+	ut64 addr; ///< Start address of the interval.
+	ut64 size; ///< Size of the interval in bytes.
 } RzInterval;
 
 typedef RzInterval rz_itv_t;
