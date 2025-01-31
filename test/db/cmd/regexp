@@ -76,15 +76,15 @@ EXPECT=<<EOF
 0x00000010 hit4_0 .abcd[33mbcccd[0me.
 EOF
 EXPECT_ERR=<<EOF
-Searching in [0x0-0x200]
+Searching in [0x0,0x200)
 [2Khits: 2
-Searching in [0x0-0x200]
+Searching in [0x0,0x200)
 [2Khits: 0
-Searching in [0x0-0x200]
+Searching in [0x0,0x200)
 [2Khits: 2
-Searching in [0x0-0x200]
+Searching in [0x0,0x200)
 [2Khits: 1
-Searching in [0x0-0x200]
+Searching in [0x0,0x200)
 [2Khits: 1
 EOF
 RUN
@@ -107,9 +107,9 @@ EXPECT=<<EOF
 0x000001fe hit1_0 .[33mbd[0m.
 EOF
 EXPECT_ERR=<<EOF
-Searching in [0x0-0x200]
+Searching in [0x0,0x200)
 [2Khits: 2
-Searching in [0x0-0x200]
+Searching in [0x0,0x200)
 [2Khits: 1
 EOF
 RUN

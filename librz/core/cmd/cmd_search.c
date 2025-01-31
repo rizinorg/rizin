@@ -1284,7 +1284,7 @@ static void do_string_search(RzCore *core, RzInterval search_itv, struct search_
 					const char *bytestr = lenstr > 1 ? "bytes" : "byte";
 					eprintf(" %d %s", kw ? kw->keyword_length : 0, bytestr);
 				}
-				eprintf(" in [0x%" PFMT64x "-0x%" PFMT64x "]\n", itv.addr, rz_itv_end(itv));
+				eprintf(" in [0x%" PFMT64x ",0x%" PFMT64x ")\n", itv.addr, rz_itv_end(itv));
 			}
 			if (!core->search->bckwrds) {
 				RzListIter *it;
