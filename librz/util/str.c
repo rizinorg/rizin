@@ -4076,7 +4076,7 @@ RZ_API RzStrEnc rz_str_guess_encoding_from_buffer(RZ_NONNULL const ut8 *buffer, 
 	}
 	for (ut32 i = 0, utf32le = 0, utf32be = 0, utf16le = 0, utf16be = 0, ascii = 0; i < length; ++i) {
 		ut32 leftovers = length - i;
-		if (rz_utf32_valid_cp(buffer, leftovers, false)) {
+		if (leftovers > 4 && IS_PRINTABLE(buffer[i]) && buffer[i + 1] == 0 && buffer[i + 2] == 0 && buffer[i + 3] == 0) {
 			utf32le++;
 			// `i > ascii + 1` means at least one non-ascii byte
 			// `utf32le  == i / 4 + 1` means neatly algined like 7700 0000 3000 0000 7700 0000
@@ -4084,7 +4084,7 @@ RZ_API RzStrEnc rz_str_guess_encoding_from_buffer(RZ_NONNULL const ut8 *buffer, 
 				enc = RZ_STRING_ENC_UTF32LE;
 				break;
 			}
-		} else if (rz_utf32_valid_cp(buffer, leftovers, true)) {
+		} else if (leftovers > 4 && buffer[i] == 0 && buffer[i + 1] == 0 && buffer[i + 2] == 0 && IS_PRINTABLE(buffer[i + 3])) {
 			utf32be++;
 			if (utf32be > 2 && (i > ascii + 1 || utf32be == i / 4 + 1)) {
 				enc = RZ_STRING_ENC_UTF32BE;
