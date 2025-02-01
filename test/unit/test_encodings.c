@@ -163,7 +163,7 @@ bool test_rz_utf16_encode(void) {
 }
 
 bool test_rz_utf32_decode(void) {
-	const ut8 utf32_size_0[] = { };
+	const ut8 utf32_size_0[] = {};
 	const ut8 utf32_size_1[] = { 0xAC };
 	const ut8 utf32_size_2[] = { 0xAC, 0xAC };
 	const ut8 utf32_size_3[] = { 0xAC, 0xAC, 0x20 };
@@ -175,7 +175,7 @@ bool test_rz_utf32_decode(void) {
 	const ut8 utf32be_a[] = { 0x00, 0x00, 0xff, 0x41 };
 	const ut8 utf32le_a[] = { 0x41, 0xff, 0x00, 0x00 };
 
-	// Chess tower symbol Red General: 🩠 
+	// Chess tower symbol Red General: 🩠
 	const ut8 utf32be_red_general[] = { 0x00, 0x01, 0xFA, 0x60 };
 	const ut8 utf32le_red_general[] = { 0x60, 0xfa, 0x01, 0x00 };
 
@@ -246,7 +246,6 @@ bool test_rz_utf32_valid(void) {
 
 	mu_end;
 }
-
 
 bool test_rz_ebcdic_valid(void) {
 	// General
