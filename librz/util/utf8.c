@@ -649,8 +649,8 @@ const RUtfBlock utf_blocks[] = {
 	{ 0x100000, 0x10FFFF, "Supplementary Private Use Area-B" }
 };
 
-RZ_API const char *rz_utf_block_name(int idx) {
-	if (idx < 0 || idx >= RZ_ARRAY_SIZE(utf_blocks)) {
+RZ_API const char *rz_utf_block_name(ut32 idx) {
+	if (idx >= RZ_ARRAY_SIZE(utf_blocks)) {
 		return NULL;
 	}
 	return utf_blocks[idx].name;

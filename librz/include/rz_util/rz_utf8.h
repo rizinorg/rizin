@@ -20,7 +20,7 @@ RZ_API int rz_utf8_encode_str(const RzCodePoint *str, ut8 *dst, const int dst_le
 RZ_API int rz_utf8_size(const ut8 *ptr);
 RZ_API int rz_utf8_strlen(const ut8 *str);
 RZ_API bool rz_code_point_is_printable(const RzCodePoint c);
-RZ_API const char *rz_utf_block_name(int idx);
+RZ_API const char *rz_utf_block_name(ut32 idx);
 RZ_API int rz_utf_block_idx(RzCodePoint ch);
 RZ_API int *rz_utf_block_list(const ut8 *str, int len, int **freq_list);
 RZ_API RzStrEnc rz_utf_bom_encoding(const ut8 *ptr, int ptrlen);
