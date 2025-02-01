@@ -3,14 +3,23 @@
 
 #include <rz_util.h>
 #include "minunit.h"
+#include <rz_list.h>
 
 static RzUtilStrScanOptions g_opt = {
 	.buf_size = 2048,
 	.max_uni_blocks = 4,
-	.min_str_length = 4,
+	.min_str_length = 7,
 	.prefer_big_endian = false,
 	.check_ascii_freq = true
 };
+
+void print_str_list(RzList *str_list) {
+	RzListIter *it;
+	RzDetectedString *ds;
+	rz_list_foreach(str_list, it, ds) {
+		printf("%s: %s\n", rz_str_enc_as_string(ds->type), ds->string);
+	}
+}
 
 bool test_rz_scan_strings_detect_ascii(void) {
 	static const unsigned char str[] = "\xff\xff\xffI am an ASCII string\xff\xff";
@@ -18,6 +27,7 @@ bool test_rz_scan_strings_detect_ascii(void) {
 
 	RzList *str_list = rz_list_newf((RzListFree)rz_detected_string_free);
 	int n = rz_scan_strings(buf, str_list, &g_opt, 0, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_GUESS);
+	// print_str_list(str_list);
 	mu_assert_eq(n, 1, "rz_scan_strings ascii, number of strings");
 
 	RzDetectedString *s = rz_list_get_n(str_list, 0);
@@ -37,11 +47,26 @@ bool test_rz_scan_strings_detect_ibm037(void) {
 
 	RzList *str_list = rz_list_newf((RzListFree)rz_detected_string_free);
 	int n = rz_scan_strings(buf, str_list, &g_opt, 0, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_GUESS);
-	mu_assert_eq(n, 1, "rz_scan_strings ibm037, number of strings");
+	// print_str_list(str_list);
+	mu_assert_eq(n, 5, "rz_scan_strings ibm037, number of strings");
 
 	RzDetectedString *s = rz_list_get_n(str_list, 0);
 	mu_assert_streq(s->string, "I am an IBM037 string", "rz_scan_strings ibm037, different string");
+	mu_assert_eq(s->type, RZ_STRING_ENC_EBCDIC_ES, "rz_scan_strings ibm037, string type");
+
+	s = rz_list_get_n(str_list, 1);
+	mu_assert_streq(s->string, "I am an IBM037 string", "rz_scan_strings ibm037, different string");
+	mu_assert_eq(s->type, RZ_STRING_ENC_EBCDIC_UK, "rz_scan_strings ibm037, string type");
+
+	s = rz_list_get_n(str_list, 2);
+	mu_assert_streq(s->string, "I am an IBM037 string", "rz_scan_strings ibm037, different string");
+	mu_assert_eq(s->type, RZ_STRING_ENC_EBCDIC_US, "rz_scan_strings ibm037, string type");
+
+	s = rz_list_get_n(str_list, 3);
+	mu_assert_streq(s->string, "I am an IBM037 string", "rz_scan_strings ibm037, different string");
 	mu_assert_eq(s->type, RZ_STRING_ENC_IBM037, "rz_scan_strings ibm037, string type");
+
+	// Ignore IBM290. Although it is in there as well.
 
 	rz_list_free(str_list);
 	rz_buf_free(buf);
@@ -54,17 +79,23 @@ bool test_rz_scan_strings_detect_ibm037(void) {
 	static const unsigned char str2[] = "\xff\xff\xff\xC2\x85\x99\x4B\x40\xE6\x88\x96\x7D\xA2\x40\xA3\x88\x85\x99\x85\x4B\x6F\x00\xC6\x99\x81\x95\x4B\x40\xD5\x81\xA8\x6B\x40\x81\x95\xA2\xA6\x85\x99\x40\x94\x85\x4B\x40\xE2\xA3\x81\x95\x84\x40\x81\x95\x84\x40\xA4\x95\x86\x96\x93\x84\x40\xA8\x96\xA4\x99\xA2\x85\x93\x86";
 	buf = rz_buf_new_with_bytes(str2, sizeof(str2));
 
-	str_list = rz_list_new();
+	str_list = rz_list_newf((RzListFree)rz_detected_string_free);
 	n = rz_scan_strings(buf, str_list, &g_opt, 0, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_GUESS);
-	mu_assert_eq(n, 2, "rz_scan_strings ibm037, number of strings");
+	// print_str_list(str_list);
+	mu_assert_eq(n, 10, "rz_scan_strings ibm037, number of strings");
 
-	s = rz_list_get_n(str_list, 0);
+	s = rz_list_get_n(str_list, 3);
 	mu_assert_streq(s->string, "Ber. Who's there.?", "rz_scan_strings ibm037, different string");
 	mu_assert_eq(s->type, RZ_STRING_ENC_IBM037, "rz_scan_strings ibm037, string type");
 
-	s = rz_list_get_n(str_list, 1);
+	s = rz_list_get_n(str_list, 8);
 	mu_assert_streq(s->string, "Fran. Nay, answer me. Stand and unfold yourself", "rz_scan_strings ibm037, different string");
 	mu_assert_eq(s->type, RZ_STRING_ENC_IBM037, "rz_scan_strings ibm037, string type");
+
+	// IBM290
+	s = rz_list_get_n(str_list, 9);
+	mu_assert_streq(s->string, "Fネアト. Nアモ, アトヘムオネ テオ. Sホアトエ アトエ マトカナツエ モナマネヘオツカ", "rz_scan_strings ibm037, different string");
+	mu_assert_eq(s->type, RZ_STRING_ENC_IBM290, "rz_scan_strings ibm290, string type");
 
 	rz_list_free(str_list);
 	rz_buf_free(buf);
@@ -75,15 +106,16 @@ bool test_rz_scan_strings_detect_ibm037(void) {
 		"\xff\xff\xff\xffI am a \xc3\x99TF-8 string\xff\xff\xff\xff";
 	buf = rz_buf_new_with_bytes(str3, sizeof(str3));
 
-	str_list = rz_list_new();
+	str_list = rz_list_newf((RzListFree)rz_detected_string_free);
 	n = rz_scan_strings(buf, str_list, &g_opt, 0, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_GUESS);
-	mu_assert_eq(n, 2, "rz_scan_strings mix utf8 and ibm037, number of strings");
+	// print_str_list(str_list);
+	mu_assert_eq(n, 6, "rz_scan_strings mix utf8 and ibm037, number of strings");
 
-	s = rz_list_get_n(str_list, 0);
+	s = rz_list_get_n(str_list, 3);
 	mu_assert_streq(s->string, "I am an IBM037 string", "rz_scan_strings mix utf8 and ibm037, different string");
 	mu_assert_eq(s->type, RZ_STRING_ENC_IBM037, "rz_scan_strings mix utf8 and ibm037, string type");
 
-	s = rz_list_get_n(str_list, 1);
+	s = rz_list_get_n(str_list, 5);
 	mu_assert_streq(s->string, "I am a \xc3\x99TF-8 string", "rz_scan_strings mix utf8 and ibm037, different string");
 	mu_assert_eq(s->type, RZ_STRING_ENC_UTF8, "rz_scan_strings mix utf8 and ibm037, string type");
 
@@ -96,16 +128,18 @@ bool test_rz_scan_strings_detect_ibm037(void) {
 		"I am a \xc3\x99TF-8 string\xff\xff\xff";
 	buf = rz_buf_new_with_bytes(str4, sizeof(str4));
 
-	str_list = rz_list_new();
+	str_list = rz_list_newf((RzListFree)rz_detected_string_free);
 	n = rz_scan_strings(buf, str_list, &g_opt, 0, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_GUESS);
-	mu_assert_eq(n, 2, "rz_scan_strings mix utf8 and ibm037, number of strings");
+	// print_str_list(str_list);
+	mu_assert_eq(n, 6, "rz_scan_strings mix utf8 and ibm037, number of strings");
 
-	s = rz_list_get_n(str_list, 0);
+	s = rz_list_get_n(str_list, 3);
 	mu_assert_streq(s->string, "I am an IBM037 string", "rz_scan_strings mix utf8 and ibm037, different string");
 	mu_assert_eq(s->type, RZ_STRING_ENC_IBM037, "rz_scan_strings mix utf8 and ibm037, string type");
 
-	s = rz_list_get_n(str_list, 1);
-	mu_assert_streq(s->string, "I am a \xc3\x99TF-8 string", "rz_scan_strings mix utf8 and ibm037, different string");
+	s = rz_list_get_n(str_list, 5);
+	// 0x25 is % in UTF-8
+	mu_assert_streq(s->string, "%I am a \xc3\x99TF-8 string", "rz_scan_strings mix utf8 and ibm037, different string");
 	mu_assert_eq(s->type, RZ_STRING_ENC_UTF8, "rz_scan_strings mix utf8 and ibm037, string type");
 
 	rz_list_free(str_list);
@@ -120,6 +154,7 @@ bool test_rz_scan_strings_detect_utf8(void) {
 
 	RzList *str_list = rz_list_newf((RzListFree)rz_detected_string_free);
 	int n = rz_scan_strings(buf, str_list, &g_opt, 0, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_GUESS);
+	// print_str_list(str_list);
 	mu_assert_eq(n, 1, "rz_scan_strings utf8, number of strings");
 
 	RzDetectedString *s = rz_list_get_n(str_list, 0);
@@ -135,7 +170,7 @@ bool test_rz_scan_strings_detect_utf8(void) {
 
 bool test_rz_scan_strings_detect_utf16_le(void) {
 	static const unsigned char str[] =
-		"\xff\xff\xff\x49\x00\x20\x00\x61\x00\x6d\x00\x20\x00\x61"
+		"\x49\x00\x20\x00\x61\x00\x6d\x00\x20\x00\x61"
 		"\x00\x20\x00\x55\x00\x54\x00\x46\x00\x2d\x00\x31\x00\x36"
 		"\x00\x6c\x00\x65\x00\x20\x00\x73\x00\x74\x00\x72\x00\x69"
 		"\x00\x6e\x00\x67\x00\x00\xff\xff";
@@ -146,9 +181,44 @@ bool test_rz_scan_strings_detect_utf16_le(void) {
 
 	g_opt.prefer_big_endian = false;
 	int n = rz_scan_strings(buf, str_list, &g_opt, 0, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_GUESS);
-	mu_assert_eq(n, 1, "rz_scan_strings utf16le, number of strings");
+	// print_str_list(str_list);
+	mu_assert_eq(n, 2, "rz_scan_strings utf16le/be, number of strings");
 
 	RzDetectedString *s = rz_list_get_n(str_list, 0);
+	mu_assert_streq(s->string, "I am a UTF-16le string", "rz_scan_strings utf16le, different string");
+	mu_assert_eq(s->addr, 0, "rz_scan_strings utf16le, address");
+	mu_assert_eq(s->type, RZ_STRING_ENC_UTF16LE, "rz_scan_strings utf16le, string type");
+
+	s = rz_list_get_n(str_list, 1);
+	mu_assert_streq(s->string, " am a UTF-16le string", "rz_scan_strings utf16be, different string");
+	mu_assert_eq(s->addr, 1, "rz_scan_strings utf16be, address");
+	mu_assert_eq(s->type, RZ_STRING_ENC_UTF16BE, "rz_scan_strings utf16be, string type");
+
+	rz_list_free(str_list);
+	rz_buf_free(buf);
+
+	// Original test, with some 0xff in front. They decode to another string.
+	static const unsigned char str_I[] =
+		"\xff\xff\xff\x49\x00\x20\x00\x61\x00\x6d\x00\x20\x00\x61"
+		"\x00\x20\x00\x55\x00\x54\x00\x46\x00\x2d\x00\x31\x00\x36"
+		"\x00\x6c\x00\x65\x00\x20\x00\x73\x00\x74\x00\x72\x00\x69"
+		"\x00\x6e\x00\x67\x00\x00\xff\xff";
+
+	buf = rz_buf_new_with_bytes(str_I, sizeof(str_I));
+
+	str_list = rz_list_newf((RzListFree)rz_detected_string_free);
+	g_opt.prefer_big_endian = false;
+	n = rz_scan_strings(buf, str_list, &g_opt, 0, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_GUESS);
+	// print_str_list(str_list);
+	mu_assert_eq(n, 2, "rz_scan_strings utf16le/be, number of strings");
+
+	// Note the ｉ is non-ASCII character.
+	s = rz_list_get_n(str_list, 0);
+	mu_assert_streq(s->string, "ｉ am a UTF-16le string", "rz_scan_strings utf16be, different string");
+	mu_assert_eq(s->addr, 2, "rz_scan_strings utf16be, address");
+	mu_assert_eq(s->type, RZ_STRING_ENC_UTF16BE, "rz_scan_strings utf16be, string type");
+
+	s = rz_list_get_n(str_list, 1);
 	mu_assert_streq(s->string, "I am a UTF-16le string", "rz_scan_strings utf16le, different string");
 	mu_assert_eq(s->addr, 3, "rz_scan_strings utf16le, address");
 	mu_assert_eq(s->type, RZ_STRING_ENC_UTF16LE, "rz_scan_strings utf16le, string type");
@@ -172,12 +242,18 @@ bool test_rz_scan_strings_detect_utf16_le_special_chars(void) {
 
 	g_opt.prefer_big_endian = false;
 	int n = rz_scan_strings(buf, str_list, &g_opt, 0, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_GUESS);
-	mu_assert_eq(n, 1, "rz_scan_strings utf16le, number of strings");
+	// print_str_list(str_list);
+	mu_assert_eq(n, 2, "rz_scan_strings utf16le, number of strings");
 
 	RzDetectedString *s = rz_list_get_n(str_list, 0);
 	mu_assert_streq(s->string, "\twide\\esc: \x1b[0m\xc2\xa1\r\n", "rz_scan_strings utf16le, different string");
 	mu_assert_eq(s->addr, 0, "rz_scan_strings utf16le, address");
 	mu_assert_eq(s->type, RZ_STRING_ENC_UTF16LE, "rz_scan_strings utf16le, string type");
+
+	s = rz_list_get_n(str_list, 1);
+	mu_assert_streq(s->string, "wide\\esc: \x1b[0m\xc2\xa1\r\n", "rz_scan_strings utf16be, different string");
+	mu_assert_eq(s->addr, 1, "rz_scan_strings utf16be, address");
+	mu_assert_eq(s->type, RZ_STRING_ENC_UTF16BE, "rz_scan_strings utf16be, string type");
 
 	rz_list_free(str_list);
 	rz_buf_free(buf);
@@ -198,12 +274,18 @@ bool test_rz_scan_strings_detect_utf16_be(void) {
 
 	g_opt.prefer_big_endian = true;
 	int n = rz_scan_strings(buf, str_list, &g_opt, 0, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_GUESS);
-	mu_assert_eq(n, 1, "rz_scan_strings utf16be, number of strings");
+	// print_str_list(str_list);
+	mu_assert_eq(n, 2, "rz_scan_strings utf16be, number of strings");
 
-	RzDetectedString *s = rz_list_get_n(str_list, 0);
+	RzDetectedString *s = rz_list_get_n(str_list, 1);
 	mu_assert_streq(s->string, "I am a UTF-16be string", "rz_scan_strings utf16be, different string");
 	mu_assert_eq(s->addr, 3, "rz_scan_strings utf16be, address");
 	mu_assert_eq(s->type, RZ_STRING_ENC_UTF16BE, "rz_scan_strings utf16be, string type");
+
+	s = rz_list_get_n(str_list, 0);
+	mu_assert_streq(s->string, "ÿI am a UTF-16be strinｧ", "rz_scan_strings utf16le, different string");
+	mu_assert_eq(s->addr, 2, "rz_scan_strings utf16le, address");
+	mu_assert_eq(s->type, RZ_STRING_ENC_UTF16LE, "rz_scan_strings utf16le, string type");
 
 	rz_list_free(str_list);
 	rz_buf_free(buf);
@@ -227,12 +309,18 @@ bool test_rz_scan_strings_detect_utf32_le(void) {
 
 	g_opt.prefer_big_endian = false;
 	int n = rz_scan_strings(buf, str_list, &g_opt, 0, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_GUESS);
-	mu_assert_eq(n, 1, "rz_scan_strings utf32le, number of strings");
+	// print_str_list(str_list);
+	mu_assert_eq(n, 2, "rz_scan_strings utf32le, number of strings");
 
 	RzDetectedString *s = rz_list_get_n(str_list, 0);
 	mu_assert_streq(s->string, "I am a UTF-32le string", "rz_scan_strings utf32le, different string");
 	mu_assert_eq(s->addr, 2, "rz_scan_strings utf32le, address");
 	mu_assert_eq(s->type, RZ_STRING_ENC_UTF32LE, "rz_scan_strings utf32le, string type");
+
+	s = rz_list_get_n(str_list, 1);
+	mu_assert_streq(s->string, " am a UTF-32le stringÿ", "rz_scan_strings utf32ne, different string");
+	mu_assert_eq(s->addr, 3, "rz_scan_strings utf32le, address");
+	mu_assert_eq(s->type, RZ_STRING_ENC_UTF32BE, "rz_scan_strings utf32be, string type");
 
 	rz_list_free(str_list);
 	rz_buf_free(buf);
@@ -256,12 +344,18 @@ bool test_rz_scan_strings_detect_utf32_be(void) {
 
 	g_opt.prefer_big_endian = true;
 	int n = rz_scan_strings(buf, str_list, &g_opt, 0, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_GUESS);
-	mu_assert_eq(n, 1, "rz_scan_strings utf32be, number of strings");
+	// print_str_list(str_list);
+	mu_assert_eq(n, 2, "rz_scan_strings utf32be, number of strings");
 
-	RzDetectedString *s = rz_list_get_n(str_list, 0);
-	mu_assert_streq(s->string, "I am a UTF-32be string", "rz_scan_strings utf32be, different string");
+	RzDetectedString *s = rz_list_get_n(str_list, 1);
+	mu_assert_streq(s->string, "I am a UTF-32be stringÿ", "rz_scan_strings utf32be, different string");
 	mu_assert_eq(s->addr, 2, "rz_scan_strings utf32be, address");
 	mu_assert_eq(s->type, RZ_STRING_ENC_UTF32BE, "rz_scan_strings utf32be, string type");
+
+	s = rz_list_get_n(str_list, 0);
+	mu_assert_streq(s->string, "ÿI am a UTF-32be string", "rz_scan_strings utf32le, different string");
+	mu_assert_eq(s->addr, 1, "rz_scan_strings utf32le, address");
+	mu_assert_eq(s->type, RZ_STRING_ENC_UTF32LE, "rz_scan_strings utf32le, string type");
 
 	rz_list_free(str_list);
 	rz_buf_free(buf);
@@ -270,6 +364,7 @@ bool test_rz_scan_strings_detect_utf32_be(void) {
 }
 
 bool test_rz_scan_strings_utf16_be(void) {
+	// слон, ладья
 	static const unsigned char str[] =
 		"\xff\xfftorre, alfiere\xff\x00\x04\x41\x04\x3b\x04\x3e\x04\x3d\x00\x2c\x00\x20\x04\x3b\x04\x30\x04\x34\x04\x4c\x04\x4f";
 
@@ -279,6 +374,7 @@ bool test_rz_scan_strings_utf16_be(void) {
 
 	g_opt.prefer_big_endian = true;
 	int n = rz_scan_strings(buf, str_list, &g_opt, 16, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_UTF16BE);
+	// print_str_list(str_list);
 	mu_assert_eq(n, 1, "rz_scan_strings utf16be, number of strings");
 
 	RzDetectedString *s = rz_list_get_n(str_list, 0);
@@ -305,6 +401,7 @@ bool test_rz_scan_strings_extended_ascii(void) {
 	RzList *str_list = rz_list_newf((RzListFree)rz_detected_string_free);
 
 	int n = rz_scan_strings(buf, str_list, &g_opt, 0, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_UTF8);
+	// print_str_list(str_list);
 	mu_assert_eq(n, 3, "rz_scan_strings extended_ascii, number of strings");
 
 	RzDetectedString *s_it = rz_list_get_n(str_list, 0);

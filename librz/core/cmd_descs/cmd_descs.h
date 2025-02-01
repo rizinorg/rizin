@@ -2068,6 +2068,8 @@ RZ_IPI RzCmdStatus rz_cmd_print_raw_printable_handler(RzCore *core, int argc, co
 RZ_IPI RzCmdStatus rz_cmd_print_raw_string_handler(RzCore *core, int argc, const char **argv);
 // "ps"
 RZ_IPI RzCmdStatus rz_print_string_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+// "psl"
+RZ_IPI RzCmdStatus rz_print_string_guess_list_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "ps+"
 RZ_IPI RzCmdStatus rz_print_string_as_libcpp_string_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "psb"

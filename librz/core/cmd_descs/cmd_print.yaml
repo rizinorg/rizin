@@ -1133,6 +1133,12 @@ commands:
                 comment: "String is NUL terminated."
               - text: "delimeter=block"
                 comment: "Print whole block as string (dosn't stop at non-printable character)."
+      - name: psl
+        summary: "Guess the string encoding at the current offset and list all possible encodings (stops at NUL)."
+        cname: print_string_guess_list
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+        args: []
       - name: ps+
         summary: Print libc++ std::string (same-endian, ascii, zero-terminated)
         cname: print_string_as_libcpp_string

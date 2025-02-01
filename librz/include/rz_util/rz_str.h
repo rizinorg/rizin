@@ -2,9 +2,10 @@
 #define RZ_STR_H
 
 #include <wchar.h>
-#include "rz_str_util.h"
-#include "rz_list.h"
-#include "rz_types.h"
+#include <rz_util/rz_str_util.h>
+#include <rz_vector.h>
+#include <rz_list.h>
+#include <rz_types.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -16,20 +17,27 @@ typedef enum {
 	RZ_STRING_TYPE_SIZED, ///< Pascal-style strings with the first byte marking the size of the string
 } RzStrType;
 
+/**
+ * \brief Number of detectable string encodings. All of the above. UTF-8 includes ASCII.
+ */
+#define RZ_STRING_ENC_DETECTABLE 10
+
 typedef enum {
-	RZ_STRING_ENC_8BIT = 'b', // unknown 8bit encoding but with ASCII from 0 to 0x7f
 	RZ_STRING_ENC_UTF8 = '8',
-	RZ_STRING_ENC_MUTF8 = 'm', // modified utf8
 	RZ_STRING_ENC_UTF16LE = 'u',
 	RZ_STRING_ENC_UTF32LE = 'U',
 	RZ_STRING_ENC_UTF16BE = 'n',
 	RZ_STRING_ENC_UTF32BE = 'N',
-	RZ_STRING_ENC_BASE64 = '6',
 	RZ_STRING_ENC_IBM037 = 'c',
 	RZ_STRING_ENC_IBM290 = 'd',
 	RZ_STRING_ENC_EBCDIC_UK = 'k',
 	RZ_STRING_ENC_EBCDIC_US = 's',
 	RZ_STRING_ENC_EBCDIC_ES = 't',
+	// All of the above are "detectable". Change RZ_STRING_ENC_DETECTABLE from above
+	// if you make any edits.
+	RZ_STRING_ENC_8BIT = 'b', // unknown 8bit encoding but with ASCII from 0 to 0x7f
+	RZ_STRING_ENC_MUTF8 = 'm', // modified utf8. A.k.a UTF-EBCDIC. Rarely used and not really supported here.
+	RZ_STRING_ENC_BASE64 = '6',
 	RZ_STRING_ENC_GUESS = 'g',
 	RZ_STRING_ENC_SETTINGS = 'S', ///< Use str.search.encoding.
 } RzStrEnc;
@@ -275,7 +283,91 @@ typedef struct rz_str_stringify_opt_t {
 	bool urlencode; ///< Encodes the output following RFC 3986.
 } RzStrStringifyOpt;
 
-RZ_API RzStrEnc rz_str_guess_encoding_from_buffer(RZ_NONNULL const ut8 *buffer, ut32 length);
+/**
+ * \brief String encoding data point.
+ */
+typedef struct rz_str_enc_stats_dp {
+	/**
+	 * \brief Score at a certain offset. Before the bias is applied.
+	 * This is always equal to the (printable) string in bytes.
+	 */
+	float score;
+	size_t code_points; ///< Number of Unicode code points the string is long at this point.
+	ut8 cp_bytes; ///< Bytes the character at this offset uses. Is 0 if unset.
+} RzStrEncStatsDP;
+
+RZ_API RZ_OWN RzStrEncStatsDP *rz_str_enc_stats_dp_new(ut8 cp_size);
+RZ_API void rz_str_enc_stats_dp_free(RZ_NULLABLE RZ_OWN RzStrEncStatsDP *dp);
+
+typedef struct rz_str_enc_stats_biases {
+	float below_min_score; ///< Score multiplier if a score is below the minimum expected code point count.
+	float below_min_cp; ///< Score multiplier if a score is below the minimum expected code point count.
+	float bom_preset; ///< Score multiplier if the encoding BOM was detected.
+	float is_big_endian; ///< Score multiplier for big endian encodings.
+	float is_little_endian; ///< Score multiplier for little endian encodings.
+	float aligned_to_2; ///< Score multiplier if byte is aligned to an offset % 2 == 0.
+	float is_utf16; ///< Score multiplier if guessed encoding is UTF-16.
+	float is_utf8; ///< Score multiplier if guessed encoding is UTF-8 or ASCII.
+} RzStrEncStatsBiases;
+
+/**
+ * \brief Statistics counting valid characters in a buffer.
+ * Used to guess string encodings from raw bytes.
+ *
+ * The buffer is scanned and characters are decoded at each offset.
+ * For valid AND printable character decodings the score of the encoding is increased
+ * by the number of successful decoded bytes.
+ * Biases are added or subtracted for certain hints.
+ *
+ * E.g. a valid BOM at the beginning of the buffer
+ * gives the encoding a huge score advantage.
+ */
+typedef struct rz_str_encoding_stats {
+	RzStrEncStatsBiases biases; ///< The biases applied on the score on certain conditions.
+	RzStrEnc present_bom; ///< Encoding type of BOM at buffer beginning, if present.
+	float min_score; ///< Minimal expected score.
+	size_t min_code_points; ///< Minimal expected Unicode code points a string should have.
+	size_t buffer_size; ///< Buffer size this statistic was built on.
+	bool reset_at_nul; ///< Reset score on encountering NUL character.
+	RzStrEncStatsDP *utf8; ///< UTF8 data points.
+	RzStrEncStatsDP *utf16le; ///< UTF16LE data points.
+	RzStrEncStatsDP *utf16be; ///< UTF16BE data points.
+	RzStrEncStatsDP *utf32le; ///< UTF32LE data points.
+	RzStrEncStatsDP *utf32be; ///< UTF32BE data points.
+	RzStrEncStatsDP *ibm037; ///< IBM037 data points.
+	RzStrEncStatsDP *ibm290; ///< IBM290 data points.
+	RzStrEncStatsDP *ebcdic_es; ///< EBCDIC_ES data points.
+	RzStrEncStatsDP *ebcdic_uk; ///< EBCDIC_UK data points.
+	RzStrEncStatsDP *ebcdic_us; ///< EBCDIC_US data points.
+	RzStrEncStatsDP **dp_arrays; ///< Arrays from above for quicker iteration.
+} RzStrEncStats;
+
+typedef struct {
+	float score; ///< Biased score at an offset.
+	RzStrEnc enc; ///< Encoding of the candidate.
+} RzStrEncCandidate;
+
+/**
+ * \brief String encoding point of interest.
+ */
+typedef struct {
+	size_t buf_offset;
+	RzStrEncCandidate candidate;
+} RzStrEncPOI;
+
+RZ_API RZ_OWN RzStrEncStats *rz_str_enc_stats_new(ut64 buffer_size, size_t min_code_points, RzStrEnc bom, RZ_NULLABLE RZ_BORROW RzStrEncStatsBiases *biases);
+RZ_API void rz_str_enc_stats_free(RZ_NULLABLE RZ_OWN RzStrEncStats *stats);
+RZ_API bool rz_str_enc_stats_dp_is_set(RZ_NONNULL RZ_BORROW RzStrEncStatsDP *dp);
+RZ_API void rz_str_enc_stats_add_dp(RZ_NONNULL RzStrEncStats *stats, RZ_NONNULL const ut8 *buf, size_t buf_len, size_t offset);
+RZ_API void rz_str_enc_stats_evaluate(RZ_NONNULL RzStrEncStats *stats);
+RZ_API RzStrEnc rz_str_enc_stats_likely_at_offset(RZ_NONNULL RzStrEncStats *stats, size_t offset);
+RZ_API RZ_OWN RzVector /*<RzStrEncCandidate>*/ *rz_str_enc_get_candiates(RZ_NONNULL RzStrEncStats *stats, size_t offset);
+RZ_API void rz_str_enc_stats_run(RZ_BORROW RZ_NONNULL RzStrEncStats *stats, RZ_NONNULL const ut8 *buffer, size_t buf_len);
+RZ_API RZ_OWN RzVector /*<RzStrEncPOI>*/ *rz_str_enc_stats_get_pois(RZ_NONNULL const RzStrEncStats *stats);
+RZ_API RzStrEncStatsBiases rz_str_enc_stats_get_default_biases();
+RZ_API RzStrEncStatsBiases rz_str_enc_stats_get_big_endian_biases();
+
+RZ_API RZ_OWN RzVector /*<RzStrEncCandidate>*/ *rz_str_guess_encoding_from_buffer(RZ_BORROW RzStrEncStats *stats, RZ_NONNULL const ut8 *buffer, ut32 length);
 RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NULLABLE RZ_OUT ut32 *length);
 
 RZ_API const char *rz_str_indent(int indent);

@@ -15308,6 +15308,14 @@ static const RzCmdDescHelp print_string_help = {
 	.args = print_string_args,
 };
 
+static const RzCmdDescArg print_string_guess_list_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp print_string_guess_list_help = {
+	.summary = "Guess the string encoding at the current offset and list all possible encodings (stops at NUL).",
+	.args = print_string_guess_list_args,
+};
+
 static const RzCmdDescArg print_string_as_libcpp_string_args[] = {
 	{ 0 },
 };
@@ -23171,6 +23179,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *ps_cd = rz_cmd_desc_group_modes_new(core->rcmd, cmd_print_cd, "ps", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_string_handler, &print_string_help, &ps_help);
 	rz_warn_if_fail(ps_cd);
+	RzCmdDesc *print_string_guess_list_cd = rz_cmd_desc_argv_modes_new(core->rcmd, ps_cd, "psl", RZ_OUTPUT_MODE_STANDARD, rz_print_string_guess_list_handler, &print_string_guess_list_help);
+	rz_warn_if_fail(print_string_guess_list_cd);
+
 	RzCmdDesc *print_string_as_libcpp_string_cd = rz_cmd_desc_argv_modes_new(core->rcmd, ps_cd, "ps+", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_string_as_libcpp_string_handler, &print_string_as_libcpp_string_help);
 	rz_warn_if_fail(print_string_as_libcpp_string_cd);
 

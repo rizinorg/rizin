@@ -2083,39 +2083,74 @@ static void core_print_raw_buffer(RzStrStringifyOpt *opt) {
 	}
 }
 
-static RzCmdStatus core_print_string_in_block(RzCore *core, bool stop_at_nil, ut32 offset, RzOutputMode mode, RzStrEnc str_encoding) {
+static RzCmdStatus core_print_string_in_block(RzCore *core, bool stop_at_nil, ut32 offset, RzOutputMode mode, RzStrEnc str_encoding, bool print_only_one_guess) {
 	const ut8 *buffer = core->block + offset;
 	const ut32 length = core->blocksize - offset;
 	RzStrEnc encoding = str_encoding == RZ_STRING_ENC_SETTINGS ? core->bin->str_search_cfg.string_encoding : str_encoding;
 	RzStrStringifyOpt opt = { 0 };
+	opt.buffer = buffer;
+	opt.length = length;
+	opt.encoding = encoding;
+	opt.stop_at_nil = stop_at_nil;
+	opt.stop_at_unprintable = stop_at_nil;
 
-	if (encoding == RZ_STRING_ENC_GUESS) {
-		encoding = rz_str_guess_encoding_from_buffer(buffer, length);
+	if (encoding != RZ_STRING_ENC_GUESS) {
+		switch (mode) {
+		case RZ_OUTPUT_MODE_STANDARD:
+			core_print_raw_buffer(&opt);
+			break;
+		case RZ_OUTPUT_MODE_JSON:
+			print_json_string(core, buffer, length, encoding, stop_at_nil, stop_at_nil);
+			break;
+		default:
+			RZ_LOG_ERROR("core: unsupported output mode\n");
+			return RZ_CMD_STATUS_ERROR;
+		}
+		return RZ_CMD_STATUS_OK;
 	}
 
-	switch (mode) {
-	case RZ_OUTPUT_MODE_STANDARD:
-		opt.buffer = buffer;
-		opt.length = length;
-		opt.encoding = encoding;
-		opt.stop_at_nil = stop_at_nil;
-		opt.stop_at_unprintable = stop_at_nil;
-		core_print_raw_buffer(&opt);
-		break;
-	case RZ_OUTPUT_MODE_JSON:
-		print_json_string(core, buffer, length, encoding, stop_at_nil, stop_at_nil);
-		break;
-	default:
-		RZ_LOG_ERROR("core: unsupported output mode\n");
-		return RZ_CMD_STATUS_ERROR;
+	RzStrEnc enc = rz_utf_bom_encoding(buffer, length);
+	RzStrEncStats *stats = rz_str_enc_stats_new(length, rz_config_get_i(core->config, "str.search.min_length"), enc, NULL);
+	RzVector *enc_candidates = rz_str_guess_encoding_from_buffer(stats, buffer, length);
+	rz_str_enc_stats_free(stats);
+
+	char desc[32] = { 0 };
+	RzStrEncCandidate *c;
+	rz_vector_foreach(enc_candidates, c) {
+		opt.encoding = c->enc;
+		if (!print_only_one_guess) {
+			rz_strf(desc, "%s (%02f): ", rz_str_enc_as_string(c->enc), c->score);
+			rz_cons_strcat(desc);
+			memset(desc, 0, sizeof(desc));
+		}
+		switch (mode) {
+		case RZ_OUTPUT_MODE_STANDARD:
+			core_print_raw_buffer(&opt);
+			break;
+		case RZ_OUTPUT_MODE_JSON:
+			print_json_string(core, buffer, length, c->enc, stop_at_nil, stop_at_nil);
+			break;
+		default:
+			RZ_LOG_ERROR("core: unsupported output mode\n");
+			return RZ_CMD_STATUS_ERROR;
+		}
+		if (print_only_one_guess) {
+			RZ_LOG_INFO("%" PFMTSZd " more string candidates at this offset.\n", rz_vector_len(enc_candidates));
+			break;
+		}
 	}
+	rz_vector_free(enc_candidates);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_print_string_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	bool stop_at_nil = !strcmp(argv[2], "null");
 	RzStrEnc enc = rz_str_enc_string_as_type(argv[1]);
-	return core_print_string_in_block(core, stop_at_nil, 0, mode, enc);
+	return core_print_string_in_block(core, stop_at_nil, 0, mode, enc, true);
+}
+
+RZ_IPI RzCmdStatus rz_print_string_guess_list_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	return core_print_string_in_block(core, true, 0, mode, RZ_STRING_ENC_GUESS, false);
 }
 
 RZ_IPI RzCmdStatus rz_print_string_as_libcpp_string_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
@@ -2147,12 +2182,12 @@ RZ_IPI RzCmdStatus rz_print_string_as_libcpp_string_handler(RzCore *core, int ar
 		rz_core_seek(core, new_offset, SEEK_SET);
 		rz_core_block_read(core);
 
-		status = core_print_string_in_block(core, true, 0, mode, RZ_STRING_ENC_SETTINGS);
+		status = core_print_string_in_block(core, true, 0, mode, RZ_STRING_ENC_SETTINGS, true);
 
 		rz_core_seek(core, old_offset, SEEK_SET);
 		rz_core_block_read(core);
 	} else {
-		status = core_print_string_in_block(core, true, 1, mode, RZ_STRING_ENC_SETTINGS);
+		status = core_print_string_in_block(core, true, 1, mode, RZ_STRING_ENC_SETTINGS, true);
 	}
 
 	return status;
@@ -2663,23 +2698,23 @@ RZ_API void rz_print_offset(RzPrint *p, ut64 off, int invert, int offseg, int of
 }
 
 RZ_IPI RzCmdStatus rz_print_utf8_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	return core_print_string_in_block(core, true, 0, mode, RZ_STRING_ENC_UTF8);
+	return core_print_string_in_block(core, true, 0, mode, RZ_STRING_ENC_UTF8, true);
 }
 
 RZ_IPI RzCmdStatus rz_print_utf16le_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	return core_print_string_in_block(core, true, 0, mode, RZ_STRING_ENC_UTF16LE);
+	return core_print_string_in_block(core, true, 0, mode, RZ_STRING_ENC_UTF16LE, true);
 }
 
 RZ_IPI RzCmdStatus rz_print_utf32le_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	return core_print_string_in_block(core, true, 0, mode, RZ_STRING_ENC_UTF32LE);
+	return core_print_string_in_block(core, true, 0, mode, RZ_STRING_ENC_UTF32LE, true);
 }
 
 RZ_IPI RzCmdStatus rz_print_utf16be_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	return core_print_string_in_block(core, true, 0, mode, RZ_STRING_ENC_UTF16BE);
+	return core_print_string_in_block(core, true, 0, mode, RZ_STRING_ENC_UTF16BE, true);
 }
 
 RZ_IPI RzCmdStatus rz_print_utf32be_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	return core_print_string_in_block(core, true, 0, mode, RZ_STRING_ENC_UTF32BE);
+	return core_print_string_in_block(core, true, 0, mode, RZ_STRING_ENC_UTF32BE, true);
 }
 
 RZ_IPI RzCmdStatus rz_print_hexdump_annotated_handler(RzCore *core, int argc, const char **argv) {

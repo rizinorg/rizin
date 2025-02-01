@@ -186,3 +186,21 @@ EXPECT=<<EOF
 Lorem ipsum dolor sit amet, at eligendi adipisci ius, ex natum appetere officiis has, nibh quas torquatos pro te. Quo at deleniti repudiandae, et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
 EOF
 RUN
+
+NAME=List possible encodings
+FILE=bins/cmd/search/string_encodings/Hebrew-Lipsum.utf8
+CMDS=<<EOF
+psl
+EOF
+EXPECT=<<EOF
+utf8 (566.720032): עוד מיזם יכול קהילה ב, את קרן תיאטרון שימושיים. שמו אחרונים ויקימדיה את. זאת אם תיבת הרוח שינויים, באגים בחירות בויקיפדיה אם ארץ. שנתי תאולוגיה זאת דת, מאמר צילום רוסית רבה את, באגים משחקים ממונרכיה אנא גם.
+utf16be (32.340000): 힢힕힓⃗黗駗雗鴠힙힛힕힜⃗ꟗ铗駗鳗鐠힑Ⱐ힐⃗ꟗ꣗鼠힙힐힘힕힟⃗꧗駗黗闗꧗駗駗鴮⃗꧗黗锠힐힗힕힠힙힝⃗闗駗ꟗ駗黗鏗駗鐠힐⸠힖힐⃗郗鴠힙힑⃗铗꣗闗霠힙힠힕힙힙힝Ⱐ힑힐힒힙힝⃗釗韗駗꣗闗ꨠ힑힕힙힙힓힙힔⃗郗鴠힐⸠힠힙⃗꫗郗闗鳗闗鋗駗鐠힖힐⃗鏗ꨬ⃗黗郗黗ꠠ힙힜힕힝⃗꣗闗ꇗ駗ꨠ힑힔⃗郗ꨬ⃗釗郗鋗駗鴠힞힗힙힝⃗黗黗闗ꃗ꣗鯗駗鐠힐힠힐⃗鋗鴮
+utf16le (20.020000): ꋗ闗鏗휠힞힙힖₝駗鯗闗鳗휠힔힙힜ₔ釗郗꫗휠₟꫗駗郗飗꣗闗鿗휠힙힞힕힙힙⺝휠힞ₕ郗韗꣗闗ꃗ駗鷗휠힕힙힙힞힓힙ₔ郗꫗雗郗꫗휠힐₝꫗駗釗꫗휠힔힕ₗ꧗駗ꃗ闗駗駗鷗釗郗鋗駗鷗휠힑힗힙힕₪釗闗駗ꟗ駗ꓗ鏗駗铗휠힐₝郗꣗ꗗ꧗ꃗ꫗駗휠힐힕힜힕힒힙ₔ雗郗꫗휠힓Ⲫ휠힞힐힞₨ꛗ駗鳗闗鷗휠힕힡힙₪꣗釗铗휠힐Ⲫ휠힑힐힒힙₝黗꧗韗ꟗ駗鷗휠힞힞힕힠힛힙ₔ郗ꃗ郗휠힒⺝
+ebcdicuk (6.600000): PsPnPl
+ibm037 (6.600000): PsPnPl
+ebcdicus (6.600000): PsPnPl
+ibm290 (6.600000): PヘPトPツ
+ebcdices (6.600000): PsPnPl
+EOF
+EXPECT_ERR=
+RUN

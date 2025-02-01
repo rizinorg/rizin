@@ -6,7 +6,7 @@
 #include "rz_types.h"
 #include <rz_util.h>
 #include "rz_cons.h"
-#include "rz_bin.h"
+#include <rz_bin.h>
 #include <rz_vector.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -4066,57 +4066,20 @@ RZ_API RzList /*<char *>*/ *rz_str_wrap(char *str, size_t width) {
 /**
  * \brief Tries to guess the string encoding method from the buffer.
  *
- * \param buffer  The string buffer to use for guessing the encoding
- * \param length  The string buffer length
+ * \param stats   The encoding statistic object to use.
+ * \param buffer  The string buffer to use for guessing the encoding.
+ * \param length  The string buffer length.
  *
- * \return string encoding as RzStrEnc type
+ * \return Possible string encodings at offset 0 or NULL in case of failure.
  */
-RZ_API RzStrEnc rz_str_guess_encoding_from_buffer(RZ_NONNULL const ut8 *buffer, ut32 length) {
-	rz_return_val_if_fail(buffer, RZ_STRING_ENC_UTF8);
-	RzStrEnc enc = rz_utf_bom_encoding(buffer, length);
-	if (enc != RZ_STRING_ENC_GUESS) {
-		return enc;
+RZ_API RZ_OWN RzVector /*<RzStrEncCandidate>*/ *rz_str_guess_encoding_from_buffer(RZ_BORROW RzStrEncStats *stats, RZ_NONNULL const ut8 *buffer, ut32 length) {
+	rz_return_val_if_fail(buffer, NULL);
+	for (size_t i = 0, leftover = length; i < length; i++, leftover--) {
+		rz_str_enc_stats_add_dp(stats, buffer + i, leftover, i);
 	}
-	for (ut32 i = 0, utf32le = 0, utf32be = 0, utf16le = 0, utf16be = 0, ascii = 0; i < length; ++i) {
-		ut32 leftovers = length - i;
-		if (rz_utf32_valid_cp(buffer, leftovers, false, 1)) {
-			utf32le++;
-			// `i > ascii + 1` means at least one non-ascii byte
-			// `utf32le  == i / 4 + 1` means neatly algined like 7700 0000 3000 0000 7700 0000
-			if (utf32le > 2 && (i > ascii + 1 || utf32le == i / 4 + 1)) {
-				enc = RZ_STRING_ENC_UTF32LE;
-				break;
-			}
-		} else if (rz_utf32_valid_cp(buffer, leftovers, true, 1)) {
-			utf32be++;
-			if (utf32be > 2 && (i > ascii + 1 || utf32be == i / 4 + 1)) {
-				enc = RZ_STRING_ENC_UTF32BE;
-				break;
-			}
-		}
-		if (leftovers > 2 && IS_PRINTABLE(buffer[i]) && buffer[i + 1] == 0) {
-			utf16le++;
-			if (utf16le > 2 && i > ascii + 1) {
-				enc = RZ_STRING_ENC_UTF16LE;
-				break;
-			}
-		} else if (leftovers > 2 && buffer[i] == 0 && IS_PRINTABLE(buffer[i + 1])) {
-			utf16be++;
-			if (utf16be > 2 && i > ascii + 1) {
-				enc = RZ_STRING_ENC_UTF16BE;
-				break;
-			}
-		}
-		if (IS_PRINTABLE(buffer[i]) || buffer[i] == ' ' || buffer[i] == '\0') {
-			ascii++;
-			if (ascii > length - 1) {
-				enc = RZ_STRING_ENC_8BIT;
-				break;
-			}
-		}
-	}
-
-	return enc == RZ_STRING_ENC_GUESS ? RZ_STRING_ENC_UTF8 : enc;
+	rz_str_enc_stats_evaluate(stats);
+	RzVector *candiates = rz_str_enc_get_candiates(stats, 0);
+	return candiates;
 }
 
 /**
@@ -4175,7 +4138,7 @@ RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NU
 			rsize = rz_str_ebcdic_us_to_unicode(buf[i], &code_point);
 		} else if (enc == RZ_STRING_ENC_8BIT) {
 			code_point = buf[i];
-			rsize = code_point < 0x7F ? 1 : 0;
+			rsize = code_point <= 0x7F ? 1 : 0;
 		} else {
 			rsize = rz_utf8_decode(&buf[i], buflen - i, &code_point);
 		}
@@ -4317,4 +4280,495 @@ RZ_API const char *rz_str_indent(int indent) {
 		return "";
 	}
 	return indent_tbl[indent];
+}
+
+RZ_API RZ_OWN RzStrEncStatsDP *rz_str_enc_stats_dp_new(ut8 cp_size) {
+	RzStrEncStatsDP *dp = RZ_NEW0(RzStrEncStatsDP);
+	if (!dp) {
+		return NULL;
+	}
+	dp->cp_bytes = cp_size;
+	dp->score = 0.0;
+	return dp;
+}
+
+RZ_API void rz_str_enc_stats_dp_free(RZ_NULLABLE RZ_OWN RzStrEncStatsDP *dp) {
+	free(dp);
+}
+
+/**
+ * \brief Check if this data point is used.
+ *
+ * \param dp The data point.
+ *
+ * \return True if the data point contains data. False if no data was set.
+ */
+RZ_API bool rz_str_enc_stats_dp_is_set(RZ_NONNULL RZ_BORROW RzStrEncStatsDP *dp) {
+	rz_return_val_if_fail(dp, false);
+	return dp->cp_bytes != 0;
+}
+
+RZ_API void rz_str_enc_stats_free(RZ_NULLABLE RZ_OWN RzStrEncStats *stats) {
+	if (!stats) {
+		return;
+	}
+	free(stats->utf8);
+	free(stats->utf16le);
+	free(stats->utf16be);
+	free(stats->utf32le);
+	free(stats->utf32be);
+	free(stats->ibm037);
+	free(stats->ibm290);
+	free(stats->ebcdic_es);
+	free(stats->ebcdic_uk);
+	free(stats->ebcdic_us);
+	free(stats->dp_arrays);
+	free(stats);
+}
+
+RZ_API RzStrEncStatsBiases rz_str_enc_stats_get_default_biases() {
+	RzStrEncStatsBiases biases = { 0 };
+	biases.below_min_score = 0.0;
+	biases.aligned_to_2 = 1.1;
+	biases.is_utf16 = 0.7;
+	biases.is_utf8 = 1.4;
+	biases.bom_preset = 3.0;
+	biases.below_min_cp = 0.0;
+	biases.is_big_endian = 1.0;
+	biases.is_little_endian = 1.0;
+	return biases;
+}
+
+RZ_API RzStrEncStatsBiases rz_str_enc_stats_get_big_endian_biases() {
+	RzStrEncStatsBiases biases = { 0 };
+	biases.below_min_score = 0.0;
+	biases.is_utf16 = 0.7;
+	biases.is_utf8 = 1.4;
+	biases.aligned_to_2 = 1.1;
+	biases.bom_preset = 3.0;
+	biases.below_min_cp = 0.0;
+	biases.is_big_endian = 1.0;
+	biases.is_little_endian = 1.0;
+	return biases;
+}
+
+RZ_API RZ_OWN RzStrEncStats *rz_str_enc_stats_new(ut64 buffer_size, size_t min_code_points, RzStrEnc bom, RZ_NULLABLE RZ_BORROW RzStrEncStatsBiases *biases) {
+	rz_return_val_if_fail(buffer_size > 0, NULL);
+	RzStrEncStats *stats = RZ_NEW0(RzStrEncStats);
+	if (!stats) {
+		goto alloc_error;
+	}
+
+	if (!biases) {
+		RzStrEncStatsBiases b = rz_str_enc_stats_get_default_biases();
+		rz_mem_copy(&stats->biases, sizeof(stats->biases), &b, sizeof(RzStrEncStatsBiases));
+	} else {
+		rz_mem_copy(&stats->biases, sizeof(stats->biases), biases, sizeof(RzStrEncStatsBiases));
+	}
+	stats->min_score = min_code_points;
+	stats->min_code_points = min_code_points;
+	stats->present_bom = bom;
+	stats->buffer_size = buffer_size;
+	stats->utf8 = RZ_NEWS0(RzStrEncStatsDP, buffer_size);
+	if (!stats->utf8) {
+		goto alloc_error;
+	}
+	stats->utf16le = RZ_NEWS0(RzStrEncStatsDP, buffer_size);
+	if (!stats->utf16le) {
+		goto alloc_error;
+	}
+	stats->utf16be = RZ_NEWS0(RzStrEncStatsDP, buffer_size);
+	if (!stats->utf16be) {
+		goto alloc_error;
+	}
+	stats->utf32le = RZ_NEWS0(RzStrEncStatsDP, buffer_size);
+	if (!stats->utf32le) {
+		goto alloc_error;
+	}
+	stats->utf32be = RZ_NEWS0(RzStrEncStatsDP, buffer_size);
+	if (!stats->utf32be) {
+		goto alloc_error;
+	}
+	stats->ibm037 = RZ_NEWS0(RzStrEncStatsDP, buffer_size);
+	if (!stats->ibm037) {
+		goto alloc_error;
+	}
+	stats->ibm290 = RZ_NEWS0(RzStrEncStatsDP, buffer_size);
+	if (!stats->ibm290) {
+		goto alloc_error;
+	}
+	stats->ebcdic_es = RZ_NEWS0(RzStrEncStatsDP, buffer_size);
+	if (!stats->ebcdic_es) {
+		goto alloc_error;
+	}
+	stats->ebcdic_uk = RZ_NEWS0(RzStrEncStatsDP, buffer_size);
+	if (!stats->ebcdic_uk) {
+		goto alloc_error;
+	}
+	stats->ebcdic_us = RZ_NEWS0(RzStrEncStatsDP, buffer_size);
+	if (!stats->ebcdic_us) {
+		goto alloc_error;
+	}
+	stats->dp_arrays = RZ_NEWS(RzStrEncStatsDP *, RZ_STRING_ENC_DETECTABLE);
+	if (!stats->dp_arrays) {
+		goto alloc_error;
+	}
+	stats->dp_arrays[0] = stats->utf8;
+	stats->dp_arrays[1] = stats->utf16le;
+	stats->dp_arrays[2] = stats->utf16be;
+	stats->dp_arrays[3] = stats->utf32le;
+	stats->dp_arrays[4] = stats->utf32be;
+	stats->dp_arrays[5] = stats->ibm037;
+	stats->dp_arrays[6] = stats->ibm290;
+	stats->dp_arrays[7] = stats->ebcdic_es;
+	stats->dp_arrays[8] = stats->ebcdic_uk;
+	stats->dp_arrays[9] = stats->ebcdic_us;
+	return stats;
+
+alloc_error:
+	rz_str_enc_stats_free(stats);
+	RZ_LOG_ERROR("Failed to allocate memory.\n");
+	return NULL;
+}
+
+static inline bool printable_cp(RzCodePoint cp) {
+	// For the normal use case newline ad tab are also considered "printable".
+	return rz_code_point_is_printable(cp) || cp == '\n' || cp == '\t';
+}
+
+RZ_API void rz_str_enc_stats_add_dp(RZ_NONNULL RzStrEncStats *stats, RZ_NONNULL const ut8 *buf, size_t buf_len, size_t offset) {
+	rz_return_if_fail(buf || buf_len == 0);
+	ut8 cp_bytes = 0;
+	RzCodePoint cp = 0;
+	if (buf_len >= 4) {
+		// UTF32-LE
+		cp_bytes = rz_utf32_decode(buf, buf_len, &cp, false);
+		if (printable_cp(cp)) {
+			stats->utf32le[offset].cp_bytes = cp_bytes;
+			stats->utf32le[offset].code_points = 1;
+		}
+		// UTF32-BE
+		cp_bytes = rz_utf32_decode(buf, buf_len, &cp, true);
+		if (printable_cp(cp)) {
+			stats->utf32be[offset].cp_bytes = cp_bytes;
+			stats->utf32be[offset].code_points = 1;
+		}
+	}
+
+	if (buf_len >= 2) {
+		// UTF16-LE
+		cp_bytes = rz_utf16_decode(buf, buf_len, &cp, false);
+		if (printable_cp(cp)) {
+			stats->utf16le[offset].cp_bytes = cp_bytes;
+			stats->utf16le[offset].code_points = 1;
+		}
+		// UTF16-BE
+		cp_bytes = rz_utf16_decode(buf, buf_len, &cp, true);
+		if (printable_cp(cp)) {
+			stats->utf16be[offset].cp_bytes = cp_bytes;
+			stats->utf16be[offset].code_points = 1;
+		}
+	}
+
+	// EBCDIC
+	cp_bytes = rz_str_ebcdic_es_to_unicode(buf[0], &cp);
+	if (printable_cp(cp)) {
+		stats->ebcdic_es[offset].cp_bytes = cp_bytes;
+		stats->ebcdic_es[offset].code_points = 1;
+	}
+	cp_bytes = rz_str_ebcdic_uk_to_unicode(buf[0], &cp);
+	if (printable_cp(cp)) {
+		stats->ebcdic_uk[offset].cp_bytes = cp_bytes;
+		stats->ebcdic_uk[offset].code_points = 1;
+	}
+	cp_bytes = rz_str_ebcdic_us_to_unicode(buf[0], &cp);
+	if (printable_cp(cp)) {
+		stats->ebcdic_us[offset].cp_bytes = cp_bytes;
+		stats->ebcdic_us[offset].code_points = 1;
+	}
+	cp_bytes = rz_str_ibm037_to_unicode(buf[0], &cp);
+	if (printable_cp(cp)) {
+		stats->ibm037[offset].cp_bytes = cp_bytes;
+		stats->ibm037[offset].code_points = 1;
+	}
+	cp_bytes = rz_str_ibm290_to_unicode(buf[0], &cp);
+	if (printable_cp(cp)) {
+		stats->ibm290[offset].cp_bytes = cp_bytes;
+		stats->ibm290[offset].code_points = 1;
+	}
+	// UTF-8
+	cp_bytes = rz_utf8_decode(buf, buf_len, &cp);
+	if (printable_cp(cp)) {
+		stats->utf8[offset].cp_bytes = cp_bytes;
+		stats->utf8[offset].code_points = 1;
+	}
+}
+
+RZ_API void rz_str_enc_stats_evaluate(RZ_NONNULL RzStrEncStats *stats) {
+	ut8 cp_bytes = 0;
+	for (st64 i = stats->buffer_size - 1, surrplus = 0; i >= 0; i--, surrplus++) {
+		for (size_t j = 0; j < RZ_STRING_ENC_DETECTABLE; j++) {
+			RzStrEncStatsDP *table = stats->dp_arrays[j];
+			cp_bytes = table[i].cp_bytes;
+			table[i].score = (float)cp_bytes;
+			if (cp_bytes <= surrplus) {
+				table[i].score += table[i + cp_bytes].score;
+				table[i].code_points += table[i + cp_bytes].code_points;
+			}
+		}
+	}
+}
+
+static inline int compare_candidates(const RzStrEncCandidate *a, const RzStrEncCandidate *b, void *user) {
+	if (a->score > b->score) {
+		return 1;
+	} else if (a->score < b->score) {
+		return -1;
+	}
+	return 0;
+}
+
+static float get_biased_score(const RzStrEncStats *stats, RzStrEncStatsDP *dp, RzStrEnc enc, size_t offset) {
+	float score = dp->score;
+	float biased_score = score;
+	if (dp->code_points < stats->min_code_points) {
+		biased_score *= stats->biases.below_min_cp;
+	}
+	if (biased_score == 0.0) {
+		// Early return, because most configs use 0.0 for those.
+		return 0.0;
+	}
+
+	if (stats->present_bom == enc) {
+		biased_score *= stats->biases.bom_preset;
+	}
+	if (offset % 2 == 0) {
+		biased_score *= stats->biases.aligned_to_2;
+	}
+	if (enc == RZ_STRING_ENC_UTF16LE || enc == RZ_STRING_ENC_UTF16BE) {
+		biased_score *= stats->biases.is_utf16;
+	}
+	if (enc == RZ_STRING_ENC_UTF8 || enc == RZ_STRING_ENC_8BIT) {
+		biased_score *= stats->biases.is_utf8;
+	}
+	if (enc == RZ_STRING_ENC_UTF32BE || enc == RZ_STRING_ENC_UTF16BE ||
+		enc == RZ_STRING_ENC_UTF8 || enc == RZ_STRING_ENC_8BIT) {
+		biased_score *= stats->biases.is_big_endian;
+	}
+	if (enc == RZ_STRING_ENC_UTF32LE || enc == RZ_STRING_ENC_UTF16LE ||
+		enc == RZ_STRING_ENC_UTF8 || enc == RZ_STRING_ENC_8BIT) {
+		biased_score *= stats->biases.is_little_endian;
+	}
+	if (biased_score < stats->min_score) {
+		biased_score *= stats->biases.below_min_score;
+	}
+	return biased_score;
+}
+
+RZ_API RZ_OWN RzVector /*<RzStrEncCandidate>*/ *rz_str_enc_get_candiates(RZ_NONNULL RzStrEncStats *stats, size_t offset) {
+	RzVector *candiates = rz_vector_new(sizeof(RzStrEncCandidate), NULL, NULL);
+	RzStrEncCandidate cand = { 0 };
+	if (!candiates) {
+		return NULL;
+	}
+	float biased_score = get_biased_score(stats, &stats->ebcdic_es[offset], RZ_STRING_ENC_EBCDIC_ES, offset);
+	if (biased_score > 0) {
+		cand.enc = RZ_STRING_ENC_EBCDIC_ES;
+		cand.score = biased_score;
+		rz_vector_push(candiates, &cand);
+	}
+	biased_score = get_biased_score(stats, &stats->ebcdic_uk[offset], RZ_STRING_ENC_EBCDIC_UK, offset);
+	if (biased_score > 0) {
+		cand.enc = RZ_STRING_ENC_EBCDIC_UK;
+		cand.score = biased_score;
+		rz_vector_push(candiates, &cand);
+	}
+	biased_score = get_biased_score(stats, &stats->ebcdic_us[offset], RZ_STRING_ENC_EBCDIC_US, offset);
+	if (biased_score > 0) {
+		cand.enc = RZ_STRING_ENC_EBCDIC_US;
+		cand.score = biased_score;
+		rz_vector_push(candiates, &cand);
+	}
+	biased_score = get_biased_score(stats, &stats->ibm290[offset], RZ_STRING_ENC_IBM037, offset);
+	if (biased_score > 0) {
+		cand.enc = RZ_STRING_ENC_IBM037;
+		cand.score = biased_score;
+		rz_vector_push(candiates, &cand);
+	}
+	biased_score = get_biased_score(stats, &stats->ibm037[offset], RZ_STRING_ENC_IBM290, offset);
+	if (biased_score > 0) {
+		cand.enc = RZ_STRING_ENC_IBM290;
+		cand.score = biased_score;
+		rz_vector_push(candiates, &cand);
+	}
+	biased_score = get_biased_score(stats, &stats->utf8[offset], RZ_STRING_ENC_UTF8, offset);
+	if (biased_score > 0) {
+		cand.enc = RZ_STRING_ENC_UTF8;
+		cand.score = biased_score;
+		rz_vector_push(candiates, &cand);
+	}
+	biased_score = get_biased_score(stats, &stats->utf16le[offset], RZ_STRING_ENC_UTF16LE, offset);
+	if (biased_score > 0) {
+		cand.enc = RZ_STRING_ENC_UTF16LE;
+		cand.score = biased_score;
+		rz_vector_push(candiates, &cand);
+	}
+	biased_score = get_biased_score(stats, &stats->utf16be[offset], RZ_STRING_ENC_UTF16BE, offset);
+	if (biased_score > 0) {
+		cand.enc = RZ_STRING_ENC_UTF16BE;
+		cand.score = biased_score;
+		rz_vector_push(candiates, &cand);
+	}
+	biased_score = get_biased_score(stats, &stats->utf32le[offset], RZ_STRING_ENC_UTF32LE, offset);
+	if (biased_score > 0) {
+		cand.enc = RZ_STRING_ENC_UTF32LE;
+		cand.score = biased_score;
+		rz_vector_push(candiates, &cand);
+	}
+	biased_score = get_biased_score(stats, &stats->utf32be[offset], RZ_STRING_ENC_UTF32BE, offset);
+	if (biased_score > 0) {
+		cand.enc = RZ_STRING_ENC_UTF32BE;
+		cand.score = biased_score;
+		rz_vector_push(candiates, &cand);
+	}
+	rz_vector_sort(candiates, (RzVectorComparator)compare_candidates, true, NULL);
+	return candiates;
+}
+
+RZ_API void rz_str_enc_stats_run(RZ_BORROW RZ_NONNULL RzStrEncStats *stats, RZ_NONNULL const ut8 *buffer, size_t buf_len) {
+	rz_return_if_fail(stats && buffer);
+	for (size_t i = 0, leftover = buf_len; i < buf_len; i++, leftover--) {
+		rz_str_enc_stats_add_dp(stats, buffer + i, leftover, i);
+	}
+	rz_str_enc_stats_evaluate(stats);
+}
+
+RZ_API RZ_OWN RzVector /*<RzStrEncPOI>*/ *rz_str_enc_stats_get_pois(RZ_NONNULL const RzStrEncStats *stats) {
+	rz_return_val_if_fail(stats, NULL);
+	size_t edge_ebcdic_es = 0;
+	size_t edge_ebcdic_uk = 0;
+	size_t edge_ebcdic_us = 0;
+	size_t edge_ibm290 = 0;
+	size_t edge_ibm037 = 0;
+	size_t edge_utf8 = 0;
+	size_t edge_utf16le = 0;
+	size_t edge_utf16be = 0;
+	size_t edge_utf32le = 0;
+	size_t edge_utf32be = 0;
+	RzStrEncCandidate cand = { 0 };
+	RzStrEncPOI poi = { 0 };
+	RzVector *pois = rz_vector_new(sizeof(RzStrEncPOI), NULL, NULL);
+	for (size_t i = 0; i < stats->buffer_size; i++) {
+		float biased_score = get_biased_score(stats, &stats->ebcdic_es[i], RZ_STRING_ENC_EBCDIC_ES, i);
+		if (biased_score > 0.0 && edge_ebcdic_es == 0) {
+			edge_ebcdic_es = stats->ebcdic_es[i].score;
+			cand.enc = RZ_STRING_ENC_EBCDIC_ES;
+			cand.score = biased_score;
+			poi.candidate = cand;
+			poi.buf_offset = i;
+			rz_vector_push(pois, &poi);
+		} else if (edge_ebcdic_es > 0) {
+			edge_ebcdic_es--;
+		}
+		biased_score = get_biased_score(stats, &stats->ebcdic_uk[i], RZ_STRING_ENC_EBCDIC_UK, i);
+		if (biased_score > 0.0 && edge_ebcdic_uk == 0) {
+			edge_ebcdic_uk = stats->ebcdic_uk[i].score;
+			cand.enc = RZ_STRING_ENC_EBCDIC_UK;
+			cand.score = biased_score;
+			poi.candidate = cand;
+			poi.buf_offset = i;
+			rz_vector_push(pois, &poi);
+		} else if (edge_ebcdic_uk > 0) {
+			edge_ebcdic_uk--;
+		}
+		biased_score = get_biased_score(stats, &stats->ebcdic_us[i], RZ_STRING_ENC_EBCDIC_US, i);
+		if (biased_score > 0.0 && edge_ebcdic_us == 0) {
+			edge_ebcdic_us = stats->ebcdic_us[i].score;
+			cand.enc = RZ_STRING_ENC_EBCDIC_US;
+			cand.score = biased_score;
+			poi.candidate = cand;
+			poi.buf_offset = i;
+			rz_vector_push(pois, &poi);
+		} else if (edge_ebcdic_us > 0) {
+			edge_ebcdic_us--;
+		}
+		biased_score = get_biased_score(stats, &stats->ibm290[i], RZ_STRING_ENC_IBM037, i);
+		if (biased_score > 0.0 && edge_ibm290 == 0) {
+			edge_ibm290 = stats->ibm290[i].score;
+			cand.enc = RZ_STRING_ENC_IBM037;
+			cand.score = biased_score;
+			poi.candidate = cand;
+			poi.buf_offset = i;
+			rz_vector_push(pois, &poi);
+		} else if (edge_ibm290 > 0) {
+			edge_ibm290--;
+		}
+		biased_score = get_biased_score(stats, &stats->ibm037[i], RZ_STRING_ENC_IBM290, i);
+		if (biased_score > 0.0 && edge_ibm037 == 0) {
+			edge_ibm037 = stats->ibm037[i].score;
+			cand.enc = RZ_STRING_ENC_IBM290;
+			cand.score = biased_score;
+			poi.candidate = cand;
+			poi.buf_offset = i;
+			rz_vector_push(pois, &poi);
+		} else if (edge_ibm037 > 0) {
+			edge_ibm037--;
+		}
+		biased_score = get_biased_score(stats, &stats->utf8[i], RZ_STRING_ENC_UTF8, i);
+		if (biased_score > 0.0 && edge_utf8 == 0) {
+			edge_utf8 = stats->utf8[i].score;
+			cand.enc = RZ_STRING_ENC_UTF8;
+			cand.score = biased_score;
+			poi.candidate = cand;
+			poi.buf_offset = i;
+			rz_vector_push(pois, &poi);
+		} else if (edge_utf8 > 0) {
+			edge_utf8--;
+		}
+		biased_score = get_biased_score(stats, &stats->utf16le[i], RZ_STRING_ENC_UTF16LE, i);
+		if (biased_score > 0.0 && edge_utf16le == 0) {
+			edge_utf16le = stats->utf16le[i].score;
+			cand.enc = RZ_STRING_ENC_UTF16LE;
+			cand.score = biased_score;
+			poi.candidate = cand;
+			poi.buf_offset = i;
+			rz_vector_push(pois, &poi);
+		} else if (edge_utf16le > 0) {
+			edge_utf16le--;
+		}
+		biased_score = get_biased_score(stats, &stats->utf16be[i], RZ_STRING_ENC_UTF16BE, i);
+		if (biased_score > 0.0 && edge_utf16be == 0) {
+			edge_utf16be = stats->utf16be[i].score;
+			cand.enc = RZ_STRING_ENC_UTF16BE;
+			cand.score = biased_score;
+			poi.candidate = cand;
+			poi.buf_offset = i;
+			rz_vector_push(pois, &poi);
+		} else if (edge_utf16be > 0) {
+			edge_utf16be--;
+		}
+		biased_score = get_biased_score(stats, &stats->utf32le[i], RZ_STRING_ENC_UTF32LE, i);
+		if (biased_score > 0.0 && edge_utf32le == 0) {
+			edge_utf32le = stats->utf32le[i].score;
+			cand.enc = RZ_STRING_ENC_UTF32LE;
+			cand.score = biased_score;
+			poi.candidate = cand;
+			poi.buf_offset = i;
+			rz_vector_push(pois, &poi);
+		} else if (edge_utf32le > 0) {
+			edge_utf32le--;
+		}
+		biased_score = get_biased_score(stats, &stats->utf32be[i], RZ_STRING_ENC_UTF32BE, i);
+		if (biased_score > 0.0 && edge_utf32be == 0) {
+			edge_utf32be = stats->utf32be[i].score;
+			cand.enc = RZ_STRING_ENC_UTF32BE;
+			cand.score = biased_score;
+			poi.candidate = cand;
+			poi.buf_offset = i;
+			rz_vector_push(pois, &poi);
+		} else if (edge_utf32be > 0) {
+			edge_utf32be--;
+		}
+	}
+	return pois;
 }
