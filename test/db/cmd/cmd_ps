@@ -151,3 +151,14 @@ Just like pineapple on pizza, this task/thread port doesn't belong here. @%s:%d\
 Just like pineapple on pizza, this task/thread port doesn't belong here. @%s:%d
 EOF
 RUN
+
+NAME=Issue #4697 and Unicode update
+FILE==
+CMDS=<<EOF
+wx f09f9faaf09f9faa
+ps
+EOF
+EXPECT=<<EOF
+🟪🟪
+EOF
+RUN
