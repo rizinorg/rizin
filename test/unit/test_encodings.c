@@ -3,7 +3,10 @@
 
 #include <rz_util.h>
 #include "minunit.h"
-#include "rz_util/rz_utf8.h"
+#include <rz_util/rz_utf8.h>
+#include <rz_util/rz_utf32.h>
+#include <rz_util/rz_ebcdic.h>
+#include <rz_util/rz_utf8.h>
 
 /**
  * \brief Examples partially taken from: https://en.wikipedia.org/wiki/UTF-16#Examples
@@ -159,9 +162,65 @@ bool test_rz_utf16_encode(void) {
 	mu_end;
 }
 
+bool test_rz_utf32_decode(void) {
+	const ut8 utf32_size_0[] = { };
+	const ut8 utf32_size_1[] = { 0xAC };
+	const ut8 utf32_size_2[] = { 0xAC, 0xAC };
+	const ut8 utf32_size_3[] = { 0xAC, 0xAC, 0x20 };
+
+	const ut8 utf32be_A[] = { 0x00, 0x00, 0x00, 0x41 };
+	const ut8 utf32le_A[] = { 0x41, 0x00, 0x00, 0x00 };
+
+	// The non-ascii small a
+	const ut8 utf32be_a[] = { 0x00, 0x00, 0xff, 0x41 };
+	const ut8 utf32le_a[] = { 0x41, 0xff, 0x00, 0x00 };
+
+	// Chess tower symbol Red General: 🩠 
+	const ut8 utf32be_red_general[] = { 0x00, 0x01, 0xFA, 0x60 };
+	const ut8 utf32le_red_general[] = { 0x60, 0xfa, 0x01, 0x00 };
+
+	// Chess tower symbol Red General: 🩠  🩁
+	const ut8 utf32be_red_general_black_tower[] = { 0x00, 0x01, 0xFA, 0x60, 0x00, 0x01, 0xFA, 0x41 };
+	const ut8 utf32le_red_general_black_tower[] = { 0x60, 0xFA, 0x01, 0x00, 0x41, 0xFA, 0x01, 0x00 };
+
+	RzCodePoint cp;
+	mu_assert_eq(rz_utf32_decode(utf32_size_0, 0, &cp, false), 0, "Length check failed");
+	mu_assert_eq(rz_utf32_decode(utf32_size_1, sizeof(utf32_size_1), &cp, false), 0, "Length check failed");
+	mu_assert_eq(rz_utf32_decode(utf32_size_2, sizeof(utf32_size_2), &cp, false), 0, "Length check failed");
+	mu_assert_eq(rz_utf32_decode(utf32_size_3, sizeof(utf32_size_3), &cp, false), 0, "Length check failed");
+
+	mu_assert_eq(rz_utf32_decode(utf32be_A, sizeof(utf32be_A), &cp, true), 4, "Length check failed");
+	mu_assert_eq(cp, 0x41, "Incorrect decoding.");
+	mu_assert_eq(rz_utf32_decode(utf32le_A, sizeof(utf32le_A), &cp, false), 4, "Length check failed");
+	mu_assert_eq(cp, 0x41, "Incorrect decoding.");
+
+	mu_assert_eq(rz_utf32_decode(utf32be_a, sizeof(utf32be_a), &cp, true), 4, "Length check failed");
+	mu_assert_eq(cp, 0xff41, "Incorrect decoding.");
+	mu_assert_eq(rz_utf32_decode(utf32le_a, sizeof(utf32le_a), &cp, false), 4, "Length check failed");
+	mu_assert_eq(cp, 0xff41, "Incorrect decoding.");
+
+	mu_assert_eq(rz_utf32_decode(utf32be_red_general, sizeof(utf32be_red_general), &cp, true), 4, "Length check failed");
+	mu_assert_eq(cp, 0x01fa60, "Incorrect decoding.");
+	mu_assert_eq(rz_utf32_decode(utf32le_red_general, sizeof(utf32le_red_general), &cp, false), 4, "Length check failed");
+	mu_assert_eq(cp, 0x01fa60, "Incorrect decoding.");
+
+	mu_assert_eq(rz_utf32_decode(utf32be_red_general_black_tower, sizeof(utf32be_red_general_black_tower), &cp, true), 4, "Length check failed");
+	mu_assert_eq(cp, 0x01fa60, "Incorrect decoding.");
+	mu_assert_eq(rz_utf32_decode(utf32le_red_general_black_tower, sizeof(utf32le_red_general_black_tower), &cp, false), 4, "Length check failed");
+	mu_assert_eq(cp, 0x01fa60, "Incorrect decoding.");
+
+	mu_assert_eq(rz_utf32_decode(utf32be_red_general_black_tower + 4, sizeof(utf32be_red_general_black_tower) - 4, &cp, true), 4, "Length check failed");
+	mu_assert_eq(cp, 0x01fa41, "Incorrect decoding.");
+	mu_assert_eq(rz_utf32_decode(utf32le_red_general_black_tower + 4, sizeof(utf32le_red_general_black_tower) - 4, &cp, false), 4, "Length check failed");
+	mu_assert_eq(cp, 0x01fa41, "Incorrect decoding.");
+
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_utf16_decode);
 	mu_run_test(test_rz_utf16_encode);
+	mu_run_test(test_rz_utf32_decode);
 
 	return tests_passed != tests_run;
 }
