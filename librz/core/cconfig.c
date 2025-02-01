@@ -3765,8 +3765,8 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("search.flags", "true", "All search results are flagged, otherwise only printed");
 	SETBPREF("search.overlap", "false", "Look for overlapped search hits");
 	SETI("search.maxhits", 0, "Maximum number of hits (0: no limit)");
-	SETI("search.from", 0, "Search start address");
-	SETI("search.to", UT64_MAX, "Search end address");
+	SETI("search.from", 0, "Search start address (inclusive)");
+	SETI("search.to", UT64_MAX, "Search end address (exclusive)");
 	n = NODECB("search.in", "io.maps", &cb_search_in);
 	SETDESC(n, "Specify search boundaries");
 	SETOPTIONS(n, "raw", "block",
@@ -3779,7 +3779,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETICB("search.kwidx", 0, &cb_search_kwidx, "Store last search index count");
 	SETPREF("search.prefix", "hit", "Prefix name in search hits label");
 	SETBPREF("search.show", "true", "Show search results");
-	SETI("search.to", -1, "Search end address");
 	n = NODECB("search.case_sensitive", "smart", &cb_search_case_sensitive);
 	SETDESC(n, "Set grep(~) as case smart/sensitive/insensitive");
 	SETOPTIONS(n, "smart", "sensitive", "insensitive", NULL);
