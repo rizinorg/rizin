@@ -56,7 +56,7 @@ bool test_rz_scan_strings_detect_ibm037(void) {
 	static const unsigned char str2[] = "\xff\xff\xff\xC2\x85\x99\x4B\x40\xE6\x88\x96\x7D\xA2\x40\xA3\x88\x85\x99\x85\x4B\x6F\x00\xC6\x99\x81\x95\x4B\x40\xD5\x81\xA8\x6B\x40\x81\x95\xA2\xA6\x85\x99\x40\x94\x85\x4B\x40\xE2\xA3\x81\x95\x84\x40\x81\x95\x84\x40\xA4\x95\x86\x96\x93\x84\x40\xA8\x96\xA4\x99\xA2\x85\x93\x86";
 	buf = rz_buf_new_with_bytes(str2, sizeof(str2));
 
-	str_list = rz_list_new();
+	str_list = rz_list_newf((RzListFree)rz_detected_string_free);
 	n = rz_scan_strings(buf, str_list, &g_opt, 0, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_GUESS);
 	mu_assert_eq(n, 2, "rz_scan_strings ibm037, number of strings");
 
@@ -79,7 +79,7 @@ bool test_rz_scan_strings_detect_ibm037(void) {
 		"\xff\xff\xff\xffI am a \xc3\x99TF-8 string\xff\xff\xff\xff";
 	buf = rz_buf_new_with_bytes(str3, sizeof(str3));
 
-	str_list = rz_list_new();
+	str_list = rz_list_newf((RzListFree)rz_detected_string_free);
 	n = rz_scan_strings(buf, str_list, &g_opt, 0, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_GUESS);
 	mu_assert_eq(n, 2, "rz_scan_strings mix utf8 and ibm037, number of strings");
 
@@ -102,7 +102,7 @@ bool test_rz_scan_strings_detect_ibm037(void) {
 		"I am a \xc3\x99TF-8 string\xff\xff\xff";
 	buf = rz_buf_new_with_bytes(str4, sizeof(str4));
 
-	str_list = rz_list_new();
+	str_list = rz_list_newf((RzListFree)rz_detected_string_free);
 	n = rz_scan_strings(buf, str_list, &g_opt, 0, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_GUESS);
 	mu_assert_eq(n, 2, "rz_scan_strings mix utf8 and ibm037, number of strings");
 
