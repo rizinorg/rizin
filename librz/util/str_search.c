@@ -249,27 +249,15 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 		switch(str_type) {
 		case RZ_STRING_ENC_UTF32LE:
 			rc = rz_utf32le_decode(buf + needle - from, to - needle, &r);
-			if (rc) {
-				rc = 4;
-			}
 			break;
 		case RZ_STRING_ENC_UTF16LE:
 			rc = rz_utf16le_decode(buf + needle - from, to - needle, &r);
-			if (rc == 1) {
-				rc = 2;
-			}
 			break;
 		case RZ_STRING_ENC_UTF32BE:
 			rc = rz_utf32be_decode(buf + needle - from, to - needle, &r);
-			if (rc) {
-				rc = 4;
-			}
 			break;
 		case RZ_STRING_ENC_UTF16BE:
 			rc = rz_utf16be_decode(buf + needle - from, to - needle, &r);
-			if (rc == 1) {
-				rc = 2;
-			}
 			break;
 		case RZ_STRING_ENC_IBM037:
 			rc = rz_str_ibm037_to_unicode(*(buf + needle - from), &r);
