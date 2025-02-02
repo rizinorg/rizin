@@ -366,6 +366,42 @@ error:
 	return NULL;
 }
 
+static inline bool can_be_utf16_le(const ut8 *buf, ut64 size) {
+	int rc = rz_utf8_decode(buf, size, NULL);
+	if (!rc || (size - rc) < 5) {
+		return false;
+	}
+	char *w = (char *)buf + rc;
+	return !w[0] && w[1] && !w[2] && w[3] && !w[4];
+}
+
+static inline bool can_be_utf16_be(const ut8 *buf, ut64 size) {
+	if (size < 7) {
+		return false;
+	}
+	return !buf[0] && buf[1] && !buf[2] && buf[3] && !buf[4] && buf[5] && !buf[6];
+}
+
+static inline bool can_be_utf32_le(const ut8 *buf, ut64 size) {
+	int rc = rz_utf8_decode(buf, size, NULL);
+	if (!rc || (size - rc) < 5) {
+		return false;
+	}
+	char *w = (char *)buf + rc;
+	return !w[0] && !w[1] && !w[2] && w[3] && !w[4];
+}
+
+static inline bool can_be_utf32_be(const ut8 *buf, ut64 size) {
+	if (size < 7) {
+		return false;
+	}
+	return !buf[0] && !buf[1] && !buf[2] && buf[3] && !buf[4] && !buf[5] && !buf[6];
+}
+
+static inline bool can_be_ebcdic(const ut8 *buf, ut64 size) {
+	return buf[0] < 0x20 || buf[0] > 0x3f;
+}
+
 /**
  * \brief Look for strings in a byte array, but returns only the first result.
  *
@@ -428,15 +464,83 @@ RZ_API int rz_scan_strings_raw(RZ_NONNULL const ut8 *buf, RZ_NONNULL RzList /*<R
 		size = to - needle;
 		--skip_ibm037;
 		if (type == RZ_STRING_ENC_GUESS) {
-			if (rz_utf32_valid_code_point(ptr, size, false, 1)) {
+			if (can_be_utf32_le(ptr, size)) {
 				str_type = RZ_STRING_ENC_UTF32LE;
-			} else if (rz_utf32_valid_code_point(ptr, size, true, 1)) {
-				str_type = RZ_STRING_ENC_UTF32BE;
-			} else if (rz_utf16_is_printable_code_point(ptr, size, false, 2)) {
+			} else if (can_be_utf16_le(ptr, size)) {
 				str_type = RZ_STRING_ENC_UTF16LE;
-			} else if (rz_utf16_is_printable_code_point(ptr, size, true, 2)) {
+			} else if (can_be_utf32_be(ptr, size)) {
+				if (to - needle > 3 && can_be_utf32_le(ptr + 3, size - 3)) {
+					// The string can be either utf32-le or utf32-be
+					RzDetectedString *ds_le = process_one_string(buf, from, needle + 3, to, RZ_STRING_ENC_UTF32LE, false, opt, rz_list_length(list));
+					RzDetectedString *ds_be = process_one_string(buf, from, needle, to, RZ_STRING_ENC_UTF32BE, false, opt, rz_list_length(list));
+
+					RzDetectedString *to_add = NULL;
+					RzDetectedString *to_delete = NULL;
+					ut64 needle_offset = 0;
+
+					if (!ds_le && !ds_be) {
+						needle++;
+						continue;
+					} else if (!ds_be) {
+						to_add = ds_le;
+						needle_offset = ds_le->size + 3;
+					} else if (!ds_le) {
+						to_add = ds_be;
+						needle_offset = ds_be->size;
+					} else if (!opt->prefer_big_endian) {
+						to_add = ds_le;
+						to_delete = ds_be;
+						needle_offset = ds_le->size + 3;
+					} else {
+						to_add = ds_be;
+						to_delete = ds_le;
+						needle_offset = ds_le->size;
+					}
+
+					count++;
+					needle += needle_offset;
+					rz_list_append(list, to_add);
+					rz_detected_string_free(to_delete);
+					continue;
+				}
+				str_type = RZ_STRING_ENC_UTF32BE;
+			} else if (can_be_utf16_be(ptr, size)) {
+				if (to - needle > 1 && can_be_utf16_le(ptr + 1, size - 1)) {
+					// The string can be either utf16-le or utf16-be
+					RzDetectedString *ds_le = process_one_string(buf, from, needle + 1, to, RZ_STRING_ENC_UTF16LE, false, opt, rz_list_length(list));
+					RzDetectedString *ds_be = process_one_string(buf, from, needle, to, RZ_STRING_ENC_UTF16BE, false, opt, rz_list_length(list));
+
+					RzDetectedString *to_add = NULL;
+					RzDetectedString *to_delete = NULL;
+					ut64 needle_offset = 0;
+
+					if (!ds_le && !ds_be) {
+						needle++;
+						continue;
+					} else if (!ds_be) {
+						to_add = ds_le;
+						needle_offset = ds_le->size + 1;
+					} else if (!ds_le) {
+						to_add = ds_be;
+						needle_offset = ds_be->size;
+					} else if (!opt->prefer_big_endian) {
+						to_add = ds_le;
+						to_delete = ds_be;
+						needle_offset = ds_le->size + 1;
+					} else {
+						to_add = ds_be;
+						to_delete = ds_le;
+						needle_offset = ds_le->size;
+					}
+
+					count++;
+					needle += needle_offset;
+					rz_list_append(list, to_add);
+					rz_detected_string_free(to_delete);
+					continue;
+				}
 				str_type = RZ_STRING_ENC_UTF16BE;
-			} else if (skip_ibm037 < 0 && rz_str_ebcdic_valid_code_point(ptr[0])) {
+			} else if (can_be_ebcdic(ptr, size) && skip_ibm037 < 0) {
 				ut8 sz = RZ_MIN(size, 15);
 				RzCodePoint code_points[15] = { 0 };
 				int i = 0;
@@ -541,7 +645,7 @@ RZ_API int rz_scan_strings_whole_buf(RZ_NONNULL const RzBuffer *buf_to_scan, RZ_
 	}
 
 	ut64 size;
-	const ut8 *raw_buf = rz_buf_get_whole_hot_paths((RzBuffer *) buf_to_scan, &size);
+	const ut8 *raw_buf = rz_buf_get_whole_hot_paths((RzBuffer *)buf_to_scan, &size);
 	if (!raw_buf) {
 		RZ_LOG_ERROR("Failed to get whole buffer.");
 		return -1;
