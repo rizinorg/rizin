@@ -50,7 +50,7 @@ RZ_API int rz_utf32be_decode(const ut8 *ptr, int ptrlen, RzCodePoint *ch) {
  * \return True if the buffer has \p lookahead valid UTF-32 code points.
  * \return False otherwise.
  */
-RZ_API bool rz_utf32_valid_cp(RZ_NONNULL const ut8 *buf, size_t buf_len, bool big_endian, size_t lookahead) {
+RZ_API bool rz_utf32_valid_code_point(RZ_NONNULL const ut8 *buf, size_t buf_len, bool big_endian, size_t lookahead) {
 	rz_return_val_if_fail(buf && buf_len > 0, false);
 	// At least 4 bytes must be given.
 	// Buffer must cover all look aheads.

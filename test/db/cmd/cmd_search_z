@@ -893,10 +893,9 @@ psu @ hit.string.1
 EOF
 EXPECT=<<EOF
 0000000b 10 hit.string.0
-0000003f 10 hit.string.1
+00000042 10 hit.string.1
 ипсум долор сит амет
 ИПСУМ ДОЛОР СИТ АМЕТ
-
 EOF
 EXPECT_ERR=
 RUN

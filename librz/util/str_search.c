@@ -428,15 +428,15 @@ RZ_API int rz_scan_strings_raw(RZ_NONNULL const ut8 *buf, RZ_NONNULL RzList /*<R
 		size = to - needle;
 		--skip_ibm037;
 		if (type == RZ_STRING_ENC_GUESS) {
-			if (rz_utf32_valid_cp(ptr, size, false, 1)) {
+			if (rz_utf32_valid_code_point(ptr, size, false, 1)) {
 				str_type = RZ_STRING_ENC_UTF32LE;
-			} else if (rz_utf32_valid_cp(ptr, size, true, 1)) {
+			} else if (rz_utf32_valid_code_point(ptr, size, true, 1)) {
 				str_type = RZ_STRING_ENC_UTF32BE;
-			} else if (rz_utf16_is_printable_cp(ptr, size, false, 2)) {
+			} else if (rz_utf16_is_printable_code_point(ptr, size, false, 2)) {
 				str_type = RZ_STRING_ENC_UTF16LE;
-			} else if (rz_utf16_is_printable_cp(ptr, size, true, 2)) {
+			} else if (rz_utf16_is_printable_code_point(ptr, size, true, 2)) {
 				str_type = RZ_STRING_ENC_UTF16BE;
-			} else if (skip_ibm037 < 0 && rz_str_ebcdic_valid_cp(ptr[0])) {
+			} else if (skip_ibm037 < 0 && rz_str_ebcdic_valid_code_point(ptr[0])) {
 				ut8 sz = RZ_MIN(size, 15);
 				RzCodePoint code_points[15] = { 0 };
 				int i = 0;

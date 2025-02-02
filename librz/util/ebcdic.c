@@ -689,7 +689,7 @@ RZ_API int rz_str_ebcdic_es_from_ascii(RZ_NONNULL RZ_OUT ut8 *dst, const ut8 src
  *
  * \return True, if the \p code_point is a supported EBCDIC character. False otherwise.
  */
-RZ_API bool rz_str_ebcdic_valid_cp(const RzCodePoint code_point) {
+RZ_API bool rz_str_ebcdic_valid_code_point(const RzCodePoint code_point) {
 	if (code_point == 0) {
 		// ASCII NUL byte is the same.
 		return true;
