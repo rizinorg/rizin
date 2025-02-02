@@ -493,7 +493,7 @@ commands:
           - text: "+"
             comment: "Set the grep as the opposite of search.case_sensitive"
           - text: "^"
-            comment: "Words must be placed at the beginning of line"
+            comment: "Words must be placed at the beginning of line, after whitespace if any"
           - text: "<"
             comment: "Perform zoom operation on the buffer"
           - text: "!"

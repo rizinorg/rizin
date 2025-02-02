@@ -29,7 +29,7 @@ static const char *help_detail_tilde[] = {
 	" $!", "", "sort in inverse order",
 	" ,", "", "token to define another keyword",
 	" +", "", "case insensitive grep (grep -i)",
-	" ^", "", "words must be placed at the beginning of line",
+	" ^", "", "words must be placed at the beginning of line, after whitespace if any",
 	" <", "", "perform zoom operation on the buffer",
 	" !", "", "negate grep",
 	" ?", "", "count number of matching lines",
@@ -794,6 +794,9 @@ RZ_API int rz_cons_grep_line(char *buf, int len) {
 				continue;
 			}
 			if (grep->begin) {
+				while (p > in && IS_WHITESPACE(*(p - 1))) {
+					p--;
+				}
 				hit = (p == in);
 				if (grep->neg) {
 					hit = !hit;
