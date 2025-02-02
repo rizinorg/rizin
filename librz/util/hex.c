@@ -50,7 +50,7 @@ RZ_API ut8 rz_hex_digit_to_byte(const char c) {
  *
  * \param The string to parse as hex digit pair.
  *
- * \param The byte value of the nibble pair.
+ * \return The byte value of the nibble pair.
  * Or UT16_MAX if the nibble is no hexadecimal character.
  */
 RZ_API ut16 rz_hex_digit_pair_to_byte(const char *npair) {
@@ -530,13 +530,13 @@ RZ_API int rz_hex_str2bin_msb(RZ_NONNULL const char *in, RZ_NONNULL RZ_OUT ut8 *
 		i += 2;
 	}
 
-	ut8 byte = 0;
+	ut16 byte = 0;
 	size_t nibbles = rz_str_ansi_len(in + i);
 
 	bool odd_nibble = (nibbles % 2) == 1;
 	if (odd_nibble) {
 		byte = rz_hex_digit_to_byte(in[i]);
-		if (byte == UT8_MAX) {
+		if (byte >= UT8_MAX) {
 			return 0;
 		}
 		out[j] = byte;
@@ -545,7 +545,7 @@ RZ_API int rz_hex_str2bin_msb(RZ_NONNULL const char *in, RZ_NONNULL RZ_OUT ut8 *
 	}
 
 	
-	for (byte = rz_hex_digit_pair_to_byte(in + i); i < strlen(in) && byte != UT16_MAX; j++, i += 2, byte = rz_hex_digit_pair_to_byte(in + i)) {
+	for (byte = rz_hex_digit_pair_to_byte(in + i); i < strlen(in) && byte <= UT8_MAX; j++, i += 2, byte = rz_hex_digit_pair_to_byte(in + i)) {
 		out[j] = byte;
 	}
 
