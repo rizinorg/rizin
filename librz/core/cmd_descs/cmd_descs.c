@@ -150,14 +150,14 @@ static const RzCmdDescArg cmd_info_gadget_args[2];
 static const RzCmdDescArg cmd_search_gadget_args[2];
 static const RzCmdDescArg cmd_query_gadget_args[2];
 static const RzCmdDescArg cmd_detail_gadget_args[2];
-static const RzCmdDescArg cmd_search_value_8_args[2];
-static const RzCmdDescArg cmd_search_value_16_args[2];
-static const RzCmdDescArg cmd_search_value_32_args[2];
-static const RzCmdDescArg cmd_search_value_64_args[2];
-static const RzCmdDescArg cmd_search_value_8be_args[2];
-static const RzCmdDescArg cmd_search_value_16be_args[2];
-static const RzCmdDescArg cmd_search_value_32be_args[2];
-static const RzCmdDescArg cmd_search_value_64be_args[2];
+static const RzCmdDescArg cmd_search_value_8_args[3];
+static const RzCmdDescArg cmd_search_value_16_args[3];
+static const RzCmdDescArg cmd_search_value_32_args[3];
+static const RzCmdDescArg cmd_search_value_64_args[3];
+static const RzCmdDescArg cmd_search_value_8be_args[3];
+static const RzCmdDescArg cmd_search_value_16be_args[3];
+static const RzCmdDescArg cmd_search_value_32be_args[3];
+static const RzCmdDescArg cmd_search_value_64be_args[3];
 static const RzCmdDescArg cmd_search_hex_args[2];
 static const RzCmdDescArg cmd_search_string_sensitive_args[4];
 static const RzCmdDescArg remote_args[3];
@@ -2176,8 +2176,14 @@ static const RzCmdDescHelp slash_v_help = {
 };
 static const RzCmdDescArg cmd_search_value_8_args[] = {
 	{
-		.name = "value8",
+		.name = "value8_min",
 		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{
+		.name = "value8_max",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
 
 	},
 	{ 0 },
@@ -2189,8 +2195,14 @@ static const RzCmdDescHelp cmd_search_value_8_help = {
 
 static const RzCmdDescArg cmd_search_value_16_args[] = {
 	{
-		.name = "value16",
+		.name = "value16_min",
 		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{
+		.name = "value16_max",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
 
 	},
 	{ 0 },
@@ -2202,8 +2214,14 @@ static const RzCmdDescHelp cmd_search_value_16_help = {
 
 static const RzCmdDescArg cmd_search_value_32_args[] = {
 	{
-		.name = "value32",
+		.name = "value32_min",
 		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{
+		.name = "value32_max",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
 
 	},
 	{ 0 },
@@ -2215,8 +2233,14 @@ static const RzCmdDescHelp cmd_search_value_32_help = {
 
 static const RzCmdDescArg cmd_search_value_64_args[] = {
 	{
-		.name = "value64",
+		.name = "value64_min",
 		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{
+		.name = "value64_max",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
 
 	},
 	{ 0 },
@@ -2240,8 +2264,14 @@ static const RzCmdDescHelp slash_V_help = {
 };
 static const RzCmdDescArg cmd_search_value_8be_args[] = {
 	{
-		.name = "value8",
+		.name = "value8_min",
 		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{
+		.name = "value8_max",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
 
 	},
 	{ 0 },
@@ -2253,8 +2283,14 @@ static const RzCmdDescHelp cmd_search_value_8be_help = {
 
 static const RzCmdDescArg cmd_search_value_16be_args[] = {
 	{
-		.name = "value16",
+		.name = "value16_min",
 		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{
+		.name = "value16_max",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
 
 	},
 	{ 0 },
@@ -2266,8 +2302,14 @@ static const RzCmdDescHelp cmd_search_value_16be_help = {
 
 static const RzCmdDescArg cmd_search_value_32be_args[] = {
 	{
-		.name = "value32",
+		.name = "value32_min",
 		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{
+		.name = "value32_max",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
 
 	},
 	{ 0 },
@@ -2279,8 +2321,14 @@ static const RzCmdDescHelp cmd_search_value_32be_help = {
 
 static const RzCmdDescArg cmd_search_value_64be_args[] = {
 	{
-		.name = "value64",
+		.name = "value64_min",
 		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{
+		.name = "value64_max",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
 
 	},
 	{ 0 },

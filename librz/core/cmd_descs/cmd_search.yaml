@@ -513,7 +513,10 @@ commands:
         - RZ_OUTPUT_MODE_QUIET
         - RZ_OUTPUT_MODE_TABLE
       args:
-        - name: value8
+        - name: value8_min
+          type: RZ_CMD_ARG_TYPE_NUM
+        - name: value8_max
+          optional: true
           type: RZ_CMD_ARG_TYPE_NUM
 
     - name: "/v2"
@@ -527,7 +530,10 @@ commands:
         - RZ_OUTPUT_MODE_QUIET
         - RZ_OUTPUT_MODE_TABLE
       args:
-        - name: value16
+        - name: value16_min
+          type: RZ_CMD_ARG_TYPE_NUM
+        - name: value16_max
+          optional: true
           type: RZ_CMD_ARG_TYPE_NUM
 
     - name: "/v4"
@@ -541,7 +547,10 @@ commands:
         - RZ_OUTPUT_MODE_QUIET
         - RZ_OUTPUT_MODE_TABLE
       args:
-        - name: value32
+        - name: value32_min
+          type: RZ_CMD_ARG_TYPE_NUM
+        - name: value32_max
+          optional: true
           type: RZ_CMD_ARG_TYPE_NUM
 
     - name: "/v8"
@@ -555,7 +564,10 @@ commands:
         - RZ_OUTPUT_MODE_QUIET
         - RZ_OUTPUT_MODE_TABLE
       args:
-        - name: value64
+        - name: value64_min
+          type: RZ_CMD_ARG_TYPE_NUM
+        - name: value64_max
+          optional: true
           type: RZ_CMD_ARG_TYPE_NUM
     details:
       - name: Usage example
@@ -576,7 +588,10 @@ commands:
         - RZ_OUTPUT_MODE_QUIET
         - RZ_OUTPUT_MODE_TABLE
       args:
-        - name: value8
+        - name: value8_min
+          type: RZ_CMD_ARG_TYPE_NUM
+        - name: value8_max
+          optional: true
           type: RZ_CMD_ARG_TYPE_NUM
 
     - name: "/V2"
@@ -590,7 +605,10 @@ commands:
         - RZ_OUTPUT_MODE_QUIET
         - RZ_OUTPUT_MODE_TABLE
       args:
-        - name: value16
+        - name: value16_min
+          type: RZ_CMD_ARG_TYPE_NUM
+        - name: value16_max
+          optional: true
           type: RZ_CMD_ARG_TYPE_NUM
 
     - name: "/V4"
@@ -604,7 +622,10 @@ commands:
         - RZ_OUTPUT_MODE_QUIET
         - RZ_OUTPUT_MODE_TABLE
       args:
-        - name: value32
+        - name: value32_min
+          type: RZ_CMD_ARG_TYPE_NUM
+        - name: value32_max
+          optional: true
           type: RZ_CMD_ARG_TYPE_NUM
 
     - name: "/V8"
@@ -618,7 +639,10 @@ commands:
         - RZ_OUTPUT_MODE_QUIET
         - RZ_OUTPUT_MODE_TABLE
       args:
-        - name: value64
+        - name: value64_min
+          type: RZ_CMD_ARG_TYPE_NUM
+        - name: value64_max
+          optional: true
           type: RZ_CMD_ARG_TYPE_NUM
     details:
       - name: Usage example
