@@ -113,3 +113,42 @@ Searching in [0x0,0x200)
 [2Khits: 1
 EOF
 RUN
+
+NAME=consistency btw / and /e
+FILE=bins/elf/analysis/ls2
+CMDS=<<EOF
+e scr.color=1
+/ lib
+echo ----
+/e /lib/
+EOF
+EXPECT=<<EOF
+0x00400239 hit0_0 ./[33mlib[0m64/ld-linux-x86-.
+0x00400f19 hit0_1 .a[33mlib[0mselinux.so.1_IT.
+0x00400fae hit0_2 .etfilecon_fini[33mlib[0macl.so.1acl_get.
+0x00400feb hit0_3 .l_extended_file[33mlib[0mc.so.6fflushst.
+0x004013c3 hit0_4 .cmptcgetpgrp__[33mlib[0mc_start_maindir.
+0x0041769a hit0_5 .system call./.[33mlib[0ms/lt-.
+0x004186e0 hit0_6 .emory exhausted[33mlib[0m/xstrtol.c0 <.
+0x00418e58 hit0_7 .xstrtoumax/usr/[33mlib[0mASCIICHARSETAL.
+----
+EOF
+EXPECT_ERR=<<EOF
+Searching 3 bytes in [0x61d368,0x61d720)
+[2Khits: 0
+Searching 3 bytes in [0x400000,0x41bc2c)
+[  ]  0x00403a00 < 0x0041bc2c  hits = 5   [# ][  ]  0x00407a00 < 0x0041bc2c  hits = 5   [# ][  ]  0x0040ba00 < 0x0041bc2c  hits = 5   [# ][  ]  0x0040fa00 < 0x0041bc2c  hits = 5   [# ][  ]  0x00413a00 < 0x0041bc2c  hits = 5   [# ][  ]  0x00417a00 < 0x0041bc2c  hits = 6   [# ][  ]  0x0041ba00 < 0x0041bc2c  hits = 8   [# ][2Khits: 8
+Searching 3 bytes in [0x61c5f4,0x61d360)
+[2Khits: 0
+Searching 3 bytes in [0x61bdf0,0x61c5f4)
+[2Khits: 0
+Searching in [0x61d368,0x61d720)
+[2Khits: 0
+Searching in [0x400000,0x41bc2c)
+[2Khits: 0
+Searching in [0x61c5f4,0x61d360)
+[2Khits: 0
+Searching in [0x61bdf0,0x61c5f4)
+[2Khits: 0
+EOF
+RUN
