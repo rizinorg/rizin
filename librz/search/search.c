@@ -626,7 +626,7 @@ static RzList *assemble_search_window_list(RzList /*<RzIOMap *>*/ *search_in, Rz
 
 	RzIOMap *map;
 	RzListIter *iter;
-	rz_list_foreach(search_in, iter, map) {
+	rz_list_foreach (search_in, iter, map) {
 		ut64 start = map->itv.addr;
 		ut64 end = start + map->itv.size;
 		for (size_t chunk_begin = start; chunk_begin < end; chunk_begin += opt->chunk_size) {

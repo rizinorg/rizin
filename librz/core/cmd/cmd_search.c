@@ -2809,7 +2809,6 @@ RZ_IPI RzCmdStatus rz_cmd_search_value_64be_handler(RzCore *core, int argc, cons
 	return pass_to_legacy_api(core, argc, argv, RZ_OUTPUT_MODE_STANDARD);
 }
 
-
 static RzSearchOpt *setup_search_options(RzCore *core) {
 	RzSearchOpt *search_opts = rz_search_opt_new();
 	if (!(rz_search_opt_set_max_hits(search_opts, rz_config_get_i(core->config, "search.maxhits")) &&
