@@ -70,7 +70,7 @@ RZ_IPI RzCmdStatus rz_cmd_search_assemble_1_handler(RzCore *core, int argc, cons
 // "/aI"
 RZ_IPI RzCmdStatus rz_cmd_search_assemble_I_handler(RzCore *core, int argc, const char **argv);
 // "/aa"
-RZ_IPI RzCmdStatus rz_cmd_search_assemble_a_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_cmd_search_assemble_a_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "/ac"
 RZ_IPI RzCmdStatus rz_cmd_search_assemble_c_handler(RzCore *core, int argc, const char **argv);
 // "/ad"

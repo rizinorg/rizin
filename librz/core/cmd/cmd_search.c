@@ -2567,8 +2567,8 @@ RZ_IPI RzCmdStatus rz_cmd_search_assemble_I_handler(RzCore *core, int argc, cons
 }
 
 // "/aa"
-RZ_IPI RzCmdStatus rz_cmd_search_assemble_a_handler(RzCore *core, int argc, const char **argv) {
-	return pass_to_legacy_api(core, argc, argv, RZ_OUTPUT_MODE_STANDARD);
+RZ_IPI RzCmdStatus rz_cmd_search_assemble_a_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	return pass_to_legacy_api(core, argc, argv, mode);
 }
 
 // "/ac"

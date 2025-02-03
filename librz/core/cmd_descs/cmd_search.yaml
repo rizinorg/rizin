@@ -37,6 +37,9 @@ commands:
     - name: "/aa"
       summary: "Linearly find aproximated assembly (case insensitive strstr)"
       cname: cmd_search_assemble_a
+      modes:
+        - RZ_OUTPUT_MODE_STANDARD
+        - RZ_OUTPUT_MODE_JSON
       args:
         - name: "asm-text"
           type: RZ_CMD_ARG_TYPE_STRING

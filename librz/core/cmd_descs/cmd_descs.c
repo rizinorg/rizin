@@ -20834,7 +20834,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_search_assemble_I_cd = rz_cmd_desc_argv_new(core->rcmd, slash_a_cd, "/aI", rz_cmd_search_assemble_I_handler, &cmd_search_assemble_I_help);
 	rz_warn_if_fail(cmd_search_assemble_I_cd);
 
-	RzCmdDesc *cmd_search_assemble_a_cd = rz_cmd_desc_argv_new(core->rcmd, slash_a_cd, "/aa", rz_cmd_search_assemble_a_handler, &cmd_search_assemble_a_help);
+	RzCmdDesc *cmd_search_assemble_a_cd = rz_cmd_desc_argv_modes_new(core->rcmd, slash_a_cd, "/aa", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_search_assemble_a_handler, &cmd_search_assemble_a_help);
 	rz_warn_if_fail(cmd_search_assemble_a_cd);
 
 	RzCmdDesc *cmd_search_assemble_c_cd = rz_cmd_desc_argv_new(core->rcmd, slash_a_cd, "/ac", rz_cmd_search_assemble_c_handler, &cmd_search_assemble_c_help);
