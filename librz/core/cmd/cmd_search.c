@@ -2840,7 +2840,7 @@ RZ_IPI RzCmdStatus rz_cmd_search_hex_handler(RzCore *core, int argc, const char 
 	CMD_SEARCH_BEGIN();
 
 	RzList *hits = NULL;
-	RzSearchBytesPattern *pattern = rz_search_parse_byte_pattern(argv[1], NULL);
+	RzSearchBytesPattern *pattern = rz_search_parse_byte_pattern(argv[1], "bytes");
 
 	if (!pattern) {
 		RZ_LOG_ERROR("Failed to parse given pattern.\n");

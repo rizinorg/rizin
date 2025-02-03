@@ -54,15 +54,15 @@ e search.prefix="🍍"
 /x f09f8d8d
 EOF
 EXPECT=<<EOF
-00000000 1 a.match.0
-00000018 1 a.match.1
-00000030 1 a.match.2
-00000001 1 b.match.0
-00000019 1 b.match.1
-00000031 1 b.match.2
-0000000e 4 🍍.match.0
-00000026 4 🍍.match.1
-0000003e 4 🍍.match.2
+0x00000000 1 a.bytes.0
+0x00000018 1 a.bytes.1
+0x00000030 1 a.bytes.2
+0x00000001 1 b.bytes.0
+0x00000019 1 b.bytes.1
+0x00000031 1 b.bytes.2
+0x0000000e 4 🍍.bytes.0
+0x00000026 4 🍍.bytes.1
+0x0000003e 4 🍍.bytes.2
 EOF
 RUN
 
@@ -76,7 +76,7 @@ e search.prefix="overlimit"
 /x 6162636465666741424344454647f09f8d8d2092ff7211016162636465666741424344454647f09f8d8d2092ff7211016162636465666741424344454647f09f8d8d2092ff720aff
 EOF
 EXPECT=<<EOF
-00000000 71 all.match.0
+0x00000000 71 all.bytes.0
 EOF
 RUN
 
@@ -91,16 +91,16 @@ e search.prefix="complex"
 /x 4..54647.09f...d2092.f72
 EOF
 EXPECT=<<EOF
-00000006 2 3wild.match.0
-00000015 2 3wild.match.1
-00000017 2 3wild.match.2
-0000001e 2 3wild.match.3
-0000002d 2 3wild.match.4
-0000002f 2 3wild.match.5
-00000036 2 3wild.match.6
-0000000a 12 complex.match.0
-00000022 12 complex.match.1
-0000003a 12 complex.match.2
+0x00000006 2 3wild.bytes.0
+0x00000015 2 3wild.bytes.1
+0x00000017 2 3wild.bytes.2
+0x0000001e 2 3wild.bytes.3
+0x0000002d 2 3wild.bytes.4
+0x0000002f 2 3wild.bytes.5
+0x00000036 2 3wild.bytes.6
+0x0000000a 12 complex.bytes.0
+0x00000022 12 complex.bytes.1
+0x0000003a 12 complex.bytes.2
 EOF
 RUN
 
@@ -114,24 +114,24 @@ e search.prefix="4wild2"
 /x 4.4.
 EOF
 EXPECT=<<EOF
-00000007 2 4wild2.match.0
-00000008 2 4wild2.match.1
-00000009 2 4wild2.match.2
-0000000a 2 4wild2.match.3
-0000000b 2 4wild2.match.4
-0000000c 2 4wild2.match.5
-0000001f 2 4wild2.match.6
-00000020 2 4wild2.match.7
-00000021 2 4wild2.match.8
-00000022 2 4wild2.match.9
-00000023 2 4wild2.match.10
-00000024 2 4wild2.match.11
-00000037 2 4wild2.match.12
-00000038 2 4wild2.match.13
-00000039 2 4wild2.match.14
-0000003a 2 4wild2.match.15
-0000003b 2 4wild2.match.16
-0000003c 2 4wild2.match.17
+0x00000007 2 4wild2.bytes.0
+0x00000008 2 4wild2.bytes.1
+0x00000009 2 4wild2.bytes.2
+0x0000000a 2 4wild2.bytes.3
+0x0000000b 2 4wild2.bytes.4
+0x0000000c 2 4wild2.bytes.5
+0x0000001f 2 4wild2.bytes.6
+0x00000020 2 4wild2.bytes.7
+0x00000021 2 4wild2.bytes.8
+0x00000022 2 4wild2.bytes.9
+0x00000023 2 4wild2.bytes.10
+0x00000024 2 4wild2.bytes.11
+0x00000037 2 4wild2.bytes.12
+0x00000038 2 4wild2.bytes.13
+0x00000039 2 4wild2.bytes.14
+0x0000003a 2 4wild2.bytes.15
+0x0000003b 2 4wild2.bytes.16
+0x0000003c 2 4wild2.bytes.17
 EOF
 RUN
 
@@ -147,8 +147,8 @@ e search.prefix="odd1424"
 /x 1424a41424b
 EOF
 EXPECT=<<EOF
-00000029 2 odd14f.match.0
-000000d0 6 odd1424.match.0
+0x00000029 2 odd14f.bytes.0
+0x000000d0 6 odd1424.bytes.0
 EOF
 RUN
 
@@ -171,33 +171,33 @@ e search.prefix="4142"
 /x 4142:4142
 EOF
 EXPECT=<<EOF
-0000000c 3 1.match.0
-00000024 3 1.match.1
-0000003c 3 1.match.2
-0000000c 3 2.match.0
-00000024 3 2.match.1
-0000003c 3 2.match.2
-0000000c 3 all_f.match.0
-00000024 3 all_f.match.1
-0000003c 3 all_f.match.2
-0000000c 3 odd_mask.match.0
-00000024 3 odd_mask.match.1
-0000003c 3 odd_mask.match.2
-00000000 2 4142.match.0
-00000004 2 4142.match.1
-00000007 2 4142.match.2
-0000000b 2 4142.match.3
-00000014 2 4142.match.4
-00000018 2 4142.match.5
-0000001c 2 4142.match.6
-0000001f 2 4142.match.7
-00000023 2 4142.match.8
-0000002c 2 4142.match.9
-00000030 2 4142.match.10
-00000034 2 4142.match.11
-00000037 2 4142.match.12
-0000003b 2 4142.match.13
-00000044 2 4142.match.14
+0x0000000c 3 1.bytes.0
+0x00000024 3 1.bytes.1
+0x0000003c 3 1.bytes.2
+0x0000000c 3 2.bytes.0
+0x00000024 3 2.bytes.1
+0x0000003c 3 2.bytes.2
+0x0000000c 3 all_f.bytes.0
+0x00000024 3 all_f.bytes.1
+0x0000003c 3 all_f.bytes.2
+0x0000000c 3 odd_mask.bytes.0
+0x00000024 3 odd_mask.bytes.1
+0x0000003c 3 odd_mask.bytes.2
+0x00000000 2 4142.bytes.0
+0x00000004 2 4142.bytes.1
+0x00000007 2 4142.bytes.2
+0x0000000b 2 4142.bytes.3
+0x00000014 2 4142.bytes.4
+0x00000018 2 4142.bytes.5
+0x0000001c 2 4142.bytes.6
+0x0000001f 2 4142.bytes.7
+0x00000023 2 4142.bytes.8
+0x0000002c 2 4142.bytes.9
+0x00000030 2 4142.bytes.10
+0x00000034 2 4142.bytes.11
+0x00000037 2 4142.bytes.12
+0x0000003b 2 4142.bytes.13
+0x00000044 2 4142.bytes.14
 EOF
 RUN
 
@@ -232,13 +232,13 @@ e search.prefix="chunk_33_20000"
 /x 343735383465
 EOF
 EXPECT=<<EOF
-0001fffa 6 chunk_32_overlap_0_1fffa.match.0
-0001fffb 6 chunk_32_overlap_1_1fffb.match.0
-0001fffc 6 chunk_32_overlap_2_1fffc.match.0
-0001fffd 6 chunk_32_overlap_3_1fffd.match.0
-0001fffe 6 chunk_32_overlap_4_1fffe.match.0
-0001ffff 6 chunk_32_overlap_5_1ffff.match.0
-00020000 6 chunk_33_20000.match.0
+0x0001fffa 6 chunk_32_overlap_0_1fffa.bytes.0
+0x0001fffb 6 chunk_32_overlap_1_1fffb.bytes.0
+0x0001fffc 6 chunk_32_overlap_2_1fffc.bytes.0
+0x0001fffd 6 chunk_32_overlap_3_1fffd.bytes.0
+0x0001fffe 6 chunk_32_overlap_4_1fffe.bytes.0
+0x0001ffff 6 chunk_32_overlap_5_1ffff.bytes.0
+0x00020000 6 chunk_33_20000.bytes.0
 EOF
 RUN
 
@@ -255,8 +255,8 @@ e search.prefix="just_fit_in_one_chunk"
 /x 34313431343134323431343134333431343134343431343134353431343134363431343134373431343134383431343134393431343134613431343134623431
 EOF
 EXPECT=<<EOF
-00000000 4125 larger_than_default_chunk.match.0
-00000000 64 just_fit_in_one_chunk.match.0
+0x00000000 4125 larger_than_default_chunk.bytes.0
+0x00000000 64 just_fit_in_one_chunk.bytes.0
 EOF
 RUN
 
