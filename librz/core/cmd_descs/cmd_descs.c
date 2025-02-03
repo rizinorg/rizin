@@ -20827,18 +20827,18 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(cmd_search_str_chunk_cd);
 	rz_cmd_desc_set_default_mode(cmd_search_str_chunk_cd, RZ_OUTPUT_MODE_STANDARD);
 
-	RzCmdDesc *slash_a_cd = rz_cmd_desc_group_new(core->rcmd, slash__cd, "/a", rz_cmd_search_assemble_handler, &cmd_search_assemble_help, &slash_a_help);
+	RzCmdDesc *slash_a_cd = rz_cmd_desc_group_modes_new(core->rcmd, slash__cd, "/a", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_search_assemble_handler, &cmd_search_assemble_help, &slash_a_help);
 	rz_warn_if_fail(slash_a_cd);
-	RzCmdDesc *cmd_search_assemble_1_cd = rz_cmd_desc_argv_new(core->rcmd, slash_a_cd, "/a1", rz_cmd_search_assemble_1_handler, &cmd_search_assemble_1_help);
+	RzCmdDesc *cmd_search_assemble_1_cd = rz_cmd_desc_argv_modes_new(core->rcmd, slash_a_cd, "/a1", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_search_assemble_1_handler, &cmd_search_assemble_1_help);
 	rz_warn_if_fail(cmd_search_assemble_1_cd);
 
-	RzCmdDesc *cmd_search_assemble_I_cd = rz_cmd_desc_argv_new(core->rcmd, slash_a_cd, "/aI", rz_cmd_search_assemble_I_handler, &cmd_search_assemble_I_help);
+	RzCmdDesc *cmd_search_assemble_I_cd = rz_cmd_desc_argv_modes_new(core->rcmd, slash_a_cd, "/aI", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_search_assemble_I_handler, &cmd_search_assemble_I_help);
 	rz_warn_if_fail(cmd_search_assemble_I_cd);
 
 	RzCmdDesc *cmd_search_assemble_a_cd = rz_cmd_desc_argv_modes_new(core->rcmd, slash_a_cd, "/aa", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_search_assemble_a_handler, &cmd_search_assemble_a_help);
 	rz_warn_if_fail(cmd_search_assemble_a_cd);
 
-	RzCmdDesc *cmd_search_assemble_c_cd = rz_cmd_desc_argv_new(core->rcmd, slash_a_cd, "/ac", rz_cmd_search_assemble_c_handler, &cmd_search_assemble_c_help);
+	RzCmdDesc *cmd_search_assemble_c_cd = rz_cmd_desc_argv_modes_new(core->rcmd, slash_a_cd, "/ac", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_search_assemble_c_handler, &cmd_search_assemble_c_help);
 	rz_warn_if_fail(cmd_search_assemble_c_cd);
 
 	RzCmdDesc *cmd_search_assemble_d_cd = rz_cmd_desc_argv_modes_new(core->rcmd, slash_a_cd, "/ad", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_search_assemble_d_handler, &cmd_search_assemble_d_help);
@@ -20850,10 +20850,10 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_search_assemble_d_slasha_cd = rz_cmd_desc_argv_new(core->rcmd, slash_a_cd, "/ad/a", rz_cmd_search_assemble_d_slasha_handler, &cmd_search_assemble_d_slasha_help);
 	rz_warn_if_fail(cmd_search_assemble_d_slasha_cd);
 
-	RzCmdDesc *cmd_search_assemble_e_cd = rz_cmd_desc_argv_new(core->rcmd, slash_a_cd, "/ae", rz_cmd_search_assemble_e_handler, &cmd_search_assemble_e_help);
+	RzCmdDesc *cmd_search_assemble_e_cd = rz_cmd_desc_argv_modes_new(core->rcmd, slash_a_cd, "/ae", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_search_assemble_e_handler, &cmd_search_assemble_e_help);
 	rz_warn_if_fail(cmd_search_assemble_e_cd);
 
-	RzCmdDesc *slash_af_cd = rz_cmd_desc_group_new(core->rcmd, slash_a_cd, "/af", rz_cmd_search_assemble_f_handler, &cmd_search_assemble_f_help, &slash_af_help);
+	RzCmdDesc *slash_af_cd = rz_cmd_desc_group_modes_new(core->rcmd, slash_a_cd, "/af", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_search_assemble_f_handler, &cmd_search_assemble_f_help, &slash_af_help);
 	rz_warn_if_fail(slash_af_cd);
 	RzCmdDesc *cmd_search_assemble_fl_cd = rz_cmd_desc_argv_new(core->rcmd, slash_af_cd, "/afl", rz_cmd_search_assemble_fl_handler, &cmd_search_assemble_fl_help);
 	rz_warn_if_fail(cmd_search_assemble_fl_cd);
@@ -20861,21 +20861,21 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_search_assemble_i_cd = rz_cmd_desc_argv_modes_new(core->rcmd, slash_a_cd, "/ai", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_search_assemble_i_handler, &cmd_search_assemble_i_help);
 	rz_warn_if_fail(cmd_search_assemble_i_cd);
 
-	RzCmdDesc *cmd_search_assemble_l_cd = rz_cmd_desc_argv_new(core->rcmd, slash_a_cd, "/al", rz_cmd_search_assemble_l_handler, &cmd_search_assemble_l_help);
+	RzCmdDesc *cmd_search_assemble_l_cd = rz_cmd_desc_argv_modes_new(core->rcmd, slash_a_cd, "/al", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_search_assemble_l_handler, &cmd_search_assemble_l_help);
 	rz_warn_if_fail(cmd_search_assemble_l_cd);
 
-	RzCmdDesc *cmd_search_assemble_m_cd = rz_cmd_desc_argv_new(core->rcmd, slash_a_cd, "/am", rz_cmd_search_assemble_m_handler, &cmd_search_assemble_m_help);
+	RzCmdDesc *cmd_search_assemble_m_cd = rz_cmd_desc_argv_modes_new(core->rcmd, slash_a_cd, "/am", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_search_assemble_m_handler, &cmd_search_assemble_m_help);
 	rz_warn_if_fail(cmd_search_assemble_m_cd);
 
-	RzCmdDesc *cmd_search_assemble_o_cd = rz_cmd_desc_argv_new(core->rcmd, slash_a_cd, "/ao", rz_cmd_search_assemble_o_handler, &cmd_search_assemble_o_help);
+	RzCmdDesc *cmd_search_assemble_o_cd = rz_cmd_desc_argv_modes_new(core->rcmd, slash_a_cd, "/ao", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_search_assemble_o_handler, &cmd_search_assemble_o_help);
 	rz_warn_if_fail(cmd_search_assemble_o_cd);
 
-	RzCmdDesc *slash_as_cd = rz_cmd_desc_group_new(core->rcmd, slash_a_cd, "/as", rz_cmd_search_assemble_s_handler, &cmd_search_assemble_s_help, &slash_as_help);
+	RzCmdDesc *slash_as_cd = rz_cmd_desc_group_modes_new(core->rcmd, slash_a_cd, "/as", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_search_assemble_s_handler, &cmd_search_assemble_s_help, &slash_as_help);
 	rz_warn_if_fail(slash_as_cd);
 	RzCmdDesc *cmd_search_assemble_sl_cd = rz_cmd_desc_argv_new(core->rcmd, slash_as_cd, "/asl", rz_cmd_search_assemble_sl_handler, &cmd_search_assemble_sl_help);
 	rz_warn_if_fail(cmd_search_assemble_sl_cd);
 
-	RzCmdDesc *slash_at_cd = rz_cmd_desc_group_new(core->rcmd, slash_a_cd, "/at", rz_cmd_search_assemble_t_handler, &cmd_search_assemble_t_help, &slash_at_help);
+	RzCmdDesc *slash_at_cd = rz_cmd_desc_group_modes_new(core->rcmd, slash_a_cd, "/at", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_search_assemble_t_handler, &cmd_search_assemble_t_help, &slash_at_help);
 	rz_warn_if_fail(slash_at_cd);
 	RzCmdDesc *cmd_search_assemble_tl_cd = rz_cmd_desc_argv_new(core->rcmd, slash_at_cd, "/atl", rz_cmd_search_assemble_tl_handler, &cmd_search_assemble_tl_help);
 	rz_warn_if_fail(cmd_search_assemble_tl_cd);
@@ -20941,7 +20941,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(cmd_search_hash_block_cd);
 	rz_cmd_desc_set_default_mode(cmd_search_hash_block_cd, RZ_OUTPUT_MODE_STANDARD);
 
-	RzCmdDesc *slash_m_cd = rz_cmd_desc_group_new(core->rcmd, slash__cd, "/m", rz_cmd_search_magic_const_handler, &cmd_search_magic_const_help, &slash_m_help);
+	RzCmdDesc *slash_m_cd = rz_cmd_desc_group_modes_new(core->rcmd, slash__cd, "/m", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_search_magic_const_handler, &cmd_search_magic_const_help, &slash_m_help);
 	rz_warn_if_fail(slash_m_cd);
 	RzCmdDesc *cmd_search_magic_bin_headers_cd = rz_cmd_desc_argv_new(core->rcmd, slash_m_cd, "/mb", rz_cmd_search_magic_bin_headers_handler, &cmd_search_magic_bin_headers_help);
 	rz_warn_if_fail(cmd_search_magic_bin_headers_cd);
