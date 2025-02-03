@@ -1209,6 +1209,7 @@ static void do_asm_search(RzCore *core, struct search_parameters *param, const c
 			const char *cmdhit = rz_config_get(core->config, "cmd.hit");
 			rz_list_foreach (hits, iter, hit) {
 				if (rz_cons_is_breaked()) {
+					rz_list_free(hits);
 					break;
 				}
 				if (cmdhit && *cmdhit) {
@@ -1252,7 +1253,7 @@ static void do_asm_search(RzCore *core, struct search_parameters *param, const c
 				count++;
 			}
 			rz_list_purge(hits);
-			free(hits);
+			rz_list_free(hits);
 		}
 	}
 	if (param->outmode == RZ_MODE_JSON) {
@@ -2314,6 +2315,7 @@ reread:
 				rz_search_keyword_new((const ut8 *)v_buf, bsize, NULL, 0, NULL));
 			free(v_buf);
 		}
+		rz_list_free(nums);
 		rz_search_begin(core->search);
 		dosearch = true;
 		break;

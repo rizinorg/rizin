@@ -655,6 +655,7 @@ static Ase findAssembler(RzAsm *a, const char *kw) {
 		if (assemblerMatches(a, h)) {
 			if (kw) {
 				if (strstr(h->name, kw)) {
+					rz_iterator_free(iter);
 					return h->assemble;
 				}
 			} else {

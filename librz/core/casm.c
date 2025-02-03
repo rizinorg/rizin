@@ -279,23 +279,28 @@ RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_strsearch(RzCore *core, const ch
 	ut64 usrimm2 = inp_arg ? rz_num_math(core->num, inp_arg) : usrimm;
 	if (usrimm > usrimm2) {
 		RZ_LOG_ERROR("core: Invalid range [0x%08" PFMT64x ":0x%08" PFMT64x "]\n", usrimm, usrimm2);
+		free(inp);
 		return NULL;
 	}
 
 	if (core->blocksize < 8) {
 		RZ_LOG_ERROR("core: block size is too small\n");
+		free(inp);
 		return NULL;
 	}
 	if (!(buf = (ut8 *)calloc(core->blocksize, 1))) {
+		free(inp);
 		return NULL;
 	}
 	if (!(ptr = rz_str_dup(input))) {
 		free(buf);
+		free(inp);
 		return NULL;
 	}
 	if (!(hits = rz_core_asm_hit_list_new())) {
 		free(buf);
 		free(ptr);
+		free(inp);
 		return NULL;
 	}
 	tokens[0] = NULL;
@@ -481,6 +486,7 @@ RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_strsearch(RzCore *core, const ch
 	rz_cons_break_pop();
 	rz_asm_set_pc(core->rasm, toff);
 beach:
+	free(inp);
 	free(buf);
 	free(ptr);
 	free(code);

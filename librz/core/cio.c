@@ -667,9 +667,11 @@ RZ_API bool rz_core_write_string_wide_at(RzCore *core, ut64 addr, const char *s)
 	if (!rz_core_write_at(core, addr, (const ut8 *)tmp, len * 2)) {
 		RZ_LOG_ERROR("Could not write wide string '%s' at %" PFMT64x "\n", s, addr);
 		free(str);
+		free(tmp);
 		return false;
 	}
 	res = true;
+	free(tmp);
 str_err:
 	free(str);
 	return res;
