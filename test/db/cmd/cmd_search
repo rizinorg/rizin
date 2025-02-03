@@ -2,6 +2,7 @@ NAME=trailing comment
 FILE==
 ARGS=-n
 CMDS=<<EOF
+e search.show_progress=false
 /z #
 EOF
 EXPECT=
@@ -122,9 +123,12 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=/j escaped
+NAME=/zj escaped
 FILE=bins/mach0/escaped
-CMDS=/j hello
+CMDS=<<EOF
+e search.show_progress=false
+/zj hello
+EOF
 EXPECT=<<EOF
 [{"offset":8019,"type":"string","data":"....]........c:\\hello\\world..M......."}]
 EOF
@@ -138,7 +142,9 @@ s 0
 e search.in=file
 e search.from=0
 e search.to=0x00000050
-/ ELF
+e search.str.min_len=3
+e search.show_progress=false
+/z ELF
 EOF
 EXPECT=<<EOF
 0x00000001 hit0_0 ".ELF................"
@@ -154,69 +160,25 @@ s 0x1000
 e search.in=file
 e search.from=0
 e search.to=0x50
-/ ELF
+e search.str.min_len=3
+e search.show_progress=false
+/z ELF
 EOF
 EXPECT=<<EOF
 0x00000001 hit0_0 ".ELF................"
 EOF
 RUN
 
-NAME=/j search
+NAME=/zj search
 FILE=malloc://1024
 CMDS=<<EOF
 wx 666f6f005c
-/j foo
+e search.str.min_len=3
+e search.show_progress=false
+/zj foo
 EOF
 EXPECT=<<EOF
 [{"offset":0,"type":"string","data":"foo.\\.............."}]
-EOF
-RUN
-
-NAME=/! search
-FILE=malloc://1024
-CMDS=<<EOF
-wx 666f6f00
-/! ff
-EOF
-EXPECT=<<EOF
-0x00000000 hit0_0 "foo..............."
-EOF
-RUN
-
-NAME=/!x search
-FILE=malloc://1024
-CMDS=<<EOF
-wx 666f6f00
-/!x 00
-EOF
-EXPECT=<<EOF
-0x00000000 hit0_0 66
-EOF
-RUN
-
-NAME=// search
-FILE=malloc://1024
-CMDS=<<EOF
-wx 666f6f00
-/!x 00
-//
-EOF
-EXPECT=<<EOF
-0x00000000 hit0_0 66
-0x00000000 hit1_0 66
-EOF
-RUN
-
-NAME=// search
-FILE=malloc://1024
-CMDS=<<EOF
-wx 666f6f00
-/!x 00
-//
-EOF
-EXPECT=<<EOF
-0x00000000 hit0_0 66
-0x00000000 hit1_0 66
 EOF
 RUN
 
@@ -366,6 +328,7 @@ s 0x1000
 e search.in=file
 e search.from=0
 e search.to=0x00000050
+e search.show_progress=false
 /x 3480
 EOF
 EXPECT=<<EOF
@@ -617,6 +580,7 @@ w ABCD @ 0x100
 s 0
 e search.from=0
 e search.to=0x200
+e search.show_progress=false
 /x 41424344
 EOF
 EXPECT=<<EOF
@@ -632,6 +596,7 @@ s 0x1000
 e search.in=raw
 e search.from=0
 e search.to=0x200
+e search.show_progress=false
 /x 41424344
 EOF
 EXPECT=<<EOF
@@ -647,7 +612,6 @@ e search.in=file
 s 0x1000
 /m~[0]
 s
-/fm
 EOF
 EXPECT=<<EOF
 0x00000000
@@ -811,6 +775,7 @@ CMDS=<<EOF
 e io.va=false
 e search.in=file
 s 0x1000
+e search.show_progress=false
 /x 9090cd80
 s
 EOF
@@ -821,7 +786,10 @@ RUN
 
 NAME=/x hit in the second map
 FILE=bins/elf/ioli/crackme0x00
-CMDS=/x f8820408
+CMDS=<<EOF
+e search.show_progress=false
+/x f8820408
+EOF
 EXPECT=<<EOF
 0x08049f2c hit0_0 f8820408
 EOF
@@ -829,7 +797,10 @@ RUN
 
 NAME=/x wrong entries
 FILE=bins/elf/analysis/go_stripped
-CMDS=/x 653b2530000000724b53b834e7150883ec188
+CMDS=<<EOF
+e search.show_progress=false
+/x 653b2530000000724b53b834e7150883ec188
+EOF
 EXPECT=<<EOF
 0x0805ae90 hit0_0 653b2530000000724b53b834e7150883ec
 0x0805b030 hit0_1 653b2530000000724b53b834e7150883ec
@@ -843,6 +814,7 @@ w ABCD @ 0x100
 b 0x100
 e search.from=0x50
 e search.to=0x150
+e search.show_progress=false
 /x 41424344
 EOF
 EXPECT=<<EOF
@@ -857,6 +829,7 @@ w ABCD @ 0x100
 b 0x100
 e search.from=0x50
 e search.to=0x90
+e search.show_progress=false
 /x 41424344
 EOF
 EXPECT=
@@ -869,6 +842,7 @@ w ABCD @ 0x100
 b 0x100
 e search.from=0x100
 e search.to=0x104
+e search.show_progress=false
 /x 41424344
 EOF
 EXPECT=<<EOF
@@ -887,6 +861,7 @@ w ABCD @ 0x100
 b 0x100
 e search.from=0x101
 e search.to=0x104
+e search.show_progress=false
 /x 41424344
 EOF
 EXPECT=
@@ -899,6 +874,7 @@ w ABCD @ 0x100
 b 0x100
 e search.from=0x100
 e search.to=0x103
+e search.show_progress=false
 /x 41424344
 EOF
 EXPECT=
@@ -913,7 +889,10 @@ FILE=malloc://1024
 CMDS=<<EOF
 w ABCD @ 0x100
 b 0x100
-/x 41424344 @(0x50 0x150)
+e search.from=0x50
+e search.to=0x150
+e search.show_progress=false
+/x 41424344
 EOF
 EXPECT=<<EOF
 0x00000100 hit0_0 41424344
@@ -925,71 +904,51 @@ FILE=malloc://1024
 CMDS=<<EOF
 w ABCD @ 0x100
 b 0x100
-/x 41424344 @(0x50 0x90)
-EOF
-EXPECT=
-RUN
-
-NAME=backward search hex
-FILE=malloc://1024
-CMDS=<<EOF
-w ABCD @ 0x100
 e search.from=0x50
-e search.to=0x150
-b 0x100
-/bx 41424344
-EOF
-EXPECT=<<EOF
-0x00000100 hit0_0 41424344
-EOF
-RUN
-
-NAME=backward search hex
-FILE=malloc://1024
-CMDS=<<EOF
-w ABCD @ 0x100
-e search.from=0x110
-e search.to=0x150
-b 0x100
-/bx 41424344
+e search.to=0x90
+e search.show_progress=false
+/x 41424344
 EOF
 EXPECT=
 RUN
 
-NAME=backward search hex
+NAME=search hex
 FILE=malloc://1024
 CMDS=<<EOF
 w ABCD @ 0x100
 e search.from=0x100
 e search.to=0x104
 b 0x100
-/bx 41424344
+e search.show_progress=false
+/x 41424344
 EOF
 EXPECT=<<EOF
 0x00000100 hit0_0 41424344
 EOF
 RUN
 
-NAME=backward search hex
+NAME=search hex
 FILE=malloc://1024
 CMDS=<<EOF
 w ABCD @ 0x100
 e search.from=0x100
 e search.to=0x103
 b 0x100
-/bx 41424344
+e search.show_progress=false
+/x 41424344
 EOF
 EXPECT=
 RUN
 
-NAME=backward search hex
+NAME=search hex
 FILE=malloc://1024
 CMDS=<<EOF
 w ABCD @ 0x100
 e search.from=0x101
 e search.to=0x104
 b 0x100
-/bx 41424344
+e search.show_progress=false
+/x 41424344
 EOF
 EXPECT=
 RUN
@@ -998,6 +957,7 @@ NAME=/x with bin mask
 FILE=malloc://1024
 CMDS=<<EOF
 wx aaaaaabb
+e search.show_progress=false
 /x aa..bb
 EOF
 EXPECT=<<EOF
@@ -1009,6 +969,7 @@ NAME=/x with bin mask
 FILE=malloc://1024
 CMDS=<<EOF
 wx aaaaaabb
+e search.show_progress=false
 /x ..aabb
 EOF
 EXPECT=<<EOF
@@ -1060,26 +1021,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-
-NAME=search escaped string
-FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=/ \x90\x66~[0]
-EXPECT=<<EOF
-0x08048323
-0x08048325
-0x08048327
-0x08048329
-0x0804832b
-0x0804832d
-0x08048335
-0x08048337
-0x08048339
-0x0804833b
-0x0804833d
-0x0804841d
-EOF
-RUN
-
 NAME=search range /c in arm
 FILE=bins/arm/elf/hello_world
 CMDS=<<EOF
@@ -1112,20 +1053,10 @@ NAME=/x search hexpairs ignoring spaces
 FILE=bins/elf/ioli/crackme0x00
 ARGS=-n
 CMDS=<<EOF
-# Password
-/x 50 61 73 73 77 6F 72 64
+e search.show_progress=false
+# The password
+/x 50617373776F7264
 EOF
-EXPECT=<<EOF
-0x00000581 hit0_0 50617373776f7264
-0x0000059e hit0_1 50617373776f7264
-0x000005a9 hit0_2 50617373776f7264
-EOF
-RUN
-
-NAME=/x search hexpairs ignoring spaces
-FILE=bins/elf/ioli/crackme0x00
-ARGS=-n
-CMDS=/x 5061 73 73  776F  72 64 # Password
 EXPECT=<<EOF
 0x00000581 hit0_0 50617373776f7264
 0x0000059e hit0_1 50617373776f7264
@@ -1137,7 +1068,8 @@ NAME=wx and /x with bin mask, both ignoring spaces
 FILE=malloc://1024
 CMDS=<<EOF
 wx a5 a5 a5 bf
-/x a5 .. bf
+e search.show_progress=false
+/x a5..bf
 EOF
 EXPECT=<<EOF
 0x00000001 hit0_0 a5a5bf
@@ -1148,7 +1080,8 @@ NAME=wx and /x with bin mask, both ignoring spaces
 FILE=malloc://1024
 CMDS=<<EOF
 wx 00 cafe 5a5a 5abf affe @ 0x123
-/x .. 5a bf
+e search.show_progress=false
+/x ..5abf
 EOF
 EXPECT=<<EOF
 0x00000127 hit0_0 5a5abf
@@ -1159,7 +1092,8 @@ NAME=wx and /x with custom bin mask, both ignoring spaces
 FILE=malloc://1024
 CMDS=<<EOF
 wx 01020304 a5a5a5 bf
-/x a5 e3 bf : ff 81 ff
+e search.show_progress=false
+/x a5e3bf:ff81ff
 EOF
 EXPECT=<<EOF
 0x00000005 hit0_0 a5a5bf
@@ -1237,11 +1171,12 @@ NAME=search wide string
 FILE==
 CMDS=<<EOF
 ww Hello World this is Rizin
-/w World
-/w world
-/wi world
-/wj World
-/wji world
+e search.show_progress=false
+/z World d utf16le
+/z world d utf16le
+/z world i utf16le
+/zj World d utf16le
+/zj world i utf16le
 EOF
 EXPECT=<<EOF
 0x0000000c hit0_0 57006f0072006c006400
