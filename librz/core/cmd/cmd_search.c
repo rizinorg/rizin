@@ -2424,13 +2424,6 @@ static int pass_to_legacy_api(RzCore *core, int argc, const char **argv, RzOutpu
 	// The +1 strips the '/', because the legacy handler expect it this way.
 	const char *cmd = argv[0] + 1;
 	RzStrBuf *legacy_input = rz_strbuf_new(cmd);
-	switch (mode) {
-	default:
-		break;
-	case RZ_OUTPUT_MODE_JSON:
-		rz_strbuf_append(legacy_input, "j");
-		break;
-	}
 	// Append arguments
 	for (size_t i = 1; i < argc; i++) {
 		rz_strbuf_appendf(legacy_input, " %s", argv[i]);
