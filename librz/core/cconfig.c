@@ -3541,7 +3541,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETPREF("cmd.stack", "", "Command to display the stack in visual debug mode");
 	SETPREF("cmd.cprompt", "", "Column visual prompt commands");
 	SETPREF("cmd.gprompt", "", "Graph visual prompt commands");
-	SETPREF("cmd.hit", "", "Run when a search hit is found");
+	SETPREF("cmd.hit", "", "Command to run on every search hit.");
 	SETPREF("cmd.open", "", "Run when file is opened");
 	SETPREF("cmd.load", "", "Run when binary is loaded");
 	SETPREF("cmd.prompt", "", "Prompt commands");
