@@ -573,7 +573,7 @@ static void core_analysis_bytes_standard(RzCore *core, const ut8 *buf, int len, 
 		PRINTF_LN_NOT("type2", "0x%x\n", op->type2, 0);
 		PRINTF_LN_STR("reg", op->reg);
 		PRINTF_LN_STR("ireg", op->ireg);
-		PRINTF_LN_NOT("scale", "%d\n", op->scale, 0);
+		PRINTF_LN_NOT("scale", "%" PFMT64d "\n", op->scale, 0);
 		PRINTF_LN_STR("esil", hint && hint->esil ? hint->esil : esilstr);
 		if (op->il_op) {
 			RzStrBuf *sbil = rz_strbuf_new("");

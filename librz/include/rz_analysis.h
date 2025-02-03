@@ -936,7 +936,7 @@ typedef struct rz_analysis_op_t {
 	RzAnalysisLiftedILOp il_op;
 	const char *reg; /* destination register */
 	const char *ireg; /* register used for indirect memory computation*/
-	int scale;
+	ut64 scale;
 	ut64 disp;
 	RzAnalysisSwitchOp *switch_op;
 	RzAnalysisHint hint;

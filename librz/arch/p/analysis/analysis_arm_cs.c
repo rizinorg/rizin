@@ -1671,7 +1671,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 #endif
 		// 0x000082a8    28301be5     ldr r3, [fp, -0x28]
 		if (INSOP(1).mem.scale != -1) {
-			op->scale = INSOP(1).mem.scale << LSHIFT(1);
+			op->scale = (ut64)INSOP(1).mem.scale << LSHIFT(1);
 		}
 		op->ireg = cs_reg_name(handle, REGBASE(1));
 		op->disp = MEMDISP(1);
