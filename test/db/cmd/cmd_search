@@ -142,7 +142,7 @@ s 0
 e search.in=file
 e search.from=0
 e search.to=0x00000050
-e search.str.min_len=3
+e search.str.min_length=3
 e search.show_progress=false
 /z ELF
 EOF
@@ -160,7 +160,7 @@ s 0x1000
 e search.in=file
 e search.from=0
 e search.to=0x50
-e search.str.min_len=3
+e search.str.min_length=3
 e search.show_progress=false
 /z ELF
 EOF
@@ -173,7 +173,7 @@ NAME=/zj search
 FILE=malloc://1024
 CMDS=<<EOF
 wx 666f6f005c
-e search.str.min_len=3
+e search.str.min_length=3
 e search.show_progress=false
 /zj foo
 EOF
