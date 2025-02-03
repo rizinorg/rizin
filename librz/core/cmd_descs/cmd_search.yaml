@@ -229,8 +229,10 @@ commands:
       - name: "file"
         type: RZ_CMD_ARG_TYPE_STRING
       - name: "offset"
+        optional: true
         type: RZ_CMD_ARG_TYPE_STRING
       - name: "size"
+        optional: true
         type: RZ_CMD_ARG_TYPE_STRING
   - name: "/o"
     summary: Show offset of n instructions backward.

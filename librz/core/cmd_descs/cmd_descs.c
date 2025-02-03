@@ -1812,12 +1812,14 @@ static const RzCmdDescArg cmd_search_file_args[] = {
 	{
 		.name = "offset",
 		.type = RZ_CMD_ARG_TYPE_STRING,
+		.optional = true,
 
 	},
 	{
 		.name = "size",
 		.type = RZ_CMD_ARG_TYPE_STRING,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
 
 	},
 	{ 0 },

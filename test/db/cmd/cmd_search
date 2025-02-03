@@ -2,7 +2,7 @@ NAME=trailing comment
 FILE==
 ARGS=-n
 CMDS=<<EOF
-/ #
+/z #
 EOF
 EXPECT=
 RUN
