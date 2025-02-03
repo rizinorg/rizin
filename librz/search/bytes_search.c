@@ -95,6 +95,8 @@ static bool parse_custom_mask(const char *bytes_pattern, const RzRegexMatch *mas
  * - Mask and bytes should be given in hexadeciaml numbers.
  * - If the mask is given, it must be the same length as the bytes.
  * - Each nibble can be replaced with a '.' to indicate a wildcard nibble.
+ * - Odd number of nibbles are extended on the left hand side (MSB side).
+ *   This means the nibble at the right hand side is aligned to a byte.
  *
  * Examples:
  *  - `a987`: Exact pattern for the bytes '\xa9\x87'.

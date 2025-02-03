@@ -2342,6 +2342,7 @@ static const RzCmdDescDetailEntry cmd_search_hex_Usage_space_example_detail_entr
 	{ .text = "Hexadecimal search for the exact bytes 'ffcc33'.", .arg_str = NULL, .comment = "/x ffcc33" },
 	{ .text = "Hexadecimal search for the byte pattern 'ff..33.0.'. The '.' is a wildcard for 4bits.", .arg_str = NULL, .comment = "/x ff..33.0" },
 	{ .text = "Hexadecimal search of the bytes with mask. Pattern: '<resulting bytes>:<mask>'", .arg_str = NULL, .comment = "/x ffd0:ff43" },
+	{ .text = "Hexadecimal search with an odd number of nibbles.", .arg_str = NULL, .comment = "'aabbc' is equivalent to '.aabbc'" },
 	{ 0 },
 };
 static const RzCmdDescDetail cmd_search_hex_details[] = {

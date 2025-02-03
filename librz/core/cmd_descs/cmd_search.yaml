@@ -674,6 +674,8 @@ commands:
             comment: "/x ff..33.0"
           - text: "Hexadecimal search of the bytes with mask. Pattern: '<resulting bytes>:<mask>'"
             comment: "/x ffd0:ff43"
+          - text: "Hexadecimal search with an odd number of nibbles."
+            comment: "'aabbc' is equivalent to '.aabbc'"
   - name: "/z"
     summary: String search.
     details:

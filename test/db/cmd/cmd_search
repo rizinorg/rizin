@@ -799,6 +799,8 @@ NAME=/x wrong entries
 FILE=bins/elf/analysis/go_stripped
 CMDS=<<EOF
 e search.show_progress=false
+/x 653b2530000000724b53b834e7150883ec188.
+# Should find nothing, because it gets exended on the lhs and is not aligned.
 /x 653b2530000000724b53b834e7150883ec188
 EOF
 EXPECT=<<EOF
