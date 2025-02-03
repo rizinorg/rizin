@@ -566,7 +566,8 @@ RZ_API int rz_hex_str2bin_msb(RZ_NONNULL const char *in, RZ_NONNULL RZ_OUT ut8 *
  * Use rz_hex_str2bin_msb() if you need to extend it on the MSB side.
  *
  * \param in Input string in hexadecimal form. An optional "0x" prefix may be present.
- * \param out Output buffer having at least strlen(in) / 2 bytes available
+ * \param out Output buffer having at least (strlen(in) / 2) + 1 bytes available.
+ *
  * \return Number of bytes written into \p out. The number is negative if an odd number of nibbles was parsed.
  */
 RZ_API int rz_hex_str2bin(RZ_NONNULL const char *in, RZ_NONNULL RZ_OUT ut8 *out) {

@@ -32,8 +32,8 @@ static bool rz_debug_dmp_init(RzDebug *dbg, void **user) {
 	DmpCtx *ctx = dbg->plugin_data;
 	ctx->bf = core->bin->cur;
 
+	ctx->context = malloc((strlen(core->bin->cur->o->regstate) / 2) + 1);
 	int ret = rz_hex_str2bin(core->bin->cur->o->regstate, NULL);
-	ctx->context = malloc(ret);
 	if (!ctx->context) {
 		return false;
 	}
