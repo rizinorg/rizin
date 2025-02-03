@@ -2595,6 +2595,11 @@ RZ_IPI RzCmdStatus rz_cmd_search_assemble_e_handler(RzCore *core, int argc, cons
 	return pass_to_legacy_api(core, argc, argv, RZ_OUTPUT_MODE_STANDARD);
 }
 
+// "/af"
+RZ_IPI RzCmdStatus rz_cmd_search_assemble_f_handler(RzCore *core, int argc, const char **argv) {
+	return pass_to_legacy_api(core, argc, argv, RZ_OUTPUT_MODE_STANDARD);
+}
+
 // "/afl"
 RZ_IPI RzCmdStatus rz_cmd_search_assemble_fl_handler(RzCore *core, int argc, const char **argv) {
 	return pass_to_legacy_api(core, argc, argv, RZ_OUTPUT_MODE_STANDARD);
@@ -2620,8 +2625,18 @@ RZ_IPI RzCmdStatus rz_cmd_search_assemble_o_handler(RzCore *core, int argc, cons
 	return pass_to_legacy_api(core, argc, argv, RZ_OUTPUT_MODE_STANDARD);
 }
 
+// "/as"
+RZ_IPI RzCmdStatus rz_cmd_search_assemble_s_handler(RzCore *core, int argc, const char **argv) {
+	return pass_to_legacy_api(core, argc, argv, RZ_OUTPUT_MODE_STANDARD);
+}
+
 // "/asl"
 RZ_IPI RzCmdStatus rz_cmd_search_assemble_sl_handler(RzCore *core, int argc, const char **argv) {
+	return pass_to_legacy_api(core, argc, argv, RZ_OUTPUT_MODE_STANDARD);
+}
+
+// "/at"
+RZ_IPI RzCmdStatus rz_cmd_search_assemble_t_handler(RzCore *core, int argc, const char **argv) {
 	return pass_to_legacy_api(core, argc, argv, RZ_OUTPUT_MODE_STANDARD);
 }
 

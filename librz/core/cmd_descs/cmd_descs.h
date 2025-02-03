@@ -81,6 +81,8 @@ RZ_IPI RzCmdStatus rz_cmd_search_assemble_d_slash_handler(RzCore *core, int argc
 RZ_IPI RzCmdStatus rz_cmd_search_assemble_d_slasha_handler(RzCore *core, int argc, const char **argv);
 // "/ae"
 RZ_IPI RzCmdStatus rz_cmd_search_assemble_e_handler(RzCore *core, int argc, const char **argv);
+// "/af"
+RZ_IPI RzCmdStatus rz_cmd_search_assemble_f_handler(RzCore *core, int argc, const char **argv);
 // "/afl"
 RZ_IPI RzCmdStatus rz_cmd_search_assemble_fl_handler(RzCore *core, int argc, const char **argv);
 // "/ai"
@@ -91,8 +93,12 @@ RZ_IPI RzCmdStatus rz_cmd_search_assemble_l_handler(RzCore *core, int argc, cons
 RZ_IPI RzCmdStatus rz_cmd_search_assemble_m_handler(RzCore *core, int argc, const char **argv);
 // "/ao"
 RZ_IPI RzCmdStatus rz_cmd_search_assemble_o_handler(RzCore *core, int argc, const char **argv);
+// "/as"
+RZ_IPI RzCmdStatus rz_cmd_search_assemble_s_handler(RzCore *core, int argc, const char **argv);
 // "/asl"
 RZ_IPI RzCmdStatus rz_cmd_search_assemble_sl_handler(RzCore *core, int argc, const char **argv);
+// "/at"
+RZ_IPI RzCmdStatus rz_cmd_search_assemble_t_handler(RzCore *core, int argc, const char **argv);
 // "/atl"
 RZ_IPI RzCmdStatus rz_cmd_search_assemble_tl_handler(RzCore *core, int argc, const char **argv);
 // "/ca"

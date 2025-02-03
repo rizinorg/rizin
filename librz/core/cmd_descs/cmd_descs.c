@@ -121,15 +121,15 @@ static const RzCmdDescArg cmd_search_assemble_d_args[2];
 static const RzCmdDescArg cmd_search_assemble_d_slash_args[2];
 static const RzCmdDescArg cmd_search_assemble_d_slasha_args[2];
 static const RzCmdDescArg cmd_search_assemble_e_args[2];
-static const RzCmdDescArg cmd_search_assemble_fl_args[2];
 static const RzCmdDescArg cmd_search_assemble_f_args[2];
+static const RzCmdDescArg cmd_search_assemble_fl_args[2];
 static const RzCmdDescArg cmd_search_assemble_i_args[3];
 static const RzCmdDescArg cmd_search_assemble_m_args[2];
 static const RzCmdDescArg cmd_search_assemble_o_args[2];
-static const RzCmdDescArg cmd_search_assemble_sl_args[2];
 static const RzCmdDescArg cmd_search_assemble_s_args[2];
-static const RzCmdDescArg cmd_search_assemble_tl_args[2];
+static const RzCmdDescArg cmd_search_assemble_sl_args[2];
 static const RzCmdDescArg cmd_search_assemble_t_args[2];
+static const RzCmdDescArg cmd_search_assemble_tl_args[2];
 static const RzCmdDescArg cmd_search_collision_args[4];
 static const RzCmdDescArg cmd_search_deltified_args[2];
 static const RzCmdDescArg cmd_search_file_args[4];
@@ -1569,6 +1569,9 @@ static const RzCmdDescHelp cmd_search_assemble_e_help = {
 	.args = cmd_search_assemble_e_args,
 };
 
+static const RzCmdDescHelp slash_af_help = {
+	.summary = "Search for instruction of specific family (afl=list",
+};
 static const RzCmdDescArg cmd_search_assemble_f_args[] = {
 	{
 		.name = "family",
@@ -1582,6 +1585,7 @@ static const RzCmdDescHelp cmd_search_assemble_f_help = {
 	.summary = "Search for instruction of specific family (afl=list",
 	.args = cmd_search_assemble_f_args,
 };
+
 static const RzCmdDescArg cmd_search_assemble_fl_args[] = {
 	{
 		.name = "family",
@@ -1652,6 +1656,9 @@ static const RzCmdDescHelp cmd_search_assemble_o_help = {
 	.args = cmd_search_assemble_o_args,
 };
 
+static const RzCmdDescHelp slash_as_help = {
+	.summary = "Search for syscalls (See /at swi and /af priv)",
+};
 static const RzCmdDescArg cmd_search_assemble_s_args[] = {
 	{
 		.name = "type",
@@ -1666,6 +1673,7 @@ static const RzCmdDescHelp cmd_search_assemble_s_help = {
 	.summary = "Search for syscalls (See /at swi and /af priv)",
 	.args = cmd_search_assemble_s_args,
 };
+
 static const RzCmdDescArg cmd_search_assemble_sl_args[] = {
 	{
 		.name = "type",
@@ -1681,6 +1689,9 @@ static const RzCmdDescHelp cmd_search_assemble_sl_help = {
 	.args = cmd_search_assemble_sl_args,
 };
 
+static const RzCmdDescHelp slash_at_help = {
+	.summary = "Search for instructions of given type",
+};
 static const RzCmdDescArg cmd_search_assemble_t_args[] = {
 	{
 		.name = "type",
@@ -1695,6 +1706,7 @@ static const RzCmdDescHelp cmd_search_assemble_t_help = {
 	.summary = "Search for instructions of given type",
 	.args = cmd_search_assemble_t_args,
 };
+
 static const RzCmdDescArg cmd_search_assemble_tl_args[] = {
 	{
 		.name = "type",
@@ -20790,9 +20802,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_search_assemble_e_cd = rz_cmd_desc_argv_new(core->rcmd, slash_a_cd, "/ae", rz_cmd_search_assemble_e_handler, &cmd_search_assemble_e_help);
 	rz_warn_if_fail(cmd_search_assemble_e_cd);
 
-	RzCmdDesc *cmd_search_assemble_f_cd = rz_cmd_desc_group_new(core->rcmd, slash_a_cd, "/af", NULL, NULL, &cmd_search_assemble_f_help);
-	rz_warn_if_fail(cmd_search_assemble_f_cd);
-	RzCmdDesc *cmd_search_assemble_fl_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_search_assemble_f_cd, "/afl", rz_cmd_search_assemble_fl_handler, &cmd_search_assemble_fl_help);
+	RzCmdDesc *slash_af_cd = rz_cmd_desc_group_new(core->rcmd, slash_a_cd, "/af", rz_cmd_search_assemble_f_handler, &cmd_search_assemble_f_help, &slash_af_help);
+	rz_warn_if_fail(slash_af_cd);
+	RzCmdDesc *cmd_search_assemble_fl_cd = rz_cmd_desc_argv_new(core->rcmd, slash_af_cd, "/afl", rz_cmd_search_assemble_fl_handler, &cmd_search_assemble_fl_help);
 	rz_warn_if_fail(cmd_search_assemble_fl_cd);
 
 	RzCmdDesc *cmd_search_assemble_i_cd = rz_cmd_desc_argv_modes_new(core->rcmd, slash_a_cd, "/ai", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_search_assemble_i_handler, &cmd_search_assemble_i_help);
@@ -20807,14 +20819,14 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_search_assemble_o_cd = rz_cmd_desc_argv_new(core->rcmd, slash_a_cd, "/ao", rz_cmd_search_assemble_o_handler, &cmd_search_assemble_o_help);
 	rz_warn_if_fail(cmd_search_assemble_o_cd);
 
-	RzCmdDesc *cmd_search_assemble_s_cd = rz_cmd_desc_group_new(core->rcmd, slash_a_cd, "/as", NULL, NULL, &cmd_search_assemble_s_help);
-	rz_warn_if_fail(cmd_search_assemble_s_cd);
-	RzCmdDesc *cmd_search_assemble_sl_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_search_assemble_s_cd, "/asl", rz_cmd_search_assemble_sl_handler, &cmd_search_assemble_sl_help);
+	RzCmdDesc *slash_as_cd = rz_cmd_desc_group_new(core->rcmd, slash_a_cd, "/as", rz_cmd_search_assemble_s_handler, &cmd_search_assemble_s_help, &slash_as_help);
+	rz_warn_if_fail(slash_as_cd);
+	RzCmdDesc *cmd_search_assemble_sl_cd = rz_cmd_desc_argv_new(core->rcmd, slash_as_cd, "/asl", rz_cmd_search_assemble_sl_handler, &cmd_search_assemble_sl_help);
 	rz_warn_if_fail(cmd_search_assemble_sl_cd);
 
-	RzCmdDesc *cmd_search_assemble_t_cd = rz_cmd_desc_group_new(core->rcmd, slash_a_cd, "/at", NULL, NULL, &cmd_search_assemble_t_help);
-	rz_warn_if_fail(cmd_search_assemble_t_cd);
-	RzCmdDesc *cmd_search_assemble_tl_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_search_assemble_t_cd, "/atl", rz_cmd_search_assemble_tl_handler, &cmd_search_assemble_tl_help);
+	RzCmdDesc *slash_at_cd = rz_cmd_desc_group_new(core->rcmd, slash_a_cd, "/at", rz_cmd_search_assemble_t_handler, &cmd_search_assemble_t_help, &slash_at_help);
+	rz_warn_if_fail(slash_at_cd);
+	RzCmdDesc *cmd_search_assemble_tl_cd = rz_cmd_desc_argv_new(core->rcmd, slash_at_cd, "/atl", rz_cmd_search_assemble_tl_handler, &cmd_search_assemble_tl_help);
 	rz_warn_if_fail(cmd_search_assemble_tl_cd);
 
 	RzCmdDesc *slash_c_cd = rz_cmd_desc_group_new(core->rcmd, slash__cd, "/c", NULL, NULL, &slash_c_help);

@@ -75,11 +75,13 @@ commands:
           type: RZ_CMD_ARG_TYPE_STRING
     - name: "/af"
       summary: "Search for instruction of specific family (afl=list"
-      cname: cmd_search_assemble_f
-      args:
-        - name: "family"
-          type: RZ_CMD_ARG_TYPE_STRING
       subcommands:
+      - name: "/af"
+        summary: "Search for instruction of specific family (afl=list"
+        cname: cmd_search_assemble_f
+        args:
+          - name: "family"
+            type: RZ_CMD_ARG_TYPE_STRING
       - name: "/afl"
         summary: "Search for instruction of specific family. List mode."
         cname: cmd_search_assemble_fl
@@ -116,12 +118,14 @@ commands:
           type: RZ_CMD_ARG_TYPE_STRING
     - name: "/as"
       summary: "Search for syscalls (See /at swi and /af priv)"
-      cname: cmd_search_assemble_s
-      args:
-        - name: "type"
-          optional: true
-          type: RZ_CMD_ARG_TYPE_STRING
       subcommands:
+      - name: "/as"
+        summary: "Search for syscalls (See /at swi and /af priv)"
+        cname: cmd_search_assemble_s
+        args:
+          - name: "type"
+            optional: true
+            type: RZ_CMD_ARG_TYPE_STRING
       - name: "/asl"
         summary: "Search for syscalls (See /at swi and /af priv). List mode."
         cname: cmd_search_assemble_sl
@@ -131,12 +135,14 @@ commands:
             type: RZ_CMD_ARG_TYPE_STRING
     - name: "/at"
       summary: "Search for instructions of given type"
-      cname: cmd_search_assemble_t
-      args:
-        - name: "type"
-          optional: true
-          type: RZ_CMD_ARG_TYPE_STRING
       subcommands:
+      - name: "/at"
+        summary: "Search for instructions of given type"
+        cname: cmd_search_assemble_t
+        args:
+          - name: "type"
+            optional: true
+            type: RZ_CMD_ARG_TYPE_STRING
       - name: "/atl"
         summary: "Search for instructions of given type. List mode."
         cname: cmd_search_assemble_tl
