@@ -2202,6 +2202,7 @@ reread:
 				rz_search_keyword_new((const ut8 *)v_buf, bsize, NULL, 0, NULL));
 			free(v_buf);
 		}
+		rz_list_free(nums);
 		rz_search_begin(core->search);
 		dosearch = true;
 		break;
