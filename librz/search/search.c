@@ -759,7 +759,7 @@ RZ_IPI RZ_OWN RzSearchHit *rz_search_hit_new(const char *hit_desc, ut64 address,
  *
  * \param      hit  The RzSearchHit pointer to free
  */
-RZ_API void rz_search_hit_free(RZ_NULLABLE RzSearchHit *hit) {
+RZ_IPI void rz_search_hit_free(RZ_NULLABLE RzSearchHit *hit) {
 	if (!hit) {
 		return;
 	}

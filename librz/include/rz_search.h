@@ -206,7 +206,6 @@ RZ_API RZ_OWN RzSearchCollection *rz_search_collection_magic(RZ_NONNULL const ch
 
 RZ_API bool rz_search_collection_match_any(RZ_NULLABLE RzSearchCollection *sc, RZ_NONNULL const ut8 *buffer, size_t length);
 RZ_API void rz_search_collection_free(RZ_NULLABLE RzSearchCollection *sc);
-RZ_API void rz_search_hit_free(RZ_NULLABLE RzSearchHit *hit);
 
 RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_search_on_io(RZ_BORROW RZ_NONNULL RzSearchOpt *opt, RZ_BORROW RZ_NONNULL RzSearchCollection *col, RZ_BORROW RZ_NONNULL RzIO *io, RZ_BORROW RZ_NONNULL RzList /*<RzIOMap *>*/ *search_in);
 
