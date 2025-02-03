@@ -2420,7 +2420,9 @@ beach:
 }
 
 static int pass_to_legacy_api(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	RzStrBuf *legacy_input = rz_strbuf_new(argv[0]);
+	// The +1 strips the '/', because the legacy handler expect it this way.
+	const char *cmd = argv[0] + 1;
+	RzStrBuf *legacy_input = rz_strbuf_new(cmd);
 	switch (mode) {
 	default:
 		break;
