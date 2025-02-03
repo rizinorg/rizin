@@ -5,6 +5,9 @@
 #include <rz_list.h>
 #include <rz_th.h>
 #include <rz_util/rz_buf.h>
+#include <rz_util/rz_assert.h>
+#include <rz_util/rz_mem.h>
+#include <rz_util/rz_strbuf.h>
 #include <rz_search.h>
 #include "search_internal.h"
 
@@ -765,4 +768,42 @@ RZ_IPI void rz_search_hit_free(RZ_NULLABLE RzSearchHit *hit) {
 	}
 	free(hit->hit_desc);
 	free(hit);
+}
+
+/**
+ * \brief Get a flag name describing the hit. The flag name can be customized.
+ *
+ * \param hit    The RzSearchHit to build the flag name for.
+ * \param hit_id The id number of the hit.
+ * \param prefix An optional prefix for the flag. Defaults to "hit".
+ *
+ * Example:
+ *
+ * hit       = { address = 0x110, hit_desc = "bytes", size = 0x10 }
+ * prefix    = "sb"
+ *
+ * Result    = sb.bytes.0
+
+ * hit       = { address = 0x110, hit_desc = NULL, size = 0x10 }
+ * prefix    = NULL
+ *
+ * Result    = hit.0
+ *
+ * \return A flag of \p hit, or NULL in case of failure.
+ */
+RZ_API RZ_OWN char *rz_search_hit_flag_name(RZ_NONNULL const RzSearchHit *hit,
+	size_t hit_id,
+	RZ_NULLABLE const char *prefix) {
+	rz_return_val_if_fail(hit, NULL);
+	RzStrBuf *buf = rz_strbuf_new("");
+	if (!buf) {
+		return NULL;
+	}
+	rz_strbuf_appendf(buf, "%s", prefix ? prefix : "hit");
+	if (hit->hit_desc) {
+		rz_strbuf_appendf(buf, ".%s", hit->hit_desc);
+	}
+	rz_strbuf_appendf(buf, ".%" PFMTSZd, hit_id);
+
+	return rz_strbuf_drain(buf);
 }

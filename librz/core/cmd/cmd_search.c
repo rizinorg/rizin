@@ -2466,10 +2466,10 @@ static bool cmd_search_progress_cancel(void *user, size_t n_hits, RzSearchCancel
 static void cmd_search_output_to_state(RzCmdStateOutput *state, RzSearchHit *hit, const char *flag_name) {
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_QUIET:
-		rz_cons_printf("%08" PFMT64x "\n", hit->address);
+		rz_cons_printf("0x%08" PFMT64x "\n", hit->address);
 		break;
 	case RZ_OUTPUT_MODE_STANDARD:
-		rz_cons_printf("%08" PFMT64x " %" PFMTSZu " %s\n", hit->address, hit->size, flag_name);
+		rz_cons_printf("0x%08" PFMT64x " %" PFMTSZu " %s\n", hit->address, hit->size, flag_name);
 		break;
 	case RZ_OUTPUT_MODE_JSON:
 		pj_o(state->d.pj);
@@ -2504,7 +2504,6 @@ static RzCmdStatus cmd_core_handle_search_hits(RzCore *core, RzCmdStateOutput *s
 	RzSearchHit *hit = NULL;
 	const char *cmd_hit = NULL;
 	const char *search_prefix = NULL;
-	size_t counter = 0;
 
 	cmd_hit = rz_config_get(core->config, "cmd.hit");
 	search_prefix = rz_config_get(core->config, "search.prefix");
@@ -2520,19 +2519,18 @@ static RzCmdStatus cmd_core_handle_search_hits(RzCore *core, RzCmdStateOutput *s
 		rz_flag_space_push(core->flags, "search");
 	}
 
-	rz_list_foreach (hits, it, hit) {
+	size_t i = 0;
+	rz_list_foreach_enum (hits, it, hit, i) {
 		if (RZ_STR_ISNOTEMPTY(cmd_hit)) {
 			cmd_search_call_command(core, hit, cmd_hit);
 			continue;
 		}
 
 		// only output & add flag when cmd.hit is not set.
-		const char *meta = hit->hit_desc ? hit->hit_desc : "match";
-		char *flag = rz_str_newf("%s.%s.%" PFMTSZu, search_prefix, meta, counter);
+		char *flag = rz_search_hit_flag_name(hit, i, search_prefix);
 		rz_flag_set(core->flags, flag, hit->address, hit->size);
 		cmd_search_output_to_state(state, hit, flag);
 		free(flag);
-		counter++;
 	}
 
 	if (RZ_STR_ISEMPTY(cmd_hit)) {

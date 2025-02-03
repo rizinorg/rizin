@@ -144,8 +144,8 @@ typedef struct rz_search_collection_t RzSearchCollection;
 
 typedef struct rz_search_hit_t {
 	char *hit_desc; ///< Hit description (can be NULL)
-	ut64 address; ///< Address the matched data
-	size_t size; ///< Size of the matched data (can be 0)
+	ut64 address; ///< Address/offset of the matched data.
+	size_t size; ///< Size of the matched data (can be 0), in bytes.
 } RzSearchHit;
 
 typedef enum {
@@ -154,6 +154,8 @@ typedef enum {
 } RzSearchCancelReason;
 
 typedef struct rz_search_bytes_pattern_t RzSearchBytesPattern;
+
+RZ_API RZ_OWN char *rz_search_hit_flag_name(RZ_NONNULL const RzSearchHit *hit, size_t hit_id, RZ_NULLABLE const char *prefix);
 
 RZ_API void rz_search_bytes_pattern_free(RZ_NULLABLE RZ_OWN RzSearchBytesPattern *hp);
 RZ_API RZ_OWN RzSearchBytesPattern *rz_search_bytes_pattern_copy(RZ_NONNULL RZ_BORROW RzSearchBytesPattern *hp);
