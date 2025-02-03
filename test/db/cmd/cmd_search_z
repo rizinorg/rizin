@@ -10,6 +10,19 @@ ERROR: core: invalid string: empty string.
 EOF
 RUN
 
+NAME=search escaped string
+FILE==
+CMDS=<<EOF
+/z \x90\x66
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Regex compilation for '�f' failed at 0: UTF-8 error: isolated byte with 0x80 bit set
+ERROR: Failed to compile regex pattern: '�f'
+ERROR: search: cannot add the string '�f'.
+ERROR: core: Failed to initialize search collection.
+EOF
+RUN
+
 NAME=String Search - Errors - Invalid regex args
 FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ascii
 CMDS=<<EOF
@@ -66,15 +79,15 @@ ps @ hit.string.7
 ps @ hit.string.8
 EOF
 EXPECT=<<EOF
-00000018 2 hit.string.0
-00000042 2 hit.string.1
-0000008f 2 hit.string.2
-000000be 2 hit.string.3
-0000010a 2 hit.string.4
-0000012b 2 hit.string.5
-0000013a 2 hit.string.6
-00000152 2 hit.string.7
-00000175 2 hit.string.8
+0x00000018 2 hit.string.0
+0x00000042 2 hit.string.1
+0x0000008f 2 hit.string.2
+0x000000be 2 hit.string.3
+0x0000010a 2 hit.string.4
+0x0000012b 2 hit.string.5
+0x0000013a 2 hit.string.6
+0x00000152 2 hit.string.7
+0x00000175 2 hit.string.8
 et, at eligendi adipisci ius, ex natum appetere officiis has, nibh quas torquatos pro te. Quo at deleniti repudiandae, et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
 etere officiis has, nibh quas torquatos pro te. Quo at deleniti repudiandae, et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
 et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
@@ -97,7 +110,7 @@ e search.show_progress=false
 ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-00000000 376 hit.string.0
+0x00000000 376 hit.string.0
 Lorem ipsum dolor sit amet, at eligendi adipisci ius, ex natum appetere officiis has, nibh quas torquatos pro te. Quo at deleniti repudiandae, et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
 EOF
 EXPECT_ERR=
@@ -112,7 +125,7 @@ e search.show_progress=false
 # ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-0000001f 24 hit.string.0
+0x0000001f 24 hit.string.0
 EOF
 EXPECT_ERR=
 RUN
@@ -126,7 +139,7 @@ e search.show_progress=false
 ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-000000fa 31 hit.string.0
+0x000000fa 31 hit.string.0
 placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
 EOF
 EXPECT_ERR=
@@ -141,7 +154,7 @@ e search.show_progress=false
 ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-00000116 43 hit.string.0
+0x00000116 43 hit.string.0
 ا الأوضاع, لم بوابة المبرمة عرض. إبّان اسبوعين البشريةً تعد في. كنقطة إيطاليا قام بل, أضف أن وبغطاء الباهضة.
 EOF
 EXPECT_ERR=
@@ -156,7 +169,7 @@ e search.show_progress=false
 ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-000001dc 61 hit.string.0
+0x000001dc 61 hit.string.0
 դեֆինիթիոնես ին վիս, ծասե պեռթինածիա նե վիս. ին մելիուս ֆածիլիս եոս, եսթ եռոս պոպուլո թիմեամ թե. իուս նո ծոնսուլաթու.
 EOF
 EXPECT_ERR=
@@ -171,7 +184,7 @@ e search.show_progress=false
 ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-000000de 48 hit.string.0
+0x000000de 48 hit.string.0
 京確年禁読応米新報書了号活修佐。央良持著宣込警石寂益好独田接読仕。漂戦辺量食害恐人給景族缶掲価済教放。響城引真際通御芭情査男倍淺早住。金握崎利契事用鹿仮交体受寄終山率大。
 EOF
 EXPECT_ERR=
@@ -186,7 +199,7 @@ e search.show_progress=false
 ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-00000282 132 hit.string.0
+0x00000282 132 hit.string.0
 რე, იუს ეა უთინამ დელიცათისსიმი. მელ ფერსეყუერის ლიბერავისსე თე, გრაეცო ფრინციფეს ასსენთიორ სით ეუ. ჰის მალორუმ ანთიოფამ თჰეოფჰრასთუს ნე, ეუ ეუმ ყუას ეთიამ.
 EOF
 EXPECT_ERR=
@@ -201,7 +214,7 @@ e search.show_progress=false
 ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-0000010b 88 hit.string.0
+0x0000010b 88 hit.string.0
 παρτεμ ποσιδονιθμ ατ. Ετ πρι περιcθλισ σπλενδιδε μνεσαρcηθμ, vελ ατ cονσεqθατ εξπετενδισ. Τε ηασ qθεμ πετεντιθμ.
 EOF
 EXPECT_ERR=
@@ -216,11 +229,10 @@ e search.show_progress=false
 ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-00000141 34 hit.string.0
+0x00000141 34 hit.string.0
 ים משחקים ממונרכיה אנא גם.
 EOF
-EXPECT_ERR=<<EOF
-EOF
+EXPECT_ERR=
 RUN
 
 NAME=String Search - Encoding: utf8 - Hindi
@@ -232,7 +244,7 @@ e search.show_progress=false
 ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-00000086 97 hit.string.0
+0x00000086 97 hit.string.0
 पहोचने वैश्विक एसलिये पुस्तक हुआआदी विश्व उनका खरिदने समस्याओ मार्गदर्शन रखते तरीके यायेका विश्लेषण पुष्टिकर्ता चुनने सकता बढाता वेबजाल गोपनीयता लिए। संपादक करेसाथ रचना नवंबर
 EOF
 EXPECT_ERR=
@@ -247,7 +259,7 @@ e search.show_progress=false
 ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-000000dc 27 hit.string.0
+0x000000dc 27 hit.string.0
 생의 과실이 있으며. 찬미를 사람은 그들에게 너의 청춘이 인류의 그들의 칼이다.
 EOF
 EXPECT_ERR=
@@ -262,7 +274,7 @@ e search.show_progress=false
 ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-00000042 35 hit.string.0
+0x00000042 35 hit.string.0
  ·--· ·---- ··· - ···· --·· --··· -· ··· -·· -·-- ···· ·--- ·-·-·- · ··- - ··- ···- ··--- ·-·-·- -·- -··- ----- -·
 EOF
 EXPECT_ERR=
@@ -277,7 +289,7 @@ e search.show_progress=false
 ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-00000055 49 hit.string.0
+0x00000055 49 hit.string.0
 тани ад. Цум хендрерит персецути ех, миним еяуидем цонсецтетуер яуи ид. Либер малуиссет нам еа, еа граеце дефиниебас.
 EOF
 EXPECT_ERR=
@@ -292,7 +304,7 @@ e search.show_progress=false
 psm @ hit.string.0
 EOF
 EXPECT=<<EOF
-00000138 48 hit.string.0
+0x00000138 48 hit.string.0
 ا الأوضاع, لم بوابة المبرمة عرض. إبّان اسبوعين البشريةً تعد في. كنقطة إيطاليا قام بل, أضف أن وبغطاء الباهضة.
 EOF
 EXPECT_ERR=
@@ -307,7 +319,7 @@ e search.show_progress=false
 psm @ hit.string.0
 EOF
 EXPECT=<<EOF
-0000020c 66 hit.string.0
+0x0000020c 66 hit.string.0
 դեֆինիթիոնես ին վիս, ծասե պեռթինածիա նե վիս. ին մելիուս ֆածիլիս եոս, եսթ եռոս պոպուլո թիմեամ թե. իուս նո ծոնսուլաթու.
 EOF
 EXPECT_ERR=
@@ -322,7 +334,7 @@ e search.show_progress=false
 psm @ hit.string.0
 EOF
 EXPECT=<<EOF
-00000094 32 hit.string.0
+0x00000094 32 hit.string.0
 京確年禁読応米新報書了号活修佐。央良持著宣込警石寂益好独田接読仕。漂戦辺量食害恐人給景族缶掲価済教放。響城引真際通御芭情査男倍淺早住。金握崎利契事用鹿仮交体受寄終山率大。
 EOF
 EXPECT_ERR=
@@ -337,7 +349,7 @@ e search.show_progress=false
 psm @ hit.string.0
 EOF
 EXPECT=<<EOF
-000001ec 100 hit.string.0
+0x000001ec 100 hit.string.0
 რე, იუს ეა უთინამ დელიცათისსიმი. მელ ფერსეყუერის ლიბერავისსე თე, გრაეცო ფრინციფეს ასსენთიორ სით ეუ. ჰის მალორუმ ანთიოფამ თჰეოფჰრასთუს ნე, ეუ ეუმ ყუას ეთიამ.
 EOF
 EXPECT_ERR=
@@ -352,7 +364,7 @@ e search.show_progress=false
 psm @ hit.string.0
 EOF
 EXPECT=<<EOF
-0000012c 96 hit.string.0
+0x0000012c 96 hit.string.0
 παρτεμ ποσιδονιθμ ατ. Ετ πρι περιcθλισ σπλενδιδε μνεσαρcηθμ, vελ ατ cονσεqθατ εξπετενδισ. Τε ηασ qθεμ πετεντιθμ.
 EOF
 EXPECT_ERR=
@@ -367,7 +379,7 @@ e search.show_progress=false
 psm @ hit.string.0
 EOF
 EXPECT=<<EOF
-00000168 36 hit.string.0
+0x00000168 36 hit.string.0
 ים משחקים ממונרכיה אנא גם.
 EOF
 EXPECT_ERR=
@@ -382,7 +394,7 @@ e search.show_progress=false
 psm @ hit.string.0
 EOF
 EXPECT=<<EOF
-00000064 70 hit.string.0
+0x00000064 70 hit.string.0
 पहोचने वैश्विक एसलिये पुस्तक हुआआदी विश्व उनका खरिदने समस्याओ मार्गदर्शन रखते तरीके यायेका विश्लेषण पुष्टिकर्ता चुनने सकता बढाता वेबजाल गोपनीयता लिए। संपादक करेसाथ रचना नवंबर
 EOF
 EXPECT_ERR=
@@ -397,7 +409,7 @@ e search.show_progress=false
 psm @ hit.string.0
 EOF
 EXPECT=<<EOF
-000000bc 22 hit.string.0
+0x000000bc 22 hit.string.0
 생의 과실이 있으며. 찬미를 사람은 그들에게 너의 청춘이 인류의 그들의 칼이다.
 EOF
 EXPECT_ERR=
@@ -412,7 +424,7 @@ e search.show_progress=false
 psm @ hit.string.0
 EOF
 EXPECT=<<EOF
-0000005c 50 hit.string.0
+0x0000005c 50 hit.string.0
  ·--· ·---- ··· - ···· --·· --··· -· ··· -·· -·-- ···· ·--- ·-·-·- · ··- - ··- ···- ··--- ·-·-·- -·- -··- ----- -·
 EOF
 EXPECT_ERR=
@@ -427,7 +439,7 @@ e search.show_progress=false
 psm @ hit.string.0
 EOF
 EXPECT=<<EOF
-0000005e 54 hit.string.0
+0x0000005e 54 hit.string.0
 тани ад. Цум хендрерит персецути ех, миним еяуидем цонсецтетуер яуи ид. Либер малуиссет нам еа, еа граеце дефиниебас.
 EOF
 EXPECT_ERR=
@@ -442,7 +454,7 @@ e search.show_progress=false
 # ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-00000138 48 hit.string.0
+0x00000138 48 hit.string.0
 EOF
 EXPECT_ERR=
 RUN
@@ -456,7 +468,7 @@ e search.show_progress=false
 psw @ hit.string.0
 EOF
 EXPECT=<<EOF
-0000020c 66 hit.string.0
+0x0000020c 66 hit.string.0
 դեֆինիթիոնես ին վիս, ծասե պեռթինածիա նե վիս. ին մելիուս ֆածիլիս եոս, եսթ եռոս պոպուլո թիմեամ թե. իուս նո ծոնսուլաթու.
 EOF
 EXPECT_ERR=
@@ -471,7 +483,7 @@ e search.show_progress=false
 psw @ hit.string.0
 EOF
 EXPECT=<<EOF
-00000094 32 hit.string.0
+0x00000094 32 hit.string.0
 京確年禁読応米新報書了号活修佐。央良持著宣込警石寂益好独田接読仕。漂戦辺量食害恐人給景族缶掲価済教放。響城引真際通御芭情査男倍淺早住。金握崎利契事用鹿仮交体受寄終山率大。
 EOF
 EXPECT_ERR=
@@ -486,7 +498,7 @@ e search.show_progress=false
 psw @ hit.string.0
 EOF
 EXPECT=<<EOF
-000001ec 100 hit.string.0
+0x000001ec 100 hit.string.0
 რე, იუს ეა უთინამ დელიცათისსიმი. მელ ფერსეყუერის ლიბერავისსე თე, გრაეცო ფრინციფეს ასსენთიორ სით ეუ. ჰის მალორუმ ანთიოფამ თჰეოფჰრასთუს ნე, ეუ ეუმ ყუას ეთიამ.
 EOF
 EXPECT_ERR=
@@ -501,7 +513,7 @@ e search.show_progress=false
 psw @ hit.string.0
 EOF
 EXPECT=<<EOF
-0000012c 96 hit.string.0
+0x0000012c 96 hit.string.0
 παρτεμ ποσιδονιθμ ατ. Ετ πρι περιcθλισ σπλενδιδε μνεσαρcηθμ, vελ ατ cονσεqθατ εξπετενδισ. Τε ηασ qθεμ πετεντιθμ.
 EOF
 EXPECT_ERR=
@@ -516,7 +528,7 @@ e search.show_progress=false
 psw @ hit.string.0
 EOF
 EXPECT=<<EOF
-00000168 36 hit.string.0
+0x00000168 36 hit.string.0
 ים משחקים ממונרכיה אנא גם.
 EOF
 EXPECT_ERR=
@@ -531,7 +543,7 @@ e search.show_progress=false
 psw @ hit.string.0
 EOF
 EXPECT=<<EOF
-00000064 70 hit.string.0
+0x00000064 70 hit.string.0
 पहोचने वैश्विक एसलिये पुस्तक हुआआदी विश्व उनका खरिदने समस्याओ मार्गदर्शन रखते तरीके यायेका विश्लेषण पुष्टिकर्ता चुनने सकता बढाता वेबजाल गोपनीयता लिए। संपादक करेसाथ रचना नवंबर
 EOF
 EXPECT_ERR=
@@ -546,7 +558,7 @@ e search.show_progress=false
 psw @ hit.string.0
 EOF
 EXPECT=<<EOF
-000000bc 22 hit.string.0
+0x000000bc 22 hit.string.0
 생의 과실이 있으며. 찬미를 사람은 그들에게 너의 청춘이 인류의 그들의 칼이다.
 EOF
 EXPECT_ERR=
@@ -561,7 +573,7 @@ e search.show_progress=false
 psw @ hit.string.0
 EOF
 EXPECT=<<EOF
-0000005c 50 hit.string.0
+0x0000005c 50 hit.string.0
  ·--· ·---- ··· - ···· --·· --··· -· ··· -·· -·-- ···· ·--- ·-·-·- · ··- - ··- ···- ··--- ·-·-·- -·- -··- ----- -·
 EOF
 EXPECT_ERR=
@@ -576,7 +588,7 @@ e search.show_progress=false
 psw @ hit.string.0
 EOF
 EXPECT=<<EOF
-0000005e 54 hit.string.0
+0x0000005e 54 hit.string.0
 тани ад. Цум хендрерит персецути ех, миним еяуидем цонсецтетуер яуи ид. Либер малуиссет нам еа, еа граеце дефиниебас.
 EOF
 EXPECT_ERR=
@@ -591,7 +603,7 @@ e search.show_progress=false
 psM @ hit.string.0
 EOF
 EXPECT=<<EOF
-00000270 96 hit.string.0
+0x00000270 96 hit.string.0
 ا الأوضاع, لم بوابة المبرمة عرض. إبّان اسبوعين البشريةً تعد في. كنقطة إيطاليا قام بل, أضف أن وبغطاء الباهضة.
 EOF
 EXPECT_ERR=
@@ -606,7 +618,7 @@ e search.show_progress=false
 psM @ hit.string.0
 EOF
 EXPECT=<<EOF
-00000418 132 hit.string.0
+0x00000418 132 hit.string.0
 դեֆինիթիոնես ին վիս, ծասե պեռթինածիա նե վիս. ին մելիուս ֆածիլիս եոս, եսթ եռոս պոպուլո թիմեամ թե. իուս նո ծոնսուլաթու.
 EOF
 EXPECT_ERR=
@@ -621,7 +633,7 @@ e search.show_progress=false
 psM @ hit.string.0
 EOF
 EXPECT=<<EOF
-00000128 64 hit.string.0
+0x00000128 64 hit.string.0
 京確年禁読応米新報書了号活修佐。央良持著宣込警石寂益好独田接読仕。漂戦辺量食害恐人給景族缶掲価済教放。響城引真際通御芭情査男倍淺早住。金握崎利契事用鹿仮交体受寄終山率大。
 EOF
 EXPECT_ERR=
@@ -636,7 +648,7 @@ e search.show_progress=false
 psM @ hit.string.0
 EOF
 EXPECT=<<EOF
-000003d8 200 hit.string.0
+0x000003d8 200 hit.string.0
 რე, იუს ეა უთინამ დელიცათისსიმი. მელ ფერსეყუერის ლიბერავისსე თე, გრაეცო ფრინციფეს ასსენთიორ სით ეუ. ჰის მალორუმ ანთიოფამ თჰეოფჰრასთუს ნე, ეუ ეუმ ყუას ეთიამ.
 EOF
 EXPECT_ERR=
@@ -651,7 +663,7 @@ e search.show_progress=false
 psM @ hit.string.0
 EOF
 EXPECT=<<EOF
-00000258 192 hit.string.0
+0x00000258 192 hit.string.0
 παρτεμ ποσιδονιθμ ατ. Ετ πρι περιcθλισ σπλενδιδε μνεσαρcηθμ, vελ ατ cονσεqθατ εξπετενδισ. Τε ηασ qθεμ πετεντιθμ.
 EOF
 EXPECT_ERR=
@@ -666,7 +678,7 @@ e search.show_progress=false
 psM @ hit.string.0
 EOF
 EXPECT=<<EOF
-000002d0 72 hit.string.0
+0x000002d0 72 hit.string.0
 ים משחקים ממונרכיה אנא גם.
 EOF
 EXPECT_ERR=
@@ -681,7 +693,7 @@ e search.show_progress=false
 psM @ hit.string.0
 EOF
 EXPECT=<<EOF
-000000c8 140 hit.string.0
+0x000000c8 140 hit.string.0
 पहोचने वैश्विक एसलिये पुस्तक हुआआदी विश्व उनका खरिदने समस्याओ मार्गदर्शन रखते तरीके यायेका विश्लेषण पुष्टिकर्ता चुनने सकता बढाता वेबजाल गोपनीयता लिए। संपादक करेसाथ रचना नवंबर
 EOF
 EXPECT_ERR=
@@ -696,7 +708,7 @@ e search.show_progress=false
 psM @ hit.string.0
 EOF
 EXPECT=<<EOF
-00000178 44 hit.string.0
+0x00000178 44 hit.string.0
 생의 과실이 있으며. 찬미를 사람은 그들에게 너의 청춘이 인류의 그들의 칼이다.
 EOF
 EXPECT_ERR=
@@ -711,7 +723,7 @@ e search.show_progress=false
 psM @ hit.string.0
 EOF
 EXPECT=<<EOF
-000000b8 100 hit.string.0
+0x000000b8 100 hit.string.0
  ·--· ·---- ··· - ···· --·· --··· -· ··· -·· -·-- ···· ·--- ·-·-·- · ··- - ··- ···- ··--- ·-·-·- -·- -··- ----- -·
 EOF
 EXPECT_ERR=
@@ -726,7 +738,7 @@ e search.show_progress=false
 psM @ hit.string.0
 EOF
 EXPECT=<<EOF
-000000bc 108 hit.string.0
+0x000000bc 108 hit.string.0
 тани ад. Цум хендрерит персецути ех, миним еяуидем цонсецтетуер яуи ид. Либер малуиссет нам еа, еа граеце дефиниебас.
 EOF
 EXPECT_ERR=
@@ -742,7 +754,7 @@ e search.show_progress=false
 # ps @ hit.string.0
 EOF
 EXPECT=<<EOF
-00000270 96 hit.string.0
+0x00000270 96 hit.string.0
 EOF
 EXPECT_ERR=
 RUN
@@ -756,7 +768,7 @@ e search.show_progress=false
 psW @ hit.string.0
 EOF
 EXPECT=<<EOF
-00000418 132 hit.string.0
+0x00000418 132 hit.string.0
 դեֆինիթիոնես ին վիս, ծասե պեռթինածիա նե վիս. ին մելիուս ֆածիլիս եոս, եսթ եռոս պոպուլո թիմեամ թե. իուս նո ծոնսուլաթու.
 EOF
 EXPECT_ERR=
@@ -771,7 +783,7 @@ e search.show_progress=false
 psW @ hit.string.0
 EOF
 EXPECT=<<EOF
-00000128 64 hit.string.0
+0x00000128 64 hit.string.0
 京確年禁読応米新報書了号活修佐。央良持著宣込警石寂益好独田接読仕。漂戦辺量食害恐人給景族缶掲価済教放。響城引真際通御芭情査男倍淺早住。金握崎利契事用鹿仮交体受寄終山率大。
 EOF
 EXPECT_ERR=
@@ -786,7 +798,7 @@ e search.show_progress=false
 psW @ hit.string.0
 EOF
 EXPECT=<<EOF
-000003d8 200 hit.string.0
+0x000003d8 200 hit.string.0
 რე, იუს ეა უთინამ დელიცათისსიმი. მელ ფერსეყუერის ლიბერავისსე თე, გრაეცო ფრინციფეს ასსენთიორ სით ეუ. ჰის მალორუმ ანთიოფამ თჰეოფჰრასთუს ნე, ეუ ეუმ ყუას ეთიამ.
 EOF
 EXPECT_ERR=
@@ -801,7 +813,7 @@ e search.show_progress=false
 psW @ hit.string.0
 EOF
 EXPECT=<<EOF
-00000258 192 hit.string.0
+0x00000258 192 hit.string.0
 παρτεμ ποσιδονιθμ ατ. Ετ πρι περιcθλισ σπλενδιδε μνεσαρcηθμ, vελ ατ cονσεqθατ εξπετενδισ. Τε ηασ qθεμ πετεντιθμ.
 EOF
 EXPECT_ERR=
@@ -816,7 +828,7 @@ e search.show_progress=false
 psW @ hit.string.0
 EOF
 EXPECT=<<EOF
-000002d0 72 hit.string.0
+0x000002d0 72 hit.string.0
 ים משחקים ממונרכיה אנא גם.
 EOF
 EXPECT_ERR=
@@ -831,7 +843,7 @@ e search.show_progress=false
 psW @ hit.string.0
 EOF
 EXPECT=<<EOF
-000000c8 140 hit.string.0
+0x000000c8 140 hit.string.0
 पहोचने वैश्विक एसलिये पुस्तक हुआआदी विश्व उनका खरिदने समस्याओ मार्गदर्शन रखते तरीके यायेका विश्लेषण पुष्टिकर्ता चुनने सकता बढाता वेबजाल गोपनीयता लिए। संपादक करेसाथ रचना नवंबर
 EOF
 EXPECT_ERR=
@@ -846,7 +858,7 @@ e search.show_progress=false
 psW @ hit.string.0
 EOF
 EXPECT=<<EOF
-00000178 44 hit.string.0
+0x00000178 44 hit.string.0
 생의 과실이 있으며. 찬미를 사람은 그들에게 너의 청춘이 인류의 그들의 칼이다.
 EOF
 EXPECT_ERR=
@@ -861,7 +873,7 @@ e search.show_progress=false
 psW @ hit.string.0
 EOF
 EXPECT=<<EOF
-000000b8 100 hit.string.0
+0x000000b8 100 hit.string.0
  ·--· ·---- ··· - ···· --·· --··· -· ··· -·· -·-- ···· ·--- ·-·-·- · ··- - ··- ···- ··--- ·-·-·- -·- -··- ----- -·
 EOF
 EXPECT_ERR=
@@ -876,7 +888,7 @@ e search.show_progress=false
 psW @ hit.string.0
 EOF
 EXPECT=<<EOF
-000000bc 108 hit.string.0
+0x000000bc 108 hit.string.0
 тани ад. Цум хендрерит персецути ех, миним еяуидем цонсецтетуер яуи ид. Либер малуиссет нам еа, еа граеце дефиниебас.
 EOF
 EXPECT_ERR=
@@ -892,8 +904,8 @@ psu @ hit.string.0
 psu @ hit.string.1
 EOF
 EXPECT=<<EOF
-0000000b 10 hit.string.0
-00000042 10 hit.string.1
+0x0000000b 10 hit.string.0
+0x00000042 10 hit.string.1
 ипсум долор сит амет
 ИПСУМ ДОЛОР СИТ АМЕТ
 EOF
@@ -910,8 +922,8 @@ psW @ hit.string.0
 psW @ hit.string.1
 EOF
 EXPECT=<<EOF
-00000087 20 hit.string.0
-000000bb 20 hit.string.1
+0x00000087 20 hit.string.0
+0x000000bb 20 hit.string.1
 ипсум долор сит амет, при унум семпер тритани ад. Цум хендрерит персецути ех, миним еяуидем цонсецтетуер яуи ид. Либер малуиссет нам еа, еа граеце дефиниебас.
 ит амет, при унум семпер тритани ад. Цум хендрерит персецути ех, миним еяуидем цонсецтетуер яуи ид. Либер малуиссет нам еа, еа граеце дефиниебас.
 EOF
