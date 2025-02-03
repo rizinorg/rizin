@@ -32,12 +32,12 @@ RZ_API int rz_search_regexp_update(RzSearch *s, ut64 from, const ut8 *buf, int l
 			return -1;
 		}
 
-		matches = rz_regex_match_all_not_grouped(compiled, (char *)buf, len, from, RZ_REGEX_DEFAULT);
+		matches = rz_regex_match_all_not_grouped(compiled, (char *)buf, len, 0, RZ_REGEX_DEFAULT);
 		void **it;
 		rz_pvector_foreach (matches, it) {
 			RzRegexMatch *m = *it;
 			kw->keyword_length = m->len; // For a regex search, the keyword can be of variable length
-			int t = rz_search_hit_new(s, kw, m->start);
+			int t = rz_search_hit_new(s, kw, from + m->start);
 			if (t == 0) {
 				ret = -1;
 				rz_pvector_free(matches);
