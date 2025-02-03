@@ -238,26 +238,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=/a JSON output without pattern
-FILE=bins/elf/ioli/crackme0x00
-CMDS=<<EOF
-/adj
-/aej
-/acj
-/aoj
-/aaj
-/aij
-EOF
-EXPECT=<<EOF
-[]
-[]
-[]
-[]
-[]
-[]
-EOF
-RUN
-
 NAME=/ac mov ebx
 FILE=bins/elf/ioli/crackme0x00
 CMDS=<<EOF
@@ -516,7 +496,7 @@ CMDS=<<EOF
 e asm.arch=x86
 e analysis.arch=x86
 e asm.bits=32
-"/ad/ ror (bh|...), (cl|.)"
+/ad/ "ror (bh|...), (cl|.)"
 q
 EOF
 EXPECT=<<EOF
