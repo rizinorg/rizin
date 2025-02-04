@@ -130,7 +130,7 @@ e search.show_progress=false
 /zj hello
 EOF
 EXPECT=<<EOF
-[{"offset":8019,"type":"string","data":"....]........c:\\hello\\world..M......."}]
+[{"address":3923,"size":5,"flag":"hit.string.ascii.0"}]
 EOF
 RUN
 
@@ -147,7 +147,7 @@ e search.show_progress=false
 /z ELF
 EOF
 EXPECT=<<EOF
-0x00000001 hit0_0 ".ELF................"
+0x00000001 3 hit.string.ascii.0
 EOF
 RUN
 
@@ -165,7 +165,7 @@ e search.show_progress=false
 /z ELF
 EOF
 EXPECT=<<EOF
-0x00000001 hit0_0 ".ELF................"
+0x00000001 3 hit.string.ascii.0
 EOF
 RUN
 
@@ -178,7 +178,7 @@ e search.show_progress=false
 /zj foo
 EOF
 EXPECT=<<EOF
-[{"offset":0,"type":"string","data":"foo.\\.............."}]
+[{"address":0,"size":3,"flag":"hit.string.ascii.0"}]
 EOF
 RUN
 
@@ -312,8 +312,8 @@ e search.show_progress=false
 /x 3480
 EOF
 EXPECT=<<EOF
-0x0000003c hit0_0 3480
-0x00000040 hit0_1 3480
+0x0000003c 2 hit.bytes.0
+0x00000040 2 hit.bytes.1
 EOF
 RUN
 
@@ -517,7 +517,7 @@ e search.to=0x10
 /m
 EOF
 EXPECT=<<EOF
-0x00000000 1 PE  for MS Windows Intel 80386 32-bit
+0x00000000 1 PE  for MS Windows (console) Intel 80386 32-bit
 EOF
 RUN
 
@@ -532,7 +532,7 @@ e search.to=0x10
 /m
 EOF
 EXPECT=<<EOF
-0x00000000 1 PE  for MS Windows Intel 80386 32-bit
+0x00000000 1 PE  for MS Windows (console) Intel 80386 32-bit
 EOF
 RUN
 
@@ -564,7 +564,7 @@ e search.show_progress=false
 /x 41424344
 EOF
 EXPECT=<<EOF
-0x00000100 hit0_0 41424344
+0x00000100 4 hit.bytes.0
 EOF
 RUN
 
@@ -580,7 +580,7 @@ e search.show_progress=false
 /x 41424344
 EOF
 EXPECT=<<EOF
-0x00000100 hit0_0 41424344
+0x00000100 4 hit.bytes.0
 EOF
 RUN
 
@@ -735,6 +735,7 @@ wx 0x12345678aabbccddeeff12345678
 EOF
 EXPECT=<<EOF
 [{"offset":0,"type":"hexpair","data":"12345678"},{"offset":10,"type":"hexpair","data":"12345678"}]
+
 EOF
 RUN
 
@@ -746,6 +747,7 @@ wx 0x12345678aabbccddeeff12345678
 EOF
 EXPECT=<<EOF
 [{"offset":0,"value":2018915346},{"offset":10,"value":2018915346}]
+
 EOF
 RUN
 
@@ -771,7 +773,7 @@ e search.show_progress=false
 /x f8820408
 EOF
 EXPECT=<<EOF
-0x08049f2c hit0_0 f8820408
+0x08049f2c 4 hit.bytes.0
 EOF
 RUN
 
@@ -784,8 +786,8 @@ e search.show_progress=false
 /x 653b2530000000724b53b834e7150883ec188
 EOF
 EXPECT=<<EOF
-0x0805ae90 hit0_0 653b2530000000724b53b834e7150883ec
-0x0805b030 hit0_1 653b2530000000724b53b834e7150883ec
+0x0805ae90 19 hit.bytes.0
+0x0805b030 19 hit.bytes.1
 EOF
 RUN
 
@@ -800,7 +802,7 @@ e search.show_progress=false
 /x 41424344
 EOF
 EXPECT=<<EOF
-0x00000100 hit0_0 41424344
+0x00000100 4 hit.bytes.0
 EOF
 RUN
 
@@ -828,7 +830,7 @@ e search.show_progress=false
 /x 41424344
 EOF
 EXPECT=<<EOF
-0x00000100 hit0_0 41424344
+0x00000100 4 hit.bytes.0
 EOF
 RUN
 
@@ -869,7 +871,7 @@ e search.show_progress=false
 /x 41424344
 EOF
 EXPECT=<<EOF
-0x00000100 hit0_0 41424344
+0x00000100 4 hit.bytes.0
 EOF
 RUN
 
@@ -897,7 +899,7 @@ e search.show_progress=false
 /x 41424344
 EOF
 EXPECT=<<EOF
-0x00000100 hit0_0 41424344
+0x00000100 4 hit.bytes.0
 EOF
 RUN
 
@@ -935,7 +937,7 @@ e search.show_progress=false
 /x aa..bb
 EOF
 EXPECT=<<EOF
-0x00000001 hit0_0 aaaabb
+0x00000001 3 hit.bytes.0
 EOF
 RUN
 
@@ -947,7 +949,7 @@ e search.show_progress=false
 /x ..aabb
 EOF
 EXPECT=<<EOF
-0x00000001 hit0_0 aaaabb
+0x00000001 3 hit.bytes.0
 EOF
 RUN
 
@@ -1032,9 +1034,9 @@ e search.show_progress=false
 /x 50617373776F7264
 EOF
 EXPECT=<<EOF
-0x00000581 hit0_0 50617373776f7264
-0x0000059e hit0_1 50617373776f7264
-0x000005a9 hit0_2 50617373776f7264
+0x00000581 8 hit.bytes.0
+0x0000059e 8 hit.bytes.1
+0x000005a9 8 hit.bytes.2
 EOF
 RUN
 
@@ -1046,7 +1048,7 @@ e search.show_progress=false
 /x a5..bf
 EOF
 EXPECT=<<EOF
-0x00000001 hit0_0 a5a5bf
+0x00000001 3 hit.bytes.0
 EOF
 RUN
 
@@ -1058,7 +1060,7 @@ e search.show_progress=false
 /x ..5abf
 EOF
 EXPECT=<<EOF
-0x00000127 hit0_0 5a5abf
+0x00000127 3 hit.bytes.0
 EOF
 RUN
 
@@ -1070,7 +1072,7 @@ e search.show_progress=false
 /x a5e3bf:ff81ff
 EOF
 EXPECT=<<EOF
-0x00000005 hit0_0 a5a5bf
+0x00000005 3 hit.bytes.0
 EOF
 RUN
 
@@ -1153,10 +1155,11 @@ e search.show_progress=false
 /zj world i utf16le
 EOF
 EXPECT=<<EOF
-0x0000000c hit0_0 57006f0072006c006400
-0x0000000c hit2_0 57006f0072006c006400
-[{"offset":12,"type":"hexpair","data":"57006f0072006c006400"}]
-[{"offset":12,"type":"hexpair","data":"57006f0072006c006400"}]
+0x0000000c 10 hit.string.utf16le.0
+0x0000000c 10 hit.string.utf16le.0
+0x0000000c 10 hit.string.utf16le.0
+[{"address":12,"size":10,"flag":"hit.string.utf16le.0"}]
+[{"address":12,"size":10,"flag":"hit.string.utf16le.0"}]
 EOF
 RUN
 
