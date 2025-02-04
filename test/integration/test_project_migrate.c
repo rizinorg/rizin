@@ -1008,12 +1008,13 @@ static bool test_load_v15_seek_history() {
 	mu_end;
 }
 
-static bool test_load_v15_str_config() {
+static bool test_load_v15_19_str_config() {
 	RzCore *core = rz_core_new();
+	// Load version 15 config but check if the v19 values were converted correctly.
 	BEGIN_LOAD_TEST(core, 15, "prj/v15-str-config.rzdb");
-	mu_assert_eq(rz_config_get_i(core->config, "str.search.min_length"), 6, "str.search.min_length");
-	mu_assert_streq(rz_config_get(core->config, "str.search.encoding"), "utf8", "str.search.encoding");
-	mu_assert_eq(rz_config_get_i(core->config, "str.search.buffer_size"), 0x00b00123, "str.search.buffer_size");
+	mu_assert_eq(rz_config_get_i(core->config, "search.str.min_length"), 6, "search.str.min_length");
+	mu_assert_streq(rz_config_get(core->config, "search.str.encoding"), "utf8", "search.str.encoding");
+	mu_assert_eq(rz_config_get_i(core->config, "search.str.buffer_size"), 0x00b00123, "search.str.buffer_size");
 	rz_core_free(core);
 	mu_end;
 }
@@ -1076,7 +1077,7 @@ int all_tests() {
 	mu_run_test(test_load_v12);
 	mu_run_test(test_load_v14);
 	mu_run_test(test_load_v15_seek_history);
-	mu_run_test(test_load_v15_str_config);
+	mu_run_test(test_load_v15_19_str_config);
 	mu_run_test(test_load_v16);
 	mu_run_test(test_load_v17);
 	return tests_passed != tests_run;
