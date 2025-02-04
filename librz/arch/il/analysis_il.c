@@ -96,7 +96,7 @@ static void setup_vm_init_state(RzAnalysisILVM *vm, RZ_NULLABLE RzAnalysisILInit
  * \return RzAnalysisRzil* a pointer to RzAnalysisILVM instance
  */
 RZ_API RZ_OWN RzAnalysisILVM *rz_analysis_il_vm_new(RzAnalysis *a, RZ_NULLABLE RzReg *init_state_reg) {
-	rz_return_val_if_fail(a, NULL);
+	rz_return_val_if_fail(a && a->cur && a->cur->il_config, NULL);
 	RzAnalysisILConfig *config = a->cur->il_config(a);
 	if (!config) {
 		return false;
@@ -281,9 +281,9 @@ static RzAnalysisILStepResult analysis_il_vm_step_while(
 		rz_strbuf_append(&sb, "\n");
 		il_events(vm->vm, &sb);
 
-		rz_cons_printf("0x%llx [", addr);
+		rz_cons_printf("0x%08" PFMT64x " [", addr);
 		for (int i = 0; i < op.size; ++i) {
-			rz_cons_printf("%x", code[i]);
+			rz_cons_printf("%02x", code[i]);
 		}
 		rz_cons_printf("] %s\n%s\n", op.mnemonic, rz_strbuf_get(&sb));
 		rz_cons_flush();

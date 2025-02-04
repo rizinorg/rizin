@@ -138,6 +138,7 @@
 #define MSB(x)      rz_il_op_new_msb(x)
 #define LSB(x)      rz_il_op_new_lsb(x)
 #define EQ(x, y)    rz_il_op_new_eq(x, y)
+#define NE(x, y)    rz_il_op_new_ne(x, y)
 #define ULT(x, y)   rz_il_op_new_ult(x, y)
 #define ULE(x, y)   rz_il_op_new_ule(x, y)
 #define UGT(x, y)   rz_il_op_new_ugt(x, y)
@@ -191,6 +192,5 @@
 #define BSWAP16(t)                                rz_il_bswap16(t)
 #define BSWAP32(t)                                rz_il_bswap32(t)
 #define BSWAP64(t)                                rz_il_bswap64(t)
-#define NE(x, y)                                  rz_il_op_new_ne(x, y)
 
 #endif
