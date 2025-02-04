@@ -1132,14 +1132,14 @@ static bool cb_search_max_threads(void *user, void *data) {
 	return true;
 }
 
-static bool cb_str_search_min_length(void *user, void *data) {
+static bool cb_search_str_min_length(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	if (node->i_value < 1) {
-		RZ_LOG_ERROR("str.search.min_length cannot be less than 1.\n");
+		RZ_LOG_ERROR("search.str.min_length cannot be less than 1.\n");
 		return false;
 	} else if (node->i_value >= core->bin->str_search_cfg.buffer_size) {
-		RZ_LOG_ERROR("str.search.buffer_size cannot be greater or equal to %" PFMTSZu ".\n", core->bin->str_search_cfg.buffer_size);
+		RZ_LOG_ERROR("search.str.buffer_size cannot be greater or equal to %" PFMTSZu ".\n", core->bin->str_search_cfg.buffer_size);
 		return false;
 	}
 
@@ -1153,13 +1153,13 @@ static bool cb_str_search_min_length(void *user, void *data) {
 	return true;
 }
 
-static bool cb_str_search_buffer_size(void *user, void *data) {
+static bool cb_search_str_buffer_size(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 
 	size_t min_buffer_size = RZ_MIN(core->bin->str_search_cfg.min_length, RZ_BIN_STRING_SEARCH_BUFFER_SIZE);
 	if (node->i_value < min_buffer_size) {
-		RZ_LOG_ERROR("str.search.buffer_size cannot be less than %" PFMTSZu ".\n", min_buffer_size);
+		RZ_LOG_ERROR("search.str.buffer_size cannot be less than %" PFMTSZu ".\n", min_buffer_size);
 		return false;
 	}
 
@@ -1173,11 +1173,11 @@ static bool cb_str_search_buffer_size(void *user, void *data) {
 	return true;
 }
 
-static bool cb_str_search_max_uni_blocks(void *user, void *data) {
+static bool cb_search_str_max_uni_blocks(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	if (node->i_value < 1) {
-		RZ_LOG_ERROR("str.search.max_uni_blocks cannot be less than 1.\n");
+		RZ_LOG_ERROR("search.str.max_uni_blocks cannot be less than 1.\n");
 		return false;
 	}
 	core->bin->str_search_cfg.max_uni_blocks = node->i_value;
@@ -1190,11 +1190,11 @@ static bool cb_str_search_max_uni_blocks(void *user, void *data) {
 	return true;
 }
 
-static bool cb_str_search_max_region_size(void *user, void *data) {
+static bool cb_search_str_max_region_size(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	if (node->i_value < RZ_BIN_STRING_SEARCH_MAX_REGION_SIZE) {
-		RZ_LOG_ERROR("str.search.max_region_size cannot be less than " RZ_STR(RZ_BIN_STRING_SEARCH_MAX_REGION_SIZE) ".\n");
+		RZ_LOG_ERROR("search.str.max_region_size cannot be less than " RZ_STR(RZ_BIN_STRING_SEARCH_MAX_REGION_SIZE) ".\n");
 		return false;
 	}
 	core->bin->str_search_cfg.max_region_size = node->i_value;
@@ -1207,7 +1207,7 @@ static bool cb_str_search_max_region_size(void *user, void *data) {
 	return true;
 }
 
-static bool cb_str_search_raw_alignment(void *user, void *data) {
+static bool cb_search_str_raw_alignment(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	if (node->i_value < 8 || rz_bits_count_ones_ut64(node->i_value) != 1) {
@@ -1218,14 +1218,14 @@ static bool cb_str_search_raw_alignment(void *user, void *data) {
 	return true;
 }
 
-static bool cb_str_search_check_ascii_freq(void *user, void *data) {
+static bool cb_search_str_check_ascii_freq(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	if (node->value[0] == '?') {
 		rz_cons_printf("true\nfalse\n");
 		return false;
 	} else if (!rz_str_is_bool(node->value)) {
-		RZ_LOG_ERROR("Invalid value for str.search.check_ascii_freq (%s).\n", node->value);
+		RZ_LOG_ERROR("Invalid value for search.str.check_ascii_freq (%s).\n", node->value);
 		return false;
 	}
 	core->bin->str_search_cfg.check_ascii_freq = rz_str_is_true(node->value);
@@ -1253,7 +1253,7 @@ static bool find_encoding(RzConfigNode *node, RzStrEnc *encoding) {
 	return false;
 }
 
-static bool cb_str_search_encoding(void *user, void *data) {
+static bool cb_search_str_encoding(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	RzStrEnc encoding = RZ_STRING_ENC_GUESS;
@@ -1265,7 +1265,7 @@ static bool cb_str_search_encoding(void *user, void *data) {
 			       "if utf8 char detected then utf8 else 8bit\n");
 		return false;
 	} else if (RZ_STR_EQ("settings", node->value) || (rz_str_casecmp("guess", node->value) && !found_enc)) {
-		RZ_LOG_ERROR("Invalid value for str.search.encoding (%s).\n", node->value);
+		RZ_LOG_ERROR("Invalid value for search.str.encoding (%s).\n", node->value);
 		return false;
 	}
 
@@ -3758,15 +3758,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 
 	/* string search options */
 	SETB("str.search.reload", true, "When enabled, any change to any option `str.search.*` will reload the bin strings.");
-	SETICB("str.search.min_length", RZ_BIN_STRING_SEARCH_MIN_STRING, &cb_str_search_min_length, "Smallest string length that is possible to find.");
-	SETICB("str.search.buffer_size", RZ_BIN_STRING_SEARCH_BUFFER_SIZE, &cb_str_search_buffer_size, "Maximum buffer size, which will also determine the maximum string length.");
-	SETICB("str.search.max_uni_blocks", RZ_BIN_STRING_SEARCH_MAX_UNI_BLOCKS, &cb_str_search_max_uni_blocks, "Maximum number of unicode blocks.");
-	SETICB("str.search.max_region_size", RZ_BIN_STRING_SEARCH_MAX_REGION_SIZE, &cb_str_search_max_region_size, "Maximum allowable size for the string search interval between two memory regions.");
-	SETICB("str.search.raw_alignment", RZ_BIN_STRING_SEARCH_RAW_FILE_ALIGNMENT, &cb_str_search_raw_alignment, "Memory sector alignment used for the raw string search.");
-	SETICB("str.search.check_ascii_freq", RZ_BIN_STRING_SEARCH_CHECK_ASCII_FREQ, &cb_str_search_check_ascii_freq, "If true, perform check on ASCII frequencies when looking for false positives during string search");
-	n = NODECB("str.search.encoding", "guess", &cb_str_search_encoding);
-	SETDESC(n, "The default string encoding type (when set to guess, it is automatically guessed).");
-	SETOPTIONS(n, "ascii", "8bit", "utf8", "utf16le", "utf32le", "utf16be", "utf32be", "ibm037", "ibm290", "ebcdices", "ebcdicuk", "ebcdicus", "guess", NULL);
 	n = NODECB("str.search.mode", "auto", &cb_str_search_mode);
 	SETDESC(n, "String search mode which can override how strings are found (auto, rosections or raw)");
 	SETOPTIONS(n, "auto", "rosections", "raw", NULL);
@@ -3797,6 +3788,15 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("search.show_progress", "true", "Show the search process.");
 	SETBPREF("search.overlap", "true", "Look for overlapped search hits.");
 	SETICB("search.io.alignment", 1, &cb_searchalignment, "Only search at set byte alignment.");
+	SETICB("search.str.min_length", RZ_BIN_STRING_SEARCH_MIN_STRING, &cb_search_str_min_length, "Smallest string length that is possible to find.");
+	SETICB("search.str.buffer_size", RZ_BIN_STRING_SEARCH_BUFFER_SIZE, &cb_search_str_buffer_size, "Maximum buffer size, which will also determine the maximum string length.");
+	SETICB("search.str.max_uni_blocks", RZ_BIN_STRING_SEARCH_MAX_UNI_BLOCKS, &cb_search_str_max_uni_blocks, "Maximum number of unicode blocks.");
+	SETICB("search.str.max_region_size", RZ_BIN_STRING_SEARCH_MAX_REGION_SIZE, &cb_search_str_max_region_size, "Maximum allowable size for the string search interval between two memory regions.");
+	SETICB("search.str.raw_alignment", RZ_BIN_STRING_SEARCH_RAW_FILE_ALIGNMENT, &cb_search_str_raw_alignment, "Memory sector alignment used for the raw string search.");
+	SETICB("search.str.check_ascii_freq", RZ_BIN_STRING_SEARCH_CHECK_ASCII_FREQ, &cb_search_str_check_ascii_freq, "If true, perform check on ASCII frequencies when looking for false positives during string search");
+	n = NODECB("search.str.encoding", "guess", &cb_search_str_encoding);
+	SETDESC(n, "The default string encoding type (when set to guess, it is automatically guessed).");
+	SETOPTIONS(n, "ascii", "8bit", "utf8", "utf16le", "utf32le", "utf16be", "utf32be", "ibm037", "ibm290", "ebcdices", "ebcdicuk", "ebcdicus", "guess", NULL);
 
 	SETICB("search.align", 0, &cb_searchalign, "Only catch aligned search hits");
 	SETI("search.esilcombo", 8, "Stop search after N consecutive hits");

@@ -177,7 +177,7 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_string(RZ_NONNULL RzCor
 		return NULL;
 	}
 	if (strlen(re_pattern) >= core->bin->str_search_cfg.buffer_size) {
-		RZ_LOG_ERROR("core: String to search is larger then str.search.buffer_size.\n");
+		RZ_LOG_ERROR("core: String to search is larger then search.str.buffer_size.\n");
 		return NULL;
 	}
 

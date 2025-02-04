@@ -1231,7 +1231,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=rz-bin load elf but with str.search.min_length=2
+NAME=rz-bin load elf but with search.str.min_length=2
 FILE=bins/elf/smallstrings.elf
 CMDS=!rz-bin -z -N2 ${RZ_FILE}
 EXPECT=<<EOF

@@ -3211,20 +3211,20 @@ RUN
 NAME=iz (file x86)
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF
-e str.search.encoding=ascii
+e search.str.encoding=ascii
 echo -- default --
 iz
 echo -- geq 12 --
-e str.search.min_length=12
+e search.str.min_length=12
 iz
 echo -- geq 13 --
-e str.search.min_length=13
+e search.str.min_length=13
 iz
 echo -- geq 0 --
-e str.search.min_length=1
+e search.str.min_length=1
 iz
 echo -- small buffer 12 --
-e str.search.buffer_size=13
+e search.str.buffer_size=13
 iz
 EOF
 EXPECT=<<EOF
@@ -3257,7 +3257,7 @@ CMDS=<<EOF
 echo -- default --
 iz
 echo -- geq 12 --
-e str.search.min_length=12
+e search.str.min_length=12
 iz
 EOF
 EXPECT=<<EOF
@@ -3727,7 +3727,7 @@ RUN
 
 NAME=iz utf16le
 FILE=bins/elf/strenc
-ARGS=-e str.search.check_ascii_freq=false
+ARGS=-e search.str.check_ascii_freq=false
 CMDS=<<EOF
 e str.escbslash=true
 iz~green
@@ -3741,7 +3741,7 @@ RUN
 
 NAME=iz/izz utf32le
 FILE=bins/elf/strenc
-ARGS=-e str.search.check_ascii_freq=false
+ARGS=-e search.str.check_ascii_freq=false
 CMDS=<<EOF
 e str.escbslash=true
 iz~cyan
@@ -3838,11 +3838,11 @@ nth      paddr      vaddr len size section type  string
 EOF
 RUN
 
-NAME=izz and str.search.encoding
+NAME=izz and search.str.encoding
 FILE==
 CMDS=<<EOF
 wz k\0i\0abcdefgh
-(izzenc enc; e str.search.encoding=${enc}; izz:quiet)
+(izzenc enc; e search.str.encoding=${enc}; izz:quiet)
 .(izzenc guess)
 .(izzenc ascii)
 .(izzenc utf8)
@@ -3870,7 +3870,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=str.search.encoding string reset
+NAME=search.str.encoding string reset
 FILE=--
 CMDS=<<EOF
 mkdir .tmp
@@ -3879,7 +3879,7 @@ o+ .tmp/strenc-bin
 iz:quiet
 s 0x080484b0
 wz k\0i\0abcdefgh
-(izenc enc; e str.search.encoding=${enc}; iz:quiet)
+(izenc enc; e search.str.encoding=${enc}; iz:quiet)
 .(izenc guess)
 .(izenc utf8)
 o--
@@ -3972,7 +3972,7 @@ RUN
 
 NAME=izj unicode blocks
 FILE=bins/elf/strenc
-ARGS=-e str.search.check_ascii_freq=false
+ARGS=-e search.str.check_ascii_freq=false
 CMDS=<<EOF
 e bin.str.purge=all,!4202996,!4203007,!4203208
 px @ 4203007
@@ -5040,11 +5040,11 @@ bits 64
 EOF
 RUN
 
-NAME=print elf strings but with str.search.min_length=2
+NAME=print elf strings but with search.str.min_length=2
 FILE=bins/elf/smallstrings.elf
 CMDS=<<EOF
 iz
-iz @e:str.search.min_length=2
+iz @e:search.str.min_length=2
 EOF
 EXPECT=<<EOF
 nth      paddr      vaddr len size section type  string 
@@ -5063,7 +5063,7 @@ FILE=malloc://8192
 CMDS=<<EOF
 wD 6140
 px
-e str.search.buffer_size=8000
+e search.str.buffer_size=8000
 iz
 EOF
 EXPECT=<<EOF

@@ -15915,7 +15915,7 @@ static const RzCmdDescHelp ps_help = {
 	.summary = "Print string at the current offset",
 };
 static const RzCmdDescDetailEntry print_string_Value_space_details_detail_entries[] = {
-	{ .text = "encoding=settings", .arg_str = NULL, .comment = "Use encoding from 'str.search.encoding' option." },
+	{ .text = "encoding=settings", .arg_str = NULL, .comment = "Use encoding from 'search.str.encoding' option." },
 	{ .text = "delimeter=null", .arg_str = NULL, .comment = "String is NUL terminated." },
 	{ .text = "delimeter=block", .arg_str = NULL, .comment = "Print whole block as string (dosn't stop at non-printable character)." },
 	{ 0 },

@@ -65,7 +65,7 @@ NAME=String Search - minimal string - Encoding: ascii - Latin
 FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ascii
 CMDS=<<EOF
 e search.show_progress=false
-e str.search.min_length=2
+e search.str.min_length=2
 /z "et" d ascii
 # Check string is actually at offset of the hit.
 ps @ hit.string.0

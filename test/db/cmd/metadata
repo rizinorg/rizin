@@ -487,7 +487,7 @@ RUN
 
 NAME=Cs8
 FILE=bins/elf/strenc
-ARGS=-e str.search.check_ascii_freq=false
+ARGS=-e search.str.check_ascii_freq=false
 CMDS=<<EOF
 e str.escbslash=true
 s 0x004021ff
@@ -521,7 +521,7 @@ RUN
 
 NAME=Cs8 and Cslj
 FILE=bins/elf/strenc
-ARGS=-e bin.str.purge=all,!0x004021ff -e str.search.check_ascii_freq=false
+ARGS=-e bin.str.purge=all,!0x004021ff -e search.str.check_ascii_freq=false
 CMDS=<<EOF
 s 0x004021ff
 Csl

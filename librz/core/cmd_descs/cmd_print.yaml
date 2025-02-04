@@ -1128,7 +1128,7 @@ commands:
           - name: Value details
             entries:
               - text: "encoding=settings"
-                comment: "Use encoding from 'str.search.encoding' option."
+                comment: "Use encoding from 'search.str.encoding' option."
               - text: "delimeter=null"
                 comment: "String is NUL terminated."
               - text: "delimeter=block"
