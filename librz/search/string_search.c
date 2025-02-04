@@ -94,7 +94,7 @@ static bool string_find(RZ_NULLABLE RzSearchFindOpt *fopt, void *user, ut64 offs
 				ut64 str_mem_offset;
 				align_offsets(options, detected->type, detected, group0, &str_mem_offset, &str_mem_len, found_idx << 32);
 				char *hit_type = rz_str_newf("string.%s", rz_str_enc_as_string(detected->type));
-				RzSearchHit *hit = rz_search_hit_new(hit_type, str_mem_offset, str_mem_len);
+				RzSearchHit *hit = rz_search_hit_new(hit_type, str_mem_offset + offset, str_mem_len);
 				free(hit_type);
 				if (!hit || !rz_th_queue_push(hits, hit, true)) {
 					rz_search_hit_free(hit);
