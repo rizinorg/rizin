@@ -12,6 +12,7 @@
 
 #include "cmd_search_rop.c"
 #include "rz_cons.h"
+#include <rz_util/rz_str_util.h>
 #include <rz_util/rz_strbuf.h>
 #include <rz_util/rz_regex.h>
 #include <rz_util/rz_str.h>
@@ -2833,7 +2834,8 @@ RZ_IPI RzCmdStatus rz_cmd_search_hex_handler(RzCore *core, int argc, const char 
 	CMD_SEARCH_BEGIN();
 
 	RzList *hits = NULL;
-	RzSearchBytesPattern *pattern = rz_search_parse_byte_pattern(argv[1], "bytes");
+	const char *arg = argv[1];
+	RzSearchBytesPattern *pattern = rz_search_parse_byte_pattern(arg, "bytes");
 
 	if (!pattern) {
 		RZ_LOG_ERROR("Failed to parse given pattern.\n");
@@ -2856,6 +2858,80 @@ RZ_IPI RzCmdStatus rz_cmd_search_hex_handler(RzCore *core, int argc, const char 
 	return cmd_core_handle_search_hits(core, state, hits);
 
 error:
+	rz_list_free(hits);
+	rz_search_opt_free(search_opts);
+	CMD_SEARCH_END();
+	return RZ_CMD_STATUS_ERROR;
+}
+
+static bool parse_pattern_arg(const char *arg, RZ_OUT ut8 *re, RZ_OUT size_t *len) {
+	*len = 0;
+	size_t arg_len = strlen(arg);
+	// Convert to real bytes.
+	for (size_t i = 0; i < arg_len;) {
+		if (arg[i] == 'x') {
+			if (i + 2 >= arg_len) {
+				RZ_LOG_ERROR("'x' in the pattern must be followed by two hexadecimal nibbles (N = [a-fA-F0-9]): xNN.\n");
+				return false;
+			}
+			if (!IS_HEXCHAR(arg[i + 1]) || !IS_HEXCHAR(arg[i + 2])) {
+				RZ_LOG_ERROR("Bytes with non-hexadecimal nibbles are not allowed. Got: 'x%c%c'.\n", arg[i + 1], arg[i + 2]);
+				return false;
+			}
+			ut16 byte = rz_hex_digit_pair_to_byte(arg + i + 1);
+			re[*len] = byte;
+			i += 3;
+		} else {
+			// Just copy normal character.
+			re[*len] = arg[i];
+			i++;
+		}
+		*len += 1;
+	}
+	return true;
+}
+
+// "/xr"
+RZ_IPI RzCmdStatus rz_cmd_search_hex_regex_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	ut8 *re = RZ_NEWS0(ut8, strlen(argv[1]));
+	RzSearchOpt *search_opts = setup_search_options(core);
+	if (!search_opts) {
+		goto error;
+	}
+
+	CMD_SEARCH_BEGIN();
+
+	RzList *hits = NULL;
+	const char *arg = argv[1];
+	size_t r = 0;
+	if (!parse_pattern_arg(arg, re, &r)) {
+		goto error;
+	}
+	RzSearchBytesPattern *pattern = rz_search_bytes_pattern_new(rz_new_copy(r, re), NULL, r, "bytes", true);
+
+	if (!pattern) {
+		RZ_LOG_ERROR("Failed to parse given pattern.\n");
+		goto error;
+	}
+
+	bool progress = rz_config_get_b(core->config, "search.show_progress");
+	if (!rz_search_opt_set_cancel_cb(search_opts, cmd_search_progress_cancel, progress ? state : NULL)) {
+		RZ_LOG_ERROR("code: Failed to setup default search options.\n");
+		goto error;
+	}
+	hits = rz_core_search_bytes(core, search_opts, pattern);
+	if (!hits) {
+		RZ_LOG_ERROR("Failed to perform search.\n");
+		goto error;
+	}
+
+	CMD_SEARCH_END();
+	free(re);
+	rz_search_opt_free(search_opts);
+	return cmd_core_handle_search_hits(core, state, hits);
+
+error:
+	free(re);
 	rz_list_free(hits);
 	rz_search_opt_free(search_opts);
 	CMD_SEARCH_END();

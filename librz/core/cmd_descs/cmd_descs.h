@@ -177,6 +177,8 @@ RZ_IPI RzCmdStatus rz_cmd_search_value_32be_handler(RzCore *core, int argc, cons
 RZ_IPI RzCmdStatus rz_cmd_search_value_64be_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/x"
 RZ_IPI RzCmdStatus rz_cmd_search_hex_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/xr"
+RZ_IPI RzCmdStatus rz_cmd_search_hex_regex_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/z"
 RZ_IPI RzCmdStatus rz_cmd_search_string_sensitive_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "R"

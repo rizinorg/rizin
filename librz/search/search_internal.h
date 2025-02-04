@@ -102,6 +102,7 @@ struct rz_search_bytes_pattern_t {
 	const char *pattern_desc; ///< Pattern description string.
 	ut8 *bytes; ///< Pattern bytes.
 	ut8 *mask; ///< Pattern mask (when NULL full match)
+	RzRegex *regex; ///< Regex patterns of the bytes. Is optional.
 	size_t length; ///< Pattern & mask length
 };
 

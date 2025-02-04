@@ -18,10 +18,13 @@
  * \param mask The mask to apply to the pattern and the data before comparison. (optional)
  * \param length Length of \p bytes and \p mask (if not NULL).
  * \param pattern_desc An optional description string of the pattern.
+ * \param compile_regex If true it compiles \p bytes as regex.
+ * This will make the search use the regex, instead of comparing the bytes.
+ * The \p mask is ignored in this case.
  *
  * \return The initalized pattern or NULL in case of failure.
  */
-RZ_API RZ_OWN RzSearchBytesPattern *rz_search_bytes_pattern_new(RZ_OWN ut8 *bytes, RZ_NULLABLE RZ_OWN ut8 *mask, size_t length, RZ_NULLABLE const char *pattern_desc) {
+RZ_API RZ_OWN RzSearchBytesPattern *rz_search_bytes_pattern_new(RZ_OWN ut8 *bytes, RZ_NULLABLE RZ_OWN ut8 *mask, size_t length, RZ_NULLABLE const char *pattern_desc, bool compile_regex) {
 	rz_return_val_if_fail(bytes && length > 0, NULL);
 	RzSearchBytesPattern *pat = RZ_NEW0(RzSearchBytesPattern);
 	if (!pat) {
@@ -29,6 +32,9 @@ RZ_API RZ_OWN RzSearchBytesPattern *rz_search_bytes_pattern_new(RZ_OWN ut8 *byte
 		return NULL;
 	}
 	pat->bytes = bytes;
+	if (compile_regex) {
+		pat->regex = rz_regex_new_bytes(bytes, length, RZ_REGEX_DEFAULT, RZ_REGEX_DEFAULT, NULL);
+	}
 	pat->mask = mask;
 	pat->length = length;
 	pat->pattern_desc = pattern_desc;
@@ -40,6 +46,7 @@ RZ_API void rz_search_bytes_pattern_free(RZ_NULLABLE RZ_OWN RzSearchBytesPattern
 		return;
 	}
 	free(hp->bytes);
+	rz_regex_free(hp->regex);
 	free(hp->mask);
 	free(hp);
 }
@@ -66,7 +73,7 @@ RZ_API size_t rz_search_bytes_pattern_len(RZ_NONNULL const RzSearchBytesPattern 
 
 RZ_API RZ_OWN RzSearchBytesPattern *rz_search_bytes_pattern_copy(RZ_NONNULL RZ_BORROW RzSearchBytesPattern *hp) {
 	rz_return_val_if_fail(hp, NULL);
-	return rz_search_bytes_pattern_new(rz_new_copy(hp->length, hp->bytes), rz_new_copy(hp->length, hp->mask), hp->length, hp->pattern_desc);
+	return rz_search_bytes_pattern_new(rz_new_copy(hp->length, hp->bytes), rz_new_copy(hp->length, hp->mask), hp->length, hp->pattern_desc, hp->regex != NULL);
 }
 
 static bool parse_custom_mask(const char *bytes_pattern, const RzRegexMatch *mask_match, const RzRegexMatch *bytes_match, ut8 *mask) {
@@ -159,7 +166,7 @@ RZ_API RZ_OWN RzSearchBytesPattern *rz_search_parse_byte_pattern(const char *byt
 	free(byte_str);
 
 	rz_pvector_free(matches);
-	RzSearchBytesPattern *pat = rz_search_bytes_pattern_new(bytes, use_mask ? mask : NULL, size, pattern_desc);
+	RzSearchBytesPattern *pat = rz_search_bytes_pattern_new(bytes, use_mask ? mask : NULL, size, pattern_desc, false);
 	if (!use_mask) {
 		free(mask);
 	}
@@ -205,6 +212,23 @@ static bool bytes_find(RzSearchFindOpt *fopts, void *user, ut64 address, const R
 	RzPVector /*<BytesPattern *>*/ *patterns = (RzPVector *)user;
 	rz_pvector_foreach (patterns, it) {
 		RzSearchBytesPattern *hp = (RzSearchBytesPattern *)*it;
+		if (hp->regex) {
+			RzPVector *matches = rz_regex_match_all(hp->regex, (const char *)raw_buf, size, 0, RZ_REGEX_DEFAULT);
+			void **it;
+			RzPVector *match;
+			rz_pvector_foreach (matches, it) {
+				match = *it;
+				RzRegexMatch *group0 = rz_pvector_at(match, 0);
+				RzSearchHit *hit = rz_search_hit_new(hp->pattern_desc, group0->start, group0->len);
+				if (!hit || !rz_th_queue_push(hits, hit, true)) {
+					rz_search_hit_free(hit);
+					rz_pvector_free(matches);
+					return false;
+				}
+			}
+			rz_pvector_free(matches);
+			continue;
+		}
 		for (size_t offset = 0; offset < size;) {
 			size_t leftovers = size - offset;
 			if (hp->length > leftovers) {
@@ -298,7 +322,7 @@ RZ_API bool rz_search_collection_bytes_add(RZ_NONNULL RzSearchCollection *col, R
 		return false;
 	}
 
-	RzSearchBytesPattern *hp = rz_search_bytes_pattern_new(rz_new_copy(length, bytes), rz_new_copy(length, mask), length, pattern_desc);
+	RzSearchBytesPattern *hp = rz_search_bytes_pattern_new(rz_new_copy(length, bytes), rz_new_copy(length, mask), length, pattern_desc, false);
 	if (!hp) {
 		return false;
 	} else if (!rz_pvector_push((RzPVector *)col->user, hp)) {

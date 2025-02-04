@@ -41,6 +41,40 @@ ERROR: Failed to parse given pattern.
 EOF
 RUN
 
+NAME=Search hex bytes regex - errors
+FILE=bins/cmd/search/string_encodings/Chinese-Lipsum.utf32le
+CMDS=<<EOF
+/xr x8
+/xr x8ylllasl
+/xr yxxxx
+EOF
+EXPECT_ERR=<<EOF
+ERROR: 'x' in the pattern must be followed by two hexadecimal nibbles (N = [a-fA-F0-9]): xNN.
+ERROR: Bytes with non-hexadecimal nibbles are not allowed. Got: 'x8y'.
+ERROR: Bytes with non-hexadecimal nibbles are not allowed. Got: 'xxx'.
+EOF
+RUN
+
+NAME=Search hex bytes regex - matches
+FILE=bins/cmd/search/string_encodings/Chinese-Lipsum.utf32le
+CMDS=<<EOF
+e search.show_progress=false
+# Exact match
+/xr x08x54x00x00x31
+# None ASCII bytes
+/xr x8bx00x00xd0x63
+# Complex match
+/xr x72.?x00{2}
+EOF
+EXPECT=<<EOF
+0x00000000 5 hit.bytes.0
+0x00000039 5 hit.bytes.0
+0x0000000c 4 hit.bytes.0
+0x0000007c 4 hit.bytes.1
+0x00000195 3 hit.bytes.2
+EOF
+RUN
+
 NAME=Search hex byte search - normal search
 FILE=bins/cmd/search/hex_bytes
 CMDS=<<EOF

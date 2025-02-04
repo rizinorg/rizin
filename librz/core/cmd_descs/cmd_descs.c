@@ -19,6 +19,7 @@ static const RzCmdDescDetail cmd_search_hash_block_details[2];
 static const RzCmdDescDetail slash_v_details[2];
 static const RzCmdDescDetail slash_V_details[2];
 static const RzCmdDescDetail cmd_search_hex_details[2];
+static const RzCmdDescDetail cmd_search_hex_regex_details[2];
 static const RzCmdDescDetail slash_z_details[3];
 static const RzCmdDescDetail base64_encode_details[2];
 static const RzCmdDescDetail base64_decode_details[2];
@@ -159,6 +160,7 @@ static const RzCmdDescArg cmd_search_value_16be_args[3];
 static const RzCmdDescArg cmd_search_value_32be_args[3];
 static const RzCmdDescArg cmd_search_value_64be_args[3];
 static const RzCmdDescArg cmd_search_hex_args[2];
+static const RzCmdDescArg cmd_search_hex_regex_args[2];
 static const RzCmdDescArg cmd_search_string_sensitive_args[4];
 static const RzCmdDescArg remote_args[3];
 static const RzCmdDescArg remote_send_args[3];
@@ -2338,6 +2340,9 @@ static const RzCmdDescHelp cmd_search_value_64be_help = {
 	.args = cmd_search_value_64be_args,
 };
 
+static const RzCmdDescHelp slash_x_help = {
+	.summary = "Raw hexadecimal search.",
+};
 static const RzCmdDescDetailEntry cmd_search_hex_Usage_space_example_detail_entries[] = {
 	{ .text = "Hexadecimal search for the exact bytes 'ffcc33'.", .arg_str = NULL, .comment = "/x ffcc33" },
 	{ .text = "Hexadecimal search for the byte pattern 'ff..33.0.'. The '.' is a wildcard for 4bits.", .arg_str = NULL, .comment = "/x ff..33.0" },
@@ -2362,6 +2367,32 @@ static const RzCmdDescHelp cmd_search_hex_help = {
 	.summary = "Raw hexadecimal search.",
 	.details = cmd_search_hex_details,
 	.args = cmd_search_hex_args,
+};
+
+static const RzCmdDescDetailEntry cmd_search_hex_regex_Usage_space_examples_detail_entries[] = {
+	{ .text = " Bytes are prefixed with a 'x'. Search exact match '\\x99\\x0a'.", .arg_str = NULL, .comment = "/xr x99x0a" },
+	{ .text = "Search 2-8 NUL bytes, then '\\x99' and '\\x0a'", .arg_str = NULL, .comment = "/xr x00{2,8}x99x0a" },
+	{ .text = "A '.' matches one byte. Search matches: '\\x72\\xNN\\x00'. '\\xNN' can appear 0-1 times.", .arg_str = NULL, .comment = "/xr x72.?x00" },
+	{ .text = "Using simple ASCII is allowed. Search matches: '\\x61\\x41'", .arg_str = NULL, .comment = "/xr aA" },
+	{ 0 },
+};
+static const RzCmdDescDetail cmd_search_hex_regex_details[] = {
+	{ .name = "Usage examples", .entries = cmd_search_hex_regex_Usage_space_examples_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg cmd_search_hex_regex_args[] = {
+	{
+		.name = "regex_pattern",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_search_hex_regex_help = {
+	.summary = "Regex bytes search.",
+	.details = cmd_search_hex_regex_details,
+	.args = cmd_search_hex_regex_args,
 };
 
 static const RzCmdDescDetailEntry slash_z_Encodings_detail_entries[] = {
@@ -21017,9 +21048,12 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(cmd_search_value_64be_cd);
 	rz_cmd_desc_set_default_mode(cmd_search_value_64be_cd, RZ_OUTPUT_MODE_STANDARD);
 
-	RzCmdDesc *cmd_search_hex_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash__cd, "/x", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_hex_handler, &cmd_search_hex_help);
-	rz_warn_if_fail(cmd_search_hex_cd);
-	rz_cmd_desc_set_default_mode(cmd_search_hex_cd, RZ_OUTPUT_MODE_STANDARD);
+	RzCmdDesc *slash_x_cd = rz_cmd_desc_group_state_new(core->rcmd, slash__cd, "/x", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_hex_handler, &cmd_search_hex_help, &slash_x_help);
+	rz_warn_if_fail(slash_x_cd);
+	rz_cmd_desc_set_default_mode(slash_x_cd, RZ_OUTPUT_MODE_STANDARD);
+	RzCmdDesc *cmd_search_hex_regex_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_x_cd, "/xr", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_hex_regex_handler, &cmd_search_hex_regex_help);
+	rz_warn_if_fail(cmd_search_hex_regex_cd);
+	rz_cmd_desc_set_default_mode(cmd_search_hex_regex_cd, RZ_OUTPUT_MODE_STANDARD);
 
 	RzCmdDesc *slash_z_cd = rz_cmd_desc_group_state_new(core->rcmd, slash__cd, "/z", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_string_sensitive_handler, &cmd_search_string_sensitive_help, &slash_z_help);
 	rz_warn_if_fail(slash_z_cd);
