@@ -5,6 +5,7 @@
 #define RZ_H8300_DISAS_H
 
 #include <stdint.h>
+#include <rz_analysis.h>
 
 enum h8300_4bit_opcodes {
 	H8300_MOV_4BIT_2 = 0x2,
@@ -128,6 +129,7 @@ struct h8300_cmd {
 	char operands[H8300_INSTR_MAXLEN];
 };
 
+int h8300_analyze_op_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf);
 int h8300_decode_command(const ut8 *instr, struct h8300_cmd *cmd);
 
 #endif /* H8300_DISAS_H */
