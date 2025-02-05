@@ -413,6 +413,9 @@ static char *getstring(char *b, int l) {
 	for (i = 0, r = res; i < l; b++, i++) {
 		if (IS_PRINTABLE(*b)) {
 			*r++ = *b;
+		} else {
+			// This is very ASCII-centric
+			*r++ = '.';
 		}
 	}
 	*r = 0;
@@ -456,7 +459,7 @@ static int _cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 				s = rz_str_newf("%s%s%s", pre, wrd, pos);
 			} else {
 				wrd = rz_str_utf16_encode(buf + prectx, len);
-				s = rz_str_newf(use_color ? ".%s" Color_YELLOW "%s" Color_RESET "%s."
+				s = rz_str_newf(use_color ? "\"%s" Color_YELLOW "%s" Color_RESET "%s\""
 							  : "\"%s%s%s\"",
 					pre, wrd, pos);
 			}

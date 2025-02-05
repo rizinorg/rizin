@@ -126,7 +126,7 @@ NAME=/j escaped
 FILE=bins/mach0/escaped
 CMDS=/j hello
 EXPECT=<<EOF
-[{"offset":8019,"type":"string","data":"]c:\\hello\\worldM"}]
+[{"offset":8019,"type":"string","data":"....]........c:\\hello\\world..M......."}]
 EOF
 RUN
 
@@ -141,7 +141,7 @@ e search.to=0x00000050
 / ELF
 EOF
 EXPECT=<<EOF
-0x00000001 hit0_0 "ELF"
+0x00000001 hit0_0 ".ELF................"
 EOF
 RUN
 
@@ -157,7 +157,7 @@ e search.to=0x50
 / ELF
 EOF
 EXPECT=<<EOF
-0x00000001 hit0_0 "ELF"
+0x00000001 hit0_0 ".ELF................"
 EOF
 RUN
 
@@ -168,7 +168,7 @@ wx 666f6f005c
 /j foo
 EOF
 EXPECT=<<EOF
-[{"offset":0,"type":"string","data":"foo\\"}]
+[{"offset":0,"type":"string","data":"foo.\\.............."}]
 EOF
 RUN
 
@@ -179,7 +179,7 @@ wx 666f6f00
 /! ff
 EOF
 EXPECT=<<EOF
-0x00000000 hit0_0 "foo"
+0x00000000 hit0_0 "foo..............."
 EOF
 RUN
 

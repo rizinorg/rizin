@@ -10,8 +10,8 @@ b 777
 EOF
 EXPECT=<<EOF
 
-0x00000000 hit0_0 "test"
-0x000001bc hit0_1 "Test"
+0x00000000 hit0_0 "test................"
+0x000001bc hit0_1 "................Test................"
 EOF
 RUN
 
@@ -40,8 +40,8 @@ b 777
 EOF
 EXPECT=<<EOF
 
-0x00000001 hit0_0 ""test123 ab""
-0x000001bd hit0_1 ""Test123 ab""
+0x00000001 hit0_0 ""test123 ab"..............."
+0x000001bd hit0_1 "..............."Test123 ab"..............."
 EOF
 RUN
 
@@ -64,16 +64,16 @@ echo -- 5 --
 EOF
 EXPECT=<<EOF
 -- 1 --
-0x00000001 hit0_0 .a[33mbcd[0mbccc.
-0x00000010 hit0_1 .abcd[33mbcccd[0me.
+0x00000001 hit0_0 "a[33mbcd[0m............bccc"
+0x00000010 hit0_1 "abcd............[33mbcccd[0me..............."
 -- 2 --
 -- 3 --
-0x00000001 hit2_0 .a[33mbcd[0mbccc.
-0x00000010 hit2_1 .abcd[33mbcccd[0me.
+0x00000001 hit2_0 "a[33mbcd[0m............bccc"
+0x00000010 hit2_1 "abcd............[33mbcccd[0me..............."
 -- 4 --
-0x00000001 hit3_0 .a[33mbcd[0mbccc.
+0x00000001 hit3_0 "a[33mbcd[0m............bccc"
 -- 5 --
-0x00000010 hit4_0 .abcd[33mbcccd[0me.
+0x00000010 hit4_0 "abcd............[33mbcccd[0me..............."
 EOF
 EXPECT_ERR=<<EOF
 Searching in [0x0,0x200)
@@ -101,10 +101,10 @@ echo ----
 /e /b.*d$/
 EOF
 EXPECT=<<EOF
-0x000000fe hit0_0 .[33mbcccd[0me.
-0x000001fe hit0_1 .[33mbd[0m.
+0x000000fe hit0_0 "................[33mbcccd[0me..............."
+0x000001fe hit0_1 "................[33mbd[0m................"
 ----
-0x000001fe hit1_0 .[33mbd[0m.
+0x000001fe hit1_0 "................[33mbd[0m................"
 EOF
 EXPECT_ERR=<<EOF
 Searching in [0x0,0x200)
@@ -123,23 +123,23 @@ echo ----
 /e /lib/
 EOF
 EXPECT=<<EOF
-0x00400239 hit0_0 ./[33mlib[0m64/ld-linux-x86-.
-0x00400f19 hit0_1 .a[33mlib[0mselinux.so.1_IT.
-0x00400fae hit0_2 .etfilecon_fini[33mlib[0macl.so.1acl_get.
-0x00400feb hit0_3 .l_extended_file[33mlib[0mc.so.6fflushst.
-0x004013c3 hit0_4 .cmptcgetpgrp__[33mlib[0mc_start_maindir.
-0x0041769a hit0_5 .system call./.[33mlib[0ms/lt-.
-0x004186e0 hit0_6 .emory exhausted[33mlib[0m/xstrtol.c0 <.
-0x00418e58 hit0_7 .xstrtoumax/usr/[33mlib[0mASCIICHARSETAL.
+0x00400239 hit0_0 ".............../[33mlib[0m64/ld-linux-x86-"
+0x00400f19 hit0_1 ".a..............[33mlib[0mselinux.so.1._IT"
+0x00400fae hit0_2 "etfilecon._fini.[33mlib[0macl.so.1.acl_get"
+0x00400feb hit0_3 "l_extended_file.[33mlib[0mc.so.6.fflush.st"
+0x004013c3 hit0_4 "cmp.tcgetpgrp.__[33mlib[0mc_start_main.dir"
+0x0041769a hit0_5 "system call.../.[33mlib[0ms/.lt-.........."
+0x004186e0 hit0_6 "emory exhausted.[33mlib[0m/xstrtol.c...0 <"
+0x00418e58 hit0_7 "xstrtoumax./usr/[33mlib[0m.ASCII.CHARSETAL"
 ----
-0x00400239 hit1_0 ./[33mlib[0m64/ld-linux-x86-.
-0x00400f19 hit1_1 .a[33mlib[0mselinux.so.1_IT.
-0x00400fae hit1_2 .etfilecon_fini[33mlib[0macl.so.1acl_get.
-0x00400feb hit1_3 .l_extended_file[33mlib[0mc.so.6fflushst.
-0x004013c3 hit1_4 .cmptcgetpgrp__[33mlib[0mc_start_maindir.
-0x0041769a hit1_5 .system call./.[33mlib[0ms/lt-.
-0x004186e0 hit1_6 .emory exhausted[33mlib[0m/xstrtol.c0 <.
-0x00418e58 hit1_7 .xstrtoumax/usr/[33mlib[0mASCIICHARSETAL.
+0x00400239 hit1_0 ".............../[33mlib[0m64/ld-linux-x86-"
+0x00400f19 hit1_1 ".a..............[33mlib[0mselinux.so.1._IT"
+0x00400fae hit1_2 "etfilecon._fini.[33mlib[0macl.so.1.acl_get"
+0x00400feb hit1_3 "l_extended_file.[33mlib[0mc.so.6.fflush.st"
+0x004013c3 hit1_4 "cmp.tcgetpgrp.__[33mlib[0mc_start_main.dir"
+0x0041769a hit1_5 "system call.../.[33mlib[0ms/.lt-.........."
+0x004186e0 hit1_6 "emory exhausted.[33mlib[0m/xstrtol.c...0 <"
+0x00418e58 hit1_7 "xstrtoumax./usr/[33mlib[0m.ASCII.CHARSETAL"
 EOF
 EXPECT_ERR=<<EOF
 Searching 3 bytes in [0x61d368,0x61d720)

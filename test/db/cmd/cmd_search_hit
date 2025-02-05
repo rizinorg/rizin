@@ -20,7 +20,7 @@ ps @@/j hello
 EOF
 EXPECT=<<EOF
 hello
-[{"offset":10,"type":"string","data":"hello"}]
+[{"offset":10,"type":"string","data":"..........hello................"}]
 EOF
 RUN
 
@@ -42,7 +42,7 @@ wx 0067
 /j g
 EOF
 EXPECT=<<EOF
-[{"offset":1,"type":"string","data":"g"}]
+[{"offset":1,"type":"string","data":".g................"}]
 EOF
 RUN
 
@@ -69,7 +69,7 @@ wx 33 @@/ A
 p8 1 @ 10
 EOF
 EXPECT=<<EOF
-0x0000000a hit0_0 "A"
+0x0000000a hit0_0 "..........A................"
 33
 EOF
 RUN
@@ -110,7 +110,7 @@ w AAAAAAAAAAB
 /! A
 EOF
 EXPECT=<<EOF
-0x0000000a hit0_0 "AAAAAAAAAAB"
+0x0000000a hit0_0 "AAAAAAAAAAB................"
 42
 EOF
 RUN
@@ -137,9 +137,9 @@ w AAAAAAAAAAB
 //
 EOF
 EXPECT=<<EOF
-0x0000000a hit0_0 "AAAAAAAAAAB"
+0x0000000a hit0_0 "AAAAAAAAAAB................"
 42
-0x0000000a hit1_0 "AAAAAAAAAAB"
+0x0000000a hit1_0 "AAAAAAAAAAB................"
 42
 EOF
 RUN
@@ -273,7 +273,7 @@ w AAAAAAAAAAB
 /i aaaaaaaaaab
 EOF
 EXPECT=<<EOF
-0x00000000 hit0_0 "AAAAAAAAAAB"
+0x00000000 hit0_0 "AAAAAAAAAAB................"
 AAAAAAAAAAB
 EOF
 RUN
