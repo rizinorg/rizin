@@ -2163,7 +2163,7 @@ RZ_IPI RzCmdStatus rz_print_strings_current_block_handler(RzCore *core, int argc
 	RzDetectedString *detected = NULL;
 	RzBin *bin = core->bin;
 	RzUtilStrScanOptions scan_opt = {
-		.buf_size = core->blocksize,
+		.max_str_length = core->blocksize,
 		.max_uni_blocks = bin->str_search_cfg.max_uni_blocks,
 		.min_str_length = bin->str_search_cfg.min_length,
 		.prefer_big_endian = false,
@@ -2198,7 +2198,7 @@ RZ_IPI RzCmdStatus rz_print_first_string_current_block_handler(RzCore *core, int
 	RzDetectedString *detected = NULL;
 	RzBin *bin = core->bin;
 	RzUtilStrScanOptions scan_opt = {
-		.buf_size = core->blocksize,
+		.max_str_length = core->blocksize,
 		.max_uni_blocks = bin->str_search_cfg.max_uni_blocks,
 		.min_str_length = bin->str_search_cfg.min_length,
 		.prefer_big_endian = false,

@@ -203,7 +203,7 @@ typedef enum {
 typedef struct rz_bin_string_search_opt_t {
 	RzThreadNCores max_threads; ///< Maximum thread number (normally set to RZ_THREAD_N_CORES_ALL_AVAILABLE).
 	size_t min_length; ///< Smallest string length that is possible to find.
-	size_t buffer_size; ///< Maximum buffer size, which will also determine the maximum string length.
+	size_t max_length; ///< Maximum buffer size, which will also determine the maximum string length.
 	size_t max_uni_blocks; ///< Maximum number of unicode blocks
 	size_t max_region_size; ///< Maximum allowable size for the search interval between two memory regions.
 	size_t raw_alignment; ///< Memory sector alignment used for the raw string search.

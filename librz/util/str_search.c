@@ -210,7 +210,7 @@ static ut64 adjust_offset(RzStrEnc str_type, const ut8 *buf, const ut64 str_star
 }
 
 static inline size_t buf_look_ahead(const RzUtilStrScanOptions *opt, RzStrEnc enc) {
-	if (opt->buf_size < opt->min_str_length) {
+	if (opt->max_str_length < opt->min_str_length) {
 		return 0;
 	}
 	switch (enc) {
@@ -234,7 +234,7 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 		return NULL;
 	}
 
-	ut8 *strbuf = RZ_NEWS0(ut8, opt->buf_size);
+	ut8 *strbuf = RZ_NEWS0(ut8, opt->max_str_length);
 	if (!strbuf) {
 		goto error;
 	}
@@ -243,7 +243,7 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 	int rc = 0, i = 0, runes = 0;
 
 	/* Eat a whole C string */
-	for (i = 0; i < opt->buf_size - look_ahead && needle < to; i += rc) {
+	for (i = 0; i < opt->max_str_length - look_ahead && needle < to; i += rc) {
 		RzCodePoint r = 0;
 
 		switch(str_type) {
@@ -308,7 +308,7 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 			rc = rz_utf8_encode(strbuf + i, r);
 			runes++;
 		} else if (r && r < 0x100 && is_c_escape_sequence((char)r)) {
-			if ((i + 32) < opt->buf_size && r < 93) {
+			if ((i + 32) < opt->max_str_length && r < 93) {
 				rc = rz_utf8_encode(strbuf + i, r);
 			} else {
 				// String too long

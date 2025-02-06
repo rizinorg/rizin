@@ -1138,8 +1138,8 @@ static bool cb_search_str_min_length(void *user, void *data) {
 	if (node->i_value < 1) {
 		RZ_LOG_ERROR("search.str.min_length cannot be less than 1.\n");
 		return false;
-	} else if (node->i_value >= core->bin->str_search_cfg.buffer_size) {
-		RZ_LOG_ERROR("search.str.buffer_size cannot be greater or equal to %" PFMTSZu ".\n", core->bin->str_search_cfg.buffer_size);
+	} else if (node->i_value >= core->bin->str_search_cfg.max_length) {
+		RZ_LOG_ERROR("search.str.max_length cannot be greater or equal to %" PFMTSZu ".\n", core->bin->str_search_cfg.max_length);
 		return false;
 	}
 
@@ -1153,17 +1153,17 @@ static bool cb_search_str_min_length(void *user, void *data) {
 	return true;
 }
 
-static bool cb_search_str_buffer_size(void *user, void *data) {
+static bool cb_search_str_max_length(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 
 	size_t min_buffer_size = RZ_MIN(core->bin->str_search_cfg.min_length, RZ_BIN_STRING_SEARCH_BUFFER_SIZE);
 	if (node->i_value < min_buffer_size) {
-		RZ_LOG_ERROR("search.str.buffer_size cannot be less than %" PFMTSZu ".\n", min_buffer_size);
+		RZ_LOG_ERROR("search.str.max_length cannot be less than %" PFMTSZu ".\n", min_buffer_size);
 		return false;
 	}
 
-	core->bin->str_search_cfg.buffer_size = node->i_value;
+	core->bin->str_search_cfg.max_length = node->i_value;
 	if (core->bin && rz_config_get_b(core->config, "str.search.reload")) {
 		RzBinFile *bf = rz_bin_cur(core->bin);
 		if (bf && bf->o) {
@@ -3789,7 +3789,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("search.overlap", "true", "Look for overlapped search hits.");
 	SETICB("search.io.alignment", 1, &cb_searchalignment, "Only search at set byte alignment.");
 	SETICB("search.str.min_length", RZ_BIN_STRING_SEARCH_MIN_STRING, &cb_search_str_min_length, "Smallest string length that is possible to find.");
-	SETICB("search.str.buffer_size", RZ_BIN_STRING_SEARCH_BUFFER_SIZE, &cb_search_str_buffer_size, "Maximum buffer size, which will also determine the maximum string length.");
+	SETICB("search.str.max_length", RZ_BIN_STRING_SEARCH_BUFFER_SIZE, &cb_search_str_max_length, "Maximum buffer size, which will also determine the maximum string length.");
 	SETICB("search.str.max_uni_blocks", RZ_BIN_STRING_SEARCH_MAX_UNI_BLOCKS, &cb_search_str_max_uni_blocks, "Maximum number of unicode blocks.");
 	SETICB("search.str.max_region_size", RZ_BIN_STRING_SEARCH_MAX_REGION_SIZE, &cb_search_str_max_region_size, "Maximum allowable size for the string search interval between two memory regions.");
 	SETICB("search.str.raw_alignment", RZ_BIN_STRING_SEARCH_RAW_FILE_ALIGNMENT, &cb_search_str_raw_alignment, "Memory sector alignment used for the raw string search.");

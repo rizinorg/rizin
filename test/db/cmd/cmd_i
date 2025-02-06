@@ -3224,7 +3224,7 @@ echo -- geq 0 --
 e search.str.min_length=1
 iz
 echo -- small buffer 12 --
-e search.str.buffer_size=13
+e search.str.max_length=13
 iz
 EOF
 EXPECT=<<EOF
@@ -5063,7 +5063,7 @@ FILE=malloc://8192
 CMDS=<<EOF
 wD 6140
 px
-e search.str.buffer_size=8000
+e search.str.max_length=8000
 iz
 EOF
 EXPECT=<<EOF

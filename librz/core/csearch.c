@@ -176,8 +176,8 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_string(RZ_NONNULL RzCor
 		RZ_LOG_ERROR("core: invalid string: empty string.\n");
 		return NULL;
 	}
-	if (strlen(re_pattern) >= core->bin->str_search_cfg.buffer_size) {
-		RZ_LOG_ERROR("core: String to search is larger then search.str.buffer_size.\n");
+	if (strlen(re_pattern) >= core->bin->str_search_cfg.max_length) {
+		RZ_LOG_ERROR("core: String to search is larger then search.str.max_length.\n");
 		return NULL;
 	}
 
@@ -185,7 +185,7 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_string(RZ_NONNULL RzCor
 	RzUtilStrScanOptions scan_opt = {
 		// buf_size is effectively the maximum string length.
 		// Gets renamed with the refactor.
-		.buf_size = core->bin->str_search_cfg.buffer_size,
+		.max_str_length = core->bin->str_search_cfg.max_length,
 		.max_uni_blocks = core->bin->str_search_cfg.max_uni_blocks,
 		.min_str_length = core->bin->str_search_cfg.min_length,
 		.prefer_big_endian = core->analysis->big_endian,
@@ -208,7 +208,7 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_string(RZ_NONNULL RzCor
 		RZ_LOG_ERROR("core: Setting up search from core failed.\n");
 		goto quit;
 	}
-	if (!rz_search_opt_set_elemet_size(user_opts ? user_opts : search_opts, scan_opt.buf_size)) {
+	if (!rz_search_opt_set_elemet_size(user_opts ? user_opts : search_opts, scan_opt.max_str_length)) {
 		RZ_LOG_ERROR("search: Failed to update chunk size in the search options.\n");
 		goto quit;
 	}

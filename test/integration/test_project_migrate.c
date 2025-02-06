@@ -594,7 +594,7 @@ static bool test_migrate_v18_v19_str_config() {
 	mu_assert_null(sdb_get(config_db, "str.search.encoding"), "Old config still there");
 	mu_assert_streq_free(sdb_get(config_db, "search.max_threads"), "5", "New config has wrong value");
 	mu_assert_streq_free(sdb_get(config_db, "search.str.min_length"), "5", "New config has wrong value");
-	mu_assert_streq_free(sdb_get(config_db, "search.str.buffer_size"), "5", "New config has wrong value");
+	mu_assert_streq_free(sdb_get(config_db, "search.str.max_length"), "5", "New config has wrong value");
 	mu_assert_streq_free(sdb_get(config_db, "search.str.max_uni_blocks"), "5", "New config has wrong value");
 	mu_assert_streq_free(sdb_get(config_db, "search.str.max_region_size"), "0x005555555", "New config has wrong value");
 	mu_assert_streq_free(sdb_get(config_db, "search.str.raw_alignment"), "55", "New config has wrong value");
@@ -1014,7 +1014,7 @@ static bool test_load_v15_19_str_config() {
 	BEGIN_LOAD_TEST(core, 15, "prj/v15-str-config.rzdb");
 	mu_assert_eq(rz_config_get_i(core->config, "search.str.min_length"), 6, "search.str.min_length");
 	mu_assert_streq(rz_config_get(core->config, "search.str.encoding"), "utf8", "search.str.encoding");
-	mu_assert_eq(rz_config_get_i(core->config, "search.str.buffer_size"), 0x00b00123, "search.str.buffer_size");
+	mu_assert_eq(rz_config_get_i(core->config, "search.str.max_length"), 0x00b00123, "search.str.max_length");
 	rz_core_free(core);
 	mu_end;
 }

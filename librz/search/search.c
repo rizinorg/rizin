@@ -80,7 +80,7 @@ RZ_API int rz_search_strings_update(RzSearch *s, ut64 from, const ut8 *buf, int 
 	rz_return_val_if_fail(s && buf && len, -1);
 
 	RzUtilStrScanOptions scan_opt = {
-		.buf_size = len,
+		.max_str_length = len,
 		.max_uni_blocks = s->string_max,
 		.min_str_length = s->string_min,
 		.prefer_big_endian = false,
