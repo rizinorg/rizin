@@ -66,6 +66,8 @@ CMDS=<<EOF
 e search.show_progress=false
 e search.str.min_length=2
 /z "et" d ascii
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 ps @ hit.string.ascii.0
 ps @ hit.string.ascii.1
@@ -105,6 +107,8 @@ FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ascii
 CMDS=<<EOF
 e search.show_progress=false
 /z "Lorem ipsum dolor sit amet, at eligendi adipisci ius, ex natum appetere officiis has, nibh quas torquatos pro te. Quo at deleniti repudiandae, et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et." d ascii
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 ps @ hit.string.ascii.0
 EOF
@@ -134,6 +138,8 @@ FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ascii
 CMDS=<<EOF
 e search.show_progress=false
 /z "placerat ut, eu etiam vitae nam" d ascii
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 ps @ hit.string.ascii.0
 EOF
@@ -149,6 +155,8 @@ FILE=bins/cmd/search/string_encodings/Arabic-Lipsum.utf8
 CMDS=<<EOF
 e search.show_progress=false
 /z "ا الأوضاع, لم بوابة المب" d utf8
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 ps @ hit.string.utf8.0
 EOF
@@ -164,6 +172,8 @@ FILE=bins/cmd/search/string_encodings/Armenian-Lipsum.utf8
 CMDS=<<EOF
 e search.show_progress=false
 /z "դեֆինիթիոնես ին վիս, ծասե պեռթինա" d utf8
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 ps @ hit.string.utf8.0
 EOF
@@ -179,6 +189,8 @@ FILE=bins/cmd/search/string_encodings/Chinese-Lipsum.utf8
 CMDS=<<EOF
 e search.show_progress=false
 /z "京確年禁読応米新報書了号活修佐。" d utf8
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 ps @ hit.string.utf8.0
 EOF
@@ -194,6 +206,8 @@ FILE=bins/cmd/search/string_encodings/Georgian-Lipsum.utf8
 CMDS=<<EOF
 e search.show_progress=false
 /z "რე, იუს ეა უთინამ დელიცათისსიმი. მელ ფერსეყუერის ლ" d utf8
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 ps @ hit.string.utf8.0
 EOF
@@ -209,6 +223,8 @@ FILE=bins/cmd/search/string_encodings/Greek-Lipsum.utf8
 CMDS=<<EOF
 e search.show_progress=false
 /z "παρτεμ ποσιδονιθμ ατ. Ετ πρι περιcθλισ σπλενδιδε" d utf8
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 ps @ hit.string.utf8.0
 EOF
@@ -224,6 +240,8 @@ FILE=bins/cmd/search/string_encodings/Hebrew-Lipsum.utf8
 CMDS=<<EOF
 e search.show_progress=false
 /z "ים משחקים ממונרכיה" d utf8
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 ps @ hit.string.utf8.0
 EOF
@@ -239,6 +257,8 @@ FILE=bins/cmd/search/string_encodings/Hindi-Lipsum.utf8
 CMDS=<<EOF
 e search.show_progress=false
 /z "पहोचने वैश्विक एसलिये पुस्तक हुआआदी" d utf8
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 ps @ hit.string.utf8.0
 EOF
@@ -254,6 +274,8 @@ FILE=bins/cmd/search/string_encodings/Korean2-Lipsum.utf8
 CMDS=<<EOF
 e search.show_progress=false
 /z "생의 과실이 있으며." d utf8
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 ps @ hit.string.utf8.0
 EOF
@@ -269,6 +291,8 @@ FILE=bins/cmd/search/string_encodings/Morsecode-Lipsum.utf8
 CMDS=<<EOF
 e search.show_progress=false
 /z " ·--· ·---- ··· - ···· --" d utf8
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 ps @ hit.string.utf8.0
 EOF
@@ -284,6 +308,8 @@ FILE=bins/cmd/search/string_encodings/Russian-Lipsum.utf8
 CMDS=<<EOF
 e search.show_progress=false
 /z "тани ад. Цум хендрерит перс" d utf8
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 ps @ hit.string.utf8.0
 EOF
@@ -299,6 +325,8 @@ FILE=bins/cmd/search/string_encodings/Arabic-Lipsum.utf16be
 CMDS=<<EOF
 e search.show_progress=false
 /z "ا الأوضاع, لم بوابة المب" d utf16be
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 psm @ hit.string.utf16be.0
 EOF
@@ -314,6 +342,8 @@ FILE=bins/cmd/search/string_encodings/Armenian-Lipsum.utf16be
 CMDS=<<EOF
 e search.show_progress=false
 /z "դեֆինիթիոնես ին վիս, ծասե պեռթինա" d utf16be
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 psm @ hit.string.utf16be.0
 EOF
@@ -329,6 +359,8 @@ FILE=bins/cmd/search/string_encodings/Chinese-Lipsum.utf16be
 CMDS=<<EOF
 e search.show_progress=false
 /z "京確年禁読応米新報書了号活修佐。" d utf16be
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 psm @ hit.string.utf16be.0
 EOF
@@ -344,6 +376,8 @@ FILE=bins/cmd/search/string_encodings/Georgian-Lipsum.utf16be
 CMDS=<<EOF
 e search.show_progress=false
 /z "რე, იუს ეა უთინამ დელიცათისსიმი. მელ ფერსეყუერის ლ" d utf16be
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 psm @ hit.string.utf16be.0
 EOF
@@ -359,6 +393,8 @@ FILE=bins/cmd/search/string_encodings/Greek-Lipsum.utf16be
 CMDS=<<EOF
 e search.show_progress=false
 /z "παρτεμ ποσιδονιθμ ατ. Ετ πρι περιcθλισ σπλενδιδε" d utf16be
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 psm @ hit.string.utf16be.0
 EOF
@@ -374,6 +410,8 @@ FILE=bins/cmd/search/string_encodings/Hebrew-Lipsum.utf16be
 CMDS=<<EOF
 e search.show_progress=false
 /z "ים משחקים ממונרכיה" d utf16be
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 psm @ hit.string.utf16be.0
 EOF
@@ -389,6 +427,8 @@ FILE=bins/cmd/search/string_encodings/Hindi-Lipsum.utf16be
 CMDS=<<EOF
 e search.show_progress=false
 /z "पहोचने वैश्विक एसलिये पुस्तक हुआआदी" d utf16be
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 psm @ hit.string.utf16be.0
 EOF
@@ -404,6 +444,8 @@ FILE=bins/cmd/search/string_encodings/Korean2-Lipsum.utf16be
 CMDS=<<EOF
 e search.show_progress=false
 /z "생의 과실이 있으며." d utf16be
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 psm @ hit.string.utf16be.0
 EOF
@@ -419,6 +461,8 @@ FILE=bins/cmd/search/string_encodings/Morsecode-Lipsum.utf16be
 CMDS=<<EOF
 e search.show_progress=false
 /z " ·--· ·---- ··· - ···· --" d utf16be
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 psm @ hit.string.utf16be.0
 EOF
@@ -434,6 +478,8 @@ FILE=bins/cmd/search/string_encodings/Russian-Lipsum.utf16be
 CMDS=<<EOF
 e search.show_progress=false
 /z "тани ад. Цум хендрерит перс" d utf16be
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 psm @ hit.string.utf16be.0
 EOF
@@ -449,6 +495,8 @@ FILE=bins/cmd/search/string_encodings/Arabic-Lipsum.utf16le
 CMDS=<<EOF
 e search.show_progress=false
 /z "ا الأوضاع, لم بوابة المب" d utf16le
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 # ps @ hit.string.utf16le.0
 EOF
@@ -463,6 +511,8 @@ FILE=bins/cmd/search/string_encodings/Armenian-Lipsum.utf16le
 CMDS=<<EOF
 e search.show_progress=false
 /z "դեֆինիթիոնես ին վիս, ծասե պեռթինա" d utf16le
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 psw @ hit.string.utf16le.0
 EOF
@@ -478,6 +528,8 @@ FILE=bins/cmd/search/string_encodings/Chinese-Lipsum.utf16le
 CMDS=<<EOF
 e search.show_progress=false
 /z "京確年禁読応米新報書了号活修佐。" d utf16le
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 psw @ hit.string.utf16le.0
 EOF
@@ -493,6 +545,8 @@ FILE=bins/cmd/search/string_encodings/Georgian-Lipsum.utf16le
 CMDS=<<EOF
 e search.show_progress=false
 /z "რე, იუს ეა უთინამ დელიცათისსიმი. მელ ფერსეყუერის ლ" d utf16le
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 psw @ hit.string.utf16le.0
 EOF
@@ -508,6 +562,8 @@ FILE=bins/cmd/search/string_encodings/Greek-Lipsum.utf16le
 CMDS=<<EOF
 e search.show_progress=false
 /z "παρτεμ ποσιδονιθμ ατ. Ετ πρι περιcθλισ σπλενδιδε" d utf16le
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 psw @ hit.string.utf16le.0
 EOF
@@ -523,6 +579,8 @@ FILE=bins/cmd/search/string_encodings/Hebrew-Lipsum.utf16le
 CMDS=<<EOF
 e search.show_progress=false
 /z "ים משחקים ממונרכיה" d utf16le
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 psw @ hit.string.utf16le.0
 EOF
@@ -538,6 +596,8 @@ FILE=bins/cmd/search/string_encodings/Hindi-Lipsum.utf16le
 CMDS=<<EOF
 e search.show_progress=false
 /z "पहोचने वैश्विक एसलिये पुस्तक हुआआदी" d utf16le
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 psw @ hit.string.utf16le.0
 EOF
@@ -553,6 +613,8 @@ FILE=bins/cmd/search/string_encodings/Korean2-Lipsum.utf16le
 CMDS=<<EOF
 e search.show_progress=false
 /z "생의 과실이 있으며." d utf16le
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 psw @ hit.string.utf16le.0
 EOF
@@ -568,6 +630,8 @@ FILE=bins/cmd/search/string_encodings/Morsecode-Lipsum.utf16le
 CMDS=<<EOF
 e search.show_progress=false
 /z " ·--· ·---- ··· - ···· --" d utf16le
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 psw @ hit.string.utf16le.0
 EOF
@@ -583,6 +647,8 @@ FILE=bins/cmd/search/string_encodings/Russian-Lipsum.utf16le
 CMDS=<<EOF
 e search.show_progress=false
 /z "тани ад. Цум хендрерит перс" d utf16le
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 psw @ hit.string.utf16le.0
 EOF
@@ -598,6 +664,8 @@ FILE=bins/cmd/search/string_encodings/Arabic-Lipsum.utf32be
 CMDS=<<EOF
 e search.show_progress=false
 /z "ا الأوضاع, لم بوابة المب" d utf32be
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 psM @ hit.string.utf32be.0
 EOF
@@ -613,6 +681,8 @@ FILE=bins/cmd/search/string_encodings/Armenian-Lipsum.utf32be
 CMDS=<<EOF
 e search.show_progress=false
 /z "դեֆինիթիոնես ին վիս, ծասե պեռթինա" d utf32be
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 psM @ hit.string.utf32be.0
 EOF
@@ -628,6 +698,8 @@ FILE=bins/cmd/search/string_encodings/Chinese-Lipsum.utf32be
 CMDS=<<EOF
 e search.show_progress=false
 /z "京確年禁読応米新報書了号活修佐。" d utf32be
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 psM @ hit.string.utf32be.0
 EOF
@@ -643,6 +715,8 @@ FILE=bins/cmd/search/string_encodings/Georgian-Lipsum.utf32be
 CMDS=<<EOF
 e search.show_progress=false
 /z "რე, იუს ეა უთინამ დელიცათისსიმი. მელ ფერსეყუერის ლ" d utf32be
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 psM @ hit.string.utf32be.0
 EOF
@@ -658,6 +732,8 @@ FILE=bins/cmd/search/string_encodings/Greek-Lipsum.utf32be
 CMDS=<<EOF
 e search.show_progress=false
 /z "παρτεμ ποσιδονιθμ ατ. Ετ πρι περιcθλισ σπλενδιδε" d utf32be
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 psM @ hit.string.utf32be.0
 EOF
@@ -673,6 +749,8 @@ FILE=bins/cmd/search/string_encodings/Hebrew-Lipsum.utf32be
 CMDS=<<EOF
 e search.show_progress=false
 /z "ים משחקים ממונרכיה" d utf32be
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 psM @ hit.string.utf32be.0
 EOF
@@ -688,6 +766,8 @@ FILE=bins/cmd/search/string_encodings/Hindi-Lipsum.utf32be
 CMDS=<<EOF
 e search.show_progress=false
 /z "पहोचने वैश्विक एसलिये पुस्तक हुआआदी" d utf32be
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 psM @ hit.string.utf32be.0
 EOF
@@ -703,6 +783,8 @@ FILE=bins/cmd/search/string_encodings/Korean2-Lipsum.utf32be
 CMDS=<<EOF
 e search.show_progress=false
 /z "생의 과실이 있으며." d utf32be
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 psM @ hit.string.utf32be.0
 EOF
@@ -718,6 +800,8 @@ FILE=bins/cmd/search/string_encodings/Morsecode-Lipsum.utf32be
 CMDS=<<EOF
 e search.show_progress=false
 /z " ·--· ·---- ··· - ···· --" d utf32be
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 psM @ hit.string.utf32be.0
 EOF
@@ -733,6 +817,8 @@ FILE=bins/cmd/search/string_encodings/Russian-Lipsum.utf32be
 CMDS=<<EOF
 e search.show_progress=false
 /z "тани ад. Цум хендрерит перс" d utf32be
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 psM @ hit.string.utf32be.0
 EOF
@@ -748,6 +834,8 @@ FILE=bins/cmd/search/string_encodings/Arabic-Lipsum.utf32le
 CMDS=<<EOF
 e search.show_progress=false
 /z "ا الأوضاع, لم بوابة المب" d utf32le
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 # ps @ hit.string.utf32le.0
 EOF
@@ -762,6 +850,8 @@ FILE=bins/cmd/search/string_encodings/Armenian-Lipsum.utf32le
 CMDS=<<EOF
 e search.show_progress=false
 /z "դեֆինիթիոնես ին վիս, ծասե պեռթինա" d utf32le
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 psW @ hit.string.utf32le.0
 EOF
@@ -777,6 +867,8 @@ FILE=bins/cmd/search/string_encodings/Chinese-Lipsum.utf32le
 CMDS=<<EOF
 e search.show_progress=false
 /z "京確年禁読応米新報書了号活修佐。" d utf32le
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 psW @ hit.string.utf32le.0
 EOF
@@ -792,6 +884,8 @@ FILE=bins/cmd/search/string_encodings/Georgian-Lipsum.utf32le
 CMDS=<<EOF
 e search.show_progress=false
 /z "რე, იუს ეა უთინამ დელიცათისსიმი. მელ ფერსეყუერის ლ" d utf32le
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 psW @ hit.string.utf32le.0
 EOF
@@ -807,6 +901,8 @@ FILE=bins/cmd/search/string_encodings/Greek-Lipsum.utf32le
 CMDS=<<EOF
 e search.show_progress=false
 /z "παρτεμ ποσιδονιθμ ατ. Ετ πρι περιcθλισ σπλενδιδε" d utf32le
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 psW @ hit.string.utf32le.0
 EOF
@@ -822,6 +918,8 @@ FILE=bins/cmd/search/string_encodings/Hebrew-Lipsum.utf32le
 CMDS=<<EOF
 e search.show_progress=false
 /z "ים משחקים ממונרכיה" d utf32le
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 psW @ hit.string.utf32le.0
 EOF
@@ -837,6 +935,8 @@ FILE=bins/cmd/search/string_encodings/Hindi-Lipsum.utf32le
 CMDS=<<EOF
 e search.show_progress=false
 /z "पहोचने वैश्विक एसलिये पुस्तक हुआआदी" d utf32le
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 psW @ hit.string.utf32le.0
 EOF
@@ -852,6 +952,8 @@ FILE=bins/cmd/search/string_encodings/Korean2-Lipsum.utf32le
 CMDS=<<EOF
 e search.show_progress=false
 /z "생의 과실이 있으며." d utf32le
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 psW @ hit.string.utf32le.0
 EOF
@@ -867,6 +969,8 @@ FILE=bins/cmd/search/string_encodings/Morsecode-Lipsum.utf32le
 CMDS=<<EOF
 e search.show_progress=false
 /z " ·--· ·---- ··· - ···· --" d utf32le
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 psW @ hit.string.utf32le.0
 EOF
@@ -882,6 +986,8 @@ FILE=bins/cmd/search/string_encodings/Russian-Lipsum.utf32le
 CMDS=<<EOF
 e search.show_progress=false
 /z "тани ад. Цум хендрерит перс" d utf32le
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 psW @ hit.string.utf32le.0
 EOF
@@ -897,6 +1003,8 @@ FILE=bins/cmd/search/string_encodings/regex_search.russian.utf8.utf32le.utf16be
 CMDS=<<EOF
 e search.show_progress=false
 /z "ипсум" i utf8
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 psu @ hit.string.utf8.0
 psu @ hit.string.utf8.1
@@ -915,6 +1023,8 @@ FILE=bins/cmd/search/string_encodings/regex_search.russian.utf8.utf32le.utf16be
 CMDS=<<EOF
 e search.show_progress=false
 /z "и.{3}м" e utf32le
+# Requires increasing the block size because -.-
+b 0x1000
 # Check string is actually at offset of the hit.
 psW @ hit.string.utf32le.0
 psW @ hit.string.utf32le.1

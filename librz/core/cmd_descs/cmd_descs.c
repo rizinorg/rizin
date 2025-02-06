@@ -15943,12 +15943,13 @@ static const RzCmdDescHelp cmd_print_raw_string_help = {
 };
 
 static const RzCmdDescHelp ps_help = {
-	.summary = "Print string at the current offset",
+	.summary = "Print string at the current offset.",
 };
 static const RzCmdDescDetailEntry print_string_Value_space_details_detail_entries[] = {
+	{ .text = "String length", .arg_str = NULL, .comment = "The string length depends on the block size. You need to change it via 'b <size-in-bytes>' if your string is too short." },
 	{ .text = "encoding=settings", .arg_str = NULL, .comment = "Use encoding from 'search.str.encoding' option." },
 	{ .text = "delimeter=null", .arg_str = NULL, .comment = "String is NUL terminated." },
-	{ .text = "delimeter=block", .arg_str = NULL, .comment = "Print whole block as string (dosn't stop at non-printable character)." },
+	{ .text = "delimeter=block", .arg_str = NULL, .comment = "Print whole block as string (dons't stop at non-printable character)." },
 	{ 0 },
 };
 static const RzCmdDescDetail print_string_details[] = {
@@ -15976,7 +15977,7 @@ static const RzCmdDescArg print_string_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp print_string_help = {
-	.summary = "Print the string at the current offset.",
+	.summary = "Print the string at the current offset in the block.",
 	.details = print_string_details,
 	.args = print_string_args,
 };

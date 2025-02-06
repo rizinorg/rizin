@@ -1094,10 +1094,10 @@ commands:
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
   - name: ps
-    summary: Print string at the current offset
+    summary: Print string at the current offset.
     subcommands:
       - name: ps
-        summary: Print the string at the current offset.
+        summary: Print the string at the current offset in the block.
         cname: print_string
         modes:
           - RZ_OUTPUT_MODE_STANDARD
@@ -1127,12 +1127,14 @@ commands:
         details:
           - name: Value details
             entries:
+              - text: "String length"
+                comment: "The string length depends on the block size. You need to change it via 'b <size-in-bytes>' if your string is too short."
               - text: "encoding=settings"
                 comment: "Use encoding from 'search.str.encoding' option."
               - text: "delimeter=null"
                 comment: "String is NUL terminated."
               - text: "delimeter=block"
-                comment: "Print whole block as string (dosn't stop at non-printable character)."
+                comment: "Print whole block as string (dons't stop at non-printable character)."
       - name: ps+
         summary: Print libc++ std::string (same-endian, ascii, zero-terminated)
         cname: print_string_as_libcpp_string
