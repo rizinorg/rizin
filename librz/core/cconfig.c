@@ -1132,6 +1132,15 @@ static bool cb_search_max_threads(void *user, void *data) {
 	return true;
 }
 
+static void check_reload_bin_str_search(RzCore *core) {
+	if (core->bin && rz_config_get_b(core->config, "str.search.reload")) {
+		RzBinFile *bf = rz_bin_cur(core->bin);
+		if (bf && bf->o) {
+			rz_bin_object_reset_strings(core->bin, bf, bf->o);
+		}
+	}
+}
+
 static bool cb_search_str_min_length(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
@@ -1144,12 +1153,7 @@ static bool cb_search_str_min_length(void *user, void *data) {
 	}
 
 	core->bin->str_search_cfg.min_length = node->i_value;
-	if (core->bin && rz_config_get_b(core->config, "str.search.reload")) {
-		RzBinFile *bf = rz_bin_cur(core->bin);
-		if (bf && bf->o) {
-			rz_bin_object_reset_strings(core->bin, bf, bf->o);
-		}
-	}
+	check_reload_bin_str_search(core);
 	return true;
 }
 
@@ -1164,12 +1168,7 @@ static bool cb_search_str_max_length(void *user, void *data) {
 	}
 
 	core->bin->str_search_cfg.max_length = node->i_value;
-	if (core->bin && rz_config_get_b(core->config, "str.search.reload")) {
-		RzBinFile *bf = rz_bin_cur(core->bin);
-		if (bf && bf->o) {
-			rz_bin_object_reset_strings(core->bin, bf, bf->o);
-		}
-	}
+	check_reload_bin_str_search(core);
 	return true;
 }
 
@@ -1181,12 +1180,7 @@ static bool cb_search_str_max_uni_blocks(void *user, void *data) {
 		return false;
 	}
 	core->bin->str_search_cfg.max_uni_blocks = node->i_value;
-	if (core->bin && rz_config_get_b(core->config, "str.search.reload")) {
-		RzBinFile *bf = rz_bin_cur(core->bin);
-		if (bf && bf->o) {
-			rz_bin_object_reset_strings(core->bin, bf, bf->o);
-		}
-	}
+	check_reload_bin_str_search(core);
 	return true;
 }
 
@@ -1198,12 +1192,7 @@ static bool cb_search_str_max_region_size(void *user, void *data) {
 		return false;
 	}
 	core->bin->str_search_cfg.max_region_size = node->i_value;
-	if (core->bin && rz_config_get_b(core->config, "str.search.reload")) {
-		RzBinFile *bf = rz_bin_cur(core->bin);
-		if (bf && bf->o) {
-			rz_bin_object_reset_strings(core->bin, bf, bf->o);
-		}
-	}
+	check_reload_bin_str_search(core);
 	return true;
 }
 
@@ -1229,12 +1218,7 @@ static bool cb_search_str_check_ascii_freq(void *user, void *data) {
 		return false;
 	}
 	core->bin->str_search_cfg.check_ascii_freq = rz_str_is_true(node->value);
-	if (core->bin && rz_config_get_b(core->config, "str.search.reload")) {
-		RzBinFile *bf = rz_bin_cur(core->bin);
-		if (bf && bf->o) {
-			rz_bin_object_reset_strings(core->bin, bf, bf->o);
-		}
-	}
+	check_reload_bin_str_search(core);
 	return true;
 }
 
@@ -1270,12 +1254,7 @@ static bool cb_search_str_encoding(void *user, void *data) {
 	}
 
 	core->bin->str_search_cfg.string_encoding = encoding;
-	if (core->bin && rz_config_get_b(core->config, "str.search.reload")) {
-		RzBinFile *bf = rz_bin_cur(core->bin);
-		if (bf && bf->o) {
-			rz_bin_object_reset_strings(core->bin, bf, bf->o);
-		}
-	}
+	check_reload_bin_str_search(core);
 	return true;
 }
 
@@ -1296,12 +1275,7 @@ static bool cb_str_search_mode(void *user, void *data) {
 		return true;
 	}
 	RZ_LOG_ERROR("Invalid value for str.search.mode (%s).\n", node->value);
-	if (core->bin && rz_config_get_b(core->config, "str.search.reload")) {
-		RzBinFile *bf = rz_bin_cur(core->bin);
-		if (bf && bf->o) {
-			rz_bin_object_reset_strings(core->bin, bf, bf->o);
-		}
-	}
+	check_reload_bin_str_search(core);
 	return false;
 }
 
