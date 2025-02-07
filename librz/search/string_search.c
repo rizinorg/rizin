@@ -93,6 +93,10 @@ static bool string_find(RZ_NULLABLE RzSearchFindOpt *fopt, void *user, ut64 offs
 				ut64 str_mem_len;
 				ut64 str_mem_offset;
 				align_offsets(options, detected->type, detected, group0, &str_mem_offset, &str_mem_len, found_idx << 32);
+				if (fopt->alignment > 1 && (str_mem_offset + offset) % fopt->alignment != 0) {
+					// Match has not the correct alignment in memory.
+					continue;
+				}
 				char *hit_type = rz_str_newf("string.%s", rz_str_enc_as_string(detected->type));
 				RzSearchHit *hit = rz_search_hit_new(hit_type, str_mem_offset + offset, str_mem_len);
 				free(hit_type);

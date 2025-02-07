@@ -2403,16 +2403,6 @@ static bool cb_searchalign(void *user, void *data) {
 	return true;
 }
 
-static bool cb_searchalignment(void *user, void *data) {
-	RzConfigNode *node = (RzConfigNode *)data;
-	ut64 alignment = node->i_value;
-	if (alignment >= 64 || alignment < 1) {
-		RZ_LOG_ERROR("Alignment has to be between 1-63.\n");
-		return false;
-	}
-	return true;
-}
-
 static bool cb_segoff(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
@@ -3757,14 +3747,13 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETI("search.maxhits", 0, "Maximum number of hits ('0' means no limit)");
 	SETBPREF("search.show_progress", "true", "Show the search process.");
 	SETBPREF("search.overlap", "true", "Look for overlapped search hits.");
-	SETICB("search.io.alignment", 1, &cb_searchalignment, "Only search at set byte alignment.");
 	SETICB("search.str.min_length", RZ_BIN_STRING_SEARCH_MIN_STRING, &cb_search_str_min_length, "Smallest string length that is possible to find. (inclusive)");
 	SETICB("search.str.max_length", RZ_BIN_STRING_SEARCH_BUFFER_SIZE, &cb_search_str_max_length, "Maximum buffer size, which will also determine the maximum string length. (inclusive)");
 	SETICB("search.str.max_region_size", RZ_BIN_STRING_SEARCH_MAX_REGION_SIZE, &cb_search_str_max_region_size, "Maximum allowable size for the string search interval between two memory regions.");
 	SETICB("search.str.raw_alignment", RZ_BIN_STRING_SEARCH_RAW_FILE_ALIGNMENT, &cb_search_str_raw_alignment, "Memory sector alignment used for the raw string search (RzBin only. Use search.align for /z).");
 	SETICB("search.str.check_ascii_freq", RZ_BIN_STRING_SEARCH_CHECK_ASCII_FREQ, &cb_search_str_check_ascii_freq, "If true, perform check on ASCII frequencies when looking for false positives during string search");
 
-	SETICB("search.align", 0, &cb_searchalign, "Only catch aligned search hits");
+	SETICB("search.align", 0, &cb_searchalign, "Address alignment for search.");
 	SETI("search.esilcombo", 8, "Stop search after N consecutive hits");
 	SETI("search.distance", 0, "Search string distance");
 	SETBPREF("search.flags", "true", "All search results are flagged, otherwise only printed");

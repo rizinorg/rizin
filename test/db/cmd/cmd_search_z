@@ -1081,3 +1081,44 @@ EXPECT=<<EOF
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=String search alignment - not utf8
+FILE=bins/cmd/search/string_encodings/regex_search.russian.utf8.utf32le.utf16be
+CMDS=<<EOF
+e search.show_progress=false
+/z "и.{3}м" e utf32le
+e search.align=0xb
+/z "и.{3}м" e utf32le
+e search.align=0x7
+/z "и.{3}м" e utf32le
+EOF
+EXPECT=<<EOF
+0x00000087 20 hit.string.utf32le.0
+0x000000bb 20 hit.string.utf32le.1
+0x000000bb 20 hit.string.utf32le.0
+0x00000087 20 hit.string.utf32le.0
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=String search alignment
+FILE=bins/cmd/search/alignment_test
+ARGS=
+CMDS=<<EOF
+e search.show_progress=false
+/z bb.bb r
+e search.align=2
+/z bb.bb r
+e search.align=3
+/z bb.bb r
+EOF
+EXPECT=<<EOF
+0x00000023 5 hit.string.ascii.0
+0x00000032 5 hit.string.ascii.1
+0x00000041 5 hit.string.ascii.2
+0x00000053 5 hit.string.ascii.3
+0x00000032 5 hit.string.ascii.0
+0x00000023 5 hit.string.ascii.0
+0x00000053 5 hit.string.ascii.1
+EOF
+RUN
