@@ -2416,20 +2416,22 @@ static const RzCmdDescDetailEntry slash_z_Regex_space_Flags_detail_entries[] = {
 	{ .text = "l", .arg_str = NULL, .comment = "Default. Literal string comparison. Ignores all meta-characters." },
 	{ .text = "i", .arg_str = NULL, .comment = "Caseless (equivalent: PCRE2_CASELESS)" },
 	{ .text = "r", .arg_str = NULL, .comment = "Regular expression." },
+	{ .text = "e", .arg_str = NULL, .comment = "Extended regular expression." },
 	{ .text = "m", .arg_str = NULL, .comment = "Multiline regular expression (equivalent flag: PCRE2_MULTILINE)" },
 	{ 0 },
 };
 
-static const RzCmdDescDetailEntry slash_z_Exampls_detail_entries[] = {
+static const RzCmdDescDetailEntry slash_z_Exampels_detail_entries[] = {
 	{ .text = "/z (ABC*)", .arg_str = NULL, .comment = "Search the exact string: \"(ABC*)\"." },
 	{ .text = "/z (ABC*)D li", .arg_str = NULL, .comment = "Search the exact string \"(ABC*)\" but case insensitive." },
 	{ .text = "/z (ABC*)D ri", .arg_str = NULL, .comment = "Search the regular expression \"(ABC*)D\" but case insensitive." },
+	{ .text = "/z \"и.{3}м\" ei", .arg_str = NULL, .comment = "Search the extended regular expression \"и.{3}м\" but case insensitive." },
 	{ 0 },
 };
 static const RzCmdDescDetail slash_z_details[] = {
 	{ .name = "Encodings", .entries = slash_z_Encodings_detail_entries },
 	{ .name = "Regex Flags", .entries = slash_z_Regex_space_Flags_detail_entries },
-	{ .name = "Exampls", .entries = slash_z_Exampls_detail_entries },
+	{ .name = "Exampels", .entries = slash_z_Exampels_detail_entries },
 	{ 0 },
 };
 static const RzCmdDescHelp slash_z_help = {

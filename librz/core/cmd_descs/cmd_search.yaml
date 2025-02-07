@@ -778,9 +778,11 @@ commands:
           comment: "Caseless (equivalent: PCRE2_CASELESS)"
         - text: "r"
           comment: "Regular expression."
+        - text: "e"
+          comment: "Extended regular expression."
         - text: "m"
           comment: "Multiline regular expression (equivalent flag: PCRE2_MULTILINE)"
-    - name: "Exampls"
+    - name: "Exampels"
       entries:
         - text: "/z (ABC*)"
           comment: "Search the exact string: \"(ABC*)\"."
@@ -788,6 +790,8 @@ commands:
           comment: "Search the exact string \"(ABC*)\" but case insensitive."
         - text: "/z (ABC*)D ri"
           comment: "Search the regular expression \"(ABC*)D\" but case insensitive."
+        - text: "/z \"и.{3}м\" ei"
+          comment: "Search the extended regular expression \"и.{3}м\" but case insensitive."
     subcommands:
     - name: "/z"
       summary: String search.
