@@ -31,6 +31,24 @@ bool test_rz_scan_strings_detect_ascii(void) {
 	mu_end;
 }
 
+bool test_rz_scan_strings_detect_ibm290(void) {
+	static const unsigned char expected[] = "\x40\x41\x42\x43\x44\x45\x46\x47\x48\x49\x4a\x4b\x4c\x4d\x4e\x4f\x50\x51\x52\x53\x54\x55\x56\x58\x5a\x5b\x5c\x5d\x5e\x5f\x81\x82\x83\x84\x85\x86\x87\x88\x89\x8a\x8c\x8d\x8e\x8f\x90\x91\x92\x93\x94\x95\x96\x97\x98\x99\x9a\x9d\x9e\x9f\xa1\xa2\xa3\xa4\xa5\xa6\xa7\xa8\xa9\xaa\xac\xad\xae\xaf\xba\xbb\xbc\xbd\xbe\xbf\xbf\x00";
+	RzBuffer *buf = rz_buf_new_with_bytes(expected, sizeof(expected));
+
+	RzList *str_list = rz_list_newf((RzListFree)rz_detected_string_free);
+	int n = rz_scan_strings(buf, str_list, &g_opt, 0, rz_buf_size(buf) - 1, RZ_STRING_ENC_IBM290);
+	mu_assert_eq(n, 1, "rz_scan_strings ibm290, number of strings");
+
+	RzDetectedString *s = rz_list_get_n(str_list, 0);
+	mu_assert_streq(s->string, " 。「」、・ヲァィゥ£.<(+|&ェォャュョッー!¥*);¬アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフ¯ヘホマミムメモヤユヨラリルレロワン゛゜゜", "rz_scan_strings ibm290, different string");
+	mu_assert_eq(s->type, RZ_STRING_ENC_IBM290, "rz_scan_strings ibm290, string type");
+
+	rz_list_free(str_list);
+	rz_buf_free(buf);
+
+	mu_end;
+}
+
 bool test_rz_scan_strings_detect_ibm037(void) {
 	static const unsigned char str[] = "\xc9\x40\x81\x94\x40\x81\x95\x40\xc9\xc2\xd4\xf0\xf3\xf7\x40\xa2\xa3\x99\x89\x95\x87\x25";
 	RzBuffer *buf = rz_buf_new_with_bytes(str, sizeof(str));
@@ -327,6 +345,7 @@ bool test_rz_scan_strings_extended_ascii(void) {
 bool all_tests() {
 	mu_run_test(test_rz_scan_strings_detect_ascii);
 	mu_run_test(test_rz_scan_strings_detect_ibm037);
+	mu_run_test(test_rz_scan_strings_detect_ibm290);
 	mu_run_test(test_rz_scan_strings_detect_utf8);
 	mu_run_test(test_rz_scan_strings_detect_utf16_le);
 	mu_run_test(test_rz_scan_strings_detect_utf16_le_special_chars);
