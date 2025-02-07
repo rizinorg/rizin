@@ -1130,7 +1130,7 @@ commands:
               - text: "String length"
                 comment: "The string length depends on the block size. You need to change it via 'b <size-in-bytes>' if your string is too short."
               - text: "encoding=settings"
-                comment: "Use encoding from 'search.str.encoding' option."
+                comment: "Use encoding from 'str.encoding' option."
               - text: "delimeter=null"
                 comment: "String is NUL terminated."
               - text: "delimeter=block"

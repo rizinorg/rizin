@@ -948,7 +948,7 @@ CMDS=<<EOF
 e asm.bytes=false
 e asm.cmt.off=false
 e str.escbslash=true
-e search.str.encoding=8bit
+e str.encoding=8bit
 e scr.strconv=asciiesc
 pd 1 @ 0x0040169d
 e scr.strconv=asciidot
@@ -956,11 +956,11 @@ pd 1 @ 0x0040169d
 e asm.sub.names=false
 e asm.noisy=false
 pd 1 @ 0x00401693
-e search.str.encoding=utf8
+e str.encoding=utf8
 pd 1 @ 0x00401693
-e search.str.encoding=utf16le
+e str.encoding=utf16le
 pd 1 @ 0x004016ac
-e search.str.encoding=utf32le
+e str.encoding=utf32le
 pd 1 @ 0x004016ed
 pd 1 @ 0x004016f7
 EOF
@@ -975,18 +975,18 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=search.str.encoding utf8
+NAME=str.encoding utf8
 FILE=bins/elf/strenc
 CMDS=<<EOF
 e asm.bytes=false
 e asm.sub.names=false
 e asm.noisy=false
 e str.escbslash=true
-e search.str.encoding=utf8
+e str.encoding=utf8
 pd 1 @ 0x00401693
-e search.str.encoding=8bit
+e str.encoding=8bit
 pd 1 @ 0x00401693
-e search.str.encoding=guess
+e str.encoding=guess
 pd 1 @ 0x00401693
 EOF
 EXPECT=<<EOF
@@ -996,15 +996,15 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=search.str.encoding 8bit
+NAME=str.encoding 8bit
 FILE=bins/pe/testapp-msvc64.exe
 CMDS=<<EOF
 e asm.sub.names=false
 e asm.bytes=true
 e asm.noisy=false
-e search.str.encoding=8bit
+e str.encoding=8bit
 pd 1 @ 0x140001058
-e search.str.encoding=utf8
+e str.encoding=utf8
 pd 1 @ 0x140001058
 EOF
 EXPECT=<<EOF
@@ -1013,24 +1013,24 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=search.str.encoding utf16le
+NAME=str.encoding utf16le
 FILE=bins/elf/strenc
 CMDS=<<EOF
 e asm.bytes=false
 e asm.sub.names=false
 e asm.noisy=false
 e str.escbslash=true
-e search.str.encoding=guess
+e str.encoding=guess
 pd 1 @ 0x004016ac
 e asm.sub.names=true
 e asm.cmt.off=false
-e search.str.encoding=guess
+e str.encoding=guess
 pd 1 @ 0x004016b6
-e search.str.encoding=utf16le
+e str.encoding=utf16le
 pd 1 @ 0x004016b6
-e search.str.encoding=guess
+e str.encoding=guess
 pd 1 @ 0x004016c0
-e search.str.encoding=utf16le
+e str.encoding=utf16le
 pd 1 @ 0x004016c0
 pd 1 @ 0x004016ca
 pd 1 @ 0x004016d4
@@ -1046,23 +1046,23 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=search.str.encoding utf32le
+NAME=str.encoding utf32le
 FILE=bins/elf/strenc
 CMDS=<<EOF
 e asm.bytes=false
 e asm.cmt.off=false
 e str.escbslash=true
-e search.str.encoding=utf16le
+e str.encoding=utf16le
 pd 1 @ 0x004016de
-e search.str.encoding=utf32le
+e str.encoding=utf32le
 pd 1 @ 0x004016de
 e asm.sub.names=false
 e asm.noisy=false
-e search.str.encoding=guess
+e str.encoding=guess
 pd 1 @ 0x004016ed
 pd 1 @ 0x004016f7
 pd 1 @ 0x00401701
-e search.str.encoding=utf32le
+e str.encoding=utf32le
 pd 1 @ 0x00401701
 EOF
 EXPECT=<<EOF
@@ -1075,15 +1075,15 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=search.str.encoding guess utf16le
+NAME=str.encoding guess utf16le
 FILE=bins/pe/testapp-msvc64.exe
 CMDS=<<EOF
 e asm.bytes=true
 e asm.sub.names=false
 e asm.noisy=false
-e search.str.encoding=guess
+e str.encoding=guess
 pd 1 @ 0x14000104c
-e search.str.encoding=utf16le
+e str.encoding=utf16le
 pd 1 @ 0x14000104c
 EOF
 EXPECT=<<EOF
@@ -1092,14 +1092,14 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=search.str.encoding guess utf32le
+NAME=str.encoding guess utf32le
 FILE=bins/elf/strenc-guess-utf32le
 CMDS=<<EOF
 e asm.cmt.off=false
 e asm.bytes=false
-e search.str.encoding=guess
+e str.encoding=guess
 pd 1 @ 0x00400463
-e search.str.encoding=utf32le
+e str.encoding=utf32le
 pd 1 @ 0x00400463
 EOF
 EXPECT=<<EOF
@@ -1108,7 +1108,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=search.str.encoding alias
+NAME=str.encoding alias
 FILE=bins/elf/strenc
 CMDS=<<EOF
 e asm.sub.names=false
@@ -1116,7 +1116,7 @@ e asm.noisy=false
 e asm.bytes=false
 e asm.cmt.off=false
 e str.escbslash=true
-(test_str.enc enc; e search.str.encoding=${enc}; e search.str.encoding)
+(test_str.enc enc; e str.encoding=${enc}; e str.encoding)
 .(test_str.enc guess)
 .(test_str.enc utf8)
 .(test_str.enc utf16le)
@@ -1140,10 +1140,10 @@ utf16le
 EOF
 RUN
 
-NAME=search.str.encoding error handling
+NAME=str.encoding error handling
 FILE==
 CMDS=<<EOF
-(test_str.enc enc; e search.str.encoding=${enc}; e search.str.encoding)
+(test_str.enc enc; e str.encoding=${enc}; e str.encoding)
 .(test_str.enc UTF32LE)
 .(test_str.enc cat_sat_on_keyboard)
 .(test_str.enc CAT_SAT_ON_KEYBOARD)
@@ -1154,8 +1154,8 @@ utf32le
 utf32le
 EOF
 EXPECT_ERR=<<EOF
-ERROR: Invalid value for search.str.encoding (cat_sat_on_keyboard).
-ERROR: Invalid value for search.str.encoding (CAT_SAT_ON_KEYBOARD).
+ERROR: Invalid value for str.encoding (cat_sat_on_keyboard).
+ERROR: Invalid value for str.encoding (CAT_SAT_ON_KEYBOARD).
 EOF
 RUN
 
@@ -1938,7 +1938,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pdJ with backslashes, quotation marks, str.escbslash and search.str.encoding
+NAME=pdJ with backslashes, quotation marks, str.escbslash and str.encoding
 FILE==
 CMDS=<<EOF
 e io.cache=true
@@ -1961,13 +1961,13 @@ ww "path\"C:\\Program\r"
 f wide_str
 s 0x4000
 wa "mov ebx, 0x3000"
-e search.str.encoding=guess
+e str.encoding=guess
 pd 1
 pdJ 1
-e search.str.encoding=8bit
+e str.encoding=8bit
 pd 1
 pdJ 1
-e search.str.encoding=utf16le
+e str.encoding=utf16le
 e str.escbslash=true
 pd 1
 pdJ 1
@@ -2146,7 +2146,7 @@ FILE=bins/elf/strenc
 CMDS=<<EOF
 e asm.bytes=false
 e asm.imm.str=true
-e search.str.encoding=utf16le
+e str.encoding=utf16le
 pd 1 @ 0x004016ca
 f str.fence @ 0x40235a
 e asm.cmt.off=false

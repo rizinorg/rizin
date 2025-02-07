@@ -1237,7 +1237,7 @@ static bool find_encoding(RzConfigNode *node, RzStrEnc *encoding) {
 	return false;
 }
 
-static bool cb_search_str_encoding(void *user, void *data) {
+static bool cb_str_encoding(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	RzStrEnc encoding = RZ_STRING_ENC_GUESS;
@@ -1249,7 +1249,7 @@ static bool cb_search_str_encoding(void *user, void *data) {
 			       "if utf8 char detected then utf8 else 8bit\n");
 		return false;
 	} else if (RZ_STR_EQ("settings", node->value) || (rz_str_casecmp("guess", node->value) && !found_enc)) {
-		RZ_LOG_ERROR("Invalid value for search.str.encoding (%s).\n", node->value);
+		RZ_LOG_ERROR("Invalid value for str.encoding (%s).\n", node->value);
 		return false;
 	}
 
@@ -3768,7 +3768,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETICB("search.str.max_region_size", RZ_BIN_STRING_SEARCH_MAX_REGION_SIZE, &cb_search_str_max_region_size, "Maximum allowable size for the string search interval between two memory regions.");
 	SETICB("search.str.raw_alignment", RZ_BIN_STRING_SEARCH_RAW_FILE_ALIGNMENT, &cb_search_str_raw_alignment, "Memory sector alignment used for the raw string search.");
 	SETICB("search.str.check_ascii_freq", RZ_BIN_STRING_SEARCH_CHECK_ASCII_FREQ, &cb_search_str_check_ascii_freq, "If true, perform check on ASCII frequencies when looking for false positives during string search");
-	n = NODECB("search.str.encoding", "guess", &cb_search_str_encoding);
+	n = NODECB("search.str.encoding", "guess", &cb_str_encoding);
 	SETDESC(n, "The default string encoding type (when set to guess, it is automatically guessed).");
 	SETOPTIONS(n, "ascii", "8bit", "utf8", "utf16le", "utf32le", "utf16be", "utf32be", "ibm037", "ibm290", "ebcdices", "ebcdicuk", "ebcdicus", "guess", NULL);
 

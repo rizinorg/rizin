@@ -575,7 +575,7 @@ static bool test_migrate_v15_v16_str_config() {
 }
 
 static bool test_migrate_v18_v19_str_config() {
-	RzProject *prj = rz_project_load_file_raw("prj/v18-str-config.rzdb");
+	RzProject *prj = rz_project_load_file_raw("prj/v19-str-config.rzdb");
 	mu_assert_notnull(prj, "load raw project");
 	RzSerializeResultInfo *res = rz_serialize_result_info_new();
 	bool s = rz_project_migrate_v18_v19(prj, res);
@@ -599,7 +599,7 @@ static bool test_migrate_v18_v19_str_config() {
 	mu_assert_streq_free(sdb_get(config_db, "search.str.max_region_size"), "0x005555555", "New config has wrong value");
 	mu_assert_streq_free(sdb_get(config_db, "search.str.raw_alignment"), "55", "New config has wrong value");
 	mu_assert_streq_free(sdb_get(config_db, "search.str.check_ascii_freq"), "false", "New config has wrong value");
-	mu_assert_streq_free(sdb_get(config_db, "search.str.encoding"), "utf32be", "New config has wrong value");
+	mu_assert_streq_free(sdb_get(config_db, "str.encoding"), "utf32be", "New config has wrong value");
 	rz_serialize_result_info_free(res);
 	rz_project_free(prj);
 	mu_end;
@@ -1013,7 +1013,7 @@ static bool test_load_v15_19_str_config() {
 	// Load version 15 config but check if the v19 values were converted correctly.
 	BEGIN_LOAD_TEST(core, 15, "prj/v15-str-config.rzdb");
 	mu_assert_eq(rz_config_get_i(core->config, "search.str.min_length"), 6, "search.str.min_length");
-	mu_assert_streq(rz_config_get(core->config, "search.str.encoding"), "utf8", "search.str.encoding");
+	mu_assert_streq(rz_config_get(core->config, "str.encoding"), "utf8", "str.encoding");
 	mu_assert_eq(rz_config_get_i(core->config, "search.str.max_length"), 0x00b00123, "search.str.max_length");
 	rz_core_free(core);
 	mu_end;

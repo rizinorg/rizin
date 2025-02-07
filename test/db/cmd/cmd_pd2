@@ -772,14 +772,14 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=search.str.encoding no-guess with initial null
+NAME=str.encoding no-guess with initial null
 FILE=bins/elf/utfbe&bom
 CMDS=<<EOF
 e asm.bytes=false
 e asm.offset=false
 e asm.cmt.off=false
 aar
-(pdenc enc; e search.str.encoding=${enc}; pd 1)
+(pdenc enc; e str.encoding=${enc}; pd 1)
 (pdstr bits; s `axt @ obj.utf${bits}be~[1]`; .(pdenc guess); .(pdenc utf${bits}le); .(pdenc utf${bits}be))
 .(pdstr 16)
 echo
@@ -796,13 +796,13 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=search.str.encoding guess bom, asm.cmt.off=0/1
+NAME=str.encoding guess bom, asm.cmt.off=0/1
 FILE=bins/elf/utfbe&bom
 CMDS=<<EOF
 e asm.bytes=0
 e asm.offset=0
 e asm.cmt.off=0
-e search.str.encoding=guess
+e str.encoding=guess
 aar
 (pdstr flag; s `axt @ obj.${flag}~[1]`; pd 1)
 .(pdstr utf8_bom)

@@ -31,7 +31,7 @@ typedef enum {
 	RZ_STRING_ENC_EBCDIC_US = 's',
 	RZ_STRING_ENC_EBCDIC_ES = 't',
 	RZ_STRING_ENC_GUESS = 'g',
-	RZ_STRING_ENC_SETTINGS = 'S', ///< Use search.str.encoding.
+	RZ_STRING_ENC_SETTINGS = 'S', ///< Use str.encoding.
 } RzStrEnc;
 
 /**

@@ -3211,7 +3211,7 @@ RUN
 NAME=iz (file x86)
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF
-e search.str.encoding=ascii
+e str.encoding=ascii
 echo -- default --
 iz
 echo -- geq 12 --
@@ -3838,11 +3838,11 @@ nth      paddr      vaddr len size section type  string
 EOF
 RUN
 
-NAME=izz and search.str.encoding
+NAME=izz and str.encoding
 FILE==
 CMDS=<<EOF
 wz k\0i\0abcdefgh
-(izzenc enc; e search.str.encoding=${enc}; izz:quiet)
+(izzenc enc; e str.encoding=${enc}; izz:quiet)
 .(izzenc guess)
 .(izzenc ascii)
 .(izzenc utf8)
@@ -3870,7 +3870,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=search.str.encoding string reset
+NAME=str.encoding string reset
 FILE=--
 CMDS=<<EOF
 mkdir .tmp
@@ -3879,7 +3879,7 @@ o+ .tmp/strenc-bin
 iz:quiet
 s 0x080484b0
 wz k\0i\0abcdefgh
-(izenc enc; e search.str.encoding=${enc}; iz:quiet)
+(izenc enc; e str.encoding=${enc}; iz:quiet)
 .(izenc guess)
 .(izenc utf8)
 o--

@@ -140,7 +140,7 @@ NAME=String Search - search - Encoding: ibm290 - Use settings (default setting)
 FILE=bins/cmd/search/string_encodings/Japanese-Katakana-Lipsum.ibm290
 CMDS=<<EOF
 e search.show_progress=false
-e search.str.encoding=ibm290
+e str.encoding=ibm290
 /z "!¥*);¬アイウエオカキクケコ"
 ps ibm290 @ hit.string.ibm290.0
 EOF

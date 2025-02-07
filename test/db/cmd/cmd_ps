@@ -9,7 +9,7 @@ f obj.short_str1 12 @ 0x0804a034
 f obj.long_str2 12 @ 0x0804a058
 f obj.short_str2 12 @ 0x0804a040
 e asm.bits=32
-e search.str.encoding=utf8
+e str.encoding=utf8
 ps+ @ obj.short_str1
 ps+ @ obj.short_str2
 ps+ @ obj.empty_str
@@ -35,7 +35,7 @@ f obj.short_str1 24 @ 0x00601058
 f obj.long_str2 24 @ 0x006010a0
 f obj.short_str2 24 @ 0x00601070
 e asm.bits=64
-e search.str.encoding=utf8
+e str.encoding=utf8
 ps+ @ obj.short_str1
 ps+ @ obj.short_str2
 ps+ @ obj.empty_str
@@ -150,20 +150,20 @@ Just like pineapple on pizza, this task/thread port doesn't belong here. @%s:%d
 EOF
 RUN
 
-NAME=Error case search.str.encoding
+NAME=Error case str.encoding
 FILE==
 CMDS=<<EOF
-e search.str.encoding=settings
+e str.encoding=settings
 EOF
 EXPECT_ERR=<<EOF
-ERROR: Invalid value for search.str.encoding (settings).
+ERROR: Invalid value for str.encoding (settings).
 EOF
 RUN
 
-NAME=search.str.encoding
+NAME=str.encoding
 FILE=bins/cmd/search/string_encodings/Japanese-Katakana-Lipsum.ibm290
 CMDS=<<EOF
-e search.str.encoding=ibm290
+e str.encoding=ibm290
 ps
 ps settings
 EOF

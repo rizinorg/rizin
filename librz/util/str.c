@@ -72,7 +72,7 @@ RZ_API const char *rz_str_enc_as_string(RzStrEnc enc) {
 	case RZ_STRING_ENC_GUESS:
 		return "guessed";
 	case RZ_STRING_ENC_SETTINGS:
-		return "search.str.encoding";
+		return "str.encoding";
 	default:
 		rz_warn_if_reached();
 		return "unknown";

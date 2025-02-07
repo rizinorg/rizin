@@ -696,7 +696,7 @@ RZ_API bool rz_project_migrate_v18_v19(RzProject *prj, RzSerializeResultInfo *re
 	sdb_rename(config_db, "str.search.max_region_size", "search.str.max_region_size");
 	sdb_rename(config_db, "str.search.raw_alignment", "search.str.raw_alignment");
 	sdb_rename(config_db, "str.search.check_ascii_freq", "search.str.check_ascii_freq");
-	sdb_rename(config_db, "str.search.encoding", "search.str.encoding");
+	sdb_rename(config_db, "str.search.encoding", "str.encoding");
 
 	return true;
 }

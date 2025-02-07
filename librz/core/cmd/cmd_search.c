@@ -2964,7 +2964,7 @@ static RzCmdStatus cmd_string_search_generic(RzCore *core, const char *string, c
 
 	expected = rz_str_enc_string_as_type(encoding);
 	if (expected == RZ_STRING_ENC_SETTINGS) {
-		expected = rz_str_enc_string_as_type(rz_config_get(core->config, "search.str.encoding"));
+		expected = rz_str_enc_string_as_type(rz_config_get(core->config, "str.encoding"));
 	}
 	if (!RZ_STR_EQ(encoding, "guess") && expected == RZ_STRING_ENC_GUESS) {
 		RZ_LOG_ERROR("core: invalid encoding '%s'.\n", encoding);
