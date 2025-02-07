@@ -4234,7 +4234,7 @@ static bool print_value(RzCore *core, PrintValueOptions *opts, RzCmdStateOutput 
 
 static RzCmdStatus print_value_size(RzCore *core, RzCmdStateOutput *state, int argc, const char **argv, ut64 size) {
 	int repeat = argc > 1 ? rz_num_math(NULL, argv[1]) : 1;
-	if (repeat < 0) {
+	if (repeat <= 0) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	PrintValueOptions opts = {
