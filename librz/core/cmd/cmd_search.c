@@ -404,7 +404,7 @@ RZ_API int rz_core_search_preludes(RzCore *core, bool log) {
 }
 
 /* TODO: maybe move into util/str */
-static char *getstring(char *b, int l) {
+static char *getstring(char *b, int l, bool use_color) {
 	char *r, *res = malloc(l + 1);
 	int i;
 	if (!res) {
@@ -415,7 +415,7 @@ static char *getstring(char *b, int l) {
 			*r++ = *b;
 		} else {
 			// This is very ASCII-centric
-			*r++ = '.';
+			*r++ = use_color ? '\xff' : '.';
 		}
 	}
 	*r = 0;
@@ -449,19 +449,45 @@ static int _cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 			char *buf = calloc(1, len + 32 + ctx * 2);
 			type = "string";
 			rz_io_read_at(core->io, addr - prectx, (ut8 *)buf, len + (ctx * 2));
-			pre = getstring(buf, prectx);
-			pos = getstring(buf + prectx + len, ctx);
+			pre = getstring(buf, prectx, use_color);
+			pos = getstring(buf + prectx + len, ctx, use_color);
 			if (!pos) {
 				pos = rz_str_dup("");
 			}
 			if (param->outmode == RZ_MODE_JSON) {
-				wrd = getstring(buf + prectx, len);
+				wrd = getstring(buf + prectx, len, false);
 				s = rz_str_newf("%s%s%s", pre, wrd, pos);
 			} else {
 				wrd = rz_str_utf16_encode(buf + prectx, len);
-				s = rz_str_newf(use_color ? "\"%s" Color_YELLOW "%s" Color_RESET "%s\""
-							  : "\"%s%s%s\"",
-					pre, wrd, pos);
+				if (use_color) {
+					char *ptr;
+					RzBuffer *pre_color = rz_buf_new_with_bytes(NULL, 0);
+					for (ptr = pre; *ptr; ptr++) {
+						if (*ptr == '\xff') {
+							rz_buf_append_string(pre_color, Color_BLUE "." Color_RESET);
+						} else {
+							rz_buf_append_bytes(pre_color, (const ut8 *)ptr, 1);
+						}
+					}
+					RzBuffer *pos_color = rz_buf_new_with_bytes(NULL, 0);
+					for (ptr = pos; *ptr; ptr++) {
+						if (*ptr == '\xff') {
+							rz_buf_append_string(pos_color, Color_BLUE "." Color_RESET);
+						} else {
+							rz_buf_append_bytes(pos_color, (const ut8 *)ptr, 1);
+						}
+					}
+					char *pre_color_str = rz_buf_to_string(pre_color);
+					char *pos_color_str = rz_buf_to_string(pos_color);
+					s = rz_str_newf("\"%s" Color_YELLOW "%s" Color_RESET "%s\"",
+						pre_color_str, wrd, pos_color_str);
+					free(pre_color_str);
+					free(pos_color_str);
+					rz_buf_free(pre_color);
+					rz_buf_free(pos_color);
+				} else {
+					s = rz_str_newf("\"%s%s%s\"", pre, wrd, pos);
+				}
 			}
 			free(buf);
 			free(pre);
