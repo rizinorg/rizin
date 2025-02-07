@@ -783,7 +783,7 @@ CMDS=<<EOF
 e search.show_progress=false
 /x 653b2530000000724b53b834e7150883ec188.
 # Should find nothing, because it gets exended on the lhs and is not aligned.
-/x 653b2530000000724b53b834e7150883ec188
+/x 653b2530000000724b53b834e7150883ec188~$[1]
 EOF
 EXPECT=<<EOF
 0x0805ae90 19 hit.bytes.0
