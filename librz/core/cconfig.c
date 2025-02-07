@@ -1234,6 +1234,11 @@ static bool find_encoding(RzConfigNode *node, RzStrEnc *encoding) {
 		*encoding = rz_str_enc_string_as_type(option);
 		return true;
 	}
+	if (rz_list_empty(node->options)) {
+		// Edge case when the node was just initialized but the options
+		// were not added yet.
+		*encoding = rz_str_enc_string_as_type(node->value);
+	}
 	return false;
 }
 
@@ -1248,7 +1253,7 @@ static bool cb_str_encoding(void *user, void *data) {
 			       "if 2nd - 4th & 6th bytes are 0 & no char > 0x10ffff then utf32le else "
 			       "if utf8 char detected then utf8 else 8bit\n");
 		return false;
-	} else if (RZ_STR_EQ("settings", node->value) || (rz_str_casecmp("guess", node->value) && !found_enc)) {
+	} else if (RZ_STR_EQ("settings", node->value) || (RZ_STR_EQ("guess", node->value) && !found_enc)) {
 		RZ_LOG_ERROR("Invalid value for str.encoding (%s).\n", node->value);
 		return false;
 	}
@@ -3729,6 +3734,9 @@ RZ_API int rz_core_config_init(RzCore *core) {
 
 	/* str */
 	SETCB("str.escbslash", "false", &cb_str_escbslash, "Escape the backslash");
+	n = NODECB("str.encoding", "utf8", &cb_str_encoding);
+	SETDESC(n, "The default string encoding type (when set to guess, it is automatically guessed).");
+	SETOPTIONS(n, "ascii", "8bit", "utf8", "utf16le", "utf32le", "utf16be", "utf32be", "ibm037", "ibm290", "ebcdices", "ebcdicuk", "ebcdicus", "guess", NULL);
 
 	/* string search options */
 	SETB("str.search.reload", true, "When enabled, any change to any option `str.search.*` will reload the bin strings.");
@@ -3768,9 +3776,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETICB("search.str.max_region_size", RZ_BIN_STRING_SEARCH_MAX_REGION_SIZE, &cb_search_str_max_region_size, "Maximum allowable size for the string search interval between two memory regions.");
 	SETICB("search.str.raw_alignment", RZ_BIN_STRING_SEARCH_RAW_FILE_ALIGNMENT, &cb_search_str_raw_alignment, "Memory sector alignment used for the raw string search.");
 	SETICB("search.str.check_ascii_freq", RZ_BIN_STRING_SEARCH_CHECK_ASCII_FREQ, &cb_search_str_check_ascii_freq, "If true, perform check on ASCII frequencies when looking for false positives during string search");
-	n = NODECB("search.str.encoding", "utf8", &cb_str_encoding);
-	SETDESC(n, "The default string encoding type (when set to guess, it is automatically guessed).");
-	SETOPTIONS(n, "ascii", "8bit", "utf8", "utf16le", "utf32le", "utf16be", "utf32be", "ibm037", "ibm290", "ebcdices", "ebcdicuk", "ebcdicus", "guess", NULL);
 
 	SETICB("search.align", 0, &cb_searchalign, "Only catch aligned search hits");
 	SETI("search.esilcombo", 8, "Stop search after N consecutive hits");

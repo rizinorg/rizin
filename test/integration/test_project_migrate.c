@@ -575,7 +575,7 @@ static bool test_migrate_v15_v16_str_config() {
 }
 
 static bool test_migrate_v18_v19_str_config() {
-	RzProject *prj = rz_project_load_file_raw("prj/v19-str-config.rzdb");
+	RzProject *prj = rz_project_load_file_raw("prj/v18-str-config.rzdb");
 	mu_assert_notnull(prj, "load raw project");
 	RzSerializeResultInfo *res = rz_serialize_result_info_new();
 	bool s = rz_project_migrate_v18_v19(prj, res);
