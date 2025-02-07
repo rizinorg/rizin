@@ -130,7 +130,7 @@ e search.show_progress=false
 /zj hello
 EOF
 EXPECT=<<EOF
-[{"address":3923,"size":5,"flag":"hit.string.ascii.0"}]
+[{"address":8019,"size":5,"flag":"hit.string.ascii.0"}]
 EOF
 RUN
 
@@ -517,7 +517,7 @@ e search.to=0x10
 /m
 EOF
 EXPECT=<<EOF
-0x00000000 1 PE  for MS Windows (console) Intel 80386 32-bit
+0x00000000 1 PE  for MS Windows Intel 80386 32-bit
 EOF
 RUN
 
@@ -532,7 +532,7 @@ e search.to=0x10
 /m
 EOF
 EXPECT=<<EOF
-0x00000000 1 PE  for MS Windows (console) Intel 80386 32-bit
+0x00000000 1 PE  for MS Windows Intel 80386 32-bit
 EOF
 RUN
 
@@ -1148,14 +1148,15 @@ FILE==
 CMDS=<<EOF
 ww Hello World this is Rizin
 e search.show_progress=false
-/z World d utf16le
-/z world d utf16le
+/z World l utf16le
+# Should not match
+/z world l utf16le
+# Should match
 /z world i utf16le
-/zj World d utf16le
+/zj World l utf16le
 /zj world i utf16le
 EOF
 EXPECT=<<EOF
-0x0000000c 10 hit.string.utf16le.0
 0x0000000c 10 hit.string.utf16le.0
 0x0000000c 10 hit.string.utf16le.0
 [{"address":12,"size":10,"flag":"hit.string.utf16le.0"}]
