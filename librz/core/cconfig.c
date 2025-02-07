@@ -3768,7 +3768,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETICB("search.str.max_region_size", RZ_BIN_STRING_SEARCH_MAX_REGION_SIZE, &cb_search_str_max_region_size, "Maximum allowable size for the string search interval between two memory regions.");
 	SETICB("search.str.raw_alignment", RZ_BIN_STRING_SEARCH_RAW_FILE_ALIGNMENT, &cb_search_str_raw_alignment, "Memory sector alignment used for the raw string search.");
 	SETICB("search.str.check_ascii_freq", RZ_BIN_STRING_SEARCH_CHECK_ASCII_FREQ, &cb_search_str_check_ascii_freq, "If true, perform check on ASCII frequencies when looking for false positives during string search");
-	n = NODECB("search.str.encoding", "guess", &cb_str_encoding);
+	n = NODECB("search.str.encoding", "utf8", &cb_str_encoding);
 	SETDESC(n, "The default string encoding type (when set to guess, it is automatically guessed).");
 	SETOPTIONS(n, "ascii", "8bit", "utf8", "utf16le", "utf32le", "utf16be", "utf32be", "ibm037", "ibm290", "ebcdices", "ebcdicuk", "ebcdicus", "guess", NULL);
 
