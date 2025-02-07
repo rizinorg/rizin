@@ -20,7 +20,7 @@ static const RzCmdDescDetail slash_v_details[2];
 static const RzCmdDescDetail slash_V_details[2];
 static const RzCmdDescDetail cmd_search_hex_details[2];
 static const RzCmdDescDetail cmd_search_hex_regex_details[2];
-static const RzCmdDescDetail slash_z_details[3];
+static const RzCmdDescDetail slash_z_details[4];
 static const RzCmdDescDetail base64_encode_details[2];
 static const RzCmdDescDetail base64_decode_details[2];
 static const RzCmdDescDetail print_boundaries_prot_details[2];
@@ -2413,39 +2413,46 @@ static const RzCmdDescDetailEntry slash_z_Encodings_detail_entries[] = {
 };
 
 static const RzCmdDescDetailEntry slash_z_Regex_space_Flags_detail_entries[] = {
-	{ .text = "d", .arg_str = NULL, .comment = "Default (No flag, Unicode is matched)" },
+	{ .text = "l", .arg_str = NULL, .comment = "Default. Literal string comparison. Ignores all meta-characters." },
 	{ .text = "i", .arg_str = NULL, .comment = "Caseless (equivalent: PCRE2_CASELESS)" },
-	{ .text = "e", .arg_str = NULL, .comment = "Extended (equivalent: PCRE2_EXTENDED)" },
-	{ .text = "E", .arg_str = NULL, .comment = "Extended More (equivalent: PCRE2_EXTENDED_MORE)" },
-	{ .text = "m", .arg_str = NULL, .comment = "Multiline (equivalent: PCRE2_MULTILINE)" },
+	{ .text = "r", .arg_str = NULL, .comment = "Regular expression." },
+	{ .text = "m", .arg_str = NULL, .comment = "Multiline regular expression (equivalent flag: PCRE2_MULTILINE)" },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry slash_z_Exampls_detail_entries[] = {
+	{ .text = "/z (ABC*)", .arg_str = NULL, .comment = "Search the exact string: \"(ABC*)\"." },
+	{ .text = "/z (ABC*)D li", .arg_str = NULL, .comment = "Search the exact string \"(ABC*)\" but case insensitive." },
+	{ .text = "/z (ABC*)D ri", .arg_str = NULL, .comment = "Search the regular expression \"(ABC*)D\" but case insensitive." },
 	{ 0 },
 };
 static const RzCmdDescDetail slash_z_details[] = {
 	{ .name = "Encodings", .entries = slash_z_Encodings_detail_entries },
 	{ .name = "Regex Flags", .entries = slash_z_Regex_space_Flags_detail_entries },
+	{ .name = "Exampls", .entries = slash_z_Exampls_detail_entries },
 	{ 0 },
 };
 static const RzCmdDescHelp slash_z_help = {
 	.summary = "String search.",
 	.details = slash_z_details,
 };
-static const char *cmd_search_string_sensitive_encoding_choices[] = { "ascii", "8bit", "mutf8", "utf8", "utf16le", "utf32le", "utf16be", "utf32be", "ibm037", "ibm290", "ebcdices", "ebcdicuk", "ebcdicus", NULL };
+static const char *cmd_search_string_sensitive_encoding_choices[] = { "ascii", "8bit", "mutf8", "utf8", "utf16le", "utf32le", "utf16be", "utf32be", "ibm037", "ibm290", "ebcdices", "ebcdicuk", "ebcdicus", "guess", NULL };
 static const RzCmdDescArg cmd_search_string_sensitive_args[] = {
 	{
-		.name = "string",
+		.name = "regex",
 		.type = RZ_CMD_ARG_TYPE_STRING,
 
 	},
 	{
 		.name = "regex_flags",
 		.type = RZ_CMD_ARG_TYPE_STRING,
-		.default_value = "d",
+		.default_value = "l",
 
 	},
 	{
 		.name = "encoding",
 		.type = RZ_CMD_ARG_TYPE_CHOICES,
-		.default_value = "guess",
+		.default_value = "settings",
 		.choices.choices = cmd_search_string_sensitive_encoding_choices,
 
 	},

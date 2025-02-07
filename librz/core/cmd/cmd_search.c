@@ -2963,6 +2963,9 @@ static RzCmdStatus cmd_string_search_generic(RzCore *core, const char *string, c
 	}
 
 	expected = rz_str_enc_string_as_type(encoding);
+	if (expected == RZ_STRING_ENC_SETTINGS) {
+		expected = rz_str_enc_string_as_type(rz_config_get(core->config, "search.str.encoding"));
+	}
 	if (!RZ_STR_EQ(encoding, "guess") && expected == RZ_STRING_ENC_GUESS) {
 		RZ_LOG_ERROR("core: invalid encoding '%s'.\n", encoding);
 		goto invalid_args;
@@ -2996,11 +2999,14 @@ static RzRegexFlags parse_re_flag_desc(const char *re_flags_desc) {
 		return flags;
 	}
 	size_t fcount = 0;
-	if (strchr(re_flags_desc, 'd')) {
+	if (strchr(re_flags_desc, 'i')) {
 		fcount++;
 		flags |= RZ_REGEX_CASELESS;
 	}
-	if (strchr(re_flags_desc, 'i')) {
+	if (strchr(re_flags_desc, 'l')) {
+		return RZ_REGEX_LITERAL;
+	}
+	if (strchr(re_flags_desc, 'r')) {
 		fcount++;
 		flags |= RZ_REGEX_CASELESS;
 	}

@@ -772,16 +772,22 @@ commands:
           comment: "EBCDIC-US encoding. Alias: csEBCDICUS"
     - name: "Regex Flags"
       entries:
-        - text: "d"
-          comment: "Default (No flag, Unicode is matched)"
+        - text: "l"
+          comment: "Default. Literal string comparison. Ignores all meta-characters."
         - text: "i"
           comment: "Caseless (equivalent: PCRE2_CASELESS)"
-        - text: "e"
-          comment: "Extended (equivalent: PCRE2_EXTENDED)"
-        - text: "E"
-          comment: "Extended More (equivalent: PCRE2_EXTENDED_MORE)"
+        - text: "r"
+          comment: "Regular expression."
         - text: "m"
-          comment: "Multiline (equivalent: PCRE2_MULTILINE)"
+          comment: "Multiline regular expression (equivalent flag: PCRE2_MULTILINE)"
+    - name: "Exampls"
+      entries:
+        - text: "/z (ABC*)"
+          comment: "Search the exact string: \"(ABC*)\"."
+        - text: "/z (ABC*)D li"
+          comment: "Search the exact string \"(ABC*)\" but case insensitive."
+        - text: "/z (ABC*)D ri"
+          comment: "Search the regular expression \"(ABC*)D\" but case insensitive."
     subcommands:
     - name: "/z"
       summary: String search.
@@ -794,14 +800,14 @@ commands:
         - RZ_OUTPUT_MODE_QUIET
         - RZ_OUTPUT_MODE_TABLE
       args:
-        - name: string
+        - name: regex
           type: RZ_CMD_ARG_TYPE_STRING
         - name: regex_flags
           type: RZ_CMD_ARG_TYPE_STRING
-          default_value: "d"
+          default_value: "l"
         - name: encoding
           type: RZ_CMD_ARG_TYPE_CHOICES
-          default_value: "guess"
+          default_value: "settings"
           choices:
             - "ascii"
             - "8bit"
@@ -816,3 +822,4 @@ commands:
             - "ebcdices"
             - "ebcdicuk"
             - "ebcdicus"
+            - "guess"

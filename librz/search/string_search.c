@@ -79,7 +79,7 @@ static bool string_find(RZ_NULLABLE RzSearchFindOpt *fopt, void *user, ut64 offs
 		void **it_m = NULL;
 		rz_pvector_foreach (ss->strings, it_m) {
 			RzDetectedString *find = *it_m;
-			RzPVector *matches = rz_regex_match_all(find->regex, detected->string, detected->size, 0, RZ_REGEX_DEFAULT);
+			RzPVector *matches = rz_regex_match_all(find->regex, detected->string, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT);
 			void **it;
 			rz_pvector_foreach (matches, it) {
 				RzPVector *match = *it;
