@@ -186,7 +186,6 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_string(RZ_NONNULL RzCor
 		// buf_size is effectively the maximum string length.
 		// Gets renamed with the refactor.
 		.max_str_length = core->bin->str_search_cfg.max_length,
-		.max_uni_blocks = core->bin->str_search_cfg.max_uni_blocks,
 		.min_str_length = core->bin->str_search_cfg.min_length,
 		.prefer_big_endian = core->analysis->big_endian,
 		.check_ascii_freq = core->bin->str_search_cfg.check_ascii_freq,

@@ -595,7 +595,6 @@ static bool test_migrate_v18_v19_str_config() {
 	mu_assert_streq_free(sdb_get(config_db, "search.max_threads"), "5", "New config has wrong value");
 	mu_assert_streq_free(sdb_get(config_db, "search.str.min_length"), "5", "New config has wrong value");
 	mu_assert_streq_free(sdb_get(config_db, "search.str.max_length"), "5", "New config has wrong value");
-	mu_assert_streq_free(sdb_get(config_db, "search.str.max_uni_blocks"), "5", "New config has wrong value");
 	mu_assert_streq_free(sdb_get(config_db, "search.str.max_region_size"), "0x005555555", "New config has wrong value");
 	mu_assert_streq_free(sdb_get(config_db, "search.str.raw_alignment"), "55", "New config has wrong value");
 	mu_assert_streq_free(sdb_get(config_db, "search.str.check_ascii_freq"), "false", "New config has wrong value");

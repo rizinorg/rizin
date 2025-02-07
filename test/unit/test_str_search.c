@@ -6,7 +6,6 @@
 
 static RzUtilStrScanOptions g_opt = {
 	.max_str_length = 2048,
-	.max_uni_blocks = 4,
 	.min_str_length = 4,
 	.prefer_big_endian = false,
 	.check_ascii_freq = true

@@ -517,7 +517,7 @@ RZ_API int rz_utf8_decode(const ut8 *ptr, int ptrlen, RzCodePoint *ch) {
 		if (ch) {
 			*ch = code_point;
 		}
-		return code_point > LAST_UNICODE_CODE_POINT ? 0 : 4;
+		return code_point > UNICODE_LAST_CODE_POINT ? 0 : 4;
 	}
 	return 0;
 }

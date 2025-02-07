@@ -87,14 +87,14 @@ bool test_rz_utf16_decode(void) {
 
 	nbytes = rz_utf16_decode(utf16le_last_surr, 4, &codepoint, false);
 	mu_assert_eq(nbytes, 4, "Decoded number of bytes mismatch.");
-	mu_assert_eq_fmt(codepoint, LAST_UNICODE_CODE_POINT, "Character decode failed.", "0x%" PFMT64x);
+	mu_assert_eq_fmt(codepoint, UNICODE_LAST_CODE_POINT, "Character decode failed.", "0x%" PFMT64x);
 	rz_utf8_encode((ut8 *)utf8_out, codepoint);
 	mu_assert_streq(utf8_out, "􏿿", "Encode failed.");
 	memset(utf8_out, 0, sizeof(utf8_out));
 
 	nbytes = rz_utf16_decode(utf16be_last_surr, 4, &codepoint, true);
 	mu_assert_eq(nbytes, 4, "Decoded number of bytes mismatch.");
-	mu_assert_eq_fmt(codepoint, LAST_UNICODE_CODE_POINT, "Character decode failed.", "0x%" PFMT64x);
+	mu_assert_eq_fmt(codepoint, UNICODE_LAST_CODE_POINT, "Character decode failed.", "0x%" PFMT64x);
 	rz_utf8_encode((ut8 *)utf8_out, codepoint);
 	mu_assert_streq(utf8_out, "􏿿", "Encode failed.");
 	memset(utf8_out, 0, sizeof(utf8_out));
@@ -163,7 +163,7 @@ bool test_rz_utf16_encode(void) {
 	memset(utf16_out, 0, sizeof(utf16_out));
 
 	const ut8 utf16le_last_surr[] = { 0xFF, 0xDB, 0xFF, 0xDF };
-	codepoint = LAST_UNICODE_CODE_POINT;
+	codepoint = UNICODE_LAST_CODE_POINT;
 	nbytes = rz_utf16le_encode(utf16_out, codepoint);
 	mu_assert_eq(nbytes, 4, "Decoded number of bytes mismatch.");
 	mu_assert_memeq(utf16_out, utf16le_last_surr, sizeof(utf16le), "Encode failed.");

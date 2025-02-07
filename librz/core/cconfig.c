@@ -1172,18 +1172,6 @@ static bool cb_search_str_max_length(void *user, void *data) {
 	return true;
 }
 
-static bool cb_search_str_max_uni_blocks(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	if (node->i_value < 1) {
-		RZ_LOG_ERROR("search.str.max_uni_blocks cannot be less than 1.\n");
-		return false;
-	}
-	core->bin->str_search_cfg.max_uni_blocks = node->i_value;
-	check_reload_bin_str_search(core);
-	return true;
-}
-
 static bool cb_search_str_max_region_size(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
@@ -3770,9 +3758,8 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("search.show_progress", "true", "Show the search process.");
 	SETBPREF("search.overlap", "true", "Look for overlapped search hits.");
 	SETICB("search.io.alignment", 1, &cb_searchalignment, "Only search at set byte alignment.");
-	SETICB("search.str.min_length", RZ_BIN_STRING_SEARCH_MIN_STRING, &cb_search_str_min_length, "Smallest string length that is possible to find.");
-	SETICB("search.str.max_length", RZ_BIN_STRING_SEARCH_BUFFER_SIZE, &cb_search_str_max_length, "Maximum buffer size, which will also determine the maximum string length.");
-	SETICB("search.str.max_uni_blocks", RZ_BIN_STRING_SEARCH_MAX_UNI_BLOCKS, &cb_search_str_max_uni_blocks, "Maximum number of unicode blocks.");
+	SETICB("search.str.min_length", RZ_BIN_STRING_SEARCH_MIN_STRING, &cb_search_str_min_length, "Smallest string length that is possible to find. (inclusive)");
+	SETICB("search.str.max_length", RZ_BIN_STRING_SEARCH_BUFFER_SIZE, &cb_search_str_max_length, "Maximum buffer size, which will also determine the maximum string length. (inclusive)");
 	SETICB("search.str.max_region_size", RZ_BIN_STRING_SEARCH_MAX_REGION_SIZE, &cb_search_str_max_region_size, "Maximum allowable size for the string search interval between two memory regions.");
 	SETICB("search.str.raw_alignment", RZ_BIN_STRING_SEARCH_RAW_FILE_ALIGNMENT, &cb_search_str_raw_alignment, "Memory sector alignment used for the raw string search.");
 	SETICB("search.str.check_ascii_freq", RZ_BIN_STRING_SEARCH_CHECK_ASCII_FREQ, &cb_search_str_check_ascii_freq, "If true, perform check on ASCII frequencies when looking for false positives during string search");

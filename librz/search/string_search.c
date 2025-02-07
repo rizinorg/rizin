@@ -41,7 +41,7 @@ static void align_offsets(RzUtilStrScanOptions options, RzStrEnc encoding, RzDet
 	if (!len_found) {
 		if (!offset_found) {
 			// If the previous offset was not found, we know something is broken.
-			// If it was found on the ohter hand, the string is exactly as long as the whole buffer.
+			// If it was found on the other hand, the string is exactly as long as the whole buffer.
 			// So `start + len` is OOB and hence not in the hash table.
 			RZ_LOG_WARN("Could not determine length of string in memory. String length will be off.\n");
 		}

@@ -119,7 +119,6 @@ static UTF8StringInfo calculate_utf8_string_info(ut8 *str, int size) {
 }
 
 static FalsePositiveResult reduce_false_positives(const RzUtilStrScanOptions *opt, ut8 *str, int size, RzStrEnc str_type) {
-
 	switch (str_type) {
 	case RZ_STRING_ENC_8BIT: {
 		for (int i = 0; i < size; i++) {
@@ -156,7 +155,12 @@ static FalsePositiveResult reduce_false_positives(const RzUtilStrScanOptions *op
 			return RETRY_ASCII;
 		}
 
-		if (num_blocks > opt->max_uni_blocks) {
+		// If the string has characters of more then 4 blocks, it is
+		// considered invalid. I think at least. This was a funny metric
+		// to reduce false positives. But basically useless, because not
+		// documented. Also way too ineffecient. Because this whole thing iterates
+		// twice over the string. Leave it here to prevent regressions.
+		if (num_blocks > 4) {
 			return SKIP_STRING;
 		}
 		break;
@@ -322,7 +326,7 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 	}
 
 	int strbuf_size = i;
-	if (runes >= opt->min_str_length) {
+	if (runes >= opt->min_str_length && runes <= opt->max_str_length) {
 		FalsePositiveResult false_positive_result = reduce_false_positives(opt, strbuf, strbuf_size, str_type);
 		if (false_positive_result == SKIP_STRING) {
 			goto error;

@@ -689,10 +689,10 @@ RZ_API bool rz_project_migrate_v18_v19(RzProject *prj, RzSerializeResultInfo *re
 	RZ_SERIALIZE_SUB(prj, core_db, res, "core", return false;);
 	Sdb *config_db;
 	RZ_SERIALIZE_SUB(core_db, config_db, res, "config", return false;);
+	sdb_remove(config_db, "str.search.max_uni_blocks");
 	sdb_rename(config_db, "str.search.max_threads", "search.max_threads");
 	sdb_rename(config_db, "str.search.min_length", "search.str.min_length");
 	sdb_rename(config_db, "str.search.buffer_size", "search.str.max_length");
-	sdb_rename(config_db, "str.search.max_uni_blocks", "search.str.max_uni_blocks");
 	sdb_rename(config_db, "str.search.max_region_size", "search.str.max_region_size");
 	sdb_rename(config_db, "str.search.raw_alignment", "search.str.raw_alignment");
 	sdb_rename(config_db, "str.search.check_ascii_freq", "search.str.check_ascii_freq");

@@ -81,7 +81,6 @@ RZ_API int rz_search_strings_update(RzSearch *s, ut64 from, const ut8 *buf, int 
 
 	RzUtilStrScanOptions scan_opt = {
 		.max_str_length = len,
-		.max_uni_blocks = s->string_max,
 		.min_str_length = s->string_min,
 		.prefer_big_endian = false,
 	};

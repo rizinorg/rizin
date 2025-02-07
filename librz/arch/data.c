@@ -11,7 +11,6 @@ static bool get_string(const ut8 *buf, int size, RzDetectedString **dstr, RzStrE
 
 	RzUtilStrScanOptions opt = {
 		.max_str_length = size,
-		.max_uni_blocks = 4,
 		.min_str_length = 4,
 		.prefer_big_endian = big_endian,
 		.check_ascii_freq = false,
