@@ -9,6 +9,7 @@
 #include <rz_config.h>
 #include <rz_util/rz_bits.h>
 #include <rz_util/rz_str.h>
+#include <rz_util/rz_bits.h>
 
 #include "core_private.h"
 
@@ -3753,7 +3754,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETICB("search.str.raw_alignment", RZ_BIN_STRING_SEARCH_RAW_FILE_ALIGNMENT, &cb_search_str_raw_alignment, "Memory sector alignment used for the raw string search (RzBin only. Use search.align for /z).");
 	SETICB("search.str.check_ascii_freq", RZ_BIN_STRING_SEARCH_CHECK_ASCII_FREQ, &cb_search_str_check_ascii_freq, "If true, perform check on ASCII frequencies when looking for false positives during string search");
 
-	SETICB("search.align", 0, &cb_searchalign, "Address alignment for search.");
+	SETICB("search.align", 1, &cb_searchalign, "Address alignment (searches only if 'address % search.align == 0').");
 	SETI("search.esilcombo", 8, "Stop search after N consecutive hits");
 	SETI("search.distance", 0, "Search string distance");
 	SETBPREF("search.flags", "true", "All search results are flagged, otherwise only printed");

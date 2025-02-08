@@ -61,8 +61,8 @@ static bool string_find(RZ_NULLABLE RzSearchFindOpt *fopt, void *user, ut64 offs
 	}
 
 	// Copy options here so we can set the hash table.
-	// The search options are a shared ressource and we might get
-	// runtime conditions editing and freeing it.
+	// The search options are a shared resource and we might get
+	// race-conditions editing and freeing it.
 	RzUtilStrScanOptions options = ss->options;
 	options.utf8_to_mem_offset_map = ht_uu_new();
 
@@ -93,7 +93,7 @@ static bool string_find(RZ_NULLABLE RzSearchFindOpt *fopt, void *user, ut64 offs
 				ut64 str_mem_len;
 				ut64 str_mem_offset;
 				align_offsets(options, detected->type, detected, group0, &str_mem_offset, &str_mem_len, found_idx << 32);
-				if (fopt->alignment > 1 && (str_mem_offset + offset) % fopt->alignment != 0) {
+				if (fopt->alignment > 1 && rz_mem_align_padding(str_mem_offset + group0->start, fopt->alignment) != 0) {
 					// Match has not the correct alignment in memory.
 					continue;
 				}

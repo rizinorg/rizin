@@ -1082,21 +1082,67 @@ EOF
 EXPECT_ERR=
 RUN
 
-NAME=String search alignment - not utf8
-FILE=bins/cmd/search/string_encodings/regex_search.russian.utf8.utf32le.utf16be
+NAME=String search regex - utf16be
+FILE=bins/cmd/search/string_encodings/Russian-Lipsum.utf16be
 CMDS=<<EOF
+# Requires increasing the block size because -.-
+b 0x1000
 e search.show_progress=false
-/z "и.{3}м" e utf32le
-e search.align=0xb
-/z "и.{3}м" e utf32le
-e search.align=0x7
-/z "и.{3}м" e utf32le
+/z "Л..е." e utf16be
+psm @ hit.string.utf16be.0
+psm @ hit.string.utf16be.1
 EOF
 EXPECT=<<EOF
-0x00000087 20 hit.string.utf32le.0
-0x000000bb 20 hit.string.utf32le.1
-0x000000bb 20 hit.string.utf32le.0
-0x00000087 20 hit.string.utf32le.0
+0x00000000 10 hit.string.utf16be.0
+0x000000ee 10 hit.string.utf16be.1
+Лорем ипсум долор сит амет, при унум семпер тритани ад. Цум хендрерит персецути ех, миним еяуидем цонсецтетуер яуи ид. Либер малуиссет нам еа, еа граеце дефиниебас.
+Либер малуиссет нам еа, еа граеце дефиниебас.
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=String search regex - utf32le
+FILE=bins/cmd/search/string_encodings/Russian-Lipsum.utf32le
+CMDS=<<EOF
+# Requires increasing the block size because -.-
+b 0x1000
+e search.show_progress=false
+/z "Л..е." e utf32le
+psW @ hit.string.utf32le.0
+psW @ hit.string.utf32le.1
+EOF
+EXPECT=<<EOF
+0x00000000 20 hit.string.utf32le.0
+0x000001dc 20 hit.string.utf32le.1
+Лорем ипсум долор сит амет, при унум семпер тритани ад. Цум хендрерит персецути ех, миним еяуидем цонсецтетуер яуи ид. Либер малуиссет нам еа, еа граеце дефиниебас.
+Либер малуиссет нам еа, еа граеце дефиниебас.
+EOF
+EXPECT_ERR=
+RUN
+
+
+NAME=String search regex - utf32le
+FILE=bins/cmd/search/string_encodings/Russian-Lipsum.utf32le
+CMDS=<<EOF
+# Requires increasing the block size because -.-
+b 0x1000
+e search.show_progress=false
+/z "Л..е." e utf32le
+psW @ hit.string.utf32le.0
+psW @ hit.string.utf32le.1
+e search.align=0x100
+echo Alignment=0x100
+/z "Л..е." e utf32le
+psW @ hit.string.utf32le.0
+EOF
+EXPECT=<<EOF
+0x00000000 20 hit.string.utf32le.0
+0x000001dc 20 hit.string.utf32le.1
+Лорем ипсум долор сит амет, при унум семпер тритани ад. Цум хендрерит персецути ех, миним еяуидем цонсецтетуер яуи ид. Либер малуиссет нам еа, еа граеце дефиниебас.
+Либер малуиссет нам еа, еа граеце дефиниебас.
+Alignment=0x100
+0x00000000 20 hit.string.utf32le.0
+Лорем ипсум долор сит амет, при унум семпер тритани ад. Цум хендрерит персецути ех, миним еяуидем цонсецтетуер яуи ид. Либер малуиссет нам еа, еа граеце дефиниебас.
 EOF
 EXPECT_ERR=
 RUN
@@ -1106,19 +1152,33 @@ FILE=bins/cmd/search/alignment_test
 ARGS=
 CMDS=<<EOF
 e search.show_progress=false
-/z bb.bb r
+/z b[ba].bb r~$[0]
 e search.align=2
-/z bb.bb r
-e search.align=3
-/z bb.bb r
+echo Alignment=2
+/z b[ba].bb r~$[0]
+e search.align=4
+echo Alignment=4
+/z b[ba].bb r~$[0]
+e search.align=16
+echo Alignment=16
+/z b[ba].bb r~$[0]
 EOF
 EXPECT=<<EOF
-0x00000023 5 hit.string.ascii.0
-0x00000032 5 hit.string.ascii.1
-0x00000041 5 hit.string.ascii.2
-0x00000053 5 hit.string.ascii.3
-0x00000032 5 hit.string.ascii.0
-0x00000023 5 hit.string.ascii.0
-0x00000053 5 hit.string.ascii.1
+0x00000024
+0x00000032
+0x00000040
+0x00000052
+0x0000005a
+Alignment=2
+0x00000024
+0x00000032
+0x00000040
+0x00000052
+0x0000005a
+Alignment=4
+0x00000024
+0x00000040
+Alignment=16
+0x00000040
 EOF
 RUN

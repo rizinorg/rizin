@@ -9,6 +9,7 @@
 #include <rz_util/rz_str.h>
 #include <rz_util/rz_buf.h>
 #include <rz_util/rz_regex.h>
+#include <rz_util/rz_mem.h>
 #include "search_internal.h"
 
 /**
@@ -33,7 +34,7 @@ RZ_API RZ_OWN RzSearchBytesPattern *rz_search_bytes_pattern_new(RZ_OWN ut8 *byte
 	}
 	pat->bytes = bytes;
 	if (compile_regex) {
-		pat->regex = rz_regex_new_bytes(bytes, length, RZ_REGEX_DEFAULT, RZ_REGEX_DEFAULT, NULL);
+		pat->regex = rz_regex_new_bytes(bytes, length, RZ_REGEX_EXTENDED, RZ_REGEX_DEFAULT, NULL);
 	}
 	pat->mask = mask;
 	pat->length = length;
@@ -213,13 +214,13 @@ static bool bytes_find(RzSearchFindOpt *fopts, void *user, ut64 address, const R
 	rz_pvector_foreach (patterns, it) {
 		RzSearchBytesPattern *hp = (RzSearchBytesPattern *)*it;
 		if (hp->regex) {
-			RzPVector *matches = rz_regex_match_all(hp->regex, (const char *)raw_buf, size, 0, RZ_REGEX_DEFAULT);
+			RzPVector *matches = rz_regex_match_all_overlap(hp->regex, (const char *)raw_buf, size, 0, RZ_REGEX_DEFAULT);
 			void **it;
 			RzPVector *match;
 			rz_pvector_foreach (matches, it) {
 				match = *it;
 				RzRegexMatch *group0 = rz_pvector_at(match, 0);
-				if (fopts->alignment > 1 && (address + group0->start) % fopts->alignment != 0) {
+				if (fopts->alignment > 1 && rz_mem_align_padding(address + group0->start, fopts->alignment) != 0) {
 					// Match has not the correct alignment in memory.
 					continue;
 				}
@@ -234,9 +235,9 @@ static bool bytes_find(RzSearchFindOpt *fopts, void *user, ut64 address, const R
 			continue;
 		}
 		for (size_t offset = 0; offset < size;) {
-			if (fopts->alignment > 1 && (address + offset) % fopts->alignment != 0) {
+			if (fopts->alignment > 1 && rz_mem_align_padding(address + offset, fopts->alignment) != 0) {
 				// Match has not the correct alignment in memory.
-				offset += (fopts->alignment - (address + offset) % fopts->alignment);
+				offset += rz_mem_align_padding(address + offset, fopts->alignment);
 				continue;
 			}
 			size_t leftovers = size - offset;

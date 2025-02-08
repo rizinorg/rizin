@@ -320,42 +320,64 @@ EOF
 RUN
 
 NAME=/xr on virtual address
-FILE=bins/wasm/inc.wast
+FILE=bins/cmd/search/alignment_test
 ARGS=-m 0x80000
 CMDS=<<EOF
 e search.show_progress=false
 om 3 0x400000
-/xr x67.x74~[0]
-e search.align=7
-/xr x67.x74~[0]
+echo Alignment=None
+/xr x62x62.x62x62~$[0]
+e search.align=4
+echo Alignment=4
+/xr x62x62.x62x62~$[0]
 EOF
 EXPECT=<<EOF
-0x00080053
-0x00080067
-0x00400053
-0x00400067
-0x00080067
-0x00400067
+Alignment=None
+0x00080032
+0x00080040
+0x00080041
+0x00080052
+0x00080057
+0x0008005a
+0x00400032
+0x00400040
+0x00400041
+0x00400052
+0x00400057
+0x0040005a
+Alignment=4
+0x00080040
+0x00400040
 EOF
 RUN
 
 NAME=/x on virtual address
-FILE=bins/wasm/inc.wast
+FILE=bins/cmd/search/alignment_test
 ARGS=-m 0x80000
 CMDS=<<EOF
 e search.show_progress=false
+echo Alignment=None
 om 3 0x400000
-/x 676574~[0]
-e search.align=7
-/x 676574~[0]
+/x 62626.6262~$[0]
+e search.align=4
+echo Alignment=4
+/x 62626.6262~$[0]
 EOF
 EXPECT=<<EOF
-0x00080053
-0x00080067
-0x00400053
-0x00400067
-0x00080067
-0x00400067
+Alignment=None
+0x00080032
+0x00080040
+0x00080041
+0x00080052
+0x0008005a
+0x00400032
+0x00400040
+0x00400041
+0x00400052
+0x0040005a
+Alignment=4
+0x00080040
+0x00400040
 EOF
 RUN
 
@@ -364,17 +386,35 @@ FILE=bins/cmd/search/alignment_test
 ARGS=
 CMDS=<<EOF
 e search.show_progress=false
-/xr x62x62.x62
-e search.align=3
-/xr x62x62.x62
+echo Alignment=None
+/xr x62x62.x62x62~$[0]
+e search.align=2
+echo Alignment=2
+/xr x62x62.x62x62~$[0]
+e search.align=4
+echo Alignment=4
+/xr x62x62.x62x62~$[0]
+e search.align=16
+echo Alignment=16
+/xr x62x62.x62x62~$[0]
 EOF
 EXPECT=<<EOF
-0x00000023 4 hit.bytes.0
-0x00000032 4 hit.bytes.1
-0x00000041 4 hit.bytes.2
-0x00000053 4 hit.bytes.3
-0x00000023 4 hit.bytes.0
-0x00000053 4 hit.bytes.3
+Alignment=None
+0x00000032
+0x00000040
+0x00000041
+0x00000052
+0x00000057
+0x0000005a
+Alignment=2
+0x00000032
+0x00000040
+0x00000052
+0x0000005a
+Alignment=4
+0x00000040
+Alignment=16
+0x00000040
 EOF
 RUN
 
@@ -383,15 +423,33 @@ FILE=bins/cmd/search/alignment_test
 ARGS=
 CMDS=<<EOF
 e search.show_progress=false
-/x 62826.6262
+echo Alignment=None
+/x 62626.6262~$[0]
 e search.align=2
-/x 62826.6262
+echo Alignment=2
+/x 62626.6262~$[0]
+e search.align=4
+echo Alignment=4
+/x 62626.6262~$[0]
+e search.align=16
+echo Alignment=16
+/x 62626.6262~$[0]
 EOF
 EXPECT=<<EOF
-0x00000023 4 hit.bytes.0
-0x00000032 4 hit.bytes.1
-0x00000041 4 hit.bytes.2
-0x00000053 4 hit.bytes.3
-0x00000032 4 hit.bytes.1
+Alignment=None
+0x00000032
+0x00000040
+0x00000041
+0x00000052
+0x0000005a
+Alignment=2
+0x00000032
+0x00000040
+0x00000052
+0x0000005a
+Alignment=4
+0x00000040
+Alignment=16
+0x00000040
 EOF
 RUN
