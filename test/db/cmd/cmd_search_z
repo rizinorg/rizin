@@ -90,6 +90,132 @@ EOF
 EXPECT_ERR=
 RUN
 
+NAME=String Search - minimal string - Encoding: ebcdic_uk - Latin
+FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ebcdic_uk
+CMDS=<<EOF
+e search.show_progress=false
+e search.str.min_length=2
+/z "et" l ebcdicuk
+# Requires increasing the block size because -.-
+b 0x1000
+# Check string is actually at offset of the hit.
+ps ebcdicuk @ hit.string.ebcdicuk.0
+ps ebcdicuk @ hit.string.ebcdicuk.1
+ps ebcdicuk @ hit.string.ebcdicuk.2
+ps ebcdicuk @ hit.string.ebcdicuk.3
+ps ebcdicuk @ hit.string.ebcdicuk.4
+ps ebcdicuk @ hit.string.ebcdicuk.5
+ps ebcdicuk @ hit.string.ebcdicuk.6
+ps ebcdicuk @ hit.string.ebcdicuk.7
+ps ebcdicuk @ hit.string.ebcdicuk.8
+EOF
+EXPECT=<<EOF
+0x00000018 2 hit.string.ebcdicuk.0
+0x00000042 2 hit.string.ebcdicuk.1
+0x0000008f 2 hit.string.ebcdicuk.2
+0x000000be 2 hit.string.ebcdicuk.3
+0x0000010a 2 hit.string.ebcdicuk.4
+0x0000012b 2 hit.string.ebcdicuk.5
+0x0000013a 2 hit.string.ebcdicuk.6
+0x00000152 2 hit.string.ebcdicuk.7
+0x00000175 2 hit.string.ebcdicuk.8
+et, at eligendi adipisci ius, ex natum appetere officiis has, nibh quas torquatos pro te. Quo at deleniti repudiandae, et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
+etere officiis has, nibh quas torquatos pro te. Quo at deleniti repudiandae, et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
+et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
+et assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
+etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
+etenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
+et id, ea alia nostrud detraxit est, est eros intellegebat et.
+etraxit est, est eros intellegebat et.
+et.
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=String Search - minimal string - Encoding: ebcdic_us - Latin
+FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ebcdic_us
+CMDS=<<EOF
+e search.show_progress=false
+e search.str.min_length=2
+/z "et" l ebcdicus
+# Requires increasing the block size because -.-
+b 0x1000
+# Check string is actually at offset of the hit.
+ps ebcdicus @ hit.string.ebcdicus.0
+ps ebcdicus @ hit.string.ebcdicus.1
+ps ebcdicus @ hit.string.ebcdicus.2
+ps ebcdicus @ hit.string.ebcdicus.3
+ps ebcdicus @ hit.string.ebcdicus.4
+ps ebcdicus @ hit.string.ebcdicus.5
+ps ebcdicus @ hit.string.ebcdicus.6
+ps ebcdicus @ hit.string.ebcdicus.7
+ps ebcdicus @ hit.string.ebcdicus.8
+EOF
+EXPECT=<<EOF
+0x00000018 2 hit.string.ebcdicus.0
+0x00000042 2 hit.string.ebcdicus.1
+0x0000008f 2 hit.string.ebcdicus.2
+0x000000be 2 hit.string.ebcdicus.3
+0x0000010a 2 hit.string.ebcdicus.4
+0x0000012b 2 hit.string.ebcdicus.5
+0x0000013a 2 hit.string.ebcdicus.6
+0x00000152 2 hit.string.ebcdicus.7
+0x00000175 2 hit.string.ebcdicus.8
+et, at eligendi adipisci ius, ex natum appetere officiis has, nibh quas torquatos pro te. Quo at deleniti repudiandae, et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
+etere officiis has, nibh quas torquatos pro te. Quo at deleniti repudiandae, et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
+et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
+et assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
+etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
+etenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
+et id, ea alia nostrud detraxit est, est eros intellegebat et.
+etraxit est, est eros intellegebat et.
+et.
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=String Search - minimal string - Encoding: ebcdic_es - Latin
+FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ebcdic_es
+CMDS=<<EOF
+e search.show_progress=false
+e search.str.min_length=2
+/z "et" l ebcdices
+# Requires increasing the block size because -.-
+b 0x1000
+# Check string is actually at offset of the hit.
+ps ebcdices @ hit.string.ebcdices.0
+ps ebcdices @ hit.string.ebcdices.1
+ps ebcdices @ hit.string.ebcdices.2
+ps ebcdices @ hit.string.ebcdices.3
+ps ebcdices @ hit.string.ebcdices.4
+ps ebcdices @ hit.string.ebcdices.5
+ps ebcdices @ hit.string.ebcdices.6
+ps ebcdices @ hit.string.ebcdices.7
+ps ebcdices @ hit.string.ebcdices.8
+EOF
+EXPECT=<<EOF
+0x00000018 2 hit.string.ebcdices.0
+0x00000042 2 hit.string.ebcdices.1
+0x0000008f 2 hit.string.ebcdices.2
+0x000000be 2 hit.string.ebcdices.3
+0x0000010a 2 hit.string.ebcdices.4
+0x0000012b 2 hit.string.ebcdices.5
+0x0000013a 2 hit.string.ebcdices.6
+0x00000152 2 hit.string.ebcdices.7
+0x00000175 2 hit.string.ebcdices.8
+et, at eligendi adipisci ius, ex natum appetere officiis has, nibh quas torquatos pro te. Quo at deleniti repudiandae, et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
+etere officiis has, nibh quas torquatos pro te. Quo at deleniti repudiandae, et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
+et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
+et assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
+etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
+etenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
+et id, ea alia nostrud detraxit est, est eros intellegebat et.
+etraxit est, est eros intellegebat et.
+et.
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=String Search - match all - Encoding: ascii - Latin
 FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ascii
 CMDS=<<EOF
@@ -1181,4 +1307,130 @@ Alignment=4
 Alignment=16
 0x00000040
 EOF
+RUN
+
+NAME=String Search - minimal string - Encoding: ebcdic_uk - Latin
+FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ebcdic_uk
+CMDS=<<EOF
+e search.show_progress=false
+e search.str.min_length=2
+/z "et" l ebcdicuk
+# Requires increasing the block size because -.-
+b 0x1000
+# Check string is actually at offset of the hit.
+ps ebcdicuk @ hit.string.ebcdicuk.0
+ps ebcdicuk @ hit.string.ebcdicuk.1
+ps ebcdicuk @ hit.string.ebcdicuk.2
+ps ebcdicuk @ hit.string.ebcdicuk.3
+ps ebcdicuk @ hit.string.ebcdicuk.4
+ps ebcdicuk @ hit.string.ebcdicuk.5
+ps ebcdicuk @ hit.string.ebcdicuk.6
+ps ebcdicuk @ hit.string.ebcdicuk.7
+ps ebcdicuk @ hit.string.ebcdicuk.8
+EOF
+EXPECT=<<EOF
+0x00000018 2 hit.string.ebcdicuk.0
+0x00000042 2 hit.string.ebcdicuk.1
+0x0000008f 2 hit.string.ebcdicuk.2
+0x000000be 2 hit.string.ebcdicuk.3
+0x0000010a 2 hit.string.ebcdicuk.4
+0x0000012b 2 hit.string.ebcdicuk.5
+0x0000013a 2 hit.string.ebcdicuk.6
+0x00000152 2 hit.string.ebcdicuk.7
+0x00000175 2 hit.string.ebcdicuk.8
+et, at eligendi adipisci ius, ex natum appetere officiis has, nibh quas torquatos pro te. Quo at deleniti repudiandae, et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
+etere officiis has, nibh quas torquatos pro te. Quo at deleniti repudiandae, et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
+et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
+et assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
+etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
+etenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
+et id, ea alia nostrud detraxit est, est eros intellegebat et.
+etraxit est, est eros intellegebat et.
+et.
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=String Search - minimal string - Encoding: ebcdic_us - Latin
+FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ebcdic_us
+CMDS=<<EOF
+e search.show_progress=false
+e search.str.min_length=2
+/z "et" l ebcdicus
+# Requires increasing the block size because -.-
+b 0x1000
+# Check string is actually at offset of the hit.
+ps ebcdicus @ hit.string.ebcdicus.0
+ps ebcdicus @ hit.string.ebcdicus.1
+ps ebcdicus @ hit.string.ebcdicus.2
+ps ebcdicus @ hit.string.ebcdicus.3
+ps ebcdicus @ hit.string.ebcdicus.4
+ps ebcdicus @ hit.string.ebcdicus.5
+ps ebcdicus @ hit.string.ebcdicus.6
+ps ebcdicus @ hit.string.ebcdicus.7
+ps ebcdicus @ hit.string.ebcdicus.8
+EOF
+EXPECT=<<EOF
+0x00000018 2 hit.string.ebcdicus.0
+0x00000042 2 hit.string.ebcdicus.1
+0x0000008f 2 hit.string.ebcdicus.2
+0x000000be 2 hit.string.ebcdicus.3
+0x0000010a 2 hit.string.ebcdicus.4
+0x0000012b 2 hit.string.ebcdicus.5
+0x0000013a 2 hit.string.ebcdicus.6
+0x00000152 2 hit.string.ebcdicus.7
+0x00000175 2 hit.string.ebcdicus.8
+et, at eligendi adipisci ius, ex natum appetere officiis has, nibh quas torquatos pro te. Quo at deleniti repudiandae, et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
+etere officiis has, nibh quas torquatos pro te. Quo at deleniti repudiandae, et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
+et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
+et assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
+etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
+etenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
+et id, ea alia nostrud detraxit est, est eros intellegebat et.
+etraxit est, est eros intellegebat et.
+et.
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=String Search - minimal string - Encoding: ebcdic_es - Latin
+FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ebcdic_es
+CMDS=<<EOF
+e search.show_progress=false
+e search.str.min_length=2
+/z "et" l ebcdices
+# Requires increasing the block size because -.-
+b 0x1000
+# Check string is actually at offset of the hit.
+ps ebcdices @ hit.string.ebcdices.0
+ps ebcdices @ hit.string.ebcdices.1
+ps ebcdices @ hit.string.ebcdices.2
+ps ebcdices @ hit.string.ebcdices.3
+ps ebcdices @ hit.string.ebcdices.4
+ps ebcdices @ hit.string.ebcdices.5
+ps ebcdices @ hit.string.ebcdices.6
+ps ebcdices @ hit.string.ebcdices.7
+ps ebcdices @ hit.string.ebcdices.8
+EOF
+EXPECT=<<EOF
+0x00000018 2 hit.string.ebcdices.0
+0x00000042 2 hit.string.ebcdices.1
+0x0000008f 2 hit.string.ebcdices.2
+0x000000be 2 hit.string.ebcdices.3
+0x0000010a 2 hit.string.ebcdices.4
+0x0000012b 2 hit.string.ebcdices.5
+0x0000013a 2 hit.string.ebcdices.6
+0x00000152 2 hit.string.ebcdices.7
+0x00000175 2 hit.string.ebcdices.8
+et, at eligendi adipisci ius, ex natum appetere officiis has, nibh quas torquatos pro te. Quo at deleniti repudiandae, et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
+etere officiis has, nibh quas torquatos pro te. Quo at deleniti repudiandae, et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
+et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
+et assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
+etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
+etenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
+et id, ea alia nostrud detraxit est, est eros intellegebat et.
+etraxit est, est eros intellegebat et.
+et.
+EOF
+EXPECT_ERR=
 RUN
