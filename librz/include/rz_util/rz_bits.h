@@ -19,8 +19,8 @@ extern "C" {
  *
  * \return Number of set bits in \p v.
  */
-#define DEFINE_COUNT_BITS(T) \
-	static inline size_t rz_bits_count_##T(T v) { \
+#define DEFINE_COUNT_ONES(T) \
+	static inline size_t rz_bits_count_ones_##T(T v) { \
 		v = v - ((v >> 1) & (T) ~(T)0 / 3); \
 		v = (v & (T) ~(T)0 / 15 * 3) + ((v >> 2) & (T) ~(T)0 / 15 * 3); \
 		v = (v + (v >> 4)) & (T) ~(T)0 / 255 * 15; \
@@ -28,10 +28,10 @@ extern "C" {
 		return c; \
 	}
 
-DEFINE_COUNT_BITS(ut64);
-DEFINE_COUNT_BITS(ut32);
-DEFINE_COUNT_BITS(ut16);
-DEFINE_COUNT_BITS(ut8);
+DEFINE_COUNT_ONES(ut64);
+DEFINE_COUNT_ONES(ut32);
+DEFINE_COUNT_ONES(ut16);
+DEFINE_COUNT_ONES(ut8);
 
 /**
  * \brief Get the number of leading zeros of a 64-bit integer in binary representation.

@@ -306,7 +306,7 @@ RZ_API bool rz_mem_is_zero(const ut8 *b, int l) {
  * assert(address + padding == 0x5a0);
  */
 RZ_API ut64 rz_mem_align_padding(const ut64 address, ut64 alignment) {
-	size_t c = rz_bits_count_ut64(alignment);
+	size_t c = rz_bits_count_ones_ut64(alignment);
 	if (c != 1) {
 		rz_warn_if_reached();
 		return UT64_MAX;
