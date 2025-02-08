@@ -12,6 +12,23 @@ extern "C" {
 #include <rz_types_base.h>
 
 /**
+ * \brief Reference: https://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetParallel
+ */
+#define DEFINE_COUNT_BITS(T) \
+	static inline size_t rz_bits_count_##T(T v) { \
+		v = v - ((v >> 1) & (T) ~(T)0 / 3); \
+		v = (v & (T) ~(T)0 / 15 * 3) + ((v >> 2) & (T) ~(T)0 / 15 * 3); \
+		v = (v + (v >> 4)) & (T) ~(T)0 / 255 * 15; \
+		size_t c = (T)(v * ((T) ~(T)0 / 255)) >> (sizeof(T) - 1) * CHAR_BIT; \
+		return c; \
+	}
+
+DEFINE_COUNT_BITS(ut64);
+DEFINE_COUNT_BITS(ut32);
+DEFINE_COUNT_BITS(ut16);
+DEFINE_COUNT_BITS(ut8);
+
+/**
  * \brief Get the number of leading zeros of a 64-bit integer in binary representation.
  * \param x the 64-bit integer
  * \return the number of leading zeros

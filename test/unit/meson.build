@@ -27,6 +27,7 @@ if get_option('enable_tests')
     'bin_lines',
     'bin_mach0',
     'bitvector',
+    'bits',
     'buf',
     'cmd',
     'compare',
