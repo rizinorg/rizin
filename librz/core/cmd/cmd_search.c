@@ -2895,13 +2895,13 @@ static bool parse_pattern_arg(const char *arg, RZ_OUT ut8 *re, RZ_OUT size_t *le
 RZ_IPI RzCmdStatus rz_cmd_search_hex_regex_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	ut8 *re = RZ_NEWS0(ut8, strlen(argv[1]));
 	RzSearchOpt *search_opts = setup_search_options(core);
+	RzList *hits = NULL;
 	if (!search_opts) {
 		goto error;
 	}
 
 	CMD_SEARCH_BEGIN();
 
-	RzList *hits = NULL;
 	const char *arg = argv[1];
 	size_t r = 0;
 	if (!parse_pattern_arg(arg, re, &r)) {
