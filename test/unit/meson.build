@@ -74,6 +74,7 @@ if get_option('enable_tests')
     'list',
     'log',
     'lzma',
+    'mem',
     'ovf',
     'pj',
     'rbtree',
