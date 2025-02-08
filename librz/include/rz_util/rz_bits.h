@@ -12,7 +12,12 @@ extern "C" {
 #include <rz_types_base.h>
 
 /**
- * \brief Reference: https://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetParallel
+ * \brief Count number of 1s in the given value.
+ * Reference: https://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetParallel
+ *
+ * \param v The value to count the set bits in.
+ *
+ * \return Number of set bits in \p v.
  */
 #define DEFINE_COUNT_BITS(T) \
 	static inline size_t rz_bits_count_##T(T v) { \
