@@ -342,6 +342,9 @@ e search.to=0x00000050
 /at xor
 EOF
 EXPECT=<<EOF
+0x0000001c 2 xor al, 0
+0x00000028 2 xor al, 0
+0x00000038 2 xor al, 0
 0x0000003c 2 xor al, 0x80
 0x00000040 2 xor al, 0x80
 EOF
@@ -358,6 +361,9 @@ e search.to=0x00000050
 /at xor
 EOF
 EXPECT=<<EOF
+0x0000001c 2 xor al, 0
+0x00000028 2 xor al, 0
+0x00000038 2 xor al, 0
 0x0000003c 2 xor al, 0x80
 0x00000040 2 xor al, 0x80
 EOF
@@ -781,13 +787,13 @@ NAME=/x wrong entries
 FILE=bins/elf/analysis/go_stripped
 CMDS=<<EOF
 e search.show_progress=false
-/x 653b2530000000724b53b834e7150883ec188.
+/x 653b2530000000724b53b834e7150883ec188.~$[0]
 # Should find nothing, because it gets exended on the lhs and is not aligned.
-/x 653b2530000000724b53b834e7150883ec188~$[1]
+/x 653b2530000000724b53b834e7150883ec188~$[0]
 EOF
 EXPECT=<<EOF
-0x0805ae90 19 hit.bytes.0
-0x0805b030 19 hit.bytes.1
+0x0805ae90
+0x0805b030
 EOF
 RUN
 
