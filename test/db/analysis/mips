@@ -70,6 +70,7 @@ address: 0x804fc
 opcode: b 0x804fc
 disasm: b 0x804fc
 pseudo: goto 0x804fc
+rzil: (jmp (bv 32 0x804fc))
 jump: 0x000804fc
 EOF
 RUN
