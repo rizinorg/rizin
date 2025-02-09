@@ -23,6 +23,15 @@
 #define MIPS_ZERO()           UN(gprlen, 0);
 #define MIPS_LINK()           SETG(MIPS_REG_RA, UN(gprlen, insn->address + 8)) // link register $ra
 
+// This macro checks for any writes to the $zero
+// register and returns a NOP operation.
+#define MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP() \
+	do { \
+		if (REG_IS_ZERO(0)) { \
+			return NOP(); \
+		} \
+	} while (0)
+
 static bool mips_reg_is_zero(const cs_insn *insn, ut32 idx) {
 	const ut32 regid = REGID(idx);
 
@@ -56,9 +65,7 @@ static RzILOpEffect *mips_il_move(const csh *handle, const cs_insn *insn, const 
 }
 
 static RzILOpEffect *mips_il_add(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
-	if (REG_IS_ZERO(0)) {
-		return NOP(); // return NOP if target register is $zero
-	}
+	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
 
 	const char *rd = REG(0);
 	RzILOpPure *rs = MIPS_REG(1);
@@ -70,9 +77,7 @@ static RzILOpEffect *mips_il_add(const csh *handle, const cs_insn *insn, const u
 }
 
 static RzILOpEffect *mips_il_addi(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
-	if (REG_IS_ZERO(0)) {
-		return NOP(); // return NOP if target register is $zero
-	}
+	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
 
 	const char *rd = REG(0);
 	RzILOpPure *rs = MIPS_REG(1);
@@ -84,9 +89,7 @@ static RzILOpEffect *mips_il_addi(const csh *handle, const cs_insn *insn, const 
 }
 
 static RzILOpEffect *mips_il_addiu(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
-	if (REG_IS_ZERO(0)) {
-		return NOP(); // return NOP if target register is $zero
-	}
+	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
 
 	const char *rd = REG(0);
 	RzILOpPure *rs = MIPS_REG(1);
@@ -96,9 +99,7 @@ static RzILOpEffect *mips_il_addiu(const csh *handle, const cs_insn *insn, const
 }
 
 static RzILOpEffect *mips_il_addu(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
-	if (REG_IS_ZERO(0)) {
-		return NOP(); // return NOP if target register is $zero
-	}
+	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
 
 	const char *rd = REG(0);
 	RzILOpPure *rs = MIPS_REG(1);
@@ -108,9 +109,7 @@ static RzILOpEffect *mips_il_addu(const csh *handle, const cs_insn *insn, const 
 }
 
 static RzILOpEffect *mips_il_and(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
-	if (REG_IS_ZERO(0)) {
-		return NOP(); // return NOP if target register is $zero
-	}
+	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
 
 	const char *rd = REG(0);
 	RzILOpPure *rs = MIPS_REG(1);
@@ -120,9 +119,7 @@ static RzILOpEffect *mips_il_and(const csh *handle, const cs_insn *insn, const u
 }
 
 static RzILOpEffect *mips_il_andi(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
-	if (REG_IS_ZERO(0)) {
-		return NOP(); // return NOP if target register is $zero
-	}
+	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
 
 	const char *rd = REG(0);
 	RzILOpPure *rs = MIPS_REG(1);
@@ -284,9 +281,7 @@ static RzILOpEffect *mips_il_divu(const csh *handle, const cs_insn *insn, const 
 }
 
 static RzILOpEffect *mips_il_ext(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
-	if (REG_IS_ZERO(0)) {
-		return NOP(); // return NOP if target register is $zero
-	}
+	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
 
 	// Extract Bit Field (EXT rt, rs, pos, size)
 	const char *rt = REG(0);
@@ -298,9 +293,7 @@ static RzILOpEffect *mips_il_ext(const csh *handle, const cs_insn *insn, const u
 }
 
 static RzILOpEffect *mips_il_ins(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
-	if (REG_IS_ZERO(0)) {
-		return NOP(); // return NOP if target register is $zero
-	}
+	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
 
 	// Insert Bit Field (INS rt, rs, pos, size)
 	RzILOpPure *rt = MIPS_REG(0);
@@ -353,9 +346,7 @@ static RzILOpEffect *mips_il_jr(const csh *handle, const cs_insn *insn, const ut
 }
 
 static RzILOpEffect *mips_il_lb(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
-	if (REG_IS_ZERO(0)) {
-		return NOP(); // return NOP if target register is $zero
-	}
+	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
 
 	const char *rt = REG(0);
 	RzILOpPure *offset = SN(gprlen, MEMOFFSET(1));
@@ -367,9 +358,7 @@ static RzILOpEffect *mips_il_lb(const csh *handle, const cs_insn *insn, const ut
 }
 
 static RzILOpEffect *mips_il_lbu(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
-	if (REG_IS_ZERO(0)) {
-		return NOP(); // return NOP if target register is $zero
-	}
+	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
 
 	const char *rt = REG(0);
 	RzILOpPure *offset = SN(gprlen, MEMOFFSET(1));
@@ -381,9 +370,7 @@ static RzILOpEffect *mips_il_lbu(const csh *handle, const cs_insn *insn, const u
 }
 
 static RzILOpEffect *mips_il_lh(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
-	if (REG_IS_ZERO(0)) {
-		return NOP(); // return NOP if target register is $zero
-	}
+	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
 
 	const char *rt = REG(0);
 	RzILOpPure *offset = SN(gprlen, MEMOFFSET(1));
@@ -395,9 +382,7 @@ static RzILOpEffect *mips_il_lh(const csh *handle, const cs_insn *insn, const ut
 }
 
 static RzILOpEffect *mips_il_lhu(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
-	if (REG_IS_ZERO(0)) {
-		return NOP(); // return NOP if target register is $zero
-	}
+	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
 
 	const char *rt = REG(0);
 	RzILOpPure *offset = SN(gprlen, MEMOFFSET(1));
@@ -409,9 +394,7 @@ static RzILOpEffect *mips_il_lhu(const csh *handle, const cs_insn *insn, const u
 }
 
 static RzILOpEffect *mips_il_lui(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
-	if (REG_IS_ZERO(0)) {
-		return NOP(); // return NOP if target register is $zero
-	}
+	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
 
 	const char *rt = REG(0);
 	ut64 imm = IMM(1);
@@ -421,9 +404,7 @@ static RzILOpEffect *mips_il_lui(const csh *handle, const cs_insn *insn, const u
 }
 
 static RzILOpEffect *mips_il_lw(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
-	if (REG_IS_ZERO(0)) {
-		return NOP(); // return NOP if target register is $zero
-	}
+	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
 
 	const char *rt = REG(0);
 	RzILOpPure *offset = SN(gprlen, MEMOFFSET(1));
@@ -508,9 +489,7 @@ static RzILOpEffect *mips_il_mflo(const csh *handle, const cs_insn *insn, const 
 }
 
 static RzILOpEffect *mips_il_movn(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
-	if (REG_IS_ZERO(0)) {
-		return NOP(); // return NOP if target register is $zero
-	}
+	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
 
 	// Move Conditional on Not Zero
 	const char *rd = REG(0);
@@ -592,9 +571,7 @@ static RzILOpEffect *mips_il_mtlo(const csh *handle, const cs_insn *insn, const 
 }
 
 static RzILOpEffect *mips_il_mul(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
-	if (REG_IS_ZERO(0)) {
-		return NOP(); // return NOP if target register is $zero
-	}
+	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
 
 	const char *rd = REG(0);
 	RzILOpPure *rs = MIPS_REG(1);
@@ -648,9 +625,7 @@ static RzILOpEffect *mips_il_multu(const csh *handle, const cs_insn *insn, const
 }
 
 static RzILOpEffect *mips_il_nor(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
-	if (REG_IS_ZERO(0)) {
-		return NOP(); // return NOP if target register is $zero
-	}
+	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
 
 	const char *rd = REG(0);
 	RzILOpPure *rs = MIPS_REG(1);
@@ -660,9 +635,7 @@ static RzILOpEffect *mips_il_nor(const csh *handle, const cs_insn *insn, const u
 }
 
 static RzILOpEffect *mips_il_or(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
-	if (REG_IS_ZERO(0)) {
-		return NOP(); // return NOP if target register is $zero
-	}
+	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
 
 	if (OPCOUNT() < 3) {
 		// move
@@ -688,9 +661,7 @@ static RzILOpEffect *mips_il_or(const csh *handle, const cs_insn *insn, const ut
 }
 
 static RzILOpEffect *mips_il_ori(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
-	if (REG_IS_ZERO(0)) {
-		return NOP(); // return NOP if target register is $zero
-	}
+	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
 
 	const char *rd = REG(0);
 
@@ -711,9 +682,7 @@ static RzILOpEffect *mips_il_ori(const csh *handle, const cs_insn *insn, const u
 
 static RzILOpEffect *mips_il_rotr(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	// Rotate Word Right
-	if (REG_IS_ZERO(0)) {
-		return NOP(); // return NOP if target register is $zero
-	}
+	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
 
 	const char *rd = REG(0);
 	RzILOpPure *rt = MIPS_REG(1);
@@ -727,9 +696,7 @@ static RzILOpEffect *mips_il_rotr(const csh *handle, const cs_insn *insn, const 
 
 static RzILOpEffect *mips_il_rotrv(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	// Rotate Word Right Variable
-	if (REG_IS_ZERO(0)) {
-		return NOP(); // return NOP if target register is $zero
-	}
+	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
 
 	const char *rd = REG(0);
 	RzILOpPure *rt = MIPS_REG(1);
@@ -845,9 +812,7 @@ static RzILOpEffect *mips_il_sltu(const csh *handle, const cs_insn *insn, const 
 }
 
 static RzILOpEffect *mips_il_sra(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
-	if (REG_IS_ZERO(0)) {
-		return NOP(); // return NOP if target register is $zero
-	}
+	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
 
 	const char *rd = REG(0);
 	RzILOpPure *rt = MIPS_REG(1);
@@ -857,9 +822,7 @@ static RzILOpEffect *mips_il_sra(const csh *handle, const cs_insn *insn, const u
 }
 
 static RzILOpEffect *mips_il_srav(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
-	if (REG_IS_ZERO(0)) {
-		return NOP(); // return NOP if target register is $zero
-	}
+	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
 
 	const char *rd = REG(0);
 	RzILOpPure *rt = MIPS_REG(1);
@@ -877,9 +840,7 @@ static RzILOpEffect *mips_il_srl(const csh *handle, const cs_insn *insn, const u
 }
 
 static RzILOpEffect *mips_il_srlv(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
-	if (REG_IS_ZERO(0)) {
-		return NOP(); // return NOP if target register is $zero
-	}
+	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
 
 	const char *rd = REG(0);
 	RzILOpPure *rt = MIPS_REG(1);
@@ -889,9 +850,7 @@ static RzILOpEffect *mips_il_srlv(const csh *handle, const cs_insn *insn, const 
 }
 
 static RzILOpEffect *mips_il_sub(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
-	if (REG_IS_ZERO(0)) {
-		return NOP(); // return NOP if target register is $zero
-	}
+	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
 
 	const char *rd = REG(0);
 	RzILOpPure *rs = MIPS_REG(1);
@@ -901,9 +860,7 @@ static RzILOpEffect *mips_il_sub(const csh *handle, const cs_insn *insn, const u
 }
 
 static RzILOpEffect *mips_il_subu(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
-	if (REG_IS_ZERO(0)) {
-		return NOP(); // return NOP if target register is $zero
-	}
+	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
 
 	// TODO: handle unsigness.
 	const char *rd = REG(0);
@@ -938,9 +895,7 @@ static RzILOpEffect *mips_il_wsbh(const csh *handle, const cs_insn *insn, const 
 }
 
 static RzILOpEffect *mips_il_xor(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
-	if (REG_IS_ZERO(0)) {
-		return NOP(); // return NOP if target register is $zero
-	}
+	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
 
 	const char *rd = REG(0);
 	RzILOpPure *rs = MIPS_REG(1);
@@ -950,9 +905,7 @@ static RzILOpEffect *mips_il_xor(const csh *handle, const cs_insn *insn, const u
 }
 
 static RzILOpEffect *mips_il_xori(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
-	if (REG_IS_ZERO(0)) {
-		return NOP(); // return NOP if target register is $zero
-	}
+	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
 
 	const char *rd = REG(0);
 	RzILOpPure *rs = MIPS_REG(1);
