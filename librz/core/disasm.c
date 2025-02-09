@@ -3828,7 +3828,7 @@ static void ds_print_str(RzDisasmState *ds, const char *str, int len, ut64 refad
 	}
 	const char *prefix;
 	char *escstr = ds_esc_str(ds, str, len, &prefix, false);
-	if (escstr) {
+	if (escstr && rz_str_is_printable_incl_newlines(escstr)) {
 		bool inv = ds->show_color && !ds->show_emu_strinv;
 		ds_begin_comment(ds);
 		ds_comment(ds, true, "; %s%s\"%.128s\"%s", inv ? Color_INVERT : "", prefix, escstr,

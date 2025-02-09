@@ -2160,6 +2160,9 @@ RZ_API bool rz_str_is_printable_limited(const char *str, int size) {
 }
 
 RZ_API bool rz_str_is_printable_incl_newlines(const char *str) {
+	if (!str || str[0] == '\0') {
+		return false;
+	}
 	while (*str) {
 		int ulen = rz_utf8_decode((const ut8 *)str, strlen(str), NULL);
 		if (ulen > 1) {
