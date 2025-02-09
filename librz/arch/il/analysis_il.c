@@ -262,14 +262,17 @@ static RzAnalysisILStepResult analysis_il_vm_step_while(
 		analysis->read_at(analysis, addr, code, sizeof(code));
 		int r = rz_analysis_op(analysis, &op, addr, code, sizeof(code), RZ_ANALYSIS_OP_MASK_IL | RZ_ANALYSIS_OP_MASK_HINT | RZ_ANALYSIS_OP_MASK_DISASM);
 
-		if (r < 0 || !op.il_op) {
+		if (r < 0) {
 			res = RZ_ANALYSIS_IL_STEP_INVALID_OP;
 			break;
-		}
-		if (!rz_il_vm_step(vm->vm, op.il_op, addr + (op.size > 0 ? op.size : 1))) {
+		} else if (!op.il_op) {
+			res = RZ_ANALYSIS_IL_STEP_UNIMPLEMENTED_IL;
+			break;
+		} else if (!rz_il_vm_step(vm->vm, op.il_op, addr + (op.size > 0 ? op.size : 1))) {
 			res = RZ_ANALYSIS_IL_STEP_IL_RUNTIME_ERROR;
 			break;
 		}
+
 		if (!with_events) {
 			rz_analysis_op_fini(&op);
 			continue;

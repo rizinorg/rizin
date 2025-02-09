@@ -679,13 +679,17 @@ static bool step_handle_result(RzCore *core, RzAnalysisILStepResult r) {
 	case RZ_ANALYSIS_IL_STEP_RESULT_SUCCESS:
 		rz_core_reg_update_flags(core);
 		return true;
-	case RZ_ANALYSIS_IL_STEP_INVALID_OP:
-		RZ_LOG_ERROR("RzIL: invalid instruction or lifting not implemented at address 0x%08" PFMT64x "\n",
-			rz_reg_get_value_by_role(core->analysis->reg, RZ_REG_NAME_PC));
-		break;
+	case RZ_ANALYSIS_IL_STEP_UNIMPLEMENTED_IL: {
+		ut64 reg_pc = rz_reg_get_value_by_role(core->analysis->reg, RZ_REG_NAME_PC);
+		RZ_LOG_ERROR("RzIL: lifting not implemented at address 0x%08" PFMT64x "\n", reg_pc);
+	} break;
+	case RZ_ANALYSIS_IL_STEP_INVALID_OP: {
+		ut64 reg_pc = rz_reg_get_value_by_role(core->analysis->reg, RZ_REG_NAME_PC);
+		RZ_LOG_ERROR("RzIL: invalid instruction at address 0x%08" PFMT64x "\n", reg_pc);
+	} break;
 	default: {
-		ut64 addr = rz_bv_to_ut64(core->analysis->il_vm->vm->pc);
-		RZ_LOG_ERROR("RzIL: stepping failed with PC at 0x%" PFMT64x ".\n", addr);
+		ut64 vm_pc = rz_bv_to_ut64(core->analysis->il_vm->vm->pc);
+		RZ_LOG_ERROR("RzIL: stepping failed with PC at 0x%" PFMT64x ".\n", vm_pc);
 	} break;
 	}
 	return false;
