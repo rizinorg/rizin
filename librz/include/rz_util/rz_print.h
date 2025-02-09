@@ -13,7 +13,6 @@ extern "C" {
 #endif
 
 #define RZ_PRINT_FLAGS_COLOR    0x00000001
-#define RZ_PRINT_FLAGS_ADDRMOD  0x00000002
 #define RZ_PRINT_FLAGS_CURSOR   0x00000004
 #define RZ_PRINT_FLAGS_HEADER   0x00000008
 #define RZ_PRINT_FLAGS_SPARSE   0x00000010
@@ -135,7 +134,6 @@ typedef struct rz_print_t {
 	int flags;
 	int seggrn;
 	bool use_comments;
-	int addrmod;
 	int col;
 	int stride;
 	int bytespace;

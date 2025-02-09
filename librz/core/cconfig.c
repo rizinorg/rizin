@@ -2432,7 +2432,6 @@ static bool cb_searchalign(void *user, void *data) {
 		return false;
 	}
 	core->search->align = node->i_value;
-	core->print->addrmod = node->i_value;
 	return true;
 }
 

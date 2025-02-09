@@ -3841,7 +3841,6 @@ RZ_IPI int rz_core_visual(RzCore *core, const char *input) {
 	rz_cons_singleton()->teefile = "";
 
 	static char debugstr[512];
-	core->print->flags |= RZ_PRINT_FLAGS_ADDRMOD;
 	do {
 	dodo:
 		rz_core_visual_tab_update(core);
@@ -3890,7 +3889,7 @@ RZ_IPI int rz_core_visual(RzCore *core, const char *input) {
 			flags |= RZ_PRINT_FLAGS_COLOR;
 		}
 		visual->debug = rz_config_get_b(core->config, "cfg.debug");
-		flags |= RZ_PRINT_FLAGS_ADDRMOD | RZ_PRINT_FLAGS_HEADER;
+		flags |= RZ_PRINT_FLAGS_HEADER;
 		rz_print_set_flags(core->print, flags);
 		scrseek = rz_num_math(core->num,
 			rz_config_get(core->config, "scr.seek"));

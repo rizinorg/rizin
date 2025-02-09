@@ -66,12 +66,10 @@ RZ_API RzPrint *rz_print_new(void) {
 	p->cols = 16;
 	p->cur_enabled = false;
 	p->cur = p->ocur = -1;
-	p->addrmod = 4;
 	p->flags =
 		RZ_PRINT_FLAGS_COLOR |
 		RZ_PRINT_FLAGS_OFFSET |
-		RZ_PRINT_FLAGS_HEADER |
-		RZ_PRINT_FLAGS_ADDRMOD;
+		RZ_PRINT_FLAGS_HEADER;
 	p->seggrn = 4;
 	p->zoom = RZ_NEW0(RzPrintZoom);
 	p->reg = NULL;
@@ -388,8 +386,7 @@ static inline void print_addr(RzStrBuf *sb, RzPrint *p, ut64 addr) {
 	bool use_segoff = p ? (p->flags & RZ_PRINT_FLAGS_SEGOFF) : false;
 	bool use_color = p ? (p->flags & RZ_PRINT_FLAGS_COLOR) : false;
 	bool dec = p ? (p->flags & RZ_PRINT_FLAGS_ADDRDEC) : false;
-	bool mod = p ? (p->flags & RZ_PRINT_FLAGS_ADDRMOD) : false;
-	char ch = p ? ((p->addrmod && mod) ? ((addr % p->addrmod) ? ' ' : ',') : ' ') : ' ';
+	char ch = ' ';
 	if (p && p->flags & RZ_PRINT_FLAGS_COMPACT && p->col == 1) {
 		ch = '|';
 	}
