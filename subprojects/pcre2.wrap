@@ -1,8 +1,8 @@
 [wrap-file]
-source_url = https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.44/pcre2-10.44.tar.gz
-source_filename = pcre2-10.44.tar.gz
-source_hash = 86b9cb0aa3bcb7994faa88018292bc704cdbb708e785f7c74352ff6ea7d3175b
-directory = pcre2-10.44
+source_url = https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.45/pcre2-10.45.tar.gz
+source_filename = pcre2-10.45.tar.gz
+source_hash = 0e138387df7835d7403b8351e2226c1377da804e0737db0e071b48f07c9d12ee
+directory = pcre2-10.45
 patch_directory = pcre2
 
 [provide]

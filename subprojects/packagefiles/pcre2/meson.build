@@ -1,4 +1,4 @@
-project('pcre2', 'c', version: '10.44')
+project('pcre2', 'c', version: '10.45')
 
 cc = meson.get_compiler('c')
 
@@ -34,6 +34,7 @@ pcre2_files = [
   pcre2_chartables,
   'src/pcre2_chkdint.c',
   'src/pcre2_compile.c',
+  'src/pcre2_compile_class.c',
   'src/pcre2_config.c',
   'src/pcre2_context.c',
   'src/pcre2_convert.c',
