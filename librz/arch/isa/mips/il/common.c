@@ -369,6 +369,17 @@ static RzILOpEffect *mips_il_lbu(const csh *handle, const cs_insn *insn, const u
 	return SETG(rt, byte);
 }
 
+static RzILOpEffect *mips_il_ld(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
+
+	const char *rt = REG(0);
+	RzILOpPure *offset = SN(gprlen, MEMOFFSET(1));
+	RzILOpPure *base = VARG_MEMBASE(1);
+
+	RzILOpPure *memaddr = ADD(base, offset);
+	return SETG(rt, LOADW(MIPS_DWORD_SIZE, memaddr));
+}
+
 static RzILOpEffect *mips_il_lh(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
 
@@ -411,7 +422,26 @@ static RzILOpEffect *mips_il_lw(const csh *handle, const cs_insn *insn, const ut
 	RzILOpPure *base = VARG_MEMBASE(1);
 
 	RzILOpPure *memaddr = ADD(base, offset);
-	return SETG(rt, LOADW(MIPS_WORD_SIZE, memaddr));
+	RzILOpPure *res = LOADW(MIPS_WORD_SIZE, memaddr);
+	if (gprlen > 32) {
+		res = SIGNED(gprlen, res);
+	}
+	return SETG(rt, res);
+}
+
+static RzILOpEffect *mips_il_lwu(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
+
+	const char *rt = REG(0);
+	RzILOpPure *offset = SN(gprlen, MEMOFFSET(1));
+	RzILOpPure *base = VARG_MEMBASE(1);
+
+	RzILOpPure *memaddr = ADD(base, offset);
+	RzILOpPure *res = LOADW(MIPS_WORD_SIZE, memaddr);
+	if (gprlen > 32) {
+		res = UNSIGNED(gprlen, res);
+	}
+	return SETG(rt, res);
 }
 
 static RzILOpEffect *mips_il_lwl(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
@@ -724,6 +754,15 @@ static RzILOpEffect *mips_il_sb(const csh *handle, const cs_insn *insn, const ut
 	return STOREW(memaddr, trunc);
 }
 
+static RzILOpEffect *mips_il_sd(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	RzILOpPure *rt = MIPS_REG(0);
+	RzILOpPure *offset = SN(gprlen, MEMOFFSET(1));
+	RzILOpPure *base = VARG_MEMBASE(1);
+
+	RzILOpPure *memaddr = ADD(base, offset);
+	return STOREW(memaddr, rt);
+}
+
 static RzILOpEffect *mips_il_seb(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	// Sign-Extend Byte
 	RzILOpPure *rt = MIPS_REG(1);
@@ -871,7 +910,16 @@ static RzILOpEffect *mips_il_subu(const csh *handle, const cs_insn *insn, const 
 }
 
 static RzILOpEffect *mips_il_sw(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
-	RzILOpPure *rt = MIPS_REG(0);
+	RzILOpPure *rt = NULL;
+	if (REG_IS_ZERO(0)) {
+		rt = SN(MIPS_WORD_SIZE, 0);
+	} else {
+		rt = MIPS_REG(0);
+		if (gprlen > 32) {
+			rt = TRUNC32(rt);
+		}
+	}
+
 	RzILOpPure *offset = SN(gprlen, MEMOFFSET(1));
 	RzILOpPure *base = VARG_MEMBASE(1);
 

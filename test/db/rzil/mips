@@ -10,7 +10,7 @@ o malloc://0x10 0x50000
 oC 0x10 @ obj.seckrit
 omb. obj.seckrit @ 0x0
 e cfg.bigendian=true # o commands are bugged, changes the endianness.
-e analysis.cpu=mips3+gpr32 # o commands are bugged, changes the arch and cpu
+e asm.cpu=mips3+gpr32 # o commands are bugged, changes the arch and cpu
 aezi
 w AnyColourYouLike @ 0x50000
 ar gp=loc._gp
@@ -37,7 +37,7 @@ o malloc://0x10 0x50000
 oC 0x10 @ obj.seckrit
 omb. obj.seckrit @ 0x0
 e cfg.bigendian=true # o commands are bugged, changes the endianness.
-e analysis.cpu=mips2 # o commands are bugged, changes the arch and cpu
+e asm.cpu=mips2 # o commands are bugged, changes the arch and cpu
 aezi
 w AnyColourYouLike @ 0x50000
 ar gp=loc._gp
@@ -64,7 +64,7 @@ o malloc://0x10 0x50000
 oC 0x10 @ obj.seckrit
 omb. obj.seckrit @ 0x0
 e cfg.bigendian=true # o commands are bugged, changes the endianness.
-e analysis.cpu=mips32 # o commands are bugged, changes the arch and cpu
+e asm.cpu=mips32 # o commands are bugged, changes the arch and cpu
 aezi
 w AnyColourYouLike @ 0x50000
 ar gp=loc._gp
@@ -91,7 +91,7 @@ o malloc://0x10 0x50000
 oC 0x10 @ obj.seckrit
 omb. obj.seckrit @ 0x0
 e cfg.bigendian=true # o commands are bugged, changes the endianness.
-e analysis.cpu=mips32r2 # o commands are bugged, changes the arch and cpu
+e asm.cpu=mips32r2 # o commands are bugged, changes the arch and cpu
 aezi
 w AnyColourYouLike @ 0x50000
 ar gp=loc._gp
@@ -118,7 +118,7 @@ o malloc://0x10 0x50000
 oC 0x10 @ obj.seckrit
 omb. obj.seckrit @ 0x0
 e cfg.bigendian=true # o commands are bugged, changes the endianness.
-e analysis.cpu=mips32r3 # o commands are bugged, changes the arch and cpu
+e asm.cpu=mips32r3 # o commands are bugged, changes the arch and cpu
 aezi
 w AnyColourYouLike @ 0x50000
 ar gp=loc._gp
@@ -145,7 +145,223 @@ o malloc://0x10 0x50000
 oC 0x10 @ obj.seckrit
 omb. obj.seckrit @ 0x0
 e cfg.bigendian=true # o commands are bugged, changes the endianness.
-e analysis.cpu=mips32r5 # o commands are bugged, changes the arch and cpu
+e asm.cpu=mips32r5 # o commands are bugged, changes the arch and cpu
+aezi
+w AnyColourYouLike @ 0x50000
+ar gp=loc._gp
+ar sp=0x40ff0
+ar a0=0x50000
+aezsu `pdr~jr[0]`
+ps @ obj.seckrit
+EOF
+EXPECT=<<EOF
+Hello from RzIL!
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=emulateme nostdlib mips3
+FILE=bins/elf/emulateme.nostd.mips3
+TIMEOUT=30
+CMDS=<<EOF
+e str.search.encoding=utf8
+s sym.decrypt
+af # required for pdr
+o malloc://0x1000 0x40000
+o malloc://0x10 0x50000
+oC 0x10 @ obj.seckrit
+omb. obj.seckrit @ 0x0
+e cfg.bigendian=true # o commands are bugged, changes the endianness.
+e asm.cpu=mips3 # o commands are bugged, changes the arch and cpu
+aezi
+w AnyColourYouLike @ 0x50000
+ar gp=loc._gp
+ar sp=0x40ff0
+ar a0=0x50000
+aezsu `pdr~jr[0]`
+ps @ obj.seckrit
+EOF
+EXPECT=<<EOF
+Hello from RzIL!
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=emulateme nostdlib mips4
+FILE=bins/elf/emulateme.nostd.mips4
+TIMEOUT=30
+CMDS=<<EOF
+e str.search.encoding=utf8
+s sym.decrypt
+af # required for pdr
+o malloc://0x1000 0x40000
+o malloc://0x10 0x50000
+oC 0x10 @ obj.seckrit
+omb. obj.seckrit @ 0x0
+e cfg.bigendian=true # o commands are bugged, changes the endianness.
+e asm.cpu=mips4 # o commands are bugged, changes the arch and cpu
+aezi
+w AnyColourYouLike @ 0x50000
+ar gp=loc._gp
+ar sp=0x40ff0
+ar a0=0x50000
+aezsu `pdr~jr[0]`
+ps @ obj.seckrit
+EOF
+EXPECT=<<EOF
+Hello from RzIL!
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=emulateme nostdlib mips64
+FILE=bins/elf/emulateme.nostd.mips64
+TIMEOUT=30
+CMDS=<<EOF
+e str.search.encoding=utf8
+s sym.decrypt
+af # required for pdr
+o malloc://0x1000 0x40000
+o malloc://0x10 0x50000
+oC 0x10 @ obj.seckrit
+omb. obj.seckrit @ 0x0
+e cfg.bigendian=true # o commands are bugged, changes the endianness.
+e asm.cpu=mips64 # o commands are bugged, changes the arch and cpu
+aezi
+w AnyColourYouLike @ 0x50000
+ar gp=loc._gp
+ar sp=0x40ff0
+ar a0=0x50000
+aezsu `pdr~jr[0]`
+ps @ obj.seckrit
+EOF
+EXPECT=<<EOF
+Hello from RzIL!
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=emulateme nostdlib mips64
+FILE=bins/elf/emulateme.nostd.mips64
+TIMEOUT=30
+CMDS=<<EOF
+e str.search.encoding=utf8
+s sym.decrypt
+af # required for pdr
+o malloc://0x1000 0x40000
+o malloc://0x10 0x50000
+oC 0x10 @ obj.seckrit
+omb. obj.seckrit @ 0x0
+e cfg.bigendian=true # o commands are bugged, changes the endianness.
+e asm.cpu=mips64 # o commands are bugged, changes the arch and cpu
+aezi
+w AnyColourYouLike @ 0x50000
+ar gp=loc._gp
+ar sp=0x40ff0
+ar a0=0x50000
+aezsu `pdr~jr[0]`
+ps @ obj.seckrit
+EOF
+EXPECT=<<EOF
+Hello from RzIL!
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=emulateme nostdlib mips64r2
+FILE=bins/elf/emulateme.nostd.mips64r2
+TIMEOUT=30
+CMDS=<<EOF
+e str.search.encoding=utf8
+s sym.decrypt
+af # required for pdr
+o malloc://0x1000 0x40000
+o malloc://0x10 0x50000
+oC 0x10 @ obj.seckrit
+omb. obj.seckrit @ 0x0
+e cfg.bigendian=true # o commands are bugged, changes the endianness.
+e asm.cpu=mips64r3 # o commands are bugged, changes the arch and cpu
+aezi
+w AnyColourYouLike @ 0x50000
+ar gp=loc._gp
+ar sp=0x40ff0
+ar a0=0x50000
+aezsu `pdr~jr[0]`
+ps @ obj.seckrit
+EOF
+EXPECT=<<EOF
+Hello from RzIL!
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=emulateme nostdlib mips64r3
+FILE=bins/elf/emulateme.nostd.mips64r3
+TIMEOUT=30
+CMDS=<<EOF
+e str.search.encoding=utf8
+s sym.decrypt
+af # required for pdr
+o malloc://0x1000 0x40000
+o malloc://0x10 0x50000
+oC 0x10 @ obj.seckrit
+omb. obj.seckrit @ 0x0
+e cfg.bigendian=true # o commands are bugged, changes the endianness.
+e asm.cpu=mips64r3 # o commands are bugged, changes the arch and cpu
+aezi
+w AnyColourYouLike @ 0x50000
+ar gp=loc._gp
+ar sp=0x40ff0
+ar a0=0x50000
+aezsu `pdr~jr[0]`
+ps @ obj.seckrit
+EOF
+EXPECT=<<EOF
+Hello from RzIL!
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=emulateme nostdlib orion
+FILE=bins/elf/emulateme.nostd.orion
+TIMEOUT=30
+CMDS=<<EOF
+e str.search.encoding=utf8
+s sym.decrypt
+af # required for pdr
+o malloc://0x1000 0x40000
+o malloc://0x10 0x50000
+oC 0x10 @ obj.seckrit
+omb. obj.seckrit @ 0x0
+e cfg.bigendian=true # o commands are bugged, changes the endianness.
+e asm.cpu=mips3# o commands are bugged, changes the arch and cpu
+aezi
+w AnyColourYouLike @ 0x50000
+ar gp=loc._gp
+ar sp=0x40ff0
+ar a0=0x50000
+aezsu `pdr~jr[0]`
+ps @ obj.seckrit
+EOF
+EXPECT=<<EOF
+Hello from RzIL!
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=emulateme nostdlib p5600
+FILE=bins/elf/emulateme.nostd.p5600
+TIMEOUT=30
+CMDS=<<EOF
+e str.search.encoding=utf8
+s sym.decrypt
+af # required for pdr
+o malloc://0x1000 0x40000
+o malloc://0x10 0x50000
+oC 0x10 @ obj.seckrit
+omb. obj.seckrit @ 0x0
+e cfg.bigendian=true # o commands are bugged, changes the endianness.
+e asm.cpu=mips32r2# o commands are bugged, changes the arch and cpu
 aezi
 w AnyColourYouLike @ 0x50000
 ar gp=loc._gp

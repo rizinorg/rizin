@@ -90,7 +90,7 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_JAL:
 		return mips_il_jal(handle, insn, gprlen);
 	case MIPS_INS_LD:
-		return NULL;
+		return mips_il_ld(handle, insn, gprlen);
 	case MIPS_INS_LWM:
 		return NULL;
 	case MIPS_INS_LA:
@@ -162,7 +162,7 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_S_D:
 		return NULL;
 	case MIPS_INS_SD:
-		return NULL;
+		return mips_il_sd(handle, insn, gprlen);
 	case MIPS_INS_DIV:
 		return mips_il_div(handle, insn, gprlen);
 	case MIPS_INS_SEQ:
@@ -988,13 +988,13 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_CMPI:
 		return NULL;
 	case MIPS_INS_DADD:
-		return NULL;
+		return mips_il_add(handle, insn, gprlen); // Long word add signed
 	case MIPS_INS_DADDI:
-		return NULL;
+		return mips_il_addi(handle, insn, gprlen); // Long word add immediate signed
 	case MIPS_INS_DADDIU:
-		return NULL;
+		return mips_il_addiu(handle, insn, gprlen); // Long word add immediate unsigned
 	case MIPS_INS_DADDU:
-		return NULL;
+		return mips_il_addu(handle, insn, gprlen); // Long word add unsigned
 	case MIPS_INS_DAHI:
 		return NULL;
 	case MIPS_INS_DALIGN:
@@ -1718,7 +1718,7 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_LWUPC:
 		return NULL;
 	case MIPS_INS_LWU:
-		return NULL;
+		return mips_il_lwu(handle, insn, gprlen);
 	case MIPS_INS_LWX:
 		return NULL;
 	case MIPS_INS_LWXC1:
