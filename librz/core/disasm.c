@@ -4058,7 +4058,7 @@ static void ds_print_ptr(RzDisasmState *ds, int len, int idx) {
 		}
 #endif
 		f = rz_flag_get_i(core->flags, refaddr);
-		if (f && (RZ_STR_EQ(f->space->name, RZ_FLAGS_FS_STRINGS) || RZ_STR_EQ(f->space->name, RZ_FLAGS_FS_STR))) {
+		if (f && f->space && (RZ_STR_EQ(f->space->name, RZ_FLAGS_FS_STRINGS) || RZ_STR_EQ(f->space->name, RZ_FLAGS_FS_STR))) {
 			if (strlen(msg) != 1) {
 				char *msg2 = rz_str_dup(msg);
 				if (msg2) {

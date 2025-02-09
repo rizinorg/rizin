@@ -1227,6 +1227,7 @@ static bool find_encoding(RzConfigNode *node, RzStrEnc *encoding) {
 		// Edge case when the node was just initialized but the options
 		// were not added yet.
 		*encoding = rz_str_enc_string_as_type(node->value);
+		return true;
 	}
 	return false;
 }
@@ -3713,7 +3714,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 
 	/* str */
 	SETCB("str.escbslash", "false", &cb_str_escbslash, "Escape the backslash");
-	n = NODECB("str.encoding", "utf8", &cb_str_encoding);
+	n = NODECB("str.encoding", "guess", &cb_str_encoding);
 	SETDESC(n, "The default string encoding type (when set to guess, it is automatically guessed).");
 	SETOPTIONS(n, "ascii", "8bit", "utf8", "utf16le", "utf32le", "utf16be", "utf32be", "ibm037", "ibm290", "ebcdices", "ebcdicuk", "ebcdicus", "guess", NULL);
 
