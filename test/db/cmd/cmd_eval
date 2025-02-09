@@ -24,7 +24,7 @@ zoom.to=0
 EOF
 RUN
 
-NAME=e analysis.gp(mips)
+NAME=e analysis.gp (mips)
 FILE=bins/elf/analysis/mips64r2-cc1
 CMDS=e analysis.gp
 EXPECT=<<EOF
@@ -33,7 +33,7 @@ EOF
 RUN
 
 NAME=e asm.os
-FILE=bins/elf/analysis/hello-linux-x86_64
+FILE==
 CMDS=e asm.os=?
 EXPECT=<<EOF
 ios
@@ -50,19 +50,20 @@ EOF
 RUN
 
 NAME=e asm.cpu
-FILE=bins/elf/analysis/hello-linux-x86_64
+FILE==
 CMDS=<<EOF
 e asm.arch=mips
 e asm.cpu=?
 EOF
 EXPECT=<<EOF
-mips3
+mips32
 mips1
 mips2
 mips32r2
 mips32r3
 mips32r5
 mips32r6
+mips3
 mips4
 mips5
 mips64r2
@@ -84,7 +85,20 @@ r2000a
 r2000
 r3000a
 r3000
+r6000
+r4000
+r4400
+r4600
+r4700
+r5000
+rm5000
+rm7000
+r8000
+r9000
 r10000
+r12000
+r14000
+r16000
 noptr64
 nofloat
 EOF
@@ -132,7 +146,7 @@ EOF
 RUN
 
 NAME=el commands test
-FILE=bins/elf/analysis/hello-linux-x86_64
+FILE==
 CMDS=<<EOF
 elj zoom
 elJ zoom

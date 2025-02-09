@@ -27,7 +27,7 @@ bool PE_(rz_bin_pe_has_canary)(const RzBinPEObj *bin) {
 
 // TODO: make it const! like in elf
 char *PE_(rz_bin_pe_get_machine)(RzBinPEObj *bin) {
-	char *machine = NULL;
+	const char *machine = NULL;
 
 	if (bin && bin->nt_headers) {
 		switch (bin->nt_headers->file_header.Machine) {
@@ -69,6 +69,24 @@ char *PE_(rz_bin_pe_get_machine)(RzBinPEObj *bin) {
 		}
 	}
 	return rz_str_dup(machine);
+}
+
+char *PE_(rz_bin_pe_get_cpu)(RzBinPEObj *bin) {
+	const char *cpu = NULL;
+
+	if (bin && bin->nt_headers) {
+		switch (bin->nt_headers->file_header.Machine) {
+		case PE_IMAGE_FILE_MACHINE_MIPS16: cpu = "mips16"; break;
+		case PE_IMAGE_FILE_MACHINE_MIPSFPU: cpu = "mips2"; break;
+		case PE_IMAGE_FILE_MACHINE_MIPSFPU16: cpu = "mips16"; break;
+		case PE_IMAGE_FILE_MACHINE_R10000: cpu = "r10000"; break;
+		case PE_IMAGE_FILE_MACHINE_R3000: cpu = "r3000"; break;
+		case PE_IMAGE_FILE_MACHINE_R4000: cpu = "r4000"; break;
+		case PE_IMAGE_FILE_MACHINE_WCEMIPSV2: cpu = "mips2"; break; // ISA MIPS32
+		default: return NULL;
+		}
+	}
+	return rz_str_dup(cpu);
 }
 
 // TODO: make it const! like in elf
@@ -139,6 +157,9 @@ char *PE_(rz_bin_pe_get_arch)(RzBinPEObj *bin) {
 	case PE_IMAGE_FILE_MACHINE_MIPSFPU:
 	case PE_IMAGE_FILE_MACHINE_MIPSFPU16:
 	case PE_IMAGE_FILE_MACHINE_WCEMIPSV2:
+	case PE_IMAGE_FILE_MACHINE_R10000:
+	case PE_IMAGE_FILE_MACHINE_R3000:
+	case PE_IMAGE_FILE_MACHINE_R4000:
 		arch = rz_str_dup("mips");
 		break;
 	case PE_IMAGE_FILE_MACHINE_POWERPC:
@@ -323,19 +344,29 @@ int PE_(bin_pe_get_actual_checksum)(RzBinPEObj *bin) {
 }
 
 int PE_(rz_bin_pe_get_bits)(RzBinPEObj *bin) {
-	int bits = 32;
-	if (bin && bin->nt_headers) {
-		if (is_arm(bin) && is_thumb(bin)) {
-			bits = 16;
-		} else {
-			switch (bin->nt_headers->optional_header.Magic) {
-			case PE_IMAGE_FILE_TYPE_PE32: bits = 32; break;
-			case PE_IMAGE_FILE_TYPE_PE32PLUS: bits = 64; break;
-			default: bits = -1;
-			}
-		}
+	if (!(bin && bin->nt_headers)) {
+		return 32;
 	}
-	return bits;
+	switch (bin->nt_headers->file_header.Machine) {
+	case PE_IMAGE_FILE_MACHINE_ARM: return is_thumb(bin) ? 16 : 32; // Arm32
+	case PE_IMAGE_FILE_MACHINE_ARM64: return 64; // Aarch64
+	case PE_IMAGE_FILE_MACHINE_ARMNT: return 16; // ARM Thumb-2
+	case PE_IMAGE_FILE_MACHINE_THUMB: return 16; // ARM Thumb/Thumb-2
+	case PE_IMAGE_FILE_MACHINE_MIPS16: return 32;
+	case PE_IMAGE_FILE_MACHINE_MIPSFPU: return 32;
+	case PE_IMAGE_FILE_MACHINE_MIPSFPU16: return 32;
+	case PE_IMAGE_FILE_MACHINE_WCEMIPSV2: return 32; // MIPS WCE v2
+	case PE_IMAGE_FILE_MACHINE_R10000: return 64;
+	case PE_IMAGE_FILE_MACHINE_R3000: return 32;
+	case PE_IMAGE_FILE_MACHINE_R4000: return 64;
+	default: break;
+	}
+	switch (bin->nt_headers->optional_header.Magic) {
+	case PE_IMAGE_FILE_TYPE_PE32: return 32;
+	case PE_IMAGE_FILE_TYPE_PE32PLUS: return 64;
+	default: break;
+	}
+	return 32;
 }
 
 #define HASCHR(x) (bin->nt_headers->file_header.Characteristics & (x))

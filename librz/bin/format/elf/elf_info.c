@@ -260,9 +260,9 @@ static const struct cpu_mips_translation gnu_mips_mach_translation_table[] = {
 static const struct mips_bits_translation mips_bits_translation_table[] = {
 	{ EF_MIPS_ARCH_1, 32 },
 	{ EF_MIPS_ARCH_2, 32 },
-	{ EF_MIPS_ARCH_3, 32 },
-	{ EF_MIPS_ARCH_4, 32 },
-	{ EF_MIPS_ARCH_5, 32 },
+	{ EF_MIPS_ARCH_3, 64 },
+	{ EF_MIPS_ARCH_4, 64 },
+	{ EF_MIPS_ARCH_5, 64 },
 	{ EF_MIPS_ARCH_32, 32 },
 	{ EF_MIPS_ARCH_64, 64 },
 	{ EF_MIPS_ARCH_32R2, 32 },
@@ -272,7 +272,7 @@ static const struct mips_bits_translation mips_bits_translation_table[] = {
 };
 
 static const struct cpu_mips_translation gnu_mips_arch_translation_table32[] = {
-	{ EF_MIPS_ARCH_1, "mips5" }, // also used for generic mips, so we default to mips5
+	{ EF_MIPS_ARCH_1, "mips3" }, // also used for generic mips, so we default to mips3 at 32 bits mode.
 	{ EF_MIPS_ARCH_2, "mips2" },
 	{ EF_MIPS_ARCH_3, "mips3" },
 	{ EF_MIPS_ARCH_4, "mips4" },

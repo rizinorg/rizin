@@ -671,6 +671,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->rclass = rz_str_dup("pe");
 	ret->os = PE_(rz_bin_pe_get_os)(bf->o->bin_obj);
 	ret->arch = PE_(rz_bin_pe_get_arch)(bf->o->bin_obj);
+	ret->cpu = PE_(rz_bin_pe_get_cpu)(bf->o->bin_obj);
 	ret->machine = PE_(rz_bin_pe_get_machine)(bf->o->bin_obj);
 	ret->subsystem = PE_(rz_bin_pe_get_subsystem)(bf->o->bin_obj);
 	ret->default_cc = PE_(rz_bin_pe_get_cc)(bf->o->bin_obj);

@@ -321,8 +321,8 @@ EOF
 EXPECT=<<EOF
     offset   size arch                          machine               
 ----------------------------------------------------------------------
-0x00000000 266108 mips_32 mips5 noreorder pic c MIPS R3000 big-endian
-[{"arch":"mips","bits":32,"offset":0,"size":266108,"cpu":"mips5","features":"noreorder pic cpic o32 n32","machine":"MIPS R3000 big-endian"}]
+0x00000000 266108 mips_32 mips3 noreorder pic c MIPS R3000 big-endian
+[{"arch":"mips","bits":32,"offset":0,"size":266108,"cpu":"mips3","features":"noreorder pic cpic o32 n32","machine":"MIPS R3000 big-endian"}]
 EOF
 RUN
 

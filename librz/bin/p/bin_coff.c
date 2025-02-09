@@ -416,7 +416,9 @@ static RzBinInfo *info(RzBinFile *bf) {
 
 	switch (obj->hdr.f_magic) {
 	case COFF_FILE_MACHINE_R4000:
-		ret->cpu = rz_str_dup("mips4");
+		ret->cpu = rz_str_dup("mips3");
+		ret->bits = 64;
+		break;
 		/* fall-thru */
 	case COFF_FILE_MACHINE_MIPS16:
 		if (!ret->cpu) {

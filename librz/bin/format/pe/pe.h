@@ -233,6 +233,7 @@ char *PE_(rz_bin_pe_get_arch)(RzBinPEObj *bin);
 char *PE_(rz_bin_pe_get_cc)(RzBinPEObj *bin);
 char *PE_(rz_bin_pe_get_compiler)(RzBinPEObj *bin);
 char *PE_(rz_bin_pe_get_machine)(RzBinPEObj *bin);
+char *PE_(rz_bin_pe_get_cpu)(RzBinPEObj *bin);
 char *PE_(rz_bin_pe_get_os)(RzBinPEObj *bin);
 char *PE_(rz_bin_pe_get_class)(RzBinPEObj *bin);
 int PE_(rz_bin_pe_get_bits)(RzBinPEObj *bin);
