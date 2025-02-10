@@ -2422,9 +2422,9 @@ static const RzCmdDescDetailEntry slash_z_Regex_space_Flags_detail_entries[] = {
 };
 
 static const RzCmdDescDetailEntry slash_z_Exampels_detail_entries[] = {
-	{ .text = "/z (ABC*)", .arg_str = NULL, .comment = "Search the exact string: \"(ABC*)\"." },
-	{ .text = "/z (ABC*)D li", .arg_str = NULL, .comment = "Search the exact string \"(ABC*)\" but case insensitive." },
-	{ .text = "/z (ABC*)D ri", .arg_str = NULL, .comment = "Search the regular expression \"(ABC*)D\" but case insensitive." },
+	{ .text = "/z (ABC*)", .arg_str = NULL, .comment = "Search the exact string \"(ABC*)\"." },
+	{ .text = "/z (ABC*)D li", .arg_str = NULL, .comment = "Search the exact string \"(ABC*)D\" but case insensitive." },
+	{ .text = "/z \\\\d\\\\sC*\\\\w ri", .arg_str = NULL, .comment = "Search the regular expression \"\\d\\sC*\\w\" but case insensitive." },
 	{ .text = "/z \"и.{3}м\" ei", .arg_str = NULL, .comment = "Search the extended regular expression \"и.{3}м\" but case insensitive." },
 	{ 0 },
 };
@@ -2441,7 +2441,7 @@ static const RzCmdDescHelp slash_z_help = {
 static const char *cmd_search_string_sensitive_encoding_choices[] = { "ascii", "8bit", "mutf8", "utf8", "utf16le", "utf32le", "utf16be", "utf32be", "ibm037", "ibm290", "ebcdices", "ebcdicuk", "ebcdicus", "guess", NULL };
 static const RzCmdDescArg cmd_search_string_sensitive_args[] = {
 	{
-		.name = "regex",
+		.name = "pattern",
 		.type = RZ_CMD_ARG_TYPE_STRING,
 
 	},

@@ -785,11 +785,11 @@ commands:
     - name: "Exampels"
       entries:
         - text: "/z (ABC*)"
-          comment: "Search the exact string: \"(ABC*)\"."
+          comment: "Search the exact string \"(ABC*)\"."
         - text: "/z (ABC*)D li"
-          comment: "Search the exact string \"(ABC*)\" but case insensitive."
-        - text: "/z (ABC*)D ri"
-          comment: "Search the regular expression \"(ABC*)D\" but case insensitive."
+          comment: "Search the exact string \"(ABC*)D\" but case insensitive."
+        - text: "/z \\\\d\\\\sC*\\\\w ri"
+          comment: "Search the regular expression \"\\d\\sC*\\w\" but case insensitive."
         - text: "/z \"и.{3}м\" ei"
           comment: "Search the extended regular expression \"и.{3}м\" but case insensitive."
     subcommands:
@@ -804,7 +804,7 @@ commands:
         - RZ_OUTPUT_MODE_QUIET
         - RZ_OUTPUT_MODE_TABLE
       args:
-        - name: regex
+        - name: pattern
           type: RZ_CMD_ARG_TYPE_STRING
         - name: regex_flags
           type: RZ_CMD_ARG_TYPE_STRING
