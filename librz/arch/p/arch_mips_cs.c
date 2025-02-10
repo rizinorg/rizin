@@ -98,15 +98,15 @@ static bool cs_mode_from_cpu(const char *cpu, int bits, bool big_endian, cs_mode
 		return_on_cpu("r4400", CS_MODE_MIPS3);
 		return_on_cpu("r4600", CS_MODE_MIPS3);
 		return_on_cpu("r4700", CS_MODE_MIPS3);
-		return_on_cpu("r5000", CS_MODE_MIPS4);
-		return_on_cpu("rm5000", CS_MODE_MIPS4);
-		return_on_cpu("rm7000", CS_MODE_MIPS4);
-		return_on_cpu("r8000", CS_MODE_MIPS4);
-		return_on_cpu("r9000", CS_MODE_MIPS4);
-		return_on_cpu("r10000", CS_MODE_MIPS4);
-		return_on_cpu("r12000", CS_MODE_MIPS4);
-		return_on_cpu("r14000", CS_MODE_MIPS4);
-		return_on_cpu("r16000", CS_MODE_MIPS4);
+		return_on_cpu("r5000", CS_MODE_MIPS64);
+		return_on_cpu("rm5000", CS_MODE_MIPS64);
+		return_on_cpu("rm7000", CS_MODE_MIPS64);
+		return_on_cpu("r8000", CS_MODE_MIPS64);
+		return_on_cpu("r9000", CS_MODE_MIPS64);
+		return_on_cpu("r10000", CS_MODE_MIPS64);
+		return_on_cpu("r12000", CS_MODE_MIPS64);
+		return_on_cpu("r14000", CS_MODE_MIPS64);
+		return_on_cpu("r16000", CS_MODE_MIPS64);
 	}
 
 #else // CS_NEXT_VERSION >= 6
