@@ -20,6 +20,7 @@
  * \return The find options to use. Or NULL in case of failure.
  */
 RZ_API RZ_OWN RzSearchFindOpt *rz_core_setup_default_search_find_opts(RzCore *core) {
+	rz_return_val_if_fail(core, NULL);
 	RzSearchFindOpt *fopts = rz_search_find_opt_new();
 	if (!fopts) {
 		RZ_LOG_ERROR("Failed allocating find options.\n");

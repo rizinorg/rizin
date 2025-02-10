@@ -16,9 +16,10 @@ RZ_API RZ_OWN RzSearchOpt *rz_search_opt_new() {
 }
 
 RZ_API void rz_search_opt_free(RZ_NULLABLE RzSearchOpt *opt) {
-	if (opt) {
-		rz_search_find_opt_free(opt->find_opts);
+	if (!opt) {
+		return;
 	}
+	rz_search_find_opt_free(opt->find_opts);
 	free(opt);
 }
 

@@ -120,6 +120,10 @@ RZ_API RZ_OWN RzSearchBytesPattern *rz_search_parse_byte_pattern(const char *byt
 	ut8 *bytes = RZ_NEWS0(ut8, strlen(byte_pattern) + 1);
 	ut8 *mask = RZ_NEWS0(ut8, strlen(byte_pattern) + 1);
 	RzPVector *matches = NULL;
+	if (!bytes || !mask) {
+		RZ_LOG_ERROR("Allocation falied.\n");
+		goto error;
+	}
 
 	// Some sanity checks
 	size_t ddot_count = rz_str_char_count(byte_pattern, ':');

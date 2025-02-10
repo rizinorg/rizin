@@ -2401,15 +2401,19 @@ beach:
 }
 
 static int pass_to_legacy_api(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	rz_return_val_if_fail(core && argv, RZ_CMD_STATUS_ERROR);
 	// The +1 strips the '/', because the legacy handler expect it this way.
 	const char *cmd = argv[0] + 1;
 	RzStrBuf *legacy_input = rz_strbuf_new(cmd);
+	if (!legacy_input) {
+		rz_warn_if_reached();
+		return RZ_CMD_STATUS_ERROR;
+	}
 	// Append arguments
 	for (size_t i = 1; i < argc; i++) {
 		rz_strbuf_appendf(legacy_input, " %s", argv[i]);
 	}
-	bool succeeded = cmd_search_legacy_handler(core, rz_strbuf_get(legacy_input));
-	rz_strbuf_free(legacy_input);
+	bool succeeded = cmd_search_legacy_handler(core, rz_strbuf_drain(legacy_input));
 	return succeeded ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
@@ -2862,6 +2866,7 @@ static bool parse_pattern_arg(const char *arg, RZ_OUT ut8 *re, RZ_OUT size_t *le
 
 // "/xr"
 RZ_IPI RzCmdStatus rz_cmd_search_hex_regex_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	rz_return_val_if_fail(core && state && argv, RZ_CMD_STATUS_ERROR);
 	ut8 *re = RZ_NEWS0(ut8, strlen(argv[1]));
 	RzSearchOpt *search_opts = setup_search_options(core);
 	RzList *hits = NULL;
