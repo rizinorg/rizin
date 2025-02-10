@@ -312,6 +312,7 @@ NAME=/xr on virtual address
 FILE=bins/cmd/search/alignment_test
 ARGS=-m 0x80000
 CMDS=<<EOF
+e search.overlap=true
 om 3 0x400000
 echo Alignment=None
 /xr x62x62.x62x62~$[0]
@@ -343,6 +344,7 @@ NAME=/x on virtual address
 FILE=bins/cmd/search/alignment_test
 ARGS=-m 0x80000
 CMDS=<<EOF
+e search.overlap=true
 echo Alignment=None
 om 3 0x400000
 /x 62626.6262~$[0]
@@ -372,6 +374,7 @@ NAME=/xr alignment
 FILE=bins/cmd/search/alignment_test
 ARGS=
 CMDS=<<EOF
+e search.overlap=true
 echo Alignment=None
 /xr x62x62.x62x62~$[0]
 e search.align=2
@@ -408,6 +411,7 @@ NAME=/x alignment
 FILE=bins/cmd/search/alignment_test
 ARGS=
 CMDS=<<EOF
+e search.overlap=true
 echo Alignment=None
 /x 62626.6262~$[0]
 e search.align=2
