@@ -3007,11 +3007,11 @@ static RzRegexFlags parse_re_flag_desc(const char *re_flags_desc) {
 		flags |= RZ_REGEX_CASELESS;
 	}
 	if (strchr(re_flags_desc, 'l')) {
-		return RZ_REGEX_LITERAL;
+		flags |= RZ_REGEX_LITERAL;
+		return flags;
 	}
 	if (strchr(re_flags_desc, 'r')) {
-		fcount++;
-		flags |= RZ_REGEX_CASELESS;
+		return flags;
 	}
 	if (strchr(re_flags_desc, 'e')) {
 		fcount++;
