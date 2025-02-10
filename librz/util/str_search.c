@@ -250,7 +250,7 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 	for (i = 0; i < opt->max_str_length - look_ahead && needle < to; i += rc) {
 		RzCodePoint r = 0;
 
-		switch(str_type) {
+		switch (str_type) {
 		case RZ_STRING_ENC_UTF32LE:
 			rc = rz_utf32le_decode(buf + needle - from, to - needle, &r);
 			break;

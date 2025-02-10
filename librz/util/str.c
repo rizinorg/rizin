@@ -1751,7 +1751,7 @@ static char *rz_str_escape_utf(const char *buf, int buf_size, RzStrEnc enc, bool
 		}
 		if (show_asciidot && !IS_PRINTABLE(ch)) {
 			*q++ = '.';
-		} else if (ch_bytes > 1) {
+		} else if (ch > ASCII_LAST_CODE_POINT) {
 			if (keep_printable) {
 				q += rz_utf8_encode((ut8 *)q, ch);
 			} else {
@@ -2160,9 +2160,6 @@ RZ_API bool rz_str_is_printable_limited(const char *str, int size) {
 }
 
 RZ_API bool rz_str_is_printable_incl_newlines(const char *str) {
-	if (!str || str[0] == '\0') {
-		return false;
-	}
 	while (*str) {
 		int ulen = rz_utf8_decode((const ut8 *)str, strlen(str), NULL);
 		if (ulen > 1) {

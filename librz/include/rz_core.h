@@ -57,7 +57,6 @@ RZ_LIB_VERSION_HEADER(rz_core);
 #define RZ_FLAGS_FS_SEGMENTS                "segments"
 #define RZ_FLAGS_FS_SIGNS                   "sign"
 #define RZ_FLAGS_FS_STRINGS                 "strings"
-#define RZ_FLAGS_FS_STR                     "str"
 #define RZ_FLAGS_FS_SYMBOLS                 "symbols"
 #define RZ_FLAGS_FS_SYMBOLS_SECTIONS        "symbols.sections"
 #define RZ_FLAGS_FS_SYSCALLS                "syscalls"
