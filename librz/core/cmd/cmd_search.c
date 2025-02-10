@@ -2970,44 +2970,9 @@ invalid_args:
 	return RZ_CMD_STATUS_ERROR;
 }
 
-static RzRegexFlags parse_re_flag_desc(const char *re_flags_desc) {
-	RzRegexFlags flags = RZ_REGEX_DEFAULT;
-	if (RZ_STR_ISEMPTY(re_flags_desc)) {
-		return flags;
-	}
-	size_t fcount = 0;
-	if (strchr(re_flags_desc, 'i')) {
-		fcount++;
-		flags |= RZ_REGEX_CASELESS;
-	}
-	if (strchr(re_flags_desc, 'l')) {
-		flags |= RZ_REGEX_LITERAL;
-		return flags;
-	}
-	if (strchr(re_flags_desc, 'r')) {
-		return flags;
-	}
-	if (strchr(re_flags_desc, 'e')) {
-		fcount++;
-		flags |= RZ_REGEX_EXTENDED;
-	}
-	if (strchr(re_flags_desc, 'E')) {
-		fcount++;
-		flags |= RZ_REGEX_EXTENDED_MORE;
-	}
-	if (strchr(re_flags_desc, 'm')) {
-		fcount++;
-		flags |= RZ_REGEX_MULTILINE;
-	}
-	if (fcount != strlen(re_flags_desc)) {
-		return ~RZ_REGEX_DEFAULT;
-	}
-	return flags;
-}
-
 // "/z"
 RZ_IPI RzCmdStatus rz_cmd_search_string_sensitive_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	RzRegexFlags flags = parse_re_flag_desc(argv[2]);
+	RzRegexFlags flags = rz_regex_parse_flag_desc(argv[2]);
 	if (flags == ~RZ_REGEX_DEFAULT) {
 		RZ_LOG_ERROR("Regex flags are invalid: '%s'\n", argv[2]);
 		return RZ_CMD_STATUS_ERROR;
