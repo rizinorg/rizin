@@ -34,7 +34,7 @@ static void align_offsets(RzUtilStrScanOptions options, RzStrEnc encoding, RzDet
 	*str_mem_offset = ht_uu_find(options.utf8_to_mem_offset_map, found_idx | (group0->start), &offset_found);
 	if (!offset_found) {
 		RZ_LOG_WARN("Could not determine memory offset of %s string in search. String offset will be off for: %s\n",
-		            rz_str_enc_as_string(detected->type), detected->string);
+			rz_str_enc_as_string(detected->type), detected->string);
 		*str_mem_offset = detected->addr + group0->start;
 	}
 	*str_mem_len = ht_uu_find(options.utf8_to_mem_offset_map, found_idx | (group0->start + group0->len), &len_found) - *str_mem_offset;
@@ -79,7 +79,7 @@ static bool string_find(RZ_NULLABLE RzSearchFindOpt *fopt, void *user, ut64 offs
 		void **it_m = NULL;
 		rz_pvector_foreach (ss->strings, it_m) {
 			RzDetectedString *find = *it_m;
-			RzPVector *matches = rz_regex_match_all(find->regex, detected->string, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT);
+			RzPVector *matches = fopt->match_overlap ? rz_regex_match_all_overlap(find->regex, detected->string, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT) : rz_regex_match_all(find->regex, detected->string, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT);
 			void **it;
 			rz_pvector_foreach (matches, it) {
 				RzPVector *match = *it;
