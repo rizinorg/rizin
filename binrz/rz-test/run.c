@@ -119,6 +119,7 @@ static RzSubprocessOutput *run_rz_test(RzTestRunConfig *config, ut64 timeout_ms,
 	rz_pvector_push(&args, "-escr.color=0");
 	rz_pvector_push(&args, "-escr.interactive=0");
 	rz_pvector_push(&args, "-eflirt.sigdb.load.system=false");
+	rz_pvector_push(&args, "-esearch.show_progress=false");
 	rz_pvector_push(&args, "-eflirt.sigdb.load.home=false");
 	rz_pvector_push(&args, "-N");
 	RzListIter *it;
