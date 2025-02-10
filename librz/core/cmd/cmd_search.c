@@ -2207,27 +2207,6 @@ reread:
 		rz_search_begin(core->search);
 		dosearch = true;
 		break;
-	case 'e': // "/e" match regexp
-		if (input[1] == '?') {
-			RZ_LOG_ERROR("core: Usage: /e /foo/i or /e/foo/i\n");
-		} else if (input[1]) {
-			RzSearchKeyword *kw;
-			kw = rz_search_keyword_new_regexp(input + 1, NULL);
-			if (!kw) {
-				RZ_LOG_ERROR("core: Invalid regexp specified\n");
-				break;
-			}
-			rz_search_reset(core->search, RZ_SEARCH_REGEXP);
-			// TODO distance is unused
-			rz_search_set_distance(core->search, (int)rz_config_get_i(core->config, "search.distance"));
-			rz_search_kw_add(core->search, kw);
-			rz_search_begin(core->search);
-			dosearch = true;
-			param.regex_search = true;
-		} else {
-			RZ_LOG_ERROR("core: Missing regex\n");
-		}
-		break;
 	case 'E': // "/E"
 		if (core->bin && core->bin->is_debugger) {
 			rz_debug_map_sync(core->dbg);
@@ -2662,16 +2641,6 @@ RZ_IPI RzCmdStatus rz_cmd_search_certs_handler(RzCore *core, int argc, const cha
 // "/d"
 RZ_IPI RzCmdStatus rz_cmd_search_deltified_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	return pass_to_legacy_api(core, argc, argv, RZ_OUTPUT_MODE_STANDARD);
-}
-
-// "/e"
-RZ_IPI RzCmdStatus rz_cmd_search_regex_raw_sensitive_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return pass_to_legacy_api(core, argc, argv, RZ_OUTPUT_MODE_STANDARD);
-}
-
-// "/ei"
-RZ_IPI RzCmdStatus rz_cmd_search_regex_raw_insensitive_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return pass_to_legacy_api(core, argc, argv, state->mode);
 }
 
 // "/E"

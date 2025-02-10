@@ -123,10 +123,6 @@ RZ_IPI RzCmdStatus rz_cmd_search_pattern_handler(RzCore *core, int argc, const c
 RZ_IPI RzCmdStatus rz_cmd_search_blocks_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/s"
 RZ_IPI RzCmdStatus rz_cmd_search_sections_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
-// "/e"
-RZ_IPI RzCmdStatus rz_cmd_search_regex_raw_sensitive_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
-// "/ei"
-RZ_IPI RzCmdStatus rz_cmd_search_regex_raw_insensitive_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/g"
 RZ_IPI RzCmdStatus rz_cmd_search_graph_path_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/gg"

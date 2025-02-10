@@ -337,35 +337,6 @@ commands:
     args:
       - name: "threshold"
         type: RZ_CMD_ARG_TYPE_STRING
-  - name: "/e"
-    summary: Raw regular expression search.
-    subcommands:
-    - name: "/e"
-      summary: Raw regular expression search (case-sensitive).
-      cname: cmd_search_regex_raw_sensitive
-      type: RZ_CMD_DESC_TYPE_ARGV_STATE
-      default_mode: RZ_OUTPUT_MODE_STANDARD
-      modes:
-        - RZ_OUTPUT_MODE_STANDARD
-        - RZ_OUTPUT_MODE_JSON
-        - RZ_OUTPUT_MODE_QUIET
-        - RZ_OUTPUT_MODE_TABLE
-      args:
-        - name: regex
-          type: RZ_CMD_ARG_TYPE_STRING
-    - name: "/ei"
-      summary: Raw regular expression search (case-insensitive).
-      cname: cmd_search_regex_raw_insensitive
-      type: RZ_CMD_DESC_TYPE_ARGV_STATE
-      default_mode: RZ_OUTPUT_MODE_STANDARD
-      modes:
-        - RZ_OUTPUT_MODE_STANDARD
-        - RZ_OUTPUT_MODE_JSON
-        - RZ_OUTPUT_MODE_QUIET
-        - RZ_OUTPUT_MODE_TABLE
-      args:
-        - name: regex
-          type: RZ_CMD_ARG_TYPE_STRING
 
   - name: "/g"
     summary: Search for all graph paths A to B (/gg follow jumps, see search.count and analysis.depth).

@@ -139,8 +139,6 @@ static const RzCmdDescArg cmd_search_insn_offset_backwards_fallback_args[2];
 static const RzCmdDescArg cmd_search_pattern_args[2];
 static const RzCmdDescArg cmd_search_blocks_args[2];
 static const RzCmdDescArg cmd_search_sections_args[2];
-static const RzCmdDescArg cmd_search_regex_raw_sensitive_args[2];
-static const RzCmdDescArg cmd_search_regex_raw_insensitive_args[2];
 static const RzCmdDescArg cmd_search_graph_path_args[3];
 static const RzCmdDescArg cmd_search_graph_path_follow_jumps_args[3];
 static const RzCmdDescArg cmd_search_hash_block_args[3];
@@ -1901,37 +1899,6 @@ static const RzCmdDescArg cmd_search_sections_args[] = {
 static const RzCmdDescHelp cmd_search_sections_help = {
 	.summary = "Search sections by grouping blocks with similar entropy.",
 	.args = cmd_search_sections_args,
-};
-
-static const RzCmdDescHelp slash_e_help = {
-	.summary = "Raw regular expression search.",
-};
-static const RzCmdDescArg cmd_search_regex_raw_sensitive_args[] = {
-	{
-		.name = "regex",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_search_regex_raw_sensitive_help = {
-	.summary = "Raw regular expression search (case-sensitive).",
-	.args = cmd_search_regex_raw_sensitive_args,
-};
-
-static const RzCmdDescArg cmd_search_regex_raw_insensitive_args[] = {
-	{
-		.name = "regex",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_search_regex_raw_insensitive_help = {
-	.summary = "Raw regular expression search (case-insensitive).",
-	.args = cmd_search_regex_raw_insensitive_args,
 };
 
 static const RzCmdDescHelp slash_g_help = {
@@ -20963,13 +20930,6 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_search_sections_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash__cd, "/s", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_sections_handler, &cmd_search_sections_help);
 	rz_warn_if_fail(cmd_search_sections_cd);
 	rz_cmd_desc_set_default_mode(cmd_search_sections_cd, RZ_OUTPUT_MODE_STANDARD);
-
-	RzCmdDesc *slash_e_cd = rz_cmd_desc_group_state_new(core->rcmd, slash__cd, "/e", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_regex_raw_sensitive_handler, &cmd_search_regex_raw_sensitive_help, &slash_e_help);
-	rz_warn_if_fail(slash_e_cd);
-	rz_cmd_desc_set_default_mode(slash_e_cd, RZ_OUTPUT_MODE_STANDARD);
-	RzCmdDesc *cmd_search_regex_raw_insensitive_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_e_cd, "/ei", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_regex_raw_insensitive_handler, &cmd_search_regex_raw_insensitive_help);
-	rz_warn_if_fail(cmd_search_regex_raw_insensitive_cd);
-	rz_cmd_desc_set_default_mode(cmd_search_regex_raw_insensitive_cd, RZ_OUTPUT_MODE_STANDARD);
 
 	RzCmdDesc *slash_g_cd = rz_cmd_desc_group_state_new(core->rcmd, slash__cd, "/g", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_graph_path_handler, &cmd_search_graph_path_help, &slash_g_help);
 	rz_warn_if_fail(slash_g_cd);
