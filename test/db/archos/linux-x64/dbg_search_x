@@ -3,7 +3,6 @@ FILE=bins/elf/arch-x86_64-ls
 ARGS=-d
 CMDS=<<EOF
 e search.in=dbg.maps.r
-e search.show_progress=false
 
 # Execute until main to ensure libc was mapped.
 s main

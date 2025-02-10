@@ -1,7 +1,6 @@
 NAME=String Search - Errors - Empty string
 FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ascii
 CMDS=<<EOF
-e search.show_progress=false
 /z ""
 EOF
 REGEXP_FILTER_ERR=ERROR.+
@@ -13,7 +12,6 @@ RUN
 NAME=String Search - Errors - Invalid regex args
 FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ascii
 CMDS=<<EOF
-e search.show_progress=false
 /z "as" aa
 /z "as" dd
 EOF
@@ -27,7 +25,6 @@ RUN
 NAME=String Search - Errors - Invalid encoding
 FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ascii
 CMDS=<<EOF
-e search.show_progress=false
 /z as l aa
 EOF
 REGEXP_FILTER_ERR=ERROR.+
@@ -40,7 +37,6 @@ RUN
 NAME=String Search - larger than file - Encoding: ascii - Latin
 FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ascii
 CMDS=<<EOF
-e search.show_progress=false
 /z "Lorem ipsum dolor sit amet, at eligendi adipisci ius, ex natum appetere officiis has, nibh quas torquatos pro te. Quo at deleniti repudiandae, et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.aaaaaaaaaaaaaaaa" l ascii
 EOF
 EXPECT=<<EOF
@@ -51,7 +47,6 @@ RUN
 NAME=String Search - minimal string - Encoding: ascii - Latin
 FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ascii
 CMDS=<<EOF
-e search.show_progress=false
 e search.str.min_length=2
 /z "et" l ascii
 # Requires increasing the block size because -.-
@@ -93,7 +88,6 @@ RUN
 NAME=String Search - minimal string - Encoding: ebcdic_uk - Latin
 FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ebcdic_uk
 CMDS=<<EOF
-e search.show_progress=false
 e search.str.min_length=2
 /z "et" l ebcdicuk
 # Requires increasing the block size because -.-
@@ -135,7 +129,6 @@ RUN
 NAME=String Search - minimal string - Encoding: ebcdic_us - Latin
 FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ebcdic_us
 CMDS=<<EOF
-e search.show_progress=false
 e search.str.min_length=2
 /z "et" l ebcdicus
 # Requires increasing the block size because -.-
@@ -177,7 +170,6 @@ RUN
 NAME=String Search - minimal string - Encoding: ebcdic_es - Latin
 FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ebcdic_es
 CMDS=<<EOF
-e search.show_progress=false
 e search.str.min_length=2
 /z "et" l ebcdices
 # Requires increasing the block size because -.-
@@ -219,7 +211,6 @@ RUN
 NAME=String Search - match all - Encoding: ascii - Latin
 FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ascii
 CMDS=<<EOF
-e search.show_progress=false
 /z "Lorem ipsum dolor sit amet, at eligendi adipisci ius, ex natum appetere officiis has, nibh quas torquatos pro te. Quo at deleniti repudiandae, et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et." l ascii
 # Requires increasing the block size because -.-
 b 0x1000
@@ -236,7 +227,6 @@ RUN
 NAME=String Search - search - Encoding: ibm037 - Latin
 FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ibm037
 CMDS=<<EOF
-e search.show_progress=false
 /z "eligendi adipisci ius, e" l ibm037
 # String detection for ibm037 for ps doesn't work yet.
 # ps @ hit.string.ibm037.0
@@ -250,7 +240,6 @@ RUN
 NAME=String Search - search - Encoding: ibm290 - Katakana
 FILE=bins/cmd/search/string_encodings/Japanese-Katakana-Lipsum.ibm290
 CMDS=<<EOF
-e search.show_progress=false
 # Compile with LITERAL option so * and ) are not interpreted as meta-characters.
 /z "!¥*);¬アイウエオカキクケコ" l ibm290
 ps ibm290 @ hit.string.ibm290.0
@@ -265,7 +254,6 @@ RUN
 NAME=String Search - search - Encoding: ibm290 - Use settings (default setting)
 FILE=bins/cmd/search/string_encodings/Japanese-Katakana-Lipsum.ibm290
 CMDS=<<EOF
-e search.show_progress=false
 e str.encoding=ibm290
 /z "!¥*);¬アイウエオカキクケコ"
 ps ibm290 @ hit.string.ibm290.0
@@ -280,7 +268,6 @@ RUN
 NAME=String Search - Encoding: ascii - Latin
 FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ascii
 CMDS=<<EOF
-e search.show_progress=false
 /z "placerat ut, eu etiam vitae nam" l ascii
 # Requires increasing the block size because -.-
 b 0x1000
@@ -297,7 +284,6 @@ RUN
 NAME=String Search - Encoding: utf8 - Arabic
 FILE=bins/cmd/search/string_encodings/Arabic-Lipsum.utf8
 CMDS=<<EOF
-e search.show_progress=false
 /z "ا الأوضاع, لم بوابة المب" l utf8
 # Requires increasing the block size because -.-
 b 0x1000
@@ -314,7 +300,6 @@ RUN
 NAME=String Search - Encoding: utf8 - Armenian
 FILE=bins/cmd/search/string_encodings/Armenian-Lipsum.utf8
 CMDS=<<EOF
-e search.show_progress=false
 /z "դեֆինիթիոնես ին վիս, ծասե պեռթինա" l utf8
 # Requires increasing the block size because -.-
 b 0x1000
@@ -331,7 +316,6 @@ RUN
 NAME=String Search - Encoding: utf8 - Chinese
 FILE=bins/cmd/search/string_encodings/Chinese-Lipsum.utf8
 CMDS=<<EOF
-e search.show_progress=false
 /z "京確年禁読応米新報書了号活修佐。" l utf8
 # Requires increasing the block size because -.-
 b 0x1000
@@ -348,7 +332,6 @@ RUN
 NAME=String Search - Encoding: utf8 - Georgian
 FILE=bins/cmd/search/string_encodings/Georgian-Lipsum.utf8
 CMDS=<<EOF
-e search.show_progress=false
 /z "რე, იუს ეა უთინამ დელიცათისსიმი. მელ ფერსეყუერის ლ" l utf8
 # Requires increasing the block size because -.-
 b 0x1000
@@ -365,7 +348,6 @@ RUN
 NAME=String Search - Encoding: utf8 - Greek
 FILE=bins/cmd/search/string_encodings/Greek-Lipsum.utf8
 CMDS=<<EOF
-e search.show_progress=false
 /z "παρτεμ ποσιδονιθμ ατ. Ετ πρι περιcθλισ σπλενδιδε" l utf8
 # Requires increasing the block size because -.-
 b 0x1000
@@ -382,7 +364,6 @@ RUN
 NAME=String Search - Encoding: utf8 - Hebrew I
 FILE=bins/cmd/search/string_encodings/Hebrew-Lipsum.utf8
 CMDS=<<EOF
-e search.show_progress=false
 /z "ים משחקים ממונרכיה" l utf8
 # Requires increasing the block size because -.-
 b 0x1000
@@ -399,7 +380,6 @@ RUN
 NAME=String Search - Encoding: utf8 - Hindi
 FILE=bins/cmd/search/string_encodings/Hindi-Lipsum.utf8
 CMDS=<<EOF
-e search.show_progress=false
 /z "पहोचने वैश्विक एसलिये पुस्तक हुआआदी" l utf8
 # Requires increasing the block size because -.-
 b 0x1000
@@ -416,7 +396,6 @@ RUN
 NAME=String Search - Encoding: utf8 - Korean2
 FILE=bins/cmd/search/string_encodings/Korean2-Lipsum.utf8
 CMDS=<<EOF
-e search.show_progress=false
 /z "생의 과실이 있으며." l utf8
 # Requires increasing the block size because -.-
 b 0x1000
@@ -433,7 +412,6 @@ RUN
 NAME=String Search - Encoding: utf8 - Morsecode
 FILE=bins/cmd/search/string_encodings/Morsecode-Lipsum.utf8
 CMDS=<<EOF
-e search.show_progress=false
 /z " ·--· ·---- ··· - ···· --" l utf8
 # Requires increasing the block size because -.-
 b 0x1000
@@ -450,7 +428,6 @@ RUN
 NAME=String Search - Encoding: utf8 - Russian
 FILE=bins/cmd/search/string_encodings/Russian-Lipsum.utf8
 CMDS=<<EOF
-e search.show_progress=false
 /z "тани ад. Цум хендрерит перс" l utf8
 # Requires increasing the block size because -.-
 b 0x1000
@@ -467,7 +444,6 @@ RUN
 NAME=String Search - Encoding: utf16be - Arabic
 FILE=bins/cmd/search/string_encodings/Arabic-Lipsum.utf16be
 CMDS=<<EOF
-e search.show_progress=false
 /z "ا الأوضاع, لم بوابة المب" l utf16be
 # Requires increasing the block size because -.-
 b 0x1000
@@ -484,7 +460,6 @@ RUN
 NAME=String Search - Encoding: utf16be - Armenian
 FILE=bins/cmd/search/string_encodings/Armenian-Lipsum.utf16be
 CMDS=<<EOF
-e search.show_progress=false
 /z "դեֆինիթիոնես ին վիս, ծասե պեռթինա" l utf16be
 # Requires increasing the block size because -.-
 b 0x1000
@@ -501,7 +476,6 @@ RUN
 NAME=String Search - Encoding: utf16be - Chinese
 FILE=bins/cmd/search/string_encodings/Chinese-Lipsum.utf16be
 CMDS=<<EOF
-e search.show_progress=false
 /z "京確年禁読応米新報書了号活修佐。" l utf16be
 # Requires increasing the block size because -.-
 b 0x1000
@@ -518,7 +492,6 @@ RUN
 NAME=String Search - Encoding: utf16be - Georgian
 FILE=bins/cmd/search/string_encodings/Georgian-Lipsum.utf16be
 CMDS=<<EOF
-e search.show_progress=false
 /z "რე, იუს ეა უთინამ დელიცათისსიმი. მელ ფერსეყუერის ლ" l utf16be
 # Requires increasing the block size because -.-
 b 0x1000
@@ -535,7 +508,6 @@ RUN
 NAME=String Search - Encoding: utf16be - Greek
 FILE=bins/cmd/search/string_encodings/Greek-Lipsum.utf16be
 CMDS=<<EOF
-e search.show_progress=false
 /z "παρτεμ ποσιδονιθμ ατ. Ετ πρι περιcθλισ σπλενδιδε" l utf16be
 # Requires increasing the block size because -.-
 b 0x1000
@@ -552,7 +524,6 @@ RUN
 NAME=String Search - Encoding: utf16be - Hebrew I
 FILE=bins/cmd/search/string_encodings/Hebrew-Lipsum.utf16be
 CMDS=<<EOF
-e search.show_progress=false
 /z "ים משחקים ממונרכיה" l utf16be
 # Requires increasing the block size because -.-
 b 0x1000
@@ -569,7 +540,6 @@ RUN
 NAME=String Search - Encoding: utf16be - Hindi
 FILE=bins/cmd/search/string_encodings/Hindi-Lipsum.utf16be
 CMDS=<<EOF
-e search.show_progress=false
 /z "पहोचने वैश्विक एसलिये पुस्तक हुआआदी" l utf16be
 # Requires increasing the block size because -.-
 b 0x1000
@@ -586,7 +556,6 @@ RUN
 NAME=String Search - Encoding: utf16be - Korean2
 FILE=bins/cmd/search/string_encodings/Korean2-Lipsum.utf16be
 CMDS=<<EOF
-e search.show_progress=false
 /z "생의 과실이 있으며." l utf16be
 # Requires increasing the block size because -.-
 b 0x1000
@@ -603,7 +572,6 @@ RUN
 NAME=String Search - Encoding: utf16be - Morsecode
 FILE=bins/cmd/search/string_encodings/Morsecode-Lipsum.utf16be
 CMDS=<<EOF
-e search.show_progress=false
 /z " ·--· ·---- ··· - ···· --" l utf16be
 # Requires increasing the block size because -.-
 b 0x1000
@@ -620,7 +588,6 @@ RUN
 NAME=String Search - Encoding: utf16be - Russian
 FILE=bins/cmd/search/string_encodings/Russian-Lipsum.utf16be
 CMDS=<<EOF
-e search.show_progress=false
 /z "тани ад. Цум хендрерит перс" l utf16be
 # Requires increasing the block size because -.-
 b 0x1000
@@ -637,7 +604,6 @@ RUN
 NAME=String Search - Encoding: utf16le - Arabic
 FILE=bins/cmd/search/string_encodings/Arabic-Lipsum.utf16le
 CMDS=<<EOF
-e search.show_progress=false
 /z "ا الأوضاع, لم بوابة المب" l utf16le
 # Requires increasing the block size because -.-
 b 0x1000
@@ -653,7 +619,6 @@ RUN
 NAME=String Search - Encoding: utf16le - Armenian
 FILE=bins/cmd/search/string_encodings/Armenian-Lipsum.utf16le
 CMDS=<<EOF
-e search.show_progress=false
 /z "դեֆինիթիոնես ին վիս, ծասե պեռթինա" l utf16le
 # Requires increasing the block size because -.-
 b 0x1000
@@ -670,7 +635,6 @@ RUN
 NAME=String Search - Encoding: utf16le - Chinese
 FILE=bins/cmd/search/string_encodings/Chinese-Lipsum.utf16le
 CMDS=<<EOF
-e search.show_progress=false
 /z "京確年禁読応米新報書了号活修佐。" l utf16le
 # Requires increasing the block size because -.-
 b 0x1000
@@ -687,7 +651,6 @@ RUN
 NAME=String Search - Encoding: utf16le - Georgian
 FILE=bins/cmd/search/string_encodings/Georgian-Lipsum.utf16le
 CMDS=<<EOF
-e search.show_progress=false
 /z "რე, იუს ეა უთინამ დელიცათისსიმი. მელ ფერსეყუერის ლ" l utf16le
 # Requires increasing the block size because -.-
 b 0x1000
@@ -704,7 +667,6 @@ RUN
 NAME=String Search - Encoding: utf16le - Greek
 FILE=bins/cmd/search/string_encodings/Greek-Lipsum.utf16le
 CMDS=<<EOF
-e search.show_progress=false
 /z "παρτεμ ποσιδονιθμ ατ. Ετ πρι περιcθλισ σπλενδιδε" l utf16le
 # Requires increasing the block size because -.-
 b 0x1000
@@ -721,7 +683,6 @@ RUN
 NAME=String Search - Encoding: utf16le - Hebrew I
 FILE=bins/cmd/search/string_encodings/Hebrew-Lipsum.utf16le
 CMDS=<<EOF
-e search.show_progress=false
 /z "ים משחקים ממונרכיה" l utf16le
 # Requires increasing the block size because -.-
 b 0x1000
@@ -738,7 +699,6 @@ RUN
 NAME=String Search - Encoding: utf16le - Hindi
 FILE=bins/cmd/search/string_encodings/Hindi-Lipsum.utf16le
 CMDS=<<EOF
-e search.show_progress=false
 /z "पहोचने वैश्विक एसलिये पुस्तक हुआआदी" l utf16le
 # Requires increasing the block size because -.-
 b 0x1000
@@ -755,7 +715,6 @@ RUN
 NAME=String Search - Encoding: utf16le - Korean2
 FILE=bins/cmd/search/string_encodings/Korean2-Lipsum.utf16le
 CMDS=<<EOF
-e search.show_progress=false
 /z "생의 과실이 있으며." l utf16le
 # Requires increasing the block size because -.-
 b 0x1000
@@ -772,7 +731,6 @@ RUN
 NAME=String Search - Encoding: utf16le - Morsecode
 FILE=bins/cmd/search/string_encodings/Morsecode-Lipsum.utf16le
 CMDS=<<EOF
-e search.show_progress=false
 /z " ·--· ·---- ··· - ···· --" l utf16le
 # Requires increasing the block size because -.-
 b 0x1000
@@ -789,7 +747,6 @@ RUN
 NAME=String Search - Encoding: utf16le - Russian
 FILE=bins/cmd/search/string_encodings/Russian-Lipsum.utf16le
 CMDS=<<EOF
-e search.show_progress=false
 /z "тани ад. Цум хендрерит перс" l utf16le
 # Requires increasing the block size because -.-
 b 0x1000
@@ -806,7 +763,6 @@ RUN
 NAME=String Search - Encoding: utf32be - Arabic
 FILE=bins/cmd/search/string_encodings/Arabic-Lipsum.utf32be
 CMDS=<<EOF
-e search.show_progress=false
 /z "ا الأوضاع, لم بوابة المب" l utf32be
 # Requires increasing the block size because -.-
 b 0x1000
@@ -823,7 +779,6 @@ RUN
 NAME=String Search - Encoding: utf32be - Armenian
 FILE=bins/cmd/search/string_encodings/Armenian-Lipsum.utf32be
 CMDS=<<EOF
-e search.show_progress=false
 /z "դեֆինիթիոնես ին վիս, ծասե պեռթինա" l utf32be
 # Requires increasing the block size because -.-
 b 0x1000
@@ -840,7 +795,6 @@ RUN
 NAME=String Search - Encoding: utf32be - Chinese
 FILE=bins/cmd/search/string_encodings/Chinese-Lipsum.utf32be
 CMDS=<<EOF
-e search.show_progress=false
 /z "京確年禁読応米新報書了号活修佐。" l utf32be
 # Requires increasing the block size because -.-
 b 0x1000
@@ -857,7 +811,6 @@ RUN
 NAME=String Search - Encoding: utf32be - Georgian
 FILE=bins/cmd/search/string_encodings/Georgian-Lipsum.utf32be
 CMDS=<<EOF
-e search.show_progress=false
 /z "რე, იუს ეა უთინამ დელიცათისსიმი. მელ ფერსეყუერის ლ" l utf32be
 # Requires increasing the block size because -.-
 b 0x1000
@@ -874,7 +827,6 @@ RUN
 NAME=String Search - Encoding: utf32be - Greek
 FILE=bins/cmd/search/string_encodings/Greek-Lipsum.utf32be
 CMDS=<<EOF
-e search.show_progress=false
 /z "παρτεμ ποσιδονιθμ ατ. Ετ πρι περιcθλισ σπλενδιδε" l utf32be
 # Requires increasing the block size because -.-
 b 0x1000
@@ -891,7 +843,6 @@ RUN
 NAME=String Search - Encoding: utf32be - Hebrew I
 FILE=bins/cmd/search/string_encodings/Hebrew-Lipsum.utf32be
 CMDS=<<EOF
-e search.show_progress=false
 /z "ים משחקים ממונרכיה" l utf32be
 # Requires increasing the block size because -.-
 b 0x1000
@@ -908,7 +859,6 @@ RUN
 NAME=String Search - Encoding: utf32be - Hindi
 FILE=bins/cmd/search/string_encodings/Hindi-Lipsum.utf32be
 CMDS=<<EOF
-e search.show_progress=false
 /z "पहोचने वैश्विक एसलिये पुस्तक हुआआदी" l utf32be
 # Requires increasing the block size because -.-
 b 0x1000
@@ -925,7 +875,6 @@ RUN
 NAME=String Search - Encoding: utf32be - Korean2
 FILE=bins/cmd/search/string_encodings/Korean2-Lipsum.utf32be
 CMDS=<<EOF
-e search.show_progress=false
 /z "생의 과실이 있으며." l utf32be
 # Requires increasing the block size because -.-
 b 0x1000
@@ -942,7 +891,6 @@ RUN
 NAME=String Search - Encoding: utf32be - Morsecode
 FILE=bins/cmd/search/string_encodings/Morsecode-Lipsum.utf32be
 CMDS=<<EOF
-e search.show_progress=false
 /z " ·--· ·---- ··· - ···· --" l utf32be
 # Requires increasing the block size because -.-
 b 0x1000
@@ -959,7 +907,6 @@ RUN
 NAME=String Search - Encoding: utf32be - Russian
 FILE=bins/cmd/search/string_encodings/Russian-Lipsum.utf32be
 CMDS=<<EOF
-e search.show_progress=false
 /z "тани ад. Цум хендрерит перс" l utf32be
 # Requires increasing the block size because -.-
 b 0x1000
@@ -976,7 +923,6 @@ RUN
 NAME=String Search - Encoding: utf32le - Arabic
 FILE=bins/cmd/search/string_encodings/Arabic-Lipsum.utf32le
 CMDS=<<EOF
-e search.show_progress=false
 /z "ا الأوضاع, لم بوابة المب" l utf32le
 # Requires increasing the block size because -.-
 b 0x1000
@@ -992,7 +938,6 @@ RUN
 NAME=String Search - Encoding: utf32le - Armenian
 FILE=bins/cmd/search/string_encodings/Armenian-Lipsum.utf32le
 CMDS=<<EOF
-e search.show_progress=false
 /z "դեֆինիթիոնես ին վիս, ծասե պեռթինա" l utf32le
 # Requires increasing the block size because -.-
 b 0x1000
@@ -1009,7 +954,6 @@ RUN
 NAME=String Search - Encoding: utf32le - Chinese
 FILE=bins/cmd/search/string_encodings/Chinese-Lipsum.utf32le
 CMDS=<<EOF
-e search.show_progress=false
 /z "京確年禁読応米新報書了号活修佐。" l utf32le
 # Requires increasing the block size because -.-
 b 0x1000
@@ -1026,7 +970,6 @@ RUN
 NAME=String Search - Encoding: utf32le - Georgian
 FILE=bins/cmd/search/string_encodings/Georgian-Lipsum.utf32le
 CMDS=<<EOF
-e search.show_progress=false
 /z "რე, იუს ეა უთინამ დელიცათისსიმი. მელ ფერსეყუერის ლ" l utf32le
 # Requires increasing the block size because -.-
 b 0x1000
@@ -1043,7 +986,6 @@ RUN
 NAME=String Search - Encoding: utf32le - Greek
 FILE=bins/cmd/search/string_encodings/Greek-Lipsum.utf32le
 CMDS=<<EOF
-e search.show_progress=false
 /z "παρτεμ ποσιδονιθμ ατ. Ετ πρι περιcθλισ σπλενδιδε" l utf32le
 # Requires increasing the block size because -.-
 b 0x1000
@@ -1060,7 +1002,6 @@ RUN
 NAME=String Search - Encoding: utf32le - Hebrew I
 FILE=bins/cmd/search/string_encodings/Hebrew-Lipsum.utf32le
 CMDS=<<EOF
-e search.show_progress=false
 /z "ים משחקים ממונרכיה" l utf32le
 # Requires increasing the block size because -.-
 b 0x1000
@@ -1077,7 +1018,6 @@ RUN
 NAME=String Search - Encoding: utf32le - Hindi
 FILE=bins/cmd/search/string_encodings/Hindi-Lipsum.utf32le
 CMDS=<<EOF
-e search.show_progress=false
 /z "पहोचने वैश्विक एसलिये पुस्तक हुआआदी" l utf32le
 # Requires increasing the block size because -.-
 b 0x1000
@@ -1094,7 +1034,6 @@ RUN
 NAME=String Search - Encoding: utf32le - Korean2
 FILE=bins/cmd/search/string_encodings/Korean2-Lipsum.utf32le
 CMDS=<<EOF
-e search.show_progress=false
 /z "생의 과실이 있으며." l utf32le
 # Requires increasing the block size because -.-
 b 0x1000
@@ -1111,7 +1050,6 @@ RUN
 NAME=String Search - Encoding: utf32le - Morsecode
 FILE=bins/cmd/search/string_encodings/Morsecode-Lipsum.utf32le
 CMDS=<<EOF
-e search.show_progress=false
 /z " ·--· ·---- ··· - ···· --" l utf32le
 # Requires increasing the block size because -.-
 b 0x1000
@@ -1128,7 +1066,6 @@ RUN
 NAME=String Search - Encoding: utf32le - Russian
 FILE=bins/cmd/search/string_encodings/Russian-Lipsum.utf32le
 CMDS=<<EOF
-e search.show_progress=false
 /z "тани ад. Цум хендрерит перс" l utf32le
 # Requires increasing the block size because -.-
 b 0x1000
@@ -1145,7 +1082,6 @@ RUN
 NAME=Regex Search case insensitive - Encoding: Unicode utf8, utf32le, utf16be - Russian
 FILE=bins/cmd/search/string_encodings/regex_search.russian.utf8.utf32le.utf16be
 CMDS=<<EOF
-e search.show_progress=false
 /z "ипсум" i utf8
 # Requires increasing the block size because -.-
 b 0x1000
@@ -1165,7 +1101,6 @@ RUN
 NAME=String search extended regex - Encoding: Unicode utf8, utf32le, utf16be - Russian
 FILE=bins/cmd/search/string_encodings/regex_search.russian.utf8.utf32le.utf16be
 CMDS=<<EOF
-e search.show_progress=false
 /z "и.{3}м" e utf32le
 # Requires increasing the block size because -.-
 b 0x1000
@@ -1185,7 +1120,6 @@ RUN
 NAME=String search regex case insensitive - Encoding: Unicode utf8, utf32le, utf16be - Russian
 FILE=bins/cmd/search/string_encodings/regex_search.russian.utf8.utf32le.utf16be
 CMDS=<<EOF
-e search.show_progress=false
 /z "и.{3}м" ei utf8
 # Requires increasing the block size because -.-
 b 0x1000
@@ -1213,7 +1147,6 @@ FILE=bins/cmd/search/string_encodings/Russian-Lipsum.utf16be
 CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
-e search.show_progress=false
 /z "Л..е." e utf16be
 psm @ hit.string.utf16be.0
 psm @ hit.string.utf16be.1
@@ -1232,7 +1165,6 @@ FILE=bins/cmd/search/string_encodings/Russian-Lipsum.utf32le
 CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
-e search.show_progress=false
 /z "Л..е." e utf32le
 psW @ hit.string.utf32le.0
 psW @ hit.string.utf32le.1
@@ -1252,7 +1184,6 @@ FILE=bins/cmd/search/string_encodings/Russian-Lipsum.utf32le
 CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
-e search.show_progress=false
 /z "Л..е." e utf32le
 psW @ hit.string.utf32le.0
 psW @ hit.string.utf32le.1
@@ -1277,7 +1208,6 @@ NAME=String search alignment
 FILE=bins/cmd/search/alignment_test
 ARGS=
 CMDS=<<EOF
-e search.show_progress=false
 /z b[ba].bb r~$[0]
 e search.align=2
 echo Alignment=2
@@ -1312,7 +1242,6 @@ RUN
 NAME=String Search - minimal string - Encoding: ebcdic_uk - Latin
 FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ebcdic_uk
 CMDS=<<EOF
-e search.show_progress=false
 e search.str.min_length=2
 /z "et" l ebcdicuk
 # Requires increasing the block size because -.-
@@ -1354,7 +1283,6 @@ RUN
 NAME=String Search - minimal string - Encoding: ebcdic_us - Latin
 FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ebcdic_us
 CMDS=<<EOF
-e search.show_progress=false
 e search.str.min_length=2
 /z "et" l ebcdicus
 # Requires increasing the block size because -.-
@@ -1396,7 +1324,6 @@ RUN
 NAME=String Search - minimal string - Encoding: ebcdic_es - Latin
 FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ebcdic_es
 CMDS=<<EOF
-e search.show_progress=false
 e search.str.min_length=2
 /z "et" l ebcdices
 # Requires increasing the block size because -.-

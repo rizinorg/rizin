@@ -3,7 +3,6 @@ FILE=malloc://1024
 CMDS=<<EOF
 wx 90 @ 10
 e cmd.hit="wx 91"
-e search.show_progress=false
 /x 90
 p8 1 @ 10
 EOF
@@ -15,7 +14,6 @@ RUN
 NAME=cmd.hit sugar for /z
 FILE=malloc://1024
 CMDS=<<EOF
-e search.show_progress=false
 w hello @ 10
 ps @@/z hello i
 EOF
@@ -28,7 +26,6 @@ NAME=/xj utf16
 FILE=malloc://1024
 CMDS=<<EOF
 wx 005c
-e search.show_progress=false
 /xj 005c
 EOF
 EXPECT=<<EOF
@@ -40,7 +37,6 @@ NAME=/z utf16be
 FILE=malloc://1024
 CMDS=<<EOF
 e search.str.min_length=1
-e search.show_progress=false
 wx 0067
 /zj g i utf16be
 EOF
@@ -52,7 +48,6 @@ RUN
 NAME=cmd.hit sugar for /x
 FILE=malloc://1024
 CMDS=<<EOF
-e search.show_progress=false
 wx 90 @ 10
 wx 91 @@/x 90
 p8 1 @ 10
@@ -65,7 +60,6 @@ RUN
 NAME=cmd.hit sugar for /
 FILE=malloc://1024
 CMDS=<<EOF
-e search.show_progress=false
 e asm.arch=x86
 e asm.bits=64
 w A @ 10
@@ -95,7 +89,6 @@ RUN
 NAME=cmd.hit for /+
 FILE=malloc://1024
 CMDS=<<EOF
-e search.show_progress=false
 e cmd.hit="p8 3"
 w ABCDEF
 /+ ABC
@@ -211,7 +204,6 @@ RUN
 NAME=cmd.hit for /z i
 FILE=malloc://1024
 CMDS=<<EOF
-e search.show_progress=false
 e cmd.hit=ps
 e search.from=0
 e search.to=0x10

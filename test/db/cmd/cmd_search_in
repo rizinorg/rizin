@@ -4,7 +4,6 @@ ARGS=-m 0x80000
 CMDS=<<EOF
 e search.in=io.maps
 e io.va=true
-e search.show_progress=false
 /z get~[0]
 EOF
 EXPECT=<<EOF
@@ -17,7 +16,6 @@ NAME=/z search.in=io.maps without -m
 FILE=bins//wasm/inc.wast
 CMDS=<<EOF
 e search.in=io.maps
-e search.show_progress=false
 /z get~[0]
 EOF
 EXPECT=<<EOF
@@ -29,7 +27,6 @@ RUN
 NAME=/z search.in=(default)
 FILE=bins//wasm/inc.wast
 CMDS=<<EOF
-e search.show_progress=false
 /z get~[0]
 EOF
 EXPECT=<<EOF
@@ -42,7 +39,6 @@ NAME=/z search.in=file
 FILE=bins//wasm/inc.wast
 CMDS=<<EOF
 e search.in=file
-e search.show_progress=false
 /z get~[0]
 EOF
 EXPECT=<<EOF
@@ -55,7 +51,6 @@ NAME=/z search io.maps with map
 FILE=bins//wasm/inc.wast
 ARGS=-m 0x80000
 CMDS=<<EOF
-e search.show_progress=false
 e search.in=io.maps
 e io.va=true
 /z get~[0]
@@ -70,7 +65,6 @@ NAME=/z search io.maps 2
 FILE=bins//wasm/inc.wast
 ARGS=-m 0x80000
 CMDS=<<EOF
-e search.show_progress=false
 om 3 0x400000
 e io.va=true
 e search.in=io.maps

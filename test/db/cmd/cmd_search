@@ -2,7 +2,6 @@ NAME=trailing comment
 FILE==
 ARGS=-n
 CMDS=<<EOF
-e search.show_progress=false
 /z #
 EOF
 EXPECT=
@@ -126,7 +125,6 @@ RUN
 NAME=/zj escaped
 FILE=bins/mach0/escaped
 CMDS=<<EOF
-e search.show_progress=false
 /zj hello
 EOF
 EXPECT=<<EOF
@@ -143,7 +141,6 @@ e search.in=file
 e search.from=0
 e search.to=0x00000050
 e search.str.min_length=3
-e search.show_progress=false
 /z ELF
 EOF
 EXPECT=<<EOF
@@ -161,7 +158,6 @@ e search.in=file
 e search.from=0
 e search.to=0x50
 e search.str.min_length=3
-e search.show_progress=false
 /z ELF
 EOF
 EXPECT=<<EOF
@@ -174,7 +170,6 @@ FILE=malloc://1024
 CMDS=<<EOF
 wx 666f6f005c
 e search.str.min_length=3
-e search.show_progress=false
 /zj foo
 EOF
 EXPECT=<<EOF
@@ -308,7 +303,6 @@ s 0x1000
 e search.in=file
 e search.from=0
 e search.to=0x00000050
-e search.show_progress=false
 /x 3480
 EOF
 EXPECT=<<EOF
@@ -566,7 +560,6 @@ w ABCD @ 0x100
 s 0
 e search.from=0
 e search.to=0x200
-e search.show_progress=false
 /x 41424344
 EOF
 EXPECT=<<EOF
@@ -582,7 +575,6 @@ s 0x1000
 e search.in=raw
 e search.from=0
 e search.to=0x200
-e search.show_progress=false
 /x 41424344
 EOF
 EXPECT=<<EOF
@@ -763,7 +755,6 @@ CMDS=<<EOF
 e io.va=false
 e search.in=file
 s 0x1000
-e search.show_progress=false
 /x 9090cd80
 s
 EOF
@@ -775,7 +766,6 @@ RUN
 NAME=/x hit in the second map
 FILE=bins/elf/ioli/crackme0x00
 CMDS=<<EOF
-e search.show_progress=false
 /x f8820408
 EOF
 EXPECT=<<EOF
@@ -786,7 +776,6 @@ RUN
 NAME=/x wrong entries
 FILE=bins/elf/analysis/go_stripped
 CMDS=<<EOF
-e search.show_progress=false
 /x 653b2530000000724b53b834e7150883ec188.~$[0]
 # Should find nothing, because it gets exended on the lhs and is not aligned.
 /x 653b2530000000724b53b834e7150883ec188~$[0]
@@ -804,7 +793,6 @@ w ABCD @ 0x100
 b 0x100
 e search.from=0x50
 e search.to=0x150
-e search.show_progress=false
 /x 41424344
 EOF
 EXPECT=<<EOF
@@ -819,7 +807,6 @@ w ABCD @ 0x100
 b 0x100
 e search.from=0x50
 e search.to=0x90
-e search.show_progress=false
 /x 41424344
 EOF
 EXPECT=
@@ -832,7 +819,6 @@ w ABCD @ 0x100
 b 0x100
 e search.from=0x100
 e search.to=0x104
-e search.show_progress=false
 /x 41424344
 EOF
 EXPECT=<<EOF
@@ -847,7 +833,6 @@ w ABCD @ 0x100
 b 0x100
 e search.from=0x101
 e search.to=0x104
-e search.show_progress=false
 /x 41424344
 EOF
 EXPECT=
@@ -860,7 +845,6 @@ w ABCD @ 0x100
 b 0x100
 e search.from=0x100
 e search.to=0x103
-e search.show_progress=false
 /x 41424344
 EOF
 EXPECT=
@@ -873,7 +857,6 @@ w ABCD @ 0x100
 b 0x100
 e search.from=0x50
 e search.to=0x150
-e search.show_progress=false
 /x 41424344
 EOF
 EXPECT=<<EOF
@@ -888,7 +871,6 @@ w ABCD @ 0x100
 b 0x100
 e search.from=0x50
 e search.to=0x90
-e search.show_progress=false
 /x 41424344
 EOF
 EXPECT=
@@ -901,7 +883,6 @@ w ABCD @ 0x100
 e search.from=0x100
 e search.to=0x104
 b 0x100
-e search.show_progress=false
 /x 41424344
 EOF
 EXPECT=<<EOF
@@ -916,7 +897,6 @@ w ABCD @ 0x100
 e search.from=0x100
 e search.to=0x103
 b 0x100
-e search.show_progress=false
 /x 41424344
 EOF
 EXPECT=
@@ -929,7 +909,6 @@ w ABCD @ 0x100
 e search.from=0x101
 e search.to=0x104
 b 0x100
-e search.show_progress=false
 /x 41424344
 EOF
 EXPECT=
@@ -939,7 +918,6 @@ NAME=/x with bin mask
 FILE=malloc://1024
 CMDS=<<EOF
 wx aaaaaabb
-e search.show_progress=false
 /x aa..bb
 EOF
 EXPECT=<<EOF
@@ -951,7 +929,6 @@ NAME=/x with bin mask
 FILE=malloc://1024
 CMDS=<<EOF
 wx aaaaaabb
-e search.show_progress=false
 /x ..aabb
 EOF
 EXPECT=<<EOF
@@ -1035,7 +1012,6 @@ NAME=/x search hexpairs ignoring spaces
 FILE=bins/elf/ioli/crackme0x00
 ARGS=-n
 CMDS=<<EOF
-e search.show_progress=false
 # The password
 /x 50617373776F7264
 EOF
@@ -1050,7 +1026,6 @@ NAME=wx and /x with bin mask, both ignoring spaces
 FILE=malloc://1024
 CMDS=<<EOF
 wx a5 a5 a5 bf
-e search.show_progress=false
 /x a5..bf
 EOF
 EXPECT=<<EOF
@@ -1062,7 +1037,6 @@ NAME=wx and /x with bin mask, both ignoring spaces
 FILE=malloc://1024
 CMDS=<<EOF
 wx 00 cafe 5a5a 5abf affe @ 0x123
-e search.show_progress=false
 /x ..5abf
 EOF
 EXPECT=<<EOF
@@ -1074,7 +1048,6 @@ NAME=wx and /x with custom bin mask, both ignoring spaces
 FILE=malloc://1024
 CMDS=<<EOF
 wx 01020304 a5a5a5 bf
-e search.show_progress=false
 /x a5e3bf:ff81ff
 EOF
 EXPECT=<<EOF
@@ -1153,7 +1126,6 @@ NAME=search wide string
 FILE==
 CMDS=<<EOF
 ww Hello World this is Rizin
-e search.show_progress=false
 /z World l utf16le
 # Should not match
 /z world l utf16le

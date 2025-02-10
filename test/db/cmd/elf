@@ -1,6 +1,8 @@
 NAME=search in va
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=/x 9066~[0]
+CMDS=<<EOF
+/x 9066~$[0]
+EOF
 EXPECT=<<EOF
 0x08048323
 0x08048325

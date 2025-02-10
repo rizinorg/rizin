@@ -316,6 +316,7 @@ RUN
 NAME=ps workaround for 4857 utf32le
 FILE=bins/cmd/search/string_encodings/Arabic-Lipsum.utf32le
 CMDS=<<EOF
+b 0x1000
 # Checks that no un-printable characters and the full string are emitted.
 psW
 EOF
@@ -327,6 +328,7 @@ RUN
 NAME=ps workaround for 4857 utf32be
 FILE=bins/cmd/search/string_encodings/Arabic-Lipsum.utf16be
 CMDS=<<EOF
+b 0x1000
 # Checks that no un-printable characters and the full string are emitted.
 psm
 EOF
