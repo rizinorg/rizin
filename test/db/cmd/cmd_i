@@ -3244,10 +3244,9 @@ nth      paddr      vaddr len size section type  string
 --------------------------------------------------------------
   0 0x000004b0 0x080484b0  12   13 .rodata ascii Hello world!
 -- small buffer 12 --
-nth      paddr      vaddr len size section type  string    
------------------------------------------------------------
-  0 0x000004b0 0x080484b0   9    9 .rodata ascii Hello wor
-  1 0x000004b9 0x080484b9   3    4 .rodata ascii ld!
+nth      paddr      vaddr len size section type  string       
+--------------------------------------------------------------
+  0 0x000004b0 0x080484b0  12   12 .rodata ascii Hello world!
 EOF
 RUN
 
