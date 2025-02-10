@@ -1243,7 +1243,7 @@ static bool cb_str_encoding(void *user, void *data) {
 			       "if 2nd - 4th & 6th bytes are 0 & no char > 0x10ffff then utf32le else "
 			       "if utf8 char detected then utf8 else 8bit\n");
 		return false;
-	} else if (RZ_STR_EQ("settings", node->value) || (RZ_STR_EQ("guess", node->value) && !found_enc)) {
+	} else if (!RZ_STR_EQ("guess", node->value) && !found_enc) {
 		RZ_LOG_ERROR("Invalid value for str.encoding (%s).\n", node->value);
 		return false;
 	}
