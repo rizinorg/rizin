@@ -2827,13 +2827,13 @@ static RzSearchOpt *setup_search_options(RzCore *core) {
 // "/x"
 RZ_IPI RzCmdStatus rz_cmd_search_hex_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	RzSearchOpt *search_opts = setup_search_options(core);
+	RzList *hits = NULL;
 	if (!search_opts) {
 		goto error;
 	}
 
 	CMD_SEARCH_BEGIN();
 
-	RzList *hits = NULL;
 	const char *arg = argv[1];
 	RzSearchBytesPattern *pattern = rz_search_parse_byte_pattern(arg, "bytes");
 
