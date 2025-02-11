@@ -4747,7 +4747,7 @@ RZ_IPI void rz_core_analysis_value_pointers(RzCore *core, RzOutputMode mode) {
 	char *tmp = rz_str_dup(analysisin);
 	bool is_debug = rz_config_get_b(core->config, "cfg.debug");
 	int archAlign = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN);
-	rz_config_set_i(core->config, "search.align", archAlign);
+	rz_config_set_i(core->config, "search.align", archAlign < 1 ? 1 : archAlign);
 	rz_config_set(core->config, "analysis.in", "io.maps.x");
 	rz_core_notify_done(core, "Finding xrefs in noncode section with analysis.in=io.maps");
 
@@ -4822,7 +4822,7 @@ beach:
 	// end
 	rz_config_set(core->config, "analysis.in", tmp);
 	free(tmp);
-	rz_config_set_i(core->config, "search.align", o_align);
+	rz_config_set_i(core->config, "search.align", o_align < 1 ? 1 : o_align);
 }
 
 RZ_API int rz_core_get_stacksz(RzCore *core, ut64 from, ut64 to) {

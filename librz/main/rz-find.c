@@ -411,7 +411,7 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 			    " -e search.align=%d"
 			    " -e search.from=%" PFMT64d
 			    " %s -qnc/m%s \"%s\"",
-			ro->align, ro->from, tostr, ro->json ? "j" : "", efile);
+			ro->align < 1 ? 1 : ro->align, ro->from, tostr, ro->json ? "j" : "", efile);
 		free(tostr);
 		goto done;
 	}
@@ -530,6 +530,10 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 		switch (c) {
 		case 'a':
 			ro.align = rz_num_math(NULL, opt.arg);
+			if (rz_bits_count_ones_ut64(ro.align) != 1) {
+				RZ_LOG_ERROR("Alignment must only have one bit set.\n");
+				return 1;
+			}
 			break;
 		case 'r':
 			ro.rad = true;
