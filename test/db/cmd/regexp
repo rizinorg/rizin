@@ -111,11 +111,11 @@ ps ascii unprintable @ hit.string.ascii.0
 ps ascii unprintable @ hit.string.ascii.1
 echo ----
 /z "b.*d$" r
-ps ascii @ hit.string.ascii.0
+ps ascii unprintable @ hit.string.ascii.0
 EOF
 EXPECT=<<EOF
-0x000000fe unprintable 5 hit.string.ascii.0
-0x000001fe unprintable 2 hit.string.ascii.1
+0x000000fe 5 hit.string.ascii.0
+0x000001fe 2 hit.string.ascii.1
 bcccde
 bd
 ----
