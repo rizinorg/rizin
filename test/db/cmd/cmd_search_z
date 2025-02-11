@@ -17,7 +17,9 @@ CMDS=<<EOF
 EOF
 REGEXP_FILTER_ERR=ERROR.+
 EXPECT_ERR=<<EOF
+ERROR: Flag combination 'aa' is invalid.
 ERROR: Regex flags are invalid: 'aa'
+ERROR: Flag combination 'dd' is invalid.
 ERROR: Regex flags are invalid: 'dd'
 EOF
 RUN
@@ -52,15 +54,15 @@ e search.str.min_length=2
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-ps @ hit.string.ascii.0
-ps @ hit.string.ascii.1
-ps @ hit.string.ascii.2
-ps @ hit.string.ascii.3
-ps @ hit.string.ascii.4
-ps @ hit.string.ascii.5
-ps @ hit.string.ascii.6
-ps @ hit.string.ascii.7
-ps @ hit.string.ascii.8
+ps ascii unprintable @ hit.string.ascii.0
+ps ascii unprintable @ hit.string.ascii.1
+ps ascii unprintable @ hit.string.ascii.2
+ps ascii unprintable @ hit.string.ascii.3
+ps ascii unprintable @ hit.string.ascii.4
+ps ascii unprintable @ hit.string.ascii.5
+ps ascii unprintable @ hit.string.ascii.6
+ps ascii unprintable @ hit.string.ascii.7
+ps ascii unprintable @ hit.string.ascii.8
 EOF
 EXPECT=<<EOF
 0x00000018 2 hit.string.ascii.0
@@ -93,15 +95,15 @@ e search.str.min_length=2
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-ps ebcdicuk @ hit.string.ebcdicuk.0
-ps ebcdicuk @ hit.string.ebcdicuk.1
-ps ebcdicuk @ hit.string.ebcdicuk.2
-ps ebcdicuk @ hit.string.ebcdicuk.3
-ps ebcdicuk @ hit.string.ebcdicuk.4
-ps ebcdicuk @ hit.string.ebcdicuk.5
-ps ebcdicuk @ hit.string.ebcdicuk.6
-ps ebcdicuk @ hit.string.ebcdicuk.7
-ps ebcdicuk @ hit.string.ebcdicuk.8
+ps ebcdicuk unprintable @ hit.string.ebcdicuk.0
+ps ebcdicuk unprintable @ hit.string.ebcdicuk.1
+ps ebcdicuk unprintable @ hit.string.ebcdicuk.2
+ps ebcdicuk unprintable @ hit.string.ebcdicuk.3
+ps ebcdicuk unprintable @ hit.string.ebcdicuk.4
+ps ebcdicuk unprintable @ hit.string.ebcdicuk.5
+ps ebcdicuk unprintable @ hit.string.ebcdicuk.6
+ps ebcdicuk unprintable @ hit.string.ebcdicuk.7
+ps ebcdicuk unprintable @ hit.string.ebcdicuk.8
 EOF
 EXPECT=<<EOF
 0x00000018 2 hit.string.ebcdicuk.0
@@ -134,15 +136,15 @@ e search.str.min_length=2
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-ps ebcdicus @ hit.string.ebcdicus.0
-ps ebcdicus @ hit.string.ebcdicus.1
-ps ebcdicus @ hit.string.ebcdicus.2
-ps ebcdicus @ hit.string.ebcdicus.3
-ps ebcdicus @ hit.string.ebcdicus.4
-ps ebcdicus @ hit.string.ebcdicus.5
-ps ebcdicus @ hit.string.ebcdicus.6
-ps ebcdicus @ hit.string.ebcdicus.7
-ps ebcdicus @ hit.string.ebcdicus.8
+ps ebcdicus unprintable @ hit.string.ebcdicus.0
+ps ebcdicus unprintable @ hit.string.ebcdicus.1
+ps ebcdicus unprintable @ hit.string.ebcdicus.2
+ps ebcdicus unprintable @ hit.string.ebcdicus.3
+ps ebcdicus unprintable @ hit.string.ebcdicus.4
+ps ebcdicus unprintable @ hit.string.ebcdicus.5
+ps ebcdicus unprintable @ hit.string.ebcdicus.6
+ps ebcdicus unprintable @ hit.string.ebcdicus.7
+ps ebcdicus unprintable @ hit.string.ebcdicus.8
 EOF
 EXPECT=<<EOF
 0x00000018 2 hit.string.ebcdicus.0
@@ -175,15 +177,15 @@ e search.str.min_length=2
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-ps ebcdices @ hit.string.ebcdices.0
-ps ebcdices @ hit.string.ebcdices.1
-ps ebcdices @ hit.string.ebcdices.2
-ps ebcdices @ hit.string.ebcdices.3
-ps ebcdices @ hit.string.ebcdices.4
-ps ebcdices @ hit.string.ebcdices.5
-ps ebcdices @ hit.string.ebcdices.6
-ps ebcdices @ hit.string.ebcdices.7
-ps ebcdices @ hit.string.ebcdices.8
+ps ebcdices unprintable @ hit.string.ebcdices.0
+ps ebcdices unprintable @ hit.string.ebcdices.1
+ps ebcdices unprintable @ hit.string.ebcdices.2
+ps ebcdices unprintable @ hit.string.ebcdices.3
+ps ebcdices unprintable @ hit.string.ebcdices.4
+ps ebcdices unprintable @ hit.string.ebcdices.5
+ps ebcdices unprintable @ hit.string.ebcdices.6
+ps ebcdices unprintable @ hit.string.ebcdices.7
+ps ebcdices unprintable @ hit.string.ebcdices.8
 EOF
 EXPECT=<<EOF
 0x00000018 2 hit.string.ebcdices.0
@@ -215,7 +217,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-ps @ hit.string.ascii.0
+ps ascii unprintable @ hit.string.ascii.0
 EOF
 EXPECT=<<EOF
 0x00000000 376 hit.string.ascii.0
@@ -229,7 +231,7 @@ FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ibm037
 CMDS=<<EOF
 /z "eligendi adipisci ius, e" l ibm037
 # String detection for ibm037 for ps doesn't work yet.
-# ps @ hit.string.ibm037.0
+# ps ascii unprintable @ hit.string.ibm037.0
 EOF
 EXPECT=<<EOF
 0x0000001f 24 hit.string.ibm037.0
@@ -242,7 +244,7 @@ FILE=bins/cmd/search/string_encodings/Japanese-Katakana-Lipsum.ibm290
 CMDS=<<EOF
 # Compile with LITERAL option so * and ) are not interpreted as meta-characters.
 /z "!¥*);¬アイウエオカキクケコ" l ibm290
-ps ibm290 @ hit.string.ibm290.0
+ps ibm290 unprintable @ hit.string.ibm290.0
 EOF
 EXPECT=<<EOF
 0x00000018 16 hit.string.ibm290.0
@@ -256,7 +258,7 @@ FILE=bins/cmd/search/string_encodings/Japanese-Katakana-Lipsum.ibm290
 CMDS=<<EOF
 e str.encoding=ibm290
 /z "!¥*);¬アイウエオカキクケコ"
-ps ibm290 @ hit.string.ibm290.0
+ps ibm290 unprintable @ hit.string.ibm290.0
 EOF
 EXPECT=<<EOF
 0x00000018 16 hit.string.ibm290.0
@@ -272,7 +274,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-ps @ hit.string.ascii.0
+ps ascii unprintable @ hit.string.ascii.0
 EOF
 EXPECT=<<EOF
 0x000000fa 31 hit.string.ascii.0
@@ -288,7 +290,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-ps @ hit.string.utf8.0
+ps utf8 unprintable @ hit.string.utf8.0
 EOF
 EXPECT=<<EOF
 0x00000116 43 hit.string.utf8.0
@@ -304,7 +306,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-ps @ hit.string.utf8.0
+ps utf8 unprintable @ hit.string.utf8.0
 EOF
 EXPECT=<<EOF
 0x000001dc 61 hit.string.utf8.0
@@ -320,7 +322,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-ps @ hit.string.utf8.0
+ps utf8 unprintable @ hit.string.utf8.0
 EOF
 EXPECT=<<EOF
 0x000000de 48 hit.string.utf8.0
@@ -336,7 +338,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-ps @ hit.string.utf8.0
+ps utf8 unprintable @ hit.string.utf8.0
 EOF
 EXPECT=<<EOF
 0x00000282 132 hit.string.utf8.0
@@ -352,7 +354,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-ps @ hit.string.utf8.0
+ps utf8 unprintable @ hit.string.utf8.0
 EOF
 EXPECT=<<EOF
 0x0000010b 88 hit.string.utf8.0
@@ -368,7 +370,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-ps @ hit.string.utf8.0
+ps utf8 unprintable @ hit.string.utf8.0
 EOF
 EXPECT=<<EOF
 0x00000141 34 hit.string.utf8.0
@@ -384,7 +386,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-ps @ hit.string.utf8.0
+ps utf8 unprintable @ hit.string.utf8.0
 EOF
 EXPECT=<<EOF
 0x00000086 97 hit.string.utf8.0
@@ -400,7 +402,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-ps @ hit.string.utf8.0
+ps utf8 unprintable @ hit.string.utf8.0
 EOF
 EXPECT=<<EOF
 0x000000dc 27 hit.string.utf8.0
@@ -416,7 +418,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-ps @ hit.string.utf8.0
+ps utf8 unprintable @ hit.string.utf8.0
 EOF
 EXPECT=<<EOF
 0x00000042 35 hit.string.utf8.0
@@ -432,7 +434,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-ps @ hit.string.utf8.0
+ps utf8 unprintable @ hit.string.utf8.0
 EOF
 EXPECT=<<EOF
 0x00000055 49 hit.string.utf8.0
@@ -448,7 +450,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-psm @ hit.string.utf16be.0
+ps utf16be unprintable @ hit.string.utf16be.0
 EOF
 EXPECT=<<EOF
 0x00000138 48 hit.string.utf16be.0
@@ -464,7 +466,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-psm @ hit.string.utf16be.0
+ps utf16be unprintable @ hit.string.utf16be.0
 EOF
 EXPECT=<<EOF
 0x0000020c 66 hit.string.utf16be.0
@@ -480,7 +482,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-psm @ hit.string.utf16be.0
+ps utf16be unprintable @ hit.string.utf16be.0
 EOF
 EXPECT=<<EOF
 0x00000094 32 hit.string.utf16be.0
@@ -496,7 +498,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-psm @ hit.string.utf16be.0
+ps utf16be unprintable @ hit.string.utf16be.0
 EOF
 EXPECT=<<EOF
 0x000001ec 100 hit.string.utf16be.0
@@ -512,7 +514,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-psm @ hit.string.utf16be.0
+ps utf16be unprintable @ hit.string.utf16be.0
 EOF
 EXPECT=<<EOF
 0x0000012c 96 hit.string.utf16be.0
@@ -528,7 +530,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-psm @ hit.string.utf16be.0
+ps utf16be unprintable @ hit.string.utf16be.0
 EOF
 EXPECT=<<EOF
 0x00000168 36 hit.string.utf16be.0
@@ -544,7 +546,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-psm @ hit.string.utf16be.0
+ps utf16be unprintable @ hit.string.utf16be.0
 EOF
 EXPECT=<<EOF
 0x00000064 70 hit.string.utf16be.0
@@ -560,7 +562,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-psm @ hit.string.utf16be.0
+ps utf16be unprintable @ hit.string.utf16be.0
 EOF
 EXPECT=<<EOF
 0x000000bc 22 hit.string.utf16be.0
@@ -576,7 +578,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-psm @ hit.string.utf16be.0
+ps utf16be unprintable @ hit.string.utf16be.0
 EOF
 EXPECT=<<EOF
 0x0000005c 50 hit.string.utf16be.0
@@ -592,7 +594,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-psm @ hit.string.utf16be.0
+ps utf16be unprintable @ hit.string.utf16be.0
 EOF
 EXPECT=<<EOF
 0x0000005e 54 hit.string.utf16be.0
@@ -608,7 +610,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-# ps @ hit.string.utf16le.0
+# psutf1 unprintable @ hit.string.utf16le.0
 EOF
 EXPECT=<<EOF
 0x00000138 48 hit.string.utf16le.0
@@ -623,7 +625,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-psw @ hit.string.utf16le.0
+ps utf16le unprintable @ hit.string.utf16le.0
 EOF
 EXPECT=<<EOF
 0x0000020c 66 hit.string.utf16le.0
@@ -639,7 +641,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-psw @ hit.string.utf16le.0
+ps utf16le unprintable @ hit.string.utf16le.0
 EOF
 EXPECT=<<EOF
 0x00000094 32 hit.string.utf16le.0
@@ -655,7 +657,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-psw @ hit.string.utf16le.0
+ps utf16le unprintable @ hit.string.utf16le.0
 EOF
 EXPECT=<<EOF
 0x000001ec 100 hit.string.utf16le.0
@@ -671,7 +673,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-psw @ hit.string.utf16le.0
+ps utf16le unprintable @ hit.string.utf16le.0
 EOF
 EXPECT=<<EOF
 0x0000012c 96 hit.string.utf16le.0
@@ -687,7 +689,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-psw @ hit.string.utf16le.0
+ps utf16le unprintable @ hit.string.utf16le.0
 EOF
 EXPECT=<<EOF
 0x00000168 36 hit.string.utf16le.0
@@ -703,7 +705,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-psw @ hit.string.utf16le.0
+ps utf16le unprintable @ hit.string.utf16le.0
 EOF
 EXPECT=<<EOF
 0x00000064 70 hit.string.utf16le.0
@@ -719,7 +721,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-psw @ hit.string.utf16le.0
+ps utf16le unprintable @ hit.string.utf16le.0
 EOF
 EXPECT=<<EOF
 0x000000bc 22 hit.string.utf16le.0
@@ -735,7 +737,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-psw @ hit.string.utf16le.0
+ps utf16le unprintable @ hit.string.utf16le.0
 EOF
 EXPECT=<<EOF
 0x0000005c 50 hit.string.utf16le.0
@@ -751,7 +753,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-psw @ hit.string.utf16le.0
+ps utf16le unprintable @ hit.string.utf16le.0
 EOF
 EXPECT=<<EOF
 0x0000005e 54 hit.string.utf16le.0
@@ -767,7 +769,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-psM @ hit.string.utf32be.0
+ps utf32be unprintable @ hit.string.utf32be.0
 EOF
 EXPECT=<<EOF
 0x00000270 96 hit.string.utf32be.0
@@ -783,7 +785,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-psM @ hit.string.utf32be.0
+ps utf32be unprintable @ hit.string.utf32be.0
 EOF
 EXPECT=<<EOF
 0x00000418 132 hit.string.utf32be.0
@@ -799,7 +801,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-psM @ hit.string.utf32be.0
+ps utf32be unprintable @ hit.string.utf32be.0
 EOF
 EXPECT=<<EOF
 0x00000128 64 hit.string.utf32be.0
@@ -815,7 +817,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-psM @ hit.string.utf32be.0
+ps utf32be unprintable @ hit.string.utf32be.0
 EOF
 EXPECT=<<EOF
 0x000003d8 200 hit.string.utf32be.0
@@ -831,7 +833,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-psM @ hit.string.utf32be.0
+ps utf32be unprintable @ hit.string.utf32be.0
 EOF
 EXPECT=<<EOF
 0x00000258 192 hit.string.utf32be.0
@@ -847,7 +849,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-psM @ hit.string.utf32be.0
+ps utf32be unprintable @ hit.string.utf32be.0
 EOF
 EXPECT=<<EOF
 0x000002d0 72 hit.string.utf32be.0
@@ -863,7 +865,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-psM @ hit.string.utf32be.0
+ps utf32be unprintable @ hit.string.utf32be.0
 EOF
 EXPECT=<<EOF
 0x000000c8 140 hit.string.utf32be.0
@@ -879,7 +881,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-psM @ hit.string.utf32be.0
+ps utf32be unprintable @ hit.string.utf32be.0
 EOF
 EXPECT=<<EOF
 0x00000178 44 hit.string.utf32be.0
@@ -895,7 +897,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-psM @ hit.string.utf32be.0
+ps utf32be unprintable @ hit.string.utf32be.0
 EOF
 EXPECT=<<EOF
 0x000000b8 100 hit.string.utf32be.0
@@ -911,7 +913,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-psM @ hit.string.utf32be.0
+ps utf32be unprintable @ hit.string.utf32be.0
 EOF
 EXPECT=<<EOF
 0x000000bc 108 hit.string.utf32be.0
@@ -927,7 +929,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-# ps @ hit.string.utf32le.0
+# psutf3 unprintable @ hit.string.utf32le.0
 EOF
 EXPECT=<<EOF
 0x00000270 96 hit.string.utf32le.0
@@ -942,7 +944,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-psW @ hit.string.utf32le.0
+ps utf32le unprintable @ hit.string.utf32le.0
 EOF
 EXPECT=<<EOF
 0x00000418 132 hit.string.utf32le.0
@@ -958,7 +960,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-psW @ hit.string.utf32le.0
+ps utf32le unprintable @ hit.string.utf32le.0
 EOF
 EXPECT=<<EOF
 0x00000128 64 hit.string.utf32le.0
@@ -974,7 +976,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-psW @ hit.string.utf32le.0
+ps utf32le unprintable @ hit.string.utf32le.0
 EOF
 EXPECT=<<EOF
 0x000003d8 200 hit.string.utf32le.0
@@ -990,7 +992,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-psW @ hit.string.utf32le.0
+ps utf32le unprintable @ hit.string.utf32le.0
 EOF
 EXPECT=<<EOF
 0x00000258 192 hit.string.utf32le.0
@@ -1006,7 +1008,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-psW @ hit.string.utf32le.0
+ps utf32le unprintable @ hit.string.utf32le.0
 EOF
 EXPECT=<<EOF
 0x000002d0 72 hit.string.utf32le.0
@@ -1022,7 +1024,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-psW @ hit.string.utf32le.0
+ps utf32le unprintable @ hit.string.utf32le.0
 EOF
 EXPECT=<<EOF
 0x000000c8 140 hit.string.utf32le.0
@@ -1038,7 +1040,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-psW @ hit.string.utf32le.0
+ps utf32le unprintable @ hit.string.utf32le.0
 EOF
 EXPECT=<<EOF
 0x00000178 44 hit.string.utf32le.0
@@ -1054,7 +1056,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-psW @ hit.string.utf32le.0
+ps utf32le unprintable @ hit.string.utf32le.0
 EOF
 EXPECT=<<EOF
 0x000000b8 100 hit.string.utf32le.0
@@ -1070,7 +1072,7 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-psW @ hit.string.utf32le.0
+ps utf32le unprintable @ hit.string.utf32le.0
 EOF
 EXPECT=<<EOF
 0x000000bc 108 hit.string.utf32le.0
@@ -1086,8 +1088,8 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-psu @ hit.string.utf8.0
-psu @ hit.string.utf8.1
+ps utf8 unprintable @ hit.string.utf8.0
+ps utf8 unprintable @ hit.string.utf8.1
 EOF
 EXPECT=<<EOF
 0x0000000b 10 hit.string.utf8.0
@@ -1105,8 +1107,8 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-psW @ hit.string.utf32le.0
-psW @ hit.string.utf32le.1
+ps utf32le unprintable @ hit.string.utf32le.0
+ps utf32le unprintable @ hit.string.utf32le.1
 EOF
 EXPECT=<<EOF
 0x00000087 20 hit.string.utf32le.0
@@ -1124,10 +1126,10 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-psu @ hit.string.utf8.0
-psu @ hit.string.utf8.1
-psu @ hit.string.utf8.2
-psu @ hit.string.utf8.3
+ps utf8 unprintable @ hit.string.utf8.0
+ps utf8 unprintable @ hit.string.utf8.1
+ps utf8 unprintable @ hit.string.utf8.2
+ps utf8 unprintable @ hit.string.utf8.3
 EOF
 EXPECT=<<EOF
 0x0000000b 10 hit.string.utf8.0
@@ -1148,8 +1150,8 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 /z "Л..е." e utf16be
-psm @ hit.string.utf16be.0
-psm @ hit.string.utf16be.1
+ps utf16be unprintable @ hit.string.utf16be.0
+ps utf16be unprintable @ hit.string.utf16be.1
 EOF
 EXPECT=<<EOF
 0x00000000 10 hit.string.utf16be.0
@@ -1166,8 +1168,8 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 /z "Л..е." e utf32le
-psW @ hit.string.utf32le.0
-psW @ hit.string.utf32le.1
+ps utf32le unprintable @ hit.string.utf32le.0
+ps utf32le unprintable @ hit.string.utf32le.1
 EOF
 EXPECT=<<EOF
 0x00000000 20 hit.string.utf32le.0
@@ -1185,12 +1187,12 @@ CMDS=<<EOF
 # Requires increasing the block size because -.-
 b 0x1000
 /z "Л..е." e utf32le
-psW @ hit.string.utf32le.0
-psW @ hit.string.utf32le.1
+ps utf32le unprintable @ hit.string.utf32le.0
+ps utf32le unprintable @ hit.string.utf32le.1
 e search.align=0x100
 echo Alignment=0x100
 /z "Л..е." e utf32le
-psW @ hit.string.utf32le.0
+ps utf32le unprintable @ hit.string.utf32le.0
 EOF
 EXPECT=<<EOF
 0x00000000 20 hit.string.utf32le.0
@@ -1247,15 +1249,15 @@ e search.str.min_length=2
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-ps ebcdicuk @ hit.string.ebcdicuk.0
-ps ebcdicuk @ hit.string.ebcdicuk.1
-ps ebcdicuk @ hit.string.ebcdicuk.2
-ps ebcdicuk @ hit.string.ebcdicuk.3
-ps ebcdicuk @ hit.string.ebcdicuk.4
-ps ebcdicuk @ hit.string.ebcdicuk.5
-ps ebcdicuk @ hit.string.ebcdicuk.6
-ps ebcdicuk @ hit.string.ebcdicuk.7
-ps ebcdicuk @ hit.string.ebcdicuk.8
+ps ebcdicuk unprintable @ hit.string.ebcdicuk.0
+ps ebcdicuk unprintable @ hit.string.ebcdicuk.1
+ps ebcdicuk unprintable @ hit.string.ebcdicuk.2
+ps ebcdicuk unprintable @ hit.string.ebcdicuk.3
+ps ebcdicuk unprintable @ hit.string.ebcdicuk.4
+ps ebcdicuk unprintable @ hit.string.ebcdicuk.5
+ps ebcdicuk unprintable @ hit.string.ebcdicuk.6
+ps ebcdicuk unprintable @ hit.string.ebcdicuk.7
+ps ebcdicuk unprintable @ hit.string.ebcdicuk.8
 EOF
 EXPECT=<<EOF
 0x00000018 2 hit.string.ebcdicuk.0
@@ -1288,15 +1290,15 @@ e search.str.min_length=2
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-ps ebcdicus @ hit.string.ebcdicus.0
-ps ebcdicus @ hit.string.ebcdicus.1
-ps ebcdicus @ hit.string.ebcdicus.2
-ps ebcdicus @ hit.string.ebcdicus.3
-ps ebcdicus @ hit.string.ebcdicus.4
-ps ebcdicus @ hit.string.ebcdicus.5
-ps ebcdicus @ hit.string.ebcdicus.6
-ps ebcdicus @ hit.string.ebcdicus.7
-ps ebcdicus @ hit.string.ebcdicus.8
+ps ebcdicus unprintable @ hit.string.ebcdicus.0
+ps ebcdicus unprintable @ hit.string.ebcdicus.1
+ps ebcdicus unprintable @ hit.string.ebcdicus.2
+ps ebcdicus unprintable @ hit.string.ebcdicus.3
+ps ebcdicus unprintable @ hit.string.ebcdicus.4
+ps ebcdicus unprintable @ hit.string.ebcdicus.5
+ps ebcdicus unprintable @ hit.string.ebcdicus.6
+ps ebcdicus unprintable @ hit.string.ebcdicus.7
+ps ebcdicus unprintable @ hit.string.ebcdicus.8
 EOF
 EXPECT=<<EOF
 0x00000018 2 hit.string.ebcdicus.0
@@ -1329,15 +1331,15 @@ e search.str.min_length=2
 # Requires increasing the block size because -.-
 b 0x1000
 # Check string is actually at offset of the hit.
-ps ebcdices @ hit.string.ebcdices.0
-ps ebcdices @ hit.string.ebcdices.1
-ps ebcdices @ hit.string.ebcdices.2
-ps ebcdices @ hit.string.ebcdices.3
-ps ebcdices @ hit.string.ebcdices.4
-ps ebcdices @ hit.string.ebcdices.5
-ps ebcdices @ hit.string.ebcdices.6
-ps ebcdices @ hit.string.ebcdices.7
-ps ebcdices @ hit.string.ebcdices.8
+ps ebcdices unprintable @ hit.string.ebcdices.0
+ps ebcdices unprintable @ hit.string.ebcdices.1
+ps ebcdices unprintable @ hit.string.ebcdices.2
+ps ebcdices unprintable @ hit.string.ebcdices.3
+ps ebcdices unprintable @ hit.string.ebcdices.4
+ps ebcdices unprintable @ hit.string.ebcdices.5
+ps ebcdices unprintable @ hit.string.ebcdices.6
+ps ebcdices unprintable @ hit.string.ebcdices.7
+ps ebcdices unprintable @ hit.string.ebcdices.8
 EOF
 EXPECT=<<EOF
 0x00000018 2 hit.string.ebcdices.0

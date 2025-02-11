@@ -1123,7 +1123,7 @@ commands:
           - name: delimiter
             type: RZ_CMD_ARG_TYPE_CHOICES
             default_value: "null"
-            choices: ["null", "block"]
+            choices: ["null", "block", "unprintable"]
         details:
           - name: Value details
             entries:
@@ -1132,9 +1132,11 @@ commands:
               - text: "encoding=settings"
                 comment: "Use encoding from 'str.encoding' option."
               - text: "delimeter=null"
-                comment: "String is NUL terminated."
+                comment: "Prints until first NUL code point. Non-printable characters are escaped."
+              - text: "delimeter=unprintable"
+                comment: "Prints until the first non-printable code point. This includes '\\n', '\\t' etc."
               - text: "delimeter=block"
-                comment: "Print whole block as string (dons't stop at non-printable character)."
+                comment: "Print whole block as string (don't stop at non-printable or NUL character)."
       - name: ps+
         summary: Print libc++ std::string (same-endian, ascii, zero-terminated)
         cname: print_string_as_libcpp_string

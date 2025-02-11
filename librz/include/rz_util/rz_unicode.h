@@ -4,6 +4,7 @@
 #include <rz_types.h>
 #include "rz_str.h"
 
+#define UNICODE_NUL             0
 #define UNICODE_VERSION_MAJOR   16
 #define UNICODE_VERSION_MINOR   0
 #define UNICODE_VERSION_PATCH   0

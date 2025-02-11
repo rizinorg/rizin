@@ -15924,8 +15924,9 @@ static const RzCmdDescHelp ps_help = {
 static const RzCmdDescDetailEntry print_string_Value_space_details_detail_entries[] = {
 	{ .text = "String length", .arg_str = NULL, .comment = "The string length depends on the block size. You need to change it via 'b <size-in-bytes>' if your string is too short." },
 	{ .text = "encoding=settings", .arg_str = NULL, .comment = "Use encoding from 'str.encoding' option." },
-	{ .text = "delimeter=null", .arg_str = NULL, .comment = "String is NUL terminated." },
-	{ .text = "delimeter=block", .arg_str = NULL, .comment = "Print whole block as string (dons't stop at non-printable character)." },
+	{ .text = "delimeter=null", .arg_str = NULL, .comment = "Prints until first NUL code point. Non-printable characters are escaped." },
+	{ .text = "delimeter=unprintable", .arg_str = NULL, .comment = "Prints until the first non-printable code point. This includes '\\n', '\\t' etc." },
+	{ .text = "delimeter=block", .arg_str = NULL, .comment = "Print whole block as string (don't stop at non-printable or NUL character)." },
 	{ 0 },
 };
 static const RzCmdDescDetail print_string_details[] = {
@@ -15934,7 +15935,7 @@ static const RzCmdDescDetail print_string_details[] = {
 };
 static const char *print_string_encoding_choices[] = { "settings", "guess", "ascii", "utf8", "utf16le", "utf32le", "utf16be", "utf32be", "ibm037", "ibm290", "ebcdices", "ebcdicuk", "ebcdicus", NULL };
 
-static const char *print_string_delimiter_choices[] = { "null", "block", NULL };
+static const char *print_string_delimiter_choices[] = { "null", "block", "unprintable", NULL };
 static const RzCmdDescArg print_string_args[] = {
 	{
 		.name = "encoding",

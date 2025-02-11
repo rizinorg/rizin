@@ -178,7 +178,7 @@ NAME=ps select encoding
 FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ebcdic_es
 CMDS=<<EOF
 b 0x1000
-ps ebcdices
+ps ebcdices unprintable
 EOF
 EXPECT=<<EOF
 Lorem ipsum dolor sit amet, at eligendi adipisci ius, ex natum appetere officiis has, nibh quas torquatos pro te. Quo at deleniti repudiandae, et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.

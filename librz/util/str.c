@@ -4217,7 +4217,7 @@ RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NU
 				line_runes = 0;
 			}
 			continue;
-		} else if (code_point == '\0' && option->stop_at_nil) {
+		} else if (code_point == UNICODE_NUL && option->stop_at_nil) {
 			break;
 		} else if (code_point == '\n') {
 			line_runes = 0;
@@ -4267,11 +4267,13 @@ RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NU
 		} else {
 			if (code_point == '\\') {
 				rz_strbuf_appendf(&sb, "\\\\");
-			} else if ((code_point == '\n' && !option->escape_nl) || (rz_unicode_code_point_is_printable(code_point) && code_point >= ' ')) {
+			} else if ((code_point == '\n' && !option->escape_nl) || (rz_unicode_code_point_is_printable(code_point))) {
 				char tmp[5] = { 0 };
 				rz_utf8_encode((ut8 *)tmp, code_point);
 				rz_strbuf_appendf(&sb, "%s", tmp);
-			} else if (!option->stop_at_unprintable) {
+			} else if (option->stop_at_unprintable) {
+				break;
+			} else {
 				ut8 tmp[4];
 				int n_enc = rz_utf8_encode((ut8 *)tmp, code_point);
 				for (int j = 0; j < n_enc; ++j) {

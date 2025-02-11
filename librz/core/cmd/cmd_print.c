@@ -2083,7 +2083,7 @@ static void core_print_raw_buffer(RzStrStringifyOpt *opt) {
 	}
 }
 
-static RzCmdStatus core_print_string_in_block(RzCore *core, bool stop_at_nil, ut32 offset, RzOutputMode mode, RzStrEnc str_encoding) {
+static RzCmdStatus core_print_string_in_block(RzCore *core, bool stop_at_nil, bool stop_at_unprintable, ut32 offset, RzOutputMode mode, RzStrEnc str_encoding) {
 	const ut8 *buffer = core->block + offset;
 	const ut32 length = core->blocksize - offset;
 	RzStrEnc encoding = str_encoding == RZ_STRING_ENC_SETTINGS ? core->bin->str_search_cfg.string_encoding : str_encoding;
@@ -2099,7 +2099,7 @@ static RzCmdStatus core_print_string_in_block(RzCore *core, bool stop_at_nil, ut
 		opt.length = length;
 		opt.encoding = encoding;
 		opt.stop_at_nil = stop_at_nil;
-		opt.stop_at_unprintable = stop_at_nil;
+		opt.stop_at_unprintable = stop_at_unprintable;
 		core_print_raw_buffer(&opt);
 		break;
 	case RZ_OUTPUT_MODE_JSON:
@@ -2112,12 +2112,15 @@ static RzCmdStatus core_print_string_in_block(RzCore *core, bool stop_at_nil, ut
 	return RZ_CMD_STATUS_OK;
 }
 
+// "ps"
 RZ_IPI RzCmdStatus rz_print_string_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	bool stop_at_nil = !strcmp(argv[2], "null");
+	bool stop_at_unprintable = !strcmp(argv[2], "unprintable");
 	RzStrEnc enc = rz_str_enc_string_as_type(argv[1]);
-	return core_print_string_in_block(core, stop_at_nil, 0, mode, enc);
+	return core_print_string_in_block(core, stop_at_nil, stop_at_unprintable, 0, mode, enc);
 }
 
+// "ps+"
 RZ_IPI RzCmdStatus rz_print_string_as_libcpp_string_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	ut32 bitness = (ut32)rz_config_get_i(core->config, "asm.bits");
 	bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
@@ -2147,17 +2150,18 @@ RZ_IPI RzCmdStatus rz_print_string_as_libcpp_string_handler(RzCore *core, int ar
 		rz_core_seek(core, new_offset, SEEK_SET);
 		rz_core_block_read(core);
 
-		status = core_print_string_in_block(core, true, 0, mode, RZ_STRING_ENC_SETTINGS);
+		status = core_print_string_in_block(core, true, false, 0, mode, RZ_STRING_ENC_SETTINGS);
 
 		rz_core_seek(core, old_offset, SEEK_SET);
 		rz_core_block_read(core);
 	} else {
-		status = core_print_string_in_block(core, true, 1, mode, RZ_STRING_ENC_SETTINGS);
+		status = core_print_string_in_block(core, true, false, 1, mode, RZ_STRING_ENC_SETTINGS);
 	}
 
 	return status;
 }
 
+// "psb"
 RZ_IPI RzCmdStatus rz_print_strings_current_block_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	RzListIter *it = NULL;
 	RzDetectedString *detected = NULL;
@@ -2661,23 +2665,23 @@ RZ_API void rz_print_offset(RzPrint *p, ut64 off, int invert, int offseg, int of
 }
 
 RZ_IPI RzCmdStatus rz_print_utf8_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	return core_print_string_in_block(core, true, 0, mode, RZ_STRING_ENC_UTF8);
+	return core_print_string_in_block(core, true, false, 0, mode, RZ_STRING_ENC_UTF8);
 }
 
 RZ_IPI RzCmdStatus rz_print_utf16le_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	return core_print_string_in_block(core, true, 0, mode, RZ_STRING_ENC_UTF16LE);
+	return core_print_string_in_block(core, true, false, 0, mode, RZ_STRING_ENC_UTF16LE);
 }
 
 RZ_IPI RzCmdStatus rz_print_utf32le_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	return core_print_string_in_block(core, true, 0, mode, RZ_STRING_ENC_UTF32LE);
+	return core_print_string_in_block(core, true, false, 0, mode, RZ_STRING_ENC_UTF32LE);
 }
 
 RZ_IPI RzCmdStatus rz_print_utf16be_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	return core_print_string_in_block(core, true, 0, mode, RZ_STRING_ENC_UTF16BE);
+	return core_print_string_in_block(core, true, false, 0, mode, RZ_STRING_ENC_UTF16BE);
 }
 
 RZ_IPI RzCmdStatus rz_print_utf32be_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	return core_print_string_in_block(core, true, 0, mode, RZ_STRING_ENC_UTF32BE);
+	return core_print_string_in_block(core, true, false, 0, mode, RZ_STRING_ENC_UTF32BE);
 }
 
 RZ_IPI RzCmdStatus rz_print_hexdump_annotated_handler(RzCore *core, int argc, const char **argv) {
