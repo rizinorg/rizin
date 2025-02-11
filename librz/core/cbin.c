@@ -2973,6 +2973,10 @@ RZ_API bool rz_core_file_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFil
 
 	const char *filename = get_filename(info, desc);
 	char *escaped = NULL;
+	RzStrEscOptions opt = { 0 };
+	opt.show_asciidot = false;
+	opt.esc_bslash = false;
+	escaped = rz_str_escape_utf8_keep_printable(filename, &opt);
 
 	rz_cmd_state_output_set_columnsf(state, "ss", "field", "value");
 
@@ -2982,11 +2986,12 @@ RZ_API bool rz_core_file_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFil
 	case RZ_OUTPUT_MODE_JSON:
 		pj_o(state->d.pj);
 		const char *file_tag = "file";
-		if (rz_str_is_utf8(filename)) {
+		if (strlen(filename) == strlen(escaped)) {
 			pj_ks(state->d.pj, file_tag, filename);
 		} else {
 			pj_kr(state->d.pj, file_tag, (const ut8 *)filename, strlen(filename));
 		}
+		free(escaped);
 		if (desc) {
 			ut64 fsz = rz_io_desc_size(desc);
 			pj_ki(state->d.pj, "fd", desc->fd);
@@ -3018,10 +3023,7 @@ RZ_API bool rz_core_file_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFil
 		if (desc) {
 			rz_table_add_rowf(state->d.t, "sd", "fd", desc->fd);
 		}
-		RzStrEscOptions opt = { 0 };
-		opt.show_asciidot = false;
-		opt.esc_bslash = false;
-		escaped = rz_str_escape_utf8_keep_printable(filename, &opt);
+
 		rz_table_add_rowf(state->d.t, "ss", "file", escaped);
 		free(escaped);
 		if (desc) {

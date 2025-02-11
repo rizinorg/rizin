@@ -1520,11 +1520,13 @@ RZ_API char *rz_str_sanitize_sdb_key(const char *s) {
 }
 
 /**
- * \brief Converts unprintable characters to C-like backslash representation
+ * \brief Converts unprintable characters to C-like backslash representation.
  *
- * \param p pointer to the original string
- * \param dst pointer where pointer to the resulting characters sequence is put
- * \param opt pointer to encoding options structure
+ * NOTE: The \p dst pointer is incremented by 2 to 4.
+ *
+ * \param p pointer to the original string.
+ * \param dst pointer where pointer to the resulting characters sequence is put.
+ * \param opt pointer to encoding options structure.
  **/
 RZ_API void rz_str_byte_escape(const char *p, char **dst, RzStrEscOptions *opt) {
 	char *q = *dst;
@@ -1693,7 +1695,7 @@ static char *rz_str_escape_utf(const char *buf, int buf_size, RzStrEnc enc, bool
 	char *new_buf, *q;
 	const char *p, *end;
 	RzCodePoint ch;
-	int i, len, ch_bytes;
+	int len, ch_bytes;
 
 	if (!buf) {
 		return NULL;
@@ -1720,14 +1722,15 @@ static char *rz_str_escape_utf(const char *buf, int buf_size, RzStrEnc enc, bool
 		len = strlen(buf);
 		end = buf + len;
 	}
-	/* Worst case scenario, we convert every byte to \xhh */
-	new_buf = malloc(1 + (len * 4));
+	/* Worst case scenario, we convert every byte to a \Uhhhhhh */
+	new_buf = malloc(1 + (len * 8));
 	if (!new_buf) {
 		return NULL;
 	}
 	p = buf;
 	q = new_buf;
 	while (p < end) {
+		size_t min_char_width;
 		switch (enc) {
 		case RZ_STRING_ENC_UTF16LE:
 		case RZ_STRING_ENC_UTF16BE:
@@ -1735,55 +1738,39 @@ static char *rz_str_escape_utf(const char *buf, int buf_size, RzStrEnc enc, bool
 		case RZ_STRING_ENC_UTF32BE:
 			if (enc == RZ_STRING_ENC_UTF16LE || enc == RZ_STRING_ENC_UTF16BE) {
 				ch_bytes = rz_utf16_decode((ut8 *)p, end - p, &ch, enc == RZ_STRING_ENC_UTF16BE);
+				min_char_width = 2;
 			} else {
 				ch_bytes = rz_utf32_decode((ut8 *)p, end - p, &ch, enc == RZ_STRING_ENC_UTF32BE);
-			}
-			if (ch_bytes == 0) {
-				p++;
-				continue;
+				min_char_width = 4;
 			}
 			break;
 		default:
 			ch_bytes = rz_utf8_decode((ut8 *)p, end - p, &ch);
-			if (ch_bytes == 0) {
-				ch_bytes = 1;
-			}
+			min_char_width = 1;
 		}
 		if (show_asciidot && !IS_PRINTABLE(ch)) {
 			*q++ = '.';
-		} else if (ch > ASCII_LAST_CODE_POINT) {
-			if (keep_printable) {
-				q += rz_utf8_encode((ut8 *)q, ch);
+		} else if (keep_printable && ch_bytes != 0 && rz_unicode_code_point_is_printable(ch)) {
+			q += rz_utf8_encode((ut8 *)q, ch);
+		} else {
+			if (ch_bytes > 0) {
+				// Valid code point, but it should be escaped.
+				rz_snprintf(q, 9, "\\U%06" PFMT32x, ch);
+				q += 8;
 			} else {
-				*q++ = '\\';
-				*q++ = ch_bytes == 4 ? 'U' : 'u';
-				for (i = ch_bytes == 4 ? 6 : 2; i >= 0; i -= 2) {
-					*q++ = "0123456789abcdef"[ch >> 4 * (i + 1) & 0xf];
-					*q++ = "0123456789abcdef"[ch >> 4 * i & 0xf];
+				RzStrEscOptions opt = { 0 };
+				opt.dot_nl = false;
+				opt.show_asciidot = false;
+				opt.esc_bslash = esc_bslash;
+				opt.esc_double_quotes = esc_double_quotes;
+				// Invalid code point. Escape as minimal number of invalid bytes.
+				for (size_t i = 0; i < min_char_width && p + i < end; i++) {
+					rz_str_byte_escape(p + i, &q, &opt);
+					// q is incremented in rz_str_byte_escape
 				}
 			}
-		} else {
-			int offset = enc == RZ_STRING_ENC_UTF16BE ? 1 : enc == RZ_STRING_ENC_UTF32BE ? 3
-												     : 0;
-			RzStrEscOptions opt = { 0 };
-			opt.dot_nl = false;
-			opt.show_asciidot = false;
-			opt.esc_bslash = esc_bslash;
-			opt.esc_double_quotes = esc_double_quotes;
-			rz_str_byte_escape(p + offset, &q, &opt);
 		}
-		switch (enc) {
-		case RZ_STRING_ENC_UTF16LE:
-		case RZ_STRING_ENC_UTF16BE:
-			p += ch_bytes < 2 ? 2 : ch_bytes;
-			break;
-		case RZ_STRING_ENC_UTF32LE:
-		case RZ_STRING_ENC_UTF32BE:
-			p += 4;
-			break;
-		default:
-			p += ch_bytes;
-		}
+		p += ch_bytes < 1 ? min_char_width : ch_bytes;
 	}
 	*q = '\0';
 	return new_buf;
