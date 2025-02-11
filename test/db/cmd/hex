@@ -9,7 +9,7 @@ s hit.bytes.0
 %vi $?
 EOF
 EXPECT=<<EOF
-3
+256
 EOF
 RUN
 
