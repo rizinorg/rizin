@@ -1390,7 +1390,7 @@ RZ_API void rz_core_sym_name_init(RZ_NONNULL RZ_OUT RzBinSymNames *names, RZ_NON
 		.esc_double_quotes = false,
 		.dot_nl = false,
 	};
-	names->symbolname = rz_str_escape_utf8(demangle && names->demname ? names->demname : names->name, &opt);
+	names->symbolname = rz_str_escape_utf8_keep_printable(demangle && names->demname ? names->demname : names->name, &opt);
 }
 
 /**
