@@ -724,7 +724,7 @@ EXPECT=<<EOF
             ;-- (🎈️):
             0x00000100      stp   x24, x0, [x23, 0x20]
 0x00000100 1 flag_name
-[{"name":"flag_name","realname":"(🎈\ufe0f)","size":1,"offset":256}]
+[{"name":"flag_name","realname":"(🎈️)","size":1,"offset":256}]
 0x00000100 1 (🎈️)
 EOF
 RUN

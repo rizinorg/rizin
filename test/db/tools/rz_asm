@@ -258,9 +258,7 @@ RUN
 NAME=rz-asm -B
 FILE==
 CMDS=!rz-asm -a x86 -b16 -B "xor al, 0x34";ps
-EXPECT=<<EOF
-44
-EOF
+EXPECT=44
 RUN
 
 NAME=rz-asm -v~commit?"
