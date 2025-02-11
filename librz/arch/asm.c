@@ -874,7 +874,7 @@ RZ_API RzAsmCode *rz_asm_massemble(RzAsm *a, const char *assembly) {
 		return rz_asm_code_free(acode);
 	}
 	lbuf = rz_str_dup(assembly);
-	acode->code_align = 0;
+	acode->code_align = 1;
 
 	/* consider ,, an alias for a newline */
 	lbuf = rz_str_replace(lbuf, ",,", "\n", true);

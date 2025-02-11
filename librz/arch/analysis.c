@@ -338,7 +338,7 @@ RZ_API bool rz_analysis_set_bits(RzAnalysis *analysis, int bits) {
 			bool is_hack = is_arm_thumb_hack(analysis, bits);
 			analysis->bits = bits;
 			int v = rz_analysis_archinfo(analysis, RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN);
-			analysis->pcalign = RZ_MAX(0, v);
+			analysis->pcalign = RZ_MAX(1, v);
 			rz_type_db_set_bits(analysis->typedb, bits);
 			rz_type_db_set_address_bits(analysis->typedb, rz_analysis_get_address_bits(analysis));
 			if (!is_hack) {

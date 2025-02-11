@@ -106,6 +106,9 @@ static bool set_xref(HtUP *m, RzAnalysisXRef *xref, bool from2to) {
 
 // Set a cross reference from FROM to TO.
 RZ_API bool rz_analysis_xrefs_set(RzAnalysis *analysis, ut64 from, ut64 to, RzAnalysisXRefType type) {
+	if (type == RZ_ANALYSIS_XREF_TYPE_NULL && (from == 0x8000033c || to == 0x8000033c)) {
+		printf("ASDASDASD\n");
+	}
 	if (!analysis || from == to) {
 		return false;
 	}
