@@ -16027,7 +16027,7 @@ static const RzCmdDescArg print_utf16be_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp print_utf16be_help = {
-	.summary = "Print buffer as a utf16be string (alias for 'ps utf16le null').",
+	.summary = "Print buffer as a utf16be string (alias for 'ps utf16be null').",
 	.args = print_utf16be_args,
 };
 
@@ -16051,7 +16051,7 @@ static const RzCmdDescArg print_utf16le_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp print_utf16le_help = {
-	.summary = "Print buffer as a utf16le string (alias for 'ps utf32le null').",
+	.summary = "Print buffer as a utf16le string (alias for 'ps utf16le null').",
 	.args = print_utf16le_args,
 };
 
