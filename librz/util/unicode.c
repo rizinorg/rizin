@@ -46,6 +46,39 @@ const RzUnicodeRangeTable private_ranges = {
 };
 
 /**
+ * \brief Unicode format ranges.
+ *
+ * Table generated with `ucd-generate general-category`.
+ * See: https://github.com/BurntSushi/ucd-generate
+ *
+ * Unicode version: 16.0.0.
+ */
+const RzUnicodeRangeTable format_ranges = {
+	{ 173, 173 },
+	{ 1536, 1541 },
+	{ 1564, 1564 },
+	{ 1757, 1757 },
+	{ 1807, 1807 },
+	{ 2192, 2193 },
+	{ 2274, 2274 },
+	{ 6158, 6158 },
+	{ 8203, 8207 },
+	{ 8234, 8238 },
+	{ 8288, 8292 },
+	{ 8294, 8303 },
+	{ 65279, 65279 },
+	{ 65529, 65531 },
+	{ 69821, 69821 },
+	{ 69837, 69837 },
+	{ 78896, 78911 },
+	{ 113824, 113827 },
+	{ 119155, 119162 },
+	{ 917505, 917505 },
+	{ 917536, 917631 },
+
+};
+
+/**
  * \brief Unicode undefined ranges.
  *
  * Table generated with `ucd-generate general-category`.
@@ -304,6 +337,17 @@ RZ_API bool rz_unicode_code_point_is_private(const RzCodePoint c) {
 }
 
 /**
+ * \brief Returns true when the RzCodePoint is a Unicode format code point.
+ *
+ * \param c RzCodePoint value to test.
+ *
+ * \return True if the code point is a format code point, false otherwise.
+ */
+RZ_API bool rz_unicode_code_point_is_format(const RzCodePoint c) {
+	return bin_search_range(c, format_ranges, RZ_ARRAY_SIZE(format_ranges));
+}
+
+/**
  * \brief Returns true when the RzCodePoint is a printable symbol.
  * Printable means:
  * - Is defined Unicode code point.
@@ -326,6 +370,7 @@ RZ_API bool rz_unicode_code_point_is_printable(const RzCodePoint c) {
 	return rz_unicode_code_point_is_defined(c) &&
 		!rz_unicode_code_point_is_control(c) &&
 		!rz_unicode_code_point_is_surrogate(c) &&
+		!rz_unicode_code_point_is_format(c) &&
 		!rz_unicode_code_point_is_private(c);
 }
 

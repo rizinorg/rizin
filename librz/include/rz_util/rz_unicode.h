@@ -37,6 +37,7 @@ RZ_API bool rz_unicode_code_point_is_legal_decode(const RzCodePoint c);
 RZ_API bool rz_unicode_code_point_is_control(const RzCodePoint c);
 RZ_API bool rz_unicode_code_point_is_surrogate(const RzCodePoint c);
 RZ_API bool rz_unicode_code_point_is_private(const RzCodePoint c);
+RZ_API bool rz_unicode_code_point_is_format(const RzCodePoint c);
 RZ_API RzStrEnc rz_unicode_bom_encoding(const ut8 *ptr, size_t ptrlen);
 
 #endif // RZ_UNICODE_H
