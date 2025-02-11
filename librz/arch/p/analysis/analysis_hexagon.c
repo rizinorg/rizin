@@ -24,8 +24,8 @@ RZ_API int hexagon_v6_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, cons
 	if (len < HEX_INSN_SIZE) {
 		return -1;
 	}
-	if (analysis->pcalign == 0) {
-		analysis->pcalign = HEX_PC_ALIGNMENT;
+	if (analysis->pcalign != HEXAGON_PTR_ALIGNMENT) {
+		analysis->pcalign = HEXAGON_PTR_ALIGNMENT;
 	}
 
 	// Disassemble as many instructions as possible from the buffer.
@@ -739,6 +739,31 @@ RZ_API char *get_reg_profile(RzAnalysis *analysis) {
 	return rz_str_dup(p);
 }
 
+static int hexagon_archinfo(RzAnalysis *analysis, RzAnalysisInfoType query) {
+	switch (query) {
+	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
+	case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE:
+		// Technically incorrect, because it can be 4-32. But this
+		// has to wait for RzArch.
+		return 4;
+	case RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN:
+		return HEXAGON_PTR_ALIGNMENT;
+	case RZ_ANALYSIS_ARCHINFO_DATA_ALIGN:
+		// Depends on data type. Aligned to size of element.
+		// Bytes are aligned to 1, shorts to 2 etc.
+		return -1;
+	case RZ_ANALYSIS_ARCHINFO_CAN_USE_POINTERS:
+		return true;
+	/* The value below is used for runtime checks */
+	case RZ_ANALYSIS_ARCHINFO_ENUM_SIZE:
+		// Is variable. Always the smallest possible value.
+		return -1;
+	default:
+		rz_warn_if_reached();
+		return -1;
+	}
+}
+
 RzAnalysisPlugin rz_analysis_plugin_hexagon = {
 	.name = "hexagon",
 	.desc = "Qualcomm Hexagon (QDSP6) V6",
@@ -749,4 +774,5 @@ RzAnalysisPlugin rz_analysis_plugin_hexagon = {
 	.esil = false,
 	.get_reg_profile = get_reg_profile,
 	.il_config = rz_hexagon_il_config,
+	.archinfo = hexagon_archinfo,
 };
