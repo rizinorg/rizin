@@ -78,6 +78,7 @@ rz_util_common_sources = [
   'utf16.c',
   'utf32.c',
   'utf8.c',
+  'unicode.c',
   'vector.c',
   'version.c',
   'w32-sys.c',

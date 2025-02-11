@@ -134,7 +134,7 @@ RZ_API bool rz_utf16_is_printable_code_point(RZ_NONNULL const ut8 *buf, size_t b
 	RzCodePoint cp = 0;
 	while (lookahead > 0) {
 		size_t dec_bytes = rz_utf16_decode(buf + offset, buf_len - offset, &cp, big_endian);
-		if (!rz_code_point_is_printable(cp) || dec_bytes == 0) {
+		if (!rz_unicode_code_point_is_printable(cp) || dec_bytes == 0) {
 			return false;
 		}
 		lookahead--;

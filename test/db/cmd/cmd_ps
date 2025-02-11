@@ -184,3 +184,14 @@ EXPECT=<<EOF
 Lorem ipsum dolor sit amet, at eligendi adipisci ius, ex natum appetere officiis has, nibh quas torquatos pro te. Quo at deleniti repudiandae, et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
 EOF
 RUN
+
+NAME=Issue #4697 and Unicode update
+FILE==
+CMDS=<<EOF
+wx f09f9faaf09f9faa
+ps
+EOF
+EXPECT=<<EOF
+🟪🟪
+EOF
+RUN

@@ -1877,7 +1877,7 @@ static char *escape_utf8_for_json(const char *buf, int buf_size, bool mutf8) {
 				}
 			}
 		} else if (ch_bytes == 4) {
-			if (rz_code_point_is_printable(ch)) {
+			if (rz_unicode_code_point_is_printable(ch)) {
 				// Assumes buf is UTF8-encoded
 				for (i = 0; i < ch_bytes; i++) {
 					*q++ = *(p + i);
@@ -1901,7 +1901,7 @@ static char *escape_utf8_for_json(const char *buf, int buf_size, bool mutf8) {
 				}
 			}
 		} else if (ch_bytes > 1) {
-			if (rz_code_point_is_printable(ch)) {
+			if (rz_unicode_code_point_is_printable(ch)) {
 				// Assumes buf is UTF8-encoded
 				for (i = 0; i < ch_bytes; i++) {
 					*q++ = *(p + i);
@@ -4073,7 +4073,7 @@ RZ_API RzList /*<char *>*/ *rz_str_wrap(char *str, size_t width) {
  */
 RZ_API RzStrEnc rz_str_guess_encoding_from_buffer(RZ_NONNULL const ut8 *buffer, ut32 length) {
 	rz_return_val_if_fail(buffer, RZ_STRING_ENC_UTF8);
-	RzStrEnc enc = rz_utf_bom_encoding(buffer, length);
+	RzStrEnc enc = rz_unicode_bom_encoding(buffer, length);
 	if (enc != RZ_STRING_ENC_GUESS) {
 		return enc;
 	}
@@ -4267,7 +4267,7 @@ RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NU
 		} else {
 			if (code_point == '\\') {
 				rz_strbuf_appendf(&sb, "\\\\");
-			} else if ((code_point == '\n' && !option->escape_nl) || (rz_code_point_is_printable(code_point) && code_point >= ' ')) {
+			} else if ((code_point == '\n' && !option->escape_nl) || (rz_unicode_code_point_is_printable(code_point) && code_point >= ' ')) {
 				char tmp[5] = { 0 };
 				rz_utf8_encode((ut8 *)tmp, code_point);
 				rz_strbuf_appendf(&sb, "%s", tmp);

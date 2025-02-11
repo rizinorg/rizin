@@ -3744,7 +3744,7 @@ static char *ds_esc_str(RzDisasmState *ds, const char *str, int len, const char 
 	const char *prefix = "";
 	RzStrEnc strenc = ds->strenc;
 	if (strenc == RZ_STRING_ENC_GUESS) {
-		strenc = rz_utf_bom_encoding((ut8 *)str, len);
+		strenc = rz_unicode_bom_encoding((ut8 *)str, len);
 	}
 	RzStrEscOptions opt = { 0 };
 	opt.show_asciidot = ds->show_asciidot;
@@ -4051,7 +4051,7 @@ static void ds_print_ptr(RzDisasmState *ds, int len, int idx) {
 		}
 		bool print_msg = true;
 #if 1
-		if (ds->strenc == RZ_STRING_ENC_GUESS && rz_utf_bom_encoding((ut8 *)msg, len) == RZ_STRING_ENC_GUESS && !(IS_PRINTABLE(*msg) || IS_WHITECHAR(*msg))) {
+		if (ds->strenc == RZ_STRING_ENC_GUESS && rz_unicode_bom_encoding((ut8 *)msg, len) == RZ_STRING_ENC_GUESS && !(IS_PRINTABLE(*msg) || IS_WHITECHAR(*msg))) {
 			print_msg = false;
 		} else {
 			msg[len - 1] = 0;

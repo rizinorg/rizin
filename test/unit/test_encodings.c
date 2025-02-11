@@ -3,7 +3,8 @@
 
 #include <rz_util.h>
 #include "minunit.h"
-#include "rz_util/rz_utf32.h"
+#include <rz_util/rz_unicode.h>
+#include <rz_util/rz_utf32.h>
 #include <rz_util/rz_ebcdic.h>
 #include <rz_util/rz_utf8.h>
 
@@ -178,9 +179,8 @@ bool test_rz_utf16_encode(void) {
 	mu_end;
 }
 
-
 bool test_rz_utf32_decode(void) {
-	const ut8 utf32_size_0[] = { };
+	const ut8 utf32_size_0[] = {};
 	const ut8 utf32_size_1[] = { 0xAC };
 	const ut8 utf32_size_2[] = { 0xAC, 0xAC };
 	const ut8 utf32_size_3[] = { 0xAC, 0xAC, 0x20 };
@@ -192,7 +192,7 @@ bool test_rz_utf32_decode(void) {
 	const ut8 utf32be_a[] = { 0x00, 0x00, 0xff, 0x41 };
 	const ut8 utf32le_a[] = { 0x41, 0xff, 0x00, 0x00 };
 
-	// Chess tower symbol Red General: 🩠 
+	// Chess tower symbol Red General: 🩠
 	const ut8 utf32be_red_general[] = { 0x00, 0x01, 0xFA, 0x60 };
 	const ut8 utf32le_red_general[] = { 0x60, 0xfa, 0x01, 0x00 };
 
@@ -293,6 +293,121 @@ bool test_rz_ebcdic_valid(void) {
 	mu_end;
 }
 
+bool test_rz_unicode_printable(void) {
+	// Control
+	mu_assert_false(rz_unicode_code_point_is_printable(0x0), "Not printable.");
+	mu_assert_false(rz_unicode_code_point_is_printable(31), "Not printable.");
+	mu_assert_true(rz_unicode_code_point_is_printable(32), "Printable.");
+	mu_assert_true(rz_unicode_code_point_is_printable(126), "Printable.");
+	mu_assert_false(rz_unicode_code_point_is_printable(127), "Not printable.");
+	mu_assert_false(rz_unicode_code_point_is_printable(159), "Not printable.");
+	mu_assert_true(rz_unicode_code_point_is_printable(160), "Printable.");
+
+	// Surrogates
+	mu_assert_false(rz_unicode_code_point_is_printable(55296), "Not printable.");
+	mu_assert_false(rz_unicode_code_point_is_printable(57343), "Not printable.");
+
+	// Private - consider them not printable
+	mu_assert_false(rz_unicode_code_point_is_printable(57344), "Not printable.");
+	mu_assert_false(rz_unicode_code_point_is_printable(63743), "Not printable.");
+	mu_assert_true(rz_unicode_code_point_is_printable(63744), "Printable.");
+
+	mu_assert_false(rz_unicode_code_point_is_printable(983040), "Not printable.");
+	mu_assert_false(rz_unicode_code_point_is_printable(1048573), "Not printable.");
+
+	mu_assert_false(rz_unicode_code_point_is_printable(1048576), "Not printable.");
+	mu_assert_false(rz_unicode_code_point_is_printable(1114109), "Not printable.");
+
+	// Undefined
+	// First
+	mu_assert_true(rz_unicode_code_point_is_printable(887), "Printable.");
+	mu_assert_false(rz_unicode_code_point_is_printable(888), "Not printable.");
+	mu_assert_false(rz_unicode_code_point_is_printable(889), "Not printable.");
+	mu_assert_true(rz_unicode_code_point_is_printable(890), "Printable.");
+	// Last
+	mu_assert_false(rz_unicode_code_point_is_printable(1114110), "Not printable.");
+	mu_assert_false(rz_unicode_code_point_is_printable(1114111), "Not printable.");
+	// Out of code point range.
+	mu_assert_false(rz_unicode_code_point_is_printable(0x110000), "Not printable.");
+	mu_assert_false(rz_unicode_code_point_is_printable(0xFFFFFFFF), "Not printable.");
+	// Even offset in table
+	mu_assert_true(rz_unicode_code_point_is_printable(3010), "Printable.");
+	mu_assert_false(rz_unicode_code_point_is_printable(3011), "Not printable.");
+	mu_assert_false(rz_unicode_code_point_is_printable(3013), "Not printable.");
+	mu_assert_true(rz_unicode_code_point_is_printable(3014), "Printable.");
+	// Odd offset in table
+	mu_assert_true(rz_unicode_code_point_is_printable(3016), "Printable.");
+	mu_assert_false(rz_unicode_code_point_is_printable(3017), "Not printable.");
+	mu_assert_true(rz_unicode_code_point_is_printable(3018), "Printable.");
+
+	mu_end;
+}
+
+bool test_rz_unicode_control(void) {
+	// Control
+	mu_assert_true(rz_unicode_code_point_is_control(0x0), "Control.");
+	mu_assert_true(rz_unicode_code_point_is_control(31), "Control.");
+	mu_assert_false(rz_unicode_code_point_is_control(32), "Not control.");
+	mu_assert_false(rz_unicode_code_point_is_control(126), "Not control.");
+	mu_assert_true(rz_unicode_code_point_is_control(127), "Control.");
+	mu_assert_true(rz_unicode_code_point_is_control(159), "Control.");
+	mu_assert_false(rz_unicode_code_point_is_control(160), "Not control.");
+	mu_end;
+}
+
+bool test_rz_unicode_surrogate(void) {
+	// Surrogates
+	mu_assert_false(rz_unicode_code_point_is_printable(55296), "Not printable.");
+	mu_assert_false(rz_unicode_code_point_is_printable(57343), "Not printable.");
+	mu_end;
+}
+
+bool test_rz_unicode_private(void) {
+	// Private - consider them private
+	mu_assert_false(rz_unicode_code_point_is_private(57343), "Not private.");
+	mu_assert_true(rz_unicode_code_point_is_private(57344), "Private.");
+	mu_assert_true(rz_unicode_code_point_is_private(63743), "Private.");
+	mu_assert_false(rz_unicode_code_point_is_private(63744), "Not private.");
+
+	mu_assert_false(rz_unicode_code_point_is_private(983039), "Not private.");
+	mu_assert_true(rz_unicode_code_point_is_private(983040), "Private.");
+	mu_assert_true(rz_unicode_code_point_is_private(1048573), "Private.");
+	mu_assert_false(rz_unicode_code_point_is_private(1048574), "Not private.");
+
+	mu_assert_false(rz_unicode_code_point_is_private(1048575), "Not private.");
+	mu_assert_true(rz_unicode_code_point_is_private(1048576), "Private.");
+	mu_assert_true(rz_unicode_code_point_is_private(1114109), "Private.");
+	mu_assert_false(rz_unicode_code_point_is_private(1114110), "Not private.");
+	mu_end;
+}
+
+bool test_rz_unicode_undefined(void) {
+	// Undefined
+	// First
+	mu_assert_true(rz_unicode_code_point_is_defined(887), "Defined.");
+	mu_assert_false(rz_unicode_code_point_is_defined(888), "Not defined.");
+	mu_assert_false(rz_unicode_code_point_is_defined(889), "Not defined.");
+	mu_assert_true(rz_unicode_code_point_is_defined(890), "Defined.");
+	// Last
+	mu_assert_true(rz_unicode_code_point_is_defined(1114109), "Defined.");
+	mu_assert_false(rz_unicode_code_point_is_defined(1114110), "Not defined.");
+	mu_assert_false(rz_unicode_code_point_is_defined(1114111), "Not defined.");
+	mu_assert_false(rz_unicode_code_point_is_defined(1114112), "Defined.");
+	// Out of range
+	mu_assert_false(rz_unicode_code_point_is_defined(0x110000), "Not defined.");
+	mu_assert_false(rz_unicode_code_point_is_defined(0xFFFFFFFF), "Not defined.");
+	// Even offset in table
+	mu_assert_true(rz_unicode_code_point_is_defined(3010), "Defined.");
+	mu_assert_false(rz_unicode_code_point_is_defined(3011), "Not defined.");
+	mu_assert_false(rz_unicode_code_point_is_defined(3013), "Not defined.");
+	mu_assert_true(rz_unicode_code_point_is_defined(3014), "Defined.");
+	// Odd offset in table
+	mu_assert_true(rz_unicode_code_point_is_defined(3016), "Defined.");
+	mu_assert_false(rz_unicode_code_point_is_defined(3017), "Not defined.");
+	mu_assert_true(rz_unicode_code_point_is_defined(3018), "Defined.");
+
+	mu_end;
+}
 
 bool test_rz_utf16_valid(void) {
 	const ut8 utf16be_one_byte[] = { 0x00 };
@@ -300,7 +415,7 @@ bool test_rz_utf16_valid(void) {
 	const ut8 utf16be_ff[] = { 0x00, 0x00 };
 	const ut8 utf16be_EUR[] = { 0x20, 0xAC };
 	const ut8 utf16be_complex[] = { 0xD8, 0x01, 0xDC, 0x37 };
-	const ut8 utf16be_A_A[] = { 0x00, 0x41, 0x00,  0x41 };
+	const ut8 utf16be_A_A[] = { 0x00, 0x41, 0x00, 0x41 };
 	const ut8 utf16be_complex_EUR_A[] = { 0xD8, 0x01, 0xDC, 0x37, 0x20, 0xAC, 0x00, 0x41 };
 	const ut8 utf16be_complex_A_EUR[] = { 0xD8, 0x01, 0xDC, 0x37, 0x00, 0x41, 0x20, 0xAC };
 	const ut8 utf16be_A_complex_EUR[] = { 0x00, 0x41, 0xD8, 0x01, 0xDC, 0x37, 0x20, 0xAC };
@@ -359,6 +474,11 @@ bool all_tests() {
 	mu_run_test(test_rz_utf32_valid);
 	mu_run_test(test_rz_utf16_valid);
 	mu_run_test(test_rz_ebcdic_valid);
+	mu_run_test(test_rz_unicode_printable);
+	mu_run_test(test_rz_unicode_undefined);
+	mu_run_test(test_rz_unicode_surrogate);
+	mu_run_test(test_rz_unicode_private);
+	mu_run_test(test_rz_unicode_control);
 
 	return tests_passed != tests_run;
 }
