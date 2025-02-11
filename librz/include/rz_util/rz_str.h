@@ -44,6 +44,7 @@ typedef struct {
 	bool esc_bslash; ///< When true, backslashes `\` are quoted with `\\`
 	bool esc_double_quotes; ///< When true, double quotes `"` are quoted with `\"`
 	bool dot_nl; ///< When true, \n is converted into the graphiz-compatible newline \l
+	bool keep_printable; ///< Keep all printable characters (excludes \n, \t etc.).
 } RzStrEscOptions;
 
 /**

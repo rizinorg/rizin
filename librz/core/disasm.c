@@ -3750,6 +3750,7 @@ static char *ds_esc_str(RzDisasmState *ds, const char *str, int len, const char 
 	opt.show_asciidot = ds->show_asciidot;
 	opt.esc_double_quotes = true;
 	opt.esc_bslash = ds->core->print->esc_bslash;
+	opt.keep_printable = true;
 	switch (strenc) {
 	case RZ_STRING_ENC_8BIT:
 		escstr = rz_str_escape_8bit(str, is_comment, &opt);
