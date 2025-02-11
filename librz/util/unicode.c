@@ -259,6 +259,17 @@ RZ_API bool rz_unicode_code_point_is_defined(const RzCodePoint c) {
 }
 
 /**
+ * \brief Returns true when the RzCodePoint is a defined Unicode code point and not a surrogate.
+ *
+ * \param c RzCodePoint value to test.
+ *
+ * \return True if the code point is defined and not a surrogate, false otherwise.
+ */
+RZ_API bool rz_unicode_code_point_is_legal_decode(const RzCodePoint c) {
+	return rz_unicode_code_point_is_defined(c) && !rz_unicode_code_point_is_surrogate(c);
+}
+
+/**
  * \brief Returns true when the RzCodePoint is a Unicode control code point.
  *
  * \param c RzCodePoint value to test.

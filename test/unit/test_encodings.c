@@ -8,6 +8,55 @@
 #include <rz_util/rz_ebcdic.h>
 #include <rz_util/rz_utf8.h>
 
+bool test_rz_utf8_decode(void) {
+	RzCodePoint codepoint = 0;
+	const ut8 utf8_1b_valid_first[] = { 0x00 };
+	const ut8 utf8_1b_valid_last[] = { 0x7f };
+	const ut8 utf8_2b_valid_first[] = { 0xC2, 0x80 };
+	const ut8 utf8_2b_valid_last[] = { 0xDF, 0xBF };
+	const ut8 utf8_3b_valid_first[] = { 0xE0, 0xA0, 0x80 };
+	const ut8 utf8_3b_valid_last[] = { 0xEF, 0xBF, 0xBD };
+	const ut8 utf8_4b_valid_first[] = { 0xF0, 0x90, 0x80, 0x80 };
+	const ut8 utf8_4b_valid_last[] = { 0xF4, 0x8F, 0xBF, 0xBD };
+
+	mu_assert_eq(rz_utf8_decode(utf8_1b_valid_first, sizeof(utf8_1b_valid_first), &codepoint), 1, "Decode failed");
+	mu_assert_eq(codepoint, 0, "Code point incorrect");
+	mu_assert_eq(rz_utf8_decode(utf8_1b_valid_last, sizeof(utf8_1b_valid_last), &codepoint), 1, "Decode failed");
+	mu_assert_eq(codepoint, 0x7f, "Code point incorrect");
+
+	mu_assert_eq(rz_utf8_decode(utf8_2b_valid_first, sizeof(utf8_2b_valid_first), &codepoint), 2, "Decode failed");
+	mu_assert_eq(codepoint, 0x80, "Code point incorrect");
+	mu_assert_eq(rz_utf8_decode(utf8_2b_valid_last, sizeof(utf8_2b_valid_last), &codepoint), 2, "Decode failed");
+	mu_assert_eq(codepoint, 0x07FF, "Code point incorrect");
+
+	mu_assert_eq(rz_utf8_decode(utf8_3b_valid_first, sizeof(utf8_3b_valid_first), &codepoint), 3, "Decode failed");
+	mu_assert_eq(codepoint, 0x800, "Code point incorrect");
+	mu_assert_eq(rz_utf8_decode(utf8_3b_valid_last, sizeof(utf8_3b_valid_last), &codepoint), 3, "Decode failed");
+	mu_assert_eq(codepoint, 0xFFFD, "Code point incorrect");
+
+	mu_assert_eq(rz_utf8_decode(utf8_4b_valid_first, sizeof(utf8_4b_valid_first), &codepoint), 4, "Decode failed");
+	mu_assert_eq(codepoint, 0x10000, "Code point incorrect");
+	mu_assert_eq(rz_utf8_decode(utf8_4b_valid_last, sizeof(utf8_4b_valid_last), &codepoint), 4, "Decode failed");
+	mu_assert_eq(codepoint, 0x10FFFD, "Code point incorrect");
+
+	const ut8 utf8_1b_invalid_F[] = { 0xFF };
+	const ut8 utf8_2b_invalid_F[] = { 0xFF, 0x00 };
+	const ut8 utf8_3b_invalid_F[] = { 0xFF, 0x00, 0x00 };
+	mu_assert_eq(rz_utf8_decode(utf8_1b_invalid_F, sizeof(utf8_1b_invalid_F), &codepoint), 0, "Invalid decode, prefix bit false.");
+	mu_assert_eq(rz_utf8_decode(utf8_2b_invalid_F, sizeof(utf8_2b_invalid_F), &codepoint), 0, "Invalid decode, prefix bit false.");
+	mu_assert_eq(rz_utf8_decode(utf8_3b_invalid_F, sizeof(utf8_3b_invalid_F), &codepoint), 0, "Invalid decode, prefix bit false.");
+
+	const ut8 utf8_2b_invalid_small_code_point[] = { 0xC0, 0x80 };
+	const ut8 utf8_3b_invalid_small_code_point[] = { 0xE0, 0x80, 0x80 };
+	const ut8 utf8_4b_invalid_small_code_point[] = { 0xF0, 0x80, 0x80, 0x80 };
+
+	mu_assert_eq(rz_utf8_decode(utf8_2b_invalid_small_code_point, sizeof(utf8_2b_invalid_small_code_point), &codepoint), 0, "Invalid decode, code point is too small for encoding.");
+	mu_assert_eq(rz_utf8_decode(utf8_3b_invalid_small_code_point, sizeof(utf8_3b_invalid_small_code_point), &codepoint), 0, "Invalid decode, code point is too small for encoding.");
+	mu_assert_eq(rz_utf8_decode(utf8_4b_invalid_small_code_point, sizeof(utf8_4b_invalid_small_code_point), &codepoint), 0, "Invalid decode, code point is too small for encoding.");
+
+	mu_end;
+}
+
 /**
  * \brief Examples partially taken from: https://en.wikipedia.org/wiki/UTF-16#Examples
  */
@@ -468,6 +517,7 @@ bool test_rz_utf16_valid(void) {
 }
 
 bool all_tests() {
+	mu_run_test(test_rz_utf8_decode);
 	mu_run_test(test_rz_utf16_decode);
 	mu_run_test(test_rz_utf16_encode);
 	mu_run_test(test_rz_utf32_decode);

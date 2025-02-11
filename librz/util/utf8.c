@@ -364,36 +364,52 @@ RZ_API const char *rz_utf_block_name(int idx) {
 	return unicode_blocks[idx].name;
 }
 
-/* Convert an UTF-8 buf into a unicode RzCodePoint */
-RZ_API int rz_utf8_decode(const ut8 *ptr, int ptrlen, RzCodePoint *ch) {
-	if (ptrlen < 1) {
+/**
+ * \brief Decodes an UTF-8 encoded Unicode code point form the buffer \p buf
+ *
+ * \param buf The buffer to read from.
+ * \param The buffer length in bytes.
+ * \param cp The decoded code point. It is only written if a valid
+ * Unicode code point was decoded.
+ *
+ * \return The number of bytes decoded. Is always between 0-4.
+ */
+RZ_API size_t rz_utf8_decode(RZ_NONNULL const ut8 *buf, size_t buf_len, RZ_NULLABLE RZ_OUT RzCodePoint *cp) {
+	rz_return_val_if_fail(buf, 0);
+	if (buf_len < 1) {
 		return 0;
 	}
-	if (ptr[0] < 0x80) {
-		if (ch) {
-			*ch = (ut32)ptr[0];
+	RzCodePoint code_point = UNICODE_LAST_CODE_POINT + 1;
+	size_t bytes_used = 0;
+	if (buf[0] < 0x80) {
+		code_point = (RzCodePoint)buf[0];
+		bytes_used = 1;
+	} else if (buf_len > 1 && (buf[0] & 0xe0) == 0xc0 && (buf[1] & 0xc0) == 0x80) {
+		code_point = (buf[0] & 0x1f) << 6 | (buf[1] & 0x3f);
+		if (code_point < UNICODE_FIRST_2BYTE_CODE_POINT) {
+			return 0;
 		}
-		return 1;
-	} else if (ptrlen > 1 && (ptr[0] & 0xe0) == 0xc0 && (ptr[1] & 0xc0) == 0x80) {
-		RzCodePoint code_point = (ptr[0] & 0x1f) << 6 | (ptr[1] & 0x3f);
-		if (ch) {
-			*ch = code_point;
+		bytes_used = 2;
+	} else if (buf_len > 2 && (buf[0] & 0xf0) == 0xe0 && (buf[1] & 0xc0) == 0x80 && (buf[2] & 0xc0) == 0x80) {
+		code_point = (buf[0] & 0xf) << 12 | (buf[1] & 0x3f) << 6 | (buf[2] & 0x3f);
+		if (code_point < UNICODE_FIRST_3BYTE_CODE_POINT) {
+			return 0;
 		}
-		return code_point < 0x80 ? 0 : 2;
-	} else if (ptrlen > 2 && (ptr[0] & 0xf0) == 0xe0 && (ptr[1] & 0xc0) == 0x80 && (ptr[2] & 0xc0) == 0x80) {
-		RzCodePoint code_point = (ptr[0] & 0xf) << 12 | (ptr[1] & 0x3f) << 6 | (ptr[2] & 0x3f);
-		if (ch) {
-			*ch = code_point;
+		bytes_used = 3;
+	} else if (buf_len > 3 && (buf[0] & 0xf8) == 0xf0 && (buf[1] & 0xc0) == 0x80 && (buf[2] & 0xc0) == 0x80 && (buf[3] & 0xc0) == 0x80) {
+		code_point = (buf[0] & 7) << 18 | (buf[1] & 0x3f) << 12 | (buf[2] & 0x3f) << 6 | (buf[3] & 0x3f);
+		if (code_point < UNICODE_FIRST_4BYTE_CODE_POINT) {
+			return 0;
 		}
-		return code_point < 0x800 ? 0 : 3;
-	} else if (ptrlen > 3 && (ptr[0] & 0xf8) == 0xf0 && (ptr[1] & 0xc0) == 0x80 && (ptr[2] & 0xc0) == 0x80 && (ptr[3] & 0xc0) == 0x80) {
-		RzCodePoint code_point = (ptr[0] & 7) << 18 | (ptr[1] & 0x3f) << 12 | (ptr[2] & 0x3f) << 6 | (ptr[3] & 0x3f);
-		if (ch) {
-			*ch = code_point;
-		}
-		return code_point > UNICODE_LAST_CODE_POINT ? 0 : 4;
+		bytes_used = 4;
 	}
-	return 0;
+	if (code_point > UNICODE_LAST_CODE_POINT || !rz_unicode_code_point_is_legal_decode(code_point)) {
+		return 0;
+	}
+	if (cp) {
+		*cp = code_point;
+	}
+	return bytes_used;
 }
 
 /* Convert an MUTF-8 buf into a unicode RzCodePoint */

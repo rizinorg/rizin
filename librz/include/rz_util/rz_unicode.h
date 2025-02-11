@@ -4,11 +4,15 @@
 #include <rz_types.h>
 #include "rz_str.h"
 
-#define UNICODE_NUL             0
-#define UNICODE_VERSION_MAJOR   16
-#define UNICODE_VERSION_MINOR   0
-#define UNICODE_VERSION_PATCH   0
-#define UNICODE_LAST_CODE_POINT 0x10ffff
+#define UNICODE_NUL                    0
+#define UNICODE_VERSION_MAJOR          16
+#define UNICODE_VERSION_MINOR          0
+#define UNICODE_VERSION_PATCH          0
+#define UNICODE_FIRST_1BYTE_CODE_POINT 0x0
+#define UNICODE_FIRST_2BYTE_CODE_POINT 0x80
+#define UNICODE_FIRST_3BYTE_CODE_POINT 0x0800
+#define UNICODE_FIRST_4BYTE_CODE_POINT 0x010000
+#define UNICODE_LAST_CODE_POINT        0x10ffff
 
 struct rz_unicode_range_name_entry_t {
 	ut32 from;
@@ -29,6 +33,7 @@ typedef ut32 RzCodePoint;
 
 RZ_API bool rz_unicode_code_point_is_printable(const RzCodePoint c);
 RZ_API bool rz_unicode_code_point_is_defined(const RzCodePoint c);
+RZ_API bool rz_unicode_code_point_is_legal_decode(const RzCodePoint c);
 RZ_API bool rz_unicode_code_point_is_control(const RzCodePoint c);
 RZ_API bool rz_unicode_code_point_is_surrogate(const RzCodePoint c);
 RZ_API bool rz_unicode_code_point_is_private(const RzCodePoint c);
