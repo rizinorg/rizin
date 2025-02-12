@@ -292,7 +292,7 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 
 		/* Invalid sequence detected */
 		if (!rc || (ascii_only && r > 0x7f)) {
-			needle++;
+			// Either an invalid code point decoded or a non-ASCII character.
 			break;
 		}
 

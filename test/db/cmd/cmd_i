@@ -3804,10 +3804,10 @@ iz~abcdef
 iz~123456
 EOF
 EXPECT=<<EOF
-  1 0x0000060c 0x0040060c   6   28 .rodata utf32le ABCDEF
-  1 0x0000060c 0x0040060c   6   28 .rodata utf32le ABCDEF
-  2 0x00000650 0x00400650   6   25 .rodata utf32le abcdef
-  3 0x00000694 0x00400694   6   28 .rodata utf32le 123456
+  1 0x0000060c 0x0040060c   6   24 .rodata utf32le ABCDEF
+  1 0x0000060c 0x0040060c   6   24 .rodata utf32le ABCDEF
+  2 0x00000650 0x00400650   6   24 .rodata utf32le abcdef
+  3 0x00000694 0x00400694   6   24 .rodata utf32le 123456
 EOF
 RUN
 
@@ -3861,7 +3861,7 @@ EXPECT=<<EOF
   0 0x00000004 0x00000004   8    9         ascii abcdefgh
   0 0x00000000 0x00000000   6   14         utf16le ki扡摣晥桧 blocks=Basic Latin,CJK Unified Ideographs
 
-  0 0x00000001 0x00000001   4    9         utf16le %%%%
+  0 0x00000001 0x00000001   4    8         utf16le %%%%
   0 0x00000000 0x00000000   4   10         utf16le ──── blocks=Box Drawing
 
   0 0x00000000 0x00000000   8    9         ascii &%&%&%&%
@@ -4008,7 +4008,7 @@ e bin.str.purge=all,!4195920
 izzj
 EOF
 EXPECT=<<EOF
-[{"vaddr":4195920,"paddr":1616,"ordinal":13,"size":25,"length":6,"section":".rodata","type":"utf32le","string":"abcdef"}]
+[{"vaddr":4195920,"paddr":1616,"ordinal":13,"size":24,"length":6,"section":".rodata","type":"utf32le","string":"abcdef"}]
 EOF
 RUN
 
@@ -4061,7 +4061,7 @@ e bin.str.purge=all,!0x413220-0x413235
 EOF
 EXPECT=<<EOF
 --1--
-1089 0x00012420 0x00412420   5    6 .text              ascii   AWAVA
+1089 0x00012420 0x00412420   5    5 .text              ascii   AWAVA
 --2--
 --3--
   0 0x000131d8 0x004131d8  11   12 .rodata ascii dev_ino_pop
@@ -4718,9 +4718,9 @@ NAME=ascii substring detection (#14499)
 FILE=bins/pe/Reborn_Stub-strings.exe
 CMDS=izz~pomf[1,2,3,4,5,6,7,8]
 EXPECT=<<EOF
-0x00087f8a 0x00489d8a 26 53 .text utf16le http://pomf.cat/upload.php
-0x000880dd 0x00489edd 19 39 .text utf16le https://a.pomf.cat/
-0x00089bed 0x0048b9ed 26 53 .text utf16le http://pomf.cat/upload.php
+0x00087f8a 0x00489d8a 26 52 .text utf16le http://pomf.cat/upload.php
+0x000880dd 0x00489edd 19 38 .text utf16le https://a.pomf.cat/
+0x00089bed 0x0048b9ed 26 52 .text utf16le http://pomf.cat/upload.php
 0x00089c22 0x0048ba22 19 40 .text utf16le https://a.pomf.cat/
 EOF
 RUN
