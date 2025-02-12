@@ -304,11 +304,6 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 		needle += rc;
 
 		if (rz_unicode_code_point_is_printable(r) && r != '\\') {
-			if (str_type == RZ_STRING_ENC_UTF32LE || str_type == RZ_STRING_ENC_UTF32BE) {
-				if (r == 0xff) {
-					r = 0;
-				}
-			}
 			rc = rz_utf8_encode(strbuf + i, r);
 			runes++;
 		} else if (r && r < 0x100 && is_c_escape_sequence((char)r)) {

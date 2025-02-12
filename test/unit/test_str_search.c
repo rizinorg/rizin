@@ -276,7 +276,7 @@ bool test_rz_scan_strings_detect_utf32_be(void) {
 	mu_assert_eq(n, 1, "rz_scan_strings utf32be, number of strings");
 
 	RzDetectedString *s = rz_list_get_n(str_list, 0);
-	mu_assert_streq(s->string, "I am a UTF-32be string", "rz_scan_strings utf32be, different string");
+	mu_assert_streq(s->string, "I am a UTF-32be stringÿ", "rz_scan_strings utf32be, different string");
 	mu_assert_eq(s->addr, 2, "rz_scan_strings utf32be, address");
 	mu_assert_eq(s->type, RZ_STRING_ENC_UTF32BE, "rz_scan_strings utf32be, string type");
 
