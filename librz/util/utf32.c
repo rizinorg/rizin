@@ -9,7 +9,8 @@
  *
  * \param buf The buffer to read from.
  * \param buf_len The buffer size in bytes.
- * \param ch The code point to write the value to.
+ * \param ch The decoded code point. It is only written if a valid
+ * Unicode code point was decoded.
  * \param big_endian If the buffer bytes have big endian order.
  *
  * \return The number of bytes converted. For UTF-32 this is always 0 or 4.
@@ -22,7 +23,11 @@ RZ_API size_t rz_utf32_decode(RZ_NONNULL const ut8 *buf, size_t buf_len, RZ_NULL
 	if (!ch) {
 		return 4;
 	}
-	*ch = rz_read_ble32(buf, big_endian);
+	RzCodePoint cp = rz_read_ble32(buf, big_endian);
+	if (!rz_unicode_code_point_is_legal_decode(cp)) {
+		return 0;
+	}
+	*ch = cp;
 	return 4;
 }
 

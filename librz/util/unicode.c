@@ -288,6 +288,9 @@ static bool bin_search_range(RzCodePoint cp, const RzUnicodeRangeTable table, si
  * \return True if the code point is defined, false otherwise.
  */
 RZ_API bool rz_unicode_code_point_is_defined(const RzCodePoint c) {
+	if (c > UNICODE_LAST_CODE_POINT) {
+		return false;
+	}
 	return !bin_search_range(c, undefined_ranges, RZ_ARRAY_SIZE(undefined_ranges));
 }
 

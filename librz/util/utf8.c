@@ -403,7 +403,7 @@ RZ_API size_t rz_utf8_decode(RZ_NONNULL const ut8 *buf, size_t buf_len, RZ_NULLA
 		}
 		bytes_used = 4;
 	}
-	if (code_point > UNICODE_LAST_CODE_POINT || !rz_unicode_code_point_is_legal_decode(code_point)) {
+	if (!rz_unicode_code_point_is_legal_decode(code_point)) {
 		return 0;
 	}
 	if (cp) {

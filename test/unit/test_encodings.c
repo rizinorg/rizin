@@ -233,6 +233,8 @@ bool test_rz_utf32_decode(void) {
 	const ut8 utf32_size_1[] = { 0xAC };
 	const ut8 utf32_size_2[] = { 0xAC, 0xAC };
 	const ut8 utf32_size_3[] = { 0xAC, 0xAC, 0x20 };
+	const ut8 utf32_undefined_I[] = { 0xFF, 0xFF, 0xFF, 0xFF };
+	const ut8 utf32_invalid_surrogate[] = { 0x00, 0x00, 0xD8, 0x00 };
 
 	const ut8 utf32be_A[] = { 0x00, 0x00, 0x00, 0x41 };
 	const ut8 utf32le_A[] = { 0x41, 0x00, 0x00, 0x00 };
@@ -254,6 +256,8 @@ bool test_rz_utf32_decode(void) {
 	mu_assert_eq(rz_utf32_decode(utf32_size_1, sizeof(utf32_size_1), &cp, false), 0, "Length check failed");
 	mu_assert_eq(rz_utf32_decode(utf32_size_2, sizeof(utf32_size_2), &cp, false), 0, "Length check failed");
 	mu_assert_eq(rz_utf32_decode(utf32_size_3, sizeof(utf32_size_3), &cp, false), 0, "Length check failed");
+	mu_assert_eq(rz_utf32_decode(utf32_undefined_I, sizeof(utf32_undefined_I), &cp, false), 0, "Undefined");
+	mu_assert_eq(rz_utf32_decode(utf32_invalid_surrogate, sizeof(utf32_invalid_surrogate), &cp, false), 0, "Undefined");
 
 	mu_assert_eq(rz_utf32_decode(utf32be_A, sizeof(utf32be_A), &cp, true), 4, "Length check failed");
 	mu_assert_eq(cp, 0x41, "Incorrect decoding.");
