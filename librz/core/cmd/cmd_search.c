@@ -422,6 +422,23 @@ static char *getstring(char *b, int l, bool use_color) {
 	return res;
 }
 
+static RZ_OWN char *get_colored_context(RZ_NONNULL const char *ctx) {
+	RzBuffer *buf = rz_buf_new_with_bytes(NULL, 0);
+	if (!buf) {
+		return NULL;
+	}
+	for (; *ctx; ctx++) {
+		if (*ctx == '\xff') {
+			rz_buf_append_string(buf, Color_BLUE "." Color_RESET);
+		} else {
+			rz_buf_append_bytes(buf, (const ut8 *)ctx, 1);
+		}
+	}
+	char *ctx_color = rz_buf_to_string(buf);
+	rz_buf_free(buf);
+	return ctx_color;
+}
+
 static int _cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 	struct search_parameters *param = user;
 	RzCore *core = param->core;
@@ -460,31 +477,12 @@ static int _cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 			} else {
 				wrd = rz_str_utf16_encode(buf + prectx, len);
 				if (use_color) {
-					char *ptr;
-					RzBuffer *pre_color = rz_buf_new_with_bytes(NULL, 0);
-					for (ptr = pre; *ptr; ptr++) {
-						if (*ptr == '\xff') {
-							rz_buf_append_string(pre_color, Color_BLUE "." Color_RESET);
-						} else {
-							rz_buf_append_bytes(pre_color, (const ut8 *)ptr, 1);
-						}
-					}
-					RzBuffer *pos_color = rz_buf_new_with_bytes(NULL, 0);
-					for (ptr = pos; *ptr; ptr++) {
-						if (*ptr == '\xff') {
-							rz_buf_append_string(pos_color, Color_BLUE "." Color_RESET);
-						} else {
-							rz_buf_append_bytes(pos_color, (const ut8 *)ptr, 1);
-						}
-					}
-					char *pre_color_str = rz_buf_to_string(pre_color);
-					char *pos_color_str = rz_buf_to_string(pos_color);
+					char *pre_color = get_colored_context(pre);
+					char *pos_color = get_colored_context(pos);
 					s = rz_str_newf("\"%s" Color_YELLOW "%s" Color_RESET "%s\"",
-						pre_color_str, wrd, pos_color_str);
-					free(pre_color_str);
-					free(pos_color_str);
-					rz_buf_free(pre_color);
-					rz_buf_free(pos_color);
+						pre_color, wrd, pos_color);
+					free(pre_color);
+					free(pos_color);
 				} else {
 					s = rz_str_newf("\"%s%s%s\"", pre, wrd, pos);
 				}
