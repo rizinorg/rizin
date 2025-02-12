@@ -4793,6 +4793,9 @@ RZ_IPI void rz_core_analysis_value_pointers(RzCore *core, RzOutputMode mode) {
 			if (rz_cons_is_breaked()) {
 				break;
 			}
+			if (map2->perm & RZ_PERM_X) {
+				continue;
+			}
 			// TODO: Reduce multiple hits for same addr
 			from = rz_itv_begin(map2->itv);
 			to = rz_itv_end(map2->itv);
