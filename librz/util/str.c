@@ -1519,7 +1519,18 @@ RZ_API char *rz_str_sanitize_sdb_key(const char *s) {
 	return ret;
 }
 
-static inline bool escape_it(RzCodePoint cp, size_t ch_bytes, const RzStrEscOptions *opts) {
+/**
+ * \brief Returns true if the code point should be escaped, accoring to the RzStrEscOptions.
+ *
+ * \param code_point The code point or char to check.
+ * \param ch_bytes The number of bytes the code point was encoded in. Can be 0, if the the decode was invalid.
+ * In this case this function returns true.
+ * \param opts The string escape options to check.
+ *
+ * \return Return true if the code point/character should be escaped. False if it can be printed normally.
+ */
+RZ_API bool rz_str_escape_code_point(ut32 /* RzCodePoint */ cp, size_t ch_bytes, RZ_NONNULL const RzStrEscOptions *opts) {
+	rz_return_val_if_fail(opts, true);
 	bool is_invalid_decode = ch_bytes == 0;
 	if (is_invalid_decode || !opts->keep_printable) {
 		return true;
@@ -1569,7 +1580,7 @@ static RZ_OWN char *rz_str_escape_(const char *buf, bool parse_esc_seq, bool ign
 			}
 			/* fallthrough */
 		default:
-			if (!escape_it(*p, 1, opt)) {
+			if (!rz_str_escape_code_point(*p, 1, opt)) {
 				*q++ = *p;
 			} else {
 				rz_unicode_byte_escape(*p, &q, opt);
@@ -1702,10 +1713,10 @@ static char *rz_str_escape_utf(const char *buf, int buf_size, RzStrEnc enc, cons
 			ch_bytes = rz_utf8_decode((ut8 *)p, end - p, &ch);
 			min_char_width = 1;
 		}
-		if (!escape_it(ch, ch_bytes, esc_opts)) {
+		if (!rz_str_escape_code_point(ch, ch_bytes, esc_opts)) {
 			q += rz_utf8_encode((ut8 *)q, ch);
 		} else {
-			if (ch_bytes > 0 && rz_unicode_code_point_is_defined(ch)) {
+			if (ch_bytes > 0) {
 				// Valid code point, but it should be escaped.
 				rz_unicode_code_point_escape(ch, &q, esc_opts);
 				// q is incremented in rz_str_byte_escape

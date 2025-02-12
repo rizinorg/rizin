@@ -1199,7 +1199,13 @@ static void rz_type_byte_escape(const RzPrint *p, const char *src, char **dst, i
 	opt.dot_nl = dot_nl;
 	opt.show_asciidot = !strcmp(p->strconv_mode, "asciidot");
 	opt.esc_bslash = p->esc_bslash;
-	rz_unicode_byte_escape(*src, dst, &opt);
+	opt.keep_printable = true;
+	if (!rz_str_escape_code_point(*src, 1, &opt)) {
+		**dst = *src;
+		(*dst)++;
+	} else {
+		rz_unicode_byte_escape(*src, dst, &opt);
+	}
 }
 
 static void rz_type_format_nulltermstring(const RzTypeDB *typedb, RzPrint *p, RzStrBuf *outbuf, int len, int endian, int mode,
@@ -1275,12 +1281,8 @@ static void rz_type_format_nulltermstring(const RzTypeDB *typedb, RzPrint *p, Rz
 		rz_strbuf_append(outbuf, "\"");
 		for (; j < len && ((size == -1 || size-- > 0) && buf[j]); j++) {
 			char esc_str[5] = { 0 };
-			char *ptr = esc_str;
-			if (IS_PRINTABLE(buf[j])) {
-				*ptr++ = buf[j];
-			} else {
-				rz_type_byte_escape(p, (char *)&buf[j], &ptr, false);
-			}
+			char *ptr = esc_str;			
+			rz_type_byte_escape(p, (char *)&buf[j], &ptr, false);
 			rz_strbuf_appendf(outbuf, "%s", esc_str);
 		}
 		rz_strbuf_append(outbuf, "\"");

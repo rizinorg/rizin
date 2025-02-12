@@ -214,6 +214,7 @@ RZ_API char *rz_str_path_escape(const char *path);
 RZ_API int rz_str_unescape(char *buf);
 RZ_DEPRECATE RZ_API RZ_OWN char *rz_str_escape(RZ_NONNULL const char *buf);
 RZ_API char *rz_str_escape_sh(const char *buf);
+RZ_API bool rz_str_escape_code_point(ut32 /* RzCodePoint */ cp, size_t ch_bytes, RZ_NONNULL const RzStrEscOptions *opts);
 RZ_DEPRECATE RZ_API char *rz_str_escape_dot(const char *buf);
 RZ_DEPRECATE RZ_API char *rz_str_escape_8bit(const char *buf, bool colors, RzStrEscOptions *opt);
 RZ_API RZ_OWN char *rz_str_escape_utf8(RZ_NONNULL const char *buf, RZ_NONNULL const RzStrEscOptions *opt);
