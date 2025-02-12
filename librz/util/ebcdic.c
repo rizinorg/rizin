@@ -440,6 +440,13 @@ static const ut8 ebcdic_es_page20[256] = {
 	[0xa7] = 0x5b,
 };
 
+static inline bool invalid_ebcdic_decode(ut8 byte_in, ut8 ebcdic_decode) {
+	// 0x0 is always mapped to the NUL byte in EBCDIC.
+	// If the input was a 0x0 but the output was a 0x0 as well,
+	// the decode is invalid.
+	return byte_in != 0 && ebcdic_decode == 0;
+}
+
 /**
  * \name IBM037
  * see https://www.compart.com/en/unicode/charsets/IBM037
@@ -457,7 +464,7 @@ static const ut8 ebcdic_es_page20[256] = {
 RZ_API int rz_str_ibm037_to_unicode(const ut8 src, RZ_NONNULL RZ_OUT RzCodePoint *dst) {
 	rz_return_val_if_fail(dst, 0);
 	*dst = ibm037_to_uni[src];
-	return 1;
+	return invalid_ebcdic_decode(src, *dst) ? 0 : 1;
 }
 
 /**
@@ -470,7 +477,7 @@ RZ_API int rz_str_ibm037_from_unicode(RZ_NONNULL RZ_OUT ut8 *dst, const RzCodePo
 	rz_return_val_if_fail(dst, 0);
 	if (src <= 0xff) {
 		*dst = ibm037_from_uni[src];
-		return 1;
+		return invalid_ebcdic_decode(src, *dst) ? 0 : 1;
 	}
 	return 0;
 }
@@ -486,7 +493,7 @@ RZ_API int rz_str_ibm037_to_ascii(const ut8 src, RZ_NONNULL RZ_OUT ut8 *dst) {
 	ut8 c = ibm037_to_uni[src];
 	if (c < 0x80) {
 		*dst = c;
-		return 1;
+		return invalid_ebcdic_decode(src, *dst) ? 0 : 1;
 	}
 	return 0;
 }
@@ -500,7 +507,7 @@ RZ_API int rz_str_ibm037_to_ascii(const ut8 src, RZ_NONNULL RZ_OUT ut8 *dst) {
 RZ_API int rz_str_ibm037_from_ascii(RZ_NONNULL RZ_OUT ut8 *dst, const ut8 src) {
 	rz_return_val_if_fail(dst, 0);
 	*dst = ibm037_from_uni[src];
-	return 1;
+	return invalid_ebcdic_decode(src, *dst) ? 0 : 1;
 }
 
 /// @}
@@ -516,7 +523,7 @@ RZ_API int rz_str_ibm037_from_ascii(RZ_NONNULL RZ_OUT ut8 *dst, const ut8 src) {
 RZ_API int rz_str_ibm290_to_unicode(const ut8 src, RZ_NONNULL RZ_OUT RzCodePoint *dst) {
 	rz_return_val_if_fail(dst, 0);
 	*dst = ibm290_to_uni[src];
-	return 1;
+	return invalid_ebcdic_decode(src, *dst) ? 0 : 1;
 }
 
 /// Convert an unicode RzCodePoint into an ibm290 char
@@ -524,10 +531,10 @@ RZ_API int rz_str_ibm290_from_unicode(RZ_NONNULL RZ_OUT ut8 *dst, const RzCodePo
 	rz_return_val_if_fail(dst, 0);
 	if (src <= 0xff) {
 		*dst = ibm290_page00[src];
-		return 1;
+		return invalid_ebcdic_decode(src, *dst) ? 0 : 1;
 	} else if (src >= 0x3000 && src <= 0x30ff) {
 		*dst = ibm290_page30[src & 0xff];
-		return 1;
+		return invalid_ebcdic_decode(src, *dst) ? 0 : 1;
 	}
 	return 0;
 }
@@ -538,7 +545,7 @@ RZ_API int rz_str_ibm290_to_ascii(const ut8 src, RZ_NONNULL RZ_OUT ut8 *dst) {
 	ut8 c = ibm290_to_uni[src];
 	if (c < 0x80) {
 		*dst = c;
-		return 1;
+		return invalid_ebcdic_decode(src, *dst) ? 0 : 1;
 	}
 	return 0;
 }
@@ -547,7 +554,7 @@ RZ_API int rz_str_ibm290_to_ascii(const ut8 src, RZ_NONNULL RZ_OUT ut8 *dst) {
 RZ_API int rz_str_ibm290_from_ascii(RZ_NONNULL RZ_OUT ut8 *dst, const ut8 src) {
 	rz_return_val_if_fail(dst, 0);
 	*dst = ibm290_page00[src];
-	return 1;
+	return invalid_ebcdic_decode(src, *dst) ? 0 : 1;
 }
 
 /// @}
@@ -563,7 +570,7 @@ RZ_API int rz_str_ibm290_from_ascii(RZ_NONNULL RZ_OUT ut8 *dst, const ut8 src) {
 RZ_API int rz_str_ebcdic_uk_to_unicode(const ut8 src, RZ_NONNULL RZ_OUT RzCodePoint *dst) {
 	rz_return_val_if_fail(dst, 0);
 	*dst = ebcdic_uk_to_uni[src];
-	return 1;
+	return invalid_ebcdic_decode(src, *dst) ? 0 : 1;
 }
 
 /// Convert an unicode RzCodePoint into an ebcdic_uk char
@@ -571,7 +578,7 @@ RZ_API int rz_str_ebcdic_uk_from_unicode(RZ_NONNULL RZ_OUT ut8 *dst, const RzCod
 	rz_return_val_if_fail(dst, 0);
 	if (src <= 0xff) {
 		*dst = ebcdic_uk_from_uni[src];
-		return 1;
+		return invalid_ebcdic_decode(src, *dst) ? 0 : 1;
 	}
 	return 0;
 }
@@ -582,7 +589,7 @@ RZ_API int rz_str_ebcdic_uk_to_ascii(const ut8 src, RZ_NONNULL RZ_OUT ut8 *dst) 
 	ut8 c = ebcdic_uk_to_uni[src];
 	if (c < 0x80) {
 		*dst = c;
-		return 1;
+		return invalid_ebcdic_decode(src, *dst) ? 0 : 1;
 	}
 	return 0;
 }
@@ -591,7 +598,7 @@ RZ_API int rz_str_ebcdic_uk_to_ascii(const ut8 src, RZ_NONNULL RZ_OUT ut8 *dst) 
 RZ_API int rz_str_ebcdic_uk_from_ascii(RZ_NONNULL RZ_OUT ut8 *dst, const ut8 src) {
 	rz_return_val_if_fail(dst, 0);
 	*dst = ebcdic_uk_from_uni[src];
-	return 1;
+	return invalid_ebcdic_decode(src, *dst) ? 0 : 1;
 }
 
 /// @}
@@ -607,7 +614,7 @@ RZ_API int rz_str_ebcdic_uk_from_ascii(RZ_NONNULL RZ_OUT ut8 *dst, const ut8 src
 RZ_API int rz_str_ebcdic_us_to_unicode(const ut8 src, RZ_NONNULL RZ_OUT RzCodePoint *dst) {
 	rz_return_val_if_fail(dst, 0);
 	*dst = ebcdic_us_to_uni[src];
-	return 1;
+	return invalid_ebcdic_decode(src, *dst) ? 0 : 1;
 }
 
 /// Convert an unicode RzCodePoint into an ebcdic_us char
@@ -615,7 +622,7 @@ RZ_API int rz_str_ebcdic_us_from_unicode(RZ_NONNULL RZ_OUT ut8 *dst, const RzCod
 	rz_return_val_if_fail(dst, 0);
 	if (src <= 0xff) {
 		*dst = ebcdic_us_from_uni[src];
-		return 1;
+		return invalid_ebcdic_decode(src, *dst) ? 0 : 1;
 	}
 	return 0;
 }
@@ -626,7 +633,7 @@ RZ_API int rz_str_ebcdic_us_to_ascii(const ut8 src, RZ_NONNULL RZ_OUT ut8 *dst) 
 	ut8 c = ebcdic_us_to_uni[src];
 	if (c < 0x80) {
 		*dst = c;
-		return 1;
+		return invalid_ebcdic_decode(src, *dst) ? 0 : 1;
 	}
 	return 0;
 }
@@ -635,7 +642,7 @@ RZ_API int rz_str_ebcdic_us_to_ascii(const ut8 src, RZ_NONNULL RZ_OUT ut8 *dst) 
 RZ_API int rz_str_ebcdic_us_from_ascii(RZ_NONNULL RZ_OUT ut8 *dst, const ut8 src) {
 	rz_return_val_if_fail(dst, 0);
 	*dst = ebcdic_us_from_uni[src];
-	return 1;
+	return invalid_ebcdic_decode(src, *dst) ? 0 : 1;
 }
 
 /// @}
@@ -645,12 +652,13 @@ RZ_API int rz_str_ebcdic_us_from_ascii(RZ_NONNULL RZ_OUT ut8 *dst, const ut8 src
  * see https://www.compart.com/en/unicode/charsets/EBCDIC-ES
  */
 /// @{
+//
 
 /// Convert an ebcdic_es char into an unicode RzCodePoint
 RZ_API int rz_str_ebcdic_es_to_unicode(const ut8 src, RZ_NONNULL RZ_OUT RzCodePoint *dst) {
 	rz_return_val_if_fail(dst, 0);
 	*dst = ebcdic_es_to_uni[src];
-	return 1;
+	return invalid_ebcdic_decode(src, *dst) ? 0 : 1;
 }
 
 /// Convert an unicode RzCodePoint into an ebcdic_es char
@@ -658,10 +666,10 @@ RZ_API int rz_str_ebcdic_es_from_unicode(RZ_NONNULL RZ_OUT ut8 *dst, const RzCod
 	rz_return_val_if_fail(dst, 0);
 	if (src <= 0xff) {
 		*dst = ebcdic_es_page00[src];
-		return 1;
+		return invalid_ebcdic_decode(src, *dst) ? 0 : 1;
 	} else if (src >= 0x2000 && src <= 0x20ff) {
 		*dst = ebcdic_es_page20[src & 0xff];
-		return 1;
+		return invalid_ebcdic_decode(src, *dst) ? 0 : 1;
 	}
 	return 0;
 }
@@ -672,7 +680,7 @@ RZ_API int rz_str_ebcdic_es_to_ascii(const ut8 src, RZ_NONNULL RZ_OUT ut8 *dst) 
 	ut8 c = ebcdic_es_to_uni[src];
 	if (c < 0x80) {
 		*dst = c;
-		return 1;
+		return invalid_ebcdic_decode(src, *dst) ? 0 : 1;
 	}
 	return 0;
 }
@@ -681,7 +689,7 @@ RZ_API int rz_str_ebcdic_es_to_ascii(const ut8 src, RZ_NONNULL RZ_OUT ut8 *dst) 
 RZ_API int rz_str_ebcdic_es_from_ascii(RZ_NONNULL RZ_OUT ut8 *dst, const ut8 src) {
 	rz_return_val_if_fail(dst, 0);
 	*dst = ebcdic_es_page00[src];
-	return 1;
+	return invalid_ebcdic_decode(src, *dst) ? 0 : 1;
 }
 
 /**

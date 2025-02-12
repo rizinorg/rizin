@@ -122,7 +122,7 @@ bool test_rz_scan_strings_detect_ibm037(void) {
 	mu_assert_eq(s->type, RZ_STRING_ENC_IBM037, "rz_scan_strings mix utf8 and ibm037, string type");
 
 	s = rz_list_get_n(str_list, 1);
-	mu_assert_streq(s->string, "I am a \xc3\x99TF-8 string", "rz_scan_strings mix utf8 and ibm037, different string");
+	mu_assert_streq(s->string, "%I am a \xc3\x99TF-8 string", "rz_scan_strings mix utf8 and ibm037, different string");
 	mu_assert_eq(s->type, RZ_STRING_ENC_UTF8, "rz_scan_strings mix utf8 and ibm037, string type");
 
 	rz_list_free(str_list);
