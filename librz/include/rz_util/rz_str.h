@@ -222,7 +222,6 @@ RZ_API char *rz_str_escape_utf16le(const char *buf, int buf_size, RzStrEscOption
 RZ_API char *rz_str_escape_utf32le(const char *buf, int buf_size, RzStrEscOptions *opt);
 RZ_API char *rz_str_escape_utf16be(const char *buf, int buf_size, RzStrEscOptions *opt);
 RZ_API char *rz_str_escape_utf32be(const char *buf, int buf_size, RzStrEscOptions *opt);
-RZ_API void rz_str_byte_escape(const char *p, char **dst, RzStrEscOptions *opt);
 RZ_API char *rz_str_format_msvc_argv(size_t argc, const char **argv);
 RZ_API void rz_str_uri_decode(char *buf);
 RZ_API char *rz_str_uri_encode(const char *buf);

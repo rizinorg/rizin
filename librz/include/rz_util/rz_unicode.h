@@ -39,5 +39,7 @@ RZ_API bool rz_unicode_code_point_is_surrogate(const RzCodePoint c);
 RZ_API bool rz_unicode_code_point_is_private(const RzCodePoint c);
 RZ_API bool rz_unicode_code_point_is_format(const RzCodePoint c);
 RZ_API RzStrEnc rz_unicode_bom_encoding(const ut8 *ptr, size_t ptrlen);
+RZ_API void rz_unicode_code_point_escape(RzCodePoint code_point, RZ_NONNULL RZ_OUT char **dst, RZ_NONNULL RzStrEscOptions *opt);
+RZ_API void rz_unicode_byte_escape(char ch, RZ_NONNULL RZ_OUT char **dst, RzStrEscOptions *opt);
 
 #endif // RZ_UNICODE_H

@@ -399,3 +399,111 @@ RZ_API RzStrEnc rz_unicode_bom_encoding(const ut8 *ptr, size_t ptrlen) {
 	}
 	return RZ_STRING_ENC_GUESS;
 }
+
+static bool short_escape(RzCodePoint code_point, char **dst, RzStrEscOptions *opt) {
+	char *q = *dst;
+	switch (code_point) {
+	case '\n':
+		*q++ = '\\';
+		*q++ = opt->dot_nl ? 'l' : 'n';
+		break;
+	case '\r':
+		*q++ = '\\';
+		*q++ = 'r';
+		break;
+	case '\\':
+		if (opt->esc_bslash) {
+			*q++ = '\\';
+		}
+		*q++ = '\\';
+		break;
+	case '\t':
+		*q++ = '\\';
+		*q++ = 't';
+		break;
+	case '"':
+		if (opt->esc_double_quotes) {
+			*q++ = '\\';
+		}
+		*q++ = '"';
+		break;
+	case '\f':
+		*q++ = '\\';
+		*q++ = 'f';
+		break;
+	case '\b':
+		*q++ = '\\';
+		*q++ = 'b';
+		break;
+	case '\v':
+		*q++ = '\\';
+		*q++ = 'v';
+		break;
+	case '\a':
+		*q++ = '\\';
+		*q++ = 'a';
+		break;
+	case '\x1b':
+		*q++ = '\\';
+		*q++ = 'e';
+		break;
+	default:
+		return false;
+	}
+	*dst = q;
+	return true;
+}
+
+/**
+ * \brief Converts an unicode characters to the \Uhhhhhh backslash representation.
+ * Common control characters like (new line, tab etc.) are escaped
+ * to their short form ('\n', '\r', '\t' etc.).
+ *
+ * NOTE: The \p dst pointer is incremented up to 8 bytes (if \Uhhhhhh is copied into it).
+ *
+ * \param code_point The code point to escape.
+ * \param dst String pointer to write the escaped code point into.
+ * It must have at least a length of 9 (8 + '\0'). It gets incremented by the amount of bytes copied into it.
+ * \param opt The encoding options structure.
+ **/
+RZ_API void rz_unicode_code_point_escape(RzCodePoint code_point, RZ_NONNULL RZ_OUT char **dst, RZ_NONNULL RzStrEscOptions *opt) {
+	rz_return_if_fail(dst && opt);
+	if (!short_escape(code_point, dst, opt)) {
+		char *q = *dst;
+		rz_snprintf(q, 9, "\\U%06" PFMT32x, code_point);
+		q += 8;
+		*dst = q;
+	}
+}
+
+/**
+ * \brief Escapes an unprintable character to C-like backslash representation '\\xhh'.
+ * Common control characters like (new line, tab etc.) are escaped
+ * to their short form ('\n', '\r', '\t' etc.).
+ *
+ * NOTE: The \p dst pointer is incremented by 2 to 4 bytes.
+ *
+ * \param ch The character to escape.
+ * \param dst pointer where pointer to the resulting characters sequence is put.
+ * \param opt pointer to encoding options structure.
+ **/
+RZ_API void rz_unicode_byte_escape(char ch, RZ_NONNULL RZ_OUT char **dst, RzStrEscOptions *opt) {
+	rz_return_if_fail(dst && opt);
+	if (!short_escape(ch, dst, opt)) {
+		char *q = *dst;
+		/* Outside the ASCII printable range */
+		if (!IS_PRINTABLE(ch)) {
+			if (opt->show_asciidot) {
+				*q++ = '.';
+			} else {
+				*q++ = '\\';
+				*q++ = 'x';
+				*q++ = "0123456789abcdef"[ch >> 4 & 0xf];
+				*q++ = "0123456789abcdef"[ch & 0xf];
+			}
+		} else {
+			*q++ = ch;
+		}
+		*dst = q;
+	}
+}

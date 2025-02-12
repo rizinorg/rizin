@@ -1519,80 +1519,6 @@ RZ_API char *rz_str_sanitize_sdb_key(const char *s) {
 	return ret;
 }
 
-/**
- * \brief Converts unprintable characters to C-like backslash representation.
- *
- * NOTE: The \p dst pointer is incremented by 2 to 4.
- *
- * \param p pointer to the original string.
- * \param dst pointer where pointer to the resulting characters sequence is put.
- * \param opt pointer to encoding options structure.
- **/
-RZ_API void rz_str_byte_escape(const char *p, char **dst, RzStrEscOptions *opt) {
-	char *q = *dst;
-	switch (*p) {
-	case '\n':
-		*q++ = '\\';
-		*q++ = opt->dot_nl ? 'l' : 'n';
-		break;
-	case '\r':
-		*q++ = '\\';
-		*q++ = 'r';
-		break;
-	case '\\':
-		if (opt->esc_bslash) {
-			*q++ = '\\';
-		}
-		*q++ = '\\';
-		break;
-	case '\t':
-		*q++ = '\\';
-		*q++ = 't';
-		break;
-	case '"':
-		if (opt->esc_double_quotes) {
-			*q++ = '\\';
-		}
-		*q++ = '"';
-		break;
-	case '\f':
-		*q++ = '\\';
-		*q++ = 'f';
-		break;
-	case '\b':
-		*q++ = '\\';
-		*q++ = 'b';
-		break;
-	case '\v':
-		*q++ = '\\';
-		*q++ = 'v';
-		break;
-	case '\a':
-		*q++ = '\\';
-		*q++ = 'a';
-		break;
-	case '\x1b':
-		*q++ = '\\';
-		*q++ = 'e';
-		break;
-	default:
-		/* Outside the ASCII printable range */
-		if (!IS_PRINTABLE(*p)) {
-			if (opt->show_asciidot) {
-				*q++ = '.';
-			} else {
-				*q++ = '\\';
-				*q++ = 'x';
-				*q++ = "0123456789abcdef"[*p >> 4 & 0xf];
-				*q++ = "0123456789abcdef"[*p & 0xf];
-			}
-		} else {
-			*q++ = *p;
-		}
-	}
-	*dst = q;
-}
-
 /* Internal function. dot_nl specifies whether to convert \n into the
  * graphiz-compatible newline \l */
 static RZ_OWN char *rz_str_escape_(const char *buf, bool parse_esc_seq, bool ign_esc_seq, RzStrEscOptions *opt) {
@@ -1632,7 +1558,7 @@ static RZ_OWN char *rz_str_escape_(const char *buf, bool parse_esc_seq, bool ign
 			}
 			/* fallthrough */
 		default:
-			rz_str_byte_escape(p, &q, opt);
+			rz_unicode_byte_escape(*p, &q, opt);
 			break;
 		}
 		p++;
@@ -1722,7 +1648,7 @@ static char *rz_str_escape_utf(const char *buf, int buf_size, RzStrEnc enc, bool
 		len = strlen(buf);
 		end = buf + len;
 	}
-	/* Worst case scenario, we convert every byte to a \Uhhhhhh */
+	/* Worst case scenario, we convert every byte to an \Uhhhhhh */
 	new_buf = malloc(1 + (len * 8));
 	if (!new_buf) {
 		return NULL;
@@ -1748,6 +1674,11 @@ static char *rz_str_escape_utf(const char *buf, int buf_size, RzStrEnc enc, bool
 			ch_bytes = rz_utf8_decode((ut8 *)p, end - p, &ch);
 			min_char_width = 1;
 		}
+		RzStrEscOptions opt = { 0 };
+		opt.dot_nl = false;
+		opt.show_asciidot = false;
+		opt.esc_bslash = esc_bslash;
+		opt.esc_double_quotes = esc_double_quotes;
 		if (show_asciidot && !IS_PRINTABLE(ch)) {
 			*q++ = '.';
 		} else if (keep_printable && ch_bytes != 0 && rz_unicode_code_point_is_printable(ch)) {
@@ -1755,17 +1686,11 @@ static char *rz_str_escape_utf(const char *buf, int buf_size, RzStrEnc enc, bool
 		} else {
 			if (ch_bytes > 0) {
 				// Valid code point, but it should be escaped.
-				rz_snprintf(q, 9, "\\U%06" PFMT32x, ch);
-				q += 8;
+				rz_unicode_code_point_escape(ch, &q, &opt);
 			} else {
-				RzStrEscOptions opt = { 0 };
-				opt.dot_nl = false;
-				opt.show_asciidot = false;
-				opt.esc_bslash = esc_bslash;
-				opt.esc_double_quotes = esc_double_quotes;
 				// Invalid code point. Escape as minimal number of invalid bytes.
 				for (size_t i = 0; i < min_char_width && p + i < end; i++) {
-					rz_str_byte_escape(p + i, &q, &opt);
+					rz_unicode_byte_escape(p[i], &q, &opt);
 					// q is incremented in rz_str_byte_escape
 				}
 			}
