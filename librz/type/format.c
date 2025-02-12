@@ -1281,7 +1281,7 @@ static void rz_type_format_nulltermstring(const RzTypeDB *typedb, RzPrint *p, Rz
 		rz_strbuf_append(outbuf, "\"");
 		for (; j < len && ((size == -1 || size-- > 0) && buf[j]); j++) {
 			char esc_str[5] = { 0 };
-			char *ptr = esc_str;			
+			char *ptr = esc_str;
 			rz_type_byte_escape(p, (char *)&buf[j], &ptr, false);
 			rz_strbuf_appendf(outbuf, "%s", esc_str);
 		}

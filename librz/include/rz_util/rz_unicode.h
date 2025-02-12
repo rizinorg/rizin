@@ -17,7 +17,7 @@
 /**
  * \brief String width of "\U00hhhhhh"
  */
-#define UNICODE_ESCAPED_STR_WIDTH      10
+#define UNICODE_ESCAPED_STR_WIDTH 10
 
 struct rz_unicode_range_name_entry_t {
 	ut32 from;
