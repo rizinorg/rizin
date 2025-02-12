@@ -89,7 +89,7 @@ static bool default_search_no_cancel(void *user, size_t n_hits, RzSearchCancelRe
 	return rz_cons_is_breaked();
 }
 
-static RzList *perform_search_on_core_io(RzCore *core, RZ_BORROW RzSearchOpt *search_opts, RZ_BORROW RzList *boundaries, RZ_BORROW RzSearchCollection *collection) {
+static RzList /*<RzSearchHit *>*/ *perform_search_on_core_io(RzCore *core, RZ_BORROW RzSearchOpt *search_opts, RZ_BORROW RzList /*<RzIOMap *>*/ *boundaries, RZ_BORROW RzSearchCollection *collection) {
 	RzList *hits = NULL;
 
 	hits = rz_search_on_io(search_opts, collection, core->io, boundaries);

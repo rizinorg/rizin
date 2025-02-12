@@ -1920,7 +1920,7 @@ RZ_API char *rz_str_escape_mutf8_for_json(const char *buf, int buf_size) {
 
 // http://daviddeley.com/autohotkey/parameters/parameters.htm#WINCRULES
 // https://docs.microsoft.com/en-us/cpp/cpp/main-function-command-line-args?redirectedfrom=MSDN&view=vs-2019#parsing-c-command-line-arguments
-RZ_API char *rz_str_format_msvc_argv(size_t argc, const char **argv) {
+RZ_API RZ_OWN char *rz_str_format_msvc_argv(size_t argc, const char **argv) {
 	RzStrBuf sb;
 	rz_strbuf_init(&sb);
 

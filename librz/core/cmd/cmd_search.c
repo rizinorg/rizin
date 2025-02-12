@@ -2472,7 +2472,7 @@ static void cmd_search_call_command(RzCore *core, RzSearchHit *hit, const char *
 	rz_core_seek(core, old_offset, true);
 }
 
-static RzCmdStatus cmd_core_handle_search_hits(RzCore *core, RzCmdStateOutput *state, RZ_OWN RzList *hits) {
+static RzCmdStatus cmd_core_handle_search_hits(RzCore *core, RzCmdStateOutput *state, RZ_OWN RzList /*<RzSearchHit *>*/ *hits) {
 	if (!hits) {
 		core->num->value = 0;
 		return RZ_CMD_STATUS_ERROR;
