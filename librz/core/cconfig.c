@@ -3707,13 +3707,13 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB("scr.utf8.curvy", "false", &cb_utf8_curvy, "Show curved UTF-8 corners (requires scr.utf8)");
 	SETBPREF("scr.histsave", "true", "Always save history on exit");
 	n = NODECB("scr.strconv", "asciiesc", &cb_scrstrconv);
-	SETDESC(n, "Convert string before display");
+	SETDESC(n, "Convert string before display. asciiesc = Escape non-printable ASCII characters. asciidot = Replace non-printable ASCII characters with '.'.");
 	SETOPTIONS(n, "asciiesc", "asciidot", NULL);
 	SETBPREF("scr.confirmquit", "false", "Confirm on quit");
 	SETICB("scr.visual.mode", RZ_CORE_VISUAL_MODE_PX, &cb_visual_mode, "Visual mode (0: hexdump, 1: disassembly, 2: debug, 3: color blocks, 4: strings)");
 
 	/* str */
-	SETCB("str.escbslash", "false", &cb_str_escbslash, "Escape the backslash");
+	SETCB("str.escbslash", "false", &cb_str_escbslash, "Escape the backslash.");
 	n = NODECB("str.encoding", "guess", &cb_str_encoding);
 	SETDESC(n, "The default string encoding type (when set to guess, it is automatically guessed).");
 	SETOPTIONS(n, "ascii", "8bit", "utf8", "utf16le", "utf32le", "utf16be", "utf32be", "ibm037", "ibm290", "ebcdices", "ebcdicuk", "ebcdicus", "guess", NULL);
