@@ -3060,6 +3060,7 @@ static bool ds_print_meta_infos(RzDisasmState *ds, ut8 *buf, int len, int idx, i
 				opt.esc_bslash = core->print->esc_bslash;
 				opt.esc_double_quotes = true;
 				opt.show_asciidot = false;
+				opt.keep_printable = true;
 
 				switch (mi->subtype) {
 				case RZ_STRING_ENC_UTF8:
@@ -3776,7 +3777,7 @@ static char *ds_esc_str(RzDisasmState *ds, const char *str, int len, const char 
 		break;
 	default:
 		str_len = strlen(str);
-		if ((str_len == 1 && len > 3 && str[2] && !str[3]) || (str_len == 3 && len > 5 && !memcmp(str, "\xff\xfe", 2) && str[4] && !str[5])) {
+		if ((str_len == 1 && len > 3 && str[2] && !str[3])) {
 			escstr = rz_str_escape_utf16le(str, len, &opt);
 			prefix = "u";
 		} else if (str_len == 1 && len > 7 && !str[2] && !str[3] && str[4] && !str[5]) {
@@ -3788,7 +3789,7 @@ static char *ds_esc_str(RzDisasmState *ds, const char *str, int len, const char 
 				end = str + len - 1;
 			}
 			for (ptr = str; ptr < end; ptr += 4) {
-				if (rz_utf32le_decode((ut8 *)ptr, end - ptr, &ch) > 0 && ch > 0x10ffff) {
+				if (rz_utf32le_decode((ut8 *)ptr, end - ptr, &ch) == 0) {
 					enc = RZ_STRING_ENC_8BIT;
 					break;
 				}
@@ -3797,18 +3798,10 @@ static char *ds_esc_str(RzDisasmState *ds, const char *str, int len, const char 
 				escstr = rz_str_escape_utf32le(str, len, &opt);
 				prefix = "U";
 			} else {
-				escstr = rz_str_escape_8bit(str, is_comment, &opt);
+				escstr = rz_str_escape_utf8(str, &opt);
 			}
 		} else {
-			RzStrEnc enc = RZ_STRING_ENC_8BIT;
-			const char *ptr = str, *end = str + str_len;
-			for (; ptr < end; ptr++) {
-				if (rz_utf8_decode((ut8 *)ptr, end - ptr, NULL) > 1) {
-					enc = RZ_STRING_ENC_UTF8;
-					break;
-				}
-			}
-			escstr = (enc == RZ_STRING_ENC_UTF8 ? rz_str_escape_utf8(str, &opt) : rz_str_escape_8bit(str, is_comment, &opt));
+			escstr = rz_str_escape_utf8(str, &opt);
 		}
 	}
 	if (prefix_out) {

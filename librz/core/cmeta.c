@@ -48,6 +48,7 @@ static char *meta_string_escape(RzCore *core, RzAnalysisMetaItem *mi) {
 	RzStrEscOptions opt = { 0 };
 	opt.show_asciidot = false;
 	opt.esc_bslash = core->print->esc_bslash;
+	opt.keep_printable = true;
 	switch (mi->subtype) {
 	case RZ_STRING_ENC_UTF16LE:
 	case RZ_STRING_ENC_UTF16BE:

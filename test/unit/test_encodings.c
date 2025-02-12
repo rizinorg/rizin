@@ -61,6 +61,9 @@ bool test_rz_utf8_decode(void) {
  * \brief Examples partially taken from: https://en.wikipedia.org/wiki/UTF-16#Examples
  */
 bool test_rz_utf16_decode(void) {
+	const ut8 utf16le_surrogate[] = { 0xd8, 0x00 };
+	mu_assert_eq(rz_utf16_decode(utf16le_surrogate, 2, NULL, true), 0, "Invalid decode");
+
 	char utf8_out[5] = { 0 };
 	RzCodePoint codepoint = 0;
 	const ut8 utf16le_A[] = { 0x41, 0x00 };
@@ -136,18 +139,10 @@ bool test_rz_utf16_decode(void) {
 	const ut8 utf16be_last_surr[] = { 0xDB, 0xFF, 0xDF, 0xFF };
 
 	nbytes = rz_utf16_decode(utf16le_last_surr, 4, &codepoint, false);
-	mu_assert_eq(nbytes, 4, "Decoded number of bytes mismatch.");
-	mu_assert_eq_fmt(codepoint, UNICODE_LAST_CODE_POINT, "Character decode failed.", "0x%" PFMT64x);
-	rz_utf8_encode((ut8 *)utf8_out, codepoint);
-	mu_assert_streq(utf8_out, "􏿿", "Encode failed.");
-	memset(utf8_out, 0, sizeof(utf8_out));
+	mu_assert_eq(nbytes, 0, "Undefined code point.");
 
 	nbytes = rz_utf16_decode(utf16be_last_surr, 4, &codepoint, true);
-	mu_assert_eq(nbytes, 4, "Decoded number of bytes mismatch.");
-	mu_assert_eq_fmt(codepoint, UNICODE_LAST_CODE_POINT, "Character decode failed.", "0x%" PFMT64x);
-	rz_utf8_encode((ut8 *)utf8_out, codepoint);
-	mu_assert_streq(utf8_out, "􏿿", "Encode failed.");
-	memset(utf8_out, 0, sizeof(utf8_out));
+	mu_assert_eq(nbytes, 0, "Undefined code point.");
 
 	const ut8 utf16le_invalid_small_surr[] = { 0x00, 0xD7, 0x00, 0xDB };
 	const ut8 utf16be_invalid_small_surr[] = { 0xD7, 0x00, 0xDB, 0x00 };
@@ -165,21 +160,17 @@ bool test_rz_utf16_decode(void) {
 	const ut8 utf16be_invalid_big_surr[] = { 0xDC, 0x01, 0xE0, 0x37 };
 
 	nbytes = rz_utf16_decode(utf16le_invalid_big_surr, 4, &codepoint, false);
-	mu_assert_eq(nbytes, 2, "Decoded number of bytes mismatch.");
-	mu_assert_eq_fmt(codepoint, 0xDC01, "Character decode failed.", "0x%" PFMT64x);
+	mu_assert_eq(nbytes, 0, "Undefined code point.");
 	nbytes = rz_utf16_decode(utf16be_invalid_big_surr, 4, &codepoint, true);
-	mu_assert_eq(nbytes, 2, "Decoded number of bytes mismatch.");
-	mu_assert_eq_fmt(codepoint, 0xDC01, "Character decode failed.", "0x%" PFMT64x);
+	mu_assert_eq(nbytes, 0, "Undefined code point.");
 
-	const ut8 utf16le_invalid[] = { 0xff, 0xff, 0xff, 0xff };
-	const ut8 utf16be_invalid[] = { 0xff, 0xff, 0xff, 0xff };
+	const ut8 utf16le_last_non_surr[] = { 0xff, 0xff, 0xff, 0xff };
+	const ut8 utf16be_last_non_surr[] = { 0xff, 0xff, 0xff, 0xff };
 
-	nbytes = rz_utf16_decode(utf16le_invalid, 4, &codepoint, false);
-	mu_assert_eq(nbytes, 2, "Decoded number of bytes mismatch.");
-	mu_assert_eq_fmt(codepoint, 0xFFFF, "Character decode failed.", "0x%" PFMT64x);
-	nbytes = rz_utf16_decode(utf16be_invalid, 4, &codepoint, true);
-	mu_assert_eq(nbytes, 2, "Decoded number of bytes mismatch.");
-	mu_assert_eq_fmt(codepoint, 0xFFFF, "Character decode failed.", "0x%" PFMT64x);
+	nbytes = rz_utf16_decode(utf16le_last_non_surr, 4, &codepoint, false);
+	mu_assert_eq(nbytes, 0, "Undefined code point.");
+	nbytes = rz_utf16_decode(utf16be_last_non_surr, 4, &codepoint, true);
+	mu_assert_eq(nbytes, 0, "Undefined code point.");
 
 	mu_end;
 }

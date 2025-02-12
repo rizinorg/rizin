@@ -403,7 +403,7 @@ RZ_API RzStrEnc rz_unicode_bom_encoding(const ut8 *ptr, size_t ptrlen) {
 	return RZ_STRING_ENC_GUESS;
 }
 
-static bool short_escape(RzCodePoint code_point, char **dst, RzStrEscOptions *opt) {
+static bool short_escape(RzCodePoint code_point, char **dst, const RzStrEscOptions *opt) {
 	char *q = *dst;
 	switch (code_point) {
 	case '\n':
@@ -458,55 +458,61 @@ static bool short_escape(RzCodePoint code_point, char **dst, RzStrEscOptions *op
 }
 
 /**
- * \brief Converts an unicode characters to the \Uhhhhhh backslash representation.
+ * \brief Converts an unicode characters to the \U00hhhhhh backslash representation.
  * Common control characters like (new line, tab etc.) are escaped
  * to their short form ('\n', '\r', '\t' etc.).
  *
- * NOTE: The \p dst pointer is incremented up to 8 bytes (if \Uhhhhhh is copied into it).
+ * NOTE: The \p dst pointer is incremented up to 10 bytes (if \U00hhhhhh is copied into it).
+ * NOTE: This function _ignores_ opt->keep_printable.
  *
  * \param code_point The code point to escape.
  * \param dst String pointer to write the escaped code point into.
- * It must have at least a length of 9 (8 + '\0'). It gets incremented by the amount of bytes copied into it.
+ * It must have at least a length of 11 (10 + '\0'). It gets incremented by the amount of bytes copied into it.
  * \param opt The encoding options structure.
  **/
-RZ_API void rz_unicode_code_point_escape(RzCodePoint code_point, RZ_NONNULL RZ_OUT char **dst, RZ_NONNULL RzStrEscOptions *opt) {
+RZ_API void rz_unicode_code_point_escape(RzCodePoint code_point, RZ_NONNULL RZ_OUT char **dst, RZ_NONNULL const RzStrEscOptions *opt) {
 	rz_return_if_fail(dst && opt);
-	if (!short_escape(code_point, dst, opt)) {
-		char *q = *dst;
-		rz_snprintf(q, 9, "\\U%06" PFMT32x, code_point);
-		q += 8;
-		*dst = q;
+
+	char *q = *dst;
+	if (opt->show_asciidot && !IS_PRINTABLE(code_point)) {
+		*q++ = '.';
+		goto assign_return;
+	} else if (short_escape(code_point, &q, opt)) {
+		goto assign_return;
+	} else {
+		rz_snprintf(q, UNICODE_ESCAPED_STR_WIDTH + 1, "\\U00%06" PFMT32x, code_point);
+		q += UNICODE_ESCAPED_STR_WIDTH;
 	}
+assign_return:
+	*dst = q;
 }
 
 /**
- * \brief Escapes an unprintable character to C-like backslash representation '\\xhh'.
+ * \brief Escapes an unprintable character to C-like backslash representation '\xhh'.
  * Common control characters like (new line, tab etc.) are escaped
  * to their short form ('\n', '\r', '\t' etc.).
  *
  * NOTE: The \p dst pointer is incremented by 2 to 4 bytes.
+ * NOTE: This function _ignores_ opt->keep_printable.
  *
  * \param ch The character to escape.
  * \param dst pointer where pointer to the resulting characters sequence is put.
  * \param opt pointer to encoding options structure.
  **/
-RZ_API void rz_unicode_byte_escape(char ch, RZ_NONNULL RZ_OUT char **dst, RzStrEscOptions *opt) {
+RZ_API void rz_unicode_byte_escape(char ch, RZ_NONNULL RZ_OUT char **dst, RZ_NONNULL const RzStrEscOptions *opt) {
 	rz_return_if_fail(dst && opt);
-	if (!short_escape(ch, dst, opt)) {
-		char *q = *dst;
-		/* Outside the ASCII printable range */
-		if (!IS_PRINTABLE(ch)) {
-			if (opt->show_asciidot) {
-				*q++ = '.';
-			} else {
-				*q++ = '\\';
-				*q++ = 'x';
-				*q++ = "0123456789abcdef"[ch >> 4 & 0xf];
-				*q++ = "0123456789abcdef"[ch & 0xf];
-			}
-		} else {
-			*q++ = ch;
-		}
-		*dst = q;
+	char *q = *dst;
+	if (opt->show_asciidot && !IS_PRINTABLE(ch)) {
+		*q++ = '.';
+		goto assign_return;
+	} else if (short_escape(ch, &q, opt)) {
+		goto assign_return;
+	} else {
+		*q++ = '\\';
+		*q++ = 'x';
+		*q++ = "0123456789abcdef"[ch >> 4 & 0xf];
+		*q++ = "0123456789abcdef"[ch & 0xf];
 	}
+assign_return:
+	*dst = q;
 }

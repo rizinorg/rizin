@@ -25,7 +25,8 @@ static RzCodePoint utf16_surrogate_to_codepoint(ut16 high_surrogate, ut16 low_su
  *
  * \param buf       The buffer to read the bytes from.
  * \param buf_len   The buffer length.
- * \param codepoint The decoded code point.
+ * \param ch The decoded code point. It is only written if a valid
+ * Unicode code point was decoded.
  * \param bigendian Flag if the \p buf holds UTF-16 bytes in big endian.
  *
  * \return Number of bytes decoded.
@@ -35,18 +36,29 @@ RZ_API size_t rz_utf16_decode(RZ_NONNULL const ut8 *buf, size_t buf_len, RZ_NONN
 	if (buf_len <= 1) {
 		return 0;
 	}
+	RzCodePoint cp;
+	size_t bytes_used = 0;
 	int high = bigendian ? 0 : 1;
 	int low = bigendian ? 1 : 0;
 	if (buf_len > 3 && is_valid_surrogate_pair(buf[high], buf[high + 2])) {
-		*ch = utf16_surrogate_to_codepoint((buf[high] << 8 | buf[low]), (buf[high + 2] << 8) | buf[low + 2]);
-		return 4;
+		cp = utf16_surrogate_to_codepoint((buf[high] << 8 | buf[low]), (buf[high + 2] << 8) | buf[low + 2]);
+		bytes_used = 4;
+		goto check_assign;
 	}
 	if (buf[high]) {
-		*ch = buf[high] << 8 | buf[low];
-		return 2;
+		cp = buf[high] << 8 | buf[low];
+		bytes_used = 2;
+		goto check_assign;
 	}
-	*ch = (ut32)buf[low];
-	return 2;
+	cp = (RzCodePoint)buf[low];
+	bytes_used = 2;
+
+check_assign:
+	if (!rz_unicode_code_point_is_legal_decode(cp)) {
+		return 0;
+	}
+	*ch = cp;
+	return bytes_used;
 }
 
 /**

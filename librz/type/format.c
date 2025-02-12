@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2007-2020 Skia <skia@libskia.so>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include "rz_util/rz_str_util.h"
 #include <rz_util.h>
 #include <rz_util/rz_print.h>
 #include <rz_reg.h>
@@ -1275,7 +1276,11 @@ static void rz_type_format_nulltermstring(const RzTypeDB *typedb, RzPrint *p, Rz
 		for (; j < len && ((size == -1 || size-- > 0) && buf[j]); j++) {
 			char esc_str[5] = { 0 };
 			char *ptr = esc_str;
-			rz_type_byte_escape(p, (char *)&buf[j], &ptr, false);
+			if (IS_PRINTABLE(buf[j])) {
+				*ptr++ = buf[j];
+			} else {
+				rz_type_byte_escape(p, (char *)&buf[j], &ptr, false);
+			}
 			rz_strbuf_appendf(outbuf, "%s", esc_str);
 		}
 		rz_strbuf_append(outbuf, "\"");

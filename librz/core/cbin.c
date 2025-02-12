@@ -1389,8 +1389,9 @@ RZ_API void rz_core_sym_name_init(RZ_NONNULL RZ_OUT RzBinSymNames *names, RZ_NON
 		.esc_bslash = true,
 		.esc_double_quotes = false,
 		.dot_nl = false,
+		.keep_printable = true,
 	};
-	names->symbolname = rz_str_escape_utf8_keep_printable(demangle && names->demname ? names->demname : names->name, &opt);
+	names->symbolname = rz_str_escape_utf8(demangle && names->demname ? names->demname : names->name, &opt);
 }
 
 /**
@@ -2734,7 +2735,8 @@ static bool strings_print(RzCore *core, RzCmdStateOutput *state, const RzPVector
 			opt.show_asciidot = false;
 			opt.esc_bslash = true;
 			opt.esc_double_quotes = false;
-			escaped_string = rz_str_escape_utf8_keep_printable(string->string, &opt);
+			opt.keep_printable = true;
+			escaped_string = rz_str_escape_utf8(string->string, &opt);
 		}
 
 		switch (state->mode) {
@@ -2976,7 +2978,8 @@ RZ_API bool rz_core_file_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFil
 	RzStrEscOptions opt = { 0 };
 	opt.show_asciidot = false;
 	opt.esc_bslash = false;
-	escaped = rz_str_escape_utf8_keep_printable(filename, &opt);
+	opt.keep_printable = true;
+	escaped = rz_str_escape_utf8(filename, &opt);
 
 	rz_cmd_state_output_set_columnsf(state, "ss", "field", "value");
 

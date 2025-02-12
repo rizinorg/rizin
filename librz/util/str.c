@@ -6,7 +6,7 @@
 #include "rz_types.h"
 #include <rz_util.h>
 #include "rz_cons.h"
-#include "rz_bin.h"
+#include "rz_util/rz_unicode.h"
 #include <rz_vector.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -1519,6 +1519,17 @@ RZ_API char *rz_str_sanitize_sdb_key(const char *s) {
 	return ret;
 }
 
+static inline bool escape_it(RzCodePoint cp, size_t ch_bytes, const RzStrEscOptions *opts) {
+	bool is_invalid_decode = ch_bytes == 0;
+	if (is_invalid_decode || !opts->keep_printable) {
+		return true;
+	}
+	bool escape_double_quotes = cp == '"' && opts->esc_double_quotes;
+	bool escape_backslash = cp == '\\' && opts->esc_bslash;
+	bool not_printable = !rz_unicode_code_point_is_printable(cp);
+	return escape_double_quotes || escape_backslash || not_printable;
+}
+
 /* Internal function. dot_nl specifies whether to convert \n into the
  * graphiz-compatible newline \l */
 static RZ_OWN char *rz_str_escape_(const char *buf, bool parse_esc_seq, bool ign_esc_seq, RzStrEscOptions *opt) {
@@ -1558,7 +1569,11 @@ static RZ_OWN char *rz_str_escape_(const char *buf, bool parse_esc_seq, bool ign
 			}
 			/* fallthrough */
 		default:
-			rz_unicode_byte_escape(*p, &q, opt);
+			if (!escape_it(*p, 1, opt)) {
+				*q++ = *p;
+			} else {
+				rz_unicode_byte_escape(*p, &q, opt);
+			}
 			break;
 		}
 		p++;
@@ -1568,12 +1583,16 @@ out:
 	return new_buf;
 }
 
-RZ_API RZ_OWN char *rz_str_escape(RZ_NONNULL const char *buf) {
+/**
+ * \brief DEPRECATED: Use rz_str_escape_utf8() instead.
+ */
+RZ_DEPRECATE RZ_API RZ_OWN char *rz_str_escape(RZ_NONNULL const char *buf) {
 	rz_return_val_if_fail(buf, NULL);
 	RzStrEscOptions opt = { 0 };
 	opt.dot_nl = false;
 	opt.show_asciidot = false;
 	opt.esc_bslash = true;
+	opt.keep_printable = true;
 	return rz_str_escape_(buf, true, true, &opt);
 }
 
@@ -1605,22 +1624,28 @@ RZ_API char *rz_str_escape_sh(const char *buf) {
 	return new_buf;
 }
 
-RZ_API char *rz_str_escape_dot(const char *buf) {
+/**
+ * \brief DEPRECATED: Use rz_str_escape_utf8() instead.
+ */
+RZ_DEPRECATE RZ_API char *rz_str_escape_dot(const char *buf) {
 	RzStrEscOptions opt = { 0 };
 	opt.dot_nl = true;
 	opt.show_asciidot = false;
 	opt.esc_bslash = true;
+	opt.keep_printable = true;
 	return rz_str_escape_(buf, true, true, &opt);
 }
 
-RZ_API char *rz_str_escape_8bit(const char *buf, bool colors, RzStrEscOptions *opt) {
+/**
+ * \brief DEPRECATED: Use rz_str_escape_utf8() instead.
+ */
+RZ_DEPRECATE RZ_API char *rz_str_escape_8bit(const char *buf, bool colors, RzStrEscOptions *opt) {
 	return rz_str_escape_(buf, colors, !colors, opt);
 }
 
-static char *rz_str_escape_utf(const char *buf, int buf_size, RzStrEnc enc, bool show_asciidot, bool esc_bslash, bool esc_double_quotes, bool keep_printable) {
+static char *rz_str_escape_utf(const char *buf, int buf_size, RzStrEnc enc, const RzStrEscOptions *esc_opts) {
 	char *new_buf, *q;
 	const char *p, *end;
-	RzCodePoint ch;
 	int len, ch_bytes;
 
 	if (!buf) {
@@ -1640,7 +1665,9 @@ static char *rz_str_escape_utf(const char *buf, int buf_size, RzStrEnc enc, bool
 			end = (char *)rz_mem_mem_aligned((ut8 *)buf, buf_size, (ut8 *)"\0\0\0\0", 4, 4);
 		}
 		if (!end) {
-			end = buf + buf_size - 1; /* TODO: handle overlong strings properly */
+			// NUL byte was not in buffer.
+			// Assume end of the buffer as end of string.
+			end = buf + buf_size - 1;
 		}
 		len = end - buf;
 		break;
@@ -1648,14 +1675,15 @@ static char *rz_str_escape_utf(const char *buf, int buf_size, RzStrEnc enc, bool
 		len = strlen(buf);
 		end = buf + len;
 	}
-	/* Worst case scenario, we convert every byte to an \Uhhhhhh */
-	new_buf = malloc(1 + (len * 8));
+	/* Worst case scenario, we convert every byte to an \U00hhhhhh */
+	new_buf = RZ_NEWS0(char, 1 + (len * UNICODE_ESCAPED_STR_WIDTH));
 	if (!new_buf) {
 		return NULL;
 	}
 	p = buf;
 	q = new_buf;
 	while (p < end) {
+		RzCodePoint ch = UNICODE_LAST_CODE_POINT + 1;
 		size_t min_char_width;
 		switch (enc) {
 		case RZ_STRING_ENC_UTF16LE:
@@ -1674,24 +1702,18 @@ static char *rz_str_escape_utf(const char *buf, int buf_size, RzStrEnc enc, bool
 			ch_bytes = rz_utf8_decode((ut8 *)p, end - p, &ch);
 			min_char_width = 1;
 		}
-		RzStrEscOptions opt = { 0 };
-		opt.dot_nl = false;
-		opt.show_asciidot = false;
-		opt.esc_bslash = esc_bslash;
-		opt.esc_double_quotes = esc_double_quotes;
-		if (show_asciidot && !IS_PRINTABLE(ch)) {
-			*q++ = '.';
-		} else if (keep_printable && ch_bytes != 0 && rz_unicode_code_point_is_printable(ch)) {
+		if (!escape_it(ch, ch_bytes, esc_opts)) {
 			q += rz_utf8_encode((ut8 *)q, ch);
 		} else {
-			if (ch_bytes > 0) {
+			if (ch_bytes > 0 && rz_unicode_code_point_is_defined(ch)) {
 				// Valid code point, but it should be escaped.
-				rz_unicode_code_point_escape(ch, &q, &opt);
+				rz_unicode_code_point_escape(ch, &q, esc_opts);
+				// q is incremented in rz_str_byte_escape
 			} else {
 				// Invalid code point. Escape as minimal number of invalid bytes.
 				for (size_t i = 0; i < min_char_width && p + i < end; i++) {
-					rz_unicode_byte_escape(p[i], &q, &opt);
-					// q is incremented in rz_str_byte_escape
+					rz_unicode_byte_escape(p[i], &q, esc_opts);
+					// q is incremented in rz_str_byte_escape.
 				}
 			}
 		}
@@ -1701,28 +1723,69 @@ static char *rz_str_escape_utf(const char *buf, int buf_size, RzStrEnc enc, bool
 	return new_buf;
 }
 
-RZ_API char *rz_str_escape_utf8(const char *buf, RzStrEscOptions *opt) {
-	return rz_str_escape_utf(buf, -1, RZ_STRING_ENC_UTF8, opt->show_asciidot, opt->esc_bslash, opt->esc_double_quotes, opt->keep_printable);
+/**
+ * \brief Escape a NUL terminated UTF-8 string.
+ *
+ * \param buf The buffer with the UTF-8 characaters. Must be NUL terminated.
+ * \param opt The escape options.
+ *
+ * \return The escaped string, or NULL in case of failure.
+ */
+RZ_API RZ_OWN char *rz_str_escape_utf8(RZ_NONNULL const char *buf, RZ_NONNULL const RzStrEscOptions *opt) {
+	rz_return_val_if_fail(buf && opt, NULL);
+	return rz_str_escape_utf(buf, -1, RZ_STRING_ENC_UTF8, opt);
 }
 
-RZ_API char *rz_str_escape_utf8_keep_printable(const char *buf, RzStrEscOptions *opt) {
-	return rz_str_escape_utf(buf, -1, RZ_STRING_ENC_UTF8, opt->show_asciidot, opt->esc_bslash, opt->esc_double_quotes, true);
+/**
+ * \brief Escape a NUL terminated UTF-16le string.
+ *
+ * \param buf The buffer with the UTF-16le characaters.
+ * \param opt The escape options.
+ *
+ * \return The escaped string, or NULL in case of failure.
+ */
+RZ_API RZ_OWN char *rz_str_escape_utf16le(RZ_NONNULL const char *buf, size_t buf_size, RZ_NONNULL const RzStrEscOptions *opt) {
+	rz_return_val_if_fail(buf && opt, NULL);
+	return rz_str_escape_utf(buf, buf_size, RZ_STRING_ENC_UTF16LE, opt);
 }
 
-RZ_API char *rz_str_escape_utf16le(const char *buf, int buf_size, RzStrEscOptions *opt) {
-	return rz_str_escape_utf(buf, buf_size, RZ_STRING_ENC_UTF16LE, opt->show_asciidot, opt->esc_bslash, opt->esc_double_quotes, opt->keep_printable);
+/**
+ * \brief Escape a NUL terminated UTF-32le string.
+ *
+ * \param buf The buffer with the UTF-32le characaters.
+ * \param opt The escape options.
+ *
+ * \return The escaped string, or NULL in case of failure.
+ */
+RZ_API RZ_OWN char *rz_str_escape_utf32le(RZ_NONNULL const char *buf, size_t buf_size, RZ_NONNULL const RzStrEscOptions *opt) {
+	rz_return_val_if_fail(buf && opt, NULL);
+	return rz_str_escape_utf(buf, buf_size, RZ_STRING_ENC_UTF32LE, opt);
 }
 
-RZ_API char *rz_str_escape_utf32le(const char *buf, int buf_size, RzStrEscOptions *opt) {
-	return rz_str_escape_utf(buf, buf_size, RZ_STRING_ENC_UTF32LE, opt->show_asciidot, opt->esc_bslash, opt->esc_double_quotes, opt->keep_printable);
+/**
+ * \brief Escape a NUL terminated UTF-16be string.
+ *
+ * \param buf The buffer with the UTF-16be characaters.
+ * \param opt The escape options.
+ *
+ * \return The escaped string, or NULL in case of failure.
+ */
+RZ_API RZ_OWN char *rz_str_escape_utf16be(RZ_NONNULL const char *buf, size_t buf_size, RZ_NONNULL const RzStrEscOptions *opt) {
+	rz_return_val_if_fail(buf && opt, NULL);
+	return rz_str_escape_utf(buf, buf_size, RZ_STRING_ENC_UTF16BE, opt);
 }
 
-RZ_API char *rz_str_escape_utf16be(const char *buf, int buf_size, RzStrEscOptions *opt) {
-	return rz_str_escape_utf(buf, buf_size, RZ_STRING_ENC_UTF16BE, opt->show_asciidot, opt->esc_bslash, opt->esc_double_quotes, opt->keep_printable);
-}
-
-RZ_API char *rz_str_escape_utf32be(const char *buf, int buf_size, RzStrEscOptions *opt) {
-	return rz_str_escape_utf(buf, buf_size, RZ_STRING_ENC_UTF32BE, opt->show_asciidot, opt->esc_bslash, opt->esc_double_quotes, opt->keep_printable);
+/**
+ * \brief Escape a NUL terminated UTF-32be string.
+ *
+ * \param buf The buffer with the UTF-32be characaters.
+ * \param opt The escape options.
+ *
+ * \return The escaped string, or NULL in case of failure.
+ */
+RZ_API RZ_OWN char *rz_str_escape_utf32be(RZ_NONNULL const char *buf, size_t buf_size, RZ_NONNULL const RzStrEscOptions *opt) {
+	rz_return_val_if_fail(buf && opt, NULL);
+	return rz_str_escape_utf(buf, buf_size, RZ_STRING_ENC_UTF32BE, opt);
 }
 
 static char *escape_utf8_for_json(const char *buf, int buf_size, bool mutf8) {

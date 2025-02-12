@@ -787,11 +787,11 @@ echo
 EOF
 EXPECT=<<EOF
                  mov   esi, obj.utf16be
-                 mov   esi, obj.utf16be                                ; u"\u5500\u5400\u4600\u3100\u3600\u4200\u4500"
+                 mov   esi, obj.utf16be                                ; u"唀吀䘀\x00\x31㘀䈀䔀"
                  mov   esi, obj.utf16be                                ; ub"UTF16BE"
 
                  mov   esi, obj.utf32be
-                 mov   esi, obj.utf32be                                ; U"\U55000000\U54000000\U46000000\U33000000\U32000000\U42000000\U45000000"
+                 mov   esi, obj.utf32be                                ; U"\x00\x00\x00\x55\x00\x00\x00\x54\x00\x00\x00\x46\x00\x00\x00\x33\x00\x00\x00\x32\x00\x00\x00\x42\x00\x00\x00\x45"
                  mov   esi, obj.utf32be                                ; Ub"UTF32BE"
 EOF
 RUN
@@ -817,9 +817,9 @@ e asm.cmt.off=off
 .(pdstr utf32be_bom)
 EOF
 EXPECT=<<EOF
-                 mov   esi, obj.utf8_bom                               ; "\ufeffUTF8_BOM"
-                 mov   esi, obj.utf16le_bom                            ; u"\ufeffUTF16LE_BOM"
-                 mov   esi, obj.utf16be_bom                            ; ub"\ufeffUTF16BE_BOM"
+                 mov   esi, obj.utf8_bom                               ; "\U0000feffUTF8_BOM"
+                 mov   esi, obj.utf16le_bom                            ; u"\U0000feffUTF16LE_BOM"
+                 mov   esi, obj.utf16be_bom                            ; ub"\U0000feffUTF16BE_BOM"
                  mov   esi, obj.utf32le_bom                            ; U"\U0000feffUTF32LE_BOM"
                  mov   esi, obj.utf32be_bom                            ; Ub"\U0000feffUTF32BE_BOM"
 
