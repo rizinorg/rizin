@@ -82,9 +82,9 @@ Cannot open file 'incorrect_file'
 EOF
 RUN
 
-NAME=rz-find -a
+NAME=rz-find
 FILE==
-CMDS=!rz-find -a -X -s 250382 bins/elf/ioli/crackme0x00
+CMDS=!rz-find -s 250382 bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
 0x58f
 EOF
@@ -132,15 +132,15 @@ RUN
 
 NAME=rz-find -b 0xa
 FILE==
-CMDS=!rz-find  -a -X -s  250382 -b 0xa bins/elf/ioli/crackme0x00
+CMDS=!rz-find -s 250382 -b 0xa bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
 0x58f
 EOF
 RUN
 
-NAME=rz-find -a -b 0x3
+NAME=rz-find -a 2 -b 0x3
 FILE==
-CMDS=!rz-find -X -s 250382 -b 0x3 bins/elf/ioli/crackme0x00
+CMDS=!rz-find -a 2 -s 250382 -b 0x3 bins/elf/ioli/crackme0x00
 EXPECT=
 RUN
 
