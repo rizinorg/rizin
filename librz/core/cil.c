@@ -364,7 +364,7 @@ RZ_IPI void rz_core_analysis_esil_emulate(RzCore *core, ut64 addr, ut64 until_ad
 				(void)rz_analysis_esil_parse(esil, e);
 			}
 		}
-		int inc = (core->search->align > 0) ? core->search->align - 1 : ret - 1;
+		int inc = (core->search->align > 1) ? core->search->align - 1 : ret - 1;
 		if (inc < 0) {
 			inc = minopcode;
 		}
@@ -1416,7 +1416,7 @@ RZ_API void rz_core_analysis_esil(RzCore *core, ut64 addr, ut64 size, RZ_NULLABL
 		/* realign address if needed */
 		rz_core_seek_arch_bits(core, cur);
 		int opalign = core->analysis->pcalign;
-		if (opalign > 0) {
+		if (opalign > 1) {
 			cur -= (cur % opalign);
 		}
 

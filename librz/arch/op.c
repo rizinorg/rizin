@@ -118,7 +118,7 @@ RZ_API int rz_analysis_op(RZ_NONNULL RzAnalysis *analysis, RZ_OUT RzAnalysisOp *
 		if (analysis && analysis->coreb.archbits) {
 			analysis->coreb.archbits(analysis->coreb.core, addr);
 		}
-		if (analysis->pcalign && addr % analysis->pcalign) {
+		if (analysis->pcalign > 1 && addr % analysis->pcalign) {
 			op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 			op->addr = addr;
 			// RZ_LOG_DEBUG("Unaligned instruction for %d bits at 0x%"PFMT64x"\n", analysis->bits, addr);

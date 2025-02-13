@@ -375,7 +375,7 @@ RZ_API void rz_analysis_set_cpu(RzAnalysis *analysis, const char *cpu) {
 	free(analysis->cpu);
 	analysis->cpu = rz_str_dup(cpu);
 	int v = rz_analysis_archinfo(analysis, RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN);
-	if (v != -1) {
+	if (v > 0) {
 		analysis->pcalign = v;
 	}
 	rz_analysis_set_reg_profile(analysis);

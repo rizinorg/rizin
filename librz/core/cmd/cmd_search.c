@@ -645,7 +645,7 @@ static void do_esil_search(RzCore *core, struct search_parameters *param, const 
 
 		rz_cons_break_push(NULL, NULL);
 		for (addr = from; addr < to; addr++) {
-			if (core->search->align) {
+			if (core->search->align > 1) {
 				if ((addr % core->search->align)) {
 					continue;
 				}
@@ -785,7 +785,7 @@ static void do_syscall_search(RzCore *core, struct search_parameters *param) {
 			if (i >= (bsize - 32)) {
 				i = 0;
 			}
-			if (align && (at % align)) {
+			if (align > 1 && (at % align)) {
 				continue;
 			}
 			if (!i) {
@@ -836,7 +836,7 @@ static void do_syscall_search(RzCore *core, struct search_parameters *param) {
 				}
 				syscallNumber = 0;
 			}
-			int inc = (core->search->align > 0) ? core->search->align - 1 : ret - 1;
+			int inc = (core->search->align > 1) ? core->search->align - 1 : ret - 1;
 			if (inc < 0) {
 				inc = minopcode;
 			}
@@ -1071,7 +1071,7 @@ static bool do_analysis_search(RzCore *core, struct search_parameters *param, co
 						goto done;
 					}
 				}
-				int inc = (core->search->align > 0) ? core->search->align - 1 : ret - 1;
+				int inc = (core->search->align > 1) ? core->search->align - 1 : ret - 1;
 				if (inc < 0) {
 					inc = 0;
 				}

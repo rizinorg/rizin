@@ -23,7 +23,7 @@ static int perform_mapped_file_yank(RzCore *core, ut64 offset, ut64 len, const c
 		ut64 load_align = rz_config_get_i(core->config, "file.loadalign");
 		yankdesc = rz_io_open_nomap(core->io, filename, RZ_PERM_R, 0644);
 		// map the file in for IO operations.
-		if (yankdesc && load_align) {
+		if (yankdesc && load_align > 1) {
 			yank_file_sz = rz_io_size(core->io);
 			ut64 addr = rz_io_map_next_available(core->io, 0, yank_file_sz, load_align);
 			RzIOMap *map = rz_io_map_new(core->io, yankdesc->fd, RZ_PERM_R, 0, addr, yank_file_sz);

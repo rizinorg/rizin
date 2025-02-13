@@ -24,7 +24,7 @@ RZ_API int hexagon_v6_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, cons
 	if (len < HEX_INSN_SIZE) {
 		return -1;
 	}
-	if (analysis->pcalign == 0) {
+	if (analysis->pcalign != HEX_PC_ALIGNMENT) {
 		analysis->pcalign = HEX_PC_ALIGNMENT;
 	}
 

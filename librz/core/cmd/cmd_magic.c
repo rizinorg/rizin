@@ -36,7 +36,7 @@ static int rz_core_magic_at(RzCore *core, const char *file, ut64 addr, int depth
 			rz_core_seek(core, addr, true);
 		}
 	}
-	if (core->search->align) {
+	if (core->search->align > 1) {
 		int mod = addr % core->search->align;
 		if (mod) {
 			RZ_LOG_ERROR("core: Unaligned search at %d\n", mod);

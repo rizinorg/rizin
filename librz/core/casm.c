@@ -428,10 +428,8 @@ RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_strsearch(RzCore *core, const ch
 					rz_pvector_free(tmp_m);
 				}
 			}
-			if (align && align > 1) {
-				if (addr % align) {
-					matches = false;
-				}
+			if (align > 1 && addr % align) {
+				matches = false;
 			}
 			if (matches) {
 				code = rz_str_appendf(code, "%s; ", opst);

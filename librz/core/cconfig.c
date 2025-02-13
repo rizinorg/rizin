@@ -293,7 +293,7 @@ static bool cb_analysis_cpu(void *user, void *data) {
 	/* set pcalign */
 	{
 		int v = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN);
-		rz_config_set_i(core->config, "asm.pcalign", (v != -1) ? v : 0);
+		rz_config_set_i(core->config, "asm.pcalign", (v != -1) ? v : 1);
 	}
 	return true;
 }
@@ -605,7 +605,7 @@ static bool cb_asmarch(void *user, void *data) {
 		if (v != -1) {
 			rz_config_set_i(core->config, "asm.pcalign", v);
 		} else {
-			rz_config_set_i(core->config, "asm.pcalign", 0);
+			rz_config_set_i(core->config, "asm.pcalign", 1);
 		}
 	}
 	/* reload types and cc info */
@@ -691,7 +691,7 @@ static bool cb_asmbits(void *user, void *data) {
 		}
 		/* set pcalign */
 		int v = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN);
-		rz_config_set_i(core->config, "asm.pcalign", (v != -1) ? v : 0);
+		rz_config_set_i(core->config, "asm.pcalign", (v != -1) ? v : 1);
 	}
 	return ret;
 }

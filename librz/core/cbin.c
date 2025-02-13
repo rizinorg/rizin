@@ -2390,7 +2390,7 @@ static void sections_print_json(RzCore *core, PJ *pj, RzBinObject *o, RzBinSecti
 	}
 	pj_kn(pj, "paddr", section->paddr);
 	pj_kn(pj, "vaddr", addr);
-	if (section->align) {
+	if (section->align > 1) {
 		pj_kn(pj, "align", section->align);
 	}
 	if (hashes && section->size > 0) {

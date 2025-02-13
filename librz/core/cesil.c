@@ -219,7 +219,7 @@ repeat:
 	// eprintf ("REPE 0x%llx %s => 0x%llx\n", addr, RZ_STRBUF_SAFEGET (&op.esil), rz_reg_getv (core->analysis->reg, "PC"));
 
 	ut64 pc = rz_reg_getv(core->analysis->reg, name);
-	if (core->analysis->pcalign > 0) {
+	if (core->analysis->pcalign > 1) {
 		pc -= (pc % core->analysis->pcalign);
 		rz_reg_setv(core->analysis->reg, name, pc);
 	}

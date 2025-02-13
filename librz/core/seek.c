@@ -274,7 +274,7 @@ RZ_API bool rz_core_seek_prev(RzCore *core, const char *type, bool save) {
  * \param save If true save the current state in seek history before seeking
  */
 RZ_API bool rz_core_seek_align(RzCore *core, ut64 align, bool save) {
-	if (!align) {
+	if (align < 2) {
 		return false;
 	}
 	int diff = core->offset % align;

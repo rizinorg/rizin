@@ -464,7 +464,7 @@ static int archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
 	case RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN:
 		return 2;
 	case RZ_ANALYSIS_ARCHINFO_DATA_ALIGN:
-		return 0;
+		return 1;
 	case RZ_ANALYSIS_ARCHINFO_CAN_USE_POINTERS:
 		return true;
 	default:

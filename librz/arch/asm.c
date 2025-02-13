@@ -578,7 +578,7 @@ RZ_API int rz_asm_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	op->size = 4;
 	op->bitsize = 0;
 	rz_asm_op_set_asm(op, "");
-	if (a->pcalign) {
+	if (a->pcalign > 1) {
 		const int mod = a->pc % a->pcalign;
 		if (mod) {
 			op->size = a->pcalign - mod;
@@ -1026,7 +1026,7 @@ RZ_API RzAsmCode *rz_asm_massemble(RzAsm *a, const char *assembly) {
 						*ptr = 0;
 						char *p = rz_str_dup(ptr_start);
 						*ptr = ':';
-						if (acode->code_align) {
+						if (acode->code_align > 1) {
 							off += (acode->code_align - (off % acode->code_align));
 						}
 						char *food = rz_str_newf("0x%" PFMT64x, off);
