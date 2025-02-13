@@ -341,6 +341,7 @@ RZ_API bool rz_io_vread_at_mapped(RzIO *io, ut64 vaddr, ut8 *buf, size_t len);
 RZ_API bool rz_io_read_at(RzIO *io, ut64 addr, ut8 *buf, size_t len);
 RZ_API bool rz_io_read_at_mapped(RzIO *io, ut64 addr, ut8 *buf, size_t len);
 RZ_API int rz_io_nread_at(RzIO *io, ut64 addr, ut8 *buf, size_t len);
+RZ_API RZ_OWN RzBuffer *rz_io_nread_at_new_buf(RZ_NONNULL RzIO *io, ut64 addr, size_t len);
 RZ_API bool rz_io_write_at(RzIO *io, ut64 addr, const ut8 *buf, size_t len);
 RZ_API bool rz_io_read(RzIO *io, ut8 *buf, size_t len);
 RZ_API bool rz_io_write(RzIO *io, const ut8 *buf, size_t len);

@@ -6,6 +6,9 @@
 #include <rz_io.h>
 #include <sdb.h>
 #include "io_private.h"
+#include <rz_util/rz_assert.h>
+#include <rz_util/rz_buf.h>
+#include <rz_util/rz_log.h>
 
 #if __WINDOWS__
 #include <rz_windows.h>
@@ -350,6 +353,36 @@ RZ_API int rz_io_nread_at(RzIO *io, ut64 addr, ut8 *buf, size_t len) {
 		(void)rz_io_cache_read(io, addr, buf, len);
 	}
 	return ret;
+}
+
+/**
+ * \brief Reads from IO and returns the result in a RzBuffer.
+ * The actual number of bytes read, should be checked with rz_buf_size()
+ * on the returned buffer.
+ *
+ * \param io The IO object to read from.
+ * \param addr The address to read data from.
+ * \param len The number of bytes to read. It must be >0.
+ *
+ * \return The buffer holding the read bytes or NULL in case of failure.
+ */
+RZ_API RZ_OWN RzBuffer *rz_io_nread_at_new_buf(RZ_NONNULL RzIO *io, ut64 addr, size_t len) {
+	rz_return_val_if_fail(io && len > 0, NULL);
+
+	ut8 *raw_buf = malloc(len);
+	int ret = rz_io_nread_at(io, addr, raw_buf, len);
+	if (ret <= 0) {
+		RZ_LOG_ERROR("Failed to read from IO.\n");
+		free(raw_buf);
+		return NULL;
+	}
+	RzBuffer *buf = rz_buf_new_from_bytes(raw_buf, len);
+	if (!buf) {
+		RZ_LOG_ERROR("Failed to initialize RzBuffer.\n");
+		free(raw_buf);
+		return NULL;
+	}
+	return buf;
 }
 
 /**
