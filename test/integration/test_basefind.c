@@ -88,7 +88,7 @@ int test_rz_basefind_no_callback(void) {
 
 	// alignment
 	basefind_options_set_valid(&options);
-	options.alignment = 1;
+	options.alignment = 0;
 	result = rz_basefind(core, &options);
 	mu_assert_null(result, "invalid alignment");
 

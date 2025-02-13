@@ -336,9 +336,6 @@ e search.to=0x00000050
 /at xor
 EOF
 EXPECT=<<EOF
-0x0000001c 2 xor al, 0
-0x00000028 2 xor al, 0
-0x00000038 2 xor al, 0
 0x0000003c 2 xor al, 0x80
 0x00000040 2 xor al, 0x80
 EOF
@@ -355,9 +352,6 @@ e search.to=0x00000050
 /at xor
 EOF
 EXPECT=<<EOF
-0x0000001c 2 xor al, 0
-0x00000028 2 xor al, 0
-0x00000038 2 xor al, 0
 0x0000003c 2 xor al, 0x80
 0x00000040 2 xor al, 0x80
 EOF
