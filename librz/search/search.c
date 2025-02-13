@@ -144,7 +144,7 @@ RZ_API int rz_search_begin(RzSearch *s) {
 }
 
 // Returns 2 if search.maxhits is reached, 0 on error, otherwise 1
-RZ_API int rz_search_hit_new(RzSearch *s, RzSearchKeyword *kw, ut64 addr) {
+RZ_API int rz_search_legacy_hit_new(RzSearch *s, RzSearchKeyword *kw, ut64 addr) {
 	if (s->align > 1 && (addr % s->align)) {
 		eprintf("0x%08" PFMT64x " unaligned\n", addr);
 		return 1;
