@@ -110,6 +110,7 @@ RZ_API RZ_OWN RzBuffer *rz_buf_new_sparse(ut8 Oxff);
 RZ_API RZ_OWN RzBuffer *rz_buf_new_sparse_overlay(RzBuffer *b, RzBufferSparseWriteMode write_mode);
 RZ_API RZ_OWN RzBuffer *rz_buf_new_with_buf(RzBuffer *b);
 RZ_API RZ_OWN RzBuffer *rz_buf_new_with_bytes(RZ_NULLABLE RZ_BORROW const ut8 *bytes, ut64 len);
+RZ_API RZ_OWN RzBuffer *rz_buf_new_from_bytes(RZ_NULLABLE RZ_OWN const ut8 *bytes, ut64 len);
 RZ_API RZ_OWN RzBuffer *rz_buf_new_with_io_fd(RZ_NONNULL void /* RzIOBind */ *iob, int fd);
 RZ_API RZ_OWN RzBuffer *rz_buf_new_with_io(RZ_NONNULL void /* RzIOBind */ *iob);
 RZ_API RZ_OWN RzBuffer *rz_buf_new_with_methods(RZ_NONNULL const RzBufferMethods *methods, void *init_user, RzBufferType type);
@@ -154,9 +155,19 @@ RZ_API ut64 rz_buf_size(RZ_NONNULL RzBuffer *b);
 RZ_API ut64 rz_buf_tell(RZ_NONNULL RzBuffer *b);
 RZ_API void rz_buf_free(RzBuffer *b);
 RZ_API void rz_buf_set_overflow_byte(RZ_NONNULL RzBuffer *b, ut8 Oxff);
+RZ_API bool rz_buf_is_bytes_buf(const RzBuffer *b);
 RZ_DEPRECATE RZ_API RZ_BORROW ut8 *rz_buf_data(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut64 *size);
 RZ_API RZ_BORROW const ut8 *rz_buf_get_whole_hot_paths(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut64 *sz);
 
+/**
+ * \brief Callback to be used with rz_buf_fwd_scan().
+ *
+ * \param buf Buffer it can read.
+ * \param len Length of buffer to read.
+ * \param user User data.
+ *
+ * \return The number of bytes read.
+ */
 typedef ut64 (*RzBufferFwdScan)(RZ_BORROW RZ_NONNULL const ut8 *buf, ut64 len, RZ_NULLABLE void *user);
 RZ_API ut64 rz_buf_fwd_scan(RZ_NONNULL RzBuffer *b, ut64 start, ut64 amount, RZ_NONNULL RzBufferFwdScan fwd_scan, RZ_NULLABLE void *user);
 

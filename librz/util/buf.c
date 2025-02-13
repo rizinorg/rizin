@@ -547,6 +547,29 @@ RZ_API RZ_OWN RzBuffer *rz_buf_new_with_bytes(RZ_NULLABLE RZ_BORROW const ut8 *b
 	return new_buffer(RZ_BUFFER_BYTES, &u);
 }
 
+/**
+ * \brief Creates a new buffer with a bytes array.
+ * The buffer takes ownership of the bytes array.
+ *
+ * \param bytes The bytes array used to initialized the buffer.
+ * \param len The length of the bytes array.
+ * \return Return the new allocated buffer.
+ *
+ * The function creates a new buffer in memory, initializing it with the bytes
+ * passed as argument. The bytes parameter can be NULL, but the length should
+ * be set to 0.
+ */
+RZ_API RZ_OWN RzBuffer *rz_buf_new_from_bytes(RZ_NULLABLE RZ_OWN const ut8 *bytes, ut64 len) {
+	rz_return_val_if_fail((bytes && len) || (!bytes && !len), NULL);
+
+	struct buf_bytes_user u = { 0 };
+	u.length = len;
+	u.data_steal = bytes;
+	u.steal = true;
+
+	return new_buffer(RZ_BUFFER_BYTES, &u);
+}
+
 // TODO: Optimize to use memcpy when buffers are not in range..
 // check buf boundaries and offsets and use memcpy or memmove
 
@@ -1379,6 +1402,17 @@ RZ_API void rz_buf_set_overflow_byte(RZ_NONNULL RzBuffer *b, ut8 Oxff) {
 	rz_return_if_fail(b);
 
 	b->Oxff_priv = Oxff;
+}
+
+/**
+ * \brief Returns true if \b is a bytes buffer.
+ *
+ * \param b The buffer to check.
+ *
+ * \return True if the buffer is a raw bytes buffer. False otherwise.
+ */
+RZ_API bool rz_buf_is_bytes_buf(const RzBuffer *b) {
+	return b->type == RZ_BUFFER_BYTES;
 }
 
 /**
