@@ -360,6 +360,9 @@ static void vector_quick_sort(void *a, size_t elem_size, size_t len, RzVectorCom
  */
 RZ_API void rz_vector_sort(RzVector *vec, RzVectorComparator cmp, bool reverse, void *user) {
 	rz_return_if_fail(vec && cmp);
+	if (rz_vector_empty(vec)) {
+		return;
+	}
 	vector_quick_sort(vec->a, vec->elem_size, vec->len, cmp, reverse, user);
 }
 
@@ -546,5 +549,8 @@ static void quick_sort(void **a, size_t n, RzPVectorComparator cmp, void *user) 
 
 RZ_API void rz_pvector_sort(RzPVector *vec, RzPVectorComparator cmp, void *user) {
 	rz_return_if_fail(vec && cmp);
+	if (rz_pvector_empty(vec)) {
+		return;
+	}
 	quick_sort(vec->v.a, vec->v.len, cmp, user);
 }
