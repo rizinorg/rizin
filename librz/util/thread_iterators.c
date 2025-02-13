@@ -31,6 +31,7 @@ static bool th_run_iterator(RzThreadFunction th_cb, void *context, RzThreadNCore
 
 typedef struct th_list_ctx_s {
 	RzThreadLock *lock;
+	RzAtomicBool *loop;
 	RzListIter /*<void *>*/ *head;
 	void *user;
 	RzThreadIterator iterator;
@@ -39,6 +40,7 @@ typedef struct th_list_ctx_s {
 static void *thread_iterate_list_cb(th_list_ctx_t *context) {
 	void *element = NULL;
 	void *user = context->user;
+	RzAtomicBool *loop = context->loop;
 	RzThreadIterator iterator = context->iterator;
 	RzThreadLock *lock = context->lock;
 
@@ -52,10 +54,11 @@ static void *thread_iterate_list_cb(th_list_ctx_t *context) {
 		context->head = rz_list_iter_get_next(context->head);
 		rz_th_lock_leave(lock);
 
-		if (element) {
-			iterator(element, user);
+		if (element && !iterator(element, user)) {
+			rz_atomic_bool_set(loop, false);
+			break;
 		}
-	} while (true);
+	} while (rz_atomic_bool_get(loop));
 	return NULL;
 }
 
@@ -79,6 +82,7 @@ RZ_API bool rz_th_iterate_list(RZ_NONNULL const RzList /*<void *>*/ *list, RZ_NO
 
 	th_list_ctx_t context = {
 		.lock = rz_th_lock_new(true),
+		.loop = rz_atomic_bool_new(true),
 		.head = list->head,
 		.iterator = iterator,
 		.user = user,
@@ -96,6 +100,7 @@ RZ_API bool rz_th_iterate_list(RZ_NONNULL const RzList /*<void *>*/ *list, RZ_NO
 
 typedef struct th_vec_ctx_s {
 	RzThreadLock *lock;
+	RzAtomicBool *loop;
 	size_t index;
 	const RzPVector /*<void *>*/ *pvec;
 	void *user;
@@ -107,6 +112,7 @@ static void *thread_iterate_pvec_cb(th_vec_ctx_t *context) {
 	void *user = context->user;
 	RzThreadIterator iterator = context->iterator;
 	RzThreadLock *lock = context->lock;
+	RzAtomicBool *loop = context->loop;
 	const RzPVector *pvec = context->pvec;
 	size_t length = rz_pvector_len(pvec);
 
@@ -120,10 +126,11 @@ static void *thread_iterate_pvec_cb(th_vec_ctx_t *context) {
 		context->index++;
 		rz_th_lock_leave(lock);
 
-		if (element) {
-			iterator(element, user);
+		if (element && !iterator(element, user)) {
+			rz_atomic_bool_set(loop, false);
+			break;
 		}
-	} while (true);
+	} while (rz_atomic_bool_get(loop));
 	return NULL;
 }
 
@@ -147,6 +154,7 @@ RZ_API bool rz_th_iterate_pvector(RZ_NONNULL const RzPVector /*<void *>*/ *pvec,
 
 	th_vec_ctx_t context = {
 		.lock = rz_th_lock_new(true),
+		.loop = rz_atomic_bool_new(true),
 		.index = 0,
 		.pvec = pvec,
 		.iterator = iterator,

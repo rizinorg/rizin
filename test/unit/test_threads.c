@@ -138,9 +138,10 @@ bool test_thread_ht(void) {
 	mu_end;
 }
 
-void thread_set_bool_arg(bool *value, bool *user) {
+bool thread_set_bool_arg(bool *value, bool *user) {
 	*value = true;
 	*user = true;
+	return true;
 }
 
 bool test_thread_iterator_list(void) {
