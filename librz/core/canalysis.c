@@ -2950,7 +2950,7 @@ RZ_IPI void rz_core_add_string_ref(RzCore *core, ut64 xref_from, ut64 xref_to) {
 }
 
 static inline bool aligns(ut64 addr, size_t align) {
-	return align > 0 && addr % align == 0;
+	return align > 1 && addr % align == 0;
 }
 
 RZ_API int rz_core_search_value_in_range(RzCore *core, RzInterval search_itv, ut64 vmin,
