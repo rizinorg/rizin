@@ -52,8 +52,8 @@ static void *thread_iterate_list_cb(th_list_ctx_t *context) {
 		context->head = rz_list_iter_get_next(context->head);
 		rz_th_lock_leave(lock);
 
-		if (element) {
-			iterator(element, user);
+		if (element && !iterator(element, user)) {
+			break;
 		}
 	} while (true);
 	return NULL;
