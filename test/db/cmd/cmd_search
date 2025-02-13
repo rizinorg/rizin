@@ -126,7 +126,7 @@ NAME=/j escaped
 FILE=bins/mach0/escaped
 CMDS=/j hello
 EXPECT=<<EOF
-[{"offset":8019,"type":"string","data":"....]........c:\\hello\\world..M......."}]
+[{"offset":8019,"type":"string"}]
 EOF
 RUN
 
@@ -168,7 +168,7 @@ wx 666f6f005c
 /j foo
 EOF
 EXPECT=<<EOF
-[{"offset":0,"type":"string","data":"foo.\\.............."}]
+[{"offset":0,"type":"string"}]
 EOF
 RUN
 

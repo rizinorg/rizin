@@ -458,23 +458,20 @@ static int _cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 			return 0;
 		}
 		switch (kw->type) {
-		case RZ_SEARCH_KEYWORD_TYPE_STRING: {
-			const int ctx = 16;
-			const int prectx = addr > 16 ? ctx : addr;
-			char *pre, *pos, *wrd;
-			const int len = keyword_len;
-			char *buf = calloc(1, len + 32 + ctx * 2);
+		case RZ_SEARCH_KEYWORD_TYPE_STRING:
 			type = "string";
-			rz_io_read_at(core->io, addr - prectx, (ut8 *)buf, len + (ctx * 2));
-			pre = getstring(buf, prectx, use_color);
-			pos = getstring(buf + prectx + len, ctx, use_color);
-			if (!pos) {
-				pos = rz_str_dup("");
-			}
-			if (param->outmode == RZ_MODE_JSON) {
-				wrd = getstring(buf + prectx, len, false);
-				s = rz_str_newf("%s%s%s", pre, wrd, pos);
-			} else {
+			if (param->outmode != RZ_MODE_JSON) {
+				const int ctx = 16;
+				const int prectx = addr > 16 ? ctx : addr;
+				char *pre, *pos, *wrd;
+				const int len = keyword_len;
+				char *buf = calloc(1, len + 32 + ctx * 2);
+				rz_io_read_at(core->io, addr - prectx, (ut8 *)buf, len + (ctx * 2));
+				pre = getstring(buf, prectx, use_color);
+				pos = getstring(buf + prectx + len, ctx, use_color);
+				if (!pos) {
+					pos = rz_str_dup("");
+				}
 				wrd = rz_str_utf16_encode(buf + prectx, len);
 				if (use_color) {
 					char *pre_color = get_colored_context(pre);
@@ -486,13 +483,11 @@ static int _cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 				} else {
 					s = rz_str_newf("\"%s%s%s\"", pre, wrd, pos);
 				}
+				free(buf);
+				free(pre);
+				free(wrd);
+				free(pos);
 			}
-			free(buf);
-			free(pre);
-			free(wrd);
-			free(pos);
-		}
-			free(p);
 			break;
 		default:
 			len = keyword_len; // 8 byte context
@@ -524,10 +519,13 @@ static int _cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 		}
 
 		if (param->outmode == RZ_MODE_JSON) {
+			// TODO: offset alone not sufficient for regex search
 			pj_o(param->pj);
 			pj_kn(param->pj, "offset", base_addr + addr);
 			pj_ks(param->pj, "type", type);
-			pj_ks(param->pj, "data", s);
+			if (kw->type != RZ_SEARCH_KEYWORD_TYPE_STRING) {
+				pj_ks(param->pj, "data", s);
+			}
 			pj_end(param->pj);
 		} else {
 			rz_cons_printf("0x%08" PFMT64x " %s%d_%d %s\n",

@@ -20,7 +20,7 @@ ps @@/j hello
 EOF
 EXPECT=<<EOF
 hello
-[{"offset":10,"type":"string","data":"..........hello................"}]
+[{"offset":10,"type":"string"}]
 EOF
 RUN
 
@@ -42,7 +42,7 @@ wx 0067
 /j g
 EOF
 EXPECT=<<EOF
-[{"offset":1,"type":"string","data":".g................"}]
+[{"offset":1,"type":"string"}]
 EOF
 RUN
 
