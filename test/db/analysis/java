@@ -214,7 +214,7 @@ maxopsz  16
 minopsz  1
 os       any
 cc       N/A
-pcalign  0
+pcalign  1
 rpath    N/A
 subsys   any
 stripped false

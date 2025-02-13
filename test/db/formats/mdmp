@@ -33,7 +33,7 @@ maxopsz  16
 minopsz  1
 os       Windows NT Workstation 6.1.7601
 cc       N/A
-pcalign  0
+pcalign  1
 rpath    NONE
 streams  13
 subsys   

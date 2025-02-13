@@ -418,7 +418,7 @@ maxopsz  16
 minopsz  1
 os       linux
 cc       N/A
-pcalign  0
+pcalign  1
 relro    no
 rpath    NONE
 subsys   linux
@@ -688,7 +688,7 @@ maxopsz  16
 minopsz  1
 os       linux
 cc       N/A
-pcalign  0
+pcalign  1
 relro    full
 rpath    NONE
 subsys   linux
@@ -734,7 +734,7 @@ maxopsz  16
 minopsz  1
 os       linux
 cc       N/A
-pcalign  0
+pcalign  1
 relro    partial
 rpath    NONE
 subsys   linux
@@ -780,7 +780,7 @@ maxopsz  16
 minopsz  1
 os       darwin
 cc       N/A
-pcalign  0
+pcalign  1
 rpath    N/A
 subsys   macOS
 stripped false

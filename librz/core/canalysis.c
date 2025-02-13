@@ -2951,7 +2951,7 @@ RZ_IPI void rz_core_add_string_ref(RzCore *core, ut64 xref_from, ut64 xref_to) {
 }
 
 static inline bool aligns(ut64 addr, size_t align) {
-	return align > 1 && addr % align == 0;
+	return align > 0 && addr % align == 0;
 }
 
 RZ_API int rz_core_search_value_in_range(RzCore *core, RzInterval search_itv, ut64 vmin,
@@ -4709,7 +4709,7 @@ static void _CbInRangeAav(RzCore *core, ut64 from, ut64 to, int vsize, void *use
 	int arch_align = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN);
 	bool vinfun = rz_config_get_b(core->config, "analysis.vinfun");
 	int searchAlign = rz_config_get_i(core->config, "search.align");
-	int align = (searchAlign > 1) ? searchAlign : arch_align;
+	int align = (arch_align < 1) ? searchAlign : arch_align;
 	if (!aligns(from, align) || !aligns(to, align)) {
 		bool itsFine = false;
 		if (archIsThumbable(core)) {

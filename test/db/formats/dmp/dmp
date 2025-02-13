@@ -32,7 +32,7 @@ maxopsz  16
 minopsz  1
 os       Unknown
 cc       N/A
-pcalign  0
+pcalign  1
 rpath    N/A
 subsys   
 stripped false
