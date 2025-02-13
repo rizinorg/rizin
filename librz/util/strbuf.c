@@ -313,7 +313,14 @@ static inline char *drain(RzStrBuf *sb) {
 	return sb->ptr ? sb->ptr : rz_str_dup(sb->buf);
 }
 
-RZ_API RZ_OWN char *rz_strbuf_drain(RzStrBuf *sb) {
+/**
+ * \brief Drains the buffer, frees it and returns the drained string.
+ *
+ * \param sb The string buffer to drain.
+ *
+ * \return The string of \p sb.
+ */
+RZ_API RZ_OWN char *rz_strbuf_drain(RZ_OWN RZ_NONNULL RzStrBuf *sb) {
 	rz_return_val_if_fail(sb, NULL);
 	char *ret = drain(sb);
 	free(sb);
