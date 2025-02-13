@@ -7,6 +7,7 @@
 #include <rz_th.h>
 #include <rz_windows.h>
 #include <rz_config.h>
+#include <rz_util/rz_bits.h>
 
 #include "core_private.h"
 
@@ -830,8 +831,9 @@ static bool cb_asm_pcalign(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	int align = node->i_value;
-	if (align < 0) {
-		align = 0;
+	if (rz_bits_count_ones_ut64(align) != 1) {
+		RZ_LOG_ERROR("Alignment is only defined for '>0' and 'n^2'. Is = %" PFMT64d "\n", node->i_value);
+		return false;
 	}
 	core->rasm->pcalign = align;
 	core->analysis->pcalign = align;
@@ -1208,8 +1210,8 @@ static bool cb_str_search_max_region_size(void *user, void *data) {
 static bool cb_str_search_raw_alignment(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (node->i_value < 8) {
-		RZ_LOG_ERROR("str.search.raw_alignment cannot be less than 8.\n");
+	if (node->i_value < 8 || rz_bits_count_ones_ut64(node->i_value) != 1) {
+		RZ_LOG_ERROR("search.str.raw_alignment cannot be less than 8 and must be n^2.\n");
 		return false;
 	}
 	core->bin->str_search_cfg.raw_alignment = node->i_value;
@@ -2425,6 +2427,10 @@ static bool cb_contiguous(void *user, void *data) {
 static bool cb_searchalign(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
+	if (rz_bits_count_ones_ut64(node->i_value) != 1) {
+		RZ_LOG_ERROR("Alignment is only defined for '>0' and 'n^2'. Is = %" PFMT64d "\n", node->i_value);
+		return false;
+	}
 	core->search->align = node->i_value;
 	core->print->addrmod = node->i_value;
 	return true;
@@ -3163,7 +3169,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("asm.cmt.esil", "false", "Show ESIL expressions as comments");
 	SETBPREF("asm.cmt.il", "false", "Show RzIL expressions as comments");
 	SETI("asm.cmt.col", 71, "Column to align comments");
-	SETICB("asm.pcalign", 0, &cb_asm_pcalign, "Only recognize as valid instructions aligned to this value");
+	SETICB("asm.pcalign", 1, &cb_asm_pcalign, "Only recognize as valid instructions aligned to this value");
 	// maybe rename to asm.cmt.calls
 	SETBPREF("asm.calls", "true", "Show callee function related info as comments in disasm");
 	SETBPREF("asm.comments", "true", "Show comments in disassembly view");
@@ -3758,7 +3764,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 
 	/* search */
 	SETCB("search.contiguous", "true", &cb_contiguous, "Accept contiguous/adjacent search hits");
-	SETICB("search.align", 0, &cb_searchalign, "Only catch aligned search hits");
+	SETICB("search.align", 1, &cb_searchalign, "Only catch aligned search hits");
 	SETI("search.chunk", 0, "Chunk size for /+ (default size is asm.bits/8");
 	SETI("search.esilcombo", 8, "Stop search after N consecutive hits");
 	SETI("search.distance", 0, "Search string distance");
