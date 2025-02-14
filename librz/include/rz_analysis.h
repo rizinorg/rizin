@@ -871,7 +871,7 @@ typedef struct rz_analysis_value_t {
 	ut64 base; // numeric address
 	st64 delta; // numeric delta
 	st64 imm; // immediate value
-	int mul; // multiplier (reg*4+base)
+	ut64 mul; // multiplier (reg*4+base)
 	RzRegItem *seg; // segment selector register
 	RzRegItem *reg; // register / register base used (-1 if no reg)
 	RzRegItem *regdelta; // register index used (-1 if no reg)

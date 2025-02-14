@@ -1958,7 +1958,7 @@ static void set_src_dst(RzAnalysisValue *val, RzReg *reg, csh *handle, cs_insn *
 			break;
 		case ARM_OP_MEM:
 			val->type = RZ_ANALYSIS_VAL_MEM;
-			val->mul = armop.mem.scale << armop.shift.value;
+			val->mul = (ut64)armop.mem.scale << armop.shift.value;
 #if CS_NEXT_VERSION >= 6
 			val->delta = MEMDISP(x);
 #else
