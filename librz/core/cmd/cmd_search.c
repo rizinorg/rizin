@@ -427,12 +427,24 @@ static RZ_OWN char *get_colored_context(RZ_NONNULL const char *ctx) {
 	if (!buf) {
 		return NULL;
 	}
+	bool prev_nonprintable = false;
 	for (; *ctx; ctx++) {
 		if (*ctx == '\xff') {
-			rz_buf_append_string(buf, Color_BLUE "." Color_RESET);
+			if (!prev_nonprintable) {
+				rz_buf_append_string(buf, Color_BLUE);
+			}
+			rz_buf_append_string(buf, ".");
+			prev_nonprintable = true;
 		} else {
+			if (prev_nonprintable) {
+				rz_buf_append_string(buf, Color_RESET);
+			}
 			rz_buf_append_bytes(buf, (const ut8 *)ctx, 1);
+			prev_nonprintable = false;
 		}
+	}
+	if (prev_nonprintable) {
+		rz_buf_append_string(buf, Color_RESET);
 	}
 	char *ctx_color = rz_buf_to_string(buf);
 	rz_buf_free(buf);
