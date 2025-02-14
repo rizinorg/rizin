@@ -616,7 +616,7 @@ failure:
 	return false;
 }
 
-static RzList /*<RzInterval>*/ *assemble_search_window_list(RzList /*<RzIOMap *>*/ *search_in, RzSearchOpt *opt) {
+static RzList /*<RzInterval *>*/ *assemble_search_window_list(RzList /*<RzIOMap *>*/ *search_in, RzSearchOpt *opt) {
 	rz_return_val_if_fail(search_in && opt && opt->element_size, NULL);
 	RzList *list = rz_list_newf(free);
 	if (!list) {
