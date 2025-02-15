@@ -488,7 +488,7 @@ static const char *map_dwarf_reg_to_riscv_reg(ut32 reg_num) {
  * \param bits The architecture bitness
  * \return The function that maps a DWARF register number to a register name
  */
-static DWARF_RegisterMapping dwarf_register_mapping_query(RZ_NONNULL char *arch, int bits) {
+static DWARF_RegisterMapping dwarf_register_mapping_query(RZ_NONNULL const char *arch, int bits) {
 	if (RZ_STR_EQ(arch, "x86")) {
 		if (bits == 64) {
 			return map_dwarf_reg_to_x86_64_reg;
@@ -1759,10 +1759,10 @@ RZ_API void rz_analysis_dwarf_preprocess_info(
 	RZ_NONNULL RZ_BORROW RzAnalysis *analysis,
 	RZ_NONNULL RZ_BORROW RzBinDWARF *dw) {
 	rz_return_if_fail(analysis && dw);
-	if (!dw->info) {
+	if (!dw->info || !analysis->cur) {
 		return;
 	}
-	analysis->debug_info->dwarf_register_mapping = dwarf_register_mapping_query(analysis->cpu, analysis->bits);
+	analysis->debug_info->dwarf_register_mapping = dwarf_register_mapping_query(analysis->cur->name, analysis->bits);
 	DwContext ctx = {
 		.analysis = analysis,
 		.dw = dw,
