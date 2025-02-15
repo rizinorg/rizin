@@ -213,9 +213,30 @@ static ut64 adjust_offset(RzStrEnc str_type, const ut8 *buf, const ut64 str_star
 	return 0;
 }
 
+static inline size_t buf_look_ahead(const RzUtilStrScanOptions *opt, RzStrEnc enc) {
+	if (opt->max_str_length < opt->min_str_length) {
+		return 0;
+	}
+	switch (enc) {
+	case RZ_STRING_ENC_8BIT:
+		return 1;
+	case RZ_STRING_ENC_UTF16BE:
+	case RZ_STRING_ENC_UTF16LE:
+		return 2;
+	case RZ_STRING_ENC_UTF32BE:
+	case RZ_STRING_ENC_UTF32LE:
+	default:
+		return UNICODE_MAX_BYTES_PER_CHAR;
+	}
+}
+
 static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut64 needle, const ut64 to,
 	RzStrEnc str_type, bool ascii_only, const RzUtilStrScanOptions *opt, ut64 str_list_idx, bool test_false_positives) {
 	rz_return_val_if_fail(str_type != RZ_STRING_ENC_GUESS, NULL);
+	size_t look_ahead = buf_look_ahead(opt, str_type);
+	if (look_ahead == 0) {
+		return NULL;
+	}
 
 	ut8 *strbuf = RZ_NEWS0(ut8, opt->max_str_length + 1);
 	if (!strbuf) {
@@ -226,7 +247,7 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 	int rc = 0, i = 0, runes = 0;
 
 	/* Eat a whole C string */
-	for (i = 0; i < opt->max_str_length - UNICODE_MAX_BYTES_PER_CHAR - 1 && needle < to; i += rc) {
+	for (i = 0; i < opt->max_str_length - look_ahead && needle < to; i += rc) {
 		RzCodePoint r = 0;
 
 		switch (str_type) {
@@ -265,6 +286,7 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 			rc = rz_utf8_decode(buf + needle - from, to - needle, &r);
 			if (rc > 1) {
 				str_type = RZ_STRING_ENC_UTF8;
+				look_ahead = buf_look_ahead(opt, RZ_STRING_ENC_UTF8);
 			}
 			break;
 		}
