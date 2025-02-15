@@ -279,6 +279,8 @@ bool test_rz_scan_strings_detect_utf32_be(void) {
 	mu_assert_streq(s->string, "I am a UTF-32be stringÿ", "rz_scan_strings utf32be, different string");
 	mu_assert_eq(s->addr, 2, "rz_scan_strings utf32be, address");
 	mu_assert_eq(s->type, RZ_STRING_ENC_UTF32BE, "rz_scan_strings utf32be, string type");
+	mu_assert_eq(s->size, 92, "rz_scan_strings utf32be, size"); // 92 bytes in size, no NUL byte.
+	mu_assert_eq(s->length, 23, "rz_scan_strings utf32be, length"); // 23 characters in length.
 
 	rz_list_free(str_list);
 	rz_buf_free(buf);
@@ -301,9 +303,12 @@ bool test_rz_scan_strings_utf16_be(void) {
 	RzDetectedString *s = rz_list_get_n(str_list, 0);
 
 	mu_assert_eq(s->addr, 18, "rz_scan_strings utf16be, address");
-	mu_assert_streq(s->string, "\xd1\x81\xd0\xbb\xd0\xbe\xd0\xbd\x2c\x20\xd0\xbb\xd0\xb0\xd0\xb4\xd1\x8c\xd1\x8f",
+	// "слон, ладья" UTF-8 encoded:
+	mu_assert_streq(s->string, "\xd1\x81\xd0\xbb\xd0\xbe\xd0\xbd\x2c\x20\xd0\xbb\xd0\xb0\xd0\xb4\xd1\x8c\xd1\x8f", // This is UTF-8 encoded.
 		"rz_scan_strings utf16be, different string");
 	mu_assert_eq(s->type, RZ_STRING_ENC_UTF16BE, "rz_scan_strings utf16be, string type");
+	mu_assert_eq(s->size, 22, "rz_scan_strings utf16be, size"); // 22 bytes in size, no NUL byte.
+	mu_assert_eq(s->length, 11, "rz_scan_strings utf16be, length"); // 11 characters in length.
 
 	rz_list_free(str_list);
 	rz_buf_free(buf);
@@ -341,6 +346,84 @@ bool test_rz_scan_strings_extended_ascii(void) {
 	mu_end;
 }
 
+/**
+ * \brief NUL byte is counted in the RzDetectedString->size member but not in the length member.
+ */
+bool test_rz_scan_strings_detect_length_ascii(void) {
+	static const unsigned char no_nul[] = "I am an ASCII string without NUL byte.\xff";
+	RzBuffer *buf = rz_buf_new_with_bytes(no_nul, sizeof(no_nul));
+
+	RzList *str_list = rz_list_newf((RzListFree)rz_detected_string_free);
+	int n = rz_scan_strings(buf, str_list, &g_opt, 0, buf->methods->get_size(buf), RZ_STRING_ENC_8BIT);
+	mu_assert_eq(n, 1, "rz_scan_strings ascii, number of strings");
+
+	RzDetectedString *s = rz_list_get_n(str_list, 0);
+	mu_assert_streq(s->string, "I am an ASCII string without NUL byte.", "rz_scan_strings ascii, different string");
+	mu_assert_eq(s->addr, 0, "rz_scan_strings ascii, address");
+	mu_assert_eq(s->size, 38, "rz_scan_strings ascii, size (in bytes, no NUL byte)");
+	mu_assert_eq(s->length, 38, "rz_scan_strings ascii, length (in characters without NUL byte)");
+	mu_assert_eq(s->type, RZ_STRING_ENC_8BIT, "rz_scan_strings ascii, type");
+	rz_list_purge(str_list);
+
+	// Extra space between "a" and "NUL" to get comparable string length.
+	static const unsigned char nul[] = "I am an ASCII string with a  NUL byte.\0";
+	RzBuffer *buf_nul = rz_buf_new_with_bytes(nul, sizeof(nul));
+	n = rz_scan_strings(buf_nul, str_list, &g_opt, 0, buf_nul->methods->get_size(buf_nul), RZ_STRING_ENC_8BIT);
+	s = rz_list_get_n(str_list, 0);
+	mu_assert_eq(n, 1, "rz_scan_strings ascii, number of strings");
+	mu_assert_streq(s->string, "I am an ASCII string with a  NUL byte.", "rz_scan_strings ascii, different string");
+	mu_assert_eq(s->addr, 0, "rz_scan_strings ascii, address");
+	// One byte larger in size than above, due to additional NUL byte.
+	mu_assert_eq(s->size, 39, "rz_scan_strings ascii, size (in bytes, without NUL byte)");
+	mu_assert_eq(s->length, 38, "rz_scan_strings ascii, length (in characters)");
+	mu_assert_eq(s->type, RZ_STRING_ENC_8BIT, "rz_scan_strings ascii, type");
+
+	rz_list_free(str_list);
+	rz_buf_free(buf);
+	rz_buf_free(buf_nul);
+
+	mu_end;
+}
+
+/**
+ * \brief NUL byte is counted in the RzDetectedString->size member but not in the length member.
+ */
+bool test_rz_scan_strings_detect_length_utf8(void) {
+	static const unsigned char no_nul[] = "⟨I am an UTF-8 string without NUL byte⟩.\xff";
+	RzBuffer *buf = rz_buf_new_with_bytes(no_nul, sizeof(no_nul));
+
+	RzList *str_list = rz_list_newf((RzListFree)rz_detected_string_free);
+	int n = rz_scan_strings(buf, str_list, &g_opt, 0, buf->methods->get_size(buf), RZ_STRING_ENC_UTF8);
+	mu_assert_eq(n, 1, "rz_scan_strings ascii, number of strings");
+
+	RzDetectedString *s = rz_list_get_n(str_list, 0);
+	mu_assert_streq(s->string, "⟨I am an UTF-8 string without NUL byte⟩.", "rz_scan_strings utf-8, different string");
+	mu_assert_eq(s->addr, 0, "rz_scan_strings utf-8, address");
+	mu_assert_eq(s->size, 44, "rz_scan_strings utf-8, size (in bytes, no NUL byte)");
+	mu_assert_eq(s->length, 40, "rz_scan_strings utf-8, length (in characters without NUL byte)");
+	mu_assert_eq(s->type, RZ_STRING_ENC_UTF8, "rz_scan_strings utf-8, type");
+	rz_list_purge(str_list);
+
+	// Extra space between "a" and "NUL" to get comparable string length.
+	static const unsigned char nul[] = "⟨I am an UTF-8 string with a  NUL byte⟩.\0";
+	RzBuffer *buf_nul = rz_buf_new_with_bytes(nul, sizeof(nul));
+	n = rz_scan_strings(buf_nul, str_list, &g_opt, 0, buf_nul->methods->get_size(buf_nul), RZ_STRING_ENC_UTF8);
+	s = rz_list_get_n(str_list, 0);
+	mu_assert_eq(n, 1, "rz_scan_strings utf-8, number of strings");
+	mu_assert_streq(s->string, "⟨I am an UTF-8 string with a  NUL byte⟩.", "rz_scan_strings utf-8, different string");
+	mu_assert_eq(s->addr, 0, "rz_scan_strings utf-8, address");
+	// One byte larger in size than above, due to additional NUL byte.
+	mu_assert_eq(s->size, 45, "rz_scan_strings utf-8, size (in bytes, with NUL byte)");
+	mu_assert_eq(s->length, 40, "rz_scan_strings utf-8, length (in characters)");
+	mu_assert_eq(s->type, RZ_STRING_ENC_UTF8, "rz_scan_strings utf-8, type");
+
+	rz_list_free(str_list);
+	rz_buf_free(buf);
+	rz_buf_free(buf_nul);
+
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_scan_strings_detect_ascii);
 	mu_run_test(test_rz_scan_strings_detect_ibm037);
@@ -353,6 +436,8 @@ bool all_tests() {
 	mu_run_test(test_rz_scan_strings_detect_utf32_be);
 	mu_run_test(test_rz_scan_strings_utf16_be);
 	mu_run_test(test_rz_scan_strings_extended_ascii);
+	mu_run_test(test_rz_scan_strings_detect_length_ascii);
+	mu_run_test(test_rz_scan_strings_detect_length_utf8);
 
 	return tests_passed != tests_run;
 }
