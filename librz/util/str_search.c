@@ -214,7 +214,7 @@ static ut64 adjust_offset(RzStrEnc str_type, const ut8 *buf, const ut64 str_star
 }
 
 static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut64 needle, const ut64 to,
-	RzStrEnc str_type, bool ascii_only, const RzUtilStrScanOptions *opt, ut64 str_list_idx) {
+	RzStrEnc str_type, bool ascii_only, const RzUtilStrScanOptions *opt, ut64 str_list_idx, bool test_false_positives) {
 	rz_return_val_if_fail(str_type != RZ_STRING_ENC_GUESS, NULL);
 
 	ut8 *strbuf = RZ_NEWS0(ut8, opt->max_str_length + 1);
@@ -301,12 +301,14 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 
 	int strbuf_size = i;
 	if (runes >= opt->min_str_length && runes <= opt->max_str_length) {
-		FalsePositiveResult false_positive_result = reduce_false_positives(opt, strbuf, strbuf_size, str_type);
-		if (false_positive_result == SKIP_STRING) {
-			goto error;
-		} else if (false_positive_result == RETRY_ASCII) {
-			free(strbuf);
-			return process_one_string(buf, from, str_addr, to, str_type, true, opt, str_list_idx);
+		if (test_false_positives) {
+			FalsePositiveResult false_positive_result = reduce_false_positives(opt, strbuf, strbuf_size, str_type);
+			if (false_positive_result == SKIP_STRING) {
+				goto error;
+			} else if (false_positive_result == RETRY_ASCII) {
+				free(strbuf);
+				return process_one_string(buf, from, str_addr, to, str_type, true, opt, str_list_idx, false);
+			}
 		}
 
 		RzDetectedString *ds = RZ_NEW0(RzDetectedString);
@@ -421,6 +423,7 @@ RZ_API int rz_scan_strings_raw(RZ_NONNULL const ut8 *buf, RZ_NONNULL RzList /*<R
 	int count = 0;
 	RzStrEnc str_type = type;
 
+	bool test_false_positives = false;
 	needle = from;
 	const ut8 *ptr = NULL;
 	ut64 size = 0;
@@ -430,6 +433,7 @@ RZ_API int rz_scan_strings_raw(RZ_NONNULL const ut8 *buf, RZ_NONNULL RzList /*<R
 		size = to - needle;
 		--skip_ibm037;
 		if (type == RZ_STRING_ENC_GUESS) {
+			test_false_positives = true;
 			if (can_be_utf32_le(ptr, size)) {
 				str_type = RZ_STRING_ENC_UTF32LE;
 			} else if (can_be_utf16_le(ptr, size)) {
@@ -437,8 +441,8 @@ RZ_API int rz_scan_strings_raw(RZ_NONNULL const ut8 *buf, RZ_NONNULL RzList /*<R
 			} else if (can_be_utf32_be(ptr, size)) {
 				if (to - needle > 3 && can_be_utf32_le(ptr + 3, size - 3)) {
 					// The string can be either utf32-le or utf32-be
-					RzDetectedString *ds_le = process_one_string(buf, from, needle + 3, to, RZ_STRING_ENC_UTF32LE, false, opt, rz_list_length(list));
-					RzDetectedString *ds_be = process_one_string(buf, from, needle, to, RZ_STRING_ENC_UTF32BE, false, opt, rz_list_length(list));
+					RzDetectedString *ds_le = process_one_string(buf, from, needle + 3, to, RZ_STRING_ENC_UTF32LE, false, opt, rz_list_length(list), false);
+					RzDetectedString *ds_be = process_one_string(buf, from, needle, to, RZ_STRING_ENC_UTF32BE, false, opt, rz_list_length(list), false);
 
 					RzDetectedString *to_add = NULL;
 					RzDetectedString *to_delete = NULL;
@@ -473,8 +477,8 @@ RZ_API int rz_scan_strings_raw(RZ_NONNULL const ut8 *buf, RZ_NONNULL RzList /*<R
 			} else if (can_be_utf16_be(ptr, size)) {
 				if (to - needle > 1 && can_be_utf16_le(ptr + 1, size - 1)) {
 					// The string can be either utf16-le or utf16-be
-					RzDetectedString *ds_le = process_one_string(buf, from, needle + 1, to, RZ_STRING_ENC_UTF16LE, false, opt, rz_list_length(list));
-					RzDetectedString *ds_be = process_one_string(buf, from, needle, to, RZ_STRING_ENC_UTF16BE, false, opt, rz_list_length(list));
+					RzDetectedString *ds_le = process_one_string(buf, from, needle + 1, to, RZ_STRING_ENC_UTF16LE, false, opt, rz_list_length(list), false);
+					RzDetectedString *ds_be = process_one_string(buf, from, needle, to, RZ_STRING_ENC_UTF16BE, false, opt, rz_list_length(list), false);
 
 					RzDetectedString *to_add = NULL;
 					RzDetectedString *to_delete = NULL;
@@ -533,10 +537,11 @@ RZ_API int rz_scan_strings_raw(RZ_NONNULL const ut8 *buf, RZ_NONNULL RzList /*<R
 				}
 			}
 		} else if (type == RZ_STRING_ENC_UTF8) {
-			str_type = RZ_STRING_ENC_8BIT; // initial assumption
+			// It gets promoted to UTF-8 in process_one_string() if an UTF-8 character was decoded.
+			str_type = RZ_STRING_ENC_8BIT;
 		}
 
-		RzDetectedString *ds = process_one_string(buf, from, needle, to, str_type, false, opt, rz_list_length(list));
+		RzDetectedString *ds = process_one_string(buf, from, needle, to, str_type, false, opt, rz_list_length(list), test_false_positives);
 		if (!ds) {
 			needle++;
 			continue;
