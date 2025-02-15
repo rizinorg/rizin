@@ -254,6 +254,7 @@ arch_isa_sources = [
   'isa/pyc/opcode_30.c',
   'isa/pyc/opcode_31.c',
   'isa/pyc/opcode_310.c',
+  'isa/pyc/opcode_311.c',
   'isa/pyc/opcode_32.c',
   'isa/pyc/opcode_33.c',
   'isa/pyc/opcode_34.c',
