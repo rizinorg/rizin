@@ -11,7 +11,7 @@
 #define MIPS_REG_HI "hi"
 #define MIPS_REG_RA "ra"
 
-#define REG_IS_ZERO(idx) mips_reg_is_zero(insn, idx)
+#define IS_ZERO_REG(idx) mips_is_zero_reg(insn, idx)
 #define TRUNC32(x)       UNSIGNED(MIPS_WORD_SIZE, x)
 #define TRUNC16(x)       UNSIGNED(MIPS_HALF_SIZE, x)
 #define TRUNC8(x)        UNSIGNED(MIPS_BYTE_SIZE, x)
@@ -27,12 +27,12 @@
 // register and returns a NOP operation.
 #define MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP() \
 	do { \
-		if (REG_IS_ZERO(0)) { \
+		if (IS_ZERO_REG(0)) { \
 			return NOP(); \
 		} \
 	} while (0)
 
-static bool mips_reg_is_zero(const cs_insn *insn, ut32 idx) {
+static bool mips_is_zero_reg(const cs_insn *insn, ut32 idx) {
 	const ut32 regid = REGID(idx);
 
 	return regid == MIPS_REG_ZERO ||
@@ -41,7 +41,7 @@ static bool mips_reg_is_zero(const cs_insn *insn, ut32 idx) {
 }
 
 static RzILOpPure *mips_get_reg(const csh *handle, const cs_insn *insn, unsigned regid, ut32 gprlen) {
-	if (REG_IS_ZERO(regid)) {
+	if (IS_ZERO_REG(regid)) {
 		return SN(gprlen, 0);
 	}
 
@@ -52,7 +52,7 @@ static RzILOpEffect *mips_il_move(const csh *handle, const cs_insn *insn, const 
 	const char *rt = REG(0);
 	RzILOpPure *val = NULL;
 
-	if (REG_IS_ZERO(1)) {
+	if (IS_ZERO_REG(1)) {
 		// set zero if target register is $zero
 		val = SN(gprlen, 0);
 	} else if (IS_IMM(1)) {
@@ -162,7 +162,7 @@ static RzILOpEffect *mips_il_beq(const csh *handle, const cs_insn *insn, const u
 }
 
 static RzILOpEffect *mips_il_bgez(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
-	if (OPCOUNT() == 1 || REG_IS_ZERO(0)) {
+	if (OPCOUNT() == 1 || IS_ZERO_REG(0)) {
 		return mips_il_b(handle, insn, gprlen);
 	}
 
@@ -174,7 +174,7 @@ static RzILOpEffect *mips_il_bgez(const csh *handle, const cs_insn *insn, const 
 }
 
 static RzILOpEffect *mips_il_bgezal(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
-	if (OPCOUNT() == 1 || REG_IS_ZERO(0)) {
+	if (OPCOUNT() == 1 || IS_ZERO_REG(0)) {
 		return mips_il_bal(handle, insn, gprlen);
 	}
 
@@ -195,7 +195,7 @@ static RzILOpEffect *mips_il_bgtz(const csh *handle, const cs_insn *insn, const 
 }
 
 static RzILOpEffect *mips_il_blez(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
-	if (OPCOUNT() == 1 || REG_IS_ZERO(0)) {
+	if (OPCOUNT() == 1 || IS_ZERO_REG(0)) {
 		return mips_il_b(handle, insn, gprlen);
 	}
 
@@ -215,7 +215,7 @@ static RzILOpEffect *mips_il_bltz(const csh *handle, const cs_insn *insn, const 
 }
 
 static RzILOpEffect *mips_il_bltzal(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
-	if (OPCOUNT() < 2 || REG_IS_ZERO(0)) {
+	if (OPCOUNT() < 2 || IS_ZERO_REG(0)) {
 		return NOP();
 	}
 
@@ -673,13 +673,13 @@ static RzILOpEffect *mips_il_or(const csh *handle, const cs_insn *insn, const ut
 	}
 
 	const char *rd = REG(0);
-	if (REG_IS_ZERO(1) && REG_IS_ZERO(2)) {
+	if (IS_ZERO_REG(1) && IS_ZERO_REG(2)) {
 		RzILOpPure *zero = SN(gprlen, 0);
 		return SETG(rd, zero);
-	} else if (REG_IS_ZERO(1)) {
+	} else if (IS_ZERO_REG(1)) {
 		RzILOpPure *rt = MIPS_REG(2);
 		return SETG(rd, rt);
-	} else if (REG_IS_ZERO(2)) {
+	} else if (IS_ZERO_REG(2)) {
 		RzILOpPure *rs = MIPS_REG(1);
 		return SETG(rd, rs);
 	}
@@ -695,7 +695,7 @@ static RzILOpEffect *mips_il_ori(const csh *handle, const cs_insn *insn, const u
 
 	const char *rd = REG(0);
 
-	if (REG_IS_ZERO(1)) {
+	if (IS_ZERO_REG(1)) {
 		// this also covers when IMM(2) is 0
 		RzILOpPure *imm = MIPS_IMM(2);
 		return SETG(rd, imm);
@@ -741,7 +741,7 @@ static RzILOpEffect *mips_il_rotrv(const csh *handle, const cs_insn *insn, const
 
 static RzILOpEffect *mips_il_sb(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	RzILOpPure *trunc = NULL;
-	if (REG_IS_ZERO(0)) {
+	if (IS_ZERO_REG(0)) {
 		trunc = SN(MIPS_BYTE_SIZE, 0);
 	} else {
 		RzILOpPure *rt = MIPS_REG(0);
@@ -777,7 +777,7 @@ static RzILOpEffect *mips_il_seh(const csh *handle, const cs_insn *insn, const u
 
 static RzILOpEffect *mips_il_sh(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	RzILOpPure *trunc = NULL;
-	if (REG_IS_ZERO(0)) {
+	if (IS_ZERO_REG(0)) {
 		trunc = SN(MIPS_HALF_SIZE, 0);
 	} else {
 		RzILOpPure *rt = MIPS_REG(0);
@@ -791,7 +791,7 @@ static RzILOpEffect *mips_il_sh(const csh *handle, const cs_insn *insn, const ut
 }
 
 static RzILOpEffect *mips_il_sll(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
-	if (OPCOUNT() < 3 || REG_IS_ZERO(0)) {
+	if (OPCOUNT() < 3 || IS_ZERO_REG(0)) {
 		return NOP();
 	}
 
@@ -803,7 +803,7 @@ static RzILOpEffect *mips_il_sll(const csh *handle, const cs_insn *insn, const u
 }
 
 static RzILOpEffect *mips_il_sllv(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
-	if (OPCOUNT() < 3 || REG_IS_ZERO(0)) {
+	if (OPCOUNT() < 3 || IS_ZERO_REG(0)) {
 		return NOP();
 	}
 
@@ -911,7 +911,7 @@ static RzILOpEffect *mips_il_subu(const csh *handle, const cs_insn *insn, const 
 
 static RzILOpEffect *mips_il_sw(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	RzILOpPure *rt = NULL;
-	if (REG_IS_ZERO(0)) {
+	if (IS_ZERO_REG(0)) {
 		rt = SN(MIPS_WORD_SIZE, 0);
 	} else {
 		rt = MIPS_REG(0);
