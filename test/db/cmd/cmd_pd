@@ -938,7 +938,7 @@ e asm.bytes=true
 pd 1 @ 0x140001040
 EOF
 EXPECT=<<EOF
-            0x140001040      488d05415001.  lea   rax, [0x140016088]   ; u"r2 ገ⏴⏴"
+            0x140001040      488d05415001.  lea   rax, str.r2          ; 0x140016088 ; u"r2 ገ⏴⏴"
 EOF
 RUN
 
