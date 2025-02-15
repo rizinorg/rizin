@@ -261,13 +261,16 @@ const RzUnicodeRangeTable undefined_ranges = {
 };
 
 static bool bin_search_range(RzCodePoint cp, const RzUnicodeRangeTable table, size_t table_size) {
-	int low = 0;
-	int hi = table_size - 1;
+	size_t low = 0;
+	size_t hi = table_size - 1;
 
 	do {
-		int mid = (low + hi) >> 1;
+		size_t mid = (low + hi) >> 1;
 		if (cp >= table[mid].from && cp <= table[mid].to) {
 			return true;
+		}
+		if (low == hi) {
+			break;
 		}
 		if (mid < table_size && cp > table[mid].to) {
 			low = mid + 1;
