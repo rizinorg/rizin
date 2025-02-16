@@ -3776,7 +3776,7 @@ EXPECT=<<EOF
 125 0x0000323f 0x0000323f   9   10         ibm037  3SRSPRHEX
 191 0x00004c0f 0x00004c0f  27   28         ibm037  SRSPRHEX_03/06/08_14.17°Ö}\f
  18 0x000003ba 0x000003ba   8    9         ibm037  SRSTASK 
- 91 0x00002540 0x00002540  17   18         ibm037  ­bå0­«SRSTASK  \-
+ 91 0x00002545 0x00002545  12   13         ibm037  «SRSTASK  \-
 124 0x00003230 0x00003230   8    9         ibm037  SRSTASK 
 130 0x000033e4 0x000033e4 103  104         ibm037  SRSTASK_12/31/08_20.31 SRS Version 1.3.0_A13001  COPYRIGHT 1998-2008 DAVID W DANNER ALL RIGHTS RESERVED
 EOF
@@ -4619,7 +4619,7 @@ NAME=izz
 FILE=bins/mach0/fatmach0-3true
 CMDS=izz~http~codesigning
 EXPECT=<<EOF
- 93 0x00003f3c 0x100002f3c  47   48                         ascii  ,http://www.apple.com/appleca/codesigning.crl0\r
+ 94 0x00003f3c 0x100002f3c  47   48                         ascii  ,http://www.apple.com/appleca/codesigning.crl0\r
 EOF
 RUN
 

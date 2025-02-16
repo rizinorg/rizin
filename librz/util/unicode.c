@@ -368,13 +368,14 @@ RZ_API bool rz_unicode_code_point_is_format(const RzCodePoint c) {
  * \return   true if the code point is printable, otherwise false
  */
 RZ_API bool rz_unicode_code_point_is_printable(const RzCodePoint c) {
-	// RzCodePoints are most commonly single byte... We can early out with this common case.
-	if (c <= 0xFF) {
-		// Check for control plain (extended ASCII) here, because they are so common.
-		return !rz_unicode_code_point_is_control(c);
+	// RzCodePoints are most commonly single bytes.
+	// We can early out with this common case.
+	if (c <= UNICODE_LAST_ASCII) {
+		// Check for control plain of ASCII here, because they are so common.
+		return IS_PRINTABLE(c);
 	}
-	return rz_unicode_code_point_is_defined(c) &&
-		!rz_unicode_code_point_is_control(c) &&
+	return !rz_unicode_code_point_is_control(c) &&
+		rz_unicode_code_point_is_defined(c) &&
 		!rz_unicode_code_point_is_surrogate(c) &&
 		!rz_unicode_code_point_is_format(c) &&
 		!rz_unicode_code_point_is_private(c);
