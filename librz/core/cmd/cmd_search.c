@@ -538,12 +538,18 @@ static int _cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 		if (param->outmode == RZ_MODE_JSON) {
 			pj_o(param->pj);
 			pj_kn(param->pj, "offset", base_addr + addr);
+			if (param->regex_search) {
+				pj_ki(param->pj, "len", keyword_len);
+			}
 			pj_ks(param->pj, "type", type);
 			pj_ks(param->pj, "data", s);
 			pj_end(param->pj);
 		} else {
-			rz_cons_printf("0x%08" PFMT64x " %s%d_%d %s\n",
-				base_addr + addr, searchprefix, kw->kwidx, kw->count, s);
+			rz_cons_printf("0x%08" PFMT64x, base_addr + addr);
+			if (param->regex_search) {
+				rz_cons_printf(" %d", keyword_len);
+			}
+			rz_cons_printf(" %s%d_%d %s\n", searchprefix, kw->kwidx, kw->count, s);
 		}
 		free(s);
 		free(buf);
