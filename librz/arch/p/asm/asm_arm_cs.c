@@ -300,7 +300,7 @@ char **arm_cpu_descriptions() {
 RzAsmPlugin rz_asm_plugin_arm_cs = {
 	.name = "arm",
 	.desc = "Capstone ARM disassembler",
-	.cpus = "v8,cortexm,arm1176,cortexA72,cortexA8",
+	.cpus = "arm,v8,cortexm,arm1176,cortexA72,cortexA8",
 	.platforms = "bcm2835,omap3430",
 	.features = "v8",
 	.license = "BSD",
