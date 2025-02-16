@@ -220,7 +220,6 @@ bool test_rz_utf16_encode(void) {
 }
 
 bool test_rz_utf32_decode(void) {
-	const ut8 utf32_size_0[] = {};
 	const ut8 utf32_size_1[] = { 0xAC };
 	const ut8 utf32_size_2[] = { 0xAC, 0xAC };
 	const ut8 utf32_size_3[] = { 0xAC, 0xAC, 0x20 };
@@ -243,7 +242,7 @@ bool test_rz_utf32_decode(void) {
 	const ut8 utf32le_red_general_black_tower[] = { 0x60, 0xFA, 0x01, 0x00, 0x41, 0xFA, 0x01, 0x00 };
 
 	RzCodePoint cp;
-	mu_assert_eq(rz_utf32_decode(utf32_size_0, 0, &cp, false), 0, "Length check failed");
+	mu_assert_eq(rz_utf32_decode(NULL, 0, &cp, false), 0, "Length check failed");
 	mu_assert_eq(rz_utf32_decode(utf32_size_1, sizeof(utf32_size_1), &cp, false), 0, "Length check failed");
 	mu_assert_eq(rz_utf32_decode(utf32_size_2, sizeof(utf32_size_2), &cp, false), 0, "Length check failed");
 	mu_assert_eq(rz_utf32_decode(utf32_size_3, sizeof(utf32_size_3), &cp, false), 0, "Length check failed");
