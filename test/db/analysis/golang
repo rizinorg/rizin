@@ -376,6 +376,7 @@ EOF
 RUN
 
 NAME=Resolve all symbols on a linux go1.16 binary (arm32)
+TIMEOUT=1000
 FILE=bins/golang/btcctl-linux-armv7-v0.22.0-beta
 CMDS=<<EOF
 aalg
