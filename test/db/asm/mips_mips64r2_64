@@ -15,15 +15,15 @@ d "bgez v0, 0x10" 02004104 0x4 (branch (|| (! (sle (var v0) (bv 64 0x0))) (== (v
 d "bgezal s1, 0x108" 40003106 0x4 (branch (|| (! (sle (var s1) (bv 64 0x0))) (== (var s1) (bv 64 0x0))) (seq (set ra (bv 64 0xc)) (jmp (bv 64 0x108))) nop)
 d "bgezall t3, 0x128" 48007305 0x4 (branch (|| (! (sle (var t3) (bv 64 0x0))) (== (var t3) (bv 64 0x0))) (seq (set ra (bv 64 0xc)) (jmp (bv 64 0x128))) nop)
 d "bgezl t6, 0x128" 4800c305 0x4 (branch (|| (! (sle (var t6) (bv 64 0x0))) (== (var t6) (bv 64 0x0))) (jmp (bv 64 0x128)) nop)
-d "bgtz zero, 8" 0000001c 0x4 (branch (! (sle (bv 64 0x0) (bv 64 0x0))) (jmp (bv 64 0x8)) nop)
-d "bgtzl zero, 8" 0000005c 0x4 (branch (! (sle (bv 64 0x0) (bv 64 0x0))) (jmp (bv 64 0x8)) nop)
-d "blez zero, 8" 00000018 0x4 (jmp (bv 64 0x1a))
-d "blezl zero, 8" 00000058 0x4 (jmp (bv 64 0x1a))
-d "bltz zero, 8" 00000004 0x4 (branch (&& (sle (bv 64 0x0) (bv 64 0x0)) (! (== (bv 64 0x0) (bv 64 0x0)))) (jmp (bv 64 0x8)) nop)
+d "bgtz zero, 8" 0000001c 0x4 nop
+d "bgtzl zero, 8" 0000005c 0x4 nop
+d "blez zero, 8" 00000018 0x4 (jmp (bv 64 0x8))
+d "blezl zero, 8" 00000058 0x4 (jmp (bv 64 0x8))
+d "bltz zero, 8" 00000004 0x4 nop
 d "bltzl s6, 0x118" 4400c206 0x4 (branch (&& (sle (var s6) (bv 64 0x0)) (! (== (var s6) (bv 64 0x0)))) (jmp (bv 64 0x118)) nop)
 d "bne t0, s0, 0x440c" 01111015 0x4 (branch (! (== (var t0) (var s0))) (jmp (bv 64 0x440c)) nop)
 d "bnel s0, s0, -0xbff8" 00d01056 0x4 (branch (! (== (var s0) (var s0))) (jmp (bv 64 0xffffffffffff4008)) nop)
-d "bnez zero, 8" 00000014 0x4 (branch (! (is_zero (bv 64 0x0))) (jmp (bv 64 0x8)) nop)
+d "bnez zero, 8" 00000014 0x4 nop
 d "cache 0, 0(zero)" 000000bc 0x4 nop
 d "daddi zero, zero, 0" 00000060 0x4 nop
 d "daddiu zero, zero, 0" 00000064 0x4 nop
@@ -60,14 +60,14 @@ d "sdc1 f0, 0(zero)" 000000f4 0x4
 d "sdl zero, 0(zero)" 000000b0 0x4
 d "sdr zero, 0(zero)" 000000b4 0x4
 d "sh zero, 0(zero)" 000000a4 0x4 (storew 0 (+ (var zero) (bv 64 0x0)) (bv 16 0x0))
-d "slti zero, zero, 0" 00000028 0x4 (set zero (ite (&& (sle (bv 64 0x0) (bv 64 0x0)) (! (== (bv 64 0x0) (bv 64 0x0)))) (bv 64 0x1) (bv 64 0x0)))
-d "sltiu zero, zero, 0" 0000002c 0x4 (set zero (ite (&& (ule (bv 64 0x0) (bv 64 0x0)) (! (== (bv 64 0x0) (bv 64 0x0)))) (bv 64 0x1) (bv 64 0x0)))
+d "slti zero, zero, 0" 00000028 0x4 nop
+d "sltiu zero, zero, 0" 0000002c 0x4 nop
 d "sw zero, 0(zero)" 000000ac 0x4 (storew 0 (+ (var zero) (bv 64 0x0)) (bv 32 0x0))
 d "swc1 f0, 0(zero)" 000000e4 0x4
 d "swl zero, 0(zero)" 000000a8 0x4
 d "swr zero, 0(zero)" 000000b8 0x4
 d "xori zero, zero, 0" 00000038 0x4 nop
-d "beqzl zero, 8" 00000050 0x4 (branch (is_zero (bv 64 0x0)) (jmp (bv 64 0x8)) nop)
+d "beqzl zero, 8" 00000050 0x4 (jmp (bv 64 0x8))
 d "bnezl t0, 8" 00000055 0x4 (branch (! (is_zero (var t0))) (jmp (bv 64 0x8)) nop)
 dB "c0 0x0" 00000042 0x4
 dB "c1 0x1000000" 00000047 0x4
