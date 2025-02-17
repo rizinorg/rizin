@@ -709,3 +709,14 @@ c64x            Texas Instruments TMS320C64x DSP family
 tricore         Generic TriCore CPU family by Infineon
 EOF
 RUN
+
+NAME=rz-asm invalid skip
+FILE=
+CMDS=<<EOF
+!rz-asm -i 6 -E 'mov eax, 30'
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=
+rz-asm: invalid skip value (skip 12 > 11 len).
+RUN

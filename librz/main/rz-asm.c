@@ -901,13 +901,18 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 		if (dis) {
 			char *usrstr = rz_str_dup(opt.argv[opt.ind]);
 			if (!usrstr) {
-				eprintf("rz-asm: disassemble rz_str_dup OOM\n");
+				eprintf("rz-asm: failed to allocate string.\n");
 				ret = 1;
 				goto beach;
 			}
 			len = strlen(usrstr);
 			if (skip && len > skip) {
 				skip *= 2;
+				if (skip > len) {
+					eprintf("rz-asm: invalid skip value (skip %" PFMT64u " > %" PFMT64u " len).\n", skip, len);
+					ret = 1;
+					goto beach;
+				}
 				// eprintf ("SKIP (%s) (%lld)\n", usrstr, skip);
 				memmove(usrstr, usrstr + skip, len - skip);
 				len -= skip;
