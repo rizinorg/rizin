@@ -69,10 +69,20 @@ def main():
 
     # analyze the file via new POST-cmd
     post_cmd = requests.post(URL + "/cmd/", data=cmd, timeout=5)
+    if "md5: " not in post_cmd.text:
+        errlogs = popen.stderr.read()
+        popen.kill()
+        raise Exception("http response:\n" + post_cmd.text + "\nstderr:\n" + errlogs)
+
     post_text = post_cmd.text.split("md5: ")[1].rstrip()
 
     # analyze the file by old GET-cmd
     get_cmd = requests.get(URL + "/cmd/" + cmd, timeout=5)
+    if "md5: " not in get_cmd.text:
+        errlogs = popen.stderr.read()
+        popen.kill()
+        raise Exception("http response:\n" + get_cmd.text + "\nstderr:\n" + errlogs)
+
     get_text = get_cmd.text.split("md5: ")[1].rstrip()
 
     # compare results
