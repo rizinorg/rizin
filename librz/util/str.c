@@ -1548,7 +1548,7 @@ static RZ_OWN char *rz_str_escape_(const char *buf, bool parse_esc_seq, bool ign
 
 	/* Worst case scenario, we convert every byte to a single-char escape
 	 * (e.g. \n) if show_asciidot, or \xhh if !show_asciidot */
-	char *new_buf = malloc(1 + strlen(buf) * (opt->show_asciidot ? 2 : 4));
+	char *new_buf = RZ_NEWS0(char, 1 + strlen(buf) * (opt->show_asciidot ? 2 : 4));
 	if (!new_buf) {
 		return NULL;
 	}
@@ -1580,7 +1580,7 @@ static RZ_OWN char *rz_str_escape_(const char *buf, bool parse_esc_seq, bool ign
 			}
 			/* fallthrough */
 		default:
-			if (!rz_str_escape_code_point(*p, 1, opt)) {
+			if (!rz_str_escape_code_point((RzCodePoint) *p, 1, opt)) {
 				*q++ = *p;
 			} else {
 				rz_unicode_byte_escape(*p, &q, opt);
