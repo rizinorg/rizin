@@ -717,6 +717,7 @@ CMDS=<<EOF
 EOF
 EXPECT=<<EOF
 EOF
-EXPECT_ERR=
+EXPECT_ERR=<<EOF
 rz-asm: invalid skip value (skip 12 > 11 len).
+EOF
 RUN
