@@ -20,7 +20,7 @@
 
 static RzILOpEffect *mips_il_break(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	// HW breakpoint
-	NOT_IMPLEMENTED;
+	return NOP();
 }
 
 static RzILOpEffect *mips_il_deret(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
@@ -71,71 +71,71 @@ static RzILOpEffect *mips_il_rdpgpr(const csh *handle, const cs_insn *insn, cons
 
 static RzILOpEffect *mips_il_sdbbp(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	// Software Debug Breakpoint
-	NOT_IMPLEMENTED;
+	return NOP();
 }
 
 static RzILOpEffect *mips_il_syscall(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
-	NOT_IMPLEMENTED;
+	return NOP();
 }
 
 static RzILOpEffect *mips_il_teq(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	// Trap if Equal
-	NOT_IMPLEMENTED;
+	return NOP();
 }
 
 static RzILOpEffect *mips_il_teqi(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	// Trap if Equal Immediate
-	NOT_IMPLEMENTED;
+	return NOP();
 }
 
 static RzILOpEffect *mips_il_tge(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	// Trap if Greater or Equal
-	NOT_IMPLEMENTED;
+	return NOP();
 }
 
 static RzILOpEffect *mips_il_tgei(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	// Trap if Greater or Equal Immediate Signed
-	NOT_IMPLEMENTED;
+	return NOP();
 }
 
 static RzILOpEffect *mips_il_tgeiu(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	// Trap if Greater or Equal Immediate Unsigned
-	NOT_IMPLEMENTED;
+	return NOP();
 }
 
 static RzILOpEffect *mips_il_tgeu(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	// Trap if Greater or Equal Unsigned
-	NOT_IMPLEMENTED;
+	return NOP();
 }
 
 static RzILOpEffect *mips_il_tlt(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	// Trap if Less Than
-	NOT_IMPLEMENTED;
+	return NOP();
 }
 
 static RzILOpEffect *mips_il_tlti(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	// Trap if Less Than Immediate Signed
-	NOT_IMPLEMENTED;
+	return NOP();
 }
 
 static RzILOpEffect *mips_il_tltiu(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	// Trap if Less Than Immediate Unsigned
-	NOT_IMPLEMENTED;
+	return NOP();
 }
 
 static RzILOpEffect *mips_il_tltu(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	// Trap if Less Than Unsigned
-	NOT_IMPLEMENTED;
+	return NOP();
 }
 
 static RzILOpEffect *mips_il_tne(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	// Trap if Not Equal
-	NOT_IMPLEMENTED;
+	return NOP();
 }
 
 static RzILOpEffect *mips_il_tnei(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	// Trap if Not Equal Immediate
-	NOT_IMPLEMENTED;
+	return NOP();
 }
 
 static RzILOpEffect *mips_il_wrpgpr(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
