@@ -1200,7 +1200,7 @@ static void rz_type_byte_escape(const RzPrint *p, const char *src, char **dst, i
 	opt.show_asciidot = !strcmp(p->strconv_mode, "asciidot");
 	opt.esc_bslash = p->esc_bslash;
 	opt.keep_printable = true;
-	if (!rz_str_escape_code_point((RzCodePoint) *src, 1, &opt)) {
+	if (!rz_str_escape_code_point((RzCodePoint)*src, 1, &opt)) {
 		**dst = *src;
 		(*dst)++;
 	} else {

@@ -1580,7 +1580,7 @@ static RZ_OWN char *rz_str_escape_(const char *buf, bool parse_esc_seq, bool ign
 			}
 			/* fallthrough */
 		default:
-			if (!rz_str_escape_code_point((RzCodePoint) *p, 1, opt)) {
+			if (!rz_str_escape_code_point((RzCodePoint)*p, 1, opt)) {
 				*q++ = *p;
 			} else {
 				rz_unicode_byte_escape(*p, &q, opt);
