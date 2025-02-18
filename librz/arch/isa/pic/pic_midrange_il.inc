@@ -4,7 +4,7 @@
 
 #include <rz_il/rz_il_opbuilder_begin.h>
 #include <rz_analysis.h>
-#include "pic16.h"
+#include "pic_midrange.h"
 #include "pic_il.inc"
 
 enum {
@@ -50,11 +50,11 @@ static const ut16 STKPTR = 0xfed;
 static const ut16 TOSL = 0xfee;
 static const ut16 TOSH = 0xfef;
 
-typedef struct pic16_il_context_t {
+typedef struct pic_midrange_il_context_t {
 	RzAnalysis *analysis;
 	RzAnalysisOp *op;
-	const Pic16Op *x;
-} Pic16ILContext;
+	const PicMidrangeOp *x;
+} PicMidrangeILContext;
 
 static RzILOpPure *register_i(ut16 i);
 static RzILOpEffect *set_register_i(ut16 i, RzILOpPure *x);
@@ -121,24 +121,24 @@ static RzILOpEffect *set_register_i(ut16 i, RzILOpPure *x) {
 	STORE(U16(TOSH), UNSIGNED(8, SHIFTR0(VARL("__tos"), U8(8)))), \
 	STORE(U16(TOSL), UNSIGNED(8, VARL("__tos"))))
 
-static RzILOpPure *register_WF(Pic16ILContext *ctx) {
+static RzILOpPure *register_WF(PicMidrangeILContext *ctx) {
 	rz_warn_if_fail(F < 0x80);
 	return D ? VRW : VRF;
 }
-static RzILOpEffect *set_register_WF(Pic16ILContext *ctx, RzILOpPure *x) {
+static RzILOpEffect *set_register_WF(PicMidrangeILContext *ctx, RzILOpPure *x) {
 	rz_warn_if_fail(F < 0x80);
 	return D ? SET_F(x) : SET_W(x);
 }
 #define VRWF      register_WF(ctx)
 #define SET_WF(x) (set_register_WF(ctx, x))
 
-typedef RzILOpEffect *(*pic16_il_handler)(Pic16ILContext *, ut16);
+typedef RzILOpEffect *(*pic_midrange_il_handler)(PicMidrangeILContext *, ut16);
 
 RzILOpEffect *reset() {
 	return NOP();
 }
 
-RzILOpEffect *set_z(Pic16ILContext *ctx, RzILOpPure *x) {
+RzILOpEffect *set_z(PicMidrangeILContext *ctx, RzILOpPure *x) {
 	return SETGb(STATUS, Z, IS_ZERO(x));
 }
 
@@ -146,9 +146,9 @@ RzILOpEffect *set_z(Pic16ILContext *ctx, RzILOpPure *x) {
 
 // HELPER DEFINES & TYPEDEFS
 
-#define IL_LIFTER(op)      pic16_##op##_il_lifter
-#define IL_LIFTER_IMPL(op) static RzILOpEffect *pic16_##op##_il_lifter( \
-	RZ_NONNULL Pic16ILContext *ctx, ut16 instr)
+#define IL_LIFTER(op)      pic_midrange_##op##_il_lifter
+#define IL_LIFTER_IMPL(op) static RzILOpEffect *pic_midrange_##op##_il_lifter( \
+	RZ_NONNULL PicMidrangeILContext *ctx, ut16 instr)
 
 #define INS_LEN 2
 
@@ -165,7 +165,7 @@ RzILOpEffect *set_z(Pic16ILContext *ctx, RzILOpPure *x) {
  *
  * \return \c RzILOpEffect containing set of steps to set status flags.
  * */
-RzILOpEffect *pic16_il_set_arithmetic_flags(Pic16ILContext *ctx,
+RzILOpEffect *pic_midrange_il_set_arithmetic_flags(PicMidrangeILContext *ctx,
 	RZ_BORROW RzILOpPure *x, RZ_BORROW RzILOpPure *y, RZ_BORROW RzILOpPure *res, bool add) {
 	// get carry flag
 	RzILOpBool *cf = NULL;
@@ -198,8 +198,8 @@ RzILOpEffect *pic16_il_set_arithmetic_flags(Pic16ILContext *ctx,
 				Z, VARL("_z"))));
 }
 
-#define SET_STATUS_ADD(ctx, x, y, r) pic16_il_set_arithmetic_flags(ctx, x, y, r, true)
-#define SET_STATUS_SUB(ctx, x, y, r) pic16_il_set_arithmetic_flags(ctx, x, y, r, false)
+#define SET_STATUS_ADD(ctx, x, y, r) pic_midrange_il_set_arithmetic_flags(ctx, x, y, r, true)
+#define SET_STATUS_SUB(ctx, x, y, r) pic_midrange_il_set_arithmetic_flags(ctx, x, y, r, false)
 
 /**
  * NOP
@@ -557,7 +557,7 @@ IL_LIFTER_IMPL(BRA) {
 #undef RWF
 #undef VRWF
 
-const char *pic16_reg_bindings[] = {
+const char *pic_midrange_reg_bindings[] = {
 	"tris",
 	"_bank",
 	NULL,
@@ -567,13 +567,13 @@ const char *pic16_reg_bindings[] = {
  * \brief Returns IL VM config for given PIC Mid-Range device type.
  *
  * \param analysis \c RzAnalysis instance.
- * \param device_type Device type in PIC16F family.
+ * \param device_type Device type in PIC_MIDRANGEF family.
  *
  * \return valid ptr to RzAnalysisILConfig on success, NULL otherwise.
  * */
-RzAnalysisILConfig *pic16_il_config(
+RzAnalysisILConfig *pic_midrange_il_config(
 	RZ_NONNULL RzAnalysis *analysis) {
 	RzAnalysisILConfig *cfg = rz_analysis_il_config_new(16, false, 16);
-	cfg->reg_bindings = pic16_reg_bindings;
+	cfg->reg_bindings = pic_midrange_reg_bindings;
 	return cfg;
 }

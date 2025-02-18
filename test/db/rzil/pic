@@ -2,6 +2,7 @@ NAME=Testing the decryption in emulateme
 FILE=bins/pic/emulateme.pic18f2520.elf
 TIMEOUT=30
 CMDS=<<EOF
+e asm.cpu=highend
 e io.cache=1
 s loc.__pcinit
 aezi
@@ -17,8 +18,8 @@ NAME=Testing the decryption in emulateme 16F13113
 FILE=bins/pic/emulateme.16F13113.elf
 TIMEOUT=30
 CMDS=<<EOF
-e analysis.cpu=pic16
-e asm.cpu=pic16
+e analysis.cpu=midrange
+e asm.cpu=midrange
 e io.cache=1
 om- 1 # cinit
 om- 3 # maintext

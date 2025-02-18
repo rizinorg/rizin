@@ -5,8 +5,8 @@ e asm.arch=pic
 echo =============== midrange
 e asm.cpu=midrange
 ar
-echo =============== pic18
-e asm.cpu=pic18
+echo =============== highend
+e asm.cpu=highend
 ar
 EOF
 EXPECT=<<EOF
@@ -31,7 +31,7 @@ tosl = 0x00
 tosh = 0x00
 tris = 0x00
 _bank = 0x00
-=============== pic18
+=============== highend
 pc = 0x00000000
 bsr = 0x00
 tos = 0x00000000
@@ -123,7 +123,7 @@ NAME=pic18 functions
 FILE=ihex://bins/pic18c/FreeRTOS-pic18c.hex
 CMDS=<<EOF
 e asm.arch=pic
-e asm.cpu=pic18
+e asm.cpu=highend
 e asm.lines.call=true
 aaa
 afl

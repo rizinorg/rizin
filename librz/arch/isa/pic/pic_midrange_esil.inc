@@ -6,38 +6,38 @@
 #define e(frag)       rz_strbuf_append(&op->esil, frag)
 #define ef(frag, ...) rz_strbuf_appendf(&op->esil, frag, __VA_ARGS__)
 
-#define PIC16_ESIL_SRAM_START (1 << 16)
-#define PIC16_ESIL_CSTACK_TOP ((1 << 16) + (1 << 12))
+#define PIC_MIDRANGE_ESIL_SRAM_START (1 << 16)
+#define PIC_MIDRANGE_ESIL_CSTACK_TOP ((1 << 16) + (1 << 12))
 
-#define PIC16_ESIL_BSR_ADDR "bsr,0x80,*,0x%x,+,_sram,+"
+#define PIC_MIDRANGE_ESIL_BSR_ADDR "bsr,0x80,*,0x%x,+,_sram,+"
 
-#define PIC16_ESIL_OPTION_ADDR "0x95,_sram,+"
+#define PIC_MIDRANGE_ESIL_OPTION_ADDR "0x95,_sram,+"
 
-#define PIC16_ESIL_UPDATE_FLAGS \
+#define PIC_MIDRANGE_ESIL_UPDATE_FLAGS \
 	"$z,z,:=," \
 	"7,$c,c,:=," \
 	"4,$c,dc,:=,"
 
-#define PIC16_ESIL_LW_OP(O) \
-	"0x%x,wreg," #O "=," PIC16_ESIL_UPDATE_FLAGS
+#define PIC_MIDRANGE_ESIL_LW_OP(O) \
+	"0x%x,wreg," #O "=," PIC_MIDRANGE_ESIL_UPDATE_FLAGS
 
-#define PIC16_ESIL_FWF_OP(O) \
-	"wreg," PIC16_ESIL_BSR_ADDR "," #O \
-	"=[1]," PIC16_ESIL_UPDATE_FLAGS
+#define PIC_MIDRANGE_ESIL_FWF_OP(O) \
+	"wreg," PIC_MIDRANGE_ESIL_BSR_ADDR "," #O \
+	"=[1]," PIC_MIDRANGE_ESIL_UPDATE_FLAGS
 
-#define PIC16_ESIL_WWF_OP(O) \
-	PIC16_ESIL_BSR_ADDR \
+#define PIC_MIDRANGE_ESIL_WWF_OP(O) \
+	PIC_MIDRANGE_ESIL_BSR_ADDR \
 	",[1]," \
-	"wreg," #O "=," PIC16_ESIL_UPDATE_FLAGS
+	"wreg," #O "=," PIC_MIDRANGE_ESIL_UPDATE_FLAGS
 
-#define PIC16_ESIL_FWF_OP_C(O) \
+#define PIC_MIDRANGE_ESIL_FWF_OP_C(O) \
 	"c,wreg," \
-	"+," PIC16_ESIL_BSR_ADDR "," #O \
-	"=[1]," PIC16_ESIL_UPDATE_FLAGS
+	"+," PIC_MIDRANGE_ESIL_BSR_ADDR "," #O \
+	"=[1]," PIC_MIDRANGE_ESIL_UPDATE_FLAGS
 
-#define PIC16_ESIL_WWF_OP_C(O) \
-	"c," PIC16_ESIL_BSR_ADDR ",[1]," #O "," \
-	"wreg," #O "=," PIC16_ESIL_UPDATE_FLAGS
+#define PIC_MIDRANGE_ESIL_WWF_OP_C(O) \
+	"c," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1]," #O "," \
+	"wreg," #O "=," PIC_MIDRANGE_ESIL_UPDATE_FLAGS
 
 INST_HANDLER(NOP) {}
 
@@ -83,15 +83,15 @@ INST_HANDLER(GOTO) {
 
 INST_HANDLER(BCF) {
 	ut8 mask = ~(1 << args->b);
-	ef(PIC16_ESIL_BSR_ADDR
-		",[1],0x%x,&," PIC16_ESIL_BSR_ADDR ",=[1],",
+	ef(PIC_MIDRANGE_ESIL_BSR_ADDR
+		",[1],0x%x,&," PIC_MIDRANGE_ESIL_BSR_ADDR ",=[1],",
 		args->f, mask, args->f);
 }
 
 INST_HANDLER(BSF) {
 	ut8 mask = (1 << args->b);
-	ef(PIC16_ESIL_BSR_ADDR
-		",[1],0x%x,|," PIC16_ESIL_BSR_ADDR ",=[1],",
+	ef(PIC_MIDRANGE_ESIL_BSR_ADDR
+		",[1],0x%x,|," PIC_MIDRANGE_ESIL_BSR_ADDR ",=[1],",
 		args->f, mask, args->f);
 }
 
@@ -100,7 +100,7 @@ INST_HANDLER(BTFSC) {
 	op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 	op->jump = addr + 4;
 	op->fail = addr + 2;
-	ef(PIC16_ESIL_BSR_ADDR ",[1],0x%x,&,!,?{,0x%" PFMT64x ",pc,=,},",
+	ef(PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],0x%x,&,!,?{,0x%" PFMT64x ",pc,=,},",
 		args->f, mask, op->jump);
 }
 
@@ -109,7 +109,7 @@ INST_HANDLER(BTFSS) {
 	op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 	op->jump = addr + 4;
 	op->fail = addr + 2;
-	ef(PIC16_ESIL_BSR_ADDR ",[1],0x%x,&,?{,0x%" PFMT64x ",pc,=,},", args->f,
+	ef(PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],0x%x,&,?{,0x%" PFMT64x ",pc,=,},", args->f,
 		mask, op->jump);
 }
 
@@ -133,9 +133,9 @@ INST_HANDLER(BRW) {
 INST_HANDLER(SUBWF) {
 	op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 	if (args->d) {
-		ef(PIC16_ESIL_FWF_OP(-), args->f);
+		ef(PIC_MIDRANGE_ESIL_FWF_OP(-), args->f);
 	} else {
-		ef(PIC16_ESIL_WWF_OP(-), args->f);
+		ef(PIC_MIDRANGE_ESIL_WWF_OP(-), args->f);
 		e("wreg,0x00,-,wreg,=,c,!=,dc,!=,");
 	}
 }
@@ -145,12 +145,12 @@ INST_HANDLER(DECFSZ) {
 	op->jump = addr + 4;
 	op->fail = addr + 2;
 	if (args->d) {
-		ef("0x01," PIC16_ESIL_BSR_ADDR ",-=[1],", args->f);
+		ef("0x01," PIC_MIDRANGE_ESIL_BSR_ADDR ",-=[1],", args->f);
 	} else {
-		ef("0x01," PIC16_ESIL_BSR_ADDR ",[1],-,wreg,=,",
+		ef("0x01," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],-,wreg,=,",
 			args->f);
 	}
-	ef(PIC16_ESIL_BSR_ADDR ",[1],!,?{,0x%" PFMT64x ",pc,=,},", args->f,
+	ef(PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],!,?{,0x%" PFMT64x ",pc,=,},", args->f,
 		op->jump);
 }
 
@@ -159,21 +159,21 @@ INST_HANDLER(INCFSZ) {
 	op->jump = addr + 4;
 	op->fail = addr + 2;
 	if (args->d) {
-		ef("0x01," PIC16_ESIL_BSR_ADDR ",+=[1],", args->f);
+		ef("0x01," PIC_MIDRANGE_ESIL_BSR_ADDR ",+=[1],", args->f);
 	} else {
-		ef("0x01," PIC16_ESIL_BSR_ADDR ",[1],+,wreg,=,",
+		ef("0x01," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],+,wreg,=,",
 			args->f);
 	}
-	ef(PIC16_ESIL_BSR_ADDR ",[1],!,?{,0x%" PFMT64x ",pc,=,},", args->f,
+	ef(PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],!,?{,0x%" PFMT64x ",pc,=,},", args->f,
 		op->jump);
 }
 
 INST_HANDLER(INCF) {
 	op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 	if (args->d) {
-		ef("0x01," PIC16_ESIL_BSR_ADDR ",+=[1],", args->f);
+		ef("0x01," PIC_MIDRANGE_ESIL_BSR_ADDR ",+=[1],", args->f);
 	} else {
-		ef("0x01," PIC16_ESIL_BSR_ADDR ",[1],+,wreg,=,",
+		ef("0x01," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],+,wreg,=,",
 			args->f);
 	}
 	e("$z,z,:=,");
@@ -182,9 +182,9 @@ INST_HANDLER(INCF) {
 INST_HANDLER(DECF) {
 	op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 	if (args->d) {
-		ef("0x01," PIC16_ESIL_BSR_ADDR ",-=[1],", args->f);
+		ef("0x01," PIC_MIDRANGE_ESIL_BSR_ADDR ",-=[1],", args->f);
 	} else {
-		ef("0x01," PIC16_ESIL_BSR_ADDR ",[1],-,wreg,=,",
+		ef("0x01," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],-,wreg,=,",
 			args->f);
 	}
 	e("$z,z,:=,");
@@ -193,62 +193,62 @@ INST_HANDLER(DECF) {
 INST_HANDLER(IORWF) {
 	op->type = RZ_ANALYSIS_OP_TYPE_OR;
 	if (args->d) {
-		ef(PIC16_ESIL_FWF_OP(|), args->f);
+		ef(PIC_MIDRANGE_ESIL_FWF_OP(|), args->f);
 	} else {
-		ef(PIC16_ESIL_WWF_OP(|), args->f);
+		ef(PIC_MIDRANGE_ESIL_WWF_OP(|), args->f);
 	}
 }
 
 INST_HANDLER(ANDWF) {
 	op->type = RZ_ANALYSIS_OP_TYPE_AND;
 	if (args->d) {
-		ef(PIC16_ESIL_FWF_OP(&), args->f);
+		ef(PIC_MIDRANGE_ESIL_FWF_OP(&), args->f);
 	} else {
-		ef(PIC16_ESIL_WWF_OP(&), args->f);
+		ef(PIC_MIDRANGE_ESIL_WWF_OP(&), args->f);
 	}
 }
 
 INST_HANDLER(XORWF) {
 	op->type = RZ_ANALYSIS_OP_TYPE_XOR;
 	if (args->d) {
-		ef(PIC16_ESIL_FWF_OP(^), args->f);
+		ef(PIC_MIDRANGE_ESIL_FWF_OP(^), args->f);
 	} else {
-		ef(PIC16_ESIL_WWF_OP(^), args->f);
+		ef(PIC_MIDRANGE_ESIL_WWF_OP(^), args->f);
 	}
 }
 
 INST_HANDLER(ADDWF) {
 	op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 	if (args->d) {
-		ef(PIC16_ESIL_FWF_OP(+), args->f);
+		ef(PIC_MIDRANGE_ESIL_FWF_OP(+), args->f);
 	} else {
-		ef(PIC16_ESIL_WWF_OP(+), args->f);
+		ef(PIC_MIDRANGE_ESIL_WWF_OP(+), args->f);
 	}
 }
 
 INST_HANDLER(SUBLW) {
 	op->type = RZ_ANALYSIS_OP_TYPE_SUB;
-	ef(PIC16_ESIL_LW_OP(-), args->k);
+	ef(PIC_MIDRANGE_ESIL_LW_OP(-), args->k);
 }
 
 INST_HANDLER(ADDLW) {
 	op->type = RZ_ANALYSIS_OP_TYPE_ADD;
-	ef(PIC16_ESIL_LW_OP(+), args->k);
+	ef(PIC_MIDRANGE_ESIL_LW_OP(+), args->k);
 }
 
 INST_HANDLER(IORLW) {
 	op->type = RZ_ANALYSIS_OP_TYPE_OR;
-	ef(PIC16_ESIL_LW_OP(|), args->k);
+	ef(PIC_MIDRANGE_ESIL_LW_OP(|), args->k);
 }
 
 INST_HANDLER(ANDLW) {
 	op->type = RZ_ANALYSIS_OP_TYPE_AND;
-	ef(PIC16_ESIL_LW_OP(&), args->k);
+	ef(PIC_MIDRANGE_ESIL_LW_OP(&), args->k);
 }
 
 INST_HANDLER(XORLW) {
 	op->type = RZ_ANALYSIS_OP_TYPE_XOR;
-	ef(PIC16_ESIL_LW_OP(^), args->k);
+	ef(PIC_MIDRANGE_ESIL_LW_OP(^), args->k);
 }
 
 INST_HANDLER(MOVLW) {
@@ -286,35 +286,35 @@ INST_HANDLER(CALLW) {
 
 INST_HANDLER(MOVWF) {
 	op->type = RZ_ANALYSIS_OP_TYPE_STORE;
-	ef("wreg," PIC16_ESIL_BSR_ADDR ",=[1],", args->f);
+	ef("wreg," PIC_MIDRANGE_ESIL_BSR_ADDR ",=[1],", args->f);
 }
 
 INST_HANDLER(MOVF) {
 	op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 	if (args->d) {
-		ef(PIC16_ESIL_BSR_ADDR
-			",[1]," PIC16_ESIL_BSR_ADDR ",=[1],",
+		ef(PIC_MIDRANGE_ESIL_BSR_ADDR
+			",[1]," PIC_MIDRANGE_ESIL_BSR_ADDR ",=[1],",
 			args->f, args->f);
 	} else {
-		ef(PIC16_ESIL_BSR_ADDR ",[1],wreg,=,", args->f);
+		ef(PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],wreg,=,", args->f);
 	}
 	e("$z,z,:=,");
 }
 
 INST_HANDLER(SWAPF) {
-	ef("4," PIC16_ESIL_BSR_ADDR ",[1],>>,0x0f,&,", args->f);
-	ef("4," PIC16_ESIL_BSR_ADDR ",[1],<<,0xf0,&,", args->f);
+	ef("4," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],>>,0x0f,&,", args->f);
+	ef("4," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],<<,0xf0,&,", args->f);
 	e("|,");
-	ef(PIC16_ESIL_BSR_ADDR ",=[1],", args->f);
+	ef(PIC_MIDRANGE_ESIL_BSR_ADDR ",=[1],", args->f);
 }
 
 INST_HANDLER(LSLF) {
 	op->type = RZ_ANALYSIS_OP_TYPE_SHL;
-	ef("7," PIC16_ESIL_BSR_ADDR ",[1],>>,c,=,", args->f);
+	ef("7," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],>>,c,=,", args->f);
 	if (args->d) {
-		ef("1," PIC16_ESIL_BSR_ADDR ",<<=[1],", args->f);
+		ef("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",<<=[1],", args->f);
 	} else {
-		ef("1," PIC16_ESIL_BSR_ADDR ",[1],<<,wreg,=,",
+		ef("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],<<,wreg,=,",
 			args->f);
 	}
 	e("$z,z,:=,");
@@ -322,11 +322,11 @@ INST_HANDLER(LSLF) {
 
 INST_HANDLER(LSRF) {
 	op->type = RZ_ANALYSIS_OP_TYPE_SHR;
-	ef("1," PIC16_ESIL_BSR_ADDR ",[1],&,c,=,", args->f);
+	ef("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],&,c,=,", args->f);
 	if (args->d) {
-		ef("1," PIC16_ESIL_BSR_ADDR ",>>=[1],", args->f);
+		ef("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",>>=[1],", args->f);
 	} else {
-		ef("1," PIC16_ESIL_BSR_ADDR ",[1],>>,wreg,=,",
+		ef("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],>>,wreg,=,",
 			args->f);
 	}
 	e("$z,z,:=,");
@@ -334,11 +334,11 @@ INST_HANDLER(LSRF) {
 
 INST_HANDLER(ASRF) {
 	op->type = RZ_ANALYSIS_OP_TYPE_SHR;
-	ef("1," PIC16_ESIL_BSR_ADDR ",[1],&,c,=,", args->f);
-	ef("1," PIC16_ESIL_BSR_ADDR ",[1],>>,", args->f);
-	ef("0x80," PIC16_ESIL_BSR_ADDR ",[1],&,", args->f);
+	ef("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],&,c,=,", args->f);
+	ef("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],>>,", args->f);
+	ef("0x80," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],&,", args->f);
 	if (args->d) {
-		ef("|," PIC16_ESIL_BSR_ADDR ",=[1],", args->f);
+		ef("|," PIC_MIDRANGE_ESIL_BSR_ADDR ",=[1],", args->f);
 	} else {
 		e("|,wreg,=,");
 	}
@@ -347,13 +347,13 @@ INST_HANDLER(ASRF) {
 
 INST_HANDLER(RRF) {
 	op->type = RZ_ANALYSIS_OP_TYPE_ROR;
-	ef("1," PIC16_ESIL_BSR_ADDR ",[1],&,", args->f);
+	ef("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],&,", args->f);
 	if (args->d) {
-		ef("1," PIC16_ESIL_BSR_ADDR ",>>=[1],"
-		   "c," PIC16_ESIL_BSR_ADDR ",|=[1],",
+		ef("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",>>=[1],"
+		   "c," PIC_MIDRANGE_ESIL_BSR_ADDR ",|=[1],",
 			args->f, args->f);
 	} else {
-		ef("1," PIC16_ESIL_BSR_ADDR ",[1],>>,wreg,=,"
+		ef("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],>>,wreg,=,"
 		   "c,wreg,|=[1],",
 			args->f);
 	}
@@ -362,13 +362,13 @@ INST_HANDLER(RRF) {
 
 INST_HANDLER(RLF) {
 	op->type = RZ_ANALYSIS_OP_TYPE_ROL;
-	ef("7," PIC16_ESIL_BSR_ADDR ",[1],>>,", args->f);
+	ef("7," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],>>,", args->f);
 	if (args->d) {
-		ef("1," PIC16_ESIL_BSR_ADDR ",<<=[1],"
-		   "c," PIC16_ESIL_BSR_ADDR ",|=[1],",
+		ef("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",<<=[1],"
+		   "c," PIC_MIDRANGE_ESIL_BSR_ADDR ",|=[1],",
 			args->f, args->f);
 	} else {
-		ef("1," PIC16_ESIL_BSR_ADDR ",[1],<<,wreg,=,"
+		ef("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],<<,wreg,=,"
 		   "c,wreg,|=[1],",
 			args->f);
 	}
@@ -377,9 +377,9 @@ INST_HANDLER(RLF) {
 
 INST_HANDLER(COMF) {
 	if (args->d) {
-		ef("0xff," PIC16_ESIL_BSR_ADDR ",^=[1],", args->f);
+		ef("0xff," PIC_MIDRANGE_ESIL_BSR_ADDR ",^=[1],", args->f);
 	} else {
-		ef("0xff," PIC16_ESIL_BSR_ADDR ",^,wreg,=,", args->f);
+		ef("0xff," PIC_MIDRANGE_ESIL_BSR_ADDR ",^,wreg,=,", args->f);
 	}
 	e("$z,z,:=,");
 }
@@ -416,9 +416,9 @@ INST_HANDLER(SUBWFB) {
 	op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 	e("c,!=,");
 	if (args->d) {
-		ef(PIC16_ESIL_FWF_OP_C(-), args->f);
+		ef(PIC_MIDRANGE_ESIL_FWF_OP_C(-), args->f);
 	} else {
-		ef(PIC16_ESIL_WWF_OP_C(-), args->f);
+		ef(PIC_MIDRANGE_ESIL_WWF_OP_C(-), args->f);
 		e("wreg,0x00,-,wreg,=,c,!=,dc,!=,");
 	}
 }
@@ -426,9 +426,9 @@ INST_HANDLER(SUBWFB) {
 INST_HANDLER(ADDWFC) {
 	op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 	if (args->d) {
-		ef(PIC16_ESIL_FWF_OP_C(+), args->f);
+		ef(PIC_MIDRANGE_ESIL_FWF_OP_C(+), args->f);
 	} else {
-		ef(PIC16_ESIL_WWF_OP_C(+), args->f);
+		ef(PIC_MIDRANGE_ESIL_WWF_OP_C(+), args->f);
 	}
 }
 

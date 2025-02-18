@@ -10,7 +10,7 @@ typedef struct {
 	RzIODesc *mem_sram;
 	RzIODesc *mem_stack;
 	bool init_done;
-	HtSU *pic18_mm;
+	HtSU *pic_highend_mm;
 } PicContext;
 
 #define SEXT(B, x, b) ((st##B)(x << (B - b)) >> (B - b))

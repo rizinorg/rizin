@@ -158,12 +158,10 @@ hcs08           Freescale HCS08: 8-bit microcontroller family
 68030           Motorola 68030: Enhanced 32-bit microprocessor with integrated MMU
 68040           Motorola 68040: High-performance 32-bit microprocessor with integrated FPU
 68060           Motorola 68060: 32-bit microprocessor, highest performer in m68k series
-pic18           PIC18: High-performance 8-bit microcontroller family
-pic16           PIC16: Mid-range 8-bit microcontroller family
-pic14           PIC14: 14-bit instruction set microcontroller family
-highend         Alias for PIC18
-midrange        Alias for PIC16
-baseline        Alias for PIC14
+baseline        Baseline 12-bit instruction set microcontrollers: PIC10Fxxx, PIC12Fxxx, and PIC16Fxxx
+midrange        Mid-Range 14-bit instruction set microcontrollers: PIC10Fxxx, PIC12Fxxx, and PIC16Fxxx
+highend         High-End 16-bit instruction set microcontrollers: PIC18Fxxxx, PIC18FxxJxx, and PIC18FxxKxx
+pic18           alias for highend
 ppc             Generic PowerPC CPU
 vle             PowerPC with Variable Length Encoding extension
 ps              PowerPC with Paired Single SIMD extension

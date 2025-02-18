@@ -5,30 +5,28 @@
 #include <rz_asm.h>
 #include <rz_lib.h>
 
-#include "pic/pic14.h"
-#include "pic/pic18.h"
-#include "pic/pic16.h"
+#include "pic/pic_baseline.h"
+#include "pic/pic_midrange.h"
+#include "pic/pic_highend.h"
 
 static int asm_pic_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *b, int l) {
 	int res = -1;
-	if (a->cpu && is_pic14(a->cpu)) {
-		res = pic14_disassemble(a, op, b, l);
-	} else if (a->cpu && is_pic16(a->cpu)) {
-		res = pic16_disassemble(a, op, b, l);
-	} else if (a->cpu && is_pic18(a->cpu)) {
-		res = pic18_disassemble(a, op, b, l);
+	if (a->cpu && is_pic_baseline(a->cpu)) {
+		res = pic_baseline_disassemble(a, op, b, l);
+	} else if (a->cpu && is_pic_midrange(a->cpu)) {
+		res = pic_midrange_disassemble(a, op, b, l);
+	} else if (a->cpu && is_pic_highend(a->cpu)) {
+		res = pic_highend_disassemble(a, op, b, l);
 	}
 	return op->size = res;
 }
 
 char **pic_cpu_descriptions() {
 	static char *cpu_desc[] = {
-		"pic18", "PIC18: High-performance 8-bit microcontroller family",
-		"pic16", "PIC16: Mid-range 8-bit microcontroller family",
-		"pic14", "PIC14: 14-bit instruction set microcontroller family",
-		"highend", "Alias for PIC18",
-		"midrange", "Alias for PIC16",
-		"baseline", "Alias for PIC14",
+		"baseline", "Baseline 12-bit instruction set microcontrollers: PIC10Fxxx, PIC12Fxxx, and PIC16Fxxx",
+		"midrange", "Mid-Range 14-bit instruction set microcontrollers: PIC10Fxxx, PIC12Fxxx, and PIC16Fxxx",
+		"highend", "High-End 16-bit instruction set microcontrollers: PIC18Fxxxx, PIC18FxxJxx, and PIC18FxxKxx",
+		"pic18", "alias for highend",
 		NULL
 	};
 	return cpu_desc;
@@ -37,7 +35,7 @@ char **pic_cpu_descriptions() {
 RzAsmPlugin rz_asm_plugin_pic = {
 	.name = "pic",
 	.arch = "pic",
-	.cpus = "pic18,pic16,pic14,highend,midrange,baseline",
+	.cpus = "baseline,midrange,highend,pic18",
 	.bits = 16 | 32,
 	.license = "LGPL3",
 	.desc = "PIC disassembler",

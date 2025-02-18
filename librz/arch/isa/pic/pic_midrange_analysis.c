@@ -4,31 +4,31 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "pic.h"
-#include "pic16.h"
-#include "pic16_il.inc"
+#include "pic_midrange.h"
+#include "pic_midrange_il.inc"
 
-typedef void (*pic16_inst_handler_t)(RzAnalysis *analysis, RzAnalysisOp *op,
+typedef void (*pic_midrange_inst_handler_t)(RzAnalysis *analysis, RzAnalysisOp *op,
 	ut64 addr,
-	Pic16OpArgsVal *args);
+	PicMidrangeOpArgsVal *args);
 
 typedef struct {
-	Pic16Opcode opcode;
-	pic16_inst_handler_t handler;
-	pic16_il_handler il_handler;
-} Pic16OpAnalysisInfo;
+	PicMidrangeOpcode opcode;
+	pic_midrange_inst_handler_t handler;
+	pic_midrange_il_handler il_handler;
+} PicMidrangeOpAnalysisInfo;
 
 #define INST_HANDLER(OPCODE_NAME) \
 	static void _inst__##OPCODE_NAME(RzAnalysis *analysis, RzAnalysisOp *op, \
 		ut64 addr, \
-		Pic16OpArgsVal *args)
+		PicMidrangeOpArgsVal *args)
 #define INST_DECL(NAME) \
-	[PIC16_OPCODE_##NAME] = { \
-		PIC16_OPCODE_##NAME, _inst__##NAME, IL_LIFTER(NAME) \
+	[PIC_MIDRANGE_OPCODE_##NAME] = { \
+		PIC_MIDRANGE_OPCODE_##NAME, _inst__##NAME, IL_LIFTER(NAME) \
 	}
 
-#include "pic16_esil.inc"
+#include "pic_midrange_esil.inc"
 
-static const Pic16OpAnalysisInfo pic16_op_analysis_info[] = {
+static const PicMidrangeOpAnalysisInfo pic_midrange_op_analysis_info[] = {
 	INST_DECL(NOP),
 	INST_DECL(RETURN),
 	INST_DECL(RETFIE),
@@ -96,7 +96,7 @@ static RzIODesc *cpu_memory_map(
 	return desc;
 }
 
-static bool pic16_reg_write(RzReg *reg, const char *regname, ut32 num) {
+static bool pic_midrange_reg_write(RzReg *reg, const char *regname, ut32 num) {
 	if (reg) {
 		RzRegItem *item = rz_reg_get(reg, regname, RZ_REG_TYPE_GPR);
 		if (item) {
@@ -107,7 +107,7 @@ static bool pic16_reg_write(RzReg *reg, const char *regname, ut32 num) {
 	return false;
 }
 
-static void analysis_pic16_setup(RzAnalysis *analysis, bool force) {
+static void analysis_pic_midrange_setup(RzAnalysis *analysis, bool force) {
 	PicContext *ctx = (PicContext *)analysis->plugin_data;
 
 	if (!ctx->init_done || force) {
@@ -116,22 +116,22 @@ static void analysis_pic16_setup(RzAnalysis *analysis, bool force) {
 		// image
 		ctx->mem_sram =
 			cpu_memory_map(&analysis->iob, ctx->mem_sram,
-				PIC16_ESIL_SRAM_START, 0x1000);
+				PIC_MIDRANGE_ESIL_SRAM_START, 0x1000);
 		ctx->mem_stack =
 			cpu_memory_map(&analysis->iob, ctx->mem_sram,
-				PIC16_ESIL_CSTACK_TOP, 0x20);
+				PIC_MIDRANGE_ESIL_CSTACK_TOP, 0x20);
 
-		pic16_reg_write(analysis->reg, "_sram",
-			PIC16_ESIL_SRAM_START);
-		pic16_reg_write(analysis->reg, "_stack",
-			PIC16_ESIL_CSTACK_TOP);
-		pic16_reg_write(analysis->reg, "stkptr", 0x1f);
+		pic_midrange_reg_write(analysis->reg, "_sram",
+			PIC_MIDRANGE_ESIL_SRAM_START);
+		pic_midrange_reg_write(analysis->reg, "_stack",
+			PIC_MIDRANGE_ESIL_CSTACK_TOP);
+		pic_midrange_reg_write(analysis->reg, "stkptr", 0x1f);
 
 		ctx->init_done = true;
 	}
 }
 
-int pic16_op(
+int pic_midrange_op(
 	RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	const ut8 *buf, int len, RzAnalysisOpMask mask) {
 
@@ -139,14 +139,14 @@ int pic16_op(
 		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 		return -1;
 	}
-	Pic16Op x = { 0 };
-	if (!pic16_disasm_op(&x, addr, buf, len)) {
+	PicMidrangeOp x = { 0 };
+	if (!pic_midrange_disasm_op(&x, addr, buf, len)) {
 		return -1;
 	}
-	if (!(x.opcode < RZ_ARRAY_SIZE(pic16_op_analysis_info))) {
+	if (!(x.opcode < RZ_ARRAY_SIZE(pic_midrange_op_analysis_info))) {
 		return -1;
 	}
-	const Pic16OpAnalysisInfo *info = pic16_op_analysis_info + x.opcode;
+	const PicMidrangeOpAnalysisInfo *info = pic_midrange_op_analysis_info + x.opcode;
 	if (!info) {
 		return -1;
 	}
@@ -156,11 +156,11 @@ int pic16_op(
 	op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 
 	if (mask & RZ_ANALYSIS_OP_MASK_ESIL && info->handler) {
-		analysis_pic16_setup(analysis, false);
+		analysis_pic_midrange_setup(analysis, false);
 		info->handler(analysis, op, addr, &x.args);
 	}
 	if (mask & RZ_ANALYSIS_OP_MASK_IL && info->il_handler) {
-		Pic16ILContext il_ctx = {
+		PicMidrangeILContext il_ctx = {
 			.analysis = analysis,
 			.op = op,
 			.x = &x,
@@ -177,7 +177,7 @@ int pic16_op(
 	return op->size;
 }
 
-char *pic16_get_reg_profile(RzAnalysis *a) {
+char *pic_midrange_get_reg_profile(RzAnalysis *a) {
 	const char *p =
 		"=PC	pc\n"
 		"=SP	stkptr\n"

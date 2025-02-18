@@ -4,10 +4,10 @@
 
 #include <rz_types.h>
 
-#include "pic18.h"
+#include "pic_highend.h"
 
 /**
- * \file PIC18CXXX instruction set
+ * \file High-end (e.g. PIC18CXXX) instruction set
  */
 
 // instruction classification according to the argument types
@@ -15,94 +15,94 @@
 static char *fsr[] = { "fsr0", "fsr1", "fsr2" };
 
 typedef struct {
-	Pic18Opcode code;
+	PicHighendOpcode code;
 	ut16 opmin;
 	ut16 opmax;
 	const char *name;
-	Pic18ArgsKind optype;
+	PicHighendArgsKind optype;
 	// and some magical hocus pocus ;)
-} Pic18OpDesc;
+} PicHighendOpDesc;
 
-static const Pic18OpDesc pic18_ops[] = {
-	{ PIC18_OPCODE_NOP, 0xf000, 0xffff, "nop", NO_ARG },
-	{ PIC18_OPCODE_GOTO, 0xef00, 0xefff, "goto", K20_T },
-	{ PIC18_OPCODE_LFSR, 0xee00, 0xee3f, "lfsr", FK_T },
-	{ PIC18_OPCODE_CALL, 0xec00, 0xedff, "call", K20S_T },
-	{ PIC18_OPCODE_BNN, 0xe700, 0xe7ff, "bnn", N8_T },
-	{ PIC18_OPCODE_BN, 0xe600, 0xe6ff, "bn", N8_T },
-	{ PIC18_OPCODE_BNOV, 0xe500, 0xe5ff, "bnov", N8_T },
-	{ PIC18_OPCODE_BOV, 0xe400, 0xe4ff, "bov", N8_T },
-	{ PIC18_OPCODE_BNC, 0xe300, 0xe3ff, "bnc", N8_T },
-	{ PIC18_OPCODE_BC, 0xe200, 0xe2ff, "bc", N8_T },
-	{ PIC18_OPCODE_BNZ, 0xe100, 0xe1ff, "bnz", N8_T },
-	{ PIC18_OPCODE_BZ, 0xe000, 0xe0ff, "bz", N8_T },
-	{ PIC18_OPCODE_RCALL, 0xd800, 0xdfff, "rcall", N11_T },
-	{ PIC18_OPCODE_BRA, 0xd000, 0xd7ff, "bra", N11_T },
-	{ PIC18_OPCODE_MOVFF, 0xc000, 0xcfff, "movff", SD_T },
-	{ PIC18_OPCODE_BTFSC, 0xb000, 0xbfff, "btfsc", FBA_T },
-	{ PIC18_OPCODE_BTFSS, 0xa000, 0xafff, "btfss", FBA_T },
-	{ PIC18_OPCODE_BCF, 0x9000, 0x9fff, "bcf", FBA_T },
-	{ PIC18_OPCODE_BSF, 0x8000, 0x8fff, "bsf", FBA_T },
-	{ PIC18_OPCODE_BTG, 0x7000, 0x7fff, "btg", FBA_T },
-	{ PIC18_OPCODE_MOVWF, 0x6e00, 0x6fff, "movwf", FA_T },
-	{ PIC18_OPCODE_NEGF, 0x6c00, 0x6dff, "negf", FA_T },
-	{ PIC18_OPCODE_CLRF, 0x6a00, 0x6bff, "clrf", FA_T },
-	{ PIC18_OPCODE_SETF, 0x6800, 0x69ff, "setf", FA_T },
-	{ PIC18_OPCODE_TSTFSZ, 0x6600, 0x67ff, "tstfsz", FA_T },
-	{ PIC18_OPCODE_CPFSGT, 0x6400, 0x65ff, "cpfsgt", FA_T },
-	{ PIC18_OPCODE_CPFSEQ, 0x6200, 0x63ff, "cpfseq", FA_T },
-	{ PIC18_OPCODE_CPFSLT, 0x6000, 0x61ff, "cpfslt", FA_T },
-	{ PIC18_OPCODE_SUBWF, 0x5c00, 0x5fff, "subwf", FDA_T },
-	{ PIC18_OPCODE_SUBWFB, 0x5800, 0x5bff, "subwfb", FDA_T },
-	{ PIC18_OPCODE_SUBFWB, 0x5400, 0x57ff, "subfwb", FDA_T },
-	{ PIC18_OPCODE_MOVF, 0x5000, 0x53ff, "movf", FDA_T },
-	{ PIC18_OPCODE_DCFSNZ, 0x4c00, 0x4fff, "dcfsnz", FDA_T },
-	{ PIC18_OPCODE_INFSNZ, 0x4800, 0x4bff, "infsnz", FDA_T },
-	{ PIC18_OPCODE_RLNCF, 0x4400, 0x47ff, "rlncf", FDA_T },
-	{ PIC18_OPCODE_RRNCF, 0x4000, 0x43ff, "rrncf", FDA_T },
-	{ PIC18_OPCODE_INCFSZ, 0x3c00, 0x3fff, "incfsz", FDA_T },
-	{ PIC18_OPCODE_SWAPF, 0x3800, 0x3bff, "swapf", FDA_T },
-	{ PIC18_OPCODE_RLCF, 0x3400, 0x37ff, "rlcf", FDA_T },
-	{ PIC18_OPCODE_RRCF, 0x3000, 0x33ff, "rrcf", FDA_T },
-	{ PIC18_OPCODE_DECFSZ, 0x2c00, 0x2fff, "decfsz", FDA_T },
-	{ PIC18_OPCODE_INCF, 0x2800, 0x2bff, "incf", FDA_T },
-	{ PIC18_OPCODE_ADDWF, 0x2400, 0x27ff, "addwf", FDA_T },
-	{ PIC18_OPCODE_ADDWFC, 0x2000, 0x23ff, "addwfc", FDA_T },
-	{ PIC18_OPCODE_COMF, 0x1c00, 0x1fff, "comf", FDA_T },
-	{ PIC18_OPCODE_XORWF, 0x1800, 0x1bff, "xorwf", FDA_T },
-	{ PIC18_OPCODE_ANDWF, 0x1400, 0x17ff, "andwf", FDA_T },
-	{ PIC18_OPCODE_IORWF, 0x1000, 0x13ff, "iorwf", FDA_T },
-	{ PIC18_OPCODE_ADDLW, 0xf00, 0xfff, "addlw", K8_T },
-	{ PIC18_OPCODE_MOVLW, 0xe00, 0xeff, "movlw", K8_T },
-	{ PIC18_OPCODE_MULLW, 0xd00, 0xdff, "mullw", K8_T },
-	{ PIC18_OPCODE_RETLW, 0xc00, 0xcff, "retlw", K8_T },
-	{ PIC18_OPCODE_ANDLW, 0xb00, 0xbff, "andlw", K8_T },
-	{ PIC18_OPCODE_XORLW, 0xa00, 0xaff, "xorlw", K8_T },
-	{ PIC18_OPCODE_IORLW, 0x900, 0x9ff, "iorlw", K8_T },
-	{ PIC18_OPCODE_SUBLW, 0x800, 0x8ff, "sublw", K8_T },
-	{ PIC18_OPCODE_DECF, 0x400, 0x7ff, "decf", FDA_T },
-	{ PIC18_OPCODE_MULWF, 0x200, 0x3ff, "mulwf", FA_T },
-	{ PIC18_OPCODE_MOVLB, 0x100, 0x10f, "movlb", K4_T },
-	{ PIC18_OPCODE_RESET, 0xff, 0xff, "reset", NO_ARG },
-	{ PIC18_OPCODE_RETURN, 0x12, 0x13, "return", S_T },
-	{ PIC18_OPCODE_RETFIE, 0x10, 0x11, "retfie", S_T },
-	{ PIC18_OPCODE_TBLWTis, 0xf, 0xf, "tblwt+*", NO_ARG },
-	{ PIC18_OPCODE_TBLWTMsd, 0xe, 0xe, "tblwt*-", NO_ARG },
-	{ PIC18_OPCODE_TBLWTMsi, 0xd, 0xd, "tblwt*+", NO_ARG },
-	{ PIC18_OPCODE_TBLWTMs, 0xc, 0xc, "tblwt*", NO_ARG },
-	{ PIC18_OPCODE_TBLRDis, 0xb, 0xb, "tblrd+*", NO_ARG },
-	{ PIC18_OPCODE_TBLRDsd, 0xa, 0xa, "tblrd*-", NO_ARG },
-	{ PIC18_OPCODE_TBLRDsi, 0x9, 0x9, "tblrd*+", NO_ARG },
-	{ PIC18_OPCODE_TBLRDs, 0x8, 0x8, "tblrd*", NO_ARG },
-	{ PIC18_OPCODE_DAW, 0x7, 0x7, "daw", NO_ARG },
-	{ PIC18_OPCODE_POP, 0x6, 0x6, "pop", NO_ARG },
-	{ PIC18_OPCODE_PUSH, 0x5, 0x5, "push", NO_ARG },
-	{ PIC18_OPCODE_CLRWDT, 0x4, 0x4, "clrwdt", NO_ARG },
-	{ PIC18_OPCODE_SLEEP, 0x3, 0x3, "sleep", NO_ARG },
-	{ PIC18_OPCODE_NOP, 0x0, 0x0, "nop", NO_ARG },
+static const PicHighendOpDesc pic_highend_ops[] = {
+	{ PIC_HIGHEND_OPCODE_NOP, 0xf000, 0xffff, "nop", NO_ARG },
+	{ PIC_HIGHEND_OPCODE_GOTO, 0xef00, 0xefff, "goto", K20_T },
+	{ PIC_HIGHEND_OPCODE_LFSR, 0xee00, 0xee3f, "lfsr", FK_T },
+	{ PIC_HIGHEND_OPCODE_CALL, 0xec00, 0xedff, "call", K20S_T },
+	{ PIC_HIGHEND_OPCODE_BNN, 0xe700, 0xe7ff, "bnn", N8_T },
+	{ PIC_HIGHEND_OPCODE_BN, 0xe600, 0xe6ff, "bn", N8_T },
+	{ PIC_HIGHEND_OPCODE_BNOV, 0xe500, 0xe5ff, "bnov", N8_T },
+	{ PIC_HIGHEND_OPCODE_BOV, 0xe400, 0xe4ff, "bov", N8_T },
+	{ PIC_HIGHEND_OPCODE_BNC, 0xe300, 0xe3ff, "bnc", N8_T },
+	{ PIC_HIGHEND_OPCODE_BC, 0xe200, 0xe2ff, "bc", N8_T },
+	{ PIC_HIGHEND_OPCODE_BNZ, 0xe100, 0xe1ff, "bnz", N8_T },
+	{ PIC_HIGHEND_OPCODE_BZ, 0xe000, 0xe0ff, "bz", N8_T },
+	{ PIC_HIGHEND_OPCODE_RCALL, 0xd800, 0xdfff, "rcall", N11_T },
+	{ PIC_HIGHEND_OPCODE_BRA, 0xd000, 0xd7ff, "bra", N11_T },
+	{ PIC_HIGHEND_OPCODE_MOVFF, 0xc000, 0xcfff, "movff", SD_T },
+	{ PIC_HIGHEND_OPCODE_BTFSC, 0xb000, 0xbfff, "btfsc", FBA_T },
+	{ PIC_HIGHEND_OPCODE_BTFSS, 0xa000, 0xafff, "btfss", FBA_T },
+	{ PIC_HIGHEND_OPCODE_BCF, 0x9000, 0x9fff, "bcf", FBA_T },
+	{ PIC_HIGHEND_OPCODE_BSF, 0x8000, 0x8fff, "bsf", FBA_T },
+	{ PIC_HIGHEND_OPCODE_BTG, 0x7000, 0x7fff, "btg", FBA_T },
+	{ PIC_HIGHEND_OPCODE_MOVWF, 0x6e00, 0x6fff, "movwf", FA_T },
+	{ PIC_HIGHEND_OPCODE_NEGF, 0x6c00, 0x6dff, "negf", FA_T },
+	{ PIC_HIGHEND_OPCODE_CLRF, 0x6a00, 0x6bff, "clrf", FA_T },
+	{ PIC_HIGHEND_OPCODE_SETF, 0x6800, 0x69ff, "setf", FA_T },
+	{ PIC_HIGHEND_OPCODE_TSTFSZ, 0x6600, 0x67ff, "tstfsz", FA_T },
+	{ PIC_HIGHEND_OPCODE_CPFSGT, 0x6400, 0x65ff, "cpfsgt", FA_T },
+	{ PIC_HIGHEND_OPCODE_CPFSEQ, 0x6200, 0x63ff, "cpfseq", FA_T },
+	{ PIC_HIGHEND_OPCODE_CPFSLT, 0x6000, 0x61ff, "cpfslt", FA_T },
+	{ PIC_HIGHEND_OPCODE_SUBWF, 0x5c00, 0x5fff, "subwf", FDA_T },
+	{ PIC_HIGHEND_OPCODE_SUBWFB, 0x5800, 0x5bff, "subwfb", FDA_T },
+	{ PIC_HIGHEND_OPCODE_SUBFWB, 0x5400, 0x57ff, "subfwb", FDA_T },
+	{ PIC_HIGHEND_OPCODE_MOVF, 0x5000, 0x53ff, "movf", FDA_T },
+	{ PIC_HIGHEND_OPCODE_DCFSNZ, 0x4c00, 0x4fff, "dcfsnz", FDA_T },
+	{ PIC_HIGHEND_OPCODE_INFSNZ, 0x4800, 0x4bff, "infsnz", FDA_T },
+	{ PIC_HIGHEND_OPCODE_RLNCF, 0x4400, 0x47ff, "rlncf", FDA_T },
+	{ PIC_HIGHEND_OPCODE_RRNCF, 0x4000, 0x43ff, "rrncf", FDA_T },
+	{ PIC_HIGHEND_OPCODE_INCFSZ, 0x3c00, 0x3fff, "incfsz", FDA_T },
+	{ PIC_HIGHEND_OPCODE_SWAPF, 0x3800, 0x3bff, "swapf", FDA_T },
+	{ PIC_HIGHEND_OPCODE_RLCF, 0x3400, 0x37ff, "rlcf", FDA_T },
+	{ PIC_HIGHEND_OPCODE_RRCF, 0x3000, 0x33ff, "rrcf", FDA_T },
+	{ PIC_HIGHEND_OPCODE_DECFSZ, 0x2c00, 0x2fff, "decfsz", FDA_T },
+	{ PIC_HIGHEND_OPCODE_INCF, 0x2800, 0x2bff, "incf", FDA_T },
+	{ PIC_HIGHEND_OPCODE_ADDWF, 0x2400, 0x27ff, "addwf", FDA_T },
+	{ PIC_HIGHEND_OPCODE_ADDWFC, 0x2000, 0x23ff, "addwfc", FDA_T },
+	{ PIC_HIGHEND_OPCODE_COMF, 0x1c00, 0x1fff, "comf", FDA_T },
+	{ PIC_HIGHEND_OPCODE_XORWF, 0x1800, 0x1bff, "xorwf", FDA_T },
+	{ PIC_HIGHEND_OPCODE_ANDWF, 0x1400, 0x17ff, "andwf", FDA_T },
+	{ PIC_HIGHEND_OPCODE_IORWF, 0x1000, 0x13ff, "iorwf", FDA_T },
+	{ PIC_HIGHEND_OPCODE_ADDLW, 0xf00, 0xfff, "addlw", K8_T },
+	{ PIC_HIGHEND_OPCODE_MOVLW, 0xe00, 0xeff, "movlw", K8_T },
+	{ PIC_HIGHEND_OPCODE_MULLW, 0xd00, 0xdff, "mullw", K8_T },
+	{ PIC_HIGHEND_OPCODE_RETLW, 0xc00, 0xcff, "retlw", K8_T },
+	{ PIC_HIGHEND_OPCODE_ANDLW, 0xb00, 0xbff, "andlw", K8_T },
+	{ PIC_HIGHEND_OPCODE_XORLW, 0xa00, 0xaff, "xorlw", K8_T },
+	{ PIC_HIGHEND_OPCODE_IORLW, 0x900, 0x9ff, "iorlw", K8_T },
+	{ PIC_HIGHEND_OPCODE_SUBLW, 0x800, 0x8ff, "sublw", K8_T },
+	{ PIC_HIGHEND_OPCODE_DECF, 0x400, 0x7ff, "decf", FDA_T },
+	{ PIC_HIGHEND_OPCODE_MULWF, 0x200, 0x3ff, "mulwf", FA_T },
+	{ PIC_HIGHEND_OPCODE_MOVLB, 0x100, 0x10f, "movlb", K4_T },
+	{ PIC_HIGHEND_OPCODE_RESET, 0xff, 0xff, "reset", NO_ARG },
+	{ PIC_HIGHEND_OPCODE_RETURN, 0x12, 0x13, "return", S_T },
+	{ PIC_HIGHEND_OPCODE_RETFIE, 0x10, 0x11, "retfie", S_T },
+	{ PIC_HIGHEND_OPCODE_TBLWTis, 0xf, 0xf, "tblwt+*", NO_ARG },
+	{ PIC_HIGHEND_OPCODE_TBLWTMsd, 0xe, 0xe, "tblwt*-", NO_ARG },
+	{ PIC_HIGHEND_OPCODE_TBLWTMsi, 0xd, 0xd, "tblwt*+", NO_ARG },
+	{ PIC_HIGHEND_OPCODE_TBLWTMs, 0xc, 0xc, "tblwt*", NO_ARG },
+	{ PIC_HIGHEND_OPCODE_TBLRDis, 0xb, 0xb, "tblrd+*", NO_ARG },
+	{ PIC_HIGHEND_OPCODE_TBLRDsd, 0xa, 0xa, "tblrd*-", NO_ARG },
+	{ PIC_HIGHEND_OPCODE_TBLRDsi, 0x9, 0x9, "tblrd*+", NO_ARG },
+	{ PIC_HIGHEND_OPCODE_TBLRDs, 0x8, 0x8, "tblrd*", NO_ARG },
+	{ PIC_HIGHEND_OPCODE_DAW, 0x7, 0x7, "daw", NO_ARG },
+	{ PIC_HIGHEND_OPCODE_POP, 0x6, 0x6, "pop", NO_ARG },
+	{ PIC_HIGHEND_OPCODE_PUSH, 0x5, 0x5, "push", NO_ARG },
+	{ PIC_HIGHEND_OPCODE_CLRWDT, 0x4, 0x4, "clrwdt", NO_ARG },
+	{ PIC_HIGHEND_OPCODE_SLEEP, 0x3, 0x3, "sleep", NO_ARG },
+	{ PIC_HIGHEND_OPCODE_NOP, 0x0, 0x0, "nop", NO_ARG },
 };
 
-static const char *pic18_SFRs[] = {
+static const char *pic_highend_SFRs[] = {
 	[0xFFF - 0xF80] = "tosu",
 	[0xFFE - 0xF80] = "tosh",
 	[0xFFD - 0xF80] = "tosl",
@@ -233,7 +233,7 @@ static const char *pic18_SFRs[] = {
 	[0xF80 - 0xF80] = "porta",
 };
 
-static const char *pic18_GPRs[] = {
+static const char *pic_highend_GPRs[] = {
 	"0x00",
 	"0x01",
 	"0x02",
@@ -364,29 +364,29 @@ static const char *pic18_GPRs[] = {
 	"0x7f"
 };
 
-const char *pic18_regname(size_t index) {
+const char *pic_highend_regname(size_t index) {
 	if (index <= 0xff && index >= 0x80) {
-		return pic18_SFRs[index - 0x80];
+		return pic_highend_SFRs[index - 0x80];
 	}
 	if (index < 0x80) {
-		return pic18_GPRs[index];
+		return pic_highend_GPRs[index];
 	}
 	rz_warn_if_reached();
 	return NULL;
 }
 
-const char *pic18_regname_extra(size_t index) {
+const char *pic_highend_regname_extra(size_t index) {
 	if (index <= 0xff) {
-		return pic18_regname(index);
+		return pic_highend_regname(index);
 	}
 	if (index >= 0xf80 && index <= 0xfff) {
-		return pic18_regname(index % 0x100);
+		return pic_highend_regname(index % 0x100);
 	}
 	return NULL;
 }
 
 #define STATUS_BIT_IMPL(DECL, X) \
-	ut8 pic18_##X(const char *name) { \
+	ut8 pic_highend_##X(const char *name) { \
 		for (int i = 0; i < RZ_ARRAY_SIZE(DECL); ++i) { \
 			if (RZ_STR_EQ(name, DECL[i])) { \
 				return i; \
@@ -427,7 +427,7 @@ static const char *intcon_bits[] = {
 
 STATUS_BIT_IMPL(status_bits, status);
 STATUS_BIT_IMPL(rcon_bits, rcon);
-ut8 pic18_intcon(const char *name) {
+ut8 pic_highend_intcon(const char *name) {
 	for (int i = 0; i < RZ_ARRAY_SIZE(intcon_bits); ++i) {
 		if (RZ_STR_EQ(name, intcon_bits[i])) {
 			return i;
@@ -442,9 +442,9 @@ ut8 pic18_intcon(const char *name) {
 	return 0xff;
 }
 
-static const Pic18OpDesc *pic18_get_op_desc(ut16 word) {
-	for (Pic18OpDesc *desc = (Pic18OpDesc *)pic18_ops;
-		desc - pic18_ops < RZ_ARRAY_SIZE(pic18_ops);
+static const PicHighendOpDesc *pic_highend_get_op_desc(ut16 word) {
+	for (PicHighendOpDesc *desc = (PicHighendOpDesc *)pic_highend_ops;
+		desc - pic_highend_ops < RZ_ARRAY_SIZE(pic_highend_ops);
 		desc++) {
 		if (desc->opmin == (desc->opmin & word) && desc->opmax == (desc->opmax | word)) {
 			return desc;
@@ -453,10 +453,10 @@ static const Pic18OpDesc *pic18_get_op_desc(ut16 word) {
 	return NULL;
 }
 
-bool pic18_disasm_op(Pic18Op *op, ut64 addr, const ut8 *buff, ut64 len) {
+bool pic_highend_disasm_op(PicHighendOp *op, ut64 addr, const ut8 *buff, ut64 len) {
 #define check_len(x) \
 	if (len < x) { \
-		op->code = PIC18_OPCODE_INVALID; \
+		op->code = PIC_HIGHEND_OPCODE_INVALID; \
 		return false; \
 	} \
 	op->size = x;
@@ -464,7 +464,7 @@ bool pic18_disasm_op(Pic18Op *op, ut64 addr, const ut8 *buff, ut64 len) {
 	op->addr = addr;
 	check_len(2);
 	ut16 word = rz_read_le16(buff);
-	const Pic18OpDesc *desc = pic18_get_op_desc(word);
+	const PicHighendOpDesc *desc = pic_highend_get_op_desc(word);
 	if (!desc) {
 		return false;
 	}
@@ -553,20 +553,20 @@ bool pic18_disasm_op(Pic18Op *op, ut64 addr, const ut8 *buff, ut64 len) {
 		rz_strf(op->operands, "0x%x", op->k);
 		break;
 	case FDA_T:
-		rz_strf(op->operands, "%s, %d, %d", pic18_regname(op->f), op->d, op->a);
+		rz_strf(op->operands, "%s, %d, %d", pic_highend_regname(op->f), op->d, op->a);
 		break;
 	case FA_T:
-		rz_strf(op->operands, "%s, %d", pic18_regname(op->f), op->a);
+		rz_strf(op->operands, "%s, %d", pic_highend_regname(op->f), op->a);
 		break;
 	case FBA_T:
-		rz_strf(op->operands, "%s, %d, %d", pic18_regname(op->f), op->b, op->a);
+		rz_strf(op->operands, "%s, %d, %d", pic_highend_regname(op->f), op->b, op->a);
 		break;
 	case K20S_T:
 		rz_strf(op->operands, "0x%x, %d", op->k, op->s);
 		break;
 	case SD_T: {
-		const char *rs = pic18_regname_extra(op->s);
-		const char *rd = pic18_regname_extra(op->d);
+		const char *rs = pic_highend_regname_extra(op->s);
+		const char *rd = pic_highend_regname_extra(op->d);
 		if (rs && rd) {
 			rz_strf(op->operands, "%s, %s", rs, rd);
 		} else if (rs) {
@@ -590,11 +590,11 @@ bool pic18_disasm_op(Pic18Op *op, ut64 addr, const ut8 *buff, ut64 len) {
 	return true;
 }
 
-int pic18_disassemble(RzAsm *a, RzAsmOp *asm_op, const ut8 *b, int blen) {
+int pic_highend_disassemble(RzAsm *a, RzAsmOp *asm_op, const ut8 *b, int blen) {
 	asm_op->size = 2;
-	Pic18Op op = { 0 };
-	if (!pic18_disasm_op(&op, a->pc, b, blen) ||
-		op.code == PIC18_OPCODE_INVALID) {
+	PicHighendOp op = { 0 };
+	if (!pic_highend_disasm_op(&op, a->pc, b, blen) ||
+		op.code == PIC_HIGHEND_OPCODE_INVALID) {
 		rz_asm_op_set_asm(asm_op, "invalid");
 		return -1;
 	}

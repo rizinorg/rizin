@@ -1,0 +1,156 @@
+// SPDX-FileCopyrightText: 2015-2018 oddcoder <ahmedsoliman@oddcoder.com>
+// SPDX-FileCopyrightText: 2015-2018 thestr4ng3r <info@florianmaerkl.de>
+// SPDX-License-Identifier: LGPL-3.0-only
+
+#ifndef PIC_HIGHEND_H
+#define PIC_HIGHEND_H
+
+#include <rz_asm.h>
+#include "pic.h"
+
+static inline bool is_pic_highend(const char *x) {
+	return RZ_STR_EQ(x, "highend") ||
+		RZ_STR_EQ(x, "pic18");
+}
+
+typedef enum {
+	PIC_HIGHEND_OPCODE_ADDLW,
+	PIC_HIGHEND_OPCODE_ADDWF,
+	PIC_HIGHEND_OPCODE_ADDWFC,
+	PIC_HIGHEND_OPCODE_ANDWF,
+	PIC_HIGHEND_OPCODE_ANDLW,
+
+	PIC_HIGHEND_OPCODE_BCF,
+	PIC_HIGHEND_OPCODE_BSF,
+	PIC_HIGHEND_OPCODE_BTG,
+	PIC_HIGHEND_OPCODE_BTFSC,
+	PIC_HIGHEND_OPCODE_BTFSS,
+	PIC_HIGHEND_OPCODE_BNN,
+	PIC_HIGHEND_OPCODE_BN,
+	PIC_HIGHEND_OPCODE_BNOV,
+	PIC_HIGHEND_OPCODE_BOV,
+	PIC_HIGHEND_OPCODE_BNC,
+	PIC_HIGHEND_OPCODE_BC,
+	PIC_HIGHEND_OPCODE_BNZ,
+	PIC_HIGHEND_OPCODE_BZ,
+	PIC_HIGHEND_OPCODE_BRA,
+
+	PIC_HIGHEND_OPCODE_COMF,
+	PIC_HIGHEND_OPCODE_CALL,
+	PIC_HIGHEND_OPCODE_CLRWDT,
+	PIC_HIGHEND_OPCODE_CLRF,
+	PIC_HIGHEND_OPCODE_CPFSGT,
+	PIC_HIGHEND_OPCODE_CPFSEQ,
+	PIC_HIGHEND_OPCODE_CPFSLT,
+
+	PIC_HIGHEND_OPCODE_DAW,
+	PIC_HIGHEND_OPCODE_DECF,
+	PIC_HIGHEND_OPCODE_DECFSZ,
+	PIC_HIGHEND_OPCODE_DCFSNZ,
+
+	PIC_HIGHEND_OPCODE_GOTO,
+
+	PIC_HIGHEND_OPCODE_IORWF,
+	PIC_HIGHEND_OPCODE_INFSNZ,
+	PIC_HIGHEND_OPCODE_INCF,
+	PIC_HIGHEND_OPCODE_INCFSZ,
+	PIC_HIGHEND_OPCODE_IORLW,
+
+	PIC_HIGHEND_OPCODE_LFSR,
+
+	PIC_HIGHEND_OPCODE_MOVF,
+	PIC_HIGHEND_OPCODE_MOVWF,
+	PIC_HIGHEND_OPCODE_MULWF,
+	PIC_HIGHEND_OPCODE_MOVLB,
+	PIC_HIGHEND_OPCODE_MOVFF,
+	PIC_HIGHEND_OPCODE_MOVLW,
+	PIC_HIGHEND_OPCODE_MULLW,
+
+	PIC_HIGHEND_OPCODE_NOP,
+	PIC_HIGHEND_OPCODE_NEGF,
+
+	PIC_HIGHEND_OPCODE_POP,
+	PIC_HIGHEND_OPCODE_PUSH,
+
+	PIC_HIGHEND_OPCODE_RETURN,
+	PIC_HIGHEND_OPCODE_RETFIE,
+	PIC_HIGHEND_OPCODE_RLNCF,
+	PIC_HIGHEND_OPCODE_RRNCF,
+	PIC_HIGHEND_OPCODE_RLCF,
+	PIC_HIGHEND_OPCODE_RRCF,
+	PIC_HIGHEND_OPCODE_RCALL,
+	PIC_HIGHEND_OPCODE_RESET,
+	PIC_HIGHEND_OPCODE_RETLW,
+
+	PIC_HIGHEND_OPCODE_SLEEP,
+	PIC_HIGHEND_OPCODE_SETF,
+	PIC_HIGHEND_OPCODE_SUBWF,
+	PIC_HIGHEND_OPCODE_SUBWFB,
+	PIC_HIGHEND_OPCODE_SUBFWB,
+	PIC_HIGHEND_OPCODE_SWAPF,
+	PIC_HIGHEND_OPCODE_SUBLW,
+
+	PIC_HIGHEND_OPCODE_TBLRDs,
+	PIC_HIGHEND_OPCODE_TBLRDis,
+	PIC_HIGHEND_OPCODE_TBLRDsd,
+	PIC_HIGHEND_OPCODE_TBLRDsi,
+	PIC_HIGHEND_OPCODE_TBLWTMs,
+	PIC_HIGHEND_OPCODE_TBLWTis,
+	PIC_HIGHEND_OPCODE_TBLWTMsd,
+	PIC_HIGHEND_OPCODE_TBLWTMsi,
+	PIC_HIGHEND_OPCODE_TSTFSZ,
+
+	PIC_HIGHEND_OPCODE_XORWF,
+	PIC_HIGHEND_OPCODE_XORLW,
+
+	PIC_HIGHEND_OPCODE_INVALID
+} PicHighendOpcode;
+
+typedef enum {
+	NO_ARG,
+	FDA_T,
+	SD_T,
+	FBA_T,
+	K4_T,
+	K8_T,
+	K20_T,
+	K20S_T,
+	S_T,
+	N8_T,
+	N11_T,
+	FA_T,
+	FK_T,
+} PicHighendArgsKind;
+
+typedef struct {
+	ut64 addr;
+	PicHighendOpcode code;
+	const char *mnemonic;
+	char operands[32];
+	ut8 size;
+	PicHighendArgsKind args_kind;
+	struct {
+		ut32 k : 20;
+		ut16 n : 11;
+		ut16 d;
+		ut16 s;
+		ut8 f;
+		ut8 a : 1;
+		ut8 b : 3;
+	};
+} PicHighendOp;
+
+const char *pic_highend_regname(size_t index);
+const char *pic_highend_regname_extra(size_t index);
+ut8 pic_highend_status(const char *name);
+ut8 pic_highend_rcon(const char *name);
+ut8 pic_highend_intcon(const char *name);
+bool pic_highend_disasm_op(PicHighendOp *op, ut64 addr, const ut8 *buff, ut64 len);
+int pic_highend_disassemble(RzAsm *a, RzAsmOp *asm_op, const ut8 *b, int l);
+
+int pic_highend_op(RzAnalysis *analysis, RzAnalysisOp *aop, ut64 addr,
+	const ut8 *buf, int len, RzAnalysisOpMask mask);
+char *pic_highend_get_reg_profile(RzAnalysis *esil);
+RzAnalysisILConfig *pic_highend_il_config(RZ_NONNULL RzAnalysis *analysis);
+
+#endif // PIC_HIGHEND_H

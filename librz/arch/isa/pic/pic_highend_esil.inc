@@ -3,76 +3,76 @@
 // SPDX-FileCopyrightText: 2015-2018 courk <courk@courk.cc>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-static void pic18_cond_branch_esil(RzAnalysisOp *aop, ut64 addr, const ut8 *buf, char *flag) {
+static void pic_highend_cond_branch_esil(RzAnalysisOp *aop, ut64 addr, const ut8 *buf, char *flag) {
 	rz_strbuf_setf(&aop->esil, "%s,?,{,0x%" PFMT64x ",pc,=,}", flag, aop->jump);
 }
 
-static void pic18_esil(
-	RzAnalysisOp *aop, Pic18Op *op, ut64 addr, const ut8 *buf) {
+static void pic_highend_esil(
+	RzAnalysisOp *aop, PicHighendOp *op, ut64 addr, const ut8 *buf) {
 	switch (op->code) {
-	case PIC18_OPCODE_BRA: // bra
+	case PIC_HIGHEND_OPCODE_BRA: // bra
 		rz_strbuf_setf(&aop->esil, "0x%" PFMT64x ",pc,=", aop->jump);
 		break;
-	case PIC18_OPCODE_BZ: // bz
-		pic18_cond_branch_esil(aop, addr, buf, "z");
+	case PIC_HIGHEND_OPCODE_BZ: // bz
+		pic_highend_cond_branch_esil(aop, addr, buf, "z");
 		break;
-	case PIC18_OPCODE_BNZ: // bnz
-		pic18_cond_branch_esil(aop, addr, buf, "z,!");
+	case PIC_HIGHEND_OPCODE_BNZ: // bnz
+		pic_highend_cond_branch_esil(aop, addr, buf, "z,!");
 		break;
-	case PIC18_OPCODE_BNC: // bnc
-		pic18_cond_branch_esil(aop, addr, buf, "c,!");
+	case PIC_HIGHEND_OPCODE_BNC: // bnc
+		pic_highend_cond_branch_esil(aop, addr, buf, "c,!");
 		break;
-	case PIC18_OPCODE_BOV: // bov
-		pic18_cond_branch_esil(aop, addr, buf, "ov");
+	case PIC_HIGHEND_OPCODE_BOV: // bov
+		pic_highend_cond_branch_esil(aop, addr, buf, "ov");
 		break;
-	case PIC18_OPCODE_BNOV: // bnov
-		pic18_cond_branch_esil(aop, addr, buf, "ov,!");
+	case PIC_HIGHEND_OPCODE_BNOV: // bnov
+		pic_highend_cond_branch_esil(aop, addr, buf, "ov,!");
 		break;
-	case PIC18_OPCODE_BN: // bn
-		pic18_cond_branch_esil(aop, addr, buf, "n");
+	case PIC_HIGHEND_OPCODE_BN: // bn
+		pic_highend_cond_branch_esil(aop, addr, buf, "n");
 		break;
-	case PIC18_OPCODE_BNN: // bnn
-		pic18_cond_branch_esil(aop, addr, buf, "n,!");
+	case PIC_HIGHEND_OPCODE_BNN: // bnn
+		pic_highend_cond_branch_esil(aop, addr, buf, "n,!");
 		break;
-	case PIC18_OPCODE_BC: // bc
-		pic18_cond_branch_esil(aop, addr, buf, "c");
+	case PIC_HIGHEND_OPCODE_BC: // bc
+		pic_highend_cond_branch_esil(aop, addr, buf, "c");
 		break;
-	case PIC18_OPCODE_GOTO: // goto
+	case PIC_HIGHEND_OPCODE_GOTO: // goto
 		rz_strbuf_setf(&aop->esil, "0x%" PFMT64x ",pc,=", aop->jump);
 		break;
-	case PIC18_OPCODE_ADDLW: // addlw
+	case PIC_HIGHEND_OPCODE_ADDLW: // addlw
 		// TODO add support for dc flag
 		rz_strbuf_setf(&aop->esil, "0x%x,wreg,+=,$z,z,:=,7,$s,n,:=,7,$c,c,:=,7,$o,ov,:=,", *(ut16 *)buf & 0xff);
 		break;
-	case PIC18_OPCODE_MOVLW: // movlw
+	case PIC_HIGHEND_OPCODE_MOVLW: // movlw
 		rz_strbuf_setf(&aop->esil, "0x%x,wreg,=,", *(ut16 *)buf & 0xff);
 		break;
-	case PIC18_OPCODE_MULLW: // mullw
+	case PIC_HIGHEND_OPCODE_MULLW: // mullw
 		rz_strbuf_setf(&aop->esil, "0x%x,wreg,*,prod,=", *(ut16 *)buf & 0xff);
 		break;
-	case PIC18_OPCODE_RETLW: // retlw
+	case PIC_HIGHEND_OPCODE_RETLW: // retlw
 		rz_strbuf_setf(&aop->esil, "0x%x,wreg,=,tos,pc,=,", *(ut16 *)buf & 0xff);
 		break;
-	case PIC18_OPCODE_ANDLW: // andlw
+	case PIC_HIGHEND_OPCODE_ANDLW: // andlw
 		rz_strbuf_setf(&aop->esil, "0x%x,wreg,&=,$z,z,:=,7,$s,n,:=,", *(ut16 *)buf & 0xff);
 		break;
-	case PIC18_OPCODE_XORLW: // xorlw
+	case PIC_HIGHEND_OPCODE_XORLW: // xorlw
 		rz_strbuf_setf(&aop->esil, "0x%x,wreg,^=,$z,z,:=,7,$s,n,:=,", *(ut16 *)buf & 0xff);
 		break;
-	case PIC18_OPCODE_IORLW: // iorlw
+	case PIC_HIGHEND_OPCODE_IORLW: // iorlw
 		rz_strbuf_setf(&aop->esil, "0x%x,wreg,^=,$z,z,:=,7,$s,n,:=,", *(ut16 *)buf & 0xff);
 		break;
-	case PIC18_OPCODE_SUBLW: // sublw
+	case PIC_HIGHEND_OPCODE_SUBLW: // sublw
 		// TODO add support for dc flag
 		rz_strbuf_setf(&aop->esil, "wreg,0x%x,-,wreg,=,$z,z,:=,7,$s,n,:=,7,$c,c,:=,7,$o,ov,:=,", *(ut16 *)buf & 0xff);
 		break;
-	case PIC18_OPCODE_MOVLB: // movlb
+	case PIC_HIGHEND_OPCODE_MOVLB: // movlb
 		rz_strbuf_setf(&aop->esil, "0x%x,bsr,=,", *(ut16 *)buf & 0xf);
 		break;
-	case PIC18_OPCODE_RETURN: // return
+	case PIC_HIGHEND_OPCODE_RETURN: // return
 		rz_strbuf_setf(&aop->esil, "tos,pc,=,");
 		break;
-	case PIC18_OPCODE_NOP: // nop
+	case PIC_HIGHEND_OPCODE_NOP: // nop
 		rz_strbuf_setf(&aop->esil, ",");
 		break;
 	default: break;

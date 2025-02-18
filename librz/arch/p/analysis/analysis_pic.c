@@ -5,8 +5,8 @@
 
 #include <rz_types.h>
 #include <rz_analysis.h>
-#include "../isa/pic/pic18.h"
-#include "../isa/pic/pic16.h"
+#include "../isa/pic/pic_highend.h"
+#include "../isa/pic/pic_midrange.h"
 
 static bool pic_init(void **user) {
 	PicContext *ctx = RZ_NEW0(PicContext);
@@ -14,14 +14,14 @@ static bool pic_init(void **user) {
 		return false;
 	}
 	ctx->init_done = false;
-	ctx->pic18_mm = ht_su_new(HT_STR_CONST);
+	ctx->pic_highend_mm = ht_su_new(HT_STR_CONST);
 	for (int i = 0; i < 0x80; ++i) {
-		const char *regname = pic18_regname(i);
-		ht_su_insert(ctx->pic18_mm, regname, i);
+		const char *regname = pic_highend_regname(i);
+		ht_su_insert(ctx->pic_highend_mm, regname, i);
 	}
 	for (int i = 0x80; i < 0x100; ++i) {
-		const char *regname = pic18_regname(i);
-		ht_su_insert(ctx->pic18_mm, regname, i + 0xf00);
+		const char *regname = pic_highend_regname(i);
+		ht_su_insert(ctx->pic_highend_mm, regname, i + 0xf00);
 	}
 	*user = ctx;
 	return true;
@@ -30,7 +30,7 @@ static bool pic_init(void **user) {
 static bool pic_fini(void *user) {
 	PicContext *ctx = (PicContext *)user;
 	if (ctx) {
-		ht_su_free(ctx->pic18_mm);
+		ht_su_free(ctx->pic_highend_mm);
 		RZ_FREE(ctx);
 	}
 	return true;
@@ -39,39 +39,39 @@ static bool pic_fini(void *user) {
 static int analysis_pic_op(
 	RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	const ut8 *buf, int len, RzAnalysisOpMask mask) {
-	if (RZ_STR_ISEMPTY(analysis->cpu) || is_pic18(analysis->cpu)) {
-		return pic18_op(analysis, op, addr, buf, len, mask);
+	if (RZ_STR_ISEMPTY(analysis->cpu) || is_pic_highend(analysis->cpu)) {
+		return pic_highend_op(analysis, op, addr, buf, len, mask);
 	}
 
-	if (is_pic14_or_pic16(analysis->cpu)) {
-		return pic16_op(analysis, op, addr, buf, len, mask);
+	if (is_pic_baseline_or_pic_midrange(analysis->cpu)) {
+		return pic_midrange_op(analysis, op, addr, buf, len, mask);
 	}
 	return -1;
 }
 
 static char *analysis_pic_get_reg_profile(RzAnalysis *analysis) {
-	if (RZ_STR_ISEMPTY(analysis->cpu) || is_pic18(analysis->cpu)) {
-		return pic18_get_reg_profile(analysis);
+	if (RZ_STR_ISEMPTY(analysis->cpu) || is_pic_highend(analysis->cpu)) {
+		return pic_highend_get_reg_profile(analysis);
 	}
 
-	if (is_pic14_or_pic16(analysis->cpu)) {
-		return pic16_get_reg_profile(analysis);
+	if (is_pic_baseline_or_pic_midrange(analysis->cpu)) {
+		return pic_midrange_get_reg_profile(analysis);
 	}
 	return NULL;
 }
 
 static RzAnalysisILConfig *pic_il_config(RzAnalysis *analysis) {
-	if (RZ_STR_ISEMPTY(analysis->cpu) || is_pic18(analysis->cpu)) {
-		return pic18_il_config(analysis);
+	if (RZ_STR_ISEMPTY(analysis->cpu) || is_pic_highend(analysis->cpu)) {
+		return pic_highend_il_config(analysis);
 	}
-	if (is_pic14_or_pic16(analysis->cpu)) {
-		return pic16_il_config(analysis);
+	if (is_pic_baseline_or_pic_midrange(analysis->cpu)) {
+		return pic_midrange_il_config(analysis);
 	}
 	return NULL;
 }
 
 static int pic_archinfo(RzAnalysis *analysis, RzAnalysisInfoType query) {
-	if (RZ_STR_ISEMPTY(analysis->cpu) || is_pic18(analysis->cpu)) {
+	if (RZ_STR_ISEMPTY(analysis->cpu) || is_pic_highend(analysis->cpu)) {
 		switch (query) {
 		case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE: return 2;
 		case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE: return 4;
@@ -82,7 +82,7 @@ static int pic_archinfo(RzAnalysis *analysis, RzAnalysisInfoType query) {
 		}
 	}
 
-	if (is_pic14_or_pic16(analysis->cpu)) {
+	if (is_pic_baseline_or_pic_midrange(analysis->cpu)) {
 		switch (query) {
 		case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE: return 2;
 		case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE: return 2;

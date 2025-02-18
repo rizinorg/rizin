@@ -6,10 +6,10 @@
 #include "pic_il.inc"
 
 #define U24(x) UN(24, x)
-static RzILOpPure *varg_mm(Pic18ILContext *ctx, const char *v, ut8 bank);
-static RzILOpEffect *setg_mm(Pic18ILContext *ctx, const char *v, RzILOpPure *x, ut8 bank);
+static RzILOpPure *varg_mm(PicHighendILContext *ctx, const char *v, ut8 bank);
+static RzILOpEffect *setg_mm(PicHighendILContext *ctx, const char *v, RzILOpPure *x, ut8 bank);
 
-static void pic18_append_eff(Pic18ILContext *ctx, const ILOpEff *eff) {
+static void pic_highend_append_eff(PicHighendILContext *ctx, const ILOpEff *eff) {
 	ILOpEff *i;
 	rz_vector_foreach (&ctx->effs, i) {
 		if (i->tag == eff->tag && RZ_STR_EQ(i->fsr, eff->fsr)) {
@@ -19,7 +19,7 @@ static void pic18_append_eff(Pic18ILContext *ctx, const ILOpEff *eff) {
 	rz_vector_push(&ctx->effs, (void *)eff);
 }
 
-static RzILOpPure *pic18_reg_addr(Pic18ILContext *ctx, const char *v, ut8 bank) {
+static RzILOpPure *pic_highend_reg_addr(PicHighendILContext *ctx, const char *v, ut8 bank) {
 	if (RZ_STR_ISEMPTY(v)) {
 		return NULL;
 	}
@@ -33,19 +33,19 @@ static RzILOpPure *pic18_reg_addr(Pic18ILContext *ctx, const char *v, ut8 bank) 
 		long n = strtol(v + 7, NULL, 0);
 		rz_strf(eff.fsr, "fsr%ld", n);
 		eff.tag = ILOpEff_PostDec;
-		pic18_append_eff(ctx, &eff);
+		pic_highend_append_eff(ctx, &eff);
 	}
 	if (rz_str_startswith(v, "postinc")) {
 		long n = strtol(v + 7, NULL, 0);
 		rz_strf(eff.fsr, "fsr%ld", n);
 		eff.tag = ILOpEff_PostInc;
-		pic18_append_eff(ctx, &eff);
+		pic_highend_append_eff(ctx, &eff);
 	}
 	if (rz_str_startswith(v, "predec")) {
 		long n = strtol(v + 6, NULL, 0);
 		rz_strf(eff.fsr, "fsr%ld", n);
 		eff.tag = ILOpEff_PreInc;
-		pic18_append_eff(ctx, &eff);
+		pic_highend_append_eff(ctx, &eff);
 	}
 	if (rz_str_startswith(v, "plusw")) {
 		long n = strtol(v + 5, NULL, 0);
@@ -64,14 +64,14 @@ static RzILOpPure *pic18_reg_addr(Pic18ILContext *ctx, const char *v, ut8 bank) 
 	return NULL;
 }
 
-static RzILOpPure *varg_hl(Pic18ILContext *ctx, const char *v, ut8 bank) {
+static RzILOpPure *varg_hl(PicHighendILContext *ctx, const char *v, ut8 bank) {
 	char h[8];
 	char l[8];
 	rz_strf(h, "%sh", v);
 	rz_strf(l, "%sl", v);
 	return APPEND(varg_mm(ctx, h, bank), varg_mm(ctx, l, bank));
 }
-static RzILOpEffect *setg_hl(Pic18ILContext *ctx, const char *v, RzILOpPure *x, ut8 bank) {
+static RzILOpEffect *setg_hl(PicHighendILContext *ctx, const char *v, RzILOpPure *x, ut8 bank) {
 	char h[8];
 	char l[8];
 	rz_strf(h, "%sh", v);
@@ -81,12 +81,12 @@ static RzILOpEffect *setg_hl(Pic18ILContext *ctx, const char *v, RzILOpPure *x, 
 		setg_mm(ctx, h, UNSIGNED(8, SHIFTR0(VARL("__x"), U8(8))), bank),
 		setg_mm(ctx, l, UNSIGNED(8, VARL("__x")), bank));
 }
-static RzILOpPure *varg_uhl(Pic18ILContext *ctx, const char *v, ut8 bank) {
+static RzILOpPure *varg_uhl(PicHighendILContext *ctx, const char *v, ut8 bank) {
 	char u[8];
 	rz_strf(u, "%su", v);
 	return APPEND(varg_mm(ctx, u, bank), varg_hl(ctx, v, bank));
 }
-static RzILOpEffect *setg_uhl(Pic18ILContext *ctx, const char *v, RzILOpPure *x, ut8 bank) {
+static RzILOpEffect *setg_uhl(PicHighendILContext *ctx, const char *v, RzILOpPure *x, ut8 bank) {
 	char u[8];
 	rz_strf(u, "%su", v);
 	return SEQ3(
@@ -95,16 +95,16 @@ static RzILOpEffect *setg_uhl(Pic18ILContext *ctx, const char *v, RzILOpPure *x,
 		setg_hl(ctx, v, VARL("__x"), bank));
 }
 
-#define PIC18_STATUS_BIT_GET(X) \
+#define PIC_HIGHEND_STATUS_BIT_GET(X) \
 	{ \
-		ut8 b = pic18_##X(v); \
+		ut8 b = pic_highend_##X(v); \
 		if (b != 0xff) { \
 			return bit_get(varg_mm(ctx, #X, bank), b); \
 		} \
 	}
-#define PIC18_STATUS_BIT_SET(X) \
+#define PIC_HIGHEND_STATUS_BIT_SET(X) \
 	{ \
-		ut8 b = pic18_##X(v); \
+		ut8 b = pic_highend_##X(v); \
 		if (b != 0xff) { \
 			return setg_mm(ctx, #X, bit_set1(varg_mm(ctx, #X, bank), b, x), bank); \
 		} \
@@ -126,19 +126,19 @@ static RzILOpEffect *setg_uhl(Pic18ILContext *ctx, const char *v, RzILOpPure *x,
  */
 
 #define IS_FSR(x) (RZ_STR_EQ(x, "fsr0") || RZ_STR_EQ(x, "fsr1") || RZ_STR_EQ(x, "fsr2"))
-static RzILOpPure *varg_mm(Pic18ILContext *ctx, const char *v, ut8 bank) {
+static RzILOpPure *varg_mm(PicHighendILContext *ctx, const char *v, ut8 bank) {
 	if (RZ_STR_ISEMPTY(v)) {
 		rz_warn_if_reached();
 		return NULL;
 	}
-	RzILOpPure *adr = pic18_reg_addr(ctx, v, bank);
+	RzILOpPure *adr = pic_highend_reg_addr(ctx, v, bank);
 	if (adr) {
 		return LOAD(adr);
 	}
 
-	PIC18_STATUS_BIT_GET(status);
-	PIC18_STATUS_BIT_GET(rcon);
-	PIC18_STATUS_BIT_GET(intcon);
+	PIC_HIGHEND_STATUS_BIT_GET(status);
+	PIC_HIGHEND_STATUS_BIT_GET(rcon);
+	PIC_HIGHEND_STATUS_BIT_GET(intcon);
 
 	if (RZ_STR_EQ(v, "tblptr") || RZ_STR_EQ(v, "tos")) {
 		return varg_uhl(ctx, v, bank);
@@ -148,19 +148,19 @@ static RzILOpPure *varg_mm(Pic18ILContext *ctx, const char *v, ut8 bank) {
 	}
 	return VARG(v);
 }
-static RzILOpEffect *setg_mm(Pic18ILContext *ctx, const char *v, RzILOpPure *x, ut8 bank) {
+static RzILOpEffect *setg_mm(PicHighendILContext *ctx, const char *v, RzILOpPure *x, ut8 bank) {
 	if (RZ_STR_ISEMPTY(v)) {
 		rz_warn_if_reached();
 		return NULL;
 	}
-	RzILOpPure *adr = pic18_reg_addr(ctx, v, bank);
+	RzILOpPure *adr = pic_highend_reg_addr(ctx, v, bank);
 	if (adr) {
 		return STORE(adr, x);
 	}
 
-	PIC18_STATUS_BIT_SET(status);
-	PIC18_STATUS_BIT_SET(rcon);
-	PIC18_STATUS_BIT_SET(intcon);
+	PIC_HIGHEND_STATUS_BIT_SET(status);
+	PIC_HIGHEND_STATUS_BIT_SET(rcon);
+	PIC_HIGHEND_STATUS_BIT_SET(intcon);
 
 	if (RZ_STR_EQ(v, "tblptr") || RZ_STR_EQ(v, "tos")) {
 		return setg_uhl(ctx, v, x, bank);
@@ -185,9 +185,9 @@ static RzILOpEffect *setg_mm(Pic18ILContext *ctx, const char *v, RzILOpPure *x, 
 
 #define RW   "wreg"
 #define VRW  (VARG(RW))
-#define RF   pic18_regname(F)
-#define VRF  (VARG(pic18_regname(F)))
-#define RWF  (D ? pic18_regname(F) : RW)
+#define RF   pic_highend_regname(F)
+#define VRF  (VARG(pic_highend_regname(F)))
+#define RWF  (D ? pic_highend_regname(F) : RW)
 #define VRWF (VARG(RWF))
 
 #define VPC  (UN(24, PC))
@@ -211,10 +211,10 @@ static RzILOpEffect *setg_mm(Pic18ILContext *ctx, const char *v, RzILOpPure *x, 
  * If `a` is 1; the bank specified by the BSR Register is used.
  * If `a` is 0; the access bank is used.
  */
-static RzILOpEffect *set_dest(Pic18ILContext *ctx, RzILOpPure *x) {
-	const char *fsr = ctx->op->d ? pic18_regname(F) : RW;
+static RzILOpEffect *set_dest(PicHighendILContext *ctx, RzILOpPure *x) {
+	const char *fsr = ctx->op->d ? pic_highend_regname(F) : RW;
 	if (ctx->op->a) {
-		RzILOpPure *adr = pic18_reg_addr(ctx, fsr, 0);
+		RzILOpPure *adr = pic_highend_reg_addr(ctx, fsr, 0);
 		if (adr != NULL) {
 			return STORE(
 				ADD(MUL(UNSIGNED(24, LOGAND(VARG("bsr"), U8(0x0f))), UN(24, 0x100)), adr),
@@ -255,7 +255,7 @@ static RzILOpEffect *set_dest(Pic18ILContext *ctx, RzILOpPure *x) {
  * with either the high or low order bit of the source register.
  */
 
-static RzILOpEffect *status_add(Pic18ILContext *ctx, RzILOpPure *a, RzILOpPure *b, RzILOpPure *res, RzILOpPure *curry) {
+static RzILOpEffect *status_add(PicHighendILContext *ctx, RzILOpPure *a, RzILOpPure *b, RzILOpPure *res, RzILOpPure *curry) {
 	return SEQ5(
 		SETG("c", CHECK_CARRY(a, b, res)),
 		SETG("dc", CHECK_DIGIT_CARRY(DUP(a), DUP(b), DUP(res))),
@@ -264,7 +264,7 @@ static RzILOpEffect *status_add(Pic18ILContext *ctx, RzILOpPure *a, RzILOpPure *
 		SETG("n", MSB(DUP(res))));
 }
 
-static RzILOpEffect *status_sub(Pic18ILContext *ctx, RzILOpPure *a, RzILOpPure *b, RzILOpPure *res, RzILOpPure *curry) {
+static RzILOpEffect *status_sub(PicHighendILContext *ctx, RzILOpPure *a, RzILOpPure *b, RzILOpPure *res, RzILOpPure *curry) {
 	return SEQ5(
 		SETG("c", CHECK_BORROW(a, b, res)),
 		SETG("dc", CHECK_DIGIT_BORROW(DUP(a), DUP(b), DUP(res))),
@@ -273,13 +273,13 @@ static RzILOpEffect *status_sub(Pic18ILContext *ctx, RzILOpPure *a, RzILOpPure *
 		SETG("n", MSB(DUP(res))));
 }
 
-static RzILOpEffect *status_res(Pic18ILContext *ctx, RzILOpPure *res) {
+static RzILOpEffect *status_res(PicHighendILContext *ctx, RzILOpPure *res) {
 	return SEQ2(
 		SETG("z", IS_ZERO(res)),
 		SETG("n", MSB(DUP(res))));
 }
 
-static RzILOpEffect *set_dest_status(Pic18ILContext *ctx, RzILOpPure *x) {
+static RzILOpEffect *set_dest_status(PicHighendILContext *ctx, RzILOpPure *x) {
 	return SEQ3(
 		SETL("__res", x),
 		status_res(ctx, VARL("__res")),
@@ -294,7 +294,7 @@ static RzILOpPure *complement_2(RzILOpPure *x) {
 	return ADD(U8(1), NEG(x));
 }
 
-static RzILOpPure *decimal_adjust(Pic18ILContext *ctx, RzILOpPure *x) {
+static RzILOpPure *decimal_adjust(PicHighendILContext *ctx, RzILOpPure *x) {
 	return LET(
 		"_x03", UNSIGNED(4, x),
 		LET(
@@ -310,7 +310,7 @@ static RzILOpPure *decimal_adjust(Pic18ILContext *ctx, RzILOpPure *x) {
 
 #define SET_DST_RES (dst ? SETG(dst, VARL("__res")) : set_dest(ctx, VARL("__res")))
 
-static RzILOpEffect *op_add(Pic18ILContext *ctx, const char *dst,
+static RzILOpEffect *op_add(PicHighendILContext *ctx, const char *dst,
 	RzILOpPure *a, RzILOpPure *b, RzILOpPure *curry) {
 	return SEQ3(
 		SETL("__res", ADD(a, curry ? ADD(b, curry) : b)),
@@ -318,7 +318,7 @@ static RzILOpEffect *op_add(Pic18ILContext *ctx, const char *dst,
 		SET_DST_RES);
 }
 
-static RzILOpEffect *op_sub(Pic18ILContext *ctx, const char *dst,
+static RzILOpEffect *op_sub(PicHighendILContext *ctx, const char *dst,
 	RzILOpPure *a, RzILOpPure *b, RzILOpPure *curry) {
 	return SEQ3(
 		SETL("__res", SUB(a, curry ? ADD(b, curry) : b)),
@@ -326,14 +326,14 @@ static RzILOpEffect *op_sub(Pic18ILContext *ctx, const char *dst,
 		SET_DST_RES);
 }
 
-static RzILOpEffect *op_branch(Pic18ILContext *ctx, RzILOpPure *condition) {
+static RzILOpEffect *op_branch(PicHighendILContext *ctx, RzILOpPure *condition) {
 	st8 n = (st8)((ut8)ctx->op->n);
 	RzILOpEffect *jmp = JMP(UN(24, PC + 2 + 2 * n));
 	return condition ? BRANCH(condition, jmp, NOP())
 			 : jmp;
 }
 
-static RzILOpEffect *load_shadows_opt(Pic18ILContext *ctx) {
+static RzILOpEffect *load_shadows_opt(PicHighendILContext *ctx) {
 	return ctx->op->s ? SEQ3(
 				    SETG("wregs", VRW),
 				    SETG("statuss", VARG("status")),
@@ -341,14 +341,14 @@ static RzILOpEffect *load_shadows_opt(Pic18ILContext *ctx) {
 			  : NOP();
 }
 
-static RzILOpEffect *op_call(Pic18ILContext *ctx) {
+static RzILOpEffect *op_call(PicHighendILContext *ctx) {
 	return SEQ3(
 		SETG("tos", UN(24, PC + 4)),
 		load_shadows_opt(ctx),
 		JMP(UN(24, K)));
 }
 
-static RzILOpEffect *op_and(Pic18ILContext *ctx, const char *dst,
+static RzILOpEffect *op_and(PicHighendILContext *ctx, const char *dst,
 	RzILOpPure *a, RzILOpPure *b) {
 	return SEQ3(
 		SETL("__res", LOGAND(a, b)),
@@ -356,38 +356,38 @@ static RzILOpEffect *op_and(Pic18ILContext *ctx, const char *dst,
 		SET_DST_RES);
 }
 
-static RzILOpEffect *op_skip_if(Pic18ILContext *ctx, RzILOpPure *condition) {
+static RzILOpEffect *op_skip_if(PicHighendILContext *ctx, RzILOpPure *condition) {
 	return BRANCH(condition, SETG("_skip", U8(1)), NOP());
 }
 
-static RzILOpEffect *set_prod16(Pic18ILContext *ctx, RzILOpPure *res) {
+static RzILOpEffect *set_prod16(PicHighendILContext *ctx, RzILOpPure *res) {
 	return SEQ3(
 		SETL("__res", res),
 		SETG("prodh", UNSIGNED(8, SHIFTR0(VARL("__res"), U8(8)))),
 		SETG("prodl", UNSIGNED(8, VARL("__res"))));
 }
 
-static RzILOpEffect *op_pop(Pic18ILContext *ctx) {
+static RzILOpEffect *op_pop(PicHighendILContext *ctx) {
 	return SEQ2(
 		SETG("stkptr", SUB(VARG("stkptr"), U8(4))),
 		SETG("tos", LOADW(24, UNSIGNED(24, ADD(VARG("_stack"), VARG("stkptr"))))));
 }
 
-static RzILOpEffect *op_pop_jmp(Pic18ILContext *ctx) {
+static RzILOpEffect *op_pop_jmp(PicHighendILContext *ctx) {
 	return SEQ3(
 		SETL("_pc", VARG("tos")),
 		op_pop(ctx),
 		JMP(VARL("_pc")));
 }
 
-static RzILOpEffect *op_push(Pic18ILContext *ctx, RzILOpPure *x) {
+static RzILOpEffect *op_push(PicHighendILContext *ctx, RzILOpPure *x) {
 	return SEQ3(
 		SETG("stkptr", ADD(VARG("stkptr"), U8(4))),
 		STOREW(UNSIGNED(24, ADD(VARG("_stack"), VARG("stkptr"))), x),
 		SETG("tos", DUP(x)));
 }
 
-static RzILOpEffect *op_lfsr(Pic18ILContext *ctx) {
+static RzILOpEffect *op_lfsr(PicHighendILContext *ctx) {
 	ut8 lo = (ut8)ctx->op->k;
 	ut8 hi = (ut8)ctx->op->k >> 8;
 	char regl[8];
@@ -399,97 +399,97 @@ static RzILOpEffect *op_lfsr(Pic18ILContext *ctx) {
 		SETG(regh, U8(hi)));
 }
 
-static RzILOpEffect *pic18_il_op(Pic18ILContext *ctx) {
+static RzILOpEffect *pic_highend_il_op(PicHighendILContext *ctx) {
 	switch (ctx->op->code) {
-	case PIC18_OPCODE_ADDLW: return op_add(ctx, RW, VRW, U8(K), NULL);
-	case PIC18_OPCODE_ADDWF: return op_add(ctx, NULL, VRW, VRF, NULL);
-	case PIC18_OPCODE_ADDWFC: return op_add(ctx, NULL, VRW, VRF, BOOL_TO_BV(VRC, 8));
-	case PIC18_OPCODE_ANDLW: return op_and(ctx, RW, VRW, U8(K));
-	case PIC18_OPCODE_ANDWF: return op_and(ctx, NULL, VRW, VRF);
-	case PIC18_OPCODE_BC: return op_branch(ctx, VRC);
-	case PIC18_OPCODE_BN: return op_branch(ctx, VRN);
-	case PIC18_OPCODE_BOV: return op_branch(ctx, VROV);
-	case PIC18_OPCODE_BZ: return op_branch(ctx, VRZ);
-	case PIC18_OPCODE_BNC: return op_branch(ctx, INV(VRC));
-	case PIC18_OPCODE_BNN: return op_branch(ctx, INV(VRN));
-	case PIC18_OPCODE_BNOV: return op_branch(ctx, INV(VROV));
-	case PIC18_OPCODE_BNZ: return op_branch(ctx, INV(VRZ));
-	case PIC18_OPCODE_BRA: return op_branch(ctx, NULL);
+	case PIC_HIGHEND_OPCODE_ADDLW: return op_add(ctx, RW, VRW, U8(K), NULL);
+	case PIC_HIGHEND_OPCODE_ADDWF: return op_add(ctx, NULL, VRW, VRF, NULL);
+	case PIC_HIGHEND_OPCODE_ADDWFC: return op_add(ctx, NULL, VRW, VRF, BOOL_TO_BV(VRC, 8));
+	case PIC_HIGHEND_OPCODE_ANDLW: return op_and(ctx, RW, VRW, U8(K));
+	case PIC_HIGHEND_OPCODE_ANDWF: return op_and(ctx, NULL, VRW, VRF);
+	case PIC_HIGHEND_OPCODE_BC: return op_branch(ctx, VRC);
+	case PIC_HIGHEND_OPCODE_BN: return op_branch(ctx, VRN);
+	case PIC_HIGHEND_OPCODE_BOV: return op_branch(ctx, VROV);
+	case PIC_HIGHEND_OPCODE_BZ: return op_branch(ctx, VRZ);
+	case PIC_HIGHEND_OPCODE_BNC: return op_branch(ctx, INV(VRC));
+	case PIC_HIGHEND_OPCODE_BNN: return op_branch(ctx, INV(VRN));
+	case PIC_HIGHEND_OPCODE_BNOV: return op_branch(ctx, INV(VROV));
+	case PIC_HIGHEND_OPCODE_BNZ: return op_branch(ctx, INV(VRZ));
+	case PIC_HIGHEND_OPCODE_BRA: return op_branch(ctx, NULL);
 
-	case PIC18_OPCODE_BCF: return regbit_set(RF, B, 0);
-	case PIC18_OPCODE_BSF: return regbit_set(RF, B, 1);
-	case PIC18_OPCODE_BTG: return regbit_set1(RF, B, INV(bit_get(VRF, B)));
-	case PIC18_OPCODE_BTFSC: return op_skip_if(ctx, BITN(VRF, B));
-	case PIC18_OPCODE_BTFSS: return op_skip_if(ctx, bit_get(VRF, B));
+	case PIC_HIGHEND_OPCODE_BCF: return regbit_set(RF, B, 0);
+	case PIC_HIGHEND_OPCODE_BSF: return regbit_set(RF, B, 1);
+	case PIC_HIGHEND_OPCODE_BTG: return regbit_set1(RF, B, INV(bit_get(VRF, B)));
+	case PIC_HIGHEND_OPCODE_BTFSC: return op_skip_if(ctx, BITN(VRF, B));
+	case PIC_HIGHEND_OPCODE_BTFSS: return op_skip_if(ctx, bit_get(VRF, B));
 
-	case PIC18_OPCODE_CALL: return op_call(ctx);
-	case PIC18_OPCODE_CLRF: return SEQ2(SETG(RF, U8(0)), SETG("z", IL_TRUE));
-	case PIC18_OPCODE_CLRWDT:
+	case PIC_HIGHEND_OPCODE_CALL: return op_call(ctx);
+	case PIC_HIGHEND_OPCODE_CLRF: return SEQ2(SETG(RF, U8(0)), SETG("z", IL_TRUE));
+	case PIC_HIGHEND_OPCODE_CLRWDT:
 		return NOP();
 		//		return SEQ4(
 		//			SETG("wdt", U8(0)),
 		//			SETG("wdtps", IL_FALSE),
 		//			SETG("to", IL_TRUE),
 		//			SETG("pd", IL_TRUE));
-	case PIC18_OPCODE_SLEEP:
+	case PIC_HIGHEND_OPCODE_SLEEP:
 		return NOP();
 		//		return SEQ4(
 		//			SETG("wdt", U8(0)),
 		//			SETG("wdtps", IL_FALSE),
 		//			SETG("to", IL_TRUE),
 		//			SETG("pd", IL_FALSE));
-	case PIC18_OPCODE_COMF: return set_dest_status(ctx, complement_1(VRF));
-	case PIC18_OPCODE_CPFSEQ: return op_skip_if(ctx, EQ(VRW, VRF));
-	case PIC18_OPCODE_CPFSGT: return op_skip_if(ctx, UGT(VRF, VRW));
-	case PIC18_OPCODE_CPFSLT: return op_skip_if(ctx, ULT(VRF, VRW));
-	case PIC18_OPCODE_DAW:
+	case PIC_HIGHEND_OPCODE_COMF: return set_dest_status(ctx, complement_1(VRF));
+	case PIC_HIGHEND_OPCODE_CPFSEQ: return op_skip_if(ctx, EQ(VRW, VRF));
+	case PIC_HIGHEND_OPCODE_CPFSGT: return op_skip_if(ctx, UGT(VRF, VRW));
+	case PIC_HIGHEND_OPCODE_CPFSLT: return op_skip_if(ctx, ULT(VRF, VRW));
+	case PIC_HIGHEND_OPCODE_DAW:
 		return SEQ3(
 			SETL("__res", decimal_adjust(ctx, VRW)),
 			SETG("c", IL_FALSE), // TODO: status C
 			SETG(RW, VARL("__res")));
-	case PIC18_OPCODE_DECF:
+	case PIC_HIGHEND_OPCODE_DECF:
 		return SEQ3(
 			SETL("__res", SUB(VRF, U8(1))),
 			status_sub(ctx, VRF, U8(1), VARL("__res"), NULL),
 			set_dest(ctx, VARL("__res")));
-	case PIC18_OPCODE_DECFSZ:
+	case PIC_HIGHEND_OPCODE_DECFSZ:
 		return SEQ3(
 			SETL("__res", SUB(VRF, U8(1))),
 			set_dest(ctx, VARL("__res")),
 			op_skip_if(ctx, IS_ZERO(VARL("__res"))));
-	case PIC18_OPCODE_DCFSNZ:
+	case PIC_HIGHEND_OPCODE_DCFSNZ:
 		return SEQ3(
 			SETL("__res", SUB(VRF, U8(1))),
 			set_dest(ctx, VARL("__res")),
 			op_skip_if(ctx, NON_ZERO(VARL("__res"))));
-	case PIC18_OPCODE_GOTO: return JMP(UN(24, (ut32)K));
-	case PIC18_OPCODE_INCF:
+	case PIC_HIGHEND_OPCODE_GOTO: return JMP(UN(24, (ut32)K));
+	case PIC_HIGHEND_OPCODE_INCF:
 		return SEQ3(
 			SETL("__res", ADD(VRF, U8(1))),
 			status_add(ctx, VRF, U8(1), VARL("__res"), NULL),
 			set_dest(ctx, VARL("__res")));
-	case PIC18_OPCODE_INCFSZ:
+	case PIC_HIGHEND_OPCODE_INCFSZ:
 		return SEQ3(
 			SETL("__res", ADD(VRF, U8(1))),
 			set_dest(ctx, VARL("__res")),
 			op_skip_if(ctx, IS_ZERO(VARL("__res"))));
-	case PIC18_OPCODE_INFSNZ:
+	case PIC_HIGHEND_OPCODE_INFSNZ:
 		return SEQ3(
 			SETL("__res", ADD(VRF, U8(1))),
 			set_dest(ctx, VARL("__res")),
 			op_skip_if(ctx, NON_ZERO(VARL("__res"))));
-	case PIC18_OPCODE_IORWF:
+	case PIC_HIGHEND_OPCODE_IORWF:
 		return set_dest_status(ctx, LOGOR(VRW, VRF));
-	case PIC18_OPCODE_IORLW:
+	case PIC_HIGHEND_OPCODE_IORLW:
 		return SEQ2(
 			SETG(RW, LOGOR(VRW, U8(K))),
 			status_res(ctx, VRW));
-	case PIC18_OPCODE_LFSR: return op_lfsr(ctx);
-	case PIC18_OPCODE_MOVF:
+	case PIC_HIGHEND_OPCODE_LFSR: return op_lfsr(ctx);
+	case PIC_HIGHEND_OPCODE_MOVF:
 		return set_dest_status(ctx, VRF);
-	case PIC18_OPCODE_MOVFF: {
-		const char *rs = pic18_regname_extra(ctx->op->s);
-		const char *rd = pic18_regname_extra(ctx->op->d);
+	case PIC_HIGHEND_OPCODE_MOVFF: {
+		const char *rs = pic_highend_regname_extra(ctx->op->s);
+		const char *rd = pic_highend_regname_extra(ctx->op->d);
 		if (rs && rd) {
 			return setg_mm(ctx, rd,
 				varg_mm(ctx, rs, 0),
@@ -506,26 +506,26 @@ static RzILOpEffect *pic18_il_op(Pic18ILContext *ctx) {
 				LOAD(U24(ctx->op->s)));
 		}
 	}
-	case PIC18_OPCODE_MOVLB:
+	case PIC_HIGHEND_OPCODE_MOVLB:
 		return SETG("bsr", LOGOR(U8(K), LOGAND(VARG("bsr"), U8(0xf0))));
-	case PIC18_OPCODE_MOVLW:
+	case PIC_HIGHEND_OPCODE_MOVLW:
 		return SETG(RW, U8(K));
-	case PIC18_OPCODE_MOVWF:
+	case PIC_HIGHEND_OPCODE_MOVWF:
 		return SETG(RF, VRW);
-	case PIC18_OPCODE_MULLW:
+	case PIC_HIGHEND_OPCODE_MULLW:
 		return set_prod16(ctx, MUL(UNSIGNED(16, VRW), U16(K)));
-	case PIC18_OPCODE_MULWF:
+	case PIC_HIGHEND_OPCODE_MULWF:
 		return set_prod16(ctx, MUL(UNSIGNED(16, VRW), UNSIGNED(16, VRF)));
-	case PIC18_OPCODE_NOP: return NOP();
-	case PIC18_OPCODE_NEGF: return SETG(RF, complement_2(VRF));
-	case PIC18_OPCODE_POP: return op_pop(ctx);
-	case PIC18_OPCODE_PUSH: return op_push(ctx, UN(24, PC));
-	case PIC18_OPCODE_RCALL:
+	case PIC_HIGHEND_OPCODE_NOP: return NOP();
+	case PIC_HIGHEND_OPCODE_NEGF: return SETG(RF, complement_2(VRF));
+	case PIC_HIGHEND_OPCODE_POP: return op_pop(ctx);
+	case PIC_HIGHEND_OPCODE_PUSH: return op_push(ctx, UN(24, PC));
+	case PIC_HIGHEND_OPCODE_RCALL:
 		return SEQ2(
 			op_push(ctx, UN(24, PC + 2)),
 			JMP(UN(24, PC + 2 + 2 * N)));
-	case PIC18_OPCODE_RESET: return NOP();
-	case PIC18_OPCODE_RETFIE:
+	case PIC_HIGHEND_OPCODE_RESET: return NOP();
+	case PIC_HIGHEND_OPCODE_RETFIE:
 		return SEQ3(
 			BRANCH(
 				INV(VARG("ipen")),
@@ -536,80 +536,80 @@ static RzILOpEffect *pic18_il_op(Pic18ILContext *ctx) {
 					SETG("gieh", IL_TRUE))),
 			load_shadows_opt(ctx),
 			op_pop_jmp(ctx));
-	case PIC18_OPCODE_RETLW:
+	case PIC_HIGHEND_OPCODE_RETLW:
 		return SEQ2(
 			SETG(RW, U8(K)),
 			op_pop_jmp(ctx));
-	case PIC18_OPCODE_RETURN:
+	case PIC_HIGHEND_OPCODE_RETURN:
 		return SEQ2(
 			load_shadows_opt(ctx),
 			op_pop_jmp(ctx));
-	case PIC18_OPCODE_RLNCF:
+	case PIC_HIGHEND_OPCODE_RLNCF:
 		return set_dest_status(ctx, LET("_x", VRF, LOGOR(SHIFTL0(VARLP("_x"), U8(7)), BOOL_TO_BV(MSB(VARLP("_x")), 8))));
-	case PIC18_OPCODE_RRNCF:
+	case PIC_HIGHEND_OPCODE_RRNCF:
 		return set_dest_status(ctx, LET("_x", VRF, LOGOR(SHIFTR0(VARLP("_x"), U8(7)), BOOL_TO_BV(LSB(VARLP("_x")), 8))));
-	case PIC18_OPCODE_RLCF:
+	case PIC_HIGHEND_OPCODE_RLCF:
 		return SEQ3(
 			SETL("_x", VRF),
 			SETG("c", MSB(VARL("_x"))),
 			set_dest_status(ctx, LOGOR(SHIFTL0(VARL("_x"), U8(7)), BOOL_TO_BV(VRC, 8))));
-	case PIC18_OPCODE_RRCF:
+	case PIC_HIGHEND_OPCODE_RRCF:
 		return SEQ3(
 			SETL("_x", VRF),
 			SETG("c", LSB(VARL("_x"))),
 			set_dest_status(ctx, LOGOR(SHIFTR0(VARL("_x"), U8(7)), BOOL_TO_BV(VRC, 8))));
-	case PIC18_OPCODE_SETF:
+	case PIC_HIGHEND_OPCODE_SETF:
 		return SETG(RF, U8(0xff));
-	case PIC18_OPCODE_SUBFWB: return op_sub(ctx, NULL, VRW, VRF, BOOL_TO_BV(VRC, 8));
-	case PIC18_OPCODE_SUBLW: return op_sub(ctx, RW, U8(K), VRW, NULL);
-	case PIC18_OPCODE_SUBWF: return op_sub(ctx, NULL, VRF, VRW, NULL);
-	case PIC18_OPCODE_SUBWFB: return op_sub(ctx, NULL, VRF, VRW, BOOL_TO_BV(VRC, 8));
-	case PIC18_OPCODE_SWAPF:
+	case PIC_HIGHEND_OPCODE_SUBFWB: return op_sub(ctx, NULL, VRW, VRF, BOOL_TO_BV(VRC, 8));
+	case PIC_HIGHEND_OPCODE_SUBLW: return op_sub(ctx, RW, U8(K), VRW, NULL);
+	case PIC_HIGHEND_OPCODE_SUBWF: return op_sub(ctx, NULL, VRF, VRW, NULL);
+	case PIC_HIGHEND_OPCODE_SUBWFB: return op_sub(ctx, NULL, VRF, VRW, BOOL_TO_BV(VRC, 8));
+	case PIC_HIGHEND_OPCODE_SWAPF:
 		return set_dest(ctx, APPEND(UNSIGNED(4, VRF), UNSIGNED(4, SHIFTR0(VRF, U8(4)))));
 
-	case PIC18_OPCODE_TBLRDs:
+	case PIC_HIGHEND_OPCODE_TBLRDs:
 		return SETG("tablat", LOAD(VARG("tblptr")));
-	case PIC18_OPCODE_TBLRDis:
+	case PIC_HIGHEND_OPCODE_TBLRDis:
 		return SEQ2(
 			SETG("tblptr", ADD(VARG("tblptr"), UN(24, 1))),
 			SETG("tablat", LOAD(VARG("tblptr"))));
-	case PIC18_OPCODE_TBLRDsd:
+	case PIC_HIGHEND_OPCODE_TBLRDsd:
 		return SEQ2(
 			SETG("tablat", LOAD(VARG("tblptr"))),
 			SETG("tblptr", SUB(VARG("tblptr"), UN(24, 1))));
-	case PIC18_OPCODE_TBLRDsi:
+	case PIC_HIGHEND_OPCODE_TBLRDsi:
 		return SEQ2(
 			SETG("tablat", LOAD(VARG("tblptr"))),
 			SETG("tblptr", ADD(VARG("tblptr"), UN(24, 1))));
-	case PIC18_OPCODE_TBLWTMs:
+	case PIC_HIGHEND_OPCODE_TBLWTMs:
 		return STORE(VARG("tblptr"), VARG("tablat"));
-	case PIC18_OPCODE_TBLWTis:
+	case PIC_HIGHEND_OPCODE_TBLWTis:
 		return SEQ2(
 			SETG("tblptr", ADD(VARG("tblptr"), UN(24, 1))),
 			STORE(VARG("tblptr"), VARG("tablat")));
-	case PIC18_OPCODE_TBLWTMsd:
+	case PIC_HIGHEND_OPCODE_TBLWTMsd:
 		return SEQ2(
 			STORE(VARG("tblptr"), VARG("tablat")),
 			SETG("tblptr", SUB(VARG("tblptr"), UN(24, 1))));
-	case PIC18_OPCODE_TBLWTMsi:
+	case PIC_HIGHEND_OPCODE_TBLWTMsi:
 		return SEQ2(
 			STORE(VARG("tblptr"), VARG("tablat")),
 			SETG("tblptr", ADD(VARG("tblptr"), UN(24, 1))));
-	case PIC18_OPCODE_TSTFSZ:
+	case PIC_HIGHEND_OPCODE_TSTFSZ:
 		return op_skip_if(ctx, IS_ZERO(VRF));
-	case PIC18_OPCODE_XORWF:
+	case PIC_HIGHEND_OPCODE_XORWF:
 		return set_dest_status(ctx, LOGXOR(VRW, VRF));
-	case PIC18_OPCODE_XORLW:
+	case PIC_HIGHEND_OPCODE_XORLW:
 		return SEQ2(
 			SETG(RW, LOGXOR(VRW, VRF)),
 			status_res(ctx, VRW));
-	case PIC18_OPCODE_INVALID: break;
+	case PIC_HIGHEND_OPCODE_INVALID: break;
 	}
 	return NULL;
 }
 
-static RzILOpEffect *pic18_il_op_finally(Pic18ILContext *ctx) {
-	RzILOpEffect *op = pic18_il_op(ctx);
+static RzILOpEffect *pic_highend_il_op_finally(PicHighendILContext *ctx) {
+	RzILOpEffect *op = pic_highend_il_op(ctx);
 	ILOpEff *eff;
 	rz_vector_foreach (&ctx->effs, eff) {
 		switch (eff->tag) {
@@ -661,7 +661,7 @@ static RzILOpEffect *pic18_il_op_finally(Pic18ILContext *ctx) {
 #undef RS
 #undef VRS
 
-static const char *pic18_reg_bindings[] = {
+static const char *pic_highend_reg_bindings[] = {
 	"pc",
 	"wregs",
 	"statuss",
@@ -672,10 +672,10 @@ static const char *pic18_reg_bindings[] = {
 	NULL
 };
 
-RzAnalysisILConfig *pic18_il_config(
+RzAnalysisILConfig *pic_highend_il_config(
 	RZ_NONNULL RzAnalysis *analysis) {
 	RzAnalysisILConfig *cfg = rz_analysis_il_config_new(24, false, 24);
-	cfg->reg_bindings = pic18_reg_bindings;
+	cfg->reg_bindings = pic_highend_reg_bindings;
 	return cfg;
 }
 
