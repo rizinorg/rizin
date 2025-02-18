@@ -21,10 +21,12 @@
 #define MIPS_REG(idx)         mips_get_reg(handle, insn, idx, gprlen)
 #define MIPS_IMM(idx)         UN(gprlen, IMM(idx))
 #define MIPS_ZERO()           UN(gprlen, 0)
-#define MIPS_LINK()           SETG(MIPS_REG_RA, UN(gprlen, insn->address + 8)) // link register $ra
+#define MIPS_LINK()           SETG(MIPS_REG_RA, UN(gprlen, insn->address + 8)) /* link register $ra */
 
-// This macro checks for any writes to the $zero
-// register and returns a NOP operation.
+/**
+ * This macro checks for any writes to the $zero
+ * register and returns a NOP operation.
+ **/
 #define MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP() \
 	do { \
 		if (IS_ZERO_REG(0)) { \

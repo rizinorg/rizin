@@ -124,14 +124,14 @@ static bool cs_mode_from_cpu(const char *cpu, int bits, bool big_endian, cs_mode
 	do { \
 		if (!strcmp(cpu, cpu_name)) { \
 			*mode = _mode | mode_flag; \
-			if (gpr_size) { \
-				if (force_gpr32) { \
-					*gpr_size = 32; \
-				} else if (force_gpr64) { \
-					*gpr_size = 64; \
-				} else { \
-					*gpr_size = gprlen; \
-				} \
+			if (!gpr_size) { \
+				return true; \
+			} else if (force_gpr32) { \
+				*gpr_size = 32; \
+			} else if (force_gpr64) { \
+				*gpr_size = 64; \
+			} else { \
+				*gpr_size = gprlen; \
 			} \
 			return true; \
 		} \
