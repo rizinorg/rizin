@@ -2,7 +2,7 @@ NAME=emulateme nostdlib mips1
 FILE=bins/elf/emulateme.nostd.mips1
 TIMEOUT=30
 CMDS=<<EOF
-e str.search.encoding=utf8
+e str.encoding=utf8
 s sym.decrypt
 af # required for pdr
 o malloc://0x1000 0x40000
@@ -29,7 +29,7 @@ NAME=emulateme nostdlib mips2
 FILE=bins/elf/emulateme.nostd.mips2
 TIMEOUT=30
 CMDS=<<EOF
-e str.search.encoding=utf8
+e str.encoding=utf8
 s sym.decrypt
 af # required for pdr
 o malloc://0x1000 0x40000
@@ -56,7 +56,7 @@ NAME=emulateme nostdlib mips32
 FILE=bins/elf/emulateme.nostd.mips32
 TIMEOUT=30
 CMDS=<<EOF
-e str.search.encoding=utf8
+e str.encoding=utf8
 s sym.decrypt
 af # required for pdr
 o malloc://0x1000 0x40000
@@ -83,7 +83,7 @@ NAME=emulateme nostdlib mips32r2
 FILE=bins/elf/emulateme.nostd.mips32r2
 TIMEOUT=30
 CMDS=<<EOF
-e str.search.encoding=utf8
+e str.encoding=utf8
 s sym.decrypt
 af # required for pdr
 o malloc://0x1000 0x40000
@@ -110,7 +110,7 @@ NAME=emulateme nostdlib mips32r3
 FILE=bins/elf/emulateme.nostd.mips32r3
 TIMEOUT=30
 CMDS=<<EOF
-e str.search.encoding=utf8
+e str.encoding=utf8
 s sym.decrypt
 af # required for pdr
 o malloc://0x1000 0x40000
@@ -137,7 +137,7 @@ NAME=emulateme nostdlib mips32r5
 FILE=bins/elf/emulateme.nostd.mips32r5
 TIMEOUT=30
 CMDS=<<EOF
-e str.search.encoding=utf8
+e str.encoding=utf8
 s sym.decrypt
 af # required for pdr
 o malloc://0x1000 0x40000
@@ -164,7 +164,7 @@ NAME=emulateme nostdlib mips3
 FILE=bins/elf/emulateme.nostd.mips3
 TIMEOUT=30
 CMDS=<<EOF
-e str.search.encoding=utf8
+e str.encoding=utf8
 s sym.decrypt
 af # required for pdr
 o malloc://0x1000 0x40000
@@ -191,7 +191,7 @@ NAME=emulateme nostdlib mips4
 FILE=bins/elf/emulateme.nostd.mips4
 TIMEOUT=30
 CMDS=<<EOF
-e str.search.encoding=utf8
+e str.encoding=utf8
 s sym.decrypt
 af # required for pdr
 o malloc://0x1000 0x40000
@@ -218,7 +218,7 @@ NAME=emulateme nostdlib mips64
 FILE=bins/elf/emulateme.nostd.mips64
 TIMEOUT=30
 CMDS=<<EOF
-e str.search.encoding=utf8
+e str.encoding=utf8
 s sym.decrypt
 af # required for pdr
 o malloc://0x1000 0x40000
@@ -245,7 +245,7 @@ NAME=emulateme nostdlib mips64
 FILE=bins/elf/emulateme.nostd.mips64
 TIMEOUT=30
 CMDS=<<EOF
-e str.search.encoding=utf8
+e str.encoding=utf8
 s sym.decrypt
 af # required for pdr
 o malloc://0x1000 0x40000
@@ -272,7 +272,7 @@ NAME=emulateme nostdlib mips64r2
 FILE=bins/elf/emulateme.nostd.mips64r2
 TIMEOUT=30
 CMDS=<<EOF
-e str.search.encoding=utf8
+e str.encoding=utf8
 s sym.decrypt
 af # required for pdr
 o malloc://0x1000 0x40000
@@ -299,7 +299,7 @@ NAME=emulateme nostdlib mips64r3
 FILE=bins/elf/emulateme.nostd.mips64r3
 TIMEOUT=30
 CMDS=<<EOF
-e str.search.encoding=utf8
+e str.encoding=utf8
 s sym.decrypt
 af # required for pdr
 o malloc://0x1000 0x40000
@@ -326,7 +326,7 @@ NAME=emulateme nostdlib orion
 FILE=bins/elf/emulateme.nostd.orion
 TIMEOUT=30
 CMDS=<<EOF
-e str.search.encoding=utf8
+e str.encoding=utf8
 s sym.decrypt
 af # required for pdr
 o malloc://0x1000 0x40000
@@ -353,7 +353,7 @@ NAME=emulateme nostdlib p5600
 FILE=bins/elf/emulateme.nostd.p5600
 TIMEOUT=30
 CMDS=<<EOF
-e str.search.encoding=utf8
+e str.encoding=utf8
 s sym.decrypt
 af # required for pdr
 o malloc://0x1000 0x40000
