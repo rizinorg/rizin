@@ -1244,3 +1244,15 @@ nth      paddr      vaddr len size section type  string
 
 EOF
 RUN
+
+NAME=Issue #4910 - segfault
+FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ascii
+CMDS=!rz-bin -z -N ":<dH" ${RZ_FILE}
+EXPECT=<<EOF
+[Strings]
+nth paddr vaddr len size section type string 
+---------------------------------------------
+
+EOF
+EXPECT_ERR=
+RUN
