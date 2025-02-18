@@ -99,8 +99,10 @@ r10000
 r12000
 r14000
 r16000
-noptr64
-nofloat
++noptr64
++nofloat
++gpr32
++gpr64
 EOF
 RUN
 

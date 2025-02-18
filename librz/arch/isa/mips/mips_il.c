@@ -4,6 +4,7 @@
 
 #include "mips_internal.h"
 
+#if CS_NEXT_VERSION > 5
 #include <rz_il/rz_il_opbuilder_begin.h>
 
 #define VARG_REG(idx)     VARG(REG(idx))
@@ -2751,5 +2752,17 @@ RZ_IPI RzAnalysisILConfig *mips_il_config(RzAnalysis *analysis) {
 	}
 	return r;
 }
-
 #include <rz_il/rz_il_opbuilder_end.h>
+
+#else // CS_NEXT_VERSION < 6
+// Capstone before v6 has a very broken MIPS support.
+// we cannot support it for RzIL.
+
+RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_insn *insn, const ut32 gprlen) {
+	return NULL;
+}
+
+RZ_IPI RzAnalysisILConfig *mips_il_config(RzAnalysis *analysis) {
+	return NULL;
+}
+#endif // CS_NEXT_VERSION

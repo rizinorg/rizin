@@ -39,7 +39,7 @@
 #else
 // first cpu is default
 #define CAPSTONE_CPUS     "mips32,mips1,mips2,mips32r2,mips32r3,mips32r5,mips32r6,mips3,mips4,mips5,mips64r2,mips64r3,mips64r5,mips64r6,octeon,octeonp,nanomips,nms1,i7200,micromips,micro32r3,micro32r6"
-#define CAPSTONE_FEATURES "noptr64,nofloat"
+#define CAPSTONE_FEATURES "+noptr64,+nofloat,+gpr32,+gpr64"
 #endif
 
 #define MIPS_CPUS     CAPSTONE_CPUS "," EXTRA_CPUS "," CAPSTONE_FEATURES
@@ -61,10 +61,6 @@
 
 static bool cs_mode_from_cpu(const char *cpu, int bits, bool big_endian, cs_mode *mode, ut32 *gpr_size) {
 	cs_mode _mode = (big_endian) ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN;
-	ut32 _add_gpr_size = bits > 0 ? bits : 32;
-
-	bool force_gpr32 = has_special_cpu_flag(cpu, "+gpr32");
-	bool force_gpr64 = has_special_cpu_flag(cpu, "+gpr64");
 
 #if CS_NEXT_VERSION < 6
 	switch (bits) {
@@ -120,6 +116,10 @@ static bool cs_mode_from_cpu(const char *cpu, int bits, bool big_endian, cs_mode
 	}
 
 #else // CS_NEXT_VERSION >= 6
+	ut32 _add_gpr_size = bits > 0 ? bits : 32;
+	bool force_gpr32 = has_special_cpu_flag(cpu, "+gpr32");
+	bool force_gpr64 = has_special_cpu_flag(cpu, "+gpr64");
+
 #define return_or_add_on_cpu(cpu_name, mode_flag, gprlen) \
 	do { \
 		if (!strcmp(cpu, cpu_name)) { \
@@ -225,7 +225,6 @@ static bool cs_mode_from_cpu(const char *cpu, int bits, bool big_endian, cs_mode
 	default:
 		return false;
 	}
-#endif /* CS_NEXT_VERSION */
 
 success:
 	if (gpr_size) {
@@ -237,6 +236,7 @@ success:
 			*gpr_size = _add_gpr_size;
 		}
 	}
+#endif /* CS_NEXT_VERSION */
 	return true;
 }
 #undef return_on_cpu
