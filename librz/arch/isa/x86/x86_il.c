@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: 2023 Dhruv Maroo <dhruvmaru007@gmail.com>
-// SPDX-FileCopyrightText: 2024 tushar3q34 <tushar3q34@gmail.com>
+// SPDX-FileCopyrightText: 2024-2025 tushar3q34 <tushar3q34@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "x86_il.h"
@@ -47,7 +47,6 @@ const char *x86_bound_regs_16[] = {
 	"bx", /* X86_REG_BX */
 	"cx", /* X86_REG_CX */
 	"dx", /* X86_REG_DX */
-	// "ip", /* X86_REG_IP */
 	"sp", /* X86_REG_SP */
 	"bp", /* X86_REG_BP */
 	"si", /* X86_REG_SI */
@@ -64,7 +63,6 @@ const char *x86_bound_regs_32[] = {
 	"ebx", /* X86_REG_EBX */
 	"ecx", /* X86_REG_ECX */
 	"edx", /* X86_REG_EDX */
-	// "eip", /* X86_REG_EIP */
 	"esp", /* X86_REG_ESP */
 	"ebp", /* X86_REG_EBP */
 	"esi", /* X86_REG_ESI */
@@ -88,7 +86,6 @@ const char *x86_bound_regs_64[] = {
 	"rbx", /* X86_REG_RBX */
 	"rcx", /* X86_REG_RCX */
 	"rdx", /* X86_REG_RDX */
-	// "rip", /* X86_REG_RIP */
 	"rsp", /* X86_REG_RSP */
 	"rbp", /* X86_REG_RBP */
 	"rsi", /* X86_REG_RSI */
@@ -197,7 +194,6 @@ x86_il_ins x86_ins[X86_INS_MAX_VALUE] = {
 	[X86_INS_LOOPE] = x86_il_loope,
 	[X86_INS_LOOPNE] = x86_il_loopne,
 	[X86_INS_MOV] = x86_il_mov,
-	//[X86_INS_MOVABS] = x86_il_mov,
 	[X86_INS_MOVSB] = x86_il_movsb,
 	[X86_INS_MOVSW] = x86_il_movsw,
 	[X86_INS_MOVSD] = x86_il_movsd,
@@ -220,14 +216,12 @@ x86_il_ins x86_ins[X86_INS_MAX_VALUE] = {
 	[X86_INS_PUSHFD] = x86_il_pushfd,
 	[X86_INS_PUSHFQ] = x86_il_pushfq,
 	[X86_INS_PUSHAD] = x86_il_pushaw,
-	//[X86_INS_PUSHAL] = x86_il_pushal,
 	[X86_INS_RCL] = x86_il_rcl,
 	[X86_INS_RCR] = x86_il_rcr,
 	[X86_INS_ROL] = x86_il_rol,
 	[X86_INS_ROR] = x86_il_ror,
 	[X86_INS_RET] = x86_il_ret,
 	[X86_INS_SAHF] = x86_il_sahf,
-	//[X86_INS_SAL] = x86_il_sal,
 	[X86_INS_SAR] = x86_il_sar,
 	[X86_INS_SHL] = x86_il_shl,
 	[X86_INS_SHR] = x86_il_shr,
@@ -303,8 +297,6 @@ x86_il_ins x86_ins[X86_INS_MAX_VALUE] = {
 	[X86_INS_FCOMPP] = x86_il_fcompp,
 	[X86_INS_FICOMP] = x86_il_ficomp,
 	[X86_INS_FCOMI] = x86_il_fcomi,
-	//[X86_INS_FCOMPI] = x86_il_fcomip,
-	//[X86_INS_FUCOMPI] = x86_il_fcomip,
 
 	/* Using the same FCOM & FCOMI family IL lifters for FUCOM & FUCOMI family instructions
 	 * since we don't support invalid arithmetic operand exceptions (#IA) anyways. */
@@ -321,8 +313,6 @@ x86_il_ins x86_ins[X86_INS_MAX_VALUE] = {
 
 	/* unimplemented instructions */
 	[X86_INS_IRET] = x86_il_unimpl,
-	//[X86_INS_RETF] = x86_il_unimpl,
-	//[X86_INS_RETFQ] = x86_il_unimpl,
 	[X86_INS_INSB] = x86_il_unimpl,
 	[X86_INS_INSW] = x86_il_unimpl,
 	[X86_INS_OUTSB] = x86_il_unimpl,
@@ -362,7 +352,6 @@ RZ_IPI bool rz_x86_il_opcode(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnaly
 	}
 
 	aop->il_op = lifted;
-	// printf("\n");
 	return true;
 }
 

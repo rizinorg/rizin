@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: 2013-2019 pancake <pancake@nopcode.org>
-// SPDX-FileCopyrightText: 2024 tushar3q34 <tushar3q34@gmail.com>
+// SPDX-FileCopyrightText: 2024-2025 tushar3q34 <tushar3q34@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_asm.h>
@@ -12,7 +12,7 @@ typedef struct {
 	ZydisMachineMode omode;
 	ZydisStackWidth owidth;
 	ZydisFormatter oformat;
-	int obits;
+	size_t obits;
 } ZydisContext;
 
 static bool x86_zydis_asm_init(void **user) {
@@ -60,14 +60,14 @@ static char *x86_zydis_asm_mnemonics(RzAsm *a, int id, bool json) {
 			rz_strbuf_append(buf, "\"");
 		}
 		rz_strbuf_append(buf, op);
-		if (json) {
-			if (ZydisMnemonicGetString(i + 1)) {
-				rz_strbuf_append(buf, "\",");
-			} else {
-				rz_strbuf_append(buf, "\"]\n");
-			}
-		} else {
+		if (!json) {
 			rz_strbuf_append(buf, "\n");
+			continue;
+		}
+		if (ZydisMnemonicGetString(i + 1)) {
+			rz_strbuf_append(buf, "\",");
+		} else {
+			rz_strbuf_append(buf, "\"]\n");
 		}
 	}
 	return rz_strbuf_drain(buf);
@@ -138,7 +138,7 @@ static int x86_zydis_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len)
 
 RzAsmPlugin rz_asm_plugin_x86_zydis = {
 	.name = "x86",
-	.desc = "Zydis X86 disassembler",
+	.desc = "X86/X86_64 Zydis-based disassembler",
 	.license = "MIT",
 	.arch = "x86",
 	.bits = 16 | 32 | 64,

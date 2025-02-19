@@ -1188,10 +1188,10 @@ aat
 pdf~bar.
 EOF
 EXPECT=<<EOF
-|           0x00000007      488b5004       mov   rdx, qword [rax + bar.b]
-|           0x0000000b      488b4808       mov   rcx, qword [rax + bar.c]
-|           0x0000000f      483b5004       cmp   rdx, qword [rax + bar.b]
-|           0x0000001d      48895808       mov   qword [rax + bar.c], rbx
+|           0x00000007      488b5004       mov   rdx, qword [rax+bar.b]
+|           0x0000000b      488b4808       mov   rcx, qword [rax+bar.c]
+|           0x0000000f      483b5004       cmp   rdx, qword [rax+bar.b]
+|           0x0000001d      48895808       mov   qword [rax+bar.c], rbx
 EOF
 RUN
 
@@ -1212,10 +1212,10 @@ pdf~bar.
 EOF
 EXPECT=<<EOF
 
-|           0x00000007      488b5004       mov   rdx, qword [rax + bar.b]
-|           0x0000000b      488b4808       mov   rcx, qword [rax + bar.c]
-|           0x0000000f      483b5004       cmp   rdx, qword [rax + bar.b]
-|           0x0000001d      48895808       mov   qword [rax + bar.c], rbx
+|           0x00000007      488b5004       mov   rdx, qword [rax+bar.b]
+|           0x0000000b      488b4808       mov   rcx, qword [rax+bar.c]
+|           0x0000000f      483b5004       cmp   rdx, qword [rax+bar.b]
+|           0x0000001d      48895808       mov   qword [rax+bar.c], rbx
 EOF
 RUN
 
@@ -1271,7 +1271,6 @@ EXPECT=<<EOF
 |           0x000006c5      488930         mov   qword [rax], rsi      ; Books.subject[0]
 |           0x000006c8      66c740086700   mov   word [rax+Books.subject[8]], 0x67 ; 'g'
 |           0x000006d5      b800000000     mov   eax, 0x00             ; Books.subject[0]
-|       `-> 0x000006ee      c9             leave                       ; Books.title[0]
 EOF
 RUN
 
@@ -1620,7 +1619,8 @@ EOF
 EXPECT=<<EOF
 var unsigned long long var_80h @ stack - 0x80
 var unsigned long long var_71h @ stack - 0x71
-var char [20] var_70h @ stack - 0x70
+var int64_t var_70h @ stack - 0x70
+var char *var_60h @ stack - 0x60
 var int64_t var_58h @ stack - 0x58
 var int64_t var_56h @ stack - 0x56
 var int64_t var_50h @ stack - 0x50
@@ -1633,8 +1633,7 @@ arg int argc @ rdi
 arg char **argv @ rsi
 var unsigned long long var_80h @ stack - 0x80
 var unsigned long long var_71h @ stack - 0x71
-var int64_t var_70h @ stack - 0x70
-var char *var_60h @ stack - 0x60
+var char [20] var_70h @ stack - 0x70
 var int64_t var_58h @ stack - 0x58
 var int64_t var_56h @ stack - 0x56
 var int64_t var_50h @ stack - 0x50
