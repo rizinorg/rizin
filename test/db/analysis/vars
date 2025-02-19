@@ -385,7 +385,7 @@ EOF
 EXPECT=<<EOF
 afvR
    var_98h  0x18
-    var_8h  0x21,0x38
+    var_8h  0x21
     var_0h
    var_s8h  0x29
   var_s10h  0x2d

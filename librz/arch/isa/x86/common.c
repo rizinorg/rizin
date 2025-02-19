@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: 2023 Dhruv Maroo <dhruvmaru007@gmail.com>
-// SPDX-FileCopyrightText: 2024 tushar3q34 <tushar3q34@gmail.com>
+// SPDX-FileCopyrightText: 2024-2025 tushar3q34 <tushar3q34@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "common.h"
@@ -35,7 +35,6 @@ const char *x86_registers[X86_REG_MAX_VALUE] = {
 	[X86_REG_EDX] = "edx",
 	[X86_REG_EFLAGS] = "eflags",
 	[X86_REG_EIP] = "eip",
-	//[X86_REG_EIZ] = "eiz",
 	[X86_REG_ES] = "es",
 	[X86_REG_ESI] = "esi",
 	[X86_REG_ESP] = "esp",
@@ -50,7 +49,6 @@ const char *x86_registers[X86_REG_MAX_VALUE] = {
 	[X86_REG_RDI] = "rdi",
 	[X86_REG_RDX] = "rdx",
 	[X86_REG_RIP] = "rip",
-	//[X86_REG_RIZ] = "riz",
 	[X86_REG_RSI] = "rsi",
 	[X86_REG_RSP] = "rsp",
 	[X86_REG_SI] = "si",
@@ -90,14 +88,6 @@ const char *x86_registers[X86_REG_MAX_VALUE] = {
 	[X86_REG_DR13] = "dr13",
 	[X86_REG_DR14] = "dr14",
 	[X86_REG_DR15] = "dr15",
-	//[X86_REG_FP0] = "fp0",
-	//[X86_REG_FP1] = "fp1",
-	//[X86_REG_FP2] = "fp2",
-	//[X86_REG_FP3] = "fp3",
-	//[X86_REG_FP4] = "fp4",
-	//[X86_REG_FP5] = "fp5",
-	//[X86_REG_FP6] = "fp6",
-	//[X86_REG_FP7] = "fp7",
 	[X86_REG_K0] = "k0",
 	[X86_REG_K1] = "k1",
 	[X86_REG_K2] = "k2",
@@ -315,8 +305,7 @@ const X86Reg gpr_eregs[] = {
 	X86_REG_EBP, // rbp
 	X86_REG_EDI, // rdi
 	X86_REG_EIP, // rip
-	0,
-	// X86_REG_EIZ, // riz
+	X86_REG_NONE, // riz
 	X86_REG_ESI, // rsi
 	X86_REG_ESP, // rsp
 };
@@ -329,8 +318,7 @@ const X86Reg gpr_rregs[] = {
 	X86_REG_RBP,
 	X86_REG_RDI,
 	X86_REG_RIP,
-	0,
-	// X86_REG_RIZ,
+	X86_REG_NONE,
 	X86_REG_RSI,
 	X86_REG_RSP
 };
@@ -547,8 +535,6 @@ const struct gpr_lookup_helper_t gpr_lookup_table[] = {
 	[X86_REG_DI] = { 5, x86_il_get_gpr16, x86_il_set_gpr16 },
 	[X86_REG_EDI] = { 5, x86_il_get_gpr32, x86_il_set_gpr32 },
 	[X86_REG_RDI] = { 5, x86_il_get_gpr64, x86_il_set_gpr64 },
-	//[X86_REG_EIZ] = { 7, x86_il_get_gpr32, x86_il_set_gpr32 },
-	//[X86_REG_RIZ] = { 7, x86_il_get_gpr64, x86_il_set_gpr64 },
 	[X86_REG_SIL] = { 8, x86_il_get_gprl, x86_il_set_gprl },
 	[X86_REG_SI] = { 8, x86_il_get_gpr16, x86_il_set_gpr16 },
 	[X86_REG_ESI] = { 8, x86_il_get_gpr32, x86_il_set_gpr32 },
@@ -734,12 +720,6 @@ RZ_IPI RzILOpEffect *x86_il_set_mem_bits(X86Mem mem, RZ_OWN RZ_NONNULL RzILOpPur
  */
 RZ_IPI RzILOpPure *x86_il_get_operand_bits(X86Op op, int analysis_bits, ut64 pc, int implicit_size, const X86ILIns *ins) {
 	switch (op.type) {
-	// case X86_OP_INVALID:
-	//	if (implicit_size) {
-	//		return SN(implicit_size * BITS_PER_BYTE, 1);
-	//	}
-	//	RZ_LOG_ERROR("x86: RzIL: Invalid param type encountered\n");
-	//	return NULL;
 	case X86_OP_REG:
 		return x86_il_get_reg_bits(op.reg.value, analysis_bits, pc);
 	case X86_OP_IMM:
@@ -1497,7 +1477,6 @@ RZ_IPI RzILOpPure *x86_il_get_floating_operand_bits(X86Op op, int bits, ut64 pc)
 			RZ_LOG_ERROR("x86: RzIL: Invalid memory operand width for a floating point operand: %d\n", op.size);
 		}
 		break;
-	// case X86_OP_INVALID:
 	case X86_OP_IMM:
 	default:
 		RZ_LOG_ERROR("x86: RzIL: Invalid param type encountered: %d\n", op.type);

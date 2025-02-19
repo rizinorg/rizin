@@ -60,10 +60,14 @@ directories used by Rizin, have a look at options `rizin_sdb`,
 etc. in [meson_options.txt][].
 
 Rizin uses the Capstone disassembly engine and supports versions 3, 4, and 5.
+For x86/x86_64 architecture, we use the Zydis decoder and disassembler.
 By default, we use a custom version of Capstone based on v5 and statically link
 it into the Rizin executables.  Some distributions might prefer that a system
 version of Capstone be dynamically linked at runtime. To do this, use the
 `-Duse_sys_capstone=enabled` command line option when running `meson`.
+Similarly we statically link Zydis into the Rizin executables.
+To dynamically link the system's Zydis at runtime, use the
+`-Duse_sys_zydis=enabled` command line option when running `meson`.
 
 You can override the version of Capstone Rizin will use by setting
 `use_capstone_version` to one of `v4`, `v5`, `v6` or `next`.
@@ -82,6 +86,7 @@ At the time of writing, these are:
 * `use_sys_pcre2`
 * `use_sys_tree_sitter`
 * `use_sys_softfloat`
+* `use_sys_zydis`
 
 See [meson_options.txt][] for a complete list of compile-time options.
 

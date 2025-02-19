@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: 2023 Dhruv Maroo <dhruvmaru007@gmail.com>
-// SPDX-FileCopyrightText: 2024 tushar3q34 <tushar3q34@gmail.com>
+// SPDX-FileCopyrightText: 2024-2025 tushar3q34 <tushar3q34@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 /**
@@ -1596,8 +1596,6 @@ IL_LIFTER(popfq) {
 	return SEQ2(x86_il_set_flags(pop.val, 64), pop.eff);
 }
 
-#define CALCULATE_REX_PREFIX(rex) ((rex).W << 3 | (rex).R << 2 | (rex).X << 1 | (rex).B) /* in bytes */
-
 RzILOpEffect *x86_push_helper_impl(RzILOpPure *val, unsigned int user_op_size, unsigned int bitness, const X86ILIns *ins, ut64 pc) {
 	unsigned int dflag = user_op_size;
 	unsigned int op_size;
@@ -1605,8 +1603,8 @@ RzILOpEffect *x86_push_helper_impl(RzILOpPure *val, unsigned int user_op_size, u
 
 	if (ins) {
 		if (bitness == 64) {
-			dflag = CALCULATE_REX_PREFIX(ins->structure->raw.rex) ? 8 : ins->structure->raw.prefixes[2].value ? 2
-															  : 4;
+			dflag = ins->structure->raw.rex.W ? 8 : ins->structure->raw.prefixes[2].value ? 2
+												      : 4;
 			stack_size = 8; /* in bytes */
 		} else {
 			/* We use the other operand and address size if the prefix is set */
@@ -1627,8 +1625,10 @@ RzILOpEffect *x86_push_helper_impl(RzILOpPure *val, unsigned int user_op_size, u
 	}
 
 	RzILOpEffect *final_stack = SETL("final", SUB(x86_il_get_reg_bits(X86_REG_RSP, bitness, pc), UN(bitness, stack_size)));
+
 	RzILOpEffect *ret = STOREW(VARL("final"), UNSIGNED(op_size * BITS_PER_BYTE, val));
 	ret = SEQ3(final_stack, ret, x86_il_set_reg_bits(X86_REG_RSP, VARL("final"), bitness));
+
 	return ret;
 }
 
@@ -1718,33 +1718,10 @@ IL_LIFTER(pushaw) {
 	return SEQ2(temp, push);
 }
 
-/**
- * PUSHAD
- * Push all general-purpose registers (32-bits)
- * Encoding: ZO
- */
-// IL_LIFTER(pushal) {
-//	if (analysis->bits != 32) {
-//		return NULL;
-//	}
-//
-//	RzILOpEffect *temp = SETL("_esp", x86_il_get_reg(X86_REG_ESP));
-//	RzILOpEffect *push = x86_push_helper(x86_il_get_reg(X86_REG_EAX), 4);
-//	push = SEQ2(push, x86_push_helper(x86_il_get_reg(X86_REG_ECX), 4));
-//	push = SEQ2(push, x86_push_helper(x86_il_get_reg(X86_REG_EDX), 4));
-//	push = SEQ2(push, x86_push_helper(x86_il_get_reg(X86_REG_EBX), 4));
-//	push = SEQ2(push, x86_push_helper(VARL("_esp"), 4));
-//	push = SEQ2(push, x86_push_helper(x86_il_get_reg(X86_REG_EBP), 4));
-//	push = SEQ2(push, x86_push_helper(x86_il_get_reg(X86_REG_ESI), 4));
-//	push = SEQ2(push, x86_push_helper(x86_il_get_reg(X86_REG_EDI), 4));
-//
-//	return SEQ2(temp, push);
-// }
-
 #define RCX_MACRO() \
 	ut8 size_in_bytes = ins->operands[0].size; \
 	ut8 size = size_in_bytes * BITS_PER_BYTE; \
-	ut8 shift_size = (size_in_bytes == 8 || (analysis->bits == 64 && CALCULATE_REX_PREFIX(ins->structure->raw.rex))) ? 6 : 5; \
+	ut8 shift_size = (size_in_bytes == 8 || (analysis->bits == 64 && ins->structure->raw.rex.W)) ? 6 : 5; \
 	ut8 shift_max = size + 1; \
 	RzILOpEffect *pre_dest = SETL("_pre_dest", x86_il_get_op(0)); \
 	RzILOpEffect *shift = NULL; \
@@ -1821,7 +1798,7 @@ IL_LIFTER(rcr) {
 #define ROX_MACRO() \
 	ut8 size_in_bytes = ins->operands[0].size; \
 	ut8 size = size_in_bytes * BITS_PER_BYTE; \
-	ut8 shift_size = (size_in_bytes == 8 || (analysis->bits == 64 && CALCULATE_REX_PREFIX(ins->structure->raw.rex))) ? 6 : 5; \
+	ut8 shift_size = (size_in_bytes == 8 || (analysis->bits == 64 && ins->structure->raw.rex.W)) ? 6 : 5; \
 	ut8 shift_max = size; \
 	RzILOpEffect *pre_dest = SETL("_pre_dest", x86_il_get_op(0)); \
 	RzILOpEffect *shift = SETL("_shift", MOD(UNSIGNED(shift_size, x86_il_get_op_implicit(1, size_in_bytes)), UN(shift_size, shift_max)));
@@ -1926,34 +1903,11 @@ IL_LIFTER(sahf) {
 #define SHIFT_MACRO() \
 	ut8 size = ins->operands[0].size * BITS_PER_BYTE; \
 	ut8 shift_size = ins->operands[1].size * BITS_PER_BYTE; \
-	ut8 shift_mask = (analysis->bits == 64 && CALCULATE_REX_PREFIX(ins->structure->raw.rex)) ? 0x3f : 0x1f; \
+	ut8 shift_mask = (analysis->bits == 64 && ins->structure->raw.rex.W) ? 0x3f : 0x1f; \
 	RzILOpEffect *pre_dest = SETL("_pre_dest", x86_il_get_op(0)); \
 	RzILOpEffect *shift = SETL("_shift", LOGAND(x86_il_get_op(1), UN(shift_size, shift_mask))); \
 	RzILOpEffect *set_dest = x86_il_set_op(0, VARL("_dest")); \
 	RzILOpEffect *set_flags = BRANCH(IS_ZERO(VARL("_shift")), NULL, x86_il_set_result_flags(VARL("_dest")));
-
-/**
- * SAL
- * Shift arithmetically left (signed shift left)
- * Encoding: M1, MC, MI
- * (Functionally the same as SHL)
- */
-// IL_LIFTER(sal) {
-//	SHIFT_MACRO();
-//
-//	RzILOpEffect *shifted = SETL("_shifted", SHIFTL0(UNSIGNED(size + 1, VARL("_pre_dest")), VARL("_shift")));
-//
-//	RzILOpEffect *result = SETL("_dest", UNSIGNED(size, VARL("_shifted")));
-//
-//	// if _shift == 0, CF is unaffected.
-//	RzILOpEffect *set_cf = SETG(EFLAGS(CF), MSB(VARL("_shifted")));
-//
-//	// if _shift == 1, OF is set to 'CF xor MSB (after shift)'.
-//	// otherwise, OF is undefined.
-//	RzILOpEffect *set_of = SETG(EFLAGS(OF), XOR(VARG(EFLAGS(CF)), MSB(VARL("_dest"))));
-//
-//	return SEQ8(pre_dest, shift, shifted, result, set_cf, set_of, set_flags, set_dest);
-// }
 
 /**
  * SAR

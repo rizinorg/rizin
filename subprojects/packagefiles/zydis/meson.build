@@ -11,11 +11,11 @@ endif
 if cc.get_argument_syntax() == 'msvc'
   if get_option('b_lto')
     add_project_arguments(
-      '/GL', # -flto
+      '/GL', # Compiler optimisation for MSVC
       language: 'c',
     )
     add_project_link_arguments(
-      '/LTCG',
+      '/LTCG', # Used for Linking when compiling with /GL
       language: 'c',
     )
   endif

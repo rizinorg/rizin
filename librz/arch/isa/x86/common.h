@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: 2023 Dhruv Maroo <dhruvmaru007@gmail.com>
-// SPDX-FileCopyrightText: 2024 tushar3q34 <tushar3q34@gmail.com>
+// SPDX-FileCopyrightText: 2024-2025 tushar3q34 <tushar3q34@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef X86_IL_COMMON_H

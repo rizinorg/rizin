@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: 2023 Dhruv Maroo <dhruvmaru007@gmail.com>
-// SPDX-FileCopyrightText: 2024 tushar3q34 <tushar3q34@gmail.com>
+// SPDX-FileCopyrightText: 2024-2025 tushar3q34 <tushar3q34@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 /**
@@ -642,14 +642,6 @@ RzILOpEffect *fcomi_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
 IL_LIFTER(fcomi) {
 	return fcomi_helper(ins, pc, analysis);
 }
-
-///**
-// * FCOMIP
-// * Compare ST(0) and ST(i), set the EFLAGS accordingly and pop the stack
-// */
-// IL_LIFTER(fcomip) {
-//	return SEQ2(fcomi_helper(ins, pc, analysis), x86_il_st_pop());
-//}
 
 /**
  * FCHS
