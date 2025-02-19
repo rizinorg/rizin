@@ -238,7 +238,7 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 		return NULL;
 	}
 
-	ut8 *strbuf = RZ_NEWS0(ut8, opt->max_str_length + 1);
+	ut8 *strbuf = RZ_NEWS(ut8, opt->max_str_length + 1);
 	if (!strbuf) {
 		goto error;
 	}
@@ -345,9 +345,8 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 		ut64 off_adj = adjust_offset(str_type, buf, ds->addr - from);
 		ds->addr -= off_adj;
 		ds->size += off_adj;
-
-		ds->string = rz_str_ndup((const char *)strbuf, strbuf_size);
-		free(strbuf);
+		strbuf[strbuf_size] = '\0';
+		ds->string = (char *) strbuf;
 		return ds;
 	}
 
