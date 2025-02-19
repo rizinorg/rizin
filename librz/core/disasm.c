@@ -3987,7 +3987,7 @@ static void ds_print_ptr(RzDisasmState *ds, int len, int idx) {
 						msg2 = calloc(sizeof(char), len);
 						rz_io_read_at(core->io, n, (ut8 *)msg2, len - 1);
 						msg2[len - 1] = 0;
-						data_kind = rz_analysis_data_kind(core->analysis, refaddr, (const ut8 *)msg2, len - 1);
+						data_kind = rz_analysis_data_kind(core->analysis, refaddr, (const ut8 *)msg2, len - 1, false);
 						if (data_kind == RZ_ANALYSIS_DATA_KIND_STRING) {
 							rz_str_filter(msg2);
 							if (*msg2) {
@@ -4094,7 +4094,7 @@ static void ds_print_ptr(RzDisasmState *ds, int len, int idx) {
 				ds_print_str(ds, msg, len, refaddr);
 				string_printed = true;
 			}
-			data_kind = rz_analysis_data_kind(core->analysis, refaddr, (const ut8 *)msg, len - 1);
+			data_kind = rz_analysis_data_kind(core->analysis, refaddr, (const ut8 *)msg, len - 1, true);
 			if (data_kind == RZ_ANALYSIS_DATA_KIND_STRING && !string_printed && print_msg) {
 				ds_print_str(ds, msg, len, refaddr);
 			} else if (data_kind == RZ_ANALYSIS_DATA_KIND_INVALID) {

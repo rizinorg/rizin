@@ -247,7 +247,7 @@ RZ_API void rz_analysis_data_free(RZ_NULLABLE RzAnalysisData *d) {
  *
  * \return     On success a valid pointer, otherwise NULL.
  */
-RZ_API RZ_OWN RzAnalysisData *rz_analysis_data(RZ_NONNULL RzAnalysis *analysis, ut64 addr, RZ_NONNULL const ut8 *buf, size_t size, int wordsize) {
+RZ_API RZ_OWN RzAnalysisData *rz_analysis_data(RZ_NONNULL RzAnalysis *analysis, ut64 addr, RZ_NONNULL const ut8 *buf, size_t size, int wordsize, bool check_strings) {
 	rz_return_val_if_fail(analysis && buf, NULL);
 
 	ut64 dst = 0;
@@ -305,7 +305,7 @@ RZ_API RZ_OWN RzAnalysisData *rz_analysis_data(RZ_NONNULL RzAnalysis *analysis, 
 			return rz_analysis_data_new(addr, RZ_ANALYSIS_DATA_INFO_TYPE_POINTER, dst, buf, word);
 		}
 	}
-	if (get_string(buf, size, &dstr, encoding, big_endian)) {
+	if (check_strings && get_string(buf, size, &dstr, encoding, big_endian)) {
 		RzAnalysisData *ad = rz_analysis_data_new_string(addr, buf, dstr);
 		rz_detected_string_free(dstr);
 		return ad;
@@ -329,7 +329,7 @@ RZ_API RZ_OWN RzAnalysisData *rz_analysis_data(RZ_NONNULL RzAnalysis *analysis, 
  *
  * \return     The data kind.
  */
-RZ_API RzAnalysisDataKind rz_analysis_data_kind(RZ_NONNULL RzAnalysis *a, ut64 addr, RZ_NONNULL const ut8 *buf, size_t len) {
+RZ_API RzAnalysisDataKind rz_analysis_data_kind(RZ_NONNULL RzAnalysis *a, ut64 addr, RZ_NONNULL const ut8 *buf, size_t len, bool check_strings) {
 	rz_return_val_if_fail(a && buf, RZ_ANALYSIS_DATA_KIND_UNKNOWN);
 
 	size_t inv = 0;
@@ -342,7 +342,7 @@ RZ_API RzAnalysisDataKind rz_analysis_data_kind(RZ_NONNULL RzAnalysis *a, ut64 a
 		if (str && !buf[i]) {
 			str++;
 		}
-		RzAnalysisData *data = rz_analysis_data(a, addr + i, buf + i, len - i, 0);
+		RzAnalysisData *data = rz_analysis_data(a, addr + i, buf + i, len - i, 0, check_strings);
 		if (!data) {
 			i += word;
 			continue;

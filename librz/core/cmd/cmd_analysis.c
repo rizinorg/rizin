@@ -6197,7 +6197,7 @@ RZ_IPI RzCmdStatus rz_analysis_data_function_gaps_handler(RzCore *core, int argc
 
 RZ_IPI RzCmdStatus rz_analysis_data_kind_handler(RzCore *core, int argc, const char **argv) {
 	RzAnalysisDataKind kind = rz_analysis_data_kind(core->analysis,
-		core->offset, core->block, core->blocksize);
+		core->offset, core->block, core->blocksize, true);
 	switch (kind) {
 	case RZ_ANALYSIS_DATA_KIND_INVALID:
 		rz_cons_println("invalid");

@@ -2462,7 +2462,7 @@ RZ_API void rz_core_analysis_data(RZ_NONNULL RzCore *core, ut64 addr, ut32 count
 	rz_core_seek(core, addr, true);
 
 	for (ut32 i = 0, j = 0; j < count; j++) {
-		d = rz_analysis_data(core->analysis, addr + i, buf + i, count - i, wordsize);
+		d = rz_analysis_data(core->analysis, addr + i, buf + i, count - i, wordsize, true);
 		if (!d) {
 			i += word;
 			continue;
