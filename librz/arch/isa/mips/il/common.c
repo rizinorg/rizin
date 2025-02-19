@@ -102,6 +102,10 @@ static RzILOpEffect *mips_il_addiu(const csh *handle, const cs_insn *insn, const
 
 static RzILOpEffect *mips_il_addu(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
+	if (OPCOUNT() < 3) {
+		// move
+		return mips_il_move(handle, insn, gprlen);
+	}
 
 	const char *rd = REG(0);
 	RzILOpPure *rs = MIPS_REG(1);
@@ -969,8 +973,23 @@ static RzILOpEffect *mips_il_sub(const csh *handle, const cs_insn *insn, const u
 	return SETG(rd, SUB(rs, rt));
 }
 
+static RzILOpEffect *mips_il_negu(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
+
+	const char *rd = REG(0);
+	RzILOpPure *zero = MIPS_ZERO();
+	RzILOpPure *rt = MIPS_REG(1);
+
+	return SETG(rd, SUB(zero, rt));
+}
+
 static RzILOpEffect *mips_il_subu(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
+
+	if (OPCOUNT() < 3) {
+		// negu
+		return mips_il_negu(handle, insn, gprlen);
+	}
 
 	// TODO: handle unsigness.
 	const char *rd = REG(0);
