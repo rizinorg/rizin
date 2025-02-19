@@ -19,7 +19,7 @@ EXPECT=<<EOF
 0x0063e49b str.version
 0x0063e4ac str.HTTP_version
 0x0063e566 str.
-15389
+14566
 bufio
 bytes
 compress/flate
@@ -152,7 +152,7 @@ EXPECT=<<EOF
 0x0066dc76 str.
 0x0066e68d str.Addr
 ;-- str.flag:
-14534
+13554
 bufio
 bytes
 compress/flate
@@ -273,7 +273,7 @@ EXPECT=<<EOF
 0x0065de6d str.version
 0x0065de8a str.HTTP_version
 0x0065dfe6 str.
-15100
+14478
 bufio
 bytes
 compress/flate
@@ -439,7 +439,7 @@ EXPECT=<<EOF
 0x0027401c str.btcctl.conf
 0x00274090 str.rpc.cert
 0x00274104 str.rpc.cert
-16168
+15370
 bufio
 bytes
 compress/flate
@@ -632,7 +632,7 @@ EXPECT=<<EOF
 0x0026e4b8 str.btcctl.conf
 0x0026e53c str.rpc.cert
 0x0026e5c0 str.rpc.cert
-16744
+15632
 EOF
 RUN
 
@@ -715,7 +715,7 @@ EOF
 EXPECT=<<EOF
 1788
 0x004a699b str.hello__hacktivity
-9557
+8718
 compiler go1.15 Linker 03.00
 errors
 fmt
@@ -975,7 +975,7 @@ EXPECT=<<EOF
 0x00490692 str.name:
 0x0049071e str.tail:
 0x00490780 str.expected__foo__or__bar__subcommands
-20682
+21626
 EOF
 RUN
 
@@ -1006,6 +1006,6 @@ EXPECT=<<EOF
 0x00487a12 str.name:
 0x00487a9e str.tail:
 0x00487b00 str.expected__foo__or__bar__subcommands
-3604
+3627
 EOF
 RUN

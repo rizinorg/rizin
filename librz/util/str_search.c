@@ -346,7 +346,7 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 		ds->addr -= off_adj;
 		ds->size += off_adj;
 		strbuf[strbuf_size] = '\0';
-		ds->string = (char *) strbuf;
+		ds->string = (char *)strbuf;
 		return ds;
 	}
 
