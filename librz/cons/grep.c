@@ -750,6 +750,13 @@ RZ_API void rz_cons_grepbuf(void) {
 		char *ptr = cons->context->buffer;
 		char *str;
 		grep->sorted_column = grep->sort;
+		if (!grep->sorted_lines || !grep->unsorted_lines) {
+			rz_list_free(grep->sorted_lines);
+			rz_list_free(grep->unsorted_lines);
+			grep->sorted_lines = NULL;
+			grep->unsorted_lines = NULL;
+			return;
+		}
 		rz_list_sort(grep->sorted_lines, cmp, grep);
 		if (grep->sort_invert) {
 			rz_list_reverse(grep->sorted_lines);
