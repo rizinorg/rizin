@@ -4,6 +4,8 @@
 #include <rz_util/rz_str.h>
 #include <rz_util/rz_assert.h>
 #include <rz_util/rz_buf.h>
+#include <rz_util/rz_regex.h>
+#include <rz_util/ht_uu.h>
 #include <rz_list.h>
 
 #ifdef __cplusplus
@@ -63,6 +65,7 @@ RZ_API int rz_scan_strings_raw(RZ_NONNULL const ut8 *buf, RZ_NONNULL RzList /*<R
 	const ut64 from, const ut64 to, RzStrEnc type);
 RZ_API int rz_scan_strings(RZ_NONNULL RzBuffer *buf_to_scan, RZ_NONNULL RzList /*<RzDetectedString *>*/ *list, RZ_NONNULL const RzUtilStrScanOptions *opt,
 	const ut64 from, const ut64 to, RzStrEnc type);
+RZ_API int rz_scan_strings_whole_buf(RZ_NONNULL const RzBuffer *buf_to_scan, RZ_NONNULL RzList /*<RzDetectedString *>*/ *list, RZ_NONNULL const RzUtilStrScanOptions *opt, RzStrEnc type);
 
 #ifdef __cplusplus
 }

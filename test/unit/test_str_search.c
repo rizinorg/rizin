@@ -5,8 +5,7 @@
 #include "minunit.h"
 
 static RzUtilStrScanOptions g_opt = {
-	.buf_size = 2048,
-	.max_uni_blocks = 4,
+	.max_str_length = 2048,
 	.min_str_length = 4,
 	.prefer_big_endian = false,
 	.check_ascii_freq = true
