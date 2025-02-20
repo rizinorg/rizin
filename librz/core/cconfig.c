@@ -983,6 +983,17 @@ static bool cb_strfilter(void *user, void *data) {
 	return true;
 }
 
+static bool cb_bin_lang(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	if (RZ_STR_EQ(node->value, "go")) {
+		// Go always has UTF-8 strings:
+		// https://go.dev/blog/strings
+		rz_config_set(core->config, "str.encoding", "utf8");
+	}
+	return true;
+}
+
 static bool cb_binforce(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
@@ -3309,7 +3320,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETOPTIONS(n, "a", "8", "p", "e", "u", "i", "U", "f", NULL);
 	SETCB("bin.filter", "true", &cb_binfilter, "Filter symbol names to fix dupped names");
 	SETCB("bin.force", "", &cb_binforce, "Force that rbin plugin");
-	SETPREF("bin.lang", "", "Language for bin.demangle");
+	SETCB("bin.lang", "", &cb_bin_lang, "Language for bin.demangle");
 	SETCB("bin.demangle", "true", &cb_bindemangle, "Demangles all symbols parsed via RzBin");
 	SETBPREF("bin.demangle.libs", "false", "Show library name on demangled symbols names");
 	n = NODECB("bin.demangle.flags", "base", &cb_bindemangle_flags);
