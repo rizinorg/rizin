@@ -1068,7 +1068,7 @@ NAME=misaligned arm string xref
 FILE=bins/mach0/misaligned_data-iOS-armv7
 CMDS=<<EOF
 aaa
-axt @ str.helloradareworl
+axt @ str.helloradareworld
 pd 1 @ 0xbf9c
 EOF
 EXPECT=<<EOF

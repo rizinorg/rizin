@@ -186,7 +186,7 @@ FILE=bins/elf/ppc/emulateme-ppc32be
 TIMEOUT=30
 CMDS=<<EOF
 s sym.decrypt
-e str.search.encoding=utf8
+e str.encoding=utf8
 ps @ obj.seckrit
 aezi
 o malloc://0x1000 0x400000
@@ -211,7 +211,7 @@ FILE=bins/elf/ppc/emulateme-ppc32le
 TIMEOUT=30
 CMDS=<<EOF
 s sym.decrypt
-e str.search.encoding=utf8
+e str.encoding=utf8
 ps @ obj.seckrit
 aezi
 o malloc://0x1000 0x400000

@@ -1,4 +1,4 @@
-NAME=/e /test/i
+NAME=/z test i
 FILE=malloc://1024
 CMDS=<<EOF
 w test
@@ -6,29 +6,33 @@ w Test@ 444
 echo
 e search.in=block
 b 777
-/e /test/i
+/z test i
+ps ascii @ hit.string.ascii.0
+ps ascii @ hit.string.ascii.1
 EOF
 EXPECT=<<EOF
 
-0x00000000 hit0_0 "test................"
-0x000001bc hit0_1 "................Test................"
+0x00000000 4 hit.string.ascii.0
+0x000001bc 4 hit.string.ascii.1
+test
+Test
 EOF
 RUN
 
-NAME=/e m (invalid) #742
+NAME=/z m (invalid) #742
 FILE=malloc://1024
 CMDS=<<EOF
 w test
 w Test@444
-/e m
-/e m
-/e m
-/e m
+/z m
+/z m
+/z m
+/z m
 EOF
 EXPECT=
 RUN
 
-NAME="/e /t\wst\d\d\d\s\w\w/i" - rzshell
+NAME="/z t\wst\d\d\d\s\w\w ri" - rzshell
 FILE=malloc://1024
 CMDS=<<EOF
 w '"test123 ab"'
@@ -36,127 +40,123 @@ w '"Test123 ab"' @ 444
 echo
 e search.in=block
 b 777
-"/e /t\wst\d\d\d\s\w\w/i"
+/z t\\wst\\d\\d\\d\\s\\w\\w ri
+ps ascii @ hit.string.ascii.0
+ps ascii @ hit.string.ascii.1
 EOF
 EXPECT=<<EOF
 
-0x00000001 hit0_0 ""test123 ab"..............."
-0x000001bd hit0_1 "..............."Test123 ab"..............."
+0x00000001 10 hit.string.ascii.0
+0x000001bd 10 hit.string.ascii.1
+test123 ab"
+Test123 ab"
 EOF
 RUN
 
-NAME=/e with nul as newline
+NAME=/z with nul as newline
 FILE==
 CMDS=<<EOF
 w abcd
 w bcccde @ 0x10
 e scr.color=1
 echo -- 1 --
-/e /b.*d/
+/z "b.*d" r
+ps ascii @ hit.string.ascii.0
+ps ascii @ hit.string.ascii.1
 echo -- 2 --
-/e /b.*D/
+/z "b.*D" r
 echo -- 3 --
-/e /b.*D/i
+/z "b.*D" ri
+ps ascii @ hit.string.ascii.0
+ps ascii @ hit.string.ascii.1
 echo -- 4 --
-/e /b.*d$/
+/z "b.*d$" r
+ps ascii @ hit.string.ascii.0
 echo -- 5 --
-/e /^b.*d/
+/z "^b.*d" r
+ps ascii @ hit.string.ascii.0
 EOF
 EXPECT=<<EOF
 -- 1 --
-0x00000001 hit0_0 "a[33mbcd[0m[34m............[0mbccc"
-0x00000010 hit0_1 "abcd[34m............[0m[33mbcccd[0me[34m...............[0m"
+0x00000001 3 hit.string.ascii.0
+0x00000010 5 hit.string.ascii.1
+bcd
+bcccde
 -- 2 --
 -- 3 --
-0x00000001 hit2_0 "a[33mbcd[0m[34m............[0mbccc"
-0x00000010 hit2_1 "abcd[34m............[0m[33mbcccd[0me[34m...............[0m"
+0x00000001 3 hit.string.ascii.0
+0x00000010 5 hit.string.ascii.1
+bcd
+bcccde
 -- 4 --
-0x00000001 hit3_0 "a[33mbcd[0m[34m............[0mbccc"
+0x00000001 3 hit.string.ascii.0
+bcd
 -- 5 --
-0x00000010 hit4_0 "abcd[34m............[0m[33mbcccd[0me[34m...............[0m"
+0x00000010 5 hit.string.ascii.0
+bcccde
 EOF
-EXPECT_ERR=<<EOF
-Searching in [0x0,0x200)
-[2Khits: 2
-Searching in [0x0,0x200)
-[2Khits: 0
-Searching in [0x0,0x200)
-[2Khits: 2
-Searching in [0x0,0x200)
-[2Khits: 1
-Searching in [0x0,0x200)
-[2Khits: 1
-EOF
+EXPECT_ERR=
 RUN
 
-NAME=/e at block end
+NAME=/z at block end
 FILE==
 CMDS=<<EOF
+e search.str.min_length=2
 b 0x100
 w bcccde @ 0xfe
 w bd @ 0x1fe
 e scr.color=1
-/e /b.*d/
+/z "b.*d" r
+ps ascii unprintable @ hit.string.ascii.0
+ps ascii unprintable @ hit.string.ascii.1
 echo ----
-/e /b.*d$/
+/z "b.*d$" r
+ps ascii unprintable @ hit.string.ascii.0
 EOF
 EXPECT=<<EOF
-0x000000fe hit0_0 "[34m................[0m[33mbcccd[0me[34m...............[0m"
-0x000001fe hit0_1 "[34m................[0m[33mbd[0m[34m................[0m"
+0x000000fe 5 hit.string.ascii.0
+0x000001fe 2 hit.string.ascii.1
+bcccde
+bd
 ----
-0x000001fe hit1_0 "[34m................[0m[33mbd[0m[34m................[0m"
+0x000001fe 2 hit.string.ascii.0
+bd
 EOF
-EXPECT_ERR=<<EOF
-Searching in [0x0,0x200)
-[2Khits: 2
-Searching in [0x0,0x200)
-[2Khits: 1
-EOF
+EXPECT_ERR=
 RUN
 
-NAME=consistency btw / and /e
+NAME=consistency btw /z
 FILE=bins/elf/analysis/ls2
 CMDS=<<EOF
 e scr.color=1
-/ lib
-echo ----
-/e /lib/
+e search.str.min_length=3
+/z lib
+ps ascii @ hit.string.ascii.0
+ps ascii @ hit.string.ascii.1
+ps ascii @ hit.string.ascii.2
+ps ascii @ hit.string.ascii.3
+ps ascii @ hit.string.ascii.4
+ps ascii @ hit.string.ascii.5
+ps ascii @ hit.string.ascii.6
+ps ascii @ hit.string.ascii.7
 EOF
 EXPECT=<<EOF
-0x00400239 hit0_0 "[34m...............[0m/[33mlib[0m64/ld-linux-x86-"
-0x00400f19 hit0_1 "[34m.[0ma[34m..............[0m[33mlib[0mselinux.so.1[34m.[0m_IT"
-0x00400fae hit0_2 "etfilecon[34m.[0m_fini[34m.[0m[33mlib[0macl.so.1[34m.[0macl_get"
-0x00400feb hit0_3 "l_extended_file[34m.[0m[33mlib[0mc.so.6[34m.[0mfflush[34m.[0mst"
-0x004013c3 hit0_4 "cmp[34m.[0mtcgetpgrp[34m.[0m__[33mlib[0mc_start_main[34m.[0mdir"
-0x0041769a hit0_5 "system call.[34m..[0m/.[33mlib[0ms/[34m.[0mlt-[34m..........[0m"
-0x004186e0 hit0_6 "emory exhausted[34m.[0m[33mlib[0m/xstrtol.c[34m...[0m0 <"
-0x00418e58 hit0_7 "xstrtoumax[34m.[0m/usr/[33mlib[0m[34m.[0mASCII[34m.[0mCHARSETAL"
-----
-0x00400239 hit1_0 "[34m...............[0m/[33mlib[0m64/ld-linux-x86-"
-0x00400f19 hit1_1 "[34m.[0ma[34m..............[0m[33mlib[0mselinux.so.1[34m.[0m_IT"
-0x00400fae hit1_2 "etfilecon[34m.[0m_fini[34m.[0m[33mlib[0macl.so.1[34m.[0macl_get"
-0x00400feb hit1_3 "l_extended_file[34m.[0m[33mlib[0mc.so.6[34m.[0mfflush[34m.[0mst"
-0x004013c3 hit1_4 "cmp[34m.[0mtcgetpgrp[34m.[0m__[33mlib[0mc_start_main[34m.[0mdir"
-0x0041769a hit1_5 "system call.[34m..[0m/.[33mlib[0ms/[34m.[0mlt-[34m..........[0m"
-0x004186e0 hit1_6 "emory exhausted[34m.[0m[33mlib[0m/xstrtol.c[34m...[0m0 <"
-0x00418e58 hit1_7 "xstrtoumax[34m.[0m/usr/[33mlib[0m[34m.[0mASCII[34m.[0mCHARSETAL"
+0x00400239 3 hit.string.ascii.0
+0x00400f19 3 hit.string.ascii.1
+0x00400fae 3 hit.string.ascii.2
+0x00400feb 3 hit.string.ascii.3
+0x004013c3 3 hit.string.ascii.4
+0x0041769a 3 hit.string.ascii.5
+0x004186e0 3 hit.string.ascii.6
+0x00418e58 3 hit.string.ascii.7
+lib64/ld-linux-x86-64.so.2
+libselinux.so.1
+libacl.so.1
+libc.so.6
+libc_start_main
+libs/
+lib/xstrtol.c
+lib
 EOF
-EXPECT_ERR=<<EOF
-Searching 3 bytes in [0x61d368,0x61d720)
-[2Khits: 0
-Searching 3 bytes in [0x400000,0x41bc2c)
-[  ]  0x00403a00 < 0x0041bc2c  hits = 5   [# ][  ]  0x00407a00 < 0x0041bc2c  hits = 5   [# ][  ]  0x0040ba00 < 0x0041bc2c  hits = 5   [# ][  ]  0x0040fa00 < 0x0041bc2c  hits = 5   [# ][  ]  0x00413a00 < 0x0041bc2c  hits = 5   [# ][  ]  0x00417a00 < 0x0041bc2c  hits = 6   [# ][  ]  0x0041ba00 < 0x0041bc2c  hits = 8   [# ][2Khits: 8
-Searching 3 bytes in [0x61c5f4,0x61d360)
-[2Khits: 0
-Searching 3 bytes in [0x61bdf0,0x61c5f4)
-[2Khits: 0
-Searching in [0x61d368,0x61d720)
-[2Khits: 0
-Searching in [0x400000,0x41bc2c)
-[2Khits: 8
-Searching in [0x61c5f4,0x61d360)
-[2Khits: 0
-Searching in [0x61bdf0,0x61c5f4)
-[2Khits: 0
-EOF
+EXPECT_ERR=
 RUN

@@ -11,13 +11,13 @@ nth      paddr      vaddr len size section   type    string
   4 0x000002fa 0x004002fa   4    5 .dynstr   ascii   puts
   5 0x000002ff 0x004002ff  17   18 .dynstr   ascii   __libc_start_main
   6 0x00000311 0x00400311  11   12 .dynstr   ascii   GLIBC_2.2.5
-  7 0x00000588 0x00400588   4    5 .text     ascii   \$\bH
-  8 0x00000597 0x00400597   4    5 .text     ascii   l$ L
-  9 0x0000059c 0x0040059c   4    5 .text     ascii   t$(L
- 10 0x000005a1 0x004005a1   4    5 .text     ascii   |$0H
+  7 0x00000588 0x00400588   4    4 .text     ascii   \$\bH
+  8 0x00000597 0x00400597   4    4 .text     ascii   l$ L
+  9 0x0000059c 0x0040059c   4    4 .text     ascii   t$(L
+ 10 0x000005a1 0x004005a1   4    4 .text     ascii   |$0H
  11 0x000005c4 0x004005c4  11   12 .rodata   ascii   Hello World
- 12 0x00000618 0x00400618   4    5 .eh_frame ascii   \e\f\a\b
- 13 0x00000648 0x00400648   4    5 .eh_frame ascii   \e\f\a\b
+ 12 0x00000618 0x00400618   4    4 .eh_frame ascii   \e\f\a\b
+ 13 0x00000648 0x00400648   4    4 .eh_frame ascii   \e\f\a\b
  14 0x0000066f 0x0040066f   5    6 .eh_frame ascii   ;*3$"
  15 0x00000691 0x00400691   4    5 .eh_frame ascii   P\f\a\b
  16 0x00000910 ----------  16   17 .comment  ascii   GCC: (GNU) 4.7.2

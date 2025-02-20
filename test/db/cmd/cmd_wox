@@ -30,7 +30,7 @@ CMDS=<<EOF
 e cfg.bigendian=false
 w helloworld
 wox 0xabcdef@!10
-ps block @! 14
+ps guess block @! 14
 EOF
 EXPECT=<<EOF
 è\x83Ǣ\x98Ŀ\x83\xcf\x00\x00\x00\x00
@@ -56,7 +56,7 @@ CMDS=<<EOF
 e cfg.bigendian=false
 w helloworld
 wox 0xabcdef0102@!10
-ps block @! 14
+ps guess block @! 14
 EOF
 EXPECT=<<EOF
 è\x83mmܢ\x9dmf\x00\x00\x00\x00
@@ -69,7 +69,7 @@ CMDS=<<EOF
 e cfg.bigendian=false
 w helloworld
 wox 0xabcdef010203@!10
-ps block @! 14
+ps guess block @! 14
 EOF
 EXPECT=<<EOF
 è\x83mmtĿ\x83e\x00\x00\x00\x00
@@ -82,7 +82,7 @@ CMDS=<<EOF
 e cfg.bigendian=false
 w helloworld
 wox 0xabcdef01020304@!10
-ps block @! 14
+ps guess block @! 14
 EOF
 EXPECT=<<EOF
 è\x83mmtk١\x8b\x00\x00\x00\x00

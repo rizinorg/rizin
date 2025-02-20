@@ -3211,20 +3211,20 @@ RUN
 NAME=iz (file x86)
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF
-e str.search.encoding=ascii
+e str.encoding=ascii
 echo -- default --
 iz
 echo -- geq 12 --
-e str.search.min_length=12
+e search.str.min_length=12
 iz
 echo -- geq 13 --
-e str.search.min_length=13
+e search.str.min_length=13
 iz
 echo -- geq 0 --
-e str.search.min_length=1
+e search.str.min_length=1
 iz
 echo -- small buffer 12 --
-e str.search.buffer_size=13
+e search.str.max_length=13
 iz
 EOF
 EXPECT=<<EOF
@@ -3244,10 +3244,9 @@ nth      paddr      vaddr len size section type  string
 --------------------------------------------------------------
   0 0x000004b0 0x080484b0  12   13 .rodata ascii Hello world!
 -- small buffer 12 --
-nth      paddr      vaddr len size section type  string    
------------------------------------------------------------
-  0 0x000004b0 0x080484b0   9    9 .rodata ascii Hello wor
-  1 0x000004b9 0x080484b9   3    4 .rodata ascii ld!
+nth      paddr      vaddr len size section type  string       
+--------------------------------------------------------------
+  0 0x000004b0 0x080484b0  12   12 .rodata ascii Hello world!
 EOF
 RUN
 
@@ -3257,7 +3256,7 @@ CMDS=<<EOF
 echo -- default --
 iz
 echo -- geq 12 --
-e str.search.min_length=12
+e search.str.min_length=12
 iz
 EOF
 EXPECT=<<EOF
@@ -3727,7 +3726,7 @@ RUN
 
 NAME=iz utf16le
 FILE=bins/elf/strenc
-ARGS=-e str.search.check_ascii_freq=false
+ARGS=-e search.str.check_ascii_freq=false
 CMDS=<<EOF
 e str.escbslash=true
 iz~green
@@ -3741,7 +3740,7 @@ RUN
 
 NAME=iz/izz utf32le
 FILE=bins/elf/strenc
-ARGS=-e str.search.check_ascii_freq=false
+ARGS=-e search.str.check_ascii_freq=false
 CMDS=<<EOF
 e str.escbslash=true
 iz~cyan
@@ -3763,23 +3762,23 @@ iz~SRSPRHEX
 iz~SRSTASK
 EOF
 EXPECT=<<EOF
- 14 0x000002f6 0x000002f6   8    9         ibm037 SRSGENER
- 19 0x000004dc 0x000004dc   8    9         ibm037 SRSGENER
- 22 0x00000668 0x00000668  92   93         ibm037 SRSGENER_03/06/08_14.16 SRS Version 1.3.0_BASE    COPYRIGHT 1998-2008 DAVID W DANNER ALL RIG
- 63 0x00001682 0x00001682  30   31         ibm037 SRSGENERNO     *SRS>   NONHELD
-114 0x00002faa 0x00002faa  49   50         ibm037 SHUTDOWNSRSOPTS SRSTBLK SRSGENERALL     STARTINGS
- 10 0x0000029a 0x0000029a   8    9         ibm037 SRSPRHEX
- 17 0x00000362 0x00000362   8    9         ibm037 SRSPRHEX
- 64 0x000016d4 0x000016d4   8    9         ibm037 SRSPRHEX
- 67 0x00001861 0x00001861  27   28         ibm037 SRSPRHEX_03/06/08_14.17°Ö}\f
- 71 0x0000191f 0x0000191f   9   10         ibm037 ÏSRSPRHEX
-120 0x0000315b 0x0000315b  27   28         ibm037 SRSPRHEX_03/06/08_14.17°Ö}\f
-124 0x0000323f 0x0000323f   9   10         ibm037 3SRSPRHEX
-190 0x00004c0f 0x00004c0f  27   28         ibm037 SRSPRHEX_03/06/08_14.17°Ö}\f
- 18 0x000003ba 0x000003ba   8    9         ibm037 SRSTASK 
- 90 0x00002540 0x00002540  17   18         ibm037 ­bå0­«SRSTASK  \-
-123 0x00003230 0x00003230   8    9         ibm037 SRSTASK 
-129 0x000033e4 0x000033e4 103  104         ibm037 SRSTASK_12/31/08_20.31 SRS Version 1.3.0_A13001  COPYRIGHT 1998-2008 DAVID W DANNER ALL RIGHTS RESERVED
+ 14 0x000002f6 0x000002f6   8    9         ibm037  SRSGENER
+ 19 0x000004dc 0x000004dc   8    9         ibm037  SRSGENER
+ 22 0x00000668 0x00000668  92   93         ibm037  SRSGENER_03/06/08_14.16 SRS Version 1.3.0_BASE    COPYRIGHT 1998-2008 DAVID W DANNER ALL RIG
+ 63 0x00001682 0x00001682  30   31         ibm037  SRSGENERNO     *SRS>   NONHELD
+115 0x00002faa 0x00002faa  49   50         ibm037  SHUTDOWNSRSOPTS SRSTBLK SRSGENERALL     STARTINGS
+ 10 0x0000029a 0x0000029a   8    9         ibm037  SRSPRHEX
+ 17 0x00000362 0x00000362   8    9         ibm037  SRSPRHEX
+ 64 0x000016d4 0x000016d4   8    9         ibm037  SRSPRHEX
+ 67 0x00001861 0x00001861  27   28         ibm037  SRSPRHEX_03/06/08_14.17°Ö}\f
+ 71 0x0000191f 0x0000191f   9   10         ibm037  ÏSRSPRHEX
+121 0x0000315b 0x0000315b  27   28         ibm037  SRSPRHEX_03/06/08_14.17°Ö}\f
+125 0x0000323f 0x0000323f   9   10         ibm037  3SRSPRHEX
+191 0x00004c0f 0x00004c0f  27   28         ibm037  SRSPRHEX_03/06/08_14.17°Ö}\f
+ 18 0x000003ba 0x000003ba   8    9         ibm037  SRSTASK 
+ 91 0x00002545 0x00002545  12   13         ibm037  «SRSTASK  \-
+124 0x00003230 0x00003230   8    9         ibm037  SRSTASK 
+130 0x000033e4 0x000033e4 103  104         ibm037  SRSTASK_12/31/08_20.31 SRS Version 1.3.0_A13001  COPYRIGHT 1998-2008 DAVID W DANNER ALL RIGHTS RESERVED
 EOF
 RUN
 
@@ -3805,10 +3804,10 @@ iz~abcdef
 iz~123456
 EOF
 EXPECT=<<EOF
-  1 0x0000060c 0x0040060c   6   28 .rodata utf32le ABCDEF
-  1 0x0000060c 0x0040060c   6   28 .rodata utf32le ABCDEF
-  2 0x00000650 0x00400650   6   25 .rodata utf32le abcdef
-  3 0x00000694 0x00400694   6   28 .rodata utf32le 123456
+  1 0x0000060c 0x0040060c   6   24 .rodata utf32le ABCDEF
+  1 0x0000060c 0x0040060c   6   24 .rodata utf32le ABCDEF
+  2 0x00000650 0x00400650  10   40 .rodata utf32le abcdef𐍈  g blocks=Basic Latin,Gothic
+  3 0x00000694 0x00400694   6   24 .rodata utf32le 123456
 EOF
 RUN
 
@@ -3838,11 +3837,11 @@ nth      paddr      vaddr len size section type  string
 EOF
 RUN
 
-NAME=izz and str.search.encoding
+NAME=izz and str.encoding
 FILE==
 CMDS=<<EOF
 wz k\0i\0abcdefgh
-(izzenc enc; e str.search.encoding=${enc}; izz:quiet)
+(izzenc enc; e str.encoding=${enc}; izz:quiet)
 .(izzenc guess)
 .(izzenc ascii)
 .(izzenc utf8)
@@ -3862,7 +3861,7 @@ EXPECT=<<EOF
   0 0x00000004 0x00000004   8    9         ascii abcdefgh
   0 0x00000000 0x00000000   6   14         utf16le ki扡摣晥桧 blocks=Basic Latin,CJK Unified Ideographs
 
-  0 0x00000001 0x00000001   4    9         utf16le %%%%
+  0 0x00000001 0x00000001   6   14         utf16le %%%%最h blocks=Basic Latin,CJK Unified Ideographs
   0 0x00000000 0x00000000   4   10         utf16le ──── blocks=Box Drawing
 
   0 0x00000000 0x00000000   8    9         ascii &%&%&%&%
@@ -3870,7 +3869,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=str.search.encoding string reset
+NAME=str.encoding string reset
 FILE=--
 CMDS=<<EOF
 mkdir .tmp
@@ -3879,7 +3878,7 @@ o+ .tmp/strenc-bin
 iz:quiet
 s 0x080484b0
 wz k\0i\0abcdefgh
-(izenc enc; e str.search.encoding=${enc}; iz:quiet)
+(izenc enc; e str.encoding=${enc}; iz:quiet)
 .(izenc guess)
 .(izenc utf8)
 o--
@@ -3972,7 +3971,7 @@ RUN
 
 NAME=izj unicode blocks
 FILE=bins/elf/strenc
-ARGS=-e str.search.check_ascii_freq=false
+ARGS=-e search.str.check_ascii_freq=false
 CMDS=<<EOF
 e bin.str.purge=all,!4202996,!4203007,!4203208
 px @ 4203007
@@ -4009,7 +4008,7 @@ e bin.str.purge=all,!4195920
 izzj
 EOF
 EXPECT=<<EOF
-[{"vaddr":4195920,"paddr":1616,"ordinal":13,"size":25,"length":6,"section":".rodata","type":"utf32le","string":"abcdef"}]
+[{"vaddr":4195920,"paddr":1616,"ordinal":13,"size":40,"length":10,"section":".rodata","type":"utf32le","string":"abcdef𐍈  g","blocks":["Basic Latin","Gothic"]}]
 EOF
 RUN
 
@@ -4062,7 +4061,7 @@ e bin.str.purge=all,!0x413220-0x413235
 EOF
 EXPECT=<<EOF
 --1--
-1089 0x00012420 0x00412420   5    6 .text              ascii   AWAVA
+1089 0x00012420 0x00412420   5    5 .text              ascii   AWAVA
 --2--
 --3--
   0 0x000131d8 0x004131d8  11   12 .rodata ascii dev_ino_pop
@@ -4620,7 +4619,7 @@ NAME=izz
 FILE=bins/mach0/fatmach0-3true
 CMDS=izz~http~codesigning
 EXPECT=<<EOF
- 93 0x00003f3c 0x100002f3c  47   48                         ascii  ,http://www.apple.com/appleca/codesigning.crl0\r
+ 94 0x00003f3c 0x100002f3c  47   48                         ascii  ,http://www.apple.com/appleca/codesigning.crl0\r
 EOF
 RUN
 
@@ -4719,9 +4718,9 @@ NAME=ascii substring detection (#14499)
 FILE=bins/pe/Reborn_Stub-strings.exe
 CMDS=izz~pomf[1,2,3,4,5,6,7,8]
 EXPECT=<<EOF
-0x00087f8a 0x00489d8a 26 53 .text utf16le http://pomf.cat/upload.php
-0x000880dd 0x00489edd 19 39 .text utf16le https://a.pomf.cat/
-0x00089bed 0x0048b9ed 26 53 .text utf16le http://pomf.cat/upload.php
+0x00087f8a 0x00489d8a 26 52 .text utf16le http://pomf.cat/upload.php
+0x000880dd 0x00489edd 19 38 .text utf16le https://a.pomf.cat/
+0x00089bed 0x0048b9ed 26 52 .text utf16le http://pomf.cat/upload.php
 0x00089c22 0x0048ba22 19 40 .text utf16le https://a.pomf.cat/
 EOF
 RUN
@@ -5040,11 +5039,11 @@ bits 64
 EOF
 RUN
 
-NAME=print elf strings but with str.search.min_length=2
+NAME=print elf strings but with search.str.min_length=2
 FILE=bins/elf/smallstrings.elf
 CMDS=<<EOF
 iz
-iz @e:str.search.min_length=2
+iz @e:search.str.min_length=2
 EOF
 EXPECT=<<EOF
 nth      paddr      vaddr len size section type  string 
@@ -5063,7 +5062,7 @@ FILE=malloc://8192
 CMDS=<<EOF
 wD 6140
 px
-e str.search.buffer_size=8000
+e search.str.max_length=8000
 iz
 EOF
 EXPECT=<<EOF

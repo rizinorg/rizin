@@ -7,20 +7,18 @@ e cmd.hit="wx 91"
 p8 1 @ 10
 EOF
 EXPECT=<<EOF
-0x0000000a hit0_0 90
 91
 EOF
 RUN
 
-NAME=cmd.hit sugar for /j
+NAME=cmd.hit sugar for /z
 FILE=malloc://1024
 CMDS=<<EOF
 w hello @ 10
-ps @@/j hello
+ps @@/z hello i
 EOF
 EXPECT=<<EOF
 hello
-[{"offset":10,"type":"string","data":"..........hello................"}]
 EOF
 RUN
 
@@ -31,18 +29,19 @@ wx 005c
 /xj 005c
 EOF
 EXPECT=<<EOF
-[{"offset":0,"type":"hexpair","data":"005c"}]
+[{"address":0,"size":2,"flag":"hit.bytes.0"}]
 EOF
 RUN
 
-NAME=/j utf16
+NAME=/z utf16be
 FILE=malloc://1024
 CMDS=<<EOF
+e search.str.min_length=1
 wx 0067
-/j g
+/zj g i utf16be
 EOF
 EXPECT=<<EOF
-[{"offset":1,"type":"string","data":".g................"}]
+[{"address":0,"size":2,"flag":"hit.string.utf16be.0"}]
 EOF
 RUN
 
@@ -54,7 +53,6 @@ wx 91 @@/x 90
 p8 1 @ 10
 EOF
 EXPECT=<<EOF
-0x0000000a hit0_0 90
 91
 EOF
 RUN
@@ -65,12 +63,11 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 w A @ 10
-wx 33 @@/ A
+wx 33 @@/z A
 p8 1 @ 10
 EOF
 EXPECT=<<EOF
-0x0000000a hit0_0 "..........A................"
-33
+41
 EOF
 RUN
 
@@ -89,32 +86,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=cmd.hit for /!x
-FILE=malloc://1024
-CMDS=<<EOF
-e cmd.hit="p8 1"
-wx 90 @ 10
-/!x 00
-EOF
-EXPECT=<<EOF
-0x0000000a hit0_0 90
-90
-EOF
-RUN
-
-NAME=cmd.hit for /!
-FILE=malloc://1024
-CMDS=<<EOF
-e cmd.hit="p8 1"
-w AAAAAAAAAAB
-/! A
-EOF
-EXPECT=<<EOF
-0x0000000a hit0_0 "AAAAAAAAAAB................"
-42
-EOF
-RUN
-
 NAME=cmd.hit for /+
 FILE=malloc://1024
 CMDS=<<EOF
@@ -123,24 +94,7 @@ w ABCDEF
 /+ ABC
 EOF
 EXPECT=<<EOF
-0x00000000 hit0_0 414243
 414243
-EOF
-RUN
-
-NAME=cmd.hit for //
-FILE=malloc://1024
-CMDS=<<EOF
-e cmd.hit="p8 1"
-w AAAAAAAAAAB
-/! A
-//
-EOF
-EXPECT=<<EOF
-0x0000000a hit0_0 "AAAAAAAAAAB................"
-42
-0x0000000a hit1_0 "AAAAAAAAAAB................"
-42
 EOF
 RUN
 
@@ -233,22 +187,6 @@ pop ebp
 EOF
 RUN
 
-NAME=cmd.hit for /bx
-FILE=malloc://1024
-CMDS=<<EOF
-e cmd.hit="p8 4"
-w ABCD @ 0x100
-e search.from=0x100
-e search.to=0x104
-b 0x100
-/bx 41424344
-EOF
-EXPECT=<<EOF
-0x00000100 hit0_0 41424344
-41424344
-EOF
-RUN
-
 NAME=cmd.hit for /B
 FILE=malloc://1024
 CMDS=<<EOF
@@ -263,17 +201,16 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=cmd.hit for /i
+NAME=cmd.hit for /z i
 FILE=malloc://1024
 CMDS=<<EOF
 e cmd.hit=ps
 e search.from=0
 e search.to=0x10
 w AAAAAAAAAAB
-/i aaaaaaaaaab
+/z aaaaaaaaaab i
 EOF
 EXPECT=<<EOF
-0x00000000 hit0_0 "AAAAAAAAAAB................"
 AAAAAAAAAAB
 EOF
 RUN

@@ -2,7 +2,7 @@ NAME=trailing comment
 FILE==
 ARGS=-n
 CMDS=<<EOF
-/ #
+/z #
 EOF
 EXPECT=
 RUN
@@ -122,11 +122,13 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=/j escaped
+NAME=/zj escaped
 FILE=bins/mach0/escaped
-CMDS=/j hello
+CMDS=<<EOF
+/zj hello
+EOF
 EXPECT=<<EOF
-[{"offset":8019,"type":"string","data":"....]........c:\\hello\\world..M......."}]
+[{"address":8019,"size":5,"flag":"hit.string.ascii.0"}]
 EOF
 RUN
 
@@ -138,10 +140,11 @@ s 0
 e search.in=file
 e search.from=0
 e search.to=0x00000050
-/ ELF
+e search.str.min_length=3
+/z ELF
 EOF
 EXPECT=<<EOF
-0x00000001 hit0_0 ".ELF................"
+0x00000001 3 hit.string.ascii.0
 EOF
 RUN
 
@@ -154,69 +157,23 @@ s 0x1000
 e search.in=file
 e search.from=0
 e search.to=0x50
-/ ELF
+e search.str.min_length=3
+/z ELF
 EOF
 EXPECT=<<EOF
-0x00000001 hit0_0 ".ELF................"
+0x00000001 3 hit.string.ascii.0
 EOF
 RUN
 
-NAME=/j search
+NAME=/zj search
 FILE=malloc://1024
 CMDS=<<EOF
 wx 666f6f005c
-/j foo
+e search.str.min_length=3
+/zj foo
 EOF
 EXPECT=<<EOF
-[{"offset":0,"type":"string","data":"foo.\\.............."}]
-EOF
-RUN
-
-NAME=/! search
-FILE=malloc://1024
-CMDS=<<EOF
-wx 666f6f00
-/! ff
-EOF
-EXPECT=<<EOF
-0x00000000 hit0_0 "foo..............."
-EOF
-RUN
-
-NAME=/!x search
-FILE=malloc://1024
-CMDS=<<EOF
-wx 666f6f00
-/!x 00
-EOF
-EXPECT=<<EOF
-0x00000000 hit0_0 66
-EOF
-RUN
-
-NAME=// search
-FILE=malloc://1024
-CMDS=<<EOF
-wx 666f6f00
-/!x 00
-//
-EOF
-EXPECT=<<EOF
-0x00000000 hit0_0 66
-0x00000000 hit1_0 66
-EOF
-RUN
-
-NAME=// search
-FILE=malloc://1024
-CMDS=<<EOF
-wx 666f6f00
-/!x 00
-//
-EOF
-EXPECT=<<EOF
-0x00000000 hit0_0 66
-0x00000000 hit1_0 66
+[{"address":0,"size":3,"flag":"hit.string.ascii.0"}]
 EOF
 RUN
 
@@ -273,26 +230,6 @@ EXPECT=<<EOF
 0x0804805c hit0_1 54
 0x08048060 hit0_2 54
 0x08048369 hit0_3 54
-EOF
-RUN
-
-NAME=/a JSON output without pattern
-FILE=bins/elf/ioli/crackme0x00
-CMDS=<<EOF
-/adj
-/aej
-/acj
-/aoj
-/aaj
-/aij
-EOF
-EXPECT=<<EOF
-[]
-[]
-[]
-[]
-[]
-[]
 EOF
 RUN
 
@@ -369,8 +306,8 @@ e search.to=0x00000050
 /x 3480
 EOF
 EXPECT=<<EOF
-0x0000003c hit0_0 3480
-0x00000040 hit0_1 3480
+0x0000003c 2 hit.bytes.0
+0x00000040 2 hit.bytes.1
 EOF
 RUN
 
@@ -553,7 +490,7 @@ CMDS=<<EOF
 e asm.arch=x86
 e analysis.arch=x86
 e asm.bits=32
-"/ad/ ror (bh|...), (cl|.)"
+/ad/ "ror (bh|...), (cl|.)"
 q
 EOF
 EXPECT=<<EOF
@@ -620,7 +557,7 @@ e search.to=0x200
 /x 41424344
 EOF
 EXPECT=<<EOF
-0x00000100 hit0_0 41424344
+0x00000100 4 hit.bytes.0
 EOF
 RUN
 
@@ -635,7 +572,7 @@ e search.to=0x200
 /x 41424344
 EOF
 EXPECT=<<EOF
-0x00000100 hit0_0 41424344
+0x00000100 4 hit.bytes.0
 EOF
 RUN
 
@@ -647,7 +584,6 @@ e search.in=file
 s 0x1000
 /m~[0]
 s
-/fm
 EOF
 EXPECT=<<EOF
 0x00000000
@@ -791,6 +727,7 @@ wx 0x12345678aabbccddeeff12345678
 EOF
 EXPECT=<<EOF
 [{"offset":0,"type":"hexpair","data":"12345678"},{"offset":10,"type":"hexpair","data":"12345678"}]
+
 EOF
 RUN
 
@@ -802,6 +739,7 @@ wx 0x12345678aabbccddeeff12345678
 EOF
 EXPECT=<<EOF
 [{"offset":0,"value":2018915346},{"offset":10,"value":2018915346}]
+
 EOF
 RUN
 
@@ -821,18 +759,24 @@ RUN
 
 NAME=/x hit in the second map
 FILE=bins/elf/ioli/crackme0x00
-CMDS=/x f8820408
+CMDS=<<EOF
+/x f8820408
+EOF
 EXPECT=<<EOF
-0x08049f2c hit0_0 f8820408
+0x08049f2c 4 hit.bytes.0
 EOF
 RUN
 
 NAME=/x wrong entries
 FILE=bins/elf/analysis/go_stripped
-CMDS=/x 653b2530000000724b53b834e7150883ec188
+CMDS=<<EOF
+/x 653b2530000000724b53b834e7150883ec188.~$[0]
+# Should find nothing, because it gets exended on the lhs and is not aligned.
+/x 653b2530000000724b53b834e7150883ec188~$[0]
+EOF
 EXPECT=<<EOF
-0x0805ae90 hit0_0 653b2530000000724b53b834e7150883ec
-0x0805b030 hit0_1 653b2530000000724b53b834e7150883ec
+0x0805ae90
+0x0805b030
 EOF
 RUN
 
@@ -846,7 +790,7 @@ e search.to=0x150
 /x 41424344
 EOF
 EXPECT=<<EOF
-0x00000100 hit0_0 41424344
+0x00000100 4 hit.bytes.0
 EOF
 RUN
 
@@ -872,11 +816,7 @@ e search.to=0x104
 /x 41424344
 EOF
 EXPECT=<<EOF
-0x00000100 hit0_0 41424344
-EOF
-EXPECT_ERR=<<EOF
-Searching 4 bytes in [0x100,0x104)
-[2Khits: 1
+0x00000100 4 hit.bytes.0
 EOF
 RUN
 
@@ -902,10 +842,6 @@ e search.to=0x103
 /x 41424344
 EOF
 EXPECT=
-EXPECT_ERR=<<EOF
-Searching 4 bytes in [0x100,0x103)
-[2Khits: 0
-EOF
 RUN
 
 NAME=search range hex @(A..B)
@@ -913,83 +849,61 @@ FILE=malloc://1024
 CMDS=<<EOF
 w ABCD @ 0x100
 b 0x100
-/x 41424344 @(0x50 0x150)
-EOF
-EXPECT=<<EOF
-0x00000100 hit0_0 41424344
-EOF
-RUN
-
-NAME=search range hex @(A..B)
-FILE=malloc://1024
-CMDS=<<EOF
-w ABCD @ 0x100
-b 0x100
-/x 41424344 @(0x50 0x90)
-EOF
-EXPECT=
-RUN
-
-NAME=backward search hex
-FILE=malloc://1024
-CMDS=<<EOF
-w ABCD @ 0x100
 e search.from=0x50
 e search.to=0x150
-b 0x100
-/bx 41424344
+/x 41424344
 EOF
 EXPECT=<<EOF
-0x00000100 hit0_0 41424344
+0x00000100 4 hit.bytes.0
 EOF
 RUN
 
-NAME=backward search hex
+NAME=search range hex @(A..B)
 FILE=malloc://1024
 CMDS=<<EOF
 w ABCD @ 0x100
-e search.from=0x110
-e search.to=0x150
 b 0x100
-/bx 41424344
+e search.from=0x50
+e search.to=0x90
+/x 41424344
 EOF
 EXPECT=
 RUN
 
-NAME=backward search hex
+NAME=search hex
 FILE=malloc://1024
 CMDS=<<EOF
 w ABCD @ 0x100
 e search.from=0x100
 e search.to=0x104
 b 0x100
-/bx 41424344
+/x 41424344
 EOF
 EXPECT=<<EOF
-0x00000100 hit0_0 41424344
+0x00000100 4 hit.bytes.0
 EOF
 RUN
 
-NAME=backward search hex
+NAME=search hex
 FILE=malloc://1024
 CMDS=<<EOF
 w ABCD @ 0x100
 e search.from=0x100
 e search.to=0x103
 b 0x100
-/bx 41424344
+/x 41424344
 EOF
 EXPECT=
 RUN
 
-NAME=backward search hex
+NAME=search hex
 FILE=malloc://1024
 CMDS=<<EOF
 w ABCD @ 0x100
 e search.from=0x101
 e search.to=0x104
 b 0x100
-/bx 41424344
+/x 41424344
 EOF
 EXPECT=
 RUN
@@ -1001,7 +915,7 @@ wx aaaaaabb
 /x aa..bb
 EOF
 EXPECT=<<EOF
-0x00000001 hit0_0 aaaabb
+0x00000001 3 hit.bytes.0
 EOF
 RUN
 
@@ -1012,7 +926,7 @@ wx aaaaaabb
 /x ..aabb
 EOF
 EXPECT=<<EOF
-0x00000001 hit0_0 aaaabb
+0x00000001 3 hit.bytes.0
 EOF
 RUN
 
@@ -1060,26 +974,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-
-NAME=search escaped string
-FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=/ \x90\x66~[0]
-EXPECT=<<EOF
-0x08048323
-0x08048325
-0x08048327
-0x08048329
-0x0804832b
-0x0804832d
-0x08048335
-0x08048337
-0x08048339
-0x0804833b
-0x0804833d
-0x0804841d
-EOF
-RUN
-
 NAME=search range /c in arm
 FILE=bins/arm/elf/hello_world
 CMDS=<<EOF
@@ -1112,24 +1006,13 @@ NAME=/x search hexpairs ignoring spaces
 FILE=bins/elf/ioli/crackme0x00
 ARGS=-n
 CMDS=<<EOF
-# Password
-/x 50 61 73 73 77 6F 72 64
+# The password
+/x 50617373776F7264
 EOF
 EXPECT=<<EOF
-0x00000581 hit0_0 50617373776f7264
-0x0000059e hit0_1 50617373776f7264
-0x000005a9 hit0_2 50617373776f7264
-EOF
-RUN
-
-NAME=/x search hexpairs ignoring spaces
-FILE=bins/elf/ioli/crackme0x00
-ARGS=-n
-CMDS=/x 5061 73 73  776F  72 64 # Password
-EXPECT=<<EOF
-0x00000581 hit0_0 50617373776f7264
-0x0000059e hit0_1 50617373776f7264
-0x000005a9 hit0_2 50617373776f7264
+0x00000581 8 hit.bytes.0
+0x0000059e 8 hit.bytes.1
+0x000005a9 8 hit.bytes.2
 EOF
 RUN
 
@@ -1137,10 +1020,10 @@ NAME=wx and /x with bin mask, both ignoring spaces
 FILE=malloc://1024
 CMDS=<<EOF
 wx a5 a5 a5 bf
-/x a5 .. bf
+/x a5..bf
 EOF
 EXPECT=<<EOF
-0x00000001 hit0_0 a5a5bf
+0x00000001 3 hit.bytes.0
 EOF
 RUN
 
@@ -1148,10 +1031,10 @@ NAME=wx and /x with bin mask, both ignoring spaces
 FILE=malloc://1024
 CMDS=<<EOF
 wx 00 cafe 5a5a 5abf affe @ 0x123
-/x .. 5a bf
+/x ..5abf
 EOF
 EXPECT=<<EOF
-0x00000127 hit0_0 5a5abf
+0x00000127 3 hit.bytes.0
 EOF
 RUN
 
@@ -1159,10 +1042,10 @@ NAME=wx and /x with custom bin mask, both ignoring spaces
 FILE=malloc://1024
 CMDS=<<EOF
 wx 01020304 a5a5a5 bf
-/x a5 e3 bf : ff 81 ff
+/x a5e3bf:ff81ff
 EOF
 EXPECT=<<EOF
-0x00000005 hit0_0 a5a5bf
+0x00000005 3 hit.bytes.0
 EOF
 RUN
 
@@ -1237,17 +1120,19 @@ NAME=search wide string
 FILE==
 CMDS=<<EOF
 ww Hello World this is Rizin
-/w World
-/w world
-/wi world
-/wj World
-/wji world
+/z World l utf16le
+# Should not match
+/z world l utf16le
+# Should match
+/z world i utf16le
+/zj World l utf16le
+/zj world i utf16le
 EOF
 EXPECT=<<EOF
-0x0000000c hit0_0 57006f0072006c006400
-0x0000000c hit2_0 57006f0072006c006400
-[{"offset":12,"type":"hexpair","data":"57006f0072006c006400"}]
-[{"offset":12,"type":"hexpair","data":"57006f0072006c006400"}]
+0x0000000c 10 hit.string.utf16le.0
+0x0000000c 10 hit.string.utf16le.0
+[{"address":12,"size":10,"flag":"hit.string.utf16le.0"}]
+[{"address":12,"size":10,"flag":"hit.string.utf16le.0"}]
 EOF
 RUN
 

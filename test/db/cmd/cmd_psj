@@ -35,10 +35,10 @@ NAME=psj utf8 (#9064)
 FILE==
 CMDS=<<EOF
 wz "...\"..����..."
-psj @!13 @e:str.search.encoding=utf8
+psj @!13 @e:str.encoding=utf8
 EOF
 EXPECT=<<EOF
-{"string":"...\"..\u00ef\u00bf\u00bd\u00ef\u00bf\u00bd\u00ef","offset":0,"section":"unknown","length":13,"type":"utf8"}
+{"string":"...\"..\u00ef\u00bf\u00bd\u00ef\u00bf\u00bd","offset":0,"section":"unknown","length":12,"type":"utf8"}
 EOF
 RUN
 
