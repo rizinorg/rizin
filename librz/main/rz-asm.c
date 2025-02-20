@@ -303,12 +303,13 @@ static int rasm_disasm(RzAsmState *as, ut64 addr, const char *buf, int len, int 
 		clen = len; // XXX
 		data = (ut8 *)buf;
 	} else {
-		clen = rz_hex_str2bin(buf, NULL);
-		if ((int)clen < 1 || !(data = malloc(clen))) {
+		if (!(data = malloc((strlen(buf) / 2) + 1))) {
 			ret = 0;
 			goto beach;
 		}
-		rz_hex_str2bin(buf, data);
+		clen = rz_hex_str2bin(buf, data);
+		// Odd number of nibbles case.
+		clen *= clen < 0 ? -1 : 1;
 		len = clen;
 	}
 

@@ -189,7 +189,7 @@ RZ_API RzSearchKeyword *rz_search_keyword_new_hexmask(const char *kwstr, const c
 		kw = malloc(len + 4);
 		bm = malloc(len + 4);
 		if (kw != NULL && bm != NULL) {
-			len = rz_hex_str2binmask(kwstr, (ut8 *)kw, (ut8 *)bm);
+			len = rz_hex_str2bin_mask(kwstr, (ut8 *)kw, (ut8 *)bm, true);
 			if (len < 0) {
 				len = -len - 1;
 			}

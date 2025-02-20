@@ -32,13 +32,13 @@ static bool rz_debug_dmp_init(RzDebug *dbg, void **user) {
 	DmpCtx *ctx = dbg->plugin_data;
 	ctx->bf = core->bin->cur;
 
-	int ret = rz_hex_str2bin(core->bin->cur->o->regstate, NULL);
-	ctx->context = malloc(ret);
+	ctx->context = malloc((strlen(core->bin->cur->o->regstate) / 2) + 1);
 	if (!ctx->context) {
 		return false;
 	}
-	ctx->context_sz = ret;
-	rz_hex_str2bin(core->bin->cur->o->regstate, ctx->context);
+	int size = rz_hex_str2bin(core->bin->cur->o->regstate, ctx->context);
+	size *= size < 0 ? -1 : 1;
+	ctx->context_sz = size;
 
 	ut32 MachineImageType = 0; // Windows Architecture (IMAGE_FILE_MACHINE)
 	ut32 MinorVersion = 0; // Windows Version
