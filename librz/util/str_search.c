@@ -238,10 +238,13 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 		return NULL;
 	}
 
-	ut8 *strbuf = RZ_NEWS(ut8, opt->max_str_length + 1);
-	if (!strbuf) {
-		goto error;
-	}
+	// Most calls to this function never produce a valid string (e.g. because they are too short).
+	// To save allocations and frees, we first decode the first few code points onto the stack.
+	// Then, if the stack buffer is full, we move it to the heap.
+	ut8 stack_alloc[UNICODE_MAX_BYTES_PER_CHAR * 5] = { 0 };
+	// Gets only set if the stack buffer is full.
+	ut8 *heap_alloc = NULL;
+	ut8 *output_buf = stack_alloc;
 
 	ut64 str_addr = needle;
 	int rc = 0, i = 0, runes = 0;
@@ -304,12 +307,23 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 
 		needle += rc;
 
+		if (i + UNICODE_MAX_BYTES_PER_CHAR > sizeof(stack_alloc) && !heap_alloc) {
+			// The decoded string now gets larger than the space on the stack.
+			// Allocate on the heap and move the string decoded so far.
+			heap_alloc = RZ_NEWS(ut8, opt->max_str_length + 1);
+			if (!heap_alloc) {
+				goto error;
+			}
+			rz_mem_copy(heap_alloc, opt->max_str_length + 1, stack_alloc, sizeof(stack_alloc));
+			output_buf = heap_alloc;
+		}
+
 		if (rz_unicode_code_point_is_printable(r) && r != '\\') {
-			rc = rz_utf8_encode(strbuf + i, r);
+			rc = rz_utf8_encode(output_buf + i, r);
 			runes++;
 		} else if (r && r < 0x100 && is_c_escape_sequence((char)r)) {
 			if ((i + 32) < opt->max_str_length && r < 93) {
-				rc = rz_utf8_encode(strbuf + i, r);
+				rc = rz_utf8_encode(output_buf + i, r);
 			} else {
 				// String too long
 				break;
@@ -324,11 +338,11 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 	int strbuf_size = i;
 	if (runes >= opt->min_str_length && runes <= opt->max_str_length) {
 		if (test_false_positives) {
-			FalsePositiveResult false_positive_result = reduce_false_positives(opt, strbuf, strbuf_size, str_type);
+			FalsePositiveResult false_positive_result = reduce_false_positives(opt, output_buf, strbuf_size, str_type);
 			if (false_positive_result == SKIP_STRING) {
 				goto error;
 			} else if (false_positive_result == RETRY_ASCII) {
-				free(strbuf);
+				free(heap_alloc);
 				return process_one_string(buf, from, str_addr, to, str_type, true, opt, str_list_idx, false);
 			}
 		}
@@ -345,13 +359,13 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 		ut64 off_adj = adjust_offset(str_type, buf, ds->addr - from);
 		ds->addr -= off_adj;
 		ds->size += off_adj;
-		strbuf[strbuf_size] = '\0';
-		ds->string = (char *)strbuf;
+		output_buf[strbuf_size] = '\0';
+		ds->string = heap_alloc ? (char *)output_buf : rz_str_ndup((char *)stack_alloc, sizeof(stack_alloc));
 		return ds;
 	}
 
 error:
-	free(strbuf);
+	free(heap_alloc);
 	return NULL;
 }
 
