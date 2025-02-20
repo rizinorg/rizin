@@ -71,6 +71,8 @@ RZ_API const char *rz_str_enc_as_string(RzStrEnc enc) {
 		return "ebcdicus";
 	case RZ_STRING_ENC_GUESS:
 		return "guessed";
+	case RZ_STRING_ENC_SETTINGS:
+		return "str.encoding";
 	default:
 		rz_warn_if_reached();
 		return "unknown";
@@ -110,11 +112,13 @@ RZ_API RzStrEnc rz_str_enc_string_as_type(RZ_NULLABLE const char *encoding) {
 		return RZ_STRING_ENC_EBCDIC_UK;
 	} else if (!strcmp(encoding, "ebcdicus")) {
 		return RZ_STRING_ENC_EBCDIC_US;
+	} else if (!strcmp(encoding, "settings")) {
+		return RZ_STRING_ENC_SETTINGS;
 	} else if (!strcmp(encoding, "base64")) {
 		return RZ_STRING_ENC_BASE64;
 	}
 
-	RZ_LOG_ERROR("rz_str: encoding %s not supported\n", encoding);
+	RZ_LOG_ERROR("rz_str: encoding '%s' not supported\n", encoding);
 	return RZ_STRING_ENC_GUESS;
 }
 

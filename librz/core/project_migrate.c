@@ -677,6 +677,30 @@ RZ_API bool rz_project_migrate_v17_v18(RzProject *prj, RzSerializeResultInfo *re
 	return true;
 }
 
+// --
+// Migration 18 -> 19
+//
+// Changes from f9422ac0cd6922f73208e5f5e6f47b3d64b3bd0d:
+//	Renamed non RzBin string search options:
+//	- `str.search.X` to `search.str.X`
+
+RZ_API bool rz_project_migrate_v18_v19(RzProject *prj, RzSerializeResultInfo *res) {
+	Sdb *core_db;
+	RZ_SERIALIZE_SUB(prj, core_db, res, "core", return false;);
+	Sdb *config_db;
+	RZ_SERIALIZE_SUB(core_db, config_db, res, "config", return false;);
+	sdb_remove(config_db, "str.search.max_uni_blocks");
+	sdb_rename(config_db, "str.search.max_threads", "search.max_threads");
+	sdb_rename(config_db, "str.search.min_length", "search.str.min_length");
+	sdb_rename(config_db, "str.search.buffer_size", "search.str.max_length");
+	sdb_rename(config_db, "str.search.max_region_size", "search.str.max_region_size");
+	sdb_rename(config_db, "str.search.raw_alignment", "search.str.raw_alignment");
+	sdb_rename(config_db, "str.search.check_ascii_freq", "search.str.check_ascii_freq");
+	sdb_rename(config_db, "str.search.encoding", "str.encoding");
+
+	return true;
+}
+
 static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = {
 	rz_project_migrate_v1_v2,
 	rz_project_migrate_v2_v3,
@@ -695,6 +719,7 @@ static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = 
 	rz_project_migrate_v15_v16,
 	rz_project_migrate_v16_v17,
 	rz_project_migrate_v17_v18,
+	rz_project_migrate_v18_v19,
 };
 
 /// Migrate the given project to the current version in-place

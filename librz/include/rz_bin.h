@@ -189,7 +189,6 @@ enum {
 
 #define RZ_BIN_STRING_SEARCH_MIN_STRING         4
 #define RZ_BIN_STRING_SEARCH_BUFFER_SIZE        2048
-#define RZ_BIN_STRING_SEARCH_MAX_UNI_BLOCKS     4
 #define RZ_BIN_STRING_SEARCH_MAX_REGION_SIZE    (1024 * 1024 * 10)
 #define RZ_BIN_STRING_SEARCH_RAW_FILE_ALIGNMENT 0x10000
 #define RZ_BIN_STRING_SEARCH_CHECK_ASCII_FREQ   true
@@ -203,8 +202,7 @@ typedef enum {
 typedef struct rz_bin_string_search_opt_t {
 	RzThreadNCores max_threads; ///< Maximum thread number (normally set to RZ_THREAD_N_CORES_ALL_AVAILABLE).
 	size_t min_length; ///< Smallest string length that is possible to find.
-	size_t buffer_size; ///< Maximum buffer size, which will also determine the maximum string length.
-	size_t max_uni_blocks; ///< Maximum number of unicode blocks
+	size_t max_length; ///< Maximum buffer size, which will also determine the maximum string length.
 	size_t max_region_size; ///< Maximum allowable size for the search interval between two memory regions.
 	size_t raw_alignment; ///< Memory sector alignment used for the raw string search.
 	bool check_ascii_freq; ///< If true, perform check on ASCII frequencies when looking for false positives

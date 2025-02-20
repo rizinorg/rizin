@@ -240,7 +240,7 @@ static int rzbin_show_help(int v) {
 		       " RZ_BIN_DEBUGINFOD_URLS:  e bin.dbginfo.debuginfod_urls # use alternative debuginfod server\n"
 		       " RZ_BIN_DEMANGLE=0:       e bin.demangle                # do not demangle symbols\n"
 		       " RZ_BIN_LANG:             e bin.lang                    # assume lang for demangling\n"
-		       " RZ_BIN_MAXSTRBUF:        e str.search.buffer_size      # specify maximum buffer size\n"
+		       " RZ_BIN_MAXSTRBUF:        e search.str.max_length       # specify maximum buffer size\n"
 		       " RZ_BIN_PDBSERVER:        e pdb.server                  # use alternative PDB server\n"
 		       " RZ_BIN_PREFIX:           e bin.prefix                  # prefix symbols/sections/relocs with a specific string\n"
 		       " RZ_BIN_STRFILTER:        e bin.str.filter              # rizin -qc 'e bin.str.filter=?"
@@ -784,7 +784,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	if ((tmp = rz_sys_getenv("RZ_BIN_MAXSTRBUF"))) {
 		if (rz_num_is_valid_input(NULL, tmp)) {
 			ut64 value = rz_num_math(NULL, tmp);
-			rz_config_set_i(core.config, "str.search.buffer_size", value);
+			rz_config_set_i(core.config, "search.str.max_length", value);
 		}
 		free(tmp);
 	}
@@ -988,10 +988,10 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		case 'N': {
 			tmp = strchr(opt.arg, ':');
 			size_t value = rz_num_math(NULL, opt.arg);
-			rz_config_set_i(core.config, "str.search.min_length", value);
+			rz_config_set_i(core.config, "search.str.min_length", value);
 			if (tmp) {
 				value = rz_num_math(NULL, tmp + 1);
-				rz_config_set_i(core.config, "str.search.buffer_size", value);
+				rz_config_set_i(core.config, "search.str.max_length", value);
 			}
 			break;
 		}

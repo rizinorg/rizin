@@ -574,6 +574,36 @@ static bool test_migrate_v15_v16_str_config() {
 	mu_end;
 }
 
+static bool test_migrate_v18_v19_str_config() {
+	RzProject *prj = rz_project_load_file_raw("prj/v18-str-config.rzdb");
+	mu_assert_notnull(prj, "load raw project");
+	RzSerializeResultInfo *res = rz_serialize_result_info_new();
+	bool s = rz_project_migrate_v18_v19(prj, res);
+	mu_assert_true(s, "migrate success");
+	Sdb *core_db = sdb_ns(prj, "core", false);
+	mu_assert_notnull(core_db, "core ns");
+	Sdb *config_db = sdb_ns(core_db, "config", false);
+	mu_assert_notnull(config_db, "config ns");
+	mu_assert_null(sdb_get(config_db, "str.search.max_threads"), "Old config still there");
+	mu_assert_null(sdb_get(config_db, "str.search.min_length"), "Old config still there");
+	mu_assert_null(sdb_get(config_db, "str.search.buffer_size"), "Old config still there");
+	mu_assert_null(sdb_get(config_db, "str.search.max_uni_blocks"), "Old config still there");
+	mu_assert_null(sdb_get(config_db, "str.search.max_region_size"), "Old config still there");
+	mu_assert_null(sdb_get(config_db, "str.search.raw_alignment"), "Old config still there");
+	mu_assert_null(sdb_get(config_db, "str.search.check_ascii_freq"), "Old config still there");
+	mu_assert_null(sdb_get(config_db, "str.search.encoding"), "Old config still there");
+	mu_assert_streq_free(sdb_get(config_db, "search.max_threads"), "5", "New config has wrong value");
+	mu_assert_streq_free(sdb_get(config_db, "search.str.min_length"), "5", "New config has wrong value");
+	mu_assert_streq_free(sdb_get(config_db, "search.str.max_length"), "5", "New config has wrong value");
+	mu_assert_streq_free(sdb_get(config_db, "search.str.max_region_size"), "0x005555555", "New config has wrong value");
+	mu_assert_streq_free(sdb_get(config_db, "search.str.raw_alignment"), "55", "New config has wrong value");
+	mu_assert_streq_free(sdb_get(config_db, "search.str.check_ascii_freq"), "false", "New config has wrong value");
+	mu_assert_streq_free(sdb_get(config_db, "str.encoding"), "utf32be", "New config has wrong value");
+	rz_serialize_result_info_free(res);
+	rz_project_free(prj);
+	mu_end;
+}
+
 static bool test_migrate_v16_v17_flags_base() {
 	RzProject *prj = rz_project_load_file_raw("prj/v16-flags-base.rzdb");
 	mu_assert_notnull(prj, "load raw project");
@@ -977,12 +1007,13 @@ static bool test_load_v15_seek_history() {
 	mu_end;
 }
 
-static bool test_load_v15_str_config() {
+static bool test_load_v15_19_str_config() {
 	RzCore *core = rz_core_new();
+	// Load version 15 config but check if the v19 values were converted correctly.
 	BEGIN_LOAD_TEST(core, 15, "prj/v15-str-config.rzdb");
-	mu_assert_eq(rz_config_get_i(core->config, "str.search.min_length"), 6, "str.search.min_length");
-	mu_assert_streq(rz_config_get(core->config, "str.search.encoding"), "utf8", "str.search.encoding");
-	mu_assert_eq(rz_config_get_i(core->config, "str.search.buffer_size"), 0x00b00123, "str.search.buffer_size");
+	mu_assert_eq(rz_config_get_i(core->config, "search.str.min_length"), 6, "search.str.min_length");
+	mu_assert_streq(rz_config_get(core->config, "str.encoding"), "utf8", "str.encoding");
+	mu_assert_eq(rz_config_get_i(core->config, "search.str.max_length"), 0x00b00123, "search.str.max_length");
 	rz_core_free(core);
 	mu_end;
 }
@@ -1024,6 +1055,7 @@ int all_tests() {
 	mu_run_test(test_migrate_v15_v16_str_config);
 	mu_run_test(test_migrate_v16_v17_flags_base);
 	mu_run_test(test_migrate_v17_v18_rop_config);
+	mu_run_test(test_migrate_v18_v19_str_config);
 	mu_run_test(test_load_v1_noreturn);
 	mu_run_test(test_load_v1_noreturn_empty);
 	mu_run_test(test_load_v1_unknown_type);
@@ -1044,7 +1076,7 @@ int all_tests() {
 	mu_run_test(test_load_v12);
 	mu_run_test(test_load_v14);
 	mu_run_test(test_load_v15_seek_history);
-	mu_run_test(test_load_v15_str_config);
+	mu_run_test(test_load_v15_19_str_config);
 	mu_run_test(test_load_v16);
 	mu_run_test(test_load_v17);
 	return tests_passed != tests_run;

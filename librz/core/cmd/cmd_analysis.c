@@ -5898,7 +5898,12 @@ RZ_IPI RzCmdStatus rz_recover_all_golang_functions_strings_handler(RzCore *core,
 		RZ_LOG_ERROR("cannot recover golang functions.\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
+	const char *val = rz_config_get(core->config, "str.encoding");
+	// Go always has UTF-8 strings:
+	// https://go.dev/blog/strings
+	rz_config_set(core->config, "str.encoding", "utf8");
 	rz_core_analysis_resolve_golang_strings(core);
+	rz_config_set(core->config, "str.encoding", val);
 	return RZ_CMD_STATUS_OK;
 }
 

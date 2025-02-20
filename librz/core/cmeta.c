@@ -437,8 +437,7 @@ static bool meta_string_guess_add(RzCore *core, ut64 addr, size_t limit, char **
 	}
 	bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
 	RzUtilStrScanOptions scan_opt = {
-		.buf_size = bin->str_search_cfg.buffer_size,
-		.max_uni_blocks = bin->str_search_cfg.max_uni_blocks,
+		.max_str_length = bin->str_search_cfg.max_length,
 		.min_str_length = bin->str_search_cfg.min_length,
 		.prefer_big_endian = big_endian,
 		.check_ascii_freq = bin->str_search_cfg.check_ascii_freq,

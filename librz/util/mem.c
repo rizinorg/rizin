@@ -300,10 +300,12 @@ RZ_API bool rz_mem_is_zero(const ut8 *b, int l) {
  *
  * Examples:
  *
+ * ```c
  * ut64 address = 0x59d;
  * ut64 padding = rz_mem_align_padding(address, 4);
  * assert(padding == 3);
  * assert(address + padding == 0x5a0);
+ * ```
  */
 RZ_API ut64 rz_mem_align_padding(const ut64 address, ut64 alignment) {
 	size_t c = rz_bits_count_ones_ut64(alignment);

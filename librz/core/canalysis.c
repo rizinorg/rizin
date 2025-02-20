@@ -75,8 +75,7 @@ static bool find_string_at(RzCore *core, RzBinObject *bobj, ut64 pointer, char *
 
 	RzStrEnc strenc = bin->str_search_cfg.string_encoding;
 	RzUtilStrScanOptions scan_opt = {
-		.buf_size = sizeof(buffer),
-		.max_uni_blocks = bin->str_search_cfg.max_uni_blocks,
+		.max_str_length = sizeof(buffer),
 		.min_str_length = bin->str_search_cfg.min_length,
 		.prefer_big_endian = core->analysis->big_endian,
 		.check_ascii_freq = bin->str_search_cfg.check_ascii_freq,
