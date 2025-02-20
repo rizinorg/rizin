@@ -312,3 +312,27 @@ EXPECT=<<EOF
 }
 EOF
 RUN
+
+NAME=ps workaround for 4857 utf32le
+FILE=bins/cmd/search/string_encodings/Arabic-Lipsum.utf32le
+CMDS=<<EOF
+b 0x1000
+# Checks that no un-printable characters and the full string are emitted.
+ps utf32le unprintable
+EOF
+EXPECT=<<EOF
+أسيا مساعدة جعل عن, أخذ قد يونيو الثانية, نهاية الإقتصادية أي فقد. كما فسقط يتعلّق محاولات أي, هو الأحمر العمليات تلك, اكتوبر مقاطعة من كلا. هو لان وسفن أسيا الأوضاع, لم بوابة المبرمة عرض. إبّان اسبوعين البشريةً تعد في. كنقطة إيطاليا قام بل, أضف أن وبغطاء الباهضة.
+EOF
+RUN
+
+NAME=ps workaround for 4857 utf32be
+FILE=bins/cmd/search/string_encodings/Arabic-Lipsum.utf16be
+CMDS=<<EOF
+b 0x1000
+# Checks that no un-printable characters and the full string are emitted.
+ps utf16be unprintable
+EOF
+EXPECT=<<EOF
+أسيا مساعدة جعل عن, أخذ قد يونيو الثانية, نهاية الإقتصادية أي فقد. كما فسقط يتعلّق محاولات أي, هو الأحمر العمليات تلك, اكتوبر مقاطعة من كلا. هو لان وسفن أسيا الأوضاع, لم بوابة المبرمة عرض. إبّان اسبوعين البشريةً تعد في. كنقطة إيطاليا قام بل, أضف أن وبغطاء الباهضة.
+EOF
+RUN

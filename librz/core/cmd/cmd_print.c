@@ -9,7 +9,6 @@
 #include <rz_types.h>
 
 #include "../core_private.h"
-#include <rz_util/rz_strbuf.h>
 
 #define PF_USAGE_STR "pf[.k[.f[=v]]|[v]]|[n]|[0|cnt][fmt] [a0 a1 ...]"
 
@@ -1859,7 +1858,7 @@ static inline ut32 cmd_pxb_k(const ut8 *buffer, int x) {
 	return ((ut32)buffer[3 - x]) << (8 * x);
 }
 
-static void print_json_string(RzCore *core, const ut8 *block, ut32 len, RzStrEnc encoding, bool stop_at_nil) {
+static void print_json_string(RzCore *core, const ut8 *block, ut32 len, RzStrEnc encoding, bool stop_at_nil, bool stop_at_unprintable) {
 	char *section = get_section_name(core, core->offset);
 	if (!section) {
 		return;
@@ -1871,6 +1870,7 @@ static void print_json_string(RzCore *core, const ut8 *block, ut32 len, RzStrEnc
 	opt.encoding = encoding;
 	opt.json = true;
 	opt.stop_at_nil = stop_at_nil;
+	opt.stop_at_unprintable = stop_at_unprintable;
 	char *dstring = rz_str_stringify_raw_buffer(&opt, &dlength);
 	if (!dstring) {
 		free(section);
@@ -2083,10 +2083,10 @@ static void core_print_raw_buffer(RzStrStringifyOpt *opt) {
 	}
 }
 
-static RzCmdStatus core_auto_detect_and_print_string(RzCore *core, bool stop_at_nil, ut32 offset, RzOutputMode mode) {
+static RzCmdStatus core_print_string_in_block(RzCore *core, bool stop_at_nil, bool stop_at_unprintable, ut32 offset, RzOutputMode mode, RzStrEnc str_encoding) {
 	const ut8 *buffer = core->block + offset;
 	const ut32 length = core->blocksize - offset;
-	RzStrEnc encoding = core->bin->str_search_cfg.string_encoding;
+	RzStrEnc encoding = str_encoding == RZ_STRING_ENC_SETTINGS ? core->bin->str_search_cfg.string_encoding : str_encoding;
 	RzStrStringifyOpt opt = { 0 };
 
 	if (encoding == RZ_STRING_ENC_GUESS) {
@@ -2099,10 +2099,11 @@ static RzCmdStatus core_auto_detect_and_print_string(RzCore *core, bool stop_at_
 		opt.length = length;
 		opt.encoding = encoding;
 		opt.stop_at_nil = stop_at_nil;
+		opt.stop_at_unprintable = stop_at_unprintable;
 		core_print_raw_buffer(&opt);
 		break;
 	case RZ_OUTPUT_MODE_JSON:
-		print_json_string(core, buffer, length, encoding, stop_at_nil);
+		print_json_string(core, buffer, length, encoding, stop_at_nil, stop_at_nil);
 		break;
 	default:
 		RZ_LOG_ERROR("core: unsupported output mode\n");
@@ -2111,11 +2112,15 @@ static RzCmdStatus core_auto_detect_and_print_string(RzCore *core, bool stop_at_
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_print_string_auto_detect_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	bool stop_at_nil = !strcmp(argv[1], "null");
-	return core_auto_detect_and_print_string(core, stop_at_nil, 0, mode);
+// "ps"
+RZ_IPI RzCmdStatus rz_print_string_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	bool stop_at_nil = !strcmp(argv[2], "null");
+	bool stop_at_unprintable = !strcmp(argv[2], "unprintable");
+	RzStrEnc enc = rz_str_enc_string_as_type(argv[1]);
+	return core_print_string_in_block(core, stop_at_nil, stop_at_unprintable, 0, mode, enc);
 }
 
+// "ps+"
 RZ_IPI RzCmdStatus rz_print_string_as_libcpp_string_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	ut32 bitness = (ut32)rz_config_get_i(core->config, "asm.bits");
 	bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
@@ -2145,24 +2150,24 @@ RZ_IPI RzCmdStatus rz_print_string_as_libcpp_string_handler(RzCore *core, int ar
 		rz_core_seek(core, new_offset, SEEK_SET);
 		rz_core_block_read(core);
 
-		status = core_auto_detect_and_print_string(core, true, 0, mode);
+		status = core_print_string_in_block(core, true, false, 0, mode, RZ_STRING_ENC_SETTINGS);
 
 		rz_core_seek(core, old_offset, SEEK_SET);
 		rz_core_block_read(core);
 	} else {
-		status = core_auto_detect_and_print_string(core, true, 1, mode);
+		status = core_print_string_in_block(core, true, false, 1, mode, RZ_STRING_ENC_SETTINGS);
 	}
 
 	return status;
 }
 
+// "psb"
 RZ_IPI RzCmdStatus rz_print_strings_current_block_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	RzListIter *it = NULL;
 	RzDetectedString *detected = NULL;
 	RzBin *bin = core->bin;
 	RzUtilStrScanOptions scan_opt = {
-		.buf_size = core->blocksize,
-		.max_uni_blocks = bin->str_search_cfg.max_uni_blocks,
+		.max_str_length = core->blocksize,
 		.min_str_length = bin->str_search_cfg.min_length,
 		.prefer_big_endian = false,
 		.check_ascii_freq = bin->str_search_cfg.check_ascii_freq,
@@ -2196,8 +2201,7 @@ RZ_IPI RzCmdStatus rz_print_first_string_current_block_handler(RzCore *core, int
 	RzDetectedString *detected = NULL;
 	RzBin *bin = core->bin;
 	RzUtilStrScanOptions scan_opt = {
-		.buf_size = core->blocksize,
-		.max_uni_blocks = bin->str_search_cfg.max_uni_blocks,
+		.max_str_length = core->blocksize,
 		.min_str_length = bin->str_search_cfg.min_length,
 		.prefer_big_endian = false,
 		.check_ascii_freq = bin->str_search_cfg.check_ascii_freq,
@@ -2260,10 +2264,11 @@ RZ_IPI RzCmdStatus rz_print_pascal_string_handler(RzCore *core, int argc, const 
 		opt.length = string_len;
 		opt.encoding = RZ_STRING_ENC_8BIT;
 		opt.stop_at_nil = true;
+		opt.stop_at_unprintable = true;
 		core_print_raw_buffer(&opt);
 		break;
 	case RZ_OUTPUT_MODE_JSON:
-		print_json_string(core, core->block + offset, string_len, RZ_STRING_ENC_8BIT, true);
+		print_json_string(core, core->block + offset, string_len, RZ_STRING_ENC_8BIT, true, true);
 		break;
 	default:
 		RZ_LOG_ERROR("core: unsupported output mode\n");
@@ -2659,60 +2664,24 @@ RZ_API void rz_print_offset(RzPrint *p, ut64 off, int invert, int offseg, int of
 	rz_print_offset_sg(p, off, invert, offseg, 4, offdec, delta, label);
 }
 
+RZ_IPI RzCmdStatus rz_print_utf8_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	return core_print_string_in_block(core, true, false, 0, mode, RZ_STRING_ENC_UTF8);
+}
+
 RZ_IPI RzCmdStatus rz_print_utf16le_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	if (mode == RZ_OUTPUT_MODE_JSON) {
-		print_json_string(core, core->block, core->blocksize, RZ_STRING_ENC_UTF16LE, true);
-	} else {
-		RzStrStringifyOpt opt = { 0 };
-		opt.buffer = core->block;
-		opt.length = core->blocksize;
-		opt.encoding = RZ_STRING_ENC_UTF16LE;
-		opt.stop_at_nil = true;
-		core_print_raw_buffer(&opt);
-	}
-	return RZ_CMD_STATUS_OK;
+	return core_print_string_in_block(core, true, false, 0, mode, RZ_STRING_ENC_UTF16LE);
 }
 
 RZ_IPI RzCmdStatus rz_print_utf32le_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	if (mode == RZ_OUTPUT_MODE_JSON) {
-		print_json_string(core, core->block, core->blocksize, RZ_STRING_ENC_UTF32LE, true);
-	} else {
-		RzStrStringifyOpt opt = { 0 };
-		opt.buffer = core->block;
-		opt.length = core->blocksize;
-		opt.encoding = RZ_STRING_ENC_UTF32LE;
-		opt.stop_at_nil = true;
-		core_print_raw_buffer(&opt);
-	}
-	return RZ_CMD_STATUS_OK;
+	return core_print_string_in_block(core, true, false, 0, mode, RZ_STRING_ENC_UTF32LE);
 }
 
 RZ_IPI RzCmdStatus rz_print_utf16be_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	if (mode == RZ_OUTPUT_MODE_JSON) {
-		print_json_string(core, core->block, core->blocksize, RZ_STRING_ENC_UTF16BE, true);
-	} else {
-		RzStrStringifyOpt opt = { 0 };
-		opt.buffer = core->block;
-		opt.length = core->blocksize;
-		opt.encoding = RZ_STRING_ENC_UTF16BE;
-		opt.stop_at_nil = true;
-		core_print_raw_buffer(&opt);
-	}
-	return RZ_CMD_STATUS_OK;
+	return core_print_string_in_block(core, true, false, 0, mode, RZ_STRING_ENC_UTF16BE);
 }
 
 RZ_IPI RzCmdStatus rz_print_utf32be_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	if (mode == RZ_OUTPUT_MODE_JSON) {
-		print_json_string(core, core->block, core->blocksize, RZ_STRING_ENC_UTF32BE, true);
-	} else {
-		RzStrStringifyOpt opt = { 0 };
-		opt.buffer = core->block;
-		opt.length = core->blocksize;
-		opt.encoding = RZ_STRING_ENC_UTF32BE;
-		opt.stop_at_nil = true;
-		core_print_raw_buffer(&opt);
-	}
-	return RZ_CMD_STATUS_OK;
+	return core_print_string_in_block(core, true, false, 0, mode, RZ_STRING_ENC_UTF32BE);
 }
 
 RZ_IPI RzCmdStatus rz_print_hexdump_annotated_handler(RzCore *core, int argc, const char **argv) {
@@ -4293,6 +4262,7 @@ RZ_IPI RzCmdStatus rz_print_url_encode_zero_handler(RzCore *core, int argc, cons
 	opt.buffer = core->block;
 	opt.length = len;
 	opt.stop_at_nil = true;
+	opt.stop_at_unprintable = true;
 	opt.encoding = RZ_STRING_ENC_8BIT;
 	opt.urlencode = true;
 	core_print_raw_buffer(&opt);

@@ -66,6 +66,7 @@ static const RzCmdDescDetail cmd_info_query_details[2];
 static const RzCmdDescDetail query_sdb_get_set_details[2];
 static const RzCmdDescDetail cmd_print_byte_array_details[3];
 static const RzCmdDescDetail pf_details[3];
+static const RzCmdDescDetail print_string_details[2];
 static const RzCmdDescDetail print_rising_and_falling_entropy_details[2];
 static const RzCmdDescDetail interactive_visual_details[2];
 static const RzCmdDescDetail write_details[3];
@@ -678,7 +679,7 @@ static const RzCmdDescArg print_operation_xor_args[2];
 static const RzCmdDescArg cmd_print_raw_args[2];
 static const RzCmdDescArg cmd_print_raw_colors_args[2];
 static const RzCmdDescArg cmd_print_raw_string_args[2];
-static const RzCmdDescArg print_string_auto_detect_args[2];
+static const RzCmdDescArg print_string_args[3];
 static const RzCmdDescArg print_pascal_string_args[2];
 static const RzCmdDescArg print_value_args[2];
 static const RzCmdDescArg print_value1_args[2];
@@ -14932,22 +14933,44 @@ static const RzCmdDescHelp cmd_print_raw_string_help = {
 };
 
 static const RzCmdDescHelp ps_help = {
-	.summary = "Print string at the current offset",
+	.summary = "Print string at the current offset.",
 };
-static const char *print_string_auto_detect_delimiter_choices[] = { "null", "block", NULL };
-static const RzCmdDescArg print_string_auto_detect_args[] = {
+static const RzCmdDescDetailEntry print_string_Value_space_details_detail_entries[] = {
+	{ .text = "String length", .arg_str = NULL, .comment = "The string length depends on the block size. You need to change it via 'b <size-in-bytes>' if your string is too short." },
+	{ .text = "encoding=settings", .arg_str = NULL, .comment = "Use encoding from 'str.encoding' option." },
+	{ .text = "delimeter=null", .arg_str = NULL, .comment = "Prints until first NUL code point. Non-printable characters are escaped." },
+	{ .text = "delimeter=unprintable", .arg_str = NULL, .comment = "Prints until the first non-printable code point. This includes '\\n', '\\t' etc." },
+	{ .text = "delimeter=block", .arg_str = NULL, .comment = "Print whole block as string (don't stop at non-printable or NUL character)." },
+	{ 0 },
+};
+static const RzCmdDescDetail print_string_details[] = {
+	{ .name = "Value details", .entries = print_string_Value_space_details_detail_entries },
+	{ 0 },
+};
+static const char *print_string_encoding_choices[] = { "settings", "guess", "ascii", "utf8", "utf16le", "utf32le", "utf16be", "utf32be", "ibm037", "ibm290", "ebcdices", "ebcdicuk", "ebcdicus", NULL };
+
+static const char *print_string_delimiter_choices[] = { "null", "block", "unprintable", NULL };
+static const RzCmdDescArg print_string_args[] = {
+	{
+		.name = "encoding",
+		.type = RZ_CMD_ARG_TYPE_CHOICES,
+		.default_value = "settings",
+		.choices.choices = print_string_encoding_choices,
+
+	},
 	{
 		.name = "delimiter",
 		.type = RZ_CMD_ARG_TYPE_CHOICES,
 		.default_value = "null",
-		.choices.choices = print_string_auto_detect_delimiter_choices,
+		.choices.choices = print_string_delimiter_choices,
 
 	},
 	{ 0 },
 };
-static const RzCmdDescHelp print_string_auto_detect_help = {
-	.summary = "Print the autodetected string at the current offset (null->zero-terminated, block->block-terminated)",
-	.args = print_string_auto_detect_args,
+static const RzCmdDescHelp print_string_help = {
+	.summary = "Print the string at the current offset in the block.",
+	.details = print_string_details,
+	.args = print_string_args,
 };
 
 static const RzCmdDescArg print_string_as_libcpp_string_args[] = {
@@ -15006,11 +15029,19 @@ static const RzCmdDescHelp print_string_wrap_width_help = {
 	.args = print_string_wrap_width_args,
 };
 
+static const RzCmdDescArg print_utf8_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp print_utf8_help = {
+	.summary = "Print buffer as a utf8 string (alias for 'ps utf8 null').",
+	.args = print_utf8_args,
+};
+
 static const RzCmdDescArg print_utf16be_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp print_utf16be_help = {
-	.summary = "Print buffer as a utf16be string",
+	.summary = "Print buffer as a utf16be string (alias for 'ps utf16be null').",
 	.args = print_utf16be_args,
 };
 
@@ -15018,7 +15049,7 @@ static const RzCmdDescArg print_utf32be_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp print_utf32be_help = {
-	.summary = "Print buffer as a utf32be string",
+	.summary = "Print buffer as a utf32be string (alias for 'ps utf32be null').",
 	.args = print_utf32be_args,
 };
 
@@ -15034,7 +15065,7 @@ static const RzCmdDescArg print_utf16le_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp print_utf16le_help = {
-	.summary = "Print buffer as a utf16le string",
+	.summary = "Print buffer as a utf16le string (alias for 'ps utf16le null').",
 	.args = print_utf16le_args,
 };
 
@@ -15042,7 +15073,7 @@ static const RzCmdDescArg print_utf32le_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp print_utf32le_help = {
-	.summary = "Print buffer as a utf32le string",
+	.summary = "Print buffer as a utf32le string (alias for 'ps utf32le null').",
 	.args = print_utf32le_args,
 };
 
@@ -22737,7 +22768,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_print_raw_string_cd = rz_cmd_desc_argv_new(core->rcmd, pr_cd, "prz", rz_cmd_print_raw_string_handler, &cmd_print_raw_string_help);
 	rz_warn_if_fail(cmd_print_raw_string_cd);
 
-	RzCmdDesc *ps_cd = rz_cmd_desc_group_modes_new(core->rcmd, cmd_print_cd, "ps", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_string_auto_detect_handler, &print_string_auto_detect_help, &ps_help);
+	RzCmdDesc *ps_cd = rz_cmd_desc_group_modes_new(core->rcmd, cmd_print_cd, "ps", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_string_handler, &print_string_help, &ps_help);
 	rz_warn_if_fail(ps_cd);
 	RzCmdDesc *print_string_as_libcpp_string_cd = rz_cmd_desc_argv_modes_new(core->rcmd, ps_cd, "ps+", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_string_as_libcpp_string_handler, &print_string_as_libcpp_string_help);
 	rz_warn_if_fail(print_string_as_libcpp_string_cd);
@@ -22756,6 +22787,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *print_string_wrap_width_cd = rz_cmd_desc_argv_modes_new(core->rcmd, ps_cd, "pss", RZ_OUTPUT_MODE_STANDARD, rz_print_string_wrap_width_handler, &print_string_wrap_width_help);
 	rz_warn_if_fail(print_string_wrap_width_cd);
+
+	RzCmdDesc *print_utf8_cd = rz_cmd_desc_argv_modes_new(core->rcmd, ps_cd, "psu", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_utf8_handler, &print_utf8_help);
+	rz_warn_if_fail(print_utf8_cd);
 
 	RzCmdDesc *print_utf16be_cd = rz_cmd_desc_argv_modes_new(core->rcmd, ps_cd, "psm", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_utf16be_handler, &print_utf16be_help);
 	rz_warn_if_fail(print_utf16be_cd);
