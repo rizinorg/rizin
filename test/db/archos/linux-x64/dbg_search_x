@@ -1,0 +1,17 @@
+NAME=Search library maps.
+FILE=bins/elf/arch-x86_64-ls
+ARGS=-d
+CMDS=<<EOF
+e search.in=dbg.maps.r
+# Execute until main to ensure libc was mapped.
+s main
+db
+dc
+# This equals the string: "ISO-10646/UCS4/".
+# It should only be present if libc is loaded.
+/x 49534f2d31303634362f554353342f~?
+EOF
+EXPECT=<<EOF
+11
+EOF
+RUN
