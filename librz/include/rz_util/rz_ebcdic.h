@@ -42,6 +42,8 @@ RZ_API int rz_str_ebcdic_us_from_unicode(RZ_NONNULL RZ_OUT ut8 *dst, const RzCod
 RZ_API int rz_str_ebcdic_es_to_unicode(const ut8 src, RZ_NONNULL RZ_OUT RzCodePoint *dst);
 RZ_API int rz_str_ebcdic_es_from_unicode(RZ_NONNULL RZ_OUT ut8 *dst, const RzCodePoint src);
 
+RZ_API bool rz_str_ebcdic_valid_code_point(const RzCodePoint code_point);
+
 #ifdef __cplusplus
 }
 #endif

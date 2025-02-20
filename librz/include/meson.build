@@ -116,6 +116,7 @@ rz_util_files = [
   'rz_util/rz_time.h',
   'rz_util/rz_tree.h',
   'rz_util/rz_uleb128.h',
+  'rz_util/rz_unicode.h',
   'rz_util/rz_utf16.h',
   'rz_util/rz_utf32.h',
   'rz_util/rz_utf8.h',

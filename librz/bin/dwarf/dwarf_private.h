@@ -58,9 +58,10 @@ static inline char *str_escape_utf8_copy(const char *p) {
 		.dot_nl = true,
 		.esc_bslash = true,
 		.esc_double_quotes = true,
-		.show_asciidot = false
+		.show_asciidot = false,
+		.keep_printable = true
 	};
-	return rz_str_escape_utf8_keep_printable(p, &opt);
+	return rz_str_escape_utf8(p, &opt);
 }
 
 static inline void strbuf_append_string_own(RzStrBuf *b, char *own) {

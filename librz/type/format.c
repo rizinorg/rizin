@@ -1198,7 +1198,14 @@ static void rz_type_byte_escape(const RzPrint *p, const char *src, char **dst, i
 	opt.dot_nl = dot_nl;
 	opt.show_asciidot = !strcmp(p->strconv_mode, "asciidot");
 	opt.esc_bslash = p->esc_bslash;
-	rz_str_byte_escape(src, dst, &opt);
+	opt.keep_printable = true;
+	RzCodePoint cp = (ut8)*src;
+	if (cp <= RZ_UNICODE_LAST_ASCII && !rz_str_escape_code_point(cp, 1, &opt)) {
+		**dst = *src;
+		(*dst)++;
+	} else {
+		rz_unicode_byte_escape(cp, dst, &opt);
+	}
 }
 
 static void rz_type_format_nulltermstring(const RzTypeDB *typedb, RzPrint *p, RzStrBuf *outbuf, int len, int endian, int mode,
