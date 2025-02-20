@@ -61,6 +61,92 @@ RZ_IPI RzCmdStatus rz_interpret_pipe_handler(RzCore *core, int argc, const char 
 RZ_IPI RzCmdStatus rz_interpret_macro_handler(RzCore *core, int argc, const char **argv);
 // "..("
 RZ_IPI RzCmdStatus rz_interpret_macro_multiple_handler(RzCore *core, int argc, const char **argv);
+// "/+"
+RZ_IPI RzCmdStatus rz_cmd_search_str_chunk_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+// "/a"
+RZ_IPI RzCmdStatus rz_cmd_search_assemble_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+// "/a1"
+RZ_IPI RzCmdStatus rz_cmd_search_assemble_1_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+// "/aI"
+RZ_IPI RzCmdStatus rz_cmd_search_assemble_I_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+// "/aa"
+RZ_IPI RzCmdStatus rz_cmd_search_assemble_a_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+// "/ac"
+RZ_IPI RzCmdStatus rz_cmd_search_assemble_c_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+// "/ad"
+RZ_IPI RzCmdStatus rz_cmd_search_assemble_d_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+// "/ad/"
+RZ_IPI RzCmdStatus rz_cmd_search_assemble_d_slash_handler(RzCore *core, int argc, const char **argv);
+// "/ad/a"
+RZ_IPI RzCmdStatus rz_cmd_search_assemble_d_slasha_handler(RzCore *core, int argc, const char **argv);
+// "/ae"
+RZ_IPI RzCmdStatus rz_cmd_search_assemble_e_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+// "/af"
+RZ_IPI RzCmdStatus rz_cmd_search_assemble_f_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+// "/afl"
+RZ_IPI RzCmdStatus rz_cmd_search_assemble_fl_handler(RzCore *core, int argc, const char **argv);
+// "/ai"
+RZ_IPI RzCmdStatus rz_cmd_search_assemble_i_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+// "/al"
+RZ_IPI RzCmdStatus rz_cmd_search_assemble_l_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+// "/am"
+RZ_IPI RzCmdStatus rz_cmd_search_assemble_m_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+// "/ao"
+RZ_IPI RzCmdStatus rz_cmd_search_assemble_o_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+// "/as"
+RZ_IPI RzCmdStatus rz_cmd_search_assemble_s_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+// "/asl"
+RZ_IPI RzCmdStatus rz_cmd_search_assemble_sl_handler(RzCore *core, int argc, const char **argv);
+// "/at"
+RZ_IPI RzCmdStatus rz_cmd_search_assemble_t_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+// "/atl"
+RZ_IPI RzCmdStatus rz_cmd_search_assemble_tl_handler(RzCore *core, int argc, const char **argv);
+// "/ca"
+RZ_IPI RzCmdStatus rz_cmd_search_aes_key_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/cc"
+RZ_IPI RzCmdStatus rz_cmd_search_collision_handler(RzCore *core, int argc, const char **argv);
+// "/cr"
+RZ_IPI RzCmdStatus rz_cmd_search_private_key_handler(RzCore *core, int argc, const char **argv);
+// "/cd"
+RZ_IPI RzCmdStatus rz_cmd_search_certs_handler(RzCore *core, int argc, const char **argv);
+// "/d"
+RZ_IPI RzCmdStatus rz_cmd_search_deltified_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+// "/F"
+RZ_IPI RzCmdStatus rz_cmd_search_file_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+// "/o"
+RZ_IPI RzCmdStatus rz_cmd_search_insn_offset_backwards_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/O"
+RZ_IPI RzCmdStatus rz_cmd_search_insn_offset_backwards_fallback_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/p"
+RZ_IPI RzCmdStatus rz_cmd_search_pattern_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/P"
+RZ_IPI RzCmdStatus rz_cmd_search_blocks_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/s"
+RZ_IPI RzCmdStatus rz_cmd_search_sections_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/g"
+RZ_IPI RzCmdStatus rz_cmd_search_graph_path_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/gg"
+RZ_IPI RzCmdStatus rz_cmd_search_graph_path_follow_jumps_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/h"
+RZ_IPI RzCmdStatus rz_cmd_search_hash_block_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/m"
+RZ_IPI RzCmdStatus rz_cmd_search_magic_const_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+// "/mb"
+RZ_IPI RzCmdStatus rz_cmd_search_magic_bin_headers_handler(RzCore *core, int argc, const char **argv);
+// "/E"
+RZ_IPI RzCmdStatus rz_cmd_search_esil_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+// "/r"
+RZ_IPI RzCmdStatus rz_cmd_search_reference_handler(RzCore *core, int argc, const char **argv);
+// "/ra"
+RZ_IPI RzCmdStatus rz_cmd_search_reference_all_handler(RzCore *core, int argc, const char **argv);
+// "/rc"
+RZ_IPI RzCmdStatus rz_cmd_search_reference_call_handler(RzCore *core, int argc, const char **argv);
+// "/rr"
+RZ_IPI RzCmdStatus rz_cmd_search_reference_read_handler(RzCore *core, int argc, const char **argv);
+// "/rw"
+RZ_IPI RzCmdStatus rz_cmd_search_reference_write_handler(RzCore *core, int argc, const char **argv);
+// "/rx"
+RZ_IPI RzCmdStatus rz_cmd_search_reference_execute_handler(RzCore *core, int argc, const char **argv);
 // "/R"
 RZ_IPI RzCmdStatus rz_cmd_info_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/R/"
@@ -69,8 +155,28 @@ RZ_IPI RzCmdStatus rz_cmd_search_gadget_handler(RzCore *core, int argc, const ch
 RZ_IPI RzCmdStatus rz_cmd_query_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/Rg"
 RZ_IPI RzCmdStatus rz_cmd_detail_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
-// "/"
-RZ_IPI int rz_cmd_search(void *data, const char *input);
+// "/v1"
+RZ_IPI RzCmdStatus rz_cmd_search_value_8_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/v2"
+RZ_IPI RzCmdStatus rz_cmd_search_value_16_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/v4"
+RZ_IPI RzCmdStatus rz_cmd_search_value_32_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/v8"
+RZ_IPI RzCmdStatus rz_cmd_search_value_64_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/V1"
+RZ_IPI RzCmdStatus rz_cmd_search_value_8be_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/V2"
+RZ_IPI RzCmdStatus rz_cmd_search_value_16be_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/V4"
+RZ_IPI RzCmdStatus rz_cmd_search_value_32be_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/V8"
+RZ_IPI RzCmdStatus rz_cmd_search_value_64be_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/x"
+RZ_IPI RzCmdStatus rz_cmd_search_hex_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/xr"
+RZ_IPI RzCmdStatus rz_cmd_search_hex_regex_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/z"
+RZ_IPI RzCmdStatus rz_cmd_search_string_sensitive_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "R"
 RZ_IPI RzCmdStatus rz_remote_handler(RzCore *core, int argc, const char **argv);
 // "R<"
@@ -2282,8 +2388,6 @@ RZ_IPI RzCmdStatus rz_seek_redo_handler(RzCore *core, int argc, const char **arg
 RZ_IPI RzCmdStatus rz_seek_undo_handler(RzCore *core, int argc, const char **argv);
 // "sh-"
 RZ_IPI RzCmdStatus rz_seek_undo_reset_handler(RzCore *core, int argc, const char **argv);
-// "s/"
-RZ_IPI int rz_seek_search(void *data, const char *input);
 // "sa"
 RZ_IPI RzCmdStatus rz_seek_asz_handler(RzCore *core, int argc, const char **argv);
 // "sb"

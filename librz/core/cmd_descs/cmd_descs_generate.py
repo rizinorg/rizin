@@ -816,7 +816,7 @@ parser.add_argument(
 parser.add_argument("--output-dir", type=str, required=True, help="Output directory")
 parser.add_argument(
     "yaml_files",
-    type=argparse.FileType("r"),
+    type=argparse.FileType("r", encoding="utf8"),
     nargs="+",
     help="Input YAML files containing commands descriptions. One should be named 'root'.",
 )

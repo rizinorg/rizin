@@ -5251,7 +5251,6 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		const char *description;
 		RzCmdCb cb;
 	} cmds[] = {
-		{ "/", "search kw, pattern aes", rz_cmd_search },
 		{ "p", "print current block", rz_cmd_print },
 		{ "x", "alias for px", rz_cmd_hexdump },
 	};
