@@ -5,6 +5,7 @@
 #include <rz_util.h>
 #include <rz_list.h>
 #include <rz_io.h>
+#include <rz_th.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -44,10 +45,10 @@ typedef struct rz_search_keyword_t {
 	ut64 last; // last hit hint
 } RzSearchKeyword;
 
-typedef struct rz_search_hit_t {
+typedef struct {
 	RzSearchKeyword *kw;
 	ut64 addr;
-} RzSearchHit;
+} RzSearchLegacyHit;
 
 typedef int (*RzSearchCallback)(RzSearchKeyword *kw, void *user, ut64 where);
 
@@ -109,7 +110,7 @@ RZ_API int rz_search_deltakey_update(RzSearch *s, ut64 from, const ut8 *buf, int
 RZ_API int rz_search_strings_update(RzSearch *s, ut64 from, const ut8 *buf, int len);
 RZ_API int rz_search_regexp_update(RzSearch *s, ut64 from, const ut8 *buf, int len);
 // Returns 2 if search.maxhits is reached, 0 on error, otherwise 1
-RZ_API int rz_search_hit_new(RzSearch *s, RzSearchKeyword *kw, ut64 addr);
+RZ_API int rz_search_legacy_hit_new(RzSearch *s, RzSearchKeyword *kw, ut64 addr);
 RZ_API void rz_search_set_distance(RzSearch *s, int dist);
 RZ_API int rz_search_set_string_limits(RzSearch *s, ut32 min, ut32 max); // dup again?
 // RZ_API int rz_search_set_callback(RzSearch *s, int (*callback)(struct rz_search_kw_t *, void *, ut64), void *user);
@@ -120,9 +121,98 @@ RZ_API int rz_search_begin(RzSearch *s);
 RZ_API void rz_search_pattern_size(RzSearch *s, int size);
 RZ_API int rz_search_pattern(RzSearch *s, ut64 from, ut64 to);
 
+#endif // RZ_API
+
+//
+// New search.
+// Everything above is only there to not break the build.
+//
+
+RZ_LIB_VERSION_HEADER(rz_search);
+
+/**
+ * \brief Private search options for the search module. Use the rz_search_opt_*() functions to edit it.
+ */
+typedef struct rz_search_opt_t RzSearchOpt;
+
+/**
+ * \brief Options for the find() callback of the different searches.
+ */
+typedef struct rz_search_find_opt_t RzSearchFindOpt;
+
+typedef struct rz_search_collection_t RzSearchCollection;
+
+typedef struct rz_search_hit_t {
+	char *hit_desc; ///< Hit description (can be NULL)
+	ut64 address; ///< Address/offset of the matched data.
+	size_t size; ///< Size of the matched data (can be 0), in bytes.
+} RzSearchHit;
+
+typedef enum {
+	RZ_SEARCH_CANCEL_REGULAR_CHECK, ///< Regular cancel check. Repeated every RZ_SEARCH_CANCEL_CHECK_INTERVAL_USEC microseconds.
+	RZ_SEARCH_CANCEL_SIGINT, ///< Interrupt signal (likely ctrl + c).
+} RzSearchCancelReason;
+
+typedef struct rz_search_bytes_pattern_t RzSearchBytesPattern;
+
+RZ_API RZ_OWN char *rz_search_hit_flag_name(RZ_NONNULL const RzSearchHit *hit, size_t hit_id, RZ_NULLABLE const char *prefix);
+
+RZ_API void rz_search_bytes_pattern_free(RZ_NULLABLE RZ_OWN RzSearchBytesPattern *hp);
+RZ_API RZ_OWN RzSearchBytesPattern *rz_search_bytes_pattern_copy(RZ_NONNULL RZ_BORROW RzSearchBytesPattern *hp);
+RZ_API RZ_OWN RzSearchBytesPattern *rz_search_bytes_pattern_new(RZ_OWN ut8 *bytes, RZ_NULLABLE RZ_OWN ut8 *mask, size_t length, RZ_NULLABLE const char *pattern_desc, bool compile_regex);
+RZ_API RZ_OWN RzSearchBytesPattern *rz_search_parse_byte_pattern(const char *byte_pattern, RZ_NULLABLE const char *pattern_desc);
+RZ_API size_t rz_search_bytes_pattern_len(RZ_NONNULL const RzSearchBytesPattern *hp);
+RZ_API const char *rz_search_bytes_pattern_desc(RZ_NONNULL const RzSearchBytesPattern *bp);
+
+/**
+ * \brief The cancel callback. It is invoked to check, if the search should be stopped.
+ *
+ * \param user The private user data.
+ * \param n_hits Number of hits already found during the search.
+ * \param invoe_reason The reason it is called.
+ *
+ * \return True, if the search should be canceled.
+ * \return False, if the search should continue.
+ */
+typedef bool (*RzSearchCancelCallback)(void *user, size_t n_hits, RzSearchCancelReason invoke_reason);
+
+RZ_API RZ_OWN RzSearchOpt *rz_search_opt_new();
+RZ_API void rz_search_opt_free(RZ_NULLABLE RzSearchOpt *opt);
+RZ_API bool rz_search_opt_set_max_hits(RZ_NONNULL RzSearchOpt *opt, size_t max_hits);
+RZ_API bool rz_search_opt_set_elemet_size(RZ_NONNULL RzSearchOpt *opt, ut64 chunk_size);
+RZ_API bool rz_search_opt_set_max_threads(RZ_NONNULL RzSearchOpt *opt, RzThreadNCores max_threads);
+RZ_API bool rz_search_opt_set_cancel_cb(RZ_NONNULL RzSearchOpt *opt, RzSearchCancelCallback callback, void *user);
+RZ_API bool rz_search_opt_set_find_options(RZ_NONNULL RzSearchOpt *opt, RZ_OWN RzSearchFindOpt *find_opts);
+
+RZ_API RZ_OWN RzSearchFindOpt *rz_search_find_opt_new();
+RZ_API void rz_search_find_opt_free(RZ_NULLABLE RzSearchFindOpt *opt);
+RZ_API bool rz_search_find_opt_set_inverse_match(RZ_NONNULL RzSearchFindOpt *opt, bool inverse_match);
+RZ_API bool rz_search_find_opt_set_overlap_match(RZ_NONNULL RzSearchFindOpt *opt, bool overlap_match);
+RZ_API bool rz_search_find_opt_set_alignment(RZ_NONNULL RzSearchFindOpt *opt, size_t alignment);
+
+RZ_API RZ_OWN RzSearchCollection *rz_search_collection_aes_keys();
+
+RZ_API RZ_OWN RzSearchCollection *rz_search_collection_private_keys();
+
+RZ_API RZ_OWN RzSearchCollection *rz_search_collection_regex();
+RZ_API bool rz_search_collection_regex_add(RZ_NONNULL RzSearchCollection *col, RZ_NONNULL const char *regex, bool caseless);
+
+RZ_API RZ_OWN RzSearchCollection *rz_search_collection_bytes();
+RZ_API bool rz_search_collection_bytes_add(RZ_NONNULL RzSearchCollection *col, RZ_NULLABLE const char *pattern_desc, RZ_NONNULL const ut8 *bytes, RZ_NULLABLE const ut8 *mask, size_t length);
+RZ_API bool rz_search_collection_bytes_add_pattern(RZ_NONNULL RzSearchCollection *col, RZ_NONNULL RZ_OWN RzSearchBytesPattern *bytes_pattern);
+
+RZ_API RZ_OWN RzSearchCollection *rz_search_collection_strings(RZ_NONNULL RzUtilStrScanOptions *opts, RzStrEnc expected, RzRegexFlags re_flags);
+RZ_API bool rz_search_collection_string_add(RZ_NONNULL RzSearchCollection *col, RZ_NONNULL const char *regex_pattern, RzRegexFlags re_flags);
+
+RZ_API RZ_OWN RzSearchCollection *rz_search_collection_magic(RZ_NONNULL const char *magic_dir);
+
+RZ_API bool rz_search_collection_match_any(RZ_NULLABLE RzSearchCollection *sc, RZ_NONNULL const ut8 *buffer, size_t length);
+RZ_API void rz_search_collection_free(RZ_NULLABLE RzSearchCollection *sc);
+
+RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_search_on_io(RZ_BORROW RZ_NONNULL RzSearchOpt *opt, RZ_BORROW RZ_NONNULL RzSearchCollection *col, RZ_BORROW RZ_NONNULL RzIO *io, RZ_BORROW RZ_NONNULL RzList /*<RzIOMap *>*/ *search_in);
+
 #ifdef __cplusplus
 }
 #endif
 
-#endif
 #endif

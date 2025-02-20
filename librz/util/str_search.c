@@ -75,6 +75,7 @@ RZ_API void rz_detected_string_free(RzDetectedString *str) {
 		return;
 	}
 	free(str->string);
+	rz_regex_free(str->regex);
 	free(str);
 }
 
@@ -113,7 +114,6 @@ static UTF8StringInfo calculate_utf8_string_info(ut8 *str, int size) {
 }
 
 static FalsePositiveResult reduce_false_positives(const RzUtilStrScanOptions *opt, ut8 *str, int size, RzStrEnc str_type) {
-
 	switch (str_type) {
 	case RZ_STRING_ENC_8BIT: {
 		for (int i = 0; i < size; i++) {
