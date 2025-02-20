@@ -5208,8 +5208,12 @@ static void *AnalysisBytesContext_next(RzIterator *it) {
 		*sp = 0;
 		if (op->prefix) {
 			char *p = strchr(sp + 1, ' ');
-			*p = 0;
-			memmove(ctx->mnemonic, sp + 1, p - sp);
+			if (!p) {
+				rz_str_ncpy(ctx->mnemonic, sp + 1, strlen(sp + 1) + 1);
+			} else {
+				*p = 0;
+				rz_str_ncpy(ctx->mnemonic, sp + 1, p - sp);
+			}
 		}
 	}
 	op->mnemonic = mnem;
