@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: 2021 Rot127 <unisono@quyllur.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-// LLVM commit: b6f51787f6c8e77143f0aef6b58ddc7c55741d5c
-// LLVM commit date: 2023-11-15 07:10:59 -0800 (ISO 8601 format)
-// Date of code generation: 2024-03-16 06:22:39-05:00
+// LLVM commit: c2b89fc9e45d325282b8eb6536f6145282dc3fdf
+// LLVM commit date: 2024-12-23 13:36:28 -0600 (ISO 8601 format)
+// Date of code generation: 2025-02-21 18:11:59-05:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -407,12 +407,9 @@ typedef enum {
 	HEX_INS_G4_TFRGPCP,
 	HEX_INS_G4_TFRGRCR,
 	HEX_INS_IMPORTED_RD_SS,
-	HEX_INS_IMPORTED_RD_MEMW_PHYS_RS_RT,
 	HEX_INS_IMPORTED_RDD_SSS,
 	HEX_INS_IMPORTED_SD_RS,
 	HEX_INS_IMPORTED_SDD_RSS,
-	HEX_INS_IMPORTED_L2GCLEAN_RTT,
-	HEX_INS_IMPORTED_L2GCLEANINV_RTT,
 	HEX_INS_J2_CALL,
 	HEX_INS_J2_CALLF,
 	HEX_INS_J2_CALLR,
@@ -760,6 +757,7 @@ typedef enum {
 	HEX_INS_L4_LOADRUH_AP,
 	HEX_INS_L4_LOADRUH_RR,
 	HEX_INS_L4_LOADRUH_UR,
+	HEX_INS_L4_LOADW_PHYS,
 	HEX_INS_L4_OR_MEMOPB_IO,
 	HEX_INS_L4_OR_MEMOPH_IO,
 	HEX_INS_L4_OR_MEMOPW_IO,
@@ -2386,6 +2384,8 @@ typedef enum {
 	HEX_INS_Y6_DMRESUME,
 	HEX_INS_Y6_DMSTART,
 	HEX_INS_Y6_DMWAIT,
+	HEX_INS_Y6_L2GCLEANINVPA,
+	HEX_INS_Y6_L2GCLEANPA,
 	HEX_INS_DEP_A2_ADDSAT,
 	HEX_INS_DEP_A2_SUBSAT,
 	HEX_INS_DEP_S2_PACKHL,

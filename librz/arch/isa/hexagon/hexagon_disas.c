@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: 2021 Rot127 <unisono@quyllur.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-// LLVM commit: b6f51787f6c8e77143f0aef6b58ddc7c55741d5c
-// LLVM commit date: 2023-11-15 07:10:59 -0800 (ISO 8601 format)
-// Date of code generation: 2024-03-16 06:22:39-05:00
+// LLVM commit: c2b89fc9e45d325282b8eb6536f6145282dc3fdf
+// LLVM commit date: 2024-12-23 13:36:28 -0600 (ISO 8601 format)
+// Date of code generation: 2025-02-21 18:11:59-05:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -21217,6 +21217,20 @@ static const HexInsnTemplate templates_normal_0x9[] = {
 		.syntax = " = memuh(<<+)",
 	},
 	{
+		// 10010010000sssssPP1ttttt000ddddd | Rd = memw_phys(Rs,Rt)
+		.encoding = { .mask = 0xffe020e0, .op = 0x92002000 },
+		.id = HEX_INS_L4_LOADW_PHYS,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT, .masks = { { 0x5, 0 } }, .reg_cls = HEX_REG_CLASS_INT_REGS, .isa_id = 'd', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 16 } }, .reg_cls = HEX_REG_CLASS_INT_REGS, .isa_id = 's', .syntax = 13 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_INT_REGS, .isa_id = 't', .syntax = 14 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = " = memw_phys(,)",
+	},
+	{
 		// 10011111000iiiiiPP101tti100ddddd | if (!Pt) Rd = memb(Ii)
 		.encoding = { .mask = 0xffe038e0, .op = 0x9f002880 },
 		.id = HEX_INS_L4_PLOADRBF_ABS,
@@ -21719,20 +21733,6 @@ static const HexInsnTemplate templates_normal_0x9[] = {
 		.cond = RZ_TYPE_COND_AL,
 		.type = RZ_ANALYSIS_OP_TYPE_NULL,
 		.syntax = "dcfetch(+)",
-	},
-	{
-		// 10010010000sssssPP1ttttt000ddddd | Rd = memw_phys(Rs,Rt)
-		.encoding = { .mask = 0xffe020e0, .op = 0x92002000 },
-		.id = HEX_INS_IMPORTED_RD_MEMW_PHYS_RS_RT,
-		.ops = {
-			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT, .masks = { { 0x5, 0 } }, .reg_cls = HEX_REG_CLASS_INT_REGS, .isa_id = 'd', .syntax = 0 },
-			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 16 } }, .reg_cls = HEX_REG_CLASS_INT_REGS, .isa_id = 's', .syntax = 13 },
-			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_INT_REGS, .isa_id = 't', .syntax = 14 },
-		},
-		.pred = HEX_NOPRED,
-		.cond = RZ_TYPE_COND_AL,
-		.type = RZ_ANALYSIS_OP_TYPE_NULL,
-		.syntax = " = memw_phys(,)",
 	},
 	{ { 0 } },
 };
@@ -24119,21 +24119,9 @@ static const HexInsnTemplate templates_normal_0xa[] = {
 		.syntax = " = dmwait",
 	},
 	{
-		// 1010011010100000PP0ttttt00000000 | l2gclean(Rtt)
-		.encoding = { .mask = 0xffff20ff, .op = 0xa6a00000 },
-		.id = HEX_INS_IMPORTED_L2GCLEAN_RTT,
-		.ops = {
-			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_PAIR, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_DOUBLE_REGS, .isa_id = 't', .syntax = 9 },
-		},
-		.pred = HEX_NOPRED,
-		.cond = RZ_TYPE_COND_AL,
-		.type = RZ_ANALYSIS_OP_TYPE_NULL,
-		.syntax = "l2gclean()",
-	},
-	{
 		// 1010011011000000PP0ttttt00000000 | l2gcleaninv(Rtt)
 		.encoding = { .mask = 0xffff20ff, .op = 0xa6c00000 },
-		.id = HEX_INS_IMPORTED_L2GCLEANINV_RTT,
+		.id = HEX_INS_Y6_L2GCLEANINVPA,
 		.ops = {
 			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_PAIR, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_DOUBLE_REGS, .isa_id = 't', .syntax = 12 },
 		},
@@ -24141,6 +24129,18 @@ static const HexInsnTemplate templates_normal_0xa[] = {
 		.cond = RZ_TYPE_COND_AL,
 		.type = RZ_ANALYSIS_OP_TYPE_NULL,
 		.syntax = "l2gcleaninv()",
+	},
+	{
+		// 1010011010100000PP0ttttt00000000 | l2gclean(Rtt)
+		.encoding = { .mask = 0xffff20ff, .op = 0xa6a00000 },
+		.id = HEX_INS_Y6_L2GCLEANPA,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_PAIR, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_DOUBLE_REGS, .isa_id = 't', .syntax = 9 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = "l2gclean()",
 	},
 	{ { 0 } },
 };
