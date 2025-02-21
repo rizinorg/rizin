@@ -3,7 +3,7 @@
 # SPDX-FileCopyrightText: 2021 ret2libc <sirmy15@gmail.com>
 # SPDX-License-Identifier: LGPL-3.0-only
 
-""" Portable python script to execute git -C (even on system where -C is not available) """
+"""Portable python script to execute git -C (even on system where -C is not available)"""
 
 import os
 import subprocess
