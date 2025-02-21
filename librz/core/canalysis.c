@@ -5209,10 +5209,12 @@ static void *AnalysisBytesContext_next(RzIterator *it) {
 		if (op->prefix) {
 			char *p = strchr(sp + 1, ' ');
 			if (!p) {
-				rz_str_ncpy(ctx->mnemonic, sp + 1, strlen(sp + 1) + 1);
+				memmove(ctx->mnemonic, sp + 1, strlen(sp + 1));
+				ctx->mnemonic[strlen(sp + 1)] = '\0';
 			} else {
 				*p = 0;
-				rz_str_ncpy(ctx->mnemonic, sp + 1, p - sp);
+				memmove(ctx->mnemonic, sp + 1, p - sp);
+				ctx->mnemonic[p - sp] = '\0';
 			}
 		}
 	}
