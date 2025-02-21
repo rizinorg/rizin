@@ -345,7 +345,7 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_AUI:
 		return mips_il_aui(handle, insn, gprlen);
 	case MIPS_INS_AUIPC:
-		return NULL;
+		return mips_il_auipc(handle, insn, gprlen);
 	case MIPS_INS_AVER_S_B:
 		return NULL;
 	case MIPS_INS_AVER_S_D:

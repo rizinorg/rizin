@@ -220,6 +220,17 @@ static RzILOpEffect *mips_il_aui(const csh *handle, const cs_insn *insn, const u
 	return SETG(rt, add);
 }
 
+static RzILOpEffect *mips_il_auipc(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Add Upper Immediate to PC
+	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
+
+	const char *rs = REG(0);
+	st64 imm = (st64)IMM(1);
+	// cast required due possible left shift of negative value
+	ut64 pc_imm = insn->address + (st64)((ut64)imm << 16);
+	return SETG(rs, SN(gprlen, pc_imm));
+}
+
 static RzILOpEffect *mips_il_b(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	RzILOpPure *target = MIPS_IMM(0);
 	return JMP(target);

@@ -6,3 +6,5 @@ d "aui s2, t7, 0xf770" 70f7f23d 0x4 (set s2 (cast 64 (msb (+ (cast 32 false (var
 d "aui t3, a3, 0x520" 2005eb3c 0x4 (set t3 (cast 64 (msb (+ (cast 32 false (var a3)) (bv 32 0x5200000))) (+ (cast 32 false (var a3)) (bv 32 0x5200000))))
 d "aui s2, zero, 0xff7f" 7fff123c 0x4 (set s2 (bv 64 0xff7f0000))
 d "aui a0, zero, 0x100" 0001043c 0x4 (set a0 (bv 64 0x1000000))
+dE "auipc s2, -0x145" 0xee5efebb 0x80012580 (set s2 (bv 64 0x7ebc2580))
+dE "auipc t3, 0x10" 0xed7e0010 0x80012580 (set t3 (bv 64 0x80112580))
