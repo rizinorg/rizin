@@ -20,6 +20,7 @@
 #define CHECK_OVERFLOW(r, sz) EQ(BITN(r, sz), BITN(r, sz - 1))
 #define MIPS_REG(idx)         mips_get_reg(handle, insn, idx, gprlen)
 #define MIPS_IMM(idx)         UN(gprlen, IMM(idx))
+#define MIPS_PCADDIMM(idx)    UN(gprlen, insn->address + IMM(idx)) /* returns an immediate which is PC + IMM */
 #define MIPS_ZERO()           UN(gprlen, 0)
 #define MIPS_LINK()           SETG(MIPS_REG_RA, UN(gprlen, insn->address + 8)) /* link register $ra */
 
@@ -98,6 +99,15 @@ static RzILOpEffect *mips_il_addiu(const csh *handle, const cs_insn *insn, const
 	RzILOpPure *imm = MIPS_IMM(2);
 	RzILOpPure *sum = ADD(rs, imm);
 	return SETG(rd, sum);
+}
+
+static RzILOpEffect *mips_il_addiupc(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// LAPC is also an alias of addiupc
+	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
+
+	const char *rs = REG(0);
+	RzILOpPure *pc_imm = MIPS_PCADDIMM(1);
+	return SETG(rs, pc_imm);
 }
 
 static RzILOpEffect *mips_il_addu(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
