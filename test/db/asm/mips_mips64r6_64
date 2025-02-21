@@ -1,1 +1,3 @@
 d "lapc v0, 0x64" 190040ec 0x812580 (set v0 (bv 64 0x8125e4))
+d "align a0, a2, t0, 3" e022c87c 0x4 (set a0 (cast 64 (msb (| (<< (cast 32 false (var t0)) (bv 32 0x18) false) (>> (cast 32 false (var a2)) (bv 32 0x18) false))) (| (<< (cast 32 false (var t0)) (bv 32 0x18) false) (>> (cast 32 false (var a2)) (bv 32 0x18) false))))
+d "dalign a0, a2, t0, 3" e422c87c 0x4 (set a0 (| (<< (var t0) (bv 64 0x18) false) (>> (var a2) (bv 64 0x18) false)))

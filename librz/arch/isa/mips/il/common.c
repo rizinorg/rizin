@@ -124,14 +124,51 @@ static RzILOpEffect *mips_il_addu(const csh *handle, const cs_insn *insn, const 
 	return SETG(rd, sum);
 }
 
+static RzILOpEffect *mips_il_align(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Concatenate two GPRs, and extract a contiguous subset at a byte position | ALIGN rd,rs,rt,bp
+	// operates on 32 bit. in 64bit mode sign extends.
+	// GPR[rd] = (GPR[rt] << (8*bp)) or (GPR[rs] >> (GPRLEN-8*bp))
+
+	const char *rd = REG(0);
+	RzILOpPure *rs = MIPS_REG(1);
+	RzILOpPure *rt = MIPS_REG(2);
+	if (gprlen > 32) {
+		rs = TRUNC32(rs);
+		rt = TRUNC32(rt);
+	}
+	RzILOpPure *bp_8 = UN(32, IMM(3) << 3); // bp * 8
+	RzILOpPure *gprlen_bp_8 = UN(32, IMM(3) << 3); // gprlen - (bp * 8)
+
+	RzILOpPure * or = LOGOR(SHIFTL0(rt, bp_8), SHIFTR0(rs, gprlen_bp_8));
+	if (gprlen > 32) {
+		or = SIGNED(gprlen, or);
+	}
+	return SETG(rd, or);
+}
+
+static RzILOpEffect *mips_il_dalign(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Concatenate two GPRs, and extract a contiguous subset at a byte position | ALIGN rd,rs,rt,bp
+	// operates on in 64 bits mode
+	// GPR[rd] = (GPR[rt] << (8*bp)) or (GPR[rs] >> (GPRLEN-8*bp))
+
+	const char *rd = REG(0);
+	RzILOpPure *rs = MIPS_REG(1);
+	RzILOpPure *rt = MIPS_REG(2);
+	RzILOpPure *bp_8 = UN(gprlen, IMM(3) << 3); // bp * 8
+	RzILOpPure *gprlen_bp_8 = UN(gprlen, IMM(3) << 3); // gprlen - (bp * 8)
+
+	RzILOpPure * or = LOGOR(SHIFTL0(rt, bp_8), SHIFTR0(rs, gprlen_bp_8));
+	return SETG(rd, or);
+}
+
 static RzILOpEffect *mips_il_and(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
 
 	const char *rd = REG(0);
 	RzILOpPure *rs = MIPS_REG(1);
 	RzILOpPure *rt = MIPS_REG(2);
-	RzILOpPure *sum = LOGAND(rs, rt);
-	return SETG(rd, sum);
+	RzILOpPure *and = LOGAND(rs, rt);
+	return SETG(rd, and);
 }
 
 static RzILOpEffect *mips_il_andi(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
@@ -140,8 +177,8 @@ static RzILOpEffect *mips_il_andi(const csh *handle, const cs_insn *insn, const 
 	const char *rd = REG(0);
 	RzILOpPure *rs = MIPS_REG(1);
 	RzILOpPure *imm = MIPS_IMM(2);
-	RzILOpPure *sum = LOGAND(rs, imm);
-	return SETG(rd, sum);
+	RzILOpPure *and = LOGAND(rs, imm);
+	return SETG(rd, and);
 }
 
 static RzILOpEffect *mips_il_b(const csh *handle, const cs_insn *insn, const ut32 gprlen) {

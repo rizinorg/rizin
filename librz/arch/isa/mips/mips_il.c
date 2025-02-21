@@ -23,7 +23,7 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_ABS:
 		return NULL;
 	case MIPS_INS_ALIGN:
-		return NULL;
+		return mips_il_align(handle, insn, gprlen);
 	case MIPS_INS_BEQL:
 		return mips_il_beq(handle, insn, gprlen); // beq Likely
 	case MIPS_INS_BGE:
@@ -999,7 +999,7 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_DAHI:
 		return NULL;
 	case MIPS_INS_DALIGN:
-		return NULL;
+		return mips_il_dalign(handle, insn, gprlen);
 	case MIPS_INS_DATI:
 		return NULL;
 	case MIPS_INS_DAUI:
