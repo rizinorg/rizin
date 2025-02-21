@@ -193,6 +193,33 @@ static RzILOpEffect *mips_il_andi(const csh *handle, const cs_insn *insn, const 
 	return SETG(rd, and);
 }
 
+static RzILOpEffect *mips_il_aui(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Add Upper Immediate signed
+	// AUI is a 32 gpr instruction, so when in 64 gpr mode, the result
+	// is sign extended as if a 32-bits signed address.
+	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
+
+	const char *rt = REG(0);
+	st64 imm = (st64)IMM(2);
+	// cast required due possible left shift of negative value
+	imm = (st64)((ut64)imm << 16);
+
+	if (IS_ZERO_REG(1)) {
+		return SETG(rt, SN(gprlen, imm));
+	}
+
+	RzILOpPure *rs = MIPS_REG(1);
+	if (gprlen > 32) {
+		rs = TRUNC32(rs);
+	}
+
+	RzILOpPure *add = ADD(rs, SN(32, imm));
+	if (gprlen > 32) {
+		add = SIGNED(gprlen, add);
+	}
+	return SETG(rt, add);
+}
+
 static RzILOpEffect *mips_il_b(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	RzILOpPure *target = MIPS_IMM(0);
 	return JMP(target);
