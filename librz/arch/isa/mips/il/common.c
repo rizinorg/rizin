@@ -161,6 +161,18 @@ static RzILOpEffect *mips_il_dalign(const csh *handle, const cs_insn *insn, cons
 	return SETG(rd, or);
 }
 
+static RzILOpEffect *mips_il_aluipc(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Aligned Add Upper Immediate to PC
+	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
+
+	const char *rs = REG(0);
+	st64 imm = (st64)IMM(1);
+	// cast required due possible left shift of negative value
+	ut64 pc_imm = insn->address + (st64)((ut64)imm << 16);
+	pc_imm &= 0xffffffffffff0000ull;
+	return SETG(rs, UN(gprlen, pc_imm));
+}
+
 static RzILOpEffect *mips_il_and(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
 
