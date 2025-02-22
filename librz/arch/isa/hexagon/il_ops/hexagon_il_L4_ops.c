@@ -780,9 +780,9 @@ RzILOpEffect *hex_il_op_l4_loadalignh_ap(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_18 = WRITE_REG(bundle, Ryy_op, CAST(64, IL_FALSE, op_OR_16));
 
 	// Re = ((st32) U);
-	RzILOpEffect *op_ASSIGN_22 = WRITE_REG(bundle, Re_op, CAST(32, IL_FALSE, VARL("U")));
+	RzILOpEffect *op_ASSIGN_21 = WRITE_REG(bundle, Re_op, CAST(32, IL_FALSE, VARL("U")));
 
-	RzILOpEffect *instruction_sequence = SEQN(5, imm_assign_0, op_ASSIGN_3, op_ASSIGN_9, op_ASSIGN_18, op_ASSIGN_22);
+	RzILOpEffect *instruction_sequence = SEQN(5, imm_assign_0, op_ASSIGN_3, op_ASSIGN_9, op_ASSIGN_18, op_ASSIGN_21);
 	return instruction_sequence;
 }
 
@@ -887,9 +887,9 @@ RzILOpEffect *hex_il_op_l4_loadbsw2_ap(HexInsnPktBundle *bundle) {
 	RzILOpEffect *seq_48 = SEQN(2, op_ASSIGN_11, for_47);
 
 	// Re = ((st32) U);
-	RzILOpEffect *op_ASSIGN_51 = WRITE_REG(bundle, Re_op, CAST(32, IL_FALSE, VARL("U")));
+	RzILOpEffect *op_ASSIGN_52 = WRITE_REG(bundle, Re_op, CAST(32, IL_FALSE, VARL("U")));
 
-	RzILOpEffect *instruction_sequence = SEQN(5, imm_assign_0, op_ASSIGN_3, op_ASSIGN_9, seq_48, op_ASSIGN_51);
+	RzILOpEffect *instruction_sequence = SEQN(5, imm_assign_0, op_ASSIGN_3, op_ASSIGN_9, seq_48, op_ASSIGN_52);
 	return instruction_sequence;
 }
 
@@ -1925,6 +1925,11 @@ RzILOpEffect *hex_il_op_l4_loadruh_ur(HexInsnPktBundle *bundle) {
 
 	RzILOpEffect *instruction_sequence = SEQN(4, imm_assign_0, imm_assign_4, op_ASSIGN_9, op_ASSIGN_15);
 	return instruction_sequence;
+}
+
+// Rd = memw_phys(Rs,Rt)
+RzILOpEffect *hex_il_op_l4_loadw_phys(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
 }
 
 // memb(Rs+Ii) |= Rt
