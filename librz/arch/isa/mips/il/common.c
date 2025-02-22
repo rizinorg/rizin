@@ -376,6 +376,11 @@ static RzILOpEffect *mips_il_bne(const csh *handle, const cs_insn *insn, const u
 	return BRANCH(NE(rs, rt), JMP(target), NOP());
 }
 
+static RzILOpEffect *mips_il_bitswap(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Swaps (reverses) bits in each byte
+	NOT_IMPLEMENTED;
+}
+
 static RzILOpEffect *mips_il_clo(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	// Count Leading Ones in Word
 	NOT_IMPLEMENTED;

@@ -525,7 +525,7 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_BITREVW:
 		return NULL;
 	case MIPS_INS_BITSWAP:
-		return NULL;
+		return mips_il_bitswap(handle, insn, gprlen);
 	case MIPS_INS_BLEZ:
 		return mips_il_blez(handle, insn, gprlen);
 	case MIPS_INS_BLEZALC:
