@@ -75,8 +75,7 @@ static RzILOpEffect *mips_il_add(const csh *handle, const cs_insn *insn, const u
 	RzILOpPure *rt = MIPS_REG(2);
 
 	RzILOpPure *sum = SIGNED(gprlen, ADD(rs, rt));
-	RzILOpPure *overflow = CHECK_OVERFLOW(DUP(sum), 32);
-	return BRANCH(overflow, IL_CAUSE_OVERFLOW(), SETG(rd, sum));
+	return SETG(rd, sum);
 }
 
 static RzILOpEffect *mips_il_addi(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
@@ -87,8 +86,7 @@ static RzILOpEffect *mips_il_addi(const csh *handle, const cs_insn *insn, const 
 	RzILOpPure *imm = MIPS_IMM(2);
 
 	RzILOpPure *sum = SIGNED(gprlen, ADD(rs, imm));
-	RzILOpPure *overflow = CHECK_OVERFLOW(DUP(sum), 32);
-	return BRANCH(overflow, IL_CAUSE_OVERFLOW(), SETG(rd, sum));
+	return SETG(rd, sum);
 }
 
 static RzILOpEffect *mips_il_addiu(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
