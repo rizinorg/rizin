@@ -403,7 +403,7 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_BBNEZC:
 		return NULL;
 	case MIPS_INS_BC:
-		return NULL;
+		return mips_il_b(handle, insn, gprlen);
 	case MIPS_INS_BC16:
 		return NULL;
 	case MIPS_INS_BC1EQZ:
