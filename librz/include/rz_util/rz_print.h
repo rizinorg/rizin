@@ -151,7 +151,7 @@ typedef struct rz_print_t {
 	RzConsBind consbind;
 	RzNum *num;
 	RzReg *reg;
-	RzRegItem *(*get_register)(RzReg *reg, const char *name, int type);
+	RzRegItem *(*get_register)(const RzReg *reg, const char *name, int type);
 	ut64 (*get_register_value)(RzReg *reg, RzRegItem *item);
 	bool (*exists_var)(struct rz_print_t *print, ut64 func_addr, char *str);
 	bool esc_bslash;

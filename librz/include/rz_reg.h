@@ -193,7 +193,7 @@ RZ_API const char *rz_reg_get_name(const RzReg *reg, int kind);
 RZ_API RzRegItem *rz_reg_get_by_role(RzReg *reg, RzRegisterId role);
 RZ_API const char *rz_reg_get_role(int role);
 RZ_API int rz_reg_role_by_name(RZ_NONNULL const char *str);
-RZ_API RzRegItem *rz_reg_get(RzReg *reg, const char *name, int type);
+RZ_API RzRegItem *rz_reg_get(const RzReg *reg, const char *name, int type);
 RZ_API RzRegItem *rz_reg_get_by_role_or_name(RzReg *reg, const char *name);
 RZ_API const RzList /*<RzRegItem *>*/ *rz_reg_get_list(RzReg *reg, int type);
 RZ_API RzRegItem *rz_reg_get_at(RzReg *reg, int type, int regsize, int delta);
