@@ -383,9 +383,9 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_BADDU:
 		return NULL;
 	case MIPS_INS_BAL:
-		return mips_il_bal(handle, insn, gprlen);
+		/* fall-thru */
 	case MIPS_INS_BALC:
-		return NULL;
+		return mips_il_bal(handle, insn, gprlen);
 	case MIPS_INS_BALIGN:
 		return NULL;
 	case MIPS_INS_BALRSC:
