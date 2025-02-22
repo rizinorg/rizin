@@ -605,7 +605,7 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_BNZ_W:
 		return NULL;
 	case MIPS_INS_BOVC:
-		return NULL;
+		return mips_il_bovc(handle, insn, gprlen);
 	case MIPS_INS_BPOSGE32:
 		return NULL;
 	case MIPS_INS_BPOSGE32C:

@@ -17,7 +17,7 @@
 #define TRUNC8(x)        UNSIGNED(MIPS_BYTE_SIZE, x)
 
 #define BITN(x, n)            SHIFTR0(LOGAND(x, UN(gprlen, (ut64)1 << (n - 1))), UN(gprlen, n - 1))
-#define CHECK_OVERFLOW(r, sz) EQ(BITN(r, sz), BITN(r, sz - 1))
+#define CHECK_OVERFLOW(r, sz) EQ(BITN(r, sz), BITN(DUP(r), sz - 1))
 #define MIPS_REG(idx)         mips_get_reg(handle, insn, idx, gprlen)
 #define MIPS_IMM(idx)         UN(gprlen, IMM(idx))
 #define MIPS_PCADDIMM(idx)    UN(gprlen, insn->address + IMM(idx)) /* returns an immediate which is PC + IMM */
@@ -379,6 +379,17 @@ static RzILOpEffect *mips_il_bne(const csh *handle, const cs_insn *insn, const u
 static RzILOpEffect *mips_il_bitswap(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	// Swaps (reverses) bits in each byte
 	NOT_IMPLEMENTED;
+}
+
+static RzILOpEffect *mips_il_bovc(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Branch on Overflow
+	RzILOpPure *rs = MIPS_REG(0);
+	RzILOpPure *rt = MIPS_REG(1);
+	RzILOpPure *target = MIPS_IMM(2);
+
+	RzILOpPure *sum = SIGNED(gprlen, ADD(rs, rt));
+	RzILOpPure *overflow = CHECK_OVERFLOW(sum, gprlen);
+	return BRANCH(overflow, JMP(target), NOP());
 }
 
 static RzILOpEffect *mips_il_clo(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
