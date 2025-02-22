@@ -733,7 +733,25 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_search_on_io(
 	rz_th_lock_free(ctx.io_lock);
 	rz_list_free(windows);
 	rz_th_queue_free(hits);
+
+	rz_list_sort(results, (RzListComparator)rz_search_hit_cmp, NULL);
 	return results;
+}
+
+RZ_IPI int rz_search_hit_cmp(RZ_NULLABLE RzSearchHit *a, RZ_NULLABLE RzSearchHit *b, void *user) {
+	if (!a && !b) {
+		return 0;
+	} else if (!a) {
+		return -1;
+	} else if (!b) {
+		return 1;
+	}
+	if (a->address == b->address) {
+		return 0;
+	} else if (a->address < b->address) {
+		return -1;
+	}
+	return 1;
 }
 
 /**
