@@ -15,8 +15,6 @@ To learn more on Rizin you may want to read the
 # Usage Demo
 
 ![Rizin Demo](https://raw.githubusercontent.com/rizinorg/website/refs/heads/main/static/images/rizin-demo.gif)
-![Rizin shell](https://raw.githubusercontent.com/rizinorg/website/refs/heads/main/static/images/rzshell-demo.gif)
-![Rizin Package Manager](https://raw.githubusercontent.com/rizinorg/website/refs/heads/main/static/images/rzpm-demo.gif)
 
 # How to install
 
