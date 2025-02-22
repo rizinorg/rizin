@@ -753,7 +753,7 @@ commands:
           comment: "Extended regular expression."
         - text: "m"
           comment: "Multiline regular expression (equivalent flag: PCRE2_MULTILINE)"
-    - name: "Exampels"
+    - name: "Examples"
       entries:
         - text: "/z (ABC*)"
           comment: "Search the exact string \"(ABC*)\"."
