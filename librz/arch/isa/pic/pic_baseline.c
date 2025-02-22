@@ -20,7 +20,7 @@ static const PicBaselineOpInfo pic_baseline_op_info[PIC_BASELINE_OPCODE_INVALID]
 	{ "iorwf", PIC_BASELINE_OP_ARGS_1D_5F },
 	{ "andwf", PIC_BASELINE_OP_ARGS_1D_5F },
 	{ "xorwf", PIC_BASELINE_OP_ARGS_1D_5F },
-	{ "andwf", PIC_BASELINE_OP_ARGS_1D_5F },
+	{ "addwf", PIC_BASELINE_OP_ARGS_1D_5F },
 	{ "movf", PIC_BASELINE_OP_ARGS_1D_5F },
 	{ "comf", PIC_BASELINE_OP_ARGS_1D_5F },
 	{ "incf", PIC_BASELINE_OP_ARGS_1D_5F },
