@@ -1,7 +1,15 @@
-// SPDX-FileCopyrightText: 2018 thestr4ng3r <info@florianmaerkl.de>
+// SPDX-FileCopyrightText: 2018-2025 Florian Märkl <info@florianmaerkl.de>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "pic_baseline.h"
+#include "pic_midrange.h"
+
+/**
+ * \file PIC Baseline (some but not all of 10Fxxx, 12Fxxx, and 16Fxxx) instruction set
+ * Because baseline instructions are a subset of midrange, but the encoding is
+ * different, only decoding is implemented specifically for baseline, but for analysis,
+ * il, etc., the decoded instructions are lifted to midrange and its code is reused.
+ */
 
 static const PicBaselineOpInfo pic_baseline_op_info[PIC_BASELINE_OPCODE_INVALID] = {
 	{ "nop", PIC_BASELINE_OP_ARGS_NONE },
@@ -183,13 +191,6 @@ PicBaselineOpcode pic_baseline_get_opcode(ut16 instr) {
 	}
 }
 
-PicBaselineOpArgs pic_baseline_get_opargs(PicBaselineOpcode opcode) {
-	if (opcode >= PIC_BASELINE_OPCODE_INVALID) {
-		return -1;
-	}
-	return pic_baseline_op_info[opcode].args;
-}
-
 const PicBaselineOpInfo *pic_baseline_get_op_info(PicBaselineOpcode opcode) {
 	if (opcode >= PIC_BASELINE_OPCODE_INVALID) {
 		return NULL;
@@ -197,65 +198,171 @@ const PicBaselineOpInfo *pic_baseline_get_op_info(PicBaselineOpcode opcode) {
 	return &pic_baseline_op_info[opcode];
 }
 
-int pic_baseline_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *b, int l) {
-#define EMIT_INVALID \
-	{ \
-		op->size = 1; \
-		rz_asm_op_set_asm(op, "invalid"); \
-		return 1; \
-	}
-	if (!b || l < 2) {
-		EMIT_INVALID
-	}
+static void pic_baseline_extract_args(
+	ut16 instr,
+	PicBaselineOpArgs args,
+	PicMidrangeOpArgsVal *args_val) {
 
-	ut16 instr = rz_read_le16(b);
-	PicBaselineOpcode opcode = pic_baseline_get_opcode(instr);
-	if (opcode == PIC_BASELINE_OPCODE_INVALID) {
-		EMIT_INVALID
-	}
+	memset(args_val, 0, sizeof(PicMidrangeOpArgsVal));
 
-	const PicBaselineOpInfo *op_info = pic_baseline_get_op_info(opcode);
-	if (!op_info) {
-		EMIT_INVALID
-	}
-
-#undef EMIT_INVALID
-
-	op->size = 2;
-	switch (op_info->args) {
+	switch (args) {
 	case PIC_BASELINE_OP_ARGS_NONE:
-		rz_asm_op_set_asm(op, op_info->mnemonic);
 		break;
 	case PIC_BASELINE_OP_ARGS_2F:
-		rz_asm_op_setf_asm(op, "%s 0x%x", op_info->mnemonic, instr & PIC_BASELINE_OP_ARGS_2F_MASK_F);
+		args_val->f = instr & PIC_BASELINE_OP_ARGS_2F_MASK_F;
 		break;
 	case PIC_BASELINE_OP_ARGS_3F:
-		rz_asm_op_setf_asm(op, "%s 0x%x", op_info->mnemonic, instr & PIC_BASELINE_OP_ARGS_3F_MASK_F);
+		args_val->f = instr & PIC_BASELINE_OP_ARGS_3F_MASK_F;
 		break;
 	case PIC_BASELINE_OP_ARGS_3K:
-		rz_asm_op_setf_asm(op, "%s 0x%x", op_info->mnemonic, instr & PIC_BASELINE_OP_ARGS_3K_MASK_K);
+		args_val->k = instr & PIC_BASELINE_OP_ARGS_3K_MASK_K;
 		break;
 	case PIC_BASELINE_OP_ARGS_1D_5F:
-		rz_asm_op_setf_asm(op, "%s 0x%x, %c", op_info->mnemonic, instr & PIC_BASELINE_OP_ARGS_1D_5F_MASK_F,
-			(instr & PIC_BASELINE_OP_ARGS_1D_5F_MASK_D) >> 5 ? 'f' : 'w');
+		args_val->f = instr & PIC_BASELINE_OP_ARGS_1D_5F_MASK_F;
+		args_val->d = (instr & PIC_BASELINE_OP_ARGS_1D_5F_MASK_D) >> 5;
 		break;
 	case PIC_BASELINE_OP_ARGS_5F:
-		rz_asm_op_setf_asm(op, "%s 0x%x", op_info->mnemonic, instr & PIC_BASELINE_OP_ARGS_5F_MASK_F);
+		args_val->f = instr & PIC_BASELINE_OP_ARGS_5F_MASK_F;
 		break;
 	case PIC_BASELINE_OP_ARGS_3B_5F:
-		rz_asm_op_setf_asm(op, "%s 0x%x, 0x%x", op_info->mnemonic, instr & PIC_BASELINE_OP_ARGS_3B_5F_MASK_F,
-			(instr & PIC_BASELINE_OP_ARGS_3B_5F_MASK_B) >> 5);
+		args_val->f = instr & PIC_BASELINE_OP_ARGS_3B_5F_MASK_F;
+		args_val->b = (instr & PIC_BASELINE_OP_ARGS_3B_5F_MASK_B) >> 5;
 		break;
 	case PIC_BASELINE_OP_ARGS_8K:
-		rz_asm_op_setf_asm(op, "%s 0x%x", op_info->mnemonic, instr & PIC_BASELINE_OP_ARGS_8K_MASK_K);
+		args_val->k = instr & PIC_BASELINE_OP_ARGS_8K_MASK_K;
 		break;
 	case PIC_BASELINE_OP_ARGS_9K:
-		rz_asm_op_setf_asm(op, "%s 0x%x", op_info->mnemonic, instr & PIC_BASELINE_OP_ARGS_9K_MASK_K);
-		break;
-	default:
-		rz_asm_op_set_asm(op, "invalid");
+		args_val->k = instr & PIC_BASELINE_OP_ARGS_9K_MASK_K;
 		break;
 	}
+}
 
-	return op->size;
+static PicMidrangeOpcode opcode_lift_to_midrange(PicBaselineOpcode opcode) {
+	switch (opcode) {
+	case PIC_BASELINE_OPCODE_NOP:
+		return PIC_MIDRANGE_OPCODE_NOP;
+	case PIC_BASELINE_OPCODE_OPTION:
+		return PIC_MIDRANGE_OPCODE_OPTION;
+	case PIC_BASELINE_OPCODE_SLEEP:
+		return PIC_MIDRANGE_OPCODE_SLEEP;
+	case PIC_BASELINE_OPCODE_CLRWDT:
+		return PIC_MIDRANGE_OPCODE_CLRWDT;
+	case PIC_BASELINE_OPCODE_TRIS:
+		return PIC_MIDRANGE_OPCODE_TRIS;
+	case PIC_BASELINE_OPCODE_MOVLB:
+		return PIC_MIDRANGE_OPCODE_MOVLB;
+	case PIC_BASELINE_OPCODE_RETURN:
+		return PIC_MIDRANGE_OPCODE_RETURN;
+	case PIC_BASELINE_OPCODE_RETFIE:
+		return PIC_MIDRANGE_OPCODE_RETFIE;
+	case PIC_BASELINE_OPCODE_MOVWF:
+		return PIC_MIDRANGE_OPCODE_MOVWF;
+	case PIC_BASELINE_OPCODE_CLRF:
+		return PIC_MIDRANGE_OPCODE_CLRF;
+	case PIC_BASELINE_OPCODE_CLRW:
+		return PIC_MIDRANGE_OPCODE_CLRW;
+	case PIC_BASELINE_OPCODE_SUBWF:
+		return PIC_MIDRANGE_OPCODE_SUBWF;
+	case PIC_BASELINE_OPCODE_DECF:
+		return PIC_MIDRANGE_OPCODE_DECF;
+	case PIC_BASELINE_OPCODE_IORWF:
+		return PIC_MIDRANGE_OPCODE_IORWF;
+	case PIC_BASELINE_OPCODE_ANDWF:
+		return PIC_MIDRANGE_OPCODE_ANDWF;
+	case PIC_BASELINE_OPCODE_XORWF:
+		return PIC_MIDRANGE_OPCODE_XORWF;
+	case PIC_BASELINE_OPCODE_ADDWF:
+		return PIC_MIDRANGE_OPCODE_ADDWF;
+	case PIC_BASELINE_OPCODE_MOVF:
+		return PIC_MIDRANGE_OPCODE_MOVF;
+	case PIC_BASELINE_OPCODE_COMF:
+		return PIC_MIDRANGE_OPCODE_COMF;
+	case PIC_BASELINE_OPCODE_INCF:
+		return PIC_MIDRANGE_OPCODE_INCF;
+	case PIC_BASELINE_OPCODE_DECFSZ:
+		return PIC_MIDRANGE_OPCODE_DECFSZ;
+	case PIC_BASELINE_OPCODE_RRF:
+		return PIC_MIDRANGE_OPCODE_RRF;
+	case PIC_BASELINE_OPCODE_RLF:
+		return PIC_MIDRANGE_OPCODE_RLF;
+	case PIC_BASELINE_OPCODE_SWAPF:
+		return PIC_MIDRANGE_OPCODE_SWAPF;
+	case PIC_BASELINE_OPCODE_INCFSZ:
+		return PIC_MIDRANGE_OPCODE_INCFSZ;
+	case PIC_BASELINE_OPCODE_BCF:
+		return PIC_MIDRANGE_OPCODE_BCF;
+	case PIC_BASELINE_OPCODE_BSF:
+		return PIC_MIDRANGE_OPCODE_BSF;
+	case PIC_BASELINE_OPCODE_BTFSC:
+		return PIC_MIDRANGE_OPCODE_BTFSC;
+	case PIC_BASELINE_OPCODE_BTFSS:
+		return PIC_MIDRANGE_OPCODE_BTFSS;
+	case PIC_BASELINE_OPCODE_RETLW:
+		return PIC_MIDRANGE_OPCODE_RETLW;
+	case PIC_BASELINE_OPCODE_CALL:
+		return PIC_MIDRANGE_OPCODE_CALL;
+	case PIC_BASELINE_OPCODE_GOTO:
+		return PIC_MIDRANGE_OPCODE_GOTO;
+	case PIC_BASELINE_OPCODE_MOVLW:
+		return PIC_MIDRANGE_OPCODE_MOVLW;
+	case PIC_BASELINE_OPCODE_IORLW:
+		return PIC_MIDRANGE_OPCODE_IORLW;
+	case PIC_BASELINE_OPCODE_ANDLW:
+		return PIC_MIDRANGE_OPCODE_ANDLW;
+	case PIC_BASELINE_OPCODE_XORLW:
+		return PIC_MIDRANGE_OPCODE_XORLW;
+	case PIC_BASELINE_OPCODE_INVALID:
+	default:
+		return PIC_MIDRANGE_OPCODE_INVALID;
+	}
+}
+
+bool pic_baseline_decode_op(RZ_OUT RZ_NONNULL PicMidrangeOp *op, ut64 addr, RZ_NONNULL const ut8 *b, ut64 l) {
+	rz_return_val_if_fail(op && b, false);
+	if (l < 2) {
+		return false;
+	}
+
+	op->instr = rz_read_le16(b);
+	PicBaselineOpcode opcode = pic_baseline_get_opcode(op->instr);
+	if (opcode == PIC_BASELINE_OPCODE_INVALID) {
+		return false;
+	}
+	const PicBaselineOpInfo *op_info = pic_baseline_get_op_info(opcode);
+	if (!op_info) {
+		return false;
+	}
+
+	op->opcode = opcode_lift_to_midrange(opcode);
+	op->size = 2;
+	op->addr = addr;
+	op->mnemonic = op_info->mnemonic;
+
+	pic_baseline_extract_args(op->instr, op_info->args, &op->args);
+
+	switch (op_info->args) {
+	case PIC_BASELINE_OP_ARGS_NONE:
+		op->operands[0] = '\0';
+		break;
+	case PIC_BASELINE_OP_ARGS_2F:
+	case PIC_BASELINE_OP_ARGS_3F:
+	case PIC_BASELINE_OP_ARGS_5F:
+		rz_strf(op->operands, "0x%" PFMT32x, (ut32)op->args.f);
+		break;
+	case PIC_BASELINE_OP_ARGS_3K:
+	case PIC_BASELINE_OP_ARGS_8K:
+	case PIC_BASELINE_OP_ARGS_9K:
+		rz_strf(op->operands, "0x%" PFMT32x, (ut32)op->args.k);
+		break;
+	case PIC_BASELINE_OP_ARGS_1D_5F:
+		rz_strf(op->operands, "0x%" PFMT32x ", %c", (ut32)op->args.f, op->args.d ? 'f' : 'w');
+		break;
+	case PIC_BASELINE_OP_ARGS_3B_5F:
+		rz_strf(op->operands, "0x%" PFMT32x ", 0x%" PFMT32x, (ut32)op->args.f, (ut32)op->args.b);
+		break;
+	default:
+		rz_strf(op->operands, "invalid");
+		break;
+	}
+	return true;
 }

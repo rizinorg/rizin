@@ -11,11 +11,6 @@ static inline bool is_pic_midrange(const char *x) {
 	return RZ_STR_EQ(x, "midrange");
 }
 
-static inline bool is_pic_baseline_or_pic_midrange(const char *x) {
-	return RZ_STR_EQ(x, "baseline") ||
-		is_pic_midrange(x);
-}
-
 typedef enum {
 	PIC_MIDRANGE_OP_ARGS_NONE = 0,
 	PIC_MIDRANGE_OP_ARGS_2F,
@@ -116,25 +111,26 @@ typedef struct _pic_midrange_op_args_val {
 	ut8 b;
 } PicMidrangeOpArgsVal;
 
-typedef struct {
+typedef struct pic_midrange_op_t {
 	const char *mnemonic;
 	char operands[32];
-	PicMidrangeOpArgs args_tag;
 	PicMidrangeOpArgsVal args;
-	ut32 addr;
+	ut64 addr;
 	PicMidrangeOpcode opcode;
 	ut32 size;
 	ut16 instr;
 } PicMidrangeOp;
 
+// decoding
+
 PicMidrangeOpcode pic_midrange_get_opcode(ut16 instr);
 const PicMidrangeOpAsmInfo *pic_midrange_get_op_info(PicMidrangeOpcode opcode);
-bool pic_midrange_disasm_op(PicMidrangeOp *op, ut64 addr, const ut8 *b, ut64 len);
-int pic_midrange_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *b, int l);
+bool pic_midrange_decode_op(RZ_OUT RZ_NONNULL PicMidrangeOp *op, ut64 addr, RZ_NONNULL const ut8 *b, ut64 l);
 
-int pic_midrange_op(
-	RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
-	const ut8 *buf, int len, RzAnalysisOpMask mask);
+// analysis
+
+int pic_midrange_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op,
+	RZ_OUT RZ_NONNULL PicMidrangeOp *pic_op, RzAnalysisOpMask mask);
 char *pic_midrange_get_reg_profile(RzAnalysis *a);
 RzAnalysisILConfig *pic_midrange_il_config(RZ_NONNULL RzAnalysis *analysis);
 

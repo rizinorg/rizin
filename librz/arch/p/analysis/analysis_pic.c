@@ -7,6 +7,7 @@
 #include <rz_analysis.h>
 #include "../isa/pic/pic_highend.h"
 #include "../isa/pic/pic_midrange.h"
+#include "../isa/pic/pic_baseline.h"
 
 static bool pic_init(void **user) {
 	PicContext *ctx = RZ_NEW0(PicContext);
@@ -44,7 +45,15 @@ static int analysis_pic_op(
 	}
 
 	if (is_pic_baseline_or_pic_midrange(analysis->cpu)) {
-		return pic_midrange_op(analysis, op, addr, buf, len, mask);
+		if (!buf || len < 2) {
+			op->type = RZ_ANALYSIS_OP_TYPE_ILL;
+			return -1;
+		}
+		PicMidrangeOp x = { 0 };
+		if (!(is_pic_baseline(analysis->cpu) ? pic_baseline_decode_op : pic_midrange_decode_op)(&x, addr, buf, len)) {
+			return -1;
+		}
+		return pic_midrange_analysis_op(analysis, op, &x, mask);
 	}
 	return -1;
 }
