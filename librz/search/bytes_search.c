@@ -204,7 +204,7 @@ static inline bool bytes_pattern_compare_masked(RZ_BORROW RZ_NONNULL const ut8 *
 	return true;
 }
 
-static bool bytes_find(RzSearchFindOpt *fopts, void *user, ut64 address, const RzBuffer *buffer, RzThreadQueue *hits) {
+static bool bytes_find(RzSearchFindOpt *fopts, void *user, ut64 address, const RzBuffer *buffer, RZ_OUT RzThreadQueue *hits) {
 	if (!fopts) {
 		RZ_LOG_ERROR("bytes_find requires valid find options.\n");
 		return false;

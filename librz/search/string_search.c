@@ -49,7 +49,9 @@ static void align_offsets(RzUtilStrScanOptions options, RzStrEnc encoding, RzDet
 	}
 }
 
-static bool string_find(RZ_NULLABLE RzSearchFindOpt *fopt, void *user, ut64 offset, const RzBuffer *buffer, RZ_OUT RzThreadQueue *hits) {
+static bool string_find(RzSearchFindOpt *fopt, void *user, ut64 offset, const RzBuffer *buffer, RZ_OUT RzThreadQueue *hits) {
+	rz_return_val_if_fail(fopt, false);
+
 	StringSearch *ss = (StringSearch *)user;
 	RzDetectedString *detected = NULL;
 	RzListIter *it_s = NULL;
