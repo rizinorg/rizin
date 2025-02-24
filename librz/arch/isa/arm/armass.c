@@ -617,7 +617,7 @@ static char *getrange(char *s) {
 }
 
 // ret register #; -1 if failed
-static int getreg(const char *str) {
+static st64 getreg(const char *str) {
 	int i;
 	char *ep;
 	const char *aliases[] = { "sb", "sl", "fp", "ip", "sp", "lr", "pc", NULL };
