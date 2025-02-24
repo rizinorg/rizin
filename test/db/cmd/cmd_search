@@ -186,7 +186,7 @@ wa "add esp,8;pop ebx; pop ebp; ret"
 /a add esp, 8
 EOF
 EXPECT=<<EOF
-0x00000000 hit0_0 83c408
+0x00000000 3 hit.asm_text.0
 EOF
 RUN
 
@@ -201,8 +201,8 @@ e search.to=0x50
 /a xor al, 0x80
 EOF
 EXPECT=<<EOF
-0x0000003c hit0_0 3480
-0x00000040 hit0_1 3480
+0x0000003c 2 hit.asm_text.0
+0x00000040 2 hit.asm_text.1
 EOF
 RUN
 
@@ -217,8 +217,8 @@ e search.to=0x50
 /a xor al, 0x80
 EOF
 EXPECT=<<EOF
-0x0000003c hit0_0 3480
-0x00000040 hit0_1 3480
+0x0000003c 2 hit.asm_text.0
+0x00000040 2 hit.asm_text.1
 EOF
 RUN
 
@@ -226,10 +226,10 @@ NAME=/a push esp
 FILE=bins/elf/ioli/crackme0x00
 CMDS=/a push esp
 EXPECT=<<EOF
-0x08048058 hit0_0 54
-0x0804805c hit0_1 54
-0x08048060 hit0_2 54
-0x08048369 hit0_3 54
+0x08048058 1 hit.asm_text.0
+0x0804805c 1 hit.asm_text.1
+0x08048060 1 hit.asm_text.2
+0x08048369 1 hit.asm_text.3
 EOF
 RUN
 
@@ -290,8 +290,8 @@ e search.to=0x00000050
 /a xor al, 0x80
 EOF
 EXPECT=<<EOF
-0x0000003c hit0_0 3480
-0x00000040 hit0_1 3480
+0x0000003c 2 hit.asm_text.0
+0x00000040 2 hit.asm_text.1
 EOF
 RUN
 

@@ -19,11 +19,14 @@ commands:
     summary: Assemble the instruction and search its bytes.
     subcommands:
     - name: "/a"
-      summary: Assemble the instruction and search its bytes
+      summary: Assemble the instruction and search its bytes.
+      type: RZ_CMD_DESC_TYPE_ARGV_STATE
       cname: cmd_search_assemble
       modes:
         - RZ_OUTPUT_MODE_STANDARD
         - RZ_OUTPUT_MODE_JSON
+        - RZ_OUTPUT_MODE_QUIET
+        - RZ_OUTPUT_MODE_TABLE
       args:
         - name: asm-text
           type: RZ_CMD_ARG_TYPE_STRING

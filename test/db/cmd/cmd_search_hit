@@ -161,7 +161,6 @@ wa "add esp,8;pop ebx; pop ebp; ret"
 /a add esp, 8
 EOF
 EXPECT=<<EOF
-0x00000000 hit0_0 83c408
 add esp, 8
 pop ebx
 pop ebp

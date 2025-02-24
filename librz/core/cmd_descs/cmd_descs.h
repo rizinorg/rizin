@@ -64,7 +64,7 @@ RZ_IPI RzCmdStatus rz_interpret_macro_multiple_handler(RzCore *core, int argc, c
 // "/+"
 RZ_IPI RzCmdStatus rz_cmd_search_str_chunk_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "/a"
-RZ_IPI RzCmdStatus rz_cmd_search_assemble_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+RZ_IPI RzCmdStatus rz_cmd_search_assemble_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/a1"
 RZ_IPI RzCmdStatus rz_cmd_search_assemble_1_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "/aI"

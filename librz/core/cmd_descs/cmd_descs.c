@@ -1459,7 +1459,7 @@ static const RzCmdDescArg cmd_search_assemble_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_search_assemble_help = {
-	.summary = "Assemble the instruction and search its bytes",
+	.summary = "Assemble the instruction and search its bytes.",
 	.args = cmd_search_assemble_args,
 };
 
@@ -20836,7 +20836,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(cmd_search_str_chunk_cd);
 	rz_cmd_desc_set_default_mode(cmd_search_str_chunk_cd, RZ_OUTPUT_MODE_STANDARD);
 
-	RzCmdDesc *slash_a_cd = rz_cmd_desc_group_modes_new(core->rcmd, slash__cd, "/a", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_search_assemble_handler, &cmd_search_assemble_help, &slash_a_help);
+	RzCmdDesc *slash_a_cd = rz_cmd_desc_group_state_new(core->rcmd, slash__cd, "/a", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_assemble_handler, &cmd_search_assemble_help, &slash_a_help);
 	rz_warn_if_fail(slash_a_cd);
 	RzCmdDesc *cmd_search_assemble_1_cd = rz_cmd_desc_argv_modes_new(core->rcmd, slash_a_cd, "/a1", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_search_assemble_1_handler, &cmd_search_assemble_1_help);
 	rz_warn_if_fail(cmd_search_assemble_1_cd);

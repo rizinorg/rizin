@@ -12,6 +12,7 @@
 
 #include "cmd_search_rop.c"
 #include "rz_cons.h"
+#include <rz_util/rz_mem.h>
 #include <rz_util/rz_str_util.h>
 #include <rz_util/rz_strbuf.h>
 #include <rz_util/rz_regex.h>
@@ -1903,20 +1904,6 @@ reread:
 			__core_cmd_search_asm_byteswap(core, (int)rz_num_math(core->num, input + 2));
 		} else if (input[1] == 'I') { // "/aI" - infinite
 			__core_cmd_search_asm_infinite(core, rz_str_trim_head_ro(input + 1));
-		} else if (input[1] == ' ') {
-			if (input[param_offset - 1]) {
-				char *kwd = rz_core_asm_search(core, input + param_offset);
-				if (!kwd) {
-					ret = false;
-					goto beach;
-				}
-				dosearch = true;
-				rz_search_reset(core->search, RZ_SEARCH_KEYWORD);
-				rz_search_set_distance(core->search, (int)rz_config_get_i(core->config, "search.distance"));
-				rz_search_kw_add(core->search,
-					rz_search_keyword_new_hexmask(kwd, NULL));
-				free(kwd);
-			}
 		} else if (input[1] == 's') {
 			if (input[2] == 'l') { // "asl"
 				rz_core_cmd0(core, "asl");
@@ -2523,14 +2510,86 @@ static RzCmdStatus cmd_core_handle_search_hits(RzCore *core, RzCmdStateOutput *s
 	return RZ_CMD_STATUS_OK;
 }
 
+static RzSearchOpt *setup_search_options(RzCore *core) {
+	RzSearchOpt *search_opts = rz_search_opt_new();
+	if (!(rz_search_opt_set_max_hits(search_opts, rz_config_get_i(core->config, "search.maxhits")) &&
+		    rz_search_opt_set_max_threads(search_opts, rz_th_max_threads(rz_config_get_i(core->config, "search.max_threads"))))) {
+		RZ_LOG_ERROR("Failed setup find options.\n");
+		return NULL;
+	}
+
+	RzSearchFindOpt *fopts = rz_core_setup_default_search_find_opts(core);
+	if (!fopts) {
+		RZ_LOG_ERROR("Failed init find options.\n");
+		return NULL;
+	}
+	if (!rz_search_opt_set_find_options(search_opts, fopts)) {
+		RZ_LOG_ERROR("Failed add find options to the search optoins.\n");
+		return NULL;
+	}
+	return search_opts;
+}
+
+static RzCmdStatus byte_pattern_search(RzCore *core, RZ_OWN RzSearchBytesPattern *pattern, RzCmdStateOutput *state) {
+	RzSearchOpt *search_opts = setup_search_options(core);
+	RzList *hits = NULL;
+	if (!search_opts) {
+		goto error;
+	}
+
+	CMD_SEARCH_BEGIN();
+
+	if (!pattern) {
+		RZ_LOG_ERROR("Failed to parse given pattern.\n");
+		goto error;
+	}
+
+	bool progress = rz_config_get_b(core->config, "search.show_progress");
+	if (!rz_search_opt_set_cancel_cb(search_opts, cmd_search_progress_cancel, progress ? state : NULL)) {
+		RZ_LOG_ERROR("code: Failed to setup default search options.\n");
+		goto error;
+	}
+	hits = rz_core_search_bytes(core, search_opts, pattern);
+	if (!hits) {
+		RZ_LOG_ERROR("Failed to perform search.\n");
+		goto error;
+	}
+
+	CMD_SEARCH_END();
+	rz_search_opt_free(search_opts);
+	return cmd_core_handle_search_hits(core, state, hits);
+
+error:
+	rz_list_free(hits);
+	rz_search_opt_free(search_opts);
+	CMD_SEARCH_END();
+	return RZ_CMD_STATUS_ERROR;
+}
 // "/+"
 RZ_IPI RzCmdStatus rz_cmd_search_str_chunk_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	return pass_to_legacy_api(core, argc, argv, RZ_OUTPUT_MODE_STANDARD);
 }
 
 // "/a"
-RZ_IPI RzCmdStatus rz_cmd_search_assemble_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	return pass_to_legacy_api(core, argc, argv, RZ_OUTPUT_MODE_STANDARD);
+RZ_IPI RzCmdStatus rz_cmd_search_assemble_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	rz_return_val_if_fail(core && core->rasm, RZ_CMD_STATUS_ERROR);
+	if (!core->rasm->cur) {
+		RZ_LOG_ERROR("Not RzArch plugin set up.\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	RzAsmCode *acode;
+	if (!(acode = rz_asm_massemble(core->rasm, argv[1]))) {
+		RZ_LOG_ERROR("Failed to assemble '%s'\n", argv[1]);
+		RZ_LOG_ERROR("Consider using \"/ar\" instead.\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	size_t len = acode->len;
+	ut8 *bytes = rz_mem_dup(acode->bytes, len);
+	rz_asm_code_free(acode);
+
+	RzSearchBytesPattern *pattern = rz_search_bytes_pattern_new(bytes, NULL, len, "asm_text", false);
+	return byte_pattern_search(core, pattern, state);
 }
 
 // "/a1"
@@ -2777,64 +2836,11 @@ RZ_IPI RzCmdStatus rz_cmd_search_value_64be_handler(RzCore *core, int argc, cons
 	return pass_to_legacy_api(core, argc, argv, RZ_OUTPUT_MODE_STANDARD);
 }
 
-static RzSearchOpt *setup_search_options(RzCore *core) {
-	RzSearchOpt *search_opts = rz_search_opt_new();
-	if (!(rz_search_opt_set_max_hits(search_opts, rz_config_get_i(core->config, "search.maxhits")) &&
-		    rz_search_opt_set_max_threads(search_opts, rz_th_max_threads(rz_config_get_i(core->config, "search.max_threads"))))) {
-		RZ_LOG_ERROR("Failed setup find options.\n");
-		return NULL;
-	}
-
-	RzSearchFindOpt *fopts = rz_core_setup_default_search_find_opts(core);
-	if (!fopts) {
-		RZ_LOG_ERROR("Failed init find options.\n");
-		return NULL;
-	}
-	if (!rz_search_opt_set_find_options(search_opts, fopts)) {
-		RZ_LOG_ERROR("Failed add find options to the search optoins.\n");
-		return NULL;
-	}
-	return search_opts;
-}
-
 // "/x"
 RZ_IPI RzCmdStatus rz_cmd_search_hex_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	RzSearchOpt *search_opts = setup_search_options(core);
-	RzList *hits = NULL;
-	if (!search_opts) {
-		goto error;
-	}
-
-	CMD_SEARCH_BEGIN();
-
 	const char *arg = argv[1];
 	RzSearchBytesPattern *pattern = rz_search_parse_byte_pattern(arg, "bytes");
-
-	if (!pattern) {
-		RZ_LOG_ERROR("Failed to parse given pattern.\n");
-		goto error;
-	}
-
-	bool progress = rz_config_get_b(core->config, "search.show_progress");
-	if (!rz_search_opt_set_cancel_cb(search_opts, cmd_search_progress_cancel, progress ? state : NULL)) {
-		RZ_LOG_ERROR("code: Failed to setup default search options.\n");
-		goto error;
-	}
-	hits = rz_core_search_bytes(core, search_opts, pattern);
-	if (!hits) {
-		RZ_LOG_ERROR("Failed to perform search.\n");
-		goto error;
-	}
-
-	CMD_SEARCH_END();
-	rz_search_opt_free(search_opts);
-	return cmd_core_handle_search_hits(core, state, hits);
-
-error:
-	rz_list_free(hits);
-	rz_search_opt_free(search_opts);
-	CMD_SEARCH_END();
-	return RZ_CMD_STATUS_ERROR;
+	return byte_pattern_search(core, pattern, state);
 }
 
 static bool parse_pattern_arg(const char *arg, RZ_OUT ut8 *re, RZ_OUT size_t *len) {
