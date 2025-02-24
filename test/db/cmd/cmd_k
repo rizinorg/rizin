@@ -89,6 +89,8 @@ k debug/abc=0
 k debug/*
 kd output_file debug
 k debug/*
+rm output_file
+rm file.sdb
 EOF
 EXPECT=<<EOF
 abc=123
