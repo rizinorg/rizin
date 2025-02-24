@@ -62,6 +62,7 @@ typedef bool (*RzSearchIsEmptyCallback)(void *user);
 /**
  * \brief A callback checking a chunk of bytes if it matches the search criteria.
  *
+ * \param fopt The find() search options.
  * \param user The private user data.
  * \param address The address associated with the given bytes.
  * \param buffer The bytes buffer.
