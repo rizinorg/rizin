@@ -2436,7 +2436,7 @@ static int pass_to_legacy_api(RzCore *core, int argc, const char **argv, RzOutpu
 static bool cmd_search_progress_cancel(void *user, size_t n_hits, RzSearchCancelReason invoke_reason) {
 	if (user) {
 		// we have RzCmdStateOutput state
-		rz_cons_printf("Searching... hits: %" PFMTSZu "\r", n_hits);
+		eprintf("Searching... hits: %" PFMTSZu "\r", n_hits);
 	}
 	return rz_cons_is_breaked();
 }
