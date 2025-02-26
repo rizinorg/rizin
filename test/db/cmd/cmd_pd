@@ -125,6 +125,33 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=pd with gaps in io maps
+FILE=--
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bytes=true
+e asm.bits=64
+o malloc://8 0xc
+o malloc://12 0x1c
+pd 13
+EOF
+EXPECT=<<EOF
+            0x00000000      ffffffff       invalid
+            0x00000004      ffffffff       invalid
+            0x00000008      ffffffff       invalid
+            0x0000000c      00000000       udf   0
+            0x00000010      00000000       udf   0
+            0x00000014      ffffffff       invalid
+            0x00000018      ffffffff       invalid
+            0x0000001c      00000000       udf   0
+            0x00000020      00000000       udf   0
+            0x00000024      00000000       udf   0
+            0x00000028      ffffffff       invalid
+            0x0000002c      ffffffff       invalid
+            0x00000030      ffffffff       invalid
+EOF
+RUN
+
 NAME=pd double comma
 FILE=malloc://128
 CMDS=<<EOF

@@ -311,11 +311,19 @@ RZ_DEPRECATE RZ_API bool rz_io_read_at(RzIO *io, ut64 addr, ut8 *buf, size_t len
 	return ret;
 }
 
-// Returns true iff all reads on mapped regions are successful and complete.
-// Unmapped regions are filled with io->Oxff in both physical and virtual modes.
-// Use this function if you want to ignore gaps or do not care about the number
-// of read bytes.
-RZ_API bool rz_io_read_at_mapped(RzIO *io, ut64 addr, ut8 *buf, size_t len) {
+/**
+ * \brief Read a chunk of memory from io
+ *
+ * Reads from io depending on io->va. Unmapped regions are filled with io->Oxff
+ * in both physical and virtual modes. Use this function if you want to ignore
+ * gaps or do not care about the number of bytes read from actually mapped
+ * regions.
+ *
+ * \param addr address to start reading at
+ * \param len size of \p buf
+ * \return true iff all reads on mapped regions are successful and complete
+ */
+RZ_API bool rz_io_read_at_mapped(RZ_NONNULL RzIO *io, ut64 addr, RZ_OUT RZ_NONNULL ut8 *buf, size_t len) {
 	bool ret;
 	rz_return_val_if_fail(io && buf, false);
 	if (io->ff) {
@@ -332,10 +340,17 @@ RZ_API bool rz_io_read_at_mapped(RzIO *io, ut64 addr, ut8 *buf, size_t len) {
 	return ret;
 }
 
-// For both virtual and physical mode, returns the number of bytes of read
-// prefix.
-// Returns -1 on error.
-RZ_API int rz_io_nread_at(RzIO *io, ut64 addr, ut8 *buf, size_t len) {
+/**
+ * \brief Read a prefix until the next mapping boundary
+ *
+ * Reads from io depending on io->va. Similar to rz_io_read_at_mapped, but for
+ * virtual addressing, stops as soon as a an unmapped byte is encountered.
+ *
+ * \param addr address to start reading at
+ * \param len size of \p buf
+ * \return the number of bytes read or -1 on error
+ */
+RZ_API int rz_io_nread_at(RZ_NONNULL RzIO *io, ut64 addr, RZ_OUT RZ_NONNULL ut8 *buf, size_t len) {
 	int ret;
 	rz_return_val_if_fail(io && buf && len >= 0, -1);
 	if (len == 0) {

@@ -362,7 +362,7 @@ RZ_API ut64 rz_reg_getv_by_role_or_name(RzReg *reg, const char *name) {
 	return ri ? rz_reg_get_value(reg, ri) : UT64_MAX;
 }
 
-RZ_API RzRegItem *rz_reg_get(RzReg *reg, const char *name, int type) {
+RZ_API RzRegItem *rz_reg_get(const RzReg *reg, const char *name, int type) {
 	int i, e;
 	rz_return_val_if_fail(reg && name, NULL);
 	// TODO: define flag register as RZ_REG_TYPE_FLG

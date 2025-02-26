@@ -283,6 +283,17 @@ EOF
 EXPECT_ERR=
 RUN
 
+NAME=String Search - ~[0]
+FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ascii
+CMDS=<<EOF
+e search.show_progress=true
+/z "placerat ut, eu etiam vitae nam"~[0]
+EOF
+EXPECT=<<EOF
+0x000000fa
+EOF
+RUN
+
 NAME=String Search - Encoding: utf8 - Arabic
 FILE=bins/cmd/search/string_encodings/Arabic-Lipsum.utf8
 CMDS=<<EOF

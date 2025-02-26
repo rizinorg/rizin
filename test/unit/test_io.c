@@ -1,8 +1,62 @@
+// SPDX-FileCopyrightText: 2025 Florian Märkl <info@florianmaerkl.de>
 // SPDX-FileCopyrightText: 2017 condret <condr3t@protonmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_io.h>
 #include "minunit.h"
+
+bool test_rz_io_read_at_mapped(void) {
+	RzIO *io = rz_io_new();
+	io->va = true;
+	io->ff = true;
+	io->Oxff = '_';
+	rz_io_open_at(io, "malloc://8", RZ_PERM_RW, 0, 0x10, NULL);
+	rz_io_write_at(io, 0x10, (ut8 *)"abcdefgh", 15);
+	rz_io_open_at(io, "malloc://4", RZ_PERM_RW, 0, 0x15, NULL);
+	rz_io_write_at(io, 0x15, (ut8 *)"1234", 15);
+
+	ut8 buf[0x20];
+	bool r = rz_io_read_at_mapped(io, 0xe, buf, sizeof(buf));
+	mu_assert_true(r, "read before map");
+	mu_assert_memeq(buf, (const ut8 *)"__abcde1234___", 14, "nread at map start content");
+
+	r = rz_io_read_at_mapped(io, 0x10, buf, sizeof(buf));
+	mu_assert_true(r, "read at map start");
+	mu_assert_memeq(buf, (const ut8 *)"abcde1234___", 12, "nread at map start content");
+
+	r = rz_io_read_at_mapped(io, 0x12, buf, sizeof(buf));
+	mu_assert_true(r, "read inside map");
+	mu_assert_memeq(buf, (const ut8 *)"cde1234_____", 10, "nread insite map content");
+
+	rz_io_free(io);
+	mu_end;
+}
+
+bool test_rz_io_nread_at(void) {
+	RzIO *io = rz_io_new();
+	io->va = true;
+	io->ff = true;
+	io->Oxff = '_';
+	rz_io_open_at(io, "malloc://8", RZ_PERM_RW, 0, 0x10, NULL);
+	rz_io_write_at(io, 0x10, (ut8 *)"abcdefgh", 15);
+	rz_io_open_at(io, "malloc://4", RZ_PERM_RW, 0, 0x15, NULL);
+	rz_io_write_at(io, 0x15, (ut8 *)"1234", 15);
+
+	ut8 buf[0x20];
+	int r = rz_io_nread_at(io, 0xe, buf, sizeof(buf));
+	mu_assert_eq(r, 0, "nread fails before map");
+
+	r = rz_io_nread_at(io, 0x10, buf, sizeof(buf));
+	mu_assert_eq(r, 9, "nread at map start size");
+	mu_assert_memeq(buf, (const ut8 *)"abcde1234", 9, "nread at map start content");
+
+	r = rz_io_nread_at(io, 0x12, buf, sizeof(buf));
+	mu_assert_eq(r, 7, "nread inside map size");
+	mu_assert_memeq(buf, (const ut8 *)"cde1234", 7, "nread insite map content");
+
+	rz_io_free(io);
+	mu_end;
+}
 
 bool test_rz_io_cache(void) {
 	RzIO *io = rz_io_new();
@@ -631,6 +685,8 @@ bool test_rz_io_map_del_on_close_all(void) {
 }
 
 bool all_tests(void) {
+	mu_run_test(test_rz_io_read_at_mapped);
+	mu_run_test(test_rz_io_nread_at);
 	mu_run_test(test_rz_io_cache);
 	mu_run_test(test_rz_io_mapsplit);
 	mu_run_test(test_rz_io_mapsplit2);

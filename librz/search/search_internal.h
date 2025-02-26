@@ -62,6 +62,7 @@ typedef bool (*RzSearchIsEmptyCallback)(void *user);
 /**
  * \brief A callback checking a chunk of bytes if it matches the search criteria.
  *
+ * \param fopt The find() search options.
  * \param user The private user data.
  * \param address The address associated with the given bytes.
  * \param buffer The bytes buffer.
@@ -70,7 +71,7 @@ typedef bool (*RzSearchIsEmptyCallback)(void *user);
  * \return True, if a match was found.
  * \return False otherwise.
  */
-typedef bool (*RzSearchFindBytesCallback)(RZ_NULLABLE RzSearchFindOpt *fopt, void *user, ut64 address, const RzBuffer *buffer, RZ_OUT RzThreadQueue *hits);
+typedef bool (*RzSearchFindBytesCallback)(RzSearchFindOpt *fopt, void *user, ut64 address, const RzBuffer *buffer, RZ_OUT RzThreadQueue *hits);
 
 /**
  * \brief A callback to search a graph for a pattern.

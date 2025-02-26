@@ -3152,15 +3152,16 @@ static bool core_disassembly(RzCore *core, int n_bytes, int n_instrs, RzCmdState
 		.cbytes = cbytes,
 	};
 
-	ut8 *buf = malloc(n_bytes + 1);
+	ut8 *buf = RZ_NEWS0(ut8, n_bytes + 1);
 	if (!buf) {
 		RZ_LOG_ERROR("Failed to allocate memory\n");
 		return false;
 	}
-	if (rz_io_nread_at(core->io, offset, buf, n_bytes + 1) == -1) {
-		free(buf);
-		RZ_LOG_ERROR("Failed to read at 0x%" PFMT64x "\n", offset);
-		return false;
+	bool ret = true;
+	if (!rz_io_read_at_mapped(core->io, offset, buf, n_bytes + 1)) {
+		// Even with an error, keep on disassembling as at least some data may be read successfully
+		RZ_LOG_ERROR("Failed to read chunk of size 0x%" PFMT64x " at 0x%" PFMT64x " for disassembly.\n", (ut64)(n_bytes + 1), offset);
+		ret = false;
 	}
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
@@ -3184,7 +3185,7 @@ static bool core_disassembly(RzCore *core, int n_bytes, int n_instrs, RzCmdState
 	}
 	free(buf);
 
-	return true;
+	return ret;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_disassembly_n_bytes_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
