@@ -2465,6 +2465,11 @@ static RzCmdStatus cmd_core_handle_search_hits(RzCore *core, RzCmdStateOutput *s
 		return RZ_CMD_STATUS_ERROR;
 	}
 
+	if (rz_config_get_b(core->config, "search.show_progress")) {
+		// clear last progress notification, if any
+		rz_cons_clear_line(1);
+	}
+
 	RzListIter *it = NULL;
 	RzSearchHit *hit = NULL;
 	const char *cmd_hit = NULL;

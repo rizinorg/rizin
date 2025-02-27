@@ -565,12 +565,15 @@ static void *search_cancel_th(void *user) {
 	RzSearchOpt *opt = ctx->opt;
 
 	do {
+		rz_sys_usleep(RZ_SEARCH_CANCEL_CHECK_INTERVAL_USEC);
+		if (!rz_atomic_bool_get(ctx->loop)) {
+			break;
+		}
 		size_t n_hits = rz_th_queue_size(ctx->hits);
 		if (opt->cancel_cb(opt->cancel_usr, n_hits, RZ_SEARCH_CANCEL_REGULAR_CHECK)) {
 			rz_atomic_bool_set(ctx->loop, false);
 			break;
 		}
-		rz_sys_usleep(RZ_SEARCH_CANCEL_CHECK_INTERVAL_USEC);
 	} while (rz_atomic_bool_get(ctx->loop));
 
 	return NULL;

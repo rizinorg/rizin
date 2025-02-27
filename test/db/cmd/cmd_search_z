@@ -291,7 +291,7 @@ e search.show_progress=true
 /z "placerat ut, eu etiam vitae nam"~[0]
 EOF
 EXPECT=<<EOF
-Searching... hits: 00x000000fa
+[2K0x000000fa
 EOF
 RUN
 
