@@ -564,7 +564,7 @@ static void *search_cancel_th(void *user) {
 	search_ctx_t *ctx = (search_ctx_t *)user;
 	RzSearchOpt *opt = ctx->opt;
 
-	do {
+	while (true) {
 		rz_sys_usleep(RZ_SEARCH_CANCEL_CHECK_INTERVAL_USEC);
 		if (!rz_atomic_bool_get(ctx->loop)) {
 			break;
@@ -574,7 +574,7 @@ static void *search_cancel_th(void *user) {
 			rz_atomic_bool_set(ctx->loop, false);
 			break;
 		}
-	} while (rz_atomic_bool_get(ctx->loop));
+	}
 
 	return NULL;
 }
