@@ -285,12 +285,13 @@ RUN
 
 NAME=String Search - ~[0]
 FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ascii
+ARGS=-1
 CMDS=<<EOF
 e search.show_progress=true
 /z "placerat ut, eu etiam vitae nam"~[0]
 EOF
 EXPECT=<<EOF
-0x000000fa
+Searching... hits: 00x000000fa
 EOF
 RUN
 
