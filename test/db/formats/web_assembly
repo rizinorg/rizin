@@ -44,3 +44,11 @@ EXPECT=<<EOF
  5 fd: 3 +0x00000000 0x00000000 * 0x00000423 r-x 
 EOF
 RUN
+
+NAME=WASM dotnet with long names
+FILE=bins/wasm/dotnet.wasm
+CMDS=isQ~__cxx_atomic_compare_exchange_strong
+EXPECT=<<EOF
+bool std::__2::__cxx_atomic_compare_exchange_strong<icu::numparse::impl::NumberParserImpl*>(std::__2::__cxx_atomic_base_impl<icu::numparse::impl::NumberParserImpl*>*, icu::numparse::impl::NumberParserImpl**, icu::numparse::impl::NumberParserImpl*, std::__2::memory_order, std::__2::memory_order)
+EOF
+RUN

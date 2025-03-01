@@ -12,6 +12,7 @@
 #mesondefine HAVE__FILENO
 #mesondefine HAVE__SETMODE
 #mesondefine HAVE__SNPRINTF
+#mesondefine HAVE__SNWPRINTF_S
 #mesondefine HAVE__STRDUP
 #mesondefine HAVE__STRICMP
 #mesondefine HAVE__STRTOI64
@@ -32,6 +33,7 @@
 #mesondefine HAVE_LIBLZMA
 #mesondefine HAVE_LOCALTIME_R
 #mesondefine HAVE_MBEDTLS
+#mesondefine HAVE_MEMCPY_S
 #mesondefine HAVE_MKSTEMP
 #mesondefine HAVE_NULLABLE
 #mesondefine HAVE_OPENSSL
@@ -39,7 +41,10 @@
 #mesondefine HAVE_SNPRINTF
 #mesondefine HAVE_STRCASECMP
 #mesondefine HAVE_STRDUP
+#mesondefine HAVE_STRERROR_S
 #mesondefine HAVE_STRICMP
+#mesondefine HAVE_STRNCPY
+#mesondefine HAVE_STRNCPY_S
 #mesondefine HAVE_STRTOLL
 #mesondefine HAVE_STRTOULL
 #mesondefine HAVE_STRUCT_TM_TM_ZONE

@@ -14,9 +14,8 @@
 
 #define RZ_BIN_WASM_MAGIC_BYTES "\x00" \
 				"asm"
-#define RZ_BIN_WASM_VERSION       0x1
-#define RZ_BIN_WASM_STRING_LENGTH 256
-#define RZ_BIN_WASM_END_OF_CODE   0xb
+#define RZ_BIN_WASM_VERSION     0x1
+#define RZ_BIN_WASM_END_OF_CODE 0xb
 
 #define RZ_BIN_WASM_SECTION_CUSTOM   0x0
 #define RZ_BIN_WASM_SECTION_TYPE     0x1
@@ -40,42 +39,42 @@ typedef enum {
 	RZ_BIN_WASM_VALUETYPE_ANYFUNC = 0x10,
 	RZ_BIN_WASM_VALUETYPE_FUNC = 0x20,
 	RZ_BIN_WASM_VALUETYPE_EMPTY = 0x40,
-} rz_bin_wasm_value_type_t;
+} RzBinWasmValueType;
 
 typedef enum {
 	RZ_BIN_WASM_EXTERNALKIND_Function = 0x0,
 	RZ_BIN_WASM_EXTERNALKIND_Table = 0x1,
 	RZ_BIN_WASM_EXTERNALKIND_Memory = 0x2,
 	RZ_BIN_WASM_EXTERNALKIND_Global = 0x3,
-} rz_bin_wasm_external_kind_t;
+} RzBinWasmExternalKind;
 
 typedef enum {
 	RZ_BIN_WASM_NAMETYPE_Module = 0x0,
 	RZ_BIN_WASM_NAMETYPE_Function = 0x1,
 	RZ_BIN_WASM_NAMETYPE_Local = 0x2,
-} rz_bin_wasm_custom_name_type_t;
+} RzBinWasmCustomNameType;
 
-struct rz_bin_wasm_init_expr_t {
+typedef struct rz_bin_wasm_init_expr_t {
 	// bytecode	terminated in 0xb
 	size_t len;
-};
+} RzBinWasmInitExpr;
 
-struct rz_bin_wasm_resizable_limits_t {
+typedef struct rz_bin_wasm_resizable_limits_t {
 	ut8 flags; // 1 if max field is present, 0 otherwise
 	ut32 initial;
 	ut32 maximum;
-};
+} RzBinWasmResizableLimits;
 
-struct rz_bin_wasm_name_t {
+typedef struct rz_bin_wasm_name_t {
 	ut32 len;
-	ut8 name[RZ_BIN_WASM_STRING_LENGTH];
-};
+	ut8 *name;
+} RzBinWasmName;
 
 typedef struct rz_bin_wasm_section_t {
 	ut8 id;
 	ut32 size;
 	ut32 name_len;
-	char name[RZ_BIN_WASM_STRING_LENGTH];
+	char *name;
 	ut32 offset;
 	ut32 payload_data;
 	ut32 payload_len;
@@ -85,38 +84,37 @@ typedef struct rz_bin_wasm_section_t {
 typedef struct rz_bin_wasm_type_t {
 	ut8 form;
 	ut32 param_count;
-	rz_bin_wasm_value_type_t *param_types;
+	RzBinWasmValueType *param_types;
 	st8 return_count; // MVP = 1
-	rz_bin_wasm_value_type_t return_type;
-	char to_str[RZ_BIN_WASM_STRING_LENGTH];
+	RzBinWasmValueType return_type;
 } RzBinWasmTypeEntry;
 
 // Other Types
-struct rz_bin_wasm_global_type_t {
-	rz_bin_wasm_value_type_t content_type;
+typedef struct rz_bin_wasm_global_type_t {
+	RzBinWasmValueType content_type;
 	ut8 mutability;
-};
+} RzBinWasmGlobalType;
 
-struct rz_bin_wasm_table_type_t {
-	rz_bin_wasm_value_type_t elem_type;
-	struct rz_bin_wasm_resizable_limits_t limits;
-};
+typedef struct rz_bin_wasm_table_type_t {
+	RzBinWasmValueType elem_type;
+	RzBinWasmResizableLimits limits;
+} RzBinWasmTableType;
 
-struct rz_bin_wasm_memory_type_t {
-	struct rz_bin_wasm_resizable_limits_t limits;
-};
+typedef struct rz_bin_wasm_memory_type_t {
+	RzBinWasmResizableLimits limits;
+} RzBinWasmMemoryType;
 
 typedef struct rz_bin_wasm_import_t {
 	ut32 module_len;
-	char module_str[RZ_BIN_WASM_STRING_LENGTH];
+	char *module_str;
 	ut32 field_len;
-	char field_str[RZ_BIN_WASM_STRING_LENGTH];
+	char *field_str;
 	ut8 kind;
 	union {
 		ut32 type_f;
-		struct rz_bin_wasm_global_type_t type_g;
-		struct rz_bin_wasm_table_type_t type_t;
-		struct rz_bin_wasm_memory_type_t type_m;
+		RzBinWasmGlobalType type_g;
+		RzBinWasmTableType type_t;
+		RzBinWasmMemoryType type_m;
 	};
 
 } RzBinWasmImportEntry;
@@ -127,22 +125,22 @@ typedef struct rz_bin_wasm_function_t {
 
 typedef struct rz_bin_wasm_table_t {
 	ut8 element_type; // only anyfunc
-	struct rz_bin_wasm_resizable_limits_t limits;
+	RzBinWasmResizableLimits limits;
 } RzBinWasmTableEntry;
 
 typedef struct rz_bin_wasm_memory_t {
-	struct rz_bin_wasm_resizable_limits_t limits;
+	RzBinWasmResizableLimits limits;
 } RzBinWasmMemoryEntry;
 
 typedef struct rz_bin_wasm_global_t {
-	rz_bin_wasm_value_type_t content_type;
+	RzBinWasmValueType content_type;
 	ut8 mutability; // 0 if immutable, 1 if mutable
-	struct rz_bin_wasm_init_expr_t init;
+	RzBinWasmInitExpr init;
 } RzBinWasmGlobalEntry;
 
 typedef struct rz_bin_wasm_export_t {
 	ut32 field_len;
-	char field_str[RZ_BIN_WASM_STRING_LENGTH];
+	char *field_str;
 	ut8 kind;
 	ut32 index;
 } RzBinWasmExportEntry;
@@ -151,14 +149,14 @@ typedef struct rz_bin_wasm_start_t {
 	ut32 index;
 } RzBinWasmStartEntry;
 
-struct rz_bin_wasm_local_entry_t {
+typedef struct rz_bin_wasm_local_entry_t {
 	ut32 count;
-	rz_bin_wasm_value_type_t type;
-};
+	RzBinWasmValueType type;
+} RzBinWasmLocalEntry;
 
 typedef struct rz_bin_wasm_element_t {
 	ut32 index;
-	struct rz_bin_wasm_init_expr_t init;
+	RzBinWasmInitExpr init;
 	ut32 num_elem;
 	ut32 elems[];
 } RzBinWasmElementEntry;
@@ -170,13 +168,11 @@ typedef struct rz_bin_wasm_code_t {
 	ut32 code; // offset
 	ut32 len; // real bytecode length
 	ut8 byte; // 0xb, indicating end of the body
-	char name[RZ_BIN_WASM_STRING_LENGTH];
-	char *signature;
 } RzBinWasmCodeEntry;
 
 typedef struct rz_bin_wasm_data_t {
 	ut32 index; // linear memory index (0 in MVP)
-	struct rz_bin_wasm_init_expr_t offset; // bytecode evaluated at runtime
+	RzBinWasmInitExpr offset; // bytecode evaluated at runtime
 	ut32 size;
 	ut32 data; // offset
 } RzBinWasmDataEntry;
@@ -207,7 +203,7 @@ typedef struct rz_bin_wasm_custom_name_entry_t {
 
 	ut8 payload_data;
 	union {
-		struct rz_bin_wasm_name_t *mod_name;
+		RzBinWasmName *mod_name;
 		RzBinWasmCustomNameFunctionNames *func;
 		RzBinWasmCustomNameLocalNames *local;
 	};
@@ -253,6 +249,6 @@ RzList /*<RzBinWasmDataEntry *>*/ *rz_bin_wasm_get_datas(RzBinWasmObj *bin);
 RzList /*<RzBinWasmCustomNameEntry *>*/ *rz_bin_wasm_get_custom_names(RzBinWasmObj *bin);
 ut32 rz_bin_wasm_get_entrypoint(RzBinWasmObj *bin);
 const char *rz_bin_wasm_get_function_name(RzBinWasmObj *bin, ut32 idx);
-const char *rz_bin_wasm_valuetype_to_string(rz_bin_wasm_value_type_t type);
+const char *rz_bin_wasm_valuetype_to_string(RzBinWasmValueType type);
 
 #endif

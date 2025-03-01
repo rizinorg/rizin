@@ -641,6 +641,7 @@ libzip_dep = dependency('libzip', required: get_option('use_sys_libzip'), static
 if not libzip_dep.found()
   libzip_proj = subproject('libzip', default_options: [
     'default_library=static',
+    'werror=false',
     'static_runtime=@0@'.format(is_static_build),
     'use_sys_openssl=@0@'.format(get_option('use_sys_libzip_openssl')),
   ])

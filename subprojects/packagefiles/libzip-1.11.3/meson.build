@@ -1,5 +1,5 @@
 project('libzip', 'c',
-  version: '1.9.2',
+  version: '1.11.3',
   license: 'BSD-3-clause',
   meson_version: '>=0.55.0',
 )
@@ -57,8 +57,8 @@ else
   endif
 endif
 
-underscore_functions = ['close', 'dup', 'fdopen', 'fileno', 'setmode', 'snprintf', 'strdup', 'stricmp', 'strtoi64', 'strtoui64', 'umask', 'unlink']
-functions = ['clonefile', 'explicit_bzero', 'explicit_memset', 'fileno', 'fseeko', 'ftello', 'getprogname', 'localtime_r', 'mkstemp', 'setmode', 'snprintf', 'strdup', 'stricmp', 'strtoll', 'strtoull']
+underscore_functions = ['close', 'dup', 'fdopen', 'fileno', 'setmode', 'snprintf', 'snwprintf_s', 'strdup', 'stricmp', 'strtoi64', 'strtoui64', 'umask', 'unlink']
+functions = ['clonefile', 'explicit_bzero', 'explicit_memset', 'fileno', 'fseeko', 'ftello', 'getprogname', 'localtime_r', 'memcpy_s', 'mkstemp', 'setmode', 'snprintf', 'strdup', 'strncpy', 'strncpy_s', 'strerror_s', 'stricmp', 'strtoll', 'strtoull']
 headers = ['stdbool.h', 'strings.h', 'unistd.h', 'dirent.h', 'fts.h', 'ndir.h', 'sys/dir.h', 'sys/ndir.h', 'sys/attr.h']
 types = ['off_t', 'size_t']
 # special case because clang-cl finds strcasecmp but has problem while linking
@@ -254,7 +254,6 @@ zip_err_str_c = custom_target('zip_err_str',
 # Build libzip library
 
 zip_files = [
-  'lib/zip_add.c',
   'lib/zip_add_dir.c',
   'lib/zip_add_entry.c',
   'lib/zip_algorithm_deflate.c',
@@ -301,7 +300,6 @@ zip_files = [
   'lib/zip_get_file_comment.c',
   'lib/zip_get_name.c',
   'lib/zip_get_num_entries.c',
-  'lib/zip_get_num_files.c',
   'lib/zip_hash.c',
   'lib/zip_io_util.c',
   'lib/zip_libzip_version.c',
@@ -333,10 +331,12 @@ zip_files = [
   'lib/zip_source_file_stdio.c',
   'lib/zip_source_free.c',
   'lib/zip_source_function.c',
+  'lib/zip_source_get_dostime.c',
   'lib/zip_source_get_file_attributes.c',
   'lib/zip_source_is_deleted.c',
   'lib/zip_source_layered.c',
   'lib/zip_source_open.c',
+  'lib/zip_source_pass_to_lower_layer.c',
   'lib/zip_source_pkware_decode.c',
   'lib/zip_source_pkware_encode.c',
   'lib/zip_source_read.c',
