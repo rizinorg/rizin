@@ -125,12 +125,14 @@ EOF
 EXPECT_ERR=
 RUN
 
-NAME=consistency btw /z
+NAME=consistency btw /z and /x
 FILE=bins/elf/analysis/ls2
 CMDS=<<EOF
-e scr.color=1
-e search.str.min_length=3
-/z lib
+!!rizin -qc "e search.show_progress=true; /z lib" -1 bins/elf/analysis/ls2 | sed "s/^.*\r//"~$2
+echo ----
+!!rizin -qc "e search.show_progress=true; /x `%x lib`" -1 bins/elf/analysis/ls2 | sed "s/^.*\r//"~$2
+echo ----
+/z lib > /dev/null
 ps ascii @ hit.string.ascii.0
 ps ascii @ hit.string.ascii.1
 ps ascii @ hit.string.ascii.2
@@ -141,6 +143,10 @@ ps ascii @ hit.string.ascii.6
 ps ascii @ hit.string.ascii.7
 EOF
 EXPECT=<<EOF
+Searching in [0x400000, 0x41bc2c) ... hits: 8
+Searching in [0x61bdf0, 0x61c5f4) ... hits: 0
+Searching in [0x61c5f4, 0x61d360) ... hits: 0
+Searching in [0x61d368, 0x61d720) ... hits: 0
 0x00400239 3 hit.string.ascii.0
 0x00400f19 3 hit.string.ascii.1
 0x00400fae 3 hit.string.ascii.2
@@ -149,6 +155,47 @@ EXPECT=<<EOF
 0x0041769a 3 hit.string.ascii.5
 0x004186e0 3 hit.string.ascii.6
 0x00418e58 3 hit.string.ascii.7
+----
+Searching in [0x400000, 0x401002) ... hits: 4
+Searching in [0x401000, 0x402002) ... hits: 1
+Searching in [0x402000, 0x403002) ... hits: 0
+Searching in [0x403000, 0x404002) ... hits: 0
+Searching in [0x404000, 0x405002) ... hits: 0
+Searching in [0x405000, 0x406002) ... hits: 0
+Searching in [0x406000, 0x407002) ... hits: 0
+Searching in [0x407000, 0x408002) ... hits: 0
+Searching in [0x408000, 0x409002) ... hits: 0
+Searching in [0x409000, 0x40a002) ... hits: 0
+Searching in [0x40a000, 0x40b002) ... hits: 0
+Searching in [0x40b000, 0x40c002) ... hits: 0
+Searching in [0x40c000, 0x40d002) ... hits: 0
+Searching in [0x40d000, 0x40e002) ... hits: 0
+Searching in [0x40e000, 0x40f002) ... hits: 0
+Searching in [0x40f000, 0x410002) ... hits: 0
+Searching in [0x410000, 0x411002) ... hits: 0
+Searching in [0x411000, 0x412002) ... hits: 0
+Searching in [0x412000, 0x413002) ... hits: 0
+Searching in [0x413000, 0x414002) ... hits: 0
+Searching in [0x414000, 0x415002) ... hits: 0
+Searching in [0x415000, 0x416002) ... hits: 0
+Searching in [0x416000, 0x417002) ... hits: 0
+Searching in [0x417000, 0x418002) ... hits: 1
+Searching in [0x418000, 0x419002) ... hits: 2
+Searching in [0x419000, 0x41a002) ... hits: 0
+Searching in [0x41a000, 0x41b002) ... hits: 0
+Searching in [0x41b000, 0x41bc2c) ... hits: 0
+Searching in [0x61bdf0, 0x61c5f4) ... hits: 0
+Searching in [0x61c5f4, 0x61d360) ... hits: 0
+Searching in [0x61d368, 0x61d720) ... hits: 0
+0x00400239 3 hit.bytes.0
+0x00400f19 3 hit.bytes.1
+0x00400fae 3 hit.bytes.2
+0x00400feb 3 hit.bytes.3
+0x004013c3 3 hit.bytes.4
+0x0041769a 3 hit.bytes.5
+0x004186e0 3 hit.bytes.6
+0x00418e58 3 hit.bytes.7
+----
 lib64/ld-linux-x86-64.so.2
 libselinux.so.1
 libacl.so.1
@@ -158,5 +205,4 @@ libs/
 lib/xstrtol.c
 lib
 EOF
-EXPECT_ERR=
 RUN

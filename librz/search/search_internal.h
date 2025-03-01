@@ -71,7 +71,8 @@ typedef bool (*RzSearchIsEmptyCallback)(void *user);
  * \return True, if a match was found.
  * \return False otherwise.
  */
-typedef bool (*RzSearchFindBytesCallback)(RzSearchFindOpt *fopt, void *user, ut64 address, const RzBuffer *buffer, RZ_OUT RzThreadQueue *hits);
+typedef bool (*RzSearchFindBytesCallback)(RzSearchFindOpt *fopt, void *user, ut64 address, const RzBuffer *buffer,
+	RZ_OUT RzThreadQueue *hits, RZ_OUT size_t *num_hits);
 
 /**
  * \brief A callback to search a graph for a pattern.
@@ -113,6 +114,7 @@ struct rz_search_opt_t {
 	ut64 chunk_size;
 	ut64 element_size;
 	RzThreadNCores max_threads;
+	bool show_progress;
 
 	// cancel callback
 	void *cancel_usr;

@@ -66,6 +66,12 @@ RZ_API bool rz_search_opt_set_max_threads(RZ_NONNULL RzSearchOpt *opt, RzThreadN
 	return true;
 }
 
+RZ_API bool rz_search_opt_set_show_progress(RZ_NONNULL RzSearchOpt *opt, bool show_progress) {
+	rz_return_val_if_fail(opt, false);
+	opt->show_progress = show_progress;
+	return true;
+}
+
 RZ_API bool rz_search_opt_set_cancel_cb(RZ_NONNULL RzSearchOpt *opt, RzSearchCancelCallback callback, void *user) {
 	rz_return_val_if_fail(opt, false);
 	opt->cancel_cb = callback;

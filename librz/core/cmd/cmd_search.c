@@ -2517,8 +2517,12 @@ static RzCmdStatus cmd_core_handle_search_hits(RzCore *core, RzCmdStateOutput *s
 
 static RzSearchOpt *setup_search_options(RzCore *core) {
 	RzSearchOpt *search_opts = rz_search_opt_new();
-	if (!(rz_search_opt_set_max_hits(search_opts, rz_config_get_i(core->config, "search.maxhits")) &&
-		    rz_search_opt_set_max_threads(search_opts, rz_th_max_threads(rz_config_get_i(core->config, "search.max_threads"))))) {
+	ut32 max_threads = rz_th_max_threads(rz_config_get_i(core->config, "search.max_threads"));
+	ut32 max_hits = rz_config_get_i(core->config, "search.maxhits");
+	bool show_progress = rz_config_get_b(core->config, "search.show_progress");
+	if (!(rz_search_opt_set_max_threads(search_opts, max_threads) &&
+		    rz_search_opt_set_max_hits(search_opts, max_hits) &&
+		    rz_search_opt_set_show_progress(search_opts, show_progress))) {
 		RZ_LOG_ERROR("Failed setup find options.\n");
 		return NULL;
 	}
