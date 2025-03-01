@@ -610,7 +610,7 @@ static bool search_iterator_io_map_cb(void *element, void *user) {
 		RZ_LOG_ERROR("search: failed search at 0x%08" PFMT64x "\n", at);
 		goto failure;
 	} else if (ctx->opt->show_progress) {
-		eprintf("Searching in [0x%" PFMT64x ", 0x%" PFMT64x ") ... hits: %zu\n", at, at + size, num_hits);
+		eprintf("[0x%" PFMT64x ", 0x%" PFMT64x "): %zu\n", at, at + size, num_hits);
 	}
 
 	rz_buf_free(buffer);

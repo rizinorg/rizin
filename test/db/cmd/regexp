@@ -128,9 +128,11 @@ RUN
 NAME=consistency btw /z and /x
 FILE=bins/elf/analysis/ls2
 CMDS=<<EOF
-!!rizin -qc "e search.show_progress=true; /z lib" -1 bins/elf/analysis/ls2 | sed "s/^.*[[:cntrl:]]//"~$2
+!!rizin -qc "e search.show_progress=true; /z lib" -1 bins/elf/analysis/ls2 | grep "^\[.*" | sed "s/^.*[[:cntrl:]]//"~$0
+!!rizin -qc "/z lib" bins/elf/analysis/ls2
 echo ----
-!!rizin -qc "e search.show_progress=true; /x `%x lib`" -1 bins/elf/analysis/ls2 | sed "s/^.*[[:cntrl:]]//"~$2
+!!rizin -qc "e search.show_progress=true; /x `%x lib`" -1 bins/elf/analysis/ls2 | grep "^\[.*" | sed "s/^.*[[:cntrl:]]//"~$0
+!!rizin -qc "/x `%x lib`" bins/elf/analysis/ls2
 echo ----
 /z lib > /dev/null
 ps ascii @ hit.string.ascii.0
@@ -143,10 +145,10 @@ ps ascii @ hit.string.ascii.6
 ps ascii @ hit.string.ascii.7
 EOF
 EXPECT=<<EOF
-Searching in [0x400000, 0x41bc2c) ... hits: 8
-Searching in [0x61bdf0, 0x61c5f4) ... hits: 0
-Searching in [0x61c5f4, 0x61d360) ... hits: 0
-Searching in [0x61d368, 0x61d720) ... hits: 0
+[0x400000, 0x41bc2c): 8
+[0x61bdf0, 0x61c5f4): 0
+[0x61c5f4, 0x61d360): 0
+[0x61d368, 0x61d720): 0
 0x00400239 3 hit.string.ascii.0
 0x00400f19 3 hit.string.ascii.1
 0x00400fae 3 hit.string.ascii.2
@@ -156,37 +158,37 @@ Searching in [0x61d368, 0x61d720) ... hits: 0
 0x004186e0 3 hit.string.ascii.6
 0x00418e58 3 hit.string.ascii.7
 ----
-Searching in [0x400000, 0x401002) ... hits: 4
-Searching in [0x401000, 0x402002) ... hits: 1
-Searching in [0x402000, 0x403002) ... hits: 0
-Searching in [0x403000, 0x404002) ... hits: 0
-Searching in [0x404000, 0x405002) ... hits: 0
-Searching in [0x405000, 0x406002) ... hits: 0
-Searching in [0x406000, 0x407002) ... hits: 0
-Searching in [0x407000, 0x408002) ... hits: 0
-Searching in [0x408000, 0x409002) ... hits: 0
-Searching in [0x409000, 0x40a002) ... hits: 0
-Searching in [0x40a000, 0x40b002) ... hits: 0
-Searching in [0x40b000, 0x40c002) ... hits: 0
-Searching in [0x40c000, 0x40d002) ... hits: 0
-Searching in [0x40d000, 0x40e002) ... hits: 0
-Searching in [0x40e000, 0x40f002) ... hits: 0
-Searching in [0x40f000, 0x410002) ... hits: 0
-Searching in [0x410000, 0x411002) ... hits: 0
-Searching in [0x411000, 0x412002) ... hits: 0
-Searching in [0x412000, 0x413002) ... hits: 0
-Searching in [0x413000, 0x414002) ... hits: 0
-Searching in [0x414000, 0x415002) ... hits: 0
-Searching in [0x415000, 0x416002) ... hits: 0
-Searching in [0x416000, 0x417002) ... hits: 0
-Searching in [0x417000, 0x418002) ... hits: 1
-Searching in [0x418000, 0x419002) ... hits: 2
-Searching in [0x419000, 0x41a002) ... hits: 0
-Searching in [0x41a000, 0x41b002) ... hits: 0
-Searching in [0x41b000, 0x41bc2c) ... hits: 0
-Searching in [0x61bdf0, 0x61c5f4) ... hits: 0
-Searching in [0x61c5f4, 0x61d360) ... hits: 0
-Searching in [0x61d368, 0x61d720) ... hits: 0
+[0x400000, 0x401002): 4
+[0x401000, 0x402002): 1
+[0x402000, 0x403002): 0
+[0x403000, 0x404002): 0
+[0x404000, 0x405002): 0
+[0x405000, 0x406002): 0
+[0x406000, 0x407002): 0
+[0x407000, 0x408002): 0
+[0x408000, 0x409002): 0
+[0x409000, 0x40a002): 0
+[0x40a000, 0x40b002): 0
+[0x40b000, 0x40c002): 0
+[0x40c000, 0x40d002): 0
+[0x40d000, 0x40e002): 0
+[0x40e000, 0x40f002): 0
+[0x40f000, 0x410002): 0
+[0x410000, 0x411002): 0
+[0x411000, 0x412002): 0
+[0x412000, 0x413002): 0
+[0x413000, 0x414002): 0
+[0x414000, 0x415002): 0
+[0x415000, 0x416002): 0
+[0x416000, 0x417002): 0
+[0x417000, 0x418002): 1
+[0x418000, 0x419002): 2
+[0x419000, 0x41a002): 0
+[0x41a000, 0x41b002): 0
+[0x41b000, 0x41bc2c): 0
+[0x61bdf0, 0x61c5f4): 0
+[0x61c5f4, 0x61d360): 0
+[0x61d368, 0x61d720): 0
 0x00400239 3 hit.bytes.0
 0x00400f19 3 hit.bytes.1
 0x00400fae 3 hit.bytes.2
