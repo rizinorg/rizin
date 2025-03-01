@@ -66,7 +66,8 @@ typedef bool (*RzSearchIsEmptyCallback)(void *user);
  * \param user The private user data.
  * \param address The address associated with the given bytes.
  * \param buffer The bytes buffer.
- * \param The queue to push new hits onto.
+ * \param hits The queue to push new hits onto.
+ * \param num_hits The variable to store the number of new hits.
  *
  * \return True, if a match was found.
  * \return False otherwise.
