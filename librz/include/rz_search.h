@@ -140,6 +140,8 @@ typedef struct rz_search_opt_t RzSearchOpt;
  */
 typedef struct rz_search_find_opt_t RzSearchFindOpt;
 
+typedef struct rz_search_interval_t RzSearchInterval;
+
 typedef struct rz_search_collection_t RzSearchCollection;
 
 typedef struct rz_search_hit_t {
