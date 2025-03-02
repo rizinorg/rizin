@@ -604,13 +604,13 @@ static bool search_iterator_io_map_cb(void *element, void *user) {
 	}
 	rz_th_lock_leave(ctx->io_lock);
 
-	size_t num_hits = 0;
+	size_t n_hits = 0;
 	RzSearchFindBytesCallback find = col->find;
-	if (!find(ctx->opt->find_opts, col->user, at, buffer, ctx->hits, &num_hits)) {
+	if (!find(ctx->opt->find_opts, col->user, at, buffer, ctx->hits, &n_hits)) {
 		RZ_LOG_ERROR("search: failed search at 0x%08" PFMT64x "\n", at);
 		goto failure;
 	} else if (ctx->opt->show_progress) {
-		eprintf("[0x%" PFMT64x ", 0x%" PFMT64x "): %zu\n", at, at + size, num_hits);
+		eprintf("[0x%" PFMT64x ", 0x%" PFMT64x "): %zu\n", at, at + size, n_hits);
 	}
 
 	rz_buf_free(buffer);

@@ -205,7 +205,7 @@ static inline bool bytes_pattern_compare_masked(RZ_BORROW RZ_NONNULL const ut8 *
 }
 
 static bool bytes_find(RzSearchFindOpt *fopts, void *user, ut64 address, const RzBuffer *buffer,
-	RZ_OUT RzThreadQueue *hits, RZ_OUT size_t *num_hits) {
+	RZ_OUT RzThreadQueue *hits, RZ_OUT size_t *n_hits) {
 	if (!fopts) {
 		RZ_LOG_ERROR("bytes_find requires valid find options.\n");
 		return false;
@@ -216,7 +216,7 @@ static bool bytes_find(RzSearchFindOpt *fopts, void *user, ut64 address, const R
 	const ut8 *raw_buf = rz_buf_get_whole_hot_paths((RzBuffer *)buffer, &size);
 	void **it = NULL;
 	RzPVector /*<BytesPattern *>*/ *patterns = (RzPVector *)user;
-	*num_hits = 0;
+	*n_hits = 0;
 	rz_pvector_foreach (patterns, it) {
 		RzSearchBytesPattern *hp = (RzSearchBytesPattern *)*it;
 		if (hp->regex) {
@@ -236,7 +236,7 @@ static bool bytes_find(RzSearchFindOpt *fopts, void *user, ut64 address, const R
 					rz_pvector_free(matches);
 					return false;
 				}
-				(*num_hits)++;
+				(*n_hits)++;
 			}
 			rz_pvector_free(matches);
 			continue;
@@ -267,7 +267,7 @@ static bool bytes_find(RzSearchFindOpt *fopts, void *user, ut64 address, const R
 				rz_search_hit_free(hit);
 				return false;
 			}
-			(*num_hits)++;
+			(*n_hits)++;
 			offset += fopts->match_overlap ? 1 : hp->length;
 		}
 	}
