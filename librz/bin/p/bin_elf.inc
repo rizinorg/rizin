@@ -1032,6 +1032,21 @@ static void patch_reloc_hexagon(RZ_INOUT RzBuffer *buf_patched, const ut64 patch
 #define ADR_IMM_MASK2 (((1U << 19) - 1) << 5)
 #define ADR_IMM_MASK3 (((1U << 19) - 1) << 2)
 
+
+/**
+ * \brief Patches relocation type of relocation entries.
+ * 
+ * NOTE: Some relocation symbols (e.g. TLS, G) are not yet implemented and are set to 0.
+ * TODO: Implement remaining relocation symbols.
+ * 
+ * \param obj The ELF object.
+ * \param rel The relocation entry.
+ * \param S The symbol value.
+ * \param B The base address.
+ * \param L The load address.
+ * \param GOT The Global Offset Table address.
+*/
+
 static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel, ut64 S, ut64 B, ut64 L, ut64 GOT) {
 	ut16 e_machine = obj->ehdr.e_machine;
 	ut64 val = 0;
@@ -1227,17 +1242,78 @@ static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel,
 		break;
 	}
 	case EM_386:
+		// Relocation types using G and TLS calculations not implemented
+		int word = 0;
 		switch (rel->type) {
+		case RZ_386_8:
+			word = 1;
+			val = S + A;
+			break;
+		case RZ_386_16: 
+			word = 2;
+			val = S + A;
+			break;
 		case RZ_386_32:
+			word = 4;
+			val = S + A;
+			break;
 		case RZ_386_PC32:
-			rz_buf_read_at(obj->buf_patched, patch_addr, buf, 4);
-			val = rz_read_le32(buf) + S + A;
-			if (rel->type == RZ_386_PC32) {
-				val -= P;
-			}
+			word = 4;
+			val = S + A - P;
+			break;
+		case RZ_386_PLT32:
+			word = 4;
+			val = L + A - P;
+			break;
+		case RZ_386_GLOB_DAT:
+			word = 4;
+			val = S;
+			break;
+		case RZ_386_JMP_SLOT:
+			word = 4;
+			val = S;
+			break;
+		case RZ_386_RELATIVE:
+			word = 4;
+			val = B + A;
+			break;
+		case RZ_386_GOTOFF:
+			word = 4;
+			val = S + A - GOT;
+			break;
+		case RZ_386_GOTPC:
+			word = 4;
+			val = GOT + A - P;
+			break;
+		case RZ_386_32PLT:
+			word = 4;
+			val = L + A;
+			break;
+		case RZ_386_PC8:
+			word = 1;
+			val = S + A - P;
+			break;
+		case RZ_386_PC16:
+			word = 2;
+			val = S + A - P;
+			break;
+		default:
+			break;
+		}
+		switch (word) {
+		case 0:
+			break;
+		case 1:
+			buf[0] = val;
+			rz_buf_write_at(obj->buf_patched, patch_addr, buf, 1);
+			break;
+		case 2:
+			rz_write_le16(buf, val);
+			rz_buf_write_at(obj->buf_patched, patch_addr, buf, 2);
+			break;
+		case 4:
 			rz_write_le32(buf, val);
 			rz_buf_write_at(obj->buf_patched, patch_addr, buf, 4);
-		default:
 			break;
 		}
 		break;
