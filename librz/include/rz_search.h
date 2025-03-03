@@ -20,8 +20,6 @@ enum {
 	RZ_SEARCH_PATTERN,
 	RZ_SEARCH_STRING,
 	RZ_SEARCH_XREFS,
-	RZ_SEARCH_AES,
-	RZ_SEARCH_PRIV_KEY,
 	RZ_SEARCH_DELTAKEY,
 	RZ_SEARCH_MAGIC,
 	RZ_SEARCH_LAST
@@ -103,8 +101,6 @@ RZ_API void rz_search_string_prepare_backward(RzSearch *s);
 
 // TODO: is this an internal API?
 RZ_API int rz_search_mybinparse_update(RzSearch *s, ut64 from, const ut8 *buf, int len);
-RZ_API int rz_search_aes_update(RzSearch *s, ut64 from, const ut8 *buf, int len);
-RZ_API int rz_search_privkey_update(RzSearch *s, ut64 from, const ut8 *buf, int len);
 RZ_API int rz_search_magic_update(RzSearch *_s, ut64 from, const ut8 *buf, int len);
 RZ_API int rz_search_deltakey_update(RzSearch *s, ut64 from, const ut8 *buf, int len);
 RZ_API int rz_search_strings_update(RzSearch *s, ut64 from, const ut8 *buf, int len);
@@ -190,9 +186,21 @@ RZ_API bool rz_search_find_opt_set_inverse_match(RZ_NONNULL RzSearchFindOpt *opt
 RZ_API bool rz_search_find_opt_set_overlap_match(RZ_NONNULL RzSearchFindOpt *opt, bool overlap_match);
 RZ_API bool rz_search_find_opt_set_alignment(RZ_NONNULL RzSearchFindOpt *opt, size_t alignment);
 
-RZ_API RZ_OWN RzSearchCollection *rz_search_collection_aes_keys();
+typedef enum {
+	RZ_SEARCH_COLLECTION_CRYPTOGRAPHIC_AES_128 = 0,
+	RZ_SEARCH_COLLECTION_CRYPTOGRAPHIC_AES_192,
+	RZ_SEARCH_COLLECTION_CRYPTOGRAPHIC_AES_256,
+	RZ_SEARCH_COLLECTION_CRYPTOGRAPHIC_RSA,
+	RZ_SEARCH_COLLECTION_CRYPTOGRAPHIC_ECC,
+	RZ_SEARCH_COLLECTION_CRYPTOGRAPHIC_SAFECURVES,
+	RZ_SEARCH_COLLECTION_CRYPTOGRAPHIC_X509,
+	// Always the last element to define enum size
+	RZ_SEARCH_COLLECTION_CRYPTOGRAPHIC_ENUM_SIZE,
+} RzSearchCollectionCryptographicType;
 
-RZ_API RZ_OWN RzSearchCollection *rz_search_collection_private_keys();
+RZ_API RZ_OWN RzSearchCollection *rz_search_collection_cryptographic(bool add_all_methods);
+RZ_API bool rz_search_collection_cryptographic_add(RZ_NONNULL RzSearchCollection *col, RzSearchCollectionCryptographicType type);
+RZ_API bool rz_search_collection_cryptographic_name_to_type(RZ_NONNULL const char *name, RzSearchCollectionCryptographicType *type);
 
 RZ_API RZ_OWN RzSearchCollection *rz_search_collection_bytes();
 RZ_API bool rz_search_collection_bytes_add(RZ_NONNULL RzSearchCollection *col, RZ_NULLABLE const char *pattern_desc, RZ_NONNULL const ut8 *bytes, RZ_NULLABLE const ut8 *mask, size_t length);

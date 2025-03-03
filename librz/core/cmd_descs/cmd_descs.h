@@ -101,14 +101,10 @@ RZ_IPI RzCmdStatus rz_cmd_search_assemble_sl_handler(RzCore *core, int argc, con
 RZ_IPI RzCmdStatus rz_cmd_search_assemble_t_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "/atl"
 RZ_IPI RzCmdStatus rz_cmd_search_assemble_tl_handler(RzCore *core, int argc, const char **argv);
-// "/ca"
-RZ_IPI RzCmdStatus rz_cmd_search_aes_key_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/cc"
 RZ_IPI RzCmdStatus rz_cmd_search_collision_handler(RzCore *core, int argc, const char **argv);
-// "/cr"
-RZ_IPI RzCmdStatus rz_cmd_search_private_key_handler(RzCore *core, int argc, const char **argv);
-// "/cd"
-RZ_IPI RzCmdStatus rz_cmd_search_certs_handler(RzCore *core, int argc, const char **argv);
+// "/cm"
+RZ_IPI RzCmdStatus rz_cmd_search_cryptographic_material_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/d"
 RZ_IPI RzCmdStatus rz_cmd_search_deltified_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "/F"

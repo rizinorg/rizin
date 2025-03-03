@@ -120,8 +120,6 @@ RZ_API int rz_search_set_mode(RzSearch *s, int mode) {
 	switch (mode) {
 	case RZ_SEARCH_KEYWORD: s->update = rz_search_mybinparse_update; break;
 	case RZ_SEARCH_REGEXP: s->update = rz_search_regexp_update; break;
-	case RZ_SEARCH_AES: s->update = rz_search_aes_update; break;
-	case RZ_SEARCH_PRIV_KEY: s->update = rz_search_privkey_update; break;
 	case RZ_SEARCH_STRING: s->update = rz_search_strings_update; break;
 	case RZ_SEARCH_DELTAKEY: s->update = rz_search_deltakey_update; break;
 	case RZ_SEARCH_MAGIC: s->update = rz_search_magic_update; break;
