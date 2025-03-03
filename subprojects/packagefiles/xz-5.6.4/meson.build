@@ -1,6 +1,6 @@
 # liblzma is what upstream uses for their pkg-config name
 project('liblzma', 'c',
-  version : '5.4.3',
+  version : '5.6.4',
   license : ['PD', 'LGPL2', 'GPL2', 'GPL3'],
   meson_version: '>=0.55.0',
 )
