@@ -1271,7 +1271,6 @@ RZ_API RZ_BORROW RzCoreFile *rz_core_file_open(RZ_NONNULL RzCore *r, RZ_NONNULL 
 	if (loadaddr != UT64_MAX) {
 		rz_config_set_i(r->config, "bin.laddr", loadaddr);
 	}
-	rz_core_cmd0(r, "R!");
 beach:
 	r->times->file_open_time = rz_time_now_mono() - prev;
 	return fh;
