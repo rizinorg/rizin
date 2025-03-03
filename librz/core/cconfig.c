@@ -3747,7 +3747,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 		NULL);
 	SETPREF("search.prefix", "hit", "Prefix name in search hits label");
 	SETI("search.maxhits", 0, "Maximum number of hits ('0' means no limit)");
-	SETBPREF("search.show_progress", "true", "Show the search process.");
+	SETPREF("search.show_progress", "1", "Show the search process (true, false, intervals)");
 	SETICB("search.str.min_length", RZ_BIN_STRING_SEARCH_MIN_STRING, &cb_search_str_min_length, "Smallest string length (in number of characters).");
 	SETICB("search.str.max_length", RZ_BIN_STRING_SEARCH_BUFFER_SIZE, &cb_search_str_max_length, "Maximum string length (in number of characters).");
 	SETICB("search.str.max_region_size", RZ_BIN_STRING_SEARCH_MAX_REGION_SIZE, &cb_search_str_max_region_size, "Maximum allowable size for the string search interval between two memory regions.");

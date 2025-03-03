@@ -65,10 +65,10 @@ RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_setup_io_search_parameters(RzCore 
 		// Set search options known by core.
 		ut32 max_threads = rz_th_max_threads(rz_config_get_i(core->config, "search.max_threads"));
 		ut32 max_hits = rz_config_get_i(core->config, "search.maxhits");
-		bool show_progress = rz_config_get_b(core->config, "search.show_progress");
+		const char *show_progress = rz_config_get(core->config, "search.show_progress");
 		if (!(rz_search_opt_set_max_threads(search_opts, max_threads) &&
 			    rz_search_opt_set_max_hits(search_opts, max_hits) &&
-			    rz_search_opt_set_show_progress(search_opts, show_progress))) {
+			    rz_search_opt_set_show_progress_from_str(search_opts, show_progress))) {
 			RZ_LOG_ERROR("core: Failed to setup search options.\n");
 			goto fail;
 		}

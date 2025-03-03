@@ -128,10 +128,10 @@ RUN
 NAME=consistency btw /z and /x
 FILE=bins/elf/analysis/ls2
 CMDS=<<EOF
-!!rizin -qc "e search.show_progress=true; /z lib" -1 bins/elf/analysis/ls2 | grep "^.*[[:punct:]]0x.*" | sed "s/^.*[[:cntrl:]]//"~$0
+!!rizin -qc "e search.show_progress=intervals; /z lib" -1 bins/elf/analysis/ls2 | grep "^.*[[:punct:]]0x.*" | sed "s/^.*[[:cntrl:]]//"~$0
 !!rizin -qc "/z lib" bins/elf/analysis/ls2
 echo ----
-!!rizin -qc "e search.show_progress=true; /x `%x lib`" -1 bins/elf/analysis/ls2 | grep "^.*[[:punct:]]0x.*" | sed "s/^.*[[:cntrl:]]//"~$0
+!!rizin -qc "e search.show_progress=intervals; /x `%x lib`" -1 bins/elf/analysis/ls2 | grep "^.*[[:punct:]]0x.*" | sed "s/^.*[[:cntrl:]]//"~$0
 !!rizin -qc "/x `%x lib`" bins/elf/analysis/ls2
 echo ----
 /z lib > /dev/null

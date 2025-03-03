@@ -623,7 +623,7 @@ static bool search_iterator_io_map_cb(void *element, void *user) {
 	if (!find(ctx->opt->find_opts, col->user, at, buffer, ctx->hits, &n_hits)) {
 		RZ_LOG_ERROR("search: failed search at 0x%08" PFMT64x "\n", at);
 		goto failure;
-	} else if (ctx->opt->show_progress) {
+	} else if (ctx->opt->show_progress == RZ_SEARCH_PROGRESS_INTERVALS) {
 		RzSearchInterval *interval = rz_search_interval_new(*window, n_hits);
 		if (!interval || !rz_th_queue_push(ctx->intervals, interval, true)) {
 			RZ_LOG_ERROR("search: failed to push search interval to queue\n");

@@ -66,9 +66,15 @@ RZ_API bool rz_search_opt_set_max_threads(RZ_NONNULL RzSearchOpt *opt, RzThreadN
 	return true;
 }
 
-RZ_API bool rz_search_opt_set_show_progress(RZ_NONNULL RzSearchOpt *opt, bool show_progress) {
+RZ_API bool rz_search_opt_set_show_progress_from_str(RZ_NONNULL RzSearchOpt *opt, const char *show_progress) {
 	rz_return_val_if_fail(opt, false);
-	opt->show_progress = show_progress;
+	if (rz_str_is_false(show_progress)) {
+		opt->show_progress = RZ_SEARCH_PROGRESS_DISABLED;
+	} else if (!strcmp(show_progress, "intervals")) {
+		opt->show_progress = RZ_SEARCH_PROGRESS_INTERVALS;
+	} else {
+		opt->show_progress = RZ_SEARCH_PROGRESS_NUM_HITS;
+	}
 	return true;
 }
 
