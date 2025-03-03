@@ -7,35 +7,6 @@
 #include "rz_core.h"
 #include <rz_util/rz_num.h>
 
-static const char *help_msg_equal[] = {
-	"Usage:", " R[:!+-=ghH] [...]", " # connect with other instances of rizin",
-	"\nremote commands:", "", "",
-	"R", "", "list all open connections",
-	"R<", "[fd] cmd", "send output of local command to remote fd", // XXX may not be a special char
-	"R", "[fd] cmd", "exec cmd at remote 'fd' (last open is default one)",
-	"R!", " cmd", "run command via rz_io_system",
-	"R+", " [proto://]host:port", "connect to remote host:port (*rap://, raps://, tcp://, udp://, http://)",
-	"R-", "[fd]", "remove all hosts or host 'fd'",
-	"R=", "[fd]", "open remote session with host 'fd', 'q' to quit",
-	"R!=", "", "disable remote cmd mode",
-	"R=!", "", "enable remote cmd mode",
-	"\nservers:", "", "",
-	".:", "9000", "start the tcp server (echo x|nc ::1 9090 or curl ::1:9090/cmd/x)",
-	"R:", "port", "start the rap server (o rap://9999)",
-	"Rg", "[?]", "start the gdbserver",
-	"Rh", "[?]", "start the http webserver",
-	"RH", "[?]", "start the http webserver (and launch the web browser)",
-	"\nother:", "", "",
-	"R&", ":port", "start rap server in background (same as '& Rr')",
-	"R", ":host:port cmd", "run 'cmd' command on remote server",
-	"\nexamples:", "", "",
-	"R+", "tcp://localhost:9090/", "connect to: rizin -c.:9090 ./bin",
-	"R+", "rap://localhost:9090/", "connect to: rizin rap://:9090",
-	"R+", "http://localhost:9090/cmd/", "connect to: rizin -c'Rh 9090' bin",
-	"o ", "rap://:9090/", "start the rap server on tcp port 9090",
-	NULL
-};
-
 // "Rh"
 RZ_IPI RzCmdStatus rz_remote_webserver_start_fg_handler(RzCore *core, int argc, const char **argv) {
 	bool open_browser = RZ_STR_EQ(argv[1], "yes");
@@ -58,38 +29,7 @@ RZ_IPI RzCmdStatus rz_remote_webserver_stop_fg_handler(RzCore *core, int argc, c
 	return RZ_CMD_STATUS_ERROR;
 }
 
-RZ_IPI int rz_cmd_remote(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	switch (*input) {
-	case '\0': // "R"
-		rz_core_rtr_list(core);
-		break;
-	case 'j': // "Rj"
-		RZ_LOG_ERROR("core: list connections in json is not implemented\n");
-		break;
-	case '+': // "R+"
-		rz_core_rtr_add(core, input + 1);
-		break;
-	case '-': // "R-"
-		rz_core_rtr_remove(core, input + 1);
-		break;
-	// case ':': rz_core_rtr_cmds (core, input + 1); break;
-	case '<': // "R<"
-		rz_core_rtr_pushout(core, input + 1);
-		break;
-	case '=': // "R="
-		rz_core_rtr_session(core, input + 1);
-		break;
-	case '?': // "R?"
-		rz_core_cmd_help(core, help_msg_equal);
-		break;
-	default:
-		rz_core_rtr_cmd(core, input);
-		break;
-	}
-	return 0;
-}
-
+// "R"
 RZ_IPI RzCmdStatus rz_remote_handler(RzCore *core, int argc, const char **argv) {
 	if (argc == 1) {
 		rz_core_rtr_list(core);
@@ -131,6 +71,7 @@ RZ_IPI RzCmdStatus rz_remote_io_system_run_cmd_handler(RzCore *core, int argc, c
 	return RZ_CMD_STATUS_OK;
 }
 
+// "R<"
 RZ_IPI RzCmdStatus rz_remote_send_handler(RzCore *core, int argc, const char **argv) {
 	char *args = rz_str_array_join(argv + 1, argc - 1, " ");
 	rz_core_rtr_pushout(core, args);
@@ -138,16 +79,7 @@ RZ_IPI RzCmdStatus rz_remote_send_handler(RzCore *core, int argc, const char **a
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI int rz_io_system_run_oldhandler(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	char *res = rz_io_system(core->io, input);
-	if (res) {
-		rz_cons_printf("%s\n", res);
-		free(res);
-	}
-	return 0;
-}
-
+// "R+"
 RZ_IPI RzCmdStatus rz_remote_add_handler(RzCore *core, int argc, const char **argv) {
 	char *args = rz_str_array_join(argv + 1, argc - 1, " ");
 	rz_core_rtr_add(core, args);
@@ -155,6 +87,7 @@ RZ_IPI RzCmdStatus rz_remote_add_handler(RzCore *core, int argc, const char **ar
 	return RZ_CMD_STATUS_OK;
 }
 
+// "R-"
 RZ_IPI RzCmdStatus rz_remote_del_handler(RzCore *core, int argc, const char **argv) {
 	char *args = rz_str_array_join(argv + 1, argc - 1, " ");
 	rz_core_rtr_remove(core, args);
@@ -162,6 +95,7 @@ RZ_IPI RzCmdStatus rz_remote_del_handler(RzCore *core, int argc, const char **ar
 	return RZ_CMD_STATUS_OK;
 }
 
+// "R="
 RZ_IPI RzCmdStatus rz_remote_open_handler(RzCore *core, int argc, const char **argv) {
 	char *args = rz_str_array_join(argv + 1, argc - 1, " ");
 	rz_core_rtr_session(core, args);
@@ -169,6 +103,7 @@ RZ_IPI RzCmdStatus rz_remote_open_handler(RzCore *core, int argc, const char **a
 	return RZ_CMD_STATUS_OK;
 }
 
+// "R!="
 RZ_IPI RzCmdStatus rz_remote_mode_enable_handler(RzCore *core, int argc, const char **argv) {
 	const char *cmdremote = rz_str_trim_dup(argc > 1 ? argv[1] : "0");
 	rz_core_rtr_enable(core, cmdremote);
@@ -176,11 +111,13 @@ RZ_IPI RzCmdStatus rz_remote_mode_enable_handler(RzCore *core, int argc, const c
 	return RZ_CMD_STATUS_OK;
 }
 
+// "R=!"
 RZ_IPI RzCmdStatus rz_remote_mode_disable_handler(RzCore *core, int argc, const char **argv) {
 	RZ_FREE(core->cmdremote);
 	return RZ_CMD_STATUS_OK;
 }
 
+// "Rr"
 RZ_IPI RzCmdStatus rz_remote_rap_handler(RzCore *core, int argc, const char **argv) {
 	char *args = rz_str_array_join(argv + 1, argc - 1, " ");
 	args = rz_str_prepend(args, ":");
@@ -189,6 +126,7 @@ RZ_IPI RzCmdStatus rz_remote_rap_handler(RzCore *core, int argc, const char **ar
 	return RZ_CMD_STATUS_OK;
 }
 
+// "R&r"
 RZ_IPI RzCmdStatus rz_remote_rap_bg_handler(RzCore *core, int argc, const char **argv) {
 	char *args = rz_str_array_join(argv + 1, argc - 1, " ");
 	args = rz_str_prepend(args, "&:");
@@ -197,6 +135,7 @@ RZ_IPI RzCmdStatus rz_remote_rap_bg_handler(RzCore *core, int argc, const char *
 	return RZ_CMD_STATUS_OK;
 }
 
+// "Rt"
 RZ_IPI RzCmdStatus rz_remote_tcp_handler(RzCore *core, int argc, const char **argv) {
 	if (argc == 2) {
 		rz_core_rtr_cmds(core, argv[1]);
