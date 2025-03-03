@@ -101,7 +101,14 @@ RZ_API size_t rz_num_base_of_string(RzNum *num, RZ_NONNULL const char *str);
 RZ_API double rz_num_get_float(RzNum *num, const char *str);
 RZ_API bool rz_num_is_hex_prefix(const char *p);
 
-static inline st64 rz_num_abs(st64 num) {
+/**
+ * \brief Absolute value of a 64-bit number. Store result in `ut64`
+ * \return unsigned 64-bit number
+ */
+static inline ut64 rz_num_abs(st64 num) {
+	if (num == ST64_MIN) {
+		return UT64_GT0;
+	}
 	return num < 0 ? -num : num;
 }
 
