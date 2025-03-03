@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2009-2021 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include "rz_util/rz_assert.h"
 #define INTERACTIVE_MAX_REP 1024
 
 #include <rz_core.h>
@@ -5246,24 +5247,10 @@ static void cmd_descriptor_init(RzCore *core) {
 }
 
 RZ_API void rz_core_cmd_init(RzCore *core) {
-	struct {
-		const char *cmd;
-		const char *description;
-		RzCmdCb cb;
-	} cmds[] = {
-		{ "p", "print current block", rz_cmd_print },
-	};
-
+	rz_return_if_fail(core);
 	core->rcmd = rz_core_cmd_new(core, !!core->cons);
 	core->rcmd->nullcallback = rz_core_cmd_nullcallback;
 	core->cmd_descriptors = rz_list_newf(free);
-
-	size_t i;
-	for (i = 0; i < RZ_ARRAY_SIZE(cmds); i++) {
-		if (cmds[i].cb) {
-			rz_cmd_add(core->rcmd, cmds[i].cmd, cmds[i].cb);
-		}
-	}
 
 	cmd_descriptor_init(core);
 	rzshell_cmddescs_init(core);

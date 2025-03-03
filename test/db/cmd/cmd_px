@@ -401,3 +401,107 @@ EXPECT=<<EOF
       40: ]
 EOF
 RUN
+
+NAME=px/ x
+FILE=bins/elf/ls
+CMDS=<<EOF
+px/ 1 x b
+px/ 1 x w
+px/ 1 x d
+px/ 2 x d
+px/ 2 x h
+EOF
+EXPECT=<<EOF
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00005ae0  f3                                       .
+0x00005ae0  0xfa1e0ff3                                   ....
+0x00005ae0  0x8949ed31fa1e0ff3                       ....1.I.
+0x00005ae0  0x8949ed31fa1e0ff3  0xe48348e289485ed1   ....1.I..^H..H..
+0x00005ae0  0x0ff3 0xfa1e                                   ....
+EOF
+RUN
+
+NAME=px/ d
+FILE=bins/elf/ls
+CMDS=<<EOF
+px/ 1 d b
+px/ 1 d w
+px/ 2 d d
+px/ 2 d h
+EOF
+EXPECT=<<EOF
+- offset -     0    1    2    3    4    5    6    7    8    9    A    B    C    D    E    F  0123456789ABCDEF
+0x00005ae0   -13                                        .
+- offset -    0  1   2  3   4  5   6  7   8  9   A  B   C  D   E  F  0123456789ABCDEF
+0x00005ae0      -98693133                                            ....
+- offset -   0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F  0123456789ABCDEF
+0x00005ae0     -8554045218308091917    -1980659273309856047  ....1.I..^H..H..
+- offset -    0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F  0123456789ABCDEF
+0x00005ae0     4083   -1506                                ....
+EOF
+RUN
+
+NAME=px/ o
+FILE=bins/elf/ls
+CMDS=<<EOF
+px/ 1 o
+px/ 2 o d
+px/ 1 o h
+px/ 5 o b
+EOF
+EXPECT=<<EOF
+- offset -    0  1   2  3   4  5   6  7   8  9   A  B   C  D   E  F  0123456789ABCDEF
+0x00005ae0  363017 036372 061355 111211                      ....1.I.
+- offset -    0  1   2  3   4  5   6  7   8  9   A  B   C  D   E  F  0123456789ABCDEF
+0x00005ae0  363017 036372 061355 111211 321136 110211 342110 203344  ....1.I..^H..H..
+- offset -    0  1   2  3   4  5   6  7   8  9   A  B   C  D   E  F  0123456789ABCDEF
+0x00005ae0  363017                                     ..
+- offset -    0  1   2  3   4  5   6  7   8  9   A  B   C  D   E  F  0123456789ABCDEF
+0x00005ae0  363017 036372 061                             ....1
+EOF
+RUN
+
+NAME=px/ f
+FILE=bins/elf/ls
+CMDS=<<EOF
+px/ 8 f
+EOF
+EXPECT=<<EOF
+0x00005ae0 = -2.05176598e+35
+0x00005ae4 = -2.43060218e-33
+0x00005ae8 = -2.41187068e-33
+0x00005aec = -1.93742019e+22
+0x00005af0 = 55657408
+0x00005af4 = 1.77202259e-31
+0x00005af8 = -6.16297629e-31
+0x00005afc = 2.57017785e-38
+EOF
+RUN
+
+NAME=px/ error cases
+FILE=bins/elf/ls
+CMDS=<<EOF
+px/ 0 x
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=px/ s
+FILE=bins/elf/ls
+CMDS=<<EOF
+px/ 50 s w
+px/ 50 s d
+ps @ 0x00005c5a
+EOF
+EXPECT=<<EOF
+0x00005b8b u3UH
+0x00005b8b u3UH
+0x00005c02 H9G
+0x00005c5a AUATA
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN

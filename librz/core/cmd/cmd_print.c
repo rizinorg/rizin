@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_asm.h>
+#include <rz_cmd.h>
 #include <rz_core.h>
 #include <rz_config.h>
 #include <rz_util.h>
@@ -105,90 +106,6 @@ static const char *help_msg_at_at_at[] = {
 	"x", " @@@t", "threads",
 	"x", " @@@r", "regs",
 	// TODO: Add @@k sdb-query-expression-here
-	NULL
-};
-
-static const char *help_msg_p[] = {
-	"Usage:", "p[=68abcdDfiImrstuxz] [arg|len] [@addr]", "",
-	"p", "[b|B|xb] [len] ([S])", "bindump N bits skipping S bytes",
-	"p", "[iI][df] [len]", "print N ops/bytes (f=func) (see pi? and pdq)",
-	"p", "[kK] [len]", "print key in randomart (K is for mosaic)",
-	"p-", "[?][jh] [mode]", "bar|json|histogram blocks (mode: e?search.in)",
-	"p2", " [len]", "8x8 2bpp-tiles",
-	"p6", "[de] [len]", "base64 decode/encode",
-	"p8", "[?][j] [len]", "8bit hexpair list of bytes",
-	"p=", "[?][bep] [N] [L] [b]", "show entropy/printable chars/chars bars",
-	"pa", "[edD] [arg]", "pa:assemble  pa[dD]:disasm or pae: esil from hex",
-	"pb", "[?] [n]", "bitstream of N bits",
-	"pB", "[?] [n]", "bitstream of N bytes",
-	"pc", "[?][p] [len]", "output C (or python) format",
-	"pC", "[aAcdDxw] [rows]", "print disassembly in columns (see hex.cols and pdq)",
-	"pd", "[?] [sz] [a] [b]", "disassemble N opcodes (pd) or N bytes (pD)",
-	"pf", "[?][.nam] [fmt]", "print formatted data (pf.name, pf.name $<expr>)",
-	"pF", "[?][apx]", "print asn1, pkcs7 or x509",
-	"pg", "[?][x y w h] [cmd]", "create new visual gadget or print it (see pg? for details)",
-	"ph", "[?][=|hash] ([len])", "calculate hash for a block",
-	"pi", "[?][bdefrj] [num]", "print instructions",
-	"pI", "[?][iI][df] [len]", "print N instructions/bytes (f=func)",
-	"pm", "[?] [magic]", "print libmagic data (see pm? and /m?)",
-	"po", "[?] hex", "print operation applied to block (see po?)",
-	"pp", "[?][sz] [len]", "print patterns, see pp? for more help",
-	"pr", "[?][glx] [len]", "print N raw bytes (in lines or hexblocks, 'g'unzip)",
-	"ps", "[?][pwz] [len]", "print pascal/wide/zero-terminated strings",
-	"pt", "[?][dn] [len]", "print different timestamps",
-	"pu", "[?][w] [len]", "print N url encoded bytes (w=wide)",
-	"pv", "[?][jh] [mode]", "show variable/pointer/value in memory",
-	"px", "[?][owq] [len]", "hexdump of N bytes (o=octal, w=32bit, q=64bit)",
-	"plf", "", "print the RzIL output of the function",
-	NULL
-};
-
-static const char *help_msg_px[] = {
-	"Usage:", "px[0afoswqWqQ][f]", " # Print heXadecimal",
-	"px", "", "show hexdump",
-	"px/", "", "same as x/ in gdb (help x)",
-	"px0", "", "8bit hexpair list of bytes until zero byte",
-	"pxa", "", "show annotated hexdump",
-	"pxA", "[?]", "show op analysis color map",
-	"pxb", "", "dump bits in hexdump form", // should be px1?
-	"pxc", "", "show hexdump with comments",
-	"pxd", "[?1248]", "signed integer dump (1 byte, 2 and 4)",
-	"pxe", "", "emoji hexdump! :)",
-	"pxf", "", "show hexdump of current function",
-	"pxh", "", "show hexadecimal half-words dump (16bit)",
-	"pxH", "", "same as above, but one per line",
-	"pxi", "", "HexII compact binary representation",
-	"pxl", "", "display N lines (rows) of hexdump",
-	"pxo", "", "show octal dump",
-	"pxq", "", "show hexadecimal quad-words dump (64bit)",
-	"pxQ", "[q]", "same as above, but one per line",
-	"pxr", "[1248][qj]", "show hexword references (q=quiet, j=json)",
-	"pxs", "", "show hexadecimal in sparse mode",
-	"pxt", "[*.] [origin]", "show delta pointer table in rizin commands",
-	"pxw", "", "show hexadecimal words dump (32bit)",
-	"pxW", "[q]", "same as above, but one per line (q=quiet)",
-	"pxx", "", "show N bytes of hex-less hexdump",
-	"pxX", "", "show N words of hex-less hexdump",
-	NULL
-};
-
-const char *help_msg_pxA[] = {
-	"Usage: pxA [len]", "", "show op analysis color map",
-	"$$", "", "int/swi/trap/new\n",
-	"+-*/", "", "math ops\n",
-	"->", "", "push\n",
-	"..", "", "nop\n",
-	"<-", "", "pop\n",
-	"<<>>", "", "shift ops\n",
-	"==", "", "cmp/test\n",
-	"XX", "", "invalid\n",
-	"_C", "", "call\n",
-	"_J", "", "jump\n",
-	"_R", "", "ret\n",
-	"cJ", "", "conditional jump\n",
-	"io", "", "in/out ops\n",
-	"mv", "", "move,lea,li\n",
-	"|&^", "", "bin ops\n",
 	NULL
 };
 
@@ -2414,137 +2331,6 @@ RZ_IPI RzCmdStatus rz_esil_of_hex_handler(RzCore *core, int argc, const char **a
 	free(buf);
 	free(hex);
 	return RZ_CMD_STATUS_OK;
-}
-
-RZ_IPI int rz_cmd_print(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	st64 l;
-	int i, len, ret;
-	ut32 tbs = core->blocksize;
-	ut64 n, off;
-	ut64 tmpseek = UT64_MAX;
-	ret = 0;
-
-	rz_print_init_rowoffsets(core->print);
-	off = UT64_MAX;
-	l = len = core->blocksize;
-	if (input[0] && input[1]) {
-		int idx = (input[0] == 'h') ? 2 : 1;
-		const char *p = off ? strchr(input + idx, ' ') : NULL;
-		if (p) {
-			l = (int)rz_num_math(core->num, p + 1);
-			/* except disasm and memoryfmt (pd, pm) and overlay (po) */
-			if (input[0] != 'd' && input[0] != 't' && input[0] != 'D' && input[0] != 'm' &&
-				input[0] != 'a' && input[0] != 'f' && input[0] != 'i' &&
-				input[0] != 'I' && input[0] != 'o') {
-				if (l < 0) {
-					off = core->offset + l;
-					len = l = -l;
-					tmpseek = core->offset;
-				} else {
-					len = l;
-					if (l > core->blocksize) {
-						if (!rz_core_block_size(core, l)) {
-							goto beach;
-						}
-					}
-				}
-			} else {
-				len = l;
-			}
-		}
-	}
-
-	if (len > core->blocksize) {
-		len = core->blocksize;
-	}
-
-	if (input[0] != 'd' && input[0] != 'm' && input[0] != 'a' && input[0] != 'f' && input[0] != 'i') {
-		n = core->blocksize_max;
-		i = (int)n;
-		if (i != n) {
-			i = 0;
-		}
-		if (i && l > i) {
-			RZ_LOG_ERROR("core: This block size is too big (0x%" PFMT64x
-				     " < 0x%" PFMT64x "). Did you mean 'p%c @ %s' instead?\n",
-				n, l, *input, input + 2);
-			goto beach;
-		}
-	}
-	if (input[0] == 'x' || input[0] == 'D') {
-		if (l > 0 && tmpseek == UT64_MAX) {
-			if (!rz_core_block_size(core, l)) {
-				RZ_LOG_ERROR("core: This block size is too big. Did you mean 'p%c @ %s' instead?\n",
-					*input, input + 2);
-				goto beach;
-			}
-		}
-	}
-
-	if (input[0] && input[0] != 'z' && input[1] == 'f' && input[2] != '?') {
-		RzAnalysisFunction *f = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
-		// RZ_ANALYSIS_FCN_TYPE_FCN|RZ_ANALYSIS_FCN_TYPE_SYM);
-		if (f) {
-			len = rz_analysis_function_linear_size(f);
-			if (len > core->blocksize) {
-				len = core->blocksize;
-			}
-		} else {
-			RZ_LOG_ERROR("core: p: Cannot find function at 0x%08" PFMT64x "\n", core->offset);
-			core->num->value = 0;
-			goto beach;
-		}
-	}
-	// TODO figure out why `f eax=33; f test=eax; pa call test` misassembles if len is 0
-	core->num->value = len ? len : core->blocksize;
-	if (off != UT64_MAX) {
-		rz_core_seek(core, off, SEEK_SET);
-		rz_core_block_read(core);
-	}
-	switch (*input) {
-	case 'x': // "px"
-	{
-		bool show_offset = rz_config_get_i(core->config, "hex.offset");
-		if (show_offset) {
-			core->print->flags |= RZ_PRINT_FLAGS_OFFSET;
-		} else {
-			core->print->flags &= ~RZ_PRINT_FLAGS_OFFSET;
-		}
-		int show_header = rz_config_get_i(core->config, "hex.header");
-		if (show_header) {
-			core->print->flags |= RZ_PRINT_FLAGS_HEADER;
-		} else {
-			core->print->flags &= ~RZ_PRINT_FLAGS_HEADER;
-		}
-		/* Don't show comments in default case */
-		core->print->use_comments = false;
-	}
-		rz_cons_break_push(NULL, NULL);
-		switch (input[1]) {
-		case '/': // "px/"
-			rz_core_print_examine(core, input + 2);
-			break;
-		case '?':
-		default:
-			rz_core_cmd_help(core, help_msg_px);
-			break;
-		}
-		rz_cons_break_pop();
-		break;
-	default:
-		rz_core_cmd_help(core, help_msg_p);
-		break;
-	}
-beach:
-	if (tmpseek != UT64_MAX) {
-		rz_core_seek(core, tmpseek, SEEK_SET);
-		rz_core_block_read(core);
-	}
-	if (tbs != core->blocksize) {
-		rz_core_block_size(core, tbs);
-	}
-	return ret;
 }
 
 static int lenof(ut64 off, int two) {
@@ -6731,4 +6517,70 @@ RZ_IPI RzCmdStatus rz_print_hexdump_alias_handler(RzCore *core, int argc, const 
 // "xc"
 RZ_IPI RzCmdStatus rz_print_hexdump_comments_alias_handler(RzCore *core, int argc, const char **argv) {
 	return rz_print_hexdump_comments_handler(core, argc, argv);
+}
+
+static size_t format_width_to_num(size_t arch_bits, const char *width) {
+	rz_return_val_if_fail(width, 0);
+	switch (width[0]) {
+	default:
+		rz_warn_if_reached();
+		return 0;
+	case 'b': // # Byte = 1 bytes
+		return 1;
+	case 'h': // # Half word = 2 bytes
+		return 2;
+	case 'w': // # Word = 4 bytes
+		return 4;
+	case 'd': // # Double word = 8 bytes
+		return 8;
+	case 'a': // # Architecture width
+		return arch_bits > 0 ? arch_bits / 8 : 1;
+	}
+}
+
+// "px/"
+RZ_IPI RzCmdStatus rz_print_hexdump_format_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	ut64 num = rz_num_math(core->num, argv[1]);
+	if (!num) {
+		return RZ_CMD_STATUS_OK;
+	}
+	const char *format = argv[2];
+	size_t width = format_width_to_num(core->analysis ? core->analysis->bits : 0, argv[3]);
+	switch (format[0]) {
+	default:
+		RZ_LOG_ERROR("Invalid format: '%s'.\n", format);
+		return RZ_CMD_STATUS_ERROR;
+	case 'x':
+		return bool2status(rz_core_print_dump(core, state->mode, core->offset, width, num * width, RZ_CORE_PRINT_FORMAT_TYPE_HEXADECIMAL));
+	case 'o':
+		// Parameter n must be 1 here. Don't ask me why :( The rabbit whole is deep and defuse.
+		return bool2status(rz_core_print_dump(core, state->mode, core->offset, 1, num * width, RZ_CORE_PRINT_FORMAT_TYPE_OCTAL));
+	case 'd':
+		return bool2status(rz_core_print_dump(core, state->mode, core->offset, width, num * width, RZ_CORE_PRINT_FORMAT_TYPE_INTEGER));
+	case 'f': {
+		char *format = RZ_NEWS0(char, num + 1);
+		for (size_t i = 0; i < num; ++i) {
+			format[i] = 'f';
+		}
+		RzCmdStatus status = print_format(core, format, RZ_PRINT_MUSTSEE, state);
+		free(format);
+		return status;
+	}
+	case 's': {
+		size_t block_size_bak = core->blocksize;
+		size_t new_block_size = num * width;
+		if (!rz_core_block_size(core, new_block_size)) {
+			RZ_LOG_ERROR("Failed to set block size to %" PFMTSZu " bytes.\n", new_block_size);
+			return RZ_CMD_STATUS_ERROR;
+		}
+		const char *psb = "psb";
+		RzCmdStatus status = rz_print_strings_current_block_handler(core, 1, &psb, state->mode);
+		if (!rz_core_block_size(core, block_size_bak)) {
+			RZ_LOG_ERROR("Failed to reset block size to %" PFMTSZu " bytes.\n", block_size_bak);
+			return RZ_CMD_STATUS_ERROR;
+		}
+		return status;
+	}
+	}
+	return RZ_CMD_STATUS_ERROR;
 }

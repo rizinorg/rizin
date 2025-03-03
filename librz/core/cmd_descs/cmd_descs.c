@@ -75,6 +75,7 @@ static const RzCmdDescDetail query_sdb_get_set_details[2];
 static const RzCmdDescDetail cmd_print_byte_array_details[3];
 static const RzCmdDescDetail pf_details[3];
 static const RzCmdDescDetail print_string_details[2];
+static const RzCmdDescDetail print_hexdump_format_details[4];
 static const RzCmdDescDetail print_rising_and_falling_entropy_details[2];
 static const RzCmdDescDetail interactive_visual_details[2];
 static const RzCmdDescDetail write_details[3];
@@ -743,6 +744,7 @@ static const RzCmdDescArg print_value2_args[2];
 static const RzCmdDescArg print_value4_args[2];
 static const RzCmdDescArg print_value8_args[2];
 static const RzCmdDescArg print_hexdump_args[2];
+static const RzCmdDescArg print_hexdump_format_args[4];
 static const RzCmdDescArg print_hexdump_annotated_args[2];
 static const RzCmdDescArg print_op_analysis_color_map_args[2];
 static const RzCmdDescArg print_hexdump_bits_args[2];
@@ -16256,6 +16258,67 @@ static const RzCmdDescHelp print_hexdump_help = {
 	.args = print_hexdump_args,
 };
 
+static const RzCmdDescDetailEntry print_hexdump_format_number_detail_entries[] = {
+	{ .text = "", .arg_str = NULL, .comment = "Number of elements to print." },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry print_hexdump_format_format_detail_entries[] = {
+	{ .text = "o", .arg_str = NULL, .comment = "Octal" },
+	{ .text = "d", .arg_str = NULL, .comment = "Decimal" },
+	{ .text = "x", .arg_str = NULL, .comment = "Hex" },
+	{ .text = "f", .arg_str = NULL, .comment = "Float - Alias for: 'pf ffff...' (<number> times 'f'. <width> is ignored)." },
+	{ .text = "i", .arg_str = NULL, .comment = "Instruction - Alias for: 'pdq <number> !@ <number * width>'." },
+	{ .text = "s", .arg_str = NULL, .comment = "String - Alias for: 'psb !@ <number * width>'." },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry print_hexdump_format_width_detail_entries[] = {
+	{ .text = "b", .arg_str = NULL, .comment = "Byte        = 1 bytes" },
+	{ .text = "h", .arg_str = NULL, .comment = "Half word   = 2 bytes" },
+	{ .text = "w", .arg_str = NULL, .comment = "Word        = 4 bytes" },
+	{ .text = "d", .arg_str = NULL, .comment = "Double word = 8 bytes" },
+	{ .text = "a", .arg_str = NULL, .comment = "Architecture width as bytes." },
+	{ 0 },
+};
+static const RzCmdDescDetail print_hexdump_format_details[] = {
+	{ .name = "number", .entries = print_hexdump_format_number_detail_entries },
+	{ .name = "format", .entries = print_hexdump_format_format_detail_entries },
+	{ .name = "width", .entries = print_hexdump_format_width_detail_entries },
+	{ 0 },
+};
+static const char *print_hexdump_format_format_choices[] = { "o", "d", "x", "f", "i", "s", NULL };
+
+static const char *print_hexdump_format_width_choices[] = { "b", "h", "w", "d", "a", NULL };
+static const RzCmdDescArg print_hexdump_format_args[] = {
+	{
+		.name = "number",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.default_value = "1",
+
+	},
+	{
+		.name = "format",
+		.type = RZ_CMD_ARG_TYPE_CHOICES,
+		.default_value = "x",
+		.choices.choices = print_hexdump_format_format_choices,
+
+	},
+	{
+		.name = "width",
+		.type = RZ_CMD_ARG_TYPE_CHOICES,
+		.default_value = "a",
+		.choices.choices = print_hexdump_format_width_choices,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_hexdump_format_help = {
+	.summary = "Print formatted bytes.",
+	.details = print_hexdump_format_details,
+	.args = print_hexdump_format_args,
+};
+
 static const RzCmdDescArg print_hexdump_annotated_args[] = {
 	{
 		.name = "len",
@@ -23692,7 +23755,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *open_exchange_cd = rz_cmd_desc_argv_new(core->rcmd, o_cd, "ox", rz_open_exchange_handler, &open_exchange_help);
 	rz_warn_if_fail(open_exchange_cd);
 
-	RzCmdDesc *cmd_print_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "p", rz_cmd_print, &cmd_print_help);
+	RzCmdDesc *cmd_print_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "p", NULL, NULL, &cmd_print_help);
 	rz_warn_if_fail(cmd_print_cd);
 	RzCmdDesc *cmd_print_2bpp_tiles_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_cd, "p2", rz_cmd_print_2bpp_tiles_handler, &cmd_print_2bpp_tiles_help);
 	rz_warn_if_fail(cmd_print_2bpp_tiles_cd);
@@ -24113,6 +24176,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *px_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_print_cd, "px", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_hexdump_handler, &print_hexdump_help, &px_help);
 	rz_warn_if_fail(px_cd);
+	RzCmdDesc *print_hexdump_format_cd = rz_cmd_desc_argv_state_new(core->rcmd, px_cd, "px/", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_hexdump_format_handler, &print_hexdump_format_help);
+	rz_warn_if_fail(print_hexdump_format_cd);
+
 	RzCmdDesc *print_hexdump_annotated_cd = rz_cmd_desc_argv_new(core->rcmd, px_cd, "pxa", rz_print_hexdump_annotated_handler, &print_hexdump_annotated_help);
 	rz_warn_if_fail(print_hexdump_annotated_cd);
 

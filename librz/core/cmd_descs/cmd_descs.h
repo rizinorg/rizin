@@ -2178,6 +2178,8 @@ RZ_IPI RzCmdStatus rz_print_value4_handler(RzCore *core, int argc, const char **
 RZ_IPI RzCmdStatus rz_print_value8_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "px"
 RZ_IPI RzCmdStatus rz_print_hexdump_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "px/"
+RZ_IPI RzCmdStatus rz_print_hexdump_format_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "pxa"
 RZ_IPI RzCmdStatus rz_print_hexdump_annotated_handler(RzCore *core, int argc, const char **argv);
 // "pxA"
@@ -2336,8 +2338,6 @@ RZ_IPI RzCmdStatus rz_print_equal_equal_priv_visual_handler(RzCore *core, int ar
 RZ_IPI RzCmdStatus rz_print_equal_equal_z_handler(RzCore *core, int argc, const char **argv);
 // "p==zv"
 RZ_IPI RzCmdStatus rz_print_equal_equal_z_visual_handler(RzCore *core, int argc, const char **argv);
-// "p"
-RZ_IPI int rz_cmd_print(void *data, const char *input);
 // "Ps"
 RZ_IPI RzCmdStatus rz_project_save_handler(RzCore *core, int argc, const char **argv);
 // "Po"

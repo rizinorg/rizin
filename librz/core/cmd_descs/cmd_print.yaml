@@ -1300,6 +1300,67 @@ commands:
           - name: len
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
+      - name: px/
+        summary: Print formatted bytes.
+        cname: print_hexdump_format
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: number
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            default_value: 1
+          - name: format
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: x
+            choices:
+              - "o" # Octal
+              - "d" # Decimal
+              - "x" # Hex
+              - "f" # Float
+              - "i" # Instruction
+              - "s" # String
+          - name: width
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: a
+            choices:
+              - "b" # Byte = 1 bytes
+              - "h" # Half word = 2 bytes
+              - "w" # Word = 4 bytes
+              - "d" # Double = 8 bytes
+              - "a" # Architecture width
+        details:
+          - name: "number"
+            entries:
+              - text: ""
+                comment: "Number of elements to print."
+          - name: "format"
+            entries:
+              - text: "o"
+                comment: "Octal"
+              - text: "d"
+                comment: "Decimal"
+              - text: "x"
+                comment: "Hex"
+              - text: "f"
+                comment: "Float - Alias for: 'pf ffff...' (<number> times 'f'. <width> is ignored)."
+              - text: "i"
+                comment: "Instruction - Alias for: 'pdq <number> !@ <number * width>'."
+              - text: "s"
+                comment: "String - Alias for: 'psb !@ <number * width>'."
+          - name: "width"
+            entries:
+              - text: "b"
+                comment: "Byte        = 1 bytes"
+              - text: "h"
+                comment: "Half word   = 2 bytes"
+              - text: "w"
+                comment: "Word        = 4 bytes"
+              - text: "d"
+                comment: "Double word = 8 bytes"
+              - text: "a"
+                comment: "Architecture width as bytes."
       - name: pxa
         summary: show annotated hexdump
         cname: print_hexdump_annotated
