@@ -105,21 +105,6 @@ RZ_IPI int rz_cmd_remote(void *data, const char *input) {
 	case 'j': // "Rj"
 		RZ_LOG_ERROR("core: list connections in json is not implemented\n");
 		break;
-	case '!': // "R!"
-		if (input[1] == 'q') {
-			RZ_FREE(core->cmdremote);
-		} else if (input[1] == '=') { // R!=0 or R!= for iosystem
-			const char *cmdremote = rz_str_trim_dup(input + 2);
-			rz_core_rtr_enable(core, cmdremote);
-			RZ_FREE(cmdremote);
-		} else {
-			char *res = rz_io_system(core->io, input + 1);
-			if (res) {
-				rz_cons_printf("%s\n", res);
-				free(res);
-			}
-		}
-		break;
 	case '+': // "R+"
 		rz_core_rtr_add(core, input + 1);
 		break;
@@ -163,6 +148,16 @@ RZ_IPI RzCmdStatus rz_remote_handler(RzCore *core, int argc, const char **argv) 
 		return RZ_CMD_STATUS_OK;
 	}
 	return RZ_CMD_STATUS_ERROR;
+}
+
+// R!
+RZ_IPI RzCmdStatus rz_remote_io_system_run_cmd_handler(RzCore *core, int argc, const char **argv) {
+	char *res = rz_io_system(core->io, argv[1]);
+	if (res) {
+		rz_cons_printf("%s\n", res);
+		free(res);
+	}
+	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_remote_send_handler(RzCore *core, int argc, const char **argv) {

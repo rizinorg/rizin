@@ -23,10 +23,11 @@ commands:
       - name: cmd
         type: RZ_CMD_ARG_TYPE_CMD
   - name: R!
-    cname: io_system_run_oldhandler
-    summary: Run <cmd> via rz_io_system
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
-    args_str: "[<cmd>]"
+    cname: remote_io_system_run_cmd
+    summary: Run command via rz_io_system
+    args:
+      - name: cmd
+        type: RZ_CMD_ARG_TYPE_CMD
     options: ""
   - name: R+
     cname: remote_add

@@ -178,7 +178,7 @@ RZ_IPI RzCmdStatus rz_remote_handler(RzCore *core, int argc, const char **argv);
 // "R<"
 RZ_IPI RzCmdStatus rz_remote_send_handler(RzCore *core, int argc, const char **argv);
 // "R!"
-RZ_IPI int rz_io_system_run_oldhandler(void *data, const char *input);
+RZ_IPI RzCmdStatus rz_remote_io_system_run_cmd_handler(RzCore *core, int argc, const char **argv);
 // "R+"
 RZ_IPI RzCmdStatus rz_remote_add_handler(RzCore *core, int argc, const char **argv);
 // "R-"
