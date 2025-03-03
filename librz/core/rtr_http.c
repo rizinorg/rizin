@@ -327,15 +327,13 @@ static int rtr_http_stop(RzCore *u) {
 }
 
 // return 1 on error
-static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char *path) {
+static int rz_core_rtr_http_run(RzCore *core, bool open_browser) {
 	char headers[128] = RZ_EMPTY;
 	RzSocketHTTPRequest *rs;
-	char buf[32];
 	int ret = 0;
 	RzSocket *s;
 	RzSocketHTTPOptions so;
 	char *dir;
-	int iport;
 	const char *bind = rz_config_get(core->config, "http.bind");
 	const char *root = rz_config_get(core->config, "http.root");
 	const char *homeroot = rz_config_get(core->config, "http.homeroot");
@@ -349,25 +347,7 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 			RZ_LOG_ERROR("core: cannot find http.root or http.homeroot\n");
 		}
 	}
-	if (!path) {
-		return false;
-	}
-	char *arg = strchr(path, ' ');
-	if (arg) {
-		path = arg + 1;
-	}
-	if (path && atoi(path)) {
-		port = path;
-		rz_config_set(core->config, "http.port", port);
-		path = NULL;
-	}
 
-	if (!strcmp(port, "0")) {
-		rz_num_irand();
-		iport = 1024 + rz_num_rand32(45256);
-		snprintf(buf, sizeof(buf), "%d", iport);
-		port = buf;
-	}
 	s = rz_socket_new(false);
 	s->local = is_localhost(bind);
 	memset(&so, 0, sizeof(so));
@@ -377,10 +357,10 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 		return 1;
 	}
 
-	if (browse == 'H') {
+	if (open_browser) {
 		const char *browser = rz_config_get(core->config, "http.browser");
-		rz_sys_cmdf("%s http://%s:%d/%s &",
-			browser, bind, atoi(port), path ? path : "");
+		rz_sys_cmdf("%s http://%s:%s/cmd/ &",
+			browser, bind, port);
 	}
 
 	so.httpauth = rz_config_get_i(core->config, "http.auth");
@@ -552,23 +532,15 @@ the_end:
 	return ret;
 }
 
-RZ_API int rz_core_rtr_http(RzCore *core, int launch, int browse, const char *path) {
-	int ret = 0;
-	if (launch == '-') {
-		return 0;
-	}
+RZ_API bool rz_core_rtr_http(RzCore *core, bool open_browser) {
+	rz_return_val_if_fail(core, 1);
 	if (core->http_up) {
 		RZ_LOG_ERROR("core: http server is already running\n");
-		return 1;
+		return false;
 	}
-	if (launch == '&') {
-		while (*path == '&') {
-			path++;
-		}
-		return rz_core_cmdf(core, "& Rh%s", path);
-	}
+	int ret = 0;
 	do {
-		ret = rz_core_rtr_http_run(core, launch, browse, path);
+		ret = rz_core_rtr_http_run(core, open_browser);
 	} while (ret == -2);
-	return ret;
+	return ret != 1;
 }

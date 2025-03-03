@@ -172,6 +172,7 @@ static const RzCmdDescArg remote_mode_enable_args[2];
 static const RzCmdDescArg remote_rap_args[3];
 static const RzCmdDescArg remote_gdb_args[4];
 static const RzCmdDescArg remote_gdb_debug_args[4];
+static const RzCmdDescArg remote_webserver_start_fg_args[2];
 static const RzCmdDescArg remote_tcp_args[3];
 static const RzCmdDescArg remote_rap_bg_args[2];
 static const RzCmdDescArg cmd_help_search_args[2];
@@ -2641,12 +2642,39 @@ static const RzCmdDescHelp remote_gdb_debug_help = {
 	.args = remote_gdb_debug_args,
 };
 
-static const RzCmdDescHelp equal_h_handler_old_help = {
-	.summary = "Start the http webserver",
+static const RzCmdDescHelp Rh_help = {
+	.summary = "HTTP webserver commands.",
+};
+static const char *remote_webserver_start_fg_launch_browser_choices[] = { "yes", "no", NULL };
+static const RzCmdDescArg remote_webserver_start_fg_args[] = {
+	{
+		.name = "launch_browser",
+		.type = RZ_CMD_ARG_TYPE_CHOICES,
+		.default_value = "no",
+		.choices.choices = remote_webserver_start_fg_launch_browser_choices,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp remote_webserver_start_fg_help = {
+	.summary = "Start the HTTP webserver in foreground.",
+	.args = remote_webserver_start_fg_args,
 };
 
-static const RzCmdDescHelp equal_H_handler_old_help = {
-	.summary = "Start the http webserver (and launch the web browser)",
+static const RzCmdDescArg remote_webserver_restart_fg_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp remote_webserver_restart_fg_help = {
+	.summary = "Restart the HTTP webserver in foreground.",
+	.args = remote_webserver_restart_fg_args,
+};
+
+static const RzCmdDescArg remote_webserver_stop_fg_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp remote_webserver_stop_fg_help = {
+	.summary = "Stop the HTTP webserver in foreground.",
+	.args = remote_webserver_stop_fg_args,
 };
 
 static const RzCmdDescArg remote_tcp_args[] = {
@@ -21127,11 +21155,13 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *remote_gdb_debug_cd = rz_cmd_desc_argv_new(core->rcmd, Rg_cd, "Rg!", rz_remote_gdb_debug_handler, &remote_gdb_debug_help);
 	rz_warn_if_fail(remote_gdb_debug_cd);
 
-	RzCmdDesc *equal_h_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, R_cd, "Rh", rz_equal_h_handler_old, &equal_h_handler_old_help);
-	rz_warn_if_fail(equal_h_handler_old_cd);
+	RzCmdDesc *Rh_cd = rz_cmd_desc_group_new(core->rcmd, R_cd, "Rh", rz_remote_webserver_start_fg_handler, &remote_webserver_start_fg_help, &Rh_help);
+	rz_warn_if_fail(Rh_cd);
+	RzCmdDesc *remote_webserver_restart_fg_cd = rz_cmd_desc_argv_new(core->rcmd, Rh_cd, "Rh*", rz_remote_webserver_restart_fg_handler, &remote_webserver_restart_fg_help);
+	rz_warn_if_fail(remote_webserver_restart_fg_cd);
 
-	RzCmdDesc *equal_H_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, R_cd, "RH", rz_equal_H_handler_old, &equal_H_handler_old_help);
-	rz_warn_if_fail(equal_H_handler_old_cd);
+	RzCmdDesc *remote_webserver_stop_fg_cd = rz_cmd_desc_argv_new(core->rcmd, Rh_cd, "Rh--", rz_remote_webserver_stop_fg_handler, &remote_webserver_stop_fg_help);
+	rz_warn_if_fail(remote_webserver_stop_fg_cd);
 
 	RzCmdDesc *remote_tcp_cd = rz_cmd_desc_argv_new(core->rcmd, R_cd, "Rt", rz_remote_tcp_handler, &remote_tcp_help);
 	rz_warn_if_fail(remote_tcp_cd);

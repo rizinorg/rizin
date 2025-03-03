@@ -1080,7 +1080,7 @@ RZ_API void rz_core_rtr_add(RzCore *core, const char *input);
 RZ_API void rz_core_rtr_remove(RzCore *core, const char *input);
 RZ_API void rz_core_rtr_session(RzCore *core, const char *input);
 RZ_API void rz_core_rtr_cmd(RzCore *core, const char *input);
-RZ_API int rz_core_rtr_http(RzCore *core, int launch, int browse, const char *path);
+RZ_API bool rz_core_rtr_http(RzCore *core, bool open_browser);
 RZ_API bool rz_core_rtr_gdb(RzCore *core, ut32 port, const char *file_path, RZ_NULLABLE const char *gdb_args, bool debug_msg);
 
 /// Legacy search

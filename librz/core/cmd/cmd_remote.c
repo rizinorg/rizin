@@ -36,47 +36,26 @@ static const char *help_msg_equal[] = {
 	NULL
 };
 
-static const char *help_msg_equalh[] = {
-	"Usage:", " R[hH] [...]", " # http server",
-	"http server:", "", "",
-	"Rh", " port", "listen for http connections (rizin -qcRH /bin/ls)",
-	"Rh-", "", "stop background webserver",
-	"Rh--", "", "stop foreground webserver",
-	"Rh*", "", "restart current webserver",
-	"Rh&", " port", "start http server in background",
-	"RH", " port", "launch browser and listen for http",
-	"RH&", " port", "launch browser and listen for http in background",
-	NULL
-};
-
-static int getArg(char ch, int def) {
-	switch (ch) {
-	case '&':
-	case '-':
-		return ch;
+// "Rh"
+RZ_IPI RzCmdStatus rz_remote_webserver_start_fg_handler(RzCore *core, int argc, const char **argv) {
+	bool open_browser = RZ_STR_EQ(argv[1], "yes");
+	if (!rz_core_rtr_http(core, open_browser)) {
+		RZ_LOG_ERROR("Webserver exited with an error.\n");
+		return RZ_CMD_STATUS_ERROR;
 	}
-	return def;
+	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI int rz_equal_h_handler_old(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	if (input[0] == '?') {
-		rz_core_cmd_help(core, help_msg_equalh);
-	} else {
-		rz_core_rtr_http(core, getArg(input[0], 'h'), 'h', input);
-	}
-	return 0;
+// "Rh*"
+RZ_IPI RzCmdStatus rz_remote_webserver_restart_fg_handler(RzCore *core, int argc, const char **argv) {
+	RZ_LOG_ERROR("Rh* is only handled by the HTTP server.\n");
+	return RZ_CMD_STATUS_ERROR;
 }
 
-RZ_IPI int rz_equal_H_handler_old(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	if (input[0] == '?') {
-		rz_core_cmd_help(core, help_msg_equalh);
-	} else {
-		const char *arg = rz_str_trim_head_ro(input);
-		rz_core_rtr_http(core, getArg(input[0], 'H'), 'H', arg);
-	}
-	return 0;
+// "Rh--"
+RZ_IPI RzCmdStatus rz_remote_webserver_stop_fg_handler(RzCore *core, int argc, const char **argv) {
+	RZ_LOG_ERROR("Rh-- is only handled by the HTTP server.\n");
+	return RZ_CMD_STATUS_ERROR;
 }
 
 RZ_IPI int rz_cmd_remote(void *data, const char *input) {
@@ -100,12 +79,6 @@ RZ_IPI int rz_cmd_remote(void *data, const char *input) {
 		break;
 	case '=': // "R="
 		rz_core_rtr_session(core, input + 1);
-		break;
-	case 'h': // "Rh"
-		rz_equal_h_handler_old(core, input + 1);
-		break;
-	case 'H': // "RH"
-		rz_equal_H_handler_old(core, input + 1);
 		break;
 	case '?': // "R?"
 		rz_core_cmd_help(core, help_msg_equal);

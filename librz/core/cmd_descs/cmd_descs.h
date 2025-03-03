@@ -196,9 +196,11 @@ RZ_IPI RzCmdStatus rz_remote_gdb_handler(RzCore *core, int argc, const char **ar
 // "Rg!"
 RZ_IPI RzCmdStatus rz_remote_gdb_debug_handler(RzCore *core, int argc, const char **argv);
 // "Rh"
-RZ_IPI int rz_equal_h_handler_old(void *data, const char *input);
-// "RH"
-RZ_IPI int rz_equal_H_handler_old(void *data, const char *input);
+RZ_IPI RzCmdStatus rz_remote_webserver_start_fg_handler(RzCore *core, int argc, const char **argv);
+// "Rh*"
+RZ_IPI RzCmdStatus rz_remote_webserver_restart_fg_handler(RzCore *core, int argc, const char **argv);
+// "Rh--"
+RZ_IPI RzCmdStatus rz_remote_webserver_stop_fg_handler(RzCore *core, int argc, const char **argv);
 // "Rt"
 RZ_IPI RzCmdStatus rz_remote_tcp_handler(RzCore *core, int argc, const char **argv);
 // "R&r"

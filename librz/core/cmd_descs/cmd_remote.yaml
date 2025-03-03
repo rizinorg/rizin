@@ -94,13 +94,26 @@ commands:
           type: RZ_CMD_ARG_TYPE_STRING
           optional: true
   - name: Rh
-    cname: equal_h_handler_old
-    summary: Start the http webserver
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
-  - name: RH
-    cname: equal_H_handler_old
-    summary: Start the http webserver (and launch the web browser)
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    summary: HTTP webserver commands.
+    subcommands:
+    - name: Rh
+      summary: Start the HTTP webserver in foreground.
+      cname: remote_webserver_start_fg
+      args:
+        - name: "launch_browser"
+          type: RZ_CMD_ARG_TYPE_CHOICES
+          default_value: "no"
+          choices:
+            - "yes"
+            - "no"
+    - name: Rh*
+      summary: Restart the HTTP webserver in foreground.
+      cname: remote_webserver_restart_fg
+      args: []
+    - name: Rh--
+      summary: Stop the HTTP webserver in foreground.
+      cname: remote_webserver_stop_fg
+      args: []
   - name: Rt
     cname: remote_tcp
     summary: Start the tcp server
