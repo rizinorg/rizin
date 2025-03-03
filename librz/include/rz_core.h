@@ -1081,7 +1081,7 @@ RZ_API void rz_core_rtr_remove(RzCore *core, const char *input);
 RZ_API void rz_core_rtr_session(RzCore *core, const char *input);
 RZ_API void rz_core_rtr_cmd(RzCore *core, const char *input);
 RZ_API int rz_core_rtr_http(RzCore *core, int launch, int browse, const char *path);
-RZ_API int rz_core_rtr_gdb(RzCore *core, int launch, const char *path);
+RZ_API bool rz_core_rtr_gdb(RzCore *core, ut32 port, const char *file_path, RZ_NULLABLE const char *gdb_args, bool debug_msg);
 
 /// Legacy search
 RZ_API int rz_core_search_preludes(RzCore *core, bool log);

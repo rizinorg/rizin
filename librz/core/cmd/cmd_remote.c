@@ -5,6 +5,7 @@
 
 #include "rz_cmd.h"
 #include "rz_core.h"
+#include <rz_util/rz_num.h>
 
 static const char *help_msg_equal[] = {
 	"Usage:", " R[:!+-=ghH] [...]", " # connect with other instances of rizin",
@@ -48,14 +49,6 @@ static const char *help_msg_equalh[] = {
 	NULL
 };
 
-static const char *help_msg_equalg[] = {
-	"Usage:", " R[g] [...]", " # gdb server",
-	"gdbserver:", "", "",
-	"Rg", " port file [args]", "listen on 'port' debugging 'file' using gdbserver",
-	"Rg!", " port file [args]", "same as above, but debug protocol messages (like gdbserver --remote-debug)",
-	NULL
-};
-
 static int getArg(char ch, int def) {
 	switch (ch) {
 	case '&':
@@ -63,16 +56,6 @@ static int getArg(char ch, int def) {
 		return ch;
 	}
 	return def;
-}
-
-RZ_IPI int rz_equal_g_handler_old(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	if (input[0] == '?') {
-		rz_core_cmd_help(core, help_msg_equalg);
-	} else {
-		rz_core_rtr_gdb(core, getArg(input[0], 'g'), input);
-	}
-	return 0;
 }
 
 RZ_IPI int rz_equal_h_handler_old(void *data, const char *input) {
@@ -118,9 +101,6 @@ RZ_IPI int rz_cmd_remote(void *data, const char *input) {
 	case '=': // "R="
 		rz_core_rtr_session(core, input + 1);
 		break;
-	case 'g': // "Rg"
-		rz_equal_g_handler_old(core, input + 1);
-		break;
 	case 'h': // "Rh"
 		rz_equal_h_handler_old(core, input + 1);
 		break;
@@ -148,6 +128,24 @@ RZ_IPI RzCmdStatus rz_remote_handler(RzCore *core, int argc, const char **argv) 
 		return RZ_CMD_STATUS_OK;
 	}
 	return RZ_CMD_STATUS_ERROR;
+}
+
+// "Rg"
+RZ_IPI RzCmdStatus rz_remote_gdb_handler(RzCore *core, int argc, const char **argv) {
+	ut32 port = rz_num_math(core->num, argv[1]);
+	if (!rz_core_rtr_gdb(core, port, argv[2], argc > 3 ? argv[3] : NULL, false)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+// "Rg!"
+RZ_IPI RzCmdStatus rz_remote_gdb_debug_handler(RzCore *core, int argc, const char **argv) {
+	ut32 port = rz_num_math(core->num, argv[1]);
+	if (!rz_core_rtr_gdb(core, port, argv[2], argc > 3 ? argv[3] : NULL, true)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return RZ_CMD_STATUS_OK;
 }
 
 // R!

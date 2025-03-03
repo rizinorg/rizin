@@ -416,69 +416,41 @@ static int rz_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd,
 }
 
 // path = "<port> <file_name>"
-static int rz_core_rtr_gdb_run(RzCore *core, int launch, const char *path) {
+static bool rz_core_rtr_gdb_run(RzCore *core, ut32 port, const char *file_path, const char *gdb_args, bool debug_msg) {
 	RzSocket *sock;
-	int p, ret;
-	bool debug_msg = false;
-	char port[10];
-	char *file = NULL, *args = NULL;
 	libgdbr_t *g;
+	char port_str[11] = { 0 };
+	snprintf(port_str, sizeof(port_str) - 1, "%" PFMT32d, port);
 
-	if (!core || !path) {
-		return -1;
+	if (!core || !file_path) {
+		return false;
 	}
-	if (*path == '!') {
-		debug_msg = true;
-		path++;
-	}
-	if (!(path = rz_str_trim_head_ro(path)) || !*path) {
-		RZ_LOG_ERROR("core: gdbserver: Port not specified\n");
-		return -1;
-	}
-	if (!(p = atoi(path)) || p < 0 || p > 65535) {
-		RZ_LOG_ERROR("core: gdbserver: Invalid port: %s\n", port);
-		return -1;
-	}
-	snprintf(port, sizeof(port) - 1, "%d", p);
-	if (!(file = strchr(path, ' '))) {
-		RZ_LOG_ERROR("core: gdbserver: File not specified\n");
-		return -1;
-	}
-	if (!(file = (char *)rz_str_trim_head_ro(file)) || !*file) {
-		RZ_LOG_ERROR("core: gdbserver: File not specified\n");
-		return -1;
-	}
-	args = strchr(file, ' ');
-	if (args) {
-		*args++ = '\0';
-		if (!(args = (char *)rz_str_trim_head_ro(args))) {
-			args = "";
-		}
-	} else {
-		args = "";
+	if (port > 65535 || port == 0) {
+		RZ_LOG_ERROR("core: gdbserver: Invalid port: %" PFMT32d "\n", port);
+		return false;
 	}
 
-	if (!rz_core_file_open(core, file, RZ_PERM_R, 0)) {
-		RZ_LOG_ERROR("core: cannot open file (%s)\n", file);
-		return -1;
+	if (!rz_core_file_open(core, file_path, RZ_PERM_R, 0)) {
+		RZ_LOG_ERROR("core: cannot open file (%s)\n", file_path);
+		return false;
 	}
 	ut64 baddr = rz_config_get_i(core->config, "bin.baddr");
 	rz_core_bin_load(core, NULL, baddr);
-	rz_core_file_reopen_debug(core, args);
+	rz_core_file_reopen_debug(core, gdb_args);
 
 	if (!(sock = rz_socket_new(false))) {
 		RZ_LOG_ERROR("core: gdbserver: Could not open socket for listening\n");
-		return -1;
+		return false;
 	}
-	if (!rz_socket_listen(sock, port, NULL)) {
+	if (!rz_socket_listen(sock, port_str, NULL)) {
 		rz_socket_free(sock);
-		RZ_LOG_ERROR("core: gdbserver: Cannot listen on port: %s\n", port);
-		return -1;
+		RZ_LOG_ERROR("core: gdbserver: Cannot listen on port: %s\n", port_str);
+		return false;
 	}
 	if (!(g = RZ_NEW0(libgdbr_t))) {
 		rz_socket_free(sock);
 		RZ_LOG_ERROR("core: gdbserver: Cannot alloc libgdbr instance\n");
-		return -1;
+		return false;
 	}
 	gdbr_init(g, true);
 	g->server_debug = debug_msg;
@@ -486,14 +458,14 @@ static int rz_core_rtr_gdb_run(RzCore *core, int launch, const char *path) {
 	int bits = rz_config_get_i(core->config, "asm.bits");
 	gdbr_set_architecture(g, arch, bits);
 	core->gdbserver_up = 1;
-	RZ_LOG_ERROR("core: gdbserver: started on port %s, file: %s\n", port, file);
+	RZ_LOG_ERROR("core: gdbserver: started on port %" PFMT32d ", file: %s\n", port, file_path);
 
 	for (;;) {
 		if (!(g->sock = rz_socket_accept(sock))) {
 			break;
 		}
 		g->connected = 1;
-		ret = gdbr_server_serve(g, rz_core_rtr_gdb_cb, (void *)core);
+		int ret = gdbr_server_serve(g, rz_core_rtr_gdb_cb, (void *)core);
 		rz_socket_close(g->sock);
 		g->connected = 0;
 		if (ret < 0) {
@@ -504,17 +476,17 @@ static int rz_core_rtr_gdb_run(RzCore *core, int launch, const char *path) {
 	gdbr_cleanup(g);
 	free(g);
 	rz_socket_free(sock);
-	return 0;
+	return true;
 }
 
-RZ_API int rz_core_rtr_gdb(RzCore *core, int launch, const char *path) {
+RZ_API bool rz_core_rtr_gdb(RzCore *core, ut32 port, const char *file_path, RZ_NULLABLE const char *gdb_args, bool debug_msg) {
 	int ret;
 	// TODO: do stuff with launch
 	if (core->gdbserver_up) {
 		RZ_LOG_ERROR("core: gdbserver is already running\n");
 		return -1;
 	}
-	ret = rz_core_rtr_gdb_run(core, launch, path);
+	ret = rz_core_rtr_gdb_run(core, port, file_path, gdb_args, debug_msg);
 	return ret;
 }
 

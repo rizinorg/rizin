@@ -69,9 +69,30 @@ commands:
         type: RZ_CMD_ARG_TYPE_CMD
         optional: true
   - name: Rg
-    cname: equal_g_handler_old
     summary: Start the gdbserver
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    subcommands:
+    - name: Rg
+      cname: remote_gdb
+      summary: Start the gdbserver.
+      args:
+        - name: port
+          type: RZ_CMD_ARG_TYPE_NUM
+        - name: file
+          type: RZ_CMD_ARG_TYPE_STRING
+        - name: args
+          type: RZ_CMD_ARG_TYPE_STRING
+          optional: true
+    - name: Rg!
+      cname: remote_gdb_debug
+      summary: Start the gdbserver with debug protocol messages (like gdbserver --remote-debug).
+      args:
+        - name: port
+          type: RZ_CMD_ARG_TYPE_NUM
+        - name: file
+          type: RZ_CMD_ARG_TYPE_STRING
+        - name: args
+          type: RZ_CMD_ARG_TYPE_STRING
+          optional: true
   - name: Rh
     cname: equal_h_handler_old
     summary: Start the http webserver

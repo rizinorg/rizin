@@ -170,6 +170,8 @@ static const RzCmdDescArg remote_del_args[2];
 static const RzCmdDescArg remote_open_args[2];
 static const RzCmdDescArg remote_mode_enable_args[2];
 static const RzCmdDescArg remote_rap_args[3];
+static const RzCmdDescArg remote_gdb_args[4];
+static const RzCmdDescArg remote_gdb_debug_args[4];
 static const RzCmdDescArg remote_tcp_args[3];
 static const RzCmdDescArg remote_rap_bg_args[2];
 static const RzCmdDescArg cmd_help_search_args[2];
@@ -2586,8 +2588,57 @@ static const RzCmdDescHelp remote_rap_help = {
 	.args = remote_rap_args,
 };
 
-static const RzCmdDescHelp equal_g_handler_old_help = {
+static const RzCmdDescHelp Rg_help = {
 	.summary = "Start the gdbserver",
+};
+static const RzCmdDescArg remote_gdb_args[] = {
+	{
+		.name = "port",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{
+		.name = "file",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "args",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp remote_gdb_help = {
+	.summary = "Start the gdbserver.",
+	.args = remote_gdb_args,
+};
+
+static const RzCmdDescArg remote_gdb_debug_args[] = {
+	{
+		.name = "port",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{
+		.name = "file",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "args",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp remote_gdb_debug_help = {
+	.summary = "Start the gdbserver with debug protocol messages (like gdbserver --remote-debug).",
+	.args = remote_gdb_debug_args,
 };
 
 static const RzCmdDescHelp equal_h_handler_old_help = {
@@ -21071,8 +21122,10 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *remote_rap_cd = rz_cmd_desc_argv_new(core->rcmd, R_cd, "Rr", rz_remote_rap_handler, &remote_rap_help);
 	rz_warn_if_fail(remote_rap_cd);
 
-	RzCmdDesc *equal_g_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, R_cd, "Rg", rz_equal_g_handler_old, &equal_g_handler_old_help);
-	rz_warn_if_fail(equal_g_handler_old_cd);
+	RzCmdDesc *Rg_cd = rz_cmd_desc_group_new(core->rcmd, R_cd, "Rg", rz_remote_gdb_handler, &remote_gdb_help, &Rg_help);
+	rz_warn_if_fail(Rg_cd);
+	RzCmdDesc *remote_gdb_debug_cd = rz_cmd_desc_argv_new(core->rcmd, Rg_cd, "Rg!", rz_remote_gdb_debug_handler, &remote_gdb_debug_help);
+	rz_warn_if_fail(remote_gdb_debug_cd);
 
 	RzCmdDesc *equal_h_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, R_cd, "Rh", rz_equal_h_handler_old, &equal_h_handler_old_help);
 	rz_warn_if_fail(equal_h_handler_old_cd);
