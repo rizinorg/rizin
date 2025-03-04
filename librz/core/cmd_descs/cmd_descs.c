@@ -1771,6 +1771,8 @@ static const RzCmdDescDetailEntry cmd_search_cryptographic_material_Types_detail
 	{ .text = "aes128", .arg_str = NULL, .comment = "Searches for expanded AES 128 keys." },
 	{ .text = "aes192", .arg_str = NULL, .comment = "Searches for expanded AES 192 keys." },
 	{ .text = "aes256", .arg_str = NULL, .comment = "Searches for expanded AES 256 keys." },
+	{ .text = "sm4be", .arg_str = NULL, .comment = "Searches for expanded SM4 keys (big-endian)." },
+	{ .text = "sm4le", .arg_str = NULL, .comment = "Searches for expanded SM4 keys (little-endian)." },
 	{ .text = "rsa", .arg_str = NULL, .comment = "Searches for DER/BER encoded RSA keys (see RFC 3447)." },
 	{ .text = "ecc", .arg_str = NULL, .comment = "Searches for DER/BER encoded ECC keys (see RFC 5915)." },
 	{ .text = "safecurves", .arg_str = NULL, .comment = "Searches for DER/BER encoded Safecurves keys (see RFC 8410)." },
@@ -1781,7 +1783,7 @@ static const RzCmdDescDetail cmd_search_cryptographic_material_details[] = {
 	{ .name = "Types", .entries = cmd_search_cryptographic_material_Types_detail_entries },
 	{ 0 },
 };
-static const char *cmd_search_cryptographic_material_type_choices[] = { "all", "aes128", "aes192", "aes256", "rsa", "ecc", "safecurves", "x509", NULL };
+static const char *cmd_search_cryptographic_material_type_choices[] = { "all", "aes128", "aes192", "aes256", "sm4be", "sm4le", "rsa", "ecc", "safecurves", "x509", NULL };
 static const RzCmdDescArg cmd_search_cryptographic_material_args[] = {
 	{
 		.name = "type",

@@ -243,6 +243,8 @@ commands:
             - "aes128"
             - "aes192"
             - "aes256"
+            - "sm4be"
+            - "sm4le"
             - "rsa"
             - "ecc"
             - "safecurves"
@@ -256,6 +258,10 @@ commands:
               comment: "Searches for expanded AES 192 keys."
             - text: aes256
               comment: "Searches for expanded AES 256 keys."
+            - text: sm4be
+              comment: "Searches for expanded SM4 keys (big-endian)."
+            - text: sm4le
+              comment: "Searches for expanded SM4 keys (little-endian)."
             - text: rsa
               comment: "Searches for DER/BER encoded RSA keys (see RFC 3447)."
             - text: ecc
