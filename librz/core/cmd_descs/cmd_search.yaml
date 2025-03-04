@@ -247,6 +247,23 @@ commands:
             - "ecc"
             - "safecurves"
             - "x509"
+      details:
+        - name: Types
+          entries:
+            - text: aes128
+              comment: "Searches for expanded AES 128 keys."
+            - text: aes192
+              comment: "Searches for expanded AES 192 keys."
+            - text: aes256
+              comment: "Searches for expanded AES 256 keys."
+            - text: rsa
+              comment: "Searches for DER/BER encoded RSA keys (see RFC 3447)."
+            - text: ecc
+              comment: "Searches for DER/BER encoded ECC keys (see RFC 5915)."
+            - text: safecurves
+              comment: "Searches for DER/BER encoded Safecurves keys (see RFC 8410)."
+            - text: x509
+              comment: "Searches for DER/BER encoded X.509 certificates."
   - name: "/d"
     summary: Search for a deltified sequence of bytes.
     cname: cmd_search_deltified

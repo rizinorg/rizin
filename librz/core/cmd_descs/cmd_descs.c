@@ -15,6 +15,7 @@ static const RzCmdDescDetail oparen__details[2];
 static const RzCmdDescDetail pointer_details[2];
 static const RzCmdDescDetail interpret_macro_multiple_details[2];
 static const RzCmdDescDetail cmd_search_collision_details[2];
+static const RzCmdDescDetail cmd_search_cryptographic_material_details[2];
 static const RzCmdDescDetail cmd_search_hash_block_details[2];
 static const RzCmdDescDetail slash_v_details[2];
 static const RzCmdDescDetail slash_V_details[2];
@@ -1766,6 +1767,20 @@ static const RzCmdDescHelp cmd_search_collision_help = {
 	.args = cmd_search_collision_args,
 };
 
+static const RzCmdDescDetailEntry cmd_search_cryptographic_material_Types_detail_entries[] = {
+	{ .text = "aes128", .arg_str = NULL, .comment = "Searches for expanded AES 128 keys." },
+	{ .text = "aes192", .arg_str = NULL, .comment = "Searches for expanded AES 192 keys." },
+	{ .text = "aes256", .arg_str = NULL, .comment = "Searches for expanded AES 256 keys." },
+	{ .text = "rsa", .arg_str = NULL, .comment = "Searches for DER/BER encoded RSA keys (see RFC 3447)." },
+	{ .text = "ecc", .arg_str = NULL, .comment = "Searches for DER/BER encoded ECC keys (see RFC 5915)." },
+	{ .text = "safecurves", .arg_str = NULL, .comment = "Searches for DER/BER encoded Safecurves keys (see RFC 8410)." },
+	{ .text = "x509", .arg_str = NULL, .comment = "Searches for DER/BER encoded X.509 certificates." },
+	{ 0 },
+};
+static const RzCmdDescDetail cmd_search_cryptographic_material_details[] = {
+	{ .name = "Types", .entries = cmd_search_cryptographic_material_Types_detail_entries },
+	{ 0 },
+};
 static const char *cmd_search_cryptographic_material_type_choices[] = { "all", "aes128", "aes192", "aes256", "rsa", "ecc", "safecurves", "x509", NULL };
 static const RzCmdDescArg cmd_search_cryptographic_material_args[] = {
 	{
@@ -1779,6 +1794,7 @@ static const RzCmdDescArg cmd_search_cryptographic_material_args[] = {
 };
 static const RzCmdDescHelp cmd_search_cryptographic_material_help = {
 	.summary = "Search cryptographic material.",
+	.details = cmd_search_cryptographic_material_details,
 	.args = cmd_search_cryptographic_material_args,
 };
 
