@@ -1032,20 +1032,19 @@ static void patch_reloc_hexagon(RZ_INOUT RzBuffer *buf_patched, const ut64 patch
 #define ADR_IMM_MASK2 (((1U << 19) - 1) << 5)
 #define ADR_IMM_MASK3 (((1U << 19) - 1) << 2)
 
-
 /**
  * \brief Patches relocation type of relocation entries.
- * 
+ *
  * NOTE: Some relocation symbols (e.g. TLS, G) are not yet implemented and are set to 0.
  * TODO: Implement remaining relocation symbols.
- * 
+ *
  * \param obj The ELF object.
  * \param rel The relocation entry.
  * \param S The symbol value.
  * \param B The base address.
  * \param L The load address.
  * \param GOT The Global Offset Table address.
-*/
+ */
 static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel, ut64 S, ut64 B, ut64 L, ut64 GOT) {
 	ut16 e_machine = obj->ehdr.e_machine;
 	ut64 val = 0;
@@ -1248,7 +1247,7 @@ static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel,
 			word = 1;
 			val = S + A;
 			break;
-		case RZ_386_16: 
+		case RZ_386_16:
 			word = 2;
 			val = S + A;
 			break;
