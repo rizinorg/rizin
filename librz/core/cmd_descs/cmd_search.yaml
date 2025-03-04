@@ -192,17 +192,6 @@ commands:
   - name: "/c"
     summary: Cryptographic material search.
     subcommands:
-    - name: "/ca"
-      summary: Search for AES keys.
-      cname: cmd_search_aes_key
-      type: RZ_CMD_DESC_TYPE_ARGV_STATE
-      default_mode: RZ_OUTPUT_MODE_STANDARD
-      modes:
-        - RZ_OUTPUT_MODE_STANDARD
-        - RZ_OUTPUT_MODE_JSON
-        - RZ_OUTPUT_MODE_QUIET
-        - RZ_OUTPUT_MODE_TABLE
-      args: []
     - name: "/cc"
       summary: Find collisions (bruteforce block length values until given checksum is found).
       cname: cmd_search_collision
@@ -235,14 +224,29 @@ commands:
               comment: "printable (alpha + digit)"
             - text: b
               comment: "binary (any number is valid)"
-    - name: "/cr"
-      summary: Search for private RSA/ECC/EdDSA keys.
-      cname: cmd_search_private_key
-      args: []
-    - name: "/cd"
-      summary: Search for ASN1/DER certificates.
-      cname: cmd_search_certs
-      args: []
+    - name: "/cm"
+      summary: Search cryptographic material.
+      cname: cmd_search_cryptographic_material
+      type: RZ_CMD_DESC_TYPE_ARGV_STATE
+      default_mode: RZ_OUTPUT_MODE_STANDARD
+      modes:
+        - RZ_OUTPUT_MODE_STANDARD
+        - RZ_OUTPUT_MODE_JSON
+        - RZ_OUTPUT_MODE_QUIET
+        - RZ_OUTPUT_MODE_TABLE
+      args:
+        - name: type
+          type: RZ_CMD_ARG_TYPE_CHOICES
+          default_value: "all"
+          choices:
+            - "all"
+            - "aes128"
+            - "aes192"
+            - "aes256"
+            - "rsa"
+            - "ecc"
+            - "safecurves"
+            - "x509"
   - name: "/d"
     summary: Search for a deltified sequence of bytes.
     cname: cmd_search_deltified

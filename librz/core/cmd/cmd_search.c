@@ -1968,48 +1968,6 @@ reread:
 			free(s);
 			goto beach;
 		} break;
-		case 'd': // "cd"
-		{
-			// Certificate with version number
-			RzSearchKeyword *kw_1 = rz_search_keyword_new_hex("30820000308100A0030201", "ffff0000fffc00ffffffff", NULL);
-			RzSearchKeyword *kw_2 = rz_search_keyword_new_hex("3082000030820000A0030201", "ffff0000fffc0000ffffffff", NULL);
-			// Certificate with serial number
-			RzSearchKeyword *kw_3 = rz_search_keyword_new_hex("308200003082000002", "ffff0000fffc0000ff", NULL);
-			rz_search_reset(core->search, RZ_SEARCH_KEYWORD);
-			if (kw_1 && kw_2 && kw_3) {
-				rz_search_kw_add(core->search, kw_1);
-				rz_search_kw_add(core->search, kw_2);
-				rz_search_kw_add(core->search, kw_3);
-				rz_search_begin(core->search);
-			} else {
-				RZ_LOG_ERROR("core: null pointer on search keyword\n");
-				dosearch = false;
-			}
-		} break;
-		case 'a': // "ca"
-		{
-			RzSearchKeyword *kw;
-			kw = rz_search_keyword_new_hexmask("00", NULL);
-			// AES search is done over 40 bytes
-			kw->keyword_length = AES_SEARCH_LENGTH;
-			rz_search_reset(core->search, RZ_SEARCH_AES);
-			rz_search_kw_add(search, kw);
-			rz_search_begin(core->search);
-			param.aes_search = true;
-			break;
-		}
-		case 'r': // "cr"
-		{
-			RzSearchKeyword *kw;
-			kw = rz_search_keyword_new_hexmask("00", NULL);
-			// Private key search is at least 11 bytes
-			kw->keyword_length = PRIVATE_KEY_SEARCH_LENGTH;
-			rz_search_reset(core->search, RZ_SEARCH_PRIV_KEY);
-			rz_search_kw_add(search, kw);
-			rz_search_begin(core->search);
-			param.privkey_search = true;
-			break;
-		}
 		default: {
 			dosearch = false;
 		}
@@ -2570,6 +2528,7 @@ error:
 	CMD_SEARCH_END();
 	return RZ_CMD_STATUS_ERROR;
 }
+
 // "/+"
 RZ_IPI RzCmdStatus rz_cmd_search_str_chunk_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	return pass_to_legacy_api(core, argc, argv, RZ_OUTPUT_MODE_STANDARD);
@@ -2688,21 +2647,53 @@ RZ_IPI RzCmdStatus rz_cmd_search_assemble_tl_handler(RzCore *core, int argc, con
 }
 
 // "/ca"
-RZ_IPI RzCmdStatus rz_cmd_search_aes_key_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return pass_to_legacy_api(core, argc, argv, state->mode);
+RZ_IPI RzCmdStatus rz_cmd_search_cryptographic_material_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	rz_return_val_if_fail(core, RZ_CMD_STATUS_ERROR);
+	if (argc < 2 || RZ_STR_ISEMPTY(argv[1])) {
+		return RZ_CMD_STATUS_WRONG_ARGS;
+	}
+
+	bool is_all = !strcmp(argv[1], "all");
+	RzSearchCollectionCryptographicType type = RZ_SEARCH_COLLECTION_CRYPTOGRAPHIC_ENUM_SIZE;
+
+	if (!is_all && !rz_search_collection_cryptographic_name_to_type(argv[1], &type)) {
+		RZ_LOG_ERROR("Failed to parse given type (%s).\n", argv[1]);
+		return RZ_CMD_STATUS_WRONG_ARGS;
+	}
+
+	RzSearchOpt *search_opts = setup_search_options(core);
+	RzList *hits = NULL;
+	if (!search_opts) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	CMD_SEARCH_BEGIN();
+
+	bool progress = rz_config_get_b(core->config, "search.show_progress");
+	if (!rz_search_opt_set_cancel_cb(search_opts, cmd_search_progress_cancel, progress ? state : NULL)) {
+		RZ_LOG_ERROR("code: Failed to setup default search options.\n");
+		goto error;
+	}
+
+	hits = rz_core_search_cryptographic_material(core, search_opts, type);
+	if (!hits) {
+		RZ_LOG_ERROR("Failed to perform search.\n");
+		goto error;
+	}
+
+	CMD_SEARCH_END();
+	rz_search_opt_free(search_opts);
+	return cmd_core_handle_search_hits(core, state, hits);
+
+error:
+	rz_list_free(hits);
+	rz_search_opt_free(search_opts);
+	CMD_SEARCH_END();
+	return RZ_CMD_STATUS_ERROR;
 }
 
 // "/cc"
 RZ_IPI RzCmdStatus rz_cmd_search_collision_handler(RzCore *core, int argc, const char **argv) {
-	return pass_to_legacy_api(core, argc, argv, RZ_OUTPUT_MODE_STANDARD);
-}
-
-// "/cr"
-RZ_IPI RzCmdStatus rz_cmd_search_private_key_handler(RzCore *core, int argc, const char **argv) {
-	return pass_to_legacy_api(core, argc, argv, RZ_OUTPUT_MODE_STANDARD);
-}
-// "/cd"
-RZ_IPI RzCmdStatus rz_cmd_search_certs_handler(RzCore *core, int argc, const char **argv) {
 	return pass_to_legacy_api(core, argc, argv, RZ_OUTPUT_MODE_STANDARD);
 }
 

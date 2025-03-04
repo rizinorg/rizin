@@ -21,7 +21,7 @@ project('zstd',
     # so this isn't safe
     # 'werror=true'
   ],
-  version: '1.5.5',
+  version: '1.5.7',
   meson_version: '>=0.50.0')
 
 cc = meson.get_compiler('c')

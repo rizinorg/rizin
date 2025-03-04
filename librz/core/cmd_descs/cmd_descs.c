@@ -132,6 +132,7 @@ static const RzCmdDescArg cmd_search_assemble_sl_args[2];
 static const RzCmdDescArg cmd_search_assemble_t_args[2];
 static const RzCmdDescArg cmd_search_assemble_tl_args[2];
 static const RzCmdDescArg cmd_search_collision_args[4];
+static const RzCmdDescArg cmd_search_cryptographic_material_args[2];
 static const RzCmdDescArg cmd_search_deltified_args[2];
 static const RzCmdDescArg cmd_search_file_args[4];
 static const RzCmdDescArg cmd_search_insn_offset_backwards_args[2];
@@ -1725,14 +1726,6 @@ static const RzCmdDescHelp cmd_search_assemble_tl_help = {
 static const RzCmdDescHelp slash_c_help = {
 	.summary = "Cryptographic material search.",
 };
-static const RzCmdDescArg cmd_search_aes_key_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_search_aes_key_help = {
-	.summary = "Search for AES keys.",
-	.args = cmd_search_aes_key_args,
-};
-
 static const RzCmdDescDetailEntry cmd_search_collision_Modes_detail_entries[] = {
 	{ .text = "a", .arg_str = NULL, .comment = "lowercase alphabet chars only" },
 	{ .text = "A", .arg_str = NULL, .comment = "uppercase alphabet chars only" },
@@ -1773,20 +1766,20 @@ static const RzCmdDescHelp cmd_search_collision_help = {
 	.args = cmd_search_collision_args,
 };
 
-static const RzCmdDescArg cmd_search_private_key_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_search_private_key_help = {
-	.summary = "Search for private RSA/ECC/EdDSA keys.",
-	.args = cmd_search_private_key_args,
-};
+static const char *cmd_search_cryptographic_material_type_choices[] = { "all", "aes128", "aes192", "aes256", "rsa", "ecc", "safecurves", "x509", NULL };
+static const RzCmdDescArg cmd_search_cryptographic_material_args[] = {
+	{
+		.name = "type",
+		.type = RZ_CMD_ARG_TYPE_CHOICES,
+		.default_value = "all",
+		.choices.choices = cmd_search_cryptographic_material_type_choices,
 
-static const RzCmdDescArg cmd_search_certs_args[] = {
+	},
 	{ 0 },
 };
-static const RzCmdDescHelp cmd_search_certs_help = {
-	.summary = "Search for ASN1/DER certificates.",
-	.args = cmd_search_certs_args,
+static const RzCmdDescHelp cmd_search_cryptographic_material_help = {
+	.summary = "Search cryptographic material.",
+	.args = cmd_search_cryptographic_material_args,
 };
 
 static const RzCmdDescArg cmd_search_deltified_args[] = {
@@ -20891,18 +20884,12 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *slash_c_cd = rz_cmd_desc_group_new(core->rcmd, slash__cd, "/c", NULL, NULL, &slash_c_help);
 	rz_warn_if_fail(slash_c_cd);
-	RzCmdDesc *cmd_search_aes_key_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_c_cd, "/ca", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_aes_key_handler, &cmd_search_aes_key_help);
-	rz_warn_if_fail(cmd_search_aes_key_cd);
-	rz_cmd_desc_set_default_mode(cmd_search_aes_key_cd, RZ_OUTPUT_MODE_STANDARD);
-
 	RzCmdDesc *cmd_search_collision_cd = rz_cmd_desc_argv_new(core->rcmd, slash_c_cd, "/cc", rz_cmd_search_collision_handler, &cmd_search_collision_help);
 	rz_warn_if_fail(cmd_search_collision_cd);
 
-	RzCmdDesc *cmd_search_private_key_cd = rz_cmd_desc_argv_new(core->rcmd, slash_c_cd, "/cr", rz_cmd_search_private_key_handler, &cmd_search_private_key_help);
-	rz_warn_if_fail(cmd_search_private_key_cd);
-
-	RzCmdDesc *cmd_search_certs_cd = rz_cmd_desc_argv_new(core->rcmd, slash_c_cd, "/cd", rz_cmd_search_certs_handler, &cmd_search_certs_help);
-	rz_warn_if_fail(cmd_search_certs_cd);
+	RzCmdDesc *cmd_search_cryptographic_material_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_c_cd, "/cm", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_cryptographic_material_handler, &cmd_search_cryptographic_material_help);
+	rz_warn_if_fail(cmd_search_cryptographic_material_cd);
+	rz_cmd_desc_set_default_mode(cmd_search_cryptographic_material_cd, RZ_OUTPUT_MODE_STANDARD);
 
 	RzCmdDesc *cmd_search_deltified_cd = rz_cmd_desc_argv_modes_new(core->rcmd, slash__cd, "/d", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_deltified_handler, &cmd_search_deltified_help);
 	rz_warn_if_fail(cmd_search_deltified_cd);

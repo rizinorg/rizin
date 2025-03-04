@@ -484,7 +484,7 @@ Gadget size: 8
 EOF
 RUN
 
-NAME=/c/ search instructions extended regex
+NAME=/ad/ search instructions extended regex
 FILE=bins/pe/standard.exe
 CMDS=<<EOF
 e asm.arch=x86

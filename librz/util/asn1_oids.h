@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2017-2022 deroad <wargio@libero.it>
+// SPDX-FileCopyrightText: 2017-2025 deroad <deroad@kumo.xn--q9jyb4c>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef RZ_OIDS_H
@@ -1094,6 +1094,12 @@ struct rz_oid_list_t {
 	{ "1.2.840.114021.4.1", "identrusOCSP" },
 	{ "1.3.101.1.4", "thawte-ce" },
 	{ "1.3.101.1.4.1", "strongExtranet" },
+	{ "1.3.101.110", "x25519" },
+	{ "1.3.101.111", "x448" },
+	{ "1.3.101.112", "ed25519" },
+	{ "1.3.101.113", "ed448" },
+	{ "1.3.101.114", "edDSA25519ph" },
+	{ "1.3.101.115", "edDSA448ph" },
 	{ "1.3.12.2.1011.7.1", "decEncryptionAlgorithm" },
 	{ "1.3.12.2.1011.7.1.2", "decDEA" },
 	{ "1.3.12.2.1011.7.2", "decHashAlgorithm" },

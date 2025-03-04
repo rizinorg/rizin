@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: 2024 deroad <deroad@kumo.xn--q9jyb4c>
-// SPDX-FileCopyrightText: 2024 Rot127 <unisono@quyllur.org>
+// SPDX-FileCopyrightText: 2024-2025 deroad <deroad@kumo.xn--q9jyb4c>
+// SPDX-FileCopyrightText: 2024-2025 Rot127 <unisono@quyllur.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_bin.h>
@@ -101,6 +101,20 @@ static RzList /*<RzSearchHit *>*/ *perform_search_on_core_io(RzCore *core, RZ_BO
 	return hits;
 }
 
+static RzSearchOpt *default_search_options() {
+	RzSearchOpt *def_options = rz_search_opt_new();
+	if (!def_options) {
+		RZ_LOG_ERROR("search: Failed to allocate search options.\n");
+		return NULL;
+	} else if (!rz_search_opt_set_cancel_cb(def_options, default_search_no_cancel, NULL)) {
+		RZ_LOG_ERROR("search: Failed to setup callback for search options.\n");
+		rz_search_opt_free(def_options);
+		return NULL;
+	}
+
+	return def_options;
+}
+
 /**
  * \brief      Finds a byte array in the IO layer of the given core and core configuration.
  *
@@ -131,26 +145,27 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_bytes(RZ_NONNULL RzCore
 	}
 
 	if (!user_opts) {
-		search_opts = rz_search_opt_new();
-		if (!rz_search_opt_set_cancel_cb(search_opts, default_search_no_cancel, NULL)) {
-			RZ_LOG_ERROR("search: Failed to setup callback for search options.\n");
+		// override user_opts with default one
+		user_opts = search_opts = default_search_options();
+		if (!search_opts) {
 			goto quit;
 		}
 	}
 
 	// Don't pass the user provided search options.
 	// They were set up by the user and we respect them.
-	boundaries = rz_core_setup_io_search_parameters(core, user_opts ? NULL : search_opts);
+	boundaries = rz_core_setup_io_search_parameters(core, user_opts);
 	if (!boundaries) {
 		RZ_LOG_ERROR("core: Setting up search from core failed.\n");
 		goto quit;
 	}
-	if (!rz_search_opt_set_elemet_size(user_opts ? user_opts : search_opts, rz_search_bytes_pattern_len(pattern))) {
+
+	if (!rz_search_opt_set_elemet_size(user_opts, rz_search_bytes_pattern_len(pattern))) {
 		RZ_LOG_ERROR("search: Failed to update chunk size in the search options.\n");
 		goto quit;
 	}
 
-	hits = perform_search_on_core_io(core, user_opts ? user_opts : search_opts, boundaries, collection);
+	hits = perform_search_on_core_io(core, user_opts, boundaries, collection);
 
 quit:
 	rz_list_free(boundaries);
@@ -203,17 +218,82 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_string(RZ_NONNULL RzCor
 		RZ_LOG_ERROR("core: Failed to initialize search collection.\n");
 		return NULL;
 	}
-	boundaries = rz_core_setup_io_search_parameters(core, user_opts ? NULL : search_opts);
+
+	if (!user_opts) {
+		// override user_opts with default one
+		user_opts = search_opts = default_search_options();
+		if (!search_opts) {
+			goto quit;
+		}
+	}
+
+	boundaries = rz_core_setup_io_search_parameters(core, user_opts);
 	if (!boundaries) {
 		RZ_LOG_ERROR("core: Setting up search from core failed.\n");
 		goto quit;
 	}
-	if (!rz_search_opt_set_elemet_size(user_opts ? user_opts : search_opts, scan_opt.max_str_length)) {
+	if (!rz_search_opt_set_elemet_size(user_opts, scan_opt.max_str_length)) {
 		RZ_LOG_ERROR("search: Failed to update chunk size in the search options.\n");
 		goto quit;
 	}
 
-	hits = perform_search_on_core_io(core, user_opts ? user_opts : search_opts, boundaries, collection);
+	hits = perform_search_on_core_io(core, user_opts, boundaries, collection);
+
+quit:
+	rz_list_free(boundaries);
+	rz_search_opt_free(search_opts);
+	rz_search_collection_free(collection);
+	return hits;
+}
+
+/**
+ * \brief      Finds a cryptographic material in the IO layer of the given core and core configuration.
+ *
+ * \param      core The RzCore core.
+ * \param      opt  The search options to apply. If it is NULL a default set of options is used.
+ * \param      type The cryptographic material type (if invalid, the search will be performed on all materials).
+ *
+ * \return     On success returns a pointer to the search hits, otherwise NULL
+ */
+RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_cryptographic_material(RZ_NONNULL RzCore *core, RZ_BORROW RZ_NULLABLE RzSearchOpt *user_opts, RzSearchCollectionCryptographicType type) {
+	rz_return_val_if_fail(core && core->config, NULL);
+
+	RzList *hits = NULL;
+	RzList *boundaries = NULL;
+	RzSearchOpt *search_opts = NULL;
+	bool add_all_methods = type >= RZ_SEARCH_COLLECTION_CRYPTOGRAPHIC_ENUM_SIZE;
+
+	RzSearchCollection *collection = rz_search_collection_cryptographic(add_all_methods);
+	if (!collection) {
+		return NULL;
+	}
+
+	if (!add_all_methods &&
+		!rz_search_collection_cryptographic_add(collection, type)) {
+		goto quit;
+	}
+
+	if (!user_opts) {
+		// override user_opts with default one
+		user_opts = search_opts = default_search_options();
+		if (!search_opts) {
+			goto quit;
+		}
+	}
+
+	// minimal element size is always 2 (since 1 would be unaligned)
+	if (!rz_search_opt_set_elemet_size(user_opts, 2)) {
+		RZ_LOG_ERROR("search: Failed to update chunk size in the search options.\n");
+		goto quit;
+	}
+
+	boundaries = rz_core_setup_io_search_parameters(core, user_opts);
+	if (!boundaries) {
+		RZ_LOG_ERROR("core: Setting up search from core failed.\n");
+		goto quit;
+	}
+
+	hits = perform_search_on_core_io(core, user_opts, boundaries, collection);
 
 quit:
 	rz_list_free(boundaries);
