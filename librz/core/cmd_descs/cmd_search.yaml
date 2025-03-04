@@ -192,17 +192,6 @@ commands:
   - name: "/c"
     summary: Cryptographic material search.
     subcommands:
-    - name: "/ca"
-      summary: Search for AES keys.
-      cname: cmd_search_aes_key
-      type: RZ_CMD_DESC_TYPE_ARGV_STATE
-      default_mode: RZ_OUTPUT_MODE_STANDARD
-      modes:
-        - RZ_OUTPUT_MODE_STANDARD
-        - RZ_OUTPUT_MODE_JSON
-        - RZ_OUTPUT_MODE_QUIET
-        - RZ_OUTPUT_MODE_TABLE
-      args: []
     - name: "/cc"
       summary: Find collisions (bruteforce block length values until given checksum is found).
       cname: cmd_search_collision
@@ -235,14 +224,46 @@ commands:
               comment: "printable (alpha + digit)"
             - text: b
               comment: "binary (any number is valid)"
-    - name: "/cr"
-      summary: Search for private RSA/ECC/EdDSA keys.
-      cname: cmd_search_private_key
-      args: []
-    - name: "/cd"
-      summary: Search for ASN1/DER certificates.
-      cname: cmd_search_certs
-      args: []
+    - name: "/cm"
+      summary: Search cryptographic material.
+      cname: cmd_search_cryptographic_material
+      type: RZ_CMD_DESC_TYPE_ARGV_STATE
+      default_mode: RZ_OUTPUT_MODE_STANDARD
+      modes:
+        - RZ_OUTPUT_MODE_STANDARD
+        - RZ_OUTPUT_MODE_JSON
+        - RZ_OUTPUT_MODE_QUIET
+        - RZ_OUTPUT_MODE_TABLE
+      args:
+        - name: type
+          type: RZ_CMD_ARG_TYPE_CHOICES
+          default_value: "all"
+          choices:
+            - "all"
+            - "aes128"
+            - "aes192"
+            - "aes256"
+            - "rsa"
+            - "ecc"
+            - "safecurves"
+            - "x509"
+      details:
+        - name: Types
+          entries:
+            - text: aes128
+              comment: "Searches for expanded AES 128 keys."
+            - text: aes192
+              comment: "Searches for expanded AES 192 keys."
+            - text: aes256
+              comment: "Searches for expanded AES 256 keys."
+            - text: rsa
+              comment: "Searches for DER/BER encoded RSA keys (see RFC 3447)."
+            - text: ecc
+              comment: "Searches for DER/BER encoded ECC keys (see RFC 5915)."
+            - text: safecurves
+              comment: "Searches for DER/BER encoded Safecurves keys (see RFC 8410)."
+            - text: x509
+              comment: "Searches for DER/BER encoded X.509 certificates."
   - name: "/d"
     summary: Search for a deltified sequence of bytes.
     cname: cmd_search_deltified

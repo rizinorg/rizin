@@ -9,9 +9,7 @@
 #include <rz_list.h>
 #include <rz_th.h>
 
-#define RZ_SEARCH_AES_LENGTH         40
-#define RZ_SEARCH_PRIVATE_KEY_LENGTH 11
-#define RZ_SEARCH_MAX_HEX_PATTERN    UT16_MAX
+#define RZ_SEARCH_MAX_HEX_PATTERN UT16_MAX
 
 /**
  * \brief The number of elements per search chunk.

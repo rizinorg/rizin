@@ -109,6 +109,9 @@ static void msf_stream_free(void *data) {
 }
 
 static void msf_stream_directory_free(void *data) {
+	if (!data) {
+		return;
+	}
 	RzPdbMsfStreamDirectory *msd = data;
 	RZ_FREE(msd->StreamSizes);
 	rz_buf_free(msd->sd);

@@ -1,10 +1,10 @@
 [wrap-file]
-directory = lz4-1.9.4
-source_url = https://github.com/lz4/lz4/archive/v1.9.4.tar.gz
-source_filename = lz4-1.9.4.tgz
-source_hash = 0b0e3aa07c8c063ddf40b082bdf7e37a1562bda40a0ff5272957f3e987e0e54b
-patch_directory = lz4-1.9.4
-source_fallback_url = https://raw.githubusercontent.com/rizinorg/fallback-repo/main/lz4-1.9.4.tar.gz
+directory = lz4-1.10.0
+source_url = https://github.com/lz4/lz4/archive/v1.10.0.tar.gz
+source_filename = lz4-1.10.0.tgz
+source_hash = 537512904744b35e232912055ccf8ec66d768639ff3abe5788d90d792ec5f48b
+patch_directory = lz4-1.10.0
+source_fallback_url = https://raw.githubusercontent.com/rizinorg/fallback-repo/main/lz4-1.10.0.tar.gz
 
 [provide]
 lz4 = lz4_dep

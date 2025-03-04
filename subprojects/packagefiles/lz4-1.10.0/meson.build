@@ -1,6 +1,6 @@
 project('lz4', ['c'],
   license: 'BSD-2-Clause-Patent AND GPL-2.0-or-later',
-  version: '1.9.4',
+  version: '1.10.0',
   meson_version: '>=0.55.0',
 )
 
