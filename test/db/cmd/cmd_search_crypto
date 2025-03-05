@@ -1,5 +1,5 @@
 
-NAME=search crypto AES256 (no overlap)
+NAME=search crypto AES256 expanded key (no overlap)
 FILE=bins/other/aes.dump
 CMDS=<<EOF
 e search.overlap=false
@@ -17,7 +17,7 @@ offset       size flag
 EOF
 RUN
 
-NAME=search crypto AES256 (overlap)
+NAME=search crypto AES256 expanded key (overlap)
 FILE=bins/other/aes.dump
 CMDS=<<EOF
 e search.overlap=true
@@ -42,6 +42,22 @@ offset       size flag
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x0000002e  0000 0000 0000 0000 0000 0000 0000 0000  ................
 0x0000003e  6263 6363 6263 6363                      bcccbccc
+EOF
+RUN
+
+NAME=search crypto SM4 expanded key
+FILE=bins/other/sm4_key_schedule.bin
+CMDS=<<EOF
+e search.overlap=true
+/cmt
+px @ hit.sm4.le.0 @!16
+EOF
+EXPECT=<<EOF
+offset       size flag         
+-------------------------------
+  0xff 0x00000010 hit.sm4.le.0
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x000000ff  f986 21f1 612b 6641 db28 e447 57db e32c  ..!.a+fA.(.GW..,
 EOF
 RUN
 

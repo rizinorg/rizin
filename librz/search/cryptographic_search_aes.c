@@ -26,19 +26,19 @@
 #define AES256_KEY_LENGTH 32
 
 static bool aes_256_key_test(const ut8 *buf) {
-	bool word1 = buf[32] == (buf[0] ^ Sbox[buf[29]] ^ 1) && buf[33] == (buf[1] ^ Sbox[buf[30]]) && buf[34] == (buf[2] ^ Sbox[buf[31]]) && buf[35] == (buf[3] ^ Sbox[buf[28]]);
+	bool word1 = buf[32] == (buf[0] ^ RZ_AES_SBOX[buf[29]] ^ 1) && buf[33] == (buf[1] ^ RZ_AES_SBOX[buf[30]]) && buf[34] == (buf[2] ^ RZ_AES_SBOX[buf[31]]) && buf[35] == (buf[3] ^ RZ_AES_SBOX[buf[28]]);
 	bool word2 = (buf[36] == (buf[4] ^ buf[32]) && buf[37] == (buf[5] ^ buf[33]) && buf[38] == (buf[6] ^ buf[34]) && buf[39] == (buf[7] ^ buf[35]));
 	return word1 && word2;
 }
 
 static bool aes_192_key_test(const ut8 *buf) {
-	bool word1 = buf[24] == (buf[0] ^ Sbox[buf[21]] ^ 1) && buf[25] == (buf[1] ^ Sbox[buf[22]]) && buf[26] == (buf[2] ^ Sbox[buf[23]]) && buf[27] == (buf[3] ^ Sbox[buf[20]]);
+	bool word1 = buf[24] == (buf[0] ^ RZ_AES_SBOX[buf[21]] ^ 1) && buf[25] == (buf[1] ^ RZ_AES_SBOX[buf[22]]) && buf[26] == (buf[2] ^ RZ_AES_SBOX[buf[23]]) && buf[27] == (buf[3] ^ RZ_AES_SBOX[buf[20]]);
 	bool word2 = buf[28] == (buf[4] ^ buf[24]) && buf[29] == (buf[5] ^ buf[25]) && buf[30] == (buf[6] ^ buf[26]) && buf[31] == (buf[7] ^ buf[27]);
 	return word1 && word2;
 }
 
 static bool aes_128_key_test(const ut8 *buf) {
-	bool word1 = buf[16] == (buf[0] ^ Sbox[buf[13]] ^ 1) && buf[17] == (buf[1] ^ Sbox[buf[14]]) && buf[18] == (buf[2] ^ Sbox[buf[15]]) && buf[19] == (buf[3] ^ Sbox[buf[12]]);
+	bool word1 = buf[16] == (buf[0] ^ RZ_AES_SBOX[buf[13]] ^ 1) && buf[17] == (buf[1] ^ RZ_AES_SBOX[buf[14]]) && buf[18] == (buf[2] ^ RZ_AES_SBOX[buf[15]]) && buf[19] == (buf[3] ^ RZ_AES_SBOX[buf[12]]);
 	bool word2 = buf[20] == (buf[4] ^ buf[16]) && buf[21] == (buf[5] ^ buf[17]) && buf[22] == (buf[6] ^ buf[18]) && buf[23] == (buf[7] ^ buf[19]);
 	return word1 && word2;
 }

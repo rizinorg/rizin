@@ -9,6 +9,7 @@
 #include "search_internal.h"
 
 #include "cryptographic_search_aes.c"
+#include "cryptographic_search_sm4.c"
 #include "cryptographic_search_pki.c"
 #include "cryptographic_search_x509.c"
 
@@ -23,6 +24,8 @@ static CryptographicMethod cryptographic_methods[RZ_SEARCH_COLLECTION_CRYPTOGRAP
 	[RZ_SEARCH_COLLECTION_CRYPTOGRAPHIC_AES_128] = { "aes128", aes_128_find },
 	[RZ_SEARCH_COLLECTION_CRYPTOGRAPHIC_AES_192] = { "aes192", aes_192_find },
 	[RZ_SEARCH_COLLECTION_CRYPTOGRAPHIC_AES_256] = { "aes256", aes_256_find },
+	[RZ_SEARCH_COLLECTION_CRYPTOGRAPHIC_SM4_BE] = { "sm4be", sm4_be_find },
+	[RZ_SEARCH_COLLECTION_CRYPTOGRAPHIC_SM4_LE] = { "sm4le", sm4_le_find },
 	[RZ_SEARCH_COLLECTION_CRYPTOGRAPHIC_RSA] = { "rsa", rsa_find },
 	[RZ_SEARCH_COLLECTION_CRYPTOGRAPHIC_ECC] = { "ecc", ecc_find },
 	[RZ_SEARCH_COLLECTION_CRYPTOGRAPHIC_SAFECURVES] = { "safecurves", safecurves_find },
