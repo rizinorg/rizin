@@ -2653,14 +2653,11 @@ static bool cb_search_in(void *user, void *data) {
 
 static bool cb_search_show_progress(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (rz_str_is_true(node->value)) {
-		free(node->value);
-		node->value = rz_str_dup("true");
-	} else if (rz_str_is_false(node->value)) {
+	if (rz_str_is_false(node->value)) {
 		free(node->value);
 		node->value = rz_str_dup("false");
-	} else if (!RZ_STR_EQ(node->value, "intervals")) {
-		RZ_LOG_ERROR("search.show_progress: invalid value (%s), supported only `true, false, intervals`\n", node->value);
+	} else if (!rz_str_cmp_list("num_hits intervals", node->value, ' ')) {
+		RZ_LOG_ERROR("search.show_progress: invalid value (%s), supported only `false, num_hits, intervals`\n", node->value);
 		return false;
 	}
 	return true;
@@ -3762,9 +3759,9 @@ RZ_API int rz_core_config_init(RzCore *core) {
 		NULL);
 	SETPREF("search.prefix", "hit", "Prefix name in search hits label");
 	SETI("search.maxhits", 0, "Maximum number of hits ('0' means no limit)");
-	n = NODECB("search.show_progress", "1", &cb_search_show_progress);
-	SETDESC(n, "Show the search process (true, false, intervals)");
-	SETOPTIONS(n, "true", "false", "intervals", NULL);
+	n = NODECB("search.show_progress", "num_hits", &cb_search_show_progress);
+	SETDESC(n, "Show the search process (false, num_hits, intervals)");
+	SETOPTIONS(n, "false", "num_hits", "intervals", NULL);
 	SETICB("search.str.min_length", RZ_BIN_STRING_SEARCH_MIN_STRING, &cb_search_str_min_length, "Smallest string length (in number of characters).");
 	SETICB("search.str.max_length", RZ_BIN_STRING_SEARCH_BUFFER_SIZE, &cb_search_str_max_length, "Maximum string length (in number of characters).");
 	SETICB("search.str.max_region_size", RZ_BIN_STRING_SEARCH_MAX_REGION_SIZE, &cb_search_str_max_region_size, "Maximum allowable size for the string search interval between two memory regions.");
