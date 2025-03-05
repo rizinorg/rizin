@@ -1,0 +1,41 @@
+{
+  "$schema": "https://tree-sitter.github.io/tree-sitter/assets/schemas/config.schema.json",
+  "grammars": [
+    {
+      "name": "rizinshell",
+      "camelcase": "RizinShell",
+      "title": "Rizin shell parser",
+      "scope": "source.rizinshell",
+      "file-types": [
+        "rz"
+      ],
+      "injection-regex": "^rizinshell$",
+      "class-name": "TreeSitterRizinshell"
+    }
+  ],
+  "metadata": {
+    "version": "0.1.0",
+    "license": "LGPL3",
+    "description": "A grammar and parser for the Rizin shell syntax",
+    "authors": [
+      {
+        "name": "RizinOrg",
+        "email": "info@rizin.re",
+        "url": "https://rizin.re/"
+      }
+    ],
+    "links": {
+      "repository": "https://github.com/rizinorg/rizin",
+      "funding": "https://opencollective.com/rizin"
+    }
+  },
+  "bindings": {
+    "c": true,
+    "go": true,
+    "node": true,
+    "python": true,
+    "rust": true,
+    "swift": true,
+    "zig": false
+  }
+}

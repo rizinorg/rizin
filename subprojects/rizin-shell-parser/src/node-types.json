@@ -5279,6 +5279,7 @@
   {
     "type": "statements",
     "named": true,
+    "root": true,
     "fields": {},
     "children": {
       "multiple": true,
@@ -6112,6 +6113,10 @@
   },
   {
     "type": "`",
+    "named": false
+  },
+  {
+    "type": "env",
     "named": false
   },
   {

@@ -12,7 +12,7 @@ const ARG_IDENTIFIER_BASE = choice(
   "$$$",
   "$$",
   /\$[^\s@|#"'>;`~\\({) ]/,
-  /\${[^\r\n $}]+}/,
+  /\$\{[^\r\n $}]+\}/,
   /\\./,
 );
 const SPEC_ARG_IDENTIFIER_BASE = choice(
@@ -20,7 +20,7 @@ const SPEC_ARG_IDENTIFIER_BASE = choice(
   "$$$",
   "$$",
   /\$[^\s@|#"'>;`~\\({) ]/,
-  /\${[^\r\n $}]+}/,
+  /\$\{[^\r\n $}]+\}/,
   /\\./,
 );
 
@@ -257,7 +257,7 @@ module.exports = grammar({
           prec.right(1, seq(field("args", $._simple_stmt), field("command", "|."))),
         ),
       ),
-    _interpret_search_identifier: ($) => seq("./"),
+    _interpret_search_identifier: ($) => "./",
     _env_stmt: ($) =>
       prec.left(
         seq(
@@ -323,7 +323,7 @@ module.exports = grammar({
           choice(
             repeat1(noneOf(...SPECIAL_CHARACTERS_EQUAL)),
             /\$[^({]/,
-            /\${[^\r\n $}]+}/,
+            /\$\{[^\r\n $}]+\}/,
             escape(...SPECIAL_CHARACTERS_EQUAL),
           ),
         ),
@@ -350,7 +350,7 @@ module.exports = grammar({
     _comment: ($) => /#[^\r\n]*/,
 
     stmt_delimiter: ($) => choice("\n", "\r", $.stmt_delimiter_singleline),
-    stmt_delimiter_singleline: ($) => choice(";"),
+    stmt_delimiter_singleline: ($) => ";",
 
     specifiers: ($) => repeat1(seq($._spec_sep, $._concat, alias($.spec_arg_identifier, $.arg_identifier))),
     cmd_identifier: ($) => seq(field("id", $._cmd_identifier), field("extra", optional($.specifiers))),

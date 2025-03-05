@@ -1,4 +1,5 @@
 {
+  "$schema": "https://tree-sitter.github.io/tree-sitter/assets/schemas/grammar.schema.json",
   "name": "rzcmd",
   "rules": {
     "statements": {
@@ -2039,13 +2040,8 @@
       }
     },
     "_interpret_search_identifier": {
-      "type": "SEQ",
-      "members": [
-        {
-          "type": "STRING",
-          "value": "./"
-        }
-      ]
+      "type": "STRING",
+      "value": "./"
     },
     "_env_stmt": {
       "type": "PREC_LEFT",
@@ -2566,7 +2562,7 @@
             },
             {
               "type": "PATTERN",
-              "value": "\\${[^\\r\\n $}]+}"
+              "value": "\\$\\{[^\\r\\n $}]+\\}"
             },
             {
               "type": "STRING",
@@ -2658,7 +2654,7 @@
                 },
                 {
                   "type": "PATTERN",
-                  "value": "\\${[^\\r\\n $}]+}"
+                  "value": "\\$\\{[^\\r\\n $}]+\\}"
                 },
                 {
                   "type": "PATTERN",
@@ -2705,7 +2701,7 @@
                 },
                 {
                   "type": "PATTERN",
-                  "value": "\\${[^\\r\\n $}]+}"
+                  "value": "\\$\\{[^\\r\\n $}]+\\}"
                 },
                 {
                   "type": "PATTERN",
@@ -2912,13 +2908,8 @@
       ]
     },
     "stmt_delimiter_singleline": {
-      "type": "CHOICE",
-      "members": [
-        {
-          "type": "STRING",
-          "value": ";"
-        }
-      ]
+      "type": "STRING",
+      "value": ";"
     },
     "specifiers": {
       "type": "REPEAT1",
@@ -3017,5 +3008,6 @@
     "stmt_delimiter",
     "stmt_delimiter_singleline"
   ],
-  "supertypes": []
+  "supertypes": [],
+  "reserved": {}
 }
