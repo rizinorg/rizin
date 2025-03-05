@@ -267,7 +267,7 @@ commands:
             - text: ecc
               comment: "Searches for DER/BER encoded ECC keys (see RFC 5915)."
             - text: safecurves
-              comment: "Searches for DER/BER encoded Safecurves keys (see RFC 8410)."
+              comment: "Searches for DER/BER encoded SafeCurves keys (see RFC 8410)."
             - text: x509
               comment: "Searches for DER/BER encoded X.509 certificates."
   - name: "/d"

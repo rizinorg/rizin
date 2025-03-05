@@ -1775,7 +1775,7 @@ static const RzCmdDescDetailEntry cmd_search_cryptographic_material_Types_detail
 	{ .text = "sm4le", .arg_str = NULL, .comment = "Searches for expanded SM4 keys (little-endian)." },
 	{ .text = "rsa", .arg_str = NULL, .comment = "Searches for DER/BER encoded RSA keys (see RFC 3447)." },
 	{ .text = "ecc", .arg_str = NULL, .comment = "Searches for DER/BER encoded ECC keys (see RFC 5915)." },
-	{ .text = "safecurves", .arg_str = NULL, .comment = "Searches for DER/BER encoded Safecurves keys (see RFC 8410)." },
+	{ .text = "safecurves", .arg_str = NULL, .comment = "Searches for DER/BER encoded SafeCurves keys (see RFC 8410)." },
 	{ .text = "x509", .arg_str = NULL, .comment = "Searches for DER/BER encoded X.509 certificates." },
 	{ 0 },
 };
