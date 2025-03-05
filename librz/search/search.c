@@ -565,7 +565,7 @@ static void print_intervals(RZ_NONNULL RzThreadQueue *intervals) {
 	RzSearchInterval *search_interval = NULL;
 	while ((search_interval = rz_th_queue_pop(intervals, false))) {
 		RzInterval *itv = &search_interval->interval;
-		eprintf("[0x%" PFMT64x ", 0x%" PFMT64x "): %zu\n", itv->addr, itv->addr + itv->size,
+		eprintf("[0x%" PFMT64x ", 0x%" PFMT64x "): %" PFMTSZu "\n", itv->addr, itv->addr + itv->size,
 			search_interval->n_hits);
 	}
 }
