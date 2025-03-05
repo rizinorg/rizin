@@ -425,7 +425,7 @@ static bool rz_core_rtr_gdb_run(RzCore *core, ut32 port, const char *file_path, 
 	if (!core || !file_path) {
 		return false;
 	}
-	if (port > 65535 || port == 0) {
+	if (port > 65535 || !port) {
 		RZ_LOG_ERROR("core: gdbserver: Invalid port: %" PFMT32d "\n", port);
 		return false;
 	}
