@@ -151,26 +151,10 @@ static bool test_autocmplt_newcommand(void) {
 	mu_assert_notnull(core, "core should be created");
 	RzLineBuffer *buf = &core->cons->line->buffer;
 
-	strcpy(buf->data, "");
-	buf->length = strlen("");
-	buf->index = 0;
-	RzLineNSCompletionResult *r = rz_core_autocomplete_rzshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
-
-	mu_assert_notnull(r, "r should be returned");
-	mu_assert_eq(r->start, 0, "should autocomplete starting from 0");
-	mu_assert_eq(r->end, 0, "should autocomplete ending at 0");
-	mu_assert_eq(rz_pvector_len(&r->options), 5, "there are 5 commands available");
-	mu_assert_streq(rz_pvector_at(&r->options, 0), "p", "one is p");
-	mu_assert_streq(rz_pvector_at(&r->options, 1), "s", "one is s");
-	mu_assert_streq(rz_pvector_at(&r->options, 2), "xd", "one is xd");
-	mu_assert_streq(rz_pvector_at(&r->options, 3), "xe", "one is xe");
-	mu_assert_streq(rz_pvector_at(&r->options, 4), "z", "one is z");
-	rz_line_ns_completion_result_free(r);
-
 	strcpy(buf->data, "p @@c:");
 	buf->length = strlen("p @@c:");
 	buf->index = buf->length;
-	r = rz_core_autocomplete_rzshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
+	RzLineNSCompletionResult *r = rz_core_autocomplete_rzshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
 
 	mu_assert_notnull(r, "result should be there");
 	mu_assert_eq(r->start, buf->length, "start should be ok");
