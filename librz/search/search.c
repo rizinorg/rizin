@@ -556,7 +556,7 @@ typedef struct search_ctx {
 	RzSearchOpt *opt; ///< User options
 	RzThreadQueue /* RzSearchHits */ *hits; ///< Hits list
 	RzAtomicBool *loop; ///< If set, the execution will continue until it terminates. If unset, the execution cancels.
-	RzThreadQueue /* RzSearchInterval */ *intervals; ///< Interval list
+	RzThreadQueue /* RzSearchInterval */ *finished_intervals; ///< Interval queue
 } search_ctx_t;
 
 static void print_intervals(RZ_NONNULL RzThreadQueue *intervals) {
@@ -579,14 +579,14 @@ static void *search_cancel_th(void *user) {
 		if (!rz_atomic_bool_get(ctx->loop)) {
 			break;
 		}
-		print_intervals(ctx->intervals);
+		print_intervals(ctx->finished_intervals);
 		size_t n_hits = rz_th_queue_size(ctx->hits);
 		if (opt->cancel_cb(opt->cancel_usr, n_hits, RZ_SEARCH_CANCEL_REGULAR_CHECK)) {
 			rz_atomic_bool_set(ctx->loop, false);
 			break;
 		}
 	}
-	print_intervals(ctx->intervals);
+	print_intervals(ctx->finished_intervals);
 
 	return NULL;
 }
@@ -623,7 +623,7 @@ static bool search_iterator_io_map_cb(void *element, void *user) {
 		goto failure;
 	} else if (ctx->opt->show_progress == RZ_SEARCH_PROGRESS_INTERVALS) {
 		RzSearchInterval *interval = rz_search_interval_new(*window, n_hits);
-		if (!interval || !rz_th_queue_push(ctx->intervals, interval, true)) {
+		if (!interval || !rz_th_queue_push(ctx->finished_intervals, interval, true)) {
 			RZ_LOG_ERROR("search: failed to push search interval to queue\n");
 			free(interval);
 			goto failure;
@@ -734,7 +734,7 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_search_on_io(
 	ctx.io_lock = rz_th_lock_new(false);
 	ctx.loop = rz_atomic_bool_new(true);
 	ctx.hits = hits;
-	ctx.intervals = intervals;
+	ctx.finished_intervals = intervals;
 
 	if (opt->cancel_cb) {
 		// create cancel thread
