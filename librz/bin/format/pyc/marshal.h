@@ -71,6 +71,11 @@ typedef struct {
 	pyc_object *lnotab;
 	st64 start_offset;
 	st64 end_offset;
+	// For versions >=3.11.0
+	pyc_object *localsplusnames;
+	pyc_object *localspluskinds;
+	pyc_object *qualname;
+	pyc_object *exceptiontable;
 } pyc_code_object;
 
 typedef struct pyc_context {

@@ -902,6 +902,8 @@ static pyc_object *get_code_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 	bool v11_to_14 = magic_int_within(pyc->magic_int, 39170, 20117, &error); // 1.0.1 - 1.4
 	bool v15_to_22 = magic_int_within(pyc->magic_int, 20121, 60718, &error); // 1.5a1 - 2.2a1
 	bool v13_to_20 = magic_int_within(pyc->magic_int, 11913, 50824, &error); // 1.3b1 - 2.0b1
+	bool v311_to_latest = magic_int_within(pyc->magic_int, 3495, 3531, &error); // 3.11a1 - 3.12b1;
+	rz_cons_printf("%d", pyc->magic_int);
 	// bool v21_to_27 = (!v13_to_20) && magic_int_within (magic_int, 60124, 62212, &error);
 	bool has_posonlyargcount = magic_int_within(pyc->magic_int, 3410, 3491, &error); // v3.8.0a4 - latest
 	if (error) {
@@ -934,6 +936,8 @@ static pyc_object *get_code_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 		cobj->nlocals = get_ut16(buffer, &error);
 	} else if (v10_to_12) {
 		cobj->nlocals = 0;
+	} else if (v311_to_latest) {
+		cobj->nlocals = 0;
 	} else {
 		cobj->nlocals = get_ut32(buffer, &error);
 	}
@@ -959,19 +963,28 @@ static pyc_object *get_code_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 	if (!pyc->refs) {
 		return ret; // return for entried part to get the root object of this file
 	}
+
 	cobj->code = get_object(pyc, buffer);
 	cobj->end_offset = rz_buf_tell(buffer);
 
 	cobj->consts = get_object(pyc, buffer);
 	cobj->names = get_object(pyc, buffer);
 
-	if (v10_to_12) {
+	if (v10_to_12 || v311_to_latest) {
 		cobj->varnames = NULL;
 	} else {
 		cobj->varnames = get_object(pyc, buffer);
 	}
 
-	if (!(v10_to_12 || v13_to_20)) {
+	if (v311_to_latest) {
+		cobj->localsplusnames = get_object(pyc, buffer);
+		cobj->localspluskinds = get_object(pyc, buffer);
+	} else {
+		cobj->localsplusnames = NULL;
+		cobj->localspluskinds = NULL;
+	}
+
+	if (!(v10_to_12 || v13_to_20 || v311_to_latest)) {
 		cobj->freevars = get_object(pyc, buffer);
 		cobj->cellvars = get_object(pyc, buffer);
 	} else {
@@ -981,6 +994,12 @@ static pyc_object *get_code_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 
 	cobj->filename = get_object(pyc, buffer);
 	cobj->name = get_object(pyc, buffer);
+
+	if (v311_to_latest) {
+		cobj->qualname = get_object(pyc, buffer);
+	} else {
+		cobj->qualname = NULL;
+	}
 
 	if (v15_to_22) {
 		cobj->firstlineno = get_ut16(buffer, &error);
@@ -996,6 +1015,12 @@ static pyc_object *get_code_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 		cobj->lnotab = get_object(pyc, buffer);
 	}
 
+	if (v311_to_latest) {
+		cobj->exceptiontable = get_object(pyc, buffer);
+	} else {
+		cobj->exceptiontable = NULL;
+	}
+
 	if (error) {
 		free_object(cobj->code);
 		free_object(cobj->consts);
@@ -1006,6 +1031,10 @@ static pyc_object *get_code_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 		free_object(cobj->filename);
 		free_object(cobj->name);
 		free_object(cobj->lnotab);
+		free_object(cobj->localsplusnames);
+		free_object(cobj->localspluskinds);
+		free_object(cobj->qualname);
+		free_object(cobj->exceptiontable);
 		free(cobj);
 		RZ_FREE(ret);
 		return NULL;
