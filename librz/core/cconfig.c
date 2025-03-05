@@ -2659,7 +2659,7 @@ static bool cb_search_show_progress(void *user, void *data) {
 	} else if (rz_str_is_false(node->value)) {
 		free(node->value);
 		node->value = rz_str_dup("false");
-	} else if (strcmp(node->value, "intervals")) {
+	} else if (!RZ_STR_EQ(node->value, "intervals")) {
 		RZ_LOG_ERROR("search.show_progress: invalid value (%s), supported only `true, false, intervals`\n", node->value);
 		return false;
 	}
