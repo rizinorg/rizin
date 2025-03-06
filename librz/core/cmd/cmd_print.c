@@ -2547,11 +2547,6 @@ beach:
 	return ret;
 }
 
-RZ_IPI int rz_cmd_hexdump(void *data, const char *input) {
-	// TODO: Use the API directly
-	return rz_core_cmdf(data, "px%s", input);
-}
-
 static int lenof(ut64 off, int two) {
 	char buf[64];
 	buf[0] = 0;
@@ -6726,4 +6721,9 @@ RZ_IPI RzCmdStatus rz_cmd_print_8bit_hexpair_function_handler(RzCore *core, int 
 	size_t len = rz_analysis_function_linear_size(f);
 	ut64 addr = rz_analysis_function_min_addr(f);
 	return print_8bit_hexpair(core, addr, len);
+}
+
+// "x"
+RZ_IPI RzCmdStatus rz_print_hexdump_alias_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	return rz_print_hexdump_handler(core, argc, argv, state);
 }

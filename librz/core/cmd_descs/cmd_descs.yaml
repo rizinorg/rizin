@@ -270,9 +270,16 @@ commands:
     summary: Write commands
     subcommands: cmd_write
   - name: x
-    cname: cmd_hexdump
-    summary: Alias for 'px' (print hexadecimal)
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    summary: Alias for 'px' (print hexdump).
+    cname: print_hexdump_alias
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
+    args:
+      - name: len
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        optional: true
   - name: y
     summary: Yank/paste bytes from/to memory
     subcommands: cmd_yank

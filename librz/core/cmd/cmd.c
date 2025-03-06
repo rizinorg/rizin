@@ -5252,7 +5252,6 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		RzCmdCb cb;
 	} cmds[] = {
 		{ "p", "print current block", rz_cmd_print },
-		{ "x", "alias for px", rz_cmd_hexdump },
 	};
 
 	core->rcmd = rz_core_cmd_new(core, !!core->cons);
