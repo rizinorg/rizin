@@ -1374,7 +1374,7 @@ static void rz_type_format_bitfield(const RzTypeDB *typedb, RzStrBuf *outbuf, ut
 static void rz_type_format_enum(const RzTypeDB *typedb, RzStrBuf *outbuf, ut64 seeki, char *fmtname,
 	char *fieldname, ut64 addr, int mode, int size) {
 	const char *enumvalue = NULL;
-	addr &= (1ULL << (size * 8)) - 1;
+	addr &= (size < 0 ? 0 : (1ULL << size * 8)) - 1;
 	if (MUSTSEE && !SEEVALUE) {
 		rz_strbuf_appendf(outbuf, "0x%08" PFMT64x " = ", seeki);
 	}
