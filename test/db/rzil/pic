@@ -43,5 +43,8 @@ aezi
 aezsu 0x0000082b
 psb @ seckrit
 EOF
-EXPECT=0x00000020 Hello from RzIL!
+EXPECT=<<EOF
+0x00000020 Hello from RzIL!
+0x0000007c AnyColourYouLike
+EOF
 RUN

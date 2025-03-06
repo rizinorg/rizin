@@ -2106,7 +2106,11 @@ RZ_IPI RzCmdStatus rz_print_strings_current_block_handler(RzCore *core, int argc
 		if (mode != RZ_OUTPUT_MODE_QUIET) {
 			rz_print_offset(core->print, address, 0, 0, 0, 0, NULL);
 		}
-		rz_cons_memcat(detected->string, detected->size);
+		RzStrEscOptions eopts = { 0 };
+		eopts.keep_printable = true;
+		char *escaped = rz_str_escape_utf8(detected->string, &eopts);
+		rz_cons_printf("%s", escaped);
+		free(escaped);
 		rz_cons_newline();
 	}
 
