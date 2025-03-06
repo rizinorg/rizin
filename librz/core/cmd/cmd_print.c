@@ -6727,3 +6727,8 @@ RZ_IPI RzCmdStatus rz_cmd_print_8bit_hexpair_function_handler(RzCore *core, int 
 RZ_IPI RzCmdStatus rz_print_hexdump_alias_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	return rz_print_hexdump_handler(core, argc, argv, state);
 }
+
+// "xc"
+RZ_IPI RzCmdStatus rz_print_hexdump_comments_alias_handler(RzCore *core, int argc, const char **argv) {
+	return rz_print_hexdump_comments_handler(core, argc, argv);
+}

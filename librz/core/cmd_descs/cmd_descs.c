@@ -918,6 +918,7 @@ static const RzCmdDescArg write_debruijn_find_args[2];
 static const RzCmdDescArg write_duplicate_args[3];
 static const RzCmdDescArg write_length_string_args[2];
 static const RzCmdDescArg print_hexdump_alias_args[2];
+static const RzCmdDescArg print_hexdump_comments_alias_args[2];
 static const RzCmdDescArg yank_args[2];
 static const RzCmdDescArg yank_file_args[3];
 static const RzCmdDescArg yank_whole_file_args[2];
@@ -20023,6 +20024,21 @@ static const RzCmdDescHelp print_hexdump_alias_help = {
 	.args = print_hexdump_alias_args,
 };
 
+static const RzCmdDescArg print_hexdump_comments_alias_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_hexdump_comments_alias_help = {
+	.summary = "Alias for 'pxc' (show hexdump with comments).",
+	.args = print_hexdump_comments_alias_args,
+};
+
 static const RzCmdDescHelp y_help = {
 	.summary = "Yank/paste bytes from/to memory",
 };
@@ -24768,6 +24784,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *print_hexdump_alias_cd = rz_cmd_desc_argv_state_new(core->rcmd, root_cd, "x", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_hexdump_alias_handler, &print_hexdump_alias_help);
 	rz_warn_if_fail(print_hexdump_alias_cd);
+
+	RzCmdDesc *print_hexdump_comments_alias_cd = rz_cmd_desc_argv_new(core->rcmd, root_cd, "xc", rz_print_hexdump_comments_alias_handler, &print_hexdump_comments_alias_help);
+	rz_warn_if_fail(print_hexdump_comments_alias_cd);
 
 	RzCmdDesc *y_cd = rz_cmd_desc_group_state_new(core->rcmd, root_cd, "y", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_yank_handler, &yank_help, &y_help);
 	rz_warn_if_fail(y_cd);

@@ -280,6 +280,13 @@ commands:
       - name: len
         type: RZ_CMD_ARG_TYPE_RZNUM
         optional: true
+  - name: xc
+    summary:  Alias for 'pxc' (show hexdump with comments).
+    cname: print_hexdump_comments_alias
+    args:
+      - name: len
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        optional: true
   - name: y
     summary: Yank/paste bytes from/to memory
     subcommands: cmd_yank
