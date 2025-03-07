@@ -2178,7 +2178,7 @@ RZ_IPI RzCmdStatus rz_print_value4_handler(RzCore *core, int argc, const char **
 RZ_IPI RzCmdStatus rz_print_value8_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "px"
 RZ_IPI RzCmdStatus rz_print_hexdump_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
-// "px/"
+// "pxF"
 RZ_IPI RzCmdStatus rz_print_hexdump_format_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "pxa"
 RZ_IPI RzCmdStatus rz_print_hexdump_annotated_handler(RzCore *core, int argc, const char **argv);

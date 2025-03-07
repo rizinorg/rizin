@@ -405,11 +405,11 @@ RUN
 NAME=px/ x
 FILE=bins/elf/ls
 CMDS=<<EOF
-px/ 1 x b
-px/ 1 x w
-px/ 1 x d
-px/ 2 x d
-px/ 2 x h
+pxF 1 x b
+pxF 1 x w
+pxF 1 x d
+pxF 2 x d
+pxF 2 x h
 EOF
 EXPECT=<<EOF
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
@@ -424,10 +424,10 @@ RUN
 NAME=px/ d
 FILE=bins/elf/ls
 CMDS=<<EOF
-px/ 1 d b
-px/ 1 d w
-px/ 2 d d
-px/ 2 d h
+pxF 1 d b
+pxF 1 d w
+pxF 2 d d
+pxF 2 d h
 EOF
 EXPECT=<<EOF
 - offset -     0    1    2    3    4    5    6    7    8    9    A    B    C    D    E    F  0123456789ABCDEF
@@ -444,10 +444,10 @@ RUN
 NAME=px/ o
 FILE=bins/elf/ls
 CMDS=<<EOF
-px/ 1 o
-px/ 2 o d
-px/ 1 o h
-px/ 5 o b
+pxF 1 o
+pxF 2 o d
+pxF 1 o h
+pxF 5 o b
 EOF
 EXPECT=<<EOF
 - offset -    0  1   2  3   4  5   6  7   8  9   A  B   C  D   E  F  0123456789ABCDEF
@@ -464,7 +464,7 @@ RUN
 NAME=px/ f
 FILE=bins/elf/ls
 CMDS=<<EOF
-px/ 8 f
+pxF 8 f
 EOF
 EXPECT=<<EOF
 0x00005ae0 = -2.05176598e+35
@@ -481,7 +481,7 @@ RUN
 NAME=px/ error cases
 FILE=bins/elf/ls
 CMDS=<<EOF
-px/ 0 x
+pxF 0 x
 EOF
 EXPECT=<<EOF
 EOF
@@ -492,8 +492,8 @@ RUN
 NAME=px/ s
 FILE=bins/elf/ls
 CMDS=<<EOF
-px/ 50 s w
-px/ 50 s d
+pxF 50 s w
+pxF 50 s d
 EOF
 EXPECT=<<EOF
 0x00005b8b u3UH

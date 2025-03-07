@@ -1300,7 +1300,7 @@ commands:
           - name: len
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
-      - name: px/
+      - name: pxF
         summary: Print formatted bytes.
         cname: print_hexdump_format
         type: RZ_CMD_DESC_TYPE_ARGV_STATE

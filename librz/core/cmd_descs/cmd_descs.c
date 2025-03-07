@@ -24176,7 +24176,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *px_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_print_cd, "px", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_hexdump_handler, &print_hexdump_help, &px_help);
 	rz_warn_if_fail(px_cd);
-	RzCmdDesc *print_hexdump_format_cd = rz_cmd_desc_argv_state_new(core->rcmd, px_cd, "px/", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_hexdump_format_handler, &print_hexdump_format_help);
+	RzCmdDesc *print_hexdump_format_cd = rz_cmd_desc_argv_state_new(core->rcmd, px_cd, "pxF", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_hexdump_format_handler, &print_hexdump_format_help);
 	rz_warn_if_fail(print_hexdump_format_cd);
 
 	RzCmdDesc *print_hexdump_annotated_cd = rz_cmd_desc_argv_new(core->rcmd, px_cd, "pxa", rz_print_hexdump_annotated_handler, &print_hexdump_annotated_help);

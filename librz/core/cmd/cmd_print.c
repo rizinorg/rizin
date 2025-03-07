@@ -6542,7 +6542,7 @@ static size_t format_width_to_num(size_t arch_bits, const char *width) {
 	}
 }
 
-// "px/"
+// "pxF"
 RZ_IPI RzCmdStatus rz_print_hexdump_format_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	ut64 num = rz_num_math(core->num, argv[1]);
 	if (!num) {
