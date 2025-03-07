@@ -242,11 +242,7 @@ static bool bytes_find(RzSearchFindOpt *fopts, void *user, ut64 address, const R
 			continue;
 		}
 		for (size_t offset = 0; offset < size;) {
-			if (fopts->alignment > 1 && rz_mem_align_padding(address + offset, fopts->alignment) != 0) {
-				// Match has not the correct alignment in memory.
-				offset += rz_mem_align_padding(address + offset, fopts->alignment);
-				continue;
-			}
+			RAW_BUF_ITER_ALIGN(fopts, address, offset);
 			size_t leftovers = size - offset;
 			if (hp->length > leftovers) {
 				break;

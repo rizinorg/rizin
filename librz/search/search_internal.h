@@ -131,6 +131,17 @@ struct rz_search_interval_t {
 	size_t n_hits;
 };
 
+/**
+ * \brief Checks of \p fopst->alignment is aligned.
+ * If not, it increases \p offset by the required patting to align address + offset again and continues.
+ */
+#define RAW_BUF_ITER_ALIGN(fopts, address, offset) \
+		if (fopts->alignment > 1 && rz_mem_align_padding(address + offset, fopts->alignment) != 0) { \
+			/* Match has not the correct alignment in memory. */ \
+			offset += rz_mem_align_padding(address + offset, fopts->alignment); \
+			continue; \
+		}
+
 RZ_IPI RZ_OWN RzSearchHit *rz_search_hit_new(const char *metadata, ut64 address, size_t size);
 RZ_IPI void rz_search_hit_free(RZ_NULLABLE RzSearchHit *hit);
 RZ_IPI int rz_search_hit_cmp(RZ_NULLABLE RzSearchHit *a, RZ_NULLABLE RzSearchHit *b, void *user);
