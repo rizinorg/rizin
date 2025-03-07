@@ -108,7 +108,7 @@ RZ_IPI RzCmdStatus rz_cmd_search_cryptographic_material_handler(RzCore *core, in
 // "/d"
 RZ_IPI RzCmdStatus rz_cmd_search_deltified_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "/F"
-RZ_IPI RzCmdStatus rz_cmd_search_file_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+RZ_IPI RzCmdStatus rz_cmd_search_file_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/o"
 RZ_IPI RzCmdStatus rz_cmd_search_insn_offset_backwards_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/O"
