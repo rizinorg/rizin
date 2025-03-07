@@ -91,12 +91,6 @@ typedef enum {
 	RZ_SEARCH_SPACE_KB, ///< The search is performed on the knowledge base.
 } RzSearchSpace;
 
-typedef enum {
-	RZ_SEARCH_PROGRESS_DISABLED = 0, ///< Don't show any search progress.
-	RZ_SEARCH_PROGRESS_NUM_HITS, ///< Show running count of hits.
-	RZ_SEARCH_PROGRESS_INTERVALS, ///< Above + show hits per interval.
-} RzSearchProgress;
-
 struct rz_search_collection_t {
 	void *user; ///< Context defined by the various collections
 	RzSearchSpace space; ///< The search space of this collection.

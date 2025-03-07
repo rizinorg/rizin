@@ -78,6 +78,11 @@ RZ_API bool rz_search_opt_set_show_progress_from_str(RZ_NONNULL RzSearchOpt *opt
 	return true;
 }
 
+RZ_API RzSearchProgress rz_search_opt_get_show_progress(RZ_NONNULL RzSearchOpt *opt) {
+	rz_return_val_if_fail(opt, RZ_SEARCH_PROGRESS_DISABLED);
+	return opt->show_progress;
+}
+
 RZ_API bool rz_search_opt_set_cancel_cb(RZ_NONNULL RzSearchOpt *opt, RzSearchCancelCallback callback, void *user) {
 	rz_return_val_if_fail(opt, false);
 	opt->cancel_cb = callback;
