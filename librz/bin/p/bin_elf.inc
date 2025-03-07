@@ -1239,7 +1239,7 @@ static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel,
 		}
 		break;
 	}
-	case EM_386:
+	case EM_386: {
 		int word = 0;
 		switch (rel->type) {
 		case RZ_386_8:
