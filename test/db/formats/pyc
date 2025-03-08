@@ -1,3 +1,19 @@
+NAME=pyc load version311
+FILE=bins/pyc/py311.pyc
+CMDS=<<EOF
+iI~machine
+EOF
+EXPECT=<<EOF
+machine  Python v3.11.0 VM (rev 968953dcd8930880a3e9c5302b6892a5a0836c14)
+EOF
+REGEXP_FILTER_ERR=<<EOF
+free_object\s\(0\)
+EOF
+EXPECT_ERR=<<EOF
+free_object (0)
+EOF
+RUN
+
 NAME=pyc load version310
 FILE=bins/pyc/py310.pyc
 CMDS=<<EOF
@@ -110,6 +126,28 @@ free_object (0)
 EOF
 RUN
 
+NAME=pyc 3.11 sections
+FILE=bins/pyc/py311.pyc
+CMDS=<<EOF
+iS~Bat
+EOF
+EXPECT=<<EOF
+0x0000354b   0x26 0x0000354b   0x26   0x0 ---- module_.Bat                     
+0x00003599   0x14 0x00003599   0x14   0x0 ---- module_.Bat.__init              
+0x0000361d    0xa 0x0000361d    0xa   0x0 ---- module_.Bat.say                 
+0x0000368f    0x6 0x0000368f    0x6   0x0 ---- module_.Bat.sonar               
+0x000037a9   0x1a 0x000037a9   0x1a   0x0 ---- module_.Batman                  
+0x000037e7   0x76 0x000037e7   0x76   0x0 ---- module_.Batman.__init           
+0x00003981    0x6 0x00003981    0x6   0x0 ---- module_.Batman.sing             
+EOF
+REGEXP_FILTER_ERR=<<EOF
+free_object\s\(0\)
+EOF
+EXPECT_ERR=<<EOF
+free_object (0)
+EOF
+RUN
+
 NAME=pyc 3.10 sections
 FILE=bins/pyc/py310.pyc
 CMDS=<<EOF
@@ -202,6 +240,36 @@ free_object (0)
 EOF
 RUN
 
+NAME=pyc 3.11 disasm
+FILE=bins/pyc/py311.pyc
+CMDS=<<EOF
+pd 10
+EOF
+EXPECT=<<EOF
+            ;-- entry0:
+            ;-- section.module:
+            ;-- <module>:
+            0x0000002a      RESUME                0                    ; [00] ---- section size 7316 named module
+            0x0000002c      LOAD_CONST             Multiline strings can be written
+    using three "s, and are often used
+    as documentation.
+            0x0000002e      STORE_NAME            __doc__
+            0x00000030      NOP
+            0x00000032      NOP
+            0x00000034      NOP
+            0x00000036      NOP
+            0x00000038      NOP
+            0x0000003a      NOP
+            0x0000003c      NOP
+EOF
+REGEXP_FILTER_ERR=<<EOF
+free_object\s\(0\)
+EOF
+EXPECT_ERR=<<EOF
+free_object (0)
+EOF
+RUN
+
 NAME=pyc 3.10 disasm
 FILE=bins/pyc/py310.pyc
 CMDS=<<EOF
@@ -223,6 +291,72 @@ EXPECT=<<EOF
             0x0000003c      NOP
             0x0000003e      NOP
             0x00000040      NOP
+EOF
+REGEXP_FILTER_ERR=<<EOF
+free_object\s\(0\)
+EOF
+EXPECT_ERR=<<EOF
+free_object (0)
+EOF
+RUN
+
+NAME=pyc 3.11 disasm
+FILE=bins/pyc/py311.pyc
+CMDS=<<EOF
+s 0x000032f3
+pd 48
+EOF
+EXPECT=<<EOF
+            ;-- section.module_.Superhero.boast:
+            ;-- <module>.Superhero.boast:
+            0x000032f3      RESUME                0                    ; [29] ---- section size 96 named module_.Superhero.boast
+            0x000032f5      LOAD_FAST             self
+            0x000032f7      LOAD_ATTR             superpowers
+            0x000032f9      CACHE
+            0x000032fb      CACHE
+            0x000032fd      CACHE
+            0x000032ff      CACHE
+            0x00003301      GET_ITER
+      ,,.-> 0x00003303      FOR_ITER              37
+      `---> 0x00003305      STORE_FAST            power
+       |:   0x00003307      LOAD_GLOBAL
+       |:   0x00003309      CACHE
+       |:   0x0000330b      CACHE
+       |:   0x0000330d      CACHE
+       |:   0x0000330f      CACHE
+       |:   0x00003311      CACHE
+       |:   0x00003313      LOAD_CONST            I wield the power of {pow}!
+       |:   0x00003315      LOAD_METHOD           format
+       |:   0x00003317      CACHE
+       |:   0x00003319      CACHE
+       |:   0x0000331b      CACHE
+       |:   0x0000331d      CACHE
+       |:   0x0000331f      CACHE
+       |:   0x00003321      CACHE
+       |:   0x00003323      CACHE
+       |:   0x00003325      CACHE
+       |:   0x00003327      CACHE
+       |:   0x00003329      CACHE
+       |:   0x0000332b      LOAD_FAST             power
+       |:   0x0000332d      KW_NAMES              2
+       |:   0x0000332f      PRECALL               1
+       |:   0x00003331      CACHE
+       |:   0x00003333      CALL                   1
+       |:   0x00003335      CACHE
+       |:   0x00003337      CACHE
+       |:   0x00003339      CACHE
+       |:   0x0000333b      CACHE
+       |:   0x0000333d      PRECALL               1
+       |:   0x0000333f      CACHE
+       |:   0x00003341      CALL                   1
+       |:   0x00003343      CACHE
+       |:   0x00003345      CACHE
+       |:   0x00003347      CACHE
+       |:   0x00003349      CACHE
+       |:   0x0000334b      POP_TOP
+       |`=< 0x0000334d      JUMP_BACKWARD         38
+       `--> 0x0000334f      LOAD_CONST            None
+            0x00003351      RETURN_VALUE
 EOF
 REGEXP_FILTER_ERR=<<EOF
 free_object\s\(0\)

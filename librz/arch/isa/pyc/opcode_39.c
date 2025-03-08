@@ -25,6 +25,10 @@ pyc_opcodes *opcode_39(void) {
 	def_op(.op_obj = ret->opcodes, .op_name = "WITH_EXCEPT_START", .op_code = 49, .pop = 3, .push = 0);
 	def_op(.op_obj = ret->opcodes, .op_name = "LOAD_ASSERTION_ERROR", .op_code = 74, .pop = 0, .push = 1);
 
+	def_op(.op_obj = ret->opcodes, .op_name = "IS_OP", .op_code = 117, .pop = 0, .push = 0);
+	def_op(.op_obj = ret->opcodes, .op_name = "CONTAINS_OP", .op_code = 118, .pop = 0, .push = 0);
+	def_op(.op_obj = ret->opcodes, .op_name = "LIST_EXTEND", .op_code = 162, .pop = 0, .push = 0);
+
 	rz_list_purge(ret->opcode_arg_fmt);
 	add_arg_fmt(ret, "CALL_FUNCTION_KW", format_CALL_FUNCTION_KW_36);
 	add_arg_fmt(ret, "CALL_FUNCTION_EX", format_CALL_FUNCTION_EX_36);
