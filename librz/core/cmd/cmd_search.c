@@ -622,7 +622,7 @@ static void do_esil_search(RzCore *core, struct search_parameters *param, const 
 		rz_config_set_i(core->config, "search.kwidx", search->n_kws); // TODO remove
 		rz_cons_break_pop();
 	}
-	rz_cons_clear_line(1);
+	rz_cons_clear_line(stderr);
 	if (param->outmode == RZ_MODE_JSON) {
 		pj_end(param->pj);
 	}
@@ -1287,7 +1287,7 @@ static void do_string_search(RzCore *core, RzInterval search_itv, struct search_
 				}
 			}
 			print_search_progress(at, to1, search->nhits, param);
-			rz_cons_clear_line(1);
+			rz_cons_clear_line(stderr);
 			core->num->value = search->nhits;
 			if (param->outmode != RZ_MODE_JSON) {
 				eprintf("hits: %" PFMT64d "\n", search->nhits - saved_nhits);
@@ -2012,7 +2012,7 @@ reread:
 					}
 					addr += ret - 1;
 				}
-				rz_cons_clear_line(1);
+				rz_cons_clear_line(stderr);
 				rz_cons_break_pop();
 			}
 			if (param.outmode == RZ_MODE_JSON) {
@@ -2021,7 +2021,7 @@ reread:
 		} else {
 			RZ_LOG_ERROR("core: Usage: /m [file]\n");
 		}
-		rz_cons_clear_line(1);
+		rz_cons_clear_line(stderr);
 		break;
 	case 'p': // "/p"
 	{
@@ -2425,7 +2425,7 @@ static RzCmdStatus cmd_core_handle_search_hits(RzCore *core, RzCmdStateOutput *s
 
 	if (!rz_str_is_false(rz_config_get(core->config, "search.show_progress"))) {
 		// clear last progress notification, if any
-		rz_cons_clear_line(1);
+		rz_cons_clear_line(stderr);
 	}
 
 	RzListIter *it = NULL;

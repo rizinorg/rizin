@@ -759,10 +759,15 @@ RZ_API void rz_cons_fill_line(void) {
 	}
 }
 
-RZ_API void rz_cons_clear_line(int std_err) {
+/**
+ * \brief Print on `stream` the ANSI escape sequence to clear the current line.
+ * \param stream Either stdout or stderr.
+ */
+RZ_API void rz_cons_clear_line(FILE *stream) {
+	rz_return_if_fail(stream == stdout || stream == stderr);
 #if __WINDOWS__
 	if (I.vtmode != RZ_VIRT_TERM_MODE_DISABLE) {
-		fprintf(std_err ? stderr : stdout, "%s", RZ_CONS_CLEAR_LINE);
+		fprintf(stream, "%s", RZ_CONS_CLEAR_LINE);
 	} else {
 		char white[1024];
 		memset(&white, ' ', sizeof(white));
@@ -773,12 +778,12 @@ RZ_API void rz_cons_clear_line(int std_err) {
 		} else {
 			white[sizeof(white) - 1] = 0; // HACK
 		}
-		fprintf(std_err ? stderr : stdout, "\r%s\r", white);
+		fprintf(stream, "\r%s\r", white);
 	}
 #else
-	fprintf(std_err ? stderr : stdout, "%s", RZ_CONS_CLEAR_LINE);
+	fprintf(stream, "%s", RZ_CONS_CLEAR_LINE);
 #endif
-	fflush(std_err ? stderr : stdout);
+	fflush(stream);
 }
 
 RZ_API void rz_cons_clear00(void) {

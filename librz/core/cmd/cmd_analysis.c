@@ -5426,7 +5426,7 @@ RZ_IPI RzCmdStatus rz_analyze_cycles_handler(RzCore *core, int argc, const char 
 	rz_config_set_i(core->config, "asm.xrefs", false);
 
 	hooks = rz_core_analysis_cycles(core, ccl); // analysisyse
-	rz_cons_clear_line(1);
+	rz_cons_clear_line(stderr);
 	rz_list_foreach (hooks, iter, hook) {
 		instr_tmp = rz_core_disassemble_instr(core, hook->addr, 1);
 		rz_cons_printf("After %4i cycles:\t%s", (ccl - hook->cycles), instr_tmp);

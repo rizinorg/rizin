@@ -29,7 +29,7 @@ enum {
 #define MAX_SCAN_SIZE 0x7ffffff
 
 static void loganalysis(ut64 from, ut64 to, int depth) {
-	rz_cons_clear_line(1);
+	rz_cons_clear_line(stderr);
 	eprintf("0x%08" PFMT64x " > 0x%08" PFMT64x " %d\r", from, to, depth);
 }
 
@@ -955,7 +955,7 @@ static int __core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, in
 						}
 						// TODO: ensure next address is function after padding (nop or trap or wat)
 						// XXX noisy for test cases because we want to clear the stderr
-						rz_cons_clear_line(1);
+						rz_cons_clear_line(stderr);
 						loganalysis(fcn->addr, at, 10000 - depth);
 						next = next_append(next, &nexti, at);
 					}
@@ -2666,7 +2666,7 @@ RZ_API RzList /*<RzAnalysisCycleHook *>*/ *rz_core_analysis_cycles(RzCore *core,
 	rz_cons_break_push(NULL, NULL);
 	while (cf && !rz_cons_is_breaked()) {
 		if ((op = rz_core_analysis_op(core, addr, RZ_ANALYSIS_OP_MASK_BASIC)) && (op->cycles) && (ccl > 0)) {
-			rz_cons_clear_line(1);
+			rz_cons_clear_line(stderr);
 			eprintf("%i -- ", ccl);
 			addr += op->size;
 			switch (op->type) {
@@ -5996,7 +5996,7 @@ RZ_API void rz_core_perform_auto_analysis(RZ_NONNULL RzCore *core, RzCoreAnalysi
 	if (rz_core_is_debugging(core)) {
 		debugger = core->dbg->cur ? rz_str_dup(core->dbg->cur->name) : rz_str_dup("esil");
 	}
-	rz_cons_clear_line(1);
+	rz_cons_clear_line(stderr);
 
 	// if type was simple only then don't proceed further
 	if (type == RZ_CORE_ANALYSIS_SIMPLE || rz_cons_is_breaked()) {

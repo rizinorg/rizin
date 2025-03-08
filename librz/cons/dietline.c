@@ -1191,7 +1191,7 @@ static void __print_prompt(RzLine *line) {
 		rz_cons_gotoxy(0, cons->rows);
 		rz_cons_flush();
 	}
-	rz_cons_clear_line(0);
+	rz_cons_clear_line(stdout);
 	if (cons->context->color_mode > 0) {
 		printf("\r%s%s", Color_RESET, line->prompt);
 	} else {
@@ -1610,7 +1610,7 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 		bool o_do_setup_match = line->history.do_setup_match;
 		line->history.do_setup_match = true;
 		if (line->echo) {
-			rz_cons_clear_line(0);
+			rz_cons_clear_line(stdout);
 		}
 		switch (*buf) {
 

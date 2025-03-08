@@ -1866,7 +1866,7 @@ static void diff_graph_as_json(RzCore *core_a, RzAnalysisFunction *fcn_a, RzCore
 }
 
 static bool diff_progess_status(const size_t n_left, const size_t n_matches, void *user) {
-	rz_cons_clear_line(true);
+	rz_cons_clear_line(stderr);
 	fprintf(stderr, "rz-diff: to check %" PFMTSZu " | matches %" PFMTSZu "\r", n_left, n_matches);
 	return !rz_cons_is_breaked();
 }
@@ -2665,7 +2665,7 @@ static bool rz_diff_draw_tui(DiffHexView *hview, bool show_help) {
 static char *visual_prompt(DiffHexView *hview, const char *prompt) {
 	char buf[1024];
 	rz_cons_gotoxy(0, hview->screen.height);
-	rz_cons_clear_line(0);
+	rz_cons_clear_line(stdout);
 	rz_cons_printf("%s%s ", hview->colors.reset, prompt);
 	rz_line_set_prompt(rz_cons_singleton()->line, ":> ");
 	rz_cons_flush();

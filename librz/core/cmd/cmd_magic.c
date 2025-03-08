@@ -139,7 +139,7 @@ static int rz_core_magic_at(RzCore *core, const char *file, ut64 addr, int depth
 			pj_ks(pj, "info", p);
 			pj_end(pj);
 		}
-		rz_cons_clear_line(1);
+		rz_cons_clear_line(stderr);
 		// eprintf ("0x%08"PFMT64x" 0x%08"PFMT64x" %d %s\n", addr+adelta, addr+adelta, magicdepth-depth, p);
 		//  walking children
 		for (q = p; *q; q++) {
