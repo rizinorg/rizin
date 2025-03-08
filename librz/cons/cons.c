@@ -761,7 +761,7 @@ RZ_API void rz_cons_fill_line(void) {
 
 /**
  * \brief Print on `stream` the ANSI escape sequence to clear the current line.
- * \param stream Either stdout or stderr.
+ * \param stream Either stdout or stderr. Only 2 possible stream values are accepted.
  */
 RZ_API void rz_cons_clear_line(FILE *stream) {
 	rz_return_if_fail(stream == stdout || stream == stderr);
