@@ -732,6 +732,186 @@ static void analysis_SETUP_ASYNC_WITH(RzAnalysisOp *op, pyc_opcode_object *op_ob
 	op->fail = mid;
 }
 
+// 3.11.0 opcodes
+static void analysis_ASYNC_GEN_WRAP(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	op->type = RZ_ANALYSIS_OP_TYPE_UNK;
+}
+
+static void analysis_RETURN_GENERATOR(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	op->type = RZ_ANALYSIS_OP_TYPE_NEW;
+}
+
+static void analysis_SEND(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	op->type = RZ_ANALYSIS_OP_TYPE_UNK;
+}
+
+static void analysis_COPY_FREE_VARS(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	op->type = RZ_ANALYSIS_OP_TYPE_UNK;
+}
+
+static void analysis_MAKE_CELL(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	op->type = RZ_ANALYSIS_OP_TYPE_NEW;
+}
+
+static void analysis_PREP_RERAISE_STAR(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	op->type = RZ_ANALYSIS_OP_TYPE_NEW;
+}
+
+static void analysis_PUSH_EXC_INFO(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	analysis_push(op, op_obj, oparg, RZ_ANALYSIS_OP_TYPE_UNK, 1);
+}
+
+static void analysis_RESUME(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	op->type = RZ_ANALYSIS_OP_TYPE_NOP;
+}
+
+static void analysis_JUMP_BACKWARD_NO_INTERRUPT(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	op->type = RZ_ANALYSIS_OP_TYPE_JMP;
+	op->jump = op->addr + 2 - 2 * oparg; // addr + ((is_python36) ? 2 : 3) - JMP_OFFSET(ops, oparg);
+}
+
+// combined BINARY_* and INPLACE_* in one
+static void analysis_BINARY_OP(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	switch (oparg) {
+	case 0:
+		analysis_BINARY_ADD(op, op_obj, oparg);
+		break;
+	case 1:
+		analysis_BINARY_AND(op, op_obj, oparg);
+		break;
+	case 2:
+		analysis_BINARY_FLOOR_DIVIDE(op, op_obj, oparg);
+		break;
+	case 3:
+		analysis_BINARY_LSHIFT(op, op_obj, oparg);
+		break;
+	case 4:
+		analysis_BINARY_MATRIX_MULTIPLY(op, op_obj, oparg);
+		break;
+	case 5:
+		analysis_BINARY_MULTIPLY(op, op_obj, oparg);
+		break;
+	case 6:
+		analysis_BINARY_MODULO(op, op_obj, oparg);
+		break;
+	case 7:
+		analysis_BINARY_OR(op, op_obj, oparg);
+		break;
+	case 8:
+		analysis_BINARY_POWER(op, op_obj, oparg);
+		break;
+	case 9:
+		analysis_BINARY_RSHIFT(op, op_obj, oparg);
+		break;
+	case 10:
+		analysis_BINARY_SUBTRACT(op, op_obj, oparg);
+		break;
+	case 11:
+		analysis_BINARY_TRUE_DIVIDE(op, op_obj, oparg);
+		break;
+	case 12:
+		analysis_BINARY_XOR(op, op_obj, oparg);
+		break;
+	case 13:
+		analysis_INPLACE_ADD(op, op_obj, oparg);
+		break;
+	case 14:
+		analysis_INPLACE_AND(op, op_obj, oparg);
+		break;
+	case 15:
+		analysis_INPLACE_FLOOR_DIVIDE(op, op_obj, oparg);
+		break;
+	case 16:
+		analysis_INPLACE_LSHIFT(op, op_obj, oparg);
+		break;
+	case 17:
+		analysis_INPLACE_MATRIX_MULTIPLY(op, op_obj, oparg);
+		break;
+	case 18:
+		analysis_INPLACE_MULTIPLY(op, op_obj, oparg);
+		break;
+	case 19:
+		analysis_INPLACE_MODULO(op, op_obj, oparg);
+		break;
+	case 20:
+		analysis_INPLACE_OR(op, op_obj, oparg);
+		break;
+	case 21:
+		analysis_INPLACE_POWER(op, op_obj, oparg);
+		break;
+	case 22:
+		analysis_INPLACE_RSHIFT(op, op_obj, oparg);
+		break;
+	case 23:
+		analysis_INPLACE_SUBTRACT(op, op_obj, oparg);
+		break;
+	case 24:
+		analysis_INPLACE_TRUE_DIVIDE(op, op_obj, oparg);
+		break;
+	case 25:
+		analysis_INPLACE_XOR(op, op_obj, oparg);
+		break;
+	default:
+		analysis_pop(op, op_obj, oparg, RZ_ANALYSIS_OP_TYPE_UNK, 1);
+		break;
+	}
+}
+
+static void analysis_CALL(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	op->type = RZ_ANALYSIS_OP_TYPE_ICALL;
+}
+
+static void analysis_KW_NAMES(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	op->type = RZ_ANALYSIS_OP_TYPE_UNK;
+}
+
+static void analysis_PRECALL(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	op->type = RZ_ANALYSIS_OP_TYPE_NOP;
+}
+
+static void analysis_PUSH_NULL(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	analysis_push(op, op_obj, oparg, RZ_ANALYSIS_OP_TYPE_PUSH, 1);
+}
+
+static void analysis_COPY(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	analysis_push(op, op_obj, oparg, RZ_ANALYSIS_OP_TYPE_PUSH, 1);
+}
+
+static void analysis_SWAP(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	op->type = RZ_ANALYSIS_OP_TYPE_UNK;
+}
+
+static void analysis_JUMP_BACKWARD(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	op->type = RZ_ANALYSIS_OP_TYPE_JMP;
+	op->jump = op->addr + 2 - 2 * oparg; // addr + ((is_python36) ? 2 : 3) - JMP_OFFSET(ops, oparg);
+}
+
+static void analysis_POP_JUMP_FORWARD_IF_TRUE(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
+}
+
+static void analysis_POP_JUMP_FORWARD_IF_FALSE(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
+}
+
+static void analysis_POP_JUMP_BACKWARD_IF_TRUE(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
+	op->jump = op->addr + 2 - 2 * oparg; // addr + ((is_python36) ? 2 : 3) - JMP_OFFSET(ops, oparg);
+}
+
+static void analysis_POP_JUMP_BACKWARD_IF_FALSE(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
+	op->jump = op->addr + 2 - 2 * oparg; // addr + ((is_python36) ? 2 : 3) - JMP_OFFSET(ops, oparg);
+}
+
+static void analysis_BEFORE_WITH(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	analysis_push(op, op_obj, oparg, RZ_ANALYSIS_OP_TYPE_UNK, 2);
+}
+
+static void analysis_CACHE(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	op->type = RZ_ANALYSIS_OP_TYPE_NOP;
+}
+
 static op_analysis_func op_analysis[] = {
 	{ "BEFORE_ASYNC_WITH", analysis_BEFORE_ASYNC_WITH },
 	{ "BEGIN_FINALLY", analysis_BEGIN_FINALLY },
@@ -897,6 +1077,29 @@ static op_analysis_func op_analysis[] = {
 	{ "SETUP_FINALLY", analysis_SETUP_FINALLY },
 	{ "SETUP_WITH", analysis_SETUP_WITH },
 	{ "SETUP_ASYNC_WITH", analysis_SETUP_ASYNC_WITH },
+	{ "ASYNC_GEN_WRAP", analysis_ASYNC_GEN_WRAP },
+	{ "RETURN_GENERATOR", analysis_RETURN_GENERATOR },
+	{ "SEND", analysis_SEND },
+	{ "COPY_FREE_VARS", analysis_COPY_FREE_VARS },
+	{ "JUMP_BACKWARD_NO_INTERRUPT", analysis_JUMP_BACKWARD_NO_INTERRUPT },
+	{ "MAKE_CELL", analysis_MAKE_CELL },
+	{ "PREP_RERAISE_STAR", analysis_PREP_RERAISE_STAR },
+	{ "PUSH_EXC_INFO", analysis_PUSH_EXC_INFO },
+	{ "RESUME", analysis_RESUME },
+	{ "BINARY_OP", analysis_BINARY_OP },
+	{ "CALL", analysis_CALL },
+	{ "KW_NAMES", analysis_KW_NAMES },
+	{ "PRECALL", analysis_PRECALL },
+	{ "PUSH_NULL", analysis_PUSH_NULL },
+	{ "COPY", analysis_COPY },
+	{ "SWAP", analysis_SWAP },
+	{ "JUMP_BACKWARD", analysis_JUMP_BACKWARD },
+	{ "POP_JUMP_FORWARD_IF_TRUE", analysis_POP_JUMP_FORWARD_IF_TRUE },
+	{ "POP_JUMP_FORWARD_IF_FALSE", analysis_POP_JUMP_FORWARD_IF_FALSE },
+	{ "POP_JUMP_BACKWARD_IF_TRUE", analysis_POP_JUMP_BACKWARD_IF_TRUE },
+	{ "POP_JUMP_BACKWARD_IF_FALSE", analysis_POP_JUMP_BACKWARD_IF_FALSE },
+	{ "BEFORE_WITH", analysis_BEFORE_WITH },
+	{ "CACHE", analysis_CACHE },
 };
 
 void analysis_pyc_op(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {

@@ -844,12 +844,22 @@ static pyc_object *copy_object(pyc_object *object) {
 		dst->code = copy_object(src->code);
 		dst->consts = copy_object(src->consts);
 		dst->names = copy_object(src->names);
-		dst->varnames = copy_object(src->varnames);
-		dst->freevars = copy_object(src->freevars);
-		dst->cellvars = copy_object(src->cellvars);
+		dst->localsplusnames = copy_object(src->localsplusnames);
+		dst->localspluskinds = copy_object(src->localspluskinds);
+		if (src->varnames) {
+			dst->varnames = copy_object(src->varnames);
+		}
+		if (src->freevars) {
+			dst->freevars = copy_object(src->freevars);
+		}
+		if (src->cellvars) {
+			dst->cellvars = copy_object(src->cellvars);
+		}
 		dst->filename = copy_object(src->filename);
 		dst->name = copy_object(src->name);
 		dst->lnotab = copy_object(src->lnotab);
+		dst->qualname = copy_object(src->qualname);
+		dst->exceptiontable = copy_object(src->exceptiontable);
 		copy->data = dst;
 	} break;
 	case TYPE_REF:
@@ -882,6 +892,57 @@ static pyc_object *copy_object(pyc_object *object) {
 	return copy;
 }
 
+// populate varnames, freevars, cellvars version >=3.11.0
+
+static void extract_variables_from_localplus(pyc_object *localplusnames, pyc_object *localpluskinds, pyc_object **varnames, pyc_object **freevars, pyc_object **cellvars, bool *error) {
+	if (!localplusnames || !localpluskinds) {
+		*error = true;
+		return;
+	}
+
+	RzList *names_list = (RzList *)localplusnames->data;
+	ut8 *kinds_list = (ut8 *)localpluskinds->data;
+
+	*varnames = RZ_NEW0(pyc_object);
+	*freevars = RZ_NEW0(pyc_object);
+	*cellvars = RZ_NEW0(pyc_object);
+
+	if (!*varnames || !*cellvars || !*freevars) {
+		*error = true;
+		return;
+	}
+
+	(*varnames)->data = rz_list_new();
+	(*freevars)->data = rz_list_new();
+	(*cellvars)->data = rz_list_new();
+
+	(*varnames)->type = localplusnames->type;
+	(*freevars)->type = localplusnames->type;
+	(*cellvars)->type = localplusnames->type;
+
+	RzListIter *iter;
+	pyc_object *name;
+	int offset = 0;
+
+	rz_list_foreach (names_list, iter, name) {
+		ut8 kind = kinds_list[offset];
+
+		if (kind & 0x20) { // CO_FAST_LOCAL
+			rz_list_append((*varnames)->data, name);
+		}
+
+		if (kind & 0x40) { // CO_FAST_CELL
+			rz_list_append((*cellvars)->data, name);
+		}
+
+		if (kind & 0x80) { // CO_FAST_FREE
+			rz_list_append((*freevars)->data, name);
+		}
+
+		offset++;
+	}
+}
+
 static pyc_object *get_code_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 	bool error = false;
 
@@ -903,7 +964,6 @@ static pyc_object *get_code_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 	bool v15_to_22 = magic_int_within(pyc->magic_int, 20121, 60718, &error); // 1.5a1 - 2.2a1
 	bool v13_to_20 = magic_int_within(pyc->magic_int, 11913, 50824, &error); // 1.3b1 - 2.0b1
 	bool v311_to_latest = magic_int_within(pyc->magic_int, 3495, 3531, &error); // 3.11a1 - 3.12b1;
-	rz_cons_printf("%d", pyc->magic_int);
 	// bool v21_to_27 = (!v13_to_20) && magic_int_within (magic_int, 60124, 62212, &error);
 	bool has_posonlyargcount = magic_int_within(pyc->magic_int, 3410, 3491, &error); // v3.8.0a4 - latest
 	if (error) {
@@ -1019,6 +1079,10 @@ static pyc_object *get_code_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 		cobj->exceptiontable = get_object(pyc, buffer);
 	} else {
 		cobj->exceptiontable = NULL;
+	}
+
+	if (v311_to_latest) {
+		extract_variables_from_localplus(cobj->localsplusnames, cobj->localspluskinds, &cobj->varnames, &cobj->freevars, &cobj->cellvars, &error);
 	}
 
 	if (error) {

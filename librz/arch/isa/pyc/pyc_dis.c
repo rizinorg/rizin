@@ -24,14 +24,13 @@ int rz_pyc_disasm(RzAsmOp *opstruct, const ut8 *code, RzList /*<pyc_code_object 
 	}
 
 	if (cobj) {
-		if (cobj->varnames && cobj->freevars && cobj->cellvars) {
-			/* TODO: adding line number and offset */
-			RzList *varnames = cobj->varnames->data;
-			RzList *consts = cobj->consts->data;
-			RzList *names = cobj->names->data;
-			RzList *freevars = cobj->freevars->data;
-			RzList *cellvars = cobj->cellvars->data;
-		}
+
+		/* TODO: adding line number and offset and exception table*/
+		RzList *varnames = cobj->varnames->data;
+		RzList *consts = cobj->consts->data;
+		RzList *names = cobj->names->data;
+		RzList *freevars = cobj->freevars->data;
+		RzList *cellvars = cobj->cellvars->data;
 
 		ut8 op = code[i];
 		i++;
