@@ -88,17 +88,17 @@ pyc_opcodes *opcode_311(void) {
 	def_op(.op_obj = ret->opcodes, .op_name = "COPY", .op_code = 120, .pop = 0, .push = 1);
 	def_op(.op_obj = ret->opcodes, .op_name = "SWAP", .op_code = 99, .pop = 1, .push = 1);
 
-	jrel_op00(.op_obj = ret->opcodes, .op_name = "JUMP_BACKWARD", .op_code = 140, .pop = 9, .push = 1, .conditional = false, .fallthrough = false);
+	jrel_op00(.op_obj = ret->opcodes, .op_name = "JUMP_BACKWARD", .op_code = 140, .pop = 9, .push = 1, .conditional = false);
 
-	jrel_op(.op_obj = ret->opcodes, .op_name = "POP_JUMP_FORWARD_IF_TRUE", .op_code = 115, .pop = 0, .push = 0, .conditional = true, .fallthrough = false);
-	jrel_op(.op_obj = ret->opcodes, .op_name = "POP_JUMP_FORWARD_IF_FALSE", .op_code = 114, .pop = 0, .push = 0, .conditional = true, .fallthrough = false);
-	jrel_op(.op_obj = ret->opcodes, .op_name = "POP_JUMP_FORWARD_IF_NOT_NONE", .op_code = 128, .pop = 0, .push = 0, .conditional = true, .fallthrough = false);
-	jrel_op(.op_obj = ret->opcodes, .op_name = "POP_JUMP_FORWARD_IF_NONE", .op_code = 129, .pop = 0, .push = 0, .conditional = true, .fallthrough = false);
+	jrel_op(.op_obj = ret->opcodes, .op_name = "POP_JUMP_FORWARD_IF_TRUE", .op_code = 115, .pop = 0, .push = 0, .conditional = true);
+	jrel_op(.op_obj = ret->opcodes, .op_name = "POP_JUMP_FORWARD_IF_FALSE", .op_code = 114, .pop = 0, .push = 0, .conditional = true);
+	jrel_op(.op_obj = ret->opcodes, .op_name = "POP_JUMP_FORWARD_IF_NOT_NONE", .op_code = 128, .pop = 0, .push = 0, .conditional = true);
+	jrel_op(.op_obj = ret->opcodes, .op_name = "POP_JUMP_FORWARD_IF_NONE", .op_code = 129, .pop = 0, .push = 0, .conditional = true);
 
-	jrel_op(.op_obj = ret->opcodes, .op_name = "POP_JUMP_BACKWARD_IF_TRUE", .op_code = 176, .pop = 0, .push = 0, .conditional = true, .fallthrough = false);
-	jrel_op(.op_obj = ret->opcodes, .op_name = "POP_JUMP_BACKWARD_IF_FALSE", .op_code = 175, .pop = 0, .push = 0, .conditional = true, .fallthrough = false);
-	jrel_op(.op_obj = ret->opcodes, .op_name = "POP_JUMP_BACKWARD_IF_NOT_NONE", .op_code = 173, .pop = 0, .push = 0, .conditional = true, .fallthrough = false);
-	jrel_op(.op_obj = ret->opcodes, .op_name = "POP_JUMP_BACKWARD_IF_NONE", .op_code = 174, .pop = 0, .push = 0, .conditional = true, .fallthrough = false);
+	jrel_op(.op_obj = ret->opcodes, .op_name = "POP_JUMP_BACKWARD_IF_TRUE", .op_code = 176, .pop = 0, .push = 0, .conditional = true);
+	jrel_op(.op_obj = ret->opcodes, .op_name = "POP_JUMP_BACKWARD_IF_FALSE", .op_code = 175, .pop = 0, .push = 0, .conditional = true);
+	jrel_op(.op_obj = ret->opcodes, .op_name = "POP_JUMP_BACKWARD_IF_NOT_NONE", .op_code = 173, .pop = 0, .push = 0, .conditional = true);
+	jrel_op(.op_obj = ret->opcodes, .op_name = "POP_JUMP_BACKWARD_IF_NONE", .op_code = 174, .pop = 0, .push = 0, .conditional = true);
 
 	def_op(.op_obj = ret->opcodes, .op_name = "BEFORE_WITH", .op_code = 53, .pop = 0, .push = 2);
 
