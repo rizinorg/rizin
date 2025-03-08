@@ -26,6 +26,7 @@ rz_util_common_sources = [
   'hex.c',
   'idpool.c',
   'intervaltree.c',
+  'itv.c',
   'json_indent.c',
   'json_parser.c',
   'lang_byte_array.c',
