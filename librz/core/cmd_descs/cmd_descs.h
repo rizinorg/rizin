@@ -151,22 +151,24 @@ RZ_IPI RzCmdStatus rz_cmd_search_gadget_handler(RzCore *core, int argc, const ch
 RZ_IPI RzCmdStatus rz_cmd_query_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/Rg"
 RZ_IPI RzCmdStatus rz_cmd_detail_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/v"
+RZ_IPI RzCmdStatus rz_cmd_search_value_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/v1"
-RZ_IPI RzCmdStatus rz_cmd_search_value_8_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+RZ_IPI RzCmdStatus rz_cmd_search_value_alias_v1_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/v2"
-RZ_IPI RzCmdStatus rz_cmd_search_value_16_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+RZ_IPI RzCmdStatus rz_cmd_search_value_alias_v2_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/v4"
-RZ_IPI RzCmdStatus rz_cmd_search_value_32_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+RZ_IPI RzCmdStatus rz_cmd_search_value_alias_v4_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/v8"
-RZ_IPI RzCmdStatus rz_cmd_search_value_64_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+RZ_IPI RzCmdStatus rz_cmd_search_value_alias_v8_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/V1"
-RZ_IPI RzCmdStatus rz_cmd_search_value_8be_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+RZ_IPI RzCmdStatus rz_cmd_search_value_alias_v1_range_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/V2"
-RZ_IPI RzCmdStatus rz_cmd_search_value_16be_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+RZ_IPI RzCmdStatus rz_cmd_search_value_alias_v2_range_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/V4"
-RZ_IPI RzCmdStatus rz_cmd_search_value_32be_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+RZ_IPI RzCmdStatus rz_cmd_search_value_alias_v4_range_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/V8"
-RZ_IPI RzCmdStatus rz_cmd_search_value_64be_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+RZ_IPI RzCmdStatus rz_cmd_search_value_alias_v8_range_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/x"
 RZ_IPI RzCmdStatus rz_cmd_search_hex_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/xr"

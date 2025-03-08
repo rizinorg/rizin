@@ -177,6 +177,64 @@ quit:
 }
 
 /**
+ * \brief      Finds a value ranges in the IO layer of the given core and core configuration.
+ *
+ * \param      core    The RzCore core.
+ * \param      opt     The search options to apply. If it is NULL a default set of options is used.
+ * \param      vranges The value ranges to search.
+ *
+ * \return     On success returns a valid pointer, otherwise NULL
+ */
+RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_values(RZ_NONNULL RzCore *core, RZ_BORROW RZ_NULLABLE RzSearchOpt *user_opts, RZ_NONNULL RZ_OWN RzVector /*<RzSearchValueRange>*/ *vranges) {
+	rz_return_val_if_fail(core && core->config && vranges, NULL);
+	if (rz_vector_empty(vranges)) {
+		RZ_LOG_ERROR("core: No value ranges to search.\n");
+		rz_vector_free(vranges);
+		return NULL;
+	}
+
+	RzList *hits = NULL;
+	RzList *boundaries = NULL;
+	RzSearchOpt *search_opts = NULL;
+
+	RzSearchCollection *collection = rz_search_collection_values();
+	if (!collection ||
+		!rz_search_collection_values_add(collection, vranges)) {
+		RZ_LOG_ERROR("core: Failed to initialize search collection.\n");
+		goto quit;
+	}
+
+	if (!user_opts) {
+		// override user_opts with default one
+		user_opts = search_opts = default_search_options();
+		if (!search_opts) {
+			goto quit;
+		}
+	}
+
+	// Don't pass the user provided search options.
+	// They were set up by the user and we respect them.
+	boundaries = rz_core_setup_io_search_parameters(core, user_opts);
+	if (!boundaries) {
+		RZ_LOG_ERROR("core: Setting up search from core failed.\n");
+		goto quit;
+	}
+
+	if (!rz_search_opt_set_chunk_size(user_opts, RZ_SEARCH_VALUE_SEARCH_MAX_WIDTH)) {
+		RZ_LOG_ERROR("search: Failed to update chunk size in the search options.\n");
+		goto quit;
+	}
+
+	hits = perform_search_on_core_io(core, user_opts, boundaries, collection);
+
+quit:
+	rz_list_free(boundaries);
+	rz_search_opt_free(search_opts);
+	rz_search_collection_free(collection);
+	return hits;
+}
+
+/**
  * \brief      Finds a string within the `search.in` boundaries.
  *
  * \param      core        The RzCore core.

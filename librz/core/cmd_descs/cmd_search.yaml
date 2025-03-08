@@ -546,9 +546,57 @@ commands:
   - name: "/v"
     summary: Value search.
     subcommands:
+    - name: "/v"
+      summary: Value search.
+      cname: cmd_search_value
+      type: RZ_CMD_DESC_TYPE_ARGV_STATE
+      default_mode: RZ_OUTPUT_MODE_STANDARD
+      modes:
+        - RZ_OUTPUT_MODE_STANDARD
+        - RZ_OUTPUT_MODE_JSON
+        - RZ_OUTPUT_MODE_QUIET
+        - RZ_OUTPUT_MODE_TABLE
+      args:
+        - name: bytes
+          type: RZ_CMD_ARG_TYPE_CHOICES
+          choices:
+            - "1"
+            - "2le"
+            - "4le"
+            - "8le"
+            - "2be"
+            - "4be"
+            - "8be"
+            - "2a"
+            - "4a"
+            - "8a"
+        - name: range
+          type: RZ_CMD_ARG_TYPE_STRING
+          flags: RZ_CMD_ARG_FLAG_ARRAY
+      details:
+        - name: Arguments
+          entries:
+            - text: "bytes"
+              comment: "Value byte width and endianess."
+            - text: "range"
+              comment: "One or multiple ranges of values.
+                Can be single values or range descriptions. Must be wrapped in '\"'."
+        - name: Usage example
+          entries:
+            - text: "/v 4be 512"
+              comment: "Search 512 represented in 4 bytes big endian order."
+            - text: "/v 8le \"[0x80000000,0x80001000]\""
+              comment: "Search values in the closed range '[0x80000000,0x80001000]'
+                represented in 8 bytes little endian order."
+            - text: "/v 2a \"(0x1000,0xff0)\""
+              comment: "Search values in the open range '(0x1000,0xff0)' represented
+                in 2 bytes order of cfg.bigendian."
+            - text: "/v 1 \"[0x20,0x10)\", 0xff, \"[0xf0,0xff]\""
+              comment: "Search values in the right open range '[0x20,0x10)', value '0x55'
+                and closed range values '[0xf0,0xff]' represented in 1 byte."
     - name: "/v1"
-      summary: 8-bit value search.
-      cname: cmd_search_value_8
+      summary: Value search - Alias for /v 1 <value>.
+      cname: cmd_search_value_alias_v1
       type: RZ_CMD_DESC_TYPE_ARGV_STATE
       default_mode: RZ_OUTPUT_MODE_STANDARD
       modes:
@@ -557,15 +605,11 @@ commands:
         - RZ_OUTPUT_MODE_QUIET
         - RZ_OUTPUT_MODE_TABLE
       args:
-        - name: value8_min
+        - name: value
           type: RZ_CMD_ARG_TYPE_NUM
-        - name: value8_max
-          optional: true
-          type: RZ_CMD_ARG_TYPE_NUM
-
     - name: "/v2"
-      summary: 16-bit size value search.
-      cname: cmd_search_value_16
+      summary: Value search - Alias for /v 2a <value>.
+      cname: cmd_search_value_alias_v2
       type: RZ_CMD_DESC_TYPE_ARGV_STATE
       default_mode: RZ_OUTPUT_MODE_STANDARD
       modes:
@@ -574,15 +618,11 @@ commands:
         - RZ_OUTPUT_MODE_QUIET
         - RZ_OUTPUT_MODE_TABLE
       args:
-        - name: value16_min
+        - name: value
           type: RZ_CMD_ARG_TYPE_NUM
-        - name: value16_max
-          optional: true
-          type: RZ_CMD_ARG_TYPE_NUM
-
     - name: "/v4"
-      summary: 32-bit size value search.
-      cname: cmd_search_value_32
+      summary: Value search - Alias for /v 4a <value>.
+      cname: cmd_search_value_alias_v4
       type: RZ_CMD_DESC_TYPE_ARGV_STATE
       default_mode: RZ_OUTPUT_MODE_STANDARD
       modes:
@@ -591,15 +631,11 @@ commands:
         - RZ_OUTPUT_MODE_QUIET
         - RZ_OUTPUT_MODE_TABLE
       args:
-        - name: value32_min
+        - name: value
           type: RZ_CMD_ARG_TYPE_NUM
-        - name: value32_max
-          optional: true
-          type: RZ_CMD_ARG_TYPE_NUM
-
     - name: "/v8"
-      summary: 64-bit size value search.
-      cname: cmd_search_value_64
+      summary: Value search - Alias for /v 8a <value>.
+      cname: cmd_search_value_alias_v8
       type: RZ_CMD_DESC_TYPE_ARGV_STATE
       default_mode: RZ_OUTPUT_MODE_STANDARD
       modes:
@@ -608,22 +644,11 @@ commands:
         - RZ_OUTPUT_MODE_QUIET
         - RZ_OUTPUT_MODE_TABLE
       args:
-        - name: value64_min
+        - name: value
           type: RZ_CMD_ARG_TYPE_NUM
-        - name: value64_max
-          optional: true
-          type: RZ_CMD_ARG_TYPE_NUM
-    details:
-      - name: Usage example
-        entries:
-          - text: "512 value search of its 32-bit representation"
-            comment: "/v4 512"
-  - name: "/V"
-    summary: Value search.
-    subcommands:
     - name: "/V1"
-      summary: 8-bit value search.
-      cname: cmd_search_value_8be
+      summary: Value search - Alias for /v 1 [<min_value>,<max_value>].
+      cname: cmd_search_value_alias_v1_range
       type: RZ_CMD_DESC_TYPE_ARGV_STATE
       default_mode: RZ_OUTPUT_MODE_STANDARD
       modes:
@@ -632,15 +657,13 @@ commands:
         - RZ_OUTPUT_MODE_QUIET
         - RZ_OUTPUT_MODE_TABLE
       args:
-        - name: value8_min
+        - name: min_value
           type: RZ_CMD_ARG_TYPE_NUM
-        - name: value8_max
-          optional: true
+        - name: max_value
           type: RZ_CMD_ARG_TYPE_NUM
-
     - name: "/V2"
-      summary: 16-bit size value search.
-      cname: cmd_search_value_16be
+      summary: Value search - Alias for /v 2a [<min_value>,<max_value>].
+      cname: cmd_search_value_alias_v2_range
       type: RZ_CMD_DESC_TYPE_ARGV_STATE
       default_mode: RZ_OUTPUT_MODE_STANDARD
       modes:
@@ -649,15 +672,13 @@ commands:
         - RZ_OUTPUT_MODE_QUIET
         - RZ_OUTPUT_MODE_TABLE
       args:
-        - name: value16_min
+        - name: min_value
           type: RZ_CMD_ARG_TYPE_NUM
-        - name: value16_max
-          optional: true
+        - name: max_value
           type: RZ_CMD_ARG_TYPE_NUM
-
     - name: "/V4"
-      summary: 32-bit size value search.
-      cname: cmd_search_value_32be
+      summary: Value search - Alias for /v 4a [<min_value>,<max_value>].
+      cname: cmd_search_value_alias_v4_range
       type: RZ_CMD_DESC_TYPE_ARGV_STATE
       default_mode: RZ_OUTPUT_MODE_STANDARD
       modes:
@@ -666,33 +687,26 @@ commands:
         - RZ_OUTPUT_MODE_QUIET
         - RZ_OUTPUT_MODE_TABLE
       args:
-        - name: value32_min
+        - name: min_value
           type: RZ_CMD_ARG_TYPE_NUM
-        - name: value32_max
-          optional: true
+        - name: max_value
+          type: RZ_CMD_ARG_TYPE_NUM
+    - name: "/V8"
+      summary: Value search - Alias for /v 8a [<min_value>,<max_value>].
+      cname: cmd_search_value_alias_v8_range
+      type: RZ_CMD_DESC_TYPE_ARGV_STATE
+      default_mode: RZ_OUTPUT_MODE_STANDARD
+      modes:
+        - RZ_OUTPUT_MODE_STANDARD
+        - RZ_OUTPUT_MODE_JSON
+        - RZ_OUTPUT_MODE_QUIET
+        - RZ_OUTPUT_MODE_TABLE
+      args:
+        - name: min_value
+          type: RZ_CMD_ARG_TYPE_NUM
+        - name: max_value
           type: RZ_CMD_ARG_TYPE_NUM
 
-    - name: "/V8"
-      summary: 64-bit size value search.
-      cname: cmd_search_value_64be
-      type: RZ_CMD_DESC_TYPE_ARGV_STATE
-      default_mode: RZ_OUTPUT_MODE_STANDARD
-      modes:
-        - RZ_OUTPUT_MODE_STANDARD
-        - RZ_OUTPUT_MODE_JSON
-        - RZ_OUTPUT_MODE_QUIET
-        - RZ_OUTPUT_MODE_TABLE
-      args:
-        - name: value64_min
-          type: RZ_CMD_ARG_TYPE_NUM
-        - name: value64_max
-          optional: true
-          type: RZ_CMD_ARG_TYPE_NUM
-    details:
-      - name: Usage example
-        entries:
-          - text: "512 value search of its 32-bit representation"
-            comment: "/V4 512"
   - name: "/x"
     summary: Raw hexadecimal search.
     subcommands:

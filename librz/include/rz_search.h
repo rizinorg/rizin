@@ -73,6 +73,12 @@ typedef struct rz_search_t {
 	char bckwrds;
 } RzSearch;
 
+typedef struct rz_search_value_range_t {
+	RzIntervalBoundedUt64 itv; ///< Search interval with explicit boundaries.
+	size_t width; ///< Value width in bytes.
+	bool big_endian; ///< Byte ordering.
+} RzSearchValueRange;
+
 #ifdef RZ_API
 
 #define RZ_SEARCH_AES_BOX_SIZE 31
@@ -151,9 +157,9 @@ typedef enum {
 	RZ_SEARCH_CANCEL_SIGINT, ///< Interrupt signal (likely ctrl + c).
 } RzSearchCancelReason;
 
-typedef struct rz_search_bytes_pattern_t RzSearchBytesPattern;
-
 RZ_API RZ_OWN char *rz_search_hit_flag_name(RZ_NONNULL const RzSearchHit *hit, size_t hit_id, RZ_NULLABLE const char *prefix);
+
+typedef struct rz_search_bytes_pattern_t RzSearchBytesPattern;
 
 RZ_API void rz_search_bytes_pattern_free(RZ_NULLABLE RZ_OWN RzSearchBytesPattern *hp);
 RZ_API RZ_OWN RzSearchBytesPattern *rz_search_bytes_pattern_copy(RZ_NONNULL RZ_BORROW RzSearchBytesPattern *hp);
@@ -213,6 +219,14 @@ typedef enum {
 RZ_API RZ_OWN RzSearchCollection *rz_search_collection_cryptographic(bool add_all_methods);
 RZ_API bool rz_search_collection_cryptographic_add(RZ_NONNULL RzSearchCollection *col, RzSearchCollectionCryptographicType type);
 RZ_API bool rz_search_collection_cryptographic_name_to_type(RZ_NONNULL const char *name, RzSearchCollectionCryptographicType *type);
+
+/**
+ * \brief Maximum value width to search for is currently 64bits/8bytes.
+ */
+#define RZ_SEARCH_VALUE_SEARCH_MAX_WIDTH 8
+
+RZ_API RZ_OWN RzSearchCollection *rz_search_collection_values();
+RZ_API bool rz_search_collection_values_add(RZ_NONNULL RzSearchCollection *col, RZ_NONNULL RZ_OWN RzVector /*<RzSearchValueRange>*/ *vranges);
 
 RZ_API RZ_OWN RzSearchCollection *rz_search_collection_bytes();
 RZ_API bool rz_search_collection_bytes_add(RZ_NONNULL RzSearchCollection *col, RZ_NULLABLE const char *pattern_desc, RZ_NONNULL const ut8 *bytes, RZ_NULLABLE const ut8 *mask, size_t length);
