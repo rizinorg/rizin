@@ -12,6 +12,9 @@
 
 #include "cmd_search_rop.c"
 #include "rz_cons.h"
+#include <rz_util/rz_file.h>
+#include <rz_util/rz_log.h>
+#include <rz_util/rz_num.h>
 #include <rz_util/rz_mem.h>
 #include <rz_util/rz_str_util.h>
 #include <rz_util/rz_strbuf.h>
@@ -2231,58 +2234,6 @@ reread:
 			}
 		}
 		break;
-	case 'F': // "/F" search file /F [file] ([offset] ([sz]))
-		if (input[param_offset - 1] == ' ') {
-			int n_args;
-			char **args = rz_str_argv(input + param_offset, &n_args);
-			ut8 *buf = NULL;
-			ut64 offset = 0;
-			size_t size;
-			buf = (ut8 *)rz_file_slurp(args[0], &size);
-			if (!buf) {
-				RZ_LOG_ERROR("core: Cannot open '%s'\n", args[0]);
-				rz_str_argv_free(args);
-				break;
-			}
-			if (n_args > 1) {
-				offset = rz_num_math(core->num, args[1]);
-				if (size <= offset) {
-					RZ_LOG_ERROR("core: size <= offset\n");
-					rz_str_argv_free(args);
-					free(buf);
-					break;
-				}
-			}
-			if (n_args > 2) {
-				len = rz_num_math(core->num, args[2]);
-				if (len > size - offset) {
-					RZ_LOG_ERROR("core: len too large\n");
-					rz_str_argv_free(args);
-					free(buf);
-					break;
-				}
-			} else {
-				len = size - offset;
-			}
-			RzSearchKeyword *kw;
-			rz_search_reset(core->search, RZ_SEARCH_KEYWORD);
-			rz_search_set_distance(core->search, (int)rz_config_get_i(core->config, "search.distance"));
-			kw = rz_search_keyword_new(buf + offset, len, NULL, 0, NULL);
-			if (kw) {
-				rz_search_kw_add(core->search, kw);
-				// eprintf ("Searching %d byte(s)...\n", kw->keyword_length);
-				rz_search_begin(core->search);
-				dosearch = true;
-			} else {
-				RZ_LOG_ERROR("core: no keyword\n");
-			}
-
-			rz_str_argv_free(args);
-			free(buf);
-		} else {
-			RZ_LOG_ERROR("core: Usage: /F[j] [file] ([offset] ([sz]))\n");
-		}
-		break;
 	case 's': // "/s"
 		do_section_search(core, &param, input + 1);
 		break;
@@ -2712,8 +2663,31 @@ RZ_IPI RzCmdStatus rz_cmd_search_esil_handler(RzCore *core, int argc, const char
 }
 
 // "/F"
-RZ_IPI RzCmdStatus rz_cmd_search_file_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	return pass_to_legacy_api(core, argc, argv, RZ_OUTPUT_MODE_STANDARD);
+RZ_IPI RzCmdStatus rz_cmd_search_file_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	const char *keyword_file = argv[1];
+	ut64 offset = argc > 2 ? rz_num_get(core->num, argv[2]) : 0;
+	ut64 len = argc > 3 ? rz_num_get(core->num, argv[3]) : 0;
+	if (!rz_file_exists(keyword_file)) {
+		RZ_LOG_ERROR("File '%s' does not exist.\n", keyword_file);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	ut64 file_size = rz_file_size(keyword_file);
+	if (len > INT_MAX || (len == 0 && file_size > INT_MAX)) {
+		RZ_LOG_ERROR("File sizes larger than INT_MAX are not supported currently.\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (offset >= file_size) {
+		RZ_LOG_ERROR("Given offset %" PFMT64u " exceeds file size %" PFMT64u ".\n", offset, file_size);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	int bytes_read;
+	ut8 *file_content = (ut8 *)rz_file_slurp_range(keyword_file, offset, len == 0 ? file_size : len, &bytes_read);
+	if (!file_content) {
+		RZ_LOG_ERROR("Failed to read file: '%s'.\n", keyword_file);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzSearchBytesPattern *pattern = rz_search_bytes_pattern_new(file_content, NULL, bytes_read, "keyword_file", false);
+	return byte_pattern_search(core, pattern, state);
 }
 
 // "/g"

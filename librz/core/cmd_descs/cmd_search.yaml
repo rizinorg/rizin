@@ -283,8 +283,9 @@ commands:
       - name: "101112"
         type: RZ_CMD_ARG_TYPE_STRING
   - name: "/F"
-    summary: Search contents of file with offset and size.
+    summary: Search the content of a file.
     cname: cmd_search_file
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
     default_mode: RZ_OUTPUT_MODE_STANDARD
     modes:
       - RZ_OUTPUT_MODE_STANDARD
@@ -300,6 +301,15 @@ commands:
       - name: "size"
         optional: true
         type: RZ_CMD_ARG_TYPE_STRING
+    details:
+      - name: Arguments
+        entries:
+          - text: "<file>"
+            comment: "The file containing the data to search."
+          - text: "<offset>"
+            comment: "Offset into <file> to read the search data from."
+          - text: "<size>"
+            comment: "Number of bytes to read from the <file>."
   - name: "/o"
     summary: Show offset of n instructions backward.
     cname: cmd_search_insn_offset_backwards

@@ -54,7 +54,7 @@ RZ_API ut8 *rz_deflate(RZ_NONNULL const ut8 *src, int srcLen, int *srcConsumed, 
 RZ_API ut8 *rz_file_gzslurp(const char *str, int *outlen, int origonfail);
 RZ_API char *rz_stdin_slurp(int *sz);
 RZ_API RZ_OWN char *rz_file_slurp(const char *str, RZ_NULLABLE size_t *usz);
-RZ_API char *rz_file_slurp_range(const char *str, ut64 off, int sz, int *osz);
+RZ_API RZ_OWN char *rz_file_slurp_range(RZ_NONNULL const char *str, ut64 off, int sz, RZ_OUT RZ_NULLABLE int *osz);
 RZ_API char *rz_file_slurp_random_line(const char *file);
 RZ_API char *rz_file_slurp_random_line_count(const char *file, int *linecount);
 RZ_API ut8 *rz_file_slurp_hexpairs(const char *str, int *usz);

@@ -16,6 +16,7 @@ static const RzCmdDescDetail pointer_details[2];
 static const RzCmdDescDetail interpret_macro_multiple_details[2];
 static const RzCmdDescDetail cmd_search_collision_details[2];
 static const RzCmdDescDetail cmd_search_cryptographic_material_details[2];
+static const RzCmdDescDetail cmd_search_file_details[2];
 static const RzCmdDescDetail cmd_search_hash_block_details[2];
 static const RzCmdDescDetail slash_v_details[2];
 static const RzCmdDescDetail slash_V_details[2];
@@ -1822,6 +1823,16 @@ static const RzCmdDescHelp cmd_search_deltified_help = {
 	.args = cmd_search_deltified_args,
 };
 
+static const RzCmdDescDetailEntry cmd_search_file_Arguments_detail_entries[] = {
+	{ .text = "<file>", .arg_str = NULL, .comment = "The file containing the data to search." },
+	{ .text = "<offset>", .arg_str = NULL, .comment = "Offset into <file> to read the search data from." },
+	{ .text = "<size>", .arg_str = NULL, .comment = "Number of bytes to read from the <file>." },
+	{ 0 },
+};
+static const RzCmdDescDetail cmd_search_file_details[] = {
+	{ .name = "Arguments", .entries = cmd_search_file_Arguments_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg cmd_search_file_args[] = {
 	{
 		.name = "file",
@@ -1844,7 +1855,8 @@ static const RzCmdDescArg cmd_search_file_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_search_file_help = {
-	.summary = "Search contents of file with offset and size.",
+	.summary = "Search the content of a file.",
+	.details = cmd_search_file_details,
 	.args = cmd_search_file_args,
 };
 
@@ -21093,7 +21105,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(cmd_search_deltified_cd);
 	rz_cmd_desc_set_default_mode(cmd_search_deltified_cd, RZ_OUTPUT_MODE_STANDARD);
 
-	RzCmdDesc *cmd_search_file_cd = rz_cmd_desc_argv_modes_new(core->rcmd, slash__cd, "/F", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_file_handler, &cmd_search_file_help);
+	RzCmdDesc *cmd_search_file_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash__cd, "/F", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_file_handler, &cmd_search_file_help);
 	rz_warn_if_fail(cmd_search_file_cd);
 	rz_cmd_desc_set_default_mode(cmd_search_file_cd, RZ_OUTPUT_MODE_STANDARD);
 

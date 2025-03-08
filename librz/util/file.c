@@ -592,7 +592,19 @@ RZ_API ut8 *rz_file_slurp_hexpairs(const char *str, int *usz) {
 	return ret;
 }
 
-RZ_API char *rz_file_slurp_range(const char *str, ut64 off, int sz, int *osz) {
+/**
+ * \brief Reads \p sz bytes from the file \p str at \p off. Note, this function
+ * doesn't support files larger than INT_MAX bytes  currently.
+ *
+ * \param str The file name.
+ * \param off The offset to start reading in the file.
+ * \param sz The number of bytes to read.
+ * \param osz If not NULL, the number of bytes read.
+ *
+ * \return Buffer with the read content. The buffer is always '\0' terminated.
+ */
+RZ_API RZ_OWN char *rz_file_slurp_range(RZ_NONNULL const char *str, ut64 off, int sz, RZ_OUT RZ_NULLABLE int *osz) {
+	rz_return_val_if_fail(str, NULL);
 	char *ret;
 	size_t read_items;
 	FILE *fd = rz_sys_fopen(str, "rb");
