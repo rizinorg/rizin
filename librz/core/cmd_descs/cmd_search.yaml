@@ -313,13 +313,10 @@ commands:
   - name: "/o"
     summary: Show offset of n instructions backward.
     cname: cmd_search_insn_offset_backwards
-    type: RZ_CMD_DESC_TYPE_ARGV_STATE
     default_mode: RZ_OUTPUT_MODE_STANDARD
     modes:
       - RZ_OUTPUT_MODE_STANDARD
       - RZ_OUTPUT_MODE_JSON
-      - RZ_OUTPUT_MODE_QUIET
-      - RZ_OUTPUT_MODE_TABLE
     args:
       - name: "n"
         optional: true
@@ -327,13 +324,10 @@ commands:
   - name: "/O"
     summary: Same as /o, but with a different fallback if analysis cannot be used.
     cname: cmd_search_insn_offset_backwards_fallback
-    type: RZ_CMD_DESC_TYPE_ARGV_STATE
     default_mode: RZ_OUTPUT_MODE_STANDARD
     modes:
       - RZ_OUTPUT_MODE_STANDARD
       - RZ_OUTPUT_MODE_JSON
-      - RZ_OUTPUT_MODE_QUIET
-      - RZ_OUTPUT_MODE_TABLE
     args:
       - name: "n"
         optional: true

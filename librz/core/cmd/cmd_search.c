@@ -1786,36 +1786,6 @@ reread:
 			}
 		}
 		goto reread;
-	case 'o': { // "/o" print the offset of the Previous opcode
-		ut64 addr, n = input[param_offset - 1] ? rz_num_math(core->num, input + param_offset) : 1;
-		n = RZ_ABS((st64)n);
-		if (((st64)n) < 1) {
-			n = 1;
-		}
-		if (!rz_core_prevop_addr(core, core->offset, n, &addr)) {
-			addr = UT64_MAX;
-			(void)rz_core_asm_bwdis_len(core, NULL, &addr, n);
-		}
-		if (param.outmode == RZ_MODE_JSON) {
-			rz_cons_printf("[%" PFMT64u "]", addr);
-		} else {
-			rz_cons_printf("0x%08" PFMT64x "\n", addr);
-		}
-		break;
-	}
-	case 'O': { // "/O" alternative to "/o"
-		ut64 addr, n = input[param_offset - 1] ? rz_num_math(core->num, input + param_offset) : 1;
-		if (!n) {
-			n = 1;
-		}
-		addr = rz_core_prevop_addr_force(core, core->offset, n);
-		if (param.outmode == RZ_MODE_JSON) {
-			rz_cons_printf("[%" PFMT64u "]", addr);
-		} else {
-			rz_cons_printf("0x%08" PFMT64x "\n", addr);
-		}
-		break;
-	}
 	case 'r': // "/r"
 	{
 		ut64 n = (input[1] == ' ' || (input[1] && input[2] == ' '))
@@ -2716,13 +2686,37 @@ RZ_IPI RzCmdStatus rz_cmd_search_magic_bin_headers_handler(RzCore *core, int arg
 }
 
 // "/o"
-RZ_IPI RzCmdStatus rz_cmd_search_insn_offset_backwards_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return pass_to_legacy_api(core, argc, argv, RZ_OUTPUT_MODE_STANDARD);
+RZ_IPI RzCmdStatus rz_cmd_search_insn_offset_backwards_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	ut64 addr, n = rz_num_math(core->num, argv[1]);
+	n = rz_num_abs((st64)n);
+	if (((st64)n) < 1) {
+		n = 1;
+	}
+	if (!rz_core_prevop_addr(core, core->offset, n, &addr)) {
+		addr = UT64_MAX;
+		(void)rz_core_asm_bwdis_len(core, NULL, &addr, n);
+	}
+	if (mode == RZ_OUTPUT_MODE_JSON) {
+		rz_cons_printf("[%" PFMT64u "]", addr);
+	} else {
+		rz_cons_printf("0x%08" PFMT64x "\n", addr);
+	}
+	return RZ_CMD_STATUS_OK;
 }
 
 // "/O"
-RZ_IPI RzCmdStatus rz_cmd_search_insn_offset_backwards_fallback_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return pass_to_legacy_api(core, argc, argv, RZ_OUTPUT_MODE_STANDARD);
+RZ_IPI RzCmdStatus rz_cmd_search_insn_offset_backwards_fallback_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	ut64 addr, n = rz_num_math(core->num, argv[1]);
+	if (!n) {
+		n = 1;
+	}
+	addr = rz_core_prevop_addr_force(core, core->offset, n);
+	if (mode == RZ_OUTPUT_MODE_JSON) {
+		rz_cons_printf("[%" PFMT64u "]", addr);
+	} else {
+		rz_cons_printf("0x%08" PFMT64x "\n", addr);
+	}
+	return RZ_CMD_STATUS_OK;
 }
 
 // "/p"

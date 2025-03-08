@@ -21109,11 +21109,11 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(cmd_search_file_cd);
 	rz_cmd_desc_set_default_mode(cmd_search_file_cd, RZ_OUTPUT_MODE_STANDARD);
 
-	RzCmdDesc *cmd_search_insn_offset_backwards_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash__cd, "/o", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_insn_offset_backwards_handler, &cmd_search_insn_offset_backwards_help);
+	RzCmdDesc *cmd_search_insn_offset_backwards_cd = rz_cmd_desc_argv_modes_new(core->rcmd, slash__cd, "/o", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_search_insn_offset_backwards_handler, &cmd_search_insn_offset_backwards_help);
 	rz_warn_if_fail(cmd_search_insn_offset_backwards_cd);
 	rz_cmd_desc_set_default_mode(cmd_search_insn_offset_backwards_cd, RZ_OUTPUT_MODE_STANDARD);
 
-	RzCmdDesc *cmd_search_insn_offset_backwards_fallback_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash__cd, "/O", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_insn_offset_backwards_fallback_handler, &cmd_search_insn_offset_backwards_fallback_help);
+	RzCmdDesc *cmd_search_insn_offset_backwards_fallback_cd = rz_cmd_desc_argv_modes_new(core->rcmd, slash__cd, "/O", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_search_insn_offset_backwards_fallback_handler, &cmd_search_insn_offset_backwards_fallback_help);
 	rz_warn_if_fail(cmd_search_insn_offset_backwards_fallback_cd);
 	rz_cmd_desc_set_default_mode(cmd_search_insn_offset_backwards_fallback_cd, RZ_OUTPUT_MODE_STANDARD);
 
