@@ -42,6 +42,8 @@ RUN
 NAME=from/to /v not in range
 FILE==
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 wx 01
 e cmd.hit="pi 1"
 e search.in=raw
