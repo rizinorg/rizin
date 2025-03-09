@@ -28,15 +28,15 @@
 #define PRIVATE_KEY_SEARCH_LENGTH 11
 
 static int preludecnt = 0;
-static int searchflags = 0;
-static int searchshow = 0;
-static const char *searchprefix = NULL;
 
 struct search_parameters {
 	RzCore *core;
 	RzList /*<RzIOMap *>*/ *boundaries;
 	const char *mode;
 	const char *cmd_hit;
+	const char *hit_prefix;
+	int searchflags;
+	int searchshow;
 	PJ *pj;
 	int outmode; // 0 or RZ_MODE_RIZINCMD or RZ_MODE_JSON
 	bool inverse;
@@ -368,7 +368,7 @@ static int _cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 	int keyword_len = kw ? kw->keyword_length + (search->mode == RZ_SEARCH_DELTAKEY) : 0;
 	char tmpbuf[128];
 
-	if (searchshow && kw && kw->keyword_length > 0) {
+	if (param->searchshow && kw && kw->keyword_length > 0) {
 		int len, i, extra, mallocsize;
 		char *s = NULL, *str = NULL, *p = NULL;
 		extra = (param->outmode == RZ_MODE_JSON) ? 3 : 1;
@@ -451,7 +451,7 @@ static int _cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 			pj_end(param->pj);
 		} else {
 			rz_cons_printf("0x%08" PFMT64x " %s%d_%d %s\n",
-				base_addr + addr, searchprefix, kw->kwidx, kw->count, s);
+				base_addr + addr, param->hit_prefix, kw->kwidx, kw->count, s);
 		}
 		free(s);
 		free(buf);
@@ -463,16 +463,16 @@ static int _cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 			pj_ki(param->pj, "len", keyword_len);
 			pj_end(param->pj);
 		} else {
-			if (searchflags) {
-				rz_cons_printf("%s%d_%d\n", searchprefix, kw->kwidx, kw->count);
+			if (param->searchflags) {
+				rz_cons_printf("%s%d_%d\n", param->hit_prefix, kw->kwidx, kw->count);
 			} else {
-				rz_cons_printf("f %s%d_%d %d @ 0x%08" PFMT64x "\n", searchprefix,
+				rz_cons_printf("f %s%d_%d %d @ 0x%08" PFMT64x "\n", param->hit_prefix,
 					kw->kwidx, kw->count, keyword_len, base_addr + addr);
 			}
 		}
 	}
-	if (searchflags && kw) {
-		const char *flag = rz_strf(tmpbuf, "%s%d_%d", searchprefix, kw->kwidx, kw->count);
+	if (param->searchflags && kw) {
+		const char *flag = rz_strf(tmpbuf, "%s%d_%d", param->hit_prefix, kw->kwidx, kw->count);
 		rz_flag_set(core->flags, flag, base_addr + addr, keyword_len);
 	}
 	if (*param->cmd_hit) {
@@ -514,18 +514,13 @@ static bool esil_addrinfo(RzAnalysisEsil *esil) {
 	return true;
 }
 
-static void do_esil_search(RzCore *core, struct search_parameters *param, const char *input) {
+static void do_esil_search(RzCore *core, struct search_parameters *param, const char *esil_expr) {
 	const int hit_combo_limit = rz_config_get_i(core->config, "search.esilcombo");
 	const bool cfgDebug = rz_config_get_b(core->config, "cfg.debug");
 	RzSearch *search = core->search;
 	RzSearchKeyword kw = RZ_EMPTY;
-	if (input[0] != 'E') {
-		return;
-	}
-	if (input[1] == 'j') { // "/Ej"
+	if (param->outmode == RZ_MODE_JSON) { // "/Ej"
 		pj_a(param->pj);
-		param->outmode = RZ_MODE_JSON;
-		input++;
 	}
 	if (!core->analysis->esil) {
 		// initialize esil vm
@@ -572,9 +567,9 @@ static void do_esil_search(RzCore *core, struct search_parameters *param, const 
 				break;
 			}
 			rz_analysis_esil_set_pc(core->analysis->esil, addr);
-			if (!rz_analysis_esil_parse(core->analysis->esil, input + 2)) {
+			if (!rz_analysis_esil_parse(core->analysis->esil, esil_expr)) {
 				// XXX: return value doesnt seems to be correct here
-				RZ_LOG_ERROR("core: Cannot parse esil (%s)\n", input + 2);
+				RZ_LOG_ERROR("core: Cannot parse esil (%s)\n", esil_expr);
 				break;
 			}
 			hit_happens = false;
@@ -599,7 +594,7 @@ static void do_esil_search(RzCore *core, struct search_parameters *param, const 
 					}
 				}
 			} else {
-				RZ_LOG_ERROR("core: Cannot parse esil (%s)\n", input + 2);
+				RZ_LOG_ERROR("core: Cannot parse esil (%s)\n", esil_expr);
 				rz_analysis_esil_stack_free(core->analysis->esil);
 				free(res);
 				break;
@@ -733,8 +728,8 @@ static void do_syscall_search(RzCore *core, struct search_parameters *param) {
 					rz_cons_printf("0x%08" PFMT64x " %s\n", at, item->name);
 				}
 				memset(previnstr, 0, (MAXINSTR + 1) * sizeof(*previnstr)); // clearing the buffer
-				if (searchflags) {
-					char *flag = rz_str_newf("%s%d_%d.%s", searchprefix, kwidx, count, item ? item->name : "syscall");
+				if (param->searchflags) {
+					char *flag = rz_str_newf("%s%d_%d.%s", param->hit_prefix, kwidx, count, item ? item->name : "syscall");
 					rz_flag_set(core->flags, flag, at, ret);
 					free(flag);
 				}
@@ -968,10 +963,10 @@ static bool do_analysis_search(RzCore *core, struct search_parameters *param, co
 						break;
 					}
 					RZ_FREE(opstr);
-					if (*input && searchflags) {
+					if (*input && param->searchflags) {
 						char flag[64];
 						snprintf(flag, sizeof(flag), "%s%d_%d",
-							searchprefix, kwidx, count);
+							param->hit_prefix, kwidx, count);
 						rz_flag_set(core->flags, flag, at, ret);
 					}
 					if (*param->cmd_hit) {
@@ -1139,7 +1134,7 @@ static void do_asm_search(RzCore *core, struct search_parameters *param, const c
 					break;
 				case RZ_MODE_RIZINCMD:
 					rz_cons_printf("f %s%d_%i @ 0x%08" PFMT64x "\n",
-						searchprefix, kwidx, count, hit->addr);
+						param->hit_prefix, kwidx, count, hit->addr);
 					break;
 				default:
 					if (filter) {
@@ -1158,8 +1153,8 @@ static void do_asm_search(RzCore *core, struct search_parameters *param, const c
 					}
 					break;
 				}
-				if (searchflags) {
-					const char *flagname = rz_strf(tmpbuf, "%s%d_%d", searchprefix, kwidx, count);
+				if (param->searchflags) {
+					const char *flagname = rz_strf(tmpbuf, "%s%d_%d", param->hit_prefix, kwidx, count);
 					if (flagname) {
 						rz_flag_set(core->flags, flagname, hit->addr, hit->len);
 					}
@@ -1186,7 +1181,7 @@ static void do_string_search(RzCore *core, RzInterval search_itv, struct search_
 	}
 	RzListIter *iter;
 	RzIOMap *map;
-	if (!searchflags && param->outmode != RZ_MODE_JSON) {
+	if (!param->searchflags && param->outmode != RZ_MODE_JSON) {
 		rz_cons_printf("fs hits\n");
 	}
 	core->search->inverse = param->inverse;
@@ -1701,14 +1696,14 @@ static int cmd_search_legacy_handler(void *data, const char *input) {
 
 	c = 0;
 
-	searchshow = rz_config_get_i(core->config, "search.show");
+	param.searchshow = rz_config_get_i(core->config, "search.show");
 	param.mode = rz_config_get(core->config, "search.in");
 	param.boundaries = rz_core_get_boundaries_select(core, "search.from", "search.to", "search.in");
 
 	core->search->align = rz_config_get_i(core->config, "search.align");
-	searchflags = rz_config_get_i(core->config, "search.flags");
+	param.searchflags = rz_config_get_i(core->config, "search.flags");
 	core->search->maxhits = rz_config_get_i(core->config, "search.maxhits");
-	searchprefix = rz_config_get(core->config, "search.prefix");
+	param.hit_prefix = rz_config_get(core->config, "search.prefix");
 	core->search->overlap = rz_config_get_i(core->config, "search.overlap");
 	core->search->bckwrds = false;
 
@@ -1973,12 +1968,6 @@ reread:
 	case 'P': // "/P"
 		search_similar_pattern(core, atoi(input + 1), &param);
 		break;
-	case 'E': // "/E"
-		if (core->bin && core->bin->is_debugger) {
-			rz_debug_map_sync(core->dbg);
-		}
-		do_esil_search(core, &param, input);
-		goto beach;
 	case 'd': // "/d" search delta key
 		if (input[1]) {
 			rz_search_reset(core->search, RZ_SEARCH_DELTAKEY);
@@ -2506,9 +2495,48 @@ RZ_IPI RzCmdStatus rz_cmd_search_deltified_handler(RzCore *core, int argc, const
 	return pass_to_legacy_api(core, argc, argv, RZ_OUTPUT_MODE_STANDARD);
 }
 
+static void legacy_param_setup(RzCore *core, struct search_parameters *param, size_t mode) {
+	param->mode = rz_config_get(core->config, "search.in");
+	param->core = core;
+	param->cmd_hit = rz_config_get(core->config, "cmd.hit");
+	if (!param->cmd_hit) {
+		param->cmd_hit = "";
+	}
+	param->hit_prefix = rz_config_get(core->config, "search.prefix");
+	param->outmode = mode;
+	param->searchshow = rz_config_get_i(core->config, "search.show");
+	param->searchflags = rz_config_get_i(core->config, "search.flags");
+	param->boundaries = rz_core_get_boundaries_select(core, "search.from", "search.to", "search.in");
+	if (param->outmode == RZ_MODE_JSON) {
+		param->pj = pj_new();
+	}
+}
+
 // "/E"
 RZ_IPI RzCmdStatus rz_cmd_search_esil_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	return pass_to_legacy_api(core, argc, argv, mode);
+	// return pass_to_legacy_api(core, argc, argv, mode);
+	CMD_SEARCH_BEGIN();
+	struct search_parameters param = { 0 };
+	legacy_param_setup(core, &param, mode == RZ_OUTPUT_MODE_JSON ? RZ_MODE_JSON : 0);
+	core->search->align = rz_config_get_i(core->config, "search.align");
+	core->search->maxhits = rz_config_get_i(core->config, "search.maxhits");
+	core->search->overlap = rz_config_get_i(core->config, "search.overlap");
+	rz_flag_space_push(core->flags, "search");
+
+	if (core->bin && core->bin->is_debugger) {
+		rz_debug_map_sync(core->dbg);
+	}
+	do_esil_search(core, &param, argv[1]);
+	if (param.outmode == RZ_MODE_JSON) {
+		rz_cons_println(pj_string(param.pj));
+	}
+	pj_free(param.pj);
+	rz_list_free(param.boundaries);
+	rz_flag_space_pop(core->flags);
+	core->num->value = core->search->nhits;
+	rz_search_kw_reset(core->search);
+	CMD_SEARCH_END();
+	return RZ_CMD_STATUS_OK;
 }
 
 // "/F"
