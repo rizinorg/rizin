@@ -121,7 +121,7 @@ RZ_API int rz_search_begin(RzSearch *s);
 
 /* pattern search */
 RZ_API void rz_search_pattern_size(RzSearch *s, int size);
-RZ_API int rz_search_pattern(RzSearch *s, ut64 from, ut64 to);
+RZ_API bool rz_search_pattern(RzSearch *s, ut64 from, ut64 to);
 
 #endif // RZ_API
 
