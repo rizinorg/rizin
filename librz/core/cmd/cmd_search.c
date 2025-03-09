@@ -1965,9 +1965,6 @@ reread:
 		}
 		RZ_LOG_ERROR("core: Invalid pattern size (must be > 0)\n");
 	} break;
-	case 'P': // "/P"
-		search_similar_pattern(core, atoi(input + 1), &param);
-		break;
 	case 'd': // "/d" search delta key
 		if (input[1]) {
 			rz_search_reset(core->search, RZ_SEARCH_DELTAKEY);
@@ -2633,7 +2630,12 @@ RZ_IPI RzCmdStatus rz_cmd_search_pattern_handler(RzCore *core, int argc, const c
 
 // "/P"
 RZ_IPI RzCmdStatus rz_cmd_search_blocks_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return pass_to_legacy_api(core, argc, argv, RZ_OUTPUT_MODE_STANDARD);
+	CMD_SEARCH_BEGIN();
+	struct search_parameters param = { 0 };
+	legacy_param_setup(core, &param, 0);
+	search_similar_pattern(core, rz_num_get(NULL, argv[1]), &param);
+	CMD_SEARCH_END();
+	return RZ_CMD_STATUS_OK;
 }
 
 // "/r"
