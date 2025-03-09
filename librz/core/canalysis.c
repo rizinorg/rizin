@@ -2953,6 +2953,8 @@ static inline bool aligns(ut64 addr, size_t align) {
 	return align > 0 && addr % align == 0;
 }
 
+static void cb_in_range_aav(RzCore *core, ut64 from, ut64 to, int vsize, void *user);
+
 RZ_API int rz_core_search_value_in_range(RzCore *core, RzInterval search_itv, ut64 vmin,
 	ut64 vmax, int vsize, inRangeCb cb, void *cb_user) {
 	int i, align = core->search->align, hitctr = 0;
@@ -3011,10 +3013,12 @@ RZ_API int rz_core_search_value_in_range(RzCore *core, RzInterval search_itv, ut
 		if (size <= vsize) {
 			break;
 		}
+		RzAnalysisOp *op = rz_analysis_op_new();
 		for (i = 0; i <= (size - vsize); i++) {
 			void *v = (buf + i);
 			ut64 addr = from + i;
 			if (rz_cons_is_breaked()) {
+				rz_analysis_op_free(op);
 				goto beach;
 			}
 			if (!aligns(addr, align)) {
@@ -3048,6 +3052,7 @@ RZ_API int rz_core_search_value_in_range(RzCore *core, RzInterval search_itv, ut
 			default:
 				RZ_LOG_ERROR("core: unknown vsize %d (supported only 1,2,4,8)\n", vsize);
 				hitctr = -1;
+				rz_analysis_op_free(op);
 				goto beach;
 			}
 			if (match && !vinfun) {
@@ -3078,7 +3083,16 @@ RZ_API int rz_core_search_value_in_range(RzCore *core, RzInterval search_itv, ut
 					hitctr++;
 				}
 			}
+			if (!match && core->analysis && op && cb == cb_in_range_aav) {
+				rz_analysis_op_init(op);
+				int oplen = rz_analysis_op(core->analysis, op, from + i, buf + i, vsize, RZ_ANALYSIS_OP_MASK_BASIC);
+				if (oplen > 0) {
+					i += oplen - 1;
+				}
+				rz_analysis_op_fini(op);
+			}
 		}
+		rz_analysis_op_free(op);
 		if (size == to - from) {
 			break;
 		}
@@ -4703,7 +4717,7 @@ static bool archIsThumbable(RzCore *core) {
 	return arch_is(core, "arm");
 }
 
-static void _CbInRangeAav(RzCore *core, ut64 from, ut64 to, int vsize, void *user) {
+static void cb_in_range_aav(RzCore *core, ut64 from, ut64 to, int vsize, void *user) {
 	bool pretend = (user && *(RzOutputMode *)user == RZ_OUTPUT_MODE_RIZIN);
 	int arch_align = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN);
 	bool vinfun = rz_config_get_b(core->config, "analysis.vinfun");
@@ -4779,7 +4793,7 @@ RZ_IPI void rz_core_analysis_value_pointers(RzCore *core, RzOutputMode mode) {
 			}
 			rz_core_notify_done(core, "from 0x%" PFMT64x " to 0x%" PFMT64x " (aav)", map->itv.addr, rz_itv_end(map->itv));
 			(void)rz_core_search_value_in_range(core, map->itv,
-				map->itv.addr, rz_itv_end(map->itv), vsize, _CbInRangeAav, (void *)&mode);
+				map->itv.addr, rz_itv_end(map->itv), vsize, cb_in_range_aav, (void *)&mode);
 		}
 		rz_list_free(list);
 	} else {
@@ -4815,7 +4829,7 @@ RZ_IPI void rz_core_analysis_value_pointers(RzCore *core, RzOutputMode mode) {
 					continue;
 				}
 				rz_core_notify_done(core, "0x%08" PFMT64x "-0x%08" PFMT64x " in 0x%" PFMT64x "-0x%" PFMT64x " (aav)", from, to, begin, end);
-				(void)rz_core_search_value_in_range(core, map->itv, from, to, vsize, _CbInRangeAav, (void *)&mode);
+				(void)rz_core_search_value_in_range(core, map->itv, from, to, vsize, cb_in_range_aav, (void *)&mode);
 			}
 		}
 		rz_list_free(list);
