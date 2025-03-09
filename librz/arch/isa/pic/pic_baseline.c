@@ -352,7 +352,7 @@ bool pic_baseline_decode_op(RZ_OUT RZ_NONNULL PicMidrangeOp *op, ut64 addr, RZ_N
 	case PIC_BASELINE_OP_ARGS_3K:
 	case PIC_BASELINE_OP_ARGS_8K:
 	case PIC_BASELINE_OP_ARGS_9K:
-		rz_strf(op->operands, "0x%" PFMT32x, (ut32)op->args.k);
+		rz_strf(op->operands, "0x%" PFMT32x, (ut32)pic_midrange_op_args_k_for_op(&op->args, op->opcode));
 		break;
 	case PIC_BASELINE_OP_ARGS_1D_5F:
 		rz_strf(op->operands, "0x%" PFMT32x ", %c", (ut32)op->args.f, op->args.d ? 'f' : 'w');

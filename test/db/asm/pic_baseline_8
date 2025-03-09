@@ -21,9 +21,9 @@ d "bsf 0x15, 0x7" f505
 d "btfsc 0x3, 0x0" 0306
 d "btfss 0x7, 0x5" a707
 d "andlw 0xfa" fa0e
-d "call 0x1a" 1a09
+d "call 0x34" 1a09
 d "clrwdt" 0400
-d "goto 0xfe" fe0a
+d "goto 0x1fc" fe0a
 d "iorlw 0x1" 010d
 d "movlw 0x42" 420c
 d "option" 0200

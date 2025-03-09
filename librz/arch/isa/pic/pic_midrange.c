@@ -258,7 +258,7 @@ const PicMidrangeOpAsmInfo *pic_midrange_get_op_info(PicMidrangeOpcode opcode) {
 }
 
 #define F pic_midrange_regname(op->args.f)
-#define K (op->args.k)
+#define K pic_midrange_op_args_k_for_op(&op->args, op->opcode)
 
 bool pic_midrange_decode_op(RZ_OUT RZ_NONNULL PicMidrangeOp *op, ut64 addr, RZ_NONNULL const ut8 *b, ut64 l) {
 	rz_return_val_if_fail(op && b, false);
@@ -317,7 +317,7 @@ bool pic_midrange_decode_op(RZ_OUT RZ_NONNULL PicMidrangeOp *op, ut64 addr, RZ_N
 	case PIC_MIDRANGE_OP_ARGS_4K:
 	case PIC_MIDRANGE_OP_ARGS_8K:
 	case PIC_MIDRANGE_OP_ARGS_11K:
-		rz_strf(op->operands, "0x%x", op->args.k);
+		rz_strf(op->operands, "0x%x", (unsigned int)K);
 		break;
 	case PIC_MIDRANGE_OP_ARGS_9K:
 		rz_strf(op->operands, "%s%#x", K < 0 ? "-" : "", (unsigned)abs(K));

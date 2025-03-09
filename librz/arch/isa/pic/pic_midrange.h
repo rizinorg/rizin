@@ -111,6 +111,11 @@ typedef struct _pic_midrange_op_args_val {
 	ut8 b;
 } PicMidrangeOpArgsVal;
 
+static inline st16 pic_midrange_op_args_k_for_op(RZ_NONNULL PicMidrangeOpArgsVal *val, PicMidrangeOpcode op) {
+	// We emulate 12-bit or 14-bit instructions by using two bytes, so program addresses need to be doubled.
+	return op == PIC_MIDRANGE_OPCODE_GOTO || op == PIC_MIDRANGE_OPCODE_CALL ? val->k << 1 : val->k;
+}
+
 typedef struct pic_midrange_op_t {
 	const char *mnemonic;
 	char operands[32];
