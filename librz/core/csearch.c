@@ -162,7 +162,7 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_bytes(RZ_NONNULL RzCore
 		goto quit;
 	}
 
-	if (!rz_search_opt_set_elemet_size(user_opts, rz_search_bytes_pattern_len(pattern))) {
+	if (!rz_search_opt_set_element_size(user_opts, rz_search_bytes_pattern_len(pattern))) {
 		RZ_LOG_ERROR("search: Failed to update chunk size in the search options.\n");
 		goto quit;
 	}
@@ -234,7 +234,7 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_string(RZ_NONNULL RzCor
 		RZ_LOG_ERROR("core: Setting up search from core failed.\n");
 		goto quit;
 	}
-	if (!rz_search_opt_set_elemet_size(user_opts, scan_opt.max_str_length)) {
+	if (!rz_search_opt_set_element_size(user_opts, scan_opt.max_str_length)) {
 		RZ_LOG_ERROR("search: Failed to update chunk size in the search options.\n");
 		goto quit;
 	}
@@ -284,7 +284,7 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_cryptographic_material(
 	}
 
 	// minimal element size is always 2 (since 1 would be unaligned)
-	if (!rz_search_opt_set_elemet_size(user_opts, 2)) {
+	if (!rz_search_opt_set_element_size(user_opts, 2)) {
 		RZ_LOG_ERROR("search: Failed to update chunk size in the search options.\n");
 		goto quit;
 	}
