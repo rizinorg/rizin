@@ -86,6 +86,10 @@ static const PicMidrangeOpAnalysisInfo pic_midrange_op_analysis_info[] = {
 
 static RzIODesc *cpu_memory_map(
 	RzIOBind *iob, RzIODesc *desc, ut32 addr, ut32 size) {
+	if (!iob->fd_get_name) {
+		// e.g. in rz-asm
+		return NULL;
+	}
 	char mstr[16];
 	rz_strf(mstr, "malloc://%d", size);
 	if (desc && iob->fd_get_name(iob->io, desc->fd)) {
@@ -142,12 +146,14 @@ int pic_midrange_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op,
 		return -1;
 	}
 
+	memset(op, 0, sizeof(RzAnalysisOp));
 	op->size = pic_op->size;
 	op->cycles = 1;
-	op->type = RZ_ANALYSIS_OP_TYPE_NOP;
+	op->type = RZ_ANALYSIS_OP_TYPE_UNK;
 
-	if (mask & RZ_ANALYSIS_OP_MASK_ESIL && info->handler) {
+	if (info->handler) {
 		analysis_pic_midrange_setup(analysis, false);
+		// fills basic info and esil
 		info->handler(analysis, op, pic_op->addr, &pic_op->args);
 	}
 	if (mask & RZ_ANALYSIS_OP_MASK_IL && info->il_handler) {
