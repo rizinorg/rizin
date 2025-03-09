@@ -894,12 +894,30 @@ static void analysis_POP_JUMP_FORWARD_IF_FALSE(RzAnalysisOp *op, pyc_opcode_obje
 	op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 }
 
+static void analysis_POP_JUMP_FORWARD_IF_NOT_NONE(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
+}
+
+static void analysis_POP_JUMP_FORWARD_IF_NONE(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
+}
+
 static void analysis_POP_JUMP_BACKWARD_IF_TRUE(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
 	op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 	op->jump = op->addr + 2 - 2 * oparg; // addr + ((is_python36) ? 2 : 3) - JMP_OFFSET(ops, oparg);
 }
 
 static void analysis_POP_JUMP_BACKWARD_IF_FALSE(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
+	op->jump = op->addr + 2 - 2 * oparg; // addr + ((is_python36) ? 2 : 3) - JMP_OFFSET(ops, oparg);
+}
+
+static void analysis_POP_JUMP_BACKWARD_IF_NOT_NONE(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
+	op->jump = op->addr + 2 - 2 * oparg; // addr + ((is_python36) ? 2 : 3) - JMP_OFFSET(ops, oparg);
+}
+
+static void analysis_POP_JUMP_BACKWARD_IF_NONE(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
 	op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 	op->jump = op->addr + 2 - 2 * oparg; // addr + ((is_python36) ? 2 : 3) - JMP_OFFSET(ops, oparg);
 }
@@ -1096,8 +1114,12 @@ static op_analysis_func op_analysis[] = {
 	{ "JUMP_BACKWARD", analysis_JUMP_BACKWARD },
 	{ "POP_JUMP_FORWARD_IF_TRUE", analysis_POP_JUMP_FORWARD_IF_TRUE },
 	{ "POP_JUMP_FORWARD_IF_FALSE", analysis_POP_JUMP_FORWARD_IF_FALSE },
+	{ "POP_JUMP_FORWARD_IF_NOT_NONE", analysis_POP_JUMP_FORWARD_IF_NOT_NONE },
+	{ "POP_JUMP_FORWARD_IF_NONE", analysis_POP_JUMP_FORWARD_IF_NONE },
 	{ "POP_JUMP_BACKWARD_IF_TRUE", analysis_POP_JUMP_BACKWARD_IF_TRUE },
 	{ "POP_JUMP_BACKWARD_IF_FALSE", analysis_POP_JUMP_BACKWARD_IF_FALSE },
+	{ "POP_JUMP_BACKWARD_IF_NOT_NONE", analysis_POP_JUMP_BACKWARD_IF_NOT_NONE },
+	{ "POP_JUMP_BACKWARD_IF_NONE", analysis_POP_JUMP_BACKWARD_IF_NONE },
 	{ "BEFORE_WITH", analysis_BEFORE_WITH },
 	{ "CACHE", analysis_CACHE },
 };

@@ -894,7 +894,13 @@ static pyc_object *copy_object(pyc_object *object) {
 
 // populate varnames, freevars, cellvars version >=3.11.0
 
-static void extract_variables_from_localplus(pyc_object *localplusnames, pyc_object *localpluskinds, pyc_object **varnames, pyc_object **freevars, pyc_object **cellvars, bool *error) {
+static void extract_variables_from_localplus(
+	pyc_object *localplusnames,
+	pyc_object *localpluskinds,
+	pyc_object **varnames,
+	pyc_object **freevars,
+	pyc_object **cellvars,
+	bool *error) {
 	if (!localplusnames || !localpluskinds) {
 		*error = true;
 		return;
@@ -908,6 +914,9 @@ static void extract_variables_from_localplus(pyc_object *localplusnames, pyc_obj
 	*cellvars = RZ_NEW0(pyc_object);
 
 	if (!*varnames || !*cellvars || !*freevars) {
+		free(*varnames);
+		free(*cellvars);
+		free(*freevars);
 		*error = true;
 		return;
 	}
@@ -1082,7 +1091,13 @@ static pyc_object *get_code_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 	}
 
 	if (v311_to_latest) {
-		extract_variables_from_localplus(cobj->localsplusnames, cobj->localspluskinds, &cobj->varnames, &cobj->freevars, &cobj->cellvars, &error);
+		extract_variables_from_localplus(
+			cobj->localsplusnames,
+			cobj->localspluskinds,
+			&cobj->varnames,
+			&cobj->freevars,
+			&cobj->cellvars,
+			&error);
 	}
 
 	if (error) {
