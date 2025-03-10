@@ -9,7 +9,7 @@ pyc_opcodes *opcode_22(void) {
 		return NULL;
 	}
 
-	ret->version_sig = (void *(*)())opcode_22;
+	ret->version_sig = (opcode_func)opcode_22;
 
 	// 2.2 Bytecodes not in 2.3
 	def_op(.op_obj = ret->opcodes, .op_name = "FOR_LOOP", .op_code = 114);

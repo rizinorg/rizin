@@ -936,15 +936,15 @@ static void extract_variables_from_localplus(
 	rz_list_foreach (names_list, iter, name) {
 		ut8 kind = kinds_list[offset];
 
-		if (kind & 0x20) { // CO_FAST_LOCAL
+		if (kind & RZ_PYC_CO_FAST_LOCAL) {
 			rz_list_append((*varnames)->data, name);
 		}
 
-		if (kind & 0x40) { // CO_FAST_CELL
+		if (kind & RZ_PYC_CO_FAST_CELL) {
 			rz_list_append((*cellvars)->data, name);
 		}
 
-		if (kind & 0x80) { // CO_FAST_FREE
+		if (kind & RZ_PYC_CO_FAST_FREE) {
 			rz_list_append((*freevars)->data, name);
 		}
 

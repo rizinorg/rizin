@@ -12,6 +12,8 @@
 
 #define OBJECT_SIZE_ON_STACK 1
 
+typedef void *(*opcode_func)();
+
 typedef enum {
 	HASCOMPARE = 0x1,
 	HASCONDITION = 0x2, // conditional operator; has jump offset

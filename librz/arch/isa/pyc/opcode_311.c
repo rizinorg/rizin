@@ -9,7 +9,7 @@ pyc_opcodes *opcode_311(void) {
 		return NULL;
 	}
 
-	ret->version_sig = (void *(*)())opcode_310;
+	ret->version_sig = (opcode_func)opcode_311;
 
 	// Removed opcodes
 	rm_op(.op_obj = ret->opcodes, .op_name = "POP_BLOCK", .op_code = 87);
@@ -22,7 +22,6 @@ pyc_opcodes *opcode_311(void) {
 	rm_op(.op_obj = ret->opcodes, .op_name = "BINARY_MODULO", .op_code = 22);
 	rm_op(.op_obj = ret->opcodes, .op_name = "BINARY_ADD", .op_code = 23);
 	rm_op(.op_obj = ret->opcodes, .op_name = "BINARY_SUBTRACT", .op_code = 24);
-	// rm_op(.op_obj = ret->opcodes, .op_name = "BINARY_SUBSCR", .op_code = 25); Still there in source code, docs mention BINARY_* removed
 	rm_op(.op_obj = ret->opcodes, .op_name = "BINARY_FLOOR_DIVIDE", .op_code = 26);
 	rm_op(.op_obj = ret->opcodes, .op_name = "BINARY_TRUE_DIVIDE", .op_code = 27);
 	rm_op(.op_obj = ret->opcodes, .op_name = "BINARY_LSHIFT", .op_code = 62);
@@ -70,7 +69,7 @@ pyc_opcodes *opcode_311(void) {
 	def_op(.op_obj = ret->opcodes, .op_name = "MAKE_CELL", .op_code = 135, .pop = 0, .push = 0);
 
 	def_op(.op_obj = ret->opcodes, .op_name = "CHECK_EXC_MATCH", .op_code = 36, .pop = 1, .push = 1);
-	def_op(.op_obj = ret->opcodes, .op_name = "CHECK_EG_MATCH", .op_code = 37, .pop = 9, .push = 1); // Conditional pushing and popping, I dont know how that is implemented in analysis.
+	def_op(.op_obj = ret->opcodes, .op_name = "CHECK_EG_MATCH", .op_code = 37, .pop = 9, .push = 1);
 	def_op(.op_obj = ret->opcodes, .op_name = "PREP_RERAISE_STAR", .op_code = 88, .pop = 2, .push = 2);
 	def_op(.op_obj = ret->opcodes, .op_name = "PUSH_EXC_INFO", .op_code = 35, .pop = 1, .push = 2);
 	def_op(.op_obj = ret->opcodes, .op_name = "RESUME", .op_code = 151, .pop = 0, .push = 0);

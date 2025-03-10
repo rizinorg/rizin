@@ -9,6 +9,10 @@
 #include <rz_types.h>
 #include "pyc_magic.h"
 
+#define RZ_PYC_CO_FAST_LOCAL 0x20
+#define RZ_PYC_CO_FAST_CELL  0x40
+#define RZ_PYC_CO_FAST_FREE  0x80
+
 typedef enum {
 	TYPE_ASCII = 'a',
 	TYPE_ASCII_INTERNED = 'A',
