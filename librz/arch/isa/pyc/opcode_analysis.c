@@ -779,8 +779,7 @@ static inline void analysis_RESUME(RzAnalysisOp *op, pyc_opcode_object *op_obj, 
 }
 
 static inline void analysis_JUMP_BACKWARD_NO_INTERRUPT(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
-	op->type = RZ_ANALYSIS_OP_TYPE_JMP;
-	op->jump = op->addr + 2 - 2 * oparg;
+	analysis_relative_jump_backward(op, op_obj, oparg, RZ_ANALYSIS_OP_TYPE_JMP);
 }
 
 // combined BINARY_* and INPLACE_* in one
