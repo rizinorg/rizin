@@ -854,7 +854,7 @@ jobs:
     name: Build rz-bindgen
     if: contains(github.head_ref, 'dist') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable' || github.event_name == 'schedule'
     needs: [ test-tarball ]
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/download-artifact@v4
         with:
