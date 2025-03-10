@@ -292,7 +292,8 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_string(RZ_NONNULL RzCor
 		RZ_LOG_ERROR("core: Setting up search from core failed.\n");
 		goto quit;
 	}
-	if (!rz_search_opt_set_chunk_size(user_opts, scan_opt.max_str_length)) {
+	// the following strlen assumes that re_pattern is UTF8-encoded
+	if (!rz_search_opt_set_chunk_size(user_opts, flags & RZ_REGEX_LITERAL ? strlen(re_pattern) : scan_opt.max_str_length)) {
 		RZ_LOG_ERROR("search: Failed to update chunk size in the search options.\n");
 		goto quit;
 	}
