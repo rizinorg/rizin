@@ -48,7 +48,12 @@ static bool element_chunk_ratio_ok(ut64 element_size, ut64 chunk_size) {
 	return (chunk_size / element_size) >= RZ_SEARCH_MIN_ELEMENTS_PER_CHUNK;
 }
 
-RZ_API bool rz_search_opt_set_elemet_size(RZ_NONNULL RzSearchOpt *opt, ut64 element_size) {
+/**
+ * \brief Sets the chunk size based on `element_size`.
+ * \param opt The search options.
+ * \param element_size The size in bytes of the element to search for.
+ */
+RZ_API bool rz_search_opt_set_chunk_size(RZ_NONNULL RzSearchOpt *opt, ut64 element_size) {
 	rz_return_val_if_fail(opt, false);
 	if (!element_chunk_ratio_ok(element_size, opt->chunk_size)) {
 		if (!set_chunk_size(opt, element_size * RZ_SEARCH_MIN_ELEMENTS_PER_CHUNK)) {
