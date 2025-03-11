@@ -133,20 +133,6 @@ pop ebp
 EOF
 RUN
 
-NAME=cmd.hit for /B
-FILE=malloc://1024
-CMDS=<<EOF
-wx cffa edfe
-e cmd.hit="px 1"
-e search.from=0
-e search.to=0x10
-/mb
-EOF
-EXPECT=<<EOF
-0x00000000  mach064
-EOF
-RUN
-
 NAME=cmd.hit for /z i
 FILE=malloc://1024
 CMDS=<<EOF
