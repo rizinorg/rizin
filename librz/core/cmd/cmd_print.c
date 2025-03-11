@@ -1500,14 +1500,31 @@ RZ_IPI RzCmdStatus rz_cmd_print_hash_cfg_algo_list_handler(RzCore *core, int arg
 }
 
 RZ_IPI RzCmdStatus rz_cmd_print_magic_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	RzList *hits = rz_core_search_magic(core, NULL, argc > 1 ? argv[1] : NULL);
+	if (!hits) {
+		RZ_LOG_ERROR("Searching for magics failed.\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzListIter *it;
+	RzSearchHit *hit;
 	if (mode == RZ_OUTPUT_MODE_JSON) {
 		PJ *pj = pj_new();
-		rz_core_search_magic(core, NULL, argc > 1 ? argv[1] : NULL);
+		pj_a(pj);
+		rz_list_foreach (hits, it, hit) {
+			pj_o(pj);
+			pj_kn(pj, "address", hit->address);
+			pj_ks(pj, "magic", hit->comment);
+			pj_end(pj);
+		}
+		pj_end(pj);
 		rz_cons_println(pj_string(pj));
 		pj_free(pj);
 	} else {
-		rz_core_search_magic(core, NULL, argc > 1 ? argv[1] : NULL);
+		rz_list_foreach (hits, it, hit) {
+			rz_cons_printf("0x%08" PFMT64x " %s\n", hit->address, hit->comment);
+		}
 	}
+	rz_list_free(hits);
 	return RZ_CMD_STATUS_OK;
 }
 

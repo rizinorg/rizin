@@ -15792,7 +15792,7 @@ static const RzCmdDescArg cmd_print_magic_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_magic_help = {
-	.summary = "Print libmagic data",
+	.summary = "Search magics and print the long description of them.",
 	.args = cmd_print_magic_args,
 };
 
@@ -24067,7 +24067,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *print_key_mosaic_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_cd, "pK", rz_print_key_mosaic_handler, &print_key_mosaic_help);
 	rz_warn_if_fail(print_key_mosaic_cd);
 
-	RzCmdDesc *cmd_print_magic_cd = rz_cmd_desc_argv_modes_new(core->rcmd, cmd_print_cd, "pm", RZ_OUTPUT_MODE_JSON, rz_cmd_print_magic_handler, &cmd_print_magic_help);
+	RzCmdDesc *cmd_print_magic_cd = rz_cmd_desc_argv_modes_new(core->rcmd, cmd_print_cd, "pm", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_print_magic_handler, &cmd_print_magic_help);
 	rz_warn_if_fail(cmd_print_magic_cd);
 
 	RzCmdDesc *po_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_cd, "po", NULL, NULL, &po_help);
