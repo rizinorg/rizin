@@ -657,7 +657,8 @@ FILE=bins/elf/ioli/crackme0x00
 ARGS=-n
 CMDS=pm bins/src/olf.magic
 EXPECT=<<EOF
-0x00000000 1 OLF 32-bit LSB
+0x00000000 OLF 32-bit LSB
+0x00001d70 very short file (no magic)
 EOF
 RUN
 
