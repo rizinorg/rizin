@@ -1,3 +1,17 @@
+NAME=Error config to < from
+FILE==
+CMDS=<<EOF
+e search.from=2
+e search.to=3
+e search.to=2
+e search.to=1
+EOF
+EXPECT=<<EOF
+search.to cannot be smaller than search.from.
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=trailing comment
 FILE==
 ARGS=-n

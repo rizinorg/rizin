@@ -1133,6 +1133,17 @@ static bool cb_search_max_threads(void *user, void *data) {
 	return true;
 }
 
+static bool cb_search_to(void *user, void *data) {
+	RzCore *core = user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	ut64 from = rz_config_get_i(core->config, "search.from");
+	if (node->i_value < from) {
+		rz_cons_printf("search.to cannot be smaller than search.from.\n");
+		return false;
+	}
+	return true;
+}
+
 static void check_reload_bin_str_search(RzCore *core) {
 	if (core->bin && rz_config_get_b(core->config, "str.search.reload")) {
 		RzBinFile *bf = rz_bin_cur(core->bin);
@@ -3746,8 +3757,11 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("search.overlap", "false", "Look for overlapped search hits");
 	SETI("search.maxhits", 0, "Maximum number of hits (0: no limit)");
 	SETICB("search.max_threads", RZ_THREAD_N_CORES_ALL_AVAILABLE, &cb_search_max_threads, "Maximum core number. '0' for all cores. '?' to show available.");
+	// Order matters for these. cb_search_to() checks if search.from is smaller or equal.
+	// Because those two are commonly used in calculations.
 	SETI("search.from", 0, "Search start address (inclusive)");
-	SETI("search.to", UT64_MAX, "Search end address (exclusive)");
+	SETICB("search.to", UT64_MAX, &cb_search_to, "Search end address (exclusive)");
+	// Order end
 	n = NODECB("search.in", "io.maps", &cb_search_in);
 	SETDESC(n, "Specify search boundaries");
 	SETOPTIONS(n, "raw", "block",
