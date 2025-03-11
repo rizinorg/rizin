@@ -433,9 +433,13 @@ commands:
     - name: "/m"
       summary: Magic constants search.
       cname: cmd_search_magic_const
+      type: RZ_CMD_DESC_TYPE_ARGV_STATE
+      default_mode: RZ_OUTPUT_MODE_STANDARD
       modes:
         - RZ_OUTPUT_MODE_STANDARD
         - RZ_OUTPUT_MODE_JSON
+        - RZ_OUTPUT_MODE_QUIET
+        - RZ_OUTPUT_MODE_TABLE
       args:
         - name: magic-file
           optional: true

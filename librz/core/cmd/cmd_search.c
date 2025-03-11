@@ -1896,56 +1896,6 @@ reread:
 		}
 		}
 	} break;
-	case 'm': // "/m"
-		dosearch = false;
-		if (input[1] == 'b') { // "/mb"
-			bool bin_verbose = rz_config_get_i(core->config, "bin.verbose");
-			rz_config_set_i(core->config, "bin.verbose", false);
-			// TODO : iter maps?
-			cmd_search_bin(core, search_itv);
-			rz_config_set_i(core->config, "bin.verbose", bin_verbose);
-		} else if (input[1] == ' ' || input[1] == '\0' || param.outmode == RZ_MODE_JSON) {
-			int ret;
-			const char *file = input[param_offset - 1] ? input + param_offset : NULL;
-			ut64 addr = search_itv.addr;
-			RzListIter *iter;
-			RzIOMap *map;
-			if (param.outmode == RZ_MODE_JSON) {
-				pj_a(param.pj);
-			}
-			rz_core_magic_reset(core);
-			int maxHits = rz_config_get_i(core->config, "search.maxhits");
-			int hits = 0;
-			rz_list_foreach (param.boundaries, iter, map) {
-				if (param.outmode != RZ_MODE_JSON) {
-					eprintf("-- %llx %llx\n", map->itv.addr, rz_itv_end(map->itv));
-				}
-				rz_cons_break_push(NULL, NULL);
-				for (addr = map->itv.addr; addr < rz_itv_end(map->itv); addr++) {
-					if (rz_cons_is_breaked()) {
-						break;
-					}
-					ret = rz_core_magic_at(core, file, addr, 99, false, param.outmode == RZ_MODE_JSON ? param.pj : NULL, &hits);
-					if (ret == -1) {
-						// something went terribly wrong.
-						break;
-					}
-					if (maxHits && hits >= maxHits) {
-						break;
-					}
-					addr += ret - 1;
-				}
-				rz_cons_clear_line(stderr);
-				rz_cons_break_pop();
-			}
-			if (param.outmode == RZ_MODE_JSON) {
-				pj_end(param.pj);
-			}
-		} else {
-			RZ_LOG_ERROR("core: Usage: /m [file]\n");
-		}
-		rz_cons_clear_line(stderr);
-		break;
 	case 'p': // "/p"
 	{
 		if (input[param_offset - 1]) {
@@ -2580,8 +2530,12 @@ RZ_IPI RzCmdStatus rz_cmd_search_hash_block_handler(RzCore *core, int argc, cons
 }
 
 // "/m"
-RZ_IPI RzCmdStatus rz_cmd_search_magic_const_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	return pass_to_legacy_api(core, argc, argv, mode);
+RZ_IPI RzCmdStatus rz_cmd_search_magic_const_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzList *hits = NULL;
+	CMD_SEARCH_BEGIN();
+	hits = rz_core_search_magic(core, NULL, argc > 1 ? argv[1] : NULL);
+	CMD_SEARCH_END();
+	return cmd_core_handle_search_hits(core, state, hits);
 }
 
 // "/mb"
