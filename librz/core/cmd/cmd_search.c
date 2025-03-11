@@ -2543,7 +2543,15 @@ RZ_IPI RzCmdStatus rz_cmd_search_magic_const_handler(RzCore *core, int argc, con
 
 // "/mb"
 RZ_IPI RzCmdStatus rz_cmd_search_magic_bin_headers_handler(RzCore *core, int argc, const char **argv) {
-	return pass_to_legacy_api(core, argc, argv, RZ_OUTPUT_MODE_STANDARD);
+	RzInterval itv = { 0 };
+	itv.addr = rz_config_get_i(core->config, "search.from");
+	itv.size = rz_config_get_i(core->config, "search.to") - itv.addr;
+	CMD_SEARCH_BEGIN();
+	// This does not really searches magics.
+	// It just opens the buffer with rz_bin_open_io().
+	cmd_search_bin(core, itv);
+	CMD_SEARCH_END();
+	return RZ_CMD_STATUS_OK;
 }
 
 // "/o"
