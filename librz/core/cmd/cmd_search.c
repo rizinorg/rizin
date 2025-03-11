@@ -2141,12 +2141,11 @@ static RzCmdStatus cmd_core_handle_search_hits(RzCore *core, RzCmdStateOutput *s
 	cmd_hit = rz_config_get(core->config, "cmd.hit");
 	search_prefix = rz_config_get(core->config, "search.prefix");
 	if (RZ_STR_ISEMPTY(search_prefix)) {
-		// ensure thre prefix is always set.
 		search_prefix = "hit";
 	}
 
 	if (RZ_STR_ISEMPTY(cmd_hit)) {
-		// setup output and flagspace
+		// Setup output and flag space.
 		rz_cmd_state_output_array_start(state);
 		rz_cmd_state_output_set_columnsf(state, "xXs", "offset", "size", "flag");
 		rz_flag_space_push(core->flags, "search");
@@ -2159,7 +2158,7 @@ static RzCmdStatus cmd_core_handle_search_hits(RzCore *core, RzCmdStateOutput *s
 			continue;
 		}
 
-		// only output & add flag when cmd.hit is not set.
+		// Only output & add flag when cmd.hit is not set.
 		char *flag = rz_search_hit_flag_name(hit, i, search_prefix);
 		rz_flag_set(core->flags, flag, hit->address, hit->size);
 		cmd_search_output_to_state(state, hit, flag);
@@ -2167,7 +2166,7 @@ static RzCmdStatus cmd_core_handle_search_hits(RzCore *core, RzCmdStateOutput *s
 	}
 
 	if (RZ_STR_ISEMPTY(cmd_hit)) {
-		// terminating output and flagspace
+		// terminating output and flag space
 		rz_flag_space_pop(core->flags);
 		rz_cmd_state_output_array_end(state);
 	}

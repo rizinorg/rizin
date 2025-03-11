@@ -23,7 +23,7 @@ static RzMagic *setup_magic_instance(const char *magic_dir) {
 }
 
 static bool magic_is_empty(void *user) {
-	// always return false.
+	// Always return false.
 	return false;
 }
 
@@ -37,7 +37,7 @@ static bool magic_find(RzSearchFindOpt *fopt, void *user, ut64 address, const Rz
 
 	ut64 size;
 	const ut8 *raw_buf = rz_buf_get_whole_hot_paths((RzBuffer *)buffer, &size);
-	// there are no single-byte signatures
+	// There are no single-byte signatures.
 	for (size_t i = 0; i < size; i += 2) {
 		const char *match = rz_magic_buffer(magic, raw_buf + i, size - i);
 		if (!match) {
@@ -56,11 +56,11 @@ static bool magic_find(RzSearchFindOpt *fopt, void *user, ut64 address, const Rz
 }
 
 /**
- * \brief      Allocates and initialize a magic RzSearchCollection
+ * \brief      Allocates and initialize a magic RzSearchCollection.
  *
- * \param[in]  magic_dir  The magic directory to use for loading the signatures
+ * \param[in]  magic_dir  The magic directory to use for loading the signatures.
  *
- * \return     On success returns a valid pointer, otherwise NULL
+ * \return     On success returns a valid pointer, otherwise NULL.
  */
 RZ_API RZ_OWN RzSearchCollection *rz_search_collection_magic(RZ_NONNULL const char *magic_dir) {
 	rz_return_val_if_fail(magic_dir, NULL);
