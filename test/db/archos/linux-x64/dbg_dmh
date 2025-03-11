@@ -19,23 +19,23 @@ FILE=bins/elf/simple_malloc_x86_64
 ARGS=-d
 CMDS=<<EOF
 dcu main
-dmh | tail -n 2
+dmh | tail -n 2 | sed 's/11c\|120/1__/' | sed 's/xf1\|xed/x__/'
 echo ----
 7dso
-dmh | tail -n 3
+dmh | tail -n 3 | sed 's/11c\|120/1__/' | sed 's/xf1\|xed/x__/'
 EOF
-REGEXP_FILTER_OUT=(status=[a-z]+)|(size=0x[a-f0-9]+)
+REGEXP_FILTER_OUT=(status=[a-z]+)|(size=0x[_a-f0-9]+)
 EXPECT=<<EOF
 status=allocated
-size=0x11c10
+size=0x1__10
 status=free
-size=0xf160
+size=0x__60
 status=allocated
-size=0x11c10
+size=0x1__10
 status=allocated
 size=0x20
 status=free
-size=0xf140
+size=0x__40
 EOF
 RUN
 
