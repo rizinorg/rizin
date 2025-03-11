@@ -1,5 +1,5 @@
 NAME=dmi ld
-FILE=bins/elf/ls
+FILE=/bin/ls
 ARGS=-d
 CMDS=<<EOF
 dmiQ ld | grep 'exception\|error' | sort
@@ -18,7 +18,7 @@ EOF
 RUN
 
 NAME=dmia ld
-FILE=bins/elf/ls
+FILE=/bin/ls
 ARGS=-d
 CMDS=<<EOF
 dmiaQ ld~la_activity
