@@ -258,10 +258,11 @@ const PicMidrangeOpAsmInfo *pic_midrange_get_op_info(PicMidrangeOpcode opcode) {
 }
 
 #define F pic_midrange_regname(op->args.f)
-#define K (op->args.k)
+#define K pic_midrange_op_args_k_for_op(&op->args, op->opcode)
 
-bool pic_midrange_disasm_op(PicMidrangeOp *op, ut64 addr, const ut8 *b, ut64 l) {
-	if (!b || l < 2) {
+bool pic_midrange_decode_op(RZ_OUT RZ_NONNULL PicMidrangeOp *op, ut64 addr, RZ_NONNULL const ut8 *b, ut64 l) {
+	rz_return_val_if_fail(op && b, false);
+	if (l < 2) {
 		return false;
 	}
 
@@ -279,7 +280,6 @@ bool pic_midrange_disasm_op(PicMidrangeOp *op, ut64 addr, const ut8 *b, ut64 l) 
 	op->size = 2;
 	op->addr = addr;
 	op->mnemonic = op_info->mnemonic;
-	op->args_tag = op_info->args;
 	analysis_pic_midrange_extract_args(op->instr, op_info->args, &op->args);
 
 	switch (op_info->args) {
@@ -317,7 +317,7 @@ bool pic_midrange_disasm_op(PicMidrangeOp *op, ut64 addr, const ut8 *b, ut64 l) 
 	case PIC_MIDRANGE_OP_ARGS_4K:
 	case PIC_MIDRANGE_OP_ARGS_8K:
 	case PIC_MIDRANGE_OP_ARGS_11K:
-		rz_strf(op->operands, "0x%x", op->args.k);
+		rz_strf(op->operands, "0x%x", (unsigned int)K);
 		break;
 	case PIC_MIDRANGE_OP_ARGS_9K:
 		rz_strf(op->operands, "%s%#x", K < 0 ? "-" : "", (unsigned)abs(K));
@@ -329,37 +329,4 @@ bool pic_midrange_disasm_op(PicMidrangeOp *op, ut64 addr, const ut8 *b, ut64 l) 
 		break;
 	}
 	return true;
-}
-
-/**
- * \brief Disassemble a PIC 16 instruction.
- *
- * \param op RzAsmOp to tell number of instructions decoded.
- * \param opbuf Decoded instruction mnemonic will be stored in this before return.
- * \param b Opcode buffer containing PicMidrange opcodes.
- * \param l Length of opcode buffer \p b.
- *
- * \return Number of decoded bytes (2 on success, 1 on failure).
- * */
-int pic_midrange_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *b, int l) {
-#define EMIT_INVALID \
-	{ \
-		op->size = 2; \
-		rz_asm_op_set_asm(op, "invalid"); \
-		return 1; \
-	}
-
-	PicMidrangeOp x = { 0 };
-	if (!pic_midrange_disasm_op(&x, a->pc, b, l)) {
-		EMIT_INVALID;
-	}
-
-	op->size = x.size;
-	if (x.operands[0]) {
-		rz_asm_op_setf_asm(op, "%s %s", x.mnemonic, x.operands);
-	} else {
-		rz_asm_op_setf_asm(op, x.mnemonic);
-	}
-
-	return op->size;
 }

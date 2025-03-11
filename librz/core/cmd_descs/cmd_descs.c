@@ -1907,8 +1907,7 @@ static const RzCmdDescHelp cmd_search_pattern_help = {
 static const RzCmdDescArg cmd_search_blocks_args[] = {
 	{
 		.name = "patternsize",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.type = RZ_CMD_ARG_TYPE_NUM,
 
 	},
 	{ 0 },

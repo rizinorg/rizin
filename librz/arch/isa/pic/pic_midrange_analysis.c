@@ -86,6 +86,10 @@ static const PicMidrangeOpAnalysisInfo pic_midrange_op_analysis_info[] = {
 
 static RzIODesc *cpu_memory_map(
 	RzIOBind *iob, RzIODesc *desc, ut32 addr, ut32 size) {
+	if (!iob->fd_get_name) {
+		// e.g. in rz-asm
+		return NULL;
+	}
 	char mstr[16];
 	rz_strf(mstr, "malloc://%d", size);
 	if (desc && iob->fd_get_name(iob->io, desc->fd)) {
@@ -131,47 +135,40 @@ static void analysis_pic_midrange_setup(RzAnalysis *analysis, bool force) {
 	}
 }
 
-int pic_midrange_op(
-	RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
-	const ut8 *buf, int len, RzAnalysisOpMask mask) {
-
-	if (!buf || len < 2) {
-		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
+int pic_midrange_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op,
+	RZ_OUT RZ_NONNULL PicMidrangeOp *pic_op, RzAnalysisOpMask mask) {
+	rz_return_val_if_fail(analysis && op && pic_op, -1);
+	if (!(pic_op->opcode < RZ_ARRAY_SIZE(pic_midrange_op_analysis_info))) {
 		return -1;
 	}
-	PicMidrangeOp x = { 0 };
-	if (!pic_midrange_disasm_op(&x, addr, buf, len)) {
-		return -1;
-	}
-	if (!(x.opcode < RZ_ARRAY_SIZE(pic_midrange_op_analysis_info))) {
-		return -1;
-	}
-	const PicMidrangeOpAnalysisInfo *info = pic_midrange_op_analysis_info + x.opcode;
+	const PicMidrangeOpAnalysisInfo *info = pic_midrange_op_analysis_info + pic_op->opcode;
 	if (!info) {
 		return -1;
 	}
 
-	op->size = x.size;
+	memset(op, 0, sizeof(RzAnalysisOp));
+	op->size = pic_op->size;
 	op->cycles = 1;
-	op->type = RZ_ANALYSIS_OP_TYPE_NOP;
+	op->type = RZ_ANALYSIS_OP_TYPE_UNK;
 
-	if (mask & RZ_ANALYSIS_OP_MASK_ESIL && info->handler) {
+	if (info->handler) {
 		analysis_pic_midrange_setup(analysis, false);
-		info->handler(analysis, op, addr, &x.args);
+		// fills basic info and esil
+		info->handler(analysis, op, pic_op->addr, &pic_op->args);
 	}
 	if (mask & RZ_ANALYSIS_OP_MASK_IL && info->il_handler) {
 		PicMidrangeILContext il_ctx = {
 			.analysis = analysis,
 			.op = op,
-			.x = &x,
+			.x = pic_op,
 		};
-		op->il_op = info->il_handler(&il_ctx, x.opcode);
+		op->il_op = info->il_handler(&il_ctx, pic_op->opcode);
 	}
 	if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
 		op->mnemonic = rz_str_newf("%s%s%s",
-			x.mnemonic,
-			x.operands[0] ? " " : "",
-			x.operands);
+			pic_op->mnemonic,
+			pic_op->operands[0] ? " " : "",
+			pic_op->operands);
 	}
 
 	return op->size;

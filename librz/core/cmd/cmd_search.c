@@ -1965,9 +1965,6 @@ reread:
 		}
 		RZ_LOG_ERROR("core: Invalid pattern size (must be > 0)\n");
 	} break;
-	case 'P': // "/P"
-		search_similar_pattern(core, atoi(input + 1), &param);
-		break;
 	case 'd': // "/d" search delta key
 		if (input[1]) {
 			rz_search_reset(core->search, RZ_SEARCH_DELTAKEY);
@@ -2628,12 +2625,40 @@ RZ_IPI RzCmdStatus rz_cmd_search_insn_offset_backwards_fallback_handler(RzCore *
 
 // "/p"
 RZ_IPI RzCmdStatus rz_cmd_search_pattern_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return pass_to_legacy_api(core, argc, argv, RZ_OUTPUT_MODE_STANDARD);
+	ut64 ps = rz_num_get(NULL, argv[1]);
+	if (ps <= 1) {
+		RZ_LOG_ERROR("Pattern size must be greater than 1.\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	CMD_SEARCH_BEGIN();
+	struct search_parameters param = { 0 };
+	legacy_param_setup(core, &param, 0);
+	RzListIter *iter;
+	RzIOMap *map;
+	rz_list_foreach (param.boundaries, iter, map) {
+		eprintf("-- %llx %llx\n", map->itv.addr, rz_itv_end(map->itv));
+		rz_cons_break_push(NULL, NULL);
+		rz_search_pattern_size(core->search, ps);
+		if (!rz_search_pattern(core->search, map->itv.addr, rz_itv_end(map->itv))) {
+			RZ_LOG_ERROR("Pattern search failed.\n");
+			rz_cons_break_pop();
+			CMD_SEARCH_END();
+			return RZ_CMD_STATUS_ERROR;
+		}
+		rz_cons_break_pop();
+	}
+	CMD_SEARCH_END();
+	return RZ_CMD_STATUS_OK;
 }
 
 // "/P"
 RZ_IPI RzCmdStatus rz_cmd_search_blocks_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return pass_to_legacy_api(core, argc, argv, RZ_OUTPUT_MODE_STANDARD);
+	CMD_SEARCH_BEGIN();
+	struct search_parameters param = { 0 };
+	legacy_param_setup(core, &param, 0);
+	search_similar_pattern(core, rz_num_get(NULL, argv[1]), &param);
+	CMD_SEARCH_END();
+	return RZ_CMD_STATUS_OK;
 }
 
 // "/r"

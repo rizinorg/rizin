@@ -357,7 +357,7 @@ commands:
       - RZ_OUTPUT_MODE_TABLE
     args:
       - name: "patternsize"
-        type: RZ_CMD_ARG_TYPE_STRING
+        type: RZ_CMD_ARG_TYPE_NUM
   - name: "/s"
     summary: Search sections by grouping blocks with similar entropy.
     cname: cmd_search_sections

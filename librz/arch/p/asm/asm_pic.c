@@ -10,15 +10,23 @@
 #include "pic/pic_highend.h"
 
 static int asm_pic_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *b, int l) {
-	int res = -1;
-	if (a->cpu && is_pic_baseline(a->cpu)) {
-		res = pic_baseline_disassemble(a, op, b, l);
-	} else if (a->cpu && is_pic_midrange(a->cpu)) {
-		res = pic_midrange_disassemble(a, op, b, l);
-	} else if (a->cpu && is_pic_highend(a->cpu)) {
-		res = pic_highend_disassemble(a, op, b, l);
+	if (is_pic_baseline_or_pic_midrange(a->cpu)) {
+		PicMidrangeOp x = { 0 };
+		if (!(is_pic_baseline(a->cpu) ? pic_baseline_decode_op : pic_midrange_decode_op)(&x, a->pc, b, l)) {
+			rz_asm_op_set_asm(op, "invalid");
+			return op->size = 1;
+		}
+		op->size = x.size;
+		if (x.operands[0]) {
+			rz_asm_op_setf_asm(op, "%s %s", x.mnemonic, x.operands);
+		} else {
+			rz_asm_op_setf_asm(op, x.mnemonic);
+		}
+		return op->size;
+	} else if (is_pic_highend(a->cpu)) {
+		return pic_highend_disassemble(a, op, b, l);
 	}
-	return op->size = res;
+	return -1;
 }
 
 char **pic_cpu_descriptions() {

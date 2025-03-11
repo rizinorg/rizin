@@ -39,7 +39,9 @@
 	"c," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1]," #O "," \
 	"wreg," #O "=," PIC_MIDRANGE_ESIL_UPDATE_FLAGS
 
-INST_HANDLER(NOP) {}
+INST_HANDLER(NOP) {
+	op->type = RZ_ANALYSIS_OP_TYPE_NOP;
+}
 
 INST_HANDLER(RETFIE) {
 	op->type = RZ_ANALYSIS_OP_TYPE_RET;
@@ -62,10 +64,8 @@ INST_HANDLER(RETURN) {
 }
 
 INST_HANDLER(CALL) {
-	ut64 pclath;
 	op->type = RZ_ANALYSIS_OP_TYPE_CALL;
-	rz_analysis_esil_reg_read(analysis->esil, "pclath", &pclath, NULL);
-	op->jump = 2 * (((pclath & 0x78) << 8) + args->k);
+	op->jump = 2 * args->k; // TODO: perhaps try to guess pclath statically and append here
 	ef("8,pclath,0x78,&,<<,0x%x,+,2,*,pc,=,", args->k);
 	e("0x1f,stkptr,==,$z,?{,0xff,stkptr,=,},");
 	e("0x0f,stkptr,==,$z,?{,0xff,stkptr,=,},");
@@ -74,14 +74,13 @@ INST_HANDLER(CALL) {
 }
 
 INST_HANDLER(GOTO) {
-	ut64 pclath;
 	op->type = RZ_ANALYSIS_OP_TYPE_JMP;
-	rz_analysis_esil_reg_read(analysis->esil, "pclath", &pclath, NULL);
-	op->jump = 2 * (((pclath & 0x78) << 8) + args->k);
+	op->jump = 2 * args->k; // TODO: perhaps try to guess pclath statically and append here
 	ef("8,pclath,0x78,&,<<,0x%x,+,2,*,pc,=,", args->k);
 }
 
 INST_HANDLER(BCF) {
+	op->type = RZ_ANALYSIS_OP_TYPE_AND;
 	ut8 mask = ~(1 << args->b);
 	ef(PIC_MIDRANGE_ESIL_BSR_ADDR
 		",[1],0x%x,&," PIC_MIDRANGE_ESIL_BSR_ADDR ",=[1],",
@@ -89,6 +88,7 @@ INST_HANDLER(BCF) {
 }
 
 INST_HANDLER(BSF) {
+	op->type = RZ_ANALYSIS_OP_TYPE_OR;
 	ut8 mask = (1 << args->b);
 	ef(PIC_MIDRANGE_ESIL_BSR_ADDR
 		",[1],0x%x,|," PIC_MIDRANGE_ESIL_BSR_ADDR ",=[1],",
@@ -123,10 +123,8 @@ INST_HANDLER(BRA) {
 }
 
 INST_HANDLER(BRW) {
-	ut64 wreg;
 	op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
-	rz_analysis_esil_reg_read(analysis->esil, "wreg", &wreg, NULL);
-	op->jump = addr + 2 * (wreg + 1);
+	op->jump = UT64_MAX; // not statically known: addr + 2 * (wreg + 1)
 	e("wreg,1,+,2,*,pc,+=,");
 }
 
@@ -302,6 +300,7 @@ INST_HANDLER(MOVF) {
 }
 
 INST_HANDLER(SWAPF) {
+	op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 	ef("4," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],>>,0x0f,&,", args->f);
 	ef("4," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],<<,0xf0,&,", args->f);
 	e("|,");
@@ -376,6 +375,7 @@ INST_HANDLER(RLF) {
 }
 
 INST_HANDLER(COMF) {
+	op->type = RZ_ANALYSIS_OP_TYPE_CPL;
 	if (args->d) {
 		ef("0xff," PIC_MIDRANGE_ESIL_BSR_ADDR ",^=[1],", args->f);
 	} else {
@@ -403,11 +403,13 @@ INST_HANDLER(ADDFSR) {
 }
 
 INST_HANDLER(CLRWDT) {
+	op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 	e("1,to,=,");
 	e("1,pd,=,");
 }
 
 INST_HANDLER(SLEEP) {
+	op->type = RZ_ANALYSIS_OP_TYPE_SWI;
 	e("1,to,=,");
 	e("0,pd,=,");
 }
@@ -433,6 +435,7 @@ INST_HANDLER(ADDWFC) {
 }
 
 INST_HANDLER(MOVIW_1) {
+	op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 	if (args->n == 0) {
 		if (!(args->m & 2)) {
 			ef("1,fsr0l,%s=,", (args->m & 1) ? "-" : "+");
@@ -463,6 +466,7 @@ INST_HANDLER(MOVIW_1) {
 }
 
 INST_HANDLER(MOVWI_1) {
+	op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 	if (args->n == 0) {
 		if (!(args->m & 2)) {
 			ef("1,fsr0l,%s=,", (args->m & 1) ? "-" : "+");
@@ -492,6 +496,7 @@ INST_HANDLER(MOVWI_1) {
 }
 
 INST_HANDLER(MOVIW_2) {
+	op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 	if (args->n == 0) {
 		e("fsr0l,8,fsr0h,<<,+,");
 	} else {
@@ -501,6 +506,7 @@ INST_HANDLER(MOVIW_2) {
 }
 
 INST_HANDLER(MOVWI_2) {
+	op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 	e("wreg,");
 	if (args->n == 0) {
 		e("fsr0l,8,fsr0h,<<,+,");
@@ -510,6 +516,10 @@ INST_HANDLER(MOVWI_2) {
 	e("=[1],");
 }
 
-INST_HANDLER(CLRF) {}
+INST_HANDLER(CLRF) {
+	op->type = RZ_ANALYSIS_OP_TYPE_MOV;
+}
 
-INST_HANDLER(CLRW) {}
+INST_HANDLER(CLRW) {
+	op->type = RZ_ANALYSIS_OP_TYPE_MOV;
+}
