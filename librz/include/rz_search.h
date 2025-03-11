@@ -147,7 +147,8 @@ typedef struct rz_search_interval_t RzSearchInterval;
 typedef struct rz_search_collection_t RzSearchCollection;
 
 typedef struct rz_search_hit_t {
-	char *hit_desc; ///< Hit description (can be NULL)
+	char *hit_desc; ///< Hit one word description. If set, it is added to the flag name of the hit. Optional, can be NULL.
+	char *comment; ///< A detailed comment about the hit. Set as flag comment. Optional, can be NULL.
 	ut64 address; ///< Address/offset of the matched data.
 	size_t size; ///< Size of the matched data (can be 0), in bytes.
 } RzSearchHit;

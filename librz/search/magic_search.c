@@ -4,6 +4,7 @@
 
 #include <rz_search.h>
 #include <rz_magic.h>
+#include <string.h>
 
 #include "rz_util/rz_buf.h"
 #include "search_internal.h"
@@ -39,12 +40,14 @@ static bool magic_find(RzSearchFindOpt *fopt, void *user, ut64 address, const Rz
 	const ut8 *raw_buf = rz_buf_get_whole_hot_paths((RzBuffer *)buffer, &size);
 	// There are no single-byte signatures.
 	for (size_t i = 0; i < size; i += 2) {
-		const char *match = rz_magic_buffer(magic, raw_buf + i, size - i);
+		RAW_BUF_ITER_ALIGN(fopt, address, i);
+		size_t leftovers = size - i;
+		const char *match = rz_magic_buffer(magic, raw_buf + i, leftovers);
 		if (!match) {
 			continue;
 		}
 
-		RzSearchHit *hit = rz_search_hit_new("magic", address + i, 0);
+		RzSearchHit *hit = rz_search_hit_new("magic", address + i, 0, match);
 		if (!hit || !rz_th_queue_push(hits, hit, true)) {
 			rz_search_hit_free(hit);
 			rz_magic_free(magic);

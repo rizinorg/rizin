@@ -48,7 +48,7 @@ static RzSearchHit *pki_find(const ut8 *marker, size_t marker_size, const char *
 
 	size_t length = asn1->total_size;
 	rz_asn1_object_free(asn1);
-	return rz_search_hit_new(metadata, address, length);
+	return rz_search_hit_new(metadata, address, length, NULL);
 }
 
 static RzSearchHit *rsa_find(ut64 address, const ut8 *bytes, size_t n_bytes) {

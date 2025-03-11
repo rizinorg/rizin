@@ -796,12 +796,13 @@ RZ_IPI int rz_search_hit_cmp(RZ_NULLABLE RzSearchHit *a, RZ_NULLABLE RzSearchHit
  *
  * \return     On success returns a valid pointer, otherwise NULL
  */
-RZ_IPI RZ_OWN RzSearchHit *rz_search_hit_new(const char *hit_desc, ut64 address, size_t size) {
+RZ_IPI RZ_OWN RzSearchHit *rz_search_hit_new(const char *hit_desc, ut64 address, size_t size, const char *hit_comment) {
 	RzSearchHit *hit = RZ_NEW0(RzSearchHit);
 	if (!hit) {
 		return NULL;
 	}
 	hit->hit_desc = rz_str_dup(hit_desc);
+	hit->comment = rz_str_dup(hit_comment);
 	hit->address = address;
 	hit->size = size;
 	return hit;
@@ -817,6 +818,7 @@ RZ_IPI void rz_search_hit_free(RZ_NULLABLE RzSearchHit *hit) {
 		return;
 	}
 	free(hit->hit_desc);
+	free(hit->comment);
 	free(hit);
 }
 

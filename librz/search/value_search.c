@@ -88,7 +88,7 @@ static bool values_find(RzSearchFindOpt *fopts, void *user, ut64 address, const 
 				continue;
 			case RZ_INTERVAL_IN:
 				(*n_hits)++;
-				RzSearchHit *hit = rz_search_hit_new("value", address + offset, range->width);
+				RzSearchHit *hit = rz_search_hit_new("value", address + offset, range->width, NULL);
 				if (!hit || !rz_th_queue_push(hits, hit, true)) {
 					rz_search_hit_free(hit);
 					return false;

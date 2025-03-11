@@ -44,5 +44,5 @@ static RzSearchHit *x509_find(ut64 address, const ut8 *buffer, size_t buffer_siz
 
 	size_t length = asn1->total_size;
 	rz_asn1_object_free(asn1);
-	return rz_search_hit_new("x509", address, length);
+	return rz_search_hit_new("x509", address, length, NULL);
 }

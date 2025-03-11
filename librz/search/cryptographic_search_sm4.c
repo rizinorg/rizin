@@ -29,7 +29,7 @@
 	static RzSearchHit *sm4_##name##_find(ut64 address, const ut8 *bytes, size_t n_bytes) { \
 		if (n_bytes >= SM4_SEARCH_LENGTH && \
 			sm4_##name##_key_test(bytes)) { \
-			return rz_search_hit_new("sm4." RZ_STR(name), address, RZ_SM4_KEY_SIZE); \
+			return rz_search_hit_new("sm4." RZ_STR(name), address, RZ_SM4_KEY_SIZE, NULL); \
 		} \
 		return NULL; \
 	}

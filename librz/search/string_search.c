@@ -102,7 +102,7 @@ static bool string_find(RzSearchFindOpt *fopt, void *user, ut64 offset, const Rz
 					continue;
 				}
 				char *hit_type = rz_str_newf("string.%s", rz_str_enc_as_string(detected->type));
-				RzSearchHit *hit = rz_search_hit_new(hit_type, str_mem_offset + offset, str_mem_len);
+				RzSearchHit *hit = rz_search_hit_new(hit_type, str_mem_offset + offset, str_mem_len, NULL);
 				free(hit_type);
 				if (!hit || !rz_th_queue_push(hits, hit, true)) {
 					rz_search_hit_free(hit);

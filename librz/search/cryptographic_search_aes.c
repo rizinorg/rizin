@@ -47,7 +47,7 @@ static bool aes_128_key_test(const ut8 *buf) {
 	static RzSearchHit *aes_##bits##_find(ut64 address, const ut8 *bytes, size_t n_bytes) { \
 		if (n_bytes >= AES##bits##_SEARCH_LENGTH && \
 			aes_##bits##_key_test(bytes)) { \
-			return rz_search_hit_new("aes" RZ_STR(bits), address, AES##bits##_KEY_LENGTH); \
+			return rz_search_hit_new("aes" RZ_STR(bits), address, AES##bits##_KEY_LENGTH, NULL); \
 		} \
 		return NULL; \
 	}

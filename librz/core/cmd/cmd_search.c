@@ -12,6 +12,7 @@
 
 #include "cmd_search_rop.c"
 #include "rz_cons.h"
+#include <rz_flag.h>
 #include <rz_util/rz_file.h>
 #include <rz_util/rz_log.h>
 #include <rz_util/rz_itv.h>
@@ -2160,7 +2161,10 @@ static RzCmdStatus cmd_core_handle_search_hits(RzCore *core, RzCmdStateOutput *s
 
 		// Only output & add flag when cmd.hit is not set.
 		char *flag = rz_search_hit_flag_name(hit, i, search_prefix);
-		rz_flag_set(core->flags, flag, hit->address, hit->size);
+		RzFlagItem *fitem = rz_flag_set(core->flags, flag, hit->address, hit->size);
+		if (hit->comment) {
+			rz_flag_item_set_comment(fitem, hit->comment);
+		}
 		cmd_search_output_to_state(state, hit, flag);
 		free(flag);
 	}
