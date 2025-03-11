@@ -885,7 +885,7 @@ static int mget(RzMagic *ms, const ut8 *s, struct rz_magic *m, size_t nbytes, un
 
 	if ((ms->flags & RZ_MAGIC_DEBUG) != 0) {
 		mdebug(offset, (char *)(void *)p, sizeof(union VALUETYPE));
-		file_mdump(m);
+		file_mdump(ms, m);
 	}
 
 	if (m->flag & INDIR) {
@@ -1159,7 +1159,7 @@ static int mget(RzMagic *ms, const ut8 *s, struct rz_magic *m, size_t nbytes, un
 		if ((ms->flags & RZ_MAGIC_DEBUG) != 0) {
 			mdebug(offset, (char *)(void *)p,
 				sizeof(union VALUETYPE));
-			file_mdump(m);
+			file_mdump(ms, m);
 		}
 	}
 
