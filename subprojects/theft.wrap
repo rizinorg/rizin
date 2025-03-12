@@ -1,0 +1,4 @@
+[wrap-git]
+url = https://github.com/notxvilka/theft.git
+revision = meson
+depth = 1

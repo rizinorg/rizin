@@ -265,6 +265,15 @@ if (sys_xxhash_opt.auto() and not xxhash_dep.found()) or sys_xxhash_opt.disabled
   xxhash_dep = xxhash_proj.get_variable('xxhash_dep')
 endif
 
+# handle theft (for unit tests)
+r = run_command(py3_exe, check_meson_subproject_py, 'theft', check: false)
+if r.returncode() == 1 and get_option('subprojects_check')
+  error(subproject_clean_error_msg)
+endif
+
+theft_proj = subproject('theft', default_options: [])
+theft_dep = theft_proj.get_variable('theft_dep')
+
 # handle libdemangle
 r = run_command(py3_exe, check_meson_subproject_py, 'libdemangle', check: false)
 if r.returncode() == 1 and get_option('subprojects_check')
