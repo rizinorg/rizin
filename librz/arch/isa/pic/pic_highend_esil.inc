@@ -42,32 +42,32 @@ static void pic_highend_esil(
 		break;
 	case PIC_HIGHEND_OPCODE_ADDLW: // addlw
 		// TODO add support for dc flag
-		rz_strbuf_setf(&aop->esil, "0x%x,wreg,+=,$z,z,:=,7,$s,n,:=,7,$c,c,:=,7,$o,ov,:=,", *(ut16 *)buf & 0xff);
+		rz_strbuf_setf(&aop->esil, "0x%" PFMT32x ",wreg,+=,$z,z,:=,7,$s,n,:=,7,$c,c,:=,7,$o,ov,:=,", (ut32)buf[0]);
 		break;
 	case PIC_HIGHEND_OPCODE_MOVLW: // movlw
-		rz_strbuf_setf(&aop->esil, "0x%x,wreg,=,", *(ut16 *)buf & 0xff);
+		rz_strbuf_setf(&aop->esil, "0x%" PFMT32x ",wreg,=,", (ut32)buf[0]);
 		break;
 	case PIC_HIGHEND_OPCODE_MULLW: // mullw
-		rz_strbuf_setf(&aop->esil, "0x%x,wreg,*,prod,=", *(ut16 *)buf & 0xff);
+		rz_strbuf_setf(&aop->esil, "0x%" PFMT32x ",wreg,*,prod,=", (ut32)buf[0]);
 		break;
 	case PIC_HIGHEND_OPCODE_RETLW: // retlw
-		rz_strbuf_setf(&aop->esil, "0x%x,wreg,=,tos,pc,=,", *(ut16 *)buf & 0xff);
+		rz_strbuf_setf(&aop->esil, "0x%" PFMT32x ",wreg,=,tos,pc,=,", (ut32)buf[0]);
 		break;
 	case PIC_HIGHEND_OPCODE_ANDLW: // andlw
-		rz_strbuf_setf(&aop->esil, "0x%x,wreg,&=,$z,z,:=,7,$s,n,:=,", *(ut16 *)buf & 0xff);
+		rz_strbuf_setf(&aop->esil, "0x%" PFMT32x ",wreg,&=,$z,z,:=,7,$s,n,:=,", (ut32)buf[0]);
 		break;
 	case PIC_HIGHEND_OPCODE_XORLW: // xorlw
-		rz_strbuf_setf(&aop->esil, "0x%x,wreg,^=,$z,z,:=,7,$s,n,:=,", *(ut16 *)buf & 0xff);
+		rz_strbuf_setf(&aop->esil, "0x%" PFMT32x ",wreg,^=,$z,z,:=,7,$s,n,:=,", (ut32)buf[0]);
 		break;
 	case PIC_HIGHEND_OPCODE_IORLW: // iorlw
-		rz_strbuf_setf(&aop->esil, "0x%x,wreg,^=,$z,z,:=,7,$s,n,:=,", *(ut16 *)buf & 0xff);
+		rz_strbuf_setf(&aop->esil, "0x%" PFMT32x ",wreg,^=,$z,z,:=,7,$s,n,:=,", (ut32)buf[0]);
 		break;
 	case PIC_HIGHEND_OPCODE_SUBLW: // sublw
 		// TODO add support for dc flag
-		rz_strbuf_setf(&aop->esil, "wreg,0x%x,-,wreg,=,$z,z,:=,7,$s,n,:=,7,$c,c,:=,7,$o,ov,:=,", *(ut16 *)buf & 0xff);
+		rz_strbuf_setf(&aop->esil, "wreg,0x%" PFMT32x ",-,wreg,=,$z,z,:=,7,$s,n,:=,7,$c,c,:=,7,$o,ov,:=,", (ut32)buf[0]);
 		break;
 	case PIC_HIGHEND_OPCODE_MOVLB: // movlb
-		rz_strbuf_setf(&aop->esil, "0x%x,bsr,=,", *(ut16 *)buf & 0xf);
+		rz_strbuf_setf(&aop->esil, "0x%" PFMT32x ",bsr,=,", (ut32)(buf[0] & 0xf));
 		break;
 	case PIC_HIGHEND_OPCODE_RETURN: // return
 		rz_strbuf_setf(&aop->esil, "tos,pc,=,");
