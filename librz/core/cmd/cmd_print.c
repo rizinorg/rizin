@@ -956,6 +956,9 @@ static void annotated_hexdump(RzCore *core, int len) {
 					}
 				}
 			}
+			if (!ebytes) { // this check is just to silence the compiler
+				goto err_ebytes;
+			}
 			sprintf(ebytes, "%02x", ch);
 			// rz_print_byte (core->print, "%02x ", j, ch);
 			ebytes += strlen(ebytes);
@@ -1050,6 +1053,7 @@ static void annotated_hexdump(RzCore *core, int len) {
 		addr += nb_cols;
 	}
 
+err_ebytes:
 	free(bytes);
 err_bytes:
 	free(note);

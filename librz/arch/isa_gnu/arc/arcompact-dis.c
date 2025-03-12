@@ -354,6 +354,10 @@ my_sprintf(struct arcDisState *state, char *buf, const char *format, ...) {
 	regMap[0] = 0;
 	regMap[1] = 0;
 	while (1) {
+		if (!bp) { // this check is just to silence the compiler
+			va_end(ap);
+			return;
+		}
 		switch (*p++) {
 		case 0: goto DOCOMM; /*(return) */
 		default:
