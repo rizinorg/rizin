@@ -13,8 +13,6 @@ EXPECT=<<EOF
 cpu      mips32
 PIE      true
 features noreorder pic cpic o32 n32
-            ; UNKNOWN XREF from aav.0x00080002 @ +0x16
-            ; UNKNOWN XREF from section..dynsym @ +0x74
             ;-- section..text:
             ;-- _ftext:
             ;-- .text:
@@ -37,7 +35,6 @@ features noreorder pic cpic o32 n32
 |           0x000804f8      nop
 |       @-> 0x000804fc      b     0x804fc
 \           0x00080500      nop
-            ; UNKNOWN XREF from section..dynsym @ +0xb4
             ; DATA XREF from sym.do_mips_start @ 0x80544
 / int main(int argc, char **argv, char **envp);
 |           ; arg int argc @ a0
@@ -137,7 +134,6 @@ EOF
 EXPECT=<<EOF
 cpu      i7200
 features o32 n32
-|           ; UNKNOWN XREF from segment.LOAD0 @ +0x18
             ;-- section..text:
             ;-- __start:
             ;-- _start:
@@ -205,7 +201,6 @@ features o32 n32
 |    | ||   ;-- .L10:
 |    `-``-> 0x004005a8      move  a0, a3
 |           0x004005aa      restore.jrc 0x30, fp, ra, gp
-|           ; UNKNOWN XREF from section..dynsym @ +0xe4
 |           ;-- (0x004005b0) section..fini:
 |           ;-- (0x004005b0) _fini:
 \           0x004005ae  ~   sigrie 0x83e2
@@ -970,6 +965,331 @@ afl~?
 EOF
 EXPECT=<<EOF
 1
-1258
+1268
+EOF
+RUN
+
+NAME=pdf after aav
+FILE=bins/elf/analysis/mipsbe-ip
+CMDS=<<EOF
+aa
+aav
+pdf @ main
+EOF
+EXPECT=<<EOF
+            ; UNKNOWN XREF from section..dynsym @ +0x504
+/ int main(int argc, char **argv, char **envp);
+|           ; arg int argc @ a0
+|           ; arg char **argv @ a1
+|           ; arg char **envp @ a2
+|           ; var int32_t var_40h @ stack - 0x40
+|           ; var int32_t var_38h @ stack - 0x38
+|           ; var int32_t var_30h @ stack - 0x30
+|           ; var int32_t var_2ch @ stack - 0x2c
+|           ; var int32_t var_28h @ stack - 0x28
+|           ; var int32_t var_24h @ stack - 0x24
+|           ; var int32_t var_20h @ stack - 0x20
+|           ; var int32_t var_1ch @ stack - 0x1c
+|           ; var int32_t var_18h @ stack - 0x18
+|           ; var int32_t var_14h @ stack - 0x14
+|           ; var int32_t var_10h @ stack - 0x10
+|           ; var int32_t var_ch @ stack - 0xc
+|           ; var int32_t var_8h @ stack - 0x8
+|           ; var int32_t var_4h @ stack - 0x4
+|           0x00402558      addiu sp, sp, -0x50
+|           0x0040255c      sw    ra, (var_4h)
+|           0x00402560      sw    fp, (var_8h)
+|           0x00402564      sw    s7, (var_ch)
+|           0x00402568      sw    s6, (var_10h)
+|           0x0040256c      sw    s5, (var_14h)
+|           0x00402570      sw    s4, (var_18h)
+|           0x00402574      sw    s3, (var_1ch)
+|           0x00402578      sw    s2, (var_20h)
+|           0x0040257c      sw    s1, (var_24h)
+|           0x00402580      sw    s0, (var_28h)
+|           0x00402584      lui   gp, 0x44
+|           0x00402588      addiu gp, gp, -0x2f20
+|           0x0040258c      sw    gp, (var_40h)
+|           0x00402590      move  s0, a1
+|           0x00402594      lw    t9, -sym.imp.strrchr(gp)             ; [0x4352f8:4]=0x41e910 sym.imp.strrchr
+|           0x00402598      addiu a1, zero, 0x2f                       ; argv
+|           0x0040259c      lw    s6, 0(s0)
+|           0x004025a0      move  s1, a0
+|           0x004025a4      jalr  t9
+|           0x004025a8      move  a0, s6
+|           0x004025ac      slti  v1, s1, 2
+|           0x004025b0      addiu a0, v0, 1                            ; argc
+|           0x004025b4      lw    gp, (var_40h)
+|       ,=< 0x004025b8      bnez  v1, 0x402708
+..
+|      .--> 0x004025ec      sw    s0, (var_30h)
+|      :|   0x004025f0      addiu s0, s0, 4
+|      :|   0x004025f4      lw    v1, 0(s0)
+|      :|   0x004025f8      addiu a1, s2, -0x10c0
+|      :|   0x004025fc      lw    t9, -sym.imp.strcmp(gp)              ; [0x435200:4]=0x41eb40 sym.imp.strcmp
+|      :|   0x00402600      move  a0, v1
+|      :|   0x00402604      jalr  t9
+|      :|   0x00402608      sw    v1, (var_2ch)
+|      :|   0x0040260c      lw    gp, (var_40h)
+|      :|   0x00402610      lw    v1, (var_2ch)
+|     ,===< 0x00402614      beqz  v0, 0x402944
+|     |:|   0x00402618      addiu v0, zero, 0x2d
+|     |:|   0x0040261c      lb    a0, 0(v1)
+|    ,====< 0x00402620      bne   a0, v0, 0x40295c
+|    ||:|   0x00402624      addiu a2, v1, 1
+|    ||:|   0x00402628      lb    v0, 1(v1)
+|    ||:|   0x0040262c      move  a1, s3
+|    ||:|   0x00402630      lw    t9, -sym.matches(gp)                 ; [0x4351ac:4]=0x41b2b4 sym.matches
+|    ||:|   0x00402634      xori  v0, v0, 0x2d
+..
+| |||||:|   ; XREFS: CODE 0x00402a64  CODE 0x00402a9c  CODE 0x00402ae0  
+| |||||:|   ; XREFS: CODE 0x00402b40  CODE 0x00402ba8  CODE 0x00402c0c  
+| --------> 0x004026f8      addiu s1, s1, -1
+| |||||:|   0x004026fc      slti  v0, s1, 2
+| |||||`==< 0x00402700      beqz  v0, 0x4025ec
+| ||||| |   0x00402704      nop
+| ||||| `-> 0x00402708      lui   v0, 0x43
+| |||||     0x0040270c      lw    v0, 0x5470(v0)
+| ||||| ,=< 0x00402710      bnez  v0, 0x402850
+| ||||| |   0x00402714      lui   v0, 0x43
+| ||||| |   ; CODE XREF from main @ 0x402954
+| |||||.--> 0x00402718      lui   v1, 0x42
+| |||||:|   ; CODE XREF from main @ 0x402970
+| --------> 0x0040271c      lw    a0, 0x547c(v0)
+| |||||:|   0x00402720      addiu v1, v1, 0x3ac
+| |||||:|   0x00402724      lui   v0, 0x43
+| ========< 0x00402728      beqz  a0, 0x402868
+| |||||:|   0x0040272c      sw    v1, 0x5478(v0)
+| --------> 0x00402730      jal   fcn.00402338
+| |||||:|   0x00402734      nop
+| |||||:|   ; CODE XREF from main @ 0x4029c0
+| --------> 0x00402738      lw    ra, (var_4h)
+| |||||:|   0x0040273c      lw    fp, (var_8h)
+| |||||:|   0x00402740      lw    s7, (var_ch)
+| |||||:|   0x00402744      lw    s6, (var_10h)
+| |||||:|   0x00402748      lw    s5, (var_14h)
+| |||||:|   0x0040274c      lw    s4, (var_18h)
+| |||||:|   0x00402750      lw    s3, (var_1ch)
+| |||||:|   0x00402754      lw    s2, (var_20h)
+| |||||:|   0x00402758      lw    s1, (var_24h)
+| |||||:|   0x0040275c      lw    s0, (var_28h)
+| |||||:|   0x00402760      jr    ra
+| |||||:|   0x00402764      addiu sp, sp, 0x50
+..
+| .-------> 0x0040284c      lui   v0, 0x43
+| :||||:`-> 0x00402850      lui   v1, 0x42
+| :||||:    0x00402854      lw    a0, 0x547c(v0)
+| :||||:    0x00402858      addiu v1, v1, -0xf90
+| :||||:    0x0040285c      lui   v0, 0x43
+| ========< 0x00402860      bnez  a0, 0x402730
+| :||||:    0x00402864      sw    v1, 0x5478(v0)
+| --------> 0x00402868      lw    t9, -sym.rtnl_open(gp)               ; [0x435300:4]=0x41a99c sym.rtnl_open
+| :||||:    0x0040286c      lui   s2, 0x43
+| :||||:    0x00402870      addiu a0, s2, 0x3c60                       ; argc
+| :||||:    0x00402874      jalr  t9
+| :||||:    0x00402878      move  a1, zero
+| :||||:    0x0040287c      lw    gp, (var_40h)
+| :||||:,=< 0x00402880      bltz  v0, 0x402aa4
+| :||||:|   0x00402884      nop
+| :||||:|   0x00402888      lw    t9, -sym.imp.strlen(gp)              ; [0x435174:4]=0x41ec10 sym.imp.strlen
+| :||||:|   0x0040288c      jalr  t9
+| :||||:|   0x00402890      move  a0, s6
+| :||||:|   0x00402894      sltiu v0, v0, 3
+| :||||:|   0x00402898      lw    gp, (var_40h)
+| ========< 0x0040289c      beqz  v0, 0x4029b4
+| :||||:|   0x004028a0      addiu a0, s6, 2                            ; argc
+| :||||:|   0x004028a4      slti  v0, s1, 2
+| ========< 0x004028a8      bnez  v0, 0x402a20
+| :||||:|   0x004028ac      nop
+| :||||:|   0x004028b0      lw    a0, 4(s0)
+| :||||:|   0x004028b4      addiu a1, s1, -1                           ; argv
+| :||||:|   0x004028b8      jal   fcn.00402210
+| :||||:|   0x004028bc      addiu a2, s0, 4
+| :||||:|   0x004028c0      lw    ra, (var_4h)
+| :||||:|   0x004028c4      lw    fp, (var_8h)
+| :||||:|   0x004028c8      lw    s7, (var_ch)
+| :||||:|   0x004028cc      lw    s6, (var_10h)
+| :||||:|   0x004028d0      lw    s5, (var_14h)
+| :||||:|   0x004028d4      lw    s4, (var_18h)
+| :||||:|   0x004028d8      lw    s3, (var_1ch)
+| :||||:|   0x004028dc      lw    s2, (var_20h)
+| :||||:|   0x004028e0      lw    s1, (var_24h)
+| :||||:|   0x004028e4      lw    s0, (var_28h)
+| :||||:|   0x004028e8      jr    ra
+| :||||:|   0x004028ec      addiu sp, sp, 0x50
+..
+| :|||`---> 0x00402944      lui   v0, 0x43
+| :||| :|   0x00402948      lw    v0, 0x5470(v0)
+| ========< 0x0040294c      bnez  v0, 0x40284c
+| :||| :|   0x00402950      addiu s1, s1, -1
+| :||| `==< 0x00402954      b     0x402718
+| :|||  |   0x00402958      lui   v0, 0x43
+| :||`----> 0x0040295c      lui   v0, 0x43
+| :||   |   0x00402960      lw    v0, 0x5470(v0)
+| :||   |   0x00402964      lw    s0, (var_30h)
+| `=======< 0x00402968      bnez  v0, 0x40284c
+|  ||   |   0x0040296c      lui   v0, 0x43
+| ========< 0x00402970      b     0x40271c
+|  ||   |   0x00402974      lui   v1, 0x42
+..
+| --------> 0x004029b4      move  a1, s1
+|  |  :||   0x004029b8      jal   fcn.00402210
+|  |  :||   0x004029bc      move  a2, s0
+| ========< 0x004029c0      b     0x402738
+|  |  :||   0x004029c4      nop
+..
+| --------> 0x00402a20      lw    t9, -sym.rtnl_close(gp)              ; [0x4352c8:4]=0x41a9b8 sym.rtnl_close
+|  |   ||   0x00402a24      jalr  t9
+|  |   ||   0x00402a28      addiu a0, s2, 0x3c60                       ; argc
+| -`...---> 0x00402a2c      jal   fcn.004022e4
+|   :::||   0x00402a30      nop
+|   :::`--> 0x00402a34      lw    t9, -sym.matches(gp)                 ; [0x4351ac:4]=0x41b2b4 sym.matches
+|   ::: |   0x00402a38      lui   a1, 0x42
+|   ::: |   0x00402a3c      move  a0, a2
+|   ::: |   0x00402a40      sw    a2, (var_2ch)
+|   ::: |   0x00402a44      jalr  t9
+|   ::: |   0x00402a48      addiu a1, a1, -0x1044
+|   ::: |   0x00402a4c      lw    gp, (var_40h)
+|   ::: |   0x00402a50      lw    a2, (var_2ch)
+|   :::,==< 0x00402a54      bnez  v0, 0x402a6c
+|   :::||   0x00402a58      lui   v0, 0x43
+|   :::||   0x00402a5c      lw    v1, 0x546c(v0)
+|   :::||   0x00402a60      addiu v1, v1, 1
+| ========< 0x00402a64      b     0x4026f8
+|   :::||   0x00402a68      sw    v1, 0x546c(v0)
+|   :::`--> 0x00402a6c      lw    t9, -sym.matches(gp)                 ; [0x4351ac:4]=0x41b2b4 sym.matches
+|   ::: |   0x00402a70      lui   a1, 0x42
+|   ::: |   0x00402a74      move  a0, a2
+|   ::: |   0x00402a78      sw    a2, (var_2ch)
+|   ::: |   0x00402a7c      jalr  t9
+|   ::: |   0x00402a80      addiu a1, a1, -0x1038
+|   ::: |   0x00402a84      lw    gp, (var_40h)
+|   ::: |   0x00402a88      lw    a2, (var_2ch)
+|   :::,==< 0x00402a8c      bnez  v0, 0x402ab0
+|   :::||   0x00402a90      lui   v0, 0x43
+|   :::||   0x00402a94      lw    v1, 0x5470(v0)
+|   :::||   0x00402a98      addiu v1, v1, 1
+| ========< 0x00402a9c      b     0x4026f8
+|   :::||   0x00402aa0      sw    v1, 0x5470(v0)
+|   :::|`-> 0x00402aa4      lw    t9, -sym.imp.exit(gp)                ; [0x4351a4:4]=0x41ebb0 sym.imp.exit
+|   :::|    0x00402aa8      jalr  t9
+|   :::|    0x00402aac      addiu a0, zero, 1                          ; argc
+|   :::`--> 0x00402ab0      lw    t9, -sym.matches(gp)                 ; [0x4351ac:4]=0x41b2b4 sym.matches
+|   :::     0x00402ab4      lui   a1, 0x42
+|   :::     0x00402ab8      move  a0, a2
+|   :::     0x00402abc      sw    a2, (var_2ch)
+|   :::     0x00402ac0      jalr  t9
+|   :::     0x00402ac4      addiu a1, a1, -0x102c                      ; argv
+|   :::     0x00402ac8      lw    gp, (var_40h)
+|   :::     0x00402acc      lw    a2, (var_2ch)
+|   ::: ,=< 0x00402ad0      bnez  v0, 0x402ae8
+|   ::: |   0x00402ad4      lui   v0, 0x43
+|   ::: |   0x00402ad8      lw    v1, 0x5474(v0)
+|   ::: |   0x00402adc      addiu v1, v1, 1
+| ========< 0x00402ae0      b     0x4026f8
+|   ::: |   0x00402ae4      sw    v1, 0x5474(v0)
+|   ::: `-> 0x00402ae8      lw    t9, -sym.matches(gp)                 ; [0x4351ac:4]=0x41b2b4 sym.matches
+|   :::     0x00402aec      lui   a1, 0x42
+|   :::     0x00402af0      move  a0, a2
+|   :::     0x00402af4      sw    a2, (var_2ch)
+|   :::     0x00402af8      jalr  t9
+|   :::     0x00402afc      addiu a1, a1, -0x1020                      ; argv
+|   :::     0x00402b00      lw    gp, (var_40h)
+|   :::     0x00402b04      lw    a2, (var_2ch)
+|   ::: ,=< 0x00402b08      beqz  v0, 0x402b48
+|   ::: |   0x00402b0c      lui   a0, 0x42
+|   ::: |   0x00402b10      lw    t9, -sym.matches(gp)                 ; [0x4351ac:4]=0x41b2b4 sym.matches
+|   ::: |   0x00402b14      lui   a1, 0x42
+|   ::: |   0x00402b18      move  a0, a2
+|   ::: |   0x00402b1c      sw    a2, (var_2ch)
+|   ::: |   0x00402b20      jalr  t9
+|   ::: |   0x00402b24      addiu a1, a1, -0xff8                       ; argv
+|   ::: |   0x00402b28      lw    gp, (var_40h)
+|   ::: |   0x00402b2c      lw    a2, (var_2ch)
+|   :::,==< 0x00402b30      bnez  v0, 0x402b6c
+|   :::||   0x00402b34      lui   v0, 0x43
+|   :::||   0x00402b38      lw    v1, 0x5480(v0)
+|   :::||   0x00402b3c      addiu v1, v1, 1
+| ========< 0x00402b40      b     0x4026f8
+|   :::||   0x00402b44      sw    v1, 0x5480(v0)
+|   :::|`-> 0x00402b48      lw    t9, -sym.imp.printf(gp)              ; [0x4353ec:4]=0x41e7b0 sym.imp.printf
+|   :::|    0x00402b4c      lui   a1, 0x42
+|   :::|    0x00402b50      addiu a0, a0, -0x1014                      ; argc
+|   :::|    0x00402b54      jalr  t9
+|   :::|    0x00402b58      addiu a1, a1, -0xf20                       ; argv
+|   :::|    0x00402b5c      lw    gp, (var_40h)
+|   :::|    0x00402b60      lw    t9, -sym.imp.exit(gp)                ; [0x4351a4:4]=0x41ebb0 sym.imp.exit
+|   :::|    0x00402b64      jalr  t9
+|   :::|    0x00402b68      move  a0, zero
+|   :::`--> 0x00402b6c      lw    t9, -sym.matches(gp)                 ; [0x4351ac:4]=0x41b2b4 sym.matches
+|   :::     0x00402b70      lui   a1, 0x42
+|   :::     0x00402b74      move  a0, a2
+|   :::     0x00402b78      sw    a2, (var_2ch)
+|   :::     0x00402b7c      jalr  t9
+|   :::     0x00402b80      addiu a1, a1, -0xff0                       ; argv
+|   :::     0x00402b84      lw    gp, (var_40h)
+|   :::     0x00402b88      lw    a2, (var_2ch)
+|   ::: ,=< 0x00402b8c      bnez  v0, 0x402bb0
+|   ::: |   0x00402b90      addiu v0, zero, 1
+|   ::: |   0x00402b94      addiu s1, s1, -1
+|   `=====< 0x00402b98      beq   s1, v0, 0x402a2c
+|    :: |   0x00402b9c      addiu s0, s0, 4
+|    :: |   0x00402ba0      lui   v0, 0x43
+|    :: |   0x00402ba4      lw    v1, 0(s0)
+| ========< 0x00402ba8      b     0x4026f8
+..
+|    :: `-> 0x00402bb0      lw    t9, -sym.matches(gp)                 ; [0x4351ac:4]=0x41b2b4 sym.matches
+|    ::     0x00402bb4      lui   a1, 0x42
+|    ::     0x00402bb8      move  a0, a2
+|    ::     0x00402bbc      sw    a2, (var_2ch)
+|    ::     0x00402bc0      jalr  t9
+|    ::     0x00402bc4      addiu a1, a1, -0xfe8                       ; argv
+|    ::     0x00402bc8      lw    gp, (var_40h)
+|    ::     0x00402bcc      lw    a2, (var_2ch)
+|    :: ,=< 0x00402bd0      bnez  v0, 0x402c14
+|    :: |   0x00402bd4      addiu s1, s1, -1
+|    :: |   0x00402bd8      addiu v0, zero, 1
+|    `====< 0x00402bdc      beq   s1, v0, 0x402a2c
+|     : |   0x00402be0      addiu s0, s0, 4
+|     : |   0x00402be4      addiu a0, sp, 0x18                         ; argc
+|     : |   0x00402be8      lw    t9, -sym.get_unsigned(gp)            ; [0x435178:4]=0x41bec4 sym.get_unsigned
+|     : |   0x00402bec      lw    a1, 0(s0)
+|     : |   0x00402bf0      jalr  t9
+|     : |   0x00402bf4      move  a2, zero
+|     : |   0x00402bf8      lw    gp, (var_40h)
+|     :,==< 0x00402bfc      bnez  v0, 0x402c68
+|     :||   0x00402c00      nop
+|     :||   0x00402c04      lw    v1, (var_38h)
+|     :||   0x00402c08      lw    v0, -obj.rcvbuf(gp)                  ; [0x4351fc:4]=0x433ca0 obj.rcvbuf
+| ========< 0x00402c0c      b     0x4026f8
+|     :||   0x00402c10      sw    v1, 0(v0)
+|     :|`-> 0x00402c14      lw    t9, -sym.matches(gp)                 ; [0x4351ac:4]=0x41b2b4 sym.matches
+|     :|    0x00402c18      lui   a1, 0x42
+|     :|    0x00402c1c      move  a0, a2
+|     :|    0x00402c20      sw    a2, (var_2ch)
+|     :|    0x00402c24      jalr  t9
+|     :|    0x00402c28      addiu a1, a1, -0xfc4                       ; argv
+|     :|    0x00402c2c      lw    gp, (var_40h)
+|     :|    0x00402c30      lw    a2, (var_2ch)
+|     `===< 0x00402c34      beqz  v0, 0x402a2c
+|      |    0x00402c38      nop
+|      |    0x00402c3c      lw    v0, -0x7efc(gp)                      ; [0x4351e4:4]=0
+|      |    0x00402c40      lui   a1, 0x42
+|      |    0x00402c44      lw    t9, -sym.imp.fprintf(gp)             ; [0x4352dc:4]=0x41e940 sym.imp.fprintf
+|      |    0x00402c48      addiu a1, a1, -0xfbc                       ; argv
+|      |    0x00402c4c      lw    a0, 0(v0)
+|      |    ; CODE XREF from main @ 0x402c7c
+|      |.-> 0x00402c50      jalr  t9
+|      |:   0x00402c54      nop
+|      |:   0x00402c58      lw    gp, (var_40h)
+|      |:   0x00402c5c      lw    t9, -sym.imp.exit(gp)                ; [0x4351a4:4]=0x41ebb0 sym.imp.exit
+|      |:   0x00402c60      jalr  t9
+|      |:   0x00402c64      addiu a0, zero, -1                         ; argc
+|      `--> 0x00402c68      lw    v0, -0x7efc(gp)                      ; [0x4351e4:4]=0
+|       :   0x00402c6c      lui   a1, 0x42
+|       :   0x00402c70      lw    a2, 0(s0)
+|       :   0x00402c74      lw    a0, 0(v0)
+|       :   0x00402c78      lw    t9, -sym.imp.fprintf(gp)             ; [0x4352dc:4]=0x41e940 sym.imp.fprintf
+\       `=< 0x00402c7c      b     0x402c50
 EOF
 RUN

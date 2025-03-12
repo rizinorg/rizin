@@ -163,7 +163,7 @@ void file_badread(RzMagic *ms) {
 	file_error(ms, errno, "error reading");
 }
 
-int file_buffer(RzMagic *ms, int fd, const char *inname, const void *buf, size_t nb) {
+int file_buffer(RzMagic *ms, int fd, const char *inname, const ut8 *buf, size_t nb) {
 	int mime, m = 0;
 	if (!ms) {
 		return -1;

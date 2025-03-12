@@ -52,7 +52,7 @@ typedef unsigned long unichar;
 
 struct stat;
 const char *file_fmttime(unsigned int, int, char *);
-int file_buffer(struct rz_magic_set *, int, const char *, const void *, size_t);
+int file_buffer(RzMagic *ms, int fd, const char *inname, const ut8 *buf, size_t nb);
 int file_fsmagic(struct rz_magic_set *, const char *, struct stat *);
 int file_pipe2file(struct rz_magic_set *, int, const void *, size_t);
 int file_printf(struct rz_magic_set *, const char *, ...);
@@ -71,7 +71,7 @@ void file_oomem(struct rz_magic_set *, size_t);
 void file_error(struct rz_magic_set *, int, const char *, ...);
 void file_magerror(struct rz_magic_set *, const char *, ...);
 void file_magwarn(struct rz_magic_set *, const char *, ...);
-void file_mdump(struct rz_magic *);
+void file_mdump(struct rz_magic_set *ms, struct rz_magic *m);
 void file_showstr(FILE *, const char *, size_t);
 size_t file_mbswidth(const char *);
 const char *file_getbuffer(struct rz_magic_set *);

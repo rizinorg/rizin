@@ -44,7 +44,7 @@
 #define SZOF(a) (sizeof(a) / sizeof(a[0]))
 
 #ifndef COMPILE_ONLY
-void file_mdump(struct rz_magic *m) {
+void file_mdump(struct rz_magic_set *ms, struct rz_magic *m) {
 	static const char optyp[] = { FILE_OPS };
 	char pp[ASCTIME_BUF_MINLEN];
 
@@ -54,7 +54,7 @@ void file_mdump(struct rz_magic *m) {
 	if (m->flag & INDIR) {
 		(void)eprintf("(%s,",
 			/* Note: type is unsigned */
-			(m->in_type < file_nnames) ? magic_file_names[m->in_type] : "*bad*");
+			(m->in_type < FILE_MAGICSIZE) ? ms->magic_file_names[m->in_type] : "*bad*");
 		if (m->in_op & FILE_OPINVERSE)
 			(void)fputc('~', stderr);
 		(void)eprintf("%c%u),",
@@ -63,7 +63,7 @@ void file_mdump(struct rz_magic *m) {
 	}
 	(void)eprintf(" %s%s", (m->flag & UNSIGNED) ? "u" : "",
 		/* Note: type is unsigned */
-		(m->type < file_nnames) ? magic_file_names[m->type] : "*bad*");
+		(m->type < FILE_MAGICSIZE) ? ms->magic_file_names[m->type] : "*bad*");
 	if (m->mask_op & FILE_OPINVERSE)
 		(void)fputc('~', stderr);
 

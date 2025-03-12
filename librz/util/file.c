@@ -164,9 +164,17 @@ RZ_API bool rz_file_is_regular(const char *str) {
 	return ((S_IFREG & buf.st_mode) == S_IFREG);
 }
 
-RZ_API bool rz_file_is_directory(const char *str) {
+/**
+ * \brief Checks if the given path is a directory.
+ *
+ * \return true if \p str points to a directory.
+ * \return false otherwise.
+ */
+RZ_API bool rz_file_is_directory(RZ_NULLABLE const char *str) {
+	if (RZ_STR_ISEMPTY(str)) {
+		return false;
+	}
 	StructStat buf = { 0 };
-	rz_return_val_if_fail(!RZ_STR_ISEMPTY(str), false);
 	if (file_stat(str, &buf) == -1) {
 		return false;
 	}
@@ -189,8 +197,16 @@ RZ_API bool rz_file_fexists(const char *fmt, ...) {
 	return ret;
 }
 
-RZ_API bool rz_file_exists(const char *str) {
-	rz_return_val_if_fail(!RZ_STR_ISEMPTY(str), false);
+/**
+ * \brief Checks if the given path points to an existing file.
+ *
+ * \return true if the file at \p str exists.
+ * \return false otherwise.
+ */
+RZ_API bool rz_file_exists(RZ_NULLABLE const char *str) {
+	if (RZ_STR_ISEMPTY(str)) {
+		return false;
+	}
 	char *absfile = rz_file_abspath(str);
 	StructStat buf = { 0 };
 
