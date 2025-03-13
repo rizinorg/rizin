@@ -652,11 +652,44 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=pm olf
+FILE=bins/elf/ioli/crackme0x00
+ARGS=-n
+CMDS=pm bins/src/olf.magic
+EXPECT=<<EOF
+0x00000000 OLF 32-bit LSB
+0x00001d70 very short file (no magic)
+EOF
+RUN
+
+NAME=/m lzma
+FILE=bins/other/hello-world.lzma
+CMDS=<<EOF
+pm
+EOF
+EXPECT=<<EOF
+0x00000000 LZMA BE compressed data dictionary size: 32768 bytes,
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=/pmj lzma
+FILE=bins/other/hello-world.lzma
+CMDS=<<EOF
+pmj
+EOF
+EXPECT=<<EOF
+[{"address":0,"magic":"LZMA BE compressed data dictionary size: 32768 bytes,"}]
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=pm hello.c
 FILE=bins/src/hello.c
 CMDS=pm
 EXPECT=<<EOF
-0x00000000 1 C source code
+0x00000000 C source code
+0x00000048 very short file (no magic)
 EOF
 RUN
 
@@ -665,7 +698,7 @@ FILE=bins/elf/analysis/main
 ARGS=-n
 CMDS=pm
 EXPECT=<<EOF
-0x00000000 1 ELF 64-bit LSB executable, x86-64, version 1
+0x00000000 ELF 64-bit LSB executable, x86-64, version 1
 EOF
 RUN
 
@@ -674,7 +707,7 @@ FILE=bins/elf/analysis/main
 ARGS=-n
 CMDS=pmj
 EXPECT=<<EOF
-{"offset":0,"depth":1,"info":"ELF 64-bit LSB executable, x86-64, version 1"}
+[{"address":0,"magic":"ELF 64-bit LSB executable, x86-64, version 1"}]
 EOF
 RUN
 
@@ -683,7 +716,13 @@ FILE=bins/mach0/fatmach0-3true
 ARGS=-n
 CMDS=pm
 EXPECT=<<EOF
-0x00000000 1 Fat-Mach-O
+0x00000000 Fat-Mach-O
+0x00001000 Mach-O
+0x00003140 MacOS Deteched Code Signature
+0x00005000 Mach-O
+0x00007120 MacOS Deteched Code Signature
+0x00009000 Mach-O
+0x0000b060 MacOS Deteched Code Signature
 EOF
 RUN
 
@@ -692,7 +731,8 @@ FILE=bins/java/Hello.class
 ARGS=-n
 CMDS=pm
 EXPECT=<<EOF
-0x00000000 1 Java CLASS
+0x00000000 Java CLASS
+0x000002d4 very short file (no magic)
 EOF
 RUN
 
@@ -701,7 +741,7 @@ FILE=bins/pe/a.exe
 ARGS=-n
 CMDS=pm
 EXPECT=<<EOF
-0x00000000 1 PE  for MS Windows (console) Intel 80386 32-bit
+0x00000000 PE  for MS Windows (console) Intel 80386 32-bit
 EOF
 RUN
 

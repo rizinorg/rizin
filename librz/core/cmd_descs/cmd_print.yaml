@@ -977,13 +977,14 @@ commands:
         type: RZ_CMD_ARG_TYPE_RZNUM
         optional: true
   - name: pm
-    summary: Print libmagic data
+    summary: Search magics and print the long description of them.
     cname: cmd_print_magic
     args:
       - name: file/directory
         type: RZ_CMD_ARG_TYPE_STRING
         optional: true
     modes:
+      - RZ_OUTPUT_MODE_STANDARD
       - RZ_OUTPUT_MODE_JSON
   - name: po
     summary: Print operation applied on the data

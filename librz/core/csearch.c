@@ -7,6 +7,7 @@
 #include <rz_util/rz_str.h>
 #include <rz_util/rz_log.h>
 #include <rz_util/rz_regex.h>
+#include <rz_util/rz_file.h>
 #include <rz_core.h>
 #include <rz_search.h>
 #include <rz_util/rz_assert.h>
@@ -343,6 +344,57 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_cryptographic_material(
 
 	// minimal element size is always 2 (since 1 would be unaligned)
 	if (!rz_search_opt_set_chunk_size(user_opts, 2)) {
+		RZ_LOG_ERROR("search: Failed to update chunk size in the search options.\n");
+		goto quit;
+	}
+
+	boundaries = rz_core_setup_io_search_parameters(core, user_opts);
+	if (!boundaries) {
+		RZ_LOG_ERROR("core: Setting up search from core failed.\n");
+		goto quit;
+	}
+
+	hits = perform_search_on_core_io(core, user_opts, boundaries, collection);
+
+quit:
+	rz_list_free(boundaries);
+	rz_search_opt_free(search_opts);
+	rz_search_collection_free(collection);
+	return hits;
+}
+
+/**
+ * \brief Searches magics defined in \p magic_dir.
+ *
+ * \param core The core to use.
+ * \param user_opts User defined search options. If NULL defaults are used.
+ * \param magic_dir The directory or file with magics to search for. If NULL, the directory from 'dir.magic' is used.
+ *
+ * \return A list of search hits or NULL in case of failure.
+ */
+RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_magic(RZ_NONNULL RzCore *core, RZ_BORROW RZ_NULLABLE RzSearchOpt *user_opts, RZ_NULLABLE const char *magic_dir) {
+	rz_return_val_if_fail(core && core->config, NULL);
+	RzList *hits = NULL;
+	RzList *boundaries = NULL;
+	RzSearchOpt *search_opts = NULL;
+	if (!magic_dir) {
+		magic_dir = rz_config_get(core->config, "dir.magic");
+	}
+
+	RzSearchCollection *collection = rz_search_collection_magic(magic_dir);
+	if (!collection) {
+		return NULL;
+	}
+
+	if (!user_opts) {
+		// override user_opts with default one
+		user_opts = search_opts = default_search_options();
+		if (!search_opts) {
+			goto quit;
+		}
+	}
+
+	if (!rz_search_opt_set_chunk_size(user_opts, RZ_MAGIC_BUF_SIZE)) {
 		RZ_LOG_ERROR("search: Failed to update chunk size in the search options.\n");
 		goto quit;
 	}

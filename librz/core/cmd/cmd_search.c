@@ -12,6 +12,7 @@
 
 #include "cmd_search_rop.c"
 #include "rz_cons.h"
+#include <rz_flag.h>
 #include <rz_util/rz_file.h>
 #include <rz_util/rz_log.h>
 #include <rz_util/rz_itv.h>
@@ -1896,56 +1897,6 @@ reread:
 		}
 		}
 	} break;
-	case 'm': // "/m"
-		dosearch = false;
-		if (input[1] == 'b') { // "/mb"
-			bool bin_verbose = rz_config_get_i(core->config, "bin.verbose");
-			rz_config_set_i(core->config, "bin.verbose", false);
-			// TODO : iter maps?
-			cmd_search_bin(core, search_itv);
-			rz_config_set_i(core->config, "bin.verbose", bin_verbose);
-		} else if (input[1] == ' ' || input[1] == '\0' || param.outmode == RZ_MODE_JSON) {
-			int ret;
-			const char *file = input[param_offset - 1] ? input + param_offset : NULL;
-			ut64 addr = search_itv.addr;
-			RzListIter *iter;
-			RzIOMap *map;
-			if (param.outmode == RZ_MODE_JSON) {
-				pj_a(param.pj);
-			}
-			rz_core_magic_reset(core);
-			int maxHits = rz_config_get_i(core->config, "search.maxhits");
-			int hits = 0;
-			rz_list_foreach (param.boundaries, iter, map) {
-				if (param.outmode != RZ_MODE_JSON) {
-					eprintf("-- %llx %llx\n", map->itv.addr, rz_itv_end(map->itv));
-				}
-				rz_cons_break_push(NULL, NULL);
-				for (addr = map->itv.addr; addr < rz_itv_end(map->itv); addr++) {
-					if (rz_cons_is_breaked()) {
-						break;
-					}
-					ret = rz_core_magic_at(core, file, addr, 99, false, param.outmode == RZ_MODE_JSON ? param.pj : NULL, &hits);
-					if (ret == -1) {
-						// something went terribly wrong.
-						break;
-					}
-					if (maxHits && hits >= maxHits) {
-						break;
-					}
-					addr += ret - 1;
-				}
-				rz_cons_clear_line(stderr);
-				rz_cons_break_pop();
-			}
-			if (param.outmode == RZ_MODE_JSON) {
-				pj_end(param.pj);
-			}
-		} else {
-			RZ_LOG_ERROR("core: Usage: /m [file]\n");
-		}
-		rz_cons_clear_line(stderr);
-		break;
 	case 'p': // "/p"
 	{
 		if (input[param_offset - 1]) {
@@ -2191,12 +2142,11 @@ static RzCmdStatus cmd_core_handle_search_hits(RzCore *core, RzCmdStateOutput *s
 	cmd_hit = rz_config_get(core->config, "cmd.hit");
 	search_prefix = rz_config_get(core->config, "search.prefix");
 	if (RZ_STR_ISEMPTY(search_prefix)) {
-		// ensure thre prefix is always set.
 		search_prefix = "hit";
 	}
 
 	if (RZ_STR_ISEMPTY(cmd_hit)) {
-		// setup output and flagspace
+		// Setup output and flag space.
 		rz_cmd_state_output_array_start(state);
 		rz_cmd_state_output_set_columnsf(state, "xXs", "offset", "size", "flag");
 		rz_flag_space_push(core->flags, "search");
@@ -2209,15 +2159,18 @@ static RzCmdStatus cmd_core_handle_search_hits(RzCore *core, RzCmdStateOutput *s
 			continue;
 		}
 
-		// only output & add flag when cmd.hit is not set.
+		// Only output & add flag when cmd.hit is not set.
 		char *flag = rz_search_hit_flag_name(hit, i, search_prefix);
-		rz_flag_set(core->flags, flag, hit->address, hit->size);
+		RzFlagItem *fitem = rz_flag_set(core->flags, flag, hit->address, hit->size);
+		if (hit->comment) {
+			rz_flag_item_set_comment(fitem, hit->comment);
+		}
 		cmd_search_output_to_state(state, hit, flag);
 		free(flag);
 	}
 
 	if (RZ_STR_ISEMPTY(cmd_hit)) {
-		// terminating output and flagspace
+		// terminating output and flag space
 		rz_flag_space_pop(core->flags);
 		rz_cmd_state_output_array_end(state);
 	}
@@ -2580,13 +2533,25 @@ RZ_IPI RzCmdStatus rz_cmd_search_hash_block_handler(RzCore *core, int argc, cons
 }
 
 // "/m"
-RZ_IPI RzCmdStatus rz_cmd_search_magic_const_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	return pass_to_legacy_api(core, argc, argv, mode);
+RZ_IPI RzCmdStatus rz_cmd_search_magic_const_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzList *hits = NULL;
+	CMD_SEARCH_BEGIN();
+	hits = rz_core_search_magic(core, NULL, argc > 1 ? argv[1] : NULL);
+	CMD_SEARCH_END();
+	return cmd_core_handle_search_hits(core, state, hits);
 }
 
 // "/mb"
 RZ_IPI RzCmdStatus rz_cmd_search_magic_bin_headers_handler(RzCore *core, int argc, const char **argv) {
-	return pass_to_legacy_api(core, argc, argv, RZ_OUTPUT_MODE_STANDARD);
+	RzInterval itv = { 0 };
+	itv.addr = rz_config_get_i(core->config, "search.from");
+	itv.size = rz_config_get_i(core->config, "search.to") - itv.addr;
+	CMD_SEARCH_BEGIN();
+	// This does not really searches magics.
+	// It just opens the buffer with rz_bin_open_io().
+	cmd_search_bin(core, itv);
+	CMD_SEARCH_END();
+	return RZ_CMD_STATUS_OK;
 }
 
 // "/o"

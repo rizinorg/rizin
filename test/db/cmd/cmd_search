@@ -1,3 +1,17 @@
+NAME=Error config to < from
+FILE==
+CMDS=<<EOF
+e search.from=2
+e search.to=3
+e search.to=2
+e search.to=1
+EOF
+EXPECT=<<EOF
+search.to cannot be smaller than search.from.
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=trailing comment
 FILE==
 ARGS=-n
@@ -27,23 +41,6 @@ s@ hit0_0
 EOF
 EXPECT=<<EOF
 [{"addr":134513508,"value":1}]
-EOF
-RUN
-
-NAME=pm olf
-FILE=bins/elf/ioli/crackme0x00
-ARGS=-n
-CMDS=pm bins/src/olf.magic
-EXPECT=<<EOF
-0x00000000 1 OLF 32-bit LSB
-EOF
-RUN
-
-NAME=/m lzma
-FILE=bins/other/hello-world.lzma
-CMDS=pm
-EXPECT=<<EOF
-0x00000000 1 LZMA BE compressed data dictionary size: 32768 bytes,
 EOF
 RUN
 
@@ -500,36 +497,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=/m search from/to (seek 0)
-FILE=bins/pe/standard.exe
-CMDS=<<EOF
-e io.va=false
-s 0
-e search.in=file
-e search.from=0
-e search.to=0x10
-/m
-EOF
-EXPECT=<<EOF
-0x00000000 1 PE  for MS Windows Intel 80386 32-bit
-EOF
-RUN
-
-NAME=/m search from/to (seek beyond data)
-FILE=bins/pe/standard.exe
-CMDS=<<EOF
-e io.va=false
-s 0x1000
-e search.in=file
-e search.from=0
-e search.to=0x10
-/m
-EOF
-EXPECT=<<EOF
-0x00000000 1 PE  for MS Windows Intel 80386 32-bit
-EOF
-RUN
-
 NAME=/o search offset of instructions backward
 FILE=malloc://1024
 ARGS=-a x86 -b 32
@@ -573,29 +540,6 @@ e search.to=0x200
 EOF
 EXPECT=<<EOF
 0x00000100 4 hit.bytes.0
-EOF
-RUN
-
-NAME=/m search seek
-FILE=bins/pe/standard.exe
-CMDS=<<EOF
-e io.va=false
-e search.in=file
-s 0x1000
-/m~[0]
-s
-EOF
-EXPECT=<<EOF
-0x00000000
-0x1000
-EOF
-RUN
-
-NAME=/mj test json output
-FILE=bins/elf/analysis/x86-simple
-CMDS=/mj
-EXPECT=<<EOF
-[{"offset":134512640,"depth":1,"info":"ELF 32-bit LSB executable, Intel 80386, version 1"}]
 EOF
 RUN
 

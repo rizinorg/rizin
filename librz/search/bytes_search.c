@@ -230,7 +230,7 @@ static bool bytes_find(RzSearchFindOpt *fopts, void *user, ut64 address, const R
 					// Match has not the correct alignment in memory.
 					continue;
 				}
-				RzSearchHit *hit = rz_search_hit_new(hp->pattern_desc, address + group0->start, group0->len);
+				RzSearchHit *hit = rz_search_hit_new(hp->pattern_desc, address + group0->start, group0->len, NULL);
 				if (!hit || !rz_th_queue_push(hits, hit, true)) {
 					rz_search_hit_free(hit);
 					rz_pvector_free(matches);
@@ -258,7 +258,7 @@ static bool bytes_find(RzSearchFindOpt *fopts, void *user, ut64 address, const R
 					continue;
 				}
 			}
-			RzSearchHit *hit = rz_search_hit_new(hp->pattern_desc, address + offset, hp->length);
+			RzSearchHit *hit = rz_search_hit_new(hp->pattern_desc, address + offset, hp->length, NULL);
 			if (!hit || !rz_th_queue_push(hits, hit, true)) {
 				rz_search_hit_free(hit);
 				return false;

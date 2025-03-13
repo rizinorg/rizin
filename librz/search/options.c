@@ -49,7 +49,7 @@ static bool element_chunk_ratio_ok(ut64 element_size, ut64 chunk_size) {
 }
 
 /**
- * \brief Sets the chunk size based on `element_size`.
+ * \brief Sets opt->element_size and the updates the chunk size dependent on `element_size`.
  * \param opt The search options.
  * \param element_size The size in bytes of the element to search for.
  */

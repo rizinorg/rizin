@@ -126,7 +126,7 @@ RZ_IPI RzCmdStatus rz_cmd_search_graph_path_follow_jumps_handler(RzCore *core, i
 // "/h"
 RZ_IPI RzCmdStatus rz_cmd_search_hash_block_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/m"
-RZ_IPI RzCmdStatus rz_cmd_search_magic_const_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+RZ_IPI RzCmdStatus rz_cmd_search_magic_const_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/mb"
 RZ_IPI RzCmdStatus rz_cmd_search_magic_bin_headers_handler(RzCore *core, int argc, const char **argv);
 // "/E"

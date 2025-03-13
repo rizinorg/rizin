@@ -8,6 +8,7 @@ rz_search_sources = [
   'bytes_search.c',
   'value_search.c',
   'cryptographic_search.c',
+  'magic_search.c',
   'string_search.c',
 ]
 

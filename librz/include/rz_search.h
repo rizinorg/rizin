@@ -147,7 +147,8 @@ typedef struct rz_search_interval_t RzSearchInterval;
 typedef struct rz_search_collection_t RzSearchCollection;
 
 typedef struct rz_search_hit_t {
-	char *hit_desc; ///< Hit description (can be NULL)
+	char *hit_desc; ///< Hit one word description. If set, it is added to the flag name of the hit. Optional, can be NULL.
+	char *comment; ///< A detailed comment about the hit. Set as flag comment. Optional, can be NULL.
 	ut64 address; ///< Address/offset of the matched data.
 	size_t size; ///< Size of the matched data (can be 0), in bytes.
 } RzSearchHit;
@@ -237,6 +238,8 @@ RZ_API bool rz_search_collection_string_add(RZ_NONNULL RzSearchCollection *col, 
 
 RZ_API bool rz_search_collection_match_any(RZ_NULLABLE RzSearchCollection *sc, RZ_NONNULL const ut8 *buffer, size_t length);
 RZ_API void rz_search_collection_free(RZ_NULLABLE RzSearchCollection *sc);
+
+RZ_API RZ_OWN RzSearchCollection *rz_search_collection_magic(RZ_NONNULL const char *magic_dir);
 
 RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_search_on_io(RZ_BORROW RZ_NONNULL RzSearchOpt *opt, RZ_BORROW RZ_NONNULL RzSearchCollection *col, RZ_BORROW RZ_NONNULL RzIO *io, RZ_BORROW RZ_NONNULL RzList /*<RzIOMap *>*/ *search_in);
 
