@@ -1966,29 +1966,6 @@ reread:
 			}
 		}
 		break;
-	case 'g': // "/g" graph search
-		if (input[1] == '?') {
-			rz_cons_printf("Usage: /g[g] [fromaddr] @ [toaddr]\n");
-			rz_cons_printf("(find all graph paths A to B (/gg follow jumps, see search.count and analysis.depth)");
-		} else {
-			ut64 addr = UT64_MAX;
-			if (input[1]) {
-				addr = rz_num_math(core->num, input + 2);
-			} else {
-				RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, addr);
-				if (fcn) {
-					addr = fcn->addr;
-				} else {
-					addr = core->offset;
-				}
-			}
-			const int depth = rz_config_get_i(core->config, "analysis.depth");
-			// Va;ifate input length
-			if (input[1] != '\0') {
-				rz_core_analysis_paths(core, addr, core->offset, input[1] == 'g', depth, (input[1] == 'j' || input[2] == 'j'));
-			}
-		}
-		break;
 	case 's': // "/s"
 		do_section_search(core, &param, input + 1);
 		break;
@@ -2519,12 +2496,20 @@ RZ_IPI RzCmdStatus rz_cmd_search_file_handler(RzCore *core, int argc, const char
 
 // "/g"
 RZ_IPI RzCmdStatus rz_cmd_search_graph_path_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return pass_to_legacy_api(core, argc, argv, RZ_OUTPUT_MODE_STANDARD);
+	ut64 from = rz_num_get(NULL, argv[1]);
+	ut64 to = rz_num_get(NULL, argv[2]);
+	const int depth = rz_config_get_i(core->config, "analysis.depth");
+	rz_core_analysis_paths(core, from, to, false, depth, state->mode == RZ_OUTPUT_MODE_JSON);
+	return RZ_CMD_STATUS_OK;
 }
 
 // "/gg"
-RZ_IPI RzCmdStatus rz_cmd_search_graph_path_follow_jumps_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return pass_to_legacy_api(core, argc, argv, RZ_OUTPUT_MODE_STANDARD);
+RZ_IPI RzCmdStatus rz_cmd_search_graph_path_follow_calls_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	ut64 from = rz_num_get(NULL, argv[1]);
+	ut64 to = rz_num_get(NULL, argv[2]);
+	const int depth = rz_config_get_i(core->config, "analysis.depth");
+	rz_core_analysis_paths(core, from, to, true, depth, state->mode == RZ_OUTPUT_MODE_JSON);
+	return RZ_CMD_STATUS_OK;
 }
 
 // "/h"

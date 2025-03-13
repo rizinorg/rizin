@@ -122,7 +122,7 @@ RZ_IPI RzCmdStatus rz_cmd_search_sections_handler(RzCore *core, int argc, const 
 // "/g"
 RZ_IPI RzCmdStatus rz_cmd_search_graph_path_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/gg"
-RZ_IPI RzCmdStatus rz_cmd_search_graph_path_follow_jumps_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+RZ_IPI RzCmdStatus rz_cmd_search_graph_path_follow_calls_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/h"
 RZ_IPI RzCmdStatus rz_cmd_search_hash_block_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/m"

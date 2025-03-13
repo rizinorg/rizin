@@ -373,33 +373,29 @@ commands:
         type: RZ_CMD_ARG_TYPE_STRING
 
   - name: "/g"
-    summary: Search for all graph paths A to B (/gg follow jumps, see search.count and analysis.depth).
+    summary: Search for all graph paths A to B.
     subcommands:
     - name: "/g"
-      summary: Search for all graph paths A to B (does not follow jumps).
+      summary: Search for all graph paths A to B (does not follow calls).
       cname: cmd_search_graph_path
       type: RZ_CMD_DESC_TYPE_ARGV_STATE
       default_mode: RZ_OUTPUT_MODE_STANDARD
       modes:
         - RZ_OUTPUT_MODE_STANDARD
         - RZ_OUTPUT_MODE_JSON
-        - RZ_OUTPUT_MODE_QUIET
-        - RZ_OUTPUT_MODE_TABLE
       args:
         - name: from
           type: RZ_CMD_ARG_TYPE_RZNUM
         - name: to
           type: RZ_CMD_ARG_TYPE_RZNUM
     - name: "/gg"
-      summary: Search for all graph paths A to B (follow jumps, see `search.count` and `analysis.depth`).
-      cname: cmd_search_graph_path_follow_jumps
+      summary: Search for all graph paths A to B (follows calls, see `search.count` and `analysis.depth`).
+      cname: cmd_search_graph_path_follow_calls
       type: RZ_CMD_DESC_TYPE_ARGV_STATE
       default_mode: RZ_OUTPUT_MODE_STANDARD
       modes:
         - RZ_OUTPUT_MODE_STANDARD
         - RZ_OUTPUT_MODE_JSON
-        - RZ_OUTPUT_MODE_QUIET
-        - RZ_OUTPUT_MODE_TABLE
       args:
         - name: from
           type: RZ_CMD_ARG_TYPE_RZNUM

@@ -143,7 +143,7 @@ static const RzCmdDescArg cmd_search_pattern_args[2];
 static const RzCmdDescArg cmd_search_blocks_args[2];
 static const RzCmdDescArg cmd_search_sections_args[2];
 static const RzCmdDescArg cmd_search_graph_path_args[3];
-static const RzCmdDescArg cmd_search_graph_path_follow_jumps_args[3];
+static const RzCmdDescArg cmd_search_graph_path_follow_calls_args[3];
 static const RzCmdDescArg cmd_search_hash_block_args[3];
 static const RzCmdDescArg cmd_search_magic_const_args[2];
 static const RzCmdDescArg cmd_search_esil_args[2];
@@ -1932,7 +1932,7 @@ static const RzCmdDescHelp cmd_search_sections_help = {
 };
 
 static const RzCmdDescHelp slash_g_help = {
-	.summary = "Search for all graph paths A to B (/gg follow jumps, see search.count and analysis.depth).",
+	.summary = "Search for all graph paths A to B.",
 };
 static const RzCmdDescArg cmd_search_graph_path_args[] = {
 	{
@@ -1949,11 +1949,11 @@ static const RzCmdDescArg cmd_search_graph_path_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_search_graph_path_help = {
-	.summary = "Search for all graph paths A to B (does not follow jumps).",
+	.summary = "Search for all graph paths A to B (does not follow calls).",
 	.args = cmd_search_graph_path_args,
 };
 
-static const RzCmdDescArg cmd_search_graph_path_follow_jumps_args[] = {
+static const RzCmdDescArg cmd_search_graph_path_follow_calls_args[] = {
 	{
 		.name = "from",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
@@ -1967,9 +1967,9 @@ static const RzCmdDescArg cmd_search_graph_path_follow_jumps_args[] = {
 	},
 	{ 0 },
 };
-static const RzCmdDescHelp cmd_search_graph_path_follow_jumps_help = {
-	.summary = "Search for all graph paths A to B (follow jumps, see `search.count` and `analysis.depth`).",
-	.args = cmd_search_graph_path_follow_jumps_args,
+static const RzCmdDescHelp cmd_search_graph_path_follow_calls_help = {
+	.summary = "Search for all graph paths A to B (follows calls, see `search.count` and `analysis.depth`).",
+	.args = cmd_search_graph_path_follow_calls_args,
 };
 
 static const RzCmdDescDetailEntry cmd_search_hash_block_Usage_space_example_detail_entries[] = {
@@ -21119,12 +21119,12 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(cmd_search_sections_cd);
 	rz_cmd_desc_set_default_mode(cmd_search_sections_cd, RZ_OUTPUT_MODE_STANDARD);
 
-	RzCmdDesc *slash_g_cd = rz_cmd_desc_group_state_new(core->rcmd, slash__cd, "/g", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_graph_path_handler, &cmd_search_graph_path_help, &slash_g_help);
+	RzCmdDesc *slash_g_cd = rz_cmd_desc_group_state_new(core->rcmd, slash__cd, "/g", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_search_graph_path_handler, &cmd_search_graph_path_help, &slash_g_help);
 	rz_warn_if_fail(slash_g_cd);
 	rz_cmd_desc_set_default_mode(slash_g_cd, RZ_OUTPUT_MODE_STANDARD);
-	RzCmdDesc *cmd_search_graph_path_follow_jumps_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_g_cd, "/gg", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_graph_path_follow_jumps_handler, &cmd_search_graph_path_follow_jumps_help);
-	rz_warn_if_fail(cmd_search_graph_path_follow_jumps_cd);
-	rz_cmd_desc_set_default_mode(cmd_search_graph_path_follow_jumps_cd, RZ_OUTPUT_MODE_STANDARD);
+	RzCmdDesc *cmd_search_graph_path_follow_calls_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_g_cd, "/gg", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_search_graph_path_follow_calls_handler, &cmd_search_graph_path_follow_calls_help);
+	rz_warn_if_fail(cmd_search_graph_path_follow_calls_cd);
+	rz_cmd_desc_set_default_mode(cmd_search_graph_path_follow_calls_cd, RZ_OUTPUT_MODE_STANDARD);
 
 	RzCmdDesc *cmd_search_hash_block_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash__cd, "/h", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_hash_block_handler, &cmd_search_hash_block_help);
 	rz_warn_if_fail(cmd_search_hash_block_cd);
