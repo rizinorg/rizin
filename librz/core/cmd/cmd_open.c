@@ -755,12 +755,6 @@ RZ_IPI RzCmdStatus rz_open_binary_file_handler(RzCore *core, int argc, const cha
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_open_binary_rebase_handler(RzCore *core, int argc, const char **argv) {
-	rz_core_bin_rebase(core, rz_num_math(core->num, argv[1]));
-	rz_core_bin_apply_all_info(core, rz_bin_cur(core->bin));
-	return RZ_CMD_STATUS_OK;
-}
-
 RZ_IPI RzCmdStatus rz_open_binary_reload_handler(RzCore *core, int argc, const char **argv) {
 	// XXX: this will reload the bin using the buffer.
 	// An assumption is made that assumes there is an underlying

@@ -812,25 +812,6 @@ RZ_API bool rz_core_file_loadlib(RzCore *core, const char *lib, ut64 libaddr) {
 	return ret;
 }
 
-/**
- * \brief      Rebase the current RzBinFile and its RzBinObject
- *
- * \param[in]  RzCore  The RzCore structure to use
- * \param[in]  baddr   The new base address
- *
- * \return     On success returns true, otherwise false.
- */
-RZ_API bool rz_core_bin_rebase(RZ_NONNULL RzCore *core, ut64 baddr) {
-	rz_return_val_if_fail(core && core->bin && core->bin->cur, false);
-	if (baddr == UT64_MAX) {
-		return false;
-	}
-	RzBinFile *bf = core->bin->cur;
-	bf->o->opts.baseaddr = baddr;
-	bf->o->opts.loadaddr = baddr;
-	return rz_bin_object_process_plugin_data(bf, bf->o);
-}
-
 static void load_scripts_for(RzCore *core, const char *name) {
 	char *file;
 	RzListIter *iter;

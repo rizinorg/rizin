@@ -633,7 +633,6 @@ static const RzCmdDescArg open_binary_select_fd_args[2];
 static const RzCmdDescArg open_binary_del_args[2];
 static const RzCmdDescArg open_binary_add_args[2];
 static const RzCmdDescArg open_binary_file_args[2];
-static const RzCmdDescArg open_binary_rebase_args[2];
 static const RzCmdDescArg open_binary_reload_args[2];
 static const RzCmdDescArg open_use_args[2];
 static const RzCmdDescArg open_prioritize_args[2];
@@ -13832,20 +13831,6 @@ static const RzCmdDescHelp open_binary_file_help = {
 	.args = open_binary_file_args,
 };
 
-static const RzCmdDescArg open_binary_rebase_args[] = {
-	{
-		.name = "baddr",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp open_binary_rebase_help = {
-	.summary = "Rebase current bin object",
-	.args = open_binary_rebase_args,
-};
-
 static const RzCmdDescArg open_binary_reload_args[] = {
 	{
 		.name = "baddr",
@@ -23673,9 +23658,6 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *open_binary_file_cd = rz_cmd_desc_argv_new(core->rcmd, ob_cd, "obf", rz_open_binary_file_handler, &open_binary_file_help);
 	rz_warn_if_fail(open_binary_file_cd);
-
-	RzCmdDesc *open_binary_rebase_cd = rz_cmd_desc_argv_new(core->rcmd, ob_cd, "obr", rz_open_binary_rebase_handler, &open_binary_rebase_help);
-	rz_warn_if_fail(open_binary_rebase_cd);
 
 	RzCmdDesc *open_binary_reload_cd = rz_cmd_desc_argv_new(core->rcmd, ob_cd, "obR", rz_open_binary_reload_handler, &open_binary_reload_help);
 	rz_warn_if_fail(open_binary_reload_cd);

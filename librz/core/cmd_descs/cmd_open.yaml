@@ -256,12 +256,6 @@ commands:
           - name: file
             type: RZ_CMD_ARG_TYPE_FILE
             optional: true
-      - name: obr
-        cname: open_binary_rebase
-        summary: Rebase current bin object
-        args:
-          - name: baddr
-            type: RZ_CMD_ARG_TYPE_RZNUM
       - name: obR
         cname: open_binary_reload
         summary: Reload the current buffer for setting of the bin (use once only)

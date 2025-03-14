@@ -136,14 +136,14 @@ RZ_IPI void rz_bin_process_swift(RzBinObject *o, char *classname, char *demangle
 #endif /* WITH_SWIFT_DEMANGLER */
 
 /**
- * \brief      Reset and initialize the data of the given RzBinObject using the defined RzBinPlugin
+ * \brief      Initialize the data of the given RzBinObject using the defined RzBinPlugin
  *
  * \param      bf    The RzBinFile to use
  * \param      o     The RzBinObject to initialize
  *
  * \return     On success returns true
  */
-RZ_API bool rz_bin_object_process_plugin_data(RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzBinObject *o) {
+RZ_IPI bool rz_bin_object_process_plugin_data(RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzBinObject *o) {
 	rz_return_val_if_fail(bf && bf->rbin && o && o->plugin, false);
 	const RzDemanglerPlugin *demangler = NULL;
 
