@@ -9,6 +9,8 @@ pyc_opcodes *opcode_310(void) {
 		return NULL;
 	}
 
+	rm_op(.op_obj = ret->opcodes, .op_name = "RERAISE", .op_code = 48);
+	def_op(.op_obj = ret->opcodes, .op_name = "RERAISE", .op_code = 119, .pop = 0, .push = 0);
 	ret->version_sig = (opcode_func)opcode_310;
 	ret->jump_use_instruction_offset = true;
 
