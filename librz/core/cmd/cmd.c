@@ -3404,6 +3404,8 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(redirect_stmt) {
 	} else {
 		rz_cons_flush();
 		RZ_LOG_DEBUG("redirect_stmt: fdn = %d, is_append = %d\n", fdn, is_append);
+		rz_cons_push();
+		rz_cons_set_flush(true);
 		RzConsPipe *cpipe = rz_cons_pipe_open(arg_str, fdn, is_append);
 		if (cpipe) {
 			if (!pipecolor) {
@@ -3416,6 +3418,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(redirect_stmt) {
 		} else {
 			RZ_LOG_WARN("Could not open pipe to %d\n", fdn);
 		}
+		rz_cons_pop();
 	}
 	free(arg_str);
 fail:
