@@ -146,9 +146,16 @@ typedef struct rz_search_interval_t RzSearchInterval;
 
 typedef struct rz_search_collection_t RzSearchCollection;
 
+typedef enum {
+	RZ_SEARCH_HIT_DETAIL_NONE = 0,
+	RZ_SEARCH_HIT_DETAIL_HASH,
+} RzSearchHitDetailType;
+
 typedef struct rz_search_hit_t {
 	char *hit_desc; ///< Hit one word description. If set, it is added to the flag name of the hit. Optional, can be NULL.
 	char *comment; ///< A detailed comment about the hit. Set as flag comment. Optional, can be NULL.
+	void *details; ///< Search dependent details of the hit.
+	RzSearchHitDetailType detail_type; ///< The type of the detail, if any.
 	ut64 address; ///< Address/offset of the matched data.
 	size_t size; ///< Size of the matched data (can be 0), in bytes.
 } RzSearchHit;
@@ -159,6 +166,8 @@ typedef enum {
 } RzSearchCancelReason;
 
 RZ_API RZ_OWN char *rz_search_hit_flag_name(RZ_NONNULL const RzSearchHit *hit, size_t hit_id, RZ_NULLABLE const char *prefix);
+RZ_API RZ_OWN char *rz_search_hit_detail_str(RZ_BORROW RZ_NONNULL RzSearchHit *hit);
+RZ_API bool rz_search_hit_detail_json(RZ_BORROW RZ_NONNULL RzSearchHit *hit, RZ_OUT RZ_NONNULL PJ *pj);
 
 typedef struct rz_search_bytes_pattern_t RzSearchBytesPattern;
 

@@ -808,6 +808,13 @@ RZ_IPI RZ_OWN RzSearchHit *rz_search_hit_new(const char *hit_desc, ut64 address,
 	return hit;
 }
 
+RZ_IPI RZ_OWN bool rz_search_hit_add_details(RZ_NONNULL RzSearchHit *hit, RzSearchHitDetailType type, RZ_OWN void *details) {
+	rz_return_val_if_fail(hit && details, false);
+	hit->detail_type = type;
+	hit->details = details;
+	return true;
+}
+
 /**
  * \brief      Frees a RzSearchHit structure
  *
@@ -817,9 +824,79 @@ RZ_IPI void rz_search_hit_free(RZ_NULLABLE RzSearchHit *hit) {
 	if (!hit) {
 		return;
 	}
+	switch (hit->detail_type) {
+	case RZ_SEARCH_HIT_DETAIL_NONE:
+		break;
 	free(hit->hit_desc);
 	free(hit->comment);
 	free(hit);
+}
+
+/**
+ * \brief Get the string describing the search hit detail.
+ *
+ * \param hit The search hit to get the from
+ *
+ * \return Returns the pretty string.
+ * Or NULL in case of failure or if hit->detail_type is none.
+ */
+RZ_API RZ_OWN char *rz_search_hit_detail_str(RZ_BORROW RZ_NONNULL RzSearchHit *hit) {
+	rz_return_val_if_fail(hit, NULL);
+	if (hit->detail_type == RZ_SEARCH_HIT_DETAIL_NONE) {
+		return NULL;
+	}
+	RzStrBuf *str = rz_strbuf_new("");
+	if (!str) {
+		goto error;
+	}
+
+	switch (hit->detail_type) {
+	default:
+		goto error;
+	case RZ_SEARCH_HIT_DETAIL_HASH: {
+		if (hit->details) {
+			RzSearchiHitDetailHash *detail = hit->details;
+			rz_strbuf_appendf(str, "%s", detail->hash_str);
+		}
+		break;
+	}
+	}
+	return rz_strbuf_drain(str);
+
+error:
+	RZ_LOG_ERROR("Stringify of search hit detail failed.\n");
+	rz_strbuf_free(str);
+	return NULL;
+}
+
+/**
+ * \brief Extend a JSON object with the details of the search hit if any.
+ *
+ * \param hit The search hit to get the from
+ * \param pj The JSON object to extend.
+ *
+ * \return True if the detail was added, false otherwise.
+ */
+RZ_API bool rz_search_hit_detail_json(RZ_BORROW RZ_NONNULL RzSearchHit *hit, RZ_OUT RZ_NONNULL PJ *pj) {
+	rz_return_val_if_fail(hit && pj, NULL);
+	if (hit->detail_type == RZ_SEARCH_HIT_DETAIL_NONE) {
+		return false;
+	}
+
+	switch (hit->detail_type) {
+	default:
+		goto error;
+	case RZ_SEARCH_HIT_DETAIL_HASH: {
+		RzSearchiHitDetailHash *detail = hit->details;
+		pj_ks(pj, "hash", detail->hash_str);
+		break;
+	}
+	}
+	return true;
+
+error:
+	RZ_LOG_ERROR("Adding the search hit detail to the JSON object failed.\n");
+	return false;
 }
 
 /**

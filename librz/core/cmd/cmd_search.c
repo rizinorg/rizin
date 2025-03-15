@@ -2074,18 +2074,35 @@ static void cmd_search_output_to_state(RzCmdStateOutput *state, RzSearchHit *hit
 	case RZ_OUTPUT_MODE_QUIET:
 		rz_cons_printf("0x%08" PFMT64x "\n", hit->address);
 		break;
-	case RZ_OUTPUT_MODE_STANDARD:
-		rz_cons_printf("0x%08" PFMT64x " %" PFMTSZu " %s\n", hit->address, hit->size, flag_name);
+	case RZ_OUTPUT_MODE_STANDARD: {
+		RzStrBuf *sb = rz_strbuf_new("");
+		rz_strbuf_appendf(sb, "0x%08" PFMT64x " %" PFMTSZu " %s", hit->address, hit->size, flag_name);
+		if (hit->detail_type != RZ_SEARCH_HIT_DETAIL_NONE) {
+			rz_strbuf_appendf(sb, " %s", rz_search_hit_detail_str(hit));
+		}
+		char *desc = rz_strbuf_drain(sb);
+		rz_cons_printf("%s\n", desc);
+		free(desc);
 		break;
+	}
 	case RZ_OUTPUT_MODE_JSON:
 		pj_o(state->d.pj);
 		pj_kn(state->d.pj, "address", hit->address);
 		pj_kn(state->d.pj, "size", hit->size);
 		pj_ks(state->d.pj, "flag", flag_name);
+		if (hit->detail_type != RZ_SEARCH_HIT_DETAIL_NONE) {
+			pj_ko(state->d.pj, "detail");
+			rz_search_hit_detail_json(hit, state->d.pj);
+			pj_end(state->d.pj);
+		}
 		pj_end(state->d.pj);
 		break;
 	case RZ_OUTPUT_MODE_TABLE:
-		rz_table_add_rowf(state->d.t, "xXs", hit->address, hit->size, flag_name);
+		if (hit->detail_type != RZ_SEARCH_HIT_DETAIL_NONE) {
+			rz_table_add_rowf(state->d.t, "xXss", hit->address, hit->size, flag_name, rz_search_hit_detail_str(hit));
+		} else {
+			rz_table_add_rowf(state->d.t, "xXs", hit->address, hit->size, flag_name);
+		}
 		break;
 	default:
 		rz_warn_if_reached();
@@ -2134,6 +2151,9 @@ static RzCmdStatus cmd_core_handle_search_hits(RzCore *core, RzCmdStateOutput *s
 		if (RZ_STR_ISNOTEMPTY(cmd_hit)) {
 			cmd_search_call_command(core, hit, cmd_hit);
 			continue;
+		}
+		if (state->mode == RZ_OUTPUT_MODE_TABLE && hit->detail_type != RZ_SEARCH_HIT_DETAIL_NONE) {
+			rz_table_add_column(state->d.t, rz_table_type("string"), "detail", 0);
 		}
 
 		// Only output & add flag when cmd.hit is not set.
