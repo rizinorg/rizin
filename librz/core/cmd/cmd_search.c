@@ -2374,7 +2374,7 @@ RZ_IPI RzCmdStatus rz_cmd_search_cryptographic_material_handler(RzCore *core, in
 	}
 
 	bool is_all = !strcmp(argv[1], "all");
-	RzSearchCollectionCryptographicType type = RZ_SEARCH_COLLECTION_CRYPTOGRAPHIC_ENUM_SIZE;
+	RzSearchCollectionCryptographicType type = RZ_SEARCH_COLLECTION_CRYPTOGRAPHIC_ALL;
 
 	if (!is_all && !rz_search_collection_cryptographic_name_to_type(argv[1], &type)) {
 		RZ_LOG_ERROR("Failed to parse given type (%s).\n", argv[1]);

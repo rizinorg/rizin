@@ -213,11 +213,14 @@ typedef enum {
 	RZ_SEARCH_COLLECTION_CRYPTOGRAPHIC_ECC,
 	RZ_SEARCH_COLLECTION_CRYPTOGRAPHIC_SAFECURVES,
 	RZ_SEARCH_COLLECTION_CRYPTOGRAPHIC_X509,
+
 	// Always the last element to define enum size
 	RZ_SEARCH_COLLECTION_CRYPTOGRAPHIC_ENUM_SIZE,
 } RzSearchCollectionCryptographicType;
 
-RZ_API RZ_OWN RzSearchCollection *rz_search_collection_cryptographic(bool add_all_methods);
+#define RZ_SEARCH_COLLECTION_CRYPTOGRAPHIC_ALL RZ_SEARCH_COLLECTION_CRYPTOGRAPHIC_ENUM_SIZE
+
+RZ_API RZ_OWN RzSearchCollection *rz_search_collection_cryptographic();
 RZ_API bool rz_search_collection_cryptographic_add(RZ_NONNULL RzSearchCollection *col, RzSearchCollectionCryptographicType type);
 RZ_API bool rz_search_collection_cryptographic_name_to_type(RZ_NONNULL const char *name, RzSearchCollectionCryptographicType *type);
 

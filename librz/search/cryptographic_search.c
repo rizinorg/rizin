@@ -102,25 +102,13 @@ static bool cryptographic_is_empty(void *user) {
 /**
  * \brief      Allocates and initialize a pkey RzSearchCollection
  *
- * \param[in]  add_all   If true, it adds all cryptographic methods to the search, otherwise none.
- *
  * \return     On success returns a valid pointer, otherwise NULL
  */
-RZ_API RZ_OWN RzSearchCollection *rz_search_collection_cryptographic(bool add_all_methods) {
+RZ_API RZ_OWN RzSearchCollection *rz_search_collection_cryptographic() {
 	RzPVector /*<CryptographicCallback *>*/ *pvec = rz_pvector_new(NULL);
 	if (!pvec) {
 		RZ_LOG_ERROR("search: cannot allocate internal data for cryptographic search collection\n");
 		return NULL;
-	}
-
-	for (size_t i = 0; add_all_methods && i < RZ_ARRAY_SIZE(cryptographic_methods); ++i) {
-		CryptographicCallback find = cryptographic_methods[i].find;
-		if (!rz_pvector_push(pvec, find)) {
-			const char *name = cryptographic_methods[i].name;
-			RZ_LOG_ERROR("search: cannot add %s to cryptographic search collection\n", name);
-			rz_pvector_free(pvec);
-			return NULL;
-		}
 	}
 
 	return rz_search_collection_new_bytes_space(cryptographic_find, cryptographic_is_empty, (RzSearchFreeCallback)rz_pvector_free, pvec);
@@ -142,8 +130,26 @@ RZ_API bool rz_search_collection_cryptographic_add(RZ_NONNULL RzSearchCollection
 		return false;
 	}
 
-	if (type >= RZ_SEARCH_COLLECTION_CRYPTOGRAPHIC_ENUM_SIZE) {
-		RZ_LOG_ERROR("search: cannot add cryptographic method when type value exceeds enum size\n");
+	if (type >= RZ_SEARCH_COLLECTION_CRYPTOGRAPHIC_ALL) {
+		RzPVector *pvec = col->user;
+		CryptographicCallback find_cb;
+		for (size_t i = 0; i < RZ_SEARCH_COLLECTION_CRYPTOGRAPHIC_ENUM_SIZE; ++i) {
+			find_cb = cryptographic_methods[i].find;
+			if (rz_pvector_contains(pvec, find_cb)) {
+				RZ_LOG_WARN("search: %s already in cryptographic search collection!\n", cryptographic_methods[i].name);
+				continue;
+			}
+			if (!rz_pvector_push(pvec, find_cb)) {
+				const char *name = cryptographic_methods[i].name;
+				RZ_LOG_ERROR("search: cannot add %s to cryptographic search collection\n", name);
+				return false;
+			}
+		}
+		return true;
+	}
+
+	if (!cryptographic_methods[type].find) {
+		RZ_LOG_ERROR("The crypto type has no search method defined.\n");
 		return false;
 	}
 

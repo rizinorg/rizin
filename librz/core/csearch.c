@@ -316,21 +316,22 @@ quit:
  *
  * \return     On success returns a pointer to the search hits, otherwise NULL
  */
-RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_cryptographic_material(RZ_NONNULL RzCore *core, RZ_BORROW RZ_NULLABLE RzSearchOpt *user_opts, RzSearchCollectionCryptographicType type) {
+RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_cryptographic_material(
+	RZ_NONNULL RzCore *core,
+	RZ_BORROW RZ_NULLABLE RzSearchOpt *user_opts,
+	RzSearchCollectionCryptographicType type) {
 	rz_return_val_if_fail(core && core->config, NULL);
 
 	RzList *hits = NULL;
 	RzList *boundaries = NULL;
 	RzSearchOpt *search_opts = NULL;
-	bool add_all_methods = type >= RZ_SEARCH_COLLECTION_CRYPTOGRAPHIC_ENUM_SIZE;
 
-	RzSearchCollection *collection = rz_search_collection_cryptographic(add_all_methods);
+	RzSearchCollection *collection = rz_search_collection_cryptographic();
 	if (!collection) {
 		return NULL;
 	}
 
-	if (!add_all_methods &&
-		!rz_search_collection_cryptographic_add(collection, type)) {
+	if (!rz_search_collection_cryptographic_add(collection, type)) {
 		goto quit;
 	}
 
