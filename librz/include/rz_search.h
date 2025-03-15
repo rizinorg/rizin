@@ -2,6 +2,7 @@
 #define RZ_SEARCH_H
 
 #include <rz_types.h>
+#include <rz_hash.h>
 #include <rz_util.h>
 #include <rz_list.h>
 #include <rz_io.h>
@@ -146,6 +147,18 @@ typedef struct rz_search_interval_t RzSearchInterval;
 
 typedef struct rz_search_collection_t RzSearchCollection;
 
+/**
+ * \brief Data passed to hash search find() workers.
+ */
+typedef struct rz_search_hash_find_data_t RzSearchHashFindData;
+
+typedef struct {
+	char *algo; ///< The hash algorithm used for the.
+	ut8 *hash; ///< Calculated hash.
+	size_t hash_size; ///< Hash size in bytes.
+	char *hash_str; ///< The hash result as printable string.
+} RzSearchiHitDetailHash;
+
 typedef enum {
 	RZ_SEARCH_HIT_DETAIL_NONE = 0,
 	RZ_SEARCH_HIT_DETAIL_HASH,
@@ -232,6 +245,12 @@ typedef enum {
 RZ_API RZ_OWN RzSearchCollection *rz_search_collection_cryptographic();
 RZ_API bool rz_search_collection_cryptographic_add(RZ_NONNULL RzSearchCollection *col, RzSearchCollectionCryptographicType type);
 RZ_API bool rz_search_collection_cryptographic_name_to_type(RZ_NONNULL const char *name, RzSearchCollectionCryptographicType *type);
+
+RZ_API RZ_OWN RzSearchCollection *rz_search_collection_hash();
+RZ_API RZ_OWN RzSearchHashFindData *rz_search_hash_get_find_data(const RzHash *rz_hash, RZ_NONNULL const char *algo_name, RZ_NONNULL const char *expected_digits, const char *block_size_arg);
+RZ_API bool rz_search_collection_hash_add(RZ_NONNULL RzSearchCollection *col, RZ_OWN RZ_NONNULL RzSearchHashFindData *data);
+RZ_API bool rz_search_collection_hash_name_to_type(RZ_NONNULL const char *name);
+RZ_API ut64 rz_search_hash_get_element_size(RZ_NONNULL RzSearchCollection *collection);
 
 /**
  * \brief Maximum value width to search for is currently 64bits/8bytes.

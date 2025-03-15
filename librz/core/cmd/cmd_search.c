@@ -46,78 +46,6 @@ struct search_parameters {
 	bool regex_search;
 };
 
-static int search_hash(RzCore *core, const char *hashname, const char *hashstr, ut32 minlen, ut32 maxlen, struct search_parameters *param) {
-	RzIOMap *map;
-	ut8 *buf;
-	int i, j;
-	RzListIter *iter;
-
-	if (!minlen || minlen == UT32_MAX) {
-		minlen = core->blocksize;
-	}
-	if (!maxlen || maxlen == UT32_MAX) {
-		maxlen = minlen;
-	}
-
-	rz_cons_break_push(NULL, NULL);
-	for (j = minlen; j <= maxlen; j++) {
-		ut32 len = j;
-		eprintf("Searching %s for %d byte length.\n", hashname, j);
-		rz_list_foreach (param->boundaries, iter, map) {
-			if (rz_cons_is_breaked()) {
-				break;
-			}
-			ut64 from = map->itv.addr, to = rz_itv_end(map->itv);
-			st64 bufsz;
-			bufsz = to - from;
-			if (len > bufsz) {
-				RZ_LOG_ERROR("core: Hash length is bigger than range 0x%" PFMT64x "\n", from);
-				continue;
-			}
-			buf = malloc(bufsz);
-			if (!buf) {
-				RZ_LOG_ERROR("core: Cannot allocate %" PFMT64d " bytes\n", bufsz);
-				goto fail;
-			}
-			eprintf("Search in range 0x%08" PFMT64x " and 0x%08" PFMT64x "\n", from, to);
-			int blocks = (int)(to - from - len);
-			eprintf("Carving %d blocks...\n", blocks);
-			(void)rz_io_read_at(core->io, from, buf, bufsz);
-			for (i = 0; (from + i + len) < to; i++) {
-				if (rz_cons_is_breaked()) {
-					break;
-				}
-				char *s = rz_hash_cfg_calculate_small_block_string(core->hash, hashname, buf + i, len, NULL, false);
-				if (!s) {
-					RZ_LOG_ERROR("core: Hash fail\n");
-					break;
-				}
-				if (!(i % 5)) {
-					eprintf("%d\r", i);
-				}
-				// eprintf ("0x%08"PFMT64x" %s\n", from+i, s);
-				if (!strcmp(s, hashstr)) {
-					eprintf("Found at 0x%" PFMT64x "\n", from + i);
-					rz_cons_printf("f hash.%s.%s @ 0x%" PFMT64x "\n",
-						hashname, hashstr, from + i);
-					free(s);
-					free(buf);
-					rz_cons_break_pop();
-					return 1;
-				}
-				free(s);
-			}
-			free(buf);
-		}
-	}
-	rz_cons_break_pop();
-	eprintf("No hashes found\n");
-	return 0;
-fail:
-	rz_cons_break_pop();
-	return -1;
-}
-
 RZ_IPI RzCmdStatus rz_cmd_info_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	const char *input = argc > 1 ? argv[1] : "";
 	if (!input) {
@@ -999,74 +927,6 @@ done:
 	return false;
 }
 
-static void do_section_search(RzCore *core, struct search_parameters *param, const char *input) {
-	double threshold = 1;
-	bool r2mode = false;
-	if (input && *input) {
-		if (*input == '*') {
-			r2mode = true;
-		}
-		sscanf(input, "%lf", &threshold);
-		if (threshold < 1) {
-			threshold = 1;
-		}
-	}
-	int buf_size = core->blocksize;
-	ut8 *buf = malloc(buf_size);
-	if (!buf) {
-		return;
-	}
-	double oe = 0;
-	RzListIter *iter;
-	RzIOMap *map;
-	ut64 begin = UT64_MAX;
-	ut64 at, end = 0;
-	int index = 0;
-	bool lastBlock = true;
-	rz_cons_break_push(NULL, NULL);
-	rz_list_foreach (param->boundaries, iter, map) {
-		ut64 from = map->itv.addr;
-		ut64 to = rz_itv_end(map->itv);
-		if (rz_cons_is_breaked()) {
-			break;
-		}
-		for (at = from; at < to; at += buf_size) {
-			if (begin == UT64_MAX) {
-				begin = at;
-			}
-			rz_io_read_at(core->io, at, buf, buf_size);
-			double e = rz_hash_entropy(buf, buf_size);
-			double diff = oe - e;
-			diff = RZ_ABS(diff);
-			end = at + buf_size;
-			if (diff > threshold) {
-				if (r2mode) {
-					rz_cons_printf("f entropy_section_%d 0x%08" PFMT64x " @ 0x%08" PFMT64x "\n", index, end - begin, begin);
-				} else {
-					rz_cons_printf("0x%08" PFMT64x " - 0x%08" PFMT64x " ~ %lf\n", begin, end, e);
-				}
-				begin = UT64_MAX;
-				index++;
-				lastBlock = false;
-			} else {
-				lastBlock = true;
-			}
-			oe = e;
-		}
-		begin = UT64_MAX;
-	}
-	if (begin != UT64_MAX && lastBlock) {
-		if (r2mode) {
-			rz_cons_printf("f entropy_section_%d 0x%08" PFMT64x " @ 0x%08" PFMT64x "\n", index, end - begin, begin);
-		} else {
-			rz_cons_printf("0x%08" PFMT64x " - 0x%08" PFMT64x " ~ %d .. last\n", begin, end, 0);
-		}
-		index++;
-	}
-	rz_cons_break_pop();
-	free(buf);
-}
-
 static void do_asm_search(RzCore *core, struct search_parameters *param, const char *input, int mode, RzInterval search_itv) {
 	RzCoreAsmHit *hit;
 	RzListIter *iter, *itermap;
@@ -1927,34 +1787,6 @@ reread:
 			RZ_LOG_ERROR("core: Missing delta\n");
 		}
 		break;
-	case 'h': // "/h"
-	{
-		char *p, *arg = rz_str_trim_dup(input + 1);
-		p = strchr(arg, ' ');
-		if (p) {
-			*p++ = 0;
-			if (*arg == '?') {
-				RZ_LOG_ERROR("core: Usage: /h md5 [hash] [datalen]\n");
-			} else {
-				ut32 min = UT32_MAX;
-				ut32 max = UT32_MAX;
-				char *pmax, *pmin = strchr(p, ' ');
-				if (pmin) {
-					*pmin++ = 0;
-					pmax = strchr(pmin, ' ');
-					if (pmax) {
-						*pmax++ = 0;
-						max = rz_num_math(core->num, pmax);
-					}
-					min = rz_num_math(core->num, pmin);
-				}
-				search_hash(core, arg, p, min, max, &param);
-			}
-		} else {
-			RZ_LOG_ERROR("core: Missing hash. See ph?\n");
-		}
-		free(arg);
-	} break;
 	case 'f': // "/f" forward search
 		if (core->offset) {
 			RzInterval itv = { core->offset, -core->offset };
@@ -1965,9 +1797,6 @@ reread:
 				search_itv = rz_itv_intersect(search_itv, itv);
 			}
 		}
-		break;
-	case 's': // "/s"
-		do_section_search(core, &param, input + 1);
 		break;
 	case '+': // "/+"
 		if (input[1] == ' ') {
@@ -2432,6 +2261,55 @@ error:
 	return RZ_CMD_STATUS_ERROR;
 }
 
+// "/ch"
+RZ_IPI RzCmdStatus rz_cmd_search_hash_block_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	rz_return_val_if_fail(core, RZ_CMD_STATUS_ERROR);
+	RzSearchOpt *search_opts = setup_search_options(core);
+	RzList *hits = NULL;
+	if (!search_opts) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	CMD_SEARCH_BEGIN();
+
+	bool progress = rz_config_get_b(core->config, "search.show_progress");
+	if (!rz_search_opt_set_cancel_cb(search_opts, cmd_search_progress_cancel, progress ? state : NULL)) {
+		RZ_LOG_ERROR("code: Failed to setup default search options.\n");
+		goto error;
+	}
+	RzSearchHashFindData *data = rz_search_hash_get_find_data(core->hash, argv[1], argv[2], argv[3]);
+	if (!data) {
+		RZ_LOG_ERROR("Failed to initialized search data.\n");
+		goto error;
+	}
+
+	hits = rz_core_search_hash_material(core, search_opts, data);
+	if (!hits) {
+		RZ_LOG_ERROR("Failed to perform search.\n");
+		goto error;
+	}
+
+	CMD_SEARCH_END();
+	rz_search_opt_free(search_opts);
+	return cmd_core_handle_search_hits(core, state, hits);
+
+error:
+	rz_list_free(hits);
+	rz_search_opt_free(search_opts);
+	CMD_SEARCH_END();
+	return RZ_CMD_STATUS_ERROR;
+}
+
+// "/ce"
+RZ_IPI RzCmdStatus rz_cmd_search_hash_entropy_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	const char *argv_ch[4];
+	argv_ch[0] = argv[0];
+	argv_ch[1] = "entropy_fract";
+	argv_ch[2] = argv[1];
+	argv_ch[3] = argv[2];
+	return rz_cmd_search_hash_block_handler(core, 4, argv_ch, state);
+}
+
 // "/cc"
 RZ_IPI RzCmdStatus rz_cmd_search_collision_handler(RzCore *core, int argc, const char **argv) {
 	return pass_to_legacy_api(core, argc, argv, RZ_OUTPUT_MODE_STANDARD);
@@ -2530,11 +2408,6 @@ RZ_IPI RzCmdStatus rz_cmd_search_graph_path_follow_calls_handler(RzCore *core, i
 	const int depth = rz_config_get_i(core->config, "analysis.depth");
 	rz_core_analysis_paths(core, from, to, true, depth, state->mode == RZ_OUTPUT_MODE_JSON);
 	return RZ_CMD_STATUS_OK;
-}
-
-// "/h"
-RZ_IPI RzCmdStatus rz_cmd_search_hash_block_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return pass_to_legacy_api(core, argc, argv, RZ_OUTPUT_MODE_STANDARD);
 }
 
 // "/m"
@@ -2658,11 +2531,6 @@ RZ_IPI RzCmdStatus rz_cmd_search_reference_write_handler(RzCore *core, int argc,
 
 // "/rx"
 RZ_IPI RzCmdStatus rz_cmd_search_reference_execute_handler(RzCore *core, int argc, const char **argv) {
-	return pass_to_legacy_api(core, argc, argv, RZ_OUTPUT_MODE_STANDARD);
-}
-
-// "/s"
-RZ_IPI RzCmdStatus rz_cmd_search_sections_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	return pass_to_legacy_api(core, argc, argv, RZ_OUTPUT_MODE_STANDARD);
 }
 

@@ -15,9 +15,10 @@ static const RzCmdDescDetail oparen__details[2];
 static const RzCmdDescDetail pointer_details[2];
 static const RzCmdDescDetail interpret_macro_multiple_details[2];
 static const RzCmdDescDetail cmd_search_collision_details[2];
+static const RzCmdDescDetail cmd_search_hash_block_details[3];
+static const RzCmdDescDetail cmd_search_hash_entropy_details[3];
 static const RzCmdDescDetail cmd_search_cryptographic_material_details[2];
 static const RzCmdDescDetail cmd_search_file_details[2];
-static const RzCmdDescDetail cmd_search_hash_block_details[2];
 static const RzCmdDescDetail cmd_search_value_details[3];
 static const RzCmdDescDetail cmd_search_hex_details[2];
 static const RzCmdDescDetail cmd_search_hex_regex_details[2];
@@ -134,6 +135,8 @@ static const RzCmdDescArg cmd_search_assemble_sl_args[2];
 static const RzCmdDescArg cmd_search_assemble_t_args[2];
 static const RzCmdDescArg cmd_search_assemble_tl_args[2];
 static const RzCmdDescArg cmd_search_collision_args[4];
+static const RzCmdDescArg cmd_search_hash_block_args[4];
+static const RzCmdDescArg cmd_search_hash_entropy_args[3];
 static const RzCmdDescArg cmd_search_cryptographic_material_args[2];
 static const RzCmdDescArg cmd_search_deltified_args[2];
 static const RzCmdDescArg cmd_search_file_args[4];
@@ -141,10 +144,8 @@ static const RzCmdDescArg cmd_search_insn_offset_backwards_args[2];
 static const RzCmdDescArg cmd_search_insn_offset_backwards_fallback_args[2];
 static const RzCmdDescArg cmd_search_pattern_args[2];
 static const RzCmdDescArg cmd_search_blocks_args[2];
-static const RzCmdDescArg cmd_search_sections_args[2];
 static const RzCmdDescArg cmd_search_graph_path_args[3];
 static const RzCmdDescArg cmd_search_graph_path_follow_calls_args[3];
-static const RzCmdDescArg cmd_search_hash_block_args[3];
 static const RzCmdDescArg cmd_search_magic_const_args[2];
 static const RzCmdDescArg cmd_search_esil_args[2];
 static const RzCmdDescArg cmd_search_reference_args[2];
@@ -1775,6 +1776,80 @@ static const RzCmdDescHelp cmd_search_collision_help = {
 	.args = cmd_search_collision_args,
 };
 
+static const RzCmdDescDetailEntry cmd_search_hash_block_Usage_space_example_detail_entries[] = {
+	{ .text = "/ch md5 0bc8f8c426b74ffaedac8330a7464014 512", .arg_str = NULL, .comment = "MD5 hash search within blocks of 512 bytes." },
+	{ .text = "/ch entropy_fract 0.6 16k", .arg_str = NULL, .comment = "Find 16384 byte blocks with an entropy of 0.6 and above." },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry cmd_search_hash_block_Tip_detail_entries[] = {
+	{ .text = "The command 'Lh' gives you a list of supported hash plugins.", .arg_str = NULL, .comment = "" },
+	{ 0 },
+};
+static const RzCmdDescDetail cmd_search_hash_block_details[] = {
+	{ .name = "Usage example", .entries = cmd_search_hash_block_Usage_space_example_detail_entries },
+	{ .name = "Tip", .entries = cmd_search_hash_block_Tip_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg cmd_search_hash_block_args[] = {
+	{
+		.name = "algo",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "hash",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "block_size",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.default_value = "256",
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_search_hash_block_help = {
+	.summary = "Search for blocks that have the same hash.",
+	.details = cmd_search_hash_block_details,
+	.args = cmd_search_hash_block_args,
+};
+
+static const RzCmdDescDetailEntry cmd_search_hash_entropy_Usage_space_example_detail_entries[] = {
+	{ .text = "/ce 0.3 512", .arg_str = NULL, .comment = "Find 512 byte blocks with an entropy of 0.3 and above." },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry cmd_search_hash_entropy_Tip_detail_entries[] = {
+	{ .text = "The command 'Lh' gives you a list of supported hash plugins.", .arg_str = NULL, .comment = "" },
+	{ 0 },
+};
+static const RzCmdDescDetail cmd_search_hash_entropy_details[] = {
+	{ .name = "Usage example", .entries = cmd_search_hash_entropy_Usage_space_example_detail_entries },
+	{ .name = "Tip", .entries = cmd_search_hash_entropy_Tip_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg cmd_search_hash_entropy_args[] = {
+	{
+		.name = "entropy",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{
+		.name = "block_size",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.default_value = "256",
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_search_hash_entropy_help = {
+	.summary = "Search for blocks above an entropy level (alias for: /ch entropy_fract <entropy> <block_size>).",
+	.details = cmd_search_hash_entropy_details,
+	.args = cmd_search_hash_entropy_args,
+};
+
 static const RzCmdDescDetailEntry cmd_search_cryptographic_material_Types_detail_entries[] = {
 	{ .text = "aes128", .arg_str = NULL, .comment = "Searches for expanded AES 128 keys." },
 	{ .text = "aes192", .arg_str = NULL, .comment = "Searches for expanded AES 192 keys." },
@@ -1916,20 +1991,6 @@ static const RzCmdDescHelp cmd_search_blocks_help = {
 	.args = cmd_search_blocks_args,
 };
 
-static const RzCmdDescArg cmd_search_sections_args[] = {
-	{
-		.name = "threshold",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_search_sections_help = {
-	.summary = "Search sections by grouping blocks with similar entropy.",
-	.args = cmd_search_sections_args,
-};
-
 static const RzCmdDescHelp slash_g_help = {
 	.summary = "Search for all graph paths A to B.",
 };
@@ -1969,34 +2030,6 @@ static const RzCmdDescArg cmd_search_graph_path_follow_calls_args[] = {
 static const RzCmdDescHelp cmd_search_graph_path_follow_calls_help = {
 	.summary = "Search for all graph paths A to B (follows calls, see `search.count` and `analysis.depth`).",
 	.args = cmd_search_graph_path_follow_calls_args,
-};
-
-static const RzCmdDescDetailEntry cmd_search_hash_block_Usage_space_example_detail_entries[] = {
-	{ .text = "MD5 hash search within blocks of 512 bytes.", .arg_str = NULL, .comment = "/h md5 0bc8f8c426b74ffaedac8330a7464014 @! 512" },
-	{ 0 },
-};
-static const RzCmdDescDetail cmd_search_hash_block_details[] = {
-	{ .name = "Usage example", .entries = cmd_search_hash_block_Usage_space_example_detail_entries },
-	{ 0 },
-};
-static const RzCmdDescArg cmd_search_hash_block_args[] = {
-	{
-		.name = "algo",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-
-	},
-	{
-		.name = "hash",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_search_hash_block_help = {
-	.summary = "Search for blocks that have the same hash (see also command `ph`).",
-	.details = cmd_search_hash_block_details,
-	.args = cmd_search_hash_block_args,
 };
 
 static const RzCmdDescHelp slash_m_help = {
@@ -21072,6 +21105,14 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_search_collision_cd = rz_cmd_desc_argv_new(core->rcmd, slash_c_cd, "/cc", rz_cmd_search_collision_handler, &cmd_search_collision_help);
 	rz_warn_if_fail(cmd_search_collision_cd);
 
+	RzCmdDesc *cmd_search_hash_block_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_c_cd, "/ch", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_hash_block_handler, &cmd_search_hash_block_help);
+	rz_warn_if_fail(cmd_search_hash_block_cd);
+	rz_cmd_desc_set_default_mode(cmd_search_hash_block_cd, RZ_OUTPUT_MODE_STANDARD);
+
+	RzCmdDesc *cmd_search_hash_entropy_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_c_cd, "/ce", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_hash_entropy_handler, &cmd_search_hash_entropy_help);
+	rz_warn_if_fail(cmd_search_hash_entropy_cd);
+	rz_cmd_desc_set_default_mode(cmd_search_hash_entropy_cd, RZ_OUTPUT_MODE_STANDARD);
+
 	RzCmdDesc *cmd_search_cryptographic_material_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_c_cd, "/cm", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_cryptographic_material_handler, &cmd_search_cryptographic_material_help);
 	rz_warn_if_fail(cmd_search_cryptographic_material_cd);
 	rz_cmd_desc_set_default_mode(cmd_search_cryptographic_material_cd, RZ_OUTPUT_MODE_STANDARD);
@@ -21100,20 +21141,12 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(cmd_search_blocks_cd);
 	rz_cmd_desc_set_default_mode(cmd_search_blocks_cd, RZ_OUTPUT_MODE_STANDARD);
 
-	RzCmdDesc *cmd_search_sections_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash__cd, "/s", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_sections_handler, &cmd_search_sections_help);
-	rz_warn_if_fail(cmd_search_sections_cd);
-	rz_cmd_desc_set_default_mode(cmd_search_sections_cd, RZ_OUTPUT_MODE_STANDARD);
-
 	RzCmdDesc *slash_g_cd = rz_cmd_desc_group_state_new(core->rcmd, slash__cd, "/g", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_search_graph_path_handler, &cmd_search_graph_path_help, &slash_g_help);
 	rz_warn_if_fail(slash_g_cd);
 	rz_cmd_desc_set_default_mode(slash_g_cd, RZ_OUTPUT_MODE_STANDARD);
 	RzCmdDesc *cmd_search_graph_path_follow_calls_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_g_cd, "/gg", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_search_graph_path_follow_calls_handler, &cmd_search_graph_path_follow_calls_help);
 	rz_warn_if_fail(cmd_search_graph_path_follow_calls_cd);
 	rz_cmd_desc_set_default_mode(cmd_search_graph_path_follow_calls_cd, RZ_OUTPUT_MODE_STANDARD);
-
-	RzCmdDesc *cmd_search_hash_block_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash__cd, "/h", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_hash_block_handler, &cmd_search_hash_block_help);
-	rz_warn_if_fail(cmd_search_hash_block_cd);
-	rz_cmd_desc_set_default_mode(cmd_search_hash_block_cd, RZ_OUTPUT_MODE_STANDARD);
 
 	RzCmdDesc *slash_m_cd = rz_cmd_desc_group_state_new(core->rcmd, slash__cd, "/m", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_magic_const_handler, &cmd_search_magic_const_help, &slash_m_help);
 	rz_warn_if_fail(slash_m_cd);

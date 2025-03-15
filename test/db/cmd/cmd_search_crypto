@@ -310,3 +310,115 @@ Algorithm:
 Signature: 256 bytes
 EOF
 RUN
+
+NAME=/ch not existing algo
+FILE=
+CMDS=<<EOF
+/ch asdasd 00
+EOF
+EXPECT_ERR=<<EOF
+ERROR: msg digest: 'asdasd' does not exists.
+ERROR: The hash algorithm 'asdasd' is not supported for the search. List supported with the command 'Lh'.
+ERROR: Failed to initialized search data.
+EOF
+RUN
+
+NAME=/ch entropy_fract error too large entropy limit
+FILE=
+CMDS=<<EOF
+/ch entropy_fract 2.0
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Threshold '2.000000' cannot be larger than 1.0.
+ERROR: Failed to parse has search arguments.
+ERROR: Failed to initialized search data.
+EOF
+RUN
+
+NAME=/ch entropy_fract error too small entropy limit
+FILE=
+CMDS=<<EOF
+/ch entropy_fract -0.3
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Threshold '-0.300000' cannot be smaller than 0.0.
+ERROR: Failed to parse has search arguments.
+ERROR: Failed to initialized search data.
+EOF
+RUN
+
+NAME=/ch entropy_fract error odd block size
+FILE=
+CMDS=<<EOF
+/ch entropy_fract 0.3 13
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Odd or zero block sizes are not allowed.
+ERROR: Failed to initialized search data.
+EOF
+RUN
+
+NAME=/ch entropy_fract error 0 block size
+FILE=
+CMDS=<<EOF
+/ch entropy_fract 0.3 0
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Odd or zero block sizes are not allowed.
+ERROR: Failed to initialized search data.
+EOF
+RUN
+
+NAME=/ch aligned
+FILE=bins/elf/analysis/x86-simple
+CMDS=<<EOF
+e search.align=0x20
+echo ----all----
+/ch entropy_fract 0.0 256
+echo ----0x20 block size----
+/ch entropy_fract 0.0 0x20
+echo ----above 0.5----
+/ch entropy_fract 0.5 0x20
+EOF
+EXPECT=<<EOF
+----all----
+0x08048000 114 hit.entropy_fract.0 0.36193749
+0x08048020 82 hit.entropy_fract.1 0.34642421
+----0x20 block size----
+0x08048000 32 hit.entropy_fract.0 0.51570707
+0x08048020 32 hit.entropy_fract.1 0.41100834
+0x08048040 32 hit.entropy_fract.2 0.26189747
+0x08048060 18 hit.entropy_fract.3 0.55742235
+----above 0.5----
+0x08048000 32 hit.entropy_fract.0 0.51570707
+0x08048060 18 hit.entropy_fract.1 0.55742235
+EOF
+RUN
+
+NAME=/ch entropy_fract 0.0
+FILE=
+CMDS=<<EOF
+/ch entropy_fract 0.0
+/ch entropy_fract 0.2
+EOF
+EXPECT=<<EOF
+0x00000000 256 hit.entropy_fract.0 0.00000000
+0x00000100 256 hit.entropy_fract.1 0.00000000
+EOF
+RUN
+
+NAME=/ce alias
+FILE=
+CMDS=<<EOF
+/ce 0.0
+/ce 0.2
+EOF
+EXPECT=<<EOF
+0x00000000 256 hit.entropy_fract.0 0.00000000
+0x00000100 256 hit.entropy_fract.1 0.00000000
+EOF
+RUN

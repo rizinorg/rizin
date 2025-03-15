@@ -131,6 +131,14 @@ struct rz_search_interval_t {
 	size_t n_hits;
 };
 
+struct rz_search_hash_find_data_t {
+	char *algo; ///< The hash algorithm.
+	void *digits; ///< The expected hash digits the data block should match.
+	size_t digits_len; ///< Length of the expected digits.
+	ut64 block_size; ///< The data block size given as input to the hash function.
+	const RzHash *rz_hash; ///< Immutable RzHash instance with all registered plugins.
+};
+
 /**
  * \brief Checks of \p fopst->alignment is aligned.
  * If not, it increases \p offset by the required patting to align address + offset again and continues.

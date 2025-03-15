@@ -371,6 +371,62 @@ quit:
 }
 
 /**
+ * \brief      Finds a hash material in the IO layer of the given core and core configuration.
+ *
+ * \param      core The RzCore core.
+ * \param      opt  The search options to apply. If it is NULL a default set of options is used.
+ * \param      data Optional additional search data. Some crytpographic searches require additional data (e.g. entropy search).
+ *
+ * \return     On success returns a pointer to the search hits, otherwise NULL
+ */
+RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_hash_material(
+	RZ_NONNULL RzCore *core,
+	RZ_BORROW RZ_NULLABLE RzSearchOpt *user_opts,
+	RZ_NULLABLE RzSearchHashFindData *data) {
+	rz_return_val_if_fail(core && core->config, NULL);
+
+	RzList *hits = NULL;
+	RzList *boundaries = NULL;
+	RzSearchOpt *search_opts = NULL;
+
+	RzSearchCollection *collection = rz_search_collection_hash();
+	if (!collection) {
+		return NULL;
+	}
+
+	if (!rz_search_collection_hash_add(collection, data)) {
+		goto quit;
+	}
+
+	if (!user_opts) {
+		// override user_opts with default one
+		user_opts = search_opts = default_search_options();
+		if (!search_opts) {
+			goto quit;
+		}
+	}
+
+	if (!rz_search_opt_set_chunk_size(user_opts, rz_search_hash_get_element_size(collection))) {
+		RZ_LOG_ERROR("search: Failed to update chunk size in the search options.\n");
+		goto quit;
+	}
+
+	boundaries = rz_core_setup_io_search_parameters(core, user_opts);
+	if (!boundaries) {
+		RZ_LOG_ERROR("core: Setting up search from core failed.\n");
+		goto quit;
+	}
+
+	hits = perform_search_on_core_io(core, user_opts, boundaries, collection);
+
+quit:
+	rz_list_free(boundaries);
+	rz_search_opt_free(search_opts);
+	rz_search_collection_free(collection);
+	return hits;
+}
+
+/**
  * \brief Searches magics defined in \p magic_dir.
  *
  * \param core The core to use.

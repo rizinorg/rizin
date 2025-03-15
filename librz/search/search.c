@@ -827,6 +827,15 @@ RZ_IPI void rz_search_hit_free(RZ_NULLABLE RzSearchHit *hit) {
 	switch (hit->detail_type) {
 	case RZ_SEARCH_HIT_DETAIL_NONE:
 		break;
+	case RZ_SEARCH_HIT_DETAIL_HASH:
+		if (hit->details) {
+			RzSearchiHitDetailHash *hdetails = hit->details;
+			free(hdetails->algo);
+			free(hdetails->hash);
+			free(hdetails->hash_str);
+		}
+		free(hit->details);
+	}
 	free(hit->hit_desc);
 	free(hit->comment);
 	free(hit);

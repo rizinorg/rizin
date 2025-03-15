@@ -42,6 +42,7 @@ static bool set_chunk_size(RZ_NONNULL RzSearchOpt *opt, ut64 chunk_size) {
 }
 
 static bool element_chunk_ratio_ok(ut64 element_size, ut64 chunk_size) {
+	rz_return_val_if_fail(element_size != 0, false);
 	if (element_size >= chunk_size) {
 		return false;
 	}

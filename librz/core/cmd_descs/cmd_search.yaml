@@ -224,6 +224,60 @@ commands:
               comment: "printable (alpha + digit)"
             - text: b
               comment: "binary (any number is valid)"
+    - name: "/ch"
+      summary: Search for blocks that have the same hash.
+      cname: cmd_search_hash_block
+      type: RZ_CMD_DESC_TYPE_ARGV_STATE
+      default_mode: RZ_OUTPUT_MODE_STANDARD
+      modes:
+        - RZ_OUTPUT_MODE_STANDARD
+        - RZ_OUTPUT_MODE_JSON
+        - RZ_OUTPUT_MODE_QUIET
+        - RZ_OUTPUT_MODE_TABLE
+      args:
+        - name: algo
+          type: RZ_CMD_ARG_TYPE_STRING
+        - name: hash
+          type: RZ_CMD_ARG_TYPE_STRING
+        - name: "block_size"
+          type: RZ_CMD_ARG_TYPE_NUM
+          default_value: "256"
+      details:
+        - name: Usage example
+          entries:
+            - text: "/ch md5 0bc8f8c426b74ffaedac8330a7464014 512"
+              comment: "MD5 hash search within blocks of 512 bytes."
+            - text: /ch entropy_fract 0.6 16k
+              comment: "Find 16384 byte blocks with an entropy of 0.6 and above."
+        - name: Tip
+          entries:
+            - text: "The command 'Lh' gives you a list of supported hash plugins."
+              comment: ""
+    - name: "/ce"
+      summary: "Search for blocks above an entropy level (alias for: /ch entropy_fract <entropy> <block_size>)."
+      cname: cmd_search_hash_entropy
+      type: RZ_CMD_DESC_TYPE_ARGV_STATE
+      default_mode: RZ_OUTPUT_MODE_STANDARD
+      modes:
+        - RZ_OUTPUT_MODE_STANDARD
+        - RZ_OUTPUT_MODE_JSON
+        - RZ_OUTPUT_MODE_QUIET
+        - RZ_OUTPUT_MODE_TABLE
+      args:
+        - name: entropy
+          type: RZ_CMD_ARG_TYPE_NUM
+        - name: "block_size"
+          type: RZ_CMD_ARG_TYPE_NUM
+          default_value: "256"
+      details:
+        - name: Usage example
+          entries:
+            - text: /ce 0.3 512
+              comment: "Find 512 byte blocks with an entropy of 0.3 and above."
+        - name: Tip
+          entries:
+            - text: "The command 'Lh' gives you a list of supported hash plugins."
+              comment: ""
     - name: "/cm"
       summary: Search cryptographic material.
       cname: cmd_search_cryptographic_material
@@ -358,19 +412,6 @@ commands:
     args:
       - name: "patternsize"
         type: RZ_CMD_ARG_TYPE_NUM
-  - name: "/s"
-    summary: Search sections by grouping blocks with similar entropy.
-    cname: cmd_search_sections
-    type: RZ_CMD_DESC_TYPE_ARGV_STATE
-    default_mode: RZ_OUTPUT_MODE_STANDARD
-    modes:
-      - RZ_OUTPUT_MODE_STANDARD
-      - RZ_OUTPUT_MODE_JSON
-      - RZ_OUTPUT_MODE_QUIET
-      - RZ_OUTPUT_MODE_TABLE
-    args:
-      - name: "threshold"
-        type: RZ_CMD_ARG_TYPE_STRING
 
   - name: "/g"
     summary: Search for all graph paths A to B.
@@ -401,28 +442,6 @@ commands:
           type: RZ_CMD_ARG_TYPE_RZNUM
         - name: to
           type: RZ_CMD_ARG_TYPE_RZNUM
-
-  - name: "/h"
-    summary: Search for blocks that have the same hash (see also command `ph`).
-    cname: cmd_search_hash_block
-    type: RZ_CMD_DESC_TYPE_ARGV_STATE
-    default_mode: RZ_OUTPUT_MODE_STANDARD
-    modes:
-      - RZ_OUTPUT_MODE_STANDARD
-      - RZ_OUTPUT_MODE_JSON
-      - RZ_OUTPUT_MODE_QUIET
-      - RZ_OUTPUT_MODE_TABLE
-    args:
-      - name: algo
-        type: RZ_CMD_ARG_TYPE_STRING
-      - name: hash
-        type: RZ_CMD_ARG_TYPE_STRING
-    details:
-      - name: Usage example
-        entries:
-          - text: "MD5 hash search within blocks of 512 bytes."
-            comment: "/h md5 0bc8f8c426b74ffaedac8330a7464014 @! 512"
-
   - name: "/m"
     summary: Magic constants search.
     subcommands:
