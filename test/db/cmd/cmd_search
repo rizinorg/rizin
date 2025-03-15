@@ -960,3 +960,18 @@ from     to size perms
  0x0 0x2148 8520 rwx
 EOF
 RUN
+
+NAME=error - search unmapped region
+CMDS=<<EOF
+e search.from=0xf0000000000
+e search.to=0xf0000000020
+/cm
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: The range [0xf0000000000, 0xf0000000020] doesn't overlap with a mapped memory region or
+the region is not included in search.in.
+ERROR: core: Setting up search from core failed.
+ERROR: Failed to perform search.
+EOF
+RUN

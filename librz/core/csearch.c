@@ -58,7 +58,13 @@ RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_setup_io_search_parameters(RzCore 
 	if (!boundaries || rz_list_empty(boundaries)) {
 		ut64 from = rz_config_get_i(core->config, "search.from");
 		ut64 to = rz_config_get_i(core->config, "search.to");
-		RZ_LOG_ERROR("core: Failed to get search boundaries within [0x%" PFMT64x ", 0x%" PFMT64x "].\n", from, to);
+		if (!boundaries) {
+			RZ_LOG_ERROR("Failed to initialize boundaries within [0x%" PFMT64x ", 0x%" PFMT64x "].\n", from, to);
+		} else {
+			RZ_LOG_ERROR("The range [0x%" PFMT64x ", 0x%" PFMT64x "] doesn't overlap with a mapped memory region or\n"
+				     "the region is not included in search.in.\n",
+				from, to);
+		}
 		goto fail;
 	}
 
