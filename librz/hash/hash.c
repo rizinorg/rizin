@@ -215,7 +215,7 @@ static HashCfgConfig *hash_cfg_config_new(const RzHashPlugin *plugin) {
 	return mdc;
 }
 
-RZ_API RZ_BORROW const RzHashPlugin *rz_hash_plugin_by_name(RZ_NONNULL RzHash *rh, RZ_NONNULL const char *name) {
+RZ_API RZ_BORROW const RzHashPlugin *rz_hash_plugin_by_name(const RZ_NONNULL RzHash *rh, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(name && rh, NULL);
 
 	bool found = false;
@@ -226,7 +226,7 @@ RZ_API RZ_BORROW const RzHashPlugin *rz_hash_plugin_by_name(RZ_NONNULL RzHash *r
 	return NULL;
 }
 
-RZ_API RZ_OWN RzHashCfg *rz_hash_cfg_new(RZ_NONNULL RzHash *rh) {
+RZ_API RZ_OWN RzHashCfg *rz_hash_cfg_new(const RZ_NONNULL RzHash *rh) {
 	rz_return_val_if_fail(rh, NULL);
 
 	RzHashCfg *md = RZ_NEW0(RzHashCfg);
@@ -253,7 +253,7 @@ RZ_API RZ_OWN RzHashCfg *rz_hash_cfg_new(RZ_NONNULL RzHash *rh) {
  * with the given algorithm and runs also the algo init.
  * when fails to allocate or configure or initialize, returns NULL.
  * */
-RZ_API RZ_OWN RzHashCfg *rz_hash_cfg_new_with_algo(RZ_NONNULL RzHash *rh, RZ_NONNULL const char *name, RZ_NULLABLE const ut8 *key, ut64 key_size) {
+RZ_API RZ_OWN RzHashCfg *rz_hash_cfg_new_with_algo(const RZ_NONNULL RzHash *rh, RZ_NONNULL const char *name, RZ_NULLABLE const ut8 *key, ut64 key_size) {
 	rz_return_val_if_fail(rh && name, NULL);
 	RzHashCfg *md = rz_hash_cfg_new(rh);
 	if (!md) {
@@ -542,7 +542,7 @@ RZ_API bool rz_hash_cfg_iterate(RZ_NONNULL RzHashCfg *md, size_t iterate) {
  * RzHashCfg contains a list of configurations; this method will search
  * for the configuration with the given name and if found return the digest value.
  * */
-RZ_API RZ_BORROW const ut8 *rz_hash_cfg_get_result(RZ_NONNULL RzHashCfg *md, RZ_NONNULL const char *name, RZ_NONNULL ut32 *size) {
+RZ_API RZ_BORROW const ut8 *rz_hash_cfg_get_result(RZ_NONNULL RzHashCfg *md, RZ_NONNULL const char *name, RZ_NULLABLE ut32 *size) {
 	rz_return_val_if_fail(md && name && hash_cfg_has_finshed(md), false);
 
 	RzListIter *it = rz_list_find(md->configurations, name, hash_cfg_config_compare, NULL);
