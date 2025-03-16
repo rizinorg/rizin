@@ -937,56 +937,56 @@ static inline void analysis_CACHE(RzAnalysisOp *op, pyc_opcode_object *op_obj, u
 	op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 }
 
-static inline void analysis_BINARY_SLICE(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg){
-		analysis_pop(op,op_obj,oparg, RZ_ANALYSIS_OP_TYPE_UNK,2);
+static inline void analysis_BINARY_SLICE(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	analysis_pop(op, op_obj, oparg, RZ_ANALYSIS_OP_TYPE_UNK, 2);
 }
 
-static inline void analysis_STORE_SLICE(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg){
-		analysis_pop(op,op_obj,oparg, RZ_ANALYSIS_OP_TYPE_UNK,4);
+static inline void analysis_STORE_SLICE(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	analysis_pop(op, op_obj, oparg, RZ_ANALYSIS_OP_TYPE_UNK, 4);
 }
 
-static inline void analysis_CALL_INTRINSIC_1(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg){
-		op->type=RZ_ANALYSIS_OP_TYPE_UCALL;
+static inline void analysis_CALL_INTRINSIC_1(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	op->type = RZ_ANALYSIS_OP_TYPE_UCALL;
 }
 
-static inline void analysis_CALL_INTRINSIC_2(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg){
-		analysis_pop(op,op_obj,oparg,RZ_ANALYSIS_OP_TYPE_UCALL,1);
+static inline void analysis_CALL_INTRINSIC_2(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	analysis_pop(op, op_obj, oparg, RZ_ANALYSIS_OP_TYPE_UCALL, 1);
 }
 
-static inline void analysis_CLEANUP_THROW(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg){
-		analysis_pop(op,op_obj,oparg,RZ_ANALYSIS_OP_TYPE_UNK,2);
+static inline void analysis_CLEANUP_THROW(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	analysis_pop(op, op_obj, oparg, RZ_ANALYSIS_OP_TYPE_UNK, 2);
 }
 
-static inline void analysis_END_SEND(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg){
-		op->type=RZ_ANALYSIS_OP_TYPE_UNK;
+static inline void analysis_END_SEND(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	op->type = RZ_ANALYSIS_OP_TYPE_UNK;
 }
 
-static inline void analysis_END_FOR(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg){
-		op->type=RZ_ANALYSIS_OP_TYPE_UNK;
+static inline void analysis_END_FOR(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	op->type = RZ_ANALYSIS_OP_TYPE_UNK;
 }
 
-static inline void analysis_LOAD_FAST_AND_CLEAR(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg){
-		analysis_push(op,op_obj,oparg,RZ_ANALYSIS_OP_TYPE_UNK,1);
+static inline void analysis_LOAD_FAST_AND_CLEAR(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	analysis_push(op, op_obj, oparg, RZ_ANALYSIS_OP_TYPE_UNK, 1);
 }
 
-static inline void analysis_LOAD_FAST_CHECK(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg){
-		analysis_push(op,op_obj,oparg,RZ_ANALYSIS_OP_TYPE_UNK,1);
+static inline void analysis_LOAD_FAST_CHECK(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	analysis_push(op, op_obj, oparg, RZ_ANALYSIS_OP_TYPE_UNK, 1);
 }
 
-static inline void analysis_LOAD_FROM_DICT_OR_DEREF(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg){
-		analysis_pop(op,op_obj,oparg,RZ_ANALYSIS_OP_TYPE_UNK,1);
+static inline void analysis_LOAD_FROM_DICT_OR_DEREF(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	analysis_pop(op, op_obj, oparg, RZ_ANALYSIS_OP_TYPE_UNK, 1);
 }
 
-static inline void analysis_LOAD_FROM_DICT_OR_GLOBALS(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg){
-		op->type=RZ_ANALYSIS_OP_TYPE_UNK;
+static inline void analysis_LOAD_FROM_DICT_OR_GLOBALS(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	op->type = RZ_ANALYSIS_OP_TYPE_UNK;
 }
 
-static inline void analysis_LOAD_SUPER_ATTR(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg){
-		analysis_pop(op,op_obj,oparg,RZ_ANALYSIS_OP_TYPE_UNK,3);
+static inline void analysis_LOAD_SUPER_ATTR(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	analysis_pop(op, op_obj, oparg, RZ_ANALYSIS_OP_TYPE_UNK, 3);
 }
 
-static inline void analysis_RETURN_CONST(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg){
-		op->type=RZ_ANALYSIS_OP_TYPE_UNK;
+static inline void analysis_RETURN_CONST(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	op->type = RZ_ANALYSIS_OP_TYPE_UNK;
 }
 
 static op_analysis_func op_analysis[] = {
@@ -1183,19 +1183,19 @@ static op_analysis_func op_analysis[] = {
 	{ "POP_JUMP_BACKWARD_IF_NONE", analysis_POP_JUMP_BACKWARD_IF_NONE },
 	{ "BEFORE_WITH", analysis_BEFORE_WITH },
 	{ "CACHE", analysis_CACHE },
-	{"BINARY_SLICE",analysis_BINARY_SLICE},
-	{"STORE_SLICE",analysis_STORE_SLICE},
-	{"CALL_INTRINSIC_1",analysis_CALL_INTRINSIC_1},
-	{"CALL_INTRINSIC_2",analysis_CALL_INTRINSIC_2},
-	{"CLEANUP_THROW",analysis_CLEANUP_THROW},
-	{"END_SEND",analysis_END_SEND},
-	{"LOAD_FAST_AND_CLEAR",analysis_LOAD_FAST_AND_CLEAR},
-	{"LOAD_FAST_CHECK",analysis_LOAD_FAST_CHECK},
-	{"LOAD_FROM_DICT_OR_DEREF",analysis_LOAD_FROM_DICT_OR_DEREF},
-	{"LOAD_FROM_DICT_OR_GLOBALS",analysis_LOAD_FROM_DICT_OR_GLOBALS},
-	{"LOAD_LOCALS",analysis_LOAD_LOCALS},
-	{"LOAD_SUPER_ATTR",analysis_LOAD_SUPER_ATTR},
-	{"RETURN_CONST",analysis_RETURN_CONST},
+	{ "BINARY_SLICE", analysis_BINARY_SLICE },
+	{ "STORE_SLICE", analysis_STORE_SLICE },
+	{ "CALL_INTRINSIC_1", analysis_CALL_INTRINSIC_1 },
+	{ "CALL_INTRINSIC_2", analysis_CALL_INTRINSIC_2 },
+	{ "CLEANUP_THROW", analysis_CLEANUP_THROW },
+	{ "END_SEND", analysis_END_SEND },
+	{ "LOAD_FAST_AND_CLEAR", analysis_LOAD_FAST_AND_CLEAR },
+	{ "LOAD_FAST_CHECK", analysis_LOAD_FAST_CHECK },
+	{ "LOAD_FROM_DICT_OR_DEREF", analysis_LOAD_FROM_DICT_OR_DEREF },
+	{ "LOAD_FROM_DICT_OR_GLOBALS", analysis_LOAD_FROM_DICT_OR_GLOBALS },
+	{ "LOAD_LOCALS", analysis_LOAD_LOCALS },
+	{ "LOAD_SUPER_ATTR", analysis_LOAD_SUPER_ATTR },
+	{ "RETURN_CONST", analysis_RETURN_CONST },
 };
 
 void analysis_pyc_op(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {

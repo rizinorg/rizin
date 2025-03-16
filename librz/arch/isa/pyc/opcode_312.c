@@ -20,11 +20,10 @@ pyc_opcodes *opcode_312(void) {
 	rm_op(.op_obj = ret->opcodes, .op_name = "POP_JUMP_FORWARD_IF_NOT_NONE", .op_code = 128);
 	rm_op(.op_obj = ret->opcodes, .op_name = "POP_JUMP_FORWARD_IF_NONE", .op_code = 129);
 
-	jabs_op(.op_obj=ret->opcodes, .op_name="POP_JUMP_IF_FALSE",.op_code=114, .conditional=true);
-	jabs_op(.op_obj=ret->opcodes, .op_name="POP_JUMP_IF_TRUE",.op_code=115, .conditional=true);
-	jabs_op(.op_obj=ret->opcodes, .op_name="POP_JUMP_IF_NOT_NONE", .op_code=128, .conditional=true);
-	jabs_op(.op_obj=ret->opcodes, .op_name="POP_JUMP_IF_NONE", .op_code=129, .conditional=true);
-
+	jabs_op(.op_obj = ret->opcodes, .op_name = "POP_JUMP_IF_FALSE", .op_code = 114, .conditional = true);
+	jabs_op(.op_obj = ret->opcodes, .op_name = "POP_JUMP_IF_TRUE", .op_code = 115, .conditional = true);
+	jabs_op(.op_obj = ret->opcodes, .op_name = "POP_JUMP_IF_NOT_NONE", .op_code = 128, .conditional = true);
+	jabs_op(.op_obj = ret->opcodes, .op_name = "POP_JUMP_IF_NONE", .op_code = 129, .conditional = true);
 
 	def_op(.op_obj = ret->opcodes, .op_name = "BINARY_SLICE", .op_code = 26, .pop = 3, .push = 1);
 	def_op(.op_obj = ret->opcodes, .op_name = "STORE_SLICE", .op_code = 27, .pop = 4, .push = 0);
