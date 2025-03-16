@@ -1467,6 +1467,7 @@ bool test_call_multiple_macros(void) {
 }
 
 int all_tests() {
+	rz_cons_new();
 	mu_run_test(test_parsed_args_noargs);
 	mu_run_test(test_parsed_args_onearg);
 	mu_run_test(test_parsed_args_args);
