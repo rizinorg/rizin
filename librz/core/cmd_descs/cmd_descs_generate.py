@@ -15,7 +15,6 @@ from cmd_descs_util import (
     CD_TYPE_FAKE,
     CD_TYPE_GROUP,
     CD_TYPE_INNER,
-    CD_TYPE_OLDINPUT,
     CD_VALID_TYPES,
     compute_cname,
     get_handler_cname,
@@ -105,9 +104,6 @@ DESC_HELP_TEMPLATE = """static const RzCmdDescHelp {cname} = {{
 {description}{args_str}{usage}{options}{details}{details_cb}{args}{sort_subcommands}}};
 """
 
-DEFINE_OLDINPUT_TEMPLATE = """
-\tRzCmdDesc *{cname}_cd = rz_cmd_desc_oldinput_new(core->rcmd, {parent_cname}_cd, {name}, {handler_cname}, &{help_cname});
-\trz_warn_if_fail({cname}_cd);"""
 DEFINE_ARGV_TEMPLATE = """
 \tRzCmdDesc *{cname}_cd = rz_cmd_desc_argv_new(core->rcmd, {parent_cname}_cd, {name}, {handler_cname}, &{help_cname});
 \trz_warn_if_fail({cname}_cd);"""
@@ -438,8 +434,7 @@ class CmdDesc:
             sys.exit(1)
 
         if (
-            self.type
-            in [CD_TYPE_ARGV, CD_TYPE_ARGV_MODES, CD_TYPE_ARGV_STATE, CD_TYPE_OLDINPUT]
+            self.type in [CD_TYPE_ARGV, CD_TYPE_ARGV_MODES, CD_TYPE_ARGV_STATE]
             and not self.cname
         ):
             print("Command '%s' does not have cname field" % (self.name,))
@@ -460,7 +455,6 @@ class CmdDesc:
         if self.parent and self.parent.type not in [
             CD_TYPE_GROUP,
             CD_TYPE_INNER,
-            CD_TYPE_OLDINPUT,
         ]:
             print("The parent of '%s' is of the wrong type" % (self.cname,))
             sys.exit(1)
@@ -479,13 +473,12 @@ class CmdDesc:
 
     def get_handler_cname(self):
         if self.type not in [
-            CD_TYPE_OLDINPUT,
             CD_TYPE_ARGV,
             CD_TYPE_ARGV_MODES,
             CD_TYPE_ARGV_STATE,
         ]:
             return None
-        return get_handler_cname(self.type, self.handler, self.cname)
+        return get_handler_cname(self.handler, self.cname)
 
     @classmethod
     def get_arg_cname(cls, cd):
@@ -716,17 +709,6 @@ def createcd(cd):
         formatted_string += "\n".join(
             [createcd(child) for child in cd.subcommands or []]
         )
-    elif cd.type == CD_TYPE_OLDINPUT:
-        formatted_string = DEFINE_OLDINPUT_TEMPLATE.format(
-            cname=cd.cname,
-            parent_cname=cd.parent.cname,
-            name=strornull(cd.name),
-            handler_cname=cd.get_handler_cname(),
-            help_cname=cd.get_help_cname(),
-        )
-        formatted_string += "\n".join(
-            [createcd(child) for child in cd.subcommands or []]
-        )
     elif cd.type == CD_TYPE_GROUP:
         formatted_string = createcd_typegroup(cd)
     else:
@@ -774,15 +756,6 @@ def handler2decl(cd, cd_type, handler_name, db_names):
     if cd_type == CD_TYPE_ARGV_STATE and handler_name not in db_names:
         out.append(
             '// "%s"\nRZ_IPI RzCmdStatus %s(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);'
-            % (
-                cd.name,
-                handler_name,
-            )
-        )
-        db_names.add(handler_name)
-    if cd_type == CD_TYPE_OLDINPUT and handler_name not in db_names:
-        out.append(
-            '// "%s"\nRZ_IPI int %s(void *data, const char *input);'
             % (
                 cd.name,
                 handler_name,

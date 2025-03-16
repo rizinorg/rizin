@@ -140,14 +140,12 @@ If that doesn't work, please report the problem to us! However, you can still
 find the handler yourself by looking at the file
 [`librz/core/cmd_descs/cmd_descs.yaml`](https://github.com/rizinorg/rizin/blob/6f40dfe493f0caf9e0541e1ee83e3d8012b5750f/librz/core/cmd_descs/cmd_descs.yaml).
 By looking at the `cname` field of the command descriptor, you can see what is
-the name of the handler of the `x` command. If the `cname` is `hex` and the type
-is `RZ_CMD_DESC_TYPE_OLDINPUT`, then the handler will be named `rz_hex`. In all
-other cases, the handler will be named `rz_hex_handler`.
+the name of the handler of the `x` command. It is always of the form `rz_<cname>_handler`.
+So for the command `x` with `cname = hex` the handler is `rz_hex_handler`.
 
 Some examples:
 - command: `wv`, type: unspecified (default to `RZ_CMD_DESC_TYPE_ARGV`), handler: `rz_write_value_handler`
 - command: `w6d`, type: unspecified (default to `RZ_CMD_DESC_TYPE_ARGV`), handler: `rz_write_base64_decode_handler`
-- command: `s`, type: `RZ_CMD_DESC_TYPE_OLDINPUT`, handler: `rz_cmd_seek`
 
 ## How to improve the help messages of a command
 

@@ -3009,7 +3009,7 @@ static RzCmdParsedArgs *parse_args(struct tsr2cmd_state *state, TSNode args, boo
 			TSNode arg = ts_node_named_child(args, i);
 			bool arg_raw = is_arg_raw(cd, i);
 			bool do_unwrap_arg = do_unwrap;
-			if (!do_unwrap && cd && cd->type != RZ_CMD_DESC_TYPE_OLDINPUT && !arg_raw) {
+			if (!do_unwrap && cd && !arg_raw) {
 				do_unwrap_arg = true;
 			}
 			unescaped_args[i] = do_handle_ts_unescape_arg(state, arg, arg_raw, do_unwrap_arg);
@@ -3022,7 +3022,7 @@ static RzCmdParsedArgs *parse_args(struct tsr2cmd_state *state, TSNode args, boo
 		return res;
 	} else {
 		bool arg_raw = is_arg_raw(cd, 0);
-		if (!do_unwrap && cd && cd->type != RZ_CMD_DESC_TYPE_OLDINPUT && !arg_raw) {
+		if (!do_unwrap && cd && !arg_raw) {
 			do_unwrap = true;
 		}
 		char *unescaped_args[] = { do_handle_ts_unescape_arg(state, args, arg_raw, do_unwrap) };

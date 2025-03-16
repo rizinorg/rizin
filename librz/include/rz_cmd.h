@@ -345,16 +345,11 @@ typedef struct rz_cmd_desc_help_t {
 
 typedef enum rz_cmd_desc_type_t {
 	/**
-	 * For old handlers that parse their own input and accept a single string.
-	 * Mainly used for legacy reasons with old command handlers.
-	 */
-	RZ_CMD_DESC_TYPE_OLDINPUT = 0,
-	/**
 	 * For handlers that accept argc/argv. It cannot have children. Use
 	 * RZ_CMD_DESC_TYPE_GROUP if you need a command that can be both
 	 * executed and has sub-commands.
 	 */
-	RZ_CMD_DESC_TYPE_ARGV,
+	RZ_CMD_DESC_TYPE_ARGV = 0,
 	/**
 	 * For cmd descriptors that are parent of other sub-commands, even if
 	 * they may also have a sub-command with the same name. For example,
@@ -365,7 +360,7 @@ typedef enum rz_cmd_desc_type_t {
 	/**
 	 * For cmd descriptors that are just used to group together related
 	 * sub-commands. Do not use this if the command can be used by itself or
-	 * if it's necessary to show its help, because this descriptor is not
+	 * if it's necessary to show its help. Because this descriptor is not
 	 * stored in the hashtable and cannot be retrieved except by listing the
 	 * children of its parent. Most of the time you want RZ_CMD_DESC_TYPE_GROUP.
 	 */
@@ -408,8 +403,8 @@ typedef enum rz_cmd_desc_type_t {
 typedef struct rz_cmd_desc_t {
 	/**
 	 * Type of the command descriptor. There are several types of commands:
-	 * those that are still using the old-style and parses the input string
-	 * themselves, those that accept argc/argv, etc.
+	 * groups, fake and inner have no handlers; argv, mode and state can
+	 * have handlers and get arguments via int argc, char **argv.
 	 */
 	RzCmdDescType type;
 	/**
@@ -443,9 +438,6 @@ typedef struct rz_cmd_desc_t {
 	 * Type-specific fields.
 	 */
 	union {
-		struct {
-			RzCmdCb cb;
-		} oldinput_data;
 		struct {
 			RzCmdArgvCb cb;
 			int min_argc;
@@ -556,7 +548,6 @@ RZ_API RzCmdDesc *rz_cmd_desc_inner_new(RzCmd *cmd, RzCmdDesc *parent, const cha
 RZ_API RzCmdDesc *rz_cmd_desc_group_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, RzCmdArgvCb cb, const RzCmdDescHelp *help, const RzCmdDescHelp *group_help);
 RZ_API RzCmdDesc *rz_cmd_desc_group_modes_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, int modes, RzCmdArgvModesCb cb, const RzCmdDescHelp *help, const RzCmdDescHelp *group_help);
 RZ_API RzCmdDesc *rz_cmd_desc_group_state_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, int modes, RzCmdArgvStateCb cb, const RzCmdDescHelp *help, const RzCmdDescHelp *group_help);
-RZ_API RzCmdDesc *rz_cmd_desc_oldinput_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, RzCmdCb cb, const RzCmdDescHelp *help);
 RZ_API RzCmdDesc *rz_cmd_desc_fake_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, const RzCmdDescHelp *help);
 RZ_API RzCmdDesc *rz_cmd_desc_parent(RzCmdDesc *cd);
 RZ_API RzCmdDesc *rz_cmd_desc_get_exec(RzCmdDesc *cd);

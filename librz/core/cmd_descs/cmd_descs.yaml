@@ -32,8 +32,7 @@
 #     RzCmdDescArg array
 #   handler: >
 #     name of the C handler that handles the command. If not specified it is based
-#     on the cname. For OLDINPUT, the handler has the form `rz_{cname}`, for all
-#     other cases it is `rz_{cname}_handler`.
+#     on the cname.
 #   subcommands: >
 #     array of RzCmdDesc/RzCmdDescHelp descriptors. When present the
 #     type is RZ_CMD_DESC_TYPE_GROUP. Only the first subcommand can contain a

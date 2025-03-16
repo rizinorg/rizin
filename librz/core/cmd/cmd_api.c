@@ -105,7 +105,6 @@ static bool cmd_desc_set_parent(RzCmd *cmd, RzCmdDesc *cd, RzCmdDesc *parent) {
 	rz_return_val_if_fail(cd && !cd->parent, false);
 	if (parent) {
 		switch (parent->type) {
-		case RZ_CMD_DESC_TYPE_OLDINPUT:
 		case RZ_CMD_DESC_TYPE_GROUP:
 		case RZ_CMD_DESC_TYPE_INNER:
 			break;
@@ -346,9 +345,6 @@ static RzCmdDesc *cmd_get_desc_best(RzCmd *cmd, const char *cmd_identifier, bool
 				}
 				res = cd;
 				goto out;
-			case RZ_CMD_DESC_TYPE_OLDINPUT:
-				res = cd;
-				goto out;
 			case RZ_CMD_DESC_TYPE_INNER:
 				break;
 			}
@@ -384,10 +380,6 @@ RZ_API RzCmdDesc *rz_cmd_get_desc_best(RzCmd *cmd, const char *cmd_identifier) {
  * \brief Retrieve the command descriptor for the command named \p cmd_identifier
  *
  * Check if there is a command with exactly the name \p cmd_identifier.
- *
- * If there isn't, it removes one letter at a time to be compatible with radare2
- * behaviour until all commands are converted to rzshell. This best-matching
- * works only to find OLDINPUT command references.
  *
  * \param cmd Reference to RzCmd instance
  * \param cmd_identifier Name of the command to search
@@ -598,16 +590,6 @@ RZ_API int rz_cmd_call(RzCmd *cmd, const char *input) {
 	return ret;
 }
 
-static RzCmdStatus int2cmdstatus(int v) {
-	if (v == -2) {
-		return RZ_CMD_STATUS_EXIT;
-	} else if (v < 0) {
-		return RZ_CMD_STATUS_ERROR;
-	} else {
-		return RZ_CMD_STATUS_OK;
-	}
-}
-
 static void get_minmax_argc(RzCmdDesc *cd, int *min_argc, int *max_argc) {
 	*min_argc = 1;
 	*max_argc = 1;
@@ -780,9 +762,6 @@ static RzCmdStatus argv_call_cb(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args
 }
 
 static RzCmdStatus call_cd(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args) {
-	char *exec_string;
-	RzCmdStatus res = RZ_CMD_STATUS_INVALID;
-
 	int i;
 	const char *s;
 	rz_cmd_parsed_args_foreach_arg(args, i, s) {
@@ -799,11 +778,6 @@ static RzCmdStatus call_cd(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args) {
 	case RZ_CMD_DESC_TYPE_ARGV_MODES:
 	case RZ_CMD_DESC_TYPE_ARGV_STATE:
 		return argv_call_cb(cmd, cd, args);
-	case RZ_CMD_DESC_TYPE_OLDINPUT:
-		exec_string = rz_cmd_parsed_args_execstr(args);
-		res = int2cmdstatus(cd->d.oldinput_data.cb(cmd->core, exec_string + strlen(cd->name)));
-		RZ_FREE(exec_string);
-		return res;
 	default:
 		RZ_LOG_ERROR("RzCmdDesc type not handled\n");
 		return RZ_CMD_STATUS_INVALID;
@@ -894,7 +868,7 @@ static size_t fill_children_chars(RzStrBuf *sb, const RzCmdDesc *cd) {
 }
 
 static bool show_children_shortcut(const RzCmdDesc *cd) {
-	return cd->n_children || cd->help->options || cd->type == RZ_CMD_DESC_TYPE_OLDINPUT ||
+	return cd->n_children || cd->help->options ||
 		has_cd_submodes(cd);
 }
 
@@ -1345,28 +1319,6 @@ static char *fake_get_help(RzCmd *cmd, RzCmdDesc *cd, bool use_color) {
 	return argv_get_help(cmd, cd, 2, use_color);
 }
 
-static char *oldinput_get_help(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *a) {
-	if (!cmd->has_cons) {
-		return NULL;
-	}
-
-	char *res = NULL;
-	rz_cons_push();
-	// rz_cons_push disables flushing, which is going to be a problem if a help menu is
-	// displayed.
-	rz_cons_set_flush(true);
-	RzCmdStatus status = rz_cmd_call_parsed_args(cmd, a);
-	if (status == RZ_CMD_STATUS_OK) {
-		rz_cons_filter();
-		res = rz_cons_get_buffer_dup();
-	}
-	if (!res) {
-		res = rz_str_dup("");
-	}
-	rz_cons_pop();
-	return res;
-}
-
 static char *get_help(RzCmd *cmd, RzCmdDesc *cd, const char *cmdid, RzCmdParsedArgs *args, bool use_color, size_t detail) {
 	switch (cd->type) {
 	case RZ_CMD_DESC_TYPE_GROUP:
@@ -1387,8 +1339,6 @@ static char *get_help(RzCmd *cmd, RzCmdDesc *cd, const char *cmdid, RzCmdParsedA
 			return NULL;
 		}
 		return fake_get_help(cmd, cd, use_color);
-	case RZ_CMD_DESC_TYPE_OLDINPUT:
-		return oldinput_get_help(cmd, cd, args);
 	case RZ_CMD_DESC_TYPE_INNER:
 		rz_warn_if_reached();
 		return NULL;
@@ -1493,7 +1443,6 @@ RZ_API bool rz_cmd_get_help_json(RzCmd *cmd, const RzCmdDesc *cd, PJ *j) {
 	case (x): \
 		type = (y); \
 		break
-		CASE_CDTYPE(RZ_CMD_DESC_TYPE_OLDINPUT, "oldinput");
 		CASE_CDTYPE(RZ_CMD_DESC_TYPE_ARGV, "argv");
 		CASE_CDTYPE(RZ_CMD_DESC_TYPE_GROUP, "group");
 		CASE_CDTYPE(RZ_CMD_DESC_TYPE_INNER, "inner");
@@ -2144,16 +2093,6 @@ RZ_API RzCmdDesc *rz_cmd_desc_group_state_new(RzCmd *cmd, RzCmdDesc *parent, con
 	return res;
 }
 
-RZ_API RzCmdDesc *rz_cmd_desc_oldinput_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, RzCmdCb cb, const RzCmdDescHelp *help) {
-	rz_return_val_if_fail(cmd && parent && name && cb, NULL);
-	RzCmdDesc *res = create_cmd_desc(cmd, parent, RZ_CMD_DESC_TYPE_OLDINPUT, name, help, true);
-	if (!res) {
-		return NULL;
-	}
-	res->d.oldinput_data.cb = cb;
-	return res;
-}
-
 RZ_API RzCmdDesc *rz_cmd_desc_fake_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, const RzCmdDescHelp *help) {
 	rz_return_val_if_fail(cmd && parent && name && help, NULL);
 	return create_cmd_desc(cmd, parent, RZ_CMD_DESC_TYPE_FAKE, name, help, true);
@@ -2173,8 +2112,6 @@ RZ_API bool rz_cmd_desc_has_handler(const RzCmdDesc *cd) {
 		return cd->d.argv_modes_data.cb;
 	case RZ_CMD_DESC_TYPE_ARGV_STATE:
 		return cd->d.argv_state_data.cb;
-	case RZ_CMD_DESC_TYPE_OLDINPUT:
-		return cd->d.oldinput_data.cb;
 	case RZ_CMD_DESC_TYPE_FAKE:
 	case RZ_CMD_DESC_TYPE_INNER:
 		return false;
@@ -2276,11 +2213,6 @@ static void cmd_foreach_cmdname(RzCmd *cmd, RzCmdDesc *cd, RzCmdForeachNameCb cb
 		break;
 	case RZ_CMD_DESC_TYPE_FAKE:
 		break;
-	case RZ_CMD_DESC_TYPE_OLDINPUT:
-		if (rz_cmd_desc_has_handler(cd)) {
-			cb(cmd, cd, user);
-		}
-		// fallthrough
 	case RZ_CMD_DESC_TYPE_INNER:
 	case RZ_CMD_DESC_TYPE_GROUP:
 		rz_cmd_desc_children_foreach(cd, it_cd) {
