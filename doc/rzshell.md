@@ -107,18 +107,13 @@ You have to call it according to the `cname` field you previously set for the
 
 Below you can see how the code for adding the `sky` command would look like:
 ```YAML
-- name: s
-  cname: cmd_seek
-  summary: Seek to address
-  type: RZ_CMD_DESC_TYPE_OLDINPUT
-  subcommands:
-    - name: sky
-      cname: sky
-      summary: Find all occurrences of the work "sky" in the opened file
-      args:
-        - name: n
-          type: RZ_CMD_ARG_TYPE_NUM
-          optional: true
+  - name: sky
+    cname: sky
+    summary: Print current address / Seek to address
+    args:
+      - name: limit
+        type: RZ_CMD_ARG_TYPE_NUM
+        optional: true
 ```
 ```C
 // cmd_seek.c (example, real place depends on the parent command)
