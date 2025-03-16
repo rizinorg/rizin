@@ -97,3 +97,29 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=/ad search - issue 4098
+FILE==
+ARGS=-e asm.arch=arm -e asm.bits=64
+CMDS=<<EOF
+wx a0e1fe9000003b9141b8fe9021400f91
+pd 4
+/ad "adrp x0;add x0"
+/ad "adrp x1;add x1"
+/ad "adrp x1;add x2"
+/adj "adrp x0;add x0"
+/adj "adrp x1;add x1"
+/adj "adrp x1;add x2"
+EOF
+EXPECT=<<EOF
+            0x00000000      adrp  x0, 0xfffffffffdc34000
+            0x00000004      add   x0, x0, 0xec0
+            0x00000008      adrp  x1, 0xfffffffffd708000
+            0x0000000c      add   x1, x1, 0x3d0
+0x00000000   # 8: adrp x0, 0xfffffffffdc34000; add x0, x0, 0xec0
+0x00000008   # 8: adrp x1, 0xfffffffffd708000; add x1, x1, 0x3d0
+[{"offset":0,"len":8,"code":"adrp x0, 0xfffffffffdc34000; add x0, x0, 0xec0"}]
+[{"offset":8,"len":8,"code":"adrp x1, 0xfffffffffd708000; add x1, x1, 0x3d0"}]
+[]
+EOF
+RUN
+

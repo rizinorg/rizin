@@ -442,7 +442,7 @@ RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_strsearch(RzCore *core, const ch
 						RZ_FREE(hits);
 						goto beach;
 					}
-					hit->addr = addr;
+					hit->addr = tokcount == 1 ? addr : tidx;
 					hit->len = idx + len - tidx;
 					if (hit->len == -1) {
 						rz_core_asm_hit_free(hit);
