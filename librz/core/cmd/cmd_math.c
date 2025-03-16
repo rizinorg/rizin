@@ -10,16 +10,6 @@
 
 #define HIGHLIGHT_SZ 1024
 
-static const char *help_msg_greater_sign[] = {
-	"Usage:", "[cmd]>[file]", "redirects console from 'cmd' output to 'file'",
-	"[cmd] > [file]", "", "redirect STDOUT of 'cmd' to 'file'",
-	"[cmd] > $alias", "", "save the output of the command as an alias (see $?)",
-	"[cmd] H> [file]", "", "redirect html output of 'cmd' to 'file'",
-	"[cmd] 2> [file]", "", "redirect STDERR of 'cmd' to 'file'",
-	"[cmd] 2> /dev/null", "", "omit the STDERR output of 'cmd'",
-	NULL
-};
-
 struct rz_core_var {
 	const char *name;
 	const char *description;

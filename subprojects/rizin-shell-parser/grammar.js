@@ -52,8 +52,6 @@ module.exports = grammar({
 
     _statement: ($) => choice($.redirect_stmt, $._simple_stmt),
 
-    legacy_quoted_stmt: ($) => seq('"', field("string", token(prec(-1, /([^"\\]|\\(.|\n))+/))), '"'),
-
     _simple_stmt: ($) =>
       choice(
         $.help_stmt,
@@ -64,7 +62,6 @@ module.exports = grammar({
         $._iter_stmt,
         $._pipe_stmt,
         $.grep_stmt,
-        $.legacy_quoted_stmt,
       ),
 
     tmp_stmt: ($) => prec.right(seq($._simple_stmt, repeat1($._tmp_op))),

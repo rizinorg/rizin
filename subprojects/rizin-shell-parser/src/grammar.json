@@ -120,34 +120,6 @@
         }
       ]
     },
-    "legacy_quoted_stmt": {
-      "type": "SEQ",
-      "members": [
-        {
-          "type": "STRING",
-          "value": "\""
-        },
-        {
-          "type": "FIELD",
-          "name": "string",
-          "content": {
-            "type": "TOKEN",
-            "content": {
-              "type": "PREC",
-              "value": -1,
-              "content": {
-                "type": "PATTERN",
-                "value": "([^\"\\\\]|\\\\(.|\\n))+"
-              }
-            }
-          }
-        },
-        {
-          "type": "STRING",
-          "value": "\""
-        }
-      ]
-    },
     "_simple_stmt": {
       "type": "CHOICE",
       "members": [
@@ -183,10 +155,6 @@
           "type": "SYMBOL",
           "name": "grep_stmt"
         },
-        {
-          "type": "SYMBOL",
-          "name": "legacy_quoted_stmt"
-        }
       ]
     },
     "tmp_stmt": {
