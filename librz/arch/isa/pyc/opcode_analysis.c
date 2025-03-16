@@ -1189,6 +1189,7 @@ static op_analysis_func op_analysis[] = {
 	{ "CALL_INTRINSIC_2", analysis_CALL_INTRINSIC_2 },
 	{ "CLEANUP_THROW", analysis_CLEANUP_THROW },
 	{ "END_SEND", analysis_END_SEND },
+	{ "END_FOR", analysis_END_FOR },
 	{ "LOAD_FAST_AND_CLEAR", analysis_LOAD_FAST_AND_CLEAR },
 	{ "LOAD_FAST_CHECK", analysis_LOAD_FAST_CHECK },
 	{ "LOAD_FROM_DICT_OR_DEREF", analysis_LOAD_FROM_DICT_OR_DEREF },
