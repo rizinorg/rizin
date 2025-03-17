@@ -16,7 +16,8 @@ static const RzCmdDescDetail pointer_details[2];
 static const RzCmdDescDetail interpret_macro_multiple_details[2];
 static const RzCmdDescDetail cmd_search_collision_details[2];
 static const RzCmdDescDetail cmd_search_hash_block_details[3];
-static const RzCmdDescDetail cmd_search_hash_entropy_details[3];
+static const RzCmdDescDetail cmd_search_hash_entropy_details[2];
+static const RzCmdDescDetail cmd_search_hash_entropy_fractional_details[2];
 static const RzCmdDescDetail cmd_search_cryptographic_material_details[2];
 static const RzCmdDescDetail cmd_search_file_details[2];
 static const RzCmdDescDetail cmd_search_value_details[3];
@@ -136,7 +137,8 @@ static const RzCmdDescArg cmd_search_assemble_t_args[2];
 static const RzCmdDescArg cmd_search_assemble_tl_args[2];
 static const RzCmdDescArg cmd_search_collision_args[4];
 static const RzCmdDescArg cmd_search_hash_block_args[4];
-static const RzCmdDescArg cmd_search_hash_entropy_args[3];
+static const RzCmdDescArg cmd_search_hash_entropy_args[4];
+static const RzCmdDescArg cmd_search_hash_entropy_fractional_args[4];
 static const RzCmdDescArg cmd_search_cryptographic_material_args[2];
 static const RzCmdDescArg cmd_search_deltified_args[2];
 static const RzCmdDescArg cmd_search_file_args[4];
@@ -1778,12 +1780,12 @@ static const RzCmdDescHelp cmd_search_collision_help = {
 
 static const RzCmdDescDetailEntry cmd_search_hash_block_Usage_space_example_detail_entries[] = {
 	{ .text = "/ch md5 0bc8f8c426b74ffaedac8330a7464014 512", .arg_str = NULL, .comment = "MD5 hash search within blocks of 512 bytes." },
-	{ .text = "/ch entropy_fract 0.6 16k", .arg_str = NULL, .comment = "Find 16384 byte blocks with an entropy of 0.6 and above." },
 	{ 0 },
 };
 
 static const RzCmdDescDetailEntry cmd_search_hash_block_Tip_detail_entries[] = {
-	{ .text = "The command 'Lh' gives you a list of supported hash plugins.", .arg_str = NULL, .comment = "" },
+	{ .text = "", .arg_str = NULL, .comment = "The command 'Lh' gives you a list of supported hash plugins." },
+	{ .text = "", .arg_str = NULL, .comment = "Use /ce and /cef for entropy search." },
 	{ 0 },
 };
 static const RzCmdDescDetail cmd_search_hash_block_details[] = {
@@ -1817,23 +1819,23 @@ static const RzCmdDescHelp cmd_search_hash_block_help = {
 };
 
 static const RzCmdDescDetailEntry cmd_search_hash_entropy_Usage_space_example_detail_entries[] = {
-	{ .text = "/ce 0.3 512", .arg_str = NULL, .comment = "Find 512 byte blocks with an entropy of 0.3 and above." },
-	{ 0 },
-};
-
-static const RzCmdDescDetailEntry cmd_search_hash_entropy_Tip_detail_entries[] = {
-	{ .text = "The command 'Lh' gives you a list of supported hash plugins.", .arg_str = NULL, .comment = "" },
+	{ .text = "/ce 2.5 7.4 512", .arg_str = NULL, .comment = "Find 512 byte long blocks with an entropy between 2.5 and 7.4 (inclusive min & max)." },
 	{ 0 },
 };
 static const RzCmdDescDetail cmd_search_hash_entropy_details[] = {
 	{ .name = "Usage example", .entries = cmd_search_hash_entropy_Usage_space_example_detail_entries },
-	{ .name = "Tip", .entries = cmd_search_hash_entropy_Tip_detail_entries },
 	{ 0 },
 };
 static const RzCmdDescArg cmd_search_hash_entropy_args[] = {
 	{
-		.name = "entropy",
+		.name = "min_entropy",
 		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{
+		.name = "max_entropy",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.default_value = "8.0",
 
 	},
 	{
@@ -1845,9 +1847,43 @@ static const RzCmdDescArg cmd_search_hash_entropy_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_search_hash_entropy_help = {
-	.summary = "Search for blocks above an entropy level (alias for: /ch entropy_fract <entropy> <block_size>).",
+	.summary = "Search for blocks above an entropy level.",
 	.details = cmd_search_hash_entropy_details,
 	.args = cmd_search_hash_entropy_args,
+};
+
+static const RzCmdDescDetailEntry cmd_search_hash_entropy_fractional_Usage_space_example_detail_entries[] = {
+	{ .text = "/cef 0.3 0.8 512", .arg_str = NULL, .comment = "Find 512 byte long blocks with a fractional entropy between 0.3 and 0.8 (inclusive min & max)." },
+	{ 0 },
+};
+static const RzCmdDescDetail cmd_search_hash_entropy_fractional_details[] = {
+	{ .name = "Usage example", .entries = cmd_search_hash_entropy_fractional_Usage_space_example_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg cmd_search_hash_entropy_fractional_args[] = {
+	{
+		.name = "min_entropy",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{
+		.name = "max_entropy",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.default_value = "1.0",
+
+	},
+	{
+		.name = "block_size",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.default_value = "256",
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_search_hash_entropy_fractional_help = {
+	.summary = "Search for blocks above an fractional entropy level.",
+	.details = cmd_search_hash_entropy_fractional_details,
+	.args = cmd_search_hash_entropy_fractional_args,
 };
 
 static const RzCmdDescDetailEntry cmd_search_cryptographic_material_Types_detail_entries[] = {
@@ -21112,6 +21148,10 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_search_hash_entropy_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_c_cd, "/ce", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_hash_entropy_handler, &cmd_search_hash_entropy_help);
 	rz_warn_if_fail(cmd_search_hash_entropy_cd);
 	rz_cmd_desc_set_default_mode(cmd_search_hash_entropy_cd, RZ_OUTPUT_MODE_STANDARD);
+
+	RzCmdDesc *cmd_search_hash_entropy_fractional_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_c_cd, "/cef", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_hash_entropy_fractional_handler, &cmd_search_hash_entropy_fractional_help);
+	rz_warn_if_fail(cmd_search_hash_entropy_fractional_cd);
+	rz_cmd_desc_set_default_mode(cmd_search_hash_entropy_fractional_cd, RZ_OUTPUT_MODE_STANDARD);
 
 	RzCmdDesc *cmd_search_cryptographic_material_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_c_cd, "/cm", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_cryptographic_material_handler, &cmd_search_cryptographic_material_help);
 	rz_warn_if_fail(cmd_search_cryptographic_material_cd);

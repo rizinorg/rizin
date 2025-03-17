@@ -107,6 +107,8 @@ RZ_IPI RzCmdStatus rz_cmd_search_collision_handler(RzCore *core, int argc, const
 RZ_IPI RzCmdStatus rz_cmd_search_hash_block_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/ce"
 RZ_IPI RzCmdStatus rz_cmd_search_hash_entropy_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/cef"
+RZ_IPI RzCmdStatus rz_cmd_search_hash_entropy_fractional_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/cm"
 RZ_IPI RzCmdStatus rz_cmd_search_cryptographic_material_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/d"

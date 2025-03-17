@@ -1355,7 +1355,8 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_bytes(RZ_NONNULL RzCore
 RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_values(RZ_NONNULL RzCore *core, RZ_BORROW RZ_NULLABLE RzSearchOpt *user_opts, RZ_NONNULL RZ_OWN RzVector /*<RzSearchValueRange>*/ *vranges);
 RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_string(RZ_NONNULL RzCore *core, RZ_BORROW RZ_NONNULL RzSearchOpt *user_opts, RZ_NONNULL const char *string, RzRegexFlags flags, RzStrEnc expected);
 RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_cryptographic_material(RZ_NONNULL RzCore *core, RZ_BORROW RZ_NULLABLE RzSearchOpt *user_opts, RzSearchCollectionCryptographicType type);
-RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_hash_material(RZ_NONNULL RzCore *core, RZ_BORROW RZ_NULLABLE RzSearchOpt *user_opts, RZ_NULLABLE RzSearchHashFindData *data);
+RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_hash(RZ_NONNULL RzCore *core, RZ_BORROW RZ_NULLABLE RzSearchOpt *user_opts, RZ_NONNULL const char *algo_name, RZ_NONNULL const char *expected_digits, ut64 block_size);
+RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_entropy(RZ_NONNULL RzCore *core, RZ_BORROW RZ_NULLABLE RzSearchOpt *user_opts, bool fractional, double min_inclusive_limit, double max_inclusive_limit, ut64 block_size);
 RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_magic(RZ_NONNULL RzCore *core, RZ_BORROW RZ_NULLABLE RzSearchOpt *user_opts, RZ_NULLABLE const char *magic_dir);
 
 #endif

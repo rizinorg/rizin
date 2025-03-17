@@ -131,14 +131,6 @@ struct rz_search_interval_t {
 	size_t n_hits;
 };
 
-struct rz_search_hash_find_data_t {
-	char *algo; ///< The hash algorithm.
-	void *digits; ///< The expected hash digits the data block should match.
-	size_t digits_len; ///< Length of the expected digits.
-	ut64 block_size; ///< The data block size given as input to the hash function.
-	const RzHash *rz_hash; ///< Immutable RzHash instance with all registered plugins.
-};
-
 /**
  * \brief Checks of \p fopst->alignment is aligned.
  * If not, it increases \p offset by the required patting to align address + offset again and continues.
@@ -151,12 +143,8 @@ struct rz_search_hash_find_data_t {
 	}
 
 RZ_IPI RZ_OWN RzSearchHit *rz_search_hit_new(const char *hit_desc, ut64 address, size_t size, const char *hit_comment);
-RZ_IPI RZ_OWN bool rz_search_hit_add_details(RZ_NONNULL RzSearchHit *hit, RzSearchHitDetailType type, RZ_OWN void *details);
 RZ_IPI void rz_search_hit_free(RZ_NULLABLE RzSearchHit *hit);
 RZ_IPI int rz_search_hit_cmp(RZ_NULLABLE RzSearchHit *a, RZ_NULLABLE RzSearchHit *b, void *user);
-
-RZ_IPI bool rz_search_hit_detail_str_entropy(RZ_NONNULL RzSearchHit *hit, RZ_OUT RzStrBuf *str);
-RZ_IPI bool rz_search_hit_detail_json_entropy(RZ_BORROW RZ_NONNULL RzSearchHit *hit, RZ_OUT RZ_NONNULL PJ *pj);
 
 RZ_IPI RZ_OWN RzSearchInterval *rz_search_interval_new(RzInterval interval, size_t n_hits);
 RZ_IPI void rz_search_interval_free(RZ_NULLABLE RzSearchInterval *interval);

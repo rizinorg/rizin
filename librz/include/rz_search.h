@@ -147,28 +147,9 @@ typedef struct rz_search_interval_t RzSearchInterval;
 
 typedef struct rz_search_collection_t RzSearchCollection;
 
-/**
- * \brief Data passed to hash search find() workers.
- */
-typedef struct rz_search_hash_find_data_t RzSearchHashFindData;
-
-typedef struct {
-	char *algo; ///< The hash algorithm used for the.
-	ut8 *hash; ///< Calculated hash.
-	size_t hash_size; ///< Hash size in bytes.
-	char *hash_str; ///< The hash result as printable string.
-} RzSearchiHitDetailHash;
-
-typedef enum {
-	RZ_SEARCH_HIT_DETAIL_NONE = 0,
-	RZ_SEARCH_HIT_DETAIL_HASH,
-} RzSearchHitDetailType;
-
 typedef struct rz_search_hit_t {
 	char *hit_desc; ///< Hit one word description. If set, it is added to the flag name of the hit. Optional, can be NULL.
 	char *comment; ///< A detailed comment about the hit. Set as flag comment. Optional, can be NULL.
-	void *details; ///< Search dependent details of the hit.
-	RzSearchHitDetailType detail_type; ///< The type of the detail, if any.
 	ut64 address; ///< Address/offset of the matched data.
 	size_t size; ///< Size of the matched data (can be 0), in bytes.
 } RzSearchHit;
@@ -179,8 +160,6 @@ typedef enum {
 } RzSearchCancelReason;
 
 RZ_API RZ_OWN char *rz_search_hit_flag_name(RZ_NONNULL const RzSearchHit *hit, size_t hit_id, RZ_NULLABLE const char *prefix);
-RZ_API RZ_OWN char *rz_search_hit_detail_str(RZ_BORROW RZ_NONNULL RzSearchHit *hit);
-RZ_API bool rz_search_hit_detail_json(RZ_BORROW RZ_NONNULL RzSearchHit *hit, RZ_OUT RZ_NONNULL PJ *pj);
 
 typedef struct rz_search_bytes_pattern_t RzSearchBytesPattern;
 
@@ -247,10 +226,12 @@ RZ_API bool rz_search_collection_cryptographic_add(RZ_NONNULL RzSearchCollection
 RZ_API bool rz_search_collection_cryptographic_name_to_type(RZ_NONNULL const char *name, RzSearchCollectionCryptographicType *type);
 
 RZ_API RZ_OWN RzSearchCollection *rz_search_collection_hash();
-RZ_API RZ_OWN RzSearchHashFindData *rz_search_hash_get_find_data(const RzHash *rz_hash, RZ_NONNULL const char *algo_name, RZ_NONNULL const char *expected_digits, const char *block_size_arg);
-RZ_API bool rz_search_collection_hash_add(RZ_NONNULL RzSearchCollection *col, RZ_OWN RZ_NONNULL RzSearchHashFindData *data);
+RZ_API bool rz_search_collection_hash_add(RZ_NONNULL RzSearchCollection *col, RZ_NONNULL const RzHash *rz_hash, RZ_NONNULL const char *algo_name, RZ_NONNULL const char *expected_digest, ut64 block_size);
 RZ_API bool rz_search_collection_hash_name_to_type(RZ_NONNULL const char *name);
 RZ_API ut64 rz_search_hash_get_element_size(RZ_NONNULL RzSearchCollection *collection);
+
+RZ_API RZ_OWN RzSearchCollection *rz_search_collection_entropy(RZ_NONNULL const RzHash *rz_hash);
+RZ_API bool rz_search_collection_entropy_add(RZ_NONNULL RzSearchCollection *col, bool fractional, double min_inclusive_limit, double max_inclusive_limit, ut64 block_size);
 
 /**
  * \brief Maximum value width to search for is currently 64bits/8bytes.

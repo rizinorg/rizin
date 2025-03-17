@@ -1903,35 +1903,25 @@ static void cmd_search_output_to_state(RzCmdStateOutput *state, RzSearchHit *hit
 	case RZ_OUTPUT_MODE_QUIET:
 		rz_cons_printf("0x%08" PFMT64x "\n", hit->address);
 		break;
-	case RZ_OUTPUT_MODE_STANDARD: {
-		RzStrBuf *sb = rz_strbuf_new("");
-		rz_strbuf_appendf(sb, "0x%08" PFMT64x " %" PFMTSZu " %s", hit->address, hit->size, flag_name);
-		if (hit->detail_type != RZ_SEARCH_HIT_DETAIL_NONE) {
-			rz_strbuf_appendf(sb, " %s", rz_search_hit_detail_str(hit));
+	case RZ_OUTPUT_MODE_STANDARD:
+		rz_cons_printf("0x%08" PFMT64x " %" PFMTSZu " %s", hit->address, hit->size, flag_name);
+		if (hit->comment) {
+			rz_cons_printf(" %s", hit->comment);
 		}
-		char *desc = rz_strbuf_drain(sb);
-		rz_cons_printf("%s\n", desc);
-		free(desc);
+		rz_cons_newline();
 		break;
-	}
 	case RZ_OUTPUT_MODE_JSON:
 		pj_o(state->d.pj);
 		pj_kn(state->d.pj, "address", hit->address);
 		pj_kn(state->d.pj, "size", hit->size);
 		pj_ks(state->d.pj, "flag", flag_name);
-		if (hit->detail_type != RZ_SEARCH_HIT_DETAIL_NONE) {
-			pj_ko(state->d.pj, "detail");
-			rz_search_hit_detail_json(hit, state->d.pj);
-			pj_end(state->d.pj);
+		if (hit->comment) {
+			pj_ks(state->d.pj, "comment", hit->comment);
 		}
 		pj_end(state->d.pj);
 		break;
 	case RZ_OUTPUT_MODE_TABLE:
-		if (hit->detail_type != RZ_SEARCH_HIT_DETAIL_NONE) {
-			rz_table_add_rowf(state->d.t, "xXss", hit->address, hit->size, flag_name, rz_search_hit_detail_str(hit));
-		} else {
-			rz_table_add_rowf(state->d.t, "xXs", hit->address, hit->size, flag_name);
-		}
+		rz_table_add_rowf(state->d.t, "xXss", hit->address, hit->size, flag_name, rz_str_get(hit->comment));
 		break;
 	default:
 		rz_warn_if_reached();
@@ -1971,7 +1961,7 @@ static RzCmdStatus cmd_core_handle_search_hits(RzCore *core, RzCmdStateOutput *s
 	if (RZ_STR_ISEMPTY(cmd_hit)) {
 		// Setup output and flag space.
 		rz_cmd_state_output_array_start(state);
-		rz_cmd_state_output_set_columnsf(state, "xXs", "offset", "size", "flag");
+		rz_cmd_state_output_set_columnsf(state, "xXss", "offset", "size", "flag", "comment");
 		rz_flag_space_push(core->flags, "search");
 	}
 
@@ -1980,9 +1970,6 @@ static RzCmdStatus cmd_core_handle_search_hits(RzCore *core, RzCmdStateOutput *s
 		if (RZ_STR_ISNOTEMPTY(cmd_hit)) {
 			cmd_search_call_command(core, hit, cmd_hit);
 			continue;
-		}
-		if (state->mode == RZ_OUTPUT_MODE_TABLE && hit->detail_type != RZ_SEARCH_HIT_DETAIL_NONE) {
-			rz_table_add_column(state->d.t, rz_table_type("string"), "detail", 0);
 		}
 
 		// Only output & add flag when cmd.hit is not set.
@@ -2270,20 +2257,63 @@ RZ_IPI RzCmdStatus rz_cmd_search_hash_block_handler(RzCore *core, int argc, cons
 		return RZ_CMD_STATUS_ERROR;
 	}
 
+	ut64 block_size = rz_num_get(NULL, argv[3]);
+	if (block_size < 1) {
+		RZ_LOG_ERROR("search: bad block size (%s).\n", argv[3]);
+		return RZ_CMD_STATUS_WRONG_ARGS;
+	}
+
 	CMD_SEARCH_BEGIN();
 
 	bool progress = rz_config_get_b(core->config, "search.show_progress");
 	if (!rz_search_opt_set_cancel_cb(search_opts, cmd_search_progress_cancel, progress ? state : NULL)) {
-		RZ_LOG_ERROR("code: Failed to setup default search options.\n");
-		goto error;
-	}
-	RzSearchHashFindData *data = rz_search_hash_get_find_data(core->hash, argv[1], argv[2], argv[3]);
-	if (!data) {
-		RZ_LOG_ERROR("Failed to initialized search data.\n");
+		RZ_LOG_ERROR("search: Failed to setup default search options.\n");
 		goto error;
 	}
 
-	hits = rz_core_search_hash_material(core, search_opts, data);
+	hits = rz_core_search_hash(core, search_opts, argv[1], argv[2], block_size);
+	if (!hits) {
+		RZ_LOG_ERROR("Failed to perform search.\n");
+		goto error;
+	}
+
+	CMD_SEARCH_END();
+	rz_search_opt_free(search_opts);
+	return cmd_core_handle_search_hits(core, state, hits);
+
+error:
+	rz_list_free(hits);
+	rz_search_opt_free(search_opts);
+	CMD_SEARCH_END();
+	return RZ_CMD_STATUS_ERROR;
+}
+
+static RzCmdStatus cmd_search_hash_entropy_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state, bool fractional) {
+	rz_return_val_if_fail(core, RZ_CMD_STATUS_ERROR);
+	RzSearchOpt *search_opts = setup_search_options(core);
+	RzList *hits = NULL;
+	if (!search_opts) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	ut64 block_size = rz_num_get(NULL, argv[3]);
+	if (block_size < 1) {
+		RZ_LOG_ERROR("search: bad block size (%s).\n", argv[3]);
+		return RZ_CMD_STATUS_WRONG_ARGS;
+	}
+
+	CMD_SEARCH_BEGIN();
+
+	bool progress = rz_config_get_b(core->config, "search.show_progress");
+	if (!rz_search_opt_set_cancel_cb(search_opts, cmd_search_progress_cancel, progress ? state : NULL)) {
+		RZ_LOG_ERROR("search: Failed to setup default search options.\n");
+		goto error;
+	}
+
+	double min_inclusive_limit = strtod(argv[1], NULL);
+	double max_inclusive_limit = strtod(argv[2], NULL);
+
+	hits = rz_core_search_entropy(core, search_opts, fractional, min_inclusive_limit, max_inclusive_limit, block_size);
 	if (!hits) {
 		RZ_LOG_ERROR("Failed to perform search.\n");
 		goto error;
@@ -2302,12 +2332,12 @@ error:
 
 // "/ce"
 RZ_IPI RzCmdStatus rz_cmd_search_hash_entropy_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	const char *argv_ch[4];
-	argv_ch[0] = argv[0];
-	argv_ch[1] = "entropy_fract";
-	argv_ch[2] = argv[1];
-	argv_ch[3] = argv[2];
-	return rz_cmd_search_hash_block_handler(core, 4, argv_ch, state);
+	return cmd_search_hash_entropy_handler(core, argc, argv, state, false);
+}
+
+// "/cef"
+RZ_IPI RzCmdStatus rz_cmd_search_hash_entropy_fractional_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	return cmd_search_hash_entropy_handler(core, argc, argv, state, true);
 }
 
 // "/cc"

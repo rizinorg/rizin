@@ -42,7 +42,7 @@ EOF
 EXPECT=<<EOF
 0x08048000 0 hit.magic.0
 ELF 32-bit LSB executable, Intel 80386, version 1
-[{"address":134512640,"size":0,"flag":"hit.magic.0"}]
+[{"address":134512640,"size":0,"flag":"hit.magic.0","comment":"ELF 32-bit LSB executable, Intel 80386, version 1"}]
 EOF
 RUN
 
@@ -116,7 +116,7 @@ EOF
 EXPECT=<<EOF
 0x08048000 0 hit.magic.0
 ELF 32-bit LSB executable, Intel 80386, version 1
-[{"address":134512640,"size":0,"flag":"hit.magic.0"}]
+[{"address":134512640,"size":0,"flag":"hit.magic.0","comment":"ELF 32-bit LSB executable, Intel 80386, version 1"}]
 EOF
 RUN
 

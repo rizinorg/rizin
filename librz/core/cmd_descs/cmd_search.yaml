@@ -247,14 +247,14 @@ commands:
           entries:
             - text: "/ch md5 0bc8f8c426b74ffaedac8330a7464014 512"
               comment: "MD5 hash search within blocks of 512 bytes."
-            - text: /ch entropy_fract 0.6 16k
-              comment: "Find 16384 byte blocks with an entropy of 0.6 and above."
         - name: Tip
           entries:
-            - text: "The command 'Lh' gives you a list of supported hash plugins."
-              comment: ""
+            - text: ""
+              comment: "The command 'Lh' gives you a list of supported hash plugins."
+            - text: ""
+              comment: "Use /ce and /cef for entropy search."
     - name: "/ce"
-      summary: "Search for blocks above an entropy level (alias for: /ch entropy_fract <entropy> <block_size>)."
+      summary: "Search for blocks above an entropy level."
       cname: cmd_search_hash_entropy
       type: RZ_CMD_DESC_TYPE_ARGV_STATE
       default_mode: RZ_OUTPUT_MODE_STANDARD
@@ -264,20 +264,43 @@ commands:
         - RZ_OUTPUT_MODE_QUIET
         - RZ_OUTPUT_MODE_TABLE
       args:
-        - name: entropy
+        - name: min_entropy
           type: RZ_CMD_ARG_TYPE_NUM
+        - name: max_entropy
+          type: RZ_CMD_ARG_TYPE_NUM
+          default_value: "8.0"
         - name: "block_size"
           type: RZ_CMD_ARG_TYPE_NUM
           default_value: "256"
       details:
         - name: Usage example
           entries:
-            - text: /ce 0.3 512
-              comment: "Find 512 byte blocks with an entropy of 0.3 and above."
-        - name: Tip
+            - text: /ce 2.5 7.4 512
+              comment: "Find 512 byte long blocks with an entropy between 2.5 and 7.4 (inclusive min & max)."
+    - name: "/cef"
+      summary: "Search for blocks above an fractional entropy level."
+      cname: cmd_search_hash_entropy_fractional
+      type: RZ_CMD_DESC_TYPE_ARGV_STATE
+      default_mode: RZ_OUTPUT_MODE_STANDARD
+      modes:
+        - RZ_OUTPUT_MODE_STANDARD
+        - RZ_OUTPUT_MODE_JSON
+        - RZ_OUTPUT_MODE_QUIET
+        - RZ_OUTPUT_MODE_TABLE
+      args:
+        - name: min_entropy
+          type: RZ_CMD_ARG_TYPE_NUM
+        - name: max_entropy
+          type: RZ_CMD_ARG_TYPE_NUM
+          default_value: "1.0"
+        - name: "block_size"
+          type: RZ_CMD_ARG_TYPE_NUM
+          default_value: "256"
+      details:
+        - name: Usage example
           entries:
-            - text: "The command 'Lh' gives you a list of supported hash plugins."
-              comment: ""
+            - text: /cef 0.3 0.8 512
+              comment: "Find 512 byte long blocks with a fractional entropy between 0.3 and 0.8 (inclusive min & max)."
     - name: "/cm"
       summary: Search cryptographic material.
       cname: cmd_search_cryptographic_material

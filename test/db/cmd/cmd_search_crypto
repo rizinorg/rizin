@@ -7,9 +7,9 @@ e search.overlap=false
 px @ hit.aes256.0 @!40
 EOF
 EXPECT=<<EOF
-offset       size flag         
--------------------------------
-  0x1e 0x00000020 hit.aes256.0
+offset       size flag         comment 
+---------------------------------------
+  0x1e 0x00000020 hit.aes256.0 
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x0000001e  0000 0000 0000 0000 0000 0000 0000 0000  ................
 0x0000002e  0000 0000 0000 0000 0000 0000 0000 0000  ................
@@ -27,11 +27,11 @@ px @ hit.aes192.1 @!32
 px @ hit.aes128.2 @!24
 EOF
 EXPECT=<<EOF
-offset       size flag         
--------------------------------
-  0x1e 0x00000020 hit.aes256.0
-  0x26 0x00000018 hit.aes192.1
-  0x2e 0x00000010 hit.aes128.2
+offset       size flag         comment 
+---------------------------------------
+  0x1e 0x00000020 hit.aes256.0 
+  0x26 0x00000018 hit.aes192.1 
+  0x2e 0x00000010 hit.aes128.2 
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x0000001e  0000 0000 0000 0000 0000 0000 0000 0000  ................
 0x0000002e  0000 0000 0000 0000 0000 0000 0000 0000  ................
@@ -53,9 +53,9 @@ e search.overlap=true
 px @ hit.sm4.le.0 @!16
 EOF
 EXPECT=<<EOF
-offset       size flag         
--------------------------------
-  0xff 0x00000010 hit.sm4.le.0
+offset       size flag         comment 
+---------------------------------------
+  0xff 0x00000010 hit.sm4.le.0 
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x000000ff  f986 21f1 612b 6641 db28 e447 57db e32c  ..!.a+fA.(.GW..,
 EOF
@@ -69,9 +69,9 @@ e search.overlap=true
 px @ hit.aes192.0 @!0x18
 EOF
 EXPECT=<<EOF
-offset       size flag         
--------------------------------
-  0xfa 0x00000018 hit.aes192.0
+offset       size flag         comment 
+---------------------------------------
+  0xfa 0x00000018 hit.aes192.0 
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x000000fa  0001 0203 0405 0607 0809 0a0b 0c0d 0e0f  ................
 0x0000010a  1011 1213 1415 1617                      ........
@@ -86,9 +86,9 @@ e search.overlap=true
 pFa @ hit.rsa.0 @!0x92c
 EOF
 EXPECT=<<EOF
-offset       size flag      
-----------------------------
-   0xd 0x0000092c hit.rsa.0
+offset       size flag      comment 
+------------------------------------
+   0xd 0x0000092c hit.rsa.0 
    0  2344: 0: cons SEQUENCE            : 
    4     1: 1: prim INTEGER             : 00
    7   513: 1: prim INTEGER             : 00 c0 79 f2 4b 04 27 87 e4 89 6d b4 11 fa 76 47 |..y.K.'...m...vG|
@@ -251,9 +251,9 @@ e search.overlap=true
 pFa @ hit.safecurves.0 @!0x49
 EOF
 EXPECT=<<EOF
-offset       size flag             
------------------------------------
-  0xf5 0x00000049 hit.safecurves.0
+offset       size flag             comment 
+-------------------------------------------
+  0xf5 0x00000049 hit.safecurves.0 
    0    71: 0: cons SEQUENCE            : 
    2     1: 1: prim INTEGER             : 00
    5     5: 1: cons SEQUENCE            : 
@@ -274,9 +274,9 @@ e search.overlap=true
 pFx @ hit.x509.0 @!0x34d
 EOF
 EXPECT=<<EOF
-offset       size flag       
------------------------------
-  0x2f 0x0000034d hit.x509.0
+offset       size flag       comment 
+-------------------------------------
+  0x2f 0x0000034d hit.x509.0 
 TBSCertificate:
   Version: v3
   Serial Number:
@@ -308,117 +308,5 @@ TBSCertificate:
 Algorithm:
   sha256WithRSAEncryption
 Signature: 256 bytes
-EOF
-RUN
-
-NAME=/ch not existing algo
-FILE=
-CMDS=<<EOF
-/ch asdasd 00
-EOF
-EXPECT_ERR=<<EOF
-ERROR: msg digest: 'asdasd' does not exists.
-ERROR: The hash algorithm 'asdasd' is not supported for the search. List supported with the command 'Lh'.
-ERROR: Failed to initialized search data.
-EOF
-RUN
-
-NAME=/ch entropy_fract error too large entropy limit
-FILE=
-CMDS=<<EOF
-/ch entropy_fract 2.0
-EOF
-EXPECT=
-EXPECT_ERR=<<EOF
-ERROR: Threshold '2.000000' cannot be larger than 1.0.
-ERROR: Failed to parse has search arguments.
-ERROR: Failed to initialized search data.
-EOF
-RUN
-
-NAME=/ch entropy_fract error too small entropy limit
-FILE=
-CMDS=<<EOF
-/ch entropy_fract -0.3
-EOF
-EXPECT=
-EXPECT_ERR=<<EOF
-ERROR: Threshold '-0.300000' cannot be smaller than 0.0.
-ERROR: Failed to parse has search arguments.
-ERROR: Failed to initialized search data.
-EOF
-RUN
-
-NAME=/ch entropy_fract error odd block size
-FILE=
-CMDS=<<EOF
-/ch entropy_fract 0.3 13
-EOF
-EXPECT=
-EXPECT_ERR=<<EOF
-ERROR: Odd or zero block sizes are not allowed.
-ERROR: Failed to initialized search data.
-EOF
-RUN
-
-NAME=/ch entropy_fract error 0 block size
-FILE=
-CMDS=<<EOF
-/ch entropy_fract 0.3 0
-EOF
-EXPECT=
-EXPECT_ERR=<<EOF
-ERROR: Odd or zero block sizes are not allowed.
-ERROR: Failed to initialized search data.
-EOF
-RUN
-
-NAME=/ch aligned
-FILE=bins/elf/analysis/x86-simple
-CMDS=<<EOF
-e search.align=0x20
-echo ----all----
-/ch entropy_fract 0.0 256
-echo ----0x20 block size----
-/ch entropy_fract 0.0 0x20
-echo ----above 0.5----
-/ch entropy_fract 0.5 0x20
-EOF
-EXPECT=<<EOF
-----all----
-0x08048000 114 hit.entropy_fract.0 0.36193749
-0x08048020 82 hit.entropy_fract.1 0.34642421
-----0x20 block size----
-0x08048000 32 hit.entropy_fract.0 0.51570707
-0x08048020 32 hit.entropy_fract.1 0.41100834
-0x08048040 32 hit.entropy_fract.2 0.26189747
-0x08048060 18 hit.entropy_fract.3 0.55742235
-----above 0.5----
-0x08048000 32 hit.entropy_fract.0 0.51570707
-0x08048060 18 hit.entropy_fract.1 0.55742235
-EOF
-RUN
-
-NAME=/ch entropy_fract 0.0
-FILE=
-CMDS=<<EOF
-/ch entropy_fract 0.0
-/ch entropy_fract 0.2
-EOF
-EXPECT=<<EOF
-0x00000000 256 hit.entropy_fract.0 0.00000000
-0x00000100 256 hit.entropy_fract.1 0.00000000
-EOF
-RUN
-
-NAME=/ce alias
-FILE=
-CMDS=<<EOF
-/ce 0.0
-/ce 0.2
-EOF
-EXPECT=<<EOF
-0x00000000 256 hit.entropy_fract.0 0.00000000
-0x00000100 256 hit.entropy_fract.1 0.00000000
 EOF
 RUN
