@@ -153,10 +153,3 @@ else
       dependencies: declare_dependency(link_with: libzstd_static))
   endif
 endif
-
-pkgconfig.generate(libzstd,
-  name: 'libzstd',
-  filebase: 'libzstd',
-  description: 'fast lossless compression algorithm library',
-  version: zstd_libversion,
-  url: 'https://facebook.github.io/zstd/')

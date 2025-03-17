@@ -25,7 +25,6 @@ project('zstd',
   meson_version: '>=0.50.0')
 
 cc = meson.get_compiler('c')
-pkgconfig = import('pkgconfig')
 windows_mod = import('windows')
 
 host_machine_os = host_machine.system()
