@@ -254,7 +254,7 @@ jobs:
               export ASAN_LD_PRELOAD=$(${CC} -print-file-name=libasan.so)
             fi
           fi
-          meson test -C build --suite unit
+          meson test -C build --suite unit --print-errorlogs
         env:
           ASAN: ${{ matrix.asan }}
           ASAN_OPTIONS: ${{ matrix.asan_options }}
@@ -288,7 +288,7 @@ jobs:
               export ASAN_LD_PRELOAD=$(${CC} -print-file-name=libasan.so)
             fi
           fi
-          meson test -C build --suite integration
+          meson test -C build --suite integration --print-errorlogs
           cd test
           if [ "$RUNNER_OS" == "macOS" ]; then
             rz-test -j `sysctl -n hw.activecpu` -L -o results.json
@@ -1028,4 +1028,4 @@ jobs:
     - name: Ninja compile and install
       run: ninja -C build && sudo meson install -C build
     - name: Run unit tests
-      run: meson test -C build
+      run: meson test -C build --print-errorlogs
