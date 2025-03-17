@@ -154,7 +154,7 @@
         {
           "type": "SYMBOL",
           "name": "grep_stmt"
-        },
+        }
       ]
     },
     "tmp_stmt": {

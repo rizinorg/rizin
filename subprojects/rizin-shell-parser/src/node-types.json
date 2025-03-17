@@ -168,10 +168,6 @@
             "named": true
           },
           {
-            "type": "legacy_quoted_stmt",
-            "named": true
-          },
-          {
             "type": "macro_stmt",
             "named": true
           },
@@ -370,10 +366,6 @@
         },
         {
           "type": "iter_threads_stmt",
-          "named": true
-        },
-        {
-          "type": "legacy_quoted_stmt",
           "named": true
         },
         {
@@ -623,10 +615,6 @@
             "named": true
           },
           {
-            "type": "legacy_quoted_stmt",
-            "named": true
-          },
-          {
             "type": "macro_stmt",
             "named": true
           },
@@ -797,10 +785,6 @@
             "named": true
           },
           {
-            "type": "legacy_quoted_stmt",
-            "named": true
-          },
-          {
             "type": "macro_stmt",
             "named": true
           },
@@ -945,10 +929,6 @@
             "named": true
           },
           {
-            "type": "legacy_quoted_stmt",
-            "named": true
-          },
-          {
             "type": "macro_stmt",
             "named": true
           },
@@ -1090,10 +1070,6 @@
         },
         {
           "type": "iter_threads_stmt",
-          "named": true
-        },
-        {
-          "type": "legacy_quoted_stmt",
           "named": true
         },
         {
@@ -1244,10 +1220,6 @@
           "named": true
         },
         {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
           "type": "macro_stmt",
           "named": true
         },
@@ -1388,10 +1360,6 @@
         },
         {
           "type": "iter_threads_stmt",
-          "named": true
-        },
-        {
-          "type": "legacy_quoted_stmt",
           "named": true
         },
         {
@@ -1538,10 +1506,6 @@
           "named": true
         },
         {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
           "type": "macro_stmt",
           "named": true
         },
@@ -1685,10 +1649,6 @@
           "named": true
         },
         {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
           "type": "macro_stmt",
           "named": true
         },
@@ -1829,10 +1789,6 @@
         },
         {
           "type": "iter_threads_stmt",
-          "named": true
-        },
-        {
-          "type": "legacy_quoted_stmt",
           "named": true
         },
         {
@@ -1983,10 +1939,6 @@
           "named": true
         },
         {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
           "type": "macro_stmt",
           "named": true
         },
@@ -2131,10 +2083,6 @@
         },
         {
           "type": "iter_threads_stmt",
-          "named": true
-        },
-        {
-          "type": "legacy_quoted_stmt",
           "named": true
         },
         {
@@ -2285,10 +2233,6 @@
           "named": true
         },
         {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
           "type": "macro_stmt",
           "named": true
         },
@@ -2429,10 +2373,6 @@
         },
         {
           "type": "iter_threads_stmt",
-          "named": true
-        },
-        {
-          "type": "legacy_quoted_stmt",
           "named": true
         },
         {
@@ -2579,10 +2519,6 @@
           "named": true
         },
         {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
           "type": "macro_stmt",
           "named": true
         },
@@ -2723,10 +2659,6 @@
         },
         {
           "type": "iter_threads_stmt",
-          "named": true
-        },
-        {
-          "type": "legacy_quoted_stmt",
           "named": true
         },
         {
@@ -2873,10 +2805,6 @@
           "named": true
         },
         {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
           "type": "macro_stmt",
           "named": true
         },
@@ -3020,10 +2948,6 @@
           "named": true
         },
         {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
           "type": "macro_stmt",
           "named": true
         },
@@ -3164,10 +3088,6 @@
         },
         {
           "type": "iter_threads_stmt",
-          "named": true
-        },
-        {
-          "type": "legacy_quoted_stmt",
           "named": true
         },
         {
@@ -3318,10 +3238,6 @@
           "named": true
         },
         {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
           "type": "macro_stmt",
           "named": true
         },
@@ -3469,10 +3385,6 @@
           "named": true
         },
         {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
           "type": "macro_stmt",
           "named": true
         },
@@ -3613,10 +3525,6 @@
         },
         {
           "type": "iter_threads_stmt",
-          "named": true
-        },
-        {
-          "type": "legacy_quoted_stmt",
           "named": true
         },
         {
@@ -3763,10 +3671,6 @@
           "named": true
         },
         {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
           "type": "macro_stmt",
           "named": true
         },
@@ -3907,10 +3811,6 @@
         },
         {
           "type": "iter_threads_stmt",
-          "named": true
-        },
-        {
-          "type": "legacy_quoted_stmt",
           "named": true
         },
         {
@@ -4061,10 +3961,6 @@
           "named": true
         },
         {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
           "type": "macro_stmt",
           "named": true
         },
@@ -4205,10 +4101,6 @@
         },
         {
           "type": "iter_threads_stmt",
-          "named": true
-        },
-        {
-          "type": "legacy_quoted_stmt",
           "named": true
         },
         {
@@ -4355,10 +4247,6 @@
           "named": true
         },
         {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
           "type": "macro_stmt",
           "named": true
         },
@@ -4502,10 +4390,6 @@
           "named": true
         },
         {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
           "type": "macro_stmt",
           "named": true
         },
@@ -4523,11 +4407,6 @@
         }
       ]
     }
-  },
-  {
-    "type": "legacy_quoted_stmt",
-    "named": true,
-    "fields": {}
   },
   {
     "type": "macro_body",
@@ -4651,10 +4530,6 @@
         },
         {
           "type": "iter_threads_stmt",
-          "named": true
-        },
-        {
-          "type": "legacy_quoted_stmt",
           "named": true
         },
         {
@@ -4896,10 +4771,6 @@
           "named": true
         },
         {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
           "type": "macro_stmt",
           "named": true
         },
@@ -5050,10 +4921,6 @@
           },
           {
             "type": "iter_threads_stmt",
-            "named": true
-          },
-          {
-            "type": "legacy_quoted_stmt",
             "named": true
           },
           {
@@ -5233,10 +5100,6 @@
             "named": true
           },
           {
-            "type": "legacy_quoted_stmt",
-            "named": true
-          },
-          {
             "type": "macro_stmt",
             "named": true
           },
@@ -5399,10 +5262,6 @@
         },
         {
           "type": "iter_threads_stmt",
-          "named": true
-        },
-        {
-          "type": "legacy_quoted_stmt",
           "named": true
         },
         {
@@ -5760,10 +5619,6 @@
         },
         {
           "type": "iter_threads_stmt",
-          "named": true
-        },
-        {
-          "type": "legacy_quoted_stmt",
           "named": true
         },
         {
