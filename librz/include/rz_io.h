@@ -147,7 +147,13 @@ typedef struct rz_io_map_t {
 	int perm;
 	ut32 id;
 	RzInterval itv;
-	ut64 delta; // paddr = itv.addr + delta
+	/**
+	 * \brief This delta is applied to the offset for reading.
+	 * If the map references a memory region at offset 0x100 in a file,
+	 * but this map is read at offset `o = 0x20`. The real reading offset within the
+	 * file is at: `o + delta = 0x120`.
+	 */
+	ut64 delta;
 	RZ_NULLABLE char *name;
 
 	/**
