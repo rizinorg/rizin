@@ -1089,6 +1089,15 @@ RZ_API void rz_bin_map_free(RZ_NULLABLE RzBinMap *map) {
 	free(map);
 }
 
+RZ_API RZ_OWN RzBinMap *rz_bin_map_clone(RZ_NONNULL RzBinMap *map) {
+	rz_return_val_if_fail(map, NULL);
+	RzBinMap *clone = RZ_NEW0(RzBinMap);
+	rz_mem_copy(clone, sizeof(RzBinMap), map, sizeof(RzBinMap));
+	clone->name = rz_str_dup(map->name);
+	clone->vfile_name = map->vfile_name ? rz_str_dup(map->vfile_name) : NULL;
+	return clone;
+}
+
 /**
  * \brief Create a pvector of RzBinMap from RzBinSections queried from the given file
  *

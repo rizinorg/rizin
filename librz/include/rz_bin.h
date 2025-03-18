@@ -804,6 +804,7 @@ RZ_API void rz_bin_class_field_free(RZ_NULLABLE RzBinClassField *field);
 RZ_API void rz_bin_class_free(RZ_NULLABLE RzBinClass *k);
 
 RZ_API void rz_bin_virtual_file_free(RZ_NULLABLE RzBinVirtualFile *vfile);
+RZ_API RZ_OWN RzBinMap *rz_bin_map_clone(RZ_NONNULL RzBinMap *map);
 RZ_API void rz_bin_map_free(RZ_NULLABLE RzBinMap *map);
 RZ_API bool rz_bin_map_is_data(RZ_NONNULL const RzBinMap *map);
 RZ_API RZ_OWN RzPVector /*<RzBinMap *>*/ *rz_bin_maps_of_file_sections(RZ_NONNULL RzBinFile *binfile);
