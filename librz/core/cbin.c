@@ -856,7 +856,7 @@ static bool bin_map_references_real_file(const RzBinFile *bf, const RzBinMap *ma
 	}
 	const RzBinVirtualFile *map_vf = NULL;
 	void **it;
-	rz_pvector_foreach(bf->o->vfiles, it) {
+	rz_pvector_foreach (bf->o->vfiles, it) {
 		RzBinVirtualFile *vf = *it;
 		if (RZ_STR_EQ(vf->name, map->vfile_name)) {
 			map_vf = vf;
