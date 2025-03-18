@@ -1573,6 +1573,7 @@ RZ_API RZ_OWN RzAsmTokenString *rz_asm_tokenize_asm_regex(RZ_BORROW RzStrBuf *as
 			// Pattern was not compiled.
 			rz_asm_compile_token_patterns(patterns);
 			if (!pattern->regex) {
+				rz_asm_token_string_free(toks);
 				rz_warn_if_reached();
 				return NULL;
 			}
