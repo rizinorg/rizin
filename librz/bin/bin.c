@@ -1080,6 +1080,36 @@ RZ_API void rz_bin_virtual_file_free(RZ_NULLABLE RzBinVirtualFile *vfile) {
 	free(vfile);
 }
 
+/**
+ * \brief Clones a virtual file. Note, the buffer will never be cloned.
+ * This function will assign the buffer to of \p vfile but always sets buf_owned = false;
+ *
+ * \p vfile The virtual to clone.
+ *
+ * \return A clone of the vfile but with clone->buf_owned = false.
+ */
+RZ_API RZ_OWN RzBinVirtualFile *rz_bin_virtual_file_copy(RZ_BORROW RZ_NONNULL RzBinVirtualFile *vfile) {
+	rz_return_val_if_fail(vfile, NULL);
+	RzBinVirtualFile *clone = RZ_NEW0(RzBinVirtualFile);
+	if (!clone) {
+		return NULL;
+	}
+	clone->represents_real_file = vfile->represents_real_file;
+	clone->buf_owned = false;
+	clone->buf = vfile->buf;
+	if (!clone->buf) {
+		return NULL;
+	}
+	clone->name = rz_str_dup(vfile->name);
+	if (!clone->name) {
+		if (clone->buf_owned) {
+			rz_buf_free(clone->buf);
+		}
+		return NULL;
+	}
+	return clone;
+}
+
 RZ_API void rz_bin_map_free(RZ_NULLABLE RzBinMap *map) {
 	if (!map) {
 		return;
