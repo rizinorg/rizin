@@ -74,6 +74,19 @@ static ut32 sm4_ecb_transform_internal(ut32 val) {
 	return rz_read_be32(buf);
 }
 
+RZ_API void rz_sm4_extract_master_key(const ut32 word[4], ut8 key_out[RZ_SM4_KEY_SIZE]) {
+	ut32 partial[4] = { 0 };
+	partial[3] = word[3] ^ (rz_sm4_round_key(word[2] ^ word[1] ^ word[0] ^ SM4_CK[3]));
+	partial[2] = word[2] ^ (rz_sm4_round_key(word[1] ^ word[0] ^ partial[3] ^ SM4_CK[2]));
+	partial[1] = word[1] ^ (rz_sm4_round_key(word[0] ^ partial[3] ^ partial[2] ^ SM4_CK[1]));
+	partial[0] = word[0] ^ (rz_sm4_round_key(partial[3] ^ partial[2] ^ partial[1] ^ SM4_CK[0]));
+
+	rz_write_at_be32(key_out, SM4_FK[0] ^ partial[0], 0);
+	rz_write_at_be32(key_out, SM4_FK[1] ^ partial[1], 4);
+	rz_write_at_be32(key_out, SM4_FK[2] ^ partial[2], 8);
+	rz_write_at_be32(key_out, SM4_FK[3] ^ partial[3], 12);
+}
+
 RZ_API ut32 rz_sm4_round_key(ut32 val) {
 	ut32 x = sm4_ecb_transform_internal(val);
 	return x ^ sm4_rol32(x, 13) ^ sm4_rol32(x, 23);

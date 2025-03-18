@@ -51,13 +51,15 @@ CMDS=<<EOF
 e search.overlap=true
 /cmt
 px @ hit.sm4.le.0 @!16
+fC hit.sm4.le.0
 EOF
 EXPECT=<<EOF
-offset       size flag         detail 
---------------------------------------
-  0xff 0x00000010 hit.sm4.le.0 
+offset       size flag         detail                           
+----------------------------------------------------------------
+  0xff 0x00000010 hit.sm4.le.0 0123456789abcdef123456789abcdef0
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x000000ff  f986 21f1 612b 6641 db28 e447 57db e32c  ..!.a+fA.(.GW..,
+0123456789abcdef123456789abcdef0
 EOF
 RUN
 
