@@ -543,6 +543,12 @@ typedef struct rz_bin_virtual_file_t {
 	RZ_OWN RZ_NONNULL char *name;
 	RZ_NONNULL RzBuffer *buf;
 	bool buf_owned; ///< whether buf is owned and freed by this RzBinVirtualFile
+	/**
+	 * \brief Is set the virtual file represents a distinct file, not just a
+	 * memory region in another file.
+	 * This is useful for Rizin APIs which only accepts virtual files.
+	 */
+	bool represents_real_file;
 } RzBinVirtualFile;
 
 /// Description of a single memory mapping into virtual memory from a binary

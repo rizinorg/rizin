@@ -847,6 +847,25 @@ static bool io_create_mem_map(RzIO *io, RZ_NULLABLE RzCoreFile *cf, RzBinMap *ma
 	return true;
 }
 
+// If the map's virtual file is actually a real and distinct file, the delta offset is 0.
+// Because the IO layer will read from the file buffer of the virtual file.
+// Not of the file initially opened with Rizin.
+static bool bin_map_references_real_file(const RzBinFile *bf, const RzBinMap *map) {
+	if (!map->vfile_name) {
+		return false;
+	}
+	const RzBinVirtualFile *map_vf = NULL;
+	void **it;
+	rz_pvector_foreach(bf->o->vfiles, it) {
+		RzBinVirtualFile *vf = *it;
+		if (RZ_STR_EQ(vf->name, map->vfile_name)) {
+			map_vf = vf;
+			break;
+		}
+	}
+	return map_vf && map_vf->represents_real_file;
+}
+
 static void add_map(RzCore *core, RZ_NULLABLE RzCoreFile *cf, RzBinFile *bf, RzBinMap *map, ut64 addr, int fd) {
 	RzIODesc *io_desc = rz_io_desc_get(core->io, fd);
 	if (!io_desc || UT64_ADD_OVFCHK(map->psize, map->paddr) ||
@@ -906,8 +925,9 @@ static void add_map(RzCore *core, RZ_NULLABLE RzCoreFile *cf, RzBinFile *bf, RzB
 		perm |= RZ_PERM_X;
 	}
 
+	bool map_references_real_file = bin_map_references_real_file(bf, map);
 	if (size) {
-		RzIOMap *iomap = rz_io_map_add_batch(core->io, fd, perm, map->paddr, addr, size);
+		RzIOMap *iomap = rz_io_map_add_batch(core->io, fd, perm, map_references_real_file ? 0 : map->paddr, addr, size);
 		if (!iomap) {
 			free(map_name);
 			return;
