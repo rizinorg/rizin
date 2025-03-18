@@ -7,8 +7,8 @@ e search.overlap=false
 px @ hit.aes256.0 @!40
 EOF
 EXPECT=<<EOF
-offset       size flag         comment 
----------------------------------------
+offset       size flag         detail 
+--------------------------------------
   0x1e 0x00000020 hit.aes256.0 
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x0000001e  0000 0000 0000 0000 0000 0000 0000 0000  ................
@@ -27,8 +27,8 @@ px @ hit.aes192.1 @!32
 px @ hit.aes128.2 @!24
 EOF
 EXPECT=<<EOF
-offset       size flag         comment 
----------------------------------------
+offset       size flag         detail 
+--------------------------------------
   0x1e 0x00000020 hit.aes256.0 
   0x26 0x00000018 hit.aes192.1 
   0x2e 0x00000010 hit.aes128.2 
@@ -53,8 +53,8 @@ e search.overlap=true
 px @ hit.sm4.le.0 @!16
 EOF
 EXPECT=<<EOF
-offset       size flag         comment 
----------------------------------------
+offset       size flag         detail 
+--------------------------------------
   0xff 0x00000010 hit.sm4.le.0 
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x000000ff  f986 21f1 612b 6641 db28 e447 57db e32c  ..!.a+fA.(.GW..,
@@ -69,8 +69,8 @@ e search.overlap=true
 px @ hit.aes192.0 @!0x18
 EOF
 EXPECT=<<EOF
-offset       size flag         comment 
----------------------------------------
+offset       size flag         detail 
+--------------------------------------
   0xfa 0x00000018 hit.aes192.0 
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x000000fa  0001 0203 0405 0607 0809 0a0b 0c0d 0e0f  ................
@@ -86,8 +86,8 @@ e search.overlap=true
 pFa @ hit.rsa.0 @!0x92c
 EOF
 EXPECT=<<EOF
-offset       size flag      comment 
-------------------------------------
+offset       size flag      detail 
+-----------------------------------
    0xd 0x0000092c hit.rsa.0 
    0  2344: 0: cons SEQUENCE            : 
    4     1: 1: prim INTEGER             : 00
@@ -251,8 +251,8 @@ e search.overlap=true
 pFa @ hit.safecurves.0 @!0x49
 EOF
 EXPECT=<<EOF
-offset       size flag             comment 
--------------------------------------------
+offset       size flag             detail 
+------------------------------------------
   0xf5 0x00000049 hit.safecurves.0 
    0    71: 0: cons SEQUENCE            : 
    2     1: 1: prim INTEGER             : 00
@@ -274,8 +274,8 @@ e search.overlap=true
 pFx @ hit.x509.0 @!0x34d
 EOF
 EXPECT=<<EOF
-offset       size flag       comment 
--------------------------------------
+offset       size flag       detail 
+------------------------------------
   0x2f 0x0000034d hit.x509.0 
 TBSCertificate:
   Version: v3

@@ -790,20 +790,20 @@ RZ_IPI int rz_search_hit_cmp(RZ_NULLABLE RzSearchHit *a, RZ_NULLABLE RzSearchHit
 /**
  * \brief      Allocate and initialize a new RzSearchHit
  *
- * \param[in]  hit_desc     The hit description linked to the hit (can be NULL)
- * \param[in]  address      The address where the hit happened
- * \param[in]  size         The size of the hit data (can be 0)
- * \param[in]  hit_comment  The comment containing additional information about the hit (can be NULL)
+ * \param[in]  hit_desc    The hit description linked to the hit (can be NULL)
+ * \param[in]  address     The address where the hit happened
+ * \param[in]  size        The size of the hit data (can be 0)
+ * \param[in]  hit_detail  Contains additional information about the hit (can be NULL)
  *
  * \return     On success returns a valid pointer, otherwise NULL
  */
-RZ_IPI RZ_OWN RzSearchHit *rz_search_hit_new(const char *hit_desc, ut64 address, size_t size, const char *hit_comment) {
+RZ_IPI RZ_OWN RzSearchHit *rz_search_hit_new(const char *hit_desc, ut64 address, size_t size, RzSearchHitDetail *hit_detail) {
 	RzSearchHit *hit = RZ_NEW0(RzSearchHit);
 	if (!hit) {
 		return NULL;
 	}
 	hit->hit_desc = rz_str_dup(hit_desc);
-	hit->comment = rz_str_dup(hit_comment);
+	hit->detail = hit_detail;
 	hit->address = address;
 	hit->size = size;
 	return hit;
@@ -819,7 +819,7 @@ RZ_IPI void rz_search_hit_free(RZ_NULLABLE RzSearchHit *hit) {
 		return;
 	}
 	free(hit->hit_desc);
-	free(hit->comment);
+	rz_search_hit_detail_free(hit->detail);
 	free(hit);
 }
 
@@ -844,9 +844,7 @@ RZ_IPI void rz_search_hit_free(RZ_NULLABLE RzSearchHit *hit) {
  *
  * \return A flag of \p hit, or NULL in case of failure.
  */
-RZ_API RZ_OWN char *rz_search_hit_flag_name(RZ_NONNULL const RzSearchHit *hit,
-	size_t hit_id,
-	RZ_NULLABLE const char *prefix) {
+RZ_API RZ_OWN char *rz_search_hit_flag_name(RZ_NONNULL const RzSearchHit *hit, size_t hit_id, RZ_NULLABLE const char *prefix) {
 	rz_return_val_if_fail(hit, NULL);
 	RzStrBuf *buf = rz_strbuf_new("");
 	if (!buf) {
@@ -859,6 +857,240 @@ RZ_API RZ_OWN char *rz_search_hit_flag_name(RZ_NONNULL const RzSearchHit *hit,
 	rz_strbuf_appendf(buf, ".%" PFMTSZd, hit_id);
 
 	return rz_strbuf_drain(buf);
+}
+
+/**
+ * \brief      Returns the detail as a null-terminated string
+ *
+ * \param[in]  hit   The RzSearchHit to use
+ *
+ * \return     On success a valid string, otherwise null.
+ */
+RZ_API RZ_OWN char *rz_search_hit_detail_as_string(RZ_NONNULL const RzSearchHit *hit) {
+	rz_return_val_if_fail(hit, NULL);
+	if (!hit->detail) {
+		return NULL;
+	}
+	RzSearchHitDetail *detail = hit->detail;
+	switch (detail->type) {
+	case RZ_SEARCH_HIT_DETAIL_STRING:
+		return rz_str_ndup(detail->string, detail->length);
+	case RZ_SEARCH_HIT_DETAIL_UNSIGNED:
+		if (detail->u64 < 128) {
+			return rz_str_newf("%" PFMT64u, detail->u64);
+		}
+		return rz_str_newf("%" PFMT64x, detail->u64);
+	case RZ_SEARCH_HIT_DETAIL_SIGNED:
+		return rz_str_newf("%" PFMT64d, detail->s64);
+	case RZ_SEARCH_HIT_DETAIL_DOUBLE:
+		return rz_str_newf("%.4f", detail->f64);
+	case RZ_SEARCH_HIT_DETAIL_BYTES:
+		return rz_hex_bin2strdup(detail->bytes, detail->length);
+	default:
+		rz_warn_if_reached();
+		return NULL;
+	}
+}
+
+/**
+ * \brief      Adds the detail to a gives PJ (json) structure.
+ *
+ * \param[in]  hit   The RzSearchHit to use
+ * \param      json  The json where to add the detail
+ */
+RZ_API void rz_search_hit_detail_as_json(RZ_NONNULL const RzSearchHit *hit, RZ_NONNULL PJ *json) {
+	rz_return_if_fail(hit && json);
+	if (!hit->detail) {
+		return;
+	}
+
+	RzSearchHitDetail *detail = hit->detail;
+	switch (detail->type) {
+	case RZ_SEARCH_HIT_DETAIL_STRING:
+		pj_ks(json, "detail", detail->string);
+		return;
+	case RZ_SEARCH_HIT_DETAIL_UNSIGNED:
+		pj_kn(json, "detail", detail->u64);
+		return;
+	case RZ_SEARCH_HIT_DETAIL_SIGNED:
+		pj_kN(json, "detail", detail->s64);
+		return;
+	case RZ_SEARCH_HIT_DETAIL_DOUBLE:
+		pj_kd(json, "detail", detail->f64);
+		return;
+	case RZ_SEARCH_HIT_DETAIL_BYTES: {
+		char *hex = rz_hex_bin2strdup(detail->bytes, detail->length);
+		pj_ks(json, "detail", hex);
+		free(hex);
+		return;
+	}
+	default:
+		rz_warn_if_reached();
+		return;
+	}
+}
+
+RZ_IPI RZ_OWN RzSearchHitDetail *rz_search_hit_detail_string_new(const char *string) {
+	if (RZ_STR_ISEMPTY(string)) {
+		return NULL;
+	}
+
+	size_t length = strlen(string);
+	if (length < 1) {
+		return NULL;
+	}
+
+	RzSearchHitDetail *detail = RZ_NEW0(RzSearchHitDetail);
+	if (!detail) {
+		return NULL;
+	}
+
+	detail->string = rz_str_ndup(string, length);
+	if (!detail->string) {
+		free(detail);
+		return NULL;
+	}
+	detail->type = RZ_SEARCH_HIT_DETAIL_STRING;
+	detail->length = length;
+	return detail;
+}
+
+RZ_IPI RZ_OWN RzSearchHitDetail *rz_search_hit_detail_unsigned_new(const ut64 u64) {
+	RzSearchHitDetail *detail = RZ_NEW0(RzSearchHitDetail);
+	if (!detail) {
+		return NULL;
+	}
+	detail->type = RZ_SEARCH_HIT_DETAIL_UNSIGNED;
+	detail->u64 = u64;
+	return detail;
+}
+
+RZ_IPI RZ_OWN RzSearchHitDetail *rz_search_hit_detail_signed_new(const st64 s64) {
+	RzSearchHitDetail *detail = RZ_NEW0(RzSearchHitDetail);
+	if (!detail) {
+		return NULL;
+	}
+	detail->type = RZ_SEARCH_HIT_DETAIL_SIGNED;
+	detail->s64 = s64;
+	return detail;
+}
+
+RZ_IPI RZ_OWN RzSearchHitDetail *rz_search_hit_detail_double_new(const double f64) {
+	RzSearchHitDetail *detail = RZ_NEW0(RzSearchHitDetail);
+	if (!detail) {
+		return NULL;
+	}
+
+	detail->type = RZ_SEARCH_HIT_DETAIL_DOUBLE;
+	detail->f64 = f64;
+	return detail;
+}
+
+RZ_IPI RZ_OWN RzSearchHitDetail *rz_search_hit_detail_bytes_new(const ut8 *bytes, size_t length) {
+	if (length < 1) {
+		return NULL;
+	}
+
+	RzSearchHitDetail *detail = RZ_NEW0(RzSearchHitDetail);
+	if (!detail) {
+		return NULL;
+	}
+
+	detail->bytes = malloc(length);
+	if (!detail->bytes) {
+		free(detail);
+		return NULL;
+	}
+	memcpy(detail->bytes, bytes, length);
+
+	detail->type = RZ_SEARCH_HIT_DETAIL_BYTES;
+	detail->length = length;
+	return detail;
+}
+
+RZ_API bool rz_search_hit_detail_get_type(RZ_NULLABLE RzSearchHitDetail *detail, RZ_NONNULL RZ_OUT RzSearchHitDetailType *type) {
+	rz_return_val_if_fail(type, false);
+	if (!detail) {
+		return false;
+	}
+	*type = detail->type;
+	return true;
+}
+
+RZ_API bool rz_search_hit_detail_get_string(RZ_NULLABLE RzSearchHitDetail *detail, RZ_NONNULL RZ_OUT char **string) {
+	rz_return_val_if_fail(string, false);
+	if (!detail || detail->type != RZ_SEARCH_HIT_DETAIL_STRING) {
+		return false;
+	}
+	char *copy = rz_str_ndup(detail->string, detail->length);
+	if (!copy) {
+		RZ_LOG_ERROR("search: failed to duplicate string.\n");
+		return false;
+	}
+	*string = copy;
+	return true;
+}
+
+RZ_API bool rz_search_hit_detail_get_unsigned(RZ_NULLABLE RzSearchHitDetail *detail, RZ_NONNULL RZ_OUT ut64 *u64) {
+	rz_return_val_if_fail(u64, false);
+	if (!detail || detail->type != RZ_SEARCH_HIT_DETAIL_UNSIGNED) {
+		return false;
+	}
+	*u64 = detail->u64;
+	return true;
+}
+
+RZ_API bool rz_search_hit_detail_get_signed(RZ_NULLABLE RzSearchHitDetail *detail, RZ_NONNULL RZ_OUT st64 *s64) {
+	rz_return_val_if_fail(s64, false);
+	if (!detail || detail->type != RZ_SEARCH_HIT_DETAIL_SIGNED) {
+		return false;
+	}
+	*s64 = detail->s64;
+	return true;
+}
+
+RZ_API bool rz_search_hit_detail_get_double(RZ_NULLABLE RzSearchHitDetail *detail, RZ_NONNULL RZ_OUT double *f64) {
+	rz_return_val_if_fail(f64, false);
+	if (!detail || detail->type != RZ_SEARCH_HIT_DETAIL_DOUBLE) {
+		return false;
+	}
+	*f64 = detail->f64;
+	return true;
+}
+
+RZ_API bool rz_search_hit_detail_get_bytes(RZ_NULLABLE RzSearchHitDetail *detail, RZ_NONNULL RZ_OUT ut8 **bytes, RZ_NONNULL RZ_OUT size_t *length) {
+	rz_return_val_if_fail(bytes && length, false);
+	if (!detail || detail->type != RZ_SEARCH_HIT_DETAIL_BYTES) {
+		return false;
+	}
+	ut8 *b = malloc(detail->length);
+	if (!b) {
+		RZ_LOG_ERROR("search: failed to allocate byte buffer for copy.\n");
+		return false;
+	}
+	memcpy(b, detail->bytes, detail->length);
+
+	*bytes = b;
+	*length = detail->length;
+	return true;
+}
+
+RZ_IPI void rz_search_hit_detail_free(RZ_NULLABLE RzSearchHitDetail *detail) {
+	if (!detail) {
+		return;
+	}
+
+	switch (detail->type) {
+	case RZ_SEARCH_HIT_DETAIL_STRING:
+		free(detail->string);
+		break;
+	case RZ_SEARCH_HIT_DETAIL_BYTES:
+		free(detail->bytes);
+		break;
+	default:
+		break;
+	}
+	free(detail);
 }
 
 RZ_IPI RZ_OWN RzSearchInterval *rz_search_interval_new(RzInterval interval, size_t n_hits) {

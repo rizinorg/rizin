@@ -116,31 +116,31 @@ echo ----entropy_fract above 0.5 json----
 EOF
 EXPECT=<<EOF
 ----entropy any----
-0x08048000 114 hit.entropy.0 2.4731 in [0.0000,8.0000]
-0x08048020 82 hit.entropy.1 2.2024 in [0.0000,8.0000]
+0x08048000 114 hit.entropy.0 2.4731
+0x08048020 82 hit.entropy.1 2.2024
 ----entropy 0x20 block size----
-0x08048000 32 hit.entropy.0 2.5785 in [0.0000,8.0000]
-0x08048020 32 hit.entropy.1 2.0550 in [0.0000,8.0000]
-0x08048040 32 hit.entropy.2 1.3095 in [0.0000,8.0000]
-0x08048060 18 hit.entropy.3 2.3244 in [0.0000,8.0000]
+0x08048000 32 hit.entropy.0 2.5785
+0x08048020 32 hit.entropy.1 2.0550
+0x08048040 32 hit.entropy.2 1.3095
+0x08048060 18 hit.entropy.3 2.3244
 ----entropy above 2.1----
-0x08048000 32 hit.entropy.0 2.5785 in [2.1000,8.0000]
-0x08048060 18 hit.entropy.1 2.3244 in [2.1000,8.0000]
+0x08048000 32 hit.entropy.0 2.5785
+0x08048060 18 hit.entropy.1 2.3244
 ----entropy above 2.1 (json)----
-[{"address":134512640,"size":32,"flag":"hit.entropy.0","comment":"2.5785 in [2.1000,8.0000]"},{"address":134512736,"size":18,"flag":"hit.entropy.1","comment":"2.3244 in [2.1000,8.0000]"}]
+[{"address":134512640,"size":32,"flag":"hit.entropy.0","detail":2.578535},{"address":134512736,"size":18,"flag":"hit.entropy.1","detail":2.324409}]
 ----entropy_fract any----
-0x08048000 114 hit.entropy_fract.0 0.3619 in [0.0000,1.0000]
-0x08048020 82 hit.entropy_fract.1 0.3464 in [0.0000,1.0000]
+0x08048000 114 hit.entropy_fract.0 0.3619
+0x08048020 82 hit.entropy_fract.1 0.3464
 ----entropy_fract 0x20 block size----
-0x08048000 32 hit.entropy_fract.0 0.5157 in [0.0000,0.7000]
-0x08048020 32 hit.entropy_fract.1 0.4110 in [0.0000,0.7000]
-0x08048040 32 hit.entropy_fract.2 0.2619 in [0.0000,0.7000]
-0x08048060 18 hit.entropy_fract.3 0.5574 in [0.0000,0.7000]
+0x08048000 32 hit.entropy_fract.0 0.5157
+0x08048020 32 hit.entropy_fract.1 0.4110
+0x08048040 32 hit.entropy_fract.2 0.2619
+0x08048060 18 hit.entropy_fract.3 0.5574
 ----entropy_fract above 0.5----
-0x08048000 32 hit.entropy_fract.0 0.5157 in [0.5000,1.0000]
-0x08048060 18 hit.entropy_fract.1 0.5574 in [0.5000,1.0000]
+0x08048000 32 hit.entropy_fract.0 0.5157
+0x08048060 18 hit.entropy_fract.1 0.5574
 ----entropy_fract above 0.5 json----
-[{"address":134512640,"size":32,"flag":"hit.entropy_fract.0","comment":"0.5157 in [0.5000,1.0000]"},{"address":134512736,"size":18,"flag":"hit.entropy_fract.1","comment":"0.5574 in [0.5000,1.0000]"}]
+[{"address":134512640,"size":32,"flag":"hit.entropy_fract.0","detail":0.515707},{"address":134512736,"size":18,"flag":"hit.entropy_fract.1","detail":0.557422}]
 EOF
 RUN
 
@@ -154,5 +154,44 @@ EOF
 EXPECT=<<EOF
 0x08048060 16 hit.md5.0
 [{"address":134512736,"size":16,"flag":"hit.md5.0"}]
+EOF
+RUN
+
+NAME=error - search unmapped region
+CMDS=<<EOF
+e search.from=0xf0000000000
+e search.to=0xf0000000020
+/cef 0.0 1.0 12
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: The range [0xf0000000000, 0xf0000000020] doesn't overlap with a mapped memory region or
+the region is not included in search.in.
+ERROR: core: Setting up search from core failed.
+ERROR: Failed to perform search.
+EOF
+RUN
+
+NAME=search hit detail output
+FILE==
+CMDS=<<EOF
+e search.from=0
+e search.to=0x10
+ws "hello world!"
+/cef 0.0 1.0 16
+/cefq 0.0 1.0 16
+/cefj 0.0 1.0 16
+/ceft 0.0 1.0 16
+EOF
+EXPECT=<<EOF
+0x00000000 16 hit.entropy_fract.0 0.8202
+0x00000001 15 hit.entropy_fract.1 0.8036
+0x00000000
+0x00000001
+[{"address":0,"size":16,"flag":"hit.entropy_fract.0","detail":0.820160},{"address":1,"size":15,"flag":"hit.entropy_fract.1","detail":0.803599}]
+offset       size flag                detail 
+---------------------------------------------
+   0x0 0x00000010 hit.entropy_fract.0 0.8202
+   0x1 0x0000000f hit.entropy_fract.1 0.8036
 EOF
 RUN

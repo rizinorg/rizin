@@ -131,6 +131,26 @@ struct rz_search_interval_t {
 	size_t n_hits;
 };
 
+struct rz_search_hit_detail_t {
+	RzSearchHitDetailType type;
+	union {
+		char *string;
+		ut64 u64;
+		st64 s64;
+		double f64;
+		ut8 *bytes;
+	};
+	size_t length;
+};
+
+RZ_IPI RZ_OWN RzSearchHitDetail *rz_search_hit_detail_string_new(const char *string);
+RZ_IPI RZ_OWN RzSearchHitDetail *rz_search_hit_detail_unsigned_new(const ut64 u64);
+RZ_IPI RZ_OWN RzSearchHitDetail *rz_search_hit_detail_signed_new(const st64 s64);
+RZ_IPI RZ_OWN RzSearchHitDetail *rz_search_hit_detail_double_new(const double f64);
+RZ_IPI RZ_OWN RzSearchHitDetail *rz_search_hit_detail_bytes_new(const ut8 *bytes, size_t length);
+
+RZ_IPI void rz_search_hit_detail_free(RZ_NULLABLE RzSearchHitDetail *detail);
+
 /**
  * \brief Checks of \p fopst->alignment is aligned.
  * If not, it increases \p offset by the required patting to align address + offset again and continues.
@@ -142,7 +162,7 @@ struct rz_search_interval_t {
 		continue; \
 	}
 
-RZ_IPI RZ_OWN RzSearchHit *rz_search_hit_new(const char *hit_desc, ut64 address, size_t size, const char *hit_comment);
+RZ_IPI RZ_OWN RzSearchHit *rz_search_hit_new(const char *hit_desc, ut64 address, size_t size, RzSearchHitDetail *hit_detail);
 RZ_IPI void rz_search_hit_free(RZ_NULLABLE RzSearchHit *hit);
 RZ_IPI int rz_search_hit_cmp(RZ_NULLABLE RzSearchHit *a, RZ_NULLABLE RzSearchHit *b, void *user);
 

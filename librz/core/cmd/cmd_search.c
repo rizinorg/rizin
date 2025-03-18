@@ -1898,15 +1898,15 @@ static bool cmd_search_progress_cancel(void *user, size_t n_hits, RzSearchCancel
 	return rz_cons_is_breaked();
 }
 
-static void cmd_search_output_to_state(RzCmdStateOutput *state, RzSearchHit *hit, const char *flag_name) {
+static void cmd_search_output_to_state(RzCmdStateOutput *state, RzSearchHit *hit, const char *flag_name, const char *detail) {
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_QUIET:
 		rz_cons_printf("0x%08" PFMT64x "\n", hit->address);
 		break;
 	case RZ_OUTPUT_MODE_STANDARD:
 		rz_cons_printf("0x%08" PFMT64x " %" PFMTSZu " %s", hit->address, hit->size, flag_name);
-		if (hit->comment) {
-			rz_cons_printf(" %s", hit->comment);
+		if (detail) {
+			rz_cons_printf(" %s", detail);
 		}
 		rz_cons_newline();
 		break;
@@ -1915,13 +1915,11 @@ static void cmd_search_output_to_state(RzCmdStateOutput *state, RzSearchHit *hit
 		pj_kn(state->d.pj, "address", hit->address);
 		pj_kn(state->d.pj, "size", hit->size);
 		pj_ks(state->d.pj, "flag", flag_name);
-		if (hit->comment) {
-			pj_ks(state->d.pj, "comment", hit->comment);
-		}
+		rz_search_hit_detail_as_json(hit, state->d.pj);
 		pj_end(state->d.pj);
 		break;
 	case RZ_OUTPUT_MODE_TABLE:
-		rz_table_add_rowf(state->d.t, "xXss", hit->address, hit->size, flag_name, rz_str_get(hit->comment));
+		rz_table_add_rowf(state->d.t, "xXss", hit->address, hit->size, flag_name, rz_str_get(detail));
 		break;
 	default:
 		rz_warn_if_reached();
@@ -1961,7 +1959,7 @@ static RzCmdStatus cmd_core_handle_search_hits(RzCore *core, RzCmdStateOutput *s
 	if (RZ_STR_ISEMPTY(cmd_hit)) {
 		// Setup output and flag space.
 		rz_cmd_state_output_array_start(state);
-		rz_cmd_state_output_set_columnsf(state, "xXss", "offset", "size", "flag", "comment");
+		rz_cmd_state_output_set_columnsf(state, "xXss", "offset", "size", "flag", "detail");
 		rz_flag_space_push(core->flags, "search");
 	}
 
@@ -1975,10 +1973,12 @@ static RzCmdStatus cmd_core_handle_search_hits(RzCore *core, RzCmdStateOutput *s
 		// Only output & add flag when cmd.hit is not set.
 		char *flag = rz_search_hit_flag_name(hit, i, search_prefix);
 		RzFlagItem *fitem = rz_flag_set(core->flags, flag, hit->address, hit->size);
-		if (hit->comment) {
-			rz_flag_item_set_comment(fitem, hit->comment);
+		char *detail = rz_search_hit_detail_as_string(hit);
+		if (detail) {
+			rz_flag_item_set_comment(fitem, detail);
 		}
-		cmd_search_output_to_state(state, hit, flag);
+		cmd_search_output_to_state(state, hit, flag, detail);
+		free(detail);
 		free(flag);
 	}
 

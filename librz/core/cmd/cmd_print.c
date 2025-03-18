@@ -1515,17 +1515,21 @@ RZ_IPI RzCmdStatus rz_cmd_print_magic_handler(RzCore *core, int argc, const char
 		PJ *pj = pj_new();
 		pj_a(pj);
 		rz_list_foreach (hits, it, hit) {
+			char *detail = rz_search_hit_detail_as_string(hit);
 			pj_o(pj);
 			pj_kn(pj, "address", hit->address);
-			pj_ks(pj, "magic", hit->comment);
+			pj_ks(pj, "magic", rz_str_get(detail));
 			pj_end(pj);
+			free(detail);
 		}
 		pj_end(pj);
 		rz_cons_println(pj_string(pj));
 		pj_free(pj);
 	} else {
 		rz_list_foreach (hits, it, hit) {
-			rz_cons_printf("0x%08" PFMT64x " %s\n", hit->address, hit->comment);
+			char *detail = rz_search_hit_detail_as_string(hit);
+			rz_cons_printf("0x%08" PFMT64x " %s\n", hit->address, rz_str_get(detail));
+			free(detail);
 		}
 	}
 	rz_list_free(hits);

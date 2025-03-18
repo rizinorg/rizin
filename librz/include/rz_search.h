@@ -147,11 +147,28 @@ typedef struct rz_search_interval_t RzSearchInterval;
 
 typedef struct rz_search_collection_t RzSearchCollection;
 
+typedef enum {
+	RZ_SEARCH_HIT_DETAIL_STRING = 0, ///< The detail contains a null-terminated string.
+	RZ_SEARCH_HIT_DETAIL_UNSIGNED, ///< The detail contains a unsigned numeric value.
+	RZ_SEARCH_HIT_DETAIL_SIGNED, ///< The detail contains a signed numeric value.
+	RZ_SEARCH_HIT_DETAIL_DOUBLE, ///< The detail contains a double numeric value.
+	RZ_SEARCH_HIT_DETAIL_BYTES, ///< The detail contains byte array.
+} RzSearchHitDetailType;
+
+typedef struct rz_search_hit_detail_t RzSearchHitDetail;
+
+RZ_API bool rz_search_hit_detail_get_type(RZ_NULLABLE RzSearchHitDetail *detail, RZ_NONNULL RZ_OUT RzSearchHitDetailType *type);
+RZ_API bool rz_search_hit_detail_get_string(RZ_NULLABLE RzSearchHitDetail *detail, RZ_NONNULL RZ_OUT char **string);
+RZ_API bool rz_search_hit_detail_get_unsigned(RZ_NULLABLE RzSearchHitDetail *detail, RZ_NONNULL RZ_OUT ut64 *u64);
+RZ_API bool rz_search_hit_detail_get_signed(RZ_NULLABLE RzSearchHitDetail *detail, RZ_NONNULL RZ_OUT st64 *s64);
+RZ_API bool rz_search_hit_detail_get_double(RZ_NULLABLE RzSearchHitDetail *detail, RZ_NONNULL RZ_OUT double *f64);
+RZ_API bool rz_search_hit_detail_get_bytes(RZ_NULLABLE RzSearchHitDetail *detail, RZ_NONNULL RZ_OUT ut8 **bytes, RZ_NONNULL RZ_OUT size_t *length);
+
 typedef struct rz_search_hit_t {
 	char *hit_desc; ///< Hit one word description. If set, it is added to the flag name of the hit. Optional, can be NULL.
-	char *comment; ///< A detailed comment about the hit. Set as flag comment. Optional, can be NULL.
 	ut64 address; ///< Address/offset of the matched data.
 	size_t size; ///< Size of the matched data (can be 0), in bytes.
+	RzSearchHitDetail *detail; ///< A detail about the hit. Used to set as flag comment. Optional, can be NULL.
 } RzSearchHit;
 
 typedef enum {
@@ -160,6 +177,8 @@ typedef enum {
 } RzSearchCancelReason;
 
 RZ_API RZ_OWN char *rz_search_hit_flag_name(RZ_NONNULL const RzSearchHit *hit, size_t hit_id, RZ_NULLABLE const char *prefix);
+RZ_API RZ_OWN char *rz_search_hit_detail_as_string(RZ_NONNULL const RzSearchHit *hit);
+RZ_API void rz_search_hit_detail_as_json(RZ_NONNULL const RzSearchHit *hit, RZ_NONNULL PJ *json);
 
 typedef struct rz_search_bytes_pattern_t RzSearchBytesPattern;
 

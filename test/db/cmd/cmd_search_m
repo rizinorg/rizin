@@ -40,9 +40,9 @@ fC hit.magic.0
 /mj
 EOF
 EXPECT=<<EOF
-0x08048000 0 hit.magic.0
+0x08048000 0 hit.magic.0 ELF 32-bit LSB executable, Intel 80386, version 1
 ELF 32-bit LSB executable, Intel 80386, version 1
-[{"address":134512640,"size":0,"flag":"hit.magic.0","comment":"ELF 32-bit LSB executable, Intel 80386, version 1"}]
+[{"address":134512640,"size":0,"flag":"hit.magic.0","detail":"ELF 32-bit LSB executable, Intel 80386, version 1"}]
 EOF
 RUN
 
@@ -54,7 +54,7 @@ wx cffa edfe
 fC hit.magic.0
 EOF
 EXPECT=<<EOF
-0x00000000 0 hit.magic.0
+0x00000000 0 hit.magic.0 Mach-O
 Mach-O
 EOF
 RUN
@@ -69,7 +69,7 @@ e search.in=file
 fC hit.magic.0
 EOF
 EXPECT=<<EOF
-0x00000000 0 hit.magic.0
+0x00000000 0 hit.magic.0 PE  for MS Windows (console) Intel 80386 32-bit
 PE  for MS Windows (console) Intel 80386 32-bit
 EOF
 RUN
@@ -84,7 +84,7 @@ e search.in=file
 fC hit.magic.0
 EOF
 EXPECT=<<EOF
-0x00000000 0 hit.magic.0
+0x00000000 0 hit.magic.0 PE  for MS Windows (console) Intel 80386 32-bit
 PE  for MS Windows (console) Intel 80386 32-bit
 EOF
 EXPECT_ERR=
@@ -114,9 +114,9 @@ fC hit.magic.0
 /mj
 EOF
 EXPECT=<<EOF
-0x08048000 0 hit.magic.0
+0x08048000 0 hit.magic.0 ELF 32-bit LSB executable, Intel 80386, version 1
 ELF 32-bit LSB executable, Intel 80386, version 1
-[{"address":134512640,"size":0,"flag":"hit.magic.0","comment":"ELF 32-bit LSB executable, Intel 80386, version 1"}]
+[{"address":134512640,"size":0,"flag":"hit.magic.0","detail":"ELF 32-bit LSB executable, Intel 80386, version 1"}]
 EOF
 RUN
 

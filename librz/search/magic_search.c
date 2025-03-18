@@ -12,11 +12,11 @@
 static RzMagic *setup_magic_instance(const char *magic_dir) {
 	RzMagic *magic = rz_magic_new(0);
 	if (!magic) {
-		RZ_LOG_ERROR("cannot initialize RzMagic.\n");
+		RZ_LOG_ERROR("search: cannot initialize RzMagic.\n");
 		return NULL;
 	}
 	if (!rz_magic_load(magic, magic_dir)) {
-		RZ_LOG_ERROR("Failed to load from '%s'.\n", magic_dir);
+		RZ_LOG_ERROR("search: failed to load from '%s'.\n", magic_dir);
 		rz_magic_free(magic);
 		return NULL;
 	}
@@ -47,7 +47,12 @@ static bool magic_find(RzSearchFindOpt *fopt, void *user, ut64 address, const Rz
 			continue;
 		}
 
-		RzSearchHit *hit = rz_search_hit_new("magic", address + i, 0, match);
+		RzSearchHitDetail *detail = rz_search_hit_detail_string_new(match);
+		if (!detail) {
+			RZ_LOG_ERROR("search: failed to allocate magic hit detail.\n");
+			return false;
+		}
+		RzSearchHit *hit = rz_search_hit_new("magic", address + i, 0, detail);
 		if (!hit || !rz_th_queue_push(hits, hit, true)) {
 			rz_search_hit_free(hit);
 			rz_magic_free(magic);

@@ -26,15 +26,15 @@ typedef struct search_entropy_t {
 static RzSearchHit *calculate_entropy_and_compare(RzHashCfg *cfg, const SearchEntropyRange *range, ut64 address, const ut8 *buffer, size_t buf_size) {
 	rz_return_val_if_fail(cfg && buffer, NULL);
 	if (!rz_hash_cfg_init(cfg)) {
-		RZ_LOG_ERROR("Hash config init failed.\n");
+		RZ_LOG_ERROR("search: entropy init failed.\n");
 		return NULL;
 	}
 	if (!rz_hash_cfg_update(cfg, buffer, buf_size)) {
-		RZ_LOG_ERROR("Hash config update failed.\n");
+		RZ_LOG_ERROR("search: entropy update failed.\n");
 		return NULL;
 	}
 	if (!rz_hash_cfg_final(cfg)) {
-		RZ_LOG_ERROR("Hash config final failed.\n");
+		RZ_LOG_ERROR("search: entropy final failed.\n");
 		return NULL;
 	}
 
@@ -52,10 +52,12 @@ static RzSearchHit *calculate_entropy_and_compare(RzHashCfg *cfg, const SearchEn
 		return NULL;
 	}
 
-	char comment[64]; // 6 chars per double
-	rz_strf(comment, "%.4f in [%.4f,%.4f]", entropy, range->min_inclusive_limit, range->max_inclusive_limit);
-
-	return rz_search_hit_new(algo, address, buf_size, comment);
+	RzSearchHitDetail *detail = rz_search_hit_detail_double_new(entropy);
+	if (!detail) {
+		RZ_LOG_ERROR("search: failed to allocate entropy hit detail.\n");
+		return NULL;
+	}
+	return rz_search_hit_new(algo, address, buf_size, detail);
 }
 
 static bool entropy_find(RzSearchFindOpt *fopts, void *user, ut64 address, const RzBuffer *buffer,

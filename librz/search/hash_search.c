@@ -15,7 +15,7 @@ typedef struct search_hash_context_t {
 	ut8 *digest; ///< The expected hash digest the data block should match.
 	size_t digest_len; ///< Length of the expected digest.
 	ut64 block_size; ///< The data block size given as input to the hash function.
-	RzHashCfg *config; ///< RzHash configuration for the given algorithm.
+	const RzHash *rz_hash; ///< Immutable RzHash instance with all registered plugins.
 } SearchHashContext;
 
 static void search_hash_data_free(SearchHashContext *data) {
@@ -41,25 +41,25 @@ static bool rz_search_hash_data_eq(const SearchHashContext *a, const SearchHashC
 	return rz_mem_eq(a->digest, b->digest, a->digest_len);
 }
 
-static ut8 *parse_digest(const char *algo, const char *expected_digest, ut32 digit_size) {
+static ut8 *parse_digest(const char *algo, const char *expected_digest, ut32 digest_size) {
 	rz_return_val_if_fail(expected_digest, NULL);
 
-	ut8 *out = RZ_NEWS0(ut8, digit_size);
+	ut8 *out = RZ_NEWS0(ut8, digest_size);
 	if (!out) {
-		RZ_LOG_ERROR("search: failed to allocate %u bytes for digest.\n", digit_size);
+		RZ_LOG_ERROR("search: failed to allocate %u bytes for digest.\n", digest_size);
 		return NULL;
 	}
 
 	if (RZ_STR_EQ(algo, "ssdeep")) {
-		rz_mem_copy(out, digit_size, expected_digest, strlen(expected_digest));
+		rz_mem_copy(out, digest_size, expected_digest, strlen(expected_digest));
 	} else {
 		if (rz_regex_contains("[^a-fA-F0-9]+", expected_digest, RZ_REGEX_ZERO_TERMINATED, RZ_REGEX_EXTENDED, RZ_REGEX_DEFAULT)) {
 			RZ_LOG_ERROR("search: digest must be a hexadecimal string without spaces nor '0x' prefix. Got: '%s'\n", expected_digest);
 			goto error;
 		}
 		ut32 elen = strlen(expected_digest) / 2;
-		if (elen != digit_size || elen & 1) {
-			RZ_LOG_ERROR("search: invalid digest size. Expected: %" PFMT32u ", got: %" PFMT32u ".\n", digit_size, (elen / 2) + elen % 2);
+		if (elen != digest_size || elen & 1) {
+			RZ_LOG_ERROR("search: invalid digest size. Expected: %" PFMT32u ", got: %" PFMT32u ".\n", digest_size, (elen / 2) + elen % 2);
 			goto error;
 		}
 		rz_hex_str2bin(expected_digest, out);
@@ -93,34 +93,31 @@ static RZ_OWN SearchHashContext *search_hash_context_new(RZ_NONNULL const RzHash
 		RZ_LOG_ERROR("search: invalid hash algorithm '%s'.\n", algo_name);
 		return NULL;
 	}
-	// required to reset the status.
-	rz_hash_cfg_final(md);
 
-	ut32 digit_size = rz_hash_cfg_size(md, algo_name);
-	if (digit_size < 1) {
+	ut32 digest_size = rz_hash_cfg_size(md, algo_name);
+	if (digest_size < 1) {
 		rz_warn_if_reached();
 		return NULL;
 	}
+	rz_hash_cfg_free(md);
 
-	ut8 *digest = parse_digest(algo_name, expected_digest, digit_size);
+	ut8 *digest = parse_digest(algo_name, expected_digest, digest_size);
 	if (!digest) {
-		rz_hash_cfg_free(md);
 		return NULL;
 	}
 
 	SearchHashContext *data = RZ_NEW(SearchHashContext);
 	if (!data) {
 		RZ_LOG_ERROR("search: failed to allocate SearchHashContext.\n");
-		rz_hash_cfg_free(md);
 		free(digest);
 		return NULL;
 	}
 
 	data->digest = digest;
-	data->digest_len = digit_size;
+	data->digest_len = digest_size;
 	data->algo = rz_str_dup(algo_name);
 	data->block_size = block_size;
-	data->config = md;
+	data->rz_hash = rz_hash;
 	return data;
 }
 
@@ -132,28 +129,30 @@ static bool hashes_match(const SearchHashContext *data, const ut8 *calculated_ha
 }
 
 static RzSearchHit *calculate_hash_and_compare(const SearchHashContext *data, ut64 address, const ut8 *buffer, size_t buf_size) {
-	rz_return_val_if_fail(data && data->config && buffer, NULL);
-	if (!rz_hash_cfg_init(data->config)) {
-		RZ_LOG_ERROR("search: hash config init failed.\n");
+	rz_return_val_if_fail(data && buffer, NULL);
+	RzHashCfg *md = rz_hash_cfg_new_with_algo2(data->rz_hash, data->algo);
+	if (!md) {
 		return NULL;
-	}
-	if (!rz_hash_cfg_update(data->config, buffer, buf_size)) {
+	} else if (!rz_hash_cfg_update(md, buffer, buf_size)) {
 		RZ_LOG_ERROR("search: hash config update failed.\n");
 		return NULL;
-	}
-	if (!rz_hash_cfg_final(data->config)) {
+	} else if (!rz_hash_cfg_final(md)) {
 		RZ_LOG_ERROR("search: hash config final failed.\n");
 		return NULL;
 	}
 
-	RzHashSize hsize;
-	const ut8 *calculated_hash = rz_hash_cfg_get_result(data->config, data->algo, &hsize);
+	RzHashSize hsize = 0;
+	const ut8 *calculated_hash = rz_hash_cfg_get_result(md, data->algo, &hsize);
 	if (hsize != data->digest_len) {
+		rz_hash_cfg_free(md);
 		rz_warn_if_reached();
 		return NULL;
 	}
 
-	if (!hashes_match(data, calculated_hash, hsize)) {
+	bool is_match = hashes_match(data, calculated_hash, hsize);
+	rz_hash_cfg_free(md);
+
+	if (!is_match) {
 		return NULL;
 	}
 
