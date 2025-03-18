@@ -2852,7 +2852,11 @@ static bool core_disassembly(RzCore *core, int n_bytes, int n_instrs, RzCmdState
 	ut64 offset = rz_core_backward_offset(core, core->offset, &n_instrs, &n_bytes);
 
 	if (n_bytes == 0) {
-		const int max_op_size = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE);
+		int max_op_size = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE);
+		if (max_op_size < 1) {
+			// Just assume some random default value.
+			max_op_size = 1;
+		}
 		n_bytes = max_op_size * n_instrs;
 	}
 
