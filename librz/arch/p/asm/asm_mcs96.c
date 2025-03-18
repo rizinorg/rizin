@@ -109,9 +109,10 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 
 RzAsmPlugin rz_asm_plugin_mcs96 = {
 	.name = "mcs96",
-	.desc = "condrets car",
+	.desc = "Intel MCS-96 disassembler",
 	.arch = "mcs96",
 	.license = "LGPL3",
+	.author = "condret",
 	.bits = 16,
 	.endian = RZ_SYS_ENDIAN_NONE,
 	.disassemble = &disassemble

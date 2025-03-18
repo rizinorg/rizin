@@ -50,7 +50,7 @@ fin:
 
 RzAsmPlugin rz_asm_plugin_riscv_cs = {
 	.name = "riscv.cs",
-	.desc = "Capstone RISCV disassembler",
+	.desc = "RISC-V Capstone-based disassembler",
 	.license = "BSD",
 	.arch = "riscv",
 	.cpus = "",

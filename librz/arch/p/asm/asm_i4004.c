@@ -14,7 +14,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 
 RzAsmPlugin rz_asm_plugin_i4004 = {
 	.name = "i4004",
-	.desc = "Intel 4004 microprocessor",
+	.desc = "Intel 4004 disassembler",
 	.arch = "i4004",
 	.license = "LGPL3",
 	.bits = 4,

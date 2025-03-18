@@ -459,7 +459,7 @@ static bool alpha_fini(void *u) {
 
 RzAnalysisPlugin rz_analysis_plugin_alpha_cs = {
 	.name = "alpha",
-	.desc = "Capstone Alpha analysis plugin",
+	.desc = "DEC Alpha Capstone-based disassembler",
 	.license = "LGPL3",
 	.arch = "alpha",
 	.bits = 64,

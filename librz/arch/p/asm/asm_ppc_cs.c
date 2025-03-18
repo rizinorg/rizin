@@ -129,7 +129,7 @@ char **ppc_cpu_descriptions() {
 
 RzAsmPlugin rz_asm_plugin_ppc_cs = {
 	.name = "ppc",
-	.desc = "Capstone PowerPC disassembler",
+	.desc = "PowerPC Capstone-based disassembler",
 	.license = "BSD",
 	.author = "pancake",
 	.arch = "ppc",

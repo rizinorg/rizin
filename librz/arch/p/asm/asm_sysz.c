@@ -58,7 +58,7 @@ static int sysz_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 
 RzAsmPlugin rz_asm_plugin_sysz = {
 	.name = "sysz",
-	.desc = "SystemZ CPU disassembler",
+	.desc = "IBM SystemZ (S/390) Capstone-based disassembler",
 	.license = "BSD",
 	.arch = "sysz",
 	.bits = 32 | 64,

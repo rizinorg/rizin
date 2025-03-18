@@ -16,7 +16,7 @@ static int disassemble(RzAsm *a, RzAsmOp *rz_op, const ut8 *buf, int len) {
 
 RzAsmPlugin rz_asm_plugin_spc700 = {
 	.name = "spc700",
-	.desc = "spc700, snes' sound-chip",
+	.desc = "Sony SPC700 (Nintendo SuperNES sound-chip) disassembler",
 	.arch = "spc700",
 	.license = "LGPL3",
 	.bits = 16,

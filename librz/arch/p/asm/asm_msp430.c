@@ -29,7 +29,7 @@ fail:
 RzAsmPlugin rz_asm_plugin_msp430 = {
 	.name = "msp430",
 	.license = "LGPL3",
-	.desc = "msp430 disassembly plugin",
+	.desc = "Texas Instruments MSP430 disassembler",
 	.arch = "msp430",
 	.bits = 16,
 	.endian = RZ_SYS_ENDIAN_LITTLE,

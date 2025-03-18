@@ -102,6 +102,6 @@ RzAsmPlugin rz_asm_plugin_sparc_gnu = {
 	.license = "GPL3",
 	.init = sparc_gnu_init,
 	.fini = sparc_gnu_fini,
-	.desc = "Scalable Processor Architecture",
+	.desc = "Sun SPARC disassembler",
 	.disassemble = &disassemble,
 };

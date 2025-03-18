@@ -61,7 +61,7 @@ RzAsmPlugin rz_asm_plugin_luac = {
 	.arch = "luac",
 	.license = "LGPL3",
 	.bits = 8,
-	.desc = "luac disassemble plugin",
+	.desc = "Lua bytecode (LUAC) disassembler",
 	.disassemble = &rz_luac_disasm,
 	.assemble = &rz_luac_asm,
 };

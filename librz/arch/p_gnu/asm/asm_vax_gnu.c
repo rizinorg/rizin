@@ -77,6 +77,6 @@ RzAsmPlugin rz_asm_plugin_vax_gnu = {
 	.license = "GPL3",
 	.bits = 8 | 32,
 	.endian = RZ_SYS_ENDIAN_LITTLE,
-	.desc = "VAX",
+	.desc = "DEC VAX disassembler",
 	.disassemble = &disassemble
 };

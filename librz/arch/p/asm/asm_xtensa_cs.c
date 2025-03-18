@@ -42,7 +42,7 @@ char **xtensa_cpu_descriptions() {
 RzAsmPlugin rz_asm_plugin_xtensa_cs = {
 	.name = "xtensa",
 	.license = "LGPL3",
-	.desc = "Capstone Xtensa disassembly plugin",
+	.desc = "Tensilica Xtensa Capstone-based disassembler",
 	.author = "billow",
 	.arch = "xtensa",
 	.cpus = "esp32,esp32s2,esp8266",

@@ -71,6 +71,6 @@ RzAsmPlugin rz_asm_plugin_lanai_gnu = {
 	.license = "GPL3",
 	.bits = 32,
 	.endian = RZ_SYS_ENDIAN_BIG,
-	.desc = "LANAI",
+	.desc = "Google LANAI disassembler",
 	.disassemble = &disassemble
 };

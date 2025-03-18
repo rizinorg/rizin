@@ -99,7 +99,7 @@ char **m680x_cpu_descriptions() {
 RzAsmPlugin rz_asm_plugin_m680x_cs = {
 	.name = "m680x",
 	.cpus = "6800,6801,6805,6808,6809,6811,cpu12,6301,6309,hcs08",
-	.desc = "Capstone M680X Disassembler",
+	.desc = "Motorola 680X Capstone-based disassembler",
 	.license = "BSD",
 	.arch = "m680x",
 	.bits = 8 | 32,

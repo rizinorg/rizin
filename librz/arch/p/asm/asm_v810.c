@@ -27,7 +27,7 @@ static int v810_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 RzAsmPlugin rz_asm_plugin_v810 = {
 	.name = "v810",
 	.license = "LGPL3",
-	.desc = "v810 disassembly plugin",
+	.desc = "NEC V810 disassembler",
 	.author = "pancake",
 	.arch = "v810",
 	.bits = 32,

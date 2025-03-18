@@ -146,7 +146,7 @@ static int or1k_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 
 RzAsmPlugin rz_asm_plugin_or1k = {
 	.name = "or1k",
-	.desc = "OpenRISC 1000",
+	.desc = "OpenRISC 1000 disassembler",
 	.license = "LGPL3",
 	.arch = "or1k",
 	.bits = 32,

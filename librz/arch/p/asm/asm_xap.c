@@ -30,6 +30,6 @@ RzAsmPlugin rz_asm_plugin_xap = {
 	.license = "PD",
 	.bits = 16,
 	.endian = RZ_SYS_ENDIAN_LITTLE,
-	.desc = "XAP4 RISC (CSR)",
+	.desc = "Cambridge Consultants XAP4 RISC (CSR) disassembler",
 	.disassemble = &disassemble
 };

@@ -75,7 +75,7 @@ static bool loongarch_asm_fini(void *u) {
 
 RzAsmPlugin rz_asm_plugin_loongarch_cs = {
 	.name = "loongarch",
-	.desc = "Capstone Alpha disassembler",
+	.desc = "Loongson LoongArch disassembler",
 	.license = "LGPL3",
 	.arch = "loongarch",
 	.bits = 32 | 64,

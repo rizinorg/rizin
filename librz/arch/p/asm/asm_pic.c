@@ -46,7 +46,7 @@ RzAsmPlugin rz_asm_plugin_pic = {
 	.cpus = "baseline,midrange,highend,pic18",
 	.bits = 16 | 32,
 	.license = "LGPL3",
-	.desc = "PIC disassembler",
+	.desc = "Microchip PIC disassembler",
 	.disassemble = &asm_pic_disassemble,
 	.get_cpu_desc = pic_cpu_descriptions,
 };

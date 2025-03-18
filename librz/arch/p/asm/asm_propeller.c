@@ -27,7 +27,7 @@ static int propeller_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len)
 RzAsmPlugin rz_asm_plugin_propeller = {
 	.name = "propeller",
 	.license = "LGPL3",
-	.desc = "propeller disassembly plugin",
+	.desc = "Parallax Propeller disassembler",
 	.arch = "propeller",
 	.bits = 32,
 	.endian = RZ_SYS_ENDIAN_BIG,

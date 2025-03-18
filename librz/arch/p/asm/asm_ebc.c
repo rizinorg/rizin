@@ -23,7 +23,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 RzAsmPlugin rz_asm_plugin_ebc = {
 	.name = "ebc",
 	.license = "LGPL3",
-	.desc = "EFI Bytecode",
+	.desc = "EFI bytecode disassembler",
 	.author = "Fedor Sakharov",
 	.arch = "ebc",
 	.bits = 32 | 64,

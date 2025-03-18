@@ -57,7 +57,7 @@ fin:
 
 RzAsmPlugin rz_asm_plugin_xcore_cs = {
 	.name = "xcore",
-	.desc = "Capstone XCore disassembler",
+	.desc = "XCore Capstone-based disassembler",
 	.license = "BSD",
 	.author = "pancake",
 	.arch = "xcore",

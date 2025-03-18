@@ -42,7 +42,7 @@ RzAsmPlugin rz_asm_plugin_sh = {
 	.license = "LGPL3",
 	.bits = 32,
 	.endian = RZ_SYS_ENDIAN_LITTLE | RZ_SYS_ENDIAN_BIG,
-	.desc = "SuperH-4 CPU",
+	.desc = "Hitachi/Renesas SuperH-4 disassembler",
 	.disassemble = &disassemble,
 	.assemble = &assemble
 };

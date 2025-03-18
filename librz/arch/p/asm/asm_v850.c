@@ -27,7 +27,7 @@ static int v850_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 RzAsmPlugin rz_asm_plugin_v850 = {
 	.name = "v850",
 	.license = "LGPL3",
-	.desc = "v850 disassembly plugin",
+	.desc = "NEC/Renesas V850 disassembler",
 	.arch = "v850",
 	.bits = 32,
 	.endian = RZ_SYS_ENDIAN_LITTLE,

@@ -47,7 +47,7 @@ static bool snes_asm_fini(void *user) {
 
 RzAsmPlugin rz_asm_plugin_snes = {
 	.name = "snes",
-	.desc = "SuperNES CPU",
+	.desc = "SuperNES CPU disassembler",
 	.arch = "snes",
 	.bits = 8 | 16,
 	.init = snes_asm_init,

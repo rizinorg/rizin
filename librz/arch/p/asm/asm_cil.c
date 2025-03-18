@@ -17,7 +17,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 RzAsmPlugin rz_asm_plugin_cil = {
 	.name = "cil",
 	.arch = "cil",
-	.desc = ".NET Common Intermediate Language",
+	.desc = ".NET CIL/MSIL (Common Intermediate Language) bytecode disassembler",
 	.license = "LGPL3",
 	.bits = 16 | 32 | 64,
 	.disassemble = &disassemble,

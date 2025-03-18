@@ -57,7 +57,7 @@ RzAsmPlugin rz_asm_plugin_pyc = {
 	.arch = "pyc",
 	.license = "LGPL3",
 	.bits = 16 | 8,
-	.desc = "PYC disassemble plugin",
+	.desc = "Python bytecode (PYC) disassembler",
 	.disassemble = &pyc_asm_disassemble,
 	.fini = &pyc_asm_finish,
 };

@@ -28,7 +28,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 RzAsmPlugin rz_asm_plugin_amd29k = {
 	.name = "amd29k",
 	.license = "LGPL3",
-	.desc = "AMD 29k RISC CPU",
+	.desc = "AMD 29k RISC disassembler",
 	.author = "deroad",
 	.arch = CPU_29000 "," CPU_29050,
 	.cpus = "amd29k",

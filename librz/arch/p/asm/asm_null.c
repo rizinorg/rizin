@@ -26,7 +26,7 @@ RzAsmPlugin rz_asm_plugin_null = {
 	.license = "MIT",
 	.bits = 16 | 32 | 64,
 	.endian = RZ_SYS_ENDIAN_NONE,
-	.desc = "no disassemble",
+	.desc = "NULL (empty) disassembler",
 	.disassemble = &disassemble,
 	.assemble = &assemble
 };

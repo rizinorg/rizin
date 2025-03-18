@@ -133,7 +133,7 @@ static int x86_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 
 RzAsmPlugin rz_asm_plugin_x86_cs = {
 	.name = "x86",
-	.desc = "Capstone X86 disassembler",
+	.desc = "X86/X86_64 Capstone-based disassembler",
 	.license = "BSD",
 	.cpus = "generic",
 	.platforms = "generic",

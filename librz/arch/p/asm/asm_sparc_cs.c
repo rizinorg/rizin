@@ -75,7 +75,7 @@ char **sparc_cpu_descriptions() {
 
 RzAsmPlugin rz_asm_plugin_sparc_cs = {
 	.name = "sparc",
-	.desc = "Capstone SPARC disassembler",
+	.desc = "Sun SPARC Capstone-based disassembler",
 	.license = "BSD",
 	.arch = "sparc",
 	.cpus = "v9",

@@ -12,7 +12,7 @@ static int riscv_gnu_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len)
 
 RzAsmPlugin rz_asm_plugin_riscv_gnu = {
 	.name = "riscv",
-	.desc = "RISC-V",
+	.desc = "RISC-V disassembler",
 	.arch = "riscv",
 	.bits = 32 | 64,
 	.endian = RZ_SYS_ENDIAN_LITTLE | RZ_SYS_ENDIAN_BIG,

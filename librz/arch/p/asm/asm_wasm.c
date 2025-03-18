@@ -35,7 +35,7 @@ RzAsmPlugin rz_asm_plugin_wasm = {
 	.license = "MIT",
 	.bits = 32,
 	.endian = RZ_SYS_ENDIAN_LITTLE,
-	.desc = "WebAssembly",
+	.desc = "WebAssembly disassembler",
 	.disassemble = &disassemble,
 	.assemble = &assemble
 };

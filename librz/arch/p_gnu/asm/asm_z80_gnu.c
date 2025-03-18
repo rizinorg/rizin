@@ -16,7 +16,7 @@ static int do_assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
 
 RzAsmPlugin rz_asm_plugin_z80_gnu = {
 	.name = "z80",
-	.desc = "Zilog Z80",
+	.desc = "Zilog Z80 disassembler",
 	.license = "GPL3",
 	.author = "condret",
 	.arch = "z80",

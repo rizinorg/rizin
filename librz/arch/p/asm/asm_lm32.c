@@ -429,7 +429,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 RzAsmPlugin rz_asm_plugin_lm32 = {
 	.name = "lm32",
 	.arch = "lm32",
-	.desc = "disassembly plugin for Lattice Micro 32 ISA",
+	.desc = "Lattice Micro 32 ISA disassembler",
 	.author = "Felix Held",
 	.license = "BSD",
 	.bits = 32,

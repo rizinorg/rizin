@@ -134,7 +134,7 @@ char **mips_cpu_descriptions() {
 
 RzAsmPlugin rz_asm_plugin_mips_cs = {
 	.name = "mips",
-	.desc = "Capstone MIPS disassembler",
+	.desc = "MIPS Capstone-based disassembler",
 	.license = "BSD",
 	.arch = "mips",
 	.cpus = MIPS_CPUS,

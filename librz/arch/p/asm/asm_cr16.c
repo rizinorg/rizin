@@ -22,7 +22,7 @@ static int cr16_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 RzAsmPlugin rz_asm_plugin_cr16 = {
 	.name = "cr16",
 	.license = "LGPL3",
-	.desc = "cr16 disassembly plugin",
+	.desc = "CompactRISC CR16 disassembler",
 	.arch = "cr16",
 	.bits = 16,
 	.endian = RZ_SYS_ENDIAN_LITTLE,

@@ -14,7 +14,7 @@ static int do_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 
 RzAsmPlugin rz_asm_plugin_i8080 = {
 	.name = "i8080",
-	.desc = "Intel 8080 CPU",
+	.desc = "Intel 8080 disassembler",
 	.arch = "i8080",
 	.license = "BSD",
 	.bits = 8,

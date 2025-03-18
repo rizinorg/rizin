@@ -135,6 +135,6 @@ RzAsmPlugin rz_asm_plugin_cris_gnu = {
 	.author = "pancake",
 	.bits = 32,
 	.endian = RZ_SYS_ENDIAN_LITTLE,
-	.desc = "Axis Communications 32-bit embedded processor",
+	.desc = "Axis Communications 32-bit embedded processor disassembler",
 	.disassemble = &disassemble
 };

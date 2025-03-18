@@ -30,7 +30,7 @@ static int __disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 
 RzAsmPlugin rz_asm_plugin_malbolge = {
 	.name = "malbolge",
-	.desc = "Malbolge Ternary VM",
+	.desc = "Malbolge Ternary VM bytecode disassembler",
 	.arch = "malbolge",
 	.author = "condret",
 	.license = "LGPL3",
