@@ -529,7 +529,7 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_BLEZ:
 		return mips_il_blez(handle, insn, gprlen);
 	case MIPS_INS_BLEZALC:
-		return NULL;
+		return mips_il_blezalc(handle, insn, gprlen);
 	case MIPS_INS_BLEZC:
 		return NULL;
 	case MIPS_INS_BLEZL:

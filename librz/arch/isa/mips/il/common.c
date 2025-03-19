@@ -350,6 +350,19 @@ static RzILOpEffect *mips_il_bltzal(const csh *handle, const cs_insn *insn, cons
 	return BRANCH(SLT(rs, zero), SEQ2(link_op, jmp_op), NOP());
 }
 
+static RzILOpEffect *mips_il_blezalc(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	if (OPCOUNT() < 2 || IS_ZERO_REG(0)) {
+		return NOP();
+	}
+
+	RzILOpPure *rs = MIPS_REG(0);
+	RzILOpPure *zero = MIPS_ZERO();
+	RzILOpPure *jump_target = MIPS_IMM(1);
+	RzILOpEffect *link_op = MIPS_LINK();
+	RzILOpEffect *jmp_op = JMP(jump_target);
+	return BRANCH(SLE(rs, zero), SEQ2(link_op, jmp_op), NOP());
+}
+
 static RzILOpEffect *mips_il_bnez(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	if (IS_ZERO_REG(0)) {
 		// never taken
