@@ -31,3 +31,5 @@ dE "dlsa t4, t0, s2, 3" 01126095 0x80000000 (set t4 (+ (<< (var t0) (bv 8 0x3) f
 dE "dlsa t4, t0, s2, 1" 01126015 0x80000000 (set t4 (+ (<< (var t0) (bv 8 0x1) false) (var s2)))
 dE "mod t0, t7, t4" 01ec40da 0x80000000 (set t0 (smod (var t7) (var t4)))
 dE "dmod t3, s4, t6" 028e58de 0x80000000 (set t3 (smod (var s4) (var t6)))
+dE "modu s3, t0, s1" 011198db 0x80000000 (set s3 (mod (var t0) (var s1)))
+dE "dmodu t6, t6, s5" 01d570df 0x80000000 (set t6 (mod (var t6) (var s5)))

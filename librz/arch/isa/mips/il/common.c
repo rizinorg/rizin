@@ -805,6 +805,16 @@ static RzILOpEffect *mips_il_mod(const csh *handle, const cs_insn *insn, const u
 	return SETG(rd, SMOD(rs, rt));
 }
 
+static RzILOpEffect *mips_il_modu(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Modulo Words Unsigned
+	// MODU rd, rs, rt
+
+	const char *rd = REG(0);
+	RzILOpPure *rs = MIPS_REG(1);
+	RzILOpPure *rt = MIPS_REG(2);
+	return SETG(rd, MOD(rs, rt));
+}
+
 static RzILOpEffect *mips_il_movn(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
 
