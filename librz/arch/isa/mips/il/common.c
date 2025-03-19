@@ -20,6 +20,7 @@
 #define CHECK_OVERFLOW(r, sz) EQ(BITN(r, sz), BITN(DUP(r), sz - 1))
 #define MIPS_REG(idx)         mips_get_reg(handle, insn, idx, gprlen)
 #define MIPS_IMM(idx)         UN(gprlen, IMM(idx))
+#define MIPS_IMM32(idx)       UN(32, IMM(idx))
 #define MIPS_PCADDIMM(idx)    UN(gprlen, insn->address + IMM(idx)) /* returns an immediate which is PC + IMM */
 #define MIPS_ZERO()           UN(gprlen, 0)
 #define MIPS_LINK()           SETG(MIPS_REG_RA, UN(gprlen, insn->address + 8)) /* link register $ra */
@@ -532,15 +533,20 @@ static RzILOpEffect *mips_il_divu(const csh *handle, const cs_insn *insn, const 
 }
 
 static RzILOpEffect *mips_il_ext(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Extract Bit Field (EXT rt, rs, pos, size)
 	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
 
-	// Extract Bit Field (EXT rt, rs, pos, size)
 	const char *rt = REG(0);
 	RzILOpPure *rs = MIPS_REG(1);
-	RzILOpPure *pos = MIPS_IMM(2);
-	RzILOpPure *size = MIPS_IMM(3);
-
-	return SETG(rt, EXTRACT32(rs, pos, size));
+	RzILOpPure *pos = MIPS_IMM32(2); // EXTRACT64 requires 32 bit value.
+	RzILOpPure *size = MIPS_IMM32(3); // EXTRACT64 requires 32 bit value.
+	RzILOpPure *extract = NULL;
+	if (gprlen > 32) {
+		extract = EXTRACT64(rs, pos, size);
+	} else {
+		extract = EXTRACT32(rs, pos, size);
+	}
+	return SETG(rt, extract);
 }
 
 static RzILOpEffect *mips_il_ins(const csh *handle, const cs_insn *insn, const ut32 gprlen) {

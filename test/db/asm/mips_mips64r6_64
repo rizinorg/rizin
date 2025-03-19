@@ -21,3 +21,5 @@ dE "bnezalc s6, 0x80000438" 6016010d 0x80000000 (branch (! (is_zero (var s6))) (
 dE "daui t5, s6, 0xb87" 76cd0b87 0x80000000 (set t5 (+ (var s6) (bv 64 0xb870000)))
 dE "dahi s1, s1, 0x522" 06260522 0x80000000 (set s1 (+ (var s1) (bv 64 0x52200000000)))
 dE "dati s3, s3, 0x82e" 067e082e 0x80000000 (set s3 (+ (var s3) (bv 64 0x82e000000000000)))
+dE "dext t6, s0, 0xc, 0x19" 7e0ec303 0x80000000 (set t6 (& (>> (var s0) (bv 32 0xc) false) (>> (bv 64 0xffffffffffffffff) (- (bv 32 0x40) (bv 32 0x19)) false)))
+dE "dext s1, s5, 0x30, 0x10" 7eb17c02 0x80000000 (set s1 (& (>> (var s5) (bv 32 0x30) false) (>> (bv 64 0xffffffffffffffff) (- (bv 32 0x40) (bv 32 0x10)) false)))
