@@ -997,7 +997,7 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_DADDU:
 		return mips_il_addu(handle, insn, gprlen); // Long word add unsigned
 	case MIPS_INS_DAHI:
-		return NULL;
+		return mips_il_dahi(handle, insn, gprlen);
 	case MIPS_INS_DALIGN:
 		return mips_il_dalign(handle, insn, gprlen);
 	case MIPS_INS_DATI:
