@@ -989,6 +989,42 @@ static inline void analysis_RETURN_CONST(RzAnalysisOp *op, pyc_opcode_object *op
 	op->type = RZ_ANALYSIS_OP_TYPE_UNK;
 }
 
+static inline void analysis_TO_BOOL(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	op->type = RZ_ANALYSIS_OP_TYPE_UNK;
+}
+
+static inline void analysis_LOAD_FAST_LOAD_FAST(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	analysis_push(op, op_obj, oparg, RZ_ANALYSIS_OP_TYPE_UNK, 2);
+}
+
+static inline void analysis_STORE_FAST_STORE_FAST(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	op->type = RZ_ANALYSIS_OP_TYPE_UNK;
+}
+
+static inline void analysis_STORE_FAST_LOAD_FAST(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	op->type = RZ_ANALYSIS_OP_TYPE_UNK;
+}
+
+static inline void analysis_CALL_KW(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	op->type = RZ_ANALYSIS_OP_TYPE_UCALL;
+}
+
+static inline void analysis_SET_FUNCTION_ATTRIBUTE(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	op->type = RZ_ANALYSIS_OP_TYPE_UNK;
+}
+
+static inline void analysis_CONVERT_VALUE(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	op->type = RZ_ANALYSIS_OP_TYPE_UNK;
+}
+
+static inline void analysis_FORMAT_SIMPLE(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	op->type = RZ_ANALYSIS_OP_TYPE_UNK;
+}
+
+static inline void analysis_FORMAT_WITH_SPEC(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	analysis_pop(op, op_obj, oparg, RZ_ANALYSIS_OP_TYPE_UNK, 1);
+}
+
 static op_analysis_func op_analysis[] = {
 	{ "BEFORE_ASYNC_WITH", analysis_BEFORE_ASYNC_WITH },
 	{ "BEGIN_FINALLY", analysis_BEGIN_FINALLY },
@@ -1194,9 +1230,17 @@ static op_analysis_func op_analysis[] = {
 	{ "LOAD_FAST_CHECK", analysis_LOAD_FAST_CHECK },
 	{ "LOAD_FROM_DICT_OR_DEREF", analysis_LOAD_FROM_DICT_OR_DEREF },
 	{ "LOAD_FROM_DICT_OR_GLOBALS", analysis_LOAD_FROM_DICT_OR_GLOBALS },
-	{ "LOAD_LOCALS", analysis_LOAD_LOCALS },
 	{ "LOAD_SUPER_ATTR", analysis_LOAD_SUPER_ATTR },
 	{ "RETURN_CONST", analysis_RETURN_CONST },
+	{ "TO_BOOL", analysis_TO_BOOL },
+	{ "LOAD_FAST_LOAD_FAST", analysis_LOAD_FAST_LOAD_FAST },
+	{ "STORE_FAST_LOAD_FAST", analysis_STORE_FAST_LOAD_FAST },
+	{ "STORE_FAST_STORE_FAST", analysis_STORE_FAST_STORE_FAST },
+	{ "CALL_KW", analysis_CALL_KW },
+	{ "SET_FUNCTION_ATTRIBUTE", analysis_SET_FUNCTION_ATTRIBUTE },
+	{ "CONVERT_VALUE", analysis_CONVERT_VALUE },
+	{ "FORMAT_SIMPLE", analysis_FORMAT_SIMPLE },
+	{ "FORMAT_WITH_SPEC", analysis_FORMAT_WITH_SPEC },
 };
 
 void analysis_pyc_op(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {

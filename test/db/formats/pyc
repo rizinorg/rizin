@@ -1,3 +1,19 @@
+NAME=pyc load version313
+FILE=bins/pyc/pyc313.pyc
+CMDS=<<EOF
+iI~machine
+EOF
+EXPECT=<<EOF
+machine  Python v3.13.0 VM (rev 3f27099d916c7b885e3daf1fabedcc119462014d)
+EOF
+REGEXP_FILTER_ERR=<<EOF
+free_object\s\(0\)
+EOF
+EXPECT_ERR=<<EOF
+free_object (0)
+EOF
+RUN
+
 NAME=pyc load version312
 FILE=bins/pyc/pyc312.pyc
 CMDS=<<EOF
@@ -133,6 +149,28 @@ is~?Human
 EOF
 EXPECT=<<EOF
 9
+EOF
+REGEXP_FILTER_ERR=<<EOF
+free_object\s\(0\)
+EOF
+EXPECT_ERR=<<EOF
+free_object (0)
+EOF
+RUN
+
+NAME=pyc 3.13 sections
+FILE=bins/pyc/pyc313.pyc
+CMDS=<<EOF
+iS~Bat
+EOF
+EXPECT=<<EOF
+0x00002dcc   0x2e 0x00002dcc   0x2e   0x0 ---- module_.Bat                     
+0x00002e26   0x10 0x00002e26   0x10   0x0 ---- module_.Bat.__init              
+0x00002ea0    0xa 0x00002ea0    0xa   0x0 ---- module_.Bat.say                 
+0x00002f12    0x4 0x00002f12    0x4   0x0 ---- module_.Bat.sonar               
+0x00003002   0x20 0x00003002   0x20   0x0 ---- module_.Batman                  
+0x0000304b   0x88 0x0000304b   0x88   0x0 ---- module_.Batman.__init           
+0x000031d4    0x4 0x000031d4    0x4   0x0 ---- module_.Batman.sing             
 EOF
 REGEXP_FILTER_ERR=<<EOF
 free_object\s\(0\)
@@ -278,6 +316,36 @@ free_object (0)
 EOF
 RUN
 
+NAME=pyc 3.13 disasm
+FILE=bins/pyc/pyc313.pyc
+CMDS=<<EOF
+pd 10
+EOF
+EXPECT=<<EOF
+            ;-- entry0:
+            ;-- section.module:
+            ;-- <module>:
+            0x0000002a      RESUME                                     ; [00] ---- section size 6372 named module
+            0x0000002c      LOAD_CONST            Multiline strings can be written
+using three "s, and are often used
+as documentation.
+            0x0000002e      STORE_NAME            __doc__
+            0x00000030      NOP
+            0x00000032      NOP
+            0x00000034      NOP
+            0x00000036      NOP
+            0x00000038      NOP
+            0x0000003a      NOP
+            0x0000003c      NOP
+EOF
+REGEXP_FILTER_ERR=<<EOF
+free_object\s\(0\)
+EOF
+EXPECT_ERR=<<EOF
+free_object (0)
+EOF
+RUN
+
 NAME=pyc 3.12 disasm
 FILE=bins/pyc/pyc312.pyc
 CMDS=<<EOF
@@ -359,6 +427,69 @@ EXPECT=<<EOF
             0x0000003c      NOP
             0x0000003e      NOP
             0x00000040      NOP
+EOF
+REGEXP_FILTER_ERR=<<EOF
+free_object\s\(0\)
+EOF
+EXPECT_ERR=<<EOF
+free_object (0)
+EOF
+RUN
+
+NAME=pyc 3.13 disasm
+FILE=bins/pyc/pyc313.pyc
+CMDS=<<EOF
+s 0x00002bc4
+pd 45
+EOF
+EXPECT=<<EOF
+            ;-- section.module_.Superhero.boast:
+            ;-- <module>.Superhero.boast:
+            0x00002bc4      RESUME                                     ; [25] ---- section size 90 named module_.Superhero.boast
+            0x00002bc6      LOAD_FAST             self
+            0x00002bc8      LOAD_ATTR             superpowers
+            0x00002bca      CACHE
+            0x00002bcc      CACHE
+            0x00002bce      CACHE
+            0x00002bd0      CACHE
+            0x00002bd2      CACHE
+            0x00002bd4      CACHE
+            0x00002bd6      CACHE
+            0x00002bd8      CACHE
+            0x00002bda      CACHE
+        .-> 0x00002bdc      GET_ITER
+      ,,==< 0x00002bde      FOR_ITER              27
+      `---> 0x00002be0      CACHE
+       |:   0x00002be2      STORE_FAST            power
+       |:   0x00002be4      LOAD_GLOBAL
+       |:   0x00002be6      CACHE
+       |:   0x00002be8      CACHE
+       |:   0x00002bea      CACHE
+       |:   0x00002bec      CACHE
+       |:   0x00002bee      LOAD_CONST            I wield the power of {pow}!
+       |:   0x00002bf0      LOAD_ATTR
+       |:   0x00002bf2      CACHE
+       |:   0x00002bf4      CACHE
+       |:   0x00002bf6      CACHE
+       |:   0x00002bf8      CACHE
+       |:   0x00002bfa      CACHE
+       |:   0x00002bfc      CACHE
+       |:   0x00002bfe      CACHE
+       |:   0x00002c00      CACHE
+       |:   0x00002c02      CACHE
+       |:   0x00002c04      LOAD_FAST             power
+       |:   0x00002c06      LOAD_CONST            (pow)
+       |:   0x00002c08      CALL_KW
+       |:   0x00002c0a      CALL                   1
+       |:   0x00002c0c      CACHE
+       |:   0x00002c0e      CACHE
+       |:   0x00002c10      CACHE
+       |:   0x00002c12      POP_TOP
+       |`=< 0x00002c14      JUMP_BACKWARD         29
+       `--> 0x00002c16      CACHE
+            0x00002c18      END_FOR
+            0x00002c1a      POP_TOP
+            0x00002c1c      RETURN_CONST
 EOF
 REGEXP_FILTER_ERR=<<EOF
 free_object\s\(0\)

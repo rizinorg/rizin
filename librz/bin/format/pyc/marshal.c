@@ -972,9 +972,9 @@ static pyc_object *get_code_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 	bool v11_to_14 = magic_int_within(pyc->magic_int, 39170, 20117, &error); // 1.0.1 - 1.4
 	bool v15_to_22 = magic_int_within(pyc->magic_int, 20121, 60718, &error); // 1.5a1 - 2.2a1
 	bool v13_to_20 = magic_int_within(pyc->magic_int, 11913, 50824, &error); // 1.3b1 - 2.0b1
-	bool v311_to_latest = magic_int_within(pyc->magic_int, 3495, 3531, &error); // 3.11a1 - 3.12b1;
+	bool v311_to_latest = magic_int_within(pyc->magic_int, 3495, 3571, &error); // 3.11a1 - 3.13b1;
 	// bool v21_to_27 = (!v13_to_20) && magic_int_within (magic_int, 60124, 62212, &error);
-	bool has_posonlyargcount = magic_int_within(pyc->magic_int, 3410, 3531, &error); // v3.8.0a4 - latest
+	bool has_posonlyargcount = magic_int_within(pyc->magic_int, 3410, 3571, &error); // v3.8.0a4 - latest
 	if (error) {
 		free(ret);
 		free(cobj);

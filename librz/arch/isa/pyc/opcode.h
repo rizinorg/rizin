@@ -101,6 +101,7 @@ pyc_opcodes *opcode_39(void);
 pyc_opcodes *opcode_310(void);
 pyc_opcodes *opcode_311(void);
 pyc_opcodes *opcode_312(void);
+pyc_opcodes *opcode_313(void);
 
 pyc_opcodes *get_opcode_by_version(char *version);
 

@@ -77,6 +77,20 @@ pyc_opcodes *opcode_311(void) {
 	jrel_op(.op_obj = ret->opcodes, .op_name = "JUMP_BACKWARD_NO_INTERRUPT", .op_code = 134, .pop = 0, .push = 0, .conditional = false);
 
 	def_op(.op_obj = ret->opcodes, .op_name = "BINARY_OP", .op_code = 122, .pop = 2, .push = 1);
+	def_op(.op_obj = ret->opcodes, .op_name = "BINARY_OP_ADAPTIVE", .op_code = 3, .pop = 2, .push = 1);
+	def_op(.op_obj = ret->opcodes, .op_name = "BINARY_OP_ADD_FLOAT", .op_code = 4, .pop = 2, .push = 1);
+	def_op(.op_obj = ret->opcodes, .op_name = "BINARY_OP_ADD_INT", .op_code = 5, .pop = 2, .push = 1);
+	def_op(.op_obj = ret->opcodes, .op_name = "BINARY_OP_ADD_UNICODE", .op_code = 6, .pop = 2, .push = 1);
+	def_op(.op_obj = ret->opcodes, .op_name = "BINARY_OP_INPLACE_ADD_UNICODE", .op_code = 7, .pop = 2, .push = 1);
+	def_op(.op_obj = ret->opcodes, .op_name = "BINARY_OP_MULTIPLY_FLOAT", .op_code = 8, .pop = 2, .push = 1);
+	def_op(.op_obj = ret->opcodes, .op_name = "BINARY_OP_MULTIPLY_INT", .op_code = 13, .pop = 2, .push = 1);
+	def_op(.op_obj = ret->opcodes, .op_name = "BINARY_OP_SUBTRACT_FLOAT", .op_code = 14, .pop = 2, .push = 1);
+	def_op(.op_obj = ret->opcodes, .op_name = "BINARY_OP_SUBTRACT_INT", .op_code = 16, .pop = 2, .push = 1);
+	def_op(.op_obj = ret->opcodes, .op_name = "BINARY_SUBSCR_ADAPTIVE", .op_code = 17, .pop = 2, .push = 1);
+	def_op(.op_obj = ret->opcodes, .op_name = "BINARY_SUBSCR_DICT", .op_code = 18, .pop = 2, .push = 1);
+	def_op(.op_obj = ret->opcodes, .op_name = "BINARY_SUBSCR_GETITEM", .op_code = 19, .pop = 2, .push = 1);
+	def_op(.op_obj = ret->opcodes, .op_name = "BINARY_SUBSCR_LIST_INT", .op_code = 20, .pop = 2, .push = 1);
+	def_op(.op_obj = ret->opcodes, .op_name = "BINARY_SUBSCR_TUPLE_INT", .op_code = 21, .pop = 2, .push = 1);
 
 	nargs_op(.op_obj = ret->opcodes, .op_name = "CALL", .op_code = 171, .pop = 9, .push = 1);
 	nargs_op(.op_obj = ret->opcodes, .op_name = "KW_NAMES", .op_code = 172, .pop = 0, .push = 0);

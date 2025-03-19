@@ -25,6 +25,9 @@ pyc_opcodes *opcode_39(void) {
 	def_op(.op_obj = ret->opcodes, .op_name = "WITH_EXCEPT_START", .op_code = 49, .pop = 3, .push = 0);
 	def_op(.op_obj = ret->opcodes, .op_name = "LOAD_ASSERTION_ERROR", .op_code = 74, .pop = 0, .push = 1);
 
+	def_op(.op_obj = ret->opcodes, .op_name = "DICT_UPDATE", .op_code = 165, .pop = 1, .push = 0);
+	def_op(.op_obj = ret->opcodes, .op_name = "DICT_MERGE", .op_code = 164, .pop = 1, .push = 0);
+	def_op(.op_obj = ret->opcodes, .op_name = "SET_UPDATE", .op_code = 163, .pop = 1, .push = 0);
 	def_op(.op_obj = ret->opcodes, .op_name = "IS_OP", .op_code = 117, .pop = 0, .push = 0);
 	def_op(.op_obj = ret->opcodes, .op_name = "CONTAINS_OP", .op_code = 118, .pop = 0, .push = 0);
 	def_op(.op_obj = ret->opcodes, .op_name = "LIST_EXTEND", .op_code = 162, .pop = 0, .push = 0);
