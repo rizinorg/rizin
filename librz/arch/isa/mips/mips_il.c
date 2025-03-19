@@ -483,7 +483,7 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_BGTZ:
 		return mips_il_bgtz(handle, insn, gprlen);
 	case MIPS_INS_BGTZALC:
-		return NULL;
+		return mips_il_bgtzalc(handle, insn, gprlen);
 	case MIPS_INS_BGTZC:
 		return NULL;
 	case MIPS_INS_BGTZL:

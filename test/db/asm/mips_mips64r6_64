@@ -15,3 +15,4 @@ dE "bovc s6, v1, 0x7ffffebc" 22c3ffae 0x80000000 (branch (== (>> (& (cast 64 (ms
 dE "blezalc t0, 0x800005d4" 18080174 0x80000000 (branch (sle (var t0) (bv 64 0x0)) (seq (set ra (bv 64 0x80000008)) (jmp (bv 64 0x800005d4))) nop)
 dE "bltzalc s7, 0x80000774" 1ef701dc 0x80000000 (branch (&& (sle (var s7) (bv 64 0x0)) (! (== (var s7) (bv 64 0x0)))) (seq (set ra (bv 64 0x80000008)) (jmp (bv 64 0x80000774))) nop)
 dE "bgezalc t3, 0x800005b8" 196b016d 0x80000000 (branch (|| (! (sle (var t3) (bv 64 0x0))) (== (var t3) (bv 64 0x0))) (seq (set ra (bv 64 0x80000008)) (jmp (bv 64 0x800005b8))) nop)
+dE "bgtzalc t4, 0x80000568" 1c0c0159 0x80000000 (branch (! (sle (var t4) (bv 64 0x0))) (seq (set ra (bv 64 0x80000008)) (jmp (bv 64 0x80000568))) nop)
