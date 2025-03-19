@@ -115,13 +115,13 @@ pyc_opcodes *opcode_313(void) {
 	def_op(.op_obj = ret->opcodes, .op_name = "SET_ADD", .op_code = 105, .pop = 1, .push = 0); // Calls set.add(TOS1[-i], TOS).
 	def_op(.op_obj = ret->opcodes, .op_name = "SET_FUNCTION_ATTRIBUTE", .op_code = 106, .pop = 0, .push = 0);
 	def_op(.op_obj = ret->opcodes, .op_name = "SET_UPDATE", .op_code = 107, .pop = 1, .push = 0);
-	store_op(.op_obj = ret->opcodes, .op_name = "STORE_ATTR", .op_code = 108, .pop = 2, .push = 0, .func = NAME_OP); // Operand is in name list
-	store_op(.op_obj = ret->opcodes, .op_name = "STORE_DEREF", .op_code = 109, .pop = 1, .push = 0, .func = FREE_OP);
-	store_op(.op_obj = ret->opcodes, .op_name = "STORE_FAST", .op_code = 110, .pop = 1, .push = 0, .func = LOCAL_OP); // Local variable number
-	store_op(.op_obj = ret->opcodes, .op_name = "STORE_FAST_LOAD_FAST", .op_code = 111, .pop = 1, .push = 1, .func = LOCAL_OP);
-	store_op(.op_obj = ret->opcodes, .op_name = "STORE_FAST_STORE_FAST", .op_code = 112, .pop = 0, .push = 0, .func = LOCAL_OP);
-	store_op(.op_obj = ret->opcodes, .op_name = "STORE_GLOBAL", .op_code = 113, .pop = 1, .push = 0, .func = NAME_OP); // ""
-	store_op(.op_obj = ret->opcodes, .op_name = "STORE_NAME", .op_code = 114, .pop = 1, .push = 0, .func = NAME_OP); // Operand is in name list
+	store_op00(.op_obj = ret->opcodes, .op_name = "STORE_ATTR", .op_code = 108, .pop = 2, .push = 0, .func = NAME_OP); // Operand is in name list
+	store_op00(.op_obj = ret->opcodes, .op_name = "STORE_DEREF", .op_code = 109, .pop = 1, .push = 0, .func = FREE_OP);
+	store_op00(.op_obj = ret->opcodes, .op_name = "STORE_FAST", .op_code = 110, .pop = 1, .push = 0, .func = LOCAL_OP); // Local variable number
+	store_op00(.op_obj = ret->opcodes, .op_name = "STORE_FAST_LOAD_FAST", .op_code = 111, .pop = 1, .push = 1, .func = LOCAL_OP);
+	store_op00(.op_obj = ret->opcodes, .op_name = "STORE_FAST_STORE_FAST", .op_code = 112, .pop = 0, .push = 0, .func = LOCAL_OP);
+	store_op00(.op_obj = ret->opcodes, .op_name = "STORE_GLOBAL", .op_code = 113, .pop = 1, .push = 0, .func = NAME_OP); // ""
+	store_op00(.op_obj = ret->opcodes, .op_name = "STORE_NAME", .op_code = 114, .pop = 1, .push = 0, .func = NAME_OP); // Operand is in name list
 	def_op(.op_obj = ret->opcodes, .op_name = "SWAP", .op_code = 115, .pop = 1, .push = 1);
 	def_op(.op_obj = ret->opcodes, .op_name = "UNPACK_EX", .op_code = 116, .pop = 9, .push = 1); // assignment with a starred target; TOS is #entries
 	varargs_op(.op_obj = ret->opcodes, .op_name = "UNPACK_SEQUENCE", .op_code = 117, .pop = 9, .push = 1); // TOS is number of tuple items
