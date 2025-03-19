@@ -20,3 +20,4 @@ dE "beqzalc s0, 0x80000410" 20100103 0x80000000 (branch (is_zero (var s0)) (seq 
 dE "bnezalc s6, 0x80000438" 6016010d 0x80000000 (branch (! (is_zero (var s6))) (seq (set ra (bv 64 0x80000008)) (jmp (bv 64 0x80000438))) nop)
 dE "daui t5, s6, 0xb87" 76cd0b87 0x80000000 (set t5 (+ (var s6) (bv 64 0xb870000)))
 dE "dahi s1, s1, 0x522" 06260522 0x80000000 (set s1 (+ (var s1) (bv 64 0x52200000000)))
+dE "dati s3, s3, 0x82e" 067e082e 0x80000000 (set s3 (+ (var s3) (bv 64 0x82e000000000000)))

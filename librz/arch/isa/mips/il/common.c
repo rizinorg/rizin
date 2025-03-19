@@ -256,6 +256,25 @@ static RzILOpEffect *mips_il_dahi(const csh *handle, const cs_insn *insn, const 
 	return SETG(rt, add);
 }
 
+static RzILOpEffect *mips_il_dati(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Doubleword Add Top Immediate
+	// DAUI is a 64 gpr instruction
+	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
+
+	const char *rt = REG(0);
+	st64 imm = (st64)IMM(2);
+	// cast required due possible left shift of negative value
+	imm = (st64)((ut64)imm << 48);
+
+	if (IS_ZERO_REG(1)) {
+		return SETG(rt, SN(gprlen, imm));
+	}
+
+	RzILOpPure *rs = MIPS_REG(1);
+	RzILOpPure *add = ADD(rs, SN(gprlen, imm));
+	return SETG(rt, add);
+}
+
 static RzILOpEffect *mips_il_auipc(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	// Add Upper Immediate to PC
 	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();

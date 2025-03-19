@@ -1001,7 +1001,7 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_DALIGN:
 		return mips_il_dalign(handle, insn, gprlen);
 	case MIPS_INS_DATI:
-		return NULL;
+		return mips_il_dati(handle, insn, gprlen);
 	case MIPS_INS_DAUI:
 		return mips_il_daui(handle, insn, gprlen);
 	case MIPS_INS_DBITSWAP:
