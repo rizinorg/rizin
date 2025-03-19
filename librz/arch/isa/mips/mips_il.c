@@ -547,7 +547,7 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_BLTZAL:
 		return mips_il_bltzal(handle, insn, gprlen);
 	case MIPS_INS_BLTZALC:
-		return NULL;
+		return mips_il_bltzal(handle, insn, gprlen); // bltzal Compact
 	case MIPS_INS_BLTZALL:
 		return mips_il_bltzal(handle, insn, gprlen); // bltzal Likely
 	case MIPS_INS_BLTZALS:
