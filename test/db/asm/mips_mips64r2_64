@@ -78,3 +78,4 @@ d "lwc2 0, 0(zero)" 000000c8 0x4
 dB "paddsh f0, f0, f0" 0000004b 0x4
 d "sdc2 0, 0(zero)" 000000f8 0x4
 d "swc2 0, 0(zero)" 000000e8 0x4
+dE "ddiv $zero, s2, s0" 0250001e 0x80000000 (seq (set lo (sdiv (var s2) (var s0))) (set hi (smod (var s2) (var s0))))

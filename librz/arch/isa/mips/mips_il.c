@@ -81,7 +81,7 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_DROR:
 		return NULL;
 	case MIPS_INS_DDIV:
-		return NULL;
+		return mips_il_div(handle, insn, gprlen); // removed from r6
 	case MIPS_INS_DREM:
 		return NULL;
 	case MIPS_INS_DDIVU:
