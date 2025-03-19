@@ -17,3 +17,5 @@ dE "bgezalc t3, 0x800005b8" 196b016d 0x80000000 (branch (|| (! (sle (var t3) (bv
 dE "bgtzalc t4, 0x80000568" 1c0c0159 0x80000000 (branch (! (sle (var t4) (bv 32 0x0))) (seq (set ra (bv 32 0x80000008)) (jmp (bv 32 0x80000568))) nop)
 dE "beqzalc s0, 0x80000410" 20100103 0x80000000 (branch (is_zero (var s0)) (seq (set ra (bv 32 0x80000008)) (jmp (bv 32 0x80000410))) nop)
 dE "bnezalc s6, 0x80000438" 6016010d 0x80000000 (branch (! (is_zero (var s6))) (seq (set ra (bv 32 0x80000008)) (jmp (bv 32 0x80000438))) nop)
+dE "lsa t7, s2, t5, 2" 024d7845 0x80000000 (set t7 (+ (<< (var s2) (bv 8 0x2) false) (var t5)))
+dE "lsa t7, s2, t5, 1" 024d7805 0x80000000 (set t7 (+ (<< (var s2) (bv 8 0x1) false) (var t5)))

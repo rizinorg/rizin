@@ -717,6 +717,20 @@ static RzILOpEffect *mips_il_lwr(const csh *handle, const cs_insn *insn, const u
 	NOT_IMPLEMENTED;
 }
 
+static RzILOpEffect *mips_il_lsa(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Load Scaled Address
+	// LSA rd, rs, rt, sa | rd = (rs << (sa+1)) + rt
+	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
+
+	const char *rd = REG(0);
+	RzILOpPure *rs = MIPS_REG(1);
+	RzILOpPure *rt = MIPS_REG(2);
+	ut64 sa = IMM(3); // plus one added by capstone
+
+	RzILOpPure *shiftl = SHIFTL0(rs, U8(sa));
+	return SETG(rd, ADD(shiftl, rt));
+}
+
 static RzILOpEffect *mips_il_madd(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	RzILOpPure *rs = MIPS_REG(0);
 	RzILOpPure *rt = MIPS_REG(1);

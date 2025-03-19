@@ -1043,7 +1043,7 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_DIV_U_W:
 		return NULL;
 	case MIPS_INS_DLSA:
-		return NULL;
+		return mips_il_lsa(handle, insn, gprlen);
 	case MIPS_INS_DMFC0:
 		return NULL;
 	case MIPS_INS_DMFC1:
@@ -1683,7 +1683,7 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_LLWP:
 		return NULL;
 	case MIPS_INS_LSA:
-		return NULL;
+		return mips_il_lsa(handle, insn, gprlen);
 	case MIPS_INS_LUI:
 		return mips_il_lui(handle, insn, gprlen);
 	case MIPS_INS_LUXC1:
