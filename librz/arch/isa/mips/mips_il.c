@@ -471,7 +471,7 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_BGEZAL:
 		return mips_il_bgezal(handle, insn, gprlen);
 	case MIPS_INS_BGEZALC:
-		return NULL;
+		return mips_il_bgezal(handle, insn, gprlen); // bgezal Compact
 	case MIPS_INS_BGEZALL:
 		return mips_il_bgezal(handle, insn, gprlen); // bgezal Likely
 	case MIPS_INS_BGEZALS:
