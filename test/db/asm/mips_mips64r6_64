@@ -23,3 +23,5 @@ dE "dahi s1, s1, 0x522" 06260522 0x80000000 (set s1 (+ (var s1) (bv 64 0x5220000
 dE "dati s3, s3, 0x82e" 067e082e 0x80000000 (set s3 (+ (var s3) (bv 64 0x82e000000000000)))
 dE "dext t6, s0, 0xc, 0x19" 7e0ec303 0x80000000 (set t6 (& (>> (var s0) (bv 32 0xc) false) (>> (bv 64 0xffffffffffffffff) (- (bv 32 0x40) (bv 32 0x19)) false)))
 dE "dext s1, s5, 0x30, 0x10" 7eb17c02 0x80000000 (set s1 (& (>> (var s5) (bv 32 0x30) false) (>> (bv 64 0xffffffffffffffff) (- (bv 32 0x40) (bv 32 0x10)) false)))
+dE "dins t0, t3, 9, 0x1a" 7d681245 0x80000000 (set t0 (| (& (var t0) (~ (<< (>> (bv 64 0xffffffffffffffff) (- (bv 32 0x40) (bv 32 0x1a)) false) (bv 32 0x9) false))) (& (<< (var t3) (bv 32 0x9) false) (<< (>> (bv 64 0xffffffffffffffff) (- (bv 32 0x40) (bv 32 0x1a)) false) (bv 32 0x9) false))))
+dE "dins s1, s5, 0x30, 0x10" 7eb1fc06 0x80000000 (set s1 (| (& (var s1) (~ (<< (>> (bv 64 0xffffffffffffffff) (- (bv 32 0x40) (bv 32 0x10)) false) (bv 32 0x30) false))) (& (<< (var s5) (bv 32 0x30) false) (<< (>> (bv 64 0xffffffffffffffff) (- (bv 32 0x40) (bv 32 0x10)) false) (bv 32 0x30) false))))

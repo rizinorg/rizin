@@ -550,15 +550,21 @@ static RzILOpEffect *mips_il_ext(const csh *handle, const cs_insn *insn, const u
 }
 
 static RzILOpEffect *mips_il_ins(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Insert Bit Field (INS rt, rs, pos, size)
 	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
 
-	// Insert Bit Field (INS rt, rs, pos, size)
 	RzILOpPure *rt = MIPS_REG(0);
 	RzILOpPure *rs = MIPS_REG(1);
-	RzILOpPure *pos = MIPS_IMM(2);
-	RzILOpPure *size = MIPS_IMM(3);
+	RzILOpPure *pos = MIPS_IMM32(2); // DEPOSIT64 requires 32 bit value
+	RzILOpPure *size = MIPS_IMM32(3); // DEPOSIT64 requires 32 bit value
 
-	return SETG(REG(0), DEPOSIT32(rt, pos, size, rs));
+	RzILOpPure *deposit = NULL;
+	if (gprlen > 32) {
+		deposit = DEPOSIT64(rt, pos, size, rs);
+	} else {
+		deposit = DEPOSIT32(rt, pos, size, rs);
+	}
+	return SETG(REG(0), deposit);
 }
 
 static RzILOpEffect *mips_il_j(const csh *handle, const cs_insn *insn, const ut32 gprlen) {

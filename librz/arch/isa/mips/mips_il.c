@@ -1021,11 +1021,11 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_DI:
 		return NOP(); // Disable Interrupts
 	case MIPS_INS_DINS:
-		return NULL;
+		return mips_il_ins(handle, insn, gprlen);
 	case MIPS_INS_DINSM:
-		return NULL;
+		return mips_il_ins(handle, insn, gprlen);
 	case MIPS_INS_DINSU:
-		return NULL;
+		return mips_il_ins(handle, insn, gprlen);
 	case MIPS_INS_DIV_S_B:
 		return NULL;
 	case MIPS_INS_DIV_S_D:
