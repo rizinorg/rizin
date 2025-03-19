@@ -587,7 +587,7 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_BNEZ16:
 		return NULL;
 	case MIPS_INS_BNEZALC:
-		return NULL;
+		return mips_il_bnezalc(handle, insn, gprlen);
 	case MIPS_INS_BNEZC:
 		return NULL;
 	case MIPS_INS_BNEZC16:
