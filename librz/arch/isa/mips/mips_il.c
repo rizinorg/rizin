@@ -1045,11 +1045,11 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_DLSA:
 		return mips_il_lsa(handle, insn, gprlen);
 	case MIPS_INS_DMFC0:
-		return NULL;
+		return mips_il_mfc0(handle, insn, gprlen);
 	case MIPS_INS_DMFC1:
-		return NULL;
+		return mips_il_mfc1(handle, insn, gprlen);
 	case MIPS_INS_DMFC2:
-		return NULL;
+		return mips_il_mfc2(handle, insn, gprlen);
 	case MIPS_INS_DMFGC0:
 		return NULL;
 	case MIPS_INS_DMOD:
@@ -1059,11 +1059,11 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_DMT:
 		return NULL;
 	case MIPS_INS_DMTC0:
-		return NULL;
+		return mips_il_mtc0(handle, insn, gprlen);
 	case MIPS_INS_DMTC1:
-		return NULL;
+		return mips_il_mtc1(handle, insn, gprlen);
 	case MIPS_INS_DMTC2:
-		return NULL;
+		return mips_il_mtc2(handle, insn, gprlen);
 	case MIPS_INS_DMTGC0:
 		return NULL;
 	case MIPS_INS_DMUH:
