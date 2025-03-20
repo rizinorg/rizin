@@ -736,7 +736,7 @@ static RzILOpEffect *mips_il_madd(const csh *handle, const cs_insn *insn, const 
 	RzILOpPure *rs = MIPS_REG(0);
 	RzILOpPure *rt = MIPS_REG(1);
 
-	// product can be a 64 bit value so sign extend it
+	// product is on 64 bit value so sign extend it
 	RzILOpPure *rs64 = SIGNED(64, rs);
 	RzILOpPure *rt64 = SIGNED(64, rt);
 	RzILOpPure *prod = MUL(rs64, rt64);
@@ -764,7 +764,7 @@ static RzILOpEffect *mips_il_maddu(const csh *handle, const cs_insn *insn, const
 	RzILOpPure *rs = MIPS_REG(0);
 	RzILOpPure *rt = MIPS_REG(1);
 
-	// product can be a 64 bit value so zero extend it
+	// product is on 64 bit value so zero extend it
 	RzILOpPure *rs64 = UNSIGNED(64, rs);
 	RzILOpPure *rt64 = UNSIGNED(64, rt);
 	RzILOpPure *prod = MUL(rs64, rt64);
@@ -849,7 +849,7 @@ static RzILOpEffect *mips_il_msub(const csh *handle, const cs_insn *insn, const 
 	RzILOpPure *rs = MIPS_REG(0);
 	RzILOpPure *rt = MIPS_REG(1);
 
-	// product can be a 64 bit value so sign extend it
+	// product is on 64 bit value so sign extend it
 	RzILOpPure *rs64 = SIGNED(64, rs);
 	RzILOpPure *rt64 = SIGNED(64, rt);
 	RzILOpPure *prod = MUL(rs64, rt64);
@@ -877,7 +877,7 @@ static RzILOpEffect *mips_il_msubu(const csh *handle, const cs_insn *insn, const
 	RzILOpPure *rs = MIPS_REG(0);
 	RzILOpPure *rt = MIPS_REG(1);
 
-	// product can be a 64 bit value so zero extend it
+	// product is on 64 bit value so zero extend it
 	RzILOpPure *rs64 = UNSIGNED(64, rs);
 	RzILOpPure *rt64 = UNSIGNED(64, rt);
 	RzILOpPure *prod = MUL(rs64, rt64);
@@ -922,7 +922,7 @@ static RzILOpEffect *mips_il_mul(const csh *handle, const cs_insn *insn, const u
 	RzILOpPure *rt = MIPS_REG(2);
 
 	if (gprlen == 32) {
-		// product can be a 64 bit value so sign extend it
+		// product is on 64 bit value so sign extend it
 		rs = SIGNED(64, rs);
 		rt = SIGNED(64, rt);
 	}
@@ -952,7 +952,7 @@ static RzILOpEffect *mips_il_mulu(const csh *handle, const cs_insn *insn, const 
 	RzILOpPure *rt = MIPS_REG(2);
 
 	if (gprlen == 32) {
-		// product can be a 64 bit value so sign extend it
+		// product is on 64 bit value so zero extend it
 		rs = UNSIGNED(64, rs);
 		rt = UNSIGNED(64, rt);
 	}
@@ -1004,7 +1004,7 @@ static RzILOpEffect *mips_il_dmulu(const csh *handle, const cs_insn *insn, const
 	RzILOpPure *rs = MIPS_REG(1);
 	RzILOpPure *rt = MIPS_REG(2);
 
-	// product is on 128 bit value so sign extend it
+	// product is on 128 bit value so zero extend it
 	rs = UNSIGNED(128, rs);
 	rt = UNSIGNED(128, rt);
 	RzILOpPure *prod = MUL(rs, rt);
@@ -1026,7 +1026,7 @@ static RzILOpEffect *mips_il_muh(const csh *handle, const cs_insn *insn, const u
 	RzILOpPure *rt = MIPS_REG(2);
 
 	if (gprlen == 32) {
-		// product can be a 64 bit value so sign extend it
+		// product is on 64 bit value so sign extend it
 		rs = SIGNED(64, rs);
 		rt = SIGNED(64, rt);
 	}
@@ -1043,6 +1043,29 @@ static RzILOpEffect *mips_il_muh(const csh *handle, const cs_insn *insn, const u
 	return SETG(rd, rs);
 }
 
+static RzILOpEffect *mips_il_dmuh(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// 64bit only
+	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
+
+	const char *rd = REG(0);
+	if (IS_ZERO_REG(1) || IS_ZERO_REG(2)) {
+		// multiply by zero always returns zero.
+		SETG(rd, MIPS_ZERO());
+	}
+
+	RzILOpPure *rs = MIPS_REG(1);
+	RzILOpPure *rt = MIPS_REG(2);
+
+	// product is on 128 bit value so sign extend it
+	rs = SIGNED(128, rs);
+	rt = SIGNED(128, rt);
+	RzILOpPure *prod = MUL(rs, rt);
+
+	// shift and truncate to 64 bits (hi).
+	RzILOpPure *res = TRUNC64(SHIFTR0(prod, U8(64)));
+	return SETG(rd, res);
+}
+
 static RzILOpEffect *mips_il_muhu(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
 
@@ -1056,7 +1079,7 @@ static RzILOpEffect *mips_il_muhu(const csh *handle, const cs_insn *insn, const 
 	RzILOpPure *rt = MIPS_REG(2);
 
 	if (gprlen == 32) {
-		// product can be a 64 bit value so sign extend it
+		// product is on 64 bit value so zero extend it
 		rs = UNSIGNED(64, rs);
 		rt = UNSIGNED(64, rt);
 	}
@@ -1073,6 +1096,29 @@ static RzILOpEffect *mips_il_muhu(const csh *handle, const cs_insn *insn, const 
 	return SETG(rd, rs);
 }
 
+static RzILOpEffect *mips_il_dmuhu(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// 64bit only
+	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
+
+	const char *rd = REG(0);
+	if (IS_ZERO_REG(1) || IS_ZERO_REG(2)) {
+		// multiply by zero always returns zero.
+		SETG(rd, MIPS_ZERO());
+	}
+
+	RzILOpPure *rs = MIPS_REG(1);
+	RzILOpPure *rt = MIPS_REG(2);
+
+	// product is on 128 bit value so zero extend it
+	rs = UNSIGNED(128, rs);
+	rt = UNSIGNED(128, rt);
+	RzILOpPure *prod = MUL(rs, rt);
+
+	// shift and truncate to 64 bits (hi).
+	RzILOpPure *res = TRUNC64(SHIFTR0(prod, U8(64)));
+	return SETG(rd, res);
+}
+
 static RzILOpEffect *mips_il_mult(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	if (IS_ZERO_REG(0) || IS_ZERO_REG(1)) {
 		// multiply by zero always returns zero.
@@ -1084,7 +1130,7 @@ static RzILOpEffect *mips_il_mult(const csh *handle, const cs_insn *insn, const 
 	RzILOpPure *rs = MIPS_REG(0);
 	RzILOpPure *rt = MIPS_REG(1);
 
-	// product can be a 64 bit value so sign extend it
+	// product is on 64 bit value so sign extend it
 	RzILOpPure *rs64 = SIGNED(64, rs);
 	RzILOpPure *rt64 = SIGNED(64, rt);
 	RzILOpPure *prod = MUL(rs64, rt64);
@@ -1113,7 +1159,7 @@ static RzILOpEffect *mips_il_multu(const csh *handle, const cs_insn *insn, const
 	RzILOpPure *rs = MIPS_REG(0);
 	RzILOpPure *rt = MIPS_REG(1);
 
-	// product can be a 64 bit value so zero extend it
+	// product is on 64 bit value so zero extend it
 	RzILOpPure *rs64 = UNSIGNED(64, rs);
 	RzILOpPure *rt64 = UNSIGNED(64, rt);
 	RzILOpPure *prod = MUL(rs64, rt64);
