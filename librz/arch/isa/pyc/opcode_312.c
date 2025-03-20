@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2025 FXTi <takshformal@gmail.com>
+// SPDX-FileCopyrightText: 2025 well-mannered-goat <takshformal@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "opcode.h"
