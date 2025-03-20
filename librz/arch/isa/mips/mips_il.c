@@ -2005,9 +2005,9 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_MTTR:
 		return NULL;
 	case MIPS_INS_MUH:
-		return NULL;
+		return mips_il_muh(handle, insn, gprlen);
 	case MIPS_INS_MUHU:
-		return NULL;
+		return mips_il_muhu(handle, insn, gprlen);
 	case MIPS_INS_MULEQ_S_W_PHL:
 		return NULL;
 	case MIPS_INS_MULEQ_S_W_PHR:

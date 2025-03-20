@@ -35,3 +35,7 @@ dE "modu s3, t0, s1" 011198db 0x80000000 (set s3 (mod (var t0) (var s1)))
 dE "dmodu t6, t6, s5" 01d570df 0x80000000 (set t6 (mod (var t6) (var s5)))
 dE "mul s5, t1, t7" 012fa898 0x80000000 (set s5 (cast 64 (msb (cast 32 false (* (var t1) (var t7)))) (cast 32 false (* (var t1) (var t7)))))
 dE "mulu s1, t6, t2" 01ca8899 0x80000000 (set s1 (cast 64 (msb (cast 32 false (* (var t6) (var t2)))) (cast 32 false (* (var t6) (var t2)))))
+dE "muh t3, s1, t1" 022958d8 0x80000000 (set t3 (cast 64 (msb (cast 32 false (>> (* (var s1) (var t1)) (bv 8 0x20) false))) (cast 32 false (>> (* (var s1) (var t1)) (bv 8 0x20) false))))
+dE "muhu t0, t3, t7" 016f40d9 0x80000000 (set t0 (cast 64 (msb (cast 32 false (>> (* (var t3) (var t7)) (bv 8 0x20) false))) (cast 32 false (>> (* (var t3) (var t7)) (bv 8 0x20) false))))
+
+
