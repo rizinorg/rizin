@@ -288,12 +288,12 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 			return NULL;
 		}
 		map->name = rz_str_newf("cache_map.%d", i);
-		map->paddr = cache->maps[i].fileOffset;
+		map->offset = cache->maps[i].fileOffset;
 		map->psize = cache->maps[i].size;
 		map->vsize = map->psize;
 		map->vaddr = cache->maps[i].address + slide;
 		map->perm = prot2perm(cache->maps[i].initProt);
-		if (rz_dyldcache_range_needs_rebasing(cache, map->paddr, map->psize)) {
+		if (rz_dyldcache_range_needs_rebasing(cache, map->offset, map->psize)) {
 			map->vfile_name = rz_str_dup(RZ_DYLDCACHE_VFILE_NAME_REBASED);
 		}
 		rz_pvector_push(ret, map);

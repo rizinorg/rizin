@@ -679,7 +679,7 @@ RZ_API RZ_BORROW RzBinMap *rz_bin_object_get_map_at(RZ_NONNULL RzBinObject *o, u
 
 	rz_pvector_foreach_prev(o->maps, iter) {
 		map = *iter;
-		from = va ? rz_bin_object_addr_with_base(o, map->vaddr) : map->paddr;
+		from = va ? rz_bin_object_addr_with_base(o, map->vaddr) : map->offset;
 		to = from + (va ? map->vsize : map->psize);
 		if (off >= from && off < to) {
 			return map;
@@ -742,7 +742,7 @@ RZ_API RZ_OWN RzPVector /*<RzBinMap *>*/ *rz_bin_object_get_maps_at(RzBinObject 
 
 	rz_pvector_foreach (o->maps, iter) {
 		map = *iter;
-		from = va ? rz_bin_object_addr_with_base(o, map->vaddr) : map->paddr;
+		from = va ? rz_bin_object_addr_with_base(o, map->vaddr) : map->offset;
 		to = from + (va ? map->vsize : map->psize);
 		if (off >= from && off < to) {
 			rz_pvector_push(res, map);
@@ -1119,7 +1119,7 @@ RZ_API RZ_OWN RzPVector /*<RzBinMap *>*/ *rz_bin_maps_of_file_sections(RZ_NONNUL
 			goto hcf;
 		}
 		map->name = rz_str_dup(sec->name);
-		map->paddr = sec->paddr;
+		map->offset = sec->paddr;
 		map->psize = sec->size;
 		map->vaddr = sec->vaddr;
 		map->vsize = sec->vsize;
@@ -1157,7 +1157,7 @@ RZ_API RzPVector /*<RzBinSection *>*/ *rz_bin_sections_of_maps(RzPVector /*<RzBi
 			break;
 		}
 		sec->name = rz_str_dup(map->name);
-		sec->paddr = map->paddr;
+		sec->paddr = map->offset;
 		sec->size = map->psize;
 		sec->vaddr = map->vaddr;
 		sec->vsize = map->vsize;

@@ -135,7 +135,7 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 				goto beach;
 			}
 			map->name = rz_str_dup(ptr->name);
-			map->paddr = ptr->paddr;
+			map->offset = ptr->paddr;
 			map->psize = ptr->size;
 			map->vsize = ptr->vsize;
 			rz_pvector_push(maps, map);
@@ -165,7 +165,7 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 				goto beach;
 			}
 			map->name = rz_str_dup(ptr->name);
-			map->paddr = ptr->paddr;
+			map->offset = ptr->paddr;
 			map->psize = ptr->size;
 			map->vsize = ptr->vsize;
 			rz_pvector_push(maps, map);

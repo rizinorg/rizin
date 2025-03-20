@@ -198,7 +198,7 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 			return ret;
 		}
 		map->name = rz_str_newf("page.0x%" PFMT64x, page->start);
-		map->paddr = page->file_offset;
+		map->offset = page->file_offset;
 		map->psize = page->size;
 		map->vaddr = page->start;
 		map->vsize = page->size;
@@ -212,7 +212,7 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 			return ret;
 		}
 		map->name = rz_str_newf("kernel.0x%" PFMT64x, datablock->virtualAddress);
-		map->paddr = datablock->offset;
+		map->offset = datablock->offset;
 		map->psize = datablock->size;
 		map->vaddr = datablock->virtualAddress;
 		map->vsize = datablock->size;

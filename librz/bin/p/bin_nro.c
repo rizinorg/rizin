@@ -130,7 +130,7 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 		}
 
 		map->name = rz_str_dup("sig0");
-		map->paddr = sig0;
+		map->offset = sig0;
 		map->psize = sig0sz;
 		map->vsize = sig0sz;
 		map->vaddr = sig0 + ba;
@@ -149,7 +149,7 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	if (!rz_buf_read_le32_at(b, NRO_OFF(text_memoffset), &tmp)) {
 		goto maps_err;
 	}
-	map->paddr = tmp;
+	map->offset = tmp;
 
 	if (!rz_buf_read_le32_at(b, NRO_OFF(text_size), &tmp)) {
 		goto maps_err;
@@ -157,7 +157,7 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	map->psize = tmp;
 
 	map->vsize = map->psize;
-	map->vaddr = map->paddr + ba;
+	map->vaddr = map->offset + ba;
 	map->perm = RZ_PERM_RX;
 	rz_pvector_push(ret, map);
 
@@ -169,7 +169,7 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	if (!rz_buf_read_le32_at(b, NRO_OFF(ro_memoffset), &tmp)) {
 		goto maps_err;
 	}
-	map->paddr = tmp;
+	map->offset = tmp;
 
 	if (!rz_buf_read_le32_at(b, NRO_OFF(ro_size), &tmp)) {
 		goto maps_err;
@@ -177,7 +177,7 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	map->psize = tmp;
 
 	map->vsize = map->psize;
-	map->vaddr = map->paddr + ba;
+	map->vaddr = map->offset + ba;
 	map->perm = RZ_PERM_R;
 	rz_pvector_push(ret, map);
 
@@ -189,7 +189,7 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	if (!rz_buf_read_le32_at(b, NRO_OFF(data_memoffset), &tmp)) {
 		goto maps_err;
 	}
-	map->paddr = tmp;
+	map->offset = tmp;
 
 	if (!rz_buf_read_le32_at(b, NRO_OFF(data_size), &tmp)) {
 		goto maps_err;
@@ -197,7 +197,7 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	map->psize = tmp;
 
 	map->vsize = map->psize;
-	map->vaddr = map->paddr + ba;
+	map->vaddr = map->offset + ba;
 	map->perm = RZ_PERM_RW;
 	rz_pvector_push(ret, map);
 	return ret;

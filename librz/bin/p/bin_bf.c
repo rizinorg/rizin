@@ -124,7 +124,7 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 		rz_pvector_free(ret);
 		return NULL;
 	}
-	map->paddr = 0;
+	map->offset = 0;
 	map->vaddr = 0;
 	map->psize = bf->size;
 	map->vsize = bf->size;
@@ -137,7 +137,7 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 		rz_pvector_free(ret);
 		return NULL;
 	}
-	map->paddr = 0;
+	map->offset = 0;
 	map->vaddr = 0x10000;
 	map->psize = 0;
 	map->vsize = 30000;

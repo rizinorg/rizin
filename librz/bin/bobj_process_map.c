@@ -18,6 +18,6 @@ RZ_IPI void rz_bin_set_and_process_maps(RzBinFile *bf, RzBinObject *o) {
 	rz_pvector_foreach (o->maps, it) {
 		element = *it;
 		// rebase physical address
-		element->paddr += o->opts.loadaddr;
+		element->offset += o->opts.loadaddr;
 	}
 }

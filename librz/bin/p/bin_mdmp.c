@@ -192,7 +192,7 @@ static RzPVector /*<RzBinMap *>*/ *mdmp_maps(RzBinFile *bf) {
 		if (!map) {
 			return ret;
 		}
-		map->paddr = (memory->memory).rva;
+		map->offset = (memory->memory).rva;
 		map->psize = (memory->memory).data_size;
 		map->vaddr = memory->start_of_memory_range;
 		map->vsize = (memory->memory).data_size;
@@ -208,7 +208,7 @@ static RzPVector /*<RzBinMap *>*/ *mdmp_maps(RzBinFile *bf) {
 		if (!map) {
 			return ret;
 		}
-		map->paddr = index;
+		map->offset = index;
 		map->psize = memory64->data_size;
 		map->vaddr = memory64->start_of_memory_range;
 		map->vsize = memory64->data_size;

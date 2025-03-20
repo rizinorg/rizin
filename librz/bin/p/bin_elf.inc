@@ -679,7 +679,7 @@ static RzPVector /*<RzBinMap *>*/ *maps_unpatched(RzBinFile *bf) {
 				break;
 			}
 
-			map->paddr = iter->data.p_offset;
+			map->offset = iter->data.p_offset;
 			map->psize = iter->data.p_filesz;
 			map->vsize = iter->data.p_memsz;
 			map->vaddr = iter->data.p_vaddr;
@@ -712,7 +712,7 @@ static RzPVector /*<RzBinMap *>*/ *maps_unpatched(RzBinFile *bf) {
 			}
 
 			map->name = rz_str_dup(section->name);
-			map->paddr = section->offset;
+			map->offset = section->offset;
 			map->psize = section->type != SHT_NOBITS ? section->size : 0;
 			map->vsize = section->size;
 			map->vaddr = section->rva;
@@ -727,7 +727,7 @@ static RzPVector /*<RzBinMap *>*/ *maps_unpatched(RzBinFile *bf) {
 			return ret;
 		}
 		map->name = rz_str_dup("uphdr");
-		map->paddr = 0;
+		map->offset = 0;
 		map->psize = bf->size;
 		map->vaddr = 0x10000;
 		map->vsize = bf->size;
@@ -745,7 +745,7 @@ static RzPVector /*<RzBinMap *>*/ *maps_unpatched(RzBinFile *bf) {
 			ehdr_size = bf->size;
 		}
 		map->name = rz_str_dup("ehdr");
-		map->paddr = 0;
+		map->offset = 0;
 		map->psize = ehdr_size;
 		map->vaddr = obj->baddr;
 		map->vsize = ehdr_size;

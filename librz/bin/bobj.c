@@ -891,7 +891,7 @@ err:
 }
 
 static ut64 map_p2v(RzBinMap *m, ut64 paddr) {
-	ut64 delta = paddr - m->paddr;
+	ut64 delta = paddr - m->offset;
 	if (delta >= m->vsize) {
 		return UT64_MAX;
 	}
@@ -961,7 +961,7 @@ RZ_API ut64 rz_bin_object_v2p(RZ_NONNULL RzBinObject *obj, ut64 vaddr) {
 	if (delta >= m->psize) {
 		return UT64_MAX;
 	}
-	return m->paddr + delta;
+	return m->offset + delta;
 }
 
 /**

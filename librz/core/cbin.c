@@ -849,7 +849,7 @@ static bool io_create_mem_map(RzIO *io, RZ_NULLABLE RzCoreFile *cf, RzBinMap *ma
 
 static void add_map(RzCore *core, RZ_NULLABLE RzCoreFile *cf, RzBinFile *bf, RzBinMap *map, ut64 addr, int fd) {
 	RzIODesc *io_desc = rz_io_desc_get(core->io, fd);
-	if (!io_desc || UT64_ADD_OVFCHK(map->psize, map->paddr) ||
+	if (!io_desc || UT64_ADD_OVFCHK(map->psize, map->offset) ||
 		UT64_ADD_OVFCHK(map->vsize, addr) || !map->vsize) {
 		return;
 	}
@@ -907,7 +907,7 @@ static void add_map(RzCore *core, RZ_NULLABLE RzCoreFile *cf, RzBinFile *bf, RzB
 	}
 
 	if (size) {
-		RzIOMap *iomap = rz_io_map_add_batch(core->io, fd, perm, map->paddr, addr, size);
+		RzIOMap *iomap = rz_io_map_add_batch(core->io, fd, perm, map->offset, addr, size);
 		if (!iomap) {
 			free(map_name);
 			return;
@@ -946,7 +946,7 @@ RZ_API bool rz_core_bin_apply_maps(RzCore *core, RzBinFile *binfile, bool va) {
 		if (va && !(map->perm & RZ_PERM_R)) {
 			va_map = VA_NOREBASE;
 		}
-		ut64 addr = rva(o, map->paddr, map->vaddr, va_map);
+		ut64 addr = rva(o, map->offset, map->vaddr, va_map);
 		add_map(core, cf, binfile, map, addr, binfile->fd);
 	}
 	return true;

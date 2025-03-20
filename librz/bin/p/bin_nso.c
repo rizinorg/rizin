@@ -273,7 +273,7 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 		return ret;
 	}
 	map->name = rz_str_dup("text");
-	map->paddr = bin->decompressed ? 0 : hdr->text_memoffset;
+	map->offset = bin->decompressed ? 0 : hdr->text_memoffset;
 	map->vsize = map->psize = hdr->text_size;
 	map->vaddr = hdr->text_loc + ba;
 	map->perm = RZ_PERM_RX;
@@ -286,7 +286,7 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 		return ret;
 	}
 	map->name = rz_str_dup("ro");
-	map->paddr = bin->decompressed ? hdr->text_size : hdr->ro_memoffset;
+	map->offset = bin->decompressed ? hdr->text_size : hdr->ro_memoffset;
 	map->vsize = map->psize = hdr->ro_size;
 	map->vaddr = hdr->ro_loc + ba;
 	map->perm = RZ_PERM_R;
@@ -299,7 +299,7 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 		return ret;
 	}
 	map->name = rz_str_dup("data");
-	map->paddr = bin->decompressed ? hdr->text_size + hdr->ro_size : hdr->data_memoffset;
+	map->offset = bin->decompressed ? hdr->text_size + hdr->ro_size : hdr->data_memoffset;
 	map->vsize = map->psize = hdr->data_size;
 	map->vaddr = hdr->data_loc + ba;
 	map->perm = RZ_PERM_RW;

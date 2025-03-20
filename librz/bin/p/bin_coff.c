@@ -241,7 +241,7 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 		ptr->name = rz_coff_symbol_name(obj, (const ut8 *)hdr->s_name);
 		ptr->psize = hdr->s_size;
 		ptr->vsize = hdr->s_size;
-		ptr->paddr = hdr->s_scnptr;
+		ptr->offset = hdr->s_scnptr;
 		if (obj->scn_va) {
 			ptr->vaddr = obj->scn_va[i];
 		}
@@ -259,7 +259,7 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 			return ret;
 		}
 		map->name = rz_str_dup("reloc-targets");
-		map->paddr = 0;
+		map->offset = 0;
 		map->psize = rtmsz;
 		map->vaddr = rz_coff_get_reloc_targets_map_base(obj);
 		map->vsize = rtmsz;

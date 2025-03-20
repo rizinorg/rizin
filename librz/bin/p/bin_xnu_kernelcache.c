@@ -1030,12 +1030,12 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 		rz_str_ncpy(segname, seg->segname, 17);
 		rz_str_filter(segname);
 		map->name = rz_str_newf("%d.%s", i, segname);
-		map->paddr = seg->fileoff + bf->o->boffset;
+		map->offset = seg->fileoff + bf->o->boffset;
 		map->psize = seg->vmsize;
 		map->vsize = seg->vmsize;
 		map->vaddr = seg->vmaddr;
 		if (!map->vaddr) {
-			map->vaddr = map->paddr;
+			map->vaddr = map->offset;
 		}
 		map->perm = prot2perm(seg->initprot);
 		map->vfile_name = kobj->patched_buf ? rz_str_dup(VFILE_NAME_PATCHED) : NULL;

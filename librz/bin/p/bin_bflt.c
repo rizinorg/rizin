@@ -45,7 +45,7 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 		rz_pvector_free(ret);
 		return NULL;
 	}
-	map->paddr = 0;
+	map->offset = 0;
 	map->vaddr = rz_bflt_get_text_base(obj);
 	map->psize = obj->hdr.data_start;
 	map->vsize = obj->hdr.data_start;
@@ -59,7 +59,7 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 		rz_pvector_free(ret);
 		return NULL;
 	}
-	map->paddr = obj->hdr.data_start;
+	map->offset = obj->hdr.data_start;
 	map->vaddr = rz_bflt_get_data_base(obj);
 	map->psize = obj->hdr.data_end - obj->hdr.data_start;
 	map->vsize = rz_bflt_get_data_vsize(obj);

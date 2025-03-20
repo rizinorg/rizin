@@ -1964,7 +1964,7 @@ RzPVector /*<RzBinMap *>*/ *MACH0_(get_maps_unpatched)(RzBinFile *bf) {
 		map->perm = prot2perm(seg->initprot);
 		// boffset is relevant for fatmach0 where the mach0 is located boffset into the whole file
 		// the rebasing vfile above however is based at the mach0 already
-		map->paddr = seg->fileoff + bf->o->boffset;
+		map->offset = seg->fileoff + bf->o->boffset;
 		rz_pvector_push(ret, map);
 	}
 	return ret;

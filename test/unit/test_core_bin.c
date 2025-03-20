@@ -48,7 +48,7 @@ static RzPVector *maps(RzBinFile *bf) {
 
 	RzBinMap *map = RZ_NEW0(RzBinMap);
 	map->name = strdup("direct map");
-	map->paddr = 2;
+	map->offset = 2;
 	map->vaddr = 0x100;
 	map->psize = 2;
 	map->vsize = 2;
@@ -57,7 +57,7 @@ static RzPVector *maps(RzBinFile *bf) {
 
 	map = RZ_NEW0(RzBinMap);
 	map->name = strdup("direct map with zeroes");
-	map->paddr = 2;
+	map->offset = 2;
 	map->vaddr = 0x200;
 	map->psize = 2;
 	map->vsize = 0x30;
@@ -66,7 +66,7 @@ static RzPVector *maps(RzBinFile *bf) {
 
 	map = RZ_NEW0(RzBinMap);
 	map->name = strdup("vfile map");
-	map->paddr = 4;
+	map->offset = 4;
 	map->vaddr = 0x300;
 	map->psize = 4;
 	map->vsize = 4;
@@ -76,7 +76,7 @@ static RzPVector *maps(RzBinFile *bf) {
 
 	map = RZ_NEW0(RzBinMap);
 	map->name = strdup("vfile map with zeroes");
-	map->paddr = 0;
+	map->offset = 0;
 	map->vaddr = 0x400;
 	map->psize = 3;
 	map->vsize = 4;

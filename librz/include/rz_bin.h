@@ -545,14 +545,16 @@ typedef struct rz_bin_virtual_file_t {
 	bool buf_owned; ///< whether buf is owned and freed by this RzBinVirtualFile
 } RzBinVirtualFile;
 
-/// Description of a single memory mapping into virtual memory from a binary
+/**
+ * \brief A single memory mapping from a binary file into virtual memory.
+ */
 typedef struct rz_bin_map_t {
-	ut64 paddr; ///< address of the map inside the file
-	ut64 psize; ///< size of the data inside the file
-	ut64 vaddr; ///< address in the destination address space to map to
-	ut64 vsize; ///< size to map in the destination address space. If vsize > psize, excessive bytes are meant to be filled with 0
-	RZ_NULLABLE char *name;
-	ut32 perm;
+	ut64 offset; ///< Offset into the binary file where the map starts.
+	ut64 psize; ///< Size of the map inside the file.
+	ut64 vaddr; ///< Address where the map is located in address space.
+	ut64 vsize; ///< Size of map in the address space. If vsize > psize, excessive bytes are meant to be filled with 0
+	RZ_NULLABLE char *name; ///< Optional name of the map.
+	ut32 perm; ///< Map permissions (PF_R, PF_W, PF_X).
 
 	/**
 	 * If not NULL, the data will be taken from the virtual file returned by the

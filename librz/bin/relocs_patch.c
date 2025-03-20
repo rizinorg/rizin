@@ -101,13 +101,13 @@ RZ_API void rz_bin_relocs_patch_maps(RZ_NONNULL RzPVector /*<RzBinMap *>*/ *maps
 				// But as far as we can tell, these two features are mutually exclusive in practice.
 				continue;
 			}
-			ut64 buf_addr = map->paddr - buf_patched_offset;
+			ut64 buf_addr = map->offset - buf_patched_offset;
 			if (!map->psize || !rz_buf_sparse_populated_in(buf_patched, buf_addr, buf_addr + map->psize - 1)) {
 				// avoid using the patched file if there is nothing different in this range
 				continue;
 			}
 			map->vfile_name = rz_str_dup(vfile_name_patched);
-			map->paddr = buf_addr;
+			map->offset = buf_addr;
 		}
 	}
 
@@ -118,7 +118,7 @@ RZ_API void rz_bin_relocs_patch_maps(RZ_NONNULL RzPVector /*<RzBinMap *>*/ *maps
 			return;
 		}
 		map->name = rz_str_dup("reloc-targets");
-		map->paddr = 0;
+		map->offset = 0;
 		map->psize = target_vfile_size;
 		map->vaddr = target_vfile_base;
 		map->vsize = target_vfile_size;

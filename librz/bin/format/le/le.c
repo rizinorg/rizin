@@ -1853,10 +1853,10 @@ RZ_OWN RzPVector /*<RzBinMap *>*/ *rz_bin_le_get_maps(RzBinFile *bf) {
 		map->vsize = le_map->vsize;
 		CHECK(map->name = rz_str_newf("obj%u_map%u", obj_num, map_num));
 		if (le_map->is_physical) {
-			map->paddr = le_map->paddr;
+			map->offset = le_map->paddr;
 			CHECK(map->vfile_name = rz_str_dup(VFILE_NAME_PATCHED));
 		} else {
-			map->paddr = 0;
+			map->offset = 0;
 			if (map->psize != 0) {
 				CHECK(map->vfile_name = rz_str_dup(le_map->vfile_name));
 			}

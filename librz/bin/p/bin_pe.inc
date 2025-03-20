@@ -156,7 +156,7 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 		return ret;
 	}
 	map->name = rz_str_dup("header");
-	map->paddr = 0;
+	map->offset = 0;
 	ut32 aligned_hdr_size = UT32_MAX;
 	if (bin->nt_headers->optional_header.FileAlignment != 0) {
 		aligned_hdr_size = RZ_ROUND(bin->nt_headers->optional_header.SizeOfHeaders, bin->nt_headers->optional_header.FileAlignment);
@@ -173,7 +173,7 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 		if (!map) {
 			break;
 		}
-		map->paddr = sections[i].paddr;
+		map->offset = sections[i].paddr;
 		map->name = rz_str_dup((char *)sections[i].name);
 		map->psize = sections[i].size;
 		if (map->psize > bin->size) {
