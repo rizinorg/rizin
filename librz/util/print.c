@@ -1414,8 +1414,9 @@ RZ_API RZ_OWN RzStrBuf *rz_print_colorize_asm_str(RZ_BORROW RzPrint *p, const Rz
 	rz_return_val_if_fail(out, NULL);
 
 	const char *color;
-	RzAsmToken *tok;
-	rz_vector_foreach (toks->tokens, tok) {
+	void **it;
+	rz_pvector_foreach (toks->tokens, it) {
+		RzAsmToken *tok = *it;
 		switch (tok->type) {
 		default:
 			rz_strbuf_free(out);

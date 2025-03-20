@@ -104,15 +104,16 @@ static bool test_rz_tokenize_generic_0_no_reg_profile(void) {
 	};
 	RzAsmTokenString *toks = rz_asm_tokenize_asm_string(asm_str, NULL);
 
-	mu_assert_eq(rz_vector_len(toks->tokens), 5, "Number of generated tokens");
+	mu_assert_eq(rz_pvector_len(toks->tokens), 5, "Number of generated tokens");
 
 	int i = 0;
-	RzAsmToken *it;
-	rz_vector_foreach (toks->tokens, it) {
-		mu_assert_eq(it->start, tokens[i].start, "Token start");
-		mu_assert_eq(it->len, tokens[i].len, "Token length");
-		mu_assert_eq(it->type, tokens[i].type, "Token type");
-		mu_assert_eq(it->val.number, tokens[i].val.number, "Token value");
+	void **it;
+	rz_pvector_foreach (toks->tokens, it) {
+		RzAsmToken *tok = *it;
+		mu_assert_eq(tok->start, tokens[i].start, "Token start");
+		mu_assert_eq(tok->len, tokens[i].len, "Token length");
+		mu_assert_eq(tok->type, tokens[i].type, "Token type");
+		mu_assert_eq(tok->val.number, tokens[i].val.number, "Token value");
 		++i;
 	}
 
@@ -134,15 +135,16 @@ static bool test_rz_tokenize_generic_0(void) {
 	RzAsmParseParam param = { .reg_sets = a->reg->regset };
 	RzAsmTokenString *toks = rz_asm_tokenize_asm_string(asm_str, &param);
 
-	mu_assert_eq(rz_vector_len(toks->tokens), 5, "Number of generated tokens");
+	mu_assert_eq(rz_pvector_len(toks->tokens), 5, "Number of generated tokens");
 
 	int i = 0;
-	RzAsmToken *it;
-	rz_vector_foreach (toks->tokens, it) {
-		mu_assert_eq(it->start, tokens[i].start, "Token start");
-		mu_assert_eq(it->len, tokens[i].len, "Token length");
-		mu_assert_eq(it->type, tokens[i].type, "Token type");
-		mu_assert_eq(it->val.number, tokens[i].val.number, "Token value");
+	void **it;
+	rz_pvector_foreach (toks->tokens, it) {
+		RzAsmToken *tok = *it;
+		mu_assert_eq(tok->start, tokens[i].start, "Token start");
+		mu_assert_eq(tok->len, tokens[i].len, "Token length");
+		mu_assert_eq(tok->type, tokens[i].type, "Token type");
+		mu_assert_eq(tok->val.number, tokens[i].val.number, "Token value");
 		++i;
 	}
 
@@ -181,15 +183,16 @@ static bool test_rz_tokenize_generic_1(void) {
 	RzAsmParseParam param = { .reg_sets = a->reg->regset };
 	RzAsmTokenString *toks = rz_asm_tokenize_asm_string(asm_str, &param);
 
-	mu_assert_eq(rz_vector_len(toks->tokens), 20, "Number of generated tokens");
+	mu_assert_eq(rz_pvector_len(toks->tokens), 20, "Number of generated tokens");
 
 	int i = 0;
-	RzAsmToken *it;
-	rz_vector_foreach (toks->tokens, it) {
-		mu_assert_eq(it->start, tokens[i].start, "Token start");
-		mu_assert_eq(it->len, tokens[i].len, "Token length");
-		mu_assert_eq(it->type, tokens[i].type, "Token type");
-		mu_assert_eq(it->val.number, tokens[i].val.number, "Token value");
+	void **it;
+	rz_pvector_foreach (toks->tokens, it) {
+		RzAsmToken *tok = *it;
+		mu_assert_eq(tok->start, tokens[i].start, "Token start");
+		mu_assert_eq(tok->len, tokens[i].len, "Token length");
+		mu_assert_eq(tok->type, tokens[i].type, "Token type");
+		mu_assert_eq(tok->val.number, tokens[i].val.number, "Token value");
 		++i;
 	}
 
@@ -212,15 +215,16 @@ static bool test_rz_tokenize_generic_2(void) {
 	RzAsmParseParam param = { .reg_sets = a->reg->regset };
 	RzAsmTokenString *toks = rz_asm_tokenize_asm_string(asm_str, &param);
 
-	mu_assert_eq(rz_vector_len(toks->tokens), 5, "Number generated tokens");
+	mu_assert_eq(rz_pvector_len(toks->tokens), 5, "Number generated tokens");
 
 	int i = 0;
-	RzAsmToken *it;
-	rz_vector_foreach (toks->tokens, it) {
-		mu_assert_eq(it->start, tokens[i].start, "Token start");
-		mu_assert_eq(it->len, tokens[i].len, "Token length");
-		mu_assert_eq(it->type, tokens[i].type, "Token type");
-		mu_assert_eq(it->val.number, tokens[i].val.number, "Token value");
+	void **it;
+	rz_pvector_foreach (toks->tokens, it) {
+		RzAsmToken *tok = *it;
+		mu_assert_eq(tok->start, tokens[i].start, "Token start");
+		mu_assert_eq(tok->len, tokens[i].len, "Token length");
+		mu_assert_eq(tok->type, tokens[i].type, "Token type");
+		mu_assert_eq(tok->val.number, tokens[i].val.number, "Token value");
 		++i;
 	}
 
@@ -243,15 +247,16 @@ static bool test_rz_tokenize_generic_3(void) {
 	RzAsmParseParam param = { .reg_sets = a->reg->regset };
 	RzAsmTokenString *toks = rz_asm_tokenize_asm_string(asm_str, &param);
 
-	mu_assert_eq(rz_vector_len(toks->tokens), 5, "Number of generated tokens");
+	mu_assert_eq(rz_pvector_len(toks->tokens), 5, "Number of generated tokens");
 
 	int i = 0;
-	RzAsmToken *it;
-	rz_vector_foreach (toks->tokens, it) {
-		mu_assert_eq(it->start, tokens[i].start, "Token start");
-		mu_assert_eq(it->len, tokens[i].len, "Token length");
-		mu_assert_eq(it->type, tokens[i].type, "Token type");
-		mu_assert_eq(it->val.number, tokens[i].val.number, "Token value");
+	void **it;
+	rz_pvector_foreach (toks->tokens, it) {
+		RzAsmToken *tok = *it;
+		mu_assert_eq(tok->start, tokens[i].start, "Token start");
+		mu_assert_eq(tok->len, tokens[i].len, "Token length");
+		mu_assert_eq(tok->type, tokens[i].type, "Token type");
+		mu_assert_eq(tok->val.number, tokens[i].val.number, "Token value");
 		++i;
 	}
 
@@ -280,15 +285,16 @@ static bool test_rz_tokenize_generic_4(void) {
 	RzAsmParseParam param = { .reg_sets = a->reg->regset };
 	RzAsmTokenString *toks = rz_asm_tokenize_asm_string(asm_str, &param);
 
-	mu_assert_eq(rz_vector_len(toks->tokens), 11, "Number of generated tokens");
+	mu_assert_eq(rz_pvector_len(toks->tokens), 11, "Number of generated tokens");
 
 	int i = 0;
-	RzAsmToken *it;
-	rz_vector_foreach (toks->tokens, it) {
-		mu_assert_eq(it->start, tokens[i].start, "Token start");
-		mu_assert_eq(it->len, tokens[i].len, "Token length");
-		mu_assert_eq(it->type, tokens[i].type, "Token type");
-		mu_assert_eq(it->val.number, tokens[i].val.number, "Token value");
+	void **it;
+	rz_pvector_foreach (toks->tokens, it) {
+		RzAsmToken *tok = *it;
+		mu_assert_eq(tok->start, tokens[i].start, "Token start");
+		mu_assert_eq(tok->len, tokens[i].len, "Token length");
+		mu_assert_eq(tok->type, tokens[i].type, "Token type");
+		mu_assert_eq(tok->val.number, tokens[i].val.number, "Token value");
 		++i;
 	}
 
@@ -317,15 +323,16 @@ static bool test_rz_tokenize_custom_hexagon_0(void) {
 	if (!op->asm_toks) {
 		mu_fail("NULL check failed.\n");
 	}
-	mu_assert_eq(rz_vector_len(op->asm_toks->tokens), 7, "Number of generated tokens.");
+	mu_assert_eq(rz_pvector_len(op->asm_toks->tokens), 7, "Number of generated tokens.");
 
 	int i = 0;
-	RzAsmToken *it;
-	rz_vector_foreach (op->asm_toks->tokens, it) {
-		mu_assert_eq(it->start, tokens[i].start, "Token start");
-		mu_assert_eq(it->len, tokens[i].len, "Token length");
-		mu_assert_eq(it->type, tokens[i].type, "Token type");
-		mu_assert_eq(it->val.number, tokens[i].val.number, "Token value");
+	void **it;
+	rz_pvector_foreach (op->asm_toks->tokens, it) {
+		RzAsmToken *tok = *it;
+		mu_assert_eq(tok->start, tokens[i].start, "Token start");
+		mu_assert_eq(tok->len, tokens[i].len, "Token length");
+		mu_assert_eq(tok->type, tokens[i].type, "Token type");
+		mu_assert_eq(tok->val.number, tokens[i].val.number, "Token value");
 		++i;
 	}
 
@@ -359,14 +366,15 @@ static bool test_rz_tokenize_custom_hexagon_1(void) {
 	if (!op->asm_toks) {
 		mu_fail("NULL check failed.\n");
 	}
-	mu_assert_eq(rz_vector_len(op->asm_toks->tokens), 13, "Number of generated tokens.");
+	mu_assert_eq(rz_pvector_len(op->asm_toks->tokens), 13, "Number of generated tokens.");
 	int i = 0;
-	RzAsmToken *it;
-	rz_vector_foreach (op->asm_toks->tokens, it) {
-		mu_assert_eq(it->start, tokens[i].start, "Token start");
-		mu_assert_eq(it->len, tokens[i].len, "Token length");
-		mu_assert_eq(it->type, tokens[i].type, "Token type");
-		mu_assert_eq(it->val.number, tokens[i].val.number, "Token value");
+	void **it;
+	rz_pvector_foreach (op->asm_toks->tokens, it) {
+		RzAsmToken *tok = *it;
+		mu_assert_eq(tok->start, tokens[i].start, "Token start");
+		mu_assert_eq(tok->len, tokens[i].len, "Token length");
+		mu_assert_eq(tok->type, tokens[i].type, "Token type");
+		mu_assert_eq(tok->val.number, tokens[i].val.number, "Token value");
 		++i;
 	};
 
