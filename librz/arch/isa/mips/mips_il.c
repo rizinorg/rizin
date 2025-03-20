@@ -1071,9 +1071,9 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_DMUHU:
 		return mips_il_dmuhu(handle, insn, gprlen);
 	case MIPS_INS_DMULT:
-		return NULL;
+		return mips_il_dmult(handle, insn, gprlen);
 	case MIPS_INS_DMULTU:
-		return NULL;
+		return mips_il_dmultu(handle, insn, gprlen);
 	case MIPS_INS_DMULU:
 		return mips_il_dmulu(handle, insn, gprlen);
 	case MIPS_INS_DOTP_S_D:

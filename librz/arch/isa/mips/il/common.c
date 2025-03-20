@@ -1148,6 +1148,36 @@ static RzILOpEffect *mips_il_mult(const csh *handle, const cs_insn *insn, const 
 	return SEQ3(res, set_hi, set_lo);
 }
 
+static RzILOpEffect *mips_il_dmult(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// 64bit only
+	if (IS_ZERO_REG(0) || IS_ZERO_REG(1)) {
+		// multiply by zero always returns zero.
+		RzILOpEffect *set_hi = SETG(MIPS_REG_HI, MIPS_ZERO());
+		RzILOpEffect *set_lo = SETG(MIPS_REG_LO, MIPS_ZERO());
+		return SEQ2(set_hi, set_lo);
+	}
+
+	RzILOpPure *rs = MIPS_REG(0);
+	RzILOpPure *rt = MIPS_REG(1);
+
+	// product is on 128 bit value so sign extend it
+	RzILOpPure *rs128 = SIGNED(128, rs);
+	RzILOpPure *rt128 = SIGNED(128, rt);
+	RzILOpPure *prod = MUL(rs128, rt128);
+
+	// store result in temp
+	RzILOpEffect *res = SETL("temp", prod);
+
+	// cast back to 64 bits
+	RzILOpPure *res_hi = TRUNC64(SHIFTR0(VARL("temp"), U8(64)));
+	RzILOpPure *res_lo = TRUNC64(VARL("temp"));
+
+	RzILOpEffect *set_hi = SETG(MIPS_REG_HI, res_hi);
+	RzILOpEffect *set_lo = SETG(MIPS_REG_LO, res_lo);
+
+	return SEQ3(res, set_hi, set_lo);
+}
+
 static RzILOpEffect *mips_il_multu(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	if (IS_ZERO_REG(0) || IS_ZERO_REG(1)) {
 		// multiply by zero always returns zero.
@@ -1170,6 +1200,35 @@ static RzILOpEffect *mips_il_multu(const csh *handle, const cs_insn *insn, const
 	// cast back to 32 bits
 	RzILOpPure *res_hi = TRUNC32(SHIFTR0(VARL("temp"), U8(32)));
 	RzILOpPure *res_lo = TRUNC32(VARL("temp"));
+
+	RzILOpEffect *set_hi = SETG(MIPS_REG_HI, res_hi);
+	RzILOpEffect *set_lo = SETG(MIPS_REG_LO, res_lo);
+
+	return SEQ3(res, set_hi, set_lo);
+}
+
+static RzILOpEffect *mips_il_dmultu(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	if (IS_ZERO_REG(0) || IS_ZERO_REG(1)) {
+		// multiply by zero always returns zero.
+		RzILOpEffect *set_hi = SETG(MIPS_REG_HI, MIPS_ZERO());
+		RzILOpEffect *set_lo = SETG(MIPS_REG_LO, MIPS_ZERO());
+		return SEQ2(set_hi, set_lo);
+	}
+
+	RzILOpPure *rs = MIPS_REG(0);
+	RzILOpPure *rt = MIPS_REG(1);
+
+	// product is on 128 bit value so zero extend it
+	RzILOpPure *rs128 = UNSIGNED(128, rs);
+	RzILOpPure *rt128 = UNSIGNED(128, rt);
+	RzILOpPure *prod = MUL(rs128, rt128);
+
+	// store result in temp
+	RzILOpEffect *res = SETL("temp", prod);
+
+	// cast back to 64 bits
+	RzILOpPure *res_hi = TRUNC64(SHIFTR0(VARL("temp"), U8(64)));
+	RzILOpPure *res_lo = TRUNC64(VARL("temp"));
 
 	RzILOpEffect *set_hi = SETG(MIPS_REG_HI, res_hi);
 	RzILOpEffect *set_lo = SETG(MIPS_REG_LO, res_lo);
