@@ -21,3 +21,5 @@ dE "lsa t7, s2, t5, 2" 024d7845 0x80000000 (set t7 (+ (<< (var s2) (bv 8 0x2) fa
 dE "lsa t7, s2, t5, 1" 024d7805 0x80000000 (set t7 (+ (<< (var s2) (bv 8 0x1) false) (var t5)))
 dE "mod t0, t7, t4" 01ec40da 0x80000000 (set t0 (smod (var t7) (var t4)))
 dE "modu s3, t0, s1" 011198db 0x80000000 (set s3 (mod (var t0) (var s1)))
+dE "mul s5, t1, t7" 012fa898 0x80000000 (set s5 (cast 32 false (* (cast 64 (msb (var t1)) (var t1)) (cast 64 (msb (var t7)) (var t7)))))
+dE "mulu s1, t6, t2" 01ca8899 0x80000000 (set s1 (cast 32 false (* (cast 64 false (var t6)) (cast 64 false (var t2)))))

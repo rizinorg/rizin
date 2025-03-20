@@ -920,7 +920,52 @@ static RzILOpEffect *mips_il_mul(const csh *handle, const cs_insn *insn, const u
 	RzILOpPure *rs = MIPS_REG(1);
 	RzILOpPure *rt = MIPS_REG(2);
 
-	return SETG(rd, MUL(rs, rt));
+	if (gprlen == 32) {
+		// product can be a 64 bit value so sign extend it
+		rs = SIGNED(64, rs);
+		rt = SIGNED(64, rt);
+	}
+	RzILOpPure *prod = MUL(rs, rt);
+
+	// truncate to 32 bits (lo).
+	rs = TRUNC32(prod);
+
+	if (gprlen > 32) {
+		// sign-extend to gprlen
+		rs = SIGNED(gprlen, rs);
+	}
+
+	return SETG(rd, rs);
+}
+
+static RzILOpEffect *mips_il_mulu(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
+
+	const char *rd = REG(0);
+	if (IS_ZERO_REG(1) || IS_ZERO_REG(2)) {
+		// multiply by zero always returns zero.
+		SETG(rd, MIPS_ZERO());
+	}
+
+	RzILOpPure *rs = MIPS_REG(1);
+	RzILOpPure *rt = MIPS_REG(2);
+
+	if (gprlen == 32) {
+		// product can be a 64 bit value so sign extend it
+		rs = UNSIGNED(64, rs);
+		rt = UNSIGNED(64, rt);
+	}
+	RzILOpPure *prod = MUL(rs, rt);
+
+	// truncate to 32 bits (lo).
+	rs = TRUNC32(prod);
+
+	if (gprlen > 32) {
+		// sign-extend to gprlen (even when unsigned)
+		rs = SIGNED(gprlen, rs);
+	}
+
+	return SETG(rd, rs);
 }
 
 static RzILOpEffect *mips_il_mult(const csh *handle, const cs_insn *insn, const ut32 gprlen) {

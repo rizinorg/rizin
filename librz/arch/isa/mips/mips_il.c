@@ -2039,7 +2039,7 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_MULTU:
 		return mips_il_multu(handle, insn, gprlen);
 	case MIPS_INS_MULU:
-		return NULL;
+		return mips_il_mulu(handle, insn, gprlen);
 	case MIPS_INS_MULV_B:
 		return NULL;
 	case MIPS_INS_MULV_D:
