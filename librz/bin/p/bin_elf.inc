@@ -1616,6 +1616,229 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 			RZ_LOG_WARN("unimplemented ELF/Alpha reloc type %d\n", rel->type);
 			break;
 		}
+		break;
+	case EM_QDSP6:
+		switch (rel->type) {
+		case R_HEX_B22_PCREL: ADD(32, -P, "R_HEX_B22_PCREL");
+		case R_HEX_B15_PCREL: ADD(32, -P, "R_HEX_B15_PCREL");
+		case R_HEX_B7_PCREL: ADD(32, -P, "R_HEX_B7_PCREL");
+		case R_HEX_LO16: ADD(32, 0, "R_HEX_LO16");
+		case R_HEX_HI16: ADD(32, 0, "R_HEX_HI16");
+		case R_HEX_32: ADD(32, 0, "R_HEX_32");
+		case R_HEX_16: ADD(16, 0, "R_HEX_16");
+		case R_HEX_8: ADD(8, 0, "R_HEX_8");
+		case R_HEX_HL16: ADD(64, 0, "R_HEX_HL16");
+		case R_HEX_B13_PCREL: ADD(32, -P, "R_HEX_B13_PCREL");
+		case R_HEX_B9_PCREL: ADD(32, -P, "R_HEX_B9_PCREL");
+		case R_HEX_B32_PCREL_X: ADD(32, -P, "R_HEX_B32_PCREL_X");
+		case R_HEX_32_6_X: ADD(32, 0, "R_HEX_32_6_X");
+		case R_HEX_B22_PCREL_X: ADD(32, -P, "R_HEX_B22_PCREL_X");
+		case R_HEX_B15_PCREL_X: ADD(32, -P, "R_HEX_B15_PCREL_X");
+		case R_HEX_B13_PCREL_X: ADD(32, -P, "R_HEX_B13_PCREL_X");
+		case R_HEX_B9_PCREL_X: ADD(32, -P, "R_HEX_B9_PCREL_X");
+		case R_HEX_B7_PCREL_X: ADD(32, -P, "R_HEX_B7_PCREL_X");
+		case R_HEX_16_X: ADD(32, 0, "R_HEX_16_X");
+		case R_HEX_12_X: ADD(32, 0, "R_HEX_12_X");
+		case R_HEX_11_X: ADD(32, 0, "R_HEX_11_X");
+		case R_HEX_10_X: ADD(32, 0, "R_HEX_10_X");
+		case R_HEX_9_X: ADD(32, 0, "R_HEX_9_X");
+		case R_HEX_8_X: ADD(32, 0, "R_HEX_8_X");
+		case R_HEX_7_X: ADD(32, 0, "R_HEX_7_X");
+		case R_HEX_6_X: ADD(32, 0, "R_HEX_6_X");
+		case R_HEX_32_PCREL: ADD(32, -P, "R_HEX_32_PCREL");
+		case R_HEX_GLOB_DAT: ADD(32, 0, "R_HEX_GLOB_DAT");
+		case R_HEX_JMP_SLOT: ADD(32, 0, "R_HEX_JMP_SLOT");
+		case R_HEX_GOTREL_LO16: ADD(32, -GOT, "R_HEX_GOTREL_LO16");
+		case R_HEX_GOTREL_HI16: ADD(32, -GOT, "R_HEX_GOTREL_HI16");
+		case R_HEX_GOTREL_32: ADD(32, -GOT, "R_HEX_GOTREL_32");
+		case R_HEX_6_PCREL_X: ADD(32, -P, "R_HEX_6_PCREL_X");
+		case R_HEX_GOTREL_32_6_X: ADD(32, -GOT, "R_HEX_GOTREL_32_6_X");
+		case R_HEX_GOTREL_16_X: ADD(32, -GOT, "R_HEX_GOTREL_16_X");
+		case R_HEX_GOTREL_11_X: ADD(32, -GOT, "R_HEX_GOTREL_11_X");
+		case R_HEX_GD_PLT_B22_PCREL_X: ADD(32, -P, "R_HEX_GD_PLT_B22_PCREL_X");
+		case R_HEX_GD_PLT_B32_PCREL_X: ADD(32, -P, "R_HEX_GD_PLT_B32_PCREL_X");
+		case R_HEX_LD_PLT_B22_PCREL_X: ADD(32, -P, "R_HEX_LD_PLT_B22_PCREL_X");
+		case R_HEX_LD_PLT_B32_PCREL_X: ADD(32, -P, "R_HEX_LD_PLT_B32_PCREL_X");
+		case R_HEX_COPY: SET(32, "R_HEX_COPY");
+		case R_HEX_NONE:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_NONE\n");
+			break;
+		case R_HEX_RELATIVE:
+			RZ_LOG_WARN("R_HEX_RELATIVE - Preview not supported, patching is implemented\n");
+			break;
+		case R_HEX_PLT_B22_PCREL:
+			RZ_LOG_WARN("R_HEX_PLT_B22_PCREL - Preview not supported, patching is implemented\n");
+			break;
+		case R_HEX_GOT_LO16:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_GOT_LO16\n");
+			break;
+		case R_HEX_GOT_HI16:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_GOT_HI16\n");
+			break;
+		case R_HEX_GOT_32:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_GOT_32\n");
+			break;
+		case R_HEX_GOT_16:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_GOT_16\n");
+			break;
+		case R_HEX_DTPMOD_32:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_DTPMOD_32\n");
+			break;
+		case R_HEX_GD_PLT_B22_PCREL:
+			RZ_LOG_WARN("R_HEX_GD_PLT_B22_PCREL - Preview not supported, patching is implemented\n");
+			break;
+		case R_HEX_GD_GOT_LO16:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_GD_GOT_LO16\n");
+			break;
+		case R_HEX_GD_GOT_HI16:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_GD_GOT_HI16\n");
+			break;
+		case R_HEX_GD_GOT_32:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_GD_GOT_32\n");
+			break;
+		case R_HEX_GD_GOT_16:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_GD_GOT_16\n");
+			break;
+		case R_HEX_IE_LO16:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_IE_LO16\n");
+			break;
+		case R_HEX_IE_HI16:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_IE_HI16\n");
+			break;
+		case R_HEX_IE_32:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_IE_32\n");
+			break;
+		case R_HEX_IE_GOT_LO16:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_IE_GOT_LO16\n");
+			break;
+		case R_HEX_IE_GOT_HI16:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_IE_GOT_HI16\n");
+			break;
+		case R_HEX_IE_GOT_32:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_IE_GOT_32\n");
+			break;
+		case R_HEX_IE_GOT_16:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_IE_GOT_16\n");
+			break;
+		case R_HEX_TPREL_LO16:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_TPREL_LO16\n");
+			break;
+		case R_HEX_TPREL_HI16:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_TPREL_HI16\n");
+			break;
+		case R_HEX_TPREL_32:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_TPREL_32\n");
+			break;
+		case R_HEX_TPREL_16:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_TPREL_16\n");
+			break;
+		case R_HEX_GOT_32_6_X:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_GOT_32_6_X\n");
+			break;
+		case R_HEX_GOT_16_X:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_GOT_16_X\n");
+			break;
+		case R_HEX_GOT_11_X:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_GOT_11_X\n");
+			break;
+		case R_HEX_GD_GOT_32_6_X:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_GD_GOT_32_6_X\n");
+			break;
+		case R_HEX_GD_GOT_16_X:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_GD_GOT_16_X\n");
+			break;
+		case R_HEX_GD_GOT_11_X:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_GD_GOT_11_X\n");
+			break;
+		case R_HEX_IE_32_6_X:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_IE_32_6_X\n");
+			break;
+		case R_HEX_IE_16_X:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_IE_16_X\n");
+			break;
+		case R_HEX_IE_GOT_32_6_X:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_IE_GOT_32_6_X\n");
+			break;
+		case R_HEX_IE_GOT_16_X:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_IE_GOT_16_X\n");
+			break;
+		case R_HEX_IE_GOT_11_X:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_IE_GOT_11_X\n");
+			break;
+		case R_HEX_TPREL_32_6_X:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_TPREL_32_6_X\n");
+			break;
+		case R_HEX_TPREL_16_X:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_TPREL_16_X\n");
+			break;
+		case R_HEX_TPREL_11_X:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_TPREL_11_X\n");
+			break;
+		case R_HEX_LD_PLT_B22_PCREL:
+			RZ_LOG_WARN("R_HEX_LD_PLT_B22_PCREL - Preview not supported, patching is implemented\n");
+			break;
+		case R_HEX_LD_GOT_LO16:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_LD_GOT_LO16\n");
+			break;
+		case R_HEX_LD_GOT_HI16:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_LD_GOT_HI16\n");
+			break;
+		case R_HEX_LD_GOT_32:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_LD_GOT_32\n");
+			break;
+		case R_HEX_LD_GOT_16:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_LD_GOT_16\n");
+			break;
+		case R_HEX_LD_GOT_32_6_X:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_LD_GOT_32_6_X\n");
+			break;
+		case R_HEX_LD_GOT_16_X:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_LD_GOT_16_X\n");
+			break;
+		case R_HEX_LD_GOT_11_X:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_LD_GOT_11_X\n");
+			break;
+		case R_HEX_27_REG:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_27_REG\n");
+			break;
+		case R_HEX_23_REG:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_23_REG\n");
+			break;
+		case R_HEX_DTPREL_32_6_X:
+			RZ_LOG_WARN("R_HEX_DTPREL_32_6_X - Preview not supported, patching is implemented\n");
+			break;
+		case R_HEX_DTPREL_16_X:
+			RZ_LOG_WARN("R_HEX_DTPREL_16_X - Preview not supported, patching is implemented\n");
+			break;
+		case R_HEX_DTPREL_11_X:
+			RZ_LOG_WARN("R_HEX_DTPREL_11_X - Preview not supported, patching is implemented\n");
+			break;
+		case R_HEX_DTPREL_LO16:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_DTPREL_LO16\n");
+			break;
+		case R_HEX_DTPREL_HI16:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_DTPREL_HI16\n");
+			break;
+		case R_HEX_DTPREL_32:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_DTPREL_32\n");
+			break;
+		case R_HEX_DTPREL_16:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_DTPREL_16\n");
+			break;
+		case R_HEX_GPREL16_0:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_GPREL16_0\n");
+			break;
+		case R_HEX_GPREL16_1:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_GPREL16_1\n");
+			break;
+		case R_HEX_GPREL16_2:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_GPREL16_2\n");
+			break;
+		case R_HEX_GPREL16_3:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_GPREL16_3\n");
+			break;
+		}
+		break;
 	default:
 		break;
 	}
