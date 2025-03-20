@@ -99,7 +99,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		return ret;
 	}
 	ptr->name = rz_str_dup("ROM");
-	ptr->paddr = INES_HDR_SIZE;
+	ptr->offset = INES_HDR_SIZE;
 	ptr->size = ihdr.prg_page_count_16k * PRG_PAGE_SIZE;
 	bool mirror = ROM_START_ADDRESS + ptr->size <= ROM_MIRROR_ADDRESS; // not a 256bit ROM, mapper 0 mirrors the complete ROM in this case
 	ptr->vaddr = ROM_START_ADDRESS;
@@ -111,7 +111,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 			return ret;
 		}
 		ptr->name = rz_str_dup("ROM_MIRROR");
-		ptr->paddr = INES_HDR_SIZE;
+		ptr->offset = INES_HDR_SIZE;
 		ptr->size = ihdr.prg_page_count_16k * PRG_PAGE_SIZE;
 		ptr->vaddr = ROM_MIRROR_ADDRESS;
 		ptr->vsize = ROM_MIRROR_SIZE;

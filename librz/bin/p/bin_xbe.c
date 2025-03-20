@@ -190,7 +190,7 @@ static RzPVector /*<RzBinAddr *>*/ *sections(RzBinFile *bf) {
 		}
 		tmp[sizeof(tmp) - 1] = 0;
 		item->name = rz_str_newf("%s.%i", tmp, i);
-		item->paddr = sect.offset;
+		item->offset = sect.offset;
 		item->vaddr = sect.vaddr;
 		item->size = sect.size;
 		item->vsize = sect.vsize;

@@ -4571,7 +4571,7 @@ RZ_API bool rz_analysis_add_device_peripheral_map(RzBinObject *o, RzAnalysis *an
 	s->vaddr = rom_address;
 	s->vsize = rom_size;
 	s->size = rom_size;
-	s->paddr = rom_address;
+	s->offset = rom_address;
 	s->perm = RZ_PERM_RX;
 	rz_pvector_push(o->sections, s);
 	return true;

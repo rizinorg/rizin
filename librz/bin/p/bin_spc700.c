@@ -57,7 +57,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		return NULL;
 	}
 	ptr->name = rz_str_dup("RAM");
-	ptr->paddr = RAM_START_ADDRESS;
+	ptr->offset = RAM_START_ADDRESS;
 	ptr->size = RAM_SIZE;
 	ptr->vaddr = 0x0;
 	ptr->vsize = RAM_SIZE;

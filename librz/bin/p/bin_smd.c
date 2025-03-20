@@ -262,7 +262,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		return ret;
 	}
 	ptr->name = rz_str_dup("vtable");
-	ptr->paddr = ptr->vaddr = 0;
+	ptr->offset = ptr->vaddr = 0;
 	ptr->size = ptr->vsize = 0x100;
 	ptr->perm = RZ_PERM_R;
 	rz_pvector_push(ret, ptr);
@@ -271,7 +271,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		return ret;
 	}
 	ptr->name = rz_str_dup("header");
-	ptr->paddr = ptr->vaddr = 0x100;
+	ptr->offset = ptr->vaddr = 0x100;
 	ptr->size = ptr->vsize = sizeof(SMD_Header);
 	ptr->perm = RZ_PERM_R;
 	rz_pvector_push(ret, ptr);
@@ -280,14 +280,14 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		return ret;
 	}
 	ptr->name = rz_str_dup("text");
-	ptr->paddr = ptr->vaddr = 0x100 + sizeof(SMD_Header);
+	ptr->offset = ptr->vaddr = 0x100 + sizeof(SMD_Header);
 	{
 		SMD_Header hdr = { { 0 } };
 		rz_buf_read_at(bf->buf, 0x100, (ut8 *)&hdr, sizeof(hdr));
 		ut64 baddr = rz_read_be32(&hdr.RomStart);
 		ptr->vaddr += baddr;
 	}
-	ptr->size = ptr->vsize = rz_buf_size(bf->buf) - ptr->paddr;
+	ptr->size = ptr->vsize = rz_buf_size(bf->buf) - ptr->offset;
 	ptr->perm = RZ_PERM_RX;
 	rz_pvector_push(ret, ptr);
 	return ret;

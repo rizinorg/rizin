@@ -11,7 +11,7 @@ void luac_add_section(RzPVector /*<RzBinSection *>*/ *section_vec, char *name, u
 	}
 
 	bin_sec->name = rz_str_dup(name);
-	bin_sec->vaddr = bin_sec->paddr = offset;
+	bin_sec->vaddr = bin_sec->offset = offset;
 	bin_sec->size = bin_sec->vsize = size;
 	bin_sec->is_data = false;
 	bin_sec->bits = is_func ? sizeof(LUA_INSTRUCTION) * 8 : 8;

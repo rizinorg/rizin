@@ -333,7 +333,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	}
 	ptr->vsize = tmp;
 
-	ptr->paddr = 0;
+	ptr->offset = 0;
 	ptr->vaddr = 0;
 	ptr->perm = RZ_PERM_R;
 	rz_pvector_push(ret, ptr);

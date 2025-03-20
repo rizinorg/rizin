@@ -167,7 +167,7 @@ static mach0_ut va2pa(mach0_ut p, ut32 *offset, ut32 *left, RzBinFile *bf) {
 			if (left) {
 				*left = s->vsize - (addr - s->vaddr);
 			}
-			r = (s->paddr - obj->boffset + (addr - s->vaddr));
+			r = (s->offset - obj->boffset + (addr - s->vaddr));
 			return r;
 		}
 	}

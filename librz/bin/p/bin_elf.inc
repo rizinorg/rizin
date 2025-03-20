@@ -1772,7 +1772,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		}
 		ptr->size = section->type != SHT_NOBITS ? section->size : 0;
 		ptr->vsize = section->size;
-		ptr->paddr = section->offset;
+		ptr->offset = section->offset;
 		ptr->vaddr = section->rva;
 		ptr->type = section->type;
 		ptr->flags = section->flags;
@@ -1792,7 +1792,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 
 		ptr->size = iter->data.p_filesz;
 		ptr->vsize = iter->data.p_memsz;
-		ptr->paddr = iter->data.p_offset;
+		ptr->offset = iter->data.p_offset;
 		ptr->vaddr = iter->data.p_vaddr;
 		ptr->perm = iter->data.p_flags;
 		ptr->align = iter->data.p_align;
@@ -1859,7 +1859,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 			ehdr_size = bf->size;
 		}
 		ptr->name = rz_str_dup("ehdr");
-		ptr->paddr = 0;
+		ptr->offset = 0;
 		ptr->vaddr = obj->baddr;
 		ptr->size = ehdr_size;
 		ptr->vsize = ehdr_size;
@@ -2204,8 +2204,8 @@ static ut64 size(RzBinFile *bf) {
 		bf->o->sections = sections(bf);
 		rz_pvector_foreach (bf->o->sections, iter) {
 			section = *iter;
-			if (section->paddr > off) {
-				off = section->paddr;
+			if (section->offset > off) {
+				off = section->offset;
 				len = section->size;
 			}
 		}

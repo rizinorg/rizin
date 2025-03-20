@@ -127,7 +127,7 @@ static RzBinSection *n3ds_firm_section_new(N3DSFirmSectHdr *shdr) {
 
 	section->size = shdr->size;
 	section->vsize = shdr->size;
-	section->paddr = shdr->offset;
+	section->offset = shdr->offset;
 	section->vaddr = shdr->address;
 	section->name = n3ds_section_name(shdr);
 	section->perm = RZ_PERM_RWX;

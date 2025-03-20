@@ -286,7 +286,7 @@ RZ_IPI RzCmdStatus rz_cmd_info_section_bars_handler(RzCore *core, int argc, cons
 	rz_pvector_foreach (sections, iter) {
 		section = *iter;
 		char humansz[8];
-		RzInterval pitv = (RzInterval){ section->paddr, section->size };
+		RzInterval pitv = (RzInterval){ section->offset, section->size };
 		RzInterval vitv = (RzInterval){ section->vaddr, section->vsize };
 
 		rz_num_units(humansz, sizeof(humansz), section->size);

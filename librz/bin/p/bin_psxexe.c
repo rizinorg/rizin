@@ -70,7 +70,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	sz = rz_buf_size(bf->buf);
 
 	sect->name = rz_str_dup("TEXT");
-	sect->paddr = PSXEXE_TEXTSECTION_OFFSET;
+	sect->offset = PSXEXE_TEXTSECTION_OFFSET;
 	sect->size = sz - PSXEXE_TEXTSECTION_OFFSET;
 	sect->vaddr = psxheader.t_addr;
 	sect->vsize = psxheader.t_size;

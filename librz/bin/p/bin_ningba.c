@@ -75,7 +75,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		return NULL;
 	}
 	s->name = rz_str_dup("ROM");
-	s->paddr = 0;
+	s->offset = 0;
 	s->vaddr = 0x8000000;
 	s->size = sz;
 	s->vsize = 0x2000000;

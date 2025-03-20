@@ -96,8 +96,8 @@ RzPVector /*<RzBinSection *>*/ *rz_bin_ne_get_segments(rz_bin_ne_obj_t *bin) {
 		bs->bits = RZ_SYS_BITS_16;
 		bs->is_data = se->flags & IS_DATA;
 		bs->perm = __translate_perms(se->flags);
-		bs->paddr = (ut64)se->offset * bin->alignment;
-		bs->name = rz_str_newf("%s.%" PFMT64d, se->flags & IS_MOVEABLE ? "MOVEABLE" : "FIXED", bs->paddr);
+		bs->offset = (ut64)se->offset * bin->alignment;
+		bs->name = rz_str_newf("%s.%" PFMT64d, se->flags & IS_MOVEABLE ? "MOVEABLE" : "FIXED", bs->offset);
 		bs->is_segment = true;
 		rz_pvector_push(segments, bs);
 	}
@@ -451,7 +451,7 @@ RzPVector /*<RzBinAddr *>*/ *rz_bin_ne_get_entrypoints(rz_bin_ne_obj_t *bin) {
 		}
 		entry->bits = 16;
 		RzBinSection *s = (RzBinSection *)rz_pvector_at(segments, bin->ne_header->csEntryPoint - 1);
-		entry->paddr = bin->ne_header->ipEntryPoint + (s ? s->paddr : 0);
+		entry->paddr = bin->ne_header->ipEntryPoint + (s ? s->offset : 0);
 		rz_pvector_push(entries, entry);
 	}
 	ut32 off = 0;
@@ -551,7 +551,7 @@ RzPVector /*<RzBinReloc *>*/ *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 		if (!(bin->segment_entries[index].flags & RELOCINFO)) {
 			continue;
 		}
-		ut32 off, start = off = seg->paddr + seg->size;
+		ut32 off, start = off = seg->offset + seg->size;
 		if ((ut64)off + 2 > bufsz) {
 			continue;
 		}
@@ -576,7 +576,7 @@ RzPVector /*<RzBinReloc *>*/ *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 			rz_buf_read_le16_offset(bin->buf, &offset, &rel.offset);
 			rz_buf_read_le16_offset(bin->buf, &offset, &rel.align1);
 			rz_buf_read_le16_offset(bin->buf, &offset, &rel.func_ord);
-			reloc->paddr = seg->paddr + rel.offset;
+			reloc->paddr = seg->offset + rel.offset;
 			reloc->print_name = get_reloc_type_name(rel.type & NE_RELOC_SRC_MASK, rel.flags & NE_RELOC_TARGET_MASK);
 
 			if (rel.flags & (IMPORTED_ORD | IMPORTED_NAME)) {
@@ -610,7 +610,7 @@ RzPVector /*<RzBinReloc *>*/ *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 				if (strstr(seg->name, "FIXED")) {
 					RzBinSection *s = (RzBinSection *)rz_pvector_at(segments, rel.segnum - 1);
 					if (s) {
-						offset = s->paddr + rel.segoff;
+						offset = s->offset + rel.segoff;
 					} else {
 						offset = -1;
 					}
@@ -654,7 +654,7 @@ RzPVector /*<RzBinReloc *>*/ *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 						break;
 					}
 					*reloc = *tmp;
-					reloc->paddr = seg->paddr + offset;
+					reloc->paddr = seg->offset + offset;
 				} while (offset != 0xFFFF);
 				free(reloc);
 			}

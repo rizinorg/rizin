@@ -2007,8 +2007,8 @@ RzPVector /*<RzBinSection *>*/ *MACH0_(get_segments)(RzBinFile *bf) {
 			s->vaddr = seg->vmaddr;
 			s->vsize = seg->vmsize;
 			s->size = seg->vmsize;
-			s->paddr = seg->fileoff;
-			s->paddr += bf->o->boffset;
+			s->offset = seg->fileoff;
+			s->offset += bf->o->boffset;
 			// TODO s->flags = seg->flags;
 			s->name = rz_str_ndup(seg->segname, 16);
 			s->is_segment = true;
@@ -2033,7 +2033,7 @@ RzPVector /*<RzBinSection *>*/ *MACH0_(get_segments)(RzBinFile *bf) {
 			s->type = bin->sects[i].flags & 0xFF;
 			s->flags = bin->sects[i].flags & 0xFFFFFF00;
 			// XXX flags
-			s->paddr = (ut64)bin->sects[i].offset;
+			s->offset = (ut64)bin->sects[i].offset;
 			int segment_index = 0;
 			// s->perm =prot2perm (bin->segs[j].initprot);
 			for (j = 0; j < bin->nsegs; j++) {

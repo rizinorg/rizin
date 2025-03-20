@@ -192,7 +192,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ptr->name = rz_str_dup("header");
 	ptr->size = sizeof(BootImage);
 	ptr->vsize = bi->page_size;
-	ptr->paddr = 0;
+	ptr->offset = 0;
 	ptr->vaddr = 0;
 	ptr->perm = RZ_PERM_R; // r--
 	rz_pvector_push(ret, ptr);
@@ -203,7 +203,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ptr->name = rz_str_dup("kernel");
 	ptr->size = bi->kernel_size;
 	ptr->vsize = ADD_REMAINDER(ptr->size, bi->page_size);
-	ptr->paddr = bi->page_size;
+	ptr->offset = bi->page_size;
 	ptr->vaddr = bi->kernel_addr;
 	ptr->perm = RZ_PERM_R; // r--
 	rz_pvector_push(ret, ptr);
@@ -216,7 +216,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		ptr->name = rz_str_dup("ramdisk");
 		ptr->size = bi->ramdisk_size;
 		ptr->vsize = ADD_REMAINDER(bi->ramdisk_size, bi->page_size);
-		ptr->paddr = ROUND_DOWN(base, bi->page_size);
+		ptr->offset = ROUND_DOWN(base, bi->page_size);
 		ptr->vaddr = bi->ramdisk_addr;
 		ptr->perm = RZ_PERM_RX; // r-x
 		rz_pvector_push(ret, ptr);
@@ -230,7 +230,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		ptr->name = rz_str_dup("second");
 		ptr->size = bi->second_size;
 		ptr->vsize = ADD_REMAINDER(bi->second_size, bi->page_size);
-		ptr->paddr = ROUND_DOWN(base, bi->page_size);
+		ptr->offset = ROUND_DOWN(base, bi->page_size);
 		ptr->vaddr = bi->second_addr;
 		ptr->perm = RZ_PERM_RX; // r-x
 		rz_pvector_push(ret, ptr);

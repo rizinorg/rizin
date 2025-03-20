@@ -159,7 +159,7 @@ static void print_bin_string(RzBinFile *bf, RzBinString *string, PJ *pj) {
 
 	RzBinSection *s = rz_bin_get_section_at(bf->o, string->paddr, false);
 	if (s) {
-		string->vaddr = s->vaddr + (string->paddr - s->paddr);
+		string->vaddr = s->vaddr + (string->paddr - s->offset);
 	}
 	string->vaddr = bf->o ? rz_bin_object_get_vaddr(bf->o, string->paddr, string->vaddr) : UT64_MAX;
 

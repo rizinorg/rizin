@@ -141,7 +141,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	for (size_t i = 0; i < banks_count; i++) {
 		RzBinSection *section = RZ_NEW0(RzBinSection);
 		section->name = rz_str_newf("rombank%02x", (unsigned int)i);
-		section->paddr = i * 0x4000;
+		section->offset = i * 0x4000;
 		section->vaddr = i ? (i * 0x10000 - 0xc000) : 0;
 		section->size = section->vsize = 0x4000;
 		section->perm = rz_str_rwx("rx");

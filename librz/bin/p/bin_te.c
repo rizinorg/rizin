@@ -91,7 +91,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		ptr->name = rz_str_dup((char *)sections[i].name);
 		ptr->size = sections[i].size;
 		ptr->vsize = sections[i].vsize;
-		ptr->paddr = sections[i].paddr;
+		ptr->offset = sections[i].paddr;
 		ptr->vaddr = sections[i].vaddr;
 		ptr->perm = 0;
 		if (RZ_BIN_TE_SCN_IS_EXECUTABLE(sections[i].flags)) {

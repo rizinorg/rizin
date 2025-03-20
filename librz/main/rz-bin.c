@@ -465,13 +465,13 @@ static bool __dumpSections(RzBin *bin, const char *scnname, const char *output, 
 				free(buf);
 				return false;
 			}
-			if (section->paddr > rz_buf_size(bin->cur->buf) ||
-				section->paddr + section->size > rz_buf_size(bin->cur->buf)) {
+			if (section->offset > rz_buf_size(bin->cur->buf) ||
+				section->offset + section->size > rz_buf_size(bin->cur->buf)) {
 				free(buf);
 				free(ret);
 				return false;
 			}
-			r = rz_buf_read_at(bin->cur->buf, section->paddr,
+			r = rz_buf_read_at(bin->cur->buf, section->offset,
 				buf, section->size);
 			if (r < 1) {
 				free(buf);
@@ -668,7 +668,7 @@ static void print_string(RzBinFile *bf, RzBinString *string, PJ *pj, int mode) {
 	ut64 vaddr;
 	RzBinSection *s = rz_bin_get_section_at(bf->o, string->paddr, false);
 	if (s) {
-		string->vaddr = s->vaddr + (string->paddr - s->paddr);
+		string->vaddr = s->vaddr + (string->paddr - s->offset);
 	}
 	vaddr = bf->o ? rz_bin_object_get_vaddr(bf->o, string->paddr, string->vaddr) : UT64_MAX;
 	const char *type_string = rz_str_enc_as_string(string->type);

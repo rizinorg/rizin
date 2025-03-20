@@ -51,7 +51,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		return ret;
 	}
 	section->name = rz_str_dup("prg");
-	section->paddr = 2;
+	section->offset = 2;
 	section->size = sz - 2;
 	section->vaddr = baddr(bf);
 	section->vsize = sz - 2;

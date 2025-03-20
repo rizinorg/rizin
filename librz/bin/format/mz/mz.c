@@ -155,7 +155,7 @@ RzPVector /*<RzBinSection *>*/ *rz_bin_mz_get_segments(const struct rz_bin_mz_ob
 			p_section->vsize = p_section->size;
 		}
 		section->vsize = section->size;
-		section->paddr = rz_bin_mz_la_to_pa(bin, section->vaddr);
+		section->offset = rz_bin_mz_la_to_pa(bin, section->vaddr);
 		section->perm = rz_str_rwx("rwx");
 		section_number++;
 	}

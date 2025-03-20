@@ -71,8 +71,8 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ptr->name = rz_str_dup("text");
 	ptr->size = textsize;
 	ptr->vsize = textsize + (textsize % 4096);
-	ptr->paddr = 8 * 4;
-	ptr->vaddr = ptr->paddr;
+	ptr->offset = 8 * 4;
+	ptr->vaddr = ptr->offset;
 	ptr->perm = RZ_PERM_RX; // r-x
 	rz_pvector_push(ret, ptr);
 	// add data segment
@@ -88,8 +88,8 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		ptr->name = rz_str_dup("data");
 		ptr->size = datasize;
 		ptr->vsize = datasize + (datasize % 4096);
-		ptr->paddr = textsize + (8 * 4);
-		ptr->vaddr = ptr->paddr;
+		ptr->offset = textsize + (8 * 4);
+		ptr->vaddr = ptr->offset;
 		ptr->perm = RZ_PERM_RW;
 		rz_pvector_push(ret, ptr);
 	}
@@ -108,8 +108,8 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		ptr->name = rz_str_dup("syms");
 		ptr->size = symssize;
 		ptr->vsize = symssize + (symssize % 4096);
-		ptr->paddr = datasize + textsize + (8 * 4);
-		ptr->vaddr = ptr->paddr;
+		ptr->offset = datasize + textsize + (8 * 4);
+		ptr->vaddr = ptr->offset;
 		ptr->perm = RZ_PERM_R; // r--
 		rz_pvector_push(ret, ptr);
 	}
@@ -126,8 +126,8 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		ptr->name = rz_str_dup("spsz");
 		ptr->size = spszsize;
 		ptr->vsize = spszsize + (spszsize % 4096);
-		ptr->paddr = symssize + datasize + textsize + (8 * 4);
-		ptr->vaddr = ptr->paddr;
+		ptr->offset = symssize + datasize + textsize + (8 * 4);
+		ptr->vaddr = ptr->offset;
 		ptr->perm = RZ_PERM_R; // r--
 		rz_pvector_push(ret, ptr);
 	}
@@ -146,8 +146,8 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		ptr->name = rz_str_dup("pcsz");
 		ptr->size = pcszsize;
 		ptr->vsize = pcszsize + (pcszsize % 4096);
-		ptr->paddr = spszsize + symssize + datasize + textsize + (8 * 4);
-		ptr->vaddr = ptr->paddr;
+		ptr->offset = spszsize + symssize + datasize + textsize + (8 * 4);
+		ptr->vaddr = ptr->offset;
 		ptr->perm = RZ_PERM_R; // r--
 		rz_pvector_push(ret, ptr);
 	}

@@ -1745,7 +1745,7 @@ static RzBinSection *new_section(const char *name, ut64 start, ut64 end, ut32 pe
 		free(section);
 		return NULL;
 	}
-	section->paddr = start;
+	section->offset = start;
 	section->vaddr = start;
 	section->size = end - start;
 	section->vsize = section->size;

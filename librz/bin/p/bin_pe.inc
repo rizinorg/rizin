@@ -220,7 +220,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		ptr->size = sections[i].size;
 		ptr->vsize = sections[i].vsize;
 		ptr->flags = sections[i].flags;
-		ptr->paddr = sections[i].paddr;
+		ptr->offset = sections[i].paddr;
 		ptr->vaddr = sections[i].vaddr + ba;
 		ptr->perm = perm_of_section_perm(sections[i].perm);
 		if ((ptr->perm & RZ_PERM_R) && !(ptr->perm & RZ_PERM_X) && ptr->size > 0) {

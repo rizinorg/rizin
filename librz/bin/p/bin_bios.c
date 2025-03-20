@@ -98,7 +98,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	}
 	ptr->name = rz_str_dup("bootblk"); // Maps to 0xF000:0000 segment
 	ptr->vsize = ptr->size = 0x10000;
-	ptr->paddr = rz_buf_size(bf->buf) - ptr->size;
+	ptr->offset = rz_buf_size(bf->buf) - ptr->size;
 	ptr->vaddr = 0xf0000;
 	ptr->perm = RZ_PERM_RWX;
 	rz_pvector_push(ret, ptr);
@@ -109,7 +109,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		}
 		ptr->name = rz_str_dup("_e000"); // Maps to 0xE000:0000 segment
 		ptr->vsize = ptr->size = 0x10000;
-		ptr->paddr = rz_buf_size(obj) - 2 * ptr->size;
+		ptr->offset = rz_buf_size(obj) - 2 * ptr->size;
 		ptr->vaddr = 0xe0000;
 		ptr->perm = RZ_PERM_RWX;
 		rz_pvector_push(ret, ptr);

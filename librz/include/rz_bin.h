@@ -569,7 +569,7 @@ typedef struct rz_bin_section_t {
 	ut64 size;
 	ut64 vsize;
 	ut64 vaddr;
-	ut64 paddr;
+	ut64 offset;
 	ut32 perm;
 	ut64 align;
 	// per section platform info

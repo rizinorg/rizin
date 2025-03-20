@@ -994,10 +994,10 @@ RZ_API bool rz_core_bin_apply_sections(RzCore *core, RzBinFile *binfile, bool va
 		if (va && !(section->perm & RZ_PERM_R)) {
 			va_sect = VA_NOREBASE;
 		}
-		if (is_invalid_address_va2(va_sect, section->vaddr, section->paddr)) {
+		if (is_invalid_address_va2(va_sect, section->vaddr, section->offset)) {
 			continue;
 		}
-		ut64 addr = rva(o, section->paddr, section->vaddr, va_sect);
+		ut64 addr = rva(o, section->offset, section->vaddr, va_sect);
 
 		rz_name_filter(section->name, strlen(section->name) + 1, false);
 
@@ -2349,7 +2349,7 @@ static ut64 get_section_addr(RzCore *core, RzBinObject *o, RzBinSection *section
 	if (va && !(section->perm & RZ_PERM_R)) {
 		va = VA_NOREBASE;
 	}
-	return rva(o, section->paddr, section->vaddr, va);
+	return rva(o, section->offset, section->vaddr, va);
 }
 
 static bool digests_pj_cb(void *user, const char *k, const char *v) {
@@ -2389,13 +2389,13 @@ static void sections_print_json(RzCore *core, PJ *pj, RzBinObject *o, RzBinSecti
 		}
 		rz_list_free(flags);
 	}
-	pj_kn(pj, "paddr", section->paddr);
+	pj_kn(pj, "paddr", section->offset);
 	pj_kn(pj, "vaddr", addr);
 	if (section->align > 1) {
 		pj_kn(pj, "align", section->align);
 	}
 	if (hashes && section->size > 0) {
-		HtSS *digests = rz_core_bin_create_digests(core, section->paddr, section->size, hashes);
+		HtSS *digests = rz_core_bin_create_digests(core, section->offset, section->size, hashes);
 		if (!digests) {
 			pj_end(pj);
 			return;
@@ -2429,13 +2429,13 @@ static bool sections_print_table(RzCore *core, RzTable *t, RzBinObject *o, RzBin
 		section_name = rz_str_newf("%s.%s", core->bin->prefix, section_name);
 	}
 
-	rz_table_add_rowf(t, "XxXxxss", section->paddr, section->size, addr, section->vsize, section->align, perms, section_name);
+	rz_table_add_rowf(t, "XxXxxss", section->offset, section->size, addr, section->vsize, section->align, perms, section_name);
 	if (!section->is_segment) {
 		rz_table_add_row_columnsf(t, "ss", section_type, section_flags_str);
 	}
 	bool result = false;
 	if (hashes && section->size > 0) {
-		HtSS *digests = rz_core_bin_create_digests(core, section->paddr, section->size, hashes);
+		HtSS *digests = rz_core_bin_create_digests(core, section->offset, section->size, hashes);
 		if (!digests) {
 			goto cleanup;
 		}
@@ -2504,7 +2504,7 @@ RZ_API bool rz_core_bin_sections_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBin
 		section = *iter;
 		if (filter && filter->offset != UT64_MAX) {
 			if (!is_in_symbol_range(section->vaddr, section->vsize, filter->offset) &&
-				!is_in_symbol_range(section->paddr, section->size, filter->offset)) {
+				!is_in_symbol_range(section->offset, section->size, filter->offset)) {
 				continue;
 			}
 		}
@@ -2664,7 +2664,7 @@ RZ_API bool rz_core_bin_segments_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBin
 		segment = *it;
 		if (filter && filter->offset != UT64_MAX) {
 			if (!is_in_symbol_range(segment->vaddr, segment->vsize, filter->offset) &&
-				!is_in_symbol_range(segment->paddr, segment->size, filter->offset)) {
+				!is_in_symbol_range(segment->offset, segment->size, filter->offset)) {
 				continue;
 			}
 		}

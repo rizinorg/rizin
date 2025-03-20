@@ -221,7 +221,7 @@ static RzPVector /*<RzBinSection *>*/ *nds_sections(RzBinFile *bf) {
 	ptr9->name = rz_str_dup("arm9");
 	ptr9->size = hdr->arm9_size;
 	ptr9->vsize = hdr->arm9_size;
-	ptr9->paddr = hdr->arm9_rom_offset;
+	ptr9->offset = hdr->arm9_rom_offset;
 	ptr9->vaddr = hdr->arm9_ram_address;
 	ptr9->perm = perm_rwx;
 	rz_pvector_push(ret, ptr9);
@@ -229,7 +229,7 @@ static RzPVector /*<RzBinSection *>*/ *nds_sections(RzBinFile *bf) {
 	ptr7->name = rz_str_dup("arm7");
 	ptr7->size = hdr->arm7_size;
 	ptr7->vsize = hdr->arm7_size;
-	ptr7->paddr = hdr->arm7_rom_offset;
+	ptr7->offset = hdr->arm7_rom_offset;
 	ptr7->vaddr = hdr->arm7_ram_address;
 	ptr7->perm = perm_rwx;
 	rz_pvector_push(ret, ptr7);
@@ -252,7 +252,7 @@ static RzPVector /*<RzBinSection *>*/ *nds_sections(RzBinFile *bf) {
 		overlay->name = rz_str_newf("arm7_overlay_%" PFMT32u, ovl_entry->id);
 		overlay->size = fat_entry->file_end_offset - fat_entry->file_start_offset;
 		overlay->vsize = ovl_entry->ram_size;
-		overlay->paddr = fat_entry->file_start_offset;
+		overlay->offset = fat_entry->file_start_offset;
 		overlay->vaddr = ovl_entry->load_address;
 		overlay->perm = perm_rwx;
 		rz_pvector_push(ret, overlay);
@@ -274,7 +274,7 @@ static RzPVector /*<RzBinSection *>*/ *nds_sections(RzBinFile *bf) {
 		overlay->name = rz_str_newf("arm9_overlay_%" PFMT32u, ovl_entry->id);
 		overlay->size = fat_entry->file_end_offset - fat_entry->file_start_offset;
 		overlay->vsize = ovl_entry->ram_size;
-		overlay->paddr = fat_entry->file_start_offset;
+		overlay->offset = fat_entry->file_start_offset;
 		overlay->vaddr = ovl_entry->load_address;
 		overlay->perm = perm_rwx;
 		rz_pvector_push(ret, overlay);

@@ -1203,7 +1203,7 @@ static RzBinSection *section_new(const char *name, ut32 perm, ut32 size, ut64 pa
 		return NULL;
 	}
 	section->name = rz_str_dup(name);
-	section->paddr = paddr;
+	section->offset = paddr;
 	section->vaddr = vaddr;
 	section->size = section->vsize = size;
 	section->perm = perm;

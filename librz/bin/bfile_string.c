@@ -240,7 +240,7 @@ static void string_scan_range_cfstring(RzBinFile *bf, HtUP *strings_db, RzPVecto
 		return;
 	}
 
-	rz_buf_read_at(bf->buf, section->paddr + cfstr_offs, sbuf, section->size);
+	rz_buf_read_at(bf->buf, section->offset + cfstr_offs, sbuf, section->size);
 	for (ut64 i = 0; i < section->size; i += cfstr_size) {
 		ut8 *buf = sbuf;
 		ut8 *p = buf + i;
@@ -287,7 +287,7 @@ static void scan_cfstring_table(RzBinFile *bf, HtUP *strings_db, RzPVector /*<Rz
 	}
 	rz_pvector_foreach (o->sections, iter) {
 		section = *iter;
-		if (!section->name || section->paddr >= bf->size) {
+		if (!section->name || section->offset >= bf->size) {
 			continue;
 		} else if (max_region_size && section->size > max_region_size) {
 			RZ_LOG_WARN("bin_file_strings: search interval size (0x%" PFMT64x
@@ -415,7 +415,7 @@ RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_bin_file_strings(RZ_NONNULL RzBi
 		RzBinObject *o = bf->o;
 		rz_pvector_foreach (o->sections, iter) {
 			section = *iter;
-			if (section->paddr >= bf->size) {
+			if (section->offset >= bf->size) {
 				continue;
 			} else if (opt->max_region_size && section->size > opt->max_region_size) {
 				RZ_LOG_WARN("bin_file_strings: search interval size (0x%" PFMT64x
@@ -434,7 +434,7 @@ RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_bin_file_strings(RZ_NONNULL RzBi
 				goto fail;
 			}
 
-			itv->paddr = section->paddr;
+			itv->paddr = section->offset;
 			itv->psize = section->size;
 			if ((itv->paddr + itv->psize) > bf->size) {
 				itv->psize = bf->size - itv->paddr;

@@ -290,7 +290,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		}
 		ptr->size = obj->scn_hdrs[i].s_size;
 		ptr->vsize = obj->scn_hdrs[i].s_size;
-		ptr->paddr = obj->scn_hdrs[i].s_scnptr;
+		ptr->offset = obj->scn_hdrs[i].s_scnptr;
 		ptr->flags = obj->scn_hdrs[i].s_flags;
 		if (obj->scn_va) {
 			ptr->vaddr = obj->scn_va[i];

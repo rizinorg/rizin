@@ -161,7 +161,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 				return ret;
 			}
 			ptr->name = rz_str_dup("BASIC");
-			ptr->paddr = vsf_obj->rom + rz_offsetof(struct vsf_c64rom, basic);
+			ptr->offset = vsf_obj->rom + rz_offsetof(struct vsf_c64rom, basic);
 			ptr->size = 1024 * 8; // (8k)
 			ptr->vaddr = 0xa000;
 			ptr->vsize = 1024 * 8; // BASIC size (8k)
@@ -173,7 +173,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 				return ret;
 			}
 			ptr->name = rz_str_dup("KERNAL");
-			ptr->paddr = vsf_obj->rom + rz_offsetof(struct vsf_c64rom, kernal);
+			ptr->offset = vsf_obj->rom + rz_offsetof(struct vsf_c64rom, kernal);
 			ptr->size = 1024 * 8; // (8k)
 			ptr->vaddr = 0xe000;
 			ptr->vsize = 1024 * 8; // KERNAL size (8k)
@@ -188,7 +188,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 				return ret;
 			}
 			ptr->name = rz_str_dup("BASIC");
-			ptr->paddr = vsf_obj->rom + rz_offsetof(struct vsf_c128rom, basic);
+			ptr->offset = vsf_obj->rom + rz_offsetof(struct vsf_c128rom, basic);
 			ptr->size = 1024 * 28; // (28k)
 			ptr->vaddr = 0x4000;
 			ptr->vsize = 1024 * 28; // BASIC size (28k)
@@ -201,7 +201,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 			}
 			ptr->name = rz_str_dup("MONITOR");
 			// skip first 28kb  since "BASIC" and "MONITOR" share the same section in VSF
-			ptr->paddr = vsf_obj->rom + rz_offsetof(struct vsf_c128rom, basic) + 1024 * 28;
+			ptr->offset = vsf_obj->rom + rz_offsetof(struct vsf_c128rom, basic) + 1024 * 28;
 			ptr->size = 1024 * 4; // (4k)
 			ptr->vaddr = 0xb000;
 			ptr->vsize = 1024 * 4; // BASIC size (4k)
@@ -213,7 +213,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 				return ret;
 			}
 			ptr->name = rz_str_dup("EDITOR");
-			ptr->paddr = vsf_obj->rom + rz_offsetof(struct vsf_c128rom, editor);
+			ptr->offset = vsf_obj->rom + rz_offsetof(struct vsf_c128rom, editor);
 			ptr->size = 1024 * 4; // (4k)
 			ptr->vaddr = 0xc000;
 			ptr->vsize = 1024 * 4; // BASIC size (4k)
@@ -225,7 +225,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 				return ret;
 			}
 			ptr->name = rz_str_dup("KERNAL");
-			ptr->paddr = vsf_obj->rom + rz_offsetof(struct vsf_c128rom, kernal);
+			ptr->offset = vsf_obj->rom + rz_offsetof(struct vsf_c128rom, kernal);
 			ptr->size = 1024 * 8; // (8k)
 			ptr->vaddr = 0xe000;
 			ptr->vsize = 1024 * 8; // KERNAL size (8k)
@@ -245,7 +245,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 				return ret;
 			}
 			ptr->name = rz_str_dup("RAM");
-			ptr->paddr = vsf_obj->mem + offset;
+			ptr->offset = vsf_obj->mem + offset;
 			ptr->size = size;
 			ptr->vaddr = 0x0;
 			ptr->vsize = size;
@@ -261,7 +261,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 				return ret;
 			}
 			ptr->name = rz_str_dup("RAM BANK 0");
-			ptr->paddr = vsf_obj->mem + offset;
+			ptr->offset = vsf_obj->mem + offset;
 			ptr->size = size;
 			ptr->vaddr = 0x0;
 			ptr->vsize = size;
@@ -272,7 +272,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 				return ret;
 			}
 			ptr->name = rz_str_dup("RAM BANK 1");
-			ptr->paddr = vsf_obj->mem + offset + size;
+			ptr->offset = vsf_obj->mem + offset + size;
 			ptr->size = size;
 			ptr->vaddr = 0x0;
 			ptr->vsize = size;

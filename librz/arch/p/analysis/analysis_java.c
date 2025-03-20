@@ -41,7 +41,7 @@ static ut64 java_analysis_find_method(RzAnalysis *a, ut64 addr) {
 		if (!(sec->perm & RZ_PERM_X) || addr < from || addr > to) {
 			continue;
 		}
-		return sec->paddr;
+		return sec->offset;
 	}
 
 	return addr;

@@ -6,7 +6,7 @@
 
 static void process_handle_section(RzBinSection *section, RzBinObject *o, HtSP *filter_db) {
 	// rebase physical address
-	section->paddr += o->opts.loadaddr;
+	section->offset += o->opts.loadaddr;
 
 	if (!filter_db) {
 		// we do not have to filter the names.
@@ -19,7 +19,7 @@ static void process_handle_section(RzBinSection *section, RzBinObject *o, HtSP *
 		return;
 	}
 
-	char *name = rz_str_newf("%s_0x%" PFMT64x, section->name, section->paddr);
+	char *name = rz_str_newf("%s_0x%" PFMT64x, section->name, section->offset);
 	free(section->name);
 	section->name = name;
 }

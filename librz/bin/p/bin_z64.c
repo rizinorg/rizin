@@ -116,7 +116,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	text->name = rz_str_dup("text");
 	text->size = rz_buf_size(bf->buf) - N64_ROM_START;
 	text->vsize = text->size;
-	text->paddr = N64_ROM_START;
+	text->offset = N64_ROM_START;
 	text->vaddr = baddr(bf);
 	text->perm = RZ_PERM_RX;
 	rz_pvector_push(ret, text);

@@ -248,7 +248,7 @@ static ut64 scan_go_build_info(const ut8 *buf, ut64 len, void *user) {
 	struct scan_go_info_s *ctx = user;
 	for (ut64 pos = 0; pos <= len - build_info_align; pos += build_info_align) {
 		if (is_go_build_info(buf + pos)) {
-			parse_go_build_info(ctx->bf, ctx->go_info, ctx->section->paddr + pos);
+			parse_go_build_info(ctx->bf, ctx->go_info, ctx->section->offset + pos);
 			return 0;
 		}
 	}
@@ -257,7 +257,7 @@ static ut64 scan_go_build_info(const ut8 *buf, ut64 len, void *user) {
 
 static void find_go_build_info(RzBinFile *bf, GoBuildInfo *go_info, RzBinSection *section) {
 	struct scan_go_info_s ctx = { bf, go_info, section };
-	rz_buf_fwd_scan(bf->buf, section->paddr, section->size, scan_go_build_info, &ctx);
+	rz_buf_fwd_scan(bf->buf, section->offset, section->size, scan_go_build_info, &ctx);
 }
 
 /**
@@ -295,7 +295,7 @@ RZ_IPI RZ_OWN char *rz_bin_file_golang_compiler(RZ_NONNULL RzBinFile *bf) {
 		if (is_pe && strstr(section->name, "data") && section->size > 16) {
 			find_go_build_info(bf, &go_info, section);
 		} else if (!is_pe && (strstr(section->name, "go_buildinfo") || strstr(section->name, "go.buildinfo"))) {
-			parse_go_build_info(bf, &go_info, section->paddr);
+			parse_go_build_info(bf, &go_info, section->offset);
 		}
 		if (go_info.version) {
 			break;

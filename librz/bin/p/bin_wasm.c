@@ -111,7 +111,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		ptr->size = sec->payload_len;
 		ptr->vsize = sec->payload_len;
 		ptr->vaddr = sec->offset;
-		ptr->paddr = sec->offset;
+		ptr->offset = sec->offset;
 		// TODO permissions
 		ptr->perm = 0;
 		rz_pvector_push(ret, ptr);

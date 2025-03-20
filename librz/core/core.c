@@ -797,7 +797,7 @@ static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 			return str[2] == '$' ? core->prompt_offset : core->offset;
 		case 'o': { // $o
 			RzBinSection *s = rz_bin_get_section_at(rz_bin_cur_object(core->bin), core->offset, true);
-			return s ? core->offset - s->vaddr + s->paddr : core->offset;
+			return s ? core->offset - s->vaddr + s->offset : core->offset;
 			break;
 		}
 		case 'O': // $O

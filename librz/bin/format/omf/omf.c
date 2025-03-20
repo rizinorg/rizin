@@ -760,7 +760,7 @@ int rz_bin_omf_send_sections(RzPVector /*<RzBinSection *>*/ *vec, OMF_segment *s
 
 		new->size = data->size;
 		new->vsize = data->size;
-		new->paddr = data->paddr;
+		new->offset = data->paddr;
 		new->vaddr = section->vaddr + data->offset + OMF_BASE_ADDR;
 		new->perm = RZ_PERM_RWX;
 		rz_pvector_push(vec, new);

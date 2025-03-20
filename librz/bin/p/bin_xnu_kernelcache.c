@@ -1092,11 +1092,11 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		ptr->name = rz_str_newf("%d.%s", i, segname);
 		ptr->size = seg->vmsize;
 		ptr->vsize = seg->vmsize;
-		ptr->paddr = seg->fileoff + bf->o->boffset;
+		ptr->offset = seg->fileoff + bf->o->boffset;
 		ptr->vaddr = seg->vmaddr;
 		ptr->is_segment = true;
 		if (!ptr->vaddr) {
-			ptr->vaddr = ptr->paddr;
+			ptr->vaddr = ptr->offset;
 		}
 		ptr->perm = prot2perm(seg->initprot);
 		rz_pvector_push(ret, ptr);
@@ -1139,10 +1139,10 @@ static void sections_from_mach0(RzPVector /*<RzBinSection *>*/ *ret, struct MACH
 		handle_data_sections(ptr);
 		ptr->size = sections[i].size;
 		ptr->vsize = sections[i].vsize;
-		ptr->paddr = sections[i].offset + bf->o->boffset + paddr;
+		ptr->offset = sections[i].offset + bf->o->boffset + paddr;
 		ptr->vaddr = K_PPTR(sections[i].addr);
 		if (!ptr->vaddr) {
-			ptr->vaddr = ptr->paddr;
+			ptr->vaddr = ptr->offset;
 		}
 		ptr->perm = sections[i].perm;
 		if (!ptr->perm && strstr(sections[i].name, "__TEXT_EXEC.__text")) {

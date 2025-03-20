@@ -1638,7 +1638,7 @@ RZ_OWN RzPVector /*<RzBinSection *>*/ *rz_bin_le_get_sections(RzBinFile *bf) {
 		sec->size = le_map->size;
 		sec->vsize = le_map->vsize;
 		sec->vaddr = le_map->vaddr;
-		sec->paddr = le_map->paddr;
+		sec->offset = le_map->paddr;
 
 		LE_object *obj = &bin->objects[obj_num - 1];
 		sec->perm = le_obj_perm(obj);

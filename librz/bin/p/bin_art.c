@@ -164,7 +164,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ptr->name = rz_str_dup("load");
 	ptr->size = rz_buf_size(bf->buf);
 	ptr->vsize = art.image_size; // TODO: align?
-	ptr->paddr = 0;
+	ptr->offset = 0;
 	ptr->vaddr = art.image_base;
 	ptr->perm = RZ_PERM_R; // r--
 	rz_pvector_push(ret, ptr);
@@ -175,7 +175,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ptr->name = rz_str_dup("bitmap");
 	ptr->size = art.bitmap_size;
 	ptr->vsize = art.bitmap_size;
-	ptr->paddr = art.bitmap_offset;
+	ptr->offset = art.bitmap_offset;
 	ptr->vaddr = art.image_base + art.bitmap_offset;
 	ptr->perm = RZ_PERM_RX; // r-x
 	rz_pvector_push(ret, ptr);
@@ -184,7 +184,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		return ret;
 	}
 	ptr->name = rz_str_dup("oat");
-	ptr->paddr = art.bitmap_offset;
+	ptr->offset = art.bitmap_offset;
 	ptr->vaddr = art.oat_file_begin;
 	ptr->size = art.oat_file_end - art.oat_file_begin;
 	ptr->vsize = ptr->size;
@@ -195,7 +195,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		return ret;
 	}
 	ptr->name = rz_str_dup("oat_data");
-	ptr->paddr = art.bitmap_offset;
+	ptr->offset = art.bitmap_offset;
 	ptr->vaddr = art.oat_data_begin;
 	ptr->size = art.oat_data_end - art.oat_data_begin;
 	ptr->vsize = ptr->size;

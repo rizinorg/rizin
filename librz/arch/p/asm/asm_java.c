@@ -46,7 +46,7 @@ static ut64 java_asm_find_method(RzAsm *a) {
 		if (!(sec->perm & RZ_PERM_X) || addr < from || addr > to) {
 			continue;
 		}
-		return sec->paddr;
+		return sec->offset;
 	}
 
 	return addr;

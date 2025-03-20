@@ -1317,7 +1317,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 					rz_pvector_foreach (sections, iter) {
 						s = *iter;
 						if (s->perm & RZ_PERM_X) {
-							ut64 addr = s->vaddr ? s->vaddr : s->paddr;
+							ut64 addr = s->vaddr ? s->vaddr : s->offset;
 							rz_core_seek(r, addr, true);
 							break;
 						}

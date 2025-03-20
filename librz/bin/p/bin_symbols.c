@@ -138,7 +138,7 @@ static RzBinSection *bin_section_from_section(RzCoreSymCacheElementSection *sect
 	s->name = rz_str_ndup(sect->name, 256);
 	s->size = sect->size;
 	s->vsize = s->size;
-	s->paddr = sect->paddr;
+	s->offset = sect->paddr;
 	s->vaddr = sect->vaddr;
 	s->perm = strstr(s->name, "TEXT") ? 5 : 4;
 	s->is_segment = false;
@@ -156,7 +156,7 @@ static RzBinSection *bin_section_from_segment(RzCoreSymCacheElementSegment *seg)
 	s->name = rz_str_ndup(seg->name, 16);
 	s->size = seg->size;
 	s->vsize = seg->vsize;
-	s->paddr = seg->paddr;
+	s->offset = seg->paddr;
 	s->vaddr = seg->vaddr;
 	s->perm = strstr(s->name, "TEXT") ? 5 : 4;
 	s->is_segment = true;

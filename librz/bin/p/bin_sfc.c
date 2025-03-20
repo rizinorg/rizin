@@ -101,7 +101,7 @@ static void addrom(RzPVector /*<RzBinSection *>*/ *ret, const char *name, int i,
 		return;
 	}
 	ptr->name = rz_str_newf("%s_%02x", name, i);
-	ptr->paddr = paddr;
+	ptr->offset = paddr;
 	ptr->vaddr = vaddr;
 	ptr->size = ptr->vsize = size;
 	ptr->perm = RZ_PERM_RX;

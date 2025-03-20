@@ -226,9 +226,9 @@ static void sections_from_bin(RzPVector /*<RzBinSection *>*/ *ret, RzBinFile *bf
 		ptr->size = sections[i].size;
 		ptr->vsize = sections[i].vsize;
 		ptr->vaddr = sections[i].addr;
-		ptr->paddr = rz_dyldcache_va2pa(cache, sections[i].addr, NULL, NULL);
+		ptr->offset = rz_dyldcache_va2pa(cache, sections[i].addr, NULL, NULL);
 		if (!ptr->vaddr) {
-			ptr->vaddr = ptr->paddr;
+			ptr->vaddr = ptr->offset;
 		}
 		ptr->perm = sections[i].perm;
 		rz_pvector_push(ret, ptr);

@@ -193,7 +193,7 @@ RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries_current_bin_section
 		return core_get_boundaries_generic(core, elem->vaddr, elem->vsize, interval, elem->perm);
 	}
 	// physical
-	return core_get_boundaries_generic(core, elem->paddr, elem->size, interval, elem->perm);
+	return core_get_boundaries_generic(core, elem->offset, elem->size, interval, elem->perm);
 }
 
 /**
@@ -221,7 +221,7 @@ RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries_current_bin_segment
 		return core_get_boundaries_generic(core, elem->vaddr, elem->vsize, interval, elem->perm);
 	}
 	// physical
-	return core_get_boundaries_generic(core, elem->paddr, elem->size, interval, elem->perm);
+	return core_get_boundaries_generic(core, elem->offset, elem->size, interval, elem->perm);
 }
 
 /**
@@ -345,7 +345,7 @@ RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries_bin_segments(RZ_NON
 			boundaries.size = elem->vsize;
 		} else {
 			// physical
-			boundaries.addr = elem->paddr;
+			boundaries.addr = elem->offset;
 			boundaries.size = elem->size;
 		}
 
@@ -404,7 +404,7 @@ RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries_bin_sections(RZ_NON
 			boundaries.size = elem->vsize;
 		} else {
 			// physical
-			boundaries.addr = elem->paddr;
+			boundaries.addr = elem->offset;
 			boundaries.size = elem->size;
 		}
 
@@ -461,7 +461,7 @@ RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries_code_only(RZ_NONNUL
 			boundaries.size = elem->vsize;
 		} else {
 			// physical
-			boundaries.addr = elem->paddr;
+			boundaries.addr = elem->offset;
 			boundaries.size = elem->size;
 		}
 

@@ -125,7 +125,7 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 				goto beach;
 			}
 			ptr->name = rz_str_dup("LMF_RESOURCE");
-			ptr->paddr = offset;
+			ptr->offset = offset;
 			ptr->vsize = lrec.data_nbytes - LMF_RESOURCE_SIZE;
 			ptr->size = ptr->vsize;
 			rz_pvector_push(sections, ptr);
@@ -135,7 +135,7 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 				goto beach;
 			}
 			map->name = rz_str_dup(ptr->name);
-			map->offset = ptr->paddr;
+			map->offset = ptr->offset;
 			map->psize = ptr->size;
 			map->vsize = ptr->vsize;
 			rz_pvector_push(maps, map);
@@ -154,7 +154,7 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 				goto beach;
 			}
 			ptr->name = rz_str_dup("LMF_LOAD");
-			ptr->paddr = offset;
+			ptr->offset = offset;
 			ptr->vaddr = ldata.offset;
 			ptr->vsize = lrec.data_nbytes - LMF_DATA_SIZE;
 			ptr->size = ptr->vsize;
@@ -165,7 +165,7 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 				goto beach;
 			}
 			map->name = rz_str_dup(ptr->name);
-			map->offset = ptr->paddr;
+			map->offset = ptr->offset;
 			map->psize = ptr->size;
 			map->vsize = ptr->vsize;
 			rz_pvector_push(maps, map);

@@ -1148,8 +1148,8 @@ static ut32 section_hash_addr(const RzBinSection *elem) {
 	hash ^= (ut32)elem->size;
 	hash ^= (ut32)(elem->vaddr >> 32);
 	hash ^= (ut32)elem->vaddr;
-	hash ^= (ut32)(elem->paddr >> 32);
-	hash ^= (ut32)elem->paddr;
+	hash ^= (ut32)(elem->offset >> 32);
+	hash ^= (ut32)elem->offset;
 	return hash;
 }
 
@@ -1164,7 +1164,7 @@ static int section_compare_addr(const RzBinSection *a, const RzBinSection *b) {
 	if (ret) {
 		return ret;
 	}
-	ret = ((st64)b->paddr) - ((st64)a->paddr);
+	ret = ((st64)b->offset) - ((st64)a->offset);
 	if (ret) {
 		return ret;
 	}
@@ -1189,7 +1189,7 @@ static void section_stringify_addr(const RzBinSection *elem, RzStrBuf *sb) {
 	perm[4] = 0;
 
 	rz_strbuf_setf(sb, "virt: 0x%016" PFMT64x ":0x%04" PFMT64x " phys: 0x%016" PFMT64x ":0x%04" PFMT64x " align: 0x%08" PFMT64x " %s %s\n",
-		elem->vaddr, elem->vsize, elem->paddr, elem->size, elem->align, perm, elem->name);
+		elem->vaddr, elem->vsize, elem->offset, elem->size, elem->align, perm, elem->name);
 }
 
 static ut32 section_hash(const RzBinSection *elem) {

@@ -124,8 +124,8 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ptr->name = rz_str_dup("text");
 	ptr->size = rz_read_ble32(buf + 16, false);
 	ptr->vsize = ptr->size + (ptr->size % 4096);
-	ptr->paddr = rz_read_ble32(buf + 12, false);
-	ptr->vaddr = ptr->paddr + baddr(bf);
+	ptr->offset = rz_read_ble32(buf + 12, false);
+	ptr->vaddr = ptr->offset + baddr(bf);
 	ptr->perm = RZ_PERM_RX; // r-x
 	rz_pvector_push(ret, ptr);
 
@@ -139,8 +139,8 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		const ut32 idata_end = rz_read_ble32(buf + 44, false);
 		ptr->size = idata_end - idata_start;
 		ptr->vsize = ptr->size + (ptr->size % 4096);
-		ptr->paddr = rz_read_ble32(buf + 40, false);
-		ptr->vaddr = ptr->paddr + baddr(bf);
+		ptr->offset = rz_read_ble32(buf + 40, false);
+		ptr->vaddr = ptr->offset + baddr(bf);
 		ptr->perm = RZ_PERM_R; // r--
 		rz_pvector_push(ret, ptr);
 	}

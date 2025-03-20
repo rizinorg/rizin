@@ -100,7 +100,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		}
 		s = RZ_NEW0(RzBinSection);
 		s->name = rz_str_newf("text_%d", i);
-		s->paddr = dol->text_paddr[i];
+		s->offset = dol->text_paddr[i];
 		s->vaddr = dol->text_vaddr[i];
 		s->size = dol->text_size[i];
 		s->vsize = s->size;
@@ -114,7 +114,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		}
 		s = RZ_NEW0(RzBinSection);
 		s->name = rz_str_newf("data_%d", i);
-		s->paddr = dol->data_paddr[i];
+		s->offset = dol->data_paddr[i];
 		s->vaddr = dol->data_vaddr[i];
 		s->size = dol->data_size[i];
 		s->vsize = s->size;
@@ -124,7 +124,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	/* bss section */
 	s = RZ_NEW0(RzBinSection);
 	s->name = rz_str_dup("bss");
-	s->paddr = 0;
+	s->offset = 0;
 	s->vaddr = dol->bss_addr;
 	s->size = dol->bss_size;
 	s->vsize = s->size;

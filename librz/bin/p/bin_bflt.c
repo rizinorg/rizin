@@ -84,7 +84,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	if (!sec) {
 		goto beach;
 	}
-	sec->paddr = 0;
+	sec->offset = 0;
 	sec->vaddr = rz_bflt_get_text_base(obj);
 	sec->size = obj->hdr.data_start;
 	sec->vsize = obj->hdr.data_start;
@@ -97,7 +97,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	if (!sec) {
 		goto beach;
 	}
-	sec->paddr = obj->hdr.data_start;
+	sec->offset = obj->hdr.data_start;
 	sec->vaddr = rz_bflt_get_data_base(obj);
 	sec->size = obj->hdr.data_start;
 	sec->vsize = rz_bflt_get_data_vsize(obj);
@@ -112,7 +112,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	if (!sec) {
 		goto beach;
 	}
-	sec->paddr = 0;
+	sec->offset = 0;
 	sec->vaddr = rz_bflt_get_text_base(obj);
 	sec->size = BFLT_HDR_SIZE;
 	sec->vsize = BFLT_HDR_SIZE;
@@ -124,7 +124,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	if (!sec) {
 		goto beach;
 	}
-	sec->paddr = BFLT_HDR_SIZE;
+	sec->offset = BFLT_HDR_SIZE;
 	sec->vaddr = rz_bflt_get_text_base(obj) + BFLT_HDR_SIZE;
 	sec->size = obj->hdr.data_start - BFLT_HDR_SIZE;
 	sec->vsize = obj->hdr.data_start - BFLT_HDR_SIZE;
@@ -136,7 +136,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	if (!sec) {
 		goto beach;
 	}
-	sec->paddr = obj->hdr.data_start;
+	sec->offset = obj->hdr.data_start;
 	sec->vaddr = rz_bflt_get_data_base(obj);
 	sec->size = obj->hdr.data_end - obj->hdr.data_start;
 	sec->vsize = obj->hdr.data_end - obj->hdr.data_start;
@@ -149,7 +149,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	if (!sec) {
 		goto beach;
 	}
-	sec->paddr = obj->hdr.data_end;
+	sec->offset = obj->hdr.data_end;
 	sec->vaddr = rz_bflt_get_data_base(obj) + obj->hdr.data_end - obj->hdr.data_start;
 	sec->size = 0;
 	sec->vsize = obj->hdr.bss_end - obj->hdr.data_end;

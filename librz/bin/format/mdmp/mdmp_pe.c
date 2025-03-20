@@ -159,7 +159,7 @@ RzPVector /*<RzBinSection *>*/ *PE_(rz_bin_mdmp_pe_get_sections)(struct PE_(rz_b
 		if (!ptr->vsize && ptr->size) {
 			ptr->vsize = ptr->size;
 		}
-		ptr->paddr = sections[i].paddr + pe_bin->paddr;
+		ptr->offset = sections[i].paddr + pe_bin->paddr;
 		ptr->vaddr = sections[i].vaddr + ba;
 		ptr->perm = 0;
 		if (RZ_BIN_PE_SCN_IS_EXECUTABLE(sections[i].perm)) {

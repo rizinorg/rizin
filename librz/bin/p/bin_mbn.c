@@ -114,7 +114,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ptr->name = rz_str_dup("text");
 	ptr->size = sb->psize;
 	ptr->vsize = sb->psize;
-	ptr->paddr = sb->paddr + 40;
+	ptr->offset = sb->paddr + 40;
 	ptr->vaddr = sb->vaddr;
 	ptr->perm = RZ_PERM_RX; // r-x
 	ptr->has_strings = true;
@@ -126,7 +126,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ptr->name = rz_str_dup("sign");
 	ptr->size = sb->sign_sz;
 	ptr->vsize = sb->sign_sz;
-	ptr->paddr = sb->sign_va - sb->vaddr;
+	ptr->offset = sb->sign_va - sb->vaddr;
 	ptr->vaddr = sb->sign_va;
 	ptr->perm = RZ_PERM_R; // r--
 	ptr->has_strings = true;
@@ -139,7 +139,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		ptr->name = rz_str_dup("cert");
 		ptr->size = sb->cert_sz;
 		ptr->vsize = sb->cert_sz;
-		ptr->paddr = sb->cert_va - sb->vaddr;
+		ptr->offset = sb->cert_va - sb->vaddr;
 		ptr->vaddr = sb->cert_va;
 		ptr->perm = RZ_PERM_R; // r--
 		ptr->has_strings = true;

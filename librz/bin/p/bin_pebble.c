@@ -131,7 +131,7 @@ static RzPVector /*<RzBinSection *>*/ *pebble_sections(RzBinFile *bf) {
 	}
 	ptr->name = rz_str_dup("relocs");
 	ptr->vsize = ptr->size = ((ut64)pai->num_reloc_entries) * sizeof(ut32);
-	ptr->vaddr = ptr->paddr = pai->reloc_list_start;
+	ptr->vaddr = ptr->offset = pai->reloc_list_start;
 	ptr->perm = RZ_PERM_RW;
 	rz_pvector_push(ret, ptr);
 	if (ptr->vaddr < textsize) {
@@ -144,7 +144,7 @@ static RzPVector /*<RzBinSection *>*/ *pebble_sections(RzBinFile *bf) {
 	}
 	ptr->name = rz_str_dup("symtab");
 	ptr->vsize = ptr->size = 0;
-	ptr->vaddr = ptr->paddr = pai->sym_table_addr;
+	ptr->vaddr = ptr->offset = pai->sym_table_addr;
 	ptr->perm = RZ_PERM_R;
 	rz_pvector_push(ret, ptr);
 	if (ptr->vaddr < textsize) {
@@ -155,8 +155,8 @@ static RzPVector /*<RzBinSection *>*/ *pebble_sections(RzBinFile *bf) {
 		return ret;
 	}
 	ptr->name = rz_str_dup("text");
-	ptr->vaddr = ptr->paddr = 0x80;
-	ptr->vsize = ptr->size = textsize - ptr->paddr;
+	ptr->vaddr = ptr->offset = 0x80;
+	ptr->vsize = ptr->size = textsize - ptr->offset;
 	ptr->perm = RZ_PERM_RWX;
 	rz_pvector_push(ret, ptr);
 
@@ -165,7 +165,7 @@ static RzPVector /*<RzBinSection *>*/ *pebble_sections(RzBinFile *bf) {
 	}
 	ptr->name = rz_str_dup("header");
 	ptr->vsize = ptr->size = sizeof(PebbleAppInfo);
-	ptr->vaddr = ptr->paddr = 0;
+	ptr->vaddr = ptr->offset = 0;
 	ptr->perm = RZ_PERM_R;
 	rz_pvector_push(ret, ptr);
 

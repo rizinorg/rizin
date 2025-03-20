@@ -76,16 +76,16 @@ RZ_IPI RZ_OWN RzBinEndianReader *rz_bin_dwarf_section_reader(
 	RZ_BORROW RZ_NONNULL RzBinFile *binfile,
 	RZ_BORROW RZ_NONNULL RzBinSection *section) {
 	rz_return_val_if_fail(binfile && section, NULL);
-	if (section->paddr >= binfile->size) {
+	if (section->offset >= binfile->size) {
 		return NULL;
 	}
 	RzBinEndianReader *R = NULL;
 
-	ut64 len = RZ_MIN(section->size, binfile->size - section->paddr);
+	ut64 len = RZ_MIN(section->size, binfile->size - section->offset);
 	bool is_zlib_gnu = rz_str_startswith(section->name, ".zdebug");
 
 	ut8 *sh_buf = malloc(len);
-	if (!(sh_buf && (rz_buf_read_at(binfile->buf, section->paddr, sh_buf, len) == len))) {
+	if (!(sh_buf && (rz_buf_read_at(binfile->buf, section->offset, sh_buf, len) == len))) {
 		goto err;
 	}
 	bool bigendian = bf_bigendian(binfile);

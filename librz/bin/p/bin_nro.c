@@ -222,7 +222,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ptr->name = rz_str_dup("header");
 	ptr->size = 0x80;
 	ptr->vsize = 0x80;
-	ptr->paddr = 0;
+	ptr->offset = 0;
 	ptr->vaddr = 0;
 	ptr->perm = RZ_PERM_R;
 	rz_pvector_push(ret, ptr);
@@ -247,7 +247,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		ptr->name = rz_str_dup("mod0");
 		ptr->size = mod0sz;
 		ptr->vsize = mod0sz;
-		ptr->paddr = mod0;
+		ptr->offset = mod0;
 		ptr->vaddr = mod0 + ba;
 		ptr->perm = RZ_PERM_R; // rw-
 		rz_pvector_push(ret, ptr);
