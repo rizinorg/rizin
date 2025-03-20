@@ -12,6 +12,7 @@
 #define MIPS_REG_RA "ra"
 
 #define IS_ZERO_REG(idx) mips_is_zero_reg(insn, idx)
+#define TRUNC64(x)       UNSIGNED(MIPS_DWORD_SIZE, x)
 #define TRUNC32(x)       UNSIGNED(MIPS_WORD_SIZE, x)
 #define TRUNC16(x)       UNSIGNED(MIPS_HALF_SIZE, x)
 #define TRUNC8(x)        UNSIGNED(MIPS_BYTE_SIZE, x)
@@ -966,6 +967,50 @@ static RzILOpEffect *mips_il_mulu(const csh *handle, const cs_insn *insn, const 
 	}
 
 	return SETG(rd, rs);
+}
+
+static RzILOpEffect *mips_il_dmul(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// 64bit only
+	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
+
+	const char *rd = REG(0);
+	if (IS_ZERO_REG(1) || IS_ZERO_REG(2)) {
+		// multiply by zero always returns zero.
+		SETG(rd, MIPS_ZERO());
+	}
+
+	RzILOpPure *rs = MIPS_REG(1);
+	RzILOpPure *rt = MIPS_REG(2);
+
+	// product is on 128 bit value so sign extend it
+	rs = SIGNED(128, rs);
+	rt = SIGNED(128, rt);
+	RzILOpPure *prod = MUL(rs, rt);
+
+	// truncate to 64 bits (lo).
+	return SETG(rd, TRUNC64(prod));
+}
+
+static RzILOpEffect *mips_il_dmulu(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// 64bit only
+	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
+
+	const char *rd = REG(0);
+	if (IS_ZERO_REG(1) || IS_ZERO_REG(2)) {
+		// multiply by zero always returns zero.
+		SETG(rd, MIPS_ZERO());
+	}
+
+	RzILOpPure *rs = MIPS_REG(1);
+	RzILOpPure *rt = MIPS_REG(2);
+
+	// product is on 128 bit value so sign extend it
+	rs = UNSIGNED(128, rs);
+	rt = UNSIGNED(128, rt);
+	RzILOpPure *prod = MUL(rs, rt);
+
+	// truncate to 64 bits (lo).
+	return SETG(rd, TRUNC64(prod));
 }
 
 static RzILOpEffect *mips_il_muh(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
