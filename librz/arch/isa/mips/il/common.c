@@ -1296,10 +1296,14 @@ static RzILOpEffect *mips_il_rotr(const csh *handle, const cs_insn *insn, const 
 	// Rotate Word Right
 	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
 
+	ut32 sa = IMM(2);
+	if (!sa) {
+		// is just a move.
+		return mips_il_move(handle, insn, gprlen);
+	}
+
 	const char *rd = REG(0);
 	RzILOpPure *rt = MIPS_REG(1);
-	ut32 sa = IMM(2);
-
 	RzILOpPure *left = SHIFTL0(DUP(rt), U8(gprlen - sa));
 	RzILOpPure *right = SHIFTR0(rt, U8(sa));
 	RzILOpPure *rotr = LOGOR(left, right);
@@ -1315,7 +1319,7 @@ static RzILOpEffect *mips_il_rotrv(const csh *handle, const cs_insn *insn, const
 	RzILOpPure *rs = MIPS_REG(2);
 	RzILOpPure *reglen = UN(gprlen, gprlen); // a number that contains its own size
 
-	RzILOpPure *left = SHIFTL0(DUP(rt), SUB(reglen, rs));
+	RzILOpPure *left = SHIFTL0(DUP(rt), SUB(reglen, DUP(rs)));
 	RzILOpPure *right = SHIFTR0(rt, rs);
 	RzILOpPure *rotr = LOGOR(left, right);
 	return SETG(rd, rotr);
