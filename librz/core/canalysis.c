@@ -2166,6 +2166,23 @@ static void set_new_xref(RzCore *core, ut64 xref_from, ut64 xref_to, RzAnalysisX
 }
 
 /**
+ * \brief Search for xrefs in the form [reg*mul + disp]
+ *
+ * Assumes that disp is absolute address and reg is either array index or
+ * some kind of base offset.
+ *
+ * Potential false positives (might be filtered elsewhere):
+ * - RIP relative addressing
+ * - stack relative addressing - mitigated by disp > 512 check
+ * - field access within struct - mitigated by disp > 512 check
+ */
+static bool maybe_disp_xref(RzAnalysisOp *op) {
+	return op->disp && op->disp != UT64_MAX &&
+		op->disp > 512 && /* small offset could likely be a stack or struct relative access */
+		op->addr > 512;
+}
+
+/**
  * \brief Searches for xrefs in the range of the paramters \p 'from' and \p 'to'.
  *
  * \param core The Rizin core.
@@ -2227,6 +2244,7 @@ RZ_API int rz_core_analysis_search_xrefs(RZ_NONNULL RzCore *core, ut64 from, ut6
 			continue;
 		}
 		while (i < bsz && !rz_cons_is_breaked()) {
+			int count_before = count;
 			rz_analysis_op_init(&op);
 			ret = rz_analysis_op(core->analysis, &op, at + i, buf + i, bsz - i, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT);
 			ret = ret > 0 ? ret : 1;
@@ -2257,13 +2275,7 @@ RZ_API int rz_core_analysis_search_xrefs(RZ_NONNULL RzCore *core, ut64 from, ut6
 					count++;
 				}
 			}
-			// find references
-			if (op.addr > 512 && op.disp > 512 && op.disp && op.disp != UT64_MAX) {
-				if (is_valid_xref(core, op.disp, RZ_ANALYSIS_XREF_TYPE_DATA, cfg_debug)) {
-					set_new_xref(core, op.addr, op.disp, RZ_ANALYSIS_XREF_TYPE_DATA, can_search_string);
-					count++;
-				}
-			}
+
 			switch (op.type) {
 			case RZ_ANALYSIS_OP_TYPE_JMP:
 				if (is_valid_xref(core, op.jump, RZ_ANALYSIS_XREF_TYPE_CODE, cfg_debug)) {
@@ -2309,6 +2321,16 @@ RZ_API int rz_core_analysis_search_xrefs(RZ_NONNULL RzCore *core, ut64 from, ut6
 				break;
 			default:
 				break;
+			}
+
+			// find references
+			if (count - count_before == 0 && maybe_disp_xref(&op)) {
+				// This can easily produce false positives, skip when any other method has already detetcted
+				// probably more accurate xref.
+				if (is_valid_xref(core, op.disp, RZ_ANALYSIS_XREF_TYPE_DATA, cfg_debug)) {
+					set_new_xref(core, op.addr, op.disp, RZ_ANALYSIS_XREF_TYPE_DATA, can_search_string);
+					count++;
+				}
 			}
 			rz_analysis_op_fini(&op);
 		}
