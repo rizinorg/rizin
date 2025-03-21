@@ -41,15 +41,16 @@ dm~?
 db @ sym.imp.puts
 dc~?
 echo ----
-dm~x86-helloworld-gcc~?
-$libc_count=$`dm~/usr/lib32/libc.so.6~?`
+$dm=%b64- `dm | base64 -w 0`
+$dm~x86-helloworld-gcc~?
+$libc_count=$`$dm~/usr/lib32/libc.so.6~?`
 %= `$libc_count`-6
 %! %vi 5
 %% $libc_count
-dm~unk~?
-dm~[v~?
-dm~/usr/lib32/ld-linux.so.2~?
-dm~[stack~?
+$dm~unk~?
+$dm~[v~?
+$dm~/usr/lib32/ld-linux.so.2~?
+$dm~[stack~?
 echo ----
 dc
 EOF
