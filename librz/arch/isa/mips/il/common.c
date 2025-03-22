@@ -1310,6 +1310,20 @@ static RzILOpEffect *mips_il_rotr(const csh *handle, const cs_insn *insn, const 
 	return SETG(rd, rotr);
 }
 
+static RzILOpEffect *mips_il_drotr32(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Doubleword Rotate Right Plus 32
+	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
+
+	const char *rd = REG(0);
+	RzILOpPure *rt = MIPS_REG(1);
+	ut32 sa = IMM(2) + 32;
+
+	RzILOpPure *left = SHIFTL0(DUP(rt), U8(gprlen - sa));
+	RzILOpPure *right = SHIFTR0(rt, U8(sa));
+	RzILOpPure *rotr = LOGOR(left, right);
+	return SETG(rd, rotr);
+}
+
 static RzILOpEffect *mips_il_rotrv(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	// Rotate Word Right Variable
 	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();

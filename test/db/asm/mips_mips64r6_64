@@ -44,3 +44,4 @@ dE "dmuhu t3, t4, t6" 018e58dd 0x80000000 (set t3 (cast 64 false (>> (* (cast 12
 dE "drotr s7, s0, 7" 0030b9fa 0x80000000 (set s7 (| (<< (var s0) (bv 8 0x39) false) (>> (var s0) (bv 8 0x7) false)))
 dE "drotr t5, s4, 0" 0034683a 0x80000000 (set t5 (var s4))
 dE "drotrv t6, s3, t5" 01b37056 0x80000000 (set t6 (| (<< (var s3) (- (bv 64 0x40) (var t5)) false) (>> (var s3) (var t5) false)))
+dE "drotr32 t4, s4, 0x1b" 003466fe 0x80000000 (set t4 (| (<< (var s4) (bv 8 0x5) false) (>> (var s4) (bv 8 0x3b) false)))
