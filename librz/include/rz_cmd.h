@@ -558,8 +558,8 @@ RZ_API bool rz_cmd_desc_remove(RzCmd *cmd, RzCmdDesc *cd);
 RZ_API void rz_cmd_foreach_cmdname(RzCmd *cmd, RzCmdDesc *begin, RzCmdForeachNameCb cb, void *user);
 RZ_API const RzCmdDescArg *rz_cmd_desc_get_arg(const RzCmdDesc *cd, size_t i);
 
-#define rz_cmd_desc_children_foreach(root, it_cd) rz_pvector_foreach (&root->children, it_cd)
-#define rz_cmd_desc_children_foreach_idx(root, it_cd, idx) rz_pvector_enumerate(&root->children, it_cd, idx)
+#define rz_cmd_desc_children_foreach(root, it_cd)          rz_pvector_foreach (&root->children, it_cd)
+#define rz_cmd_desc_children_foreach_idx(root, it_cd, idx) rz_pvector_enumerate (&root->children, it_cd, idx)
 
 RZ_API void rz_cmd_desc_details_free(RzCmdDescDetail *details);
 

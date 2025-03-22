@@ -1110,15 +1110,15 @@ static void do_print_child_help(RzCmd *cmd, RzStrBuf *sb, const RzCmdDesc *cd, c
 	rz_strbuf_appendf(sb, "%s\n", pal_reset);
 }
 
-static void print_child_help(RzCmd *cmd, RzStrBuf *sb, RzCmdDesc *cd, size_t max_len,const char *vertical_line, bool use_color) {
+static void print_child_help(RzCmd *cmd, RzStrBuf *sb, RzCmdDesc *cd, size_t max_len, const char *vertical_line, bool use_color) {
 	do_print_child_help(cmd, sb, cd, cd->name, cd->help->summary ? cd->help->summary : "", vertical_line, true, max_len, use_color);
 }
 
-static char *group_get_help(RzCmd *cmd, RzCmdDesc *cd, RzConfig *config,  bool use_color) {
+static char *group_get_help(RzCmd *cmd, RzCmdDesc *cd, RzConfig *config, bool use_color) {
 
 	bool scr_utf8 = config ? (strcmp(rz_config_get(config, "scr.utf8"), "true") == 0) : false;
 	bool scr_curvy = config ? (strcmp(rz_config_get(config, "scr.utf8.curvy"), "true") == 0) && scr_utf8 : false;
-	
+
 	RzStrBuf *sb = rz_strbuf_new(NULL);
 	fill_usage_strbuf(cmd, sb, cd, use_color);
 
@@ -1136,8 +1136,8 @@ static char *group_get_help(RzCmd *cmd, RzCmdDesc *cd, RzConfig *config,  bool u
 
 	rz_cmd_desc_children_foreach_idx(cd, it_cd, idx) {
 		RzCmdDesc *child = *(RzCmdDesc **)it_cd;
-		// Based on Config and Line order choses the vertical line shape 
-		const char * vertical_line  = (((idx == 0) && (scr_curvy == true)) ? "\xE2\x95\xAD" : (((idx == cd->children.v.len - 1) && (scr_curvy == true))? "\xE2\x95\xB0" : ( (scr_utf8 == true) ? "\xE2\x94\x82" : "|")));
+		// Based on Config and Line order choses the vertical line shape
+		const char *vertical_line = (((idx == 0) && (scr_curvy == true)) ? "\xE2\x95\xAD" : (((idx == cd->children.v.len - 1) && (scr_curvy == true)) ? "\xE2\x95\xB0" : ((scr_utf8 == true) ? "\xE2\x94\x82" : "|")));
 		// const char * vertical_line  = ((idx == 0) && (scr_curvy == true)) ? "\xE2\x95\xAD" : "|";
 		print_child_help(cmd, sb, child, max_len, vertical_line, use_color);
 	}
