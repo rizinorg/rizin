@@ -958,6 +958,46 @@ RZ_API const char *rz_bin_entry_type_string(int etype) {
 	return NULL;
 }
 
+/**
+ * \brief Returns a first possible entry point address of the object.
+ * If no entry point could be determined, it just returns 0, which is also a valid address.
+ *
+ * If the object has entry points defined, it returns the first one.
+ * If it doesn't it returns the start address of the first executable section.
+ * Otherwise 0.
+ *
+ * It always prioritizes virtual addresses.
+ *
+ * \param obj The object file to get the entry point from.
+ *
+ * \return The entry point address of the binary.
+ */
+RZ_API ut64 rz_bin_get_first_entrypoint(RZ_NULLABLE RzBinObject *obj) {
+	if (!obj) {
+		return 0;
+	} else if (obj->entries && rz_pvector_len(obj->entries) > 0) {
+		// The binary loader specified entry points. Use the first one.
+		const RzBinAddr *entry = rz_pvector_at(obj->entries, 0);
+		ut64 addr = entry->vaddr ? entry->vaddr : entry->paddr;
+		return addr;
+	}
+	const RzPVector *sections = rz_bin_object_get_sections_all(obj);
+	if (!sections) {
+		return 0;
+	}
+	// The binary loader did not specify entry points.
+	// Fall back to the first executable section.
+	void **iter;
+	rz_pvector_foreach (sections, iter) {
+		RzBinSection *s = *iter;
+		if (s->perm & RZ_PERM_X) {
+			ut64 addr = s->vaddr ? s->vaddr : s->paddr;
+			return addr;
+		}
+	}
+	return 0;
+}
+
 RZ_API void rz_bin_load_filter(RzBin *bin, ut64 rules) {
 	bin->filter_rules = rules;
 }

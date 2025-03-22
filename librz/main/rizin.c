@@ -1305,24 +1305,11 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		RZ_FREE(debugbackend);
 		RzBinObject *o = rz_bin_cur_object(r->bin);
 		if (!debug && o && !o->regstate) {
-			RzFlagItem *fi = rz_flag_get(r->flags, "entry0");
-			if (fi) {
-				rz_core_seek(r, fi->offset, true);
+			const RzFlagItem *entry0 = rz_flag_get(r->flags, "entry0");
+			if (entry0) {
+				rz_core_seek(r, entry0->offset, true);
 			} else {
-				if (o) {
-					RzBinObject *obj = rz_bin_cur_object(r->bin);
-					const RzPVector *sections = obj ? rz_bin_object_get_sections_all(obj) : NULL;
-					void **iter;
-					RzBinSection *s;
-					rz_pvector_foreach (sections, iter) {
-						s = *iter;
-						if (s->perm & RZ_PERM_X) {
-							ut64 addr = s->vaddr ? s->vaddr : s->paddr;
-							rz_core_seek(r, addr, true);
-							break;
-						}
-					}
-				}
+				rz_core_seek(r, rz_bin_get_first_entrypoint(o), true);
 			}
 		}
 		if (o && o->info && compute_hashes) {
