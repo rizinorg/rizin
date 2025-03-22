@@ -2279,9 +2279,9 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_SDC3:
 		return NULL;
 	case MIPS_INS_SDL:
-		return NULL;
+		return mips_il_sdl(handle, insn, gprlen);
 	case MIPS_INS_SDR:
-		return NULL;
+		return mips_il_sdr(handle, insn, gprlen);
 	case MIPS_INS_SDXC1:
 		return mips_il_sdxc1(handle, insn, gprlen);
 	case MIPS_INS_SEB:
