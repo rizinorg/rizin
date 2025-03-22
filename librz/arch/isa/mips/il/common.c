@@ -1410,6 +1410,19 @@ static RzILOpEffect *mips_il_sll(const csh *handle, const cs_insn *insn, const u
 	return SETG(rd, SHIFTL0(rt, sa));
 }
 
+static RzILOpEffect *mips_il_dsll32(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	//  Doubleword Shift Left Logical Plus 32
+	if (OPCOUNT() < 3 || IS_ZERO_REG(0)) {
+		return NOP();
+	}
+
+	const char *rd = REG(0);
+	RzILOpPure *rt = MIPS_REG(1);
+	RzILOpPure *sa = UN(gprlen, IMM(2) + 32);
+
+	return SETG(rd, SHIFTL0(rt, sa));
+}
+
 static RzILOpEffect *mips_il_sllv(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	if (OPCOUNT() < 3 || IS_ZERO_REG(0)) {
 		return NOP();
