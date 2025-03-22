@@ -1193,9 +1193,9 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_ERETNC:
 		return mips_il_eretnc(handle, insn, gprlen);
 	case MIPS_INS_EVP:
-		return NULL;
+		return NOP(); // Enable Virtual Processor
 	case MIPS_INS_EVPE:
-		return NULL;
+		return NOP(); // Enable Virtual Processor Execution
 	case MIPS_INS_EXT:
 		return mips_il_ext(handle, insn, gprlen);
 	case MIPS_INS_EXTP:
