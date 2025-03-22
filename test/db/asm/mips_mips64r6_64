@@ -53,3 +53,6 @@ dE "dsra t5, t1, 9" 00096a7b 0x80000000 (set t5 (>> (var t1) (bv 64 0x9) (msb (v
 dE "dsra t6, t4, 0" 000c703b 0x80000000 (set t6 (var t4))
 dE "dsrav t2, s1, t6" 01d15017 0x80000000 (set t2 (>> (var s1) (var t6) (msb (var s1))))
 dE "dsra32 t0, t3, 2" 000b40bf 0x80000000 (set t0 (>> (var t3) (bv 64 0x22) (msb (var t3))))
+dE "dsrl s6, t6, 3" 000eb0fa 0x80000000 (set s6 (>> (var t6) (bv 64 0x3) false))
+dE "dsrl t3, s0, 0" 0010583a 0x80000000 (set t3 (var s0))
+dE "dsrlv t6, s3, t7" 01f37016 0x80000000 (set t6 (>> (var s3) (var t7) false))
