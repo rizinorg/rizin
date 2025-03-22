@@ -1175,9 +1175,9 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_DSRLV:
 		return mips_il_srlv(handle, insn, gprlen);
 	case MIPS_INS_DSUB:
-		return NULL;
+		return mips_il_sub(handle, insn, gprlen);
 	case MIPS_INS_DSUBU:
-		return NULL;
+		return mips_il_subu(handle, insn, gprlen);
 	case MIPS_INS_DVP:
 		return NULL;
 	case MIPS_INS_DVPE:
