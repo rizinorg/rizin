@@ -613,6 +613,13 @@ static RzILOpEffect *mips_il_jialc(const csh *handle, const cs_insn *insn, const
 	return SEQ2(link_op, jmp_op);
 }
 
+static RzILOpEffect *mips_il_jic(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Jump Indexed, Compact
+	RzILOpPure *jump_target = MIPS_REG(0);
+	RzILOpPure *jump_offset = MIPS_IMM(1);
+	return JMP(ADD(jump_target, jump_offset));
+}
+
 static RzILOpEffect *mips_il_jr(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	RzILOpPure *target = MIPS_REG(0);
 	return JMP(target);

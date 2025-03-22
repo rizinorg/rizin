@@ -60,3 +60,4 @@ dE "dsrl32 t7, s0, 0x15" 00107d7e 0x80000000 (set t7 (>> (var s0) (bv 64 0x35) f
 dE "dsub t5, t3, t6" 016e682e 0x80000000 (set t5 (- (var t3) (var t6)))
 dE "dsubu t7, s5, t6" 02ae782f 0x80000000 (set t7 (- (var s5) (var t6)))
 dE "jialc s7, 0x6dc" f81706dc 0x80000000 (seq (set ra (bv 64 0x80000008)) (jmp (+ (var s7) (bv 64 0x6dc))))
+dE "jic t4, 0x560" d80c0560 0x80000000 (jmp (+ (var t4) (bv 64 0x560)))
