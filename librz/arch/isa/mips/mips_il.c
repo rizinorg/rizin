@@ -2371,7 +2371,7 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_SHX:
 		return NULL;
 	case MIPS_INS_SIGRIE:
-		return NULL;
+		return NOP(); // Signal Reserved Instruction Exception
 	case MIPS_INS_SLDI_B:
 		return NULL;
 	case MIPS_INS_SLDI_D:
@@ -2653,9 +2653,9 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_TGEU:
 		return mips_il_tgeu(handle, insn, gprlen);
 	case MIPS_INS_TLBGINV:
-		return NULL;
+		return NOP(); // TLB Invalidate
 	case MIPS_INS_TLBGINVF:
-		return NULL;
+		return NOP(); // TLB Invalidate Flush
 	case MIPS_INS_TLBGP:
 		return NULL;
 	case MIPS_INS_TLBGR:
