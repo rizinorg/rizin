@@ -1482,6 +1482,11 @@ static RzILOpEffect *mips_il_sltu(const csh *handle, const cs_insn *insn, const 
 static RzILOpEffect *mips_il_sra(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
 
+	if (!IMM(2)) {
+		// is a move
+		return mips_il_move(handle, insn, gprlen);
+	}
+
 	const char *rd = REG(0);
 	RzILOpPure *rt = MIPS_REG(1);
 	RzILOpPure *sa = MIPS_IMM(2);
