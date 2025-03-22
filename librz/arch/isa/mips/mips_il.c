@@ -1589,7 +1589,7 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_JALX:
 		return mips_il_jalx(handle, insn, gprlen);
 	case MIPS_INS_JIALC:
-		return NULL;
+		return mips_il_jialc(handle, insn, gprlen);
 	case MIPS_INS_JIC:
 		return NULL;
 	case MIPS_INS_JR:
