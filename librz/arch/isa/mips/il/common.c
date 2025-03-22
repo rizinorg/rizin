@@ -729,8 +729,18 @@ static RzILOpEffect *mips_il_lwl(const csh *handle, const cs_insn *insn, const u
 	NOT_IMPLEMENTED;
 }
 
+static RzILOpEffect *mips_il_ldl(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Load Doubleword Left
+	NOT_IMPLEMENTED;
+}
+
 static RzILOpEffect *mips_il_lwr(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	// Load Word Right
+	NOT_IMPLEMENTED;
+}
+
+static RzILOpEffect *mips_il_ldr(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Load Doubleword Right
 	NOT_IMPLEMENTED;
 }
 
