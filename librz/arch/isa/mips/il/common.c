@@ -660,6 +660,18 @@ static RzILOpEffect *mips_il_ld(const csh *handle, const cs_insn *insn, const ut
 	return SETG(rt, LOADW(MIPS_DWORD_SIZE, memaddr));
 }
 
+static RzILOpEffect *mips_il_ldpc(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Load Doubleword PC-relative
+	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
+
+	ut64 address = (insn->address & (~0x7ull));
+	// ensure it's sign extended.
+	address += (st64)IMM(1);
+
+	RzILOpPure *memaddr = UN(gprlen, address);
+	return SETG(REG(0), LOADW(MIPS_DWORD_SIZE, memaddr));
+}
+
 static RzILOpEffect *mips_il_lh(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
 
@@ -709,6 +721,22 @@ static RzILOpEffect *mips_il_lw(const csh *handle, const cs_insn *insn, const ut
 	return SETG(rt, res);
 }
 
+static RzILOpEffect *mips_il_lwpc(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Load Word PC-relative (signed)
+	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
+
+	ut64 address = (insn->address & (~0x7ull));
+	// ensure it's sign extended.
+	address += (st64)IMM(1);
+
+	RzILOpPure *memaddr = UN(gprlen, address);
+	RzILOpPure *res = LOADW(MIPS_WORD_SIZE, memaddr);
+	if (gprlen > 32) {
+		res = SIGNED(gprlen, res);
+	}
+	return SETG(REG(0), res);
+}
+
 static RzILOpEffect *mips_il_lwu(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
 
@@ -722,6 +750,22 @@ static RzILOpEffect *mips_il_lwu(const csh *handle, const cs_insn *insn, const u
 		res = UNSIGNED(gprlen, res);
 	}
 	return SETG(rt, res);
+}
+
+static RzILOpEffect *mips_il_lwupc(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Load Word PC-relative (unsigned)
+	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
+
+	ut64 address = (insn->address & (~0x7ull));
+	// ensure it's sign extended.
+	address += (st64)IMM(1);
+
+	RzILOpPure *memaddr = UN(gprlen, address);
+	RzILOpPure *res = LOADW(MIPS_WORD_SIZE, memaddr);
+	if (gprlen > 32) {
+		res = UNSIGNED(gprlen, res);
+	}
+	return SETG(REG(0), res);
 }
 
 static RzILOpEffect *mips_il_lwl(const csh *handle, const cs_insn *insn, const ut32 gprlen) {

@@ -1641,7 +1641,7 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_LDL:
 		return mips_il_ldl(handle, insn, gprlen);
 	case MIPS_INS_LDPC:
-		return NULL;
+		return mips_il_ldpc(handle, insn, gprlen);
 	case MIPS_INS_LDR:
 		return mips_il_ldr(handle, insn, gprlen);
 	case MIPS_INS_LDXC1:
@@ -1709,7 +1709,7 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_LWM32:
 		return NULL;
 	case MIPS_INS_LWPC:
-		return NULL;
+		return mips_il_lwpc(handle, insn, gprlen);
 	case MIPS_INS_LWP:
 		return NULL;
 	case MIPS_INS_LWR:
@@ -1717,7 +1717,7 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_LWRE:
 		return mips_il_lwr(handle, insn, gprlen); // Load Word Right EVA
 	case MIPS_INS_LWUPC:
-		return NULL;
+		return mips_il_lwupc(handle, insn, gprlen);
 	case MIPS_INS_LWU:
 		return mips_il_lwu(handle, insn, gprlen);
 	case MIPS_INS_LWX:

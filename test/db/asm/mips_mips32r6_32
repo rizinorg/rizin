@@ -25,3 +25,4 @@ dE "mul s5, t1, t7" 012fa898 0x80000000 (set s5 (cast 32 false (* (cast 64 (msb 
 dE "mulu s1, t6, t2" 01ca8899 0x80000000 (set s1 (cast 32 false (* (cast 64 false (var t6)) (cast 64 false (var t2)))))
 dE "muh t3, s1, t1" 022958d8 0x80000000 (set t3 (cast 32 false (>> (* (cast 64 (msb (var s1)) (var s1)) (cast 64 (msb (var t1)) (var t1))) (bv 8 0x20) false)))
 dE "muhu t0, t3, t7" 016f40d9 0x80000000 (set t0 (cast 32 false (>> (* (cast 64 false (var t3)) (cast 64 false (var t7))) (bv 8 0x20) false)))
+dE "lwpc s6, 0x58c" eec80163 0x80001234 (set s6 (loadw 0 32 (bv 32 0x800017bc)))
