@@ -82,10 +82,6 @@ static void free_rz_section(RzBinSection *section) {
 		RZ_FREE(section->name);
 	}
 
-	if (section->format) {
-		RZ_FREE(section->format);
-	}
-
 	RZ_FREE(section);
 }
 

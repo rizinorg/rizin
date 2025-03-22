@@ -8,6 +8,7 @@
 #include <rz_util.h>
 #include "mach0.h"
 #include <rz_hash.h>
+#include <rz_analysis.h>
 
 #include "mach0_utils.inc"
 
@@ -2054,7 +2055,9 @@ RzPVector /*<RzBinSection *>*/ *MACH0_(get_segments)(RzBinFile *bf) {
 #else
 				const int ws = 4;
 #endif
-				s->format = rz_str_newf("Cd %d[%" PFMT64d "]", ws, s->vsize / ws);
+				s->layout.type = RZ_META_TYPE_DATA;
+				s->layout.element_size = ws;
+				s->layout.count = s->vsize / ws;
 			}
 			rz_pvector_push(vec, s);
 			free(segment_name);

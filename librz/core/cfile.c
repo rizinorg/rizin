@@ -75,7 +75,6 @@ static RZ_OWN RzPVector /*<RzBinSection *>*/ *__save_old_sections(RzCore *core) 
 		}
 		*old_sec = *sec;
 		old_sec->name = rz_str_dup(sec->name);
-		old_sec->format = NULL;
 		rz_pvector_push(old_sections, old_sec);
 	}
 	return old_sections;

@@ -562,6 +562,18 @@ typedef struct rz_bin_map_t {
 	RZ_NULLABLE char *vfile_name;
 } RzBinMap;
 
+#define RZ_BIN_MAX_HANDLED_LAYOUT_SIZE (1024 * 1024 * 2)
+
+/**
+ * \brief A repetitive data layout of a section. The type will be applied to
+ * element_size * element_count.
+ */
+typedef struct rz_bin_section_format_t {
+	int /* RzAnalysisMetaType */ type; ///< The meta type of the elements.
+	ut64 element_size; ///< Size of an element in this section.
+	size_t count; ///< The number of consecutive elements in this section.
+} RzBinSectionLayout;
+
 typedef struct rz_bin_section_t {
 	char *name;
 	ut64 size;
@@ -574,7 +586,7 @@ typedef struct rz_bin_section_t {
 	const char *arch;
 	ut64 type;
 	ut64 flags;
-	char *format;
+	RzBinSectionLayout layout;
 	int bits;
 	bool has_strings;
 	bool is_data;

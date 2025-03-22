@@ -13,6 +13,7 @@
 #include <rz_cons.h>
 #include "../i/private.h"
 #include "elf/elf.h"
+#include <rz_analysis.h>
 #include <rz_util/ht_uu.h>
 
 #define rz_bin_file_get_elf(bf) ((ELFOBJ *)bf->o->bin_obj)
@@ -1768,7 +1769,9 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 			ptr->is_data = true;
 		}
 		if (is_wordable_section(ptr->name)) {
-			ptr->format = rz_str_newf("Cd %zu %" PFMT64d, sizeof(Elf_(Addr)), section->size / sizeof(Elf_(Addr)));
+			ptr->layout.type = RZ_META_TYPE_DATA;
+			ptr->layout.element_size = sizeof(Elf_(Addr));
+			ptr->layout.count = section->size / sizeof(Elf_(Addr));
 		}
 		ptr->size = section->type != SHT_NOBITS ? section->size : 0;
 		ptr->vsize = section->size;

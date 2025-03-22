@@ -1003,10 +1003,9 @@ RZ_API bool rz_core_bin_apply_sections(RzCore *core, RzBinFile *binfile, bool va
 
 		char perms[5];
 		section_perms_str(perms, section->perm);
-		if (section->format) {
-			// This is really slow if section vsize is HUGE
-			if (section->vsize < 1024 * 1024 * 2) {
-				rz_core_cmdf(core, "%s @ 0x%" PFMT64x, section->format, section->vaddr);
+		if (section->layout.type != RZ_META_TYPE_NONE) {
+			for (size_t i = 0, off = 0; i < section->layout.count && off < RZ_BIN_MAX_HANDLED_LAYOUT_SIZE; ++i, off = section->layout.element_size * i) {
+				rz_meta_set(core->analysis, section->layout.type, section->vaddr + off, section->layout.element_size, "");
 			}
 		}
 		const char *type;

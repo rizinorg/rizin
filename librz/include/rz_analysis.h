@@ -186,6 +186,7 @@ typedef struct rz_analysis_func_arg_t {
 } RzAnalysisFuncArg;
 
 typedef enum {
+	RZ_META_TYPE_NONE = 0,
 	RZ_META_TYPE_ANY = -1,
 	RZ_META_TYPE_DATA = 'd', //< marks the data as data (not a code)
 	RZ_META_TYPE_CODE = 'c', //< marks the data as code

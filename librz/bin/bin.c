@@ -1180,7 +1180,6 @@ RZ_API void rz_bin_section_free(RZ_NULLABLE RzBinSection *bs) {
 		return;
 	}
 	free(bs->name);
-	free(bs->format);
 	free(bs);
 }
 

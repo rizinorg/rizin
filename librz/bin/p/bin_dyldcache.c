@@ -220,7 +220,9 @@ static void sections_from_bin(RzPVector /*<RzBinSection *>*/ *ret, RzBinFile *bf
 		}
 		if (strstr(ptr->name, "la_symbol_ptr")) {
 			int len = sections[i].size / 8;
-			ptr->format = rz_str_newf("Cd %d %d", 8, len);
+			ptr->layout.type = RZ_META_TYPE_DATA;
+			ptr->layout.element_size = 8;
+			ptr->layout.count = len;
 		}
 		ptr->is_data = __is_data_section(ptr->name);
 		ptr->size = sections[i].size;
