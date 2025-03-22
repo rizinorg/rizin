@@ -1465,15 +1465,6 @@ EXPECT=<<EOF
 0x080000b4 0x000000b4 0x08000034 R_HEX_8           test_sym
 0x080000b8 0x000000b8 0x08000034 R_HEX_32_PCREL    test_sym - 0x080000b8
 EOF
-EXPECT_ERR=<<EOF
-WARNING: R_HEX_PLT_B22_PCREL - Preview not supported, patching is implemented
-WARNING: R_HEX_DTPREL_32_6_X - Preview not supported, patching is implemented
-WARNING: R_HEX_DTPREL_16_X - Preview not supported, patching is implemented
-WARNING: R_HEX_DTPREL_32_6_X - Preview not supported, patching is implemented
-WARNING: R_HEX_DTPREL_16_X - Preview not supported, patching is implemented
-WARNING: R_HEX_DTPREL_32_6_X - Preview not supported, patching is implemented
-WARNING: R_HEX_DTPREL_11_X - Preview not supported, patching is implemented
-EOF
 RUN
 
 NAME=hexagon tail calls
