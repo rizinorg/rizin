@@ -2289,13 +2289,13 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_SEH:
 		return mips_il_seh(handle, insn, gprlen);
 	case MIPS_INS_SELEQZ:
-		return NULL;
+		return mips_il_seleqz(handle, insn, gprlen);
 	case MIPS_INS_SELEQZ_D:
 		return mips_il_seleqz_fmt(handle, insn, gprlen);
 	case MIPS_INS_SELEQZ_S:
 		return mips_il_seleqz_fmt(handle, insn, gprlen);
 	case MIPS_INS_SELNEZ:
-		return NULL;
+		return mips_il_selnez(handle, insn, gprlen);
 	case MIPS_INS_SELNEZ_D:
 		return mips_il_selneqz_fmt(handle, insn, gprlen);
 	case MIPS_INS_SELNEZ_S:

@@ -1449,6 +1449,28 @@ static RzILOpEffect *mips_il_seh(const csh *handle, const cs_insn *insn, const u
 	return SETG(REG(0), SIGNED(gprlen, UNSIGNED(MIPS_HALF_SIZE, rt)));
 }
 
+static RzILOpEffect *mips_il_seleqz(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Select GPR value or zero (equal zero)
+	// rd = rt == 0 ? rs : 0
+	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
+
+	RzILOpPure *rs = MIPS_REG(1);
+	RzILOpPure *rt = MIPS_REG(2);
+
+	return BRANCH(IS_ZERO(rt), SETG(REG(0), rs), SETG(REG(0), MIPS_ZERO()));
+}
+
+static RzILOpEffect *mips_il_selnez(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Select GPR value or zero (not equal zero)
+	// rd = rt != 0 ? rs : 0
+	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
+
+	RzILOpPure *rs = MIPS_REG(1);
+	RzILOpPure *rt = MIPS_REG(2);
+
+	return BRANCH(IS_ZERO(rt), SETG(REG(0), MIPS_ZERO()), SETG(REG(0), rs));
+}
+
 static RzILOpEffect *mips_il_sh(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	RzILOpPure *trunc = NULL;
 	if (IS_ZERO_REG(0)) {
