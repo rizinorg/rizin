@@ -8,6 +8,10 @@ EXPECT=<<EOF
      vaddr      paddr     hvaddr      haddr type    
 ----------------------------------------------------
 0x00008440 0x00000440 0x00008018 0x00000018 program
+0xfffffffe ---------- 0x00009b28 0x00000b28 preinit
+0xfffffffe ---------- 0x00009b30 0x00000b30 init
+0xfffffffe ---------- 0x00009b38 0x00000b38 init
+0xfffffffe ---------- 0x00009b40 0x00000b40 fini
 arch     arm
 bits     32
 machine  ARM
@@ -24,6 +28,8 @@ EXPECT=<<EOF
      vaddr      paddr     hvaddr      haddr type    
 ----------------------------------------------------
 0x00008438 0x00000438 0x00008018 0x00000018 program
+0x00008538 0x00000538 0x00010f0c 0x00000f0c init
+0x00008510 0x00000510 0x00010f10 0x00000f10 fini
 arch     arm
 bits     32
 machine  ARM
@@ -104,6 +110,8 @@ EXPECT=<<EOF
      vaddr      paddr     hvaddr      haddr type    
 ----------------------------------------------------
 0x00400600 0x00000600 0x00400018 0x00000018 program
+0x004006c0 0x000006c0 0x00600e10 0x00000e10 init
+0x004006a0 0x000006a0 0x00600e18 0x00000e18 fini
 arch     x86
 bits     64
 machine  AMD x86-64 architecture
@@ -136,6 +144,8 @@ EXPECT=<<EOF
      vaddr      paddr     hvaddr      haddr type    
 ----------------------------------------------------
 0x08048440 0x00000440 0x08048018 0x00000018 program
+0x08048510 0x00000510 0x08049f08 0x00000f08 init
+0x080484f0 0x000004f0 0x08049f0c 0x00000f0c fini
 arch     x86
 bits     32
 machine  Intel 80386
@@ -152,6 +162,8 @@ EXPECT=<<EOF
      vaddr      paddr     hvaddr      haddr type    
 ----------------------------------------------------
 0x004014e0 0x000008e0 ---------- 0x000000a8 program
+0x004017f0 0x00000bf0 ---------- 0x00002c20 tls
+0x004017a0 0x00000ba0 ---------- 0x00002c24 tls
 arch     x86
 bits     32
 machine  i386

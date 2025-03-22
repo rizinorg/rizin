@@ -1888,9 +1888,7 @@ static bool entries_initfini_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput
 		ut64 paddr = entry->paddr;
 		ut64 hpaddr = UT64_MAX;
 		ut64 hvaddr = UT64_MAX;
-		if (!initfini && entry->type != RZ_BIN_ENTRY_TYPE_PROGRAM) {
-			continue;
-		} else if (initfini && entry->type == RZ_BIN_ENTRY_TYPE_PROGRAM) {
+		if (initfini && entry->type == RZ_BIN_ENTRY_TYPE_PROGRAM) {
 			continue;
 		}
 		if (entry->hpaddr) {

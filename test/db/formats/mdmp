@@ -236,7 +236,7 @@ ie:quiet~?
 iee:quiet~?
 EOF
 EXPECT=<<EOF
-9
+11
 2
 EOF
 RUN

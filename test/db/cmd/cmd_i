@@ -885,6 +885,9 @@ strncmp
 pthread_mutex_lock
 pthread_mutex_unlock
 0x00005fa8
+0x00005fb8
+0x00006014
+0x00005fa8
 0x00007c70 10 __aeabi_unwind_cpp_pr0
 0x00006108 48 getPackageName(_JNIEnv*, _jobject*)
 0x00006138 164 JstringToString(_JNIEnv*, _jstring*)
@@ -1759,6 +1762,8 @@ EXPECT=<<EOF
      vaddr      paddr     hvaddr      haddr type    
 ----------------------------------------------------
 0x08048300 0x00000300 0x08048018 0x00000018 program
+0x080483d0 0x000003d0 0x0804959c 0x0000059c init
+0x080483b0 0x000003b0 0x080495a0 0x000005a0 fini
 EOF
 RUN
 
@@ -1766,7 +1771,7 @@ NAME=iej (file x86)
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=iej
 EXPECT=<<EOF
-[{"vaddr":134513408,"paddr":768,"baddr":134512640,"laddr":0,"hvaddr":134512664,"haddr":24,"type":"program"}]
+[{"vaddr":134513408,"paddr":768,"baddr":134512640,"laddr":0,"hvaddr":134512664,"haddr":24,"type":"program"},{"vaddr":134513616,"paddr":976,"baddr":134512640,"laddr":0,"hvaddr":134518172,"haddr":1436,"type":"init"},{"vaddr":134513584,"paddr":944,"baddr":134512640,"laddr":0,"hvaddr":134518176,"haddr":1440,"type":"fini"}]
 EOF
 RUN
 
@@ -3358,6 +3363,8 @@ EXPECT=<<EOF
      vaddr      paddr     hvaddr      haddr type    
 ----------------------------------------------------
 0x00400410 0x00000410 0x00400018 0x00000018 program
+0x004004d0 0x000004d0 0x006006e0 0x000006e0 init
+0x004004b0 0x000004b0 0x006006e8 0x000006e8 fini
 EOF
 RUN
 
@@ -4281,6 +4288,24 @@ EXPECT=<<EOF
     "hvaddr": 134512664,
     "haddr": 24,
     "type": "program"
+  },
+  {
+    "vaddr": 134513616,
+    "paddr": 976,
+    "baddr": 134512640,
+    "laddr": 0,
+    "hvaddr": 134518172,
+    "haddr": 1436,
+    "type": "init"
+  },
+  {
+    "vaddr": 134513584,
+    "paddr": 944,
+    "baddr": 134512640,
+    "laddr": 0,
+    "hvaddr": 134518176,
+    "haddr": 1440,
+    "type": "fini"
   }
 ]
 [
@@ -4824,6 +4849,9 @@ EXPECT=<<EOF
      vaddr      paddr     hvaddr      haddr type    
 ----------------------------------------------------
 0x00000f50 0x00000f50 0x00000018 0x00000018 program
+0xfffffffe ---------- 0x000039d4 0x000029d4 init
+0xfffffffe ---------- 0x000039dc 0x000029dc fini
+0x00000f50 0x00000f50 0x000039e0 0x000029e0 fini
 EOF
 EXPECT_ERR=
 RUN

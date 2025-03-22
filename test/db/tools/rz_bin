@@ -3,7 +3,11 @@ FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=!rz-bin -qe ${RZ_FILE};!rz-bin -B 0x400000 -qe ${RZ_FILE}
 EXPECT=<<EOF
 0x00400410
+0x004004d0
+0x004004b0
 0x00400410
+0x004004d0
+0x004004b0
 EOF
 RUN
 
@@ -12,7 +16,11 @@ FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=!rz-bin -qe ${RZ_FILE};!rz-bin -B 0x800000 -qe ${RZ_FILE}
 EXPECT=<<EOF
 0x00400410
+0x004004d0
+0x004004b0
 0x00800410
+0x008004d0
+0x008004b0
 EOF
 RUN
 
@@ -21,7 +29,11 @@ FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=!rz-bin -qe ${RZ_FILE};!rz-bin -B 0 -qe ${RZ_FILE}
 EXPECT=<<EOF
 0x00400410
+0x004004d0
+0x004004b0
 0x00000410
+0x000004d0
+0x000004b0
 EOF
 RUN
 
@@ -33,6 +45,8 @@ EXPECT=<<EOF
      vaddr      paddr     hvaddr      haddr type    
 ----------------------------------------------------
 0x00400410 0x00000410 0x00400018 0x00000018 program
+0x004004d0 0x000004d0 0x006006e0 0x000006e0 init
+0x004004b0 0x000004b0 0x006006e8 0x000006e8 fini
 
 EOF
 RUN
@@ -45,6 +59,8 @@ EXPECT=<<EOF
      vaddr      paddr     hvaddr      haddr type    
 ----------------------------------------------------
 0x00000410 0x00000410 0x00000018 0x00000018 program
+0x000004d0 0x000004d0 0x002006e0 0x000006e0 init
+0x000004b0 0x000004b0 0x002006e8 0x000006e8 fini
 
 EOF
 RUN
@@ -446,6 +462,8 @@ nth      vaddr bind   type   lib name
      vaddr      paddr     hvaddr      haddr type    
 ----------------------------------------------------
 0x08048300 0x00000300 0x08048018 0x00000018 program
+0x080483d0 0x000003d0 0x0804959c 0x0000059c init
+0x080483b0 0x000003b0 0x080495a0 0x000005a0 fini
 
 [Classes]
 address min max name super 

@@ -12,6 +12,7 @@ EXPECT=<<EOF
      vaddr      paddr     hvaddr      haddr type    
 ----------------------------------------------------
 0x7efd0000 0x00000000 ---------- 0x0000506c program
+0x7efd0148 0x00000148 ---------- 0x000001cc tls
 EOF
 RUN
 
