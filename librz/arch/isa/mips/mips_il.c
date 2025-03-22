@@ -1677,7 +1677,7 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_LL:
 		return mips_il_ll(handle, insn, gprlen);
 	case MIPS_INS_LLD:
-		return NULL;
+		return mips_il_lld(handle, insn, gprlen);
 	case MIPS_INS_LLE:
 		return mips_il_ll(handle, insn, gprlen); // Load Linked Word EVA
 	case MIPS_INS_LLWP:
@@ -2263,7 +2263,7 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_SC:
 		return mips_il_sc(handle, insn, gprlen);
 	case MIPS_INS_SCD:
-		return NULL;
+		return mips_il_scd(handle, insn, gprlen);
 	case MIPS_INS_SCE:
 		return mips_il_sc(handle, insn, gprlen); // Store Conditional Word EVA
 	case MIPS_INS_SCWP:
