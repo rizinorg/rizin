@@ -1153,15 +1153,15 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_DROTRV:
 		return mips_il_rotrv(handle, insn, gprlen);
 	case MIPS_INS_DSBH:
-		return NULL;
+		return mips_il_dsbh(handle, insn, gprlen);
 	case MIPS_INS_DSHD:
-		return NULL;
+		return mips_il_dshd(handle, insn, gprlen);
 	case MIPS_INS_DSLL:
-		return NULL;
+		return mips_il_sll(handle, insn, gprlen);
 	case MIPS_INS_DSLL32:
 		return NULL;
 	case MIPS_INS_DSLLV:
-		return NULL;
+		return mips_il_sllv(handle, insn, gprlen);
 	case MIPS_INS_DSRA:
 		return NULL;
 	case MIPS_INS_DSRA32:

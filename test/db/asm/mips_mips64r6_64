@@ -45,3 +45,6 @@ dE "drotr s7, s0, 7" 0030b9fa 0x80000000 (set s7 (| (<< (var s0) (bv 8 0x39) fal
 dE "drotr t5, s4, 0" 0034683a 0x80000000 (set t5 (var s4))
 dE "drotrv t6, s3, t5" 01b37056 0x80000000 (set t6 (| (<< (var s3) (- (bv 64 0x40) (var t5)) false) (>> (var s3) (var t5) false)))
 dE "drotr32 t4, s4, 0x1b" 003466fe 0x80000000 (set t4 (| (<< (var s4) (bv 8 0x5) false) (>> (var s4) (bv 8 0x3b) false)))
+dE "dsll t5, t5, 0" 000d6838 0x80000000 (set t5 (var t5))
+dE "dsll t0, s4, 0x1e" 001447b8 0x80000000 (set t0 (<< (var s4) (bv 64 0x1e) false))
+dE "dsllv t1, t4, s4" 028c4814 0x80000000 (set t1 (<< (var t4) (var s4) false))

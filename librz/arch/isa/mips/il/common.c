@@ -1399,6 +1399,10 @@ static RzILOpEffect *mips_il_sll(const csh *handle, const cs_insn *insn, const u
 		return NOP();
 	}
 
+	if (!IMM(2)) {
+		return mips_il_move(handle, insn, gprlen);
+	}
+
 	const char *rd = REG(0);
 	RzILOpPure *rt = MIPS_REG(1);
 	RzILOpPure *sa = MIPS_IMM(2);
