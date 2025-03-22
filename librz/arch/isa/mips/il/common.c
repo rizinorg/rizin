@@ -1569,6 +1569,16 @@ static RzILOpEffect *mips_il_wsbh(const csh *handle, const cs_insn *insn, const 
 	NOT_IMPLEMENTED;
 }
 
+static RzILOpEffect *mips_il_dsbh(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Doubleword Swap Bytes Within Halfwords
+	NOT_IMPLEMENTED;
+}
+
+static RzILOpEffect *mips_il_dshd(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Doubleword Swap Halfwords Within Doublewords
+	NOT_IMPLEMENTED;
+}
+
 static RzILOpEffect *mips_il_xor(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
 
