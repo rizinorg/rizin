@@ -1082,7 +1082,7 @@ static void get_help_wrong_cmd(RzCore *core, const char *cmdname) {
 		goto cmdname_err;
 	}
 	bool use_color = core->print->flags & RZ_PRINT_FLAGS_COLOR;
-	char *help_msg = rz_cmd_get_help(core->rcmd, help_pra, use_color);
+	char *help_msg = rz_cmd_get_help(core->rcmd, core->config, help_pra, use_color);
 	if (!help_msg) {
 		goto help_pra_err;
 	}
@@ -1463,7 +1463,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(help_stmt) {
 	// let's try first with the new auto-generated help, if
 	// something fails fallback to old behaviour
 	bool use_color = state->core->print->flags & RZ_PRINT_FLAGS_COLOR;
-	char *help_msg = rz_cmd_get_help(state->core->rcmd, pr_args, use_color);
+	char *help_msg = rz_cmd_get_help(state->core->rcmd, state->core->config, pr_args, use_color);
 	if (help_msg) {
 		rz_cons_printf("%s", help_msg);
 		free(help_msg);
