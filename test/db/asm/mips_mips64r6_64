@@ -52,3 +52,4 @@ dE "dsll32 t0, s6, 7" 001641fc 0x80000000 (set t0 (<< (var s6) (bv 64 0x27) fals
 dE "dsra t5, t1, 9" 00096a7b 0x80000000 (set t5 (>> (var t1) (bv 64 0x9) (msb (var t1))))
 dE "dsra t6, t4, 0" 000c703b 0x80000000 (set t6 (var t4))
 dE "dsrav t2, s1, t6" 01d15017 0x80000000 (set t2 (>> (var s1) (var t6) (msb (var s1))))
+dE "dsra32 t0, t3, 2" 000b40bf 0x80000000 (set t0 (>> (var t3) (bv 64 0x22) (msb (var t3))))

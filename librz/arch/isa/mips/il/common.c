@@ -1494,6 +1494,19 @@ static RzILOpEffect *mips_il_sra(const csh *handle, const cs_insn *insn, const u
 	return SETG(rd, SHIFTRA(rt, sa));
 }
 
+static RzILOpEffect *mips_il_dsra32(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Doubleword Shift Right Arithmetic Plus 32
+	if (OPCOUNT() < 3 || IS_ZERO_REG(0)) {
+		return NOP();
+	}
+
+	const char *rd = REG(0);
+	RzILOpPure *rt = MIPS_REG(1);
+	RzILOpPure *sa = UN(gprlen, IMM(2) + 32);
+
+	return SETG(rd, SHIFTRA(rt, sa));
+}
+
 static RzILOpEffect *mips_il_srav(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	MIPS_CHECK_IF_TARGET_IS_ZERO_REG_AND_NOP();
 
