@@ -447,7 +447,7 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_BCLR_W:
 		return NULL;
 	case MIPS_INS_BEQC:
-		return NULL;
+		return mips_il_beq(handle, insn, gprlen);
 	case MIPS_INS_BEQIC:
 		return NULL;
 	case MIPS_INS_BEQZ16:
@@ -455,17 +455,17 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_BEQZALC:
 		return mips_il_beqzalc(handle, insn, gprlen);
 	case MIPS_INS_BEQZC:
-		return NULL;
+		return mips_il_beqz(handle, insn, gprlen);
 	case MIPS_INS_BEQZC16:
 		return NULL;
 	case MIPS_INS_BGEC:
-		return NULL;
+		return mips_il_bgec(handle, insn, gprlen);
 	case MIPS_INS_BGEIC:
 		return NULL;
 	case MIPS_INS_BGEIUC:
 		return NULL;
 	case MIPS_INS_BGEUC:
-		return NULL;
+		return mips_il_bgec(handle, insn, gprlen); // unsigned
 	case MIPS_INS_BGEZ:
 		return mips_il_bgez(handle, insn, gprlen);
 	case MIPS_INS_BGEZAL:
@@ -477,17 +477,17 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_BGEZALS:
 		return NULL;
 	case MIPS_INS_BGEZC:
-		return NULL;
+		return mips_il_bgez(handle, insn, gprlen); // bgez compact
 	case MIPS_INS_BGEZL:
-		return mips_il_bgez(handle, insn, gprlen); /// bgez Likely
+		return mips_il_bgez(handle, insn, gprlen); // bgez Likely
 	case MIPS_INS_BGTZ:
 		return mips_il_bgtz(handle, insn, gprlen);
 	case MIPS_INS_BGTZALC:
 		return mips_il_bgtzalc(handle, insn, gprlen);
 	case MIPS_INS_BGTZC:
-		return NULL;
+		return mips_il_bgtz(handle, insn, gprlen); // compact
 	case MIPS_INS_BGTZL:
-		return mips_il_bgtz(handle, insn, gprlen); /// bgtz Likely
+		return mips_il_bgtz(handle, insn, gprlen); // bgtz Likely
 	case MIPS_INS_BINSLI_B:
 		return NULL;
 	case MIPS_INS_BINSLI_D:
@@ -531,17 +531,17 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_BLEZALC:
 		return mips_il_blezalc(handle, insn, gprlen);
 	case MIPS_INS_BLEZC:
-		return NULL;
+		return mips_il_blez(handle, insn, gprlen); // compact
 	case MIPS_INS_BLEZL:
 		return mips_il_blez(handle, insn, gprlen); // blez Likely
 	case MIPS_INS_BLTC:
-		return NULL;
+		return mips_il_bltc(handle, insn, gprlen);
 	case MIPS_INS_BLTIC:
 		return NULL;
 	case MIPS_INS_BLTIUC:
 		return NULL;
 	case MIPS_INS_BLTUC:
-		return NULL;
+		return mips_il_bltc(handle, insn, gprlen); // unsigned
 	case MIPS_INS_BLTZ:
 		return mips_il_bltz(handle, insn, gprlen);
 	case MIPS_INS_BLTZAL:
@@ -553,7 +553,7 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_BLTZALS:
 		return NULL;
 	case MIPS_INS_BLTZC:
-		return NULL;
+		return mips_il_bltz(handle, insn, gprlen); // compact
 	case MIPS_INS_BLTZL:
 		return mips_il_bltz(handle, insn, gprlen); // blez Likely
 	case MIPS_INS_BMNZI_B:
@@ -565,7 +565,7 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_BMZ_V:
 		return NULL;
 	case MIPS_INS_BNEC:
-		return NULL;
+		return mips_il_bne(handle, insn, gprlen);
 	case MIPS_INS_BNEGI_B:
 		return NULL;
 	case MIPS_INS_BNEGI_D:
@@ -589,7 +589,7 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_BNEZALC:
 		return mips_il_bnezalc(handle, insn, gprlen);
 	case MIPS_INS_BNEZC:
-		return NULL;
+		return mips_il_bnez(handle, insn, gprlen);
 	case MIPS_INS_BNEZC16:
 		return NULL;
 	case MIPS_INS_BNVC:

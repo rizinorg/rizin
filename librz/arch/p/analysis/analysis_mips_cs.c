@@ -548,8 +548,8 @@ static int mips_analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, co
 		break;
 	case MIPS_INS_JIC:
 		op->delay = 0;
+		op->type = RZ_ANALYSIS_OP_TYPE_RJMP;
 		op->jump = IMM(0);
-		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 		break;
 	case MIPS_INS_J:
 		op->delay = 1;

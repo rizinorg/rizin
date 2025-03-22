@@ -337,6 +337,18 @@ static RzILOpEffect *mips_il_beq(const csh *handle, const cs_insn *insn, const u
 	return BRANCH(EQ(rs, rt), JMP(target), NOP());
 }
 
+static RzILOpEffect *mips_il_bgec(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	if (OPCOUNT() == 1) {
+		return mips_il_b(handle, insn, gprlen);
+	}
+
+	RzILOpPure *target = MIPS_IMM(2);
+	RzILOpPure *rs = MIPS_REG(0);
+	RzILOpPure *rt = MIPS_REG(1);
+
+	return BRANCH(SGE(rs, rt), JMP(target), NOP());
+}
+
 static RzILOpEffect *mips_il_bgez(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	if (OPCOUNT() == 1) {
 		return mips_il_b(handle, insn, gprlen);
@@ -406,6 +418,19 @@ static RzILOpEffect *mips_il_blez(const csh *handle, const cs_insn *insn, const 
 	RzILOpPure *zero = MIPS_ZERO();
 
 	return BRANCH(SLE(rs, zero), JMP(target), NOP());
+}
+
+static RzILOpEffect *mips_il_bltc(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	if (IS_ZERO_REG(0)) {
+		// never taken
+		return NOP();
+	}
+
+	RzILOpPure *rs = MIPS_REG(0);
+	RzILOpPure *rt = MIPS_REG(1);
+	RzILOpPure *target = MIPS_IMM(2);
+
+	return BRANCH(SLT(rs, rt), JMP(target), NOP());
 }
 
 static RzILOpEffect *mips_il_bltz(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
@@ -616,6 +641,9 @@ static RzILOpEffect *mips_il_jialc(const csh *handle, const cs_insn *insn, const
 static RzILOpEffect *mips_il_jic(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	// Jump Indexed, Compact
 	RzILOpPure *jump_target = MIPS_REG(0);
+	if (IMM(1) == 0) {
+		return JMP(jump_target);
+	}
 	RzILOpPure *jump_offset = MIPS_IMM(1);
 	return JMP(ADD(jump_target, jump_offset));
 }
