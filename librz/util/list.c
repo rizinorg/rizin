@@ -815,11 +815,9 @@ RZ_API void rz_list_sorted_uniq(RZ_NONNULL RzList *list, RZ_NONNULL RzListCompar
 	RzListIter *iter, *tmp_iter;
 	void *cur, *prev = NULL;
 	rz_list_foreach_safe (list, iter, tmp_iter, cur) {
-		if (prev) {
-			if (cmp(prev, cur, user) == 0) {
-				rz_list_delete(list, iter);
-				continue;
-			}
+		if (prev && cmp(prev, cur, user) == 0) {
+			rz_list_delete(list, iter);
+			continue;
 		}
 		prev = cur;
 	}
