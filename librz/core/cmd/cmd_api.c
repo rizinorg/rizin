@@ -33,7 +33,7 @@
 
 // Based on Config and Line order choses the vertical line shape
 static inline const char *get_vertical_line(int idx, int len, bool scr_curvy, bool scr_utf8) {
-	return (((idx == 0) && (scr_curvy == true)) ? "\xE2\x95\xAD" : (((idx == len - 1) && (scr_curvy == true)) ? "\xE2\x95\xB0" : ((scr_utf8 == true) ? "\xE2\x94\x82" : "|")));
+	return (((idx == 0) && (scr_curvy == true)) ? RUNE_CURVE_CORNER_TL : (((idx == len - 1) && (scr_curvy == true)) ? RUNE_CURVE_CORNER_BL : ((scr_utf8 == true) ? RUNE_LINE_VERT : "|")));
 }
 
 // NOTE: this should be in sync with SPECIAL_CHARACTERS in
@@ -1185,7 +1185,7 @@ static void fill_argv_modes_help_strbuf(RzCmd *cmd, RzStrBuf *sb, RzCmdDesc *cd,
 		if (cd->d.argv_modes_data.modes & argv_modes[i].mode) {
 			char *name = rz_str_newf("%s%s", cd->name, argv_modes[i].suffix);
 			char *summary = rz_str_newf("%s%s", cd->help->summary, argv_modes[i].summary_suffix);
-			do_print_child_help(cmd, sb, cd, name, summary, scr_utf8 ? "\xE2\x94\x82" : "|", false, max_len, use_color);
+			do_print_child_help(cmd, sb, cd, name, summary, scr_utf8 ? RUNE_LINE_VERT : "|", false, max_len, use_color);
 			free(name);
 			free(summary);
 		}
@@ -1493,7 +1493,7 @@ RZ_API bool rz_cmd_get_help_json(RzCmd *cmd, const RzCmdDesc *cd, PJ *j) {
 RZ_API bool rz_cmd_get_help_strbuf(RzCmd *cmd, const RzCmdDesc *cd, bool use_color, RzStrBuf *sb) {
 	rz_return_val_if_fail(cmd && cd && sb, false);
 	bool scr_utf8 = rz_config_get_b(cmd->core->config, "scr.utf8");
-	do_print_child_help(cmd, sb, cd, cd->name, cd->help->summary, scr_utf8 ? "\xE2\x94\x82" : "|", false, MAX_RIGHT_ALIGHNMENT, use_color);
+	do_print_child_help(cmd, sb, cd, cd->name, cd->help->summary, scr_utf8 ? RUNE_LINE_VERT : "|", false, MAX_RIGHT_ALIGHNMENT, use_color);
 	return true;
 }
 
