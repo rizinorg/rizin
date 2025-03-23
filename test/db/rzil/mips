@@ -402,3 +402,30 @@ Hello from RzIL!
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=emulateme nostdlib mips32r6
+FILE=bins/elf/emulateme.nostd.mips32r6
+TIMEOUT=30
+CMDS=<<EOF
+e str.encoding=utf8
+s sym.decrypt
+af # required for pdr
+o malloc://0x1000 0x40000
+o malloc://0x10 0x50000
+oC 0x10 @ obj.seckrit
+omb. obj.seckrit @ 0x0
+e cfg.bigendian=true # o commands are bugged, changes the endianness.
+e asm.cpu=mips32r6 # o commands are bugged, changes the arch and cpu
+aezi
+w AnyColourYouLike @ 0x50000
+ar gp=loc._gp
+ar sp=0x40ff0
+ar a0=0x50000
+aezsu `pdr~jrc[1]`
+ps @ obj.seckrit
+EOF
+EXPECT=<<EOF
+Hello from RzIL!
+EOF
+EXPECT_ERR=
+RUN
