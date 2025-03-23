@@ -23,7 +23,7 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_ABS:
 		return NULL;
 	case MIPS_INS_ALIGN:
-		return NULL;
+		return mips_il_align(handle, insn, gprlen);
 	case MIPS_INS_BEQL:
 		return mips_il_beq(handle, insn, gprlen); // beq Likely
 	case MIPS_INS_BGE:
@@ -71,7 +71,7 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_CTTC1:
 		return NULL;
 	case MIPS_INS_DMUL:
-		return NULL;
+		return mips_il_dmul(handle, insn, gprlen);
 	case MIPS_INS_DMULO:
 		return NULL;
 	case MIPS_INS_DMULOU:
@@ -81,11 +81,11 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_DROR:
 		return NULL;
 	case MIPS_INS_DDIV:
-		return NULL;
+		return mips_il_div(handle, insn, gprlen); // removed from r6
 	case MIPS_INS_DREM:
 		return NULL;
 	case MIPS_INS_DDIVU:
-		return NULL;
+		return mips_il_divu(handle, insn, gprlen); // removed from r6
 	case MIPS_INS_DREMU:
 		return NULL;
 	case MIPS_INS_JAL:
@@ -217,7 +217,7 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_ADD:
 		return mips_il_add(handle, insn, gprlen);
 	case MIPS_INS_ADDIUPC:
-		return NULL;
+		return mips_il_addiupc(handle, insn, gprlen);
 	case MIPS_INS_ADDIUR1SP:
 		return NULL;
 	case MIPS_INS_ADDIUR2:
@@ -313,7 +313,7 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_ADDI:
 		return mips_il_addi(handle, insn, gprlen);
 	case MIPS_INS_ALUIPC:
-		return NULL;
+		return mips_il_aluipc(handle, insn, gprlen);
 	case MIPS_INS_AND:
 		return mips_il_and(handle, insn, gprlen);
 	case MIPS_INS_AND16:
@@ -343,9 +343,9 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_ASUB_U_W:
 		return NULL;
 	case MIPS_INS_AUI:
-		return NULL;
+		return mips_il_aui(handle, insn, gprlen);
 	case MIPS_INS_AUIPC:
-		return NULL;
+		return mips_il_auipc(handle, insn, gprlen);
 	case MIPS_INS_AVER_S_B:
 		return NULL;
 	case MIPS_INS_AVER_S_D:
@@ -383,9 +383,9 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_BADDU:
 		return NULL;
 	case MIPS_INS_BAL:
-		return mips_il_bal(handle, insn, gprlen);
+		/* fall-thru */
 	case MIPS_INS_BALC:
-		return NULL;
+		return mips_il_bal(handle, insn, gprlen);
 	case MIPS_INS_BALIGN:
 		return NULL;
 	case MIPS_INS_BALRSC:
@@ -403,7 +403,7 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_BBNEZC:
 		return NULL;
 	case MIPS_INS_BC:
-		return NULL;
+		return mips_il_b(handle, insn, gprlen);
 	case MIPS_INS_BC16:
 		return NULL;
 	case MIPS_INS_BC1EQZ:
@@ -447,47 +447,47 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_BCLR_W:
 		return NULL;
 	case MIPS_INS_BEQC:
-		return NULL;
+		return mips_il_beq(handle, insn, gprlen);
 	case MIPS_INS_BEQIC:
 		return NULL;
 	case MIPS_INS_BEQZ16:
 		return NULL;
 	case MIPS_INS_BEQZALC:
-		return NULL;
+		return mips_il_beqzalc(handle, insn, gprlen);
 	case MIPS_INS_BEQZC:
-		return NULL;
+		return mips_il_beqz(handle, insn, gprlen);
 	case MIPS_INS_BEQZC16:
 		return NULL;
 	case MIPS_INS_BGEC:
-		return NULL;
+		return mips_il_bgec(handle, insn, gprlen);
 	case MIPS_INS_BGEIC:
 		return NULL;
 	case MIPS_INS_BGEIUC:
 		return NULL;
 	case MIPS_INS_BGEUC:
-		return NULL;
+		return mips_il_bgec(handle, insn, gprlen); // unsigned
 	case MIPS_INS_BGEZ:
 		return mips_il_bgez(handle, insn, gprlen);
 	case MIPS_INS_BGEZAL:
 		return mips_il_bgezal(handle, insn, gprlen);
 	case MIPS_INS_BGEZALC:
-		return NULL;
+		return mips_il_bgezal(handle, insn, gprlen); // bgezal Compact
 	case MIPS_INS_BGEZALL:
 		return mips_il_bgezal(handle, insn, gprlen); // bgezal Likely
 	case MIPS_INS_BGEZALS:
 		return NULL;
 	case MIPS_INS_BGEZC:
-		return NULL;
+		return mips_il_bgez(handle, insn, gprlen); // bgez compact
 	case MIPS_INS_BGEZL:
-		return mips_il_bgez(handle, insn, gprlen); /// bgez Likely
+		return mips_il_bgez(handle, insn, gprlen); // bgez Likely
 	case MIPS_INS_BGTZ:
 		return mips_il_bgtz(handle, insn, gprlen);
 	case MIPS_INS_BGTZALC:
-		return NULL;
+		return mips_il_bgtzalc(handle, insn, gprlen);
 	case MIPS_INS_BGTZC:
-		return NULL;
+		return mips_il_bgtz(handle, insn, gprlen); // compact
 	case MIPS_INS_BGTZL:
-		return mips_il_bgtz(handle, insn, gprlen); /// bgtz Likely
+		return mips_il_bgtz(handle, insn, gprlen); // bgtz Likely
 	case MIPS_INS_BINSLI_B:
 		return NULL;
 	case MIPS_INS_BINSLI_D:
@@ -525,35 +525,35 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_BITREVW:
 		return NULL;
 	case MIPS_INS_BITSWAP:
-		return NULL;
+		return mips_il_bitswap(handle, insn, gprlen);
 	case MIPS_INS_BLEZ:
 		return mips_il_blez(handle, insn, gprlen);
 	case MIPS_INS_BLEZALC:
-		return NULL;
+		return mips_il_blezalc(handle, insn, gprlen);
 	case MIPS_INS_BLEZC:
-		return NULL;
+		return mips_il_blez(handle, insn, gprlen); // compact
 	case MIPS_INS_BLEZL:
 		return mips_il_blez(handle, insn, gprlen); // blez Likely
 	case MIPS_INS_BLTC:
-		return NULL;
+		return mips_il_bltc(handle, insn, gprlen);
 	case MIPS_INS_BLTIC:
 		return NULL;
 	case MIPS_INS_BLTIUC:
 		return NULL;
 	case MIPS_INS_BLTUC:
-		return NULL;
+		return mips_il_bltc(handle, insn, gprlen); // unsigned
 	case MIPS_INS_BLTZ:
 		return mips_il_bltz(handle, insn, gprlen);
 	case MIPS_INS_BLTZAL:
 		return mips_il_bltzal(handle, insn, gprlen);
 	case MIPS_INS_BLTZALC:
-		return NULL;
+		return mips_il_bltzal(handle, insn, gprlen); // bltzal Compact
 	case MIPS_INS_BLTZALL:
 		return mips_il_bltzal(handle, insn, gprlen); // bltzal Likely
 	case MIPS_INS_BLTZALS:
 		return NULL;
 	case MIPS_INS_BLTZC:
-		return NULL;
+		return mips_il_bltz(handle, insn, gprlen); // compact
 	case MIPS_INS_BLTZL:
 		return mips_il_bltz(handle, insn, gprlen); // blez Likely
 	case MIPS_INS_BMNZI_B:
@@ -565,7 +565,7 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_BMZ_V:
 		return NULL;
 	case MIPS_INS_BNEC:
-		return NULL;
+		return mips_il_bne(handle, insn, gprlen);
 	case MIPS_INS_BNEGI_B:
 		return NULL;
 	case MIPS_INS_BNEGI_D:
@@ -587,9 +587,9 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_BNEZ16:
 		return NULL;
 	case MIPS_INS_BNEZALC:
-		return NULL;
+		return mips_il_bnezalc(handle, insn, gprlen);
 	case MIPS_INS_BNEZC:
-		return NULL;
+		return mips_il_bnez(handle, insn, gprlen);
 	case MIPS_INS_BNEZC16:
 		return NULL;
 	case MIPS_INS_BNVC:
@@ -605,7 +605,7 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_BNZ_W:
 		return NULL;
 	case MIPS_INS_BOVC:
-		return NULL;
+		return mips_il_bovc(handle, insn, gprlen);
 	case MIPS_INS_BPOSGE32:
 		return NULL;
 	case MIPS_INS_BPOSGE32C:
@@ -695,9 +695,9 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_CINS32:
 		return NULL;
 	case MIPS_INS_CLASS_D:
-		return NULL;
+		return mips_il_class_fmt(handle, insn, gprlen);
 	case MIPS_INS_CLASS_S:
-		return NULL;
+		return mips_il_class_fmt(handle, insn, gprlen);
 	case MIPS_INS_CLEI_S_B:
 		return NULL;
 	case MIPS_INS_CLEI_S_D:
@@ -785,75 +785,75 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_CMPU_LT_QB:
 		return NULL;
 	case MIPS_INS_CMP_AF_D:
-		return NULL;
+		return mips_il_cmp_condn_fmt(handle, insn, gprlen);
 	case MIPS_INS_CMP_AF_S:
-		return NULL;
+		return mips_il_cmp_condn_fmt(handle, insn, gprlen);
 	case MIPS_INS_CMP_EQ_D:
-		return NULL;
+		return mips_il_cmp_condn_fmt(handle, insn, gprlen);
 	case MIPS_INS_CMP_EQ_PH:
-		return NULL;
+		return mips_il_cmp_condn_fmt(handle, insn, gprlen);
 	case MIPS_INS_CMP_EQ_S:
-		return NULL;
+		return mips_il_cmp_condn_fmt(handle, insn, gprlen);
 	case MIPS_INS_CMP_LE_D:
-		return NULL;
+		return mips_il_cmp_condn_fmt(handle, insn, gprlen);
 	case MIPS_INS_CMP_LE_PH:
-		return NULL;
+		return mips_il_cmp_condn_fmt(handle, insn, gprlen);
 	case MIPS_INS_CMP_LE_S:
-		return NULL;
+		return mips_il_cmp_condn_fmt(handle, insn, gprlen);
 	case MIPS_INS_CMP_LT_D:
-		return NULL;
+		return mips_il_cmp_condn_fmt(handle, insn, gprlen);
 	case MIPS_INS_CMP_LT_PH:
-		return NULL;
+		return mips_il_cmp_condn_fmt(handle, insn, gprlen);
 	case MIPS_INS_CMP_LT_S:
-		return NULL;
+		return mips_il_cmp_condn_fmt(handle, insn, gprlen);
 	case MIPS_INS_CMP_SAF_D:
-		return NULL;
+		return mips_il_cmp_condn_fmt(handle, insn, gprlen);
 	case MIPS_INS_CMP_SAF_S:
-		return NULL;
+		return mips_il_cmp_condn_fmt(handle, insn, gprlen);
 	case MIPS_INS_CMP_SEQ_D:
-		return NULL;
+		return mips_il_cmp_condn_fmt(handle, insn, gprlen);
 	case MIPS_INS_CMP_SEQ_S:
-		return NULL;
+		return mips_il_cmp_condn_fmt(handle, insn, gprlen);
 	case MIPS_INS_CMP_SLE_D:
-		return NULL;
+		return mips_il_cmp_condn_fmt(handle, insn, gprlen);
 	case MIPS_INS_CMP_SLE_S:
-		return NULL;
+		return mips_il_cmp_condn_fmt(handle, insn, gprlen);
 	case MIPS_INS_CMP_SLT_D:
-		return NULL;
+		return mips_il_cmp_condn_fmt(handle, insn, gprlen);
 	case MIPS_INS_CMP_SLT_S:
-		return NULL;
+		return mips_il_cmp_condn_fmt(handle, insn, gprlen);
 	case MIPS_INS_CMP_SUEQ_D:
-		return NULL;
+		return mips_il_cmp_condn_fmt(handle, insn, gprlen);
 	case MIPS_INS_CMP_SUEQ_S:
-		return NULL;
+		return mips_il_cmp_condn_fmt(handle, insn, gprlen);
 	case MIPS_INS_CMP_SULE_D:
-		return NULL;
+		return mips_il_cmp_condn_fmt(handle, insn, gprlen);
 	case MIPS_INS_CMP_SULE_S:
-		return NULL;
+		return mips_il_cmp_condn_fmt(handle, insn, gprlen);
 	case MIPS_INS_CMP_SULT_D:
-		return NULL;
+		return mips_il_cmp_condn_fmt(handle, insn, gprlen);
 	case MIPS_INS_CMP_SULT_S:
-		return NULL;
+		return mips_il_cmp_condn_fmt(handle, insn, gprlen);
 	case MIPS_INS_CMP_SUN_D:
-		return NULL;
+		return mips_il_cmp_condn_fmt(handle, insn, gprlen);
 	case MIPS_INS_CMP_SUN_S:
-		return NULL;
+		return mips_il_cmp_condn_fmt(handle, insn, gprlen);
 	case MIPS_INS_CMP_UEQ_D:
-		return NULL;
+		return mips_il_cmp_condn_fmt(handle, insn, gprlen);
 	case MIPS_INS_CMP_UEQ_S:
-		return NULL;
+		return mips_il_cmp_condn_fmt(handle, insn, gprlen);
 	case MIPS_INS_CMP_ULE_D:
-		return NULL;
+		return mips_il_cmp_condn_fmt(handle, insn, gprlen);
 	case MIPS_INS_CMP_ULE_S:
-		return NULL;
+		return mips_il_cmp_condn_fmt(handle, insn, gprlen);
 	case MIPS_INS_CMP_ULT_D:
-		return NULL;
+		return mips_il_cmp_condn_fmt(handle, insn, gprlen);
 	case MIPS_INS_CMP_ULT_S:
-		return NULL;
+		return mips_il_cmp_condn_fmt(handle, insn, gprlen);
 	case MIPS_INS_CMP_UN_D:
-		return NULL;
+		return mips_il_cmp_condn_fmt(handle, insn, gprlen);
 	case MIPS_INS_CMP_UN_S:
-		return NULL;
+		return mips_il_cmp_condn_fmt(handle, insn, gprlen);
 	case MIPS_INS_COPY_S_B:
 		return NULL;
 	case MIPS_INS_COPY_S_D:
@@ -997,35 +997,35 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_DADDU:
 		return mips_il_addu(handle, insn, gprlen); // Long word add unsigned
 	case MIPS_INS_DAHI:
-		return NULL;
+		return mips_il_dahi(handle, insn, gprlen);
 	case MIPS_INS_DALIGN:
-		return NULL;
+		return mips_il_dalign(handle, insn, gprlen);
 	case MIPS_INS_DATI:
-		return NULL;
+		return mips_il_dati(handle, insn, gprlen);
 	case MIPS_INS_DAUI:
-		return NULL;
+		return mips_il_daui(handle, insn, gprlen);
 	case MIPS_INS_DBITSWAP:
-		return NULL;
+		return mips_il_bitswap(handle, insn, gprlen);
 	case MIPS_INS_DCLO:
-		return NULL;
+		return mips_il_clo(handle, insn, gprlen);
 	case MIPS_INS_DCLZ:
-		return NULL;
+		return mips_il_clz(handle, insn, gprlen);
 	case MIPS_INS_DERET:
 		return mips_il_deret(handle, insn, gprlen);
 	case MIPS_INS_DEXT:
-		return NULL;
+		return mips_il_ext(handle, insn, gprlen);
 	case MIPS_INS_DEXTM:
-		return NULL;
+		return mips_il_ext(handle, insn, gprlen);
 	case MIPS_INS_DEXTU:
-		return NULL;
+		return mips_il_ext(handle, insn, gprlen);
 	case MIPS_INS_DI:
 		return NOP(); // Disable Interrupts
 	case MIPS_INS_DINS:
-		return NULL;
+		return mips_il_ins(handle, insn, gprlen);
 	case MIPS_INS_DINSM:
-		return NULL;
+		return mips_il_ins(handle, insn, gprlen);
 	case MIPS_INS_DINSU:
-		return NULL;
+		return mips_il_ins(handle, insn, gprlen);
 	case MIPS_INS_DIV_S_B:
 		return NULL;
 	case MIPS_INS_DIV_S_D:
@@ -1043,39 +1043,39 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_DIV_U_W:
 		return NULL;
 	case MIPS_INS_DLSA:
-		return NULL;
+		return mips_il_lsa(handle, insn, gprlen);
 	case MIPS_INS_DMFC0:
-		return NULL;
+		return mips_il_mfc0(handle, insn, gprlen);
 	case MIPS_INS_DMFC1:
-		return NULL;
+		return mips_il_mfc1(handle, insn, gprlen);
 	case MIPS_INS_DMFC2:
-		return NULL;
+		return mips_il_mfc2(handle, insn, gprlen);
 	case MIPS_INS_DMFGC0:
 		return NULL;
 	case MIPS_INS_DMOD:
-		return NULL;
+		return mips_il_mod(handle, insn, gprlen);
 	case MIPS_INS_DMODU:
-		return NULL;
+		return mips_il_modu(handle, insn, gprlen);
 	case MIPS_INS_DMT:
 		return NULL;
 	case MIPS_INS_DMTC0:
-		return NULL;
+		return mips_il_mtc0(handle, insn, gprlen);
 	case MIPS_INS_DMTC1:
-		return NULL;
+		return mips_il_mtc1(handle, insn, gprlen);
 	case MIPS_INS_DMTC2:
-		return NULL;
+		return mips_il_mtc2(handle, insn, gprlen);
 	case MIPS_INS_DMTGC0:
 		return NULL;
 	case MIPS_INS_DMUH:
-		return NULL;
+		return mips_il_dmuh(handle, insn, gprlen);
 	case MIPS_INS_DMUHU:
-		return NULL;
+		return mips_il_dmuhu(handle, insn, gprlen);
 	case MIPS_INS_DMULT:
-		return NULL;
+		return mips_il_dmult(handle, insn, gprlen);
 	case MIPS_INS_DMULTU:
-		return NULL;
+		return mips_il_dmultu(handle, insn, gprlen);
 	case MIPS_INS_DMULU:
-		return NULL;
+		return mips_il_dmulu(handle, insn, gprlen);
 	case MIPS_INS_DOTP_S_D:
 		return NULL;
 	case MIPS_INS_DOTP_S_H:
@@ -1147,39 +1147,39 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_DPS_W_PH:
 		return NULL;
 	case MIPS_INS_DROTR:
-		return NULL;
+		return mips_il_rotr(handle, insn, gprlen);
 	case MIPS_INS_DROTR32:
-		return NULL;
+		return mips_il_drotr32(handle, insn, gprlen);
 	case MIPS_INS_DROTRV:
-		return NULL;
+		return mips_il_rotrv(handle, insn, gprlen);
 	case MIPS_INS_DSBH:
-		return NULL;
+		return mips_il_dsbh(handle, insn, gprlen);
 	case MIPS_INS_DSHD:
-		return NULL;
+		return mips_il_dshd(handle, insn, gprlen);
 	case MIPS_INS_DSLL:
-		return NULL;
+		return mips_il_sll(handle, insn, gprlen);
 	case MIPS_INS_DSLL32:
-		return NULL;
+		return mips_il_dsll32(handle, insn, gprlen);
 	case MIPS_INS_DSLLV:
-		return NULL;
+		return mips_il_sllv(handle, insn, gprlen);
 	case MIPS_INS_DSRA:
-		return NULL;
+		return mips_il_sra(handle, insn, gprlen);
 	case MIPS_INS_DSRA32:
-		return NULL;
+		return mips_il_dsra32(handle, insn, gprlen);
 	case MIPS_INS_DSRAV:
-		return NULL;
+		return mips_il_srav(handle, insn, gprlen);
 	case MIPS_INS_DSRL:
-		return NULL;
+		return mips_il_srl(handle, insn, gprlen);
 	case MIPS_INS_DSRL32:
-		return NULL;
+		return mips_il_dsrl32(handle, insn, gprlen);
 	case MIPS_INS_DSRLV:
-		return NULL;
+		return mips_il_srlv(handle, insn, gprlen);
 	case MIPS_INS_DSUB:
-		return NULL;
+		return mips_il_sub(handle, insn, gprlen);
 	case MIPS_INS_DSUBU:
-		return NULL;
+		return mips_il_subu(handle, insn, gprlen);
 	case MIPS_INS_DVP:
-		return NULL;
+		return NOP(); // Disable Virtual Processor
 	case MIPS_INS_DVPE:
 		return NULL;
 	case MIPS_INS_EHB:
@@ -1193,9 +1193,9 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_ERETNC:
 		return mips_il_eretnc(handle, insn, gprlen);
 	case MIPS_INS_EVP:
-		return NULL;
+		return NOP(); // Enable Virtual Processor
 	case MIPS_INS_EVPE:
-		return NULL;
+		return NOP(); // Enable Virtual Processor Execution
 	case MIPS_INS_EXT:
 		return mips_il_ext(handle, insn, gprlen);
 	case MIPS_INS_EXTP:
@@ -1589,9 +1589,9 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_JALX:
 		return mips_il_jalx(handle, insn, gprlen);
 	case MIPS_INS_JIALC:
-		return NULL;
+		return mips_il_jialc(handle, insn, gprlen);
 	case MIPS_INS_JIC:
-		return NULL;
+		return mips_il_jic(handle, insn, gprlen);
 	case MIPS_INS_JR:
 		return mips_il_jr(handle, insn, gprlen);
 	case MIPS_INS_JR16:
@@ -1639,11 +1639,11 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_LDI_W:
 		return NULL;
 	case MIPS_INS_LDL:
-		return NULL;
+		return mips_il_ldl(handle, insn, gprlen);
 	case MIPS_INS_LDPC:
-		return NULL;
+		return mips_il_ldpc(handle, insn, gprlen);
 	case MIPS_INS_LDR:
-		return NULL;
+		return mips_il_ldr(handle, insn, gprlen);
 	case MIPS_INS_LDXC1:
 		return NULL;
 	case MIPS_INS_LD_B:
@@ -1677,13 +1677,13 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_LL:
 		return mips_il_ll(handle, insn, gprlen);
 	case MIPS_INS_LLD:
-		return NULL;
+		return mips_il_lld(handle, insn, gprlen);
 	case MIPS_INS_LLE:
 		return mips_il_ll(handle, insn, gprlen); // Load Linked Word EVA
 	case MIPS_INS_LLWP:
 		return NULL;
 	case MIPS_INS_LSA:
-		return NULL;
+		return mips_il_lsa(handle, insn, gprlen);
 	case MIPS_INS_LUI:
 		return mips_il_lui(handle, insn, gprlen);
 	case MIPS_INS_LUXC1:
@@ -1709,7 +1709,7 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_LWM32:
 		return NULL;
 	case MIPS_INS_LWPC:
-		return NULL;
+		return mips_il_lwpc(handle, insn, gprlen);
 	case MIPS_INS_LWP:
 		return NULL;
 	case MIPS_INS_LWR:
@@ -1717,7 +1717,7 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_LWRE:
 		return mips_il_lwr(handle, insn, gprlen); // Load Word Right EVA
 	case MIPS_INS_LWUPC:
-		return NULL;
+		return mips_il_lwupc(handle, insn, gprlen);
 	case MIPS_INS_LWU:
 		return mips_il_lwu(handle, insn, gprlen);
 	case MIPS_INS_LWX:
@@ -1729,9 +1729,9 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_MADD:
 		return mips_il_madd(handle, insn, gprlen);
 	case MIPS_INS_MADDF_D:
-		return mips_il_madd_fmt(handle, insn, gprlen);
+		return mips_il_maddf_fmt(handle, insn, gprlen);
 	case MIPS_INS_MADDF_S:
-		return mips_il_madd_fmt(handle, insn, gprlen);
+		return mips_il_maddf_fmt(handle, insn, gprlen);
 	case MIPS_INS_MADDR_Q_H:
 		return NULL;
 	case MIPS_INS_MADDR_Q_W:
@@ -1747,13 +1747,13 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_MADDV_W:
 		return NULL;
 	case MIPS_INS_MADD_D:
-		return NULL;
+		return mips_il_madd_fmt(handle, insn, gprlen);
 	case MIPS_INS_MADD_Q_H:
-		return NULL;
+		return mips_il_madd_fmt(handle, insn, gprlen);
 	case MIPS_INS_MADD_Q_W:
-		return NULL;
+		return mips_il_madd_fmt(handle, insn, gprlen);
 	case MIPS_INS_MADD_S:
-		return NULL;
+		return mips_il_madd_fmt(handle, insn, gprlen);
 	case MIPS_INS_MAQ_SA_W_PHL:
 		return NULL;
 	case MIPS_INS_MAQ_SA_W_PHR:
@@ -1763,9 +1763,9 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_MAQ_S_W_PHR:
 		return NULL;
 	case MIPS_INS_MAXA_D:
-		return NULL;
+		return mips_il_maxa_fmt(handle, insn, gprlen);
 	case MIPS_INS_MAXA_S:
-		return NULL;
+		return mips_il_maxa_fmt(handle, insn, gprlen);
 	case MIPS_INS_MAXI_S_B:
 		return NULL;
 	case MIPS_INS_MAXI_S_D:
@@ -1791,9 +1791,9 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_MAX_A_W:
 		return NULL;
 	case MIPS_INS_MAX_D:
-		return NULL;
+		return mips_il_max_fmt(handle, insn, gprlen);
 	case MIPS_INS_MAX_S:
-		return NULL;
+		return mips_il_max_fmt(handle, insn, gprlen);
 	case MIPS_INS_MAX_S_B:
 		return NULL;
 	case MIPS_INS_MAX_S_D:
@@ -1837,9 +1837,9 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_MFTR:
 		return NULL;
 	case MIPS_INS_MINA_D:
-		return NULL;
+		return mips_il_mina_fmt(handle, insn, gprlen);
 	case MIPS_INS_MINA_S:
-		return NULL;
+		return mips_il_mina_fmt(handle, insn, gprlen);
 	case MIPS_INS_MINI_S_B:
 		return NULL;
 	case MIPS_INS_MINI_S_D:
@@ -1865,9 +1865,9 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_MIN_A_W:
 		return NULL;
 	case MIPS_INS_MIN_D:
-		return NULL;
+		return mips_il_min_fmt(handle, insn, gprlen);
 	case MIPS_INS_MIN_S:
-		return NULL;
+		return mips_il_min_fmt(handle, insn, gprlen);
 	case MIPS_INS_MIN_S_B:
 		return NULL;
 	case MIPS_INS_MIN_S_D:
@@ -1885,11 +1885,11 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_MIN_U_W:
 		return NULL;
 	case MIPS_INS_MOD:
-		return NULL;
+		return mips_il_mod(handle, insn, gprlen);
 	case MIPS_INS_MODSUB:
 		return NULL;
 	case MIPS_INS_MODU:
-		return NULL;
+		return mips_il_modu(handle, insn, gprlen);
 	case MIPS_INS_MOD_S_B:
 		return NULL;
 	case MIPS_INS_MOD_S_D:
@@ -1943,9 +1943,9 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_MSUB:
 		return mips_il_msub(handle, insn, gprlen);
 	case MIPS_INS_MSUBF_D:
-		return mips_il_msub_fmt(handle, insn, gprlen);
+		return mips_il_msubf_fmt(handle, insn, gprlen);
 	case MIPS_INS_MSUBF_S:
-		return mips_il_msub_fmt(handle, insn, gprlen);
+		return mips_il_msubf_fmt(handle, insn, gprlen);
 	case MIPS_INS_MSUBR_Q_H:
 		return NULL;
 	case MIPS_INS_MSUBR_Q_W:
@@ -1961,13 +1961,13 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_MSUBV_W:
 		return NULL;
 	case MIPS_INS_MSUB_D:
-		return NULL;
+		return mips_il_msub_fmt(handle, insn, gprlen);
 	case MIPS_INS_MSUB_Q_H:
-		return NULL;
+		return mips_il_msub_fmt(handle, insn, gprlen);
 	case MIPS_INS_MSUB_Q_W:
-		return NULL;
+		return mips_il_msub_fmt(handle, insn, gprlen);
 	case MIPS_INS_MSUB_S:
-		return NULL;
+		return mips_il_msub_fmt(handle, insn, gprlen);
 	case MIPS_INS_MTC0:
 		return mips_il_mtc0(handle, insn, gprlen);
 	case MIPS_INS_MTC1:
@@ -2005,9 +2005,9 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_MTTR:
 		return NULL;
 	case MIPS_INS_MUH:
-		return NULL;
+		return mips_il_muh(handle, insn, gprlen);
 	case MIPS_INS_MUHU:
-		return NULL;
+		return mips_il_muhu(handle, insn, gprlen);
 	case MIPS_INS_MULEQ_S_W_PHL:
 		return NULL;
 	case MIPS_INS_MULEQ_S_W_PHR:
@@ -2039,7 +2039,7 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_MULTU:
 		return mips_il_multu(handle, insn, gprlen);
 	case MIPS_INS_MULU:
-		return NULL;
+		return mips_il_mulu(handle, insn, gprlen);
 	case MIPS_INS_MULV_B:
 		return NULL;
 	case MIPS_INS_MULV_D:
@@ -2213,9 +2213,9 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_RESTORE:
 		return NULL;
 	case MIPS_INS_RINT_D:
-		return NULL;
+		return mips_il_rint_fmt(handle, insn, gprlen);
 	case MIPS_INS_RINT_S:
-		return NULL;
+		return mips_il_rint_fmt(handle, insn, gprlen);
 	case MIPS_INS_ROTR:
 		return mips_il_rotr(handle, insn, gprlen);
 	case MIPS_INS_ROTRV:
@@ -2263,7 +2263,7 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_SC:
 		return mips_il_sc(handle, insn, gprlen);
 	case MIPS_INS_SCD:
-		return NULL;
+		return mips_il_scd(handle, insn, gprlen);
 	case MIPS_INS_SCE:
 		return mips_il_sc(handle, insn, gprlen); // Store Conditional Word EVA
 	case MIPS_INS_SCWP:
@@ -2279,9 +2279,9 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_SDC3:
 		return NULL;
 	case MIPS_INS_SDL:
-		return NULL;
+		return mips_il_sdl(handle, insn, gprlen);
 	case MIPS_INS_SDR:
-		return NULL;
+		return mips_il_sdr(handle, insn, gprlen);
 	case MIPS_INS_SDXC1:
 		return mips_il_sdxc1(handle, insn, gprlen);
 	case MIPS_INS_SEB:
@@ -2289,21 +2289,21 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_SEH:
 		return mips_il_seh(handle, insn, gprlen);
 	case MIPS_INS_SELEQZ:
-		return NULL;
+		return mips_il_seleqz(handle, insn, gprlen);
 	case MIPS_INS_SELEQZ_D:
-		return NULL;
+		return mips_il_seleqz_fmt(handle, insn, gprlen);
 	case MIPS_INS_SELEQZ_S:
-		return NULL;
+		return mips_il_seleqz_fmt(handle, insn, gprlen);
 	case MIPS_INS_SELNEZ:
-		return NULL;
+		return mips_il_selnez(handle, insn, gprlen);
 	case MIPS_INS_SELNEZ_D:
-		return NULL;
+		return mips_il_selneqz_fmt(handle, insn, gprlen);
 	case MIPS_INS_SELNEZ_S:
-		return NULL;
+		return mips_il_selneqz_fmt(handle, insn, gprlen);
 	case MIPS_INS_SEL_D:
-		return NULL;
+		return mips_il_sel_fmt(handle, insn, gprlen);
 	case MIPS_INS_SEL_S:
-		return NULL;
+		return mips_il_sel_fmt(handle, insn, gprlen);
 	case MIPS_INS_SEQI:
 		return NULL;
 	case MIPS_INS_SH:
@@ -2371,7 +2371,7 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_SHX:
 		return NULL;
 	case MIPS_INS_SIGRIE:
-		return NULL;
+		return NOP(); // Signal Reserved Instruction Exception
 	case MIPS_INS_SLDI_B:
 		return NULL;
 	case MIPS_INS_SLDI_D:
@@ -2653,9 +2653,9 @@ RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_i
 	case MIPS_INS_TGEU:
 		return mips_il_tgeu(handle, insn, gprlen);
 	case MIPS_INS_TLBGINV:
-		return NULL;
+		return NOP(); // TLB Invalidate
 	case MIPS_INS_TLBGINVF:
-		return NULL;
+		return NOP(); // TLB Invalidate Flush
 	case MIPS_INS_TLBGP:
 		return NULL;
 	case MIPS_INS_TLBGR:

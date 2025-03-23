@@ -40,6 +40,16 @@ static RzILOpEffect *mips_il_ceil_w_fmt(const csh *handle, const cs_insn *insn, 
 	NOT_IMPLEMENTED;
 }
 
+static RzILOpEffect *mips_il_class_fmt(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Scalar Floating-Point Class Mask
+	NOT_IMPLEMENTED;
+}
+
+static RzILOpEffect *mips_il_cmp_condn_fmt(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Floating Point Compare Setting Mask | CMP.condn.fmt
+	NOT_IMPLEMENTED;
+}
+
 static RzILOpEffect *mips_il_cfc1(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	// Move Control Word From Floating Point
 	NOT_IMPLEMENTED;
@@ -134,6 +144,31 @@ static RzILOpEffect *mips_il_madd_fmt(const csh *handle, const cs_insn *insn, co
 	NOT_IMPLEMENTED;
 }
 
+static RzILOpEffect *mips_il_maddf_fmt(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Floating Point Fused Multiply Add
+	NOT_IMPLEMENTED;
+}
+
+static RzILOpEffect *mips_il_max_fmt(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Floating Point Maximum
+	NOT_IMPLEMENTED;
+}
+
+static RzILOpEffect *mips_il_maxa_fmt(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Floating Point Value with Maximum Absolute Value
+	NOT_IMPLEMENTED;
+}
+
+static RzILOpEffect *mips_il_min_fmt(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Floating Point Minimum
+	NOT_IMPLEMENTED;
+}
+
+static RzILOpEffect *mips_il_mina_fmt(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Floating Point Value with Minimum Absolute Value
+	NOT_IMPLEMENTED;
+}
+
 static RzILOpEffect *mips_il_mfc1(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	// Move Word From Floating Point
 	NOT_IMPLEMENTED;
@@ -190,6 +225,11 @@ static RzILOpEffect *mips_il_movz_fmt(const csh *handle, const cs_insn *insn, co
 
 static RzILOpEffect *mips_il_msub_fmt(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	// Floating Point Multiply Subtract
+	NOT_IMPLEMENTED;
+}
+
+static RzILOpEffect *mips_il_msubf_fmt(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Floating Point Fused Multiply Subtract
 	NOT_IMPLEMENTED;
 }
 
@@ -253,6 +293,11 @@ static RzILOpEffect *mips_il_recip_fmt(const csh *handle, const cs_insn *insn, c
 	NOT_IMPLEMENTED;
 }
 
+static RzILOpEffect *mips_il_rint_fmt(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Scalar floating-point round to integer
+	NOT_IMPLEMENTED;
+}
+
 static RzILOpEffect *mips_il_round_l_fmt(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	// Floating Point Round to Long Fixed Point
 	NOT_IMPLEMENTED;
@@ -275,6 +320,21 @@ static RzILOpEffect *mips_il_sdc1(const csh *handle, const cs_insn *insn, const 
 
 static RzILOpEffect *mips_il_sdxc1(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
 	// Store Doubleword Indexed from Floating Point
+	NOT_IMPLEMENTED;
+}
+
+static RzILOpEffect *mips_il_sel_fmt(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Floating Point Select
+	NOT_IMPLEMENTED;
+}
+
+static RzILOpEffect *mips_il_seleqz_fmt(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Floating Point Select if condition Equal to Zero, Else 0.0
+	NOT_IMPLEMENTED;
+}
+
+static RzILOpEffect *mips_il_selneqz_fmt(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
+	// Floating Point Select if condition is Not Equal to Zero, Else 0.0
 	NOT_IMPLEMENTED;
 }
 

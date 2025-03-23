@@ -78,3 +78,7 @@ d "lwc2 0, 0(zero)" 000000c8 0x4
 dB "paddsh f0, f0, f0" 0000004b 0x4
 d "sdc2 0, 0(zero)" 000000f8 0x4
 d "swc2 0, 0(zero)" 000000e8 0x4
+dE "ddiv $zero, s2, s0" 0250001e 0x80000000 (seq (set lo (sdiv (var s2) (var s0))) (set hi (smod (var s2) (var s0))))
+dE "ddivu $zero, t5, t0" 01a8001f 0x80000000 (seq (set lo (div (var t5) (var t0))) (set hi (mod (var t5) (var t0))))
+dE "dmult s2, t2" 024a001c 0x80000000 (seq (set temp (* (cast 128 (msb (var s2)) (var s2)) (cast 128 (msb (var t2)) (var t2)))) (set hi (cast 64 false (>> (var temp) (bv 8 0x40) false))) (set lo (cast 64 false (var temp))))
+dE "dmultu t1, s1" 0131001d 0x80000000 (seq (set temp (* (cast 128 false (var t1)) (cast 128 false (var s1)))) (set hi (cast 64 false (>> (var temp) (bv 8 0x40) false))) (set lo (cast 64 false (var temp))))
