@@ -31,6 +31,11 @@
 #define MIN_SUMMARY_WIDTH    6
 #define MAX_RIGHT_ALIGHNMENT 20
 
+// Based on Config and Line order choses the vertical line shape
+static inline const char *get_vertical_line(int idx, int len, bool scr_curvy, bool scr_utf8) {
+	return (((idx == 0) && (scr_curvy == true)) ? "\xE2\x95\xAD" : (((idx == len - 1) && (scr_curvy == true)) ? "\xE2\x95\xB0" : ((scr_utf8 == true) ? "\xE2\x94\x82" : "|")));
+}
+
 // NOTE: this should be in sync with SPECIAL_CHARACTERS in
 //       rizin-shell-parser grammar, except for ", ' and
 //       whitespaces, because we let cmd_substitution_arg create
@@ -1136,10 +1141,7 @@ static char *group_get_help(RzCmd *cmd, RzCmdDesc *cd, RzConfig *config, bool us
 
 	rz_cmd_desc_children_foreach_idx(cd, it_cd, idx) {
 		RzCmdDesc *child = *(RzCmdDesc **)it_cd;
-		// Based on Config and Line order choses the vertical line shape
-		const char *vertical_line = (((idx == 0) && (scr_curvy == true)) ? "\xE2\x95\xAD" : (((idx == cd->children.v.len - 1) && (scr_curvy == true)) ? "\xE2\x95\xB0" : ((scr_utf8 == true) ? "\xE2\x94\x82" : "|")));
-		// const char * vertical_line  = ((idx == 0) && (scr_curvy == true)) ? "\xE2\x95\xAD" : "|";
-		print_child_help(cmd, sb, child, max_len, vertical_line, use_color);
+		print_child_help(cmd, sb, child, max_len, get_vertical_line(idx, cd->children.v.len, scr_curvy, scr_utf8), use_color);
 	}
 
 	bool details_filled = fill_details(cmd, cd, sb, use_color);
