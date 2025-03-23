@@ -1119,10 +1119,9 @@ static void print_child_help(RzCmd *cmd, RzStrBuf *sb, RzCmdDesc *cd, size_t max
 	do_print_child_help(cmd, sb, cd, cd->name, cd->help->summary ? cd->help->summary : "", vertical_line, true, max_len, use_color);
 }
 
-static char *group_get_help(RzCmd *cmd, RzCmdDesc *cd, RzConfig *config, bool use_color) {
-
-	bool scr_utf8 = config ? (strcmp(rz_config_get(config, "scr.utf8"), "true") == 0) : false;
-	bool scr_curvy = config ? (strcmp(rz_config_get(config, "scr.utf8.curvy"), "true") == 0) && scr_utf8 : false;
+static char *group_get_help(RzCmd *cmd, RzCmdDesc *cd, bool use_color) {
+	bool scr_utf8 = rz_config_get_b(cmd->core->config,"scr.utf8");
+	bool scr_curvy = rz_config_get_b(cmd->core->config,"scr.utf8.curvy") && scr_utf8;
 
 	RzStrBuf *sb = rz_strbuf_new(NULL);
 	fill_usage_strbuf(cmd, sb, cd, use_color);
@@ -1180,13 +1179,13 @@ static void fill_argv_modes_help_strbuf(RzCmd *cmd, RzStrBuf *sb, RzCmdDesc *cd,
 	if (max_len - min_len > MAX_RIGHT_ALIGHNMENT) {
 		max_len = min_len + MAX_RIGHT_ALIGHNMENT;
 	}
-
+	bool scr_utf8 = rz_config_get_b(cmd->core->config,"scr.utf8");
 	size_t i;
 	for (i = 0; i < RZ_ARRAY_SIZE(argv_modes); i++) {
 		if (cd->d.argv_modes_data.modes & argv_modes[i].mode) {
 			char *name = rz_str_newf("%s%s", cd->name, argv_modes[i].suffix);
 			char *summary = rz_str_newf("%s%s", cd->help->summary, argv_modes[i].summary_suffix);
-			do_print_child_help(cmd, sb, cd, name, summary, "|", false, max_len, use_color);
+			do_print_child_help(cmd, sb, cd, name, summary, scr_utf8 ? "\xE2\x94\x82" : "|", false, max_len, use_color);
 			free(name);
 			free(summary);
 		}
@@ -1329,15 +1328,15 @@ static char *fake_get_help(RzCmd *cmd, RzCmdDesc *cd, bool use_color) {
 	return argv_get_help(cmd, cd, 2, use_color);
 }
 
-static char *get_help(RzCmd *cmd, RzCmdDesc *cd, RzConfig *config, const char *cmdid, RzCmdParsedArgs *args, bool use_color, size_t detail) {
+static char *get_help(RzCmd *cmd, RzCmdDesc *cd, const char *cmdid, RzCmdParsedArgs *args, bool use_color, size_t detail) {
 	switch (cd->type) {
 	case RZ_CMD_DESC_TYPE_GROUP:
 		if (cd->d.group_data.exec_cd && (detail > 1 || (detail == 1 && strcmp(cmdid, cd->name)))) {
-			return get_help(cmd, cd->d.group_data.exec_cd, config, cmdid, args, use_color, detail);
+			return get_help(cmd, cd->d.group_data.exec_cd, cmdid, args, use_color, detail);
 		}
 		if (detail == 1) {
 			// show the group help only when doing <cmd>?
-			return group_get_help(cmd, cd, config, use_color);
+			return group_get_help(cmd, cd, use_color);
 		}
 		return argv_get_help(cmd, cd, detail, use_color);
 	case RZ_CMD_DESC_TYPE_ARGV:
@@ -1493,11 +1492,12 @@ RZ_API bool rz_cmd_get_help_json(RzCmd *cmd, const RzCmdDesc *cd, PJ *j) {
  */
 RZ_API bool rz_cmd_get_help_strbuf(RzCmd *cmd, const RzCmdDesc *cd, bool use_color, RzStrBuf *sb) {
 	rz_return_val_if_fail(cmd && cd && sb, false);
-	do_print_child_help(cmd, sb, cd, cd->name, cd->help->summary, "|", false, MAX_RIGHT_ALIGHNMENT, use_color);
+	bool scr_utf8 = rz_config_get_b(cmd->core->config,"scr.utf8");
+	do_print_child_help(cmd, sb, cd, cd->name, cd->help->summary, scr_utf8 ? "\xE2\x94\x82" : "|", false, MAX_RIGHT_ALIGHNMENT, use_color);
 	return true;
 }
 
-RZ_API char *rz_cmd_get_help(RzCmd *cmd, RzConfig *config, RzCmdParsedArgs *args, bool use_color) {
+RZ_API char *rz_cmd_get_help(RzCmd *cmd, RzCmdParsedArgs *args, bool use_color) {
 	char *cmdid = rz_str_dup(rz_cmd_parsed_args_cmd(args));
 	if (!cmdid) {
 		return NULL;
@@ -1521,7 +1521,7 @@ RZ_API char *rz_cmd_get_help(RzCmd *cmd, RzConfig *config, RzCmdParsedArgs *args
 		goto err;
 	}
 
-	res = get_help(cmd, cd, config, cmdid, args, use_color, detail);
+	res = get_help(cmd, cd, cmdid, args, use_color, detail);
 err:
 	free(cmdid);
 	return res;
