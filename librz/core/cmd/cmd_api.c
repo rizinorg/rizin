@@ -1120,8 +1120,8 @@ static void print_child_help(RzCmd *cmd, RzStrBuf *sb, RzCmdDesc *cd, size_t max
 }
 
 static char *group_get_help(RzCmd *cmd, RzCmdDesc *cd, bool use_color) {
-	bool scr_utf8 = rz_config_get_b(cmd->core->config,"scr.utf8");
-	bool scr_curvy = rz_config_get_b(cmd->core->config,"scr.utf8.curvy") && scr_utf8;
+	bool scr_utf8 = rz_config_get_b(cmd->core->config, "scr.utf8");
+	bool scr_curvy = rz_config_get_b(cmd->core->config, "scr.utf8.curvy") && scr_utf8;
 
 	RzStrBuf *sb = rz_strbuf_new(NULL);
 	fill_usage_strbuf(cmd, sb, cd, use_color);
@@ -1179,7 +1179,7 @@ static void fill_argv_modes_help_strbuf(RzCmd *cmd, RzStrBuf *sb, RzCmdDesc *cd,
 	if (max_len - min_len > MAX_RIGHT_ALIGHNMENT) {
 		max_len = min_len + MAX_RIGHT_ALIGHNMENT;
 	}
-	bool scr_utf8 = rz_config_get_b(cmd->core->config,"scr.utf8");
+	bool scr_utf8 = rz_config_get_b(cmd->core->config, "scr.utf8");
 	size_t i;
 	for (i = 0; i < RZ_ARRAY_SIZE(argv_modes); i++) {
 		if (cd->d.argv_modes_data.modes & argv_modes[i].mode) {
@@ -1492,7 +1492,7 @@ RZ_API bool rz_cmd_get_help_json(RzCmd *cmd, const RzCmdDesc *cd, PJ *j) {
  */
 RZ_API bool rz_cmd_get_help_strbuf(RzCmd *cmd, const RzCmdDesc *cd, bool use_color, RzStrBuf *sb) {
 	rz_return_val_if_fail(cmd && cd && sb, false);
-	bool scr_utf8 = rz_config_get_b(cmd->core->config,"scr.utf8");
+	bool scr_utf8 = rz_config_get_b(cmd->core->config, "scr.utf8");
 	do_print_child_help(cmd, sb, cd, cd->name, cd->help->summary, scr_utf8 ? "\xE2\x94\x82" : "|", false, MAX_RIGHT_ALIGHNMENT, use_color);
 	return true;
 }
