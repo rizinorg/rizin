@@ -768,6 +768,7 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_search_on_io(
 	rz_th_queue_free(intervals);
 
 	rz_list_sort(results, (RzListComparator)rz_search_hit_cmp, NULL);
+	rz_list_sorted_uniq(results, (RzListComparator)rz_search_hit_cmp, NULL);
 	return results;
 }
 

@@ -962,9 +962,7 @@ EXPECT=<<EOF
 [0x20000, 0x4000a): 2
 [0x40000, 0x4000a): 1
 0x00020000 5 hit.string.ascii.0
-0x00020000 5 hit.string.ascii.1
-0x00040000 5 hit.string.ascii.2
-0x00040000 5 hit.string.ascii.3
+0x00040000 5 hit.string.ascii.1
 ----
 [0x0, 0x1004): 0
 [0x1000, 0x2004): 0

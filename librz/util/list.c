@@ -805,6 +805,27 @@ RZ_API RZ_OWN RzList *rz_list_uniq(RZ_NONNULL const RzList *list, RZ_NONNULL RzL
 }
 
 /**
+ * \brief Removes duplicate values from a sorted list in-place.
+ *
+ * Use only on a list that is sorted with respect to the RzListComparator.
+ **/
+RZ_API void rz_list_sorted_uniq(RZ_NONNULL RzList *list, RZ_NONNULL RzListComparator cmp, void *user) {
+	rz_return_if_fail(list && cmp);
+
+	RzListIter *iter, *tmp_iter;
+	void *cur, *prev = NULL;
+	rz_list_foreach_safe (list, iter, tmp_iter, cur) {
+		if (prev) {
+			if (cmp(prev, cur, user) == 0) {
+				rz_list_delete(list, iter);
+				continue;
+			}
+		}
+		prev = cur;
+	}
+}
+
+/**
  * \brief Casts a RzList containg strings into a concatenated string
  *
  * \param list The list of strings to concatenate.
