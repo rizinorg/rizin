@@ -4383,3 +4383,14 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=axf string false positive
+FILE=bins/elf/echo
+CMDS=<<EOF
+# make sure none of the analysis produces incorrect redundant xref see rizinorg/rizin#1828
+aaa
+axf @ 0xef8
+EOF
+EXPECT=<<EOF
+d 0x11f4 str.Missing_argument
+EOF
+RUN

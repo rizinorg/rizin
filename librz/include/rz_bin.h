@@ -212,8 +212,16 @@ typedef struct rz_bin_string_search_opt_t {
 
 typedef struct rz_bin_addr_t {
 	ut64 vaddr;
+	/**
+	 * \brief The offset into the binary file.
+	 * Note: This is not related to the physical addresses an MMU would manage!
+	 */
 	ut64 paddr;
 	ut64 hvaddr;
+	/**
+	 * \brief The offset into the binary file where the header is.
+	 * Note: This is not related to the physical addresses an MMU would manage!
+	 */
 	ut64 hpaddr;
 	int type;
 	int bits;
@@ -348,7 +356,11 @@ typedef struct rz_bin_file_options_t {
 	int rawstr;
 	ut64 baddr; // base address
 	ut64 laddr; // load address
-	ut64 paddr; // offset
+	/**
+	 * \brief The offset into the binary file.
+	 * Note: This is not related to the physical addresses an MMU would manage!
+	 */
+	ut64 paddr;
 	const char *plugname; // force a plugin? why do i need this?
 	// const char *xtrname;
 } RzBinFileOptions;
@@ -547,7 +559,11 @@ typedef struct rz_bin_virtual_file_t {
 
 /// Description of a single memory mapping into virtual memory from a binary
 typedef struct rz_bin_map_t {
-	ut64 paddr; ///< address of the map inside the file
+	/**
+	 * \brief The offset into the binary file.
+	 * Note: This is not related to the physical addresses an MMU would manage!
+	 */
+	ut64 paddr;
 	ut64 psize; ///< size of the data inside the file
 	ut64 vaddr; ///< address in the destination address space to map to
 	ut64 vsize; ///< size to map in the destination address space. If vsize > psize, excessive bytes are meant to be filled with 0
@@ -567,6 +583,10 @@ typedef struct rz_bin_section_t {
 	ut64 size;
 	ut64 vsize;
 	ut64 vaddr;
+	/**
+	 * \brief The offset into the binary file.
+	 * Note: This is not related to the physical addresses an MMU would manage!
+	 */
 	ut64 paddr;
 	ut32 perm;
 	ut64 align;
@@ -632,6 +652,10 @@ typedef struct rz_bin_symbol_t {
 	// ----------------
 	// char descriptor[RZ_BIN_SIZEOF_STRINGS+1];
 	ut64 vaddr;
+	/**
+	 * \brief The offset into the binary file.
+	 * Note: This is not related to the physical addresses an MMU would manage!
+	 */
 	ut64 paddr;
 	ut32 size;
 	ut32 ordinal;
@@ -660,7 +684,11 @@ typedef struct rz_bin_reloc_t {
 	RzBinImport *import;
 	st64 addend;
 	ut64 vaddr; ///< the vaddr where the value should be patched into
-	ut64 paddr; ///< the paddr where the value should be patched into
+	/**
+	 * \brief The offset into the binary file.
+	 * Note: This is not related to the physical addresses an MMU would manage!
+	 */
+	ut64 paddr;
 	ut64 target_vaddr; ///< the target address that the patched reloc points to
 	ut64 section_vaddr; ///< the subsection address
 	ut32 visibility;
@@ -700,6 +728,10 @@ typedef struct rz_bin_string_t {
 	// TODO: rename string->name (avoid colisions)
 	char *string;
 	ut64 vaddr;
+	/**
+	 * \brief The offset into the binary file.
+	 * Note: This is not related to the physical addresses an MMU would manage!
+	 */
 	ut64 paddr;
 	ut32 ordinal;
 	ut32 size; // size of buffer containing the string in bytes
@@ -709,6 +741,10 @@ typedef struct rz_bin_string_t {
 
 typedef struct rz_bin_field_t {
 	ut64 vaddr;
+	/**
+	 * \brief The offset into the binary file.
+	 * Note: This is not related to the physical addresses an MMU would manage!
+	 */
 	ut64 paddr;
 	int size;
 	int offset;
@@ -722,6 +758,10 @@ typedef struct rz_bin_field_t {
 
 typedef struct rz_bin_class_field_t {
 	ut64 vaddr;
+	/**
+	 * \brief The offset into the binary file.
+	 * Note: This is not related to the physical addresses an MMU would manage!
+	 */
 	ut64 paddr;
 	char *name;
 	char *classname;
