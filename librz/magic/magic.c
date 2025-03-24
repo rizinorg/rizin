@@ -39,7 +39,7 @@ RZ_API const char *rz_magic_file(RzMagic *m, const char *f) {
 RZ_API const char *rz_magic_descriptor(RzMagic *m, int fd) {
 	return magic_descriptor(m, fd);
 }
-RZ_API const char *rz_magic_buffer(RzMagic *m, const void *b, size_t s) {
+RZ_API const char *rz_magic_buffer(RzMagic *m, const ut8 *b, size_t s) {
 	return magic_buffer(m, b, s);
 }
 RZ_API const char *rz_magic_error(RzMagic *m) {
