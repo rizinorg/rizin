@@ -342,6 +342,54 @@ static bool test_rz_tokenize_custom_hexagon_0(void) {
 	mu_end;
 }
 
+static bool test_rz_tokenize_custom_hexagon_issues_tilde(void) {
+	RzAsm *a = setup_hexagon_asm();
+	hexagon_set_next_pc(a);
+
+	// Check if ~ is an operator
+	const ut8 buf[] = "\x00\xc0\x81\xf1"; // [   R0 = and(R0,~R1)
+	RzAsmOp *op = RZ_NEW0(RzAsmOp);
+	a->cur->disassemble(a, op, buf, sizeof(buf));
+	if (!op->asm_toks) {
+		mu_fail("NULL check failed.\n");
+	}
+	mu_assert_true(rz_pvector_len(op->asm_toks->tokens) > 10, "Number of generated tokens.");
+
+	RzAsmToken *tok = rz_pvector_at(op->asm_toks->tokens, 10);
+	mu_assert_eq(tok->start, 16, "Token start");
+	mu_assert_eq(tok->len, 1, "Token length");
+	mu_assert_eq(tok->type, RZ_ASM_TOKEN_OPERATOR, "Token type");
+	mu_assert_eq(tok->val.number, 0, "Token value");
+
+	rz_asm_op_fini(op);
+	rz_asm_free(a);
+	mu_end;
+}
+
+static bool test_rz_tokenize_custom_hexagon_issues_long_reg(void) {
+	RzAsm *a = setup_hexagon_asm();
+	hexagon_set_next_pc(a);
+
+	// Check if BRKPTPC0 is a register
+	const ut8 buf[] = "\x24\xc0\x01\x67"; // [   BRKPTPC0 = R1
+	RzAsmOp *op = RZ_NEW0(RzAsmOp);
+	a->cur->disassemble(a, op, buf, sizeof(buf));
+	if (!op->asm_toks) {
+		mu_fail("NULL check failed.\n");
+	}
+	mu_assert_true(rz_pvector_len(op->asm_toks->tokens) > 3, "Number of generated tokens.");
+
+	RzAsmToken *tok = rz_pvector_at(op->asm_toks->tokens, 2);
+	mu_assert_eq(tok->start, 4, "Token start");
+	mu_assert_eq(tok->len, 8, "Token length");
+	mu_assert_eq(tok->type, RZ_ASM_TOKEN_REGISTER, "Token type");
+	mu_assert_eq(tok->val.number, 0, "Token value");
+
+	rz_asm_op_fini(op);
+	rz_asm_free(a);
+	mu_end;
+}
+
 static bool test_rz_tokenize_custom_hexagon_1(void) {
 	RzAsm *a = setup_hexagon_asm();
 	hexagon_set_next_pc(a);
@@ -777,6 +825,8 @@ static int all_tests() {
 	mu_run_test(test_rz_colorize_custom_hexagon_2);
 	mu_run_test(test_rz_colorize_custom_hexagon_3);
 	mu_run_test(test_rz_tokenize_custom_bf_0);
+	mu_run_test(test_rz_tokenize_custom_hexagon_issues_tilde);
+	mu_run_test(test_rz_tokenize_custom_hexagon_issues_long_reg);
 
 	return tests_passed != tests_run;
 }

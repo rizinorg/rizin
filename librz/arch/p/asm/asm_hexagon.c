@@ -41,14 +41,7 @@ static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns() {
 	pat = RZ_NEW0(RzAsmTokenPattern);
 	pat->type = RZ_ASM_TOKEN_REGISTER;
 	pat->pattern = rz_str_dup(
-		"[CNPRMQVO]\\d{1,2}(:\\d{1,2})?(in)?" // Registers and double registers
-	);
-	rz_pvector_push(pvec, pat);
-
-	pat = RZ_NEW0(RzAsmTokenPattern);
-	pat->type = RZ_ASM_TOKEN_REGISTER;
-	pat->pattern = rz_str_dup(
-		"GP|HTID|UGP|LR|FP|SP" // Other regs
+		"[CNPRMQVO]\\d{1,2}(:\\d{1,2})?(in)?|(GP|HTID|UGP|LR|FP|SP|([A-Z]{2,}[0-9]{,1}))" // Registers and double registers
 	);
 	rz_pvector_push(pvec, pat);
 
@@ -84,7 +77,7 @@ static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns() {
 	pat = RZ_NEW0(RzAsmTokenPattern);
 	pat->type = RZ_ASM_TOKEN_OPERATOR;
 	pat->pattern = rz_str_dup(
-		"[+*&+?=!^\\/|-]{1,2}" // +,-,=,],[, ! (not the packet prefix)
+		"[+*&+?=!^\\/|-~]{1,2}" // +,-,=,],[, ! (not the packet prefix)
 	);
 	rz_pvector_push(pvec, pat);
 
