@@ -517,6 +517,7 @@ bool test_rz_list_sorted_uniq() {
 	mu_assert_streq(rz_list_first(list), "cccc", "first");
 	mu_assert_streq(rz_list_get_n(list, 1), "bbbb", "second");
 	mu_assert_streq(rz_list_last(list), "aaaa", "third");
+	rz_list_free(list);
 	mu_end;
 }
 
