@@ -1528,7 +1528,7 @@ RZ_API bool rz_cmd_get_help_strbuf(RzCmd *cmd, const RzCmdDesc *cd, bool use_col
  *
  * \return returns NULL if invalid args are given, otherwise returns help message of the given args.
  */
-RZ_API char *rz_cmd_get_help(RzCmd *cmd, RzCmdParsedArgs *args, bool use_color) {
+RZ_API RZ_OWN char *rz_cmd_get_help(RzCmd *cmd, RzCmdParsedArgs *args, bool use_color) {
 	char *cmdid = rz_str_dup(rz_cmd_parsed_args_cmd(args));
 	if (!cmdid) {
 		return NULL;
