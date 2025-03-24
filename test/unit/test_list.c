@@ -509,6 +509,17 @@ bool test_rz_list_find_ptr(void) {
 	mu_end;
 }
 
+bool test_rz_list_sorted_uniq() {
+	const char *test_strings[] = { "cccc", "cccc", "cccc", "bbbb", "aaaa", "aaaa" };
+	RzList *list = rz_list_new_from_array((const void **)test_strings, RZ_ARRAY_SIZE(test_strings));
+	rz_list_sorted_uniq(list, (RzListComparator)strcmp, NULL);
+	mu_assert_eq(rz_list_length(list), 3, "unique strings");
+	mu_assert_streq(rz_list_first(list), "cccc", "first");
+	mu_assert_streq(rz_list_get_n(list, 1), "bbbb", "second");
+	mu_assert_streq(rz_list_last(list), "aaaa", "third");
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_rz_list_size);
 	mu_run_test(test_rz_list_values);
@@ -528,6 +539,7 @@ int all_tests() {
 	mu_run_test(test_rz_list_clone);
 	mu_run_test(test_rz_list_find_ptr);
 	mu_run_test(test_rz_list_from_iter);
+	mu_run_test(test_rz_list_sorted_uniq);
 	return tests_passed != tests_run;
 }
 
