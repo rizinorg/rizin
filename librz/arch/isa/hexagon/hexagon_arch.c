@@ -1070,24 +1070,10 @@ static void copy_asm_ana_ops(HexState *state, RZ_BORROW HexReversedOpcode *rz_re
 	rz_return_if_fail(state && rz_reverse && hic);
 	rz_reverse->state = state;
 	switch (rz_reverse->action) {
-	default:
-		memcpy(rz_reverse->asm_op, &hic->asm_op, sizeof(RzAsmOp));
-		memcpy(rz_reverse->ana_op, &hic->ana_op, sizeof(RzAnalysisOp));
-		rz_strbuf_set(&rz_reverse->asm_op->buf_asm, hic->text);
-		if (rz_reverse->asm_op->asm_toks) {
-			rz_asm_token_string_free(rz_reverse->asm_op->asm_toks);
-		}
-		rz_reverse->asm_op->asm_toks = rz_asm_tokenize_asm_regex(&rz_reverse->asm_op->buf_asm, state->token_patterns);
-		if (rz_reverse->asm_op->asm_toks) {
-			rz_reverse->asm_op->asm_toks->op_type = hic->ana_op.type;
-		}
-		break;
 	case HEXAGON_DISAS:
-		memcpy(rz_reverse->asm_op, &hic->asm_op, sizeof(RzAsmOp));
+		rz_asm_token_string_free(rz_reverse->asm_op->asm_toks);
+		rz_reverse->asm_op->size = hic->asm_op.size;
 		rz_strbuf_set(&rz_reverse->asm_op->buf_asm, hic->text);
-		if (rz_reverse->asm_op->asm_toks) {
-			rz_asm_token_string_free(rz_reverse->asm_op->asm_toks);
-		}
 		rz_reverse->asm_op->asm_toks = rz_asm_tokenize_asm_regex(&rz_reverse->asm_op->buf_asm, state->token_patterns);
 		if (rz_reverse->asm_op->asm_toks) {
 			rz_reverse->asm_op->asm_toks->op_type = hic->ana_op.type;
