@@ -374,6 +374,7 @@ RZ_IPI RZ_OWN HexState *hexagon_state_new() {
 		state->pkts[i].bin = rz_list_newf((RzListFree)hex_insn_container_free);
 		state->pkts[i].il_ops = rz_pvector_new(NULL);
 		if (!state->pkts[i].bin) {
+			hexagon_state_fini(state);
 			RZ_LOG_FATAL("Could not initialize instruction list!");
 			return NULL;
 		}

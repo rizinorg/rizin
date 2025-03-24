@@ -588,6 +588,7 @@ RZ_IPI RZ_OWN RzILOpEffect *hex_write_reg(RZ_BORROW HexInsnPktBundle *bundle, co
 	case HEX_REG_CLASS_GENERAL_SUB_REGS:
 		low_name = hex_get_reg_in_class(HEX_REG_CLASS_INT_REGS, reg_num, false, true, true);
 		if (!low_name) {
+			rz_il_op_pure_free(high_val);
 			return NULL;
 		}
 		low_val = CAST(HEX_GPR_WIDTH, IL_FALSE, val);
@@ -609,6 +610,7 @@ RZ_IPI RZ_OWN RzILOpEffect *hex_write_reg(RZ_BORROW HexInsnPktBundle *bundle, co
 		if (hex_ctr_immut_masks[reg_num] != HEX_IMMUTABLE_REG) {
 			low_name = hex_get_reg_in_class(HEX_REG_CLASS_CTR_REGS, reg_num, false, true, true);
 			if (!low_name) {
+				rz_il_op_pure_free(high_val);
 				return NULL;
 			}
 			low_val = CAST(HEX_GPR_WIDTH, IL_FALSE, val);
@@ -813,6 +815,8 @@ RZ_IPI RZ_OWN RzILOpPure *hex_read_reg(RZ_BORROW HexPkt *pkt, const HexOp *op, b
 	}
 	if (read_cond_faulty(low_val, high_val, val_width)) {
 		rz_warn_if_reached();
+		rz_il_op_pure_free(high_val);
+		rz_il_op_pure_free(low_val);
 		return NULL;
 	}
 	log_reg_read(pkt, reg_num, op->class, tmp_reg);
@@ -852,7 +856,9 @@ RzILOpPure *hex_get_corresponding_cs(RZ_BORROW HexPkt *pkt, const HexOp *Mu) {
 }
 
 RZ_IPI void hex_il_pkt_stats_fini(HexILExecData *stats) {
-	rz_return_if_fail(stats);
+	if (!stats) {
+		return;
+	}
 	rz_bv_free(stats->slot_cancelled);
 	rz_bv_free(stats->ctr_written);
 	rz_bv_free(stats->gpr_written);
