@@ -16,6 +16,7 @@ RZ_API void rz_asm_op_init(RZ_NULLABLE RzAsmOp *op) {
 	if (!op) {
 		return;
 	}
+	rz_asm_op_fini(op);
 	memset(op, 0, sizeof(*op));
 }
 
