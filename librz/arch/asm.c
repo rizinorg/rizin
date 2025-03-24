@@ -405,7 +405,7 @@ RZ_API bool rz_asm_use_assembler(RzAsm *a, const char *name) {
 	RzAsmPlugin **val;
 	rz_iterator_foreach(iter, val) {
 		RzAsmPlugin *h = *val;
-		if (h->assemble && !strcmp(h->name, name)) {
+		if (h->assemble && RZ_STR_EQ(h->name, name)) {
 			a->acur = h;
 			rz_iterator_free(iter);
 			return true;
