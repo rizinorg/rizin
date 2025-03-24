@@ -1359,7 +1359,7 @@ RZ_API RZ_OWN RzAsmTokenString *rz_asm_token_string_clone(RZ_OWN RZ_NONNULL RzAs
 	newt->op_type = toks->op_type;
 
 	if (!(newt->tokens && newt->str)) {
-		free(newt);
+		rz_asm_token_string_free(newt);
 		return NULL;
 	}
 	return newt;

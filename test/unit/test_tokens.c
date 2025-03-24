@@ -337,6 +337,7 @@ static bool test_rz_tokenize_custom_hexagon_0(void) {
 	}
 
 	rz_asm_op_fini(op);
+	rz_asm_free(a);
 	mu_end;
 }
 
@@ -379,6 +380,7 @@ static bool test_rz_tokenize_custom_hexagon_1(void) {
 	};
 
 	rz_asm_op_fini(op);
+	rz_asm_free(a);
 	mu_end;
 }
 
@@ -560,6 +562,7 @@ static bool test_rz_colorize_custom_hexagon_0(void) {
 	snprintf(err_msg, sizeof(err_msg), "Colors of \"%s\" are incorrect. Should be \"%s\"\n.", rz_strbuf_get(colored_asm), rz_strbuf_get(expected));
 	mu_assert_true(rz_strbuf_equals(colored_asm, expected), err_msg);
 
+	rz_asm_free(d);
 	rz_asm_op_fini(asmop);
 	rz_analysis_op_free(anaop);
 	rz_cons_context_free(p->cons->context);
@@ -589,6 +592,7 @@ static bool test_rz_colorize_custom_hexagon_1(void) {
 	snprintf(err_msg, sizeof(err_msg), "Colors of \"%s\" are incorrect. Should be \"%s\"\n.", rz_strbuf_get(colored_asm), rz_strbuf_get(expected));
 	mu_assert_true(rz_strbuf_equals(colored_asm, expected), err_msg);
 
+	rz_asm_free(d);
 	rz_asm_op_fini(asmop);
 	rz_cons_context_free(p->cons->context);
 	rz_print_free(p);
@@ -636,6 +640,7 @@ static bool test_rz_colorize_custom_hexagon_2(void) {
 	}
 
 	rz_asm_op_fini(asmop);
+	rz_asm_free(d);
 	rz_cons_context_free(p->cons->context);
 	rz_print_free(p);
 	mu_end;
@@ -686,6 +691,7 @@ static bool test_rz_colorize_custom_hexagon_3(void) {
 	rz_asm_op_fini(asmop);
 	rz_cons_context_free(p->cons->context);
 	rz_print_free(p);
+	rz_asm_free(d);
 	mu_end;
 }
 
