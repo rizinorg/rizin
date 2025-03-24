@@ -568,6 +568,7 @@ static bool __isInvalid(RzAsmOp *op) {
 }
 
 RZ_API int rz_asm_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+	rz_asm_op_fini(op);
 	rz_asm_op_init(op);
 	rz_return_val_if_fail(a && buf && op, -1);
 	if (len < 1) {
