@@ -39,14 +39,13 @@ static inline const char *get_vertical_line(size_t idx, size_t len, bool scr_cur
 		return RUNE_CURVE_CORNER_BL;
 	} else if (scr_utf8) {
 		return RUNE_LINE_VERT;
-	} else {
-		return "| ";
 	}
+	return "| ";
 }
 
-// return true if core and core->config aren't NULL, else false
-static inline bool is_core_and_config(RzCore *core) {
-	return (core && core->config);
+// return rz_config_get_b if core and core->config aren't NULL else false
+static inline bool core_config_get_b(RzCore *core, const char *option) {
+	return core && core->config ? rz_config_get_b(core->config, option) : false;
 }
 
 // NOTE: this should be in sync with SPECIAL_CHARACTERS in
@@ -1133,11 +1132,8 @@ static void print_child_help(RzCmd *cmd, RzStrBuf *sb, RzCmdDesc *cd, size_t max
 }
 
 static char *group_get_help(RzCmd *cmd, RzCmdDesc *cd, bool use_color) {
-	bool scr_utf8 = false, scr_curvy = false;
-	if (is_core_and_config(cmd->core)) {
-		scr_utf8 = rz_config_get_b(cmd->core->config, "scr.utf8");
-		scr_curvy = scr_utf8 && rz_config_get_b(cmd->core->config, "scr.utf8.curvy");
-	}
+	bool scr_utf8 = core_config_get_b(cmd->core, "scr.utf8");
+	bool scr_curvy = scr_utf8 && core_config_get_b(cmd->core, "scr.utf8.curvy");
 
 	RzStrBuf *sb = rz_strbuf_new(NULL);
 	fill_usage_strbuf(cmd, sb, cd, use_color);
@@ -1193,10 +1189,7 @@ static char *group_get_help(RzCmd *cmd, RzCmdDesc *cd, bool use_color) {
 }
 
 static void fill_argv_modes_help_strbuf(RzCmd *cmd, RzStrBuf *sb, RzCmdDesc *cd, bool use_color) {
-	bool scr_utf8 = false;
-	if (is_core_and_config(cmd->core)) {
-		scr_utf8 = rz_config_get_b(cmd->core->config, "scr.utf8");
-	}
+	bool scr_utf8 = core_config_get_b(cmd->core, "scr.utf8");
 	const char *vertical_line = scr_utf8 ? RUNE_LINE_VERT : "| ";
 
 	size_t max_len = 0, min_len = SIZE_MAX;
@@ -1519,10 +1512,7 @@ RZ_API bool rz_cmd_get_help_json(RzCmd *cmd, const RzCmdDesc *cd, PJ *j) {
 RZ_API bool rz_cmd_get_help_strbuf(RzCmd *cmd, const RzCmdDesc *cd, bool use_color, RzStrBuf *sb) {
 	rz_return_val_if_fail(cmd && cd && sb, false);
 
-	bool scr_utf8 = false;
-	if (is_core_and_config(cmd->core)) {
-		scr_utf8 = rz_config_get_b(cmd->core->config, "scr.utf8");
-	}
+	bool scr_utf8 = core_config_get_b(cmd->core, "scr.utf8");
 	const char *vertical_line = scr_utf8 ? RUNE_LINE_VERT : "| ";
 
 	do_print_child_help(cmd, sb, cd, cd->name, cd->help->summary, vertical_line, false, MAX_RIGHT_ALIGHNMENT, use_color);
