@@ -65,7 +65,7 @@ int binutils_assemble(RzAsm *a, RzAsmOp *op, const char *buf, const char *as, co
 		} else {
 			len = (int)(size_t)(end - begin - 9);
 			if (len > 0) {
-				rz_strbuf_setbin(&op->buf, begin + 9, len);
+				rz_strbuf_setbin(op->buf, begin + 9, len);
 			} else {
 				len = 0;
 			}

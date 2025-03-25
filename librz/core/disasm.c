@@ -1418,10 +1418,10 @@ static void ds_atabs_option(RzDisasmState *ds) {
 		}
 		opstr = ds->opstr;
 	} else {
-		if (calc_tab_buf_size(rz_strbuf_length(&ds->asmop.buf_asm), ds->atabs, &size)) {
+		if (calc_tab_buf_size(rz_strbuf_length(ds->asmop.buf_asm), ds->atabs, &size)) {
 			return;
 		}
-		opstr = rz_strbuf_get(&ds->asmop.buf_asm);
+		opstr = rz_strbuf_get(ds->asmop.buf_asm);
 	}
 	b = malloc(size);
 	if (!b) {
@@ -5438,7 +5438,7 @@ toro:
 
 			ds_print_asmop_payload(ds, buf + addrbytes * idx);
 			if (core->rasm->syntax != RZ_ASM_SYNTAX_INTEL) {
-				RzAsmOp ao; /* disassemble for the vm .. */
+				RzAsmOp ao = { 0 }; /* disassemble for the vm .. */
 				int os = core->rasm->syntax;
 				rz_asm_set_syntax(core->rasm, RZ_ASM_SYNTAX_INTEL);
 				rz_asm_disassemble(core->rasm, &ao, buf + addrbytes * idx,
@@ -5478,7 +5478,7 @@ toro:
 
 			ds_print_asmop_payload(ds, buf + addrbytes * idx);
 			if (core->rasm->syntax != RZ_ASM_SYNTAX_INTEL) {
-				RzAsmOp ao; /* disassemble for the vm .. */
+				RzAsmOp ao = { 0 }; /* disassemble for the vm .. */
 				int os = core->rasm->syntax;
 				rz_asm_set_syntax(core->rasm, RZ_ASM_SYNTAX_INTEL);
 				rz_asm_disassemble(core->rasm, &ao, buf + addrbytes * idx,
@@ -5999,7 +5999,7 @@ RZ_API int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len, int
 	int i, ret, count = 0;
 	ut8 *buf = core->block;
 	char str[128];
-	RzAsmOp asmop;
+	RzAsmOp asmop = { 0 };
 	if (l < 1) {
 		l = len;
 	}
@@ -6049,7 +6049,7 @@ RZ_API int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len, int
 					rz_analysis_op(core->analysis, &aop, addr, buf + i, l - i, RZ_ANALYSIS_OP_MASK_ALL);
 					RzStrBuf *colored_asm;
 					RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, aop.type);
-					colored_asm = rz_asm_colorize_asm_str(&asmop.buf_asm, core->print, param, asmop.asm_toks);
+					colored_asm = rz_asm_colorize_asm_str(asmop.buf_asm, core->print, param, asmop.asm_toks);
 					rz_analysis_op_fini(&aop);
 					rz_asm_parse_param_free(param);
 					if (colored_asm) {
@@ -6128,7 +6128,7 @@ RZ_API int rz_core_disasm_pdi_with_buf(RzCore *core, ut64 address, ut8 *buf, ut3
 	bool asm_immtrim = rz_config_get_b(core->config, "asm.imm.trim");
 	bool alloc_buf = !buf;
 	int i = 0, j, ret, err = 0;
-	RzAsmOp asmop;
+	RzAsmOp asmop = { 0 };
 	const size_t addrbytes = buf ? 1 : core->io->addrbytes;
 
 	// set the parameter equaling 0 to a value that won't affect another parameter
@@ -6582,15 +6582,15 @@ RZ_API RZ_OWN char *rz_core_disasm_instruction(RzCore *core, ut64 addr, ut64 rel
 	// this is because of the hassle of arm/thumb
 	rz_core_seek_arch_bits(core, addr);
 	rz_asm_disassemble(core->rasm, &asmop, buf, size);
-	int ba_len = rz_strbuf_length(&asmop.buf_asm) + 128;
+	int ba_len = rz_strbuf_length(asmop.buf_asm) + 128;
 	char *ba = malloc(ba_len);
-	strcpy(ba, rz_strbuf_get(&asmop.buf_asm));
+	strcpy(ba, rz_strbuf_get(asmop.buf_asm));
 	RzAnalysisOp op = { 0 };
 	rz_analysis_op_init(&op);
 	rz_analysis_op(core->analysis, &op, addr, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC);
 	if (asm_subvar) {
 		rz_parse_subvar(core->parser, fcn, &op,
-			ba, ba, sizeof(asmop.buf_asm));
+			ba, ba, ba_len);
 		rz_analysis_op_fini(&op);
 	}
 	RzAnalysisHint *hint = rz_analysis_hint_get(core->analysis, addr);

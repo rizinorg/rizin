@@ -270,7 +270,7 @@ static bool step_until_inst(RzCore *core, const char *instr, bool regex) {
 		RZ_LOG_ERROR("wrong debugger state\n");
 		return false;
 	}
-	RzAsmOp asmop;
+	RzAsmOp asmop = { 0 };
 	ut8 buf[32];
 	ut64 pc;
 	int ret;

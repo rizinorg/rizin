@@ -30,7 +30,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	rz_asm_op_setf_asm(op, "%s%s%s",
 		ctx->insn->mnemonic, RZ_STR_ISNOTEMPTY(ctx->insn->op_str) ? " " : "", ctx->insn->op_str);
 
-	op->asm_toks = rz_asm_tokenize_asm_regex(&op->buf_asm, ctx->token_patterns);
+	op->asm_toks = rz_asm_tokenize_asm_regex(op->buf_asm, ctx->token_patterns);
 
 beach:
 	cs_free(ctx->insn, ctx->count);

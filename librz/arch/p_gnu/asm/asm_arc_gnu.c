@@ -54,7 +54,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	if (len < 2) {
 		return -1;
 	}
-	buf_global = &op->buf_asm;
+	buf_global = op->buf_asm;
 	Offset = a->pc;
 	if (len > sizeof(bytes)) {
 		len = sizeof(bytes);
@@ -73,14 +73,14 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	ctx->disasm_obj.fprintf_func = &generic_fprintf_func;
 	ctx->disasm_obj.stream = stdout;
 	ctx->disasm_obj.mach = 0;
-	rz_strbuf_set(&op->buf_asm, "");
+	rz_strbuf_set(op->buf_asm, "");
 	if (a->bits == 16) {
 		op->size = ARCompact_decodeInstr((bfd_vma)Offset, &ctx->disasm_obj);
 	} else {
 		op->size = ARCTangent_decodeInstr((bfd_vma)Offset, &ctx->disasm_obj);
 	}
 	if (op->size == -1) {
-		rz_strbuf_set(&op->buf_asm, "(data)");
+		rz_strbuf_set(op->buf_asm, "(data)");
 	}
 	return op->size;
 }

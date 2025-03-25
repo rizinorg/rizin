@@ -48,7 +48,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	if (len < 4) {
 		return -1;
 	}
-	buf_global = &op->buf_asm;
+	buf_global = op->buf_asm;
 	bytes = buf;
 	bytes_size = len;
 	Offset = a->pc;

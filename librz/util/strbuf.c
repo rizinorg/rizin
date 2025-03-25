@@ -5,7 +5,14 @@
 #include "rz_util.h"
 #include <stdio.h>
 
-RZ_API RzStrBuf *rz_strbuf_new(const char *str) {
+/**
+ * \brief Initializes a string buffer and returns it.
+ *
+ * \param str The initial string the buffer should hold. Can be NULL for none.
+ *
+ * \return The string buffer or NULL in case of failure.
+ */
+RZ_API RZ_OWN RzStrBuf *rz_strbuf_new(RZ_NULLABLE const char *str) {
 	RzStrBuf *s = RZ_NEW0(RzStrBuf);
 	if (str) {
 		rz_strbuf_set(s, str);

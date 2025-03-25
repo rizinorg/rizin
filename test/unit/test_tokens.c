@@ -312,7 +312,7 @@ static bool test_rz_tokenize_custom_hexagon_0(void) {
 		{ .start = 11, .len = 3, .type = RZ_ASM_TOKEN_NUMBER, .val.number = 3 }, // 0x3
 		{ .start = 14, .len = 1, .type = RZ_ASM_TOKEN_SEPARATOR, .val.number = 0 } // )
 	};
-	RzAsmOp *op = RZ_NEW0(RzAsmOp);
+	RzAsmOp *op = rz_asm_op_new();
 	a->cur->disassemble(a, op, buf, sizeof(buf));
 	if (!op->asm_toks) {
 		mu_fail("NULL check failed.\n");
@@ -354,7 +354,7 @@ static bool test_rz_tokenize_custom_hexagon_1(void) {
 		{ .start = 24, .len = 4, .type = RZ_ASM_TOKEN_NUMBER, .val.number = 0x18 } // 0x18
 	};
 
-	RzAsmOp *op = RZ_NEW0(RzAsmOp);
+	RzAsmOp *op = rz_asm_op_new();
 	rz_asm_disassemble(a, op, buf, sizeof(buf));
 	if (!op->asm_toks) {
 		mu_fail("NULL check failed.\n");
@@ -387,7 +387,7 @@ static bool test_rz_colorize_generic_0(void) {
 	rz_analysis_op(a, anaop, 0x0, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_ALL);
 
 	RzAsmParseParam *param = rz_asm_get_parse_param(a->reg, anaop->type);
-	RzStrBuf *colored_asm = rz_asm_colorize_asm_str(&asmop->buf_asm, p,
+	RzStrBuf *colored_asm = rz_asm_colorize_asm_str(asmop->buf_asm, p,
 		param, asmop->asm_toks);
 
 	RzStrBuf *expected = rz_strbuf_new("\x1b[35mldur\x1b[0m\x1b[37m \x1b[0m\x1b[36mx4\x1b[0m\x1b[37m, [\x1b[0m\x1b[36mx6\x1b[0m\x1b[37m, \x1b[0m\x1b[33m0x14\x1b[0m\x1b[37m]\x1b[0m");
@@ -419,7 +419,7 @@ static bool test_rz_colorize_generic_1(void) {
 	rz_asm_disassemble(d, asmop, buf, sizeof(buf));
 	rz_analysis_op(a, anaop, 0x0, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_ALL);
 
-	RzStrBuf *colored_asm = rz_asm_colorize_asm_str(&asmop->buf_asm, p,
+	RzStrBuf *colored_asm = rz_asm_colorize_asm_str(asmop->buf_asm, p,
 		rz_asm_get_parse_param(a->reg, anaop->type), asmop->asm_toks);
 
 	RzStrBuf *expected = rz_strbuf_new("\x1b[33madc.w\x1b[0m\x1b[37m \x1b[0m\x1b[36mr8\x1b[0m\x1b[37m, \x1b[0m\x1b[36msb\x1b[0m\x1b[37m, \x1b[0m\x1b[36msl\x1b[0m\x1b[37m, \x1b[0m\x1b[37mlsl\x1b[0m\x1b[37m \x1b[0m\x1b[33m31\x1b[0m");
@@ -450,7 +450,7 @@ static bool test_rz_colorize_generic_2(void) {
 	rz_asm_disassemble(d, asmop, buf, sizeof(buf));
 	rz_analysis_op(a, anaop, 0x0, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_ALL);
 
-	RzStrBuf *colored_asm = rz_asm_colorize_asm_str(&asmop->buf_asm, p,
+	RzStrBuf *colored_asm = rz_asm_colorize_asm_str(asmop->buf_asm, p,
 		rz_asm_get_parse_param(a->reg, anaop->type), asmop->asm_toks);
 
 	RzStrBuf *expected = rz_strbuf_new("\x1b[37mmovabs\x1b[0m\x1b[37m \x1b[0m\x1b[36mrax\x1b[0m\x1b[37m, \x1b[0m\x1b[33m0x1122334455667788\x1b[0m");
@@ -480,7 +480,7 @@ static bool test_rz_colorize_generic_3(void) {
 	rz_asm_disassemble(d, asmop, buf, sizeof(buf));
 	rz_analysis_op(a, anaop, 0x0, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_ALL);
 
-	RzStrBuf *colored_asm = rz_asm_colorize_asm_str(&asmop->buf_asm, p,
+	RzStrBuf *colored_asm = rz_asm_colorize_asm_str(asmop->buf_asm, p,
 		rz_asm_get_parse_param(a->reg, anaop->type), asmop->asm_toks);
 
 	RzStrBuf *expected = rz_strbuf_new("\x1b[37mmov\x1b[0m\x1b[37m \x1b[0m\x1b[36mac0\x1b[0m\x1b[37m.\x1b[0m\x1b[37ml\x1b[0m\x1b[37m, \x1b[0m\x1b[37m*\x1b[0m\x1b[36mar2\x1b[0m\x1b[37m |\x1b[0m\x1b[37m|\x1b[0m\x1b[37m \x1b[0m\x1b[37mmov\x1b[0m\x1b[37m \x1b[0m\x1b[37m*\x1b[0m\x1b[37m(\x1b[0m\x1b[36mar1\x1b[0m\x1b[37m+\x1b[0m\x1b[37mt0b\x1b[0m\x1b[37m) \x1b[0m\x1b[37m<<\x1b[0m\x1b[37m \x1b[0m\x1b[36mt3\x1b[0m\x1b[37m, \x1b[0m\x1b[36mac1\x1b[0m");
@@ -511,7 +511,7 @@ static bool test_rz_colorize_generic_4(void) {
 	rz_asm_disassemble(d, asmop, buf, sizeof(buf));
 	rz_analysis_op(a, anaop, 0x0, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_ALL);
 
-	RzStrBuf *colored_asm = rz_asm_colorize_asm_str(&asmop->buf_asm, p,
+	RzStrBuf *colored_asm = rz_asm_colorize_asm_str(asmop->buf_asm, p,
 		rz_asm_get_parse_param(a->reg, anaop->type), asmop->asm_toks);
 
 	RzStrBuf *expected = rz_strbuf_new("\x1b[37mmov\x1b[0m\x1b[37m \x1b[0m\x1b[36mac0\x1b[0m\x1b[37m.\x1b[0m\x1b[37ml\x1b[0m\x1b[37m, \x1b[0m\x1b[37m*\x1b[0m\x1b[36mar2\x1b[0m\x1b[37m |\x1b[0m\x1b[37m|\x1b[0m\x1b[37m \x1b[0m\x1b[37mmov\x1b[0m\x1b[37m \x1b[0m\x1b[37m*\x1b[0m\x1b[37m(\x1b[0m\x1b[36mar1\x1b[0m\x1b[37m+\x1b[0m\x1b[37mt0b\x1b[0m\x1b[37m) \x1b[0m\x1b[37m<<\x1b[0m\x1b[37m \x1b[0m\x1b[36mt3\x1b[0m\x1b[37m, \x1b[0m\x1b[36mac1\x1b[0m");

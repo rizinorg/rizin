@@ -9,7 +9,7 @@
 #include <spc700/spc700dis.h>
 
 static int disassemble(RzAsm *a, RzAsmOp *rz_op, const ut8 *buf, int len) {
-	size_t dlen = spc700_disas(&rz_op->buf_asm, a->pc, buf, len);
+	size_t dlen = spc700_disas(rz_op->buf_asm, a->pc, buf, len);
 	rz_op->size = dlen;
 	return (int)dlen;
 }

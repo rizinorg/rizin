@@ -12,7 +12,7 @@ static int cr16_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	struct cr16_cmd cmd = { 0 };
 	int ret = cr16_decode_command(buf, &cmd, len);
 	if (ret > -1) {
-		rz_strbuf_initf(&op->buf_asm, "%s %s", cmd.instr, cmd.operands);
+		rz_strbuf_initf(op->buf_asm, "%s %s", cmd.instr, cmd.operands);
 	} else {
 		rz_asm_op_set_asm(op, "invalid");
 	}

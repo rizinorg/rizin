@@ -261,7 +261,7 @@ static int hackyArmAsm(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 			if (!a->immdisp) {
 				rz_str_replace_char(buf_asm, '#', 0);
 			}
-			rz_strbuf_set(&op->buf_asm, buf_asm);
+			rz_strbuf_set(op->buf_asm, buf_asm);
 			free(buf_asm);
 			return op->size = 4;
 		}

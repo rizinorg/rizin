@@ -54,7 +54,7 @@ static ut64 java_asm_find_method(RzAsm *a) {
 
 static int java_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	JavaAsmContext *ctx = (JavaAsmContext *)a->plugin_data;
-	rz_strbuf_set(&op->buf_asm, "invalid");
+	rz_strbuf_set(op->buf_asm, "invalid");
 
 	if (a->pc < ctx->last) {
 		ctx->switchop = BYTECODE_00_NOP;
@@ -68,7 +68,7 @@ static int java_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		}
 		op->size = 4;
 		ut64 jump = ctx->pc + rz_read_be32(buf);
-		rz_strbuf_setf(&op->buf_asm, "case %d: goto 0x%" PFMT64x, ctx->count + ctx->ts.low, jump);
+		rz_strbuf_setf(op->buf_asm, "case %d: goto 0x%" PFMT64x, ctx->count + ctx->ts.low, jump);
 		java_asm_update_context(ctx);
 		return op->size;
 	}
@@ -80,7 +80,7 @@ static int java_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		op->size = 8;
 		st32 number = (st32)rz_read_be32(buf);
 		ut64 jump = ctx->pc + rz_read_at_be32(buf, 4);
-		rz_strbuf_setf(&op->buf_asm, "case %d: goto 0x%" PFMT64x, number, jump);
+		rz_strbuf_setf(op->buf_asm, "case %d: goto 0x%" PFMT64x, number, jump);
 		java_asm_update_context(ctx);
 		return op->size;
 	}
@@ -91,7 +91,7 @@ static int java_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	JavaVM vm = { 0 };
 	Bytecode bc = { 0 };
 
-	rz_strbuf_set(&op->buf_asm, "invalid");
+	rz_strbuf_set(op->buf_asm, "invalid");
 
 	ut64 section = java_asm_find_method(a);
 	if (!jvm_init(&vm, buf, len, a->pc, section)) {
@@ -101,7 +101,7 @@ static int java_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	op->size = 1;
 	if (jvm_fetch(&vm, &bc)) {
 		op->size = bc.size;
-		bytecode_snprint(&op->buf_asm, &bc);
+		bytecode_snprint(op->buf_asm, &bc);
 		if (bc.opcode == BYTECODE_AA_TABLESWITCH) {
 			ctx->count = 0;
 			ctx->switchop = BYTECODE_AA_TABLESWITCH;
@@ -148,7 +148,7 @@ static int java_assemble(RzAsm *a, RzAsmOp *ao, const char *str) {
 		return -1;
 	}
 
-	rz_strbuf_setbin(&ao->buf, (const ut8 *)&buffer, written);
+	rz_strbuf_setbin(ao->buf, (const ut8 *)&buffer, written);
 	return written;
 }
 

@@ -103,7 +103,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	if (len > 1 && !memcmp(buf, "\xff\xff", 2)) {
 		return -1;
 	}
-	op->size = mcs96_len(buf, len, &op->buf_asm);
+	op->size = mcs96_len(buf, len, op->buf_asm);
 	return op->size;
 }
 

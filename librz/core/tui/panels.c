@@ -1521,7 +1521,7 @@ void __fix_cursor_down(RzCore *core) {
 	if (!cur_is_visible) {
 		// XXX: ugly hack
 		for (int i = 0; i < 2; i++) {
-			RzAsmOp op;
+			RzAsmOp op = { 0 };
 			int sz = rz_asm_disassemble(core->rasm,
 				&op, core->block, 32);
 			if (sz < 1) {
@@ -3744,7 +3744,7 @@ void __direction_disassembly_cb(void *user, int direction) {
 			rz_core_block_read(core);
 			__set_panel_addr(core, cur, core->offset);
 		} else {
-			RzAsmOp op;
+			RzAsmOp op = { 0 };
 			rz_core_visual_disasm_down(core, &op, &cols);
 			rz_core_seek(core, core->offset + cols, true);
 			__set_panel_addr(core, cur, core->offset);

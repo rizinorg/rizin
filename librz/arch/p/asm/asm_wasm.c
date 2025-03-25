@@ -22,7 +22,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 }
 
 static int assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
-	ut8 *opbuf = (ut8 *)rz_strbuf_get(&op->buf);
+	ut8 *opbuf = (ut8 *)rz_strbuf_get(op->buf);
 	op->size = wasm_asm(buf, opbuf, 32); // XXX hardcoded opsize
 	return op->size;
 }

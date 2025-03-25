@@ -67,8 +67,8 @@ typedef struct rz_asm_op_t {
 	int bitsize; // instruction size in bits (or 0 if fits in 8bit bytes) // why this field is dup?
 	int payload; // size of payload (opsize = (size-payload))
 	// But this is pretty slow..so maybe we should add some accessors
-	RzStrBuf buf;
-	RzStrBuf buf_asm;
+	RzStrBuf *buf;
+	RzStrBuf *buf_asm;
 	RzBuffer *buf_inc; // must die
 	RzAsmTokenString *asm_toks; ///< Tokenized asm string.
 } RzAsmOp;

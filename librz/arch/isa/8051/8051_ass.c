@@ -1184,7 +1184,7 @@ int assemble_8051(RzAsm *a, RzAsmOp *op, char const *user_asm) {
 	if (!a || !op || !user_asm) {
 		return 0;
 	}
-	rz_strbuf_set(&op->buf_asm, user_asm);
+	rz_strbuf_set(op->buf_asm, user_asm);
 	while (!terminates_asm_line(*user_asm) && (*user_asm == ' ' || *user_asm == '\t')) {
 		user_asm += 1;
 	}
@@ -1238,7 +1238,7 @@ int assemble_8051(RzAsm *a, RzAsmOp *op, char const *user_asm) {
 		arg[2] = 0;
 		carg[0] = 0;
 		size_t len = binp - instr;
-		rz_strbuf_setbin(&op->buf, instr, len);
+		rz_strbuf_setbin(op->buf, instr, len);
 		return binp - instr;
 	}
 }

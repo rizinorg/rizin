@@ -20,7 +20,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		dlen = 0;
 	}
 	if (s) {
-		rz_strbuf_set(&op->buf_asm, s);
+		rz_strbuf_set(op->buf_asm, s);
 		free(s);
 	}
 	op->size = dlen;

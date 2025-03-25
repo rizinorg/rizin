@@ -98,10 +98,10 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		break;
 	}
 
-	rz_strbuf_set(&op->buf_asm, buf_asm);
+	rz_strbuf_set(op->buf_asm, buf_asm);
 
 	RzPVector *token_patterns = get_token_patterns(a);
-	op->asm_toks = rz_asm_tokenize_asm_regex(&op->buf_asm, token_patterns);
+	op->asm_toks = rz_asm_tokenize_asm_regex(op->buf_asm, token_patterns);
 	op->asm_toks->op_type = op_type;
 
 	op->size = 1;
@@ -114,7 +114,7 @@ static bool _write_asm(RzAsmOp *op, int value, int n) {
 		return true;
 	}
 	memset(opbuf, value, n);
-	rz_strbuf_setbin(&op->buf, opbuf, n);
+	rz_strbuf_setbin(op->buf, opbuf, n);
 	free(opbuf);
 	return false;
 }

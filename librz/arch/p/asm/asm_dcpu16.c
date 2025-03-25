@@ -16,13 +16,13 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		return -1; // at least 2 bytes!
 	}
 	op->size = dcpu16_disasm(buf_asm, sizeof(buf_asm), (const ut16 *)buf, len, NULL);
-	rz_strbuf_set(&op->buf_asm, (op->size > 0) ? buf_asm : "(data)");
+	rz_strbuf_set(op->buf_asm, (op->size > 0) ? buf_asm : "(data)");
 	return op->size;
 }
 
 static int assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
-	int len = dcpu16_assemble((ut8 *)rz_strbuf_get(&op->buf), buf);
-	op->buf.len = len;
+	int len = dcpu16_assemble((ut8 *)rz_strbuf_get(op->buf), buf);
+	op->buf->len = len;
 	return len;
 }
 

@@ -102,7 +102,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	}
 	if (op) {
 		op->size = 4;
-		rz_strbuf_set(&op->buf_asm, "");
+		rz_strbuf_set(op->buf_asm, "");
 	}
 	if (!ctx->cd || mode != ctx->omode) {
 		ret = (a->bits == 64) ? cs_open(CS_ARCH_ARM64, mode, &ctx->cd) : cs_open(CS_ARCH_ARM, mode, &ctx->cd);
@@ -138,7 +138,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	if (a->features && *a->features) {
 		if (!check_features(a, insn) && op) {
 			op->size = insn->size;
-			rz_strbuf_set(&op->buf_asm, "illegal");
+			rz_strbuf_set(op->buf_asm, "illegal");
 		}
 	}
 	if (op && !op->size) {
@@ -169,7 +169,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 beach:
 	cs_close(&ctx->cd);
 	if (op) {
-		if (!*rz_strbuf_get(&op->buf_asm)) {
+		if (!*rz_strbuf_get(op->buf_asm)) {
 			rz_asm_op_set_asm(op, "invalid");
 		}
 		return op->size;
@@ -221,7 +221,7 @@ static int assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
 			rz_write_be32(opbuf, opcode);
 		}
 	}
-	rz_strbuf_setbin(&op->buf, opbuf, opsize);
+	rz_strbuf_setbin(op->buf, opbuf, opsize);
 	// XXX. thumb endian assembler needs no swap
 	return opsize;
 }

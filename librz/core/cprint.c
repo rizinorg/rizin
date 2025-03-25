@@ -543,7 +543,7 @@ RZ_API RZ_OWN char *rz_core_print_bytes_with_inst(RZ_NONNULL RzCore *core, RZ_NO
 			rz_strbuf_appendf(sb, "%s0x%02x", j ? ", " : "", buf[i]);
 			i++;
 		}
-		rz_strbuf_appendf(sb, "  // %s\n", rz_strbuf_get(&asmop.buf_asm));
+		rz_strbuf_appendf(sb, "  // %s\n", rz_strbuf_get(asmop.buf_asm));
 		rz_asm_op_fini(&asmop);
 		i--;
 	}

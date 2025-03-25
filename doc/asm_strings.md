@@ -193,10 +193,10 @@ In our example we do it in `disassemble()`.
 		break;
 	}
 
-	rz_strbuf_set(&op->buf_asm, buf_asm);
+	rz_strbuf_set(op->buf_asm, buf_asm);
 
 	RzPVector *token_patterns = get_token_patterns();
-	op->asm_toks = rz_asm_tokenize_asm_regex(&op->buf_asm, token_patterns);
+	op->asm_toks = rz_asm_tokenize_asm_regex(op->buf_asm, token_patterns);
 	op->asm_toks->op_type = op_type;
 
 	// ...

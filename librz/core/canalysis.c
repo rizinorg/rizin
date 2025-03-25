@@ -1062,12 +1062,12 @@ RZ_API RzAnalysisOp *rz_core_analysis_op(RzCore *core, ut64 addr, int mask) {
 	}
 	// TODO This code block must be deleted when all the analysis plugins support disasm
 	if (!op->mnemonic && mask & RZ_ANALYSIS_OP_MASK_DISASM) {
-		RzAsmOp asmop;
+		RzAsmOp asmop = { 0 };
 		RZ_LOG_DEBUG("Unimplemented RZ_ANALYSIS_OP_MASK_DISASM for current analysis.arch. Using the RzAsmOp as fallback for now.\n");
 		rz_asm_set_pc(core->rasm, addr);
 		rz_asm_op_init(&asmop);
 		if (rz_asm_disassemble(core->rasm, &asmop, ptr, len) > 0) {
-			op->mnemonic = rz_str_dup(rz_strbuf_get(&asmop.buf_asm));
+			op->mnemonic = rz_str_dup(rz_strbuf_get(asmop.buf_asm));
 		}
 		rz_asm_op_fini(&asmop);
 	}
@@ -5102,7 +5102,7 @@ RZ_API void rz_analysis_bytes_free(RZ_NULLABLE void *ptr) {
 
 static ut64 analysis_bytes_oplen(RzCore *core, const ut8 *ptr, ut64 addr, int len, int min_op_size, int mask) {
 	int oplen = 0;
-	RzAsmOp asmop;
+	RzAsmOp asmop = { 0 };
 	RzAnalysisOp op;
 	rz_asm_op_init(&asmop);
 	rz_asm_set_pc(core->rasm, addr);
@@ -5260,7 +5260,7 @@ static void *AnalysisBytesContext_next(RzIterator *it) {
 
 	if (ctx->asm_sub_var) {
 		rz_parse_subvar(core->parser, fcn, op,
-			ctx->asm_buff, ctx->asm_buff, sizeof(asmop->buf_asm));
+			ctx->asm_buff, ctx->asm_buff, sizeof(ctx->asm_buff));
 	}
 
 	rz_parse_filter(core->parser, addr, core->flags, ab->hint,

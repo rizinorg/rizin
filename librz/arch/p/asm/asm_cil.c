@@ -9,7 +9,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	if (cil_dis(&cilop, buf, len)) {
 		return 0;
 	}
-	rz_strbuf_copy(&op->buf_asm, &cilop.strbuf);
+	rz_strbuf_copy(op->buf_asm, &cilop.strbuf);
 	rz_strbuf_fini(&cilop.strbuf);
 	return op->size = cilop.size;
 }

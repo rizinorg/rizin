@@ -69,7 +69,7 @@ static int m680x_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 			rz_asm_op_setf_asm(op, "%s%s%s",
 				insn->mnemonic, insn->op_str[0] ? " " : "",
 				insn->op_str);
-			char *ptrstr = strstr(rz_strbuf_get(&op->buf_asm), "ptr ");
+			char *ptrstr = strstr(rz_strbuf_get(op->buf_asm), "ptr ");
 			if (ptrstr) {
 				memmove(ptrstr, ptrstr + 4, strlen(ptrstr + 4) + 1);
 			}

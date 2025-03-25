@@ -498,9 +498,9 @@ static int dalvik_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 			strasm = NULL;
 			size = 2;
 		}
-		rz_strbuf_set(&op->buf_asm, strasm ? strasm : "invalid");
+		rz_strbuf_set(op->buf_asm, strasm ? strasm : "invalid");
 	} else if (len > 0) {
-		rz_strbuf_set(&op->buf_asm, "invalid");
+		rz_strbuf_set(op->buf_asm, "invalid");
 		op->size = len;
 		size = len;
 	}
@@ -536,7 +536,7 @@ static int dalvik_assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
 		if (!strcmp(dalvik_opcodes[i].name, buf)) {
 			ut8 buf[4];
 			rz_write_ble32(buf, i, a->big_endian);
-			rz_strbuf_setbin(&op->buf, buf, sizeof(buf));
+			rz_strbuf_setbin(op->buf, buf, sizeof(buf));
 			op->size = dalvik_opcodes[i].len;
 			return op->size;
 		}

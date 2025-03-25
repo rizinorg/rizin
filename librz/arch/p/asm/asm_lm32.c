@@ -413,13 +413,13 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	instr.value = buf[0] << 24 | buf[1] << 16 | buf[2] << 8 | buf[3];
 	instr.addr = a->pc;
 	if (rz_asm_lm32_decode(&instr)) {
-		rz_strbuf_set(&op->buf_asm, "invalid");
+		rz_strbuf_set(op->buf_asm, "invalid");
 		a->invhex = 1;
 		return -1;
 	}
 	// op->buf_asm is 256 chars long, which is more than sufficient
-	if (rz_asm_lm32_stringify(&instr, rz_strbuf_get(&op->buf_asm))) {
-		rz_strbuf_set(&op->buf_asm, "invalid");
+	if (rz_asm_lm32_stringify(&instr, rz_strbuf_get(op->buf_asm))) {
+		rz_strbuf_set(op->buf_asm, "invalid");
 		a->invhex = 1;
 		return -1;
 	}

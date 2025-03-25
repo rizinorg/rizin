@@ -64,7 +64,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	if (len < 4) {
 		return -1;
 	}
-	buf_global = &op->buf_asm;
+	buf_global = op->buf_asm;
 	Offset = a->pc;
 	memcpy(bytes, buf, RZ_MIN(len, 8)); // TODO handle thumb
 
@@ -122,7 +122,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		}
 	}
 	if (op->size == -1) {
-		rz_strbuf_set(&op->buf_asm, "(data)");
+		rz_strbuf_set(op->buf_asm, "(data)");
 	}
 	return op->size;
 }

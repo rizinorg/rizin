@@ -24,7 +24,7 @@ RZ_IPI bool rz_core_visual_bit_editor(RzCore *core) {
 	const int nbits = sizeof(ut64) * 8;
 	bool colorBits = false;
 	int i, j, x = 0;
-	RzAsmOp asmop;
+	RzAsmOp asmop = { 0 };
 	RzAnalysisOp aop = { 0 };
 	ut8 buf[sizeof(ut64)];
 	bool bitsInLine = false;
@@ -61,7 +61,7 @@ RZ_IPI bool rz_core_visual_bit_editor(RzCore *core) {
 		}
 		{
 			RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, aop.type);
-			RzStrBuf *colored_asm = rz_asm_colorize_asm_str(&asmop.buf_asm, core->print, param, asmop.asm_toks);
+			RzStrBuf *colored_asm = rz_asm_colorize_asm_str(asmop.buf_asm, core->print, param, asmop.asm_toks);
 			rz_asm_parse_param_free(param);
 			rz_cons_printf(Color_RESET "asm: %s\n" Color_RESET, colored_asm ? rz_strbuf_get(colored_asm) : "");
 			rz_strbuf_free(colored_asm);

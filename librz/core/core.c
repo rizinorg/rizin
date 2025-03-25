@@ -1188,7 +1188,7 @@ RZ_API char *rz_core_analysis_hasrefs_to_depth(RzCore *core, ut64 value, PJ *pj,
 				rz_strbuf_appendf(s, "%sW%s ", c, cend);
 			}
 			if (type & RZ_ANALYSIS_ADDR_TYPE_EXEC) {
-				RzAsmOp op;
+				RzAsmOp op = { 0 };
 				ut8 buf[32];
 				rz_strbuf_appendf(s, "%sX%s ", c, cend);
 				/* instruction disassembly */
@@ -1967,7 +1967,7 @@ RZ_API char *rz_core_op_str(RzCore *core, ut64 addr) {
 	rz_asm_set_pc(core->rasm, addr);
 	rz_io_read_at(core->io, addr, buf, sizeof(buf));
 	int ret = rz_asm_disassemble(core->rasm, &op, buf, sizeof(buf));
-	char *str = (ret > 0) ? rz_str_dup(rz_strbuf_get(&op.buf_asm)) : NULL;
+	char *str = (ret > 0) ? rz_str_dup(rz_strbuf_get(op.buf_asm)) : NULL;
 	rz_asm_op_fini(&op);
 	return str;
 }

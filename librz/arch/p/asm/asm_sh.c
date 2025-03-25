@@ -12,10 +12,10 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	SHOp *dis_op = sh_disassembler(rz_read_ble16(buf, a->big_endian));
 	op->size = 2;
 	if (!dis_op) {
-		rz_strbuf_set(&op->buf_asm, "invalid");
+		rz_strbuf_set(op->buf_asm, "invalid");
 	} else {
 		char *disasm = sh_op_to_str(dis_op, a->pc);
-		rz_strbuf_set(&op->buf_asm, disasm);
+		rz_strbuf_set(op->buf_asm, disasm);
 		free(disasm);
 	}
 	RZ_FREE(dis_op);
@@ -31,7 +31,7 @@ static int assemble(RzAsm *a, RzAsmOp *ao, const char *str) {
 
 	ut8 buffer[2];
 	rz_write_ble16(buffer, opcode, a->big_endian);
-	rz_strbuf_setbin(&ao->buf, buffer, 2);
+	rz_strbuf_setbin(ao->buf, buffer, 2);
 	return 2;
 }
 

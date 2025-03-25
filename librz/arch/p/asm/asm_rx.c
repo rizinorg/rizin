@@ -16,7 +16,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		return bytes_read;
 	}
 
-	rx_inst_stringify(&inst, &op->buf_asm);
+	rx_inst_stringify(&inst, op->buf_asm);
 	op->size = bytes_read;
 	return bytes_read;
 }

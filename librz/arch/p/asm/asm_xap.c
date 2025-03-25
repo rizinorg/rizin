@@ -20,7 +20,7 @@ static int arch_xap_disasm(RzStrBuf *asm_buf, const unsigned char *buf, ut64 add
 	return 0;
 }
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
-	arch_xap_disasm(&op->buf_asm, buf, a->pc);
+	arch_xap_disasm(op->buf_asm, buf, a->pc);
 	return (op->size = 2);
 }
 

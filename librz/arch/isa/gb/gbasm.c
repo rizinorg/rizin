@@ -212,8 +212,8 @@ int gbAsm(RzAsm *a, RzAsmOp *op, const char *buf) {
 		return 0;
 	}
 	ut8 opbuf[4] = { 0 };
-	rz_strbuf_set(&op->buf_asm, buf);
-	char *buf_asm = rz_strbuf_get(&op->buf_asm);
+	rz_strbuf_set(op->buf_asm, buf);
+	char *buf_asm = rz_strbuf_get(op->buf_asm);
 	ut32 buf_len = strlen(buf);
 	while (strstr(buf_asm, "  ")) {
 		rz_str_replace_in(buf_asm, buf_len, "  ", " ", true);
@@ -651,6 +651,6 @@ int gbAsm(RzAsm *a, RzAsmOp *op, const char *buf) {
 		len = 0;
 		break;
 	}
-	memcpy(rz_strbuf_get(&op->buf), opbuf, sizeof(ut8) * len);
+	memcpy(rz_strbuf_get(op->buf), opbuf, sizeof(ut8) * len);
 	return op->size = len;
 }

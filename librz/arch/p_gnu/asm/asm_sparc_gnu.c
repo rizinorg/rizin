@@ -47,13 +47,13 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	if (len < 4) {
 		return -1;
 	}
-	buf_global = &op->buf_asm;
+	buf_global = op->buf_asm;
 	Offset = a->pc;
 	// disasm inverted
 	ut32 newbuf = rz_swap_ut32(*(ut32 *)buf);
 	memcpy(bytes, &newbuf, 4); // TODO handle thumb
 
-	rz_strbuf_set(&op->buf_asm, "");
+	rz_strbuf_set(op->buf_asm, "");
 	/* prepare disassembler */
 	memset(&ctx->disasm_obj, '\0', sizeof(struct disassemble_info));
 	ctx->disasm_obj.buffer = bytes;
@@ -70,7 +70,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 
 	op->size = print_insn_sparc((bfd_vma)Offset, &ctx->disasm_obj);
 
-	if (!strncmp(rz_strbuf_get(&op->buf_asm), "unknown", 7)) {
+	if (!strncmp(rz_strbuf_get(op->buf_asm), "unknown", 7)) {
 		rz_asm_op_set_asm(op, "invalid");
 	}
 	if (op->size == -1) {

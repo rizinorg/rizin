@@ -169,7 +169,7 @@ int lua54_disasm(RzAsmOp *op, const ut8 *buf, int len, LuaOpNameList opnames) {
 		asm_string = rz_str_newf("invalid");
 	}
 
-	rz_strbuf_append(&op->buf_asm, asm_string);
+	rz_strbuf_append(op->buf_asm, asm_string);
 	op->size = 4;
 	RZ_FREE(asm_string);
 	return 4;

@@ -118,7 +118,7 @@ static int x86_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		decompile_vm(a, op, buf, len);
 	}
 	if (a->syntax == RZ_ASM_SYNTAX_JZ) {
-		char *buf_asm = rz_strbuf_get(&op->buf_asm);
+		char *buf_asm = rz_strbuf_get(op->buf_asm);
 		if (!strncmp(buf_asm, "je ", 3)) {
 			memcpy(buf_asm, "jz", 2);
 		} else if (!strncmp(buf_asm, "jne ", 4)) {

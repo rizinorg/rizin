@@ -79,7 +79,7 @@ fin:
 }
 
 static int mips_assemble(RzAsm *a, RzAsmOp *op, const char *str) {
-	ut8 *opbuf = (ut8 *)rz_strbuf_get(&op->buf);
+	ut8 *opbuf = (ut8 *)rz_strbuf_get(op->buf);
 	int ret = mips_assemble_opcode(str, a->pc, opbuf);
 	if (a->big_endian) {
 		ut8 *buf = opbuf;
