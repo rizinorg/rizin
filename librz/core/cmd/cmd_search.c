@@ -702,7 +702,7 @@ static void do_ref_search(RzCore *core, ut64 addr, ut64 from, ut64 to, struct se
 	RzAnalysisXRef *xref;
 	RzListIter *iter;
 	ut8 buf[12];
-	RzAsmOp asmop;
+	RzAsmOp asmop = { 0 };
 	RzList *list = rz_analysis_xrefs_get_to(core->analysis, addr);
 	if (list) {
 		rz_list_foreach (list, iter, xref) {
@@ -1476,7 +1476,7 @@ static void __core_cmd_search_asm_infinite(RzCore *core, const char *arg) {
 }
 
 static void __core_cmd_search_asm_byteswap(RzCore *core, int nth) {
-	RzAsmOp asmop;
+	RzAsmOp asmop = { 0 };
 	ut8 buf[32];
 	int i;
 	rz_io_read_at(core->io, 0, buf, sizeof(buf));

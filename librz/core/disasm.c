@@ -5438,7 +5438,7 @@ toro:
 
 			ds_print_asmop_payload(ds, buf + addrbytes * idx);
 			if (core->rasm->syntax != RZ_ASM_SYNTAX_INTEL) {
-				RzAsmOp ao; /* disassemble for the vm .. */
+				RzAsmOp ao = { 0 }; /* disassemble for the vm .. */
 				int os = core->rasm->syntax;
 				rz_asm_set_syntax(core->rasm, RZ_ASM_SYNTAX_INTEL);
 				rz_asm_disassemble(core->rasm, &ao, buf + addrbytes * idx,
@@ -5478,7 +5478,7 @@ toro:
 
 			ds_print_asmop_payload(ds, buf + addrbytes * idx);
 			if (core->rasm->syntax != RZ_ASM_SYNTAX_INTEL) {
-				RzAsmOp ao; /* disassemble for the vm .. */
+				RzAsmOp ao = { 0 }; /* disassemble for the vm .. */
 				int os = core->rasm->syntax;
 				rz_asm_set_syntax(core->rasm, RZ_ASM_SYNTAX_INTEL);
 				rz_asm_disassemble(core->rasm, &ao, buf + addrbytes * idx,
@@ -5999,7 +5999,7 @@ RZ_API int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len, int
 	int i, ret, count = 0;
 	ut8 *buf = core->block;
 	char str[128];
-	RzAsmOp asmop;
+	RzAsmOp asmop = { 0 };
 	if (l < 1) {
 		l = len;
 	}
@@ -6128,7 +6128,7 @@ RZ_API int rz_core_disasm_pdi_with_buf(RzCore *core, ut64 address, ut8 *buf, ut3
 	bool asm_immtrim = rz_config_get_b(core->config, "asm.imm.trim");
 	bool alloc_buf = !buf;
 	int i = 0, j, ret, err = 0;
-	RzAsmOp asmop;
+	RzAsmOp asmop = { 0 };
 	const size_t addrbytes = buf ? 1 : core->io->addrbytes;
 
 	// set the parameter equaling 0 to a value that won't affect another parameter

@@ -351,7 +351,7 @@ static void core_analysis_bytes_size(RzCore *core, const ut8 *buf, int len, int 
 static void core_analysis_bytes_desc(RzCore *core, const ut8 *buf, int len, int nops) {
 	core->parser->subrel = rz_config_get_i(core->config, "asm.sub.rel");
 	int ret, i, idx;
-	RzAsmOp asmop;
+	RzAsmOp asmop = { 0 };
 	RzAnalysisOp op = { 0 };
 	ut64 addr;
 
@@ -2946,7 +2946,7 @@ RZ_IPI RzCmdStatus rz_analysis_xrefs_from_list_handler(RzCore *core, int argc, c
 		rz_list_foreach (list, iter, xref) {
 			ut8 buf[16];
 			char *desc;
-			RzAsmOp asmop;
+			RzAsmOp asmop = { 0 };
 			RzFlagItem *flag = rz_flag_get_at(core->flags, xref->to, false);
 			if (flag) {
 				desc = flag->name;

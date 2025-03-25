@@ -24,7 +24,7 @@ RZ_IPI bool rz_core_visual_bit_editor(RzCore *core) {
 	const int nbits = sizeof(ut64) * 8;
 	bool colorBits = false;
 	int i, j, x = 0;
-	RzAsmOp asmop;
+	RzAsmOp asmop = { 0 };
 	RzAnalysisOp aop = { 0 };
 	ut8 buf[sizeof(ut64)];
 	bool bitsInLine = false;

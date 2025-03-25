@@ -1188,7 +1188,7 @@ RZ_API char *rz_core_analysis_hasrefs_to_depth(RzCore *core, ut64 value, PJ *pj,
 				rz_strbuf_appendf(s, "%sW%s ", c, cend);
 			}
 			if (type & RZ_ANALYSIS_ADDR_TYPE_EXEC) {
-				RzAsmOp op;
+				RzAsmOp op = { 0 };
 				ut8 buf[32];
 				rz_strbuf_appendf(s, "%sX%s ", c, cend);
 				/* instruction disassembly */

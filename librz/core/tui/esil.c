@@ -39,7 +39,7 @@ RZ_IPI bool rz_core_visual_esil(RzCore *core) {
 	const int nbits = sizeof(ut64) * 8;
 	char *word = NULL;
 	int x = 0;
-	RzAsmOp asmop;
+	RzAsmOp asmop = { 0 };
 	RzAnalysisOp aop = { 0 };
 	ut8 buf[sizeof(ut64)];
 	unsigned int addrsize = rz_config_get_i(core->config, "esil.addr.size");
