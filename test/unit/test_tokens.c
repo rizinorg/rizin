@@ -337,6 +337,7 @@ static bool test_rz_tokenize_custom_hexagon_0(void) {
 	}
 
 	rz_asm_op_fini(op);
+	free(op);
 	rz_asm_free(a);
 	mu_end;
 }
@@ -380,6 +381,7 @@ static bool test_rz_tokenize_custom_hexagon_1(void) {
 	};
 
 	rz_asm_op_fini(op);
+	free(op);
 	rz_asm_free(a);
 	mu_end;
 }
@@ -407,6 +409,7 @@ static bool test_rz_colorize_generic_0(void) {
 
 	rz_asm_parse_param_free(param);
 	rz_asm_op_fini(asmop);
+	free(asmop);
 	rz_analysis_op_free(anaop);
 	rz_asm_free(d);
 	rz_analysis_free(a);
@@ -429,15 +432,18 @@ static bool test_rz_colorize_generic_1(void) {
 	rz_asm_disassemble(d, asmop, buf, sizeof(buf));
 	rz_analysis_op(a, anaop, 0x0, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_ALL);
 
+	RzAsmParseParam *param = rz_asm_get_parse_param(a->reg, anaop->type);
 	RzStrBuf *colored_asm = rz_asm_colorize_asm_str(&asmop->buf_asm, p,
-		rz_asm_get_parse_param(a->reg, anaop->type), asmop->asm_toks);
+		param, asmop->asm_toks);
 
 	RzStrBuf *expected = rz_strbuf_new("\x1b[33madc.w\x1b[0m\x1b[37m \x1b[0m\x1b[36mr8\x1b[0m\x1b[37m, \x1b[0m\x1b[36msb\x1b[0m\x1b[37m, \x1b[0m\x1b[36msl\x1b[0m\x1b[37m, \x1b[0m\x1b[37mlsl\x1b[0m\x1b[37m \x1b[0m\x1b[33m31\x1b[0m");
 	char err_msg[2048];
 	snprintf(err_msg, sizeof(err_msg), "Colors of \"%s\" are incorrect. Should be \"%s\"\n.", rz_strbuf_get(colored_asm), rz_strbuf_get(expected));
 	mu_assert_true(rz_strbuf_equals(colored_asm, expected), err_msg);
 
+	rz_asm_parse_param_free(param);
 	rz_asm_op_fini(asmop);
+	free(asmop);
 	rz_analysis_op_free(anaop);
 	rz_asm_free(d);
 	rz_analysis_free(a);
@@ -460,15 +466,18 @@ static bool test_rz_colorize_generic_2(void) {
 	rz_asm_disassemble(d, asmop, buf, sizeof(buf));
 	rz_analysis_op(a, anaop, 0x0, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_ALL);
 
+	RzAsmParseParam *param = rz_asm_get_parse_param(a->reg, anaop->type);
 	RzStrBuf *colored_asm = rz_asm_colorize_asm_str(&asmop->buf_asm, p,
-		rz_asm_get_parse_param(a->reg, anaop->type), asmop->asm_toks);
+		param, asmop->asm_toks);
 
 	RzStrBuf *expected = rz_strbuf_new("\x1b[37mmovabs\x1b[0m\x1b[37m \x1b[0m\x1b[36mrax\x1b[0m\x1b[37m, \x1b[0m\x1b[33m0x1122334455667788\x1b[0m");
 	char err_msg[2048];
 	snprintf(err_msg, sizeof(err_msg), "Colors of \"%s\" are incorrect. Should be \"%s\"\n.", rz_strbuf_get(colored_asm), rz_strbuf_get(expected));
 	mu_assert_true(rz_strbuf_equals(colored_asm, expected), err_msg);
 
+	rz_asm_parse_param_free(param);
 	rz_asm_op_fini(asmop);
+	free(asmop);
 	rz_analysis_op_free(anaop);
 	rz_asm_free(d);
 	rz_analysis_free(a);
@@ -490,8 +499,9 @@ static bool test_rz_colorize_generic_3(void) {
 	rz_asm_disassemble(d, asmop, buf, sizeof(buf));
 	rz_analysis_op(a, anaop, 0x0, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_ALL);
 
+	RzAsmParseParam *param = rz_asm_get_parse_param(a->reg, anaop->type);
 	RzStrBuf *colored_asm = rz_asm_colorize_asm_str(&asmop->buf_asm, p,
-		rz_asm_get_parse_param(a->reg, anaop->type), asmop->asm_toks);
+		param, asmop->asm_toks);
 
 	RzStrBuf *expected = rz_strbuf_new("\x1b[37mmov\x1b[0m\x1b[37m \x1b[0m\x1b[36mac0\x1b[0m\x1b[37m.\x1b[0m\x1b[37ml\x1b[0m\x1b[37m, \x1b[0m\x1b[37m*\x1b[0m\x1b[36mar2\x1b[0m\x1b[37m |\x1b[0m\x1b[37m|\x1b[0m\x1b[37m \x1b[0m\x1b[37mmov\x1b[0m\x1b[37m \x1b[0m\x1b[37m*\x1b[0m\x1b[37m(\x1b[0m\x1b[36mar1\x1b[0m\x1b[37m+\x1b[0m\x1b[37mt0b\x1b[0m\x1b[37m) \x1b[0m\x1b[37m<<\x1b[0m\x1b[37m \x1b[0m\x1b[36mt3\x1b[0m\x1b[37m, \x1b[0m\x1b[36mac1\x1b[0m");
 
@@ -499,7 +509,9 @@ static bool test_rz_colorize_generic_3(void) {
 	snprintf(err_msg, sizeof(err_msg), "Colors of \"%s\" are incorrect. Should be \"%s\"\n.", rz_strbuf_get(colored_asm), rz_strbuf_get(expected));
 	mu_assert_true(rz_strbuf_equals(colored_asm, expected), err_msg);
 
+	rz_asm_parse_param_free(param);
 	rz_asm_op_fini(asmop);
+	free(asmop);
 	rz_analysis_op_free(anaop);
 	rz_asm_free(d);
 	rz_analysis_free(a);
@@ -521,8 +533,9 @@ static bool test_rz_colorize_generic_4(void) {
 	rz_asm_disassemble(d, asmop, buf, sizeof(buf));
 	rz_analysis_op(a, anaop, 0x0, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_ALL);
 
+	RzAsmParseParam *param = rz_asm_get_parse_param(a->reg, anaop->type);
 	RzStrBuf *colored_asm = rz_asm_colorize_asm_str(&asmop->buf_asm, p,
-		rz_asm_get_parse_param(a->reg, anaop->type), asmop->asm_toks);
+		param, asmop->asm_toks);
 
 	RzStrBuf *expected = rz_strbuf_new("\x1b[37mmov\x1b[0m\x1b[37m \x1b[0m\x1b[36mac0\x1b[0m\x1b[37m.\x1b[0m\x1b[37ml\x1b[0m\x1b[37m, \x1b[0m\x1b[37m*\x1b[0m\x1b[36mar2\x1b[0m\x1b[37m |\x1b[0m\x1b[37m|\x1b[0m\x1b[37m \x1b[0m\x1b[37mmov\x1b[0m\x1b[37m \x1b[0m\x1b[37m*\x1b[0m\x1b[37m(\x1b[0m\x1b[36mar1\x1b[0m\x1b[37m+\x1b[0m\x1b[37mt0b\x1b[0m\x1b[37m) \x1b[0m\x1b[37m<<\x1b[0m\x1b[37m \x1b[0m\x1b[36mt3\x1b[0m\x1b[37m, \x1b[0m\x1b[36mac1\x1b[0m");
 
@@ -530,7 +543,9 @@ static bool test_rz_colorize_generic_4(void) {
 	snprintf(err_msg, sizeof(err_msg), "Colors of \"%s\" are incorrect. Should be \"%s\"\n.", rz_strbuf_get(colored_asm), rz_strbuf_get(expected));
 	mu_assert_true(rz_strbuf_equals(colored_asm, expected), err_msg);
 
+	rz_asm_parse_param_free(param);
 	rz_asm_op_fini(asmop);
+	free(asmop);
 	rz_analysis_op_free(anaop);
 	rz_asm_free(d);
 	rz_analysis_free(a);
@@ -564,6 +579,7 @@ static bool test_rz_colorize_custom_hexagon_0(void) {
 
 	rz_asm_free(d);
 	rz_asm_op_fini(asmop);
+	free(asmop);
 	rz_analysis_op_free(anaop);
 	rz_cons_context_free(p->cons->context);
 	rz_print_free(p);
@@ -594,6 +610,7 @@ static bool test_rz_colorize_custom_hexagon_1(void) {
 
 	rz_asm_free(d);
 	rz_asm_op_fini(asmop);
+	free(asmop);
 	rz_cons_context_free(p->cons->context);
 	rz_print_free(p);
 	rz_strbuf_free(expected);
@@ -609,7 +626,7 @@ static bool test_rz_colorize_custom_hexagon_2(void) {
 	d->core = &core;
 
 	RzPrint *p = setup_print();
-	RzAsmOp *asmop;
+	RzAsmOp asmop = { 0 };
 	RzStrBuf *colored_asm;
 	RzStrBuf *expected;
 	char err_msg[2048];
@@ -628,10 +645,9 @@ static bool test_rz_colorize_custom_hexagon_2(void) {
 	};
 
 	for (int i = 0; i < 0x14; i += 4) {
-		asmop = rz_asm_op_new();
 		rz_asm_set_pc(d, i);
-		rz_asm_disassemble(d, asmop, buf + i, 4);
-		colored_asm = rz_print_colorize_asm_str(p, asmop->asm_toks);
+		rz_asm_disassemble(d, &asmop, buf + i, 4);
+		colored_asm = rz_print_colorize_asm_str(p, asmop.asm_toks);
 		expected = rz_strbuf_new(expected_str[i / 4]);
 		snprintf(err_msg, sizeof(err_msg), "Colors of \"%s\" are incorrect. Should be \"%s\"\n.", rz_strbuf_get(colored_asm), rz_strbuf_get(expected));
 		mu_assert_true(rz_strbuf_equals(colored_asm, expected), err_msg);
@@ -639,7 +655,7 @@ static bool test_rz_colorize_custom_hexagon_2(void) {
 		rz_strbuf_free(expected);
 	}
 
-	rz_asm_op_fini(asmop);
+	rz_asm_op_fini(&asmop);
 	rz_asm_free(d);
 	rz_cons_context_free(p->cons->context);
 	rz_print_free(p);
@@ -654,7 +670,7 @@ static bool test_rz_colorize_custom_hexagon_3(void) {
 	d->core = &core;
 
 	RzPrint *p = setup_print();
-	RzAsmOp *asmop;
+	RzAsmOp asmop = { 0 };
 	RzStrBuf *colored_asm;
 	RzStrBuf *expected;
 	char err_msg[2048];
@@ -676,11 +692,10 @@ static bool test_rz_colorize_custom_hexagon_3(void) {
 	};
 
 	for (int i = 0; i < 0x10; i += 4) {
-		asmop = rz_asm_op_new();
 		rz_asm_set_pc(d, i);
-		rz_asm_disassemble(d, asmop, buf + i, 4);
+		rz_asm_disassemble(d, &asmop, buf + i, 4);
 
-		colored_asm = rz_print_colorize_asm_str(p, asmop->asm_toks);
+		colored_asm = rz_print_colorize_asm_str(p, asmop.asm_toks);
 		expected = rz_strbuf_new(expected_str[i / 4]);
 		snprintf(err_msg, sizeof(err_msg), "Colors of \"%s\" are incorrect. Should be \"%s\"\n.", rz_strbuf_get(colored_asm), rz_strbuf_get(expected));
 		mu_assert_true(rz_strbuf_equals(colored_asm, expected), err_msg);
@@ -688,7 +703,7 @@ static bool test_rz_colorize_custom_hexagon_3(void) {
 		rz_strbuf_free(expected);
 	}
 
-	rz_asm_op_fini(asmop);
+	rz_asm_op_fini(&asmop);
 	rz_cons_context_free(p->cons->context);
 	rz_print_free(p);
 	rz_asm_free(d);
@@ -725,18 +740,18 @@ static bool test_rz_tokenize_custom_bf_0(void) {
 
 	RzPrint *p = setup_print();
 	char err_msg[2048];
+	RzAsmOp asmop = { 0 };
 	for (int i = 0; i < sizeof(buf) - 1; i++) {
-		RzAsmOp *asmop = rz_asm_op_new();
-		rz_asm_disassemble(a, asmop, buf + i, 1);
-		RzStrBuf *colored_asm = rz_print_colorize_asm_str(p, asmop->asm_toks);
+		rz_asm_disassemble(a, &asmop, buf + i, 1);
+		RzStrBuf *colored_asm = rz_print_colorize_asm_str(p, asmop.asm_toks);
 		RzStrBuf *expected = rz_strbuf_new(expected_str[i]);
 		snprintf(err_msg, sizeof(err_msg), "Colors of \"%s\" are incorrect. Should be \"%s\"\n.", rz_strbuf_get(colored_asm), rz_strbuf_get(expected));
 		mu_assert_true(rz_strbuf_equals(colored_asm, expected), err_msg);
-		rz_asm_op_fini(asmop);
 		rz_strbuf_free(expected);
 		rz_strbuf_free(colored_asm);
 	}
 
+	rz_asm_op_fini(&asmop);
 	rz_asm_free(a);
 	rz_cons_context_free(p->cons->context);
 	rz_print_free(p);
