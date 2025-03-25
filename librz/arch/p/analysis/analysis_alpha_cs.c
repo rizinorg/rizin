@@ -21,37 +21,38 @@ static char *get_reg_profile(RzAnalysis *_) {
 		"=A2	r18\n"
 		"=A3	r19\n"
 		"=A4	r20\n"
-		"gpr	r0	.64	0	0\n"
-		"gpr	r1	.64	8	0\n"
-		"gpr	r2	.64	16	0\n"
-		"gpr	r3	.64	24	0\n"
-		"gpr	r4	.64	32	0\n"
-		"gpr	r5	.64	40	0\n"
-		"gpr	r6	.64	48	0\n"
-		"gpr	r7	.64	56	0\n"
-		"gpr	r8	.64	64	0\n"
-		"gpr	r9	.64	72	0\n"
-		"gpr	r10	.64	80	0\n"
-		"gpr	r11	.64	88	0\n"
-		"gpr	r12	.64	96	0\n"
-		"gpr	r13	.64	104	0\n"
-		"gpr	r14	.64	112	0\n"
-		"gpr	r15	.64	120	0\n"
-		"gpr	r16	.64	128	0\n"
-		"gpr	r17	.64	136	0\n"
-		"gpr	r18	.64	144	0\n"
-		"gpr	r19	.64	152	0\n"
-		"gpr	r20	.64	160	0\n"
-		"gpr	r21	.64	168	0\n"
-		"gpr	r22	.64	176	0\n"
-		"gpr	r23	.64	184	0\n"
-		"gpr	r24	.64	192	0\n"
-		"gpr	r25	.64	200	0\n"
-		"gpr	r26	.64	208	0\n"
-		"gpr	r27	.64	216	0\n"
-		"gpr	r28	.64	224	0\n"
-		"gpr	r29	.64	232	0\n"
-		"gpr	r30	.64	240	0\n"
+		"=A5	r21\n"
+		"gpr	r0	.64	0	0\n" // v0
+		"gpr	r1	.64	8	0\n" // t0
+		"gpr	r2	.64	16	0\n" // t1
+		"gpr	r3	.64	24	0\n" // t2
+		"gpr	r4	.64	32	0\n" // t3
+		"gpr	r5	.64	40	0\n" // t4
+		"gpr	r6	.64	48	0\n" // t5
+		"gpr	r7	.64	56	0\n" // t6
+		"gpr	r8	.64	64	0\n" // t7
+		"gpr	r9	.64	72	0\n" // s0
+		"gpr	r10	.64	80	0\n" // s1
+		"gpr	r11	.64	88	0\n" // s2
+		"gpr	r12	.64	96	0\n" // s3
+		"gpr	r13	.64	104	0\n" // s4
+		"gpr	r14	.64	112	0\n" // s5
+		"gpr	r15	.64	120	0\n" // fp
+		"gpr	r16	.64	128	0\n" // a0
+		"gpr	r17	.64	136	0\n" // a1
+		"gpr	r18	.64	144	0\n" // a2
+		"gpr	r19	.64	152	0\n" // a3
+		"gpr	r20	.64	160	0\n" // a4
+		"gpr	r21	.64	168	0\n" // a5
+		"gpr	r22	.64	176	0\n" // t8
+		"gpr	r23	.64	184	0\n" // t9
+		"gpr	r24	.64	192	0\n" // t10
+		"gpr	r25	.64	200	0\n" // t11
+		"gpr	r26	.64	208	0\n" // ra
+		"gpr	r27	.64	216	0\n" // t12
+		"gpr	r28	.64	224	0\n" // at
+		"gpr	r29	.64	232	0\n" // gp
+		"gpr	r30	.64	240	0\n" // sp
 		"gpr	r31	.64	248	0\n" // always zero
 		"fpu	f0	.64	256	0\n"
 		"fpu	f1	.64	264	0\n"
