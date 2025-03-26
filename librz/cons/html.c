@@ -61,7 +61,7 @@ RZ_API char *rz_cons_html_filter(const char *ptr, int *newlen) {
 					rz_strbuf_appendf(res, " color='%s'", text_color);
 				}
 				if (background_color[0]) {
-					rz_strbuf_append(res, first_style ? " style='" : ";");
+					rz_strbuf_append(res, " style='");
 					rz_strbuf_appendf(res, "background-color:%s", background_color);
 					first_style = false;
 				}
