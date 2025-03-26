@@ -2045,8 +2045,8 @@ static RzILOpEffect *avr_il_movw(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis
 
 	RzILOpEffect *let, *movw;
 	// Rd+1:Rd = Rr+1:Rr
-	ut16 Rd = aop->param[0];
-	ut16 Rr = aop->param[1];
+	ut32 Rd = aop->param[0];
+	ut32 Rr = aop->param[1];
 	avr_return_val_if_invalid_gpr(Rd, NULL);
 	avr_return_val_if_invalid_gpr(Rr, NULL);
 
