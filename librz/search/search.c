@@ -718,12 +718,15 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_search_on_io(
 	intervals = rz_th_queue_new(RZ_THREAD_QUEUE_UNLIMITED, (RzListFree)rz_search_interval_free);
 	if (!intervals) {
 		RZ_LOG_ERROR("search: cannot allocate RzSearchInterval queue.\n");
+		rz_th_queue_free(hits);
 		return NULL;
 	}
 
 	windows = assemble_search_window_list(search_in, opt);
 	if (!windows) {
 		RZ_LOG_ERROR("search: Could not prepare search window queue.\n");
+		rz_th_queue_free(hits);
+		rz_th_queue_free(intervals);
 		return NULL;
 	}
 
