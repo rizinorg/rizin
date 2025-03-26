@@ -10,7 +10,6 @@ EXPECT=<<EOF
 5  dbg  native   LGPL3
 6  ---  null     MIT
 7  ---  qnx      LGPL3
-8  ---  rap      LGPL3
-9  ---  winkd    LGPL3
+8  ---  winkd    LGPL3
 EOF
 RUN

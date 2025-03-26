@@ -519,9 +519,6 @@ RZ_API void rz_core_rtr_pushout(RzCore *core, const char *input) {
 	}
 
 	switch (rtr_host[rtr_n].proto) {
-	case RTR_PROTOCOL_RAP:
-		RZ_LOG_ERROR("core: Cannot use '=<' to a rap connection.\n");
-		break;
 	case RTR_PROTOCOL_UNIX:
 		rz_socket_write(rtr_host[rtr_n].fd, str, strlen(str));
 		break;
@@ -545,12 +542,11 @@ RZ_API void rz_core_rtr_list(RzCore *core) {
 		if (!rtr_host[i].fd) {
 			continue;
 		}
-		const char *proto = "rap";
+		const char *proto = "http";
 		switch (rtr_host[i].proto) {
 		case RTR_PROTOCOL_HTTP: proto = "http"; break;
 		case RTR_PROTOCOL_TCP: proto = "tcp"; break;
 		case RTR_PROTOCOL_UDP: proto = "udp"; break;
-		case RTR_PROTOCOL_RAP: proto = "rap"; break;
 		case RTR_PROTOCOL_UNIX: proto = "unix"; break;
 		}
 		rz_cons_printf("%d fd:%i %s://%s:%i/%s\n",
@@ -568,7 +564,7 @@ RZ_API void rz_core_rtr_add(RzCore *core, const char *_input) {
 	strncpy(input, _input, sizeof(input) - 4);
 	input[sizeof(input) - 4] = '\0';
 
-	int proto = RTR_PROTOCOL_RAP;
+	int proto = RTR_PROTOCOL_HTTP;
 	char *host = (char *)rz_str_trim_head_ro(input);
 	char *pikaboo = strstr(host, "://");
 	if (pikaboo) {
@@ -578,8 +574,6 @@ RZ_API void rz_core_rtr_add(RzCore *core, const char *_input) {
 		} uris[7] = {
 			{ "tcp", RTR_PROTOCOL_TCP },
 			{ "udp", RTR_PROTOCOL_UDP },
-			{ "rap", RTR_PROTOCOL_RAP },
-			{ "r2p", RTR_PROTOCOL_RAP },
 			{ "http", RTR_PROTOCOL_HTTP },
 			{ "unix", RTR_PROTOCOL_UNIX },
 			{ NULL, 0 }
@@ -639,16 +633,6 @@ RZ_API void rz_core_rtr_add(RzCore *core, const char *_input) {
 		// eprintf ("Connected to: 'http://%s:%s'\n", host, port);
 		free(str);
 	} break;
-	case RTR_PROTOCOL_RAP:
-		if (!rz_socket_connect_tcp(fd, host, port, timeout)) { // TODO: Use rap.ssl
-			RZ_LOG_ERROR("core: Cannot connect to '%s' (%s)\n", host, port);
-			rz_socket_free(fd);
-			return;
-		} else {
-			int n = rz_socket_rap_client_open(fd, file, 0);
-			RZ_LOG_INFO("core: opened as fd = %d\n", n);
-		}
-		break;
 	case RTR_PROTOCOL_UNIX:
 		if (!rz_socket_connect_unix(fd, host)) {
 			core->num->value = 1;
@@ -659,7 +643,7 @@ RZ_API void rz_core_rtr_add(RzCore *core, const char *_input) {
 		RZ_LOG_INFO("core: Connected to: 'unix://%s'\n", host);
 		break;
 	case RTR_PROTOCOL_TCP:
-		if (!rz_socket_connect_tcp(fd, host, port, timeout)) { // TODO: Use rap.ssl
+		if (!rz_socket_connect_tcp(fd, host, port, timeout)) {
 			core->num->value = 1;
 			RZ_LOG_ERROR("core: Cannot connect to '%s' (%s)\n", host, port);
 			rz_socket_free(fd);
@@ -669,7 +653,7 @@ RZ_API void rz_core_rtr_add(RzCore *core, const char *_input) {
 		RZ_LOG_INFO("core: Connected to: %s at port %s\n", host, port);
 		break;
 	case RTR_PROTOCOL_UDP:
-		if (!rz_socket_connect_udp(fd, host, port, timeout)) { // TODO: Use rap.ssl
+		if (!rz_socket_connect_udp(fd, host, port, timeout)) {
 			core->num->value = 1;
 			RZ_LOG_ERROR("core: Cannot connect to '%s' (%s)\n", host, port);
 			rz_socket_free(fd);
@@ -725,38 +709,6 @@ RZ_API void rz_core_rtr_session(RzCore *core, const char *input) {
 	__rtr_shell(core, atoi(input));
 }
 
-static bool rz_core_rtr_rap_run(RzCore *core, const char *input) {
-	char *file = rz_str_newf("rap://%s", input);
-	int flags = RZ_PERM_RW;
-	RzIODesc *fd = rz_io_open_nomap(core->io, file, flags, 0644);
-	if (fd) {
-		if (rz_io_is_listener(core->io)) {
-			if (!rz_core_serve(core, fd)) {
-				rz_cons_singleton()->context->breaked = true;
-			}
-			rz_io_desc_close(fd);
-			// avoid double free, we are not the owners of this fd so we can't destroy it
-			// rz_io_desc_free (fd);
-		}
-	} else {
-		rz_cons_singleton()->context->breaked = true;
-	}
-	return !rz_cons_singleton()->context->breaked;
-	// rz_core_cmdf (core, "o rap://%s", input);
-}
-
-static void *rz_core_rtr_rap_thread(RapThread *rt) {
-	if (!rt || !rt->core) {
-		return false;
-	}
-	bool loop = true;
-	while (loop) {
-		loop = rz_atomic_bool_get(rt->loop) &&
-			rz_core_rtr_rap_run(rt->core, rt->input);
-	}
-	return NULL;
-}
-
 RZ_API void rz_core_rtr_cmd(RzCore *core, const char *input) {
 	unsigned int cmd_len = 0;
 	char tmpbuf[8];
@@ -769,45 +721,6 @@ RZ_API void rz_core_rtr_cmd(RzCore *core, const char *input) {
 		cmd++;
 		cmd_len = strlen(cmd);
 	}
-	// "=:"
-	if (*input == ':' && !strchr(input + 1, ':')) {
-		void *bed = rz_cons_sleep_begin();
-		rz_core_rtr_rap_run(core, input);
-		rz_cons_sleep_end(bed);
-		return;
-	}
-
-	if (*input == '&') { // "Rh&" "R&:9090"
-		if (rapthread) {
-			RZ_LOG_ERROR("core: RAP thread is already running\n");
-			RZ_LOG_WARN("core: This is experimental and probably buggy. Use at your own risk\n");
-		} else {
-			// TODO: use tasks
-			RapThread *rap_th = RZ_NEW0(RapThread);
-			if (!rap_th) {
-				RZ_LOG_ERROR("cannot allocate RapThread\n");
-				return;
-			}
-			rap_th->core = core;
-			rap_th->input = rz_str_dup(input + 1);
-			rap_th->loop = rz_atomic_bool_new(true);
-
-			rapthread = rz_th_new((RzThreadFunction)rz_core_rtr_rap_thread, rap_th);
-			if (!rap_th) {
-				RZ_LOG_ERROR("cannot spawn the RzThread\n");
-				return;
-			}
-			int cpuaff = (int)rz_config_get_i(core->config, "cfg.cpuaffinity");
-			if (cpuaff) {
-				// modify the affinity only when the flag is actually set.
-				rz_th_set_affinity(rapthread, cpuaff);
-			}
-			rz_th_set_name(rapthread, "rapthread");
-			RZ_LOG_WARN("Background rap server started.\n");
-		}
-		return;
-	}
-
 	if (fd != -1) {
 		if (fd >= 0 && fd < RTR_MAX_HOSTS) {
 			rtr_n = fd;
@@ -873,20 +786,6 @@ RZ_API void rz_core_rtr_cmd(RzCore *core, const char *input) {
 		return;
 	}
 
-	if (rtr_host[rtr_n].proto == RTR_PROTOCOL_RAP) {
-		core->num->value = 0; // that's fine
-		cmd = rz_str_trim_head_ro(cmd);
-		RzSocket *fh = rtr_host[rtr_n].fd;
-		if (!strlen(cmd)) {
-			// just check if we can connect
-			rz_socket_close(fh);
-			return;
-		}
-		char *cmd_output = rz_socket_rap_client_command(fh, cmd, &core->analysis->coreb);
-		rz_cons_println(cmd_output);
-		free(cmd_output);
-		return;
-	}
 	RZ_LOG_ERROR("core: unknown protocol\n");
 }
 

@@ -1203,7 +1203,6 @@ RZ_API RZ_BORROW RzCoreFile *rz_core_file_open(RZ_NONNULL RzCore *r, RZ_NONNULL 
 		}
 	}
 	if (rz_io_is_listener(r->io)) {
-		rz_core_serve(r, fd);
 		rz_io_desc_free(fd);
 		goto beach;
 	}

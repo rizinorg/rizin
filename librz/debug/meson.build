@@ -5,7 +5,6 @@ debug_plugins_list = [
   'gdb',
   'io',
   'null',
-  'rap',
   'winkd',
 ]
 
@@ -43,7 +42,6 @@ rz_debug_sources = [
   'p/debug_gdb.c',
   'p/debug_io.c',
   'p/debug_null.c',
-  'p/debug_rap.c',
   'p/debug_winkd.c',
   #'p/native/arm.c',
   #'p/native/bt/fuzzy-all.c',

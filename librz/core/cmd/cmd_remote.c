@@ -117,24 +117,6 @@ RZ_IPI RzCmdStatus rz_remote_mode_disable_handler(RzCore *core, int argc, const 
 	return RZ_CMD_STATUS_OK;
 }
 
-// "Rr"
-RZ_IPI RzCmdStatus rz_remote_rap_handler(RzCore *core, int argc, const char **argv) {
-	char *args = rz_str_array_join(argv + 1, argc - 1, " ");
-	args = rz_str_prepend(args, ":");
-	rz_core_rtr_cmd(core, args);
-	free(args);
-	return RZ_CMD_STATUS_OK;
-}
-
-// "R&r"
-RZ_IPI RzCmdStatus rz_remote_rap_bg_handler(RzCore *core, int argc, const char **argv) {
-	char *args = rz_str_array_join(argv + 1, argc - 1, " ");
-	args = rz_str_prepend(args, "&:");
-	rz_core_rtr_cmd(core, args);
-	free(args);
-	return RZ_CMD_STATUS_OK;
-}
-
 // "Rt"
 RZ_IPI RzCmdStatus rz_remote_tcp_handler(RzCore *core, int argc, const char **argv) {
 	if (argc == 2) {

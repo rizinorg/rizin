@@ -193,8 +193,6 @@ RZ_IPI RzCmdStatus rz_remote_open_handler(RzCore *core, int argc, const char **a
 RZ_IPI RzCmdStatus rz_remote_mode_enable_handler(RzCore *core, int argc, const char **argv);
 // "R=!"
 RZ_IPI RzCmdStatus rz_remote_mode_disable_handler(RzCore *core, int argc, const char **argv);
-// "Rr"
-RZ_IPI RzCmdStatus rz_remote_rap_handler(RzCore *core, int argc, const char **argv);
 // "Rg"
 RZ_IPI RzCmdStatus rz_remote_gdb_handler(RzCore *core, int argc, const char **argv);
 // "Rg!"
@@ -207,8 +205,6 @@ RZ_IPI RzCmdStatus rz_remote_webserver_restart_fg_handler(RzCore *core, int argc
 RZ_IPI RzCmdStatus rz_remote_webserver_stop_fg_handler(RzCore *core, int argc, const char **argv);
 // "Rt"
 RZ_IPI RzCmdStatus rz_remote_tcp_handler(RzCore *core, int argc, const char **argv);
-// "R&r"
-RZ_IPI RzCmdStatus rz_remote_rap_bg_handler(RzCore *core, int argc, const char **argv);
 // "?*"
 RZ_IPI RzCmdStatus rz_cmd_help_search_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "%"

@@ -174,12 +174,10 @@ static const RzCmdDescArg remote_add_args[2];
 static const RzCmdDescArg remote_del_args[2];
 static const RzCmdDescArg remote_open_args[2];
 static const RzCmdDescArg remote_mode_enable_args[2];
-static const RzCmdDescArg remote_rap_args[3];
 static const RzCmdDescArg remote_gdb_args[4];
 static const RzCmdDescArg remote_gdb_debug_args[4];
 static const RzCmdDescArg remote_webserver_start_fg_args[2];
 static const RzCmdDescArg remote_tcp_args[3];
-static const RzCmdDescArg remote_rap_bg_args[2];
 static const RzCmdDescArg cmd_help_search_args[2];
 static const RzCmdDescArg calculate_expr_args[2];
 static const RzCmdDescArg list_rizin_vars_args[2];
@@ -2643,26 +2641,6 @@ static const RzCmdDescHelp remote_mode_disable_help = {
 	.args = remote_mode_disable_args,
 };
 
-static const RzCmdDescArg remote_rap_args[] = {
-	{
-		.name = "[host:]port",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-
-	},
-	{
-		.name = "cmd",
-		.type = RZ_CMD_ARG_TYPE_CMD,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp remote_rap_help = {
-	.summary = "Start the rap server (o rap://9999) / Execute <cmd> on rap server",
-	.args = remote_rap_args,
-};
-
 static const RzCmdDescHelp Rg_help = {
 	.summary = "Start the gdbserver",
 };
@@ -2769,19 +2747,6 @@ static const RzCmdDescArg remote_tcp_args[] = {
 static const RzCmdDescHelp remote_tcp_help = {
 	.summary = "Start the tcp server",
 	.args = remote_tcp_args,
-};
-
-static const RzCmdDescArg remote_rap_bg_args[] = {
-	{
-		.name = "port",
-		.type = RZ_CMD_ARG_TYPE_NUM,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp remote_rap_bg_help = {
-	.summary = "Start rap server in background (same as '& Rr')",
-	.args = remote_rap_bg_args,
 };
 
 static const RzCmdDescArg cmd_help_search_args[] = {
@@ -21298,9 +21263,6 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *remote_mode_disable_cd = rz_cmd_desc_argv_new(core->rcmd, R_cd, "R=!", rz_remote_mode_disable_handler, &remote_mode_disable_help);
 	rz_warn_if_fail(remote_mode_disable_cd);
 
-	RzCmdDesc *remote_rap_cd = rz_cmd_desc_argv_new(core->rcmd, R_cd, "Rr", rz_remote_rap_handler, &remote_rap_help);
-	rz_warn_if_fail(remote_rap_cd);
-
 	RzCmdDesc *Rg_cd = rz_cmd_desc_group_new(core->rcmd, R_cd, "Rg", rz_remote_gdb_handler, &remote_gdb_help, &Rg_help);
 	rz_warn_if_fail(Rg_cd);
 	RzCmdDesc *remote_gdb_debug_cd = rz_cmd_desc_argv_new(core->rcmd, Rg_cd, "Rg!", rz_remote_gdb_debug_handler, &remote_gdb_debug_help);
@@ -21316,9 +21278,6 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *remote_tcp_cd = rz_cmd_desc_argv_new(core->rcmd, R_cd, "Rt", rz_remote_tcp_handler, &remote_tcp_help);
 	rz_warn_if_fail(remote_tcp_cd);
-
-	RzCmdDesc *remote_rap_bg_cd = rz_cmd_desc_argv_new(core->rcmd, R_cd, "R&r", rz_remote_rap_bg_handler, &remote_rap_bg_help);
-	rz_warn_if_fail(remote_rap_bg_cd);
 
 	RzCmdDesc *cmd_help_search_cd = rz_cmd_desc_argv_modes_new(core->rcmd, root_cd, "?*", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_help_search_handler, &cmd_help_search_help);
 	rz_warn_if_fail(cmd_help_search_cd);

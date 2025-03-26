@@ -515,7 +515,6 @@ RZ_API bool rz_core_analysis_esil_trace_start(RzCore *core);
 RZ_API bool rz_core_analysis_esil_trace_stop(RzCore *core);
 
 RZ_API int rz_core_search_cb(RzCore *core, ut64 from, ut64 to, RzCoreSearchCallback cb);
-RZ_API bool rz_core_serve(RzCore *core, RzIODesc *fd);
 RZ_API bool rz_core_file_reopen(RzCore *core, const char *args, int perm, int binload);
 RZ_API void rz_core_file_reopen_in_malloc(RzCore *core);
 RZ_API void rz_core_file_reopen_debug(RzCore *core, const char *args);
