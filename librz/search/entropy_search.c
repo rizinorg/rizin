@@ -67,6 +67,8 @@ static bool entropy_find(RzSearchFindOpt *fopts, void *user, ut64 address, const
 	RzHashCfg *entropy_norm = rz_hash_cfg_new_with_algo2(ctx->rz_hash, "entropy");
 	RzHashCfg *entropy_fract = rz_hash_cfg_new_with_algo2(ctx->rz_hash, "entropy_fract");
 	if (!entropy_norm || !entropy_fract) {
+		rz_hash_cfg_free(entropy_norm);
+		rz_hash_cfg_free(entropy_fract);
 		return false;
 	}
 
@@ -98,6 +100,8 @@ static bool entropy_find(RzSearchFindOpt *fopts, void *user, ut64 address, const
 				continue;
 			} else if (!rz_th_queue_push(hits, hit, true)) {
 				rz_search_hit_free(hit);
+				rz_hash_cfg_free(entropy_norm);
+				rz_hash_cfg_free(entropy_fract);
 				return false;
 			}
 			(*n_hits)++;
@@ -112,6 +116,9 @@ static bool entropy_find(RzSearchFindOpt *fopts, void *user, ut64 address, const
 			offset += match_len;
 		}
 	}
+
+	rz_hash_cfg_free(entropy_norm);
+	rz_hash_cfg_free(entropy_fract);
 	return true;
 }
 
