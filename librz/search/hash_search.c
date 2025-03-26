@@ -18,7 +18,7 @@ typedef struct search_hash_context_t {
 	const RzHash *rz_hash; ///< Immutable RzHash instance with all registered plugins.
 } SearchHashContext;
 
-static void search_hash_data_free(SearchHashContext *data) {
+static void search_hash_context_free(SearchHashContext *data) {
 	if (!data) {
 		return;
 	}
@@ -243,11 +243,13 @@ RZ_API bool rz_search_collection_hash_add(RZ_NONNULL RzSearchCollection *col, RZ
 
 	if (already_in_hash_collection(pvec, ctx)) {
 		RZ_LOG_WARN("search: %s already in hash search collection!\n", algo_name);
+		search_hash_context_free(ctx);
 		return true;
 	}
 
 	if (!rz_pvector_push(pvec, ctx)) {
 		RZ_LOG_ERROR("search: failed to add %s to hash search collection\n", algo_name);
+		search_hash_context_free(ctx);
 		return false;
 	}
 	return true;
@@ -259,7 +261,7 @@ RZ_API bool rz_search_collection_hash_add(RZ_NONNULL RzSearchCollection *col, RZ
  * \return     On success returns a valid pointer, otherwise NULL
  */
 RZ_API RZ_OWN RzSearchCollection *rz_search_collection_hash() {
-	RzPVector /*<SearchHashContext *>*/ *vec = rz_pvector_new((RzPVectorFree)search_hash_data_free);
+	RzPVector /*<SearchHashContext *>*/ *vec = rz_pvector_new((RzPVectorFree)search_hash_context_free);
 	if (!vec) {
 		RZ_LOG_ERROR("search: cannot allocate internal data for hash search collection\n");
 		return NULL;
