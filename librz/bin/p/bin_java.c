@@ -12,7 +12,7 @@
 
 #define rz_bin_file_get_java_class(bf) ((RzBinJavaClass *)bf->o->bin_obj)
 
-static RzBinInfo *info(RzBinFile *bf) {
+static RzBinInfo *java_info(RzBinFile *bf) {
 	RzBinJavaClass *jclass = rz_bin_file_get_java_class(bf);
 	if (!jclass) {
 		return NULL;
@@ -37,7 +37,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return binfo;
 }
 
-static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
+static bool java_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
 	RzBinJavaClass *jclass = rz_bin_java_class_new(buf, obj->opts.loadaddr, sdb);
 	if (!jclass) {
 		return false;
@@ -46,11 +46,11 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 	return true;
 }
 
-static void destroy(RzBinFile *bf) {
+static void java_destroy(RzBinFile *bf) {
 	rz_bin_java_class_free(rz_bin_file_get_java_class(bf));
 }
 
-static bool check_buffer(RzBuffer *b) {
+static bool java_check_buffer(RzBuffer *b) {
 	if (rz_buf_size(b) > 32) {
 		ut8 buf[4];
 		rz_buf_read_at(b, 0, buf, sizeof(buf));
@@ -59,15 +59,15 @@ static bool check_buffer(RzBuffer *b) {
 	return false;
 }
 
-static ut64 baddr(RzBinFile *bf) {
+static ut64 java_baddr(RzBinFile *bf) {
 	return 0;
 }
 
-static Sdb *get_sdb(RzBinFile *bf) {
+static Sdb *java_get_sdb(RzBinFile *bf) {
 	return bf->sdb;
 }
 
-static RzPVector /*<RzBinClass *>*/ *classes(RzBinFile *bf) {
+static RzPVector /*<RzBinClass *>*/ *java_classes(RzBinFile *bf) {
 	RzBinJavaClass *jclass = rz_bin_file_get_java_class(bf);
 	if (!jclass) {
 		return NULL;
@@ -76,7 +76,7 @@ static RzPVector /*<RzBinClass *>*/ *classes(RzBinFile *bf) {
 	return rz_bin_java_class_as_classes(jclass);
 }
 
-static RzPVector /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
+static RzPVector /*<RzBinImport *>*/ *java_imports(RzBinFile *bf) {
 	RzBinJavaClass *jclass = rz_bin_file_get_java_class(bf);
 	if (!jclass) {
 		return NULL;
@@ -85,7 +85,7 @@ static RzPVector /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 	return rz_bin_java_class_const_pool_as_imports(jclass);
 }
 
-static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+static RzPVector /*<RzBinSection *>*/ *java_sections(RzBinFile *bf) {
 	RzBinJavaClass *jclass = rz_bin_file_get_java_class(bf);
 	if (!jclass) {
 		return NULL;
@@ -94,7 +94,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	return rz_bin_java_class_as_sections(jclass);
 }
 
-static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
+static RzPVector /*<RzBinSymbol *>*/ *java_symbols(RzBinFile *bf) {
 	RzList *tmp;
 	RzBinJavaClass *jclass = rz_bin_file_get_java_class(bf);
 	if (!jclass) {
@@ -107,6 +107,7 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	RzBinSymbol *sym;
 	RzList *list = rz_bin_java_class_methods_as_symbols(jclass);
 	if (!list) {
+		rz_pvector_free(ret);
 		return NULL;
 	}
 	rz_list_foreach (list, iter, sym) {
@@ -131,7 +132,7 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	return ret;
 }
 
-static RzPVector /*<char *>*/ *libs(RzBinFile *bf) {
+static RzPVector /*<char *>*/ *java_libs(RzBinFile *bf) {
 	RzBinJavaClass *jclass = rz_bin_file_get_java_class(bf);
 	if (!jclass) {
 		return NULL;
@@ -140,7 +141,7 @@ static RzPVector /*<char *>*/ *libs(RzBinFile *bf) {
 	return rz_bin_java_class_as_libraries(jclass);
 }
 
-static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol sym) {
+static RzBinAddr *java_binsym(RzBinFile *bf, RzBinSpecialSymbol sym) {
 	RzBinJavaClass *jclass = rz_bin_file_get_java_class(bf);
 	if (!jclass) {
 		return NULL;
@@ -149,7 +150,7 @@ static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol sym) {
 	return rz_bin_java_class_resolve_symbol(jclass, sym);
 }
 
-static RzPVector /*<RzBinAddr *>*/ *entrypoints(RzBinFile *bf) {
+static RzPVector /*<RzBinAddr *>*/ *java_entrypoints(RzBinFile *bf) {
 	RzBinJavaClass *jclass = rz_bin_file_get_java_class(bf);
 	if (!jclass) {
 		return NULL;
@@ -158,7 +159,7 @@ static RzPVector /*<RzBinAddr *>*/ *entrypoints(RzBinFile *bf) {
 	return rz_bin_java_class_entrypoints(jclass);
 }
 
-static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
+static RzPVector /*<RzBinString *>*/ *java_strings(RzBinFile *bf) {
 	RzBinJavaClass *jclass = rz_bin_file_get_java_class(bf);
 	if (!jclass) {
 		return NULL;
@@ -167,11 +168,11 @@ static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 	return rz_bin_java_class_strings(jclass);
 }
 
-static int demangle_type(const char *str) {
+static int java_demangle_type(const char *str) {
 	return RZ_BIN_LANGUAGE_JAVA;
 }
 
-static char *enrich_asm(RzBinFile *bf, const char *asm_str, int asm_len) {
+static char *java_enrich_asm(RzBinFile *bf, const char *asm_str, int asm_len) {
 	RzBinJavaClass *jclass = rz_bin_file_get_java_class(bf);
 	if (!jclass) {
 		return NULL;
@@ -201,23 +202,23 @@ RzBinPlugin rz_bin_plugin_java = {
 	.name = "java",
 	.desc = "java bin plugin",
 	.license = "LGPL3",
-	.get_sdb = &get_sdb,
-	.load_buffer = &load_buffer,
-	.destroy = &destroy,
-	.check_buffer = &check_buffer,
-	.baddr = &baddr,
-	.binsym = &binsym,
-	.entries = &entrypoints,
+	.get_sdb = &java_get_sdb,
+	.load_buffer = &java_load_buffer,
+	.destroy = &java_destroy,
+	.check_buffer = &java_check_buffer,
+	.baddr = &java_baddr,
+	.binsym = &java_binsym,
+	.entries = &java_entrypoints,
 	.maps = &rz_bin_maps_of_file_sections,
-	.sections = sections,
-	.symbols = &symbols,
-	.imports = &imports,
-	.strings = &strings,
-	.enrich_asm = &enrich_asm,
-	.info = &info,
-	.libs = libs,
-	.classes = classes,
-	.demangle_type = demangle_type,
+	.sections = java_sections,
+	.symbols = &java_symbols,
+	.imports = &java_imports,
+	.strings = &java_strings,
+	.enrich_asm = &java_enrich_asm,
+	.info = &java_info,
+	.libs = java_libs,
+	.classes = java_classes,
+	.demangle_type = java_demangle_type,
 };
 
 #ifndef RZ_PLUGIN_INCORE
