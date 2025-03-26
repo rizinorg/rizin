@@ -570,10 +570,12 @@ static void il_opdmp_branch(RzILOpEffect *op, PJ *pj) {
 }
 
 static void il_op_pure_json_resolve(RzILOpPure *op, PJ *pj) {
-	if (!op && pj) {
-		pj_o(pj);
-		pj_knull(pj, "opcode");
-		pj_end(pj);
+	if (!op) {
+		if (pj) {
+			pj_o(pj);
+			pj_knull(pj, "opcode");
+			pj_end(pj);
+		}
 		return;
 	}
 	switch (op->code) {
