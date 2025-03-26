@@ -4814,10 +4814,6 @@ RZ_IPI int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 			core->cons->event_resize = (RzConsEvent)agraph_set_need_reload_nodes;
 			rz_core_visual_prompt_input(core);
 			core->cons->event_resize = (RzConsEvent)agraph_refresh_oneshot;
-			if (!g) {
-				g->need_reload_nodes = true; // maybe too slow and unnecessary sometimes? better be safe and reload
-				get_bbupdate(g, core, fcn);
-			}
 			break;
 		case 'w':
 			agraph_toggle_speed(g, core);
