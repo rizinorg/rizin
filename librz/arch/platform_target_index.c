@@ -91,8 +91,8 @@ static bool sdb_load_platform_profile(RZ_NONNULL RzPlatformTargetIndex *t, RZ_NO
 	return true;
 }
 
-static bool sdb_load_arch_platform_by_path(RZ_NONNULL RzPlatformTargetIndex *t, RZ_NONNULL const char *path) {
-	rz_return_val_if_fail(t && path, false);
+static bool sdb_load_arch_platform_by_path(RZ_NONNULL RzPlatformTargetIndex *t, RZ_NULLABLE const char *path) {
+	rz_return_val_if_fail(t, false);
 	if (!path) {
 		return false;
 	}
