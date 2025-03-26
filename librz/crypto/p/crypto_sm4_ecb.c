@@ -192,9 +192,6 @@ static bool sm4_update(RzCrypto *cry, const ut8 *buf, int len) {
 	}
 
 	if (cry->dir == RZ_CRYPTO_DIR_ENCRYPT) {
-		if (len == 0) {
-			return false;
-		}
 		if (len % 16 == 0) {
 			len += 16;
 		} else {
