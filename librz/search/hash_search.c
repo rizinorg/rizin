@@ -95,11 +95,11 @@ static RZ_OWN SearchHashContext *search_hash_context_new(RZ_NONNULL const RzHash
 	}
 
 	ut32 digest_size = rz_hash_cfg_size(md, algo_name);
+	rz_hash_cfg_free(md);
 	if (digest_size < 1) {
 		rz_warn_if_reached();
 		return NULL;
 	}
-	rz_hash_cfg_free(md);
 
 	ut8 *digest = parse_digest(algo_name, expected_digest, digest_size);
 	if (!digest) {
