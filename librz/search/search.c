@@ -724,7 +724,6 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_search_on_io(
 	windows = assemble_search_window_list(search_in, opt);
 	if (!windows) {
 		RZ_LOG_ERROR("search: Could not prepare search window queue.\n");
-		rz_list_free(windows);
 		return NULL;
 	}
 
@@ -744,6 +743,7 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_search_on_io(
 			rz_th_queue_free(hits);
 			rz_th_queue_free(intervals);
 			rz_atomic_bool_free(ctx.loop);
+			rz_list_free(windows);
 			return NULL;
 		}
 	}
