@@ -926,17 +926,15 @@ RZ_API RZ_OWN RzBitVector *rz_bv_sdiv(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBi
 		return ret;
 	}
 
-	if (mx && my) {
-		neg_x = rz_bv_neg(x);
-		neg_y = rz_bv_neg(y);
+	// mx && my
+	neg_x = rz_bv_neg(x);
+	neg_y = rz_bv_neg(y);
 
-		ret = rz_bv_div(neg_x, neg_y);
-		rz_bv_free(neg_x);
-		rz_bv_free(neg_y);
-		return ret;
-	}
+	ret = rz_bv_div(neg_x, neg_y);
+	rz_bv_free(neg_x);
+	rz_bv_free(neg_y);
 
-	return NULL; // something wrong
+	return ret;
 }
 
 /**
