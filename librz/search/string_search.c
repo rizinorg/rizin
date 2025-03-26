@@ -92,6 +92,7 @@ static bool string_find(RzSearchFindOpt *fopt, void *user, ut64 offset, const Rz
 					RZ_LOG_ERROR("search: Failed to get group of match.\n");
 					ht_uu_free(options.utf8_to_mem_offset_map);
 					rz_list_free(found);
+					rz_pvector_free(matches);
 					return false;
 				}
 				ut64 str_mem_len;
@@ -108,6 +109,7 @@ static bool string_find(RzSearchFindOpt *fopt, void *user, ut64 offset, const Rz
 					rz_search_hit_free(hit);
 					ht_uu_free(options.utf8_to_mem_offset_map);
 					rz_list_free(found);
+					rz_pvector_free(matches);
 					return false;
 				}
 				(*n_hits)++;
