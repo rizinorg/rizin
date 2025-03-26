@@ -135,9 +135,11 @@ static RzSearchHit *calculate_hash_and_compare(const SearchHashContext *data, ut
 		return NULL;
 	} else if (!rz_hash_cfg_update(md, buffer, buf_size)) {
 		RZ_LOG_ERROR("search: hash config update failed.\n");
+		rz_hash_cfg_free(md);
 		return NULL;
 	} else if (!rz_hash_cfg_final(md)) {
 		RZ_LOG_ERROR("search: hash config final failed.\n");
+		rz_hash_cfg_free(md);
 		return NULL;
 	}
 
