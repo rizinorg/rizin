@@ -951,11 +951,17 @@ RUN
 NAME=consistency btw /z and /x at 0x20k multiple
 FILE=--
 CMDS=<<EOF
-!!rizin -qc "e search.show_progress=intervals; w abc+d @@=0x20000 0x40000; /z abc+d" -1 malloc://0x40000+10 | grep "^.*[[:punct:]]0x.*" | sed "s/^.*[[:cntrl:]]//"~$0
-!!rizin -qc "w abc+d @@=0x20000 0x40000; /z abc+d" malloc://0x40000+10
+$str=$abc+d
+$bin=$malloc://0x40000+10
+$setup=$"w `$str` @@=0x20000 0x40000"
+(show_intervals cmd; !!rizin -qc "e search.show_progress=intervals; `$setup`; ${cmd}" -1 `$bin` | grep "^.*[[:punct:]]0x.*" | sed "s/^.*[[:cntrl:]]//"~$0)
+(show_hits cmd; !!rizin -qc "`$setup`; ${cmd}" `$bin`)
+(search.show_progress cmd; .(show_intervals ${cmd}); .(show_hits ${cmd}))
+
+.(search.show_progress "/z\ `$str`")
 echo ----
-!!rizin -qc "e search.show_progress=intervals; w abc+d @@=0x20000 0x40000; /x `%x abc+d`" -1 malloc://0x40000+10 | grep "^.*[[:punct:]]0x.*" | sed "s/^.*[[:cntrl:]]//"~$0
-!!rizin -qc "w abc+d @@=0x20000 0x40000; /x `%x abc+d`" malloc://0x40000+10
+$bytes=%x `$str`
+.(search.show_progress "/x\ `$bytes`")
 EOF
 EXPECT=<<EOF
 [0x0, 0x207ff): 1

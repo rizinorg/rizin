@@ -128,11 +128,18 @@ RUN
 NAME=consistency btw /z and /x
 FILE=bins/elf/analysis/ls2
 CMDS=<<EOF
-!!rizin -qc "e search.show_progress=intervals; /z lib" -1 bins/elf/analysis/ls2 | grep "^.*[[:punct:]]0x.*" | sed "s/^.*[[:cntrl:]]//"~$0
-!!rizin -qc "/z lib" bins/elf/analysis/ls2
+$str=$lib
+$bin=$bins/elf/analysis/ls2
+$setup=$""
+(show_intervals cmd; !!rizin -qc "e search.show_progress=intervals; `$setup`; ${cmd}" -1 `$bin` | grep "^.*[[:punct:]]0x.*" | sed "s/^.*[[:cntrl:]]//"~$0)
+(show_hits cmd; !!rizin -qc "`$setup`; ${cmd}" `$bin`)
+(search.show_progress cmd; .(show_intervals ${cmd}); .(show_hits ${cmd}))
+
+.(search.show_progress "/z\ `$str`")
 echo ----
-!!rizin -qc "e search.show_progress=intervals; /x `%x lib`" -1 bins/elf/analysis/ls2 | grep "^.*[[:punct:]]0x.*" | sed "s/^.*[[:cntrl:]]//"~$0
-!!rizin -qc "/x `%x lib`" bins/elf/analysis/ls2
+$bytes=%x `$str`
+.(search.show_progress "/x\ `$bytes`")
+
 echo ----
 /z lib > /dev/null
 ps ascii @ hit.string.ascii.0
