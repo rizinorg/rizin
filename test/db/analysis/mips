@@ -82,7 +82,7 @@ af
 pdf
 EOF
 EXPECT=<<EOF
-cpu      micromips
+cpu      micro32r3
 features noreorder cpic o32 n32
             ;-- entry0:
             ;-- section..text:

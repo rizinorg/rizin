@@ -935,7 +935,7 @@ static char *get_cpu_mips(ELFOBJ *bin) {
 	case EF_MIPS_ARCH_ASE_M16:
 		return strdup("mips16");
 	case EF_MIPS_ARCH_ASE_MICROMIPS:
-		switch (mips_ase) {
+		switch (mips_arch) {
 		case EF_MIPS_ARCH_32R2:
 			// r2 is included in r3
 			return strdup("micro32r3");
