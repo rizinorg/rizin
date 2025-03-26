@@ -248,6 +248,7 @@ static void add_new_library_from_name(RzCore *core, const char *name) {
 
 	RzBinFile *bf = rz_bin_cur(core->bin);
 	if (!bf || !bf->o) {
+		free(libname);
 		return;
 	}
 
