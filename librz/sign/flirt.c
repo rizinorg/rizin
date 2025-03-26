@@ -1280,7 +1280,7 @@ RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_parse_compressed_pattern_from_buffer(RZ
 	if (parse_tree(&ps, node)) {
 		ret = node;
 	} else {
-		free(node);
+		rz_sign_flirt_node_free(node);
 	}
 
 	if (info && ret) {
