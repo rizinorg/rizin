@@ -105,29 +105,32 @@ static RzPVector /*<RzBinSymbol *>*/ *java_symbols(RzBinFile *bf) {
 	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_symbol_free);
 	RzListIter *iter;
 	RzBinSymbol *sym;
-	RzList *list = rz_bin_java_class_methods_as_symbols(jclass);
-	if (!list) {
+	tmp = rz_bin_java_class_methods_as_symbols(jclass);
+	if (!tmp) {
 		rz_pvector_free(ret);
 		return NULL;
 	}
-	rz_list_foreach (list, iter, sym) {
+	rz_list_foreach (tmp, iter, sym) {
 		rz_pvector_push(ret, sym);
 	}
+	// moved ownership to pvec
+	tmp->free = NULL;
+	rz_list_free(tmp);
 
 	tmp = rz_bin_java_class_fields_as_symbols(jclass);
 	rz_list_foreach (tmp, iter, sym) {
 		rz_pvector_push(ret, sym);
 	}
-	tmp->length = 0;
-	tmp->head = tmp->tail = NULL;
+	// moved ownership to pvec
+	tmp->free = NULL;
 	rz_list_free(tmp);
 
 	tmp = rz_bin_java_class_const_pool_as_symbols(jclass);
 	rz_list_foreach (tmp, iter, sym) {
 		rz_pvector_push(ret, sym);
 	}
-	tmp->length = 0;
-	tmp->head = tmp->tail = NULL;
+	// moved ownership to pvec
+	tmp->free = NULL;
 	rz_list_free(tmp);
 	return ret;
 }
