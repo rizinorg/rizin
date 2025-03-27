@@ -1,321 +1,685 @@
-// SPDX-FileCopyrightText: 2012-2018 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2025 RizinOrg <info@rizin.re>
+// SPDX-FileCopyrightText: 2025 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_types.h>
 #include <rz_util.h>
 
-static const char *const regs[33] = {
-	"zero", "at", "v0", "v1", "a0", "a1", "a2", "a3",
-	"t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7",
-	"s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7",
-	"t8", "t9", "k0", "k1", "gp", "sp", "s8", "ra",
-	NULL
-};
-
-static struct {
+typedef struct mips_reg {
 	const char *name;
-	int type;
-	int args;
-	int n;
-	int x;
-} ops[] = {
-	{ "nop", 'N', 0, 0, 0 },
-	{ "lui", 'I', 2, 15, 0 },
-	{ "sw", 'I', 3, 43, 0 },
-	{ "sh", 'I', 3, 41, 0 },
-	{ "sb", 'I', 3, 40, 0 },
-	{ "lw", 'I', 3, 35, 0 },
-	{ "lh", 'I', 3, 33, 0 },
-	{ "lb", 'I', 3, 32, 0 },
-	{ "ori", 'I', 3, 13, 0 },
-	{ "andi", 'I', 3, 12, 0 },
-	{ "xori", 'I', 3, 14, 0 },
-	{ "addi", 'I', 3, 8, 0 },
-	{ "addiu", 'I', 3, 9, 0 },
-	{ "b", 'B', -1, 4, 0 },
-	{ "bnez", 'B', 2, 5, 0 },
-	{ "bal", 'B', -1, -1, 17 },
-	{ "bne", 'B', 3, 5, 0 },
-	{ "beq", 'B', 3, 4, 0 },
-	{ "bgez", 'B', -2, -1, 1 },
-	{ "bgezal", 'B', -2, -1, 17 },
-	{ "bltzal", 'B', -2, -1, 16 },
-	{ "bgtz", 'B', -2, 7, 0 },
-	{ "blez", 'B', -2, 6, 0 },
-	{ "bltz", 'B', -2, 1, 0 },
-	{ "syscall", 'R', 0, 12, 0 },
-	{ "break", 'R', 0, 13, 0 },
-	{ "nor", 'R', 3, 39, 0 },
-	{ "or", 'R', 3, 37, 0 },
-	{ "xor", 'R', 3, 38, 0 },
-	{ "and", 'R', 3, 36, 0 },
-	{ "sll", 'R', -3, 0, 0 },
-	{ "sllv", 'R', 3, 4, 0 },
-	{ "slt", 'R', 3, 42, 0 },
-	{ "slti", 'I', 3, 10, 0 },
-	{ "sltu", 'R', 3, 43, 0 },
-	{ "sra", 'R', -3, 3, 0 },
-	{ "srl", 'R', -3, 2, 0 },
-	{ "srlv", 'R', 3, 6, 0 },
-	{ "srav", 'R', 3, 7, 0 },
-	{ "add", 'R', 3, 32, 0 },
-	{ "move", 'R', -2, 32, 0 },
-	{ "addu", 'R', 3, 33, 0 },
-	{ "sub", 'R', 3, 34, 0 },
-	{ "subu", 'R', 3, 35, 0 },
-	{ "mult", 'R', 2, 24, 0 },
-	{ "multu", 'R', 2, 25, 0 },
-	{ "div", 'R', 2, 26, 0 },
-	{ "divu", 'R', 2, 27, 0 },
-	{ "mfhi", 'R', 1, 16, 0 },
-	{ "mflo", 'R', 1, 18, 0 },
-	{ "mthi", 'R', 1, 17, 0 },
-	{ "mtlo", 'R', 1, 19, 0 },
-	{ "jalr", 'R', -2, 9, 0 },
-	{ "jr", 'R', 1, 8, 0 },
-	{ "jal", 'J', 1, 3, 0 },
-	{ "j", 'J', 1, 2, 0 },
-	{ NULL }
+	ut32 number;
+} MipsReg;
+
+typedef bool (*mips_encode)(ut64 pc, ut8 *buffer, const ut32 opcode, RzList /*<char *>*/ *tokens, bool be);
+
+typedef struct mips_op {
+	mips_encode encoder;
+	ut32 opcode;
+	const char *mnemonic;
+} MipsOp;
+
+// clang-format off
+const MipsReg mips_registers[] = {
+	{ "r0", 0 }, { "zero", 0 }, { "0", 0 },
+	{ "at", 1 }, { "r1", 1 }, { "1", 1 },
+	{ "v0", 2 }, { "r2", 2 }, { "2", 2 },
+	{ "v1", 3 }, { "r3", 3 }, { "3", 3 },
+	{ "a0", 4 }, { "r4", 4 }, { "4", 4 },
+	{ "a1", 5 }, { "r5", 5 }, { "5", 5 },
+	{ "a2", 6 }, { "r6", 6 }, { "6", 6 },
+	{ "a3", 7 }, { "r7", 7 }, { "7", 7 },
+	{ "t0", 8 }, { "r8", 8 }, { "8", 8 },
+	{ "t1", 9 }, { "r9", 9 }, { "9", 9 },
+	{ "t2", 10 }, { "r10", 10 }, { "10", 10 },
+	{ "t3", 11 }, { "r11", 11 }, { "11", 11 },
+	{ "t4", 12 }, { "r12", 12 }, { "12", 12 },
+	{ "t5", 13 }, { "r13", 13 }, { "13", 13 },
+	{ "t6", 14 }, { "r14", 14 }, { "14", 14 },
+	{ "t7", 15 }, { "r15", 15 }, { "15", 15 },
+	{ "s0", 16 }, { "r16", 16 }, { "16", 16 },
+	{ "s1", 17 }, { "r17", 17 }, { "17", 17 },
+	{ "s2", 18 }, { "r18", 18 }, { "18", 18 },
+	{ "s3", 19 }, { "r19", 19 }, { "19", 19 },
+	{ "s4", 20 }, { "r20", 20 }, { "20", 20 },
+	{ "s5", 21 }, { "r21", 21 }, { "21", 21 },
+	{ "s6", 22 }, { "r22", 22 }, { "22", 22 },
+	{ "s7", 23 }, { "r23", 23 }, { "23", 23 },
+	{ "t8", 24 }, { "r24", 24 }, { "24", 24 },
+	{ "t9", 25 }, { "r25", 25 }, { "25", 25 },
+	{ "k0", 26 }, { "r26", 26 }, { "26", 26 },
+	{ "k1", 27 }, { "r27", 27 }, { "27", 27 },
+	{ "gp", 28 }, { "r28", 28 }, { "28", 28 },
+	{ "sp", 29 }, { "r29", 29 }, { "29", 29 },
+	{ "fp", 30 }, { "r30", 30 }, { "s8", 30 }, { "30", 30 },
+	{ "ra", 31 }, { "r31", 31 }, { "31", 31 },
 };
 
-static int mips_r(ut8 *b, int op, int rs, int rt, int rd, int sa, int fun) {
-	//^this will keep the below mips_r fuctions working
-	// diff instructions use a diff arg order (add is rd, rs, rt - sll is rd, rt, sa - sllv is rd, rt, rs
-	// static int mips_r (ut8 *b, int op, int rd, int rs, int rt, int sa, int fun) {
-	if (rs < 0 || rt < 0 || rd < 0 || sa < 0) {
-		return -1;
+const MipsReg mips_fcc_registers[] = {
+	{ "fcc0", 0 }, { "0", 0 },
+	{ "fcc1", 1 }, { "1", 1 },
+	{ "fcc2", 2 }, { "2", 2 },
+	{ "fcc3", 3 }, { "3", 3 },
+	{ "fcc4", 4 }, { "4", 4 },
+	{ "fcc5", 5 }, { "5", 5 },
+};
+// clang-format on
+
+static bool mips_op_unsigned(const char *str_imm, ut32 *uimm, ut32 limit) {
+	if (RZ_STR_ISEMPTY(str_imm)) {
+		return false;
 	}
-	b[3] = ((op << 2) & 0xfc) | ((rs >> 3) & 3); // 2
-	b[2] = (rs << 5) | (rt & 0x1f); // 1
-	b[1] = ((rd << 3) & 0xff) | (sa >> 2); // 0
-	b[0] = (fun & 0x3f) | ((sa & 3) << 6);
-	return 4;
+
+	ut32 number = strtoull(str_imm, NULL, 0);
+	if (number > limit) {
+		return false;
+	}
+
+	*uimm = number;
+	return true;
 }
 
-static int mips_i(ut8 *b, int op, int rs, int rt, int imm, int is_branch) {
-	if (rs < 0 || rt < 0) {
-		return -1;
+static bool mips_op_signed(const char *str_imm, st32 *simm, st32 min, st32 max) {
+	if (RZ_STR_ISEMPTY(str_imm)) {
+		return false;
 	}
-	if (is_branch) {
-		if (imm > 4) {
-			imm /= 4;
-			imm--;
-		} else {
-			imm = 0;
+
+	st32 number = strtoll(str_imm, NULL, 0);
+	if (number > max || number < min) {
+		return false;
+	}
+
+	*simm = number;
+	return true;
+}
+
+static bool mips_op_gpr(const char *reg, ut32 *reg_no) {
+	if (RZ_STR_ISEMPTY(reg)) {
+		return false;
+	} else if (reg[0] == '$') {
+		reg++;
+	}
+
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(mips_registers); ++i) {
+		if (RZ_STR_NE(reg, mips_registers[i].name)) {
+			continue;
 		}
+		*reg_no = mips_registers[i].number;
+		return true;
 	}
-	b[3] = ((op << 2) & 0xfc) | ((rs >> 3) & 3);
-	b[2] = (rs << 5) | (rt);
-	b[1] = (imm >> 8) & 0xff;
-	b[0] = imm & 0xff;
-	return 4;
+	return false;
 }
 
-static int mips_j(ut8 *b, int op, int addr) {
-	addr /= 4;
-	b[3] = ((op << 2) & 0xfc) | ((addr >> 24) & 3);
-	b[2] = (addr >> 16) & 0xff;
-	b[1] = (addr >> 8) & 0xff;
-	b[0] = addr & 0xff;
-	return 4;
-}
-
-static int getreg(const char *p) {
-	int n;
-	if (RZ_STR_ISEMPTY(p)) {
-		RZ_LOG_ERROR("assembler: mips: invalid assembly (missing an argument).\n");
-		return -1;
+static bool mips_op_fcc(const char *reg, ut32 *reg_no) {
+	if (RZ_STR_ISEMPTY(reg)) {
+		return false;
+	} else if (reg[0] == '$') {
+		reg++;
 	}
-	/* check if it's a register */
-	for (n = 0; regs[n]; n++) {
-		if (!strcmp(p, regs[n])) {
-			return n;
+
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(mips_fcc_registers); ++i) {
+		if (RZ_STR_NE(reg, mips_fcc_registers[i].name)) {
+			continue;
 		}
+		*reg_no = mips_fcc_registers[i].number;
+		return true;
 	}
-	/* try to convert it into a number */
-	if (p[0] == '-') {
-		n = (int)rz_num_get(NULL, &p[1]);
-		n = -n;
+	return false;
+}
+
+/* nop, syscall, eret */
+static bool mips_op_kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk(ut64 pc, ut8 *buffer, const ut32 opcode, RzList /*<char *>*/ *tokens, bool be) {
+	rz_write_ble32(buffer, opcode, be);
+	return true;
+}
+
+/* add, sub, addu, subu, mul, and, or, xor, slt, sltu, movn, movz */
+static bool mips_op_kkkkkksssssffffftttttkkkkkkkkkkk(ut64 pc, ut8 *buffer, const ut32 opcode, RzList /*<char *>*/ *tokens, bool be) {
+	ut32 assembled = opcode;
+	ut32 rs = 0, rt = 0, rf = 0;
+
+	const char *reg_s = rz_list_get_n(tokens, 1);
+	const char *reg_t = rz_list_get_n(tokens, 2);
+	const char *reg_f = rz_list_get_n(tokens, 3);
+	if (!mips_op_gpr(reg_s, &rs) ||
+		!mips_op_gpr(reg_t, &rt) ||
+		!mips_op_gpr(reg_f, &rf)) {
+		return false;
+	}
+
+	assembled |= (rs << 21);
+	assembled |= (rf << 16);
+	assembled |= (rt << 11);
+
+	rz_write_ble32(buffer, assembled, be);
+	return true;
+}
+
+/* nor */
+static bool mips_op_kkkkkkffffftttttssssskkkkkkkkkkk(ut64 pc, ut8 *buffer, const ut32 opcode, RzList /*<char *>*/ *tokens, bool be) {
+	ut32 assembled = opcode;
+	ut32 rs = 0, rt = 0, rf = 0;
+
+	const char *reg_s = rz_list_get_n(tokens, 1);
+	const char *reg_f = rz_list_get_n(tokens, 2);
+	const char *reg_t = rz_list_get_n(tokens, 3);
+	if (!mips_op_gpr(reg_s, &rs) ||
+		!mips_op_gpr(reg_t, &rt) ||
+		!mips_op_gpr(reg_f, &rf)) {
+		return false;
+	}
+
+	assembled |= (rf << 21);
+	assembled |= (rt << 16);
+	assembled |= (rs << 11);
+
+	rz_write_ble32(buffer, assembled, be);
+	return true;
+}
+
+/* div, divu */
+static bool mips_op_kkkkkkfffffssssstttttkkkkkkkkkkk(ut64 pc, ut8 *buffer, const ut32 opcode, RzList /*<char *>*/ *tokens, bool be) {
+	ut32 assembled = opcode;
+	ut32 rs = 0, rt = 0, rf = 0;
+
+	const char *reg_s = rz_list_get_n(tokens, 1);
+	const char *reg_f = rz_list_get_n(tokens, 2);
+	const char *reg_t = rz_list_get_n(tokens, 3);
+	if (!mips_op_gpr(reg_s, &rs) ||
+		!mips_op_gpr(reg_t, &rt) ||
+		!mips_op_gpr(reg_f, &rf)) {
+		return false;
+	}
+
+	assembled |= (rt << 21);
+	assembled |= (rf << 16);
+	assembled |= (rs << 11);
+
+	rz_write_ble32(buffer, assembled, be);
+	return true;
+}
+
+/* addi, addiu, andi, ori, xori, slti, sltiu */
+static bool mips_op_kkkkkksssssffffftttttttttttttttt(ut64 pc, ut8 *buffer, const ut32 opcode, RzList /*<char *>*/ *tokens, bool be) {
+	ut32 assembled = opcode;
+	ut32 rs = 0, rf = 0, imm = 0;
+
+	const char *reg_s = rz_list_get_n(tokens, 1);
+	const char *reg_f = rz_list_get_n(tokens, 2);
+	const char *imm_n = rz_list_get_n(tokens, 3);
+	if (!mips_op_gpr(reg_s, &rs) ||
+		!mips_op_gpr(reg_f, &rf) ||
+		!mips_op_signed(imm_n, (st32 *)&imm, ST16_MIN, ST16_MAX)) {
+		return false;
+	}
+
+	imm &= 0xffffu;
+	assembled |= (rs << 16);
+	assembled |= (rf << 21);
+	assembled |= imm;
+
+	rz_write_ble32(buffer, assembled, be);
+	return true;
+}
+
+/* mult, multu, madd, maddu, msub, msubu */
+static bool mips_op_kkkkkkfffffssssskkkkkkkkkkkkkkkk(ut64 pc, ut8 *buffer, const ut32 opcode, RzList /*<char *>*/ *tokens, bool be) {
+	ut32 assembled = opcode;
+	ut32 rs = 0, rf = 0;
+
+	const char *reg_s = rz_list_get_n(tokens, 1);
+	const char *reg_f = rz_list_get_n(tokens, 2);
+	if (!mips_op_gpr(reg_s, &rs) ||
+		!mips_op_gpr(reg_f, &rf)) {
+		return false;
+	}
+
+	assembled |= (rs << 16);
+	assembled |= (rf << 21);
+
+	rz_write_ble32(buffer, assembled, be);
+	return true;
+}
+
+/* teq, tne, tge, tgeu, tlt, tltu */
+static bool mips_op_kkkkkksssssfffffkkkkkkkkkkkkkkkk(ut64 pc, ut8 *buffer, const ut32 opcode, RzList /*<char *>*/ *tokens, bool be) {
+	ut32 assembled = opcode;
+	ut32 rs = 0, rf = 0;
+
+	const char *reg_s = rz_list_get_n(tokens, 1);
+	const char *reg_f = rz_list_get_n(tokens, 2);
+	if (!mips_op_gpr(reg_s, &rs) ||
+		!mips_op_gpr(reg_f, &rf)) {
+		return false;
+	}
+
+	assembled |= (rs << 21);
+	assembled |= (rf << 16);
+
+	rz_write_ble32(buffer, assembled, be);
+	return true;
+}
+
+/* mfhi, mflo */
+static bool mips_op_kkkkkkkkkkkkkkkkfffffkkkkkkkkkkk(ut64 pc, ut8 *buffer, const ut32 opcode, RzList /*<char *>*/ *tokens, bool be) {
+	ut32 assembled = opcode;
+	ut32 rf = 0;
+
+	const char *reg_f = rz_list_get_n(tokens, 1);
+	if (!mips_op_gpr(reg_f, &rf)) {
+		return false;
+	}
+
+	assembled |= (rf << 11);
+
+	rz_write_ble32(buffer, assembled, be);
+	return true;
+}
+
+/* mthi, mtlo, jr */
+static bool mips_op_kkkkkkfffffkkkkkkkkkkkkkkkkkkkkk(ut64 pc, ut8 *buffer, const ut32 opcode, RzList /*<char *>*/ *tokens, bool be) {
+	ut32 assembled = opcode;
+	ut32 rf = 0;
+
+	const char *reg_f = rz_list_get_n(tokens, 1);
+	if (!mips_op_gpr(reg_f, &rf)) {
+		return false;
+	}
+
+	assembled |= (rf << 21);
+
+	rz_write_ble32(buffer, assembled, be);
+	return true;
+}
+
+/* sll, srl, sra */
+static bool mips_op_kkkkkkkkkkktttttdddddssssskkkkkk(ut64 pc, ut8 *buffer, const ut32 opcode, RzList /*<char *>*/ *tokens, bool be) {
+	ut32 assembled = opcode;
+	ut32 rt = 0, rf = 0, uimm = 0;
+
+	const char *reg_t = rz_list_get_n(tokens, 1);
+	const char *reg_f = rz_list_get_n(tokens, 2);
+	const char *imm_n = rz_list_get_n(tokens, 3);
+	if (!mips_op_gpr(reg_t, &rt) ||
+		!mips_op_gpr(reg_f, &rf) ||
+		!mips_op_unsigned(imm_n, &uimm, 31)) {
+		return false;
+	}
+
+	assembled |= (rt << 11);
+	assembled |= (rf << 16);
+	assembled |= (uimm << 6);
+
+	rz_write_ble32(buffer, assembled, be);
+	return true;
+}
+
+/* sllv, srav, srlv */
+static bool mips_op_kkkkkkssssstttttdddddkkkkkkkkkkk(ut64 pc, ut8 *buffer, const ut32 opcode, RzList /*<char *>*/ *tokens, bool be) {
+	ut32 assembled = opcode;
+	ut32 rd = 0, rt = 0, rs = 0;
+
+	const char *reg_d = rz_list_get_n(tokens, 1);
+	const char *reg_t = rz_list_get_n(tokens, 2);
+	const char *reg_s = rz_list_get_n(tokens, 3);
+	if (!mips_op_gpr(reg_d, &rd) ||
+		!mips_op_gpr(reg_t, &rt) ||
+		!mips_op_gpr(reg_s, &rs)) {
+		return false;
+	}
+
+	assembled |= (rd << 21);
+	assembled |= (rt << 16);
+	assembled |= (rs << 11);
+
+	rz_write_ble32(buffer, assembled, be);
+	return true;
+}
+
+/* lw, lwl, lwr, sw, swl, swr, lb, lh, lhu, lbu, sb, sh */
+static bool mips_op_kkkkkktttttfffffssssssssssssssss(ut64 pc, ut8 *buffer, const ut32 opcode, RzList /*<char *>*/ *tokens, bool be) {
+	ut32 assembled = opcode;
+	ut32 rt = 0, offset = 0, base = 0;
+
+	const char *reg_t = rz_list_get_n(tokens, 1);
+	const char *reg_o = rz_list_get_n(tokens, 2);
+	const char *reg_b = rz_list_get_n(tokens, 3);
+
+	if (!mips_op_gpr(reg_t, &rt) ||
+		!mips_op_signed(reg_o, (st32 *)&offset, ST16_MIN, ST16_MAX) ||
+		!mips_op_gpr(reg_b, &base)) {
+		return false;
+	}
+
+	offset &= 0xffffu;
+	assembled |= (base << 21);
+	assembled |= (rt << 16);
+	assembled |= offset;
+
+	rz_write_ble32(buffer, assembled, be);
+	return true;
+}
+
+/* lui */
+static bool mips_op_kkkkkkkkkkkfffffssssssssssssssss(ut64 pc, ut8 *buffer, const ut32 opcode, RzList /*<char *>*/ *tokens, bool be) {
+	ut32 assembled = opcode;
+	ut32 rs = 0, imm = 0;
+
+	const char *reg_s = rz_list_get_n(tokens, 1);
+	const char *imm_n = rz_list_get_n(tokens, 2);
+	if (!mips_op_gpr(reg_s, &rs) ||
+		!mips_op_signed(imm_n, (st32 *)&imm, ST16_MIN, ST16_MAX)) {
+		return false;
+	}
+
+	imm &= 0xffffu;
+	assembled |= (rs << 16);
+	assembled |= imm;
+
+	rz_write_ble32(buffer, assembled, be);
+	return true;
+}
+
+/* beq, bne */
+static bool mips_op_kkkkkkfffffssssstttttttttttttttt(ut64 pc, ut8 *buffer, const ut32 opcode, RzList /*<char *>*/ *tokens, bool be) {
+	ut32 assembled = opcode;
+	ut32 rs = 0, rt = 0, imm = 0;
+
+	const char *reg_s = rz_list_get_n(tokens, 1);
+	const char *reg_t = rz_list_get_n(tokens, 2);
+	const char *imm_n = rz_list_get_n(tokens, 3);
+	if (!mips_op_gpr(reg_s, &rs) ||
+		!mips_op_gpr(reg_t, &rt) ||
+		!mips_op_signed(imm_n, (st32 *)&imm, (ST16_MIN << 2), (ST16_MAX << 2))) {
+		return false;
+	}
+
+	imm -= (4 + pc);
+	imm >>= 2;
+	imm &= 0xffffu;
+
+	assembled |= (rs << 21);
+	assembled |= (rt << 16);
+	assembled |= imm;
+
+	rz_write_ble32(buffer, assembled, be);
+	return true;
+}
+
+/* bgez, bgezal, bgtz, blez, bltz, bltzal */
+static bool mips_op_kkkkkkfffffkkkkkssssssssssssssss(ut64 pc, ut8 *buffer, const ut32 opcode, RzList /*<char *>*/ *tokens, bool be) {
+	ut32 assembled = opcode;
+	ut32 rs = 0, imm = 0;
+
+	const char *reg_s = rz_list_get_n(tokens, 1);
+	const char *imm_n = rz_list_get_n(tokens, 2);
+	if (!mips_op_gpr(reg_s, &rs) ||
+		!mips_op_signed(imm_n, (st32 *)&imm, (ST16_MIN << 2), (ST16_MAX << 2))) {
+		return false;
+	}
+
+	imm -= (4 + pc);
+	imm >>= 2;
+	imm &= 0xffffu;
+
+	assembled |= (rs << 21);
+	assembled |= imm;
+
+	rz_write_ble32(buffer, assembled, be);
+	return true;
+}
+
+/* teqi, tnei, tgei, tgeiu, tlti, tltiu */
+static bool mips_op_kkkkkkssssskkkkkiiiiiiiiiiiiiiii(ut64 pc, ut8 *buffer, const ut32 opcode, RzList /*<char *>*/ *tokens, bool be) {
+	ut32 assembled = opcode;
+	ut32 rs = 0, imm = 0;
+
+	const char *reg_s = rz_list_get_n(tokens, 1);
+	const char *imm_n = rz_list_get_n(tokens, 2);
+	if (!mips_op_gpr(reg_s, &rs) ||
+		!mips_op_signed(imm_n, (st32 *)&imm, ST16_MIN, ST16_MAX)) {
+		return false;
+	}
+
+	imm &= 0xffffu;
+	assembled |= (rs << 21);
+	assembled |= imm;
+
+	rz_write_ble32(buffer, assembled, be);
+	return true;
+}
+
+/* jalr */
+static bool mips_op_kkkkkkssssskkkkkfffffkkkkkkkkkkk(ut64 pc, ut8 *buffer, const ut32 opcode, RzList /*<char *>*/ *tokens, bool be) {
+	// JALR rd, rs (normal form)
+	// JALR rs (rd = 31 implied)
+	ut32 assembled = opcode;
+	ut32 rs = 0, rd = 31;
+	const size_t n_toks = rz_list_length(tokens);
+
+	if (n_toks == 3) {
+		const char *reg_d = rz_list_get_n(tokens, 1);
+		const char *reg_s = rz_list_get_n(tokens, 2);
+		if (!mips_op_gpr(reg_d, &rd) ||
+			!mips_op_gpr(reg_s, &rs)) {
+			return false;
+		}
 	} else {
-		n = (int)rz_num_get(NULL, p);
+		const char *reg_s = rz_list_get_n(tokens, 1);
+		if (!mips_op_gpr(reg_s, &rs)) {
+			return false;
+		}
 	}
-	if (n != 0 || p[0] == '0') {
-		return n;
-	}
-	RZ_LOG_ERROR("assembler: mips: invalid reg name (%s) at pos %d.\n", p, n);
-	return -1;
+
+	assembled |= (rs << 21);
+	assembled |= (rd << 11);
+
+	rz_write_ble32(buffer, assembled, be);
+	return true;
 }
 
-RZ_IPI int mips_assemble_opcode(const char *str, ut64 pc, ut8 *out) {
-	int i, hasp;
-	char w0[32], w1[32], w2[32], w3[32];
-	char *s = rz_str_dup(str);
-	if (!s) {
+/* movf, movt */
+static bool mips_op_kkkkkkssssstttkkfffffkkkkkkkkkkk(ut64 pc, ut8 *buffer, const ut32 opcode, RzList /*<char *>*/ *tokens, bool be) {
+	ut32 assembled = opcode;
+	ut32 rs = 0, rd = 0, fcc = 0;
+
+	const char *reg_d = rz_list_get_n(tokens, 1);
+	const char *reg_s = rz_list_get_n(tokens, 2);
+	if (!mips_op_gpr(reg_d, &rd) ||
+		!mips_op_gpr(reg_s, &rs)) {
+		return false;
+	}
+
+	if (rz_list_length(tokens) == 4) {
+		const char *fcc_u = rz_list_get_n(tokens, 3);
+		if (!mips_op_fcc(fcc_u, &fcc)) {
+			return false;
+		}
+	}
+
+	assembled |= (rs << 21);
+	assembled |= (fcc << 18);
+	assembled |= (rd << 11);
+
+	rz_write_ble32(buffer, assembled, be);
+	return true;
+}
+
+/* break */
+static bool mips_op_kkkkkkuuuuuuuuuuffffffffffkkkkkk(ut64 pc, ut8 *buffer, const ut32 opcode, RzList /*<char *>*/ *tokens, bool be) {
+	const size_t n_toks = rz_list_length(tokens);
+	if (n_toks != 3) {
+		if (n_toks != 1) {
+			return false;
+		}
+		// break without params.
+		rz_write_ble32(buffer, opcode, be);
+		return true;
+	}
+
+	ut32 assembled = opcode;
+	ut32 uimm = 0, fimm = 0;
+
+	const char *imm_u = rz_list_get_n(tokens, 1);
+	const char *imm_f = rz_list_get_n(tokens, 2);
+	if (!mips_op_unsigned(imm_u, &uimm, 0x7ffu) ||
+		!mips_op_unsigned(imm_f, &fimm, 0x7ffu)) {
+		return false;
+	}
+
+	assembled |= (uimm << 16);
+	assembled |= (fimm << 6);
+
+	rz_write_ble32(buffer, assembled, be);
+	return true;
+}
+
+/* j, jal */
+static bool mips_op_kkkkkkffffffffffffffffffffffffff(ut64 pc, ut8 *buffer, const ut32 opcode, RzList /*<char *>*/ *tokens, bool be) {
+	ut32 assembled = opcode;
+	ut32 imm32 = 0;
+	const char *imm_n = rz_list_get_n(tokens, 1);
+	if (!mips_op_signed(imm_n, (st32 *)&imm32, (st32)0xf0000000, 0x0fffffff)) {
+		return false;
+	}
+
+	imm32 >>= 2;
+	imm32 &= 0x3ffffffu;
+	assembled |= imm32;
+
+	rz_write_ble32(buffer, assembled, be);
+	return true;
+}
+
+// clang-format off
+const MipsOp mips_opcodes[] = {
+	{ mips_op_kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk, 0x00000000, "nop" },       /// nop
+	{ mips_op_kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk, 0x42000018, "eret" },      /// eret
+	{ mips_op_kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk, 0x0000000c, "syscall" },   /// syscall
+	{ mips_op_kkkkkksssssffffftttttkkkkkkkkkkk, 0x00000020, "add" },       /// add $t1, $t2, $t3
+	{ mips_op_kkkkkksssssffffftttttkkkkkkkkkkk, 0x00000022, "sub" },       /// sub $t1, $t2, $t3
+	{ mips_op_kkkkkksssssffffftttttttttttttttt, 0x20000000, "addi" },      /// addi $t1, $t2, -100
+	{ mips_op_kkkkkksssssffffftttttkkkkkkkkkkk, 0x00000021, "addu" },      /// addu $t1, $t2, $t3
+	{ mips_op_kkkkkksssssffffftttttkkkkkkkkkkk, 0x00000023, "subu" },      /// subu $t1, $t2, $t3
+	{ mips_op_kkkkkksssssffffftttttttttttttttt, 0x24000000, "addiu" },     /// addiu $t1, $t2, -100
+	{ mips_op_kkkkkkfffffssssskkkkkkkkkkkkkkkk, 0x00000018, "mult" },      /// mult $t1, $t2
+	{ mips_op_kkkkkkfffffssssskkkkkkkkkkkkkkkk, 0x00000019, "multu" },     /// multu $t1, $t2
+	{ mips_op_kkkkkksssssffffftttttkkkkkkkkkkk, 0x70000002, "mul" },       /// mul $t1, $t2, $t3
+	{ mips_op_kkkkkkfffffssssskkkkkkkkkkkkkkkk, 0x70000000, "madd" },      /// madd $t1, $t2
+	{ mips_op_kkkkkkfffffssssskkkkkkkkkkkkkkkk, 0x70000001, "maddu" },     /// maddu $t1, $t2
+	{ mips_op_kkkkkkfffffssssskkkkkkkkkkkkkkkk, 0x70000004, "msub" },      /// msub $t1, $t2
+	{ mips_op_kkkkkkfffffssssskkkkkkkkkkkkkkkk, 0x70000005, "msubu" },     /// msubu $t1, $t2
+	{ mips_op_kkkkkkfffffssssstttttkkkkkkkkkkk, 0x0000001a, "div" },       /// div $t1, $t2
+	{ mips_op_kkkkkkfffffssssstttttkkkkkkkkkkk, 0x0000001b, "divu" },      /// divu $t1, $t2
+	{ mips_op_kkkkkkkkkkkkkkkkfffffkkkkkkkkkkk, 0x00000010, "mfhi" },      /// mfhi $t1
+	{ mips_op_kkkkkkkkkkkkkkkkfffffkkkkkkkkkkk, 0x00000012, "mflo" },      /// mflo $t1
+	{ mips_op_kkkkkkfffffkkkkkkkkkkkkkkkkkkkkk, 0x00000011, "mthi" },      /// mthi $t1
+	{ mips_op_kkkkkkfffffkkkkkkkkkkkkkkkkkkkkk, 0x00000013, "mtlo" },      /// mtlo $t1
+	{ mips_op_kkkkkksssssffffftttttkkkkkkkkkkk, 0x00000024, "and" },       /// and $t1, $t2, $t3
+	{ mips_op_kkkkkksssssffffftttttkkkkkkkkkkk, 0x00000025, "or" },        /// or $t1, $t2, $t3
+	{ mips_op_kkkkkksssssffffftttttttttttttttt, 0x30000000, "andi" },      /// andi $t1, $t2,100
+	{ mips_op_kkkkkksssssffffftttttttttttttttt, 0x34000000, "ori" },       /// ori $t1, $t2,100
+	{ mips_op_kkkkkkffffftttttssssskkkkkkkkkkk, 0x00000027, "nor" },       /// nor $t1, $t2, $t3
+	{ mips_op_kkkkkksssssffffftttttkkkkkkkkkkk, 0x00000026, "xor" },       /// xor $t1, $t2, $t3
+	{ mips_op_kkkkkksssssffffftttttttttttttttt, 0x38000000, "xori" },      /// xori $t1, $t2,100
+	{ mips_op_kkkkkkkkkkktttttdddddssssskkkkkk, 0x00000000, "sll" },       /// sll $t1, $t2,10
+	{ mips_op_kkkkkkssssstttttdddddkkkkkkkkkkk, 0x00000004, "sllv" },      /// sllv $t1, $t2, $t3
+	{ mips_op_kkkkkkkkkkktttttdddddssssskkkkkk, 0x00000002, "srl" },       /// srl $t1, $t2,10
+	{ mips_op_kkkkkkkkkkktttttdddddssssskkkkkk, 0x00000003, "sra" },       /// sra $t1, $t2,10
+	{ mips_op_kkkkkkssssstttttdddddkkkkkkkkkkk, 0x00000007, "srav" },      /// srav $t1, $t2, $t3
+	{ mips_op_kkkkkkssssstttttdddddkkkkkkkkkkk, 0x00000006, "srlv" },      /// srlv $t1, $t2, $t3
+	{ mips_op_kkkkkktttttfffffssssssssssssssss, 0x8c000000, "lw" },        /// lw $t1, -100($t2)
+	{ mips_op_kkkkkktttttfffffssssssssssssssss, 0x88000000, "lwl" },       /// lwl $t1, -100($t2)
+	{ mips_op_kkkkkktttttfffffssssssssssssssss, 0x98000000, "lwr" },       /// lwr $t1, -100($t2)
+	{ mips_op_kkkkkktttttfffffssssssssssssssss, 0xac000000, "sw" },        /// sw $t1, -100($t2)
+	{ mips_op_kkkkkktttttfffffssssssssssssssss, 0xa8000000, "swl" },       /// swl $t1, -100($t2)
+	{ mips_op_kkkkkktttttfffffssssssssssssssss, 0xb8000000, "swr" },       /// swr $t1, -100($t2)
+	{ mips_op_kkkkkkkkkkkfffffssssssssssssssss, 0x3c000000, "lui" },       /// lui $t1,100
+	{ mips_op_kkkkkkfffffssssstttttttttttttttt, 0x10000000, "beq" },       /// beq $t1, $t2, label
+	{ mips_op_kkkkkkfffffssssstttttttttttttttt, 0x14000000, "bne" },       /// bne $t1, $t2, label
+	{ mips_op_kkkkkkfffffkkkkkssssssssssssssss, 0x04010000, "bgez" },      /// bgez $t1, label
+	{ mips_op_kkkkkkfffffkkkkkssssssssssssssss, 0x04110000, "bgezal" },    /// bgezal $t1, label
+	{ mips_op_kkkkkkfffffkkkkkssssssssssssssss, 0x1c000000, "bgtz" },      /// bgtz $t1, label
+	{ mips_op_kkkkkkfffffkkkkkssssssssssssssss, 0x18000000, "blez" },      /// blez $t1, label
+	{ mips_op_kkkkkkfffffkkkkkssssssssssssssss, 0x04000000, "bltz" },      /// bltz $t1, label
+	{ mips_op_kkkkkkfffffkkkkkssssssssssssssss, 0x04100000, "bltzal" },    /// bltzal $t1, label
+	{ mips_op_kkkkkksssssffffftttttkkkkkkkkkkk, 0x0000002a, "slt" },       /// slt $t1, $t2, $t3
+	{ mips_op_kkkkkksssssffffftttttkkkkkkkkkkk, 0x0000002b, "sltu" },      /// sltu $t1, $t2, $t3
+	{ mips_op_kkkkkksssssffffftttttttttttttttt, 0x28000000, "slti" },      /// slti $t1, $t2, -100
+	{ mips_op_kkkkkksssssffffftttttttttttttttt, 0x2c000000, "sltiu" },     /// sltiu $t1, $t2, -100
+	{ mips_op_kkkkkksssssffffftttttkkkkkkkkkkk, 0x0000000b, "movn" },      /// movn $t1, $t2, $t3
+	{ mips_op_kkkkkksssssffffftttttkkkkkkkkkkk, 0x0000000a, "movz" },      /// movz $t1, $t2, $t3
+	{ mips_op_kkkkkkssssstttkkfffffkkkkkkkkkkk, 0x00000001, "movf" },      /// movf $t1, $t2, 1 | movf $t1, $t2
+	{ mips_op_kkkkkkssssstttkkfffffkkkkkkkkkkk, 0x00010001, "movt" },      /// movt $t1, $t2, 1 | movt $t1, $t2
+	{ mips_op_kkkkkkuuuuuuuuuuffffffffffkkkkkk, 0x0000000d, "break" },     /// break 0, 100 | break
+	{ mips_op_kkkkkkffffffffffffffffffffffffff, 0x08000000, "j" },         /// j target
+	{ mips_op_kkkkkkfffffkkkkkkkkkkkkkkkkkkkkk, 0x00000008, "jr" },        /// jr $t1
+	{ mips_op_kkkkkkffffffffffffffffffffffffff, 0x0c000000, "jal" },       /// jal target
+	{ mips_op_kkkkkkssssskkkkkfffffkkkkkkkkkkk, 0x00000009, "jalr" },      /// jalr $t1, $t2
+	{ mips_op_kkkkkktttttfffffssssssssssssssss, 0x80000000, "lb" },        /// lb $t1, -100($t2)
+	{ mips_op_kkkkkktttttfffffssssssssssssssss, 0x84000000, "lh" },        /// lh $t1, -100($t2)
+	{ mips_op_kkkkkktttttfffffssssssssssssssss, 0x94000000, "lhu" },       /// lhu $t1, -100($t2)
+	{ mips_op_kkkkkktttttfffffssssssssssssssss, 0x90000000, "lbu" },       /// lbu $t1, -100($t2)
+	{ mips_op_kkkkkktttttfffffssssssssssssssss, 0xa0000000, "sb" },        /// sb $t1, -100($t2)
+	{ mips_op_kkkkkktttttfffffssssssssssssssss, 0xa4000000, "sh" },        /// sh $t1, -100($t2)
+	{ mips_op_kkkkkksssssfffffkkkkkkkkkkkkkkkk, 0x00000034, "teq" },       /// teq $t1, $t2
+	{ mips_op_kkkkkkssssskkkkkiiiiiiiiiiiiiiii, 0x040c0000, "teqi" },      /// teqi $t1, -100
+	{ mips_op_kkkkkksssssfffffkkkkkkkkkkkkkkkk, 0x00000036, "tne" },       /// tne $t1, $t2
+	{ mips_op_kkkkkkssssskkkkkiiiiiiiiiiiiiiii, 0x040e0000, "tnei" },      /// tnei $t1, -100
+	{ mips_op_kkkkkksssssfffffkkkkkkkkkkkkkkkk, 0x00000030, "tge" },       /// tge $t1, $t2
+	{ mips_op_kkkkkksssssfffffkkkkkkkkkkkkkkkk, 0x00000031, "tgeu" },      /// tgeu $t1, $t2
+	{ mips_op_kkkkkkssssskkkkkiiiiiiiiiiiiiiii, 0x04080000, "tgei" },      /// tgei $t1, -100
+	{ mips_op_kkkkkkssssskkkkkiiiiiiiiiiiiiiii, 0x04090000, "tgeiu" },     /// tgeiu $t1, -100
+	{ mips_op_kkkkkksssssfffffkkkkkkkkkkkkkkkk, 0x00000032, "tlt" },       /// tlt $t1, $t2
+	{ mips_op_kkkkkksssssfffffkkkkkkkkkkkkkkkk, 0x00000033, "tltu" },      /// tltu $t1, $t2
+	{ mips_op_kkkkkkssssskkkkkiiiiiiiiiiiiiiii, 0x040a0000, "tlti" },      /// tlti $t1, -100
+	{ mips_op_kkkkkkssssskkkkkiiiiiiiiiiiiiiii, 0x040b0000, "tltiu" },     /// tltiu $t1, -100
+};
+// clang-format on
+
+RZ_IPI int mips_assemble_opcode(const char *line, ut64 pc, RzStrBuf *out, bool be) {
+	// on success return instruction size.
+	ut8 buffer[4] = { 0 };
+	RzList /*<char *>*/ *tokens = NULL;
+
+	if (RZ_STR_ISEMPTY(line)) {
+		eprintf("HERE %d\n", __LINE__);
+		return false;
+	}
+
+	if (!strchr(line, ' ')) {
+		const char *lines[1] = { line };
+		tokens = rz_list_new_from_array((const void **)lines, 1);
+	} else {
+		tokens = rz_str_split_duplist_n_regex(line, ",?\\s+|\\(|\\)", 0, true);
+	}
+
+	if (rz_list_length(tokens) < 1) {
+		RZ_LOG_INFO("mips: assembler failed to split line\n");
+		rz_list_free(tokens);
+		return false;
+	}
+
+	const char *token = rz_list_get_n(tokens, 0);
+	if (RZ_STR_ISEMPTY(token)) {
 		return -1;
 	}
 
-	rz_str_replace_char(s, ',', ' ');
-	hasp = rz_str_replace_char(s, '(', ' ');
-	rz_str_replace_char(s, ')', ' ');
+	int ret = -1;
 
-	*out = 0;
-	*w0 = 0;
-	*w1 = 0;
-	*w2 = 0;
-	*w3 = 0;
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(mips_opcodes); ++i) {
+		if (RZ_STR_NE(token, mips_opcodes[i].mnemonic)) {
+			continue;
+		}
 
-	if (!strncmp(s, "jalr", 4) && !strchr(s, ',')) {
-		char opstr[32];
-		const char *arg = strchr(s, ' ');
-		if (arg) {
-			snprintf(opstr, sizeof(opstr), "jalr ra ra %s", arg + 1);
-			free(s);
-			s = rz_str_dup(opstr);
-			if (!s) {
-				return -1;
-			}
+		mips_encode encoder = mips_opcodes[i].encoder;
+		const ut32 opcode = mips_opcodes[i].opcode;
+		if (encoder(pc, buffer, opcode, tokens, be) &&
+			rz_strbuf_setbin(out, buffer, sizeof(buffer))) {
+			ret = 4;
+			break;
 		}
 	}
 
-	sscanf(s, "%31s", w0);
-	if (*w0) {
-		for (i = 0; ops[i].name; i++) {
-			if (!strcmp(ops[i].name, w0)) {
-				switch (ops[i].args) {
-				case 3: sscanf(s, "%31s %31s %31s %31s", w0, w1, w2, w3); break;
-				case -3: sscanf(s, "%31s %31s %31s %31s", w0, w1, w2, w3); break;
-				case 2: sscanf(s, "%31s %31s %31s", w0, w1, w2); break;
-				case -2: sscanf(s, "%31s %31s %31s", w0, w1, w2); break;
-				case 1: sscanf(s, "%31s %31s", w0, w1); break;
-				case -1: sscanf(s, "%31s %31s", w0, w1); break;
-				case 0: sscanf(s, "%31s", w0); break;
-				}
-				if (hasp) {
-					char tmp[32];
-					strcpy(tmp, w2);
-					strcpy(w2, w3);
-					strcpy(w3, tmp);
-				}
-				switch (ops[i].type) {
-				case 'R': {
-					// reg order diff per instruction 'group' - ordered to number of likelyhood to call (add > mfhi)
-					int op = 0, rs = 0, rt = 0, rd = 0, sa = 0, fn = 0;
-					bool invalid = false;
-					switch (ops[i].args) {
-					case 3:
-						rs = getreg(w2);
-						rt = getreg(w3);
-						rd = getreg(w1);
-						fn = ops[i].n;
-						break;
-					case -3:
-						if (ops[i].n > -1) {
-							rt = getreg(w2);
-							rd = getreg(w1);
-							sa = getreg(w3);
-							fn = ops[i].n;
-						} else {
-							rs = getreg(w3);
-							rt = getreg(w2);
-							rd = getreg(w1);
-							fn = (-1 * ops[i].n);
-						}
-						break;
-					case 2:
-						rs = getreg(w1);
-						rt = getreg(w2);
-						fn = ops[i].n;
-						break;
-					case 1:
-						rs = getreg(w1);
-						fn = ops[i].n;
-						break;
-					case -2:
-						rs = getreg(w2);
-						rd = getreg(w1);
-						fn = ops[i].n;
-						break;
-					case -1:
-						rd = getreg(w1);
-						fn = ops[i].n;
-						break;
-					case 0:
-						fn = ops[i].n;
-						break;
-					default:
-						invalid = true;
-						break;
-					}
-					if (!invalid) {
-						free(s);
-						return mips_r(out, op, rs, rt, rd, sa, fn);
-					}
-					break;
-				}
-				case 'I':
-				case 'B': {
-					bool invalid = false;
-					int op = 0, rs = 0, rt = 0, imm = 0, is_branch = ops[i].type == 'B';
-					switch (ops[i].args) {
-					case 2:
-						op = ops[i].n;
-						rt = getreg(w1);
-						imm = getreg(w2);
-						break;
-					case 3:
-						op = ops[i].n;
-						rs = getreg(w2);
-						rt = getreg(w1);
-						imm = getreg(w3);
-						break;
-					case -2:
-						if (ops[i].n > 0) {
-							op = ops[i].n;
-							rs = getreg(w1);
-							imm = getreg(w2);
-						} else {
-							op = (-1 * ops[i].n);
-							rs = getreg(w1);
-							rt = ops[i].x;
-							imm = getreg(w2);
-						}
-						break;
-					case -1:
-						if (ops[i].n > 0) {
-							op = ops[i].n;
-							imm = getreg(w1);
-						} else {
-							op = (-1 * ops[i].n);
-							rt = ops[i].x;
-							imm = getreg(w1);
-						}
-						break;
-					default:
-						invalid = true;
-						break;
-					}
-					if (!invalid) {
-						free(s);
-						return mips_i(out, op, rs, rt, imm, is_branch);
-					}
-					break;
-				}
-				case 'J':
-					if (ops[i].args == 1) {
-						free(s);
-						return mips_j(out, ops[i].n, getreg(w1));
-					}
-					break;
-				case 'N': // nop
-					memset(out, 0, 4);
-					free(s);
-					return 4;
-				}
-				free(s);
-				return -1;
-			}
-		}
-	}
-	free(s);
-	return -1;
+	rz_list_free(tokens);
+	return ret;
 }

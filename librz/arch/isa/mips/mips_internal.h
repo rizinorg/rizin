@@ -21,7 +21,7 @@
 
 RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL const csh *handle, RZ_NONNULL const cs_insn *insn, const ut32 gprlen);
 RZ_IPI RzAnalysisILConfig *mips_il_config(RzAnalysis *analysis);
-RZ_IPI int mips_assemble_opcode(const char *str, ut64 pc, ut8 *out);
+RZ_IPI int mips_assemble_opcode(const char *line, ut64 pc, RzStrBuf *out, bool be);
 RZ_IPI int analyze_op_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn);
 
 #endif /* MIPS_INTERNAL_H */

@@ -79,18 +79,7 @@ fin:
 }
 
 static int mips_assemble(RzAsm *a, RzAsmOp *op, const char *str) {
-	ut8 *opbuf = (ut8 *)rz_strbuf_get(&op->buf);
-	int ret = mips_assemble_opcode(str, a->pc, opbuf);
-	if (a->big_endian) {
-		ut8 *buf = opbuf;
-		ut8 tmp = buf[0];
-		buf[0] = buf[3];
-		buf[3] = tmp;
-		tmp = buf[1];
-		buf[1] = buf[2];
-		buf[2] = tmp;
-	}
-	return ret;
+	return mips_assemble_opcode(str, a->pc, &op->buf, a->big_endian);
 }
 
 char **mips_cpu_descriptions() {
