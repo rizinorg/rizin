@@ -642,7 +642,6 @@ RZ_IPI int mips_assemble_opcode(const char *line, ut64 pc, RzStrBuf *out, bool b
 	RzList /*<char *>*/ *tokens = NULL;
 
 	if (RZ_STR_ISEMPTY(line)) {
-		eprintf("HERE %d\n", __LINE__);
 		return false;
 	}
 
