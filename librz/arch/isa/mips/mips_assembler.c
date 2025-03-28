@@ -389,7 +389,7 @@ static bool mips_op_kkkkkkfffffssssstttttttttttttttt(ut64 pc, ut8 *buffer, const
 	const char *imm_n = rz_list_get_n(tokens, 3);
 	if (!mips_op_gpr(reg_s, &rs) ||
 		!mips_op_gpr(reg_t, &rt) ||
-		!mips_op_signed(imm_n, (st32 *)&imm, (ST16_MIN << 2), (ST16_MAX << 2))) {
+		!mips_op_signed(imm_n, (st32 *)&imm, (((ut32)ST16_MIN) << 2), (ST16_MAX << 2))) {
 		return false;
 	}
 
@@ -413,7 +413,7 @@ static bool mips_op_kkkkkkfffffkkkkkssssssssssssssss(ut64 pc, ut8 *buffer, const
 	const char *reg_s = rz_list_get_n(tokens, 1);
 	const char *imm_n = rz_list_get_n(tokens, 2);
 	if (!mips_op_gpr(reg_s, &rs) ||
-		!mips_op_signed(imm_n, (st32 *)&imm, (ST16_MIN << 2), (ST16_MAX << 2))) {
+		!mips_op_signed(imm_n, (st32 *)&imm, (((ut32)ST16_MIN) << 2), (ST16_MAX << 2))) {
 		return false;
 	}
 
