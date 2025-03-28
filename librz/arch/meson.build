@@ -448,6 +448,24 @@ arch_common_includes = [
   '.',
 ]
 
+# vax plugin changes starts here
+arch_plugins_list += [
+  'vax'
+]
+
+vax_sources = [
+  'vax/vax.c',
+  'vax/vax_disasm.c',
+  'p_gnu/analysis/analysis_vax_gnu.c'
+]
+arch_plugin_sources += vax_sources
+
+vax_includes = [
+  'vax'
+]
+arch_isa_includes += vax_includes
+# vax plugin changes end here
+
 arch_plugins = {
   'base_name': 'rz_arch',
   'base_struct': 'RzArchPlugin',
@@ -512,3 +530,6 @@ modules += { 'rz_arch': {
     ],
     'plugins': [arch_plugins]
 }}
+
+
+

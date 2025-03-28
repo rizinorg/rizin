@@ -1,0 +1,6 @@
+NAME=vax_brb
+FILE=../bin/vax/brb.bin
+ARGS=-a vax
+CMDS=pd 1
+EXPECT=            0x00000000      1100         brb 0x2
+RUN

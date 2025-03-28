@@ -1,0 +1,6 @@
+NAME=vax_movl
+FILE=../bin/vax/movl.bin
+ARGS=-a vax
+CMDS=pd 1
+EXPECT=            0x00000000      d0505050     movl r0, r0
+RUN

@@ -1,0 +1,1 @@
+echo -ne '\x01' > ../bin/vax/nop.bin

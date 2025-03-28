@@ -1,0 +1,1 @@
+echo -ne '\x11\x00' > ../bin/vax/brb.bin

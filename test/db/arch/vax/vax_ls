@@ -1,0 +1,6 @@
+NAME=vax_ls
+FILE=../bin/vax/ls.vax
+ARGS=-a vax
+CMDS=pd 1 @ 0x120001000
+EXPECT=            0x120001000      04           halt
+RUN

@@ -1,0 +1,6 @@
+NAME=vax_nop
+FILE=../bin/vax/nop.bin
+ARGS=-a vax
+CMDS=pd 1
+EXPECT=            0x00000000      01           nop
+RUN
