@@ -4,18 +4,26 @@
 #ifndef RZ_VAX_H
 #define RZ_VAX_H
 
-typedef struct {
-    const char *name;  // e.g., "movl"
-    unsigned int opcode;  // e.g., 0xD0
-    const char *args;  // e.g., "rlwl"
-} vax_instruction;
+typedef enum {
+    VAX_OP_HALT = 0x04,
+    VAX_OP_NOP = 0x01,
+    VAX_OP_BRB = 0x11,
+    VAX_OP_MOVL = 0xD0,
+    VAX_OP_INVALID = 0 // Sentinel value for end of table
+} VaxOpcode;
 
-static const vax_instruction vax_instructions[] = {
-    {"halt", 0x04, ""},        // HALT: no operands (for NetBSD binary)
-    {"nop",  0x01, ""},        // NOP: no operands
-    {"brb",  0x11, "bb"},      // BRB: 1-byte displacement
-    {"movl", 0xD0, "rlwl"},    // MOVL: read long, write long
-    {NULL,   0,    NULL}       // End of table
+typedef struct {
+    const char *name;
+    VaxOpcode opcode;
+    const char *args;
+} VaxInstruction;
+
+static const VaxInstruction vax_instructions[] = {
+    {"halt", VAX_OP_HALT, ""},
+    {"nop",  VAX_OP_NOP,  ""},
+    {"brb",  VAX_OP_BRB,  "bb"},
+    {"movl", VAX_OP_MOVL, "rlwl"},
+    {NULL,   VAX_OP_INVALID, NULL}
 };
 
 #endif // RZ_VAX_H

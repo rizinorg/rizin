@@ -530,6 +530,3 @@ modules += { 'rz_arch': {
     ],
     'plugins': [arch_plugins]
 }}
-
-
-
