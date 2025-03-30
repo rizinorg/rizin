@@ -951,15 +951,14 @@ RUN
 NAME=consistency btw /z and /x at 0x20k multiple
 FILE=--
 CMDS=<<EOF
+. scripts/string-consistency-test.rz
 $str=$abc+d
 $bin=$malloc://0x40000+10
 $setup=$"w `$str` @@=0x20000 0x40000"
-. scripts/string-consistency-test.rz
-
-.(search.show_progress "/z\ `$str`")
+.(search.show_progress "/z `$str`")
 echo ----
 $bytes=%x `$str`
-.(search.show_progress "/x\ `$bytes`")
+.(search.show_progress "/x `$bytes`")
 EOF
 EXPECT=<<EOF
 [0x0, 0x207ff): 1

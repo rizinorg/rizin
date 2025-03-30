@@ -128,15 +128,14 @@ RUN
 NAME=consistency btw /z and /x
 FILE=bins/elf/analysis/ls2
 CMDS=<<EOF
+. scripts/string-consistency-test.rz
 $str=$lib
 $bin=$bins/elf/analysis/ls2
 $setup=$""
-. scripts/string-consistency-test.rz
-
-.(search.show_progress "/z\ `$str`")
+.(search.show_progress "/z `$str`")
 echo ----
 $bytes=%x `$str`
-.(search.show_progress "/x\ `$bytes`")
+.(search.show_progress "/x `$bytes`")
 
 echo ----
 /z lib > /dev/null
