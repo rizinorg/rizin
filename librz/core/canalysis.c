@@ -5114,6 +5114,7 @@ static ut64 analysis_bytes_oplen(RzCore *core, const ut8 *ptr, ut64 addr, int le
 		return min_op_size;
 	}
 	oplen = rz_asm_op_get_size(&asmop);
+	rz_analysis_op_fini(&op);
 	rz_core_asm_bb_middle(core, addr, &oplen, &ret);
 	return oplen;
 }
@@ -5279,6 +5280,7 @@ static void *AnalysisBytesContext_next(RzIterator *it) {
 	free(amask);
 
 	ab->bytes = rz_asm_op_get_hex(asmop);
+	rz_asm_op_fini(asmop);
 
 out:
 	inner->offset += ab->oplen;

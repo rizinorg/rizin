@@ -356,9 +356,9 @@ static int rasm_disasm(RzAsmState *as, ut64 addr, const char *buf, int len, int 
 		break;
 	}
 	case DISASM_MODE_WITH_BYTES: {
-		RzAsmOp op = { 0 };
 		rz_asm_set_pc(as->a, addr);
 		while ((len - ret) > 0) {
+			RzAsmOp op = { 0 };
 			int dr = rz_asm_disassemble(as->a, &op, data + ret, len - ret);
 			if (dr == -1 || op.size < 1) {
 				op.size = 1;
@@ -371,6 +371,7 @@ static int rasm_disasm(RzAsmState *as, ut64 addr, const char *buf, int len, int 
 			free(op_hex);
 			ret += op.size;
 			rz_asm_set_pc(as->a, addr + ret);
+			rz_asm_op_fini(&op);
 		}
 		break;
 	}

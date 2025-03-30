@@ -702,17 +702,18 @@ static void do_ref_search(RzCore *core, ut64 addr, ut64 from, ut64 to, struct se
 	RzAnalysisXRef *xref;
 	RzListIter *iter;
 	ut8 buf[12];
-	RzAsmOp asmop = { 0 };
 	RzList *list = rz_analysis_xrefs_get_to(core->analysis, addr);
 	if (list) {
 		rz_list_foreach (list, iter, xref) {
 			rz_io_read_at(core->io, xref->from, buf, size);
 			rz_asm_set_pc(core->rasm, xref->from);
+			RzAsmOp asmop = { 0 };
 			rz_asm_disassemble(core->rasm, &asmop, buf, size);
 			fcn = rz_analysis_get_fcn_in(core->analysis, xref->from, 0);
 			RzAnalysisHint *hint = rz_analysis_hint_get(core->analysis, xref->from);
 			rz_parse_filter(core->parser, xref->from, core->flags, hint, rz_strbuf_get(&asmop.buf_asm),
 				str, sizeof(str), core->print->big_endian);
+			rz_asm_op_fini(&asmop);
 			rz_analysis_hint_free(hint);
 			const char *comment = rz_meta_get_string(core->analysis, RZ_META_TYPE_COMMENT, xref->from);
 			char *print_comment = NULL;
@@ -1476,7 +1477,6 @@ static void __core_cmd_search_asm_infinite(RzCore *core, const char *arg) {
 }
 
 static void __core_cmd_search_asm_byteswap(RzCore *core, int nth) {
-	RzAsmOp asmop = { 0 };
 	ut8 buf[32];
 	int i;
 	rz_io_read_at(core->io, 0, buf, sizeof(buf));
@@ -1485,11 +1485,15 @@ static void __core_cmd_search_asm_byteswap(RzCore *core, int nth) {
 	}
 	for (i = 0; i <= 0xff; i++) {
 		buf[nth] = i;
+		RzAsmOp asmop = { 0 };
 		if (rz_asm_disassemble(core->rasm, &asmop, buf, sizeof(buf)) > 0) {
 			const char *asmstr = rz_strbuf_get(&asmop.buf_asm);
+			rz_asm_op_fini(&asmop);
 			if (!strstr(asmstr, "invalid") && !strstr(asmstr, "unaligned")) {
 				rz_cons_printf("%02x  %s\n", i, asmstr);
 			}
+		} else {
+			rz_asm_op_fini(&asmop);
 		}
 	}
 }

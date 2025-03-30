@@ -270,7 +270,6 @@ static bool step_until_inst(RzCore *core, const char *instr, bool regex) {
 		RZ_LOG_ERROR("wrong debugger state\n");
 		return false;
 	}
-	RzAsmOp asmop = { 0 };
 	ut8 buf[32];
 	ut64 pc;
 	int ret;
@@ -295,19 +294,24 @@ static bool step_until_inst(RzCore *core, const char *instr, bool regex) {
 		rz_asm_set_pc(core->rasm, pc);
 		// TODO: speedup if instructions are in the same block as the previous
 		rz_io_read_at(core->io, pc, buf, sizeof(buf));
+		RzAsmOp asmop = { 0 };
 		ret = rz_asm_disassemble(core->rasm, &asmop, buf, sizeof(buf));
 		rz_cons_printf("0x%08" PFMT64x " %d %s\n", pc, ret, rz_asm_op_get_asm(&asmop)); // asmop.buf_asm);
 		if (ret > 0) {
 			const char *buf_asm = rz_asm_op_get_asm(&asmop);
 			if (regex) {
 				if (rz_regex_contains(instr, buf_asm, RZ_REGEX_ZERO_TERMINATED, RZ_REGEX_EXTENDED, RZ_REGEX_DEFAULT)) {
+					rz_asm_op_fini(&asmop);
 					break;
 				}
 			} else {
 				if (strstr(buf_asm, instr)) {
+					rz_asm_op_fini(&asmop);
 					break;
 				}
 			}
+		} else {
+			rz_asm_op_fini(&asmop);
 		}
 	}
 	rz_core_reg_update_flags(core);

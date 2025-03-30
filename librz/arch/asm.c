@@ -568,11 +568,11 @@ static bool __isInvalid(RzAsmOp *op) {
 }
 
 RZ_API int rz_asm_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
-	rz_asm_op_init(op);
 	rz_return_val_if_fail(a && buf && op, -1);
 	if (len < 1) {
 		return 0;
 	}
+	rz_asm_op_init(op);
 
 	int ret = op->payload = 0;
 	op->size = 4;
@@ -796,9 +796,9 @@ RZ_API RzAsmCode *rz_asm_mdisassemble(RzAsm *a, const ut8 *buf, int len) {
 		return rz_asm_code_free(acode);
 	}
 	RzAsmOp op = { 0 };
-	rz_asm_op_init(&op);
 	for (idx = 0; idx + addrbytes <= len; idx += (addrbytes * ret)) {
 		rz_asm_set_pc(a, pc + idx);
+		rz_asm_op_init(&op);
 		ret = rz_asm_disassemble(a, &op, buf + idx, len - idx);
 		if (ret < 1) {
 			ret = 1;
@@ -808,8 +808,8 @@ RZ_API RzAsmCode *rz_asm_mdisassemble(RzAsm *a, const ut8 *buf, int len) {
 		}
 		rz_strbuf_append(buf_asm, rz_strbuf_get(&op.buf_asm));
 		rz_strbuf_append(buf_asm, "\n");
+		rz_asm_op_fini(&op);
 	}
-	rz_asm_op_fini(&op);
 	acode->assembly = rz_strbuf_drain(buf_asm);
 	acode->len = idx;
 	return acode;

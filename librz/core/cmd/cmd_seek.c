@@ -42,14 +42,15 @@ RZ_IPI int rz_core_seek_opcode_backward(RzCore *core, int numinstr, bool silent)
 			if (prev_addr == UT64_MAX || prev_addr >= core->offset) {
 				break;
 			}
-			RzAsmOp op = { 0 };
 			rz_core_seek(core, prev_addr, true);
+			RzAsmOp op = { 0 };
 			rz_asm_disassemble(core->rasm, &op, core->block, 32);
 			if (op.size < mininstrsize) {
 				op.size = mininstrsize;
 			}
 			val += op.size;
 			addr = prev_addr;
+			rz_asm_op_fini(&op);
 		}
 	}
 	rz_core_seek_opt(core, addr, true, !silent);

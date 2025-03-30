@@ -10,6 +10,7 @@
 #include <rz_util/rz_print.h>
 #include "core_private.h"
 #include "rz_analysis.h"
+#include "rz_asm.h"
 #include <rz_util/rz_strbuf.h>
 
 #define HASRETRY      1
@@ -5441,6 +5442,7 @@ toro:
 				RzAsmOp ao = { 0 }; /* disassemble for the vm .. */
 				int os = core->rasm->syntax;
 				rz_asm_set_syntax(core->rasm, RZ_ASM_SYNTAX_INTEL);
+				rz_asm_op_fini(&ds->asmop);
 				rz_asm_disassemble(core->rasm, &ao, buf + addrbytes * idx,
 					len - addrbytes * idx + 5);
 				rz_asm_set_syntax(core->rasm, os);
@@ -5481,6 +5483,7 @@ toro:
 				RzAsmOp ao = { 0 }; /* disassemble for the vm .. */
 				int os = core->rasm->syntax;
 				rz_asm_set_syntax(core->rasm, RZ_ASM_SYNTAX_INTEL);
+				rz_asm_op_fini(&ds->asmop);
 				rz_asm_disassemble(core->rasm, &ao, buf + addrbytes * idx,
 					len - addrbytes * idx + 5);
 				rz_asm_set_syntax(core->rasm, os);
@@ -5682,6 +5685,7 @@ RZ_API int rz_core_print_disasm_instructions_with_buf(RzCore *core, ut64 address
 		rz_asm_set_pc(core->rasm, ds->at);
 		// XXX copypasta from main disassembler function
 		// rz_analysis_get_fcn_in (core->analysis, ds->at, RZ_ANALYSIS_FCN_TYPE_NULL);
+		rz_asm_op_fini(&ds->asmop);
 		ret = rz_asm_disassemble(core->rasm, &ds->asmop,
 			buf + addrbytes * i, len);
 		ds->oplen = ret;
@@ -5999,7 +6003,6 @@ RZ_API int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len, int
 	int i, ret, count = 0;
 	ut8 *buf = core->block;
 	char str[128];
-	RzAsmOp asmop = { 0 };
 	if (l < 1) {
 		l = len;
 	}
@@ -6024,6 +6027,7 @@ RZ_API int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len, int
 		if (rz_cons_is_breaked()) {
 			break;
 		}
+		RzAsmOp asmop = { 0 };
 		ret = rz_asm_disassemble(core->rasm, &asmop, buf + i, l - i);
 		if (ret < 1) {
 			switch (mode) {
@@ -6101,6 +6105,7 @@ RZ_API int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len, int
 			}
 			}
 		}
+		rz_asm_op_fini(&asmop);
 	}
 	rz_cons_break_pop();
 	if (buf != core->block) {
@@ -6313,6 +6318,7 @@ RZ_API int rz_core_disasm_pdi_with_buf(RzCore *core, ut64 address, ut8 *buf, ut3
 					rz_cons_println(opstr);
 				}
 				rz_analysis_op_fini(&analysis_op);
+				rz_asm_op_fini(&asmop);
 			} else {
 				char opstr[128] = {
 					0
@@ -6343,6 +6349,7 @@ RZ_API int rz_core_disasm_pdi_with_buf(RzCore *core, ut64 address, ut8 *buf, ut3
 					rz_cons_printf("%s" Color_RESET "\n", colored_asm ? rz_strbuf_get(colored_asm) : "");
 					rz_strbuf_free(colored_asm);
 					rz_analysis_op_fini(&aop);
+					rz_asm_op_fini(&asmop);
 				} else {
 					rz_cons_println(asm_str);
 				}
@@ -6566,7 +6573,6 @@ RZ_API RZ_OWN char *rz_core_disasm_instruction(RzCore *core, ut64 addr, ut64 rel
 	char str[512];
 	const int size = 12;
 	ut8 buf[12];
-	RzAsmOp asmop = { 0 };
 	char *buf_asm = NULL;
 	bool asm_subvar = rz_config_get_i(core->config, "asm.sub.var");
 	core->parser->pseudo = rz_config_get_i(core->config, "asm.pseudo");
@@ -6581,6 +6587,7 @@ RZ_API RZ_OWN char *rz_core_disasm_instruction(RzCore *core, ut64 addr, ut64 rel
 	// use core binding to set asm.bits correctly based on the addr
 	// this is because of the hassle of arm/thumb
 	rz_core_seek_arch_bits(core, addr);
+	RzAsmOp asmop = { 0 };
 	rz_asm_disassemble(core->rasm, &asmop, buf, size);
 	int ba_len = rz_strbuf_length(&asmop.buf_asm) + 128;
 	char *ba = malloc(ba_len);
@@ -6609,6 +6616,7 @@ RZ_API RZ_OWN char *rz_core_disasm_instruction(RzCore *core, ut64 addr, ut64 rel
 	} else {
 		buf_asm = rz_str_dup(str);
 	}
+	rz_asm_op_fini(&asmop);
 	return buf_asm;
 }
 

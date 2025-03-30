@@ -207,6 +207,8 @@ RZ_API RZ_OWN RzList /*<RzCompareData *>*/ *rz_core_cmp_disasm(RzCore *core, ut6
 			op2.size = 1;
 		}
 		j += op2.size;
+		rz_asm_op_fini(&op);
+		rz_asm_op_fini(&op2);
 	}
 
 	free(buf);

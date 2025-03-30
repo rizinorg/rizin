@@ -1524,6 +1524,7 @@ void __fix_cursor_down(RzCore *core) {
 			RzAsmOp op = { 0 };
 			int sz = rz_asm_disassemble(core->rasm,
 				&op, core->block, 32);
+			rz_asm_op_fini(&op);
 			if (sz < 1) {
 				sz = 1;
 			}
@@ -3746,6 +3747,7 @@ void __direction_disassembly_cb(void *user, int direction) {
 		} else {
 			RzAsmOp op = { 0 };
 			rz_core_visual_disasm_down(core, &op, &cols);
+			rz_asm_op_fini(&op);
 			rz_core_seek(core, core->offset + cols, true);
 			__set_panel_addr(core, cur, core->offset);
 		}

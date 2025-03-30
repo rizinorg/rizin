@@ -351,7 +351,6 @@ static void core_analysis_bytes_size(RzCore *core, const ut8 *buf, int len, int 
 static void core_analysis_bytes_desc(RzCore *core, const ut8 *buf, int len, int nops) {
 	core->parser->subrel = rz_config_get_i(core->config, "asm.sub.rel");
 	int ret, i, idx;
-	RzAsmOp asmop = { 0 };
 	RzAnalysisOp op = { 0 };
 	ut64 addr;
 
@@ -361,6 +360,7 @@ static void core_analysis_bytes_desc(RzCore *core, const ut8 *buf, int len, int 
 		rz_analysis_op_init(&op);
 		ret = rz_analysis_op(core->analysis, &op, addr, buf + idx, len - idx,
 			RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_IL | RZ_ANALYSIS_OP_MASK_OPEX | RZ_ANALYSIS_OP_MASK_HINT);
+		RzAsmOp asmop = { 0 };
 		(void)rz_asm_disassemble(core->rasm, &asmop, buf + idx, len - idx);
 
 		if (ret < 1) {
@@ -369,6 +369,7 @@ static void core_analysis_bytes_desc(RzCore *core, const ut8 *buf, int len, int 
 		}
 
 		char *opname = rz_str_dup(rz_asm_op_get_asm(&asmop));
+		rz_asm_op_fini(&asmop);
 		if (opname) {
 			rz_str_split(opname, ' ');
 			char *d = rz_asm_describe(core->rasm, opname);
@@ -2946,17 +2947,18 @@ RZ_IPI RzCmdStatus rz_analysis_xrefs_from_list_handler(RzCore *core, int argc, c
 		rz_list_foreach (list, iter, xref) {
 			ut8 buf[16];
 			char *desc;
-			RzAsmOp asmop = { 0 };
 			RzFlagItem *flag = rz_flag_get_at(core->flags, xref->to, false);
 			if (flag) {
 				desc = flag->name;
 			} else {
 				rz_io_read_at(core->io, xref->to, buf, sizeof(buf));
 				rz_asm_set_pc(core->rasm, xref->to);
+				RzAsmOp asmop = { 0 };
 				rz_asm_disassemble(core->rasm, &asmop, buf, sizeof(buf));
 				RzAnalysisHint *hint = rz_analysis_hint_get(core->analysis, xref->to);
 				rz_parse_filter(core->parser, xref->from, core->flags, hint, rz_asm_op_get_asm(&asmop),
 					str, sizeof(str), core->print->big_endian);
+				rz_asm_op_fini(&asmop);
 				rz_analysis_hint_free(hint);
 				desc = str;
 			}

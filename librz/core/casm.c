@@ -254,7 +254,6 @@ RZ_API RzCmdStatus rz_core_cpu_descs_print(RZ_NONNULL RzCore *core, RZ_NONNULL c
 // TODO: add support for byte-per-byte opcode search
 RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_strsearch(RzCore *core, const char *input, ut64 from, ut64 to, int maxhits, int regexp, int everyByte, int mode) {
 	RzCoreAsmHit *hit;
-	RzAsmOp op = { 0 };
 	RzList *hits;
 	ut64 at, toff = core->offset;
 	ut8 *buf;
@@ -374,6 +373,7 @@ RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_strsearch(RzCore *core, const ch
 						rz_analysis_op_fini(&aop);
 						goto beach;
 					}
+					RzAsmOp op = { 0 };
 					rz_asm_disassemble(core->rasm, &op, buf + addrbytes * idx,
 						core->blocksize - addrbytes * idx);
 					hit->code = rz_str_dup(rz_strbuf_get(&op.buf_asm));
@@ -399,6 +399,7 @@ RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_strsearch(RzCore *core, const ch
 				opst = rz_str_dup(rz_strbuf_get(&aop.esil));
 				rz_analysis_op_fini(&aop);
 			} else {
+				RzAsmOp op = { 0 };
 				if (!(len = rz_asm_disassemble(
 					      core->rasm, &op,
 					      buf + addrbytes * idx,
@@ -574,7 +575,6 @@ static int handle_forward_disassemble(RzCore *core, RzList /*<RzCoreAsmHit *>*/ 
 	ut64 temp_instr_len = 0;
 	ut64 start = 0, end = 0;
 	ut8 is_valid = false;
-	RzAsmOp op = { 0 };
 
 	if (end_addr < current_instr_addr) {
 		return end_addr;
@@ -584,7 +584,9 @@ static int handle_forward_disassemble(RzCore *core, RzList /*<RzCoreAsmHit *>*/ 
 	while (tmp_current_buf_pos < len && temp_instr_addr < end_addr) {
 		temp_instr_len = len - tmp_current_buf_pos;
 		RZ_LOG_DEBUG("Current position: %" PFMT64d " instr_addr: 0x%" PFMT64x "\n", tmp_current_buf_pos, temp_instr_addr);
+		RzAsmOp op = { 0 };
 		temp_instr_len = rz_asm_disassemble(core->rasm, &op, buf + tmp_current_buf_pos, temp_instr_len);
+		rz_asm_op_fini(&op);
 
 		if (temp_instr_len == 0) {
 			is_valid = false;
@@ -680,7 +682,6 @@ static int is_hit_inrange(RzCoreAsmHit *hit, ut64 start_range, ut64 end_range) {
 }
 
 RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_bwdisassemble(RzCore *core, ut64 addr, int n, int len) {
-	RzAsmOp op = { 0 };
 	// if (n > core->blocksize) n = core->blocksize;
 	ut64 at;
 	ut32 idx = 0, hit_count;
@@ -736,10 +737,12 @@ RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_bwdisassemble(RzCore *core, ut64
 	at = addr - idx / addrbytes;
 	rz_asm_set_pc(core->rasm, at);
 	for (hit_count = 0; hit_count < n; hit_count++) {
+		RzAsmOp op = { 0 };
 		int instrlen = rz_asm_disassemble(core->rasm, &op,
 			buf + len - addrbytes * (addr - at), addrbytes * (addr - at));
 		add_hit_to_hits(hits, at, instrlen, true);
 		at += instrlen;
+		rz_asm_op_fini(&op);
 	}
 	free(buf);
 	return hits;
@@ -749,7 +752,6 @@ static RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_back_disassemble_all(RzCore *cor
 	RzList *hits = rz_core_asm_hit_list_new();
 	RzCoreAsmHit dummy_value;
 	RzCoreAsmHit *hit = NULL;
-	RzAsmOp op = { 0 };
 	ut8 *buf = (ut8 *)malloc(len + extra_padding);
 	int current_instr_len = 0;
 	ut64 current_instr_addr = addr,
@@ -786,7 +788,9 @@ static RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_back_disassemble_all(RzCore *cor
 		rz_asm_set_pc(core->rasm, current_instr_addr);
 		current_instr_len = len - current_buf_pos + extra_padding;
 		RZ_LOG_DEBUG("current_buf_pos: 0x%" PFMT64x ", current_instr_len: %d\n", current_buf_pos, current_instr_len);
+		RzAsmOp op = { 0 };
 		current_instr_len = rz_asm_disassemble(core->rasm, &op, buf + current_buf_pos, current_instr_len);
+		rz_asm_op_fini(&op);
 		hit = rz_core_asm_hit_new();
 		hit->addr = current_instr_addr;
 		hit->len = current_instr_len;
@@ -804,7 +808,6 @@ static RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_back_disassemble_all(RzCore *cor
 
 static RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_back_disassemble(RzCore *core, ut64 addr, int len, ut64 max_hit_count, ut8 disassmble_each_addr, ut32 extra_padding) {
 	RzList *hits;
-	RzAsmOp op = { 0 };
 	ut8 *buf = NULL;
 	ut8 max_invalid_b4_exit = 4,
 	    last_num_invalid = 0;
@@ -865,6 +868,7 @@ static RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_back_disassemble(RzCore *core, u
 		// reset assembler
 		rz_asm_set_pc(core->rasm, current_instr_addr);
 		current_instr_len = next_buf_pos - current_buf_pos;
+		RzAsmOp op = { 0 };
 		current_instr_len = rz_asm_disassemble(core->rasm, &op, buf + current_buf_pos, current_instr_len);
 		// disassembly invalid
 		if (current_instr_len == 0 || strstr(rz_strbuf_get(&op.buf_asm), "invalid")) {
@@ -909,6 +913,7 @@ static RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_back_disassemble(RzCore *core, u
 			hit_count = rz_list_length(hits);
 			last_num_invalid = 0;
 		}
+		rz_asm_op_fini(&op);
 
 		// walk backwards by one instruction
 		RZ_LOG_DEBUG(" current_instr_addr: 0x%" PFMT64x " current_instr_len: %d next_instr_addr: 0x%04" PFMT64x "\n",

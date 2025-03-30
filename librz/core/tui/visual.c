@@ -6,6 +6,7 @@
 #include <rz_windows.h>
 #include "../core_private.h"
 #include "modes.h"
+#include "rz_asm.h"
 
 static void visual_refresh(RzCore *core);
 
@@ -1558,7 +1559,6 @@ static void cursor_nextrow(RzCore *core, bool use_ocur) {
 	RzPrint *p = core->print;
 	ut32 roff, next_roff;
 	int row, sz, delta;
-	RzAsmOp op = { 0 };
 
 	cursor_ocur(core, use_ocur);
 	if (PIDX == RZ_CORE_VISUAL_MODE_PD) {
@@ -1619,8 +1619,10 @@ static void cursor_nextrow(RzCore *core, bool use_ocur) {
 			return;
 		}
 		if (next_roff + 32 < core->blocksize) {
+			RzAsmOp op = { 0 };
 			sz = rz_asm_disassemble(core->rasm, &op,
 				core->block + next_roff, 32);
+			rz_asm_op_fini(&op);
 			if (sz < 1) {
 				sz = 1;
 			}
@@ -1708,6 +1710,7 @@ static void cursor_prevrow(RzCore *core, bool use_ocur) {
 				rz_core_seek(core, prev_addr, true);
 				prev_sz = rz_asm_disassemble(core->rasm, &op,
 					core->block, 32);
+				rz_asm_op_fini(&op);
 			}
 		} else {
 			prev_sz = roff - prev_roff;
@@ -1771,6 +1774,7 @@ static bool fix_cursor(RzCore *core) {
 			RzAsmOp op = { 0 };
 			int sz = rz_asm_disassemble(core->rasm,
 				&op, core->block, 32);
+			rz_asm_op_fini(&op);
 			if (sz < 1) {
 				sz = 1;
 			}
@@ -2085,7 +2089,6 @@ static bool canWrite(RzCore *core, ut64 addr) {
 
 RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 	ut8 och = arg[0];
-	RzAsmOp op = { 0 };
 	ut64 offset = core->offset;
 	RzCoreVisual *visual = core->visual;
 	RzLine *line = core->cons->line;
@@ -2670,7 +2673,9 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 						}
 						while (times--) {
 							if (isDisasmPrint(visual->printidx)) {
+								RzAsmOp op = { 0 };
 								rz_core_visual_disasm_down(core, &op, &cols);
+								rz_asm_op_fini(&op);
 							} else if (!strcmp(__core_visual_print_command(core),
 									   "prc")) {
 								cols = rz_config_get_i(core->config, "hex.cols");
@@ -2692,7 +2697,9 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 					ut64 addr = UT64_MAX;
 					if (isDisasmPrint(visual->printidx)) {
 						if (core->print->screen_bounds == core->offset) {
+							RzAsmOp op = { 0 };
 							rz_asm_disassemble(core->rasm, &op, core->block, 32);
+							rz_asm_op_fini(&op);
 						}
 						if (addr == core->offset || addr == UT64_MAX) {
 							addr = core->offset + 48;

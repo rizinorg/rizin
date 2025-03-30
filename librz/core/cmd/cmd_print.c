@@ -3310,6 +3310,7 @@ RZ_IPI RzCmdStatus rz_cmd_sizes_of_n_instructions_handler(RzCore *core, int argc
 	for (ut32 i = 0, j = 0; i < core->blocksize && j < RZ_ABS(n_instrs); i += ret, j++) {
 		RzAsmOp asm_op = { 0 };
 		ret = rz_asm_disassemble(core->rasm, &asm_op, core->block + i, core->blocksize - i);
+		rz_asm_op_fini(&asm_op);
 		if (rz_cons_is_breaked()) {
 			break;
 		}
