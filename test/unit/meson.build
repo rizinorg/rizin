@@ -15,6 +15,7 @@ if get_option('enable_tests')
     'analysis_block',
     'analysis_cc',
     'analysis_class_graph',
+    'analysis_coverage',
     'analysis_function',
     'analysis_hints',
     'analysis_meta',

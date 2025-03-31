@@ -5604,6 +5604,7 @@ RZ_API st64 rz_core_analysis_coverage_count(RZ_NONNULL RzCore *core) {
 RZ_API st64 rz_core_analysis_code_count(RZ_NONNULL RzCore *core) {
 	rz_return_val_if_fail(core, ST64_MAX);
 	st64 code = 0;
+	code += (st64)rz_meta_get_size(core->analysis, RZ_META_TYPE_DATA);
 	void **it;
 	RzPVector *maps = rz_io_maps(core->io);
 	rz_pvector_foreach (maps, it) {
