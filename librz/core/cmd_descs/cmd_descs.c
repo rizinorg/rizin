@@ -13173,6 +13173,14 @@ static const RzCmdDescHelp cmd_info_guess_size_help = {
 	.args = cmd_info_guess_size_args,
 };
 
+static const RzCmdDescArg cmd_info_xrefs_strings_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_xrefs_strings_help = {
+	.summary = "List strings in the whole binary with xrefs pointing to it.",
+	.args = cmd_info_xrefs_strings_args,
+};
+
 static const RzCmdDescHelp k_help = {
 	.summary = "Run query (SDB)",
 };
@@ -23541,6 +23549,10 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_info_guess_size_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "iZ", RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN, rz_cmd_info_guess_size_handler, &cmd_info_guess_size_help);
 	rz_warn_if_fail(cmd_info_guess_size_cd);
+
+	RzCmdDesc *cmd_info_xrefs_strings_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "izx", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_QUIETEST, rz_cmd_info_xrefs_strings_handler, &cmd_info_xrefs_strings_help);
+	rz_warn_if_fail(cmd_info_xrefs_strings_cd);
+	rz_cmd_desc_set_default_mode(cmd_info_xrefs_strings_cd, RZ_OUTPUT_MODE_TABLE);
 
 	RzCmdDesc *k_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "k", rz_query_sdb_get_set_handler, &query_sdb_get_set_help, &k_help);
 	rz_warn_if_fail(k_cd);

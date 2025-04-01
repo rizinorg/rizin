@@ -25,14 +25,14 @@
 
 #define LOAD_BSS_MALLOC 0
 
-#define IS_MODE_SET(mode)       ((mode)&RZ_MODE_SET)
-#define IS_MODE_SIMPLE(mode)    ((mode)&RZ_MODE_SIMPLE)
-#define IS_MODE_SIMPLEST(mode)  ((mode)&RZ_MODE_SIMPLEST)
-#define IS_MODE_JSON(mode)      ((mode)&RZ_MODE_JSON)
-#define IS_MODE_RZCMD(mode)     ((mode)&RZ_MODE_RIZINCMD)
-#define IS_MODE_EQUAL(mode)     ((mode)&RZ_MODE_EQUAL)
+#define IS_MODE_SET(mode)       ((mode) & RZ_MODE_SET)
+#define IS_MODE_SIMPLE(mode)    ((mode) & RZ_MODE_SIMPLE)
+#define IS_MODE_SIMPLEST(mode)  ((mode) & RZ_MODE_SIMPLEST)
+#define IS_MODE_JSON(mode)      ((mode) & RZ_MODE_JSON)
+#define IS_MODE_RZCMD(mode)     ((mode) & RZ_MODE_RIZINCMD)
+#define IS_MODE_EQUAL(mode)     ((mode) & RZ_MODE_EQUAL)
 #define IS_MODE_NORMAL(mode)    (!(mode))
-#define IS_MODE_CLASSDUMP(mode) ((mode)&RZ_MODE_CLASSDUMP)
+#define IS_MODE_CLASSDUMP(mode) ((mode) & RZ_MODE_CLASSDUMP)
 
 // dup from cmd_info
 #define PAIR_WIDTH "9"
@@ -2943,6 +2943,36 @@ RZ_API bool rz_core_bin_whole_strings_print(RZ_NONNULL RzCore *core, RZ_NONNULL 
 	}
 	bool res = strings_print(core, state, l);
 	rz_pvector_free(l);
+	return res;
+}
+
+RZ_IPI bool rz_core_bin_xrefs_strings_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzCmdStateOutput *state) {
+	rz_return_val_if_fail(core && state, false);
+
+	RzPVector *l = rz_core_bin_whole_strings(core, bf);
+	RzPVector *ll = rz_pvector_new(NULL);
+
+	void **iter;
+	rz_pvector_foreach (l, iter) {
+		RzBinString *string = *iter;
+		RzList *list = rz_analysis_xrefs_get_to(core->analysis, string->paddr);
+		RzAnalysisXRef *xref;
+		RzListIter *iterator;
+		rz_list_foreach (list, iterator, xref) {
+			switch (xref->type) {
+			case RZ_ANALYSIS_XREF_TYPE_CODE:
+			case RZ_ANALYSIS_XREF_TYPE_DATA:
+				if (!rz_pvector_contains(ll, string)) {
+					rz_pvector_push_front(ll, string);
+				}
+			default:
+				break;
+			}
+		}
+	}
+	bool res = strings_print(core, state, ll);
+	rz_pvector_free(l);
+	rz_pvector_free(ll);
 	return res;
 }
 

@@ -1732,6 +1732,8 @@ RZ_IPI RzCmdStatus rz_cmd_info_whole_strings_handler(RzCore *core, int argc, con
 RZ_IPI RzCmdStatus rz_cmd_info_purge_string_handler(RzCore *core, int argc, const char **argv);
 // "iZ"
 RZ_IPI RzCmdStatus rz_cmd_info_guess_size_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "izx"
+RZ_IPI RzCmdStatus rz_cmd_info_xrefs_strings_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "k"
 RZ_IPI RzCmdStatus rz_query_sdb_get_set_handler(RzCore *core, int argc, const char **argv);
 // "kj"

@@ -709,3 +709,8 @@ RZ_IPI RzCmdStatus rz_cmd_info_guess_size_handler(RzCore *core, int argc, const 
 	}
 	return bool2status(res);
 }
+
+RZ_IPI RzCmdStatus rz_cmd_info_xrefs_strings_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzBinFile *bf = rz_bin_cur(core->bin);
+	return bool2status(rz_core_bin_xrefs_strings_print(core, bf, state));
+}
