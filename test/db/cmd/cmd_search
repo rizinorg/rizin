@@ -951,7 +951,7 @@ RUN
 NAME=consistency btw /z and /x at 0x20k multiple
 FILE=--
 CMDS=<<EOF
-. scripts/string-consistency-test.rz
+. scripts/search-consistency-test.rz
 $str=$abc+d
 $bin=$malloc://0x40000+10
 $setup=$"w `$str` @@=0x20000 0x40000"

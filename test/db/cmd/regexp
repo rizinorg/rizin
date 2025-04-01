@@ -128,7 +128,7 @@ RUN
 NAME=consistency btw /z and /x
 FILE=bins/elf/analysis/ls2
 CMDS=<<EOF
-. scripts/string-consistency-test.rz
+. scripts/search-consistency-test.rz
 $str=$lib
 $bin=$bins/elf/analysis/ls2
 $setup=$""
