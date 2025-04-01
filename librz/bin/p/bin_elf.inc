@@ -209,7 +209,7 @@ static ut64 baddr(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o, UT64_MAX);
 
 	ELFOBJ *bin = rz_bin_file_get_elf(bf);
-	return Elf_(rz_bin_elf_get_baddr)(bin);
+	return Elf_(rz_bin_elf_get_baddr)(bin, &bf->o->opts);
 }
 
 static ut64 boffset(RzBinFile *bf) {

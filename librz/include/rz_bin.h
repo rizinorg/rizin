@@ -282,7 +282,7 @@ typedef struct rz_bin_info_t {
 } RzBinInfo;
 
 typedef struct rz_bin_file_load_options_t {
-	ut64 baseaddr; ///< where the linker maps the binary in memory
+	ut64 baseaddr; ///< Where the linker maps the binary in memory. UT64_MAX will determine a default base address. Any other value (including 0) is valid.
 	ut64 loadaddr; ///< starting physical address to read from the target file
 	bool patch_relocs; ///< ask the bin plugin to fill relocs with valid contents for analysis
 	bool big_endian; ///< only used for binary formats that do not specify the endian in the file, but need it to load, otherwise ignored.

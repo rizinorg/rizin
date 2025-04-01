@@ -463,7 +463,7 @@ static ut64 get_main_offset_x86_pie(ELFOBJ *bin, ut64 entry, ut8 *buf) {
 			maddr = (ut64)rz_read_le32(&n32s[0]);
 			baddr = (bin->ehdr.e_entry >> 16) << 16;
 			if (Elf_(rz_bin_elf_has_segments)(bin)) {
-				baddr = Elf_(rz_bin_elf_get_baddr)(bin);
+				baddr = Elf_(rz_bin_elf_get_baddr)(bin, NULL);
 			}
 			maddr += baddr;
 			return maddr;
@@ -1973,19 +1973,25 @@ bool Elf_(rz_bin_elf_is_big_endian)(RZ_NONNULL ELFOBJ *bin) {
 }
 
 /**
- * \brief Compute the base address of the binary
- * \param elf binary
- * \return the base address
+ * \brief Compute the base address of the ELF object.
+ * \param elf The ELF object.
+ * \param opts The load options. If set, it will check the base address defined in it.
+ * \return The base address.
  *
- * To compute the base address, one determines the memory
+ * If \p opts->baseaddr is invalid, it will check if the binary is relocatable.
+ * If yes, it will return RZ_BIN_ELF_DEFAULT_RELOC_BASE_ADDRESS .
+ * Otherwise it determines the memory
  * address associated with the lowest p_vaddr value for a
  * PT_LOAD segment.
  */
-ut64 Elf_(rz_bin_elf_get_baddr)(RZ_NONNULL ELFOBJ *bin) {
+ut64 Elf_(rz_bin_elf_get_baddr)(RZ_NONNULL ELFOBJ *bin, RZ_NULLABLE RzBinObjectLoadOptions *opts) {
 	rz_return_val_if_fail(bin, 0);
+	if (opts && opts->baseaddr != UT64_MAX) {
+		return opts->baseaddr;
+	}
 
 	if (Elf_(rz_bin_elf_is_relocatable)(bin)) {
-		return 0x08000000;
+		return RZ_BIN_ELF_DEFAULT_RELOC_BASE_ADDRESS;
 	}
 
 	if (Elf_(rz_bin_elf_has_segments)(bin)) {

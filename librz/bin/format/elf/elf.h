@@ -21,6 +21,8 @@
 #define RZ_BIN_ELF_PART_RELRO 1
 #define RZ_BIN_ELF_FULL_RELRO 2
 
+#define RZ_BIN_ELF_DEFAULT_RELOC_BASE_ADDRESS 0x08000000
+
 #define ELFOBJ struct Elf_(rz_bin_elf_obj_t)
 
 #define rz_bin_elf_foreach_segments(bin, segment) \
@@ -300,7 +302,7 @@ bool Elf_(rz_bin_elf_is_stripped)(RZ_NONNULL ELFOBJ *bin);
 int Elf_(rz_bin_elf_get_bits)(RZ_NONNULL ELFOBJ *bin);
 int Elf_(rz_bin_elf_has_relro)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_has_nobtcfi)(RZ_NONNULL ELFOBJ *bin);
-ut64 Elf_(rz_bin_elf_get_baddr)(RZ_NONNULL ELFOBJ *bin);
+ut64 Elf_(rz_bin_elf_get_baddr)(RZ_NONNULL ELFOBJ *bin, RZ_NULLABLE RzBinObjectLoadOptions *opts);
 ut64 Elf_(rz_bin_elf_get_boffset)(RZ_NONNULL ELFOBJ *bin);
 ut64 Elf_(rz_bin_elf_get_entry_offset)(RZ_NONNULL ELFOBJ *bin);
 ut64 Elf_(rz_bin_elf_get_fini_offset)(RZ_NONNULL ELFOBJ *bin);

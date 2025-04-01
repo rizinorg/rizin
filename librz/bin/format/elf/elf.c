@@ -315,7 +315,7 @@ static bool init(ELFOBJ *bin, RzBinObjectLoadOptions *options) {
 	}
 
 	if (bin->ehdr.e_type != ET_CORE) {
-		bin->baddr = Elf_(rz_bin_elf_get_baddr)(bin);
+		bin->baddr = Elf_(rz_bin_elf_get_baddr)(bin, options);
 		init_shstrtab(bin, sections);
 		init_shdr(bin, options, sections);
 	}
