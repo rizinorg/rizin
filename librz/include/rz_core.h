@@ -741,9 +741,9 @@ RZ_API bool rz_core_analysis_continue_until_call(RZ_NONNULL RzCore *core);
 RZ_API bool rz_core_is_debugging(RZ_NONNULL RzCore *core);
 RZ_API void rz_core_perform_auto_analysis(RZ_NONNULL RzCore *core, RzCoreAnalysisType type);
 
-RZ_API st64 rz_core_analysis_coverage_count(RZ_NONNULL RzCore *core);
-RZ_API st64 rz_core_analysis_code_count(RZ_NONNULL RzCore *core);
-RZ_API st64 rz_core_analysis_calls_count(RZ_NONNULL RzCore *core);
+RZ_API size_t rz_core_analysis_coverage_count(RZ_NONNULL RzCore *core);
+RZ_API size_t rz_core_analysis_code_count(RZ_NONNULL RzCore *core);
+RZ_API size_t rz_core_analysis_calls_count(RZ_NONNULL RzCore *core);
 
 RZ_API RZ_BORROW const char *rz_core_analysis_name_type_to_str(RzCoreAnalysisNameType typ);
 RZ_API void rz_core_analysis_name_free(RZ_NULLABLE RzCoreAnalysisName *p);
