@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2025 PremadeS <emadsohail001@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
 #include <rz_analysis.h>
 #include <rz_core.h>
 #include <rz_io.h>
