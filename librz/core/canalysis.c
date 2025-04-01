@@ -5574,6 +5574,8 @@ RZ_API bool rz_core_analysis_continue_until_call(RZ_NONNULL RzCore *core) {
 
 /**
  * \brief Compute analysis coverage count
+ * \param core The RzCore instance
+ * \return Total size of coverage. SIZE_MAX on failure.
  */
 RZ_API size_t rz_core_analysis_coverage_count(RZ_NONNULL RzCore *core) {
 	rz_return_val_if_fail(core && core->analysis, SIZE_MAX);
@@ -5600,6 +5602,8 @@ RZ_API size_t rz_core_analysis_coverage_count(RZ_NONNULL RzCore *core) {
 
 /**
  * \brief Compute analysis code count
+ * \param core The RzCore instance
+ * \return Total size of code regions. SIZE_MAX on failure.
  */
 RZ_API size_t rz_core_analysis_code_count(RZ_NONNULL RzCore *core) {
 	rz_return_val_if_fail(core, SIZE_MAX);
@@ -5618,6 +5622,8 @@ RZ_API size_t rz_core_analysis_code_count(RZ_NONNULL RzCore *core) {
 
 /**
  * \brief Compute analysis function xrefs count
+ * \param core The RzCore instance
+ * \return Total calls from all functions. SIZE_MAX on failure.
  */
 RZ_API size_t rz_core_analysis_calls_count(RZ_NONNULL RzCore *core) {
 	rz_return_val_if_fail(core && core->analysis, SIZE_MAX);
