@@ -24,11 +24,9 @@ bool test_code_size_vs_coverage(void) {
 	rz_core_analysis_all(r);
 
 	long long int code = rz_core_analysis_code_count(r);
-	printf("\n\n%lld\n\n", code);
 	mu_assert("Code size should be non-negative", code >= 0);
 
 	long long int cov = rz_core_analysis_coverage_count(r);
-	printf("\n\n%lld\n\n", cov);
 	mu_assert("Coverage should be non-negative", cov >= 0);
 
 	mu_assert("Coverage exceeded code size", cov <= code);
