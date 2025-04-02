@@ -126,7 +126,7 @@ jobs:
             run_tests: true
             meson_options: -Dbuildtype=debug -Db_coverage=true --werror
             coverage: true
-            enabled: ${{ github.event_name != 'pull_request' && needs.changes.outputs.edited == 'true' }}
+            enabled: ${{ needs.changes.outputs.edited == 'true' }}
             timeout: 60
             allow_failure: false
           - name: capstone-sys
@@ -189,6 +189,9 @@ jobs:
       - name: Install meson and ninja
         if: matrix.build_system == 'meson' && matrix.enabled
         run: pip3 install --user meson ninja PyYAML
+      - name: Install meson and ninja
+        if: matrix.coverage && matrix.enabled
+        run: pip3 install --user gcovr
       - name: Checkout rzpipe
         if: matrix.enabled
         uses: actions/checkout@v4
@@ -299,10 +302,19 @@ jobs:
           ASAN: ${{ matrix.asan }}
           ASAN_OPTIONS: ${{ matrix.asan_options }}
           CC: ${{ matrix.compiler }}
-      - name: Upload coverage info
-        if: matrix.coverage == '1' && matrix.enabled
-        working-directory: build
-        run: bash <(curl -s https://codecov.io/bash) -Q github-action -n -F
+      - name: Generate coverage data
+        if: matrix.coverage
+        run: |
+          gcovr --version
+          gcovr --gcov-ignore-parse-errors=negative_hits.warn --txt build/coverage.txt --cobertura build/coverage.xml build
+      - name: Upload coverage to Codecov
+        if: matrix.coverage
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          directory: build/
+          fail_ci_if_error: true
+          verbose: true
       - name: Run fuzz tests
         if: matrix.run_tests && matrix.enabled && (github.event_name != 'pull_request' || contains(github.event.pull_request.head.ref, 'fuzz'))
         run: |
