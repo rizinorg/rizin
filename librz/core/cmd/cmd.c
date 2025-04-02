@@ -1361,72 +1361,6 @@ fail:
 	return res;
 }
 
-typedef struct _search_help {
-	bool color;
-	RzStrBuf *sb;
-	PJ *pj;
-} RzHelpSearch;
-
-static bool help_search_cmd_desc_entry(RzCmd *cmd, const RzCmdDesc *cd, void *user) {
-	rz_return_val_if_fail(cd, false);
-	RzHelpSearch *hs = (RzHelpSearch *)user;
-	if (hs->pj) {
-		rz_cmd_get_help_json(cmd, cd, hs->pj);
-	} else {
-		rz_cmd_get_help_strbuf(cmd, cd, hs->color, hs->sb);
-	}
-	return true;
-}
-
-RZ_IPI RzCmdStatus rz_cmd_help_search_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	RzCmdStatus status = RZ_CMD_STATUS_OK;
-	RzCmdDesc *begin = NULL;
-
-	if (argc == 2) {
-		begin = rz_cmd_get_desc(core->rcmd, argv[1]);
-		if (!begin) {
-			RZ_LOG_ERROR("Command '%s' does not exist.\n", argv[1]);
-			status = RZ_CMD_STATUS_ERROR;
-			goto exit_status;
-		}
-	}
-
-	RzHelpSearch hs = {
-		.color = core->print->flags & RZ_PRINT_FLAGS_COLOR,
-		.pj = NULL,
-		.sb = NULL,
-	};
-
-	if (mode & RZ_OUTPUT_MODE_JSON) {
-		hs.pj = pj_new();
-		if (!hs.pj) {
-			status = RZ_CMD_STATUS_ERROR;
-			goto exit_status;
-		}
-		pj_o(hs.pj);
-	} else {
-		hs.sb = rz_strbuf_new(NULL);
-		if (!hs.sb) {
-			status = RZ_CMD_STATUS_ERROR;
-			goto exit_status;
-		}
-	}
-
-	rz_cmd_foreach_cmdname(core->rcmd, begin, help_search_cmd_desc_entry, &hs);
-
-	if (mode & RZ_OUTPUT_MODE_JSON) {
-		pj_end(hs.pj);
-		rz_cons_printf("%s\n", pj_string(hs.pj));
-		pj_free(hs.pj);
-	} else {
-		char *help = rz_strbuf_drain(hs.sb);
-		rz_cons_printf("%s", help);
-		free(help);
-	}
-exit_status:
-	return status;
-}
-
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(help_stmt) {
 	size_t node_str_len = strlen(node_string);
 	if (node_str_len >= 2 && !strcmp(node_string + node_str_len - 2, "?*")) {
@@ -1439,6 +1373,16 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(help_stmt) {
 		const char *argv[2] = { NULL, node_string };
 		int argc = node_str_len > 2 ? 2 : 1;
 		return rz_cmd_help_search_handler(state->core, argc, argv, RZ_OUTPUT_MODE_JSON);
+	} else if (node_str_len >= 3 && RZ_STR_EQ(node_string + node_str_len - 3, "?**")) {
+		node_string[3] = 0;
+		const char *argv[1] = { node_string };
+		int argc = 1;
+		return rz_cmd_help_search_interactive_handler(state->core, argc, argv);
+	} else if (node_str_len >= 4 && RZ_STR_EQ(node_string + node_str_len - 4, "?***")) {
+		node_string[4] = 0;
+		const char *argv[1] = { node_string };
+		int argc = 1;
+		return rz_cmd_help_search_interactive_everything_handler(state->core, argc, argv);
 	}
 
 	TSNode command = ts_node_child_by_field_name(node, "command", strlen("command"));

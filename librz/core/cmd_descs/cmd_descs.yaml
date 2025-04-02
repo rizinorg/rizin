@@ -157,16 +157,9 @@ commands:
     summary: Connect with other instances of rizin
     subcommands: cmd_remote
   - name: "?*"
-    cname: cmd_help_search
-    summary: Search help
-    args:
-      - name: search_cmd
-        type: RZ_CMD_ARG_TYPE_STRING
-        flags: ""
-        optional: true
-    modes:
-      - RZ_OUTPUT_MODE_STANDARD
-      - RZ_OUTPUT_MODE_JSON
+    summary: Search help commands
+    type: RZ_CMD_DESC_TYPE_GROUP
+    subcommands: cmd_help
   - name: "%"
     cname: cmd_math
     summary: Math commands

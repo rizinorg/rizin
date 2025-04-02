@@ -81,7 +81,7 @@ rz_core_sources = [
   'cmd/cmd_flag.c',
   'cmd/cmd_flirt.c',
   'cmd/cmd_hash.c',
-  #'cmd/cmd_help.c',
+  'cmd/cmd_help.c',
   'cmd/cmd_history.c',
   'cmd/cmd_info.c',
   'cmd/cmd_interactive.c',

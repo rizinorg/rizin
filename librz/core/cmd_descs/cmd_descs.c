@@ -2751,6 +2751,9 @@ static const RzCmdDescHelp remote_tcp_help = {
 	.args = remote_tcp_args,
 };
 
+static const RzCmdDescHelp question__star__help = {
+	.summary = "Search help commands",
+};
 static const RzCmdDescArg cmd_help_search_args[] = {
 	{
 		.name = "search_cmd",
@@ -2763,6 +2766,22 @@ static const RzCmdDescArg cmd_help_search_args[] = {
 static const RzCmdDescHelp cmd_help_search_help = {
 	.summary = "Search help",
 	.args = cmd_help_search_args,
+};
+
+static const RzCmdDescArg cmd_help_search_interactive_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_help_search_interactive_help = {
+	.summary = "Search command summaries interactively (alias for ?*~...).",
+	.args = cmd_help_search_interactive_args,
+};
+
+static const RzCmdDescArg cmd_help_search_interactive_everything_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_help_search_interactive_everything_help = {
+	.summary = "Search command summaries and their extended help interactively.",
+	.args = cmd_help_search_interactive_everything_args,
 };
 
 static const RzCmdDescHelp cmd_math_help = {
@@ -21302,8 +21321,13 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *remote_tcp_cd = rz_cmd_desc_argv_new(core->rcmd, R_cd, "Rt", rz_remote_tcp_handler, &remote_tcp_help);
 	rz_warn_if_fail(remote_tcp_cd);
 
-	RzCmdDesc *cmd_help_search_cd = rz_cmd_desc_argv_modes_new(core->rcmd, root_cd, "?*", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_help_search_handler, &cmd_help_search_help);
-	rz_warn_if_fail(cmd_help_search_cd);
+	RzCmdDesc *question__star__cd = rz_cmd_desc_group_modes_new(core->rcmd, root_cd, "?*", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_help_search_handler, &cmd_help_search_help, &question__star__help);
+	rz_warn_if_fail(question__star__cd);
+	RzCmdDesc *cmd_help_search_interactive_cd = rz_cmd_desc_argv_new(core->rcmd, question__star__cd, "?**", rz_cmd_help_search_interactive_handler, &cmd_help_search_interactive_help);
+	rz_warn_if_fail(cmd_help_search_interactive_cd);
+
+	RzCmdDesc *cmd_help_search_interactive_everything_cd = rz_cmd_desc_argv_new(core->rcmd, question__star__cd, "?***", rz_cmd_help_search_interactive_everything_handler, &cmd_help_search_interactive_everything_help);
+	rz_warn_if_fail(cmd_help_search_interactive_everything_cd);
 
 	RzCmdDesc *cmd_math_cd = rz_cmd_desc_group_state_new(core->rcmd, root_cd, "%", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_calculate_expr_handler, &calculate_expr_help, &cmd_math_help);
 	rz_warn_if_fail(cmd_math_cd);

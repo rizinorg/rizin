@@ -1,0 +1,22 @@
+---
+name: cmd_help
+commands:
+  - name: "?*"
+    cname: cmd_help_search
+    summary: Search help
+    args:
+      - name: search_cmd
+        type: RZ_CMD_ARG_TYPE_STRING
+        flags: ""
+        optional: true
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
+  - name: "?**"
+    cname: cmd_help_search_interactive
+    summary: Search command summaries interactively (alias for ?*~...).
+    args: []
+  - name: "?***"
+    cname: cmd_help_search_interactive_everything
+    summary: Search command summaries and their extended help interactively.
+    args: []
