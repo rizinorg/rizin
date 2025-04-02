@@ -231,58 +231,6 @@ static char *syscmd_ls(RZ_NONNULL const int argc, const char **argv) {
 	return res;
 }
 
-static const char *findBreakChar(const char *s) {
-	while (*s) {
-		if (!rz_name_validate_char(*s, true)) {
-			break;
-		}
-		s++;
-	}
-	return s;
-}
-
-static char *filterFlags(RzCore *core, const char *msg) {
-	const char *dollar, *end;
-	char *word, *buf = NULL;
-	for (;;) {
-		dollar = strchr(msg, '$');
-		if (!dollar) {
-			break;
-		}
-		buf = rz_str_appendlen(buf, msg, dollar - msg);
-		if (dollar[1] == '{') {
-			// find }
-			end = strchr(dollar + 2, '}');
-			if (end) {
-				word = rz_str_newlen(dollar + 2, end - dollar - 2);
-				end++;
-			} else {
-				msg = dollar + 1;
-				buf = rz_str_append(buf, "$");
-				continue;
-			}
-		} else {
-			end = findBreakChar(dollar + 1);
-			if (!end) {
-				end = dollar + strlen(dollar);
-			}
-			word = rz_str_newlen(dollar + 1, end - dollar - 1);
-		}
-		if (end && word) {
-			ut64 val = rz_num_math(core->num, word);
-			char num[32];
-			snprintf(num, sizeof(num), "0x%" PFMT64x, val);
-			buf = rz_str_append(buf, num);
-			msg = end;
-		} else {
-			break;
-		}
-		free(word);
-	}
-	buf = rz_str_append(buf, msg);
-	return buf;
-}
-
 static ut32 vernum(const char *s) {
 	// XXX this is known to be buggy, only works for strings like "x.x.x"
 	// XXX anything like "x.xx.x" will break the parsing
@@ -391,12 +339,9 @@ RZ_IPI RzCmdStatus rz_cmd_shell_uname_handler(RzCore *core, int argc, const char
 RZ_IPI RzCmdStatus rz_cmd_shell_echo_handler(RzCore *core, int argc, const char **argv) {
 	if (argc >= 2) {
 		char *output = rz_str_array_join(argv + 1, argc - 1, " ");
-		// TODO: replace all ${flagname} by its value in hexa
-		char *newmsg = filterFlags(core, output);
-		rz_str_unescape(newmsg);
-		rz_cons_print(newmsg);
+		rz_str_unescape(output);
+		rz_cons_print(output);
 		free(output);
-		free(newmsg);
 	}
 	rz_cons_newline();
 	return RZ_CMD_STATUS_OK;

@@ -84,7 +84,7 @@ echo $$$
 echo ${str}
 EOF
 EXPECT=<<EOF
-0x00x00x0
-0x0
+$$$
+${str}
 EOF
 RUN
