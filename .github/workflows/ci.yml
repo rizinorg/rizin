@@ -306,7 +306,7 @@ jobs:
         if: matrix.coverage
         run: |
           gcovr --version
-          gcovr --gcov-ignore-parse-errors=negative_hits.warn --txt build/coverage.txt --cobertura build/coverage.xml build
+          gcovr --gcov-ignore-parse-errors=all --txt build/coverage.txt --cobertura build/coverage.xml build
       - name: Upload coverage to Codecov
         if: matrix.coverage
         uses: codecov/codecov-action@v5
