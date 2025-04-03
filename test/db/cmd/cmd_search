@@ -955,10 +955,9 @@ CMDS=<<EOF
 $str=$abc+d
 $bin=$malloc://0x40000+10
 $setup=$"w `$str` @@=0x20000 0x40000"
-.(search.show_progress "/z `$str`")
-echo ----
-$bytes=%x `$str`
-.(search.show_progress "/x `$bytes`")
+$cmd_z=$/z ${str}
+$cmd_x=$/x ${bytes}
+.(search-consistency-test)
 EOF
 EXPECT=<<EOF
 [0x0, 0x207ff): 1

@@ -132,11 +132,9 @@ CMDS=<<EOF
 $str=$lib
 $bin=$bins/elf/analysis/ls2
 $setup=$""
-.(search.show_progress "/z `$str`")
-echo ----
-$bytes=%x `$str`
-.(search.show_progress "/x `$bytes`")
-
+$cmd_z=$/z ${str}
+$cmd_x=$/x ${bytes}
+.(search-consistency-test)
 echo ----
 /z lib > /dev/null
 ps ascii @ hit.string.ascii.0
