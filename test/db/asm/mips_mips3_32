@@ -15,8 +15,8 @@ ad "bne t0, t1, 0x10" 02000915 0x4
 ad "break 0, 0x1e2" 8d780000 0x4
 ad "break 0x30e, 0x1e2" 8d780e03 0x4
 ad "break" 0d000000 0x4
-ad "div $zero, t1, t1" 1a002901 0x4
-ad "divu $zero, t1, t1" 1b002901 0x4
+ad "div zero, t1, t1" 1a002901 0x4
+ad "divu zero, t1, t1" 1b002901 0x4
 ad "eret" 18000042
 ad "j 0x123454" 158d0408 0x4
 ad "jal 0x123454" 158d040c 0x4
@@ -101,8 +101,8 @@ adE "bne t0, t1, 0x10" 15090002 0x4
 adE "break 0, 0x1e2" 0000788d 0x4
 adE "break 0x30e, 0x1e2" 030e788d 0x4
 adE "break" 0000000d 0x4
-adE "div $zero, t1, t1" 0129001a 0x4
-adE "divu $zero, t1, t1" 0129001b 0x4
+adE "div zero, t1, t1" 0129001a 0x4
+adE "divu zero, t1, t1" 0129001b 0x4
 adE "eret" 42000018
 adE "j 0x123454" 08048d15 0x4
 adE "j 0xffcfffc" 0bff3fff 0x7fffff0
