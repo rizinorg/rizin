@@ -57,6 +57,7 @@ static const RzCmdDescDetail analysis_hint_set_optype_details[2];
 static const RzCmdDescDetail analysis_hint_set_immbase_details[3];
 static const RzCmdDescDetail analysis_hint_set_offset_details[2];
 static const RzCmdDescDetail analyze_esil_insn_access_details[4];
+static const RzCmdDescDetail basefind_compute_details[2];
 static const RzCmdDescDetail cmd_cmp_unified_details[2];
 static const RzCmdDescDetail cw_details[2];
 static const RzCmdDescDetail cmd_debug_list_bp_details[2];
@@ -7900,6 +7901,14 @@ static const RzCmdDescHelp block_max_help = {
 	.args = block_max_args,
 };
 
+static const RzCmdDescDetailEntry basefind_compute_Settings_space_of_space_this_space_command_detail_entries[] = {
+	{ .text = "Check out the settings for this command with 'el basefind.'", .arg_str = NULL, .comment = "" },
+	{ 0 },
+};
+static const RzCmdDescDetail basefind_compute_details[] = {
+	{ .name = "Settings of this command", .entries = basefind_compute_Settings_space_of_space_this_space_command_detail_entries },
+	{ 0 },
+};
 static const char *basefind_compute_pointer_bits_choices[] = { "32", "64", NULL };
 static const RzCmdDescArg basefind_compute_args[] = {
 	{
@@ -7912,7 +7921,8 @@ static const RzCmdDescArg basefind_compute_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp basefind_compute_help = {
-	.summary = "Computes the possibles firmware locations in memory (CPU intensive)",
+	.summary = "Computes the possibles firmware locations in memory a.k.a basefind (CPU intensive)",
+	.details = basefind_compute_details,
 	.args = basefind_compute_args,
 };
 

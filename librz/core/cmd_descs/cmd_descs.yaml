@@ -186,7 +186,7 @@ commands:
     summary: Display or change the block size
     subcommands: cmd_block
   - name: B
-    summary: Computes the possibles firmware locations in memory (CPU intensive)
+    summary: Computes the possibles firmware locations in memory a.k.a basefind (CPU intensive)
     cname: basefind_compute
     type: RZ_CMD_DESC_TYPE_ARGV_STATE
     default_mode: RZ_OUTPUT_MODE_TABLE
@@ -199,6 +199,11 @@ commands:
         type: RZ_CMD_ARG_TYPE_CHOICES
         optional: true
         choices: ["32", "64"]
+    details:
+      - name: "Settings of this command"
+        entries:
+          - text: "Check out the settings for this command with 'el basefind.'"
+            comment: ""
   - name: c
     summary: Compare block with given data
     subcommands: cmd_cmp
