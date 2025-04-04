@@ -253,6 +253,10 @@ RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries_io_maps(RZ_NONNULL 
 		if ((map->perm & perms_mask) != perms) {
 			continue;
 		}
+		if (!(map->perm & RZ_PERM_R)) {
+			RZ_LOG_WARN("Skip adding map '%s' to boundaries, because it is not readable.\n", map->name);
+			continue;
+		}
 		if (!add_interval(core->io, list, map->itv, interval, map->perm)) {
 			rz_list_free(list);
 			return NULL;
