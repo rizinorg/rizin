@@ -35,6 +35,19 @@ commands:
       - RZ_OUTPUT_MODE_QUIET
       - RZ_OUTPUT_MODE_STANDARD
       - RZ_OUTPUT_MODE_JSON
+    details:
+      - name: Legend
+        entries:
+          - text: "a"
+            comment: "Analysis plugin"
+          - text: "d"
+            comment: "Disassembler plugin"
+          - text: "A"
+            comment: "Assembler plugin"
+          - text: "e"
+            comment: "ESIL Support"
+          - text: "I"
+            comment: "RzIL Support"
   - name: Lc
     cname: plugins_core_print
     summary: List the core plugins
