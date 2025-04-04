@@ -303,7 +303,7 @@ jobs:
           ASAN_OPTIONS: ${{ matrix.asan_options }}
           CC: ${{ matrix.compiler }}
       - name: Generate coverage data
-        if: matrix.coverage
+        if: matrix.coverage && matrix.enabled
         run: |
           gcovr --version
           gcovr --gcov-ignore-parse-errors=all --txt build/coverage.txt --cobertura build/coverage.xml build
