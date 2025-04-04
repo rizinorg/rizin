@@ -1,12 +1,11 @@
 [wrap-file]
-directory = xz-5.6.4
-source_url = https://raw.githubusercontent.com/rizinorg/fallback-repo/main/xz-5.6.4.tar.gz
-source_fallback_url = https://github.com/tukaani-project/xz/releases/download/v5.6.4/xz-5.6.4.tar.gz
-# source_fallback_url = https://tukaani.org/xz/xz-5.6.4.tar.gz // possibly has different hash, let's prefer github
-source_filename = xz-5.6.4.tar.gz
-source_hash = 269e3f2e512cbd3314849982014dc199a7b2148cf5c91cedc6db629acdf5e09b
-patch_directory = xz-5.6.4
+directory = xz-5.8.1
+source_url = https://raw.githubusercontent.com/rizinorg/fallback-repo/main/xz-5.8.1.tar.gz
+source_fallback_url = https://github.com/tukaani-project/xz/releases/download/v5.8.1/xz-5.8.1.tar.gz
+# source_fallback_url = https://tukaani.org/xz/xz-5.8.1.tar.gz // possibly has different hash, let's prefer github
+source_filename = xz-5.8.1.tar.gz
+source_hash = 507825b599356c10dca1cd720c9d0d0c9d5400b9de300af00e4d1ea150795543
+patch_directory = xz-5.8.1
 
 [provide]
 liblzma = lzma_dep
-

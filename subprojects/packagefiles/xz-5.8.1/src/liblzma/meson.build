@@ -53,9 +53,7 @@ main_dec_sources = [
 ]
 
 check_sources = ['check/check.c',
-  'check/crc32_table.c',
   'check/crc32_fast.c',
-  'check/crc64_table.c',
   'check/crc64_fast.c',
   'check/sha256.c'
 ]
