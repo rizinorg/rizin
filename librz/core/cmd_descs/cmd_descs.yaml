@@ -174,10 +174,33 @@ commands:
     subcommands: cmd_math
   - name: <
     cname: push_escaped
-    summary: Push escaped string into the RzCons.readChar buffer
+    summary: Push escaped string into the RzCons.readChar (pressed keys) buffer
     args:
       - name: characters
         type: RZ_CMD_ARG_TYPE_STRING
+    details:
+      - name: "Examples"
+        entries:
+          - text: "< ppq; <command>"
+            comment: "Equivalent to running <command> and pressing the keys: p, p, q."
+          - text: "< \\n; <command>"
+            comment: "As above, but '\\n' is equivalent to pressing <enter>."
+      - name: "Escape sequences"
+        entries:
+          - text: "\\n"
+            comment: "newline (0x0a)."
+          - text: "\\b"
+            comment: "backspace (0x08)."
+          - text: "\\t"
+            comment: "horizontal tab (0x09)."
+          - text: "\\v"
+            comment: "vertical tab (0x0b)."
+          - text: "\\f"
+            comment: "new page (0x0c)."
+          - text: "\\r"
+            comment: "carriage return (0x0d)."
+          - text: "\\xHH"
+            comment: "Raw byte 0xHH (in hexadecimal)."
   - name: a
     cname: cmd_analysis
     summary: Analysis commands

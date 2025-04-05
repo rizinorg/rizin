@@ -34,6 +34,7 @@ static const RzCmdDescDetail set_last_eval_expr_details[2];
 static const RzCmdDescDetail compare_and_set_core_num_value_details[2];
 static const RzCmdDescDetail exec_cmd_if_core_num_value_positive_details[2];
 static const RzCmdDescDetail exec_cmd_if_core_num_value_negative_details[2];
+static const RzCmdDescDetail push_escaped_details[3];
 static const RzCmdDescDetail analysis_all_esil_details[2];
 static const RzCmdDescDetail analyze_all_preludes_details[2];
 static const RzCmdDescDetail analysis_functions_merge_details[2];
@@ -3531,6 +3532,27 @@ static const RzCmdDescHelp get_addr_references_help = {
 	.args = get_addr_references_args,
 };
 
+static const RzCmdDescDetailEntry push_escaped_Examples_detail_entries[] = {
+	{ .text = "< ppq; <command>", .arg_str = NULL, .comment = "Equivalent to running <command> and pressing the keys: p, p, q." },
+	{ .text = "< \\n; <command>", .arg_str = NULL, .comment = "As above, but '\\n' is equivalent to pressing <enter>." },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry push_escaped_Escape_space_sequences_detail_entries[] = {
+	{ .text = "\\n", .arg_str = NULL, .comment = "newline (0x0a)." },
+	{ .text = "\\b", .arg_str = NULL, .comment = "backspace (0x08)." },
+	{ .text = "\\t", .arg_str = NULL, .comment = "horizontal tab (0x09)." },
+	{ .text = "\\v", .arg_str = NULL, .comment = "vertical tab (0x0b)." },
+	{ .text = "\\f", .arg_str = NULL, .comment = "new page (0x0c)." },
+	{ .text = "\\r", .arg_str = NULL, .comment = "carriage return (0x0d)." },
+	{ .text = "\\xHH", .arg_str = NULL, .comment = "Raw byte 0xHH (in hexadecimal)." },
+	{ 0 },
+};
+static const RzCmdDescDetail push_escaped_details[] = {
+	{ .name = "Examples", .entries = push_escaped_Examples_detail_entries },
+	{ .name = "Escape sequences", .entries = push_escaped_Escape_space_sequences_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg push_escaped_args[] = {
 	{
 		.name = "characters",
@@ -3541,7 +3563,8 @@ static const RzCmdDescArg push_escaped_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp push_escaped_help = {
-	.summary = "Push escaped string into the RzCons.readChar buffer",
+	.summary = "Push escaped string into the RzCons.readChar (pressed keys) buffer",
+	.details = push_escaped_details,
 	.args = push_escaped_args,
 };
 
