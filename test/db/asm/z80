@@ -1,3 +1,204 @@
+a "scf" 37
+a "ccf" 3f
+a "halt" 76
+a "jr 0xfe" 18fe
+a "jr c, 0xfe" 38fe
+a "jr nc, 0xfe" 30fe
+a "jr nz, 0xfe" 20fe
+a "jr z, 0xfe" 28fe
+a "cp 0x00" fe00
+a "cp a, [hl]" be
+a "cp a, [ix+0x00]" ddbe00
+a "cp a, [iy+0x00]" fdbe00
+a "cp a, a" bf
+a "cp a, b" b8
+a "cp a, c" b9
+a "cp a, d" ba
+a "cp a, e" bb
+a "cp a, h" bc
+a "cp a, ixh" ddbc
+a "cp a, ixl" ddbd
+a "cp a, iyh" fdbc
+a "cp a, iyl" fdbd
+a "cp a, l" bd
+a "or 0x00" f600
+a "or a, [hl]" b6
+a "or a, [ix+0x00]" ddb600
+a "or a, [iy+0x00]" fdb600
+a "or a, a" b7
+a "or a, b" b0
+a "or a, c" b1
+a "or a, d" b2
+a "or a, e" b3
+a "or a, h" b4
+a "or a, ixh" ddb4
+a "or a, ixl" ddb5
+a "or a, iyh" fdb4
+a "or a, iyl" fdb5
+a "or a, l" b5
+a "xor 0x00" ee00
+a "xor a, [hl]" ae
+a "xor a, [ix+0x00]" ddae00
+a "xor a, [iy+0x00]" fdae00
+a "xor a, [iy+0x1f]" fdae1f
+a "xor a, a" af
+a "xor a, b" a8
+a "xor a, c" a9
+a "xor a, d" aa
+a "xor a, e" ab
+a "xor a, h" ac
+a "xor a, ixh" ddac
+a "xor a, ixl" ddad
+a "xor a, iyh" fdac
+a "xor a, iyl" fdad
+a "xor a, l" ad
+a "sbc a, 0x00" de00
+a "sbc a, [hl]" 9e
+a "sbc a, [ix+0x00]" dd9e00
+a "sbc a, [iy+0x00]" fd9e00
+a "sbc a, a" 9f
+a "sbc a, b" 98
+a "sbc a, c" 99
+a "sbc a, d" 9a
+a "sbc a, e" 9b
+a "sbc a, h" 9c
+a "sbc a, ixh" dd9c
+a "sbc a, ixl" dd9d
+a "sbc a, iyh" fd9c
+a "sbc a, iyl" fd9d
+a "sbc a, l" 9d
+a "sbc hl, bc" ed42
+a "sbc hl, de" ed52
+a "sbc hl, hl" ed62
+a "sbc hl, sp" ed72
+a "sub 0x00" d600
+a "sub a, [hl]" 96
+a "sub a, [ix+0x00]" dd9600
+a "sub a, [iy+0x00]" fd9600
+a "sub a, a" 97
+a "sub a, ixh" dd94
+a "sub a, ixl" dd95
+a "sub a, b" 90
+a "sub a, c" 91
+a "sub a, d" 92
+a "sub a, e" 93
+a "sub a, h" 94
+a "sub a, iyh" fd94
+a "sub a, iyl" fd95
+a "sub a, l" 95
+a "adc a, 0x00" ce00
+a "adc a, [hl]" 8e
+a "adc a, [ix+0x00]" dd8e00
+a "adc a, [iy+0x00]" fd8e00
+a "adc a, a" 8f
+a "adc a, b" 88
+a "adc a, c" 89
+a "adc a, d" 8a
+a "adc a, e" 8b
+a "adc a, h" 8c
+a "adc a, ixh" dd8c
+a "adc a, ixl" dd8d
+a "adc a, iyh" fd8c
+a "adc a, iyl" fd8d
+a "adc a, l" 8d
+a "adc hl, bc" ed4a
+a "adc hl, de" ed5a
+a "adc hl, hl" ed6a
+a "adc hl, sp" ed7a 
+a "inc [hl]" 34
+a "inc [ix+0x00]" dd3400
+a "inc [iy+0x00]" fd3400
+a "inc a" 3c
+a "inc b" 04
+a "inc bc" 03
+a "inc c" 0c
+a "inc de" 13
+a "inc e" 1c
+a "inc h" 24
+a "inc hl" 23
+a "inc ix" dd23
+a "inc ixh" dd24
+a "inc ixl" dd2c
+a "inc iy" fd23
+a "inc iyh" fd24
+a "inc iyl" fd2c
+a "inc l" 2c
+a "inc sp" 33
+a "dec [hl]" 35
+a "dec [ix+0x00]" dd3500
+a "dec [iy+0x00]" fd3500
+a "dec a" 3d
+a "dec b" 05
+a "dec bc" 0b
+a "dec c" 0d
+a "dec d" 15
+a "dec de" 1b
+a "dec e" 1d
+a "dec h" 25
+a "dec hl" 2b
+a "dec ix" dd2b
+a "dec ixh" dd25
+a "dec ixl" dd2d
+a "dec iy" fd2b
+a "dec iyh" fd25
+a "dec iyl" fd2d
+a "dec l" 2d
+a "dec sp" 3b
+a "pop af" f1
+a "pop bc" c1
+a "pop de" d1
+a "pop hl" e1
+a "pop ix" dde1
+a "pop iy" fde1
+a "push af" f5
+a "push bc" c5
+a "push de" d5
+a "push hl" e5
+a "push ix" dde5
+a "push iy" fde5
+a "add a, 0x00" c600
+a "add a, [hl]" 86
+a "add a, [ix+0x00]" dd8600
+a "add a, [iy+0x00]" fd8600
+a "add a, a" 87
+a "add a, b" 80
+a "add a, c" 81
+a "add a, d" 82
+a "add a, e" 83
+a "add a, h" 84
+a "add a, ixh" dd84
+a "add a, ixl" dd85
+a "add a, iyh" fd84
+a "add a, iyl" fd85
+a "add a, l" 85
+a "add hl, bc" 09
+a "add hl, de" 19
+a "add hl, hl" 29
+a "add hl, sp" 39
+a "add ix, bc" dd09
+a "add ix, de" dd19
+a "add ix, ix" dd29
+a "add ix, sp" dd39
+a "add iy, bc" fd09
+a "add iy, de" fd19
+a "add iy, iy" fd29
+a "add iy, sp" fd39
+a "and 0x00" e600
+a "and a, [hl]" a6
+a "and a, [ix+0x00]" dda600
+a "and a, [iy+0x00]" fda600
+a "and a, a" a7
+a "and a, b" a0
+a "and a, c" a1
+a "and a, d" a2
+a "and a, e" a3
+a "and a, h" a4
+a "and a, ixh" dda4
+a "and a, ixl" dda5
+a "and a, iyh" fda4
+a "and a, iyl" fda5
+a "and a, l" a5
+a "scf" 37
 d "adc a, 0x00" ce00
 d "adc a, [hl]" 8e
 d "adc a, [ix+0x00]" dd8e00

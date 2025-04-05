@@ -10,8 +10,8 @@ static int z80_gnu_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	return op->size = z80Disass(op, buf, len);
 }
 
-static int z80_gnu_assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
-	return op->size = z80asm((ut8 *)rz_strbuf_get(&op->buf), buf);
+static int do_assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
+	return op->size = z80Asm(a, op, buf);
 }
 
 RzAsmPlugin rz_asm_plugin_z80_gnu = {
