@@ -19,3 +19,37 @@ EXPECT_ERR=<<EOF
 Hud mode requires scr.interactive=true.
 EOF
 RUN
+
+NAME=?** search
+FILE==
+CMDS=<<EOF
+e scr.interactive=true
+e scr.columns=120
+e scr.rows=3
+e scr.color=0
+< \n; ?**
+echo
+EOF
+EXPECT=<<EOF
+[?25l[0m[2J[0;0H0> |                                                                                                                   [0m[2J[0;0H0> |
+ - | !<command> [<args1> <args2> ...] # Runs given commands in system(3)                                                
+   | !!<command> [<args1> <args2> ...] # Runs a given commands in system(3) and pipes stdout to rizin                   [?25h
+EOF
+RUN
+
+NAME=?*** search
+FILE==
+CMDS=<<EOF
+e scr.interactive=true
+e scr.columns=100
+e scr.rows=3
+e scr.color=0
+< \n; ?***
+echo
+EOF
+EXPECT=<<EOF
+[?25l[0m[2J[0;0H0> |                                                                                               [0m[2J[0;0H0> |
+ - ! | Usage: !<command> [<args1> <args2> ...]   # Runs given commands in system(3)                 
+   ! | Examples:                                                                                    [?25h
+EOF
+RUN
