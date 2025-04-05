@@ -74,6 +74,7 @@ static const RzCmdDescDetail egg_config_details[2];
 static const RzCmdDescDetail history_list_or_exec_details[2];
 static const RzCmdDescDetail cmd_info_query_details[2];
 static const RzCmdDescDetail query_sdb_get_set_details[2];
+static const RzCmdDescDetail plugins_asm_print_details[2];
 static const RzCmdDescDetail cmd_print_byte_array_details[3];
 static const RzCmdDescDetail pf_details[3];
 static const RzCmdDescDetail print_string_details[2];
@@ -13304,6 +13305,18 @@ static const RzCmdDescHelp plugins_lang_print_help = {
 	.args = plugins_lang_print_args,
 };
 
+static const RzCmdDescDetailEntry plugins_asm_print_Legend_detail_entries[] = {
+	{ .text = "a", .arg_str = NULL, .comment = "Analysis plugin" },
+	{ .text = "d", .arg_str = NULL, .comment = "Disassembler plugin" },
+	{ .text = "A", .arg_str = NULL, .comment = "Assembler plugin" },
+	{ .text = "e", .arg_str = NULL, .comment = "ESIL Support" },
+	{ .text = "I", .arg_str = NULL, .comment = "RzIL Support" },
+	{ 0 },
+};
+static const RzCmdDescDetail plugins_asm_print_details[] = {
+	{ .name = "Legend", .entries = plugins_asm_print_Legend_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg plugins_asm_print_args[] = {
 	{
 		.name = "features",
@@ -13316,6 +13329,7 @@ static const RzCmdDescArg plugins_asm_print_args[] = {
 };
 static const RzCmdDescHelp plugins_asm_print_help = {
 	.summary = "List the asm/analysis plugins",
+	.details = plugins_asm_print_details,
 	.args = plugins_asm_print_args,
 };
 
