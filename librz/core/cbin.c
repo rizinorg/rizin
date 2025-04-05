@@ -4857,8 +4857,8 @@ RZ_IPI RzCmdStatus rz_core_bin_plugin_print(const RzBinPlugin *bp, RzCmdStateOut
 		if (bp->version) {
 			pj_ks(state->d.pj, "version", bp->version);
 		}
-		if (bp->license) {
-			pj_ks(state->d.pj, "author", bp->license);
+		if (bp->author) {
+			pj_ks(state->d.pj, "author", bp->author);
 		}
 		pj_end(state->d.pj);
 		break;
