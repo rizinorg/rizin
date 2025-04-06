@@ -243,6 +243,26 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_highlight_list_handler(RzCore *core, int ar
 	return RZ_CMD_STATUS_OK;
 }
 
+RZ_IPI char **theme_choices_cb(RzCore *core) {
+	RzPVector *themes = rz_core_get_themes(core);
+	if (!themes) {
+		return NULL;
+	}
+	size_t count = rz_pvector_len(themes);
+	char **choices = RZ_NEWS0(char *, count + 1);
+	if (!choices) {
+		rz_pvector_free(themes);
+		return NULL;
+	}
+	size_t i = 0;
+	void **iter;
+	rz_pvector_foreach (themes, iter) {
+		choices[i++] = rz_str_dup(*iter);
+	}
+	rz_pvector_free(themes);
+	return choices;
+}
+
 RZ_IPI RzCmdStatus rz_cmd_eval_color_load_theme_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	PJ *pj = state->d.pj;
 	if (argc == 2) {
