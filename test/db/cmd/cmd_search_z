@@ -49,7 +49,6 @@ RUN
 NAME=String Search - minimal string - Encoding: ascii - Latin
 FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ascii
 CMDS=<<EOF
-e search.str.min_length=2
 /z "et" l ascii
 # Requires increasing the block size because -.-
 b 0x1000
@@ -90,7 +89,6 @@ RUN
 NAME=String Search - minimal string - Encoding: ebcdic_uk - Latin
 FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ebcdic_uk
 CMDS=<<EOF
-e search.str.min_length=2
 /z "et" l ebcdicuk
 # Requires increasing the block size because -.-
 b 0x1000
@@ -131,7 +129,6 @@ RUN
 NAME=String Search - minimal string - Encoding: ebcdic_us - Latin
 FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ebcdic_us
 CMDS=<<EOF
-e search.str.min_length=2
 /z "et" l ebcdicus
 # Requires increasing the block size because -.-
 b 0x1000
@@ -172,7 +169,6 @@ RUN
 NAME=String Search - minimal string - Encoding: ebcdic_es - Latin
 FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ebcdic_es
 CMDS=<<EOF
-e search.str.min_length=2
 /z "et" l ebcdices
 # Requires increasing the block size because -.-
 b 0x1000
@@ -1255,7 +1251,6 @@ RUN
 NAME=String Search - minimal string - Encoding: ebcdic_uk - Latin
 FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ebcdic_uk
 CMDS=<<EOF
-e search.str.min_length=2
 /z "et" l ebcdicuk
 # Requires increasing the block size because -.-
 b 0x1000
@@ -1296,7 +1291,6 @@ RUN
 NAME=String Search - minimal string - Encoding: ebcdic_us - Latin
 FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ebcdic_us
 CMDS=<<EOF
-e search.str.min_length=2
 /z "et" l ebcdicus
 # Requires increasing the block size because -.-
 b 0x1000
@@ -1337,7 +1331,6 @@ RUN
 NAME=String Search - minimal string - Encoding: ebcdic_es - Latin
 FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ebcdic_es
 CMDS=<<EOF
-e search.str.min_length=2
 /z "et" l ebcdices
 # Requires increasing the block size because -.-
 b 0x1000
@@ -1373,4 +1366,23 @@ etraxit est, est eros intellegebat et.
 et.
 EOF
 EXPECT_ERR=
+RUN
+
+NAME=Manual string search - min length of 1
+FILE==
+CMDS=<<EOF
+w ELF @ 0x12
+/z ELF
+echo ----
+/z EL
+echo ----
+/z E
+EOF
+EXPECT=<<EOF
+0x00000012 3 hit.string.ascii.0
+----
+0x00000012 2 hit.string.ascii.0
+----
+0x00000012 1 hit.string.ascii.0
+EOF
 RUN

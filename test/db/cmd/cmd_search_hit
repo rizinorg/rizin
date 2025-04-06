@@ -36,7 +36,6 @@ RUN
 NAME=/z utf16be
 FILE=malloc://1024
 CMDS=<<EOF
-e search.str.min_length=1
 wx 0067
 /zj g i utf16be
 EOF
