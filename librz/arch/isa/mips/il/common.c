@@ -535,8 +535,13 @@ static RzILOpEffect *mips_il_clz(const csh *handle, const cs_insn *insn, const u
 }
 
 static RzILOpEffect *mips_il_div(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
-	RzILOpPure *rs = MIPS_REG(0);
-	RzILOpPure *rt = MIPS_REG(1);
+	size_t offset = 0;
+	if (OPCOUNT() > 2 && IS_ZERO_REG(0)) {
+		// handle mips revision 2 ot 5 format
+		offset = 1;
+	}
+	RzILOpPure *rs = MIPS_REG(offset + 0);
+	RzILOpPure *rt = MIPS_REG(offset + 1);
 
 	RzILOpPure *quotient = SDIV(DUP(rs), DUP(rt));
 	RzILOpPure *remainder = SMOD(rs, rt);
@@ -547,8 +552,13 @@ static RzILOpEffect *mips_il_div(const csh *handle, const cs_insn *insn, const u
 }
 
 static RzILOpEffect *mips_il_divu(const csh *handle, const cs_insn *insn, const ut32 gprlen) {
-	RzILOpPure *rs = MIPS_REG(0);
-	RzILOpPure *rt = MIPS_REG(1);
+	size_t offset = 0;
+	if (OPCOUNT() > 2 && IS_ZERO_REG(0)) {
+		// handle mips revision 2 ot 5 format
+		offset = 1;
+	}
+	RzILOpPure *rs = MIPS_REG(offset + 0);
+	RzILOpPure *rt = MIPS_REG(offset + 1);
 
 	RzILOpPure *quotient = DIV(DUP(rs), DUP(rt));
 	RzILOpPure *remainder = MOD(rs, rt);

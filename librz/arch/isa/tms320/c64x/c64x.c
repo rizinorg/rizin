@@ -47,7 +47,8 @@ int tms320_c64x_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len, void
 		ctx->omode = -1;
 	}
 	if (!ctx->handle) {
-		ret = cs_open(CS_ARCH_TMS320C64X, 0, &ctx->handle);
+		cs_mode mode = a->big_endian ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN;
+		ret = cs_open(CS_ARCH_TMS320C64X, mode, &ctx->handle);
 		if (ret) {
 			goto fin;
 		}
@@ -170,6 +171,7 @@ int tms320_c64x_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, i
 		ctx->omode = mode;
 	}
 	if (ctx->handle == 0) {
+		mode = a->big_endian ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN;
 		ret = cs_open(CS_ARCH_TMS320C64X, mode, &ctx->handle);
 		if (ret != CS_ERR_OK) {
 			return -1;

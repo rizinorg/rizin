@@ -54,6 +54,7 @@ bool test_bin_vfiles() {
 
 	// 5. Exit
 	rz_bin_free(bin);
+	rz_buf_free(buf);
 	mu_end;
 }
 
