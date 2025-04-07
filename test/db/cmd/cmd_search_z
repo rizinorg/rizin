@@ -1374,3 +1374,16 @@ et.
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=Manual string search - min length is string literal length
+FILE==
+CMDS=<<EOF
+w ab @ 0x10
+w abc @ 0x20
+w abcd @ 0x30
+/z ab
+EOF
+EXPECT=<<EOF
+0x00000030 2 hit.string.ascii.0
+EOF
+RUN
