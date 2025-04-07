@@ -174,10 +174,11 @@ CMDS=<<EOF
 La??
 EOF
 EXPECT=<<EOF
-Usage: La[jq] [<features>]   # List the asm/analysis plugins
-| La [<features>]      # List the asm/analysis plugins
-| Laj [<features>]     # List the asm/analysis plugins (JSON mode)
-| Laq [<features>]     # List the asm/analysis plugins (quiet mode)
+Usage: La[jqt] [<features>]   # List the arch plugins
+| La [<features>]       # List the arch plugins
+| Laj [<features>]      # List the arch plugins (JSON mode)
+| Laq [<features>]      # List the arch plugins (quiet mode)
+| Lat [<features>]      # List the arch plugins (table mode)
 
 Legend:
 | a # Analysis plugin

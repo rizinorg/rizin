@@ -412,6 +412,9 @@ RZ_API RzCmdDesc *rz_cmd_get_desc(RzCmd *cmd, const char *cmd_identifier) {
  * Command descriptors that support multiple output modes can also have a
  * default one. This function can be used to set it.
  *
+ * It's not possible to add a default mode when RZ_OUTPUT_MODE_STANDARD is
+ * defined because it doesn't have a letter assigned unlike the other outputs.
+ *
  * \return True if the default output mode was changed, false otherwise.
  */
 RZ_API bool rz_cmd_desc_set_default_mode(RzCmdDesc *cd, RzOutputMode mode) {

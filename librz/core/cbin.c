@@ -4886,7 +4886,7 @@ RZ_IPI RzCmdStatus rz_core_binxtr_plugin_print(const RzBinXtrPlugin *bx, RzCmdSt
 	rz_cmd_state_output_set_columnsf(state, "sss", "type", "name", "description");
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_QUIET:
-		rz_cons_printf("%s\n", bx->name);
+		rz_cons_println(bx->name);
 		break;
 	case RZ_OUTPUT_MODE_JSON:
 		pj_o(state->d.pj);

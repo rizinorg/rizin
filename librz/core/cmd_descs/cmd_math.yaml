@@ -85,7 +85,6 @@ commands:
       those search modes.
     cname: print_boundaries_prot
     type: RZ_CMD_DESC_TYPE_ARGV_STATE
-    default_mode: RZ_OUTPUT_MODE_TABLE
     modes:
       - RZ_OUTPUT_MODE_STANDARD
       - RZ_OUTPUT_MODE_JSON

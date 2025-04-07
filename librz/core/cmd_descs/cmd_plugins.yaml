@@ -21,39 +21,57 @@ commands:
     type: RZ_CMD_DESC_TYPE_ARGV_STATE
     args: []
     modes:
-      - RZ_OUTPUT_MODE_STANDARD
-      - RZ_OUTPUT_MODE_JSON
-  - name: La
-    cname: plugins_asm_print
-    summary: List the asm/analysis plugins
-    type: RZ_CMD_DESC_TYPE_ARGV_STATE
-    args:
-      - name: features
-        type: RZ_CMD_ARG_TYPE_STRING
-        optional: true
-    modes:
+      - RZ_OUTPUT_MODE_TABLE
       - RZ_OUTPUT_MODE_QUIET
       - RZ_OUTPUT_MODE_STANDARD
       - RZ_OUTPUT_MODE_JSON
-    details:
-      - name: Legend
-        entries:
-          - text: "a"
-            comment: "Analysis plugin"
-          - text: "d"
-            comment: "Disassembler plugin"
-          - text: "A"
-            comment: "Assembler plugin"
-          - text: "e"
-            comment: "ESIL Support"
-          - text: "I"
-            comment: "RzIL Support"
+  - name: La
+    summary: List the asm/analysis plugins
+    subcommands:
+    - name: La
+      cname: plugins_asm_print
+      summary: List the arch plugins
+      type: RZ_CMD_DESC_TYPE_ARGV_STATE
+      args:
+        - name: features
+          type: RZ_CMD_ARG_TYPE_STRING
+          optional: true
+      modes:
+        - RZ_OUTPUT_MODE_TABLE
+        - RZ_OUTPUT_MODE_QUIET
+        - RZ_OUTPUT_MODE_STANDARD
+        - RZ_OUTPUT_MODE_JSON
+      details:
+        - name: Legend
+          entries:
+            - text: "a"
+              comment: "Analysis plugin"
+            - text: "d"
+              comment: "Disassembler plugin"
+            - text: "A"
+              comment: "Assembler plugin"
+            - text: "e"
+              comment: "ESIL Support"
+            - text: "I"
+              comment: "RzIL Support"
+    - name: Lac
+      cname: plugins_asm_cpu_print
+      summary: List the cpus supported by the arch plugin
+      type: RZ_CMD_DESC_TYPE_ARGV_STATE
+      args:
+        - name: architecture
+          type: RZ_CMD_ARG_TYPE_STRING
+      modes:
+        - RZ_OUTPUT_MODE_STANDARD
+        - RZ_OUTPUT_MODE_JSON
   - name: Lc
     cname: plugins_core_print
     summary: List the core plugins
     type: RZ_CMD_DESC_TYPE_ARGV_STATE
     args: []
     modes:
+      - RZ_OUTPUT_MODE_TABLE
+      - RZ_OUTPUT_MODE_QUIET
       - RZ_OUTPUT_MODE_STANDARD
       - RZ_OUTPUT_MODE_JSON
   - name: LC
@@ -62,6 +80,8 @@ commands:
     type: RZ_CMD_DESC_TYPE_ARGV_STATE
     args: []
     modes:
+      - RZ_OUTPUT_MODE_TABLE
+      - RZ_OUTPUT_MODE_QUIET
       - RZ_OUTPUT_MODE_STANDARD
       - RZ_OUTPUT_MODE_JSON
   - name: Ld
@@ -73,6 +93,7 @@ commands:
         type: RZ_CMD_ARG_TYPE_STRING
         optional: true
     modes:
+      - RZ_OUTPUT_MODE_TABLE
       - RZ_OUTPUT_MODE_QUIET
       - RZ_OUTPUT_MODE_STANDARD
       - RZ_OUTPUT_MODE_JSON
@@ -82,6 +103,7 @@ commands:
     type: RZ_CMD_DESC_TYPE_ARGV_STATE
     args: []
     modes:
+      - RZ_OUTPUT_MODE_TABLE
       - RZ_OUTPUT_MODE_QUIET
       - RZ_OUTPUT_MODE_STANDARD
       - RZ_OUTPUT_MODE_JSON
@@ -91,6 +113,7 @@ commands:
     type: RZ_CMD_DESC_TYPE_ARGV_STATE
     args: []
     modes:
+      - RZ_OUTPUT_MODE_TABLE
       - RZ_OUTPUT_MODE_QUIET
       - RZ_OUTPUT_MODE_STANDARD
       - RZ_OUTPUT_MODE_JSON
@@ -102,10 +125,10 @@ commands:
       - name: path
         type: RZ_CMD_ARG_TYPE_FILE
         optional: true
-    default_mode: RZ_OUTPUT_MODE_TABLE
     modes:
       - RZ_OUTPUT_MODE_TABLE
       - RZ_OUTPUT_MODE_QUIET
+      - RZ_OUTPUT_MODE_STANDARD
       - RZ_OUTPUT_MODE_JSON
   - name: Lp
     cname: plugins_parser_print
@@ -113,6 +136,8 @@ commands:
     type: RZ_CMD_DESC_TYPE_ARGV_STATE
     args: []
     modes:
+      - RZ_OUTPUT_MODE_TABLE
+      - RZ_OUTPUT_MODE_QUIET
       - RZ_OUTPUT_MODE_STANDARD
       - RZ_OUTPUT_MODE_JSON
   - name: LD
@@ -120,8 +145,8 @@ commands:
     summary: List the demanglers plugins (alias for iDl)
     type: RZ_CMD_DESC_TYPE_ARGV_STATE
     args: []
-    default_mode: RZ_OUTPUT_MODE_TABLE
     modes:
       - RZ_OUTPUT_MODE_TABLE
       - RZ_OUTPUT_MODE_QUIET
+      - RZ_OUTPUT_MODE_STANDARD
       - RZ_OUTPUT_MODE_JSON

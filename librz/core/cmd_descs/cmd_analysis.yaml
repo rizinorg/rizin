@@ -2363,7 +2363,6 @@ commands:
         summary: List syscalls
         cname: analysis_syscall_print
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
-        default_mode: RZ_OUTPUT_MODE_STANDARD
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON

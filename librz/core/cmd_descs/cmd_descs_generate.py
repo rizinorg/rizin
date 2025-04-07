@@ -471,6 +471,13 @@ class CmdDesc:
             print("Specify arguments for command %s" % (self.name,))
             sys.exit(1)
 
+        if self.modes and "RZ_OUTPUT_MODE_STANDARD" in self.modes and self.default_mode:
+            print(
+                "You cannot define `default_mode` if `RZ_OUTPUT_MODE_STANDARD` mode is set on command `%s`"
+                % (self.name,)
+            )
+            sys.exit(1)
+
     def get_handler_cname(self):
         if self.type not in [
             CD_TYPE_ARGV,

@@ -289,7 +289,7 @@ ED____ serpent-ecb    LGPL-3     NicsTr
 ED____ sm4-ecb        LGPL-3     0xSh4dy
 ED____ aes-cbc        LGPL-3     rakholiyajenish.07
 E_____ rol            LGPL-3     pancake
-ED____ aes-ecb        LGPL3      Nettle project (algorithm implementation), pancake (plugin)
+ED____ aes-ecb        LGPL3      Nettle project,pancake
 ED____ des-ecb        LGPL-3     deroad
 ED____ blowfish       LGPL3      kishorbhat
 __ed__ base91         LGPL-3     rakholiyajenish.07

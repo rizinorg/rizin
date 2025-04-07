@@ -19,9 +19,13 @@ RZ_IPI RzCmdStatus rz_plugins_lang_print_handler(RzCore *core, int argc, const c
 
 RZ_IPI RzCmdStatus rz_plugins_asm_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	if (argc > 1) {
-		return rz_core_asm_plugins_print(core, NULL, state, argv[1]);
+		return rz_core_asm_plugins_print(core, state, argv[1]);
 	}
-	return rz_core_asm_plugins_print(core, NULL, state, NULL);
+	return rz_core_asm_plugins_print(core, state, NULL);
+}
+
+RZ_IPI RzCmdStatus rz_plugins_asm_cpu_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	return rz_core_asm_cpu_plugin_print(core, state, argv[1]);
 }
 
 RZ_IPI RzCmdStatus rz_plugins_core_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
