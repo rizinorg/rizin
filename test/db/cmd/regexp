@@ -101,6 +101,7 @@ RUN
 NAME=/z at block end
 FILE==
 CMDS=<<EOF
+e search.str.min_length=2
 b 0x100
 w bcccde @ 0xfe
 w bd @ 0x1fe
