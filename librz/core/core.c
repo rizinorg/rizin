@@ -2160,24 +2160,36 @@ RZ_API RzTable *rz_core_table(RzCore *core) {
 	return table;
 }
 
-RZ_API RzCmdStatus rz_core_core_plugin_print(RzCorePlugin *cp, RzCmdStateOutput *state, const char *license) {
+static RzCmdStatus core_core_plugin_print(RzCorePlugin *cp, RzCmdStateOutput *state) {
+	const char *name = rz_str_get(cp->name);
+	const char *desc = rz_str_get(cp->desc);
+	const char *author = rz_str_get(cp->author);
+	const char *version = rz_str_get(cp->version);
+	const char *license = rz_str_get(cp->license);
+
 	PJ *pj = state->d.pj;
 	switch (state->mode) {
+	case RZ_OUTPUT_MODE_TABLE:
+		rz_table_add_rowf(state->d.t, "sssss", name, license, author, version, desc);
+		break;
 	case RZ_OUTPUT_MODE_JSON: {
 		pj_o(pj);
-		pj_ks(pj, "name", cp->name);
-		pj_ks(pj, "description", cp->desc);
-		pj_ks(pj, "author", cp->author);
-		pj_ks(pj, "version", cp->version);
+		pj_ks(pj, "name", name);
+		pj_ks(pj, "description", desc);
+		pj_ks(pj, "author", author);
+		pj_ks(pj, "version", version);
 		pj_ks(pj, "license", license);
 		pj_end(pj);
 		break;
 	}
 	case RZ_OUTPUT_MODE_STANDARD: {
 		rz_cons_printf("%s: %s (Made by %s, v%s, %s)\n",
-			cp->name, cp->desc, cp->author, cp->version, license);
+			name, desc, author, version, license);
 		break;
 	}
+	case RZ_OUTPUT_MODE_QUIET:
+		rz_cons_println(name);
+		break;
 	default: {
 		rz_warn_if_reached();
 		return RZ_CMD_STATUS_NONEXISTINGCMD;
@@ -2194,12 +2206,10 @@ RZ_API RzCmdStatus rz_core_core_plugins_print(RzCore *core, RzCmdStateOutput *st
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_cmd_state_output_array_start(state);
+	rz_cmd_state_output_set_columnsf(state, "sssss", "name", "license", "author", "version", "description");
 	rz_iterator_foreach(iter, val) {
 		RzCorePlugin *cp = *val;
-		const char *license = cp->license
-			? cp->license
-			: "???";
-		status = rz_core_core_plugin_print(cp, state, license);
+		status = core_core_plugin_print(cp, state);
 		if (status != RZ_CMD_STATUS_OK) {
 			return status;
 		}

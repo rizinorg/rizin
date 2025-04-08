@@ -6,7 +6,6 @@ commands:
   - name: "/+"
     summary: Construct the string with chunks.
     cname: cmd_search_str_chunk
-    default_mode: RZ_OUTPUT_MODE_STANDARD
     modes:
       - RZ_OUTPUT_MODE_STANDARD
       - RZ_OUTPUT_MODE_JSON
@@ -228,7 +227,6 @@ commands:
       summary: Search for blocks that have the same hash.
       cname: cmd_search_hash_block
       type: RZ_CMD_DESC_TYPE_ARGV_STATE
-      default_mode: RZ_OUTPUT_MODE_STANDARD
       modes:
         - RZ_OUTPUT_MODE_STANDARD
         - RZ_OUTPUT_MODE_JSON
@@ -257,7 +255,6 @@ commands:
       summary: "Search for blocks above an entropy level."
       cname: cmd_search_hash_entropy
       type: RZ_CMD_DESC_TYPE_ARGV_STATE
-      default_mode: RZ_OUTPUT_MODE_STANDARD
       modes:
         - RZ_OUTPUT_MODE_STANDARD
         - RZ_OUTPUT_MODE_JSON
@@ -281,7 +278,6 @@ commands:
       summary: "Search for blocks above an fractional entropy level."
       cname: cmd_search_hash_entropy_fractional
       type: RZ_CMD_DESC_TYPE_ARGV_STATE
-      default_mode: RZ_OUTPUT_MODE_STANDARD
       modes:
         - RZ_OUTPUT_MODE_STANDARD
         - RZ_OUTPUT_MODE_JSON
@@ -305,7 +301,6 @@ commands:
       summary: Search cryptographic material.
       cname: cmd_search_cryptographic_material
       type: RZ_CMD_DESC_TYPE_ARGV_STATE
-      default_mode: RZ_OUTPUT_MODE_STANDARD
       modes:
         - RZ_OUTPUT_MODE_STANDARD
         - RZ_OUTPUT_MODE_JSON
@@ -350,7 +345,6 @@ commands:
   - name: "/d"
     summary: Search for a deltified sequence of bytes.
     cname: cmd_search_deltified
-    default_mode: RZ_OUTPUT_MODE_STANDARD
     modes:
       - RZ_OUTPUT_MODE_STANDARD
       - RZ_OUTPUT_MODE_JSON
@@ -363,7 +357,6 @@ commands:
     summary: Search the content of a file.
     cname: cmd_search_file
     type: RZ_CMD_DESC_TYPE_ARGV_STATE
-    default_mode: RZ_OUTPUT_MODE_STANDARD
     modes:
       - RZ_OUTPUT_MODE_STANDARD
       - RZ_OUTPUT_MODE_JSON
@@ -390,7 +383,6 @@ commands:
   - name: "/o"
     summary: Show offset of n instructions backward.
     cname: cmd_search_insn_offset_backwards
-    default_mode: RZ_OUTPUT_MODE_STANDARD
     modes:
       - RZ_OUTPUT_MODE_STANDARD
       - RZ_OUTPUT_MODE_JSON
@@ -401,7 +393,6 @@ commands:
   - name: "/O"
     summary: Same as /o, but with a different fallback if analysis cannot be used.
     cname: cmd_search_insn_offset_backwards_fallback
-    default_mode: RZ_OUTPUT_MODE_STANDARD
     modes:
       - RZ_OUTPUT_MODE_STANDARD
       - RZ_OUTPUT_MODE_JSON
@@ -413,7 +404,6 @@ commands:
     summary: Search for pattern of given size.
     cname: cmd_search_pattern
     type: RZ_CMD_DESC_TYPE_ARGV_STATE
-    default_mode: RZ_OUTPUT_MODE_STANDARD
     modes:
       - RZ_OUTPUT_MODE_STANDARD
       - RZ_OUTPUT_MODE_JSON
@@ -426,7 +416,6 @@ commands:
     summary: Search similar blocks.
     cname: cmd_search_blocks
     type: RZ_CMD_DESC_TYPE_ARGV_STATE
-    default_mode: RZ_OUTPUT_MODE_STANDARD
     modes:
       - RZ_OUTPUT_MODE_STANDARD
       - RZ_OUTPUT_MODE_JSON
@@ -443,7 +432,6 @@ commands:
       summary: Search for all graph paths A to B (does not follow calls).
       cname: cmd_search_graph_path
       type: RZ_CMD_DESC_TYPE_ARGV_STATE
-      default_mode: RZ_OUTPUT_MODE_STANDARD
       modes:
         - RZ_OUTPUT_MODE_STANDARD
         - RZ_OUTPUT_MODE_JSON
@@ -456,7 +444,6 @@ commands:
       summary: Search for all graph paths A to B (follows calls, see `search.count` and `analysis.depth`).
       cname: cmd_search_graph_path_follow_calls
       type: RZ_CMD_DESC_TYPE_ARGV_STATE
-      default_mode: RZ_OUTPUT_MODE_STANDARD
       modes:
         - RZ_OUTPUT_MODE_STANDARD
         - RZ_OUTPUT_MODE_JSON
@@ -472,7 +459,6 @@ commands:
       summary: Magic constants search.
       cname: cmd_search_magic_const
       type: RZ_CMD_DESC_TYPE_ARGV_STATE
-      default_mode: RZ_OUTPUT_MODE_STANDARD
       modes:
         - RZ_OUTPUT_MODE_STANDARD
         - RZ_OUTPUT_MODE_JSON
@@ -534,7 +520,6 @@ commands:
         cname: cmd_info_gadget
         summary: List ROP Gadgets
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
-        default_mode: RZ_OUTPUT_MODE_STANDARD
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
@@ -548,7 +533,6 @@ commands:
         cname: cmd_search_gadget
         summary: List ROP Gadgets [regular expression]
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
-        default_mode: RZ_OUTPUT_MODE_STANDARD
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
@@ -562,7 +546,6 @@ commands:
         cname: cmd_query_gadget
         summary: Query ROP Gadgets by providing constraints
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
-        default_mode: RZ_OUTPUT_MODE_STANDARD
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
@@ -577,7 +560,6 @@ commands:
         cname: cmd_detail_gadget
         summary: Gadget detail info
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
-        default_mode: RZ_OUTPUT_MODE_STANDARD
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
@@ -592,7 +574,6 @@ commands:
       summary: Value search.
       cname: cmd_search_value
       type: RZ_CMD_DESC_TYPE_ARGV_STATE
-      default_mode: RZ_OUTPUT_MODE_STANDARD
       modes:
         - RZ_OUTPUT_MODE_STANDARD
         - RZ_OUTPUT_MODE_JSON
@@ -640,7 +621,6 @@ commands:
       summary: Value search - Alias for /v 1 <value>.
       cname: cmd_search_value_alias_v1
       type: RZ_CMD_DESC_TYPE_ARGV_STATE
-      default_mode: RZ_OUTPUT_MODE_STANDARD
       modes:
         - RZ_OUTPUT_MODE_STANDARD
         - RZ_OUTPUT_MODE_JSON
@@ -653,7 +633,6 @@ commands:
       summary: Value search - Alias for /v 2a <value>.
       cname: cmd_search_value_alias_v2
       type: RZ_CMD_DESC_TYPE_ARGV_STATE
-      default_mode: RZ_OUTPUT_MODE_STANDARD
       modes:
         - RZ_OUTPUT_MODE_STANDARD
         - RZ_OUTPUT_MODE_JSON
@@ -666,7 +645,6 @@ commands:
       summary: Value search - Alias for /v 4a <value>.
       cname: cmd_search_value_alias_v4
       type: RZ_CMD_DESC_TYPE_ARGV_STATE
-      default_mode: RZ_OUTPUT_MODE_STANDARD
       modes:
         - RZ_OUTPUT_MODE_STANDARD
         - RZ_OUTPUT_MODE_JSON
@@ -679,7 +657,6 @@ commands:
       summary: Value search - Alias for /v 8a <value>.
       cname: cmd_search_value_alias_v8
       type: RZ_CMD_DESC_TYPE_ARGV_STATE
-      default_mode: RZ_OUTPUT_MODE_STANDARD
       modes:
         - RZ_OUTPUT_MODE_STANDARD
         - RZ_OUTPUT_MODE_JSON
@@ -692,7 +669,6 @@ commands:
       summary: Value search - Alias for /v 1 [<min_value>,<max_value>].
       cname: cmd_search_value_alias_v1_range
       type: RZ_CMD_DESC_TYPE_ARGV_STATE
-      default_mode: RZ_OUTPUT_MODE_STANDARD
       modes:
         - RZ_OUTPUT_MODE_STANDARD
         - RZ_OUTPUT_MODE_JSON
@@ -707,7 +683,6 @@ commands:
       summary: Value search - Alias for /v 2a [<min_value>,<max_value>].
       cname: cmd_search_value_alias_v2_range
       type: RZ_CMD_DESC_TYPE_ARGV_STATE
-      default_mode: RZ_OUTPUT_MODE_STANDARD
       modes:
         - RZ_OUTPUT_MODE_STANDARD
         - RZ_OUTPUT_MODE_JSON
@@ -722,7 +697,6 @@ commands:
       summary: Value search - Alias for /v 4a [<min_value>,<max_value>].
       cname: cmd_search_value_alias_v4_range
       type: RZ_CMD_DESC_TYPE_ARGV_STATE
-      default_mode: RZ_OUTPUT_MODE_STANDARD
       modes:
         - RZ_OUTPUT_MODE_STANDARD
         - RZ_OUTPUT_MODE_JSON
@@ -737,7 +711,6 @@ commands:
       summary: Value search - Alias for /v 8a [<min_value>,<max_value>].
       cname: cmd_search_value_alias_v8_range
       type: RZ_CMD_DESC_TYPE_ARGV_STATE
-      default_mode: RZ_OUTPUT_MODE_STANDARD
       modes:
         - RZ_OUTPUT_MODE_STANDARD
         - RZ_OUTPUT_MODE_JSON
@@ -756,7 +729,6 @@ commands:
       summary: Raw hexadecimal search.
       cname: cmd_search_hex
       type: RZ_CMD_DESC_TYPE_ARGV_STATE
-      default_mode: RZ_OUTPUT_MODE_STANDARD
       modes:
         - RZ_OUTPUT_MODE_STANDARD
         - RZ_OUTPUT_MODE_JSON
@@ -780,7 +752,6 @@ commands:
       summary: Regex bytes search.
       cname: cmd_search_hex_regex
       type: RZ_CMD_DESC_TYPE_ARGV_STATE
-      default_mode: RZ_OUTPUT_MODE_STANDARD
       modes:
         - RZ_OUTPUT_MODE_STANDARD
         - RZ_OUTPUT_MODE_JSON
@@ -858,7 +829,6 @@ commands:
       summary: String search.
       cname: cmd_search_string_sensitive
       type: RZ_CMD_DESC_TYPE_ARGV_STATE
-      default_mode: RZ_OUTPUT_MODE_STANDARD
       modes:
         - RZ_OUTPUT_MODE_STANDARD
         - RZ_OUTPUT_MODE_JSON

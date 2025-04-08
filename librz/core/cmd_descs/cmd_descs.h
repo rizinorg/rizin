@@ -1750,6 +1750,8 @@ RZ_IPI RzCmdStatus rz_plugins_unload_handler(RzCore *core, int argc, const char 
 RZ_IPI RzCmdStatus rz_plugins_lang_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "La"
 RZ_IPI RzCmdStatus rz_plugins_asm_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "Lac"
+RZ_IPI RzCmdStatus rz_plugins_asm_cpu_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "Lc"
 RZ_IPI RzCmdStatus rz_plugins_core_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "LC"

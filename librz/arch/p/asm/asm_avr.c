@@ -83,6 +83,6 @@ RzAsmPlugin rz_asm_plugin_avr = {
 		"ATmega88,"
 		"ATxmega128a4u,"
 		"ATTiny48,"
-		"ATTiny88,",
+		"ATTiny88",
 	.get_cpu_desc = avr_cpu_descriptions,
 };

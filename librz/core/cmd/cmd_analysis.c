@@ -5499,7 +5499,7 @@ RZ_IPI RzCmdStatus rz_list_mne_handler(RzCore *core, int argc, const char **argv
 }
 
 RZ_IPI RzCmdStatus rz_list_plugins_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return rz_core_asm_plugins_print(core, NULL, state, NULL);
+	return rz_core_asm_plugins_print(core, state, NULL);
 }
 
 RZ_IPI RzCmdStatus rz_list_cpu_details_handler(RzCore *core, int argc, const char **argv) {

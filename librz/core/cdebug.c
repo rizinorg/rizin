@@ -307,40 +307,66 @@ RZ_IPI void rz_core_debug_attach(RzCore *core, int pid) {
 	rz_io_system(core->io, rz_strf(buf, "pid %d", core->dbg->pid));
 }
 
-RZ_API RzCmdStatus rz_core_debug_plugin_print(RzDebug *dbg, RzDebugPlugin *plugin, RzCmdStateOutput *state, int count, char *spaces) {
+static void bits_to_string(ut32 bits, char output[32]) {
+
+	if (bits & RZ_SYS_BITS_8) {
+		strcat(output, "8 ");
+	}
+	if (bits & RZ_SYS_BITS_16) {
+		strcat(output, "16 ");
+	}
+	if (bits & RZ_SYS_BITS_32) {
+		strcat(output, "32 ");
+	}
+	if (bits & RZ_SYS_BITS_64) {
+		strcat(output, "64");
+	}
+}
+
+static RzCmdStatus core_debug_plugin_print(RzDebug *dbg, RzDebugPlugin *plugin, RzCmdStateOutput *state, ut64 count, char *spaces) {
+	const char *arch = rz_str_get(plugin->arch);
+	const char *name = rz_str_get(plugin->name);
+	const char *license = rz_str_get(plugin->license);
+	const char *version = rz_str_get(plugin->version);
+	bool selected = plugin == dbg->cur;
+	char bits[32] = { 0 };
+	bits_to_string(plugin->bits, bits);
+
 	PJ *pj = state->d.pj;
 	switch (state->mode) {
-	case RZ_OUTPUT_MODE_QUIET: {
-		rz_cons_printf("%s\n", plugin->name);
+	case RZ_OUTPUT_MODE_TABLE:
+		rz_table_add_rowf(state->d.t, "nsssss", count, selected ? "yes" : "", name, license, bits, arch);
 		break;
-	}
-	case RZ_OUTPUT_MODE_JSON: {
+	case RZ_OUTPUT_MODE_QUIET:
+		rz_cons_printf("%s\n", name);
+		break;
+	case RZ_OUTPUT_MODE_JSON:
 		pj_o(pj);
-		pj_ks(pj, "arch", plugin->arch);
-		pj_ks(pj, "name", plugin->name);
-		pj_ks(pj, "license", plugin->license);
+		pj_ks(pj, "arch", arch);
+		pj_ks(pj, "name", name);
+		pj_ks(pj, "bits", bits);
+		pj_ks(pj, "license", license);
+		pj_ks(pj, "version", version);
+		if (selected) {
+			pj_kb(pj, "selected", true);
+		}
 		pj_end(pj);
 		break;
-	}
-	case RZ_OUTPUT_MODE_STANDARD: {
-		rz_cons_printf("%d  %s  %s %s%s\n",
-			count, (plugin == dbg->cur) ? "dbg" : "---",
-			plugin->name, spaces, plugin->license);
+	case RZ_OUTPUT_MODE_STANDARD:
+		rz_cons_printf("%" PFMT64u "  %s  %s %s%s\n", count, selected ? "dbg" : "---", name, spaces, license);
 		break;
-	}
-	default: {
+	default:
 		rz_warn_if_reached();
 		return RZ_CMD_STATUS_NONEXISTINGCMD;
-	}
 	}
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_API RzCmdStatus rz_core_debug_plugins_print(RZ_NONNULL RZ_BORROW RzCore *core, RZ_OUT RzCmdStateOutput *state) {
 	rz_return_val_if_fail(core && state, RZ_CMD_STATUS_ERROR);
-	int count = 0;
+	ut64 count = 0;
 	char spaces[16];
-	memset(spaces, ' ', 15);
+	memset(spaces, ' ', sizeof(spaces));
 	spaces[15] = 0;
 	RzDebug *dbg = core->dbg;
 	RzCmdStatus status;
@@ -348,6 +374,7 @@ RZ_API RzCmdStatus rz_core_debug_plugins_print(RZ_NONNULL RZ_BORROW RzCore *core
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_cmd_state_output_array_start(state);
+	rz_cmd_state_output_set_columnsf(state, "nsssss", "idx", "selected", "name", "license", "bits", "arch");
 	RzIterator *iter = ht_sp_as_iter(dbg->plugins);
 	RzList *plugin_list = rz_list_new_from_iterator(iter);
 	if (!plugin_list) {
@@ -358,9 +385,9 @@ RZ_API RzCmdStatus rz_core_debug_plugins_print(RZ_NONNULL RZ_BORROW RzCore *core
 	RzListIter *it;
 	RzDebugPlugin *plugin;
 	rz_list_foreach (plugin_list, it, plugin) {
-		int sp = 8 - strlen(plugin->name);
+		size_t sp = 8 - strlen(plugin->name);
 		spaces[sp] = 0;
-		status = rz_core_debug_plugin_print(dbg, plugin, state, count, spaces);
+		status = core_debug_plugin_print(dbg, plugin, state, count, spaces);
 		if (status != RZ_CMD_STATUS_OK) {
 			rz_iterator_free(iter);
 			rz_list_free(plugin_list);

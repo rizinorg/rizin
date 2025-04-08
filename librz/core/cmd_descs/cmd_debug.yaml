@@ -356,7 +356,6 @@ commands:
         cname: cmd_debug_descriptor_list
         args: []
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
-        default_mode: RZ_OUTPUT_MODE_STANDARD
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
@@ -704,7 +703,6 @@ commands:
       - RZ_OUTPUT_MODE_RIZIN
       - RZ_OUTPUT_MODE_JSON
       - RZ_OUTPUT_MODE_QUIET
-    default_mode: RZ_OUTPUT_MODE_STANDARD
     args: []
   - name: dk
     summary: Debug signals management
@@ -724,7 +722,6 @@ commands:
           - RZ_OUTPUT_MODE_JSON
           - RZ_OUTPUT_MODE_QUIET
           - RZ_OUTPUT_MODE_TABLE
-        default_mode: RZ_OUTPUT_MODE_STANDARD
         args: []
       - name: dkn
         summary: Resolve the name of signal given the number
@@ -774,7 +771,6 @@ commands:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
           - RZ_OUTPUT_MODE_QUIET
-        default_mode: RZ_OUTPUT_MODE_STANDARD
         args: []
   - name: dm
     summary: Memory map commands
@@ -986,7 +982,6 @@ commands:
         summary: List current pid and children
         cname: cmd_debug_pid_list
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
-        default_mode: RZ_OUTPUT_MODE_STANDARD
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
@@ -999,7 +994,6 @@ commands:
         summary: List all attachable pids
         cname: cmd_debug_pid_attachable_list
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
-        default_mode: RZ_OUTPUT_MODE_STANDARD
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
@@ -1057,7 +1051,6 @@ commands:
         summary: List threads of specified or current <pid>
         cname: cmd_debug_thread_list
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
-        default_mode: RZ_OUTPUT_MODE_STANDARD
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON

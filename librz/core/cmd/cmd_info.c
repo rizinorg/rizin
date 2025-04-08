@@ -534,6 +534,9 @@ static bool print_demangler_info(const RzDemanglerPlugin *plugin, RzDemanglerFla
 		pj_ks(state->d.pj, "author", plugin->author);
 		pj_end(state->d.pj);
 		break;
+	case RZ_OUTPUT_MODE_STANDARD:
+		rz_cons_printf("%-8s %-12s %s\n", plugin->language, plugin->license, plugin->author);
+		break;
 	case RZ_OUTPUT_MODE_TABLE:
 		rz_table_add_rowf(state->d.t, "sss", plugin->language, plugin->license, plugin->author);
 		break;
