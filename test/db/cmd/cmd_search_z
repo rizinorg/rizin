@@ -1375,15 +1375,36 @@ EOF
 EXPECT_ERR=
 RUN
 
-NAME=Manual string search - min length is string literal length
+NAME=String search - warn if |search literal| < search.str.min_length
 FILE==
+ARGS=-1
 CMDS=<<EOF
+e log.level=3
 w ab @ 0x10
 w abc @ 0x20
 w abcd @ 0x30
 /z ab
+echo ----
+/z ab @e:search.str.min_length=2
+echo
+w ¢€𐍈 @ 0x40
+w ¢€𐍈a @ 0x50
+/z ¢€𐍈
+echo ----
+/z ¢€𐍈 @e:search.str.min_length=3
 EOF
 EXPECT=<<EOF
+WARNING: |ab| < search.str.min_length so some search hits may be hidden. Set search.str.min_length to 2 to see them.
 0x00000030 2 hit.string.ascii.0
+----
+0x00000010 2 hit.string.ascii.0
+0x00000020 2 hit.string.ascii.1
+0x00000030 2 hit.string.ascii.2
+
+WARNING: |¢€𐍈| < search.str.min_length so some search hits may be hidden. Set search.str.min_length to 3 to see them.
+0x00000050 9 hit.string.utf8.0
+----
+0x00000040 9 hit.string.utf8.0
+0x00000050 9 hit.string.utf8.1
 EOF
 RUN

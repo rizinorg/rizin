@@ -2774,10 +2774,17 @@ static RzCmdStatus cmd_string_search_generic(RzCore *core, const char *string, c
 		RZ_LOG_ERROR("core: invalid encoding: empty encoding.\n");
 		goto invalid_args;
 	}
-
 	if (rz_str_unescape(search_str) < 1) {
 		RZ_LOG_ERROR("core: invalid string: failed to unescape.\n");
 		goto invalid_args;
+	}
+	if (flags & RZ_REGEX_LITERAL) {
+		int utf8_len = rz_utf8_strlen((ut8 *)search_str);
+		if (utf8_len < core->bin->str_search_cfg.min_length) {
+			RZ_LOG_WARN("|%s| < search.str.min_length so some search hits may be hidden. Set "
+				    "search.str.min_length to %d to see them.\n",
+				search_str, utf8_len);
+		}
 	}
 
 	expected = rz_str_enc_string_as_type(encoding);
