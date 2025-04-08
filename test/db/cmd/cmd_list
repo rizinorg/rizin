@@ -603,7 +603,7 @@ Ldj~{[4]}
 # Ldj~{[5]} - Native plugin. The arch field changes in each test environment and breaks it.
 Ldj~{[6]}
 Ldj~{[7]}
-Ldt:name/ne/native:name/ne/winkd:name/cols/selected/license/bits/arch
+Ldt:name/ne/native:name/ne/winkd:name/ne/windbg:name/cols/selected/license/bits/arch
 EOF
 EXPECT=<<EOF
 --- bf LGPL3
