@@ -1,0 +1,4 @@
+[wrap-git]
+directory=rizin-0.6.0
+url=https://github.com/rizinorg/rizin.git
+revision=0.6.0
