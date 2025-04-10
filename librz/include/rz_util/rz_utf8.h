@@ -12,7 +12,7 @@ RZ_API size_t rz_utf8_decode(RZ_NONNULL const ut8 *buf, size_t buf_len, RZ_NULLA
 RZ_API int rz_mutf8_decode(const ut8 *ptr, int ptrlen, RzCodePoint *ch);
 RZ_API int rz_utf8_encode_str(const RzCodePoint *str, ut8 *dst, const int dst_length);
 RZ_API int rz_utf8_size(const ut8 *ptr);
-RZ_API int rz_utf8_strlen(const ut8 *str);
+RZ_API size_t rz_utf8_strlen(const ut8 *str);
 RZ_API const char *rz_utf_block_name(int idx);
 RZ_API int rz_utf_block_idx(RzCodePoint ch);
 RZ_API int *rz_utf_block_list(const ut8 *str, int len, int **freq_list);

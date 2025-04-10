@@ -2779,7 +2779,7 @@ static RzCmdStatus cmd_string_search_generic(RzCore *core, const char *string, c
 		goto invalid_args;
 	}
 	if (flags & RZ_REGEX_LITERAL) {
-		size_t utf8_len = rz_utf8_strlen((ut8 *)search_str);
+		size_t utf8_len = rz_utf8_strlen((const ut8 *)search_str);
 		if (utf8_len < core->bin->str_search_cfg.min_length) {
 			RZ_LOG_WARN("|%s| < search.str.min_length so some search hits may be hidden. Set "
 				    "search.str.min_length to %" PFMTSZu " to see them.\n",

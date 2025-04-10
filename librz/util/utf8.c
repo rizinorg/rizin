@@ -477,10 +477,16 @@ RZ_API int rz_utf8_size(const ut8 *ptr) {
 	return (ptr[0] & 0x80) ? utf8_size[ptr[0] ^ 0x80] : 1;
 }
 
-RZ_API int rz_utf8_strlen(const ut8 *str) {
-	int len = 0;
+/**
+ * \brief Returns the length of a string in UTF8 code points.
+ *
+ * \param str The UTF8 string.
+ * \return The length of `str` in UTF8 code points.
+ */
+RZ_API size_t rz_utf8_strlen(const ut8 *str) {
+	size_t len = 0;
 
-	for (int i = 0; str[i]; i++) {
+	for (size_t i = 0; str[i]; i++) {
 		if ((str[i] & 0xc0) != 0x80) {
 			len++;
 		}

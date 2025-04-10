@@ -467,7 +467,7 @@ static pyc_object *get_unicode_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 		return NULL;
 	}
 
-	if (!add_string_to_cache(pyc, addr, ret->data, n, rz_utf8_strlen(ret->data), RZ_STRING_ENC_UTF8)) {
+	if (!add_string_to_cache(pyc, addr, ret->data, n, (ut32)rz_utf8_strlen(ret->data), RZ_STRING_ENC_UTF8)) {
 		RZ_FREE(ret);
 		return NULL;
 	}
