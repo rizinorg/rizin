@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2012-2015 pancake <pancake@nopcode.org>
 // SPDX-FileCopyrightText: 2012-2015 Fedor Sakharov <fedor.sakharov@gmail.com>
 // SPDX-FileCopyrightText: 2012-2015 Bhootravi <ravi2809@gmail.com>
+// SPDX-FileCopyrightText: 2025 billow <billow.fun@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <string.h>
@@ -48,7 +49,6 @@ static void h8300_analysis_jsr(RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 static int h8300_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	int ret;
-	ut8 opcode = buf[0];
 	struct h8300_cmd cmd;
 
 	if (!op) {
@@ -61,117 +61,76 @@ static int h8300_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	if (ret < 0) {
 		return ret;
 	}
-	switch (opcode >> 4) {
-	case H8300_MOV_4BIT_2:
-	case H8300_MOV_4BIT_3:
-	case H8300_MOV_4BIT:
+
+	switch (cmd.id) {
+	case H8300_INSN_MOV:
+	case H8300_INSN_EEPMOV:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		break;
-	case H8300_CMP_4BIT:
+	case H8300_INSN_CMP:
+	case H8300_INSN_BTST:
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 		break;
-	case H8300_XOR_4BIT:
-		op->type = RZ_ANALYSIS_OP_TYPE_XOR;
-		break;
-	case H8300_AND_4BIT:
+	case H8300_INSN_AND:
 		op->type = RZ_ANALYSIS_OP_TYPE_AND;
 		break;
-	case H8300_ADD_4BIT:
-	case H8300_ADDX_4BIT:
-		op->type = RZ_ANALYSIS_OP_TYPE_AND;
-		break;
-	case H8300_SUBX_4BIT:
-		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
-		break;
-	default:
-		op->type = RZ_ANALYSIS_OP_TYPE_UNK;
-		break;
-	};
-	if (op->type != RZ_ANALYSIS_OP_TYPE_UNK) {
-		goto step_esil;
-	}
-
-	switch (opcode) {
-	case H8300_MOV_R82IND16:
-	case H8300_MOV_IND162R16:
-	case H8300_MOV_R82ABS16:
-	case H8300_MOV_ABS162R16:
-	case H8300_MOV_R82RDEC16:
-	case H8300_MOV_INDINC162R16:
-	case H8300_MOV_R82DISPR16:
-	case H8300_MOV_DISP162R16:
-	case H8300_MOV_IMM162R16:
-	case H8300_MOV_1:
-	case H8300_MOV_2:
-	case H8300_EEPMOV:
-		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
-		break;
-	case H8300_RTS:
+	case H8300_INSN_RTS:
 		op->type = RZ_ANALYSIS_OP_TYPE_RET;
 		break;
-	case H8300_CMP_1:
-	case H8300_CMP_2:
-	case H8300_BTST_R2R8:
-	case H8300_BTST:
-		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
-		break;
-	case H8300_SHL:
+	case H8300_INSN_SHL:
 		op->type = RZ_ANALYSIS_OP_TYPE_SHL;
 		break;
-	case H8300_SHR:
+	case H8300_INSN_SHR:
 		op->type = RZ_ANALYSIS_OP_TYPE_SHR;
 		break;
-	case H8300_XOR:
-	case H8300_XORC:
+	case H8300_INSN_XOR:
+	case H8300_INSN_XORC:
 		op->type = RZ_ANALYSIS_OP_TYPE_XOR;
 		break;
-	case H8300_MULXU:
+	case H8300_INSN_MULXU:
 		op->type = RZ_ANALYSIS_OP_TYPE_MUL;
 		break;
-	case H8300_ANDC:
+	case H8300_INSN_ANDC:
 		op->type = RZ_ANALYSIS_OP_TYPE_AND;
 		break;
-	case H8300_ADDB_DIRECT:
-	case H8300_ADDW_DIRECT:
-	case H8300_ADDS:
-	case H8300_ADDX:
+	case H8300_INSN_ADDB:
+	case H8300_INSN_ADDW:
+	case H8300_INSN_ADDS:
+	case H8300_INSN_ADDX:
+	case H8300_INSN_ADD:
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		break;
-	case H8300_SUB_1:
-	case H8300_SUBW:
-	case H8300_SUBS:
-	case H8300_SUBX:
+	case H8300_INSN_SUB:
+	case H8300_INSN_SUBW:
+	case H8300_INSN_SUBS:
+	case H8300_INSN_SUBX:
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 		break;
-	case H8300_NOP:
+	case H8300_INSN_NOP:
 		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 		break;
-	case H8300_JSR_1:
-	case H8300_JSR_2:
-	case H8300_JSR_3:
+	case H8300_INSN_JSR:
 		h8300_analysis_jsr(op, addr, buf);
 		break;
-	case H8300_JMP_1:
-	case H8300_JMP_2:
-	case H8300_JMP_3:
+	case H8300_INSN_JMP:
 		h8300_analysis_jmp(op, addr, buf);
 		break;
-	case H8300_BRA:
-	case H8300_BRN:
-	case H8300_BHI:
-	case H8300_BLS:
-	case H8300_BCC:
-	case H8300_BCS:
-	case H8300_BNE:
-	case H8300_BEQ:
-	case H8300_BVC:
-	case H8300_BVS:
-	case H8300_BPL:
-	case H8300_BMI:
-	case H8300_BGE:
-	case H8300_BLT:
-	case H8300_BGT:
-	case H8300_BLE:
+	case H8300_INSN_BRA:
+	case H8300_INSN_BRN:
+	case H8300_INSN_BHI:
+	case H8300_INSN_BLS:
+	case H8300_INSN_BCC:
+	case H8300_INSN_BCS:
+	case H8300_INSN_BNE:
+	case H8300_INSN_BEQ:
+	case H8300_INSN_BVC:
+	case H8300_INSN_BVS:
+	case H8300_INSN_BPL:
+	case H8300_INSN_BMI:
+	case H8300_INSN_BGE:
+	case H8300_INSN_BLT:
+	case H8300_INSN_BGT:
+	case H8300_INSN_BLE:
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 		op->jump = addr + 2 + (st8)(buf[1]);
 		op->fail = addr + 2;
@@ -179,9 +138,8 @@ static int h8300_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	default:
 		op->type = RZ_ANALYSIS_OP_TYPE_UNK;
 		break;
-	};
+	}
 
-step_esil:
 	if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
 		h8300_analyze_op_esil(analysis, op, addr, buf);
 	}
