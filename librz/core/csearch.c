@@ -244,15 +244,16 @@ quit:
 /**
  * \brief      Finds a string within the `search.in` boundaries.
  *
- * \param      core        The RzCore core.
- * \param      opt         The search options to apply. If NULL, a default set of options is used.
- * \param[in]  re_pattern  The regex pattern to search.
- * \param[in]  flags       The regex flags to the \p re_pattern.
- * \param[in]  expected    The expected encoding.
+ * \param      core            The RzCore core.
+ * \param      opt             The search options to apply. If NULL, a default set of options is used.
+ * \param[in]  re_pattern      The regex pattern to search.
+ * \param[in]  re_pattern_len  The length of \p re_pattern if it is a literal, 0 otherwise.
+ * \param[in]  flags           The regex flags to the \p re_pattern.
+ * \param[in]  expected        The expected encoding.
  *
  * \return     On success returns a valid pointer to a list of search hits, otherwise NULL.
  */
-RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_string(RZ_NONNULL RzCore *core, RZ_BORROW RZ_NONNULL RzSearchOpt *user_opts, RZ_NONNULL const char *re_pattern, RzRegexFlags flags, RzStrEnc expected) {
+RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_string(RZ_NONNULL RzCore *core, RZ_BORROW RZ_NONNULL RzSearchOpt *user_opts, RZ_NONNULL const char *re_pattern, size_t re_pattern_len, RzRegexFlags flags, RzStrEnc expected) {
 	rz_return_val_if_fail(core && user_opts && re_pattern, NULL);
 
 	if (RZ_STR_ISEMPTY(re_pattern)) {
@@ -269,7 +270,7 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_string(RZ_NONNULL RzCor
 		// buf_size is effectively the maximum string length.
 		// Gets renamed with the refactor.
 		.max_str_length = core->bin->str_search_cfg.max_length,
-		.min_str_length = core->bin->str_search_cfg.min_length,
+		.min_str_length = RZ_MAX(re_pattern_len, core->bin->str_search_cfg.min_length),
 		.prefer_big_endian = core->analysis->big_endian,
 		.check_ascii_freq = core->bin->str_search_cfg.check_ascii_freq,
 	};

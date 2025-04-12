@@ -2778,12 +2778,13 @@ static RzCmdStatus cmd_string_search_generic(RzCore *core, const char *string, c
 		RZ_LOG_ERROR("core: invalid string: failed to unescape.\n");
 		goto invalid_args;
 	}
+	size_t search_str_len = 0; // Not set if not literal.
 	if (flags & RZ_REGEX_LITERAL) {
-		size_t utf8_len = rz_utf8_strlen((const ut8 *)search_str);
-		if (utf8_len < core->bin->str_search_cfg.min_length) {
+		search_str_len = rz_utf8_strlen((const ut8 *)search_str);
+		if (search_str_len < core->bin->str_search_cfg.min_length) {
 			RZ_LOG_WARN("|%s| < search.str.min_length so some search hits may be hidden. Set "
 				    "search.str.min_length to %" PFMTSZu " to see them.\n",
-				search_str, utf8_len);
+				search_str, search_str_len);
 		}
 	}
 
@@ -2807,7 +2808,7 @@ static RzCmdStatus cmd_string_search_generic(RzCore *core, const char *string, c
 		CMD_SEARCH_END();
 		return RZ_CMD_STATUS_ERROR;
 	}
-	RzList *hits = rz_core_search_string(core, search_opts, search_str, flags, expected);
+	RzList *hits = rz_core_search_string(core, search_opts, search_str, search_str_len, flags, expected);
 
 	free(search_str);
 	rz_search_opt_free(search_opts);

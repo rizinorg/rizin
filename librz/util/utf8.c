@@ -481,7 +481,7 @@ RZ_API int rz_utf8_size(const ut8 *ptr) {
  * \brief Returns the length of a string in UTF8 code points.
  *
  * \param str The UTF8 string.
- * \return The length of `str` in UTF8 code points.
+ * \return The length of \p str in UTF8 code points.
  */
 RZ_API size_t rz_utf8_strlen(const ut8 *str) {
 	size_t len = 0;
