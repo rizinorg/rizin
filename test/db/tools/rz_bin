@@ -68,7 +68,6 @@ RUN
 NAME=rz-bin -k file
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=!rz-bin -k ${RZ_FILE}
-ARGS=-e log.level=3
 EXPECT=
 EXPECT_ERR=<<EOF
 WARNING: Neither hash nor gnu_hash exist. Falling back to heuristics for deducing the number of dynamic symbols...

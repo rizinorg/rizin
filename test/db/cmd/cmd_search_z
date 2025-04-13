@@ -1379,7 +1379,6 @@ NAME=String search - warn if |search literal| < search.str.min_length
 FILE==
 ARGS=-1
 CMDS=<<EOF
-e log.level=3
 w ab @ 0x10
 w abc @ 0x20
 w abcd @ 0x30

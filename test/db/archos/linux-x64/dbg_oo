@@ -108,7 +108,6 @@ RUN
 
 NAME=ood check for ptrace errors
 FILE=bins/elf/analysis/x86-helloworld-gcc
-ARGS=-e log.level=3
 CMDS=<<EOF
 ood
 EOF
