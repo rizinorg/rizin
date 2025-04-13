@@ -331,6 +331,9 @@ message('USE_PTRACE_WRAP: @0@'.format(use_ptrace_wrap))
 
 checks_level = get_option('checks_level')
 message('RZ_CHECKS_LEVEL: @0@'.format(checks_level))
+if checks_level < 0 or checks_level > 3
+  error('`checks_level` must be between 0 and 3.')
+endif
 
 userconf = configuration_data()
 ccs = [[cc, userconf, host_machine, false]]
