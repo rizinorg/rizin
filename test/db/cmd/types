@@ -1320,21 +1320,26 @@ FILE==
 CMDS=<<EOF
 td "struct bla {int foo,bar; void *b};"
 td "union foo {float a,b; int c,d;};"
-td "typedef struct {char *a; void *b;} ts, *pts;"
+td "typedef struct {char *a; void *b;} qs, *pts;"
 tsc bla
 tuc foo
-ttc ts
+ttc qs
 tsc "anonymous struct 0"
 ttc pts
 EOF
 EXPECT=<<EOF
+struct bla {
+	int foo;
+	int bar;
+	void *b;
+};
 union foo {
 	float a;
 	float b;
 	int c;
 	int d;
 };
-typedef struct anonymous struct 0 ts;
+typedef struct anonymous struct 0 qs;
 struct anonymous struct 0 {
 	char *a;
 	void *b;
@@ -2218,10 +2223,9 @@ td "stract"
 td "struct crash __attribute__((packed)) { };"
 EOF
 EXPECT_ERR=<<EOF
-ERROR: core: Unsupported type definition: struct;;
+ERROR: core: Unsupported type definition: struct
 ERROR: core: Unsupported type definition: stract;
 ERROR: core: Unsupported type definition: { }
-Unsupported type definition: ;;
 EOF
 RUN
 
