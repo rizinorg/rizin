@@ -13177,7 +13177,7 @@ static const RzCmdDescArg cmd_info_xrefs_strings_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_info_xrefs_strings_help = {
-	.summary = "List strings in the whole binary with xrefs pointing to it.",
+	.summary = "List all strings which have xrefs to them.",
 	.args = cmd_info_xrefs_strings_args,
 };
 

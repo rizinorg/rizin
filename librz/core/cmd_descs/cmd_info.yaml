@@ -491,7 +491,7 @@ commands:
     args: []
   - name: izx
     cname: cmd_info_xrefs_strings
-    summary: List strings in the whole binary with xrefs pointing to it.
+    summary: List all strings which have xrefs to them.
     type: RZ_CMD_DESC_TYPE_ARGV_STATE
     default_mode: RZ_OUTPUT_MODE_TABLE
     modes:
