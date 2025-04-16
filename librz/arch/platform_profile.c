@@ -10,7 +10,7 @@
  * 	Frees the hashtables used for MMIO and extended
  * 	registers
  */
-RZ_API void rz_platform_profile_free(RzPlatformProfile *p) {
+RZ_API void rz_platform_profile_free(RZ_NULLABLE RzPlatformProfile *p) {
 	if (!p) {
 		return;
 	}
@@ -62,7 +62,7 @@ RZ_API RZ_OWN RzPlatformTarget *rz_platform_target_new() {
  *
  *	Frees the pointer to the SDB and the RzPlatformProfile
  */
-RZ_API void rz_platform_target_free(RzPlatformTarget *t) {
+RZ_API void rz_platform_target_free(RZ_NULLABLE RzPlatformTarget *t) {
 	if (!t) {
 		return;
 	}
@@ -162,7 +162,8 @@ static bool sdb_load_arch_profile_by_path(RZ_NONNULL RzPlatformTarget *t, const 
  * \param t reference to RzPlatformTarget
  * \param path reference to path of the SDB file
  */
-RZ_API bool rz_platform_load_profile_sdb(RzPlatformTarget *t, const char *path) {
+RZ_API bool rz_platform_load_profile_sdb(RZ_NONNULL RzPlatformTarget *t, RZ_NONNULL const char *path) {
+	rz_return_val_if_fail(t && path, false);
 	if (!rz_file_exists(path)) {
 		return false;
 	}
@@ -215,11 +216,11 @@ static bool is_cpu_valid(const char *cpu_dir, const char *cpu) {
  * \param arch reference to the selected architecture (value of `asm.arch`)
  * \param cpus_dir reference to the directory containing cpu files
  */
-RZ_API bool rz_platform_profiles_init(RzPlatformTarget *t, const char *cpu, const char *arch, const char *cpus_dir) {
-	if (!cpu_reload_needed(t, cpu, arch)) {
+RZ_API bool rz_platform_profiles_init(RZ_NULLABLE RzPlatformTarget *t, RZ_NULLABLE const char *cpu, RZ_NULLABLE const char *arch, RZ_NULLABLE const char *cpus_dir) {
+	if (!t || !arch || !cpu || !cpus_dir) {
 		return false;
 	}
-	if (!cpus_dir || !arch || !cpu) {
+	if (!cpu_reload_needed(t, cpu, arch)) {
 		return false;
 	}
 	char buf[50];

@@ -3339,7 +3339,8 @@ static bool add_mmio_extended_flag_cb(void *user, const ut64 addr, const void *v
  * \param profile reference to RzPlatformProfile
  * \param flags reference to RzFlag
  */
-RZ_API void rz_platform_profile_add_flag_every_io(RzPlatformProfile *profile, RzFlag *flags) {
+RZ_API void rz_platform_profile_add_flag_every_io(RZ_NONNULL RzPlatformProfile *profile, RZ_NONNULL RzFlag *flags) {
+	rz_return_if_fail(profile && flags);
 	rz_flag_unset_all_in_space(flags, RZ_FLAGS_FS_MMIO_REGISTERS);
 	rz_flag_unset_all_in_space(flags, RZ_FLAGS_FS_MMIO_REGISTERS_EXTENDED);
 	ht_up_foreach(profile->registers_mmio, add_mmio_flag_cb, flags);

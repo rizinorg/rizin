@@ -1,3 +1,19 @@
+NAME=e-
+FILE==
+CMDS=<<EOF
+e cfg.seek.histsize
+e cfg.seek.histsize=128
+e cfg.seek.histsize
+e-
+e cfg.seek.histsize
+EOF
+EXPECT=<<EOF
+63
+128
+63
+EOF
+RUN
+
 NAME=et
 FILE==
 CMDS=<<EOF
