@@ -2950,6 +2950,11 @@ RZ_IPI bool rz_core_bin_xrefs_strings_print(RZ_NONNULL RzCore *core, RZ_NONNULL 
 	rz_return_val_if_fail(core && state, false);
 
 	RzPVector *whole_strings = rz_core_bin_whole_strings(core, bf);
+
+	if (!whole_strings) {
+		return false;
+	}
+
 	RzPVector *xrefs_strings = rz_pvector_new((RzPVectorFree)rz_bin_string_free);
 
 	void **iter;

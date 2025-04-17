@@ -4648,6 +4648,15 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=izx
+FILE=bins/mach0/fatmach0-3true
+CMDS=izx
+EXPECT=<<EOF
+nth paddr vaddr len size section type string 
+---------------------------------------------
+EOF
+RUN
+
 NAME=iT
 FILE==
 ARGS=-w
