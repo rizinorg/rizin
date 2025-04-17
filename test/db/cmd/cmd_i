@@ -4649,11 +4649,13 @@ EOF
 RUN
 
 NAME=izx
-FILE=bins/mach0/fatmach0-3true
-CMDS=izx
+FILE=bins/arm/elf/hello_world 
+CMDS=aaa;izx
 EXPECT=<<EOF
-nth paddr vaddr len size section type string 
----------------------------------------------
+nth      paddr      vaddr len size section type  string        
+---------------------------------------------------------------
+ 19 0x00000574 0x00000574  12   13 .rodata ascii Hello world!
+ 13 0x00000494 0x00000494  10   11 .text   ascii \bH\tKxD\tJ{D
 EOF
 RUN
 

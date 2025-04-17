@@ -2946,7 +2946,7 @@ RZ_API bool rz_core_bin_whole_strings_print(RZ_NONNULL RzCore *core, RZ_NONNULL 
 	return res;
 }
 
-RZ_IPI bool rz_core_bin_xrefs_strings_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzCmdStateOutput *state) {
+RZ_API bool rz_core_bin_xrefs_strings_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzCmdStateOutput *state) {
 	rz_return_val_if_fail(core && state, false);
 
 	RzPVector *whole_strings = rz_core_bin_whole_strings(core, bf);
