@@ -2958,6 +2958,7 @@ RZ_API bool rz_core_bin_xrefs_strings_print(RZ_NONNULL RzCore *core, RZ_NONNULL 
 	RzPVector *xrefs_strings = rz_pvector_new((RzPVectorFree)rz_bin_string_free);
 
 	if (!xrefs_strings) {
+		rz_pvector_free(whole_strings);
 		return false;
 	}
 
