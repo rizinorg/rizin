@@ -3110,7 +3110,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB("analysis.refstr", "false", &cb_analysis_searchstringrefs, "Search string references in data references");
 	SETCB("analysis.trycatch", "false", &cb_analysis_trycatch, "Honor try.X.Y.{from,to,catch} flags");
 	SETCB("analysis.bb.maxsize", "63K", &cb_analysis_bb_max_size, "Maximum basic block size");
-	SETCB("analysis.max_fcn_size", "256K", &cb_analysis_fcn_max_size, "Maximum function size (unspecified units)");
+	SETCB("analysis.fcn_max_size", "256K", &cb_analysis_fcn_max_size, "Maximum function size (unspecified units)");
 	SETCB("analysis.pushret", "false", &cb_analysis_pushret, "Analyze push+ret as jmp");
 
 	n = NODECB("analysis.cpp.abi", "itanium", &cb_analysis_cpp_abi);
