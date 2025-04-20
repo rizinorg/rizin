@@ -2875,7 +2875,7 @@ static bool cb_analysis_trycatch(void *user, void *data) {
 static bool cb_analysis_bb_max_size(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->analysis->opt.bb_max_size = node->i_value;
+	core->analysis->opt.bb_max_size = RZ_MIN(node->i_value, RZ_ANALYSIS_BLOCK_MAX_SIZE);
 	return true;
 }
 

@@ -560,7 +560,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 	RzAnalysisFunction *fcn = item->fcn;
 	RzStackAddr sp = item->sp;
 	ut64 addr = item->start_address;
-	ut64 len = RZ_MIN(analysis->opt.bb_max_size, UT16_MAX);
+	ut64 len = RZ_MIN(analysis->opt.bb_max_size, RZ_ANALYSIS_BLOCK_MAX_SIZE);
 	ReadAhead read_ahead_cache = { 0 };
 	const int continue_after_jump = analysis->opt.afterjmp;
 	const int addrbytes = analysis->iob.io ? analysis->iob.io->addrbytes : 1;
@@ -789,7 +789,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			if (newbbsize >= len) {
 				// Instruction offsets are stored in u16,
 				// artificially introduce bb split to keep the offsets within limits.
-				RzAnalysisBlock* next = fcn_append_basic_block(analysis, fcn, at);
+				RzAnalysisBlock *next = fcn_append_basic_block(analysis, fcn, at);
 				if (!next) {
 					gotoBeach(RZ_ANALYSIS_RET_ERROR);
 				}

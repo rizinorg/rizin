@@ -984,7 +984,7 @@ error:
 				rz_flag_space_pop(core->flags);
 			}
 			rz_analysis_add_function(core->analysis, fcn);
-			if (has_next && next != UT64_MAX) {
+			if (has_next) {
 				ut64 newaddr = rz_analysis_function_max_addr(fcn);
 				RzIOMap *map = rz_io_map_get(core->io, newaddr);
 				if (!map || (map && (map->perm & RZ_PERM_X))) {

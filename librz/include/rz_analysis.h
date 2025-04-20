@@ -999,6 +999,8 @@ typedef struct rz_analysis_bb_t {
 	int ref;
 } RzAnalysisBlock;
 
+#define RZ_ANALYSIS_BLOCK_MAX_SIZE UT16_MAX
+
 typedef struct rz_analysis_task_item {
 	RzAnalysisFunction *fcn; ///< current function
 	RzAnalysisBlock *block; ///< block being analyzed
