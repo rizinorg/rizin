@@ -1,8 +1,7 @@
 NAME=PE: corkami nosectionXP.exe - open
 FILE=bins/pe/nosectionXP.exe
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=PE: nosectionXP - section

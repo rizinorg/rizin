@@ -1,0 +1,129 @@
+abs=absolute value
+add=byte data addition without carry
+sub=subtract data
+adc=addition of byte data with carry
+and=logical and
+bclr=clear a bit
+bnot=inverts a bit
+bset=set a bit
+btst=test a bit to set C/Z flag
+clrpsw=clear a flag in the PSW reg
+cmp=compare two operands
+div=divide signed
+divu=divide unsigned
+emul=extended multiply signed
+emulu=extended multiply unsigned
+fadd=float-point addition
+fcmp=compare float-point
+fdiv=divide float-point
+fmul=multiply float-point
+fsub=subtract float-point
+ftoi=convert float-point to signed integer
+itof=convert signed integer to float-point
+machi=multiply-accumulate the upper words
+maclo=multiply-accumulate the lower words
+max=maximum of two signed integers
+min=minimum of two signed integers
+mov=move data
+mov=move data unsigned
+xchg=exchange data
+mul=multiply data
+mulhi=multiply the upper words
+mullo=multiply the lower words
+mvfachi=move data from upper longword([b32,b63]) of the accumulator(acc)
+mvfacmi=move data from middle longword([b16, b47]) of the accumulator(acc)
+mvtachi=move data to upper longword([b32,b63]) of the accumulator(acc)
+mvtaclo=move data to lower longword([b0, b31]) of the accumulator(acc)
+mvfc=move data from a control register
+mvtc=move data to a control register
+mvtipl=move data to IPL
+neg=negate operand (2's complement)
+not=logical not (1's complement)
+or=logical or
+xor=logical xor
+nop=do nothing
+pop=pop register from stack
+popc=pop a control register from stack
+popm=pop multiple registers from stack
+push= push a register to stack
+pushc=push a control register to stack
+pushm=push multiple registers to stack
+racw=round the accumulator into a word and stores result
+revl=reverse endian within longword
+revw=reverse endian within word
+rmpa=repeat multiply-accumulate
+rolc=rotate left with carry
+rorc=rotate right with carry
+rotl=rotate left
+rotr=rotate right
+round=round float-point to signed integer
+rte=return from exception
+rtfi=return from fast interrupt
+rts=return from subroutine
+rtsd=return from subroutine after deallocating stack frames
+sat=saturate (generate 7FFFFFFFh if flag O and S are set to 1 else generate 80000000)
+satr=saturate from rmpa
+sbb=subtract with borrow
+setpsw=set a flag or bit in PSW
+shar=arithmetic shift right
+shlr=logical shift right
+shll=logical shift left
+scmpu=string compare until not equal
+smovb=string move backward
+smovf=string move forward
+smovu=string move until zero detected
+sstr=string store
+suntil=string search until equal
+swhile=string search while equal
+stnz=store(move) data on not zero
+stz=store(move) on zero
+tst=test logical (S = MSB(op1&op2) Z = !(op1&op2))
+wait=pause and wait interrupt
+int=software interrupt
+jmp=unconditional
+jsr=jump to a subroutine
+bra=unconditional relative branch
+brk=unconditional trap
+bsr=relative branch to a subroutine
+scgeu=store truth value of condition if C == 1 (unsigned <=)
+sceq=store truth value of condition if Z == 1 (==)
+scgtu=store truth value of condition if (C & ~Z) == 1 (unsigned <)
+scpz=store truth value of condition if S == 0 ( >= 0)
+scge=store truth value of condition if (S ^ O) == 0 (signed <=)
+scgt=store truth value of condition if ((S ^ O) | Z) == 0 (signed <)
+sco=store truth value of condition if O == 1 (overflow)
+scltu=store truth value of condition if C == 0 (unsigned >)
+scne=store truth value of condition if Z == 0 (!=)
+scleu=store truth value of condition if (C & ~Z) == 0 (unsigned >=)
+scn=store truth value of condition if S == 1 ( < 0 )
+scle=store truth value of condition if ((S ^ O) | Z) == 1 (<)
+sclt=store truth value of condition if (S ^ O) == 1 (>)
+scno=store truth value of condition if O == 0
+bgeu=conditional relative branch if C == 1 (unsigned <=)
+beq=conditional relative branch if Z == 1 (==)
+bgtu=conditional relative branch if (C & ~Z) == 1 (unsigned <)
+bpz=conditional relative branch if S == 0 ( >= 0)
+bge=conditional relative branch if (S ^ O) == 0 (signed <=)
+bgt=conditional relative branch if ((S ^ O) | Z) == 0 (signed <)
+bo=conditional relative branch if O == 1 (overflow)
+bltu=conditional relative branch if C == 0 (unsigned >)
+bne=conditional relative branch if Z == 0 (!=)
+bleu=conditional relative branch if (C & ~Z) == 0 (unsigned >=)
+bn=conditional relative branch if S == 1 ( < 0 )
+ble=conditional relative branch if ((S ^ O) | Z) == 1 (<)
+blt=conditional relative branch if (S ^ O) == 1 (>)
+bno=conditional relative branch if O == 0
+bmgeu=store truth value of condition to a bit if C == 1 (unsigned <=)
+bmeq=store truth value of condition to a bit if Z == 1 (==)
+bmgtu=store truth value of condition to a bit if (C & ~Z) == 1 (unsigned <)
+bmpz=store truth value of condition to a bit if S == 0 ( >= 0)
+bmge=store truth value of condition to a bit if (S ^ O) == 0 (signed <=)
+bmgt=store truth value of condition to a bit if ((S ^ O) | Z) == 0 (signed <)
+bmo=store truth value of condition to a bit if O == 1 (overflow)
+bmltu=store truth value of condition to a bit if C == 0 (unsigned >)
+bmne=store truth value of condition to a bit if Z == 0 (!=)
+bmleu=store truth value of condition to a bit if (C & ~Z) == 0 (unsigned >=)
+bmn=store truth value of condition to a bit if S == 1 ( < 0 )
+bmle=store truth value of condition to a bit if ((S ^ O) | Z) == 1 (<)
+bmlt=store truth value of condition to a bit if (S ^ O) == 1 (>)
+bmno=store truth value of condition to a bit if O == 0

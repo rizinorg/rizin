@@ -12,7 +12,7 @@ const ARG_IDENTIFIER_BASE = choice(
   "$$$",
   "$$",
   /\$[^\s@|#"'>;`~\\({) ]/,
-  /\${[^\r\n $}]+}/,
+  /\$\{[^\r\n $}]+\}/,
   /\\./,
 );
 const SPEC_ARG_IDENTIFIER_BASE = choice(
@@ -20,7 +20,7 @@ const SPEC_ARG_IDENTIFIER_BASE = choice(
   "$$$",
   "$$",
   /\$[^\s@|#"'>;`~\\({) ]/,
-  /\${[^\r\n $}]+}/,
+  /\$\{[^\r\n $}]+\}/,
   /\\./,
 );
 
@@ -52,39 +52,38 @@ module.exports = grammar({
 
     _statement: ($) => choice($.redirect_stmt, $._simple_stmt),
 
-    legacy_quoted_stmt: ($) => seq('"', field("string", token(prec(-1, /([^"\\]|\\(.|\n))+/))), '"'),
-
     _simple_stmt: ($) =>
       choice(
         $.help_stmt,
         $.repeat_stmt,
         $.arged_stmt,
         $.macro_stmt,
-        $._tmp_stmt,
+        $.tmp_stmt,
         $._iter_stmt,
         $._pipe_stmt,
         $.grep_stmt,
-        $.legacy_quoted_stmt,
       ),
 
-    _tmp_stmt: ($) =>
+    tmp_stmt: ($) => prec.right(seq($._simple_stmt, repeat1($._tmp_op))),
+
+    _tmp_op: ($) =>
       choice(
-        $.tmp_seek_stmt,
-        $.tmp_blksz_stmt,
-        $.tmp_fromto_stmt,
-        $.tmp_arch_stmt,
-        $.tmp_bits_stmt,
-        $.tmp_nthi_stmt,
-        $.tmp_eval_stmt,
-        $.tmp_fs_stmt,
-        $.tmp_reli_stmt,
-        $.tmp_kuery_stmt,
-        $.tmp_fd_stmt,
-        $.tmp_reg_stmt,
-        $.tmp_file_stmt,
-        $.tmp_string_stmt,
-        $.tmp_value_stmt,
-        $.tmp_hex_stmt,
+        $.tmp_seek_op,
+        $.tmp_blksz_op,
+        $.tmp_fromto_op,
+        $.tmp_arch_op,
+        $.tmp_bits_op,
+        $.tmp_nthi_op,
+        $.tmp_eval_op,
+        $.tmp_fs_op,
+        $.tmp_reli_op,
+        $.tmp_kuery_op,
+        $.tmp_fd_op,
+        $.tmp_reg_op,
+        $.tmp_file_op,
+        $.tmp_string_op,
+        $.tmp_value_op,
+        $.tmp_hex_op,
       ),
 
     _iter_stmt: ($) =>
@@ -163,22 +162,22 @@ module.exports = grammar({
     iter_step_stmt: ($) => prec.right(1, seq($._simple_stmt, "@@s:", $.args)),
 
     // tmp changes statements
-    tmp_seek_stmt: ($) => prec.right(1, seq($._simple_stmt, "@ ", $.args)),
-    tmp_blksz_stmt: ($) => prec.right(1, seq($._simple_stmt, "@!", $.args)),
-    tmp_fromto_stmt: ($) => prec.right(1, seq($._simple_stmt, "@(", $.args, ")")),
-    tmp_arch_stmt: ($) => prec.right(1, seq($._simple_stmt, "@a:", $.arg)),
-    tmp_bits_stmt: ($) => prec.right(1, seq($._simple_stmt, "@b:", $.args)),
-    tmp_nthi_stmt: ($) => prec.right(1, seq($._simple_stmt, "@B:", $.arg)),
-    tmp_eval_stmt: ($) => prec.right(1, seq($._simple_stmt, "@e:", alias($.tmp_eval_args, $.args))),
-    tmp_fs_stmt: ($) => prec.right(1, seq($._simple_stmt, "@F:", $.arg)),
-    tmp_reli_stmt: ($) => prec.right(1, seq($._simple_stmt, "@i:", $.args)),
-    tmp_kuery_stmt: ($) => prec.right(1, seq($._simple_stmt, "@k:", $.arg)),
-    tmp_fd_stmt: ($) => prec.right(1, seq($._simple_stmt, "@o:", $.args)),
-    tmp_reg_stmt: ($) => prec.right(1, seq($._simple_stmt, "@r:", $.arg)),
-    tmp_file_stmt: ($) => prec.right(1, seq($._simple_stmt, "@f:", $.arg)),
-    tmp_string_stmt: ($) => prec.right(1, seq($._simple_stmt, "@s:", $.arg)),
-    tmp_value_stmt: ($) => prec.right(1, seq($._simple_stmt, "@v:", $.arg)),
-    tmp_hex_stmt: ($) => prec.right(1, seq($._simple_stmt, "@x:", $.arg)),
+    tmp_seek_op: ($) => seq("@ ", $.args),
+    tmp_blksz_op: ($) => seq("@!", $.args),
+    tmp_fromto_op: ($) => seq("@(", $.args, ")"),
+    tmp_arch_op: ($) => seq("@a:", $.arg),
+    tmp_bits_op: ($) => seq("@b:", $.args),
+    tmp_nthi_op: ($) => seq("@B:", $.arg),
+    tmp_eval_op: ($) => seq("@e:", alias($.tmp_eval_args, $.args)),
+    tmp_fs_op: ($) => seq("@F:", $.arg),
+    tmp_reli_op: ($) => seq("@i:", $.args),
+    tmp_kuery_op: ($) => seq("@k:", $.arg),
+    tmp_fd_op: ($) => seq("@o:", $.args),
+    tmp_reg_op: ($) => seq("@r:", $.arg),
+    tmp_file_op: ($) => seq("@f:", $.arg),
+    tmp_string_op: ($) => seq("@s:", $.arg),
+    tmp_value_op: ($) => seq("@v:", $.arg),
+    tmp_hex_op: ($) => seq("@x:", $.arg),
 
     // basic statements
     help_stmt: ($) =>
@@ -201,6 +200,7 @@ module.exports = grammar({
         $._simple_arged_stmt,
         $._pointer_arged_stmt,
         $._macro_arged_stmt,
+        $._alias_arged_stmt,
         $._system_stmt,
         $._interpret_stmt,
         $._env_stmt,
@@ -212,6 +212,14 @@ module.exports = grammar({
       choice(
         field("command", alias(choice("(", "(-*", "(*"), $.cmd_identifier)),
         seq(field("command", alias("(-", $.cmd_identifier)), field("args", $.args)),
+      ),
+    _alias_arged_stmt: ($) =>
+      prec.left(
+        1,
+        choice(
+          field("command", alias(choice("$*", "$**"), $.cmd_identifier)),
+          seq(field("command", alias("$", $.cmd_identifier)), optional(field("args", $.args))),
+        ),
       ),
     _simple_arged_stmt_question: ($) =>
       prec.left(1, seq(field("command", alias($._help_stmt, $.cmd_identifier)), field("args", $.args))),
@@ -246,7 +254,7 @@ module.exports = grammar({
           prec.right(1, seq(field("args", $._simple_stmt), field("command", "|."))),
         ),
       ),
-    _interpret_search_identifier: ($) => seq("./"),
+    _interpret_search_identifier: ($) => "./",
     _env_stmt: ($) =>
       prec.left(
         seq(
@@ -312,7 +320,7 @@ module.exports = grammar({
           choice(
             repeat1(noneOf(...SPECIAL_CHARACTERS_EQUAL)),
             /\$[^({]/,
-            /\${[^\r\n $}]+}/,
+            /\$\{[^\r\n $}]+\}/,
             escape(...SPECIAL_CHARACTERS_EQUAL),
           ),
         ),
@@ -339,7 +347,7 @@ module.exports = grammar({
     _comment: ($) => /#[^\r\n]*/,
 
     stmt_delimiter: ($) => choice("\n", "\r", $.stmt_delimiter_singleline),
-    stmt_delimiter_singleline: ($) => choice(";"),
+    stmt_delimiter_singleline: ($) => ";",
 
     specifiers: ($) => repeat1(seq($._spec_sep, $._concat, alias($.spec_arg_identifier, $.arg_identifier))),
     cmd_identifier: ($) => seq(field("id", $._cmd_identifier), field("extra", optional($.specifiers))),

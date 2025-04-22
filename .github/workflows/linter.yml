@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   changes:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     outputs:
       yaml: ${{ steps.filter.outputs.yaml }}
       clang-format: ${{ steps.filter.outputs.clang-format }}
@@ -56,7 +56,7 @@ jobs:
 
   cmd_descs_yaml_check:
     needs: changes
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     if: ${{ needs.changes.outputs.yaml == 'true' }}
     steps:
       - uses: actions/checkout@v4
@@ -72,7 +72,7 @@ jobs:
 
   bindgen-linter:
     needs: changes
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     if: ${{ needs.changes.outputs.bindgen-linter == 'true' }}
     steps:
       - name: Checkout rizin
@@ -104,20 +104,11 @@ jobs:
 
   clang-format:
     needs: changes
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     if: ${{ needs.changes.outputs.clang-format == 'true' }}
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
-
-    - name: Install wget, software-properties-common, lsb-release (dependencies of LLVM install script)
-      run: sudo apt --assume-yes install wget software-properties-common lsb-release
-
-    - name: Uninstall old conflicting packages
-      run: sudo apt purge --assume-yes --auto-remove llvm python3-lldb-14 llvm-14
-
-    - name: Install automatic LLVM 16
-      run: wget https://apt.llvm.org/llvm.sh -O /tmp/llvm-install.sh; chmod +x /tmp/llvm-install.sh; sudo /tmp/llvm-install.sh 16
 
     - name: Install clang-format-16
       run: sudo apt --assume-yes install clang-format-16
@@ -133,7 +124,7 @@ jobs:
 
   prettier:
     needs: changes
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     if: ${{ needs.changes.outputs.prettier == 'true' }}
     steps:
     - name: Checkout repository
@@ -149,7 +140,7 @@ jobs:
 
   python:
     needs: changes
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     if: ${{ needs.changes.outputs.python == 'true' }}
     steps:
     - name: Checkout repository
@@ -169,7 +160,7 @@ jobs:
         find . -name "*.py" | grep -v "subprojects" | grep -v "librz/bin/format/xnu/scripts/" | xargs -I % pylint --disable=R1737 '%'
 
   licenses:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4

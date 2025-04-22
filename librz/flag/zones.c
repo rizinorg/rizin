@@ -41,7 +41,7 @@ RZ_API bool rz_flag_zone_add(RzFlag *f, const char *name, ut64 addr) {
 			rz_flag_zone_reset(f);
 		}
 		zi = RZ_NEW0(RzFlagZoneItem);
-		zi->name = strdup(name);
+		zi->name = rz_str_dup(name);
 		zi->from = zi->to = addr;
 		rz_list_append(f->zones, zi);
 	}

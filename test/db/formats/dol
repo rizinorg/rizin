@@ -1,8 +1,7 @@
 NAME=DOL: sqrxz4 - open
 FILE=bins/dol/sqrxz4-gc.dol
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=DOL: sqrxz4 - iI

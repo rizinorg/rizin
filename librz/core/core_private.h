@@ -267,9 +267,9 @@ typedef struct rz_core_visual_tab_t {
 
 typedef int (*RzPanelsMenuCallback)(void *user);
 typedef struct rz_panels_menu_item {
-	int n_sub, selectedIndex;
+	int selectedIndex;
 	char *name;
-	struct rz_panels_menu_item **sub;
+	RzPVector /*<RzPanelsMenuItem *>*/ submenus;
 	RzPanelsMenuCallback cb;
 	RzPanel *p;
 } RzPanelsMenuItem;
@@ -295,7 +295,7 @@ typedef enum {
 	PANEL_LAYOUT_DEFAULT_DYNAMIC = 1
 } RzPanelsLayout;
 
-typedef struct rz_panels_t {
+typedef struct rz_panels_tab_t {
 	RzConsCanvas *can;
 	RzPanel **panel;
 	int n_panels;
@@ -307,16 +307,16 @@ typedef struct rz_panels_t {
 	bool mouse_on_edge_x;
 	bool mouse_on_edge_y;
 	RzPanelsMenu *panels_menu;
-	Sdb *db;
-	Sdb *rotate_db;
-	Sdb *almighty_db;
-	HtPP *mht;
+	HtSS *db;
+	HtSP *rotate_db;
+	HtSP *almighty_db;
+	HtSP *mht;
 	RzPanelsMode mode;
 	RzPanelsMode prevMode;
 	RzPanelsLayout layout;
 	char *name;
 	bool first_run;
-} RzPanels;
+} RzPanelsTab;
 
 typedef enum {
 	DEFAULT,
@@ -326,20 +326,36 @@ typedef enum {
 } RzPanelsRootState;
 
 typedef struct rz_panels_root_t {
-	int n_panels;
-	int cur_panels;
-	Sdb *pdc_caches;
-	Sdb *cur_pdc_cache;
-	RzPanels **panels;
+	int cur_tab;
+	RzPVector /*<RzPanelsTab *>*/ tabs;
+	RzPanelsTab *active_tab; // Seems redudant since we have cur_tab index
 	RzPanelsRootState root_state;
+	RzPVector /*<char *>*/ *themes; ///< Available rizin themes
+	bool from_visual;
 } RzPanelsRoot;
+
+typedef struct rz_core_visual_view_t {
+	int level;
+	st64 delta;
+	ut64 column_nlines;
+	// output is used to store the result of printCmds
+	// and avoid duplicated analysis while j and k is pressed
+	char *output;
+	// output_mode labels which printCmds' result is stored in output
+	int output_mode;
+	int output_addr;
+	int option;
+	int variable_option;
+	int printMode;
+	bool selectPanel;
+	bool hide_legend;
+	bool is_inputing; // whether the user is inputing
+	char *inputing; // for filter on the go in Vv mode
+} RzCoreVisualView;
 
 typedef struct rz_core_visual_t {
 	RzList /*<RzCoreVisualTab *>*/ *tabs;
 	int tab;
-	bool hide_legend;
-	bool is_inputing; // whether the user is inputing
-	char *inputing; // for filter on the go in Vv mode
 	RzCoreVisualMode printidx;
 	/* TODO: Reorganize */
 	int obs;
@@ -363,11 +379,16 @@ typedef struct rz_core_visual_t {
 	int current5format;
 	/* Panels */
 	RzPanelsRoot *panels_root;
-	RzPanels *panels;
+	/* file percentage */
+	float percentage;
+	/* visual view */
+	RzCoreVisualView *view;
 } RzCoreVisual;
 
 RZ_IPI RZ_OWN RzCoreVisual *rz_core_visual_new();
 RZ_IPI void rz_core_visual_free(RZ_NULLABLE RzCoreVisual *visual);
+
+RZ_IPI void rz_panels_root_free(RZ_NULLABLE RzPanelsRoot *panels_root);
 
 RZ_IPI void rz_core_visual_prompt_input(RzCore *core);
 RZ_IPI void rz_core_visual_toggle_hints(RzCore *core);
@@ -423,6 +444,9 @@ RZ_IPI void rz_core_visual_nexttab(RzCore *core);
 RZ_IPI void rz_core_visual_prevtab(RzCore *core);
 RZ_IPI void rz_core_visual_closetab(RzCore *core);
 
+RZ_IPI const char **rz_core_visual_get_short_help();
+RZ_IPI const char **rz_core_visual_get_long_help();
+RZ_IPI const char **rz_core_visual_get_fcn_help();
 RZ_IPI int rz_core_visual(RzCore *core, const char *input);
 RZ_IPI int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_fcn, int is_interactive);
 RZ_IPI bool rz_core_visual_panels_root(RzCore *core, RzPanelsRoot *panels_root);

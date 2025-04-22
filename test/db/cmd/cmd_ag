@@ -811,15 +811,15 @@ EXPECT=<<EOF
 | ; 0x8c0                                                               |
 | lea r8, [sym.__libc_csu_fini]                                         |
 | ; 0x850                                                               |
-| ; "AWAVA\x89\xffAUATL\x8d%.\x05 "                                     |
+| ; "AWAVA\x89\xffAUATL\x8d%.\U00000005 "                               |
 | lea rcx, [sym.__libc_csu_init]                                        |
 | ; 0x7aa                                                               |
 | lea rdi, [main]                                                       |
 | ; [reloc.__libc_start_main:8]=0x201058 reloc.target.__libc_start_main |
-| ; "X\x10 "                                                            |
+| ; "X\U00000010 "                                                      |
 | call qword [reloc.__libc_start_main]                                  |
 `-----------------------------------------------------------------------'
-agn "0x6a0" base64:OyBbMTNdIC1yLXggc2VjdGlvbiBzaXplIDU0NiBuYW1lZCAudGV4dAogIDstLSBzZWN0aW9uLi50ZXh0OgogIDstLSAudGV4dDoKICA7LS0gX3N0YXJ0OgplbnRyeTAoaW50NjRfdCBhcmczKTsKOyBhcmcgaW50NjRfdCBhcmczIEAgcmR4CnhvciBlYnAsIGVicAo7IGFyZzMKbW92IHI5LCByZHgKcG9wIHJzaQptb3YgcmR4LCByc3AKYW5kIHJzcCwgMHhmZmZmZmZmZmZmZmZmZmYwCnB1c2ggcmF4CnB1c2ggcnNwCjsgMHg4YzAKbGVhIHI4LCBbc3ltLl9fbGliY19jc3VfZmluaV0KOyAweDg1MAo7ICJBV0FWQVx4ODlceGZmQVVBVExceDhkJS5ceDA1ICIKbGVhIHJjeCwgW3N5bS5fX2xpYmNfY3N1X2luaXRdCjsgMHg3YWEKbGVhIHJkaSwgW21haW5dCjsgW3JlbG9jLl9fbGliY19zdGFydF9tYWluOjhdPTB4MjAxMDU4IHJlbG9jLnRhcmdldC5fX2xpYmNfc3RhcnRfbWFpbgo7ICJYXHgxMCAiCmNhbGwgcXdvcmQgW3JlbG9jLl9fbGliY19zdGFydF9tYWluXQ==
+agn "0x6a0" base64:OyBbMTNdIC1yLXggc2VjdGlvbiBzaXplIDU0NiBuYW1lZCAudGV4dAogIDstLSBzZWN0aW9uLi50ZXh0OgogIDstLSAudGV4dDoKICA7LS0gX3N0YXJ0OgplbnRyeTAoaW50NjRfdCBhcmczKTsKOyBhcmcgaW50NjRfdCBhcmczIEAgcmR4CnhvciBlYnAsIGVicAo7IGFyZzMKbW92IHI5LCByZHgKcG9wIHJzaQptb3YgcmR4LCByc3AKYW5kIHJzcCwgMHhmZmZmZmZmZmZmZmZmZmYwCnB1c2ggcmF4CnB1c2ggcnNwCjsgMHg4YzAKbGVhIHI4LCBbc3ltLl9fbGliY19jc3VfZmluaV0KOyAweDg1MAo7ICJBV0FWQVx4ODlceGZmQVVBVExceDhkJS5cVTAwMDAwMDA1ICIKbGVhIHJjeCwgW3N5bS5fX2xpYmNfY3N1X2luaXRdCjsgMHg3YWEKbGVhIHJkaSwgW21haW5dCjsgW3JlbG9jLl9fbGliY19zdGFydF9tYWluOjhdPTB4MjAxMDU4IHJlbG9jLnRhcmdldC5fX2xpYmNfc3RhcnRfbWFpbgo7ICJYXFUwMDAwMDAxMCAiCmNhbGwgcXdvcmQgW3JlbG9jLl9fbGliY19zdGFydF9tYWluXQ==
 digraph code {
 rankdir=LR;
 outputorder=edgesfirst
@@ -843,12 +843,12 @@ push rsp
 ; 0x8c0
 lea r8, [sym.__libc_csu_fini]
 ; 0x850
-; 'AWAVA\x89\xffAUATL\x8d%.\x05 '
+; 'AWAVA\x89\xffAUATL\x8d%.\U00000005 '
 lea rcx, [sym.__libc_csu_init]
 ; 0x7aa
 lea rdi, [main]
 ; [reloc.__libc_start_main:8]=0x201058 reloc.target.__libc_start_main
-; 'X\x10 '
+; 'X\U00000010 '
 call qword [reloc.__libc_start_main]
 "]
 }
@@ -862,15 +862,15 @@ directed 1
     label  "0x6a0"
   ]
 ]
-{"nodes":[{"id":0,"title":"0x6a0","body":"; [13] -r-x section size 546 named .text\n  ;-- section..text:\n  ;-- .text:\n  ;-- _start:\nentry0(int64_t arg3);\n; arg int64_t arg3 @ rdx\nxor ebp, ebp\n; arg3\nmov r9, rdx\npop rsi\nmov rdx, rsp\nand rsp, 0xfffffffffffffff0\npush rax\npush rsp\n; 0x8c0\nlea r8, [sym.__libc_csu_fini]\n; 0x850\n; \"AWAVA\\x89\\xffAUATL\\x8d%.\\x05 \"\nlea rcx, [sym.__libc_csu_init]\n; 0x7aa\nlea rdi, [main]\n; [reloc.__libc_start_main:8]=0x201058 reloc.target.__libc_start_main\n; \"X\\x10 \"\ncall qword [reloc.__libc_start_main]\n","offset":1696,"out_nodes":[]}]}
-{"nodes":[{"id":0,"title":"0x6a0","body":"; [13] -r-x section size 546 named .text\n  ;-- section..text:\n  ;-- .text:\n  ;-- _start:\nentry0(int64_t arg3);\n; arg int64_t arg3 @ rdx\nxor ebp, ebp\n; arg3\nmov r9, rdx\npop rsi\nmov rdx, rsp\nand rsp, 0xfffffffffffffff0\npush rax\npush rsp\n; 0x8c0\nlea r8, [sym.__libc_csu_fini]\n; 0x850\n; \"AWAVA\\x89\\xffAUATL\\x8d%.\\x05 \"\nlea rcx, [sym.__libc_csu_init]\n; 0x7aa\nlea rdi, [main]\n; [reloc.__libc_start_main:8]=0x201058 reloc.target.__libc_start_main\n; \"X\\x10 \"\ncall qword [reloc.__libc_start_main]\n","offset":1696,"out_nodes":[]}]}
+{"nodes":[{"id":0,"title":"0x6a0","body":"; [13] -r-x section size 546 named .text\n  ;-- section..text:\n  ;-- .text:\n  ;-- _start:\nentry0(int64_t arg3);\n; arg int64_t arg3 @ rdx\nxor ebp, ebp\n; arg3\nmov r9, rdx\npop rsi\nmov rdx, rsp\nand rsp, 0xfffffffffffffff0\npush rax\npush rsp\n; 0x8c0\nlea r8, [sym.__libc_csu_fini]\n; 0x850\n; \"AWAVA\\x89\\xffAUATL\\x8d%.\\U00000005 \"\nlea rcx, [sym.__libc_csu_init]\n; 0x7aa\nlea rdi, [main]\n; [reloc.__libc_start_main:8]=0x201058 reloc.target.__libc_start_main\n; \"X\\U00000010 \"\ncall qword [reloc.__libc_start_main]\n","offset":1696,"out_nodes":[]}]}
+{"nodes":[{"id":0,"title":"0x6a0","body":"; [13] -r-x section size 546 named .text\n  ;-- section..text:\n  ;-- .text:\n  ;-- _start:\nentry0(int64_t arg3);\n; arg int64_t arg3 @ rdx\nxor ebp, ebp\n; arg3\nmov r9, rdx\npop rsi\nmov rdx, rsp\nand rsp, 0xfffffffffffffff0\npush rax\npush rsp\n; 0x8c0\nlea r8, [sym.__libc_csu_fini]\n; 0x850\n; \"AWAVA\\x89\\xffAUATL\\x8d%.\\U00000005 \"\nlea rcx, [sym.__libc_csu_init]\n; 0x7aa\nlea rdi, [main]\n; [reloc.__libc_start_main:8]=0x201058 reloc.target.__libc_start_main\n; \"X\\U00000010 \"\ncall qword [reloc.__libc_start_main]\n","offset":1696,"out_nodes":[]}]}
 agraph.color_box=G1swbQ==
 agraph.delta_x=0xb
 agraph.delta_y=0x1
 agraph.h=0x1e
 agraph.is_callgraph=false
 agraph.nodes=0x6a0
-agraph.nodes.0x6a0.body=base64:OyBbMTNdIC1yLXggc2VjdGlvbiBzaXplIDU0NiBuYW1lZCAudGV4dAogIDstLSBzZWN0aW9uLi50ZXh0OgogIDstLSAudGV4dDoKICA7LS0gX3N0YXJ0OgplbnRyeTAoaW50NjRfdCBhcmczKTsKOyBhcmcgaW50NjRfdCBhcmczIEAgcmR4CnhvciBlYnAsIGVicAo7IGFyZzMKbW92IHI5LCByZHgKcG9wIHJzaQptb3YgcmR4LCByc3AKYW5kIHJzcCwgMHhmZmZmZmZmZmZmZmZmZmYwCnB1c2ggcmF4CnB1c2ggcnNwCjsgMHg4YzAKbGVhIHI4LCBbc3ltLl9fbGliY19jc3VfZmluaV0KOyAweDg1MAo7ICJBV0FWQVx4ODlceGZmQVVBVExceDhkJS5ceDA1ICIKbGVhIHJjeCwgW3N5bS5fX2xpYmNfY3N1X2luaXRdCjsgMHg3YWEKbGVhIHJkaSwgW21haW5dCjsgW3JlbG9jLl9fbGliY19zdGFydF9tYWluOjhdPTB4MjAxMDU4IHJlbG9jLnRhcmdldC5fX2xpYmNfc3RhcnRfbWFpbgo7ICJYXHgxMCAiCmNhbGwgcXdvcmQgW3JlbG9jLl9fbGliY19zdGFydF9tYWluXQ==
+agraph.nodes.0x6a0.body=base64:OyBbMTNdIC1yLXggc2VjdGlvbiBzaXplIDU0NiBuYW1lZCAudGV4dAogIDstLSBzZWN0aW9uLi50ZXh0OgogIDstLSAudGV4dDoKICA7LS0gX3N0YXJ0OgplbnRyeTAoaW50NjRfdCBhcmczKTsKOyBhcmcgaW50NjRfdCBhcmczIEAgcmR4CnhvciBlYnAsIGVicAo7IGFyZzMKbW92IHI5LCByZHgKcG9wIHJzaQptb3YgcmR4LCByc3AKYW5kIHJzcCwgMHhmZmZmZmZmZmZmZmZmZmYwCnB1c2ggcmF4CnB1c2ggcnNwCjsgMHg4YzAKbGVhIHI4LCBbc3ltLl9fbGliY19jc3VfZmluaV0KOyAweDg1MAo7ICJBV0FWQVx4ODlceGZmQVVBVExceDhkJS5cVTAwMDAwMDA1ICIKbGVhIHJjeCwgW3N5bS5fX2xpYmNfY3N1X2luaXRdCjsgMHg3YWEKbGVhIHJkaSwgW21haW5dCjsgW3JlbG9jLl9fbGliY19zdGFydF9tYWluOjhdPTB4MjAxMDU4IHJlbG9jLnRhcmdldC5fX2xpYmNfc3RhcnRfbWFpbgo7ICJYXFUwMDAwMDAxMCAiCmNhbGwgcXdvcmQgW3JlbG9jLl9fbGliY19zdGFydF9tYWluXQ==
 agraph.nodes.0x6a0.h=0x1b
 agraph.nodes.0x6a0.w=0x49
 agraph.nodes.0x6a0.x=0

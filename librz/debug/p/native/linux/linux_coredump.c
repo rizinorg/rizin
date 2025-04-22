@@ -92,7 +92,7 @@ static prpsinfo_t *linux_get_prpsinfo(RzDebug *dbg, proc_per_process_t *proc_dat
 		goto error;
 	}
 	buffer[len] = 0;
-	pfname = strdup(buffer);
+	pfname = rz_str_dup(buffer);
 	if (!pfname) {
 		goto error;
 	}
@@ -299,7 +299,7 @@ static char *isAnonymousKeyword(const char *pp) {
 static bool has_map_anonymous_content(char *buff_smaps, unsigned long start_addr, unsigned long end_addr) {
 	char *pp, *extern_tok = NULL, *keyw = NULL;
 	char *identity = rz_str_newf(fmt_addr, start_addr, end_addr);
-	char *str = strdup(buff_smaps);
+	char *str = rz_str_dup(buff_smaps);
 	char *p = strtok_r(str, "\n", &extern_tok);
 	for (; p; p = strtok_r(NULL, "\n", &extern_tok)) {
 		if (strstr(p, identity)) {
@@ -334,7 +334,7 @@ static bool dump_this_map(char *buff_smaps, linux_map_entry_t *entry, ut8 filter
 		free(identity);
 		return false;
 	}
-	aux = strdup(buff_smaps);
+	aux = rz_str_dup(buff_smaps);
 	if (!aux) {
 		free(identity);
 		return false;
@@ -507,7 +507,7 @@ static linux_map_entry_t *linux_get_mapped_files(RzDebug *dbg, ut8 filter_flags)
 		pmentry->end_addr = map->addr_end;
 		pmentry->offset = map->offset;
 		pmentry->name = strncmp(map->name, "unk", strlen("unk"))
-			? strdup(map->name)
+			? rz_str_dup(map->name)
 			: NULL;
 		pmentry->perms = map->perm;
 		pmentry->shared = map->shared;

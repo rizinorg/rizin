@@ -125,15 +125,6 @@ static int rz_debug_gdb_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 	memcpy((void *)(volatile void *)buf, ctx->desc->data, RZ_MIN(copy_size, size));
 	memset((void *)(volatile void *)ctx->reg_buf, 0, buflen);
 	memcpy((void *)(volatile void *)ctx->reg_buf, ctx->desc->data, copy_size);
-#if 0
-	int i;
-	//for(i=0;i<168;i++) {
-	for(i=0;i<copy_size;i++) {
-		if (!(i%16)) printf ("\n0x%08x  ", i);
-		printf ("%02x ", buf[i]); //(ut8)desc->data[i]);
-	}
-	printf("\n");
-#endif
 	return ctx->desc->data_len;
 }
 
@@ -263,7 +254,7 @@ static RzList /*<RzDebugMap *>*/ *rz_debug_gdb_map_get(RzDebug *dbg) { // TODO
 		}
 		map->offset = offset;
 		map->shared = map_is_shared;
-		map->file = strdup(name);
+		map->file = rz_str_dup(name);
 		rz_list_append(retlist, map);
 		ptr = strtok(NULL, "\n");
 	}
@@ -288,7 +279,7 @@ static RzList /*<RzDebugMap *>*/ *rz_debug_gdb_modules_get(RzDebug *dbg) {
 	rz_list_foreach_safe (list, iter, iter2, map) {
 		const char *file = map->file;
 		if (!map->file) {
-			file = map->file = strdup(map->name);
+			file = map->file = rz_str_dup(map->name);
 		}
 		must_delete = true;
 		if (file && *file == '/') {
@@ -301,7 +292,7 @@ static RzList /*<RzDebugMap *>*/ *rz_debug_gdb_modules_get(RzDebug *dbg) {
 		} else {
 			rz_list_append(last, map);
 			free(lastname);
-			lastname = strdup(file);
+			lastname = rz_str_dup(file);
 		}
 	}
 	list->free = NULL;
@@ -452,7 +443,7 @@ static const char *rz_debug_gdb_reg_profile(RzDebug *dbg) {
 		gdbr_set_architecture(ctx->desc, arch, bits);
 	}
 	if (ctx->desc->target.regprofile) {
-		return strdup(ctx->desc->target.regprofile);
+		return rz_str_dup(ctx->desc->target.regprofile);
 	}
 	return NULL;
 }

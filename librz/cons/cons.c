@@ -73,7 +73,7 @@ static RzConsStack *cons_stack_dump(bool recreate) {
 		if (data->grep) {
 			memcpy(data->grep, &CTX(grep), sizeof(RzConsGrep));
 			if (CTX(grep).str) {
-				data->grep->str = strdup(CTX(grep).str);
+				data->grep->str = rz_str_dup(CTX(grep).str);
 			}
 		}
 		if (recreate && CTX(buffer_sz) > 0) {
@@ -759,10 +759,15 @@ RZ_API void rz_cons_fill_line(void) {
 	}
 }
 
-RZ_API void rz_cons_clear_line(int std_err) {
+/**
+ * \brief Print on `stream` the ANSI escape sequence to clear the current line.
+ * \param stream Either stdout or stderr. Only 2 possible stream values are accepted.
+ */
+RZ_API void rz_cons_clear_line(FILE *stream) {
+	rz_return_if_fail(stream == stdout || stream == stderr);
 #if __WINDOWS__
 	if (I.vtmode != RZ_VIRT_TERM_MODE_DISABLE) {
-		fprintf(std_err ? stderr : stdout, "%s", RZ_CONS_CLEAR_LINE);
+		fprintf(stream, "%s", RZ_CONS_CLEAR_LINE);
 	} else {
 		char white[1024];
 		memset(&white, ' ', sizeof(white));
@@ -773,12 +778,12 @@ RZ_API void rz_cons_clear_line(int std_err) {
 		} else {
 			white[sizeof(white) - 1] = 0; // HACK
 		}
-		fprintf(std_err ? stderr : stdout, "\r%s\r", white);
+		fprintf(stream, "\r%s\r", white);
 	}
 #else
-	fprintf(std_err ? stderr : stdout, "%s", RZ_CONS_CLEAR_LINE);
+	fprintf(stream, "%s", RZ_CONS_CLEAR_LINE);
 #endif
-	fflush(std_err ? stderr : stdout);
+	fflush(stream);
 }
 
 RZ_API void rz_cons_clear00(void) {
@@ -816,7 +821,6 @@ RZ_API void rz_cons_reset(void) {
 	}
 	CTX(buffer_len) = 0;
 	I.lines = 0;
-	I.lastline = CTX(buffer);
 	cons_grep_reset(&CTX(grep));
 	CTX(pageable) = true;
 	ctx_rowcol_calc_reset();
@@ -835,7 +839,7 @@ RZ_API const char *rz_cons_get_buffer(void) {
  */
 RZ_API RZ_OWN char *rz_cons_get_buffer_dup(void) {
 	const char *s = rz_cons_get_buffer();
-	return s ? strdup(s) : NULL;
+	return rz_str_dup(s);
 }
 
 RZ_API int rz_cons_get_buffer_len(void) {
@@ -1287,10 +1291,10 @@ RZ_API void rz_cons_newline(void) {
 		rz_cons_strcat("\n");
 	}
 #if 0
-This place is wrong to manage the color reset, can interfire with rzpipe output sending resetchars
-and break json output appending extra chars.
-this code now is managed into output.c:118 at function rz_cons_w32_print
-now the console color is reset with each \n (same stuff do it here but in correct place ... i think)
+	// This place is wrong to manage the color reset, can interfire with rzpipe output sending resetchars
+	// and break json output appending extra chars.
+	// this code now is managed into output.c:118 at function rz_cons_w32_print
+	// now the console color is reset with each \n (same stuff do it here but in correct place ... i think)
 
 #if __WINDOWS__
 	rz_cons_reset_colors();
@@ -1830,10 +1834,10 @@ RZ_API void rz_cons_highlight(const char *word) {
 		if (I.highlight) {
 			if (strcmp(word, I.highlight)) {
 				free(I.highlight);
-				I.highlight = strdup(word);
+				I.highlight = rz_str_dup(word);
 			}
 		} else {
-			I.highlight = strdup(word);
+			I.highlight = rz_str_dup(word);
 		}
 		rword = malloc(word_len + linv[0] + linv[1] + 1);
 		if (!rword) {
@@ -1936,7 +1940,7 @@ RZ_API char *rz_cons_swap_ground(const char *col) {
 		/* is foreground */
 		return rz_str_newf("\x1b[4%s", col + 3);
 	}
-	return strdup(col);
+	return rz_str_dup(col);
 }
 
 RZ_API bool rz_cons_drop(int n) {
@@ -1990,7 +1994,7 @@ RZ_API const char *rz_cons_get_rune(const ut8 ch) {
 RZ_API void rz_cons_breakword(RZ_NULLABLE const char *s) {
 	free(I.break_word);
 	if (s) {
-		I.break_word = strdup(s);
+		I.break_word = rz_str_dup(s);
 		I.break_word_len = strlen(s);
 	} else {
 		I.break_word = NULL;

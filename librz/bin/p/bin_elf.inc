@@ -13,6 +13,7 @@
 #include <rz_cons.h>
 #include "../i/private.h"
 #include "elf/elf.h"
+#include <rz_analysis.h>
 #include <rz_util/ht_uu.h>
 
 #define rz_bin_file_get_elf(bf) ((ELFOBJ *)bf->o->bin_obj)
@@ -68,7 +69,7 @@ static ut32 hexagon_get_bitmask_r6(ut32 insn) {
 			return hex_rel6_x_masks[i].relocMask;
 		}
 	}
-	RZ_LOG_ERROR("Unrecognized instruction for 6_X relocation: 0x%x", insn);
+	RZ_LOG_ERROR("Unrecognized instruction for 6_X relocation: 0x%x\n", insn);
 	return 0;
 }
 
@@ -133,7 +134,7 @@ static ut32 hexagon_get_bitmask_r16(ut32 insn) {
 		}
 	}
 
-	RZ_LOG_ERROR("Unrecognized instruction for 16_X relocation: 0x%x", insn);
+	RZ_LOG_ERROR("Unrecognized instruction for 16_X relocation: 0x%x\n", insn);
 	return 0;
 }
 
@@ -273,7 +274,7 @@ static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol sym) {
 	return rz_bin_addr_new_from_paddr(bin, paddr);
 }
 
-static void add_constructor(ELFOBJ *bin, ut64 addr, ut64 size, int type, RzList /*<RzBinAddr *>*/ *result) {
+static void add_constructor(ELFOBJ *bin, ut64 addr, ut64 size, int type, RzPVector /*<RzBinAddr *>*/ *result) {
 	ut64 constructor_offset = Elf_(rz_bin_elf_v2p)(bin, addr);
 	if (constructor_offset == UT64_MAX) {
 		return;
@@ -303,13 +304,13 @@ static void add_constructor(ELFOBJ *bin, ut64 addr, ut64 size, int type, RzList 
 		tmp->hvaddr = addr + pos;
 		tmp->type = type;
 
-		rz_list_append(result, tmp);
+		rz_pvector_push(result, tmp);
 
 		pos += sizeof(Elf_(Addr));
 	}
 }
 
-static void add_constructors(ELFOBJ *bin, RzList /*<RzBinAddr *>*/ *result) {
+static void add_constructors(ELFOBJ *bin, RzPVector /*<RzBinAddr *>*/ *result) {
 	ut64 addr, size;
 
 	if (Elf_(rz_bin_elf_get_dt_info)(bin, DT_PREINIT_ARRAY, &addr) && Elf_(rz_bin_elf_get_dt_info)(bin, DT_PREINIT_ARRAYSZ, &size)) {
@@ -325,7 +326,7 @@ static void add_constructors(ELFOBJ *bin, RzList /*<RzBinAddr *>*/ *result) {
 	}
 }
 
-static void add_entry_offset(ELFOBJ *bin, RzList /*<RzBinAddr *>*/ *result) {
+static void add_entry_offset(ELFOBJ *bin, RzPVector /*<RzBinAddr *>*/ *result) {
 	ut64 paddr = Elf_(rz_bin_elf_get_entry_offset)(bin);
 	if (paddr == UT64_MAX) {
 		return;
@@ -343,28 +344,28 @@ static void add_entry_offset(ELFOBJ *bin, RzList /*<RzBinAddr *>*/ *result) {
 		RZ_LOG_ERROR("Cannot determine entrypoint, using 0x%08" PFMT64x ".\n", tmp->vaddr);
 	}
 
-	rz_list_append(result, tmp);
+	rz_pvector_push(result, tmp);
 }
 
-static void add_java_libraries(ELFOBJ *bin, RzList /*<RzBinAddr *>*/ *result) {
+static void add_java_libraries(ELFOBJ *bin, RzPVector /*<RzBinAddr *>*/ *result) {
 	RzBinElfSymbol *symbol;
 	rz_bin_elf_foreach_symbols(bin, symbol) {
 		if (symbol->name && rz_str_startswith(symbol->name, "Java") && rz_str_endswith(symbol->name, "_init")) {
 			RzBinAddr *tmp = rz_bin_addr_new_from_paddr(bin, symbol->paddr);
 			tmp->type = RZ_BIN_ENTRY_TYPE_INIT;
 
-			rz_list_append(result, tmp);
+			rz_pvector_push(result, tmp);
 			break;
 		}
 	}
 }
 
-static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o, NULL);
 
 	ELFOBJ *bin = rz_bin_file_get_elf(bf);
 
-	RzList *result = rz_list_newf((RzListFree)free);
+	RzPVector *result = rz_pvector_new((RzPVectorFree)free);
 	if (!result) {
 		return NULL;
 	}
@@ -496,7 +497,11 @@ static RzBinSymbol *convert_symbol(ELFOBJ *bin, RzBinElfSymbol *elf_symbol) {
 
 	result->paddr = elf_symbol->paddr;
 	result->vaddr = elf_symbol->vaddr;
-	result->name = rz_str_dup(elf_symbol->name);
+	if (RZ_STR_ISNOTEMPTY(elf_symbol->name)) {
+		result->name = rz_str_dup(elf_symbol->name);
+	} else {
+		result->name = rz_str_newf("unknown_%u", elf_symbol->ordinal);
+	}
 	result->forwarder = "NONE";
 	result->bind = elf_symbol->bind;
 	result->type = elf_symbol->type;
@@ -557,7 +562,7 @@ static char *regstate(RzBinFile *bf) {
 	RzVector *notes;
 	rz_bin_elf_foreach_notes_segment(obj, notes) {
 		RzBinElfNote *tmp;
-		rz_vector_foreach(notes, tmp) {
+		rz_vector_foreach (notes, tmp) {
 			if (tmp->type != NT_PRSTATUS) {
 				continue;
 			}
@@ -577,17 +582,17 @@ static char *setphname(ut16 mach, Elf_(Word) ptyp) {
 	// TODO to complete over time
 	if (mach == EM_ARM) {
 		if (ptyp == SHT_ARM_EXIDX) {
-			return strdup("EXIDX");
+			return rz_str_dup("EXIDX");
 		}
 	} else if (mach == EM_MIPS) {
 		if (ptyp == PT_MIPS_ABIFLAGS) {
-			return strdup("ABIFLAGS");
+			return rz_str_dup("ABIFLAGS");
 		} else if (ptyp == PT_MIPS_REGINFO) {
-			return strdup("REGINFO");
+			return rz_str_dup("REGINFO");
 		}
 	}
 
-	return strdup("UNKNOWN");
+	return rz_str_dup("UNKNOWN");
 }
 
 static bool is_wordable_section(const char *name) {
@@ -620,7 +625,7 @@ static RzBinElfNoteFile *note_file_for_load_segment(ELFOBJ *obj, Elf_(Phdr) * ph
 	RzVector *notes;
 	rz_bin_elf_foreach_notes_segment(obj, notes) {
 		RzBinElfNote *tmp;
-		rz_vector_foreach(notes, tmp) {
+		rz_vector_foreach (notes, tmp) {
 			if (tmp->type != NT_FILE) {
 				continue;
 			}
@@ -683,11 +688,11 @@ static RzPVector /*<RzBinMap *>*/ *maps_unpatched(RzBinFile *bf) {
 
 			// map names specific to core files...
 			if (core_sp != UT64_MAX && core_sp >= iter->data.p_vaddr && core_sp < iter->data.p_vaddr + iter->data.p_memsz) {
-				map->name = strdup("[stack]");
+				map->name = rz_str_dup("[stack]");
 			} else {
 				RzBinElfNoteFile *nf = note_file_for_load_segment(obj, &iter->data);
 				if (nf && nf->file) {
-					map->name = strdup(nf->file);
+					map->name = rz_str_dup(nf->file);
 				}
 			}
 			// generic names
@@ -722,7 +727,7 @@ static RzPVector /*<RzBinMap *>*/ *maps_unpatched(RzBinFile *bf) {
 		if (!map) {
 			return ret;
 		}
-		map->name = strdup("uphdr");
+		map->name = rz_str_dup("uphdr");
 		map->paddr = 0;
 		map->psize = bf->size;
 		map->vaddr = 0x10000;
@@ -740,7 +745,7 @@ static RzPVector /*<RzBinMap *>*/ *maps_unpatched(RzBinFile *bf) {
 		if (bf->size < ehdr_size) {
 			ehdr_size = bf->size;
 		}
-		map->name = strdup("ehdr");
+		map->name = rz_str_dup("ehdr");
 		map->paddr = 0;
 		map->psize = ehdr_size;
 		map->vaddr = obj->baddr;
@@ -830,7 +835,7 @@ static void patch_reloc_hexagon(RZ_INOUT RzBuffer *buf_patched, const ut64 patch
 
 	switch (rel_type) {
 	default:
-		RZ_LOG_WARN("Patching for reloc type %d not implemented.", rel_type);
+		RZ_LOG_WARN("Patching for reloc type %d not implemented.\n", rel_type);
 		rz_warn_if_reached();
 		// For more implementetations check out the LLVM src:
 		// https://github.com/llvm/llvm-project/blob/abc17a67519747be36f1fd03e227c5103da4c677/lld/ELF/Arch/Hexagon.cpp
@@ -1040,14 +1045,41 @@ static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel,
 	case EM_QDSP6:
 		patch_reloc_hexagon(obj->buf_patched, patch_addr, rel->type, &formular_sym);
 		break;
-	case EM_ARM:
-		val = S + A;
-		if (!rel->sym && rel->mode == DT_REL) {
-			rz_buf_read_at(obj->buf_patched, patch_addr, buf, 4);
-			val += obj->big_endian ? rz_read_be32(buf) : rz_read_le32(buf);
+	case EM_ARM: {
+		ut16 keephw1, keephw2;
+		ut32 nbytes = 4;
+		rz_buf_read_at(obj->buf_patched, patch_addr, buf, 4);
+		switch (rel->type) {
+		case RZ_ARM_THM_JUMP24:
+		case RZ_ARM_THM_PC22:
+			// Encoding B  T4, BL T1, BLX T2: Val = S:I1:I2:imm10:imm11:0
+			// I1 = NOT(J1 EOR S)
+			// I2 = NOT(J2 EOR S)
+			val = S + A;
+			keephw1 = rz_read_ble16(&buf[0], big_endian);
+			keephw2 = rz_read_ble16(&buf[2], big_endian);
+			rz_write_ble16(&buf[0],
+				(keephw1 & 0xF800U) | // opcode
+					((val >> 14) & 0x0400U) | // sign
+					((val >> 12) & 0x03FFU), // imm 10
+				big_endian);
+			rz_write_ble16(&buf[2],
+				(keephw2 & 0xD000U) | // opcode
+					(((~(val >> 10)) ^ (val >> 11)) & 0x2000) | // J1
+					(((~(val >> 11)) ^ (val >> 13)) & 0x0800) | // J2
+					((val >> 1) & 0x07ff), // imm11
+				big_endian);
+			break;
+		default:
+			val = S + A;
+			if (!rel->sym && rel->mode == DT_REL) {
+				val += rz_read_ble32(buf, big_endian);
+			}
+			rz_write_ble32(buf, val, big_endian);
 		}
-		rz_buf_write_ble32_at(obj->buf_patched, patch_addr, val, obj->big_endian);
+		rz_buf_write_at(obj->buf_patched, patch_addr, buf, nbytes);
 		break;
+	}
 	case EM_AARCH64: {
 		ut32 keep;
 		ut32 nbytes = 4;
@@ -1285,6 +1317,77 @@ static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel,
 		}
 		break;
 	}
+	case EM_RX:
+		// no dynamic for rx-elf program, handle rx elf object reloc type (emulate linkage map)
+		// and no GOT/PLT for existed for rx-elf, leave no imports info for extern symbol
+		switch (rel->type) {
+		// simply use rizin default symbol resolution to map OBJECT variable symbol to vaddr
+		case R_RX_NONE: break;
+		case R_RX_DIR32:
+			val = S + A;
+			rz_buf_write_ble32_at(obj->buf_patched, patch_addr, val, obj->big_endian);
+			break;
+		case R_RX_DIR24S_PCREL:
+			val = S + A - P + 1;
+			if (obj->big_endian) {
+				buf[2] = val;
+				buf[1] = val >> 8;
+				buf[0] = val >> 16;
+			} else {
+				buf[0] = val;
+				buf[1] = val >> 8;
+				buf[2] = val >> 16;
+			}
+			// write 3 Bytes
+			rz_buf_write_at(obj->buf_patched, patch_addr, buf, 3);
+			break;
+		default:
+			RZ_LOG_WARN("Reloc type %d for Renesas RX family not implemented yet.\n", rel->type);
+			break;
+		}
+		break;
+	case EM_ALPHA:
+		switch (rel->type) {
+		case RZ_ALPHA_NONE: break;
+		case RZ_ALPHA_REFLONG:
+			val = S + A;
+			rz_buf_write_ble32_at(obj->buf_patched, patch_addr, val, obj->big_endian);
+			break;
+		case RZ_ALPHA_REFQUAD:
+			val = S + A;
+			rz_buf_write_ble64_at(obj->buf_patched, patch_addr, val, obj->big_endian);
+			break;
+		case RZ_ALPHA_SREL16:
+			val = S + A - P + 1;
+			if (obj->big_endian) {
+				buf[1] = val;
+				buf[0] = val >> 8;
+			} else {
+				buf[0] = val;
+				buf[1] = val >> 8;
+			}
+			rz_buf_write_at(obj->buf_patched, patch_addr, buf, 2);
+			break;
+		case RZ_ALPHA_SREL32:
+			val = S + A - P + 1;
+			if (obj->big_endian) {
+				buf[3] = val;
+				buf[2] = val >> 8;
+				buf[1] = val >> 16;
+				buf[0] = val >> 24;
+			} else {
+				buf[0] = val;
+				buf[1] = val >> 8;
+				buf[2] = val >> 16;
+				buf[3] = val >> 24;
+			}
+			rz_buf_write_at(obj->buf_patched, patch_addr, buf, 4);
+			break;
+		default:
+			RZ_LOG_WARN("Reloc type %d for DEC Alpha is not implemented yet.\n", rel->type);
+			break;
+		}
+		break;
 	}
 }
 
@@ -1334,33 +1437,33 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 		r->section_vaddr = section->rva;
 	}
 
-#define SET(T) \
-	r->type = RZ_BIN_RELOC_##T; \
-	r->additive = 0; \
+#define SET(BIT_SIZE, RELOC_NAME) \
+	r->type = RZ_BIN_RELOC_##BIT_SIZE; \
+	r->print_name = (RELOC_NAME); \
 	return r
-#define ADD(T, A) \
-	r->type = RZ_BIN_RELOC_##T; \
-	r->addend += (A); \
-	r->additive = rel->mode == DT_RELA; \
-	return r
+#define ADD(BIT_SIZE, ADDEND, RELOC_NAME) \
+	r->addend += (ADDEND); \
+	SET(BIT_SIZE, RELOC_NAME)
 
 	switch (bin->ehdr.e_machine) {
 	case EM_386:
+		// TODO: We're missing a lot of architectures!
 		switch (rel->type) {
 		case RZ_386_NONE: break; // malloc then free. meh. then again, there's no real world use for _NONE.
-		case RZ_386_32: ADD(32, 0);
-		case RZ_386_PC32: ADD(32, -P);
-		case RZ_386_GLOB_DAT: SET(32);
-		case RZ_386_JMP_SLOT: SET(32);
-		case RZ_386_RELATIVE: ADD(32, B);
-		case RZ_386_GOTOFF: ADD(32, -GOT);
-		case RZ_386_GOTPC: ADD(32, GOT - P);
-		case RZ_386_16: ADD(16, 0);
-		case RZ_386_PC16: ADD(16, -P);
-		case RZ_386_8: ADD(8, 0);
-		case RZ_386_PC8: ADD(8, -P);
-		case RZ_386_COPY: ADD(32, 0); // copy symbol at runtime
-		case RZ_386_IRELATIVE: r->is_ifunc = true; SET(32);
+		case RZ_386_32: ADD(32, 0, "R_386_32");
+		case RZ_386_PC32: ADD(32, -P, "R_386_PC32");
+		case RZ_386_GLOB_DAT: SET(32, "R_386_GLOB_DAT");
+		case RZ_386_JMP_SLOT: SET(32, "R_386_JMP_SLOT");
+		case RZ_386_RELATIVE: ADD(32, B, "R_386_RELATIVE");
+		case RZ_386_GOTOFF: ADD(32, -GOT, "R_386_GOTOFF");
+		case RZ_386_GOTPC: ADD(32, GOT - P, "R_386_GOTPC");
+		case RZ_386_16: ADD(16, 0, "R_386_16");
+		case RZ_386_PC16: ADD(16, -P, "R_386_PC16");
+		case RZ_386_8: ADD(8, 0, "R_386_8");
+		case RZ_386_PC8: ADD(8, -P, "R_386_PC8");
+		case RZ_386_COPY: ADD(32, 0, "R_386_COPY"); // copy symbol at runtime
+		case RZ_386_IRELATIVE: r->is_ifunc = true; SET(32, "R_386_IRELATIVE");
+		// FIXME: Quite a few relocatons missing here.
 		default:
 			RZ_LOG_WARN("unimplemented ELF/X86_32 reloc type %d\n", rel->type);
 			break;
@@ -1369,22 +1472,23 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 	case EM_X86_64:
 		switch (rel->type) {
 		case RZ_X86_64_NONE: break; // malloc then free. meh. then again, there's no real world use for _NONE.
-		case RZ_X86_64_64: ADD(64, 0);
-		case RZ_X86_64_PLT32: ADD(32, -P /* +L */);
-		case RZ_X86_64_GOT32: ADD(32, GOT);
-		case RZ_X86_64_PC32: ADD(32, -P);
-		case RZ_X86_64_GLOB_DAT: r->vaddr -= rel->sto; SET(64);
-		case RZ_X86_64_JUMP_SLOT: r->vaddr -= rel->sto; SET(64);
-		case RZ_X86_64_RELATIVE: ADD(64, B);
-		case RZ_X86_64_32: ADD(32, 0);
-		case RZ_X86_64_32S: ADD(32, 0);
-		case RZ_X86_64_16: ADD(16, 0);
-		case RZ_X86_64_PC16: ADD(16, -P);
-		case RZ_X86_64_8: ADD(8, 0);
-		case RZ_X86_64_PC8: ADD(8, -P);
-		case RZ_X86_64_GOTPCREL: ADD(64, GOT - P);
-		case RZ_X86_64_COPY: ADD(64, 0); // copy symbol at runtime
-		case RZ_X86_64_IRELATIVE: r->is_ifunc = true; SET(64);
+		case RZ_X86_64_64: ADD(64, 0, "R_X86_64_64");
+		case RZ_X86_64_PLT32: ADD(32, -P /* +L */, "R_X86_64_PLT32");
+		case RZ_X86_64_GOT32: ADD(32, GOT, "R_X86_64_GOT32");
+		case RZ_X86_64_PC32: ADD(32, -P, "R_X86_64_PC32");
+		case RZ_X86_64_GLOB_DAT: r->vaddr -= rel->sto; SET(64, "R_X86_64_GLOB_DAT");
+		case RZ_X86_64_JUMP_SLOT: r->vaddr -= rel->sto; SET(64, "R_X86_64_JUMP_SLOT");
+		case RZ_X86_64_RELATIVE: ADD(64, B, "R_X86_64_RELATIVE");
+		case RZ_X86_64_32: ADD(32, 0, "R_X86_64_32");
+		case RZ_X86_64_32S: ADD(32, 0, "R_X86_64_32S");
+		case RZ_X86_64_16: ADD(16, 0, "R_X86_64_16");
+		case RZ_X86_64_PC16: ADD(16, -P, "R_X86_64_PC16");
+		case RZ_X86_64_8: ADD(8, 0, "R_X86_64_8");
+		case RZ_X86_64_PC8: ADD(8, -P, "R_X86_64_PC8");
+		case RZ_X86_64_GOTPCREL: ADD(64, GOT - P, "R_X86_64_GOTPCREL");
+		case RZ_X86_64_COPY: ADD(64, 0, "R_X86_64_COPY"); // copy symbol at runtime
+		case RZ_X86_64_IRELATIVE: r->is_ifunc = true; SET(64, "R_X86_64_IRELATIVE");
+		// FIXME: Quite a few relocatons missing here.
 		default:
 			RZ_LOG_WARN("unimplemented ELF/X86_64 reloc type %d\n", rel->type);
 			break;
@@ -1393,72 +1497,76 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 	case EM_ARM:
 		switch (rel->type) {
 		case RZ_ARM_NONE: break;
-		case RZ_ARM_ABS32: ADD(32, 0);
-		case RZ_ARM_REL32: ADD(32, -P);
-		case RZ_ARM_ABS16: ADD(16, 0);
-		case RZ_ARM_ABS8: ADD(8, 0);
-		case RZ_ARM_SBREL32: ADD(32, -B);
-		case RZ_ARM_GLOB_DAT: ADD(32, 0);
-		case RZ_ARM_JUMP_SLOT: ADD(32, 0);
-		case RZ_ARM_COPY: ADD(32, 0); // copy symbol at runtime
-		case RZ_ARM_RELATIVE: ADD(32, B);
-		case RZ_ARM_GOTOFF: ADD(32, -GOT);
-		case RZ_ARM_GOTPC: ADD(32, GOT - P);
-		case RZ_ARM_CALL: ADD(24, -P);
-		case RZ_ARM_JUMP24: ADD(24, -P);
-		case RZ_ARM_THM_JUMP24: ADD(24, -P);
-		case RZ_ARM_PREL31: ADD(32, -P);
-		case RZ_ARM_MOVW_PREL_NC: ADD(16, -P);
-		case RZ_ARM_MOVT_PREL: ADD(32, -P);
-		case RZ_ARM_THM_MOVW_PREL_NC: ADD(16, -P);
-		case RZ_ARM_REL32_NOI: ADD(32, -P);
-		case RZ_ARM_ABS32_NOI: ADD(32, 0);
-		case RZ_ARM_ALU_PC_G0_NC: ADD(32, -P);
-		case RZ_ARM_ALU_PC_G0: ADD(32, -P);
-		case RZ_ARM_ALU_PC_G1_NC: ADD(32, -P);
-		case RZ_ARM_ALU_PC_G1: ADD(32, -P);
-		case RZ_ARM_ALU_PC_G2: ADD(32, -P);
-		case RZ_ARM_LDR_PC_G1: ADD(32, -P);
-		case RZ_ARM_LDR_PC_G2: ADD(32, -P);
-		case RZ_ARM_LDRS_PC_G0: ADD(32, -P);
-		case RZ_ARM_LDRS_PC_G1: ADD(32, -P);
-		case RZ_ARM_LDRS_PC_G2: ADD(32, -P);
-		case RZ_ARM_LDC_PC_G0: ADD(32, -P);
-		case RZ_ARM_LDC_PC_G1: ADD(32, -P);
-		case RZ_ARM_LDC_PC_G2: ADD(32, -P);
-		default: ADD(32, GOT); break; // reg relocations
+		case RZ_ARM_ABS32: ADD(32, 0, "R_ARM_ABS32");
+		case RZ_ARM_REL32: ADD(32, -P, "R_ARM_REL32");
+		case RZ_ARM_ABS16: ADD(16, 0, "R_ARM_ABS16");
+		case RZ_ARM_ABS8: ADD(8, 0, "R_ARM_ABS8");
+		case RZ_ARM_SBREL32: ADD(32, -B, "R_ARM_SBREL32");
+		case RZ_ARM_GLOB_DAT: ADD(32, 0, "R_ARM_GLOB_DAT");
+		case RZ_ARM_JUMP_SLOT: ADD(32, 0, "R_ARM_JUMP_SLOT");
+		case RZ_ARM_COPY: ADD(32, 0, "R_ARM_COPY"); // copy symbol at runtime
+		case RZ_ARM_RELATIVE: ADD(32, B, "R_ARM_RELATIVE");
+		case RZ_ARM_GOTOFF: ADD(32, -GOT, "R_ARM_GOTOFF");
+		case RZ_ARM_GOTPC: ADD(32, GOT - P, "R_ARM_GOTPC");
+		case RZ_ARM_CALL: ADD(24, -P, "R_ARM_CALL");
+		case RZ_ARM_JUMP24: ADD(24, -P, "R_ARM_JUMP24");
+		case RZ_ARM_THM_JUMP24: ADD(24, -P, "R_ARM_THM_JUMP24");
+		case RZ_ARM_THM_PC22: ADD(24, -P, "R_ARM_THM_PC22");
+		case RZ_ARM_PREL31: ADD(32, -P, "R_ARM_PREL31");
+		case RZ_ARM_MOVW_PREL_NC: ADD(16, -P, "R_ARM_MOVW_PREL_NC");
+		case RZ_ARM_MOVT_PREL: ADD(32, -P, "R_ARM_MOVT_PREL");
+		case RZ_ARM_THM_MOVW_PREL_NC: ADD(16, -P, "R_ARM_THM_MOVW_PREL_NC");
+		case RZ_ARM_REL32_NOI: ADD(32, -P, "R_ARM_REL32_NOI");
+		case RZ_ARM_ABS32_NOI: ADD(32, 0, "R_ARM_ABS32_NOI");
+		case RZ_ARM_ALU_PC_G0_NC: ADD(32, -P, "R_ARM_ALU_PC_G0_NC");
+		case RZ_ARM_ALU_PC_G0: ADD(32, -P, "R_ARM_ALU_PC_G0");
+		case RZ_ARM_ALU_PC_G1_NC: ADD(32, -P, "R_ARM_ALU_PC_G1_NC");
+		case RZ_ARM_ALU_PC_G1: ADD(32, -P, "R_ARM_ALU_PC_G1");
+		case RZ_ARM_ALU_PC_G2: ADD(32, -P, "R_ARM_ALU_PC_G2");
+		case RZ_ARM_LDR_PC_G1: ADD(32, -P, "R_ARM_LDR_PC_G1");
+		case RZ_ARM_LDR_PC_G2: ADD(32, -P, "R_ARM_LDR_PC_G2");
+		case RZ_ARM_LDRS_PC_G0: ADD(32, -P, "R_ARM_LDRS_PC_G0");
+		case RZ_ARM_LDRS_PC_G1: ADD(32, -P, "R_ARM_LDRS_PC_G1");
+		case RZ_ARM_LDRS_PC_G2: ADD(32, -P, "R_ARM_LDRS_PC_G2");
+		case RZ_ARM_LDC_PC_G0: ADD(32, -P, "R_ARM_LDC_PC_G0");
+		case RZ_ARM_LDC_PC_G1: ADD(32, -P, "R_ARM_LDC_PC_G1");
+		case RZ_ARM_LDC_PC_G2: ADD(32, -P, "R_ARM_LDC_PC_G2");
+		// FIXME: Quite a few relocatons missing here. It's incorrect to place them all under "reg relocations".
+		default: ADD(32, GOT, "ARM REG RELOC"); break;
 		}
 		break;
 	case EM_RISCV:
 		switch (rel->type) {
 		case RZ_RISCV_NONE: break;
-		case RZ_RISCV_JUMP_SLOT: ADD(64, 0);
-		case RZ_RISCV_RELATIVE: ADD(64, B);
-		default: ADD(64, GOT); break; // reg relocations
+		case RZ_RISCV_JUMP_SLOT: ADD(64, 0, "R_RISCV_JUMP_SLOT");
+		case RZ_RISCV_RELATIVE: ADD(64, B, "R_RISCV_RELATIVE");
+		// FIXME: Quite a few relocatons missing here. It's incorrect to place them all under "reg relocations".
+		default: ADD(64, GOT, "RISC-V REG RELOC"); break; // reg relocations
 		}
 		break;
 	case EM_AARCH64:
 		switch (rel->type) {
 		case RZ_AARCH64_NONE: break;
-		case RZ_AARCH64_ABS64: ADD(64, 0);
-		case RZ_AARCH64_ABS32: ADD(32, 0);
-		case RZ_AARCH64_ABS16: ADD(16, 0);
-		case RZ_AARCH64_PREL64: ADD(64, 0);
-		case RZ_AARCH64_PREL32: ADD(32, 0);
-		case RZ_AARCH64_PREL16: ADD(16, 0);
-		case RZ_AARCH64_GLOB_DAT: SET(64);
-		case RZ_AARCH64_JUMP_SLOT: SET(64);
-		case RZ_AARCH64_RELATIVE: ADD(64, B);
-		case RZ_AARCH64_LDST8_ABS_LO12_NC: ADD(16, 0);
-		case RZ_AARCH64_ADD_ABS_LO12_NC: ADD(16, 0);
-		case RZ_AARCH64_JUMP26: ADD(32, 0);
-		case RZ_AARCH64_CALL26: ADD(32, 0);
-		case RZ_AARCH64_LDST64_ABS_LO12_NC: ADD(32, 0);
-		case RZ_AARCH64_LD64_GOT_LO12_NC: ADD(32, 0);
+		case RZ_AARCH64_ABS64: ADD(64, 0, "R_AARCH64_ABS64");
+		case RZ_AARCH64_ABS32: ADD(32, 0, "R_AARCH64_ABS32");
+		case RZ_AARCH64_ABS16: ADD(16, 0, "R_AARCH64_ABS16");
+		case RZ_AARCH64_PREL64: ADD(64, 0, "R_AARCH64_PREL64");
+		case RZ_AARCH64_PREL32: ADD(32, 0, "R_AARCH64_PREL32");
+		case RZ_AARCH64_PREL16: ADD(16, 0, "R_AARCH64_PREL16");
+		case RZ_AARCH64_GLOB_DAT: SET(64, "R_AARCH64_GLOB_DAT");
+		case RZ_AARCH64_JUMP_SLOT: SET(64, "R_AARCH64_JUMP_SLOT");
+		case RZ_AARCH64_RELATIVE: ADD(64, B, "R_AARCH64_RELATIVE");
+		case RZ_AARCH64_LDST8_ABS_LO12_NC: ADD(16, 0, "R_AARCH64_LDST8_ABS_LO12_NC");
+		case RZ_AARCH64_ADD_ABS_LO12_NC: ADD(16, 0, "R_AARCH64_ADD_ABS_LO12_NC");
+		case RZ_AARCH64_JUMP26: ADD(32, 0, "R_AARCH64_JUMP26");
+		case RZ_AARCH64_CALL26: ADD(32, 0, "R_AARCH64_CALL26");
+		case RZ_AARCH64_LDST64_ABS_LO12_NC: ADD(32, 0, "R_AARCH64_LDST64_ABS_LO12_NC");
+		case RZ_AARCH64_LD64_GOT_LO12_NC: ADD(32, 0, "R_AARCH64_LD64_GOT_LO12_NC");
 		// Page-relative relocations
-		case RZ_AARCH64_ADR_GOT_PAGE: ADD(32, 0);
-		case RZ_AARCH64_ADR_PREL_PG_HI21: ADD(32, 0);
-		case RZ_AARCH64_ADR_PREL_PG_HI21_NC: ADD(32, 0);
+		case RZ_AARCH64_ADR_GOT_PAGE: ADD(32, 0, "R_AARCH64_ADR_GOT_PAGE");
+		case RZ_AARCH64_ADR_PREL_PG_HI21: ADD(32, 0, "R_AARCH64_ADR_PREL_PG_HI21");
+		case RZ_AARCH64_ADR_PREL_PG_HI21_NC: ADD(32, 0, "R_AARCH64_ADR_PREL_PG_HI21_NC");
+		// FIXME: Quite a few relocations missing here
 		default:
 			RZ_LOG_WARN("unimplemented ELF/AARCH64 reloc type %d\n", rel->type);
 			break;
@@ -1467,22 +1575,273 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 	case EM_PPC:
 		switch (rel->type) {
 		case RZ_PPC_NONE: break;
-		case RZ_PPC_GLOB_DAT: ADD(32, 0);
-		case RZ_PPC_JMP_SLOT: ADD(32, 0);
-		case RZ_PPC_COPY: ADD(32, 0); // copy symbol at runtime
-		case RZ_PPC_REL24: ADD(24, -P);
-		case RZ_PPC_REL14: ADD(16, -P);
-		case RZ_PPC_REL32: ADD(32, -P);
-		case RZ_PPC_RELATIVE: ADD(32, -P);
-		case RZ_PPC_PLT32: ADD(32, -P);
-		case RZ_PPC_ADDR16: ADD(16, 0);
-		case RZ_PPC_ADDR32: ADD(32, 0);
+		case RZ_PPC_GLOB_DAT: ADD(32, 0, "R_PPC_GLOB_DAT");
+		case RZ_PPC_JMP_SLOT: ADD(32, 0, "R_PPC_JMP_SLOT");
+		case RZ_PPC_COPY: ADD(32, 0, "R_PPC_COPY"); // copy symbol at runtime
+		case RZ_PPC_REL24: ADD(24, -P, "R_PPC_REL24");
+		case RZ_PPC_REL14: ADD(16, -P, "R_PPC_REL14");
+		case RZ_PPC_REL32: ADD(32, -P, "R_PPC_REL32");
+		case RZ_PPC_RELATIVE: ADD(32, -P, "R_PPC_RELATIVE");
+		case RZ_PPC_PLT32: ADD(32, -P, "R_PPC_PLT32");
+		case RZ_PPC_ADDR16: ADD(16, 0, "R_PPC_ADDR16");
+		case RZ_PPC_ADDR32: ADD(32, 0, "R_PPC_ADDR32");
+		// FIXME: Quite a few relocatons missing here.
 		default:
 			RZ_LOG_WARN("unimplemented ELF/PPC reloc type %d\n", rel->type);
 			break;
 		}
 		break;
-	default: break;
+	case EM_RX:
+		switch (rel->type) {
+		case R_RX_NONE: break;
+		case R_RX_DIR24S_PCREL: ADD(24, -P, "RX_DIR24S_PCREL");
+		case R_RX_DIR32: SET(32, "RX_DIR32");
+		// FIXME: Quite a few relocatons missing here.
+		default:
+			RZ_LOG_WARN("unimplemented ELF/RX reloc type %d\n", rel->type);
+			break;
+		}
+		break;
+	case EM_ALPHA:
+		switch (rel->type) {
+		case RZ_ALPHA_NONE: break;
+		case RZ_ALPHA_REFLONG: SET(32, "R_ALPHA_REFLONG");
+		case RZ_ALPHA_REFQUAD: SET(64, "R_ALPHA_REFQUAD");
+		case RZ_ALPHA_SREL16: ADD(16, -P, "R_ALPHA_SREL16");
+		case RZ_ALPHA_SREL32: ADD(32, -P, "R_ALPHA_SREL32");
+		case RZ_ALPHA_SREL64: ADD(64, -P, "R_ALPHA_SREL64");
+		case RZ_ALPHA_COPY: ADD(32, 0, "R_ALPHA_COPY"); // copy symbol at runtime
+		case RZ_ALPHA_GLOB_DAT: ADD(32, 0, "R_ALPHA_GLOB_DAT");
+		case RZ_ALPHA_JMP_SLOT: ADD(32, 0, "R_ALPHA_JMP_SLOT");
+		default:
+			RZ_LOG_WARN("unimplemented ELF/Alpha reloc type %d\n", rel->type);
+			break;
+		}
+		break;
+	case EM_QDSP6:
+		switch (rel->type) {
+		case R_HEX_B22_PCREL: ADD(32, -P, "R_HEX_B22_PCREL");
+		case R_HEX_B15_PCREL: ADD(32, -P, "R_HEX_B15_PCREL");
+		case R_HEX_B7_PCREL: ADD(32, -P, "R_HEX_B7_PCREL");
+		case R_HEX_LO16: ADD(32, 0, "R_HEX_LO16");
+		case R_HEX_HI16: ADD(32, 0, "R_HEX_HI16");
+		case R_HEX_32: ADD(32, 0, "R_HEX_32");
+		case R_HEX_16: ADD(16, 0, "R_HEX_16");
+		case R_HEX_8: ADD(8, 0, "R_HEX_8");
+		case R_HEX_HL16: ADD(64, 0, "R_HEX_HL16");
+		case R_HEX_B13_PCREL: ADD(32, -P, "R_HEX_B13_PCREL");
+		case R_HEX_B9_PCREL: ADD(32, -P, "R_HEX_B9_PCREL");
+		case R_HEX_B32_PCREL_X: ADD(32, -P, "R_HEX_B32_PCREL_X");
+		case R_HEX_32_6_X: ADD(32, 0, "R_HEX_32_6_X");
+		case R_HEX_B22_PCREL_X: ADD(32, -P, "R_HEX_B22_PCREL_X");
+		case R_HEX_B15_PCREL_X: ADD(32, -P, "R_HEX_B15_PCREL_X");
+		case R_HEX_B13_PCREL_X: ADD(32, -P, "R_HEX_B13_PCREL_X");
+		case R_HEX_B9_PCREL_X: ADD(32, -P, "R_HEX_B9_PCREL_X");
+		case R_HEX_B7_PCREL_X: ADD(32, -P, "R_HEX_B7_PCREL_X");
+		case R_HEX_16_X: ADD(32, 0, "R_HEX_16_X");
+		case R_HEX_12_X: ADD(32, 0, "R_HEX_12_X");
+		case R_HEX_11_X: ADD(32, 0, "R_HEX_11_X");
+		case R_HEX_10_X: ADD(32, 0, "R_HEX_10_X");
+		case R_HEX_9_X: ADD(32, 0, "R_HEX_9_X");
+		case R_HEX_8_X: ADD(32, 0, "R_HEX_8_X");
+		case R_HEX_7_X: ADD(32, 0, "R_HEX_7_X");
+		case R_HEX_6_X: ADD(32, 0, "R_HEX_6_X");
+		case R_HEX_32_PCREL: ADD(32, -P, "R_HEX_32_PCREL");
+		case R_HEX_GLOB_DAT: ADD(32, 0, "R_HEX_GLOB_DAT");
+		case R_HEX_JMP_SLOT: ADD(32, 0, "R_HEX_JMP_SLOT");
+		case R_HEX_GOTREL_LO16: ADD(32, -GOT, "R_HEX_GOTREL_LO16");
+		case R_HEX_GOTREL_HI16: ADD(32, -GOT, "R_HEX_GOTREL_HI16");
+		case R_HEX_GOTREL_32: ADD(32, -GOT, "R_HEX_GOTREL_32");
+		case R_HEX_6_PCREL_X: ADD(32, -P, "R_HEX_6_PCREL_X");
+		case R_HEX_GOTREL_32_6_X: ADD(32, -GOT, "R_HEX_GOTREL_32_6_X");
+		case R_HEX_GOTREL_16_X: ADD(32, -GOT, "R_HEX_GOTREL_16_X");
+		case R_HEX_GOTREL_11_X: ADD(32, -GOT, "R_HEX_GOTREL_11_X");
+		case R_HEX_GD_PLT_B22_PCREL_X: ADD(32, -P, "R_HEX_GD_PLT_B22_PCREL_X");
+		case R_HEX_GD_PLT_B32_PCREL_X: ADD(32, -P, "R_HEX_GD_PLT_B32_PCREL_X");
+		case R_HEX_LD_PLT_B22_PCREL_X: ADD(32, -P, "R_HEX_LD_PLT_B22_PCREL_X");
+		case R_HEX_LD_PLT_B32_PCREL_X: ADD(32, -P, "R_HEX_LD_PLT_B32_PCREL_X");
+		case R_HEX_COPY: SET(32, "R_HEX_COPY");
+		case R_HEX_NONE:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_NONE\n");
+			break;
+		case R_HEX_RELATIVE:
+			RZ_LOG_WARN("R_HEX_RELATIVE - Preview not supported, patching is implemented\n");
+			break;
+		case R_HEX_PLT_B22_PCREL:
+			RZ_LOG_WARN("R_HEX_PLT_B22_PCREL - Preview not supported, patching is implemented\n");
+			break;
+		case R_HEX_GOT_LO16:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_GOT_LO16\n");
+			break;
+		case R_HEX_GOT_HI16:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_GOT_HI16\n");
+			break;
+		case R_HEX_GOT_32:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_GOT_32\n");
+			break;
+		case R_HEX_GOT_16:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_GOT_16\n");
+			break;
+		case R_HEX_DTPMOD_32:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_DTPMOD_32\n");
+			break;
+		case R_HEX_GD_PLT_B22_PCREL:
+			RZ_LOG_WARN("R_HEX_GD_PLT_B22_PCREL - Preview not supported, patching is implemented\n");
+			break;
+		case R_HEX_GD_GOT_LO16:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_GD_GOT_LO16\n");
+			break;
+		case R_HEX_GD_GOT_HI16:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_GD_GOT_HI16\n");
+			break;
+		case R_HEX_GD_GOT_32:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_GD_GOT_32\n");
+			break;
+		case R_HEX_GD_GOT_16:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_GD_GOT_16\n");
+			break;
+		case R_HEX_IE_LO16:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_IE_LO16\n");
+			break;
+		case R_HEX_IE_HI16:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_IE_HI16\n");
+			break;
+		case R_HEX_IE_32:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_IE_32\n");
+			break;
+		case R_HEX_IE_GOT_LO16:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_IE_GOT_LO16\n");
+			break;
+		case R_HEX_IE_GOT_HI16:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_IE_GOT_HI16\n");
+			break;
+		case R_HEX_IE_GOT_32:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_IE_GOT_32\n");
+			break;
+		case R_HEX_IE_GOT_16:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_IE_GOT_16\n");
+			break;
+		case R_HEX_TPREL_LO16:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_TPREL_LO16\n");
+			break;
+		case R_HEX_TPREL_HI16:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_TPREL_HI16\n");
+			break;
+		case R_HEX_TPREL_32:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_TPREL_32\n");
+			break;
+		case R_HEX_TPREL_16:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_TPREL_16\n");
+			break;
+		case R_HEX_GOT_32_6_X:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_GOT_32_6_X\n");
+			break;
+		case R_HEX_GOT_16_X:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_GOT_16_X\n");
+			break;
+		case R_HEX_GOT_11_X:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_GOT_11_X\n");
+			break;
+		case R_HEX_GD_GOT_32_6_X:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_GD_GOT_32_6_X\n");
+			break;
+		case R_HEX_GD_GOT_16_X:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_GD_GOT_16_X\n");
+			break;
+		case R_HEX_GD_GOT_11_X:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_GD_GOT_11_X\n");
+			break;
+		case R_HEX_IE_32_6_X:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_IE_32_6_X\n");
+			break;
+		case R_HEX_IE_16_X:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_IE_16_X\n");
+			break;
+		case R_HEX_IE_GOT_32_6_X:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_IE_GOT_32_6_X\n");
+			break;
+		case R_HEX_IE_GOT_16_X:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_IE_GOT_16_X\n");
+			break;
+		case R_HEX_IE_GOT_11_X:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_IE_GOT_11_X\n");
+			break;
+		case R_HEX_TPREL_32_6_X:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_TPREL_32_6_X\n");
+			break;
+		case R_HEX_TPREL_16_X:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_TPREL_16_X\n");
+			break;
+		case R_HEX_TPREL_11_X:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_TPREL_11_X\n");
+			break;
+		case R_HEX_LD_PLT_B22_PCREL:
+			RZ_LOG_WARN("R_HEX_LD_PLT_B22_PCREL - Preview not supported, patching is implemented\n");
+			break;
+		case R_HEX_LD_GOT_LO16:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_LD_GOT_LO16\n");
+			break;
+		case R_HEX_LD_GOT_HI16:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_LD_GOT_HI16\n");
+			break;
+		case R_HEX_LD_GOT_32:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_LD_GOT_32\n");
+			break;
+		case R_HEX_LD_GOT_16:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_LD_GOT_16\n");
+			break;
+		case R_HEX_LD_GOT_32_6_X:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_LD_GOT_32_6_X\n");
+			break;
+		case R_HEX_LD_GOT_16_X:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_LD_GOT_16_X\n");
+			break;
+		case R_HEX_LD_GOT_11_X:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_LD_GOT_11_X\n");
+			break;
+		case R_HEX_27_REG:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_27_REG\n");
+			break;
+		case R_HEX_23_REG:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_23_REG\n");
+			break;
+		case R_HEX_DTPREL_32_6_X:
+			RZ_LOG_WARN("R_HEX_DTPREL_32_6_X - Preview not supported, patching is implemented\n");
+			break;
+		case R_HEX_DTPREL_16_X:
+			RZ_LOG_WARN("R_HEX_DTPREL_16_X - Preview not supported, patching is implemented\n");
+			break;
+		case R_HEX_DTPREL_11_X:
+			RZ_LOG_WARN("R_HEX_DTPREL_11_X - Preview not supported, patching is implemented\n");
+			break;
+		case R_HEX_DTPREL_LO16:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_DTPREL_LO16\n");
+			break;
+		case R_HEX_DTPREL_HI16:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_DTPREL_HI16\n");
+			break;
+		case R_HEX_DTPREL_32:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_DTPREL_32\n");
+			break;
+		case R_HEX_DTPREL_16:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_DTPREL_16\n");
+			break;
+		case R_HEX_GPREL16_0:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_GPREL16_0\n");
+			break;
+		case R_HEX_GPREL16_1:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_GPREL16_1\n");
+			break;
+		case R_HEX_GPREL16_2:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_GPREL16_2\n");
+			break;
+		case R_HEX_GPREL16_3:
+			RZ_LOG_WARN("Unsupported reloc: R_HEX_GPREL16_3\n");
+			break;
+		}
+		break;
+	default:
+		break;
 	}
 
 #undef SET
@@ -1571,7 +1930,7 @@ static RzPVector /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 		}
 		vf->buf = buf;
 		vf->buf_owned = true;
-		vf->name = strdup(VFILE_NAME_RELOC_TARGETS);
+		vf->name = rz_str_dup(VFILE_NAME_RELOC_TARGETS);
 		rz_pvector_push(r, vf);
 	}
 	// virtual file mirroring the raw file, but with relocs patched
@@ -1581,7 +1940,7 @@ static RzPVector /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 			return r;
 		}
 		vf->buf = obj->buf_patched;
-		vf->name = strdup(VFILE_NAME_PATCHED);
+		vf->name = rz_str_dup(VFILE_NAME_PATCHED);
 		rz_pvector_push(r, vf);
 	}
 	return r;
@@ -1633,7 +1992,9 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 			ptr->is_data = true;
 		}
 		if (is_wordable_section(ptr->name)) {
-			ptr->format = rz_str_newf("Cd %zu %" PFMT64d, sizeof(Elf_(Addr)), section->size / sizeof(Elf_(Addr)));
+			ptr->layout.type = RZ_META_TYPE_DATA;
+			ptr->layout.element_size = sizeof(Elf_(Addr));
+			ptr->layout.count = section->size / sizeof(Elf_(Addr));
 		}
 		ptr->size = section->type != SHT_NOBITS ? section->size : 0;
 		ptr->vsize = section->size;
@@ -1665,7 +2026,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 
 		switch (iter->data.p_type) {
 		case PT_DYNAMIC:
-			ptr->name = strdup("DYNAMIC");
+			ptr->name = rz_str_dup("DYNAMIC");
 			break;
 		case PT_LOAD: {
 			ptr->name = rz_str_newf("LOAD%zu", n++);
@@ -1673,41 +2034,41 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 			break;
 		}
 		case PT_INTERP:
-			ptr->name = strdup("INTERP");
+			ptr->name = rz_str_dup("INTERP");
 			break;
 		case PT_GNU_STACK:
-			ptr->name = strdup("GNU_STACK");
+			ptr->name = rz_str_dup("GNU_STACK");
 			break;
 		case PT_GNU_RELRO:
-			ptr->name = strdup("GNU_RELRO");
+			ptr->name = rz_str_dup("GNU_RELRO");
 			break;
 		case PT_GNU_EH_FRAME:
-			ptr->name = strdup("GNU_EH_FRAME");
+			ptr->name = rz_str_dup("GNU_EH_FRAME");
 			break;
 		case PT_PHDR:
-			ptr->name = strdup("PHDR");
+			ptr->name = rz_str_dup("PHDR");
 			break;
 		case PT_TLS:
-			ptr->name = strdup("TLS");
+			ptr->name = rz_str_dup("TLS");
 			break;
 		case PT_NOTE:
-			ptr->name = strdup("NOTE");
+			ptr->name = rz_str_dup("NOTE");
 			break;
 		case PT_OPENBSD_RANDOMIZE:
-			ptr->name = strdup("OPENBSD_RANDOMIZE");
+			ptr->name = rz_str_dup("OPENBSD_RANDOMIZE");
 			break;
 		case PT_OPENBSD_WXNEEDED:
-			ptr->name = strdup("OPENBSD_WXNEEDED");
+			ptr->name = rz_str_dup("OPENBSD_WXNEEDED");
 			break;
 		case PT_OPENBSD_BOOTDATA:
-			ptr->name = strdup("OPENBSD_BOOTDATA");
+			ptr->name = rz_str_dup("OPENBSD_BOOTDATA");
 			break;
 		case PT_OPENBSD_NOBTCFI:
-			ptr->name = strdup("OPENBSD_NOBTCFI");
+			ptr->name = rz_str_dup("OPENBSD_NOBTCFI");
 			break;
 		default:
 			if (ptr->size == 0 && ptr->vsize == 0) {
-				ptr->name = strdup("NONE");
+				ptr->name = rz_str_dup("NONE");
 			} else {
 				ptr->name = setphname(mach, iter->data.p_type);
 			}
@@ -1723,7 +2084,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		if (bf->size < ehdr_size) {
 			ehdr_size = bf->size;
 		}
-		ptr->name = strdup("ehdr");
+		ptr->name = rz_str_dup("ehdr");
 		ptr->paddr = 0;
 		ptr->vaddr = obj->baddr;
 		ptr->size = ehdr_size;
@@ -1821,7 +2182,7 @@ static RzPVector /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 
 	patch_relocs(bf, bin);
 
-	if (!(ret = rz_pvector_new((RzPVectorFree)free))) {
+	if (!(ret = rz_pvector_new((RzPVectorFree)rz_bin_reloc_free))) {
 		return NULL;
 	}
 
@@ -1918,15 +2279,13 @@ static RzBinInfo *info(RzBinFile *bf) {
 	if (!(ret = RZ_NEW0(RzBinInfo))) {
 		return NULL;
 	}
-	ret->file = bf->file
-		? strdup(bf->file)
-		: NULL;
+	ret->file = rz_str_dup(bf->file);
 	ELFOBJ *obj = bf->o->bin_obj;
 	if ((str = Elf_(rz_bin_elf_get_rpath)(obj))) {
-		ret->rpath = strdup(str);
+		ret->rpath = rz_str_dup(str);
 		free(str);
 	} else {
-		ret->rpath = strdup("NONE");
+		ret->rpath = rz_str_dup("NONE");
 	}
 	if (!(str = Elf_(rz_bin_elf_get_file_type)(obj))) {
 		free(ret);
@@ -1971,9 +2330,13 @@ static RzBinInfo *info(RzBinFile *bf) {
 	}
 	if ((str = Elf_(rz_bin_elf_get_abi)(obj))) {
 		ret->features = str;
+		if (!ret->has_pi) {
+			// Elf MIPS PIE flag is in features.
+			ret->has_pi = (strstr(str, "pic ")) ? 1 : 0;
+		}
 	}
 
-	ret->rclass = strdup("elf");
+	ret->rclass = rz_str_dup("elf");
 	ret->bits = obj->bits;
 	if (!strcmp(ret->arch, "avr")) {
 		ret->bits = 16;

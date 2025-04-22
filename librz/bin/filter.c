@@ -42,7 +42,7 @@ static bool false_positive(const char *str) {
 RZ_API bool rz_bin_strpurge(RzBin *bin, const char *str, ut64 refaddr) {
 	bool purge = false;
 	if (bin->strpurge) {
-		char *addrs = strdup(bin->strpurge);
+		char *addrs = rz_str_dup(bin->strpurge);
 		if (addrs) {
 			int splits = rz_str_split(addrs, ',');
 			int i;

@@ -104,39 +104,39 @@ static RzBinInfo *info(RzBinFile *arch) {
 		return NULL;
 	}
 
-	ret->file = strdup(arch->file);
+	ret->file = rz_str_dup(arch->file);
 	ret->type = rz_str_newf("Python %s byte-compiled file", ctx->version.version);
-	ret->bclass = strdup("Python byte-compiled file");
-	ret->rclass = strdup("pyc");
-	ret->arch = strdup("pyc");
+	ret->bclass = rz_str_dup("Python byte-compiled file");
+	ret->rclass = rz_str_dup("pyc");
+	ret->arch = rz_str_dup("pyc");
 	ret->machine = rz_str_newf("Python %s VM (rev %s)", ctx->version.version,
 		ctx->version.revision);
-	ret->os = strdup("any");
+	ret->os = rz_str_dup("any");
 	ret->bits = is_before_py_36 ? 16 : 8;
-	ret->cpu = strdup(ctx->version.version); // pass version info in cpu, Asm plugin will get it
+	ret->cpu = rz_str_dup(ctx->version.version); // pass version info in cpu, Asm plugin will get it
 	return ret;
 }
 
-static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *arch) {
+static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *arch) {
 	RzBinPycObj *pyc = arch->o->bin_obj;
 
-	RzList *entries = rz_list_newf((RzListFree)free);
+	RzPVector *entries = rz_pvector_new((RzPVectorFree)free);
 	if (!entries) {
 		return NULL;
 	}
 	RzBinAddr *addr = RZ_NEW0(RzBinAddr);
 	if (!addr) {
-		rz_list_free(entries);
+		rz_pvector_free(entries);
 		return NULL;
 	}
 	ut64 entrypoint = get_entrypoint(arch);
 	addr->paddr = entrypoint;
 	addr->vaddr = entrypoint;
 	rz_buf_seek(arch->buf, entrypoint, RZ_IO_SEEK_SET);
-	rz_list_append(entries, addr);
+	rz_pvector_push(entries, addr);
 
 	if (!init_pyc_cache(pyc, arch->buf)) {
-		rz_list_free(entries);
+		rz_pvector_free(entries);
 		return NULL;
 	}
 	return entries;

@@ -34,18 +34,18 @@ static bool lmf_header_load(lmf_header *lmfh, RzBuffer *buf, Sdb *db) {
 		return false;
 	}
 	char tmpbuf[32];
-	sdb_set(db, "qnx.version", rz_strf(tmpbuf, "0x%xH", lmfh->version), 0);
-	sdb_set(db, "qnx.cflags", rz_strf(tmpbuf, "0x%xH", lmfh->cflags), 0);
-	sdb_set(db, "qnx.cpu", rz_strf(tmpbuf, "0x%xH", lmfh->cpu), 0);
-	sdb_set(db, "qnx.fpu", rz_strf(tmpbuf, "0x%xH", lmfh->fpu), 0);
-	sdb_set(db, "qnx.code_index", rz_strf(tmpbuf, "0x%x", lmfh->code_index), 0);
-	sdb_set(db, "qnx.stack_index", rz_strf(tmpbuf, "0x%x", lmfh->stack_index), 0);
-	sdb_set(db, "qnx.heap_index", rz_strf(tmpbuf, "0x%x", lmfh->heap_index), 0);
-	sdb_set(db, "qnx.argv_index", rz_strf(tmpbuf, "0x%x", lmfh->argv_index), 0);
-	sdb_set(db, "qnx.code_offset", rz_strf(tmpbuf, "0x%x", lmfh->code_offset), 0);
-	sdb_set(db, "qnx.stack_nbytes", rz_strf(tmpbuf, "0x%x", lmfh->stack_nbytes), 0);
-	sdb_set(db, "qnx.heap_nbytes", rz_strf(tmpbuf, "0x%x", lmfh->heap_nbytes), 0);
-	sdb_set(db, "qnx.image_base", rz_strf(tmpbuf, "0x%x", lmfh->image_base), 0);
+	sdb_set(db, "qnx.version", rz_strf(tmpbuf, "0x%xH", lmfh->version));
+	sdb_set(db, "qnx.cflags", rz_strf(tmpbuf, "0x%xH", lmfh->cflags));
+	sdb_set(db, "qnx.cpu", rz_strf(tmpbuf, "0x%xH", lmfh->cpu));
+	sdb_set(db, "qnx.fpu", rz_strf(tmpbuf, "0x%xH", lmfh->fpu));
+	sdb_set(db, "qnx.code_index", rz_strf(tmpbuf, "0x%x", lmfh->code_index));
+	sdb_set(db, "qnx.stack_index", rz_strf(tmpbuf, "0x%x", lmfh->stack_index));
+	sdb_set(db, "qnx.heap_index", rz_strf(tmpbuf, "0x%x", lmfh->heap_index));
+	sdb_set(db, "qnx.argv_index", rz_strf(tmpbuf, "0x%x", lmfh->argv_index));
+	sdb_set(db, "qnx.code_offset", rz_strf(tmpbuf, "0x%x", lmfh->code_offset));
+	sdb_set(db, "qnx.stack_nbytes", rz_strf(tmpbuf, "0x%x", lmfh->stack_nbytes));
+	sdb_set(db, "qnx.heap_nbytes", rz_strf(tmpbuf, "0x%x", lmfh->heap_nbytes));
+	sdb_set(db, "qnx.image_base", rz_strf(tmpbuf, "0x%x", lmfh->image_base));
 	return true;
 }
 
@@ -124,7 +124,7 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 			if (!ptr) {
 				goto beach;
 			}
-			ptr->name = strdup("LMF_RESOURCE");
+			ptr->name = rz_str_dup("LMF_RESOURCE");
 			ptr->paddr = offset;
 			ptr->vsize = lrec.data_nbytes - LMF_RESOURCE_SIZE;
 			ptr->size = ptr->vsize;
@@ -134,7 +134,7 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 			if (!map) {
 				goto beach;
 			}
-			map->name = ptr->name ? strdup(ptr->name) : NULL;
+			map->name = rz_str_dup(ptr->name);
 			map->paddr = ptr->paddr;
 			map->psize = ptr->size;
 			map->vsize = ptr->vsize;
@@ -153,7 +153,7 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 				free(ptr);
 				goto beach;
 			}
-			ptr->name = strdup("LMF_LOAD");
+			ptr->name = rz_str_dup("LMF_LOAD");
 			ptr->paddr = offset;
 			ptr->vaddr = ldata.offset;
 			ptr->vsize = lrec.data_nbytes - LMF_DATA_SIZE;
@@ -164,7 +164,7 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 			if (!map) {
 				goto beach;
 			}
-			map->name = ptr->name ? strdup(ptr->name) : NULL;
+			map->name = rz_str_dup(ptr->name);
 			map->paddr = ptr->paddr;
 			map->psize = ptr->size;
 			map->vsize = ptr->vsize;
@@ -231,14 +231,14 @@ static RzBinInfo *info(RzBinFile *bf) {
 	if (!ret) {
 		return NULL;
 	}
-	ret->file = bf->file ? strdup(bf->file) : NULL;
-	ret->type = strdup("QNX Executable");
-	ret->bclass = strdup("qnx");
-	ret->machine = strdup("i386");
-	ret->rclass = strdup("QNX");
-	ret->arch = strdup("x86");
-	ret->os = strdup("any");
-	ret->subsystem = strdup("any");
+	ret->file = rz_str_dup(bf->file);
+	ret->type = rz_str_dup("QNX Executable");
+	ret->bclass = rz_str_dup("qnx");
+	ret->machine = rz_str_dup("i386");
+	ret->rclass = rz_str_dup("QNX");
+	ret->arch = rz_str_dup("x86");
+	ret->os = rz_str_dup("any");
+	ret->subsystem = rz_str_dup("any");
 	ret->lang = "C/C++";
 	ret->signature = true;
 	return ret;
@@ -249,7 +249,7 @@ static RzPVector /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 	QnxObj *qo = bf->o->bin_obj;
 	RzBinReloc *reloc = NULL;
 	RzListIter *it = NULL;
-	RzPVector *relocs = rz_pvector_new(free);
+	RzPVector *relocs = rz_pvector_new((RzPVectorFree)rz_bin_reloc_free);
 	if (!relocs) {
 		return NULL;
 	}
@@ -336,20 +336,19 @@ static ut64 baddr(RzBinFile *bf) {
  * Currently both physical and virtual address are set to 0
  * The memory map has different values for entry
  */
-static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
-	RzList *ret;
+static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+	RzPVector *ret;
 	RzBinAddr *ptr = NULL;
 	QnxObj *qo = bf->o->bin_obj;
-	if (!(ret = rz_list_new())) {
+	if (!(ret = rz_pvector_new(free))) {
 		return NULL;
 	}
-	ret->free = free;
 	if (!(ptr = RZ_NEW0(RzBinAddr))) {
 		return ret;
 	}
 	ptr->paddr = qo->lmfh.code_offset;
 	ptr->vaddr = qo->lmfh.code_offset + baddr(bf);
-	rz_list_append(ret, ptr);
+	rz_pvector_push(ret, ptr);
 	return ret;
 }
 

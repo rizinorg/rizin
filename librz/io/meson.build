@@ -18,7 +18,6 @@ io_plugins_list = [
   'ptrace',
   'rzpipe',
   'rzweb',
-  'rap',
   'self',
   'shm',
   'sparse',
@@ -41,8 +40,8 @@ if host_machine.system() == 'windows'
 endif
 
 io_plugins = {
-  'conf_name': 'plugins_io',
-  'base_cname': 'rz_io_plugin_',
+  'base_name': 'rz_io',
+  'base_struct': 'RzIOPlugin',
   'list': io_plugins_list,
 }
 
@@ -75,7 +74,6 @@ rz_io_sources = [
   'p/io_ptrace.c',
   'p/io_rzpipe.c',
   'p/io_rzweb.c',
-  'p/io_rap.c',
   'p/io_self.c',
   'p/io_shm.c',
   'p/io_sparse.c',

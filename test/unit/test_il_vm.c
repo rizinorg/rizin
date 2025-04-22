@@ -1019,6 +1019,73 @@ static bool test_rzil_vm_op_fcast() {
 	mu_end;
 }
 
+static bool test_rzil_vm_op_fexcept() {
+	/**
+	 * test for execute fexcept op in rzil vm
+	 * 1. div by zero
+	 * 2. overflow
+	 * 3. underflow
+	 * 4. inexact result
+	 */
+
+	RzILVM *vm = rz_il_vm_new(0, 32, false);
+	RzFloat *result;
+	RzILBool *e;
+	RzILOpFloat *op;
+	RzILOpBool *eop;
+
+	// 1. Test division by zero
+	op = rz_il_op_new_fdiv(RZ_FLOAT_RMODE_RNE,
+		rz_il_op_new_float_from_f64(1.0),
+		rz_il_op_new_float_from_f64(0.0));
+	result = rz_il_evaluate_float(vm, op);
+
+	eop = rz_il_op_new_fexcept(RZ_FLOAT_E_DIV_ZERO, op);
+	e = rz_il_evaluate_bool(vm, eop);
+
+	mu_assert_true(rz_float_is_inf(result), "div by zero should result in infinity");
+	mu_assert_true(e->b, "div by zero exception should be set");
+	rz_float_free(result);
+	rz_il_op_pure_free(eop);
+
+	// 2. Test overflow
+	op = rz_il_op_new_fmul(RZ_FLOAT_RMODE_RNE,
+		rz_il_op_new_float_from_f64(1e308),
+		rz_il_op_new_float_from_f64(1e308));
+	result = rz_il_evaluate_float(vm, op);
+	eop = rz_il_op_new_fexcept(RZ_FLOAT_E_OVERFLOW, op);
+	e = rz_il_evaluate_bool(vm, eop);
+
+	mu_assert_true(rz_float_is_inf(result), "overflow should result in infinity");
+	mu_assert_true(e->b, "overflow exception should be set");
+	rz_float_free(result);
+	rz_il_op_pure_free(eop);
+	rz_il_bool_free(e);
+
+	// 3. Test underflow
+	op = rz_il_op_new_fmul(RZ_FLOAT_RMODE_RNE,
+		rz_il_op_new_float_from_f64(1e-308),
+		rz_il_op_new_float_from_f64(1e-308));
+	eop = rz_il_op_new_fexcept(RZ_FLOAT_E_UNDERFLOW, op);
+	e = rz_il_evaluate_bool(vm, eop);
+	mu_assert_true(e->b, "underflow exception should be set");
+	rz_il_op_pure_free(eop);
+	rz_il_bool_free(e);
+
+	// 4. Test inexact result
+	op = rz_il_op_new_fdiv(RZ_FLOAT_RMODE_RNE,
+		rz_il_op_new_float_from_f64(1.0),
+		rz_il_op_new_float_from_f64(3.0));
+	eop = rz_il_op_new_fexcept(RZ_FLOAT_E_INEXACT, op);
+	e = rz_il_evaluate_bool(vm, eop);
+	mu_assert_true(e->b, "inexact exception should be set");
+	rz_il_op_pure_free(eop);
+	rz_il_bool_free(e);
+
+	rz_il_vm_free(vm);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rzil_vm_init);
 	mu_run_test(test_rzil_vm_global_vars);
@@ -1047,6 +1114,7 @@ bool all_tests() {
 	mu_run_test(test_rzil_vm_op_compare);
 	mu_run_test(test_rzil_vm_op_float);
 	mu_run_test(test_rzil_vm_op_fcast);
+	mu_run_test(test_rzil_vm_op_fexcept);
 	return tests_passed != tests_run;
 }
 

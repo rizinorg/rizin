@@ -2,6 +2,12 @@ NAME=t/bug_backtick
 FILE==
 BROKEN=1
 CMDS=p8 3`~`
-EXPECT=<<EOF
-EOF
+EXPECT=
+RUN
+
+NAME=Invalid offset due invalid command
+FILE==
+BROKEN=1
+CMDS=fd @ `entry1`
+EXPECT=
 RUN

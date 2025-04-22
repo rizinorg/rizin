@@ -30,7 +30,7 @@ REGEXP_FILTER_ERR=<<EOF
 ERROR:.+
 EOF
 EXPECT_ERR=<<EOF
-ERROR: RzIL: invalid instruction or lifting not implemented at address 0x00000004
+ERROR: RzIL: lifting not implemented at address 0x00000004
 EOF
 RUN
 
@@ -52,7 +52,7 @@ REGEXP_FILTER_ERR=<<EOF
 ERROR:.+
 EOF
 EXPECT_ERR=<<EOF
-ERROR: RzIL: invalid instruction or lifting not implemented at address 0x00000004
+ERROR: RzIL: lifting not implemented at address 0x00000004
 EOF
 RUN
 
@@ -82,7 +82,7 @@ REGEXP_FILTER_ERR=<<EOF
 ERROR:.+
 EOF
 EXPECT_ERR=<<EOF
-ERROR: RzIL: invalid instruction or lifting not implemented at address 0x00000004
+ERROR: RzIL: lifting not implemented at address 0x00000004
 EOF
 RUN
 

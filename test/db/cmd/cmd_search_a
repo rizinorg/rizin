@@ -1,0 +1,125 @@
+NAME=/a search - errors - no assembler
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=hexagon
+e asm.bits=32
+/a add esp, 8
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'add esp, 8' at line 3
+ERROR: Failed to assemble 'add esp, 8'
+ERROR: Consider using "/ar" instead.
+EOF
+RUN
+
+NAME=/a search - errors - faulty asm-text
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+wa "add esp,8;pop ebx; pop ebp; ret"
+/a ad esp, 8
+EOF
+EXPECT=
+REGEXP_FILTER_ERR=Cannot assemble.*
+EXPECT_ERR=<<EOF
+Cannot assemble 'ad esp, 8' at line 3
+EOF
+RUN
+
+NAME=/a search - empty
+FILE=
+CMDS=<<EOF
+e asm.arch=x86
+e asm.assembler=x86
+e asm.bits=32
+/a add esp, 8
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=/a search - x86
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+wa "add esp,8;pop ebx; pop ebp; ret"
+/a add esp, 8
+/a pop ebx
+/a pop ebp
+/a ret
+EOF
+EXPECT=<<EOF
+0x00000000 3 hit.asm_text.0
+0x00000003 1 hit.asm_text.0
+0x00000004 1 hit.asm_text.0
+0x00000005 1 hit.asm_text.0
+EOF
+RUN
+
+NAME=/a search - arm - in file
+FILE=bins/elf/arm-init
+CMDS=<<EOF
+/a add r0, pc, r0
+pi 1 @ hit.asm_text.0
+pi 1 @ hit.asm_text.1
+/a pop {fp, pc}
+pi 1 @ hit.asm_text.0
+pi 1 @ hit.asm_text.1
+EOF
+EXPECT=<<EOF
+0x000002e8 4 hit.asm_text.0
+0x00000310 4 hit.asm_text.1
+add r0, pc, r0
+add r0, pc, r0
+0x0000033c 4 hit.asm_text.0
+0x0000035c 4 hit.asm_text.1
+pop {fp, pc}
+pop {fp, pc}
+EOF
+RUN
+
+NAME=/a search - x86 - in file
+FILE=bins/elf/hello_world
+CMDS=<<EOF
+e asm.arch=x86
+/a mov   r15d, edi
+/a hlt
+EOF
+EXPECT=<<EOF
+0x00000854 3 hit.asm_text.0
+0x0000028c 1 hit.asm_text.0
+0x000006ca 1 hit.asm_text.1
+EOF
+RUN
+
+NAME=/ad search - issue 4098
+FILE==
+ARGS=-e asm.arch=arm -e asm.bits=64
+CMDS=<<EOF
+wx a0e1fe9000003b9141b8fe9021400f91
+pd 4
+/ad "adrp x0;add x0"
+/ad "adrp x1;add x1"
+/ad "adrp x1;add x2"
+/adj "adrp x0;add x0"
+/adj "adrp x1;add x1"
+/adj "adrp x1;add x2"
+EOF
+EXPECT=<<EOF
+            0x00000000      adrp  x0, 0xfffffffffdc34000
+            0x00000004      add   x0, x0, 0xec0
+            0x00000008      adrp  x1, 0xfffffffffd708000
+            0x0000000c      add   x1, x1, 0x3d0
+0x00000000   # 8: adrp x0, 0xfffffffffdc34000; add x0, x0, 0xec0
+0x00000008   # 8: adrp x1, 0xfffffffffd708000; add x1, x1, 0x3d0
+[{"offset":0,"len":8,"code":"adrp x0, 0xfffffffffdc34000; add x0, x0, 0xec0"}]
+[{"offset":8,"len":8,"code":"adrp x1, 0xfffffffffd708000; add x1, x1, 0x3d0"}]
+[]
+EOF
+RUN
+

@@ -44,7 +44,7 @@ NAME=DEX dex38.dex ie command
 FILE=bins/dex/dex38.dex
 CMDS=ie
 EXPECT=<<EOF
-vaddr       paddr      hvaddr     haddr      type    
+      vaddr      paddr     hvaddr      haddr type    
 -----------------------------------------------------
 0x100000f70 0x00000f70 ---------- ---------- program
 0x1000010b8 0x000010b8 ---------- ---------- program
@@ -82,17 +82,17 @@ icf 'Hello'
 icm 'Hello'
 EOF
 EXPECT=<<EOF
-address    min         max         name  super  
+   address         min         max name  super  
 ------------------------------------------------
 0x00000174 0x1000001a4 0x10000021e Hello Object
-address     index class flags name type   
+    address index class flags name type   
 ------------------------------------------
-0x100000336 0     Hello P     who  String
-address     index class flags name                
+0x100000336     0 Hello P     who  String
+    address index class flags name                
 --------------------------------------------------
-0x1000001a4 0     Hello pC    void <init>(String)
-0x1000001c0 1     Hello sp    void main(String[])
-0x1000001e8 2     Hello p     void say()
+0x1000001a4     0 Hello pC    void <init>(String)
+0x1000001c0     1 Hello sp    void main(String[])
+0x1000001e8     2 Hello p     void say()
 EOF
 RUN
 
@@ -103,14 +103,14 @@ icf 'Hello'
 icm 'Hello'
 EOF
 EXPECT=<<EOF
-address     index class flags name type   
+    address index class flags name type   
 ------------------------------------------
-0x100000336 0     Hello P     who  String
-address     index class flags name                
+0x100000336     0 Hello P     who  String
+    address index class flags name                
 --------------------------------------------------
-0x1000001a4 0     Hello pC    void <init>(String)
-0x1000001c0 1     Hello sp    void main(String[])
-0x1000001e8 2     Hello p     void say()
+0x1000001a4     0 Hello pC    void <init>(String)
+0x1000001c0     1 Hello sp    void main(String[])
+0x1000001e8     2 Hello p     void say()
 EOF
 RUN
 
@@ -235,16 +235,16 @@ ARGS=-e bin.demangle.flags=all
 FILE=bins/dex/HelloWorld.dex
 CMDS=ii
 EXPECT=<<EOF
-nth vaddr      bind type  lib                     name                         
+nth      vaddr bind type  lib                     name                         
 -------------------------------------------------------------------------------
-0   ---------- WEAK FIELD java.lang.System        out
-1   ---------- WEAK FUNC  java.io.PrintStream     void println(String)
-2   ---------- WEAK FUNC  java.lang.Integer       void <init>(int)
-3   ---------- WEAK FUNC  java.lang.Integer       String toString()
-4   ---------- WEAK FUNC  java.lang.Object        void <init>()
-5   ---------- WEAK FUNC  java.lang.StringBuilder void <init>()
-6   ---------- WEAK FUNC  java.lang.StringBuilder StringBuilder append(String)
-7   ---------- WEAK FUNC  java.lang.StringBuilder String toString()
+  0 ---------- WEAK FIELD java.lang.System        out
+  1 ---------- WEAK FUNC  java.io.PrintStream     void println(String)
+  2 ---------- WEAK FUNC  java.lang.Integer       void <init>(int)
+  3 ---------- WEAK FUNC  java.lang.Integer       String toString()
+  4 ---------- WEAK FUNC  java.lang.Object        void <init>()
+  5 ---------- WEAK FUNC  java.lang.StringBuilder void <init>()
+  6 ---------- WEAK FUNC  java.lang.StringBuilder StringBuilder append(String)
+  7 ---------- WEAK FUNC  java.lang.StringBuilder String toString()
 EOF
 RUN
 
@@ -252,10 +252,10 @@ NAME=DEX HelloWorld.dex exports (iE command)
 FILE=bins/dex/HelloWorld.dex
 CMDS=iE
 EXPECT=<<EOF
-nth paddr      vaddr       bind   type  size lib   name                
+nth      paddr       vaddr bind   type  size lib   name                
 -----------------------------------------------------------------------
-1   0x000004f0 0x1000004f0 GLOBAL FIELD 0    Hello localVar2
-2   0x0000025c 0x10000025c GLOBAL METH  34   Hello void main(String[])
+  1 0x000004f0 0x1000004f0 GLOBAL FIELD    0 Hello localVar2
+  2 0x0000025c 0x10000025c GLOBAL METH    34 Hello void main(String[])
 EOF
 RUN
 
@@ -1441,17 +1441,17 @@ icf 'com.stericson.RootTools.Installer'
 icm 'com.stericson.RootTools.Installer'
 EOF
 EXPECT=<<EOF
-address     index class                             flags name            type                    
+    address index class                             flags name            type                    
 --------------------------------------------------------------------------------------------------
-0x10000a4b2 0     com.stericson.RootTools.Installer sPf   BOGUS_FILE_NAME String
-0x10000a4b5 1     com.stericson.RootTools.Installer sPf   LOG_TAG         String
-0x10000a4b7 2     com.stericson.RootTools.Installer P     context         android.content.Context
-0x10000a4ba 3     com.stericson.RootTools.Installer P     filesPath       String
-address     index class                             flags name                                       
+0x10000a4b2     0 com.stericson.RootTools.Installer sPf   BOGUS_FILE_NAME String
+0x10000a4b5     1 com.stericson.RootTools.Installer sPf   LOG_TAG         String
+0x10000a4b7     2 com.stericson.RootTools.Installer P     context         android.content.Context
+0x10000a4ba     3 com.stericson.RootTools.Installer P     filesPath       String
+    address index class                             flags name                                       
 -----------------------------------------------------------------------------------------------------
-0x100011410 0     com.stericson.RootTools.Installer pC    void <init>(android.content.Context)
-0x100011440 1     com.stericson.RootTools.Installer r     boolean installBinary(int, String, String)
-0x100011814 2     com.stericson.RootTools.Installer r     boolean isBinaryInstalled(String)
+0x100011410     0 com.stericson.RootTools.Installer pC    void <init>(android.content.Context)
+0x100011440     1 com.stericson.RootTools.Installer r     boolean installBinary(int, String, String)
+0x100011814     2 com.stericson.RootTools.Installer r     boolean isBinaryInstalled(String)
 EOF
 RUN
 

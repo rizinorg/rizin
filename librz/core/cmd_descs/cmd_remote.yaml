@@ -23,10 +23,11 @@ commands:
       - name: cmd
         type: RZ_CMD_ARG_TYPE_CMD
   - name: R!
-    cname: io_system_run_oldhandler
-    summary: Run <cmd> via rz_io_system
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
-    args_str: "[<cmd>]"
+    cname: remote_io_system_run_cmd
+    summary: Run command via rz_io_system
+    args:
+      - name: cmd
+        type: RZ_CMD_ARG_TYPE_CMD
     options: ""
   - name: R+
     cname: remote_add
@@ -58,27 +59,52 @@ commands:
     cname: remote_mode_disable
     summary: Disable remote cmd mode
     args: []
-  - name: "Rr"
-    cname: remote_rap
-    summary: Start the rap server (o rap://9999) / Execute <cmd> on rap server
-    args:
-      - name: "[host:]port"
-        type: RZ_CMD_ARG_TYPE_STRING
-      - name: cmd
-        type: RZ_CMD_ARG_TYPE_CMD
-        optional: true
   - name: Rg
-    cname: equal_g_handler_old
     summary: Start the gdbserver
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    subcommands:
+    - name: Rg
+      cname: remote_gdb
+      summary: Start the gdbserver.
+      args:
+        - name: port
+          type: RZ_CMD_ARG_TYPE_NUM
+        - name: file
+          type: RZ_CMD_ARG_TYPE_STRING
+        - name: args
+          type: RZ_CMD_ARG_TYPE_STRING
+          optional: true
+    - name: Rg!
+      cname: remote_gdb_debug
+      summary: Start the gdbserver with debug protocol messages (like gdbserver --remote-debug).
+      args:
+        - name: port
+          type: RZ_CMD_ARG_TYPE_NUM
+        - name: file
+          type: RZ_CMD_ARG_TYPE_STRING
+        - name: args
+          type: RZ_CMD_ARG_TYPE_STRING
+          optional: true
   - name: Rh
-    cname: equal_h_handler_old
-    summary: Start the http webserver
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
-  - name: RH
-    cname: equal_H_handler_old
-    summary: Start the http webserver (and launch the web browser)
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    summary: HTTP webserver commands.
+    subcommands:
+    - name: Rh
+      summary: Start the HTTP webserver in foreground.
+      cname: remote_webserver_start_fg
+      args:
+        - name: "launch_browser"
+          type: RZ_CMD_ARG_TYPE_CHOICES
+          default_value: "no"
+          choices:
+            - "yes"
+            - "no"
+    - name: Rh*
+      summary: Restart the HTTP webserver in foreground.
+      cname: remote_webserver_restart_fg
+      args: []
+    - name: Rh--
+      summary: Stop the HTTP webserver in foreground.
+      cname: remote_webserver_stop_fg
+      args: []
   - name: Rt
     cname: remote_tcp
     summary: Start the tcp server
@@ -88,9 +114,3 @@ commands:
       - name: cmd
         type: RZ_CMD_ARG_TYPE_CMD
         optional: true
-  - name: "R&r"
-    cname: remote_rap_bg
-    summary: Start rap server in background (same as '& Rr')
-    args:
-      - name: port
-        type: RZ_CMD_ARG_TYPE_NUM

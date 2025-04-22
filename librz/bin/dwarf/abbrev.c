@@ -35,24 +35,17 @@ static void RzBinDwarfAbbrevTable_free(RzBinDwarfAbbrevTable *table) {
 	free(table);
 }
 
-static void htup_RzBinDwarfAbbrevTable_free(HtUPKv *kv) {
-	if (!kv) {
-		return;
-	}
-	RzBinDwarfAbbrevTable_free(kv->value);
-}
-
 static void RzBinDwarfAbbrevs_fini(RzBinDwarfAbbrev *abbrevs) {
-	ht_up_free(abbrevs->tbl_by_offset);
-	RzBinEndianReader_free(abbrevs->reader);
+	ht_up_free(abbrevs->by_offset);
+	R_free(abbrevs->R);
 }
 
 static bool RzBinDwarfAbbrevs_init(RzBinDwarfAbbrev *abbrevs) {
 	if (!abbrevs) {
 		return false;
 	}
-	abbrevs->tbl_by_offset = ht_up_new(NULL, htup_RzBinDwarfAbbrevTable_free, NULL);
-	if (!abbrevs->tbl_by_offset) {
+	abbrevs->by_offset = ht_up_new(NULL, (HtUPFreeValue)RzBinDwarfAbbrevTable_free);
+	if (!abbrevs->by_offset) {
 		goto beach;
 	}
 	return true;
@@ -77,11 +70,11 @@ static RzBinDwarfAbbrevTable *RzBinDwarfAbbrevTable_new(size_t offset) {
 }
 
 static bool RzBinDwarfAbbrevs_parse(RzBinDwarfAbbrev *abbrevs) {
-	RzBinEndianReader *reader = abbrevs->reader;
+	RzBinEndianReader *R = abbrevs->R;
 	RET_FALSE_IF_FAIL(RzBinDwarfAbbrevs_init(abbrevs));
-	RzBinDwarfAbbrevTable *tbl = RzBinDwarfAbbrevTable_new(rz_buf_tell(reader->buffer));
+	RzBinDwarfAbbrevTable *tbl = RzBinDwarfAbbrevTable_new(R_tell(R));
 	while (true) {
-		ut64 offset = rz_buf_tell(reader->buffer);
+		ut64 offset = R_tell(R);
 		if (!tbl) {
 			tbl = RzBinDwarfAbbrevTable_new(offset);
 		}
@@ -93,7 +86,7 @@ static bool RzBinDwarfAbbrevs_parse(RzBinDwarfAbbrev *abbrevs) {
 
 		ULE128_OR_GOTO(decl.code, ok);
 		if (decl.code == 0) {
-			ht_up_update(abbrevs->tbl_by_offset, tbl->offset, tbl);
+			ht_up_update(abbrevs->by_offset, tbl->offset, tbl);
 			tbl = NULL;
 			continue;
 		}
@@ -102,7 +95,7 @@ static bool RzBinDwarfAbbrevs_parse(RzBinDwarfAbbrev *abbrevs) {
 		U8_OR_GOTO(decl.has_children, err);
 		if (!(decl.has_children == DW_CHILDREN_yes || decl.has_children == DW_CHILDREN_no)) {
 			RZ_LOG_ERROR(".debug_abbrevs parse error: 0x%" PFMT64x "\t[%s] invalid DW_CHILDREN value: %d\n",
-				rz_buf_tell(reader->buffer), rz_bin_dwarf_tag(decl.tag), decl.has_children);
+				R_tell(R), rz_bin_dwarf_tag(decl.tag), decl.has_children);
 			goto err;
 		}
 
@@ -137,7 +130,7 @@ static bool RzBinDwarfAbbrevs_parse(RzBinDwarfAbbrev *abbrevs) {
 				SLE128_OR_GOTO(def.special, err);
 			}
 			RZ_LOG_DEBUG("0x%" PFMT64x ":\t\t%s [%s] special = %" PFMT64d "\n",
-				rz_buf_tell(reader->buffer), rz_bin_dwarf_attr(def.at), rz_bin_dwarf_form(def.form), def.special);
+				R_tell(R), rz_bin_dwarf_attr(def.at), rz_bin_dwarf_form(def.form), def.special);
 			rz_vector_push(&decl.defs, &def);
 		} while (true);
 	abbrev_ok:
@@ -145,7 +138,7 @@ static bool RzBinDwarfAbbrevs_parse(RzBinDwarfAbbrev *abbrevs) {
 		abbrevs->count++;
 	}
 ok:
-	ht_up_update(abbrevs->tbl_by_offset, tbl->offset, tbl);
+	ht_up_update(abbrevs->by_offset, tbl->offset, tbl);
 	return abbrevs;
 err:
 	RzBinDwarfAbbrevTable_free(tbl);
@@ -157,11 +150,11 @@ err:
  * \param buffer  Buffer to parse
  * \return RzBinDwarfAbbrevs object
  */
-RZ_API RZ_OWN RzBinDwarfAbbrev *rz_bin_dwarf_abbrev_new(RZ_OWN RZ_NONNULL RzBinEndianReader *reader) {
-	rz_return_val_if_fail(reader, NULL);
+RZ_API RZ_OWN RzBinDwarfAbbrev *rz_bin_dwarf_abbrev_new(RZ_OWN RZ_NONNULL RzBinEndianReader *R) {
+	rz_return_val_if_fail(R, NULL);
 	RzBinDwarfAbbrev *abbrevs = RZ_NEW0(RzBinDwarfAbbrev);
 	RET_FALSE_IF_FAIL(abbrevs);
-	abbrevs->reader = reader;
+	abbrevs->R = R;
 	if (!RzBinDwarfAbbrevs_parse(abbrevs)) {
 		rz_bin_dwarf_abbrev_free(abbrevs);
 		return NULL;
@@ -175,9 +168,9 @@ RZ_API RZ_OWN RzBinDwarfAbbrev *rz_bin_dwarf_abbrev_new(RZ_OWN RZ_NONNULL RzBinE
  * \return RzBinDwarfAbbrevs object
  */
 RZ_API RZ_OWN RzBinDwarfAbbrev *rz_bin_dwarf_abbrev_from_file(
-	RZ_BORROW RZ_NONNULL RzBinFile *bf, bool is_dwo) {
+	RZ_BORROW RZ_NONNULL RzBinFile *bf) {
 	rz_return_val_if_fail(bf, NULL);
-	RzBinEndianReader *r = RzBinEndianReader_from_file(bf, ".debug_abbrev", is_dwo);
+	RzBinEndianReader *r = RzBinEndianReader_from_file(bf, ".debug_abbrev");
 	RET_NULL_IF_FAIL(r);
 	return rz_bin_dwarf_abbrev_new(r);
 }
@@ -217,4 +210,51 @@ RZ_API RZ_BORROW RzBinDwarfAbbrevDecl *rz_bin_dwarf_abbrev_get(RZ_BORROW RZ_NONN
 RZ_API size_t rz_bin_dwarf_abbrev_decl_count(RZ_BORROW RZ_NONNULL const RzBinDwarfAbbrevDecl *decl) {
 	rz_return_val_if_fail(decl, 0);
 	return rz_vector_len(&decl->defs);
+}
+
+static void abbrev_decl_dump(
+	RZ_NONNULL RZ_BORROW RzBinDwarfAbbrevDecl *decl,
+	RZ_NONNULL RZ_BORROW RzStrBuf *sb) {
+	rz_return_if_fail(decl && sb);
+	rz_strbuf_appendf(sb, "%" PFMT64d " ", decl->code);
+	rz_strbuf_appendf(sb, "%s\t", rz_bin_dwarf_tag(decl->tag));
+	rz_strbuf_appendf(sb, "%s ", rz_bin_dwarf_children(decl->has_children));
+	rz_strbuf_appendf(sb, "(0x%" PFMT64x ")\n", decl->offset);
+
+	RzBinDwarfAttrSpec *def = NULL;
+	rz_vector_foreach (&decl->defs, def) {
+		rz_strbuf_appendf(sb, "\t%s\t%s\n",
+			rz_bin_dwarf_attr(def->at), rz_bin_dwarf_form(def->form));
+	}
+	rz_strbuf_append(sb, "\n");
+}
+
+static bool cb_abbrev_table_dump(void *user, ut64 k, const void *v) {
+	if (!v) {
+		return false;
+	}
+	RzStrBuf *sb = user;
+	const RzBinDwarfAbbrevTable *table = v;
+	if (!rz_vector_empty(&table->abbrevs)) {
+		rz_strbuf_appendf(sb, "Abbrev table for offset: 0x%08zx\n", table->offset);
+	}
+
+	void *itdecl;
+	rz_vector_foreach (&table->abbrevs, itdecl) {
+		if (!itdecl) {
+			continue;
+		}
+		abbrev_decl_dump(itdecl, sb);
+	}
+	return true;
+}
+
+RZ_API void rz_core_bin_dwarf_abbrevs_dump(
+	RZ_NONNULL RZ_BORROW const RzBinDwarfAbbrev *abbrevs,
+	RZ_NONNULL RZ_BORROW RzStrBuf *sb) {
+	rz_return_if_fail(abbrevs && sb);
+	if (abbrevs->by_offset->count > 0) {
+		rz_strbuf_append(sb, ".debug_abbrevs content:\n");
+	}
+	ht_up_foreach(abbrevs->by_offset, cb_abbrev_table_dump, sb);
 }

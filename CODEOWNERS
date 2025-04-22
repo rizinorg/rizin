@@ -1,13 +1,13 @@
-* @wargio @XVilka @kazarmy @thestr4ng3r @ret2libc
+* @wargio @XVilka @kazarmy @thestr4ng3r @ret2libc @Rot127
 *.js @wargio
-CODEOWNERS @wargio @XVilka @kazarmy @thestr4ng3r @ret2libc
-librz/analysis/ @thestr4ng3r
-librz/analysis/esil* @wargio
-librz/analysis/xrefs.c @ret2libc
+CODEOWNERS @wargio @XVilka @kazarmy @thestr4ng3r @ret2libc @Rot127
+librz/arch/ @thestr4ng3r
+librz/arch/esil* @wargio
+librz/arch/xrefs.c @ret2libc
 librz/arch/gb/ @wargio
-librz/asm/ @wargio
-librz/asm/p/x86_* @ret2libc
-librz/asm/p/arm_* @wargio
+librz/arch/ @wargio
+librz/arch/p/asm/x86_* @ret2libc
+librz/arch/p/asm/arm_* @wargio
 librz/bin/ @ret2libc @wargio
 librz/bin/format/elf/ @ret2libc @kazarmy
 librz/bin/format/mach0/ @wargio
@@ -23,7 +23,6 @@ librz/fs/ @wargio
 librz/io/ @wargio @ret2libc
 librz/lang/ @thestr4ng3r @wargio @ret2libc
 librz/magic/ @wargio
-librz/parse/ @ret2libc @wargio
 librz/reg/ @XVilka @wargio
 librz/socket/ @XVilka @yossizap
 librz/syscall/ @ret2libc @wargio

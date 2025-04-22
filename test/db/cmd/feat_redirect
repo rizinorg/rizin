@@ -37,3 +37,25 @@ Hello
 World
 EOF
 RUN
+
+NAME=stacked redirect
+FILE==
+CMDS=<<EOF
+# inner redirect to file
+(mac1; echo a>.rz-stacked-redirect.txt; echo b)
+# outer redirect to alias, any other feature which redirects output to buffer like the builtin grep ~ would also work
+.(mac1) > $al1
+echo "---"
+cat .rz-stacked-redirect.txt
+echo "---"
+$**
+rm .rz-stacked-redirect.txt
+EOF
+EXPECT=<<EOF
+---
+a
+---
+$al1=$b
+
+EOF
+RUN

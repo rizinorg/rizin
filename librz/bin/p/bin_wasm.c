@@ -48,14 +48,14 @@ static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol type) {
 
 static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf);
 
-static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	RzBinWasmObj *bin = bf && bf->o ? bf->o->bin_obj : NULL;
 	// TODO
-	RzList *ret = NULL;
+	RzPVector *ret = NULL;
 	RzBinAddr *ptr = NULL;
 	ut64 addr = 0x0;
 
-	if (!(ret = rz_list_newf((RzListFree)free))) {
+	if (!(ret = rz_pvector_new((RzPVectorFree)free))) {
 		return NULL;
 	}
 
@@ -71,14 +71,14 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 			}
 		}
 		if (!addr) {
-			rz_list_free(ret);
+			rz_pvector_free(ret);
 			return NULL;
 		}
 	}
 	if ((ptr = RZ_NEW0(RzBinAddr))) {
 		ptr->paddr = addr;
 		ptr->vaddr = addr;
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 	return ret;
 }
@@ -104,7 +104,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 			rz_pvector_free(ret);
 			return NULL;
 		}
-		ptr->name = strdup((char *)sec->name);
+		ptr->name = rz_str_dup((char *)sec->name);
 		if (sec->id == RZ_BIN_WASM_SECTION_DATA || sec->id == RZ_BIN_WASM_SECTION_MEMORY) {
 			ptr->is_data = true;
 		}
@@ -150,8 +150,8 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 		if (!(ptr = RZ_NEW0(RzBinSymbol))) {
 			goto bad_alloc;
 		}
-		ptr->name = strdup(imp->field_str);
-		ptr->libname = strdup(imp->module_str);
+		ptr->name = rz_str_dup(imp->field_str);
+		ptr->libname = rz_str_dup(imp->module_str);
 		ptr->is_imported = true;
 		ptr->forwarder = "NONE";
 		ptr->bind = "NONE";
@@ -188,7 +188,7 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 
 		const char *fcn_name = rz_bin_wasm_get_function_name(bin, fcn_idx);
 		if (fcn_name) {
-			ptr->name = strdup(fcn_name);
+			ptr->name = rz_str_dup(fcn_name);
 
 			is_exp = rz_list_find(exports, &fcn_idx, (RzListComparator)find_export, NULL);
 			if (is_exp) {
@@ -247,8 +247,8 @@ static RzPVector /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 		if (!(ptr = RZ_NEW0(RzBinImport))) {
 			goto bad_alloc;
 		}
-		ptr->name = strdup(import->field_str);
-		ptr->classname = strdup(import->module_str);
+		ptr->name = rz_str_dup(import->field_str);
+		ptr->classname = rz_str_dup(import->module_str);
 		ptr->ordinal = i;
 		ptr->bind = "NONE";
 		switch (import->kind) {
@@ -284,14 +284,14 @@ static RzBinInfo *info(RzBinFile *bf) {
 	if (!(ret = RZ_NEW0(RzBinInfo))) {
 		return NULL;
 	}
-	ret->file = strdup(bf->file);
-	ret->bclass = strdup("module");
-	ret->rclass = strdup("wasm");
-	ret->os = strdup("WebAssembly");
-	ret->arch = strdup("wasm");
-	ret->machine = strdup(ret->arch);
-	ret->subsystem = strdup("wasm");
-	ret->type = strdup("EXEC");
+	ret->file = rz_str_dup(bf->file);
+	ret->bclass = rz_str_dup("module");
+	ret->rclass = rz_str_dup("wasm");
+	ret->os = rz_str_dup("WebAssembly");
+	ret->arch = rz_str_dup("wasm");
+	ret->machine = rz_str_dup(ret->arch);
+	ret->subsystem = rz_str_dup("wasm");
+	ret->type = rz_str_dup("EXEC");
 	ret->bits = 32;
 	ret->has_va = 0;
 	ret->big_endian = false;

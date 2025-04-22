@@ -46,8 +46,8 @@ bool test_analysis_graph() {
 	rz_graph_free(g);
 
 	RzGraph *g_main_dataref = graph_by_function_name(core, RZ_CORE_GRAPH_TYPE_DATAREF, "main");
-	mu_assert_eq(g_main_dataref->n_nodes, 135, "data graph node count");
-	mu_assert_eq(g_main_dataref->n_edges, 134, "data graph edge count");
+	mu_assert_eq(g_main_dataref->n_nodes, 130, "data graph node count");
+	mu_assert_eq(g_main_dataref->n_edges, 129, "data graph edge count");
 
 	// 4. Save into the project
 	char *tmpdir = rz_file_tmpdir();

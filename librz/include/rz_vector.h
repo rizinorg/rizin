@@ -70,6 +70,7 @@ RZ_API void rz_vector_fini(RzVector *vec);
 RZ_API void rz_vector_free(RzVector *vec);
 
 typedef void (*RzVectorItemCpyFunc)(void *, void *);
+typedef void (*RzPVectorItemCpyFunc)(void *, void *);
 
 RZ_API bool rz_vector_clone_intof(
 	RZ_NONNULL RZ_BORROW RZ_OUT RzVector *dst,
@@ -112,6 +113,9 @@ static inline void *rz_vector_head(const RzVector *vec) {
 // returns a pointer to the last element of the vector
 static inline void *rz_vector_tail(RzVector *vec) {
 	rz_return_val_if_fail(vec, NULL);
+	if (vec->len < 1) {
+		return NULL;
+	}
 	return (char *)vec->a + vec->elem_size * (vec->len - 1);
 }
 
@@ -250,14 +254,11 @@ RZ_API void rz_pvector_clear(RzPVector *vec);
 RZ_API void rz_pvector_free(RzPVector *vec);
 
 /// See rz_vector_clone() for detailed semantics
-static inline RzPVector *rz_pvector_clone(
-	RzPVector *vec) {
+static inline RzPVector *rz_pvector_clone(RzPVector *vec) {
 	return (RzPVector *)rz_vector_clone(&vec->v);
 }
 
-static inline RzPVector *rz_pvector_clonef(
-	RzPVector *vec,
-	void (*item_cpy)(void *, void *)) {
+static inline RzPVector *rz_pvector_clonef(RzPVector *vec, RzPVectorItemCpyFunc item_cpy) {
 	return (RzPVector *)rz_vector_clonef(&vec->v, item_cpy);
 }
 
@@ -269,7 +270,10 @@ static inline size_t rz_pvector_len(const RzPVector *vec) {
 }
 
 static inline void *rz_pvector_at(const RzPVector *vec, size_t index) {
-	rz_return_val_if_fail(vec && index < vec->v.len, NULL);
+	rz_return_val_if_fail(vec, NULL);
+	if (index >= vec->v.len) {
+		return NULL;
+	}
 	return ((void **)vec->v.a)[index];
 }
 
@@ -282,12 +286,6 @@ static inline bool rz_pvector_empty(const RzPVector *vec) {
 	return rz_pvector_len(vec) == 0;
 }
 
-// returns a pointer to the offset inside the array where the element of the index lies.
-static inline void **rz_pvector_index_ptr(RzPVector *vec, size_t index) {
-	rz_return_val_if_fail(vec && index < vec->v.capacity, NULL);
-	return ((void **)vec->v.a) + index;
-}
-
 // same as rz_pvector_index_ptr(<vec>, 0)
 static inline void **rz_pvector_data(RzPVector *vec) {
 	rz_return_val_if_fail(vec, NULL);
@@ -297,12 +295,18 @@ static inline void **rz_pvector_data(RzPVector *vec) {
 // returns the first element of the vector
 static inline void *rz_pvector_head(RzPVector *vec) {
 	rz_return_val_if_fail(vec, NULL);
+	if (vec->v.len < 1) {
+		return NULL;
+	}
 	return ((void **)vec->v.a)[0];
 }
 
 // returns the last element of the vector
 static inline void *rz_pvector_tail(RzPVector *vec) {
 	rz_return_val_if_fail(vec, NULL);
+	if (vec->v.len < 1) {
+		return NULL;
+	}
 	return ((void **)vec->v.a)[vec->v.len - 1];
 }
 
@@ -314,6 +318,8 @@ RZ_API RZ_BORROW void **rz_pvector_find(RZ_NONNULL const RzPVector *vec, RZ_NONN
 
 // join two pvector into one, pvec1 should free the joined element in pvec2
 RZ_API bool rz_pvector_join(RZ_NONNULL RzPVector *pvec1, RZ_NONNULL RzPVector *pvec2);
+
+RZ_API void *rz_pvector_assign_at(RZ_BORROW RZ_NONNULL RzPVector *vec, size_t index, RZ_OWN RZ_NONNULL void *ptr);
 
 // removes and returns the pointer at the given index. Does not call free.
 RZ_API void *rz_pvector_remove_at(RzPVector *vec, size_t index);
@@ -380,6 +386,13 @@ static inline void **rz_pvector_flush(RzPVector *vec) {
 #define rz_pvector_foreach_prev(vec, it) \
 	if (!rz_pvector_empty(vec)) \
 		for (it = ((vec)->v.len == 0 ? NULL : (void **)(vec)->v.a + (vec)->v.len - 1); it && it != (void **)(vec)->v.a - 1; it--)
+
+/**
+ * \brief Like rz_pvector_foreach() but with index
+ */
+#define rz_pvector_enumerate(vec, it, idx) \
+	if (!rz_pvector_empty(vec)) \
+		for (it = (void **)(vec)->v.a, idx = 0; idx < (vec)->v.len; it++, idx++)
 
 /*
  * \brief Find the index of the least element greater than or equal to the lower bound x using binary search

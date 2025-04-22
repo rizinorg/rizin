@@ -20,28 +20,28 @@ static void mdmp_destroy(RzBinFile *bf) {
 	rz_bin_mdmp_free((MiniDmpObj *)bf->o->bin_obj);
 }
 
-static RzList /*<RzBinAddr *>*/ *mdmp_entries(RzBinFile *bf) {
+static RzPVector /*<RzBinAddr *>*/ *mdmp_entries(RzBinFile *bf) {
 	MiniDmpObj *obj;
 	struct Pe32_rz_bin_mdmp_pe_bin *pe32_bin;
 	struct Pe64_rz_bin_mdmp_pe_bin *pe64_bin;
 	RzListIter *it;
-	RzList *ret, *list;
+	RzPVector *ret, *vec;
 
-	if (!(ret = rz_list_newf(free))) {
+	if (!(ret = rz_pvector_new(free))) {
 		return NULL;
 	}
 
 	obj = (MiniDmpObj *)bf->o->bin_obj;
 
 	rz_list_foreach (obj->pe32_bins, it, pe32_bin) {
-		list = Pe32_rz_bin_mdmp_pe_get_entrypoint(pe32_bin);
-		rz_list_join(ret, list);
-		rz_list_free(list);
+		vec = Pe32_rz_bin_mdmp_pe_get_entrypoint(pe32_bin);
+		rz_pvector_join(ret, vec);
+		rz_pvector_free(vec);
 	}
 	rz_list_foreach (obj->pe64_bins, it, pe64_bin) {
-		list = Pe64_rz_bin_mdmp_pe_get_entrypoint(pe64_bin);
-		rz_list_join(ret, list);
-		rz_list_free(list);
+		vec = Pe64_rz_bin_mdmp_pe_get_entrypoint(pe64_bin);
+		rz_pvector_join(ret, vec);
+		rz_pvector_free(vec);
 	}
 
 	return ret;
@@ -60,38 +60,38 @@ static RzBinInfo *mdmp_info(RzBinFile *bf) {
 
 	ret->big_endian = false;
 	ret->claimed_checksum = rz_str_newf("0x%08x", obj->hdr->check_sum);
-	ret->file = bf->file ? strdup(bf->file) : NULL;
+	ret->file = rz_str_dup(bf->file);
 	ret->has_va = true;
-	ret->rclass = strdup("mdmp");
-	ret->rpath = strdup("NONE");
-	ret->type = strdup("MDMP (MiniDump crash report data)");
+	ret->rclass = rz_str_dup("mdmp");
+	ret->rpath = rz_str_dup("NONE");
+	ret->type = rz_str_dup("MDMP (MiniDump crash report data)");
 
-	sdb_set(bf->sdb, "mdmp.flags", rz_strf(tmpbuf, "0x%08" PFMT64x, obj->hdr->flags), 0);
-	sdb_num_set(bf->sdb, "mdmp.streams", obj->hdr->number_of_streams, 0);
+	sdb_set(bf->sdb, "mdmp.flags", rz_strf(tmpbuf, "0x%08" PFMT64x, obj->hdr->flags));
+	sdb_num_set(bf->sdb, "mdmp.streams", obj->hdr->number_of_streams);
 
 	if (obj->streams.system_info) {
 		switch (obj->streams.system_info->processor_architecture) {
 		case MDMP_PROCESSOR_ARCHITECTURE_INTEL:
-			ret->machine = strdup("i386");
-			ret->arch = strdup("x86");
+			ret->machine = rz_str_dup("i386");
+			ret->arch = rz_str_dup("x86");
 			ret->bits = 32;
 			break;
 		case MDMP_PROCESSOR_ARCHITECTURE_ARM:
-			ret->machine = strdup("ARM");
+			ret->machine = rz_str_dup("ARM");
 			ret->big_endian = false;
 			break;
 		case MDMP_PROCESSOR_ARCHITECTURE_IA64:
-			ret->machine = strdup("IA64");
-			ret->arch = strdup("IA64");
+			ret->machine = rz_str_dup("IA64");
+			ret->arch = rz_str_dup("IA64");
 			ret->bits = 64;
 			break;
 		case MDMP_PROCESSOR_ARCHITECTURE_AMD64:
-			ret->machine = strdup("AMD64");
-			ret->arch = strdup("x86");
+			ret->machine = rz_str_dup("AMD64");
+			ret->arch = rz_str_dup("x86");
 			ret->bits = 64;
 			break;
 		default:
-			ret->machine = strdup("Unknown");
+			ret->machine = rz_str_dup("Unknown");
 			break;
 		}
 
@@ -115,7 +115,7 @@ static RzBinInfo *mdmp_info(RzBinFile *bf) {
 				obj->streams.system_info->build_number);
 			break;
 		default:
-			ret->os = strdup("Unknown");
+			ret->os = rz_str_dup("Unknown");
 		}
 	}
 
@@ -124,11 +124,8 @@ static RzBinInfo *mdmp_info(RzBinFile *bf) {
 
 static RzPVector /*<char *>*/ *mdmp_libs(RzBinFile *bf) {
 	char *ptr = NULL;
-	int i;
 	MiniDmpObj *obj;
-	struct rz_bin_pe_lib_t *libs = NULL;
-	struct Pe32_rz_bin_mdmp_pe_bin *pe32_bin;
-	struct Pe64_rz_bin_mdmp_pe_bin *pe64_bin;
+	RzPVector *libs = NULL;
 	RzPVector *ret = NULL;
 	RzListIter *it;
 
@@ -143,25 +140,29 @@ static RzPVector /*<char *>*/ *mdmp_libs(RzBinFile *bf) {
 
 	/* TODO: Resolve module name for lib, or filter to remove duplicates,
 	** rather than the vaddr :) */
+	struct Pe32_rz_bin_mdmp_pe_bin *pe32_bin;
 	rz_list_foreach (obj->pe32_bins, it, pe32_bin) {
 		if (!(libs = Pe32_rz_bin_pe_get_libs(pe32_bin->bin))) {
-			return ret;
+			continue;
 		}
-		for (i = 0; !libs[i].last; i++) {
-			ptr = rz_str_newf("[0x%.08" PFMT64x "] - %s", pe32_bin->vaddr, libs[i].name);
+		void **libs_iter;
+		rz_pvector_foreach (libs, libs_iter) {
+			ptr = rz_str_newf("[0x%.08" PFMT64x "] - %s", pe32_bin->vaddr, (char *)*libs_iter);
 			rz_pvector_push(ret, ptr);
 		}
-		free(libs);
+		rz_pvector_free(libs);
 	}
+	struct Pe64_rz_bin_mdmp_pe_bin *pe64_bin;
 	rz_list_foreach (obj->pe64_bins, it, pe64_bin) {
 		if (!(libs = Pe64_rz_bin_pe_get_libs(pe64_bin->bin))) {
-			return ret;
+			continue;
 		}
-		for (i = 0; !libs[i].last; i++) {
-			ptr = rz_str_newf("[0x%.08" PFMT64x "] - %s", pe64_bin->vaddr, libs[i].name);
+		void **libs_iter;
+		rz_pvector_foreach (libs, libs_iter) {
+			ptr = rz_str_newf("[0x%.08" PFMT64x "] - %s", pe64_bin->vaddr, (char *)*libs_iter);
 			rz_pvector_push(ret, ptr);
 		}
-		free(libs);
+		rz_pvector_free(libs);
 	}
 	return ret;
 }
@@ -375,40 +376,6 @@ static RzPVector /*<RzBinMem *>*/ *mdmp_mem(RzBinFile *bf) {
 	return ret;
 }
 
-static RzPVector /*<RzBinReloc *>*/ *mdmp_relocs(RzBinFile *bf) {
-	MiniDmpObj *obj;
-	struct Pe32_rz_bin_mdmp_pe_bin *pe32_bin;
-	struct Pe64_rz_bin_mdmp_pe_bin *pe64_bin;
-	RzListIter *it;
-	void **vit;
-
-	RzPVector *ret = rz_pvector_new(free);
-	if (!ret) {
-		return NULL;
-	}
-
-	obj = (MiniDmpObj *)bf->o->bin_obj;
-
-	rz_list_foreach (obj->pe32_bins, it, pe32_bin) {
-		if (pe32_bin->bin && pe32_bin->bin->relocs) {
-			rz_pvector_foreach (pe32_bin->bin->relocs, vit) {
-				RzBinReloc *reloc = *vit;
-				rz_pvector_push(ret, reloc);
-			}
-		}
-	}
-	rz_list_foreach (obj->pe64_bins, it, pe64_bin) {
-		if (pe64_bin->bin && pe64_bin->bin->relocs) {
-			rz_pvector_foreach (pe64_bin->bin->relocs, vit) {
-				RzBinReloc *reloc = *vit;
-				rz_pvector_push(ret, reloc);
-			}
-		}
-	}
-
-	return ret;
-}
-
 static RzPVector /*<RzBinImport *>*/ *mdmp_imports(RzBinFile *bf) {
 	MiniDmpObj *obj;
 	struct Pe32_rz_bin_mdmp_pe_bin *pe32_bin;
@@ -426,24 +393,14 @@ static RzPVector /*<RzBinImport *>*/ *mdmp_imports(RzBinFile *bf) {
 	rz_list_foreach (obj->pe32_bins, it, pe32_bin) {
 		vec = Pe32_rz_bin_mdmp_pe_get_imports(pe32_bin);
 		if (vec) {
-			void **vec_it;
-			rz_pvector_foreach (vec, vec_it) {
-				RzBinImport *import = *vec_it;
-				rz_pvector_push(ret, import);
-			}
-			// this won't free import
+			rz_pvector_join(ret, vec);
 			rz_pvector_free(vec);
 		}
 	}
 	rz_list_foreach (obj->pe64_bins, it, pe64_bin) {
 		vec = Pe64_rz_bin_mdmp_pe_get_imports(pe64_bin);
 		if (vec) {
-			void **vec_it;
-			rz_pvector_foreach (vec, vec_it) {
-				RzBinImport *import = *vec_it;
-				rz_pvector_push(ret, import);
-			}
-			// this won't free import
+			rz_pvector_join(ret, vec);
 			rz_pvector_free(vec);
 		}
 	}
@@ -507,7 +464,6 @@ RzBinPlugin rz_bin_plugin_mdmp = {
 	.load_buffer = &mdmp_load_buffer,
 	.check_buffer = &mdmp_check_buffer,
 	.mem = &mdmp_mem,
-	.relocs = &mdmp_relocs,
 	.maps = &mdmp_maps,
 	.sections = &mdmp_sections,
 	.symbols = &mdmp_symbols,

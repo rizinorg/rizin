@@ -22,7 +22,7 @@ static inline bool is_between(ut64 a, ut64 x, ut64 b) {
 
 static inline char *core_flag_name(const RzCore *core, ut64 addr) {
 	RzFlagItem *item = rz_flag_get_i(core->flags, addr);
-	return item ? strdup(item->name) : rz_str_newf("0x%08" PFMT64x, addr);
+	return item ? rz_str_dup(item->name) : rz_str_newf("0x%08" PFMT64x, addr);
 }
 
 static inline void core_graph_dataref(RzCore *core, RzAnalysisFunction *fcn, RzGraph /*<RzGraphNodeInfo *>*/ *graph) {
@@ -259,7 +259,7 @@ static inline char *block_disasm(RzCore *core, ut64 addr, RzAnalysisBlock *bb) {
 	rz_core_print_disasm(core, b->addr, block, b->size, 9999, NULL, &disasm_options);
 	rz_cons_filter();
 	const char *retstr = rz_str_get(rz_cons_get_buffer());
-	char *opcodes = strdup(retstr);
+	char *opcodes = rz_str_dup(retstr);
 	rz_cons_pop();
 	rz_cons_echo(NULL);
 	free(block);
@@ -286,9 +286,10 @@ static void core_graph_fn_bbs(RzCore *core, RzAnalysisFunction *fcn, RzGraph /*<
 		return;
 	}
 
-	RzListIter *iter;
 	RzAnalysisBlock *bbi;
-	rz_list_foreach (fcn->bbs, iter, bbi) {
+	void **iter;
+	rz_pvector_foreach (fcn->bbs, iter) {
+		bbi = (RzAnalysisBlock *)*iter;
 		if (bbi->addr == UT64_MAX) {
 			continue;
 		}
@@ -354,13 +355,14 @@ static RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_function_bbs(RZ_NON
 	if (!hc) {
 		goto fail;
 	}
-	cache = ht_up_new0();
+	cache = ht_up_new(NULL, NULL);
 	if (!cache) {
 		goto fail;
 	}
 
-	rz_config_hold_i(hc, "asm.lines", "asm.lines.fcn", "asm.bytes", "asm.debuginfo", "asm.offset", "asm.marks",
+	rz_config_hold_i(hc, "asm.xrefs.max", "asm.lines", "asm.lines.fcn", "asm.bytes", "asm.debuginfo", "asm.offset", "asm.marks",
 		"asm.cmt.right", "asm.cmt.col", "asm.bb.middle", NULL);
+	rz_config_set_i(core->config, "asm.xrefs.max", 3);
 	rz_config_set_i(core->config, "asm.lines", 0);
 	rz_config_set_i(core->config, "asm.lines.fcn", 0);
 	rz_config_set_i(core->config, "asm.bytes", 0);
@@ -772,7 +774,7 @@ RZ_API bool rz_core_graph_write(RZ_NONNULL RzCore *core, ut64 addr, RzCoreGraphT
 RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_il(RZ_NONNULL RzCore *core, ut64 addr) {
 	rz_return_val_if_fail(core && core->analysis, NULL);
 
-	RzAnalysisOp op;
+	RzAnalysisOp op = { 0 };
 	RzGraph *graph = NULL;
 	ut64 old_offset = core->offset;
 	RzAnalysisOpMask flags = RZ_ANALYSIS_OP_MASK_DISASM | RZ_ANALYSIS_OP_MASK_IL;
@@ -888,7 +890,7 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_icfg(RZ_NONNULL RzC
 		return NULL;
 	}
 
-	HtUU *graph_idx = ht_uu_new0();
+	HtUU *graph_idx = ht_uu_new();
 	RzListIter *it;
 	const RzAnalysisFunction *fcn;
 	rz_list_foreach (fcns, it, fcn) {
@@ -1038,7 +1040,7 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg(RZ_NONNULL RzCo
 	}
 
 	// Visited instructions. Indexed by instruction address, value is index in graph.
-	HtUU *nodes_visited = ht_uu_new0();
+	HtUU *nodes_visited = ht_uu_new();
 	// Addresses to visit.
 	RzVector *to_visit = rz_vector_new(sizeof(ut64), NULL, NULL);
 

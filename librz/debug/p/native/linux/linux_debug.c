@@ -83,6 +83,8 @@ char *linux_reg_profile(RzDebug *dbg) {
 	}
 #elif __s390x__
 #include "reg/linux-s390x.h"
+#elif __loongarch64
+#include "reg/linux-loongarch64.h"
 #else
 #error "Unsupported Linux CPU"
 	return NULL;
@@ -706,7 +708,8 @@ static bool linux_attach_single_pid(RzDebug *dbg, int ptid) {
 	return true;
 }
 
-static RzList /*<RzDebugPid *>*/ *get_pid_thread_list(RzDebug *dbg, int main_pid) {
+static RZ_OWN RzList /*<RzDebugPid *>*/ *get_pid_thread_list(RZ_NONNULL RzDebug *dbg, int main_pid) {
+	rz_return_val_if_fail(dbg, NULL);
 	RzList *list = rz_list_new();
 	if (list) {
 		list = linux_thread_list(dbg, main_pid, list);
@@ -737,7 +740,7 @@ static char *read_link(int pid, const char *file) {
 	int ret = readlink(path, buf, sizeof(buf));
 	if (ret > 0) {
 		buf[sizeof(buf) - 1] = '\0';
-		return strdup(buf);
+		return rz_str_dup(buf);
 	}
 	return NULL;
 }
@@ -829,7 +832,7 @@ RzDebugPid *fill_pid_info(const char *info, const char *path, int tid) {
 	}
 
 	pid_info->pid = tid;
-	pid_info->path = path ? strdup(path) : NULL;
+	pid_info->path = rz_str_dup(path);
 	pid_info->runnable = true;
 	pid_info->pc = 0;
 	return pid_info;
@@ -872,11 +875,66 @@ RzList /*<RzDebugPid *>*/ *linux_pid_list(int pid, RzList /*<RzDebugPid *>*/ *li
 	return list;
 }
 
+/**
+ * \brief Find the TLS base for the provided thread ID
+ * \param dbg RzDebug Pointer.
+ * \param tid Thread ID.
+ * \return TLS base addr
+ */
+RZ_API ut64 get_linux_tls_val(RZ_NONNULL RzDebug *dbg, int tid) {
+	rz_return_val_if_fail(dbg, 0);
+	ut64 tls = 0;
+
+#if !__ANDROID__
+	int prev_tid = dbg->tid;
+
+	if (dbg->tid != tid) {
+		linux_attach_single_pid(dbg, tid);
+		dbg->tid = tid;
+		rz_debug_reg_sync(dbg, RZ_REG_TYPE_GPR, false);
+	}
+
+#if __x86_64__
+	RzRegItem *ri = rz_reg_get(dbg->reg, "fs", RZ_REG_TYPE_ANY);
+	RZ_DEBUG_REG_T regs;
+	// Fetch gs_base from a ptrace call
+	if (ri == NULL && !strcmp(dbg->arch, "x86")) {
+		if (rz_debug_ptrace(dbg, PTRACE_GETREGS, dbg->tid, NULL, &regs) != -1) {
+			tls = regs.gs_base;
+		}
+	} else {
+		tls = rz_reg_get_value(dbg->reg, ri);
+	}
+#elif __aarch64__
+	struct iovec iovec = { 0 };
+	ut64 reg;
+
+	iovec.iov_base = &reg;
+	iovec.iov_len = sizeof(reg);
+	RzRegItem *ri = rz_reg_get(dbg->reg, "tpidr_el0", RZ_REG_TYPE_ANY);
+	if (ri == NULL && rz_debug_ptrace(dbg, PTRACE_GETREGSET, dbg->tid, (void *)NT_ARM_TLS, &iovec) != -1) {
+		tls = reg;
+	} else {
+		tls = rz_reg_get_value(dbg->reg, ri);
+	}
+#endif
+	// Must execute this block everytime
+	if (dbg->tid != tid) {
+		linux_attach_single_pid(dbg, prev_tid);
+		dbg->tid = prev_tid;
+		rz_debug_reg_sync(dbg, RZ_REG_TYPE_GPR, false);
+	}
+#endif
+
+	return tls;
+}
+
 RzList /*<RzDebugPid *>*/ *linux_thread_list(RzDebug *dbg, int pid, RzList /*<RzDebugPid *>*/ *list) {
 	int i = 0, thid = 0;
 	char *ptr, buf[PATH_MAX];
 	RzDebugPid *pid_info = NULL;
 	ut64 pc = 0;
+	ut64 tls = 0;
 	int prev_tid = dbg->tid;
 
 	if (!pid) {
@@ -922,7 +980,9 @@ RzList /*<RzDebugPid *>*/ *linux_thread_list(RzDebug *dbg, int pid, RzList /*<Rz
 
 			rz_debug_reg_sync(dbg, RZ_REG_TYPE_GPR, false);
 			pc = rz_debug_reg_get(dbg, "PC");
-
+#if !__ANDROID__
+			tls = get_linux_tls_val(dbg, dbg->tid);
+#endif
 			if (!procfs_pid_slurp(tid, "status", info, sizeof(info))) {
 				// Get information about pid (status, pc, etc.)
 				pid_info = fill_pid_info(info, NULL, tid);
@@ -930,9 +990,11 @@ RzList /*<RzDebugPid *>*/ *linux_thread_list(RzDebug *dbg, int pid, RzList /*<Rz
 			} else {
 				pid_info = rz_debug_pid_new(NULL, tid, uid, 's', pc);
 			}
+			// Handle it in the caller if tls is not found. Setting it here anyways.
+			pid_info->tls = tls;
 			rz_list_append(list, pid_info);
-			dbg->n_threads++;
 		}
+		dbg->n_threads = rz_list_length(list);
 		closedir(dh);
 		// Return to the original thread
 		linux_attach_single_pid(dbg, prev_tid);
@@ -994,11 +1056,10 @@ RzList /*<RzDebugPid *>*/ *linux_thread_list(RzDebug *dbg, int pid, RzList /*<Rz
 
 static void print_fpu(void *f) {
 #if __x86_64__
-	int i, j;
 	struct user_fpregs_struct fpregs = *(struct user_fpregs_struct *)f;
 #if __ANDROID__
 	PRINT_FPU(fpregs);
-	for (i = 0; i < 8; i++) {
+	for (int i = 0; i < 8; i++) {
 		ut64 *b = (ut64 *)&fpregs.st_space[i * 4];
 		ut32 *c = (ut32 *)&fpregs.st_space;
 		float *f = (float *)&fpregs.st_space;
@@ -1014,7 +1075,7 @@ static void print_fpu(void *f) {
 	rz_cons_printf("---- x86-64 ----\n");
 	PRINT_FPU(fpregs);
 	rz_cons_printf("size = 0x%08x\n", (ut32)sizeof(fpregs));
-	for (i = 0; i < 16; i++) {
+	for (int i = 0; i < 16; i++) {
 		ut32 *a = (ut32 *)&fpregs.xmm_space;
 		a = a + (i * 4);
 		rz_cons_printf("xmm%d = %08x %08x %08x %08x   ", i, (int)a[0], (int)a[1],
@@ -1025,7 +1086,7 @@ static void print_fpu(void *f) {
 			long double *st_ld = (long double *)&fpregs.st_space[i * 4];
 			rz_cons_printf("mm%d = 0x%016" PFMT64x " | st%d = ", i, *st_u64, i);
 			// print as hex TBYTE - always little endian
-			for (j = 9; j >= 0; j--) {
+			for (int j = 9; j >= 0; j--) {
 				rz_cons_printf("%02x", st_u8[j]);
 			}
 			// Using %Lf and %Le even though we do not show the extra precision to avoid another cast
@@ -1037,7 +1098,6 @@ static void print_fpu(void *f) {
 	}
 #endif // __ANDROID__
 #elif __i386__
-	int i;
 #if __ANDROID__
 	struct user_fpxregs_struct fpxregs = *(struct user_fpxregs_struct *)f;
 	rz_cons_printf("---- x86-32 ----\n");
@@ -1050,7 +1110,7 @@ static void print_fpu(void *f) {
 	rz_cons_printf("foo = 0x%08x\n", (ut32)fpxregs.foo);
 	rz_cons_printf("fos = 0x%08x\n", (ut32)fpxregs.fos);
 	rz_cons_printf("mxcsr = 0x%08x\n", (ut32)fpxregs.mxcsr);
-	for (i = 0; i < 8; i++) {
+	for (int i = 0; i < 8; i++) {
 		ut32 *a = (ut32 *)(&fpxregs.xmm_space);
 		ut64 *b = (ut64 *)(&fpxregs.st_space[i * 4]);
 		ut32 *c = (ut32 *)&fpxregs.st_space;
@@ -1070,7 +1130,7 @@ static void print_fpu(void *f) {
 	struct user_fpregs_struct fpregs = *(struct user_fpregs_struct *)f;
 	rz_cons_printf("---- x86-32-noxmm ----\n");
 	PRINT_FPU_NOXMM(fpregs);
-	for (i = 0; i < 8; i++) {
+	for (int i = 0; i < 8; i++) {
 		ut64 *b = (ut64 *)(&fpregs.st_space[i * 4]);
 		double *d = (double *)b;
 		ut32 *c = (ut32 *)&fpregs.st_space;

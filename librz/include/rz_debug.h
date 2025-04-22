@@ -15,6 +15,8 @@
 
 #include <rz_config.h>
 #include "rz_bind.h"
+#include "rz_util/rz_assert.h"
+#include "rz_util/rz_str.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -220,12 +222,9 @@ typedef struct rz_debug_trace_t {
 	RzList /*<RzDebugTracepoint *>*/ *traces;
 	int count;
 	int enabled;
-	// int changed;
 	int tag;
 	int dup;
-	char *addresses;
-	// TODO: add range here
-	HtPP *ht;
+	HtSP *ht;
 } RzDebugTrace;
 
 typedef struct rz_debug_tracepoint_t {
@@ -292,7 +291,7 @@ typedef struct rz_debug_t {
 
 	struct rz_debug_plugin_t *cur;
 	void *plugin_data;
-	RzList /*<RzDebugPlugin *>*/ *plugins;
+	HtSP /*<RzDebugPlugin *>*/ *plugins;
 
 	bool pc_at_bp; /* after a breakpoint, is the pc at the bp? */
 	bool pc_at_bp_set; /* is the pc_at_bp variable set already? */
@@ -317,7 +316,7 @@ typedef struct rz_debug_t {
 	bool verbose;
 	bool main_arena_resolved; /* is the main_arena resolved already? */
 	int glibc_version;
-
+	bool is_glibc_resolved;
 	bool nt_x86_xstate_supported; ///< Track whether X86_FEATURE_XSAVE feature is supported on current kernel
 } RzDebug;
 
@@ -386,7 +385,7 @@ typedef struct rz_debug_plugin_t {
 	int (*reg_read)(RzDebug *dbg, int type, ut8 *buf, int size);
 	int (*reg_write)(RzDebug *dbg, int type, const ut8 *buf, int size); // XXX struct rz_regset_t regs);
 	bool (*sync_registers)(RzDebug *dbg, RzReg *reg, bool to_debugger);
-	char *(*reg_profile)(RzDebug *dbg);
+	RZ_OWN char *(*reg_profile)(RzDebug *dbg);
 	int (*set_reg_profile)(RzDebug *dbg, const char *str);
 	/* memory */
 	RzList /*<RzDebugMap *>*/ *(*map_get)(RzDebug *dbg);
@@ -410,6 +409,7 @@ typedef struct rz_debug_pid_t {
 	int uid;
 	int gid;
 	ut64 pc;
+	ut64 tls; ///< Thread local storage base (used for accessing thread specific variables)
 } RzDebugPid;
 
 typedef struct rz_backtrace_t {
@@ -429,6 +429,21 @@ typedef struct rz_debug_esil_watchpoint_t {
 } RzDebugEsilWatchpoint;
 
 #ifdef RZ_API
+
+/**
+ * \brief Compare plugins by name (via strcmp).
+ */
+static inline int rz_debug_plugin_cmp(RZ_NULLABLE const RzDebugPlugin *a, RZ_NULLABLE const RzDebugPlugin *b) {
+	if (!a && !b) {
+		return 0;
+	} else if (!a) {
+		return -1;
+	} else if (!b) {
+		return 1;
+	}
+	return rz_str_cmp(a->name, b->name, -1);
+}
+
 RZ_API RZ_OWN RzDebug *rz_debug_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *bp_ctx);
 RZ_API RzDebug *rz_debug_free(RzDebug *dbg);
 
@@ -464,6 +479,9 @@ RZ_API bool rz_debug_select(RzDebug *dbg, int pid, int tid);
 RZ_API RzDebugPid *rz_debug_pid_new(const char *path, int pid, int uid, char status, ut64 pc);
 RZ_API RzDebugPid *rz_debug_pid_free(RzDebugPid *pid);
 RZ_API RzList /*<RzDebugPid *>*/ *rz_debug_pids(RzDebug *dbg, int pid);
+RZ_API RzDebugPid *rz_debug_get_thread(RzList /*<RzList *>*/ *th_list, int tid);
+RZ_API RZ_OWN RzList /*<RzDebugPid *>*/ *rz_debug_native_threads(RzDebug *dbg, int pid);
+RZ_API ut64 rz_debug_get_tls(RZ_NONNULL RzDebug *dbg, int tid);
 
 RZ_API bool rz_debug_set_arch(RzDebug *dbg, const char *arch, int bits);
 RZ_API bool rz_debug_use(RzDebug *dbg, const char *str);
@@ -472,6 +490,8 @@ RZ_API RzDebugInfo *rz_debug_info(RzDebug *dbg, const char *arg);
 RZ_API void rz_debug_info_free(RzDebugInfo *rdi);
 
 RZ_API ut64 rz_debug_get_baddr(RzDebug *dbg, const char *file);
+
+RZ_API void rz_debug_switch_to_first_thread(RZ_NONNULL RzDebug *debug);
 
 /* send signals */
 RZ_API void rz_debug_signal_init(RzDebug *dbg);
@@ -541,7 +561,6 @@ RZ_API void rz_debug_tracenodes_reset(RzDebug *dbg);
 RZ_API void rz_debug_trace_reset(RzDebug *dbg);
 RZ_API int rz_debug_trace_pc(RzDebug *dbg, ut64 pc);
 RZ_API void rz_debug_trace_op(RzDebug *dbg, RzAnalysisOp *op);
-RZ_API void rz_debug_trace_at(RzDebug *dbg, const char *str);
 RZ_API RzDebugTracepoint *rz_debug_trace_get(RzDebug *dbg, ut64 addr);
 RZ_API void rz_debug_trace_print(RzDebug *dbg, RzCmdStateOutput *state, ut64 offset);
 RZ_API RZ_OWN RzList /*<RzListInfo *>*/ *rz_debug_traces_info(RzDebug *dbg, ut64 offset);
@@ -611,19 +630,6 @@ static inline void *rz_debug_ptrace_func(RzDebug *dbg, void *(*func)(void *), vo
 }
 #endif
 
-/* plugin pointers */
-extern RzDebugPlugin rz_debug_plugin_native;
-extern RzDebugPlugin rz_debug_plugin_esil;
-extern RzDebugPlugin rz_debug_plugin_dmp;
-extern RzDebugPlugin rz_debug_plugin_rap;
-extern RzDebugPlugin rz_debug_plugin_gdb;
-extern RzDebugPlugin rz_debug_plugin_bf;
-extern RzDebugPlugin rz_debug_plugin_io;
-extern RzDebugPlugin rz_debug_plugin_winkd;
-extern RzDebugPlugin rz_debug_plugin_windbg;
-extern RzDebugPlugin rz_debug_plugin_bochs;
-extern RzDebugPlugin rz_debug_plugin_qnx;
-extern RzDebugPlugin rz_debug_plugin_null;
 #endif
 
 #ifdef __cplusplus

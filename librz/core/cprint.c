@@ -82,6 +82,7 @@ RZ_API RZ_OWN char *rz_core_esil_of_assembly(RzCore *core, const char *assembly)
 	RzAnalysisOp aop = { 0 };
 	while (printed < bufsz) {
 		aop.size = 0;
+		rz_analysis_op_init(&aop);
 		if (rz_analysis_op(core->analysis, &aop, core->offset,
 			    (const ut8 *)acode->bytes + printed, bufsz - printed, RZ_ANALYSIS_OP_MASK_ESIL) <= 0 ||
 			aop.size < 1) {
@@ -141,6 +142,7 @@ RZ_API RZ_OWN char *rz_core_esil_of_hex(RzCore *core, ut8 *hex, int len) {
 	RzAnalysisOp aop = { 0 };
 	while (printed < len) {
 		aop.size = 0;
+		rz_analysis_op_init(&aop);
 		if (rz_analysis_op(core->analysis, &aop, core->offset,
 			    (const ut8 *)hex + printed, len - printed, RZ_ANALYSIS_OP_MASK_ESIL) <= 0 ||
 			aop.size < 1) {
@@ -373,7 +375,7 @@ RZ_API RZ_OWN char *rz_core_print_hexdump_or_hexdiff_str(RZ_NONNULL RzCore *core
 			string = rz_core_print_hexdump_diff_str(core, addr, addr + to - from, len);
 			break;
 		default:
-			RZ_LOG_ERROR("Hexdiff not supported in JSON");
+			RZ_LOG_ERROR("Hexdiff not supported in JSON\n");
 			return NULL;
 		}
 	}
@@ -451,7 +453,7 @@ RZ_API RZ_OWN char *rz_core_print_hexdump_byline_str(RZ_NONNULL RzCore *core, bo
 			st64 delta = (st64)(v - f->offset);
 			if (delta >= 0 && delta < 8192) {
 				if (v == f->offset) {
-					fn = strdup(f->name);
+					fn = rz_str_dup(f->name);
 				} else {
 					fn = rz_str_newf("%s+%" PFMT64d, f->name, v - f->offset);
 				}
@@ -599,7 +601,7 @@ RZ_IPI RZ_OWN char *rz_core_print_cons_disassembly(RzCore *core, ut64 addr, ut32
 	}
 
 	if (rz_io_nread_at(core->io, addr, block, byte_len) == -1) {
-		RZ_LOG_ERROR("Fail to read from 0x%" PFMT64x ".", addr);
+		RZ_LOG_ERROR("Fail to read from 0x%" PFMT64x ".\n", addr);
 		free(block);
 		return NULL;
 	}
@@ -612,7 +614,7 @@ RZ_IPI RZ_OWN char *rz_core_print_cons_disassembly(RzCore *core, ut64 addr, ut32
 	rz_core_print_disasm(core, addr, block, byte_len, inst_len, NULL, &disasm_options);
 	rz_cons_filter();
 	const char *cons_str = rz_str_get(rz_cons_get_buffer());
-	char *ret = strdup(cons_str);
+	char *ret = rz_str_dup(cons_str);
 	rz_cons_pop();
 	rz_cons_echo(NULL);
 	free(block);
@@ -816,7 +818,7 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RzCore
 				string2 = rz_str_ndup(str + 1, qoe - str - 1);
 			} else {
 				free(string2);
-				string2 = strdup(str + 1);
+				string2 = rz_str_dup(str + 1);
 			}
 			if (string2) {
 				RZ_FREE(string);
@@ -841,7 +843,7 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RzCore
 			}
 		}
 		if (str) {
-			string2 = mark_malloc ? str : strdup(str);
+			string2 = mark_malloc ? str : rz_str_dup(str);
 			linecolor = RZ_CONS_COLOR(call);
 		}
 		if (!string && string2) {
@@ -870,7 +872,7 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RzCore
 					}
 					if (rz_str_startswith(comment, "switch table")) {
 						free(switchcmp);
-						switchcmp = strdup(comment);
+						switchcmp = rz_str_dup(comment);
 					}
 					RZ_FREE(comment);
 				}
@@ -878,9 +880,11 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RzCore
 			if (fcn) {
 				bool label = false;
 				/* show labels, basic blocks and (conditional) branches */
+
+				void **vit;
 				RzAnalysisBlock *bb;
-				RzListIter *iterb;
-				rz_list_foreach (fcn->bbs, iterb, bb) {
+				rz_pvector_foreach (fcn->bbs, vit) {
+					bb = (RzAnalysisBlock *)*vit;
 					if (addr == bb->jump) {
 						if (show_offset) {
 							rz_strbuf_appendf(sb, "%s0x%08" PFMT64x ":\n", use_color ? Color_YELLOW : "", addr);
@@ -893,7 +897,9 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RzCore
 					rz_strbuf_appendf(sb, "%s0x%08" PFMT64x ":\n", use_color ? Color_YELLOW : "", addr);
 				}
 				if (strstr(line, "=<")) {
-					rz_list_foreach (fcn->bbs, iterb, bb) {
+					RzAnalysisBlock *bb;
+					rz_pvector_foreach (fcn->bbs, vit) {
+						bb = (RzAnalysisBlock *)*vit;
 						if (addr >= bb->addr && addr < bb->addr + bb->size) {
 							const char *op;
 							if (use_color) {

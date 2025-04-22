@@ -19,7 +19,7 @@ typedef struct rz_buf_t RzBuffer;
 
 typedef bool (*RzBufferInit)(RzBuffer *b, const void *user);
 typedef bool (*RzBufferFini)(RzBuffer *b);
-typedef st64 (*RzBufferRead)(RzBuffer *b, ut8 *buf, ut64 len);
+typedef st64 (*RzBufferRead)(RZ_BORROW RzBuffer *b, RZ_OUT ut8 *buf, ut64 len);
 typedef st64 (*RzBufferWrite)(RzBuffer *b, const ut8 *buf, ut64 len);
 typedef ut64 (*RzBufferGetSize)(RzBuffer *b);
 typedef bool (*RzBufferResize)(RzBuffer *b, ut64 newsize);
@@ -31,7 +31,7 @@ typedef RzList *(*RzBufferNonEmptyList)(RzBuffer *b);
 typedef struct rz_buffer_methods_t {
 	RzBufferInit init;
 	RzBufferFini fini;
-	RzBufferRead read;
+	RzBufferRead read; ///< The buffer read() method. It should behave as rz_buf_read() documents.
 	RzBufferWrite write;
 	RzBufferGetSize get_size;
 	RzBufferResize resize;
@@ -40,7 +40,20 @@ typedef struct rz_buffer_methods_t {
 	RzBufferFreeWholeBuf free_whole_buf;
 } RzBufferMethods;
 
+typedef enum {
+	RZ_BUFFER_INVALID = 0,
+	RZ_BUFFER_FILE,
+	RZ_BUFFER_IO_FD,
+	RZ_BUFFER_IO, ///< A buffer over RzIO.
+	RZ_BUFFER_BYTES, ///< A buffer over raw bytes.
+	RZ_BUFFER_MMAP,
+	RZ_BUFFER_SPARSE,
+	RZ_BUFFER_REF,
+	RZ_BUFFER_CUSTOM, ///< A buffer with custom methods.
+} RzBufferType;
+
 struct rz_buf_t {
+	RzBufferType type;
 	const RzBufferMethods *methods;
 	void *priv;
 	ut8 *whole_buf;
@@ -97,9 +110,10 @@ RZ_API RZ_OWN RzBuffer *rz_buf_new_sparse(ut8 Oxff);
 RZ_API RZ_OWN RzBuffer *rz_buf_new_sparse_overlay(RzBuffer *b, RzBufferSparseWriteMode write_mode);
 RZ_API RZ_OWN RzBuffer *rz_buf_new_with_buf(RzBuffer *b);
 RZ_API RZ_OWN RzBuffer *rz_buf_new_with_bytes(RZ_NULLABLE RZ_BORROW const ut8 *bytes, ut64 len);
+RZ_API RZ_OWN RzBuffer *rz_buf_new_from_bytes(RZ_NULLABLE RZ_OWN const ut8 *bytes, ut64 len);
 RZ_API RZ_OWN RzBuffer *rz_buf_new_with_io_fd(RZ_NONNULL void /* RzIOBind */ *iob, int fd);
 RZ_API RZ_OWN RzBuffer *rz_buf_new_with_io(RZ_NONNULL void /* RzIOBind */ *iob);
-RZ_API RZ_OWN RzBuffer *rz_buf_new_with_methods(RZ_NONNULL const RzBufferMethods *methods, void *init_user);
+RZ_API RZ_OWN RzBuffer *rz_buf_new_with_methods(RZ_NONNULL const RzBufferMethods *methods, void *init_user, RzBufferType type);
 RZ_API RZ_OWN RzBuffer *rz_buf_new_with_pointers(const ut8 *bytes, ut64 len, bool steal);
 RZ_API RZ_OWN RzBuffer *rz_buf_new_with_string(RZ_NONNULL const char *msg);
 
@@ -141,8 +155,19 @@ RZ_API ut64 rz_buf_size(RZ_NONNULL RzBuffer *b);
 RZ_API ut64 rz_buf_tell(RZ_NONNULL RzBuffer *b);
 RZ_API void rz_buf_free(RzBuffer *b);
 RZ_API void rz_buf_set_overflow_byte(RZ_NONNULL RzBuffer *b, ut8 Oxff);
+RZ_API bool rz_buf_is_bytes_buf(const RzBuffer *b);
 RZ_DEPRECATE RZ_API RZ_BORROW ut8 *rz_buf_data(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut64 *size);
+RZ_API RZ_BORROW const ut8 *rz_buf_get_whole_hot_paths(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut64 *sz);
 
+/**
+ * \brief Callback to be used with rz_buf_fwd_scan().
+ *
+ * \param buf Buffer it can read.
+ * \param len Length of buffer to read.
+ * \param user User data.
+ *
+ * \return The number of bytes read.
+ */
 typedef ut64 (*RzBufferFwdScan)(RZ_BORROW RZ_NONNULL const ut8 *buf, ut64 len, RZ_NULLABLE void *user);
 RZ_API ut64 rz_buf_fwd_scan(RZ_NONNULL RzBuffer *b, ut64 start, ut64 amount, RZ_NONNULL RzBufferFwdScan fwd_scan, RZ_NULLABLE void *user);
 
@@ -361,21 +386,6 @@ DEFINE_RZ_BUF_WRITE_OFFSET_BLE(64)
 static inline ut8 rz_buf_peek(RZ_NONNULL RzBuffer *b) {
 	ut8 x = 0;
 	rz_buf_read8_at(b, rz_buf_tell(b), &x);
-	return x;
-}
-
-/**
- * \brief Peeks at the next two bytes in the buffer as a little-endian
- *        unsigned 16-bit integer without modify the buffer position.
- *
- * It assumes that the buffer contains at least two bytes beyond the current position,
- * otherwise the behavior of the function is undefined.
- * \param b The buffer
- * \return The ut16 value
- */
-static inline ut8 rz_buf_peek_u16(RZ_NONNULL RzBuffer *b) {
-	ut16 x = 0;
-	rz_buf_read_le16_at(b, rz_buf_tell(b), &x);
 	return x;
 }
 

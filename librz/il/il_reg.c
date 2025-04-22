@@ -62,7 +62,7 @@ RZ_API RzILRegBinding *rz_il_reg_binding_derive(RZ_NONNULL RzReg *reg) {
 			}
 			// all good, bind it
 			rz_list_push(flags, item);
-			char *name = strdup(item->name);
+			char *name = rz_str_dup(item->name);
 			if (!name) {
 				rz_list_free(flags);
 				goto err;
@@ -117,7 +117,7 @@ RZ_API RzILRegBinding *rz_il_reg_binding_derive(RZ_NONNULL RzReg *reg) {
 				// pc is handled outside of reg binding
 				continue;
 			}
-			char *name = strdup(item->name);
+			char *name = rz_str_dup(item->name);
 			if (!name) {
 				rz_list_free(flags);
 				rz_list_free(items);
@@ -185,7 +185,7 @@ RZ_API RzILRegBinding *rz_il_reg_binding_exactly(RZ_NONNULL RzReg *reg, size_t r
 			// overlap detected
 			goto err_regs;
 		}
-		rb->regs[i].name = strdup(regs[i]);
+		rb->regs[i].name = rz_str_dup(regs[i]);
 		if (!rb->regs[i].name) {
 			goto err_regs;
 		}

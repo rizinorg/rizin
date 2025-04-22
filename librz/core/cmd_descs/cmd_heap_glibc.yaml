@@ -25,8 +25,9 @@ commands:
     cname: cmd_heap_bins_list_print
     summary: >
       Display double linked list for bins in an arena.
-      Use dmhbg command for graphical representation.
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_GRAPH
     args:
       - name: bin_num|bin_num:malloc_state
         type: RZ_CMD_ARG_TYPE_STRING
@@ -50,7 +51,6 @@ commands:
         choices: ["small", "large", "fast", "unsorted", "tcache"]
   - name: dmhf
     cname: cmd_heap_fastbins_print
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
     summary: >
       Display all parsed fastbins of main_arena's or a particular
       arena fastbinY instance

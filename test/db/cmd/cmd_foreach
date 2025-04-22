@@ -73,9 +73,7 @@ wx 000090000000009000
 s @@/x 90
 EOF
 EXPECT=<<EOF
-0x00000002 hit0_0 90
 0x2
-0x00000007 hit0_1 90
 0x7
 EOF
 RUN
@@ -128,16 +126,14 @@ NAME=iter dbt
 FILE==
 CMDS=<<EOF
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=iter threads
 FILE==
 CMDS=<<EOF
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=iter bbs
@@ -316,8 +312,7 @@ NAME=iter dbgmap
 FILE==
 CMDS=<<EOF
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=iter register

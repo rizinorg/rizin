@@ -1,3 +1,104 @@
+NAME=k
+FILE==
+CMDS=<<EOF
+k
+k abc=123
+k abc
+# BSDs don't have a syscall namespace.
+k **~!syscall
+k analysis/**
+e asm.arch=x86
+k analysis/cc/*
+EOF
+EXPECT=<<EOF
+orig_baddr=0
+123
+analysis
+bin
+debug
+spec
+cc
+classes
+noreturn
+amd64=cc
+amd64syscall=cc
+cc.amd64.arg0=rdi
+cc.amd64.arg1=rsi
+cc.amd64.arg10=xmm4
+cc.amd64.arg2=rdx
+cc.amd64.arg3=rcx
+cc.amd64.arg4=r8
+cc.amd64.arg5=r9
+cc.amd64.arg6=xmm0
+cc.amd64.arg7=xmm1
+cc.amd64.arg8=xmm2
+cc.amd64.arg9=xmm3
+cc.amd64.maxargs=11
+cc.amd64.ret=rax
+cc.amd64syscall.arg0=rdi
+cc.amd64syscall.arg1=rsi
+cc.amd64syscall.arg2=rdx
+cc.amd64syscall.arg3=r10
+cc.amd64syscall.arg4=r8
+cc.amd64syscall.arg5=r9
+cc.amd64syscall.maxargs=6
+cc.amd64syscall.ret=rax
+cc.ms.arg0=rcx
+cc.ms.arg1=rdx
+cc.ms.arg2=r8
+cc.ms.arg3=r9
+cc.ms.argn=stack
+cc.ms.maxargs=4
+cc.ms.ret=rax
+cc.reg.arg0=rdi
+cc.reg.arg1=rsi
+cc.reg.arg2=rdx
+cc.reg.arg3=rcx
+cc.reg.maxargs=4
+cc.reg.ret=rdi
+cc.swift.arg0=rdi
+cc.swift.arg1=rsi
+cc.swift.arg10=xmm4
+cc.swift.arg2=rdx
+cc.swift.arg3=rcx
+cc.swift.arg4=r8
+cc.swift.arg5=r9
+cc.swift.arg6=xmm0
+cc.swift.arg7=xmm1
+cc.swift.arg8=xmm2
+cc.swift.arg9=xmm3
+cc.swift.error=r12
+cc.swift.maxargs=11
+cc.swift.ret=rax
+cc.swift.self=r13
+default.cc=amd64
+ms=cc
+reg=cc
+swift=cc
+EOF
+RUN
+
+NAME=ko/kd
+BROKEN=1
+FILE==
+CMDS=<<EOF
+k debug/abc=123
+kd output_file debug
+kd file.sdb debug
+k debug/abc=0
+k debug/*
+kd output_file debug
+k debug/*
+rm output_file
+rm file.sdb
+EOF
+EXPECT=<<EOF
+abc=123
+abc=0
+abc=123
+EOF
+RUN
+
 NAME=1: k syscall/
 FILE=malloc://512
 CMDS=<<EOF

@@ -45,9 +45,8 @@ RZ_IPI bool xnu_modify_trace_bit(RzDebug *dbg, xnu_thread_t *th, int enable) {
 }
 
 #elif __POWERPC__ // ppc processor
-// XXX poor support at this stage i don't care so much. Once intel and arm done it could be done
-// TODO add better support for ppc
-RZ_IPI bool xnu_modify_trace_bit(RzDebug *dbg, void *th, int enable) {
+// TODO: Implement and test this for ppc too. Below is an old example for reference.
+RZ_IPI bool xnu_modify_trace_bit(RzDebug *dbg, xnu_thread_t *th, int enable) {
 	return false;
 }
 #if 0
@@ -376,7 +375,7 @@ static int handle_exception_message(RzDebug *dbg, exc_msg *msg, int *ret_code, b
 		// We want to stop and examine when getting signals
 		kr = task_suspend(msg->task.name);
 		if (kr != KERN_SUCCESS) {
-			RZ_LOG_ERROR("Failed to suspend after EXC_SOFTWARE");
+			RZ_LOG_ERROR("Failed to suspend after EXC_SOFTWARE\n");
 		}
 		break;
 	case EXC_BREAKPOINT:

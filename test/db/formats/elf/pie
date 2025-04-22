@@ -2,9 +2,11 @@ NAME=ELF: entrypoint
 FILE=bins/elf/analysis/pie
 CMDS=ie
 EXPECT=<<EOF
-vaddr      paddr      hvaddr     haddr      type    
+     vaddr      paddr     hvaddr      haddr type    
 ----------------------------------------------------
 0x00000450 0x00000450 0x00000018 0x00000018 program
+0x00000580 0x00000580 0x0000173c 0x0000073c init
+0x00000530 0x00000530 0x00001740 0x00000740 fini
 EOF
 RUN
 

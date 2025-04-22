@@ -152,7 +152,11 @@ RZ_API void rz_bin_source_line_info_free(RzBinSourceLineInfo *sli) {
  */
 RZ_API bool rz_bin_source_line_info_merge(RZ_BORROW RZ_NONNULL RzBinSourceLineInfo *dst, RZ_BORROW RZ_NONNULL RzBinSourceLineInfo *src) {
 	rz_return_val_if_fail(dst && src, false);
-	RzBinSourceLineSample *tmp = realloc(dst->samples, sizeof(RzBinSourceLineSample) * (dst->samples_count + src->samples_count));
+	size_t new_samples_count = dst->samples_count + src->samples_count;
+	if (!new_samples_count) {
+		return true;
+	}
+	RzBinSourceLineSample *tmp = realloc(dst->samples, sizeof(RzBinSourceLineSample) * new_samples_count);
 	if (!tmp) {
 		return false;
 	}
@@ -277,7 +281,7 @@ static const char *read_line(const char *file, int line, RzBinSourceLineCache *c
 	bool found = false;
 	char *content = NULL;
 	size_t sz = 0;
-	RzBinSourceLineCacheItem *item = ht_pp_find(cache->items, file, &found);
+	RzBinSourceLineCacheItem *item = ht_sp_find(cache->items, file, &found);
 	if (found) {
 		if (!(item && item->file_content)) {
 			return NULL;
@@ -287,7 +291,7 @@ static const char *read_line(const char *file, int line, RzBinSourceLineCache *c
 	} else {
 		content = rz_file_slurp(file, &sz);
 		if (!content) {
-			ht_pp_insert(cache->items, file, NULL);
+			ht_sp_insert(cache->items, file, NULL);
 			return NULL;
 		}
 		item = RZ_NEW0(RzBinSourceLineCacheItem);
@@ -300,7 +304,7 @@ static const char *read_line(const char *file, int line, RzBinSourceLineCache *c
 		if (!item->line_by_ln) {
 			goto err;
 		}
-		ht_pp_update(cache->items, file, item);
+		ht_sp_update(cache->items, file, item);
 
 		rz_pvector_reserve(item->line_by_ln, line);
 		cache_lines(item);
@@ -331,7 +335,7 @@ RZ_API RZ_OWN char *rz_bin_source_line_addr2text(
 	}
 	const char *filepath = opt.abspath ? s->file : rz_file_basename(s->file);
 	if (!s->line) {
-		return strdup(filepath);
+		return rz_str_dup(filepath);
 	}
 
 	RzStrBuf sb = { 0 };

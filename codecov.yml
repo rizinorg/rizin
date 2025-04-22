@@ -6,19 +6,22 @@ coverage:
           - dev
           - 'release-*'
         if_not_found: failure
-        if_ci_failed: error
-        informational: true
+        target: auto
+        threshold: 0.1%
     patch:
       default:
         if_not_found: success
-        if_ci_failed: success
-        informational: true
+        target: auto
+        threshold: 0.1%
 ignore:
   - "binrz/rz-test"
+  - ".github"
   - "doc"
   - "man"
   - "mk"
   - "sys"
   - "test"
 
-comment: false
+comment:
+  layout: "header, files, components, footer"
+  require_changes: true

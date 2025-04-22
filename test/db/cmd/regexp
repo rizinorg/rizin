@@ -1,4 +1,4 @@
-NAME=/e /test/i
+NAME=/z test i
 FILE=malloc://1024
 CMDS=<<EOF
 w test
@@ -6,30 +6,33 @@ w Test@ 444
 echo
 e search.in=block
 b 777
-/e /test/i
+/z test i
+ps ascii @ hit.string.ascii.0
+ps ascii @ hit.string.ascii.1
 EOF
 EXPECT=<<EOF
 
-0x00000000 hit0_0 "test"
-0x000001bc hit0_1 "Test"
+0x00000000 4 hit.string.ascii.0
+0x000001bc 4 hit.string.ascii.1
+test
+Test
 EOF
 RUN
 
-NAME=/e m (invalid) #742
+NAME=/z m (invalid) #742
 FILE=malloc://1024
 CMDS=<<EOF
 w test
 w Test@444
-/e m
-/e m
-/e m
-/e m
+/z m
+/z m
+/z m
+/z m
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
-NAME="/e /t\wst\d\d\d\s\w\w/i" - rzshell
+NAME="/z t\wst\d\d\d\s\w\w ri" - rzshell
 FILE=malloc://1024
 CMDS=<<EOF
 w '"test123 ab"'
@@ -37,11 +40,173 @@ w '"Test123 ab"' @ 444
 echo
 e search.in=block
 b 777
-"/e /t\wst\d\d\d\s\w\w/i"
+/z t\\wst\\d\\d\\d\\s\\w\\w ri
+ps ascii @ hit.string.ascii.0
+ps ascii @ hit.string.ascii.1
 EOF
 EXPECT=<<EOF
 
-0x00000001 hit0_0 ""test123 ab""
-0x000001bd hit0_1 ""Test123 ab""
+0x00000001 10 hit.string.ascii.0
+0x000001bd 10 hit.string.ascii.1
+test123 ab"
+Test123 ab"
+EOF
+RUN
+
+NAME=/z with nul as newline
+FILE==
+CMDS=<<EOF
+w abcd
+w bcccde @ 0x10
+e scr.color=1
+echo -- 1 --
+/z "b.*d" r
+ps ascii @ hit.string.ascii.0
+ps ascii @ hit.string.ascii.1
+echo -- 2 --
+/z "b.*D" r
+echo -- 3 --
+/z "b.*D" ri
+ps ascii @ hit.string.ascii.0
+ps ascii @ hit.string.ascii.1
+echo -- 4 --
+/z "b.*d$" r
+ps ascii @ hit.string.ascii.0
+echo -- 5 --
+/z "^b.*d" r
+ps ascii @ hit.string.ascii.0
+EOF
+EXPECT=<<EOF
+-- 1 --
+0x00000001 3 hit.string.ascii.0
+0x00000010 5 hit.string.ascii.1
+bcd
+bcccde
+-- 2 --
+-- 3 --
+0x00000001 3 hit.string.ascii.0
+0x00000010 5 hit.string.ascii.1
+bcd
+bcccde
+-- 4 --
+0x00000001 3 hit.string.ascii.0
+bcd
+-- 5 --
+0x00000010 5 hit.string.ascii.0
+bcccde
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=/z at block end
+FILE==
+CMDS=<<EOF
+e search.str.min_length=2
+b 0x100
+w bcccde @ 0xfe
+w bd @ 0x1fe
+e scr.color=1
+/z "b.*d" r
+ps ascii unprintable @ hit.string.ascii.0
+ps ascii unprintable @ hit.string.ascii.1
+echo ----
+/z "b.*d$" r
+ps ascii unprintable @ hit.string.ascii.0
+EOF
+EXPECT=<<EOF
+0x000000fe 5 hit.string.ascii.0
+0x000001fe 2 hit.string.ascii.1
+bcccde
+bd
+----
+0x000001fe 2 hit.string.ascii.0
+bd
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=consistency btw /z and /x
+FILE=bins/elf/analysis/ls2
+CMDS=<<EOF
+. scripts/search-consistency-test.rz
+$str=$lib
+$bin=$bins/elf/analysis/ls2
+$setup=$""
+$cmd_z=$/z ${str}
+$cmd_x=$/x ${bytes}
+.(search-consistency-test)
+echo ----
+/z lib > /dev/null
+ps ascii @ hit.string.ascii.0
+ps ascii @ hit.string.ascii.1
+ps ascii @ hit.string.ascii.2
+ps ascii @ hit.string.ascii.3
+ps ascii @ hit.string.ascii.4
+ps ascii @ hit.string.ascii.5
+ps ascii @ hit.string.ascii.6
+ps ascii @ hit.string.ascii.7
+EOF
+EXPECT=<<EOF
+[0x400000, 0x41bc2c): 8
+[0x61bdf0, 0x61c5f4): 0
+[0x61c5f4, 0x61d360): 0
+[0x61d368, 0x61d720): 0
+0x00400239 3 hit.string.ascii.0
+0x00400f19 3 hit.string.ascii.1
+0x00400fae 3 hit.string.ascii.2
+0x00400feb 3 hit.string.ascii.3
+0x004013c3 3 hit.string.ascii.4
+0x0041769a 3 hit.string.ascii.5
+0x004186e0 3 hit.string.ascii.6
+0x00418e58 3 hit.string.ascii.7
+----
+[0x400000, 0x401002): 4
+[0x401000, 0x402002): 1
+[0x402000, 0x403002): 0
+[0x403000, 0x404002): 0
+[0x404000, 0x405002): 0
+[0x405000, 0x406002): 0
+[0x406000, 0x407002): 0
+[0x407000, 0x408002): 0
+[0x408000, 0x409002): 0
+[0x409000, 0x40a002): 0
+[0x40a000, 0x40b002): 0
+[0x40b000, 0x40c002): 0
+[0x40c000, 0x40d002): 0
+[0x40d000, 0x40e002): 0
+[0x40e000, 0x40f002): 0
+[0x40f000, 0x410002): 0
+[0x410000, 0x411002): 0
+[0x411000, 0x412002): 0
+[0x412000, 0x413002): 0
+[0x413000, 0x414002): 0
+[0x414000, 0x415002): 0
+[0x415000, 0x416002): 0
+[0x416000, 0x417002): 0
+[0x417000, 0x418002): 1
+[0x418000, 0x419002): 2
+[0x419000, 0x41a002): 0
+[0x41a000, 0x41b002): 0
+[0x41b000, 0x41bc2c): 0
+[0x61bdf0, 0x61c5f4): 0
+[0x61c5f4, 0x61d360): 0
+[0x61d368, 0x61d720): 0
+0x00400239 3 hit.bytes.0
+0x00400f19 3 hit.bytes.1
+0x00400fae 3 hit.bytes.2
+0x00400feb 3 hit.bytes.3
+0x004013c3 3 hit.bytes.4
+0x0041769a 3 hit.bytes.5
+0x004186e0 3 hit.bytes.6
+0x00418e58 3 hit.bytes.7
+----
+lib64/ld-linux-x86-64.so.2
+libselinux.so.1
+libacl.so.1
+libc.so.6
+libc_start_main
+libs/
+lib/xstrtol.c
+lib
 EOF
 RUN

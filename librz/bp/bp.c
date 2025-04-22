@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_bp.h>
-#include <config.h>
+#include "rz_bp_plugins.h"
 
 RZ_LIB_VERSION(rz_bp);
 
@@ -36,7 +36,7 @@ RZ_API RzBreakpoint *rz_bp_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *ctx) {
 	bp->traces = rz_bp_traptrace_new();
 	bp->cb_printf = (PrintfCallback)printf;
 	bp->bps = rz_list_newf((RzListFree)rz_bp_item_free);
-	bp->plugins = rz_list_new();
+	bp->plugins = ht_sp_new(HT_STR_DUP, NULL, NULL);
 	bp->nhwbps = 0;
 	for (i = 0; i < RZ_ARRAY_SIZE(bp_static_plugins); i++) {
 		rz_bp_plugin_add(bp, bp_static_plugins[i]);
@@ -47,7 +47,7 @@ RZ_API RzBreakpoint *rz_bp_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *ctx) {
 
 RZ_API RzBreakpoint *rz_bp_free(RzBreakpoint *bp) {
 	rz_list_free(bp->bps);
-	rz_list_free(bp->plugins);
+	ht_sp_free(bp->plugins);
 	rz_list_free(bp->traces);
 	free(bp->bps_idx);
 	free(bp);
@@ -425,7 +425,7 @@ RZ_API bool rz_bp_item_set_cond(RZ_NONNULL RzBreakpointItem *item, RZ_NULLABLE c
 
 	char *tmp_cond = NULL;
 	if (cond) {
-		tmp_cond = strdup(cond);
+		tmp_cond = rz_str_dup(cond);
 		if (!tmp_cond) {
 			return false;
 		}
@@ -447,7 +447,7 @@ RZ_API bool rz_bp_item_set_data(RZ_NONNULL RzBreakpointItem *item, RZ_NULLABLE c
 
 	char *tmp_data = NULL;
 	if (data) {
-		tmp_data = strdup(data);
+		tmp_data = rz_str_dup(data);
 		if (!tmp_data) {
 			return false;
 		}
@@ -469,7 +469,7 @@ RZ_API bool rz_bp_item_set_expr(RZ_NONNULL RzBreakpointItem *item, RZ_NULLABLE c
 
 	char *tmp_expr = NULL;
 	if (expr) {
-		tmp_expr = strdup(expr);
+		tmp_expr = rz_str_dup(expr);
 		if (!tmp_expr) {
 			return false;
 		}
@@ -491,7 +491,7 @@ RZ_API bool rz_bp_item_set_name(RZ_NONNULL RzBreakpointItem *item, RZ_NULLABLE c
 
 	char *tmp_name = NULL;
 	if (name) {
-		tmp_name = strdup(name);
+		tmp_name = rz_str_dup(name);
 		if (!tmp_name) {
 			return false;
 		}

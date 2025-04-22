@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_core.h>
 #include <rz_list.h>
 #include <rz_reg.h>
 #include <rz_util.h>
@@ -10,6 +11,23 @@ RZ_LIB_VERSION(rz_reg);
 static const char *types[RZ_REG_TYPE_LAST + 1] = {
 	"gpr", "drx", "fpu", "mmx", "xmm", "ymm", "flg", "seg", "sys", "sec", "vc", "vcc", "ctr", NULL
 };
+
+/**
+ * \brief Check if the given register has the given RegisterId.
+ *
+ * \param reg const RzReg Pointer
+ * \param name Register name.
+ * \param id RegisterId to check.
+ * \return true if the register has the given RegisterId, false otherwise.
+ */
+RZ_API bool rz_reg_is_role(const RzReg *reg, const char *name, const RzRegisterId id) {
+	rz_return_val_if_fail(reg && name, false);
+	const char *sp = rz_reg_get_name(reg, id);
+	if (!sp) {
+		return false;
+	}
+	return RZ_STR_EQ(sp, name);
+}
 
 // Take the 32bits name of a register, and return the 64 bit name of it.
 // If there is no equivalent 64 bit register return NULL.
@@ -147,7 +165,7 @@ RZ_API bool rz_reg_set_name(RZ_NONNULL RzReg *reg, RzRegisterId role, RZ_NONNULL
 	return false;
 }
 
-RZ_API const char *rz_reg_get_name(RzReg *reg, int role) {
+RZ_API const char *rz_reg_get_name(const RzReg *reg, const int role) {
 	if (reg && role >= 0 && role < RZ_REG_NAME_LAST) {
 		return reg->name[role];
 	}
@@ -210,7 +228,7 @@ RZ_API void rz_reg_free_internal(RzReg *reg, bool init) {
 		}
 	}
 	for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
-		ht_pp_free(reg->regset[i].ht_regs);
+		ht_sp_free(reg->regset[i].ht_regs);
 		reg->regset[i].ht_regs = NULL;
 		if (!reg->regset[i].pool) {
 			continue;
@@ -344,7 +362,7 @@ RZ_API ut64 rz_reg_getv_by_role_or_name(RzReg *reg, const char *name) {
 	return ri ? rz_reg_get_value(reg, ri) : UT64_MAX;
 }
 
-RZ_API RzRegItem *rz_reg_get(RzReg *reg, const char *name, int type) {
+RZ_API RzRegItem *rz_reg_get(const RzReg *reg, const char *name, int type) {
 	int i, e;
 	rz_return_val_if_fail(reg && name, NULL);
 	// TODO: define flag register as RZ_REG_TYPE_FLG
@@ -366,10 +384,10 @@ RZ_API RzRegItem *rz_reg_get(RzReg *reg, const char *name, int type) {
 		e = type + 1;
 	}
 	for (; i < e; i++) {
-		HtPP *pp = reg->regset[i].ht_regs;
-		if (pp) {
+		HtSP *ht = reg->regset[i].ht_regs;
+		if (ht) {
 			bool found = false;
-			RzRegItem *item = ht_pp_find(pp, name, &found);
+			RzRegItem *item = ht_sp_find(ht, name, &found);
 			if (found) {
 				return item;
 			}

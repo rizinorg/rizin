@@ -6,6 +6,7 @@
 #define RZ_ASM_H
 
 #include <rz_util/rz_print.h>
+#include <rz_util/ht_ss.h>
 #include <rz_types.h>
 #include <rz_bin.h> // only for binding, no hard dep required
 #include <rz_util.h>
@@ -16,8 +17,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-RZ_LIB_VERSION_HEADER(rz_asm);
 
 /* backward compatibility */
 #define RZ_ASM_ARCH_NONE  RZ_SYS_ARCH_NONE
@@ -75,13 +74,9 @@ typedef struct rz_asm_op_t {
 } RzAsmOp;
 
 typedef struct rz_asm_code_t {
-#if 1
 	int len;
 	ut8 *bytes;
 	char *assembly;
-#else
-	RzAsmOp op; // we have those fields already inside RzAsmOp
-#endif
 	RzList /*<RzAsmEqu *>*/ *equs; // TODO: must be a hash
 	ut64 code_offset;
 	ut64 data_offset;
@@ -96,16 +91,20 @@ typedef struct {
 
 #define _RzAsmPlugin struct rz_asm_plugin_t
 typedef struct rz_asm_t {
+	void *core;
+	ut8 ptr_alignment_I;
+	void *plugin_data;
+	ut8 ptr_alignment_II;
+	// NOTE: Do not change the order of fields above!
+	// They are used in pointer passing hacks in rz_types.h.
 	char *cpu;
 	int bits;
 	int big_endian;
 	int syntax;
 	ut64 pc;
-	void *core;
-	void *plugin_data;
 	_RzAsmPlugin *cur;
 	_RzAsmPlugin *acur;
-	RzList /*<RzAsmPlugin *>*/ *plugins;
+	HtSP /*<RzAsmPlugin *>*/ *plugins;
 	RzBinBind binb;
 	RzParse *ifilter;
 	RzParse *ofilter;
@@ -121,7 +120,7 @@ typedef struct rz_asm_t {
 	bool immsign; // Print signed immediates as negative values, not their unsigned representation.
 	bool immdisp; // Display immediates with # symbol (for arm architectures). false = show hashs
 	bool utf8; // Flag for plugins: Use utf-8 characters.
-	HtPP *flags;
+	HtSS *flags;
 	int seggrn;
 	bool pseudo;
 } RzAsm;
@@ -141,10 +140,25 @@ typedef struct rz_asm_plugin_t {
 	int (*disassemble)(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len);
 	int (*assemble)(RzAsm *a, RzAsmOp *op, const char *buf);
 	char *(*mnemonics)(RzAsm *a, int id, bool json);
-	RzConfig *(*get_config)(void);
+	RZ_OWN RzConfig *(*get_config)(void *plugin_data);
 	const char *features;
 	const char *platforms;
+	char **(*get_cpu_desc)();
 } RzAsmPlugin;
+
+/**
+ * \brief Compare plugins by name (via strcmp).
+ */
+static inline int rz_asm_plugin_cmp(RZ_NULLABLE const RzAsmPlugin *a, RZ_NULLABLE const RzAsmPlugin *b) {
+	if (!a && !b) {
+		return 0;
+	} else if (!a) {
+		return -1;
+	} else if (!b) {
+		return 1;
+	}
+	return rz_str_cmp(a->name, b->name, -1);
+}
 
 #ifdef RZ_API
 /* asm.c */
@@ -156,7 +170,7 @@ RZ_API bool rz_asm_plugin_add(RzAsm *a, RZ_NONNULL RzAsmPlugin *foo);
 RZ_API bool rz_asm_plugin_del(RzAsm *a, RZ_NONNULL RzAsmPlugin *foo);
 RZ_API bool rz_asm_setup(RzAsm *a, const char *arch, int bits, int big_endian);
 RZ_API bool rz_asm_is_valid(RzAsm *a, const char *name);
-RZ_API bool rz_asm_use(RzAsm *a, const char *name);
+RZ_API bool rz_asm_use(RzAsm *a, RZ_NULLABLE const char *name);
 RZ_API bool rz_asm_use_assembler(RzAsm *a, const char *name);
 RZ_API bool rz_asm_set_arch(RzAsm *a, const char *name, int bits);
 RZ_DEPRECATE RZ_API int rz_asm_set_bits(RzAsm *a, int bits);
@@ -177,7 +191,7 @@ RZ_API ut8 *rz_asm_from_string(RzAsm *a, ut64 addr, const char *b, int *l);
 RZ_API int rz_asm_sub_names_input(RzAsm *a, const char *f);
 RZ_API int rz_asm_sub_names_output(RzAsm *a, const char *f);
 RZ_API char *rz_asm_describe(RzAsm *a, const char *str);
-RZ_API RzList /*<RzAsmPlugin *>*/ *rz_asm_get_plugins(RzAsm *a);
+RZ_API RZ_BORROW HtSP /*<RzAsmPlugin *>*/ *rz_asm_get_plugins(RZ_BORROW RZ_NONNULL RzAsm *a);
 RZ_API void rz_asm_list_directives(void);
 
 /* code.c */
@@ -211,79 +225,9 @@ RZ_API void rz_asm_token_pattern_free(void *p);
 RZ_API void rz_asm_compile_token_patterns(RZ_INOUT RzPVector /*<RzAsmTokenPattern *>*/ *patterns);
 RZ_API RZ_OWN RzAsmTokenString *rz_asm_tokenize_asm_regex(RZ_BORROW RzStrBuf *asm_str, RzPVector /*<RzAsmTokenPattern *>*/ *patterns);
 RZ_API RZ_OWN RzAsmParseParam *rz_asm_get_parse_param(RZ_NULLABLE const RzReg *reg, ut32 ana_op_type);
+RZ_API void rz_asm_parse_param_free(RZ_OWN RZ_NULLABLE RzAsmParseParam *p);
 RZ_DEPRECATE RZ_API RZ_OWN RzAsmTokenString *rz_asm_tokenize_asm_string(RZ_BORROW RzStrBuf *asm_str, RZ_NULLABLE const RzAsmParseParam *param);
 RZ_DEPRECATE RZ_API RZ_OWN RzStrBuf *rz_asm_colorize_asm_str(RZ_BORROW RzStrBuf *asm_str, RZ_BORROW RzPrint *p, RZ_NULLABLE const RzAsmParseParam *param, RZ_NULLABLE const RzAsmTokenString *toks);
-
-/* plugin pointers */
-extern RzAsmPlugin rz_asm_plugin_6502;
-extern RzAsmPlugin rz_asm_plugin_8051;
-extern RzAsmPlugin rz_asm_plugin_amd29k;
-extern RzAsmPlugin rz_asm_plugin_arc;
-extern RzAsmPlugin rz_asm_plugin_arm_as;
-extern RzAsmPlugin rz_asm_plugin_arm_cs;
-extern RzAsmPlugin rz_asm_plugin_avr;
-extern RzAsmPlugin rz_asm_plugin_bf;
-extern RzAsmPlugin rz_asm_plugin_null;
-extern RzAsmPlugin rz_asm_plugin_chip8;
-extern RzAsmPlugin rz_asm_plugin_cil;
-extern RzAsmPlugin rz_asm_plugin_cr16;
-extern RzAsmPlugin rz_asm_plugin_cris_gnu;
-extern RzAsmPlugin rz_asm_plugin_dalvik;
-extern RzAsmPlugin rz_asm_plugin_dcpu16;
-extern RzAsmPlugin rz_asm_plugin_ebc;
-extern RzAsmPlugin rz_asm_plugin_gb;
-extern RzAsmPlugin rz_asm_plugin_h8300;
-extern RzAsmPlugin rz_asm_plugin_hexagon;
-extern RzAsmPlugin rz_asm_plugin_hexagon_gnu;
-extern RzAsmPlugin rz_asm_plugin_hppa_gnu;
-extern RzAsmPlugin rz_asm_plugin_i4004;
-extern RzAsmPlugin rz_asm_plugin_i8080;
-extern RzAsmPlugin rz_asm_plugin_java;
-extern RzAsmPlugin rz_asm_plugin_lanai_gnu;
-extern RzAsmPlugin rz_asm_plugin_lh5801;
-extern RzAsmPlugin rz_asm_plugin_lm32;
-extern RzAsmPlugin rz_asm_plugin_luac;
-extern RzAsmPlugin rz_asm_plugin_m68k_cs;
-extern RzAsmPlugin rz_asm_plugin_m680x_cs;
-extern RzAsmPlugin rz_asm_plugin_malbolge;
-extern RzAsmPlugin rz_asm_plugin_mcore;
-extern RzAsmPlugin rz_asm_plugin_mcs96;
-extern RzAsmPlugin rz_asm_plugin_mips_cs;
-extern RzAsmPlugin rz_asm_plugin_mips_gnu;
-extern RzAsmPlugin rz_asm_plugin_msp430;
-extern RzAsmPlugin rz_asm_plugin_nios2;
-extern RzAsmPlugin rz_asm_plugin_or1k;
-extern RzAsmPlugin rz_asm_plugin_pic;
-extern RzAsmPlugin rz_asm_plugin_ppc_as;
-extern RzAsmPlugin rz_asm_plugin_ppc_cs;
-extern RzAsmPlugin rz_asm_plugin_propeller;
-extern RzAsmPlugin rz_asm_plugin_riscv;
-extern RzAsmPlugin rz_asm_plugin_riscv_cs;
-extern RzAsmPlugin rz_asm_plugin_rl78;
-extern RzAsmPlugin rz_asm_plugin_rsp;
-extern RzAsmPlugin rz_asm_plugin_rx;
-extern RzAsmPlugin rz_asm_plugin_sh;
-extern RzAsmPlugin rz_asm_plugin_snes;
-extern RzAsmPlugin rz_asm_plugin_sparc_cs;
-extern RzAsmPlugin rz_asm_plugin_sparc_gnu;
-extern RzAsmPlugin rz_asm_plugin_spc700;
-extern RzAsmPlugin rz_asm_plugin_sysz;
-extern RzAsmPlugin rz_asm_plugin_tms320;
-extern RzAsmPlugin rz_asm_plugin_tms320c64x;
-extern RzAsmPlugin rz_asm_plugin_tricore;
-extern RzAsmPlugin rz_asm_plugin_v810;
-extern RzAsmPlugin rz_asm_plugin_v850;
-extern RzAsmPlugin rz_asm_plugin_vax;
-extern RzAsmPlugin rz_asm_plugin_wasm;
-extern RzAsmPlugin rz_asm_plugin_x86_as;
-extern RzAsmPlugin rz_asm_plugin_x86_cs;
-extern RzAsmPlugin rz_asm_plugin_x86_nasm;
-extern RzAsmPlugin rz_asm_plugin_x86_nz;
-extern RzAsmPlugin rz_asm_plugin_xap;
-extern RzAsmPlugin rz_asm_plugin_xcore_cs;
-extern RzAsmPlugin rz_asm_plugin_xtensa;
-extern RzAsmPlugin rz_asm_plugin_z80;
-extern RzAsmPlugin rz_asm_plugin_pyc;
 
 #endif
 

@@ -9,6 +9,5 @@ RUN
 NAME=./pe32
 FILE=bins/pe/vista-glass.exe
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN

@@ -152,6 +152,22 @@ static void il_op_effect_string_resolve(RzILOpEffect *op, RzStrBuf *sb, int pad)
 		} \
 	} while (0)
 
+#define il_op_param_1_with_fexcept(name, opx, v0, e) \
+	do { \
+		const char *str = rz_il_float_stringify_exception(opx.e); \
+		if (pad < 0) { \
+			rz_strbuf_append(sb, "(" name " "); \
+			rz_strbuf_append(sb, str); \
+			rz_strbuf_append(sb, " "); \
+			il_op_pure_string_resolve(opx.v0, sb, pad); \
+			rz_strbuf_append(sb, ")"); \
+		} else { \
+			rz_strbuf_appendf(sb, "%*.s(" name " %s\n", pad, "", str); \
+			il_op_pure_string_resolve(opx.v0, sb, pad + PRETTY_PAD); \
+			rz_strbuf_append(sb, ")"); \
+		} \
+	} while (0)
+
 static void il_opdmp_var(RzILOpPure *op, RzStrBuf *sb, int pad) {
 	RzILOpArgsVar *opx = &op->op.var;
 	if (pad < 0) {
@@ -523,6 +539,10 @@ static void il_opdmp_fsqrt(RzILOpPure *op, RzStrBuf *sb, int pad) {
 
 static void il_opdmp_frsqrt(RzILOpPure *op, RzStrBuf *sb, int pad) {
 	il_op_param_1_with_rmode("frsqrt", op->op.frsqrt, f, rmode);
+}
+
+static void il_opdmp_fexcept(RzILOpPure *op, RzStrBuf *sb, int pad) {
+	il_op_param_1_with_fexcept("fexcept", op->op.fexcept, x, e);
 }
 
 static void il_opdmp_fadd(RzILOpPure *op, RzStrBuf *sb, int pad) {
@@ -899,6 +919,9 @@ static void il_op_pure_string_resolve(RzILOpPure *op, RzStrBuf *sb, int pad) {
 	case RZ_IL_OP_FRSQRT:
 		il_opdmp_frsqrt(op, sb, pad);
 		return;
+	case RZ_IL_OP_FEXCEPT:
+		il_opdmp_fexcept(op, sb, pad);
+		return;
 	case RZ_IL_OP_FADD:
 		il_opdmp_fadd(op, sb, pad);
 		return;
@@ -1025,6 +1048,9 @@ RZ_API void rz_il_op_effect_stringify(RZ_NONNULL RzILOpEffect *op, RZ_NONNULL Rz
  */
 RZ_API char *rz_il_value_stringify(RZ_NONNULL const RzILVal *val) {
 	rz_return_val_if_fail(val, NULL);
+	if (val->type == RZ_IL_TYPE_PURE_FLOAT) {
+		return rz_float_as_string(val->data.f);
+	}
 	RzBitVector *bv = rz_il_value_to_bv(val);
 	if (!bv) {
 		return NULL;
@@ -1053,7 +1079,11 @@ RZ_API void rz_il_event_stringify(RZ_NONNULL const RzILEvent *evt, RZ_NONNULL Rz
 	case RZ_IL_EVENT_MEM_READ:
 		tmp0 = rz_bv_as_hex_string(evt->data.mem_read.address, false);
 		tmp1 = evt->data.mem_read.value ? rz_bv_as_hex_string(evt->data.mem_read.value, false) : NULL;
-		rz_strbuf_appendf(sb, "mem_read(addr: %s, value: %s)", tmp0, tmp1 ? tmp1 : "uninitialized memory");
+		if (evt->data.mem_read.index == 0) {
+			rz_strbuf_appendf(sb, "mem_read(addr: %s, value: %s)", tmp0, tmp1 ? tmp1 : "uninitialized memory");
+		} else {
+			rz_strbuf_appendf(sb, "mem_read(index: %u, addr: %s, value: %s)", evt->data.mem_read.index, tmp0, tmp1 ? tmp1 : "uninitialized memory");
+		}
 		break;
 	case RZ_IL_EVENT_VAR_READ:
 		tmp1 = rz_il_value_stringify(evt->data.var_read.value);
@@ -1063,7 +1093,11 @@ RZ_API void rz_il_event_stringify(RZ_NONNULL const RzILEvent *evt, RZ_NONNULL Rz
 		tmp0 = rz_bv_as_hex_string(evt->data.mem_write.address, false);
 		tmp1 = evt->data.mem_write.old_value ? rz_bv_as_hex_string(evt->data.mem_write.old_value, false) : NULL;
 		tmp2 = rz_bv_as_hex_string(evt->data.mem_write.new_value, false);
-		rz_strbuf_appendf(sb, "mem_write(addr: %s, old: %s, new: %s)", tmp0, tmp1 ? tmp1 : "uninitialized memory", tmp2);
+		if (evt->data.mem_write.index == 0) {
+			rz_strbuf_appendf(sb, "mem_write(addr: %s, old: %s, new: %s)", tmp0, tmp1 ? tmp1 : "uninitialized memory", tmp2);
+		} else {
+			rz_strbuf_appendf(sb, "mem_write(index: %u, addr: %s, old: %s, new: %s)", evt->data.mem_write.index, tmp0, tmp1 ? tmp1 : "uninitialized memory", tmp2);
+		}
 		break;
 	case RZ_IL_EVENT_VAR_WRITE:
 		tmp1 = rz_il_value_stringify(evt->data.var_write.old_value);
@@ -1200,6 +1234,8 @@ RZ_API RZ_NONNULL const char *rz_il_op_pure_code_stringify(RzILOpPureCode code) 
 		return "fsqrt";
 	case RZ_IL_OP_FRSQRT:
 		return "frsqrt";
+	case RZ_IL_OP_FEXCEPT:
+		return "fexcept";
 	case RZ_IL_OP_FADD:
 		return "fadd";
 	case RZ_IL_OP_FSUB:
@@ -1238,9 +1274,9 @@ RZ_API RZ_OWN char *rz_il_sort_pure_stringify(RzILSortPure sort) {
 	case RZ_IL_TYPE_PURE_BITVECTOR:
 		return rz_str_newf("bitvector:%u", (unsigned int)sort.props.bv.length);
 	case RZ_IL_TYPE_PURE_BOOL:
-		return strdup("bool");
+		return rz_str_dup("bool");
 	case RZ_IL_TYPE_PURE_FLOAT:
 		return rz_str_newf("float:%u", (unsigned int)sort.props.f.format);
 	}
-	return strdup("invalid");
+	return rz_str_dup("invalid");
 }

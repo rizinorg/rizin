@@ -284,14 +284,36 @@ RZ_API RZ_OWN RzList *rz_list_newf(RZ_NULLABLE RzListFree f) {
  * \brief Allocates a new RzList and adds an array elements to it
  *
  **/
-RZ_API RZ_OWN RzList *rz_list_new_from_array(RZ_NONNULL const void **arr, size_t arr_size) {
+RZ_API RZ_OWN RzList *rz_list_new_from_array(const void **arr, size_t arr_size) {
 	RzList *l = rz_list_new();
 	if (!l) {
 		return NULL;
 	}
+	if (!arr) {
+		return l;
+	}
 	size_t i;
 	for (i = 0; i < arr_size; i++) {
 		rz_list_append(l, (void *)arr[i]);
+	}
+	return l;
+}
+
+/**
+ * \brief Allocates a new RzList and adds all elements of the iterator \p iter to it.
+ * \p iter keeps the ownership over the values.
+ *
+ * \return The produced list. Or NULL in case of failure.
+ **/
+RZ_API RZ_OWN RzList *rz_list_new_from_iterator(RZ_BORROW RZ_NONNULL RzIterator *iter) {
+	rz_return_val_if_fail(iter, NULL);
+	RzList *l = rz_list_new();
+	if (!l) {
+		return NULL;
+	}
+	void **val;
+	rz_iterator_foreach(iter, val) {
+		rz_list_append(l, (void *)*val);
 	}
 	return l;
 }
@@ -477,26 +499,6 @@ RZ_API ut32 rz_list_del_n(RZ_NONNULL RzList *list, ut32 n) {
 }
 
 /**
- * \brief Returns the last element of the list
- *
- **/
-RZ_API RZ_BORROW void *rz_list_get_top(RZ_NONNULL const RzList *list) {
-	rz_return_val_if_fail(list, NULL);
-
-	return list->tail ? list->tail->elem : NULL;
-}
-
-/**
- * \brief Returns the first element of the list
- *
- **/
-RZ_API RZ_BORROW void *rz_list_get_bottom(RZ_NONNULL const RzList *list) {
-	rz_return_val_if_fail(list, NULL);
-
-	return list->head ? list->head->elem : NULL;
-}
-
-/**
  * \brief Reverses the list
  *
  **/
@@ -513,24 +515,6 @@ RZ_API void rz_list_reverse(RZ_NONNULL RzList *list) {
 	tmp = list->head;
 	list->head = list->tail;
 	list->tail = tmp;
-}
-
-/**
- * \brief Returns the data of the first element of the list
- *
- **/
-RZ_API RZ_BORROW void *rz_list_get_head_data(RZ_NONNULL RzList *list) {
-	rz_return_val_if_fail(list, NULL);
-	return rz_list_iter_get_data(list->head);
-}
-
-/**
- * \brief Returns the data of the last element of the list
- *
- **/
-RZ_API RZ_BORROW void *rz_list_get_tail_data(RZ_NONNULL RzList *list) {
-	rz_return_val_if_fail(list, NULL);
-	return rz_list_iter_get_data(list->tail);
 }
 
 /**
@@ -821,6 +805,25 @@ RZ_API RZ_OWN RzList *rz_list_uniq(RZ_NONNULL const RzList *list, RZ_NONNULL RzL
 }
 
 /**
+ * \brief Removes duplicate values from a sorted list in-place.
+ *
+ * Use only on a list that is sorted with respect to the RzListComparator.
+ **/
+RZ_API void rz_list_sorted_uniq(RZ_NONNULL RzList *list, RZ_NONNULL RzListComparator cmp, void *user) {
+	rz_return_if_fail(list && cmp);
+
+	RzListIter *iter, *tmp_iter;
+	void *cur, *prev = NULL;
+	rz_list_foreach_safe (list, iter, tmp_iter, cur) {
+		if (prev && cmp(prev, cur, user) == 0) {
+			rz_list_delete(list, iter);
+			continue;
+		}
+		prev = cur;
+	}
+}
+
+/**
  * \brief Casts a RzList containg strings into a concatenated string
  *
  * \param list The list of strings to concatenate.
@@ -839,18 +842,4 @@ RZ_API RZ_OWN char *rz_list_to_str(RZ_NONNULL RzList *list, char ch) {
 		rz_strbuf_appendf(buf, "%s%c", item, ch);
 	}
 	return rz_strbuf_drain(buf);
-}
-
-/**
- * \brief Converts a SdbList into a RzList
- *
- **/
-RZ_API RZ_OWN RzList *rz_list_of_sdblist(SdbList *sl) {
-	RzList *l = rz_list_newf(free);
-	SdbKv *kv;
-	SdbListIter *iter;
-	ls_foreach (sl, iter, kv) {
-		rz_list_append(l, strdup(sdbkv_key(kv)));
-	}
-	return l;
 }

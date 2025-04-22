@@ -47,7 +47,7 @@ static void emit_init(RzEgg *egg) {
 static char *emit_syscall(RzEgg *egg, int nargs) {
 	char p[512];
 	if (attsyntax) {
-		return strdup(": mov $`.arg`, %" RZ_AX "\n: " SYSCALL_ATT "\n");
+		return rz_str_dup(": mov $`.arg`, %" RZ_AX "\n: " SYSCALL_ATT "\n");
 	}
 	switch (egg->os) {
 	case RZ_EGG_OS_LINUX:
@@ -72,7 +72,7 @@ static char *emit_syscall(RzEgg *egg, int nargs) {
 	default:
 		return NULL;
 	}
-	return strdup(p);
+	return rz_str_dup(p);
 }
 
 static void emit_frame(RzEgg *egg, int sz) {
@@ -213,24 +213,6 @@ static void emit_string(RzEgg *egg, const char *dstvar, const char *str, int j) 
 	free(p);
 
 #undef BPOFF
-#if 0
-	char *p, str2[64];
-	int i, oj = j;
-	for (i=0; i<oj; i+=4) {
-		/* XXX endian and 32/64bit issues */
-		int *n = (int *)(str+i);
-		p = rz_egg_mkvar (egg, str2, dstvar, j);
-		if (attsyntax) rz_egg_printf (egg, "  movl $0x%x, %s\n", *n, p);
-		else rz_egg_printf (egg, "  mov %s, 0x%x\n", p, *n);
-		j -= 4;
-	}
-	p = rz_egg_mkvar (egg, str2, dstvar, oj);
-	if (attsyntax) rz_egg_printf (egg, "  lea %s, %%"RZ_AX"\n", p);
-	else rz_egg_printf (egg, "  lea "RZ_AX", %s\n", p);
-	p = rz_egg_mkvar (egg, str2, dstvar, 0);
-	if (attsyntax) rz_egg_printf (egg, "  mov %%"RZ_AX", %s\n", p);
-	else rz_egg_printf (egg, "  mov %s, "RZ_AX"\n", p);
-#endif
 	free(s);
 }
 
@@ -335,17 +317,9 @@ static void emit_get_while_end(RzEgg *egg, char *str, const char *ctxpush, const
 }
 
 static void emit_while_end(RzEgg *egg, const char *labelback) {
-#if 0
-	if (attsyntax) {
-		rz_egg_printf (egg, "  pop %%"RZ_AX"\n");
-		rz_egg_printf (egg, "  cmp $0, %%"RZ_AX"\n"); // XXX MUST SUPPORT != 0 COMPARE HERE
-		rz_egg_printf (egg, "  jnz %s\n", labelback);
-	} else {
-#endif
 	rz_egg_printf(egg, "  pop " RZ_AX "\n");
 	rz_egg_printf(egg, "  test " RZ_AX ", " RZ_AX "\n"); // XXX MUST SUPPORT != 0 COMPARE HERE
 	rz_egg_printf(egg, "  jnz %s\n", labelback);
-	//	}
 }
 
 // XXX: this is wrong
@@ -522,12 +496,6 @@ static void emit_mathop(RzEgg *egg, int ch, int vs, int type, const char *eq, co
 		if (!p) {
 			p = RZ_AX;
 		}
-		// TODO:
-#if 0
-		eprintf ("TYPE = %c\n", type);
-		eprintf ("  %s%c %c%s, %s\n", op, vs, type, eq, p);
-		eprintf ("  %s %s, [%s]\n", op, p, eq);
-#endif
 		if (type == '*') {
 			rz_egg_printf(egg, "  %s %s, [%s]\n", op, p, eq);
 		} else {

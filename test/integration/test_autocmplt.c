@@ -151,26 +151,10 @@ static bool test_autocmplt_newcommand(void) {
 	mu_assert_notnull(core, "core should be created");
 	RzLineBuffer *buf = &core->cons->line->buffer;
 
-	strcpy(buf->data, "");
-	buf->length = strlen("");
-	buf->index = 0;
-	RzLineNSCompletionResult *r = rz_core_autocomplete_rzshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
-
-	mu_assert_notnull(r, "r should be returned");
-	mu_assert_eq(r->start, 0, "should autocomplete starting from 0");
-	mu_assert_eq(r->end, 0, "should autocomplete ending at 0");
-	mu_assert_eq(rz_pvector_len(&r->options), 5, "there are 5 commands available");
-	mu_assert_streq(rz_pvector_at(&r->options, 0), "p", "one is p");
-	mu_assert_streq(rz_pvector_at(&r->options, 1), "s", "one is s");
-	mu_assert_streq(rz_pvector_at(&r->options, 2), "xd", "one is xd");
-	mu_assert_streq(rz_pvector_at(&r->options, 3), "xe", "one is xe");
-	mu_assert_streq(rz_pvector_at(&r->options, 4), "z", "one is z");
-	rz_line_ns_completion_result_free(r);
-
 	strcpy(buf->data, "p @@c:");
 	buf->length = strlen("p @@c:");
 	buf->index = buf->length;
-	r = rz_core_autocomplete_rzshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
+	RzLineNSCompletionResult *r = rz_core_autocomplete_rzshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
 
 	mu_assert_notnull(r, "result should be there");
 	mu_assert_eq(r->start, buf->length, "start should be ok");
@@ -445,14 +429,14 @@ static bool test_autocmplt_global(void) {
 	rz_analysis_var_global_set_type(glob2, typ);
 
 	RzLineBuffer *buf = &core->cons->line->buffer;
-	const char *s = "avg ";
+	const char *s = "avgl ";
 	strcpy(buf->data, s);
 	buf->length = strlen(s);
 	buf->index = buf->length;
 
 	RzLineNSCompletionResult *r = rz_core_autocomplete_rzshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
 	mu_assert_notnull(r, "r should not be null");
-	mu_assert_eq(r->start, strlen("avg "), "should autocomplete the last arg");
+	mu_assert_eq(r->start, strlen("avgl "), "should autocomplete the last arg");
 	mu_assert_eq(r->end, buf->length, "should autocomplete ending at end of buffer");
 	mu_assert_eq(rz_pvector_len(&r->options), 2, "there are 2 global vars");
 	mu_assert_streq(rz_pvector_at(&r->options, 0), "GINT", "GINT found");
@@ -530,6 +514,63 @@ static bool test_autocmplt_tmp_operators(void) {
 		char msg[100];
 		rz_strf(msg, "%d-th should be %s", i, tmp_ops[i]);
 		mu_assert_streq(rz_pvector_at(&r->options, i), tmp_ops[i], msg);
+	}
+	rz_line_ns_completion_result_free(r);
+
+	rz_core_free(core);
+	mu_end;
+}
+
+static bool test_autocmplt_iter_operators(void) {
+	RzCore *core = fake_core_new();
+	mu_assert_notnull(core, "core should be created");
+	RzLineBuffer *buf = &core->cons->line->buffer;
+
+	const char *s = "pd @@";
+	strcpy(buf->data, s);
+	buf->length = strlen(s);
+	buf->index = buf->length;
+	RzLineNSCompletionResult *r = rz_core_autocomplete_rzshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
+
+	mu_assert_notnull(r, "r should not be null");
+	mu_assert_eq(r->start, strlen("pd "), "should autocomplete the @@ operator");
+	mu_assert_eq(r->end, buf->length, "should autocomplete ending at end of buffer");
+
+	const char *iter_ops[] = {
+		"@@.",
+		"@@=",
+		"@@@=",
+		"@@",
+		"@@c:",
+		"@@@c:",
+		"@@C",
+		"@@C:",
+		"@@dbt",
+		"@@dbtb",
+		"@@dbts",
+		"@@t",
+		"@@b",
+		"@@i",
+		"@@ii",
+		"@@iS",
+		"@@iSS",
+		"@@is",
+		"@@iz",
+		"@@f",
+		"@@f:",
+		"@@F",
+		"@@F:",
+		"@@om",
+		"@@dm",
+		"@@r",
+		"@@s:",
+	};
+	mu_assert_eq(rz_pvector_len(&r->options), RZ_ARRAY_SIZE(iter_ops), "there are all @@/@@ operators (see @@?)");
+	int i;
+	for (i = 0; i < RZ_ARRAY_SIZE(iter_ops); i++) {
+		char msg[100];
+		rz_strf(msg, "%d-th should be %s", i, iter_ops[i]);
+		mu_assert_streq(rz_pvector_at(&r->options, i), iter_ops[i], msg);
 	}
 	rz_line_ns_completion_result_free(r);
 
@@ -649,6 +690,7 @@ bool all_tests() {
 	mu_run_test(test_autocmplt_seek);
 	mu_run_test(test_autocmplt_global);
 	mu_run_test(test_autocmplt_tmp_operators);
+	mu_run_test(test_autocmplt_iter_operators);
 	mu_run_test(test_autocmplt_tmp_seek);
 	mu_run_test(test_autocmplt_tmp_config);
 	mu_run_test(test_autocmplt_tmp_arch);

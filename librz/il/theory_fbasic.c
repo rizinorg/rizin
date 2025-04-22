@@ -286,6 +286,42 @@ void *rz_il_handler_fsqrt(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 	return ret;
 }
 
+void *rz_il_handler_fexcept(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
+	rz_return_val_if_fail(vm && op && type, NULL);
+	RzILOpArgsFexcept args = op->op.fexcept;
+	RzFloat *n = rz_il_evaluate_float(vm, args.x);
+	if (!n) {
+		return NULL;
+	}
+
+	bool e = false;
+	switch (args.e) {
+	case RZ_FLOAT_E_DIV_ZERO:
+		e = n->exception & RZ_FLOAT_E_DIV_ZERO;
+		rz_il_vm_event_add(vm, rz_il_event_exception_new("float division by zero"));
+		break;
+	case RZ_FLOAT_E_OVERFLOW:
+		e = n->exception & RZ_FLOAT_E_OVERFLOW;
+		rz_il_vm_event_add(vm, rz_il_event_exception_new("float overflow"));
+		break;
+	case RZ_FLOAT_E_UNDERFLOW:
+		e = n->exception & RZ_FLOAT_E_UNDERFLOW;
+		rz_il_vm_event_add(vm, rz_il_event_exception_new("float underflow"));
+		break;
+	case RZ_FLOAT_E_INEXACT:
+		e = n->exception & RZ_FLOAT_E_INEXACT;
+		rz_il_vm_event_add(vm, rz_il_event_exception_new("float inexact"));
+		break;
+	default:;
+	}
+
+	RzILBool *ret = rz_il_bool_new(e);
+	rz_float_free(n);
+
+	*type = RZ_IL_TYPE_PURE_BOOL;
+	return ret;
+}
+
 void *rz_il_handler_frsqrt(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 	// TODO : float todo unimplemented
 	rz_return_val_if_fail(vm && op && type, NULL);

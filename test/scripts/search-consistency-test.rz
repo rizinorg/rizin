@@ -1,0 +1,9 @@
+# $setup and $bin need to be defined before calling these macros:
+
+(show_intervals cmd; !!rizin -qc "e search.show_progress=intervals; `$setup`; `echo ${cmd}`" -1 `$bin` | grep "^.*[[:punct:]]0x.*" | sed "s/^.*[[:cntrl:]]//"~$0)
+(show_hits cmd; !!rizin -qc "`$setup`; `echo ${cmd}`" `$bin`)
+(search.show_progress cmd; .(show_intervals ${cmd}); .(show_hits ${cmd}))
+
+# Additionally, $cmd_z, $cmd_x and $str need to be defined before calling the macro below:
+
+(search-consistency-test; .(search.show_progress "(cmd_z str; `$cmd_z`); .(cmd_z `$str`)"); echo "----"; .(search.show_progress "(cmd_x bytes; `$cmd_x`); .(cmd_x \`%x `$str`\`)"))

@@ -77,10 +77,10 @@ s 2
 avga bla short
 sd +6
 avga foo int
-avgj
+avglj
 EOF
 EXPECT=<<EOF
-[{"name":"bla","type":"short","addr":"0x2"},{"name":"foo","type":"int","addr":"0x8"}]
+[{"name":"bla","type":"short","size":2,"addr":"0x2"},{"name":"foo","type":"int","size":4,"addr":"0x8"}]
 EOF
 RUN
 
@@ -90,7 +90,7 @@ CMDS=<<EOF
 avga bla int @ 0x4
 w test @ 0x10
 avga foo "char *" @ 0x10
-avg
+avgl
 EOF
 EXPECT=<<EOF
 global int bla @ 0x4
@@ -216,7 +216,7 @@ pf "F long double"
 pf "f float"
 pf "d int"
 pf "w short"
-pf "x long"
+pf "q long"
 pf "q long long"
 pf "q size_t"
 pf "q uid_t"
@@ -243,7 +243,7 @@ EXPECT=<<EOF
 pf "d int"
 EOF
 EXPECT_ERR=<<EOF
-ERROR: core: cannot find 'int' type
+ERROR: core: cannot find 'int' type's format
 EOF
 RUN
 
@@ -293,7 +293,7 @@ union xoo {
 };
 EOF
 EXPECT_ERR=<<EOF
-ERROR: core: cannot find 'xoo' type
+ERROR: core: cannot find 'xoo' type's format
 ERROR: Cannot find "xoo" union type
 EOF
 RUN
@@ -402,8 +402,7 @@ td "enum pe_machine { IMAGE_FILE_MACHINE_IA64=0x200, IMAGE_FILE_MACHINE_I386=0x1
 t-*
 t
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=teb
@@ -1321,21 +1320,26 @@ FILE==
 CMDS=<<EOF
 td "struct bla {int foo,bar; void *b};"
 td "union foo {float a,b; int c,d;};"
-td "typedef struct {char *a; void *b;} ts, *pts;"
+td "typedef struct {char *a; void *b;} qs, *pts;"
 tsc bla
 tuc foo
-ttc ts
+ttc qs
 tsc "anonymous struct 0"
 ttc pts
 EOF
 EXPECT=<<EOF
+struct bla {
+	int foo;
+	int bar;
+	void *b;
+};
 union foo {
 	float a;
 	float b;
 	int c;
 	int d;
 };
-typedef struct anonymous struct 0 ts;
+typedef struct anonymous struct 0 qs;
 struct anonymous struct 0 {
 	char *a;
 	void *b;
@@ -1613,8 +1617,8 @@ ar bp=0x98
 afvd var_70h
 EOF
 EXPECT=<<EOF
-var uint64_t var_80h @ stack - 0x80
-var uint64_t var_71h @ stack - 0x71
+var unsigned long long var_80h @ stack - 0x80
+var unsigned long long var_71h @ stack - 0x71
 var int64_t var_70h @ stack - 0x70
 var char *var_60h @ stack - 0x60
 var int64_t var_58h @ stack - 0x58
@@ -1627,8 +1631,8 @@ var int64_t var_40h @ stack - 0x40
 arg int64_t arg_5h @ stack + 0x5
 arg int argc @ rdi
 arg char **argv @ rsi
-var uint64_t var_80h @ stack - 0x80
-var uint64_t var_71h @ stack - 0x71
+var unsigned long long var_80h @ stack - 0x80
+var unsigned long long var_71h @ stack - 0x71
 var char [20] var_70h @ stack - 0x70
 var int64_t var_58h @ stack - 0x58
 var int64_t var_56h @ stack - 0x56
@@ -1788,10 +1792,10 @@ s sym.funcarg
 pd 1
 EOF
 EXPECT=<<EOF
-sym.funcarg(const char *arg1, uint64_t arg2);
+sym.funcarg(const char *arg1, unsigned long long arg2);
 ; arg const char *arg1 @ rdi
-; arg uint64_t arg2 @ rsi
-; var uint64_t var_14h @ stack - 0x14
+; arg unsigned long long arg2 @ rsi
+; var unsigned long long var_14h @ stack - 0x14
 ; var const char *var_10h @ stack - 0x10
 0x0000068a      55             push  rbp
 EOF
@@ -1809,10 +1813,10 @@ s sym.funcarg
 pd 1
 EOF
 EXPECT=<<EOF
-sym.funcarg(const char *arg_4h, unsigned long arg_8h);
+sym.funcarg(const char *arg_4h, size_t arg_8h);
 ; var int32_t var_8h @ stack - 0x8
 ; arg const char *arg_4h @ stack + 0x4
-; arg unsigned long arg_8h @ stack + 0x8
+; arg size_t arg_8h @ stack + 0x8
 0x0000054d      55             push  ebp
 EOF
 RUN
@@ -1879,7 +1883,7 @@ EOF
 EXPECT=<<EOF
 var int var_3ch @ stack - 0x3c
 var int64_t var_38h @ stack - 0x38
-var uint64_t var_30h @ stack - 0x30
+var unsigned long long var_30h @ stack - 0x30
 EOF
 RUN
 
@@ -1893,7 +1897,7 @@ afvl
 EOF
 EXPECT=<<EOF
 var void *va_args @ stack - 0x3c
-var uint64_t var_34h @ stack - 0x34
+var unsigned long long var_34h @ stack - 0x34
 var FILE *stream @ stack - 0x30
 var const char *s @ stack - 0x28
 var const char *var_20h @ stack - 0x20
@@ -1932,9 +1936,9 @@ var int *wstatus @ stack - 0x14d4
 var int64_t var_14cch @ stack - 0x14cc
 var int64_t var_14c8h @ stack - 0x14c8
 var int64_t var_14c4h @ stack - 0x14c4
-var uint64_t pid @ stack - 0x14c0
-var uint64_t var_14bch @ stack - 0x14bc
-var uint64_t var_14b8h @ stack - 0x14b8
+var unsigned long long pid @ stack - 0x14c0
+var unsigned long long var_14bch @ stack - 0x14bc
+var unsigned long long var_14b8h @ stack - 0x14b8
 var int64_t var_14b4h @ stack - 0x14b4
 var const char *var_14b0h @ stack - 0x14b0
 var const char *s @ stack - 0x14a8
@@ -1950,9 +1954,9 @@ var int64_t var_20h @ stack - 0x20
 arg int argc @ rdi
 arg char **argv @ rsi
 var char *str @ stack - 0xb8
-var int64_t var_ach @ stack - 0xac
+var long long signed int var_ach @ stack - 0xac
 var int64_t var_a8h @ stack - 0xa8
-var uint64_t var_a4h @ stack - 0xa4
+var unsigned long long var_a4h @ stack - 0xa4
 var int var_a0h @ stack - 0xa0
 var int var_9ch @ stack - 0x9c
 var int var_98h @ stack - 0x98
@@ -1971,14 +1975,14 @@ var char *var_68h @ stack - 0x68
 var char *var_60h @ stack - 0x60
 var char *var_58h @ stack - 0x58
 var char *var_50h @ stack - 0x50
-var uint64_t var_48h @ stack - 0x48
+var unsigned long long var_48h @ stack - 0x48
 var const char *s1 @ stack - 0x40
 var const char *s @ stack - 0x38
 var const char *var_30h @ stack - 0x30
 var const char *var_28h @ stack - 0x28
 var int64_t var_20h @ stack - 0x20
 var int64_t var_10h @ stack - 0x10
-arg int64_t arg1 @ rdi
+arg long long signed int arg1 @ rdi
 arg char *arg2 @ rsi
 EOF
 RUN
@@ -2219,10 +2223,9 @@ td "stract"
 td "struct crash __attribute__((packed)) { };"
 EOF
 EXPECT_ERR=<<EOF
-ERROR: core: Unsupported type definition: struct;;
+ERROR: core: Unsupported type definition: struct
 ERROR: core: Unsupported type definition: stract;
 ERROR: core: Unsupported type definition: { }
-Unsupported type definition: ;;
 EOF
 RUN
 
@@ -2317,13 +2320,13 @@ EOF
 EXPECT=<<EOF
 int64_t
 const char *
-uint64_t
+unsigned long long
 int
 char **
 =
 int64_t
 const char *
-uint64_t
+unsigned long long
 const void *
 size_t
 mbstate_t *
@@ -8301,5 +8304,27 @@ EXPECT=<<EOF
  2 fd: 3 +0x00000000 0x00000000 * 0x000009af r-x fmap.LOAD0
  3 fd: 5 +0x00000000 0x00201010 - 0x00201017 rw- mmap.LOAD1
  4 fd: 6 +0x00000d98 0x00200d98 - 0x0020100f r-- vmap.LOAD1
+EOF
+RUN
+
+NAME=tp nested structs with typedefs
+FILE=--
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+td "typedef struct { int a; char b; struct { float c; char d[5]; } q; long long *z; } bla_t"
+td "typedef struct { char a; unsigned b; long long *z; } moo_t"
+td "typedef struct { void *a; char b[10]; struct { double c; char d[5]; } q;} goo_t"
+td "typedef struct { bla_t bla[2]; moo_t moot; goo_t goot; } bmg"
+tl bmg;
+tl bla_t;
+tl moo_t;
+tl goo_t;
+EOF
+EXPECT=<<EOF
+typedef bmg (0x2a0) "[2]??? (bla_t)bla (moo_t)moot (goo_t)goot"
+typedef bla_t (0xb0) "dc?*q a b (anonymous struct 1)q z"
+typedef moo_t (0x48) "c*q a z"
+typedef goo_t (0xf8) "p[10]c? a b (anonymous struct 4)q"
 EOF
 RUN

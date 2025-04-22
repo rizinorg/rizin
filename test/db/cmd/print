@@ -76,19 +76,19 @@ RUN
 NAME=MIPS new abi
 FILE=bins/elf/analysis/mips64r2-busybox-loongson
 CMDS=<<EOF
-e asm.arch=mips.gnu
+e asm.arch=mips
 e asm.bytes=true
 e cfg.bigendian=false
 s 0x120005978
 pd 6
 EOF
 EXPECT=<<EOF
-            0x120005978      1800bfff       sd    ra, 24(sp)
-            0x12000597c      3800a7ff       sd    a3, 56(sp)
-            0x120005980      4000a8ff       sd    a4, 64(sp)
-            0x120005984      4800a9ff       sd    a5, 72(sp)
-            0x120005988      5000aaff       sd    a6, 80(sp)
-            0x12000598c      5800abff       sd    a7, 88(sp)
+            0x120005978      1800bfff       sd    ra, 0x18(sp)
+            0x12000597c      3800a7ff       sd    a3, 0x38(sp)
+            0x120005980      4000a8ff       sd    t0, 0x40(sp)
+            0x120005984      4800a9ff       sd    t1, 0x48(sp)
+            0x120005988      5000aaff       sd    t2, 0x50(sp)
+            0x12000598c      5800abff       sd    t3, 0x58(sp)
 EOF
 RUN
 
@@ -266,5 +266,73 @@ prz 100 | rz-ax -S
 EOF
 EXPECT=<<EOF
 7f454c46020101
-EOF 
+EOF
+RUN
+
+NAME=pj - Print json
+FILE==
+CMDS=<<EOF
+ws "{\"as\": [1, 2, 3],\"asdf\": {\"a\": 1,\"b\": 0}}"
+pj
+s 0x4
+pj
+pj @ 0
+pj @ 0x80
+EOF
+EXPECT=<<EOF
+{
+  "as": [
+    1,
+    2,
+    3
+  ],
+  "asdf": {
+    "a": 1,
+    "b": 0
+  }
+}
+ [
+  1,
+  2,
+  3
+] {
+  "a": 1,
+  "b": 0
+}
+{
+  "as": [
+    1,
+    2,
+    3
+  ],
+  "asdf": {
+    "a": 1,
+    "b": 0
+  }
+}
+EOF
+RUN
+
+NAME=ps workaround for 4857 utf32le
+FILE=bins/cmd/search/string_encodings/Arabic-Lipsum.utf32le
+CMDS=<<EOF
+b 0x1000
+# Checks that no un-printable characters and the full string are emitted.
+ps utf32le unprintable
+EOF
+EXPECT=<<EOF
+أسيا مساعدة جعل عن, أخذ قد يونيو الثانية, نهاية الإقتصادية أي فقد. كما فسقط يتعلّق محاولات أي, هو الأحمر العمليات تلك, اكتوبر مقاطعة من كلا. هو لان وسفن أسيا الأوضاع, لم بوابة المبرمة عرض. إبّان اسبوعين البشريةً تعد في. كنقطة إيطاليا قام بل, أضف أن وبغطاء الباهضة.
+EOF
+RUN
+
+NAME=ps workaround for 4857 utf32be
+FILE=bins/cmd/search/string_encodings/Arabic-Lipsum.utf16be
+CMDS=<<EOF
+b 0x1000
+# Checks that no un-printable characters and the full string are emitted.
+ps utf16be unprintable
+EOF
+EXPECT=<<EOF
+أسيا مساعدة جعل عن, أخذ قد يونيو الثانية, نهاية الإقتصادية أي فقد. كما فسقط يتعلّق محاولات أي, هو الأحمر العمليات تلك, اكتوبر مقاطعة من كلا. هو لان وسفن أسيا الأوضاع, لم بوابة المبرمة عرض. إبّان اسبوعين البشريةً تعد في. كنقطة إيطاليا قام بل, أضف أن وبغطاء الباهضة.
+EOF
 RUN

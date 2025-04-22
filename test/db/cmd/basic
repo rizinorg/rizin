@@ -7,13 +7,13 @@ w test @ 666
 echo
 e search.in=block
 b 777
-/ test
+/z test
 EOF
 EXPECT=<<EOF
 
-0x00000000 hit0_0 "test"
-0x0000014d hit0_1 "test"
-0x0000029a hit0_2 "test"
+0x00000000 4 hit.string.ascii.0
+0x0000014d 4 hit.string.ascii.1
+0x0000029a 4 hit.string.ascii.2
 EOF
 RUN
 
@@ -26,7 +26,7 @@ e search.to=0x8048390
 /x b4960408ffd0c9c3
 EOF
 EXPECT=<<EOF
-0x08048362 hit0_0 b4960408ffd0c9c3
+0x08048362 8 hit.bytes.0
 EOF
 RUN
 
@@ -39,7 +39,7 @@ e search.to=0x8048390
 /x b4960408ffd0c9c3
 EOF
 EXPECT=<<EOF
-0x08048362 hit0_0 b4960408ffd0c9c3
+0x08048362 8 hit.bytes.0
 EOF
 RUN
 
@@ -50,8 +50,8 @@ w AAAA
 /x 4141
 EOF
 EXPECT=<<EOF
-0x00000000 hit0_0 4141
-0x00000002 hit0_1 4141
+0x00000000 2 hit.bytes.0
+0x00000002 2 hit.bytes.1
 EOF
 RUN
 
@@ -63,8 +63,8 @@ w AAAA
 /x 4141
 EOF
 EXPECT=<<EOF
-0x00000000 hit0_0 4141
-0x00000001 hit0_1 4141
-0x00000002 hit0_2 4141
+0x00000000 2 hit.bytes.0
+0x00000001 2 hit.bytes.1
+0x00000002 2 hit.bytes.2
 EOF
 RUN

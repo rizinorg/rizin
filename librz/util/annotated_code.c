@@ -52,7 +52,7 @@ RZ_API RzPVector /*<RzCodeAnnotation *>*/ *rz_annotated_code_annotations_in(RzAn
 		return NULL;
 	}
 	RzCodeAnnotation *annotation;
-	rz_vector_foreach(&code->annotations, annotation) {
+	rz_vector_foreach (&code->annotations, annotation) {
 		if (offset >= annotation->start && offset < annotation->end) {
 			rz_pvector_push(r, annotation);
 		}
@@ -66,7 +66,7 @@ RZ_API RzPVector /*<RzCodeAnnotation *>*/ *rz_annotated_code_annotations_range(R
 		return NULL;
 	}
 	RzCodeAnnotation *annotation;
-	rz_vector_foreach(&code->annotations, annotation) {
+	rz_vector_foreach (&code->annotations, annotation) {
 		if (start >= annotation->end || end < annotation->start) {
 			continue;
 		}

@@ -60,13 +60,13 @@ static void __as_free(RzAsmState *as) {
 
 static char *stackop2str(int type) {
 	switch (type) {
-	case RZ_ANALYSIS_STACK_NULL: return strdup("null");
-	case RZ_ANALYSIS_STACK_NOP: return strdup("nop");
-	// case RZ_ANALYSIS_STACK_INCSTACK: return strdup ("incstack");
-	case RZ_ANALYSIS_STACK_GET: return strdup("get");
-	case RZ_ANALYSIS_STACK_SET: return strdup("set");
+	case RZ_ANALYSIS_STACK_NULL: return rz_str_dup("null");
+	case RZ_ANALYSIS_STACK_NOP: return rz_str_dup("nop");
+	// case RZ_ANALYSIS_STACK_INCSTACK: return rz_str_dup ("incstack");
+	case RZ_ANALYSIS_STACK_GET: return rz_str_dup("get");
+	case RZ_ANALYSIS_STACK_SET: return rz_str_dup("set");
 	}
-	return strdup("unknown");
+	return rz_str_dup("unknown");
 }
 
 static void showanalysis(RzAsmState *as, RzAnalysisOp *op, ut64 offset, ut8 *buf, int len, PJ *pj) {
@@ -121,7 +121,7 @@ static void showanalysis(RzAsmState *as, RzAnalysisOp *op, ut64 offset, ut8 *buf
 
 // TODO: add israw/len
 static int show_analinfo(RzAsmState *as, const char *arg, ut64 offset) {
-	ut8 *buf = (ut8 *)strdup((const char *)arg);
+	ut8 *buf = (ut8 *)rz_str_dup((const char *)arg);
 	int ret, len = rz_hex_str2bin((char *)buf, buf);
 	PJ *pj = NULL;
 	if (as->json) {
@@ -139,6 +139,7 @@ static int show_analinfo(RzAsmState *as, const char *arg, ut64 offset) {
 	}
 	for (ret = 0; ret < len;) {
 		aop.size = 0;
+		rz_analysis_op_init(&aop);
 		if (rz_analysis_op(as->analysis, &aop, offset, buf + ret, len - ret, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_ESIL) < 1) {
 			eprintf("Error analyzing instruction at 0x%08" PFMT64x "\n", offset);
 			break;
@@ -170,7 +171,7 @@ static int show_analinfo(RzAsmState *as, const char *arg, ut64 offset) {
 static int rasm_show_help(int v) {
 	if (v < 2) {
 		printf("%s%s", Color_CYAN, "Usage: ");
-		printf(Color_RESET "rz-asm [-ACdDehLBvw] [-a arch] [-b bits] [-o addr] [-s syntax]\n"
+		printf(Color_RESET "rz-asm [-ACdDehLBvw] [-a arch] [-b bits] [-m plugin] [-o addr] [-s syntax]\n"
 				   "             [-f file] [-F fil:ter] [-i skip] [-l len] 'code'|hex|-\n");
 	}
 	const char *options[] = {
@@ -193,6 +194,7 @@ static int rasm_show_help(int v) {
 		"-k",       "[kernel]",         "Select operating system (linux, windows, darwin, ..)",
 		"-l",       "[len]",            "Input/Output length",
 		"-L",       "",                 "List Asm plugins: (a=asm, d=disasm, A=analyze, e=ESIL)",
+		"-m",       "[plugin]",         "List supported CPUs for the chosen plugin",
 		"-o, -@",   "[addr]",           "Set start address for code (default 0)",
 		"-O",       "[file]",           "Output file name (rz-asm -Bf a.asm -O a)",
 		"-p",       "",                 "Run SPP over input for assembly",
@@ -223,10 +225,12 @@ static int rasm_show_help(int v) {
 	printf(" If '-l' value is greater than output length, output is padded with nops\n"
 	       " If the last argument is '-' reads from stdin\n"
 	       "Environment:\n"
-	       " RZ_NOPLUGINS      do not load shared plugins (speedup loading)\n"
-	       " RZ_ASM_ARCH       same as rz-asm -a\n"
-	       " RZ_ASM_BITS       same as rz-asm -b\n"
-	       " RZ_DEBUG          if defined, show error messages and crash signal\n"
+	       " RZ_ARCH      e asm.arch # architecture to assemble/disassemble (same as rz-asm -a)\n"
+	       " RZ_ASM_ARCH             # architecture to assemble/disassemble (same as rz-asm -a)\n"
+	       " RZ_ASM_BITS             # cpu register size (8, 16, 32, 64) (same as rz-asm -b)\n"
+	       " RZ_BITS      e asm.bits # cpu register size (8, 16, 32, 64) (same as rz-asm -b)\n"
+	       " RZ_DEBUG                # if defined, show error messages and crash signal\n"
+	       " RZ_NOPLUGINS            # do not load shared plugins (speedup loading)\n"
 	       "");
 	if (v == 2) {
 		printf("Supported Assembler directives:\n");
@@ -299,12 +303,13 @@ static int rasm_disasm(RzAsmState *as, ut64 addr, const char *buf, int len, int 
 		clen = len; // XXX
 		data = (ut8 *)buf;
 	} else {
-		clen = rz_hex_str2bin(buf, NULL);
-		if ((int)clen < 1 || !(data = malloc(clen))) {
+		if (!(data = malloc((strlen(buf) / 2) + 1))) {
 			ret = 0;
 			goto beach;
 		}
-		rz_hex_str2bin(buf, data);
+		clen = rz_hex_str2bin(buf, data);
+		// Odd number of nibbles case.
+		clen *= clen < 0 ? -1 : 1;
 		len = clen;
 	}
 
@@ -317,6 +322,7 @@ static int rasm_disasm(RzAsmState *as, ut64 addr, const char *buf, int len, int 
 		RzAnalysisOp aop = { 0 };
 		while (ret < len) {
 			aop.size = 0;
+			rz_analysis_op_init(&aop);
 			if (rz_analysis_op(as->analysis, &aop, addr, data + ret, len - ret, RZ_ANALYSIS_OP_MASK_ESIL) > 0) {
 				printf("%s\n", RZ_STRBUF_SAFEGET(&aop.esil));
 			}
@@ -333,6 +339,7 @@ static int rasm_disasm(RzAsmState *as, ut64 addr, const char *buf, int len, int 
 		RzAnalysisOp aop = { 0 };
 		while (ret < len) {
 			aop.size = 0;
+			rz_analysis_op_init(&aop);
 			if (rz_analysis_op(as->analysis, &aop, addr, data + ret, len - ret, RZ_ANALYSIS_OP_MASK_IL) <= 0) {
 				eprintf("Invalid\n");
 				ret = 0;
@@ -349,9 +356,9 @@ static int rasm_disasm(RzAsmState *as, ut64 addr, const char *buf, int len, int 
 		break;
 	}
 	case DISASM_MODE_WITH_BYTES: {
-		RzAsmOp op;
 		rz_asm_set_pc(as->a, addr);
 		while ((len - ret) > 0) {
+			RzAsmOp op = { 0 };
 			int dr = rz_asm_disassemble(as->a, &op, data + ret, len - ret);
 			if (dr == -1 || op.size < 1) {
 				op.size = 1;
@@ -364,6 +371,7 @@ static int rasm_disasm(RzAsmState *as, ut64 addr, const char *buf, int len, int 
 			free(op_hex);
 			ret += op.size;
 			rz_asm_set_pc(as->a, addr + ret);
+			rz_asm_op_fini(&op);
 		}
 		break;
 	}
@@ -407,8 +415,8 @@ static void print_buf(RzAsmState *as, char *str) {
 	}
 }
 
-static bool print_label(void *user, const void *k, const void *v) {
-	printf("f label.%s @ %s\n", (const char *)k, (const char *)v);
+static bool print_label(void *user, const char *k, const char *v) {
+	printf("f label.%s @ %s\n", k, v);
 	return true;
 }
 
@@ -476,6 +484,26 @@ static bool lib_analysis_cb(RzLibPlugin *pl, void *user, void *data) {
 	return rz_analysis_plugin_add(as->analysis, hand);
 }
 
+/* arch callback */
+static bool lib_arch_cb(RzLibPlugin *pl, void *user, void *data) {
+	RzArchPlugin *hand = (RzArchPlugin *)data;
+	RzAsmState *as = (RzAsmState *)user;
+	if (!hand->p_asm && !hand->p_analysis) {
+		// TODO: add new structure.
+		// return rz_arch_plugin_add(as->a, hand);
+		return false;
+	}
+	if (hand->p_asm && !rz_asm_plugin_add(as->a, hand->p_asm)) {
+		// deprecated structure
+		return false;
+	}
+	if (hand->p_analysis && !rz_analysis_plugin_add(as->analysis, hand->p_analysis)) {
+		// deprecated structure
+		return false;
+	}
+	return true;
+}
+
 static int print_assembly_output(RzAsmState *as, const char *buf, ut64 offset, ut64 len, int bits,
 	int bin, bool use_spp, bool rad, bool hexwords, const char *arch) {
 	if (rad) {
@@ -490,7 +518,7 @@ static int print_assembly_output(RzAsmState *as, const char *buf, ut64 offset, u
 	if (rad) {
 		printf("f entry @ $$\n");
 		printf("f label.main @ $$ + 1\n");
-		ht_pp_foreach(as->a->flags, print_label, NULL);
+		ht_ss_foreach(as->a->flags, print_label, NULL);
 	}
 	return ret;
 }
@@ -501,8 +529,9 @@ static void __load_plugins(RzAsmState *as) {
 		free(tmp);
 		return;
 	}
-	rz_lib_add_handler(as->l, RZ_LIB_TYPE_ASM, "(dis)assembly plugins", &lib_asm_cb, NULL, as);
-	rz_lib_add_handler(as->l, RZ_LIB_TYPE_ANALYSIS, "analysis/emulation plugins", &lib_analysis_cb, NULL, as);
+	rz_lib_add_handler(as->l, RZ_LIB_TYPE_ASM, "(dis)assembly plugins (deprecated)", &lib_asm_cb, NULL, as);
+	rz_lib_add_handler(as->l, RZ_LIB_TYPE_ANALYSIS, "analysis/emulation plugins (deprecated)", &lib_analysis_cb, NULL, as);
+	rz_lib_add_handler(as->l, RZ_LIB_TYPE_ARCH, "(dis)assembly/analysis/emulation plugins", &lib_arch_cb, NULL, as);
 
 	char *path = rz_sys_getenv(RZ_LIB_ENV);
 	if (!RZ_STR_ISEMPTY(path)) {
@@ -556,14 +585,14 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 		arch = rz_arch;
 	}
 
-	char *r2bits = rz_sys_getenv("RZ_BITS");
-	if (r2bits) {
-		bits = rz_num_math(NULL, r2bits);
-		free(r2bits);
+	char *rz_bits = rz_sys_getenv("RZ_BITS");
+	if (rz_bits) {
+		bits = rz_num_math(NULL, rz_bits);
+		free(rz_bits);
 	}
 
 	RzGetopt opt;
-	rz_getopt_init(&opt, argc, argv, "a:Ab:Bc:CdDeEIf:F:hi:jk:l:L@:o:O:pqrs:vwx");
+	rz_getopt_init(&opt, argc, argv, "a:Ab:Bc:CdDeEIf:F:hi:jk:l:Lm:@:o:O:pqrs:vwx");
 	while ((c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case 'a':
@@ -629,7 +658,11 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 			core->analysis = as->analysis;
 			RzCmdStateOutput state = { 0 };
 			rz_cmd_state_output_init(&state, as->json ? RZ_OUTPUT_MODE_JSON : RZ_OUTPUT_MODE_STANDARD);
-			rz_core_asm_plugins_print(core, opt.argv[opt.ind], &state);
+			if (opt.argv[opt.ind]) {
+				rz_core_asm_cpu_plugin_print(core, &state, opt.argv[opt.ind]);
+			} else {
+				rz_core_asm_plugins_print(core, &state, NULL);
+			}
 			rz_cmd_state_output_print(&state);
 			rz_cmd_state_output_fini(&state);
 			rz_cons_flush();
@@ -637,6 +670,16 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 			core->analysis = tmp_analysis;
 			rz_core_free(core);
 			ret = 1;
+			goto beach;
+		}
+		case 'm': {
+			RzCore *core = rz_core_new();
+			RzAsm *tmp_asm = core->rasm;
+			core->rasm = as->a;
+			rz_core_cpu_descs_print(core, opt.arg);
+			rz_cons_flush();
+			core->rasm = tmp_asm;
+			rz_core_free(core);
 			goto beach;
 		}
 		case '@':
@@ -862,15 +905,20 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 			goto beach;
 		}
 		if (dis) {
-			char *usrstr = strdup(opt.argv[opt.ind]);
+			char *usrstr = rz_str_dup(opt.argv[opt.ind]);
 			if (!usrstr) {
-				eprintf("rz-asm: disassemble strdup OOM\n");
+				eprintf("rz-asm: failed to allocate string.\n");
 				ret = 1;
 				goto beach;
 			}
 			len = strlen(usrstr);
 			if (skip && len > skip) {
 				skip *= 2;
+				if (skip > len) {
+					eprintf("rz-asm: invalid skip value (skip %" PFMT64u " > %" PFMT64u " len).\n", skip, len);
+					ret = 1;
+					goto beach;
+				}
 				// eprintf ("SKIP (%s) (%lld)\n", usrstr, skip);
 				memmove(usrstr, usrstr + skip, len - skip);
 				len -= skip;

@@ -83,8 +83,7 @@ static RzList /*<RzDetectedString *>*/ *string_scan_range(SharedData *shared, co
 	size_t buffer_size = RZ_MIN(shared->buffer_size, interval_size);
 
 	RzUtilStrScanOptions scan_opt = {
-		.buf_size = buffer_size,
-		.max_uni_blocks = shared->max_uni_blocks,
+		.max_str_length = buffer_size,
 		.min_str_length = shared->min_str_length,
 		.prefer_big_endian = shared->prefer_big_endian,
 		.check_ascii_freq = shared->check_ascii_freq,
@@ -310,10 +309,9 @@ static void scan_cfstring_table(RzBinFile *bf, HtUP *strings_db, RzPVector /*<Rz
  */
 RZ_API void rz_bin_string_search_opt_init(RZ_NONNULL RzBinStringSearchOpt *opt) {
 	rz_return_if_fail(opt);
-	opt->max_threads = RZ_THREAD_POOL_ALL_CORES;
+	opt->max_threads = RZ_THREAD_N_CORES_ALL_AVAILABLE;
 	opt->min_length = RZ_BIN_STRING_SEARCH_MIN_STRING;
-	opt->buffer_size = RZ_BIN_STRING_SEARCH_BUFFER_SIZE;
-	opt->max_uni_blocks = RZ_BIN_STRING_SEARCH_MAX_UNI_BLOCKS;
+	opt->max_length = RZ_BIN_STRING_SEARCH_BUFFER_SIZE;
 	opt->max_region_size = RZ_BIN_STRING_SEARCH_MAX_REGION_SIZE;
 	opt->raw_alignment = RZ_BIN_STRING_SEARCH_RAW_FILE_ALIGNMENT;
 	opt->string_encoding = RZ_STRING_ENC_GUESS;
@@ -361,7 +359,7 @@ RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_bin_file_strings(RZ_NONNULL RzBi
 		goto fail;
 	}
 
-	strings_db = ht_up_new0();
+	strings_db = ht_up_new(NULL, NULL);
 	if (!strings_db) {
 		RZ_LOG_ERROR("bin_file_strings: cannot allocate string map.\n");
 		goto fail;
@@ -464,9 +462,8 @@ RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_bin_file_strings(RZ_NONNULL RzBi
 		.lock = lock,
 		.bf = bf,
 		.strings_db = strings_db,
-		.buffer_size = opt->buffer_size,
+		.buffer_size = opt->max_length,
 		.string_encoding = opt->string_encoding,
-		.max_uni_blocks = opt->max_uni_blocks,
 		.min_str_length = opt->min_length,
 		.check_ascii_freq = opt->check_ascii_freq,
 		.prefer_big_endian = prefer_big_endian,
@@ -500,13 +497,7 @@ RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_bin_file_strings(RZ_NONNULL RzBi
 		}
 		SearchThreadData *std = (SearchThreadData *)rz_th_get_user(th);
 		if (std) {
-			void **iter;
-			RzBinString *bstr;
-			rz_pvector_foreach (std->results, iter) {
-				bstr = *iter;
-				rz_pvector_push(results, bstr);
-			}
-			std->results->v.len = 0;
+			rz_pvector_join(results, std->results);
 		}
 	}
 

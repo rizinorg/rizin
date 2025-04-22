@@ -9,7 +9,7 @@
         __ut64    __pc;             /* Program counter */
         __uint32_t    __cpsr;   /* Current program status register */
 #endif
-return strdup(
+return rz_str_dup(
 	"=PC	pc\n"
 	"=SP	sp\n" // XXX
 	"=BP	x30\n" // XXX

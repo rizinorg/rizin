@@ -1,1 +1,9 @@
+.editorconfig
+.gitattributes
 node_modules
+bindings/
+Makefile
+Package.swift
+go.mod
+pyproject.toml
+setup.py

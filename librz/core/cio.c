@@ -35,10 +35,10 @@ RZ_API int rz_core_setup_debugger(RzCore *r, const char *debugbackend, bool atta
 				/* do nothing here */
 			} else if (!strcmp(bep, "entry")) {
 				address = rz_num_math(r->num, "entry0");
-				rz_core_debug_continue_until(r, address, address);
+				rz_core_debug_continue_until(r, address);
 			} else {
 				address = rz_num_math(r->num, bep);
-				rz_core_debug_continue_until(r, address, address);
+				rz_core_debug_continue_until(r, address);
 			}
 		}
 	}
@@ -376,6 +376,7 @@ RZ_API int rz_core_write_assembly_fill(RzCore *core, ut64 addr, RZ_NONNULL const
 	}
 
 	RzAnalysisOp op = { 0 };
+	rz_analysis_op_init(&op);
 	if (rz_analysis_op(core->analysis, &op, core->offset, core->block, core->blocksize, RZ_ANALYSIS_OP_MASK_BASIC) < 1) {
 		RZ_LOG_ERROR("Invalid instruction at %" PFMT64x "\n", core->offset);
 		goto err;
@@ -393,6 +394,7 @@ RZ_API int rz_core_write_assembly_fill(RzCore *core, ut64 addr, RZ_NONNULL const
 	}
 	ret = acode->len;
 err:
+	rz_analysis_op_fini(&op);
 	rz_asm_code_free(acode);
 	return ret;
 }
@@ -420,7 +422,7 @@ RZ_API RzCmdStatus rz_core_io_plugin_print(RzIOPlugin *plugin, RzCmdStateOutput 
 
 		if (plugin->uris) {
 			char *uri;
-			char *uris = strdup(plugin->uris);
+			char *uris = rz_str_dup(plugin->uris);
 			RzList *plist = rz_str_split_list(uris, ",", 0);
 			RzListIter *piter;
 			pj_k(pj, "uris");
@@ -476,17 +478,29 @@ RZ_API RzCmdStatus rz_core_io_plugin_print(RzIOPlugin *plugin, RzCmdStateOutput 
  * \param io Reference to RzIO instance
  * \param state Specify how plugins shall be printed
  */
-RZ_API RzCmdStatus rz_core_io_plugins_print(RzIO *io, RzCmdStateOutput *state) {
-	RzIOPlugin *plugin;
-	RzListIter *iter;
+RZ_API RzCmdStatus rz_core_io_plugins_print(RZ_NONNULL RZ_BORROW RzIO *io, RzCmdStateOutput *state) {
+	rz_return_val_if_fail(io && state, RZ_CMD_STATUS_ERROR);
+
 	if (!io) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_cmd_state_output_array_start(state);
 	rz_cmd_state_output_set_columnsf(state, "sssss", "perm", "license", "name", "uri", "description");
-	rz_list_foreach (io->plugins, iter, plugin) {
+
+	RzIterator *iter = ht_sp_as_iter(io->plugins);
+	RzList *plugin_list = rz_list_new_from_iterator(iter);
+	if (!plugin_list) {
+		rz_iterator_free(iter);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_list_sort(plugin_list, (RzListComparator)rz_io_plugin_cmp, NULL);
+	RzListIter *it;
+	RzIOPlugin *plugin;
+	rz_list_foreach (plugin_list, it, plugin) {
 		rz_core_io_plugin_print(plugin, state);
 	}
+	rz_iterator_free(iter);
+	rz_list_free(plugin_list);
 	rz_cmd_state_output_array_end(state);
 	return RZ_CMD_STATUS_OK;
 }
@@ -603,7 +617,7 @@ RZ_API bool rz_core_write_value_inc_at(RzCore *core, ut64 addr, st64 value, int 
 RZ_API bool rz_core_write_string_at(RzCore *core, ut64 addr, RZ_NONNULL const char *s) {
 	rz_return_val_if_fail(core && s, false);
 
-	char *str = strdup(s);
+	char *str = rz_str_dup(s);
 	if (!str) {
 		return false;
 	}
@@ -629,7 +643,7 @@ RZ_API bool rz_core_write_string_wide_at(RzCore *core, ut64 addr, const char *s)
 	rz_return_val_if_fail(core && s, false);
 
 	bool res = false;
-	char *str = strdup(s);
+	char *str = rz_str_dup(s);
 	if (!str) {
 		return false;
 	}
@@ -653,9 +667,11 @@ RZ_API bool rz_core_write_string_wide_at(RzCore *core, ut64 addr, const char *s)
 	if (!rz_core_write_at(core, addr, (const ut8 *)tmp, len * 2)) {
 		RZ_LOG_ERROR("Could not write wide string '%s' at %" PFMT64x "\n", s, addr);
 		free(str);
+		free(tmp);
 		return false;
 	}
 	res = true;
+	free(tmp);
 str_err:
 	free(str);
 	return res;
@@ -671,7 +687,7 @@ str_err:
 RZ_API bool rz_core_write_length_string_at(RzCore *core, ut64 addr, const char *s) {
 	rz_return_val_if_fail(core && s, false);
 
-	char *str = strdup(s);
+	char *str = rz_str_dup(s);
 	if (!str) {
 		return false;
 	}
@@ -903,7 +919,7 @@ RZ_API RzCmdStatus rz_core_io_pcache_print(RzCore *core, RzIODesc *desc, RzCmdSt
 RZ_API bool rz_core_write_string_zero_at(RzCore *core, ut64 addr, const char *s) {
 	rz_return_val_if_fail(core && s, false);
 
-	char *str = strdup(s);
+	char *str = rz_str_dup(s);
 	if (!str) {
 		return false;
 	}

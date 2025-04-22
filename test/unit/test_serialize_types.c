@@ -12,34 +12,34 @@
 
 Sdb *types_ref_db() {
 	Sdb *db = sdb_new0();
-	sdb_set(db, "junker", "struct", 0);
-	sdb_set(db, "struct.junker", "gillian,seed", 0);
-	sdb_set(db, "struct.junker.gillian", "char *,0,0", 0);
-	sdb_set(db, "struct.junker.seed", "uint64_t,8,0", 0);
-	sdb_set(db, "snatcher", "union", 0);
-	sdb_set(db, "union.snatcher", "random,hajile", 0);
-	sdb_set(db, "union.snatcher.random", "int,0,0", 0);
-	sdb_set(db, "union.snatcher.hajile", "uint32_t,0,0", 0);
-	sdb_set(db, "human", "typedef", 0);
-	sdb_set(db, "typedef.human", "union snatcher", 0);
-	sdb_set(db, "mika", "enum", 0);
-	sdb_set(db, "enum.mika", "ELIJAH,MODNAR", 0);
-	sdb_set(db, "enum.mika.MODNAR", "0x539", 0);
-	sdb_set(db, "enum.mika.ELIJAH", "0x2a", 0);
-	sdb_set(db, "enum.mika.0x2a", "ELIJAH", 0);
-	sdb_set(db, "enum.mika.0x539", "MODNAR", 0);
-	sdb_set(db, "my_sint_t", "type", 0);
-	sdb_set(db, "type.my_sint_t", "d", 0);
-	sdb_set(db, "type.my_sint_t.size", "32", 0);
-	sdb_set(db, "type.my_sint_t.typeclass", "Signed Integral", 0);
-	sdb_set(db, "my_float_t", "type", 0);
-	sdb_set(db, "type.my_float_t.size", "16", 0);
-	sdb_set(db, "type.my_float_t.typeclass", "Floating", 0);
+	sdb_set(db, "junker", "struct");
+	sdb_set(db, "struct.junker", "gillian,seed");
+	sdb_set(db, "struct.junker.gillian", "char *,0,0");
+	sdb_set(db, "struct.junker.seed", "uint64_t,8,0");
+	sdb_set(db, "snatcher", "union");
+	sdb_set(db, "union.snatcher", "random,hajile");
+	sdb_set(db, "union.snatcher.random", "int,0,0");
+	sdb_set(db, "union.snatcher.hajile", "uint32_t,0,0");
+	sdb_set(db, "human", "typedef");
+	sdb_set(db, "typedef.human", "union snatcher");
+	sdb_set(db, "mika", "enum");
+	sdb_set(db, "enum.mika", "ELIJAH,MODNAR");
+	sdb_set(db, "enum.mika.MODNAR", "0x539");
+	sdb_set(db, "enum.mika.ELIJAH", "0x2a");
+	sdb_set(db, "enum.mika.0x2a", "ELIJAH");
+	sdb_set(db, "enum.mika.0x539", "MODNAR");
+	sdb_set(db, "my_sint_t", "type");
+	sdb_set(db, "type.my_sint_t", "d");
+	sdb_set(db, "type.my_sint_t.size", "32");
+	sdb_set(db, "type.my_sint_t.typeclass", "Signed Integral");
+	sdb_set(db, "my_float_t", "type");
+	sdb_set(db, "type.my_float_t.size", "16");
+	sdb_set(db, "type.my_float_t.typeclass", "Floating");
 	return db;
 }
 
 bool sdb_has_record(Sdb *db, const char *key, const char *value) {
-	const char *result = sdb_get(db, key, 0);
+	const char *result = sdb_get(db, key);
 	if (!result) {
 		return false;
 	}
@@ -168,7 +168,7 @@ bool test_types_save() {
 	mu_assert_true(sdb_has_record(db, "type.my_sint_t.size", "32"), "atomic type");
 	mu_assert_true(sdb_has_record(db, "type.my_sint_t.typeclass", "Signed Integral"), "atomic type");
 	mu_assert_true(sdb_has_record(db, "my_float_t", "type"), "atomic type");
-	mu_assert_null(sdb_get(db, "type.my_float_t", 0), "atomic type");
+	mu_assert_null(sdb_get(db, "type.my_float_t"), "atomic type");
 	mu_assert_true(sdb_has_record(db, "type.my_float_t.size", "16"), "atomic type");
 	mu_assert_true(sdb_has_record(db, "type.my_float_t.typeclass", "Floating"), "atomic type");
 

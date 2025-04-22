@@ -1,8 +1,7 @@
 NAME=PE: corkami bigib.exe - open
 FILE=bins/pe/bigib.exe
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=PE: corkami bigib.exe - entrypoint

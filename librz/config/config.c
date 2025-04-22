@@ -9,23 +9,23 @@ RZ_API RZ_OWN RzConfigNode *rz_config_node_new(RZ_NONNULL const char *name, RZ_N
 	if (!node) {
 		return NULL;
 	}
-	node->name = strdup(name);
-	node->value = strdup(value);
+	node->name = rz_str_dup(name);
+	node->value = rz_str_dup(value);
 	node->flags = CN_RW | CN_STR;
 	node->i_value = rz_num_get(NULL, value);
 	node->options = rz_list_new();
 	return node;
 }
 
-RZ_API RZ_OWN RzConfigNode *rz_config_node_clone(RzConfigNode *n) {
+RZ_API RZ_OWN RzConfigNode *rz_config_node_clone(RZ_BORROW RzConfigNode *n) {
 	rz_return_val_if_fail(n, NULL);
 	RzConfigNode *cn = RZ_NEW0(RzConfigNode);
 	if (!cn) {
 		return NULL;
 	}
-	cn->name = strdup(n->name);
-	cn->desc = n->desc ? strdup(n->desc) : NULL;
-	cn->value = strdup(n->value ? n->value : "");
+	cn->name = rz_str_dup(n->name);
+	cn->desc = n->desc ? rz_str_dup(n->desc) : NULL;
+	cn->value = rz_str_dup(n->value ? n->value : "");
 	cn->i_value = n->i_value;
 	cn->flags = n->flags;
 	cn->setter = n->setter;
@@ -45,9 +45,9 @@ RZ_API void rz_config_node_free(RZ_NULLABLE void *n) {
 	free(node);
 }
 
-RZ_API RZ_BORROW RzConfigNode *rz_config_node_get(RzConfig *cfg, RZ_NONNULL const char *name) {
+RZ_API RZ_BORROW RzConfigNode *rz_config_node_get(RZ_BORROW RzConfig *cfg, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), NULL);
-	return ht_pp_find(cfg->ht, name, NULL);
+	return ht_sp_find(cfg->ht, name, NULL);
 }
 
 RZ_API bool rz_config_set_getter(RzConfig *cfg, const char *key, RzConfigCallback cb) {
@@ -94,7 +94,7 @@ RZ_API RZ_BORROW const char *rz_config_get(RzConfig *cfg, RZ_NONNULL const char 
  * the variable is boolean, then tries to write back the inverted value.
  * Returns true in case of success.
  */
-RZ_API bool rz_config_toggle(RzConfig *cfg, RZ_NONNULL const char *name) {
+RZ_API bool rz_config_toggle(RZ_BORROW RzConfig *cfg, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), false);
 	RzConfigNode *node = rz_config_node_get(cfg, name);
 	if (!node) {
@@ -162,15 +162,12 @@ RZ_API const char *rz_config_node_type(RzConfigNode *node) {
 		return "str";
 	}
 	if (rz_config_node_is_int(node)) {
-		if (!strncmp(node->value, "0x", 2)) {
-			return "addr";
-		}
 		return "int";
 	}
 	return "";
 }
 
-RZ_API RzConfigNode *rz_config_set_cb(RzConfig *cfg, const char *name, const char *value, RzConfigCallback cb) {
+RZ_API RZ_BORROW RzConfigNode *rz_config_set_cb(RZ_BORROW RzConfig *cfg, const char *name, const char *value, RzConfigCallback cb) {
 	RzConfigNode *node = rz_config_set(cfg, name, value);
 	if (node && (node->setter = cb)) {
 		if (!cb(cfg->user, node)) {
@@ -180,7 +177,7 @@ RZ_API RzConfigNode *rz_config_set_cb(RzConfig *cfg, const char *name, const cha
 	return node;
 }
 
-RZ_API RzConfigNode *rz_config_set_i_cb(RzConfig *cfg, const char *name, int ivalue, RzConfigCallback cb) {
+RZ_API RZ_BORROW RzConfigNode *rz_config_set_i_cb(RZ_BORROW RzConfig *cfg, const char *name, st64 ivalue, RzConfigCallback cb) {
 	RzConfigNode *node = rz_config_set_i(cfg, name, ivalue);
 	if (node && (node->setter = cb)) {
 		if (!node->setter(cfg->user, node)) {
@@ -198,7 +195,7 @@ static bool __is_true_or_false(const char *s) {
  * Writes the boolean \p value in the config variable of \p name only and only if
  * the variable is boolean.
  */
-RZ_API RzConfigNode *rz_config_set_b(RzConfig *cfg, RZ_NONNULL const char *name, bool value) {
+RZ_API RZ_BORROW RzConfigNode *rz_config_set_b(RZ_BORROW RzConfig *cfg, RZ_NONNULL const char *name, bool value) {
 	rz_return_val_if_fail(cfg && cfg->ht, NULL);
 	rz_return_val_if_fail(RZ_STR_ISNOTEMPTY(name), NULL);
 
@@ -213,11 +210,11 @@ RZ_API RzConfigNode *rz_config_set_b(RzConfig *cfg, RZ_NONNULL const char *name,
 
 		oi = node->i_value;
 		if (node->value) {
-			ov = strdup(node->value);
+			ov = rz_str_dup(node->value);
 		}
 		if (rz_config_node_is_bool(node)) {
 			node->i_value = value ? 1 : 0;
-			char *svalue = strdup(rz_str_bool(value));
+			char *svalue = rz_str_dup(rz_str_bool(value));
 			if (svalue) {
 				free(node->value);
 				node->value = svalue;
@@ -236,7 +233,7 @@ RZ_API RzConfigNode *rz_config_set_b(RzConfig *cfg, RZ_NONNULL const char *name,
 			}
 			node->flags = CN_RW | CN_BOOL;
 			node->i_value = value ? 1 : 0;
-			ht_pp_insert(cfg->ht, node->name, node);
+			ht_sp_insert(cfg->ht, node->name, node);
 			if (cfg->nodes) {
 				rz_list_append(cfg->nodes, node);
 			}
@@ -251,7 +248,7 @@ RZ_API RzConfigNode *rz_config_set_b(RzConfig *cfg, RZ_NONNULL const char *name,
 				node->i_value = oi;
 			}
 			free(node->value);
-			node->value = strdup(ov ? ov : "");
+			node->value = rz_str_dup(ov ? ov : "");
 		}
 	}
 
@@ -264,7 +261,7 @@ beach:
 /**
  * Writes the string \p value in the config variable of \p name.
  */
-RZ_API RzConfigNode *rz_config_set(RzConfig *cfg, RZ_NONNULL const char *name, const char *value) {
+RZ_API RZ_BORROW RzConfigNode *rz_config_set(RZ_BORROW RzConfig *cfg, RZ_NONNULL const char *name, const char *value) {
 	rz_return_val_if_fail(cfg && cfg->ht, NULL);
 	rz_return_val_if_fail(RZ_STR_ISNOTEMPTY(name), NULL);
 
@@ -278,18 +275,18 @@ RZ_API RzConfigNode *rz_config_set(RzConfig *cfg, RZ_NONNULL const char *name, c
 		}
 		oi = node->i_value;
 		if (node->value) {
-			ov = strdup(node->value);
+			ov = rz_str_dup(node->value);
 			if (!ov) {
 				goto beach;
 			}
 		} else {
 			free(node->value);
-			node->value = strdup("");
+			node->value = rz_str_dup("");
 		}
 		if (rz_config_node_is_bool(node)) {
 			bool b = rz_str_is_true(value);
 			node->i_value = b ? 1 : 0;
-			char *value = strdup(rz_str_bool(b));
+			char *value = rz_str_dup(rz_str_bool(b));
 			if (value) {
 				free(node->value);
 				node->value = value;
@@ -297,14 +294,14 @@ RZ_API RzConfigNode *rz_config_set(RzConfig *cfg, RZ_NONNULL const char *name, c
 		} else {
 			if (!value) {
 				free(node->value);
-				node->value = strdup("");
+				node->value = rz_str_dup("");
 				node->i_value = 0;
 			} else {
 				if (node->value == value) {
 					goto beach;
 				}
 				free(node->value);
-				node->value = strdup(value);
+				node->value = rz_str_dup(value);
 				if (IS_DIGIT(*value) || (value[0] == '-' && IS_DIGIT(value[1]))) {
 					if (strchr(value, '/')) {
 						node->i_value = rz_num_get(cfg->num, value);
@@ -326,7 +323,7 @@ RZ_API RzConfigNode *rz_config_set(RzConfig *cfg, RZ_NONNULL const char *name, c
 					node->flags |= CN_BOOL;
 					node->i_value = rz_str_is_true(value) ? 1 : 0;
 				}
-				ht_pp_insert(cfg->ht, node->name, node);
+				ht_sp_insert(cfg->ht, node->name, node);
 				rz_list_append(cfg->nodes, node);
 			} else {
 				eprintf("rz_config_set: unable to create a new RzConfigNode\n");
@@ -342,7 +339,7 @@ RZ_API RzConfigNode *rz_config_set(RzConfig *cfg, RZ_NONNULL const char *name, c
 				node->i_value = oi;
 			}
 			free(node->value);
-			node->value = strdup(ov ? ov : "");
+			node->value = rz_str_dup(ov ? ov : "");
 			free(ov);
 			return NULL;
 		}
@@ -366,7 +363,7 @@ RZ_API bool rz_config_add_node(RZ_BORROW RzConfig *cfg, RZ_OWN RzConfigNode *nod
 		rz_config_node_free(node);
 		return false;
 	}
-	ht_pp_insert(cfg->ht, node->name, node);
+	ht_sp_insert(cfg->ht, node->name, node);
 	rz_list_append(cfg->nodes, node);
 	return true;
 }
@@ -384,7 +381,7 @@ RZ_API const char *rz_config_node_desc(RzConfigNode *node, RZ_NULLABLE const cha
 	rz_return_val_if_fail(node, NULL);
 	if (desc) {
 		free(node->desc);
-		node->desc = strdup(desc);
+		node->desc = rz_str_dup(desc);
 	}
 	return node->desc;
 }
@@ -393,14 +390,14 @@ RZ_API bool rz_config_rm(RzConfig *cfg, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(RZ_STR_ISNOTEMPTY(name) && cfg, false);
 	RzConfigNode *node = rz_config_node_get(cfg, name);
 	if (node) {
-		ht_pp_delete(cfg->ht, node->name);
+		ht_sp_delete(cfg->ht, node->name);
 		rz_list_delete_data(cfg->nodes, node);
 		return true;
 	}
 	return false;
 }
 
-RZ_API void rz_config_node_value_format_i(char *buf, size_t buf_size, const ut64 i, RZ_NULLABLE RzConfigNode *node) {
+RZ_API void rz_config_node_value_format_i(RZ_OUT char *buf, size_t buf_size, const ut64 i, RZ_NULLABLE RzConfigNode *node) {
 	if (node && rz_config_node_is_bool(node)) {
 		rz_str_ncpy(buf, rz_str_bool((int)i), buf_size);
 		return;
@@ -416,7 +413,7 @@ RZ_API void rz_config_node_value_format_i(char *buf, size_t buf_size, const ut64
  * Writes the integer \p value in the config variable of \p name only and only if
  * the variable is integer.
  */
-RZ_API RzConfigNode *rz_config_set_i(RzConfig *cfg, RZ_NONNULL const char *name, const ut64 i) {
+RZ_API RZ_BORROW RzConfigNode *rz_config_set_i(RZ_BORROW RzConfig *cfg, RZ_NONNULL const char *name, const ut64 i) {
 	char buf[128], *ov = NULL;
 	rz_return_val_if_fail(cfg && name, NULL);
 	RzConfigNode *node = rz_config_node_get(cfg, name);
@@ -426,11 +423,11 @@ RZ_API RzConfigNode *rz_config_set_i(RzConfig *cfg, RZ_NONNULL const char *name,
 			goto beach;
 		}
 		if (node->value) {
-			ov = strdup(node->value);
+			ov = rz_str_dup(node->value);
 		}
 		rz_config_node_value_format_i(buf, sizeof(buf), i, NULL);
 		free(node->value);
-		node->value = strdup(buf);
+		node->value = rz_str_dup(buf);
 		if (!node->value) {
 			node = NULL;
 			goto beach;
@@ -446,7 +443,7 @@ RZ_API RzConfigNode *rz_config_set_i(RzConfig *cfg, RZ_NONNULL const char *name,
 			}
 			node->flags = CN_RW | CN_INT;
 			node->i_value = i;
-			ht_pp_insert(cfg->ht, node->name, node);
+			ht_sp_insert(cfg->ht, node->name, node);
 			if (cfg->nodes) {
 				rz_list_append(cfg->nodes, node);
 			}
@@ -461,7 +458,7 @@ RZ_API RzConfigNode *rz_config_set_i(RzConfig *cfg, RZ_NONNULL const char *name,
 		if (!ret) {
 			node->i_value = oi;
 			free(node->value);
-			node->value = strdup(ov ? ov : "");
+			node->value = rz_str_dup(ov ? ov : "");
 		}
 	}
 beach:
@@ -473,12 +470,12 @@ static int cmp(RzConfigNode *a, RzConfigNode *b, void *user) {
 	return strcmp(a->name, b->name);
 }
 
-RZ_API void rz_config_lock(RzConfig *cfg, int l) {
+RZ_API void rz_config_lock(RZ_BORROW RzConfig *cfg, int l) {
 	rz_list_sort(cfg->nodes, (RzListComparator)cmp, NULL);
 	cfg->lock = l;
 }
 
-RZ_API bool rz_config_readonly(RzConfig *cfg, const char *key) {
+RZ_API bool rz_config_readonly(RZ_BORROW RzConfig *cfg, const char *key) {
 	RzConfigNode *n = rz_config_node_get(cfg, key);
 	if (n) {
 		n->flags |= CN_RO;
@@ -487,12 +484,12 @@ RZ_API bool rz_config_readonly(RzConfig *cfg, const char *key) {
 	return false;
 }
 
-RZ_API RzConfig *rz_config_new(void *user) {
+RZ_API RZ_OWN RzConfig *rz_config_new(RZ_BORROW void *user) {
 	RzConfig *cfg = RZ_NEW0(RzConfig);
 	if (!cfg) {
 		return NULL;
 	}
-	cfg->ht = ht_pp_new0();
+	cfg->ht = ht_sp_new(HT_STR_DUP, NULL, NULL);
 	cfg->nodes = rz_list_newf((RzListFree)rz_config_node_free);
 	if (!cfg->nodes) {
 		RZ_FREE(cfg);
@@ -504,7 +501,8 @@ RZ_API RzConfig *rz_config_new(void *user) {
 	return cfg;
 }
 
-RZ_API RzConfig *rz_config_clone(RzConfig *cfg) {
+RZ_API RZ_OWN RzConfig *rz_config_clone(RZ_BORROW RzConfig *cfg) {
+	rz_return_val_if_fail(cfg, NULL);
 	RzListIter *iter;
 	RzConfigNode *node;
 	RzConfig *c = rz_config_new(cfg->user);
@@ -513,18 +511,18 @@ RZ_API RzConfig *rz_config_clone(RzConfig *cfg) {
 	}
 	rz_list_foreach (cfg->nodes, iter, node) {
 		RzConfigNode *nn = rz_config_node_clone(node);
-		ht_pp_insert(c->ht, node->name, nn);
+		ht_sp_insert(c->ht, node->name, nn);
 		rz_list_append(c->nodes, nn);
 	}
 	c->lock = cfg->lock;
 	return c;
 }
 
-RZ_API void rz_config_free(RzConfig *cfg) {
+RZ_API void rz_config_free(RZ_OWN RzConfig *cfg) {
 	if (cfg) {
 		cfg->nodes->free = rz_config_node_free;
 		rz_list_free(cfg->nodes);
-		ht_pp_free(cfg->ht);
+		ht_sp_free(cfg->ht);
 		free(cfg);
 	}
 }
@@ -536,8 +534,8 @@ RZ_API void rz_config_visual_hit_i(RzConfig *cfg, const char *name, int delta) {
 	}
 }
 
-RZ_API void rz_config_bump(RzConfig *cfg, const char *key) {
-	char *orig = strdup(rz_config_get(cfg, key));
+RZ_API void rz_config_bump(RZ_BORROW RzConfig *cfg, const char *key) {
+	char *orig = rz_str_dup(rz_config_get(cfg, key));
 	if (orig) {
 		rz_config_set(cfg, key, orig);
 		free(orig);
@@ -548,15 +546,15 @@ RZ_API void rz_config_serialize(RZ_NONNULL RzConfig *config, RZ_NONNULL Sdb *db)
 	RzListIter *iter;
 	RzConfigNode *node;
 	rz_list_foreach (config->nodes, iter, node) {
-		sdb_set(db, node->name, node->value, 0);
+		sdb_set(db, node->name, node->value);
 	}
 }
 
-static bool load_config_cb(void *user, const char *k, const char *v) {
+static bool load_config_cb(void *user, const SdbKv *kv) {
 	RzConfig *config = user;
-	RzConfigNode *node = rz_config_node_get(config, k);
+	RzConfigNode *node = rz_config_node_get(config, sdbkv_key(kv));
 	if (node) {
-		rz_config_set(config, k, v);
+		rz_config_set(config, sdbkv_key(kv), sdbkv_value(kv));
 	}
 	return true;
 }

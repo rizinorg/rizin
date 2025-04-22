@@ -33,12 +33,8 @@ str x8, [sp, 0x10]
 EOF
 REGEXP_FILTER_ERR=(((Continue\suntil)|(hit\sbreakpoint\sat:)|[0-9a-f][0-9a-f][0-9a-f]\n))
 EXPECT_ERR=<<EOF
-Continue until
-c88
-
 hit breakpoint at:
 c88
-
 EOF
 RUN
 
@@ -92,7 +88,7 @@ fl@F:maps~hello~[1-]
 echo --
 dm*~hello~[0-2]
 EOF
-REGEXP_FILTER_OUT=([0-9]+ [a-zA-Z0-9_-]+\.[\.rwx_]+|[f-].+\n)
+REGEXP_FILTER_OUT=([0-9]+ [a-zA-Z0-9_-]+\.[\.rwx_]+|--\n|f\+.+\n)
 EXPECT=<<EOF
 16384 hello_macos_arm64.r_x
 16384 hello_macos_arm64.rw
@@ -134,12 +130,8 @@ x8 = 0x0000000000000064
 EOF
 REGEXP_FILTER_ERR=(((Continue\suntil)|(hit\sbreakpoint\sat:)|[0-9a-f][0-9a-f][0-9a-f]\n))
 EXPECT_ERR=<<EOF
-Continue until
-f30
-
 hit breakpoint at:
 f30
-
 EOF
 RUN
 
@@ -182,7 +174,6 @@ f44
 
 hit breakpoint at:
 f48
-
 EOF
 RUN
 
@@ -246,6 +237,5 @@ f44
 
 hit breakpoint at:
 f48
-
 EOF
 RUN

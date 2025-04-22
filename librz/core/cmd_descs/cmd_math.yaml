@@ -78,23 +78,26 @@ commands:
       - name: last
         type: RZ_CMD_ARG_TYPE_RZNUM
   - name: "%B"
-    summary: Get boundaries (start addr, stop addr) of different modes in Core.
+    summary: Prints the search boundaries based on the search.in mode.
     description: >-
       There are multiple search modes in Rizin that can be listed using the
       command `e search.in=?`. This command can be used to get boundaries of
       those search modes.
     cname: print_boundaries_prot
-    args:
-      - name: mode
-        type: RZ_CMD_ARG_TYPE_STRING
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_TABLE
+    args: []
     details:
       - name: Examples
         entries:
           - text: "%B "
-            arg_str: file
+            arg_str: "@e:search.in=file"
             comment: Prints boundary of this file
-          - text: "%B "
-            arg_str: io.maps
+          - text: "%Bt "
+            arg_str: "@e:search.in=io.maps"
             comment: Prints boundaries of all io maps
   - name: "%h"
     summary: Print hash value of string <str>

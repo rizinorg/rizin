@@ -134,7 +134,7 @@ static void GH(jemalloc_get_chunks)(RzCore *core, const char *input) {
 
 	switch (input[0]) {
 	case '\0':
-		RZ_LOG_ERROR("need an arena_t to associate chunks");
+		RZ_LOG_ERROR("need an arena_t to associate chunks\n");
 		break;
 	case ' ': {
 		GHT arena = GHT_MAX;
@@ -429,11 +429,11 @@ static void GH(jemalloc_get_runs)(RzCore *core, const char *input) {
 				return;
 			}
 			if (!GH(rz_resolve_jemalloc)(core, "je_map_bias", &map_bias)) {
-				RZ_LOG_ERROR ("Cannot resolve je_map_bias");
+				RZ_LOG_ERROR ("Cannot resolve je_map_bias\n");
 				return;
 			}
 			if (!GH(rz_resolve_jemalloc)(core, "je_map_misc_offset", &map_misc_offset)) {
-				RZ_LOG_ERROR ("Cannot resolve je_map_misc_offset");
+				RZ_LOG_ERROR ("Cannot resolve je_map_misc_offset\n");
 				return;
 			}
 
@@ -493,37 +493,19 @@ static void GH(jemalloc_get_runs)(RzCore *core, const char *input) {
 }
 #endif
 
-static int GH(cmd_dbg_map_jemalloc)(RzCore *core, const char *input) {
-	const char *help_msg[] = {
-		"Usage:", "dmx", " # Jemalloc heap parsing commands",
-		"dmxa", "[arena_t]", "show all arenas created, or print arena_t structure for given arena",
-		"dmxb", "[arena_t]", "show all bins created for given arena",
-		"dmxc", "*|[arena_t]", "show all chunks created in all arenas, or show all chunks created for a given arena_t instance",
-		// "dmxr", "[arena_chunk_t]", "print all runs created for a given arena_chunk_t instance",
-		"dmx?", "", "Show map heap help", NULL
-	};
-
-	switch (input[0]) {
-	case '?':
-		rz_core_cmd_help(core, help_msg);
-		break;
+static void GH(cmd_dbg_map_jemalloc)(RzCore *core, char dmx_variant, const char *arg) {
+	switch (dmx_variant) {
 	case 'a': // dmxa
 		GH(jemalloc_print_narenas)
-		(core, input + 1);
+		(core, arg);
 		break;
 	case 'b': // dmxb
 		GH(jemalloc_get_bins)
-		(core, input + 1);
+		(core, arg);
 		break;
 	case 'c': // dmxc
 		GH(jemalloc_get_chunks)
-		(core, input + 1);
+		(core, arg);
 		break;
-		/*
-	case 'r': //dmxr
-		GH(jemalloc_get_runs) (core, input + 1);
-		break;
-	*/
 	}
-	return 0;
 }

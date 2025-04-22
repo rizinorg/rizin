@@ -35,7 +35,7 @@ static void pdb_types_print_json(const RzTypeDB *db, const RzPdb *pdb, const RzL
 			pj_kn(pj, "size", type->size);
 			pj_ka(pj, "members");
 			RzTypeStructMember *memb;
-			rz_vector_foreach(&type->struct_data.members, memb) {
+			rz_vector_foreach (&type->struct_data.members, memb) {
 				pj_o(pj);
 				char *typ = rz_type_as_string(db, memb->type);
 				pj_ks(pj, "member_type", typ);
@@ -55,7 +55,7 @@ static void pdb_types_print_json(const RzTypeDB *db, const RzPdb *pdb, const RzL
 			pj_kn(pj, "size", type->size);
 			pj_ka(pj, "members");
 			RzTypeUnionMember *memb;
-			rz_vector_foreach(&type->union_data.members, memb) {
+			rz_vector_foreach (&type->union_data.members, memb) {
 				pj_o(pj);
 				char *typ = rz_type_as_string(db, memb->type);
 				pj_ks(pj, "member_type", typ);
@@ -77,7 +77,7 @@ static void pdb_types_print_json(const RzTypeDB *db, const RzPdb *pdb, const RzL
 			RZ_FREE(typ);
 			pj_ka(pj, "cases");
 			RzTypeEnumCase *cas;
-			rz_vector_foreach(&type->enum_data.cases, cas) {
+			rz_vector_foreach (&type->enum_data.cases, cas) {
 				pj_o(pj);
 				pj_ks(pj, "enum_name", cas->name);
 				pj_kn(pj, "enum_val", cas->val);
@@ -138,7 +138,7 @@ static bool symbol_dump(const RzPdb *pdb, const PDBSymbol *symbol, void *u) {
 		}
 
 		char *name = rz_demangler_msvc(public->name, RZ_DEMANGLER_FLAG_BASE);
-		name = (name) ? name : strdup(public->name);
+		name = (name) ? name : rz_str_dup(public->name);
 
 		switch (ctx->state->mode) {
 		case RZ_OUTPUT_MODE_JSON: // JSON
@@ -230,7 +230,7 @@ static bool symbol_load(const RzPdb *pdb, const PDBSymbol *symbol, void *u) {
 		}
 
 		char *name = rz_demangler_msvc(public->name, dflags);
-		name = (name) ? name : strdup(public->name);
+		name = (name) ? name : rz_str_dup(public->name);
 		char *filtered_name = rz_name_filter2(name, true);
 		char *fname = rz_str_newf("pdb.%s.%s", ctx->file, filtered_name);
 
@@ -295,7 +295,7 @@ static void pdb_symbols_load(
 		baddr = rz_config_get_i(core->config, "bin.baddr");
 		RZ_LOG_WARN("core: cannot find base address, flags will probably be misplaced\n");
 	}
-	char *file = rz_str_replace(strdup(pdbfile), ".pdb", "", 0);
+	char *file = rz_str_replace(rz_str_dup(pdbfile), ".pdb", "", 0);
 	rz_flag_space_push(core->flags, RZ_FLAGS_FS_SYMBOLS);
 
 	PDBLoadContext ctx = {

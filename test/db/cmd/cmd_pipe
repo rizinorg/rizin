@@ -9,8 +9,7 @@ RUN
 NAME=rzpipe.py
 FILE=bins/elf/_Exit (42)
 CMDS=<<EOF
-%= `env~?^ASAN_LD_PRELOAD=`
-%+ env LD_PRELOAD=`env ASAN_LD_PRELOAD`
+. scripts/set-LD_PRELOAD.rz
 #!pipe python3 scripts/get-funcs.py
 EOF
 EXPECT=<<EOF
@@ -37,8 +36,7 @@ RUN
 NAME=rzpipe load project
 FILE=--
 CMDS=<<EOF
-%= `env~?^ASAN_LD_PRELOAD=`
-%+ env LD_PRELOAD=`env ASAN_LD_PRELOAD`
+. scripts/set-LD_PRELOAD.rz
 !python3 -c 'import rzpipe;rz=rzpipe.open("--");rz.cmd("Po bins/other/ls.rzdb");print(rz.cmd("%v custom_main"))'
 EOF
 EXPECT=<<EOF
@@ -50,8 +48,7 @@ RUN
 NAME=rzpipe.py - shared memory (shm://)
 FILE=bins/elf/_Exit (42)
 CMDS=<<EOF
-%= `env~?^ASAN_LD_PRELOAD=`
-%+ env LD_PRELOAD=`env ASAN_LD_PRELOAD`
+. scripts/set-LD_PRELOAD.rz
 #!pipe python3 scripts/shared_memory.py
 EOF
 EXPECT=<<EOF
@@ -60,7 +57,7 @@ Copied bins/elf/_Exit (42) succesfully
 -------------
 Shared buffer size 0x360c
 -------------
-{'arch': 'x86', 'baddr': 134512640, 'binsz': 13073, 'bintype': 'elf', 'bits': 32, 'class': 'ELF32', 'compiler': 'GCC: (GNU) 9.2.1 20190827 (Red Hat 9.2.1-1)', 'endian': 'LE', 'intrp': '/lib/ld-linux.so.2', 'laddr': 0, 'lang': 'c++', 'machine': 'Intel 80386', 'maxopsz': 16, 'minopsz': 1, 'os': 'linux', 'pcalign': 0, 'relro': 'partial', 'rpath': 'NONE', 'subsys': 'linux', 'stripped': False, 'crypto': False, 'havecode': True, 'va': True, 'sanitiz': False, 'static': False, 'linenum': True, 'lsyms': True, 'canary': False, 'PIE': False, 'RELROCS': True, 'NX': True}
+{'arch': 'x86', 'baddr': 134512640, 'binsz': 13073, 'bintype': 'elf', 'bits': 32, 'class': 'ELF32', 'compiler': 'GCC: (GNU) 9.2.1 20190827 (Red Hat 9.2.1-1)', 'endian': 'LE', 'intrp': '/lib/ld-linux.so.2', 'laddr': 0, 'lang': 'c++', 'machine': 'Intel 80386', 'maxopsz': 16, 'minopsz': 1, 'os': 'linux', 'pcalign': 1, 'relro': 'partial', 'rpath': 'NONE', 'subsys': 'linux', 'stripped': False, 'crypto': False, 'havecode': True, 'va': True, 'sanitiz': False, 'static': False, 'linenum': True, 'lsyms': True, 'canary': False, 'PIE': False, 'RELROCS': True, 'NX': True}
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x08049020  5589 e583 ec08 83ec 0c6a 2ae8 e0ff ffff  U........j*.....
 
@@ -83,7 +80,7 @@ Copied bins/pe/winver.exe succesfully
 -------------
 Shared buffer size 0x400
 -------------
-{'arch': 'x86', 'baddr': 4194304, 'binsz': 1024, 'bintype': 'pe', 'bits': 32, 'retguard': False, 'class': 'PE32', 'cmp.csum': '0x00005082', 'compiled': 'Thu Jan  1 00:00:00 1970 UTC', 'endian': 'LE', 'hdr.csum': '0x00000000', 'laddr': 0, 'lang': 'c', 'machine': 'i386', 'maxopsz': 16, 'minopsz': 1, 'os': 'windows', 'overlay': False, 'cc': 'cdecl', 'pcalign': 0, 'signed': False, 'subsys': 'Windows CUI', 'stripped': False, 'crypto': False, 'havecode': True, 'va': True, 'sanitiz': False, 'static': False, 'linenum': False, 'lsyms': False, 'canary': False, 'PIE': False, 'RELROCS': False, 'NX': False}
+{'arch': 'x86', 'baddr': 4194304, 'binsz': 1024, 'bintype': 'pe', 'bits': 32, 'retguard': False, 'class': 'PE32', 'cmp.csum': '0x00005082', 'compiled': 'Thu Jan  1 00:00:00 1970 UTC', 'endian': 'LE', 'hdr.csum': '0x00000000', 'laddr': 0, 'lang': 'c', 'machine': 'i386', 'maxopsz': 16, 'minopsz': 1, 'os': 'windows', 'overlay': False, 'cc': 'cdecl', 'pcalign': 1, 'signed': False, 'subsys': 'Windows CUI', 'stripped': False, 'crypto': False, 'havecode': True, 'va': True, 'sanitiz': False, 'static': False, 'linenum': False, 'lsyms': False, 'canary': False, 'PIE': False, 'RELROCS': False, 'NX': False}
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x00401000  6880 1040 00ff 15b4 1140 00ff 3590 1040  h..@.....@..5..@
 
@@ -109,7 +106,7 @@ Copied bins/mach0/mach0_2-x86_64 succesfully
 -------------
 Shared buffer size 0x10e8
 -------------
-{'arch': 'x86', 'baddr': 4294967296, 'binsz': 4328, 'bintype': 'mach0', 'bits': 64, 'class': 'MACH064', 'endian': 'LE', 'intrp': '/usr/lib/dyld', 'laddr': 0, 'lang': 'c', 'machine': 'x86 64 all', 'maxopsz': 16, 'minopsz': 1, 'os': 'darwin', 'pcalign': 0, 'subsys': 'macOS', 'stripped': False, 'crypto': False, 'havecode': True, 'va': True, 'sanitiz': False, 'static': False, 'linenum': False, 'lsyms': False, 'canary': False, 'PIE': True, 'RELROCS': False, 'NX': False}
+{'arch': 'x86', 'cpu': 'x86 64 all', 'baddr': 4294967296, 'binsz': 4328, 'bintype': 'mach0', 'bits': 64, 'class': 'MACH064', 'compiler': '', 'endian': 'LE', 'intrp': '/usr/lib/dyld', 'laddr': 0, 'lang': 'c', 'machine': 'x86 64 all', 'maxopsz': 16, 'minopsz': 1, 'os': 'darwin', 'pcalign': 1, 'subsys': 'macOS', 'stripped': False, 'crypto': False, 'havecode': True, 'va': True, 'sanitiz': False, 'static': False, 'linenum': False, 'lsyms': False, 'canary': False, 'PIE': True, 'RELROCS': False, 'NX': False}
 - offset -    0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x100000f70  5548 89e5 4883 ec10 c745 fc00 0000 0089  UH..H....E......
 

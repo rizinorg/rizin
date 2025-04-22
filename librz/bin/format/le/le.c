@@ -78,9 +78,9 @@ static const char *le_get_cpu_type(rz_bin_le_obj_t *bin) {
 	case 3: return "80486";
 	case 0x20: return "N10";
 	case 0x21: return "N11";
-	case 0x40: return "R3000";
-	case 0x41: return "R6000";
-	case 0x42: return "R4000";
+	case 0x40: return "r3000";
+	case 0x41: return "r6000";
+	case 0x42: return "r4000";
 	default: return "Unknown";
 	}
 }
@@ -156,7 +156,7 @@ static ut32 le_obj_perm(LE_object *obj) {
 
 static ut64 le_vaddr_to_paddr(rz_bin_le_obj_t *bin, ut32 vaddr) {
 	LE_map *m;
-	rz_vector_foreach(bin->le_maps, m) {
+	rz_vector_foreach (bin->le_maps, m) {
 		if (m->vaddr <= vaddr && vaddr <= m->vaddr + m->vsize) {
 			if (vaddr > m->vaddr + m->size) {
 				return 0;
@@ -191,7 +191,7 @@ static int le_import_cmp(LE_import *a, LE_import *b) {
 	return rz_str_cmp(a->proc_name, b->proc_name, -1);
 }
 
-static void le_free_import_kv(HtPPKv *kv) {
+static void le_fini_import_kv(HtPPKv *kv) {
 	le_import_free(kv->key);
 }
 
@@ -230,7 +230,7 @@ static RZ_BORROW RzBinSymbol *le_add_symbol(rz_bin_le_obj_t *bin, ut32 ordinal, 
 		if (rz_list_empty(bin->symbols)) {
 			ordinal = 1;
 		} else {
-			ordinal = ((RzBinSymbol *)rz_list_get_tail_data(bin->symbols))->ordinal + 1;
+			ordinal = ((RzBinSymbol *)rz_list_last(bin->symbols))->ordinal + 1;
 		}
 	}
 	if (!rz_list_append(bin->symbols, sym)) {
@@ -261,8 +261,8 @@ static RZ_BORROW LE_import *le_add_import(rz_bin_le_obj_t *bin,
 
 	if (!bin->le_import_ht) {
 		HtPPOptions opt = {
-			.freefn = (HtPPKvFreeFunc)le_free_import_kv,
-			.cmp = (HtPPListComparator)le_import_cmp,
+			.finiKV = (HtPPFiniKv)le_fini_import_kv,
+			.cmp = (HtPPComparator)le_import_cmp,
 			.hashfn = (HtPPHashFunction)le_import_hash,
 		};
 		CHECK(bin->le_import_ht = ht_pp_new_opt(&opt));
@@ -295,7 +295,7 @@ static RZ_BORROW LE_import *le_add_import(rz_bin_le_obj_t *bin,
 	RzBinSymbol *sym = le_add_symbol(bin, sym_ord, sym_vaddr);
 	CHECK(le_imp->symbol = sym);
 	sym->is_imported = true;
-	CHECK(sym->name = strdup(le_imp->import->name));
+	CHECK(sym->name = rz_str_dup(le_imp->import->name));
 
 	CHECK(ht_pp_insert(bin->le_import_ht, le_imp, NULL));
 	return le_imp;
@@ -728,7 +728,7 @@ static RZ_OWN RzVector /*<LE_entry>*/ *le_load_entries(rz_bin_le_obj_t *bin) {
 	// try naming entries accessible only by ordinal
 	LE_entry *e;
 	int ei = 0;
-	rz_vector_foreach(entries, e) {
+	rz_vector_foreach (entries, e) {
 		ei++;
 		if (!e->is_empty && !e->is_forwarder && e->symbol && !e->symbol->name) {
 			e->symbol->name = rz_str_newf("%u", ei);
@@ -1091,13 +1091,13 @@ static RzVector /*<LE_map>*/ *le_create_maps(rz_bin_le_obj_t *bin) {
 	// name maps
 	LE_map *m;
 	ut32 num = 1;
-	rz_vector_foreach(le_maps, m) {
+	rz_vector_foreach (le_maps, m) {
 		const char *map_kind = m->is_physical ? "physical" : "virtual";
 		CHECK(m->vfile_name = rz_str_newf("obj%d-%s%u", m->obj_num, map_kind, num++));
 	}
 
 	// allocate buffers, fill zero pages, unpack compressed pages
-	rz_vector_foreach(le_maps, m) {
+	rz_vector_foreach (le_maps, m) {
 		if (m->is_physical) {
 			continue;
 		}
@@ -1138,7 +1138,7 @@ static RzVector /*<LE_map>*/ *le_create_maps(rz_bin_le_obj_t *bin) {
 
 	// calculate reloc_target_map_base
 	ut32 max_vaddr = 0;
-	rz_vector_foreach(le_maps, m) {
+	rz_vector_foreach (le_maps, m) {
 		max_vaddr = RZ_MAX(max_vaddr, m->vaddr + m->vsize);
 	}
 	CHECK(h->pagesize);
@@ -1181,7 +1181,7 @@ static bool le_patch_relocs(rz_bin_le_obj_t *bin) {
 	// mark last map for each object
 	CHECK(last_map = RZ_NEWS0(LE_map *, bin->header->objcnt));
 	LE_map *m;
-	rz_vector_foreach(bin->le_maps, m) {
+	rz_vector_foreach (bin->le_maps, m) {
 		last_map[m->obj_num - 1] = m;
 	}
 
@@ -1307,6 +1307,7 @@ static bool le_append_fixup(rz_bin_le_obj_t *bin, LE_reloc *reloc, RzList /*<RzB
 		free(tmp);
 		return false;
 	}
+	rz_list_append(bin->le_fixups, tmp);
 	return true;
 }
 
@@ -1491,7 +1492,7 @@ static bool le_load_fixup_record(rz_bin_le_obj_t *bin, RzList /*<RzBinReloc *>*/
 }
 
 static RZ_OWN RzList /*<LE_reloc *>*/ *le_load_relocs(rz_bin_le_obj_t *bin) {
-	RzList *relocs = rz_list_newf((RzListFree)rz_bin_reloc_free);
+	RzList *relocs = rz_list_newf(NULL);
 	if (!relocs) {
 		return NULL;
 	}
@@ -1525,6 +1526,7 @@ static void rz_bin_le_free(rz_bin_le_obj_t *bin) {
 	rz_pvector_free(bin->imports);
 	ht_pp_free(bin->le_import_ht);
 	rz_list_free(bin->le_relocs);
+	rz_list_free(bin->le_fixups);
 	free(bin);
 }
 
@@ -1571,6 +1573,7 @@ bool rz_bin_le_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *
 	CHECK(bin->imp_mod_names = le_load_import_mod_names(bin));
 	CHECK(bin->le_entries = le_load_entries(bin));
 	err_ctx = ", unable to load and apply relocations.";
+	CHECK(bin->le_fixups = rz_list_newf(free));
 	CHECK(bin->le_relocs = le_load_relocs(bin));
 	CHECK(le_patch_relocs(bin));
 
@@ -1621,7 +1624,7 @@ RZ_OWN RzPVector /*<RzBinSection *>*/ *rz_bin_le_get_sections(RzBinFile *bf) {
 
 	ut32 obj_num = 0, sec_num = 0;
 	LE_map *le_map;
-	rz_vector_foreach(bin->le_maps, le_map) {
+	rz_vector_foreach (bin->le_maps, le_map) {
 		CHECK(sec = RZ_NEW0(RzBinSection));
 
 		if (obj_num == le_map->obj_num) {
@@ -1649,14 +1652,14 @@ RZ_OWN RzPVector /*<RzBinSection *>*/ *rz_bin_le_get_sections(RzBinFile *bf) {
 	return sections;
 }
 
-RZ_OWN RzList /*<RzBinAddr *>*/ *rz_bin_le_get_entry_points(RzBinFile *bf) {
+RZ_OWN RzPVector /*<RzBinAddr *>*/ *rz_bin_le_get_entry_points(RzBinFile *bf) {
 	rz_bin_le_obj_t *bin = bf->o->bin_obj;
 	LE_header *h = bin->header;
 	RzBinAddr *addr = NULL;
-	RzList *entries = rz_list_newf((RzListFree)free);
+	RzPVector *entries = rz_pvector_new((RzPVectorFree)free);
 	if (!entries) {
 	fail_cleanup:
-		rz_list_free(entries);
+		rz_pvector_free(entries);
 		free(addr);
 		return NULL;
 	}
@@ -1667,18 +1670,18 @@ RZ_OWN RzList /*<RzBinAddr *>*/ *rz_bin_le_get_entry_points(RzBinFile *bf) {
 		CHECK(addr = RZ_NEW0(RzBinAddr));
 		addr->vaddr = bin->objects[h->startobj - 1].reloc_base_addr + h->eip;
 		addr->paddr = le_vaddr_to_paddr(bin, addr->vaddr);
-		CHECK(rz_list_append(entries, addr));
+		CHECK(rz_pvector_push(entries, addr));
 		addr = NULL;
 	}
 
 	// Exported functions, only DLLs have these.
 	LE_entry *e;
-	rz_vector_foreach(bin->le_entries, e) {
+	rz_vector_foreach (bin->le_entries, e) {
 		if (!e->is_empty && !e->is_forwarder && e->is_exported && e->symbol) {
 			CHECK(addr = RZ_NEW0(RzBinAddr));
 			addr->vaddr = e->symbol->vaddr;
 			addr->paddr = le_vaddr_to_paddr(bin, addr->vaddr);
-			CHECK(rz_list_append(entries, addr));
+			CHECK(rz_pvector_push(entries, addr));
 			addr = NULL;
 		}
 	}
@@ -1686,22 +1689,23 @@ RZ_OWN RzList /*<RzBinAddr *>*/ *rz_bin_le_get_entry_points(RzBinFile *bf) {
 	return entries;
 }
 
+static void str_copy(void *dst, void *src) {
+	char **_dst = (char **)dst;
+	char **_src = (char **)src;
+	*_dst = rz_str_dup(*_src);
+}
+
 RZ_OWN RzPVector /*<char *>*/ *rz_bin_le_get_libs(RzBinFile *bf) {
 	rz_bin_le_obj_t *bin = bf->o->bin_obj;
 	if (rz_pvector_empty(bin->imp_mod_names)) {
 		return NULL;
 	}
-	RzPVector *libs = rz_pvector_new(free);
-	if (!libs) {
-	fail_cleanup:
-		rz_pvector_free(libs);
-		return NULL;
+	RzPVector *ret = rz_pvector_clonef(bin->imp_mod_names, str_copy);
+	if (ret) {
+		ret->v.free = bin->imp_mod_names->v.free;
+		ret->v.free_user = bin->imp_mod_names->v.free_user;
 	}
-	void **it;
-	rz_pvector_foreach (bin->imp_mod_names, it) {
-		CHECK(rz_pvector_push(libs, *it));
-	}
-	return libs;
+	return ret;
 }
 
 #define VFILE_NAME_PATCHED       "patched"
@@ -1723,7 +1727,7 @@ RZ_OWN RzPVector /*<RzBinVirtualFile *>*/ *rz_bin_le_get_virtual_files(RzBinFile
 	if (bin->buf_patched) {
 		// patched vfile over main buffer
 		CHECK(vf = RZ_NEW0(RzBinVirtualFile));
-		CHECK(vf->name = strdup(VFILE_NAME_PATCHED));
+		CHECK(vf->name = rz_str_dup(VFILE_NAME_PATCHED));
 		vf->buf = bin->buf_patched;
 		vf->buf_owned = false;
 		CHECK(rz_pvector_push(vfiles, vf));
@@ -1732,12 +1736,12 @@ RZ_OWN RzPVector /*<RzBinVirtualFile *>*/ *rz_bin_le_get_virtual_files(RzBinFile
 
 	// virtual file per memory range not backed by physical pages (unpacked & zero-filled pages)
 	LE_map *le_map;
-	rz_vector_foreach(bin->le_maps, le_map) {
+	rz_vector_foreach (bin->le_maps, le_map) {
 		if (le_map->is_physical) {
 			continue;
 		}
 		CHECK(vf = RZ_NEW0(RzBinVirtualFile));
-		CHECK(vf->name = strdup(le_map->vfile_name));
+		CHECK(vf->name = rz_str_dup(le_map->vfile_name));
 		vf->buf = le_map->vfile_buf;
 		vf->buf_owned = false;
 		CHECK(rz_pvector_push(vfiles, vf));
@@ -1748,7 +1752,7 @@ RZ_OWN RzPVector /*<RzBinVirtualFile *>*/ *rz_bin_le_get_virtual_files(RzBinFile
 	ut64 rtmsz = le_reloc_targets_vfile_size(bin);
 	if (rtmsz) {
 		CHECK(vf = RZ_NEW0(RzBinVirtualFile));
-		CHECK(vf->name = strdup(VFILE_NAME_RELOC_TARGETS))
+		CHECK(vf->name = rz_str_dup(VFILE_NAME_RELOC_TARGETS))
 		CHECK(vf->buf = rz_buf_new_empty(rtmsz));
 		vf->buf_owned = true;
 		CHECK(rz_pvector_push(vfiles, vf));
@@ -1761,7 +1765,7 @@ RZ_OWN RzPVector /*<RzBinVirtualFile *>*/ *rz_bin_le_get_virtual_files(RzBinFile
 RZ_OWN RzPVector /*<RzBinReloc *>*/ *rz_bin_le_get_relocs(RzBinFile *bf) {
 	rz_bin_le_obj_t *bin = bf->o->bin_obj;
 	RzList /*<LE_reloc *>*/ *le_relocs = bin->le_relocs;
-	RzPVector /*<RzBinReloc *>*/ *relocs = rz_pvector_new((RzPVectorFree)rz_bin_reloc_free);
+	RzPVector /*<RzBinReloc *>*/ *relocs = rz_pvector_new(free);
 	RzBinReloc *reloc = NULL;
 	if (!relocs) {
 	fail_cleanup:
@@ -1834,7 +1838,7 @@ RZ_OWN RzPVector /*<RzBinMap *>*/ *rz_bin_le_get_maps(RzBinFile *bf) {
 	LE_map *le_map;
 	ut32 map_num = 0;
 	ut32 obj_num = 0;
-	rz_vector_foreach(bin->le_maps, le_map) {
+	rz_vector_foreach (bin->le_maps, le_map) {
 		LE_object *obj = &bin->objects[le_map->obj_num - 1];
 		if (le_map->obj_num != obj_num) {
 			obj_num = le_map->obj_num;
@@ -1850,11 +1854,11 @@ RZ_OWN RzPVector /*<RzBinMap *>*/ *rz_bin_le_get_maps(RzBinFile *bf) {
 		CHECK(map->name = rz_str_newf("obj%u_map%u", obj_num, map_num));
 		if (le_map->is_physical) {
 			map->paddr = le_map->paddr;
-			CHECK(map->vfile_name = strdup(VFILE_NAME_PATCHED));
+			CHECK(map->vfile_name = rz_str_dup(VFILE_NAME_PATCHED));
 		} else {
 			map->paddr = 0;
 			if (map->psize != 0) {
-				CHECK(map->vfile_name = strdup(le_map->vfile_name));
+				CHECK(map->vfile_name = rz_str_dup(le_map->vfile_name));
 			}
 		}
 		CHECK(rz_pvector_push(maps, map));
@@ -1867,8 +1871,8 @@ RZ_OWN RzPVector /*<RzBinMap *>*/ *rz_bin_le_get_maps(RzBinFile *bf) {
 	map->vaddr = bin->reloc_target_map_base;
 	map->psize = rtmsz;
 	map->vsize = rtmsz;
-	CHECK(map->name = strdup(VFILE_NAME_RELOC_TARGETS));
-	CHECK(map->vfile_name = strdup(VFILE_NAME_RELOC_TARGETS));
+	CHECK(map->name = rz_str_dup(VFILE_NAME_RELOC_TARGETS));
+	CHECK(map->vfile_name = rz_str_dup(VFILE_NAME_RELOC_TARGETS));
 	CHECK(rz_pvector_push(maps, map));
 
 	return maps;

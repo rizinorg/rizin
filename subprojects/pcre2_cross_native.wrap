@@ -1,8 +1,10 @@
 [wrap-git]
 url = https://github.com/PCRE2Project/pcre2.git
-revision = 3864abdb713f78831dd12d898ab31bbb0fa630b6
+revision = 2dce7761b1831fd3f82a9c2bd5476259d945da4d
 directory = pcre2_cross_native
 patch_directory = pcre2_cross_native
+clone-recursive = true
+depth = 2
 
 [provide]
 dependency_names = pcre2_cross_native

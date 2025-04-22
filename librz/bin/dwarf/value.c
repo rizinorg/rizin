@@ -81,7 +81,7 @@ RZ_IPI bool ValueType_from_encoding(DW_ATE encoding, ut64 byte_size, RzBinDwarfV
 	case DW_ATE_lo_user:
 	case DW_ATE_hi_user:
 	default:
-		RZ_LOG_VERBOSE("Unsupported encoding: %d", encoding);
+		RZ_LOG_VERBOSE("Unsupported encoding: %d\n", encoding);
 		return false;
 	}
 	if (value_type == -1) {
@@ -102,7 +102,7 @@ RZ_IPI bool ValueType_from_entry(RzBinDwarfDie *entry, RzBinDwarfValueType *out)
 
 	RzBinDwarfAttr *attr; // Assuming Attribute is defined elsewhere
 
-	rz_vector_foreach(&entry->attrs, attr) {
+	rz_vector_foreach (&entry->attrs, attr) {
 		switch (attr->at) {
 		case DW_AT_byte_size:
 			byte_size = rz_bin_dwarf_attr_udata(attr);
@@ -129,7 +129,7 @@ RZ_IPI bool ValueType_from_entry(RzBinDwarfDie *entry, RzBinDwarfValueType *out)
 }
 
 RZ_IPI bool Value_parse_into(
-	RzBinDwarfValue *value, RzBinDwarfValueType value_type, RzBinEndianReader *reader) {
+	RzBinDwarfValue *value, RzBinDwarfValueType value_type, RzBinEndianReader *R) {
 
 	RET_FALSE_IF_FAIL(value);
 	value->type = value_type;
@@ -1016,17 +1016,6 @@ RZ_IPI void Value_free(RzBinDwarfValue *self) {
 	}
 	Value_fini(self);
 	free(self);
-}
-
-RZ_IPI RzBinDwarfValue *Value_clone(RzBinDwarfValue *self) {
-	rz_return_val_if_fail(self, NULL);
-	RzBinDwarfValue *val = RZ_NEW(RzBinDwarfValue);
-	RET_NULL_IF_FAIL(val);
-	if (!Value_clone_into(self, val)) {
-		Value_free(val);
-		return NULL;
-	}
-	return val;
 }
 
 RZ_IPI bool Value_clone_into(RzBinDwarfValue *self, RzBinDwarfValue *val) {

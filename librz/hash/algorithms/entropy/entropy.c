@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "entropy.h"
-#include <stdlib.h>
 #include <math.h>
 #include <rz_util/rz_assert.h>
 

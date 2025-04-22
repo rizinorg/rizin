@@ -1,12 +1,12 @@
 // SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "config.h"
 #include <rz_hash.h>
 #include <rz_util.h>
 #include <rz_lib.h>
 #include <xxhash.h>
 #include "algorithms/ssdeep/ssdeep.h"
+#include "rz_hash_plugins.h"
 
 RZ_LIB_VERSION(rz_hash);
 
@@ -215,37 +215,18 @@ static HashCfgConfig *hash_cfg_config_new(const RzHashPlugin *plugin) {
 	return mdc;
 }
 
-RZ_API RZ_BORROW const RzHashPlugin *rz_hash_plugin_by_index(RZ_NONNULL RzHash *rh, size_t index) {
-	rz_return_val_if_fail(rh, NULL);
-
-	RzListIter *it;
-	const RzHashPlugin *rhp;
-	size_t i = 0;
-
-	rz_list_foreach (rh->plugins, it, rhp) {
-		if (i == index) {
-			return rhp;
-		}
-		i++;
-	}
-	return NULL;
-}
-
-RZ_API RZ_BORROW const RzHashPlugin *rz_hash_plugin_by_name(RZ_NONNULL RzHash *rh, RZ_NONNULL const char *name) {
+RZ_API RZ_BORROW const RzHashPlugin *rz_hash_plugin_by_name(const RZ_NONNULL RzHash *rh, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(name && rh, NULL);
 
-	RzListIter *it;
-	const RzHashPlugin *rhp;
-
-	rz_list_foreach (rh->plugins, it, rhp) {
-		if (!strcmp(rhp->name, name)) {
-			return rhp;
-		}
+	bool found = false;
+	const RzHashPlugin *rhp = ht_sp_find(rh->plugins, name, &found);
+	if (found) {
+		return rhp;
 	}
 	return NULL;
 }
 
-RZ_API RZ_OWN RzHashCfg *rz_hash_cfg_new(RZ_NONNULL RzHash *rh) {
+RZ_API RZ_OWN RzHashCfg *rz_hash_cfg_new(const RZ_NONNULL RzHash *rh) {
 	rz_return_val_if_fail(rh, NULL);
 
 	RzHashCfg *md = RZ_NEW0(RzHashCfg);
@@ -272,7 +253,7 @@ RZ_API RZ_OWN RzHashCfg *rz_hash_cfg_new(RZ_NONNULL RzHash *rh) {
  * with the given algorithm and runs also the algo init.
  * when fails to allocate or configure or initialize, returns NULL.
  * */
-RZ_API RZ_OWN RzHashCfg *rz_hash_cfg_new_with_algo(RZ_NONNULL RzHash *rh, RZ_NONNULL const char *name, RZ_NULLABLE const ut8 *key, ut64 key_size) {
+RZ_API RZ_OWN RzHashCfg *rz_hash_cfg_new_with_algo(const RZ_NONNULL RzHash *rh, RZ_NONNULL const char *name, RZ_NULLABLE const ut8 *key, ut64 key_size) {
 	rz_return_val_if_fail(rh && name, NULL);
 	RzHashCfg *md = rz_hash_cfg_new(rh);
 	if (!md) {
@@ -326,27 +307,32 @@ RZ_API bool rz_hash_cfg_configure(RZ_NONNULL RzHashCfg *md, RZ_NONNULL const cha
 	}
 
 	HashCfgConfig *mdc = NULL;
-	RzListIter *it;
-	const RzHashPlugin *plugin;
+	RzIterator *it = ht_sp_as_iter(md->hash->plugins);
+	const RzHashPlugin **val;
 
-	rz_list_foreach (md->hash->plugins, it, plugin) {
+	rz_iterator_foreach(it, val) {
+		const RzHashPlugin *plugin = *val;
 		if (is_all || !strcmp(plugin->name, name)) {
 			mdc = hash_cfg_config_new(plugin);
 			if (!mdc) {
+				rz_iterator_free(it);
 				return false;
 			}
 
 			if (!rz_list_append(md->configurations, mdc)) {
 				RZ_LOG_ERROR("msg digest: cannot allocate memory for list entry.\n");
 				hash_cfg_config_free(mdc);
+				rz_iterator_free(it);
 				return false;
 			}
 
 			if (!is_all) {
+				rz_iterator_free(it);
 				return true;
 			}
 		}
 	}
+	rz_iterator_free(it);
 
 	if (is_all) {
 		return true;
@@ -556,7 +542,7 @@ RZ_API bool rz_hash_cfg_iterate(RZ_NONNULL RzHashCfg *md, size_t iterate) {
  * RzHashCfg contains a list of configurations; this method will search
  * for the configuration with the given name and if found return the digest value.
  * */
-RZ_API RZ_BORROW const ut8 *rz_hash_cfg_get_result(RZ_NONNULL RzHashCfg *md, RZ_NONNULL const char *name, RZ_NONNULL ut32 *size) {
+RZ_API RZ_BORROW const ut8 *rz_hash_cfg_get_result(RZ_NONNULL RzHashCfg *md, RZ_NONNULL const char *name, RZ_NULLABLE ut32 *size) {
 	rz_return_val_if_fail(md && name && hash_cfg_has_finshed(md), false);
 
 	RzListIter *it = rz_list_find(md->configurations, name, hash_cfg_config_compare, NULL);
@@ -597,7 +583,7 @@ RZ_API RZ_OWN char *rz_hash_cfg_get_result_string(RZ_NONNULL RzHashCfg *md, RZ_N
 		double entropy = rz_read_be_double(mdc->digest);
 		return rz_str_newf("%.8f", entropy);
 	} else if (!strcmp(name, "ssdeep")) {
-		return strdup((char *)mdc->digest);
+		return rz_str_dup((char *)mdc->digest);
 	}
 
 	char *string = malloc((mdc->digest_size * 2) + 1);
@@ -708,7 +694,7 @@ RZ_API RzHash *rz_hash_new(void) {
 #if REQUIRE_OPENSSL_PROVIDER
 	rz_hash_init_openssl_lib();
 #endif /* REQUIRE_OPENSSL_PROVIDER */
-	rh->plugins = rz_list_new();
+	rh->plugins = ht_sp_new(HT_STR_DUP, NULL, NULL);
 	for (int i = 0; i < RZ_ARRAY_SIZE(hash_static_plugins); i++) {
 		rz_hash_plugin_add(rh, hash_static_plugins[i]);
 	}
@@ -719,7 +705,7 @@ RZ_API void rz_hash_free(RZ_NULLABLE RzHash *rh) {
 	if (!rh) {
 		return;
 	}
-	rz_list_free(rh->plugins);
+	ht_sp_free(rh->plugins);
 	free(rh);
 #if REQUIRE_OPENSSL_PROVIDER
 	rz_hash_fini_openssl_lib();
@@ -732,11 +718,13 @@ RZ_API void rz_hash_free(RZ_NULLABLE RzHash *rh) {
  */
 RZ_API bool rz_hash_plugin_add(RZ_NONNULL RzHash *rh, RZ_NONNULL RZ_OWN RzHashPlugin *plugin) {
 	rz_return_val_if_fail(rh && plugin && plugin->name, false);
-	RZ_PLUGIN_CHECK_AND_ADD(rh->plugins, plugin, RzHashPlugin);
+	if (!ht_sp_insert(rh->plugins, plugin->name, plugin)) {
+		RZ_LOG_WARN("Plugin '%s' was already added.\n", plugin->name);
+	}
 	return true;
 }
 
 RZ_API bool rz_hash_plugin_del(RZ_NONNULL RzHash *rh, RZ_NONNULL RzHashPlugin *plugin) {
 	rz_return_val_if_fail(rh && plugin, false);
-	return rz_list_delete_data(rh->plugins, plugin);
+	return ht_sp_delete(rh->plugins, plugin->name);
 }

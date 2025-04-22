@@ -19,8 +19,8 @@ Cdl~?
 EOF
 EXPECT=<<EOF
 114
-134
-134
+130
+130
 EOF
 RUN
 

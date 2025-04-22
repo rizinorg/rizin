@@ -397,7 +397,6 @@ echo -- round 13; aes; .(regs)
 echo -- round 14; aes; .(regs)
 echo -- round 15; aes; .(regs)
 ar pcl
-arb~[5-]~:0
 EOF
 EXPECT=<<EOF
 r0 = 0xf5
@@ -691,7 +690,6 @@ r13 = 0x72
 r14 = 0x73
 r15 = 0x21
 pcl = 0x0022
-
 EOF
 RUN
 

@@ -8,8 +8,8 @@
 
 bool test_rz_bin(void) {
 	RzBin *bin = rz_bin_new();
-	const char* default_algos[] = {"md5", "sha1", "sha256", "crc32", "entropy"};
-	bin->default_hashes = rz_list_new_from_array((const void**)default_algos, RZ_ARRAY_SIZE(default_algos));
+	const char *default_algos[] = { "md5", "sha1", "sha256", "crc32", "entropy" };
+	bin->default_hashes = rz_list_new_from_array((const void **)default_algos, RZ_ARRAY_SIZE(default_algos));
 	RzIO *io = rz_io_new();
 	rz_io_bind(io, &bin->iob);
 
@@ -29,9 +29,9 @@ bool test_rz_bin(void) {
 	mu_assert_eq(rz_pvector_len(segments), 10, "rz_bin_object_get_segments");
 	rz_pvector_free(segments);
 
-	const RzList *entries = rz_bin_object_get_entries(obj);
-	mu_assert_eq(rz_list_length(entries), 1, "rz_bin_object_get_entries");
-	RzBinAddr *entry = rz_list_first(entries);
+	const RzPVector *entries = rz_bin_object_get_entries(obj);
+	mu_assert_eq(rz_pvector_len(entries), 1, "rz_bin_object_get_entries");
+	RzBinAddr *entry = (RzBinAddr *)rz_pvector_at(entries, 0);
 	mu_assert_eq(entry->vaddr, 0x8048360, "entry virtual address");
 	mu_assert_eq(entry->paddr, 0x360, "entry file offset");
 
@@ -68,7 +68,7 @@ bool test_rz_bin(void) {
 	RzBinString *s;
 	int i = 0;
 	rz_pvector_foreach (strings, it) {
-                s = *it;
+		s = *it;
 		mu_assert_streq(s->string, exp_strings[i], "String not found");
 		mu_assert_true(rz_bin_object_get_string_at(obj, s->vaddr, true) != NULL, "is_string (virt) should be true");
 		mu_assert_false(rz_bin_object_get_string_at(obj, s->vaddr, false) != NULL, "is_string (phys) should be false");
@@ -83,9 +83,9 @@ bool test_rz_bin(void) {
 	const char *hash_hexes[] = { "99327411dd72a11d7198b54298648adf", "f2bf1c7758c7b1e22bdea1d7681882783b658705", "3aed9a3821134a2ab1d69cb455e5e9d80bb651a1c97af04cdba4f3bb0adaa37b", "cf8cb28a", "3.484857" };
 	RzBinFileHash *hash;
 	i = 0;
-        void **v_it;
+	void **v_it;
 	rz_pvector_foreach (hashes, v_it) {
-                hash = *v_it;
+		hash = *v_it;
 		mu_assert_streq(hash->type, hash_names[i], "hash name is wrong");
 		mu_assert_streq(hash->hex, hash_hexes[i], "hash digest is wrong");
 		i++;
@@ -292,14 +292,14 @@ bool test_rz_bin_sections_mapping(void) {
 	RzBinSectionMap *map1 = rz_vector_index_ptr(maps, 1);
 	mu_assert_streq(map1->segment->name, "INTERP", "second map is for INTERP");
 	mu_assert_eq(rz_pvector_len(&map1->sections), 1, "just .interp in INTERP");
-	RzBinSection *sec1_0 = *rz_pvector_index_ptr(&map1->sections, 0);
+	RzBinSection *sec1_0 = rz_pvector_at(&map1->sections, 0);
 	mu_assert_streq(sec1_0->name, ".interp", "section is .interp");
 	RzBinSectionMap *map7 = rz_vector_index_ptr(maps, 7);
 	mu_assert_streq(map7->segment->name, "GNU_RELRO", "seventh map is for GNURELRO");
 	mu_assert_eq(rz_pvector_len(&map7->sections), 5, "5 elements in GNURELRO");
-	RzBinSection *sec7_0 = *rz_pvector_index_ptr(&map7->sections, 0);
+	RzBinSection *sec7_0 = rz_pvector_at(&map7->sections, 0);
 	mu_assert_streq(sec7_0->name, ".ctors", "section is .ctors");
-	RzBinSection *sec7_1 = *rz_pvector_index_ptr(&map7->sections, 1);
+	RzBinSection *sec7_1 = rz_pvector_at(&map7->sections, 1);
 	mu_assert_streq(sec7_1->name, ".dtors", "section is .dtors");
 
 	rz_vector_free(maps);

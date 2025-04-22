@@ -1,12 +1,13 @@
 // SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_config.h>
+#include <rz_util/ht_sp.h>
 #include <rz_util/rz_regex.h>
 #include <rz_vector.h>
 #include <rz_core.h>
 #include <rz_socket.h>
 #include <rz_cmp.h>
-#include <config.h>
 #include <rz_util.h>
 #if __UNIX__
 #include <signal.h>
@@ -105,6 +106,36 @@ RZ_API void rz_core_notify_error(RZ_NONNULL RzCore *core, RZ_NONNULL const char 
 		fprintf(stderr, "\n");
 	}
 	va_end(args);
+}
+
+/**
+ * \brief  Prints a message definining the beginning of a task
+ *
+ * \param  core The RzCore to use
+ * \param  text The message to notify
+ */
+RZ_API void rz_core_notify_begin_str(RZ_NONNULL RzCore *core, RZ_NONNULL const char *text) {
+	rz_core_notify_begin(core, "%s", text);
+}
+
+/**
+ * \brief  Prints a message definining the end of a task which succeeded
+ *
+ * \param  core The RzCore to use
+ * \param  text The message to notify
+ */
+RZ_API void rz_core_notify_done_str(RZ_NONNULL RzCore *core, RZ_NONNULL const char *text) {
+	rz_core_notify_done(core, "%s", text);
+}
+
+/**
+ * \brief  Prints a message definining the end of a task which errored
+ *
+ * \param  core The RzCore to use
+ * \param  text The message to notify
+ */
+RZ_API void rz_core_notify_error_str(RZ_NONNULL RzCore *core, RZ_NONNULL const char *text) {
+	rz_core_notify_error(core, "%s", text);
 }
 
 static int on_fcn_new(RzAnalysis *_analysis, void *_user, RzAnalysisFunction *fcn) {
@@ -272,7 +303,7 @@ RZ_API char *rz_core_add_asmqjmp(RzCore *core, ut64 addr) {
 			return NULL;
 		}
 		rz_core_set_asmqjmps(core, t, sizeof(t), i);
-		return strdup(t);
+		return rz_str_dup(t);
 	}
 	return NULL;
 }
@@ -335,7 +366,7 @@ static char *getNameDelta(RzCore *core, ut64 addr) {
 				: item->name;
 			return rz_str_newf("%s+%" PFMT64u, name, addr - item->offset);
 		}
-		return strdup(item->name);
+		return rz_str_dup(item->name);
 	}
 	return NULL;
 }
@@ -429,9 +460,10 @@ static ut64 getref(RzCore *core, int n, char t, int type) {
 }
 
 static ut64 bbInstructions(RzAnalysisFunction *fcn, ut64 addr) {
-	RzListIter *iter;
+	void **vit;
 	RzAnalysisBlock *bb;
-	rz_list_foreach (fcn->bbs, iter, bb) {
+	rz_pvector_foreach (fcn->bbs, vit) {
+		bb = (RzAnalysisBlock *)*vit;
 		if (RZ_BETWEEN(bb->addr, addr, bb->addr + bb->size - 1)) {
 			return bb->ninstr;
 		}
@@ -440,9 +472,10 @@ static ut64 bbInstructions(RzAnalysisFunction *fcn, ut64 addr) {
 }
 
 static ut64 bbBegin(RzAnalysisFunction *fcn, ut64 addr) {
-	RzListIter *iter;
+	void **vit;
 	RzAnalysisBlock *bb;
-	rz_list_foreach (fcn->bbs, iter, bb) {
+	rz_pvector_foreach (fcn->bbs, vit) {
+		bb = (RzAnalysisBlock *)*vit;
 		if (RZ_BETWEEN(bb->addr, addr, bb->addr + bb->size - 1)) {
 			return bb->addr;
 		}
@@ -451,9 +484,10 @@ static ut64 bbBegin(RzAnalysisFunction *fcn, ut64 addr) {
 }
 
 static ut64 bbJump(RzAnalysisFunction *fcn, ut64 addr) {
-	RzListIter *iter;
+	void **vit;
 	RzAnalysisBlock *bb;
-	rz_list_foreach (fcn->bbs, iter, bb) {
+	rz_pvector_foreach (fcn->bbs, vit) {
+		bb = (RzAnalysisBlock *)*vit;
 		if (RZ_BETWEEN(bb->addr, addr, bb->addr + bb->size - 1)) {
 			return bb->jump;
 		}
@@ -462,9 +496,10 @@ static ut64 bbJump(RzAnalysisFunction *fcn, ut64 addr) {
 }
 
 static ut64 bbFail(RzAnalysisFunction *fcn, ut64 addr) {
-	RzListIter *iter;
+	void **vit;
 	RzAnalysisBlock *bb;
-	rz_list_foreach (fcn->bbs, iter, bb) {
+	rz_pvector_foreach (fcn->bbs, vit) {
+		bb = (RzAnalysisBlock *)*vit;
 		if (RZ_BETWEEN(bb->addr, addr, bb->addr + bb->size - 1)) {
 			return bb->fail;
 		}
@@ -473,9 +508,10 @@ static ut64 bbFail(RzAnalysisFunction *fcn, ut64 addr) {
 }
 
 static ut64 bbSize(RzAnalysisFunction *fcn, ut64 addr) {
-	RzListIter *iter;
+	void **vit;
 	RzAnalysisBlock *bb;
-	rz_list_foreach (fcn->bbs, iter, bb) {
+	rz_pvector_foreach (fcn->bbs, vit) {
+		bb = (RzAnalysisBlock *)*vit;
 		if (RZ_BETWEEN(bb->addr, addr, bb->addr + bb->size - 1)) {
 			return bb->size;
 		}
@@ -506,7 +542,7 @@ static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 	char *ptr, *bptr, *out = NULL;
 	RzFlagItem *flag;
 	RzBinSection *s;
-	RzAnalysisOp op;
+	RzAnalysisOp op = { 0 };
 	ut64 ret = 0;
 
 	if (ok) {
@@ -557,7 +593,7 @@ static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 		// push state
 		if (str[0] && str[1]) {
 			const char *q;
-			char *o = strdup(str + 1);
+			char *o = rz_str_dup(str + 1);
 			if (o) {
 				q = rz_num_calc_index(core->num, NULL);
 				if (q) {
@@ -588,6 +624,7 @@ static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 			*ok = 1;
 		}
 		// TODO: group aop-dependant vars after a char, so i can filter
+		rz_analysis_op_init(&op);
 		rz_analysis_op(core->analysis, &op, core->offset, core->block, core->blocksize, RZ_ANALYSIS_OP_MASK_BASIC);
 		rz_analysis_op_fini(&op); // we don't need strings or pointers, just values, which are not nullified in fini
 		// XXX the above line is assuming op after fini keeps jump, fail, ptr, val, size and rz_analysis_op_is_eob()
@@ -599,7 +636,7 @@ static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 				RZ_LOG_ERROR("core: expected '{' after 'k'.\n");
 				break;
 			}
-			bptr = strdup(str + 3);
+			bptr = rz_str_dup(str + 3);
 			ptr = strchr(bptr, '}');
 			if (!ptr) {
 				// invalid json
@@ -620,7 +657,7 @@ static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 			free(out);
 			return ret;
 		case '{': // ${ev} eval var
-			bptr = strdup(str + 2);
+			bptr = rz_str_dup(str + 2);
 			ptr = strchr(bptr, '}');
 			if (ptr) {
 				ptr[0] = '\0';
@@ -635,7 +672,7 @@ static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 			return rz_cons_get_size(NULL);
 		case 'r': // $r
 			if (str[2] == '{') {
-				bptr = strdup(str + 3);
+				bptr = rz_str_dup(str + 3);
 				ptr = strchr(bptr, '}');
 				if (!ptr) {
 					free(bptr);
@@ -653,7 +690,7 @@ static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 			break;
 		case 'e': // $e
 			if (str[2] == '{') { // $e{flag} flag off + size
-				char *flagName = strdup(str + 3);
+				char *flagName = rz_str_dup(str + 3);
 				int flagLength = strlen(flagName);
 				if (flagLength > 0) {
 					flagName[flagLength - 1] = 0;
@@ -712,7 +749,7 @@ static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 			return core->blocksize;
 		case 's': // $s file size
 			if (str[2] == '{') { // $s{flag} flag size
-				bptr = strdup(str + 3);
+				bptr = rz_str_dup(str + 3);
 				ptr = strchr(bptr, '}');
 				if (!ptr) {
 					// invalid json
@@ -806,14 +843,7 @@ static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 				}
 				return fcn->addr;
 			}
-#if 0
-			ut64 addr = rz_analysis_fcn_label_get (core->analysis, core->offset, str);
-			if (addr != 0) {
-				ret = addr;
-			} else {
-				...
-			}
-#endif
+
 			if ((flag = rz_flag_get(core->flags, str))) {
 				ret = flag->offset;
 				if (ok) {
@@ -860,802 +890,6 @@ RZ_API RzCore *rz_core_new(void) {
 		rz_core_init(c);
 	}
 	return c;
-}
-
-/*-----------------------------------*/
-#define rizin_argc (sizeof(rizin_argv) / sizeof(const char *) - 1)
-
-static const char *rizin_argv[] = {
-	"whereis", "which", "ls", "rm", "mkdir", "pwd", "cat", "sort", "uniq", "join", "less", "exit", "quit",
-	"#?", "#!", "#sha1", "#crc32", "#pcprint", "#sha256", "#sha512", "#md4", "#md5",
-	"#!python", "#!vala", "#!pipe",
-	"*?", "*", "$",
-	"(", "(*", "(-", "()", ".?", ".", "..", "...", ".:", ".--", ".-", ".!", ".(", "./", ".*",
-	"_?", "_",
-	"R?", "R", "R<", "R!", "R+", "R-", "R=", "R!=", "R=!", "R:", "R&:",
-	"Rg?", "Rg", "Rg!", "Rh?", "Rh", "Rh-", "Rh--", "Rh*", "Rh&", "RH?", "RH", "RH&",
-	"<",
-	"/?", "/", "/j", "/j!", "/j!x", "/+", "//", "/a", "/a1", "/ab", "/ad", "/aa", "/as", "/asl", "/at", "/atl", "/af", "/afl", "/ae", "/aej", "/ai", "/aij",
-	"/c", "/ca", "/car", "/d", "/e", "/E", "/Ej", "/f", "/F", "/g", "/gg", "/h", "/ht", "/i", "/m", "/mb", "/mm",
-	"/o", "/O", "/p", "/P", "/s", "/s*", "/r?", "/r", "/ra", "/rc", "/re", "/rr", "/rw", "/rc",
-	"/R",
-	"/v?", "/v", "/v1", "/v2", "/v4", "/v8",
-	"/V?", "/V", "/V1", "/V2", "/V4", "/V8",
-	"/w", "/wi", "/x", "/z",
-	"!?", "!", "!!", "!!!", "!!!-", "!-", "!-*", "!=!",
-	"a?", "a", "aa", "aa*",
-	"aaa", "aac", "aac*", "aad", "aae", "aaf", "aai", "aaij", "aan", "aang", "aao", "aap",
-	"aar?", "aar", "aar*", "aarj", "aas", "aat", "aaT", "aau", "aav",
-	"a8", "ab",
-	"acl", "acll", "aclj", "acl*", "ac?", "ac", "ac-", "acn", "acv", "acvf", "acv-", "acb", "acb-", "acm", "acm-", "acmn",
-	"aC?", "ad", "ad4", "ad8", "adf", "adfg", "adt", "adk",
-	"ae?", "ae??", "ae", "aea", "aeA", "aeaf", "aeAf", "aeC", "aec?", "aec", "aecb", "aecs", "aecc", "aecu", "aecue",
-	"aef", "aefa",
-	"aei", "aeim", "aeip", "aek", "aek-", "aeli", "aelir", "aep?", "aep", "aep-", "aepc",
-	"aets?", "aets+", "aets-", "aes", "aesp", "aesb", "aeso", "aesou", "aess", "aesu", "aesue", "aetr", "aex",
-	"aF",
-	"ag?", "ag", "aga", "agA", "agc", "agC", "agCi", "agF", "agd", "agf", "agi", "agr", "agR", "agx", "agg", "ag-",
-	"agn?", "agn", "agn-", "age?", "age", "age-",
-	"agl", "agfl",
-	"ah?", "ah", "ah.", "ah-", "ah*", "aha", "ahb", "ahc", "ahe", "ahf", "ahh", "ahi?", "ahi", "ahj", "aho",
-	"ahp", "ahr", "ahs", "ahS", "aht",
-	"ai", "aL", "an",
-	"ao?", "ao", "aoj", "aoe", "aor", "aos", "aom", "aod", "aoda", "aoc", "ao*",
-	"aO", "ap",
-	"ar?", "ar", "ar0", "ara?", "ara", "ara+", "ara-", "aras", "arA", "arC", "arr", "arrj", "ar=",
-	"arb", "arc", "ard", "arn", "aro", "arp?", "arp", "arpi", "arpg", "arp.", "arpj",
-	"ars", "art", "arw",
-	"as?", "as", "asc", "asca", "asf", "asj", "asl", "ask",
-	"av?", "av", "avj", "av*", "avr", "avra", "avraj", "avrr", "avrD",
-	"at",
-	"b?", "b", "b+", "b-", "bf", "bm",
-	"c?", "c", "c1", "c2", "c4", "c8", "cc", "ccd", "cf", "cg?", "cg", "cgf", "cgff", "cgfc", "cgfn", "cgo",
-	"cu?", "cu", "cu1", "cu2", "cu4", "cu8", "cud",
-	"cv", "cv1", "cv2", "cv4", "cv8",
-	"cV", "cV1", "cV2", "cV4", "cV8",
-	"cw?", "cw", "cw*", "cwr", "cwu",
-	"cx", "cx*", "cX",
-	"cl", "cls", "clear",
-	"d?", "db ", "db-", "db-*", "db.", "dbj", "dbc", "dbC", "dbd", "dbe", "dbs", "dbf", "dbm", "dbn",
-	"db?", "dbi", "dbi.", "dbix", "dbic", "dbie", "dbid", "dbis", "dbite", "dbitd", "dbits", "dbh", "dbh-",
-	"dbt", "dbt*", "dbt=", "dbtv", "dbtj", "dbta", "dbte", "dbtd", "dbts", "dbx", "dbw",
-	"dc?", "dc", "dca", "dcb", "dcc", "dccu", "dcf", "dck", "dcp", "dcr", "dcs", "dcs*", "dct", "dcu", "dcu.",
-	"dd?", "dd", "dd-", "dd*", "dds", "ddd", "ddr", "ddw",
-	"de",
-	"dg",
-	"dH",
-	"di?", "di", "di*", "diq", "dij",
-	"dk?", "dk", "dko", "dkj",
-	"dL?", "dL", "dLq", "dLj",
-	"dm?", "dm", "dm=", "dm.", "dm*", "dm-", "dmd",
-	"dmh?", "dmh", "dmha", "dmhb", "dmhbg", "dmhc", "dmhf", "dmhg", "dmhi", "dmhm", "dmht",
-	"dmi?", "dmi", "dmi*", "dmi.", "dmiv",
-	"dmj",
-	"dml?", "dml",
-	"dmm?", "dmm", "dmm*", "dmm.", "dmmj",
-	"dmp?", "dmp",
-	"dms?", "dms", "dmsj", "dms*", "dms-", "dmsA", "dmsC", "dmsd", "dmsw", "dmsa", "dmsf", "dmst",
-	"dmS", "dmS*",
-	"do?", "do", "dor", "doo",
-	"dp?", "dp", "dpj", "dpl", "dplj", "dp-", "dp=", "dpa", "dpc", "dpc*", "dpe", "dpf", "dpk", "dpn", "dptn", "dpt",
-	"dr?", "dr", "drpj", "drr", "drrj", "drs", "drs+", "drs-", "drt", "drt*", "drtj", "drw", "drx", "drx-",
-	".dr*", ".dr-",
-	"ds?", "ds", "dsb", "dsf", "dsi", "dsl", "dso", "dsp", "dss", "dsu", "dsui", "dsuo", "dsue", "dsuf",
-	"dt?", "dt", "dt%", "dt*", "dt+", "dt-", "dt=", "dtD", "dta", "dtc", "dtd", "dte", "dte-*", "dtei", "dtek",
-	"dtg", "dtg*", "dtgi",
-	"dtr",
-	"dts?", "dts", "dts+", "dts-", "dtsf", "dtst", "dtsC", "dtt",
-	"dw",
-	"dx?", "dx", "dxa", "dxe", "dxr", "dxs",
-	"e?", "e", "e-", "e*", "e!", "ec", "ee?", "ee", "?ed", "ed", "ej", "env", "er", "es"
-											"et",
-	"ev", "evj",
-	"ec?", "ec", "ec*", "ecd", "ecr", "ecs", "ecj", "ecc", "eco", "ecp", "ecn",
-	"ecH?", "ecH", "ecHi", "ecHw", "ecH-",
-	"f?", "f", "f.", "f*", "f-", "f--", "f+", "f=", "fa", "fb", "fc?", "fc", "fC", "fe-", "fe",
-	"ff", "fi", "fg", "fj",
-	"fl", "fla", "fm", "fn", "fnj", "fo", "fO", "fr", "fR", "fR?",
-	"fV", "fx", "fq",
-	"g?", "g", "gw", "gc", "gl?", "gl", "gs", "gi", "gp", "ge", "gr", "gS",
-	"i?", "i", "ij", "iA", "ia", "ib", "ic", "icc", "iC",
-	"id?", "id", "idp", "idpi", "idpi*", "idpd", "iD", "ie", "iee", "iE", "iE.",
-	"ih", "iHH", "ii", "iI", "ik", "il", "iL", "im", "iM", "io", "iO?", "iO",
-	"ir", "iR", "is", "is.", "iS", "iS.", "iS=", "iSS",
-	"it", "iV", "iX", "iz", "izj", "izz", "izzz", "iz-", "iZ",
-	"k?", "k", "ko", "kd", "ks", "kj",
-	"l",
-	"L?", "L", "L-", "Ll", "LL", "La", "Lc", "Ld", "Lh", "Li", "Lo",
-	"o?", "o", "o-", "o--", "o+", "oa", "oa-", "oq", "o*", "o.", "o=",
-	"ob?", "ob", "ob*", "obo", "oba", "obf", "obj", "obr", "ob-", "ob-*",
-	"oc", "of", "oi", "oj", "oL", "om", "on",
-	"oo?", "oo", "oo+", "oob", "ood", "oom", "oon", "oon+", "oonn", "oonn+",
-	"op", "opn", "opp", "opr", "ox",
-	"p?", "p-", "p=", "p2", "p3", "p6?", "p6", "p6d", "p6e", "p8?", "p8", "p8f", "p8j",
-	"pa?", "paD", "pad", "pade", "pae", "pA",
-	"pb?", "pb", "pB", "pxb", "pB?",
-	"pc?", "pc", "pc*", "pca", "pcA", "pcd", "pch", "pcj", "pcp", "pcs", "pcS", "pcw",
-	"pC?", "pC", "pCa", "pCA", "pCc", "pCd", "pCD", "pCx", "pCw",
-	"pd?", "pd", "pd--", "pD", "pda", "pdb", "pdC", "pdf", "pdi", "pdj", "pdJ",
-	"pdk", "pdl", "pdp", "pdr", "pdr.", "pdR", "pds?", "pds", "pdsb", "pdsf", "pdt",
-	"pD",
-	"pf?", "pf", "pf??", "pf???", "pf.", "pfj", "pfj.", "pf*", "pf*.", "pfd", "pfd.",
-	"pfo", "pfq", "pfv", "pfv.", "pfs", "pfs.",
-	"pF?", "pF", "pFa", "pFaq", "pFo", "pFp", "pFx",
-	"pg?", "pg", "pg*", "pg-*",
-	"ph?", "ph", "ph=",
-	"pi?", "pi", "pia", "pib", "pie", "pif?", "pif", "pifc", "pifcj", "pifj", "pir",
-	"pI?", "pI", "pIa", "pIb", "pIe", "pIf?", "pIf", "pIfc", "pIfcj", "pIfj", "pIr",
-	"pj?", "pj", "pj.", "pj..",
-	"pk?", "pk", "pK?", "pK",
-	"pm?", "pm",
-	"pr?", "pr", "prc", "prx", "prg?", "prg", "prgi", "prgo", "prz",
-	"ps?", "ps", "psb", "psi", "psj", "psp", "pss", "psu", "psw", "psW", "psx", "psz", "ps+",
-	"pt?", "pt", "pt.", "ptd", "pth", "ptn",
-	"pu?", "pu", "puw", "pU",
-	"pv?", "pv", "pv1", "pv2", "pv4", "pv8", "pvz", "pvj", "pvh", "pv1j", "pv2j", "pv4j", "pv8j",
-	"pv1h", "pv2h", "pv4h", "pv8h",
-	"px?", "px", "px/", "px0", "pxa", "pxA?", "pxA", "pxb", "pxc", "pxd?", "pxd", "pxd2", "pxd4", "pxd8",
-	"pxe", "pxf", "pxh", "pxH", "pxi", "pxl", "pxo", "pxq", "pxq", "pxQ", "pxQq", "pxr", "pxrj",
-	"pxs", "pxt", "pxt*", "pxt.", "pxw", "pxW", "pxWq", "pxx", "pxX",
-	"pz?", "pz", "pzp", "pzf", "pzs", "pz0", "pzF", "pze", "pzh",
-	"P?", "P", "Pc", "Pd", "Pi", "Pn", "Pnj", "Po", "Ps", "PS", "P-",
-	"q?", "q", "q!", "q!!", "q!!!", "qy", "qn", "qyy", "qyn", "qny", "qnn",
-	"r?", "r", "r-", "r+", "rh",
-	"s?", "s", "s:", "s-", "s-*", "s--", "s+", "s++", "sj", "s*", "s=", "s!", "s/", "s/x", "s.", "sa", "sb",
-	"sC?", "sC", "sC*",
-	"sf", "sf.", "sg", "sG", "sl?", "sn", "sp", "so", "sr", "ss",
-	"t?", "t", "tj", "t*", "t-", "t-*", "ta", "tb", "tc", "te?", "te", "tej", "teb", "tec",
-	"td?", "td", "td-", "tf", "tk", "tl", "tn", "to", "tos", "tp", "tpx", "ts?", "ts", "tsj", "ts*", "tsc", "tss",
-	"tu?", "tu", "tuj", "tu*", "tuc", "tt?", "tt", "ttj", "ttc",
-	"T?", "T", "T*", "T-", "Tl", "Tj", "Tm", "Ts", "TT", "T=", "T=.", "T=&",
-	"u?", "u", "uw", "us", "uc",
-	"v", "V", "v!", "vv", "vV", "vVV", "VV",
-	"w?", "w", "w1+", "w1-", "w2+", "w2-", "w4+", "w4-", "w8+", "w8-",
-	"w0", "w", "w6", "w6d", "w6e", "wa", "wa*", "waf", "wao?", "wao",
-	"wA?", "wA", "wB", "wB-", "wc", "wcj", "wc-", "wc+", "wc*", "wcr", "wci", "wcp", "wcp*", "wcpi",
-	"wd", "we?", "we", "wen", "weN", "wes", "wex", "weX",
-	"wf?", "wf", "wff", "wfs", "wF", "wh", "wm",
-	"wo?", "wo", "wo2", "wo4", "woa", "woA", "wod", "woD", "woe", "woE", "wol", "wom", "woo",
-	"wop?", "wop", "wopD", "wopD*", "wopO",
-	"wp?", "wp", "wr", "ws",
-	"wt?", "wt", "wta", "wtf", "wtf!", "wtff", "wts",
-	"wu",
-	"wv?", "wv", "wv1", "wv2", "wv4", "wv8",
-	"ww",
-	"wx?", "wx", "wxf", "wxs",
-	"wz",
-	"x?", "x", "x/", "x0", "xa", "xA?", "xA", "xb", "xc", "xd?", "xd", "xd2", "xd4", "xd8",
-	"xe", "xf", "xh", "xH", "xi", "xl", "xo", "xq", "xq", "xQ", "xQq", "xr", "xrj",
-	"xs", "xt", "xt*", "xt.", "xw", "xW", "xWq", "xx", "xX",
-	"y?", "y", "yz", "yp", "yx", "ys", "yt", "ytf", "yf", "yfa", "yfx", "yw", "ywx", "yy",
-	"z?", "z", "z*", "zj", "z-", "z-*",
-	"za?", "za??", "za", "zaf", "zaF", "zg",
-	"zo?", "zo", "zoz", "zos",
-	"zf?", "zfd", "zfs", "zfz",
-	"z/?", "z/", "z/*",
-	"zc",
-	"zs?", "zs", "zs-", "zs-*", "zs+", "zsr",
-	"zi",
-	"?", "?v", "?$?", "?@?", "?>?",
-	NULL
-};
-
-static void autocomplete_process_path(RzLineCompletion *completion, const char *str, const char *path) {
-	char *lpath = NULL, *dirname = NULL, *basename = NULL;
-	char *home = NULL, *filename = NULL, *p = NULL;
-	int n = 0;
-	RzList *list;
-	RzListIter *iter;
-
-	if (!path) {
-		goto out;
-	}
-
-	lpath = rz_str_dup(path);
-#if __WINDOWS__
-	rz_str_replace_ch(lpath, '/', '\\', true);
-#endif
-	p = (char *)rz_str_last(lpath, RZ_SYS_DIR);
-	if (p) {
-		*p = 0;
-		if (p == lpath) { // /xxx
-#if __WINDOWS__
-			dirname = strdup("\\.\\");
-#else
-			dirname = rz_str_dup(RZ_SYS_DIR);
-#endif
-		} else if (lpath[0] == '~' && lpath[1]) { // ~/xxx/yyy
-			dirname = rz_str_home(lpath + 2);
-		} else if (lpath[0] == '~') { // ~/xxx
-			if (!(home = rz_str_home(NULL))) {
-				goto out;
-			}
-			dirname = rz_str_newf("%s%s", home, RZ_SYS_DIR);
-			free(home);
-		} else if (lpath[0] == '.' || lpath[0] == RZ_SYS_DIR[0]) { // ./xxx/yyy || /xxx/yyy
-			dirname = rz_str_newf("%s%s", lpath, RZ_SYS_DIR);
-		} else { // xxx/yyy
-			char *fmt = ".%s%s%s";
-#if __WINDOWS__
-			if (strchr(path, ':')) {
-				fmt = "%.0s%s%s";
-			}
-#endif
-			dirname = rz_str_newf(fmt, RZ_SYS_DIR, lpath, RZ_SYS_DIR);
-		}
-		basename = rz_str_dup(p + 1);
-	} else { // xxx
-		dirname = rz_str_newf(".%s", RZ_SYS_DIR);
-		basename = rz_str_dup(lpath);
-	}
-
-	if (!dirname || !basename) {
-		goto out;
-	}
-
-	list = rz_sys_dir(dirname);
-	n = strlen(basename);
-	bool chgdir = !strncmp(str, "cd ", 3);
-	if (list) {
-		rz_list_foreach (list, iter, filename) {
-			if (*filename == '.') {
-				continue;
-			}
-			if (!basename[0] || !strncmp(filename, basename, n)) {
-				char *tmpstring = rz_str_newf("%s%s", dirname, filename);
-				if (rz_file_is_directory(tmpstring)) {
-					char *s = rz_str_newf("%s%s", tmpstring, RZ_SYS_DIR);
-					rz_line_completion_push(completion, s);
-					free(s);
-				} else if (!chgdir) {
-					rz_line_completion_push(completion, tmpstring);
-				}
-				free(tmpstring);
-			}
-		}
-		rz_list_free(list);
-	}
-out:
-	free(lpath);
-	free(dirname);
-	free(basename);
-}
-
-static void autocompleteFilename(RzLineCompletion *completion, RzLineBuffer *buf, char **extra_paths, int narg) {
-	char *args = NULL, *input = NULL;
-	int n = 0, i = 0;
-	char *pipe = strchr(buf->data, '>');
-	if (pipe) {
-		args = rz_str_dup(pipe + 1);
-	} else {
-		args = rz_str_dup(buf->data);
-	}
-	if (!args) {
-		goto out;
-	}
-
-	n = rz_str_word_set0(args);
-	if (n < narg) {
-		goto out;
-	}
-
-	input = rz_str_dup(rz_str_word_get0(args, narg));
-	if (!input) {
-		goto out;
-	}
-	const char *tinput = rz_str_trim_head_ro(input);
-
-	autocomplete_process_path(completion, buf->data, tinput);
-
-	if (input[0] == '/' || input[0] == '.' || !extra_paths) {
-		goto out;
-	}
-
-	for (i = 0; extra_paths[i]; i++) {
-		char *s = rz_str_newf("%s%s%s", extra_paths[i], RZ_SYS_DIR, tinput);
-		if (!s) {
-			break;
-		}
-		autocomplete_process_path(completion, buf->data, s);
-		free(s);
-	}
-out:
-	free(args);
-	free(input);
-}
-
-#define ADDARG(x) \
-	if (!strncmp(buf->data + chr, x, strlen(buf->data + chr))) { \
-		rz_line_completion_push(completion, x); \
-	}
-
-static void autocomplete_default(RZ_NULLABLE RzCore *core, RzLineCompletion *completion, RzLineBuffer *buf) {
-	RzCoreAutocomplete *a = core ? core->autocomplete : NULL;
-	int i;
-	if (a) {
-		for (i = 0; i < a->n_subcmds; i++) {
-			if (buf->data[0] == 0 || !strncmp(a->subcmds[i]->cmd, buf->data, a->subcmds[i]->length)) {
-				rz_line_completion_push(completion, a->subcmds[i]->cmd);
-			}
-		}
-	} else {
-		for (i = 0; i < rizin_argc && rizin_argv[i]; i++) {
-			int length = strlen(rizin_argv[i]);
-			if (!strncmp(rizin_argv[i], buf->data, length)) {
-				rz_line_completion_push(completion, rizin_argv[i]);
-			}
-		}
-	}
-}
-
-static void autocomplete_evals(RzCore *core, RzLineCompletion *completion, const char *str) {
-	rz_return_if_fail(str);
-	RzConfigNode *bt;
-	RzListIter *iter;
-	const char *tmp = strrchr(str, ' ');
-	if (tmp) {
-		str = tmp + 1;
-	}
-	size_t n = strlen(str);
-	rz_list_foreach (core->config->nodes, iter, bt) {
-		if (!strncmp(bt->name, str, n)) {
-			rz_line_completion_push(completion, bt->name);
-		}
-	}
-}
-
-static void autocomplete_minus(RzCore *core, RzLineCompletion *completion, const char *str) {
-	rz_return_if_fail(str);
-	int count;
-	int length = strlen(str);
-	char **keys = rz_cmd_alias_keys(core->rcmd, &count);
-	if (!keys) {
-		return;
-	}
-	int i;
-	for (i = 0; i < count; i++) {
-		if (!strncmp(keys[i], str, length)) {
-			rz_line_completion_push(completion, keys[i]);
-		}
-	}
-}
-
-static void autocomplete_breakpoints(RzCore *core, RzLineCompletion *completion, const char *str) {
-	rz_return_if_fail(str);
-	RzListIter *iter;
-	RzBreakpoint *bp = core->dbg->bp;
-	RzBreakpointItem *b;
-	int n = strlen(str);
-	rz_list_foreach (bp->bps, iter, b) {
-		char *addr = rz_str_newf("0x%" PFMT64x "", b->addr);
-		if (!strncmp(addr, str, n)) {
-			rz_line_completion_push(completion, addr);
-		}
-		free(addr);
-	}
-}
-
-static bool add_argv(RzFlagItem *fi, void *user) {
-	RzLineCompletion *completion = user;
-	rz_line_completion_push(completion, fi->name);
-	return true;
-}
-
-static void autocomplete_flags(RzCore *core, RzLineCompletion *completion, const char *str) {
-	rz_return_if_fail(str);
-	int n = strlen(str);
-	rz_flag_foreach_prefix(core->flags, str, n, add_argv, completion);
-}
-
-// TODO: Should be refactored
-static void autocomplete_sdb(RzCore *core, RzLineCompletion *completion, const char *str) {
-	rz_return_if_fail(core && completion && str);
-	char *pipe = strchr(str, '>');
-	Sdb *sdb = core->sdb;
-	char *lpath = NULL, *p1 = NULL, *out = NULL, *p2 = NULL;
-	char *cur_pos = NULL, *cur_cmd = NULL, *next_cmd = NULL;
-	char *temp_cmd = NULL, *temp_pos = NULL, *key = NULL;
-	if (pipe) {
-		str = rz_str_trim_head_ro(pipe + 1);
-	}
-	lpath = rz_str_dup(str);
-	p1 = strchr(lpath, '/');
-	if (p1) {
-		*p1 = 0;
-		char *ns = p1 + 1;
-		p2 = strchr(ns, '/');
-		if (!p2) { // analysis/m
-			char *tmp = p1 + 1;
-			int n = strlen(tmp);
-			out = sdb_querys(sdb, NULL, 0, "analysis/**");
-			if (!out) {
-				return;
-			}
-			while (*out) {
-				cur_pos = strchr(out, '\n');
-				if (!cur_pos) {
-					break;
-				}
-				cur_cmd = rz_str_ndup(out, cur_pos - out);
-				if (!strncmp(tmp, cur_cmd, n)) {
-					char *cmplt = rz_str_newf("analysis/%s/", cur_cmd);
-					rz_line_completion_push(completion, cmplt);
-					free(cmplt);
-				}
-				out += cur_pos - out + 1;
-			}
-
-		} else { // analysis/meta/*
-			char *tmp = p2 + 1;
-			int n = strlen(tmp);
-			char *spltr = strchr(ns, '/');
-			*spltr = 0;
-			next_cmd = rz_str_newf("analysis/%s/*", ns);
-			out = sdb_querys(sdb, NULL, 0, next_cmd);
-			if (!out) {
-				free(lpath);
-				return;
-			}
-			while (*out) {
-				temp_pos = strchr(out, '\n');
-				if (!temp_pos) {
-					break;
-				}
-				temp_cmd = rz_str_ndup(out, temp_pos - out); // contains the key=value pair
-				key = strchr(temp_cmd, '=');
-				*key = 0;
-				if (!strncmp(tmp, temp_cmd, n)) {
-					char *cmplt = rz_str_newf("analysis/%s/%s", ns, temp_cmd);
-					rz_line_completion_push(completion, cmplt);
-					free(cmplt);
-				}
-				out += temp_pos - out + 1;
-			}
-		}
-	} else {
-		int n = strlen(lpath);
-		if (!strncmp(lpath, "analysis", n)) {
-			rz_line_completion_push(completion, "analysis/");
-		}
-	}
-}
-
-static void autocomplete_flagspaces(RzCore *core, RzLineCompletion *completion, const char *msg) {
-	rz_return_if_fail(msg);
-	int length = strlen(msg);
-	RzFlag *flag = core->flags;
-	RzSpaceIter it;
-	RzSpace *s;
-	rz_flag_space_foreach(flag, it, s) {
-		if (!strncmp(msg, s->name, length)) {
-			rz_line_completion_push(completion, s->name);
-		}
-	}
-
-	if (strlen(msg) == 0) {
-		rz_line_completion_push(completion, "*");
-	}
-}
-
-static void autocomplete_functions(RzCore *core, RzLineCompletion *completion, const char *str) {
-	rz_return_if_fail(str);
-	RzListIter *iter;
-	RzAnalysisFunction *fcn;
-	int n = strlen(str);
-	rz_list_foreach (core->analysis->fcns, iter, fcn) {
-		if (fcn->name && !strncmp(fcn->name, str, n)) {
-			rz_line_completion_push(completion, fcn->name);
-		}
-	}
-}
-
-static void autocomplete_file(RzLineCompletion *completion, const char *str) {
-	rz_return_if_fail(str);
-	char *pipe = strchr(str, '>');
-
-	if (pipe) {
-		str = rz_str_trim_head_ro(pipe + 1);
-	}
-	if (str && !*str) {
-		autocomplete_process_path(completion, str, "./");
-	} else {
-		autocomplete_process_path(completion, str, str);
-	}
-}
-
-static void autocomplete_theme(RzCore *core, RzLineCompletion *completion, const char *str) {
-	rz_return_if_fail(str);
-	int len = strlen(str);
-	char *theme;
-	RzListIter *iter;
-	RzList *themes = rz_core_theme_list(core);
-	rz_list_foreach (themes, iter, theme) {
-		if (!len || !strncmp(str, theme, len)) {
-			rz_line_completion_push(completion, theme);
-		}
-	}
-	rz_list_free(themes);
-}
-
-static bool find_e_opts(RzCore *core, RzLineCompletion *completion, RzLineBuffer *buf) {
-	const char *pattern = "e (.*)=";
-	RzRegex *rx = rz_regex_new(pattern, RZ_REGEX_EXTENDED, 0);
-	bool ret = false;
-
-	RzPVector *matches = rz_regex_match_all_not_grouped(rx, buf->data, buf->length, 0, RZ_REGEX_DEFAULT);
-	if (!matches || rz_pvector_empty(matches) || rz_pvector_len(matches) < 2) {
-		goto out;
-	}
-	int i;
-	char *str = NULL, *sp;
-	RzRegexMatch *m1 = rz_pvector_at(matches, 1);
-	for (i = m1->start; i < m1->start + m1->len; i++) {
-		str = rz_str_appendch(str, buf->data[i]);
-	}
-	if (!str) {
-		goto out;
-	}
-	if ((sp = strchr(str, ' '))) {
-		// if the name contains a space, just null
-		*sp = 0;
-	}
-	RzConfigNode *node = rz_config_node_get(core->config, str);
-	if (sp) {
-		// if nulled, then restore.
-		*sp = ' ';
-	}
-	if (!node) {
-		ret = false;
-		goto out;
-	}
-	RzListIter *iter;
-	char *option;
-	char *p = (char *)strchr(buf->data, '=');
-	p = rz_str_ichr(p + 1, ' ');
-	int n = strlen(p);
-	rz_list_foreach (node->options, iter, option) {
-		if (!strncmp(option, p, n)) {
-			rz_line_completion_push(completion, option);
-		}
-	}
-	completion->opt = true;
-	ret = true;
-
-out:
-	rz_regex_free(rx);
-	rz_pvector_free(matches);
-	return ret;
-}
-
-static bool find_autocomplete(RzCore *core, RzLineCompletion *completion, RzLineBuffer *buf) {
-	RzCoreAutocomplete *child = NULL;
-	RzCoreAutocomplete *parent = core->autocomplete;
-	const char *p = buf->data;
-	if (!*p) {
-		return false;
-	}
-	char arg[256];
-	arg[0] = 0;
-	while (*p) {
-		const char *e = rz_str_trim_head_wp(p);
-		if (!e || (e - p) >= 256 || e == p) {
-			return false;
-		}
-		memcpy(arg, p, e - p);
-		arg[e - p] = 0;
-		child = rz_core_autocomplete_find(parent, arg, false);
-		if (child && child->length < buf->length && p[child->length] == ' ') {
-			// if is spaced then i can provide the
-			// next subtree as suggestion..
-			p = rz_str_trim_head_ro(p + child->length);
-			if (child->type == RZ_CORE_AUTOCMPLT_OPTN) {
-				continue;
-			}
-			parent = child;
-		} else {
-			break;
-		}
-	}
-	int i;
-	/* if something went wrong this will prevent bad behavior */
-	rz_line_completion_clear(completion);
-	switch (parent->type) {
-	case RZ_CORE_AUTOCMPLT_SEEK:
-		autocomplete_functions(core, completion, p);
-		// fallthrough
-	case RZ_CORE_AUTOCMPLT_FLAG:
-		autocomplete_flags(core, completion, p);
-		break;
-	case RZ_CORE_AUTOCMPLT_FLSP:
-		autocomplete_flagspaces(core, completion, p);
-		break;
-	case RZ_CORE_AUTOCMPLT_FCN:
-		autocomplete_functions(core, completion, p);
-		break;
-	case RZ_CORE_AUTOCMPLT_EVAL:
-		autocomplete_evals(core, completion, p);
-		break;
-	case RZ_CORE_AUTOCMPLT_MINS:
-		autocomplete_minus(core, completion, p);
-		break;
-	case RZ_CORE_AUTOCMPLT_BRKP:
-		autocomplete_breakpoints(core, completion, p);
-		break;
-	case RZ_CORE_AUTOCMPLT_FILE:
-		autocomplete_file(completion, p);
-		break;
-	case RZ_CORE_AUTOCMPLT_THME:
-		autocomplete_theme(core, completion, p);
-		break;
-	case RZ_CORE_AUTOCMPLT_SDB:
-		autocomplete_sdb(core, completion, p);
-		break;
-	case RZ_CORE_AUTOCMPLT_OPTN:
-		// handled before
-		break;
-	default:
-		if (rz_config_get_i(core->config, "cfg.newtab")) {
-			RzCmdDescriptor *desc = &core->root_cmd_descriptor;
-			for (i = 0; arg[i] && desc; i++) {
-				ut8 c = arg[i];
-				desc = c < RZ_ARRAY_SIZE(desc->sub) ? desc->sub[c] : NULL;
-			}
-			if (desc && desc->help_msg) {
-				rz_core_cmd_help(core, desc->help_msg);
-				rz_cons_flush();
-				return true;
-			}
-			// fallback to command listing
-		}
-		int length = strlen(arg);
-		for (i = 0; i < parent->n_subcmds; i++) {
-			if (!strncmp(arg, parent->subcmds[i]->cmd, length)) {
-				rz_line_completion_push(completion, parent->subcmds[i]->cmd);
-			}
-		}
-		break;
-	}
-	return true;
-}
-
-RZ_API void rz_core_autocomplete(RZ_NULLABLE RzCore *core, RzLineCompletion *completion, RzLineBuffer *buf, RzLinePromptType prompt_type) {
-	if (!core) {
-		autocomplete_default(core, completion, buf);
-		return;
-	}
-	rz_line_completion_clear(completion);
-	char *pipe = strchr(buf->data, '>');
-	char *ptr = strchr(buf->data, '@');
-	if (pipe && strchr(pipe + 1, ' ') && buf->data + buf->index >= pipe) {
-		autocompleteFilename(completion, buf, NULL, 1);
-	} else if (ptr && strchr(ptr + 1, ' ') && buf->data + buf->index >= ptr) {
-		int sdelta, n;
-		ptr = (char *)rz_str_trim_head_ro(ptr + 1);
-		n = strlen(ptr); //(buf->data+sdelta);
-		sdelta = (int)(size_t)(ptr - buf->data);
-		rz_flag_foreach_prefix(core->flags, buf->data + sdelta, n, add_argv, completion);
-	} else if (!strncmp(buf->data, "#!pipe ", 7)) {
-		if (strchr(buf->data + 7, ' ')) {
-			autocompleteFilename(completion, buf, NULL, 2);
-		} else {
-			int chr = 7;
-			ADDARG("node");
-			ADDARG("vala");
-			ADDARG("ruby");
-			ADDARG("newlisp");
-			ADDARG("perl");
-			ADDARG("python");
-		}
-	} else if (!strncmp(buf->data, "ec ", 3)) {
-		if (strchr(buf->data + 3, ' ')) {
-			autocompleteFilename(completion, buf, NULL, 2);
-		} else {
-			int chr = 3;
-			ADDARG("comment")
-			ADDARG("usrcmt")
-			ADDARG("args")
-			ADDARG("fname")
-			ADDARG("floc")
-			ADDARG("fline")
-			ADDARG("flag")
-			ADDARG("label")
-			ADDARG("help")
-			ADDARG("flow")
-			ADDARG("prompt")
-			ADDARG("offset")
-			ADDARG("input")
-			ADDARG("invalid")
-			ADDARG("other")
-			ADDARG("b0x00")
-			ADDARG("b0x7f")
-			ADDARG("b0xff")
-			ADDARG("math")
-			ADDARG("bin")
-			ADDARG("btext")
-			ADDARG("push")
-			ADDARG("pop")
-			ADDARG("crypto")
-			ADDARG("jmp")
-			ADDARG("cjmp")
-			ADDARG("call")
-			ADDARG("nop")
-			ADDARG("ret")
-			ADDARG("trap")
-			ADDARG("swi")
-			ADDARG("cmp")
-			ADDARG("reg")
-			ADDARG("creg")
-			ADDARG("num")
-			ADDARG("mov")
-			ADDARG("func_var")
-			ADDARG("func_var_type")
-			ADDARG("func_var_addr")
-			ADDARG("widget_bg")
-			ADDARG("widget_sel")
-			ADDARG("ai.read")
-			ADDARG("ai.write")
-			ADDARG("ai.exec")
-			ADDARG("ai.seq")
-			ADDARG("ai.ascii")
-			ADDARG("ai.unmap")
-			ADDARG("graph.box")
-			ADDARG("graph.box2")
-			ADDARG("graph.box3")
-			ADDARG("graph.box4")
-			ADDARG("graph.true")
-			ADDARG("graph.false")
-			ADDARG("graph.ujump")
-			ADDARG("graph.current")
-			ADDARG("graph.traced")
-			ADDARG("gui.cflow")
-			ADDARG("gui.dataoffset")
-			ADDARG("gui.background")
-			ADDARG("gui.alt_background")
-			ADDARG("gui.border")
-		}
-	} else if ((!strncmp(buf->data, "afvn ", 5)) || (!strncmp(buf->data, "afan ", 5))) {
-		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
-		RzList *vars;
-		if (!strncmp(buf->data, "afvn ", 5)) {
-			vars = rz_analysis_var_list(fcn, RZ_ANALYSIS_VAR_STORAGE_STACK);
-		} else {
-			vars = rz_list_new(); // TODO rz_analysis_var_list (fcn, RZ_ANALYSIS_VAR_KIND_ARG);
-		}
-		const char *f_ptr, *l_ptr;
-		RzAnalysisVar *var;
-		int len = strlen(buf->data);
-
-		f_ptr = rz_sub_str_lchr(buf->data, 0, buf->index, ' ');
-		f_ptr = f_ptr != NULL ? f_ptr + 1 : buf->data;
-		l_ptr = rz_sub_str_rchr(buf->data, buf->index, len, ' ');
-		if (!l_ptr) {
-			l_ptr = buf->data + len;
-		}
-		RzListIter *iter;
-		rz_list_foreach (vars, iter, var) {
-			if (!strncmp(f_ptr, var->name, l_ptr - f_ptr)) {
-				rz_line_completion_push(completion, var->name);
-			}
-		}
-		rz_list_free(vars);
-	} else if (!strncmp(buf->data, "$", 1)) {
-		int i;
-		for (i = 0; i < core->rcmd->aliases.count; i++) {
-			const char *key = core->rcmd->aliases.keys[i];
-			int len = strlen(buf->data);
-			if (!len || !strncmp(buf->data, key, len)) {
-				rz_line_completion_push(completion, key);
-			}
-		}
-	} else if (find_e_opts(core, completion, buf)) {
-		return;
-	} else if (prompt_type == RZ_LINE_PROMPT_OFFSET) {
-		autocomplete_flags(core, completion, buf->data);
-	} else if (prompt_type == RZ_LINE_PROMPT_FILE) {
-		autocomplete_file(completion, buf->data);
-	} else if (!find_autocomplete(core, completion, buf)) {
-		autocomplete_default(core, completion, buf);
-	}
 }
 
 static RzLineNSCompletionResult *rzshell_autocomplete(RzLineBuffer *buf, RzLinePromptType prompt_type, void *user) {
@@ -1748,9 +982,8 @@ static bool get_string(const ut8 *buf, int size, RzDetectedString **dstr, RzStrE
 	}
 
 	RzUtilStrScanOptions opt = {
-		.buf_size = size,
-		.max_uni_blocks = 4,
-		.min_str_length = 4,
+		.max_str_length = size,
+		.min_str_length = RZ_BIN_STRING_SEARCH_MIN_STRING,
 		.prefer_big_endian = big_endian,
 		.check_ascii_freq = false,
 	};
@@ -1774,7 +1007,7 @@ RZ_API char *rz_core_analysis_hasrefs(RzCore *core, ut64 value, int mode) {
 		return res;
 	}
 	RzFlagItem *fi = rz_flag_get_i(core->flags, value);
-	return fi ? strdup(fi->name) : NULL;
+	return fi ? rz_str_dup(fi->name) : NULL;
 }
 
 static char *getvalue(ut64 value, int bits) {
@@ -1955,7 +1188,7 @@ RZ_API char *rz_core_analysis_hasrefs_to_depth(RzCore *core, ut64 value, PJ *pj,
 				rz_strbuf_appendf(s, "%sW%s ", c, cend);
 			}
 			if (type & RZ_ANALYSIS_ADDR_TYPE_EXEC) {
-				RzAsmOp op;
+				RzAsmOp op = { 0 };
 				ut8 buf[32];
 				rz_strbuf_appendf(s, "%sX%s ", c, cend);
 				/* instruction disassembly */
@@ -1963,6 +1196,7 @@ RZ_API char *rz_core_analysis_hasrefs_to_depth(RzCore *core, ut64 value, PJ *pj,
 				rz_asm_set_pc(core->rasm, value);
 				rz_asm_disassemble(core->rasm, &op, buf, sizeof(buf));
 				rz_strbuf_appendf(s, "'%s' ", rz_asm_op_get_asm(&op));
+				rz_asm_op_fini(&op);
 				/* get library name */
 				{ // NOTE: dup for mapname?
 					RzDebugMap *map;
@@ -2039,10 +1273,10 @@ RZ_API char *rz_core_analysis_get_comments(RzCore *core, ut64 addr) {
 			return rz_str_newf("%s %s", type, cmt);
 		}
 		if (type) {
-			return strdup(type);
+			return rz_str_dup(type);
 		}
 		if (cmt) {
-			return strdup(cmt);
+			return rz_str_dup(cmt);
 		}
 	}
 	return NULL;
@@ -2110,73 +1344,6 @@ static void rz_core_sleep_end(RzCore *core, void *user) {
 	}
 }
 
-static void __foreach(RzCore *core, const char **cmds, int type) {
-	int i;
-	for (i = 0; cmds[i]; i++) {
-		rz_core_autocomplete_add(core->autocomplete, cmds[i], type, true);
-	}
-}
-
-static void __init_autocomplete_default(RzCore *core) {
-	const char *fcns[] = {
-		"afcf", "afn", NULL
-	};
-	const char *seeks[] = {
-		"s", NULL
-	};
-	const char *flags[] = {
-		"*", "s", "s+", "b", "f", "fg", "?", "?v", "ad", "bf", "c1", "db", "dbw",
-		"f-", "fr", "tf", "/a", "/v", "/r", "/re", "aav", "aep", "aef",
-		"afc", "axg", "axt", "axf", "dcu", "ag", "agfl", "aecu", "aesu", "aeim", NULL
-	};
-	const char *evals[] = {
-		"e", "ee", "et", "e?", "e!", "ev", "evj", NULL
-	};
-	const char *breaks[] = {
-		"db-", "dbc", "dbC", "dbd", "dbe", "dbs", "dbi", "dbte", "dbtd", "dbts", NULL
-	};
-	const char *files[] = {
-		".", "..", ".*", "/F", "/m", "!", "!!", "#!c", "#!v", "#!cpipe", "#!vala",
-		"#!rust", "#!zig", "#!pipe", "#!python", "aeli", "arp", "arpg", "dmd", "drp", "drpg", "o",
-		"idp", "idpi", "L", "obf", "o+", "oc",
-		"rizin", "rz-asm", "rz-ax", "rz-bin", "rz-diff", "rz-find", "rz-gg", "rz-hash", "rz-run", "rz-sign",
-		"cd", "ls", "on", "op", "wf", "rm", "wF", "wp", "Sd", "Sl", "to", "pm",
-		"/m", "zos", "zfd", "zfs", "zfz", "cat", "wta", "wtf", "wxf", "dml", "vi",
-		"less", "head", "Ps", "Pl", NULL
-	};
-	__foreach(core, flags, RZ_CORE_AUTOCMPLT_FLAG);
-	__foreach(core, seeks, RZ_CORE_AUTOCMPLT_SEEK);
-	__foreach(core, fcns, RZ_CORE_AUTOCMPLT_FCN);
-	__foreach(core, evals, RZ_CORE_AUTOCMPLT_EVAL);
-	__foreach(core, breaks, RZ_CORE_AUTOCMPLT_BRKP);
-	__foreach(core, files, RZ_CORE_AUTOCMPLT_FILE);
-
-	rz_core_autocomplete_add(core->autocomplete, "-", RZ_CORE_AUTOCMPLT_MINS, true);
-	rz_core_autocomplete_add(core->autocomplete, "fs", RZ_CORE_AUTOCMPLT_FLSP, true);
-	rz_core_autocomplete_add(
-		rz_core_autocomplete_add(core->autocomplete, "ls", RZ_CORE_AUTOCMPLT_DFLT, true),
-		"-l", RZ_CORE_AUTOCMPLT_FILE, true);
-	rz_core_autocomplete_add(core->autocomplete, "eco", RZ_CORE_AUTOCMPLT_THME, true);
-	rz_core_autocomplete_add(core->autocomplete, "k", RZ_CORE_AUTOCMPLT_SDB, true);
-	/* macros */
-	rz_core_autocomplete_add(core->autocomplete, ".(", RZ_CORE_AUTOCMPLT_MACR, true);
-	rz_core_autocomplete_add(core->autocomplete, "(-", RZ_CORE_AUTOCMPLT_MACR, true);
-	/* just for hints */
-	int i;
-	for (i = 0; i < rizin_argc && rizin_argv[i]; i++) {
-		if (!rz_core_autocomplete_find(core->autocomplete, rizin_argv[i], true)) {
-			rz_core_autocomplete_add(core->autocomplete, rizin_argv[i], RZ_CORE_AUTOCMPLT_DFLT, true);
-		}
-	}
-}
-
-static void __init_autocomplete(RzCore *core) {
-	core->autocomplete = RZ_NEW0(RzCoreAutocomplete);
-	if (core->autocomplete_type == AUTOCOMPLETE_DEFAULT) {
-		__init_autocomplete_default(core);
-	}
-}
-
 static const char *colorfor_cb(void *user, ut64 addr, bool verbose) {
 	return rz_core_analysis_optype_colorfor((RzCore *)user, addr, verbose);
 }
@@ -2212,12 +1379,6 @@ static RzFlagItem *core_flg_fcn_set(RzFlag *f, const char *name, ut64 addr, ut32
 	RzFlagItem *res = rz_flag_set(f, name, addr, size);
 	rz_flag_space_pop(f);
 	return res;
-}
-
-RZ_API void rz_core_autocomplete_reload(RzCore *core) {
-	rz_return_if_fail(core);
-	rz_core_autocomplete_free(core->autocomplete);
-	__init_autocomplete(core);
 }
 
 RZ_API RzFlagItem *rz_core_flag_get_by_spaces(RzFlag *f, ut64 off) {
@@ -2335,11 +1496,12 @@ RZ_API bool rz_core_init(RzCore *core) {
 	rz_core_seek_reset(core);
 	core->lastsearch = NULL;
 	core->cmdfilter = NULL;
-	core->curtheme = strdup("default");
+	core->curtheme = rz_str_dup("default");
 	core->switch_file_view = 0;
 	core->cmdremote = 0;
 	core->incomment = false;
 	core->config = NULL;
+	core->plugin_configs = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_config_free);
 	core->http_up = false;
 	ZERO_FILL(core->root_cmd_descriptor);
 	core->print = rz_print_new();
@@ -2534,7 +1696,6 @@ RZ_API bool rz_core_init(RzCore *core) {
 		}
 	}
 	rz_core_analysis_type_init(core);
-	__init_autocomplete(core);
 	return 0;
 }
 
@@ -2580,7 +1741,6 @@ RZ_API void rz_core_fini(RzCore *c) {
 	RZ_FREE(c->lastcmd);
 	RZ_FREE(c->stkcmd);
 	RZ_FREE(c->block);
-	RZ_FREE_CUSTOM(c->autocomplete, rz_core_autocomplete_free);
 
 	RZ_FREE_CUSTOM(c->gadgets, rz_list_free);
 	RZ_FREE_CUSTOM(c->num, rz_num_free);
@@ -2617,7 +1777,7 @@ RZ_API void rz_core_fini(RzCore *c) {
 	rz_core_seek_free(c);
 	RZ_FREE(c->rtr_host);
 	RZ_FREE(c->curtheme);
-	rz_core_visual_free(c->visual);
+	RZ_FREE_CUSTOM(c->visual, rz_core_visual_free);
 }
 
 RZ_API void rz_core_free(RzCore *c) {
@@ -2760,7 +1920,7 @@ RZ_API int rz_core_prompt(RzCore *r, int sync) {
 		return rz_core_prompt_exec(r);
 	}
 	free(r->cmdqueue);
-	r->cmdqueue = strdup(line);
+	r->cmdqueue = rz_str_dup(line);
 	if (r->scr_gadgets && *line && *line != 'q') {
 		rz_core_gadget_print(r);
 	}
@@ -2808,283 +1968,17 @@ RZ_API char *rz_core_op_str(RzCore *core, ut64 addr) {
 	rz_asm_set_pc(core->rasm, addr);
 	rz_io_read_at(core->io, addr, buf, sizeof(buf));
 	int ret = rz_asm_disassemble(core->rasm, &op, buf, sizeof(buf));
-	char *str = (ret > 0) ? strdup(rz_strbuf_get(&op.buf_asm)) : NULL;
+	char *str = (ret > 0) ? rz_str_dup(rz_strbuf_get(&op.buf_asm)) : NULL;
 	rz_asm_op_fini(&op);
 	return str;
 }
 
 RZ_API RzAnalysisOp *rz_core_op_analysis(RzCore *core, ut64 addr, RzAnalysisOpMask mask) {
 	ut8 buf[64];
-	RzAnalysisOp *op = RZ_NEW(RzAnalysisOp);
+	RzAnalysisOp *op = rz_analysis_op_new();
 	rz_io_read_at(core->io, addr, buf, sizeof(buf));
 	rz_analysis_op(core->analysis, op, addr, buf, sizeof(buf), mask);
 	return op;
-}
-
-typedef struct {
-	RzSocket *fd;
-	RzSocket *client;
-	bool listener;
-} RzIORap;
-
-static void rap_break(void *u) {
-	RzIORap *rior = (RzIORap *)u;
-	if (u) {
-		rz_socket_close(rior->fd);
-		rior->fd = NULL;
-	}
-}
-
-// TODO: PLEASE move into core/io/rap? */
-// TODO: use static buffer instead of mallocs all the time. it's network!
-RZ_API bool rz_core_serve(RzCore *core, RzIODesc *file) {
-	// TODO: use rz_socket_rap_server API instead of duplicating the logic
-	ut8 cmd, flg, *ptr = NULL, buf[1024];
-	int i, pipefd = -1;
-	ut64 x;
-
-	RzIORap *rior = (RzIORap *)file->data;
-	if (!rior || !rior->fd) {
-		RZ_LOG_ERROR("core: rap: cannot listen.\n");
-		return false;
-	}
-	RzSocket *fd = rior->fd;
-	RZ_LOG_WARN("RAP Server started (rap.loop=%s)\n",
-		rz_config_get(core->config, "rap.loop"));
-	rz_cons_break_push(rap_break, rior);
-reaccept:
-	while (!rz_cons_is_breaked()) {
-		RzSocket *c = rz_socket_accept(fd);
-		if (!c) {
-			break;
-		}
-		if (rz_cons_is_breaked()) {
-			goto out_of_function;
-		}
-		if (!c) {
-			RZ_LOG_ERROR("core: rap: cannot accept\n");
-			rz_socket_free(c);
-			goto out_of_function;
-		}
-		RZ_LOG_INFO("core: rap: client connected\n");
-		for (; !rz_cons_is_breaked();) {
-			if (!rz_socket_read_block(c, &cmd, 1)) {
-				RZ_LOG_ERROR("core: rap: connection closed\n");
-				if (rz_config_get_i(core->config, "rap.loop")) {
-					RZ_LOG_INFO("core: rap: waiting for new connection\n");
-					rz_socket_free(c);
-					goto reaccept;
-				}
-				goto out_of_function;
-			}
-			switch (cmd) {
-			case RAP_PACKET_OPEN:
-				rz_socket_read_block(c, &flg, 1); // flags
-				RZ_LOG_DEBUG("open (%d): ", cmd);
-				rz_socket_read_block(c, &cmd, 1); // len
-				pipefd = -1;
-				if (UT8_ADD_OVFCHK(cmd, 1)) {
-					goto out_of_function;
-				}
-				ptr = malloc((size_t)cmd + 1);
-				if (!ptr) {
-					RZ_LOG_ERROR("core: rap: cannot malloc in rmt-open len = %d\n", cmd);
-				} else {
-					ut64 baddr = rz_config_get_i(core->config, "bin.laddr");
-					rz_socket_read_block(c, ptr, cmd);
-					ptr[cmd] = 0;
-					ut32 perm = RZ_PERM_R;
-					if (flg & RZ_PERM_W) {
-						perm |= RZ_PERM_W;
-					}
-					if (rz_core_file_open(core, (const char *)ptr, perm, 0)) {
-						int fd = rz_io_fd_get_current(core->io);
-						rz_core_bin_load(core, NULL, baddr);
-						rz_io_map_add(core->io, fd, perm, 0, 0, rz_io_fd_size(core->io, fd));
-						if (core->file) {
-							pipefd = fd;
-						} else {
-							pipefd = -1;
-						}
-						RZ_LOG_DEBUG("(flags: %d) len: %d filename: '%s'\n",
-							flg, cmd, ptr); // config.file);
-					} else {
-						RZ_LOG_ERROR("core: rap: cannot open file (%s)\n", ptr);
-						rz_socket_close(c);
-						if (rz_config_get_i(core->config, "rap.loop")) {
-							RZ_LOG_INFO("core: rap: waiting for new connection\n");
-							rz_socket_free(c);
-							goto reaccept;
-						}
-						goto out_of_function; // XXX: Close connection and goto accept
-					}
-				}
-				buf[0] = RAP_PACKET_OPEN | RAP_PACKET_REPLY;
-				rz_write_be32(buf + 1, pipefd);
-				rz_socket_write(c, buf, 5);
-				rz_socket_flush(c);
-				RZ_FREE(ptr);
-				break;
-			case RAP_PACKET_READ:
-				rz_socket_read_block(c, (ut8 *)&buf, 4);
-				i = rz_read_be32(buf);
-				ptr = (ut8 *)malloc(i + core->blocksize + 5);
-				if (ptr) {
-					rz_core_block_read(core);
-					ptr[0] = RAP_PACKET_READ | RAP_PACKET_REPLY;
-					if (i > RAP_PACKET_MAX) {
-						i = RAP_PACKET_MAX;
-					}
-					if (i > core->blocksize) {
-						rz_core_block_size(core, i);
-					}
-					if (i + 128 < core->blocksize) {
-						rz_core_block_size(core, i);
-					}
-					rz_write_be32(ptr + 1, i);
-					memcpy(ptr + 5, core->block, i); // core->blocksize);
-					rz_socket_write(c, ptr, i + 5);
-					rz_socket_flush(c);
-					RZ_FREE(ptr);
-				} else {
-					RZ_LOG_ERROR("core: rap: cannot read %d byte(s)\n", i);
-					rz_socket_free(c);
-					// TODO: reply error here
-					goto out_of_function;
-				}
-				break;
-			case RAP_PACKET_CMD: {
-				char *cmd = NULL, *cmd_output = NULL;
-				char bufr[8], *bufw = NULL;
-				ut32 cmd_len = 0;
-				int i;
-
-				/* read */
-				rz_socket_read_block(c, (ut8 *)&bufr, 4);
-				i = rz_read_be32(bufr);
-				if (i > 0 && i < RAP_PACKET_MAX) {
-					if ((cmd = malloc(i + 1))) {
-						rz_socket_read_block(c, (ut8 *)cmd, i);
-						cmd[i] = '\0';
-						int scr_interactive = rz_config_get_i(core->config, "scr.interactive");
-						rz_config_set_i(core->config, "scr.interactive", 0);
-						cmd_output = rz_core_cmd_str(core, cmd);
-						rz_config_set_i(core->config, "scr.interactive", scr_interactive);
-						free(cmd);
-					} else {
-						RZ_LOG_ERROR("core: rap: cannot allocate %u bytes\n", (i + 1));
-					}
-				} else {
-					RZ_LOG_ERROR("core: rap: invalid length '%u'\n", i);
-				}
-				/* write */
-				if (cmd_output) {
-					cmd_len = strlen(cmd_output) + 1;
-				} else {
-					cmd_output = strdup("");
-					cmd_len = 0;
-				}
-				bufw = malloc(cmd_len + 5);
-				bufw[0] = (ut8)(RAP_PACKET_CMD | RAP_PACKET_REPLY);
-				rz_write_be32(bufw + 1, cmd_len);
-				memcpy(bufw + 5, cmd_output, cmd_len);
-				rz_socket_write(c, bufw, cmd_len + 5);
-				rz_socket_flush(c);
-				free(bufw);
-				free(cmd_output);
-				break;
-			}
-			case RAP_PACKET_WRITE:
-				rz_socket_read_block(c, buf, 4);
-				x = rz_read_at_be32(buf, 0);
-				ptr = malloc(x);
-				rz_socket_read_block(c, ptr, x);
-				int ret = rz_core_write_at(core, core->offset, ptr, x);
-				buf[0] = RAP_PACKET_WRITE | RAP_PACKET_REPLY;
-				rz_write_be32(buf + 1, ret);
-				rz_socket_write(c, buf, 5);
-				rz_socket_flush(c);
-				RZ_FREE(ptr);
-				break;
-			case RAP_PACKET_SEEK:
-				rz_socket_read_block(c, buf, 9);
-				x = rz_read_at_be64(buf, 1);
-				if (buf[0] == 2) {
-					if (core->file) {
-						x = rz_io_fd_size(core->io, core->file->fd);
-					} else {
-						x = 0;
-					}
-				} else {
-					if (buf[0] == 0) {
-						rz_core_seek(core, x, true); // buf[0]);
-					}
-					x = core->offset;
-				}
-				buf[0] = RAP_PACKET_SEEK | RAP_PACKET_REPLY;
-				rz_write_be64(buf + 1, x);
-				rz_socket_write(c, buf, 9);
-				rz_socket_flush(c);
-				break;
-			case RAP_PACKET_CLOSE:
-				// XXX : proper shutdown
-				rz_socket_read_block(c, buf, 4);
-				i = rz_read_be32(buf);
-				{
-					// FIXME: Use rz_socket_close
-					int ret = close(i);
-					rz_write_be32(buf + 1, ret);
-					buf[0] = RAP_PACKET_CLOSE | RAP_PACKET_REPLY;
-					rz_socket_write(c, buf, 5);
-					rz_socket_flush(c);
-				}
-				break;
-			default:
-				if (cmd == 'G') {
-					// silly http emulation over rap://
-					char line[256] = { 0 };
-					rz_socket_read_block(c, (ut8 *)line, sizeof(line));
-					if (!strncmp(line, "ET /cmd/", 8)) {
-						char *cmd = line + 8;
-						char *http = strstr(cmd, "HTTP");
-						if (http) {
-							*http = 0;
-							http--;
-							if (*http == ' ') {
-								*http = 0;
-							}
-						}
-						rz_str_uri_decode(cmd);
-						char *res = rz_core_cmd_str(core, cmd);
-						if (res) {
-							rz_socket_printf(c, "HTTP/1.0 %d %s\r\n%s"
-									    "Connection: close\r\nContent-Length: %d\r\n\r\n",
-								200, "OK", "", -1); // strlen (res));
-							rz_socket_write(c, res, strlen(res));
-							free(res);
-						}
-						rz_socket_flush(c);
-						rz_socket_close(c);
-					}
-				} else {
-					RZ_LOG_ERROR("core: rap: unknown command 0x%02x\n", cmd);
-					rz_socket_close(c);
-					RZ_FREE(ptr);
-				}
-				if (rz_config_get_i(core->config, "rap.loop")) {
-					RZ_LOG_INFO("core: rap: waiting for new connection\n");
-					rz_socket_free(c);
-					goto reaccept;
-				}
-				goto out_of_function;
-			}
-		}
-		RZ_LOG_INFO("core: rap: client disconnected\n");
-		rz_socket_free(c);
-	}
-out_of_function:
-	rz_cons_break_pop();
-	return false;
 }
 
 RZ_API int rz_core_search_cb(RzCore *core, ut64 from, ut64 to, RzCoreSearchCallback cb) {
@@ -3125,7 +2019,7 @@ RZ_API RZ_OWN char *rz_core_editor(const RzCore *core, RZ_NULLABLE const char *f
 
 	const char *editor = rz_config_get(core->config, "cfg.editor");
 	if (RZ_STR_ISEMPTY(editor)) {
-		RZ_LOG_ERROR("core: please set \"cfg.editor\" to run the editor");
+		RZ_LOG_ERROR("core: please set \"cfg.editor\" to run the editor\n");
 		return NULL;
 	}
 	char *name = NULL, *ret = NULL;
@@ -3133,7 +2027,7 @@ RZ_API RZ_OWN char *rz_core_editor(const RzCore *core, RZ_NULLABLE const char *f
 
 	bool readonly = false;
 	if (file && *file != '*') {
-		name = strdup(file);
+		name = rz_str_dup(file);
 		fd = rz_sys_open(file, O_RDWR, 0644);
 		if (fd == -1) {
 			fd = rz_sys_open(file, O_RDWR | O_CREAT, 0644);
@@ -3258,89 +2152,6 @@ RZ_API RzBuffer *rz_core_syscall(RzCore *core, const char *name, const char *arg
 	return rz_egg_get_bin(core->egg);
 }
 
-RZ_API RzCoreAutocomplete *rz_core_autocomplete_add(RzCoreAutocomplete *parent, const char *cmd, int type, bool lock) {
-	if (!parent || !cmd || type < 0 || type >= RZ_CORE_AUTOCMPLT_END) {
-		return NULL;
-	}
-	RzCoreAutocomplete *autocmpl = RZ_NEW0(RzCoreAutocomplete);
-	if (!autocmpl) {
-		return NULL;
-	}
-	RzCoreAutocomplete **updated = realloc(parent->subcmds, (parent->n_subcmds + 1) * sizeof(RzCoreAutocomplete *));
-	if (!updated) {
-		free(autocmpl);
-		return NULL;
-	}
-	parent->subcmds = updated;
-	parent->subcmds[parent->n_subcmds] = autocmpl;
-	parent->n_subcmds++;
-	autocmpl->cmd = strdup(cmd);
-	autocmpl->locked = lock;
-	autocmpl->type = type;
-	autocmpl->length = strlen(cmd);
-	return autocmpl;
-}
-
-RZ_API void rz_core_autocomplete_free(RzCoreAutocomplete *obj) {
-	if (!obj) {
-		return;
-	}
-	int i;
-	for (i = 0; i < obj->n_subcmds; i++) {
-		rz_core_autocomplete_free(obj->subcmds[i]);
-		obj->subcmds[i] = NULL;
-	}
-	free(obj->subcmds);
-	free((char *)obj->cmd);
-	free(obj);
-}
-
-RZ_API RzCoreAutocomplete *rz_core_autocomplete_find(RzCoreAutocomplete *parent, const char *cmd, bool exact) {
-	if (!parent || !cmd) {
-		return false;
-	}
-	int len = strlen(cmd);
-	int i;
-	for (i = 0; i < parent->n_subcmds; i++) {
-		if (exact && len == parent->subcmds[i]->length && !strncmp(cmd, parent->subcmds[i]->cmd, len)) {
-			return parent->subcmds[i];
-		} else if (!exact && !strncmp(cmd, parent->subcmds[i]->cmd, len)) {
-			return parent->subcmds[i];
-		}
-	}
-	return NULL;
-}
-
-RZ_API bool rz_core_autocomplete_remove(RzCoreAutocomplete *parent, const char *cmd) {
-	if (!parent || !cmd) {
-		return false;
-	}
-	int i, j;
-	for (i = 0; i < parent->n_subcmds; i++) {
-		RzCoreAutocomplete *ac = parent->subcmds[i];
-		if (ac->locked) {
-			continue;
-		}
-		// if (!strncmp (parent->subcmds[i]->cmd, cmd, parent->subcmds[i]->length)) {
-		if (rz_str_glob(ac->cmd, cmd)) {
-			for (j = i + 1; j < parent->n_subcmds; j++) {
-				parent->subcmds[j - 1] = parent->subcmds[j];
-				parent->subcmds[j] = NULL;
-			}
-			rz_core_autocomplete_free(ac);
-			RzCoreAutocomplete **updated = realloc(parent->subcmds, (parent->n_subcmds - 1) * sizeof(RzCoreAutocomplete *));
-			if (!updated && (parent->n_subcmds - 1) > 0) {
-				RZ_LOG_ERROR("core: autocomplete: something really bad has happen.. this should never ever happen..\n");
-				return false;
-			}
-			parent->subcmds = updated;
-			parent->n_subcmds--;
-			i--;
-		}
-	}
-	return false;
-}
-
 RZ_API RzTable *rz_core_table(RzCore *core) {
 	RzTable *table = rz_table_new();
 	if (table) {
@@ -3349,24 +2160,36 @@ RZ_API RzTable *rz_core_table(RzCore *core) {
 	return table;
 }
 
-RZ_API RzCmdStatus rz_core_core_plugin_print(RzCorePlugin *cp, RzCmdStateOutput *state, const char *license) {
+static RzCmdStatus core_core_plugin_print(RzCorePlugin *cp, RzCmdStateOutput *state) {
+	const char *name = rz_str_get(cp->name);
+	const char *desc = rz_str_get(cp->desc);
+	const char *author = rz_str_get(cp->author);
+	const char *version = rz_str_get(cp->version);
+	const char *license = rz_str_get(cp->license);
+
 	PJ *pj = state->d.pj;
 	switch (state->mode) {
+	case RZ_OUTPUT_MODE_TABLE:
+		rz_table_add_rowf(state->d.t, "sssss", name, license, author, version, desc);
+		break;
 	case RZ_OUTPUT_MODE_JSON: {
 		pj_o(pj);
-		pj_ks(pj, "name", cp->name);
-		pj_ks(pj, "description", cp->desc);
-		pj_ks(pj, "author", cp->author);
-		pj_ks(pj, "version", cp->version);
+		pj_ks(pj, "name", name);
+		pj_ks(pj, "description", desc);
+		pj_ks(pj, "author", author);
+		pj_ks(pj, "version", version);
 		pj_ks(pj, "license", license);
 		pj_end(pj);
 		break;
 	}
 	case RZ_OUTPUT_MODE_STANDARD: {
 		rz_cons_printf("%s: %s (Made by %s, v%s, %s)\n",
-			cp->name, cp->desc, cp->author, cp->version, license);
+			name, desc, author, version, license);
 		break;
 	}
+	case RZ_OUTPUT_MODE_QUIET:
+		rz_cons_println(name);
+		break;
 	default: {
 		rz_warn_if_reached();
 		return RZ_CMD_STATUS_NONEXISTINGCMD;
@@ -3376,22 +2199,22 @@ RZ_API RzCmdStatus rz_core_core_plugin_print(RzCorePlugin *cp, RzCmdStateOutput 
 }
 
 RZ_API RzCmdStatus rz_core_core_plugins_print(RzCore *core, RzCmdStateOutput *state) {
-	RzListIter *iter;
-	RzCorePlugin *cp;
+	RzIterator *iter = ht_sp_as_iter(core->plugins);
+	RzCorePlugin **val;
 	RzCmdStatus status;
 	if (!core) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_cmd_state_output_array_start(state);
-	rz_list_foreach (core->plugins, iter, cp) {
-		const char *license = cp->license
-			? cp->license
-			: "???";
-		status = rz_core_core_plugin_print(cp, state, license);
+	rz_cmd_state_output_set_columnsf(state, "sssss", "name", "license", "author", "version", "description");
+	rz_iterator_foreach(iter, val) {
+		RzCorePlugin *cp = *val;
+		status = core_core_plugin_print(cp, state);
 		if (status != RZ_CMD_STATUS_OK) {
 			return status;
 		}
 	}
+	rz_iterator_free(iter);
 	rz_cmd_state_output_array_end(state);
 	return RZ_CMD_STATUS_OK;
 }

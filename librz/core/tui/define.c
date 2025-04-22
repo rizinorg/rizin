@@ -199,7 +199,7 @@ onemoretime:
 				if (item) {
 					const char *ptr = rz_str_lchr(item->name, '.');
 					if (ptr) {
-						man = strdup(ptr + 1);
+						man = rz_str_dup(ptr + 1);
 					}
 				}
 			}
@@ -218,12 +218,13 @@ onemoretime:
 		rz_cons_any_key(NULL);
 	} break;
 	case 'n': {
-		RzAnalysisOp op;
+		RzAnalysisOp op = { 0 };
 		ut64 tgt_addr = UT64_MAX;
 		if (!isDisasmPrint(visual->printidx)) {
 			break;
 		}
 		// TODO: get the aligned instruction even if the cursor is in the middle of it.
+		rz_analysis_op_init(&op);
 		rz_analysis_op(core->analysis, &op, off,
 			core->block + off - core->offset, 32, RZ_ANALYSIS_OP_MASK_BASIC);
 
@@ -307,13 +308,15 @@ onemoretime:
 				fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
 			}
 			if (fcn) {
-				RzAnalysisOp op;
+				RzAnalysisOp op = { 0 };
 				ut64 size;
+				rz_analysis_op_init(&op);
 				if (rz_analysis_op(core->analysis, &op, off, core->block + delta,
 					    core->blocksize - delta, RZ_ANALYSIS_OP_MASK_BASIC) > 0) {
 					size = off - fcn->addr + op.size;
 					rz_analysis_function_resize(fcn, size);
 				}
+				rz_analysis_op_fini(&op);
 			}
 		}
 		break;

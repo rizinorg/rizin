@@ -59,7 +59,7 @@ static void meta_variable_comment_print(RzCore *Core, RzAnalysisVar *var, RzCmdS
 static RzCmdStatus meta_variable_comment_list(RzCore *core, RzAnalysisVarStorageType kind, RzCmdStateOutput *state) {
 	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
 	if (!fcn) {
-		RZ_LOG_ERROR("Cannot find the function at the 0x%08" PFMT64x " offset", core->offset);
+		RZ_LOG_ERROR("Cannot find the function at the 0x%08" PFMT64x " offset\n", core->offset);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	void **it;
@@ -76,7 +76,7 @@ static RzCmdStatus meta_variable_comment_list(RzCore *core, RzAnalysisVarStorage
 static RzCmdStatus meta_variable_comment_list_all(RzCore *core, RzCmdStateOutput *state) {
 	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
 	if (!fcn) {
-		RZ_LOG_ERROR("Cannot find the function at the 0x%08" PFMT64x " offset", core->offset);
+		RZ_LOG_ERROR("Cannot find the function at the 0x%08" PFMT64x " offset\n", core->offset);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	void **it;
@@ -115,7 +115,7 @@ static RzCmdStatus meta_variable_comment_append(RzCore *core, const char *name, 
 			rz_cons_println(var->comment);
 		}
 	} else {
-		var->comment = strdup(comment);
+		var->comment = rz_str_dup(comment);
 	}
 	free(heap_comment);
 	return RZ_CMD_STATUS_OK;
@@ -270,10 +270,10 @@ RZ_IPI RzCmdStatus rz_comment_function_list_handler(RzCore *core, int argc, cons
 
 static void meta_function_comment_remove(RzAnalysis *analysis, RzAnalysisFunction *fcn) {
 	RzAnalysisBlock *bb;
-	RzListIter *iter;
-	rz_list_foreach (fcn->bbs, iter, bb) {
-		int i;
-		for (i = 0; i < bb->size; i++) {
+	void **iter;
+	rz_pvector_foreach (fcn->bbs, iter) {
+		bb = (RzAnalysisBlock *)*iter;
+		for (size_t i = 0; i < bb->size; i++) {
 			ut64 addr = bb->addr + i;
 			rz_meta_del(analysis, RZ_META_TYPE_COMMENT, addr, 1);
 		}
@@ -283,7 +283,7 @@ static void meta_function_comment_remove(RzAnalysis *analysis, RzAnalysisFunctio
 RZ_IPI RzCmdStatus rz_comment_function_remove_handler(RzCore *core, int argc, const char **argv) {
 	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
 	if (!fcn) {
-		RZ_LOG_ERROR("Cannot find the function at the 0x%08" PFMT64x " offset", core->offset);
+		RZ_LOG_ERROR("Cannot find the function at the 0x%08" PFMT64x " offset\n", core->offset);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	meta_function_comment_remove(core->analysis, fcn);
@@ -307,7 +307,7 @@ RZ_IPI RzCmdStatus rz_comment_unique_handler(RzCore *core, int argc, const char 
 			comment = s;
 		}
 	} else {
-		comment = strdup(argv[1]);
+		comment = rz_str_dup(argv[1]);
 	}
 	if (comment) {
 		rz_core_meta_comment_add(core, comment, core->offset);

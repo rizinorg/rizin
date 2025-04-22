@@ -3,6 +3,7 @@
 
 #include <rz_th.h>
 #include "thread.h"
+#include <rz_userconf.h>
 
 /**
  * \brief RzThreadPool is a structure which handles n-threads threads
@@ -19,11 +20,11 @@ struct rz_th_pool_t {
  *
  * \return     The number of available physical cores (always >= 1)
  */
-RZ_API size_t rz_th_physical_core_number() {
+RZ_API RzThreadNCores rz_th_physical_core_number() {
 #ifdef __WINDOWS__
 	SYSTEM_INFO sysinfo;
 	GetSystemInfo(&sysinfo);
-	return sysinfo.dwNumberOfProcessors;
+	return (RzThreadNCores)sysinfo.dwNumberOfProcessors;
 #elif __APPLE__ || __FreeBSD__ || __OpenBSD__ || __DragonFly__ || __NetBSD__
 	int os_status = 0;
 	int mib[4];
@@ -57,30 +58,34 @@ RZ_API size_t rz_th_physical_core_number() {
 	// this is needed because the upper bits are set on bsd platforms
 	n_cpus &= UT32_MAX;
 
-	return n_cpus;
+	return (RzThreadNCores)n_cpus;
 #elif __HAIKU__
 	system_info info;
 	get_system_info(&info);
-	return info.cpu_count;
+	return (RzThreadNCores)info.cpu_count;
 #else
-	return sysconf(_SC_NPROCESSORS_ONLN);
+	return (RzThreadNCores)sysconf(_SC_NPROCESSORS_ONLN);
 #endif
 }
 
 /**
- * \brief      Returns the maximum number of cores available regardless of the number of cores requested.
- *	When set to 0, it will be the max number of physical cores.
+ * \brief      Returns the maximum number of threads available unless it exeeds N_THREAD_LIMIT.
+ *	           When set to 0, it will be the max number of cores.
  *
- * \param[in]  max_cores  The maximum number of physical cores to request
+ * \param[in]  max_threads  The maximum number of threads to request
  *
- * \return     The actual max number of cores available
+ * \return     The max number of threads requested
  */
-RZ_API size_t rz_th_request_physical_cores(size_t max_cores) {
-	size_t n_cores = rz_th_physical_core_number();
-	if (!max_cores) {
+RZ_API RzThreadNCores rz_th_max_threads(RzThreadNCores requested) {
+	const size_t n_thread_limit = N_THREAD_LIMIT;
+	RzThreadNCores n_cores = rz_th_physical_core_number();
+	if (requested <= RZ_THREAD_N_CORES_ALL_AVAILABLE) {
 		return n_cores;
+	} else if (n_thread_limit < (size_t)requested) {
+		RZ_LOG_WARN("The number of requested threads is higher than the thread limit (%" PFMTSZu ").\n", n_thread_limit);
+		return n_thread_limit;
 	}
-	return RZ_MIN(n_cores, max_cores);
+	return requested;
 }
 
 /**
@@ -93,13 +98,13 @@ RZ_API size_t rz_th_request_physical_cores(size_t max_cores) {
  * \param  max_threads  The maximum number of threads needed in the pool
  * \return RzThreadPool The RzThreadPool structure
  */
-RZ_API RZ_OWN RzThreadPool *rz_th_pool_new(size_t max_threads) {
+RZ_API RZ_OWN RzThreadPool *rz_th_pool_new(RzThreadNCores max_threads) {
 	RzThreadPool *pool = RZ_NEW0(RzThreadPool);
 	if (!pool) {
 		return NULL;
 	}
 
-	pool->size = rz_th_request_physical_cores(max_threads);
+	pool->size = (size_t)rz_th_max_threads(max_threads);
 	pool->threads = RZ_NEWS0(RzThread *, pool->size);
 	if (!pool->threads) {
 		free(pool);

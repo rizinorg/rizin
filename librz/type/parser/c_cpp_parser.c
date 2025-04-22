@@ -23,27 +23,27 @@ static char *ts_node_sub_string(TSNode node, const char *cstr) {
 }
 
 // Declare the `tree_sitter_c` function, which is
-// implemented by the `tree-sitter-c` library.
+// implemented by the `rizin-grammar-c` (fork of `tree-sitter-c`) library.
 TSLanguage *tree_sitter_c();
 
 // Declare the `tree_sitter_cpp` function, which is
 // implemented by the `tree-sitter-cpp` library.
 // TSLanguage *tree_sitter_cpp();
 
-CParserState *c_parser_state_new(HtPP *base_types, HtPP *callable_types) {
+CParserState *c_parser_state_new(HtSP *base_types, HtSP *callable_types) {
 	CParserState *state = RZ_NEW0(CParserState);
 	if (!base_types) {
-		state->types = ht_pp_new0();
+		state->types = ht_sp_new(HT_STR_DUP, NULL, NULL);
 	} else {
 		state->types = base_types;
 	}
 	if (!callable_types) {
-		state->callables = ht_pp_new0();
+		state->callables = ht_sp_new(HT_STR_DUP, NULL, NULL);
 	} else {
 		state->callables = callable_types;
 	}
 	// Forward definitions require to have a special hashtable
-	state->forward = ht_pp_new0();
+	state->forward = ht_sp_new(HT_STR_DUP, NULL, NULL);
 	// Initializing error/warning/debug messages buffers
 	state->errors = rz_strbuf_new("");
 	state->warnings = rz_strbuf_new("");
@@ -53,9 +53,9 @@ CParserState *c_parser_state_new(HtPP *base_types, HtPP *callable_types) {
 }
 
 void c_parser_state_free(CParserState *state) {
-	ht_pp_free(state->forward);
-	ht_pp_free(state->types);
-	ht_pp_free(state->callables);
+	ht_sp_free(state->forward);
+	ht_sp_free(state->types);
+	ht_sp_free(state->callables);
 	rz_strbuf_free(state->debug);
 	rz_strbuf_free(state->warnings);
 	rz_strbuf_free(state->errors);
@@ -64,7 +64,7 @@ void c_parser_state_free(CParserState *state) {
 }
 
 void c_parser_state_free_keep_ht(CParserState *state) {
-	ht_pp_free(state->forward);
+	ht_sp_free(state->forward);
 	rz_strbuf_free(state->debug);
 	rz_strbuf_free(state->warnings);
 	rz_strbuf_free(state->errors);
@@ -112,7 +112,7 @@ RZ_API RZ_OWN RzTypeParser *rz_type_parser_new() {
  * \param type RzBaseTypes hashtable to preload into the parser state
  * \param type RzCallable hashtable to preload into the parser state
  */
-RZ_API RZ_OWN RzTypeParser *rz_type_parser_init(HtPP *types, HtPP *callables) {
+RZ_API RZ_OWN RzTypeParser *rz_type_parser_init(HtSP *types, HtSP *callables) {
 	RzTypeParser *parser = RZ_NEW0(RzTypeParser);
 	if (!parser) {
 		return NULL;
@@ -199,7 +199,7 @@ static int type_parse_string(CParserState *state, const char *code, char **error
 		RZ_LOG_DEBUG("Warnings:\n");
 		RZ_LOG_DEBUG("%s", warning_msgs);
 		if (error_msg) {
-			*error_msg = strdup(error_msgs);
+			*error_msg = rz_str_dup(error_msgs);
 		}
 		free(error_msgs);
 		free(warning_msgs);
@@ -302,7 +302,8 @@ RZ_API void rz_type_parse_reset(RzTypeDB *typedb) {
 }
 
 /**
- * \brief Parses the single C type definition
+ * \brief Parses the single C type definition.
+ * \brief Struct member offsets are set to 0. (temporary: see parse_struct_node() in librz/type/parser/types_parser.c)
  *
  * \param parser RzTypeParser parser instance
  * \param code The C type itself
@@ -381,7 +382,7 @@ RZ_API RZ_OWN RzType *rz_type_parse_string_single(RzTypeParser *parser, const ch
 		RZ_LOG_DEBUG("Warnings:\n");
 		RZ_LOG_DEBUG("%s", warning_msgs);
 		if (error_msg) {
-			*error_msg = strdup(error_msgs);
+			*error_msg = rz_str_dup(error_msgs);
 		}
 		free(error_msgs);
 		free(warning_msgs);
@@ -471,7 +472,7 @@ RZ_API RZ_OWN RzType *rz_type_parse_string_declaration_single(RzTypeParser *pars
 		RZ_LOG_DEBUG("Warnings:\n");
 		RZ_LOG_DEBUG("%s", warning_msgs);
 		if (error_msg) {
-			*error_msg = strdup(error_msgs);
+			*error_msg = rz_str_dup(error_msgs);
 		}
 		free(error_msgs);
 		free(warning_msgs);

@@ -5,6 +5,7 @@ CMDS=<<EOF
 cd `e dir.tmp`
 e io.cache=true
 (show_fname fname; wz ${fname}; prz `$size` > `prz` ; o `prz`; i~file; ij; rm `prz`)
+$size=%l \`prz\`
 .(show_fname A\x1b¢\302\200€𝄞\363\240\201\201\\.bin)
 .(show_fname B\x1b¢\302\200€𝄞\363\240\201\201\\.bin)
 .(show_fname B\x1b¢\302\200\201€𝄞\363\240\201\201\\.bin)
@@ -13,11 +14,11 @@ $size=%v 1
 .(show_fname \xf0\x82\x82\xac\\.bin)
 EOF
 EXPECT=<<EOF
-file    A\e¢€𝄞󠁁\.bin
-{"core":{"file":"A\u001b¢\u0080€𝄞\udb40\udc41\\.bin","fd":4,"size":22,"humansz":"22","iorw":true,"mode":"r-x","block":256,"format":"any"}}
-file    B\e¢€𝄞󠁁\.bin
-{"core":{"file":"B\u001b¢\u0080€𝄞\udb40\udc41\\.bin","fd":5,"size":22,"humansz":"22","iorw":true,"mode":"r-x","block":256,"format":"any"}}
-file    B\e¢\x81€𝄞󠁁\.bin
+file    A\e¢\U00000080€𝄞\U000e0041\.bin
+{"core":{"file":[65,27,194,162,194,128,226,130,172,240,157,132,158,243,160,129,129,92,46,98,105,110],"fd":4,"size":22,"humansz":"22","iorw":true,"mode":"r-x","block":256,"format":"any"}}
+file    B\e¢\U00000080€𝄞\U000e0041\.bin
+{"core":{"file":[66,27,194,162,194,128,226,130,172,240,157,132,158,243,160,129,129,92,46,98,105,110],"fd":5,"size":22,"humansz":"22","iorw":true,"mode":"r-x","block":256,"format":"any"}}
+file    B\e¢\U00000080\x81€𝄞\U000e0041\.bin
 {"core":{"file":[66,27,194,162,194,128,129,226,130,172,240,157,132,158,243,160,129,129,92,46,98,105,110],"fd":6,"size":23,"humansz":"23","iorw":true,"mode":"r-x","block":256,"format":"any"}}
 file    €\.bin
 {"core":{"file":"€\\.bin","fd":7,"size":1,"humansz":"1","iorw":true,"mode":"r-x","block":256,"format":"any"}}

@@ -1,11 +1,17 @@
+egg_plugins_list = [
+  # commented plugins were never built.
+  #'bind',
+  #'cb',
+  'exec',
+  #'reverse',
+  #'shya',
+  'xor',
+]
+
 egg_plugins = {
-  'conf_name': 'plugins_egg',
-  'base_cname': 'rz_egg_plugin_',
-  'list': [
-    'exec',
-    #'shya',
-    'xor'
-  ],
+  'base_name': 'rz_egg',
+  'base_struct': 'RzEggPlugin',
+  'list': egg_plugins_list,
 }
 
 rz_egg_sources = [
@@ -16,6 +22,7 @@ rz_egg_sources = [
   'emit_trace.c',
   'emit_x64.c',
   'emit_x86.c',
+  # commented plugins were never built.
   #'p/egg_bind.c',
   #'p/egg_cb.c',
   'p/egg_exec.c',
@@ -29,7 +36,7 @@ rz_egg = library('rz_egg', rz_egg_sources,
   dependencies: [
     rz_util_dep,
     rz_syscall_dep,
-    rz_asm_dep,
+    rz_arch_dep,
     mpc_dep
   ],
   install: true,
@@ -47,6 +54,6 @@ meson.override_dependency('rz_egg', rz_egg_dep)
 
 modules += { 'rz_egg': {
     'target': rz_egg,
-    'dependencies': ['rz_util', 'rz_asm', 'rz_syscall'],
+    'dependencies': ['rz_util', 'rz_arch', 'rz_syscall'],
     'plugins': [egg_plugins]
 }}

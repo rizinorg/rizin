@@ -2,6 +2,7 @@
 #define RZ_PANELS_H
 
 #include <rz_types.h>
+#include <rz_vector.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -49,7 +50,7 @@ typedef struct rz_panel_model_t {
 	char *cmdStrCache;
 	char *readOnly;
 	char *funcName;
-	char **filter;
+	RzPVector /*<char *>*/ filter;
 	int n_filter;
 	int rotate;
 } RzPanelModel;
@@ -70,6 +71,10 @@ typedef struct rz_panel_t {
 } RzPanel;
 
 typedef void (*RzPanelAlmightyCallback)(void *user, RzPanel *panel, const RzPanelLayout dir, RZ_NULLABLE const char *title);
+
+RZ_IPI void rz_panel_free(RZ_NULLABLE RzPanel *panel);
+RZ_IPI void rz_save_panels_layout(RzCore *core, const char *_name);
+RZ_IPI bool rz_load_panels_layout(RzCore *core, const char *_name);
 
 #ifdef __cplusplus
 }

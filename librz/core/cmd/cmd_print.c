@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_asm.h>
+#include <rz_cmd.h>
 #include <rz_core.h>
 #include <rz_config.h>
 #include <rz_util.h>
@@ -9,198 +10,8 @@
 #include <rz_types.h>
 
 #include "../core_private.h"
-#include "rz_util/rz_strbuf.h"
 
 #define PF_USAGE_STR "pf[.k[.f[=v]]|[v]]|[n]|[0|cnt][fmt] [a0 a1 ...]"
-
-static const char *help_msg_at[] = {
-	"Usage: [.][#]<cmd>[*] [`cmd`] [@ addr] [~grep] [|syscmd] [>[>]file]", "", "",
-	"0", "", "alias for 's 0'",
-	"0x", "addr", "alias for 's 0x..'",
-	"#", "cmd", "if # is a number repeat the command # times",
-	"/*", "", "start multiline comment",
-	"*/", "", "end multiline comment",
-	".", "cmd", "execute output of command as rizin script",
-	".:", "8080", "wait for commands on port 8080",
-	".!", "rz-bin -re $FILE", "run command output as rizin script",
-	"*", "", "output of command in rizin script format (CC*)",
-	"j", "", "output of command in JSON format (pdj)",
-	"~", "?", "count number of lines (like wc -l)",
-	"~", "??", "show internal grep help",
-	"~", "..", "internal less",
-	"~", "{}", "json indent",
-	"~", "{}..", "json indent and less",
-	"~", "word", "grep for lines matching word",
-	"~", "!word", "grep for lines NOT matching word",
-	"~", "word[2]", "grep 3rd column of lines matching word",
-	"~", "word:3[0]", "grep 1st column from the 4th line matching word",
-	"@", " 0x1024", "temporary seek to this address (sym.main+3)",
-	"@", " [addr]!blocksize", "temporary set a new blocksize",
-	"@..", "addr", "temporary partial address seek (see s..)",
-	"@!", "blocksize", "temporary change the block size (p8@3!3)",
-	"@{", "from to}", "temporary set from and to for commands supporting ranges",
-	"@a:", "arch[:bits]", "temporary set arch and bits",
-	"@b:", "bits", "temporary set asm.bits",
-	"@B:", "nth", "temporary seek to nth instruction in current bb (negative numbers too)",
-	"@e:", "k=v,k=v", "temporary change eval vars",
-	"@f:", "file", "temporary replace block with file contents",
-	"@F:", "flagspace", "temporary change flag space",
-	"@i:", "nth.op", "temporary seek to the Nth relative instruction",
-	"@k:", "k", "temporary seek at value of sdb key `k`",
-	"@o:", "fd", "temporary switch to another fd",
-	"@r:", "reg", "tmp seek to reg value (f.ex pd@r:PC)",
-	"@s:", "string", "same as above but from a string",
-	"@v:", "value", "modify the current offset to a custom value",
-	"@x:", "909192", "from hex pairs string",
-	"@@=", "1 2 3", "run the previous command at offsets 1, 2 and 3",
-	"@@", " hit*", "run the command on every flag matching 'hit*'",
-	"@@?", "[ktfb..]", "show help for the iterator operator",
-	"@@@", " [type]", "run a command on every [type] (see @@@? for help)",
-	">", "file", "pipe output of command to file",
-	">>", "file", "append to file",
-	"H>", "file", "pipe output of command to file in HTML",
-	"H>>", "file", "append to file with the output of command in HTML",
-	"`", "pdq~push:0[0]`", "replace output of command inside the line",
-	"|", "cmd", "pipe output to command (pd|less) (.dr*)",
-	NULL
-};
-
-static const char *help_msg_at_at[] = {
-	"@@", "", " # foreach iterator command:",
-	"x", " @@ sym.*", "run 'x' over all flags matching 'sym.' in current flagspace",
-	"x", " @@dbt[abs]", "run 'x' command on every backtrace address, bp or sp",
-	"x", " @@.file", "run 'x' over the offsets specified in the file (one offset per line)",
-	"x", " @@=off1 off2 ..", "manual list of offsets",
-	"x", " @@/x 9090", "temporary set cmd.hit to run a command on each search result",
-	"x", " @@k sdbquery", "run 'x' on all offsets returned by that sdbquery",
-	"x", " @@t", "run 'x' on all threads (see dp)",
-	"x", " @@b", "run 'x' on all basic blocks of current function (see afb)",
-	"x", " @@i", "run 'x' on all instructions of the current function (see pdr)",
-	"x", " @@iS", "run 'x' on all sections adjusting blocksize",
-	"x", " @@f", "run 'x' on all functions (see aflq)",
-	"x", " @@f:write", "run 'x' on all functions matching write in the name",
-	"x", " @@s:from to step", "run 'x' on all offsets from, to incrementing by step",
-	"x", " @@c:cmd", "the same as @@=`` without the backticks",
-	"x", " @@=`pdf~call[0]`", "run 'x' at every call offset of the current function",
-	// TODO: Add @@k sdb-query-expression-here
-	NULL
-};
-
-static const char *help_msg_at_at_at[] = {
-	"@@@", "", " # foreach offset+size iterator command:",
-	"x", " @@@=", "[addr] [size] ([addr] [size] ...)",
-	"x", " @@@b", "basic blocks of current function",
-	"x", " @@@c:cmd", "Same as @@@=`cmd`, without the backticks",
-	"x", " @@@C:cmd", "comments matching",
-	"x", " @@@i", "imports",
-	"x", " @@@r", "registers",
-	"x", " @@@s", "symbols",
-	"x", " @@@st", "strings",
-	"x", " @@@S", "sections",
-	"x", " @@@m", "io.maps",
-	"x", " @@@M", "dbg.maps (See ?$?~size)",
-	"x", " @@@f", "flags",
-	"x", " @@@f:hit*", "flags matching glob expression",
-	"x", " @@@F", "functions (set fcn size which may be incorrect if not linear)",
-	"x", " @@@F:glob", "functions matching glob expression",
-	"x", " @@@t", "threads",
-	"x", " @@@r", "regs",
-	// TODO: Add @@k sdb-query-expression-here
-	NULL
-};
-
-static const char *help_msg_p[] = {
-	"Usage:", "p[=68abcdDfiImrstuxz] [arg|len] [@addr]", "",
-	"p", "[b|B|xb] [len] ([S])", "bindump N bits skipping S bytes",
-	"p", "[iI][df] [len]", "print N ops/bytes (f=func) (see pi? and pdq)",
-	"p", "[kK] [len]", "print key in randomart (K is for mosaic)",
-	"p-", "[?][jh] [mode]", "bar|json|histogram blocks (mode: e?search.in)",
-	"p2", " [len]", "8x8 2bpp-tiles",
-	"p6", "[de] [len]", "base64 decode/encode",
-	"p8", "[?][j] [len]", "8bit hexpair list of bytes",
-	"p=", "[?][bep] [N] [L] [b]", "show entropy/printable chars/chars bars",
-	"pa", "[edD] [arg]", "pa:assemble  pa[dD]:disasm or pae: esil from hex",
-	"pb", "[?] [n]", "bitstream of N bits",
-	"pB", "[?] [n]", "bitstream of N bytes",
-	"pc", "[?][p] [len]", "output C (or python) format",
-	"pC", "[aAcdDxw] [rows]", "print disassembly in columns (see hex.cols and pdq)",
-	"pd", "[?] [sz] [a] [b]", "disassemble N opcodes (pd) or N bytes (pD)",
-	"pf", "[?][.nam] [fmt]", "print formatted data (pf.name, pf.name $<expr>)",
-	"pF", "[?][apx]", "print asn1, pkcs7 or x509",
-	"pg", "[?][x y w h] [cmd]", "create new visual gadget or print it (see pg? for details)",
-	"ph", "[?][=|hash] ([len])", "calculate hash for a block",
-	"pi", "[?][bdefrj] [num]", "print instructions",
-	"pI", "[?][iI][df] [len]", "print N instructions/bytes (f=func)",
-	"pj", "[?] [len]", "print as indented JSON",
-	"pm", "[?] [magic]", "print libmagic data (see pm? and /m?)",
-	"po", "[?] hex", "print operation applied to block (see po?)",
-	"pp", "[?][sz] [len]", "print patterns, see pp? for more help",
-	"pr", "[?][glx] [len]", "print N raw bytes (in lines or hexblocks, 'g'unzip)",
-	"ps", "[?][pwz] [len]", "print pascal/wide/zero-terminated strings",
-	"pt", "[?][dn] [len]", "print different timestamps",
-	"pu", "[?][w] [len]", "print N url encoded bytes (w=wide)",
-	"pv", "[?][jh] [mode]", "show variable/pointer/value in memory",
-	"px", "[?][owq] [len]", "hexdump of N bytes (o=octal, w=32bit, q=64bit)",
-	"plf", "", "print the RzIL output of the function",
-	NULL
-};
-
-static const char *help_msg_pj[] = {
-	"Usage:", "pj[..] [size]", "",
-	"pj", "", "print current block as indented JSON",
-	"pj.", "", "print as indented JSON from 0 to the current offset",
-	"pj..", "", "print JSON path from 0 to the current offset",
-	NULL
-};
-
-static const char *help_msg_px[] = {
-	"Usage:", "px[0afoswqWqQ][f]", " # Print heXadecimal",
-	"px", "", "show hexdump",
-	"px/", "", "same as x/ in gdb (help x)",
-	"px0", "", "8bit hexpair list of bytes until zero byte",
-	"pxa", "", "show annotated hexdump",
-	"pxA", "[?]", "show op analysis color map",
-	"pxb", "", "dump bits in hexdump form", // should be px1?
-	"pxc", "", "show hexdump with comments",
-	"pxd", "[?1248]", "signed integer dump (1 byte, 2 and 4)",
-	"pxe", "", "emoji hexdump! :)",
-	"pxf", "", "show hexdump of current function",
-	"pxh", "", "show hexadecimal half-words dump (16bit)",
-	"pxH", "", "same as above, but one per line",
-	"pxi", "", "HexII compact binary representation",
-	"pxl", "", "display N lines (rows) of hexdump",
-	"pxo", "", "show octal dump",
-	"pxq", "", "show hexadecimal quad-words dump (64bit)",
-	"pxQ", "[q]", "same as above, but one per line",
-	"pxr", "[1248][qj]", "show hexword references (q=quiet, j=json)",
-	"pxs", "", "show hexadecimal in sparse mode",
-	"pxt", "[*.] [origin]", "show delta pointer table in rizin commands",
-	"pxw", "", "show hexadecimal words dump (32bit)",
-	"pxW", "[q]", "same as above, but one per line (q=quiet)",
-	"pxx", "", "show N bytes of hex-less hexdump",
-	"pxX", "", "show N words of hex-less hexdump",
-	NULL
-};
-
-const char *help_msg_pxA[] = {
-	"Usage: pxA [len]", "", "show op analysis color map",
-	"$$", "", "int/swi/trap/new\n",
-	"+-*/", "", "math ops\n",
-	"->", "", "push\n",
-	"..", "", "nop\n",
-	"<-", "", "pop\n",
-	"<<>>", "", "shift ops\n",
-	"==", "", "cmp/test\n",
-	"XX", "", "invalid\n",
-	"_C", "", "call\n",
-	"_J", "", "jump\n",
-	"_R", "", "ret\n",
-	"cJ", "", "conditional jump\n",
-	"io", "", "in/out ops\n",
-	"mv", "", "move,lea,li\n",
-	"|&^", "", "bin ops\n",
-	NULL
-};
 
 static const ut32 colormap[256] = {
 	0x000000,
@@ -520,7 +331,7 @@ static void colordump(RzCore *core, const ut8 *block, int len) {
 					ch = ' ';
 				}
 			} else {
-				color = strdup("");
+				color = rz_str_dup("");
 				if (show_cursor && core->print->cur == j) {
 					ch = '_';
 				} else {
@@ -533,7 +344,7 @@ static void colordump(RzCore *core, const ut8 *block, int len) {
 				ch = core->print->io_unalloc_ch;
 				if (show_color) {
 					free(color);
-					color = strdup(Color_RESET);
+					color = rz_str_dup(Color_RESET);
 					if (ch == ' ') {
 						ch = '.';
 					}
@@ -967,7 +778,7 @@ static void annotated_hexdump(RzCore *core, int len) {
 					fend = addr + j + flag->size;
 				}
 				free(note[j]);
-				note[j] = rz_str_prepend(strdup(flag->name), "/");
+				note[j] = rz_str_prepend(rz_str_dup(flag->name), "/");
 				marks = true;
 				color_idx++;
 				color_idx %= 10;
@@ -1048,6 +859,9 @@ static void annotated_hexdump(RzCore *core, int len) {
 						}
 					}
 				}
+			}
+			if (!ebytes) { // this check is just to silence the compiler
+				goto err_ebytes;
 			}
 			sprintf(ebytes, "%02x", ch);
 			// rz_print_byte (core->print, "%02x ", j, ch);
@@ -1143,6 +957,7 @@ static void annotated_hexdump(RzCore *core, int len) {
 		addr += nb_cols;
 	}
 
+err_ebytes:
 	free(bytes);
 err_bytes:
 	free(note);
@@ -1255,7 +1070,7 @@ static bool cmd_print_pxA(RzCore *core, int len, RzOutputMode mode) {
 	char buf[2];
 	char *bgcolor, *fgcolor, *text;
 	ut64 i, c, oi;
-	RzAnalysisOp op;
+	RzAnalysisOp op = { 0 };
 	ut8 *data;
 	int datalen;
 	switch (mode) {
@@ -1310,6 +1125,7 @@ static bool cmd_print_pxA(RzCore *core, int len, RzOutputMode mode) {
 		bgcolor = Color_BGBLACK;
 		fgcolor = Color_WHITE;
 		text = NULL;
+		rz_analysis_op_init(&op);
 		if (rz_analysis_op(core->analysis, &op, core->offset + i, data + i, len - i, RZ_ANALYSIS_OP_MASK_BASIC) <= 0) {
 			op.type = 0;
 			bgcolor = Color_BGRED;
@@ -1461,12 +1277,6 @@ static bool cmd_print_pxA(RzCore *core, int len, RzOutputMode mode) {
 			fgcolor = Color_WHITE;
 			text = "XX";
 			break;
-#if 0
-		default:
-			color = Color_BGCYAN;
-			fgcolor = Color_BLACK;
-			break;
-#endif
 		}
 		int opsz = RZ_MAX(op.size, 1);
 		if (show_cursor) {
@@ -1598,15 +1408,35 @@ RZ_IPI RzCmdStatus rz_cmd_print_hash_cfg_algo_list_handler(RzCore *core, int arg
 }
 
 RZ_IPI RzCmdStatus rz_cmd_print_magic_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	RzList *hits = rz_core_search_magic(core, NULL, argc > 1 ? argv[1] : NULL);
+	if (!hits) {
+		RZ_LOG_ERROR("Searching for magics failed.\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzListIter *it;
+	RzSearchHit *hit;
 	if (mode == RZ_OUTPUT_MODE_JSON) {
 		PJ *pj = pj_new();
-		rz_core_magic(core, argv[1], true, pj);
+		pj_a(pj);
+		rz_list_foreach (hits, it, hit) {
+			char *detail = rz_search_hit_detail_as_string(hit);
+			pj_o(pj);
+			pj_kn(pj, "address", hit->address);
+			pj_ks(pj, "magic", rz_str_get(detail));
+			pj_end(pj);
+			free(detail);
+		}
+		pj_end(pj);
 		rz_cons_println(pj_string(pj));
 		pj_free(pj);
 	} else {
-		// XXX: need cmd_magic header for rz_core_magic
-		rz_core_magic(core, argv[1], true, NULL);
+		rz_list_foreach (hits, it, hit) {
+			char *detail = rz_search_hit_detail_as_string(hit);
+			rz_cons_printf("0x%08" PFMT64x " %s\n", hit->address, rz_str_get(detail));
+			free(detail);
+		}
 	}
+	rz_list_free(hits);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -1715,62 +1545,112 @@ static void pr_bb(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisBlock *b, boo
 	}
 }
 
-static void disasm_until_ret(RzCore *core, ut64 addr, int limit, RzOutputMode mode) {
-	int p = 0;
+static void handle_default_disasm_print_mode(const RzCore *core, const ut64 addr, const bool ret_val,
+	const char *m_intr, RzStrBuf *buf) {
 	const bool show_color = rz_config_get_i(core->config, "scr.color");
+
+	if (show_color) {
+		const char *offsetColor = rz_cons_singleton()->context->pal.offset;
+		if (!ret_val) {
+			rz_cons_printf("%s0x%08" PFMT64x "" Color_RESET "  %10s %s\n",
+				offsetColor, addr, "", m_intr);
+		} else {
+			rz_strbuf_appendf(buf, "%s0x%08" PFMT64x "" Color_RESET "  %10s %s\n",
+				offsetColor, addr, "", m_intr);
+		}
+	} else {
+		if (!ret_val) {
+			rz_cons_printf("0x%08" PFMT64x "  %10s %s\n", addr, "", m_intr);
+		} else {
+			rz_strbuf_appendf(buf, "0x%08" PFMT64x "  %10s %s\n", addr, "", m_intr);
+		}
+	}
+}
+
+static void disasm_print_ret(const RzCore *core, const RzOutputMode mode, const char *m_intr, const ut64 addr,
+	const bool ret_val, RzStrBuf *buf) {
+	if (!buf && ret_val) {
+		return;
+	}
+	switch (mode) {
+	case RZ_OUTPUT_MODE_QUIET:
+		if (!ret_val) {
+			rz_cons_printf("%s\n", m_intr);
+		} else {
+			rz_strbuf_append(buf, m_intr);
+		}
+		break;
+	default:
+		handle_default_disasm_print_mode(core, addr, ret_val, m_intr, buf);
+		break;
+	}
+}
+
+/**
+ * \brief Disassemble from \p addr until \p limit no of instructions and
+ * prints or returns the disassembled string in \p buf
+ *
+ * \param core Pointer to the RzCore
+ * \param addr Address to start disassembling
+ * \param limit Maximum number of instructions to disassemble
+ * \param mode The mode in which data has to be printed/crafted
+ * \param ret_val If true, the disassembled string is stored in \p buf. Otherwise it is streamed to stdout
+ * \param buf Pointer to the RzStrBuf to store the disassembled string
+ *
+ * \return True if there are no errors during disassembling and crafting the response. False otherwise.
+ */
+RZ_API bool rz_core_disasm_until_ret(RZ_NONNULL RzCore *core, ut64 addr, const int limit,
+	const RzOutputMode mode, const bool ret_val, RZ_NULLABLE RZ_OUT RzStrBuf *buf) {
+	rz_return_val_if_fail(core, false);
+	if (!buf && ret_val) {
+		return false;
+	}
 	for (int i = 0; i < limit; i++) {
 		RzAnalysisOp *op = rz_core_analysis_op(core, addr, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_DISASM);
-		if (op) {
-			char *mnem = op->mnemonic;
-			char *m = malloc((strlen(mnem) * 2) + 32);
-			strcpy(m, mnem);
-			// rz_parse_parse (core->parser, op->mnemonic, m);
-			if (mode == RZ_OUTPUT_MODE_QUIET) {
-				rz_cons_printf("%s\n", m);
-			} else {
-				if (show_color) {
-					const char *offsetColor = rz_cons_singleton()->context->pal.offset; // TODO etooslow. must cache
-					rz_cons_printf("%s0x%08" PFMT64x "" Color_RESET "  %10s %s\n",
-						offsetColor, addr + p, "", m);
-				} else {
-					rz_cons_printf("0x%08" PFMT64x "  %10s %s\n", addr + p, "", m);
-				}
-			}
-			switch (op->type & 0xfffff) {
-			case RZ_ANALYSIS_OP_TYPE_RET:
-			case RZ_ANALYSIS_OP_TYPE_UJMP:
-				goto beach;
-				break;
-			}
-			if (op->type == RZ_ANALYSIS_OP_TYPE_JMP) {
-				addr = op->jump;
-			} else {
-				addr += op->size;
-			}
-		} else {
-			RZ_LOG_ERROR("Cannot get op at 0x%08" PFMT64x "\n", addr + p);
+		if (!op) {
+			RZ_LOG_ERROR("Cannot get op at 0x%08" PFMT64x "\n", addr);
 			rz_analysis_op_free(op);
 			break;
 		}
-		// rz_io_read_at (core->io, n, rbuf, 512);
+		const char *mnem = op->mnemonic;
+		disasm_print_ret(core, mode, mnem, addr, ret_val, buf);
+		switch (op->type & RZ_ANALYSIS_OP_MASK_WILDCARD) {
+		case RZ_ANALYSIS_OP_TYPE_RET:
+		case RZ_ANALYSIS_OP_TYPE_UJMP:
+			rz_analysis_op_free(op);
+			goto beach;
+			break;
+		default:
+			break;
+		}
+		if (op->type == RZ_ANALYSIS_OP_TYPE_JMP) {
+			addr = op->jump;
+		} else {
+			addr += op->size;
+		}
+		if (ret_val) {
+			rz_strbuf_append(buf, "\n");
+		}
 		rz_analysis_op_free(op);
 	}
 beach:
-	return;
+	return true;
 }
 
 static void func_walk_blocks(RzCore *core, RzAnalysisFunction *f, bool fromHere, RzCmdStateOutput *state) {
 	const bool orig_bb_middle = rz_config_get_b(core->config, "asm.bb.middle");
 	rz_config_set_b(core->config, "asm.bb.middle", false);
 
-	rz_list_sort(f->bbs, (RzListComparator)bbcmp, NULL);
+	rz_pvector_sort(f->bbs, (RzPVectorComparator)bbcmp, NULL);
 
 	RzAnalysisBlock *b;
-	RzListIter *iter;
+	void **iter;
 
 	if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		rz_cmd_state_output_array_start(state);
-		rz_list_foreach (f->bbs, iter, b) {
+
+		rz_pvector_foreach (f->bbs, iter) {
+			b = (RzAnalysisBlock *)*iter;
 			if (fromHere) {
 				if (b->addr < core->offset) {
 					core->cons->null = true;
@@ -1799,7 +1679,8 @@ static void func_walk_blocks(RzCore *core, RzAnalysisFunction *f, bool fromHere,
 		}
 		rz_config_set_i(core->config, "asm.lines.bb", 0);
 
-		rz_list_foreach (f->bbs, iter, b) {
+		rz_pvector_foreach (f->bbs, iter) {
+			b = (RzAnalysisBlock *)*iter;
 			pr_bb(core, f, b, emu, saved_gp, saved_arena, 'I', fromHere);
 		}
 		if (emu) {
@@ -1818,11 +1699,11 @@ static inline char cmd_pxb_p(char input) {
 	return IS_PRINTABLE(input) ? input : '.';
 }
 
-static inline int cmd_pxb_k(const ut8 *buffer, int x) {
-	return buffer[3 - x] << (8 * x);
+static inline ut32 cmd_pxb_k(const ut8 *buffer, int x) {
+	return ((ut32)buffer[3 - x]) << (8 * x);
 }
 
-static void print_json_string(RzCore *core, const ut8 *block, ut32 len, RzStrEnc encoding, bool stop_at_nil) {
+static void print_json_string(RzCore *core, const ut8 *block, ut32 len, RzStrEnc encoding, bool stop_at_nil, bool stop_at_unprintable) {
 	char *section = get_section_name(core, core->offset);
 	if (!section) {
 		return;
@@ -1834,6 +1715,7 @@ static void print_json_string(RzCore *core, const ut8 *block, ut32 len, RzStrEnc
 	opt.encoding = encoding;
 	opt.json = true;
 	opt.stop_at_nil = stop_at_nil;
+	opt.stop_at_unprintable = stop_at_unprintable;
 	char *dstring = rz_str_stringify_raw_buffer(&opt, &dlength);
 	if (!dstring) {
 		free(section);
@@ -2046,10 +1928,10 @@ static void core_print_raw_buffer(RzStrStringifyOpt *opt) {
 	}
 }
 
-static RzCmdStatus core_auto_detect_and_print_string(RzCore *core, bool stop_at_nil, ut32 offset, RzOutputMode mode) {
+static RzCmdStatus core_print_string_in_block(RzCore *core, bool stop_at_nil, bool stop_at_unprintable, ut32 offset, RzOutputMode mode, RzStrEnc str_encoding) {
 	const ut8 *buffer = core->block + offset;
 	const ut32 length = core->blocksize - offset;
-	RzStrEnc encoding = core->bin->str_search_cfg.string_encoding;
+	RzStrEnc encoding = str_encoding == RZ_STRING_ENC_SETTINGS ? core->bin->str_search_cfg.string_encoding : str_encoding;
 	RzStrStringifyOpt opt = { 0 };
 
 	if (encoding == RZ_STRING_ENC_GUESS) {
@@ -2062,10 +1944,11 @@ static RzCmdStatus core_auto_detect_and_print_string(RzCore *core, bool stop_at_
 		opt.length = length;
 		opt.encoding = encoding;
 		opt.stop_at_nil = stop_at_nil;
+		opt.stop_at_unprintable = stop_at_unprintable;
 		core_print_raw_buffer(&opt);
 		break;
 	case RZ_OUTPUT_MODE_JSON:
-		print_json_string(core, buffer, length, encoding, stop_at_nil);
+		print_json_string(core, buffer, length, encoding, stop_at_nil, stop_at_nil);
 		break;
 	default:
 		RZ_LOG_ERROR("core: unsupported output mode\n");
@@ -2074,11 +1957,15 @@ static RzCmdStatus core_auto_detect_and_print_string(RzCore *core, bool stop_at_
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_print_string_auto_detect_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	bool stop_at_nil = !strcmp(argv[1], "null");
-	return core_auto_detect_and_print_string(core, stop_at_nil, 0, mode);
+// "ps"
+RZ_IPI RzCmdStatus rz_print_string_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	bool stop_at_nil = !strcmp(argv[2], "null");
+	bool stop_at_unprintable = !strcmp(argv[2], "unprintable");
+	RzStrEnc enc = rz_str_enc_string_as_type(argv[1]);
+	return core_print_string_in_block(core, stop_at_nil, stop_at_unprintable, 0, mode, enc);
 }
 
+// "ps+"
 RZ_IPI RzCmdStatus rz_print_string_as_libcpp_string_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	ut32 bitness = (ut32)rz_config_get_i(core->config, "asm.bits");
 	bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
@@ -2108,24 +1995,24 @@ RZ_IPI RzCmdStatus rz_print_string_as_libcpp_string_handler(RzCore *core, int ar
 		rz_core_seek(core, new_offset, SEEK_SET);
 		rz_core_block_read(core);
 
-		status = core_auto_detect_and_print_string(core, true, 0, mode);
+		status = core_print_string_in_block(core, true, false, 0, mode, RZ_STRING_ENC_SETTINGS);
 
 		rz_core_seek(core, old_offset, SEEK_SET);
 		rz_core_block_read(core);
 	} else {
-		status = core_auto_detect_and_print_string(core, true, 1, mode);
+		status = core_print_string_in_block(core, true, false, 1, mode, RZ_STRING_ENC_SETTINGS);
 	}
 
 	return status;
 }
 
+// "psb"
 RZ_IPI RzCmdStatus rz_print_strings_current_block_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	RzListIter *it = NULL;
 	RzDetectedString *detected = NULL;
 	RzBin *bin = core->bin;
 	RzUtilStrScanOptions scan_opt = {
-		.buf_size = core->blocksize,
-		.max_uni_blocks = bin->str_search_cfg.max_uni_blocks,
+		.max_str_length = core->blocksize,
 		.min_str_length = bin->str_search_cfg.min_length,
 		.prefer_big_endian = false,
 		.check_ascii_freq = bin->str_search_cfg.check_ascii_freq,
@@ -2147,7 +2034,11 @@ RZ_IPI RzCmdStatus rz_print_strings_current_block_handler(RzCore *core, int argc
 		if (mode != RZ_OUTPUT_MODE_QUIET) {
 			rz_print_offset(core->print, address, 0, 0, 0, 0, NULL);
 		}
-		rz_cons_memcat(detected->string, detected->size);
+		RzStrEscOptions eopts = { 0 };
+		eopts.keep_printable = true;
+		char *escaped = rz_str_escape_utf8(detected->string, &eopts);
+		rz_cons_printf("%s", escaped);
+		free(escaped);
 		rz_cons_newline();
 	}
 
@@ -2159,8 +2050,7 @@ RZ_IPI RzCmdStatus rz_print_first_string_current_block_handler(RzCore *core, int
 	RzDetectedString *detected = NULL;
 	RzBin *bin = core->bin;
 	RzUtilStrScanOptions scan_opt = {
-		.buf_size = core->blocksize,
-		.max_uni_blocks = bin->str_search_cfg.max_uni_blocks,
+		.max_str_length = core->blocksize,
 		.min_str_length = bin->str_search_cfg.min_length,
 		.prefer_big_endian = false,
 		.check_ascii_freq = bin->str_search_cfg.check_ascii_freq,
@@ -2223,10 +2113,11 @@ RZ_IPI RzCmdStatus rz_print_pascal_string_handler(RzCore *core, int argc, const 
 		opt.length = string_len;
 		opt.encoding = RZ_STRING_ENC_8BIT;
 		opt.stop_at_nil = true;
+		opt.stop_at_unprintable = true;
 		core_print_raw_buffer(&opt);
 		break;
 	case RZ_OUTPUT_MODE_JSON:
-		print_json_string(core, core->block + offset, string_len, RZ_STRING_ENC_8BIT, true);
+		print_json_string(core, core->block + offset, string_len, RZ_STRING_ENC_8BIT, true, true);
 		break;
 	default:
 		RZ_LOG_ERROR("core: unsupported output mode\n");
@@ -2374,176 +2265,6 @@ RZ_IPI RzCmdStatus rz_esil_of_hex_handler(RzCore *core, int argc, const char **a
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI int rz_cmd_print(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	st64 l;
-	int i, len, ret;
-	ut32 tbs = core->blocksize;
-	ut64 n, off;
-	ut64 tmpseek = UT64_MAX;
-	ret = 0;
-
-	rz_print_init_rowoffsets(core->print);
-	off = UT64_MAX;
-	l = len = core->blocksize;
-	if (input[0] && input[1]) {
-		int idx = (input[0] == 'h') ? 2 : 1;
-		const char *p = off ? strchr(input + idx, ' ') : NULL;
-		if (p) {
-			l = (int)rz_num_math(core->num, p + 1);
-			/* except disasm and memoryfmt (pd, pm) and overlay (po) */
-			if (input[0] != 'd' && input[0] != 't' && input[0] != 'D' && input[0] != 'm' &&
-				input[0] != 'a' && input[0] != 'f' && input[0] != 'i' &&
-				input[0] != 'I' && input[0] != 'o') {
-				if (l < 0) {
-					off = core->offset + l;
-					len = l = -l;
-					tmpseek = core->offset;
-				} else {
-					len = l;
-					if (l > core->blocksize) {
-						if (!rz_core_block_size(core, l)) {
-							goto beach;
-						}
-					}
-				}
-			} else {
-				len = l;
-			}
-		}
-	}
-
-	if (len > core->blocksize) {
-		len = core->blocksize;
-	}
-
-	if (input[0] != 'd' && input[0] != 'm' && input[0] != 'a' && input[0] != 'f' && input[0] != 'i') {
-		n = core->blocksize_max;
-		i = (int)n;
-		if (i != n) {
-			i = 0;
-		}
-		if (i && l > i) {
-			RZ_LOG_ERROR("core: This block size is too big (0x%" PFMT64x
-				     " < 0x%" PFMT64x "). Did you mean 'p%c @ %s' instead?\n",
-				n, l, *input, input + 2);
-			goto beach;
-		}
-	}
-	if (input[0] == 'x' || input[0] == 'D') {
-		if (l > 0 && tmpseek == UT64_MAX) {
-			if (!rz_core_block_size(core, l)) {
-				RZ_LOG_ERROR("core: This block size is too big. Did you mean 'p%c @ %s' instead?\n",
-					*input, input + 2);
-				goto beach;
-			}
-		}
-	}
-
-	if (input[0] && input[0] != 'z' && input[1] == 'f' && input[2] != '?') {
-		RzAnalysisFunction *f = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
-		// RZ_ANALYSIS_FCN_TYPE_FCN|RZ_ANALYSIS_FCN_TYPE_SYM);
-		if (f) {
-			len = rz_analysis_function_linear_size(f);
-			if (len > core->blocksize) {
-				len = core->blocksize;
-			}
-		} else {
-			RZ_LOG_ERROR("core: p: Cannot find function at 0x%08" PFMT64x "\n", core->offset);
-			core->num->value = 0;
-			goto beach;
-		}
-	}
-	// TODO figure out why `f eax=33; f test=eax; pa call test` misassembles if len is 0
-	core->num->value = len ? len : core->blocksize;
-	if (off != UT64_MAX) {
-		rz_core_seek(core, off, SEEK_SET);
-		rz_core_block_read(core);
-	}
-	switch (*input) {
-	case 'j': // "pj"
-		if (input[1] == '?') {
-			rz_core_cmd_help(core, help_msg_pj);
-		} else if (input[1] == '.') {
-			if (input[2] == '.') {
-				ut8 *data = calloc(core->offset + 1, 1);
-				if (data) {
-					data[core->offset] = 0;
-					(void)rz_io_read_at(core->io, 0, data, core->offset);
-					char *res = rz_print_json_path((const char *)data, core->offset);
-					if (res) {
-						rz_cons_printf("-> res(%s)\n", res);
-					}
-					/*
-					char *res = rz_print_json_indent ((char*)data, false, "  ", NULL);
-					print_json_path (core, res);
-					free (res);
-*/
-				} else {
-					RZ_LOG_ERROR("core: Cannot allocate %d\n", (int)(core->offset));
-				}
-			} else {
-				rz_core_cmdf(core, "pj %" PFMT64u " @ 0", core->offset);
-			}
-		} else {
-			if (core->blocksize < 4 || !memcmp(core->block, "\xff\xff\xff\xff", 4)) {
-				RZ_LOG_ERROR("core: Cannot read\n");
-			} else {
-				char *res = rz_print_json_indent((const char *)core->block, true, "  ", NULL);
-				rz_cons_printf("%s\n", res);
-				free(res);
-			}
-		}
-		break;
-	case 'x': // "px"
-	{
-		bool show_offset = rz_config_get_i(core->config, "hex.offset");
-		if (show_offset) {
-			core->print->flags |= RZ_PRINT_FLAGS_OFFSET;
-		} else {
-			core->print->flags &= ~RZ_PRINT_FLAGS_OFFSET;
-		}
-		int show_header = rz_config_get_i(core->config, "hex.header");
-		if (show_header) {
-			core->print->flags |= RZ_PRINT_FLAGS_HEADER;
-		} else {
-			core->print->flags &= ~RZ_PRINT_FLAGS_HEADER;
-		}
-		/* Don't show comments in default case */
-		core->print->use_comments = false;
-	}
-		rz_cons_break_push(NULL, NULL);
-		switch (input[1]) {
-		case '/': // "px/"
-			rz_core_print_examine(core, input + 2);
-			break;
-		case '?':
-		default:
-			rz_core_cmd_help(core, help_msg_px);
-			break;
-		}
-		rz_cons_break_pop();
-		break;
-	default:
-		rz_core_cmd_help(core, help_msg_p);
-		break;
-	}
-beach:
-	if (tmpseek != UT64_MAX) {
-		rz_core_seek(core, tmpseek, SEEK_SET);
-		rz_core_block_read(core);
-	}
-	if (tbs != core->blocksize) {
-		rz_core_block_size(core, tbs);
-	}
-	return ret;
-}
-
-RZ_IPI int rz_cmd_hexdump(void *data, const char *input) {
-	// TODO: Use the API directly
-	return rz_core_cmdf(data, "px%s", input);
-}
-
 static int lenof(ut64 off, int two) {
 	char buf[64];
 	buf[0] = 0;
@@ -2656,60 +2377,24 @@ RZ_API void rz_print_offset(RzPrint *p, ut64 off, int invert, int offseg, int of
 	rz_print_offset_sg(p, off, invert, offseg, 4, offdec, delta, label);
 }
 
+RZ_IPI RzCmdStatus rz_print_utf8_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	return core_print_string_in_block(core, true, false, 0, mode, RZ_STRING_ENC_UTF8);
+}
+
 RZ_IPI RzCmdStatus rz_print_utf16le_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	if (mode == RZ_OUTPUT_MODE_JSON) {
-		print_json_string(core, core->block, core->blocksize, RZ_STRING_ENC_UTF16LE, true);
-	} else {
-		RzStrStringifyOpt opt = { 0 };
-		opt.buffer = core->block;
-		opt.length = core->blocksize;
-		opt.encoding = RZ_STRING_ENC_UTF16LE;
-		opt.stop_at_nil = true;
-		core_print_raw_buffer(&opt);
-	}
-	return RZ_CMD_STATUS_OK;
+	return core_print_string_in_block(core, true, false, 0, mode, RZ_STRING_ENC_UTF16LE);
 }
 
 RZ_IPI RzCmdStatus rz_print_utf32le_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	if (mode == RZ_OUTPUT_MODE_JSON) {
-		print_json_string(core, core->block, core->blocksize, RZ_STRING_ENC_UTF32LE, true);
-	} else {
-		RzStrStringifyOpt opt = { 0 };
-		opt.buffer = core->block;
-		opt.length = core->blocksize;
-		opt.encoding = RZ_STRING_ENC_UTF32LE;
-		opt.stop_at_nil = true;
-		core_print_raw_buffer(&opt);
-	}
-	return RZ_CMD_STATUS_OK;
+	return core_print_string_in_block(core, true, false, 0, mode, RZ_STRING_ENC_UTF32LE);
 }
 
 RZ_IPI RzCmdStatus rz_print_utf16be_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	if (mode == RZ_OUTPUT_MODE_JSON) {
-		print_json_string(core, core->block, core->blocksize, RZ_STRING_ENC_UTF16BE, true);
-	} else {
-		RzStrStringifyOpt opt = { 0 };
-		opt.buffer = core->block;
-		opt.length = core->blocksize;
-		opt.encoding = RZ_STRING_ENC_UTF16BE;
-		opt.stop_at_nil = true;
-		core_print_raw_buffer(&opt);
-	}
-	return RZ_CMD_STATUS_OK;
+	return core_print_string_in_block(core, true, false, 0, mode, RZ_STRING_ENC_UTF16BE);
 }
 
 RZ_IPI RzCmdStatus rz_print_utf32be_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	if (mode == RZ_OUTPUT_MODE_JSON) {
-		print_json_string(core, core->block, core->blocksize, RZ_STRING_ENC_UTF32BE, true);
-	} else {
-		RzStrStringifyOpt opt = { 0 };
-		opt.buffer = core->block;
-		opt.length = core->blocksize;
-		opt.encoding = RZ_STRING_ENC_UTF32BE;
-		opt.stop_at_nil = true;
-		core_print_raw_buffer(&opt);
-	}
-	return RZ_CMD_STATUS_OK;
+	return core_print_string_in_block(core, true, false, 0, mode, RZ_STRING_ENC_UTF32BE);
 }
 
 RZ_IPI RzCmdStatus rz_print_hexdump_annotated_handler(RzCore *core, int argc, const char **argv) {
@@ -2724,6 +2409,12 @@ RZ_IPI RzCmdStatus rz_print_hexdump_annotated_handler(RzCore *core, int argc, co
 RZ_IPI RzCmdStatus rz_print_op_analysis_color_map_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	int len = argc > 1 ? (int)rz_num_math(core->num, argv[1]) : (int)core->blocksize;
 	return bool2status(cmd_print_pxA(core, len, state->mode));
+}
+
+void print_cursor(RzPrint *p, int cur, int len, int set) {
+	if (rz_print_have_cursor(p, cur, len)) {
+		rz_cons_printf("%s", RZ_CONS_INVERT(set, 1));
+	}
 }
 
 RZ_IPI RzCmdStatus rz_print_hexdump_bits_handler(RzCore *core, int argc, const char **argv) {
@@ -2753,15 +2444,15 @@ RZ_IPI RzCmdStatus rz_print_hexdump_bits_handler(RzCore *core, int argc, const c
 		memmove(buf + 5, buf + 4, 5);
 		buf[4] = 0;
 
-		rz_print_cursor(core->print, i, 1, 1);
+		print_cursor(core->print, i, 1, 1);
 		rz_cons_printf("%s.%s  ", buf, buf + 5);
-		rz_print_cursor(core->print, i, 1, 0);
+		print_cursor(core->print, i, 1, 0);
 		if (c == 3) {
 			const ut8 *b = core->block + i - 3;
-			int (*k)(const ut8 *, int) = cmd_pxb_k;
+			ut32 (*k)(const ut8 *, int) = cmd_pxb_k;
 			char (*p)(char) = cmd_pxb_p;
 
-			int n = k(b, 0) | k(b, 1) | k(b, 2) | k(b, 3);
+			ut32 n = k(b, 0) | k(b, 1) | k(b, 2) | k(b, 3);
 			rz_cons_printf("0x%08x  %c%c%c%c\n",
 				n, p(b[0]), p(b[1]), p(b[2]), p(b[3]));
 			c = -1;
@@ -3058,7 +2749,7 @@ RZ_IPI RzCmdStatus rz_print_hexdump_oct_handler(RzCore *core, int argc, const ch
 			return RZ_CMD_STATUS_ERROR; \
 		} \
 		if (size <= 0) { \
-			RZ_LOG_ERROR("Size must be greater 0"); \
+			RZ_LOG_ERROR("Size must be greater than 0\n"); \
 			return RZ_CMD_STATUS_ERROR; \
 		} \
 		char *code = rz_lang_byte_array(core->block, size, type); \
@@ -3160,6 +2851,15 @@ static void disassembly_as_table(RzTable *t, RzCore *core, ut64 addr, int n_inst
 static bool core_disassembly(RzCore *core, int n_bytes, int n_instrs, RzCmdStateOutput *state, bool cbytes) {
 	ut64 offset = rz_core_backward_offset(core, core->offset, &n_instrs, &n_bytes);
 
+	if (n_bytes == 0) {
+		int max_op_size = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE);
+		if (max_op_size < 1) {
+			// Just assume some random default value.
+			max_op_size = 1;
+		}
+		n_bytes = max_op_size * n_instrs;
+	}
+
 	RZ_LOG_VERBOSE("disassembly at: 0x%" PFMT64x " "
 		       "blocksize: %" PFMT32d " "
 		       "n_bytes: %" PFMT32d " "
@@ -3168,15 +2868,17 @@ static bool core_disassembly(RzCore *core, int n_bytes, int n_instrs, RzCmdState
 	RzCoreDisasmOptions disasm_options = {
 		.cbytes = cbytes,
 	};
-	ut8 *buf = malloc(n_bytes + 1);
+
+	ut8 *buf = RZ_NEWS0(ut8, n_bytes + 1);
 	if (!buf) {
 		RZ_LOG_ERROR("Failed to allocate memory\n");
 		return false;
 	}
-	if (rz_io_nread_at(core->io, offset, buf, n_bytes + 1) == -1) {
-		free(buf);
-		RZ_LOG_ERROR("Failed to read at 0x%" PFMT64x "\n", offset);
-		return false;
+	bool ret = true;
+	if (!rz_io_read_at_mapped(core->io, offset, buf, n_bytes + 1)) {
+		// Even with an error, keep on disassembling as at least some data may be read successfully
+		RZ_LOG_ERROR("Failed to read chunk of size 0x%" PFMT64x " at 0x%" PFMT64x " for disassembly.\n", (ut64)(n_bytes + 1), offset);
+		ret = false;
 	}
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
@@ -3200,15 +2902,11 @@ static bool core_disassembly(RzCore *core, int n_bytes, int n_instrs, RzCmdState
 	}
 	free(buf);
 
-	return true;
+	return ret;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_disassembly_n_bytes_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	if (argc <= 1) {
-		RZ_LOG_ERROR("Invalid number of arguments\n");
-		return RZ_CMD_STATUS_ERROR;
-	}
-	int n_bytes = (int)rz_num_math(core->num, argv[1]);
+	ut64 n_bytes = argc > 1 ? (ut64)rz_num_math(core->num, argv[1]) : core->blocksize;
 	if (n_bytes == 0) {
 		RZ_LOG_ERROR("The argument cannot be zero\n");
 		return RZ_CMD_STATUS_ERROR;
@@ -3217,16 +2915,22 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_n_bytes_handler(RzCore *core, int argc, co
 }
 
 RZ_IPI RzCmdStatus rz_cmd_disassembly_n_instructions_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	int n_instrs = 0;
 	if (argc <= 1) {
-		RZ_LOG_ERROR("Invalid number of arguments\n");
-		return RZ_CMD_STATUS_ERROR;
+		// when no arg, we always use the rows number of the terminal
+		// no args must be always positive, if is not we use 16
+		n_instrs = rz_num_get(core->num, "$r");
+		if (n_instrs < 1) {
+			n_instrs = 16;
+		}
+	} else {
+		n_instrs = (int)rz_num_math(core->num, argv[1]);
+		if (n_instrs == 0) {
+			RZ_LOG_ERROR("The argument cannot be zero\n");
+			return RZ_CMD_STATUS_ERROR;
+		}
 	}
-	int n_instrs = (int)rz_num_math(core->num, argv[1]);
-	if (n_instrs == 0) {
-		RZ_LOG_ERROR("The argument cannot be zero\n");
-		return RZ_CMD_STATUS_ERROR;
-	}
-	return bool2status(core_disassembly(core, argc > 1 && n_instrs == 0 ? 0 : (int)core->blocksize, n_instrs, state, false));
+	return bool2status(core_disassembly(core, argc > 1 ? (int)core->blocksize : 0, n_instrs, state, false));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_disassembly_all_possible_opcodes_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
@@ -3457,6 +3161,21 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_function_handler(RzCore *core, int argc, c
 	return RZ_CMD_STATUS_OK;
 }
 
+RZ_IPI RzCmdStatus rz_print_current_block_json_handler(RzCore *core, int argc, const char **argv) {
+	rz_return_val_if_fail(core, RZ_CMD_STATUS_ERROR);
+	bool enable_color = rz_config_get_i(core->config, "escr.color") != 0;
+	char *res = rz_print_json_indent((const char *)core->block, enable_color, "  ", NULL);
+	if (RZ_STR_ISEMPTY(res)) {
+		free(res);
+		RZ_LOG_ERROR("Couldn't find a JSON string.\n");
+		return RZ_CMD_STATUS_ERROR;
+	} else {
+		rz_cons_printf("%s\n", res);
+	}
+	free(res);
+	return RZ_CMD_STATUS_OK;
+}
+
 RZ_IPI RzCmdStatus rz_print_function_rzil_handler(RzCore *core, int argc, const char **argv) {
 	RzAnalysisFunction *f = rz_analysis_first_function_in(core->analysis, core->offset);
 	if (!f) {
@@ -3591,6 +3310,7 @@ RZ_IPI RzCmdStatus rz_cmd_sizes_of_n_instructions_handler(RzCore *core, int argc
 	for (ut32 i = 0, j = 0; i < core->blocksize && j < RZ_ABS(n_instrs); i += ret, j++) {
 		RzAsmOp asm_op = { 0 };
 		ret = rz_asm_disassemble(core->rasm, &asm_op, core->block + i, core->blocksize - i);
+		rz_asm_op_fini(&asm_op);
 		if (rz_cons_is_breaked()) {
 			break;
 		}
@@ -3732,22 +3452,23 @@ RZ_IPI RzCmdStatus rz_cmd_disassemble_ropchain_handler(RzCore *core, int argc, c
 }
 
 static bool core_walk_function_blocks(RzCore *core, RzAnalysisFunction *f, RzCmdStateOutput *state, char type_print, bool fromHere) {
-	RzListIter *iter;
+	void **iter;
 	RzAnalysisBlock *b = NULL;
 	const bool orig_bb_middle = rz_config_get_b(core->config, "asm.bb.middle");
 	rz_config_set_b(core->config, "asm.bb.middle", false);
 
-	if (rz_list_length(f->bbs) >= 1) {
+	if (rz_pvector_len(f->bbs) >= 1) {
 		ut32 fcn_size = rz_analysis_function_realsize(f);
-		b = rz_list_get_top(f->bbs);
+		b = rz_pvector_tail(f->bbs);
 		if (b->size > fcn_size) {
 			b->size = fcn_size;
 		}
 	}
 
-	rz_list_sort(f->bbs, (RzListComparator)bbcmp, NULL);
+	rz_pvector_sort(f->bbs, (RzPVectorComparator)bbcmp, NULL);
 	if (state->mode == RZ_OUTPUT_MODE_JSON) {
-		rz_list_foreach (f->bbs, iter, b) {
+		rz_pvector_foreach (f->bbs, iter) {
+			b = (RzAnalysisBlock *)*iter;
 			ut8 *buf = malloc(b->size);
 			if (!buf) {
 				RZ_LOG_ERROR("cannot allocate %" PFMT64u " byte(s)\n", b->size);
@@ -3767,7 +3488,8 @@ static bool core_walk_function_blocks(RzCore *core, RzAnalysisFunction *f, RzCmd
 			saved_arena = rz_reg_arena_peek(core->analysis->reg);
 		}
 		rz_config_set_i(core->config, "asm.lines.bb", 0);
-		rz_list_foreach (f->bbs, iter, b) {
+		rz_pvector_foreach (f->bbs, iter) {
+			b = (RzAnalysisBlock *)*iter;
 			pr_bb(core, f, b, emu, saved_gp, saved_arena, type_print, fromHere);
 		}
 		if (emu) {
@@ -3860,7 +3582,7 @@ RZ_IPI RzCmdStatus rz_cmd_disassemble_recursively_no_function_handler(RzCore *co
 
 RZ_IPI RzCmdStatus rz_cmd_disassemble_summarize_n_bytes_handler(RzCore *core, int argc, const char **argv) {
 	if (argc <= 1) {
-		RZ_LOG_ERROR("Invalid argument.");
+		RZ_LOG_ERROR("Invalid argument.\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 
@@ -4200,7 +3922,7 @@ static bool print_value(RzCore *core, PrintValueOptions *opts, RzCmdStateOutput 
 
 static RzCmdStatus print_value_size(RzCore *core, RzCmdStateOutput *state, int argc, const char **argv, ut64 size) {
 	int repeat = argc > 1 ? rz_num_math(NULL, argv[1]) : 1;
-	if (repeat < 0) {
+	if (repeat <= 0) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	PrintValueOptions opts = {
@@ -4259,6 +3981,7 @@ RZ_IPI RzCmdStatus rz_print_url_encode_zero_handler(RzCore *core, int argc, cons
 	opt.buffer = core->block;
 	opt.length = len;
 	opt.stop_at_nil = true;
+	opt.stop_at_unprintable = true;
 	opt.encoding = RZ_STRING_ENC_8BIT;
 	opt.urlencode = true;
 	core_print_raw_buffer(&opt);
@@ -4681,8 +4404,10 @@ RZ_IPI RzCmdStatus rz_print_instr_recursive_at_handler(RzCore *core, int argc, c
 }
 
 RZ_IPI RzCmdStatus rz_print_instr_until_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	ut64 limit = argc > 1 ? rz_num_math(core->num, argv[1]) : 1024;
-	disasm_until_ret(core, core->offset, limit, state->mode);
+	const ut64 limit = argc > 1 ? rz_num_math(core->num, argv[1]) : 1024;
+	if (!rz_core_disasm_until_ret(core, core->offset, limit, state->mode, false, NULL)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -4700,7 +4425,7 @@ static RzCoreAnalysisStatsRange *analysis_stats_range(RzCore *core, int width) {
 	ut64 from = UT64_MAX;
 	ut64 to = 0;
 
-	RzList *list = rz_core_get_boundaries_prot(core, -1, NULL, "search");
+	RzList *list = rz_core_get_boundaries_select(core, "search.from", "search.to", "search.in");
 	if (rz_list_empty(list)) {
 		RZ_LOG_ERROR("No range to calculate stats for.\n");
 		rz_list_free(list);
@@ -4913,7 +4638,7 @@ RZ_IPI RzCmdStatus rz_print_minus_table_handler(RzCore *core, int argc, const ch
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_cmd_state_output_array_start(state);
-	rz_cmd_state_output_set_columnsf(state, "sddddd", "offset", "flags", "funcs", "cmts", "syms", "str");
+	rz_cmd_state_output_set_columnsf(state, "xddddd", "offset", "flags", "funcs", "cmts", "syms", "str");
 	state->d.t->showSum = true;
 	state->d.t->showFancy = true;
 	for (size_t i = 0; i < rz_vector_len(&srange->as->blocks); i++) {
@@ -5019,8 +4744,8 @@ RZ_IPI RzCmdStatus rz_print_columns_debug_handler(RzCore *core, int argc, const 
 		rows = user_rows;
 	}
 	bool asm_minicols = rz_config_get_i(core->config, "asm.minicols");
-	char *o_ao = strdup(rz_config_get(core->config, "asm.offset"));
-	char *o_ab = strdup(rz_config_get(core->config, "asm.bytes"));
+	char *o_ao = rz_str_dup(rz_config_get(core->config, "asm.offset"));
+	char *o_ab = rz_str_dup(rz_config_get(core->config, "asm.bytes"));
 	if (asm_minicols) {
 		// Set asm.offset and asm.bytes configs to false to avoid printing them
 		rz_config_set_b(core->config, "asm.offset", false);
@@ -5222,7 +4947,7 @@ static CoreBlockRange *calculate_blocks_range(RzCore *core, ut64 from, ut64 to, 
 	st64 blocksize = core->blocksize;
 	// If we are not in the debug mode - use only current mapped ranges
 	if (!rz_config_get_b(core->config, "cfg.debug")) {
-		RzList *boundaries = rz_core_get_boundaries_prot(core, -1, NULL, "zoom");
+		RzList *boundaries = rz_core_get_boundaries_select(core, "zoom.from", "zoom.to", "zoom.in");
 		if (!boundaries) {
 			free(brange);
 			return NULL;
@@ -5320,7 +5045,7 @@ static bool if_aop_match_hist_type(RzAnalysisOp *op, CoreAnalysisHistogramType t
 static ut8 *analysis_stats_histogram_data(RzCore *core, CoreBlockRange *brange) {
 	ut8 *data = calloc(1, brange->nblocks);
 	if (!data) {
-		RZ_LOG_ERROR("core: Failed to allocate memory");
+		RZ_LOG_ERROR("core: Failed to allocate memory\n");
 		return NULL;
 	}
 	// FIXME: Should we just use the value from brange instead?
@@ -5354,7 +5079,7 @@ static ut8 *analysis_histogram_data(RzCore *core, CoreBlockRange *brange, CoreAn
 	size_t j, i = 0;
 	ut8 *data = calloc(1, brange->nblocks);
 	if (!data) {
-		RZ_LOG_ERROR("core: Failed to allocate memory");
+		RZ_LOG_ERROR("core: Failed to allocate memory\n");
 		return NULL;
 	}
 	for (i = 0; i < brange->nblocks; i++) {
@@ -5366,7 +5091,7 @@ static ut8 *analysis_histogram_data(RzCore *core, CoreBlockRange *brange, CoreAn
 			if (hist_type == HISTOGRAM_ANALYSIS_BASIC_BLOCKS) {
 				RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, off + j, 0);
 				if (fcn) {
-					data[i] = rz_list_length(fcn->bbs);
+					data[i] = rz_pvector_len(fcn->bbs);
 				}
 				continue;
 			}
@@ -5622,7 +5347,7 @@ static RzCmdStatus print_histogram_entropy(RzCore *core, int argc, const char **
 	ut8 *data = calloc(1, brange->nblocks);
 	ut8 *tmp = malloc(brange->blocksize);
 	if (!tmp) {
-		RZ_LOG_ERROR("core: failed to malloc memory");
+		RZ_LOG_ERROR("core: failed to malloc memory\n");
 		free(data);
 		free(brange);
 		return RZ_CMD_STATUS_ERROR;
@@ -5740,7 +5465,7 @@ static bool print_rising_and_falling_entropy_JSON(RzCore *core, RzCmdStateOutput
 static bool print_rising_and_falling_entropy_quiet(RzCore *core, CoreBlockRange *brange, ut8 *tmp, double fallingthreshold, double risingthreshold) {
 	RzStrBuf *buf = rz_strbuf_new("");
 	if (!buf) {
-		RZ_LOG_ERROR("core: failed to malloc memory");
+		RZ_LOG_ERROR("core: failed to malloc memory\n");
 		return false;
 	}
 	bool resetFlag = 1;
@@ -5782,7 +5507,7 @@ static bool print_rising_and_falling_entropy_quiet(RzCore *core, CoreBlockRange 
 static bool print_rising_and_falling_entropy_standard(RzCore *core, CoreBlockRange *brange, ut8 *tmp, double fallingthreshold, double risingthreshold) {
 	RzStrBuf *buf = rz_strbuf_new("");
 	if (!buf) {
-		RZ_LOG_ERROR("core: failed to malloc memory");
+		RZ_LOG_ERROR("core: failed to malloc memory\n");
 		return false;
 	}
 	bool resetFlag = 1;
@@ -5824,7 +5549,7 @@ static bool print_rising_and_falling_entropy_standard(RzCore *core, CoreBlockRan
 static bool print_rising_and_falling_entropy_long(RzCore *core, CoreBlockRange *brange, ut8 *tmp, double fallingthreshold, double risingthreshold) {
 	RzStrBuf *buf = rz_strbuf_new("");
 	if (!buf) {
-		RZ_LOG_ERROR("core: failed to malloc memory");
+		RZ_LOG_ERROR("core: failed to malloc memory\n");
 		return false;
 	}
 	bool resetFlag = 1;
@@ -5873,11 +5598,11 @@ static RzCmdStatus print_rising_and_falling_entropy(RzCore *core, int argc, cons
 		fallingthreshold = rz_num_get_float(core->num, argv[2]);
 	}
 	if (fallingthreshold > risingthreshold) {
-		RZ_LOG_ERROR("falling threshold is greater than rising threshold");
+		RZ_LOG_ERROR("falling threshold is greater than rising threshold\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	if (risingthreshold > 1) {
-		RZ_LOG_ERROR("threshold can't be greater than 1");
+		RZ_LOG_ERROR("threshold can't be greater than 1\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	int nblocks = -1;
@@ -5890,7 +5615,7 @@ static RzCmdStatus print_rising_and_falling_entropy(RzCore *core, int argc, cons
 	}
 	ut8 *tmp = malloc(brange->blocksize);
 	if (!tmp) {
-		RZ_LOG_ERROR("core: failed to malloc memory");
+		RZ_LOG_ERROR("core: failed to malloc memory\n");
 		free(brange);
 		return RZ_CMD_STATUS_ERROR;
 	}
@@ -5967,7 +5692,7 @@ static RzCmdStatus print_histogram_marks(RzCore *core, int argc, const char **ar
 	if (!tmp) {
 		free(data);
 		free(brange);
-		RZ_LOG_ERROR("core: failed to malloc memory");
+		RZ_LOG_ERROR("core: failed to malloc memory\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	for (size_t i = 0; i < brange->nblocks; i++) {
@@ -6021,7 +5746,7 @@ static RzCmdStatus print_histogram_0x00(RzCore *core, int argc, const char **arg
 	if (!tmp) {
 		free(data);
 		free(brange);
-		RZ_LOG_ERROR("core: failed to malloc memory");
+		RZ_LOG_ERROR("core: failed to malloc memory\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	for (size_t i = 0; i < brange->nblocks; i++) {
@@ -6078,7 +5803,7 @@ static RzCmdStatus print_histogram_0xff(RzCore *core, int argc, const char **arg
 	if (!tmp) {
 		free(data);
 		free(brange);
-		RZ_LOG_ERROR("core: failed to malloc memory");
+		RZ_LOG_ERROR("core: failed to malloc memory\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	for (size_t i = 0; i < brange->nblocks; i++) {
@@ -6135,7 +5860,7 @@ static RzCmdStatus print_histogram_printable(RzCore *core, int argc, const char 
 	if (!tmp) {
 		free(data);
 		free(brange);
-		RZ_LOG_ERROR("core: failed to malloc memory");
+		RZ_LOG_ERROR("core: failed to malloc memory\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	for (size_t i = 0; i < brange->nblocks; i++) {
@@ -6192,7 +5917,7 @@ static RzCmdStatus print_histogram_z(RzCore *core, int argc, const char **argv, 
 	if (!tmp) {
 		free(data);
 		free(brange);
-		RZ_LOG_ERROR("core: failed to malloc memory");
+		RZ_LOG_ERROR("core: failed to malloc memory\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	size_t len = 0;
@@ -6719,4 +6444,80 @@ RZ_IPI RzCmdStatus rz_cmd_print_8bit_hexpair_function_handler(RzCore *core, int 
 	size_t len = rz_analysis_function_linear_size(f);
 	ut64 addr = rz_analysis_function_min_addr(f);
 	return print_8bit_hexpair(core, addr, len);
+}
+
+// "x"
+RZ_IPI RzCmdStatus rz_print_hexdump_alias_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	return rz_print_hexdump_handler(core, argc, argv, state);
+}
+
+// "xc"
+RZ_IPI RzCmdStatus rz_print_hexdump_comments_alias_handler(RzCore *core, int argc, const char **argv) {
+	return rz_print_hexdump_comments_handler(core, argc, argv);
+}
+
+static size_t format_width_to_num(size_t arch_bits, const char *width) {
+	rz_return_val_if_fail(width, 0);
+	switch (width[0]) {
+	default:
+		rz_warn_if_reached();
+		return 0;
+	case 'b': // # Byte = 1 bytes
+		return 1;
+	case 'h': // # Half word = 2 bytes
+		return 2;
+	case 'w': // # Word = 4 bytes
+		return 4;
+	case 'd': // # Double word = 8 bytes
+		return 8;
+	case 'a': // # Architecture width
+		return arch_bits > 0 ? arch_bits / 8 : 1;
+	}
+}
+
+// "pxF"
+RZ_IPI RzCmdStatus rz_print_hexdump_format_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	ut64 num = rz_num_math(core->num, argv[1]);
+	if (!num) {
+		return RZ_CMD_STATUS_OK;
+	}
+	const char *format = argv[2];
+	size_t width = format_width_to_num(core->analysis ? core->analysis->bits : 0, argv[3]);
+	switch (format[0]) {
+	default:
+		RZ_LOG_ERROR("Invalid format: '%s'.\n", format);
+		return RZ_CMD_STATUS_ERROR;
+	case 'x':
+		return bool2status(rz_core_print_dump(core, state->mode, core->offset, width, num * width, RZ_CORE_PRINT_FORMAT_TYPE_HEXADECIMAL));
+	case 'o':
+		// Parameter n must be 1 here. Don't ask me why :( The rabbit whole is deep and defuse.
+		return bool2status(rz_core_print_dump(core, state->mode, core->offset, 1, num * width, RZ_CORE_PRINT_FORMAT_TYPE_OCTAL));
+	case 'd':
+		return bool2status(rz_core_print_dump(core, state->mode, core->offset, width, num * width, RZ_CORE_PRINT_FORMAT_TYPE_INTEGER));
+	case 'f': {
+		char *format = RZ_NEWS0(char, num + 1);
+		for (size_t i = 0; i < num; ++i) {
+			format[i] = 'f';
+		}
+		RzCmdStatus status = print_format(core, format, RZ_PRINT_MUSTSEE, state);
+		free(format);
+		return status;
+	}
+	case 's': {
+		size_t block_size_bak = core->blocksize;
+		size_t new_block_size = num * width;
+		if (!rz_core_block_size(core, new_block_size)) {
+			RZ_LOG_ERROR("Failed to set block size to %" PFMTSZu " bytes.\n", new_block_size);
+			return RZ_CMD_STATUS_ERROR;
+		}
+		const char *psb = "psb";
+		RzCmdStatus status = rz_print_strings_current_block_handler(core, 1, &psb, state->mode);
+		if (!rz_core_block_size(core, block_size_bak)) {
+			RZ_LOG_ERROR("Failed to reset block size to %" PFMTSZu " bytes.\n", block_size_bak);
+			return RZ_CMD_STATUS_ERROR;
+		}
+		return status;
+	}
+	}
+	return RZ_CMD_STATUS_ERROR;
 }

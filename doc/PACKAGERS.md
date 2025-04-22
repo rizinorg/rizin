@@ -66,7 +66,7 @@ version of Capstone be dynamically linked at runtime. To do this, use the
 `-Duse_sys_capstone=enabled` command line option when running `meson`.
 
 You can override the version of Capstone Rizin will use by setting
-`use_capstone_version` to one of `v4`, `v5` or `next`.
+`use_capstone_version` to one of `v4`, `v5`, `v6` or `next`.
 
 There are more bundled dependencies that can be swapped out for system versions.
 At the time of writing, these are:
@@ -81,6 +81,7 @@ At the time of writing, these are:
 * `use_sys_libmspack`
 * `use_sys_pcre2`
 * `use_sys_tree_sitter`
+* `use_sys_softfloat`
 
 See [meson_options.txt][] for a complete list of compile-time options.
 

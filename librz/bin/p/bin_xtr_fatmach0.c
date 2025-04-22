@@ -60,7 +60,7 @@ static int size(RzBin *bin) {
 }
 
 static inline void fill_metadata_info_from_hdr(RzBinXtrMetadata *meta, struct MACH0_(mach_header) * hdr) {
-	meta->arch = strdup(MACH0_(get_cputype_from_hdr)(hdr));
+	meta->arch = rz_str_dup(MACH0_(get_cputype_from_hdr)(hdr));
 	meta->bits = MACH0_(get_bits_from_hdr)(hdr);
 	meta->machine = MACH0_(get_cpusubtype_from_hdr)(hdr);
 	meta->type = MACH0_(get_filetype_from_hdr)(hdr);
@@ -148,7 +148,7 @@ static RzList /*<RzBinXtrData *>*/ *oneshotall_buffer(RzBin *bin, RzBuffer *b) {
 	return NULL;
 }
 
-RzBinXtrPlugin rz_bin_xtr_plugin_xtr_fatmach0 = {
+RzBinXtrPlugin rz_bin_xtr_plugin_fatmach0 = {
 	.name = "xtr.fatmach0",
 	.desc = "fat mach0 bin extractor plugin",
 	.license = "LGPL3",

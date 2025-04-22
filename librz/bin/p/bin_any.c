@@ -23,7 +23,7 @@ static char *get_filetype(RzBuffer *b) {
 	rz_buf_read_at(b, 0, buf, sizeof(buf));
 	tmp = rz_magic_buffer(ck, buf, sizeof(buf));
 	if (tmp) {
-		res = strdup(tmp);
+		res = rz_str_dup(tmp);
 	}
 	rz_magic_free(ck);
 	return res;
@@ -35,7 +35,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 		return NULL;
 	}
 	ret->lang = "";
-	ret->file = bf->file ? strdup(bf->file) : NULL;
+	ret->file = rz_str_dup(bf->file);
 	ret->type = get_filetype(bf->buf);
 	ret->has_pi = 0;
 	ret->has_canary = 0;

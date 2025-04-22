@@ -26,6 +26,7 @@ rz_util_common_sources = [
   'hex.c',
   'idpool.c',
   'intervaltree.c',
+  'itv.c',
   'json_indent.c',
   'json_parser.c',
   'lang_byte_array.c',
@@ -78,6 +79,7 @@ rz_util_common_sources = [
   'utf16.c',
   'utf32.c',
   'utf8.c',
+  'unicode.c',
   'vector.c',
   'version.c',
   'w32-sys.c',
@@ -86,11 +88,14 @@ rz_util_common_sources = [
   'ht/ht_pp.c',
   'ht/ht_up.c',
   'ht/ht_pu.c',
+  'ht/ht_sp.c',
+  'ht/ht_ss.c',
+  'ht/ht_su.c',
   'set.c',
 ]
 rz_util_sources = rz_util_common_sources
 
-rz_util_deps = [ldl, lrt, mth, th, utl, pcre2_dep] + platform_deps
+rz_util_deps = [ldl, lrt, mth, th, utl, pcre2_dep, softfloat_dep] + platform_deps
 if zlib_dep.found()
   rz_util_deps += [zlib_dep]
 endif
@@ -139,7 +144,8 @@ meson.override_dependency('rz_util', rz_util_dep)
 if meson.is_cross_build()
   # this is a bit messy, it duplicates most of the code required to get the
   # regular dependencies but for the build_system. This is required to build
-  # sdb_native, used at build time to compile .sdb.txt files into .sdb ones.
+  # sdb_gen natively, used at build time to compile .sdb.txt files into .sdb
+  # ones.
   platform_native_deps = []
   if build_machine.system() == 'windows'
     platform_native_deps = [
@@ -148,7 +154,7 @@ if meson.is_cross_build()
       cc_native.find_library('psapi'),
     ]
   endif
-  rz_util_native_deps = [ldl_native, lrt_native, mth_native, th_native, utl_native, pcre2_native_dep] + platform_native_deps
+  rz_util_native_deps = [ldl_native, lrt_native, mth_native, th_native, utl_native, pcre2_native_dep, softfloat_cross_native_dep] + platform_native_deps
   if execinfo_native.found()
     rz_util_native_deps += [execinfo_native]
   endif
@@ -193,10 +199,10 @@ modules += { 'rz_util': {
     'include_subdirs_extra': ['librz/sdb']
 }}
 
-sdb_exe = executable('sdb_native', 'sdb/src/main.c',
+sdb_exe = executable('sdb_gen', 'sdb/src/main.c',
   dependencies: rz_util_native_dep,
   install: false,
-  native: true,
+  native: meson.is_cross_build(),
   implicit_include_directories: false,
   install_rpath: rpath_exe,
 )

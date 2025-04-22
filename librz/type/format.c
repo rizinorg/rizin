@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2007-2020 Skia <skia@libskia.so>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include "rz_util/rz_str_util.h"
 #include <rz_util.h>
 #include <rz_util/rz_print.h>
 #include <rz_reg.h>
@@ -14,7 +15,6 @@
 #define STRUCTPTR       100
 #define NESTEDSTRUCT    1
 #define STRUCTFLAG      10000
-#define NESTDEPTH       14
 #define ARRAYINDEX_COEF 10000
 
 #define MUSTSEE       (mode & RZ_PRINT_MUSTSEE && mode & RZ_PRINT_ISFIELD && !(mode & RZ_PRINT_JSON))
@@ -27,6 +27,9 @@
 // this define is used as a way to acknowledge when updateAddr should take len
 // as real len of the buffer
 #define THRESHOLD (-4444)
+
+// Maximum depth level of structure unfolding
+#define STRUCT_MAX_NESTED_LEVELS 50
 
 // TODO REWRITE THIS IS BECOMING A NIGHTMARE
 
@@ -1196,7 +1199,14 @@ static void rz_type_byte_escape(const RzPrint *p, const char *src, char **dst, i
 	opt.dot_nl = dot_nl;
 	opt.show_asciidot = !strcmp(p->strconv_mode, "asciidot");
 	opt.esc_bslash = p->esc_bslash;
-	rz_str_byte_escape(src, dst, &opt);
+	opt.keep_printable = true;
+	RzCodePoint cp = (ut8)*src;
+	if (cp <= RZ_UNICODE_LAST_ASCII && !rz_str_escape_code_point(cp, 1, &opt)) {
+		**dst = *src;
+		(*dst)++;
+	} else {
+		rz_unicode_byte_escape(cp, dst, &opt);
+	}
 }
 
 static void rz_type_format_nulltermstring(const RzTypeDB *typedb, RzPrint *p, RzStrBuf *outbuf, int len, int endian, int mode,
@@ -1230,7 +1240,7 @@ static void rz_type_format_nulltermstring(const RzTypeDB *typedb, RzPrint *p, Rz
 	if (MUSTSET) {
 		int buflen = strlen((const char *)buf + seeki);
 		int vallen = strlen(setval);
-		char *ons, *newstring = ons = strdup(setval);
+		char *ons, *newstring = ons = rz_str_dup(setval);
 		if ((newstring[0] == '\"' && newstring[vallen - 1] == '\"') || (newstring[0] == '\'' && newstring[vallen - 1] == '\'')) {
 			newstring[vallen - 1] = '\0';
 			newstring++;
@@ -1299,7 +1309,7 @@ static void rz_type_format_nulltermwidestring(RzPrint *p, RzStrBuf *outbuf, cons
 	if (MUSTSET) {
 		int vallen = strlen(setval);
 		char *newstring, *ons;
-		newstring = ons = strdup(setval);
+		newstring = ons = rz_str_dup(setval);
 		if ((newstring[0] == '\"' && newstring[vallen - 1] == '\"') || (newstring[0] == '\'' && newstring[vallen - 1] == '\'')) {
 			newstring[vallen - 1] = '\0';
 			newstring++;
@@ -1364,7 +1374,7 @@ static void rz_type_format_bitfield(const RzTypeDB *typedb, RzStrBuf *outbuf, ut
 static void rz_type_format_enum(const RzTypeDB *typedb, RzStrBuf *outbuf, ut64 seeki, char *fmtname,
 	char *fieldname, ut64 addr, int mode, int size) {
 	const char *enumvalue = NULL;
-	addr &= (1ULL << (size * 8)) - 1;
+	addr &= (size < 0 ? 0 : (1ULL << size * 8)) - 1;
 	if (MUSTSEE && !SEEVALUE) {
 		rz_strbuf_appendf(outbuf, "0x%08" PFMT64x " = ", seeki);
 	}
@@ -1423,7 +1433,7 @@ static void rz_type_format_num_specifier(RzStrBuf *outbuf, ut64 addr, int bytes,
 	} else if (bytes == 2) {
 		rz_strbuf_appendf(outbuf, fs, EXT(short));
 	} else if (bytes == 4) {
-		rz_strbuf_appendf(outbuf, fs, EXT(int)); // XXX: int is not necessarily 4 bytes I guess.
+		rz_strbuf_appendf(outbuf, fs, EXT(long));
 	} else if (bytes == 8) {
 		rz_strbuf_appendf(outbuf, fs64, addr);
 	}
@@ -1512,21 +1522,25 @@ static void rz_type_format_num(RzStrBuf *outbuf, int endian, int mode, const cha
 }
 
 // XXX: this is somewhat incomplete. must be updated to handle all format chars
-RZ_API int rz_type_format_struct_size(const RzTypeDB *typedb, const char *f, int mode, int n) {
+static int format_struct_size(const RzTypeDB *typedb, const char *parent_format, const char *f, int mode, int depth) {
 	char *end, *args, *fmt;
 	int size = 0, tabsize = 0, i, idx = 0, biggest = 0, fmt_len = 0, times = 1;
 	bool tabsize_set = false;
 	if (!f) {
 		return -1;
 	}
-	if (n >= 5) { // This is the nesting level, is this not a bit arbitrary?!
+	if (parent_format && RZ_STR_EQ(parent_format, f)) {
+		return 0;
+	}
+	if (depth >= STRUCT_MAX_NESTED_LEVELS) {
+		RZ_LOG_WARN("Structure nesting depth level reached maximum...\n");
 		return 0;
 	}
 	const char *fmt2 = rz_type_db_format_get(typedb, f);
 	if (!fmt2) {
 		fmt2 = f;
 	}
-	char *o = strdup(fmt2);
+	char *o = rz_str_dup(fmt2);
 	if (!o) {
 		return -1;
 	}
@@ -1538,9 +1552,9 @@ RZ_API int rz_type_format_struct_size(const RzTypeDB *typedb, const char *f, int
 	}
 	if (*end) {
 		*end = 0;
-		args = strdup(end + 1);
+		args = rz_str_dup(end + 1);
 	} else {
-		args = strdup("");
+		args = rz_str_dup("");
 	}
 
 	if (fmt[0] == '{') {
@@ -1648,7 +1662,7 @@ RZ_API int rz_type_format_struct_size(const RzTypeDB *typedb, const char *f, int
 			if (!wordAtIndex) {
 				break;
 			}
-			structname = strdup(wordAtIndex);
+			structname = rz_str_dup(wordAtIndex);
 			if (*structname == '(') {
 				endname = (char *)rz_str_rchr(structname, NULL, ')');
 			} else {
@@ -1682,7 +1696,7 @@ RZ_API int rz_type_format_struct_size(const RzTypeDB *typedb, const char *f, int
 				free(o);
 				return 0;
 			}
-			int newsize = rz_type_format_struct_size(typedb, format, mode, n + 1);
+			int newsize = format_struct_size(typedb, f, format, mode, depth + 1);
 			if (newsize < 1) {
 				RZ_LOG_ERROR("Cannot find size for `%s'\n", format);
 				free(structname);
@@ -1769,6 +1783,10 @@ RZ_API int rz_type_format_struct_size(const RzTypeDB *typedb, const char *f, int
 	return (mode & RZ_PRINT_UNIONMODE) ? biggest : size;
 }
 
+RZ_API int rz_type_format_struct_size(const RzTypeDB *typedb, const char *f, int mode, int n) {
+	return format_struct_size(typedb, NULL, f, mode, n);
+}
+
 static int rz_type_format_data_internal(const RzTypeDB *typedb, RzPrint *p, RzStrBuf *outbuf, ut64 seek, const ut8 *b, const int len,
 	const char *formatname, int mode, const char *setval, char *ofield);
 
@@ -1778,18 +1796,18 @@ static int rz_type_format_struct(const RzTypeDB *typedb, RzPrint *p, RzStrBuf *o
 	int ret = 0;
 	char namefmt[128];
 	slide++;
-	if ((slide % STRUCTPTR) > NESTDEPTH || (slide % STRUCTFLAG) / STRUCTPTR > NESTDEPTH) {
-		eprintf("Too much nested struct, recursion too deep...\n");
+	if ((slide % STRUCTPTR) > STRUCT_MAX_NESTED_LEVELS || (slide % STRUCTFLAG) / STRUCTPTR > STRUCT_MAX_NESTED_LEVELS) {
+		RZ_LOG_WARN("Structure nesting depth level reached maximum...\n");
 		return 0;
 	}
 	if (anon) {
-		fmt = strdup(name);
+		fmt = rz_str_dup(name);
 	} else {
 		const char *dbfmt = rz_type_db_format_get(typedb, name);
 		if (!dbfmt) { // Fetch struct info from types DB
 			fmt = rz_type_format(typedb, name);
 		} else {
-			fmt = strdup(dbfmt);
+			fmt = rz_str_dup(dbfmt);
 		}
 	}
 	if (RZ_STR_ISEMPTY(fmt)) {
@@ -1831,40 +1849,40 @@ static char *get_format_type(const char fmt, const char arg) {
 	switch (fmt) {
 	case 'b':
 	case 'C':
-		type = strdup("uint8_t");
+		type = rz_str_dup("uint8_t");
 		break;
 	case 'c':
-		type = strdup("int8_t");
+		type = rz_str_dup("int8_t");
 		break;
 	case 'd':
 	case 'i':
 	case 'o':
 	case 'x':
-		type = strdup("int32_t");
+		type = rz_str_dup("int32_t");
 		break;
 	case 'E':
-		type = strdup("enum");
+		type = rz_str_dup("enum");
 		break;
 	case 'f':
-		type = strdup("float");
+		type = rz_str_dup("float");
 		break;
 	case 'F':
-		type = strdup("double");
+		type = rz_str_dup("double");
 		break;
 	case 'q':
-		type = strdup("uint64_t");
+		type = rz_str_dup("uint64_t");
 		break;
 	case 'u':
-		type = strdup("uleb128_t");
+		type = rz_str_dup("uleb128_t");
 		break;
 	case 'Q':
-		type = strdup("uint128_t");
+		type = rz_str_dup("uint128_t");
 		break;
 	case 'w':
-		type = strdup("uint16_t");
+		type = rz_str_dup("uint16_t");
 		break;
 	case 'X':
-		type = strdup("uint8_t[]");
+		type = rz_str_dup("uint8_t[]");
 		break;
 	case 'D':
 	case 's':
@@ -1872,22 +1890,22 @@ static char *get_format_type(const char fmt, const char arg) {
 	case 't':
 	case 'z':
 	case 'Z':
-		type = strdup("char*");
+		type = rz_str_dup("char*");
 		break;
 	case 'n':
 	case 'N':
 		switch (arg) {
 		case '1':
-			type = strdup(fmt == 'n' ? "int8_t" : "uint8_t");
+			type = rz_str_dup(fmt == 'n' ? "int8_t" : "uint8_t");
 			break;
 		case '2':
-			type = strdup(fmt == 'n' ? "int16_t" : "uint16_t");
+			type = rz_str_dup(fmt == 'n' ? "int16_t" : "uint16_t");
 			break;
 		case '4':
-			type = strdup(fmt == 'n' ? "int32_t" : "uint32_t");
+			type = rz_str_dup(fmt == 'n' ? "int32_t" : "uint32_t");
 			break;
 		case '8':
-			type = strdup(fmt == 'n' ? "int64_t" : "uint64_t");
+			type = rz_str_dup(fmt == 'n' ? "int64_t" : "uint64_t");
 			break;
 		}
 		break;
@@ -1901,7 +1919,7 @@ static char *get_format_type(const char fmt, const char arg) {
 RZ_API const char *rz_type_db_format_get(const RzTypeDB *typedb, const char *name) {
 	rz_return_val_if_fail(typedb && name, NULL);
 	bool found = false;
-	const char *result = ht_pp_find(typedb->formats, name, &found);
+	const char *result = ht_ss_find(typedb->formats, name, &found);
 	if (!found || !result) {
 		// eprintf("Cannot find format \"%s\"\n", name);
 		return NULL;
@@ -1912,15 +1930,15 @@ RZ_API const char *rz_type_db_format_get(const RzTypeDB *typedb, const char *nam
 RZ_API void rz_type_db_format_set(RzTypeDB *typedb, const char *name, const char *fmt) {
 	rz_return_if_fail(typedb && name && fmt);
 	// TODO: We should check if the file format is valid (e.g. syntax) before storing it
-	ht_pp_insert(typedb->formats, name, strdup(fmt));
+	ht_ss_insert(typedb->formats, name, rz_str_dup(fmt));
 }
 
-static bool format_collect_cb(void *user, const void *k, const void *v) {
+static bool format_collect_cb(void *user, const char *k, const char *v) {
 	rz_return_val_if_fail(user && k && v, false);
 	RzList *l = user;
 	RzTypeFormat *fmt = RZ_NEW0(RzTypeFormat);
-	fmt->name = (const char *)k;
-	fmt->body = (const char *)v;
+	fmt->name = k;
+	fmt->body = v;
 	rz_list_append(l, fmt);
 	return true;
 }
@@ -1928,13 +1946,13 @@ static bool format_collect_cb(void *user, const void *k, const void *v) {
 RZ_API RZ_OWN RzList /*<RzTypeFormat *>*/ *rz_type_db_format_all(RzTypeDB *typedb) {
 	rz_return_val_if_fail(typedb, NULL);
 	RzList *formats = rz_list_new();
-	ht_pp_foreach(typedb->formats, format_collect_cb, formats);
+	ht_ss_foreach(typedb->formats, format_collect_cb, formats);
 	return formats;
 }
 
 RZ_API void rz_type_db_format_delete(RzTypeDB *typedb, const char *name) {
 	rz_return_if_fail(typedb && name);
-	ht_pp_delete(typedb->formats, name);
+	ht_ss_delete(typedb->formats, name);
 }
 
 static int rz_type_format_data_internal(const RzTypeDB *typedb, RzPrint *p, RzStrBuf *outbuf, ut64 seek, const ut8 *b, const int len,
@@ -1960,7 +1978,7 @@ static int rz_type_format_data_internal(const RzTypeDB *typedb, RzPrint *p, RzSt
 	if (!fmt) {
 		fmt = formatname;
 	}
-	internal_format = strdup(fmt);
+	internal_format = rz_str_dup(fmt);
 	fmt = internal_format;
 	while (*fmt && IS_WHITECHAR(*fmt)) {
 		fmt++;
@@ -1985,7 +2003,7 @@ static int rz_type_format_data_internal(const RzTypeDB *typedb, RzPrint *p, RzSt
 	endian = typedb->target->big_endian;
 
 	if (ofield && ofield != MINUSONE) {
-		field = strdup(ofield);
+		field = rz_str_dup(ofield);
 	}
 	/* get times */
 	otimes = times = atoi(arg);
@@ -2021,7 +2039,7 @@ static int rz_type_format_data_internal(const RzTypeDB *typedb, RzPrint *p, RzSt
 			args++;
 			tmp = *args;
 		}
-		args = strdup(args);
+		args = rz_str_dup(args);
 		nargs = rz_str_word_set0_stack(args);
 		if (nargs == 0) {
 			RZ_FREE(args);
@@ -2066,7 +2084,7 @@ static int rz_type_format_data_internal(const RzTypeDB *typedb, RzPrint *p, RzSt
 			if (strchr(formatname, ' ')) {
 				fmtname = rz_str_newf("0x%" PFMT64x, seek);
 			} else {
-				fmtname = strdup(formatname);
+				fmtname = rz_str_dup(formatname);
 			}
 		} else {
 			fmtname = rz_str_newf("0x%" PFMT64x, seek);
@@ -2159,7 +2177,7 @@ static int rz_type_format_data_internal(const RzTypeDB *typedb, RzPrint *p, RzSt
 					*dot = '\0';
 				}
 				free(oarg);
-				oarg = fieldname = strdup(rz_str_word_get0(args, idx));
+				oarg = fieldname = rz_str_dup(rz_str_word_get0(args, idx));
 				if (ISSTRUCT || tmp == 'E' || tmp == 'B' || tmp == 'r') {
 					if (*fieldname == '(') {
 						fmtname = fieldname + 1;
@@ -2850,7 +2868,11 @@ static void base_type_to_format_no_unfold(const RzTypeDB *typedb, RZ_NONNULL RzB
 		char *fmt = rz_type_as_format(typedb, type->type);
 		if (fmt) {
 			rz_strbuf_append(format, fmt);
-			rz_strbuf_appendf(fields, "%s ", identifier);
+			if (!rz_type_is_atomic(typedb, type->type)) {
+				rz_strbuf_appendf(fields, "(%s)%s ", type->name, identifier);
+			} else {
+				rz_strbuf_appendf(fields, "%s ", identifier);
+			}
 		} else {
 			type_to_format_pair(typedb, format, fields, identifier, type->type);
 		}
@@ -2878,7 +2900,7 @@ static void base_type_to_format_unfold(const RzTypeDB *typedb, RZ_NONNULL RzBase
 	switch (type->kind) {
 	case RZ_BASE_TYPE_KIND_STRUCT: {
 		RzTypeStructMember *memb;
-		rz_vector_foreach(&type->struct_data.members, memb) {
+		rz_vector_foreach (&type->struct_data.members, memb) {
 			const char *membtype = type_to_identifier(typedb, memb->type);
 			// Avoid infinite recursion in case of self-referential structures
 			if (!membtype || !strcmp(membtype, type->name)) {
@@ -2908,7 +2930,7 @@ static void base_type_to_format_unfold(const RzTypeDB *typedb, RZ_NONNULL RzBase
 		// which is why it uses `0` character as a marker
 		rz_strbuf_append(format, "0");
 		RzTypeUnionMember *memb;
-		rz_vector_foreach(&type->union_data.members, memb) {
+		rz_vector_foreach (&type->union_data.members, memb) {
 			const char *membtype = type_to_identifier(typedb, memb->type);
 			// Avoid infinite recursion in case of self-referential unions
 			if (!membtype || !strcmp(membtype, type->name)) {
@@ -3039,15 +3061,15 @@ RZ_API RZ_OWN char *rz_type_as_format(const RzTypeDB *typedb, RZ_NONNULL RzType 
 	if (type->kind == RZ_TYPE_KIND_CALLABLE) {
 		// We can't print anything useful for function type
 		// Thus we consider this is just a `void *` pointer
-		return strdup("p");
+		return rz_str_dup("p");
 	}
 	// Special case of callable ptr or `void *`
 	if (rz_type_is_void_ptr(type) || rz_type_is_callable_ptr(type)) {
-		return strdup("p");
+		return rz_str_dup("p");
 	}
 	// Special case of `char *`
 	if (rz_type_is_char_ptr(type)) {
-		return strdup("z");
+		return rz_str_dup("z");
 	}
 	RzStrBuf *buf = rz_strbuf_new(NULL);
 	type_to_format(typedb, buf, type);

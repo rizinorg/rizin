@@ -14,8 +14,8 @@ if get_option('use_swift_demangler')
 endif
 
 demangler_plugins = {
-  'conf_name': 'plugins_demangler',
-  'base_cname': 'rz_demangler_plugin_',
+  'base_name': 'rz_demangler',
+  'base_struct': 'RzDemanglerPlugin',
   'list': demangler_plugins_list,
 }
 

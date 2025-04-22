@@ -8,7 +8,6 @@
 #include <rz_drx.h>
 #include <rz_core.h>
 #include <rz_windows.h>
-#include <signal.h>
 
 RZ_LIB_VERSION(rz_debug);
 
@@ -352,7 +351,7 @@ RZ_API RZ_BORROW RzBreakpointItem *rz_debug_bp_add(RZ_NONNULL RzDebug *dbg, ut64
 	}
 	if (bpi) {
 		if (module_name) {
-			bpi->module_name = strdup(module_name);
+			bpi->module_name = rz_str_dup(module_name);
 			bpi->name = rz_str_newf("%s+0x%" PFMT64x, module_name, m_delta);
 		}
 		bpi->module_delta = m_delta;
@@ -366,10 +365,6 @@ static const char *rz_debug_str_callback(RzNum *userptr, ut64 off, int *ok) {
 	return NULL;
 }
 
-void free_tracenodes_kv(HtUPKv *kv) {
-	free(kv->value);
-}
-
 RZ_API RZ_OWN RzDebug *rz_debug_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *bp_ctx) {
 	rz_return_val_if_fail(bp_ctx, NULL);
 	RzDebug *dbg = RZ_NEW0(RzDebug);
@@ -377,7 +372,7 @@ RZ_API RZ_OWN RzDebug *rz_debug_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *bp
 		return NULL;
 	}
 	// RZ_SYS_ARCH
-	dbg->arch = strdup(RZ_SYS_ARCH);
+	dbg->arch = rz_str_dup(RZ_SYS_ARCH);
 	dbg->bits = RZ_SYS_BITS;
 	dbg->trace_forks = 1;
 	dbg->forked_pid = -1;
@@ -394,7 +389,7 @@ RZ_API RZ_OWN RzDebug *rz_debug_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *bp
 	dbg->pid = -1;
 	dbg->tid = -1;
 	dbg->tree = rz_tree_new();
-	dbg->tracenodes = ht_up_new(NULL, free_tracenodes_kv, NULL);
+	dbg->tracenodes = ht_up_new(NULL, free);
 	dbg->swstep = false;
 	dbg->stop_all_threads = false;
 	dbg->trace = rz_debug_trace_new();
@@ -411,6 +406,7 @@ RZ_API RZ_OWN RzDebug *rz_debug_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *bp
 	dbg->call_frames = NULL;
 	dbg->main_arena_resolved = false;
 	dbg->glibc_version = 231; /* default version ubuntu 20 */
+	dbg->is_glibc_resolved = false;
 	rz_debug_signal_init(dbg);
 	dbg->bp = rz_bp_new(bp_ctx);
 	rz_debug_plugin_init(dbg);
@@ -423,7 +419,7 @@ RZ_API RZ_OWN RzDebug *rz_debug_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *bp
 
 RZ_API void rz_debug_tracenodes_reset(RzDebug *dbg) {
 	ht_up_free(dbg->tracenodes);
-	dbg->tracenodes = ht_up_new(NULL, free_tracenodes_kv, NULL);
+	dbg->tracenodes = ht_up_new(NULL, free);
 }
 
 RZ_API RzDebug *rz_debug_free(RzDebug *dbg) {
@@ -438,7 +434,7 @@ RZ_API RzDebug *rz_debug_free(RzDebug *dbg) {
 		sdb_free(dbg->sgnls);
 		rz_tree_free(dbg->tree);
 		ht_up_free(dbg->tracenodes);
-		rz_list_free(dbg->plugins);
+		ht_sp_free(dbg->plugins);
 		rz_list_free(dbg->call_frames);
 		free(dbg->btalgo);
 		rz_debug_trace_free(dbg->trace);
@@ -514,7 +510,7 @@ RZ_API bool rz_debug_set_arch(RzDebug *dbg, const char *arch, int bits) {
 			}
 		}
 		free(dbg->arch);
-		dbg->arch = strdup(arch);
+		dbg->arch = rz_str_dup(arch);
 		return true;
 	}
 	return false;
@@ -796,7 +792,7 @@ RZ_API int rz_debug_step_soft(RzDebug *dbg) {
 	ut8 buf[32];
 	ut64 pc, sp, r;
 	ut64 next[2];
-	RzAnalysisOp op;
+	RzAnalysisOp op = { 0 };
 	int br, i, ret;
 	union {
 		ut64 r64;
@@ -827,10 +823,13 @@ RZ_API int rz_debug_step_soft(RzDebug *dbg) {
 	if (!dbg->iob.read_at(dbg->iob.io, pc, buf, sizeof(buf))) {
 		return false;
 	}
+	rz_analysis_op_init(&op);
 	if (rz_analysis_op(dbg->analysis, &op, pc, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC) < 1) {
+		rz_analysis_op_fini(&op);
 		return false;
 	}
 	if (op.type == RZ_ANALYSIS_OP_TYPE_ILL) {
+		rz_analysis_op_fini(&op);
 		return false;
 	}
 	switch (op.type) {
@@ -893,6 +892,7 @@ RZ_API int rz_debug_step_soft(RzDebug *dbg) {
 		br = 1;
 		break;
 	}
+	rz_analysis_op_fini(&op);
 
 	const int align = rz_analysis_archinfo(dbg->analysis, RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN);
 	for (i = 0; i < br; i++) {
@@ -1039,7 +1039,7 @@ static bool isStepOverable(ut64 opType) {
 }
 
 RZ_API int rz_debug_step_over(RzDebug *dbg, int steps) {
-	RzAnalysisOp op;
+	RzAnalysisOp op = { 0 };
 	ut64 buf_pc, pc, ins_size;
 	ut8 buf[DBG_BUF_SIZE];
 	int steps_taken = 0;
@@ -1085,8 +1085,10 @@ RZ_API int rz_debug_step_over(RzDebug *dbg, int steps) {
 			dbg->iob.read_at(dbg->iob.io, buf_pc, buf, sizeof(buf));
 		}
 		// Analyze the opcode
+		rz_analysis_op_init(&op);
 		if (rz_analysis_op(dbg->analysis, &op, pc, buf + (pc - buf_pc), sizeof(buf) - (pc - buf_pc), RZ_ANALYSIS_OP_MASK_BASIC) < 1) {
 			eprintf("debug-step-over: Decode error at %" PFMT64x "\n", pc);
+			rz_analysis_op_fini(&op);
 			return steps_taken;
 		}
 		if (op.fail == -1) {
@@ -1098,6 +1100,7 @@ RZ_API int rz_debug_step_over(RzDebug *dbg, int steps) {
 		// Skip over all the subroutine calls
 		if (isStepOverable(op.type)) {
 			if (!rz_debug_continue_until(dbg, ins_size)) {
+				rz_analysis_op_fini(&op);
 				eprintf("Could not step over call @ 0x%" PFMT64x "\n", pc);
 				return steps_taken;
 			}
@@ -1105,11 +1108,13 @@ RZ_API int rz_debug_step_over(RzDebug *dbg, int steps) {
 			// eprintf ("REP: skip to next instruction...\n");
 			if (!rz_debug_continue_until(dbg, ins_size)) {
 				eprintf("step over failed over rep\n");
+				rz_analysis_op_fini(&op);
 				return steps_taken;
 			}
 		} else {
 			rz_debug_step(dbg, 1);
 		}
+		rz_analysis_op_fini(&op);
 	}
 
 	return steps_taken;
@@ -1162,7 +1167,7 @@ RZ_API int rz_debug_continue_kill(RzDebug *dbg, int sig) {
 		RzRegItem *ripc = rz_reg_get(dbg->reg, dbg->reg->name[RZ_REG_NAME_PC], RZ_REG_TYPE_GPR);
 		RzVector *vreg = ht_up_find(dbg->session->registers, ripc->offset | (ripc->arena << 16), NULL);
 		RzDebugChangeReg *reg;
-		rz_vector_foreach_prev(vreg, reg) {
+		rz_vector_foreach_prev (vreg, reg) {
 			if (reg->cnum <= dbg->session->cnum) {
 				continue;
 			}
@@ -1305,17 +1310,20 @@ repeat:
 			RzAnalysisOp op = { 0 };
 			ut64 pc = rz_debug_reg_get(dbg, "PC");
 			dbg->iob.read_at(dbg->iob.io, pc, buf, sizeof(buf));
+			rz_analysis_op_init(&op);
 			rz_analysis_op(dbg->analysis, &op, pc, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC);
 			if (op.size > 0) {
 				const char *signame = rz_signal_to_string(dbg->reason.signum);
 				rz_debug_reg_set(dbg, "PC", pc + op.size);
 				eprintf("Skip signal %d handler %s\n",
 					dbg->reason.signum, signame);
+				rz_analysis_op_fini(&op);
 				goto repeat;
 			} else {
 				ut64 pc = rz_debug_reg_get(dbg, "PC");
 				eprintf("Stalled with an exception at 0x%08" PFMT64x "\n", pc);
 			}
+			rz_analysis_op_fini(&op);
 		}
 	}
 #if __WINDOWS__
@@ -1353,7 +1361,7 @@ RZ_API int rz_debug_continue_until_nontraced(RzDebug *dbg) {
 RZ_API int rz_debug_continue_until_optype(RzDebug *dbg, int type, int over) {
 	int ret, n = 0;
 	ut64 pc, buf_pc = 0;
-	RzAnalysisOp op;
+	RzAnalysisOp op = { 0 };
 	ut8 buf[DBG_BUF_SIZE];
 
 	if (rz_debug_is_dead(dbg)) {
@@ -1385,13 +1393,17 @@ RZ_API int rz_debug_continue_until_optype(RzDebug *dbg, int type, int over) {
 			dbg->iob.read_at(dbg->iob.io, buf_pc, buf, sizeof(buf));
 		}
 		// Analyze the opcode
+		rz_analysis_op_init(&op);
 		if (rz_analysis_op(dbg->analysis, &op, pc, buf + (pc - buf_pc), sizeof(buf) - (pc - buf_pc), RZ_ANALYSIS_OP_MASK_BASIC) < 1) {
 			eprintf("Decode error at %" PFMT64x "\n", pc);
+			rz_analysis_op_fini(&op);
 			return false;
 		}
 		if (op.type == type) {
+			rz_analysis_op_fini(&op);
 			break;
 		}
+		rz_analysis_op_fini(&op);
 		// Step over and repeat
 		ret = over
 			? rz_debug_step_over(dbg, 1)
@@ -1458,7 +1470,7 @@ RZ_API bool rz_debug_continue_back(RzDebug *dbg) {
 		return false;
 	}
 	RzDebugChangeReg *reg;
-	rz_vector_foreach_prev(vreg, reg) {
+	rz_vector_foreach_prev (vreg, reg) {
 		if (reg->cnum >= dbg->session->cnum) {
 			continue;
 		}
@@ -1551,12 +1563,6 @@ RZ_API int rz_debug_continue_syscalls(RzDebug *dbg, int *sc, int n_sc) {
 		if (reason == RZ_DEBUG_REASON_DEAD || rz_debug_is_dead(dbg)) {
 			break;
 		}
-#if 0
-		if (reason != RZ_DEBUG_REASON_STEP) {
-			eprintf ("astep\n");
-			break;
-		}
-#endif
 		if (!rz_debug_reg_sync(dbg, RZ_REG_TYPE_GPR, false)) {
 			eprintf("--> cannot sync regs, process is probably dead\n");
 			return -1;
@@ -1722,7 +1728,7 @@ RZ_API ut64 rz_debug_get_baddr(RzDebug *dbg, const char *file) {
 	}
 #endif
 	if (!abspath && file) {
-		abspath = strdup(file);
+		abspath = rz_str_dup(file);
 	}
 	if (abspath) {
 		rz_list_foreach (dbg->maps, iter, map) {
@@ -1755,4 +1761,35 @@ RZ_API void rz_debug_bp_rebase(RzDebug *dbg, ut64 old_base, ut64 new_base) {
 		bp->addr += diff;
 		bp->delta = bp->addr - dbg->bp->baddr;
 	}
+}
+
+/**
+ * \brief Switches to the first thread in the given debug context.
+ * \param debug The debug context.
+ */
+RZ_API void rz_debug_switch_to_first_thread(RZ_NONNULL RzDebug *debug) {
+	rz_return_if_fail(debug);
+	RzList *threads = rz_debug_pids(debug, debug->pid);
+	if (rz_list_length(threads) > 0) {
+		RzDebugPid *th = rz_list_first(threads);
+		rz_debug_select(debug, debug->pid, th->pid);
+	}
+	rz_list_free(threads);
+}
+
+static int thread_find(int *tid, RzDebugPid *t, void *user) {
+	return (t && (t->pid == *tid)) ? 0 : 1;
+}
+
+RZ_API RzDebugPid *rz_debug_get_thread(RzList /*<RzList *>*/ *th_list, int tid) {
+	if (!th_list) {
+		return NULL;
+	}
+
+	RzListIter *it = rz_list_find(th_list, (const void *)(size_t)&tid,
+		(RzListComparator)&thread_find, NULL);
+	if (!it) {
+		return NULL;
+	}
+	return (RzDebugPid *)rz_list_iter_get_data(it);
 }

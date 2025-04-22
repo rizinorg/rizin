@@ -1,5 +1,5 @@
 [wrap-git]
 url = https://github.com/BLAKE3-team/BLAKE3.git
-revision = 3f396d223946f722ab060fe9377cd1cebacaf4c0
+revision = 2de3cb1a21d09cdee4c8b6b14513063198cf1b82
 patch_directory = blake3
 depth = 1

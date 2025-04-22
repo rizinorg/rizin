@@ -2,7 +2,7 @@ NAME=iS query
 FILE=bins/elf/analysis/main
 CMDS=iS:name/sort:vaddr/cols/name
 EXPECT=<<EOF
-vaddr      name               
+     vaddr name               
 ------------------------------
 ---------- 
 0x00600910 .bss
@@ -126,6 +126,7 @@ type
 [Info]
 arch     N/A
 cpu      N/A
+features N/A
 baddr    0x00000000
 binsz    0x00000401
 bintype  N/A
@@ -144,7 +145,7 @@ maxopsz  16
 minopsz  1
 os       N/A
 cc       N/A
-pcalign  0
+pcalign  1
 rpath    N/A
 subsys   
 stripped false
@@ -224,6 +225,7 @@ block   0x100
 type    
 arch     N/A
 cpu      N/A
+features N/A
 baddr    0x00000000
 binsz    0x00000400
 bintype  N/A
@@ -242,7 +244,7 @@ maxopsz  16
 minopsz  1
 os       N/A
 cc       N/A
-pcalign  0
+pcalign  1
 rpath    N/A
 subsys   
 stripped false
@@ -273,6 +275,7 @@ iorw     false
 block    0x100
 arch     x86
 cpu      N/A
+features N/A
 baddr    0x08048000
 binsz    0x00001323
 bintype  elf
@@ -290,7 +293,7 @@ maxopsz  16
 minopsz  1
 os       linux
 cc       N/A
-pcalign  0
+pcalign  1
 relro    no
 rpath    NONE
 subsys   linux
@@ -316,10 +319,10 @@ iA
 iAj
 EOF
 EXPECT=<<EOF
-offset     size   arch              machine    
------------------------------------------------
-0x00000000 266108 mips_32 mips1 o32 MIPS R3000
-[{"arch":"mips","bits":32,"offset":0,"size":266108,"isa":"mips1","features":"o32","machine":"MIPS R3000"}]
+    offset   size arch                          machine               
+----------------------------------------------------------------------
+0x00000000 266108 mips_32 mips32 noreorder pic  MIPS R3000 big-endian
+[{"arch":"mips","bits":32,"offset":0,"size":266108,"cpu":"mips32","features":"noreorder pic cpic o32 n32","machine":"MIPS R3000 big-endian"}]
 EOF
 RUN
 
@@ -330,10 +333,10 @@ iA
 iAj
 EOF
 EXPECT=<<EOF
-offset     size    arch                 machine    
----------------------------------------------------
-0x00000000 1039368 mips_64 mips64r2 n64 MIPS R3000
-[{"arch":"mips","bits":64,"offset":0,"size":1039368,"isa":"mips64r2","features":"n64","machine":"MIPS R3000"}]
+    offset    size arch                          machine               
+-----------------------------------------------------------------------
+0x00000000 1039368 mips_64 mips64r2 noreorder pi MIPS R3000 big-endian
+[{"arch":"mips","bits":64,"offset":0,"size":1039368,"cpu":"mips64r2","features":"noreorder pic cpic n64","machine":"MIPS R3000 big-endian"}]
 EOF
 RUN
 
@@ -341,7 +344,7 @@ NAME=iA (file x86)
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=iA
 EXPECT=<<EOF
-offset     size arch   machine     
+    offset size arch   machine     
 -----------------------------------
 0x00000000 4899 x86_32 Intel 80386
 EOF
@@ -375,6 +378,7 @@ block    0x100
 type     JAVA CLASS
 arch     java
 cpu      N/A
+features N/A
 baddr    0x00000000
 binsz    0x00000400
 bintype  class
@@ -394,7 +398,7 @@ maxopsz  16
 minopsz  1
 os       any
 cc       N/A
-pcalign  0
+pcalign  1
 rpath    N/A
 subsys   any
 stripped false
@@ -444,7 +448,7 @@ icf
 icm
 EOF
 EXPECT=<<EOF
-address    min        max        name                                  super 
+   address        min        max name                                  super 
 -----------------------------------------------------------------------------
 ---------- 0x0000699c 0x000074f8 SystemClassLoaderInjector             
 ---------- 0x00006060 0x0000697c _JNIEnv                               
@@ -466,82 +470,82 @@ address    min        max        name                                  super
 ---------- 0x00012c1c 0x00012c2c std::bad_typeid                       
 ---------- 0x00008884 0x000088f4 std::exception                        
 ---------- 0x000097bc 0x00009854 std::type_info                        
-address    index class      flags name                 type 
+   address index class      flags name                 type 
 ------------------------------------------------------------
-0x0001601c 0     __cxxabiv1       __unexpected_handler 
-0x00016020 1     __cxxabiv1       __terminate_handler  
-address    index class                                 flags name                                                                                                                                                                                                                       
+0x0001601c     0 __cxxabiv1       __unexpected_handler 
+0x00016020     1 __cxxabiv1       __terminate_handler  
+   address index class                                 flags name                                                                                                                                                                                                                       
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-0x0000699c 0     SystemClassLoaderInjector                   findBaseDexClassloader(_JNIEnv*, _jobject*)
-0x00006a2c 1     SystemClassLoaderInjector                   getField(_JNIEnv*, _jobject*, _jobject*, _jstring*)
-0x00006abc 2     SystemClassLoaderInjector                   getPathList(_JNIEnv*, _jobject*)
-0x00006af4 3     SystemClassLoaderInjector                   getDexElements(_JNIEnv*, _jobject*)
-0x00006b1c 4     SystemClassLoaderInjector                   setField(_JNIEnv*, _jobject*, _jobject*, _jstring*, _jobject*)
-0x00006bb0 5     SystemClassLoaderInjector                   combineArray(_JNIEnv*, _jobject*, _jobject*)
-0x00006d00 6     SystemClassLoaderInjector                   injectAboveEqualApiLevel14(_JNIEnv*, _jobject*, _jstring*, _jstring*)
-0x00006e5c 7     SystemClassLoaderInjector                   appendArray(_JNIEnv*, _jobject*, _jobject*)
-0x00006f68 8     SystemClassLoaderInjector                   injectInAliyunOs(_JNIEnv*, _jobject*, _jstring*, _jstring*)
-0x0000720c 9     SystemClassLoaderInjector                   injectBelowApiLevel14(_JNIEnv*, _jobject*, _jstring*, _jstring*)
-0x000074f8 10    SystemClassLoaderInjector                   inject(_JNIEnv*, _jobject*, _jstring*, _jstring*)
-0x00006060 11    _JNIEnv                                     FindClass(char const*)
-0x0000606a 12    _JNIEnv                                     DeleteLocalRef(_jobject*)
-0x00006074 13    _JNIEnv                                     NewObject(_jclass*, _jmethodID*, ...)
-0x0000608e 14    _JNIEnv                                     GetObjectClass(_jobject*)
-0x00006098 15    _JNIEnv                                     GetMethodID(_jclass*, char const*, char const*)
-0x000060a4 16    _JNIEnv                                     CallObjectMethod(_jobject*, _jmethodID*, ...)
-0x000060c0 17    _JNIEnv                                     CallVoidMethod(_jobject*, _jmethodID*, ...)
-0x000060dc 18    _JNIEnv                                     GetStaticMethodID(_jclass*, char const*, char const*)
-0x000060ea 19    _JNIEnv                                     CallStaticObjectMethod(_jclass*, _jmethodID*, ...)
-0x0000695e 20    _JNIEnv                                     CallStaticIntMethod(_jclass*, _jmethodID*, ...)
-0x0000697c 21    _JNIEnv                                     CallStaticVoidMethod(_jclass*, _jmethodID*, ...)
-0x0000943c 22    __cxxabiv1                                  __terminate(void (*)())
-0x00009488 23    __cxxabiv1                                  __unexpected(void (*)())
-0x00009868 24    __cxxabiv1::__class_type_info               __do_upcast(__cxxabiv1::__class_type_info const*, void**) const
-0x000098c4 25    __cxxabiv1::__class_type_info               __do_find_public_src(int, void const*, __cxxabiv1::__class_type_info const*, void const*) const
-0x000098d8 26    __cxxabiv1::__class_type_info               ~__class_type_info()
-0x0000991c 27    __cxxabiv1::__class_type_info               __do_upcast(__cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__upcast_result&) const
-0x00009948 28    __cxxabiv1::__class_type_info               __do_catch(std::type_info const*, void**, unsigned int) const
-0x0000998c 29    __cxxabiv1::__class_type_info               __do_dyncast(int, __cxxabiv1::__class_type_info::__sub_kind, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__dyncast_result&) const
-0x000088c4 30    __cxxabiv1::__forced_unwind                 ~__forced_unwind()
-0x000088dc 31    __cxxabiv1::__foreign_exception             ~__foreign_exception()
-0x000094e4 32    __cxxabiv1::__fundamental_type_info         ~__fundamental_type_info()
-0x00009dd0 33    __cxxabiv1::__pbase_type_info               __pointer_catch(__cxxabiv1::__pbase_type_info const*, void**, unsigned int) const
-0x00009df0 34    __cxxabiv1::__pbase_type_info               ~__pbase_type_info()
-0x00009e34 35    __cxxabiv1::__pbase_type_info               __do_catch(std::type_info const*, void**, unsigned int) const
-0x00009528 36    __cxxabiv1::__pointer_type_info             __is_pointer_p() const
-0x00009530 37    __cxxabiv1::__pointer_type_info             ~__pointer_type_info()
-0x00009574 38    __cxxabiv1::__pointer_type_info             __pointer_catch(__cxxabiv1::__pbase_type_info const*, void**, unsigned int) const
-0x000095f4 39    __cxxabiv1::__si_class_type_info            ~__si_class_type_info()
-0x00009638 40    __cxxabiv1::__si_class_type_info            __do_find_public_src(int, void const*, __cxxabiv1::__class_type_info const*, void const*) const
-0x0000969c 41    __cxxabiv1::__si_class_type_info            __do_dyncast(int, __cxxabiv1::__class_type_info::__sub_kind, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__dyncast_result&) const
-0x0000977c 42    __cxxabiv1::__si_class_type_info            __do_upcast(__cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__upcast_result&) const
-0x00008984 43    __eh_globals_init                           ~__eh_globals_init()
-0x00009ec4 44    __gnu_cxx                                   __verbose_terminate_handler()
-0x00012780 45    __gnu_cxx                                   __throw_concurrence_lock_error()
-0x000127c8 46    __gnu_cxx                                   __throw_concurrence_unlock_error()
-0x000126b0 47    __gnu_cxx::__concurrence_lock_error         what() const
-0x000126f8 48    __gnu_cxx::__concurrence_lock_error         ~__concurrence_lock_error()
-0x000126c0 49    __gnu_cxx::__concurrence_unlock_error       what() const
-0x000126d0 50    __gnu_cxx::__concurrence_unlock_error       ~__concurrence_unlock_error()
-0x0000886c 51    std                                         uncaught_exception()
-0x00009470 52    std                                         terminate()
-0x00009494 53    std                                         unexpected()
-0x000094ac 54    std                                         set_terminate(void (*)())
-0x000094c8 55    std                                         set_unexpected(void (*)())
-0x00012bc8 56    std::bad_cast                               what() const
-0x00012bd8 57    std::bad_cast                               ~bad_cast()
-0x0000889c 58    std::bad_exception                          ~bad_exception()
-0x00008904 59    std::bad_exception                          what() const
-0x00012c1c 60    std::bad_typeid                             what() const
-0x00012c2c 61    std::bad_typeid                             ~bad_typeid()
-0x00008884 62    std::exception                              ~exception()
-0x000088f4 63    std::exception                              what() const
-0x000097bc 64    std::type_info                              ~type_info()
-0x000097d4 65    std::type_info                              __is_pointer_p() const
-0x000097dc 66    std::type_info                              __is_function_p() const
-0x000097e4 67    std::type_info                              __do_upcast(__cxxabiv1::__class_type_info const*, void**) const
-0x00009808 68    std::type_info                              operator==(std::type_info const&) const
-0x00009854 69    std::type_info                              __do_catch(std::type_info const*, void**, unsigned int) const
+0x0000699c     0 SystemClassLoaderInjector                   findBaseDexClassloader(_JNIEnv*, _jobject*)
+0x00006a2c     1 SystemClassLoaderInjector                   getField(_JNIEnv*, _jobject*, _jobject*, _jstring*)
+0x00006abc     2 SystemClassLoaderInjector                   getPathList(_JNIEnv*, _jobject*)
+0x00006af4     3 SystemClassLoaderInjector                   getDexElements(_JNIEnv*, _jobject*)
+0x00006b1c     4 SystemClassLoaderInjector                   setField(_JNIEnv*, _jobject*, _jobject*, _jstring*, _jobject*)
+0x00006bb0     5 SystemClassLoaderInjector                   combineArray(_JNIEnv*, _jobject*, _jobject*)
+0x00006d00     6 SystemClassLoaderInjector                   injectAboveEqualApiLevel14(_JNIEnv*, _jobject*, _jstring*, _jstring*)
+0x00006e5c     7 SystemClassLoaderInjector                   appendArray(_JNIEnv*, _jobject*, _jobject*)
+0x00006f68     8 SystemClassLoaderInjector                   injectInAliyunOs(_JNIEnv*, _jobject*, _jstring*, _jstring*)
+0x0000720c     9 SystemClassLoaderInjector                   injectBelowApiLevel14(_JNIEnv*, _jobject*, _jstring*, _jstring*)
+0x000074f8    10 SystemClassLoaderInjector                   inject(_JNIEnv*, _jobject*, _jstring*, _jstring*)
+0x00006060    11 _JNIEnv                                     FindClass(char const*)
+0x0000606a    12 _JNIEnv                                     DeleteLocalRef(_jobject*)
+0x00006074    13 _JNIEnv                                     NewObject(_jclass*, _jmethodID*, ...)
+0x0000608e    14 _JNIEnv                                     GetObjectClass(_jobject*)
+0x00006098    15 _JNIEnv                                     GetMethodID(_jclass*, char const*, char const*)
+0x000060a4    16 _JNIEnv                                     CallObjectMethod(_jobject*, _jmethodID*, ...)
+0x000060c0    17 _JNIEnv                                     CallVoidMethod(_jobject*, _jmethodID*, ...)
+0x000060dc    18 _JNIEnv                                     GetStaticMethodID(_jclass*, char const*, char const*)
+0x000060ea    19 _JNIEnv                                     CallStaticObjectMethod(_jclass*, _jmethodID*, ...)
+0x0000695e    20 _JNIEnv                                     CallStaticIntMethod(_jclass*, _jmethodID*, ...)
+0x0000697c    21 _JNIEnv                                     CallStaticVoidMethod(_jclass*, _jmethodID*, ...)
+0x0000943c    22 __cxxabiv1                                  __terminate(void (*)())
+0x00009488    23 __cxxabiv1                                  __unexpected(void (*)())
+0x00009868    24 __cxxabiv1::__class_type_info               __do_upcast(__cxxabiv1::__class_type_info const*, void**) const
+0x000098c4    25 __cxxabiv1::__class_type_info               __do_find_public_src(int, void const*, __cxxabiv1::__class_type_info const*, void const*) const
+0x000098d8    26 __cxxabiv1::__class_type_info               ~__class_type_info()
+0x0000991c    27 __cxxabiv1::__class_type_info               __do_upcast(__cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__upcast_result&) const
+0x00009948    28 __cxxabiv1::__class_type_info               __do_catch(std::type_info const*, void**, unsigned int) const
+0x0000998c    29 __cxxabiv1::__class_type_info               __do_dyncast(int, __cxxabiv1::__class_type_info::__sub_kind, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__dyncast_result&) const
+0x000088c4    30 __cxxabiv1::__forced_unwind                 ~__forced_unwind()
+0x000088dc    31 __cxxabiv1::__foreign_exception             ~__foreign_exception()
+0x000094e4    32 __cxxabiv1::__fundamental_type_info         ~__fundamental_type_info()
+0x00009dd0    33 __cxxabiv1::__pbase_type_info               __pointer_catch(__cxxabiv1::__pbase_type_info const*, void**, unsigned int) const
+0x00009df0    34 __cxxabiv1::__pbase_type_info               ~__pbase_type_info()
+0x00009e34    35 __cxxabiv1::__pbase_type_info               __do_catch(std::type_info const*, void**, unsigned int) const
+0x00009528    36 __cxxabiv1::__pointer_type_info             __is_pointer_p() const
+0x00009530    37 __cxxabiv1::__pointer_type_info             ~__pointer_type_info()
+0x00009574    38 __cxxabiv1::__pointer_type_info             __pointer_catch(__cxxabiv1::__pbase_type_info const*, void**, unsigned int) const
+0x000095f4    39 __cxxabiv1::__si_class_type_info            ~__si_class_type_info()
+0x00009638    40 __cxxabiv1::__si_class_type_info            __do_find_public_src(int, void const*, __cxxabiv1::__class_type_info const*, void const*) const
+0x0000969c    41 __cxxabiv1::__si_class_type_info            __do_dyncast(int, __cxxabiv1::__class_type_info::__sub_kind, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__dyncast_result&) const
+0x0000977c    42 __cxxabiv1::__si_class_type_info            __do_upcast(__cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__upcast_result&) const
+0x00008984    43 __eh_globals_init                           ~__eh_globals_init()
+0x00009ec4    44 __gnu_cxx                                   __verbose_terminate_handler()
+0x00012780    45 __gnu_cxx                                   __throw_concurrence_lock_error()
+0x000127c8    46 __gnu_cxx                                   __throw_concurrence_unlock_error()
+0x000126b0    47 __gnu_cxx::__concurrence_lock_error         what() const
+0x000126f8    48 __gnu_cxx::__concurrence_lock_error         ~__concurrence_lock_error()
+0x000126c0    49 __gnu_cxx::__concurrence_unlock_error       what() const
+0x000126d0    50 __gnu_cxx::__concurrence_unlock_error       ~__concurrence_unlock_error()
+0x0000886c    51 std                                         uncaught_exception()
+0x00009470    52 std                                         terminate()
+0x00009494    53 std                                         unexpected()
+0x000094ac    54 std                                         set_terminate(void (*)())
+0x000094c8    55 std                                         set_unexpected(void (*)())
+0x00012bc8    56 std::bad_cast                               what() const
+0x00012bd8    57 std::bad_cast                               ~bad_cast()
+0x0000889c    58 std::bad_exception                          ~bad_exception()
+0x00008904    59 std::bad_exception                          what() const
+0x00012c1c    60 std::bad_typeid                             what() const
+0x00012c2c    61 std::bad_typeid                             ~bad_typeid()
+0x00008884    62 std::exception                              ~exception()
+0x000088f4    63 std::exception                              what() const
+0x000097bc    64 std::type_info                              ~type_info()
+0x000097d4    65 std::type_info                              __is_pointer_p() const
+0x000097dc    66 std::type_info                              __is_function_p() const
+0x000097e4    67 std::type_info                              __do_upcast(__cxxabiv1::__class_type_info const*, void**) const
+0x00009808    68 std::type_info                              operator==(std::type_info const&) const
+0x00009854    69 std::type_info                              __do_catch(std::type_info const*, void**, unsigned int) const
 EOF
 RUN
 
@@ -819,6 +823,7 @@ CMDS=iq
 EXPECT=<<EOF
 arch arm
 cpu N/A
+features N/A
 bits 16
 os linux
 endian little
@@ -834,6 +839,7 @@ CMDS=iaq
 EXPECT=<<EOF
 arch arm
 cpu N/A
+features N/A
 bits 16
 os linux
 endian little
@@ -878,6 +884,9 @@ sprintf
 strncmp
 pthread_mutex_lock
 pthread_mutex_unlock
+0x00005fa8
+0x00005fb8
+0x00006014
 0x00005fa8
 0x00007c70 10 __aeabi_unwind_cpp_pr0
 0x00006108 48 getPackageName(_JNIEnv*, _jobject*)
@@ -1507,33 +1516,33 @@ pthread_mutex_unlock
 0x00005f84 16 imp.strncmp
 0x00005f90 16 imp.pthread_mutex_lock
 0x00005f9c 16 imp.pthread_mutex_unlock
-vaddr      vsize  perm name                   
+     vaddr  vsize perm name                   
 ----------------------------------------------
----------- 0x0    ---- 
-0x00000154 0x13   -r-- .interp
-0x00000168 0x24   -r-- .note.gnu.build-id
+----------    0x0 ---- 
+0x00000154   0x13 -r-- .interp
+0x00000168   0x24 -r-- .note.gnu.build-id
 0x0000018c 0x1990 -r-- .dynsym
 0x00001b1c 0x25d0 -r-- .dynstr
-0x000040ec 0xa88  -r-- .hash
+0x000040ec  0xa88 -r-- .hash
 0x00004b74 0x1150 -r-- .rel.dyn
-0x00005cc4 0x120  -r-- .rel.plt
-0x00005de4 0x1c4  -r-x .plt
+0x00005cc4  0x120 -r-- .rel.plt
+0x00005de4  0x1c4 -r-x .plt
 0x00005fa8 0xcf88 -r-x .text
-0x00012f30 0x404  -r-- .ARM.extab
-0x00013334 0x678  -r-- .ARM.exidx
+0x00012f30  0x404 -r-- .ARM.extab
+0x00013334  0x678 -r-- .ARM.exidx
 0x000139ac 0x11bc -r-- .rodata
-0x00016080 0x738  -rw- .data.rel.ro.local
-0x000167b8 0x8    -rw- .fini_array
-0x000167c0 0x5f4  -rw- .data.rel.ro
-0x00016db4 0xc    -rw- .init_array
-0x00016dc0 0x100  -rw- .dynamic
-0x00016ec0 0x140  -rw- .got
-0x00017000 0x24   -rw- .data
+0x00016080  0x738 -rw- .data.rel.ro.local
+0x000167b8    0x8 -rw- .fini_array
+0x000167c0  0x5f4 -rw- .data.rel.ro
+0x00016db4    0xc -rw- .init_array
+0x00016dc0  0x100 -rw- .dynamic
+0x00016ec0  0x140 -rw- .got
+0x00017000   0x24 -rw- .data
 0x00017028 0x4f30 -rw- .bss
----------- 0x10   ---- .comment
----------- 0x1c   ---- .note.gnu.gold-version
----------- 0x2b   ---- .ARM.attributes
----------- 0xf3   ---- .shstrtab
+----------   0x10 ---- .comment
+----------   0x1c ---- .note.gnu.gold-version
+----------   0x2b ---- .ARM.attributes
+----------   0xf3 ---- .shstrtab
 0x139ac 15 14 getPackageName
 0x139bb 21 20 ()Ljava/lang/String;
 0x139d0 17 16 java/lang/String
@@ -1750,9 +1759,11 @@ NAME=ie (file x86)
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=ie
 EXPECT=<<EOF
-vaddr      paddr      hvaddr     haddr      type    
+     vaddr      paddr     hvaddr      haddr type    
 ----------------------------------------------------
 0x08048300 0x00000300 0x08048018 0x00000018 program
+0x080483d0 0x000003d0 0x0804959c 0x0000059c init
+0x080483b0 0x000003b0 0x080495a0 0x000005a0 fini
 EOF
 RUN
 
@@ -1760,7 +1771,7 @@ NAME=iej (file x86)
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=iej
 EXPECT=<<EOF
-[{"vaddr":134513408,"paddr":768,"baddr":134512640,"laddr":0,"hvaddr":134512664,"haddr":24,"type":"program"}]
+[{"vaddr":134513408,"paddr":768,"baddr":134512640,"laddr":0,"hvaddr":134512664,"haddr":24,"type":"program"},{"vaddr":134513616,"paddr":976,"baddr":134512640,"laddr":0,"hvaddr":134518172,"haddr":1436,"type":"init"},{"vaddr":134513584,"paddr":944,"baddr":134512640,"laddr":0,"hvaddr":134518176,"haddr":1440,"type":"fini"}]
 EOF
 RUN
 
@@ -1768,11 +1779,11 @@ NAME=ii (file x86)
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=ii
 EXPECT=<<EOF
-nth vaddr      bind   type   lib name              
+nth      vaddr bind   type   lib name              
 ---------------------------------------------------
-1   0x080482d0 GLOBAL FUNC       puts
-2   0x080482e0 WEAK   NOTYPE     __gmon_start__
-3   0x080482f0 GLOBAL FUNC       __libc_start_main
+  1 0x080482d0 GLOBAL FUNC       puts
+  2 0x080482e0 WEAK   NOTYPE     __gmon_start__
+  3 0x080482f0 GLOBAL FUNC       __libc_start_main
 EOF
 RUN
 
@@ -1782,6 +1793,7 @@ CMDS=iI
 EXPECT=<<EOF
 arch     x86
 cpu      N/A
+features N/A
 baddr    0x08048000
 binsz    0x00001323
 bintype  elf
@@ -1800,7 +1812,7 @@ maxopsz  16
 minopsz  1
 os       linux
 cc       N/A
-pcalign  0
+pcalign  1
 relro    no
 rpath    NONE
 subsys   linux
@@ -1839,7 +1851,7 @@ EXPECT=<<EOF
   "maxopsz": 16,
   "minopsz": 1,
   "os": "linux",
-  "pcalign": 0,
+  "pcalign": 1,
   "relro": "no",
   "rpath": "NONE",
   "subsys": "linux",
@@ -2931,38 +2943,38 @@ NAME=iS (file x86)
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=iS
 EXPECT=<<EOF
-paddr      size  vaddr      vsize align perm name               type       flags         
+     paddr  size      vaddr vsize align perm name               type       flags         
 -----------------------------------------------------------------------------------------
-0x00000000 0x0   ---------- 0x0   0x0   ----                    NULL       
-0x00000134 0x13  0x08048134 0x13  0x0   -r-- .interp            PROGBITS   alloc
-0x00000148 0x20  0x08048148 0x20  0x0   -r-- .note.ABI-tag      NOTE       alloc
-0x00000168 0x24  0x08048168 0x24  0x0   -r-- .note.gnu.build-id NOTE       alloc
-0x0000018c 0x20  0x0804818c 0x20  0x0   -r-- .gnu.hash          GNU_HASH   alloc
-0x000001ac 0x50  0x080481ac 0x50  0x0   -r-- .dynsym            DYNSYM     alloc
-0x000001fc 0x4a  0x080481fc 0x4a  0x0   -r-- .dynstr            STRTAB     alloc
-0x00000246 0xa   0x08048246 0xa   0x0   -r-- .gnu.version       VERSYM     alloc
-0x00000250 0x20  0x08048250 0x20  0x0   -r-- .gnu.version_r     VERNEED    alloc
-0x00000270 0x8   0x08048270 0x8   0x0   -r-- .rel.dyn           REL        alloc
-0x00000278 0x18  0x08048278 0x18  0x0   -r-- .rel.plt           REL        alloc
-0x00000290 0x23  0x08048290 0x23  0x0   -r-x .init              PROGBITS   alloc,execute
-0x000002c0 0x40  0x080482c0 0x40  0x0   -r-x .plt               PROGBITS   alloc,execute
-0x00000300 0x194 0x08048300 0x194 0x0   -r-x .text              PROGBITS   alloc,execute
-0x00000494 0x14  0x08048494 0x14  0x0   -r-x .fini              PROGBITS   alloc,execute
-0x000004a8 0x15  0x080484a8 0x15  0x0   -r-- .rodata            PROGBITS   alloc
-0x000004c0 0x2c  0x080484c0 0x2c  0x0   -r-- .eh_frame_hdr      PROGBITS   alloc
-0x000004ec 0xb0  0x080484ec 0xb0  0x0   -r-- .eh_frame          PROGBITS   alloc
-0x0000059c 0x4   0x0804959c 0x4   0x0   -rw- .init_array        INIT_ARRAY write,alloc
-0x000005a0 0x4   0x080495a0 0x4   0x0   -rw- .fini_array        FINI_ARRAY write,alloc
-0x000005a4 0x4   0x080495a4 0x4   0x0   -rw- .jcr               PROGBITS   write,alloc
-0x000005a8 0xe8  0x080495a8 0xe8  0x0   -rw- .dynamic           DYNAMIC    write,alloc
-0x00000690 0x4   0x08049690 0x4   0x0   -rw- .got               PROGBITS   write,alloc
-0x00000694 0x18  0x08049694 0x18  0x0   -rw- .got.plt           PROGBITS   write,alloc
-0x000006ac 0x8   0x080496ac 0x8   0x0   -rw- .data              PROGBITS   write,alloc
-0x000006b4 0x0   0x080496b4 0x4   0x0   -rw- .bss               NOBITS     write,alloc
-0x000006b4 0x11  ---------- 0x11  0x0   ---- .comment           PROGBITS   merge,strings
-0x000006c5 0x106 ---------- 0x106 0x0   ---- .shstrtab          STRTAB     
-0x00000c7c 0x450 ---------- 0x450 0x0   ---- .symtab            SYMTAB     
-0x000010cc 0x257 ---------- 0x257 0x0   ---- .strtab            STRTAB     
+0x00000000   0x0 ----------   0x0   0x0 ----                    NULL       
+0x00000134  0x13 0x08048134  0x13   0x0 -r-- .interp            PROGBITS   alloc
+0x00000148  0x20 0x08048148  0x20   0x0 -r-- .note.ABI-tag      NOTE       alloc
+0x00000168  0x24 0x08048168  0x24   0x0 -r-- .note.gnu.build-id NOTE       alloc
+0x0000018c  0x20 0x0804818c  0x20   0x0 -r-- .gnu.hash          GNU_HASH   alloc
+0x000001ac  0x50 0x080481ac  0x50   0x0 -r-- .dynsym            DYNSYM     alloc
+0x000001fc  0x4a 0x080481fc  0x4a   0x0 -r-- .dynstr            STRTAB     alloc
+0x00000246   0xa 0x08048246   0xa   0x0 -r-- .gnu.version       VERSYM     alloc
+0x00000250  0x20 0x08048250  0x20   0x0 -r-- .gnu.version_r     VERNEED    alloc
+0x00000270   0x8 0x08048270   0x8   0x0 -r-- .rel.dyn           REL        alloc
+0x00000278  0x18 0x08048278  0x18   0x0 -r-- .rel.plt           REL        alloc
+0x00000290  0x23 0x08048290  0x23   0x0 -r-x .init              PROGBITS   alloc,execute
+0x000002c0  0x40 0x080482c0  0x40   0x0 -r-x .plt               PROGBITS   alloc,execute
+0x00000300 0x194 0x08048300 0x194   0x0 -r-x .text              PROGBITS   alloc,execute
+0x00000494  0x14 0x08048494  0x14   0x0 -r-x .fini              PROGBITS   alloc,execute
+0x000004a8  0x15 0x080484a8  0x15   0x0 -r-- .rodata            PROGBITS   alloc
+0x000004c0  0x2c 0x080484c0  0x2c   0x0 -r-- .eh_frame_hdr      PROGBITS   alloc
+0x000004ec  0xb0 0x080484ec  0xb0   0x0 -r-- .eh_frame          PROGBITS   alloc
+0x0000059c   0x4 0x0804959c   0x4   0x0 -rw- .init_array        INIT_ARRAY write,alloc
+0x000005a0   0x4 0x080495a0   0x4   0x0 -rw- .fini_array        FINI_ARRAY write,alloc
+0x000005a4   0x4 0x080495a4   0x4   0x0 -rw- .jcr               PROGBITS   write,alloc
+0x000005a8  0xe8 0x080495a8  0xe8   0x0 -rw- .dynamic           DYNAMIC    write,alloc
+0x00000690   0x4 0x08049690   0x4   0x0 -rw- .got               PROGBITS   write,alloc
+0x00000694  0x18 0x08049694  0x18   0x0 -rw- .got.plt           PROGBITS   write,alloc
+0x000006ac   0x8 0x080496ac   0x8   0x0 -rw- .data              PROGBITS   write,alloc
+0x000006b4   0x0 0x080496b4   0x4   0x0 -rw- .bss               NOBITS     write,alloc
+0x000006b4  0x11 ----------  0x11   0x0 ---- .comment           PROGBITS   merge,strings
+0x000006c5 0x106 ---------- 0x106   0x0 ---- .shstrtab          STRTAB     
+0x00000c7c 0x450 ---------- 0x450   0x0 ---- .symtab            SYMTAB     
+0x000010cc 0x257 ---------- 0x257   0x0 ---- .strtab            STRTAB     
 EOF
 RUN
 
@@ -2970,17 +2982,17 @@ NAME=iSS (file x86)
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=iSS
 EXPECT=<<EOF
-paddr      size  vaddr      vsize align  perm name         
+     paddr  size      vaddr vsize  align perm name         
 -----------------------------------------------------------
-0x00000034 0x100 0x08048034 0x100 0x4    -r-x PHDR
-0x00000134 0x13  0x08048134 0x13  0x1    -r-- INTERP
+0x00000034 0x100 0x08048034 0x100    0x4 -r-x PHDR
+0x00000134  0x13 0x08048134  0x13    0x1 -r-- INTERP
 0x00000000 0x59c 0x08048000 0x59c 0x1000 -r-x LOAD0
 0x0000059c 0x118 0x0804959c 0x11c 0x1000 -rw- LOAD1
-0x000005a8 0xe8  0x080495a8 0xe8  0x4    -rw- DYNAMIC
-0x00000148 0x44  0x08048148 0x44  0x4    -r-- NOTE
-0x000004c0 0x2c  0x080484c0 0x2c  0x4    -r-- GNU_EH_FRAME
-0x00000000 0x0   0x00000000 0x0   0x4    -rw- GNU_STACK
-0x00000000 0x34  0x08048000 0x34  0x0    -rw- ehdr
+0x000005a8  0xe8 0x080495a8  0xe8    0x4 -rw- DYNAMIC
+0x00000148  0x44 0x08048148  0x44    0x4 -r-- NOTE
+0x000004c0  0x2c 0x080484c0  0x2c    0x4 -r-- GNU_EH_FRAME
+0x00000000   0x0 0x00000000   0x0    0x4 -rw- GNU_STACK
+0x00000000  0x34 0x08048000  0x34    0x0 -rw- ehdr
 EOF
 RUN
 
@@ -2996,7 +3008,7 @@ NAME=iSSj
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=iSSj
 EXPECT=<<EOF
-[{"name":"PHDR","size":256,"vsize":256,"perm":"-r-x","paddr":52,"vaddr":134512692,"align":4},{"name":"INTERP","size":19,"vsize":19,"perm":"-r--","paddr":308,"vaddr":134512948,"align":1},{"name":"LOAD0","size":1436,"vsize":1436,"perm":"-r-x","paddr":0,"vaddr":134512640,"align":4096},{"name":"LOAD1","size":280,"vsize":284,"perm":"-rw-","paddr":1436,"vaddr":134518172,"align":4096},{"name":"DYNAMIC","size":232,"vsize":232,"perm":"-rw-","paddr":1448,"vaddr":134518184,"align":4},{"name":"NOTE","size":68,"vsize":68,"perm":"-r--","paddr":328,"vaddr":134512968,"align":4},{"name":"GNU_EH_FRAME","size":44,"vsize":44,"perm":"-r--","paddr":1216,"vaddr":134513856,"align":4},{"name":"GNU_STACK","size":0,"vsize":0,"perm":"-rw-","paddr":0,"vaddr":0,"align":4},{"name":"ehdr","size":52,"vsize":52,"perm":"-rw-","paddr":0,"vaddr":134512640}]
+[{"name":"PHDR","size":256,"vsize":256,"perm":"-r-x","paddr":52,"vaddr":134512692,"align":4},{"name":"INTERP","size":19,"vsize":19,"perm":"-r--","paddr":308,"vaddr":134512948},{"name":"LOAD0","size":1436,"vsize":1436,"perm":"-r-x","paddr":0,"vaddr":134512640,"align":4096},{"name":"LOAD1","size":280,"vsize":284,"perm":"-rw-","paddr":1436,"vaddr":134518172,"align":4096},{"name":"DYNAMIC","size":232,"vsize":232,"perm":"-rw-","paddr":1448,"vaddr":134518184,"align":4},{"name":"NOTE","size":68,"vsize":68,"perm":"-r--","paddr":328,"vaddr":134512968,"align":4},{"name":"GNU_EH_FRAME","size":44,"vsize":44,"perm":"-r--","paddr":1216,"vaddr":134513856,"align":4},{"name":"GNU_STACK","size":0,"vsize":0,"perm":"-rw-","paddr":0,"vaddr":0,"align":4},{"name":"ehdr","size":52,"vsize":52,"perm":"-rw-","paddr":0,"vaddr":134512640}]
 EOF
 RUN
 
@@ -3004,7 +3016,7 @@ NAME=iSq
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=iS:paddr/cols/vaddr/perm/name
 EXPECT=<<EOF
-paddr      vaddr      perm name               
+     paddr      vaddr perm name               
 ----------------------------------------------
 0x00000000 ---------- ---- 
 0x00000134 0x08048134 -r-- .interp
@@ -3043,7 +3055,7 @@ NAME=iSSq
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=iSS:paddr/cols/vaddr/perm/name
 EXPECT=<<EOF
-paddr      vaddr      perm name         
+     paddr      vaddr perm name         
 ----------------------------------------
 0x00000034 0x08048034 -r-x PHDR
 0x00000134 0x08048134 -r-- INTERP
@@ -3106,12 +3118,12 @@ NAME=ir (file x86)
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=ir
 EXPECT=<<EOF
-vaddr      paddr      type   name              
------------------------------------------------
-0x08049690 0x00000690 SET_32 __gmon_start__
-0x080496a0 0x000006a0 SET_32 puts
-0x080496a4 0x000006a4 SET_32 __gmon_start__
-0x080496a8 0x000006a8 SET_32 __libc_start_main
+     vaddr      paddr type           name              
+-------------------------------------------------------
+0x08049690 0x00000690 R_386_GLOB_DAT __gmon_start__
+0x080496a0 0x000006a0 R_386_JMP_SLOT puts
+0x080496a4 0x000006a4 R_386_JMP_SLOT __gmon_start__
+0x080496a8 0x000006a8 R_386_JMP_SLOT __libc_start_main
 EOF
 RUN
 
@@ -3130,117 +3142,116 @@ NAME=is (file x86)
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=is
 EXPECT=<<EOF
-nth paddr      vaddr      bind   type   size lib name                                   
+nth      paddr      vaddr bind   type   size lib name                                   
 ----------------------------------------------------------------------------------------
-4   0x000004ac 0x080484ac GLOBAL OBJ    4        _IO_stdin_used
-1   0x00000134 0x08048134 LOCAL  SECT   0        .interp
-2   0x00000148 0x08048148 LOCAL  SECT   0        .note.ABI-tag
-3   0x00000168 0x08048168 LOCAL  SECT   0        .note.gnu.build-id
-4   0x0000018c 0x0804818c LOCAL  SECT   0        .gnu.hash
-5   0x000001ac 0x080481ac LOCAL  SECT   0        .dynsym
-6   0x000001fc 0x080481fc LOCAL  SECT   0        .dynstr
-7   0x00000246 0x08048246 LOCAL  SECT   0        .gnu.version
-8   0x00000250 0x08048250 LOCAL  SECT   0        .gnu.version_r
-9   0x00000270 0x08048270 LOCAL  SECT   0        .rel.dyn
-10  0x00000278 0x08048278 LOCAL  SECT   0        .rel.plt
-11  0x00000290 0x08048290 LOCAL  SECT   0        .init
-12  0x000002c0 0x080482c0 LOCAL  SECT   0        .plt
-13  0x00000300 0x08048300 LOCAL  SECT   0        .text
-14  0x00000494 0x08048494 LOCAL  SECT   0        .fini
-15  0x000004a8 0x080484a8 LOCAL  SECT   0        .rodata
-16  0x000004c0 0x080484c0 LOCAL  SECT   0        .eh_frame_hdr
-17  0x000004ec 0x080484ec LOCAL  SECT   0        .eh_frame
-18  0x0000059c 0x0804959c LOCAL  SECT   0        .init_array
-19  0x000005a0 0x080495a0 LOCAL  SECT   0        .fini_array
-20  0x000005a4 0x080495a4 LOCAL  SECT   0        .jcr
-21  0x000005a8 0x080495a8 LOCAL  SECT   0        .dynamic
-22  0x00000690 0x08049690 LOCAL  SECT   0        .got
-23  0x00000694 0x08049694 LOCAL  SECT   0        .got.plt
-24  0x000006ac 0x080496ac LOCAL  SECT   0        .data
-25  ---------- 0x080496b4 LOCAL  SECT   0        .bss
-26  ---------- 0x00000000 LOCAL  SECT   0        .comment
-27  ---------- 0x00000000 LOCAL  FILE   0        init.c
-28  ---------- 0x00000000 LOCAL  FILE   0        
-29  ---------- 0x00000000 LOCAL  FILE   0        crtstuff.c
-30  0x000005a4 0x080495a4 LOCAL  OBJ    0        __JCR_LIST__
-31  0x00000340 0x08048340 LOCAL  FUNC   0        deregister_tm_clones
-32  0x00000370 0x08048370 LOCAL  FUNC   0        register_tm_clones
-33  0x000003b0 0x080483b0 LOCAL  FUNC   0        __do_global_dtors_aux
-34  ---------- 0x080496b4 LOCAL  OBJ    1        completed.5979
-35  0x000005a0 0x080495a0 LOCAL  OBJ    0        __do_global_dtors_aux_fini_array_entry
-36  0x000003d0 0x080483d0 LOCAL  FUNC   0        frame_dummy
-37  0x0000059c 0x0804959c LOCAL  OBJ    0        __frame_dummy_init_array_entry
-38  ---------- 0x00000000 LOCAL  FILE   0        hello.c
-39  ---------- 0x00000000 LOCAL  FILE   0        crtstuff.c
-40  0x00000598 0x08048598 LOCAL  OBJ    0        __FRAME_END__
-41  0x000005a4 0x080495a4 LOCAL  OBJ    0        __JCR_END__
-42  ---------- 0x00000000 LOCAL  FILE   0        
-43  0x000005a0 0x080495a0 LOCAL  NOTYPE 0        __init_array_end
-44  0x000005a8 0x080495a8 LOCAL  OBJ    0        _DYNAMIC
-45  0x0000059c 0x0804959c LOCAL  NOTYPE 0        __init_array_start
-46  0x00000694 0x08049694 LOCAL  OBJ    0        _GLOBAL_OFFSET_TABLE_
-47  0x00000490 0x08048490 GLOBAL FUNC   2        __libc_csu_fini
-49  0x00000330 0x08048330 GLOBAL FUNC   4        __x86.get_pc_thunk.bx
-50  0x000006ac 0x080496ac WEAK   NOTYPE 0        data_start
-51  ---------- 0x080496b4 GLOBAL NOTYPE 0        _edata
-52  0x00000494 0x08048494 GLOBAL FUNC   0        _fini
-53  0x000006ac 0x080496ac GLOBAL NOTYPE 0        __data_start
-56  0x000006b0 0x080496b0 GLOBAL OBJ    0        __dso_handle
-57  0x000004ac 0x080484ac GLOBAL OBJ    4        _IO_stdin_used
-59  0x00000420 0x08048420 GLOBAL FUNC   97       __libc_csu_init
-60  ---------- 0x080496b8 GLOBAL NOTYPE 0        _end
-61  0x00000300 0x08048300 GLOBAL FUNC   0        _start
-62  0x000004a8 0x080484a8 GLOBAL OBJ    4        _fp_hw
-63  ---------- 0x080496b4 GLOBAL NOTYPE 0        __bss_start
-64  0x00000400 0x08048400 GLOBAL FUNC   28       main
-66  ---------- 0x080496b4 GLOBAL OBJ    0        __TMC_END__
-68  0x00000290 0x08048290 GLOBAL FUNC   0        _init
-1   0x000002d0 0x080482d0 GLOBAL FUNC   16       imp.puts
-2   0x000002e0 0x080482e0 WEAK   NOTYPE 16       imp.__gmon_start__
-3   0x000002f0 0x080482f0 GLOBAL FUNC   16       imp.__libc_start_main
+  4 0x000004ac 0x080484ac GLOBAL OBJ       4     _IO_stdin_used
+  1 0x00000134 0x08048134 LOCAL  SECT      0     .interp
+  2 0x00000148 0x08048148 LOCAL  SECT      0     .note.ABI-tag
+  3 0x00000168 0x08048168 LOCAL  SECT      0     .note.gnu.build-id
+  4 0x0000018c 0x0804818c LOCAL  SECT      0     .gnu.hash
+  5 0x000001ac 0x080481ac LOCAL  SECT      0     .dynsym
+  6 0x000001fc 0x080481fc LOCAL  SECT      0     .dynstr
+  7 0x00000246 0x08048246 LOCAL  SECT      0     .gnu.version
+  8 0x00000250 0x08048250 LOCAL  SECT      0     .gnu.version_r
+  9 0x00000270 0x08048270 LOCAL  SECT      0     .rel.dyn
+ 10 0x00000278 0x08048278 LOCAL  SECT      0     .rel.plt
+ 11 0x00000290 0x08048290 LOCAL  SECT      0     .init
+ 12 0x000002c0 0x080482c0 LOCAL  SECT      0     .plt
+ 13 0x00000300 0x08048300 LOCAL  SECT      0     .text
+ 14 0x00000494 0x08048494 LOCAL  SECT      0     .fini
+ 15 0x000004a8 0x080484a8 LOCAL  SECT      0     .rodata
+ 16 0x000004c0 0x080484c0 LOCAL  SECT      0     .eh_frame_hdr
+ 17 0x000004ec 0x080484ec LOCAL  SECT      0     .eh_frame
+ 18 0x0000059c 0x0804959c LOCAL  SECT      0     .init_array
+ 19 0x000005a0 0x080495a0 LOCAL  SECT      0     .fini_array
+ 20 0x000005a4 0x080495a4 LOCAL  SECT      0     .jcr
+ 21 0x000005a8 0x080495a8 LOCAL  SECT      0     .dynamic
+ 22 0x00000690 0x08049690 LOCAL  SECT      0     .got
+ 23 0x00000694 0x08049694 LOCAL  SECT      0     .got.plt
+ 24 0x000006ac 0x080496ac LOCAL  SECT      0     .data
+ 25 ---------- 0x080496b4 LOCAL  SECT      0     .bss
+ 26 ---------- 0x00000000 LOCAL  SECT      0     .comment
+ 27 ---------- 0x00000000 LOCAL  FILE      0     init.c
+ 28 ---------- 0x00000000 LOCAL  FILE      0     unknown_28
+ 29 ---------- 0x00000000 LOCAL  FILE      0     crtstuff.c
+ 30 0x000005a4 0x080495a4 LOCAL  OBJ       0     __JCR_LIST__
+ 31 0x00000340 0x08048340 LOCAL  FUNC      0     deregister_tm_clones
+ 32 0x00000370 0x08048370 LOCAL  FUNC      0     register_tm_clones
+ 33 0x000003b0 0x080483b0 LOCAL  FUNC      0     __do_global_dtors_aux
+ 34 ---------- 0x080496b4 LOCAL  OBJ       1     completed.5979
+ 35 0x000005a0 0x080495a0 LOCAL  OBJ       0     __do_global_dtors_aux_fini_array_entry
+ 36 0x000003d0 0x080483d0 LOCAL  FUNC      0     frame_dummy
+ 37 0x0000059c 0x0804959c LOCAL  OBJ       0     __frame_dummy_init_array_entry
+ 38 ---------- 0x00000000 LOCAL  FILE      0     hello.c
+ 39 ---------- 0x00000000 LOCAL  FILE      0     crtstuff.c
+ 40 0x00000598 0x08048598 LOCAL  OBJ       0     __FRAME_END__
+ 41 0x000005a4 0x080495a4 LOCAL  OBJ       0     __JCR_END__
+ 42 ---------- 0x00000000 LOCAL  FILE      0     unknown_42
+ 43 0x000005a0 0x080495a0 LOCAL  NOTYPE    0     __init_array_end
+ 44 0x000005a8 0x080495a8 LOCAL  OBJ       0     _DYNAMIC
+ 45 0x0000059c 0x0804959c LOCAL  NOTYPE    0     __init_array_start
+ 46 0x00000694 0x08049694 LOCAL  OBJ       0     _GLOBAL_OFFSET_TABLE_
+ 47 0x00000490 0x08048490 GLOBAL FUNC      2     __libc_csu_fini
+ 49 0x00000330 0x08048330 GLOBAL FUNC      4     __x86.get_pc_thunk.bx
+ 50 0x000006ac 0x080496ac WEAK   NOTYPE    0     data_start
+ 51 ---------- 0x080496b4 GLOBAL NOTYPE    0     _edata
+ 52 0x00000494 0x08048494 GLOBAL FUNC      0     _fini
+ 53 0x000006ac 0x080496ac GLOBAL NOTYPE    0     __data_start
+ 56 0x000006b0 0x080496b0 GLOBAL OBJ       0     __dso_handle
+ 57 0x000004ac 0x080484ac GLOBAL OBJ       4     _IO_stdin_used
+ 59 0x00000420 0x08048420 GLOBAL FUNC     97     __libc_csu_init
+ 60 ---------- 0x080496b8 GLOBAL NOTYPE    0     _end
+ 61 0x00000300 0x08048300 GLOBAL FUNC      0     _start
+ 62 0x000004a8 0x080484a8 GLOBAL OBJ       4     _fp_hw
+ 63 ---------- 0x080496b4 GLOBAL NOTYPE    0     __bss_start
+ 64 0x00000400 0x08048400 GLOBAL FUNC     28     main
+ 66 ---------- 0x080496b4 GLOBAL OBJ       0     __TMC_END__
+ 68 0x00000290 0x08048290 GLOBAL FUNC      0     _init
+  1 0x000002d0 0x080482d0 GLOBAL FUNC     16     imp.puts
+  2 0x000002e0 0x080482e0 WEAK   NOTYPE   16     imp.__gmon_start__
+  3 0x000002f0 0x080482f0 GLOBAL FUNC     16     imp.__libc_start_main
 EOF
 RUN
 
 NAME=iz (file x86)
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF
-e str.search.encoding=ascii
+e str.encoding=ascii
 echo -- default --
 iz
 echo -- geq 12 --
-e str.search.min_length=12
+e search.str.min_length=12
 iz
 echo -- geq 13 --
-e str.search.min_length=13
+e search.str.min_length=13
 iz
 echo -- geq 0 --
-e str.search.min_length=1
+e search.str.min_length=1
 iz
 echo -- small buffer 12 --
-e str.search.buffer_size=13
+e search.str.max_length=13
 iz
 EOF
 EXPECT=<<EOF
 -- default --
-nth paddr      vaddr      len size section type  string       
+nth      paddr      vaddr len size section type  string       
 --------------------------------------------------------------
-0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
+  0 0x000004b0 0x080484b0  12   13 .rodata ascii Hello world!
 -- geq 12 --
-nth paddr      vaddr      len size section type  string       
+nth      paddr      vaddr len size section type  string       
 --------------------------------------------------------------
-0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
+  0 0x000004b0 0x080484b0  12   13 .rodata ascii Hello world!
 -- geq 13 --
 nth paddr vaddr len size section type string 
 ---------------------------------------------
 -- geq 0 --
-nth paddr      vaddr      len size section type  string       
+nth      paddr      vaddr len size section type  string       
 --------------------------------------------------------------
-0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
+  0 0x000004b0 0x080484b0  12   13 .rodata ascii Hello world!
 -- small buffer 12 --
-nth paddr      vaddr      len size section type  string    
------------------------------------------------------------
-0   0x000004b0 0x080484b0 9   9    .rodata ascii Hello wor
-1   0x000004b9 0x080484b9 3   4    .rodata ascii ld!
+nth      paddr      vaddr len size section type  string       
+--------------------------------------------------------------
+  0 0x000004b0 0x080484b0  12   12 .rodata ascii Hello world!
 EOF
 RUN
 
@@ -3250,36 +3261,36 @@ CMDS=<<EOF
 echo -- default --
 iz
 echo -- geq 12 --
-e str.search.min_length=12
+e search.str.min_length=12
 iz
 EOF
 EXPECT=<<EOF
 -- default --
-nth paddr      vaddr       len size section             type  string            
+nth      paddr       vaddr len size section             type  string            
 --------------------------------------------------------------------------------
-0   0x00000d58 0x100000d58 9   10   2.__TEXT.__cstring  ascii sayHello:
-1   0x00000d62 0x100000d62 4   5    2.__TEXT.__cstring  ascii init
-2   0x00000d67 0x100000d67 5   6    2.__TEXT.__cstring  ascii alloc
-3   0x00000d6d 0x100000d6d 5   6    2.__TEXT.__cstring  ascii Hahha
-4   0x00000d73 0x100000d73 12  13   2.__TEXT.__cstring  ascii Hello World 
-5   0x00000d86 0x100000d86 9   10   2.__TEXT.__cstring  ascii callMeNot
-6   0x00000d90 0x100000d90 7   8    2.__TEXT.__cstring  ascii v16@0:8
-7   0x00000d98 0x100000d98 9   10   2.__TEXT.__cstring  ascii sayHello2
-8   0x00000da2 0x100000da2 10  11   2.__TEXT.__cstring  ascii v20@0:8i16
-9   0x00000dad 0x100000dad 11  12   2.__TEXT.__cstring  ascii sayHello3::
-10  0x00000db9 0x100000db9 13  14   2.__TEXT.__cstring  ascii v24@0:8i16i20
-11  0x00000dc7 0x100000dc7 8   9    2.__TEXT.__cstring  ascii sayLong:
-12  0x00000dd0 0x100000dd0 10  11   2.__TEXT.__cstring  ascii v24@0:8Q16
-13  0x00000ddb 0x100000ddb 7   8    2.__TEXT.__cstring  ascii @16@0:8
-14  0x00000de3 0x100000de3 4   5    2.__TEXT.__cstring  ascii Test
-15  0x00001058 0x100001058 5   6    9.__DATA.__cfstring ascii cstr.Hahha
-16  0x00001078 0x100001078 12  13   9.__DATA.__cfstring ascii cstr.Hello World 
+  0 0x00000d58 0x100000d58   9   10 2.__TEXT.__cstring  ascii sayHello:
+  1 0x00000d62 0x100000d62   4    5 2.__TEXT.__cstring  ascii init
+  2 0x00000d67 0x100000d67   5    6 2.__TEXT.__cstring  ascii alloc
+  3 0x00000d6d 0x100000d6d   5    6 2.__TEXT.__cstring  ascii Hahha
+  4 0x00000d73 0x100000d73  12   13 2.__TEXT.__cstring  ascii Hello World 
+  5 0x00000d86 0x100000d86   9   10 2.__TEXT.__cstring  ascii callMeNot
+  6 0x00000d90 0x100000d90   7    8 2.__TEXT.__cstring  ascii v16@0:8
+  7 0x00000d98 0x100000d98   9   10 2.__TEXT.__cstring  ascii sayHello2
+  8 0x00000da2 0x100000da2  10   11 2.__TEXT.__cstring  ascii v20@0:8i16
+  9 0x00000dad 0x100000dad  11   12 2.__TEXT.__cstring  ascii sayHello3::
+ 10 0x00000db9 0x100000db9  13   14 2.__TEXT.__cstring  ascii v24@0:8i16i20
+ 11 0x00000dc7 0x100000dc7   8    9 2.__TEXT.__cstring  ascii sayLong:
+ 12 0x00000dd0 0x100000dd0  10   11 2.__TEXT.__cstring  ascii v24@0:8Q16
+ 13 0x00000ddb 0x100000ddb   7    8 2.__TEXT.__cstring  ascii @16@0:8
+ 14 0x00000de3 0x100000de3   4    5 2.__TEXT.__cstring  ascii Test
+ 15 0x00001058 0x100001058   5    6 9.__DATA.__cfstring ascii cstr.Hahha
+ 16 0x00001078 0x100001078  12   13 9.__DATA.__cfstring ascii cstr.Hello World 
 -- geq 12 --
-nth paddr      vaddr       len size section             type  string            
+nth      paddr       vaddr len size section             type  string            
 --------------------------------------------------------------------------------
-0   0x00000d73 0x100000d73 12  13   2.__TEXT.__cstring  ascii Hello World 
-1   0x00000db9 0x100000db9 13  14   2.__TEXT.__cstring  ascii v24@0:8i16i20
-2   0x00001078 0x100001078 12  13   9.__DATA.__cfstring ascii cstr.Hello World 
+  0 0x00000d73 0x100000d73  12   13 2.__TEXT.__cstring  ascii Hello World 
+  1 0x00000db9 0x100000db9  13   14 2.__TEXT.__cstring  ascii v24@0:8i16i20
+  2 0x00001078 0x100001078  12   13 9.__DATA.__cfstring ascii cstr.Hello World 
 EOF
 RUN
 
@@ -3297,6 +3308,7 @@ block    0x100
 type     EXEC (Executable file)
 arch     x86
 cpu      N/A
+features N/A
 baddr    0x00400000
 binsz    0x00001a36
 bintype  elf
@@ -3315,7 +3327,7 @@ maxopsz  16
 minopsz  1
 os       linux
 cc       N/A
-pcalign  0
+pcalign  1
 relro    no
 rpath    NONE
 subsys   linux
@@ -3338,7 +3350,7 @@ NAME=iA (file x86_64)
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=iA
 EXPECT=<<EOF
-offset     size arch   machine                 
+    offset size arch   machine                 
 -----------------------------------------------
 0x00000000 6710 x86_64 AMD x86-64 architecture
 EOF
@@ -3348,9 +3360,11 @@ NAME=ie (file x86_64)
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=ie
 EXPECT=<<EOF
-vaddr      paddr      hvaddr     haddr      type    
+     vaddr      paddr     hvaddr      haddr type    
 ----------------------------------------------------
 0x00400410 0x00000410 0x00400018 0x00000018 program
+0x004004d0 0x000004d0 0x006006e0 0x000006e0 init
+0x004004b0 0x000004b0 0x006006e8 0x000006e8 fini
 EOF
 RUN
 
@@ -3379,11 +3393,11 @@ NAME=ii (file x86_64)
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=ii
 EXPECT=<<EOF
-nth vaddr      bind   type   lib name              
+nth      vaddr bind   type   lib name              
 ---------------------------------------------------
-1   0x004003e0 GLOBAL FUNC       puts
-2   0x004003f0 GLOBAL FUNC       __libc_start_main
-3   0x00400400 WEAK   NOTYPE     __gmon_start__
+  1 0x004003e0 GLOBAL FUNC       puts
+  2 0x004003f0 GLOBAL FUNC       __libc_start_main
+  3 0x00400400 WEAK   NOTYPE     __gmon_start__
 EOF
 RUN
 
@@ -3393,6 +3407,7 @@ CMDS=iI
 EXPECT=<<EOF
 arch     x86
 cpu      N/A
+features N/A
 baddr    0x00400000
 binsz    0x00001a36
 bintype  elf
@@ -3411,7 +3426,7 @@ maxopsz  16
 minopsz  1
 os       linux
 cc       N/A
-pcalign  0
+pcalign  1
 relro    no
 rpath    NONE
 subsys   linux
@@ -3434,38 +3449,38 @@ NAME=iS (file x86_64)
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=iS
 EXPECT=<<EOF
-paddr      size  vaddr      vsize align perm name               type       flags         
+     paddr  size      vaddr vsize align perm name               type       flags         
 -----------------------------------------------------------------------------------------
-0x00000000 0x0   ---------- 0x0   0x0   ----                    NULL       
-0x00000200 0x1a  0x00400200 0x1a  0x0   -r-- .interp            PROGBITS   alloc
-0x0000021c 0x20  0x0040021c 0x20  0x0   -r-- .note.ABI-tag      NOTE       alloc
-0x0000023c 0x24  0x0040023c 0x24  0x0   -r-- .note.gnu.build-id NOTE       alloc
-0x00000260 0x1c  0x00400260 0x1c  0x0   -r-- .gnu.hash          GNU_HASH   alloc
-0x00000280 0x60  0x00400280 0x60  0x0   -r-- .dynsym            DYNSYM     alloc
-0x000002e0 0x3d  0x004002e0 0x3d  0x0   -r-- .dynstr            STRTAB     alloc
-0x0000031e 0x8   0x0040031e 0x8   0x0   -r-- .gnu.version       VERSYM     alloc
-0x00000328 0x20  0x00400328 0x20  0x0   -r-- .gnu.version_r     VERNEED    alloc
-0x00000348 0x18  0x00400348 0x18  0x0   -r-- .rela.dyn          RELA       alloc
-0x00000360 0x48  0x00400360 0x48  0x0   -r-- .rela.plt          RELA       alloc
-0x000003a8 0x1a  0x004003a8 0x1a  0x0   -r-x .init              PROGBITS   alloc,execute
-0x000003d0 0x40  0x004003d0 0x40  0x0   -r-x .plt               PROGBITS   alloc,execute
-0x00000410 0x1a4 0x00400410 0x1a4 0x0   -r-x .text              PROGBITS   alloc,execute
-0x000005b4 0x9   0x004005b4 0x9   0x0   -r-x .fini              PROGBITS   alloc,execute
-0x000005c0 0x10  0x004005c0 0x10  0x0   -r-- .rodata            PROGBITS   alloc
-0x000005d0 0x34  0x004005d0 0x34  0x0   -r-- .eh_frame_hdr      PROGBITS   alloc
-0x00000608 0xd4  0x00400608 0xd4  0x0   -r-- .eh_frame          PROGBITS   alloc
-0x000006e0 0x8   0x006006e0 0x8   0x0   -rw- .init_array        INIT_ARRAY write,alloc
-0x000006e8 0x8   0x006006e8 0x8   0x0   -rw- .fini_array        FINI_ARRAY write,alloc
-0x000006f0 0x8   0x006006f0 0x8   0x0   -rw- .jcr               PROGBITS   write,alloc
-0x000006f8 0x1d0 0x006006f8 0x1d0 0x0   -rw- .dynamic           DYNAMIC    write,alloc
-0x000008c8 0x8   0x006008c8 0x8   0x0   -rw- .got               PROGBITS   write,alloc
-0x000008d0 0x30  0x006008d0 0x30  0x0   -rw- .got.plt           PROGBITS   write,alloc
-0x00000900 0x10  0x00600900 0x10  0x0   -rw- .data              PROGBITS   write,alloc
-0x00000910 0x0   0x00600910 0x8   0x0   -rw- .bss               NOBITS     write,alloc
-0x00000910 0x11  ---------- 0x11  0x0   ---- .comment           PROGBITS   merge,strings
-0x00000921 0x108 ---------- 0x108 0x0   ---- .shstrtab          STRTAB     
-0x000011b0 0x648 ---------- 0x648 0x0   ---- .symtab            SYMTAB     
-0x000017f8 0x23e ---------- 0x23e 0x0   ---- .strtab            STRTAB     
+0x00000000   0x0 ----------   0x0   0x0 ----                    NULL       
+0x00000200  0x1a 0x00400200  0x1a   0x0 -r-- .interp            PROGBITS   alloc
+0x0000021c  0x20 0x0040021c  0x20   0x0 -r-- .note.ABI-tag      NOTE       alloc
+0x0000023c  0x24 0x0040023c  0x24   0x0 -r-- .note.gnu.build-id NOTE       alloc
+0x00000260  0x1c 0x00400260  0x1c   0x0 -r-- .gnu.hash          GNU_HASH   alloc
+0x00000280  0x60 0x00400280  0x60   0x0 -r-- .dynsym            DYNSYM     alloc
+0x000002e0  0x3d 0x004002e0  0x3d   0x0 -r-- .dynstr            STRTAB     alloc
+0x0000031e   0x8 0x0040031e   0x8   0x0 -r-- .gnu.version       VERSYM     alloc
+0x00000328  0x20 0x00400328  0x20   0x0 -r-- .gnu.version_r     VERNEED    alloc
+0x00000348  0x18 0x00400348  0x18   0x0 -r-- .rela.dyn          RELA       alloc
+0x00000360  0x48 0x00400360  0x48   0x0 -r-- .rela.plt          RELA       alloc
+0x000003a8  0x1a 0x004003a8  0x1a   0x0 -r-x .init              PROGBITS   alloc,execute
+0x000003d0  0x40 0x004003d0  0x40   0x0 -r-x .plt               PROGBITS   alloc,execute
+0x00000410 0x1a4 0x00400410 0x1a4   0x0 -r-x .text              PROGBITS   alloc,execute
+0x000005b4   0x9 0x004005b4   0x9   0x0 -r-x .fini              PROGBITS   alloc,execute
+0x000005c0  0x10 0x004005c0  0x10   0x0 -r-- .rodata            PROGBITS   alloc
+0x000005d0  0x34 0x004005d0  0x34   0x0 -r-- .eh_frame_hdr      PROGBITS   alloc
+0x00000608  0xd4 0x00400608  0xd4   0x0 -r-- .eh_frame          PROGBITS   alloc
+0x000006e0   0x8 0x006006e0   0x8   0x0 -rw- .init_array        INIT_ARRAY write,alloc
+0x000006e8   0x8 0x006006e8   0x8   0x0 -rw- .fini_array        FINI_ARRAY write,alloc
+0x000006f0   0x8 0x006006f0   0x8   0x0 -rw- .jcr               PROGBITS   write,alloc
+0x000006f8 0x1d0 0x006006f8 0x1d0   0x0 -rw- .dynamic           DYNAMIC    write,alloc
+0x000008c8   0x8 0x006008c8   0x8   0x0 -rw- .got               PROGBITS   write,alloc
+0x000008d0  0x30 0x006008d0  0x30   0x0 -rw- .got.plt           PROGBITS   write,alloc
+0x00000900  0x10 0x00600900  0x10   0x0 -rw- .data              PROGBITS   write,alloc
+0x00000910   0x0 0x00600910   0x8   0x0 -rw- .bss               NOBITS     write,alloc
+0x00000910  0x11 ----------  0x11   0x0 ---- .comment           PROGBITS   merge,strings
+0x00000921 0x108 ---------- 0x108   0x0 ---- .shstrtab          STRTAB     
+0x000011b0 0x648 ---------- 0x648   0x0 ---- .symtab            SYMTAB     
+0x000017f8 0x23e ---------- 0x23e   0x0 ---- .strtab            STRTAB     
 EOF
 RUN
 
@@ -3473,17 +3488,17 @@ NAME=iSS (file x86_64)
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=iSS
 EXPECT=<<EOF
-paddr      size  vaddr      vsize align    perm name         
+     paddr  size      vaddr vsize    align perm name         
 -------------------------------------------------------------
-0x00000040 0x1c0 0x00400040 0x1c0 0x8      -r-x PHDR
-0x00000200 0x1a  0x00400200 0x1a  0x1      -r-- INTERP
+0x00000040 0x1c0 0x00400040 0x1c0      0x8 -r-x PHDR
+0x00000200  0x1a 0x00400200  0x1a      0x1 -r-- INTERP
 0x00000000 0x6dc 0x00400000 0x6dc 0x200000 -r-x LOAD0
 0x000006e0 0x230 0x006006e0 0x238 0x200000 -rw- LOAD1
-0x000006f8 0x1d0 0x006006f8 0x1d0 0x8      -rw- DYNAMIC
-0x0000021c 0x44  0x0040021c 0x44  0x4      -r-- NOTE
-0x000005d0 0x34  0x004005d0 0x34  0x4      -r-- GNU_EH_FRAME
-0x00000000 0x0   0x00000000 0x0   0x8      -rw- GNU_STACK
-0x00000000 0x40  0x00400000 0x40  0x0      -rw- ehdr
+0x000006f8 0x1d0 0x006006f8 0x1d0      0x8 -rw- DYNAMIC
+0x0000021c  0x44 0x0040021c  0x44      0x4 -r-- NOTE
+0x000005d0  0x34 0x004005d0  0x34      0x4 -r-- GNU_EH_FRAME
+0x00000000   0x0 0x00000000   0x0      0x8 -rw- GNU_STACK
+0x00000000  0x40 0x00400000  0x40      0x0 -rw- ehdr
 EOF
 RUN
 
@@ -3501,12 +3516,12 @@ NAME=ir (file x86_64)
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=ir
 EXPECT=<<EOF
-vaddr      paddr      type   name              
------------------------------------------------
-0x006008c8 0x000008c8 SET_64 __gmon_start__
-0x006008e8 0x000008e8 SET_64 puts
-0x006008f0 0x000008f0 SET_64 __libc_start_main
-0x006008f8 0x000008f8 SET_64 __gmon_start__
+     vaddr      paddr type               name              
+-----------------------------------------------------------
+0x006008c8 0x000008c8 R_X86_64_GLOB_DAT  __gmon_start__
+0x006008e8 0x000008e8 R_X86_64_JUMP_SLOT puts
+0x006008f0 0x000008f0 R_X86_64_JUMP_SLOT __libc_start_main
+0x006008f8 0x000008f8 R_X86_64_JUMP_SLOT __gmon_start__
 EOF
 RUN
 
@@ -3514,18 +3529,18 @@ NAME=ir (file x86_64, ifunc)
 FILE=bins/elf/ifunc_rel64
 CMDS=ir
 EXPECT=<<EOF
-vaddr      paddr      type   name                            
--------------------------------------------------------------
-0x006b17d0 0x000b17d0 SET_64 ifunc_416530 0x00416530 (ifunc)
-0x006b17d8 0x000b17d8 SET_64 ifunc_4193a0 0x004193a0 (ifunc)
-0x006b17e0 0x000b17e0 SET_64 ifunc_4199b0 0x004199b0 (ifunc)
-0x006b17e8 0x000b17e8 SET_64 ifunc_418a50 0x00418a50 (ifunc)
-0x006b17f0 0x000b17f0 SET_64 ifunc_418de0 0x00418de0 (ifunc)
-0x006b17f8 0x000b17f8 SET_64 ifunc_419ad0 0x00419ad0 (ifunc)
-0x006b1800 0x000b1800 SET_64 ifunc_4193f0 0x004193f0 (ifunc)
-0x006b1808 0x000b1808 SET_64 ifunc_414300 0x00414300 (ifunc)
-0x006b1810 0x000b1810 SET_64 ifunc_479800 0x00479800 (ifunc)
-0x006b1818 0x000b1818 SET_64 ifunc_4140b0 0x004140b0 (ifunc)
+     vaddr      paddr type               name                            
+-------------------------------------------------------------------------
+0x006b17d0 0x000b17d0 R_X86_64_IRELATIVE ifunc_416530 0x00416530 (ifunc)
+0x006b17d8 0x000b17d8 R_X86_64_IRELATIVE ifunc_4193a0 0x004193a0 (ifunc)
+0x006b17e0 0x000b17e0 R_X86_64_IRELATIVE ifunc_4199b0 0x004199b0 (ifunc)
+0x006b17e8 0x000b17e8 R_X86_64_IRELATIVE ifunc_418a50 0x00418a50 (ifunc)
+0x006b17f0 0x000b17f0 R_X86_64_IRELATIVE ifunc_418de0 0x00418de0 (ifunc)
+0x006b17f8 0x000b17f8 R_X86_64_IRELATIVE ifunc_419ad0 0x00419ad0 (ifunc)
+0x006b1800 0x000b1800 R_X86_64_IRELATIVE ifunc_4193f0 0x004193f0 (ifunc)
+0x006b1808 0x000b1808 R_X86_64_IRELATIVE ifunc_414300 0x00414300 (ifunc)
+0x006b1810 0x000b1810 R_X86_64_IRELATIVE ifunc_479800 0x00479800 (ifunc)
+0x006b1818 0x000b1818 R_X86_64_IRELATIVE ifunc_4140b0 0x004140b0 (ifunc)
 EOF
 RUN
 
@@ -3533,71 +3548,71 @@ NAME=is (file x86_64)
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=is
 EXPECT=<<EOF
-nth paddr      vaddr      bind   type   size lib name                                   
+nth      paddr      vaddr bind   type   size lib name                                   
 ----------------------------------------------------------------------------------------
-1   0x00000200 0x00400200 LOCAL  SECT   0        .interp
-2   0x0000021c 0x0040021c LOCAL  SECT   0        .note.ABI-tag
-3   0x0000023c 0x0040023c LOCAL  SECT   0        .note.gnu.build-id
-4   0x00000260 0x00400260 LOCAL  SECT   0        .gnu.hash
-5   0x00000280 0x00400280 LOCAL  SECT   0        .dynsym
-6   0x000002e0 0x004002e0 LOCAL  SECT   0        .dynstr
-7   0x0000031e 0x0040031e LOCAL  SECT   0        .gnu.version
-8   0x00000328 0x00400328 LOCAL  SECT   0        .gnu.version_r
-9   0x00000348 0x00400348 LOCAL  SECT   0        .rela.dyn
-10  0x00000360 0x00400360 LOCAL  SECT   0        .rela.plt
-11  0x000003a8 0x004003a8 LOCAL  SECT   0        .init
-12  0x000003d0 0x004003d0 LOCAL  SECT   0        .plt
-13  0x00000410 0x00400410 LOCAL  SECT   0        .text
-14  0x000005b4 0x004005b4 LOCAL  SECT   0        .fini
-15  0x000005c0 0x004005c0 LOCAL  SECT   0        .rodata
-16  0x000005d0 0x004005d0 LOCAL  SECT   0        .eh_frame_hdr
-17  0x00000608 0x00400608 LOCAL  SECT   0        .eh_frame
-18  0x000006e0 0x006006e0 LOCAL  SECT   0        .init_array
-19  0x000006e8 0x006006e8 LOCAL  SECT   0        .fini_array
-20  0x000006f0 0x006006f0 LOCAL  SECT   0        .jcr
-21  0x000006f8 0x006006f8 LOCAL  SECT   0        .dynamic
-22  0x000008c8 0x006008c8 LOCAL  SECT   0        .got
-23  0x000008d0 0x006008d0 LOCAL  SECT   0        .got.plt
-24  0x00000900 0x00600900 LOCAL  SECT   0        .data
-25  ---------- 0x00600910 LOCAL  SECT   0        .bss
-26  ---------- 0x00000000 LOCAL  SECT   0        .comment
-27  ---------- 0x00000000 LOCAL  FILE   0        init.c
-28  ---------- 0x00000000 LOCAL  FILE   0        
-29  ---------- 0x00000000 LOCAL  FILE   0        crtstuff.c
-30  0x000006f0 0x006006f0 LOCAL  OBJ    0        __JCR_LIST__
-31  0x00000440 0x00400440 LOCAL  FUNC   0        deregister_tm_clones
-32  0x00000470 0x00400470 LOCAL  FUNC   0        register_tm_clones
-33  0x000004b0 0x004004b0 LOCAL  FUNC   0        __do_global_dtors_aux
-34  ---------- 0x00600910 LOCAL  OBJ    1        completed.6724
-35  0x000006e8 0x006006e8 LOCAL  OBJ    0        __do_global_dtors_aux_fini_array_entry
-36  0x000004d0 0x004004d0 LOCAL  FUNC   0        frame_dummy
-37  0x000006e0 0x006006e0 LOCAL  OBJ    0        __frame_dummy_init_array_entry
-38  ---------- 0x00000000 LOCAL  FILE   0        hello.c
-39  ---------- 0x00000000 LOCAL  FILE   0        crtstuff.c
-40  0x000006d8 0x004006d8 LOCAL  OBJ    0        __FRAME_END__
-41  0x000006f0 0x006006f0 LOCAL  OBJ    0        __JCR_END__
-42  ---------- 0x00000000 LOCAL  FILE   0        
-43  0x000006e8 0x006006e8 LOCAL  NOTYPE 0        __init_array_end
-44  0x000006f8 0x006006f8 LOCAL  OBJ    0        _DYNAMIC
-45  0x000006e0 0x006006e0 LOCAL  NOTYPE 0        __init_array_start
-46  0x000008d0 0x006008d0 LOCAL  OBJ    0        _GLOBAL_OFFSET_TABLE_
-47  0x000005b0 0x004005b0 GLOBAL FUNC   2        __libc_csu_fini
-49  0x00000900 0x00600900 WEAK   NOTYPE 0        data_start
-51  ---------- 0x00600910 GLOBAL NOTYPE 0        _edata
-52  0x000005b4 0x004005b4 GLOBAL FUNC   0        _fini
-54  0x00000900 0x00600900 GLOBAL NOTYPE 0        __data_start
-56  0x00000908 0x00600908 GLOBAL OBJ    0        __dso_handle
-57  0x000005c0 0x004005c0 GLOBAL OBJ    4        _IO_stdin_used
-58  0x00000520 0x00400520 GLOBAL FUNC   137      __libc_csu_init
-59  ---------- 0x00600918 GLOBAL NOTYPE 0        _end
-60  0x00000410 0x00400410 GLOBAL FUNC   0        _start
-61  ---------- 0x00600910 GLOBAL NOTYPE 0        __bss_start
-62  0x000004fc 0x004004fc GLOBAL FUNC   21       main
-64  ---------- 0x00600910 GLOBAL OBJ    0        __TMC_END__
-66  0x000003a8 0x004003a8 GLOBAL FUNC   0        _init
-1   0x000003e0 0x004003e0 GLOBAL FUNC   16       imp.puts
-2   0x000003f0 0x004003f0 GLOBAL FUNC   16       imp.__libc_start_main
-3   0x00000400 0x00400400 WEAK   NOTYPE 16       imp.__gmon_start__
+  1 0x00000200 0x00400200 LOCAL  SECT      0     .interp
+  2 0x0000021c 0x0040021c LOCAL  SECT      0     .note.ABI-tag
+  3 0x0000023c 0x0040023c LOCAL  SECT      0     .note.gnu.build-id
+  4 0x00000260 0x00400260 LOCAL  SECT      0     .gnu.hash
+  5 0x00000280 0x00400280 LOCAL  SECT      0     .dynsym
+  6 0x000002e0 0x004002e0 LOCAL  SECT      0     .dynstr
+  7 0x0000031e 0x0040031e LOCAL  SECT      0     .gnu.version
+  8 0x00000328 0x00400328 LOCAL  SECT      0     .gnu.version_r
+  9 0x00000348 0x00400348 LOCAL  SECT      0     .rela.dyn
+ 10 0x00000360 0x00400360 LOCAL  SECT      0     .rela.plt
+ 11 0x000003a8 0x004003a8 LOCAL  SECT      0     .init
+ 12 0x000003d0 0x004003d0 LOCAL  SECT      0     .plt
+ 13 0x00000410 0x00400410 LOCAL  SECT      0     .text
+ 14 0x000005b4 0x004005b4 LOCAL  SECT      0     .fini
+ 15 0x000005c0 0x004005c0 LOCAL  SECT      0     .rodata
+ 16 0x000005d0 0x004005d0 LOCAL  SECT      0     .eh_frame_hdr
+ 17 0x00000608 0x00400608 LOCAL  SECT      0     .eh_frame
+ 18 0x000006e0 0x006006e0 LOCAL  SECT      0     .init_array
+ 19 0x000006e8 0x006006e8 LOCAL  SECT      0     .fini_array
+ 20 0x000006f0 0x006006f0 LOCAL  SECT      0     .jcr
+ 21 0x000006f8 0x006006f8 LOCAL  SECT      0     .dynamic
+ 22 0x000008c8 0x006008c8 LOCAL  SECT      0     .got
+ 23 0x000008d0 0x006008d0 LOCAL  SECT      0     .got.plt
+ 24 0x00000900 0x00600900 LOCAL  SECT      0     .data
+ 25 ---------- 0x00600910 LOCAL  SECT      0     .bss
+ 26 ---------- 0x00000000 LOCAL  SECT      0     .comment
+ 27 ---------- 0x00000000 LOCAL  FILE      0     init.c
+ 28 ---------- 0x00000000 LOCAL  FILE      0     unknown_28
+ 29 ---------- 0x00000000 LOCAL  FILE      0     crtstuff.c
+ 30 0x000006f0 0x006006f0 LOCAL  OBJ       0     __JCR_LIST__
+ 31 0x00000440 0x00400440 LOCAL  FUNC      0     deregister_tm_clones
+ 32 0x00000470 0x00400470 LOCAL  FUNC      0     register_tm_clones
+ 33 0x000004b0 0x004004b0 LOCAL  FUNC      0     __do_global_dtors_aux
+ 34 ---------- 0x00600910 LOCAL  OBJ       1     completed.6724
+ 35 0x000006e8 0x006006e8 LOCAL  OBJ       0     __do_global_dtors_aux_fini_array_entry
+ 36 0x000004d0 0x004004d0 LOCAL  FUNC      0     frame_dummy
+ 37 0x000006e0 0x006006e0 LOCAL  OBJ       0     __frame_dummy_init_array_entry
+ 38 ---------- 0x00000000 LOCAL  FILE      0     hello.c
+ 39 ---------- 0x00000000 LOCAL  FILE      0     crtstuff.c
+ 40 0x000006d8 0x004006d8 LOCAL  OBJ       0     __FRAME_END__
+ 41 0x000006f0 0x006006f0 LOCAL  OBJ       0     __JCR_END__
+ 42 ---------- 0x00000000 LOCAL  FILE      0     unknown_42
+ 43 0x000006e8 0x006006e8 LOCAL  NOTYPE    0     __init_array_end
+ 44 0x000006f8 0x006006f8 LOCAL  OBJ       0     _DYNAMIC
+ 45 0x000006e0 0x006006e0 LOCAL  NOTYPE    0     __init_array_start
+ 46 0x000008d0 0x006008d0 LOCAL  OBJ       0     _GLOBAL_OFFSET_TABLE_
+ 47 0x000005b0 0x004005b0 GLOBAL FUNC      2     __libc_csu_fini
+ 49 0x00000900 0x00600900 WEAK   NOTYPE    0     data_start
+ 51 ---------- 0x00600910 GLOBAL NOTYPE    0     _edata
+ 52 0x000005b4 0x004005b4 GLOBAL FUNC      0     _fini
+ 54 0x00000900 0x00600900 GLOBAL NOTYPE    0     __data_start
+ 56 0x00000908 0x00600908 GLOBAL OBJ       0     __dso_handle
+ 57 0x000005c0 0x004005c0 GLOBAL OBJ       4     _IO_stdin_used
+ 58 0x00000520 0x00400520 GLOBAL FUNC    137     __libc_csu_init
+ 59 ---------- 0x00600918 GLOBAL NOTYPE    0     _end
+ 60 0x00000410 0x00400410 GLOBAL FUNC      0     _start
+ 61 ---------- 0x00600910 GLOBAL NOTYPE    0     __bss_start
+ 62 0x000004fc 0x004004fc GLOBAL FUNC     21     main
+ 64 ---------- 0x00600910 GLOBAL OBJ       0     __TMC_END__
+ 66 0x000003a8 0x004003a8 GLOBAL FUNC      0     _init
+  1 0x000003e0 0x004003e0 GLOBAL FUNC     16     imp.puts
+  2 0x000003f0 0x004003f0 GLOBAL FUNC     16     imp.__libc_start_main
+  3 0x00000400 0x00400400 WEAK   NOTYPE   16     imp.__gmon_start__
 EOF
 RUN
 
@@ -3605,9 +3620,9 @@ NAME=iz (file x86_64)
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=iz
 EXPECT=<<EOF
-nth paddr      vaddr      len size section type  string      
+nth      paddr      vaddr len size section type  string      
 -------------------------------------------------------------
-0   0x000005c4 0x004005c4 11  12   .rodata ascii Hello World
+  0 0x000005c4 0x004005c4  11   12 .rodata ascii Hello World
 EOF
 RUN
 
@@ -3664,8 +3679,8 @@ FILE=bins/elf/analysis/hello-linux-x86_64
 ARGS=-n
 CMDS=izz~puts
 EXPECT=<<EOF
-4   0x000002fa 0x000002fa 4   5            ascii   puts
-65  0x00001953 0x00001953 17  18           ascii   puts@@GLIBC_2.2.5
+  4 0x000002fa 0x000002fa   4    5         ascii   puts
+ 65 0x00001953 0x00001953  17   18         ascii   puts@@GLIBC_2.2.5
 EOF
 RUN
 
@@ -3710,7 +3725,7 @@ NAME=iM command
 FILE=bins/elf/redpill
 CMDS=iM
 EXPECT=<<EOF
-vaddr      paddr      
+     vaddr      paddr 
 ----------------------
 0x0000142e 0x0000142e
 EOF
@@ -3718,21 +3733,21 @@ RUN
 
 NAME=iz utf16le
 FILE=bins/elf/strenc
-ARGS=-e str.search.check_ascii_freq=false
+ARGS=-e search.str.check_ascii_freq=false
 CMDS=<<EOF
 e str.escbslash=true
 iz~green
 iz~wall
 EOF
 EXPECT=<<EOF
-5   0x00002248 0x00402248 57  118  .rodata utf16le \nutf16le> \\u00a2\\u20ac\\U00010348 in green:\e[32m ¢€𐍈 \e[0m\n blocks=Basic Latin,Latin-1 Supplement,Currency Symbols,Gothic
-7   0x000022c8 0x004022c8 33  68   .rodata utf16le is a wall with no embedded zeros\n
+  5 0x00002248 0x00402248  57  118 .rodata utf16le \nutf16le> \\u00a2\\u20ac\\U00010348 in green:\e[32m ¢€𐍈 \e[0m\n blocks=Basic Latin,Latin-1 Supplement,Currency Symbols,Gothic
+  7 0x000022c8 0x004022c8  33   68 .rodata utf16le is a wall with no embedded zeros\n
 EOF
 RUN
 
 NAME=iz/izz utf32le
 FILE=bins/elf/strenc
-ARGS=-e str.search.check_ascii_freq=false
+ARGS=-e search.str.check_ascii_freq=false
 CMDS=<<EOF
 e str.escbslash=true
 iz~cyan
@@ -3740,9 +3755,9 @@ iz~Mountain
 izz~Linux_wide
 EOF
 EXPECT=<<EOF
-16  0x0000258c 0x0040258c 55  224  .rodata utf32le utf32le> \\u00a2\\u20ac\\U00010348 in cyan:\e[36m ¢€𐍈 \e[0m\n blocks=Basic Latin,Latin-1 Supplement,Currency Symbols,Gothic
-17  0x0000266c 0x0040266c 48  196  .rodata utf32le Mountain range with embedded quad zeros: 𐌀A𐌀A𐌀A\n blocks=Basic Latin,Old Italic
-135 0x00002528 0x00402528 24  100  .rodata            utf32le \tLinux_wide\\esc: \e[0m¡\r\n blocks=Basic Latin,Latin-1 Supplement
+ 16 0x0000258c 0x0040258c  55  224 .rodata utf32le utf32le> \\u00a2\\u20ac\\U00010348 in cyan:\e[36m ¢€𐍈 \e[0m\n blocks=Basic Latin,Latin-1 Supplement,Currency Symbols,Gothic
+ 17 0x0000266c 0x0040266c  48  196 .rodata utf32le Mountain range with embedded quad zeros: 𐌀A𐌀A𐌀A\n blocks=Basic Latin,Old Italic
+135 0x00002528 0x00402528  24  100 .rodata            utf32le \tLinux_wide\\esc: \e[0m¡\r\n blocks=Basic Latin,Latin-1 Supplement
 EOF
 RUN
 
@@ -3754,23 +3769,23 @@ iz~SRSPRHEX
 iz~SRSTASK
 EOF
 EXPECT=<<EOF
-14  0x000002f6 0x000002f6 8   9            ibm037 SRSGENER
-19  0x000004dc 0x000004dc 8   9            ibm037 SRSGENER
-22  0x00000668 0x00000668 92  93           ibm037 SRSGENER_03/06/08_14.16 SRS Version 1.3.0_BASE    COPYRIGHT 1998-2008 DAVID W DANNER ALL RIG
-63  0x00001682 0x00001682 30  31           ibm037 SRSGENERNO     *SRS>   NONHELD
-114 0x00002faa 0x00002faa 49  50           ibm037 SHUTDOWNSRSOPTS SRSTBLK SRSGENERALL     STARTINGS
-10  0x0000029a 0x0000029a 8   9            ibm037 SRSPRHEX
-17  0x00000362 0x00000362 8   9            ibm037 SRSPRHEX
-64  0x000016d4 0x000016d4 8   9            ibm037 SRSPRHEX
-67  0x00001861 0x00001861 27  28           ibm037 SRSPRHEX_03/06/08_14.17°Ö}\f
-71  0x0000191f 0x0000191f 9   10           ibm037 ÏSRSPRHEX
-120 0x0000315b 0x0000315b 27  28           ibm037 SRSPRHEX_03/06/08_14.17°Ö}\f
-124 0x0000323f 0x0000323f 9   10           ibm037 3SRSPRHEX
-190 0x00004c0f 0x00004c0f 27  28           ibm037 SRSPRHEX_03/06/08_14.17°Ö}\f
-18  0x000003ba 0x000003ba 8   9            ibm037 SRSTASK 
-90  0x00002540 0x00002540 17  18           ibm037 ­bå0­«SRSTASK  \-
-123 0x00003230 0x00003230 8   9            ibm037 SRSTASK 
-129 0x000033e4 0x000033e4 103 104          ibm037 SRSTASK_12/31/08_20.31 SRS Version 1.3.0_A13001  COPYRIGHT 1998-2008 DAVID W DANNER ALL RIGHTS RESERVED
+ 14 0x000002f6 0x000002f6   8    9         ibm037  SRSGENER
+ 19 0x000004dc 0x000004dc   8    9         ibm037  SRSGENER
+ 22 0x00000668 0x00000668  92   93         ibm037  SRSGENER_03/06/08_14.16 SRS Version 1.3.0_BASE    COPYRIGHT 1998-2008 DAVID W DANNER ALL RIG
+ 63 0x00001682 0x00001682  30   31         ibm037  SRSGENERNO     *SRS>   NONHELD
+115 0x00002faa 0x00002faa  49   50         ibm037  SHUTDOWNSRSOPTS SRSTBLK SRSGENERALL     STARTINGS
+ 10 0x0000029a 0x0000029a   8    9         ibm037  SRSPRHEX
+ 17 0x00000362 0x00000362   8    9         ibm037  SRSPRHEX
+ 64 0x000016d4 0x000016d4   8    9         ibm037  SRSPRHEX
+ 67 0x00001861 0x00001861  27   28         ibm037  SRSPRHEX_03/06/08_14.17°Ö}\f
+ 71 0x0000191f 0x0000191f   9   10         ibm037  ÏSRSPRHEX
+121 0x0000315b 0x0000315b  27   28         ibm037  SRSPRHEX_03/06/08_14.17°Ö}\f
+125 0x0000323f 0x0000323f   9   10         ibm037  3SRSPRHEX
+191 0x00004c0f 0x00004c0f  27   28         ibm037  SRSPRHEX_03/06/08_14.17°Ö}\f
+ 18 0x000003ba 0x000003ba   8    9         ibm037  SRSTASK 
+ 91 0x00002545 0x00002545  12   13         ibm037  «SRSTASK  \-
+124 0x00003230 0x00003230   8    9         ibm037  SRSTASK 
+130 0x000033e4 0x000033e4 103  104         ibm037  SRSTASK_12/31/08_20.31 SRS Version 1.3.0_A13001  COPYRIGHT 1998-2008 DAVID W DANNER ALL RIGHTS RESERVED
 EOF
 RUN
 
@@ -3783,8 +3798,8 @@ e str.escbslash=false
 iz~Linux_wide
 EOF
 EXPECT=<<EOF
-17  0x00002528 0x00402528 24  100  .rodata utf32le \tLinux_wide\\esc: \e[0m¡\r\n blocks=Basic Latin,Latin-1 Supplement
-17  0x00002528 0x00402528 24  100  .rodata utf32le \tLinux_wide\esc: \e[0m¡\r\n blocks=Basic Latin,Latin-1 Supplement
+ 17 0x00002528 0x00402528  24  100 .rodata utf32le \tLinux_wide\\esc: \e[0m¡\r\n blocks=Basic Latin,Latin-1 Supplement
+ 17 0x00002528 0x00402528  24  100 .rodata utf32le \tLinux_wide\esc: \e[0m¡\r\n blocks=Basic Latin,Latin-1 Supplement
 EOF
 RUN
 
@@ -3796,10 +3811,10 @@ iz~abcdef
 iz~123456
 EOF
 EXPECT=<<EOF
-1   0x0000060c 0x0040060c 6   28   .rodata utf32le ABCDEF
-1   0x0000060c 0x0040060c 6   28   .rodata utf32le ABCDEF
-2   0x00000650 0x00400650 6   25   .rodata utf32le abcdef
-3   0x00000694 0x00400694 6   28   .rodata utf32le 123456
+  1 0x0000060c 0x0040060c   6   24 .rodata utf32le ABCDEF
+  1 0x0000060c 0x0040060c   6   24 .rodata utf32le ABCDEF
+  2 0x00000650 0x00400650  10   40 .rodata utf32le abcdef𐍈  g blocks=Basic Latin,Gothic
+  3 0x00000694 0x00400694   6   24 .rodata utf32le 123456
 EOF
 RUN
 
@@ -3819,21 +3834,21 @@ EXPECT=<<EOF
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x00000000  5155 5657 5857 595a 5b5c 5d5e 5f52 0000  QUVWXWYZ[\]^_R..
 
-nth paddr      vaddr      len size section type  string         
+nth      paddr      vaddr len size section type  string         
 ----------------------------------------------------------------
-0   0x00000000 0x00000000 14  15           ascii QUVWXWYZ[\]^_R
+  0 0x00000000 0x00000000  14   15         ascii QUVWXWYZ[\]^_R
 
-nth paddr      vaddr      len size section type  string          
+nth      paddr      vaddr len size section type  string          
 -----------------------------------------------------------------
-0   0x00000000 0x00000000 14  15           ascii QUVWXWYZ[\\]^_R
+  0 0x00000000 0x00000000  14   15         ascii QUVWXWYZ[\\]^_R
 EOF
 RUN
 
-NAME=izz and str.search.encoding
+NAME=izz and str.encoding
 FILE==
 CMDS=<<EOF
 wz k\0i\0abcdefgh
-(izzenc enc; e str.search.encoding=${enc}; izz:quiet)
+(izzenc enc; e str.encoding=${enc}; izz:quiet)
 .(izzenc guess)
 .(izzenc ascii)
 .(izzenc utf8)
@@ -3848,20 +3863,20 @@ wx 26252625262526250000
 .(izzenc utf16le)
 EOF
 EXPECT=<<EOF
-0   0x00000004 0x00000004 8   9            ascii abcdefgh
-0   0x00000004 0x00000004 8   9            ascii abcdefgh
-0   0x00000004 0x00000004 8   9            ascii abcdefgh
-0   0x00000000 0x00000000 6   14           utf16le ki扡摣晥桧 blocks=Basic Latin,CJK Unified Ideographs
+  0 0x00000004 0x00000004   8    9         ascii abcdefgh
+  0 0x00000004 0x00000004   8    9         ascii abcdefgh
+  0 0x00000004 0x00000004   8    9         ascii abcdefgh
+  0 0x00000000 0x00000000   6   14         utf16le ki扡摣晥桧 blocks=Basic Latin,CJK Unified Ideographs
 
-0   0x00000001 0x00000001 4   9            utf16le %%%%
-0   0x00000000 0x00000000 4   10           utf16le ──── blocks=Box Drawing
+  0 0x00000001 0x00000001   6   14         utf16le %%%%最h blocks=Basic Latin,CJK Unified Ideographs
+  0 0x00000000 0x00000000   4   10         utf16le ──── blocks=Box Drawing
 
-0   0x00000000 0x00000000 8   9            ascii &%&%&%&%
-0   0x00000000 0x00000000 4   10           utf16le ┦┦┦┦ blocks=Box Drawing
+  0 0x00000000 0x00000000   8    9         ascii &%&%&%&%
+  0 0x00000000 0x00000000   4   10         utf16le ┦┦┦┦ blocks=Box Drawing
 EOF
 RUN
 
-NAME=str.search.encoding string reset
+NAME=str.encoding string reset
 FILE=--
 CMDS=<<EOF
 mkdir .tmp
@@ -3870,16 +3885,16 @@ o+ .tmp/strenc-bin
 iz:quiet
 s 0x080484b0
 wz k\0i\0abcdefgh
-(izenc enc; e str.search.encoding=${enc}; iz:quiet)
+(izenc enc; e str.encoding=${enc}; iz:quiet)
 .(izenc guess)
 .(izenc utf8)
 o--
 rm .tmp/strenc-bin
 EOF
 EXPECT=<<EOF
-0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
-0   0x000004b4 0x080484b4 8   9    .rodata ascii abcdefgh
-0   0x000004b4 0x080484b4 8   9    .rodata ascii abcdefgh
+  0 0x000004b0 0x080484b0  12   13 .rodata ascii Hello world!
+  0 0x000004b4 0x080484b4   8    9 .rodata ascii abcdefgh
+  0 0x000004b4 0x080484b4   8    9 .rodata ascii abcdefgh
 EOF
 RUN
 
@@ -3891,7 +3906,16 @@ no
 EOF
 RUN
 
-NAME=ibk use after free
+NAME=ik nothing
+CMDS=<<EOF
+ik
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=ik normal query
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF
 obR
@@ -3899,6 +3923,16 @@ ik *~?elf.relro
 EOF
 EXPECT=<<EOF
 1
+EOF
+RUN
+
+NAME=ik*
+FILE=bins/elf/analysis/x86-helloworld-gcc
+CMDS=<<EOF
+ik*~?elf_header
+EOF
+EXPECT=<<EOF
+3
 EOF
 RUN
 
@@ -3944,13 +3978,33 @@ RUN
 
 NAME=izj unicode blocks
 FILE=bins/elf/strenc
-ARGS=-e str.search.check_ascii_freq=false
+ARGS=-e search.str.check_ascii_freq=false
 CMDS=<<EOF
 e bin.str.purge=all,!4202996,!4203007,!4203208
+px @ 4203007
+echo
 izj
 EOF
 EXPECT=<<EOF
-[{"vaddr":4202996,"paddr":8692,"ordinal":2,"size":11,"length":10,"section":".rodata","type":"ascii","string":"en_US.utf8"},{"vaddr":4203007,"paddr":8703,"ordinal":3,"size":61,"length":54,"section":".rodata","type":"utf8","string":"utf8> \\\\u00a2\\\\u20ac\\\\U00010348 in yellow:\\e[33m ¢€𐍈 \\e[0m\\n","blocks":["Basic Latin","Latin-1 Supplement","Currency Symbols","Gothic"]},{"vaddr":4203208,"paddr":8904,"ordinal":7,"size":68,"length":33,"section":".rodata","type":"utf16le","string":"is a wall with no embedded zeros\\n"}]
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x004021ff  7574 6638 3e20 5c75 3030 6132 5c75 3230  utf8> \u00a2\u20
+0x0040220f  6163 5c55 3030 3031 3033 3438 2069 6e20  ac\U00010348 in 
+0x0040221f  7965 6c6c 6f77 3a1b 5b33 336d 20c2 a2e2  yellow:.[33m ...
+0x0040222f  82ac f090 8d88 201b 5b30 6d0a 0073 6565  ...... .[0m..see
+0x0040223f  20da 62be 65ac 65ca 660a 0075 0074 0066   .b.e.e.f..u.t.f
+0x0040224f  0031 0036 006c 0065 003e 0020 005c 0075  .1.6.l.e.>. .\.u
+0x0040225f  0030 0030 0061 0032 005c 0075 0032 0030  .0.0.a.2.\.u.2.0
+0x0040226f  0061 0063 005c 0055 0030 0030 0030 0031  .a.c.\.U.0.0.0.1
+0x0040227f  0030 0033 0034 0038 0020 0069 006e 0020  .0.3.4.8. .i.n. 
+0x0040228f  0067 0072 0065 0065 006e 003a 001b 005b  .g.r.e.e.n.:...[
+0x0040229f  0033 0032 006d 0020 00a2 00ac 2000 d848  .3.2.m. .... ..H
+0x004022af  df20 001b 005b 0030 006d 000a 0000 005f  . ...[.0.m....._
+0x004022bf  2565 2565 2562 2520 0069 0073 0020 0061  %e%e%b% .i.s. .a
+0x004022cf  0020 0077 0061 006c 006c 0020 0077 0069  . .w.a.l.l. .w.i
+0x004022df  0074 0068 0020 006e 006f 0020 0065 006d  .t.h. .n.o. .e.m
+0x004022ef  0062 0065 0064 0064 0065 0064 0020 007a  .b.e.d.d.e.d. .z
+
+[{"vaddr":4202996,"paddr":8692,"ordinal":2,"size":11,"length":10,"section":".rodata","type":"ascii","string":"en_US.utf8"},{"vaddr":4203007,"paddr":8703,"ordinal":3,"size":61,"length":54,"section":".rodata","type":"utf8","string":"utf8> \\u00a2\\u20ac\\U00010348 in yellow:\u001b[33m ¢€𐍈 \u001b[0m\n","blocks":["Basic Latin","Latin-1 Supplement","Currency Symbols","Gothic"]},{"vaddr":4203208,"paddr":8904,"ordinal":7,"size":68,"length":33,"section":".rodata","type":"utf16le","string":"is a wall with no embedded zeros\n"}]
 EOF
 RUN
 
@@ -3961,7 +4015,7 @@ e bin.str.purge=all,!4195920
 izzj
 EOF
 EXPECT=<<EOF
-[{"vaddr":4195920,"paddr":1616,"ordinal":13,"size":25,"length":6,"section":".rodata","type":"utf32le","string":"abcdef"}]
+[{"vaddr":4195920,"paddr":1616,"ordinal":13,"size":40,"length":10,"section":".rodata","type":"utf32le","string":"abcdef𐍈  g","blocks":["Basic Latin","Gothic"]}]
 EOF
 RUN
 
@@ -4014,41 +4068,41 @@ e bin.str.purge=all,!0x413220-0x413235
 EOF
 EXPECT=<<EOF
 --1--
-1089 0x00012420 0x00412420 5   6    .text              ascii   AWAVA
+1089 0x00012420 0x00412420   5    5 .text              ascii   AWAVA
 --2--
 --3--
-0   0x000131d8 0x004131d8 11  12   .rodata ascii dev_ino_pop
-1   0x00013228 0x00413228 10  11   .rodata ascii sort_files
-2   0x00013233 0x00413233 6   7    .rodata ascii posix-
-3   0x0001323a 0x0041323a 4   5    .rodata ascii main
+  0 0x000131d8 0x004131d8  11   12 .rodata ascii dev_ino_pop
+  1 0x00013228 0x00413228  10   11 .rodata ascii sort_files
+  2 0x00013233 0x00413233   6    7 .rodata ascii posix-
+  3 0x0001323a 0x0041323a   4    5 .rodata ascii main
 --4--
-0   0x000131d8 0x004131d8 11  12   .rodata ascii dev_ino_pop
-1   0x00013228 0x00413228 10  11   .rodata ascii sort_files
+  0 0x000131d8 0x004131d8  11   12 .rodata ascii dev_ino_pop
+  1 0x00013228 0x00413228  10   11 .rodata ascii sort_files
 --5--
-2   0x00013233 0x00413233 6   7    .rodata ascii posix-
+  2 0x00013233 0x00413233   6    7 .rodata ascii posix-
 --6--
-0   0x000131d8 0x004131d8 11  12   .rodata ascii dev_ino_pop
+  0 0x000131d8 0x004131d8  11   12 .rodata ascii dev_ino_pop
 --7--
-3   0x0001323a 0x0041323a 4   5    .rodata ascii main
+  3 0x0001323a 0x0041323a   4    5 .rodata ascii main
 --8--
-1   0x00013228 0x00413228 10  11   .rodata ascii sort_files
+  1 0x00013228 0x00413228  10   11 .rodata ascii sort_files
 --9--
-0   0x000131d8 0x004131d8 11  12   .rodata ascii dev_ino_pop
+  0 0x000131d8 0x004131d8  11   12 .rodata ascii dev_ino_pop
 --10--
-2   0x00013233 0x00413233 6   7    .rodata ascii posix-
+  2 0x00013233 0x00413233   6    7 .rodata ascii posix-
 --11--
-0   0x000131d8 0x004131d8 11  12   .rodata ascii dev_ino_pop
-1   0x00013228 0x00413228 10  11   .rodata ascii sort_files
-3   0x0001323a 0x0041323a 4   5    .rodata ascii main
+  0 0x000131d8 0x004131d8  11   12 .rodata ascii dev_ino_pop
+  1 0x00013228 0x00413228  10   11 .rodata ascii sort_files
+  3 0x0001323a 0x0041323a   4    5 .rodata ascii main
 --12--
-0   0x000131d8 0x004131d8 11  12   .rodata ascii dev_ino_pop
-1   0x00013228 0x00413228 10  11   .rodata ascii sort_files
+  0 0x000131d8 0x004131d8  11   12 .rodata ascii dev_ino_pop
+  1 0x00013228 0x00413228  10   11 .rodata ascii sort_files
 --13--
-0   0x000131d8 0x004131d8 11  12   .rodata ascii dev_ino_pop
-1   0x00013228 0x00413228 10  11   .rodata ascii sort_files
+  0 0x000131d8 0x004131d8  11   12 .rodata ascii dev_ino_pop
+  1 0x00013228 0x00413228  10   11 .rodata ascii sort_files
 --14--
-1   0x00013228 0x00413228 10  11   .rodata ascii sort_files
-2   0x00013233 0x00413233 6   7    .rodata ascii posix-
+  1 0x00013228 0x00413228  10   11 .rodata ascii sort_files
+  2 0x00013233 0x00413233   6    7 .rodata ascii posix-
 EOF
 RUN
 
@@ -4098,49 +4152,49 @@ NAME=iS entropy and iSS entropy
 FILE=bins/elf/crackme0x05
 CMDS=iS entropy; iSS entropy
 EXPECT=<<EOF
-paddr      size  vaddr      vsize align perm name           type     flags         entropy    
+     paddr  size      vaddr vsize align perm name           type     flags         entropy    
 ----------------------------------------------------------------------------------------------
-0x00000000 0x0   ---------- 0x0   0x0   ----                NULL     
-0x00000154 0x13  0x08048154 0x13  0x0   -r-- .interp        PROGBITS alloc         3.68188080
-0x00000168 0x20  0x08048168 0x20  0x0   -r-- .note.ABI-tag  NOTE     alloc         1.74868984
-0x00000188 0x38  0x08048188 0x38  0x0   -r-- .hash          HASH     alloc         1.23442903
-0x000001c0 0x20  0x080481c0 0x20  0x0   -r-- .gnu.hash      GNU_HASH alloc         1.99254169
-0x000001e0 0x90  0x080481e0 0x90  0x0   -r-- .dynsym        DYNSYM   alloc         1.56755604
-0x00000270 0x5f  0x08048270 0x5f  0x0   -r-- .dynstr        STRTAB   alloc         4.38707564
-0x000002d0 0x12  0x080482d0 0x12  0x0   -r-- .gnu.version   VERSYM   alloc         1.19417373
-0x000002e4 0x20  0x080482e4 0x20  0x0   -r-- .gnu.version_r VERNEED  alloc         1.66055053
-0x00000304 0x8   0x08048304 0x8   0x0   -r-- .rel.dyn       REL      alloc         2.75000000
-0x0000030c 0x30  0x0804830c 0x30  0x0   -r-- .rel.plt       REL      alloc         2.94082791
-0x0000033c 0x17  0x0804833c 0x17  0x0   -r-x .init          PROGBITS alloc,execute 3.46241535
-0x00000354 0x70  0x08048354 0x70  0x0   -r-x .plt           PROGBITS alloc,execute 3.51876869
-0x000003d0 0x274 0x080483d0 0x274 0x0   -r-x .text          PROGBITS alloc,execute 5.76534324
-0x00000644 0x1a  0x08048644 0x1a  0x0   -r-x .fini          PROGBITS alloc,execute 3.79621760
-0x00000660 0x55  0x08048660 0x55  0x0   -r-- .rodata        PROGBITS alloc         4.59175306
-0x000006b8 0x4   0x080486b8 0x4   0x0   -r-- .eh_frame      PROGBITS alloc         0.00000000
-0x00000f0c 0x8   0x08049f0c 0x8   0x0   -rw- .ctors         PROGBITS write,alloc   1.00000000
-0x00000f14 0x8   0x08049f14 0x8   0x0   -rw- .dtors         PROGBITS write,alloc   1.00000000
-0x00000f1c 0x4   0x08049f1c 0x4   0x0   -rw- .jcr           PROGBITS write,alloc   0.00000000
-0x00000f20 0xd0  0x08049f20 0xd0  0x0   -rw- .dynamic       DYNAMIC  write,alloc   2.82161069
-0x00000ff0 0x4   0x08049ff0 0x4   0x0   -rw- .got           PROGBITS write,alloc   0.00000000
-0x00000ff4 0x24  0x08049ff4 0x24  0x0   -rw- .got.plt       PROGBITS write,alloc   2.98068211
-0x00001018 0xc   0x0804a018 0xc   0x0   -rw- .data          PROGBITS write,alloc   1.58496250
-0x00001024 0x0   0x0804a024 0x4   0x0   -rw- .bss           NOBITS   write,alloc
-0x00001024 0x1b9 ---------- 0x1b9 0x0   ---- .comment       PROGBITS               4.50015849
-0x000011dd 0xdb  ---------- 0xdb  0x0   ---- .shstrtab      STRTAB                 4.21638420
-0x00001740 0x460 ---------- 0x460 0x0   ---- .symtab        SYMTAB                 3.06854806
-0x00001ba0 0x248 ---------- 0x248 0x0   ---- .strtab        STRTAB                 4.85613827
-paddr      size  vaddr      vsize align  perm name      entropy    
+0x00000000   0x0 ----------   0x0   0x0 ----                NULL     
+0x00000154  0x13 0x08048154  0x13   0x0 -r-- .interp        PROGBITS alloc         3.68188080
+0x00000168  0x20 0x08048168  0x20   0x0 -r-- .note.ABI-tag  NOTE     alloc         1.74868984
+0x00000188  0x38 0x08048188  0x38   0x0 -r-- .hash          HASH     alloc         1.23442903
+0x000001c0  0x20 0x080481c0  0x20   0x0 -r-- .gnu.hash      GNU_HASH alloc         1.99254169
+0x000001e0  0x90 0x080481e0  0x90   0x0 -r-- .dynsym        DYNSYM   alloc         1.56755604
+0x00000270  0x5f 0x08048270  0x5f   0x0 -r-- .dynstr        STRTAB   alloc         4.38707564
+0x000002d0  0x12 0x080482d0  0x12   0x0 -r-- .gnu.version   VERSYM   alloc         1.19417373
+0x000002e4  0x20 0x080482e4  0x20   0x0 -r-- .gnu.version_r VERNEED  alloc         1.66055053
+0x00000304   0x8 0x08048304   0x8   0x0 -r-- .rel.dyn       REL      alloc         2.75000000
+0x0000030c  0x30 0x0804830c  0x30   0x0 -r-- .rel.plt       REL      alloc         2.94082791
+0x0000033c  0x17 0x0804833c  0x17   0x0 -r-x .init          PROGBITS alloc,execute 3.46241535
+0x00000354  0x70 0x08048354  0x70   0x0 -r-x .plt           PROGBITS alloc,execute 3.51876869
+0x000003d0 0x274 0x080483d0 0x274   0x0 -r-x .text          PROGBITS alloc,execute 5.76534324
+0x00000644  0x1a 0x08048644  0x1a   0x0 -r-x .fini          PROGBITS alloc,execute 3.79621760
+0x00000660  0x55 0x08048660  0x55   0x0 -r-- .rodata        PROGBITS alloc         4.59175306
+0x000006b8   0x4 0x080486b8   0x4   0x0 -r-- .eh_frame      PROGBITS alloc         0.00000000
+0x00000f0c   0x8 0x08049f0c   0x8   0x0 -rw- .ctors         PROGBITS write,alloc   1.00000000
+0x00000f14   0x8 0x08049f14   0x8   0x0 -rw- .dtors         PROGBITS write,alloc   1.00000000
+0x00000f1c   0x4 0x08049f1c   0x4   0x0 -rw- .jcr           PROGBITS write,alloc   0.00000000
+0x00000f20  0xd0 0x08049f20  0xd0   0x0 -rw- .dynamic       DYNAMIC  write,alloc   2.82161069
+0x00000ff0   0x4 0x08049ff0   0x4   0x0 -rw- .got           PROGBITS write,alloc   0.00000000
+0x00000ff4  0x24 0x08049ff4  0x24   0x0 -rw- .got.plt       PROGBITS write,alloc   2.98068211
+0x00001018   0xc 0x0804a018   0xc   0x0 -rw- .data          PROGBITS write,alloc   1.58496250
+0x00001024   0x0 0x0804a024   0x4   0x0 -rw- .bss           NOBITS   write,alloc
+0x00001024 0x1b9 ---------- 0x1b9   0x0 ---- .comment       PROGBITS               4.50015849
+0x000011dd  0xdb ----------  0xdb   0x0 ---- .shstrtab      STRTAB                 4.21638420
+0x00001740 0x460 ---------- 0x460   0x0 ---- .symtab        SYMTAB                 3.06854806
+0x00001ba0 0x248 ---------- 0x248   0x0 ---- .strtab        STRTAB                 4.85613827
+     paddr  size      vaddr vsize  align perm name      entropy    
 -------------------------------------------------------------------
-0x00000034 0x120 0x08048034 0x120 0x4    -r-x PHDR      2.77947373
-0x00000154 0x13  0x08048154 0x13  0x1    -r-- INTERP    3.68188080
+0x00000034 0x120 0x08048034 0x120    0x4 -r-x PHDR      2.77947373
+0x00000154  0x13 0x08048154  0x13    0x1 -r-- INTERP    3.68188080
 0x00000000 0x6bc 0x08048000 0x6bc 0x1000 -r-x LOAD0     5.13144413
 0x00000f0c 0x118 0x08049f0c 0x11c 0x1000 -rw- LOAD1     2.96573278
-0x00000f20 0xd0  0x08049f20 0xd0  0x4    -rw- DYNAMIC   2.82161069
-0x00000168 0x20  0x08048168 0x20  0x4    -r-- NOTE      1.74868984
-0x00000000 0x0   0x00000000 0x0   0x4    -rw- GNU_STACK
-0x00000f0c 0xf4  0x08049f0c 0xf4  0x1    -r-- GNU_RELRO 2.71815661
-0x00000000 0x0   0x00000000 0x0   0x4    ---- NONE
-0x00000000 0x34  0x08048000 0x34  0x0    -rw- ehdr      2.79887339
+0x00000f20  0xd0 0x08049f20  0xd0    0x4 -rw- DYNAMIC   2.82161069
+0x00000168  0x20 0x08048168  0x20    0x4 -r-- NOTE      1.74868984
+0x00000000   0x0 0x00000000   0x0    0x4 -rw- GNU_STACK
+0x00000f0c  0xf4 0x08049f0c  0xf4    0x1 -r-- GNU_RELRO 2.71815661
+0x00000000   0x0 0x00000000   0x0    0x4 ---- NONE
+0x00000000  0x34 0x08048000  0x34    0x0 -rw- ehdr      2.79887339
 EOF
 RUN
 
@@ -4148,30 +4202,30 @@ NAME=is sht null
 FILE=bins/elf/sht_null_symbols
 CMDS=is; ir; fl
 EXPECT=<<EOF
-nth paddr      vaddr      bind   type   size lib name                            
+nth      paddr      vaddr bind   type   size lib name                            
 ---------------------------------------------------------------------------------
-8   0x00000590 0x00000590 GLOBAL FUNC   60       main
-9   0x0000064c 0x0000064c GLOBAL OBJ    4        _IO_stdin_used
-1   ---------- ---------- WEAK   NOTYPE 0        imp._ITM_deregisterTMCloneTable
-2   ---------- ---------- WEAK   FUNC   0        imp.__cxa_finalize
-3   0x000003f0 0x000003f0 GLOBAL FUNC   16       imp.puts
-4   ---------- ---------- WEAK   NOTYPE 0        imp.__gmon_start__
-5   0x00000400 0x00000400 GLOBAL FUNC   16       imp.__libc_start_main
-6   ---------- ---------- WEAK   NOTYPE 0        imp._Jv_RegisterClasses
-7   ---------- ---------- WEAK   NOTYPE 0        imp._ITM_registerTMCloneTable
-vaddr      paddr      target     type   name                        
---------------------------------------------------------------------
-0x00001eec 0x00000eec 0x00000000 SET_32 
-0x00001ef0 0x00000ef0 0x00000000 SET_32 
-0x00001fe8 0x00000fe8 0x00002030 SET_32 _ITM_deregisterTMCloneTable
-0x00001fec 0x00000fec 0x00002034 SET_32 __cxa_finalize
-0x00001ff0 0x00000ff0 0x00002038 SET_32 __gmon_start__
-0x00001ff4 0x00000ff4 0x00000000 SET_32 
-0x00001ff8 0x00000ff8 0x0000203c SET_32 _Jv_RegisterClasses
-0x00001ffc 0x00000ffc 0x00002040 SET_32 _ITM_registerTMCloneTable
-0x0000200c 0x0000100c 0x00002028 SET_32 puts
-0x00002010 0x00001010 0x0000202c SET_32 __libc_start_main
-0x00002018 0x00001018 0x00000000 SET_32 
+  8 0x00000590 0x00000590 GLOBAL FUNC     60     main
+  9 0x0000064c 0x0000064c GLOBAL OBJ       4     _IO_stdin_used
+  1 ---------- ---------- WEAK   NOTYPE    0     imp._ITM_deregisterTMCloneTable
+  2 ---------- ---------- WEAK   FUNC      0     imp.__cxa_finalize
+  3 0x000003f0 0x000003f0 GLOBAL FUNC     16     imp.puts
+  4 ---------- ---------- WEAK   NOTYPE    0     imp.__gmon_start__
+  5 0x00000400 0x00000400 GLOBAL FUNC     16     imp.__libc_start_main
+  6 ---------- ---------- WEAK   NOTYPE    0     imp._Jv_RegisterClasses
+  7 ---------- ---------- WEAK   NOTYPE    0     imp._ITM_registerTMCloneTable
+     vaddr      paddr     target type           name                        
+----------------------------------------------------------------------------
+0x00001eec 0x00000eec 0x00000000 R_386_RELATIVE 
+0x00001ef0 0x00000ef0 0x00000000 R_386_RELATIVE 
+0x00001fe8 0x00000fe8 0x00002030 R_386_GLOB_DAT _ITM_deregisterTMCloneTable
+0x00001fec 0x00000fec 0x00002034 R_386_GLOB_DAT __cxa_finalize
+0x00001ff0 0x00000ff0 0x00002038 R_386_GLOB_DAT __gmon_start__
+0x00001ff4 0x00000ff4 0x00000000 R_386_RELATIVE 
+0x00001ff8 0x00000ff8 0x0000203c R_386_GLOB_DAT _Jv_RegisterClasses
+0x00001ffc 0x00000ffc 0x00002040 R_386_GLOB_DAT _ITM_registerTMCloneTable
+0x0000200c 0x0000100c 0x00002028 R_386_JMP_SLOT puts
+0x00002010 0x00001010 0x0000202c R_386_JMP_SLOT __libc_start_main
+0x00002018 0x00001018 0x00000000 R_386_RELATIVE 
 0x00000000 1936 segment.LOAD0
 0x00000000 0 segment.GNU_STACK
 0x00000000 52 segment.ehdr
@@ -4234,6 +4288,24 @@ EXPECT=<<EOF
     "hvaddr": 134512664,
     "haddr": 24,
     "type": "program"
+  },
+  {
+    "vaddr": 134513616,
+    "paddr": 976,
+    "baddr": 134512640,
+    "laddr": 0,
+    "hvaddr": 134518172,
+    "haddr": 1436,
+    "type": "init"
+  },
+  {
+    "vaddr": 134513584,
+    "paddr": 944,
+    "baddr": 134512640,
+    "laddr": 0,
+    "hvaddr": 134518176,
+    "haddr": 1440,
+    "type": "fini"
   }
 ]
 [
@@ -4342,7 +4414,7 @@ NAME=iM main sym
 FILE=bins/elf/before-after-main
 CMDS=iM
 EXPECT=<<EOF
-vaddr      paddr      
+     vaddr      paddr 
 ----------------------
 0x0804854e 0x0000054e
 EOF
@@ -4422,10 +4494,10 @@ NAME=ii dupped imports
 FILE=bins/elf/varsub
 CMDS=ii
 EXPECT=<<EOF
-nth vaddr      bind   type   lib name              
+nth      vaddr bind   type   lib name              
 ---------------------------------------------------
-1   ---------- GLOBAL FUNC       __libc_start_main
-2   ---------- WEAK   NOTYPE     __gmon_start__
+  1 ---------- GLOBAL FUNC       __libc_start_main
+  2 ---------- WEAK   NOTYPE     __gmon_start__
 EOF
 RUN
 
@@ -4446,28 +4518,11 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=ikv
+NAME=ik
 FILE=bins/mach0/fatmach0-3true
-CMDS=ikv mach0.entry.vaddr
+CMDS=ik mach0.entry.vaddr
 EXPECT=<<EOF
 0x100000ef8
-EOF
-RUN
-
-NAME=ik.
-FILE=bins/mach0/fatmach0-3true
-CMDS=ik. mach0.entry.vaddr
-EXPECT=<<EOF
-0x100000ef8
-EOF
-RUN
-
-NAME=ik?
-BROKEN=1
-FILE=bins/mach0/fatmach0-3true
-CMDS=ik?~?Usage
-EXPECT=<<EOF
-1
 EOF
 RUN
 
@@ -4493,7 +4548,7 @@ NAME=iSq.
 FILE=bins/mach0/fatmach0-3true
 CMDS=iS.:paddr/cols/vaddr/perm/name
 EXPECT=<<EOF
-paddr      vaddr       perm name            
+     paddr       vaddr perm name            
 --------------------------------------------
 0x00000ef8 0x100000ef8 -r-x 0.__TEXT.__text
 EOF
@@ -4577,11 +4632,11 @@ NAME=iRt
 FILE=bins/pe/standard.exe
 CMDS=iRt:quiet sha1 md5
 EXPECT=<<EOF
-0     1576 ICON       0x00401180 0x1628 LANG_NEUTRAL Thu Jan  1 00:00:00 1970 UTC ead6c27941988470ea241780d5f03bda35ffb023 4ca2df93b0862cc601fb4c5df46722aa
-1     10   STRING     0x00402a10 0x4c   LANG_NEUTRAL Thu Jan  1 00:00:00 1970 UTC ece05370137621ead05fcf468ba546e2dab83c7a e6b62b76fb2eb2a0e0adde0c067da680
-2     788  GROUP_ICON 0x004027b0 0x14   LANG_NEUTRAL Thu Jan  1 00:00:00 1970 UTC 6768033e216468247bd031a0a2d9876d79818f8f 441018525208457705bf09a8ee3c1093
-3     1    VERSION    0x004027d0 0x1c4  LANG_NEUTRAL Thu Jan  1 00:00:00 1970 UTC af9d0faa532f99a1a7e5b8f6bbf5ceaef55e38b6 3ce9d74193d28338494362767873ba7b
-4     1    MANIFEST   0x004029a0 0x4a   LANG_NEUTRAL Thu Jan  1 00:00:00 1970 UTC 1dcc0c704303ccc1729abd618f490073331e8b22 aa6672fe9e8426f8dd570c81095e1476
+    0 1576 ICON       0x00401180 0x1628 LANG_NEUTRAL Thu Jan  1 00:00:00 1970 UTC ead6c27941988470ea241780d5f03bda35ffb023 4ca2df93b0862cc601fb4c5df46722aa
+    1 10   STRING     0x00402a10   0x4c LANG_NEUTRAL Thu Jan  1 00:00:00 1970 UTC ece05370137621ead05fcf468ba546e2dab83c7a e6b62b76fb2eb2a0e0adde0c067da680
+    2 788  GROUP_ICON 0x004027b0   0x14 LANG_NEUTRAL Thu Jan  1 00:00:00 1970 UTC 6768033e216468247bd031a0a2d9876d79818f8f 441018525208457705bf09a8ee3c1093
+    3 1    VERSION    0x004027d0  0x1c4 LANG_NEUTRAL Thu Jan  1 00:00:00 1970 UTC af9d0faa532f99a1a7e5b8f6bbf5ceaef55e38b6 3ce9d74193d28338494362767873ba7b
+    4 1    MANIFEST   0x004029a0   0x4a LANG_NEUTRAL Thu Jan  1 00:00:00 1970 UTC 1dcc0c704303ccc1729abd618f490073331e8b22 aa6672fe9e8426f8dd570c81095e1476
 EOF
 RUN
 
@@ -4589,7 +4644,16 @@ NAME=izz
 FILE=bins/mach0/fatmach0-3true
 CMDS=izz~http~codesigning
 EXPECT=<<EOF
-93  0x00003f3c 0x100002f3c 47  48                           ascii  ,http://www.apple.com/appleca/codesigning.crl0\r
+ 94 0x00003f3c 0x100002f3c  47   48                         ascii  ,http://www.apple.com/appleca/codesigning.crl0\r
+EOF
+RUN
+
+NAME=izx
+FILE=bins/arm/elf/hello_world 
+CMDS=aaa;izxq
+EXPECT=<<EOF
+0x574 13 12 Hello world!
+0x494 11 10 \bH\tKxD\tJ{D
 EOF
 RUN
 
@@ -4672,8 +4736,7 @@ RUN
 NAME=isq. (malloc)
 FILE=malloc://512
 CMDS=isq.
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=isq. (file x86)
@@ -4689,9 +4752,9 @@ NAME=ascii substring detection (#14499)
 FILE=bins/pe/Reborn_Stub-strings.exe
 CMDS=izz~pomf[1,2,3,4,5,6,7,8]
 EXPECT=<<EOF
-0x00087f8a 0x00489d8a 26 53 .text utf16le http://pomf.cat/upload.php
-0x000880dd 0x00489edd 19 39 .text utf16le https://a.pomf.cat/
-0x00089bed 0x0048b9ed 26 53 .text utf16le http://pomf.cat/upload.php
+0x00087f8a 0x00489d8a 26 52 .text utf16le http://pomf.cat/upload.php
+0x000880dd 0x00489edd 19 38 .text utf16le https://a.pomf.cat/
+0x00089bed 0x0048b9ed 26 52 .text utf16le http://pomf.cat/upload.php
 0x00089c22 0x0048ba22 19 40 .text utf16le https://a.pomf.cat/
 EOF
 RUN
@@ -4704,17 +4767,17 @@ icf 'Hello'
 icm 'Hello'
 EOF
 EXPECT=<<EOF
-address    min        max        name  super  
+   address        min        max name  super  
 ----------------------------------------------
 0x00000000 0x0000022b 0x000002d3 Hello Object
-address    index class flags name type   
+   address index class flags name type   
 -----------------------------------------
-0x0000020b 0     Hello P     who  String
-address    index class flags name                
+0x0000020b     0 Hello P     who  String
+   address index class flags name                
 -------------------------------------------------
-0x0000022b 0     Hello p     void <init>(String)
-0x00000263 1     Hello p     void say()
-0x000002aa 2     Hello sp    void main(String[])
+0x0000022b     0 Hello p     void <init>(String)
+0x00000263     1 Hello p     void say()
+0x000002aa     2 Hello sp    void main(String[])
 EOF
 RUN
 
@@ -4751,8 +4814,7 @@ RUN
 NAME=icqq (file x86)
 FILE=bins/elf/ls
 CMDS=icqq
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=iqqc (file Java)
@@ -4768,8 +4830,7 @@ NAME=iqqc (file x86)
 BROKEN=1
 FILE=bins/elf/ls
 CMDS=iqqc
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=iqcq (file Java)
@@ -4785,8 +4846,7 @@ NAME=iqcq (file x86)
 BROKEN=1
 FILE=bins/elf/ls
 CMDS=iqcq
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=auto entry (lib)
@@ -4795,9 +4855,12 @@ CMDS=<<EOF
 ie
 EOF
 EXPECT=<<EOF
-vaddr      paddr      hvaddr     haddr      type    
+     vaddr      paddr     hvaddr      haddr type    
 ----------------------------------------------------
 0x00000f50 0x00000f50 0x00000018 0x00000018 program
+0xfffffffe ---------- 0x000039d4 0x000029d4 init
+0xfffffffe ---------- 0x000039dc 0x000029dc fini
+0x00000f50 0x00000f50 0x000039e0 0x000029e0 fini
 EOF
 EXPECT_ERR=
 RUN
@@ -4808,7 +4871,7 @@ CMDS=<<EOF
 ie
 EOF
 EXPECT=<<EOF
-vaddr      paddr      hvaddr     haddr      type    
+     vaddr      paddr     hvaddr      haddr type    
 ----------------------------------------------------
 0x00000d28 0x00000d28 0x00000018 0x00000018 program
 EOF
@@ -4855,10 +4918,12 @@ NAME=izz libcap (#298)
 FILE==
 CMDS=<<EOF
 wx 7500 6900 3d25 7325 7325 7300 2573 2c00 2b25 7325 7325 7300 2d25 7325 7325 7300 6361 705f 6368 6f77 6e00 6361 705f 6461
+izz:/head/1:quiet
 izz~^0
 EOF
 EXPECT=<<EOF
-0   0x00000004 0x00000004 7   8            ascii =%s%s%s
+  0 0x00000004 0x00000004   7    8         ascii =%s%s%s
+  0 0x00000004 0x00000004   7    8         ascii =%s%s%s
 EOF
 RUN
 
@@ -5011,21 +5076,21 @@ bits 64
 EOF
 RUN
 
-NAME=print elf strings but with str.search.min_length=2
+NAME=print elf strings but with search.str.min_length=2
 FILE=bins/elf/smallstrings.elf
 CMDS=<<EOF
 iz
-iz @e:str.search.min_length=2
+iz @e:search.str.min_length=2
 EOF
 EXPECT=<<EOF
-nth paddr      vaddr      len size section type  string 
+nth      paddr      vaddr len size section type  string 
 --------------------------------------------------------
-0   0x0000200d 0x0000200d 4   5    .rodata ascii 4444
-nth paddr      vaddr      len size section type  string 
+  0 0x0000200d 0x0000200d   4    5 .rodata ascii 4444
+nth      paddr      vaddr len size section type  string 
 --------------------------------------------------------
-0   0x00002006 0x00002006 2   3    .rodata ascii 22
-1   0x00002009 0x00002009 3   4    .rodata ascii 333
-2   0x0000200d 0x0000200d 4   5    .rodata ascii 4444
+  0 0x00002006 0x00002006   2    3 .rodata ascii 22
+  1 0x00002009 0x00002009   3    4 .rodata ascii 333
+  2 0x0000200d 0x0000200d   4    5 .rodata ascii 4444
 EOF
 RUN
 
@@ -5034,7 +5099,7 @@ FILE=malloc://8192
 CMDS=<<EOF
 wD 6140
 px
-e str.search.buffer_size=8000
+e search.str.max_length=8000
 iz
 EOF
 EXPECT=<<EOF
@@ -5055,8 +5120,22 @@ EXPECT=<<EOF
 0x000000d0  4142 4a41 424b 4142 4c41 424d 4142 4e41  ABJABKABLABMABNA
 0x000000e0  424f 4142 5041 4251 4142 5241 4253 4142  BOABPABQABRABSAB
 0x000000f0  5441 4255 4142 5641 4257 4142 5841 4259  TABUABVABWABXABY
-nth paddr      vaddr      len  size section type  string                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
+nth      paddr      vaddr  len size section type  string                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-0   0x00000000 0x00000000 6140 6141         ascii AAABAACAADAAEAAFAAGAAHAAIAAJAAKAALAAMAANAAOAAPAAQAARAASAATAAUAAVAAWAAXAAYAAZAAaAAbAAcAAdAAeAAfAAgAAhAAiAAjAAkAAlAAmAAnAAoAApAAqAArAAsAAtAAuAAvAAwAAxAAyAAzAA1AA2AA3AA4AA5AA6AA7AA8AA9AA0ABBABCABDABEABFABGABHABIABJABKABLABMABNABOABPABQABRABSABTABUABVABWABXABYABZABaABbABcABdABeABfABgABhABiABjABkABlABmABnABoABpABqABrABsABtABuABvABwABxAByABzAB1AB2AB3AB4AB5AB6AB7AB8AB9AB0ACBACCACDACEACFACGACHACIACJACKACLACMACNACOACPACQACRACSACTACUACVACWACXACYACZACaACbACcACdACeACfACgAChACiACjACkAClACmACnACoACpACqACrACsACtACuACvACwACxACyACzAC1AC2AC3AC4AC5AC6AC7AC8AC9AC0ADBADCADDADEADFADGADHADIADJADKADLADMADNADOADPADQADRADSADTADUADVADWADXADYADZADaADbADcADdADeADfADgADhADiADjADkADlADmADnADoADpADqADrADsADtADuADvADwADxADyADzAD1AD2AD3AD4AD5AD6AD7AD8AD9AD0AEBAECAEDAEEAEFAEGAEHAEIAEJAEKAELAEMAENAEOAEPAEQAERAESAETAEUAEVAEWAEXAEYAEZAEaAEbAEcAEdAEeAEfAEgAEhAEiAEjAEkAElAEmAEnAEoAEpAEqAErAEsAEtAEuAEvAEwAExAEyAEzAE1AE2AE3AE4AE5AE6AE7AE8AE9AE0AFBAFCAFDAFEAFFAFGAFHAFIAFJAFKAFLAFMAFNAFOAFPAFQAFRAFSAFTAFUAFVAFWAFXAFYAFZAFaAFbAFcAFdAFeAFfAFgAFhAFiAFjAFkAFlAFmAFnAFoAFpAFqAFrAFsAFtAFuAFvAFwAFxAFyAFzAF1AF2AF3AF4AF5AF6AF7AF8AF9AF0AGBAGCAGDAGEAGFAGGAGHAGIAGJAGKAGLAGMAGNAGOAGPAGQAGRAGSAGTAGUAGVAGWAGXAGYAGZAGaAGbAGcAGdAGeAGfAGgAGhAGiAGjAGkAGlAGmAGnAGoAGpAGqAGrAGsAGtAGuAGvAGwAGxAGyAGzAG1AG2AG3AG4AG5AG6AG7AG8AG9AG0AHBAHCAHDAHEAHFAHGAHHAHIAHJAHKAHLAHMAHNAHOAHPAHQAHRAHSAHTAHUAHVAHWAHXAHYAHZAHaAHbAHcAHdAHeAHfAHgAHhAHiAHjAHkAHlAHmAHnAHoAHpAHqAHrAHsAHtAHuAHvAHwAHxAHyAHzAH1AH2AH3AH4AH5AH6AH7AH8AH9AH0AIBAICAIDAIEAIFAIGAIHAIIAIJAIKAILAIMAINAIOAIPAIQAIRAISAITAIUAIVAIWAIXAIYAIZAIaAIbAIcAIdAIeAIfAIgAIhAIiAIjAIkAIlAImAInAIoAIpAIqAIrAIsAItAIuAIvAIwAIxAIyAIzAI1AI2AI3AI4AI5AI6AI7AI8AI9AI0AJBAJCAJDAJEAJFAJGAJHAJIAJJAJKAJLAJMAJNAJOAJPAJQAJRAJSAJTAJUAJVAJWAJXAJYAJZAJaAJbAJcAJdAJeAJfAJgAJhAJiAJjAJkAJlAJmAJnAJoAJpAJqAJrAJsAJtAJuAJvAJwAJxAJyAJzAJ1AJ2AJ3AJ4AJ5AJ6AJ7AJ8AJ9AJ0AKBAKCAKDAKEAKFAKGAKHAKIAKJAKKAKLAKMAKNAKOAKPAKQAKRAKSAKTAKUAKVAKWAKXAKYAKZAKaAKbAKcAKdAKeAKfAKgAKhAKiAKjAKkAKlAKmAKnAKoAKpAKqAKrAKsAKtAKuAKvAKwAKxAKyAKzAK1AK2AK3AK4AK5AK6AK7AK8AK9AK0ALBALCALDALEALFALGALHALIALJALKALLALMALNALOALPALQALRALSALTALUALVALWALXALYALZALaALbALcALdALeALfALgALhALiALjALkALlALmALnALoALpALqALrALsALtALuALvALwALxALyALzAL1AL2AL3AL4AL5AL6AL7AL8AL9AL0AMBAMCAMDAMEAMFAMGAMHAMIAMJAMKAMLAMMAMNAMOAMPAMQAMRAMSAMTAMUAMVAMWAMXAMYAMZAMaAMbAMcAMdAMeAMfAMgAMhAMiAMjAMkAMlAMmAMnAMoAMpAMqAMrAMsAMtAMuAMvAMwAMxAMyAMzAM1AM2AM3AM4AM5AM6AM7AM8AM9AM0ANBANCANDANEANFANGANHANIANJANKANLANMANNANOANPANQANRANSANTANUANVANWANXANYANZANaANbANcANdANeANfANgANhANiANjANkANlANmANnANoANpANqANrANsANtANuANvANwANxANyANzAN1AN2AN3AN4AN5AN6AN7AN8AN9AN0AOBAOCAODAOEAOFAOGAOHAOIAOJAOKAOLAOMAONAOOAOPAOQAORAOSAOTAOUAOVAOWAOXAOYAOZAOaAObAOcAOdAOeAOfAOgAOhAOiAOjAOkAOlAOmAOnAOoAOpAOqAOrAOsAOtAOuAOvAOwAOxAOyAOzAO1AO2AO3AO4AO5AO6AO7AO8AO9AO0APBAPCAPDAPEAPFAPGAPHAPIAPJAPKAPLAPMAPNAPOAPPAPQAPRAPSAPTAPUAPVAPWAPXAPYAPZAPaAPbAPcAPdAPeAPfAPgAPhAPiAPjAPkAPlAPmAPnAPoAPpAPqAPrAPsAPtAPuAPvAPwAPxAPyAPzAP1AP2AP3AP4AP5AP6AP7AP8AP9AP0AQBAQCAQDAQEAQFAQGAQHAQIAQJAQKAQLAQMAQNAQOAQPAQQAQRAQSAQTAQUAQVAQWAQXAQYAQZAQaAQbAQcAQdAQeAQfAQgAQhAQiAQjAQkAQlAQmAQnAQoAQpAQqAQrAQsAQtAQuAQvAQwAQxAQyAQzAQ1AQ2AQ3AQ4AQ5AQ6AQ7AQ8AQ9AQ0ARBARCARDAREARFARGARHARIARJARKARLARMARNAROARPARQARRARSARTARUARVARWARXARYARZARaARbARcARdAReARfARgARhARiARjARkARlARmARnARoARpARqARrARsARtARuARvARwARxARyARzAR1AR2AR3AR4AR5AR6AR7AR8AR9AR0ASBASCASDASEASFASGASHASIASJASKASLASMASNASOASPASQASRASSASTASUASVASWASXASYASZASaASbAScASdASeASfASgAShASiASjASkASlASmASnASoASpASqASrASsAStASuASvASwASxASyASzAS1AS2AS3AS4AS5AS6AS7AS8AS9AS0ATBATCATDATEATFATGATHATIATJATKATLATMATNATOATPATQATRATSATTATUATVATWATXATYATZATaATbATcATdATeATfATgAThATiATjATkATlATmATnAToATpATqATrATsATtATuATvATwATxATyATzAT1AT2AT3AT4AT5AT6AT7AT8AT9AT0AUBAUCAUDAUEAUFAUGAUHAUIAUJAUKAULAUMAUNAUOAUPAUQAURAUSAUTAUUAUVAUWAUXAUYAUZAUaAUbAUcAUdAUeAUfAUgAUhAUiAUjAUkAUlAUmAUnAUoAUpAUqAUrAUsAUtAUuAUvAUwAUxAUyAUzAU1AU2AU3AU4AU5AU6AU7AU8AU9AU0AVBAVCAVDAVEAVFAVGAVHAVIAVJAVKAVLAVMAVNAVOAVPAVQAVRAVSAVTAVUAVVAVWAVXAVYAVZAVaAVbAVcAVdAVeAVfAVgAVhAViAVjAVkAVlAVmAVnAVoAVpAVqAVrAVsAVtAVuAVvAVwAVxAVyAVzAV1AV2AV3AV4AV5AV6AV7AV8AV9AV0AWBAWCAWDAWEAWFAWGAWHAWIAWJAWKAWLAWMAWNAWOAWPAWQAWRAWSAWTAWUAWVAWWAWXAWYAWZAWaAWbAWcAWdAWeAWfAWgAWhAWiAWjAWkAWlAWmAWnAWoAWpAWqAWrAWsAWtAWuAWvAWwAWxAWyAWzAW1AW2AW3AW4AW5AW6AW7AW8AW9AW0AXBAXCAXDAXEAXFAXGAXHAXIAXJAXKAXLAXMAXNAXOAXPAXQAXRAXSAXTAXUAXVAXWAXXAXYAXZAXaAXbAXcAXdAXeAXfAXgAXhAXiAXjAXkAXlAXmAXnAXoAXpAXqAXrAXsAXtAXuAXvAXwAXxAXyAXzAX1AX2AX3AX4AX5AX6AX7AX8AX9AX0AYBAYCAYDAYEAYFAYGAYHAYIAYJAYKAYLAYMAYNAYOAYPAYQAYRAYSAYTAYUAYVAYWAYXAYYAYZAYaAYbAYcAYdAYeAYfAYgAYhAYiAYjAYkAYlAYmAYnAYoAYpAYqAYrAYsAYtAYuAYvAYwAYxAYyAYzAY1AY2AY3AY4AY5AY6AY7AY8AY9AY0AZBAZCAZDAZEAZFAZGAZHAZIAZJAZKAZLAZMAZNAZOAZPAZQAZRAZSAZTAZUAZVAZWAZXAZYAZZAZaAZbAZcAZdAZeAZfAZgAZhAZiAZjAZkAZlAZmAZnAZoAZpAZqAZrAZsAZtAZuAZvAZwAZxAZyAZzAZ1AZ2AZ3AZ4AZ5AZ6AZ7AZ8AZ9AZ0AaBAaCAaDAaEAaFAaGAaHAaIAaJAaKAaLAaMAaNAaOAaPAaQAaRAaSAaTAaUAaVAaWAaXAaYAaZAaaAabAacAadAaeAafAagAahAaiAajAakAalAamAanAaoAapAaqAarAasAatAauAavAawAaxAayAazAa1Aa2Aa3Aa4Aa5Aa6Aa7Aa8Aa9Aa0AbBAbCAbDAbEAbFAbGAbHAbIAbJAbKAbLAbMAbNAbOAbPAbQAbRAbSAbTAbUAbVAbWAbXAbYAbZAbaAbbAbcAbdAbeAbfAbgAbhAbiAbjAbkAblAbmAbnAboAbpAbqAbrAbsAbtAbuAbvAbwAbxAbyAbzAb1Ab2Ab3Ab4Ab5Ab6Ab7Ab8Ab9Ab0AcBAcCAcDAcEAcFAcGAcHAcIAcJAcKAcLAcMAcNAcOAcPAcQAcRAcSAcTAcUAcVAcWAcXAcYAcZAcaAcbAccAcdAceAcfAcgAchAciAcjAckAclAcmAcnAcoAcpAcqAcrAcsActAcuAcvAcwAcxAcyAczAc1Ac2Ac3Ac4Ac5Ac6Ac7Ac8Ac9Ac0AdBAdCAdDAdEAdFAdGAdHAdIAdJAdKAdLAdMAdNAdOAdPAdQAdRAdSAdTAdUAdVAdWAdXAdYAdZAdaAdbAdcAddAdeAdfAdgAdhAdiAdjAdkAdlAdmAdnAdoAdpAdqAdrAdsAdtAduAdvAdwAdxAdyAdzAd1Ad2Ad3Ad4Ad5Ad6Ad7Ad8Ad9Ad0AeBAeCAeDAeEAeFAeGAeHAeIAeJAeKAeLAeMAeNAeOAePAeQAeRAeSAeTAeUAeVAeWAeXAeYAeZAeaAebAecAedAeeAefAegAehAeiAejAekAelAemAenAeoAepAeqAerAesAetAeuAevAewAexAeyAezAe1Ae2Ae3Ae4Ae5Ae6Ae7Ae8Ae9Ae0AfBAfCAfDAfEAfFAfGAfHAfIAfJAfKAfLAfMAfNAfOAfPAfQAfRAfSAfTAfUAfVAfWAfXAfYAfZAfaAfbAfcAfdAfeAffAfgAfhAfiAfjAfkAflAfmAfnAfoAfpAfqAfrAfsAftAfuAfvAfwAfxAfyAfzAf1Af2Af3Af4Af5Af6Af7Af8Af9Af0AgBAgCAgDAgEAgFAgGAgHAgIAgJAgKAgLAgMAgNAgOAgPAgQAgRAgSAgTAgUAgVAgWAgXAgYAgZAgaAgbAgcAgdAgeAgfAggAghAgiAgjAgkAglAgmAgnAgoAgpAgqAgrAgsAgtAguAgvAgwAgxAgyAgzAg1Ag2Ag3Ag4Ag5Ag6Ag7Ag8Ag9Ag0AhBAhCAhDAhEAhFAhGAhHAhIAhJAhKAhLAhMAhNAhOAhPAhQAhRAhSAhTAhUAhVAhWAhXAhYAhZAhaAhbAhcAhdAheAhfAhgAhhA
+  0 0x00000000 0x00000000 6140 6141         ascii AAABAACAADAAEAAFAAGAAHAAIAAJAAKAALAAMAANAAOAAPAAQAARAASAATAAUAAVAAWAAXAAYAAZAAaAAbAAcAAdAAeAAfAAgAAhAAiAAjAAkAAlAAmAAnAAoAApAAqAArAAsAAtAAuAAvAAwAAxAAyAAzAA1AA2AA3AA4AA5AA6AA7AA8AA9AA0ABBABCABDABEABFABGABHABIABJABKABLABMABNABOABPABQABRABSABTABUABVABWABXABYABZABaABbABcABdABeABfABgABhABiABjABkABlABmABnABoABpABqABrABsABtABuABvABwABxAByABzAB1AB2AB3AB4AB5AB6AB7AB8AB9AB0ACBACCACDACEACFACGACHACIACJACKACLACMACNACOACPACQACRACSACTACUACVACWACXACYACZACaACbACcACdACeACfACgAChACiACjACkAClACmACnACoACpACqACrACsACtACuACvACwACxACyACzAC1AC2AC3AC4AC5AC6AC7AC8AC9AC0ADBADCADDADEADFADGADHADIADJADKADLADMADNADOADPADQADRADSADTADUADVADWADXADYADZADaADbADcADdADeADfADgADhADiADjADkADlADmADnADoADpADqADrADsADtADuADvADwADxADyADzAD1AD2AD3AD4AD5AD6AD7AD8AD9AD0AEBAECAEDAEEAEFAEGAEHAEIAEJAEKAELAEMAENAEOAEPAEQAERAESAETAEUAEVAEWAEXAEYAEZAEaAEbAEcAEdAEeAEfAEgAEhAEiAEjAEkAElAEmAEnAEoAEpAEqAErAEsAEtAEuAEvAEwAExAEyAEzAE1AE2AE3AE4AE5AE6AE7AE8AE9AE0AFBAFCAFDAFEAFFAFGAFHAFIAFJAFKAFLAFMAFNAFOAFPAFQAFRAFSAFTAFUAFVAFWAFXAFYAFZAFaAFbAFcAFdAFeAFfAFgAFhAFiAFjAFkAFlAFmAFnAFoAFpAFqAFrAFsAFtAFuAFvAFwAFxAFyAFzAF1AF2AF3AF4AF5AF6AF7AF8AF9AF0AGBAGCAGDAGEAGFAGGAGHAGIAGJAGKAGLAGMAGNAGOAGPAGQAGRAGSAGTAGUAGVAGWAGXAGYAGZAGaAGbAGcAGdAGeAGfAGgAGhAGiAGjAGkAGlAGmAGnAGoAGpAGqAGrAGsAGtAGuAGvAGwAGxAGyAGzAG1AG2AG3AG4AG5AG6AG7AG8AG9AG0AHBAHCAHDAHEAHFAHGAHHAHIAHJAHKAHLAHMAHNAHOAHPAHQAHRAHSAHTAHUAHVAHWAHXAHYAHZAHaAHbAHcAHdAHeAHfAHgAHhAHiAHjAHkAHlAHmAHnAHoAHpAHqAHrAHsAHtAHuAHvAHwAHxAHyAHzAH1AH2AH3AH4AH5AH6AH7AH8AH9AH0AIBAICAIDAIEAIFAIGAIHAIIAIJAIKAILAIMAINAIOAIPAIQAIRAISAITAIUAIVAIWAIXAIYAIZAIaAIbAIcAIdAIeAIfAIgAIhAIiAIjAIkAIlAImAInAIoAIpAIqAIrAIsAItAIuAIvAIwAIxAIyAIzAI1AI2AI3AI4AI5AI6AI7AI8AI9AI0AJBAJCAJDAJEAJFAJGAJHAJIAJJAJKAJLAJMAJNAJOAJPAJQAJRAJSAJTAJUAJVAJWAJXAJYAJZAJaAJbAJcAJdAJeAJfAJgAJhAJiAJjAJkAJlAJmAJnAJoAJpAJqAJrAJsAJtAJuAJvAJwAJxAJyAJzAJ1AJ2AJ3AJ4AJ5AJ6AJ7AJ8AJ9AJ0AKBAKCAKDAKEAKFAKGAKHAKIAKJAKKAKLAKMAKNAKOAKPAKQAKRAKSAKTAKUAKVAKWAKXAKYAKZAKaAKbAKcAKdAKeAKfAKgAKhAKiAKjAKkAKlAKmAKnAKoAKpAKqAKrAKsAKtAKuAKvAKwAKxAKyAKzAK1AK2AK3AK4AK5AK6AK7AK8AK9AK0ALBALCALDALEALFALGALHALIALJALKALLALMALNALOALPALQALRALSALTALUALVALWALXALYALZALaALbALcALdALeALfALgALhALiALjALkALlALmALnALoALpALqALrALsALtALuALvALwALxALyALzAL1AL2AL3AL4AL5AL6AL7AL8AL9AL0AMBAMCAMDAMEAMFAMGAMHAMIAMJAMKAMLAMMAMNAMOAMPAMQAMRAMSAMTAMUAMVAMWAMXAMYAMZAMaAMbAMcAMdAMeAMfAMgAMhAMiAMjAMkAMlAMmAMnAMoAMpAMqAMrAMsAMtAMuAMvAMwAMxAMyAMzAM1AM2AM3AM4AM5AM6AM7AM8AM9AM0ANBANCANDANEANFANGANHANIANJANKANLANMANNANOANPANQANRANSANTANUANVANWANXANYANZANaANbANcANdANeANfANgANhANiANjANkANlANmANnANoANpANqANrANsANtANuANvANwANxANyANzAN1AN2AN3AN4AN5AN6AN7AN8AN9AN0AOBAOCAODAOEAOFAOGAOHAOIAOJAOKAOLAOMAONAOOAOPAOQAORAOSAOTAOUAOVAOWAOXAOYAOZAOaAObAOcAOdAOeAOfAOgAOhAOiAOjAOkAOlAOmAOnAOoAOpAOqAOrAOsAOtAOuAOvAOwAOxAOyAOzAO1AO2AO3AO4AO5AO6AO7AO8AO9AO0APBAPCAPDAPEAPFAPGAPHAPIAPJAPKAPLAPMAPNAPOAPPAPQAPRAPSAPTAPUAPVAPWAPXAPYAPZAPaAPbAPcAPdAPeAPfAPgAPhAPiAPjAPkAPlAPmAPnAPoAPpAPqAPrAPsAPtAPuAPvAPwAPxAPyAPzAP1AP2AP3AP4AP5AP6AP7AP8AP9AP0AQBAQCAQDAQEAQFAQGAQHAQIAQJAQKAQLAQMAQNAQOAQPAQQAQRAQSAQTAQUAQVAQWAQXAQYAQZAQaAQbAQcAQdAQeAQfAQgAQhAQiAQjAQkAQlAQmAQnAQoAQpAQqAQrAQsAQtAQuAQvAQwAQxAQyAQzAQ1AQ2AQ3AQ4AQ5AQ6AQ7AQ8AQ9AQ0ARBARCARDAREARFARGARHARIARJARKARLARMARNAROARPARQARRARSARTARUARVARWARXARYARZARaARbARcARdAReARfARgARhARiARjARkARlARmARnARoARpARqARrARsARtARuARvARwARxARyARzAR1AR2AR3AR4AR5AR6AR7AR8AR9AR0ASBASCASDASEASFASGASHASIASJASKASLASMASNASOASPASQASRASSASTASUASVASWASXASYASZASaASbAScASdASeASfASgAShASiASjASkASlASmASnASoASpASqASrASsAStASuASvASwASxASyASzAS1AS2AS3AS4AS5AS6AS7AS8AS9AS0ATBATCATDATEATFATGATHATIATJATKATLATMATNATOATPATQATRATSATTATUATVATWATXATYATZATaATbATcATdATeATfATgAThATiATjATkATlATmATnAToATpATqATrATsATtATuATvATwATxATyATzAT1AT2AT3AT4AT5AT6AT7AT8AT9AT0AUBAUCAUDAUEAUFAUGAUHAUIAUJAUKAULAUMAUNAUOAUPAUQAURAUSAUTAUUAUVAUWAUXAUYAUZAUaAUbAUcAUdAUeAUfAUgAUhAUiAUjAUkAUlAUmAUnAUoAUpAUqAUrAUsAUtAUuAUvAUwAUxAUyAUzAU1AU2AU3AU4AU5AU6AU7AU8AU9AU0AVBAVCAVDAVEAVFAVGAVHAVIAVJAVKAVLAVMAVNAVOAVPAVQAVRAVSAVTAVUAVVAVWAVXAVYAVZAVaAVbAVcAVdAVeAVfAVgAVhAViAVjAVkAVlAVmAVnAVoAVpAVqAVrAVsAVtAVuAVvAVwAVxAVyAVzAV1AV2AV3AV4AV5AV6AV7AV8AV9AV0AWBAWCAWDAWEAWFAWGAWHAWIAWJAWKAWLAWMAWNAWOAWPAWQAWRAWSAWTAWUAWVAWWAWXAWYAWZAWaAWbAWcAWdAWeAWfAWgAWhAWiAWjAWkAWlAWmAWnAWoAWpAWqAWrAWsAWtAWuAWvAWwAWxAWyAWzAW1AW2AW3AW4AW5AW6AW7AW8AW9AW0AXBAXCAXDAXEAXFAXGAXHAXIAXJAXKAXLAXMAXNAXOAXPAXQAXRAXSAXTAXUAXVAXWAXXAXYAXZAXaAXbAXcAXdAXeAXfAXgAXhAXiAXjAXkAXlAXmAXnAXoAXpAXqAXrAXsAXtAXuAXvAXwAXxAXyAXzAX1AX2AX3AX4AX5AX6AX7AX8AX9AX0AYBAYCAYDAYEAYFAYGAYHAYIAYJAYKAYLAYMAYNAYOAYPAYQAYRAYSAYTAYUAYVAYWAYXAYYAYZAYaAYbAYcAYdAYeAYfAYgAYhAYiAYjAYkAYlAYmAYnAYoAYpAYqAYrAYsAYtAYuAYvAYwAYxAYyAYzAY1AY2AY3AY4AY5AY6AY7AY8AY9AY0AZBAZCAZDAZEAZFAZGAZHAZIAZJAZKAZLAZMAZNAZOAZPAZQAZRAZSAZTAZUAZVAZWAZXAZYAZZAZaAZbAZcAZdAZeAZfAZgAZhAZiAZjAZkAZlAZmAZnAZoAZpAZqAZrAZsAZtAZuAZvAZwAZxAZyAZzAZ1AZ2AZ3AZ4AZ5AZ6AZ7AZ8AZ9AZ0AaBAaCAaDAaEAaFAaGAaHAaIAaJAaKAaLAaMAaNAaOAaPAaQAaRAaSAaTAaUAaVAaWAaXAaYAaZAaaAabAacAadAaeAafAagAahAaiAajAakAalAamAanAaoAapAaqAarAasAatAauAavAawAaxAayAazAa1Aa2Aa3Aa4Aa5Aa6Aa7Aa8Aa9Aa0AbBAbCAbDAbEAbFAbGAbHAbIAbJAbKAbLAbMAbNAbOAbPAbQAbRAbSAbTAbUAbVAbWAbXAbYAbZAbaAbbAbcAbdAbeAbfAbgAbhAbiAbjAbkAblAbmAbnAboAbpAbqAbrAbsAbtAbuAbvAbwAbxAbyAbzAb1Ab2Ab3Ab4Ab5Ab6Ab7Ab8Ab9Ab0AcBAcCAcDAcEAcFAcGAcHAcIAcJAcKAcLAcMAcNAcOAcPAcQAcRAcSAcTAcUAcVAcWAcXAcYAcZAcaAcbAccAcdAceAcfAcgAchAciAcjAckAclAcmAcnAcoAcpAcqAcrAcsActAcuAcvAcwAcxAcyAczAc1Ac2Ac3Ac4Ac5Ac6Ac7Ac8Ac9Ac0AdBAdCAdDAdEAdFAdGAdHAdIAdJAdKAdLAdMAdNAdOAdPAdQAdRAdSAdTAdUAdVAdWAdXAdYAdZAdaAdbAdcAddAdeAdfAdgAdhAdiAdjAdkAdlAdmAdnAdoAdpAdqAdrAdsAdtAduAdvAdwAdxAdyAdzAd1Ad2Ad3Ad4Ad5Ad6Ad7Ad8Ad9Ad0AeBAeCAeDAeEAeFAeGAeHAeIAeJAeKAeLAeMAeNAeOAePAeQAeRAeSAeTAeUAeVAeWAeXAeYAeZAeaAebAecAedAeeAefAegAehAeiAejAekAelAemAenAeoAepAeqAerAesAetAeuAevAewAexAeyAezAe1Ae2Ae3Ae4Ae5Ae6Ae7Ae8Ae9Ae0AfBAfCAfDAfEAfFAfGAfHAfIAfJAfKAfLAfMAfNAfOAfPAfQAfRAfSAfTAfUAfVAfWAfXAfYAfZAfaAfbAfcAfdAfeAffAfgAfhAfiAfjAfkAflAfmAfnAfoAfpAfqAfrAfsAftAfuAfvAfwAfxAfyAfzAf1Af2Af3Af4Af5Af6Af7Af8Af9Af0AgBAgCAgDAgEAgFAgGAgHAgIAgJAgKAgLAgMAgNAgOAgPAgQAgRAgSAgTAgUAgVAgWAgXAgYAgZAgaAgbAgcAgdAgeAgfAggAghAgiAgjAgkAglAgmAgnAgoAgpAgqAgrAgsAgtAguAgvAgwAgxAgyAgzAg1Ag2Ag3Ag4Ag5Ag6Ag7Ag8Ag9Ag0AhBAhCAhDAhEAhFAhGAhHAhIAhJAhKAhLAhMAhNAhOAhPAhQAhRAhSAhTAhUAhVAhWAhXAhYAhZAhaAhbAhcAhdAheAhfAhgAhhA
+EOF
+RUN
+
+NAME=izzj double quote & backslash escape
+FILE==
+CMDS=<<EOF
+wz {} \" \\\" \\ \\\\ \n \\n \# \\\# \$ \\$
+px~:1.. @!32
+izzj
+EOF
+EXPECT=<<EOF
+0x00000000  7b7d 2022 205c 2220 5c20 5c5c 200a 205c  {} " \" \ \\ . \
+0x00000010  6e20 2320 5c23 2024 205c 2400 0000 0000  n # \# $ \$.....
+[{"vaddr":0,"paddr":0,"ordinal":0,"size":28,"length":27,"section":"","type":"ascii","string":"{} \" \\\" \\ \\\\ \n \\n # \\# $ \\$"}]
 EOF
 RUN

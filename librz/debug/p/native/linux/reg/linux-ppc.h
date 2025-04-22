@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2016 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-return strdup(
+return rz_str_dup(
 	"=PC	srr0\n"
 	"=SP	srr1\n"
 	"=SR	srr1\n" // status register ??

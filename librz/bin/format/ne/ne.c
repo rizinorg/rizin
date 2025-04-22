@@ -60,7 +60,7 @@ static char *__func_name_from_ord(char *module, ut16 ordinal) {
 	char *name;
 	if (rz_file_exists(path)) {
 		Sdb *sdb = sdb_new(NULL, path, 0);
-		name = sdb_get(sdb, ord, NULL);
+		name = sdb_get(sdb, ord);
 		if (!name) {
 			name = ord;
 		} else {
@@ -118,6 +118,46 @@ static void ne_sanitize_name(char *name, ut16 count) {
 	}
 }
 
+static const char *get_reloc_type_name(const ut8 src_type, const ut8 flag) {
+#define CONCAT_RELOC_STR(a, b) a b
+#define NE_RELOC_TARGET_TYPE(src_type_name, flag) \
+	switch (flag) { \
+	case INTERNAL_REF: \
+		return CONCAT_RELOC_STR(src_type_name, "_INTERNAL_REF"); \
+	case IMPORTED_ORD: \
+		return CONCAT_RELOC_STR(src_type_name, "_IMPORTED_ORD"); \
+	case IMPORTED_NAME: \
+		return CONCAT_RELOC_STR(src_type_name, "_IMPORTED_NAME"); \
+	case OSFIXUP: \
+		return CONCAT_RELOC_STR(src_type_name, "_OSFIXUP"); \
+	case ADDITIVE: \
+		return CONCAT_RELOC_STR(src_type_name, "_ADDITIVE"); \
+	default: \
+		RZ_LOG_ERROR("Unknown NE relocation target flag %d\n", flag); \
+		return CONCAT_RELOC_STR(src_type_name, "_UNKNOWN"); \
+	}
+
+	switch (src_type) {
+	case LOBYTE:
+		NE_RELOC_TARGET_TYPE("LOBYTE", flag);
+	case SEL_16:
+		NE_RELOC_TARGET_TYPE("SEL_16", flag);
+	case POI_32:
+		NE_RELOC_TARGET_TYPE("POI_32", flag);
+	case OFF_16:
+		NE_RELOC_TARGET_TYPE("OFF_16", flag);
+	case POI_48:
+		NE_RELOC_TARGET_TYPE("POI_48", flag);
+	case OFF_32:
+		NE_RELOC_TARGET_TYPE("OFF_32", flag);
+	default:
+		RZ_LOG_ERROR("Unknown NE relocation source type %d\n", flag);
+		NE_RELOC_TARGET_TYPE("UNKNOWN", flag);
+	}
+#undef NE_RELOC_TARGET_TYPE
+#undef CONCAT_RELOC_STR
+}
+
 RzPVector /*<RzBinSymbol *>*/ *rz_bin_ne_get_symbols(rz_bin_ne_obj_t *bin) {
 	RzBinSymbol *sym;
 	ut16 off = bin->ne_header->ResidNamTable + bin->header_offset;
@@ -125,7 +165,7 @@ RzPVector /*<RzBinSymbol *>*/ *rz_bin_ne_get_symbols(rz_bin_ne_obj_t *bin) {
 	if (!symbols) {
 		return NULL;
 	}
-	RzList *entries = rz_bin_ne_get_entrypoints(bin);
+	RzPVector *entries = rz_bin_ne_get_entrypoints(bin);
 	bool resident = true, first = true;
 	while (true) {
 		ut8 sz;
@@ -170,7 +210,7 @@ RzPVector /*<RzBinSymbol *>*/ *rz_bin_ne_get_symbols(rz_bin_ne_obj_t *bin) {
 			break;
 		}
 		off += 2;
-		RzBinAddr *entry = rz_list_get_n(entries, entry_off);
+		RzBinAddr *entry = (RzBinAddr *)rz_pvector_at(entries, entry_off);
 		if (entry) {
 			sym->paddr = entry->paddr;
 		} else {
@@ -180,10 +220,11 @@ RzPVector /*<RzBinSymbol *>*/ *rz_bin_ne_get_symbols(rz_bin_ne_obj_t *bin) {
 		rz_pvector_push(symbols, sym);
 		first = false;
 	}
-	RzListIter *it;
+	void **it;
 	RzBinAddr *en;
 	int i = 1;
-	rz_list_foreach (entries, it, en) {
+	rz_pvector_foreach (entries, it) {
+		en = *it;
 		if (!rz_pvector_find(symbols, &en->paddr, __find_symbol_by_paddr, NULL)) {
 			sym = RZ_NEW0(RzBinSymbol);
 			if (!sym) {
@@ -273,7 +314,7 @@ static char *__resource_type_str(int type) {
 	default:
 		return rz_str_newf("UNKNOWN (%d)", type);
 	}
-	return strdup(typeName);
+	return rz_str_dup(typeName);
 }
 
 static void __free_resource_entry(void *entry) {
@@ -390,28 +431,28 @@ RzPVector /*<RzBinImport *>*/ *rz_bin_ne_get_imports(rz_bin_ne_obj_t *bin) {
 	return imports;
 }
 
-RzList /*<RzBinAddr *>*/ *rz_bin_ne_get_entrypoints(rz_bin_ne_obj_t *bin) {
-	RzList *entries = rz_list_newf(free);
+RzPVector /*<RzBinAddr *>*/ *rz_bin_ne_get_entrypoints(rz_bin_ne_obj_t *bin) {
+	RzPVector *entries = rz_pvector_new(free);
 	if (!entries) {
 		return NULL;
 	}
 	RzBinAddr *entry;
 	RzPVector *segments = rz_bin_ne_get_segments(bin);
 	if (!segments) {
-		rz_list_free(entries);
+		rz_pvector_free(entries);
 		return NULL;
 	}
 	if (bin->ne_header->csEntryPoint) {
 		entry = RZ_NEW0(RzBinAddr);
 		if (!entry) {
-			rz_list_free(entries);
+			rz_pvector_free(entries);
 			rz_pvector_free(segments);
 			return NULL;
 		}
 		entry->bits = 16;
 		RzBinSection *s = (RzBinSection *)rz_pvector_at(segments, bin->ne_header->csEntryPoint - 1);
 		entry->paddr = bin->ne_header->ipEntryPoint + (s ? s->paddr : 0);
-		rz_list_append(entries, entry);
+		rz_pvector_push(entries, entry);
 	}
 	ut32 off = 0;
 	while (off < bin->ne_header->EntryTableLength) {
@@ -429,7 +470,7 @@ RzList /*<RzBinAddr *>*/ *rz_bin_ne_get_entrypoints(rz_bin_ne_obj_t *bin) {
 		for (i = 0; i < bundle_length; i++) {
 			entry = RZ_NEW0(RzBinAddr);
 			if (!entry) {
-				rz_list_free(entries);
+				rz_pvector_free(entries);
 				rz_pvector_free(segments);
 				return NULL;
 			}
@@ -465,7 +506,7 @@ RzList /*<RzBinAddr *>*/ *rz_bin_ne_get_entrypoints(rz_bin_ne_obj_t *bin) {
 				entry->paddr = (ut64)bin->segment_entries[bundle_type - 1].offset * bin->alignment + rz_read_le16(p);
 			}
 			off += 2;
-			rz_list_append(entries, entry);
+			rz_pvector_push(entries, entry);
 		}
 	}
 end:
@@ -479,7 +520,7 @@ RzPVector /*<RzBinReloc *>*/ *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 	if (!segments) {
 		return NULL;
 	}
-	RzList *entries = bin->entries;
+	RzPVector *entries = bin->entries;
 	if (!entries) {
 		return NULL;
 	}
@@ -536,22 +577,7 @@ RzPVector /*<RzBinReloc *>*/ *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 			rz_buf_read_le16_offset(bin->buf, &offset, &rel.align1);
 			rz_buf_read_le16_offset(bin->buf, &offset, &rel.func_ord);
 			reloc->paddr = seg->paddr + rel.offset;
-			switch (rel.type) {
-			case LOBYTE:
-				reloc->type = RZ_BIN_RELOC_8;
-				break;
-			case SEL_16:
-			case OFF_16:
-				reloc->type = RZ_BIN_RELOC_16;
-				break;
-			case POI_32:
-			case OFF_32:
-				reloc->type = RZ_BIN_RELOC_32;
-				break;
-			case POI_48:
-				reloc->type = RZ_BIN_RELOC_64;
-				break;
-			}
+			reloc->print_name = get_reloc_type_name(rel.type & NE_RELOC_SRC_MASK, rel.flags & NE_RELOC_TARGET_MASK);
 
 			if (rel.flags & (IMPORTED_ORD | IMPORTED_NAME)) {
 				RzBinImport *imp = RZ_NEW0(RzBinImport);
@@ -589,7 +615,7 @@ RzPVector /*<RzBinReloc *>*/ *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 						offset = -1;
 					}
 				} else {
-					RzBinAddr *entry = rz_list_get_n(entries, rel.entry_ordinal - 1);
+					RzBinAddr *entry = (RzBinAddr *)rz_pvector_at(entries, rel.entry_ordinal - 1);
 					if (entry) {
 						offset = entry->paddr;
 					} else {

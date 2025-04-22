@@ -1,11 +1,15 @@
+// SPDX-FileCopyrightText: 2025 deroad <deroad@kumo.xn--q9jyb4c>
 // SPDX-FileCopyrightText: 2023 0xSh4dy <rakshitawasthi17@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_lib.h>
 #include <rz_crypto.h>
+#include <rz_crypto/rz_sm4.h>
 #include "crypto_sm4.h"
 
-static const ut8 sbox[256] = { 0xd6, 0x90, 0xe9, 0xfe, 0xcc, 0xe1, 0x3d, 0xb7,
+// clang-format off
+static const ut8 SM4_SBOX[256] = {
+	0xd6, 0x90, 0xe9, 0xfe, 0xcc, 0xe1, 0x3d, 0xb7,
 	0x16, 0xb6, 0x14, 0xc2, 0x28, 0xfb, 0x2c, 0x05,
 	0x2b, 0x67, 0x9a, 0x76, 0x2a, 0xbe, 0x04, 0xc3,
 	0xaa, 0x44, 0x13, 0x26, 0x49, 0x86, 0x06, 0x99,
@@ -36,9 +40,10 @@ static const ut8 sbox[256] = { 0xd6, 0x90, 0xe9, 0xfe, 0xcc, 0xe1, 0x3d, 0xb7,
 	0x89, 0x69, 0x97, 0x4a, 0x0c, 0x96, 0x77, 0x7e,
 	0x65, 0xb9, 0xf1, 0x09, 0xc5, 0x6e, 0xc6, 0x84,
 	0x18, 0xf0, 0x7d, 0xec, 0x3a, 0xdc, 0x4d, 0x20,
-	0x79, 0xee, 0x5f, 0x3e, 0xd7, 0xcb, 0x39, 0x48 };
+	0x79, 0xee, 0x5f, 0x3e, 0xd7, 0xcb, 0x39, 0x48
+};
 
-static const ut32 CK[32] = {
+static const ut32 SM4_CK[32] = {
 	0x00070e15, 0x1c232a31, 0x383f464d, 0x545b6269,
 	0x70777e85, 0x8c939aa1, 0xa8afb6bd, 0xc4cbd2d9,
 	0xe0e7eef5, 0xfc030a11, 0x181f262d, 0x343b4249,
@@ -49,11 +54,12 @@ static const ut32 CK[32] = {
 	0x10171e25, 0x2c333a41, 0x484f565d, 0x646b7279
 };
 
-static const ut32 FK[4] = {
+static const ut32 SM4_FK[4] = {
 	0xa3b1bac6, 0x56aa3350, 0x677d9197, 0xb27022dc
 };
+// clang-format on
 
-static ut32 _rol32(ut32 n, ut32 c) {
+static ut32 sm4_rol32(ut32 n, ut32 c) {
 	const unsigned int mask = (CHAR_BIT * sizeof(n) - 1);
 	c &= mask;
 	return (n << c) | (n >> ((-c) & mask));
@@ -62,36 +68,49 @@ static ut32 _rol32(ut32 n, ut32 c) {
 static ut32 sm4_ecb_transform_internal(ut32 val) {
 	ut8 buf[4];
 	rz_write_at_be32(buf, val, 0);
-	for (int i = 0; i < 4; i++) {
-		buf[i] = sbox[buf[i]];
+	for (ut32 i = 0; i < 4; i++) {
+		buf[i] = SM4_SBOX[buf[i]];
 	}
 	return rz_read_be32(buf);
 }
 
-static ut32 sm4_ecb_get_round_key(ut32 val) {
+RZ_API void rz_sm4_extract_master_key(const ut32 word[4], ut8 key_out[RZ_SM4_KEY_SIZE]) {
+	ut32 partial[4] = { 0 };
+	partial[3] = word[3] ^ (rz_sm4_round_key(word[2] ^ word[1] ^ word[0] ^ SM4_CK[3]));
+	partial[2] = word[2] ^ (rz_sm4_round_key(word[1] ^ word[0] ^ partial[3] ^ SM4_CK[2]));
+	partial[1] = word[1] ^ (rz_sm4_round_key(word[0] ^ partial[3] ^ partial[2] ^ SM4_CK[1]));
+	partial[0] = word[0] ^ (rz_sm4_round_key(partial[3] ^ partial[2] ^ partial[1] ^ SM4_CK[0]));
+
+	rz_write_at_be32(key_out, SM4_FK[0] ^ partial[0], 0);
+	rz_write_at_be32(key_out, SM4_FK[1] ^ partial[1], 4);
+	rz_write_at_be32(key_out, SM4_FK[2] ^ partial[2], 8);
+	rz_write_at_be32(key_out, SM4_FK[3] ^ partial[3], 12);
+}
+
+RZ_API ut32 rz_sm4_round_key(ut32 val) {
 	ut32 x = sm4_ecb_transform_internal(val);
-	return x ^ _rol32(x, 13) ^ _rol32(x, 23);
+	return x ^ sm4_rol32(x, 13) ^ sm4_rol32(x, 23);
 }
 
 static ut32 sm4_ecb_transform(ut32 val) {
 	ut32 x = sm4_ecb_transform_internal(val);
-	return x ^ _rol32(x, 2) ^ _rol32(x, 10) ^ _rol32(x, 18) ^ _rol32(x, 24);
+	return x ^ sm4_rol32(x, 2) ^ sm4_rol32(x, 10) ^ sm4_rol32(x, 18) ^ sm4_rol32(x, 24);
 }
 
-static void sm4_setkey_internal(sm4_state *s, const ut8 *key) {
+static void sm4_setkey_internal(sm4_state_t *s, const ut8 *key) {
 	ut32 mk[4];
 	ut32 rk[4];
-	ut32 i, temp;
 
-	for (i = 0; i < 4; i++) {
-		mk[i] = rz_read_be32(key + 4 * i);
-	}
-	for (i = 0; i < 4; i++) {
-		rk[i] = mk[i] ^ FK[i];
+	for (ut32 i = 0; i < 4; i++) {
+		mk[i] = rz_read_at_be32(key, i << 2);
 	}
 
-	for (i = 0; i < 32; i++) {
-		temp = rk[0] ^ sm4_ecb_get_round_key(rk[1] ^ rk[2] ^ rk[3] ^ CK[i]);
+	for (ut32 i = 0; i < 4; i++) {
+		rk[i] = mk[i] ^ SM4_FK[i];
+	}
+
+	for (ut32 i = 0; i < 32; i++) {
+		ut32 temp = rk[0] ^ rz_sm4_round_key(rk[1] ^ rk[2] ^ rk[3] ^ SM4_CK[i]);
 		s->round_keys[i] = temp;
 		rk[0] = rk[1];
 		rk[1] = rk[2];
@@ -100,10 +119,11 @@ static void sm4_setkey_internal(sm4_state *s, const ut8 *key) {
 	}
 }
 
-static void sm4_setkey_enc(sm4_state *s, const ut8 *key) {
+static void sm4_setkey_enc(sm4_state_t *s, const ut8 *key) {
 	sm4_setkey_internal(s, key);
 }
-static void sm4_setkey_dec(sm4_state *s, const ut8 *key) {
+
+static void sm4_setkey_dec(sm4_state_t *s, const ut8 *key) {
 	sm4_setkey_internal(s, key);
 	for (int i = 0; i < 16; i++) {
 		ut32 temp = s->round_keys[i];
@@ -114,9 +134,9 @@ static void sm4_setkey_dec(sm4_state *s, const ut8 *key) {
 
 static bool sm4_ecb_set_key(RzCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
 	rz_return_val_if_fail(cry->user && key, false);
-	sm4_state *s = (sm4_state *)cry->user;
+	sm4_state_t *s = (sm4_state_t *)cry->user;
 	cry->dir = direction;
-	if (keylen != SM4_KEY_SIZE) {
+	if (keylen != RZ_SM4_KEY_SIZE) {
 		return false;
 	}
 	if (direction == RZ_CRYPTO_DIR_ENCRYPT) {
@@ -128,7 +148,7 @@ static bool sm4_ecb_set_key(RzCrypto *cry, const ut8 *key, int keylen, int mode,
 }
 
 static int sm4_ecb_get_key_size(RzCrypto *cry) {
-	return SM4_KEY_SIZE;
+	return RZ_SM4_KEY_SIZE;
 }
 
 static bool sm4_use(const char *algo) {
@@ -149,9 +169,10 @@ static void sm4_round(const ut32 *round_key, const ut8 *input, ut8 *output) {
 	rz_write_at_be32(output, x[33], 8);
 	rz_write_at_be32(output, x[32], 12);
 }
+
 static void sm4_ecb_encrypt(const ut32 *round_key, int length, const ut8 *input, ut8 *output) {
 	int times = length / 16;
-	for (int i = 0; i < times; i++) {
+	for (ut32 i = 0; i < times; i++) {
 		sm4_round(round_key, input, output);
 		input += 16;
 		output += 16;
@@ -162,28 +183,28 @@ static int get_next_available_len(int curr_len) {
 	return ((curr_len + 15) / 16) * 16;
 }
 
-static bool update(RzCrypto *cry, const ut8 *buf, int len) {
+static bool sm4_update(RzCrypto *cry, const ut8 *buf, int len) {
 	rz_return_val_if_fail(cry, 0);
-	sm4_state *state = (sm4_state *)cry->user;
+	sm4_state_t *state = (sm4_state_t *)cry->user;
 	int old_len = len;
 	if (len < 1) {
 		return false;
 	}
+
 	if (cry->dir == RZ_CRYPTO_DIR_ENCRYPT) {
-		if (len == 0) {
-			return false;
-		}
 		if (len % 16 == 0) {
 			len += 16;
 		} else {
 			len = get_next_available_len(len);
 		}
 	}
-	ut8 *output = (ut8 *)calloc(1, len);
+
+	ut8 *output = RZ_NEWS0(ut8, len);
 	if (!output) {
 		return false;
 	}
-	ut8 *padded_input = (ut8 *)calloc(1, len);
+
+	ut8 *padded_input = RZ_NEWS0(ut8, len);
 	if (!padded_input) {
 		free(output);
 		return false;
@@ -201,14 +222,14 @@ static bool update(RzCrypto *cry, const ut8 *buf, int len) {
 	return true;
 }
 
-static bool final(RzCrypto *cry, const ut8 *buf, int len) {
-	return update(cry, buf, len);
+static bool sm4_final(RzCrypto *cry, const ut8 *buf, int len) {
+	return sm4_update(cry, buf, len);
 }
 
 static bool sm4_ecb_init(RzCrypto *cry) {
 	rz_return_val_if_fail(cry, false);
 
-	cry->user = RZ_NEW0(sm4_state);
+	cry->user = RZ_NEW0(sm4_state_t);
 	return cry->user != NULL;
 }
 
@@ -226,8 +247,8 @@ RzCryptoPlugin rz_crypto_plugin_sm4_ecb = {
 	.set_key = sm4_ecb_set_key,
 	.get_key_size = sm4_ecb_get_key_size,
 	.use = sm4_use,
-	.update = update,
-	.final = final,
+	.update = sm4_update,
+	.final = sm4_final,
 	.init = sm4_ecb_init,
 	.fini = sm4_ecb_fini,
 };

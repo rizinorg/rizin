@@ -6,6 +6,8 @@
 #include <rz_lib.h>
 #include <stdio.h>
 
+#include "rz_io_plugins.h"
+
 typedef struct rz_io_mmo_t {
 	char *filename;
 	int mode;
@@ -72,7 +74,7 @@ RzIOMMapFileObj *rz_io_def_mmap_create_new_file(RzIO *io, const char *filename, 
 	if (mmo->nocache) {
 		filename += strlen("nocache://");
 	}
-	mmo->filename = strdup(filename);
+	mmo->filename = rz_str_dup(filename);
 	mmo->perm = rz_sys_open_perms(perm);
 	mmo->mode = mode;
 	if (!mmo->nocache) {
@@ -131,7 +133,7 @@ static RzIODesc *rz_io_def_mmap_open(RzIO *io, const char *file, int perm, int m
 	}
 	RzIODesc *d = rz_io_desc_new(io, &rz_io_plugin_default, mmo->filename, perm, mode, mmo);
 	if (!d->name) {
-		d->name = strdup(mmo->filename);
+		d->name = rz_str_dup(mmo->filename);
 	}
 	return d;
 }

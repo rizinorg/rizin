@@ -557,17 +557,17 @@ static char *get_lib_name(RzBuffer *cache_buf, cache_img_t *img) {
 	char *lib_name = file;
 	if (rz_buf_read_at(cache_buf, img->pathFileOffset, (ut8 *)file, sizeof(file)) == sizeof(file)) {
 		file[255] = 0;
-		return strdup(lib_name);
+		return rz_str_dup(lib_name);
 	}
-	return strdup("FAIL");
+	return rz_str_dup("FAIL");
 }
 
 static int string_contains(const void *a, const void *b, void *user) {
 	return !strstr((const char *)a, (const char *)b);
 }
 
-static HtPU *create_path_to_index(RzBuffer *cache_buf, cache_img_t *img, RzDyldCacheHeader *hdr) {
-	HtPU *path_to_idx = ht_pu_new0();
+static HtSU *create_path_to_index(RzBuffer *cache_buf, cache_img_t *img, RzDyldCacheHeader *hdr) {
+	HtSU *path_to_idx = ht_su_new(HT_STR_DUP);
 	if (!path_to_idx) {
 		return NULL;
 	}
@@ -577,13 +577,13 @@ static HtPU *create_path_to_index(RzBuffer *cache_buf, cache_img_t *img, RzDyldC
 			continue;
 		}
 		file[255] = 0;
-		ht_pu_insert(path_to_idx, file, (ut64)i);
+		ht_su_insert(path_to_idx, file, (ut64)i);
 	}
 
 	return path_to_idx;
 }
 
-static void carve_deps_at_address(RzDyldCache *cache, cache_img_t *img, HtPU *path_to_idx, ut64 address, int *deps, bool printing) {
+static void carve_deps_at_address(RzDyldCache *cache, cache_img_t *img, HtSU *path_to_idx, ut64 address, int *deps, bool printing) {
 	ut64 pa = va2pa(address, cache->n_maps, cache->maps, cache->buf, 0, NULL, NULL);
 	if (pa == UT64_MAX) {
 		return;
@@ -615,7 +615,7 @@ static void carve_deps_at_address(RzDyldCache *cache, cache_img_t *img, HtPU *pa
 				break;
 			}
 			const char *key = (const char *)cursor + 24;
-			size_t dep_index = (size_t)ht_pu_find(path_to_idx, key, &found);
+			size_t dep_index = (size_t)ht_su_find(path_to_idx, key, &found);
 			if (!found || dep_index >= cache->hdr->imagesCount) {
 				RZ_LOG_WARN("alien dep '%s'\n", key);
 				continue;
@@ -670,7 +670,7 @@ static RzList /*<RzDyldBinImage *>*/ *create_cache_bins(RzDyldCache *cache) {
 		}
 
 		if (target_libs) {
-			HtPU *path_to_idx = NULL;
+			HtSU *path_to_idx = NULL;
 			size_t dep_array_count = 0;
 			if (cache->accel) {
 				dep_array_count = cache->accel->depListCount;
@@ -740,7 +740,7 @@ static RzList /*<RzDyldBinImage *>*/ *create_cache_bins(RzDyldCache *cache) {
 				}
 			}
 
-			ht_pu_free(path_to_idx);
+			ht_su_free(path_to_idx);
 			RZ_FREE(dep_array);
 			RZ_FREE(extras);
 		}
@@ -777,15 +777,15 @@ static RzList /*<RzDyldBinImage *>*/ *create_cache_bins(RzDyldCache *cache) {
 								scan--;
 							}
 							if (*scan == '/') {
-								bin->file = strdup(scan + 1);
+								bin->file = rz_str_dup(scan + 1);
 							} else {
-								bin->file = strdup(last_slash + 1);
+								bin->file = rz_str_dup(last_slash + 1);
 							}
 						} else {
-							bin->file = strdup(last_slash + 1);
+							bin->file = rz_str_dup(last_slash + 1);
 						}
 					} else {
-						bin->file = strdup(file);
+						bin->file = rz_str_dup(file);
 					}
 				} else {
 					bin->file = rz_str_newf("unknown_image_%08" PFMT64x, symbols_off);
@@ -1282,7 +1282,7 @@ RZ_API ut64 rz_dyldcache_get_slide(RzDyldCache *cache) {
 	return 0;
 }
 
-RZ_API void rz_dyldcache_symbols_from_locsym(RzDyldCache *cache, RzDyldBinImage *bin, RzPVector /*<RzBinSymbol *>*/ *symbols, SetU *hash) {
+RZ_API void rz_dyldcache_symbols_from_locsym(RzDyldCache *cache, RzDyldBinImage *bin, RzPVector /*<RzBinSymbol *>*/ *symbols, RzSetU *hash) {
 	RzDyldLocSym *locsym = cache->locsym;
 	if (!locsym) {
 		return;
@@ -1309,10 +1309,10 @@ RZ_API void rz_dyldcache_symbols_from_locsym(RzDyldCache *cache, RzDyldBinImage 
 	ut32 j;
 	for (j = 0; j != bin->nlist_count; j++) {
 		struct MACH0_(nlist) *nlist = &nlists[j];
-		if (set_u_contains(hash, (ut64)nlist->n_value)) {
+		if (rz_set_u_contains(hash, (ut64)nlist->n_value)) {
 			continue;
 		}
-		set_u_add(hash, (ut64)nlist->n_value);
+		rz_set_u_add(hash, (ut64)nlist->n_value);
 		if (nlist->n_strx >= locsym->strings_size) {
 			continue;
 		}

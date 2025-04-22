@@ -13,21 +13,21 @@ static Sdb *test_sdb_new(const char *file) {
 #else
 	Sdb *r = sdb_new0();
 #endif
-	sdb_set(r, "some", "stuff", 0);
-	sdb_set(r, "and", "even", 0);
-	sdb_set(r, "more", "stuff", 0);
+	sdb_set(r, "some", "stuff");
+	sdb_set(r, "and", "even");
+	sdb_set(r, "more", "stuff");
 
 	sdb_ns(r, "emptyns", true);
 
 	Sdb *test_ns = sdb_ns(r, "test", true);
-	sdb_set(test_ns, "a", "123", 0);
-	sdb_set(test_ns, "b", "test", 0);
-	sdb_set(test_ns, "c", "hello", 0);
+	sdb_set(test_ns, "a", "123");
+	sdb_set(test_ns, "b", "test");
+	sdb_set(test_ns, "c", "hello");
 
 	Sdb *subspace_ns = sdb_ns(test_ns, "subspace", true);
-	sdb_set(subspace_ns, "some", "values", 0);
-	sdb_set(subspace_ns, "are", "saved", 0);
-	sdb_set(subspace_ns, "here", "lol", 0);
+	sdb_set(subspace_ns, "some", "values");
+	sdb_set(subspace_ns, "are", "saved");
+	sdb_set(subspace_ns, "here", "lol");
 	return r;
 }
 
@@ -190,8 +190,8 @@ bool test_sdb_diff_ns_sub() {
 bool test_sdb_diff_kv() {
 	Sdb *a = test_sdb_new("kv_a.sdb");
 	Sdb *b = test_sdb_new("kv_b.sdb");
-	sdb_unset(b, "more", 0);
-	sdb_unset(sdb_ns(b, "test", false), "a", 0);
+	sdb_unset(b, "more");
+	sdb_unset(sdb_ns(b, "test", false), "a");
 
 	mu_assert("kv removed (no diff)", !diff_str(a, b, NULL));
 	char *diff;
@@ -218,8 +218,8 @@ bool test_sdb_diff_kv() {
 bool test_sdb_diff_kv_value() {
 	Sdb *a = test_sdb_new("kv_value_a.sdb");
 	Sdb *b = test_sdb_new("kv_value_b.sdb");
-	sdb_set(b, "more", "cowbell", 0);
-	sdb_set(sdb_ns(b, "test", false), "a", "reaper", 0);
+	sdb_set(b, "more", "cowbell");
+	sdb_set(sdb_ns(b, "test", false), "a", "reaper");
 
 	mu_assert("kv value changed (no diff)", !diff_str(a, b, NULL));
 	char *diff;

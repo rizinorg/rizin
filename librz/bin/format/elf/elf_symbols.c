@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2021 08A <08A@riseup.net>
+// SPDX-FileCopyrightText: 2021 08A <dev@08a.re>
 // SPDX-FileCopyrightText: 2008-2020 nibble <nibble.ds@gmail.com>
 // SPDX-FileCopyrightText: 2008-2020 pancake <pancake@nopcode.org>
 // SPDX-FileCopyrightText: 2008-2020 alvaro_fe <alvaro.felipe91@gmail.com>
@@ -253,18 +253,17 @@ static void elf_symbol_fini(void *e, RZ_UNUSED void *user) {
 }
 
 static bool compute_symbols_from_segment(ELFOBJ *bin, RzVector /*<RzBinElfSymbol>*/ *result, struct symbols_segment *segment, RzBinElfSymbolFilter filter, HtUU *set) {
+	if (has_already_been_processed(bin, segment->offset, set)) {
+		return true;
+	}
+
+	if (!ht_uu_insert(set, segment->offset, 1ULL)) {
+		return false;
+	}
+
 	ut64 offset = segment->offset + segment->entry_size;
 
 	for (size_t i = 1; i < segment->number; i++) {
-		if (has_already_been_processed(bin, offset, set)) {
-			offset += segment->entry_size;
-			continue;
-		}
-
-		if (!ht_uu_insert(set, offset, offset)) {
-			return false;
-		}
-
 		Elf_(Sym) entry;
 		if (!get_symbol_entry(bin, offset, &entry)) {
 			return false;
@@ -401,19 +400,19 @@ static bool get_gnu_debugdata_elf_symbols(ELFOBJ *bin, RzVector /*<RzBinElfSymbo
 		goto debug_data_err;
 	}
 
-	HtPP *name_set = ht_pp_new0();
+	HtSP *name_set = ht_sp_new(HT_STR_CONST, NULL, NULL);
 	if (!name_set) {
 		goto debug_symbols_err;
 	}
 
 	RzBinElfSymbol *sym;
-	rz_vector_foreach(result, sym) {
-		ht_pp_insert(name_set, sym->name, sym);
+	rz_vector_foreach (result, sym) {
+		ht_sp_insert(name_set, sym->name, sym);
 	}
 
-	rz_vector_foreach(debug_symbols, sym) {
+	rz_vector_foreach (debug_symbols, sym) {
 		bool found;
-		ht_pp_find(name_set, sym->name, &found);
+		ht_sp_find(name_set, sym->name, &found);
 		if (found) {
 			continue;
 		}
@@ -424,7 +423,7 @@ static bool get_gnu_debugdata_elf_symbols(ELFOBJ *bin, RzVector /*<RzBinElfSymbo
 	debug_symbols->len = 0;
 	res = true;
 
-	ht_pp_free(name_set);
+	ht_sp_free(name_set);
 debug_symbols_err:
 	rz_vector_free(debug_symbols);
 debug_data_err:
@@ -489,7 +488,7 @@ RZ_OWN RzVector /*<RzBinElfSymbol>*/ *Elf_(rz_bin_elf_compute_symbols)(ELFOBJ *b
 		return NULL;
 	}
 
-	HtUU *set = ht_uu_new0();
+	HtUU *set = ht_uu_new();
 	if (!set) {
 		rz_vector_free(result);
 		return NULL;

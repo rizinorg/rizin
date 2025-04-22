@@ -1,3 +1,213 @@
+NAME=mips ensure correct cpu is selected
+FILE=bins/elf/analysis/mips-hello
+CMDS=<<EOF
+iI~cpu
+iI~pie
+iI~features
+aaa
+pdf @ entry0
+pdf @ main
+ao~0x @ 0x000804fc
+EOF
+EXPECT=<<EOF
+cpu      mips32
+PIE      true
+features noreorder pic cpic o32 n32
+            ;-- section..text:
+            ;-- _ftext:
+            ;-- .text:
+            ;-- __start:
+            ;-- _start:
+            ;-- pc:
+/ entry0();
+|           ; var int32_t var_4h @ stack - 0x4
+|           0x000804d0      bal   0x804d8                              ; [06] -r-x section size 304 named .text ;  entry0(void)
+|           0x000804d4      nop
+|           ; CALL XREF from entry0 @ 0x804d0
+|           0x000804d8      lui   gp, 2
+|           0x000804dc      addiu gp, gp, -0x74d8
+|           0x000804e0      addu  gp, gp, ra
+|           0x000804e4      move  a0, sp
+|           0x000804e8      addiu sp, sp, -0x20
+|           0x000804ec      sw    zero, (var_4h)
+|           0x000804f0      lw    t9, -sym.do_mips_start(gp)           ; [data.00091018:4]=0x8051c sym.do_mips_start
+|           0x000804f4      jalr  t9
+|           0x000804f8      nop
+|       @-> 0x000804fc      b     0x804fc
+\           0x00080500      nop
+            ; DATA XREF from sym.do_mips_start @ 0x80544
+/ int main(int argc, char **argv, char **envp);
+|           ; arg int argc @ a0
+|           ; var int32_t var_10h @ stack - 0x10
+|           ; var int32_t var_8h @ stack - 0x8
+|           ; var int32_t var_4h @ stack - 0x4
+|           ; arg int32_t arg_10h @ stack + 0x10
+|           0x000805a0      lui   gp, 2
+|           0x000805a4      addiu gp, gp, -0x75a0
+|           0x000805a8      addu  gp, gp, t9
+|           0x000805ac      addiu sp, sp, -0x20
+|           0x000805b0      sw    ra, (var_4h)
+|           0x000805b4      sw    fp, (var_8h)
+|           0x000805b8      move  fp, sp
+|           0x000805bc      sw    gp, (var_10h)
+|           0x000805c0      lw    v0, -segment.LOAD0(gp)               ; [data.0009103c:4]=0x80000 segment.ehdr
+|           0x000805c4      addiu a0, v0, 0x640                        ; 0x80640 ; "Hello World" ; argc ; str.Hello_World
+|           0x000805c8      lw    v0, -sym._MIPS_STUBS(gp)             ; [data.00091048:4]=0x80600 sym.imp.puts
+|           0x000805cc      move  t9, v0
+|           0x000805d0      jalr  t9
+|           0x000805d4      nop
+|           0x000805d8      lw    gp, (arg_10h)
+|           0x000805dc      move  sp, fp
+|           0x000805e0      lw    ra, (var_4h)
+|           0x000805e4      lw    fp, (var_8h)
+|           0x000805e8      addiu sp, sp, 0x20
+|           0x000805ec      jr    ra
+\           0x000805f0      nop
+address: 0x804fc
+opcode: b 0x804fc
+disasm: b 0x804fc
+pseudo: goto 0x804fc
+rzil: (jmp (bv 32 0x804fc))
+jump: 0x000804fc
+EOF
+RUN
+
+
+NAME=micromips ensure correct cpu is selected
+FILE=bins/elf/micromips.elf
+CMDS=<<EOF
+iI~cpu
+iI~features
+af
+pdf
+EOF
+EXPECT=<<EOF
+cpu      micro32r3
+features noreorder cpic o32 n32
+            ;-- entry0:
+            ;-- section..text:
+            ;-- .text:
+            ;-- _ftext:
+/ int main(int argc, char **argv);
+|           ; arg int argc @ a0
+|           ; arg int32_t arg_10h @ stack + 0x10
+|           ; arg int32_t arg_24h @ stack + 0x24
+|           0x004000d0      lui   gp, 2                                ; [02] -r-x section size 512 named .text
+|           0x004000d4      addiu gp, gp, -0x7de1
+|           0x004000d8      addu  gp, gp, t9
+|           0x004000dc      addiusp -0x28
+|           0x004000de      lw    t9, -0x7fe4(gp)                      ; [0x41030c:4]=0x400221
+|           0x004000e2      sw    gp, (arg_10h)
+|           0x004000e6      sw    ra, (arg_24h)
+|           0x004000e8      addiur1sp a1, 0x18
+|           0x004000ea      jalr  t9
+|           0x004000ec      addiu a0, zero, 5                          ; argc
+|           0x004000f0      lw    ra, (arg_24h)
+|           0x004000f2      jraddiusp 0x28
+|           ;-- deregister_tm_clones:
+|           0x004000f4      lui   a0, 0x41
+|           0x004000f8      lui   v0, 0x41
+|           0x004000fc      addiu a0, a0, 0x300
+|           0x00400100      addiu v0, v0, 0x303
+|           0x00400104      subu16 v0, v0, a0
+|           0x00400106      sltiu v0, v0, 7
+|       ,=< 0x0040010a      bnez16 v0, 0x400118
+|       |   0x0040010c      lui   t9, 0
+|       |   0x00400110      addiu t9, t9, 0
+|      ,==< 0x00400114      beqzc t9, loc..L6
+|      |`-> 0x00400118      jrc   t9
+|      |    ;-- .L6:
+|      `--> 0x0040011a      jrc   ra
+EOF
+RUN
+
+
+NAME=nanomips ensure correct cpu is selected
+FILE=bins/elf/emulateme.nanomips_i7200
+CMDS=<<EOF
+iI~cpu
+iI~features
+aaa
+pdf @ entry0
+pdf @ main
+EOF
+EXPECT=<<EOF
+cpu      i7200
+features o32 n32
+            ;-- section..text:
+            ;-- __start:
+            ;-- _start:
+            ;-- pc:
+/ entry0(int32_t arg3, int32_t arg4);
+|           ; arg int32_t arg3 @ a2
+|           ; arg int32_t arg4 @ a3
+\           0x004003d4      move  fp, zero                             ; [08] -r-x section size 474 named .text
+|           0x004003d6      lapc.h t0, sym._start_c
+|           0x004003da      lapc.h a1, obj._DYNAMIC
+|           0x004003de      lapc.h gp, loc._gp
+|           0x004003e2      move  a0, sp
+|           0x004003e4      li    at, -0x10
+|           0x004003e8      and   sp, sp, at
+|           0x004003ec      jalrc ra, t0
+/ int main(int argc, char **argv, char **envp);
+|     :::   ; arg int32_t arg_8h @ stack + 0x8
+|     :::   ; arg int32_t arg_ch @ stack + 0xc
+|     :::   ; arg int32_t arg_1ch @ stack + 0x1c
+|     :::   0x00400536      save  0x30, fp, ra, gp
+|     :::   0x0040053a      addiu fp, sp, -0xfd0
+|     :::   0x0040053e      lapc.h gp, loc._gp
+|     :::   0x00400542      sw    a0, (arg_ch)
+|     :::   0x00400544      sw    a1, (arg_8h)
+|     :::   0x00400546      lw    a3, (arg_ch)
+|     ::`=< 0x00400548      beqic a3, loc.__reloc_align___1, loc..L9
+|     ::    0x0040054c      lw    a3, (arg_8h)
+|     ::    0x0040054e      lw    a3, 0(a3)
+|     ::    0x00400550      move  a1, a3
+|     ::    0x00400552      lapc.h a0, loc..LC0
+|     ::    0x00400556      lw    a3, 0x28(gp)
+|     ::    0x0040055a      jalrc ra, a3
+|     ::    0x0040055c      li    a3, 1
+|     ::,=< 0x0040055e      bc    loc..L10
+|     ::|   ;-- .L9:
+|     ::|   0x00400560      lw    a3, (arg_8h)
+|     ::|   0x00400562      lw    a3, 4(a3)
+|     ::|   0x00400564      sw    a3, (arg_1ch)
+|     ::|   0x00400566      lw    a0, (arg_1ch)
+|     ::|   0x00400568      lw    a3, 0x24(gp)                         ; [0x4003b4:4]=0x300 ; section..nanoMIPS.stubs
+|     ::|   0x0040056c      jalrc ra, a3
+|     ::|   0x0040056e      move  a3, a0
+|     :`==< 0x00400570      beqic a3, 0x10, 0x400582
+|     : |   0x00400574      lapc.h a0, loc..LC1
+|     : |   0x00400578      lw    a3, 0x2c(gp)
+|     : |   0x0040057c      jalrc ra, a3
+|     : |   0x0040057e      li    a3, 1
+|     :,==< 0x00400580      bc    loc..L10
+|     :||   ;-- .L11:
+|     :||   0x00400582      lw    a0, (arg_1ch)
+|     `===< 0x00400584      balc[16] sym.decrypt
+|      ||   0x00400586      move  a3, a0
+|     ,===< 0x00400588      bnezc a3, loc..L12
+|     |||   0x0040058a      lapc.h a0, loc..LC2
+|     |||   0x0040058e      lw    a3, 0x2c(gp)
+|     |||   0x00400592      jalrc ra, a3
+|     |||   0x00400594      li    a3, 1
+|    ,====< 0x00400596      bc    loc..L10
+|    ||||   ;-- .L12:
+|    |`---> 0x00400598      lapc.h a1, obj.seckrit
+|    | ||   0x0040059c      lapc.h a0, loc..LC3
+|    | ||   0x004005a0      lw    a3, 0x28(gp)
+|    | ||   0x004005a4      jalrc ra, a3
+|    | ||   0x004005a6      move  a3, zero
+|    | ||   ;-- .L10:
+|    `-``-> 0x004005a8      move  a0, a3
+|           0x004005aa      restore.jrc 0x30, fp, ra, gp
+|           ;-- (0x004005b0) section..fini:
+|           ;-- (0x004005b0) _fini:
+\           0x004005ae  ~   sigrie 0x83e2
+EOF
+RUN
+
+
 NAME=mips hello reference analysis
 FILE=bins/elf/analysis/mips-hello
 CMDS=<<EOF
@@ -17,7 +227,7 @@ aae
 aflc
 EOF
 EXPECT=<<EOF
-436
+438
 EOF
 RUN
 
@@ -49,6 +259,7 @@ axt @ str.busybox
 EOF
 EXPECT=<<EOF
             0x00406228      fcc38424       addiu a0, a0, -0x3c04       ; 0x44c3fc ; "busybox" ; str.busybox
+(nofunc); str.busybox 0x405fec [DATA] addiu a1, a1, -str.busybox
 (nofunc); str.busybox 0x406228 [DATA] addiu a0, a0, -str.busybox
 EOF
 RUN
@@ -58,6 +269,7 @@ FILE=bins/elf/analysis/mips64r2-ld-2.28.so
 CMDS=<<EOF
 s 0x000023f0
 e asm.bytes=true
+ar a0=0
 pd 1
 s 0x00002494
 pd 1
@@ -96,7 +308,7 @@ RUN
 NAME=assembler
 FILE==
 CMDS=<<EOF
-e asm.arch=mips.gnu
+e asm.arch=mips
 e asm.bits=32
 e cfg.bigendian=0
 pa lui t9, 0x41
@@ -118,7 +330,7 @@ RUN
 NAME=with-spaces
 FILE==
 CMDS=<<EOF
-e asm.arch=mips.gnu
+e asm.arch=mips
 e asm.bits=32
 e cfg.bigendian=0
 pa addiu v0, v1, 33
@@ -162,17 +374,18 @@ e asm.pseudo=true
 pd 1
 EOF
 EXPECT=<<EOF
-            0x80100000      0000beaf       sw    fp, (sp)
+            0x80100000      0000beaf       sw    fp, 0(sp)
             0x80100000      0000beaf       word [sp] = fp
 EOF
 RUN
 
-NAME=mips LE anal
+NAME=mips LE analisys
 FILE=malloc://32
 CMDS=<<EOF
 wx 01001104
 e asm.arch=mips
 e asm.bits=32
+e asm.arch=mips3
 e asm.nbytes=4
 ao 1~type:[1]
 EOF
@@ -210,7 +423,6 @@ e asm.calls=false
 e asm.bits=32
 e asm.bytes=true
 e asm.arch=mips
-e analysis.jmp.eob=true
 e analysis.nopskip=false
 e asm.cmtcol=0
 e asm.comments=false
@@ -218,7 +430,7 @@ e asm.lines.bb=0
 e asm.lines.fcn=0
 e asm.nbytes=4
 wx 0800040c000000000000000000000000000000000000000040040408000000000800e00300000000
-aa 2> /dev/null
+aa
 pdf
 EOF
 EXPECT=<<EOF
@@ -243,12 +455,11 @@ e asm.calls=false
 e asm.bytes=true
 e asm.bits=32
 e asm.arch=mips
-e analysis.jmp.eob=false
 e asm.lines.bb=0
 e asm.lines.fcn=false
 e asm.nbytes=4
 wx 0800040c000000000000000000000000000000000000000040040408000000000800e00300000000
-af 2> /dev/null
+af
 pd 10
 afl
 EOF
@@ -278,14 +489,15 @@ CMDS=<<EOF
 e io.va=true
 e asm.calls=false
 e asm.bytes=true
-e asm.bits=32
 e asm.arch=mips
+e asm.bits=32
+e asm.cpu=mips4
 e asm.nbytes=4
 e asm.lines.bb=false
 e asm.lines.fcn=false
 s 0x80100000
 wx 0800e0030a1844000000000000000000000000
-af 2>/dev/null
+af
 pdf
 EOF
 EXPECT=<<EOF
@@ -299,13 +511,14 @@ NAME=mips branch delay function sizing.
 FILE=malloc://20
 CMDS=<<EOF
 e asm.calls=false
-e asm.bits=32
 e asm.bytes=true
 e asm.arch=mips
+e asm.bits=32
+e asm.cpu=mips4
 e asm.nbytes=4
 e asm.lines.fcn=false
 wx 0800e0030a1844000000000000000000000000
-af 2> /dev/null
+af
 pdf
 EOF
 EXPECT=<<EOF
@@ -321,18 +534,19 @@ ARGS=-m 0x80100000
 CMDS=<<EOF
 e io.va=true
 e asm.calls=false
-e asm.bits=32
 e asm.bytes=true
 e asm.arch=mips
-e analysis.jmp.eob=false
+e asm.bits=32
+e asm.cpu=mips4
 e asm.comments=false
 e asm.nbytes=4
 e asm.lines.bb=false
 e asm.lines.fcn=false
 s 0x80100000
 wx e0ffbd27000000000100001000000000fdff09150a1844000800e0032000bd270000000000000000000000
-af 2> /dev/null
+af
 pdf
+
 EOF
 EXPECT=<<EOF
 fcn.80100000();
@@ -354,17 +568,17 @@ CMDS=<<EOF
 e io.va=true
 e asm.calls=false
 e asm.bytes=true
-e asm.bits=32
 e asm.arch=mips
+e asm.bits=32
+e asm.cpu=mips4
 e asm.comments=false
-e analysis.jmp.eob=false
 e analysis.nopskip=false
 e asm.nbytes=4
 e asm.lines.bb=false
 e asm.lines.fcn=false
 s 0x80100000
 wx e0ffbd27000000000100001000000000000000000a1844000800e003 2000bd270000000000000000000000
-af 2> /dev/null
+af
 pdf
 EOF
 EXPECT=<<EOF
@@ -388,15 +602,15 @@ e io.va=true
 e asm.calls=false
 e asm.arch=mips
 e asm.bits=32
+e asm.cpu=mips4
 e asm.comments=false
 e asm.bytes=true
-e analysis.jmp.eob=false
 e analysis.nopskip=false
 e asm.nbytes=4
 e asm.lines.bb=false
 e asm.lines.fcn=false
 wx e0ffbd27000000000000000000000000fdff09150a1844000800e0032000bd270000000000000000000000
-af 2> /dev/null
+af
 pdf
 EOF
 EXPECT=<<EOF
@@ -421,14 +635,14 @@ e asm.bytes=true
 e asm.calls=false
 e asm.arch=mips
 e asm.bits=32
+e asm.cpu=mips4
 e asm.comments=false
-e analysis.jmp.eob=false
 e analysis.nopskip=false
 e asm.nbytes=4
 e asm.lines.bb=false
 e asm.lines.fcn=false
 wx e0ffbd27000000000000000000000000fdff09150000000001000010000000000a1844000800e0032000bd270000000000000000000000
-af 2> /dev/null
+af
 pdf
 EOF
 EXPECT=<<EOF
@@ -458,14 +672,13 @@ e asm.bits=32
 e asm.arch=mips
 e asm.comments=0
 e analysis.hasnext=1
-e analysis.jmp.eob=0
 e analysis.nopskip=1
 e asm.nbytes=4
 e asm.lines.bb=false
 e asm.lines.fcn=false
 s 0x8060b4f8
 wx 0000000000000000002e0500032e05000f00801021100000492d1808000082900800e003211080000000829007004010000000000016020003160200f8ff451000000000482d180801008424211000000800e003000000000000a290050040100100a524000082a00000a290552d1808010084240800e003000080a000000000e0ffbd27542d180c000000000800e0032000bd270000000000000000
-aa 2> /dev/null
+aa
 pd 38
 EOF
 EXPECT=<<EOF
@@ -479,10 +692,10 @@ fcn.8060b500(int32_t arg1, int32_t arg2);
 0x8060b508      0f008010   beqz  a0, 0x8060b548
 0x8060b50c      21100000   move  v0, zero
 0x8060b510      492d1808   j     0x8060b524
-0x8060b514      00008290   lbu   v0, (a0)
+0x8060b514      00008290   lbu   v0, (arg1)
 0x8060b518      0800e003   jr    ra
 0x8060b51c      21108000   move  v0, a0
-0x8060b520      00008290   lbu   v0, (a0)
+0x8060b520      00008290   lbu   v0, (arg1)
 0x8060b524      07004010   beqz  v0, 0x8060b544
 0x8060b528      00000000   nop
 0x8060b52c      00160200   sll   v0, v0, 0x18
@@ -497,153 +710,17 @@ fcn.8060b500(int32_t arg1, int32_t arg2);
 fcn.8060b550(int32_t arg1, int32_t arg2);
 ; arg int32_t arg1 @ a0
 ; arg int32_t arg2 @ a1
-0x8060b550      0000a290   lbu   v0, (a1)
+0x8060b550      0000a290   lbu   v0, (arg2)
 0x8060b554      05004010   beqz  v0, 0x8060b56c
 0x8060b558      0100a524   addiu a1, a1, 1
-0x8060b55c      000082a0   sb    v0, (a0)
-0x8060b560      0000a290   lbu   v0, (a1)
+0x8060b55c      000082a0   sb    v0, (arg1)
+0x8060b560      0000a290   lbu   v0, (arg2)
 0x8060b564      552d1808   j     0x8060b554
 0x8060b568      01008424   addiu a0, a0, 1
 0x8060b56c      0800e003   jr    ra
-0x8060b570      000080a0   sb    zero, (a0)
+0x8060b570      000080a0   sb    zero, (arg1)
 0x8060b574      00000000   nop
-fcn.8060b578();
-0x8060b578      e0ffbd27   addiu sp, sp, -0x20
-0x8060b57c      542d180c   jal   fcn.8060b550
-0x8060b580      00000000   nop
-0x8060b584      0800e003   jr    ra
-0x8060b588      2000bd27   addiu sp, sp, 0x20
-0x8060b58c      00000000   nop
-EOF
-RUN
-
-NAME=GNU mips branch delay function detection #1.
-FILE=malloc://160
-ARGS=-m 0x8060b4f8
-BROKEN=1
-CMDS=<<EOF
-e io.va=true
-e asm.bits=32
-e asm.arch=mips.gnu
-e asm.comments=0
-e analysis.hasnext=1
-e analysis.jmp.eob=0
-e analysis.nopskip=1
-e asm.nbytes=4
-e asm.lines.bb=false
-e asm.lines.fcn=false
-s 0x8060b4f8
-wx 0000000000000000002e0500032e05000f00801021100000492d1808000082900800e003211080000000829007004010000000000016020003160200f8ff451000000000482d180801008424211000000800e003000000000000a290050040100100a524000082a00000a290552d1808010084240800e003000080a000000000e0ffbd27542d180c000000000800e0032000bd270000000000000000
-aa 2> /dev/null
-pd 38
-EOF
-EXPECT=<<EOF
-0x8060b4f8      00000000   nop
-0x8060b4fc      00000000   nop
-fcn.8060b500 (int32_t arg1, int32_t arg2);
-0x8060b500      002e0500   sll a1, a1, 0x18
-0x8060b504      032e0500   sra a1, a1, 0x18
-0x8060b508      0f008010   beqz a0, 0x8060b548
-0x8060b50c      21100000   move v0, zero
-0x8060b510      492d1808   j 0x8060b524
-0x8060b514      00008290   lbu v0, 0(a0)
-0x8060b518      0800e003   jr ra
-0x8060b51c      21108000   move v0, a0
-0x8060b520      00008290   lbu v0, 0(a0)
-0x8060b524      07004010   beqz v0, 0x8060b544
-0x8060b528      00000000   nop
-0x8060b52c      00160200   sll v0, v0, 0x18
-0x8060b530      03160200   sra v0, v0, 0x18
-0x8060b534      f8ff4510   beq v0, a1, 0x8060b518
-0x8060b538      00000000   nop
-0x8060b53c      482d1808   j 0x8060b520
-0x8060b540      01008424   addiu a0, a0, 1
-0x8060b544      21100000   move v0, zero
-0x8060b548      0800e003   jr ra
-0x8060b54c      00000000   nop
-fcn.8060b550 (int32_t arg1, int32_t arg2);
-0x8060b550      0000a290   lbu v0, 0(a1)
-0x8060b554      05004010   beqz v0, 0x8060b56c
-0x8060b558      0100a524   addiu a1, a1, 1
-0x8060b55c      000082a0   sb v0, 0(a0)
-0x8060b560      0000a290   lbu v0, 0(a1)
-0x8060b564      552d1808   j 0x8060b554
-0x8060b568      01008424   addiu a0, a0, 1
-0x8060b56c      0800e003   jr ra
-0x8060b570      000080a0   sb zero, (a0)
-0x8060b574      00000000   nop
-fcn.8060b578 ();
-0x8060b578      e0ffbd27   addiu sp, sp, -32
-0x8060b57c      542d180c   jal fcn.8060b550
-0x8060b580      00000000   nop
-0x8060b584      0800e003   jr ra
-0x8060b588      2000bd27   addiu sp, sp, 32
-0x8060b58c      00000000   nop
-EOF
-RUN
-
-NAME=capstone: mips branch delay function detection #1.
-FILE=malloc://160
-ARGS=-m 0x8060b4f8
-CMDS=<<EOF
-e io.va=true
-e asm.calls=false
-e asm.bits=32
-e asm.bytes=true
-e asm.arch=mips
-e analysis.noncode=1
-e asm.comments=0
-e analysis.hasnext=1
-e analysis.jmp.eob=0
-e analysis.nopskip=1
-e asm.nbytes=4
-e asm.lines.bb=false
-e asm.lines.fcn=false
-s 0x8060b4f8
-wx 0000000000000000002e0500032e05000f00801021100000492d1808000082900800e003211080000000829007004010000000000016020003160200f8ff451000000000482d180801008424211000000800e003000000000000a290050040100100a524000082a00000a290552d1808010084240800e003000080a000000000e0ffbd27542d180c000000000800e0032000bd270000000000000000
-aa 2> /dev/null
-pd 38
-EOF
-EXPECT=<<EOF
-0x8060b4f8      00000000   nop
-0x8060b4fc      00000000   nop
-fcn.8060b500(int32_t arg1, int32_t arg2);
-; arg int32_t arg1 @ a0
-; arg int32_t arg2 @ a1
-0x8060b500      002e0500   sll   a1, a1, 0x18
-0x8060b504      032e0500   sra   a1, a1, 0x18
-0x8060b508      0f008010   beqz  a0, 0x8060b548
-0x8060b50c      21100000   move  v0, zero
-0x8060b510      492d1808   j     0x8060b524
-0x8060b514      00008290   lbu   v0, (a0)
-0x8060b518      0800e003   jr    ra
-0x8060b51c      21108000   move  v0, a0
-0x8060b520      00008290   lbu   v0, (a0)
-0x8060b524      07004010   beqz  v0, 0x8060b544
-0x8060b528      00000000   nop
-0x8060b52c      00160200   sll   v0, v0, 0x18
-0x8060b530      03160200   sra   v0, v0, 0x18
-0x8060b534      f8ff4510   beq   v0, a1, 0x8060b518
-0x8060b538      00000000   nop
-0x8060b53c      482d1808   j     0x8060b520
-0x8060b540      01008424   addiu a0, a0, 1
-0x8060b544      21100000   move  v0, zero
-0x8060b548      0800e003   jr    ra
-0x8060b54c      00000000   nop
-fcn.8060b550(int32_t arg1, int32_t arg2);
-; arg int32_t arg1 @ a0
-; arg int32_t arg2 @ a1
-0x8060b550      0000a290   lbu   v0, (a1)
-0x8060b554      05004010   beqz  v0, 0x8060b56c
-0x8060b558      0100a524   addiu a1, a1, 1
-0x8060b55c      000082a0   sb    v0, (a0)
-0x8060b560      0000a290   lbu   v0, (a1)
-0x8060b564      552d1808   j     0x8060b554
-0x8060b568      01008424   addiu a0, a0, 1
-0x8060b56c      0800e003   jr    ra
-0x8060b570      000080a0   sb    zero, (a0)
-0x8060b574      00000000   nop
-fcn.8060b578();
+fcn.8060b574();
 0x8060b578      e0ffbd27   addiu sp, sp, -0x20
 0x8060b57c      542d180c   jal   fcn.8060b550
 0x8060b580      00000000   nop
@@ -665,14 +742,13 @@ e asm.arch=mips
 e analysis.noncode=1
 e asm.comments=0
 e analysis.hasnext=1
-e analysis.jmp.eob=0
 e analysis.nopskip=1
 e asm.nbytes=4
 e asm.lines.bb=false
 e asm.lines.fcn=true
 s 0x8060b4f8
 wx 0000000000000000002e0500032e05000f00801021100000492d1808000082900800e003211080000000829007004010000000000016020003160200f8ff451000000000482d180801008424211000000800e003000000000000a290050040100100a524000082a00000a290552d1808010084240800e003000080a000000000e0ffbd27542d180c000000000800e0032000bd270000000000000000
-aa 2> /dev/null
+aa
 pd 38
 EOF
 EXPECT=<<EOF
@@ -686,10 +762,10 @@ EXPECT=<<EOF
 | 0x8060b508      0f008010   beqz  a0, 0x8060b548
 | 0x8060b50c      21100000   move  v0, zero
 | 0x8060b510      492d1808   j     0x8060b524
-| 0x8060b514      00008290   lbu   v0, (a0)
+| 0x8060b514      00008290   lbu   v0, (arg1)
 | 0x8060b518      0800e003   jr    ra
 | 0x8060b51c      21108000   move  v0, a0
-| 0x8060b520      00008290   lbu   v0, (a0)
+| 0x8060b520      00008290   lbu   v0, (arg1)
 | 0x8060b524      07004010   beqz  v0, 0x8060b544
 | 0x8060b528      00000000   nop
 | 0x8060b52c      00160200   sll   v0, v0, 0x18
@@ -704,17 +780,17 @@ EXPECT=<<EOF
 / fcn.8060b550(int32_t arg1, int32_t arg2);
 | ; arg int32_t arg1 @ a0
 | ; arg int32_t arg2 @ a1
-| 0x8060b550      0000a290   lbu   v0, (a1)
+| 0x8060b550      0000a290   lbu   v0, (arg2)
 | 0x8060b554      05004010   beqz  v0, 0x8060b56c
 | 0x8060b558      0100a524   addiu a1, a1, 1
-| 0x8060b55c      000082a0   sb    v0, (a0)
-| 0x8060b560      0000a290   lbu   v0, (a1)
+| 0x8060b55c      000082a0   sb    v0, (arg1)
+| 0x8060b560      0000a290   lbu   v0, (arg2)
 | 0x8060b564      552d1808   j     0x8060b554
 | 0x8060b568      01008424   addiu a0, a0, 1
 | 0x8060b56c      0800e003   jr    ra
-\ 0x8060b570      000080a0   sb    zero, (a0)
+\ 0x8060b570      000080a0   sb    zero, (arg1)
   0x8060b574      00000000   nop
-/ fcn.8060b578();
+/ fcn.8060b574();
 | 0x8060b578      e0ffbd27   addiu sp, sp, -0x20
 | 0x8060b57c      542d180c   jal   fcn.8060b550
 | 0x8060b580      00000000   nop
@@ -733,7 +809,7 @@ pd 10
 EOF
 EXPECT=<<EOF
             0x00402088      8f84814c       lw    a0, -main(gp)         ; [0x43522c:4]=0x402558 sym.main
-            0x0040208c      8fa50000       lw    a1, (sp)
+            0x0040208c      8fa50000       lw    a1, 0(sp)
             0x00402090      27a60004       addiu a2, sp, 4
             0x00402094      2401fff8       addiu at, zero, -8
             0x00402098      03a1e824       and   sp, sp, at
@@ -745,46 +821,49 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=mips.gnu regs
-FILE=
+NAME=mips regs
+FILE==
 CMDS=<<EOF
-e asm.arch=mips.gnu
+e asm.arch=mips
 ar
 EOF
 EXPECT=<<EOF
-zero = 0x0000000000000000
-at = 0x0000000000000000
-v0 = 0x0000000000000000
-v1 = 0x0000000000000000
-a0 = 0x0000000000000000
-a1 = 0x0000000000000000
-a2 = 0x0000000000000000
-a3 = 0x0000000000000000
-t0 = 0x0000000000000000
-t1 = 0x0000000000000000
-t2 = 0x0000000000000000
-t3 = 0x0000000000000000
-t4 = 0x0000000000000000
-t5 = 0x0000000000000000
-t6 = 0x0000000000000000
-t7 = 0x0000000000000000
-s0 = 0x0000000000000000
-s1 = 0x0000000000000000
-s2 = 0x0000000000000000
-s3 = 0x0000000000000000
-s4 = 0x0000000000000000
-s5 = 0x0000000000000000
-s6 = 0x0000000000000000
-s7 = 0x0000000000000000
-t8 = 0x0000000000000000
-t9 = 0x0000000000000000
-k0 = 0x0000000000000000
-k1 = 0x0000000000000000
-gp = 0x0000000000000000
-sp = 0x0000000000000000
-fp = 0x0000000000000000
-ra = 0x0000000000000000
-pc = 0x0000000000000000
+zero = 0x00000000
+at = 0x00000000
+v0 = 0x00000000
+v1 = 0x00000000
+a0 = 0x00000000
+a1 = 0x00000000
+a2 = 0x00000000
+a3 = 0x00000000
+t0 = 0x00000000
+t1 = 0x00000000
+t2 = 0x00000000
+t3 = 0x00000000
+t4 = 0x00000000
+t5 = 0x00000000
+t6 = 0x00000000
+t7 = 0x00000000
+s0 = 0x00000000
+s1 = 0x00000000
+s2 = 0x00000000
+s3 = 0x00000000
+s4 = 0x00000000
+s5 = 0x00000000
+s6 = 0x00000000
+s7 = 0x00000000
+t8 = 0x00000000
+t9 = 0x00000000
+k0 = 0x00000000
+k1 = 0x00000000
+gp = 0x00000000
+sp = 0x00000000
+fp = 0x00000000
+ra = 0x00000000
+pc = 0x00000000
+hi = 0x00000000
+lo = 0x00000000
+t = 0x00000000
 EOF
 RUN
 
@@ -801,14 +880,15 @@ pdf
 afvx
 EOF
 EXPECT=<<EOF
-/ sym.varfunc();
+/ sym.varfunc(int32_t arg_10h, int32_t arg_18h, int32_t arg_1ch, int32_t arg_20h, int32_t arg_24h);
 |           ; var int32_t var_20h @ stack - 0x20
-|           ; var int32_t var_18h @ stack - 0x18
-|           ; var int32_t var_14h @ stack - 0x14
-|           ; var int32_t var_10h @ stack - 0x10
-|           ; var int32_t var_ch @ stack - 0xc
 |           ; var int32_t var_8h @ stack - 0x8
 |           ; var int32_t var_4h @ stack - 0x4
+|           ; arg int32_t arg_10h @ stack + 0x10
+|           ; arg int32_t arg_18h @ stack + 0x18
+|           ; arg int32_t arg_1ch @ stack + 0x1c
+|           ; arg int32_t arg_20h @ stack + 0x20
+|           ; arg int32_t arg_24h @ stack + 0x24
 |           0x00000794      lui   gp, 2
 |           0x00000798      addiu gp, gp, -0x7db4
 |           0x0000079c      addu  gp, gp, t9
@@ -840,21 +920,23 @@ EXPECT=<<EOF
 |           0x00000804      jr    ra
 \           0x00000808      nop
 afvR
-    var_4h  0x7f8
+   arg_18h  0x7f0
+   arg_1ch
+   arg_20h
+   arg_24h  0x7e8
+   arg_10h  0x7e4
     var_8h  0x7fc
-   var_20h  0x7e4
-   var_18h  0x7f0
-   var_14h
-   var_10h
-    var_ch  0x7e8
+    var_4h  0x7f8
+   var_20h
 afvW
-    var_4h  0x7a4
+   arg_18h  0x7b8
+   arg_1ch  0x7c0,0x7ec
+   arg_20h  0x7c8
+   arg_24h  0x7d0
+   arg_10h
     var_8h  0x7a8
+    var_4h  0x7a4
    var_20h  0x7b0
-   var_18h  0x7b8
-   var_14h  0x7c0,0x7ec
-   var_10h  0x7c8
-    var_ch  0x7d0
 EOF
 RUN
 
@@ -871,38 +953,343 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=aav with vinfun
+NAME=aav analysis.vinfun=true & aac 
 FILE=bins/elf/analysis/mipsbe-busybox
 CMDS=<<EOF
 af @ 0x0040eb60
 e analysis.vinfun=true
 aav
 pd 1 @ 0x0040ec8c~?dword
-EOF
-EXPECT=<<EOF
-1
-EOF
-RUN
-
-NAME=aac on mips BE
-FILE=bins/elf/analysis/mipsbe-busybox
-CMDS=<<EOF
 aac
 afl~?
 EOF
 EXPECT=<<EOF
+1
 1268
 EOF
 RUN
 
-NAME=raw aac with maps (less because of wrong map address)
-FILE=bins/elf/analysis/mipsbe-busybox
-ARGS=-n -m 0x80000 -a mips -b32 -e cfg.bigendian=true
+NAME=pdf after aav
+FILE=bins/elf/analysis/mipsbe-ip
 CMDS=<<EOF
-aac
-afl~?
+aa
+aav
+pdf @ main
 EOF
 EXPECT=<<EOF
-4
+            ; UNKNOWN XREF from section..dynsym @ +0x504
+/ int main(int argc, char **argv, char **envp);
+|           ; arg int argc @ a0
+|           ; arg char **argv @ a1
+|           ; arg char **envp @ a2
+|           ; var int32_t var_40h @ stack - 0x40
+|           ; var int32_t var_38h @ stack - 0x38
+|           ; var int32_t var_30h @ stack - 0x30
+|           ; var int32_t var_2ch @ stack - 0x2c
+|           ; var int32_t var_28h @ stack - 0x28
+|           ; var int32_t var_24h @ stack - 0x24
+|           ; var int32_t var_20h @ stack - 0x20
+|           ; var int32_t var_1ch @ stack - 0x1c
+|           ; var int32_t var_18h @ stack - 0x18
+|           ; var int32_t var_14h @ stack - 0x14
+|           ; var int32_t var_10h @ stack - 0x10
+|           ; var int32_t var_ch @ stack - 0xc
+|           ; var int32_t var_8h @ stack - 0x8
+|           ; var int32_t var_4h @ stack - 0x4
+|           0x00402558      addiu sp, sp, -0x50
+|           0x0040255c      sw    ra, (var_4h)
+|           0x00402560      sw    fp, (var_8h)
+|           0x00402564      sw    s7, (var_ch)
+|           0x00402568      sw    s6, (var_10h)
+|           0x0040256c      sw    s5, (var_14h)
+|           0x00402570      sw    s4, (var_18h)
+|           0x00402574      sw    s3, (var_1ch)
+|           0x00402578      sw    s2, (var_20h)
+|           0x0040257c      sw    s1, (var_24h)
+|           0x00402580      sw    s0, (var_28h)
+|           0x00402584      lui   gp, 0x44
+|           0x00402588      addiu gp, gp, -0x2f20
+|           0x0040258c      sw    gp, (var_40h)
+|           0x00402590      move  s0, a1
+|           0x00402594      lw    t9, -sym.imp.strrchr(gp)             ; [0x4352f8:4]=0x41e910 sym.imp.strrchr
+|           0x00402598      addiu a1, zero, 0x2f                       ; argv
+|           0x0040259c      lw    s6, 0(s0)
+|           0x004025a0      move  s1, a0
+|           0x004025a4      jalr  t9
+|           0x004025a8      move  a0, s6
+|           0x004025ac      slti  v1, s1, 2
+|           0x004025b0      addiu a0, v0, 1                            ; argc
+|           0x004025b4      lw    gp, (var_40h)
+|       ,=< 0x004025b8      bnez  v1, 0x402708
+..
+|      .--> 0x004025ec      sw    s0, (var_30h)
+|      :|   0x004025f0      addiu s0, s0, 4
+|      :|   0x004025f4      lw    v1, 0(s0)
+|      :|   0x004025f8      addiu a1, s2, -0x10c0
+|      :|   0x004025fc      lw    t9, -sym.imp.strcmp(gp)              ; [0x435200:4]=0x41eb40 sym.imp.strcmp
+|      :|   0x00402600      move  a0, v1
+|      :|   0x00402604      jalr  t9
+|      :|   0x00402608      sw    v1, (var_2ch)
+|      :|   0x0040260c      lw    gp, (var_40h)
+|      :|   0x00402610      lw    v1, (var_2ch)
+|     ,===< 0x00402614      beqz  v0, 0x402944
+|     |:|   0x00402618      addiu v0, zero, 0x2d
+|     |:|   0x0040261c      lb    a0, 0(v1)
+|    ,====< 0x00402620      bne   a0, v0, 0x40295c
+|    ||:|   0x00402624      addiu a2, v1, 1
+|    ||:|   0x00402628      lb    v0, 1(v1)
+|    ||:|   0x0040262c      move  a1, s3
+|    ||:|   0x00402630      lw    t9, -sym.matches(gp)                 ; [0x4351ac:4]=0x41b2b4 sym.matches
+|    ||:|   0x00402634      xori  v0, v0, 0x2d
+..
+| |||||:|   ; XREFS: CODE 0x00402a64  CODE 0x00402a9c  CODE 0x00402ae0  
+| |||||:|   ; XREFS: CODE 0x00402b40  CODE 0x00402ba8  CODE 0x00402c0c  
+| --------> 0x004026f8      addiu s1, s1, -1
+| |||||:|   0x004026fc      slti  v0, s1, 2
+| |||||`==< 0x00402700      beqz  v0, 0x4025ec
+| ||||| |   0x00402704      nop
+| ||||| `-> 0x00402708      lui   v0, 0x43
+| |||||     0x0040270c      lw    v0, 0x5470(v0)
+| ||||| ,=< 0x00402710      bnez  v0, 0x402850
+| ||||| |   0x00402714      lui   v0, 0x43
+| ||||| |   ; CODE XREF from main @ 0x402954
+| |||||.--> 0x00402718      lui   v1, 0x42
+| |||||:|   ; CODE XREF from main @ 0x402970
+| --------> 0x0040271c      lw    a0, 0x547c(v0)
+| |||||:|   0x00402720      addiu v1, v1, 0x3ac
+| |||||:|   0x00402724      lui   v0, 0x43
+| ========< 0x00402728      beqz  a0, 0x402868
+| |||||:|   0x0040272c      sw    v1, 0x5478(v0)
+| --------> 0x00402730      jal   fcn.00402338
+| |||||:|   0x00402734      nop
+| |||||:|   ; CODE XREF from main @ 0x4029c0
+| --------> 0x00402738      lw    ra, (var_4h)
+| |||||:|   0x0040273c      lw    fp, (var_8h)
+| |||||:|   0x00402740      lw    s7, (var_ch)
+| |||||:|   0x00402744      lw    s6, (var_10h)
+| |||||:|   0x00402748      lw    s5, (var_14h)
+| |||||:|   0x0040274c      lw    s4, (var_18h)
+| |||||:|   0x00402750      lw    s3, (var_1ch)
+| |||||:|   0x00402754      lw    s2, (var_20h)
+| |||||:|   0x00402758      lw    s1, (var_24h)
+| |||||:|   0x0040275c      lw    s0, (var_28h)
+| |||||:|   0x00402760      jr    ra
+| |||||:|   0x00402764      addiu sp, sp, 0x50
+..
+| .-------> 0x0040284c      lui   v0, 0x43
+| :||||:`-> 0x00402850      lui   v1, 0x42
+| :||||:    0x00402854      lw    a0, 0x547c(v0)
+| :||||:    0x00402858      addiu v1, v1, -0xf90
+| :||||:    0x0040285c      lui   v0, 0x43
+| ========< 0x00402860      bnez  a0, 0x402730
+| :||||:    0x00402864      sw    v1, 0x5478(v0)
+| --------> 0x00402868      lw    t9, -sym.rtnl_open(gp)               ; [0x435300:4]=0x41a99c sym.rtnl_open
+| :||||:    0x0040286c      lui   s2, 0x43
+| :||||:    0x00402870      addiu a0, s2, 0x3c60                       ; argc
+| :||||:    0x00402874      jalr  t9
+| :||||:    0x00402878      move  a1, zero
+| :||||:    0x0040287c      lw    gp, (var_40h)
+| :||||:,=< 0x00402880      bltz  v0, 0x402aa4
+| :||||:|   0x00402884      nop
+| :||||:|   0x00402888      lw    t9, -sym.imp.strlen(gp)              ; [0x435174:4]=0x41ec10 sym.imp.strlen
+| :||||:|   0x0040288c      jalr  t9
+| :||||:|   0x00402890      move  a0, s6
+| :||||:|   0x00402894      sltiu v0, v0, 3
+| :||||:|   0x00402898      lw    gp, (var_40h)
+| ========< 0x0040289c      beqz  v0, 0x4029b4
+| :||||:|   0x004028a0      addiu a0, s6, 2                            ; argc
+| :||||:|   0x004028a4      slti  v0, s1, 2
+| ========< 0x004028a8      bnez  v0, 0x402a20
+| :||||:|   0x004028ac      nop
+| :||||:|   0x004028b0      lw    a0, 4(s0)
+| :||||:|   0x004028b4      addiu a1, s1, -1                           ; argv
+| :||||:|   0x004028b8      jal   fcn.00402210
+| :||||:|   0x004028bc      addiu a2, s0, 4
+| :||||:|   0x004028c0      lw    ra, (var_4h)
+| :||||:|   0x004028c4      lw    fp, (var_8h)
+| :||||:|   0x004028c8      lw    s7, (var_ch)
+| :||||:|   0x004028cc      lw    s6, (var_10h)
+| :||||:|   0x004028d0      lw    s5, (var_14h)
+| :||||:|   0x004028d4      lw    s4, (var_18h)
+| :||||:|   0x004028d8      lw    s3, (var_1ch)
+| :||||:|   0x004028dc      lw    s2, (var_20h)
+| :||||:|   0x004028e0      lw    s1, (var_24h)
+| :||||:|   0x004028e4      lw    s0, (var_28h)
+| :||||:|   0x004028e8      jr    ra
+| :||||:|   0x004028ec      addiu sp, sp, 0x50
+..
+| :|||`---> 0x00402944      lui   v0, 0x43
+| :||| :|   0x00402948      lw    v0, 0x5470(v0)
+| ========< 0x0040294c      bnez  v0, 0x40284c
+| :||| :|   0x00402950      addiu s1, s1, -1
+| :||| `==< 0x00402954      b     0x402718
+| :|||  |   0x00402958      lui   v0, 0x43
+| :||`----> 0x0040295c      lui   v0, 0x43
+| :||   |   0x00402960      lw    v0, 0x5470(v0)
+| :||   |   0x00402964      lw    s0, (var_30h)
+| `=======< 0x00402968      bnez  v0, 0x40284c
+|  ||   |   0x0040296c      lui   v0, 0x43
+| ========< 0x00402970      b     0x40271c
+|  ||   |   0x00402974      lui   v1, 0x42
+..
+| --------> 0x004029b4      move  a1, s1
+|  |  :||   0x004029b8      jal   fcn.00402210
+|  |  :||   0x004029bc      move  a2, s0
+| ========< 0x004029c0      b     0x402738
+|  |  :||   0x004029c4      nop
+..
+| --------> 0x00402a20      lw    t9, -sym.rtnl_close(gp)              ; [0x4352c8:4]=0x41a9b8 sym.rtnl_close
+|  |   ||   0x00402a24      jalr  t9
+|  |   ||   0x00402a28      addiu a0, s2, 0x3c60                       ; argc
+| -`...---> 0x00402a2c      jal   fcn.004022e4
+|   :::||   0x00402a30      nop
+|   :::`--> 0x00402a34      lw    t9, -sym.matches(gp)                 ; [0x4351ac:4]=0x41b2b4 sym.matches
+|   ::: |   0x00402a38      lui   a1, 0x42
+|   ::: |   0x00402a3c      move  a0, a2
+|   ::: |   0x00402a40      sw    a2, (var_2ch)
+|   ::: |   0x00402a44      jalr  t9
+|   ::: |   0x00402a48      addiu a1, a1, -0x1044
+|   ::: |   0x00402a4c      lw    gp, (var_40h)
+|   ::: |   0x00402a50      lw    a2, (var_2ch)
+|   :::,==< 0x00402a54      bnez  v0, 0x402a6c
+|   :::||   0x00402a58      lui   v0, 0x43
+|   :::||   0x00402a5c      lw    v1, 0x546c(v0)
+|   :::||   0x00402a60      addiu v1, v1, 1
+| ========< 0x00402a64      b     0x4026f8
+|   :::||   0x00402a68      sw    v1, 0x546c(v0)
+|   :::`--> 0x00402a6c      lw    t9, -sym.matches(gp)                 ; [0x4351ac:4]=0x41b2b4 sym.matches
+|   ::: |   0x00402a70      lui   a1, 0x42
+|   ::: |   0x00402a74      move  a0, a2
+|   ::: |   0x00402a78      sw    a2, (var_2ch)
+|   ::: |   0x00402a7c      jalr  t9
+|   ::: |   0x00402a80      addiu a1, a1, -0x1038
+|   ::: |   0x00402a84      lw    gp, (var_40h)
+|   ::: |   0x00402a88      lw    a2, (var_2ch)
+|   :::,==< 0x00402a8c      bnez  v0, 0x402ab0
+|   :::||   0x00402a90      lui   v0, 0x43
+|   :::||   0x00402a94      lw    v1, 0x5470(v0)
+|   :::||   0x00402a98      addiu v1, v1, 1
+| ========< 0x00402a9c      b     0x4026f8
+|   :::||   0x00402aa0      sw    v1, 0x5470(v0)
+|   :::|`-> 0x00402aa4      lw    t9, -sym.imp.exit(gp)                ; [0x4351a4:4]=0x41ebb0 sym.imp.exit
+|   :::|    0x00402aa8      jalr  t9
+|   :::|    0x00402aac      addiu a0, zero, 1                          ; argc
+|   :::`--> 0x00402ab0      lw    t9, -sym.matches(gp)                 ; [0x4351ac:4]=0x41b2b4 sym.matches
+|   :::     0x00402ab4      lui   a1, 0x42
+|   :::     0x00402ab8      move  a0, a2
+|   :::     0x00402abc      sw    a2, (var_2ch)
+|   :::     0x00402ac0      jalr  t9
+|   :::     0x00402ac4      addiu a1, a1, -0x102c                      ; argv
+|   :::     0x00402ac8      lw    gp, (var_40h)
+|   :::     0x00402acc      lw    a2, (var_2ch)
+|   ::: ,=< 0x00402ad0      bnez  v0, 0x402ae8
+|   ::: |   0x00402ad4      lui   v0, 0x43
+|   ::: |   0x00402ad8      lw    v1, 0x5474(v0)
+|   ::: |   0x00402adc      addiu v1, v1, 1
+| ========< 0x00402ae0      b     0x4026f8
+|   ::: |   0x00402ae4      sw    v1, 0x5474(v0)
+|   ::: `-> 0x00402ae8      lw    t9, -sym.matches(gp)                 ; [0x4351ac:4]=0x41b2b4 sym.matches
+|   :::     0x00402aec      lui   a1, 0x42
+|   :::     0x00402af0      move  a0, a2
+|   :::     0x00402af4      sw    a2, (var_2ch)
+|   :::     0x00402af8      jalr  t9
+|   :::     0x00402afc      addiu a1, a1, -0x1020                      ; argv
+|   :::     0x00402b00      lw    gp, (var_40h)
+|   :::     0x00402b04      lw    a2, (var_2ch)
+|   ::: ,=< 0x00402b08      beqz  v0, 0x402b48
+|   ::: |   0x00402b0c      lui   a0, 0x42
+|   ::: |   0x00402b10      lw    t9, -sym.matches(gp)                 ; [0x4351ac:4]=0x41b2b4 sym.matches
+|   ::: |   0x00402b14      lui   a1, 0x42
+|   ::: |   0x00402b18      move  a0, a2
+|   ::: |   0x00402b1c      sw    a2, (var_2ch)
+|   ::: |   0x00402b20      jalr  t9
+|   ::: |   0x00402b24      addiu a1, a1, -0xff8                       ; argv
+|   ::: |   0x00402b28      lw    gp, (var_40h)
+|   ::: |   0x00402b2c      lw    a2, (var_2ch)
+|   :::,==< 0x00402b30      bnez  v0, 0x402b6c
+|   :::||   0x00402b34      lui   v0, 0x43
+|   :::||   0x00402b38      lw    v1, 0x5480(v0)
+|   :::||   0x00402b3c      addiu v1, v1, 1
+| ========< 0x00402b40      b     0x4026f8
+|   :::||   0x00402b44      sw    v1, 0x5480(v0)
+|   :::|`-> 0x00402b48      lw    t9, -sym.imp.printf(gp)              ; [0x4353ec:4]=0x41e7b0 sym.imp.printf
+|   :::|    0x00402b4c      lui   a1, 0x42
+|   :::|    0x00402b50      addiu a0, a0, -0x1014                      ; argc
+|   :::|    0x00402b54      jalr  t9
+|   :::|    0x00402b58      addiu a1, a1, -0xf20                       ; argv
+|   :::|    0x00402b5c      lw    gp, (var_40h)
+|   :::|    0x00402b60      lw    t9, -sym.imp.exit(gp)                ; [0x4351a4:4]=0x41ebb0 sym.imp.exit
+|   :::|    0x00402b64      jalr  t9
+|   :::|    0x00402b68      move  a0, zero
+|   :::`--> 0x00402b6c      lw    t9, -sym.matches(gp)                 ; [0x4351ac:4]=0x41b2b4 sym.matches
+|   :::     0x00402b70      lui   a1, 0x42
+|   :::     0x00402b74      move  a0, a2
+|   :::     0x00402b78      sw    a2, (var_2ch)
+|   :::     0x00402b7c      jalr  t9
+|   :::     0x00402b80      addiu a1, a1, -0xff0                       ; argv
+|   :::     0x00402b84      lw    gp, (var_40h)
+|   :::     0x00402b88      lw    a2, (var_2ch)
+|   ::: ,=< 0x00402b8c      bnez  v0, 0x402bb0
+|   ::: |   0x00402b90      addiu v0, zero, 1
+|   ::: |   0x00402b94      addiu s1, s1, -1
+|   `=====< 0x00402b98      beq   s1, v0, 0x402a2c
+|    :: |   0x00402b9c      addiu s0, s0, 4
+|    :: |   0x00402ba0      lui   v0, 0x43
+|    :: |   0x00402ba4      lw    v1, 0(s0)
+| ========< 0x00402ba8      b     0x4026f8
+..
+|    :: `-> 0x00402bb0      lw    t9, -sym.matches(gp)                 ; [0x4351ac:4]=0x41b2b4 sym.matches
+|    ::     0x00402bb4      lui   a1, 0x42
+|    ::     0x00402bb8      move  a0, a2
+|    ::     0x00402bbc      sw    a2, (var_2ch)
+|    ::     0x00402bc0      jalr  t9
+|    ::     0x00402bc4      addiu a1, a1, -0xfe8                       ; argv
+|    ::     0x00402bc8      lw    gp, (var_40h)
+|    ::     0x00402bcc      lw    a2, (var_2ch)
+|    :: ,=< 0x00402bd0      bnez  v0, 0x402c14
+|    :: |   0x00402bd4      addiu s1, s1, -1
+|    :: |   0x00402bd8      addiu v0, zero, 1
+|    `====< 0x00402bdc      beq   s1, v0, 0x402a2c
+|     : |   0x00402be0      addiu s0, s0, 4
+|     : |   0x00402be4      addiu a0, sp, 0x18                         ; argc
+|     : |   0x00402be8      lw    t9, -sym.get_unsigned(gp)            ; [0x435178:4]=0x41bec4 sym.get_unsigned
+|     : |   0x00402bec      lw    a1, 0(s0)
+|     : |   0x00402bf0      jalr  t9
+|     : |   0x00402bf4      move  a2, zero
+|     : |   0x00402bf8      lw    gp, (var_40h)
+|     :,==< 0x00402bfc      bnez  v0, 0x402c68
+|     :||   0x00402c00      nop
+|     :||   0x00402c04      lw    v1, (var_38h)
+|     :||   0x00402c08      lw    v0, -obj.rcvbuf(gp)                  ; [0x4351fc:4]=0x433ca0 obj.rcvbuf
+| ========< 0x00402c0c      b     0x4026f8
+|     :||   0x00402c10      sw    v1, 0(v0)
+|     :|`-> 0x00402c14      lw    t9, -sym.matches(gp)                 ; [0x4351ac:4]=0x41b2b4 sym.matches
+|     :|    0x00402c18      lui   a1, 0x42
+|     :|    0x00402c1c      move  a0, a2
+|     :|    0x00402c20      sw    a2, (var_2ch)
+|     :|    0x00402c24      jalr  t9
+|     :|    0x00402c28      addiu a1, a1, -0xfc4                       ; argv
+|     :|    0x00402c2c      lw    gp, (var_40h)
+|     :|    0x00402c30      lw    a2, (var_2ch)
+|     `===< 0x00402c34      beqz  v0, 0x402a2c
+|      |    0x00402c38      nop
+|      |    0x00402c3c      lw    v0, -0x7efc(gp)                      ; [0x4351e4:4]=0
+|      |    0x00402c40      lui   a1, 0x42
+|      |    0x00402c44      lw    t9, -sym.imp.fprintf(gp)             ; [0x4352dc:4]=0x41e940 sym.imp.fprintf
+|      |    0x00402c48      addiu a1, a1, -0xfbc                       ; argv
+|      |    0x00402c4c      lw    a0, 0(v0)
+|      |    ; CODE XREF from main @ 0x402c7c
+|      |.-> 0x00402c50      jalr  t9
+|      |:   0x00402c54      nop
+|      |:   0x00402c58      lw    gp, (var_40h)
+|      |:   0x00402c5c      lw    t9, -sym.imp.exit(gp)                ; [0x4351a4:4]=0x41ebb0 sym.imp.exit
+|      |:   0x00402c60      jalr  t9
+|      |:   0x00402c64      addiu a0, zero, -1                         ; argc
+|      `--> 0x00402c68      lw    v0, -0x7efc(gp)                      ; [0x4351e4:4]=0
+|       :   0x00402c6c      lui   a1, 0x42
+|       :   0x00402c70      lw    a2, 0(s0)
+|       :   0x00402c74      lw    a0, 0(v0)
+|       :   0x00402c78      lw    t9, -sym.imp.fprintf(gp)             ; [0x4352dc:4]=0x41e940 sym.imp.fprintf
+\       `=< 0x00402c7c      b     0x402c50
 EOF
 RUN

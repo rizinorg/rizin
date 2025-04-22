@@ -128,31 +128,30 @@ static RzBinInfo *info(RzBinFile *bf) {
 	rz_return_val_if_fail(bf, NULL);
 	RzBinInfo *bi = RZ_NEW0(RzBinInfo);
 	if (bi) {
-		bi->file = strdup(bf->file);
-		bi->type = strdup("ROM");
-		bi->machine = strdup("ATmel");
-		bi->os = strdup("avr");
+		bi->file = rz_str_dup(bf->file);
+		bi->type = rz_str_dup("ROM");
+		bi->machine = rz_str_dup("ATmel");
+		bi->os = rz_str_dup("avr");
 		bi->has_va = 0; // 1;
-		bi->arch = strdup("avr");
+		bi->arch = rz_str_dup("avr");
 		bi->bits = 8;
 	}
 	return bi;
 }
 
-static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
-	RzList *ret;
+static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+	RzPVector *ret;
 	RzBinAddr *ptr = NULL;
 	if (tmp_entry == UT64_MAX) {
 		return false;
 	}
-	if (!(ret = rz_list_new())) {
+	if (!(ret = rz_pvector_new(free))) {
 		return NULL;
 	}
-	ret->free = free;
 	if ((ptr = RZ_NEW0(RzBinAddr))) {
 		ut64 addr = tmp_entry;
 		ptr->vaddr = ptr->paddr = addr;
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 	return ret;
 }
@@ -160,7 +159,7 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 static void addsym(RzPVector /*<RzBinSymbol *>*/ *ret, const char *name, ut64 addr) {
 	RzBinSymbol *ptr = RZ_NEW0(RzBinSymbol);
 	if (ptr) {
-		ptr->name = strdup(name ? name : "");
+		ptr->name = rz_str_dup(name ? name : "");
 		ptr->paddr = ptr->vaddr = addr;
 		ptr->size = 0;
 		ptr->ordinal = 0;

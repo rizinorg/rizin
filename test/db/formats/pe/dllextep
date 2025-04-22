@@ -1,8 +1,7 @@
 NAME=PE: corkami dllextep.dll - open
 FILE=bins/pe/dllextep.dll
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=PE: corkami dllextep.dll - entrypoint

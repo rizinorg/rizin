@@ -36,6 +36,7 @@ RZ_API const ut8 *rz_mem_mem_aligned(const ut8 *haystack, int hlen, const ut8 *n
 RZ_API int rz_mem_count(const ut8 **addr);
 RZ_API bool rz_mem_is_printable(const ut8 *a, int la);
 RZ_API bool rz_mem_is_zero(const ut8 *b, int l);
+RZ_API ut64 rz_mem_align_padding(const ut64 address, ut64 alignment);
 
 #ifdef __cplusplus
 }

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2021 08A <08A@riseup.net>
+// SPDX-FileCopyrightText: 2021 08A <dev@08a.re>
 // SPDX-FileCopyrightText: 2008-2020 nibble <nibble.ds@gmail.com>
 // SPDX-FileCopyrightText: 2008-2020 pancake <pancake@nopcode.org>
 // SPDX-FileCopyrightText: 2008-2020 alvaro_fe <alvaro.felipe91@gmail.com>
@@ -24,7 +24,7 @@ ut64 Elf_(rz_bin_elf_get_sp_val)(RZ_NONNULL ELFOBJ *bin) {
 	RzVector *notes;
 	rz_bin_elf_foreach_notes_segment(bin, notes) {
 		RzBinElfNote *tmp;
-		rz_vector_foreach(notes, tmp) {
+		rz_vector_foreach (notes, tmp) {
 			if (tmp->type != NT_PRSTATUS) {
 				continue;
 			}

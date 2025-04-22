@@ -1,8 +1,7 @@
 NAME=yank-segfault
 FILE==
 CMDS=y -2
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=yank-and-paste

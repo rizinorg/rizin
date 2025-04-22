@@ -28,7 +28,7 @@ static char *get_type_data(Sdb *sdb, const char *type, const char *sname) {
 	if (!key) {
 		return NULL;
 	}
-	char *members = sdb_get(sdb, key, NULL);
+	char *members = sdb_get(sdb, key);
 	free(key);
 	return members;
 }
@@ -46,7 +46,7 @@ static TypeFormatPair *get_enum_type(Sdb *sdb, const char *sname) {
 		goto error;
 	}
 
-	base_type->name = strdup(sname);
+	base_type->name = rz_str_dup(sname);
 	RzVector *cases = &base_type->enum_data.cases;
 	if (!rz_vector_reserve(cases, (size_t)sdb_alen(members))) {
 		goto error;
@@ -58,14 +58,14 @@ static TypeFormatPair *get_enum_type(Sdb *sdb, const char *sname) {
 		if (!val_key) {
 			goto error;
 		}
-		const char *value = sdb_const_get(sdb, val_key, NULL);
+		const char *value = sdb_const_get(sdb, val_key);
 		free(val_key);
 
 		if (!value) { // if nothing is found, ret NULL
 			goto error;
 		}
 
-		RzTypeEnumCase cas = { .name = strdup(cur), .val = strtol(value, NULL, 16) };
+		RzTypeEnumCase cas = { .name = rz_str_dup(cur), .val = strtol(value, NULL, 16) };
 
 		void *element = rz_vector_push(cases, &cas); // returns null if no space available
 		if (!element) {
@@ -77,7 +77,7 @@ static TypeFormatPair *get_enum_type(Sdb *sdb, const char *sname) {
 	free(members);
 
 	RzStrBuf key;
-	char *format = sdb_get(sdb, rz_strbuf_initf(&key, "type.%s", sname), 0);
+	char *format = sdb_get(sdb, rz_strbuf_initf(&key, "type.%s", sname));
 	rz_strbuf_fini(&key);
 
 	TypeFormatPair *tpair = RZ_NEW0(TypeFormatPair);
@@ -99,7 +99,7 @@ static TypeFormatPair *get_struct_type(RzTypeDB *typedb, Sdb *sdb, const char *s
 	if (!base_type) {
 		return NULL;
 	}
-	base_type->name = strdup(sname);
+	base_type->name = rz_str_dup(sname);
 
 	char *sdb_members = get_type_data(sdb, "struct", sname);
 	if (sdb_members) {
@@ -114,7 +114,7 @@ static TypeFormatPair *get_struct_type(RzTypeDB *typedb, Sdb *sdb, const char *s
 			if (!type_key) {
 				goto error;
 			}
-			char *values = sdb_get(sdb, type_key, NULL);
+			char *values = sdb_get(sdb, type_key);
 			free(type_key);
 
 			if (!values) {
@@ -136,7 +136,7 @@ static TypeFormatPair *get_struct_type(RzTypeDB *typedb, Sdb *sdb, const char *s
 			}
 
 			RzTypeStructMember memb = {
-				.name = strdup(cur),
+				.name = rz_str_dup(cur),
 				.type = ttype,
 				.offset = strtol(offset, NULL, 10)
 			};
@@ -154,12 +154,12 @@ static TypeFormatPair *get_struct_type(RzTypeDB *typedb, Sdb *sdb, const char *s
 	}
 
 	RzStrBuf key;
-	const char *format = sdb_get(sdb, rz_strbuf_initf(&key, "type.%s", sname), 0);
+	const char *format = sdb_get(sdb, rz_strbuf_initf(&key, "type.%s", sname));
 	rz_strbuf_fini(&key);
 
 	TypeFormatPair *tpair = RZ_NEW0(TypeFormatPair);
 	tpair->type = base_type;
-	tpair->format = format ? strdup(format) : NULL;
+	tpair->format = rz_str_dup(format);
 
 	return tpair;
 
@@ -177,7 +177,7 @@ static TypeFormatPair *get_union_type(RzTypeDB *typedb, Sdb *sdb, const char *sn
 		return NULL;
 	}
 
-	base_type->name = strdup(sname);
+	base_type->name = rz_str_dup(sname);
 
 	char *sdb_members = get_type_data(sdb, "union", sname);
 	if (sdb_members) {
@@ -192,7 +192,7 @@ static TypeFormatPair *get_union_type(RzTypeDB *typedb, Sdb *sdb, const char *sn
 			if (!type_key) {
 				goto error;
 			}
-			char *values = sdb_get(sdb, type_key, NULL);
+			char *values = sdb_get(sdb, type_key);
 			free(type_key);
 
 			if (!values) {
@@ -207,7 +207,7 @@ static TypeFormatPair *get_union_type(RzTypeDB *typedb, Sdb *sdb, const char *sn
 			}
 
 			RzTypeUnionMember memb = {
-				.name = strdup(cur),
+				.name = rz_str_dup(cur),
 				.type = ttype
 			};
 			free(values);
@@ -223,12 +223,12 @@ static TypeFormatPair *get_union_type(RzTypeDB *typedb, Sdb *sdb, const char *sn
 	}
 
 	RzStrBuf key;
-	const char *format = sdb_get(sdb, rz_strbuf_initf(&key, "type.%s", sname), 0);
+	const char *format = sdb_get(sdb, rz_strbuf_initf(&key, "type.%s", sname));
 	rz_strbuf_fini(&key);
 
 	TypeFormatPair *tpair = RZ_NEW0(TypeFormatPair);
 	tpair->type = base_type;
-	tpair->format = format ? strdup(format) : NULL;
+	tpair->format = rz_str_dup(format);
 
 	return tpair;
 
@@ -246,7 +246,7 @@ static TypeFormatPair *get_typedef_type(RzTypeDB *typedb, Sdb *sdb, const char *
 		return NULL;
 	}
 
-	base_type->name = strdup(sname);
+	base_type->name = rz_str_dup(sname);
 	char *type = get_type_data(sdb, "typedef", sname);
 	char *error_msg = NULL;
 	RzType *ttype = rz_type_parse_string_single(typedb->parser, type, &error_msg);
@@ -261,7 +261,7 @@ static TypeFormatPair *get_typedef_type(RzTypeDB *typedb, Sdb *sdb, const char *
 	}
 
 	RzStrBuf key;
-	char *format = sdb_get(sdb, rz_strbuf_initf(&key, "type.%s", sname), 0);
+	char *format = sdb_get(sdb, rz_strbuf_initf(&key, "type.%s", sname));
 	rz_strbuf_fini(&key);
 
 	TypeFormatPair *tpair = RZ_NEW0(TypeFormatPair);
@@ -289,26 +289,26 @@ static TypeFormatPair *get_atomic_type(RzTypeDB *typedb, Sdb *sdb, const char *s
 		goto error;
 	}
 	ttype->kind = RZ_TYPE_KIND_IDENTIFIER;
-	ttype->identifier.name = strdup(sname);
+	ttype->identifier.name = rz_str_dup(sname);
 	ttype->identifier.is_const = false; // We don't preload const types by default
 	ttype->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED;
 	base_type->type = ttype;
 
-	base_type->name = strdup(sname);
+	base_type->name = rz_str_dup(sname);
 	RzStrBuf key;
-	base_type->size = sdb_num_get(sdb, rz_strbuf_initf(&key, "type.%s.size", sname), 0);
+	base_type->size = sdb_num_get(sdb, rz_strbuf_initf(&key, "type.%s.size", sname));
 	RzTypeTypeclass typeclass = RZ_TYPE_TYPECLASS_NONE;
-	const char *tclass = sdb_const_get(sdb, rz_strbuf_setf(&key, "type.%s.typeclass", sname), 0);
+	const char *tclass = sdb_const_get(sdb, rz_strbuf_setf(&key, "type.%s.typeclass", sname));
 	if (tclass) {
 		typeclass = rz_type_typeclass_from_string(tclass);
 	}
 	set_base_type_typeclass(base_type, typeclass);
-	const char *format = sdb_const_get(sdb, rz_strbuf_setf(&key, "type.%s", sname), 0);
+	const char *format = sdb_const_get(sdb, rz_strbuf_setf(&key, "type.%s", sname));
 	rz_strbuf_fini(&key);
 
 	TypeFormatPair *tpair = RZ_NEW0(TypeFormatPair);
 	tpair->type = base_type;
-	tpair->format = format ? strdup(format) : NULL;
+	tpair->format = rz_str_dup(format);
 
 	return tpair;
 
@@ -319,10 +319,10 @@ error:
 
 bool sdb_load_base_types(RzTypeDB *typedb, Sdb *sdb) {
 	rz_return_val_if_fail(typedb && sdb, false);
-	SdbKv *kv;
-	SdbListIter *iter;
-	SdbList *l = sdb_foreach_list(sdb, false);
-	ls_foreach (l, iter, kv) {
+	void **iter;
+	RzPVector *items = sdb_get_items(sdb, false);
+	rz_pvector_foreach (items, iter) {
+		SdbKv *kv = *iter;
 		TypeFormatPair *tpair = NULL;
 		if (!strcmp(sdbkv_value(kv), "struct")) {
 			tpair = get_struct_type(typedb, sdb, sdbkv_key(kv));
@@ -336,22 +336,22 @@ bool sdb_load_base_types(RzTypeDB *typedb, Sdb *sdb) {
 			tpair = get_atomic_type(typedb, sdb, sdbkv_key(kv));
 		}
 		if (tpair && tpair->type) {
-			ht_pp_update(typedb->types, tpair->type->name, tpair->type);
+			ht_sp_update(typedb->types, tpair->type->name, tpair->type);
 			// If the SDB provided the preferred type format then we store it
 			char *format = tpair->format ? tpair->format : NULL;
 			// Format is not always defined, e.g. for types like "void" or anonymous types
 			if (format) {
-				ht_pp_update(typedb->formats, tpair->type->name, format);
+				ht_ss_update(typedb->formats, tpair->type->name, format);
 				RZ_LOG_DEBUG("inserting the \"%s\" type & format: \"%s\"\n", tpair->type->name, format);
 			} else {
-				ht_pp_delete(typedb->formats, tpair->type->name);
+				ht_ss_delete(typedb->formats, tpair->type->name);
 			}
 		} else if (tpair) {
 			free(tpair->format);
 		}
 		free(tpair);
 	}
-	ls_free(l);
+	rz_pvector_free(items);
 	return true;
 }
 
@@ -370,7 +370,7 @@ static void save_struct(const RzTypeDB *typedb, Sdb *sdb, const RzBaseType *type
 	*/
 	char *sname = type->name;
 	// name=struct
-	sdb_set(sdb, sname, kind, 0);
+	sdb_set(sdb, sname, kind);
 
 	RzStrBuf arglist;
 	RzStrBuf param_key;
@@ -381,13 +381,13 @@ static void save_struct(const RzTypeDB *typedb, Sdb *sdb, const RzBaseType *type
 
 	int i = 0;
 	RzTypeStructMember *member;
-	rz_vector_foreach(&type->struct_data.members, member) {
+	rz_vector_foreach (&type->struct_data.members, member) {
 		// struct.name.param=type,offset,argsize
 		char *member_sname = rz_str_sanitize_sdb_key(member->name);
 		char *member_type = rz_type_as_string(typedb, member->type);
 		sdb_set(sdb,
 			rz_strbuf_setf(&param_key, "%s.%s.%s", kind, sname, member_sname),
-			rz_strbuf_setf(&param_val, "%s,%zu,%u", member_type, member->offset, 0), 0ULL);
+			rz_strbuf_setf(&param_val, "%s,%zu,%u", member_type, member->offset, 0));
 		free(member_type);
 		free(member_sname);
 
@@ -395,7 +395,7 @@ static void save_struct(const RzTypeDB *typedb, Sdb *sdb, const RzBaseType *type
 	}
 	// struct.name=param1,param2,paramN
 	char *key = rz_str_newf("%s.%s", kind, sname);
-	sdb_set(sdb, key, rz_strbuf_get(&arglist), 0);
+	sdb_set(sdb, key, rz_strbuf_get(&arglist));
 	free(key);
 
 	rz_strbuf_fini(&arglist);
@@ -418,7 +418,7 @@ static void save_union(const RzTypeDB *typedb, Sdb *sdb, const RzBaseType *type)
 	*/
 	char *sname = type->name;
 	// name=union
-	sdb_set(sdb, sname, kind, 0);
+	sdb_set(sdb, sname, kind);
 
 	RzStrBuf arglist;
 	RzStrBuf param_key;
@@ -429,13 +429,13 @@ static void save_union(const RzTypeDB *typedb, Sdb *sdb, const RzBaseType *type)
 
 	int i = 0;
 	RzTypeUnionMember *member;
-	rz_vector_foreach(&type->union_data.members, member) {
+	rz_vector_foreach (&type->union_data.members, member) {
 		// union.name.arg1=type,offset,argsize
 		char *member_sname = rz_str_sanitize_sdb_key(member->name);
 		char *member_type = rz_type_as_string(typedb, member->type);
 		sdb_set(sdb,
 			rz_strbuf_setf(&param_key, "%s.%s.%s", kind, sname, member_sname),
-			rz_strbuf_setf(&param_val, "%s,%zu,%u", member_type, member->offset, 0), 0ULL);
+			rz_strbuf_setf(&param_val, "%s,%zu,%u", member_type, member->offset, 0));
 		free(member_type);
 		free(member_sname);
 
@@ -443,7 +443,7 @@ static void save_union(const RzTypeDB *typedb, Sdb *sdb, const RzBaseType *type)
 	}
 	// union.name=arg1,arg2,argN
 	char *key = rz_str_newf("%s.%s", kind, sname);
-	sdb_set(sdb, key, rz_strbuf_get(&arglist), 0);
+	sdb_set(sdb, key, rz_strbuf_get(&arglist));
 	free(key);
 
 	rz_strbuf_fini(&arglist);
@@ -467,7 +467,7 @@ static void save_enum(const RzTypeDB *typedb, Sdb *sdb, const RzBaseType *type) 
 		enum.MyEnum.argN=0x3
 	*/
 	char *sname = type->name;
-	sdb_set(sdb, sname, "enum", 0);
+	sdb_set(sdb, sname, "enum");
 
 	RzStrBuf arglist;
 	RzStrBuf param_key;
@@ -478,23 +478,23 @@ static void save_enum(const RzTypeDB *typedb, Sdb *sdb, const RzBaseType *type) 
 
 	int i = 0;
 	RzTypeEnumCase *cas;
-	rz_vector_foreach(&type->enum_data.cases, cas) {
+	rz_vector_foreach (&type->enum_data.cases, cas) {
 		// enum.name.arg1=type,offset,???
 		char *case_sname = rz_str_sanitize_sdb_key(cas->name);
 		sdb_set(sdb,
 			rz_strbuf_setf(&param_key, "enum.%s.%s", sname, case_sname),
-			rz_strbuf_setf(&param_val, "0x%" PFMT64x "", cas->val), 0);
+			rz_strbuf_setf(&param_val, "0x%" PFMT64x "", cas->val));
 
 		sdb_set(sdb,
 			rz_strbuf_setf(&param_key, "enum.%s.0x%" PFMT64x "", sname, cas->val),
-			case_sname, 0);
+			case_sname);
 		free(case_sname);
 
 		rz_strbuf_appendf(&arglist, (i++ == 0) ? "%s" : ",%s", cas->name);
 	}
 	// enum.name=arg1,arg2,argN
 	char *key = rz_str_newf("enum.%s", sname);
-	sdb_set(sdb, key, rz_strbuf_get(&arglist), 0);
+	sdb_set(sdb, key, rz_strbuf_get(&arglist));
 	free(key);
 
 	rz_strbuf_fini(&arglist);
@@ -513,7 +513,7 @@ static void save_atomic_type(const RzTypeDB *typedb, Sdb *sdb, const RzBaseType 
 		type.char.typeclass=Signed Integral
 	*/
 	char *sname = type->name;
-	sdb_set(sdb, sname, "type", 0);
+	sdb_set(sdb, sname, "type");
 
 	RzStrBuf key;
 	RzStrBuf val;
@@ -522,15 +522,15 @@ static void save_atomic_type(const RzTypeDB *typedb, Sdb *sdb, const RzBaseType 
 
 	sdb_set(sdb,
 		rz_strbuf_setf(&key, "type.%s.size", sname),
-		rz_strbuf_setf(&val, "%" PFMT64u "", type->size), 0);
+		rz_strbuf_setf(&val, "%" PFMT64u "", type->size));
 	sdb_set(sdb,
 		rz_strbuf_setf(&key, "type.%s.typeclass", sname),
-		rz_type_typeclass_as_string(get_base_type_typeclass(type)), 0);
+		rz_type_typeclass_as_string(get_base_type_typeclass(type)));
 
 	const char *typefmt = rz_type_db_format_get(typedb, sname);
 	sdb_set(sdb,
 		rz_strbuf_setf(&key, "type.%s", sname),
-		typefmt, 0);
+		typefmt);
 
 	rz_strbuf_fini(&key);
 	rz_strbuf_fini(&val);
@@ -546,7 +546,7 @@ static void save_typedef(const RzTypeDB *typedb, Sdb *sdb, const RzBaseType *typ
 		typedef.byte=char
 	*/
 	char *sname = type->name;
-	sdb_set(sdb, sname, "typedef", 0);
+	sdb_set(sdb, sname, "typedef");
 
 	RzStrBuf key;
 	RzStrBuf val;
@@ -556,7 +556,7 @@ static void save_typedef(const RzTypeDB *typedb, Sdb *sdb, const RzBaseType *typ
 	char *ttype = rz_type_as_string(typedb, type->type);
 	sdb_set(sdb,
 		rz_strbuf_setf(&key, "typedef.%s", sname),
-		rz_strbuf_setf(&val, "%s", ttype), 0);
+		rz_strbuf_setf(&val, "%s", ttype));
 
 	free(ttype);
 
@@ -602,7 +602,7 @@ struct typedb_sdb {
 	Sdb *sdb;
 };
 
-static bool export_base_type_cb(void *user, const void *k, const void *v) {
+static bool export_base_type_cb(void *user, RZ_UNUSED const char *k, const void *v) {
 	struct typedb_sdb *s = user;
 	RzBaseType *btype = (RzBaseType *)v;
 	sdb_save_base_type(s->typedb, s->sdb, btype);
@@ -611,7 +611,7 @@ static bool export_base_type_cb(void *user, const void *k, const void *v) {
 
 static bool types_export_sdb(RZ_NONNULL Sdb *db, RZ_NONNULL const RzTypeDB *typedb) {
 	struct typedb_sdb tdb = { typedb, db };
-	ht_pp_foreach(typedb->types, export_base_type_cb, &tdb);
+	ht_sp_foreach(typedb->types, export_base_type_cb, &tdb);
 	return true;
 }
 

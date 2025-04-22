@@ -8,8 +8,8 @@
  *        and stores it into `value`
  */
 RZ_IPI bool RzBinDwarfAttr_parse(
-	RzBinEndianReader *reader, RzBinDwarfAttr *attr, AttrOption *opt) {
-	rz_return_val_if_fail(opt && opt->encoding && attr && reader && reader->buffer, false);
+	RzBinEndianReader *R, RzBinDwarfAttr *attr, AttrOption *opt) {
+	rz_return_val_if_fail(opt && opt->encoding && attr && R, false);
 	ut64 unit_offset = opt->unit_offset;
 	attr->at = opt->at;
 	attr->form = opt->form;
@@ -21,7 +21,7 @@ RZ_IPI bool RzBinDwarfAttr_parse(
 	switch (attr->form) {
 	case DW_FORM_addr:
 		value->kind = RzBinDwarfAttr_Addr;
-		RET_FALSE_IF_FAIL(read_address(reader, &value->u64, address_size));
+		RET_FALSE_IF_FAIL(R_read_address(R, &value->u64, address_size));
 		break;
 	case DW_FORM_data1:
 		value->kind = RzBinDwarfAttr_UConstant;
@@ -41,12 +41,8 @@ RZ_IPI bool RzBinDwarfAttr_parse(
 		break;
 	case DW_FORM_data16:
 		value->kind = RzBinDwarfAttr_UConstant;
-		if (reader->big_endian) {
-			U_OR_RET_FALSE(64, value->u128.High);
-			U_OR_RET_FALSE(64, value->u128.Low);
-		} else {
-			U_OR_RET_FALSE(64, value->u128.Low);
-			U_OR_RET_FALSE(64, value->u128.High);
+		if (!R_read128(R, &value->u128)) {
+			return false;
 		}
 		break;
 	case DW_FORM_sdata:
@@ -59,27 +55,27 @@ RZ_IPI bool RzBinDwarfAttr_parse(
 		break;
 	case DW_FORM_string:
 		value->kind = RzBinDwarfAttr_String;
-		value->string = read_string(reader);
+		RET_FALSE_IF_FAIL(R_read_cstring(R, &value->string));
 		break;
 	case DW_FORM_block1:
 		value->kind = RzBinDwarfAttr_Block;
 		U8_OR_RET_FALSE(value->block.length);
-		RET_FALSE_IF_FAIL(read_block(reader, &value->block));
+		RET_FALSE_IF_FAIL(R_read_block(R, &value->block));
 		break;
 	case DW_FORM_block2:
 		value->kind = RzBinDwarfAttr_Block;
 		U_OR_RET_FALSE(16, value->block.length);
-		RET_FALSE_IF_FAIL(read_block(reader, &value->block));
+		RET_FALSE_IF_FAIL(R_read_block(R, &value->block));
 		break;
 	case DW_FORM_block4:
 		value->kind = RzBinDwarfAttr_Block;
 		U_OR_RET_FALSE(32, value->block.length);
-		RET_FALSE_IF_FAIL(read_block(reader, &value->block));
+		RET_FALSE_IF_FAIL(R_read_block(R, &value->block));
 		break;
 	case DW_FORM_block: // variable length ULEB128
 		value->kind = RzBinDwarfAttr_Block;
 		ULE128_OR_RET_FALSE(value->block.length);
-		RET_FALSE_IF_FAIL(read_block(reader, &value->block));
+		RET_FALSE_IF_FAIL(R_read_block(R, &value->block));
 		break;
 	case DW_FORM_flag:
 		value->kind = RzBinDwarfAttr_Flag;
@@ -88,15 +84,15 @@ RZ_IPI bool RzBinDwarfAttr_parse(
 		// offset in .debug_str
 	case DW_FORM_strp:
 		value->kind = RzBinDwarfAttr_StrRef;
-		RET_FALSE_IF_FAIL(read_offset(reader, &value->u64, is_64bit));
+		RET_FALSE_IF_FAIL(R_read_offset(R, &value->u64, is_64bit));
 		break;
 		// offset in .debug_info
 	case DW_FORM_ref_addr:
 		value->kind = RzBinDwarfAttr_Reference;
 		if (opt->encoding->version == 2) {
-			RET_FALSE_IF_FAIL(read_address(reader, &value->u64, opt->encoding->address_size));
+			RET_FALSE_IF_FAIL(R_read_address(R, &value->u64, opt->encoding->address_size));
 		} else {
-			RET_FALSE_IF_FAIL(read_offset(reader, &value->u64, is_64bit));
+			RET_FALSE_IF_FAIL(R_read_offset(R, &value->u64, is_64bit));
 		}
 		break;
 		// This type of u64 is an offset from the first byte of the compilation
@@ -107,7 +103,7 @@ RZ_IPI bool RzBinDwarfAttr_parse(
 	case DW_FORM_ref8: {
 		value->kind = RzBinDwarfAttr_UnitRef;
 		static const int index_sizes[] = { 1, 2, 4, 8 };
-		RET_FALSE_IF_FAIL(read_address(reader, &value->u64, index_sizes[attr->form - DW_FORM_ref1]));
+		RET_FALSE_IF_FAIL(R_read_address(R, &value->u64, index_sizes[attr->form - DW_FORM_ref1]));
 		value->u64 += unit_offset;
 		break;
 	}
@@ -119,12 +115,12 @@ RZ_IPI bool RzBinDwarfAttr_parse(
 		// offset in a section other than .debug_info or .debug_str
 	case DW_FORM_sec_offset:
 		value->kind = RzBinDwarfAttr_SecOffset;
-		RET_FALSE_IF_FAIL(read_offset(reader, &value->u64, is_64bit));
+		RET_FALSE_IF_FAIL(R_read_offset(R, &value->u64, is_64bit));
 		break;
 	case DW_FORM_exprloc:
 		value->kind = RzBinDwarfAttr_Block;
 		ULE128_OR_RET_FALSE(value->block.length);
-		RET_FALSE_IF_FAIL(read_block(reader, &value->block));
+		RET_FALSE_IF_FAIL(R_read_block(R, &value->block));
 		break;
 		// this means that the flag is present, nothing is read
 	case DW_FORM_flag_present:
@@ -138,7 +134,7 @@ RZ_IPI bool RzBinDwarfAttr_parse(
 	/// offset into .debug_str_offsets section
 	case DW_FORM_strx:
 		value->kind = RzBinDwarfAttr_StrOffsetIndex;
-		RET_FALSE_IF_FAIL(read_offset(reader, &value->u64, is_64bit));
+		ULE128_OR_RET_FALSE(value->u64);
 		break;
 	case DW_FORM_strx1:
 		value->kind = RzBinDwarfAttr_StrOffsetIndex;
@@ -150,9 +146,7 @@ RZ_IPI bool RzBinDwarfAttr_parse(
 		break;
 	case DW_FORM_strx3:
 		value->kind = RzBinDwarfAttr_StrOffsetIndex;
-		// TODO: DW_FORM_strx3
-		rz_buf_seek(reader->buffer, 3, RZ_BUF_CUR);
-		RZ_LOG_ERROR("TODO: DW_FORM_strx3\n");
+		READ24_OR(ut64, value->u64, return false);
 		break;
 	case DW_FORM_strx4:
 		value->kind = RzBinDwarfAttr_StrOffsetIndex;
@@ -178,10 +172,8 @@ RZ_IPI bool RzBinDwarfAttr_parse(
 		U_OR_RET_FALSE(16, value->u64);
 		break;
 	case DW_FORM_addrx3:
-		// TODO: .DW_FORM_addrx3
 		value->kind = RzBinDwarfAttr_AddrIndex;
-		rz_buf_seek(reader->buffer, 3, RZ_BUF_CUR);
-		RZ_LOG_ERROR("TODO: DW_FORM_addrx3\n");
+		READ24_OR(ut64, value->u64, return false);
 		break;
 	case DW_FORM_addrx4:
 		value->kind = RzBinDwarfAttr_AddrIndex;
@@ -189,11 +181,11 @@ RZ_IPI bool RzBinDwarfAttr_parse(
 		break;
 	case DW_FORM_line_ptr: // offset in a section .debug_line_str
 		value->kind = RzBinDwarfAttr_LineStrRef;
-		RET_FALSE_IF_FAIL(read_offset(reader, &value->u64, is_64bit));
+		RET_FALSE_IF_FAIL(R_read_offset(R, &value->u64, is_64bit));
 		break;
 	case DW_FORM_strp_sup:
 		value->kind = RzBinDwarfAttr_StrRef;
-		RET_FALSE_IF_FAIL(read_offset(reader, &value->u64, is_64bit));
+		RET_FALSE_IF_FAIL(R_read_offset(R, &value->u64, is_64bit));
 		break;
 		// offset in the supplementary object file
 	case DW_FORM_ref_sup4:
@@ -222,26 +214,10 @@ RZ_IPI bool RzBinDwarfAttr_parse(
 	return true;
 }
 
-RZ_IPI void RzBinDwarfAttr_fini(RzBinDwarfAttr *attr) {
-	if (!attr) {
-		return;
-	}
-	switch (attr->value.kind) {
-	case RzBinDwarfAttr_Block:
-		RzBinDwarfBlock_fini(&attr->value.block);
-		break;
-	case RzBinDwarfAttr_String:
-		free(attr->value.string);
-		break;
-	default:
-		break;
-	};
-}
-
 /**
  * \brief Safely get the string from an RzBinDwarfAttrValue if it has one.
  */
-RZ_API RZ_OWN char *rz_bin_dwarf_attr_string(
+RZ_API const char *rz_bin_dwarf_attr_string(
 	RZ_BORROW RZ_NONNULL const RzBinDwarfAttr *attr,
 	RZ_BORROW RZ_NULLABLE const RzBinDWARF *dw,
 	ut64 str_offsets_base) {
@@ -256,7 +232,132 @@ RZ_API RZ_OWN char *rz_bin_dwarf_attr_string(
 	} else if (v->kind == RzBinDwarfAttr_StrOffsetIndex && dw) {
 		orig = rz_bin_dwarf_str_offsets_get(dw->str, dw->str_offsets, str_offsets_base, v->u64);
 	} else if (v->kind == RzBinDwarfAttr_LineStrRef && dw) {
-		orig = rz_bin_dwarf_line_str_get(dw->line_str, v->u64);
+		orig = rz_bin_dwarf_line_str_get(rz_bin_dwarf_line_str(dw), v->u64);
 	}
-	return str_escape_copy(orig);
+	return orig;
+}
+
+RZ_API RZ_OWN char *rz_bin_dwarf_attr_string_escaped(
+	RZ_BORROW RZ_NONNULL const RzBinDwarfAttr *attr,
+	RZ_BORROW RZ_NULLABLE const RzBinDWARF *dw,
+	ut64 str_offsets_base) {
+	const char *str_ref = rz_bin_dwarf_attr_string(attr, dw, str_offsets_base);
+	if (!str_ref) {
+		return NULL;
+	}
+	return str_escape_utf8_copy(str_ref);
+}
+
+RZ_API void rz_bin_dwarf_attr_dump(
+	RZ_NONNULL RZ_BORROW const RzBinDwarfAttr *attr,
+	RZ_BORROW RZ_NULLABLE RzBinDWARF *dw,
+	ut64 str_offsets_base,
+	RZ_NONNULL RZ_BORROW RzStrBuf *sb) {
+	rz_return_if_fail(attr && sb);
+
+	const char *attr_name = rz_bin_dwarf_attr(attr->at);
+	if (attr_name) {
+		rz_strbuf_appendf(sb, "\t%s ", attr_name);
+	} else {
+		rz_strbuf_appendf(sb, "\tAT_unk [0x%-3" PFMT32x "]\t ", attr->at);
+	}
+	rz_strbuf_appendf(sb, "[%s]\t: ", rz_str_get_null(rz_bin_dwarf_form(attr->form)));
+
+	switch (attr->at) {
+	case DW_AT_language:
+		rz_strbuf_append(sb, rz_str_get_null(rz_bin_dwarf_lang(attr->value.u64)));
+		rz_strbuf_append(sb, ", raw: ");
+		break;
+	case DW_AT_encoding:
+		rz_strbuf_append(sb, rz_str_get_null(rz_bin_dwarf_ate(attr->value.u64)));
+		rz_strbuf_append(sb, ", raw: ");
+		break;
+	default: break;
+	}
+
+	switch (attr->form) {
+	case DW_FORM_block:
+	case DW_FORM_block1:
+	case DW_FORM_block2:
+	case DW_FORM_block4:
+	case DW_FORM_exprloc:
+		rz_strbuf_appendf(sb, "%" PFMT64u " byte block:",
+			rz_bin_dwarf_attr_block(attr)->length);
+		rz_bin_dwarf_block_dump(rz_bin_dwarf_attr_block(attr), sb);
+		break;
+	case DW_FORM_data1:
+	case DW_FORM_data2:
+	case DW_FORM_data4:
+	case DW_FORM_data8:
+	case DW_FORM_data16:
+		rz_strbuf_appendf(sb, "%" PFMT64u "", rz_bin_dwarf_attr_udata(attr));
+		break;
+	case DW_FORM_flag:
+		rz_strbuf_appendf(sb, "%u", rz_bin_dwarf_attr_flag(attr));
+		break;
+	case DW_FORM_sdata:
+		rz_strbuf_appendf(sb, "%" PFMT64d "", rz_bin_dwarf_attr_sdata(attr));
+		break;
+	case DW_FORM_udata:
+		rz_strbuf_appendf(sb, "%" PFMT64u "", rz_bin_dwarf_attr_udata(attr));
+		break;
+	case DW_FORM_ref_addr:
+	case DW_FORM_ref1:
+	case DW_FORM_ref2:
+	case DW_FORM_ref4:
+	case DW_FORM_ref8:
+	case DW_FORM_ref_sig8:
+	case DW_FORM_ref_udata:
+	case DW_FORM_ref_sup4:
+	case DW_FORM_ref_sup8:
+	case DW_FORM_sec_offset:
+		rz_strbuf_appendf(sb, "<0x%" PFMT64x ">", rz_bin_dwarf_attr_udata(attr));
+		break;
+	case DW_FORM_flag_present:
+		rz_strbuf_append(sb, "1");
+		break;
+	case DW_FORM_string:
+	case DW_FORM_strx:
+	case DW_FORM_strx1:
+	case DW_FORM_strx2:
+	case DW_FORM_strx3:
+	case DW_FORM_strx4:
+	case DW_FORM_line_ptr:
+	case DW_FORM_strp_sup:
+	case DW_FORM_strp: {
+		switch (attr->value.kind) {
+		case RzBinDwarfAttr_String:
+			break;
+		case RzBinDwarfAttr_StrOffsetIndex:
+			rz_strbuf_appendf(sb, "(index 0x%" PFMT64x "): ", attr->value.u64);
+			break;
+		case RzBinDwarfAttr_StrRef:
+			rz_strbuf_appendf(sb, "(.debug_str+0x%" PFMT64x "): ", attr->value.u64);
+			break;
+		case RzBinDwarfAttr_LineStrRef:
+			rz_strbuf_appendf(sb, "(.debug_line_str+0x%" PFMT64x "): ", attr->value.u64);
+			break;
+		default:
+			break;
+		}
+		strbuf_append_string_own(sb, rz_bin_dwarf_attr_string_escaped(attr, dw, str_offsets_base));
+		break;
+	}
+	case DW_FORM_addr:
+	case DW_FORM_addrx:
+	case DW_FORM_addrx1:
+	case DW_FORM_addrx2:
+	case DW_FORM_addrx3:
+	case DW_FORM_addrx4:
+	case DW_FORM_loclistx:
+	case DW_FORM_rnglistx:
+		rz_strbuf_appendf(sb, "0x%" PFMT64x "", rz_bin_dwarf_attr_udata(attr));
+		break;
+	case DW_FORM_implicit_const:
+		rz_strbuf_appendf(sb, "0x%" PFMT64d "", rz_bin_dwarf_attr_udata(attr));
+		break;
+	default:
+		rz_strbuf_appendf(sb, "Unknown attr value form %s\n", rz_bin_dwarf_form(attr->form));
+		break;
+	}
 }

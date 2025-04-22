@@ -170,10 +170,10 @@ static RzBinSymbol *bin_symbol_from_symbol(RzCoreSymCacheElement *element, RzCor
 	RzBinSymbol *sym = RZ_NEW0(RzBinSymbol);
 	if (sym) {
 		if (s->name && s->mangled_name) {
-			sym->dname = strdup(s->name);
-			sym->name = strdup(s->mangled_name);
+			sym->dname = rz_str_dup(s->name);
+			sym->name = rz_str_dup(s->mangled_name);
 		} else if (s->name) {
-			sym->name = strdup(s->name);
+			sym->name = rz_str_dup(s->name);
 		} else if (s->mangled_name) {
 			sym->name = s->mangled_name;
 		}
@@ -205,29 +205,28 @@ static RzCoreSymCacheElement *parseDragons(RzBinFile *bf, RzBuffer *buf, int off
 		RZ_LOG_ERROR("bin: symbols: cannot read at 0x%08x\n", off);
 		return NULL;
 	}
-#if 0
 	// after the list of sections, there's a bunch of unknown
 	// data, brobably dwords, and then the same section list again
 	// this function aims to parse it.
-	0x00000138 |1a2b b2a1 0300 0000 1a2b b2a1 e055 0000| .+.......+...U..
-                         n_segments ----.          .--- how many sections ?
-	0x00000148 |0100 0000 ca55 0000 0400 0000 1800 0000| .....U..........
-	             .---- how many symbols? 0xc7
-	0x00000158 |c700 0000 0000 0000 0000 0000 0104 0000| ................
-	0x00000168 |250b e803 0000 0100 0000 0000 bd55 0000| %............U..
-	0x00000178 |91bb e903 e35a b42c 93a4 340a 8746 9489| .....Z.,..4..F..
-	0x00000188 |0cea 4c40 0c00 0000 0900 0000 0000 0000| ..L@............
-	0x00000198 |0000 0000 0000 0000 0000 0000 0000 0000| ................
-	0x000001a8 |0080 0000 0000 0000 5f5f 5445 5854 0000| ........__TEXT..
-	0x000001b8 |0000 0000 0000 0000 0080 0000 0000 0000| ................
-	0x000001c8 |0040 0000 0000 0000 5f5f 4441 5441 0000| .@......__DATA..
-	0x000001d8 |0000 0000 0000 0000 00c0 0000 0000 0000| ................
-	0x000001e8 |0000 0100 0000 0000 5f5f 4c4c 564d 0000| ........__LLVM..
-	0x000001f8 |0000 0000 0000 0000 00c0 0100 0000 0000| ................
-	0x00000208 |00c0 0000 0000 0000 5f5f 4c49 4e4b 4544| ........__LINKED
-	0x00000218 |4954 0000 0000 0000 0000 0000 d069 0000| IT...........i..
-#endif
+	// 0x00000138 |1a2b b2a1 0300 0000 1a2b b2a1 e055 0000| .+.......+...U..
+	//                      n_segments ----.          .--- how many sections ?
+	// 0x00000148 |0100 0000 ca55 0000 0400 0000 1800 0000| .....U..........
+	//              .---- how many symbols? 0xc7
+	// 0x00000158 |c700 0000 0000 0000 0000 0000 0104 0000| ................
+	// 0x00000168 |250b e803 0000 0100 0000 0000 bd55 0000| %............U..
+	// 0x00000178 |91bb e903 e35a b42c 93a4 340a 8746 9489| .....Z.,..4..F..
+	// 0x00000188 |0cea 4c40 0c00 0000 0900 0000 0000 0000| ..L@............
+	// 0x00000198 |0000 0000 0000 0000 0000 0000 0000 0000| ................
+	// 0x000001a8 |0080 0000 0000 0000 5f5f 5445 5854 0000| ........__TEXT..
+	// 0x000001b8 |0000 0000 0000 0000 0080 0000 0000 0000| ................
+	// 0x000001c8 |0040 0000 0000 0000 5f5f 4441 5441 0000| .@......__DATA..
+	// 0x000001d8 |0000 0000 0000 0000 00c0 0000 0000 0000| ................
+	// 0x000001e8 |0000 0100 0000 0000 5f5f 4c4c 564d 0000| ........__LLVM..
+	// 0x000001f8 |0000 0000 0000 0000 00c0 0100 0000 0000| ................
+	// 0x00000208 |00c0 0000 0000 0000 5f5f 4c49 4e4b 4544| ........__LINKED
+	// 0x00000218 |4954 0000 0000 0000 0000 0000 d069 0000| IT...........i..
 	// eprintf ("Dragon's magic:\n");
+
 	int magicCombo = 0;
 	if (size > 3 && !memcmp("\x1a\x2b\xb2\xa1", b, 4)) { // 0x130  ?
 		magicCombo++;
@@ -258,24 +257,22 @@ static RzCoreSymCacheElement *parseDragons(RzBinFile *bf, RzBuffer *buf, int off
 }
 
 static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
-#if 0
-	SYMBOLS HEADER
+	// 	SYMBOLS HEADER
+	//
+	//  0	MAGIC	02ff01ff
+	//  4	VERSION 1 (little endian)
+	//  8      ffffffff
+	// 16      002b0000 01000000 { 0x2b00, 0x0000 }
+	// 24	UUID    16 bytes
+	// 40	2621 d85b 2100 2000 0000 0000 0000 0000
+	// 56	ffff ffff ffff ff7f 0c00 0000 0900 0000
+	// 72	0400 0000 6800 0000 2f76 6172 2f66 6f6c .... 4, 104 /// 104 length string
+	// 184
+	// 0x000000b8  5f5f 5445 5854 0000 0000 0000 0000 0000 0000 0000 0000 0000 0080 0000 0000 0000  __TEXT..........................
+	// 0x000000d8  5f5f 4441 5441 0000 0000 0000 0000 0000 0080 0000 0000 0000 0040 0000 0000 0000  __DATA...................@......
+	// 0x000000f8  5f5f 4c4c 564d 0000 0000 0000 0000 0000 00c0 0000 0000 0000 0000 0100 0000 0000  __LLVM..........................
+	// 0x00000118  5f5f 4c49 4e4b 4544 4954 0000 0000 0000 00c0 0100 0000 0000 00c0 0000 0000 0000  __LINKEDIT......................
 
- 0	MAGIC	02ff01ff
- 4	VERSION 1 (little endian)
- 8      ffffffff
-16      002b0000 01000000 { 0x2b00, 0x0000 }
-24	UUID    16 bytes
-40	2621 d85b 2100 2000 0000 0000 0000 0000
-56	ffff ffff ffff ff7f 0c00 0000 0900 0000
-72	0400 0000 6800 0000 2f76 6172 2f66 6f6c .... 4, 104 /// 104 length string
-184
-0x000000b8  5f5f 5445 5854 0000 0000 0000 0000 0000 0000 0000 0000 0000 0080 0000 0000 0000  __TEXT..........................
-0x000000d8  5f5f 4441 5441 0000 0000 0000 0000 0000 0080 0000 0000 0000 0040 0000 0000 0000  __DATA...................@......
-0x000000f8  5f5f 4c4c 564d 0000 0000 0000 0000 0000 00c0 0000 0000 0000 0000 0100 0000 0000  __LLVM..........................
-0x00000118  5f5f 4c49 4e4b 4544 4954 0000 0000 0000 00c0 0100 0000 0000 00c0 0000 0000 0000  __LINKEDIT......................
-
-#endif
 	// 0 - magic check, version ...
 	SymbolsHeader sh = parseHeader(buf);
 	if (!sh.valid) {
@@ -335,13 +332,13 @@ static RzBinInfo *info(RzBinFile *bf) {
 	if (!ret) {
 		return NULL;
 	}
-	ret->file = strdup(bf->file);
-	ret->bclass = strdup("symbols");
-	ret->os = strdup("unknown");
-	ret->arch = sm.arch ? strdup(sm.arch) : NULL;
+	ret->file = rz_str_dup(bf->file);
+	ret->bclass = rz_str_dup("symbols");
+	ret->os = rz_str_dup("unknown");
+	ret->arch = rz_str_dup(sm.arch);
 	ret->bits = sm.bits;
-	ret->type = strdup("Symbols file");
-	ret->subsystem = strdup("llvm");
+	ret->type = rz_str_dup("Symbols file");
+	ret->subsystem = rz_str_dup("llvm");
 	ret->has_va = true;
 
 	return ret;
@@ -358,7 +355,7 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	rz_return_val_if_fail(res && bf->o && bf->o->bin_obj, res);
 	RzCoreSymCacheElement *element = bf->o->bin_obj;
 	size_t i;
-	HtUU *hash = ht_uu_new0();
+	HtUU *hash = ht_uu_new();
 	if (!hash) {
 		return res;
 	}

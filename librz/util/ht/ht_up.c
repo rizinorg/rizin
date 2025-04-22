@@ -1,46 +1,51 @@
 // SPDX-FileCopyrightText: 2016-2018 crowell
 // SPDX-FileCopyrightText: 2016-2018 pancake <pancake@nopcode.org>
 // SPDX-FileCopyrightText: 2016-2018 ret2libc <sirmy15@gmail.com>
+// SPDX-FileCopyrightText: 2024 pelijah
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <rz_util/ht_up.h>
 #include "ht_inc.c"
 
-static HtName_(Ht) * internal_ht_default_new(ut32 size, ut32 prime_idx, HT_(DupValue) valdup, HT_(KvFreeFunc) pair_free, HT_(CalcSizeV) calcsizeV) {
-	HT_(Options)
-	opt = {
-		.cmp = NULL,
-		.hashfn = NULL, // TODO: use a better hash function for numbers
-		.dupkey = NULL,
-		.dupvalue = valdup,
-		.calcsizeK = NULL,
-		.calcsizeV = calcsizeV,
-		.freefn = pair_free,
-		.elem_size = sizeof(HT_(Kv)),
-	};
-	return internal_ht_new(size, prime_idx, &opt);
-}
-
-RZ_API HtName_(Ht) * Ht_(new)(HT_(DupValue) valdup, HT_(KvFreeFunc) pair_free, HT_(CalcSizeV) calcsizeV) {
-	return internal_ht_default_new(ht_primes_sizes[0], 0, valdup, pair_free, calcsizeV);
-}
-
-// creates a default HtUP that does not dup, nor free the values
-RZ_API HtName_(Ht) * Ht_(new0)(void) {
-	return Ht_(new)(NULL, NULL, NULL);
-}
-
-RZ_API HtName_(Ht) * Ht_(new_size)(ut32 initial_size, HT_(DupValue) valdup, HT_(KvFreeFunc) pair_free, HT_(CalcSizeV) calcsizeV) {
-	ut32 i = 0;
-
-	while (i < S_ARRAY_SIZE(ht_primes_sizes) &&
-		ht_primes_sizes[i] * LOAD_FACTOR < initial_size) {
-		i++;
+static void fini_kv_val(HT_(Kv) *kv, void *user) {
+	HT_(FreeValue) func = (HT_(FreeValue))user;
+	if (func) {
+		func(kv->value);
 	}
-	if (i == S_ARRAY_SIZE(ht_primes_sizes)) {
-		i = UT32_MAX;
-	}
+}
 
-	ut32 sz = compute_size(i, (ut32)(initial_size * (2 - LOAD_FACTOR)));
-	return internal_ht_default_new(sz, i, valdup, pair_free, calcsizeV);
+static void init_options(HT_(Options) *opt, HT_(DupValue) valdup, HT_(FreeValue) valfree) {
+	opt->cmp = NULL;
+	opt->hashfn = NULL;
+	opt->dupkey = NULL;
+	opt->dupvalue = valdup;
+	opt->calcsizeK = NULL;
+	opt->calcsizeV = NULL;
+	opt->finiKV = fini_kv_val;
+	opt->finiKV_user = (void *)valfree;
+	opt->elem_size = 0;
+}
+
+/**
+ * \brief Create a new hash table that has ut64 as key and void* as value.
+ * \param valdup Function to making copy of a value when inserting
+ * \param valfree Function to releasing a stored value
+ */
+RZ_API RZ_OWN HtName_(Ht) *Ht_(new)(RZ_NULLABLE HT_(DupValue) valdup, RZ_NULLABLE HT_(FreeValue) valfree) {
+	HT_(Options) opt;
+	init_options(&opt, valdup, valfree);
+	return internal_ht_new(ht_primes_sizes[0], 0, &opt);
+}
+
+/**
+ * \brief Create a new hash table that has ut64 as key and void* as value
+ *        with preallocated buckets for \p initial_size entries.
+ * \param initial_size Initial size of the hash table
+ * \param valdup Function to making copy of a value when inserting
+ * \param valfree Function to releasing a stored value
+ */
+RZ_API RZ_OWN HtName_(Ht) *Ht_(new_size)(ut32 initial_size, RZ_NULLABLE HT_(DupValue) valdup, RZ_NULLABLE HT_(FreeValue) valfree) {
+	HT_(Options) opt;
+	init_options(&opt, valdup, valfree);
+	return Ht_(new_opt_size)(&opt, initial_size);
 }

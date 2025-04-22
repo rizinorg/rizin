@@ -18,7 +18,7 @@ EXPECT=<<EOF
 0x0063e49b str.version
 0x0063e4ac str.HTTP_version
 0x0063e566 str.
-14974
+15389
 bufio
 bytes
 compress/flate
@@ -150,7 +150,7 @@ EXPECT=<<EOF
 0x0066dc76 str.
 0x0066e68d str.Addr
 ;-- str.flag:
-14186
+14534
 bufio
 bytes
 compress/flate
@@ -270,7 +270,7 @@ EXPECT=<<EOF
 0x0065de6d str.version
 0x0065de8a str.HTTP_version
 0x0065dfe6 str.
-15161
+15100
 bufio
 bytes
 compress/flate
@@ -434,7 +434,7 @@ EXPECT=<<EOF
 0x0027401c str.btcctl.conf
 0x00274090 str.rpc.cert
 0x00274104 str.rpc.cert
-15843
+16168
 bufio
 bytes
 compress/flate
@@ -626,7 +626,7 @@ EXPECT=<<EOF
 0x0026e4b8 str.btcctl.conf
 0x0026e53c str.rpc.cert
 0x0026e5c0 str.rpc.cert
-16166
+16744
 EOF
 RUN
 
@@ -707,8 +707,8 @@ EOF
 EXPECT=<<EOF
 1788
 0x004a699b str.hello__hacktivity
-9222
-compiler go1.15
+9557
+compiler go1.15 Linker 03.00
 errors
 fmt
 go
@@ -760,10 +760,10 @@ e asm.cmt.col=0
 pdr~"
 EOF
 EXPECT=<<EOF
-| 0x000be5ec      lui   v1, 0xd ; 0xd3417 ; "foogc gp in intmapnilobjpc=ptr\u00b5s\u03bcs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=AhomChamDashGOGC"
+| 0x000be5ec      lui   v1, 0xd ; 0xd3417 ; "foogc gp in intmapnilobjpc=ptrµsμs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=AhomChamDashGOGCLEAFLisu"
 | 0x000be670      lui   at, 0xd ; 0xd3860 ; "enableerrno objectselectstringstructsweep sysmontimersuint16uint32uint64  name:  tail: (scan  (scan) MB in  Value> allocs dying="
 | 0x000be6a8      lui   v1, 0xd ; 0xd3503 ; "nameprofroots + sbrktrueuint  -%s ...\n MB,  and  max= ms,  ptr  tab= top=(nil), fp:1562578125<nil>AdlamBamumBatakBuhidDograErro"
-| 0x000be700      lui   v0, 0xd ; 0xd340e ; "barendfinfoogc gp in intmapnilobjpc=ptr\u00b5s\u03bcs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=AhomCha"
+| 0x000be700      lui   v0, 0xd ; 0xd340e ; "barendfinfoogc gp in intmapnilobjpc=ptrµsμs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=AhomChamDashGOG"
 | 0x000be784      lui   at, 0xd ; 0xd360f ; "levellink lo   mheappanicpc   r0   r1   r10  r11  r12  r13  r14  r15  r16  r17  r18  r19  r2   r20  r21  r22  r23  r24  r25  r26"
 | 0x000be7dc      lui   v0, 0xf ; 0xd914e ; "expected 'foo' or 'bar' subcommandsfile type does not support deadlinefindrunnable: netpoll with spinninggreyobject: obj not poi"
 | 0x000be8e4      lui   v0, 0xf ; 0xd54fc ; "subcommand 'bar'subcommand 'foo'time: bad [0-9]*workbuf is empty spinningthreads=, 0, {interval: {, p.searchAddr = 0123456789ABC"
@@ -786,10 +786,10 @@ e asm.cmt.col=0
 pdr~"
 EOF
 EXPECT=<<EOF
-| 0x000be5d0      lui   v1, 0xd ; 0xd3416 ; "foogc gp in intmapnilobjpc=ptr\u00b5s\u03bcs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=AhomChamDashGOGC"
+| 0x000be5d0      lui   v1, 0xd ; 0xd3416 ; "foogc gp in intmapnilobjpc=ptrµsμs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=AhomChamDashGOGCLEAFLisu"
 | 0x000be654      lui   at, 0xd ; 0xd385f ; "enableerrno objectselectstringstructsweep sysmontimersuint16uint32uint64  name:  tail: (scan  (scan) MB in  Value> allocs dying="
 | 0x000be68c      lui   v1, 0xd ; 0xd3502 ; "nameprofroots + sbrktrueuint  -%s ...\n MB,  and  max= ms,  ptr  tab= top=(nil), fp:1562578125<nil>AdlamBamumBatakBuhidDograErro"
-| 0x000be6e4      lui   v0, 0xd ; 0xd340d ; "barendfinfoogc gp in intmapnilobjpc=ptr\u00b5s\u03bcs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=AhomCha"
+| 0x000be6e4      lui   v0, 0xd ; 0xd340d ; "barendfinfoogc gp in intmapnilobjpc=ptrµsμs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=AhomChamDashGOG"
 | 0x000be768      lui   at, 0xd ; 0xd360e ; "levellink lo   mheappanicpc   r0   r1   r10  r11  r12  r13  r14  r15  r16  r17  r18  r19  r2   r20  r21  r22  r23  r24  r25  r26"
 | 0x000be7c0      lui   v0, 0xf ; 0xd914d ; "expected 'foo' or 'bar' subcommandsfile type does not support deadlinefindrunnable: netpoll with spinninggreyobject: obj not poi"
 | 0x000be8c8      lui   v0, 0xf ; 0xd54fb ; "subcommand 'bar'subcommand 'foo'time: bad [0-9]*workbuf is empty spinningthreads=, 0, {interval: {, p.searchAddr = 0123456789ABC"
@@ -812,10 +812,10 @@ e asm.cmt.col=0
 pdr~"
 EOF
 EXPECT=<<EOF
-| 0x000c0378      lui   v1, 0xe ; 0xe7d69 ; "foogc gp in intmapmsanilobjpc=ptr\u00b5s\u03bcs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=AhomChamDashG"
+| 0x000c0378      lui   v1, 0xe ; 0xe7d69 ; "foogc gp in intmapmsanilobjpc=ptrµsμs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=AhomChamDashGOGCLEAFL"
 | 0x000c040c      lui   at, 0xf ; 0xe81b6 ; "enableerrno objectselectstringstructsweep sysmontimersuint16uint32uint64  name:  tail: (scan  (scan) MB in  Value> allocs dying="
 | 0x000c0448      lui   v1, 0xe ; 0xe7e54 ; "nameprofroots + sbrktrueuint  -%s ...\n MB,  and  cnt= max= ms,  ptr  tab= top=(nil), fp:1562578125<nil>AdlamBamumBatakBuhidDogr"
-| 0x000c04a8      lui   v0, 0xe ; 0xe7d60 ; "barendfinfoogc gp in intmapmsanilobjpc=ptr\u00b5s\u03bcs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=Ahom"
+| 0x000c04a8      lui   v0, 0xe ; 0xe7d60 ; "barendfinfoogc gp in intmapmsanilobjpc=ptrµsμs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=AhomChamDash"
 | 0x000c053c      lui   at, 0xe ; 0xe7f65 ; "levellink lo   mheappanicpc   r0   r1   r10  r11  r12  r13  r14  r15  r16  r17  r18  r19  r2   r20  r21  r22  r23  r24  r25  r26"
 | 0x000c05a0      lui   v0, 0x11 ; 0xedacb ; "expected 'foo' or 'bar' subcommandsfile type does not support deadlinefindrunnable: netpoll with spinninggreyobject: obj not poi"
 | 0x000c06c4      lui   v0, 0x11 ; 0xe9e6b ; "subcommand 'bar'subcommand 'foo'time: bad [0-9]*workbuf is empty spinningthreads=, 0, {interval: {, p.searchAddr = 0123456789ABC"
@@ -838,10 +838,10 @@ e asm.cmt.col=0
 pdr~"
 EOF
 EXPECT=<<EOF
-| 0x000c0360      lui   v1, 0xe ; 0xe7d6b ; "foogc gp in intmapmsanilobjpc=ptr\u00b5s\u03bcs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=AhomChamDashG"
+| 0x000c0360      lui   v1, 0xe ; 0xe7d6b ; "foogc gp in intmapmsanilobjpc=ptrµsμs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=AhomChamDashGOGCLEAFL"
 | 0x000c03f4      lui   at, 0xf ; 0xe81b8 ; "enableerrno objectselectstringstructsweep sysmontimersuint16uint32uint64  name:  tail: (scan  (scan) MB in  Value> allocs dying="
 | 0x000c0430      lui   v1, 0xe ; 0xe7e56 ; "nameprofroots + sbrktrueuint  -%s ...\n MB,  and  cnt= max= ms,  ptr  tab= top=(nil), fp:1562578125<nil>AdlamBamumBatakBuhidDogr"
-| 0x000c0490      lui   v0, 0xe ; 0xe7d62 ; "barendfinfoogc gp in intmapmsanilobjpc=ptr\u00b5s\u03bcs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=Ahom"
+| 0x000c0490      lui   v0, 0xe ; 0xe7d62 ; "barendfinfoogc gp in intmapmsanilobjpc=ptrµsμs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=AhomChamDash"
 | 0x000c0524      lui   at, 0xe ; 0xe7f67 ; "levellink lo   mheappanicpc   r0   r1   r10  r11  r12  r13  r14  r15  r16  r17  r18  r19  r2   r20  r21  r22  r23  r24  r25  r26"
 | 0x000c0588      lui   v0, 0x11 ; 0xedacd ; "expected 'foo' or 'bar' subcommandsfile type does not support deadlinefindrunnable: netpoll with spinninggreyobject: obj not poi"
 | 0x000c06ac      lui   v0, 0x11 ; 0xe9e6d ; "subcommand 'bar'subcommand 'foo'time: bad [0-9]*workbuf is empty spinningthreads=, 0, {interval: {, p.searchAddr = 0123456789ABC"
@@ -864,10 +864,10 @@ e asm.cmt.col=0
 pdr~"
 EOF
 EXPECT=<<EOF
-| 0x00099f7c      lis   r5, 0xb ; 0xb7d3f ; "foogc gp in intmapnilobjpc=ptrscv\u00b5s\u03bcs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=AhomChamDashG"
+| 0x00099f7c      lis   r5, 0xb ; 0xb7d3f ; "foogc gp in intmapnilobjpc=ptrscvµsμs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=AhomChamDashGOGCLEAFL"
 | 0x00099fec      lis   r4, 0xc ; 0xb8198 ; "enableerrno objectpower9selectstringstructsweep sysmontimersuint16uint32uint64  name:  tail: (scan  (scan) MB in  Value> allocs "
 | 0x0009a00c      lis   r4, 0xb ; go-re-sample.go:12 ; 0xb7e32 ; "nameprofroots + sbrktrueuint  -%s ...\n MB,  and  cnt= max= ms,  ptr  tab= top=(nil), fp:1562578125<nil>AdlamBamumBatakBuhidDogr"
-| 0x0009a050      lis   r9, 0xb ; 0xb7d36 ; "barendfinfoogc gp in intmapnilobjpc=ptrscv\u00b5s\u03bcs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=Ahom"
+| 0x0009a050      lis   r9, 0xb ; 0xb7d36 ; "barendfinfoogc gp in intmapnilobjpc=ptrscvµsμs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=AhomChamDash"
 | 0x0009a0c0      lis   r4, 0xb ; 0xb7f48 ; "levellink mheappanicpc   r0   r1   r10  r11  r12  r13  r14  r15  r16  r17  r18  r19  r2   r20  r21  r22  r23  r24  r25  r26  r27"
 | 0x0009a108      lis   r9, 0xd ; 0xbd867 ; "expected 'foo' or 'bar' subcommandsfile type does not support deadlinefindrunnable: netpoll with spinninggreyobject: obj not poi"
 | 0x0009a1cc      lis   r8, 0xd ; 0xb9bf0 ; "subcommand 'bar'subcommand 'foo'time: bad [0-9]*workbuf is empty spinningthreads=, 0, {interval: {, p.searchAddr = 0123456789ABC"
@@ -890,10 +890,10 @@ e asm.cmt.col=0
 pdr~"
 EOF
 EXPECT=<<EOF
-| 0x00099eac      lis   r5, 0xb ; 0xb7d60 ; "foogc gp in intmapnilobjpc=ptrscv\u00b5s\u03bcs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=AhomChamDashG"
+| 0x00099eac      lis   r5, 0xb ; 0xb7d60 ; "foogc gp in intmapnilobjpc=ptrscvµsμs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=AhomChamDashGOGCLEAFL"
 | 0x00099f1c      lis   r4, 0xc ; 0xb81b9 ; "enableerrno objectpower9selectstringstructsweep sysmontimersuint16uint32uint64  name:  tail: (scan  (scan) MB in  Value> allocs "
 | 0x00099f3c      lis   r4, 0xb ; go-re-sample.go:12 ; 0xb7e53 ; "nameprofroots + sbrktrueuint  -%s ...\n MB,  and  cnt= max= ms,  ptr  tab= top=(nil), fp:1562578125<nil>AdlamBamumBatakBuhidDogr"
-| 0x00099f80      lis   r9, 0xb ; 0xb7d57 ; "barendfinfoogc gp in intmapnilobjpc=ptrscv\u00b5s\u03bcs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=Ahom"
+| 0x00099f80      lis   r9, 0xb ; 0xb7d57 ; "barendfinfoogc gp in intmapnilobjpc=ptrscvµsμs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=AhomChamDash"
 | 0x00099ff0      lis   r4, 0xb ; 0xb7f69 ; "levellink mheappanicpc   r0   r1   r10  r11  r12  r13  r14  r15  r16  r17  r18  r19  r2   r20  r21  r22  r23  r24  r25  r26  r27"
 | 0x0009a038      lis   r9, 0xd ; 0xbd845 ; "expected 'foo' or 'bar' subcommandsfile type does not support deadlinefindrunnable: netpoll with spinninggreyobject: obj not poi"
 | 0x0009a0f0      lis   r8, 0xd ; 0xb9bf3 ; "subcommand 'bar'subcommand 'foo'time: bad [0-9]*workbuf is empty spinningthreads=, 0, {interval: {, p.searchAddr = 0123456789ABC"
@@ -916,10 +916,10 @@ e asm.cmt.col=0
 pdr~"
 EOF
 EXPECT=<<EOF
-| 0x00099898      auipc t2, 0x1e ; 0xb7b60 ; "foogc gp in intmapnilobjpc=ptr\u00b5s\u03bcs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=AhomChamDashGOGC"
+| 0x00099898      auipc t2, 0x1e ; 0xb7b60 ; "foogc gp in intmapnilobjpc=ptrµsμs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=AhomChamDashGOGCLEAFLisu"
 | 0x00099910      auipc t0, 0x1e ; 0xb7f74 ; "enableerrno objectselectstringstructsweep sysmontimersuint16uint32uint64  name:  tail: (scan  (scan) MB in  Value> allocs dying="
 | 0x00099944      auipc t2, 0x1e ; 0xb7c70 ; "namepc  profra  roots + s0  s1  s10 s11 s2  s3  s4  s5  s6  s7  s8  s9  sbrksp  t0  t1  t2  t3  t4  t5  t6  tp  trueuint  -%s .."
-| 0x00099998      auipc t2, 0x1e ; 0xb7b57 ; "barendfinfoogc gp in intmapnilobjpc=ptr\u00b5s\u03bcs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=AhomCha"
+| 0x00099998      auipc t2, 0x1e ; 0xb7b57 ; "barendfinfoogc gp in intmapnilobjpc=ptrµsμs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=AhomChamDashGOG"
 | 0x00099a10      auipc t0, 0x1e ; 0xb7dd8 ; "levelmheappanicscav schedsleepslicesudogsweeptracetrap:uint8valuewrite B ->  Value addr= alloc base  code= ctxt: curg= free  goi"
 | 0x00099a60      auipc t1, 0x3e ; 0xbd602 ; "expected 'foo' or 'bar' subcommandsfile type does not support deadlinefindrunnable: netpoll with spinninggreyobject: obj not poi"
 | 0x00099b4c      auipc t1, 0x3e ; 0xb99cd ; "subcommand 'bar'subcommand 'foo'time: bad [0-9]*workbuf is empty spinningthreads=, 0, {interval: {, p.searchAddr = 0123456789ABC"
@@ -959,7 +959,7 @@ EXPECT=<<EOF
 0x00490692 str.name:
 0x0049071e str.tail:
 0x00490780 str.expected__foo__or__bar__subcommands
-20633
+20682
 EOF
 RUN
 
@@ -989,6 +989,6 @@ EXPECT=<<EOF
 0x00487a12 str.name:
 0x00487a9e str.tail:
 0x00487b00 str.expected__foo__or__bar__subcommands
-3616
+3604
 EOF
 RUN

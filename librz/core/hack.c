@@ -8,25 +8,6 @@
  * have several modes/alignment requirements.
  */
 
-RZ_API void rz_core_hack_help(const RzCore *core) {
-	const char *help_msg[] = {
-		"wao", " [op]", "performs a modification on current opcode",
-		"wao", " nop", "nop current opcode",
-		"wao", " jinf", "assemble an infinite loop",
-		"wao", " jz", "make current opcode conditional (zero)",
-		"wao", " jnz", "make current opcode conditional (not zero)",
-		"wao", " ret1", "make the current opcode return 1",
-		"wao", " ret0", "make the current opcode return 0",
-		"wao", " retn", "make the current opcode return -1",
-		"wao", " nocj", "remove conditional operation from branch (make it unconditional)",
-		"wao", " trap", "make the current opcode a trap",
-		"wao", " recj", "reverse (swap) conditional branch instruction",
-		"WIP:", "", "not all archs are supported and not all commands work on all archs",
-		NULL
-	};
-	rz_core_cmd_help(core, help_msg);
-}
-
 RZ_API bool rz_core_hack_dalvik(RzCore *core, const char *op, const RzAnalysisOp *aop) {
 	if (!strcmp(op, "nop")) {
 		rz_core_write_hexpair(core, core->offset, "0000");
@@ -289,12 +270,16 @@ RZ_API bool rz_core_hack(RzCore *core, const char *op) {
 		RZ_LOG_ERROR("core: hack: write hacks are only supported on x86 arch\n");
 	}
 	if (hack) {
-		RzAnalysisOp aop;
+		RzAnalysisOp aop = { 0 };
+		rz_analysis_op_init(&aop);
 		if (rz_analysis_op(core->analysis, &aop, core->offset, core->block, core->blocksize, RZ_ANALYSIS_OP_MASK_BASIC) < 1) {
+			rz_analysis_op_fini(&aop);
 			RZ_LOG_ERROR("core: hack: analysis op fail\n");
 			return false;
 		}
-		return hack(core, op, &aop);
+		bool ret = hack(core, op, &aop);
+		rz_analysis_op_fini(&aop);
+		return ret;
 	}
 	return false;
 }

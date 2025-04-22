@@ -7,14 +7,22 @@
 #include <rz_th.h>
 #include <rz_windows.h>
 #include <rz_config.h>
+#include <rz_util/rz_bits.h>
+#include <rz_util/rz_str.h>
+#include <rz_util/rz_bits.h>
 
 #include "core_private.h"
+
+typedef struct config_opt_descr {
+	const char *option;
+	const char *description;
+} ConfigOptDescr;
 
 static bool boolify_var_cb(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
 	if (node->i_value || rz_str_is_false(node->value)) {
 		free(node->value);
-		node->value = strdup(rz_str_bool(node->i_value));
+		node->value = rz_str_dup(rz_str_bool(node->i_value));
 	}
 	return true;
 }
@@ -139,12 +147,6 @@ static bool cb_analysis_jmpretpoline(void *user, void *data) {
 	core->analysis->opt.retpoline = node->i_value;
 	return true;
 }
-static bool cb_analysis_jmptailcall(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	core->analysis->opt.tailcall = node->i_value;
-	return true;
-}
 
 static bool cb_analysis_armthumb(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
@@ -254,14 +256,16 @@ static bool cb_analysis_hpskip(void *user, void *data) {
 }
 
 static void update_analysis_arch_options(RzCore *core, RzConfigNode *node) {
-	RzAnalysisPlugin *h;
-	RzListIter *it;
+	RzIterator *it = ht_sp_as_iter(core->analysis->plugins);
+	RzAnalysisPlugin **val;
 	if (core && core->analysis && node) {
 		rz_list_purge(node->options);
-		rz_list_foreach (core->analysis->plugins, it, h) {
+		rz_iterator_foreach(it, val) {
+			RzAnalysisPlugin *h = *val;
 			SETOPTIONS(node, h->name, NULL);
 		}
 	}
+	rz_iterator_free(it);
 }
 
 static bool cb_analysis_arch(void *user, void *data) {
@@ -291,7 +295,7 @@ static bool cb_analysis_cpu(void *user, void *data) {
 	/* set pcalign */
 	{
 		int v = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN);
-		rz_config_set_i(core->config, "asm.pcalign", (v != -1) ? v : 0);
+		rz_config_set_i(core->config, "asm.pcalign", (v != -1) ? v : 1);
 	}
 	return true;
 }
@@ -378,28 +382,31 @@ static bool cb_asmassembler(void *user, void *data) {
 }
 
 static void update_asmcpu_options(RzCore *core, RzConfigNode *node) {
-	RzAsmPlugin *h;
-	RzListIter *iter;
 	rz_return_if_fail(core && core->rasm);
+
+	RzIterator *it = ht_sp_as_iter(core->rasm->plugins);
+	RzAsmPlugin **val;
 	const char *arch = rz_config_get(core->config, "asm.arch");
 	if (!arch || !*arch) {
 		return;
 	}
 	rz_list_purge(node->options);
-	rz_list_foreach (core->rasm->plugins, iter, h) {
+	rz_iterator_foreach(it, val) {
+		RzAsmPlugin *h = *val;
 		if (h->cpus && !strcmp(arch, h->name)) {
-			char *c = strdup(h->cpus);
+			char *c = rz_str_dup(h->cpus);
 			int i, n = rz_str_split(c, ',');
 			for (i = 0; i < n; i++) {
 				const char *word = rz_str_word_get0(c, i);
 				if (word && *word) {
 					node->options->free = free;
-					SETOPTIONS(node, strdup(word), NULL);
+					SETOPTIONS(node, rz_str_dup(word), NULL);
 				}
 			}
 			free(c);
 		}
 	}
+	rz_iterator_free(it);
 }
 
 static bool cb_asmcpu(void *user, void *data) {
@@ -410,7 +417,7 @@ static bool cb_asmcpu(void *user, void *data) {
 		/* print verbose help instead of plain option listing */
 		RzCmdStateOutput state = { 0 };
 		rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD);
-		rz_core_asm_plugins_print(core, rz_config_get(core->config, "asm.arch"), &state);
+		rz_core_asm_cpu_plugin_print(core, &state, rz_config_get(core->config, "asm.arch"));
 		rz_cmd_state_output_print(&state);
 		rz_cmd_state_output_fini(&state);
 		return 0;
@@ -430,14 +437,16 @@ static bool cb_asmcpu(void *user, void *data) {
 }
 
 static void update_asmarch_options(RzCore *core, RzConfigNode *node) {
-	RzAsmPlugin *h;
-	RzListIter *iter;
+	RzIterator *it = ht_sp_as_iter(core->rasm->plugins);
+	RzAsmPlugin **val;
 	if (core && node && core->rasm) {
 		rz_list_purge(node->options);
-		rz_list_foreach (core->rasm->plugins, iter, h) {
+		rz_iterator_foreach(it, val) {
+			RzAsmPlugin *h = *val;
 			SETOPTIONS(node, h->name, NULL);
 		}
 	}
+	rz_iterator_free(it);
 }
 
 static void update_asmbits_options(RzCore *core, RzConfigNode *node) {
@@ -494,7 +503,7 @@ static bool cb_asmarch(void *user, void *data) {
 			/* print more verbose help instead of plain option values */
 			RzCmdStateOutput state = { 0 };
 			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD);
-			rz_core_asm_plugins_print(core, NULL, &state);
+			rz_core_asm_plugins_print(core, &state, NULL);
 			rz_cmd_state_output_print(&state);
 			rz_cmd_state_output_fini(&state);
 			return false;
@@ -509,26 +518,29 @@ static bool cb_asmarch(void *user, void *data) {
 		RZ_LOG_ERROR("core: asm.arch: cannot find (%s)\n", node->value);
 		return false;
 	}
-	// we should strdup here otherwise will crash if any rz_config_set
-	// free the old value
-	char *asm_cpu = strdup(rz_config_get(core->config, "asm.cpu"));
+
+	RzConfigNode *asm_cpu_node = rz_config_node_get(core->config, "asm.cpu");
 	if (core->rasm->cur) {
-		const char *newAsmCPU = core->rasm->cur->cpus;
-		if (newAsmCPU) {
-			if (*newAsmCPU) {
-				char *nac = strdup(newAsmCPU);
-				char *comma = strchr(nac, ',');
-				if (comma) {
-					if (!*asm_cpu || (*asm_cpu && !strstr(nac, asm_cpu))) {
+		const char *cpus = core->rasm->cur->cpus;
+		if (asm_cpu_node) {
+			if (RZ_STR_ISNOTEMPTY(cpus)) {
+				if ((asm_cpu_node->value && strstr(cpus, asm_cpu_node->value) == NULL) || RZ_STR_ISEMPTY(asm_cpu_node->value)) {
+					char *cpu0 = rz_str_dup(cpus);
+					char *comma = strchr(cpu0, ',');
+					if (comma) {
 						*comma = 0;
-						rz_config_set(core->config, "asm.cpu", nac);
 					}
+
+					if (!*asm_cpu_node->value || (*asm_cpu_node->value && RZ_STR_NE(cpu0, asm_cpu_node->value))) {
+						rz_config_set(core->config, "asm.cpu", cpu0);
+					}
+					free(cpu0);
 				}
-				free(nac);
-			} else {
+			} else if (cpus && !*cpus) {
 				rz_config_set(core->config, "asm.cpu", "");
 			}
 		}
+
 		bits = core->rasm->cur->bits;
 		if (8 & bits) {
 			bits = 8;
@@ -550,7 +562,7 @@ static bool cb_asmarch(void *user, void *data) {
 
 	rz_debug_set_arch(core->dbg, node->value, bits);
 	if (!rz_config_set(core->config, "analysis.arch", node->value)) {
-		char *p, *s = strdup(node->value);
+		char *p, *s = rz_str_dup(node->value);
 		if (s) {
 			p = strchr(s, '.');
 			if (p) {
@@ -567,6 +579,7 @@ static bool cb_asmarch(void *user, void *data) {
 	if (core->analysis) {
 		const char *asmcpu = rz_config_get(core->config, "asm.cpu");
 		const char *platform = rz_config_get(core->config, "asm.platform");
+		rz_config_set(core->config, "analysis.cpu", asmcpu);
 		rz_syscall_setup(core->analysis->syscall, node->value, core->analysis->bits, asmcpu, asmos);
 		update_syscall_ns(core);
 		char *platforms_dir = rz_path_system(RZ_SDB_ARCH_PLATFORMS);
@@ -586,18 +599,16 @@ static bool cb_asmarch(void *user, void *data) {
 	// set endian of display to match binary
 	core->print->big_endian = big_endian;
 
-	rz_asm_set_cpu(core->rasm, asm_cpu);
-	free(asm_cpu);
-	RzConfigNode *asmcpu = rz_config_node_get(core->config, "asm.cpu");
-	if (asmcpu) {
-		update_asmcpu_options(core, asmcpu);
+	rz_asm_set_cpu(core->rasm, asm_cpu_node->value);
+	if (asm_cpu_node) {
+		update_asmcpu_options(core, asm_cpu_node);
 	}
 	{
 		int v = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN);
 		if (v != -1) {
 			rz_config_set_i(core->config, "asm.pcalign", v);
 		} else {
-			rz_config_set_i(core->config, "asm.pcalign", 0);
+			rz_config_set_i(core->config, "asm.pcalign", 1);
 		}
 	}
 	/* reload types and cc info */
@@ -613,11 +624,11 @@ static bool cb_asmarch(void *user, void *data) {
 	rz_core_analysis_cc_init(core);
 
 	const char *platform = rz_config_get(core->config, "asm.platform");
-	if (asmcpu) {
+	if (asm_cpu_node) {
 		char *platforms_dir = rz_path_system(RZ_SDB_ARCH_PLATFORMS);
 		char *cpus_dir = rz_path_system(RZ_SDB_ARCH_CPUS);
-		rz_platform_target_index_init(core->analysis->platform_target, node->value, asmcpu->value, platform, platforms_dir);
-		rz_platform_profiles_init(core->analysis->arch_target, asmcpu->value, node->value, cpus_dir);
+		rz_platform_target_index_init(core->analysis->platform_target, node->value, asm_cpu_node->value, platform, platforms_dir);
+		rz_platform_profiles_init(core->analysis->arch_target, asm_cpu_node->value, node->value, cpus_dir);
 		free(cpus_dir);
 		free(platforms_dir);
 	}
@@ -672,6 +683,7 @@ static bool cb_asmbits(void *user, void *data) {
 	const char *asmarch = rz_config_get(core->config, "asm.arch");
 	const char *asmcpu = rz_config_get(core->config, "asm.cpu");
 	if (core->analysis) {
+		rz_config_set(core->config, "analysis.cpu", asmcpu);
 		if (!rz_syscall_setup(core->analysis->syscall, asmarch, bits, asmcpu, asmos)) {
 			// eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
 			//	node->value, asmos, RZ_LIBDIR"/rizin/"RZ_VERSION"/syscall");
@@ -683,7 +695,7 @@ static bool cb_asmbits(void *user, void *data) {
 		}
 		/* set pcalign */
 		int v = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN);
-		rz_config_set_i(core->config, "asm.pcalign", (v != -1) ? v : 0);
+		rz_config_set_i(core->config, "asm.pcalign", (v != -1) ? v : 1);
 	}
 	return ret;
 }
@@ -693,14 +705,14 @@ static void update_asmfeatures_options(RzCore *core, RzConfigNode *node) {
 
 	if (core && core->rasm && core->rasm->cur) {
 		if (core->rasm->cur->features) {
-			char *features = strdup(core->rasm->cur->features);
+			char *features = rz_str_dup(core->rasm->cur->features);
 			rz_list_purge(node->options);
 			argc = rz_str_split(features, ',');
 			for (i = 0; i < argc; i++) {
 				node->options->free = free;
 				const char *feature = rz_str_word_get0(features, i);
 				if (feature) {
-					rz_list_append(node->options, strdup(feature));
+					rz_list_append(node->options, rz_str_dup(feature));
 				}
 			}
 			free(features);
@@ -725,7 +737,7 @@ static bool cb_asmfeatures(void *user, void *data) {
 	}
 	RZ_FREE(core->rasm->features);
 	if (node->value[0]) {
-		core->rasm->features = strdup(node->value);
+		core->rasm->features = rz_str_dup(node->value);
 	}
 	return 1;
 }
@@ -735,14 +747,14 @@ static void update_asmplatforms_options(RzCore *core, RzConfigNode *node) {
 
 	if (core && core->rasm && core->rasm->cur) {
 		if (core->rasm->cur->platforms) {
-			char *platforms = strdup(core->rasm->cur->platforms);
+			char *platforms = rz_str_dup(core->rasm->cur->platforms);
 			rz_list_purge(node->options);
 			argc = rz_str_split(platforms, ',');
 			for (i = 0; i < argc; i++) {
 				node->options->free = free;
 				const char *feature = rz_str_word_get0(platforms, i);
 				if (feature) {
-					rz_list_append(node->options, strdup(feature));
+					rz_list_append(node->options, rz_str_dup(feature));
 				}
 			}
 			free(platforms);
@@ -763,7 +775,7 @@ static bool cb_asmplatform(void *user, void *data) {
 	}
 	RZ_FREE(core->rasm->platforms);
 	if (node->value[0]) {
-		core->rasm->platforms = strdup(node->value);
+		core->rasm->platforms = rz_str_dup(node->value);
 	}
 	const char *asmcpu = rz_config_get(core->config, "asm.cpu");
 	const char *asmarch = rz_config_get(core->config, "asm.arch");
@@ -823,8 +835,9 @@ static bool cb_asm_pcalign(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	int align = node->i_value;
-	if (align < 0) {
-		align = 0;
+	if (rz_bits_count_ones_ut64(align) != 1) {
+		RZ_LOG_ERROR("Alignment is only defined for '>0' and 'n^2'. Is = %" PFMT64d "\n", node->i_value);
+		return false;
 	}
 	core->rasm->pcalign = align;
 	core->analysis->pcalign = align;
@@ -842,7 +855,7 @@ static bool cb_asmos(void *user, void *data) {
 	}
 	if (!node->value[0]) {
 		free(node->value);
-		node->value = strdup(RZ_SYS_OS);
+		node->value = rz_str_dup(RZ_SYS_OS);
 	}
 	asmarch = rz_config_node_get(core->config, "asm.arch");
 	if (asmarch) {
@@ -926,7 +939,7 @@ static bool cb_strpurge(void *user, void *data) {
 	free(core->bin->strpurge);
 	core->bin->strpurge = !*node->value || !strcmp(node->value, "false")
 		? NULL
-		: strdup(node->value);
+		: rz_str_dup(node->value);
 	return true;
 }
 
@@ -1100,7 +1113,7 @@ static bool cb_dirsrc(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
 	RzCore *core = (RzCore *)user;
 	free(core->bin->srcdir);
-	core->bin->srcdir = strdup(node->value);
+	core->bin->srcdir = rz_str_dup(node->value);
 	return true;
 }
 
@@ -1111,121 +1124,101 @@ static bool cb_str_escbslash(void *user, void *data) {
 	return true;
 }
 
-static bool cb_str_search_max_threads(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
+static bool cb_search_max_threads(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
-	size_t max_threads = rz_th_physical_core_number();
 	if (node->value[0] == '?') {
-		rz_cons_printf("%" PFMTSZu "\n", max_threads);
+		rz_cons_printf("Available cores: %d\n", rz_th_physical_core_number());
 		return false;
 	}
-	core->bin->str_search_cfg.max_threads = RZ_MIN(max_threads, node->i_value);
 	return true;
 }
 
-static bool cb_str_search_min_length(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
+static bool cb_search_to(void *user, void *data) {
+	RzCore *core = user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (node->i_value < 1) {
-		RZ_LOG_ERROR("str.search.min_length cannot be less than 1.\n");
-		return false;
-	} else if (node->i_value >= core->bin->str_search_cfg.buffer_size) {
-		RZ_LOG_ERROR("str.search.buffer_size cannot be greater or equal to %" PFMTSZu ".\n", core->bin->str_search_cfg.buffer_size);
+	ut64 from = rz_config_get_i(core->config, "search.from");
+	if (node->i_value < from) {
+		rz_cons_printf("search.to cannot be smaller than search.from.\n");
 		return false;
 	}
+	return true;
+}
 
-	core->bin->str_search_cfg.min_length = node->i_value;
+static void check_reload_bin_str_search(RzCore *core) {
 	if (core->bin && rz_config_get_b(core->config, "str.search.reload")) {
 		RzBinFile *bf = rz_bin_cur(core->bin);
 		if (bf && bf->o) {
 			rz_bin_object_reset_strings(core->bin, bf, bf->o);
 		}
 	}
+}
+
+static bool cb_search_str_min_length(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	if (node->i_value < 1) {
+		RZ_LOG_ERROR("search.str.min_length cannot be less than 1.\n");
+		return false;
+	} else if (node->i_value >= core->bin->str_search_cfg.max_length) {
+		RZ_LOG_ERROR("search.str.max_length cannot be greater or equal to %" PFMTSZu ".\n", core->bin->str_search_cfg.max_length);
+		return false;
+	}
+
+	core->bin->str_search_cfg.min_length = node->i_value;
+	check_reload_bin_str_search(core);
 	return true;
 }
 
-static bool cb_str_search_buffer_size(void *user, void *data) {
+static bool cb_search_str_max_length(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 
 	size_t min_buffer_size = RZ_MIN(core->bin->str_search_cfg.min_length, RZ_BIN_STRING_SEARCH_BUFFER_SIZE);
 	if (node->i_value < min_buffer_size) {
-		RZ_LOG_ERROR("str.search.buffer_size cannot be less than %" PFMTSZu ".\n", min_buffer_size);
+		RZ_LOG_ERROR("search.str.max_length cannot be less than %" PFMTSZu ".\n", min_buffer_size);
 		return false;
 	}
 
-	core->bin->str_search_cfg.buffer_size = node->i_value;
-	if (core->bin && rz_config_get_b(core->config, "str.search.reload")) {
-		RzBinFile *bf = rz_bin_cur(core->bin);
-		if (bf && bf->o) {
-			rz_bin_object_reset_strings(core->bin, bf, bf->o);
-		}
-	}
+	core->bin->str_search_cfg.max_length = node->i_value;
+	check_reload_bin_str_search(core);
 	return true;
 }
 
-static bool cb_str_search_max_uni_blocks(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	if (node->i_value < 1) {
-		RZ_LOG_ERROR("str.search.max_uni_blocks cannot be less than 1.\n");
-		return false;
-	}
-	core->bin->str_search_cfg.max_uni_blocks = node->i_value;
-	if (core->bin && rz_config_get_b(core->config, "str.search.reload")) {
-		RzBinFile *bf = rz_bin_cur(core->bin);
-		if (bf && bf->o) {
-			rz_bin_object_reset_strings(core->bin, bf, bf->o);
-		}
-	}
-	return true;
-}
-
-static bool cb_str_search_max_region_size(void *user, void *data) {
+static bool cb_search_str_max_region_size(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	if (node->i_value < RZ_BIN_STRING_SEARCH_MAX_REGION_SIZE) {
-		RZ_LOG_ERROR("str.search.max_region_size cannot be less than " RZ_STR(RZ_BIN_STRING_SEARCH_MAX_REGION_SIZE) ".\n");
+		RZ_LOG_ERROR("search.str.max_region_size cannot be less than " RZ_STR(RZ_BIN_STRING_SEARCH_MAX_REGION_SIZE) ".\n");
 		return false;
 	}
 	core->bin->str_search_cfg.max_region_size = node->i_value;
-	if (core->bin && rz_config_get_b(core->config, "str.search.reload")) {
-		RzBinFile *bf = rz_bin_cur(core->bin);
-		if (bf && bf->o) {
-			rz_bin_object_reset_strings(core->bin, bf, bf->o);
-		}
-	}
+	check_reload_bin_str_search(core);
 	return true;
 }
 
-static bool cb_str_search_raw_alignment(void *user, void *data) {
+static bool cb_search_str_raw_alignment(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (node->i_value < 8) {
-		RZ_LOG_ERROR("str.search.raw_alignment cannot be less than 8.\n");
+	if (node->i_value < 8 || rz_bits_count_ones_ut64(node->i_value) != 1) {
+		RZ_LOG_ERROR("search.str.raw_alignment cannot be less than 8 and must be n^2.\n");
 		return false;
 	}
 	core->bin->str_search_cfg.raw_alignment = node->i_value;
 	return true;
 }
 
-static bool cb_str_search_check_ascii_freq(void *user, void *data) {
+static bool cb_search_str_check_ascii_freq(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	if (node->value[0] == '?') {
 		rz_cons_printf("true\nfalse\n");
 		return false;
 	} else if (!rz_str_is_bool(node->value)) {
-		RZ_LOG_ERROR("Invalid value for str.search.check_ascii_freq (%s).\n", node->value);
+		RZ_LOG_ERROR("Invalid value for search.str.check_ascii_freq (%s).\n", node->value);
 		return false;
 	}
 	core->bin->str_search_cfg.check_ascii_freq = rz_str_is_true(node->value);
-	if (core->bin && rz_config_get_b(core->config, "str.search.reload")) {
-		RzBinFile *bf = rz_bin_cur(core->bin);
-		if (bf && bf->o) {
-			rz_bin_object_reset_strings(core->bin, bf, bf->o);
-		}
-	}
+	check_reload_bin_str_search(core);
 	return true;
 }
 
@@ -1241,31 +1234,33 @@ static bool find_encoding(RzConfigNode *node, RzStrEnc *encoding) {
 		*encoding = rz_str_enc_string_as_type(option);
 		return true;
 	}
+	if (rz_list_empty(node->options)) {
+		// Edge case when the node was just initialized but the options
+		// were not added yet.
+		*encoding = rz_str_enc_string_as_type(node->value);
+		return true;
+	}
 	return false;
 }
 
-static bool cb_str_search_encoding(void *user, void *data) {
+static bool cb_str_encoding(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	RzStrEnc encoding = RZ_STRING_ENC_GUESS;
+	bool found_enc = find_encoding(node, &encoding);
 	if (node->value[0] == '?') {
 		print_node_options(node);
 		rz_cons_printf("  -- if string's 2nd & 4th bytes are 0 then utf16le else "
 			       "if 2nd - 4th & 6th bytes are 0 & no char > 0x10ffff then utf32le else "
 			       "if utf8 char detected then utf8 else 8bit\n");
 		return false;
-	} else if (rz_str_casecmp("guess", node->value) && !find_encoding(node, &encoding)) {
-		RZ_LOG_ERROR("Invalid value for str.search.encoding (%s).\n", node->value);
+	} else if (RZ_STR_EQ("settings", node->value) || (!RZ_STR_EQ("guess", node->value) && !found_enc)) {
+		RZ_LOG_ERROR("Invalid value for str.encoding (%s).\n", node->value);
 		return false;
 	}
 
 	core->bin->str_search_cfg.string_encoding = encoding;
-	if (core->bin && rz_config_get_b(core->config, "str.search.reload")) {
-		RzBinFile *bf = rz_bin_cur(core->bin);
-		if (bf && bf->o) {
-			rz_bin_object_reset_strings(core->bin, bf, bf->o);
-		}
-	}
+	check_reload_bin_str_search(core);
 	return true;
 }
 
@@ -1286,12 +1281,7 @@ static bool cb_str_search_mode(void *user, void *data) {
 		return true;
 	}
 	RZ_LOG_ERROR("Invalid value for str.search.mode (%s).\n", node->value);
-	if (core->bin && rz_config_get_b(core->config, "str.search.reload")) {
-		RzBinFile *bf = rz_bin_cur(core->bin);
-		if (bf && bf->o) {
-			rz_bin_object_reset_strings(core->bin, bf, bf->o);
-		}
-	}
+	check_reload_bin_str_search(core);
 	return false;
 }
 
@@ -1371,7 +1361,7 @@ static bool cb_color_getter(void *user, RzConfigNode *node) {
 	rz_config_node_value_format_i(buf, sizeof(buf), rz_cons_singleton()->context->color_mode, node);
 	if (!node->value || strcmp(node->value, buf) != 0) {
 		free(node->value);
-		node->value = strdup(buf);
+		node->value = rz_str_dup(buf);
 	}
 	return true;
 }
@@ -1405,7 +1395,7 @@ static bool cb_dbg_btalgo(void *user, void *data) {
 		return false;
 	}
 	free(core->dbg->btalgo);
-	core->dbg->btalgo = strdup(node->value);
+	core->dbg->btalgo = rz_str_dup(node->value);
 	return true;
 }
 
@@ -1413,7 +1403,7 @@ static bool cb_dbg_libs(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	free(core->dbg->glob_libs);
-	core->dbg->glob_libs = strdup(node->value);
+	core->dbg->glob_libs = rz_str_dup(node->value);
 	return true;
 }
 
@@ -1421,7 +1411,7 @@ static bool cb_dbg_unlibs(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	free(core->dbg->glob_unlibs);
-	core->dbg->glob_unlibs = strdup(node->value);
+	core->dbg->glob_unlibs = rz_str_dup(node->value);
 	return true;
 }
 
@@ -1534,7 +1524,7 @@ static bool cb_runprofile(void *user, void *data) {
 	if (!node || !*(node->value)) {
 		r->io->runprofile = NULL;
 	} else {
-		r->io->runprofile = strdup(node->value);
+		r->io->runprofile = rz_str_dup(node->value);
 	}
 	return true;
 }
@@ -1545,7 +1535,7 @@ static bool cb_dbg_args(void *user, void *data) {
 	if (!node || !*(node->value)) {
 		core->io->args = NULL;
 	} else {
-		core->io->args = strdup(node->value);
+		core->io->args = rz_str_dup(node->value);
 	}
 	return true;
 }
@@ -1939,7 +1929,7 @@ static bool cb_cmd_esil_ioer(void *user, void *data) {
 	if (core && core->analysis && core->analysis->esil) {
 		core->analysis->esil->cmd = rz_core_esil_cmd;
 		free(core->analysis->esil->cmd_ioer);
-		core->analysis->esil->cmd_ioer = strdup(node->value);
+		core->analysis->esil->cmd_ioer = rz_str_dup(node->value);
 	}
 	return true;
 }
@@ -1950,7 +1940,7 @@ static bool cb_cmd_esil_todo(void *user, void *data) {
 	if (core && core->analysis && core->analysis->esil) {
 		core->analysis->esil->cmd = rz_core_esil_cmd;
 		free(core->analysis->esil->cmd_todo);
-		core->analysis->esil->cmd_todo = strdup(node->value);
+		core->analysis->esil->cmd_todo = rz_str_dup(node->value);
 	}
 	return true;
 }
@@ -1961,7 +1951,7 @@ static bool cb_cmd_esil_intr(void *user, void *data) {
 	if (core && core->analysis && core->analysis->esil) {
 		core->analysis->esil->cmd = rz_core_esil_cmd;
 		free(core->analysis->esil->cmd_intr);
-		core->analysis->esil->cmd_intr = strdup(node->value);
+		core->analysis->esil->cmd_intr = rz_str_dup(node->value);
 	}
 	return true;
 }
@@ -1972,7 +1962,7 @@ static bool cb_mdevrange(void *user, void *data) {
 	if (core && core->analysis && core->analysis->esil) {
 		core->analysis->esil->cmd = rz_core_esil_cmd;
 		free(core->analysis->esil->mdev_range);
-		core->analysis->esil->mdev_range = strdup(node->value);
+		core->analysis->esil->mdev_range = rz_str_dup(node->value);
 	}
 	return true;
 }
@@ -1983,7 +1973,7 @@ static bool cb_cmd_esil_step(void *user, void *data) {
 	if (core && core->analysis && core->analysis->esil) {
 		core->analysis->esil->cmd = rz_core_esil_cmd;
 		free(core->analysis->esil->cmd_step);
-		core->analysis->esil->cmd_step = strdup(node->value);
+		core->analysis->esil->cmd_step = rz_str_dup(node->value);
 	}
 	return true;
 }
@@ -1994,7 +1984,7 @@ static bool cb_cmd_esil_step_out(void *user, void *data) {
 	if (core && core->analysis && core->analysis->esil) {
 		core->analysis->esil->cmd = rz_core_esil_cmd;
 		free(core->analysis->esil->cmd_step_out);
-		core->analysis->esil->cmd_step_out = strdup(node->value);
+		core->analysis->esil->cmd_step_out = rz_str_dup(node->value);
 	}
 	return true;
 }
@@ -2005,7 +1995,7 @@ static bool cb_cmd_esil_mdev(void *user, void *data) {
 	if (core && core->analysis && core->analysis->esil) {
 		core->analysis->esil->cmd = rz_core_esil_cmd;
 		free(core->analysis->esil->cmd_mdev);
-		core->analysis->esil->cmd_mdev = strdup(node->value);
+		core->analysis->esil->cmd_mdev = rz_str_dup(node->value);
 	}
 	return true;
 }
@@ -2015,7 +2005,7 @@ static bool cb_cmd_esil_trap(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
 	if (core && core->analysis && core->analysis->esil) {
 		core->analysis->esil->cmd = rz_core_esil_cmd;
-		core->analysis->esil->cmd_trap = strdup(node->value);
+		core->analysis->esil->cmd_trap = rz_str_dup(node->value);
 	}
 	return true;
 }
@@ -2116,12 +2106,6 @@ static bool cb_iova(void *user, void *data) {
 		if (core->io->desc) {
 			rz_core_block_read(core);
 		}
-#if 0
-		/* reload symbol information */
-		if (rz_list_length (rz_bin_get_sections (core->bin)) > 0) {
-			rz_core_cmd0 (core, ".ia*");
-		}
-#endif
 	}
 	return true;
 }
@@ -2148,7 +2132,7 @@ static bool cb_filepath(void *user, void *data) {
 		if (pikaboo[3] == '/') {
 			rz_config_set(core->config, "file.lastpath", node->value);
 			char *ovalue = node->value;
-			node->value = strdup(pikaboo + 3);
+			node->value = rz_str_dup(pikaboo + 3);
 			free(ovalue);
 			return true;
 		}
@@ -2185,12 +2169,12 @@ static bool cb_pager(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	if (!strcmp(node->value, "?")) {
-		RZ_LOG_ERROR("usage: scr.pager must be '..' for internal less, or the path to a program in $PATH");
+		RZ_LOG_ERROR("usage: scr.pager must be '..' for internal less, or the path to a program in $PATH\n");
 		return false;
 	}
 	/* Let cons know we have a new pager. */
 	free(core->cons->pager);
-	core->cons->pager = strdup(node->value);
+	core->cons->pager = rz_str_dup(node->value);
 	return true;
 }
 
@@ -2332,7 +2316,7 @@ static bool cb_scrstrconv(void *user, void *data) {
 		return false;
 	} else {
 		free((char *)core->print->strconv_mode);
-		core->print->strconv_mode = strdup(node->value);
+		core->print->strconv_mode = rz_str_dup(node->value);
 	}
 	return true;
 }
@@ -2424,8 +2408,11 @@ static bool cb_contiguous(void *user, void *data) {
 static bool cb_searchalign(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
+	if (rz_bits_count_ones_ut64(node->i_value) != 1) {
+		RZ_LOG_ERROR("Alignment is only defined for '>0' and 'n^2'. Is = %" PFMT64d "\n", node->i_value);
+		return false;
+	}
 	core->search->align = node->i_value;
-	core->print->addrmod = node->i_value;
 	return true;
 }
 
@@ -2602,6 +2589,18 @@ static bool cb_bindbginfo(void *user, void *data) {
 	return true;
 }
 
+static bool cb_dwo_path(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	if (!(core && core->bin && node)) {
+		return false;
+	}
+	if (RZ_STR_ISNOTEMPTY(node->value) && rz_bin_cur(core->bin)) {
+		rz_core_bin_apply_dwarf(core, rz_bin_cur(core->bin));
+	}
+	return true;
+}
+
 static bool cb_binprefix(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
@@ -2617,7 +2616,7 @@ static bool cb_binprefix(void *user, void *data) {
 			if (name) {
 				rz_name_filter(name, strlen(name), true);
 				rz_str_filter(name);
-				core->bin->prefix = strdup(name);
+				core->bin->prefix = rz_str_dup(name);
 				free(name);
 			}
 		} else {
@@ -2627,41 +2626,84 @@ static bool cb_binprefix(void *user, void *data) {
 	return true;
 }
 
-static bool cb_searchin(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
+static ConfigOptDescr search_in_opts[] = {
+	{ "raw", "all raw memory (behaves as 'file')" },
+	{ "file", "all the file" },
+	{ "block", "current read block" },
+	{ "range", "search only within the range" },
+	{ "analysis.bb", "current basic-block" },
+	{ "analysis.fcn", "current function" },
+	{ "bin.section", "current section" },
+	{ "bin.sections[.rwx]", "all bin sections (with matching perm)" },
+	{ "bin.segment", "current segment" },
+	{ "bin.segments[.rwx]", "all bin segments (with matching perm)" },
+	{ "dbg.heap", "debugger heap" },
+	{ "dbg.stack", "debugger stack" },
+	{ "dbg.program", "debugger program (exec only)" },
+	{ "dbg.map", "current debugger memory map" },
+	{ "dbg.maps[.rwx]", "all debugger memory maps (with matching perm)" },
+	{ "io.map", "current io map" },
+	{ "io.maps[.rwx]", "all io maps (with matching perm)" },
+	{ "io.sky[.rwx]", "all skyline segments (with matching perm)" },
+};
+
+static bool cb_search_in(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (node->value[0] == '?') {
-		if (strlen(node->value) > 1 && node->value[1] == '?') {
-			rz_cons_printf("Valid values for search.in (depends on .from/.to and io.va):\n"
-				       "raw                search in raw io (ignoring bounds)\n"
-				       "block              search in the current block\n"
-				       "io.map             search in current map\n"
-				       "io.sky.[rwx]       search in all skyline segments\n"
-				       "io.maps            search in all maps\n"
-				       "io.maps.[rwx]      search in all r-w-x io maps\n"
-				       "bin.segment        search in current mapped segment\n"
-				       "bin.segments       search in all mapped segments\n"
-				       "bin.segments.[rwx] search in all r-w-x segments\n"
-				       "bin.section        search in current mapped section\n"
-				       "bin.sections       search in all mapped sections\n"
-				       "bin.sections.[rwx] search in all r-w-x sections\n"
-				       "dbg.stack          search in the stack\n"
-				       "dbg.heap           search in the heap\n"
-				       "dbg.map            search in current memory map\n"
-				       "dbg.maps           search in all memory maps\n"
-				       "dbg.maps.[rwx]     search in all executable marked memory maps\n"
-				       "analysis.fcn           search in the current function\n"
-				       "analysis.bb            search in the current basic-block\n");
-		} else {
-			print_node_options(node);
+	if (node->value[0] != '?') {
+		return true;
+	} else if (strlen(node->value) > 1 && node->value[1] == '?') {
+		rz_cons_printf("Valid values for search.in (depends on .from/.to and io.va):\n");
+		for (size_t i = 0; i < RZ_ARRAY_SIZE(search_in_opts); ++i) {
+			rz_cons_printf("%-18s - %s\n", search_in_opts[i].option, search_in_opts[i].description);
 		}
+	} else {
+		print_node_options(node);
+	}
+	return false;
+}
+
+static bool cb_search_show_progress(void *user, void *data) {
+	RzConfigNode *node = (RzConfigNode *)data;
+	if (rz_str_is_false(node->value)) {
+		free(node->value);
+		node->value = rz_str_dup("false");
+	} else if (!rz_str_cmp_list("num_hits intervals", node->value, ' ')) {
+		RZ_LOG_ERROR("search.show_progress: invalid value (%s), supported only `false, num_hits, intervals`\n", node->value);
 		return false;
 	}
-	// Set analysis.noncode if exec bit set in analysis.in
-	if (rz_str_startswith(node->name, "analysis")) {
-		core->analysis->opt.noncode = (strchr(node->value, 'x') == NULL);
-	}
 	return true;
+}
+
+static bool cb_analysis_in(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	if (node->value[0] != '?') {
+		core->analysis->opt.noncode = (strchr(node->value, 'x') == NULL);
+		return true;
+	} else if (strlen(node->value) > 1 && node->value[1] == '?') {
+		rz_cons_printf("Valid values for analysis.in (depends on .from/.to and io.va):\n");
+		for (size_t i = 0; i < RZ_ARRAY_SIZE(search_in_opts); ++i) {
+			rz_cons_printf("%-18s - %s\n", search_in_opts[i].option, search_in_opts[i].description);
+		}
+	} else {
+		print_node_options(node);
+	}
+	return false;
+}
+
+static bool cb_zoom_in(void *user, void *data) {
+	RzConfigNode *node = (RzConfigNode *)data;
+	if (node->value[0] != '?') {
+		return true;
+	} else if (strlen(node->value) > 1 && node->value[1] == '?') {
+		rz_cons_printf("Valid values for zoom.in (depends on .from/.to and io.va):\n");
+		for (size_t i = 0; i < RZ_ARRAY_SIZE(search_in_opts); ++i) {
+			rz_cons_printf("%-18s - %s\n", search_in_opts[i].option, search_in_opts[i].description);
+		}
+	} else {
+		print_node_options(node);
+	}
+	return false;
 }
 
 static int __dbg_swstep_getter(void *user, RzConfigNode *node) {
@@ -2707,9 +2749,16 @@ static bool cb_analysis_gp(RzCore *core, RzConfigNode *node) {
 
 static bool cb_analysis_from(RzCore *core, RzConfigNode *node) {
 	if (rz_config_get_i(core->config, "analysis.limits")) {
-		rz_analysis_set_limits(core->analysis,
-			rz_config_get_i(core->config, "analysis.from"),
-			rz_config_get_i(core->config, "analysis.to"));
+		ut64 to = rz_config_get_i(core->config, "analysis.to");
+		rz_analysis_set_limits(core->analysis, node->i_value, to);
+	}
+	return true;
+}
+
+static bool cb_analysis_to(RzCore *core, RzConfigNode *node) {
+	if (rz_config_get_i(core->config, "analysis.limits")) {
+		ut64 from = rz_config_get_i(core->config, "analysis.from");
+		rz_analysis_set_limits(core->analysis, from, node->i_value);
 	}
 	return true;
 }
@@ -2723,13 +2772,13 @@ static bool cb_analysis_limits(void *user, RzConfigNode *node) {
 	} else {
 		rz_analysis_unset_limits(core->analysis);
 	}
-	return 1;
+	return true;
 }
 
 static bool cb_analysis_rnr(void *user, RzConfigNode *node) {
 	RzCore *core = (RzCore *)user;
 	core->analysis->recursive_noreturn = node->i_value;
-	return 1;
+	return true;
 }
 
 static bool cb_analysis_jmptbl(void *user, void *data) {
@@ -2872,29 +2921,32 @@ static bool cb_log_config_level(void *coreptr, void *nodeptr) {
 	return true;
 }
 
-static bool cb_log_config_traplevel(void *coreptr, void *nodeptr) {
+#if RZ_BUILD_DEBUG
+static bool cb_log_config_abortlevel(void *coreptr, void *nodeptr) {
 	RzConfigNode *node = (RzConfigNode *)nodeptr;
-	rz_log_set_traplevel(node->i_value);
+	rz_log_set_abortlevel(node->i_value);
+	return true;
+}
+#endif /* RZ_BUILD_DEBUG */
+
+static bool cb_log_file(void *coreptr, void *nodeptr) {
+	RzConfigNode *node = (RzConfigNode *)nodeptr;
+	if (!rz_log_set_file(node->value)) {
+		RZ_LOG_ERROR("log.file: cannot open '%s'\n", node->value);
+		return false;
+	}
 	return true;
 }
 
-static bool cb_log_config_file(void *coreptr, void *nodeptr) {
+static bool cb_log_config_show_sources(void *coreptr, void *nodeptr) {
 	RzConfigNode *node = (RzConfigNode *)nodeptr;
 	const char *value = node->value;
-	rz_log_set_file(value);
-	return true;
-}
-
-static bool cb_log_config_srcinfo(void *coreptr, void *nodeptr) {
-	RzConfigNode *node = (RzConfigNode *)nodeptr;
-	const char *value = node->value;
-	switch (value[0]) {
-	case 't':
-	case 'T':
-		rz_log_set_srcinfo(true);
-		break;
-	default:
-		rz_log_set_srcinfo(false);
+	if (rz_str_is_true(value)) {
+		rz_log_set_show_sources(true);
+	} else if (rz_str_is_false(value)) {
+		rz_log_set_show_sources(false);
+	} else {
+		return false;
 	}
 	return true;
 }
@@ -2902,13 +2954,12 @@ static bool cb_log_config_srcinfo(void *coreptr, void *nodeptr) {
 static bool cb_log_config_colors(void *coreptr, void *nodeptr) {
 	RzConfigNode *node = (RzConfigNode *)nodeptr;
 	const char *value = node->value;
-	switch (value[0]) {
-	case 't':
-	case 'T':
+	if (rz_str_is_true(value)) {
 		rz_log_set_colors(true);
-		break;
-	default:
+	} else if (rz_str_is_false(value)) {
 		rz_log_set_colors(false);
+	} else {
+		return false;
 	}
 	return true;
 }
@@ -2988,9 +3039,9 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB("analysis.limits", "false", (RzConfigCallback)&cb_analysis_limits, "Restrict analysis to address range [analysis.from:analysis.to]");
 	SETCB("analysis.rnr", "false", (RzConfigCallback)&cb_analysis_rnr, "Recursive no return checks (EXPERIMENTAL)");
 	SETCB("analysis.limits", "false", (RzConfigCallback)&cb_analysis_limits, "Restrict analysis to address range [analysis.from:analysis.to]");
-	SETICB("analysis.from", -1, (RzConfigCallback)&cb_analysis_from, "Lower limit on the address range for analysis");
-	SETICB("analysis.to", -1, (RzConfigCallback)&cb_analysis_from, "Upper limit on the address range for analysis");
-	n = NODECB("analysis.in", "io.maps.x", &cb_searchin);
+	SETICB("analysis.from", UT64_MAX, (RzConfigCallback)&cb_analysis_from, "Lower limit on the address range for analysis");
+	SETICB("analysis.to", UT64_MAX, (RzConfigCallback)&cb_analysis_to, "Upper limit on the address range for analysis");
+	n = NODECB("analysis.in", "io.maps.x", &cb_analysis_in);
 	SETDESC(n, "Specify search boundaries for analysis");
 	SETOPTIONS(n, "range", "block",
 		"bin.segment", "bin.segments", "bin.segments.x", "bin.segments.r", "bin.section", "bin.sections", "bin.sections.rwx", "bin.sections.r", "bin.sections.rw", "bin.sections.rx", "bin.sections.wx", "bin.sections.x",
@@ -3001,7 +3052,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 		NULL);
 	SETI("analysis.timeout", 0, "Stop analyzing after a couple of seconds");
 	SETCB("analysis.jmp.retpoline", "true", &cb_analysis_jmpretpoline, "Analyze retpolines, may be slower if not needed");
-	SETICB("analysis.jmp.tailcall", 0, &cb_analysis_jmptailcall, "Consume a branch as a call if delta is big");
 
 	SETCB("analysis.armthumb", "false", &cb_analysis_armthumb, "aae computes arm/thumb changes (lot of false positives ahead)");
 	SETCB("analysis.jmp.after", "true", &cb_analysis_afterjmp, "Continue analysis after jmp/ujmp");
@@ -3111,7 +3161,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("asm.cmt.esil", "false", "Show ESIL expressions as comments");
 	SETBPREF("asm.cmt.il", "false", "Show RzIL expressions as comments");
 	SETI("asm.cmt.col", 71, "Column to align comments");
-	SETICB("asm.pcalign", 0, &cb_asm_pcalign, "Only recognize as valid instructions aligned to this value");
+	SETICB("asm.pcalign", 1, &cb_asm_pcalign, "Only recognize as valid instructions aligned to this value");
 	// maybe rename to asm.cmt.calls
 	SETBPREF("asm.calls", "true", "Show callee function related info as comments in disasm");
 	SETBPREF("asm.comments", "true", "Show comments in disassembly view");
@@ -3291,7 +3341,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETI("bin.baddr", -1, "Base address of the binary");
 	SETI("bin.laddr", 0, "Base address for loading library ('*.so')");
 	SETCB("bin.dbginfo", "true", &cb_bindbginfo, "Load debug information at startup if available");
-	SETCB("bin.dbginfo.dwo_path", "", NULL, "Load separate debug information (DWARF) file if available");
+	SETCB("bin.dbginfo.dwo_path", "", &cb_dwo_path, "Load separate debug information (DWARF) file if available");
 	SETCB("bin.dbginfo.debug_file_directory", "/usr/lib/debug", NULL,
 		"Set the directories which searches for separate debugging information files to directory");
 	SETCB("bin.dbginfo.debuginfod", "false", NULL,
@@ -3314,7 +3364,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("cfg.plugins", "true", "Load plugins at startup");
 	SETCB("time.fmt", "%Y-%m-%d %H:%M:%S %z", &cb_cfgdatefmt, "Date format (%Y-%m-%d %H:%M:%S %z)");
 	SETICB("time.zone", 0, &cb_timezone, "Time zone, in hours relative to GMT: +2, -1,..");
-	SETBPREF("cfg.newtab", "false", "Show descriptions in command completion");
 	SETCB("cfg.debug", "false", &cb_cfgdebug, "Debugger mode");
 	p = rz_sys_getenv("EDITOR");
 #if __WINDOWS__
@@ -3339,21 +3388,27 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	// RZ_LOGLEVEL / log.level
 	p = rz_sys_getenv("RZ_LOGLEVEL");
 	SETICB("log.level", p ? atoi(p) : RZ_DEFAULT_LOGLVL, cb_log_config_level, "Target log level/severity"
-										  " (0:SILLY, 1:DEBUG, 2:VERBOSE, 3:INFO, 4:WARN, 5:ERROR, 6:FATAL)");
+										  " (0:DEBUG, 1:VERBOSE, 2:INFO, 3:WARN, 4:ERROR, 5:FATAL)");
 	free(p);
-	// RZ_LOGTRAP_LEVEL / log.traplevel
-	p = rz_sys_getenv("RZ_LOGTRAPLEVEL");
-	SETICB("log.traplevel", p ? atoi(p) : RZ_LOGLVL_FATAL, cb_log_config_traplevel, "Log level for trapping rizin when hit"
-											" (0:SILLY, 1:VERBOSE, 2:DEBUG, 3:INFO, 4:WARN, 5:ERROR, 6:FATAL)");
+
+#if RZ_BUILD_DEBUG
+	// RZ_ABORTLEVEL / log.abortlevel
+	p = rz_sys_getenv("RZ_ABORTLEVEL");
+	SETICB("log.abortlevel", p ? atoi(p) : RZ_DEFAULT_LOGLVL_ABORT, cb_log_config_abortlevel, "Target log level/severity when to abort."
+												  " (0:DEBUG, 1:VERBOSE, 2:INFO, 3:WARN, 4:ERROR, 5:FATAL)");
 	free(p);
+#endif /* RZ_BUILD_DEBUG */
+
 	// RZ_LOGFILE / log.file
 	p = rz_sys_getenv("RZ_LOGFILE");
-	SETCB("log.file", p ? p : "", cb_log_config_file, "Logging output filename / path");
+	SETCB("log.file", p ? p : "", cb_log_file, "Logging output filename / path");
 	free(p);
-	// RZ_LOGSRCINFO / log.srcinfo
-	p = rz_sys_getenv("RZ_LOGSRCINFO");
-	SETCB("log.srcinfo", p ? p : "false", cb_log_config_srcinfo, "Should the log output contain src info (filename:lineno)");
+
+	// RZ_LOGSHOWSOURCES / log.show.sources
+	p = rz_sys_getenv("RZ_LOGSHOWSOURCES");
+	SETCB("log.show.sources", p ? p : "false", cb_log_config_show_sources, "Should the log output contain src info (filename:lineno)");
 	free(p);
+
 	// RZ_LOGCOLORS / log.colors
 	p = rz_sys_getenv("RZ_LOGCOLORS");
 	SETCB("log.colors", p ? p : "false", cb_log_config_colors, "Should the log output use colors (TODO)");
@@ -3468,7 +3523,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETPREF("cmd.stack", "", "Command to display the stack in visual debug mode");
 	SETPREF("cmd.cprompt", "", "Column visual prompt commands");
 	SETPREF("cmd.gprompt", "", "Graph visual prompt commands");
-	SETPREF("cmd.hit", "", "Run when a search hit is found");
+	SETPREF("cmd.hit", "", "Command to run on every search hit.");
 	SETPREF("cmd.open", "", "Run when file is opened");
 	SETPREF("cmd.load", "", "Run when binary is loaded");
 	SETPREF("cmd.prompt", "", "Prompt commands");
@@ -3675,41 +3730,39 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB("scr.utf8.curvy", "false", &cb_utf8_curvy, "Show curved UTF-8 corners (requires scr.utf8)");
 	SETBPREF("scr.histsave", "true", "Always save history on exit");
 	n = NODECB("scr.strconv", "asciiesc", &cb_scrstrconv);
-	SETDESC(n, "Convert string before display");
+	SETDESC(n, "Convert string before display. asciiesc = Escape non-printable ASCII characters. asciidot = Replace non-printable ASCII characters with '.'.");
 	SETOPTIONS(n, "asciiesc", "asciidot", NULL);
 	SETBPREF("scr.confirmquit", "false", "Confirm on quit");
 	SETICB("scr.visual.mode", RZ_CORE_VISUAL_MODE_PX, &cb_visual_mode, "Visual mode (0: hexdump, 1: disassembly, 2: debug, 3: color blocks, 4: strings)");
 
 	/* str */
-	SETCB("str.escbslash", "false", &cb_str_escbslash, "Escape the backslash");
+	SETCB("str.escbslash", "false", &cb_str_escbslash, "Escape the backslash.");
+	n = NODECB("str.encoding", "guess", &cb_str_encoding);
+	SETDESC(n, "The default string encoding type (when set to guess, it is automatically guessed).");
+	SETOPTIONS(n, "ascii", "8bit", "utf8", "utf16le", "utf32le", "utf16be", "utf32be", "ibm037", "ibm290", "ebcdices", "ebcdicuk", "ebcdicus", "guess", NULL);
 
 	/* string search options */
 	SETB("str.search.reload", true, "When enabled, any change to any option `str.search.*` will reload the bin strings.");
-	SETICB("str.search.max_threads", RZ_THREAD_POOL_ALL_CORES, &cb_str_search_max_threads, "Maximum core number (0 for all cores).");
-	SETICB("str.search.min_length", RZ_BIN_STRING_SEARCH_MIN_STRING, &cb_str_search_min_length, "Smallest string length that is possible to find.");
-	SETICB("str.search.buffer_size", RZ_BIN_STRING_SEARCH_BUFFER_SIZE, &cb_str_search_buffer_size, "Maximum buffer size, which will also determine the maximum string length.");
-	SETICB("str.search.max_uni_blocks", RZ_BIN_STRING_SEARCH_MAX_UNI_BLOCKS, &cb_str_search_max_uni_blocks, "Maximum number of unicode blocks.");
-	SETICB("str.search.max_region_size", RZ_BIN_STRING_SEARCH_MAX_REGION_SIZE, &cb_str_search_max_region_size, "Maximum allowable size for the string search interval between two memory regions.");
-	SETICB("str.search.raw_alignment", RZ_BIN_STRING_SEARCH_RAW_FILE_ALIGNMENT, &cb_str_search_raw_alignment, "Memory sector alignment used for the raw string search.");
-	SETICB("str.search.check_ascii_freq", RZ_BIN_STRING_SEARCH_CHECK_ASCII_FREQ, &cb_str_search_check_ascii_freq, "If true, perform check on ASCII frequencies when looking for false positives during string search");
-	n = NODECB("str.search.encoding", "guess", &cb_str_search_encoding);
-	SETDESC(n, "The default string encoding type (when set to guess, it is automatically guessed).");
-	SETOPTIONS(n, "ascii", "8bit", "utf8", "utf16le", "utf32le", "utf16be", "utf32be", "guess", NULL);
 	n = NODECB("str.search.mode", "auto", &cb_str_search_mode);
 	SETDESC(n, "String search mode which can override how strings are found (auto, rosections or raw)");
 	SETOPTIONS(n, "auto", "rosections", "raw", NULL);
 
 	/* search */
 	SETCB("search.contiguous", "true", &cb_contiguous, "Accept contiguous/adjacent search hits");
-	SETICB("search.align", 0, &cb_searchalign, "Only catch aligned search hits");
+	SETICB("search.align", 1, &cb_searchalign, "Only catch aligned search hits");
 	SETI("search.chunk", 0, "Chunk size for /+ (default size is asm.bits/8");
 	SETI("search.esilcombo", 8, "Stop search after N consecutive hits");
 	SETI("search.distance", 0, "Search string distance");
 	SETBPREF("search.flags", "true", "All search results are flagged, otherwise only printed");
 	SETBPREF("search.overlap", "false", "Look for overlapped search hits");
 	SETI("search.maxhits", 0, "Maximum number of hits (0: no limit)");
-	SETI("search.from", -1, "Search start address");
-	n = NODECB("search.in", "io.maps", &cb_searchin);
+	SETICB("search.max_threads", RZ_THREAD_N_CORES_ALL_AVAILABLE, &cb_search_max_threads, "Maximum core number. '0' for all cores. '?' to show available.");
+	// Order matters for these. cb_search_to() checks if search.from is smaller or equal.
+	// Because those two are commonly used in calculations.
+	SETI("search.from", 0, "Search start address (inclusive)");
+	SETICB("search.to", UT64_MAX, &cb_search_to, "Search end address (exclusive)");
+	// Order end
+	n = NODECB("search.in", "io.maps", &cb_search_in);
 	SETDESC(n, "Specify search boundaries");
 	SETOPTIONS(n, "raw", "block",
 		"bin.section", "bin.sections", "bin.sections.rwx", "bin.sections.r", "bin.sections.rw", "bin.sections.rx", "bin.sections.wx", "bin.sections.x",
@@ -3718,18 +3771,30 @@ RZ_API int rz_core_config_init(RzCore *core) {
 		"dbg.map", "dbg.maps", "dbg.maps.rwx", "dbg.maps.r", "dbg.maps.rw", "dbg.maps.rx", "dbg.maps.wx", "dbg.maps.x",
 		"analysis.fcn", "analysis.bb",
 		NULL);
-	SETICB("search.kwidx", 0, &cb_search_kwidx, "Store last search index count");
 	SETPREF("search.prefix", "hit", "Prefix name in search hits label");
+	SETI("search.maxhits", 0, "Maximum number of hits ('0' means no limit)");
+	n = NODECB("search.show_progress", "num_hits", &cb_search_show_progress);
+	SETDESC(n, "Show the search process (false, num_hits, intervals)");
+	SETOPTIONS(n, "false", "num_hits", "intervals", NULL);
+	SETICB("search.str.min_length", RZ_BIN_STRING_SEARCH_MIN_STRING, &cb_search_str_min_length, "Smallest string length (in number of characters).");
+	SETICB("search.str.max_length", RZ_BIN_STRING_SEARCH_BUFFER_SIZE, &cb_search_str_max_length, "Maximum string length (in number of characters).");
+	SETICB("search.str.max_region_size", RZ_BIN_STRING_SEARCH_MAX_REGION_SIZE, &cb_search_str_max_region_size, "Maximum allowable size for the string search interval between two memory regions.");
+	SETICB("search.str.raw_alignment", RZ_BIN_STRING_SEARCH_RAW_FILE_ALIGNMENT, &cb_search_str_raw_alignment, "Memory sector alignment used for the raw string search (RzBin only. Use search.align for /z).");
+	SETICB("search.str.check_ascii_freq", RZ_BIN_STRING_SEARCH_CHECK_ASCII_FREQ, &cb_search_str_check_ascii_freq, "If true, perform check on ASCII frequencies when looking for false positives during string search");
+
+	SETICB("search.align", 1, &cb_searchalign, "Address alignment (searches only if 'address % search.align == 0').");
+	SETI("search.esilcombo", 8, "Stop search after N consecutive hits");
+	SETI("search.distance", 0, "Search string distance");
+	SETBPREF("search.flags", "true", "All search results are flagged, otherwise only printed");
+	SETICB("search.kwidx", 0, &cb_search_kwidx, "Store last search index count");
 	SETBPREF("search.show", "true", "Show search results");
-	SETI("search.to", -1, "Search end address");
 	n = NODECB("search.case_sensitive", "smart", &cb_search_case_sensitive);
 	SETDESC(n, "Set grep(~) as case smart/sensitive/insensitive");
 	SETOPTIONS(n, "smart", "sensitive", "insensitive", NULL);
 
 	/* rop */
 	SETI("rop.len", 5, "Maximum ROP gadget length");
-	SETBPREF("rop.sdb", "false", "Cache results in sdb (experimental)");
-	SETBPREF("rop.db", "true", "Categorize rop gadgets in sdb");
+	SETBPREF("rop.cache", "false", "Cache rop gadget results(experimental)");
 	SETBPREF("rop.subchains", "false", "Display every length gadget from rop.len=X to 2 in /Rl");
 	SETBPREF("rop.conditional", "false", "Include conditional jump, calls and returns in ropsearch");
 	SETBPREF("rop.comments", "false", "Display comments in rop search output");
@@ -3773,7 +3838,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETI("basefind.alignment", RZ_BASEFIND_BASE_ALIGNMENT, "Basefind alignment in bytes");
 	SETI("basefind.min.score", RZ_BASEFIND_SCORE_MIN_VALUE, "Basefind min score value to consider it valid");
 	SETI("basefind.min.string", RZ_BASEFIND_STRING_MIN_LENGTH, "Basefind min string size to find to consider it valid");
-	SETI("basefind.max.threads", RZ_THREAD_POOL_ALL_CORES, "Basefind max threads number (when 0 uses all available cores)");
+	SETI("basefind.max.threads", RZ_THREAD_N_CORES_ALL_AVAILABLE, "Basefind max threads number (when 0 uses all available cores)");
 
 	/* nkeys */
 	SETPREF("key.s", "", "override step into action");
@@ -3794,7 +3859,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETI("zoom.from", 0, "Zoom start address");
 	SETI("zoom.maxsz", 512, "Zoom max size of block");
 	SETI("zoom.to", 0, "Zoom end address");
-	n = NODECB("zoom.in", "io.map", &cb_searchin);
+	n = NODECB("zoom.in", "io.map", &cb_zoom_in);
 	SETDESC(n, "Specify  boundaries for zoom");
 	SETOPTIONS(n, "raw", "block",
 		"bin.section", "bin.sections", "bin.sections.rwx", "bin.sections.r", "bin.sections.rw", "bin.sections.rx", "bin.sections.wx", "bin.sections.x",
@@ -3896,7 +3961,7 @@ RZ_API RZ_OWN RzList /*<char *>*/ *rz_core_config_in_space(RZ_NONNULL RzCore *co
 	RzConfigNode *node;
 	RzListIter *iter;
 	rz_list_foreach (core->config->nodes, iter, node) {
-		char *name = strdup(node->name);
+		char *name = rz_str_dup(node->name);
 		if (!name) {
 			continue;
 		}
@@ -3907,11 +3972,11 @@ RZ_API RZ_OWN RzList /*<char *>*/ *rz_core_config_in_space(RZ_NONNULL RzCore *co
 
 		if (RZ_STR_ISNOTEMPTY(space)) {
 			if (0 == strcmp(name, space) && dot && !rz_list_find(list, dot + 1, (RzListComparator)strcmp, NULL)) {
-				rz_list_append(list, strdup(dot + 1));
+				rz_list_append(list, rz_str_dup(dot + 1));
 			}
 		} else {
 			if (!rz_list_find(list, name, (RzListComparator)strcmp, NULL)) {
-				rz_list_append(list, strdup(name));
+				rz_list_append(list, rz_str_dup(name));
 			}
 		}
 		free(name);

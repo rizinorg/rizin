@@ -81,14 +81,14 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 	return true;
 }
 
-static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	RzBinAddr *ptr = NULL;
-	RzList *ret = rz_list_newf(free);
+	RzPVector *ret = rz_pvector_new(free);
 	if (!ret) {
 		return NULL;
 	}
 	if ((ptr = RZ_NEW0(RzBinAddr))) {
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 	return ret;
 }
@@ -109,20 +109,20 @@ static RzBinInfo *info(RzBinFile *bf) {
 	if (!(ret = RZ_NEW0(RzBinInfo))) {
 		return NULL;
 	}
-	ret->file = strdup(bf->file);
-	ret->bclass = strdup("dyldcache");
-	ret->os = strdup(rz_dyldcache_get_platform_str(cache));
+	ret->file = rz_str_dup(bf->file);
+	ret->bclass = rz_str_dup("dyldcache");
+	ret->os = rz_str_dup(rz_dyldcache_get_platform_str(cache));
 	if (strstr(cache->hdr->magic, "x86_64")) {
-		ret->arch = strdup("x86");
+		ret->arch = rz_str_dup("x86");
 		ret->bits = 64;
 	} else {
-		ret->arch = strdup("arm");
+		ret->arch = rz_str_dup("arm");
 		ret->bits = strstr(cache->hdr->magic, "arm64") ? 64 : 32;
 	}
-	ret->machine = strdup(ret->arch);
-	ret->subsystem = strdup("xnu");
+	ret->machine = rz_str_dup(ret->arch);
+	ret->subsystem = rz_str_dup("xnu");
 	ret->guid = rz_hex_bin2strdup((ut8 *)cache->hdr->uuid, sizeof(cache->hdr->uuid));
-	ret->type = strdup(rz_dyldcache_get_type_str(cache));
+	ret->type = rz_str_dup(rz_dyldcache_get_type_str(cache));
 	ret->has_va = true;
 	ret->big_endian = big_endian;
 	ret->dbg_info = 0;
@@ -134,7 +134,7 @@ static ut64 baddr(RzBinFile *bf) {
 	return 0x180000000;
 }
 
-void symbols_from_bin(RzDyldCache *cache, RzPVector /*<RzBinSymbol *>*/ *ret, RzBinFile *bf, RzDyldBinImage *bin, SetU *hash) {
+void symbols_from_bin(RzDyldCache *cache, RzPVector /*<RzBinSymbol *>*/ *ret, RzBinFile *bf, RzDyldBinImage *bin, RzSetU *hash) {
 	struct MACH0_(obj_t) *mach0 = bin_to_mach0(bf, bin);
 	if (!mach0) {
 		return;
@@ -156,7 +156,7 @@ void symbols_from_bin(RzDyldCache *cache, RzPVector /*<RzBinSymbol *>*/ *ret, Rz
 		if (!sym) {
 			break;
 		}
-		sym->name = strdup(symbols[i].name);
+		sym->name = rz_str_dup(symbols[i].name);
 		sym->vaddr = symbols[i].addr;
 		sym->forwarder = "NONE";
 		sym->bind = (symbols[i].type == RZ_BIN_MACH0_SYMBOL_TYPE_LOCAL) ? RZ_BIN_BIND_LOCAL_STR : RZ_BIN_BIND_GLOBAL_STR;
@@ -165,7 +165,7 @@ void symbols_from_bin(RzDyldCache *cache, RzPVector /*<RzBinSymbol *>*/ *ret, Rz
 		sym->size = symbols[i].size;
 		sym->ordinal = i;
 
-		set_u_add(hash, sym->vaddr);
+		rz_set_u_add(hash, sym->vaddr);
 		rz_pvector_push(ret, sym);
 	}
 	MACH0_(mach0_free)
@@ -220,7 +220,9 @@ static void sections_from_bin(RzPVector /*<RzBinSection *>*/ *ret, RzBinFile *bf
 		}
 		if (strstr(ptr->name, "la_symbol_ptr")) {
 			int len = sections[i].size / 8;
-			ptr->format = rz_str_newf("Cd %d %d", 8, len);
+			ptr->layout.type = RZ_META_TYPE_DATA;
+			ptr->layout.element_size = 8;
+			ptr->layout.count = len;
 		}
 		ptr->is_data = __is_data_section(ptr->name);
 		ptr->size = sections[i].size;
@@ -251,7 +253,7 @@ static RzPVector /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 		}
 		vf->buf = rz_dyldcache_new_rebasing_buf(cache);
 		vf->buf_owned = true;
-		vf->name = strdup(RZ_DYLDCACHE_VFILE_NAME_REBASED);
+		vf->name = rz_str_dup(RZ_DYLDCACHE_VFILE_NAME_REBASED);
 		rz_pvector_push(ret, vf);
 	}
 	return ret;
@@ -294,7 +296,7 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 		map->vaddr = cache->maps[i].address + slide;
 		map->perm = prot2perm(cache->maps[i].initProt);
 		if (rz_dyldcache_range_needs_rebasing(cache, map->paddr, map->psize)) {
-			map->vfile_name = strdup(RZ_DYLDCACHE_VFILE_NAME_REBASED);
+			map->vfile_name = rz_str_dup(RZ_DYLDCACHE_VFILE_NAME_REBASED);
 		}
 		rz_pvector_push(ret, map);
 	}
@@ -341,14 +343,14 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	RzListIter *iter;
 	RzDyldBinImage *bin;
 	rz_list_foreach (cache->bins, iter, bin) {
-		SetU *hash = set_u_new();
+		RzSetU *hash = rz_set_u_new();
 		if (!hash) {
 			rz_pvector_free(ret);
 			return NULL;
 		}
 		symbols_from_bin(cache, ret, bf, bin, hash);
 		rz_dyldcache_symbols_from_locsym(cache, bin, ret, hash);
-		set_u_free(hash);
+		rz_set_u_free(hash);
 	}
 
 	ut64 slide = rz_dyldcache_get_slide(cache);

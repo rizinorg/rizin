@@ -69,8 +69,7 @@ af
 af-
 afi~size
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=no no return 2
@@ -80,8 +79,7 @@ af
 af-*
 afi~size
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=noreturn real test

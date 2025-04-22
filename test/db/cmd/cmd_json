@@ -30,15 +30,15 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=/j with backslash
+NAME=/zj with backslash
 FILE=bins/pe/ConsoleApplication1.exe
-CMDS=/j ConsoleApplication1.pdb~{}
+CMDS=/zj ConsoleApplication1.pdb~{}
 EXPECT=<<EOF
 [
   {
-    "offset": 4203952,
-    "type": "string",
-    "data": "cation1\\Release\\ConsoleApplication1.pdb  "
+    "address": 4203952,
+    "size": 23,
+    "flag": "hit.string.ascii.0"
   }
 ]
 EOF

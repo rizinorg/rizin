@@ -2,8 +2,7 @@ NAME=PE: corkami apphdrW7.exe - open
 FILE=bins/pe/apphdrW7.exe
 ARGS=-A
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=PE: corkami apphdrW7.exe - entrypoint

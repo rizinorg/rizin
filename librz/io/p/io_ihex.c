@@ -27,13 +27,15 @@ KK = 0 - (sum of all bytes)
 
 */
 
-#include "rz_io.h"
-#include "rz_lib.h"
-#include "rz_util.h"
-#include <limits.h> //for INT_MAX
+#include <rz_io.h>
+#include <rz_lib.h>
+#include <rz_util.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
+
+#include "rz_io_plugins.h"
 
 // struct Rihex : holds sparse buffer + its own fd, for internal management
 typedef struct {

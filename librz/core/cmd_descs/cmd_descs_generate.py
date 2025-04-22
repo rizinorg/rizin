@@ -15,7 +15,6 @@ from cmd_descs_util import (
     CD_TYPE_FAKE,
     CD_TYPE_GROUP,
     CD_TYPE_INNER,
-    CD_TYPE_OLDINPUT,
     CD_VALID_TYPES,
     compute_cname,
     get_handler_cname,
@@ -105,9 +104,6 @@ DESC_HELP_TEMPLATE = """static const RzCmdDescHelp {cname} = {{
 {description}{args_str}{usage}{options}{details}{details_cb}{args}{sort_subcommands}}};
 """
 
-DEFINE_OLDINPUT_TEMPLATE = """
-\tRzCmdDesc *{cname}_cd = rz_cmd_desc_oldinput_new(core->rcmd, {parent_cname}_cd, {name}, {handler_cname}, &{help_cname});
-\trz_warn_if_fail({cname}_cd);"""
 DEFINE_ARGV_TEMPLATE = """
 \tRzCmdDesc *{cname}_cd = rz_cmd_desc_argv_new(core->rcmd, {parent_cname}_cd, {name}, {handler_cname}, &{help_cname});
 \trz_warn_if_fail({cname}_cd);"""
@@ -152,7 +148,7 @@ def strip(s):
 class Arg:
     def __init__(self, cd, c):
         if "name" not in c or "type" not in c:
-            print("Argument of %s should have `name`/`type` fields" % (cd.name,))
+            print("Argument of '%s' should have `name`/`type` fields" % (cd.name,))
             sys.exit(1)
 
         self.cd = cd
@@ -169,14 +165,14 @@ class Arg:
         self.choices_cb = c.pop("choices_cb", None)
         if c.keys():
             print(
-                "Argument %s for command %s has unrecognized properties: %s."
+                "Argument '%s' for command '%s' has unrecognized properties: '%s'."
                 % (self.name, self.cd.name, c.keys())
             )
             sys.exit(1)
 
         if self.default_value is not None and self.optional is not None:
             print(
-                "Argument %s for command %s has both optional and default_value."
+                "Argument '%s' for command '%s' has both optional and default_value."
                 % (self.name, self.cd.name)
             )
             sys.exit(1)
@@ -283,7 +279,7 @@ class Detail:
         self.entries = [format_detail_entry(x) for x in c.pop("entries")]
         if c.keys():
             print(
-                "Detail %s for command %s has unrecognized properties: %s."
+                "Detail '%s' for command '%s' has unrecognized properties: %s."
                 % (self.name, self.cd.name, c.keys())
             )
             sys.exit(1)
@@ -352,7 +348,7 @@ class CmdDesc:
             subcommands_name = c.pop("subcommands")
             if subcommands_name not in yamls:
                 print(
-                    "Command %s referenced another YAML file (%s) that is not passed as arg to cmd_descs_generate.py."
+                    "Command '%s' referenced another YAML file (%s) that is not passed as arg to cmd_descs_generate.py."
                     % (self.name, subcommands_name)
                 )
                 sys.exit(1)
@@ -428,19 +424,20 @@ class CmdDesc:
 
     def _validate(self, c):
         if c.keys():
-            print("Command %s has unrecognized properties: %s." % (self.name, c.keys()))
+            print(
+                "Command '%s' has unrecognized properties: %s." % (self.name, c.keys())
+            )
             sys.exit(1)
 
         if self.type not in CD_VALID_TYPES:
-            print("Command %s does not have a valid type." % (self.name,))
+            print("Command '%s' does not have a valid type." % (self.name,))
             sys.exit(1)
 
         if (
-            self.type
-            in [CD_TYPE_ARGV, CD_TYPE_ARGV_MODES, CD_TYPE_ARGV_STATE, CD_TYPE_OLDINPUT]
+            self.type in [CD_TYPE_ARGV, CD_TYPE_ARGV_MODES, CD_TYPE_ARGV_STATE]
             and not self.cname
         ):
-            print("Command %s does not have cname field" % (self.name,))
+            print("Command '%s' does not have cname field" % (self.name,))
             sys.exit(1)
 
         if (
@@ -458,9 +455,8 @@ class CmdDesc:
         if self.parent and self.parent.type not in [
             CD_TYPE_GROUP,
             CD_TYPE_INNER,
-            CD_TYPE_OLDINPUT,
         ]:
-            print("The parent of %s is of the wrong type" % (self.cname,))
+            print("The parent of '%s' is of the wrong type" % (self.cname,))
             sys.exit(1)
 
         if self.cname in CmdDesc.c_cds:
@@ -475,15 +471,21 @@ class CmdDesc:
             print("Specify arguments for command %s" % (self.name,))
             sys.exit(1)
 
+        if self.modes and "RZ_OUTPUT_MODE_STANDARD" in self.modes and self.default_mode:
+            print(
+                "You cannot define `default_mode` if `RZ_OUTPUT_MODE_STANDARD` mode is set on command `%s`"
+                % (self.name,)
+            )
+            sys.exit(1)
+
     def get_handler_cname(self):
         if self.type not in [
-            CD_TYPE_OLDINPUT,
             CD_TYPE_ARGV,
             CD_TYPE_ARGV_MODES,
             CD_TYPE_ARGV_STATE,
         ]:
             return None
-        return get_handler_cname(self.type, self.handler, self.cname)
+        return get_handler_cname(self.handler, self.cname)
 
     @classmethod
     def get_arg_cname(cls, cd):
@@ -714,17 +716,6 @@ def createcd(cd):
         formatted_string += "\n".join(
             [createcd(child) for child in cd.subcommands or []]
         )
-    elif cd.type == CD_TYPE_OLDINPUT:
-        formatted_string = DEFINE_OLDINPUT_TEMPLATE.format(
-            cname=cd.cname,
-            parent_cname=cd.parent.cname,
-            name=strornull(cd.name),
-            handler_cname=cd.get_handler_cname(),
-            help_cname=cd.get_help_cname(),
-        )
-        formatted_string += "\n".join(
-            [createcd(child) for child in cd.subcommands or []]
-        )
     elif cd.type == CD_TYPE_GROUP:
         formatted_string = createcd_typegroup(cd)
     else:
@@ -778,15 +769,6 @@ def handler2decl(cd, cd_type, handler_name, db_names):
             )
         )
         db_names.add(handler_name)
-    if cd_type == CD_TYPE_OLDINPUT and handler_name not in db_names:
-        out.append(
-            '// "%s"\nRZ_IPI int %s(void *data, const char *input);'
-            % (
-                cd.name,
-                handler_name,
-            )
-        )
-        db_names.add(handler_name)
 
     if cd.details_cb is not None and cd.details_cb not in db_names:
         out.append(
@@ -814,7 +796,7 @@ parser.add_argument(
 parser.add_argument("--output-dir", type=str, required=True, help="Output directory")
 parser.add_argument(
     "yaml_files",
-    type=argparse.FileType("r"),
+    type=argparse.FileType("r", encoding="utf8"),
     nargs="+",
     help="Input YAML files containing commands descriptions. One should be named 'root'.",
 )

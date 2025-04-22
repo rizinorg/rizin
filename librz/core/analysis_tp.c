@@ -176,7 +176,7 @@ static void get_src_regname(RzCore *core, ut64 addr, char *regname, int size) {
 		rz_analysis_op_free(op);
 		return;
 	}
-	char *op_esil = strdup(rz_strbuf_get(&op->esil));
+	char *op_esil = rz_str_dup(rz_strbuf_get(&op->esil));
 	char *tmp = strchr(op_esil, ',');
 	if (tmp) {
 		*tmp = '\0';
@@ -188,7 +188,7 @@ static void get_src_regname(RzCore *core, ut64 addr, char *regname, int size) {
 			const char *reg = rz_reg_32_to_64(analysis->reg, op_esil);
 			if (reg) {
 				free(op_esil);
-				op_esil = strdup(reg);
+				op_esil = rz_str_dup(reg);
 			}
 		}
 		strncpy(regname, op_esil, size - 1);
@@ -240,7 +240,7 @@ static RzList /*<char *>*/ *parse_format(RzCore *core, char *fmt) {
 		}
 		*tmp = '\0';
 		const char *query = rz_strf(tmpbuf, "spec.%s.%s", spec, arr);
-		char *type = (char *)sdb_const_get(s, query, 0);
+		char *type = (char *)sdb_const_get(s, query);
 		if (type) {
 			rz_list_append(ret, type);
 		}
@@ -315,12 +315,12 @@ bool function_argument_type_derive(RZ_NULLABLE const RzCallable *callable, int a
 	if (arg_num >= rz_pvector_len(callable->args)) {
 		return false;
 	}
-	RzCallableArg *arg = *rz_pvector_index_ptr(callable->args, arg_num);
+	RzCallableArg *arg = rz_pvector_at(callable->args, arg_num);
 	if (!arg) {
 		return false;
 	}
 	*type = rz_type_clone(arg->type);
-	*name = strdup(arg->name);
+	*name = rz_str_dup(arg->name);
 	return true;
 }
 
@@ -530,10 +530,6 @@ static int bb_cmpaddr(const void *_a, const void *_b, void *user) {
 	return a->addr > b->addr ? 1 : (a->addr < b->addr ? -1 : 0);
 }
 
-void free_op_cache_kv(HtUPKv *kv) {
-	rz_analysis_op_free(kv->value);
-}
-
 void handle_stack_canary(RzCore *core, RzAnalysisOp *aop, int cur_idx) {
 	RzILTraceInstruction *prev_trace = rz_analysis_esil_get_instruction_trace(
 		core->analysis->esil->trace,
@@ -609,7 +605,7 @@ static void propagate_return_type(RzCore *core, RzAnalysisOp *aop, RzAnalysisOp 
 		} else if (type == RZ_ANALYSIS_OP_TYPE_MOV) {
 			RZ_FREE(ctx->ret_reg);
 			if (single_write_reg && single_write_reg->reg_name) {
-				ctx->ret_reg = strdup(single_write_reg->reg_name);
+				ctx->ret_reg = rz_str_dup(single_write_reg->reg_name);
 			}
 		}
 	} else if (single_write_reg) {
@@ -668,24 +664,24 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, RzAnalys
 		// from the RzAnalysisFunction if nothing was found in the RzTypeDB
 		if (full_name) {
 			if (rz_type_func_exist(core->analysis->typedb, full_name)) {
-				fcn_name = strdup(full_name);
+				fcn_name = rz_str_dup(full_name);
 			} else {
 				fcn_name = rz_analysis_function_name_guess(core->analysis->typedb, full_name);
 			}
 			if (!fcn_name) {
-				fcn_name = strdup(full_name);
+				fcn_name = rz_str_dup(full_name);
 				userfnc = true;
 			}
 			const char *Cc = rz_analysis_cc_func(core->analysis, fcn_name);
 			if (Cc && rz_analysis_cc_exist(core->analysis, Cc)) {
-				char *cc = strdup(Cc);
+				char *cc = rz_str_dup(Cc);
 				type_match(core, fcn_name, aop->addr, bb->addr, cc, prev_idx, userfnc, callee_addr, op_cache);
 				prev_idx = ctx->cur_idx;
 				ctx->retctx->ret_type = rz_type_func_ret(core->analysis->typedb, fcn_name);
 				RZ_FREE(ctx->retctx->ret_reg);
 				const char *rr = rz_analysis_cc_ret(core->analysis, cc);
 				if (rr) {
-					ctx->retctx->ret_reg = strdup(rr);
+					ctx->retctx->ret_reg = rz_str_dup(rr);
 				}
 				ctx->retctx->resolved = false;
 				free(cc);
@@ -737,6 +733,9 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, RzAnalys
 				RzAnalysisOp *jmp_op = { 0 };
 				ut64 jmp_addr = next_op->jump;
 				RzAnalysisBlock *jmpbb = rz_analysis_fcn_bbget_in(core->analysis, fcn, jmp_addr);
+				if (!jmpbb) {
+					continue;
+				}
 
 				// Check exit status of jmp branch
 				int i;
@@ -814,8 +813,6 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, RzAnalys
 #define OP_CACHE_LIMIT 8192
 
 RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, HtUU *loop_table) {
-	RzListIter *it;
-
 	rz_return_if_fail(core && core->analysis && fcn);
 
 	if (!core->analysis->esil) {
@@ -840,12 +837,10 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 	}
 
 	// Reserve bigger ht to avoid rehashing
-	HtPPOptions opt;
 	RzDebugTrace *dtrace = core->dbg->trace;
-	opt = dtrace->ht->opt;
-	ht_pp_free(dtrace->ht);
-	dtrace->ht = ht_pp_new_size(fcn->ninstr, opt.dupvalue, opt.freefn, opt.calcsizeV);
-	dtrace->ht->opt = opt;
+	HtSPOptions opt = dtrace->ht->opt;
+	ht_sp_free(dtrace->ht);
+	dtrace->ht = ht_sp_new_opt_size(&opt, fcn->ninstr);
 
 	// Create a new context to store the return type propagation state
 	struct ReturnTypeAnalysisCtx retctx = {
@@ -870,14 +865,17 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 		goto out_function;
 	}
 	rz_cons_break_push(NULL, NULL);
-	rz_list_sort(fcn->bbs, bb_cmpaddr, NULL);
+	rz_pvector_sort(fcn->bbs, bb_cmpaddr, NULL);
+
 	// TODO: The algorithm can be more accurate if blocks are followed by their jmp/fail, not just by address
 	RzAnalysisBlock *bb;
-	rz_list_foreach (fcn->bbs, it, bb) {
+	void **vit;
+	rz_pvector_foreach (fcn->bbs, vit) {
+		bb = (RzAnalysisBlock *)*vit;
 		ut64 addr = bb->addr;
 		rz_reg_set_value(reg, r, addr);
 		ht_up_free(op_cache);
-		op_cache = ht_up_new(NULL, free_op_cache_kv, NULL);
+		op_cache = ht_up_new(NULL, (HtUPFreeValue)rz_analysis_op_free);
 		if (!op_cache) {
 			break;
 		}
@@ -933,7 +931,7 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 			// excessive memory usage.
 			if (op_cache->count > OP_CACHE_LIMIT) {
 				ht_up_free(op_cache);
-				op_cache = ht_up_new(NULL, free_op_cache_kv, NULL);
+				op_cache = ht_up_new(NULL, (HtUPFreeValue)rz_analysis_op_free);
 				if (!op_cache) {
 					break;
 				}
@@ -942,7 +940,6 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 	}
 
 	// Type propagation for register based args
-	void **vit;
 	rz_pvector_foreach (&fcn->vars, vit) {
 		RzAnalysisVar *rvar = *vit;
 		if (rvar->storage.type == RZ_ANALYSIS_VAR_STORAGE_REG) {

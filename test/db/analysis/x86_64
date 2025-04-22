@@ -1,11 +1,11 @@
-NAME=got switch cases
+NAME=analyze preludes
 FILE=bins/elf/fedora_32_bin_ls
 CMDS=<<EOF
 aap
 aflc
 EOF
 EXPECT=<<EOF
-459
+458
 EOF
 RUN
 
@@ -650,8 +650,7 @@ CMDS=<<EOF
 aa > /dev/null
 afl~sym.__mh_execute_header[0]
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 
@@ -744,8 +743,7 @@ aa
 af-*
 afl
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=iS. and iSj. implementation
@@ -759,9 +757,9 @@ s 0x760
 iS.j
 EOF
 EXPECT=<<EOF
-paddr      size vaddr      vsize align perm name               type flags 
+     paddr size      vaddr vsize align perm name               type flags 
 --------------------------------------------------------------------------
-0x00000188 0x24 0x08048188 0x24  0x0   -r-- .note.gnu.build-id NOTE alloc
+0x00000188 0x24 0x08048188  0x24   0x0 -r-- .note.gnu.build-id NOTE alloc
 paddr size vaddr vsize align perm name type flags 
 --------------------------------------------------
 [{"name":".plt","size":240,"vsize":240,"perm":"-r-x","type":"PROGBITS","flags":["alloc","execute"],"paddr":1888,"vaddr":134514528}]
@@ -778,9 +776,9 @@ sd +5
 is.j
 EOF
 EXPECT=<<EOF
-nth paddr      vaddr      bind   type size lib name    
+nth      paddr      vaddr bind   type size lib name    
 -------------------------------------------------------
-22  0x000009b7 0x080489b7 GLOBAL FUNC 189      decrypt
+ 22 0x000009b7 0x080489b7 GLOBAL FUNC  189     decrypt
 [{"name":"prog_timeout","flagname":"sym.prog_timeout","realname":"prog_timeout","ordinal":35,"bind":"GLOBAL","size":17,"type":"FUNC","vaddr":134515110,"paddr":2470,"is_imported":false,"lib":""}]
 EOF
 RUN
@@ -1308,7 +1306,7 @@ EXPECT=<<EOF
 |           0x14000b568      4533c9         xor   r9d, r9d             ; LPSECURITY_ATTRIBUTES lpSecurityAttributes
 |           0x14000b56b      4489442420     mov   dword [dwCreationDisposition], r8d ; DWORD dwCreationDisposition
 |           0x14000b570      ba00000040     mov   edx, 0x40000000      ; DWORD dwDesiredAccess
-|           0x14000b575      ff158d1c0000   call  qword [sym.imp.KERNEL32.dll_CreateFileW] ; [sym.imp.KERNEL32.dll_CreateFileW:8]=0x1579e reloc.KERNEL32.dll_CreateFileW ; HANDLE CreateFileW(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile)
+|           0x14000b575      ff158d1c0000   call  qword [sym.imp.KERNEL32.dll_CreateFileW] ; [0x14000d208:8]=0x1579e ; HANDLE CreateFileW(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile)
 |           0x14000b57b      4889057eb400.  mov   qword [0x140016a00], rax ; [0x140016a00:8]=-2
 |           0x14000b582      4883c448       add   rsp, 0x48
 \           0x14000b586      c3             ret
@@ -1358,8 +1356,7 @@ tfc CRTStartup THE_CC_THAT_NEVER_EXISTED
 aei
 aeim
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=2: Wrong calling convention
@@ -1622,8 +1619,7 @@ af
 afvr-*
 afvr-*
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=analysis vars crash 2
@@ -2738,8 +2734,7 @@ CMDS=<<EOF
 aaa
 fl~strlen~390
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=no function split without overlapping blocks
@@ -3331,9 +3326,9 @@ EXPECT=<<EOF
 |                                  |
 `----------------------------------'
 
-addr       name         size xrefsTo xrefsFrom calls nbbs edges cc cost noreturn min bound  range max bound  locals args frame loops 
+      addr name         size xrefsTo xrefsFrom calls nbbs edges cc cost noreturn  min bound range  max bound locals args frame loops 
 -------------------------------------------------------------------------------------------------------------------------------------
-0x00000003 fcn.00000003 9    1       1         0     3    3     0  4    false    0x00000000 7     0x00000007 0      0    0     1
+0x00000003 fcn.00000003    9       1         1     0    3     3  0    4 false    0x00000000     7 0x00000007      0    0     0     1
 EOF
 RUN
 
@@ -3988,31 +3983,6 @@ outputs: 11
 EOF
 RUN
 
-NAME=./noncode
-FILE=bins/mach0/ls-osx-x86_64
-CMDS=<<EOF
-e analysis.noncode=false
-afr
-afl~?str.
-EOF
-EXPECT=<<EOF
-0
-EOF
-RUN
-
-NAME=./noncode
-FILE=bins/mach0/ls-osx-x86_64
-CMDS=<<EOF
-e analysis.noncode=false
-e analysis.calls=true
-af
-afl~?str.
-EOF
-EXPECT=<<EOF
-0
-EOF
-RUN
-
 NAME=Microsoft x64 CC Args/Vars
 FILE=bins/pe/testx64.exe
 CMDS=<<EOF
@@ -4102,8 +4072,7 @@ s 0x780
 af
 pdr~- case[2]
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=lea pseudo improvements (pseudo disabled)
@@ -4271,8 +4240,7 @@ FILE=bins/elf/dwarf_attr_check
 CMDS=<<EOF
 aaa
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=x86_64 int64_t variable overlapping removal
@@ -4311,10 +4279,10 @@ arg int64_t arg2 @ rsi
 void fcn.00010270(int64_t arg1, int64_t arg2, const char **s, int64_t arg4, int64_t arg5);
 var const char *s2 @ stack - 0xc8
 var void *s1 @ stack - 0xc0
-var uint64_t var_b8h @ stack - 0xb8
+var unsigned long long var_b8h @ stack - 0xb8
 var int64_t var_b0h @ stack - 0xb0
 var int64_t var_a8h @ stack - 0xa8
-var uint64_t var_98h @ stack - 0x98
+var unsigned long long var_98h @ stack - 0x98
 var int64_t var_94h @ stack - 0x94
 var int64_t var_90h @ stack - 0x90
 var int64_t var_88h @ stack - 0x88
@@ -4341,10 +4309,10 @@ EOF
 EXPECT=<<EOF
 addr size jump fail 
 --------------------
-0x0  2    0x23 0x2
-0x2  2    0x1e -1
-0x1e 5    0x23 -1
-0x23 7    -1   -1
+ 0x0    2 0x23  0x2
+ 0x2    2 0x1e   -1
+0x1e    5 0x23   -1
+0x23    7   -1   -1
 EOF
 RUN
 
@@ -4356,39 +4324,39 @@ af
 afbt
 EOF
 EXPECT=<<EOF
-addr    size jump    fail    
+   addr size    jump    fail 
 -----------------------------
-0xa3a20 17   0xa3b4b 0xa3a31
-0xa3a31 10   0xa3b9a 0xa3a3b
-0xa3a3b 17   -1      -1
-0xa3b4a 1    -1      -1
-0xa3b4b 5    0xa3b62 0xa3b50
-0xa3b50 5    0xa3b73 0xa3b55
-0xa3b55 5    0xa3b80 0xa3b5a
-0xa3b5a 2    0xa3b61 0xa3b5c
-0xa3b5c 5    0xa3b61 -1
-0xa3b61 1    -1      -1
-0xa3b62 17   -1      -1
-0xa3b73 13   -1      -1
-0xa3b80 17   -1      -1
-0xa3b9a 9    0xa3c13 0xa3ba3
-0xa3ba3 6    0xa3bf0 0xa3ba9
-0xa3ba9 71   -1      -1
-0xa3bf0 35   -1      -1
-0xa3c13 9    0xa3ca8 0xa3c1c
-0xa3c1c 6    0xa3b4a 0xa3c22
-0xa3c22 65   0xa3d2f 0xa3c63
-0xa3c63 48   0xa3c63 0xa3c93
-0xa3c93 21   -1      -1
-0xa3ca8 63   0xa3d96 0xa3ce7
-0xa3ce7 52   0xa3ce7 0xa3d1b
-0xa3d1b 20   -1      -1
-0xa3d2f 13   0xa3c63 0xa3d3c
-0xa3d3c 66   0xa3d3c 0xa3d7e
-0xa3d7e 24   -1      -1
-0xa3d96 13   0xa3ce7 0xa3da3
-0xa3da3 67   0xa3da3 0xa3de6
-0xa3de6 23   -1      -1
+0xa3a20   17 0xa3b4b 0xa3a31
+0xa3a31   10 0xa3b9a 0xa3a3b
+0xa3a3b   17      -1      -1
+0xa3b4a    1      -1      -1
+0xa3b4b    5 0xa3b62 0xa3b50
+0xa3b50    5 0xa3b73 0xa3b55
+0xa3b55    5 0xa3b80 0xa3b5a
+0xa3b5a    2 0xa3b61 0xa3b5c
+0xa3b5c    5 0xa3b61      -1
+0xa3b61    1      -1      -1
+0xa3b62   17      -1      -1
+0xa3b73   13      -1      -1
+0xa3b80   17      -1      -1
+0xa3b9a    9 0xa3c13 0xa3ba3
+0xa3ba3    6 0xa3bf0 0xa3ba9
+0xa3ba9   71      -1      -1
+0xa3bf0   35      -1      -1
+0xa3c13    9 0xa3ca8 0xa3c1c
+0xa3c1c    6 0xa3b4a 0xa3c22
+0xa3c22   65 0xa3d2f 0xa3c63
+0xa3c63   48 0xa3c63 0xa3c93
+0xa3c93   21      -1      -1
+0xa3ca8   63 0xa3d96 0xa3ce7
+0xa3ce7   52 0xa3ce7 0xa3d1b
+0xa3d1b   20      -1      -1
+0xa3d2f   13 0xa3c63 0xa3d3c
+0xa3d3c   66 0xa3d3c 0xa3d7e
+0xa3d7e   24      -1      -1
+0xa3d96   13 0xa3ce7 0xa3da3
+0xa3da3   67 0xa3da3 0xa3de6
+0xa3de6   23      -1      -1
 EOF
 RUN
 
@@ -4415,3 +4383,14 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=axf string false positive
+FILE=bins/elf/echo
+CMDS=<<EOF
+# make sure none of the analysis produces incorrect redundant xref see rizinorg/rizin#1828
+aaa
+axf @ 0xef8
+EOF
+EXPECT=<<EOF
+d 0x11f4 str.Missing_argument
+EOF
+RUN

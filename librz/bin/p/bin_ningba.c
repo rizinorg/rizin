@@ -19,8 +19,8 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 	return check_buffer(buf);
 }
 
-static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
-	RzList *ret = rz_list_newf(free);
+static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+	RzPVector *ret = rz_pvector_new(free);
 	RzBinAddr *ptr = NULL;
 
 	if (bf && bf->buf) {
@@ -31,7 +31,7 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 			return ret;
 		}
 		ptr->paddr = ptr->vaddr = 0x8000000;
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 	return ret;
 }
@@ -53,9 +53,9 @@ static RzBinInfo *info(RzBinFile *bf) {
 	rz_buf_read_at(bf->buf, 0xa0, rom_info, 16);
 	ret->file = rz_str_ndup((const char *)rom_info, 12);
 	ret->type = rz_str_ndup((char *)&rom_info[12], 4);
-	ret->machine = strdup("GameBoy Advance");
-	ret->os = strdup("any");
-	ret->arch = strdup("arm");
+	ret->machine = rz_str_dup("GameBoy Advance");
+	ret->os = rz_str_dup("any");
+	ret->arch = rz_str_dup("arm");
 	ret->has_va = 1;
 	ret->bits = 32;
 	ret->big_endian = 0;
@@ -74,7 +74,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		free(s);
 		return NULL;
 	}
-	s->name = strdup("ROM");
+	s->name = rz_str_dup("ROM");
 	s->paddr = 0;
 	s->vaddr = 0x8000000;
 	s->size = sz;

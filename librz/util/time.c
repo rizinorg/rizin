@@ -23,14 +23,12 @@
  * information.
  *
  * \param p Pointer to a \p timeval structure that will be filled by this function
- * \param tz Pointer to a \p rz_timezone structure that will be filled by this function
  * \return 0 if the function succeeds, -1 on error
  */
-RZ_API int rz_time_gettimeofday(struct timeval *p, struct rz_timezone *tz) {
+RZ_API int rz_time_gettimeofday(struct timeval *p) {
 	// ULARGE_INTEGER ul; // As specified on MSDN.
 	ut64 ul = 0;
-	static int tzflag = 0;
-	FILETIME ft;
+	FILETIME ft = { 0 };
 	if (p) {
 		// Returns a 64-bit value representing the number of
 		// 100-nanosecond intervals since January 1, 1601 (UTC).
@@ -54,14 +52,6 @@ RZ_API int rz_time_gettimeofday(struct timeval *p, struct rz_timezone *tz) {
 		p->tv_sec = (long)(ul / 1000000LL);
 		p->tv_usec = (long)(ul % 1000000LL);
 	}
-	if (tz) {
-		if (!tzflag) {
-			_tzset();
-			tzflag++;
-		}
-		tz->tz_minuteswest = _timezone / 60;
-		tz->tz_dsttime = _daylight;
-	}
 	return 0;
 }
 #else
@@ -72,32 +62,39 @@ RZ_API int rz_time_gettimeofday(struct timeval *p, struct rz_timezone *tz) {
  * information.
  *
  * \param p Pointer to a \p timeval structure that will be filled by this function
- * \param tz Pointer to a \p rz_timezone structure that will be filled by this function
  * \return 0 if the function succeeds, -1 on error
  */
-RZ_API int rz_time_gettimeofday(struct timeval *p, struct rz_timezone *tz) {
-	return gettimeofday(p, tz);
+RZ_API int rz_time_gettimeofday(struct timeval *p) {
+	// struct timezone is obsolete and shall not be used.
+	return gettimeofday(p, NULL);
 }
 #endif
 
 /**
- * \brief Returns the current time in microseconds
+ * \brief Returns the current time in microseconds.
+ *
+ * Note: Don't use this for timestamps! The returned time can fluctuate.
+ * Strictly ascending values are not guaranteed with consecutive calls!
+ * So use it only for human-readable date/time information.
+ * For timestamps use rz_time_now_mono().
  *
  * \return The current time
  */
 RZ_API ut64 rz_time_now(void) {
 	ut64 ret;
 	struct timeval now;
-	rz_time_gettimeofday(&now, NULL);
+	rz_time_gettimeofday(&now);
 	ret = now.tv_sec * RZ_USEC_PER_SEC;
 	ret += now.tv_usec;
 	return ret;
 }
 
 /**
- * \brief Returns the current time in microseconds, using the monotonic clock
+ * \brief Returns microseconds since the start of the
+ * system-wide valid monotonic clock.
+ * Start point of the clock differs from system to system.
  *
- * \return The current time
+ * \return The monotonic clock microseconds
  */
 RZ_API ut64 rz_time_now_mono(void) {
 #if __WINDOWS__

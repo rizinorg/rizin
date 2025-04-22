@@ -155,12 +155,12 @@ int xnu_attach(RzDebug *dbg, int pid) {
 
 	ctx->cpu = xnu_get_cpu_type(pid);
 	if (!ctx->cpu) {
-		RZ_LOG_ERROR("xnu_attach failed to determine cpu type of pid %d", pid);
+		RZ_LOG_ERROR("xnu_attach failed to determine cpu type of pid %d\n", pid);
 	}
 
 	// First start listening to exceptions, which will also deliver signals to us
 	if (!xnu_create_exception_thread(dbg)) {
-		RZ_LOG_ERROR("Failed to start listening to mach exceptions");
+		RZ_LOG_ERROR("Failed to start listening to mach exceptions\n");
 		return -1;
 	}
 
@@ -168,7 +168,7 @@ int xnu_attach(RzDebug *dbg, int pid) {
 	int r = rz_debug_ptrace(dbg, PT_ATTACHEXC, pid, 0, 0);
 	if (r < 0) {
 		perror("ptrace(PT_ATTACHEXC)");
-		RZ_LOG_ERROR("Failed to attach to process");
+		RZ_LOG_ERROR("Failed to attach to process\n");
 		return -1;
 	}
 
@@ -176,7 +176,7 @@ int xnu_attach(RzDebug *dbg, int pid) {
 	// Our signal handler will also suspend the task, so no need to call xnu_stop if successful
 	RzDebugReasonType reas = xnu_wait_for_exception(dbg, pid, 1000, true);
 	if (reas != RZ_DEBUG_REASON_SIGNAL || dbg->reason.signum != SIGSTOP) {
-		RZ_LOG_ERROR("SIGSTOP from PT_ATTACHEXC not observed");
+		RZ_LOG_ERROR("SIGSTOP from PT_ATTACHEXC not observed\n");
 		xnu_stop(dbg, pid);
 	}
 
@@ -464,7 +464,7 @@ RzDebugInfo *xnu_info(RzDebug *dbg, const char *arg) {
 	file_path_len = proc_pidpath(rdi->pid, file_path, sizeof(file_path));
 	if (file_path_len > 0) {
 		file_path[file_path_len] = 0;
-		rdi->exe = strdup(file_path);
+		rdi->exe = rz_str_dup(file_path);
 	}
 	if (proc_pidinfo(rdi->pid, PROC_PIDTBSDINFO, 0,
 		    &proc, PROC_PIDTBSDINFO_SIZE) == PROC_PIDTBSDINFO_SIZE) {
@@ -500,7 +500,11 @@ RzList *xnu_thread_list(RzDebug *dbg, int pid, RzList *list) {
 #if __arm__ || __arm64__ || __aarch_64__
 #define CPU_PC (dbg->bits == RZ_SYS_BITS_64) ? state.arm64.__pc : state.arm32.__pc
 #elif __POWERPC__
+#if __DARWIN_UNIX03
+#define CPU_PC state.__srr0
+#else
 #define CPU_PC state.srr0
+#endif
 #elif __x86_64__ || __i386__
 #define CPU_PC (dbg->bits == RZ_SYS_BITS_64) ? state.uts.ts64.__rip : state.uts.ts32.__eip
 #endif
@@ -520,14 +524,6 @@ RzList *xnu_thread_list(RzDebug *dbg, int pid, RzList *list) {
 	}
 	return list;
 }
-
-#if 0
-static vm_prot_t unix_prot_to_darwin(int prot) {
-		return ((prot & 1 << 4) ? VM_PROT_READ : 0 |
-				(prot & 1 << 2) ? VM_PROT_WRITE : 0 |
-				(prot & 1 << 1) ? VM_PROT_EXECUTE : 0);
-}
-#endif
 
 int xnu_map_protect(RzDebug *dbg, ut64 addr, int size, int perms) {
 	rz_return_val_if_fail(dbg && dbg->plugin_data, false);
@@ -766,10 +762,6 @@ static int xnu_write_mem_maps_to_buffer(RzXnuDebug *ctx, RzBuffer *buffer, RzLis
 		}
 
 		/* Acording to osxbook, the check should be like this: */
-#if 0
-		if ((maxprot & VM_PROT_READ) == VM_PROT_READ &&
-			(vbr.user_tag != VM_MEMORY_IOKIT)) {
-#endif
 		if ((curr_map->perm & VM_PROT_READ) == VM_PROT_READ) {
 			vm_map_size_t tmp_size = curr_map->size;
 
@@ -965,16 +957,6 @@ RzDebugPid *xnu_get_pid(int pid) {
 	char *curr_arg, *start_args, *iter_args, *end_args;
 	char *procargs = NULL;
 	char psname[4096];
-#if 0
-	/* Get the maximum process arguments size. */
-	mib[0] = CTL_KERN;
-	mib[1] = KERN_ARGMAX;
-	size = sizeof(argmax);
-	if (sysctl (mib, 2, &argmax, &size, NULL, 0) == -1) {
-		eprintf ("sysctl() error on getting argmax\n");
-		return NULL;
-	}
-#endif
 	uid = uidFromPid(pid);
 
 	/* Allocate space for the arguments. */
@@ -1015,13 +997,6 @@ RzDebugPid *xnu_get_pid(int pid) {
 		return NULL;
 	}
 
-	// TODO: save the environment variables to envlist as well
-	//  Skip over the exec_path and '\0' characters.
-	//  XXX: fix parsing
-#if 0
-	while (iter_args < end_args && *iter_args != '\0') { iter_args++; }
-	while (iter_args < end_args && *iter_args == '\0') { iter_args++; }
-#endif
 	if (iter_args == end_args) {
 		free(procargs);
 		return NULL;
@@ -1150,8 +1125,10 @@ static void xnu_map_free(RzDebugMap *map) {
 }
 
 static RzList *xnu_dbg_modules(RzDebug *dbg) {
-#if __POWERPC__
+#if !defined(MAC_OS_X_VERSION_10_7)
 #warning TODO: xnu_dbg_modules not supported
+	// TASK_DYLD_INFO introduced in 10.6
+	// TASK_DYLD_ALL_IMAGE_INFO_* introduced in 10.7
 	return NULL;
 #else
 	rz_return_val_if_fail(dbg && dbg->plugin_data, NULL);
@@ -1235,7 +1212,7 @@ static RzList *xnu_dbg_modules(RzDebug *dbg) {
 			eprintf("Cannot create rz_debug_map_new\n");
 			break;
 		}
-		mr->file = strdup(file_path);
+		mr->file = rz_str_dup(file_path);
 		mr->shared = true;
 		rz_list_append(list, mr);
 	}
@@ -1271,10 +1248,10 @@ static RzDebugMap *rz_debug_map_clone(RzDebugMap *m) {
 	RzDebugMap *map = RZ_NEWCOPY(RzDebugMap, m);
 	// memcpy (map, m, sizeof (RzDebugMap));
 	if (m->name) {
-		map->name = strdup(m->name);
+		map->name = rz_str_dup(m->name);
 	}
 	if (m->file) {
-		map->file = strdup(m->file);
+		map->file = rz_str_dup(m->file);
 	}
 	return map;
 }
@@ -1307,13 +1284,6 @@ RzList *xnu_dbg_maps(RzDebug *dbg, int only_modules) {
 	size = osize = 16384;
 #else
 	size = osize = 4096;
-#endif
-#if 0
-	if (dbg->pid == 0) {
-		vm_address_t base = get_kernel_base (task);
-		eprintf ("Kernel Base Address: 0x%"PFMT64x"\n", (ut64)base);
-		return NULL;
-	}
 #endif
 	RzList *list = rz_list_new();
 	if (!list) {
@@ -1367,10 +1337,10 @@ RzList *xnu_dbg_maps(RzDebug *dbg, int only_modules) {
 			}
 			RzDebugMap *rdm = moduleAt(modules, address);
 			if (rdm) {
-				mr->file = strdup(rdm->name);
+				mr->file = rz_str_dup(rdm->name);
 			} else {
 				if (*module_name) {
-					mr->file = strdup(module_name);
+					mr->file = rz_str_dup(module_name);
 				}
 			}
 			if (mr->file) {

@@ -1,6 +1,9 @@
 #ifndef _INCLUDE_SPP_H_
 #define _INCLUDE_SPP_H_
 
+#undef _GNU_SOURCE
+#define _GNU_SOURCE
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -77,7 +80,7 @@ struct Tag *tags = (struct Tag *)&x##_tags; \
 struct Arg *args = (struct Arg *)&x##_args; \
 struct Proc *proc = &x##_proc;
 
-#if USE_R2
+#if USE_RZ_UTIL
 #include <rz_util.h>
 #define SStrBuf RzStrBuf
 #else

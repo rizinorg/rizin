@@ -8,47 +8,44 @@
 
 #define MENUET_VERSION(x) x[7]
 
-#if 0
-        db      'MENUET00'           ; 8 byte id
-        dd      38                   ; required os
-        dd      START                ; program start
-        dd      I_END                ; image size
-        dd      0x100000             ; reguired amount of memory
-        dd      0x00000000           ; reserved=no extended header
+// db      'MENUET00'           ; 8 byte id
+// dd      38                   ; required os
+// dd      START                ; program start
+// dd      I_END                ; image size
+// dd      0x100000             ; reguired amount of memory
+// dd      0x00000000           ; reserved=no extended header
 
-        org     0x0
-        db      'MENUET01'              ; 8 byte id
-        dd      1                       ; header version
-        dd      START                   ; program start
-        dd      I_END                   ; program image size
-        dd      0x1000                  ; required amount of memory
-        dd      0x1000                  ; esp
-        dd      0, 0                    ; no parameters, no path
+// org     0x0
+// db      'MENUET01'              ; 8 byte id
+// dd      1                       ; header version
+// dd      START                   ; program start
+// dd      I_END                   ; program image size
+// dd      0x1000                  ; required amount of memory
+// dd      0x1000                  ; esp
+// dd      0, 0                    ; no parameters, no path
 
-         0 db 'MENUET02'
-         8 dd 0x01
-        12 dd __start
-        16 dd __iend
-        20 dd __bssend
-        24 dd __stack
-        28 dd __cmdline
-        32 dd __pgmname
-        36 dd 0x0; tls map
-        40 dd __idata_start; секция .import
-        44 dd __idata_end
-        48 dd main
+//  0 db 'MENUET02'
+//  8 dd 0x01
+// 12 dd __start
+// 16 dd __iend
+// 20 dd __bssend
+// 24 dd __stack
+// 28 dd __cmdline
+// 32 dd __pgmname
+// 36 dd 0x0; tls map
+// 40 dd __idata_start; секция .import
+// 44 dd __idata_end
+// 48 dd main
 
-        db 'MENUET02'
-        dd 1
-        dd start
-        dd i_end
-        dd mem
-        dd mem
-        dd cmdline
-        dd path
-        dd 0
-
-#endif
+// db 'MENUET02'
+// dd 1
+// dd start
+// dd i_end
+// dd mem
+// dd mem
+// dd cmdline
+// dd path
+// dd 0
 
 static bool check_buffer(RzBuffer *b) {
 	ut8 buf[8];
@@ -84,8 +81,8 @@ static ut64 menuetEntry(const ut8 *buf, int buf_size) {
 	return UT64_MAX;
 }
 
-static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
-	RzList *ret;
+static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+	RzPVector *ret;
 	ut8 buf[64] = { 0 };
 	RzBinAddr *ptr = NULL;
 	const int buf_size = RZ_MIN(sizeof(buf), rz_buf_size(bf->buf));
@@ -95,14 +92,13 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	if (entry == UT64_MAX) {
 		return NULL;
 	}
-	if (!(ret = rz_list_new())) {
+	if (!(ret = rz_pvector_new(free))) {
 		return NULL;
 	}
-	ret->free = free;
 	if ((ptr = RZ_NEW0(RzBinAddr))) {
 		ptr->paddr = rz_read_ble32(buf + 12, false);
 		ptr->vaddr = ptr->paddr + baddr(bf);
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 	return ret;
 }
@@ -125,7 +121,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
 	}
-	ptr->name = strdup("text");
+	ptr->name = rz_str_dup("text");
 	ptr->size = rz_read_ble32(buf + 16, false);
 	ptr->vsize = ptr->size + (ptr->size % 4096);
 	ptr->paddr = rz_read_ble32(buf + 12, false);
@@ -138,7 +134,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		if (!(ptr = RZ_NEW0(RzBinSection))) {
 			return ret;
 		}
-		ptr->name = strdup("idata");
+		ptr->name = rz_str_dup("idata");
 		const ut32 idata_start = rz_read_ble32(buf + 40, false);
 		const ut32 idata_end = rz_read_ble32(buf + 44, false);
 		ptr->size = idata_end - idata_start;
@@ -155,14 +151,14 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 static RzBinInfo *info(RzBinFile *bf) {
 	RzBinInfo *ret = RZ_NEW0(RzBinInfo);
 	if (ret) {
-		ret->file = strdup(bf->file);
-		ret->bclass = strdup("program");
-		ret->rclass = strdup("menuet");
-		ret->os = strdup("MenuetOS");
-		ret->arch = strdup("x86");
-		ret->machine = strdup(ret->arch);
-		ret->subsystem = strdup("kolibri");
-		ret->type = strdup("EXEC");
+		ret->file = rz_str_dup(bf->file);
+		ret->bclass = rz_str_dup("program");
+		ret->rclass = rz_str_dup("menuet");
+		ret->os = rz_str_dup("MenuetOS");
+		ret->arch = rz_str_dup("x86");
+		ret->machine = rz_str_dup(ret->arch);
+		ret->subsystem = rz_str_dup("kolibri");
+		ret->type = rz_str_dup("EXEC");
 		ret->bits = 32;
 		ret->has_va = true;
 		ret->big_endian = 0;

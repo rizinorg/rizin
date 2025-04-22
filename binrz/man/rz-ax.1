@@ -56,7 +56,11 @@ Convert from hex string to character (rz-ax -s 43 4a 50)
 .It Fl S
 Convert from character to hex string (rz-ax -S < /bin/ls > ls.hex)
 .It Fl t
-Convert timestamp to string (rz-ax -t 1234567890)
+Convert Unix timestamp to string (rz-ax -t 1234567890)
+.It Fl m
+Convert MS-DOS timestamp to string (rz-ax -m 0x12345678)
+.It Fl W
+Convert Win32 timestamp to string (rz-ax -W 1234567890)
 .It Fl u
 Convert given value to human readable units format (rz-ax -u 389289238 # 317.0M)
 .It Fl v

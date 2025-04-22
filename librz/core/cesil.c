@@ -25,16 +25,16 @@ static ut64 initializeEsil(RzCore *core) {
 	{
 		const char *cmd_esil_step = rz_config_get(core->config, "cmd.esil.step");
 		if (cmd_esil_step && *cmd_esil_step) {
-			esil->cmd_step = strdup(cmd_esil_step);
+			esil->cmd_step = rz_str_dup(cmd_esil_step);
 		}
 		const char *cmd_esil_step_out = rz_config_get(core->config, "cmd.esil.stepout");
 		if (cmd_esil_step_out && *cmd_esil_step_out) {
-			esil->cmd_step_out = strdup(cmd_esil_step_out);
+			esil->cmd_step_out = rz_str_dup(cmd_esil_step_out);
 		}
 		{
 			const char *s = rz_config_get(core->config, "cmd.esil.intr");
 			if (s) {
-				char *my = strdup(s);
+				char *my = rz_str_dup(s);
 				if (my) {
 					rz_config_set(core->config, "cmd.esil.intr", my);
 					free(my);
@@ -43,14 +43,16 @@ static ut64 initializeEsil(RzCore *core) {
 		}
 	}
 	esil->exectrap = exectrap;
-	RzList *entries = rz_bin_get_entries(core->bin);
+	RzBinObject *obj = rz_bin_cur_object(core->bin);
+	RzPVector *entries = obj ? (RzPVector *)rz_bin_object_get_entries(obj) : NULL;
 	RzBinAddr *entry = NULL;
 	RzBinInfo *info = NULL;
-	if (entries && !rz_list_empty(entries)) {
-		entry = (RzBinAddr *)rz_list_pop_head(entries);
-		info = rz_bin_get_info(core->bin);
+	if (entries && !rz_pvector_empty(entries)) {
+		entry = (RzBinAddr *)rz_pvector_pop_front(entries);
+		RzBinObject *obj = rz_bin_cur_object(core->bin);
+		info = obj ? (RzBinInfo *)rz_bin_object_get_info(obj) : NULL;
 		addr = info->has_va ? entry->vaddr : entry->paddr;
-		rz_list_push(entries, entry);
+		rz_pvector_push(entries, entry);
 	} else {
 		addr = core->offset;
 	}
@@ -119,6 +121,7 @@ repeat:
 
 	(void)rz_io_read_at_mapped(core->io, addr, code, sizeof(code));
 	// TODO: sometimes this is dupe
+	rz_analysis_op_init(&op);
 	ret = rz_analysis_op(core->analysis, &op, addr, code, sizeof(code), RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_HINT);
 	// if type is JMP then we execute the next N instructions
 	// update the esil pointer because RzAnalysis.op() can change it
@@ -181,11 +184,12 @@ repeat:
 		if (op.delay && !isNextFall) {
 			ut8 code2[32];
 			ut64 naddr = addr + op.size;
-			RzAnalysisOp op2 = { 0 };
+			RzAnalysisOp op2;
 			// emulate only 1 instruction
 			rz_analysis_esil_set_pc(esil, naddr);
 			(void)rz_io_read_at(core->io, naddr, code2, sizeof(code2));
 			// TODO: sometimes this is dupe
+			rz_analysis_op_init(&op2);
 			ret = rz_analysis_op(core->analysis, &op2, naddr, code2, sizeof(code2), RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_HINT);
 			if (ret > 0) {
 				switch (op2.type) {
@@ -196,7 +200,7 @@ repeat:
 					// branches are illegal in a delay slot
 					esil->trap = RZ_ANALYSIS_TRAP_EXEC_ERR;
 					esil->trap_code = addr;
-					RZ_LOG_WARN("core: ESIL: Trap, trying to execute a branch in a delay slot\n");
+					RZ_LOG_INFO("core: ESIL: Trap, trying to execute a branch in a delay slot\n");
 					return_tail(1);
 					break;
 				}
@@ -215,7 +219,7 @@ repeat:
 	// eprintf ("REPE 0x%llx %s => 0x%llx\n", addr, RZ_STRBUF_SAFEGET (&op.esil), rz_reg_getv (core->analysis->reg, "PC"));
 
 	ut64 pc = rz_reg_getv(core->analysis->reg, name);
-	if (core->analysis->pcalign > 0) {
+	if (core->analysis->pcalign > 1) {
 		pc -= (pc % core->analysis->pcalign);
 		rz_reg_setv(core->analysis->reg, name, pc);
 	}
@@ -290,7 +294,7 @@ RZ_API bool rz_core_esil_continue_back(RZ_NONNULL RzCore *core) {
 	bool bp_found = false;
 	int idx = 0;
 	RzAnalysisEsilRegChange *reg;
-	rz_vector_foreach_prev(vreg, reg) {
+	rz_vector_foreach_prev (vreg, reg) {
 		if (reg->idx >= esil->trace->idx) {
 			continue;
 		}

@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_types.h>
+#include <rz_io.h>
+
+#include "rz_io_plugins.h"
 
 #if __WINDOWS__
 #include <rz_windows.h>

@@ -3,6 +3,7 @@ FILE=malloc://512280
 CMDS=<<EOF
 e asm.arch=tms320
 e asm.cpu=c64x
+e cfg.bigendian=true
 wx 0041bd10
 aoj~{}
 EOF
@@ -48,6 +49,7 @@ FILE=bins/elf/ld-2.27.so
 CMDS=<<EOF
 e asm.arch=tms320
 e asm.cpu=c64x
+e cfg.bigendian=true
 e asm.pseudo=true
 pi 0x100~=
 EOF
@@ -211,8 +213,8 @@ RUN
 NAME=arp TMS320
 FILE==
 CMDS=<<EOF
-e asm.arch=tms320c64x
-e analysis.arch=tms320
+e asm.arch=tms320
+e asm.cpu=c64x
 arp
 EOF
 EXPECT=<<EOF

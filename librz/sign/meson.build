@@ -12,7 +12,7 @@ rz_sign_inc = [
 
 rz_sign_deps = [
   rz_util_dep,
-  rz_analysis_dep,
+  rz_arch_dep,
   rz_diff_dep,
   rz_hash_dep,
   rz_type_dep,
@@ -40,7 +40,7 @@ modules += { 'rz_sign': {
     'target': rz_sign,
     'dependencies': [
       'rz_util',
-      'rz_analysis',
+      'rz_arch',
       'rz_diff',
       'rz_hash',
       'rz_type',

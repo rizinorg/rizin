@@ -234,13 +234,13 @@ struct rz_bin_pe_export_t *PE_(rz_bin_pe_get_exports)(RzBinPEObj *bin) {
 		}
 		for (i = 0; i < bin->export_directory->NumberOfFunctions; i++) {
 			// get vaddr from AddressOfFunctions array
-			function_rva = rz_read_at_ble32((ut8 *)func_rvas, i * sizeof(PE_VWord), bin->endian);
+			function_rva = rz_read_at_ble32((ut8 *)func_rvas, i * sizeof(PE_VWord), bin->big_endian);
 			// have exports by name?
 			if (bin->export_directory->NumberOfNames > 0) {
 				// search for value of i into AddressOfOrdinals
 				name_vaddr = 0;
 				for (n = 0; n < bin->export_directory->NumberOfNames; n++) {
-					PE_Word fo = rz_read_at_ble16((ut8 *)ordinals, n * sizeof(PE_Word), bin->endian);
+					PE_Word fo = rz_read_at_ble16((ut8 *)ordinals, n * sizeof(PE_Word), bin->big_endian);
 					// if exist this index into AddressOfOrdinals
 					if (i == fo) {
 						function_ordinal = fo;

@@ -4,8 +4,7 @@ CMDS=<<EOF
 e scr.null=true
 pCd 0x200
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=pCa

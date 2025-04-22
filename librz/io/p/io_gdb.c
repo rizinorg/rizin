@@ -11,6 +11,8 @@
 #include <gdbclient/commands.h>
 #include <gdbclient/responses.h>
 
+#include "rz_io_plugins.h"
+
 typedef struct {
 	libgdbr_t desc;
 } RzIOGdb;

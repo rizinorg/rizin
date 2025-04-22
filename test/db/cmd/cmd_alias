@@ -12,7 +12,7 @@ RUN
 NAME=test $alias quotes
 FILE==
 CMDS=<<EOF
-"$foo=echo hello;echo world"
+$foo="echo hello;echo world"
 $foo
 EOF
 EXPECT=<<EOF
@@ -55,5 +55,41 @@ $
 EOF
 EXPECT=<<EOF
 $foo
+EOF
+RUN
+
+NAME=$alias=$`cmd`
+FILE==
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+$copy=$`ar rax`
+ar rax
+$copy
+EOF
+EXPECT=<<EOF
+rax = 0x0000000000000000
+rax = 0x0000000000000000
+EOF
+RUN
+
+NAME=$* and $**
+FILE=--
+CMDS=<<EOF
+$dis=pdf
+$*
+$**
+EOF
+EXPECT=<<EOF
+$dis=base64:cGRm
+$dis=pdf
+EOF
+RUN
+
+NAME=Alias not found
+FILE=--
+CMDS=$dis
+EXPECT_ERR=<<EOF
+ERROR: core: unknown alias 'dis'
 EOF
 RUN

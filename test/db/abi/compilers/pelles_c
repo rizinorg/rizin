@@ -24,10 +24,10 @@ EXPECT=<<EOF
     0 * registers
     0 * registers.extended
     0 * registers.mmio
-   38 * relocs
+  916 * relocs
     4 * sections
     0 * segments
-  173 * strings
+  174 * strings
     1 * symbols
 EOF
 RUN
@@ -38,8 +38,7 @@ ARGS=-A
 CMDS=<<EOF
 pdf~main
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=ELF_ABI : Pelles C 64 load
@@ -68,10 +67,10 @@ EXPECT=<<EOF
     0 * registers
     0 * registers.extended
     0 * registers.mmio
-   38 * relocs
+  420 * relocs
     5 * sections
     0 * segments
-  124 * strings
+  125 * strings
     1 * symbols
 EOF
 RUN
@@ -82,7 +81,6 @@ ARGS=-A
 CMDS=<<EOF
 pdf~main
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 

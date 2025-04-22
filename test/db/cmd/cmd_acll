@@ -7,46 +7,46 @@ EOF
 EXPECT=<<EOF
 [A]
   (vtable at 0x400d28)
-nth addr         vt_offset type        name       
---------------------------------------------------
-1   0x00400ac8  0x00000000 VIRTUAL     greet
-2   0x00400af4  0x00000008 VIRTUAL     printValue
-3   0x00400b36  ---------- CONSTRUCTOR A
+nth       addr  vt_offset type        name       
+-------------------------------------------------
+  1 0x00400ac8 0x00000000 VIRTUAL     greet
+  2 0x00400af4 0x00000008 VIRTUAL     printValue
+  3 0x00400b36 ---------- CONSTRUCTOR A
 
 [B: A]
   (vtable at 0x400d08)
-nth addr         vt_offset type        name           
-------------------------------------------------------
-1   0x00400b4e  ---------- CONSTRUCTOR B
-2   0x00400b82  0x00000008 VIRTUAL     printValue
-3   0x00400ac8  0x00000000 VIRTUAL     method.A.greet
+nth       addr  vt_offset type        name           
+-----------------------------------------------------
+  1 0x00400b4e ---------- CONSTRUCTOR B
+  2 0x00400b82 0x00000008 VIRTUAL     printValue
+  3 0x00400ac8 0x00000000 VIRTUAL     method.A.greet
 
 [C: A]
   (vtable at 0x400ce8)
-nth addr         vt_offset type        name           
-------------------------------------------------------
-1   0x00400bc4  ---------- CONSTRUCTOR C
-2   0x00400bf8  0x00000008 VIRTUAL     printValue
-3   0x00400ac8  0x00000000 VIRTUAL     method.A.greet
+nth       addr  vt_offset type        name           
+-----------------------------------------------------
+  1 0x00400bc4 ---------- CONSTRUCTOR C
+  2 0x00400bf8 0x00000008 VIRTUAL     printValue
+  3 0x00400ac8 0x00000000 VIRTUAL     method.A.greet
 
 [std]
 [std::basic_ostream_char__std::char_traits_char_____std]
-nth addr         vt_offset type    name                                 
-------------------------------------------------------------------------
-1   0x00400890  ---------- DEFAULT operator<< <std::char_traits<char> >
-2   0x004008b0  ---------- DEFAULT endl<char, std::char_traits<char> >
+nth       addr  vt_offset type    name                                 
+-----------------------------------------------------------------------
+  1 0x00400890 ---------- DEFAULT operator<< <std::char_traits<char> >
+  2 0x004008b0 ---------- DEFAULT endl<char, std::char_traits<char> >
 
 [std::ios_base::Init]
-nth addr         vt_offset type    name  
------------------------------------------
-1   0x00400850  ---------- DEFAULT Init
-2   0x00400880  ---------- DEFAULT ~Init
+nth       addr  vt_offset type    name  
+----------------------------------------
+  1 0x00400850 ---------- DEFAULT Init
+  2 0x00400880 ---------- DEFAULT ~Init
 
 [std::ostream]
-nth addr         vt_offset type    name       
-----------------------------------------------
-1   0x00400830  ---------- DEFAULT operator<<
-2   0x004008a0  ---------- DEFAULT operator<<
+nth       addr  vt_offset type    name       
+---------------------------------------------
+  1 0x00400830 ---------- DEFAULT operator<<
+  2 0x004008a0 ---------- DEFAULT operator<<
 
 EOF
 RUN
@@ -60,51 +60,51 @@ EOF
 EXPECT=<<EOF
 [Polygon]
   (vtable at 0x3d20)
-nth addr         vt_offset type        name       
---------------------------------------------------
-1   0x000011ea  ---------- CONSTRUCTOR Polygon
-2   0x0000121e  ---------- DEFAULT     Polygon1
-3   0x0000122e  ---------- DEFAULT     Poly
-4   0x0000123e  ---------- DESTRUCTOR  ~Polygon
-5   0x000014b6  ---------- DEFAULT     set_values
-6   0x000014e0  0x00000000 VIRTUAL     area
-7   0x000014f4  0x00000008 VIRTUAL     sides
+nth       addr  vt_offset type        name       
+-------------------------------------------------
+  1 0x000011ea ---------- CONSTRUCTOR Polygon
+  2 0x0000121e ---------- DEFAULT     Polygon1
+  3 0x0000122e ---------- DEFAULT     Poly
+  4 0x0000123e ---------- DESTRUCTOR  ~Polygon
+  5 0x000014b6 ---------- DEFAULT     set_values
+  6 0x000014e0 0x00000000 VIRTUAL     area
+  7 0x000014f4 0x00000008 VIRTUAL     sides
 
 [Rectangle: Polygon]
   (vtable at 0x3d00)
-nth addr         vt_offset type        name       
---------------------------------------------------
-1   0x00001508  0x00000000 VIRTUAL     area
-2   0x00001528  0x00000008 VIRTUAL     sides
-3   0x00001578  ---------- CONSTRUCTOR Rectangle
-4   0x000015a6  ---------- DESTRUCTOR  ~Rectangle
+nth       addr  vt_offset type        name       
+-------------------------------------------------
+  1 0x00001508 0x00000000 VIRTUAL     area
+  2 0x00001528 0x00000008 VIRTUAL     sides
+  3 0x00001578 ---------- CONSTRUCTOR Rectangle
+  4 0x000015a6 ---------- DESTRUCTOR  ~Rectangle
 
 [Triangle: Polygon]
   (vtable at 0x3ce0)
-nth addr         vt_offset type        name      
--------------------------------------------------
-1   0x0000153c  0x00000000 VIRTUAL     area
-2   0x00001564  0x00000008 VIRTUAL     sides
-3   0x000015d4  ---------- CONSTRUCTOR Triangle
-4   0x00001602  ---------- DESTRUCTOR  ~Triangle
+nth       addr  vt_offset type        name      
+------------------------------------------------
+  1 0x0000153c 0x00000000 VIRTUAL     area
+  2 0x00001564 0x00000008 VIRTUAL     sides
+  3 0x000015d4 ---------- CONSTRUCTOR Triangle
+  4 0x00001602 ---------- DESTRUCTOR  ~Triangle
 
 [std]
 [std::basic_ostream_char__std::char_traits_char_____std]
-nth addr         vt_offset type    name                                
------------------------------------------------------------------------
-1   ----------  ---------- DEFAULT endl<char, std::char_traits<char> >
+nth       addr  vt_offset type    name                                
+----------------------------------------------------------------------
+  1 ---------- ---------- DEFAULT endl<char, std::char_traits<char> >
 
 [std::ios_base::Init]
-nth addr         vt_offset type    name  
------------------------------------------
-1   ----------  ---------- DEFAULT ~Init
-2   0x000010d0  ---------- DEFAULT Init
+nth       addr  vt_offset type    name  
+----------------------------------------
+  1 ---------- ---------- DEFAULT ~Init
+  2 0x000010d0 ---------- DEFAULT Init
 
 [std::ostream]
-nth addr         vt_offset type    name       
-----------------------------------------------
-1   0x000010b0  ---------- DEFAULT operator<<
-2   0x000010e0  ---------- DEFAULT operator<<
+nth       addr  vt_offset type    name       
+---------------------------------------------
+  1 0x000010b0 ---------- DEFAULT operator<<
+  2 0x000010e0 ---------- DEFAULT operator<<
 
 EOF
 RUN
@@ -119,50 +119,50 @@ EOF
 EXPECT=<<EOF
 [Polygon]
   (vtable at 0x3d20)
-nth addr         vt_offset type        name       
---------------------------------------------------
-1   0x000011ea  ---------- CONSTRUCTOR Polygon
-2   0x0000121e  ---------- DEFAULT     Polygon1
-3   0x0000122e  ---------- DEFAULT     Poly
-4   0x0000123e  ---------- DESTRUCTOR  ~Polygon
-5   0x000014b6  ---------- DEFAULT     set_values
-6   0x000014e0  0x00000000 VIRTUAL     area
-7   0x000014f4  0x00000008 VIRTUAL     sides
+nth       addr  vt_offset type        name       
+-------------------------------------------------
+  1 0x000011ea ---------- CONSTRUCTOR Polygon
+  2 0x0000121e ---------- DEFAULT     Polygon1
+  3 0x0000122e ---------- DEFAULT     Poly
+  4 0x0000123e ---------- DESTRUCTOR  ~Polygon
+  5 0x000014b6 ---------- DEFAULT     set_values
+  6 0x000014e0 0x00000000 VIRTUAL     area
+  7 0x000014f4 0x00000008 VIRTUAL     sides
 
 [Rectangle: Polygon]
   (vtable at 0x3d00)
-nth addr         vt_offset type        name       
---------------------------------------------------
-1   0x00001508  0x00000000 VIRTUAL     area
-2   0x00001528  0x00000008 VIRTUAL     sides
-3   0x00001578  ---------- CONSTRUCTOR Rectangle
-4   0x000015a6  ---------- DESTRUCTOR  ~Rectangle
+nth       addr  vt_offset type        name       
+-------------------------------------------------
+  1 0x00001508 0x00000000 VIRTUAL     area
+  2 0x00001528 0x00000008 VIRTUAL     sides
+  3 0x00001578 ---------- CONSTRUCTOR Rectangle
+  4 0x000015a6 ---------- DESTRUCTOR  ~Rectangle
 
 [Triangle: Polygon]
   (vtable at 0x3ce0)
-nth addr         vt_offset type        name      
--------------------------------------------------
-1   0x0000153c  0x00000000 VIRTUAL     area
-2   0x00001564  0x00000008 VIRTUAL     sides
-3   0x000015d4  ---------- CONSTRUCTOR Triangle
-4   0x00001602  ---------- DESTRUCTOR  ~Triangle
+nth       addr  vt_offset type        name      
+------------------------------------------------
+  1 0x0000153c 0x00000000 VIRTUAL     area
+  2 0x00001564 0x00000008 VIRTUAL     sides
+  3 0x000015d4 ---------- CONSTRUCTOR Triangle
+  4 0x00001602 ---------- DESTRUCTOR  ~Triangle
 
 [std]
 [std::basic_ostream_char__std::char_traits_char_____std]
-nth addr         vt_offset type    name                                
------------------------------------------------------------------------
-1   ----------  ---------- DEFAULT endl<char, std::char_traits<char> >
+nth       addr  vt_offset type    name                                
+----------------------------------------------------------------------
+  1 ---------- ---------- DEFAULT endl<char, std::char_traits<char> >
 
 [std::ios_base::Init]
-nth addr         vt_offset type    name  
------------------------------------------
-1   ----------  ---------- DEFAULT ~Init
-2   0x000010d0  ---------- DEFAULT Init
+nth       addr  vt_offset type    name  
+----------------------------------------
+  1 ---------- ---------- DEFAULT ~Init
+  2 0x000010d0 ---------- DEFAULT Init
 
 [std::ostream]
-nth addr         vt_offset type    name       
-----------------------------------------------
-1   0x000010e0  ---------- DEFAULT operator<<
+nth       addr  vt_offset type    name       
+---------------------------------------------
+  1 0x000010e0 ---------- DEFAULT operator<<
 
 EOF
 RUN

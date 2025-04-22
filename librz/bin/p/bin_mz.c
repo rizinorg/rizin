@@ -149,15 +149,15 @@ static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol type) {
 	return mzaddr;
 }
 
-static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	RzBinAddr *ptr = NULL;
-	RzList *res = NULL;
-	if (!(res = rz_list_newf(free))) {
+	RzPVector *res = NULL;
+	if (!(res = rz_pvector_new(free))) {
 		return NULL;
 	}
 	ptr = rz_bin_mz_get_entrypoint(bf->o->bin_obj);
 	if (ptr) {
-		rz_list_append(res, ptr);
+		rz_pvector_push(res, ptr);
 	}
 	return res;
 }
@@ -171,14 +171,14 @@ static RzBinInfo *info(RzBinFile *bf) {
 	if (!ret) {
 		return NULL;
 	}
-	ret->file = strdup(bf->file);
-	ret->bclass = strdup("MZ");
-	ret->rclass = strdup("mz");
-	ret->os = strdup("DOS");
-	ret->arch = strdup("x86");
-	ret->machine = strdup("i386");
-	ret->type = strdup("EXEC (Executable file)");
-	ret->subsystem = strdup("DOS");
+	ret->file = rz_str_dup(bf->file);
+	ret->bclass = rz_str_dup("MZ");
+	ret->rclass = rz_str_dup("mz");
+	ret->os = rz_str_dup("DOS");
+	ret->arch = rz_str_dup("x86");
+	ret->machine = rz_str_dup("i386");
+	ret->type = rz_str_dup("EXEC (Executable file)");
+	ret->subsystem = rz_str_dup("DOS");
 	ret->bits = 16;
 	ret->dbg_info = 0;
 	ret->big_endian = false;
@@ -233,7 +233,7 @@ static RzPVector /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
-	if (!(ret = rz_pvector_new(free))) {
+	if (!(ret = rz_pvector_new((RzPVectorFree)rz_bin_reloc_free))) {
 		return NULL;
 	}
 	if (!(relocs = rz_bin_mz_get_relocs(bf->o->bin_obj))) {
@@ -245,7 +245,9 @@ static RzPVector /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 			rz_pvector_free(ret);
 			return NULL;
 		}
-		rel->type = RZ_BIN_RELOC_16;
+		// relocations are 16 bit, structured as a 'segment_number:offset' pair. Suppose the start
+		// segment address is 0x500, the value at address 'segment_number*16 + offset' will have 0x500 added to it.
+		rel->print_name = "SET_16";
 		rel->vaddr = relocs[i].vaddr;
 		rel->paddr = relocs[i].paddr;
 		rz_pvector_push(ret, rel);

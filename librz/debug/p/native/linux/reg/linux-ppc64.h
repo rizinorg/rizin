@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2017 Fangrui Song <i@maskray.me>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-return strdup(
+return rz_str_dup(
 	"=PC  pc\n"
 	"=SP  r1\n"
 	"=A0  r3\n"

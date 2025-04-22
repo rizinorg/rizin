@@ -221,8 +221,7 @@ a "mov x30, 0x884800000000" 1e09d1d2
 dB "mov x30, 0x884800000000" 1e09d1d2
 a "mov x29, 0xffff00000000" fdffdfd2
 dB "mov x29, 0xffff00000000" fdffdfd2
-a "mov x27, 0x3721000000000000" 3be4e6d2
-dB "mov x27, 0x3721000000000000" 3be4e6d2
+ad "mov x27, 0x3721000000000000" 3be4e6d2
 a "mov x26, 0xffff000000000000" faffffd2
 dB "mov x26, 0xffff000000000000" faffffd2
 a "mov w25, 0xffffcfc7" 19078612
@@ -538,8 +537,8 @@ d "ldr x1, [x2, 0x18]!" 418c41f8 0x0 (seq (set x1 (loadw 0 64 (+ (var x2) (bv 64
 d "ldr x1, [x2, -0x18]!" 418c5ef8 0x0 (seq (set x1 (loadw 0 64 (- (var x2) (bv 64 0x18)))) (set x2 (- (var x2) (bv 64 0x18))))
 d "ldr x1, [x2], 0x18" 418441f8 0x0 (seq (set x1 (loadw 0 64 (var x2))) (set x2 (+ (var x2) (bv 64 0x18))))
 d "ldr x1, [x2], -0x18" 41845ef8 0x0 (seq (set x1 (loadw 0 64 (var x2))) (set x2 (- (var x2) (bv 64 0x18))))
-d "ldr x1, 0x1028" 41010058 0x1000 (set x1 (loadw 0 64 (bv 64 0x1028)))
-d "ldr w1, 0x1044" 21020018 0x1000 (set x1 (cast 64 false (loadw 0 32 (bv 64 0x1044))))
+d "ldr x1, 0x1028" 41010058 0x1000 (set x1 (loadw 0 64 (+ (bv 64 0x0) (bv 64 0x1028))))
+d "ldr w1, 0x1044" 21020018 0x1000 (set x1 (cast 64 false (loadw 0 32 (+ (bv 64 0x0) (bv 64 0x1044)))))
 d "ldrb w1, [x2]" 41004039 0x0 (set x1 (cast 64 false (load 0 (var x2))))
 d "ldrh w1, [x2]" 41004079 0x0 (set x1 (cast 64 false (loadw 0 16 (var x2))))
 d "ldrb w1, [x2], 3" 41344038 0x0 (seq (set x1 (cast 64 false (load 0 (var x2)))) (set x2 (+ (var x2) (bv 64 0x3))))

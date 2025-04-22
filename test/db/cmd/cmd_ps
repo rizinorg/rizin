@@ -9,7 +9,7 @@ f obj.short_str1 12 @ 0x0804a034
 f obj.long_str2 12 @ 0x0804a058
 f obj.short_str2 12 @ 0x0804a040
 e asm.bits=32
-e str.search.encoding=utf8
+e str.encoding=utf8
 ps+ @ obj.short_str1
 ps+ @ obj.short_str2
 ps+ @ obj.empty_str
@@ -19,7 +19,6 @@ EOF
 EXPECT=<<EOF
 a
 abcdefghij
-
 abcdefghijk
 abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ
 EOF
@@ -36,7 +35,7 @@ f obj.short_str1 24 @ 0x00601058
 f obj.long_str2 24 @ 0x006010a0
 f obj.short_str2 24 @ 0x00601070
 e asm.bits=64
-e str.search.encoding=utf8
+e str.encoding=utf8
 ps+ @ obj.short_str1
 ps+ @ obj.short_str2
 ps+ @ obj.empty_str
@@ -46,7 +45,6 @@ EOF
 EXPECT=<<EOF
 a
 abcdefghijklmnopqrstuv
-
 abcdefghijklmnopqrstuvw
 abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ
 EOF
@@ -66,11 +64,11 @@ RUN
 NAME=ps N and initial nulls (#10037)
 FILE==
 CMDS=<<EOF
-ps block @! 1
-ps block @! 2
-ps block @! 3
-ps block @! 4
-ps block @! 8
+ps guess block @! 1
+ps guess block @! 2
+ps guess block @! 3
+ps guess block @! 4
+ps guess block @! 8
 EOF
 EXPECT=<<EOF
 \x00
@@ -116,5 +114,84 @@ EXPECT=<<EOF
 #define STRING_SIZE 21
 const char s[STRING_SIZE] = "\x90\x91\x92\x41\x42\x43\x22\x90\x91\x92\x41\x42\x43\x22\x90\x91"
                             "\x92\x41\x42\x43\x22";
+EOF
+RUN
+
+NAME=ps ascii detection with block/zero-terminated
+FILE==
+CMDS=<<EOF
+o malloc://512
+wx 4a757374206c696b652070696e656170 ; sd +16
+wx 706c65206f6e2070697a7a612c207468 ; sd +16
+wx 6973207461736b2f7468726561642070 ; sd +16
+wx 6f727420646f65736e27742062656c6f ; sd +16
+wx 6e6720686572652e204025733a256400 ; sd +16
+wx 636f6d2e6170706c652e707269766174 ; sd +16
+wx 652e7461736b5f706f6c696379007374 ; sd +16
+wx 72616e6765207461736b20666c61766f ; sd +16
+wx 72204025733a25640075736572737061 ; sd +16
+wx 63652068617320636f6e74726f6c2061 ; sd +16
+wx 636365737320746f2061206b65726e65 ; sd +16
+wx 6c206d6170202570207468726f756768 ; sd +16
+wx 207461736b202570204025733a256400 ; sd +16
+wx 737472616e6765207468726561642066 ; sd +16
+wx 6c61766f72204025733a256400736861 ; sd +16
+wx 7265642e00646174612e007368617265 ; sd -256
+
+ps guess block
+echo \n
+ps guess null
+EOF
+EXPECT=<<EOF
+Just like pineapple on pizza, this task/thread port doesn't belong here. @%s:%d\x00com.apple.private.task_policy\x00strange task flavor @%s:%d\x00userspace has control access to a kernel map %p through task %p @%s:%d\x00strange thread flavor @%s:%d\x00shared.\x00data.\x00share
+
+
+Just like pineapple on pizza, this task/thread port doesn't belong here. @%s:%d
+EOF
+RUN
+
+NAME=Error case str.encoding
+FILE==
+CMDS=<<EOF
+e str.encoding=settings
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid value for str.encoding (settings).
+EOF
+RUN
+
+NAME=str.encoding
+FILE=bins/cmd/search/string_encodings/Japanese-Katakana-Lipsum.ibm290
+CMDS=<<EOF
+e str.encoding=ibm290
+ps
+ps settings
+EOF
+EXPECT=<<EOF
+ 。「」、・ヲァィゥ£.<(+|&ェォャュョッー!¥*);¬アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフ¯ヘホマミムメモヤユヨラリルレロワン゛゜゜
+ 。「」、・ヲァィゥ£.<(+|&ェォャュョッー!¥*);¬アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフ¯ヘホマミムメモヤユヨラリルレロワン゛゜゜
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=ps select encoding
+FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ebcdic_es
+CMDS=<<EOF
+b 0x1000
+ps ebcdices unprintable
+EOF
+EXPECT=<<EOF
+Lorem ipsum dolor sit amet, at eligendi adipisci ius, ex natum appetere officiis has, nibh quas torquatos pro te. Quo at deleniti repudiandae, et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
+EOF
+RUN
+
+NAME=Issue #4697 and Unicode update
+FILE==
+CMDS=<<EOF
+wx f09f9faaf09f9faa
+ps
+EOF
+EXPECT=<<EOF
+🟪🟪
 EOF
 RUN

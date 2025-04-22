@@ -1,4 +1,4 @@
-if get_option('enable_tests')
+if get_option('enable_tests') and cli_enabled
   test_conf_data = configuration_data()
   test_conf_data.set_quoted('RIZIN_BUILD_PATH', rizin_exe.full_path())
   test_conf_data.set_quoted('TEST_BUILD_TYPES_DIR', fs.as_posix(types_build_dir))
@@ -22,6 +22,7 @@ if get_option('enable_tests')
     'dwarf',
     'dwarf_info',
     'dwarf_integration',
+    'glibc_version',
     'open_analyse_save_load_project',
     'pdb',
     'project_migrate',
@@ -46,15 +47,13 @@ if get_option('enable_tests')
         rz_bin_dep,
         rz_flag_dep,
         rz_cons_dep,
-        rz_asm_dep,
+        rz_arch_dep,
         rz_debug_dep,
         rz_config_dep,
         rz_bp_dep,
         rz_reg_dep,
         rz_syscall_dep,
         rz_type_dep,
-        rz_analysis_dep,
-        rz_parse_dep,
         rz_egg_dep,
         rz_search_dep,
         rz_hash_dep,

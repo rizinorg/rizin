@@ -180,53 +180,6 @@ RZ_API void rz_socket_http_response(RzSocketHTTPRequest *rs, int code, const cha
 RZ_API void rz_socket_http_close(RzSocketHTTPRequest *rs);
 RZ_API ut8 *rz_socket_http_handle_upload(const ut8 *str, int len, int *olen);
 
-typedef int (*rap_server_open)(void *user, const char *file, int flg, int mode);
-typedef int (*rap_server_seek)(void *user, ut64 offset, int whence);
-typedef int (*rap_server_read)(void *user, ut8 *buf, int len);
-typedef int (*rap_server_write)(void *user, ut8 *buf, int len);
-typedef char *(*rap_server_cmd)(void *user, const char *command);
-typedef int (*rap_server_close)(void *user, int fd);
-
-enum {
-	RAP_PACKET_OPEN = 1,
-	RAP_PACKET_READ = 2,
-	RAP_PACKET_WRITE = 3,
-	RAP_PACKET_SEEK = 4,
-	RAP_PACKET_CLOSE = 5,
-	// system was deprecated in slot 6,
-	RAP_PACKET_CMD = 7,
-	RAP_PACKET_REPLY = 0x80,
-	RAP_PACKET_MAX = 4096
-};
-
-typedef struct rz_socket_rap_server_t {
-	RzSocket *fd;
-	char *port;
-	ut8 buf[RAP_PACKET_MAX + 32]; // This should be used as a static buffer for everything done by the server
-	rap_server_open open;
-	rap_server_seek seek;
-	rap_server_read read;
-	rap_server_write write;
-	rap_server_cmd system;
-	rap_server_cmd cmd;
-	rap_server_close close;
-	void *user; // Always first arg for callbacks
-} RzSocketRapServer;
-
-RZ_API RzSocketRapServer *rz_socket_rap_server_new(bool is_ssl, const char *port);
-RZ_API RzSocketRapServer *rz_socket_rap_server_create(const char *pathname);
-RZ_API void rz_socket_rap_server_free(RzSocketRapServer *rap_s);
-RZ_API bool rz_socket_rap_server_listen(RzSocketRapServer *rap_s, const char *certfile);
-RZ_API RzSocket *rz_socket_rap_server_accept(RzSocketRapServer *rap_s);
-RZ_API bool rz_socket_rap_server_continue(RzSocketRapServer *rap_s);
-
-/* rap client */
-RZ_API int rz_socket_rap_client_open(RzSocket *s, const char *file, int rw);
-RZ_API char *rz_socket_rap_client_command(RzSocket *s, const char *cmd, RzCoreBind *c);
-RZ_API int rz_socket_rap_client_write(RzSocket *s, const ut8 *buf, int count);
-RZ_API int rz_socket_rap_client_read(RzSocket *s, ut8 *buf, int count);
-RZ_API int rz_socket_rap_client_seek(RzSocket *s, ut64 offset, int whence);
-
 /* run.c */
 #define RZ_RUN_PROFILE_NARGS 512
 typedef struct rz_run_profile_t {

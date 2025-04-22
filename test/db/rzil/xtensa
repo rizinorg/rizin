@@ -1,0 +1,32 @@
+NAME=Testing the decryption in emulateme
+FILE=bins/xtensa/emulateme.xtensa-esp32-elf
+TIMEOUT=30
+CMDS=<<EOF
+e analysis.cpu=esp32
+aaa
+pdf @ main
+e io.cache=1
+aezi
+aezsu 0x400238
+ps @ obj.seckrit
+EOF
+EXPECT=<<EOF
+            ; DATA XREF from entry0 @ 0x4000d1
+/ int main(int argc, char **argv, char **envp);
+|           ; arg int argc @ a2
+|           ; arg char **argv @ a3
+|           ; arg int32_t arg6 @ a7
+|           0x00400220      entry a1, 0x40
+|           0x00400223      mov.n a7, a1                               ; arg6
+|           0x00400225      s32i.n a2, a7, 0x10                        ; arg6
+|           0x00400227      s32i.n a3, a7, 0x14                        ; arg6
+|           0x00400229      l32r  a8, . 0x4000b4                       ; 0x400264 ; "AnyColourYouLike"
+|           0x0040022c      s32i.n a8, a7, 0                           ; arg6
+|           0x0040022e      l32i  a10, a7, 0                           ; arg6
+|           0x00400231      call8 . -0xb4                              ; sym.decrypt
+|           0x00400234      movi.n a8, 0
+|           0x00400236      mov.n a2, a8
+\           0x00400238      retw.n
+Hello from RzIL!
+EOF
+RUN

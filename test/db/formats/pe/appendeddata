@@ -2,8 +2,7 @@ NAME=PE: corkami appendeddata.exe - open
 FILE=bins/pe/appendeddata.exe
 ARGS=-A
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=PE: corkami appendeddata.exe - entrypoint

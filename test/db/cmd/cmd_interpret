@@ -4,8 +4,7 @@ CMDS=<<EOF
 e cfg.editor=/bin/true
 .-
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=.echo echo
@@ -25,7 +24,7 @@ CMDS=<<EOF
 $foo=#!pipe echo hello
 $foo
 echo --
-"$foo=#!pipe echo hello"
+$foo="#!pipe echo hello"
 $foo
 echo --
 $-*

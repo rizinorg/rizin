@@ -160,6 +160,7 @@ RZ_API RzPVector /*<RzCmdTest *>*/ *rz_test_load_cmd_test_file(const char *file)
 			rz_pvector_push(ret, test);
 			test = rz_test_cmd_test_new();
 			if (!test) {
+				eprintf("Error: Failed to allocate RzCmdTest\n");
 				goto beach;
 			}
 			continue;
@@ -244,7 +245,7 @@ beach:
 	free(contents);
 
 	if (test && (test->name.value || test->cmds.value || test->expect.value)) {
-		eprintf("Warning: found test tokens at the end of \"%s\" without RUN.\n", file);
+		eprintf("Warning: found test tokens at the end of \"%s\" without RUN (line: %" PFMT64u ").\n", file, linenum);
 	}
 	rz_test_cmd_test_free(test);
 	return ret;

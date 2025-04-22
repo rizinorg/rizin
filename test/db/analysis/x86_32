@@ -202,8 +202,7 @@ RUN
 NAME=adf bug #16215
 FILE==
 CMDS=adf
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=adf analysis on an obfuscated executable
@@ -217,10 +216,8 @@ e asm.lines.bb=false
 e asm.lines.out=false
 e asm.bytes=false
 e asm.indentspace=0
-e asm.jmphints=false
 e asm.xrefs=false
 e asm.functions=false
-e asm.fcncalls=false
 e asm.lines.fcn=false
 e scr.utf8=false
 e analysis.jmp.after=false
@@ -228,7 +225,6 @@ e analysis.calls=false
 e analysis.jmp.cref=false
 e analysis.jmp.above=true
 e analysis.jmp.ref=true
-e analysis.split=true
 # HACK to avoid ASAN taking too long on travis.. this is broken anyway
 e analysis.bb.maxsize=1K
 adf @ sym.testObf27.exe_VirtMe
@@ -343,10 +339,11 @@ afl
 EOF
 EXPECT=<<EOF
 0x00401000    1 59           main
-0x0040103b    6 1024 -> 277  fcn.0040103b
+0x0040103b    3 15           fcn.0040103b
 0x0040104a    4 109          fcn.0040104a
 0x004010c7    1 29           fcn.004010c7
 0x004010e4    4 148          fcn.004010e4
+0x00401335    3 262          fcn.00401335
 0x00404ad7    1 8            fcn.00404ad7
 EOF
 RUN
@@ -361,10 +358,11 @@ afl
 EOF
 EXPECT=<<EOF
 0x00401000    1 59           main
-0x0040103b    6 1024 -> 277  root.0040103b
+0x0040103b    3 15           root.0040103b
 0x0040104a    4 109          root.0040104a
 0x004010c7    1 29           root.004010c7
 0x004010e4    4 148          root.004010e4
+0x00401335    3 262          root.00401335
 0x00404ad7    1 8            root.00404ad7
 EOF
 RUN
@@ -403,7 +401,7 @@ s 0x00402ade
 pd 4~printf
 EOF
 EXPECT=<<EOF
-  0x00402ae8      call  dword [sym.imp.msvcrt.dll_printf] ; 0x402d48 ; esp=0x177ff8 ; eip=0x2d08 reloc.msvcrt.dll_printf
+  0x00402ae8      call  dword [sym.imp.msvcrt.dll_printf] ; 0x402d48 ; esp=0x177ff8 ; eip=0x2d08
                     ; int printf("  - RT_MANIFEST resource located\n")
 EOF
 RUN
@@ -428,58 +426,6 @@ EOF
 EXPECT=<<EOF
 0x00401000 0x00401002 00:0000 2 j 0x00401012
 0x00401012 0x00401059 00:0000 71 j 0x0040dfd0
-0x0040dfd0 0x0040e075 00:0000 165 j 0x0040e0af f 0x0040e075
-0x0040e075 0x0040e094 00:0000 31 j 0x0040e0a8
-0x0040e094 0x0040e0a8 00:0000 20 j 0x0040e0a8
-0x0040e0a8 0x0040e0af 00:0000 7 j 0x0040e094 f 0x0040e0af
-0x0040e0af 0x0040e0c4 00:0000 21 j 0x0040e12b f 0x0040e0c4
-0x0040e0c4 0x0040e0cc 00:0000 8 j 0x0040e0cd
-0x0040e0cc 0x0040e0cd 00:0000 1 j 0x0040e0cd
-0x0040e0cd 0x0040e0d3 00:0000 6 j 0x0040e0cc f 0x0040e0d3
-0x0040e0d3 0x0040e0d7 00:0000 4 j 0x0040e0cc f 0x0040e0d7
-0x0040e0d7 0x0040e0dc 00:0000 5 j 0x0040e0e1 f 0x0040e0dc
-0x0040e0dc 0x0040e0e1 00:0000 5 j 0x0040e0e6
-0x0040e0e1 0x0040e0e5 00:0000 4 j 0x0040e0e6
-0x0040e0e5 0x0040e0e6 00:0000 1 j 0x0040e0e6
-0x0040e0e6 0x0040e0ec 00:0000 6 j 0x0040e0f4 f 0x0040e0ec
-0x0040e0ec 0x0040e0f0 00:0000 4 j 0x0040e0f4 f 0x0040e0f0
-0x0040e0f0 0x0040e0f4 00:0000 4 j 0x0040e0e5 f 0x0040e0f4
-0x0040e0f4 0x0040e0f9 00:0000 5 j 0x0040e0fd f 0x0040e0f9
-0x0040e0f9 0x0040e0fc 00:0000 3 j 0x0040e0fd
-0x0040e0fc 0x0040e0fd 00:0000 1 j 0x0040e0fd
-0x0040e0fd 0x0040e103 00:0000 6 j 0x0040e107 f 0x0040e103
-0x0040e103 0x0040e107 00:0000 4 j 0x0040e0fc f 0x0040e107
-0x0040e107 0x0040e10b 00:0000 4 j 0x0040e0fc f 0x0040e10b
-0x0040e10b 0x0040e12b 00:0000 32 j 0x0040e14c
-0x0040e12b 0x0040e14c 00:0000 33 j 0x0040e14c
-0x0040e14c 0x0040e153 00:0000 7
-0x00401000 0x00401002 00:0000 2 j 0x00401012
-0x00401012 0x00401059 00:0000 71 j 0x0040dfd0
-0x0040dfd0 0x0040e075 00:0000 165 j 0x0040e0af f 0x0040e075
-0x0040e075 0x0040e094 00:0000 31 j 0x0040e0a8
-0x0040e094 0x0040e0a8 00:0000 20 j 0x0040e0a8
-0x0040e0a8 0x0040e0af 00:0000 7 j 0x0040e094 f 0x0040e0af
-0x0040e0af 0x0040e0c4 00:0000 21 j 0x0040e12b f 0x0040e0c4
-0x0040e0c4 0x0040e0cc 00:0000 8 j 0x0040e0cd
-0x0040e0cc 0x0040e0cd 00:0000 1 j 0x0040e0cd
-0x0040e0cd 0x0040e0d3 00:0000 6 j 0x0040e0cc f 0x0040e0d3
-0x0040e0d3 0x0040e0d7 00:0000 4 j 0x0040e0cc f 0x0040e0d7
-0x0040e0d7 0x0040e0dc 00:0000 5 j 0x0040e0e1 f 0x0040e0dc
-0x0040e0dc 0x0040e0e1 00:0000 5 j 0x0040e0e6
-0x0040e0e1 0x0040e0e5 00:0000 4 j 0x0040e0e6
-0x0040e0e5 0x0040e0e6 00:0000 1 j 0x0040e0e6
-0x0040e0e6 0x0040e0ec 00:0000 6 j 0x0040e0f4 f 0x0040e0ec
-0x0040e0ec 0x0040e0f0 00:0000 4 j 0x0040e0f4 f 0x0040e0f0
-0x0040e0f0 0x0040e0f4 00:0000 4 j 0x0040e0e5 f 0x0040e0f4
-0x0040e0f4 0x0040e0f9 00:0000 5 j 0x0040e0fd f 0x0040e0f9
-0x0040e0f9 0x0040e0fc 00:0000 3 j 0x0040e0fd
-0x0040e0fc 0x0040e0fd 00:0000 1 j 0x0040e0fd
-0x0040e0fd 0x0040e103 00:0000 6 j 0x0040e107 f 0x0040e103
-0x0040e103 0x0040e107 00:0000 4 j 0x0040e0fc f 0x0040e107
-0x0040e107 0x0040e10b 00:0000 4 j 0x0040e0fc f 0x0040e10b
-0x0040e10b 0x0040e12b 00:0000 32 j 0x0040e14c
-0x0040e12b 0x0040e14c 00:0000 33 j 0x0040e14c
-0x0040e14c 0x0040e153 00:0000 7
 0x00401000 0x00401002 00:0000 2 j 0x00401012
 0x00401012 0x00401059 00:0000 71 j 0x0040dfd0
 0x0040dfd0 0x0040e075 00:0000 165 j 0x0040e0af f 0x0040e075
@@ -1417,8 +1363,7 @@ CMDS=<<EOF
 aaa
 afb @ sym.imp.kernel32.dll_ExitProcess
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=xref aar on op.val
@@ -3125,97 +3070,102 @@ EXPECT=<<EOF
               "y": {
                 "opcode": "seq",
                 "x": {
-                  "opcode": "seq",
-                  "x": {
-                    "opcode": "seq",
+                  "opcode": "set",
+                  "dst": "pf",
+                  "src": {
+                    "opcode": "!",
                     "x": {
-                      "opcode": "set",
-                      "dst": "_popcnt",
-                      "src": {
-                        "opcode": "bitv",
-                        "bits": "0x0",
-                        "len": 8
-                      }
-                    },
-                    "y": {
-                      "opcode": "set",
-                      "dst": "_val",
-                      "src": {
-                        "opcode": "cast",
-                        "value": {
-                          "opcode": "var",
-                          "value": "_result"
-                        },
-                        "length": 8,
-                        "fill": {
-                          "opcode": "bool",
-                          "value": false
-                        }
-                      }
-                    }
-                  },
-                  "y": {
-                    "opcode": "repeat",
-                    "condition": {
-                      "opcode": "!",
-                      "x": {
-                        "opcode": "is_zero",
-                        "bv": {
-                          "opcode": "var",
-                          "value": "_val"
-                        }
-                      }
-                    },
-                    "data_eff": {
-                      "opcode": "seq",
-                      "x": {
-                        "opcode": "set",
-                        "dst": "_popcnt",
-                        "src": {
-                          "opcode": "+",
-                          "x": {
-                            "opcode": "var",
-                            "value": "_popcnt"
-                          },
-                          "y": {
-                            "opcode": "ite",
-                            "condition": {
-                              "opcode": "lsb",
-                              "bv": {
-                                "opcode": "var",
-                                "value": "_val"
-                              }
-                            },
-                            "x": {
-                              "opcode": "bitv",
-                              "bits": "0x1",
-                              "len": 8
-                            },
-                            "y": {
-                              "opcode": "bitv",
-                              "bits": "0x0",
-                              "len": 8
-                            }
-                          }
-                        }
-                      },
-                      "y": {
-                        "opcode": "set",
+                      "opcode": "lsb",
+                      "bv": {
+                        "opcode": "let",
                         "dst": "_val",
-                        "src": {
-                          "opcode": ">>",
-                          "x": {
+                        "exp": {
+                          "opcode": "cast",
+                          "value": {
                             "opcode": "var",
-                            "value": "_val"
+                            "value": "_result"
                           },
-                          "y": {
-                            "opcode": "bitv",
-                            "bits": "0x1",
-                            "len": 8
-                          },
-                          "fill_bit": {
+                          "length": 8,
+                          "fill": {
                             "opcode": "bool",
                             "value": false
+                          }
+                        },
+                        "body": {
+                          "opcode": "let",
+                          "dst": "_c4",
+                          "exp": {
+                            "opcode": "^",
+                            "x": {
+                              "opcode": "var",
+                              "value": "_val"
+                            },
+                            "y": {
+                              "opcode": ">>",
+                              "x": {
+                                "opcode": "var",
+                                "value": "_val"
+                              },
+                              "y": {
+                                "opcode": "bitv",
+                                "bits": "0x4",
+                                "len": 8
+                              },
+                              "fill_bit": {
+                                "opcode": "bool",
+                                "value": false
+                              }
+                            }
+                          },
+                          "body": {
+                            "opcode": "let",
+                            "dst": "_c2",
+                            "exp": {
+                              "opcode": "^",
+                              "x": {
+                                "opcode": "var",
+                                "value": "_c4"
+                              },
+                              "y": {
+                                "opcode": ">>",
+                                "x": {
+                                  "opcode": "var",
+                                  "value": "_c4"
+                                },
+                                "y": {
+                                  "opcode": "bitv",
+                                  "bits": "0x2",
+                                  "len": 8
+                                },
+                                "fill_bit": {
+                                  "opcode": "bool",
+                                  "value": false
+                                }
+                              }
+                            },
+                            "body": {
+                              "opcode": "^",
+                              "x": {
+                                "opcode": "var",
+                                "value": "_c2"
+                              },
+                              "y": {
+                                "opcode": ">>",
+                                "x": {
+                                  "opcode": "var",
+                                  "value": "_c2"
+                                },
+                                "y": {
+                                  "opcode": "bitv",
+                                  "bits": "0x1",
+                                  "len": 8
+                                },
+                                "fill_bit": {
+                                  "opcode": "bool",
+                                  "value": false
+                                }
+                              }
+                            }
                           }
                         }
                       }
@@ -3226,45 +3176,23 @@ EXPECT=<<EOF
                   "opcode": "seq",
                   "x": {
                     "opcode": "set",
-                    "dst": "pf",
+                    "dst": "zf",
                     "src": {
                       "opcode": "is_zero",
                       "bv": {
-                        "opcode": "mod",
-                        "x": {
-                          "opcode": "var",
-                          "value": "_popcnt"
-                        },
-                        "y": {
-                          "opcode": "bitv",
-                          "bits": "0x2",
-                          "len": 8
-                        }
+                        "opcode": "var",
+                        "value": "_result"
                       }
                     }
                   },
                   "y": {
-                    "opcode": "seq",
-                    "x": {
-                      "opcode": "set",
-                      "dst": "zf",
-                      "src": {
-                        "opcode": "is_zero",
-                        "bv": {
-                          "opcode": "var",
-                          "value": "_result"
-                        }
-                      }
-                    },
-                    "y": {
-                      "opcode": "set",
-                      "dst": "sf",
-                      "src": {
-                        "opcode": "msb",
-                        "bv": {
-                          "opcode": "var",
-                          "value": "_result"
-                        }
+                    "opcode": "set",
+                    "dst": "sf",
+                    "src": {
+                      "opcode": "msb",
+                      "bv": {
+                        "opcode": "var",
+                        "value": "_result"
                       }
                     }
                   }
@@ -4265,5 +4193,43 @@ EXPECT=<<EOF
 |       |   0x0804942a   -28            call  sym.imp.printf
 |       |   0x0804942f   -28 += 16      add   esp, 0x10
 |      ,==< 0x08049432   -12            jmp   0x8049447
+EOF
+RUN
+
+NAME=tail call
+FILE=bins/pe/bcc1.ex
+CMDS=<<EOF
+af
+afb
+pdf
+EOF
+EXPECT=<<EOF
+0x00401000 0x00401002 00:0000 2 j 0x00401012
+0x00401012 0x00401059 00:0000 71 j 0x0040dfd0
+            ;-- section..text:
+/ entry0();
+|       ,=< 0x00401000      jmp   0x401012                             ; [00] -r-x section size 65536 named .text
+..
+|      ||   ; CODE XREF from entry0 @ 0x401000
+|      |`-> 0x00401012      mov   eax, dword [0x411133]                ; [0x411133:4]=0
+|      |    0x00401017      shl   eax, 2
+|      |    0x0040101a      mov   dword [0x411137], eax                ; [0x411137:4]=0
+|      |    0x0040101f      push  edx
+|      |    0x00401020      push  0
+|      |    0x00401022      call  sub.KERNEL32.DLL_GetModuleHandleA
+|      |    0x00401027      mov   edx, eax
+|      |    0x00401029      call  fcn.0040710c
+|      |    0x0040102e      pop   edx
+|      |    0x0040102f      call  fcn.004064a8
+|      |    0x00401034      call  fcn.00407110
+|      |    0x00401039      push  0
+|      |    0x0040103b      call  fcn.00408058
+|      |    0x00401040      pop   ecx
+|      |    0x00401041      push  0x4110dc
+|      |    0x00401046      push  0
+|      |    0x00401048      call  sub.KERNEL32.DLL_GetModuleHandleA
+|      |    0x0040104d      mov   dword [0x41113b], eax                ; [0x41113b:4]=0
+|      |    0x00401052      push  0
+\      |,=< 0x00401054      jmp   fcn.0040dfd0
 EOF
 RUN

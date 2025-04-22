@@ -5,6 +5,7 @@
 #include <rz_util.h>
 #include <rz_cons.h>
 #include "ar.h"
+#include "rz_io_plugins.h"
 
 static bool rz_io_ar_plugin_open(RzIO *io, const char *file, bool many) {
 	return !strncmp("ar://", file, 5) || !strncmp("lib://", file, 6);
@@ -41,7 +42,7 @@ static RzList /*<RzIODesc *>*/ *rz_io_ar_open_many(RzIO *io, const char *file, i
 			rz_list_free(list_fds);
 			return NULL;
 		}
-		desc->name = strdup(arfp->name);
+		desc->name = rz_str_dup(arfp->name);
 		if (!rz_list_append(list_fds, desc)) {
 			rz_list_free(all);
 			rz_list_free(list_fds);
@@ -56,7 +57,7 @@ static RzList /*<RzIODesc *>*/ *rz_io_ar_open_many(RzIO *io, const char *file, i
 static RzIODesc *rz_io_ar_open(RzIO *io, const char *file, int perm, int mode) {
 	rz_return_val_if_fail(io && file, NULL);
 	RzIODesc *res = NULL;
-	char *uri = strdup(file);
+	char *uri = rz_str_dup(file);
 	if (!uri) {
 		return NULL;
 	}
@@ -81,7 +82,7 @@ static RzIODesc *rz_io_ar_open(RzIO *io, const char *file, int perm, int mode) {
 	if (!res) {
 		goto err;
 	}
-	res->name = strdup(filename);
+	res->name = rz_str_dup(filename);
 err:
 	free(uri);
 	return res;

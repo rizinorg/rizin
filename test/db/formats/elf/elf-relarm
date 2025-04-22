@@ -8,17 +8,17 @@ af
 pdsf
 EOF
 EXPECT=<<EOF
-nth vaddr      bind   type   lib name              
+nth      vaddr bind   type   lib name              
 ---------------------------------------------------
-1   ---------- GLOBAL FUNC       printf
-2   ---------- WEAK   NOTYPE     __gmon_start__
-3   ---------- GLOBAL FUNC       __libc_start_main
-vaddr      paddr      type   name              
------------------------------------------------
-0x10020008 0x00010008 ADD_32 __gmon_start__
-0x10020064 0x10020064 ADD_32 printf
-0x1002006c 0x1002006c ADD_32 __gmon_start__
-0x10020074 0x10020074 ADD_32 __libc_start_main
+  1 ---------- GLOBAL FUNC       printf
+  2 ---------- WEAK   NOTYPE     __gmon_start__
+  3 ---------- GLOBAL FUNC       __libc_start_main
+     vaddr      paddr type           name              
+-------------------------------------------------------
+0x10020008 0x00010008 R_PPC_GLOB_DAT __gmon_start__
+0x10020064 0x10020064 R_PPC_JMP_SLOT printf
+0x1002006c 0x1002006c R_PPC_JMP_SLOT __gmon_start__
+0x10020074 0x10020074 R_PPC_JMP_SLOT __libc_start_main
 0x100004a0 str.Simple_PPC_program. str.Simple_PPC_program.
 EOF
 RUN
@@ -113,6 +113,26 @@ EXPECT=<<EOF
             0x000b58e4      .dword 0x00098b50 ; reloc.target..datadiv_decode12428479046606065387 ; sym..datadiv_decode12428479046606065387; RELOC 32 .datadiv_decode12428479046606065387 @ 0x00098b50
             ;-- .datadiv_decode7496105736011033460:
             0x000b58e8      .dword 0x00098b54 ; reloc.target..datadiv_decode7496105736011033460 ; sym..datadiv_decode7496105736011033460; RELOC 32 .datadiv_decode7496105736011033460 @ 0x00098b54
+EOF
+RUN
+
+NAME=ELF: arm thumb relocs 1
+FILE=bins/elf/mbedtls-bignum-thumb-interwork.so
+CMDS=<<EOF
+ir~?
+# ARM_THM_PC22
+s 0x08000b82
+pf bbbb
+pd 1
+EOF
+EXPECT=<<EOF
+4810
+0x08000b82 = 0x19
+0x08000b83 = 0xf0
+0x08000b84 = 0xaa
+0x08000b85 = 0xfa
+            ;-- memset:
+            0x08000b82      bl    memset                               ; RELOC 24 memset
 EOF
 RUN
 

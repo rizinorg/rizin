@@ -7,22 +7,48 @@
 #include <stdio.h>
 #include <rz_util/rz_file.h>
 
-static bool foreach_delete_cb(void *user, const char *key, const char *val) {
-	if (strcmp(key, "bar")) {
-		sdb_unset(user, key, 0);
+bool test_sdb_kv_list(void) {
+	Sdb *db = sdb_new(NULL, NULL, false);
+	sdb_set(db, "first__XX", "  2");
+	sdb_set(db, "second_XXXX", "    4");
+	sdb_set(db, "third__XXXXX", "     5");
+	sdb_set(db, "fourth_XXX", "   3");
+	sdb_set(db, "fifth__X", " 1");
+
+	RzPVector *items = sdb_get_items(db, true);
+	mu_assert_eq(rz_pvector_len(items), 5, "KV count");
+
+	size_t idx;
+	void **iter;
+	rz_pvector_enumerate (items, iter, idx) {
+		SdbKv *kv = *iter;
+		int pos = atoi(sdbkv_value(kv));
+		mu_assert_eq(pos, idx + 1, "KV not sorted");
+		mu_assert_eq(sdbkv_key_len(kv), idx + 8, "Key len");
+		mu_assert_eq(sdbkv_value_len(kv), idx + 2, "Value len");
 	}
-	return 1;
+
+	rz_pvector_free(items);
+	sdb_free(db);
+	mu_end;
+}
+
+static bool foreach_delete_cb(void *user, const SdbKv *kv) {
+	if (strcmp(sdbkv_key(kv), "bar")) {
+		sdb_unset(user, sdbkv_key(kv));
+	}
+	return true;
 }
 
 bool test_sdb_foreach_delete(void) {
 	Sdb *db = sdb_new(NULL, NULL, false);
-	sdb_set(db, "foo", "bar", 0);
-	sdb_set(db, "bar", "cow", 0);
-	sdb_set(db, "low", "bar", 0);
+	sdb_set(db, "foo", "bar");
+	sdb_set(db, "bar", "cow");
+	sdb_set(db, "low", "bar");
 	sdb_foreach(db, foreach_delete_cb, db);
 
-	mu_assert("Item not deleted", !(int)(size_t)sdb_const_get(db, "foo", NULL));
-	mu_assert("Item not deleted", (int)(size_t)sdb_const_get(db, "bar", NULL));
+	mu_assert("Item not deleted", !(int)(size_t)sdb_const_get(db, "foo"));
+	mu_assert("Item not deleted", (int)(size_t)sdb_const_get(db, "bar"));
 
 	sdb_free(db);
 	mu_end;
@@ -30,49 +56,49 @@ bool test_sdb_foreach_delete(void) {
 
 bool test_sdb_list_delete(void) {
 	Sdb *db = sdb_new(NULL, NULL, false);
-	sdb_set(db, "foo", "bar", 0);
-	sdb_set(db, "bar", "cow", 0);
-	sdb_set(db, "low", "bar", 0);
-	SdbList *list = sdb_foreach_list(db, true);
-	SdbListIter *iter;
-	SdbKv *kv;
-	ls_foreach (list, iter, kv) {
+	sdb_set(db, "foo", "bar");
+	sdb_set(db, "bar", "cow");
+	sdb_set(db, "low", "bar");
+	RzPVector *items = sdb_get_items(db, true);
+	void **iter;
+	rz_pvector_foreach (items, iter) {
+		SdbKv *kv = *iter;
 		// printf ("--> %s\n", kv->key);
-		sdb_unset(db, kv->base.key, 0);
+		sdb_unset(db, sdbkv_key(kv));
 	}
-	SdbList *list2 = sdb_foreach_list(db, true);
-	mu_assert("List is empty", !ls_length(list2));
-	ls_free(list);
-	ls_free(list2);
+	RzPVector *items2 = sdb_get_items(db, true);
+	mu_assert("List is empty", !rz_pvector_len(items2));
+	rz_pvector_free(items);
+	rz_pvector_free(items2);
 	sdb_free(db);
 	mu_end;
 }
 
 bool test_sdb_list_big(void) {
 	Sdb *db = sdb_new0();
-	int i;
-	for (i = 0; i < 5000; i++) {
-		sdb_num_set(db, sdb_fmt("%d", i), i + 1, 0);
+	for (int i = 0; i < 5000; i++) {
+		sdb_num_set(db, sdb_fmt("%d", i), i + 1);
 	}
-	SdbList *list = sdb_foreach_list(db, true);
+	RzPVector *items = sdb_get_items(db, true);
+	mu_assert_eq(rz_pvector_len(items), 5000, "KV count");
 	// TODO: verify if its sorted
-	ls_free(list);
+	rz_pvector_free(items);
 	sdb_free(db);
 	mu_end;
 }
 
 bool test_sdb_delete_none(void) {
 	Sdb *db = sdb_new(NULL, NULL, false);
-	sdb_set(db, "foo", "bar", 0);
-	sdb_set(db, "bar", "cow", 0);
-	sdb_set(db, "low", "bar", 0);
-	sdb_unset(db, "fundas", 0);
-	sdb_unset(db, "barnas", 0);
-	sdb_unset(db, "bar", 0);
-	sdb_unset(db, "pinuts", 0);
-	SdbList *list = sdb_foreach_list(db, false);
-	mu_assert_eq(ls_length(list), 2, "Unmatched rows");
-	ls_free(list);
+	sdb_set(db, "foo", "bar");
+	sdb_set(db, "bar", "cow");
+	sdb_set(db, "low", "bar");
+	sdb_unset(db, "fundas");
+	sdb_unset(db, "barnas");
+	sdb_unset(db, "bar");
+	sdb_unset(db, "pinuts");
+	RzPVector *items = sdb_get_items(db, false);
+	mu_assert_eq(rz_pvector_len(items), 2, "Unmatched rows");
+	rz_pvector_free(items);
 	sdb_free(db);
 	mu_end;
 }
@@ -83,14 +109,14 @@ bool test_sdb_delete_alot(void) {
 	int i;
 
 	for (i = 0; i < count; i++) {
-		sdb_set(db, sdb_fmt("key.%d", i), "bar", 0);
+		sdb_set(db, sdb_fmt("key.%d", i), "bar");
 	}
 	for (i = 0; i < count; i++) {
-		sdb_unset(db, sdb_fmt("key.%d", i), 0);
+		sdb_unset(db, sdb_fmt("key.%d", i));
 	}
-	SdbList *list = sdb_foreach_list(db, false);
-	mu_assert_eq(ls_length(list), 0, "Unmatched rows");
-	ls_free(list);
+	RzPVector *items = sdb_get_items(db, false);
+	mu_assert_eq(rz_pvector_len(items), 0, "Unmatched rows");
+	rz_pvector_free(items);
 	sdb_free(db);
 
 	mu_end;
@@ -100,9 +126,9 @@ bool test_sdb_milset(void) {
 	int i = 0;
 	const int MAX = 1999;
 	Sdb *s = sdb_new0();
-	sdb_set(s, "foo", "bar", 0);
+	sdb_set(s, "foo", "bar");
 	for (i = 0; i < MAX; i++) {
-		if (!sdb_set(s, "foo", "bar", 0)) {
+		if (!sdb_set(s, "foo", "bar")) {
 			mu_assert("milset: sdb_set failed", 0);
 			break;
 		}
@@ -116,10 +142,10 @@ bool test_sdb_milset_random(void) {
 	const int MAX = 1999;
 	bool solved = true;
 	Sdb *s = sdb_new0();
-	sdb_set(s, "foo", "bar", 0);
+	sdb_set(s, "foo", "bar");
 	for (i = 0; i < MAX; i++) {
 		char *v = sdb_fmt("bar%d", i);
-		if (!sdb_set(s, "foo", v, 0)) {
+		if (!sdb_set(s, "foo", v)) {
 			solved = false;
 			break;
 		}
@@ -139,8 +165,8 @@ bool test_sdb_namespace(void) {
 	unlink(dbname);
 	Sdb *n = sdb_ns(s, dbname, 1);
 	if (n) {
-		sdb_set(n, "user.pancake", "pancake foo", 0);
-		sdb_set(n, "user.password", "jklsdf8r3o", 0);
+		sdb_set(n, "user.pancake", "pancake foo");
+		sdb_set(n, "user.password", "jklsdf8r3o");
 		/* FIXED BUG1 ns_sync doesnt creates the database file */
 		sdb_ns_sync(s);
 		// sdb_sync (n);
@@ -159,89 +185,64 @@ bool test_sdb_namespace(void) {
 	mu_end;
 }
 
-static bool foreach_filter_user_cb(void *user, const char *key, const char *val) {
+static bool foreach_filter_user_cb(void *user, const SdbKv *kv) {
 	Sdb *db = (Sdb *)user;
-	const char *v = sdb_const_get(db, key, NULL);
+	const char *key = sdbkv_key(kv);
+	const char *v = sdb_const_get(db, key);
 	if (!v) {
 		return false;
 	}
 	return key[0] == 'b' && v[0] == 'c';
 }
 
-bool test_sdb_foreach_filter_user(void) {
+bool test_sdb_kv_list_filtered(void) {
 	Sdb *db = sdb_new(NULL, NULL, false);
-	sdb_set(db, "crow", NULL, 0);
-	sdb_set(db, "foo", "bar", 0);
-	sdb_set(db, "bar", "cow", 0);
-	sdb_set(db, "bag", "horse", 0);
-	sdb_set(db, "boo", "cow", 0);
-	sdb_set(db, "bog", "horse", 0);
-	sdb_set(db, "low", "bar", 0);
-	sdb_set(db, "bip", "cow", 0);
-	sdb_set(db, "big", "horse", 0);
-	SdbList *ls = sdb_foreach_list_filter_user(db, foreach_filter_user_cb, true, db);
-	SdbListIter *it = ls_iterator(ls);
-	HtPPKv *kv = ls_iter_get(it);
-	mu_assert_streq((const char *)kv->key, "bar", "list should be sorted");
-	mu_assert_streq((const char *)kv->value, "cow", "list should be filtered");
-	kv = ls_iter_get(it);
-	mu_assert_streq((const char *)kv->key, "bip", "list should be sorted");
-	mu_assert_streq((const char *)kv->value, "cow", "list should be filtered");
-	kv = ls_iter_get(it);
-	mu_assert_streq((const char *)kv->key, "boo", "list should be sorted");
-	mu_assert_streq((const char *)kv->value, "cow", "list should be filtered");
-	mu_assert_null(it, "list should be terminated");
-	ls_free(ls);
-	sdb_free(db);
-	mu_end;
-}
-
-static bool foreach_filter_cb(void *user, const char *key, const char *val) {
-	return key[0] == 'b';
-}
-
-bool test_sdb_foreach_filter(void) {
-	Sdb *db = sdb_new(NULL, NULL, false);
-	sdb_set(db, "foo", "bar", 0);
-	sdb_set(db, "bar", "cow", 0);
-	sdb_set(db, "boo", "cow", 0);
-	sdb_set(db, "low", "bar", 0);
-	sdb_set(db, "bip", "cow", 0);
-	SdbList *ls = sdb_foreach_list_filter(db, foreach_filter_cb, true);
-	SdbListIter *it = ls_iterator(ls);
-	HtPPKv *kv = ls_iter_get(it);
-	mu_assert_streq((const char *)kv->key, "bar", "list should be sorted");
-	kv = ls_iter_get(it);
-	mu_assert_streq((const char *)kv->key, "bip", "list should be sorted");
-	kv = ls_iter_get(it);
-	mu_assert_streq((const char *)kv->key, "boo", "list should be sorted");
-	mu_assert_null(it, "list should be terminated");
-	ls_free(ls);
+	sdb_set(db, "crow", NULL);
+	sdb_set(db, "foo", "bar");
+	sdb_set(db, "bar", "cow");
+	sdb_set(db, "bag", "horse");
+	sdb_set(db, "boo", "cow");
+	sdb_set(db, "bog", "horse");
+	sdb_set(db, "low", "bar");
+	sdb_set(db, "bip", "cow");
+	sdb_set(db, "big", "horse");
+	RzPVector *items = sdb_get_items_filter(db, foreach_filter_user_cb, db, true);
+	mu_assert_eq(rz_pvector_len(items), 3, "list length");
+	SdbKv *kv = rz_pvector_at(items, 0);
+	mu_assert_streq(sdbkv_key(kv), "bar", "list should be sorted");
+	mu_assert_streq(sdbkv_value(kv), "cow", "list should be filtered");
+	kv = rz_pvector_at(items, 1);
+	mu_assert_streq(sdbkv_key(kv), "bip", "list should be sorted");
+	mu_assert_streq(sdbkv_value(kv), "cow", "list should be filtered");
+	kv = rz_pvector_at(items, 2);
+	mu_assert_streq(sdbkv_key(kv), "boo", "list should be sorted");
+	mu_assert_streq(sdbkv_value(kv), "cow", "list should be filtered");
+	rz_pvector_free(items);
 	sdb_free(db);
 	mu_end;
 }
 
 bool test_sdb_copy() {
 	Sdb *src = sdb_new0();
-	sdb_set(src, "i am", "thou", 0);
-	sdb_set(src, "thou art", "i", 0);
+	sdb_set(src, "i am", "thou");
+	sdb_set(src, "thou art", "i");
 	Sdb *sub = sdb_ns(src, "subns", true);
-	sdb_set(sub, "rizin", "cool", 0);
-	sdb_set(sub, "cutter", "cooler", 0);
+	sdb_set(sub, "rizin", "cool");
+	sdb_set(sub, "cutter", "cooler");
 
 	Sdb *dst = sdb_new0();
 	sdb_copy(src, dst);
 	sdb_free(src);
 
 	mu_assert_eq(sdb_count(dst), 2, "root count");
-	mu_assert_streq(sdb_const_get(dst, "i am", 0), "thou", "root entries");
-	mu_assert_streq(sdb_const_get(dst, "thou art", 0), "i", "root entries");
-	mu_assert_eq(ls_length(dst->ns), 1, "sub ns count");
+	mu_assert_streq(sdb_const_get(dst, "i am"), "thou", "root entries");
+	mu_assert_streq(sdb_const_get(dst, "thou art"), "i", "root entries");
+	mu_assert_eq(rz_list_length(dst->ns), 1, "sub ns count");
 	Sdb *dst_sub = sdb_ns(dst, "subns", false);
 	mu_assert_notnull(dst_sub, "subns");
 	mu_assert_eq(sdb_count(dst_sub), 2, "sub ns entries count");
-	mu_assert_streq(sdb_const_get(dst_sub, "rizin", 0), "cool", "sub ns entries");
-	mu_assert_streq(sdb_const_get(dst_sub, "cutter", 0), "cooler", "sub ns entries");
+	mu_assert_streq(sdb_const_get(dst_sub, "rizin"), "cool", "sub ns entries");
+	mu_assert_streq(sdb_const_get(dst_sub, "cutter"), "cooler", "sub ns entries");
 
 	sdb_free(dst);
 	mu_end;
@@ -317,58 +318,58 @@ static const char *text_ref_path_last_line =
 
 static Sdb *text_ref_simple_db() {
 	Sdb *db = sdb_new0();
-	sdb_set(db, "somekey", "somevalue", 0);
-	sdb_set(db, "aaa", "stuff", 0);
-	sdb_set(db, "bbb", "other stuff", 0);
+	sdb_set(db, "somekey", "somevalue");
+	sdb_set(db, "aaa", "stuff");
+	sdb_set(db, "bbb", "other stuff");
 
 	Sdb *sub = sdb_ns(db, "subnamespace", true);
-	sdb_set(sub, "key in sub", "value in sub", 0);
-	sdb_set(sub, "/more stuff", "in sub", 0);
+	sdb_set(sub, "key in sub", "value in sub");
+	sdb_set(sub, "/more stuff", "in sub");
 
 	Sdb *subsub = sdb_ns(sub, "subsub", true);
-	sdb_set(subsub, "some stuff", "also down here", 0);
+	sdb_set(subsub, "some stuff", "also down here");
 	return db;
 }
 
 static Sdb *text_ref_db() {
 	Sdb *db = sdb_new0();
-	sdb_set(db, PERTURBATOR "key" PERTURBATOR, PERTURBATOR "value" PERTURBATOR, 0);
-	sdb_set(db, "aaa", "stuff", 0);
-	sdb_set(db, "bbb", "other stuff", 0);
+	sdb_set(db, PERTURBATOR "key" PERTURBATOR, PERTURBATOR "value" PERTURBATOR);
+	sdb_set(db, "aaa", "stuff");
+	sdb_set(db, "bbb", "other stuff");
 
 	Sdb *sub = sdb_ns(db, "sub" PERTURBATOR "namespace", true);
-	sdb_set(sub, "key" PERTURBATOR "in sub", "value" PERTURBATOR "in sub", 0);
-	sdb_set(sub, "/more stuff\n", "\nin\nsub\n", 0);
+	sdb_set(sub, "key" PERTURBATOR "in sub", "value" PERTURBATOR "in sub");
+	sdb_set(sub, "/more stuff\n", "\nin\nsub\n");
 
 	Sdb *subsub = sdb_ns(sub, "subsub", true);
-	sdb_set(subsub, "some stuff", "also down here", 0);
+	sdb_set(subsub, "some stuff", "also down here");
 	return db;
 }
 
 static Sdb *text_ref_bad_nl_db() {
 	Sdb *db = sdb_new0();
-	sdb_set(db, "non", "unix", 0);
-	sdb_set(db, "newlines", "should", 0);
-	sdb_set(db, "be", "banned", 0);
+	sdb_set(db, "non", "unix");
+	sdb_set(db, "newlines", "should");
+	sdb_set(db, "be", "banned");
 	return db;
 }
 
 static Sdb *text_ref_broken_db() {
 	Sdb *db = sdb_new0();
-	sdb_set(db, "///unnecessary", "/escapesuxa", 0);
+	sdb_set(db, "///unnecessary", "/escapesuxa");
 	Sdb *a = sdb_ns(db, "some", true);
 	Sdb *b = sdb_ns(a, "subns", true);
-	sdb_set(b, "more", "equal=signs=than=one=", 0);
+	sdb_set(b, "more", "equal=signs=than=one=");
 	Sdb *c = sdb_ns(b, "more", true);
 	Sdb *d = sdb_ns(c, "further", true);
-	sdb_set(d, "escape", "newlines", 0);
-	sdb_set(d, "also escape", "nothingness", 0);
+	sdb_set(d, "escape", "newlines");
+	sdb_set(d, "also escape", "nothingness");
 	return db;
 }
 
 static Sdb *text_ref_path_last_line_db() {
 	Sdb *db = sdb_new0();
-	sdb_set(db, "some", "stuff", 0);
+	sdb_set(db, "some", "stuff");
 	Sdb *a = sdb_ns(db, "a", true);
 	Sdb *b = sdb_ns(a, "useless", true);
 	sdb_ns(b, "namespace", true);
@@ -549,8 +550,61 @@ bool test_sdb_text_load_file() {
 	mu_end;
 }
 
+bool test_sdb_sync_disk() {
+	Sdb *db = sdb_new(NULL, ".sync_disk_db", 0);
+
+	sdb_set(db, "mykey", "foobar");
+	sdb_set(db, "zoo", "beef");
+	sdb_set(db, "spam", "egg");
+
+	sdb_sync(db);
+	sdb_free(db);
+
+	db = sdb_new(NULL, ".sync_disk_db", 0);
+	mu_assert_false(sdb_isempty(db), "Non empty");
+
+	ut32 mem, disk;
+	sdb_stats(db, &disk, &mem);
+	mu_assert_eq(disk, 3, "Disk records");
+	mu_assert_eq(mem, 0, "Mem records");
+
+	sdb_set(db, "mykey", "newfoobar");
+	sdb_stats(db, &disk, &mem);
+	mu_assert_eq(disk, 3, "Disk records");
+	mu_assert_eq(mem, 1, "Mem records");
+
+	char *val = sdb_get(db, "mykey");
+	mu_assert_streq(val, "newfoobar", "Overriden value");
+	free(val);
+
+	RzPVector *items = sdb_get_items(db, true);
+	mu_assert_eq(rz_pvector_len(items), 3, "KV count");
+
+	SdbKv *kv = rz_pvector_at(items, 0);
+	mu_assert_streq(sdbkv_key(kv), "mykey", "key");
+	mu_assert_streq(sdbkv_value(kv), "newfoobar", "value");
+	rz_pvector_free(items);
+
+	sdb_sync(db);
+	sdb_free(db);
+
+	db = sdb_new(NULL, ".sync_disk_db", 0);
+
+	sdb_stats(db, &disk, &mem);
+	mu_assert_eq(disk, 3, "Disk records");
+	mu_assert_eq(mem, 0, "Mem records");
+
+	val = sdb_get(db, "mykey");
+	mu_assert_streq(val, "newfoobar", "Overriden value");
+	free(val);
+
+	sdb_free(db);
+	mu_end;
+}
+
 int all_tests() {
 	// XXX two bugs found with crash
+	mu_run_test(test_sdb_kv_list);
 	mu_run_test(test_sdb_namespace);
 	mu_run_test(test_sdb_foreach_delete);
 	mu_run_test(test_sdb_list_delete);
@@ -559,8 +613,7 @@ int all_tests() {
 	mu_run_test(test_sdb_milset);
 	mu_run_test(test_sdb_milset_random);
 	mu_run_test(test_sdb_list_big);
-	mu_run_test(test_sdb_foreach_filter_user);
-	mu_run_test(test_sdb_foreach_filter);
+	mu_run_test(test_sdb_kv_list_filtered);
 	mu_run_test(test_sdb_copy);
 	mu_run_test(test_sdb_text_save_simple);
 	mu_run_test(test_sdb_text_save_simple_unsorted);
@@ -571,6 +624,7 @@ int all_tests() {
 	mu_run_test(test_sdb_text_load_broken);
 	mu_run_test(test_sdb_text_load_path_last_line);
 	mu_run_test(test_sdb_text_load_file);
+	mu_run_test(test_sdb_sync_disk);
 	return tests_passed != tests_run;
 }
 

@@ -119,6 +119,7 @@ static RzSubprocessOutput *run_rz_test(RzTestRunConfig *config, ut64 timeout_ms,
 	rz_pvector_push(&args, "-escr.color=0");
 	rz_pvector_push(&args, "-escr.interactive=0");
 	rz_pvector_push(&args, "-eflirt.sigdb.load.system=false");
+	rz_pvector_push(&args, "-esearch.show_progress=false");
 	rz_pvector_push(&args, "-eflirt.sigdb.load.home=false");
 	rz_pvector_push(&args, "-N");
 	RzListIter *it;
@@ -126,7 +127,7 @@ static RzSubprocessOutput *run_rz_test(RzTestRunConfig *config, ut64 timeout_ms,
 	rz_list_foreach (extra_args, it, extra_arg) {
 		rz_pvector_push(&args, extra_arg);
 	}
-	rz_pvector_push(&args, "-Qc");
+	rz_pvector_push(&args, "-qc");
 #if __WINDOWS__
 	char *wcmds = convert_win_cmds(cmds);
 	rz_pvector_push(&args, wcmds);
@@ -193,21 +194,36 @@ RZ_API RzSubprocessOutput *rz_test_run_cmd_test(RzTestRunConfig *config, RzCmdTe
 	return out;
 }
 
+RZ_API RZ_OWN RzStrBuf *rz_test_regex_full_match_str(RZ_NONNULL const char *pattern, RZ_NONNULL const char *text) {
+	return rz_regex_full_match_str(pattern, text, RZ_REGEX_ZERO_TERMINATED, RZ_REGEX_EXTENDED, RZ_REGEX_DEFAULT,
+		"\n");
+}
+
 RZ_API bool rz_test_cmp_cmd_output(const char *output, const char *expect, const char *regexp) {
 	if (regexp) {
-		RzStrBuf *match_str = rz_regex_full_match_str(regexp, output, RZ_REGEX_ZERO_TERMINATED, RZ_REGEX_EXTENDED, RZ_REGEX_DEFAULT, "\n");
+		RzStrBuf *match_str = rz_test_regex_full_match_str(regexp, output);
 		bool equal = false;
-		ut32 expect_len = strlen(expect);
-		if (expect_len > 0 && expect[expect_len - 1] == '\n') {
-			// Ignore newline
-			equal = (rz_str_cmp(expect, rz_strbuf_get(match_str), expect_len - 1) == 0);
+		size_t expect_len = strlen(expect);
+		if (expect_len && expect[expect_len - 1] == '\n') {
+			// Ignore newline in expect
+			expect_len--;
+			size_t match_str_len = rz_strbuf_length(match_str);
+			if (match_str_len && rz_strbuf_get(match_str)[match_str_len - 1] == '\n') {
+				// Ignore newline in match_str
+				match_str_len--;
+			}
+			if (expect_len != match_str_len) {
+				rz_strbuf_free(match_str);
+				return false;
+			}
+			equal = !rz_str_cmp(expect, rz_strbuf_get(match_str), expect_len);
 		} else {
 			equal = RZ_STR_EQ(expect, rz_strbuf_get(match_str));
 		}
 		rz_strbuf_free(match_str);
 		return equal;
 	}
-	return (0 == strcmp(expect, output));
+	return !strcmp(expect, output);
 }
 
 RZ_API bool rz_test_check_cmd_test(RzSubprocessOutput *out, RzCmdTest *test) {
@@ -278,6 +294,7 @@ RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest 
 	if (!out) {
 		return NULL;
 	}
+	out->as_ret = out->disas_ret = out->il_ret = INT_MAX;
 
 	RzPVector args;
 	rz_pvector_init(&args, NULL);
@@ -318,7 +335,11 @@ RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest 
 			out->as_timeout = true;
 			goto rip;
 		}
-		if (rz_subprocess_ret(proc) != 0) {
+		char *as_err = (char *)crlf2lf(rz_subprocess_err(proc, NULL));
+		rz_str_trim(as_err);
+		out->as_err = as_err;
+		out->as_ret = rz_subprocess_ret(proc);
+		if (out->as_ret != 0) {
 			goto rip;
 		}
 		char *hex = (char *)crlf2lf(rz_subprocess_out(proc, NULL));
@@ -352,7 +373,11 @@ RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest 
 			out->disas_timeout = true;
 			goto ship;
 		}
-		if (rz_subprocess_ret(proc) != 0) {
+		char *disas_err = (char *)crlf2lf(rz_subprocess_err(proc, NULL));
+		rz_str_trim(disas_err);
+		out->disas_err = disas_err;
+		out->disas_ret = rz_subprocess_ret(proc);
+		if (out->disas_ret != 0) {
 			goto ship;
 		}
 		char *disasm = (char *)crlf2lf(rz_subprocess_out(proc, NULL));
@@ -381,8 +406,9 @@ RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest 
 			char *il_err = (char *)crlf2lf(rz_subprocess_err(proc, NULL));
 			rz_str_trim(il_err);
 			out->il = il;
-			out->il_report = il_err;
-			out->il_failed = rz_subprocess_ret(proc) != 0;
+			out->il_err = il_err;
+			out->il_ret = rz_subprocess_ret(proc);
+			out->il_failed = out->il_ret != 0;
 		}
 		free(hex);
 		rz_pvector_pop(&args);
@@ -417,7 +443,7 @@ RZ_API bool rz_test_check_asm_test(RzAsmTestOutput *out, RzAsmTest *test) {
 	}
 	if (test->il) {
 		// expect some IL, no failure, no report and no timeout
-		if (!out->il || out->il_failed || (out->il_report && *out->il_report) || out->il_timeout) {
+		if (!out->il || out->il_failed || RZ_STR_ISNOTEMPTY(out->il_err) || out->il_timeout) {
 			return false;
 		}
 		// IL must also be correct
@@ -435,7 +461,9 @@ RZ_API void rz_test_asm_test_output_free(RzAsmTestOutput *out) {
 	free(out->disasm);
 	free(out->bytes);
 	free(out->il);
-	free(out->il_report);
+	free(out->as_err);
+	free(out->disas_err);
+	free(out->il_err);
 	free(out);
 }
 

@@ -57,7 +57,7 @@ RZ_API void rz_serialize_bp_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzBreakpoint *bp
 		pj_end(j);
 
 		char key[19];
-		sdb_set(db, rz_strf(key, "0x%" PFMT64x, bp_item->addr), pj_string(j), 0);
+		sdb_set(db, rz_strf(key, "0x%" PFMT64x, bp_item->addr), pj_string(j));
 		pj_free(j);
 	}
 }
@@ -119,10 +119,10 @@ typedef struct {
 	RzSerializeBpParser parser;
 } BpLoadCtx;
 
-static bool bp_load_cb(void *user, const char *k, const char *v) {
+static bool bp_load_cb(void *user, const SdbKv *kv) {
 	bool ret = false;
 	BpLoadCtx *ctx = user;
-	char *json_str = strdup(v);
+	char *json_str = sdbkv_dup_value(kv);
 	if (!json_str) {
 		return true;
 	}
@@ -131,7 +131,7 @@ static bool bp_load_cb(void *user, const char *k, const char *v) {
 		goto heaven;
 	}
 	RzBreakpointItem bp_item_temp = { 0 };
-	bp_item_temp.addr = strtoull(k, NULL, 0);
+	bp_item_temp.addr = strtoull(sdbkv_key(kv), NULL, 0);
 
 	RZ_KEY_PARSER_JSON(ctx->parser, json, child, {
 		case BP_FIELD_NAME:
@@ -256,10 +256,10 @@ static bool bp_load_cb(void *user, const char *k, const char *v) {
 	}
 
 	if (bp_item_temp.name) {
-		bp_item->name = strdup(bp_item_temp.name);
+		bp_item->name = rz_str_dup(bp_item_temp.name);
 	}
 	if (bp_item_temp.module_name) {
-		bp_item->module_name = strdup(bp_item_temp.module_name);
+		bp_item->module_name = rz_str_dup(bp_item_temp.module_name);
 	}
 	bp_item->module_delta = bp_item_temp.module_delta;
 	bp_item->delta = bp_item_temp.delta;
@@ -274,13 +274,13 @@ static bool bp_load_cb(void *user, const char *k, const char *v) {
 		bp_item->pids[i] = bp_item_temp.pids[i];
 	}
 	if (bp_item_temp.data) {
-		bp_item->data = strdup(bp_item_temp.data);
+		bp_item->data = rz_str_dup(bp_item_temp.data);
 	}
 	if (bp_item_temp.cond) {
-		bp_item->cond = strdup(bp_item_temp.cond);
+		bp_item->cond = rz_str_dup(bp_item_temp.cond);
 	}
 	if (bp_item_temp.expr) {
-		bp_item->expr = strdup(bp_item_temp.expr);
+		bp_item->expr = rz_str_dup(bp_item_temp.expr);
 	}
 	ret = true;
 

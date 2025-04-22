@@ -123,7 +123,7 @@ static int brainfuck_detach(RzDebug *dbg, int pid) {
 }
 
 static char *brainfuck_reg_profile(RzDebug *dbg) {
-	return strdup(
+	return rz_str_dup(
 		"=PC	pc\n"
 		"=SP	esp\n"
 		"=BP	ptr\n"

@@ -230,11 +230,9 @@ typedef struct operation_evaluation_result_t {
 } OperationEvaluationResult;
 
 typedef struct {
-	RzBinEndianReader *pc;
-	RzBinEndianReader *bytecode;
+	RzBinEndianReader pc;
+	RzBinEndianReader bytecode;
 } RzBinDwarfExprStackItem;
-
-RZ_IPI void RzBinDwarfEvaluationResult_fini(RzBinDwarfEvaluationResult *self);
 
 RZ_IPI void RzBinDwarfPiece_fini(RzBinDwarfPiece *x);
 

@@ -65,8 +65,7 @@ RUN
 NAME=Cf main
 FILE==
 CMDS=Cf main;C*
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=Cf 1 n2
@@ -898,8 +897,8 @@ EOF
 EXPECT=<<EOF
 0x00000000 = "\x7fabc\123\n"
 0x00000000 = "\x7fabc\\123\n"
-0x00000000 = ".abc\123\n"
-0x00000000 = ".abc\\123\n"
+0x00000000 = ".abc\123."
+0x00000000 = ".abc\\123."
 EOF
 RUN
 

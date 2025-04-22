@@ -44,7 +44,7 @@ PC = 272
    It is using the same arena->size, but we are only using the last 4 bytes
    (LITTLE ENDIAN PROBLEMS?)
 */
-return strdup(
+return rz_str_dup(
 	"=PC    pc\n"
 	"=SP    sp\n"
 	"=BP    fp\n"

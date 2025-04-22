@@ -10,7 +10,7 @@
 #include <rz_th.h>
 #include <rz_util.h>
 
-static bool th_run_iterator(RzThreadFunction th_cb, void *context, size_t max_threads) {
+static bool th_run_iterator(RzThreadFunction th_cb, void *context, RzThreadNCores max_threads) {
 	RzThreadPool *pool = rz_th_pool_new(max_threads);
 	if (!pool) {
 		RZ_LOG_ERROR("th: failed to allocate thread pool\n");
@@ -31,6 +31,7 @@ static bool th_run_iterator(RzThreadFunction th_cb, void *context, size_t max_th
 
 typedef struct th_list_ctx_s {
 	RzThreadLock *lock;
+	RzAtomicBool *loop;
 	RzListIter /*<void *>*/ *head;
 	void *user;
 	RzThreadIterator iterator;
@@ -39,6 +40,7 @@ typedef struct th_list_ctx_s {
 static void *thread_iterate_list_cb(th_list_ctx_t *context) {
 	void *element = NULL;
 	void *user = context->user;
+	RzAtomicBool *loop = context->loop;
 	RzThreadIterator iterator = context->iterator;
 	RzThreadLock *lock = context->lock;
 
@@ -52,10 +54,11 @@ static void *thread_iterate_list_cb(th_list_ctx_t *context) {
 		context->head = rz_list_iter_get_next(context->head);
 		rz_th_lock_leave(lock);
 
-		if (element) {
-			iterator(element, user);
+		if (element && !iterator(element, user)) {
+			rz_atomic_bool_set(loop, false);
+			break;
 		}
-	} while (true);
+	} while (rz_atomic_bool_get(loop));
 	return NULL;
 }
 
@@ -70,32 +73,38 @@ static void *thread_iterate_list_cb(th_list_ctx_t *context) {
  *
  * \return     On error returns false, otherwise true.
  */
-RZ_API bool rz_th_iterate_list(RZ_NONNULL const RzList /*<void *>*/ *list, RZ_NONNULL RzThreadIterator iterator, size_t max_threads, RZ_NULLABLE void *user) {
+RZ_API bool rz_th_iterate_list(RZ_NONNULL const RzList /*<void *>*/ *list, RZ_NONNULL RzThreadIterator iterator, RzThreadNCores max_threads, RZ_NULLABLE void *user) {
 	rz_return_val_if_fail(list && iterator, false);
 	if (rz_list_length(list) < 1) {
 		// nothing to do, but return true
 		return true;
 	}
 
+	bool retval = false;
 	th_list_ctx_t context = {
 		.lock = rz_th_lock_new(true),
+		.loop = rz_atomic_bool_new(true),
 		.head = list->head,
 		.iterator = iterator,
 		.user = user,
 	};
 
-	if (!context.lock) {
-		RZ_LOG_ERROR("th: failed to allocate list lock\n");
-		return false;
+	if (!context.lock || !context.loop) {
+		RZ_LOG_ERROR("th: failed to allocate list lock or atomic boolean\n");
+		goto fail;
 	}
 
-	bool retval = th_run_iterator((RzThreadFunction)thread_iterate_list_cb, &context, max_threads);
+	retval = th_run_iterator((RzThreadFunction)thread_iterate_list_cb, &context, max_threads);
+
+fail:
 	rz_th_lock_free(context.lock);
+	rz_atomic_bool_free(context.loop);
 	return retval;
 }
 
 typedef struct th_vec_ctx_s {
 	RzThreadLock *lock;
+	RzAtomicBool *loop;
 	size_t index;
 	const RzPVector /*<void *>*/ *pvec;
 	void *user;
@@ -107,6 +116,7 @@ static void *thread_iterate_pvec_cb(th_vec_ctx_t *context) {
 	void *user = context->user;
 	RzThreadIterator iterator = context->iterator;
 	RzThreadLock *lock = context->lock;
+	RzAtomicBool *loop = context->loop;
 	const RzPVector *pvec = context->pvec;
 	size_t length = rz_pvector_len(pvec);
 
@@ -120,10 +130,11 @@ static void *thread_iterate_pvec_cb(th_vec_ctx_t *context) {
 		context->index++;
 		rz_th_lock_leave(lock);
 
-		if (element) {
-			iterator(element, user);
+		if (element && !iterator(element, user)) {
+			rz_atomic_bool_set(loop, false);
+			break;
 		}
-	} while (true);
+	} while (rz_atomic_bool_get(loop));
 	return NULL;
 }
 
@@ -138,27 +149,32 @@ static void *thread_iterate_pvec_cb(th_vec_ctx_t *context) {
  *
  * \return     On error returns false, otherwise true.
  */
-RZ_API bool rz_th_iterate_pvector(RZ_NONNULL const RzPVector /*<void *>*/ *pvec, RZ_NONNULL RzThreadIterator iterator, size_t max_threads, RZ_NULLABLE void *user) {
+RZ_API bool rz_th_iterate_pvector(RZ_NONNULL const RzPVector /*<void *>*/ *pvec, RZ_NONNULL RzThreadIterator iterator, RzThreadNCores max_threads, RZ_NULLABLE void *user) {
 	rz_return_val_if_fail(pvec && iterator, false);
 	if (rz_pvector_len(pvec) < 1) {
 		// nothing to do, but return true
 		return true;
 	}
 
+	bool retval = false;
 	th_vec_ctx_t context = {
 		.lock = rz_th_lock_new(true),
+		.loop = rz_atomic_bool_new(true),
 		.index = 0,
 		.pvec = pvec,
 		.iterator = iterator,
 		.user = user,
 	};
 
-	if (!context.lock) {
-		RZ_LOG_ERROR("th: failed to allocate vector lock\n");
-		return false;
+	if (!context.lock || !context.loop) {
+		RZ_LOG_ERROR("th: failed to allocate vector lock or atomic boolean\n");
+		goto fail;
 	}
 
-	bool retval = th_run_iterator((RzThreadFunction)thread_iterate_pvec_cb, &context, max_threads);
+	retval = th_run_iterator((RzThreadFunction)thread_iterate_pvec_cb, &context, max_threads);
+
+fail:
 	rz_th_lock_free(context.lock);
+	rz_atomic_bool_free(context.loop);
 	return retval;
 }

@@ -39,8 +39,7 @@ RZ_IPI bool rz_core_visual_esil(RzCore *core) {
 	const int nbits = sizeof(ut64) * 8;
 	char *word = NULL;
 	int x = 0;
-	RzAsmOp asmop;
-	RzAnalysisOp aop;
+	RzAnalysisOp aop = { 0 };
 	ut8 buf[sizeof(ut64)];
 	unsigned int addrsize = rz_config_get_i(core->config, "esil.addr.size");
 	RzLine *line = core->cons->line;
@@ -54,9 +53,10 @@ RZ_IPI bool rz_core_visual_esil(RzCore *core) {
 	rz_analysis_esil_set_pc(esil, core->offset);
 	for (;;) {
 		rz_cons_clear00();
+		RzAsmOp asmop = { 0 };
 		// bool use_color = core->print->flags & RZ_PRINT_FLAGS_COLOR;
 		(void)rz_asm_disassemble(core->rasm, &asmop, buf, sizeof(ut64));
-		aop.type = -1;
+		rz_analysis_op_init(&aop);
 		(void)rz_analysis_op(core->analysis, &aop, core->offset, buf, sizeof(ut64), RZ_ANALYSIS_OP_MASK_ESIL);
 		rz_cons_printf("rizin's esil debugger:\n\n");
 		rz_cons_printf("pos: %d\n", x);
@@ -71,7 +71,7 @@ RZ_IPI bool rz_core_visual_esil(RzCore *core) {
 			RzStrBuf *colored_asm;
 			RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, aop.type);
 			colored_asm = rz_asm_colorize_asm_str(&asmop.buf_asm, core->print, param, asmop.asm_toks);
-			free(param);
+			rz_asm_parse_param_free(param);
 			rz_cons_printf(Color_RESET "asm: %s\n" Color_RESET, colored_asm ? rz_strbuf_get(colored_asm) : "");
 			rz_strbuf_free(colored_asm);
 		}
@@ -174,6 +174,7 @@ RZ_IPI bool rz_core_visual_esil(RzCore *core) {
 			rz_cons_clear();
 		} break;
 		}
+		rz_asm_op_fini(&asmop);
 	}
 beach:
 	rz_analysis_esil_free(esil);

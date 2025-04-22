@@ -34,11 +34,11 @@ RZ_API int rz_cons_less_str(const char *str, const char *exitkeys) {
 	RzPVector **mla;
 
 	// rcons kills str after flushing the buffer, so we must keep a copy
-	char *ostr = strdup(str);
+	char *ostr = rz_str_dup(str);
 	if (!ostr) {
 		return 0;
 	}
-	char *p = strdup(str);
+	char *p = rz_str_dup(str);
 	if (!p) {
 		free(ostr);
 		return 0;
@@ -126,7 +126,7 @@ RZ_API int rz_cons_less_str(const char *str, const char *exitkeys) {
 				if (rx) {
 					rz_regex_free(rx);
 				}
-				rx = rz_regex_new(sreg, RZ_REGEX_EXTENDED | RZ_REGEX_MULTILINE, 0);
+				rx = rz_regex_new(sreg, RZ_REGEX_EXTENDED | RZ_REGEX_MULTILINE, 0, NULL);
 			} else { /* we got an empty string */
 				from = pager_next_match(from, mla, lines_count);
 				break;

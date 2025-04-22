@@ -4,10 +4,9 @@
 #include <rz_util/rz_regex.h>
 #include "rz_list.h"
 #include "rz_types.h"
-#include "rz_util.h"
+#include <rz_util.h>
 #include "rz_cons.h"
-#include "rz_bin.h"
-#include "rz_util/rz_assert.h"
+#include "rz_util/rz_unicode.h"
 #include <rz_vector.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -72,6 +71,8 @@ RZ_API const char *rz_str_enc_as_string(RzStrEnc enc) {
 		return "ebcdicus";
 	case RZ_STRING_ENC_GUESS:
 		return "guessed";
+	case RZ_STRING_ENC_SETTINGS:
+		return "str.encoding";
 	default:
 		rz_warn_if_reached();
 		return "unknown";
@@ -111,11 +112,13 @@ RZ_API RzStrEnc rz_str_enc_string_as_type(RZ_NULLABLE const char *encoding) {
 		return RZ_STRING_ENC_EBCDIC_UK;
 	} else if (!strcmp(encoding, "ebcdicus")) {
 		return RZ_STRING_ENC_EBCDIC_US;
+	} else if (!strcmp(encoding, "settings")) {
+		return RZ_STRING_ENC_SETTINGS;
 	} else if (!strcmp(encoding, "base64")) {
 		return RZ_STRING_ENC_BASE64;
 	}
 
-	RZ_LOG_ERROR("rz_str: encoding %s not supported\n", encoding);
+	RZ_LOG_ERROR("rz_str: encoding '%s' not supported\n", encoding);
 	return RZ_STRING_ENC_GUESS;
 }
 
@@ -644,7 +647,7 @@ static const char *skip_separator_chars(const char *text) {
  */
 RZ_API RZ_OWN char *rz_str_skip_separator_chars(RZ_NONNULL const char *text) {
 	rz_return_val_if_fail(text, NULL);
-	return strdup(skip_separator_chars(text));
+	return rz_str_dup(skip_separator_chars(text));
 }
 
 // Counts the number of words (separated by separator characters: newlines, tabs,
@@ -844,8 +847,8 @@ RZ_API const char *rz_str_rsep(const char *base, const char *p, const char *sep)
 }
 
 RZ_API const char *rz_str_rstr(const char *base, const char *p) {
-	char *s = strdup(base);
-	char *k = strdup(p);
+	char *s = rz_str_dup(base);
+	char *k = rz_str_dup(p);
 	rz_str_reverse(s);
 	rz_str_reverse(k);
 	char *q = strstr(s, k);
@@ -900,7 +903,7 @@ RZ_API const char *rz_str_nstr(const char *s, const char *find, int slen) {
  */
 RZ_API const char *rz_str_case_nstr(RZ_NONNULL const char *s, RZ_NONNULL const char *find, int slen) {
 	rz_return_val_if_fail(s && find, NULL);
-	char *new_s = strdup(s), *new_find = strdup(find);
+	char *new_s = rz_str_dup(s), *new_find = rz_str_dup(find);
 	const char *res = NULL;
 	rz_str_case(new_s, false);
 	rz_str_case(new_find, false);
@@ -932,7 +935,7 @@ RZ_API char *rz_str_trunc_ellipsis(const char *str, int len) {
 		return NULL;
 	}
 	if (strlen(str) < len) {
-		return strdup(str);
+		return rz_str_dup(str);
 	}
 	char *buf = rz_str_newlen(str, len);
 	if (buf && len > 4) {
@@ -948,7 +951,7 @@ RZ_API char *rz_str_newf(const char *fmt, ...) {
 	va_start(ap, fmt);
 	if (!strchr(fmt, '%')) {
 		va_end(ap);
-		return strdup(fmt);
+		return rz_str_dup(fmt);
 	}
 	va_copy(ap2, ap);
 	int ret = vsnprintf(NULL, 0, fmt, ap2);
@@ -1017,8 +1020,18 @@ RZ_API bool rz_str_cmp_list(const char *list, const char *item, char sep) {
 	return true;
 }
 
-// like strncmp, but checking for null pointers
-RZ_API int rz_str_cmp(const char *a, const char *b, int len) {
+/**
+ * \brief Like strncmp, but checking for null pointers.
+ *
+ * \param a String a.
+ * \param b String b.
+ * \param len The number of characters to compare. If -1 it compares until the end.
+ *
+ * \return Negative value, if a < b
+ * \return 0, if a == b.
+ * \return Positive value, if a > b
+ */
+RZ_API int rz_str_cmp(RZ_NULLABLE const char *a, RZ_NULLABLE const char *b, int len) {
 	if ((a == b) || (!a && !b)) {
 		return 0;
 	}
@@ -1080,7 +1093,7 @@ RZ_API RZ_OWN char *rz_str_dup(RZ_NULLABLE const char *str) {
 RZ_API char *rz_str_prepend(char *ptr, const char *string) {
 	int slen, plen;
 	if (!ptr) {
-		return strdup(string);
+		return rz_str_dup(string);
 	}
 	plen = strlen(ptr);
 	slen = strlen(string);
@@ -1121,7 +1134,7 @@ RZ_API char *rz_str_append_owned(char *ptr, char *string) {
  */
 RZ_API RZ_OWN char *rz_str_append(RZ_OWN RZ_NULLABLE char *ptr, const char *string) {
 	if (string && !ptr) {
-		return strdup(string);
+		return rz_str_dup(string);
 	}
 	if (RZ_STR_ISEMPTY(string)) {
 		return ptr;
@@ -1267,7 +1280,7 @@ RZ_API char *rz_str_replace_icase(char *str, const char *key, const char *val, i
 		}
 
 		if (keep_case) {
-			char *tmp_val = strdup(val);
+			char *tmp_val = rz_str_dup(val);
 			char *str_case = rz_str_ndup(p, klen);
 			if (!tmp_val || !str_case) {
 				free(tmp_val);
@@ -1339,7 +1352,7 @@ RZ_API char *rz_str_replace_thunked(char *str, char *clean, int *thunk, int clen
 
 		int newo = thunk[i + klen] - thunk[i];
 		rz_str_ansi_filter(str_p, NULL, NULL, newo);
-		scnd = strdup(str_p + newo);
+		scnd = rz_str_dup(str_p + newo);
 		bias = vlen - newo;
 
 		slen += bias;
@@ -1369,7 +1382,7 @@ RZ_API char *rz_str_replace_in(char *str, ut32 sz, const char *key, const char *
 	if (!str || !key || !val) {
 		return NULL;
 	}
-	char *heaped = rz_str_replace(strdup(str), key, val, g);
+	char *heaped = rz_str_replace(rz_str_dup(str), key, val, g);
 	if (heaped) {
 		strncpy(str, heaped, sz);
 		free(heaped);
@@ -1507,75 +1520,25 @@ RZ_API char *rz_str_sanitize_sdb_key(const char *s) {
 }
 
 /**
- * \brief Converts unprintable characters to C-like backslash representation
+ * \brief Returns true if the code point should be escaped, accoring to the RzStrEscOptions.
  *
- * \param p pointer to the original string
- * \param dst pointer where pointer to the resulting characters sequence is put
- * \param opt pointer to encoding options structure
- **/
-RZ_API void rz_str_byte_escape(const char *p, char **dst, RzStrEscOptions *opt) {
-	char *q = *dst;
-	switch (*p) {
-	case '\n':
-		*q++ = '\\';
-		*q++ = opt->dot_nl ? 'l' : 'n';
-		break;
-	case '\r':
-		*q++ = '\\';
-		*q++ = 'r';
-		break;
-	case '\\':
-		if (opt->esc_bslash) {
-			*q++ = '\\';
-		}
-		*q++ = '\\';
-		break;
-	case '\t':
-		*q++ = '\\';
-		*q++ = 't';
-		break;
-	case '"':
-		if (opt->esc_double_quotes) {
-			*q++ = '\\';
-		}
-		*q++ = '"';
-		break;
-	case '\f':
-		*q++ = '\\';
-		*q++ = 'f';
-		break;
-	case '\b':
-		*q++ = '\\';
-		*q++ = 'b';
-		break;
-	case '\v':
-		*q++ = '\\';
-		*q++ = 'v';
-		break;
-	case '\a':
-		*q++ = '\\';
-		*q++ = 'a';
-		break;
-	case '\x1b':
-		*q++ = '\\';
-		*q++ = 'e';
-		break;
-	default:
-		/* Outside the ASCII printable range */
-		if (!IS_PRINTABLE(*p)) {
-			if (opt->show_asciidot) {
-				*q++ = '.';
-			} else {
-				*q++ = '\\';
-				*q++ = 'x';
-				*q++ = "0123456789abcdef"[*p >> 4 & 0xf];
-				*q++ = "0123456789abcdef"[*p & 0xf];
-			}
-		} else {
-			*q++ = *p;
-		}
+ * \param code_point The code point or char to check.
+ * \param ch_bytes The number of bytes the code point was encoded in. Can be 0, if the the decode was invalid.
+ * In this case this function returns true.
+ * \param opts The string escape options to check.
+ *
+ * \return Return true if the code point/character should be escaped. False if it can be printed normally.
+ */
+RZ_API bool rz_str_escape_code_point(ut32 /* RzCodePoint */ cp, size_t ch_bytes, RZ_NONNULL const RzStrEscOptions *opts) {
+	rz_return_val_if_fail(opts, true);
+	bool is_invalid_decode = ch_bytes == 0;
+	if (is_invalid_decode || !opts->keep_printable) {
+		return true;
 	}
-	*dst = q;
+	bool escape_double_quotes = cp == '"' && opts->esc_double_quotes;
+	bool escape_backslash = cp == '\\' && opts->esc_bslash;
+	bool not_printable = !rz_unicode_code_point_is_printable(cp);
+	return escape_double_quotes || escape_backslash || not_printable;
 }
 
 /* Internal function. dot_nl specifies whether to convert \n into the
@@ -1585,7 +1548,7 @@ static RZ_OWN char *rz_str_escape_(const char *buf, bool parse_esc_seq, bool ign
 
 	/* Worst case scenario, we convert every byte to a single-char escape
 	 * (e.g. \n) if show_asciidot, or \xhh if !show_asciidot */
-	char *new_buf = malloc(1 + strlen(buf) * (opt->show_asciidot ? 2 : 4));
+	char *new_buf = RZ_NEWS0(char, 1 + strlen(buf) * (opt->show_asciidot ? 2 : 4));
 	if (!new_buf) {
 		return NULL;
 	}
@@ -1616,9 +1579,15 @@ static RZ_OWN char *rz_str_escape_(const char *buf, bool parse_esc_seq, bool ign
 				break;
 			}
 			/* fallthrough */
-		default:
-			rz_str_byte_escape(p, &q, opt);
+		default: {
+			RzCodePoint cp = (ut8)*p;
+			if (cp <= RZ_UNICODE_LAST_ASCII && !rz_str_escape_code_point(cp, 1, opt)) {
+				*q++ = *p;
+			} else {
+				rz_unicode_byte_escape(cp, &q, opt);
+			}
 			break;
+		}
 		}
 		p++;
 	}
@@ -1627,12 +1596,16 @@ out:
 	return new_buf;
 }
 
-RZ_API RZ_OWN char *rz_str_escape(RZ_NONNULL const char *buf) {
+/**
+ * \brief DEPRECATED: Use rz_str_escape_utf8() instead.
+ */
+RZ_DEPRECATE RZ_API RZ_OWN char *rz_str_escape(RZ_NONNULL const char *buf) {
 	rz_return_val_if_fail(buf, NULL);
 	RzStrEscOptions opt = { 0 };
 	opt.dot_nl = false;
 	opt.show_asciidot = false;
 	opt.esc_bslash = true;
+	opt.keep_printable = true;
 	return rz_str_escape_(buf, true, true, &opt);
 }
 
@@ -1664,23 +1637,29 @@ RZ_API char *rz_str_escape_sh(const char *buf) {
 	return new_buf;
 }
 
-RZ_API char *rz_str_escape_dot(const char *buf) {
+/**
+ * \brief DEPRECATED: Use rz_str_escape_utf8() instead.
+ */
+RZ_DEPRECATE RZ_API char *rz_str_escape_dot(const char *buf) {
 	RzStrEscOptions opt = { 0 };
 	opt.dot_nl = true;
 	opt.show_asciidot = false;
 	opt.esc_bslash = true;
+	opt.keep_printable = true;
 	return rz_str_escape_(buf, true, true, &opt);
 }
 
-RZ_API char *rz_str_escape_8bit(const char *buf, bool colors, RzStrEscOptions *opt) {
+/**
+ * \brief DEPRECATED: Use rz_str_escape_utf8() instead.
+ */
+RZ_DEPRECATE RZ_API char *rz_str_escape_8bit(const char *buf, bool colors, RzStrEscOptions *opt) {
 	return rz_str_escape_(buf, colors, !colors, opt);
 }
 
-static char *rz_str_escape_utf(const char *buf, int buf_size, RzStrEnc enc, bool show_asciidot, bool esc_bslash, bool esc_double_quotes, bool keep_printable) {
+static char *rz_str_escape_utf(const char *buf, int buf_size, RzStrEnc enc, const RzStrEscOptions *esc_opts) {
 	char *new_buf, *q;
 	const char *p, *end;
-	RzRune ch;
-	int i, len, ch_bytes;
+	int len, ch_bytes;
 
 	if (!buf) {
 		return NULL;
@@ -1699,7 +1678,9 @@ static char *rz_str_escape_utf(const char *buf, int buf_size, RzStrEnc enc, bool
 			end = (char *)rz_mem_mem_aligned((ut8 *)buf, buf_size, (ut8 *)"\0\0\0\0", 4, 4);
 		}
 		if (!end) {
-			end = buf + buf_size - 1; /* TODO: handle overlong strings properly */
+			// NUL byte was not in buffer.
+			// Assume end of the buffer as end of string.
+			end = buf + buf_size - 1;
 		}
 		len = end - buf;
 		break;
@@ -1707,14 +1688,16 @@ static char *rz_str_escape_utf(const char *buf, int buf_size, RzStrEnc enc, bool
 		len = strlen(buf);
 		end = buf + len;
 	}
-	/* Worst case scenario, we convert every byte to \xhh */
-	new_buf = malloc(1 + (len * 4));
+	/* Worst case scenario, we convert every byte to an \U00hhhhhh */
+	new_buf = RZ_NEWS0(char, 1 + (len * RZ_UNICODE_ESCAPED_STR_WIDTH));
 	if (!new_buf) {
 		return NULL;
 	}
 	p = buf;
 	q = new_buf;
 	while (p < end) {
+		RzCodePoint ch = RZ_UNICODE_LAST_CODE_POINT + 1;
+		size_t min_char_width;
 		switch (enc) {
 		case RZ_STRING_ENC_UTF16LE:
 		case RZ_STRING_ENC_UTF16BE:
@@ -1722,88 +1705,106 @@ static char *rz_str_escape_utf(const char *buf, int buf_size, RzStrEnc enc, bool
 		case RZ_STRING_ENC_UTF32BE:
 			if (enc == RZ_STRING_ENC_UTF16LE || enc == RZ_STRING_ENC_UTF16BE) {
 				ch_bytes = rz_utf16_decode((ut8 *)p, end - p, &ch, enc == RZ_STRING_ENC_UTF16BE);
+				min_char_width = 2;
 			} else {
 				ch_bytes = rz_utf32_decode((ut8 *)p, end - p, &ch, enc == RZ_STRING_ENC_UTF32BE);
-			}
-			if (ch_bytes == 0) {
-				p++;
-				continue;
+				min_char_width = 4;
 			}
 			break;
 		default:
 			ch_bytes = rz_utf8_decode((ut8 *)p, end - p, &ch);
-			if (ch_bytes == 0) {
-				ch_bytes = 1;
-			}
+			min_char_width = 1;
 		}
-		if (show_asciidot && !IS_PRINTABLE(ch)) {
-			*q++ = '.';
-		} else if (ch_bytes > 1) {
-			if (keep_printable) {
-				q += rz_utf8_encode((ut8 *)q, ch);
+		if (!rz_str_escape_code_point(ch, ch_bytes, esc_opts)) {
+			q += rz_utf8_encode((ut8 *)q, ch);
+		} else {
+			if (ch_bytes > 0) {
+				// Valid code point, but it should be escaped.
+				rz_unicode_code_point_escape(ch, &q, esc_opts);
+				// q is incremented in rz_str_byte_escape
 			} else {
-				*q++ = '\\';
-				*q++ = ch_bytes == 4 ? 'U' : 'u';
-				for (i = ch_bytes == 4 ? 6 : 2; i >= 0; i -= 2) {
-					*q++ = "0123456789abcdef"[ch >> 4 * (i + 1) & 0xf];
-					*q++ = "0123456789abcdef"[ch >> 4 * i & 0xf];
+				// Invalid code point. Escape as minimal number of invalid bytes.
+				for (size_t i = 0; i < min_char_width && p + i < end; i++) {
+					rz_unicode_byte_escape(p[i], &q, esc_opts);
+					// q is incremented in rz_str_byte_escape.
 				}
 			}
-		} else {
-			int offset = enc == RZ_STRING_ENC_UTF16BE ? 1 : enc == RZ_STRING_ENC_UTF32BE ? 3
-												     : 0;
-			RzStrEscOptions opt = { 0 };
-			opt.dot_nl = false;
-			opt.show_asciidot = false;
-			opt.esc_bslash = esc_bslash;
-			opt.esc_double_quotes = esc_double_quotes;
-			rz_str_byte_escape(p + offset, &q, &opt);
 		}
-		switch (enc) {
-		case RZ_STRING_ENC_UTF16LE:
-		case RZ_STRING_ENC_UTF16BE:
-			p += ch_bytes < 2 ? 2 : ch_bytes;
-			break;
-		case RZ_STRING_ENC_UTF32LE:
-		case RZ_STRING_ENC_UTF32BE:
-			p += 4;
-			break;
-		default:
-			p += ch_bytes;
-		}
+		p += ch_bytes < 1 ? min_char_width : ch_bytes;
 	}
 	*q = '\0';
 	return new_buf;
 }
 
-RZ_API char *rz_str_escape_utf8(const char *buf, RzStrEscOptions *opt) {
-	return rz_str_escape_utf(buf, -1, RZ_STRING_ENC_UTF8, opt->show_asciidot, opt->esc_bslash, opt->esc_double_quotes, false);
+/**
+ * \brief Escape a NUL terminated UTF-8 string.
+ *
+ * \param buf The buffer with the UTF-8 characaters. Must be NUL terminated.
+ * \param opt The escape options.
+ *
+ * \return The escaped string, or NULL in case of failure.
+ */
+RZ_API RZ_OWN char *rz_str_escape_utf8(RZ_NONNULL const char *buf, RZ_NONNULL const RzStrEscOptions *opt) {
+	rz_return_val_if_fail(buf && opt, NULL);
+	return rz_str_escape_utf(buf, -1, RZ_STRING_ENC_UTF8, opt);
 }
 
-RZ_API char *rz_str_escape_utf8_keep_printable(const char *buf, RzStrEscOptions *opt) {
-	return rz_str_escape_utf(buf, -1, RZ_STRING_ENC_UTF8, opt->show_asciidot, opt->esc_bslash, opt->esc_double_quotes, true);
+/**
+ * \brief Escape a NUL terminated UTF-16le string.
+ *
+ * \param buf The buffer with the UTF-16le characaters.
+ * \param opt The escape options.
+ *
+ * \return The escaped string, or NULL in case of failure.
+ */
+RZ_API RZ_OWN char *rz_str_escape_utf16le(RZ_NONNULL const char *buf, size_t buf_size, RZ_NONNULL const RzStrEscOptions *opt) {
+	rz_return_val_if_fail(buf && opt, NULL);
+	return rz_str_escape_utf(buf, buf_size, RZ_STRING_ENC_UTF16LE, opt);
 }
 
-RZ_API char *rz_str_escape_utf16le(const char *buf, int buf_size, RzStrEscOptions *opt) {
-	return rz_str_escape_utf(buf, buf_size, RZ_STRING_ENC_UTF16LE, opt->show_asciidot, opt->esc_bslash, opt->esc_double_quotes, false);
+/**
+ * \brief Escape a NUL terminated UTF-32le string.
+ *
+ * \param buf The buffer with the UTF-32le characaters.
+ * \param opt The escape options.
+ *
+ * \return The escaped string, or NULL in case of failure.
+ */
+RZ_API RZ_OWN char *rz_str_escape_utf32le(RZ_NONNULL const char *buf, size_t buf_size, RZ_NONNULL const RzStrEscOptions *opt) {
+	rz_return_val_if_fail(buf && opt, NULL);
+	return rz_str_escape_utf(buf, buf_size, RZ_STRING_ENC_UTF32LE, opt);
 }
 
-RZ_API char *rz_str_escape_utf32le(const char *buf, int buf_size, RzStrEscOptions *opt) {
-	return rz_str_escape_utf(buf, buf_size, RZ_STRING_ENC_UTF32LE, opt->show_asciidot, opt->esc_bslash, opt->esc_double_quotes, false);
+/**
+ * \brief Escape a NUL terminated UTF-16be string.
+ *
+ * \param buf The buffer with the UTF-16be characaters.
+ * \param opt The escape options.
+ *
+ * \return The escaped string, or NULL in case of failure.
+ */
+RZ_API RZ_OWN char *rz_str_escape_utf16be(RZ_NONNULL const char *buf, size_t buf_size, RZ_NONNULL const RzStrEscOptions *opt) {
+	rz_return_val_if_fail(buf && opt, NULL);
+	return rz_str_escape_utf(buf, buf_size, RZ_STRING_ENC_UTF16BE, opt);
 }
 
-RZ_API char *rz_str_escape_utf16be(const char *buf, int buf_size, RzStrEscOptions *opt) {
-	return rz_str_escape_utf(buf, buf_size, RZ_STRING_ENC_UTF16BE, opt->show_asciidot, opt->esc_bslash, opt->esc_double_quotes, false);
-}
-
-RZ_API char *rz_str_escape_utf32be(const char *buf, int buf_size, RzStrEscOptions *opt) {
-	return rz_str_escape_utf(buf, buf_size, RZ_STRING_ENC_UTF32BE, opt->show_asciidot, opt->esc_bslash, opt->esc_double_quotes, false);
+/**
+ * \brief Escape a NUL terminated UTF-32be string.
+ *
+ * \param buf The buffer with the UTF-32be characaters.
+ * \param opt The escape options.
+ *
+ * \return The escaped string, or NULL in case of failure.
+ */
+RZ_API RZ_OWN char *rz_str_escape_utf32be(RZ_NONNULL const char *buf, size_t buf_size, RZ_NONNULL const RzStrEscOptions *opt) {
+	rz_return_val_if_fail(buf && opt, NULL);
+	return rz_str_escape_utf(buf, buf_size, RZ_STRING_ENC_UTF32BE, opt);
 }
 
 static char *escape_utf8_for_json(const char *buf, int buf_size, bool mutf8) {
 	char *new_buf, *q;
 	const ut8 *p, *end;
-	RzRune ch;
+	RzCodePoint ch;
 	int i, len, ch_bytes;
 
 	if (!buf) {
@@ -1864,13 +1865,13 @@ static char *escape_utf8_for_json(const char *buf, int buf_size, bool mutf8) {
 				}
 			}
 		} else if (ch_bytes == 4) {
-			if (rz_rune_is_printable(ch)) {
+			if (rz_unicode_code_point_is_printable(ch)) {
 				// Assumes buf is UTF8-encoded
 				for (i = 0; i < ch_bytes; i++) {
 					*q++ = *(p + i);
 				}
 			} else {
-				RzRune high, low;
+				RzCodePoint high, low;
 				ch -= 0x10000;
 				high = 0xd800 + (ch >> 10 & 0x3ff);
 				low = 0xdc00 + (ch & 0x3ff);
@@ -1888,7 +1889,7 @@ static char *escape_utf8_for_json(const char *buf, int buf_size, bool mutf8) {
 				}
 			}
 		} else if (ch_bytes > 1) {
-			if (rz_rune_is_printable(ch)) {
+			if (rz_unicode_code_point_is_printable(ch)) {
 				// Assumes buf is UTF8-encoded
 				for (i = 0; i < ch_bytes; i++) {
 					*q++ = *(p + i);
@@ -1921,7 +1922,7 @@ RZ_API char *rz_str_escape_mutf8_for_json(const char *buf, int buf_size) {
 
 // http://daviddeley.com/autohotkey/parameters/parameters.htm#WINCRULES
 // https://docs.microsoft.com/en-us/cpp/cpp/main-function-command-line-args?redirectedfrom=MSDN&view=vs-2019#parsing-c-command-line-arguments
-RZ_API char *rz_str_format_msvc_argv(size_t argc, const char **argv) {
+RZ_API RZ_OWN char *rz_str_format_msvc_argv(size_t argc, const char **argv) {
 	RzStrBuf sb;
 	rz_strbuf_init(&sb);
 
@@ -2032,7 +2033,7 @@ RZ_API size_t rz_str_nlen(const char *str, size_t n) {
 	return strnlen(str, n);
 #else
 	size_t len = 0;
-	while (*str && n) {
+	while (n && *str) {
 		len++;
 		str++;
 		n--;
@@ -2257,7 +2258,7 @@ RZ_API char *rz_str_ansi_crop(const char *str, ut32 x, ut32 y, ut32 x2, ut32 y2)
 	size_t rz_len, str_len = 0, nr_of_lines = 0;
 	ut32 ch = 0, cw = 0;
 	if (x2 <= x || y2 <= y || !str) {
-		return strdup("");
+		return rz_str_dup("");
 	}
 	s = s_start = str;
 	while (*s) {
@@ -2682,7 +2683,7 @@ RZ_API char **rz_str_argv(const char *cmdline, int *_argc) {
 			cmdline_current++;
 		}
 		args[args_current++] = '\0';
-		argv[argc++] = strdup(&args[arg_begin]);
+		argv[argc++] = rz_str_dup(&args[arg_begin]);
 		if (argc >= argv_len) {
 			argv_len *= 2;
 			char **tmp = realloc(argv, argv_len * sizeof(char *));
@@ -3122,10 +3123,10 @@ RZ_API char *rz_str_prefix_all(const char *s, const char *pfx) {
 	int pfx_len = 0;
 
 	if (!s) {
-		return strdup(pfx);
+		return rz_str_dup(pfx);
 	}
 	if (!pfx) {
-		return strdup(s);
+		return rz_str_dup(s);
 	}
 	len = strlen(s);
 	pfx_len = strlen(pfx);
@@ -3238,9 +3239,9 @@ RZ_API char *rz_str_crop(const char *str, unsigned int x, unsigned int y,
 	char *r, *ret;
 	unsigned int ch = 0, cw = 0;
 	if (x2 < 1 || y2 < 1 || !str) {
-		return strdup("");
+		return rz_str_dup("");
 	}
-	r = ret = strdup(str);
+	r = ret = rz_str_dup(str);
 	while (*str) {
 		/* crop height */
 		if (ch >= y2) {
@@ -3332,7 +3333,7 @@ RZ_API RZ_OWN char *rz_str_repeat(const char *str, ut16 times) {
 	rz_return_val_if_fail(str, NULL);
 	int i;
 	if (times == 0) {
-		return strdup("");
+		return rz_str_dup("");
 	}
 	RzStrBuf *buf = rz_strbuf_new(str);
 	for (i = 1; i < times; i++) {
@@ -3431,7 +3432,7 @@ static RzList /*<char *>*/ *str_split_list_common(char *str, const char *c, int 
 	for (; e;) {
 		e = strstr(aux, c);
 		if (n > 0 && ++i > n) {
-			rz_list_append(lst, dup ? strdup(aux) : aux);
+			rz_list_append(lst, dup ? rz_str_dup(aux) : aux);
 			break;
 		}
 		if (e) {
@@ -3441,7 +3442,7 @@ static RzList /*<char *>*/ *str_split_list_common(char *str, const char *c, int 
 		if (trim) {
 			rz_str_trim(aux);
 		}
-		rz_list_append(lst, dup ? strdup(aux) : aux);
+		rz_list_append(lst, dup ? rz_str_dup(aux) : aux);
 		aux = e;
 	}
 	return lst;
@@ -3528,7 +3529,7 @@ RZ_API RzList /*<char *>*/ *rz_str_split_list(char *str, const char *c, int n) {
  */
 RZ_API RZ_OWN RzList /*<char *>*/ *rz_str_split_list_regex(RZ_NONNULL char *str, RZ_NONNULL const char *r, int n) {
 	rz_return_val_if_fail(str && r, NULL);
-	RzRegex *regex = rz_regex_new(r, RZ_REGEX_EXTENDED, 0);
+	RzRegex *regex = rz_regex_new(r, RZ_REGEX_EXTENDED, 0, NULL);
 	RzList *res = str_split_list_common_regex(str, regex, n, false, false);
 	rz_regex_free(regex);
 	return res;
@@ -3547,7 +3548,7 @@ RZ_API RZ_OWN RzList /*<char *>*/ *rz_str_split_list_regex(RZ_NONNULL char *str,
  */
 RZ_API RzList /*<char *>*/ *rz_str_split_duplist(const char *_str, const char *c, bool trim) {
 	rz_return_val_if_fail(_str && c, NULL);
-	char *str = strdup(_str);
+	char *str = rz_str_dup(_str);
 	RzList *res = str_split_list_common(str, c, 0, trim, true);
 	free(str);
 	return res;
@@ -3568,7 +3569,7 @@ RZ_API RzList /*<char *>*/ *rz_str_split_duplist(const char *_str, const char *c
  */
 RZ_API RzList /*<char *>*/ *rz_str_split_duplist_n(const char *_str, const char *c, int n, bool trim) {
 	rz_return_val_if_fail(_str && c, NULL);
-	char *str = strdup(_str);
+	char *str = rz_str_dup(_str);
 	RzList *res = str_split_list_common(str, c, n, trim, true);
 	free(str);
 	return res;
@@ -3589,8 +3590,8 @@ RZ_API RzList /*<char *>*/ *rz_str_split_duplist_n(const char *_str, const char 
  */
 RZ_API RZ_OWN RzList /*<char *>*/ *rz_str_split_duplist_n_regex(RZ_NONNULL const char *_str, RZ_NONNULL const char *r, int n, bool trim) {
 	rz_return_val_if_fail(_str && r, NULL);
-	char *str = strdup(_str);
-	RzRegex *regex = rz_regex_new(r, RZ_REGEX_EXTENDED, 0);
+	char *str = rz_str_dup(_str);
+	RzRegex *regex = rz_regex_new(r, RZ_REGEX_EXTENDED, 0, NULL);
 	RzList *res = str_split_list_common_regex(str, regex, n, trim, true);
 	free(str);
 	rz_regex_free(regex);
@@ -3748,7 +3749,7 @@ RZ_API char *rz_str_highlight(char *str, const char *word, const char *color, co
 	ut32 l_reset = strlen(color_reset);
 	ut32 l_color = color ? strlen(color) : 0;
 	if (!color) {
-		return strdup(str);
+		return rz_str_dup(str);
 	}
 	if (!word || !*word) {
 		return rz_str_newf("%s%s%s", color, str, color_reset);
@@ -3800,7 +3801,7 @@ RZ_API char *rz_str_highlight(char *str, const char *word, const char *color, co
 			break;
 		}
 	}
-	return strdup(o);
+	return rz_str_dup(o);
 }
 
 RZ_API char *rz_str_from_ut64(ut64 val) {
@@ -3940,7 +3941,7 @@ RZ_API char *rz_str_scale(const char *s, int w, int h) {
 	// for now this function is ascii only (no utf8 or ansi escapes)
 	RzListIter *iter;
 	char *line;
-	char *str = strdup(s);
+	char *str = rz_str_dup(s);
 	RzList *lines = rz_str_split_list(str, "\n", 0);
 	int i, j;
 	int rows = 0;
@@ -3964,7 +3965,7 @@ RZ_API char *rz_str_scale(const char *s, int w, int h) {
 			linetext[j] = srcline[zoomedcol];
 		}
 		if (curline != zoomedline) {
-			rz_list_append(out, strdup(linetext));
+			rz_list_append(out, rz_str_dup(linetext));
 			curline = zoomedline;
 		}
 		memset(linetext, ' ', w);
@@ -4060,39 +4061,41 @@ RZ_API RzList /*<char *>*/ *rz_str_wrap(char *str, size_t width) {
  */
 RZ_API RzStrEnc rz_str_guess_encoding_from_buffer(RZ_NONNULL const ut8 *buffer, ut32 length) {
 	rz_return_val_if_fail(buffer, RZ_STRING_ENC_UTF8);
-	RzStrEnc enc = rz_utf_bom_encoding(buffer, length);
+	RzStrEnc enc = rz_unicode_bom_encoding(buffer, length);
 	if (enc != RZ_STRING_ENC_GUESS) {
 		return enc;
 	}
 	for (ut32 i = 0, utf32le = 0, utf32be = 0, utf16le = 0, utf16be = 0, ascii = 0; i < length; ++i) {
 		ut32 leftovers = length - i;
-		if (leftovers > 4 && IS_PRINTABLE(buffer[i]) && buffer[i + 1] == 0 && buffer[i + 2] == 0 && buffer[i + 3] == 0) {
+		if (rz_utf32_valid_code_point(buffer, leftovers, false, 1)) {
 			utf32le++;
-			if (utf32le > 2) {
+			// `i > ascii + 1` means at least one non-ascii byte
+			// `utf32le  == i / 4 + 1` means neatly algined like 7700 0000 3000 0000 7700 0000
+			if (utf32le > 2 && (i > ascii + 1 || utf32le == i / 4 + 1)) {
 				enc = RZ_STRING_ENC_UTF32LE;
 				break;
 			}
-		} else if (leftovers > 4 && buffer[i] == 0 && buffer[i + 1] == 0 && buffer[i + 2] == 0 && IS_PRINTABLE(buffer[i + 3])) {
+		} else if (rz_utf32_valid_code_point(buffer, leftovers, true, 1)) {
 			utf32be++;
-			if (utf32be > 2) {
+			if (utf32be > 2 && (i > ascii + 1 || utf32be == i / 4 + 1)) {
 				enc = RZ_STRING_ENC_UTF32BE;
 				break;
 			}
 		}
 		if (leftovers > 2 && IS_PRINTABLE(buffer[i]) && buffer[i + 1] == 0) {
 			utf16le++;
-			if (utf16le > 2) {
+			if (utf16le > 2 && i > ascii + 1) {
 				enc = RZ_STRING_ENC_UTF16LE;
 				break;
 			}
 		} else if (leftovers > 2 && buffer[i] == 0 && IS_PRINTABLE(buffer[i + 1])) {
 			utf16be++;
-			if (utf16be > 2) {
+			if (utf16be > 2 && i > ascii + 1) {
 				enc = RZ_STRING_ENC_UTF16BE;
 				break;
 			}
 		}
-		if (IS_PRINTABLE(buffer[i]) || buffer[i] == ' ') {
+		if (IS_PRINTABLE(buffer[i]) || buffer[i] == ' ' || buffer[i] == '\0') {
 			ascii++;
 			if (ascii > length - 1) {
 				enc = RZ_STRING_ENC_8BIT;
@@ -4100,6 +4103,7 @@ RZ_API RzStrEnc rz_str_guess_encoding_from_buffer(RZ_NONNULL const ut8 *buffer, 
 			}
 		}
 	}
+
 	return enc == RZ_STRING_ENC_GUESS ? RZ_STRING_ENC_UTF8 : enc;
 }
 
@@ -4121,50 +4125,53 @@ RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NU
 	ut32 buflen = option->length;
 	RzStrEnc enc = option->encoding;
 	ut32 wrap_at = option->wrap_at;
-	RzRune rune;
+	RzCodePoint code_point;
 	ut32 n_runes = 0;
 	int rsize = 1; // rune size
 
 	rz_strbuf_init(&sb);
 	for (ut32 i = 0, line_runes = 0; i < buflen; i += rsize) {
 		if (enc == RZ_STRING_ENC_UTF32LE) {
-			rsize = rz_utf32le_decode(&buf[i], buflen - i, &rune);
+			rsize = rz_utf32le_decode(&buf[i], buflen - i, &code_point);
 			if (rsize) {
 				rsize = 4;
 			}
 		} else if (enc == RZ_STRING_ENC_UTF16LE) {
-			rsize = rz_utf16le_decode(&buf[i], buflen - i, &rune);
+			rsize = rz_utf16le_decode(&buf[i], buflen - i, &code_point);
 			if (rsize == 1) {
 				rsize = 2;
 			}
 		} else if (enc == RZ_STRING_ENC_UTF32BE) {
-			rsize = rz_utf32be_decode(&buf[i], buflen - i, &rune);
+			rsize = rz_utf32be_decode(&buf[i], buflen - i, &code_point);
 			if (rsize) {
 				rsize = 4;
 			}
 		} else if (enc == RZ_STRING_ENC_UTF16BE) {
-			rsize = rz_utf16be_decode(&buf[i], buflen - i, &rune);
+			rsize = rz_utf16be_decode(&buf[i], buflen - i, &code_point);
 			if (rsize == 1) {
 				rsize = 2;
 			}
 		} else if (enc == RZ_STRING_ENC_IBM037) {
-			rsize = rz_str_ibm037_to_unicode(buf[i], &rune);
+			rsize = rz_str_ibm037_to_unicode(buf[i], &code_point);
 		} else if (enc == RZ_STRING_ENC_IBM290) {
-			rsize = rz_str_ibm290_to_unicode(buf[i], &rune);
+			rsize = rz_str_ibm290_to_unicode(buf[i], &code_point);
 		} else if (enc == RZ_STRING_ENC_EBCDIC_ES) {
-			rsize = rz_str_ebcdic_es_to_unicode(buf[i], &rune);
+			rsize = rz_str_ebcdic_es_to_unicode(buf[i], &code_point);
 		} else if (enc == RZ_STRING_ENC_EBCDIC_UK) {
-			rsize = rz_str_ebcdic_uk_to_unicode(buf[i], &rune);
+			rsize = rz_str_ebcdic_uk_to_unicode(buf[i], &code_point);
 		} else if (enc == RZ_STRING_ENC_EBCDIC_US) {
-			rsize = rz_str_ebcdic_us_to_unicode(buf[i], &rune);
+			rsize = rz_str_ebcdic_us_to_unicode(buf[i], &code_point);
 		} else if (enc == RZ_STRING_ENC_8BIT) {
-			rune = buf[i];
-			rsize = rune < 0x7F ? 1 : 0;
+			code_point = buf[i];
+			rsize = code_point < 0x7F ? 1 : 0;
 		} else {
-			rsize = rz_utf8_decode(&buf[i], buflen - i, &rune);
+			rsize = rz_utf8_decode(&buf[i], buflen - i, &code_point);
 		}
 
 		if (rsize == 0) {
+			if (option->stop_at_unprintable) {
+				break;
+			}
 			switch (enc) {
 			case RZ_STRING_ENC_UTF32LE:
 				rsize = RZ_MIN(4, buflen - i);
@@ -4183,14 +4190,14 @@ RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NU
 				break;
 			}
 			for (int j = 0; j < rsize; ++j) {
-				rune = buf[i + j];
+				code_point = buf[i + j];
 				n_runes++;
 				if (option->urlencode) {
-					rz_strbuf_appendf(&sb, "%%%02x", rune);
+					rz_strbuf_appendf(&sb, "%%%02x", code_point);
 				} else if (option->json) {
-					rz_strbuf_appendf(&sb, "\\u%04x", rune);
+					rz_strbuf_appendf(&sb, "\\u%04x", code_point);
 				} else {
-					rz_strbuf_appendf(&sb, "\\x%02x", rune);
+					rz_strbuf_appendf(&sb, "\\x%02x", code_point);
 				}
 			}
 			if (wrap_at && line_runes + 1 >= wrap_at) {
@@ -4198,63 +4205,65 @@ RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NU
 				line_runes = 0;
 			}
 			continue;
-		} else if (rune == '\0' && option->stop_at_nil) {
+		} else if (code_point == RZ_UNICODE_NUL && option->stop_at_nil) {
 			break;
-		} else if (rune == '\n') {
+		} else if (code_point == '\n') {
 			line_runes = 0;
 		}
 		line_runes++;
 		n_runes++;
 		if (option->urlencode) {
-			if (IS_DIGIT(rune) || IS_UPPER(rune) || IS_LOWER(rune) || rune == '-' || rune == '_' || rune == '.' || rune == '~') {
+			if (IS_DIGIT(code_point) || IS_UPPER(code_point) || IS_LOWER(code_point) || code_point == '-' || code_point == '_' || code_point == '.' || code_point == '~') {
 				// RFC 3986 section 2.3 Unreserved Characters
 				// A B C D E F G H I J K L M N O P Q R S T U V W X Y Z
 				// a b c d e f g h i j k l m n o p q r s t u v w x y z
 				// 0 1 2 3 4 5 6 7 8 9 - _ . ~
-				char ch = rune;
+				char ch = code_point;
 				rz_strbuf_appendf(&sb, "%c", ch);
 			} else {
 				ut8 tmp[4];
-				int n_enc = rz_utf8_encode((ut8 *)tmp, rune);
+				int n_enc = rz_utf8_encode((ut8 *)tmp, code_point);
 				for (int j = 0; j < n_enc; ++j) {
 					rz_strbuf_appendf(&sb, "%%%02x", tmp[j]);
 				}
 			}
 		} else if (option->json) {
-			if (IS_PRINTABLE(rune) && rune != '\"' && rune != '\\') {
-				char ch = rune;
+			if (IS_PRINTABLE(code_point) && code_point != '\"' && code_point != '\\') {
+				char ch = code_point;
 				rz_strbuf_appendf(&sb, "%c", ch);
-			} else if (rune == '\n') {
+			} else if (code_point == '\n') {
 				rz_strbuf_append(&sb, "\\n");
-			} else if (rune == '\r') {
+			} else if (code_point == '\r') {
 				rz_strbuf_append(&sb, "\\r");
-			} else if (rune == '\\') {
+			} else if (code_point == '\\') {
 				rz_strbuf_append(&sb, "\\\\");
-			} else if (rune == '\t') {
+			} else if (code_point == '\t') {
 				rz_strbuf_append(&sb, "\\t");
-			} else if (rune == '\f') {
+			} else if (code_point == '\f') {
 				rz_strbuf_append(&sb, "\\f");
-			} else if (rune == '\b') {
+			} else if (code_point == '\b') {
 				rz_strbuf_append(&sb, "\\b");
-			} else if (rune == '"') {
+			} else if (code_point == '"') {
 				rz_strbuf_append(&sb, "\\\"");
 			} else {
 				for (int j = 0; j < rsize; ++j) {
-					rune = buf[i + j];
-					rz_strbuf_appendf(&sb, "\\u%04x", rune);
+					code_point = buf[i + j];
+					rz_strbuf_appendf(&sb, "\\u%04x", code_point);
 				}
 				n_runes += rsize - 1;
 			}
 		} else {
-			if (rune == '\\') {
+			if (code_point == '\\') {
 				rz_strbuf_appendf(&sb, "\\\\");
-			} else if ((rune == '\n' && !option->escape_nl) || (rz_rune_is_printable(rune) && rune >= ' ')) {
+			} else if ((code_point == '\n' && !option->escape_nl) || (rz_unicode_code_point_is_printable(code_point))) {
 				char tmp[5] = { 0 };
-				rz_utf8_encode((ut8 *)tmp, rune);
+				rz_utf8_encode((ut8 *)tmp, code_point);
 				rz_strbuf_appendf(&sb, "%s", tmp);
+			} else if (option->stop_at_unprintable) {
+				break;
 			} else {
 				ut8 tmp[4];
-				int n_enc = rz_utf8_encode((ut8 *)tmp, rune);
+				int n_enc = rz_utf8_encode((ut8 *)tmp, code_point);
 				for (int j = 0; j < n_enc; ++j) {
 					rz_strbuf_appendf(&sb, "\\x%02x", tmp[j]);
 				}
@@ -4265,7 +4274,9 @@ RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NU
 			line_runes = 0;
 		}
 	}
-	if (!option->json) {
+	if (!option->json && n_runes > 0) {
+		// Only add a newline, if a string was decoded.
+		// Otherwise, people might think there was a "newline" string.
 		rz_strbuf_appendf(&sb, "\n");
 	}
 	if (length) {

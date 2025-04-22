@@ -26,11 +26,9 @@ rz_main_deps = [
   rz_reg_dep,
   rz_bp_dep,
   rz_syscall_dep,
-  rz_parse_dep,
-  rz_asm_dep,
+  rz_arch_dep,
   rz_egg_dep,
   rz_search_dep,
-  rz_analysis_dep,
   rz_debug_dep,
   rz_config_dep,
   rz_bin_dep,
@@ -61,7 +59,7 @@ modules += { 'rz_main': {
     'dependencies': [
       'rz_core',
       'rz_demangler',
-      'rz_asm',
+      'rz_arch',
       'rz_sign',
       'rz_diff',
       'rz_syscall'

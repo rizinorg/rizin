@@ -4,6 +4,9 @@
 #ifndef NE_SPECS_H
 #define NE_SPECS_H
 
+#define NE_RELOC_SRC_MASK    0x0F
+#define NE_RELOC_TARGET_MASK 0x03
+
 enum {
 	LOBYTE = 0,
 	SEL_16 = 2,

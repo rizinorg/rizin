@@ -551,8 +551,7 @@ aezse 5~var_write
 aezs
 aezse 2~var_write
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=ppc div and mul instructions
@@ -747,8 +746,7 @@ aezse 2 # nop, xnor
 aezs 3
 aezse 2 # isel
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 BROKEN=1
 RUN
 
@@ -792,7 +790,7 @@ w AnyColourYouLike @ 0x500000
 ar r1=0x400000
 ar r3=0x500000
 aezsu 0x001005a8
-e str.search.encoding=utf8
+e str.encoding=utf8
 ps @ obj.seckrit
 EOF
 EXPECT=<<EOF
@@ -808,7 +806,7 @@ TIMEOUT=30
 ARGS=-T
 CMDS=<<EOF
 s sym.decrypt
-e str.search.encoding=utf8
+e str.encoding=utf8
 ps @ obj.seckrit
 aezi
 o malloc://0x1000 0x400000

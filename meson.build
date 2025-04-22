@@ -1,10 +1,11 @@
 project('rizin', 'c',
-  version: 'v0.7.4',
-  license: 'LGPL3',
-  meson_version: '>=0.55.0',
+  version: 'v0.8.0',
+  license: 'LGPL-3.0-only',
+  meson_version: '>=0.57.0',
   default_options: [
     'buildtype=debugoptimized',
     'b_vscrt=from_buildtype',
+    'c_std=c99',
     'warning_level=1',
   ]
 )
@@ -79,15 +80,20 @@ if is_static_build
   endif
 endif
 
-if cc.has_argument('--std=gnu99')
-  add_global_arguments('--std=gnu99', language: ['c', 'cpp'])
-elif cc.has_argument('--std=c99')
-  add_global_arguments('--std=c99', language: ['c', 'cpp'])
+# These two warnings enum compare and conversion are necessary for the Capstone compatibility header.
+# Newer compilers will warn about the comparison of different enums (arm64 and aarch64) in the header.
+# Hence, we have to disable them for the newer once.
+# Older compilers don't have these warnings and should not be included with #pragma
+if cc.has_argument('-Wenum-conversion')
+  add_project_arguments('-DCC_SUPPORTS_W_ENUM_CONVERION', language: ['c', 'cpp'])
+endif
+if cc.has_argument('-Wenum-compare')
+  add_project_arguments('-DCC_SUPPORTS_W_ENUM_COMPARE', language: ['c', 'cpp'])
 endif
 
 # Sanitize correct usage of rz_strf()
 if cc.has_argument('-Werror=sizeof-pointer-memaccess')
-  add_global_arguments('-Werror=sizeof-pointer-memaccess', language: ['c', 'cpp'])
+  add_project_arguments('-Werror=sizeof-pointer-memaccess', language: ['c', 'cpp'])
 endif
 
 if cc.has_argument('-Wimplicit-fallthrough=3')
@@ -106,17 +112,17 @@ endif
 
 if get_option('default_library') == 'shared'
   if cc.has_argument('-fvisibility=hidden')
-    add_global_arguments('-fvisibility=hidden', language: 'c')
+    add_project_arguments('-fvisibility=hidden', language: 'c')
   endif
 endif
 
 add_project_arguments(['-DRZ_PLUGIN_INCORE=1'], language: 'c')
 b_sanitize_opt = get_option('b_sanitize')
 if (b_sanitize_opt.contains('address') or b_sanitize_opt.contains('undefined')) and cc.get_id() == 'clang'
-  add_global_arguments('-shared-libasan', language: 'c')
-  add_global_link_arguments('-shared-libasan', language: 'c')
-  add_global_arguments('-shared-libasan', language: 'c', native: true)
-  add_global_link_arguments('-shared-libasan', language: 'c', native: true)
+  add_project_arguments('-shared-libasan', language: 'c')
+  add_project_link_arguments('-shared-libasan', language: 'c')
+  add_project_arguments('-shared-libasan', language: 'c', native: true)
+  add_project_link_arguments('-shared-libasan', language: 'c', native: true)
 endif
 
 fs = import('fs')
@@ -300,6 +306,19 @@ if not tree_sitter_dep.found()
   meson.override_dependency('tree-sitter', tree_sitter_dep)
 endif
 
+# handle rizin-grammar-c
+r = run_command(py3_exe, check_meson_subproject_py, 'rizin-grammar-c', check: false)
+if r.returncode() == 1 and get_option('subprojects_check')
+  error(subproject_clean_error_msg)
+endif
+
+rizin_grammar_c_dep = dependency('rizin-grammar-c', required: get_option('use_sys_tree_sitter'), static: is_static_build, fallback: [])
+if not rizin_grammar_c_dep.found()
+  rizin_grammar_c_proj = subproject('rizin-grammar-c', default_options: ['default_library=static'])
+  rizin_grammar_c_dep = rizin_grammar_c_proj.get_variable('rizin_grammar_c_dep')
+  # override done in rizin-grammar-c subproject
+endif
+
 has_debugger = get_option('debugger')
 have_ptrace = not ['windows', 'cygwin', 'sunos', 'haiku'].contains(host_machine.system())
 use_ptrace_wrap = ['linux'].contains(host_machine.system())
@@ -311,15 +330,10 @@ message('HAVE_PTRACE: @0@'.format(have_ptrace))
 message('USE_PTRACE_WRAP: @0@'.format(use_ptrace_wrap))
 
 checks_level = get_option('checks_level')
-if checks_level == 9999
-  if get_option('buildtype') == 'release'
-    checks_level = 1
-  else
-    checks_level = 2
-  endif
-endif
-
 message('RZ_CHECKS_LEVEL: @0@'.format(checks_level))
+if checks_level < 0 or checks_level > 3
+  error('`checks_level` must be between 0 and 3.')
+endif
 
 userconf = configuration_data()
 ccs = [[cc, userconf, host_machine, false]]
@@ -342,7 +356,7 @@ foreach it : ccs
   have_pthread = it_th.found() and it_machine.system() != 'windows'
   if it_machine.system() == 'sunos'
     # workaround for Solaris until https://github.com/mesonbuild/meson/issues/4328 is fixed
-    it_mth = declare_dependency(link_args: '-lm', native: it_native)
+    it_mth = declare_dependency(link_args: '-lm')
   else
     it_mth = it_cc.find_library('m', required: false, static: is_static_build)
   endif
@@ -405,6 +419,7 @@ foreach it : ccs
   it_userconf.set10('HAVE_LZMA', get_option('use_lzma'))
   it_userconf.set10('HAVE_ZLIB', get_option('use_zlib'))
   it_userconf.set10('SUPPORTS_PCRE2_JIT', pcre2_jit_supported)
+  it_userconf.set('N_THREAD_LIMIT', get_option('n_thread_limit'))
 
   if it_machine.system() == 'freebsd' or it_machine.system() == 'dragonfly'
     add_project_link_arguments('-Wl,--unresolved-symbols,ignore-in-object-files', language: 'c', native: it_native)
@@ -544,7 +559,7 @@ if git_exe.found() and fs.exists('.git')
     build_always_stale: true,
     build_by_default: true,
     output: 'gittip',
-    command: [py3_exe, git_exe_repo_py, git_exe, repo, 'rev-parse', 'HEAD'],
+    command: [py3_exe, git_exe_repo_py, git_exe, repo, '@OUTPUT@', 'rev-parse', 'HEAD'],
     install: true,
     install_dir: rizin_datdir_rz
   )
@@ -594,6 +609,23 @@ if get_option('use_lzma')
   endif
 endif
 
+# handle softfloat dependency
+r = run_command(py3_exe, check_meson_subproject_py, 'softfloat', check: false)
+if r.returncode() == 1 and get_option('subprojects_check')
+  error(subproject_clean_error_msg)
+endif
+
+softfloat_dep = dependency('softfloat', required: get_option('use_sys_softfloat'), static: is_static_build)
+if not softfloat_dep.found()
+  softfloat_proj = subproject('softfloat', default_options: ['default_library=static'])
+  softfloat_dep = softfloat_proj.get_variable('softfloat_dep')
+endif
+
+if meson.is_cross_build()
+  softfloat_cross_native_proj = subproject('softfloat_cross_native', default_options: ['default_library=static', 'cross_native=true'])
+  softfloat_cross_native_dep = softfloat_cross_native_proj.get_variable('softfloat_dep')
+endif
+
 # handle zip dependency
 r = run_command(py3_exe, check_meson_subproject_py, 'libzip', check: false)
 if r.returncode() == 1 and get_option('subprojects_check')
@@ -604,6 +636,7 @@ libzip_dep = dependency('libzip', required: get_option('use_sys_libzip'), static
 if not libzip_dep.found()
   libzip_proj = subproject('libzip', default_options: [
     'default_library=static',
+    'werror=false',
     'static_runtime=@0@'.format(is_static_build),
     'use_sys_openssl=@0@'.format(get_option('use_sys_libzip_openssl')),
   ])
@@ -686,8 +719,7 @@ test_env_common_path = []
 build_root = meson.current_build_dir()
 if host_machine.system() == 'windows'
   test_env_common_path += [
-    build_root / 'librz' / 'analysis',
-    build_root / 'librz' / 'asm',
+    build_root / 'librz' / 'arch',
     build_root / 'librz' / 'bin',
     build_root / 'librz' / 'bp',
     build_root / 'librz' / 'config',
@@ -785,6 +817,7 @@ summary({
   'System tree-sitter library': tree_sitter_dep.found() and tree_sitter_dep.type_name() != 'internal',
   'System lz4 library': lz4_dep.found() and lz4_dep.type_name() != 'internal',
   'System lzma library': liblzma_dep.found() and liblzma_dep.type_name() != 'internal',
+  'System softfloat library': softfloat_dep.found() and softfloat_dep.type_name() != 'internal',
   'System zlib library': zlib_dep.found() and zlib_dep.type_name() != 'internal',
   'System zstd library': libzstd_dep.found() and libzstd_dep.type_name() != 'internal',
   'System zip library': libzip_dep.found() and libzip_dep.type_name() != 'internal',
@@ -817,8 +850,7 @@ foreach plugin : hash_plugins.get('list')
 endforeach
 
 summary({
-  'Analysis Plugins': analysis_plugins.get('list'),
-  'Assembler Plugins': asm_plugins.get('list'),
+  'Arch Plugins': arch_plugins.get('list'),
   'Binary Plugins': bin_plugins.get('list'),
   'BinXtr Plugins': bin_xtr_plugins.get('list'),
   'Breakpoint Plugins': bp_plugins.get('list'),
@@ -829,7 +861,5 @@ summary({
   'IO Plugins': io_plugins.get('list'),
   'Lang Plugins': lang_plugins.get('list'),
   'Hash Plugins': comb_hash_plugins,
-  'Parse Plugins': parse_plugins.get('list'),
   'Demangler Plugins': demangler_plugins.get('list'),
 }, section: 'Plugins', list_sep: ', ')
-

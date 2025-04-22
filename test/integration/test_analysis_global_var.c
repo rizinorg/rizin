@@ -138,7 +138,7 @@ bool test_rz_analysis_global_var() {
 	typ = rz_type_parse_string_single(parser, "int", &errmsg);
 	mu_assert_notnull(typ, "parsed type");
 	mu_assert_true(rz_analysis_var_global_create(analysis, "crab", typ, 0x125418),
-			"create global var");
+		"create global var");
 
 	glob = rz_analysis_var_global_get_byname(analysis, "crab");
 	mu_assert_notnull(glob, "create a global variable");

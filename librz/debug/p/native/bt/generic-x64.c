@@ -103,7 +103,7 @@ static RzList /*<RzDebugFrame *>*/ *backtrace_x86_64_analysis(RzDebug *dbg, ut64
 		frame->size = 0;
 		frame->sp = _rbp;
 		frame->bp = _rbp + 8;
-		// frame->name = (fcn && fcn->name) ? strdup (fcn->name) : NULL;
+		// frame->name = (fcn && fcn->name) ? rz_str_dup (fcn->name) : NULL;
 		rz_list_append(list, frame);
 		_rbp = ebp2;
 	}

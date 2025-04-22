@@ -13,8 +13,6 @@
 extern "C" {
 #endif
 
-RZ_LIB_VERSION_HEADER(rz_parse);
-
 typedef struct rz_parse_t {
 	void *user;
 	RzSpace *flagspace;
@@ -68,24 +66,6 @@ RZ_API bool rz_parse_filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hi
 RZ_API bool rz_parse_subvar(RzParse *p, RZ_NULLABLE RzAnalysisFunction *f, RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL RZ_IN char *data, RZ_BORROW RZ_NONNULL RZ_OUT char *str, int len);
 RZ_API char *rz_parse_immtrim(char *opstr);
 
-/* plugin pointers */
-extern RzParsePlugin rz_parse_plugin_6502_pseudo;
-extern RzParsePlugin rz_parse_plugin_arm_pseudo;
-extern RzParsePlugin rz_parse_plugin_att2intel;
-extern RzParsePlugin rz_parse_plugin_avr_pseudo;
-extern RzParsePlugin rz_parse_plugin_chip8_pseudo;
-extern RzParsePlugin rz_parse_plugin_dalvik_pseudo;
-extern RzParsePlugin rz_parse_plugin_dummy;
-extern RzParsePlugin rz_parse_plugin_m68k_pseudo;
-extern RzParsePlugin rz_parse_plugin_mips_pseudo;
-extern RzParsePlugin rz_parse_plugin_ppc_pseudo;
-extern RzParsePlugin rz_parse_plugin_sh_pseudo;
-extern RzParsePlugin rz_parse_plugin_wasm_pseudo;
-extern RzParsePlugin rz_parse_plugin_riscv_pseudo;
-extern RzParsePlugin rz_parse_plugin_x86_pseudo;
-extern RzParsePlugin rz_parse_plugin_z80_pseudo;
-extern RzParsePlugin rz_parse_plugin_tms320_pseudo;
-extern RzParsePlugin rz_parse_plugin_v850_pseudo;
 #endif
 
 #ifdef __cplusplus

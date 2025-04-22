@@ -46,6 +46,11 @@ union VALUETYPE {
 	double d;
 }; /* either number or string */
 
+/**
+ * \brief Size of the buffer the rz_magic module checks for magics.
+ */
+#define RZ_MAGIC_BUF_SIZE (HOWMANY * (1 + sizeof(union VALUETYPE)))
+
 /* constants */
 #define MAGICNO        0xF11E041C
 #define VERSIONNO      5
@@ -269,6 +274,12 @@ struct rz_magic_set {
 	/* FIXME: Make the string dynamically allocated so that e.g.
 	   strings matched in files can be longer than MAXstring */
 	union VALUETYPE ms_value; /* either number or string */
+
+	// Previously global non-constant variables in librz/magic/
+	bool ms_setup_done; ///< True if the members below were initialized.
+	int magic_file_formats[FILE_NAMES_SIZE];
+	const char *magic_file_names[FILE_NAMES_SIZE];
+	size_t maxmagic;
 };
 
 #if USE_LIB_MAGIC
@@ -283,7 +294,7 @@ RZ_API void rz_magic_free(RzMagic *);
 
 RZ_API const char *rz_magic_file(RzMagic *, const char *);
 RZ_API const char *rz_magic_descriptor(RzMagic *, int);
-RZ_API const char *rz_magic_buffer(RzMagic *, const void *, size_t);
+RZ_API const char *rz_magic_buffer(RzMagic *, const ut8 *, size_t);
 
 RZ_API const char *rz_magic_error(RzMagic *);
 RZ_API void rz_magic_setflags(RzMagic *, int);

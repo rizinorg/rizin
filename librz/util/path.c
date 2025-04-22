@@ -95,7 +95,7 @@ RZ_API void rz_path_set_prefix(RZ_NONNULL const char *path) {
 	rz_th_lock_enter(portable_prefix_mutex);
 	free(portable_prefix);
 	if (RZ_STR_ISNOTEMPTY(path)) {
-		portable_prefix = strdup(path);
+		portable_prefix = rz_str_dup(path);
 	} else {
 		portable_prefix = set_portable_prefix();
 	}
@@ -277,13 +277,13 @@ RZ_API RZ_OWN char *rz_path_home(RZ_NULLABLE const char *path) {
 RZ_API RZ_OWN char *rz_path_home_expand(RZ_NULLABLE const char *path) {
 	// if the path does not start with `~`, there is nothing to expand
 	if (path && path[0] != '~') {
-		return strdup(path);
+		return rz_str_dup(path);
 	}
 
 	// if the path starts with `~` but it is not `~/` or just `~`, then it is a
 	// valid name (e.g. `~hello`)
 	if (path && path[0] && path[1] && path[1] != '/') {
-		return strdup(path);
+		return rz_str_dup(path);
 	}
 
 	return rz_path_home(path + 1);
@@ -304,7 +304,7 @@ RZ_API RZ_OWN char *rz_path_realpath(RZ_NULLABLE const char *path) {
 	char buf[PATH_MAX] = { 0 };
 	const char *rp = realpath(path, buf);
 	if (rp) {
-		return strdup(rp);
+		return rz_str_dup(rp);
 	}
 #elif __WINDOWS__
 	wchar_t buf[MAX_PATH] = { 0 };

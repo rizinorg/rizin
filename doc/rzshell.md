@@ -1,44 +1,11 @@
 # Command parsing and command handling
 
-Rizin has moved away from the default way of parsing radare2 commands and the
-way commands were handled there. It enables by default what is/was called in r2
-`cfg.newshell`, which enables a generated parser that parses rizin commands and
-a new way of registering and developing commands.
-
-## A bit of history
-
-Rizin is a fork of radare2. Radare2 did not have, until recently, a generic
-parser for user inputs, but each command had to parse its arguments by itself.
-Moreover, there was no global register of commands available in the radare2
-shell, instead the input was chopped by looking for specific characters and then
-it was analyzed char by char, using big switch-cases to recognize the right
-command.
-
-As an example, you can see
-[cmd_flag.c:1163](https://github.com/rizinorg/rizin/blob/cde558e6e5788d0a6d544ab975b144ed59190676/librz/core/cmd_flag.c#L1163),
-which identifies the `fsr` command and then parses its input to check if an
-argument was available or not.
-
-This approach, although simple at the beginning, has some drawbacks like the
-inconsistency coming from having many different places in the code doing mostly
-the same thing (e.g. checking if an argument is available or not), the inability
-to easily register/unregister new commands at runtime (e.g. a new Core plugin
-that wants to provide a new command) or the inconsistency between commands
-actually available and commands shown to users in help messages.
-
-## Rizin shell
-
-Not long ago, radare2 introduced the variable `cfg.newshell` that, when enabled,
-allows you to use new features in the code. Rizin has chosen to enable this by
-default and it is going to transition most commands to the new way of writing
-commands, which will make it easier/faster to write commands and make the
-overall CLI experience more consistent and reliable.
-
-Rizin uses a parser generated with
+The Rizin shell language is originally derived from the Radare2 shell language.
+There is a parser generated with
 [tree-sitter](https://tree-sitter.github.io/tree-sitter/), which allows you to
 write grammars in JavaScript. You can see our grammar
 [here](https://github.com/rizinorg/rizin/blob/dev/subprojects/rizin-shell-parser/grammar.js).
-The parser recognizes the entire syntax of the rizin/radare2 shell language,
+The parser recognizes the entire syntax of the rizin shell language,
 like:
 
 - [basic statements](https://github.com/rizinorg/rizin/blob/6f40dfe493f0caf9e0541e1ee83e3d8012b5750f/subprojects/rizin-shell-parser/grammar.js#L238): `<command-name> <arg1> <arg2> ... <argN>`
@@ -48,7 +15,7 @@ like:
 - [grep statements](https://github.com/rizinorg/rizin/blob/6f40dfe493f0caf9e0541e1ee83e3d8012b5750f/subprojects/rizin-shell-parser/grammar.js#L148): `<statement>~<grep-pattern>`
 - and many others
 
-These patterns deal with the structure of the rizin/radare2 shell language, but
+These patterns deal with the structure of the rizin shell language, but
 they don't parse the input of each specific command available in the rizin shell
 (e.g. `af`, `pd`, etc.). The parser just splits the input statement into a
 "command name" and a list of "arguments".
@@ -70,7 +37,7 @@ deregister it, call the right command descriptor handler based on a list of
 command name + arguments, get the help of a command and potentially do many
 other things.
 
-As rizin/radare2 commands mainly form a tree, `RzCmdDesc` are organized in a
+As rizin commands mainly form a tree, `RzCmdDesc` are organized in a
 tree, with each descriptor having references to its parent and its children.
 Moreover, a descriptor has its help messages and its handler.
 
@@ -107,18 +74,13 @@ You have to call it according to the `cname` field you previously set for the
 
 Below you can see how the code for adding the `sky` command would look like:
 ```YAML
-- name: s
-  cname: cmd_seek
-  summary: Seek to address
-  type: RZ_CMD_DESC_TYPE_OLDINPUT
-  subcommands:
-    - name: sky
-      cname: sky
-      summary: Find all occurrences of the work "sky" in the opened file
-      args:
-        - name: n
-          type: RZ_CMD_ARG_TYPE_NUM
-          optional: true
+  - name: sky
+    cname: sky
+    summary: Print current address / Seek to address
+    args:
+      - name: limit
+        type: RZ_CMD_ARG_TYPE_NUM
+        optional: true
 ```
 ```C
 // cmd_seek.c (example, real place depends on the parent command)
@@ -145,14 +107,12 @@ If that doesn't work, please report the problem to us! However, you can still
 find the handler yourself by looking at the file
 [`librz/core/cmd_descs/cmd_descs.yaml`](https://github.com/rizinorg/rizin/blob/6f40dfe493f0caf9e0541e1ee83e3d8012b5750f/librz/core/cmd_descs/cmd_descs.yaml).
 By looking at the `cname` field of the command descriptor, you can see what is
-the name of the handler of the `x` command. If the `cname` is `hex` and the type
-is `RZ_CMD_DESC_TYPE_OLDINPUT`, then the handler will be named `rz_hex`. In all
-other cases, the handler will be named `rz_hex_handler`.
+the name of the handler of the `x` command. It is always of the form `rz_<cname>_handler`.
+So for the command `x` with `cname = hex` the handler is `rz_hex_handler`.
 
 Some examples:
 - command: `wv`, type: unspecified (default to `RZ_CMD_DESC_TYPE_ARGV`), handler: `rz_write_value_handler`
 - command: `w6d`, type: unspecified (default to `RZ_CMD_DESC_TYPE_ARGV`), handler: `rz_write_base64_decode_handler`
-- command: `s`, type: `RZ_CMD_DESC_TYPE_OLDINPUT`, handler: `rz_cmd_seek`
 
 ## How to improve the help messages of a command
 

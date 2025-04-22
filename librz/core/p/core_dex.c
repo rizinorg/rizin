@@ -45,7 +45,7 @@ static RzBinDex *core_dex_get_class(RzCore *core) {
 static char *decode_access_flags(ut32 access_flags) {
 	char *str = rz_bin_dex_access_flags_readable(access_flags);
 	if (!str) {
-		return strdup("");
+		return rz_str_dup("");
 	}
 	for (size_t i = 0; i < strlen(str); ++i) {
 		str[i] = toupper(str[i]);

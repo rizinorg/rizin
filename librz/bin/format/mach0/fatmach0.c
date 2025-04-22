@@ -46,6 +46,7 @@ static int rz_bin_fatmach0_init(struct rz_bin_fatmach0_obj_t *bin) {
 		bin->archs[i].offset = rz_read_be32(&archbytes[8]);
 		bin->archs[i].size = rz_read_be32(&archbytes[12]);
 		bin->archs[i].align = rz_read_be32(&archbytes[16]);
+		bin->archs[i].align = bin->archs[i].align < 1 ? 1 : bin->archs[i].align;
 	}
 	return true;
 }

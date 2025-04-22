@@ -14,7 +14,7 @@ void out_printf(Output *out, char *str, ...);
 void out_printf(Output *out, char *str, ...) __attribute__ ((format (printf, 2, 3)));
 #endif
 
-#if USE_R2
+#if USE_RZ_UTIL
 #include <rz_util.h>
 #else
 SStrBuf *rz_strbuf_new(const char *s);

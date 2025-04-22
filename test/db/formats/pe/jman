@@ -1,8 +1,7 @@
 NAME=MZ: jman.exe - open
 FILE=bins/pe/jman.exe
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=MZ: jman.exe - entrypoint

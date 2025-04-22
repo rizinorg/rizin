@@ -5,6 +5,8 @@
 #include <winkd.h>
 #include "librz/bin/format/dmp/dmp_specs.h"
 
+#include "rz_io_plugins.h"
+
 static bool dmp_plugin_open(RzIO *io, const char *file, bool many) {
 	return (!strncmp(file, "dmp://", 6));
 }
@@ -86,7 +88,7 @@ static RzIODesc *dmp_open(RzIO *io, const char *file, int rw, int mode) {
 		free(ctx);
 		return NULL;
 	}
-	c->fd->name = strdup(file + 6);
+	c->fd->name = rz_str_dup(file + 6);
 	ctx->windctx.user = c;
 	return c->fd;
 }

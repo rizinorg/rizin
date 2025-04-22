@@ -14,7 +14,7 @@ static void process_class_method(RzBinObject *o, RzBinSymbol *method) {
 		return;
 	}
 
-	ht_pp_insert(o->glue_to_class_method, key, method);
+	ht_sp_insert(o->glue_to_class_method, key, method);
 	free(key);
 
 	ht_up_insert(o->vaddr_to_class_method, method->vaddr, method);
@@ -30,7 +30,7 @@ static void process_class_field(RzBinObject *o, RzBinClassField *field) {
 		return;
 	}
 
-	ht_pp_insert(o->glue_to_class_field, key, field);
+	ht_sp_insert(o->glue_to_class_field, key, field);
 	free(key);
 }
 
@@ -46,9 +46,9 @@ static void process_handle_class(RzBinObject *o, RzBinClass *klass) {
 	if (!klass->name) {
 		klass->name = rz_str_dup("unknown_class");
 	}
-	RzBinClass *found = ht_pp_find(o->name_to_class_object, klass->name, NULL);
+	RzBinClass *found = ht_sp_find(o->name_to_class_object, klass->name, NULL);
 	if (!found) {
-		ht_pp_insert(o->name_to_class_object, klass->name, klass);
+		ht_sp_insert(o->name_to_class_object, klass->name, klass);
 		found = klass;
 	} else {
 		RZ_LOG_WARN("Found duplicated class: %s\n", klass->name);
@@ -80,15 +80,15 @@ RZ_IPI void rz_bin_set_and_process_classes(RzBinFile *bf, RzBinObject *o) {
 	}
 	rz_warn_if_fail(o->classes->v.free_user);
 
-	ht_pp_free(o->name_to_class_object);
-	ht_pp_free(o->glue_to_class_method);
-	ht_pp_free(o->glue_to_class_field);
+	ht_sp_free(o->name_to_class_object);
+	ht_sp_free(o->glue_to_class_method);
+	ht_sp_free(o->glue_to_class_field);
 	ht_up_free(o->vaddr_to_class_method);
 
-	o->name_to_class_object = ht_pp_new0();
-	o->glue_to_class_method = ht_pp_new0();
-	o->glue_to_class_field = ht_pp_new0();
-	o->vaddr_to_class_method = ht_up_new0();
+	o->name_to_class_object = ht_sp_new(HT_STR_DUP, NULL, NULL);
+	o->glue_to_class_method = ht_sp_new(HT_STR_DUP, NULL, NULL);
+	o->glue_to_class_field = ht_sp_new(HT_STR_DUP, NULL, NULL);
+	o->vaddr_to_class_method = ht_up_new(NULL, NULL);
 
 	void **it;
 	RzBinClass *element;

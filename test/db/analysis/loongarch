@@ -1,0 +1,134 @@
+NAME=loongarch32 ensure correct cpu is selected
+FILE=bins/elf/hello.loongarch32.o
+CMDS=<<EOF
+iI~arch
+iI~bits
+aaa
+pdf @ sym.main
+EOF
+EXPECT=<<EOF
+arch     loongarch
+machine  LoongArch
+bits     32
+/ int sym.main(int argc, char **argv, char **envp);
+|           0x0800005c      addi.w sp, sp, -0x20
+|           0x08000060      st.w  ra, sp, 0x1c
+|           0x08000064      st.w  fp, sp, 0x18
+|           0x08000068      addi.w fp, sp, 0x20
+|           0x0800006c      st.w  zero, fp, -0xc
+|           0x08000070      ori   a0, zero, 1
+|           0x08000074      st.w  a0, fp, -0x10
+|           0x08000078      ori   a0, zero, 2
+|           0x0800007c      st.w  a0, fp, -0x14
+|           0x08000080      ld.w  a0, fp, -0x10
+|           0x08000084      ld.w  a1, fp, -0x14
+|           0x08000088      add.w a0, a0, a1
+|           0x0800008c      st.w  a0, fp, -0x18
+|           0x08000090      move  a0, zero
+|           0x08000094      ld.w  fp, sp, 0x18
+|           0x08000098      ld.w  ra, sp, 0x1c
+|           0x0800009c      addi.w sp, sp, 0x20
+\           0x080000a0      ret
+EOF
+RUN
+
+NAME=loongarch64 ensure correct cpu is selected
+FILE=bins/elf/ncat.loongarch64
+CMDS=<<EOF
+iI~arch
+iI~bits
+aaa
+pdf
+pdf @ fcn.00010208
+EOF
+EXPECT=<<EOF
+arch     loongarch
+intrp    /lib64/ld-linux-loongarch-lp64d.so.1
+machine  LoongArch
+bits     64
+/ entry0();
+|           0x00007508      move  a5, a0
+|           0x0000750c      pcalau12i a0, -3
+|           0x00007510      addi.d t0, zero, 0x3a0
+|           0x00007514      lu32i.d t0, 0
+|           0x00007518      lu52i.d t0, t0, 0
+|           0x0000751c      add.d a0, a0, t0
+|           0x00007520      ld.d  a1, sp, 0
+|           0x00007524      addi.d a2, sp, 8
+|           0x00007528      bstrins.d sp, zero, 3, 0
+|           0x0000752c      move  a3, zero
+|           0x00007530      move  a4, zero
+|           0x00007534      move  a6, sp
+|           0x00007538      pcalau12i ra, -3
+|           0x0000753c      addi.d t0, zero, 0x340
+|           0x00007540      lu32i.d t0, 0
+|           ; DATA XREF from fcn.00016abc @ 0x16abc
+|           0x00007544      lu52i.d t0, t0, 0
+|           0x00007548      add.d ra, ra, t0
+|           0x0000754c      jirl  ra, ra, 0
+|           0x00007550      pcalau12i ra, -3
+|           0x00007554      addi.d t0, zero, 0x330
+|           0x00007558      lu32i.d t0, 0
+|           0x0000755c      lu52i.d t0, t0, 0
+|           0x00007560      add.d ra, ra, t0
+|           0x00007564      jirl  ra, ra, 0
+|           0x00007568      nop
+|           0x0000756c      nop
+|           0x00007570      nop
+|           0x00007574      nop
+|           0x00007578      nop
+\           0x0000757c      nop
+            ; XREFS(70)
+/ fcn.00010208();
+|           0x00010208      addi.d sp, sp, -0x70
+|           0x0001020c      st.d  ra, sp, 0x28
+|           0x00010210      st.d  s0, sp, 0x20
+|           0x00010214      st.d  s1, sp, 0x18
+|           0x00010218      st.d  s2, sp, 0x10
+|           0x0001021c      pcalau12i s1, 0x24
+|           0x00010220      pcalau12i s0, 0x24
+|           0x00010224      st.d  a4, sp, 0x50
+|           0x00010228      st.d  a5, sp, 0x58
+|           0x0001022c      st.d  a6, sp, 0x60
+|           0x00010230      st.d  a7, sp, 0x68
+|           0x00010234      st.d  a1, sp, 0x38
+|           0x00010238      st.d  a2, sp, 0x40
+|           0x0001023c      st.d  a3, sp, 0x48
+|           0x00010240      ld.d  s0, s0, -segment.NOTE
+|           0x00010244      ld.d  s1, s1, -0x210
+|           0x00010248      ldptr.d t1, s1, 0
+|           0x0001024c      move  s2, a0
+|           0x00010250      ldptr.d a0, s0, 0
+|           0x00010254      pcalau12i t0, 0x24
+|           0x00010258      pcaddi a3, str.Ncat                        ; 0x23048 ; "Ncat"
+|           0x0001025c      pcaddi a2, str.s:                          ; 0x251c8 ; "%s: "
+|           0x00010260      addi.w a1, zero, 1
+|           0x00010264      ld.d  t0, t0, -0x560
+|           0x00010268      st.d  t1, sp, 8
+|           0x0001026c      jirl  ra, t0, 0
+|           0x00010270      ldptr.d a0, s0, 0
+|           0x00010274      pcalau12i t0, 0x24
+|           0x00010278      addi.d a3, sp, 0x38
+|           0x0001027c      move  a2, s2
+|           0x00010280      addi.w a1, zero, 1
+|           0x00010284      ld.d  t0, t0, -0x588
+|           0x00010288      stptr.d a3, sp, 0
+|           0x0001028c      jirl  ra, t0, 0
+|           0x00010290      ldptr.d a0, s0, 0
+|           0x00010294      pcalau12i t0, 0x24
+|           0x00010298      ld.d  t0, t0, -0x180
+|           0x0001029c      jirl  ra, t0, 0
+|           0x000102a0      ld.d  t1, sp, 8
+|           0x000102a4      ldptr.d t0, s1, 0
+|       ,=< 0x000102a8      bne   t1, t0, 0x1c
+|       |   0x000102ac      ld.d  ra, sp, 0x28
+|       |   0x000102b0      ld.d  s0, sp, 0x20
+|       |   0x000102b4      ld.d  s1, sp, 0x18
+|       |   0x000102b8      ld.d  s2, sp, 0x10
+|       |   0x000102bc      addi.d sp, sp, 0x70
+|       |   0x000102c0      ret
+|       `-> 0x000102c4      pcalau12i t0, 0x24
+|           0x000102c8      ld.d  t0, t0, -0x4a8
+\           0x000102cc      jirl  ra, t0, 0
+EOF
+RUN

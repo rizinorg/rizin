@@ -86,8 +86,7 @@ agn- title1
 agg k~nodes=
 agg k~nodes.title1
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=remove node with title that contain spaces
@@ -98,8 +97,7 @@ agn- "Title with spaces"
 agg k~nodes=
 agg k~nodes.Title with spaces
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=remove non-existent node
@@ -225,8 +223,7 @@ age title3 title1
 agg k~agraph.w=0x35
 agg | head -2 | tail -1 | tr -d " " | grep "=----------------="
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=graph size with self-referenced bb
@@ -237,8 +234,7 @@ age title1 title1
 agg k~agraph.w=0x16
 agg k~agraph.h=0x4
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=graph title
@@ -304,8 +300,7 @@ aaa
 s 0x00011390
 agf > /dev/null
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=super mario block (#8788)
@@ -317,28 +312,28 @@ s 0x0008049c
 af+ super_mario_fix @ 0x0008049c
 afb+ 0x0008049c 0x0008049c 8
 wx c2a2c2a2c2a2 @ 0x80510
-e str.search.encoding=utf8
+e str.encoding=utf8
 agf
 e scr.strconv=asciidot
 agf
 EOF
 EXPECT=<<EOF
-.--------------------------------------------.
-|  0x8049c                                   |
-| super_mario_fix();                         |
-|    ; segment.ehdr                          |
-| lui v0, 8                                  |
-|    ; "\u00a2\u00a2\u00a2World" sym..rodata |
-| addiu a0, v0, 0x510                        |
-`--------------------------------------------'
-.-----------------------------.
-|  0x8049c                    |
-| super_mario_fix();          |
-|    ; segment.ehdr           |
-| lui v0, 8                   |
-|    ; "...World" sym..rodata |
-| addiu a0, v0, 0x510         |
-`-----------------------------'
+.--------------------------------.
+|  0x8049c                       |
+| super_mario_fix();             |
+|    ; segment.ehdr              |
+| lui v0, 8                      |
+|    ; "¢¢¢World" sym..rodata    |
+| addiu a0, v0, 0x510            |
+`--------------------------------'
+.--------------------------------.
+|  0x8049c                       |
+| super_mario_fix();             |
+|    ; segment.ehdr              |
+| lui v0, 8                      |
+|    ; "¢¢¢World" sym..rodata    |
+| addiu a0, v0, 0x510            |
+`--------------------------------'
 EOF
 RUN
 
@@ -348,8 +343,7 @@ CMDS=<<EOF
 af
 agf > /dev/null
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=Test iCFG generation

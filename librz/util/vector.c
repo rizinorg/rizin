@@ -360,6 +360,9 @@ static void vector_quick_sort(void *a, size_t elem_size, size_t len, RzVectorCom
  */
 RZ_API void rz_vector_sort(RzVector *vec, RzVectorComparator cmp, bool reverse, void *user) {
 	rz_return_if_fail(vec && cmp);
+	if (rz_vector_empty(vec)) {
+		return;
+	}
 	vector_quick_sort(vec->a, vec->elem_size, vec->len, cmp, reverse, user);
 }
 
@@ -458,8 +461,10 @@ RZ_API bool rz_pvector_join(RZ_NONNULL RzPVector *pvec1, RZ_NONNULL RzPVector *p
 		return false;
 	}
 
-	RzVector *vec = &pvec1->v;
-	RESIZE_OR_RETURN_FALSE(RZ_MAX(NEXT_VECTOR_CAPACITY, pvec1->v.len + pvec2->v.len));
+	if (pvec1->v.len + pvec2->v.len > pvec1->v.capacity) {
+		RzVector *vec = &pvec1->v;
+		RESIZE_OR_RETURN_NULL(RZ_MAX(NEXT_VECTOR_CAPACITY, pvec1->v.len + pvec2->v.len));
+	}
 	memmove((void **)pvec1->v.a + pvec1->v.len, pvec2->v.a, pvec2->v.elem_size * pvec2->v.len);
 	pvec1->v.len += pvec2->v.len;
 
@@ -467,6 +472,26 @@ RZ_API bool rz_pvector_join(RZ_NONNULL RzPVector *pvec1, RZ_NONNULL RzPVector *p
 	pvec2->v.len = 0;
 
 	return true;
+}
+
+/**
+ * \brief Assign the pointer \p ptr at \p index in the pvector.
+ *
+ * \param vec The pvector to assign to.
+ * \param index The index to assign the pointer to.
+ * \param ptr The pointer to assign.
+ *
+ * \return The pointer stored at \p index before. Or NULL in case of failure.
+ */
+RZ_API void *rz_pvector_assign_at(RZ_BORROW RZ_NONNULL RzPVector *vec, size_t index, RZ_OWN RZ_NONNULL void *ptr) {
+	rz_return_val_if_fail(vec && ptr, NULL);
+	void **p = rz_vector_index_ptr(&vec->v, index);
+	if (!p) {
+		return NULL;
+	}
+	void *prev = *p;
+	rz_vector_assign_at(&vec->v, index, ptr);
+	return prev;
 }
 
 RZ_API void *rz_pvector_remove_at(RzPVector *vec, size_t index) {
@@ -524,5 +549,8 @@ static void quick_sort(void **a, size_t n, RzPVectorComparator cmp, void *user) 
 
 RZ_API void rz_pvector_sort(RzPVector *vec, RzPVectorComparator cmp, void *user) {
 	rz_return_if_fail(vec && cmp);
+	if (rz_pvector_empty(vec)) {
+		return;
+	}
 	quick_sort(vec->v.a, vec->v.len, cmp, user);
 }
