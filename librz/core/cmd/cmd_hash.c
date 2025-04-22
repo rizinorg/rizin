@@ -20,7 +20,7 @@ RZ_IPI RzCmdDescDetail *rz_hash_bang_details_cb(RzCore *core, int argc, const ch
 	if (!details) {
 		return NULL;
 	}
-	details[0].name = (const char *)strdup("Available interpreters");
+	details[0].name = (const char *)rz_str_dup("Available interpreters");
 	if (!details->name) {
 		goto err;
 	}
@@ -31,8 +31,8 @@ RZ_IPI RzCmdDescDetail *rz_hash_bang_details_cb(RzCore *core, int argc, const ch
 	}
 	int i = 0;
 	rz_list_foreach (core->lang->langs, iter, lp) {
-		entries[i].text = (char *)strdup("#!");
-		entries[i].arg_str = (char *)strdup(lp->name);
+		entries[i].text = (char *)rz_str_dup("#!");
+		entries[i].arg_str = (char *)rz_str_dup(lp->name);
 		entries[i].comment = (char *)rz_str_newf("%s (%s)", lp->desc, lp->license);
 		if (!entries[i].text || !entries[i].arg_str || !entries[i].comment) {
 			goto err;

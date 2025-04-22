@@ -138,8 +138,7 @@ echo abc > def>ghi  # should not hang
 "rm ./def>ghi"
 rm ./ghi
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=hash+space in quoted string

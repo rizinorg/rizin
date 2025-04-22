@@ -9,11 +9,10 @@ EXPECT=<<EOF
 2  ---  dmp      LGPL3
 3  ---  gdb      LGPL3
 4  ---  io       MIT
-5  ---  null     MIT
-6  ---  rap      LGPL3
-7  ---  winkd    LGPL3
-8  ---  qnx      LGPL3
-9  dbg  native   LGPL3
+5  dbg  native   LGPL3
+6  ---  null     MIT
+7  ---  qnx      LGPL3
+8  ---  winkd    LGPL3
 EOF
 RUN
 
@@ -28,21 +27,19 @@ Ldj~{[4]}
 Ldj~{[5]}
 Ldj~{[6]}
 Ldj~{[7]}
-Ldj~{[8]}
-Ldj~{[9].name}
-Ldj~{[9].license}
+Ldj~{[8].name}
+Ldj~{[8].license}
 EOF
 EXPECT=<<EOF
-{"arch":"bf","name":"bf","license":"LGPL3"}
-{"arch":"x86","name":"bochs","license":"LGPL3"}
-{"arch":"x86,arm","name":"dmp","license":"LGPL3"}
-{"arch":"x86,arm,sh,mips,avr,lm32,v850,ba2,tricore","name":"gdb","license":"LGPL3"}
-{"arch":"any","name":"io","license":"MIT"}
-{"arch":"any","name":"null","license":"MIT"}
-{"arch":"any","name":"rap","license":"LGPL3"}
-{"arch":"x86","name":"winkd","license":"LGPL3"}
-{"arch":"x86,arm","name":"qnx","license":"LGPL3"}
-native
+{"arch":"bf","name":"bf","bits":"32 64","license":"LGPL3","version":""}
+{"arch":"x86","name":"bochs","bits":"16 32 64","license":"LGPL3","version":""}
+{"arch":"x86,arm","name":"dmp","bits":"32 64","license":"LGPL3","version":""}
+{"arch":"x86,arm,sh,mips,avr,lm32,v850,ba2,tricore","name":"gdb","bits":"16 32 64","license":"LGPL3","version":""}
+{"arch":"any","name":"io","bits":"32 64","license":"MIT","version":""}
+{"arch":"x86","name":"native","bits":"32 64","license":"LGPL3","version":"","selected":true}
+{"arch":"any","name":"null","bits":"32 64","license":"MIT","version":""}
+{"arch":"x86,arm","name":"qnx","bits":"32 ","license":"LGPL3","version":""}
+winkd
 LGPL3
 EOF
 RUN

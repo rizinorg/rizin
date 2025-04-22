@@ -161,7 +161,7 @@ typedef struct luac_bin_info {
 	st32 minor; ///< minor version
 	RzPVector /*<RzBinSection *>*/ *section_vec; ///< list of sections
 	RzList /*<RzBinSymbol *>*/ *symbol_list; ///< list of symbols
-	RzList /*<RzBinAddr *>*/ *entry_list; ///< list of entries
+	RzPVector /*<RzBinAddr *>*/ *entry_vec; ///< list of entries
 	RzList /*<RzBinString *>*/ *string_list; ///< list of strings
 	RzBinInfo *general_info; ///< general binary info from luac header
 } LuacBinInfo;
@@ -187,9 +187,9 @@ void lua_free_proto_entry(LuaProto *);
  * Common Operation to RzBinInfo
  * Implemented in 'bin/format/luac/luac_bin.c'
  * ======================================================== */
-void luac_add_section(RzPVector /*<RzBinSection *>*/ *section_list, char *name, ut64 offset, ut32 size, bool is_func);
+void luac_add_section(RzPVector /*<RzBinSection *>*/ *section_vec, char *name, ut64 offset, ut32 size, bool is_func);
 void luac_add_symbol(RzList /*<RzBinSymbol *>*/ *symbol_list, char *name, ut64 offset, ut64 size, const char *type);
-void luac_add_entry(RzList /*<RzBinAddr *>*/ *entry_list, ut64 offset, int entry_type);
+void luac_add_entry(RzPVector /*<RzBinAddr *>*/ *entry_vec, ut64 offset, int entry_type);
 void luac_add_string(RzList /*<RzBinString *>*/ *string_list, char *string, ut64 offset, ut64 size);
 
 LuacBinInfo *luac_build_info(LuaProto *proto);

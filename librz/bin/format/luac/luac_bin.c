@@ -44,7 +44,7 @@ void luac_add_symbol(RzList /*<RzBinSymbol *>*/ *symbol_list, char *name, ut64 o
 	rz_list_append(symbol_list, bin_sym);
 }
 
-void luac_add_entry(RzList /*<RzBinAddr *>*/ *entry_list, ut64 offset, int entry_type) {
+void luac_add_entry(RzPVector /*<RzBinAddr *>*/ *entry_vec, ut64 offset, int entry_type) {
 	RzBinAddr *entry = RZ_NEW0(RzBinAddr);
 	if (!entry) {
 		return;
@@ -54,7 +54,7 @@ void luac_add_entry(RzList /*<RzBinAddr *>*/ *entry_list, ut64 offset, int entry
 	entry->paddr = offset;
 	entry->type = entry_type;
 
-	rz_list_append(entry_list, entry);
+	rz_pvector_push(entry_vec, entry);
 }
 
 void luac_add_string(RzList /*<RzBinString *>*/ *string_list, char *string, ut64 offset, ut64 size) {
@@ -80,10 +80,6 @@ static void free_rz_section(RzBinSection *section) {
 
 	if (section->name) {
 		RZ_FREE(section->name);
-	}
-
-	if (section->format) {
-		RZ_FREE(section->format);
 	}
 
 	RZ_FREE(section);
@@ -112,7 +108,7 @@ void luac_build_info_free(LuacBinInfo *bin_info) {
 	if (!bin_info) {
 		return;
 	}
-	rz_list_free(bin_info->entry_list);
+	rz_pvector_free(bin_info->entry_vec);
 	rz_list_free(bin_info->symbol_list);
 	rz_pvector_free(bin_info->section_vec);
 	rz_list_free(bin_info->string_list);
@@ -130,13 +126,13 @@ LuacBinInfo *luac_build_info(LuaProto *proto) {
 		return NULL;
 	}
 
-	ret->entry_list = rz_list_newf((RzListFree)free_rz_addr);
+	ret->entry_vec = rz_pvector_new((RzPVectorFree)free_rz_addr);
 	ret->symbol_list = rz_list_newf((RzListFree)rz_bin_symbol_free);
 	ret->section_vec = rz_pvector_new((RzPVectorFree)free_rz_section);
 	ret->string_list = rz_list_newf((RzListFree)free_rz_string);
 
-	if (!(ret->entry_list && ret->symbol_list && ret->section_vec && ret->string_list)) {
-		rz_list_free(ret->entry_list);
+	if (!(ret->entry_vec && ret->symbol_list && ret->section_vec && ret->string_list)) {
+		rz_pvector_free(ret->entry_vec);
 		rz_list_free(ret->symbol_list);
 		rz_pvector_free(ret->section_vec);
 		rz_list_free(ret->string_list);
@@ -147,7 +143,7 @@ LuacBinInfo *luac_build_info(LuaProto *proto) {
 	// add entry of main
 	ut64 main_entry_offset;
 	main_entry_offset = proto->code_offset + proto->code_skipped;
-	luac_add_entry(ret->entry_list, main_entry_offset, RZ_BIN_ENTRY_TYPE_PROGRAM);
+	luac_add_entry(ret->entry_vec, main_entry_offset, RZ_BIN_ENTRY_TYPE_PROGRAM);
 
 	return ret;
 }

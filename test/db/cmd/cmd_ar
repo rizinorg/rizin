@@ -75,7 +75,7 @@ ar rbp = 0x0000000000000000
 ar rflags = 0x0000000000000000
 ar rsp = 0x0000000000000000
 -- table
-role name   value      size type 
+role name        value size type 
 ---------------------------------
 SN   rax    0x00001337 0x40 gpr
      rbx    0x00c0ffee 0x40 gpr

@@ -169,8 +169,7 @@ RUN
 NAME=Cf should be silent
 FILE==
 CMDS=Cf 32 2xx
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=format memory metadata
@@ -451,10 +450,10 @@ ascii[2] "\t"
 0x140016018 ascii[2] "\t"
             ;-- str.wide_esc:___0m:
             0x140016018     .string "\t" ; len=2
-Csw 38 @ 0x140016018 # \twide\\esc: \e[0m\u00a1\r\n
-"\twide\\esc: \e[0m\u00a1\r\n"
-utf16le[38] "\twide\\esc: \e[0m\u00a1\r\n"
-0x140016018 utf16le[38] "\twide\\esc: \e[0m\u00a1\r\n"
+Csw 38 @ 0x140016018 # \twide\\esc: \e[0m¡\r\n
+"\twide\\esc: \e[0m¡\r\n"
+utf16le[38] "\twide\\esc: \e[0m¡\r\n"
+0x140016018 utf16le[38] "\twide\\esc: \e[0m¡\r\n"
             ;-- str.wide_esc:___0m:
             0x140016018     .string "\twide\\esc: \e[0m\xc2\xa1\r\n" ; len=38
 0x140016018 ascii[4] "\t"
@@ -488,7 +487,7 @@ RUN
 
 NAME=Cs8
 FILE=bins/elf/strenc
-ARGS=-e str.search.check_ascii_freq=false
+ARGS=-e search.str.check_ascii_freq=false
 CMDS=<<EOF
 e str.escbslash=true
 s 0x004021ff
@@ -505,24 +504,24 @@ Cs.l
 pd 1
 EOF
 EXPECT=<<EOF
-Cs8 61 @ 0x004021ff # utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m \u00a2\u20ac\U00010348 \e[0m\n
-"utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m \u00a2\u20ac\U00010348 \e[0m\n"
-utf8[61] "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m \u00a2\u20ac\U00010348 \e[0m\n"
-0x004021ff utf8[61] "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m \u00a2\u20ac\U00010348 \e[0m\n"
+Cs8 61 @ 0x004021ff # utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m ¢€𐍈 \e[0m\n
+"utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m ¢€𐍈 \e[0m\n"
+utf8[61] "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m ¢€𐍈 \e[0m\n"
+0x004021ff utf8[61] "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m ¢€𐍈 \e[0m\n"
             ;-- str.utf8___u00a2_u20ac_U00010348_in_yellow:__33m_____________0m:
-            0x004021ff     .string "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m \u00a2\u20ac\U00010348 \e[0m\n" ; len=61
-Cs8 61 @ 0x004021ff # utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m \u00a2\u20ac\U00010348 \e[0m\n
-"utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m \u00a2\u20ac\U00010348 \e[0m\n"
-utf8[61] "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m \u00a2\u20ac\U00010348 \e[0m\n"
-0x004021ff utf8[61] "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m \u00a2\u20ac\U00010348 \e[0m\n"
+            0x004021ff     .string "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m ¢€𐍈 \e[0m\n" ; len=61
+Cs8 61 @ 0x004021ff # utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m ¢€𐍈 \e[0m\n
+"utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m ¢€𐍈 \e[0m\n"
+utf8[61] "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m ¢€𐍈 \e[0m\n"
+0x004021ff utf8[61] "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m ¢€𐍈 \e[0m\n"
             ;-- str.utf8___u00a2_u20ac_U00010348_in_yellow:__33m_____________0m:
-            0x004021ff     .string "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m \u00a2\u20ac\U00010348 \e[0m\n" ; len=61
+            0x004021ff     .string "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m ¢€𐍈 \e[0m\n" ; len=61
 EOF
 RUN
 
 NAME=Cs8 and Cslj
 FILE=bins/elf/strenc
-ARGS=-e bin.str.purge=all,!0x004021ff -e str.search.check_ascii_freq=false
+ARGS=-e bin.str.purge=all,!0x004021ff -e search.str.check_ascii_freq=false
 CMDS=<<EOF
 s 0x004021ff
 Csl
@@ -533,9 +532,9 @@ Csl
 Cslj
 EOF
 EXPECT=<<EOF
-0x004021ff utf8[61] "utf8> \u00a2\u20ac\U00010348 in yellow:\e[33m \u00a2\u20ac\U00010348 \e[0m\n"
+0x004021ff utf8[61] "utf8> \u00a2\u20ac\U00010348 in yellow:\e[33m ¢€𐍈 \e[0m\n"
 [{"offset":4203007,"type":"Cs","name":"dXRmOD4gXHUwMGEyXHUyMGFjXFUwMDAxMDM0OCBpbiB5ZWxsb3c6G1szM20gwqLigqzwkI2IIBtbMG0K","enc":"utf8","ascii":false}]
-0x004021ff utf8[61] "utf8> \u00a2\u20ac\U00010348 in yellow:\e[33m \u00a2\u20ac\U00010348 \e[0m\n"
+0x004021ff utf8[61] "utf8> \u00a2\u20ac\U00010348 in yellow:\e[33m ¢€𐍈 \e[0m\n"
 [{"offset":4203007,"type":"Cs","name":"dXRmOD4gXHUwMGEyXHUyMGFjXFUwMDAxMDM0OCBpbiB5ZWxsb3c6G1szM20gwqLigqzwkI2IIBtbMG0K","enc":"utf8","ascii":false}]
 EOF
 RUN

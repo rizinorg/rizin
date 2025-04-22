@@ -58,18 +58,18 @@ static int bootimg_header_load(BootImageObj *obj, Sdb *db) {
 	BootImage *bi = &obj->bi;
 	(void)rz_buf_read_at(obj->buf, 0, (ut8 *)bi, sizeof(BootImage));
 	if ((n = rz_str_ndup((char *)bi->name, BOOT_NAME_SIZE))) {
-		sdb_set(db, "name", n, 0);
+		sdb_set(db, "name", n);
 		free(n);
 	}
 	if ((n = rz_str_ndup((char *)bi->cmdline, BOOT_ARGS_SIZE))) {
-		sdb_set(db, "cmdline", n, 0);
+		sdb_set(db, "cmdline", n);
 		free(n);
 	}
 	for (i = 0; i < 8; i++) {
-		sdb_num_set(db, "id", (ut64)bi->id[i], 0);
+		sdb_num_set(db, "id", (ut64)bi->id[i]);
 	}
 	if ((n = rz_str_ndup((char *)bi->extra_cmdline, BOOT_EXTRA_ARGS_SIZE))) {
-		sdb_set(db, "extra_cmdline", n, 0);
+		sdb_set(db, "extra_cmdline", n);
 		free(n);
 	}
 	return true;
@@ -131,18 +131,18 @@ static RzBinInfo *info(RzBinFile *bf) {
 	}
 
 	ret->lang = NULL;
-	ret->file = bf->file ? strdup(bf->file) : NULL;
-	ret->type = strdup("Android Boot Image");
-	ret->os = strdup("android");
-	ret->subsystem = strdup("unknown");
-	ret->machine = strdup("arm");
-	ret->arch = strdup("arm");
+	ret->file = rz_str_dup(bf->file);
+	ret->type = rz_str_dup("Android Boot Image");
+	ret->os = rz_str_dup("android");
+	ret->subsystem = rz_str_dup("unknown");
+	ret->machine = rz_str_dup("arm");
+	ret->arch = rz_str_dup("arm");
 	ret->has_va = 1;
 	ret->has_pi = 0;
 	ret->bits = 16;
 	ret->big_endian = 0;
 	ret->dbg_info = 0;
-	ret->rclass = strdup("image");
+	ret->rclass = rz_str_dup("image");
 	return ret;
 }
 
@@ -152,16 +152,16 @@ static bool check_buffer(RzBuffer *buf) {
 	return r > 12 && !strncmp((const char *)tmp, "ANDROID!", 8);
 }
 
-static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	BootImageObj *bio = bf->o->bin_obj;
 	RzBinAddr *ptr = NULL;
 	if (!bio) {
 		return NULL;
 	}
 	BootImage *bi = &bio->bi;
-	RzList *ret;
+	RzPVector *ret;
 
-	if (!(ret = rz_list_newf(free))) {
+	if (!(ret = rz_pvector_new(free))) {
 		return NULL;
 	}
 	if (!(ptr = RZ_NEW0(RzBinAddr))) {
@@ -169,7 +169,7 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	}
 	ptr->paddr = bi->page_size;
 	ptr->vaddr = bi->kernel_addr;
-	rz_list_append(ret, ptr);
+	rz_pvector_push(ret, ptr);
 	return ret;
 }
 
@@ -189,7 +189,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
 	}
-	ptr->name = strdup("header");
+	ptr->name = rz_str_dup("header");
 	ptr->size = sizeof(BootImage);
 	ptr->vsize = bi->page_size;
 	ptr->paddr = 0;
@@ -200,7 +200,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
 	}
-	ptr->name = strdup("kernel");
+	ptr->name = rz_str_dup("kernel");
 	ptr->size = bi->kernel_size;
 	ptr->vsize = ADD_REMAINDER(ptr->size, bi->page_size);
 	ptr->paddr = bi->page_size;
@@ -213,7 +213,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		if (!(ptr = RZ_NEW0(RzBinSection))) {
 			return ret;
 		}
-		ptr->name = strdup("ramdisk");
+		ptr->name = rz_str_dup("ramdisk");
 		ptr->size = bi->ramdisk_size;
 		ptr->vsize = ADD_REMAINDER(bi->ramdisk_size, bi->page_size);
 		ptr->paddr = ROUND_DOWN(base, bi->page_size);
@@ -227,7 +227,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		if (!(ptr = RZ_NEW0(RzBinSection))) {
 			return ret;
 		}
-		ptr->name = strdup("second");
+		ptr->name = rz_str_dup("second");
 		ptr->size = bi->second_size;
 		ptr->vsize = ADD_REMAINDER(bi->second_size, bi->page_size);
 		ptr->paddr = ROUND_DOWN(base, bi->page_size);

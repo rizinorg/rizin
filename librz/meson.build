@@ -14,18 +14,16 @@ subdir('diff')
 subdir('io')
 subdir('bp')
 subdir('syscall')
-subdir('search')
 subdir('magic')
+subdir('search')
 subdir('flag')
 subdir('reg')
 subdir('type')
 subdir('bin')
 subdir('config')
-subdir('parse')
 subdir('lang')
-subdir('asm')
 subdir('il')
-subdir('analysis')
+subdir('arch')
 subdir('sign')
 subdir('egg')
 subdir('debug')
@@ -33,7 +31,6 @@ subdir('core')
 
 subdir('main')
 
-conf_data = configuration_data()
 foreach module_name, module : modules
   include_subdirs = ['librz']
   if 'include_subdirs_extra' in module
@@ -82,20 +79,27 @@ foreach module_name, module : modules
   # plugins
   if 'plugins' in module
     foreach plugin : module['plugins']
-      l = []
-      foreach p : plugin.get('list')
-        l += ['&' + plugin.get('base_cname') + p]
+      plugins_h = configuration_data()
+      static_plugins = []
+      export_plugins = []
+      base_name = plugin.get('base_name')
+      base_struct = plugin.get('base_struct')
+      foreach plugin_name : plugin.get('list')
+        plugin_var = base_name + '_plugin_' + plugin_name
+        static_plugins += ['&' + plugin_var]
+        export_plugins += ['extern ' + base_struct + ' ' + plugin_var + ';']
       endforeach
-      conf_data.set(plugin.get('conf_name'), ', '.join(l))
+      plugins_h.set('plugin_static', ', '.join(static_plugins))
+      plugins_h.set('plugin_exports', '\n'.join(export_plugins))
+      plugins_h.set('MODULE_NAME', base_name.to_upper())
+      configure_file(
+        input: 'plugins.h.in',
+        output: base_name + '_plugins.h',
+        configuration: plugins_h
+      )
     endforeach
   endif
 endforeach
-
-config_h = configure_file(
-  input: 'config.h.in',
-  output: 'config.h',
-  configuration: conf_data
-)
 
 if not is_static_libs_only
   conf = configuration_data()

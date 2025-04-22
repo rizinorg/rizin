@@ -4,7 +4,7 @@
 #include <rz_bin.h>
 #include "i/private.h"
 
-static void process_handle_section(RzBinSection *section, RzBinObject *o, HtPP *filter_db) {
+static void process_handle_section(RzBinSection *section, RzBinObject *o, HtSP *filter_db) {
 	// rebase physical address
 	section->paddr += o->opts.loadaddr;
 
@@ -14,8 +14,8 @@ static void process_handle_section(RzBinSection *section, RzBinObject *o, HtPP *
 	}
 
 	// check if section name was already found, then rename it.
-	if (!ht_pp_find(filter_db, section->name, NULL)) {
-		ht_pp_insert(filter_db, section->name, section);
+	if (!ht_sp_find(filter_db, section->name, NULL)) {
+		ht_sp_insert(filter_db, section->name, section);
 		return;
 	}
 
@@ -33,7 +33,7 @@ RZ_IPI void rz_bin_set_and_process_sections(RzBinFile *bf, RzBinObject *o) {
 		o->sections = rz_pvector_new((RzPVectorFree)rz_bin_section_free);
 	}
 
-	HtPP *filter_db = bin->filter ? ht_pp_new0() : NULL;
+	HtSP *filter_db = bin->filter ? ht_sp_new(HT_STR_DUP, NULL, NULL) : NULL;
 
 	void **it;
 	RzBinSection *element;
@@ -42,5 +42,5 @@ RZ_IPI void rz_bin_set_and_process_sections(RzBinFile *bf, RzBinObject *o) {
 		process_handle_section(element, o, filter_db);
 	}
 
-	ht_pp_free(filter_db);
+	ht_sp_free(filter_db);
 }

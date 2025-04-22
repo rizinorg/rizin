@@ -8,14 +8,14 @@ aaa
 afx
 EOF
 EXPECT=<<EOF
-c 0x00005124 -> 0x00005128 ?   jump 0x5128
-c 0x00005130 -> 0x00005134 ?   if (P0) jump:nt 0x5154
-c 0x00005130 -> 0x00005154 ?   if (P0) jump:nt 0x5154
+c 0x00005124 -> 0x00005128 [   jump 0x5128
+c 0x00005130 -> 0x00005134 [   if (P0) jump:nt 0x5154
+c 0x00005130 -> 0x00005154 [   if (P0) jump:nt 0x5154
 c 0x00005134 -> 0x00005138 [   jump 0x5138
 C 0x00005138 -> 0x000050e0 [   call sym.pHello
 C 0x0000513c -> 0x000050f8 [   call sym.pWorld
 c 0x00005140 -> 0x00005144 [   jump 0x5144
-c 0x00005150 -> 0x00005128 ?   jump 0x5128
+c 0x00005150 -> 0x00005128 [   jump 0x5128
 EOF
 RUN
 
@@ -29,12 +29,12 @@ s 0x0000539c
 pi 4
 EOF
 EXPECT=<<EOF
-?   immext(##0xb0c0)
-?   R0 = ##loc._MSG_BASE
-?   immext(##0xd180)
-?   R2 = ##0xd1ac
-?   immext(##0xfe105000)
-?   R3 = ##-0x1efb000
+/   immext(##0xb0c0)
+\   R0 = ##loc._MSG_BASE
+/   immext(##0xd180)
+|   R2 = ##0xd1ac
+|   immext(##0xfe105000)
+\   R3 = ##-0x1efb000
 EOF
 RUN
 
@@ -102,7 +102,6 @@ RUN
 
 NAME=hexagon extended immediate search
 FILE=bins/elf/analysis/hexagon-hello-loop
-BROKEN=1
 CMDS=<<EOF
 b 0x100000
 aar
@@ -110,12 +109,12 @@ aar
 /ai sym.coredump
 EOF
 EXPECT=<<EOF
-0x000051d4   # 4: ?   R1 = ##0x5410
-0x00000b70   # 4: ?   jump sym.coredump
-0x00000b7c   # 4: ?   jump sym.coredump
-0x00000b8c   # 4: ?   jump sym.coredump
-0x00000f48   # 4: ?   jump sym.coredump
-0x000051f0   # 4: ?   R28 = ##sym.coredump
+0x000051d4   # 4: \   R1 = ##sym.sys_TLSFreeAll
+0x00000b70   # 4: [   jump sym.coredump
+0x00000b7c   # 4: [   jump sym.coredump
+0x00000b8c   # 4: [   jump sym.coredump
+0x00000f48   # 4: [   jump sym.coredump
+0x000051f0   # 4: |   R28 = ##sym.coredump
 EOF
 RUN
 
@@ -451,8 +450,8 @@ EOF
 EXPECT=<<EOF
             ; CALL XREF from sym.__libc_start_main @ 0x5e98
 / int main(int argc, char **argv, char **envp);
-|           ; arg int argc @ r0
-|           0x00005110      ?       allocframe(SP,#0x8):raw
+|           ; arg int argc @ R0
+|           0x00005110      [   allocframe(SP,#0x8):raw
 EOF
 RUN
 
@@ -468,8 +467,8 @@ EXPECT=<<EOF
           |  0x5110                                           |
           |   ; CALL XREF from sym.__libc_start_main @ 0x5e98 |
           | int main(int argc, char **argv, char **envp);     |
-          | ; arg int argc @ r0                               |
-          | ?   allocframe(SP,#0x8):raw                       |
+          | ; arg int argc @ R0                               |
+          | [   allocframe(SP,#0x8):raw                       |
           | [   R2 = add(FP,##-0x4)                           |
           | [   memw(R2+#0x0) = ##0x0                         |
           | [   R2 = add(FP,##-0x8)                           |
@@ -495,8 +494,8 @@ EXPECT=<<EOF
 |    |                                         |
 |.------------------------------------.    .-----------------.
 ||  0x5154                            |    |  0x5134         |
-|| ; DATA XREF from main @ 0x5130     |    | ?   jump 0x5138 |
-|| ?   R0 = ##0x0                     |    `-----------------'
+|| ; DATA XREF from main @ 0x5130     |    | [   jump 0x5138 |
+|| [   R0 = ##0x0                     |    `-----------------'
 || [   LR:FP = dealloc_return(FP):raw |        v
 |`------------------------------------'        |
 |                                              |
@@ -536,8 +535,8 @@ pd 12
 EOF
 EXPECT=<<EOF
 / sym.thread_join();
-|           0x00005200      ?       R1 = HTID
-|           0x00005204      ?       R3 = ##0x1
+|           0x00005200      /       R1 = HTID
+|           0x00005204      \       R3 = ##0x1
 |           0x00005208      [   R1 = asl(R3,R1)
 |           0x0000520c      [   R1 = sub(##-0x1,R1)
 |           0x00005210      [   R0 = and(R0,R1)
@@ -565,7 +564,7 @@ pd 11
 EOF
 EXPECT=<<EOF
 / sym.sys_deinit_tls();
-|           0x00005344      ?       R2 = UGP
+|           0x00005344      [   R2 = UGP
 |           0x00005348      /       immext(##loc.CoreDump)             ; 0x1100
 |           0x0000534c      |       R3 = memw(GP+##loc._TLSEnd)        ; 0x1110
 |           0x00005350      |       immext(##loc.CoreDump)             ; 0x1100
@@ -588,7 +587,7 @@ s 0x00005abc
 pd 22
 EOF
 EXPECT=<<EOF
-|       ,=< 0x00005abc      ?       if (P3) jump:nt 0x5b1c
+|       ,=< 0x00005abc      [   if (P3) jump:nt 0x5b1c
 |       |   ; CODE XREF from sym.memcpy @ 0x5abc
 |      ,==< 0x00005ac0      /       loop0(0x5acc,R4)
 |      ||   0x00005ac4      |       P0 = cmp.gtu(R4,##0x1)
@@ -625,11 +624,11 @@ s 0x00008df4
 axt
 EOF
 EXPECT=<<EOF
-sym._Mbtowcx 0x8df0 [CODE] ?   loop0(0x8df4,R2)
-sym._Mbtowcx 0x8e3c [CODE] ?   R6 = ##0x1 ; R7 = add(R7,#1)
-sym._Mbtowcx 0x8e54 [CODE] ?   R6 = ##0x2 ; R7 = add(R7,#1)
-sym._Mbtowcx 0x8e70 [CODE] ?   R6 = ##0x3 ; R7 = add(R7,#1)
-sym._Mbtowcx 0x8e98 [CODE] ?   nop
+sym._Mbtowcx 0x8df0 [CODE] [   loop0(0x8df4,R2)
+sym._Mbtowcx 0x8e3c [CODE] \   R6 = ##0x1 ; R7 = add(R7,#1)     < endloop0
+sym._Mbtowcx 0x8e54 [CODE] \   R6 = ##0x2 ; R7 = add(R7,#1)     < endloop0
+sym._Mbtowcx 0x8e70 [CODE] \   R6 = ##0x3 ; R7 = add(R7,#1)     < endloop0
+sym._Mbtowcx 0x8e98 [CODE] \   nop     < endloop0
 EOF
 RUN
 
@@ -717,7 +716,7 @@ e asm.arch=hexagon
 arp~[0-1]
 EOF
 EXPECT=<<EOF
-PC pc
+PC C9
 SP R29
 BP R30
 LR R31
@@ -732,632 +731,663 @@ A5 R5
 R0 R0
 R1 R1
 ctr C0
-ctr C1
-ctr C2
-ctr C3
-ctr C4
-ctr C5
-ctr C6
-ctr C7
-ctr C8
-ctr C9
-ctr C10
-ctr C11
-ctr C12
-ctr C13
-ctr C14
-ctr C15
-ctr C16
-ctr C17
-ctr C18
-ctr C19
-ctr C30
-ctr C31
-ctr C1:0
-ctr C3:2
-ctr C5:4
-ctr C7:6
-ctr C9:8
-ctr C11:10
-ctr C13:12
-ctr C15:14
-ctr C17:16
-ctr C19:18
-ctr C31:30
-gpr R1:0
-gpr R3:2
-gpr R5:4
-gpr R7:6
-gpr R9:8
-gpr R11:10
-gpr R13:12
-gpr R15:14
-gpr R17:16
-gpr R19:18
-gpr R21:20
-gpr R23:22
-gpr R25:24
-gpr R27:26
-gpr R29:28
-gpr R31:30
-gpr G0
-gpr G1
-gpr G2
-gpr G3
-gpr G4
-gpr G5
-gpr G6
-gpr G7
-gpr G8
-gpr G9
-gpr G10
-gpr G11
-gpr G12
-gpr G13
-gpr G14
-gpr G15
-gpr G16
-gpr G17
-gpr G18
-gpr G19
-gpr G20
-gpr G21
-gpr G22
-gpr G23
-gpr G24
-gpr G25
-gpr G26
-gpr G27
-gpr G28
-gpr G29
-gpr G30
-gpr G31
-gpr G1:0
-gpr G3:2
-gpr G5:4
-gpr G7:6
-gpr G9:8
-gpr G11:10
-gpr G13:12
-gpr G15:14
-gpr G17:16
-gpr G19:18
-gpr G21:20
-gpr G23:22
-gpr G25:24
-gpr G27:26
-gpr G29:28
-gpr G31:30
-vcc Q0
-vcc Q1
-vcc Q2
-vcc Q3
-vc V3:0
-vc V7:4
-vc V11:8
-vc V15:12
-vc V19:16
-vc V23:20
-vc V27:24
-vc V31:28
-vc V0
-vc V1
-vc V2
-vc V3
-vc V4
-vc V5
-vc V6
-vc V7
-vc V8
-vc V9
-vc V10
-vc V11
-vc V12
-vc V13
-vc V14
-vc V15
-vc V16
-vc V17
-vc V18
-vc V19
-vc V20
-vc V21
-vc V22
-vc V23
-vc V24
-vc V25
-vc V26
-vc V27
-vc V28
-vc V29
-vc V30
-vc V31
-vc V1:0
-vc V3:2
-vc V5:4
-vc V7:6
-vc V9:8
-vc V11:10
-vc V13:12
-vc V15:14
-vc V17:16
-vc V19:18
-vc V21:20
-vc V23:22
-vc V25:24
-vc V27:26
-vc V29:28
-vc V31:30
-gpr R0
-gpr R1
-gpr R2
-gpr R3
-gpr R4
-gpr R5
-gpr R6
-gpr R7
-gpr R8
-gpr R9
-gpr R10
-gpr R11
-gpr R12
-gpr R13
-gpr R14
-gpr R15
-gpr R16
-gpr R17
-gpr R18
-gpr R19
-gpr R20
-gpr R21
-gpr R22
-gpr R23
-gpr R24
-gpr R25
-gpr R26
-gpr R27
-gpr R28
-gpr R29
-gpr R30
-gpr R31
-ctr P0
-ctr P1
-ctr P2
-ctr P3
-sys S0
-sys S1
-sys S2
-sys S3
-sys S4
-sys S5
-sys S6
-sys S7
-sys S8
-sys S9
-sys S10
-sys S11
-sys S12
-sys S13
-sys S14
-sys S15
-sys S16
-sys S17
-sys S18
-sys S19
-sys S20
-sys S21
-sys S22
-sys S23
-sys S24
-sys S25
-sys S26
-sys S27
-sys S28
-sys S29
-sys S30
-sys S31
-sys S32
-sys S33
-sys S34
-sys S35
-sys S36
-sys S37
-sys S38
-sys S39
-sys S40
-sys S41
-sys S42
-sys S43
-sys S44
-sys S45
-sys S46
-sys S47
-sys S48
-sys S49
-sys S50
-sys S51
-sys S52
-sys S53
-sys S54
-sys S55
-sys S56
-sys S57
-sys S58
-sys S59
-sys S60
-sys S61
-sys S62
-sys S63
-sys S64
-sys S65
-sys S66
-sys S67
-sys S68
-sys S69
-sys S70
-sys S71
-sys S72
-sys S73
-sys S74
-sys S75
-sys S76
-sys S77
-sys S78
-sys S79
-sys S80
-sys S1:0
-sys S3:2
-sys S5:4
-sys S7:6
-sys S9:8
-sys S11:10
-sys S13:12
-sys S15:14
-sys S17:16
-sys S19:18
-sys S21:20
-sys S23:22
-sys S25:24
-sys S27:26
-sys S29:28
-sys S31:30
-sys S33:32
-sys S35:34
-sys S37:36
-sys S39:38
-sys S41:40
-sys S43:42
-sys S45:44
-sys S47:46
-sys S49:48
-sys S51:50
-sys S53:52
-sys S55:54
-sys S57:56
-sys S59:58
-sys S61:60
-sys S63:62
-sys S65:64
-sys S67:66
-sys S69:68
-sys S71:70
-sys S73:72
-sys S75:74
-sys S77:76
-sys S79:78
 ctr C0_tmp
+ctr C1
 ctr C1_tmp
+ctr C2
 ctr C2_tmp
+ctr C3
 ctr C3_tmp
+ctr C4
 ctr C4_tmp
+ctr C5
 ctr C5_tmp
+ctr C6
 ctr C6_tmp
+ctr C7
 ctr C7_tmp
+ctr C8
 ctr C8_tmp
+ctr C9
 ctr C9_tmp
+ctr C10
 ctr C10_tmp
+ctr C11
 ctr C11_tmp
+ctr C12
 ctr C12_tmp
+ctr C13
 ctr C13_tmp
+ctr C14
 ctr C14_tmp
+ctr C15
 ctr C15_tmp
+ctr C16
 ctr C16_tmp
+ctr C17
 ctr C17_tmp
+ctr C18
 ctr C18_tmp
+ctr C19
 ctr C19_tmp
+ctr C20
+ctr C20_tmp
+ctr C21
+ctr C21_tmp
+ctr C22
+ctr C22_tmp
+ctr C23
+ctr C23_tmp
+ctr C24
+ctr C24_tmp
+ctr C25
+ctr C25_tmp
+ctr C26
+ctr C26_tmp
+ctr C27
+ctr C27_tmp
+ctr C28
+ctr C28_tmp
+ctr C29
+ctr C29_tmp
+ctr C30
 ctr C30_tmp
+ctr C31
 ctr C31_tmp
+ctr C1:0
 ctr C1:0_tmp
+ctr C3:2
 ctr C3:2_tmp
+ctr C5:4
 ctr C5:4_tmp
+ctr C7:6
 ctr C7:6_tmp
+ctr C9:8
 ctr C9:8_tmp
+ctr C11:10
 ctr C11:10_tmp
+ctr C13:12
 ctr C13:12_tmp
+ctr C15:14
 ctr C15:14_tmp
+ctr C17:16
 ctr C17:16_tmp
+ctr C19:18
 ctr C19:18_tmp
+ctr C21:20
+ctr C21:20_tmp
+ctr C23:22
+ctr C23:22_tmp
+ctr C25:24
+ctr C25:24_tmp
+ctr C27:26
+ctr C27:26_tmp
+ctr C29:28
+ctr C29:28_tmp
+ctr C31:30
 ctr C31:30_tmp
+gpr R1:0
 gpr R1:0_tmp
+gpr R3:2
 gpr R3:2_tmp
+gpr R5:4
 gpr R5:4_tmp
+gpr R7:6
 gpr R7:6_tmp
+gpr R9:8
 gpr R9:8_tmp
+gpr R11:10
 gpr R11:10_tmp
+gpr R13:12
 gpr R13:12_tmp
+gpr R15:14
 gpr R15:14_tmp
+gpr R17:16
 gpr R17:16_tmp
+gpr R19:18
 gpr R19:18_tmp
+gpr R21:20
 gpr R21:20_tmp
+gpr R23:22
 gpr R23:22_tmp
+gpr R25:24
 gpr R25:24_tmp
+gpr R27:26
 gpr R27:26_tmp
+gpr R29:28
 gpr R29:28_tmp
+gpr R31:30
 gpr R31:30_tmp
+gpr G0
 gpr G0_tmp
+gpr G1
 gpr G1_tmp
+gpr G2
 gpr G2_tmp
+gpr G3
 gpr G3_tmp
+gpr G4
 gpr G4_tmp
+gpr G5
 gpr G5_tmp
+gpr G6
 gpr G6_tmp
+gpr G7
 gpr G7_tmp
+gpr G8
 gpr G8_tmp
+gpr G9
 gpr G9_tmp
+gpr G10
 gpr G10_tmp
+gpr G11
 gpr G11_tmp
+gpr G12
 gpr G12_tmp
+gpr G13
 gpr G13_tmp
+gpr G14
 gpr G14_tmp
+gpr G15
 gpr G15_tmp
+gpr G16
 gpr G16_tmp
+gpr G17
 gpr G17_tmp
+gpr G18
 gpr G18_tmp
+gpr G19
 gpr G19_tmp
+gpr G20
 gpr G20_tmp
+gpr G21
 gpr G21_tmp
+gpr G22
 gpr G22_tmp
+gpr G23
 gpr G23_tmp
+gpr G24
 gpr G24_tmp
+gpr G25
 gpr G25_tmp
+gpr G26
 gpr G26_tmp
+gpr G27
 gpr G27_tmp
+gpr G28
 gpr G28_tmp
+gpr G29
 gpr G29_tmp
+gpr G30
 gpr G30_tmp
+gpr G31
 gpr G31_tmp
+gpr G1:0
 gpr G1:0_tmp
+gpr G3:2
 gpr G3:2_tmp
+gpr G5:4
 gpr G5:4_tmp
+gpr G7:6
 gpr G7:6_tmp
+gpr G9:8
 gpr G9:8_tmp
+gpr G11:10
 gpr G11:10_tmp
+gpr G13:12
 gpr G13:12_tmp
+gpr G15:14
 gpr G15:14_tmp
+gpr G17:16
 gpr G17:16_tmp
+gpr G19:18
 gpr G19:18_tmp
+gpr G21:20
 gpr G21:20_tmp
+gpr G23:22
 gpr G23:22_tmp
+gpr G25:24
 gpr G25:24_tmp
+gpr G27:26
 gpr G27:26_tmp
+gpr G29:28
 gpr G29:28_tmp
+gpr G31:30
 gpr G31:30_tmp
+vcc Q0
 vcc Q0_tmp
+vcc Q1
 vcc Q1_tmp
+vcc Q2
 vcc Q2_tmp
+vcc Q3
 vcc Q3_tmp
+vc V3:0
 vc V3:0_tmp
+vc V7:4
 vc V7:4_tmp
+vc V11:8
 vc V11:8_tmp
+vc V15:12
 vc V15:12_tmp
+vc V19:16
 vc V19:16_tmp
+vc V23:20
 vc V23:20_tmp
+vc V27:24
 vc V27:24_tmp
+vc V31:28
 vc V31:28_tmp
+vc V0
 vc V0_tmp
+vc V1
 vc V1_tmp
+vc V2
 vc V2_tmp
+vc V3
 vc V3_tmp
+vc V4
 vc V4_tmp
+vc V5
 vc V5_tmp
+vc V6
 vc V6_tmp
+vc V7
 vc V7_tmp
+vc V8
 vc V8_tmp
+vc V9
 vc V9_tmp
+vc V10
 vc V10_tmp
+vc V11
 vc V11_tmp
+vc V12
 vc V12_tmp
+vc V13
 vc V13_tmp
+vc V14
 vc V14_tmp
+vc V15
 vc V15_tmp
+vc V16
 vc V16_tmp
+vc V17
 vc V17_tmp
+vc V18
 vc V18_tmp
+vc V19
 vc V19_tmp
+vc V20
 vc V20_tmp
+vc V21
 vc V21_tmp
+vc V22
 vc V22_tmp
+vc V23
 vc V23_tmp
+vc V24
 vc V24_tmp
+vc V25
 vc V25_tmp
+vc V26
 vc V26_tmp
+vc V27
 vc V27_tmp
+vc V28
 vc V28_tmp
+vc V29
 vc V29_tmp
+vc V30
 vc V30_tmp
+vc V31
 vc V31_tmp
+vc V1:0
 vc V1:0_tmp
+vc V3:2
 vc V3:2_tmp
+vc V5:4
 vc V5:4_tmp
+vc V7:6
 vc V7:6_tmp
+vc V9:8
 vc V9:8_tmp
+vc V11:10
 vc V11:10_tmp
+vc V13:12
 vc V13:12_tmp
+vc V15:14
 vc V15:14_tmp
+vc V17:16
 vc V17:16_tmp
+vc V19:18
 vc V19:18_tmp
+vc V21:20
 vc V21:20_tmp
+vc V23:22
 vc V23:22_tmp
+vc V25:24
 vc V25:24_tmp
+vc V27:26
 vc V27:26_tmp
+vc V29:28
 vc V29:28_tmp
+vc V31:30
 vc V31:30_tmp
+gpr R0
 gpr R0_tmp
+gpr R1
 gpr R1_tmp
+gpr R2
 gpr R2_tmp
+gpr R3
 gpr R3_tmp
+gpr R4
 gpr R4_tmp
+gpr R5
 gpr R5_tmp
+gpr R6
 gpr R6_tmp
+gpr R7
 gpr R7_tmp
+gpr R8
 gpr R8_tmp
+gpr R9
 gpr R9_tmp
+gpr R10
 gpr R10_tmp
+gpr R11
 gpr R11_tmp
+gpr R12
 gpr R12_tmp
+gpr R13
 gpr R13_tmp
+gpr R14
 gpr R14_tmp
+gpr R15
 gpr R15_tmp
+gpr R16
 gpr R16_tmp
+gpr R17
 gpr R17_tmp
+gpr R18
 gpr R18_tmp
+gpr R19
 gpr R19_tmp
+gpr R20
 gpr R20_tmp
+gpr R21
 gpr R21_tmp
+gpr R22
 gpr R22_tmp
+gpr R23
 gpr R23_tmp
+gpr R24
 gpr R24_tmp
+gpr R25
 gpr R25_tmp
+gpr R26
 gpr R26_tmp
+gpr R27
 gpr R27_tmp
+gpr R28
 gpr R28_tmp
+gpr R29
 gpr R29_tmp
+gpr R30
 gpr R30_tmp
+gpr R31
 gpr R31_tmp
+ctr P0
 ctr P0_tmp
+ctr P1
 ctr P1_tmp
+ctr P2
 ctr P2_tmp
+ctr P3
 ctr P3_tmp
+sys S0
 sys S0_tmp
+sys S1
 sys S1_tmp
+sys S2
 sys S2_tmp
+sys S3
 sys S3_tmp
+sys S4
 sys S4_tmp
+sys S5
 sys S5_tmp
+sys S6
 sys S6_tmp
+sys S7
 sys S7_tmp
+sys S8
 sys S8_tmp
+sys S9
 sys S9_tmp
+sys S10
 sys S10_tmp
+sys S11
 sys S11_tmp
+sys S12
 sys S12_tmp
+sys S13
 sys S13_tmp
+sys S14
 sys S14_tmp
+sys S15
 sys S15_tmp
+sys S16
 sys S16_tmp
+sys S17
 sys S17_tmp
+sys S18
 sys S18_tmp
+sys S19
 sys S19_tmp
+sys S20
 sys S20_tmp
+sys S21
 sys S21_tmp
+sys S22
 sys S22_tmp
+sys S23
 sys S23_tmp
+sys S24
 sys S24_tmp
+sys S25
 sys S25_tmp
+sys S26
 sys S26_tmp
+sys S27
 sys S27_tmp
+sys S28
 sys S28_tmp
+sys S29
 sys S29_tmp
+sys S30
 sys S30_tmp
+sys S31
 sys S31_tmp
+sys S32
 sys S32_tmp
+sys S33
 sys S33_tmp
+sys S34
 sys S34_tmp
+sys S35
 sys S35_tmp
+sys S36
 sys S36_tmp
+sys S37
 sys S37_tmp
+sys S38
 sys S38_tmp
+sys S39
 sys S39_tmp
+sys S40
 sys S40_tmp
+sys S41
 sys S41_tmp
+sys S42
 sys S42_tmp
+sys S43
 sys S43_tmp
+sys S44
 sys S44_tmp
+sys S45
 sys S45_tmp
+sys S46
 sys S46_tmp
+sys S47
 sys S47_tmp
+sys S48
 sys S48_tmp
+sys S49
 sys S49_tmp
+sys S50
 sys S50_tmp
+sys S51
 sys S51_tmp
+sys S52
 sys S52_tmp
+sys S53
 sys S53_tmp
+sys S54
 sys S54_tmp
+sys S55
 sys S55_tmp
+sys S56
 sys S56_tmp
+sys S57
 sys S57_tmp
+sys S58
 sys S58_tmp
+sys S59
 sys S59_tmp
+sys S60
 sys S60_tmp
+sys S61
 sys S61_tmp
+sys S62
 sys S62_tmp
+sys S63
 sys S63_tmp
+sys S64
 sys S64_tmp
+sys S65
 sys S65_tmp
+sys S66
 sys S66_tmp
+sys S67
 sys S67_tmp
+sys S68
 sys S68_tmp
+sys S69
 sys S69_tmp
+sys S70
 sys S70_tmp
+sys S71
 sys S71_tmp
+sys S72
 sys S72_tmp
+sys S73
 sys S73_tmp
+sys S74
 sys S74_tmp
+sys S75
 sys S75_tmp
+sys S76
 sys S76_tmp
+sys S77
 sys S77_tmp
+sys S78
 sys S78_tmp
+sys S79
 sys S79_tmp
+sys S80
 sys S80_tmp
+sys S1:0
 sys S1:0_tmp
+sys S3:2
 sys S3:2_tmp
+sys S5:4
 sys S5:4_tmp
+sys S7:6
 sys S7:6_tmp
+sys S9:8
 sys S9:8_tmp
+sys S11:10
 sys S11:10_tmp
+sys S13:12
 sys S13:12_tmp
+sys S15:14
 sys S15:14_tmp
+sys S17:16
 sys S17:16_tmp
+sys S19:18
 sys S19:18_tmp
+sys S21:20
 sys S21:20_tmp
+sys S23:22
 sys S23:22_tmp
+sys S25:24
 sys S25:24_tmp
+sys S27:26
 sys S27:26_tmp
+sys S29:28
 sys S29:28_tmp
+sys S31:30
 sys S31:30_tmp
+sys S33:32
 sys S33:32_tmp
+sys S35:34
 sys S35:34_tmp
+sys S37:36
 sys S37:36_tmp
+sys S39:38
 sys S39:38_tmp
+sys S41:40
 sys S41:40_tmp
+sys S43:42
 sys S43:42_tmp
+sys S45:44
 sys S45:44_tmp
+sys S47:46
 sys S47:46_tmp
+sys S49:48
 sys S49:48_tmp
+sys S51:50
 sys S51:50_tmp
+sys S53:52
 sys S53:52_tmp
+sys S55:54
 sys S55:54_tmp
+sys S57:56
 sys S57:56_tmp
+sys S59:58
 sys S59:58_tmp
+sys S61:60
 sys S61:60_tmp
+sys S63:62
 sys S63:62_tmp
+sys S65:64
 sys S65:64_tmp
+sys S67:66
 sys S67:66_tmp
+sys S69:68
 sys S69:68_tmp
+sys S71:70
 sys S71:70_tmp
+sys S73:72
 sys S73:72_tmp
+sys S75:74
 sys S75:74_tmp
+sys S77:76
 sys S77:76_tmp
+sys S79:78
+sys S79:78_tmp
 EOF
 RUN
 
@@ -1369,7 +1399,7 @@ s loc.r_hex_32
 px 16~[1-8]
 EOF
 EXPECT=<<EOF
-?   nop
+[   nop
 [   nop
 [   nop
 [   nop
@@ -1401,5 +1431,120 @@ EXPECT=<<EOF
 \   R0 = memw(R0+##loc.test_sym)
 offset - 0 1 2 3 4 5
 3400 0008 3400 0000 3400 0000 7cff ffff
+EOF
+RUN
+
+NAME=hexagon relocation tests II
+FILE=bins/elf/hexagon/relocs
+CMDS=<<EOF
+ir
+EOF
+EXPECT=<<EOF
+     vaddr      paddr     target type              name                  
+-------------------------------------------------------------------------
+0x08000048 0x00000048 0x08000034 R_HEX_B15_PCREL   test_sym - 0x08000048
+0x0800004c 0x0000004c 0x08000034 R_HEX_B7_PCREL    test_sym - 0x0800004c
+0x08000050 0x00000050 0x08000034 R_HEX_LO16        test_sym
+0x08000054 0x00000054 0x08000034 R_HEX_HI16        test_sym
+0x08000058 0x00000058 0x08000034 R_HEX_B13_PCREL   test_sym - 0x08000058
+0x0800005c 0x0000005c 0x08000034 R_HEX_B9_PCREL    test_sym - 0x0800005c
+0x08000060 0x00000060 0x08000034 R_HEX_B32_PCREL_X test_sym - 0x08000060
+0x08000064 0x00000064 0x08000034 R_HEX_B22_PCREL_X test_sym - 0x08000060
+0x08000068 0x00000068 0x08000034 R_HEX_32_6_X      test_sym
+0x0800006c 0x0000006c 0x08000034 R_HEX_16_X        test_sym
+0x08000070 0x00000070 0x08000034 R_HEX_B32_PCREL_X test_sym - 0x08000070
+0x08000074 0x00000074 0x08000034 R_HEX_B22_PCREL_X test_sym - 0x08000070
+0x08000078 0x00000078 0x08000034 R_HEX_B32_PCREL_X test_sym - 0x08000078
+0x0800007c 0x0000007c 0x08000034 R_HEX_B15_PCREL_X test_sym - 0x08000078
+0x08000080 0x00000080 0x08000034 R_HEX_B32_PCREL_X test_sym - 0x08000080
+0x08000084 0x00000084 0x08000034 R_HEX_B7_PCREL_X  test_sym - 0x08000080
+0x0800008c 0x0000008c 0x08000034 R_HEX_B32_PCREL_X test_sym - 0x0800008c
+0x08000090 0x00000090 0x08000034 R_HEX_6_PCREL_X   test_sym - 0x0800008c
+0x080000ac 0x000000ac 0x08000034 R_HEX_32          test_sym
+0x080000b0 0x000000b0 0x08000034 R_HEX_16          test_sym
+0x080000b4 0x000000b4 0x08000034 R_HEX_8           test_sym
+0x080000b8 0x000000b8 0x08000034 R_HEX_32_PCREL    test_sym - 0x080000b8
+EOF
+RUN
+
+NAME=hexagon tail calls
+FILE=bins/elf/analysis/hexagon-hello-loop
+CMDS=<<EOF
+s 0x00008f04
+af
+pdf
+EOF
+EXPECT=<<EOF
+/ sym._Mbtowc();
+|           0x00008f04      /       R17:16 = combine(R2,R3)
+|           0x00008f08      \       memd(R29+#-0x10) = R17:16 ; allocframe(#0x10)
+|           0x00008f0c      [   R4 = memw(GP+##0x18)
+|           0x00008f10      /       R19:18 = combine(R0,R1)
+|           0x00008f14      \       memd(SP+##0x0) = R19:18
+|       ,=< 0x00008f18      [   P0 = cmp.eq(R4,#0x0); if (P0.new) jump:nt 0x8f20
+|       |   0x00008f1c      [   callr R4
+|       `-> 0x00008f20      /       R1:0 = combine(R18,R19)
+|           0x00008f24      |       R3:2 = combine(R16,R17)
+|           0x00008f28      |       immext(##0xd980)
+|           0x00008f2c      \       R4 = ##obj._Mbstate
+|           0x00008f30      [   R17:16 = memd(R29+#0x8) ; R19:18 = memd(R29+#0x0)
+|           0x00008f34      /       jump sym._Mbtowcx
+\           0x00008f38      \       LR:FP = deallocframe(FP):raw
+EOF
+RUN
+
+NAME=hexagon instructions buffer edge cases. 4 instr.
+FILE=bins/elf/analysis/hexagon-hello-loop
+CMDS=<<EOF
+# Check if the instruction packet is disassembled correctly,
+# Although, they are decoded in a chaotic order (not from low to high address).
+pi 1 @ 0x000053cc # instr. 1
+pi 1 @ 0x000053d4 # instr. 3
+pi 5 @ 0x000053c4 # instr 0 - 3 and one before
+aoi @ 0x000053c8
+EOF
+EXPECT=<<EOF
+|   R4 = add(R4,##0x4)
+\   if (P0.new) R16 = ##0xb
+?   R2 = add(R2,##0x18) ; R3 = add(R3,#1)
+/   if (!P0.new) jump:t 0x53b4
+|   R4 = add(R4,##0x4)
+|   P0 = cmp.gtu(R5,##0x3f)
+\   if (P0.new) R16 = ##0xb
+0x53c8 (seq empty (set jump_flag false) (set jump_target (bv 32 0xffffffff)) (set s (bv 32 0x4)) (set R4_tmp (cast 32 false (cast 32 false (+ (var R4) (var s))))) (set u (bv 32 0x3f)) (set P0_tmp (cast 8 false (cast 8 (msb (ite (! (ule (cast 32 false (var R5)) (var u))) (bv 32 0xff) (bv 32 0x0))) (ite (! (ule (cast 32 false (var R5)) (var u))) (bv 32 0xff) (bv 32 0x0))))) (set s (bv 32 0xb)) (branch (! (is_zero (& (cast 32 (msb (var P0_tmp)) (var P0_tmp)) (bv 32 0x1)))) (set R16_tmp (cast 32 false (cast 32 false (var s)))) nop) (set r (bv 32 0xffffffec)) (branch (! (! (is_zero (& (cast 32 (msb (var P0_tmp)) (var P0_tmp)) (bv 32 0x1))))) (seq (set r (& (var r) (bv 32 0xfffffffc))) (set jump_flag true) (set jump_target (+ (bv 32 0x53c8) (cast 32 false (var r))))) empty) empty (set R4 (var R4_tmp)) (set R16 (var R16_tmp)) (set P0 (var P0_tmp)) (branch (var jump_flag) (jmp (var jump_target)) (jmp (bv 32 0x53d8))))
+EOF
+RUN
+
+NAME=hexagon instructions buffer edge cases. 4 instr. Rev
+FILE=bins/elf/analysis/hexagon-hello-loop
+CMDS=<<EOF
+# Check if the instruction packet is disassembled correctly,
+# Although, they are decoded in a chaotic order (not from low to high address).
+pi 1 @ 0x000053d4 # instr. 3
+pi 1 @ 0x000053cc # instr. 1
+pi 5 @ 0x000053c4 # instr 0 - 3 and one before
+aoi @ 0x000053c8
+EOF
+EXPECT=<<EOF
+\   if (P0.new) R16 = ##0xb
+|   R4 = add(R4,##0x4)
+?   R2 = add(R2,##0x18) ; R3 = add(R3,#1)
+/   if (!P0.new) jump:t 0x53b4
+|   R4 = add(R4,##0x4)
+|   P0 = cmp.gtu(R5,##0x3f)
+\   if (P0.new) R16 = ##0xb
+0x53c8 (seq empty (set jump_flag false) (set jump_target (bv 32 0xffffffff)) (set s (bv 32 0x4)) (set R4_tmp (cast 32 false (cast 32 false (+ (var R4) (var s))))) (set u (bv 32 0x3f)) (set P0_tmp (cast 8 false (cast 8 (msb (ite (! (ule (cast 32 false (var R5)) (var u))) (bv 32 0xff) (bv 32 0x0))) (ite (! (ule (cast 32 false (var R5)) (var u))) (bv 32 0xff) (bv 32 0x0))))) (set s (bv 32 0xb)) (branch (! (is_zero (& (cast 32 (msb (var P0_tmp)) (var P0_tmp)) (bv 32 0x1)))) (set R16_tmp (cast 32 false (cast 32 false (var s)))) nop) (set r (bv 32 0xffffffec)) (branch (! (! (is_zero (& (cast 32 (msb (var P0_tmp)) (var P0_tmp)) (bv 32 0x1))))) (seq (set r (& (var r) (bv 32 0xfffffffc))) (set jump_flag true) (set jump_target (+ (bv 32 0x53c8) (cast 32 false (var r))))) empty) empty (set R4 (var R4_tmp)) (set R16 (var R16_tmp)) (set P0 (var P0_tmp)) (branch (var jump_flag) (jmp (var jump_target)) (jmp (bv 32 0x53d8))))
+EOF
+RUN
+
+NAME=hexagon missig first instruction issue
+FILE=bins/elf/hexagon/hexagon_discover_recurse
+CMDS=<<EOF
+pi 3
+EOF
+EXPECT=<<EOF
+?   allocframe(SP,#0x8):raw
+[   R0 = add(FP,##-0x4)
+[   memw(R0+#0x0) = ##-0x1
 EOF
 RUN

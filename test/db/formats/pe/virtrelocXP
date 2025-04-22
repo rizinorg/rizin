@@ -1,8 +1,7 @@
 NAME=PE: corkami virtrelocXP.exe - open
 FILE=bins/pe/virtrelocXP.exe
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=PE: corkami virtrelocXP.exe - entrypoint

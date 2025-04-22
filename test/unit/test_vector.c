@@ -742,7 +742,7 @@ static bool test_vector_foreach(void) {
 	int i = 1;
 	ut32 *it;
 	int acc[5] = { 0 };
-	rz_vector_foreach(&v, it) {
+	rz_vector_foreach (&v, it) {
 		mu_assert_eq(acc[*it], 0, "unset acc element");
 		acc[*it] = i++;
 	}
@@ -753,7 +753,7 @@ static bool test_vector_foreach(void) {
 
 	int acc_prev[5] = { 0 };
 	i = 5;
-	rz_vector_foreach_prev(&v, it) {
+	rz_vector_foreach_prev (&v, it) {
 		mu_assert_eq(acc_prev[*it], 0, "unset acc_prev element");
 		acc_prev[*it] = i++;
 	}
@@ -940,6 +940,24 @@ static bool test_pvector_contains(void) {
 	mu_assert_ptreq(p, (void **)v.v.a + 3, "contains");
 	p = rz_pvector_contains(&v, 0);
 	mu_assert_null(p, "!contains");
+	rz_pvector_clear(&v);
+	mu_end;
+}
+
+static bool test_pvector_assign_at(void) {
+	RzPVector v;
+	init_test_pvector(&v, 5, 0);
+	ut32 *x = malloc(sizeof(ut32));
+	*x = 123467890;
+	ut32 *e = rz_pvector_assign_at(&v, 3, &x);
+	mu_assert_eq(*e, 3, "assign_at ret");
+	free(e);
+	mu_assert_eq(v.v.len, 5UL, "assign_at => len");
+	mu_assert_eq(*((ut32 **)v.v.a)[0], 0, "assign_at => content at 0");
+	mu_assert_eq(*((ut32 **)v.v.a)[1], 1, "assign_at => content at 1");
+	mu_assert_eq(*((ut32 **)v.v.a)[2], 2, "assign_at => content at 2");
+	mu_assert_eq(*((ut32 **)v.v.a)[3], 123467890, "assign_at => content at 3");
+	mu_assert_eq(*((ut32 **)v.v.a)[4], 4, "assign_at => content at 4");
 	rz_pvector_clear(&v);
 	mu_end;
 }
@@ -1277,6 +1295,13 @@ static bool test_pvector_foreach(void) {
 		mu_assert_eq(acc_prev[i], 10 - i - 1, "acc_prev");
 	}
 
+	int idx;
+	rz_pvector_enumerate (&v, it, idx) {
+		void *e = *it;
+		int ev = (int)((size_t)e);
+		mu_assert_eq(ev, idx, "rz_pvector_enumerate index");
+	}
+
 	rz_pvector_clear(&v);
 
 	mu_end;
@@ -1438,6 +1463,7 @@ static int all_tests(void) {
 	mu_run_test(test_pvector_join);
 	mu_run_test(test_pvector_contains);
 	mu_run_test(test_pvector_remove_at);
+	mu_run_test(test_pvector_assign_at);
 	mu_run_test(test_pvector_insert);
 	mu_run_test(test_pvector_insert_range);
 	mu_run_test(test_pvector_pop);

@@ -49,14 +49,14 @@ static bool test_migrate_v1_v2_noreturn() {
 	Sdb *types_db = sdb_ns(analysis_db, "types", false);
 	mu_assert_notnull(types_db, "types ns");
 
-	mu_assert_null(sdb_get(types_db, "addr.1337.noreturn", 0), "old noreturn deleted");
-	mu_assert_null(sdb_get(types_db, "addr.4242.noreturn", 0), "old noreturn deleted");
+	mu_assert_null(sdb_get(types_db, "addr.1337.noreturn"), "old noreturn deleted");
+	mu_assert_null(sdb_get(types_db, "addr.4242.noreturn"), "old noreturn deleted");
 
 	Sdb *noreturn_db = sdb_ns(analysis_db, "noreturn", false);
 	mu_assert_notnull(noreturn_db, "noreturn ns");
 
-	mu_assert_streq_free(sdb_get(noreturn_db, "addr.1337.noreturn", 0), "true", "new noreturn added");
-	mu_assert_streq_free(sdb_get(noreturn_db, "addr.4242.noreturn", 0), "true", "new noreturn added");
+	mu_assert_streq_free(sdb_get(noreturn_db, "addr.1337.noreturn"), "true", "new noreturn added");
+	mu_assert_streq_free(sdb_get(noreturn_db, "addr.4242.noreturn"), "true", "new noreturn added");
 
 	rz_serialize_result_info_free(res);
 	rz_project_free(prj);
@@ -100,18 +100,18 @@ static bool test_migrate_v2_v3_typelink_callables() {
 
 	Sdb *types_db = sdb_ns(analysis_db, "types", false);
 	mu_assert_notnull(types_db, "types ns");
-	mu_assert_null(sdb_get(types_db, "func._Exit.args", 0), "old function deleted");
-	mu_assert_null(sdb_get(types_db, "_Exit", 0), "old function deleted");
-	mu_assert_null(sdb_get(types_db, "link.080484b0", 0), "old typelink deleted");
+	mu_assert_null(sdb_get(types_db, "func._Exit.args"), "old function deleted");
+	mu_assert_null(sdb_get(types_db, "_Exit"), "old function deleted");
+	mu_assert_null(sdb_get(types_db, "link.080484b0"), "old typelink deleted");
 
 	Sdb *callables_db = sdb_ns(analysis_db, "callables", false);
 	mu_assert_notnull(callables_db, "callables ns");
-	mu_assert_streq_free(sdb_get(callables_db, "func._Exit.args", 0), "1", "new callable added");
-	mu_assert_streq_free(sdb_get(callables_db, "_Exit", 0), "func", "new callable added");
+	mu_assert_streq_free(sdb_get(callables_db, "func._Exit.args"), "1", "new callable added");
+	mu_assert_streq_free(sdb_get(callables_db, "_Exit"), "func", "new callable added");
 
 	Sdb *typelinks_db = sdb_ns(analysis_db, "typelinks", false);
 	mu_assert_notnull(typelinks_db, "typelinks ns");
-	mu_assert_streq_free(sdb_get(typelinks_db, "0x080484b0", 0), "char *", "new typelink added");
+	mu_assert_streq_free(sdb_get(typelinks_db, "0x080484b0"), "char *", "new typelink added");
 
 	rz_serialize_result_info_free(res);
 	rz_project_free(prj);
@@ -164,7 +164,7 @@ static bool test_migrate_v3_v4_typelink() {
 	// Typelinks still exist too
 	Sdb *typelinks_db = sdb_ns(analysis_db, "typelinks", false);
 	mu_assert_notnull(typelinks_db, "typelinks ns");
-	mu_assert_streq_free(sdb_get(typelinks_db, "0x08048660", 0), "uint32_t", "new callable added");
+	mu_assert_streq_free(sdb_get(typelinks_db, "0x08048660"), "uint32_t", "new callable added");
 
 	rz_serialize_result_info_free(res);
 	rz_project_free(prj);
@@ -185,9 +185,9 @@ static bool test_migrate_v4_v5_types() {
 
 	Sdb *types_db = sdb_ns(analysis_db, "types", false);
 	mu_assert_notnull(types_db, "types ns");
-	mu_assert_streq_free(sdb_get(types_db, "unknown_t", 0), "type", "unknown_t added");
-	mu_assert_streq_free(sdb_get(types_db, "type.unknown_t", 0), "d", "unknown_t added");
-	mu_assert_streq_free(sdb_get(types_db, "type.unknown_t.size", 0), "32", "unknown_t added");
+	mu_assert_streq_free(sdb_get(types_db, "unknown_t"), "type", "unknown_t added");
+	mu_assert_streq_free(sdb_get(types_db, "type.unknown_t"), "d", "unknown_t added");
+	mu_assert_streq_free(sdb_get(types_db, "type.unknown_t.size"), "32", "unknown_t added");
 
 	rz_serialize_result_info_free(res);
 	rz_project_free(prj);
@@ -248,22 +248,22 @@ static bool test_migrate_v7_v8_zignatures() {
 	mu_assert_null(zigns_db, "zigns ns");
 
 	Sdb *config_db = sdb_ns(core_db, "config", false);
-	mu_assert_notnull(config_db, "analysis ns");
-	mu_assert_streq_free(sdb_get(config_db, "analysis.apply.signature", 0), "true", "config");
-	mu_assert_null(sdb_get(config_db, "zign.autoload", 0), "config");
-	mu_assert_null(sdb_get(config_db, "zign.diff.bthresh", 0), "config");
-	mu_assert_null(sdb_get(config_db, "zign.diff.gthresh", 0), "config");
-	mu_assert_null(sdb_get(config_db, "zign.match.bytes", 0), "config");
-	mu_assert_null(sdb_get(config_db, "zign.match.graph", 0), "config");
-	mu_assert_null(sdb_get(config_db, "zign.match.hash", 0), "config");
-	mu_assert_null(sdb_get(config_db, "zign.match.offset", 0), "config");
-	mu_assert_null(sdb_get(config_db, "zign.match.refs", 0), "config");
-	mu_assert_null(sdb_get(config_db, "zign.match.types", 0), "config");
-	mu_assert_null(sdb_get(config_db, "zign.maxsz", 0), "config");
-	mu_assert_null(sdb_get(config_db, "zign.mincc", 0), "config");
-	mu_assert_null(sdb_get(config_db, "zign.minsz", 0), "config");
-	mu_assert_null(sdb_get(config_db, "zign.prefix", 0), "config");
-	mu_assert_null(sdb_get(config_db, "zign.threshold", 0), "config");
+	mu_assert_notnull(config_db, "config ns");
+	mu_assert_streq_free(sdb_get(config_db, "analysis.apply.signature"), "true", "config");
+	mu_assert_null(sdb_get(config_db, "zign.autoload"), "config");
+	mu_assert_null(sdb_get(config_db, "zign.diff.bthresh"), "config");
+	mu_assert_null(sdb_get(config_db, "zign.diff.gthresh"), "config");
+	mu_assert_null(sdb_get(config_db, "zign.match.bytes"), "config");
+	mu_assert_null(sdb_get(config_db, "zign.match.graph"), "config");
+	mu_assert_null(sdb_get(config_db, "zign.match.hash"), "config");
+	mu_assert_null(sdb_get(config_db, "zign.match.offset"), "config");
+	mu_assert_null(sdb_get(config_db, "zign.match.refs"), "config");
+	mu_assert_null(sdb_get(config_db, "zign.match.types"), "config");
+	mu_assert_null(sdb_get(config_db, "zign.maxsz"), "config");
+	mu_assert_null(sdb_get(config_db, "zign.mincc"), "config");
+	mu_assert_null(sdb_get(config_db, "zign.minsz"), "config");
+	mu_assert_null(sdb_get(config_db, "zign.prefix"), "config");
+	mu_assert_null(sdb_get(config_db, "zign.threshold"), "config");
 
 	rz_serialize_result_info_free(res);
 	rz_project_free(prj);
@@ -309,7 +309,7 @@ static bool test_migrate_v10_v11_stack_vars_bp() {
 	mu_assert_notnull(functions_db, "functions ns");
 
 	// bp vars
-	const char *val = sdb_const_get(functions_db, "0x113c", 0);
+	const char *val = sdb_const_get(functions_db, "0x113c");
 	const char *varfunc_expect =
 		"{\"name\":\"dbg.varfunc\",\"bits\":64,\"type\":4,\"cc\":\"amd64\",\"stack\":-8,\"maxstack\":24,\"ninstr\":14,"
 		"\"bp_frame\":true,\"bp_off\":8,\"bbs\":[4412],"
@@ -329,7 +329,7 @@ static bool test_migrate_v10_v11_stack_vars_bp() {
 	mu_assert_streq(val, varfunc_expect, "varfunc");
 
 	// also some reg vars
-	val = sdb_const_get(functions_db, "0x1175", 0);
+	val = sdb_const_get(functions_db, "0x1175");
 	const char *main_expect =
 		"{\"name\":\"dbg.main\",\"bits\":64,\"type\":4,\"cc\":\"amd64\",\"stack\":-8,\"maxstack\":24,\"ninstr\":15,"
 		"\"bp_frame\":true,\"bp_off\":8,\"bbs\":[4469],"
@@ -365,7 +365,7 @@ static bool test_migrate_v10_v11_stack_vars_sp() {
 	mu_assert_notnull(functions_db, "functions ns");
 
 	// sp vars
-	const char *val = sdb_const_get(functions_db, "0x1137", 0);
+	const char *val = sdb_const_get(functions_db, "0x1137");
 	const char *varfunc_expect =
 		"{\"name\":\"sym.varfunc\",\"bits\":64,\"type\":4,\"cc\":\"amd64\",\"stack\":-8,\"maxstack\":16,\"ninstr\":12,"
 		"\"bp_frame\":true,\"bbs\":[4407],"
@@ -385,7 +385,7 @@ static bool test_migrate_v10_v11_stack_vars_sp() {
 	mu_assert_streq(val, varfunc_expect, "varfunc");
 
 	// also some reg vars
-	val = sdb_const_get(functions_db, "0x1174", 0);
+	val = sdb_const_get(functions_db, "0x1174");
 	const char *main_expect =
 		"{\"name\":\"main\",\"bits\":64,\"type\":4,\"cc\":\"amd64\",\"stack\":-8,\"maxstack\":24,\"ninstr\":13,"
 		"\"bp_frame\":true,\"bbs\":[4468],\"vars\":["
@@ -415,9 +415,9 @@ static bool test_migrate_v2_v12() {
 	mu_assert_notnull(core_db, "core ns");
 	Sdb *config_db = sdb_ns(core_db, "config", false);
 	mu_assert_notnull(config_db, "debug ns");
-	mu_assert_notnull(sdb_const_get(config_db, "asm.debuginfo", 0), "asm.debuginfo");
-	mu_assert_notnull(sdb_const_get(config_db, "asm.debuginfo.abspath", 0), "asm.debuginfo.abspath");
-	mu_assert_notnull(sdb_const_get(config_db, "asm.debuginfo.file", 0), "asm.debuginfo.file");
+	mu_assert_notnull(sdb_const_get(config_db, "asm.debuginfo"), "asm.debuginfo");
+	mu_assert_notnull(sdb_const_get(config_db, "asm.debuginfo.abspath"), "asm.debuginfo.abspath");
+	mu_assert_notnull(sdb_const_get(config_db, "asm.debuginfo.file"), "asm.debuginfo.file");
 
 	rz_serialize_result_info_free(res);
 	rz_project_free(prj);
@@ -441,7 +441,7 @@ static bool test_migrate_v9_v10_v11_stack_vars_bp() {
 	mu_assert_notnull(functions_db, "functions ns");
 
 	// bp vars
-	const char *val = sdb_const_get(functions_db, "0x113c", 0);
+	const char *val = sdb_const_get(functions_db, "0x113c");
 	const char *varfunc_expect =
 		"{\"name\":\"dbg.varfunc\",\"bits\":64,\"type\":4,\"cc\":\"amd64\",\"stack\":8,\"maxstack\":24,\"ninstr\":14,"
 		"\"bp_frame\":true,\"bp_off\":8,\"bbs\":[4412],"
@@ -461,7 +461,7 @@ static bool test_migrate_v9_v10_v11_stack_vars_bp() {
 	mu_assert_streq(val, varfunc_expect, "varfunc");
 
 	// also some reg vars
-	val = sdb_const_get(functions_db, "0x1175", 0);
+	val = sdb_const_get(functions_db, "0x1175");
 	const char *main_expect =
 		"{\"name\":\"dbg.main\",\"bits\":64,\"type\":4,\"cc\":\"amd64\",\"stack\":8,\"maxstack\":24,\"ninstr\":15,"
 		"\"bp_frame\":true,\"bp_off\":8,\"bbs\":[4469],"
@@ -497,7 +497,7 @@ static bool test_migrate_v9_v10_v11_stack_vars_sp() {
 	mu_assert_notnull(functions_db, "functions ns");
 
 	// sp vars
-	const char *val = sdb_const_get(functions_db, "0x1137", 0);
+	const char *val = sdb_const_get(functions_db, "0x1137");
 	const char *varfunc_expect =
 		"{\"name\":\"sym.varfunc\",\"bits\":64,\"type\":4,\"cc\":\"amd64\",\"stack\":-8,\"maxstack\":16,\"ninstr\":12,"
 		"\"bp_frame\":true,\"bbs\":[4407],"
@@ -517,7 +517,7 @@ static bool test_migrate_v9_v10_v11_stack_vars_sp() {
 	mu_assert_streq(val, varfunc_expect, "varfunc");
 
 	// also some reg vars
-	val = sdb_const_get(functions_db, "0x1174", 0);
+	val = sdb_const_get(functions_db, "0x1174");
 	const char *main_expect =
 		"{\"name\":\"main\",\"bits\":64,\"type\":4,\"cc\":\"amd64\",\"stack\":-8,\"maxstack\":24,\"ninstr\":13,"
 		"\"bp_frame\":true,\"bbs\":[4468],\"vars\":["
@@ -551,6 +551,92 @@ static bool test_migrate_v14_v15() {
 	rz_project_free(prj);
 	mu_end;
 }
+
+static bool test_migrate_v15_v16_str_config() {
+	RzProject *prj = rz_project_load_file_raw("prj/v15-str-config.rzdb");
+	mu_assert_notnull(prj, "load raw project");
+	RzSerializeResultInfo *res = rz_serialize_result_info_new();
+	bool s = rz_project_migrate_v15_v16(prj, res);
+	mu_assert_true(s, "migrate success");
+	Sdb *core_db = sdb_ns(prj, "core", false);
+	mu_assert_notnull(core_db, "core ns");
+	Sdb *config_db = sdb_ns(core_db, "config", false);
+	mu_assert_notnull(config_db, "config ns");
+	mu_assert_null(sdb_get(config_db, "bin.maxstr"), "config");
+	mu_assert_null(sdb_get(config_db, "bin.minstr"), "config");
+	mu_assert_null(sdb_get(config_db, "bin.str.enc"), "config");
+	mu_assert_null(sdb_get(config_db, "bin.maxstrbuf"), "config");
+	mu_assert_streq_free(sdb_get(config_db, "str.search.min_length"), "6", "config");
+	mu_assert_streq_free(sdb_get(config_db, "str.search.encoding"), "utf8", "config");
+	mu_assert_streq_free(sdb_get(config_db, "str.search.buffer_size"), "0x00b00123", "config");
+	rz_serialize_result_info_free(res);
+	rz_project_free(prj);
+	mu_end;
+}
+
+static bool test_migrate_v18_v19_str_config() {
+	RzProject *prj = rz_project_load_file_raw("prj/v18-str-config.rzdb");
+	mu_assert_notnull(prj, "load raw project");
+	RzSerializeResultInfo *res = rz_serialize_result_info_new();
+	bool s = rz_project_migrate_v18_v19(prj, res);
+	mu_assert_true(s, "migrate success");
+	Sdb *core_db = sdb_ns(prj, "core", false);
+	mu_assert_notnull(core_db, "core ns");
+	Sdb *config_db = sdb_ns(core_db, "config", false);
+	mu_assert_notnull(config_db, "config ns");
+	mu_assert_null(sdb_get(config_db, "str.search.max_threads"), "Old config still there");
+	mu_assert_null(sdb_get(config_db, "str.search.min_length"), "Old config still there");
+	mu_assert_null(sdb_get(config_db, "str.search.buffer_size"), "Old config still there");
+	mu_assert_null(sdb_get(config_db, "str.search.max_uni_blocks"), "Old config still there");
+	mu_assert_null(sdb_get(config_db, "str.search.max_region_size"), "Old config still there");
+	mu_assert_null(sdb_get(config_db, "str.search.raw_alignment"), "Old config still there");
+	mu_assert_null(sdb_get(config_db, "str.search.check_ascii_freq"), "Old config still there");
+	mu_assert_null(sdb_get(config_db, "str.search.encoding"), "Old config still there");
+	mu_assert_streq_free(sdb_get(config_db, "search.max_threads"), "5", "New config has wrong value");
+	mu_assert_streq_free(sdb_get(config_db, "search.str.min_length"), "5", "New config has wrong value");
+	mu_assert_streq_free(sdb_get(config_db, "search.str.max_length"), "5", "New config has wrong value");
+	mu_assert_streq_free(sdb_get(config_db, "search.str.max_region_size"), "0x005555555", "New config has wrong value");
+	mu_assert_streq_free(sdb_get(config_db, "search.str.raw_alignment"), "55", "New config has wrong value");
+	mu_assert_streq_free(sdb_get(config_db, "search.str.check_ascii_freq"), "false", "New config has wrong value");
+	mu_assert_streq_free(sdb_get(config_db, "str.encoding"), "utf32be", "New config has wrong value");
+	rz_serialize_result_info_free(res);
+	rz_project_free(prj);
+	mu_end;
+}
+
+static bool test_migrate_v16_v17_flags_base() {
+	RzProject *prj = rz_project_load_file_raw("prj/v16-flags-base.rzdb");
+	mu_assert_notnull(prj, "load raw project");
+	RzSerializeResultInfo *res = rz_serialize_result_info_new();
+	bool s = rz_project_migrate_v16_v17(prj, res);
+	mu_assert_true(s, "migrate success");
+	Sdb *core_db = sdb_ns(prj, "core", false);
+	mu_assert_notnull(core_db, "core ns");
+	Sdb *config_db = sdb_ns(core_db, "flags", false);
+	mu_assert_notnull(config_db, "config ns");
+	mu_assert_null(sdb_get(config_db, "base"), "flags base");
+	rz_serialize_result_info_free(res);
+	rz_project_free(prj);
+	mu_end;
+}
+
+static bool test_migrate_v17_v18_rop_config() {
+	RzProject *prj = rz_project_load_file_raw("prj/v17-rop-config.rzdb");
+	mu_assert_notnull(prj, "load raw project");
+	RzSerializeResultInfo *res = rz_serialize_result_info_new();
+	bool s = rz_project_migrate_v17_v18(prj, res);
+	mu_assert_true(s, "migrate success");
+	Sdb *core_db = sdb_ns(prj, "core", false);
+	mu_assert_notnull(core_db, "core ns");
+	Sdb *config_db = sdb_ns(core_db, "config", false);
+	mu_assert_null(sdb_get(config_db, "rop.sdb"), "config");
+	mu_assert_null(sdb_get(config_db, "rop.db"), "config");
+	mu_assert_streq_free(sdb_get(config_db, "rop.cache"), "false", "config");
+	rz_serialize_result_info_free(res);
+	rz_project_free(prj);
+	mu_end;
+}
+
 
 /// Load project of given version from file into core and check the log for migration success messages
 #define BEGIN_LOAD_TEST(core, version, file) \
@@ -641,10 +727,10 @@ static bool test_load_v2_callables() {
 	mu_assert_streq(chmod->name, "chmod", "is chmod() function");
 	mu_assert_eq(2, rz_type_func_args_count(typedb, "chmod"), "chmod() has 2 arguments");
 	mu_assert_false(chmod->noret, "func \"chmod\" returns");
-	RzCallableArg *arg0 = *rz_pvector_index_ptr(chmod->args, 0);
+	RzCallableArg *arg0 = rz_pvector_at(chmod->args, 0);
 	mu_assert_notnull(arg0, "func \"chmod\" has 1st argument");
 	mu_assert_streq(arg0->name, "path", "has \"path\" argument");
-	RzCallableArg *arg1 = *rz_pvector_index_ptr(chmod->args, 1);
+	RzCallableArg *arg1 = rz_pvector_at(chmod->args, 1);
 	mu_assert_notnull(arg1, "func \"chmod\" has 2nd argument");
 	mu_assert_streq(arg1->name, "mode", "has \"mode\" argument");
 	mu_assert_true(rz_type_atomic_str_eq(typedb, chmod->ret, "int"), "chmod() returns \"int\"");
@@ -921,6 +1007,33 @@ static bool test_load_v15_seek_history() {
 	mu_end;
 }
 
+static bool test_load_v15_19_str_config() {
+	RzCore *core = rz_core_new();
+	// Load version 15 config but check if the v19 values were converted correctly.
+	BEGIN_LOAD_TEST(core, 15, "prj/v15-str-config.rzdb");
+	mu_assert_eq(rz_config_get_i(core->config, "search.str.min_length"), 6, "search.str.min_length");
+	mu_assert_streq(rz_config_get(core->config, "str.encoding"), "utf8", "str.encoding");
+	mu_assert_eq(rz_config_get_i(core->config, "search.str.max_length"), 0x00b00123, "search.str.max_length");
+	rz_core_free(core);
+	mu_end;
+}
+
+static bool test_load_v16() {
+	RzCore *core = rz_core_new();
+	BEGIN_LOAD_TEST(core, 16, "prj/v16-flags-base.rzdb");
+	// No new or changed info here
+	rz_core_free(core);
+	mu_end;
+}
+
+static bool test_load_v17() {
+	RzCore *core = rz_core_new();
+	BEGIN_LOAD_TEST(core, 17, "prj/v17-rop-config.rzdb");
+	mu_assert_eq(rz_config_get_b(core->config, "rop.cache"), false, "rop.cache");
+	rz_core_free(core);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_migrate_v1_v2_noreturn);
 	mu_run_test(test_migrate_v1_v2_noreturn_empty);
@@ -939,6 +1052,10 @@ int all_tests() {
 	mu_run_test(test_migrate_v9_v10_v11_stack_vars_sp);
 	mu_run_test(test_migrate_v2_v12);
 	mu_run_test(test_migrate_v14_v15);
+	mu_run_test(test_migrate_v15_v16_str_config);
+	mu_run_test(test_migrate_v16_v17_flags_base);
+	mu_run_test(test_migrate_v17_v18_rop_config);
+	mu_run_test(test_migrate_v18_v19_str_config);
 	mu_run_test(test_load_v1_noreturn);
 	mu_run_test(test_load_v1_noreturn_empty);
 	mu_run_test(test_load_v1_unknown_type);
@@ -959,6 +1076,9 @@ int all_tests() {
 	mu_run_test(test_load_v12);
 	mu_run_test(test_load_v14);
 	mu_run_test(test_load_v15_seek_history);
+	mu_run_test(test_load_v15_19_str_config);
+	mu_run_test(test_load_v16);
+	mu_run_test(test_load_v17);
 	return tests_passed != tests_run;
 }
 

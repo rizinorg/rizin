@@ -151,11 +151,11 @@ static RzBinInfo *info(RzBinFile *bf) {
 	}
 	struct rz_bin_dmp64_obj_t *obj = (struct rz_bin_dmp64_obj_t *)bf->o->bin_obj;
 
-	ret->arch = obj->header->MachineImageType == 0xaa64 ? strdup("arm") : strdup("x86");
+	ret->arch = obj->header->MachineImageType == 0xaa64 ? rz_str_dup("arm") : rz_str_dup("x86");
 	ret->bits = 64;
-	ret->machine = obj->header->MachineImageType == 0xaa64 ? strdup("ARM64") : strdup("AMD64");
-	ret->rclass = strdup("dmp64");
-	ret->type = strdup("Windows Crash Dump");
+	ret->machine = obj->header->MachineImageType == 0xaa64 ? rz_str_dup("ARM64") : rz_str_dup("AMD64");
+	ret->rclass = rz_str_dup("dmp64");
+	ret->type = rz_str_dup("Windows Crash Dump");
 	ret->has_va = true;
 
 	switch (obj->header->ProductType) {
@@ -175,7 +175,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 			obj->header->MinorVersion);
 		break;
 	default:
-		ret->os = strdup("Unknown");
+		ret->os = rz_str_dup("Unknown");
 	}
 
 	return ret;
@@ -232,7 +232,7 @@ static RzPVector /*<char *>*/ *libs(RzBinFile *bf) {
 	RzListIter *it;
 	dmp_driver_desc *driver;
 	rz_list_foreach (obj->drivers, it, driver) {
-		char *file = strdup(driver->file);
+		char *file = rz_str_dup(driver->file);
 		if (!file) {
 			break;
 		}

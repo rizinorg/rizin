@@ -54,15 +54,15 @@ RZ_API RZ_OWN RzILEvent *rz_il_event_exception_new(RZ_NONNULL const char *except
 
 	RzILEvent *evt = RZ_NEW(RzILEvent);
 	if (!evt) {
-		RZ_LOG_ERROR("RzIL: cannot allocate exception RzILEvent");
+		RZ_LOG_ERROR("RzIL: cannot allocate exception RzILEvent\n");
 		return NULL;
 	}
 
 	evt->type = RZ_IL_EVENT_EXCEPTION;
-	evt->data.exception = strdup(exception);
+	evt->data.exception = rz_str_dup(exception);
 	if (!evt->data.exception) {
 		rz_il_event_free(evt);
-		RZ_LOG_ERROR("RzIL: cannot allocate exception string");
+		RZ_LOG_ERROR("RzIL: cannot allocate exception string\n");
 		return NULL;
 	}
 	return evt;
@@ -94,10 +94,11 @@ RZ_API RZ_OWN RzILEvent *rz_il_event_pc_write_new(RZ_NONNULL const RzBitVector *
 
 /**
  * Creates an RzILEvent of type RZ_IL_EVENT_MEM_READ
+ * \param index, RzILMemIndex, index of the memory to read
  * \param addr, RzBitVector, address of the memory where the read op has occurred
  * \param value, RzBitVector, value read from the variable
  */
-RZ_API RZ_OWN RzILEvent *rz_il_event_mem_read_new(RZ_NONNULL const RzBitVector *address, RZ_NULLABLE const RzBitVector *value) {
+RZ_API RZ_OWN RzILEvent *rz_il_event_mem_read_new(RzILMemIndex index, RZ_NONNULL const RzBitVector *address, RZ_NULLABLE const RzBitVector *value) {
 	rz_return_val_if_fail(address && value, NULL);
 
 	RzILEvent *evt = RZ_NEW(RzILEvent);
@@ -106,6 +107,7 @@ RZ_API RZ_OWN RzILEvent *rz_il_event_mem_read_new(RZ_NONNULL const RzBitVector *
 	}
 
 	evt->type = RZ_IL_EVENT_MEM_READ;
+	evt->data.mem_read.index = index;
 	evt->data.mem_read.address = rz_bv_dup(address);
 	evt->data.mem_read.value = rz_bv_dup(value);
 	if (!evt->data.mem_read.address || !evt->data.mem_read.value) {
@@ -118,11 +120,12 @@ RZ_API RZ_OWN RzILEvent *rz_il_event_mem_read_new(RZ_NONNULL const RzBitVector *
 
 /**
  * Creates an RzILEvent of type RZ_IL_EVENT_MEM_WRITE
+ * \param index, RzILMemIndex, index of the memory to store data
  * \param addr, RzBitVector, address of the memory that has changed
  * \param old_v, RzBitVector, old value before the change
  * \param new_v, RzBitVector, new value after the change
  */
-RZ_API RZ_OWN RzILEvent *rz_il_event_mem_write_new(RZ_NONNULL const RzBitVector *addr, RZ_NONNULL const RzBitVector *old_v, RZ_NONNULL const RzBitVector *new_v) {
+RZ_API RZ_OWN RzILEvent *rz_il_event_mem_write_new(RzILMemIndex index, RZ_NONNULL const RzBitVector *addr, RZ_NONNULL const RzBitVector *old_v, RZ_NONNULL const RzBitVector *new_v) {
 	rz_return_val_if_fail(addr && old_v && new_v, NULL);
 
 	RzILEvent *evt = RZ_NEW(RzILEvent);
@@ -131,6 +134,7 @@ RZ_API RZ_OWN RzILEvent *rz_il_event_mem_write_new(RZ_NONNULL const RzBitVector 
 	}
 
 	evt->type = RZ_IL_EVENT_MEM_WRITE;
+	evt->data.mem_write.index = index;
 	evt->data.mem_write.address = rz_bv_dup(addr);
 	evt->data.mem_write.old_value = rz_bv_dup(old_v);
 	evt->data.mem_write.new_value = rz_bv_dup(new_v);
@@ -158,7 +162,7 @@ RZ_API RZ_OWN RzILEvent *rz_il_event_var_read_new(RZ_NONNULL const char *name, R
 	}
 
 	evt->type = RZ_IL_EVENT_VAR_READ;
-	evt->data.var_read.variable = strdup(name);
+	evt->data.var_read.variable = rz_str_dup(name);
 	evt->data.var_read.value = rz_il_value_dup(value);
 	if (!evt->data.var_read.variable || !evt->data.var_read.value) {
 		rz_il_event_free(evt);
@@ -183,7 +187,7 @@ RZ_API RZ_OWN RzILEvent *rz_il_event_var_write_new(RZ_NONNULL const char *name, 
 	}
 
 	evt->type = RZ_IL_EVENT_VAR_WRITE;
-	evt->data.var_write.variable = strdup(name);
+	evt->data.var_write.variable = rz_str_dup(name);
 	evt->data.var_write.old_value = rz_il_value_dup(old_v);
 	evt->data.var_write.new_value = rz_il_value_dup(new_v);
 	if (!evt->data.var_write.variable ||

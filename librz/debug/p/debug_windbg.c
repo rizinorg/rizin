@@ -398,7 +398,7 @@ static RzList *windbg_modules_get(RzDebug *dbg) {
 		}
 		RzDebugMap *mod = rz_debug_map_new(mod_name, params[i].Base, params[i].Base + params[i].Size, 0, params[i].Size);
 		if (mod) {
-			mod->file = strdup(image_name);
+			mod->file = rz_str_dup(image_name);
 			rz_list_append(modules_list, mod);
 		}
 		free(mod_name);
@@ -577,8 +577,8 @@ static RzDebugInfo *windbg_info(RzDebug *dbg, const char *arg) {
 		}
 		info->pid = dbg->pid;
 		info->tid = dbg->tid;
-		info->exe = strdup(exeinfo);
-		info->cmdline = strdup(cmdline);
+		info->exe = rz_str_dup(exeinfo);
+		info->cmdline = rz_str_dup(cmdline);
 	}
 	return NULL;
 }

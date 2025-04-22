@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_bp.h>
-#include <config.h>
 
 RZ_API void rz_bp_restore_one(RzBreakpoint *bp, RzBreakpointItem *b, bool set) {
 	if (set) {

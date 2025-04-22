@@ -93,7 +93,7 @@ static void *show_class(RzCore *core, int mode, int *idx, RzBinClass *_c, const 
 				}
 			}
 
-			char *mflags = strdup("");
+			char *mflags = rz_str_dup("");
 
 			if (rz_str_startswith(name, _c->name)) {
 				name += strlen(_c->name);
@@ -397,7 +397,7 @@ static void analysis_class_print(RzAnalysis *analysis, const char *class_name) {
 	if (bases) {
 		RzAnalysisBaseClass *base;
 		bool first = true;
-		rz_vector_foreach(bases, base) {
+		rz_vector_foreach (bases, base) {
 			if (first) {
 				rz_cons_print(": ");
 				first = false;
@@ -413,7 +413,7 @@ static void analysis_class_print(RzAnalysis *analysis, const char *class_name) {
 
 	if (vtables) {
 		RzAnalysisVTable *vtable;
-		rz_vector_foreach(vtables, vtable) {
+		rz_vector_foreach (vtables, vtable) {
 			rz_cons_printf("  %2s vtable 0x%" PFMT64x " @ +0x%" PFMT64x " size:+0x%" PFMT64x "\n", vtable->id, vtable->addr, vtable->offset, vtable->size);
 		}
 		rz_vector_free(vtables);
@@ -423,7 +423,7 @@ static void analysis_class_print(RzAnalysis *analysis, const char *class_name) {
 
 	if (methods) {
 		RzAnalysisMethod *meth;
-		rz_vector_foreach(methods, meth) {
+		rz_vector_foreach (methods, meth) {
 			rz_cons_printf("  %s @ 0x%" PFMT64x, meth->name, meth->addr);
 			if (meth->vtable_offset >= 0) {
 				rz_cons_printf(" (vtable + 0x%" PFMT64x ")\n", (ut64)meth->vtable_offset);
@@ -435,11 +435,8 @@ static void analysis_class_print(RzAnalysis *analysis, const char *class_name) {
 	}
 }
 
-static const char *show_analysis_classes(RzCore *core, char mode, int *idx, SdbList *list, const char *class_name) {
+static const char *show_analysis_classes(RzCore *core, char mode, int *idx, RzPVector /*<SdbKv *>*/ *classes, const char *class_name) {
 	bool show_color = rz_config_get_i(core->config, "scr.color");
-	SdbListIter *iter;
-	SdbKv *kv;
-	int i = 0;
 	int skip = *idx - 10;
 	const char *cur_class = NULL;
 	rz_cons_printf("[hjkl_/Cfm]> analysis classes:\n\n");
@@ -449,11 +446,13 @@ static const char *show_analysis_classes(RzCore *core, char mode, int *idx, SdbL
 		return class_name;
 	}
 
-	ls_foreach (list, iter, kv) {
+	int i;
+	void **iter;
+	rz_pvector_enumerate (classes, iter, i) {
+		SdbKv *kv = *iter;
 		if (*idx > 10) {
 			skip--;
 			if (skip > 0) {
-				i++;
 				continue;
 			}
 		}
@@ -474,8 +473,6 @@ static const char *show_analysis_classes(RzCore *core, char mode, int *idx, SdbL
 		} else {
 			rz_cons_printf("%s %02d %s\n", (i == *idx) ? ">>" : "- ", i, class_name);
 		}
-
-		i++;
 	}
 
 	return cur_class;
@@ -487,13 +484,13 @@ static const char *show_analysis_classes(RzCore *core, char mode, int *idx, SdbL
 RZ_IPI int rz_core_visual_analysis_classes(RzCore *core) {
 	int ch, index = 0;
 	char command[1024];
-	SdbList *list = rz_analysis_class_get_all(core->analysis, true);
+	RzPVector *classes = rz_analysis_class_get_all(core->analysis, true);
 	int oldcur = 0;
 	char mode = ' ';
 	const char *class_name = "";
 	RzLine *line = core->cons->line;
 
-	if (rz_list_empty(list)) {
+	if (rz_pvector_empty(classes)) {
 		rz_cons_message("No Classes");
 		goto cleanup;
 	}
@@ -501,7 +498,7 @@ RZ_IPI int rz_core_visual_analysis_classes(RzCore *core) {
 		int cols;
 		rz_cons_clear00();
 
-		class_name = show_analysis_classes(core, mode, &index, list, class_name);
+		class_name = show_analysis_classes(core, mode, &index, classes, class_name);
 
 		/* update terminal size */
 		(void)rz_cons_get_size(&cols);
@@ -518,18 +515,18 @@ RZ_IPI int rz_core_visual_analysis_classes(RzCore *core) {
 			break;
 		case 'J':
 			index += 10;
-			if (index >= list->length) {
-				index = list->length - 1;
+			if (index >= rz_pvector_len(classes)) {
+				index = rz_pvector_len(classes) - 1;
 			}
 			break;
 		case 'j':
-			if (++index >= list->length) {
+			if (++index >= rz_pvector_len(classes)) {
 				index = 0;
 			}
 			break;
 		case 'k':
 			if (--index < 0) {
-				index = list->length - 1;
+				index = rz_pvector_len(classes) - 1;
 			}
 			break;
 		case 'K':
@@ -542,7 +539,7 @@ RZ_IPI int rz_core_visual_analysis_classes(RzCore *core) {
 			index = 0;
 			break;
 		case 'G':
-			index = list->length - 1;
+			index = rz_pvector_len(classes) - 1;
 			break;
 		case 'h':
 		case 127: // backspace
@@ -596,6 +593,6 @@ RZ_IPI int rz_core_visual_analysis_classes(RzCore *core) {
 		}
 	}
 cleanup:
-	ls_free(list);
+	rz_pvector_free(classes);
 	return true;
 }

@@ -1,6 +1,8 @@
 NAME=add 1 + 2
 FILE==
-CMDS="ae 2,1,+"
+CMDS=<<EOF
+ae "2,1,+"
+EOF
 EXPECT=<<EOF
 0x3
 EOF
@@ -8,7 +10,9 @@ RUN
 
 NAME=add 2 + 1
 FILE==
-CMDS="ae 1,2,+"
+CMDS=<<EOF
+ae "1,2,+"
+EOF
 EXPECT=<<EOF
 0x3
 EOF
@@ -16,7 +20,9 @@ RUN
 
 NAME=sub 2 - 3
 FILE==
-CMDS="ae 3,2,-"
+CMDS=<<EOF
+ae "3,2,-"
+EOF
 EXPECT=<<EOF
 0xffffffffffffffff
 EOF
@@ -24,7 +30,9 @@ RUN
 
 NAME=sub 3 - 2
 FILE==
-CMDS="ae 2,3,-"
+CMDS=<<EOF
+ae "2,3,-"
+EOF
 EXPECT=<<EOF
 0x1
 EOF
@@ -32,7 +40,9 @@ RUN
 
 NAME=sub 3 - 3
 FILE==
-CMDS="ae 3,3,-"
+CMDS=<<EOF
+ae "3,3,-"
+EOF
 EXPECT=<<EOF
 0x0
 EOF
@@ -40,7 +50,9 @@ RUN
 
 NAME=mul 3 6502 8051 apple arm-16 arm-32 arm-64 brainfuck cmd_aae cmd_aea cmd_aetr cmd_aex cmd_pae cmp cond debug_esil esil flag_tests intreg math mips sh step step-back step-over syscall x86-32 x86-64 xtensa 2
 FILE==
-CMDS="ae 2,3,*"
+CMDS=<<EOF
+ae "2,3,*"
+EOF
 EXPECT=<<EOF
 0x6
 EOF
@@ -48,7 +60,9 @@ RUN
 
 NAME=mul 2 6502 8051 apple arm-16 arm-32 arm-64 brainfuck cmd_aae cmd_aea cmd_aetr cmd_aex cmd_pae cmp cond debug_esil esil flag_tests intreg math mips sh step step-back step-over syscall x86-32 x86-64 xtensa 3
 FILE==
-CMDS="ae 3,2,*"
+CMDS=<<EOF
+ae "3,2,*"
+EOF
 EXPECT=<<EOF
 0x6
 EOF
@@ -56,7 +70,9 @@ RUN
 
 NAME=div 6 / 3
 FILE==
-CMDS="ae 3,6,/"
+CMDS=<<EOF
+ae "3,6,/"
+EOF
 EXPECT=<<EOF
 0x2
 EOF
@@ -64,7 +80,9 @@ RUN
 
 NAME=div 3 / 6
 FILE==
-CMDS="ae 6,3,/"
+CMDS=<<EOF
+ae "6,3,/"
+EOF
 EXPECT=<<EOF
 0x0
 EOF
@@ -73,33 +91,29 @@ RUN
 NAME=div by zero 3 / 0
 FILE==
 CMDS=<<EOF
-ae 0,3,/
-ae*
+ae "0,3,/"
 EOF
 EXPECT=<<EOF
 ESIL TRAP type 3 code 0x00000000 divbyzero
-trap: 3
-trap-code: 0
 EOF
 RUN
 
 NAME=div 0 / 3
 FILE==
 CMDS=<<EOF
-ae 3,0,/
-ae*
+ae "3,0,/"
 EOF
 EXPECT=<<EOF
 0x0
-trap: 0
-trap-code: 0
 EOF
 RUN
 
 NAME=float div 1.0 / 1.0
 FILE==
 BROKEN=1
-CMDS="ae Fx3ff0000000000000,Fx3ff0000000000000,/"
+CMDS=<<EOF
+ae "Fx3ff0000000000000,Fx3ff0000000000000,/"
+EOF
 EXPECT=<<EOF
 0x3ff0000000000000
 EOF
@@ -108,7 +122,9 @@ RUN
 NAME=float mul 1.0 6502 8051 apple arm-16 arm-32 arm-64 brainfuck cmd_aae cmd_aea cmd_aetr cmd_aex cmd_pae cmp cond debug_esil esil flag_tests intreg math mips sh step step-back step-over syscall x86-32 x86-64 xtensa 1.0
 FILE==
 BROKEN=1
-CMDS="ae Fx3ff0000000000000,Fx3ff0000000000000,*"
+CMDS=<<EOF
+ae "Fx3ff0000000000000,Fx3ff0000000000000,*"
+EOF
 EXPECT=<<EOF
 0x3ff0000000000000
 EOF
@@ -117,7 +133,9 @@ RUN
 NAME=float add 1.0 + 1.0
 FILE==
 BROKEN=1
-CMDS="ae Fx3ff0000000000000,Fx3ff0000000000000,+"
+CMDS=<<EOF
+ae "Fx3ff0000000000000,Fx3ff0000000000000,+"
+EOF
 EXPECT=<<EOF
 0x4000000000000000
 EOF
@@ -126,7 +144,9 @@ RUN
 NAME=float sub 1.0 - 1.0
 FILE==
 BROKEN=1
-CMDS="ae Fx3ff0000000000000,Fx3ff0000000000000,-"
+CMDS=<<EOF
+ae "Fx3ff0000000000000,Fx3ff0000000000000,-"
+EOF
 EXPECT=<<EOF
 0x0
 EOF

@@ -9,14 +9,14 @@
 Sdb *ref_db() {
 	Sdb *db = sdb_new0();
 
-	sdb_num_set(db, "maxcnum", 1, 0);
+	sdb_num_set(db, "maxcnum", 1);
 
 	Sdb *registers_db = sdb_ns(db, "registers", true);
-	sdb_set(registers_db, "0x100", "[{\"cnum\":0,\"data\":1094861636},{\"cnum\":1,\"data\":3735928559}]", 0);
+	sdb_set(registers_db, "0x100", "[{\"cnum\":0,\"data\":1094861636},{\"cnum\":1,\"data\":3735928559}]");
 
 	Sdb *memory_sdb = sdb_ns(db, "memory", true);
-	sdb_set(memory_sdb, "0x7ffffffff000", "[{\"cnum\":0,\"data\":170},{\"cnum\":1,\"data\":187}]", 0);
-	sdb_set(memory_sdb, "0x7ffffffff001", "[{\"cnum\":0,\"data\":0},{\"cnum\":1,\"data\":1}]", 0);
+	sdb_set(memory_sdb, "0x7ffffffff000", "[{\"cnum\":0,\"data\":170},{\"cnum\":1,\"data\":187}]");
+	sdb_set(memory_sdb, "0x7ffffffff001", "[{\"cnum\":0,\"data\":0},{\"cnum\":1,\"data\":1}]");
 
 	Sdb *checkpoints_sdb = sdb_ns(db, "checkpoints", true);
 	sdb_set(checkpoints_sdb, "0x0", "{"
@@ -38,8 +38,7 @@ Sdb *ref_db() {
 					"\"snaps\":["
 					"{\"name\":\"[stack]\",\"addr\":8796092882944,\"addr_end\":8796092883200,\"size\":256,\"data\":\"8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8A==\",\"perm\":7,\"user\":0,\"shared\":true}"
 					"]"
-					"}",
-		0);
+					"}");
 
 	return db;
 }
@@ -115,7 +114,7 @@ static bool compare_registers_cb(void *user, const ut64 key, const void *value) 
 	mu_assert_eq(actual_vreg->len, expected_vreg->len, "vreg length");
 
 	size_t i;
-	rz_vector_enumerate(actual_vreg, actual_reg, i) {
+	rz_vector_enumerate (actual_vreg, actual_reg, i) {
 		expected_reg = rz_vector_index_ptr(expected_vreg, i);
 		mu_assert_eq(actual_reg->cnum, expected_reg->cnum, "cnum");
 		mu_assert_eq(actual_reg->data, expected_reg->data, "data");
@@ -133,7 +132,7 @@ static bool compare_memory_cb(void *user, const ut64 key, const void *value) {
 	mu_assert_eq(actual_vmem->len, expected_vmem->len, "vmem length");
 
 	size_t i;
-	rz_vector_enumerate(actual_vmem, actual_mem, i) {
+	rz_vector_enumerate (actual_vmem, actual_mem, i) {
 		expected_mem = rz_vector_index_ptr(expected_vmem, i);
 		mu_assert_eq(actual_mem->cnum, expected_mem->cnum, "cnum");
 		mu_assert_eq(actual_mem->data, expected_mem->data, "data");
@@ -176,7 +175,7 @@ static bool test_session_load(void) {
 	size_t i, chkpt_idx;
 	RzDebugCheckpoint *chkpt, *ref_chkpt;
 	mu_assert_eq(s->checkpoints->len, ref->checkpoints->len, "checkpoints length");
-	rz_vector_enumerate(s->checkpoints, chkpt, chkpt_idx) {
+	rz_vector_enumerate (s->checkpoints, chkpt, chkpt_idx) {
 		ref_chkpt = rz_vector_index_ptr(ref->checkpoints, chkpt_idx);
 		// Registers
 		for (i = 0; i < RZ_REG_TYPE_LAST; i++) {

@@ -149,7 +149,7 @@ RZ_API bool rz_core_reg_assign_sync(RZ_NONNULL RzCore *core, RZ_NONNULL RzReg *r
  * \param eq_pos index of the '=' in arg
  */
 static RzCmdStatus assign_reg(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, RZ_NONNULL const char *arg, size_t eq_pos) {
-	char *str = strdup(arg);
+	char *str = rz_str_dup(arg);
 	if (!str) {
 		return RZ_CMD_STATUS_ERROR;
 	}
@@ -419,7 +419,7 @@ RZ_IPI void rz_regs_show_valgroup(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb
 
 	RzListIter *iter;
 	RzRegItem *r;
-	HtUP *db = ht_up_new0();
+	HtUP *db = ht_up_new(NULL, NULL);
 	rz_list_foreach (list, iter, r) {
 		if (r->size != core->rasm->bits) {
 			continue;

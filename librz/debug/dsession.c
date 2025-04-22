@@ -26,10 +26,6 @@ static void rz_debug_checkpoint_fini(void *element, void *user) {
 	rz_list_free(checkpoint->snaps);
 }
 
-static void htup_vector_free(HtUPKv *kv) {
-	rz_vector_free(kv->value);
-}
-
 RZ_API RzDebugSession *rz_debug_session_new(void) {
 	RzDebugSession *session = RZ_NEW0(RzDebugSession);
 	if (!session) {
@@ -41,12 +37,12 @@ RZ_API RzDebugSession *rz_debug_session_new(void) {
 		rz_debug_session_free(session);
 		return NULL;
 	}
-	session->registers = ht_up_new(NULL, htup_vector_free, NULL);
+	session->registers = ht_up_new(NULL, (HtUPFreeValue)rz_vector_free);
 	if (!session->registers) {
 		rz_debug_session_free(session);
 		return NULL;
 	}
-	session->memory = ht_up_new(NULL, htup_vector_free, NULL);
+	session->memory = ht_up_new(NULL, (HtUPFreeValue)rz_vector_free);
 	if (!session->memory) {
 		rz_debug_session_free(session);
 		return NULL;
@@ -258,7 +254,7 @@ static bool serialize_register_cb(void *db, const ut64 k, const void *v) {
 	}
 	pj_a(j);
 
-	rz_vector_foreach(vreg, reg) {
+	rz_vector_foreach (vreg, reg) {
 		pj_o(j);
 		pj_kN(j, "cnum", reg->cnum);
 		pj_kn(j, "data", reg->data);
@@ -266,7 +262,7 @@ static bool serialize_register_cb(void *db, const ut64 k, const void *v) {
 	}
 
 	pj_end(j);
-	sdb_set(db, rz_strf(tmpbuf, "0x%" PFMT64x, k), pj_string(j), 0);
+	sdb_set(db, rz_strf(tmpbuf, "0x%" PFMT64x, k), pj_string(j));
 	pj_free(j);
 	return true;
 }
@@ -286,7 +282,7 @@ static bool serialize_memory_cb(void *db, const ut64 k, const void *v) {
 	}
 	pj_a(j);
 
-	rz_vector_foreach(vmem, mem) {
+	rz_vector_foreach (vmem, mem) {
 		pj_o(j);
 		pj_kN(j, "cnum", mem->cnum);
 		pj_kn(j, "data", mem->data);
@@ -294,7 +290,7 @@ static bool serialize_memory_cb(void *db, const ut64 k, const void *v) {
 	}
 
 	pj_end(j);
-	sdb_set(db, rz_strf(tmpbuf, "0x%" PFMT64x, k), pj_string(j), 0);
+	sdb_set(db, rz_strf(tmpbuf, "0x%" PFMT64x, k), pj_string(j));
 	pj_free(j);
 	return true;
 }
@@ -310,7 +306,7 @@ static void serialize_checkpoints(Sdb *db, RzVector /*<RzDebugCheckpoint>*/ *che
 	RzListIter *iter;
 	char tmpbuf[32];
 
-	rz_vector_foreach(checkpoints, chkpt) {
+	rz_vector_foreach (checkpoints, chkpt) {
 		// 0x<cnum>={
 		//   registers:{"<RzRegisterType>":<RzRegArena>, ...},
 		//   snaps:{"size":<size_t>, "a":[<RzDebugSnap>]}
@@ -363,7 +359,7 @@ static void serialize_checkpoints(Sdb *db, RzVector /*<RzDebugCheckpoint>*/ *che
 		pj_end(j);
 
 		pj_end(j);
-		sdb_set(db, rz_strf(tmpbuf, "0x%x", chkpt->cnum), pj_string(j), 0);
+		sdb_set(db, rz_strf(tmpbuf, "0x%x", chkpt->cnum), pj_string(j));
 		pj_free(j);
 	}
 }
@@ -403,7 +399,7 @@ static void serialize_checkpoints(Sdb *db, RzVector /*<RzDebugCheckpoint>*/ *che
  * - This mostly follows rz-db-style serialization
  */
 RZ_API void rz_debug_session_serialize(RzDebugSession *session, Sdb *db) {
-	sdb_num_set(db, "maxcnum", session->maxcnum, 0);
+	sdb_num_set(db, "maxcnum", session->maxcnum);
 	serialize_registers(sdb_ns(db, "registers", true), session->registers);
 	serialize_memory(sdb_ns(db, "memory", true), session->memory);
 	serialize_checkpoints(sdb_ns(db, "checkpoints", true), session->checkpoints);
@@ -427,9 +423,9 @@ static bool session_sdb_save(Sdb *db, const char *path) {
 	free(filename);
 	sdb_close(db);
 
-	SdbListIter *it;
+	RzListIter *it;
 	SdbNs *ns;
-	ls_foreach (db->ns, it, ns) {
+	rz_list_foreach (db->ns, it, ns) {
 		char *filename = rz_str_newf("%s%s%s.sdb", path, RZ_SYS_DIR, ns->name);
 		sdb_file(ns->sdb, filename);
 		if (!sdb_sync(ns->sdb)) {
@@ -464,9 +460,9 @@ RZ_API bool rz_debug_session_save(RzDebugSession *session, const char *path) {
 	if (!v || v->type != t) \
 	continue
 
-static bool deserialize_memory_cb(void *user, const char *addr, const char *v) {
+static bool deserialize_memory_cb(void *user, const SdbKv *kv) {
 	RzJson *child;
-	char *json_str = strdup(v);
+	char *json_str = sdbkv_dup_value(kv);
 	if (!json_str) {
 		return true;
 	}
@@ -478,6 +474,7 @@ static bool deserialize_memory_cb(void *user, const char *addr, const char *v) {
 
 	HtUP *memory = user;
 	// Insert a new vector into `memory` HtUP at `addr`
+	ut64 addr = sdb_atoi(sdbkv_key(kv));
 	RzVector *vmem = rz_vector_new(sizeof(RzDebugChangeMem), NULL, NULL);
 	if (!vmem) {
 		eprintf("Error: failed to allocate RzVector vmem.\n");
@@ -485,7 +482,7 @@ static bool deserialize_memory_cb(void *user, const char *addr, const char *v) {
 		rz_json_free(reg_json);
 		return false;
 	}
-	ht_up_insert(memory, sdb_atoi(addr), vmem);
+	ht_up_insert(memory, addr, vmem);
 
 	// Extract <RzDebugChangeMem>'s into the new vector
 	for (child = reg_json->children.first; child; child = child->next) {
@@ -513,9 +510,9 @@ static void deserialize_memory(Sdb *db, HtUP *memory) {
 	sdb_foreach(db, deserialize_memory_cb, memory);
 }
 
-static bool deserialize_registers_cb(void *user, const char *addr, const char *v) {
+static bool deserialize_registers_cb(void *user, const SdbKv *kv) {
 	RzJson *child;
-	char *json_str = strdup(v);
+	char *json_str = sdbkv_dup_value(kv);
 	if (!json_str) {
 		return true;
 	}
@@ -534,7 +531,7 @@ static bool deserialize_registers_cb(void *user, const char *addr, const char *v
 		free(json_str);
 		return true;
 	}
-	ht_up_insert(registers, sdb_atoi(addr), vreg);
+	ht_up_insert(registers, sdb_atoi(sdbkv_key(kv)), vreg);
 
 	// Extract <RzDebugChangeReg>'s into the new vector
 	for (child = reg_json->children.first; child; child = child->next) {
@@ -562,9 +559,9 @@ static void deserialize_registers(Sdb *db, HtUP *registers) {
 	sdb_foreach(db, deserialize_registers_cb, registers);
 }
 
-static bool deserialize_checkpoints_cb(void *user, const char *cnum, const char *v) {
+static bool deserialize_checkpoints_cb(void *user, const SdbKv *kv) {
 	const RzJson *child;
-	char *json_str = strdup(v);
+	char *json_str = sdbkv_dup_value(kv);
 	if (!json_str) {
 		return true;
 	}
@@ -576,7 +573,7 @@ static bool deserialize_checkpoints_cb(void *user, const char *cnum, const char 
 
 	RzVector *checkpoints = user;
 	RzDebugCheckpoint checkpoint = { 0 };
-	checkpoint.cnum = (int)sdb_atoi(cnum);
+	checkpoint.cnum = (int)sdb_atoi(sdbkv_key(kv));
 
 	// Extract RzRegArena's from "registers"
 	const RzJson *regs_json = rz_json_get(chkpt_json, "registers");
@@ -642,7 +639,7 @@ static bool deserialize_checkpoints_cb(void *user, const char *cnum, const char 
 			eprintf("Error: failed to allocate RzDebugSnap snap");
 			continue;
 		}
-		snap->name = strdup(namej->str_value);
+		snap->name = rz_str_dup(namej->str_value);
 		snap->addr = addrj->num.u_value;
 		snap->addr_end = addr_endj->num.u_value;
 		snap->size = sizej->num.u_value;
@@ -707,7 +704,7 @@ error:
 RZ_API void rz_debug_session_deserialize(RzDebugSession *session, Sdb *db) {
 	Sdb *subdb;
 
-	session->maxcnum = sdb_num_get(db, "maxcnum", 0);
+	session->maxcnum = sdb_num_get(db, "maxcnum");
 
 #define DESERIALIZE(ns, func) \
 	do { \

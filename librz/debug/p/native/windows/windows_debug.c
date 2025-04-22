@@ -783,7 +783,7 @@ static void add_library(DWORD pid, LPVOID lpBaseOfDll, HANDLE hFile, char *dllna
 	if (lib_list == NULL) {
 		lib_list = rz_list_newf((RzListFree)libfree);
 		if (!lib_list) {
-			RZ_LOG_ERROR("Failed to allocate memory");
+			RZ_LOG_ERROR("Failed to allocate memory\n");
 			return;
 		}
 	}
@@ -796,20 +796,20 @@ static void add_library(DWORD pid, LPVOID lpBaseOfDll, HANDLE hFile, char *dllna
 	}
 	lib = RZ_NEW0(LIB_ITEM);
 	if (!lib) {
-		RZ_LOG_ERROR("Failed to allocate memory");
+		RZ_LOG_ERROR("Failed to allocate memory\n");
 		return;
 	}
 	lib->pid = pid;
 	lib->hFile = hFile;
 	lib->BaseOfDll = lpBaseOfDll;
-	lib->Path = strdup(dllname);
-	lib->Name = strdup(rz_file_basename(dllname));
+	lib->Path = rz_str_dup(dllname);
+	lib->Name = rz_str_dup(rz_file_basename(dllname));
 
 	(void)rz_list_append(lib_list, lib);
 }
 
 static void *last_library(void) {
-	return lib_list ? rz_list_get_tail_data(lib_list) : NULL;
+	return lib_list ? rz_list_last(lib_list) : NULL;
 }
 
 static bool breaked = false;
@@ -1301,7 +1301,7 @@ RzList *w32_thread_list(RzDebug *dbg, int pid, RzList *list) {
 		}
 		if (!path) {
 			// TODO: enum processes to get binary's name
-			path = strdup("???");
+			path = rz_str_dup("???");
 		}
 		int saved_tid = dbg->tid;
 		do {

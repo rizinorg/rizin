@@ -18,8 +18,8 @@ pfn~?
 ol~?
 EOF
 EXPECT=<<EOF
-41
-99
+79
+137
 1
 EOF
 RUN
@@ -73,15 +73,13 @@ RUN
 NAME=o-[0]
 FILE=malloc://1024
 CMDS=o- `o~[0]`;o
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=oj-
 FILE=malloc://1024
 CMDS=o- `oj~{[0].fd}`;o
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=o =
@@ -120,8 +118,7 @@ RUN
 NAME=omn - crash
 FILE==
 CMDS=omn
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=oob 10
@@ -440,6 +437,7 @@ block    0x100
 type     EXEC (Executable file)
 arch     x86
 cpu      N/A
+features N/A
 baddr    0x08048000
 binsz    0x000050bc
 bintype  elf
@@ -458,7 +456,7 @@ maxopsz  16
 minopsz  1
 os       linux
 cc       N/A
-pcalign  0
+pcalign  1
 relro    partial
 rpath    NONE
 subsys   linux
@@ -585,8 +583,7 @@ pd 3
 oa arm 64
 pd 3
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=open priority

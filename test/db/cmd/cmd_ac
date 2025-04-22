@@ -27,9 +27,9 @@ fl @F:classes
 EOF
 EXPECT=<<EOF
 [Flatline]
-nth addr         vt_offset type    name           
---------------------------------------------------
-1   0x00001337  0x00000042 DEFAULT PlayerPosition
+nth       addr  vt_offset type    name           
+-------------------------------------------------
+  1 0x00001337 0x00000042 DEFAULT PlayerPosition
 
 Flatline=c
 -
@@ -68,10 +68,10 @@ fl @F:classes
 EOF
 EXPECT=<<EOF
 [Flatline]
-nth addr         vt_offset type    name           
---------------------------------------------------
-1   0x00001337  0x00000042 DEFAULT PlayerPosition
-2   0xdeadbeef  ---------- DEFAULT RemainIndoors
+nth       addr  vt_offset type    name           
+-------------------------------------------------
+  1 0x00001337 0x00000042 DEFAULT PlayerPosition
+  2 0xdeadbeef ---------- DEFAULT RemainIndoors
 
 Flatline=c
 -
@@ -83,9 +83,9 @@ attrtypes.Flatline=method
 0xdeadbeef 0 method.Flatline.RemainIndoors
 --
 [Flatline]
-nth addr         vt_offset type    name          
--------------------------------------------------
-1   0xdeadbeef  ---------- DEFAULT RemainIndoors
+nth       addr  vt_offset type    name          
+------------------------------------------------
+  1 0xdeadbeef ---------- DEFAULT RemainIndoors
 
 Flatline=c
 -
@@ -120,9 +120,9 @@ fl @F:classes
 EOF
 EXPECT=<<EOF
 [Flatline]
-nth addr         vt_offset type    name           
---------------------------------------------------
-1   0x00001337  0x00000042 DEFAULT PlayerPosition
+nth       addr  vt_offset type    name           
+-------------------------------------------------
+  1 0x00001337 0x00000042 DEFAULT PlayerPosition
 
 Flatline=c
 -
@@ -132,9 +132,9 @@ attrtypes.Flatline=method
 0x00001337 0 method.Flatline.PlayerPosition
 --
 [Flatline]
-nth addr         vt_offset type    name     
---------------------------------------------
-1   0x00001337  0x00000042 DEFAULT Marigold
+nth       addr  vt_offset type    name     
+-------------------------------------------
+  1 0x00001337 0x00000042 DEFAULT Marigold
 
 Flatline=c
 -
@@ -188,9 +188,9 @@ EXPECT=<<EOF
 [Album]
 [Flatline: PeripheryAlbum]
   (vtable at 0x1337)
-nth addr         vt_offset type    name           
---------------------------------------------------
-1   0x00001337  0x00000042 DEFAULT PlayerPosition
+nth       addr  vt_offset type    name           
+-------------------------------------------------
+  1 0x00001337 0x00000042 DEFAULT PlayerPosition
 
 [PeripheryAlbum: Album]
 Album=c
@@ -212,9 +212,9 @@ attrtypes.PeripheryAlbum=base
 --
 [Flatline: PeripheryAlbum]
   (vtable at 0x1337)
-nth addr         vt_offset type    name           
---------------------------------------------------
-1   0x00001337  0x00000042 DEFAULT PlayerPosition
+nth       addr  vt_offset type    name           
+-------------------------------------------------
+  1 0x00001337 0x00000042 DEFAULT PlayerPosition
 
 [PeripheryAlbum]
 Flatline=c
@@ -232,9 +232,9 @@ attrtypes.Flatline=base,method,vtable
 --
 [Flatline: PeripheryAlbum]
   (vtable at 0x1337)
-nth addr         vt_offset type    name           
---------------------------------------------------
-1   0x00001337  0x00000042 DEFAULT PlayerPosition
+nth       addr  vt_offset type    name           
+-------------------------------------------------
+  1 0x00001337 0x00000042 DEFAULT PlayerPosition
 
 [PeripheryAlbum]
 Flatline=c
@@ -429,9 +429,9 @@ EXPECT=<<EOF
 [Deadwing: PorcupineTreeAlbum]
 [PorcupineTreeAlbum: Album]
   (vtable at 0x1337 in class at +0x42)
-nth addr         vt_offset type    name   
-------------------------------------------
-1   0xdeadbeef  ---------- DEFAULT Listen
+nth       addr  vt_offset type    name   
+-----------------------------------------
+  1 0xdeadbeef ---------- DEFAULT Listen
 
 Album=c
 Deadwing=c
@@ -454,9 +454,9 @@ attrtypes.PorcupineTreeAlbum=base,vtable,method
 [Deadwing: Masterpiece]
 [Masterpiece: Album]
   (vtable at 0x1337 in class at +0x42)
-nth addr         vt_offset type    name   
-------------------------------------------
-1   0xdeadbeef  ---------- DEFAULT Listen
+nth       addr  vt_offset type    name   
+-----------------------------------------
+  1 0xdeadbeef ---------- DEFAULT Listen
 
 Album=c
 Deadwing=c
@@ -625,9 +625,9 @@ EOF
 EXPECT=<<EOF
 [Flaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaatline]
   (vtable at 0x1337 in class at +0x42)
-nth addr         vt_offset type    name                                                                                                                                                                                                                                                                                                                                                                                   
---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-1   0x00012345  ---------- DEFAULT Uluuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuumulu
+nth       addr  vt_offset type    name                                                                                                                                                                                                                                                                                                                                                                                   
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  1 0x00012345 ---------- DEFAULT Uluuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuumulu
 
 Flaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaatline=c
 -

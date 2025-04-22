@@ -39,7 +39,7 @@ RZ_API const char *rz_magic_file(RzMagic *m, const char *f) {
 RZ_API const char *rz_magic_descriptor(RzMagic *m, int fd) {
 	return magic_descriptor(m, fd);
 }
-RZ_API const char *rz_magic_buffer(RzMagic *m, const void *b, size_t s) {
+RZ_API const char *rz_magic_buffer(RzMagic *m, const ut8 *b, size_t s) {
 	return magic_buffer(m, b, s);
 }
 RZ_API const char *rz_magic_error(RzMagic *m) {
@@ -139,8 +139,7 @@ static const char *file_or_fd(RzMagic *ms, const char *inname, int fd) {
 	 * one extra for terminating '\0', and
 	 * some overlapping space for matches near EOF
 	 */
-#define SLOP (1 + sizeof(union VALUETYPE))
-	if (!(buf = malloc(HOWMANY + SLOP))) {
+	if (!(buf = malloc(RZ_MAGIC_BUF_SIZE))) {
 		return NULL;
 	}
 
@@ -218,7 +217,7 @@ static const char *file_or_fd(RzMagic *ms, const char *inname, int fd) {
 	}
 #endif
 
-	(void)memset(buf + nbytes, 0, SLOP); /* NUL terminate */
+	(void)memset(buf + nbytes, 0, RZ_MAGIC_BUF_SIZE); /* NUL terminate */
 	if (file_buffer(ms, fd, inname, buf, (size_t)nbytes) == -1) {
 		goto done;
 	}
@@ -305,7 +304,7 @@ RZ_API const char *rz_magic_file(RzMagic *ms, const char *inname) {
 	return file_or_fd(ms, inname, 0); // 0 = stdin
 }
 
-RZ_API const char *rz_magic_buffer(RzMagic *ms, const void *buf, size_t nb) {
+RZ_API const char *rz_magic_buffer(RzMagic *ms, const ut8 *buf, size_t nb) {
 	if (file_reset(ms) == -1) {
 		return NULL;
 	}

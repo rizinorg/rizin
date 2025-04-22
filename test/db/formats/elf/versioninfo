@@ -1,8 +1,7 @@
 NAME=ELF: no version info
 FILE=bins/elf/analysis/x64-simple
 CMDS=iV
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=ELF: versioninfo 1

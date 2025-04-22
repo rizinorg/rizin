@@ -24,8 +24,7 @@ RZ_IPI bool rz_core_visual_bit_editor(RzCore *core) {
 	const int nbits = sizeof(ut64) * 8;
 	bool colorBits = false;
 	int i, j, x = 0;
-	RzAsmOp asmop;
-	RzAnalysisOp aop;
+	RzAnalysisOp aop = { 0 };
 	ut8 buf[sizeof(ut64)];
 	bool bitsInLine = false;
 	RzLine *rzline = core->cons->line;
@@ -41,8 +40,10 @@ RZ_IPI bool rz_core_visual_bit_editor(RzCore *core) {
 	for (;;) {
 		rz_cons_clear00();
 		bool use_color = core->print->flags & RZ_PRINT_FLAGS_COLOR;
+		RzAsmOp asmop = { 0 };
 		(void)rz_asm_disassemble(core->rasm, &asmop, buf, sizeof(ut64));
 		aop.type = -1;
+		rz_analysis_op_init(&aop);
 		(void)rz_analysis_op(core->analysis, &aop, core->offset, buf, sizeof(ut64), RZ_ANALYSIS_OP_MASK_ESIL);
 		rz_cons_printf("rizin's bit editor:\n\n");
 		rz_cons_printf("offset: 0x%08" PFMT64x "\n" Color_RESET, core->offset + cur);
@@ -61,7 +62,7 @@ RZ_IPI bool rz_core_visual_bit_editor(RzCore *core) {
 		{
 			RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, aop.type);
 			RzStrBuf *colored_asm = rz_asm_colorize_asm_str(&asmop.buf_asm, core->print, param, asmop.asm_toks);
-			free(param);
+			rz_asm_parse_param_free(param);
 			rz_cons_printf(Color_RESET "asm: %s\n" Color_RESET, colored_asm ? rz_strbuf_get(colored_asm) : "");
 			rz_strbuf_free(colored_asm);
 		}
@@ -277,6 +278,7 @@ RZ_IPI bool rz_core_visual_bit_editor(RzCore *core) {
 			rz_cons_clear();
 		} break;
 		}
+		rz_asm_op_fini(&asmop);
 	}
 	return true;
 }

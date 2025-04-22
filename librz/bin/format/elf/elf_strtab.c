@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2021 08A <08A@riseup.net>
+// SPDX-FileCopyrightText: 2021 08A <dev@08a.re>
 // SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
 // SPDX-License-Identifier: LGPL-3.0-only
 
@@ -41,7 +41,7 @@ RZ_OWN RzBinElfStrtab *Elf_(rz_bin_elf_strtab_new)(RZ_NONNULL ELFOBJ *bin, ut64 
 	}
 
 	if (result->data[0] != '\0' || result->data[size - 1] != '\0') {
-		RZ_LOG_WARN("String table at 0x%" PFMT64x " should start and end by a NULL byte", offset);
+		RZ_LOG_WARN("String table at 0x%" PFMT64x " should start and end by a NULL byte\n", offset);
 		Elf_(rz_bin_elf_strtab_free)(result);
 		return NULL;
 	}
@@ -56,7 +56,7 @@ RZ_OWN char *Elf_(rz_bin_elf_strtab_get_dup)(RZ_NONNULL RzBinElfStrtab *strtab, 
 		return NULL;
 	}
 
-	char *result = strdup(strtab->data + index);
+	char *result = rz_str_dup(strtab->data + index);
 	if (!result) {
 		return NULL;
 	}

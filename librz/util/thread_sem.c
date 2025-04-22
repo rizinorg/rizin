@@ -43,6 +43,7 @@ RZ_API RZ_OWN RzThreadSemaphore *rz_th_sem_new(unsigned int initial) {
 		free(sem);
 		return NULL;
 	}
+	sem_unlink(name);
 #else
 	sem->sem = malloc(sizeof(sem_t));
 	if (!sem->sem) {
@@ -111,7 +112,8 @@ RZ_API void rz_th_sem_post(RZ_NONNULL RzThreadSemaphore *sem) {
 RZ_API void rz_th_sem_wait(RZ_NONNULL RzThreadSemaphore *sem) {
 	rz_return_if_fail(sem);
 #if HAVE_PTHREAD
-	sem_wait(sem->sem);
+	while (sem_wait(sem->sem) < 0 && errno == EINTR)
+		;
 #elif __WINDOWS__
 	WaitForSingleObject(sem->sem, INFINITE);
 #endif

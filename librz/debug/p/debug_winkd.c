@@ -189,7 +189,7 @@ static int rz_debug_winkd_attach(RZ_BORROW RZ_NONNULL RzDebug *dbg, int pid) {
 		}
 	}
 	if (!mod->name) {
-		mod->name = strdup("\\ntoskrnl.exe");
+		mod->name = rz_str_dup("\\ntoskrnl.exe");
 	}
 	char *exepath, *pdbpath;
 	if (!winkd_download_module_and_pdb(mod,
@@ -290,7 +290,7 @@ static RzList /*<RzDebugPid *>*/ *rz_debug_winkd_pids(RZ_BORROW RZ_NONNULL RzDeb
 			rz_list_free(pids);
 			return NULL;
 		}
-		newpid->path = strdup(p->name);
+		newpid->path = rz_str_dup(p->name);
 		newpid->pid = p->uniqueid;
 		newpid->status = 's';
 		newpid->runnable = true;
@@ -418,7 +418,7 @@ static RzList /*<RzDebugMap *>*/ *rz_debug_winkd_maps(RZ_BORROW RZ_NONNULL RzDeb
 		}
 		if (m->file) {
 			RZ_PTR_MOVE(map->file, m->file);
-			map->name = strdup(rz_file_dos_basename(map->file));
+			map->name = rz_str_dup(rz_file_dos_basename(map->file));
 		}
 		map->size = m->end - m->start;
 		map->addr = m->start;

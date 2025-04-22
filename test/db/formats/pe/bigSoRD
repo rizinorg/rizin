@@ -1,8 +1,7 @@
 NAME=PE: corkami bigSoRD.exe - open
 FILE=bins/pe/bigSoRD.exe
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=PE: corkami bigSoRD.exe - entrypoint

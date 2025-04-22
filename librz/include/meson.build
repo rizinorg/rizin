@@ -1,6 +1,7 @@
 include_files = [
   'rz_agraph.h',
   'rz_analysis.h',
+  'rz_arch.h',
   'rz_asm.h',
   'rz_basefind.h',
   'rz_bin.h',
@@ -53,6 +54,7 @@ include_files = [
   'rz_vector.h',
   'rz_windows.h',
   'rz_windows_heap.h',
+  'rz_rop.h',
 ]
 install_headers(include_files, install_dir: rizin_incdir)
 
@@ -114,6 +116,7 @@ rz_util_files = [
   'rz_util/rz_time.h',
   'rz_util/rz_tree.h',
   'rz_util/rz_uleb128.h',
+  'rz_util/rz_unicode.h',
   'rz_util/rz_utf16.h',
   'rz_util/rz_utf32.h',
   'rz_util/rz_utf8.h',
@@ -124,7 +127,10 @@ rz_util_files = [
   'rz_util/ht_pu.h',
   'rz_util/ht_up.h',
   'rz_util/ht_uu.h',
-  'rz_util/set.h',
+  'rz_util/ht_sp.h',
+  'rz_util/ht_ss.h',
+  'rz_util/ht_su.h',
+  'rz_util/rz_set.h',
 ]
 install_headers(rz_util_files, install_dir: join_paths(rizin_incdir, 'rz_util'))
 
@@ -152,7 +158,9 @@ rz_il_files = [
 install_headers(rz_il_files, install_dir: join_paths(rizin_incdir, 'rz_il'))
 
 rz_crypto_files = [
-  'rz_crypto/rz_des.h'
+  'rz_crypto/rz_des.h',
+  'rz_crypto/rz_aes.h',
+  'rz_crypto/rz_sm4.h',
 ]
 install_headers(rz_crypto_files, install_dir: join_paths(rizin_incdir, 'rz_crypto'))
 

@@ -14,7 +14,7 @@ static RzBuffer *build(RzEgg *egg) {
 
 	if (!key || !*key) {
 		free(key);
-		key = strdup(default_key);
+		key = rz_str_dup(default_key);
 		eprintf("XOR key not provided. Using (%s) as the key\n", key);
 	}
 	nkey = rz_num_math(NULL, key);

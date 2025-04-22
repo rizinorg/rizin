@@ -1,0 +1,36 @@
+[wrap-git]
+
+url=${REPOSITORY}
+revision=${BRANCH}
+
+depth = 1
+
+[provide]
+rz_core = rz_core_dep
+rz_reg = rz_reg_dep
+rz_flag = rz_flag_dep
+rz_hash = rz_hash_dep
+rz_bin = rz_bin_dep
+rz_bp = rz_bp_dep
+rz_io = rz_io_dep
+rz_search = rz_search_dep
+rz_sign = rz_sign_dep
+rz_cons = rz_cons_dep
+rz_lang = rz_lang_dep
+rz_socket = rz_socket_dep
+rz_type = rz_type_dep
+rz_debug = rz_debug_dep
+#rz_ghidra = rz_ghidra_dep
+rz_il = rz_il_dep
+rz_demangler = rz_demangler_dep
+rz_util = rz_util_dep
+rz_main = rz_main_dep
+rz_asm = rz_asm_dep
+rz_crypto = rz_crypto_dep
+rz_config = rz_config_dep
+rz_egg = rz_egg_dep
+rz_syscall = rz_syscall_dep
+rz_magic = rz_magic_dep
+rz_parse = rz_parse_dep
+rz_analysis = rz_analysis_dep
+

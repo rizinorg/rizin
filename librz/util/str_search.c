@@ -1,6 +1,11 @@
 // SPDX-FileCopyrightText: 2021 borzacchiello <lucaborza@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_util/rz_assert.h>
+#include <rz_util/rz_str.h>
+#include <rz_util/rz_buf.h>
+#include <rz_util/rz_regex.h>
+#include <rz_util/ht_uu.h>
 #include <rz_util/rz_str_search.h>
 #include <rz_util/rz_utf8.h>
 #include <rz_util/rz_utf16.h>
@@ -46,10 +51,10 @@ static inline int compute_index(ut8 x, ut8 y) {
 	return (x * 7 + y);
 }
 
-static st64 score(RzRune *buff, const int len) {
+static st64 score(RzCodePoint *buff, const int len) {
 	int score = 0;
-	for (RzRune *src = buff, *end = buff + len - 1; src < end; ++src) {
-		RzRune b1 = src[0], b2 = src[1];
+	for (RzCodePoint *src = buff, *end = buff + len - 1; src < end; ++src) {
+		RzCodePoint b1 = src[0], b2 = src[1];
 		ut8 c1 = LATIN1_CLASS[b1], c2 = LATIN1_CLASS[b2];
 		if (b1 > 0x7f) {
 			score -= 6;
@@ -75,6 +80,7 @@ RZ_API void rz_detected_string_free(RzDetectedString *str) {
 		return;
 	}
 	free(str->string);
+	rz_regex_free(str->regex);
 	free(str);
 }
 
@@ -91,7 +97,7 @@ static UTF8StringInfo calculate_utf8_string_info(ut8 *str, int size) {
 
 	const ut8 *str_ptr = str;
 	const ut8 *str_end = str + size;
-	RzRune ch = 0;
+	RzCodePoint ch = 0;
 	while (str_ptr < str_end) {
 		int ch_bytes = rz_utf8_decode(str_ptr, str_end - str_ptr, &ch);
 		if (!ch_bytes) {
@@ -113,7 +119,6 @@ static UTF8StringInfo calculate_utf8_string_info(ut8 *str, int size) {
 }
 
 static FalsePositiveResult reduce_false_positives(const RzUtilStrScanOptions *opt, ut8 *str, int size, RzStrEnc str_type) {
-
 	switch (str_type) {
 	case RZ_STRING_ENC_8BIT: {
 		for (int i = 0; i < size; i++) {
@@ -150,7 +155,12 @@ static FalsePositiveResult reduce_false_positives(const RzUtilStrScanOptions *op
 			return RETRY_ASCII;
 		}
 
-		if (num_blocks > opt->max_uni_blocks) {
+		// If the string has characters of more then 4 blocks, it is
+		// considered invalid. I think at least. This was a funny metric
+		// to reduce false positives. But basically useless, because not
+		// documented. Also way too ineffecient. Because this whole thing iterates
+		// twice over the string. Leave it here to prevent regressions.
+		if (num_blocks > 4) {
 			return SKIP_STRING;
 		}
 		break;
@@ -203,79 +213,126 @@ static ut64 adjust_offset(RzStrEnc str_type, const ut8 *buf, const ut64 str_star
 	return 0;
 }
 
-static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut64 needle, const ut64 to,
-	RzStrEnc str_type, bool ascii_only, const RzUtilStrScanOptions *opt, ut8 *strbuf) {
+static inline size_t buf_look_ahead(const RzUtilStrScanOptions *opt, RzStrEnc enc) {
+	if (opt->max_str_length < opt->min_str_length) {
+		return 0;
+	}
+	switch (enc) {
+	case RZ_STRING_ENC_8BIT:
+		return 1;
+	case RZ_STRING_ENC_UTF16BE:
+	case RZ_STRING_ENC_UTF16LE:
+		return 2;
+	case RZ_STRING_ENC_UTF32BE:
+	case RZ_STRING_ENC_UTF32LE:
+	default:
+		return RZ_UNICODE_MAX_BYTES_PER_CHAR;
+	}
+}
 
+static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut64 needle, const ut64 to,
+	RzStrEnc str_type, bool ascii_only, const RzUtilStrScanOptions *opt, ut64 str_list_idx, bool test_false_positives) {
 	rz_return_val_if_fail(str_type != RZ_STRING_ENC_GUESS, NULL);
+	size_t look_ahead = buf_look_ahead(opt, str_type);
+	if (look_ahead == 0) {
+		return NULL;
+	}
+
+	// Most calls to this function never produce a valid string (e.g. because they are too short).
+	// To save allocations and frees, we first decode the first few code points onto the stack.
+	// Then, if the stack buffer is full, we move it to the heap.
+	ut8 stack_alloc[RZ_UNICODE_MAX_BYTES_PER_CHAR * 5] = { 0 };
+	// Gets only set if the stack buffer is full.
+	ut8 *heap_alloc = NULL;
+	ut8 *output_buf = stack_alloc;
 
 	ut64 str_addr = needle;
-	int rc = 0, i = 0, runes = 0;
+	// Bytes of a decoded/encoded character/code point.
+	int char_bytes = 0;
+	// Counter of correctly decoded characters/code points.
+	int char_count = 0;
+	int i = 0;
 
 	/* Eat a whole C string */
-	for (i = 0; i < opt->buf_size - 4 && needle < to; i += rc) {
-		RzRune r = 0;
+	for (i = 0; i < opt->max_str_length - look_ahead && needle < to; i += char_bytes) {
+		RzCodePoint r = 0;
 
-		if (str_type == RZ_STRING_ENC_UTF32LE) {
-			rc = rz_utf32le_decode(buf + needle - from, to - needle, &r);
-			if (rc) {
-				rc = 4;
-			}
-		} else if (str_type == RZ_STRING_ENC_UTF16LE) {
-			rc = rz_utf16le_decode(buf + needle - from, to - needle, &r);
-			if (rc == 1) {
-				rc = 2;
-			}
-		} else if (str_type == RZ_STRING_ENC_UTF32BE) {
-			rc = rz_utf32be_decode(buf + needle - from, to - needle, &r);
-			if (rc) {
-				rc = 4;
-			}
-		} else if (str_type == RZ_STRING_ENC_UTF16BE) {
-			rc = rz_utf16be_decode(buf + needle - from, to - needle, &r);
-			if (rc == 1) {
-				rc = 2;
-			}
-		} else if (str_type == RZ_STRING_ENC_IBM037) {
-			rc = rz_str_ibm037_to_unicode(*(buf + needle - from), &r);
-		} else if (str_type == RZ_STRING_ENC_IBM290) {
-			rc = rz_str_ibm290_to_unicode(*(buf + needle - from), &r);
-		} else if (str_type == RZ_STRING_ENC_EBCDIC_ES) {
-			rc = rz_str_ebcdic_es_to_unicode(*(buf + needle - from), &r);
-		} else if (str_type == RZ_STRING_ENC_EBCDIC_UK) {
-			rc = rz_str_ebcdic_uk_to_unicode(*(buf + needle - from), &r);
-		} else if (str_type == RZ_STRING_ENC_EBCDIC_US) {
-			rc = rz_str_ebcdic_us_to_unicode(*(buf + needle - from), &r);
-		} else {
-			rc = rz_utf8_decode(buf + needle - from, to - needle, &r);
-			if (rc > 1) {
+		switch (str_type) {
+		case RZ_STRING_ENC_UTF32LE:
+			char_bytes = rz_utf32le_decode(buf + needle - from, to - needle, &r);
+			break;
+		case RZ_STRING_ENC_UTF16LE:
+			char_bytes = rz_utf16le_decode(buf + needle - from, to - needle, &r);
+			break;
+		case RZ_STRING_ENC_UTF32BE:
+			char_bytes = rz_utf32be_decode(buf + needle - from, to - needle, &r);
+			break;
+		case RZ_STRING_ENC_UTF16BE:
+			char_bytes = rz_utf16be_decode(buf + needle - from, to - needle, &r);
+			break;
+		case RZ_STRING_ENC_IBM037:
+			char_bytes = rz_str_ibm037_to_unicode(*(buf + needle - from), &r);
+			break;
+		case RZ_STRING_ENC_IBM290:
+			char_bytes = rz_str_ibm290_to_unicode(*(buf + needle - from), &r);
+			break;
+		case RZ_STRING_ENC_EBCDIC_ES:
+			char_bytes = rz_str_ebcdic_es_to_unicode(*(buf + needle - from), &r);
+			break;
+		case RZ_STRING_ENC_EBCDIC_UK:
+			char_bytes = rz_str_ebcdic_uk_to_unicode(*(buf + needle - from), &r);
+			break;
+		case RZ_STRING_ENC_EBCDIC_US:
+			char_bytes = rz_str_ebcdic_us_to_unicode(*(buf + needle - from), &r);
+			break;
+		case RZ_STRING_ENC_SETTINGS:
+			rz_warn_if_reached();
+			RZ_LOG_ERROR("Illegal state reached. 'settings' encoding is not a valid value here.\n");
+			return NULL;
+		default:
+			char_bytes = rz_utf8_decode(buf + needle - from, to - needle, &r);
+			if (char_bytes > 1) {
 				str_type = RZ_STRING_ENC_UTF8;
+				look_ahead = buf_look_ahead(opt, RZ_STRING_ENC_UTF8);
 			}
-		}
-
-		/* Invalid sequence detected */
-		if (!rc || (ascii_only && r > 0x7f)) {
-			needle++;
 			break;
 		}
 
-		needle += rc;
+		/* Invalid sequence detected */
+		if (!char_bytes || (ascii_only && r > RZ_UNICODE_LAST_ASCII)) {
+			// Either an invalid code point decoded or a non-ASCII character.
+			break;
+		}
 
-		if (rz_rune_is_printable(r) && r != '\\') {
-			if (str_type == RZ_STRING_ENC_UTF32LE || str_type == RZ_STRING_ENC_UTF32BE) {
-				if (r == 0xff) {
-					r = 0;
-				}
+		if (opt->utf8_to_mem_offset_map && !rz_string_enc_is_utf8_compatible(str_type)) {
+			ut64 offset_id = ((str_list_idx) << 32) | i;
+			ht_uu_insert(opt->utf8_to_mem_offset_map, offset_id, needle);
+		}
+
+		needle += char_bytes;
+
+		if (i + RZ_UNICODE_MAX_BYTES_PER_CHAR > sizeof(stack_alloc) && !heap_alloc) {
+			// The decoded string now gets larger than the space on the stack.
+			// Allocate on the heap and move the string decoded so far.
+			heap_alloc = RZ_NEWS(ut8, opt->max_str_length + 1);
+			if (!heap_alloc) {
+				goto error;
 			}
-			rc = rz_utf8_encode(strbuf + i, r);
-			runes++;
+			rz_mem_copy(heap_alloc, opt->max_str_length + 1, stack_alloc, sizeof(stack_alloc));
+			output_buf = heap_alloc;
+		}
+
+		if (rz_unicode_code_point_is_printable(r) && r != '\\') {
+			char_bytes = rz_utf8_encode(output_buf + i, r);
+			char_count++;
 		} else if (r && r < 0x100 && is_c_escape_sequence((char)r)) {
-			if ((i + 32) < opt->buf_size && r < 93) {
-				rc = rz_utf8_encode(strbuf + i, r);
+			if ((i + 32) < opt->max_str_length && r < 93) {
+				char_bytes = rz_utf8_encode(output_buf + i, r);
 			} else {
-				// string too long
+				// String too long
 				break;
 			}
-			runes++;
+			char_count++;
 		} else {
 			/* \0 marks the end of C-strings */
 			break;
@@ -283,31 +340,36 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 	}
 
 	int strbuf_size = i;
-	if (runes >= opt->min_str_length) {
-		FalsePositiveResult false_positive_result = reduce_false_positives(opt, strbuf, strbuf_size, str_type);
-		if (false_positive_result == SKIP_STRING) {
-			return NULL;
-		} else if (false_positive_result == RETRY_ASCII) {
-			return process_one_string(buf, from, str_addr, to, str_type, true, opt, strbuf);
+	if (char_count >= opt->min_str_length && char_count <= opt->max_str_length) {
+		if (test_false_positives) {
+			FalsePositiveResult false_positive_result = reduce_false_positives(opt, output_buf, strbuf_size, str_type);
+			if (false_positive_result == SKIP_STRING) {
+				goto error;
+			} else if (false_positive_result == RETRY_ASCII) {
+				free(heap_alloc);
+				return process_one_string(buf, from, str_addr, to, str_type, true, opt, str_list_idx, false);
+			}
 		}
 
 		RzDetectedString *ds = RZ_NEW0(RzDetectedString);
 		if (!ds) {
-			return NULL;
+			goto error;
 		}
 		ds->type = str_type;
-		ds->length = runes;
+		ds->length = char_count;
 		ds->size = needle - str_addr;
 		ds->addr = str_addr;
 
 		ut64 off_adj = adjust_offset(str_type, buf, ds->addr - from);
 		ds->addr -= off_adj;
 		ds->size += off_adj;
-
-		ds->string = rz_str_ndup((const char *)strbuf, strbuf_size);
+		output_buf[strbuf_size] = '\0';
+		ds->string = heap_alloc ? (char *)output_buf : rz_str_ndup((char *)stack_alloc, sizeof(stack_alloc));
 		return ds;
 	}
 
+error:
+	free(heap_alloc);
 	return NULL;
 }
 
@@ -374,14 +436,14 @@ RZ_API bool rz_scan_strings_single_raw(RZ_NONNULL const ut8 *buf, ut64 size, RZ_
 /**
  * \brief Look for strings in a byte array.
  *
- * \param buf   Pointer to a raw buffer to scan
- * \param list  Pointer to a list that will be populated with the found strings
- * \param opt   Pointer to a RzUtilStrScanOptions that specifies search parameters
- * \param from  Minimum address to scan
- * \param to    Maximum address to scan
- * \param type  Type of strings to search
+ * \param buf   Pointer to a raw buffer to scan.
+ * \param list  Pointer to a list that will be populated with the found strings.
+ * \param opt   Pointer to an RzUtilStrScanOptions that specifies search parameters.
+ * \param from  Minimum address to scan.
+ * \param to    Maximum address to scan.
+ * \param type  Type of strings to search.
  *
- * \return Number of strings found
+ * \return Number of strings found. Or -1 in case of failure.
  *
  * Used to look for strings in a give RzBuffer. The function can also automatically detect string types.
  */
@@ -400,11 +462,7 @@ RZ_API int rz_scan_strings_raw(RZ_NONNULL const ut8 *buf, RZ_NONNULL RzList /*<R
 	int count = 0;
 	RzStrEnc str_type = type;
 
-	ut8 *strbuf = calloc(opt->buf_size, 1);
-	if (!strbuf) {
-		return -1;
-	}
-
+	bool test_false_positives = false;
 	needle = from;
 	const ut8 *ptr = NULL;
 	ut64 size = 0;
@@ -414,6 +472,7 @@ RZ_API int rz_scan_strings_raw(RZ_NONNULL const ut8 *buf, RZ_NONNULL RzList /*<R
 		size = to - needle;
 		--skip_ibm037;
 		if (type == RZ_STRING_ENC_GUESS) {
+			test_false_positives = true;
 			if (can_be_utf32_le(ptr, size)) {
 				str_type = RZ_STRING_ENC_UTF32LE;
 			} else if (can_be_utf16_le(ptr, size)) {
@@ -421,8 +480,8 @@ RZ_API int rz_scan_strings_raw(RZ_NONNULL const ut8 *buf, RZ_NONNULL RzList /*<R
 			} else if (can_be_utf32_be(ptr, size)) {
 				if (to - needle > 3 && can_be_utf32_le(ptr + 3, size - 3)) {
 					// The string can be either utf32-le or utf32-be
-					RzDetectedString *ds_le = process_one_string(buf, from, needle + 3, to, RZ_STRING_ENC_UTF32LE, false, opt, strbuf);
-					RzDetectedString *ds_be = process_one_string(buf, from, needle, to, RZ_STRING_ENC_UTF32BE, false, opt, strbuf);
+					RzDetectedString *ds_le = process_one_string(buf, from, needle + 3, to, RZ_STRING_ENC_UTF32LE, false, opt, rz_list_length(list), false);
+					RzDetectedString *ds_be = process_one_string(buf, from, needle, to, RZ_STRING_ENC_UTF32BE, false, opt, rz_list_length(list), false);
 
 					RzDetectedString *to_add = NULL;
 					RzDetectedString *to_delete = NULL;
@@ -457,8 +516,8 @@ RZ_API int rz_scan_strings_raw(RZ_NONNULL const ut8 *buf, RZ_NONNULL RzList /*<R
 			} else if (can_be_utf16_be(ptr, size)) {
 				if (to - needle > 1 && can_be_utf16_le(ptr + 1, size - 1)) {
 					// The string can be either utf16-le or utf16-be
-					RzDetectedString *ds_le = process_one_string(buf, from, needle + 1, to, RZ_STRING_ENC_UTF16LE, false, opt, strbuf);
-					RzDetectedString *ds_be = process_one_string(buf, from, needle, to, RZ_STRING_ENC_UTF16BE, false, opt, strbuf);
+					RzDetectedString *ds_le = process_one_string(buf, from, needle + 1, to, RZ_STRING_ENC_UTF16LE, false, opt, rz_list_length(list), false);
+					RzDetectedString *ds_be = process_one_string(buf, from, needle, to, RZ_STRING_ENC_UTF16BE, false, opt, rz_list_length(list), false);
 
 					RzDetectedString *to_add = NULL;
 					RzDetectedString *to_delete = NULL;
@@ -492,15 +551,15 @@ RZ_API int rz_scan_strings_raw(RZ_NONNULL const ut8 *buf, RZ_NONNULL RzList /*<R
 				str_type = RZ_STRING_ENC_UTF16BE;
 			} else if (can_be_ebcdic(ptr, size) && skip_ibm037 < 0) {
 				ut8 sz = RZ_MIN(size, 15);
-				RzRune runes[15] = { 0 };
+				RzCodePoint code_points[15] = { 0 };
 				int i = 0;
 				for (; i < sz; i++) {
-					rz_str_ibm037_to_unicode(ptr[i], &runes[i]);
-					if (!rz_rune_is_printable(runes[i])) {
+					rz_str_ibm037_to_unicode(ptr[i], &code_points[i]);
+					if (!rz_unicode_code_point_is_printable(code_points[i])) {
 						break;
 					}
 				}
-				int s = score(runes, i);
+				int s = score(code_points, i);
 				if (s >= 36) {
 					str_type = RZ_STRING_ENC_IBM037;
 				} else {
@@ -517,10 +576,11 @@ RZ_API int rz_scan_strings_raw(RZ_NONNULL const ut8 *buf, RZ_NONNULL RzList /*<R
 				}
 			}
 		} else if (type == RZ_STRING_ENC_UTF8) {
-			str_type = RZ_STRING_ENC_8BIT; // initial assumption
+			// It gets promoted to UTF-8 in process_one_string() if an UTF-8 character was decoded.
+			str_type = RZ_STRING_ENC_8BIT;
 		}
 
-		RzDetectedString *ds = process_one_string(buf, from, needle, to, str_type, false, opt, strbuf);
+		RzDetectedString *ds = process_one_string(buf, from, needle, to, str_type, false, opt, rz_list_length(list), test_false_positives);
 		if (!ds) {
 			needle++;
 			continue;
@@ -533,18 +593,18 @@ RZ_API int rz_scan_strings_raw(RZ_NONNULL const ut8 *buf, RZ_NONNULL RzList /*<R
 		rz_list_append(list, ds);
 		needle += ds->size;
 	}
-	free(strbuf);
 	return count;
 }
+
 /**
  * \brief Look for strings in an RzBuffer.
- * \param buf_to_scan Pointer to a RzBuffer to scan
- * \param list Pointer to a list that will be populated with the found strings
- * \param opt Pointer to a RzUtilStrScanOptions that specifies search parameters
- * \param from Minimum address to scan
- * \param to Maximum address to scan
- * \param type Type of strings to search
- * \return Number of strings found
+ * \param buf_to_scan Pointer to a RzBuffer to scan.
+ * \param list Pointer to a list that will be populated with the found strings.
+ * \param opt Pointer to a RzUtilStrScanOptions that specifies search parameters.
+ * \param from Minimum address to scan.
+ * \param to Maximum address to scan.
+ * \param type Type of strings to search.
+ * \return Number of strings found.
  *
  * Used to look for strings in a give RzBuffer. The function can also automatically detect string types.
  */
@@ -573,5 +633,33 @@ RZ_API int rz_scan_strings(RZ_NONNULL RzBuffer *buf_to_scan, RZ_NONNULL RzList /
 	int count = rz_scan_strings_raw(buf, list, opt, from, to, type);
 
 	free(buf);
+	return count;
+}
+
+/**
+ * \brief Look for strings in an RzBuffer. The whole buffer is scanned.
+ * This function is suited for usage on hot paths.
+ *
+ * \param buf_to_scan Pointer to an RzBuffer to scan.
+ * \param list Pointer to a list that will be populated with the found strings. The strings are always cinverted as UTF-8.
+ * \param opt Pointer to an RzUtilStrScanOptions that specifies search parameters.
+ * \param type Type of strings to search.
+ *
+ * \return Number of strings found or -1 in case of failure.
+ */
+RZ_API int rz_scan_strings_whole_buf(RZ_NONNULL const RzBuffer *buf_to_scan, RZ_NONNULL RzList /*<RzDetectedString *>*/ *list, RZ_NONNULL const RzUtilStrScanOptions *opt, RzStrEnc type) {
+	rz_return_val_if_fail(opt && list && buf_to_scan, -1);
+	if (type == RZ_STRING_ENC_MUTF8 || type == RZ_STRING_ENC_BASE64) {
+		RZ_LOG_ERROR("rz_scan_strings_whole_buf: '%s' search type is not supported.\n", rz_str_enc_as_string(type));
+		return -1;
+	}
+
+	ut64 size;
+	const ut8 *raw_buf = rz_buf_get_whole_hot_paths((RzBuffer *)buf_to_scan, &size);
+	if (!raw_buf) {
+		RZ_LOG_ERROR("Failed to get whole buffer.");
+		return -1;
+	}
+	int count = rz_scan_strings_raw(raw_buf, list, opt, 0, size, type);
 	return count;
 }

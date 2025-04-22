@@ -1,14 +1,10 @@
-// SPDX-FileCopyrightText: 2021 08A <08A@riseup.net>
+// SPDX-FileCopyrightText: 2021 08A <dev@08a.re>
 // SPDX-FileCopyrightText: 2008-2020 nibble <nibble.ds@gmail.com>
 // SPDX-FileCopyrightText: 2008-2020 pancake <pancake@nopcode.org>
 // SPDX-FileCopyrightText: 2008-2020 alvaro_fe <alvaro.felipe91@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "elf.h"
-
-#define EF_MIPS_ABI_O32 0x00001000 /* O32 ABI.  */
-#define EF_MIPS_ABI_O64 0x00002000 /* O32 extended for 64 bit.  */
-#define EF_MIPS_ABI     0x0000f000
 
 #define VERSYM_VERSION 0x7fff
 
@@ -47,18 +43,6 @@ struct ver_flags_translation {
 	const char *name;
 };
 
-static const struct mips_bits_translation mips_bits_translation_table[] = {
-	{ EF_MIPS_ARCH_1, 32 },
-	{ EF_MIPS_ARCH_2, 32 },
-	{ EF_MIPS_ARCH_3, 32 },
-	{ EF_MIPS_ARCH_4, 32 },
-	{ EF_MIPS_ARCH_5, 32 },
-	{ EF_MIPS_ARCH_32, 32 },
-	{ EF_MIPS_ARCH_64, 64 },
-	{ EF_MIPS_ARCH_32R2, 32 },
-	{ EF_MIPS_ARCH_64R2, 64 }
-};
-
 static const struct section_note_osabi_translation section_note_osabi_translation_table[] = {
 	{ ".note.openbsd.ident", "openbsd" },
 	{ ".note.minix.ident", "minix" },
@@ -74,7 +58,7 @@ static const struct machine_name_translation machine_name_translation_table[] = 
 	{ EM_68K, "Motorola m68k family" },
 	{ EM_88K, "Motorola m88k family" },
 	{ EM_860, "Intel 80860" },
-	{ EM_MIPS, "MIPS R3000" },
+	{ EM_MIPS, "MIPS R3000 big-endian" },
 	{ EM_S370, "IBM System/370" },
 	{ EM_MIPS_RS3_LE, "MIPS R3000 little-endian" },
 	{ EM_PARISC, "HPPA" },
@@ -113,6 +97,7 @@ static const struct machine_name_translation machine_name_translation_table[] = 
 	{ EM_TINYJ, "Advanced Logic Corp. Tinyj emb.fam" },
 	{ EM_X86_64, "AMD x86-64 architecture" },
 	{ EM_LANAI, "32bit LANAI architecture" },
+	{ EM_LANAI_OLD, "32bit LANAI architecture" },
 	{ EM_PDSP, "Sony DSP Processor" },
 	{ EM_PDP10, "Digital Equipment Corp. PDP-10" },
 	{ EM_PDP11, "Digital Equipment Corp. PDP-11" },
@@ -221,6 +206,24 @@ static const struct machine_name_translation machine_name_translation_table[] = 
 	{ EM_AMDGPU, "AMD GPU architecture" },
 	{ EM_BPF, "Linux BPF" },
 	{ EM_KVX, "Kalray VLIW core of the MPPA processor family" },
+	{ EM_ALPHA, "DEC Alpha" },
+	{ EM_CEVA, "CEVA Processor Architecture Family" },
+	{ EM_CEVA_X2, "CEVA X2 Processor Family" },
+	{ EM_GRAPHCORE_IPU, "Graphcore Intelligent Processing Unit" },
+	{ EM_IMG1, "Imagination Technologies (nanomips)" },
+	{ EM_NFP, "Netronome Flow Processor" },
+	{ EM_VE, "NEC Vector Engine" },
+	{ EM_CSKY, "C-SKY processor family" },
+	{ EM_ARC_COMPACT3_64, "Synopsys ARCv2.3 64-bit" },
+	{ EM_MCS6502, "MOS Technology MCS 6502 processor" },
+	{ EM_ARC_COMPACT3, "Synopsys ARCv2.3 32-bit" },
+	{ EM_KVX, "Kalray VLIW core of the MPPA processor family" },
+	{ EM_65816, "WDC 65816/65C816" },
+	{ EM_LOONGARCH, "LoongArch" },
+	{ EM_KF32, "ChipON KungFu32" },
+	{ EM_U16_U8CORE, "LAPIS nX-U16/U8" },
+	{ EM_TACHYUM, "Tachyum" },
+	{ EM_56800EF, "NXP 56800EF Digital Signal Controller (DSC)" },
 };
 
 static const struct class_translation class_translation_table[] = {
@@ -229,8 +232,47 @@ static const struct class_translation class_translation_table[] = {
 	{ ELFCLASS64, "ELF64" }
 };
 
-static const struct cpu_mips_translation cpu_mips_translation_table[] = {
-	{ EF_MIPS_ARCH_1, "mips1" },
+static const struct cpu_mips_translation gnu_mips_mach_translation_table[] = {
+	{ EF_MIPS_MACH_3900, "3900 " },
+	{ EF_MIPS_MACH_4010, "4010 " },
+	{ EF_MIPS_MACH_4100, "4100 " },
+	{ EF_MIPS_MACH_ALLEGREX, "allegrex " },
+	{ EF_MIPS_MACH_4650, "4650 " },
+	{ EF_MIPS_MACH_4120, "4120 " },
+	{ EF_MIPS_MACH_4111, "4111 " },
+	{ EF_MIPS_MACH_SB1, "sb1 " },
+	{ EF_MIPS_MACH_OCTEON, "octeon " },
+	{ EF_MIPS_MACH_XLR, "xlr " },
+	{ EF_MIPS_MACH_OCTEON2, "octeon2 " },
+	{ EF_MIPS_MACH_OCTEON3, "octeon3 " },
+	{ EF_MIPS_MACH_5400, "5400 " },
+	{ EF_MIPS_MACH_5900, "5900 " },
+	{ EF_MIPS_MACH_IAMR2, "iamr2 " },
+	{ EF_MIPS_MACH_5500, "5500 " },
+	{ EF_MIPS_MACH_9000, "9000 " },
+	{ EF_MIPS_MACH_LS2E, "ls2e " },
+	{ EF_MIPS_MACH_LS2F, "ls2f " },
+	{ EF_MIPS_MACH_GS464, "gs464 " },
+	{ EF_MIPS_MACH_GS464E, "gs464e " },
+	{ EF_MIPS_MACH_GS264E, "gs264e " },
+};
+
+static const struct mips_bits_translation mips_bits_translation_table[] = {
+	{ EF_MIPS_ARCH_1, 32 },
+	{ EF_MIPS_ARCH_2, 32 },
+	{ EF_MIPS_ARCH_3, 64 },
+	{ EF_MIPS_ARCH_4, 64 },
+	{ EF_MIPS_ARCH_5, 64 },
+	{ EF_MIPS_ARCH_32, 32 },
+	{ EF_MIPS_ARCH_64, 64 },
+	{ EF_MIPS_ARCH_32R2, 32 },
+	{ EF_MIPS_ARCH_64R2, 64 },
+	{ EF_MIPS_ARCH_32R6, 32 },
+	{ EF_MIPS_ARCH_64R6, 64 },
+};
+
+static const struct cpu_mips_translation gnu_mips_arch_translation_table32[] = {
+	{ EF_MIPS_ARCH_1, "mips32" },
 	{ EF_MIPS_ARCH_2, "mips2" },
 	{ EF_MIPS_ARCH_3, "mips3" },
 	{ EF_MIPS_ARCH_4, "mips4" },
@@ -239,11 +281,30 @@ static const struct cpu_mips_translation cpu_mips_translation_table[] = {
 	{ EF_MIPS_ARCH_64, "mips64" },
 	{ EF_MIPS_ARCH_32R2, "mips32r2" },
 	{ EF_MIPS_ARCH_64R2, "mips64r2" },
+	{ EF_MIPS_ARCH_32R6, "mips32r6" },
+	{ EF_MIPS_ARCH_64R6, "mips64r6" },
+};
+
+static const struct cpu_mips_translation gnu_mips_arch_translation_table64[] = {
+	{ EF_MIPS_ARCH_1, "mips64" }, // also used for generic mips, so we default to mips64
+	{ EF_MIPS_ARCH_2, "mips64r2" },
+	{ EF_MIPS_ARCH_3, "mips64r3" },
+	{ EF_MIPS_ARCH_4, "mips64r5" },
+	{ EF_MIPS_ARCH_5, "mips64r6" },
+	{ EF_MIPS_ARCH_32, "mips64" },
+	{ EF_MIPS_ARCH_64, "mips64" },
+	{ EF_MIPS_ARCH_32R2, "mips64r2" }, // should never happen but default to 64bit
+	{ EF_MIPS_ARCH_64R2, "mips64r2" },
+	{ EF_MIPS_ARCH_32R6, "mips64r6" }, // should never happen but default to 64bit
+	{ EF_MIPS_ARCH_64R6, "mips64r6" },
 };
 
 static const struct arch_translation arch_translation_table[] = {
+	{ EM_ALPHA, "alpha" },
 	{ EM_ARC, "arc" },
 	{ EM_ARC_A5, "arc" },
+	{ EM_ARC_COMPACT3_64, "arc" },
+	{ EM_ARC_COMPACT3, "arc" },
 	{ EM_AVR, "avr" },
 	{ EM_BA2_NON_STANDARD, "ba2" },
 	{ EM_BA2, "ba2" },
@@ -252,6 +313,7 @@ static const struct arch_translation arch_translation_table[] = {
 	{ EM_MIPS, "mips" },
 	{ EM_MIPS_RS3_LE, "mips" },
 	{ EM_MIPS_X, "mips" },
+	{ EM_IMG1, "mips" },
 	{ EM_MCST_ELBRUS, "elbrus" },
 	{ EM_TRICORE, "tricore" },
 	{ EM_RCE, "mcore" },
@@ -264,6 +326,7 @@ static const struct arch_translation arch_translation_table[] = {
 	{ EM_SPARCV9, "sparc" },
 	{ EM_PPC, "ppc" },
 	{ EM_PPC64, "ppc" },
+	{ EM_MCHP_PIC, "pic" },
 	{ EM_PARISC, "hppa" },
 	{ EM_PROPELLER, "propeller" },
 	{ EM_MICROBLAZE, "microblaze.gnu" },
@@ -287,6 +350,20 @@ static const struct arch_translation arch_translation_table[] = {
 	{ EM_NONE, "null" },
 	{ EM_BPF, "bpf" },
 	{ EM_KVX, "kvx" },
+	{ EM_CEVA, "ceva" },
+	{ EM_CEVA_X2, "ceva" },
+	{ EM_GRAPHCORE_IPU, "graphcore_ipu" },
+	{ EM_NFP, "nfp" },
+	{ EM_VE, "ve" },
+	{ EM_CSKY, "csky" },
+	{ EM_MCS6502, "mcs6502" },
+	{ EM_KVX, "kvx" },
+	{ EM_65816, "65816" },
+	{ EM_LOONGARCH, "loongarch" },
+	{ EM_KF32, "kf32" },
+	{ EM_U16_U8CORE, "u16_u8core" },
+	{ EM_TACHYUM, "tachyum" },
+	{ EM_56800EF, "56800ef" },
 };
 
 static const struct ver_flags_translation ver_flags_translation_table[] = {
@@ -631,26 +708,38 @@ static int get_bits_mips_common(Elf_(Word) mips_type) {
 	return 32;
 }
 
-static int is_playstation_hack(ELFOBJ *bin, Elf_(Word) mips_type) {
-	return Elf_(rz_bin_elf_is_executable)(bin) && Elf_(rz_bin_elf_is_static)(bin) && mips_type == EF_MIPS_ARCH_3;
+static inline bool is_elf_class64(ELFOBJ *bin) {
+	return bin->ehdr.e_ident[EI_CLASS] == ELFCLASS64;
+}
+
+static inline bool is_elf_class32(ELFOBJ *bin) {
+	return bin->ehdr.e_ident[EI_CLASS] == ELFCLASS32;
 }
 
 static int get_bits_mips(ELFOBJ *bin) {
-	const Elf_(Word) mips_type = bin->ehdr.e_flags & EF_MIPS_ARCH;
-
-	if (is_playstation_hack(bin, mips_type)) {
+	if (is_elf_class64(bin)) {
 		return 64;
 	}
 
+	const Elf_(Word) mips_type = bin->ehdr.e_flags & EF_MIPS_ARCH;
 	return get_bits_mips_common(mips_type);
 }
 
+static inline bool arch_is_nanomips(ELFOBJ *bin) {
+	return bin->ehdr.e_machine == EM_IMG1;
+}
+
 static bool arch_is_mips(ELFOBJ *bin) {
-	return Elf_(rz_bin_elf_has_segments)(bin) && bin->ehdr.e_machine == EM_MIPS;
+	return bin->ehdr.e_machine == EM_MIPS ||
+		bin->ehdr.e_machine == EM_MIPS_RS3_LE ||
+		bin->ehdr.e_machine == EM_MIPS_X ||
+		arch_is_nanomips(bin);
 }
 
 static bool arch_is_arcompact(ELFOBJ *bin) {
-	return bin->ehdr.e_machine == EM_ARC_A5;
+	return bin->ehdr.e_machine == EM_ARC_A5 ||
+		bin->ehdr.e_machine == EM_ARC_COMPACT3_64 ||
+		bin->ehdr.e_machine == EM_ARC_COMPACT3;
 }
 
 static char *read_elf_intrp(ELFOBJ *bin, ut64 addr, size_t size) {
@@ -673,8 +762,8 @@ static char *get_elf_intrp(ELFOBJ *bin, RzBinElfSegment *segment) {
 	ut64 addr = segment->data.p_offset;
 	size_t size = segment->data.p_filesz;
 
-	if (!sdb_num_set(bin->kv, "elf_header.intrp_addr", addr, 0) ||
-		!sdb_num_set(bin->kv, "elf_header.intrp_size", size, 0)) {
+	if (!sdb_num_set(bin->kv, "elf_header.intrp_addr", addr) ||
+		!sdb_num_set(bin->kv, "elf_header.intrp_size", size)) {
 		return NULL;
 	}
 
@@ -687,7 +776,7 @@ static char *get_elf_intrp(ELFOBJ *bin, RzBinElfSegment *segment) {
 		return NULL;
 	}
 
-	if (!sdb_set(bin->kv, "elf_header.intrp", str, 0)) {
+	if (!sdb_set(bin->kv, "elf_header.intrp", str)) {
 		free(str);
 		return NULL;
 	}
@@ -713,7 +802,7 @@ static char *get_ver_flags(ut32 flags) {
 	char *result = NULL;
 
 	if (!flags) {
-		return strdup("none");
+		return rz_str_dup("none");
 	}
 
 	for (size_t i = 0; i < RZ_ARRAY_SIZE(ver_flags_translation_table); i++) {
@@ -736,7 +825,7 @@ static char *get_osabi_name_from_section_note(ELFOBJ *bin, RzBinElfSection *sect
 
 	for (size_t i = 0; i < RZ_ARRAY_SIZE(section_note_osabi_translation_table); i++) {
 		if (!strcmp(section->name, section_note_osabi_translation_table[i].note_name)) {
-			return strdup(section_note_osabi_translation_table[i].os_name);
+			return rz_str_dup(section_note_osabi_translation_table[i].os_name);
 		}
 	}
 
@@ -766,13 +855,13 @@ static char *get_osabi_name_from_shdr(ELFOBJ *bin) {
 static char *get_osabi_name_from_ehdr(ELFOBJ *bin) {
 	switch (bin->ehdr.e_ident[EI_OSABI]) {
 	case ELFOSABI_LINUX:
-		return strdup("linux");
+		return rz_str_dup("linux");
 	case ELFOSABI_SOLARIS:
-		return strdup("solaris");
+		return rz_str_dup("solaris");
 	case ELFOSABI_FREEBSD:
-		return strdup("freebsd");
+		return rz_str_dup("freebsd");
 	case ELFOSABI_HPUX:
-		return strdup("hpux");
+		return rz_str_dup("hpux");
 	}
 
 	return NULL;
@@ -819,15 +908,15 @@ static bool file_type_is_os_specific(ELFOBJ *bin) {
 static char *get_file_type_basic(RZ_NONNULL ELFOBJ *bin) {
 	switch (bin->ehdr.e_type) {
 	case ET_NONE:
-		return strdup("NONE (None)");
+		return rz_str_dup("NONE (None)");
 	case ET_REL:
-		return strdup("REL (Relocatable file)");
+		return rz_str_dup("REL (Relocatable file)");
 	case ET_EXEC:
-		return strdup("EXEC (Executable file)");
+		return rz_str_dup("EXEC (Executable file)");
 	case ET_DYN:
-		return strdup("DYN (Shared object file)");
+		return rz_str_dup("DYN (Shared object file)");
 	case ET_CORE:
-		return strdup("CORE (Core file)");
+		return rz_str_dup("CORE (Core file)");
 	}
 
 	return NULL;
@@ -835,62 +924,128 @@ static char *get_file_type_basic(RZ_NONNULL ELFOBJ *bin) {
 
 static char *get_cpu_mips(ELFOBJ *bin) {
 	Elf_(Word) mips_arch = bin->ehdr.e_flags & EF_MIPS_ARCH;
+	Elf_(Word) mips_ase = bin->ehdr.e_flags & EF_MIPS_ARCH_ASE;
+	Elf_(Word) mips_mach = bin->ehdr.e_flags & EF_MIPS_MACH;
+	bool has_mdmx = false;
 
-	for (size_t i = 0; i < RZ_ARRAY_SIZE(cpu_mips_translation_table); i++) {
-		if (mips_arch == cpu_mips_translation_table[i].arch) {
-			return strdup(cpu_mips_translation_table[i].name);
+	switch (mips_ase) {
+	case EF_MIPS_ARCH_ASE_MDMX:
+		has_mdmx = true;
+		break;
+	case EF_MIPS_ARCH_ASE_M16:
+		return strdup("mips16");
+	case EF_MIPS_ARCH_ASE_MICROMIPS:
+		switch (mips_arch) {
+		case EF_MIPS_ARCH_32R2:
+			// r2 is included in r3
+			return strdup("micro32r3");
+		case EF_MIPS_ARCH_32R6:
+			return strdup("micro32r6");
+		default:
+			break;
+		}
+		return strdup("micromips");
+	}
+
+	RzStrBuf sb;
+	rz_strbuf_init(&sb);
+
+	if (has_mdmx) {
+		rz_strbuf_set(&sb, "mdmx ");
+	}
+
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(gnu_mips_mach_translation_table); i++) {
+		if (mips_mach == gnu_mips_mach_translation_table[i].arch) {
+			rz_strbuf_append(&sb, gnu_mips_mach_translation_table[i].name);
+			break;
 		}
 	}
 
-	return strdup(" Unknown mips ISA");
-}
-
-static bool is_elf_class64(ELFOBJ *bin) {
-	return bin->ehdr.e_ident[EI_CLASS] == ELFCLASS64;
-}
-
-static bool is_mips_o32(ELFOBJ *bin) {
-	if (bin->ehdr.e_ident[EI_CLASS] != ELFCLASS32) {
-		return false;
+	if (is_elf_class64(bin)) {
+		for (size_t i = 0; i < RZ_ARRAY_SIZE(gnu_mips_arch_translation_table64); i++) {
+			if (mips_arch == gnu_mips_arch_translation_table64[i].arch) {
+				rz_strbuf_append(&sb, gnu_mips_arch_translation_table64[i].name);
+				break;
+			}
+		}
+	} else {
+		for (size_t i = 0; i < RZ_ARRAY_SIZE(gnu_mips_arch_translation_table32); i++) {
+			if (mips_arch == gnu_mips_arch_translation_table32[i].arch) {
+				rz_strbuf_append(&sb, gnu_mips_arch_translation_table32[i].name);
+				break;
+			}
+		}
 	}
 
-	if ((bin->ehdr.e_flags & EF_MIPS_ABI2) != 0) {
-		return false;
-	}
-
-	if ((bin->ehdr.e_flags & EF_MIPS_ABI) != 0 && (bin->ehdr.e_flags & EF_MIPS_ABI) != EF_MIPS_ABI_O32) {
-		return false;
-	}
-
-	return true;
-}
-
-static bool is_mips_n32(ELFOBJ *bin) {
-	if (bin->ehdr.e_ident[EI_CLASS] != ELFCLASS32) {
-		return false;
-	}
-
-	if ((bin->ehdr.e_flags & EF_MIPS_ABI2) == 0 || (bin->ehdr.e_flags & EF_MIPS_ABI) != 0) {
-		return false;
-	}
-
-	return true;
+	return rz_strbuf_drain_nofree(&sb);
 }
 
 static char *get_abi_mips(ELFOBJ *bin) {
+	Elf_(Word) mips_eflags = bin->ehdr.e_flags;
+	Elf_(Word) mips_abi = mips_eflags & EF_MIPS_ABI;
+
+	RzStrBuf sb;
+	rz_strbuf_init(&sb);
+
+	if (mips_eflags & EF_MIPS_NOREORDER) {
+		rz_strbuf_append(&sb, "noreorder ");
+	}
+
+	if (mips_eflags & EF_MIPS_PIC) {
+		rz_strbuf_append(&sb, "pic ");
+	}
+
+	if (mips_eflags & EF_MIPS_CPIC) {
+		rz_strbuf_append(&sb, "cpic ");
+	}
+
+	if (mips_eflags & EF_MIPS_XGOT) {
+		rz_strbuf_append(&sb, "xgot ");
+	}
+
+	if (mips_eflags & EF_MIPS_UCODE) {
+		rz_strbuf_append(&sb, "ucode ");
+	}
+
+	if (mips_eflags & EF_MIPS_ABI2) {
+		rz_strbuf_append(&sb, "abi2 ");
+	}
+
+	if (mips_eflags & EF_MIPS_FP64) {
+		rz_strbuf_append(&sb, "fp64 ");
+	}
+
+	if (mips_eflags & EF_MIPS_NAN2008) {
+		rz_strbuf_append(&sb, "nan2008 ");
+	}
+
+	if (mips_abi == EF_MIPS_ABI_O32) {
+		rz_strbuf_append(&sb, "o32 ");
+	}
+
+	if (mips_abi == EF_MIPS_ABI_O64) {
+		rz_strbuf_append(&sb, "o64 ");
+	}
+
+	if (mips_abi == EF_MIPS_ABI_EABI32) {
+		rz_strbuf_append(&sb, "eabi32 ");
+	}
+
+	if (mips_abi == EF_MIPS_ABI_EABI64) {
+		rz_strbuf_append(&sb, "eabi64 ");
+	}
+
 	if (is_elf_class64(bin)) {
-		return strdup("n64");
+		rz_strbuf_append(&sb, "n64");
+	} else if (is_elf_class32(bin)) {
+		rz_strbuf_append(&sb, "n32");
 	}
 
-	if (is_mips_n32(bin)) {
-		return strdup("n32");
+	if (rz_strbuf_is_empty(&sb)) {
+		return rz_str_dup("Unknown ABI");
 	}
 
-	if (is_mips_o32(bin)) {
-		return strdup("o32");
-	}
-
-	return NULL;
+	return rz_strbuf_drain_nofree(&sb);
 }
 
 /**
@@ -918,7 +1073,7 @@ RZ_OWN RzPVector /*<char *>*/ *Elf_(rz_bin_elf_get_libs)(RZ_NONNULL ELFOBJ *bin)
 	}
 
 	ut64 *iter = NULL;
-	rz_vector_foreach(dt_needed, iter) {
+	rz_vector_foreach (dt_needed, iter) {
 		char *tmp = Elf_(rz_bin_elf_strtab_get_dup)(bin->dynstr, *iter);
 		if (!tmp) {
 			rz_pvector_free(result);
@@ -1050,7 +1205,7 @@ static bool get_versym_entry_sdb_from_verneed(ELFOBJ *bin, Sdb *sdb, const char 
 				return false;
 			}
 
-			if (!sdb_set_owned(sdb, key, value, 0)) {
+			if (!sdb_set_owned(sdb, key, value)) {
 				return false;
 			}
 
@@ -1111,7 +1266,7 @@ static bool get_versym_entry_sdb_from_verdef(ELFOBJ *bin, Sdb *sdb, const char *
 			return false;
 		}
 
-		if (!sdb_set_owned(sdb, key, value, 0)) {
+		if (!sdb_set_owned(sdb, key, value)) {
 			return false;
 		}
 
@@ -1144,9 +1299,9 @@ static Sdb *get_gnu_versym(ELFOBJ *bin) {
 		return NULL;
 	}
 
-	if (!sdb_num_set(sdb, "num_entries", number_of_symbols, 0) ||
-		!sdb_num_set(sdb, "addr", versym_addr, 0) ||
-		!sdb_num_set(sdb, "offset", versym_offset, 0)) {
+	if (!sdb_num_set(sdb, "num_entries", number_of_symbols) ||
+		!sdb_num_set(sdb, "addr", versym_addr) ||
+		!sdb_num_set(sdb, "offset", versym_offset)) {
 		sdb_free(sdb);
 		return NULL;
 	}
@@ -1168,13 +1323,13 @@ static Sdb *get_gnu_versym(ELFOBJ *bin) {
 
 		switch (versym_entry) {
 		case VER_NDX_LOCAL:
-			if (!sdb_set(sdb, key, "0 (*local*)", 0)) {
+			if (!sdb_set(sdb, key, "0 (*local*)")) {
 				sdb_free(sdb);
 				return NULL;
 			}
 			break;
 		case VER_NDX_GLOBAL:
-			if (!sdb_set(sdb, key, "1 (*global*)", 0)) {
+			if (!sdb_set(sdb, key, "1 (*global*)")) {
 				sdb_free(sdb);
 				return NULL;
 			}
@@ -1206,14 +1361,14 @@ static Sdb *get_vernaux_entry_sdb(ELFOBJ *bin, Elf_(Vernaux) vernaux_entry, size
 	}
 
 	char *flags = get_ver_flags(vernaux_entry.vna_flags);
-	if (!sdb_set_owned(sdb_vernaux, "flags", flags, 0)) {
+	if (!sdb_set_owned(sdb_vernaux, "flags", flags)) {
 		sdb_free(sdb_vernaux);
 		return NULL;
 	}
 
-	if (!sdb_num_set(sdb_vernaux, "idx", index, 0) ||
-		!sdb_num_set(sdb_vernaux, "version", vernaux_entry.vna_other, 0) ||
-		!sdb_set(sdb_vernaux, "name", tmp, 0)) {
+	if (!sdb_num_set(sdb_vernaux, "idx", index) ||
+		!sdb_num_set(sdb_vernaux, "version", vernaux_entry.vna_other) ||
+		!sdb_set(sdb_vernaux, "name", tmp)) {
 		sdb_free(sdb_vernaux);
 		return NULL;
 	}
@@ -1232,10 +1387,10 @@ static Sdb *get_verneed_entry_sdb_aux(ELFOBJ *bin, Elf_(Verneed) verneed_entry, 
 		return NULL;
 	}
 
-	if (!sdb_num_set(sdb_version, "cnt", verneed_entry.vn_cnt, 0) ||
-		!sdb_num_set(sdb_version, "idx", index, 0) ||
-		!sdb_num_set(sdb_version, "vn_version", verneed_entry.vn_version, 0) ||
-		!sdb_set(sdb_version, "file_name", tmp, 0)) {
+	if (!sdb_num_set(sdb_version, "cnt", verneed_entry.vn_cnt) ||
+		!sdb_num_set(sdb_version, "idx", index) ||
+		!sdb_num_set(sdb_version, "vn_version", verneed_entry.vn_version) ||
+		!sdb_set(sdb_version, "file_name", tmp)) {
 		sdb_free(sdb_version);
 		return NULL;
 	}
@@ -1302,9 +1457,9 @@ static Sdb *get_gnu_verneed(ELFOBJ *bin) {
 		return NULL;
 	}
 
-	if (!sdb_num_set(sdb, "num_entries", verneed_num, 0) ||
-		!sdb_num_set(sdb, "addr", verneed_addr, 0) ||
-		!sdb_num_set(sdb, "offset", verneed_offset, 0)) {
+	if (!sdb_num_set(sdb, "num_entries", verneed_num) ||
+		!sdb_num_set(sdb, "addr", verneed_addr) ||
+		!sdb_num_set(sdb, "offset", verneed_offset)) {
 		sdb_free(sdb);
 		return NULL;
 	}
@@ -1429,7 +1584,7 @@ RZ_OWN char *Elf_(rz_bin_elf_get_compiler)(RZ_NONNULL ELFOBJ *bin) {
 RZ_OWN char *Elf_(rz_bin_elf_get_abi)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
-	if (bin->ehdr.e_machine == EM_MIPS) {
+	if (arch_is_mips(bin)) {
 		return get_abi_mips(bin);
 	}
 
@@ -1448,11 +1603,13 @@ RZ_OWN char *Elf_(rz_bin_elf_get_arch)(RZ_NONNULL ELFOBJ *bin) {
 
 	for (size_t i = 0; i < RZ_ARRAY_SIZE(arch_translation_table); i++) {
 		if (bin->ehdr.e_machine == arch_translation_table[i].arch) {
-			return strdup(arch_translation_table[i].name);
+			return rz_str_dup(arch_translation_table[i].name);
 		}
 	}
 
-	return strdup("");
+	RZ_LOG_INFO("elf: unknown e_machine %u! defaulting to x86.\n", (ut32)bin->ehdr.e_machine);
+	// fallback on x86
+	return rz_str_dup("x86");
 }
 
 /**
@@ -1465,11 +1622,11 @@ RZ_OWN char *Elf_(rz_bin_elf_get_arch)(RZ_NONNULL ELFOBJ *bin) {
 RZ_OWN char *Elf_(rz_bin_elf_get_cpu)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
-	if (!Elf_(rz_bin_elf_has_segments)(bin)) {
-		return NULL;
-	}
-
-	if (bin->ehdr.e_machine == EM_MIPS) {
+	if (arch_is_nanomips(bin)) {
+		// we return i7200 which includes nanomips (generic) & nms1.
+		return rz_str_dup("i7200");
+	} else if (arch_is_mips(bin)) {
+		// check which is the correct known mips cpus.
 		return get_cpu_mips(bin);
 	}
 
@@ -1488,7 +1645,7 @@ RZ_OWN char *Elf_(rz_bin_elf_get_elf_class)(RZ_NONNULL ELFOBJ *bin) {
 
 	for (size_t i = 0; i < RZ_ARRAY_SIZE(class_translation_table); i++) {
 		if (bin->ehdr.e_ident[EI_CLASS] == class_translation_table[i].class) {
-			return strdup(class_translation_table[i].name);
+			return rz_str_dup(class_translation_table[i].name);
 		}
 	}
 
@@ -1534,7 +1691,7 @@ RZ_OWN char *Elf_(rz_bin_elf_get_head_flag)(RZ_NONNULL ELFOBJ *bin) {
 
 	if (RZ_STR_ISEMPTY(head_flag)) {
 		free(head_flag);
-		return strdup("unknown_flag");
+		return rz_str_dup("unknown_flag");
 	}
 
 	return head_flag;
@@ -1553,7 +1710,7 @@ RZ_OWN char *Elf_(rz_bin_elf_get_machine_name)(RZ_NONNULL ELFOBJ *bin) {
 
 	for (size_t i = 0; i < RZ_ARRAY_SIZE(machine_name_translation_table); i++) {
 		if (bin->ehdr.e_machine == machine_name_translation_table[i].machine) {
-			return strdup(machine_name_translation_table[i].name);
+			return rz_str_dup(machine_name_translation_table[i].name);
 		}
 	}
 
@@ -1580,7 +1737,7 @@ RZ_OWN char *Elf_(rz_bin_elf_get_osabi_name)(RZ_NONNULL ELFOBJ *bin) {
 		return name;
 	}
 
-	return strdup("linux");
+	return rz_str_dup("linux");
 }
 
 /**

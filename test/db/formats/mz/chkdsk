@@ -2,8 +2,7 @@ NAME=MZ: chkdsk.exe - open
 FILE=bins/mz/chkdsk.exe
 ARGS=-A
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=MZ: chkdsk.exe - entrypoint

@@ -716,7 +716,7 @@ EXPECT=<<EOF
     },
     "sign": false,
     "prefix": 0,
-    "id": 942,
+    "id": 1004,
     "opex": {
       "operands": [
         {

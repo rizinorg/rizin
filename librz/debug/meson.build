@@ -5,24 +5,20 @@ debug_plugins_list = [
   'gdb',
   'io',
   'null',
-  'rap',
   'winkd',
 ]
+
 if get_option('use_gpl')
   debug_plugins_list += 'qnx'
 endif
+
 if has_debugger
   debug_plugins_list += ['native']
 endif
+
 if host_machine.system() == 'windows'
   debug_plugins_list += 'windbg'
 endif
-
-debug_plugins = {
-  'conf_name': 'plugins_debug',
-  'base_cname': 'rz_debug_plugin_',
-  'list': debug_plugins_list,
-}
 
 rz_debug_sources = [
   'ddesc.c',
@@ -46,7 +42,6 @@ rz_debug_sources = [
   'p/debug_gdb.c',
   'p/debug_io.c',
   'p/debug_null.c',
-  'p/debug_rap.c',
   'p/debug_winkd.c',
   #'p/native/arm.c',
   #'p/native/bt/fuzzy-all.c',
@@ -70,7 +65,7 @@ rz_debug_deps = [
   rz_bp_dep,
   rz_syscall_dep,
   rz_egg_dep,
-  rz_analysis_dep,
+  rz_arch_dep,
   rz_type_dep,
   platform_deps
 ]
@@ -134,6 +129,12 @@ rz_debug_inc = [
   )
 ]
 
+debug_plugins = {
+  'base_name': 'rz_debug',
+  'base_struct': 'RzDebugPlugin',
+  'list': debug_plugins_list,
+}
+
 rz_debug = library('rz_debug', rz_debug_sources,
   include_directories: rz_debug_inc,
   dependencies: rz_debug_deps,
@@ -157,7 +158,7 @@ modules += { 'rz_debug': {
       'rz_hash',
       'rz_reg',
       'rz_syscall',
-      'rz_analysis',
+      'rz_arch',
       'rz_io',
       'rz_bin',
       'rz_bp',

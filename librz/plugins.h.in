@@ -1,0 +1,13 @@
+// SPDX-FileCopyrightText: 2024 RizinOrg <info@rizin.re>
+// SPDX-License-Identifier: LGPL-3.0-only
+
+// clang-format off
+#ifndef @MODULE_NAME@_PLUGINS_BUILD_H
+#define @MODULE_NAME@_PLUGINS_BUILD_H
+
+#define @MODULE_NAME@_STATIC_PLUGINS @plugin_static@
+
+@plugin_exports@
+// clang-format on
+
+#endif

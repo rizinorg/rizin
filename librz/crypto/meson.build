@@ -1,25 +1,27 @@
+crypto_plugins_list = [
+  'aes',
+  'aes_cbc',
+  'base64',
+  'base91',
+  'blowfish',
+  'cps2',
+  'des',
+  'punycode',
+  'rc2',
+  'rc4',
+  'rc6',
+  'rol',
+  'ror',
+  'rot',
+  'serpent',
+  'xor',
+  'sm4_ecb'
+]
+
 crypto_plugins = {
-  'conf_name': 'plugins_crypto',
-  'base_cname': 'rz_crypto_plugin_',
-  'list': [
-    'aes',
-    'aes_cbc',
-    'base64',
-    'base91',
-    'blowfish',
-    'cps2',
-    'des',
-    'punycode',
-    'rc2',
-    'rc4',
-    'rc6',
-    'rol',
-    'ror',
-    'rot',
-    'serpent',
-    'xor',
-    'sm4_ecb'
-  ],
+  'base_name': 'rz_crypto',
+  'base_struct': 'RzCryptoPlugin',
+  'list': crypto_plugins_list,
 }
 
 rz_crypto_sources = [

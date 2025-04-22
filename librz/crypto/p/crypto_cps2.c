@@ -2860,31 +2860,6 @@ static void cps2_crypt(int dir, const ut16 *rom, ut16 *dec, int length, const ut
 	}
 }
 
-#if 0
-main(cps_state,cps2crypt) {
-	ut32 key[2];
-	ut32 lower;
-	ut32 upper;
-
-	std::string skey1 = parameter("cryptkey1");;
-	key[0] = strtoll(skey1.c_str(), nullptr, 16);
-
-	std::string skey2 = parameter("cryptkey2");
-	key[1] = strtoll(skey2.c_str(), nullptr, 16);
-
-	std::string slower = parameter("cryptlower");
-	lower = strtoll(slower.c_str(), nullptr, 16); // unused
-
-	std::string supper = parameter("cryptupper");
-	upper = strtoll(supper.c_str(), nullptr, 16);
-
-	// we have a proper key so use it to decrypt
-	if (lower != 0xff0000) {// don't run the decrypt on 'dead key' games for now
-		cps2_decrypt( (ut16 *)memregion("maincpu")->base(), m_decrypted_opcodes, memregion("maincpu")->bytes(), key, lower,upper);
-	}
-}
-#endif
-
 static bool set_key(RzCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
 	rz_return_val_if_fail(cry->user && key, false);
 	ut32 *cps2key = (ut32 *)cry->user;

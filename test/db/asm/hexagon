@@ -24,7 +24,7 @@ d "?   GELR = LR" 00c01f62 0x0
 
 d "?   R11:10 = memb_fifo(R12++M0:brev)" 0a408c9e 0x0
 d "?   R15:14 = memb_fifo(R7=##0x3)" 6ed0879a 0x0
-dB "?   C21:20 = R19:18" 14c03263 0x0
+d "?   C21:20 = R19:18" 14c03263 0x0
 d "?   C17:16 = R19:18" 10c03263 0x0
 d "?   PKTCOUNT = LR:FP" 12c03e63 0x0
 

@@ -247,26 +247,6 @@ static bool rz_make_fabs(RzFloat *f) {
 }
 
 /**
- * get the half value of a float (by decreasing exponent value)
- * \param f float
- * \return half value of a float
- */
-static RzFloat *rz_half_float(RzFloat *f) {
-	ut32 total = rz_float_get_format_info(f->r, RZ_FLOAT_INFO_TOTAL_LEN);
-	ut32 exp_start = rz_float_get_format_info(f->r, RZ_FLOAT_INFO_MAN_LEN);
-
-	// for exp sub 1
-	RzBitVector *sub = rz_bv_new(total);
-	rz_bv_set(sub, exp_start, true);
-	RzFloat *half = rz_float_new(f->r);
-	rz_bv_free(half->s);
-	half->s = rz_bv_sub(f->s, sub, NULL);
-
-	rz_bv_free(sub);
-	return half;
-}
-
-/**
  * Pack sign, exponent, and significant together to float bv
  * \param sign sign of float
  * \param exp exponent part, can be squashed or normal

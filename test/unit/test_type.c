@@ -11,65 +11,65 @@
 
 static void setup_sdb_for_struct(Sdb *res) {
 	// td "struct kappa {int bar;int cow;};"
-	sdb_set(res, "kappa", "struct", 0);
-	sdb_set(res, "struct.kappa", "bar,cow", 0);
-	sdb_set(res, "struct.kappa.bar", "int32_t,0,0", 0);
-	sdb_set(res, "struct.kappa.cow", "int32_t,4,0", 0);
+	sdb_set(res, "kappa", "struct");
+	sdb_set(res, "struct.kappa", "bar,cow");
+	sdb_set(res, "struct.kappa.bar", "int32_t,0,0");
+	sdb_set(res, "struct.kappa.cow", "int32_t,4,0");
 
-	sdb_set(res, "lappa", "struct", 0);
-	sdb_set(res, "struct.lappa", "bar,cow", 0);
-	sdb_set(res, "struct.lappa.bar", "int32_t,0,0", 0);
-	sdb_set(res, "struct.lappa.cow", "struct kappa,4,0", 0);
+	sdb_set(res, "lappa", "struct");
+	sdb_set(res, "struct.lappa", "bar,cow");
+	sdb_set(res, "struct.lappa.bar", "int32_t,0,0");
+	sdb_set(res, "struct.lappa.cow", "struct kappa,4,0");
 }
 
 static void setup_sdb_for_union(Sdb *res) {
 	// td "union kappa {int bar;int cow;};"
-	sdb_set(res, "kappa", "union", 0);
-	sdb_set(res, "union.kappa", "bar,cow", 0);
-	sdb_set(res, "union.kappa.bar", "int32_t,0,0", 0);
-	sdb_set(res, "union.kappa.cow", "int32_t,0,0", 0);
+	sdb_set(res, "kappa", "union");
+	sdb_set(res, "union.kappa", "bar,cow");
+	sdb_set(res, "union.kappa.bar", "int32_t,0,0");
+	sdb_set(res, "union.kappa.cow", "int32_t,0,0");
 
-	sdb_set(res, "lappa", "union", 0);
-	sdb_set(res, "union.lappa", "bar,cow", 0);
-	sdb_set(res, "union.lappa.bar", "int32_t,0,0", 0);
-	sdb_set(res, "union.lappa.cow", "union kappa,0,0", 0);
+	sdb_set(res, "lappa", "union");
+	sdb_set(res, "union.lappa", "bar,cow");
+	sdb_set(res, "union.lappa.bar", "int32_t,0,0");
+	sdb_set(res, "union.lappa.cow", "union kappa,0,0");
 }
 
 static void setup_sdb_for_enum(Sdb *res) {
 	// td "enum foo { firstCase=1, secondCase=2,};"
-	sdb_set(res, "foo", "enum", 0);
-	sdb_set(res, "enum.foo", "firstCase,secondCase", 0);
-	sdb_set(res, "enum.foo.firstCase", "0x1", 0);
-	sdb_set(res, "enum.foo.secondCase", "0x2", 0);
-	sdb_set(res, "enum.foo.0x1", "firstCase", 0);
-	sdb_set(res, "enum.foo.0x2", "secondCase", 0);
+	sdb_set(res, "foo", "enum");
+	sdb_set(res, "enum.foo", "firstCase,secondCase");
+	sdb_set(res, "enum.foo.firstCase", "0x1");
+	sdb_set(res, "enum.foo.secondCase", "0x2");
+	sdb_set(res, "enum.foo.0x1", "firstCase");
+	sdb_set(res, "enum.foo.0x2", "secondCase");
 }
 
 static void setup_sdb_for_typedef(Sdb *res) {
 	// td "typedef char *string;"
-	sdb_set(res, "string", "typedef", 0);
-	sdb_set(res, "typedef.string", "char *", 0);
+	sdb_set(res, "string", "typedef");
+	sdb_set(res, "typedef.string", "char *");
 }
 
 static void setup_sdb_for_atomic(Sdb *res) {
-	sdb_set(res, "char", "type", 0);
-	sdb_set(res, "type.char.size", "8", 0);
-	sdb_set(res, "type.char", "c", 0);
+	sdb_set(res, "char", "type");
+	sdb_set(res, "type.char.size", "8");
+	sdb_set(res, "type.char", "c");
 }
 
 static void setup_sdb_for_not_found(Sdb *res) {
 	// malformed type states
-	sdb_set(res, "foo", "enum", 0);
-	sdb_set(res, "bar", "struct", 0);
-	sdb_set(res, "quax", "union", 0);
-	sdb_set(res, "enum.foo", "aa,bb", 0);
-	sdb_set(res, "struct.bar", "cc,dd", 0);
-	sdb_set(res, "union.quax", "ee,ff", 0);
+	sdb_set(res, "foo", "enum");
+	sdb_set(res, "bar", "struct");
+	sdb_set(res, "quax", "union");
+	sdb_set(res, "enum.foo", "aa,bb");
+	sdb_set(res, "struct.bar", "cc,dd");
+	sdb_set(res, "union.quax", "ee,ff");
 
-	sdb_set(res, "omega", "struct", 0);
-	sdb_set(res, "struct.omega", "ee,ff,gg", 0);
-	sdb_set(res, "struct.omega.ee", "0,1", 0);
-	sdb_set(res, "struct.omega.ff", "", 0);
+	sdb_set(res, "omega", "struct");
+	sdb_set(res, "struct.omega", "ee,ff,gg");
+	sdb_set(res, "struct.omega.ee", "0,1");
+	sdb_set(res, "struct.omega.ff", "");
 }
 
 static bool test_types_get_base_type_struct(void) {
@@ -251,45 +251,45 @@ static bool test_types_get_base_type_not_found(void) {
 
 static void setup_sdb_for_base_types_all(Sdb *res) {
 	// td "struct kappa {int bar;int cow;};"
-	sdb_set(res, "kappa", "struct", 0);
-	sdb_set(res, "struct.kappa", "bar,cow", 0);
-	sdb_set(res, "struct.kappa.bar", "int32_t,0,0", 0);
-	sdb_set(res, "struct.kappa.cow", "int32_t,4,0", 0);
+	sdb_set(res, "kappa", "struct");
+	sdb_set(res, "struct.kappa", "bar,cow");
+	sdb_set(res, "struct.kappa.bar", "int32_t,0,0");
+	sdb_set(res, "struct.kappa.cow", "int32_t,4,0");
 	// td "struct theta {long foo;double *bar[5];};"
-	sdb_set(res, "theta", "struct", 0);
-	sdb_set(res, "struct.theta", "foo,bar", 0);
-	sdb_set(res, "struct.theta.foo", "int64_t,0,0", 0);
-	sdb_set(res, "struct.theta.bar", "double *,8,5", 0);
+	sdb_set(res, "theta", "struct");
+	sdb_set(res, "struct.theta", "foo,bar");
+	sdb_set(res, "struct.theta.foo", "int64_t,0,0");
+	sdb_set(res, "struct.theta.bar", "double *,8,5");
 	// td "union omega {int bar;int cow;};"
-	sdb_set(res, "omega", "union", 0);
-	sdb_set(res, "union.omega", "bar,cow", 0);
-	sdb_set(res, "union.omega.bar", "int32_t,0,0", 0);
-	sdb_set(res, "union.omega.cow", "int32_t,0,0", 0);
+	sdb_set(res, "omega", "union");
+	sdb_set(res, "union.omega", "bar,cow");
+	sdb_set(res, "union.omega.bar", "int32_t,0,0");
+	sdb_set(res, "union.omega.cow", "int32_t,0,0");
 	// td "union omicron {char foo;float bar;};"
-	sdb_set(res, "omicron", "union", 0);
-	sdb_set(res, "union.omicron", "foo,bar", 0);
-	sdb_set(res, "union.omicron.bar", "float,0,0", 0);
-	sdb_set(res, "union.omicron.foo", "char,0,0", 0);
+	sdb_set(res, "omicron", "union");
+	sdb_set(res, "union.omicron", "foo,bar");
+	sdb_set(res, "union.omicron.bar", "float,0,0");
+	sdb_set(res, "union.omicron.foo", "char,0,0");
 	// td "enum foo { firstCase=1, secondCase=2,};"
-	sdb_set(res, "foo", "enum", 0);
-	sdb_set(res, "enum.foo", "firstCase,secondCase", 0);
-	sdb_set(res, "enum.foo.firstCase", "0x1", 0);
-	sdb_set(res, "enum.foo.secondCase", "0x2", 0);
-	sdb_set(res, "enum.foo.0x1", "firstCase", 0);
-	sdb_set(res, "enum.foo.0x2", "secondCase", 0);
+	sdb_set(res, "foo", "enum");
+	sdb_set(res, "enum.foo", "firstCase,secondCase");
+	sdb_set(res, "enum.foo.firstCase", "0x1");
+	sdb_set(res, "enum.foo.secondCase", "0x2");
+	sdb_set(res, "enum.foo.0x1", "firstCase");
+	sdb_set(res, "enum.foo.0x2", "secondCase");
 	// td "enum bla { minusFirstCase=0x100, minusSecondCase=0xf000,};"
-	sdb_set(res, "bla", "enum", 0);
-	sdb_set(res, "enum.bla", "minusFirstCase,minusSecondCase", 0);
-	sdb_set(res, "enum.bla.minusFirstCase", "0x100", 0);
-	sdb_set(res, "enum.bla.minusSecondCase", "0xf000", 0);
-	sdb_set(res, "enum.bla.0x100", "minusFirstCase", 0);
-	sdb_set(res, "enum.bla.0xf000", "minusSecondCase", 0);
+	sdb_set(res, "bla", "enum");
+	sdb_set(res, "enum.bla", "minusFirstCase,minusSecondCase");
+	sdb_set(res, "enum.bla.minusFirstCase", "0x100");
+	sdb_set(res, "enum.bla.minusSecondCase", "0xf000");
+	sdb_set(res, "enum.bla.0x100", "minusFirstCase");
+	sdb_set(res, "enum.bla.0xf000", "minusSecondCase");
 	// td typedef char *string;
-	sdb_set(res, "char", "type", 0);
-	sdb_set(res, "type.char.size", "8", 0);
-	sdb_set(res, "type.char", "c", 0);
-	sdb_set(res, "string", "typedef", 0);
-	sdb_set(res, "typedef.string", "char *", 0);
+	sdb_set(res, "char", "type");
+	sdb_set(res, "type.char.size", "8");
+	sdb_set(res, "type.char", "c");
+	sdb_set(res, "string", "typedef");
+	sdb_set(res, "typedef.string", "char *");
 }
 
 // RzBaseType name comparator
@@ -791,11 +791,11 @@ static bool test_struct_func_types(void) {
 	mu_assert_streq_free(rz_type_as_string(typedb, call->ret), "wchar_t", "function return type");
 
 	RzCallableArg *arg;
-	arg = *rz_pvector_index_ptr(call->args, 0);
+	arg = rz_pvector_at(call->args, 0);
 	mu_assert_streq(arg->name, "a", "argument \"a\"");
 	mu_assert_streq_free(rz_type_as_string(typedb, arg->type), "int", "argument \"a\" type");
 
-	arg = *rz_pvector_index_ptr(call->args, 1);
+	arg = rz_pvector_at(call->args, 1);
 	mu_assert_streq(arg->name, "b", "argument \"b\"");
 	mu_assert_streq_free(rz_type_as_string(typedb, arg->type), "const char *", "argument \"b\" type");
 
@@ -829,11 +829,11 @@ static bool test_struct_func_types(void) {
 	call = member->type->pointer.type->pointer.type->callable;
 	mu_assert_streq_free(rz_type_as_string(typedb, call->ret), "wchar_t", "function return type");
 
-	arg = *rz_pvector_index_ptr(call->args, 0);
+	arg = rz_pvector_at(call->args, 0);
 	mu_assert_streq(arg->name, "a", "argument \"a\"");
 	mu_assert_streq_free(rz_type_as_string(typedb, arg->type), "int", "argument \"a\" type");
 
-	arg = *rz_pvector_index_ptr(call->args, 1);
+	arg = rz_pvector_at(call->args, 1);
 	mu_assert_streq(arg->name, "b", "argument \"b\"");
 	mu_assert_streq_free(rz_type_as_string(typedb, arg->type), "const char *", "argument \"b\" type");
 
@@ -1705,6 +1705,117 @@ bool test_path_by_offset_typedef(void) {
 	mu_end;
 }
 
+bool test_offset_by_path_struct(void) {
+	RzTypeDB *typedb = rz_type_db_new();
+	const char *types_dir = TEST_BUILD_TYPES_DIR;
+	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
+
+	char *error_msg = NULL;
+	RzType *ttype = rz_type_parse_string_single(typedb->parser, "struct Hello { int32_t a; uint32_t b; };", &error_msg);
+	mu_assert_notnull(ttype, "type parse successful");
+	mu_assert_eq(ttype->kind, RZ_TYPE_KIND_IDENTIFIER, "parsed type");
+	mu_assert_streq(ttype->identifier.name, "Hello", "parsed type");
+
+	RzBaseType *btype = rz_type_get_base_type(typedb, ttype);
+	mu_assert_notnull(btype, "btype get successful");
+	RzTypeStructMember *memb_it;
+	rz_vector_foreach (&btype->struct_data.members, memb_it) {
+		if (!strcmp(memb_it->name, "a")) {
+			memb_it->offset = 0;
+		} else if (!strcmp(memb_it->name, "b")) {
+			memb_it->offset = 4;
+		}
+	}
+
+	long long offset;
+	offset = rz_type_offset_by_path(typedb, "Hello.a");
+	mu_assert_eq(offset, 0, "offset");
+	offset = rz_type_offset_by_path(typedb, "Hello.b");
+	mu_assert_eq(offset, 32, "offset");
+	rz_type_free(ttype);
+
+	ttype = rz_type_parse_string_single(typedb->parser, "union World { uint64_t ulu; Hello mulu; int32_t urshak; };", &error_msg);
+	mu_assert_notnull(ttype, "type parse successful");
+	mu_assert_eq(ttype->kind, RZ_TYPE_KIND_IDENTIFIER, "parsed type");
+	mu_assert_streq(ttype->identifier.name, "World", "parsed type");
+
+	btype = rz_type_get_base_type(typedb, ttype);
+	mu_assert_notnull(btype, "btype get successful");
+
+	offset = rz_type_offset_by_path(typedb, "World.ulu");
+	mu_assert_eq(offset, 0, "offset");
+	offset = rz_type_offset_by_path(typedb, "World.mulu");
+	mu_assert_eq(offset, 0, "offset");
+	offset = rz_type_offset_by_path(typedb, "World.urshak");
+	mu_assert_eq(offset, 0, "offset");
+
+	offset = rz_type_offset_by_path(typedb, "World.mulu.a");
+	mu_assert_eq(offset, 0, "offset");
+	offset = rz_type_offset_by_path(typedb, "World.mulu.b");
+	mu_assert_eq(offset, 32, "offset");
+	rz_type_free(ttype);
+
+	rz_type_db_free(typedb);
+	mu_end;
+}
+
+bool test_offset_by_path_array(void) {
+	RzTypeDB *typedb = rz_type_db_new();
+	const char *types_dir = TEST_BUILD_TYPES_DIR;
+	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
+	RzBaseType *btype;
+	RzType *ttype;
+
+	char *error_msg = NULL;
+	ttype = rz_type_parse_string_single(typedb->parser, "struct Hello { int32_t a; uint32_t b; };", &error_msg);
+	mu_assert_notnull(ttype, "type parse successful");
+	mu_assert_eq(ttype->kind, RZ_TYPE_KIND_IDENTIFIER, "parsed type");
+	mu_assert_streq(ttype->identifier.name, "Hello", "parsed type");
+
+	btype = rz_type_get_base_type(typedb, ttype);
+	mu_assert_notnull(btype, "btype get successful");
+	RzTypeStructMember *memb_it;
+	rz_vector_foreach (&btype->struct_data.members, memb_it) {
+		if (!strcmp(memb_it->name, "b")) {
+			memb_it->offset = 4;
+		}
+	}
+	btype->size = 64;
+	rz_type_free(ttype);
+
+	ttype = rz_type_parse_string_single(typedb->parser, "struct HelloWrap { int32_t a; Hello harr[20]; };", &error_msg);
+	mu_assert_notnull(ttype, "type parse successful");
+	mu_assert_eq(ttype->kind, RZ_TYPE_KIND_IDENTIFIER, "parsed type");
+	mu_assert_streq(ttype->identifier.name, "HelloWrap", "parsed type");
+
+	btype = rz_type_get_base_type(typedb, ttype);
+	mu_assert_notnull(btype, "btype get successful");
+	rz_vector_foreach (&btype->struct_data.members, memb_it) {
+		if (!strcmp(memb_it->name, "harr")) {
+			memb_it->offset = 4;
+		}
+	}
+
+	long long offset;
+	offset = rz_type_offset_by_path(typedb, "HelloWrap.harr");
+	mu_assert_eq(offset, 4 * 8, "offset HelloWrap.harr");
+
+	eprintf("===\n");
+	offset = rz_type_offset_by_path(typedb, "HelloWrap.harr[3]");
+	mu_assert_eq(offset, 28 * 8, "offset HelloWrap.harr[3]");
+
+	offset = rz_type_offset_by_path(typedb, "HelloWrap.harr[3].a");
+	mu_assert_eq(offset, 28 * 8, "offset HelloWrap.harr[3].a");
+
+	offset = rz_type_offset_by_path(typedb, "HelloWrap.harr[3].b");
+	mu_assert_eq(offset, 32 * 8, "offset HelloWrap.harr[3].b");
+	rz_type_free(ttype);
+
+	rz_type_db_free(typedb);
+
+	mu_end;
+}
+
 bool test_callable_unspecified_parameters(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	const char *types_dir = TEST_BUILD_TYPES_DIR;
@@ -1758,6 +1869,8 @@ int all_tests() {
 	mu_run_test(test_path_by_offset_union);
 	mu_run_test(test_path_by_offset_array);
 	mu_run_test(test_path_by_offset_typedef);
+	mu_run_test(test_offset_by_path_struct);
+	mu_run_test(test_offset_by_path_array);
 	mu_run_test(test_callable_unspecified_parameters);
 	return tests_passed != tests_run;
 }

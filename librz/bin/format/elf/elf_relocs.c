@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2021 08A <08A@riseup.net>
+// SPDX-FileCopyrightText: 2021 08A <dev@08a.re>
 // SPDX-FileCopyrightText: 2008-2020 nibble <nibble.ds@gmail.com>
 // SPDX-FileCopyrightText: 2008-2020 pancake <pancake@nopcode.org>
 // SPDX-FileCopyrightText: 2008-2020 alvaro_fe <alvaro.felipe91@gmail.com>
@@ -206,7 +206,7 @@ static bool get_relocs_entry_from_sections(ELFOBJ *bin, RzVector /*<RzBinElfRelo
 RZ_OWN RzVector /*<RzBinElfReloc>*/ *Elf_(rz_bin_elf_relocs_new)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
-	HtUU *set = ht_uu_new0();
+	HtUU *set = ht_uu_new();
 	if (!set) {
 		return NULL;
 	}

@@ -1,8 +1,7 @@
 NAME=PE: corkami dllbound-ld.exe - open
 FILE=bins/pe/dllbound-ld.exe
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=PE: corkami dllbound-ld.exe - entrypoint

@@ -2,8 +2,8 @@
 
 # Rizin
 
-Rizin is a fork of the radare2 reverse engineering framework with a focus on
-usability, working features and code cleanliness.
+Rizin is a reverse engineering framework, born as a fork of the radare2, with 
+a focus on usability, features and cleanliness.
 
 Rizin is portable and it can be used to analyze binaries, disassemble code,
 debug programs, as a forensic tool, as a scriptable command-line hexadecimal

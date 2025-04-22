@@ -43,7 +43,7 @@ int PE_(read_image_delay_import_directory)(RzBuffer *b, ut64 addr, PE_(image_del
 static char *resolveModuleOrdinal(Sdb *sdb, const char *module, int ordinal) {
 	Sdb *db = sdb;
 	char tmpbuf[32];
-	char *foo = sdb_get(db, rz_strf(tmpbuf, "%d", ordinal), 0);
+	char *foo = sdb_get(db, rz_strf(tmpbuf, "%d", ordinal));
 	if (foo && *foo) {
 		return foo;
 	} else {
@@ -94,7 +94,7 @@ static int bin_pe_parse_imports(RzBinPEObj *bin,
 				free(symdllname);
 				strncpy(name, dll_name, sizeof(name) - 1);
 				name[sizeof(name) - 1] = 0;
-				symdllname = strdup(name);
+				symdllname = rz_str_dup(name);
 
 				// remove the trailling ".dll"
 				size_t len = strlen(symdllname);
@@ -109,7 +109,7 @@ static int bin_pe_parse_imports(RzBinPEObj *bin,
 					}
 					db = NULL;
 					free(sdb_module);
-					sdb_module = strdup(symdllname);
+					sdb_module = rz_str_dup(symdllname);
 					filename = rz_str_newf("%s.sdb", symdllname);
 					if (filename && rz_file_exists(filename)) {
 						db = sdb_new(NULL, filename, 0);

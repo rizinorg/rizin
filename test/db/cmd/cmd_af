@@ -462,3 +462,16 @@ EXPECT=<<EOF
 main + 12
 EOF
 RUN
+
+NAME=Issue 4842
+FILE=bins/fuzzed/issue-4842
+CMDS=<<EOF
+# It only triggers if aaaa is run twice. Very obscure.
+# Can't pinpoint it.
+# But it is related to the `aft` code (type propagation).
+aaaa
+aaaa
+EOF
+REGEXP_FILTER_ERR=Doesn'tMatterJustShouldCatchSegfaults
+EXPECT_ERR=
+RUN

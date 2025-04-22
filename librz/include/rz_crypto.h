@@ -1,9 +1,10 @@
 #ifndef RZ_CRYPTO_H
 #define RZ_CRYPTO_H
 
-#include "rz_types.h"
-#include "rz_list.h"
-#include "rz_crypto/rz_des.h"
+#include <rz_types.h>
+#include <rz_util/ht_sp.h>
+#include <rz_crypto/rz_des.h>
+#include <rz_util/rz_str.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,7 +35,7 @@ typedef struct rz_crypto_t {
 	int output_size;
 	int dir;
 	void *user;
-	RzList /*<RzCryptoPlugin *>*/ *plugins;
+	HtSP /*<RzCryptoPlugin *>*/ *plugins;
 } RzCrypto;
 
 typedef struct rz_crypto_plugin_t {
@@ -53,6 +54,20 @@ typedef struct rz_crypto_plugin_t {
 
 typedef ut64 RzCryptoSelector;
 
+/**
+ * \brief Compare plugins by name (via strcmp).
+ */
+static inline int rz_crypto_plugin_cmp(RZ_NULLABLE const RzCryptoPlugin *a, RZ_NULLABLE const RzCryptoPlugin *b) {
+	if (!a && !b) {
+		return 0;
+	} else if (!a) {
+		return -1;
+	} else if (!b) {
+		return 1;
+	}
+	return rz_str_cmp(a->name, b->name, -1);
+}
+
 #ifdef RZ_API
 RZ_API bool rz_crypto_plugin_add(RZ_NONNULL RzCrypto *cry, RZ_NONNULL RzCryptoPlugin *h);
 RZ_API bool rz_crypto_plugin_del(RZ_NONNULL RzCrypto *cry, RZ_NONNULL RzCryptoPlugin *h);
@@ -70,25 +85,6 @@ RZ_API RZ_BORROW const char *rz_crypto_name(const RzCryptoSelector bit);
 RZ_API RZ_BORROW const char *rz_crypto_codec_name(const RzCryptoSelector bit);
 RZ_API RZ_BORROW const RzCryptoPlugin *rz_crypto_plugin_by_index(RZ_NONNULL RzCrypto *cry, size_t index);
 #endif
-
-/* plugin pointers */
-extern RzCryptoPlugin rz_crypto_plugin_aes;
-extern RzCryptoPlugin rz_crypto_plugin_des;
-extern RzCryptoPlugin rz_crypto_plugin_rc4;
-extern RzCryptoPlugin rz_crypto_plugin_xor;
-extern RzCryptoPlugin rz_crypto_plugin_blowfish;
-extern RzCryptoPlugin rz_crypto_plugin_rc2;
-extern RzCryptoPlugin rz_crypto_plugin_rot;
-extern RzCryptoPlugin rz_crypto_plugin_rol;
-extern RzCryptoPlugin rz_crypto_plugin_ror;
-extern RzCryptoPlugin rz_crypto_plugin_base64;
-extern RzCryptoPlugin rz_crypto_plugin_base91;
-extern RzCryptoPlugin rz_crypto_plugin_aes_cbc;
-extern RzCryptoPlugin rz_crypto_plugin_punycode;
-extern RzCryptoPlugin rz_crypto_plugin_rc6;
-extern RzCryptoPlugin rz_crypto_plugin_cps2;
-extern RzCryptoPlugin rz_crypto_plugin_serpent;
-extern RzCryptoPlugin rz_crypto_plugin_sm4_ecb;
 
 #define RZ_CRYPTO_NONE     0ULL
 #define RZ_CRYPTO_RC2      1ULL

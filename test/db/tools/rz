@@ -55,7 +55,7 @@ RUN
 
 NAME=rizin -V
 FILE==
-CMDS=!!rizin -V~rz_analysis?
+CMDS=!!rizin -V~rz_arch?
 EXPECT=<<EOF
 1
 EOF
@@ -99,22 +99,20 @@ RUN
 
 NAME=no-nl-at-eof script
 FILE==
-CMDS=!rizin -i scripts/no-nl-at-eof.rz -NQ =
+CMDS=!rizin -i scripts/no-nl-at-eof.rz -Nq =
 EXPECT=<<EOF
 1
 EOF
-EXPECT_ERR=<<EOF
-EOF
+EXPECT_ERR=
 RUN
 
 NAME=rizin -i -Q with missing script
 FILE==
 CMDS=<<EOF
 # Should not hang
-!rizin -i script/missing.rz -NQ =
+!rizin -i script/missing.rz -Nq =
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 EXPECT_ERR=<<EOF
 ERROR: Script 'script/missing.rz' not found.
 EOF
@@ -139,16 +137,15 @@ RUN
 NAME=rizin empty -R
 FILE==
 CMDS=!rizin -R ""
-EXPECT_ERR=<<EOF
-EOF
+EXPECT_ERR=
 RUN
 
 NAME=rizin project with explicit file
 FILE==
 CMDS=<<EOF
-!rizin -escr.utf8=0 -easm.bytes=1 -escr.color=0 -escr.interactive=0 -N -Qc "f easy @ 0x080483fe; Ps .crackme.rzdb" bins/elf/ioli/crackme0x00
+!rizin -escr.utf8=0 -easm.bytes=1 -escr.color=0 -escr.interactive=0 -N -qc "f easy @ 0x080483fe; Ps .crackme.rzdb" bins/elf/ioli/crackme0x00
 echo Same project, different file
-!rizin -escr.utf8=0 -easm.bytes=1 -escr.color=0 -escr.interactive=0 -N -p .crackme.rzdb -Qc "ol; pdq 3 @ easy" bins/elf/ioli/crackme0x01
+!rizin -escr.utf8=0 -easm.bytes=1 -escr.color=0 -escr.interactive=0 -N -p .crackme.rzdb -qc "ol; pdq 3 @ easy" bins/elf/ioli/crackme0x01
 !rm .crackme.rzdb
 EOF
 EXPECT=<<EOF
@@ -166,9 +163,9 @@ RUN
 NAME=rizin project with implicit file
 FILE==
 CMDS=<<EOF
-!rizin -escr.utf8=0 -escr.color=0 -escr.interactive=0 -N -Qc "f easy @ 0x080483fe; Ps .crackme2.rzdb" bins/elf/ioli/crackme0x00
+!rizin -escr.utf8=0 -escr.color=0 -escr.interactive=0 -N -qc "f easy @ 0x080483fe; Ps .crackme2.rzdb" bins/elf/ioli/crackme0x00
 echo Reload project including file
-!rizin -escr.utf8=0 -escr.color=0 -easm.bytes=1 -escr.interactive=0 -N -p .crackme2.rzdb -Qc "pdq 3 @ easy"
+!rizin -escr.utf8=0 -escr.color=0 -easm.bytes=1 -escr.interactive=0 -N -p .crackme2.rzdb -qc "pdq 3 @ easy"
 !rm .crackme2.rzdb
 EOF
 EXPECT=<<EOF

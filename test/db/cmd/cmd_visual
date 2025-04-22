@@ -1,7 +1,100 @@
+NAME=panels VH/VHH
+FILE==
+CMDS=<<EOF
+VH
+VHH
+EOF
+EXPECT=<<EOF
+| ?  full help
+| !  enter panels
+| a  code analysis
+| b  browse mode
+| c  toggle cursor
+| d  debugger / emulator
+| e  toggle configurations
+| i  insert / write
+| m  moving around (seeking)
+| p  print commands and modes
+| v  view management
+| ?        show visual help menu
+| ??       show this help
+| $        set the program counter to the current offset + cursor
+| &        rotate asm.bits between 8, 16, 32 and 64 applying hints
+| %        in cursor mode finds matching pair, otherwise toggle autoblocksz
+| ^        seek to the beginning of the function
+| !        enter into the visual panels mode
+| TAB      switch to the next print mode (or element in cursor mode)
+| _        enter the flag/comment/functions/.. hud (same as VF_)
+| =        set cmd.vprompt (top row)
+| |        set cmd.cprompt (right column)
+| .        seek to program counter
+| #        toggle decompiler comments in disasm (see pdd* from jsdec)
+| \        toggle visual split mode
+| "        toggle the column mode (uses pC..)
+| /        in cursor mode search in current block
+| )        toggle emu.str
+| :cmd     run rizin command
+| ;[-]cmt  add/remove comment
+| 0        seek to beginning of current function
+| [1-9]    follow jmp/call identified by shortcut (like ;[1])
+| ,file    add a link to the text file
+| /*+-[]   change block size, [] = resize hex.cols
+| <,>      seek aligned to block size (in cursor slurp or dump files)
+| a/A      (a)ssemble code, visual (A)ssembler
+| b        browse evals, symbols, flags, evals, classes, ...
+| B        toggle breakpoint
+| c/C      toggle (c)ursor and (C)olors
+| d[f?]    define function, data, code, ..
+| D        enter visual diff mode (set diff.from/to)
+| f/F      set/unset or browse flags. f- to unset, F to browse, ..
+| hjkl     move around (left-down-up-right)
+| HJKL     select in cursor mode (left-down-up-right)
+| i        insert hex or string (in hexdump) use tab to toggle
+| I        insert hexpair block
+| mK/'K    mark/go to Key (any key)
+| n/N      seek next/prev function/flag/hit (scr.nkey)
+| g        go/seek to given offset (g[g/G]<enter> to seek begin/end of file)
+| o/O      rotate between different formats (next/prev)
+| p/P      rotate print modes (hex, disasm, debug, words, buf)
+| q        back to rizin shell
+| r        toggle call/jmp/lea hints
+| R        changes the theme or randomizes colors if scr.randpal option is true.
+| sS       step / step over
+| tT       tt new tab, t[1-9] switch to nth tab, t= name tab, t- close tab
+| uU       undo/redo seek
+| v        visual function/vars code analysis menu
+| V        (V)iew interactive ascii art function graph (agfv)
+| wW       seek cursor to next/prev word
+| xX       show xrefs/refs of current function from/to data/code
+| yY       copy and paste selection
+| Enter    follow address of jump/call
+Function Keys: (See 'e key.'), defaults to
+| F2  toggle breakpoint
+| F4  run to cursor
+| F7  single step
+| F8  step over
+| F9  continue
+EOF
+RUN
+
+NAME=panels vl/vs
+FILE==
+CMDS=<<EOF
+vl asd
+e scr.layout
+vs tyui
+e scr.layout
+EOF
+EXPECT=<<EOF
+asd
+tyui
+EOF
+RUN
+
 NAME=visual_dw
 FILE==
 CMDS=<<EOF
-Vc10dwq @e:scr.interactive=true > /dev/null
+V c10dwq @e:scr.interactive=true > /dev/null
 pd 20~dword?
 EOF
 EXPECT=<<EOF
@@ -13,7 +106,7 @@ NAME=Vc+cq
 FILE==
 CMDS=<<EOF
 e scr.interactive=true
-Vc+cq
+V c+cq
 p8 1
 EOF
 EXPECT=<<EOF
@@ -28,7 +121,7 @@ e scr.interactive=true
 e asm.arch=x86
 e asm.bits=64
 wx 4889e54889e5
-Vjq
+V jq
 s
 EOF
 EXPECT=<<EOF
@@ -43,7 +136,7 @@ e asm.arch=x86
 e asm.bits=64
 e scr.interactive=true
 wx 4889e54889e5
-Vpjq
+V pjq
 s
 EOF
 EXPECT=<<EOF
@@ -58,7 +151,7 @@ e asm.arch=x86
 e asm.bits=64
 e scr.interactive=true
 wx 4889e54889e5
-VpPjq
+V pPjq
 s
 EOF
 EXPECT=<<EOF
@@ -74,8 +167,8 @@ V
 v
 EOF
 EXPECT_ERR=<<EOF
-ERROR: core: Visual mode requires scr.interactive=true.
-ERROR: core: Panel mode requires scr.interactive=true.
+ERROR: Visual mode requires scr.interactive=true.
+ERROR: Panel mode requires scr.interactive=true.
 EOF
 RUN
 
@@ -100,7 +193,7 @@ EXPECT=<<EOF
 0x00005b40  488d 3d21 c701 0048 8d35 1ac7 0100 4829  H.=!...H.5....H)           
 0x00005b50  fe48 c1fe 0348 89f0 48c1 e83f 4801 c648  .H...H..H..?H..H           
 0x00005b60  d1fe 7414 488b 053d c401 0048 85c0 7408  ..t.H..=...H..t.           
-0x00005b70  ffe0 660f 1f44 0000 c30f 1f80 0000 0000  ..f..D..........           [?25h[0m[2J[0;0H
+0x00005b70  ffe0 660f 1f44 0000 c30f 1f80 0000 0000  ..f..D..........           [12;75H9.2%[?25h[0m[2J[0;0H
 EOF
 RUN
 
@@ -124,5 +217,48 @@ EXPECT=<<EOF
 [11;0H[0m
 [12;0H[Linked[0m
 [0m[u[?25h[0m[2J[0;0H
+EOF
+RUN
+
+NAME=initial Visual function graph view
+FILE=malloc://2
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e scr.interactive=true
+e scr.columns=80
+e scr.rows=12
+aF
+< qq; VV
+echo
+EOF
+EXPECT=<<EOF
+[0m[2J[0;0H[0x00000000]> 0x0 # fcn.00000000();                                            [0m[2J[0;0H[0x00000000]> 0x0 # fcn.00000000();
+                                                                               
+                                                                               
+                                                                               
+                          .---------------------------.                         
+                          | [0x0]                     |                         
+                          | fcn.00000000();           |                         
+                          | add byte [rax], al        |                         
+                          `---------------------------'                                                                                                                                                                                                                                                                         [0m[2J[0;0H[0x00000000]> 0x0 # fcn.00000000();                                            [0m[2J[0;0H[0x00000000]> 0x0 # fcn.00000000();
+                                                                               
+                                                                               
+                                                                               
+                          .---------------------------.                         
+                          | [0x0]                     |                         
+                          | fcn.00000000();           |                         
+                          | add byte [rax], al        |                         
+                          `---------------------------'                                                                                                                                                                                                                                                                         [?25l[?25l[0;0H[0m[0x00000000 [Xadvc]0 0% 192 malloc://2]> xc @ fcn.00000000                      
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF  comment  
+0x00000000  0000 ffff ffff ffff ffff ffff ffff ffff  ................  ; fcn.000[0J[0m
+0x00000010  ffff ffff ffff ffff ffff ffff ffff ffff  ................           
+0x00000020  ffff ffff ffff ffff ffff ffff ffff ffff  ................           
+0x00000030  ffff ffff ffff ffff ffff ffff ffff ffff  ................           
+0x00000040  ffff ffff ffff ffff ffff ffff ffff ffff  ................           
+0x00000050  ffff ffff ffff ffff ffff ffff ffff ffff  ................           
+0x00000060  ffff ffff ffff ffff ffff ffff ffff ffff  ................           
+0x00000070  ffff ffff ffff ffff ffff ffff ffff ffff  ................           
+0x00000080  ffff ffff ffff ffff ffff ffff ffff ffff  ................           
+0x00000090  ffff ffff ffff ffff ffff ffff ffff ffff  ................           [?25h[0m[2J[0;0H
 EOF
 RUN

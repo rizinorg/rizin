@@ -38,15 +38,15 @@ static RzBinInfo *info(RzBinFile *bf) {
 	if (!ret) {
 		return NULL;
 	}
-	ret->file = bf->file ? strdup(bf->file) : NULL;
-	ret->type = strdup("Linux zImage Kernel");
+	ret->file = rz_str_dup(bf->file);
+	ret->type = rz_str_dup("Linux zImage Kernel");
 	ret->has_va = false;
-	ret->bclass = strdup("Compressed Linux Kernel");
-	ret->rclass = strdup("zimg");
-	ret->os = strdup("linux");
-	ret->subsystem = strdup("linux");
-	ret->machine = strdup("ARM"); // TODO: can be other cpus
-	ret->arch = strdup("arm");
+	ret->bclass = rz_str_dup("Compressed Linux Kernel");
+	ret->rclass = rz_str_dup("zimg");
+	ret->os = rz_str_dup("linux");
+	ret->subsystem = rz_str_dup("linux");
+	ret->machine = rz_str_dup("ARM"); // TODO: can be other cpus
+	ret->arch = rz_str_dup("arm");
 	ret->lang = "C";
 	ret->bits = 32;
 	ret->big_endian = 0;

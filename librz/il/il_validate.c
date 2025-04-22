@@ -11,19 +11,10 @@
  * Global (immutable) context
  */
 struct rz_il_validate_global_context_t {
-	HtPP /*<const char *, RzILSortPure *>*/ *global_vars;
+	HtSP /*<const char *, RzILSortPure *>*/ *global_vars;
 	HtUU /*<RzILMemIndex, ut32:ut32>*/ *mems;
 	ut32 pc_len;
 }; /* RzILValidateGlobalContext */
-
-static void var_kv_free(HtPPKv *kv) {
-	free(kv->key);
-	free(kv->value);
-}
-
-static void var_kv_unown_free(HtPPKv *kv) {
-	free(kv->key);
-}
 
 /**
  * Create a new global context for validation
@@ -36,14 +27,14 @@ RZ_API RzILValidateGlobalContext *rz_il_validate_global_context_new_empty(ut32 p
 		return NULL;
 	}
 	ctx->pc_len = pc_len;
-	ctx->global_vars = ht_pp_new(NULL, var_kv_free, NULL);
+	ctx->global_vars = ht_sp_new(HT_STR_DUP, NULL, free);
 	if (!ctx->global_vars) {
 		free(ctx);
 		return NULL;
 	}
-	ctx->mems = ht_uu_new0();
+	ctx->mems = ht_uu_new();
 	if (!ctx->mems) {
-		ht_pp_free(ctx->global_vars);
+		ht_sp_free(ctx->global_vars);
 		free(ctx);
 		return NULL;
 	}
@@ -60,7 +51,7 @@ RZ_API void rz_il_validate_global_context_add_var(RzILValidateGlobalContext *ctx
 		return;
 	}
 	*hts = sort;
-	ht_pp_update(ctx->global_vars, name, hts);
+	ht_sp_update(ctx->global_vars, name, hts);
 }
 
 /**
@@ -86,12 +77,14 @@ RZ_API RzILValidateGlobalContext *rz_il_validate_global_context_new_from_vm(RZ_N
 		}
 		rz_pvector_free(vars);
 	}
-	for (size_t i = 0; i < rz_pvector_len(&vm->vm_memory); i++) {
-		RzILMem *mem = rz_pvector_at(&vm->vm_memory, i);
+	size_t idx;
+	void **it;
+	rz_pvector_enumerate (&vm->vm_memory, it, idx) {
+		RzILMem *mem = *it;
 		if (!mem) {
 			continue;
 		}
-		rz_il_validate_global_context_add_mem(ctx, (RzILMemIndex)i, rz_il_mem_key_len(mem), rz_il_mem_value_len(mem));
+		rz_il_validate_global_context_add_mem(ctx, (RzILMemIndex)idx, rz_il_mem_key_len(mem), rz_il_mem_value_len(mem));
 	}
 	return ctx;
 }
@@ -100,7 +93,7 @@ RZ_API void rz_il_validate_global_context_free(RzILValidateGlobalContext *ctx) {
 	if (!ctx) {
 		return;
 	}
-	ht_pp_free(ctx->global_vars);
+	ht_sp_free(ctx->global_vars);
 	ht_uu_free(ctx->mems);
 	free(ctx);
 }
@@ -114,20 +107,20 @@ typedef struct {
 	 * This must always be a superset of `local_vars_available`.
 	 * This owns all values, local_vars_available borrows them.
 	 */
-	HtPP /*<const char *, RzILSortPure *>*/ *local_vars_known;
+	HtSP /*<const char *, RzILSortPure *>*/ *local_vars_known;
 
-	HtPP /*<const char *, RzILSortPure *>*/ *local_vars_available; ///< vars that can be accessed right now
+	HtSP /*<const char *, RzILSortPure *>*/ *local_vars_available; ///< vars that can be accessed right now
 } LocalContext;
 
 static bool local_context_init(LocalContext *ctx, const RzILValidateGlobalContext *global_ctx) {
 	ctx->global_ctx = global_ctx;
-	ctx->local_vars_known = ht_pp_new(NULL, var_kv_free, NULL);
+	ctx->local_vars_known = ht_sp_new(HT_STR_DUP, NULL, free);
 	if (!ctx->local_vars_known) {
 		return false;
 	}
-	ctx->local_vars_available = ht_pp_new(NULL, var_kv_unown_free, NULL);
+	ctx->local_vars_available = ht_sp_new(HT_STR_DUP, NULL, NULL);
 	if (!ctx->local_vars_available) {
-		ht_pp_free(ctx->local_vars_known);
+		ht_sp_free(ctx->local_vars_known);
 		ctx->local_vars_known = NULL;
 		return false;
 	}
@@ -135,29 +128,29 @@ static bool local_context_init(LocalContext *ctx, const RzILValidateGlobalContex
 }
 
 static void local_context_fini(LocalContext *ctx) {
-	ht_pp_free(ctx->local_vars_known);
-	ht_pp_free(ctx->local_vars_available);
+	ht_sp_free(ctx->local_vars_known);
+	ht_sp_free(ctx->local_vars_available);
 	ctx->local_vars_known = NULL;
 	ctx->local_vars_available = NULL;
 }
 
-static bool local_var_copy_known_cb(RZ_NONNULL void *user, const void *k, const void *v) {
+static bool local_var_copy_known_cb(RZ_NONNULL void *user, const char *k, const void *v) {
 	LocalContext *dst = user;
 	RzILSortPure *sort = RZ_NEW(RzILSortPure);
 	if (!sort) {
 		return false;
 	}
 	*sort = *(RzILSortPure *)v;
-	ht_pp_update(dst->local_vars_known, k, sort);
+	ht_sp_update(dst->local_vars_known, k, sort);
 	return true;
 }
 
-static bool local_var_copy_avail_cb(RZ_NONNULL void *user, const void *k, const void *v) {
+static bool local_var_copy_avail_cb(RZ_NONNULL void *user, const char *k, const void *v) {
 	LocalContext *dst = user;
-	RzILSortPure *sort = ht_pp_find(dst->local_vars_known, k, NULL);
+	RzILSortPure *sort = ht_sp_find(dst->local_vars_known, k, NULL);
 	// known is superset of avail, so we can assert this:
 	rz_return_val_if_fail(sort && rz_il_sort_pure_eq(*sort, *(RzILSortPure *)v), false);
-	ht_pp_update(dst->local_vars_available, k, sort);
+	ht_sp_update(dst->local_vars_available, k, sort);
 	return true;
 }
 
@@ -165,8 +158,8 @@ static bool local_context_copy(LocalContext *dst, LocalContext *src) {
 	if (!local_context_init(dst, src->global_ctx)) {
 		return false;
 	}
-	ht_pp_foreach(src->local_vars_known, local_var_copy_known_cb, dst);
-	ht_pp_foreach(src->local_vars_available, local_var_copy_avail_cb, dst);
+	ht_sp_foreach(src->local_vars_known, local_var_copy_known_cb, dst);
+	ht_sp_foreach(src->local_vars_available, local_var_copy_avail_cb, dst);
 	return true;
 }
 
@@ -179,10 +172,10 @@ typedef struct {
 } LocalContextMeet;
 
 // called on src, take the union of the known types or fail if they don't agree
-static bool local_var_meet_known_cb(RZ_NONNULL void *user, const void *k, const void *v) {
+static bool local_var_meet_known_cb(RZ_NONNULL void *user, const char *k, const void *v) {
 	LocalContextMeet *meet = user;
 	RzILSortPure src_sort = *(RzILSortPure *)v;
-	RzILSortPure *dst_sort = ht_pp_find(meet->dst->local_vars_known, k, NULL);
+	RzILSortPure *dst_sort = ht_sp_find(meet->dst->local_vars_known, k, NULL);
 	if (dst_sort && !rz_il_sort_pure_eq(src_sort, *dst_sort)) {
 		char *src_sort_s = rz_il_sort_pure_stringify(src_sort);
 		char *dst_sort_s = rz_il_sort_pure_stringify(*dst_sort);
@@ -200,17 +193,17 @@ static bool local_var_meet_known_cb(RZ_NONNULL void *user, const void *k, const 
 			return false;
 		}
 		*dst_sort = src_sort;
-		ht_pp_update(meet->dst->local_vars_known, k, dst_sort);
+		ht_sp_update(meet->dst->local_vars_known, k, dst_sort);
 	}
 	return true;
 }
 
 // called on dst, remove all vars from dst that do not appear in src (intersection)
-static bool local_var_meet_avail_cb(RZ_NONNULL void *user, const void *k, const void *v) {
+static bool local_var_meet_avail_cb(RZ_NONNULL void *user, const char *k, const void *v) {
 	LocalContextMeet *meet = user;
-	RzILSortPure *src_sort = ht_pp_find(meet->src->local_vars_available, k, NULL);
+	RzILSortPure *src_sort = ht_sp_find(meet->src->local_vars_available, k, NULL);
 	if (!src_sort) {
-		ht_pp_delete(meet->dst->local_vars_available, k);
+		ht_sp_delete(meet->dst->local_vars_available, k);
 	}
 	return true;
 }
@@ -236,11 +229,11 @@ static bool local_context_meet(RZ_INOUT LocalContext *a, RZ_IN LocalContext *b, 
 		.dst = a,
 		.src = b
 	};
-	ht_pp_foreach(b->local_vars_known, local_var_meet_known_cb, &meet);
+	ht_sp_foreach(b->local_vars_known, local_var_meet_known_cb, &meet);
 	if (meet.failed) {
 		return false;
 	}
-	ht_pp_foreach(a->local_vars_available, local_var_meet_avail_cb, &meet);
+	ht_sp_foreach(a->local_vars_available, local_var_meet_avail_cb, &meet);
 	return true;
 }
 
@@ -296,13 +289,13 @@ VALIDATOR_PURE(var) {
 	VALIDATOR_ASSERT(args->v, "Var name of var op is NULL.\n");
 	switch (args->kind) {
 	case RZ_IL_VAR_KIND_GLOBAL: {
-		RzILSortPure *sort = ht_pp_find(ctx->global_ctx->global_vars, args->v, NULL);
+		RzILSortPure *sort = ht_sp_find(ctx->global_ctx->global_vars, args->v, NULL);
 		VALIDATOR_ASSERT(sort, "Global variable \"%s\" referenced by var op does not exist.\n", args->v);
 		*sort_out = *sort;
 		return true;
 	}
 	case RZ_IL_VAR_KIND_LOCAL: {
-		RzILSortPure *sort = ht_pp_find(ctx->local_vars_available, args->v, NULL);
+		RzILSortPure *sort = ht_sp_find(ctx->local_vars_available, args->v, NULL);
 		VALIDATOR_ASSERT(sort, "Local variable \"%s\" is not available at var op.\n", args->v);
 		*sort_out = *sort;
 		return true;
@@ -366,15 +359,10 @@ VALIDATOR_PURE(ite) {
 	VALIDATOR_DESCEND(args->x, &sx);
 	RzILSortPure sy;
 	VALIDATOR_DESCEND(args->y, &sy);
-	if (!rz_il_sort_pure_eq(sx, sy)) {
-		char *sxs = rz_il_sort_pure_stringify(sx);
-		char *sys = rz_il_sort_pure_stringify(sy);
-		rz_strbuf_appendf(report_builder, "Types of ite branches do not agree: %s vs. %s.\n",
-			rz_str_get_null(sxs), rz_str_get_null(sys));
-		free(sxs);
-		free(sys);
-		return false;
-	}
+	VALIDATOR_ASSERT(rz_il_sort_pure_eq(sx, sy), "Types of ite branches do not agree: %s vs. %s.\n",
+		rz_il_sort_pure_stringify(sx),
+		rz_il_sort_pure_stringify(sy));
+
 	*sort_out = sx;
 	return true;
 }
@@ -618,16 +606,10 @@ VALIDATOR_PURE(forder) {
 	VALIDATOR_ASSERT(sy.type == RZ_IL_TYPE_PURE_FLOAT, "Right operand of %s op is not a float.\n", rz_il_op_pure_code_stringify(op->code));
 
 	// flatten validator assert
-	if (!(sx.props.f.format == sy.props.f.format)) {
-		char *ssx = rz_il_sort_pure_stringify(sx);
-		char *ssy = rz_il_sort_pure_stringify(sy);
-
-		rz_strbuf_appendf(report_builder, "Op %s formats of left operand (%s) and right operand (%s) do not agree.\n",
-			rz_il_op_pure_code_stringify(op->code), ssx, ssy);
-		free(ssx);
-		free(ssy);
-		return false;
-	}
+	VALIDATOR_ASSERT(sx.props.f.format == sy.props.f.format, "Op %s formats of left operand (%s) and right operand (%s) do not agree.\n",
+		rz_il_op_pure_code_stringify(op->code),
+		rz_il_sort_pure_stringify(sx),
+		rz_il_sort_pure_stringify(sy));
 
 	*sort_out = rz_il_sort_pure_bool();
 	return true;
@@ -649,6 +631,17 @@ VALIDATOR_PURE(float_uop_with_round) {
 	return true;
 }
 
+VALIDATOR_PURE(float_uop_except) {
+	RzILOpArgsFexcept *args = &op->op.fexcept;
+	RzILSortPure sort;
+
+	VALIDATOR_DESCEND(args->x, &sort);
+	VALIDATOR_ASSERT(sort.type == RZ_IL_TYPE_PURE_FLOAT, "operand of %s op is not a float.\n", rz_il_op_pure_code_stringify(op->code));
+
+	*sort_out = rz_il_sort_pure_bool();
+	return true;
+}
+
 VALIDATOR_PURE(float_binop_with_round) {
 	RzILOpArgsFadd *args = &op->op.fadd;
 	RzILSortPure sx, sy;
@@ -659,17 +652,10 @@ VALIDATOR_PURE(float_binop_with_round) {
 	VALIDATOR_ASSERT(sy.type == RZ_IL_TYPE_PURE_FLOAT, "Right operand of %s op is not a float.\n", rz_il_op_pure_code_stringify(op->code));
 
 	// flatten validator assert
-	if (!(sx.props.f.format == sy.props.f.format)) {
-		char *ssx = rz_il_sort_pure_stringify(sx);
-		char *ssy = rz_il_sort_pure_stringify(sy);
-
-		rz_strbuf_appendf(report_builder, "Op %s formats of left operand (%s) and right operand (%s) do not agree.\n",
-			rz_il_op_pure_code_stringify(op->code), ssx, ssy);
-
-		free(ssx);
-		free(ssy);
-		return false;
-	}
+	VALIDATOR_ASSERT(sx.props.f.format == sy.props.f.format, "Op %s formats of left operand (%s) and right operand (%s) do not agree.\n",
+		rz_il_op_pure_code_stringify(op->code),
+		rz_il_sort_pure_stringify(sx),
+		rz_il_sort_pure_stringify(sy));
 
 	*sort_out = sx;
 	return true;
@@ -688,22 +674,12 @@ VALIDATOR_PURE(float_terop_with_round) {
 	VALIDATOR_DESCEND(args->z, &sz);
 	VALIDATOR_ASSERT(sz.type == RZ_IL_TYPE_PURE_FLOAT, "3rd operand of %s op is not a float.\n", rz_il_op_pure_code_stringify(op->code));
 
-	if (!((sx.props.f.format == sy.props.f.format) &&
-		    (sx.props.f.format == sz.props.f.format))) {
-		char *ssx = rz_il_sort_pure_stringify(sx);
-		char *ssy = rz_il_sort_pure_stringify(sy);
-		char *ssz = rz_il_sort_pure_stringify(sz);
-
-		rz_strbuf_appendf(report_builder,
-			"types of operand in op %s do not agree: operand1 (%s) operand2 (%s) operand3 (%s)",
-			rz_il_op_pure_code_stringify(op->code),
-			ssx, ssy, ssz);
-
-		free(ssx);
-		free(ssy);
-		free(ssz);
-		return false;
-	}
+	VALIDATOR_ASSERT((sx.props.f.format == sy.props.f.format) && (sx.props.f.format == sz.props.f.format),
+		"types of operand in op %s do not agree: operand1 (%s) operand2 (%s) operand3 (%s)",
+		rz_il_op_pure_code_stringify(op->code),
+		rz_il_sort_pure_stringify(sx),
+		rz_il_sort_pure_stringify(sy),
+		rz_il_sort_pure_stringify(sz));
 
 	*sort_out = sx;
 	return true;
@@ -774,6 +750,7 @@ static ValidatePureFn validate_pure_table[RZ_IL_OP_PURE_MAX] = {
 	[RZ_IL_OP_FROUND] = VALIDATOR_PURE_NAME(float_uop_with_round),
 	[RZ_IL_OP_FSQRT] = VALIDATOR_PURE_NAME(float_uop_with_round),
 	[RZ_IL_OP_FRSQRT] = VALIDATOR_PURE_NAME(float_uop_with_round),
+	[RZ_IL_OP_FEXCEPT] = VALIDATOR_PURE_NAME(float_uop_except),
 	[RZ_IL_OP_FADD] = VALIDATOR_PURE_NAME(float_binop_with_round),
 	[RZ_IL_OP_FSUB] = VALIDATOR_PURE_NAME(float_binop_with_round),
 	[RZ_IL_OP_FMUL] = VALIDATOR_PURE_NAME(float_binop_with_round),
@@ -926,7 +903,7 @@ VALIDATOR_EFFECT(set) {
 	VALIDATOR_ASSERT(args->v, "Var name of set op is NULL.\n");
 	RzILSortPure sx;
 	VALIDATOR_DESCEND_PURE(args->x, &sx);
-	RzILSortPure *sort = ht_pp_find(
+	RzILSortPure *sort = ht_sp_find(
 		args->is_local ? ctx->local_vars_known : ctx->global_ctx->global_vars, args->v, NULL);
 	VALIDATOR_ASSERT(args->is_local || sort, "Global variable \"%s\" referenced by set op does not exist.\n", args->v);
 	if (sort && !rz_il_sort_pure_eq(*sort, sx)) {
@@ -946,9 +923,9 @@ VALIDATOR_EFFECT(set) {
 				return false;
 			}
 			*sort = sx;
-			ht_pp_update(ctx->local_vars_known, args->v, sort);
+			ht_sp_update(ctx->local_vars_known, args->v, sort);
 		}
-		ht_pp_update(ctx->local_vars_available, args->v, sort);
+		ht_sp_update(ctx->local_vars_available, args->v, sort);
 	}
 	*type_out = RZ_IL_TYPE_EFFECT_DATA;
 	return true;
@@ -1077,7 +1054,7 @@ static bool validate_effect(VALIDATOR_EFFECT_ARGS) {
  * \return whether the given op is valid under \p ctx
  */
 RZ_API bool rz_il_validate_effect(RZ_NULLABLE RzILOpEffect *op, RZ_NONNULL RzILValidateGlobalContext *ctx,
-	RZ_NULLABLE RZ_OUT HtPP /*<const char *, RzILSortPure *>*/ **local_var_sorts_out,
+	RZ_NULLABLE RZ_OUT HtSP /*<const char *, RzILSortPure *>*/ **local_var_sorts_out,
 	RZ_NULLABLE RZ_OUT RzILTypeEffect *type_out,
 	RZ_NULLABLE RZ_OUT RzILValidateReport *report_out) {
 	LocalContext local_ctx;

@@ -8,6 +8,8 @@
 #include <rz_cons.h>
 #include <zip.h>
 
+#include "rz_io_plugins.h"
+
 typedef enum {
 	RZ_IO_PARENT_ZIP = 0x0001,
 	RZ_IO_CHILD_FILE = 0x0002,
@@ -173,11 +175,11 @@ RzList /*<char *>*/ *rz_io_zip_get_files(const char *archivename, ut32 perm, int
 		return NULL;
 	}
 
-	num_entries = zip_get_num_files(zipArch);
+	num_entries = zip_get_num_entries(zipArch, 0);
 	for (i = 0; i < num_entries; i++) {
 		zip_stat_init(&sb);
 		zip_stat_index(zipArch, i, 0, &sb);
-		if ((name = strdup(sb.name))) {
+		if ((name = rz_str_dup(sb.name))) {
 			rz_list_append(files, name);
 		}
 	}
@@ -203,11 +205,11 @@ int rz_io_zip_flush_file(RzIOZipFileObj *zfo) {
 	const ut8 *tmp = rz_buf_data(zfo->b, &tmpsz);
 	struct zip_source *s = zip_source_buffer(zipArch, tmp, tmpsz, 0);
 	if (s && zfo->entry != -1) {
-		if (zip_replace(zipArch, zfo->entry, s) == 0) {
+		if (zip_file_replace(zipArch, zfo->entry, s, 0) == 0) {
 			res = true;
 		}
 	} else if (s && zfo->name) {
-		if (zip_add(zipArch, zfo->name, s) == 0) {
+		if (zip_file_add(zipArch, zfo->name, s, 0) == 0) {
 			zfo->entry = zip_name_locate(zipArch, zfo->name, 0);
 			res = true;
 		}
@@ -237,8 +239,8 @@ RzIOZipFileObj *rz_io_zip_create_new_file(const char *archivename, const char *f
 	RzIOZipFileObj *zfo = RZ_NEW0(RzIOZipFileObj);
 	if (zfo) {
 		zfo->b = rz_buf_new_with_bytes(NULL, 0);
-		zfo->archivename = strdup(archivename);
-		zfo->name = strdup(sb ? sb->name : filename);
+		zfo->archivename = rz_str_dup(archivename);
+		zfo->name = rz_str_dup(sb ? sb->name : filename);
 		zfo->entry = !sb ? -1 : sb->index;
 		zfo->fd = rz_num_rand32(0xFFFF); // XXX: Use rz_io_fd api
 		zfo->perm = perm;
@@ -257,7 +259,7 @@ RzIOZipFileObj *rz_io_zip_alloc_zipfileobj(const char *archivename, const char *
 	if (!zipArch) {
 		return NULL;
 	}
-	num_entries = zip_get_num_files(zipArch);
+	num_entries = zip_get_num_entries(zipArch, 0);
 
 	for (i = 0; i < num_entries; i++) {
 		zip_stat_init(&sb);
@@ -293,7 +295,7 @@ static RzList /*<RzIODesc *>*/ *rz_io_zip_open_many(RzIO *io, const char *file, 
 		return NULL;
 	}
 
-	zip_uri = strdup(file);
+	zip_uri = rz_str_dup(file);
 	if (!zip_uri) {
 		return NULL;
 	}
@@ -355,7 +357,7 @@ char *rz_io_zip_get_by_file_idx(const char *archivename, const char *idx, ut32 p
 		zip_close(zipArch);
 		return filename;
 	}
-	num_entries = zip_get_num_files(zipArch);
+	num_entries = zip_get_num_entries(zipArch, 0);
 	file_idx = atoi(idx);
 	if ((file_idx == 0 && idx[0] != '0') || (file_idx >= num_entries)) {
 		zip_close(zipArch);
@@ -365,7 +367,7 @@ char *rz_io_zip_get_by_file_idx(const char *archivename, const char *idx, ut32 p
 		zip_stat_init(&sb);
 		zip_stat_index(zipArch, i, 0, &sb);
 		if (file_idx == i) {
-			filename = strdup(sb.name);
+			filename = rz_str_dup(sb.name);
 			break;
 		}
 	}
@@ -436,7 +438,7 @@ static char *find_apk_binary(const char *filename, int rw, int mode, RzIO *io) {
 				}
 				zfo->io_backref = io;
 				RzIODesc *desc = rz_io_desc_new(io, &rz_io_plugin_zip, zfo->name, rw, mode, zfo);
-				desc->name = strdup(name);
+				desc->name = rz_str_dup(name);
 				rz_io_desc_add(io, desc);
 			}
 		}
@@ -455,14 +457,14 @@ static RzIODesc *rz_io_zip_open(RzIO *io, const char *file, int rw, int mode) {
 	if (!rz_io_zip_plugin_open(io, file, false)) {
 		return NULL;
 	}
-	zip_uri = strdup(file);
+	zip_uri = rz_str_dup(file);
 	if (!zip_uri) {
 		return NULL;
 	}
 	uri_path = strstr(zip_uri, "://");
 	if (uri_path) {
 		tmp = strstr(uri_path + 3, "//");
-		zip_filename = tmp ? strdup(tmp) : NULL;
+		zip_filename = rz_str_dup(tmp);
 		// 1) Tokenize to the '//' and find the base file directory ('/')
 		if (!zip_filename) {
 			if (!strncmp(zip_uri, "apk://", 6)) {
@@ -470,11 +472,11 @@ static RzIODesc *rz_io_zip_open(RzIO *io, const char *file, int rw, int mode) {
 			} else if (!strncmp(zip_uri, "ipa://", 6)) {
 				zip_filename = find_ipa_binary(uri_path + 3, rw, mode);
 			} else {
-				zip_filename = strdup(uri_path + 1);
+				zip_filename = rz_str_dup(uri_path + 1);
 			}
 		} else {
 			free(zip_filename);
-			zip_filename = strdup(uri_path + 1);
+			zip_filename = rz_str_dup(uri_path + 1);
 		}
 	}
 	tmp = zip_filename;
@@ -490,7 +492,7 @@ static RzIODesc *rz_io_zip_open(RzIO *io, const char *file, int rw, int mode) {
 			// null terminating uri to filename here.
 			*filename_in_zipfile++ = 0;
 			*filename_in_zipfile++ = 0;
-			filename_in_zipfile = strdup(filename_in_zipfile);
+			filename_in_zipfile = rz_str_dup(filename_in_zipfile);
 			// check for :: index
 		} else if ((filename_in_zipfile = strstr(zip_filename, "::")) &&
 			filename_in_zipfile[2]) {
@@ -503,7 +505,7 @@ static RzIODesc *rz_io_zip_open(RzIO *io, const char *file, int rw, int mode) {
 		} else {
 			filename_in_zipfile = rz_str_newf("%s", zip_filename);
 			RZ_FREE(tmp);
-			zip_filename = strdup(uri_path + 3);
+			zip_filename = rz_str_dup(uri_path + 3);
 			if (!strcmp(zip_filename, filename_in_zipfile)) {
 				// RZ_FREE (zip_filename);
 				RZ_FREE(filename_in_zipfile);

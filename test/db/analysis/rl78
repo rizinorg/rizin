@@ -14,6 +14,7 @@ EXPECT=<<EOF
             0x00000785      clrw  ax
 arch     rl78
 cpu      N/A
+features N/A
 baddr    0x00000000
 binsz    0x00008360
 bintype  elf

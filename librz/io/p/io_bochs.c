@@ -34,6 +34,8 @@
 #include <rz_lib.h>
 #include <rz_util.h>
 
+#include "rz_io_plugins.h"
+
 #define BOCHS_URI_PREFIX "bochs://"
 #define BOCHS_URI_SIZE   strlen(BOCHS_URI_PREFIX)
 #define BOCHS_STDIN_SIZE 256
@@ -110,7 +112,7 @@ static RzIODesc *io_bochs_open(RzIO *io, const char *file, int rw, int mode) {
 	size_t bin_path_length = hashtag - file - BOCHS_URI_SIZE;
 	RzSubprocess *bochs = NULL;
 	char *bochs_bin_path = rz_str_ndup(file + BOCHS_URI_SIZE, bin_path_length);
-	char *bochs_cfg_path = strdup(hashtag + 1);
+	char *bochs_cfg_path = rz_str_dup(hashtag + 1);
 
 	const char *args[3] = {
 		"-f",

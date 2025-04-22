@@ -1,9 +1,11 @@
 // SPDX-FileCopyrightText: 2008-2019 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "rz_io.h"
-#include "rz_lib.h"
+#include <rz_io.h>
+#include <rz_lib.h>
 #include <sys/types.h>
+
+#include "rz_io_plugins.h"
 
 #if HAVE_HEADER_LINUX_ASHMEM_H || HAVE_HEADER_SYS_SHM_H || __WINDOWS__
 #if HAVE_HEADER_LINUX_ASHMEM_H
@@ -218,7 +220,7 @@ static RzIODesc *shm__open(RzIO *io, const char *uri, int rw, int mode) {
 #endif
 	shm->buf = mmap(NULL, shm->size, (rw ? (PROT_READ | PROT_WRITE) : PROT_READ), MAP_SHARED, shm->fd, 0);
 	if (shm->buf == MAP_FAILED) {
-		RZ_LOG_ERROR("Cannot mmap shared memory \"%s\"/%lu (0x%08x)", shm->name, (unsigned long)shm->size, shm->id);
+		RZ_LOG_ERROR("Cannot mmap shared memory \"%s\"/%lu (0x%08x)\n", shm->name, (unsigned long)shm->size, shm->id);
 		close(shm->fd);
 		free(shm->name);
 		free(shm);

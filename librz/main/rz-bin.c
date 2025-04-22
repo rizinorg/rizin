@@ -235,19 +235,20 @@ static int rzbin_show_help(int v) {
 	}
 	if (v) {
 		printf("Environment:\n"
-		       " RZ_NOPLUGINS:                                         # do not load shared plugins (speedup loading)\n"
-		       " RZ_BIN_LANG:      e bin.lang                          # assume lang for demangling\n"
-		       " RZ_BIN_DEMANGLE=0:e bin.demangle                      # do not demangle symbols\n"
-		       " RZ_BIN_MAXSTRBUF: e str.search.buffer_size            # specify maximum buffer size\n"
-		       " RZ_BIN_STRFILTER: e bin.str.filter                    # rizin -qc 'e bin.str.filter=?"
+		       " RZ_BIN_CODESIGN_VERBOSE:                               # make code signatures verbose\n"
+		       " RZ_BIN_DEBASE64:         e bin.debase64                # try to debase64 all strings\n"
+		       " RZ_BIN_DEBUGINFOD_URLS:  e bin.dbginfo.debuginfod_urls # use alternative debuginfod server\n"
+		       " RZ_BIN_DEMANGLE=0:       e bin.demangle                # do not demangle symbols\n"
+		       " RZ_BIN_LANG:             e bin.lang                    # assume lang for demangling\n"
+		       " RZ_BIN_MAXSTRBUF:        e search.str.max_length       # specify maximum buffer size\n"
+		       " RZ_BIN_PDBSERVER:        e pdb.server                  # use alternative PDB server\n"
+		       " RZ_BIN_PREFIX:           e bin.prefix                  # prefix symbols/sections/relocs with a specific string\n"
+		       " RZ_BIN_STRFILTER:        e bin.str.filter              # rizin -qc 'e bin.str.filter=?"
 		       "?' -\n"
-		       " RZ_BIN_STRPURGE:  e bin.str.purge                     # try to purge false positives\n"
-		       " RZ_BIN_DEBASE64:  e bin.debase64                      # try to debase64 all strings\n"
-		       " RZ_BIN_PDBSERVER: e pdb.server                        # use alternative PDB server\n"
-		       " RZ_BIN_SYMSTORE:  e pdb.symstore                      # path to downstream symbol store\n"
-		       " RZ_BIN_PREFIX:    e bin.prefix                        # prefix symbols/sections/relocs with a specific string\n"
-		       " RZ_BIN_DEBUGINFOD_URLS: e bin.dbginfo.debuginfod_urls # use alternative debuginfod server\n"
-		       " RZ_CONFIG:                                            # sdb config file\n");
+		       " RZ_BIN_STRPURGE:         e bin.str.purge               # try to purge false positives\n"
+		       " RZ_BIN_SYMSTORE:         e pdb.symstore                # path to downstream PDB symbol store\n"
+		       " RZ_CONFIG:                                             # config file\n"
+		       " RZ_NOPLUGINS:                                          # do not load plugins\n");
 	}
 	return 1;
 }
@@ -274,7 +275,7 @@ static char *stdin_gets(bool liberate) {
 	if (feof(stdin)) {
 		return NULL;
 	}
-	return strdup(stdin_buf);
+	return rz_str_dup(stdin_buf);
 }
 
 static void __sdb_prompt(Sdb *sdb) {
@@ -338,7 +339,7 @@ static bool extract_binobj(const RzBinFile *bf, RzBinXtrData *data, int idx) {
 	if (!arch) {
 		arch = "unknown";
 	}
-	path = strdup(filename);
+	path = rz_str_dup(filename);
 	if (!path) {
 		return false;
 	}
@@ -497,7 +498,7 @@ static int rzbin_do_operation(RzBin *bin, const char *op, int rad, const char *o
 	bool rc = true;
 
 	/* Implement alloca with fixed-size buffer? */
-	if (!(arg = strdup(op))) {
+	if (!(arg = rz_str_dup(op))) {
 		return false;
 	}
 	if ((ptr = strchr(arg, '/'))) {
@@ -783,7 +784,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	if ((tmp = rz_sys_getenv("RZ_BIN_MAXSTRBUF"))) {
 		if (rz_num_is_valid_input(NULL, tmp)) {
 			ut64 value = rz_num_math(NULL, tmp);
-			rz_config_set_i(core.config, "str.search.buffer_size", value);
+			rz_config_set_i(core.config, "search.str.max_length", value);
 		}
 		free(tmp);
 	}
@@ -845,7 +846,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		case 'a': arch = opt.arg; break;
 		case 'C':
 			set_action(RZ_BIN_REQ_CREATE);
-			create = strdup(opt.arg);
+			create = rz_str_dup(opt.arg);
 			break;
 		case 'u': bin->filter = 0; break;
 		case 'k': query = opt.arg; break;
@@ -858,7 +859,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 				set_action(RZ_BIN_REQ_CLASSES);
 			}
 			break;
-		case 'f': arch_name = strdup(opt.arg); break;
+		case 'f': arch_name = rz_str_dup(opt.arg); break;
 		case 'F': forcebin = opt.arg; break;
 		case 'b': bits = rz_num_math(NULL, opt.arg); break;
 		case 'm':
@@ -987,10 +988,10 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		case 'N': {
 			tmp = strchr(opt.arg, ':');
 			size_t value = rz_num_math(NULL, opt.arg);
-			rz_config_set_i(core.config, "str.search.min_length", value);
+			rz_config_set_i(core.config, "search.str.min_length", value);
 			if (tmp) {
 				value = rz_num_math(NULL, tmp + 1);
-				rz_config_set_i(core.config, "str.search.buffer_size", value);
+				rz_config_set_i(core.config, "search.str.max_length", value);
 			}
 			break;
 		}

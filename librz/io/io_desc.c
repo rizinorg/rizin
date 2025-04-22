@@ -27,7 +27,7 @@ RZ_API RzIODesc *rz_io_desc_new(RzIO *io, RzIOPlugin *plugin, const char *uri, i
 		desc->data = data;
 		desc->perm = perm;
 		// because the uri-arg may live on the stack
-		desc->uri = strdup(uri);
+		desc->uri = rz_str_dup(uri);
 	}
 	return desc;
 }
@@ -121,10 +121,10 @@ RZ_API RzIODesc *rz_io_desc_open(RzIO *io, const char *uri, int perm, int mode) 
 	}
 	// for none static callbacks, those that cannot use rz_io_desc_new
 	if (!desc->name) {
-		desc->name = strdup(uri);
+		desc->name = rz_str_dup(uri);
 	}
 	if (!desc->uri) {
-		desc->uri = strdup(uri);
+		desc->uri = rz_str_dup(uri);
 	}
 	if (!desc->plugin) {
 		desc->plugin = plugin;
@@ -150,10 +150,10 @@ RZ_API RzIODesc *rz_io_desc_open_plugin(RzIO *io, RzIOPlugin *plugin, const char
 		desc->plugin = plugin;
 	}
 	if (!desc->uri) {
-		desc->uri = strdup(uri);
+		desc->uri = rz_str_dup(uri);
 	}
 	if (!desc->name) {
-		desc->name = strdup(uri);
+		desc->name = rz_str_dup(uri);
 	}
 	if (!rz_io_desc_add(io, desc)) {
 		rz_io_desc_free(desc);

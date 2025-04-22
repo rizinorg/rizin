@@ -1,5 +1,6 @@
 name: Coverity Scan
 on:
+  workflow_dispatch:
   schedule:
     - cron: '0 18 * * 2,4' # Bi-weekly at 18:00 UTC on Tuesday and Thursday
 
@@ -10,7 +11,7 @@ concurrency:
 
 jobs:
   latest:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Determine current repository
         id: "determine-repo"

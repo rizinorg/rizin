@@ -12,6 +12,7 @@ CMDS=iI
 EXPECT=<<EOF
 arch     x86
 cpu      N/A
+features N/A
 baddr    ----------
 binsz    0x00008f74
 bintype  mdmp
@@ -32,7 +33,7 @@ maxopsz  16
 minopsz  1
 os       Windows NT Workstation 6.1.7601
 cc       N/A
-pcalign  0
+pcalign  1
 rpath    NONE
 streams  13
 subsys   
@@ -55,34 +56,34 @@ NAME=mdmp sections
 FILE=bins/mdmp/calc.dmp
 CMDS=iS
 EXPECT=<<EOF
-paddr      size     vaddr         vsize    align perm name                                  type flags 
+     paddr     size         vaddr    vsize align perm name                                  type flags 
 -------------------------------------------------------------------------------------------------------
-0x00000000 0xe3000  0xfffe0000    0xe3000  0x0   ---- C:_Windows_System32_calc.exe               
-0x00000000 0x1aa000 0x77720000    0x1aa000 0x0   ---- C:_Windows_System32__tdll.dll              
-0x00000000 0x11f000 0x77500000    0x11f000 0x0   ---- C:_Windows_System32_kernel32.dll           
-0x00000000 0x6a000  0x7fefd4a0000 0x6a000  0x0   ---- C:_Windows_System32_KERNELBASE.dll         
-0x00000000 0xd8a000 0x7fefeca0000 0xd8a000 0x0   ---- C:_Windows_System32_shell32.dll            
-0x00000000 0x9f000  0x7fefdab0000 0x9f000  0x0   ---- C:_Windows_System32_msvcrt.dll             
-0x00000000 0x71000  0x7fefd890000 0x71000  0x0   ---- C:_Windows_System32_shlwapi.dll            
-0x00000000 0x67000  0x7fefdb50000 0x67000  0x0   ---- C:_Windows_System32_gdi32.dll              
-0x00000000 0xfa000  0x77620000    0xfa000  0x0   ---- C:_Windows_System32_user32.dll             
-0x00000000 0xe000   0x7fefdbc0000 0xe000   0x0   ---- C:_Windows_System32_lpk.dll                
-0x00000000 0xca000  0x7fefe450000 0xca000  0x0   ---- C:_Windows_System32_usp10.dll              
-0x00000000 0x203000 0x7fefea90000 0x203000 0x0   ---- C:_Windows_System32_ole32.dll              
-0x00000000 0x12d000 0x7fefe8d0000 0x12d000 0x0   ---- C:_Windows_System32__pcrt4.dll             
-0x00000000 0xdb000  0x7fefd9d0000 0xdb000  0x0   ---- C:_Windows_System32__dvapi32.dll           
-0x00000000 0x1f000  0x7fefdff0000 0x1f000  0x0   ---- C:_Windows_System32_sechost.dll            
-0x00000000 0xda000  0x7fefe520000 0xda000  0x0   ---- C:_Windows_System32_oleaut32.dll           
-0x00000000 0x56000  0x7fefbb40000 0x56000  0x0   ---- C:_Windows_System32_uxtheme.dll            
-0x00000000 0x3b000  0x7fefa140000 0x3b000  0x0   ---- C:_Windows_System32_winmm.dll              
-0x00000000 0xc000   0x7fefc330000 0xc000   0x0   ---- C:_Windows_System32__ersion.dll            
-0x00000000 0x2e000  0x7fefea00000 0x2e000  0x0   ---- C:_Windows_System32_imm32.dll              
-0x00000000 0x109000 0x7fefe340000 0x109000 0x0   ---- C:_Windows_System32_msctf.dll              
-0x00000000 0x161000 0x7fefb560000 0x161000 0x0   ---- C:_Windows_System32_WindowsCodecs.dll      
-0x00000000 0x18000  0x7fefb710000 0x18000  0x0   ---- C:_Windows_System32_dwmapi.dll             
-0x00000000 0xf000   0x7fefd2b0000 0xf000   0x0   ---- C:_Windows_System32_CRYPTBASE.dll          
-0x00000000 0x99000  0x7fefddb0000 0x99000  0x0   ---- C:_Windows_System32_clbcatq.dll            
-0x00000000 0x54000  0x7fef62b0000 0x54000  0x0   ---- C:_Windows_System32_oleacc.dll             
+0x00000000  0xe3000    0xfffe0000  0xe3000   0x0 ---- C:_Windows_System32_calc.exe               
+0x00000000 0x1aa000    0x77720000 0x1aa000   0x0 ---- C:_Windows_System32__tdll.dll              
+0x00000000 0x11f000    0x77500000 0x11f000   0x0 ---- C:_Windows_System32_kernel32.dll           
+0x00000000  0x6a000 0x7fefd4a0000  0x6a000   0x0 ---- C:_Windows_System32_KERNELBASE.dll         
+0x00000000 0xd8a000 0x7fefeca0000 0xd8a000   0x0 ---- C:_Windows_System32_shell32.dll            
+0x00000000  0x9f000 0x7fefdab0000  0x9f000   0x0 ---- C:_Windows_System32_msvcrt.dll             
+0x00000000  0x71000 0x7fefd890000  0x71000   0x0 ---- C:_Windows_System32_shlwapi.dll            
+0x00000000  0x67000 0x7fefdb50000  0x67000   0x0 ---- C:_Windows_System32_gdi32.dll              
+0x00000000  0xfa000    0x77620000  0xfa000   0x0 ---- C:_Windows_System32_user32.dll             
+0x00000000   0xe000 0x7fefdbc0000   0xe000   0x0 ---- C:_Windows_System32_lpk.dll                
+0x00000000  0xca000 0x7fefe450000  0xca000   0x0 ---- C:_Windows_System32_usp10.dll              
+0x00000000 0x203000 0x7fefea90000 0x203000   0x0 ---- C:_Windows_System32_ole32.dll              
+0x00000000 0x12d000 0x7fefe8d0000 0x12d000   0x0 ---- C:_Windows_System32__pcrt4.dll             
+0x00000000  0xdb000 0x7fefd9d0000  0xdb000   0x0 ---- C:_Windows_System32__dvapi32.dll           
+0x00000000  0x1f000 0x7fefdff0000  0x1f000   0x0 ---- C:_Windows_System32_sechost.dll            
+0x00000000  0xda000 0x7fefe520000  0xda000   0x0 ---- C:_Windows_System32_oleaut32.dll           
+0x00000000  0x56000 0x7fefbb40000  0x56000   0x0 ---- C:_Windows_System32_uxtheme.dll            
+0x00000000  0x3b000 0x7fefa140000  0x3b000   0x0 ---- C:_Windows_System32_winmm.dll              
+0x00000000   0xc000 0x7fefc330000   0xc000   0x0 ---- C:_Windows_System32__ersion.dll            
+0x00000000  0x2e000 0x7fefea00000  0x2e000   0x0 ---- C:_Windows_System32_imm32.dll              
+0x00000000 0x109000 0x7fefe340000 0x109000   0x0 ---- C:_Windows_System32_msctf.dll              
+0x00000000 0x161000 0x7fefb560000 0x161000   0x0 ---- C:_Windows_System32_WindowsCodecs.dll      
+0x00000000  0x18000 0x7fefb710000  0x18000   0x0 ---- C:_Windows_System32_dwmapi.dll             
+0x00000000   0xf000 0x7fefd2b0000   0xf000   0x0 ---- C:_Windows_System32_CRYPTBASE.dll          
+0x00000000  0x99000 0x7fefddb0000  0x99000   0x0 ---- C:_Windows_System32_clbcatq.dll            
+0x00000000  0x54000 0x7fef62b0000  0x54000   0x0 ---- C:_Windows_System32_oleacc.dll             
 EOF
 RUN
 
@@ -189,26 +190,26 @@ ARGS=-nn
 CMDS=pfn~mdmp
 EXPECT=<<EOF
 mdmp_directory "[4]E? (mdmp_stream_type)StreamType (mdmp_location_descriptor)Location"
-mdmp_location_descriptor64 "qq DataSize RVA"
-mdmp_exception_stream "dd?? ThreadId __Alignment (mdmp_exception)ExceptionRecord (mdmp_location_descriptor)ThreadContext"
 mdmp_header "[4]zddddt[8]B Signature Version NumberOfStreams StreamDirectoryRVA CheckSum TimeDateStamp (mdmp_type)Flags"
-mdmp_token_info "ddq TokenSize TokenId TokenHandle"
-mdmp_memory_info_list "ddq[127]? SizeOfHeader SizeOfEntry NumberOfEntries (mdmp_memory_info)MemoryInfo"
-mdmp_memory64_list "qq[83]? NumberOfMemoryRanges BaseRva (mdmp_memory_descriptor64)MemoryRanges"
+mdmp_vs_fixedfileinfo "ddddddddddddd dwSignature dwStrucVersion dwFileVersionMs dwFileVersionLs dwProductVersionMs dwProductVersionLs dwFileFlagsMask dwFileFlags dwFileOs dwFileType dwFileSubtype dwFileDateMs dwFileDateLs"
+mdmp_memory_info "qq[4]Edq[4]E[4]E[4]Ed BaseAddress AllocationBase (mdmp_page_protect)AllocationProtect __Alignment1 RegionSize (mdmp_mem_state)State (mdmp_page_protect)Protect (mdmp_mem_type)Type __Alignment2"
+mdmp_location_descriptor "dd DataSize RVA"
+mdmp_exception_stream "dd?? ThreadId __Alignment (mdmp_exception)ExceptionRecord (mdmp_location_descriptor)ThreadContext"
+mdmp_memory_descriptor64 "qq StartOfMemoryRange DataSize"
 mdmp_exception "[4]E[4]Eqqdd[15]q (mdmp_exception_code)ExceptionCode (mdmp_exception_flags)ExceptionFlags ExceptionRecord ExceptionAddress NumberParameters __UnusedAlignment ExceptionInformation"
 mdmp_memory_descriptor "q? StartOfMemoryRange (mdmp_location_descriptor)Memory"
 mdmp_thread_list "d[1]? NumberOfThreads (mdmp_thread)Threads"
-mdmp_string "dZ Length Buffer"
-mdmp_system_info "[2]EwwbBddd[4]Ed[2]Ew[2]q (mdmp_processor_architecture)ProcessorArchitecture ProcessorLevel ProcessorRevision NumberOfProcessors (mdmp_product_type)ProductType MajorVersion MinorVersion BuildNumber (mdmp_platform_id)PlatformId CsdVersionRva (mdmp_suite_mask)SuiteMask Reserved2 ProcessorFeatures"
-mdmp_vs_fixedfileinfo "ddddddddddddd dwSignature dwStrucVersion dwFileVersionMs dwFileVersionLs dwProductVersionMs dwProductVersionLs dwFileFlagsMask dwFileFlags dwFileOs dwFileType dwFileSubtype dwFileDateMs dwFileDateLs"
-mdmp_misc_info "d[4]Bdtttddddd SizeOfInfo (mdmp_misc1_flags)Flags1 ProcessId ProcessCreateTime ProcessUserTime ProcessKernelTime ProcessorMaxMhz ProcessorCurrentMhz ProcessorMhzLimit ProcessorMaxIdleState ProcessorCurrentIdleState"
-mdmp_memory_descriptor64 "qq StartOfMemoryRange DataSize"
 mdmp_module_list "d[10]? NumberOfModule (mdmp_module)Modules"
+mdmp_memory_info_list "ddq[127]? SizeOfHeader SizeOfEntry NumberOfEntries (mdmp_memory_info)MemoryInfo"
 mdmp_token_info_list "dddd TokenListSize TokenListEntries ListHeaderSize ElementHeaderSize"
-mdmp_module "qddtd???qq BaseOfImage SizeOfImage CheckSum TimeDateStamp ModuleNameRVA (mdmp_vs_fixedfileinfo)VersionInfo (mdmp_location_descriptor)CvRecord (mdmp_location_descriptor)MiscRecord Reserved0 Reserved1"
-mdmp_location_descriptor "dd DataSize RVA"
-mdmp_memory_info "qq[4]Edq[4]E[4]E[4]Ed BaseAddress AllocationBase (mdmp_page_protect)AllocationProtect __Alignment1 RegionSize (mdmp_mem_state)State (mdmp_page_protect)Protect (mdmp_mem_type)Type __Alignment2"
 mdmp_thread "ddddq?? ThreadId SuspendCount PriorityClass Priority Teb (mdmp_memory_descriptor)Stack (mdmp_location_descriptor)ThreadContext"
+mdmp_system_info "[2]EwwbBddd[4]Ed[2]Ew[2]q (mdmp_processor_architecture)ProcessorArchitecture ProcessorLevel ProcessorRevision NumberOfProcessors (mdmp_product_type)ProductType MajorVersion MinorVersion BuildNumber (mdmp_platform_id)PlatformId CsdVersionRva (mdmp_suite_mask)SuiteMask Reserved2 ProcessorFeatures"
+mdmp_token_info "ddq TokenSize TokenId TokenHandle"
+mdmp_memory64_list "qq[83]? NumberOfMemoryRanges BaseRva (mdmp_memory_descriptor64)MemoryRanges"
+mdmp_location_descriptor64 "qq DataSize RVA"
+mdmp_module "qddtd???qq BaseOfImage SizeOfImage CheckSum TimeDateStamp ModuleNameRVA (mdmp_vs_fixedfileinfo)VersionInfo (mdmp_location_descriptor)CvRecord (mdmp_location_descriptor)MiscRecord Reserved0 Reserved1"
+mdmp_misc_info "d[4]Bdtttddddd SizeOfInfo (mdmp_misc1_flags)Flags1 ProcessId ProcessCreateTime ProcessUserTime ProcessKernelTime ProcessorMaxMhz ProcessorCurrentMhz ProcessorMhzLimit ProcessorMaxIdleState ProcessorCurrentIdleState"
+mdmp_string "dZ Length Buffer"
 EOF
 RUN
 
@@ -235,7 +236,7 @@ ie:quiet~?
 iee:quiet~?
 EOF
 EXPECT=<<EOF
-9
+11
 2
 EOF
 RUN
@@ -260,7 +261,7 @@ NAME=mdmp 32bit - symbols resolving 1
 FILE=bins/mdmp/hello.dmp
 CMDS=is~DeleteCriticalSection:0
 EXPECT=<<EOF
-1    0x0009dcda 0x00406108 NONE   FUNC 0    KERNEL32.dll                                  imp.DeleteCriticalSection
+   1 0x0009dcda 0x00406108 NONE   FUNC    0 KERNEL32.dll                                  imp.DeleteCriticalSection
 EOF
 RUN
 
@@ -268,7 +269,7 @@ NAME=mdmp 32bit - symbols resolving 2
 FILE=bins/mdmp/hello.dmp
 CMDS=is~RtlDeleteCriticalSection:0
 EXPECT=<<EOF
-358  0x001c2176 0x76fb05a4 NONE   FUNC 0    ntdll.dll                                     imp.RtlDeleteCriticalSection
+ 358 0x001c2176 0x76fb05a4 NONE   FUNC    0 ntdll.dll                                     imp.RtlDeleteCriticalSection
 EOF
 RUN
 
@@ -284,7 +285,7 @@ NAME=mdmp 32bit - imports resolving
 FILE=bins/mdmp/hello.dmp
 CMDS=ii~TerminateProcess~KERNEL32.dll
 EXPECT=<<EOF
-17  0x00406148 NONE FUNC KERNEL32.dll                                  TerminateProcess
+ 17 0x00406148 NONE FUNC KERNEL32.dll                                  TerminateProcess
 EOF
 RUN
 
@@ -300,43 +301,7 @@ NAME=mdmp 32bit - exports resolving
 FILE=bins/mdmp/hello.dmp
 CMDS=iE~Ordinal_1
 EXPECT=<<EOF
-1    0x0041f1f2 0x77802620 GLOBAL FUNC 0    ntdll.dll      Ordinal_1
-EOF
-RUN
-
-NAME=mdmp 32bit - relocs count
-FILE=bins/mdmp/hello.dmp
-CMDS=ir:quiet~?
-EXPECT=<<EOF
-2028
-EOF
-RUN
-
-NAME=mdmp 32bit - relocs resolving
-FILE=bins/mdmp/hello.dmp
-CMDS=ir~__dllonexit
-EXPECT=<<EOF
-0x00406160 0x0009dd32 SET_32 msvcrt.dll___dllonexit
-EOF
-RUN
-
-NAME=mdmp 32bit - relocs following
-FILE=bins/mdmp/hello.dmp
-CMDS=e asm.bytes=true;pd 12 @ [0x004061cc];
-EXPECT=<<EOF
-            ;-- vfprintf:
-            0x773e7430      8bff           mov   edi, edi
-            0x773e7432      55             push  rbp
-            0x773e7433      8bec           mov   ebp, esp
-            0x773e7435      ff7510         push  qword [rbp + 0x10]
-            0x773e7438      6a00           push  0
-            0x773e743a      ff750c         push  qword [rbp + 0xc]
-            0x773e743d      ff7508         push  qword [rbp + 8]
-            0x773e7440      68fdcc3777     push  0x7737ccfd
-            0x773e7445      e800feffff     call  0x773e724a
-            0x773e744a      83c414         add   esp, 0x14
-            0x773e744d      5d             pop   rbp
-            0x773e744e      c3             ret
+   1 0x0041f1f2 0x77802620 GLOBAL FUNC    0 ntdll.dll      Ordinal_1
 EOF
 RUN
 
@@ -414,7 +379,7 @@ NAME=mdmp 64bit - entrypoints resolving
 FILE=bins/mdmp/hello64.dmp
 CMDS=ie~0x00401500
 EXPECT=<<EOF
-0x00401500    0x0009418f ---------- 0x00092d37 program
+   0x00401500 0x0009418f ---------- 0x00092d37 program
 EOF
 RUN
 
@@ -430,7 +395,7 @@ NAME=mdmp 64bit - symbols resolving 1
 FILE=bins/mdmp/hello64.dmp
 CMDS=is~imp.DeleteCriticalSection~KERNEL32.dll
 EXPECT=<<EOF
-1    0x0009ae8b 0x004081fc    NONE   FUNC 0    KERNEL32.dll                                  imp.DeleteCriticalSection
+   1 0x0009ae8b    0x004081fc NONE   FUNC    0 KERNEL32.dll                                  imp.DeleteCriticalSection
 EOF
 RUN
 
@@ -438,7 +403,7 @@ NAME=mdmp 64bit - symbols resolving 2
 FILE=bins/mdmp/hello64.dmp
 CMDS=is~A_SHAFinal
 EXPECT=<<EOF
-9    0x001eb87f 0x77728bf0    GLOBAL FUNC 0    ntdll.dll                                     A_SHAFinal
+   9 0x001eb87f    0x77728bf0 GLOBAL FUNC    0 ntdll.dll                                     A_SHAFinal
 EOF
 RUN
 
@@ -454,7 +419,7 @@ NAME=mdmp 64bit - imports resolving
 FILE=bins/mdmp/hello64.dmp
 CMDS=ii~KERNEL32.dll~GetCurrentProcessId
 EXPECT=<<EOF
-4   0x00408214    NONE FUNC KERNEL32.dll                                  GetCurrentProcessId
+  4    0x00408214 NONE FUNC KERNEL32.dll                                  GetCurrentProcessId
 EOF
 RUN
 
@@ -470,40 +435,7 @@ NAME=mdmp 64bit - exports resolving
 FILE=bins/mdmp/hello64.dmp
 CMDS=iE~CsrVerifyRegion
 EXPECT=<<EOF
-39   0x0029513f 0x777d24b0    GLOBAL FUNC 0    ntdll.dll      CsrVerifyRegion
-EOF
-RUN
-
-NAME=mdmp 64bit - relocs count
-FILE=bins/mdmp/hello64.dmp
-CMDS=ir:quiet~?
-EXPECT=<<EOF
-1509
-EOF
-RUN
-
-NAME=mdmp 64bit - relocs resolving
-FILE=bins/mdmp/hello64.dmp
-CMDS=ir~KERNEL32.dll_DeleteCriticalSection
-EXPECT=<<EOF
-0x004081fc    0x0009ae8b SET_64 KERNEL32.dll_DeleteCriticalSection
-EOF
-RUN
-
-NAME=mdmp 64bit - relocs following
-FILE=bins/mdmp/hello64.dmp
-CMDS=e asm.bytes=true; pd 9 @ [0x004083ac];
-EXPECT=<<EOF
-            ;-- vfprintf:
-            0x7fefdb0a1a4      4883ec38       sub   rsp, 0x38
-            0x7fefdb0a1a8      4c89442420     mov   qword [rsp + 0x20], r8
-            0x7fefdb0a1ad      4c8bc2         mov   r8, rdx
-            0x7fefdb0a1b0      488bd1         mov   rdx, rcx
-            0x7fefdb0a1b3      488d0dea7ffa.  lea   rcx, [0x7fefdab21a4]
-            0x7fefdb0a1ba      4533c9         xor   r9d, r9d
-            0x7fefdb0a1bd      e87efdffff     call  0x7fefdb09f40
-            0x7fefdb0a1c2      4883c438       add   rsp, 0x38
-            0x7fefdb0a1c6      c3             ret
+  39 0x0029513f    0x777d24b0 GLOBAL FUNC    0 ntdll.dll      CsrVerifyRegion
 EOF
 RUN
 

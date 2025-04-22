@@ -286,6 +286,36 @@ RZ_API bool rz_mem_is_zero(const ut8 *b, int l) {
 	return true;
 }
 
+/**
+ * \brief Calculates the required padding to align the given \p address to the
+ * given \p alignment.
+ *
+ * This is only valid for architectures with a defined alignment of n^2.
+ *
+ * \param address   The address to calculate the required padding for.
+ * \param alignment The required alignment. It must be a power of 2 and greater than 0.
+ *
+ * \return The additional padding to align \p address. If \p alignment
+ * is equal 0 or not a power of two it returns UT64_MAX.
+ *
+ * Examples:
+ *
+ * ```c
+ * ut64 address = 0x59d;
+ * ut64 padding = rz_mem_align_padding(address, 4);
+ * assert(padding == 3);
+ * assert(address + padding == 0x5a0);
+ * ```
+ */
+RZ_API ut64 rz_mem_align_padding(const ut64 address, ut64 alignment) {
+	size_t c = rz_bits_count_ones_ut64(alignment);
+	if (c != 1) {
+		rz_warn_if_reached();
+		return UT64_MAX;
+	}
+	return (alignment - (address % alignment)) % alignment;
+}
+
 RZ_API void rz_mem_memzero(void *dst, size_t l) {
 #ifdef _MSC_VER
 	RtlSecureZeroMemory(dst, l);

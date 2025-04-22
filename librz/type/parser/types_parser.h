@@ -10,9 +10,9 @@ typedef struct {
 
 typedef struct {
 	bool verbose;
-	HtPP *types;
-	HtPP *callables;
-	HtPP *forward;
+	HtSP *types;
+	HtSP *callables;
+	HtSP *forward;
 	RzStrBuf *errors;
 	RzStrBuf *warnings;
 	RzStrBuf *debug;
@@ -24,7 +24,7 @@ typedef struct {
 	RzType *type;
 } ParserTypePair;
 
-CParserState *c_parser_state_new(HtPP *base_types, HtPP *callable_types);
+CParserState *c_parser_state_new(HtSP *base_types, HtSP *callable_types);
 void c_parser_state_free(CParserState *state);
 
 int parse_type_nodes_save(CParserState *state, TSNode node, const char *text);

@@ -34,11 +34,12 @@ static RzBinInfo *info(RzBinFile *bf) {
 		return NULL;
 	}
 
-	ret->file = strdup(bf->file);
-	ret->type = strdup("Sony PlayStation 1 Executable");
-	ret->machine = strdup("Sony PlayStation 1");
-	ret->os = strdup("psx");
-	ret->arch = strdup("mips");
+	ret->file = rz_str_dup(bf->file);
+	ret->type = rz_str_dup("Sony PlayStation 1 Executable");
+	ret->machine = rz_str_dup("Sony PlayStation 1");
+	ret->os = rz_str_dup("psx");
+	ret->arch = rz_str_dup("mips");
+	ret->cpu = strdup("mips3");
 	ret->bits = 32;
 	ret->has_va = true;
 	return ret;
@@ -68,7 +69,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 
 	sz = rz_buf_size(bf->buf);
 
-	sect->name = strdup("TEXT");
+	sect->name = rz_str_dup("TEXT");
 	sect->paddr = PSXEXE_TEXTSECTION_OFFSET;
 	sect->size = sz - PSXEXE_TEXTSECTION_OFFSET;
 	sect->vaddr = psxheader.t_addr;
@@ -80,23 +81,23 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
-	RzList *ret = NULL;
+static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+	RzPVector *ret = NULL;
 	RzBinAddr *addr = NULL;
 	psxexe_header psxheader;
 
-	if (!(ret = rz_list_new())) {
+	if (!(ret = rz_pvector_new(NULL))) {
 		return NULL;
 	}
 
 	if (!(addr = RZ_NEW0(RzBinAddr))) {
-		rz_list_free(ret);
+		rz_pvector_free(ret);
 		return NULL;
 	}
 
 	if (rz_buf_fread_at(bf->buf, 0, (ut8 *)&psxheader, "8c17i", 1) < sizeof(psxexe_header)) {
 		RZ_LOG_ERROR("Truncated Header\n");
-		rz_list_free(ret);
+		rz_pvector_free(ret);
 		free(addr);
 		return NULL;
 	}
@@ -104,7 +105,7 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	addr->paddr = (psxheader.pc0 - psxheader.t_addr) + PSXEXE_TEXTSECTION_OFFSET;
 	addr->vaddr = psxheader.pc0;
 
-	rz_list_append(ret, addr);
+	rz_pvector_push(ret, addr);
 	return ret;
 }
 

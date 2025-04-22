@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2021 08A <08A@riseup.net>
+// SPDX-FileCopyrightText: 2021 08A <dev@08a.re>
 // SPDX-FileCopyrightText: 2008-2020 nibble <nibble.ds@gmail.com>
 // SPDX-FileCopyrightText: 2008-2020 pancake <pancake@nopcode.org>
 // SPDX-FileCopyrightText: 2008-2020 alvaro_fe <alvaro.felipe91@gmail.com>

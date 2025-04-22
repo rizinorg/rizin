@@ -83,10 +83,12 @@ typedef struct rz_asn1_object_t {
 	const ut8 *sector; /* Sector containing data */
 	ut32 length; /* Sector Length */
 	ut64 offset; /* Object offset */
+	ut64 total_size; /* Object size (including header) */
 	RzASN1List list; /* List of objects contained in the sector */
 } RzASN1Object;
 
 RZ_API RZ_OWN RzASN1Object *rz_asn1_object_parse(RZ_NONNULL const ut8 *buffer, ut32 length);
+RZ_API RZ_OWN RzASN1Object *rz_asn1_object_parse_header(RZ_NONNULL const ut8 *buffer, ut32 length);
 RZ_API RZ_OWN RzASN1Binary *rz_asn1_binary_parse(RZ_NULLABLE const ut8 *buffer, ut32 length);
 RZ_API RZ_OWN RzASN1String *rz_asn1_string_parse(RZ_NULLABLE const char *string, bool allocated, ut32 length);
 RZ_API RZ_OWN RzASN1String *rz_asn1_stringify_bits(RZ_NULLABLE const ut8 *buffer, ut32 length);

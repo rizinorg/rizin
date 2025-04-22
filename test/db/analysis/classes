@@ -8,23 +8,23 @@ EOF
 EXPECT=<<EOF
 [Album]
   (vtable at 0x140009d80)
-nth addr          vt_offset type    name      
-----------------------------------------------
-1   0x1400011f4  0x00000000 VIRTUAL virtual_0
-2   0x140001267  0x00000008 VIRTUAL virtual_8
+nth        addr  vt_offset type    name      
+---------------------------------------------
+  1 0x1400011f4 0x00000000 VIRTUAL virtual_0
+  2 0x140001267 0x00000008 VIRTUAL virtual_8
 
 [InAbsentia: Album]
   (vtable at 0x140009da0)
-nth addr          vt_offset type    name      
-----------------------------------------------
-1   0x1400010a5  0x00000000 VIRTUAL virtual_0
-2   0x14000102d  0x00000008 VIRTUAL virtual_8
+nth        addr  vt_offset type    name      
+---------------------------------------------
+  1 0x1400010a5 0x00000000 VIRTUAL virtual_0
+  2 0x14000102d 0x00000008 VIRTUAL virtual_8
 
 [type_info]
   (vtable at 0x140009dc0)
-nth addr          vt_offset type    name      
-----------------------------------------------
-1   0x1400011ea  0x00000000 VIRTUAL virtual_0
+nth        addr  vt_offset type    name      
+---------------------------------------------
+  1 0x1400011ea 0x00000000 VIRTUAL virtual_0
 
 EOF
 RUN

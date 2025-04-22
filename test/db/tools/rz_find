@@ -31,8 +31,7 @@ RUN
 NAME=rz-find -f 0x00010000 -t 0x00020000 -X -s
 FILE==
 CMDS=!rz-find -f 0x00010000 -t 0x00020000 -r -X -s 250382 bins/elf/ioli/crackme0x00
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=rz-find -r -X -x
@@ -83,29 +82,29 @@ Cannot open file 'incorrect_file'
 EOF
 RUN
 
-NAME=rz-find -a
+NAME=rz-find
 FILE==
-CMDS=!rz-find -a -X -s 250382 bins/elf/ioli/crackme0x00
+CMDS=!rz-find -s 250382 bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
 0x58f
 EOF
 RUN
 
 NAME=rz-find -i
-BROKEN=1
 FILE==
 CMDS=!!rz-find -i bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
-0x00000000 1 ELF 32-bit LSB executable, Intel 80386, version 1
+0x00000000 ELF 32-bit LSB executable, Intel 80386, version 1
+0x00001d70 very short file (no magic)
 EOF
 RUN
 
 NAME=rz-find -m
-BROKEN=1
 FILE==
 CMDS=!!rz-find -m bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
-0x00000000 1 ELF 32-bit LSB executable, Intel 80386, version 1
+0x00000000 0 hit.magic.0 ELF 32-bit LSB executable, Intel 80386, version 1
+0x00001d70 0 hit.magic.1 very short file (no magic)
 EOF
 RUN
 
@@ -135,17 +134,16 @@ RUN
 
 NAME=rz-find -b 0xa
 FILE==
-CMDS=!rz-find  -a -X -s  250382 -b 0xa bins/elf/ioli/crackme0x00
+CMDS=!rz-find -s 250382 -b 0xa bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
 0x58f
 EOF
 RUN
 
-NAME=rz-find -a -b 0x3
+NAME=rz-find -a 2 -b 0x3
 FILE==
-CMDS=!rz-find -X -s 250382 -b 0x3 bins/elf/ioli/crackme0x00
-EXPECT=<<EOF
-EOF
+CMDS=!rz-find -a 2 -s 250382 -b 0x3 bins/elf/ioli/crackme0x00
+EXPECT=
 RUN
 
 NAME=rz-find -q
@@ -260,3 +258,10 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=rz-find -E with echo as a command
+FILE==
+CMDS=!rz-find -s "README" -E "echo" bins/arm~README~?
+EXPECT=<<EOF
+1
+EOF
+RUN

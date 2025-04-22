@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2011-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include "rz_util/rz_iterator.h"
 #include <rz_egg.h>
 #include <rz_bin.h>
 #include <rz_main.h>
@@ -68,20 +69,30 @@ static int usage(int v) {
 }
 
 static void list(RzEgg *egg) {
-	RzListIter *iter;
-	RzEggPlugin *p;
 	printf("shellcodes:\n");
-	rz_list_foreach (egg->plugins, iter, p) {
+	RzIterator *iter = ht_sp_as_iter(egg->plugins);
+	RzList *plugin_list = rz_list_new_from_iterator(iter);
+	if (!plugin_list) {
+		rz_iterator_free(iter);
+		return;
+	}
+	rz_list_sort(plugin_list, (RzListComparator)rz_egg_plugin_cmp, NULL);
+	RzListIter *it;
+	RzEggPlugin *p;
+	rz_list_foreach (plugin_list, it, p) {
 		if (p->type == RZ_EGG_PLUGIN_SHELLCODE) {
 			printf("%10s : %s\n", p->name, p->desc);
 		}
 	}
+
 	printf("encoders:\n");
-	rz_list_foreach (egg->plugins, iter, p) {
+	rz_list_foreach (plugin_list, it, p) {
 		if (p->type == RZ_EGG_PLUGIN_ENCODER) {
 			printf("%10s : %s\n", p->name, p->desc);
 		}
 	}
+	rz_list_free(plugin_list);
+	rz_iterator_free(iter);
 }
 
 static bool create(const char *format, const char *arch, int bits, const ut8 *code, int codelen) {
@@ -192,7 +203,7 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 			contents = opt.arg;
 			break;
 		case 'w': {
-			char *arg = strdup(opt.arg);
+			char *arg = rz_str_dup(opt.arg);
 			char *p = strchr(arg, ':');
 			if (p) {
 				int len, off;
@@ -329,7 +340,7 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 			break;
 		case 'q':
 			get_offset = 1;
-			sequence = strdup(opt.arg);
+			sequence = rz_str_dup(opt.arg);
 			break;
 		default:
 			goto fail;
@@ -455,7 +466,7 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 	/* set output (create output file if needed) */
 	if (ofileauto) {
 		if (file) {
-			char *o, *q, *p = strdup(file);
+			char *o, *q, *p = rz_str_dup(file);
 			if ((o = strchr(p, '.'))) {
 				while ((q = strchr(o + 1, '.'))) {
 					o = q;

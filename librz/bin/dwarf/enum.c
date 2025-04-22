@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_bin_dwarf.h>
-#include "dwarf_private.h"
 
 #define DW_(x) \
 	case x: return #x;
@@ -390,6 +389,25 @@ static const char *dwarf_lnct[] = {
 	[DW_LNCT_MD5] = "DW_LNCT_MD5",
 };
 
+static const char *dwarf_ate[] = {
+	[DW_ATE_address] = "DW_ATE_address",
+	[DW_ATE_boolean] = "DW_ATE_boolean",
+	[DW_ATE_complex_float] = "DW_ATE_complex_float",
+	[DW_ATE_float] = "DW_ATE_float",
+	[DW_ATE_signed] = "DW_ATE_signed",
+	[DW_ATE_signed_char] = "DW_ATE_signed_char",
+	[DW_ATE_unsigned] = "DW_ATE_unsigned",
+	[DW_ATE_unsigned_char] = "DW_ATE_unsigned_char",
+	[DW_ATE_imaginary_float] = "DW_ATE_imaginary_float",
+	[DW_ATE_packed_decimal] = "DW_ATE_packed_decimal",
+	[DW_ATE_numeric_string] = "DW_ATE_numeric_string",
+	[DW_ATE_edited] = "DW_ATE_edited",
+	[DW_ATE_signed_fixed] = "DW_ATE_signed_fixed",
+	[DW_ATE_unsigned_fixed] = "DW_ATE_unsigned_fixed",
+	[DW_ATE_decimal_float] = "DW_ATE_decimal_float",
+	[DW_ATE_UTF] = "DW_ATE_UTF",
+};
+
 static const char *dwarf_op[] = {
 	[DW_OP_addr] = "DW_OP_addr",
 	[DW_OP_deref] = "DW_OP_deref",
@@ -555,6 +573,8 @@ static const char *dwarf_op[] = {
 	[DW_OP_xderef_type] = "DW_OP_xderef_type",
 	[DW_OP_convert] = "DW_OP_convert",
 	[DW_OP_reinterpret] = "DW_OP_reinterpret",
+	[DW_OP_GNU_uninit] = "DW_OP_GNU_uninit",
+	[DW_OP_GNU_encoded_addr] = "DW_OP_GNU_encoded_addr",
 	[DW_OP_GNU_push_tls_address] = "DW_OP_GNU_push_tls_address",
 	[DW_OP_GNU_implicit_pointer] = "DW_OP_GNU_implicit_pointer",
 	[DW_OP_GNU_entry_value] = "DW_OP_GNU_entry_value",
@@ -587,6 +607,7 @@ DW_ENUM_TO_STRING_IMPL(lns, DW_LNS, dwarf_lns);
 DW_ENUM_TO_STRING_IMPL(lne, DW_LNE, dwarf_lne);
 DW_ENUM_TO_STRING_IMPL(lnct, DW_LNCT, dwarf_lnct);
 DW_ENUM_TO_STRING_IMPL(op, DW_OP, dwarf_op);
+DW_ENUM_TO_STRING_IMPL(ate, DW_ATE, dwarf_ate);
 
 RZ_API const char *rz_bin_dwarf_tag(DW_TAG tag) {
 	DW_ENUM_TO_STRING(dwarf_tag_name_encodings, tag);
@@ -771,6 +792,13 @@ RZ_API const char *rz_bin_dwarf_attr(DW_AT attr_code) {
 		DW_(DW_AT_LLVM_include_path);
 		DW_(DW_AT_LLVM_config_macros);
 		DW_(DW_AT_LLVM_isysroot);
+		DW_(DW_AT_LLVM_tag_offset);
+		DW_(DW_AT_LLVM_ptrauth_key);
+		DW_(DW_AT_LLVM_ptrauth_address_discriminated);
+		DW_(DW_AT_LLVM_ptrauth_extra_discriminator);
+		DW_(DW_AT_LLVM_apinotes);
+		DW_(DW_AT_LLVM_ptrauth_isa_pointer);
+		DW_(DW_AT_LLVM_ptrauth_authenticates_null_values);
 		DW_(DW_AT_APPLE_optimized);
 		DW_(DW_AT_APPLE_flags);
 		DW_(DW_AT_APPLE_isa);
@@ -784,6 +812,9 @@ RZ_API const char *rz_bin_dwarf_attr(DW_AT attr_code) {
 		DW_(DW_AT_APPLE_property_attribute);
 		DW_(DW_AT_APPLE_objc_complete_type);
 		DW_(DW_AT_APPLE_property);
+		DW_(DW_AT_APPLE_objc_direct);
+		DW_(DW_AT_APPLE_sdk);
+		DW_(DW_AT_APPLE_origin);
 	default:
 		return NULL;
 	}

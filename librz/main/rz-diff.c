@@ -8,7 +8,6 @@
 #include <rz_util.h>
 #include <rz_main.h>
 
-#define MEGABYTE(x)        (x << 20)
 #define SAFE_STR_DEF(x, y) (x ? x : y)
 #define SAFE_STR(x)        (x ? x : "")
 #define IF_STRCMP_S(ret, x, y) \
@@ -229,6 +228,7 @@ static void rz_diff_show_help(bool usage_only) {
 		"",         "",             "   bytes      | compare raw bytes in the files (only for small files)",
 		"",         "",             "   lines      | compare text files",
 		"",         "",             "   functions  | compare functions found in the files",
+		"",         "",             "              | optional -0 <fcn name|offset> to compare only one function",
 		"",         "",             "   classes    | compare classes found in the files",
 		"",         "",             "   command    | compare command output returned when executed in both files",
 		"",         "",             "              | require -0 <cmd> and -1 <cmd> is optional",
@@ -365,9 +365,7 @@ static void rz_diff_parse_arguments(int argc, const char **argv, DiffContext *ct
 		} else if (!strcmp(type, "lines")) {
 			rz_diff_ctx_set_type(ctx, DIFF_TYPE_LINES);
 		} else if (!strcmp(type, "functions")) {
-			if (ctx->input_a) {
-				rz_diff_error_opt(ctx, DIFF_OPT_ERROR, "option -t '%s' does not support -0.\n", type);
-			} else if (ctx->input_b) {
+			if (ctx->input_b) {
 				rz_diff_error_opt(ctx, DIFF_OPT_ERROR, "option -t '%s' does not support -1.\n", type);
 			}
 			ctx->option = DIFF_OPT_GRAPH;
@@ -489,11 +487,6 @@ static ut8 *rz_diff_slurp_file(const char *file, size_t *size) {
 		goto rz_diff_slurp_file_end;
 	}
 
-	if (dio->filesize > MEGABYTE(5)) {
-		rz_diff_error("cannot open file '%s' because its size is above 5Mb\n", file);
-		goto rz_diff_slurp_file_end;
-	}
-
 	buffer = malloc(dio->filesize + 1);
 	if (!buffer) {
 		rz_diff_error("cannot allocate buffer\n");
@@ -525,11 +518,11 @@ static bool rz_diff_calculate_distance(DiffContext *ctx) {
 	double similarity = 0.0;
 
 	if (ctx->command_line) {
-		if (!(a_buffer = (ut8 *)strdup(ctx->file_a))) {
+		if (!(a_buffer = (ut8 *)rz_str_dup(ctx->file_a))) {
 			goto rz_diff_calculate_distance_bad;
 		}
 		a_size = strlen((const char *)a_buffer);
-		if (!(b_buffer = (ut8 *)strdup(ctx->file_b))) {
+		if (!(b_buffer = (ut8 *)rz_str_dup(ctx->file_b))) {
 			goto rz_diff_calculate_distance_bad;
 		}
 		b_size = strlen((const char *)b_buffer);
@@ -726,12 +719,6 @@ static void rz_diff_file_close(DiffFile *file) {
 }
 
 #define rz_diff_file_get(df, n) ((df)->file->o->n)
-
-/**************************************** rzlists ***************************************/
-
-static const void *rz_diff_list_elem_at(const RzList /*<void *>*/ *array, ut32 index) {
-	return rz_list_get_n(array, index);
-}
 
 /**************************************** rzpvector ***************************************/
 
@@ -1073,31 +1060,31 @@ static void entry_stringify(const RzBinAddr *elem, RzStrBuf *sb) {
 }
 
 static RzDiff *rz_diff_entries_new(DiffFile *dfile_a, DiffFile *dfile_b) {
-	RzList *list_a = NULL;
-	RzList *list_b = NULL;
+	RzPVector *vec_a = NULL;
+	RzPVector *vec_b = NULL;
 
-	list_a = rz_diff_file_get(dfile_a, entries);
-	if (!list_a) {
+	vec_a = rz_diff_file_get(dfile_a, entries);
+	if (!vec_a) {
 		rz_diff_error_ret(NULL, "cannot get entries from '%s'\n", dfile_a->dio->filename);
 	}
 
-	list_b = rz_diff_file_get(dfile_b, entries);
-	if (!list_b) {
+	vec_b = rz_diff_file_get(dfile_b, entries);
+	if (!vec_b) {
 		rz_diff_error_ret(NULL, "cannot get entries from '%s'\n", dfile_b->dio->filename);
 	}
 
-	rz_list_sort(list_a, (RzListComparator)entry_compare, NULL);
-	rz_list_sort(list_b, (RzListComparator)entry_compare, NULL);
+	rz_pvector_sort(vec_a, (RzPVectorComparator)entry_compare, NULL);
+	rz_pvector_sort(vec_b, (RzPVectorComparator)entry_compare, NULL);
 
 	RzDiffMethods methods = {
-		.elem_at = (RzDiffMethodElemAt)rz_diff_list_elem_at,
+		.elem_at = (RzDiffMethodElemAt)rz_diff_pvector_elem_at,
 		.elem_hash = (RzDiffMethodElemHash)entry_hash,
 		.compare = (RzDiffMethodCompare)entry_compare,
 		.stringify = (RzDiffMethodStringify)entry_stringify,
 		.ignore = NULL,
 	};
 
-	return rz_diff_generic_new(list_a, rz_list_length(list_a), list_b, rz_list_length(list_b), &methods);
+	return rz_diff_generic_new(vec_a, rz_pvector_len(vec_a), vec_b, rz_pvector_len(vec_b), &methods);
 }
 
 /**************************************** libraries ***************************************/
@@ -1561,7 +1548,7 @@ static char *basic_block_opcodes(RzCore *core, RzAnalysisBlock *bbi) {
 	rz_core_print_disasm(core, b->addr, block, b->size, 9999, NULL, &disasm_options);
 	rz_cons_filter();
 	const char *retstr = rz_str_get(rz_cons_get_buffer());
-	opcodes = strdup(retstr);
+	opcodes = rz_str_dup(retstr);
 exit:
 	rz_cons_pop();
 	rz_cons_echo(NULL);
@@ -1664,9 +1651,10 @@ static void graphviz_dot_nodes(RzCore *core_a, RzAnalysisFunction *fcn_a, RzCore
 #define PAL_TRUE "#13a10e"
 static void graphviz_dot_edges(RzCore *core, RzAnalysisFunction *fcn) {
 	RzAnalysisBlock *bbi;
-	RzListIter *iter;
+	void **iter;
 
-	rz_list_foreach (fcn->bbs, iter, bbi) {
+	rz_pvector_foreach (fcn->bbs, iter) {
+		bbi = (RzAnalysisBlock *)*iter;
 		if (bbi->jump != UT64_MAX) {
 			rz_cons_printf("\t\"0x%08" PFMT64x "\" -> \"0x%08" PFMT64x "\" [color=\"%s\"];\n",
 				bbi->addr, bbi->jump,
@@ -1878,7 +1866,7 @@ static void diff_graph_as_json(RzCore *core_a, RzAnalysisFunction *fcn_a, RzCore
 }
 
 static bool diff_progess_status(const size_t n_left, const size_t n_matches, void *user) {
-	rz_cons_clear_line(true);
+	rz_cons_clear_line(stderr);
 	fprintf(stderr, "rz-diff: to check %" PFMTSZu " | matches %" PFMTSZu "\r", n_left, n_matches);
 	return !rz_cons_is_breaked();
 }
@@ -2077,7 +2065,7 @@ static int comparePairFunctions(const RzAnalysisMatchPair *ma, const RzAnalysisM
  * Then the scores are shown in a table (when in quiet mode, the table
  * is headerless)
  * */
-static void core_diff_show(RzCore *core_a, RzCore *core_b, DiffMode mode, bool verbose) {
+static void core_diff_show(RzCore *core_a, RzCore *core_b, const char *addr_a, DiffMode mode, bool verbose) {
 	rz_return_if_fail(core_a && core_b);
 
 	char *output = NULL;
@@ -2090,14 +2078,28 @@ static void core_diff_show(RzCore *core_a, RzCore *core_b, DiffMode mode, bool v
 	RzAnalysisFunction *fcn_a = NULL, *fcn_b = NULL;
 	RzListIter *iter = NULL;
 	bool color = false, no_name = false;
-
-	fcns_a = rz_list_clone(rz_analysis_get_fcns(core_a->analysis));
+	if (RZ_STR_ISEMPTY(addr_a)) {
+		fcns_a = rz_list_clone(rz_analysis_function_list(core_a->analysis));
+	} else {
+		fcns_a = rz_list_new();
+		if (!fcns_a) {
+			RZ_LOG_ERROR("rz-diff: failed to create new list.\n");
+			goto fail;
+		}
+		ut64 addr = rz_num_get(core_a->num, addr_a);
+		RzAnalysisFunction *fcn = rz_analysis_get_function_at(core_a->analysis, addr);
+		if (!fcn) {
+			RZ_LOG_ERROR("rz-diff: failed to find %s in file0.\n", addr_a);
+			goto fail;
+		}
+		rz_list_append(fcns_a, fcn);
+	}
 	if (rz_list_empty(fcns_a)) {
 		RZ_LOG_ERROR("rz-diff: No functions found in file0.\n");
 		goto fail;
 	}
 
-	fcns_b = rz_list_clone(rz_analysis_get_fcns(core_b->analysis));
+	fcns_b = rz_list_clone(rz_analysis_function_list(core_b->analysis));
 	if (rz_list_empty(fcns_b)) {
 		RZ_LOG_ERROR("rz-diff: No functions found in file1.\n");
 		goto fail;
@@ -2301,7 +2303,7 @@ static bool rz_diff_graphs_files(DiffContext *ctx) {
 		if (ctx->verbose) {
 			fprintf(stderr, "rz-diff: start diffing.\n");
 		}
-		core_diff_show(a->core, b->core, ctx->mode, ctx->verbose);
+		core_diff_show(a->core, b->core, ctx->input_a, ctx->mode, ctx->verbose);
 	}
 
 	success = true;
@@ -2663,13 +2665,13 @@ static bool rz_diff_draw_tui(DiffHexView *hview, bool show_help) {
 static char *visual_prompt(DiffHexView *hview, const char *prompt) {
 	char buf[1024];
 	rz_cons_gotoxy(0, hview->screen.height);
-	rz_cons_clear_line(0);
+	rz_cons_clear_line(stdout);
 	rz_cons_printf("%s%s ", hview->colors.reset, prompt);
 	rz_line_set_prompt(rz_cons_singleton()->line, ":> ");
 	rz_cons_flush();
 	rz_cons_fgets(buf, sizeof(buf), 0, NULL);
 	if (*buf) {
-		return strdup(buf);
+		return rz_str_dup(buf);
 	}
 	return NULL;
 }

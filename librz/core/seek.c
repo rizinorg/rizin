@@ -204,12 +204,14 @@ RZ_API bool rz_core_seek_next(RzCore *core, const char *type, bool save) {
 	RzListIter *iter;
 	ut64 next = UT64_MAX;
 	if (strstr(type, "opc")) {
-		RzAnalysisOp aop;
+		RzAnalysisOp aop = { 0 };
+		rz_analysis_op_init(&aop);
 		if (rz_analysis_op(core->analysis, &aop, core->offset, core->block, core->blocksize, RZ_ANALYSIS_OP_MASK_BASIC) > 0) {
 			next = core->offset + aop.size;
 		} else {
 			RZ_LOG_ERROR("core: invalid opcode\n");
 		}
+		rz_analysis_op_fini(&aop);
 	} else if (strstr(type, "fun")) {
 		RzAnalysisFunction *fcni;
 		rz_list_foreach (core->analysis->fcns, iter, fcni) {
@@ -272,7 +274,7 @@ RZ_API bool rz_core_seek_prev(RzCore *core, const char *type, bool save) {
  * \param save If true save the current state in seek history before seeking
  */
 RZ_API bool rz_core_seek_align(RzCore *core, ut64 align, bool save) {
-	if (!align) {
+	if (align < 2) {
 		return false;
 	}
 	int diff = core->offset % align;
@@ -416,7 +418,7 @@ RZ_API RzList /*<RzCoreSeekItem *>*/ *rz_core_seek_list(RzCore *core) {
 
 	RzCoreSeekItem *it;
 	int i = -rz_vector_len(&core->seek_history.undos);
-	rz_vector_foreach(&core->seek_history.undos, it) {
+	rz_vector_foreach (&core->seek_history.undos, it) {
 		RzCoreSeekItem *dup = dup_seek_history_item(it, i++);
 		if (!dup) {
 			goto err;
@@ -431,7 +433,7 @@ RZ_API RzList /*<RzCoreSeekItem *>*/ *rz_core_seek_list(RzCore *core) {
 	rz_list_append(res, cur);
 
 	i = 1;
-	rz_vector_foreach_prev(&core->seek_history.redos, it) {
+	rz_vector_foreach_prev (&core->seek_history.redos, it) {
 		RzCoreSeekItem *dup = dup_seek_history_item(it, i++);
 		if (!dup) {
 			goto err;

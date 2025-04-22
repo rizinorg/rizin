@@ -1,0 +1,33 @@
+d "addwf 0x1, w" c101
+d "andwf 0x2, f" 6201
+d "clrf 0x3" 6300
+d "clrw" 4000
+d "comf 0x4, w" 4402
+d "decf 0x5, f" e500
+d "decfsz 0x6, w" c602
+d "incf 0x7, f" a702
+d "incfsz 0x8, w" c803
+d "iorwf 0x8, w" 0801
+d "movf 0x9, f" 2902
+d "movwf 0xa" 2a00
+d "nop" 0000
+d "rlf 0xb, w" 4b03
+d "rrf 0xc, f" 2c03
+d "subwf 0xd, w" 8d00
+d "swapf 0xe, f" ae03
+d "xorwf 0x1f, w" 9f01
+d "bcf 0x12, 0x1" 3204
+d "bsf 0x15, 0x7" f505
+d "btfsc 0x3, 0x0" 0306
+d "btfss 0x7, 0x5" a707
+d "andlw 0xfa" fa0e
+d "call 0x34" 1a09
+d "clrwdt" 0400
+d "goto 0x1fc" fe0a
+d "iorlw 0x1" 010d
+d "movlw 0x42" 420c
+d "option" 0200
+d "retlw 0x2a" 2a08
+d "sleep" 0300
+d "tris 0x7" 0700
+d "xorlw 0x71" 710f

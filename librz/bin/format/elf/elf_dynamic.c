@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2021 08A <08A@riseup.net>
+// SPDX-FileCopyrightText: 2021 08A <dev@08a.re>
 // SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
 // SPDX-License-Identifier: LGPL-3.0-only
 
@@ -101,7 +101,7 @@ RZ_OWN RzBinElfDtDynamic *Elf_(rz_bin_elf_dt_dynamic_new)(RZ_NONNULL ELFOBJ *bin
 		return NULL;
 	}
 
-	result->info = ht_uu_new0();
+	result->info = ht_uu_new();
 	if (!result->info) {
 		Elf_(rz_bin_elf_dt_dynamic_free)(result);
 		return NULL;

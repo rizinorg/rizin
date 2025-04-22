@@ -22,6 +22,7 @@ extern "C" {
 #include <rz_vector.h>
 #include <sdb.h>
 #include <rz_util/ht_up.h>
+#include <rz_util/ht_pp.h>
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -517,7 +518,6 @@ typedef enum {
 typedef struct rz_cons_t {
 	RzConsContext *context;
 	RzConsInputContext *input;
-	char *lastline;
 	bool is_html;
 	bool was_html;
 	int lines;
@@ -939,7 +939,7 @@ RZ_API void rz_cons_highlight(const char *word);
 RZ_API void rz_cons_clear(void);
 RZ_API void rz_cons_clear_buffer(void);
 RZ_API void rz_cons_clear00(void);
-RZ_API void rz_cons_clear_line(int err);
+RZ_API void rz_cons_clear_line(FILE *stream);
 RZ_API void rz_cons_fill_line(void);
 RZ_API void rz_cons_gotoxy(int x, int y);
 RZ_API int rz_cons_get_cur_line(void);

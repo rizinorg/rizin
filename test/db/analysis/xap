@@ -1,0 +1,40 @@
+NAME=xap2 example
+FILE=bins/xap/xap2_vm.app
+CMDS=<<EOF
+e asm.arch=xap
+e asm.bytes=true
+pd 30
+EOF
+EXPECT=<<EOF
+            0x00000000      4942           addc  X, @0x0042
+            0x00000002      7647           nadd  AL, @(0x0047, X)
+            0x00000004      416d           addc  AH, @0x006d
+            0x00000006      7070           nadd  AH, #0x0070
+            0x00000008      1800           ld    X, #0x0000
+            0x0000000a      0100           st    FLAGS, @(0x0000, Y)
+            0x0000000c      4bf4           addc  X, @(0xfff4, Y)
+            0x0000000e      bd1f           or    Y, @0x001f
+            0x00000010      9600           sdiv  @(0x0000, X)
+            0x00000012      d500           xor   AL, @0x0000
+            0x00000014      5d29           sub   Y, @0x0029
+            0x00000016      0100           st    FLAGS, @(0x0000, Y)
+            0x00000018      0030           
+            0x0000001a      0000           nop
+            0x0000001c      0c04           unknown
+        ,=< 0x0000001e      e703           blt   @(0x0003, Y)
+        |   0x00000020      47d6           addc  AL, @(0xffd6, Y)
+        |   0x00000022      0200           st    UX, @(0x0000, Y)
+        `-> 0x00000024      2014           print AH, #0x0014
+            0x00000026      8edb           cmp   Y, @(0xffdb, X)
+            0x00000028      0000           nop
+            0x0000002a      0000           nop
+        ,=< 0x0000002c      fc01           bcs   0x0001
+        |   0x0000002e      0000           nop
+        `-> 0x00000030      1409           ld    AL, #0x0009
+        ,=< 0x00000032      f411           beq   0x0011
+        |   0x00000034      0094           
+        |   0x00000036      10b4           ld    AH, #0xffb4
+        |   0x00000038      0005           
+        |   0x0000003a      1800           ld    X, #0x0000
+EOF
+RUN

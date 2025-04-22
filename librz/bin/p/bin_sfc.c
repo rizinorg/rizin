@@ -85,11 +85,11 @@ static RzBinInfo *info(RzBinFile *bf) {
 	if (!(ret = RZ_NEW0(RzBinInfo))) {
 		return NULL;
 	}
-	ret->file = strdup(bf->file);
-	ret->type = strdup("ROM");
-	ret->machine = strdup("Super NES / Super Famicom");
-	ret->os = strdup("snes");
-	ret->arch = strdup("snes");
+	ret->file = rz_str_dup(bf->file);
+	ret->type = rz_str_dup("ROM");
+	ret->machine = rz_str_dup("Super NES / Super Famicom");
+	ret->os = rz_str_dup("snes");
+	ret->arch = rz_str_dup("snes");
 	ret->bits = 16;
 	ret->has_va = 1;
 	return ret;
@@ -107,20 +107,6 @@ static void addrom(RzPVector /*<RzBinSection *>*/ *ret, const char *name, int i,
 	ptr->perm = RZ_PERM_RX;
 	rz_pvector_push(ret, ptr);
 }
-
-#if 0
-static void addsym(RzList *ret, const char *name, ut64 addr, ut32 size) {
-	RzBinSymbol *ptr = RZ_NEW0 (RzBinSymbol);
-	if (!ptr) {
-		return;
-	}
-	ptr->name = strdup (name? name: "");
-	ptr->paddr = ptr->vaddr = addr;
-	ptr->size = size;
-	ptr->ordinal = 0;
-	rz_list_append (ret, ptr);
-}
-#endif
 
 static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	return NULL;
@@ -196,7 +182,7 @@ static RzPVector /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
 		rz_pvector_free(ret);
 		return NULL;
 	}
-	m->name = strdup("LOWRAM");
+	m->name = rz_str_dup("LOWRAM");
 	m->addr = LOWRAM_START_ADDRESS;
 	m->size = LOWRAM_SIZE;
 	m->perms = rz_str_rwx("rwx");
@@ -206,7 +192,7 @@ static RzPVector /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
 		return ret;
 	}
 	m->mirrors = rz_pvector_new(rz_bin_mem_free);
-	m->name = strdup("LOWRAM_MIRROR");
+	m->name = rz_str_dup("LOWRAM_MIRROR");
 	m->addr = LOWRAM_MIRROR_START_ADDRESS;
 	m->size = LOWRAM_MIRROR_SIZE;
 	m->perms = rz_str_rwx("rwx");
@@ -216,7 +202,7 @@ static RzPVector /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
 		rz_pvector_free(m_bak->mirrors);
 		return ret;
 	}
-	m->name = strdup("HIRAM");
+	m->name = rz_str_dup("HIRAM");
 	m->addr = HIRAM_START_ADDRESS;
 	m->size = HIRAM_SIZE;
 	m->perms = rz_str_rwx("rwx");
@@ -224,7 +210,7 @@ static RzPVector /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
 	if (!(m = RZ_NEW0(RzBinMem))) {
 		return ret;
 	}
-	m->name = strdup("EXTRAM");
+	m->name = rz_str_dup("EXTRAM");
 	m->addr = EXTRAM_START_ADDRESS;
 	m->size = EXTRAM_SIZE;
 	m->perms = rz_str_rwx("rwx");
@@ -232,7 +218,7 @@ static RzPVector /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
 	if (!(m = RZ_NEW0(RzBinMem))) {
 		return ret;
 	}
-	m->name = strdup("PPU1_REG");
+	m->name = rz_str_dup("PPU1_REG");
 	m->addr = PPU1_REG_ADDRESS;
 	m->size = PPU1_REG_SIZE;
 	m->perms = rz_str_rwx("rwx");
@@ -241,7 +227,7 @@ static RzPVector /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
 		rz_pvector_free(ret);
 		return NULL;
 	}
-	m->name = strdup("DSP_REG");
+	m->name = rz_str_dup("DSP_REG");
 	m->addr = DSP_REG_ADDRESS;
 	m->size = DSP_REG_SIZE;
 	m->perms = rz_str_rwx("rwx");
@@ -250,7 +236,7 @@ static RzPVector /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
 		rz_pvector_free(ret);
 		return NULL;
 	}
-	m->name = strdup("OLDJOY_REG");
+	m->name = rz_str_dup("OLDJOY_REG");
 	m->addr = OLDJOY_REG_ADDRESS;
 	m->size = OLDJOY_REG_SIZE;
 	m->perms = rz_str_rwx("rwx");
@@ -259,7 +245,7 @@ static RzPVector /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
 		rz_pvector_free(ret);
 		return NULL;
 	}
-	m->name = strdup("PPU2_REG");
+	m->name = rz_str_dup("PPU2_REG");
 	m->addr = PPU2_REG_ADDRESS;
 	m->size = PPU2_REG_SIZE;
 	m->perms = rz_str_rwx("rwx");
@@ -267,9 +253,9 @@ static RzPVector /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) { // Should be 3 offsets pointed by NMI, RESET, IRQ after mapping && default = 1st CHR
-	RzList *ret;
-	if (!(ret = rz_list_new())) {
+static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) { // Should be 3 offsets pointed by NMI, RESET, IRQ after mapping && default = 1st CHR
+	RzPVector *ret;
+	if (!(ret = rz_pvector_new(NULL))) {
 		return NULL;
 	}
 	/*

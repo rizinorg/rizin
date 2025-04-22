@@ -94,7 +94,7 @@ static RzBinAddr *newEntry(ut64 hpaddr, ut64 paddr, int type, int bits) {
 	return ptr;
 }
 
-static void process_constructors(RzBinFile *bf, RzList /*<RzBinAddr *>*/ *ret, int bits) {
+static void process_constructors(RzBinFile *bf, RzPVector /*<RzBinAddr *>*/ *ret, int bits) {
 	RzPVector *secs = sections(bf);
 	void **iter;
 	RzBinSection *sec;
@@ -122,7 +122,7 @@ static void process_constructors(RzBinFile *bf, RzList /*<RzBinAddr *>*/ *ret, i
 					ut32 addr32 = rz_read_le32(buf + i);
 					RzBinAddr *ba = newEntry(sec->paddr + i, (ut64)addr32, type, bits);
 					if (ba) {
-						rz_list_append(ret, ba);
+						rz_pvector_push(ret, ba);
 					}
 				}
 			} else {
@@ -130,7 +130,7 @@ static void process_constructors(RzBinFile *bf, RzList /*<RzBinAddr *>*/ *ret, i
 					ut64 addr64 = rz_read_le64(buf + i);
 					RzBinAddr *ba = newEntry(sec->paddr + i, addr64, type, bits);
 					if (ba) {
-						rz_list_append(ret, ba);
+						rz_pvector_push(ret, ba);
 					}
 				}
 			}
@@ -139,13 +139,13 @@ static void process_constructors(RzBinFile *bf, RzList /*<RzBinAddr *>*/ *ret, i
 	}
 }
 
-static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o, NULL);
 
 	RzBinAddr *ptr = NULL;
 	struct addr_t *entry = NULL;
 
-	RzList *ret = rz_list_newf(free);
+	RzPVector *ret = rz_pvector_new(free);
 	if (!ret) {
 		return NULL;
 	}
@@ -166,7 +166,7 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 				ptr->vaddr--;
 			}
 		}
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 
 	process_constructors(bf, ret, bits);
@@ -208,7 +208,7 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	if (!(syms = MACH0_(get_symbols)(obj->bin_obj))) {
 		return ret;
 	}
-	SetU *symcache = set_u_new();
+	RzSetU *symcache = rz_set_u_new();
 	bin = (struct MACH0_(obj_t) *)obj->bin_obj;
 	for (i = 0; !syms[i].last; i++) {
 		if (syms[i].name == NULL || syms[i].name[0] == '\0' || syms[i].addr < 100) {
@@ -217,7 +217,7 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 		if (!(ptr = RZ_NEW0(RzBinSymbol))) {
 			break;
 		}
-		ptr->name = strdup((char *)syms[i].name);
+		ptr->name = rz_str_dup((char *)syms[i].name);
 		ptr->is_imported = syms[i].is_imported;
 		ptr->forwarder = "NONE";
 		ptr->bind = (syms[i].type == RZ_BIN_MACH0_SYMBOL_TYPE_LOCAL) ? RZ_BIN_BIND_LOCAL_STR : RZ_BIN_BIND_GLOBAL_STR;
@@ -231,7 +231,7 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 		}
 		ptr->ordinal = i;
 		bin->dbg_info = strncmp(ptr->name, "radr://", 7) ? 0 : 1;
-		set_u_add(symcache, ptr->vaddr);
+		rz_set_u_add(symcache, ptr->vaddr);
 		rz_pvector_push(ret, ptr);
 	}
 	// functions from LC_FUNCTION_STARTS
@@ -260,7 +260,7 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 			rz_pvector_push(ret, ptr);
 			// if any func is not found in syms then we can consider it is stripped
 			if (!isStripped) {
-				if (!set_u_contains(symcache, ptr->vaddr)) {
+				if (!rz_set_u_contains(symcache, ptr->vaddr)) {
 					isStripped = true;
 				}
 			}
@@ -269,7 +269,7 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	if (isStripped) {
 		bin->dbg_info |= RZ_BIN_DBG_STRIPPED;
 	}
-	set_u_free(symcache);
+	rz_set_u_free(symcache);
 	return ret;
 }
 
@@ -306,7 +306,7 @@ static RzBinImport *import_from_name(RzBin *rbin, const char *orig_name, HtPP *i
 	if (*name == '_') {
 		name++;
 	}
-	ptr->name = strdup(name);
+	ptr->name = rz_str_dup(name);
 	ptr->bind = "NONE";
 	ptr->type = rz_str_constpool_get(&rbin->constpool, type);
 
@@ -433,7 +433,7 @@ static RzPVector /*<char *>*/ *libs(RzBinFile *bf) {
 	}
 	if ((libs = MACH0_(get_libs)(obj->bin_obj))) {
 		for (i = 0; !libs[i].last; i++) {
-			ptr = strdup(libs[i].name);
+			ptr = rz_str_dup(libs[i].name);
 			rz_pvector_push(ret, ptr);
 		}
 		free(libs);
@@ -453,7 +453,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 
 	bin = bf->o->bin_obj;
 	if (bf->file) {
-		ret->file = strdup(bf->file);
+		ret->file = rz_str_dup(bf->file);
 	}
 	if ((str = MACH0_(get_class)(bf->o->bin_obj))) {
 		ret->bclass = str;
@@ -467,10 +467,11 @@ static RzBinInfo *info(RzBinFile *bf) {
 	}
 	ret->intrp = rz_str_dup(MACH0_(get_intrp)(bf->o->bin_obj));
 	ret->compiler = rz_str_dup("");
-	ret->rclass = strdup("mach0");
-	ret->os = strdup("darwin");
-	ret->subsystem = strdup(MACH0_(get_platform)(bf->o->bin_obj));
+	ret->rclass = rz_str_dup("mach0");
+	ret->os = rz_str_dup("darwin");
+	ret->subsystem = rz_str_dup(MACH0_(get_platform)(bf->o->bin_obj));
 	ret->arch = strdup(MACH0_(get_cputype)(bf->o->bin_obj));
+	ret->cpu = MACH0_(get_cpusubtype)(bf->o->bin_obj);
 	ret->machine = MACH0_(get_cpusubtype)(bf->o->bin_obj);
 	ret->type = MACH0_(get_filetype)(bf->o->bin_obj);
 	ret->big_endian = MACH0_(is_big_endian)(bf->o->bin_obj);

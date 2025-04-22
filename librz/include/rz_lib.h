@@ -3,7 +3,7 @@
 
 #include "rz_types.h"
 #include "rz_list.h"
-#include <rz_util/ht_pu.h>
+#include <rz_util/ht_su.h>
 
 #if __UNIX__
 #include <dlfcn.h>
@@ -50,6 +50,7 @@ typedef enum {
 	RZ_LIB_TYPE_CORE, ///< RzCore commands
 	RZ_LIB_TYPE_EGG, ///< rz_egg plugin
 	RZ_LIB_TYPE_DEMANGLER, ///< demanglers
+	RZ_LIB_TYPE_ARCH, ///< demanglers
 	RZ_LIB_TYPE_UNKNOWN
 } RzLibType;
 
@@ -102,25 +103,8 @@ typedef struct rz_lib_t {
 	char *symnamefunc;
 	RzList /*<RzLibPlugin *>*/ *plugins;
 	RzList /*<RzLibHandler *>*/ *handlers;
-	HtPU *opened_dirs; ///< Hashtable to keep track of already opened directories
+	HtSU *opened_dirs; ///< Hashtable to keep track of already opened directories
 } RzLib;
-
-#define RZ_PLUGIN_CHECK_AND_ADD(plugins, plugin, py_type) \
-	do { \
-		RzListIter *_it; \
-		py_type *_p; \
-		rz_list_foreach ((plugins), _it, _p) { \
-			if (!strcmp(_p->name, (plugin)->name)) { \
-				return false; \
-			} \
-		} \
-		rz_list_append(plugins, plugin); \
-	} while (0)
-
-#define RZ_PLUGIN_REMOVE(plugins, plugin) \
-	do { \
-		rz_list_delete_data(plugins, plugin); \
-	} while (0)
 
 #ifdef RZ_API
 RZ_API RzLib *rz_lib_new(RZ_NULLABLE const char *symname, RZ_NULLABLE const char *symnamefunc);

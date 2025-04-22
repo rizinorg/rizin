@@ -46,8 +46,7 @@ e emu.str=1
 s 0x100011130
 pd 2~addChild
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=adrp string
@@ -69,26 +68,26 @@ ii
 iE
 EOF
 EXPECT=<<EOF
-nth vaddr      bind   type   lib name             
+nth      vaddr bind   type   lib name             
 --------------------------------------------------
-3   0x00020060 GLOBAL NOTYPE     _bss_end__
-4   0x000006b0 GLOBAL FUNC       realloc
-5   0x000006c0 GLOBAL FUNC       __cxa_finalize
-7   0x000006d0 GLOBAL FUNC       __stack_chk_fail
-8   0x00020058 GLOBAL NOTYPE     __bss_start
-9   0x00020060 GLOBAL NOTYPE     __end__
-10  0x00020058 GLOBAL NOTYPE     __bss_start__
-11  0x00020058 GLOBAL NOTYPE     _edata
-12  0x000006e0 GLOBAL FUNC       malloc
-13  0x000006f0 GLOBAL FUNC       memcpy
-14  0x00020060 GLOBAL NOTYPE     __bss_end__
-15  0x00000700 GLOBAL FUNC       memset
-16  0x00020060 GLOBAL NOTYPE     _end
-17  0x00000710 GLOBAL FUNC       free
-18  0x00000720 GLOBAL FUNC       __cxa_atexit
-nth paddr      vaddr      bind   type size lib name            
+  3 0x00020060 GLOBAL NOTYPE     _bss_end__
+  4 0x000006b0 GLOBAL FUNC       realloc
+  5 0x000006c0 GLOBAL FUNC       __cxa_finalize
+  7 0x000006d0 GLOBAL FUNC       __stack_chk_fail
+  8 0x00020058 GLOBAL NOTYPE     __bss_start
+  9 0x00020060 GLOBAL NOTYPE     __end__
+ 10 0x00020058 GLOBAL NOTYPE     __bss_start__
+ 11 0x00020058 GLOBAL NOTYPE     _edata
+ 12 0x000006e0 GLOBAL FUNC       malloc
+ 13 0x000006f0 GLOBAL FUNC       memcpy
+ 14 0x00020060 GLOBAL NOTYPE     __bss_end__
+ 15 0x00000700 GLOBAL FUNC       memset
+ 16 0x00020060 GLOBAL NOTYPE     _end
+ 17 0x00000710 GLOBAL FUNC       free
+ 18 0x00000720 GLOBAL FUNC       __cxa_atexit
+nth      paddr      vaddr bind   type size lib name            
 ---------------------------------------------------------------
-6   0x0000aa20 0x0000aa20 GLOBAL FUNC 1176     Java_o__003dc_e
+  6 0x0000aa20 0x0000aa20 GLOBAL FUNC 1176     Java_o__003dc_e
 EOF
 RUN
 
@@ -108,7 +107,7 @@ pseudo: asm("irg x8, sp, x8")
 mnemonic: irg
 mask: ffffffff
 prefix: 0
-id: 0
+id: 495
 bytes: e813c89a
 refptr: 0
 size: 4
@@ -125,7 +124,7 @@ pseudo: asm("addg x9, x8, 0x20, 0")
 mnemonic: addg
 mask: ffffffff
 prefix: 0
-id: 0
+id: 6
 bytes: 09018291
 refptr: 0
 size: 4
@@ -156,7 +155,7 @@ pseudo: asm("addg x12, x8, 0x200, 2")
 mnemonic: addg
 mask: ffffffff
 prefix: 0
-id: 0
+id: 6
 bytes: 91a0090c
 refptr: 0
 size: 4
@@ -173,7 +172,7 @@ pseudo: asm("addg x9, x8, 0x20, 0")
 mnemonic: addg
 mask: ffffffff
 prefix: 0
-id: 0
+id: 6
 bytes: 91820109
 refptr: 0
 size: 4
@@ -190,7 +189,7 @@ pseudo: asm("irg x8, sp, x8")
 mnemonic: irg
 mask: ffffffff
 prefix: 0
-id: 0
+id: 495
 bytes: 9ac813e8
 refptr: 0
 size: 4
@@ -270,5 +269,25 @@ EXPECT=<<EOF
 |           0x00000008      stp   x26, x25, [sp, 0x10]
 |           0x0000000c      stp   x24, x23, [sp, 0x20]
 \           0x00000010      retab
+EOF
+RUN
+
+NAME=tail call
+FILE=bins/elf/static-glibc-2.27
+CMDS=<<EOF
+s 0x00401ae0
+af
+pdf
+EOF
+EXPECT=<<EOF
+/ fcn.00401ae0(int64_t arg1, int64_t arg2, int64_t arg3);
+|           ; arg int64_t arg1 @ rdi
+|           ; arg int64_t arg2 @ rsi
+|           ; arg int64_t arg3 @ rdx
+|           0x00401ae0      mov   r9d, edx                             ; arg3
+|           0x00401ae3      xor   r8d, r8d
+|           0x00401ae6      xor   ecx, ecx
+|           0x00401ae8      xor   edx, edx
+\       ,=< 0x00401aea      jmp   fcn.00402f40
 EOF
 RUN

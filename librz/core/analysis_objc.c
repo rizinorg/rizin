@@ -36,17 +36,13 @@ static void array_add(RzCoreObjc *o, ut64 va, ut64 xrefs_to) {
 		ht_up_insert(o->up, va, vec);
 	}
 	ut64 *addr;
-	rz_vector_foreach(vec, addr) {
+	rz_vector_foreach (vec, addr) {
 		if (xrefs_to == *addr) {
 			return;
 		}
 	}
 	// extend vector and insert new element
 	rz_vector_push(vec, &xrefs_to);
-}
-
-static void kv_array_free(HtUPKv *kv) {
-	rz_vector_free(kv->value);
 }
 
 static inline bool isValid(ut64 addr) {
@@ -110,7 +106,7 @@ static ut64 getRefPtr(RzCoreObjc *o, ut64 classMethodsVA, bool *rfound) {
 		return false;
 	}
 	ut64 *addr;
-	rz_vector_foreach(vec, addr) {
+	rz_vector_foreach (vec, addr) {
 		const ut64 at = *addr;
 		if (inBetween(o->_selrefs, at)) {
 			isMsgRef = false;
@@ -203,7 +199,7 @@ static RzCoreObjc *core_objc_new(RzCore *core) {
 		free(o);
 		return NULL;
 	}
-	o->up = ht_up_new(NULL, kv_array_free, NULL);
+	o->up = ht_up_new(NULL, (HtUPFreeValue)rz_vector_free);
 
 	return o;
 }
@@ -609,7 +605,7 @@ RZ_API void rz_core_analysis_objc_stubs(RzCore *core) {
 			goto found;
 		}
 	}
-	RZ_LOG_ERROR("__objc_stubs section not found for analysis");
+	RZ_LOG_ERROR("__objc_stubs section not found for analysis\n");
 	return;
 found:
 	analyze_objc_stubs(core, stubs_section->vaddr, stubs_section->vsize);

@@ -1,0 +1,134 @@
+NAME=Error - No binary
+FILE=
+CMDS=<<EOF
+/m
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=Error - No magic file
+FILE==
+CMDS=<<EOF
+/m asd
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: The magic file/directory 'asd' does not exist.
+EOF
+RUN
+
+NAME=Error - No magic dir
+FILE==
+CMDS=<<EOF
+e dir.magic=
+/m
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: The magic file/directory '' does not exist.
+EOF
+RUN
+
+NAME=/m single magic file
+FILE=bins/elf/analysis/x86-simple
+CMDS=<<EOF
+/m
+fC hit.magic.0
+/mj
+EOF
+EXPECT=<<EOF
+0x08048000 0 hit.magic.0 ELF 32-bit LSB executable, Intel 80386, version 1
+ELF 32-bit LSB executable, Intel 80386, version 1
+[{"address":134512640,"size":0,"flag":"hit.magic.0","detail":"ELF 32-bit LSB executable, Intel 80386, version 1"}]
+EOF
+RUN
+
+NAME=Search /m
+FILE=malloc://1024
+CMDS=<<EOF
+wx cffa edfe
+/m
+fC hit.magic.0
+EOF
+EXPECT=<<EOF
+0x00000000 0 hit.magic.0 Mach-O
+Mach-O
+EOF
+RUN
+
+NAME=/m search from/to (seek 0)
+FILE=bins/pe/standard.exe
+CMDS=<<EOF
+e io.va=false
+s 0
+e search.in=file
+/m
+fC hit.magic.0
+EOF
+EXPECT=<<EOF
+0x00000000 0 hit.magic.0 PE  for MS Windows (console) Intel 80386 32-bit
+PE  for MS Windows (console) Intel 80386 32-bit
+EOF
+RUN
+
+NAME=/m search from/to (seek beyond data)
+FILE=bins/pe/standard.exe
+CMDS=<<EOF
+e io.va=false
+s 0x1000
+e search.in=file
+/m
+fC hit.magic.0
+EOF
+EXPECT=<<EOF
+0x00000000 0 hit.magic.0 PE  for MS Windows (console) Intel 80386 32-bit
+PE  for MS Windows (console) Intel 80386 32-bit
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=/m search seek
+FILE=bins/pe/standard.exe
+CMDS=<<EOF
+e io.va=false
+e search.in=file
+s 0x1000
+/m~[0]
+fC hit.magic.0
+EOF
+EXPECT=<<EOF
+0x00000000
+PE  for MS Windows (console) Intel 80386 32-bit
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=/mj test json output
+FILE=bins/elf/analysis/x86-simple
+CMDS=<<EOF
+/m
+fC hit.magic.0
+/mj
+EOF
+EXPECT=<<EOF
+0x08048000 0 hit.magic.0 ELF 32-bit LSB executable, Intel 80386, version 1
+ELF 32-bit LSB executable, Intel 80386, version 1
+[{"address":134512640,"size":0,"flag":"hit.magic.0","detail":"ELF 32-bit LSB executable, Intel 80386, version 1"}]
+EOF
+RUN
+
+NAME=cmd.hit for /mb
+FILE=malloc://1024
+CMDS=<<EOF
+wx cffa edfe
+e search.from=0
+e search.to=0x10
+/mb
+EOF
+EXPECT=<<EOF
+0x00000000  mach064
+EOF
+RUN

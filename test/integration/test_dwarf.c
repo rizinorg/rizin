@@ -91,13 +91,10 @@ bool test_dwarf3_c_basic(void) { // this should work for dwarf2 aswell
 	mu_assert_notnull(bf, "couldn't open file");
 
 	RzBinDwarfAbbrev *da = NULL;
-	// mode = 0, calls
-	// static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RzBinDwarfDebugAbbrev *da)
-	// which prints out all the abbreviation
-	da = rz_bin_dwarf_abbrev_from_file(bin->cur, false);
+	da = rz_bin_dwarf_abbrev_from_file(bin->cur);
 	mu_assert_eq(rz_bin_dwarf_abbrev_count(da), 7, "Incorrect number of abbreviation");
 
-	RzBinDwarfAbbrevTable *tbl = ht_up_find(da->tbl_by_offset, 0x0, NULL);
+	RzBinDwarfAbbrevTable *tbl = ht_up_find(da->by_offset, 0x0, NULL);
 	RzBinDwarfAbbrevDecl *abbrev = NULL;
 	RzBinDwarfAttrSpec *def = NULL;
 
@@ -122,10 +119,9 @@ bool test_dwarf3_c_basic(void) { // this should work for dwarf2 aswell
 	TEST_ABBREV_ATTR(3, DW_AT_decl_column, DW_FORM_data1);
 	TEST_ABBREV_ATTR(4, DW_AT_type, DW_FORM_ref4);
 
-	RzBinDwarfLine *li = rz_bin_dwarf_line_from_file(
-		bin->cur, NULL, false);
+	RzBinDwarfLine *li = rz_bin_dwarf_line_from_file(NULL, bin->cur);
 	mu_assert_notnull(li, "line info");
-	mu_assert_eq(rz_list_length(li->units), 1, "line units count");
+	mu_assert_eq(rz_pvector_len(li->units), 1, "line units count");
 	mu_assert_notnull(li->lines, "line info");
 	const RzBinSourceLineSample test_line_samples[] = {
 		{ 0x1129, 3, 1, "main.c" },
@@ -170,10 +166,10 @@ bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 aswell
 	// mode = 0, calls
 	// static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RzBinDwarfDebugAbbrev *da)
 	// which prints out all the abbreviation
-	da = rz_bin_dwarf_abbrev_from_file(bin->cur, false);
+	da = rz_bin_dwarf_abbrev_from_file(bin->cur);
 	mu_assert("Incorrect number of abbreviation", rz_bin_dwarf_abbrev_count(da) == 32);
 
-	RzBinDwarfAbbrevTable *tbl = ht_up_find(da->tbl_by_offset, 0x0, NULL);
+	RzBinDwarfAbbrevTable *tbl = ht_up_find(da->by_offset, 0x0, NULL);
 	RzBinDwarfAbbrevDecl *abbrev = NULL;
 	RzBinDwarfAttrSpec *def = NULL;
 	mu_assert_notnull(tbl, "abbrev table");
@@ -208,10 +204,9 @@ bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 aswell
 
 	// rz_bin_dwarf_parse_aranges (core->bin, MODE); Information not stored anywhere, not testable now?
 
-	RzBinDwarfLine *li = rz_bin_dwarf_line_from_file(
-		bin->cur, NULL, false);
+	RzBinDwarfLine *li = rz_bin_dwarf_line_from_file(NULL, bin->cur);
 	mu_assert_notnull(li, "line info");
-	mu_assert_eq(rz_list_length(li->units), 1, "line units count");
+	mu_assert_eq(rz_pvector_len(li->units), 1, "line units count");
 	mu_assert_notnull(li->lines, "line info");
 	const RzBinSourceLineSample test_line_samples[] = {
 		{ 0x1169, 19, 12, "main.cpp" },
@@ -298,10 +293,10 @@ bool test_dwarf3_cpp_many_comp_units(void) {
 	// mode = 0, calls
 	// static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RzBinDwarfDebugAbbrev *da)
 	// which prints out all the abbreviation
-	da = rz_bin_dwarf_abbrev_from_file(bin->cur, false);
+	da = rz_bin_dwarf_abbrev_from_file(bin->cur);
 	mu_assert_eq(rz_bin_dwarf_abbrev_count(da), 58, "Incorrect number of abbreviation");
 
-	RzBinDwarfAbbrevTable *tbl = ht_up_find(da->tbl_by_offset, 0x0, NULL);
+	RzBinDwarfAbbrevTable *tbl = ht_up_find(da->by_offset, 0x0, NULL);
 	RzBinDwarfAbbrevDecl *abbrev = NULL;
 	RzBinDwarfAttrSpec *def = NULL;
 
@@ -324,10 +319,9 @@ bool test_dwarf3_cpp_many_comp_units(void) {
 	TEST_ABBREV_ATTR(5, DW_AT_GNU_all_call_sites, DW_FORM_flag);
 	TEST_ABBREV_ATTR(6, DW_AT_sibling, DW_FORM_ref4);
 
-	RzBinDwarfLine *li = rz_bin_dwarf_line_from_file(
-		bin->cur, NULL, false);
+	RzBinDwarfLine *li = rz_bin_dwarf_line_from_file(NULL, bin->cur);
 	mu_assert_notnull(li, "line info");
-	mu_assert_eq(rz_list_length(li->units), 2, "line units count");
+	mu_assert_eq(rz_pvector_len(li->units), 2, "line units count");
 	mu_assert_notnull(li->lines, "line info");
 	const RzBinSourceLineSample test_line_samples[] = {
 		{ 0x118a, 3, 3, "mammal.cpp" },
@@ -438,18 +432,17 @@ bool test_dwarf_cpp_empty_line_info(void) { // this should work for dwarf2 aswel
 	// mode = 0, calls
 	// static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RzBinDwarfDebugAbbrev *da)
 	// which prints out all the abbreviation
-	da = rz_bin_dwarf_abbrev_from_file(bin->cur, false);
+	da = rz_bin_dwarf_abbrev_from_file(bin->cur);
 	// not ignoring null entries -> 755 abbrevs
 	mu_assert_eq(rz_bin_dwarf_abbrev_count(da), 731, "Incorrect number of abbreviation");
 
-	RzBinDwarfLine *li = rz_bin_dwarf_line_from_file(
-		bin->cur, NULL, false);
+	RzBinDwarfLine *li = rz_bin_dwarf_line_from_file(NULL, bin->cur);
 	mu_assert_notnull(li, "line info");
-	mu_assert_eq(rz_list_length(li->units), 25, "line units count");
-	RzBinDwarfLineUnit *lunit = rz_list_get_tail_data(li->units);
+	mu_assert_eq(rz_pvector_len(li->units), 25, "line units count");
+	RzBinDwarfLineUnit *lunit = rz_pvector_tail(li->units);
 	mu_assert_notnull(lunit, "line unit");
 
-	RzBinDwarfLineHdr *hdr = &lunit->hdr;
+	RzBinDwarfLineUnitHdr *hdr = &lunit->hdr;
 	mu_assert_eq(hdr->unit_length, 704, "");
 	mu_assert_eq(hdr->encoding.version, 2, "");
 	mu_assert_eq(hdr->min_inst_len, 1, "");
@@ -547,10 +540,10 @@ bool test_dwarf2_cpp_many_comp_units(void) {
 	// mode = 0, calls
 	// static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RzBinDwarfDebugAbbrev *da)
 	// which prints out all the abbreviation
-	da = rz_bin_dwarf_abbrev_from_file(bin->cur, false);
+	da = rz_bin_dwarf_abbrev_from_file(bin->cur);
 	mu_assert_eq(rz_bin_dwarf_abbrev_count(da), 58, "Incorrect number of abbreviation");
 
-	RzBinDwarfAbbrevTable *tbl = ht_up_find(da->tbl_by_offset, 0x0, NULL);
+	RzBinDwarfAbbrevTable *tbl = ht_up_find(da->by_offset, 0x0, NULL);
 	RzBinDwarfAbbrevDecl *abbrev = NULL;
 	RzBinDwarfAttrSpec *def = NULL;
 
@@ -570,10 +563,9 @@ bool test_dwarf2_cpp_many_comp_units(void) {
 	TEST_ABBREV_ATTR(2, DW_AT_artificial, DW_FORM_flag);
 	TEST_ABBREV_ATTR(3, DW_AT_location, DW_FORM_block1);
 
-	RzBinDwarfLine *li = rz_bin_dwarf_line_from_file(
-		bin->cur, NULL, false);
+	RzBinDwarfLine *li = rz_bin_dwarf_line_from_file(NULL, bin->cur);
 	mu_assert_notnull(li, "line info");
-	mu_assert_eq(rz_list_length(li->units), 2, "line units count");
+	mu_assert_eq(rz_pvector_len(li->units), 2, "line units count");
 	mu_assert_notnull(li->lines, "line info");
 	const RzBinSourceLineSample test_line_samples[] = {
 		{ 0x118a, 3, 3, "mammal.cpp" },
@@ -662,10 +654,9 @@ bool test_dwarf4_cpp_many_comp_units(void) {
 
 	// TODO add abbrev checks
 
-	RzBinDwarfLine *li = rz_bin_dwarf_line_from_file(
-		bin->cur, NULL, false);
+	RzBinDwarfLine *li = rz_bin_dwarf_line_from_file(NULL, bin->cur);
 	mu_assert_notnull(li, "line info");
-	mu_assert_eq(rz_list_length(li->units), 2, "line units count");
+	mu_assert_eq(rz_pvector_len(li->units), 2, "line units count");
 	mu_assert_notnull(li->lines, "line info");
 	const RzBinSourceLineSample test_line_samples[] = {
 		{ 0x401160, 15, 0, "../main.cpp" },
@@ -765,7 +756,7 @@ bool test_dwarf4_multidir_comp_units(void) {
 	RzBinDWARF *dw = rz_bin_dwarf_from_file(bf);
 	mu_assert_notnull(dw, "DWARF");
 
-	RzBinDwarfAbbrev *da = rz_bin_dwarf_abbrev_from_file(bin->cur, false);
+	RzBinDwarfAbbrev *da = rz_bin_dwarf_abbrev_from_file(bin->cur);
 	mu_assert_notnull(da, "abbrevs");
 	mu_assert_eq(rz_bin_dwarf_abbrev_count(da), 8, "abbrevs count");
 
@@ -774,7 +765,7 @@ bool test_dwarf4_multidir_comp_units(void) {
 
 	RzBinDwarfLine *li = dw->line;
 	mu_assert_notnull(li, "line info");
-	mu_assert_eq(rz_list_length(li->units), 2, "line units count");
+	mu_assert_eq(rz_pvector_len(li->units), 2, "line units count");
 	mu_assert_notnull(li->lines, "line info");
 	const RzBinSourceLineSample test_line_samples[] = {
 		{ 0x1139, 6, 12, "/home/florian/dev/dwarf-comp-units/main.c" },
@@ -791,6 +782,7 @@ bool test_dwarf4_multidir_comp_units(void) {
 	};
 	assert_line_samples_eq(li->lines, RZ_ARRAY_SIZE(test_line_samples), test_line_samples);
 
+	rz_bin_dwarf_abbrev_free(da);
 	rz_bin_dwarf_free(dw);
 	rz_bin_free(bin);
 	rz_io_free(io);
@@ -807,9 +799,9 @@ bool test_big_endian_dwarf2(void) {
 	RzBinFile *bf = rz_bin_open(bin, "bins/elf/ppc64_sudoku_dwarf", &opt);
 	mu_assert_notnull(bf, "couldn't open file");
 
-	RzBinDwarfLine *li = rz_bin_dwarf_line_from_file(bin->cur, NULL, false);
+	RzBinDwarfLine *li = rz_bin_dwarf_line_from_file(NULL, bin->cur);
 	mu_assert_notnull(li, "line info");
-	mu_assert_eq(rz_list_length(li->units), 1, "line units count");
+	mu_assert_eq(rz_pvector_len(li->units), 1, "line units count");
 	mu_assert_notnull(li->lines, "line info");
 	const RzBinSourceLineSample test_line_samples[] = {
 		{ 0x10000ec4, 30, 1, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
@@ -1369,44 +1361,47 @@ bool test_dwarf5_loclists(void) {
 	RzBinDwarfCompUnit *cu = rz_vector_head(&dw->info->units);
 	mu_assert_notnull(cu, ".debug_info unit");
 	RzBinDwarfLocList *loclist =
-		rz_bin_dwarf_loclists_get(dw->loclists, dw->addr, cu, 0x00000012);
+		rz_bin_dwarf_loclists_get(dw->loclists, rz_bin_dwarf_addr(dw), cu, 0x00000012);
 	mu_assert_notnull(loclist, "loclist");
 
 	{
 		RzBinDwarfLocListEntry *entry = rz_pvector_at(&loclist->entries, 0);
 		mu_assert_notnull(entry, "entry");
-		mu_assert_eq(entry->range->begin, 0x4c0, "entry begin");
-		mu_assert_eq(entry->range->end, 0x4de, "entry end");
+		mu_assert_eq(entry->range.begin, 0x4c0, "entry begin");
+		mu_assert_eq(entry->range.end, 0x4de, "entry end");
 
 		RzBinDwarfLocation *loc = rz_bin_dwarf_location_from_block(entry->expression, dw, cu, NULL);
 		mu_assert_notnull(loc, "location");
 		mu_assert_eq(loc->kind, RzBinDwarfLocationKind_REGISTER, "piece kind");
 		mu_assert_eq(loc->register_number, 0, "piece reg");
+		rz_bin_dwarf_location_free(loc);
 	}
 
 	{
 		RzBinDwarfLocListEntry *entry = rz_pvector_at(&loclist->entries, 1);
 		mu_assert_notnull(entry, "entry");
-		mu_assert_eq(entry->range->begin, 0x4de, "entry begin");
-		mu_assert_eq(entry->range->end, 0x4e1, "entry end");
+		mu_assert_eq(entry->range.begin, 0x4de, "entry begin");
+		mu_assert_eq(entry->range.end, 0x4e1, "entry end");
 
 		RzBinDwarfLocation *loc = rz_bin_dwarf_location_from_block(entry->expression, dw, cu, NULL);
 		mu_assert_notnull(loc, "location");
 		mu_assert_eq(loc->kind, RzBinDwarfLocationKind_REGISTER_OFFSET, "piece kind");
 		mu_assert_eq(loc->register_number, 2, "piece reg");
 		mu_assert_eq(loc->offset, -4, "piece reg");
+		rz_bin_dwarf_location_free(loc);
 	}
 
 	{
 		RzBinDwarfLocListEntry *entry = rz_pvector_at(&loclist->entries, 2);
 		mu_assert_notnull(entry, "entry");
-		mu_assert_eq(entry->range->begin, 0x4e1, "entry begin");
-		mu_assert_eq(entry->range->end, 0x4f8, "entry end");
+		mu_assert_eq(entry->range.begin, 0x4e1, "entry begin");
+		mu_assert_eq(entry->range.end, 0x4f8, "entry end");
 
 		RzBinDwarfLocation *loc = rz_bin_dwarf_location_from_block(entry->expression, dw, cu, NULL);
 		mu_assert_notnull(loc, "location");
 		mu_assert_eq(loc->kind, RzBinDwarfLocationKind_EVALUATION_WAITING, "piece kind");
 		mu_assert("eval waiting", loc->eval_waiting.eval && loc->eval_waiting.result);
+		rz_bin_dwarf_location_free(loc);
 	}
 
 	rz_bin_dwarf_free(dw);
@@ -1431,44 +1426,47 @@ bool test_dwarf4_loclists(void) {
 
 	RzBinDwarfCompUnit *cu = rz_vector_index_ptr(&dw->info->units, 0);
 	RzBinDwarfLocList *loclist =
-		rz_bin_dwarf_loclists_get(dw->loclists, dw->addr, cu, 0);
+		rz_bin_dwarf_loclists_get(dw->loclists, rz_bin_dwarf_addr(dw), cu, 0);
 	mu_assert_notnull(loclist, "loclist");
 
 	{
 		RzBinDwarfLocListEntry *entry = rz_pvector_at(&loclist->entries, 0);
 		mu_assert_notnull(entry, "entry");
-		mu_assert_eq(entry->range->begin, 0x4013b0, "entry begin");
-		mu_assert_eq(entry->range->end, 0x4013b4, "entry end");
+		mu_assert_eq(entry->range.begin, 0x4013b0, "entry begin");
+		mu_assert_eq(entry->range.end, 0x4013b4, "entry end");
 
 		RzBinDwarfLocation *loc = rz_bin_dwarf_location_from_block(entry->expression, dw, cu, NULL);
 		mu_assert_notnull(loc, "location");
 		mu_assert_eq(loc->kind, RzBinDwarfLocationKind_REGISTER_OFFSET, "piece kind");
 		mu_assert_eq(loc->register_number, 4, "piece reg");
 		mu_assert_eq(loc->offset, 4, "piece reg offset");
+		rz_bin_dwarf_location_free(loc);
 	}
 
 	{
 		RzBinDwarfLocListEntry *entry = rz_pvector_at(&loclist->entries, 1);
 		mu_assert_notnull(entry, "entry");
-		mu_assert_eq(entry->range->begin, 0x4013b4, "entry begin");
-		mu_assert_eq(entry->range->end, 0x4013c0, "entry end");
+		mu_assert_eq(entry->range.begin, 0x4013b4, "entry begin");
+		mu_assert_eq(entry->range.end, 0x4013c0, "entry end");
 
 		RzBinDwarfLocation *loc = rz_bin_dwarf_location_from_block(entry->expression, dw, cu, NULL);
 		mu_assert_notnull(loc, "location");
 		mu_assert_eq(loc->kind, RzBinDwarfLocationKind_REGISTER, "piece kind");
 		mu_assert_eq(loc->register_number, 1, "piece reg");
+		rz_bin_dwarf_location_free(loc);
 	}
 
 	{
 		RzBinDwarfLocListEntry *entry = rz_pvector_at(&loclist->entries, 2);
 		mu_assert_notnull(entry, "entry");
-		mu_assert_eq(entry->range->begin, 0x4013c0, "entry begin");
-		mu_assert_eq(entry->range->end, 0x401728, "entry end");
+		mu_assert_eq(entry->range.begin, 0x4013c0, "entry begin");
+		mu_assert_eq(entry->range.end, 0x401728, "entry end");
 
 		RzBinDwarfLocation *loc = rz_bin_dwarf_location_from_block(entry->expression, dw, cu, NULL);
 		mu_assert_notnull(loc, "location");
 		mu_assert_eq(loc->kind, RzBinDwarfLocationKind_EVALUATION_WAITING, "piece kind");
 		mu_assert("eval waiting", loc->eval_waiting.eval && loc->eval_waiting.result);
+		rz_bin_dwarf_location_free(loc);
 	}
 
 	rz_bin_dwarf_free(dw);

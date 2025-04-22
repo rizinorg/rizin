@@ -20,6 +20,7 @@ RZ_API RZ_OWN RzFloat *rz_il_float_new(RZ_NONNULL RzFloatFormat format, RZ_NONNU
 
 	ut32 len = rz_float_get_format_info(format, RZ_FLOAT_INFO_TOTAL_LEN);
 	if (len != bv->len) {
+		RZ_LOG_ERROR("The size of the float :%d does not match the size of the bitvector :%d.\n", len, bv->len);
 		return NULL;
 	}
 
@@ -59,6 +60,28 @@ RZ_API const char *rz_il_float_stringify_rmode(RzFloatRMode mode) {
 		return "rtp";
 	default:
 		return "unk_round";
+	}
+}
+
+/**
+ * convert RzFloatException into const string for exporting info
+ * \param e RzFloatException
+ * \return RzFloatException string
+ */
+RZ_API const char *rz_il_float_stringify_exception(RzFloatException e) {
+	switch (e) {
+	case RZ_FLOAT_E_DIV_ZERO:
+		return "e_div_zero";
+	case RZ_FLOAT_E_INEXACT:
+		return "e_inexact";
+	case RZ_FLOAT_E_OVERFLOW:
+		return "e_overflow";
+	case RZ_FLOAT_E_INVALID_OP:
+		return "e_invalid_op";
+	case RZ_FLOAT_E_UNDERFLOW:
+		return "e_underflow";
+	default:
+		return "e_unk";
 	}
 }
 

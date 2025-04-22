@@ -1,6 +1,7 @@
 #ifndef RZ_HEAP_GLIBC_H
 #define RZ_HEAP_GLIBC_H
 
+#include <rz_cmd.h>
 #include <rz_types.h>
 #include <rz_list.h>
 
@@ -49,11 +50,13 @@ RZ_LIB_VERSION_HEADER(rz_heap_glibc);
 #define MMAP_ALIGN_64 0x18
 #define MMAP_OFFSET   0x8
 
-#define HDR_SZ_32 0x8
-#define HDR_SZ_64 0x10
-#define TC_HDR_SZ 0x10
-#define TC_SZ_32  0x0
-#define TC_SZ_64  0x10
+#define HDR_SZ_32          0x8
+#define HDR_SZ_64          0x10
+#define TC_HDR_SZ          0x10
+#define TC_SZ_32           0x0
+#define TC_SZ_64           0x10
+#define HEAP_PAGE_SIZE     0x21000
+#define HEAP_PAGE_SIZE_X86 0x22000
 
 // Introduced with glibc 2.32
 
@@ -326,6 +329,8 @@ RZ_API RzList /*<RzHeapChunkListItem *>*/ *rz_heap_chunks_list_32(RzCore *core, 
 
 RZ_API bool rz_heap_resolve_main_arena_64(RzCore *core, ut64 *m_arena);
 RZ_API bool rz_heap_resolve_main_arena_32(RzCore *core, ut32 *m_arena);
+RZ_API double rz_get_glibc_version_64(RzCore *core, const char *libc_path, ut8 *banner);
+RZ_API double rz_get_glibc_version_32(RzCore *core, const char *libc_path, ut8 *banner);
 
 RZ_API bool rz_heap_update_main_arena_64(RzCore *core, ut64 m_arena, MallocState *main_arena);
 RZ_API bool rz_heap_update_main_arena_32(RzCore *core, ut32 m_arena, MallocState *main_arena);
@@ -351,11 +356,11 @@ RZ_API RzList /*<RzHeapChunkListItem *>*/ *rz_heap_chunks_list_wrapper_32(RzCore
 RZ_API RzList /*<RzArenaListItem *>*/ *rz_heap_arena_list_wrapper_64(RzCore *core);
 RZ_API RzList /*<RzArenaListItem *>*/ *rz_heap_arena_list_wrapper_32(RzCore *core);
 
-RZ_IPI int rz_cmd_heap_fastbins_print_64(void *data, const char *input);
-RZ_IPI int rz_cmd_heap_fastbins_print_32(void *data, const char *input);
+RZ_IPI RzCmdStatus rz_cmd_heap_fastbins_print_handler_64(void *data, const char *input);
+RZ_IPI RzCmdStatus rz_cmd_heap_fastbins_print_handler_32(void *data, const char *input);
 
-RZ_IPI int rz_cmd_heap_bins_list_print_64(RzCore *core, const char *input);
-RZ_IPI int rz_cmd_heap_bins_list_print_32(RzCore *core, const char *input);
+RZ_IPI RzCmdStatus rz_cmd_heap_bins_list_print_handler_64(RzCore *core, const char *input, RzOutputMode mode);
+RZ_IPI RzCmdStatus rz_cmd_heap_bins_list_print_handler_32(RzCore *core, const char *input, RzOutputMode mode);
 
 RZ_API void rz_heap_bin_free_64(RzHeapBin *bin);
 RZ_API void rz_heap_bin_free_32(RzHeapBin *bin);

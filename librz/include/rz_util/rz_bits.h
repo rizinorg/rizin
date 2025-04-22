@@ -8,6 +8,31 @@
 extern "C" {
 #endif
 
+#include <rz_util/rz_assert.h>
+#include <rz_types_base.h>
+
+/**
+ * \brief Count number of 1s in the given value.
+ * Reference: https://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetParallel
+ *
+ * \param v The value to count the set bits in.
+ *
+ * \return Number of set bits in \p v.
+ */
+#define DEFINE_COUNT_ONES(T) \
+	static inline size_t rz_bits_count_ones_##T(T v) { \
+		v = v - ((v >> 1) & (T) ~(T)0 / 3); \
+		v = (v & (T) ~(T)0 / 15 * 3) + ((v >> 2) & (T) ~(T)0 / 15 * 3); \
+		v = (v + (v >> 4)) & (T) ~(T)0 / 255 * 15; \
+		size_t c = (T)(v * ((T) ~(T)0 / 255)) >> (sizeof(T) - 1) * CHAR_BIT; \
+		return c; \
+	}
+
+DEFINE_COUNT_ONES(ut64);
+DEFINE_COUNT_ONES(ut32);
+DEFINE_COUNT_ONES(ut16);
+DEFINE_COUNT_ONES(ut8);
+
 /**
  * \brief Get the number of leading zeros of a 64-bit integer in binary representation.
  * \param x the 64-bit integer

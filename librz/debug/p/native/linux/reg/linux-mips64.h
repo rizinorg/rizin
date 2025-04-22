@@ -30,7 +30,7 @@ PC = 272
 #endif
 
 #endif
-return strdup(
+return rz_str_dup(
 	"=PC	pc\n"
 	"=SP	sp\n"
 	"=BP	fp\n"

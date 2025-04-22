@@ -129,7 +129,7 @@ static RzPVector /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
 		rz_pvector_free(ret);
 		return NULL;
 	}
-	m->name = strdup("RAM");
+	m->name = rz_str_dup("RAM");
 	m->addr = 0; // start address
 	m->size = _machines[vsf_obj->machine_idx].ram_size;
 	m->perms = rz_str_rwx("rwx");
@@ -160,7 +160,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 			if (!(ptr = RZ_NEW0(RzBinSection))) {
 				return ret;
 			}
-			ptr->name = strdup("BASIC");
+			ptr->name = rz_str_dup("BASIC");
 			ptr->paddr = vsf_obj->rom + rz_offsetof(struct vsf_c64rom, basic);
 			ptr->size = 1024 * 8; // (8k)
 			ptr->vaddr = 0xa000;
@@ -172,7 +172,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 			if (!(ptr = RZ_NEW0(RzBinSection))) {
 				return ret;
 			}
-			ptr->name = strdup("KERNAL");
+			ptr->name = rz_str_dup("KERNAL");
 			ptr->paddr = vsf_obj->rom + rz_offsetof(struct vsf_c64rom, kernal);
 			ptr->size = 1024 * 8; // (8k)
 			ptr->vaddr = 0xe000;
@@ -187,7 +187,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 			if (!(ptr = RZ_NEW0(RzBinSection))) {
 				return ret;
 			}
-			ptr->name = strdup("BASIC");
+			ptr->name = rz_str_dup("BASIC");
 			ptr->paddr = vsf_obj->rom + rz_offsetof(struct vsf_c128rom, basic);
 			ptr->size = 1024 * 28; // (28k)
 			ptr->vaddr = 0x4000;
@@ -199,7 +199,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 			if (!(ptr = RZ_NEW0(RzBinSection))) {
 				return ret;
 			}
-			ptr->name = strdup("MONITOR");
+			ptr->name = rz_str_dup("MONITOR");
 			// skip first 28kb  since "BASIC" and "MONITOR" share the same section in VSF
 			ptr->paddr = vsf_obj->rom + rz_offsetof(struct vsf_c128rom, basic) + 1024 * 28;
 			ptr->size = 1024 * 4; // (4k)
@@ -212,7 +212,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 			if (!(ptr = RZ_NEW0(RzBinSection))) {
 				return ret;
 			}
-			ptr->name = strdup("EDITOR");
+			ptr->name = rz_str_dup("EDITOR");
 			ptr->paddr = vsf_obj->rom + rz_offsetof(struct vsf_c128rom, editor);
 			ptr->size = 1024 * 4; // (4k)
 			ptr->vaddr = 0xc000;
@@ -224,7 +224,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 			if (!(ptr = RZ_NEW0(RzBinSection))) {
 				return ret;
 			}
-			ptr->name = strdup("KERNAL");
+			ptr->name = rz_str_dup("KERNAL");
 			ptr->paddr = vsf_obj->rom + rz_offsetof(struct vsf_c128rom, kernal);
 			ptr->size = 1024 * 8; // (8k)
 			ptr->vaddr = 0xe000;
@@ -244,7 +244,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 			if (!(ptr = RZ_NEW0(RzBinSection))) {
 				return ret;
 			}
-			ptr->name = strdup("RAM");
+			ptr->name = rz_str_dup("RAM");
 			ptr->paddr = vsf_obj->mem + offset;
 			ptr->size = size;
 			ptr->vaddr = 0x0;
@@ -260,7 +260,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 			if (!(ptr = RZ_NEW0(RzBinSection))) {
 				return ret;
 			}
-			ptr->name = strdup("RAM BANK 0");
+			ptr->name = rz_str_dup("RAM BANK 0");
 			ptr->paddr = vsf_obj->mem + offset;
 			ptr->size = size;
 			ptr->vaddr = 0x0;
@@ -271,7 +271,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 			if (!(ptr = RZ_NEW0(RzBinSection))) {
 				return ret;
 			}
-			ptr->name = strdup("RAM BANK 1");
+			ptr->name = rz_str_dup("RAM BANK 1");
 			ptr->paddr = vsf_obj->mem + offset + size;
 			ptr->size = size;
 			ptr->vaddr = 0x0;
@@ -304,11 +304,11 @@ static RzBinInfo *info(RzBinFile *bf) {
 	if (!(ret = RZ_NEW0(RzBinInfo))) {
 		return NULL;
 	}
-	ret->file = strdup(bf->file);
-	ret->type = strdup("Snapshot");
-	ret->machine = strdup(_machines[m_idx].desc);
-	ret->os = strdup(_machines[m_idx].name);
-	ret->arch = strdup("6502");
+	ret->file = rz_str_dup(bf->file);
+	ret->type = rz_str_dup("Snapshot");
+	ret->machine = rz_str_dup(_machines[m_idx].desc);
+	ret->os = rz_str_dup(_machines[m_idx].name);
+	ret->arch = rz_str_dup("6502");
 	ret->bits = 8;
 	ret->has_va = true;
 
@@ -317,13 +317,13 @@ static RzBinInfo *info(RzBinFile *bf) {
 		return ret;
 	}
 
-	sdb_num_set(vsf_obj->kv, "vsf.reg_a", vsf_obj->maincpu->ac, 0);
-	sdb_num_set(vsf_obj->kv, "vsf.reg_x", vsf_obj->maincpu->xr, 0);
-	sdb_num_set(vsf_obj->kv, "vsf.reg_y", vsf_obj->maincpu->yr, 0);
-	sdb_num_set(vsf_obj->kv, "vsf.reg_sp", vsf_obj->maincpu->sp, 0);
-	sdb_num_set(vsf_obj->kv, "vsf.reg_pc", vsf_obj->maincpu->pc, 0);
-	sdb_num_set(vsf_obj->kv, "vsf.reg_st", vsf_obj->maincpu->st, 0);
-	sdb_num_set(vsf_obj->kv, "vsf.clock", vsf_obj->maincpu->clk, 0);
+	sdb_num_set(vsf_obj->kv, "vsf.reg_a", vsf_obj->maincpu->ac);
+	sdb_num_set(vsf_obj->kv, "vsf.reg_x", vsf_obj->maincpu->xr);
+	sdb_num_set(vsf_obj->kv, "vsf.reg_y", vsf_obj->maincpu->yr);
+	sdb_num_set(vsf_obj->kv, "vsf.reg_sp", vsf_obj->maincpu->sp);
+	sdb_num_set(vsf_obj->kv, "vsf.reg_pc", vsf_obj->maincpu->pc);
+	sdb_num_set(vsf_obj->kv, "vsf.reg_st", vsf_obj->maincpu->st);
+	sdb_num_set(vsf_obj->kv, "vsf.clock", vsf_obj->maincpu->clk);
 
 	return ret;
 }
@@ -500,16 +500,16 @@ static void destroy(RzBinFile *bf) {
 	free(obj);
 }
 
-static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	struct rz_bin_vsf_obj *vsf_obj = (struct rz_bin_vsf_obj *)bf->o->bin_obj;
 	if (!vsf_obj) {
 		return NULL;
 	}
 	const int m_idx = vsf_obj->machine_idx;
 
-	RzList *ret;
+	RzPVector *ret;
 	RzBinAddr *ptr = NULL;
-	if (!(ret = rz_list_new())) {
+	if (!(ret = rz_pvector_new(NULL))) {
 		return NULL;
 	}
 	int offset = _machines[m_idx].offset_mem;
@@ -519,7 +519,7 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	}
 	ptr->paddr = vsf_obj->mem + offset;
 	ptr->vaddr = vsf_obj->maincpu ? vsf_obj->maincpu->pc : 0;
-	rz_list_append(ret, ptr);
+	rz_pvector_push(ret, ptr);
 
 	// IRQ: 0xFFFE or 0x0314 ?
 	//	if (!(ptr = RZ_NEW0 (RzBinAddr)))

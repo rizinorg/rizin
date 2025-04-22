@@ -25,7 +25,7 @@ RZ_API bool rz_strbuf_is_empty(RzStrBuf *sb) {
 	return sb->len == 0;
 }
 
-RZ_API int rz_strbuf_length(RzStrBuf *sb) {
+RZ_API size_t rz_strbuf_length(RzStrBuf *sb) {
 	rz_return_val_if_fail(sb, 0);
 	return sb->len;
 }
@@ -310,10 +310,17 @@ RZ_API ut8 *rz_strbuf_getbin(RzStrBuf *sb, int *len) {
 }
 
 static inline char *drain(RzStrBuf *sb) {
-	return sb->ptr ? sb->ptr : strdup(sb->buf);
+	return sb->ptr ? sb->ptr : rz_str_dup(sb->buf);
 }
 
-RZ_API RZ_OWN char *rz_strbuf_drain(RzStrBuf *sb) {
+/**
+ * \brief Drains the buffer, frees it and returns the drained string.
+ *
+ * \param sb The string buffer to drain.
+ *
+ * \return The string of \p sb.
+ */
+RZ_API RZ_OWN char *rz_strbuf_drain(RZ_OWN RZ_NONNULL RzStrBuf *sb) {
 	rz_return_val_if_fail(sb, NULL);
 	char *ret = drain(sb);
 	free(sb);

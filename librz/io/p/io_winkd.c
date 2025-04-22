@@ -23,6 +23,8 @@
 #include <transport.h>
 #include <winkd.h>
 
+#include "rz_io_plugins.h"
+
 typedef struct {
 	RzIODesc *fd;
 } ReadAtCtx;

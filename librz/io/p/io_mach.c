@@ -7,6 +7,8 @@
 #include <rz_lib.h>
 #include <rz_cons.h>
 
+#include "rz_io_plugins.h"
+
 #if __APPLE__ && DEBUGGER
 
 static int __get_pid(RzIODesc *desc);
@@ -402,7 +404,7 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 	// sleep 1s to get proper path (program name instead of ls) (racy)
 	pidpath = pid
 		? rz_sys_pid_to_path(pid)
-		: strdup("kernel");
+		: rz_str_dup("kernel");
 	if (!strncmp(file, "smach://", 8)) {
 		ret = rz_io_desc_new(io, &rz_io_plugin_mach, &file[1],
 			rw | RZ_PERM_X, mode, iodd);

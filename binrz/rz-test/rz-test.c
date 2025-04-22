@@ -42,7 +42,7 @@ typedef struct rz_test_state_t {
 
 	RzThreadCond *cond; // signaled from workers to main thread to update status
 	RzThreadLock *lock; // protects everything below
-	HtPP *path_left; // char * (path to test file) => RzTestFileCounts *
+	HtSP *path_left; // char * (path to test file) => RzTestFileCounts *
 	RzPVector /*<char *>*/ completed_paths;
 	ut64 ok_count;
 	ut64 xx_count;
@@ -59,6 +59,7 @@ static void interact(RzTestState *state);
 static bool interact_fix(RzTestResultInfo *result, RzPVector /*<RzTestResultInfo *>*/ *fixup_results);
 static void interact_break(RzTestResultInfo *result, RzPVector /*<RzTestResultInfo *>*/ *fixup_results);
 static void interact_commands(RzTestResultInfo *result, RzPVector /*<RzTestResultInfo *>*/ *fixup_results);
+static void accept_all(RzTestState *state);
 
 static int help(bool verbose) {
 	printf("%s%s%s", Color_CYAN, "Usage: ", Color_RESET);
@@ -71,6 +72,7 @@ static int help(bool verbose) {
 			"-q",           "",               "Quiet mode",
 			"-V",           "",               "Be verbose",
 			"-i",           "",               "Interactive mode",
+			"-y",           "",               "Accept all interactive changes",
 			"-n",           "",               "Do nothing (don't run any test, just load/parse them)",
 			"-L",           "",               "Log mode (better printing for CI, logfiles, etc.)",
 			"-F",           "[dir]",          "Run fuzz tests (open and default analysis) on all files in the given dir",
@@ -78,7 +80,7 @@ static int help(bool verbose) {
 			"-r",           "[rizin]",        "Path to rizin executable (default is " RIZIN_CMD_DEFAULT ")",
 			"-m",           "[rz-asm]",       "Path to rz-asm executable (default is " RZ_ASM_CMD_DEFAULT ")",
 			"-f",           "[file]",         "File to use for JSON tests (default is " JSON_TEST_FILE_DEFAULT ")",
-			"-C",           "[dir]",          "Chdir before running rz-test (default follows executable symlink + test/new)",
+			"-C",           "[dir]",          "Chdir before running rz-test (default follows test pathname/cwd)",
 			"-t",           "[seconds]",      "Timeout per test (default is " TIMEOUT_DEFAULT_STR " seconds)",
 			"-o",           "[file]",         "Output test run information in JSON format to file",
 			"-e",           "[dir]",          "Exclude a particular directory while testing (this option can appear many times)",
@@ -106,50 +108,18 @@ static int help(bool verbose) {
 	return 1;
 }
 
-static void path_left_free_kv(HtPPKv *kv) {
-	free(kv->key);
-	free(kv->value);
-}
-
-static bool rz_test_chdir(const char *argv0) {
-#if __UNIX__
-	if (rz_file_is_directory("db")) {
-		return true;
-	}
-	char src_path[PATH_MAX];
-	char *rz_test_path = rz_file_path(argv0);
-	bool found = false;
-
-	ssize_t linklen = readlink(rz_test_path, src_path, sizeof(src_path) - 1);
-	if (linklen != -1) {
-		src_path[linklen] = '\0';
-		char *p = strstr(src_path, RZ_SYS_DIR "binrz" RZ_SYS_DIR "rz-test" RZ_SYS_DIR "rz-test");
-		if (p) {
-			*p = 0;
-			strcat(src_path, RZ_SYS_DIR "test" RZ_SYS_DIR);
-			if (rz_file_is_directory(src_path)) {
-				if (chdir(src_path) != -1) {
-					eprintf("Running from %s\n", src_path);
-					found = true;
-				} else {
-					eprintf("Cannot find '%s' directory\n", src_path);
-				}
-			}
-		}
-	} else {
-		eprintf("Cannot follow the link %s\n", src_path);
-	}
-	free(rz_test_path);
-	return found;
-#else
-	return false;
-#endif
-}
-
 static bool rz_test_test_run_unit(void) {
 	return rz_sys_system("make -C unit all run") == 0;
 }
 
+/**
+ * \brief Change cwd to test root dir (that has the `db/` dir) by checking dirs of test_path.
+ * \param test_path Test pathname. If NULL, empty, or starts with `@`, cwd is used.
+ * \return True if test root dir is found.
+ *
+ * The cwd change is done so that tests can find their test binaries stored in the
+ * `<test root dir>/bins` dir no matter what the old cwd was.
+ */
 static bool rz_test_chdir_fromtest(const char *test_path) {
 	if (!test_path || *test_path == '@') {
 		test_path = "";
@@ -208,6 +178,7 @@ int rz_test_main(int argc, const char **argv) {
 	bool nothing = false;
 	bool quiet = false;
 	bool interactive = false;
+	bool accept = false;
 	char *rizin_cmd = NULL;
 	char *rz_asm_cmd = NULL;
 	char *json_test_file = NULL;
@@ -219,6 +190,8 @@ int rz_test_main(int argc, const char **argv) {
 	st64 expect_succ = -1;
 	st64 expect_fail = -1;
 	int ret = 0;
+	char *cwd = NULL;
+	RzTestState state = { 0 };
 
 	if (!except_dir) {
 		RZ_LOG_ERROR("Fail to create RzPVector\n");
@@ -241,7 +214,7 @@ int rz_test_main(int argc, const char **argv) {
 #endif
 
 	RzGetopt opt;
-	rz_getopt_init(&opt, argc, (const char **)argv, "hqvj:r:m:f:C:LnVt:F:io:e:s:x:");
+	rz_getopt_init(&opt, argc, (const char **)argv, "hqvj:r:m:f:C:LnVt:F:io:e:s:x:y");
 
 	int c;
 	while ((c = rz_getopt_next(&opt)) != -1) {
@@ -267,6 +240,9 @@ int rz_test_main(int argc, const char **argv) {
 			break;
 		case 'i':
 			interactive = true;
+			break;
+		case 'y':
+			accept = true;
 			break;
 		case 'L':
 			log_mode = true;
@@ -335,7 +311,7 @@ int rz_test_main(int argc, const char **argv) {
 		}
 	}
 
-	char *cwd = rz_sys_getdir();
+	cwd = rz_sys_getdir();
 	if (rz_test_dir) {
 		if (chdir(rz_test_dir) == -1) {
 			eprintf("Cannot find %s directory.\n", rz_test_dir);
@@ -343,13 +319,10 @@ int rz_test_main(int argc, const char **argv) {
 			goto beach;
 		}
 	} else {
-		bool dir_found = (opt.ind < argc && argv[opt.ind][0] != '.')
-			? rz_test_chdir_fromtest(argv[opt.ind])
-			: rz_test_chdir(argv[0]);
+		bool dir_found = rz_test_chdir_fromtest(opt.ind < argc ? argv[opt.ind] : NULL);
 		if (!dir_found) {
-			eprintf("Cannot find db/ directory related to the given test.\n");
-			ret = -1;
-			goto beach;
+			eprintf("Cannot find db/ directory related to the given test. Assuming '-C .'.\n");
+			rz_test_dir = ".";
 		}
 	}
 
@@ -368,7 +341,6 @@ int rz_test_main(int argc, const char **argv) {
 
 	rz_sys_setenv("TZ", "UTC");
 	ut64 time_start = rz_time_now_mono();
-	RzTestState state = { 0 };
 	// Avoid PATH search for each process launched
 	if (!rizin_cmd) {
 		rizin_cmd = rz_file_path(RIZIN_CMD_DEFAULT);
@@ -486,7 +458,6 @@ int rz_test_main(int argc, const char **argv) {
 		}
 	}
 
-	RZ_FREE(cwd);
 	uint32_t loaded_tests = rz_pvector_len(&state.db->tests);
 	printf("Loaded %u tests.\n", loaded_tests);
 	if (nothing) {
@@ -517,15 +488,15 @@ int rz_test_main(int argc, const char **argv) {
 	if (log_mode) {
 		// Log mode prints the state after every completed file.
 		// The count of tests left per file is stored in a ht.
-		state.path_left = ht_pp_new(NULL, path_left_free_kv, NULL);
+		state.path_left = ht_sp_new(HT_STR_DUP, NULL, free);
 		if (state.path_left) {
 			void **it;
 			rz_pvector_foreach (&state.queue, it) {
 				RzTest *test = *it;
-				RzTestFileCounts *counts = ht_pp_find(state.path_left, test->path, NULL);
+				RzTestFileCounts *counts = ht_sp_find(state.path_left, test->path, NULL);
 				if (!counts) {
 					counts = calloc(1, sizeof(RzTestFileCounts));
-					ht_pp_insert(state.path_left, test->path, counts);
+					ht_sp_insert(state.path_left, test->path, counts);
 				}
 				counts->tests_left++;
 			}
@@ -596,6 +567,10 @@ int rz_test_main(int argc, const char **argv) {
 		interact(&state);
 	}
 
+	if (accept) {
+		accept_all(&state);
+	}
+
 	if (expect_succ > 0 && expect_succ != state.ok_count) {
 		ret = 1;
 	}
@@ -613,15 +588,16 @@ coast:
 	rz_pvector_clear(&state.results);
 	rz_pvector_clear(&state.completed_paths);
 	rz_test_test_database_free(state.db);
-	rz_th_lock_free(state.lock);
-	rz_th_cond_free(state.cond);
-	ht_pp_free(state.path_left);
+	ht_sp_free(state.path_left);
 beach:
 	free(output_file);
 	free(rizin_cmd);
 	free(rz_asm_cmd);
 	free(json_test_file);
 	free(fuzz_dir);
+	RZ_FREE(cwd);
+	rz_th_lock_free(state.lock);
+	rz_th_cond_free(state.cond);
 	rz_pvector_free(except_dir);
 #if __WINDOWS__
 	if (old_cp) {
@@ -709,7 +685,7 @@ static void *worker_th(RzTestState *state) {
 			}
 		}
 		if (state->path_left) {
-			RzTestFileCounts *counts = ht_pp_find(state->path_left, test->path, NULL);
+			RzTestFileCounts *counts = ht_sp_find(state->path_left, test->path, NULL);
 			if (counts) {
 				switch (result->result) {
 				case RZ_TEST_RESULT_OK:
@@ -737,14 +713,22 @@ static void *worker_th(RzTestState *state) {
 	return NULL;
 }
 
+static char *get_matched_str(const char *regexp, const char *str) {
+	RzStrBuf *match_str = rz_test_regex_full_match_str(regexp, str);
+	size_t len = rz_strbuf_length(match_str);
+	if (len && rz_strbuf_get(match_str)[len - 1] != '\n') { // empty matches are not changed
+		rz_strbuf_append(match_str, "\n");
+	}
+	return rz_strbuf_drain(match_str);
+}
+
 static void print_diff(const char *actual, const char *expected, const char *regexp) {
 	RzDiff *d = NULL;
 	char *uni = NULL;
 	const char *output = actual;
 
 	if (regexp) {
-		RzStrBuf *match_str = rz_regex_full_match_str(regexp, actual, RZ_REGEX_ZERO_TERMINATED, RZ_REGEX_EXTENDED, RZ_REGEX_DEFAULT, "\n");
-		output = rz_strbuf_drain(match_str);
+		output = get_matched_str(regexp, actual);
 	}
 
 	d = rz_diff_lines_new(expected, output, NULL);
@@ -783,6 +767,21 @@ static RzSubprocessOutput *print_runner(const char *file, const char *args[], si
 	}
 	printf("\n");
 	return NULL;
+}
+
+static void print_asm_exit_status(const char *mode, bool timeout, int ret, const char *err) {
+	printf("-- %s exit status: ", mode);
+	if (timeout) {
+		printf(Color_CYAN "TIMEOUT" Color_RESET);
+	} else if (ret != 0) {
+		printf(Color_RED "%d" Color_RESET, ret);
+	} else {
+		printf("0");
+	}
+	printf("\n");
+	if (RZ_STR_ISNOTEMPTY(err)) {
+		printf("-- %s stderr\n" Color_RED "%s" Color_RESET "\n", mode, err);
+	}
 }
 
 static void print_result_diff(RzTestRunConfig *config, RzTestResultInfo *result) {
@@ -843,23 +842,20 @@ static void print_result_diff(RzTestRunConfig *config, RzTestResultInfo *result)
 		if (test->il) {
 			const char *expect = test->il;
 			const char *actual = out->il;
-			const char *report = out->il_report;
-			bool il_printed = false;
 			const char *hdr = "-- IL\n";
 			if (expect && actual && strcmp(actual, expect)) {
 				printf("%s", hdr);
-				il_printed = true;
 				print_diff(actual, expect, NULL);
 			}
-			if (report) {
-				if (!il_printed) {
-					printf("%s", hdr);
-					if (actual) {
-						printf("%s\n", actual);
-					}
-				}
-				printf(Color_RED "%s" Color_RESET "\n", report);
-			}
+		}
+		if (test->mode & RZ_ASM_TEST_MODE_DISASSEMBLE) {
+			print_asm_exit_status("disasm", out->disas_timeout, out->disas_ret, out->disas_err);
+		}
+		if (test->mode & RZ_ASM_TEST_MODE_ASSEMBLE) {
+			print_asm_exit_status("asm", out->as_timeout, out->as_ret, out->as_err);
+		}
+		if (test->il) {
+			print_asm_exit_status("IL", out->il_timeout, out->il_ret, out->il_err);
 		}
 		free(expect_hex);
 		break;
@@ -909,7 +905,22 @@ static void print_new_results(RzTestState *state, ut64 prev_completed) {
 		if (result->timeout) {
 			printf(Color_CYAN " TIMEOUT" Color_RESET);
 		}
-		printf(" %s " Color_YELLOW "%s" Color_RESET "\n", result->test->path, name);
+		// time_elapsed is in microsecs
+		ut64 elapsed = result->time_elapsed;
+		const char *unit = NULL;
+		if (elapsed < 1000) {
+			unit = "usec";
+		} else if (elapsed < 1000000) {
+			elapsed /= 1000;
+			unit = "ms";
+		} else if (elapsed < 1000000000) {
+			elapsed /= 1000000;
+			unit = "secs";
+		} else {
+			elapsed /= 1000000000;
+			unit = "mins";
+		}
+		printf(Color_BLUE "%4" PFMT64u " %-4s" Color_RESET " %s " Color_YELLOW "%s" Color_RESET "\n", elapsed, unit, result->test->path, name);
 		if (result->result == RZ_TEST_RESULT_FAILED || (state->verbose && result->result == RZ_TEST_RESULT_BROKEN)) {
 			print_result_diff(&state->run_config, result);
 		}
@@ -953,7 +964,7 @@ static void print_log(RzTestState *state, ut64 prev_completed, ut64 prev_paths_c
 		}
 		printf("[**] %50s ", name);
 		if (state->path_left) {
-			RzTestFileCounts *counts = ht_pp_find(state->path_left, name, NULL);
+			RzTestFileCounts *counts = ht_sp_find(state->path_left, name, NULL);
 			if (counts) {
 				state->ok_count += counts->ok;
 				state->xx_count += counts->xx;
@@ -1043,6 +1054,40 @@ static void interact(RzTestState *state) {
 			goto beach;
 		default:
 			goto menu;
+		}
+	}
+
+beach:
+	rz_pvector_clear(&failed_results);
+}
+
+static void accept_all(RzTestState *state) {
+	void **it;
+	RzPVector failed_results;
+	rz_pvector_init(&failed_results, NULL);
+	rz_pvector_foreach (&state->results, it) {
+		RzTestResultInfo *result = *it;
+		if (result->result == RZ_TEST_RESULT_FAILED) {
+			rz_pvector_push(&failed_results, result);
+		}
+	}
+	if (rz_pvector_empty(&failed_results)) {
+		goto beach;
+	}
+
+#if __WINDOWS__
+	(void)SetConsoleOutputCP(65001); // UTF-8
+#endif
+
+	rz_pvector_foreach (&failed_results, it) {
+		RzTestResultInfo *result = *it;
+		if (result->test->type != RZ_TEST_TYPE_CMD && result->test->type != RZ_TEST_TYPE_ASM) {
+			continue;
+		}
+		if (!interact_fix(result, &failed_results)) {
+			char *name = rz_test_test_name(result->test);
+			printf("This test %s has failed too hard to be fixed.\n", name ? name : "");
+			free(name);
 		}
 	}
 
@@ -1199,10 +1244,22 @@ static bool interact_fix_cmd(RzTestResultInfo *result, RzPVector /*<RzTestResult
 	RzCmdTest *test = result->test->cmd_test;
 	RzSubprocessOutput *out = result->proc_out;
 	if (test->expect.value && out->out) {
-		replace_cmd_kv_file(result->test->path, test->expect.line_begin, test->expect.line_end, "EXPECT", (char *)out->out, fixup_results);
+		const char *out_str = (char *)out->out;
+		const char *regexp = test->regexp_out.value;
+		if (regexp) {
+			out_str = get_matched_str(regexp, out_str);
+		}
+		replace_cmd_kv_file(result->test->path, test->expect.line_begin, test->expect.line_end, "EXPECT",
+			out_str, fixup_results);
 	}
 	if (test->expect_err.value && out->err) {
-		replace_cmd_kv_file(result->test->path, test->expect_err.line_begin, test->expect_err.line_end, "EXPECT_ERR", (char *)out->err, fixup_results);
+		const char *err_str = (char *)out->err;
+		const char *regexp = test->regexp_err.value;
+		if (regexp) {
+			err_str = get_matched_str(regexp, err_str);
+		}
+		replace_cmd_kv_file(result->test->path, test->expect_err.line_begin, test->expect_err.line_end, "EXPECT_ERR",
+			err_str, fixup_results);
 	}
 	return true;
 }

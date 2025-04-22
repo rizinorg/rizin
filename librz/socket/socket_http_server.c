@@ -57,21 +57,21 @@ RZ_API RzSocketHTTPRequest *rz_socket_http_accept(RzSocket *s, RzSocketHTTPOptio
 			if (p) {
 				*p = 0;
 			}
-			hr->method = strdup(buf);
+			hr->method = rz_str_dup(buf);
 			if (p) {
 				q = strstr(p + 1, " HTTP"); // strchr (p+1, ' ');
 				if (q) {
 					*q = 0;
 				}
-				hr->path = strdup(p + 1);
+				hr->path = rz_str_dup(p + 1);
 			}
 		} else {
 			if (!hr->referer && !strncmp(buf, "Referer: ", 9)) {
-				hr->referer = strdup(buf + 9);
+				hr->referer = rz_str_dup(buf + 9);
 			} else if (!hr->agent && !strncmp(buf, "User-Agent: ", 12)) {
-				hr->agent = strdup(buf + 12);
+				hr->agent = rz_str_dup(buf + 12);
 			} else if (!hr->host && !strncmp(buf, "Host: ", 6)) {
-				hr->host = strdup(buf + 6);
+				hr->host = rz_str_dup(buf + 6);
 			} else if (!strncmp(buf, "Content-Length: ", 16)) {
 				content_length = atoi(buf + 16);
 			} else if (so->httpauth && !strncmp(buf, "Authorization: Basic ", 21)) {

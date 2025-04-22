@@ -24,7 +24,7 @@ RZ_API char *rz_cons_hud_string(const char *s) {
 		eprintf("Hud mode requires scr.interactive=true.\n");
 		return NULL;
 	}
-	char *os, *track, *ret, *o = strdup(s);
+	char *os, *track, *ret, *o = rz_str_dup(s);
 	if (!o) {
 		return NULL;
 	}
@@ -41,7 +41,7 @@ RZ_API char *rz_cons_hud_string(const char *s) {
 		if (o[i] == '\n') {
 			o[i] = 0;
 			if (*os && *os != '#') {
-				track = strdup(os);
+				track = rz_str_dup(os);
 				if (!rz_list_append(fl, track)) {
 					free(track);
 					break;
@@ -64,7 +64,7 @@ RZ_API char *rz_cons_hud_string(const char *s) {
 static bool __matchString(char *entry, char *filter, char *mask, const int mask_size) {
 	char *p, *current_token = filter;
 	const char *filter_end = filter + strlen(filter);
-	char *ansi_filtered = strdup(entry);
+	char *ansi_filtered = rz_str_dup(entry);
 	int *cps;
 	rz_str_ansi_filter(ansi_filtered, NULL, &cps, -1);
 	entry = ansi_filtered;
@@ -134,7 +134,7 @@ static RzList /*<char *>*/ *hud_filter(RzList /*<char *>*/ *list, char *user_inp
 			if (x) {
 				*x = 0;
 			}
-			p = strdup(current_entry);
+			p = rz_str_dup(current_entry);
 			// if the filter is empty, print the entry and move on
 			if (!user_input[0]) {
 				rz_list_append(res, rz_str_newf(" %c %s", first_line ? '-' : ' ', p));
@@ -191,11 +191,6 @@ static RzList /*<char *>*/ *hud_filter(RzList /*<char *>*/ *list, char *user_inp
 	return res;
 }
 
-static void mht_free_kv(HtPPKv *kv) {
-	free(kv->key);
-	rz_list_free(kv->value);
-}
-
 // Display a list of entries in the hud, filtered and emphasized based on the user input.
 
 #define HUD_CACHE 0
@@ -204,7 +199,7 @@ RZ_API char *rz_cons_hud(RzList /*<char *>*/ *list, const char *prompt) {
 	char *selected_entry = NULL;
 	RzListIter *iter;
 
-	HtPP *ht = ht_pp_new(NULL, (HtPPKvFreeFunc)mht_free_kv, (HtPPCalcSizeV)strlen);
+	HtSP *ht = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_list_free);
 	RzLineHud *hud = (RzLineHud *)RZ_NEW(RzLineHud);
 	hud->activate = 0;
 	hud->vi = 0;
@@ -234,12 +229,12 @@ RZ_API char *rz_cons_hud(RzList /*<char *>*/ *list, const char *prompt) {
 		RzList *filtered_list = NULL;
 
 		bool found = false;
-		filtered_list = ht_pp_find(ht, user_input, &found);
+		filtered_list = ht_sp_find(ht, user_input, &found);
 		if (!found) {
 			filtered_list = hud_filter(list, user_input,
 				hud->top_entry_n, &(hud->current_entry_n), &selected_entry);
 #if HUD_CACHE
-			ht_pp_insert(ht, user_input, filtered_list);
+			ht_sp_insert(ht, user_input, filtered_list);
 #endif
 		}
 		rz_list_foreach (filtered_list, iter, row) {
@@ -264,7 +259,7 @@ RZ_API char *rz_cons_hud(RzList /*<char *>*/ *list, const char *prompt) {
 					rz_cons_enable_mouse(false);
 					rz_cons_show_cursor(true);
 					rz_cons_set_raw(false);
-					return strdup(selected_entry);
+					return rz_str_dup(selected_entry);
 				}
 			} else {
 				goto _beach;
@@ -277,7 +272,7 @@ _beach:
 	rz_cons_show_cursor(true);
 	rz_cons_enable_mouse(false);
 	rz_cons_set_raw(false);
-	ht_pp_free(ht);
+	ht_sp_free(ht);
 	return NULL;
 }
 
@@ -287,9 +282,9 @@ RZ_API char *rz_cons_hud_path(const char *path, int dir) {
 	RzList *files;
 	if (path) {
 		path = rz_str_trim_head_ro(path);
-		tmp = strdup(*path ? path : "./");
+		tmp = rz_str_dup(*path ? path : "./");
 	} else {
-		tmp = strdup("./");
+		tmp = rz_str_dup("./");
 	}
 	files = rz_sys_dir(tmp);
 	if (files) {

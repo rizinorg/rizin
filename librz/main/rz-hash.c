@@ -130,11 +130,21 @@ static void rz_hash_show_algorithms(RzHashContext *ctx) {
 
 	printf("flags  algorithm      license    author\n");
 
+	RzIterator *iter = ht_sp_as_iter(ctx->rh->plugins);
+	RzList *plugin_list = rz_list_new_from_iterator(iter);
+	if (!plugin_list) {
+		rz_iterator_free(iter);
+		return;
+	}
+	rz_list_sort(plugin_list, (RzListComparator)rz_hash_plugin_cmp, NULL);
+	RzListIter *it;
 	const RzHashPlugin *rmdp;
-	for (size_t i = 0; (rmdp = rz_hash_plugin_by_index(ctx->rh, i)); ++i) {
+	rz_list_foreach (plugin_list, it, rmdp) {
 		snprintf(flags, sizeof(flags), "____h%c", rmdp->support_hmac ? 'm' : '_');
 		printf("%6s %-14s %-10s %s\n", flags, rmdp->name, rmdp->license, rmdp->author);
 	}
+	rz_list_free(plugin_list);
+	rz_iterator_free(iter);
 
 	const RzCryptoPlugin *rcp;
 	for (size_t i = 0; (rcp = rz_crypto_plugin_by_index(ctx->rc, i)); i++) {
@@ -228,7 +238,7 @@ static void rz_hash_show_algorithms(RzHashContext *ctx) {
 		if ((x)->k) { \
 			rz_hash_error(x, RZ_HASH_OP_UNKNOWN, "invalid combination of arguments for '-%c'\n", c); \
 		} else if (h || strlen(s) < 1) { \
-			(x)->k = strdup(s); \
+			(x)->k = rz_str_dup(s); \
 		} else { \
 			(x)->k = rz_str_newf("s:%s", s); \
 		} \
@@ -236,7 +246,7 @@ static void rz_hash_show_algorithms(RzHashContext *ctx) {
 
 #define rz_hash_ctx_set_mode(x, m)   rz_hash_ctx_set_val(x, mode, RZ_HASH_MODE_STANDARD, m)
 #define rz_hash_ctx_set_op(x, o)     rz_hash_ctx_set_val(x, operation, RZ_HASH_OP_UNKNOWN, o)
-#define rz_hash_ctx_set_str(x, k, s) rz_hash_ctx_set_val(x, k, NULL, strdup(s))
+#define rz_hash_ctx_set_str(x, k, s) rz_hash_ctx_set_val(x, k, NULL, rz_str_dup(s))
 
 static bool hash_parse_string(const char *option, const char *string, ut8 **buffer, size_t *bufsize) {
 	char *sstdin = NULL;
@@ -506,6 +516,7 @@ static void hash_parse_cmdline(int argc, const char **argv, RzHashContext *ctx) 
 }
 
 static void hash_context_fini(RzHashContext *ctx) {
+	free(ctx->key.buf);
 	free(ctx->algorithm);
 	free(ctx->compare);
 	free(ctx->iv);
@@ -803,18 +814,29 @@ static void hash_context_compare_hashes(RzHashContext *ctx, size_t filesize, boo
 }
 
 static RzList /*<char *>*/ *parse_hash_algorithms(RzHashContext *ctx) {
-	if (!strcmp(ctx->algorithm, "all")) {
-		const RzHashPlugin *plugin;
-		RzList *list = rz_list_newf(NULL);
-		if (!list) {
-			return NULL;
-		}
-		for (ut64 i = 0; (plugin = rz_hash_plugin_by_index(ctx->rh, i)); ++i) {
-			rz_list_append(list, (void *)plugin->name);
-		}
-		return list;
+	if (strcmp(ctx->algorithm, "all")) {
+		return rz_str_split_list(ctx->algorithm, ",", 0);
 	}
-	return rz_str_split_list(ctx->algorithm, ",", 0);
+
+	RzList *list = rz_list_newf(NULL);
+	if (!list) {
+		return NULL;
+	}
+	RzIterator *iter = ht_sp_as_iter(ctx->rh->plugins);
+	RzList *plugin_list = rz_list_new_from_iterator(iter);
+	if (!plugin_list) {
+		rz_iterator_free(iter);
+		return NULL;
+	}
+	rz_list_sort(plugin_list, (RzListComparator)rz_hash_plugin_cmp, NULL);
+	RzListIter *it;
+	const RzHashPlugin *rmdp;
+	rz_list_foreach (plugin_list, it, rmdp) {
+		rz_list_append(list, (void *)rmdp->name);
+	}
+	rz_list_free(plugin_list);
+	rz_iterator_free(iter);
+	return list;
 }
 
 static bool calculate_hash(RzHashContext *ctx, RzIO *io, const char *filename) {

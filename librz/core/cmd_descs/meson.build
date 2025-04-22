@@ -1,5 +1,6 @@
 cmd_descs_generate_py = files('cmd_descs_generate.py')
 cmd_descs_yaml = files(
+  'cmd_alias.yaml',
   'cmd_analysis.yaml',
   'cmd_block.yaml',
   'cmd_cmp.yaml',
@@ -12,6 +13,8 @@ cmd_descs_yaml = files(
   'cmd_heap_glibc.yaml',
   'cmd_history.yaml',
   'cmd_info.yaml',
+  'cmd_interactive.yaml',
+  'cmd_interactive_panel.yaml',
   'cmd_interpret.yaml',
   'cmd_macro.yaml',
   'cmd_math.yaml',
@@ -20,10 +23,12 @@ cmd_descs_yaml = files(
   'cmd_plugins.yaml',
   'cmd_print.yaml',
   'cmd_project.yaml',
+  'cmd_query.yaml',
   'cmd_quit.yaml',
   'cmd_remote.yaml',
   'cmd_resize.yaml',
   'cmd_seek.yaml',
+  'cmd_search.yaml',
   'cmd_shell.yaml',
   'cmd_system.yaml',
   'cmd_tasks.yaml',

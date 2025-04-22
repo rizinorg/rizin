@@ -11,132 +11,132 @@ EOF
 EXPECT=<<EOF
 [A]
   (vtable at 0x400d28)
-nth addr         vt_offset type        name       
---------------------------------------------------
-1   0x00400ac8  0x00000000 VIRTUAL     greet
-2   0x00400af4  0x00000008 VIRTUAL     printValue
-3   0x00400b36  ---------- CONSTRUCTOR A
+nth       addr  vt_offset type        name       
+-------------------------------------------------
+  1 0x00400ac8 0x00000000 VIRTUAL     greet
+  2 0x00400af4 0x00000008 VIRTUAL     printValue
+  3 0x00400b36 ---------- CONSTRUCTOR A
 
 [B: A]
   (vtable at 0x400d08)
-nth addr         vt_offset type        name           
-------------------------------------------------------
-1   0x00400b4e  ---------- CONSTRUCTOR B
-2   0x00400b82  0x00000008 VIRTUAL     printValue
-3   0x00400ac8  0x00000000 VIRTUAL     method.A.greet
+nth       addr  vt_offset type        name           
+-----------------------------------------------------
+  1 0x00400b4e ---------- CONSTRUCTOR B
+  2 0x00400b82 0x00000008 VIRTUAL     printValue
+  3 0x00400ac8 0x00000000 VIRTUAL     method.A.greet
 
 [C: A]
   (vtable at 0x400ce8)
-nth addr         vt_offset type        name           
-------------------------------------------------------
-1   0x00400bc4  ---------- CONSTRUCTOR C
-2   0x00400bf8  0x00000008 VIRTUAL     printValue
-3   0x00400ac8  0x00000000 VIRTUAL     method.A.greet
+nth       addr  vt_offset type        name           
+-----------------------------------------------------
+  1 0x00400bc4 ---------- CONSTRUCTOR C
+  2 0x00400bf8 0x00000008 VIRTUAL     printValue
+  3 0x00400ac8 0x00000000 VIRTUAL     method.A.greet
 
 [std]
 [std::basic_ostream_char__std::char_traits_char_____std]
-nth addr         vt_offset type    name                                 
-------------------------------------------------------------------------
-1   0x00400890  ---------- DEFAULT operator<< <std::char_traits<char> >
-2   0x004008b0  ---------- DEFAULT endl<char, std::char_traits<char> >
+nth       addr  vt_offset type    name                                 
+-----------------------------------------------------------------------
+  1 0x00400890 ---------- DEFAULT operator<< <std::char_traits<char> >
+  2 0x004008b0 ---------- DEFAULT endl<char, std::char_traits<char> >
 
 [std::ios_base::Init]
-nth addr         vt_offset type    name  
------------------------------------------
-1   0x00400850  ---------- DEFAULT Init
-2   0x00400880  ---------- DEFAULT ~Init
+nth       addr  vt_offset type    name  
+----------------------------------------
+  1 0x00400850 ---------- DEFAULT Init
+  2 0x00400880 ---------- DEFAULT ~Init
 
 [std::ostream]
-nth addr         vt_offset type    name       
-----------------------------------------------
-1   0x00400830  ---------- DEFAULT operator<<
-2   0x004008a0  ---------- DEFAULT operator<<
+nth       addr  vt_offset type    name       
+---------------------------------------------
+  1 0x00400830 ---------- DEFAULT operator<<
+  2 0x004008a0 ---------- DEFAULT operator<<
 
 [A]
   (vtable at 0x400d28)
-nth addr         vt_offset type        name       
---------------------------------------------------
-1   0x00400ac8  0x00000000 VIRTUAL     greet
-2   0x00400af4  0x00000008 VIRTUAL     printValue
-3   0x00400b36  ---------- CONSTRUCTOR A
+nth       addr  vt_offset type        name       
+-------------------------------------------------
+  1 0x00400ac8 0x00000000 VIRTUAL     greet
+  2 0x00400af4 0x00000008 VIRTUAL     printValue
+  3 0x00400b36 ---------- CONSTRUCTOR A
 
 [B: A]
   (vtable at 0x400d08)
-nth addr         vt_offset type        name           
-------------------------------------------------------
-1   0x00400b4e  ---------- CONSTRUCTOR B
-2   0x00400b82  0x00000008 VIRTUAL     printValue
-3   0x00400ac8  0x00000000 VIRTUAL     method.A.greet
+nth       addr  vt_offset type        name           
+-----------------------------------------------------
+  1 0x00400b4e ---------- CONSTRUCTOR B
+  2 0x00400b82 0x00000008 VIRTUAL     printValue
+  3 0x00400ac8 0x00000000 VIRTUAL     method.A.greet
 
 [C: A]
   (vtable at 0x400ce8)
-nth addr         vt_offset type        name           
-------------------------------------------------------
-1   0x00400bc4  ---------- CONSTRUCTOR C
-2   0x00400bf8  0x00000008 VIRTUAL     printValue
-3   0x00400ac8  0x00000000 VIRTUAL     method.A.greet
+nth       addr  vt_offset type        name           
+-----------------------------------------------------
+  1 0x00400bc4 ---------- CONSTRUCTOR C
+  2 0x00400bf8 0x00000008 VIRTUAL     printValue
+  3 0x00400ac8 0x00000000 VIRTUAL     method.A.greet
 
 [std]
 [std::basic_ostream_char__std::char_traits_char_____std]
-nth addr         vt_offset type    name                                 
-------------------------------------------------------------------------
-1   0x00400890  ---------- DEFAULT operator<< <std::char_traits<char> >
-2   0x004008b0  ---------- DEFAULT endl<char, std::char_traits<char> >
+nth       addr  vt_offset type    name                                 
+-----------------------------------------------------------------------
+  1 0x00400890 ---------- DEFAULT operator<< <std::char_traits<char> >
+  2 0x004008b0 ---------- DEFAULT endl<char, std::char_traits<char> >
 
 [std::ios_base::Init]
-nth addr         vt_offset type    name  
------------------------------------------
-1   0x00400850  ---------- DEFAULT Init
-2   0x00400880  ---------- DEFAULT ~Init
+nth       addr  vt_offset type    name  
+----------------------------------------
+  1 0x00400850 ---------- DEFAULT Init
+  2 0x00400880 ---------- DEFAULT ~Init
 
 [std::ostream]
-nth addr         vt_offset type    name       
-----------------------------------------------
-1   0x00400830  ---------- DEFAULT operator<<
-2   0x004008a0  ---------- DEFAULT operator<<
+nth       addr  vt_offset type    name       
+---------------------------------------------
+  1 0x00400830 ---------- DEFAULT operator<<
+  2 0x004008a0 ---------- DEFAULT operator<<
 
 [A]
   (vtable at 0x400d28)
-nth addr         vt_offset type        name       
---------------------------------------------------
-1   0x00400ac8  0x00000000 VIRTUAL     greet
-2   0x00400af4  0x00000008 VIRTUAL     printValue
-3   0x00400b36  ---------- CONSTRUCTOR A
+nth       addr  vt_offset type        name       
+-------------------------------------------------
+  1 0x00400ac8 0x00000000 VIRTUAL     greet
+  2 0x00400af4 0x00000008 VIRTUAL     printValue
+  3 0x00400b36 ---------- CONSTRUCTOR A
 
 [B: A]
   (vtable at 0x400d08)
-nth addr         vt_offset type        name           
-------------------------------------------------------
-1   0x00400b4e  ---------- CONSTRUCTOR B
-2   0x00400b82  0x00000008 VIRTUAL     printValue
-3   0x00400ac8  0x00000000 VIRTUAL     method.A.greet
+nth       addr  vt_offset type        name           
+-----------------------------------------------------
+  1 0x00400b4e ---------- CONSTRUCTOR B
+  2 0x00400b82 0x00000008 VIRTUAL     printValue
+  3 0x00400ac8 0x00000000 VIRTUAL     method.A.greet
 
 [C: A]
   (vtable at 0x400ce8)
-nth addr         vt_offset type        name           
-------------------------------------------------------
-1   0x00400bc4  ---------- CONSTRUCTOR C
-2   0x00400bf8  0x00000008 VIRTUAL     printValue
-3   0x00400ac8  0x00000000 VIRTUAL     method.A.greet
+nth       addr  vt_offset type        name           
+-----------------------------------------------------
+  1 0x00400bc4 ---------- CONSTRUCTOR C
+  2 0x00400bf8 0x00000008 VIRTUAL     printValue
+  3 0x00400ac8 0x00000000 VIRTUAL     method.A.greet
 
 [std]
 [std::basic_ostream_char__std::char_traits_char_____std]
-nth addr         vt_offset type    name                                 
-------------------------------------------------------------------------
-1   0x00400890  ---------- DEFAULT operator<< <std::char_traits<char> >
-2   0x004008b0  ---------- DEFAULT endl<char, std::char_traits<char> >
+nth       addr  vt_offset type    name                                 
+-----------------------------------------------------------------------
+  1 0x00400890 ---------- DEFAULT operator<< <std::char_traits<char> >
+  2 0x004008b0 ---------- DEFAULT endl<char, std::char_traits<char> >
 
 [std::ios_base::Init]
-nth addr         vt_offset type    name  
------------------------------------------
-1   0x00400850  ---------- DEFAULT Init
-2   0x00400880  ---------- DEFAULT ~Init
+nth       addr  vt_offset type    name  
+----------------------------------------
+  1 0x00400850 ---------- DEFAULT Init
+  2 0x00400880 ---------- DEFAULT ~Init
 
 [std::ostream]
-nth addr         vt_offset type    name       
-----------------------------------------------
-1   0x00400830  ---------- DEFAULT operator<<
-2   0x004008a0  ---------- DEFAULT operator<<
+nth       addr  vt_offset type    name       
+---------------------------------------------
+  1 0x00400830 ---------- DEFAULT operator<<
+  2 0x004008a0 ---------- DEFAULT operator<<
 
 EOF
 RUN

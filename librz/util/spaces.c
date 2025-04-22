@@ -15,7 +15,7 @@ RZ_API RzSpaces *rz_spaces_new(const char *name) {
 
 RZ_API bool rz_spaces_init(RzSpaces *sp, const char *name) {
 	rz_return_val_if_fail(sp && name, false);
-	sp->name = strdup(name);
+	sp->name = rz_str_dup(name);
 	if (!sp->name) {
 		goto fail;
 	}
@@ -109,7 +109,7 @@ RZ_API RzSpace *rz_spaces_add(RzSpaces *sp, const char *name) {
 		return NULL;
 	}
 
-	s->name = strdup(name);
+	s->name = rz_str_dup(name);
 	if (!s->name) {
 		free(s);
 		return NULL;
@@ -151,7 +151,7 @@ RZ_API bool rz_spaces_unset(RzSpaces *sp, const char *name) {
 	RBIter it;
 	RzSpace *s;
 	rz_spaces_foreach(sp, it, s) {
-		rz_list_append(names, strdup(s->name));
+		rz_list_append(names, rz_str_dup(s->name));
 	}
 
 	RzListIter *lit;
@@ -222,7 +222,7 @@ RZ_API bool rz_spaces_rename(RzSpaces *sp, const char *oname, const char *nname)
 
 	rz_rbtree_delete(&sp->spaces, (void *)s->name, name_space_cmp, NULL, NULL, NULL);
 	free(s->name);
-	s->name = strdup(nname);
+	s->name = rz_str_dup(nname);
 	rz_rbtree_insert(&sp->spaces, s, &s->rb, space_cmp, NULL);
 
 	return true;

@@ -73,29 +73,28 @@ static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol type) {
 	return NULL; // TODO
 }
 
-static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
-	RzList *ret;
+static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+	RzPVector *ret;
 	RzBinAddr *ptr = NULL;
-	if (!(ret = rz_list_new())) {
+	if (!(ret = rz_pvector_new(free))) {
 		return NULL;
 	}
-	ret->free = free;
 	if ((ptr = RZ_NEW0(RzBinAddr))) {
 		ptr->paddr = 0x80;
 		ptr->vaddr = ptr->paddr + baddr(bf);
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 	return ret;
 }
 
 static Sdb *get_sdb(RzBinFile *bf) {
 	Sdb *kv = sdb_new0();
-	sdb_num_set(kv, "nro_start.offset", 0, 0);
-	sdb_num_set(kv, "nro_start.size", 16, 0);
-	sdb_set(kv, "nro_start.format", "xxq unused mod_memoffset padding", 0);
-	sdb_num_set(kv, "nro_header.offset", 16, 0);
-	sdb_num_set(kv, "nro_header.size", 0x70, 0);
-	sdb_set(kv, "nro_header.format", "xxxxxxxxxxxx magic unk size unk2 text_offset text_size ro_offset ro_size data_offset data_size bss_size unk3", 0);
+	sdb_num_set(kv, "nro_start.offset", 0);
+	sdb_num_set(kv, "nro_start.size", 16);
+	sdb_set(kv, "nro_start.format", "xxq unused mod_memoffset padding");
+	sdb_num_set(kv, "nro_header.offset", 16);
+	sdb_num_set(kv, "nro_header.size", 0x70);
+	sdb_set(kv, "nro_header.format", "xxxxxxxxxxxx magic unk size unk2 text_offset text_size ro_offset ro_size data_offset data_size bss_size unk3");
 	sdb_ns_set(bf->sdb, "info", kv);
 	return kv;
 }
@@ -130,7 +129,7 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 			goto maps_err;
 		}
 
-		map->name = strdup("sig0");
+		map->name = rz_str_dup("sig0");
 		map->paddr = sig0;
 		map->psize = sig0sz;
 		map->vsize = sig0sz;
@@ -145,7 +144,7 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	if (!(map = RZ_NEW0(RzBinMap))) {
 		return ret;
 	}
-	map->name = strdup("text");
+	map->name = rz_str_dup("text");
 	ut32 tmp;
 	if (!rz_buf_read_le32_at(b, NRO_OFF(text_memoffset), &tmp)) {
 		goto maps_err;
@@ -166,7 +165,7 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	if (!(map = RZ_NEW0(RzBinMap))) {
 		return ret;
 	}
-	map->name = strdup("ro");
+	map->name = rz_str_dup("ro");
 	if (!rz_buf_read_le32_at(b, NRO_OFF(ro_memoffset), &tmp)) {
 		goto maps_err;
 	}
@@ -186,7 +185,7 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	if (!(map = RZ_NEW0(RzBinMap))) {
 		return ret;
 	}
-	map->name = strdup("data");
+	map->name = rz_str_dup("data");
 	if (!rz_buf_read_le32_at(b, NRO_OFF(data_memoffset), &tmp)) {
 		goto maps_err;
 	}
@@ -220,7 +219,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
 	}
-	ptr->name = strdup("header");
+	ptr->name = rz_str_dup("header");
 	ptr->size = 0x80;
 	ptr->vsize = 0x80;
 	ptr->paddr = 0;
@@ -245,7 +244,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 			free(ret);
 			return NULL;
 		}
-		ptr->name = strdup("mod0");
+		ptr->name = rz_str_dup("mod0");
 		ptr->size = mod0sz;
 		ptr->vsize = mod0sz;
 		ptr->paddr = mod0;
@@ -307,21 +306,21 @@ static RzBinInfo *info(RzBinFile *bf) {
 	if (!ft) {
 		ft = "nro";
 	}
-	ret->file = strdup(bf->file);
-	ret->rclass = strdup(ft);
-	ret->os = strdup("switch");
-	ret->arch = strdup("arm");
-	ret->machine = strdup("Nintendo Switch");
-	ret->subsystem = strdup(ft);
+	ret->file = rz_str_dup(bf->file);
+	ret->rclass = rz_str_dup(ft);
+	ret->os = rz_str_dup("switch");
+	ret->arch = rz_str_dup("arm");
+	ret->machine = rz_str_dup("Nintendo Switch");
+	ret->subsystem = rz_str_dup(ft);
 	if (!strncmp(ft, "nrr", 3)) {
-		ret->bclass = strdup("program");
-		ret->type = strdup("EXEC (executable file)");
+		ret->bclass = rz_str_dup("program");
+		ret->type = rz_str_dup("EXEC (executable file)");
 	} else if (!strncmp(ft, "nro", 3)) {
-		ret->bclass = strdup("object");
-		ret->type = strdup("OBJECT (executable code)");
+		ret->bclass = rz_str_dup("object");
+		ret->type = rz_str_dup("OBJECT (executable code)");
 	} else { // mod
-		ret->bclass = strdup("library");
-		ret->type = strdup("MOD (executable library)");
+		ret->bclass = rz_str_dup("library");
+		ret->type = rz_str_dup("MOD (executable library)");
 	}
 	ret->bits = 64;
 	ret->has_va = true;

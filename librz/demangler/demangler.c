@@ -6,13 +6,14 @@
 #include <rz_util.h>
 #include <rz_libdemangle.h>
 #include <rz_lib.h>
-#include <config.h>
+
+#include "rz_demangler_plugins.h"
 
 #define DEFINE_DEMANGLER_PLUGIN(name, lang, lic, auth, handler) \
 	static char *handler##_cast(const char *symbol, RzDemanglerFlag flags) { \
 		return handler(symbol, (RzDemangleOpts)flags); \
 	} \
-	RZ_API RzDemanglerPlugin rz_demangler_plugin_##name = { \
+	RzDemanglerPlugin rz_demangler_plugin_##name = { \
 		.language = lang, \
 		.license = lic, \
 		.author = auth, \
@@ -31,7 +32,7 @@ DEFINE_DEMANGLER_PLUGIN(cpp, "c++", "LGPL3", "deroad", libdemangle_handler_cxx);
 DEFINE_DEMANGLER_PLUGIN(swift, "swift", "MIT", "pancake", libdemangle_handler_swift);
 #endif
 
-DEFINE_DEMANGLER_PLUGIN(rust, "rust", "LGPL3", "Dhruv Maroo", libdemangle_handler_rust);
+DEFINE_DEMANGLER_PLUGIN(rust, "rust", "LGPL3", "Dhruv Maroo/RizinOrg", libdemangle_handler_rust);
 DEFINE_DEMANGLER_PLUGIN(java, "java", "LGPL3", "deroad", libdemangle_handler_java);
 DEFINE_DEMANGLER_PLUGIN(msvc, "msvc", "LGPL3", "inisider", libdemangle_handler_msvc);
 DEFINE_DEMANGLER_PLUGIN(objc, "objc", "LGPL3", "pancake", libdemangle_handler_objc);
@@ -106,7 +107,7 @@ RZ_API RZ_OWN RzDemangler *rz_demangler_new(void) {
 		rz_warn_if_fail(p->demangle);
 		if (!p->demangle || !rz_list_append(plugins, p)) {
 			const char *lang = p->language ? p->language : "";
-			RZ_LOG_WARN("rz_demangler: failed to add '%s' plugin at index %u", lang, i);
+			RZ_LOG_WARN("rz_demangler: failed to add '%s' plugin at index %u\n", lang, i);
 		}
 	}
 	dem->plugins = plugins;

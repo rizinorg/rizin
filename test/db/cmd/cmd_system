@@ -17,8 +17,7 @@ RUN
 NAME=!| grep
 FILE==
 CMDS=!echo magic|grep bob
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=!| sed
@@ -76,4 +75,16 @@ EXPECT=<<EOF
 0x1
 EOF
 EXPECT_ERR=
+RUN
+
+NAME=echo $
+FILE=--
+CMDS=<<EOF
+echo $$$
+echo ${str}
+EOF
+EXPECT=<<EOF
+$$$
+${str}
+EOF
 RUN

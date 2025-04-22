@@ -7,6 +7,7 @@
 #include <rz_util.h>
 
 #include "../core_private.h"
+#include "rz_rop.h"
 #include <rz_asm.h>
 #include <rz_util/rz_print.h>
 #include <rz_util/rz_strbuf.h>
@@ -22,6 +23,7 @@ RZ_IPI int rz_core_visual_view_rop(RzCore *core) {
 	const int rows = 7;
 	int cur = 0;
 	RzLine *line = core->cons->line;
+	bool status = true;
 
 	rz_line_set_prompt(line, "rop regexp: ");
 	const char *linestr = rz_line_readline(line);
@@ -34,13 +36,35 @@ RZ_IPI int rz_core_visual_view_rop(RzCore *core) {
 	// maybe store in RzCore, so we can save it in project and use it outside visual
 
 	eprintf("Searching ROP gadgets...\n");
-	char *ropstr = rz_core_cmd_strf(core, "\"/Rl %s\" @e:scr.color=0", linestr);
+	RzCmdStateOutput state = { 0 };
+	if (!rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET)) {
+		return false;
+	}
+	RzRopSearchContext *context = rz_core_rop_search_context_new(core, linestr, false, RZ_ROP_GADGET_PRINT, &state);
+	if (!context) {
+		return false;
+	}
+	context->ret_val = true;
+	if (rz_core_rop_search(core, context) != RZ_CMD_STATUS_OK) {
+		rz_core_rop_search_context_free(context);
+		return false;
+	}
+	char *ropstr = rz_strbuf_get(context->buf);
+	ropstr = rz_str_dup(ropstr);
+	rz_cmd_state_output_fini(&state);
 	RzList *rops = rz_str_split_list(ropstr, "\n", 0);
+	if (!rops) {
+		free(ropstr);
+		rz_core_rop_search_context_free(context);
+		return false;
+	}
+	rz_core_rop_search_context_free(context);
 	int delta = 0;
 	bool show_color = core->print->flags & RZ_PRINT_FLAGS_COLOR;
 	bool forceaddr = false;
 	ut64 addr = UT64_MAX;
-	char *cursearch = strdup(linestr);
+	char *cursearch = rz_str_dup(linestr);
+	char *curline = NULL, *chainstr = NULL;
 	while (true) {
 		rz_cons_clear00();
 		rz_cons_printf("[0x%08" PFMT64x "]-[visual-rzrop] %s (see pdp command)\n",
@@ -60,12 +84,14 @@ RZ_IPI int rz_core_visual_view_rop(RzCore *core) {
 				rz_strbuf_appendf(sb, "%08x", n);
 			}
 		}
-		char *chainstr = rz_strbuf_drain(sb);
+		chainstr = rz_strbuf_drain(sb);
 
 		char *wlist = rz_str_widget_list(core, rops, rows, cur, print_rop);
 		rz_cons_printf("%s", wlist);
 		free(wlist);
-		char *curline = rz_str_dup(rz_str_trim_head_ro(rz_str_widget_list(core, rops, rows, cur, print_rop)));
+		char *widget_str = rz_str_widget_list(core, rops, rows, cur, print_rop);
+		curline = rz_str_dup(rz_str_trim_head_ro(widget_str));
+		free(widget_str);
 		if (curline) {
 			char *sp = strchr(curline, ' ');
 			if (sp) {
@@ -78,10 +104,13 @@ RZ_IPI int rz_core_visual_view_rop(RzCore *core) {
 			if (addr != UT64_MAX) {
 				rz_cons_printf("Gadget:");
 				// get comment
-				char *output = rz_core_cmd_strf(core, "piu 10 @ 0x%08" PFMT64x, addr + delta);
-				if (output) {
-					rz_cons_strcat_at(output, 0, 10, scr_w, 10);
-					free(output);
+				RzStrBuf *str_buf = rz_strbuf_new(NULL);
+				if (rz_core_disasm_until_ret(core, addr + delta, 10, RZ_OUTPUT_MODE_QUIET, true, str_buf)) {
+					char *output = rz_strbuf_get(str_buf);
+					if (output) {
+						rz_cons_strcat_at(output, 0, 10, scr_w, 10);
+					}
+					rz_strbuf_free(str_buf);
 				}
 			}
 		}
@@ -103,10 +132,8 @@ RZ_IPI int rz_core_visual_view_rop(RzCore *core) {
 		rz_cons_flush();
 		int ch = rz_cons_readchar();
 		if (ch == -1 || ch == 4) {
-			free(curline);
-			free(cursearch);
-			RZ_FREE(chainstr);
-			return false;
+			status = false;
+			goto exit;
 		}
 #define NEWTYPE(x, y) rz_mem_dup(&(y), sizeof(x));
 		ch = rz_cons_arrow_to_hjkl(ch); // get ESC+char, return 'hjkl' char
@@ -178,9 +205,22 @@ RZ_IPI int rz_core_visual_view_rop(RzCore *core) {
 				delta = 0;
 				addr = UT64_MAX;
 				cur = 0;
-				cursearch = strdup(linestr);
-				free(ropstr);
-				ropstr = rz_core_cmd_strf(core, "\"/Rl %s\" @e:scr.color=0", linestr);
+				cursearch = rz_str_dup(linestr);
+				RzCmdStateOutput state_detail = { 0 };
+				if (!rz_cmd_state_output_init(&state_detail, RZ_OUTPUT_MODE_STANDARD)) {
+					status = false;
+					goto exit;
+				}
+				context = rz_core_rop_search_context_new(core, linestr, false, RZ_ROP_GADGET_PRINT, &state);
+				context->ret_val = true;
+				if (rz_core_rop_search(core, context) != RZ_CMD_STATUS_OK) {
+					rz_core_rop_search_context_free(context);
+					status = false;
+					goto exit;
+				}
+				ropstr = rz_strbuf_get(context->buf);
+				rz_cmd_state_output_fini(&state_detail);
+				ropstr = rz_str_dup(ropstr);
 				rz_list_free(rops);
 				rops = rz_str_split_list(ropstr, "\n", 0);
 			}
@@ -207,17 +247,20 @@ RZ_IPI int rz_core_visual_view_rop(RzCore *core) {
 		case '\n':
 		case '\r':
 			if (curline && *curline) {
-				char *line = rz_core_cmd_strf(core, "piuq@0x%08" PFMT64x, addr + delta);
-				rz_str_replace_char(line, '\n', ';');
+				RzStrBuf *str_buf = rz_strbuf_new(NULL);
+				if (!rz_core_disasm_until_ret(core, addr + delta, 1024, RZ_OUTPUT_MODE_QUIET, true, str_buf)) {
+					rz_strbuf_free(str_buf);
+					break;
+				}
 				if (show_color) {
 					// XXX parsing fails to read this ansi-offset
 					// const char *offsetColor = rz_cons_singleton ()->context->pal.offset; // TODO etooslow. must cache
 					// rz_list_push (core->ropchain, rz_str_newf ("%s0x%08"PFMT64x""Color_RESET"  %s", offsetColor, addr + delta, line));
-					rz_list_push(core->ropchain, rz_str_newf("0x%08" PFMT64x "  %s", addr + delta, line));
+					rz_list_push(core->ropchain, rz_str_newf("0x%08" PFMT64x "  %s", addr + delta, rz_strbuf_get(str_buf)));
 				} else {
-					rz_list_push(core->ropchain, rz_str_newf("0x%08" PFMT64x "  %s", addr + delta, line));
+					rz_list_push(core->ropchain, rz_str_newf("0x%08" PFMT64x "  %s", addr + delta, rz_strbuf_get(str_buf)));
 				}
-				free(line);
+				rz_strbuf_free(str_buf);
 			}
 			break;
 		case 'h':
@@ -261,12 +304,18 @@ RZ_IPI int rz_core_visual_view_rop(RzCore *core) {
 		case 'q':
 			free(curline);
 			free(cursearch);
+			free(rops);
 			RZ_FREE(chainstr);
 			return true;
 		}
 		RZ_FREE(chainstr);
 		free(curline);
 	}
+
+exit:
+	free(curline);
 	free(cursearch);
-	return false;
+	free(rops);
+	RZ_FREE(chainstr);
+	return status;
 }

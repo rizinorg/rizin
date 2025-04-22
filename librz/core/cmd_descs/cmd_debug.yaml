@@ -185,6 +185,7 @@ commands:
             modes:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_JSON
+              - RZ_OUTPUT_MODE_TABLE
               - RZ_OUTPUT_MODE_RIZIN
               - RZ_OUTPUT_MODE_QUIET
             args: []
@@ -281,6 +282,10 @@ commands:
         summary: Continue until call (use step into)
         cname: cmd_debug_continue_call
         args: []
+      - name: dcco
+        summary: Continue until call (use step out)
+        cname: cmd_debug_continue_call_over
+        args: []
       - name: dccu
         summary: Continue until unknown call (call reg)
         cname: cmd_debug_continue_unknown_call
@@ -327,7 +332,10 @@ commands:
       - name: dcu
         summary: Debug continue until
         cname: cmd_debug_continue_until
-        type: RZ_CMD_DESC_TYPE_OLDINPUT
+        args:
+          - name: address
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            default_value: "$$"
   - name: dd
     summary: Debug file descriptors commands
     subcommands:
@@ -348,7 +356,6 @@ commands:
         cname: cmd_debug_descriptor_list
         args: []
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
-        default_mode: RZ_OUTPUT_MODE_STANDARD
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
@@ -606,10 +613,6 @@ commands:
         summary: Reset traces (instruction/calls)
         cname: cmd_debug_traces_reset
         args: []
-      - name: dta
-        summary: Only trace given addresses
-        cname: cmd_debug_trace_addr
-        type: RZ_CMD_DESC_TYPE_OLDINPUT
       - name: dtc
         summary: Trace call/ret
         cname: cmd_debug_trace_calls
@@ -700,7 +703,6 @@ commands:
       - RZ_OUTPUT_MODE_RIZIN
       - RZ_OUTPUT_MODE_JSON
       - RZ_OUTPUT_MODE_QUIET
-    default_mode: RZ_OUTPUT_MODE_STANDARD
     args: []
   - name: dk
     summary: Debug signals management
@@ -720,7 +722,6 @@ commands:
           - RZ_OUTPUT_MODE_JSON
           - RZ_OUTPUT_MODE_QUIET
           - RZ_OUTPUT_MODE_TABLE
-        default_mode: RZ_OUTPUT_MODE_STANDARD
         args: []
       - name: dkn
         summary: Resolve the name of signal given the number
@@ -770,7 +771,6 @@ commands:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
           - RZ_OUTPUT_MODE_QUIET
-        default_mode: RZ_OUTPUT_MODE_STANDARD
         args: []
   - name: dm
     summary: Memory map commands
@@ -848,8 +848,49 @@ commands:
         subcommands: cmd_heap_glibc
       - name: dmi
         summary: List/Load symbols
-        cname: cmd_debug_dmi
-        type: RZ_CMD_DESC_TYPE_OLDINPUT
+        subcommands:
+          - name: "dmi"
+            summary: List libraries and library symbols.
+            cname: cmd_debug_dmi
+            args:
+              - name: lib_name
+                type: RZ_CMD_ARG_TYPE_STRING
+                optional: true
+              - name: symbol_name
+                type: RZ_CMD_ARG_TYPE_STRING
+                optional: true
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_RIZIN
+              - RZ_OUTPUT_MODE_JSON
+              - RZ_OUTPUT_MODE_QUIET
+              - RZ_OUTPUT_MODE_QUIETEST
+          - name: "dmia"
+            summary: List all info of target library.
+            cname: cmd_debug_dmi_all
+            args:
+              - name: lib_name
+                type: RZ_CMD_ARG_TYPE_STRING
+                optional: true
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_RIZIN
+              - RZ_OUTPUT_MODE_JSON
+              - RZ_OUTPUT_MODE_QUIET
+              - RZ_OUTPUT_MODE_QUIETEST
+          - name: "dmi."
+            summary: List closest symbol to the current address.
+            cname: cmd_debug_dmi_closest
+            args: []
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_RIZIN
+              - RZ_OUTPUT_MODE_JSON
+              - RZ_OUTPUT_MODE_QUIET
+              - RZ_OUTPUT_MODE_QUIETEST
       - name: dml
         summary: Load contents of file into current map region
         cname: cmd_debug_dml
@@ -913,9 +954,27 @@ commands:
             args: []
       - name: dmx
         summary: Jemalloc heap commands
-        cname: cmd_debug_heap_jemalloc
-        type: RZ_CMD_DESC_TYPE_OLDINPUT
-        args: []
+        subcommands:
+          - name: dmxa
+            summary: Show all arenas created, or print arena_type structure for given arena.
+            cname: cmd_debug_heap_jemalloc_a
+            args:
+              - name: arena_type
+                type: RZ_CMD_ARG_TYPE_STRING
+                optional: true
+          - name: dmxb
+            summary: Show all arenas created, or print arena_type structure for given arena.
+            cname: cmd_debug_heap_jemalloc_b
+            args:
+              - name: arena_type
+                type: RZ_CMD_ARG_TYPE_STRING
+                optional: true
+          - name: dmxc
+            summary: Show all chunks created in all arenas, or show all chunks created for a given arena_t instanc.
+            cname: cmd_debug_heap_jemalloc_c
+            args:
+              - name: "*|arena_type"
+                type: RZ_CMD_ARG_TYPE_STRING
   - name: dp
     summary: List or attach to process or thread
     subcommands:
@@ -923,7 +982,6 @@ commands:
         summary: List current pid and children
         cname: cmd_debug_pid_list
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
-        default_mode: RZ_OUTPUT_MODE_STANDARD
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
@@ -936,7 +994,6 @@ commands:
         summary: List all attachable pids
         cname: cmd_debug_pid_attachable_list
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
-        default_mode: RZ_OUTPUT_MODE_STANDARD
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
@@ -994,7 +1051,6 @@ commands:
         summary: List threads of specified or current <pid>
         cname: cmd_debug_thread_list
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
-        default_mode: RZ_OUTPUT_MODE_STANDARD
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON

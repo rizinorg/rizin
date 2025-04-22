@@ -38,7 +38,7 @@ static RzIODesc *vf_open(RzIO *io, const char *pathname, int rw, int mode) {
 	if (!vf_check(io, pathname, false)) {
 		return NULL;
 	}
-	char *vfile_path = strdup(pathname + URI_SCHEME_LEN); // path like "<binfile id>/<filename>"
+	char *vfile_path = rz_str_dup(pathname + URI_SCHEME_LEN); // path like "<binfile id>/<filename>"
 	if (!vfile_path) {
 		return NULL;
 	}

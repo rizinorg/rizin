@@ -760,22 +760,27 @@ RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_float(RzFloatFormat format, RZ_NONNULL R
 	return ret;
 }
 
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_float_from_rz_float(RZ_NONNULL RZ_OWN RzFloat *fl) {
+	rz_return_val_if_fail(fl, NULL);
+	RzILOpFloat *ret = NULL;
+	RzFloatFormat r = fl->r;
+	RzILOpBitVector *bv = rz_il_op_new_bitv(fl->s);
+	if (!bv) {
+		goto err;
+	}
+	fl->s = NULL;
+	rz_il_op_new_2(Float, RZ_IL_OP_FLOAT, RzILOpArgsFloat, float_, r, bv);
+err:
+	rz_float_free(fl);
+	return ret;
+}
+
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_float_from_f32(float f) {
 	RzFloat *value = rz_float_new_from_f32(f);
 	if (!value) {
 		return NULL;
 	}
-	RzILOpFloat *ret = RZ_NEW0(RzILOpFloat);
-	if (!ret) {
-		rz_float_free(value);
-		return NULL;
-	}
-
-	ret->code = RZ_IL_OP_FLOAT;
-	ret->op.float_.bv = rz_il_op_new_bitv(value->s);
-	ret->op.float_.r = value->r;
-	free(value);
-	return ret;
+	return rz_il_op_new_float_from_rz_float(value);
 }
 
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_float_from_f64(double f) {
@@ -783,17 +788,7 @@ RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_float_from_f64(double f) {
 	if (!value) {
 		return NULL;
 	}
-	RzILOpFloat *ret = RZ_NEW0(RzILOpFloat);
-	if (!ret) {
-		rz_float_free(value);
-		return NULL;
-	}
-
-	ret->code = RZ_IL_OP_FLOAT;
-	ret->op.float_.bv = rz_il_op_new_bitv(value->s);
-	ret->op.float_.r = value->r;
-	free(value);
-	return ret;
+	return rz_il_op_new_float_from_rz_float(value);
 }
 
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_float_from_f80(long double f) {
@@ -801,17 +796,7 @@ RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_float_from_f80(long double f) {
 	if (!value) {
 		return NULL;
 	}
-	RzILOpFloat *ret = RZ_NEW0(RzILOpFloat);
-	if (!ret) {
-		rz_float_free(value);
-		return NULL;
-	}
-
-	ret->code = RZ_IL_OP_FLOAT;
-	ret->op.float_.bv = rz_il_op_new_bitv(value->s);
-	ret->op.float_.r = value->r;
-	free(value);
-	return ret;
+	return rz_il_op_new_float_from_rz_float(value);
 }
 
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_fbits(RZ_NONNULL RzILOpFloat *f) {
@@ -957,6 +942,13 @@ RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_frsqrt(RzFloatRMode rmode, RZ_NONNULL Rz
 	rz_return_val_if_fail(f, NULL);
 	RzILOpFloat *ret;
 	rz_il_op_new_2(Float, RZ_IL_OP_FRSQRT, RzILOpArgsFrsqrt, frsqrt, rmode, f);
+	return ret;
+}
+
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_fexcept(RzFloatException e, RZ_NONNULL RzILOpFloat *x) {
+	rz_return_val_if_fail(x, NULL);
+	RzILOpBool *ret;
+	rz_il_op_new_2(Bool, RZ_IL_OP_FEXCEPT, RzILOpArgsFexcept, fexcept, e, x);
 	return ret;
 }
 
@@ -1277,6 +1269,10 @@ RZ_API RzILOpPure *rz_il_op_pure_dup(RZ_NONNULL RzILOpPure *op) {
 		CONST_CP1(frsqrt, rmode);
 		DUP_OP1(frsqrt, f);
 		break;
+	case RZ_IL_OP_FEXCEPT:
+		CONST_CP1(fexcept, e);
+		DUP_OP1(fexcept, x);
+		break;
 	case RZ_IL_OP_FADD:
 		CONST_CP1(fadd, rmode);
 		DUP_OP2(fadd, x, y);
@@ -1479,6 +1475,9 @@ RZ_API void rz_il_op_pure_free(RZ_NULLABLE RzILOpPure *op) {
 	case RZ_IL_OP_FSQRT:
 	case RZ_IL_OP_FRSQRT:
 		rz_il_op_free_1(pure, fsqrt, f);
+		break;
+	case RZ_IL_OP_FEXCEPT:
+		rz_il_op_free_1(pure, fexcept, x);
 		break;
 	case RZ_IL_OP_FADD:
 	case RZ_IL_OP_FSUB:

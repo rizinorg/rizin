@@ -44,7 +44,7 @@ static const char *system_apply_env_var(const char *env, const char *value, cons
 	}
 
 	if (!*alloc_str) {
-		*alloc_str = strdup(arg);
+		*alloc_str = rz_str_dup(arg);
 	}
 
 	*alloc_str = rz_str_replace(*alloc_str, env, value, 1);

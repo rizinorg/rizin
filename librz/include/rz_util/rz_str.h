@@ -31,16 +31,18 @@ typedef enum {
 	RZ_STRING_ENC_EBCDIC_US = 's',
 	RZ_STRING_ENC_EBCDIC_ES = 't',
 	RZ_STRING_ENC_GUESS = 'g',
+	RZ_STRING_ENC_SETTINGS = 'S', ///< Use str.encoding.
 } RzStrEnc;
 
 /**
  * \brief Group together some common options used by string escaping functions
  */
 typedef struct {
-	bool show_asciidot; ///< When true, dots `.` are placed instead of unprintable characters
+	bool show_asciidot; ///< When true, dots `.` are placed instead of unprintable ASCII characters.
 	bool esc_bslash; ///< When true, backslashes `\` are quoted with `\\`
 	bool esc_double_quotes; ///< When true, double quotes `"` are quoted with `\"`
 	bool dot_nl; ///< When true, \n is converted into the graphiz-compatible newline \l
+	bool keep_printable; ///< Keep all printable characters (excludes \n, \t etc.).
 } RzStrEscOptions;
 
 /**
@@ -183,7 +185,7 @@ RZ_API RZ_OWN char *rz_sub_str_ptr(RZ_NONNULL const char *str, RZ_NONNULL const 
 RZ_API char *rz_str_ichr(char *str, char chr);
 RZ_API bool rz_str_ccmp(const char *dst, const char *orig, int ch);
 RZ_API bool rz_str_cmp_list(const char *list, const char *item, char sep);
-RZ_API int rz_str_cmp(const char *dst, const char *orig, int len);
+RZ_API int rz_str_cmp(RZ_NULLABLE const char *dst, RZ_NULLABLE const char *orig, int len);
 RZ_API int rz_str_casecmp(const char *dst, const char *orig);
 RZ_API int rz_str_ncasecmp(const char *dst, const char *orig, size_t n);
 RZ_API int rz_str_ccpy(char *dst, char *orig, int ch);
@@ -208,18 +210,17 @@ RZ_API void rz_str_reverse(char *str);
 RZ_API int rz_str_path_unescape(char *path);
 RZ_API char *rz_str_path_escape(const char *path);
 RZ_API int rz_str_unescape(char *buf);
-RZ_API RZ_OWN char *rz_str_escape(RZ_NONNULL const char *buf);
+RZ_DEPRECATE RZ_API RZ_OWN char *rz_str_escape(RZ_NONNULL const char *buf);
 RZ_API char *rz_str_escape_sh(const char *buf);
-RZ_API char *rz_str_escape_dot(const char *buf);
-RZ_API char *rz_str_escape_8bit(const char *buf, bool colors, RzStrEscOptions *opt);
-RZ_API char *rz_str_escape_utf8(const char *buf, RzStrEscOptions *opt);
-RZ_API char *rz_str_escape_utf8_keep_printable(const char *buf, RzStrEscOptions *opt); // like escape_utf8 but leaves valid \uXXXX chars directly in utf-8
-RZ_API char *rz_str_escape_utf16le(const char *buf, int buf_size, RzStrEscOptions *opt);
-RZ_API char *rz_str_escape_utf32le(const char *buf, int buf_size, RzStrEscOptions *opt);
-RZ_API char *rz_str_escape_utf16be(const char *buf, int buf_size, RzStrEscOptions *opt);
-RZ_API char *rz_str_escape_utf32be(const char *buf, int buf_size, RzStrEscOptions *opt);
-RZ_API void rz_str_byte_escape(const char *p, char **dst, RzStrEscOptions *opt);
-RZ_API char *rz_str_format_msvc_argv(size_t argc, const char **argv);
+RZ_API bool rz_str_escape_code_point(ut32 /* RzCodePoint */ cp, size_t ch_bytes, RZ_NONNULL const RzStrEscOptions *opts);
+RZ_DEPRECATE RZ_API char *rz_str_escape_dot(const char *buf);
+RZ_DEPRECATE RZ_API char *rz_str_escape_8bit(const char *buf, bool colors, RzStrEscOptions *opt);
+RZ_API RZ_OWN char *rz_str_escape_utf8(RZ_NONNULL const char *buf, RZ_NONNULL const RzStrEscOptions *opt);
+RZ_API RZ_OWN char *rz_str_escape_utf16le(RZ_NONNULL const char *buf, size_t buf_size, RZ_NONNULL const RzStrEscOptions *opt);
+RZ_API RZ_OWN char *rz_str_escape_utf32le(RZ_NONNULL const char *buf, size_t buf_size, RZ_NONNULL const RzStrEscOptions *opt);
+RZ_API RZ_OWN char *rz_str_escape_utf16be(RZ_NONNULL const char *buf, size_t buf_size, RZ_NONNULL const RzStrEscOptions *opt);
+RZ_API RZ_OWN char *rz_str_escape_utf32be(RZ_NONNULL const char *buf, size_t buf_size, RZ_NONNULL const RzStrEscOptions *opt);
+RZ_API RZ_OWN char *rz_str_format_msvc_argv(size_t argc, const char **argv);
 RZ_API void rz_str_uri_decode(char *buf);
 RZ_API char *rz_str_uri_encode(const char *buf);
 RZ_API char *rz_str_utf16_decode(const ut8 *s, int len);
@@ -270,6 +271,7 @@ typedef struct rz_str_stringify_opt_t {
 	bool escape_nl; ///< When enabled escapes new lines (\n).
 	bool json; ///< Encodes the output as a JSON string.
 	bool stop_at_nil; ///< When enabled stops printing when '\0' is found.
+	bool stop_at_unprintable; ///< When enabled stops printing at first non-printable character.
 	bool urlencode; ///< Encodes the output following RFC 3986.
 } RzStrStringifyOpt;
 
@@ -277,6 +279,10 @@ RZ_API RzStrEnc rz_str_guess_encoding_from_buffer(RZ_NONNULL const ut8 *buffer, 
 RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NULLABLE RZ_OUT ut32 *length);
 
 RZ_API const char *rz_str_indent(int indent);
+
+static inline bool rz_string_enc_is_utf8_compatible(RzStrEnc enc) {
+	return enc == RZ_STRING_ENC_UTF8 || enc == RZ_STRING_ENC_8BIT;
+}
 
 #ifdef __cplusplus
 }

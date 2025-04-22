@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
+#include <cmd_descs.h>
 
 RZ_IPI RzCmdStatus rz_plugins_load_handler(RzCore *core, int argc, const char **argv) {
 	return rz_lib_open(core->lib, rz_str_trim_head_ro(argv[1])) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
@@ -17,7 +18,14 @@ RZ_IPI RzCmdStatus rz_plugins_lang_print_handler(RzCore *core, int argc, const c
 }
 
 RZ_IPI RzCmdStatus rz_plugins_asm_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return rz_core_asm_plugins_print(core, NULL, state);
+	if (argc > 1) {
+		return rz_core_asm_plugins_print(core, state, argv[1]);
+	}
+	return rz_core_asm_plugins_print(core, state, NULL);
+}
+
+RZ_IPI RzCmdStatus rz_plugins_asm_cpu_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	return rz_core_asm_cpu_plugin_print(core, state, argv[1]);
 }
 
 RZ_IPI RzCmdStatus rz_plugins_core_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
@@ -56,4 +64,9 @@ RZ_IPI RzCmdStatus rz_plugins_io_print_handler(RzCore *core, int argc, const cha
 
 RZ_IPI RzCmdStatus rz_plugins_parser_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	return rz_core_parser_plugins_print(core->parser, state);
+}
+
+RZ_IPI RzCmdStatus rz_plugins_demanglers_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	// alias for iDl
+	return rz_cmd_info_demangle_list_handler(core, argc, argv, state);
 }

@@ -72,12 +72,10 @@ int ptrace(int _request, pid_t _pid, caddr_t _addr, int _data);
 #include <sys/fcntl.h>
 #include <sys/proc.h>
 
-// G3
 #if __POWERPC__
 #include <sys/ptrace.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <mach/ppc/_types.h>
 #include <mach/ppc/thread_status.h>
 // iPhone5
 #elif __aarch64
@@ -88,7 +86,6 @@ int ptrace(int _request, pid_t _pid, caddr_t _addr, int _data);
 #elif __arm64
 #include <mach/arm/thread_status.h>
 #else
-// iMac
 /* x86 32/64 */
 #include <mach/i386/thread_status.h>
 #include <sys/ucontext.h>

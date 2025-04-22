@@ -37,10 +37,9 @@ static int rz_main_version_verify(int show) {
 		const char *name;
 		vc callback;
 	} vcs[] = {
-		{ "rz_analysis", rz_analysis_version },
 		{ "rz_lib", rz_lib_version },
 		{ "rz_egg", rz_egg_version },
-		{ "rz_asm", rz_asm_version },
+		{ "rz_arch", rz_arch_version },
 		{ "rz_bin", rz_bin_version },
 		{ "rz_cons", rz_cons_version },
 		{ "rz_flag", rz_flag_version },
@@ -54,7 +53,6 @@ static int rz_main_version_verify(int show) {
 #if !USE_LIB_MAGIC
 		{ "rz_magic", rz_magic_version },
 #endif
-		{ "rz_parse", rz_parse_version },
 		{ "rz_reg", rz_reg_version },
 		{ "rz_sign", rz_sign_version },
 		{ "rz_search", rz_search_version },
@@ -104,6 +102,7 @@ static int main_help(int line) {
 			"- ",          "",          "Read file from stdin",
 			"-=",          "",          "Perform R=! command to run all commands remotely",
 			"-0",          "",          "Print \\x00 after init and every command",
+			"-1",          "",          "Redirect stderr to stdout",
 			"-2",          "",          "Close stderr file descriptor (silent warning messages)",
 			"-a",          "[arch]",    "Set asm.arch",
 			"-A",          "",          "Run 'aaa' command to analyze all referenced code",
@@ -128,9 +127,8 @@ static int main_help(int line) {
 			"-n, -nn",     "",          "Do not load RzBin info (-nn only load bin structures)",
 			"-N",          "",          "Do not load user settings and scripts",
 			"-NN",         "",          "Do not load any script or plugin",
-			"-q",          "",          "Quiet mode (no prompt) and quit after -i",
-			"-qq",         "",          "Quit after running all -c and -i",
-			"-Q",          "",          "Quiet mode (no prompt) and quit faster (quickLeak=true)",
+			"-q",          "",          "Quiet mode (no prompt) and quit after -i and -c",
+			"-qq",         "",          "Quiet mode (no prompt) and force quit",
 			"-p",          "[p.rzdb]",  "Load project file",
 			"-r",          "[rz-run]",  "Specify rz-run profile to load (same as -e dbg.profile=X)",
 			"-R",          "[rule]",    "Specify custom rz-run directive",
@@ -187,18 +185,33 @@ static int main_help(int line) {
 			" user         %s %s (and %s)\n"
 			" file         ${filename}.rz\n"
 			"Plugins:\n"
-			" binrc        %s (elf, elf64, mach0, ..)\n"
-			" RZ_USER_PLUGINS %s\n"
-			" RZ_LIB_PLUGINS %s\n"
+			" binrc            %s (elf, elf64, mach0, ..)\n"
+			" RZ_USER_PLUGINS  %s\n"
+			" RZ_LIB_PLUGINS   %s\n"
 			" RZ_EXTRA_PLUGINS %s\n"
 			"Environment:\n"
-			" RZ_DEBUG      if defined, show error messages and crash signal\n"
-			" RZ_DEBUG_ASSERT=1 set a breakpoint when hitting an assert\n"
-			" RZ_MAGICPATH %s\n"
-			" RZ_NOPLUGINS do not load rizin shared plugins\n"
-			" RZ_RCFILE    %s (user preferences, batch script)\n"
-			" RZ_DATAHOME %s\n"
-			" RZ_VERSION   contains the current version of rizin\n"
+			" ANSICON             ansicon's W & H of the buffer and w & h of the window in the form of: \"WxH (wxh)\"\n"
+			" DEBUGINFOD_URLS     e bin.dbginfo.debuginfod_urls - use alternative debuginfod server\n"
+			" COLUMNS             terminal columns to use\n"
+			" RZ_ABORTLEVEL       target log level/severity when to abort (0:DEBUG, 1:VERBOSE, 2:INFO, 3:WARN, 4:ERROR, 5:FATAL)\n"
+			" RZ_CURL             whether to use curl (for SSL support)\n"
+			" RZ_DEBUG            if defined, show error messages and crash signal\n"
+			" RZ_DEBUG_ASSERT     set a breakpoint when hitting an assert\n"
+			" RZ_DEBUG_TOOL       debug tool to use when showing error messages and crash signal\n"
+			" RZ_DYLDCACHE_FILTER dyld cache filter (MacOS dynamic libraries location(s) at runtime)\n"
+			" RZ_HTTP_AUTHFILE    HTTP Authentification user file\n"
+			" RZ_LOGCOLORS        should the log output use colors\n"
+			" RZ_LOGFILE          logging output filename/path\n"
+			" RZ_LOGLEVEL         target log level/severity (0:DEBUG, 1:VERBOSE, 2:INFO, 3:WARN, 4:ERROR, 5:FATAL)\n"
+			" RZ_LOGSHOWSOURCES   should the log output contain src info (filename:lineno)\n"
+			" RZ_PIPE_IN          rzpipe cmd input (file descriptor)\n"
+			" RZ_PIPE_OUT         rzpipe cmd output (file descriptor)\n"
+			" RZ_MAGICPATH        %s\n"
+			" RZ_NOPLUGINS        do not load rizin shared plugins\n"
+			" RZ_RCFILE           %s (user preferences, batch script)\n"
+			" RZ_DATAHOME         %s\n"
+			" RZ_VERSION          contains the current version of rizin\n"
+			" SFLIBPATH           SFLib syscall library path\n"
 			"Paths:\n"
 			" RZ_PREFIX       %s\n"
 			" RZ_EXTRA_PREFIX %s\n"
@@ -440,7 +453,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	char *customRarunProfile = NULL;
 	ut64 mapaddr = 0LL;
 	bool quiet = false;
-	bool quietLeak = false;
 	int is_gdb = false;
 	const char *s_seek = NULL;
 	bool compute_hashes = true;
@@ -458,6 +470,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		rz_list_free(prefiles); \
 	}
 
+	bool stderr2stdout = false;
 	bool noStderr = false;
 
 #ifdef __UNIX
@@ -520,10 +533,10 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 
 	set_color_default(r);
 	bool load_l = true;
-	char *debugbackend = strdup("native");
+	char *debugbackend = rz_str_dup("native");
 
 	RzGetopt opt;
-	rz_getopt_init(&opt, argc, argv, "=02AMCwxfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:R:r:c:D:vVSTzuXt");
+	rz_getopt_init(&opt, argc, argv, "=012AMCwxfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:R:r:c:D:vVSTzuXt");
 	while (argc >= 2 && (c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case '-':
@@ -533,7 +546,10 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			break;
 		case '=':
 			RZ_FREE(r->cmdremote);
-			r->cmdremote = strdup("");
+			r->cmdremote = rz_str_dup("");
+			break;
+		case '1':
+			stderr2stdout = true;
 			break;
 		case '2':
 			noStderr = true;
@@ -583,7 +599,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		case 'D': {
 			debug = 2;
 			free(debugbackend);
-			debugbackend = strdup(opt.arg);
+			debugbackend = rz_str_dup(opt.arg);
 			RzCmdStateOutput state = { 0 };
 			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET);
 			if (!strcmp(opt.arg, "?")) {
@@ -669,10 +685,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		case 'p':
 			prj = *opt.arg ? opt.arg : NULL;
 			break;
-		case 'Q':
-			quiet = true;
-			quietLeak = true;
-			break;
 		case 'q':
 			rz_config_set(r->config, "scr.interactive", "false");
 			rz_config_set(r->config, "scr.prompt", "false");
@@ -736,9 +748,15 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			help++;
 		}
 	}
+	if (stderr2stdout && -1 == dup2(1, 2)) {
+		RZ_LOG_ERROR("stderr2stdout: Failed to dup2 stderr\n");
+		LISTS_FREE();
+		RZ_FREE(debugbackend);
+		return 1;
+	}
 	if (noStderr) {
 		if (-1 == close(2)) {
-			RZ_LOG_ERROR("Failed to close stderr");
+			RZ_LOG_ERROR("Failed to close stderr\n");
 			LISTS_FREE();
 			RZ_FREE(debugbackend);
 			return 1;
@@ -746,20 +764,20 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		const char nul[] = RZ_SYS_DEVNULL;
 		int new_stderr = open(nul, O_RDWR);
 		if (-1 == new_stderr) {
-			RZ_LOG_ERROR("Failed to open %s", nul);
+			RZ_LOG_ERROR("Failed to open %s\n", nul);
 			LISTS_FREE();
 			RZ_FREE(debugbackend);
 			return 1;
 		}
 		if (2 != new_stderr) {
 			if (-1 == dup2(new_stderr, 2)) {
-				RZ_LOG_ERROR("Failed to dup2 stderr");
+				RZ_LOG_ERROR("Failed to dup2 stderr\n");
 				LISTS_FREE();
 				RZ_FREE(debugbackend);
 				return 1;
 			}
 			if (-1 == close(new_stderr)) {
-				RZ_LOG_ERROR("Failed to close %s", nul);
+				RZ_LOG_ERROR("Failed to close %s\n", nul);
 				LISTS_FREE();
 				RZ_FREE(debugbackend);
 				return 1;
@@ -781,16 +799,16 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 					}
 					if (p) {
 						*p = 0;
-						pfile = strdup(program);
+						pfile = rz_str_dup(program);
 					}
 				}
 				free(msg);
 			} else {
 				eprintf("Cannot read dbg.profile '%s'\n", dbg_profile);
-				pfile = NULL; // strdup ("");
+				pfile = NULL; // rz_str_dup ("");
 			}
 		} else {
-			pfile = argv[opt.ind] ? strdup(argv[opt.ind]) : NULL;
+			pfile = rz_str_dup(argv[opt.ind]);
 		}
 	}
 
@@ -806,9 +824,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		}
 		run_commands(r, NULL, prefiles, false, do_analysis);
 		run_commands(r, cmds, files, quiet, do_analysis);
-		if (quietLeak) {
-			exit(0);
-		}
 		rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD);
 		rz_core_io_plugins_print(r->io, &state);
 		rz_cmd_state_output_print(&state);
@@ -845,14 +860,14 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		}
 		const char *src = haveRarunProfile ? pfile : argv[opt.ind];
 		if (src && *src) {
-			char *uri = strdup(src);
+			char *uri = rz_str_dup(src);
 			if (uri) {
 				char *p = strstr(uri, "://");
 				if (p) {
 					*p = 0;
 					// TODO: this must be specified by the io plugin, not hardcoded here
 					if (!strcmp(uri, "winedbg")) {
-						debugbackend = strdup("io");
+						debugbackend = rz_str_dup("io");
 					} else {
 						debugbackend = uri;
 						uri = NULL;
@@ -938,7 +953,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 #if __WINDOWS__
 		int result = _setmode(_fileno(stdin), _O_BINARY);
 		if (result == -1) {
-			RZ_LOG_ERROR("Cannot set stdin to binary mode");
+			RZ_LOG_ERROR("Cannot set stdin to binary mode\n");
 			return 1;
 		}
 #endif
@@ -1003,7 +1018,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 				}
 				if (strcmp(debugbackend, "native")) {
 					if (!haveRarunProfile) {
-						pfile = strdup(argv[opt.ind++]);
+						pfile = rz_str_dup(argv[opt.ind++]);
 					}
 					// If plugin is winkd we should keep RWX permission to be able to write to the fd
 					if (strcmp(debugbackend, "winkd")) {
@@ -1057,7 +1072,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 				const char *f = (haveRarunProfile && pfile) ? pfile : argv[opt.ind];
 				is_gdb = (!memcmp(f, "gdb://", RZ_MIN(f ? strlen(f) : 0, 6)));
 				if (!is_gdb) {
-					pfile = strdup("dbg://");
+					pfile = rz_str_dup("dbg://");
 				}
 #if __UNIX__
 				/* implicit ./ to make unix behave like windows */
@@ -1065,11 +1080,11 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 					char *path, *escaped_path;
 					if (strchr(f, '/')) {
 						// f is a path
-						path = strdup(f);
+						path = rz_str_dup(f);
 					} else {
 						// f is a filename
 						if (rz_file_exists(f)) {
-							path = rz_str_prepend(strdup(f), "./");
+							path = rz_str_prepend(rz_str_dup(f), "./");
 						} else {
 							path = rz_file_path(f);
 						}
@@ -1126,7 +1141,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			if (opt.ind < argc) {
 				RZ_FREE(pfile);
 				while (opt.ind < argc) {
-					pfile = strdup(argv[opt.ind++]);
+					pfile = rz_str_dup(argv[opt.ind++]);
 					fh = rz_core_file_open(r, pfile, perms, mapaddr);
 					if (!fh && perms & RZ_PERM_W) {
 						perms |= RZ_PERM_CREAT;
@@ -1290,24 +1305,11 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		RZ_FREE(debugbackend);
 		RzBinObject *o = rz_bin_cur_object(r->bin);
 		if (!debug && o && !o->regstate) {
-			RzFlagItem *fi = rz_flag_get(r->flags, "entry0");
-			if (fi) {
-				rz_core_seek(r, fi->offset, true);
+			const RzFlagItem *entry0 = rz_flag_get(r->flags, "entry0");
+			if (entry0) {
+				rz_core_seek(r, entry0->offset, true);
 			} else {
-				if (o) {
-					RzBinObject *obj = rz_bin_cur_object(r->bin);
-					const RzPVector *sections = obj ? rz_bin_object_get_sections_all(obj) : NULL;
-					void **iter;
-					RzBinSection *s;
-					rz_pvector_foreach (sections, iter) {
-						s = *iter;
-						if (s->perm & RZ_PERM_X) {
-							ut64 addr = s->vaddr ? s->vaddr : s->paddr;
-							rz_core_seek(r, addr, true);
-							break;
-						}
-					}
-				}
+				rz_core_seek(r, rz_bin_get_first_entrypoint(o), true);
 			}
 		}
 		if (o && o->info && compute_hashes) {
@@ -1335,7 +1337,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		/* check if file.path has changed */
 		if (iod && !strstr(iod->uri, "://")) {
 			const char *npath;
-			char *path = strdup(rz_config_get(r->config, "file.path"));
+			char *path = rz_str_dup(rz_config_get(r->config, "file.path"));
 			iod = r->io ? rz_io_desc_get(r->io, fh->fd) : NULL;
 			npath = rz_config_get(r->config, "file.path");
 			if (!quiet && path && *path && npath && strcmp(path, npath)) {
@@ -1395,7 +1397,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		case 1: rz_core_perform_auto_analysis(r, RZ_CORE_ANALYSIS_SIMPLE); break;
 		case 2: rz_core_perform_auto_analysis(r, RZ_CORE_ANALYSIS_DEEP); break;
 		case 3: rz_core_perform_auto_analysis(r, RZ_CORE_ANALYSIS_EXPERIMENTAL); break;
-		default: rz_core_cmd_show_analysis_help(r); break;
+		default: break;
 		}
 		rz_cons_flush();
 	}
@@ -1532,10 +1534,6 @@ beach:
 		// Always detach properly if still attached, even if we already killed the process,
 		// otherwise there will be a zombie on macOS!
 		rz_debug_detach(r->dbg, r->dbg->pid);
-	}
-	if (quietLeak) {
-		exit(ret);
-		return ret;
 	}
 
 	rz_core_task_sync_end(&r->tasks);

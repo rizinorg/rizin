@@ -38,23 +38,23 @@ RZ_API RZ_OWN char *rz_bin_pdb_calling_convention_as_string(RZ_NONNULL RzPdbTpiC
 	switch (idx) {
 	case NEAR_C:
 	case FAR_C:
-		return strdup("__cdecl");
+		return rz_str_dup("__cdecl");
 	case NEAR_PASCAL:
 	case FAR_PASCAL:
-		return strdup("__pascal");
+		return rz_str_dup("__pascal");
 	case NEAR_FAST:
 	case FAR_FAST:
-		return strdup("__fastcall");
+		return rz_str_dup("__fastcall");
 	case NEAR_STD:
 	case FAR_STD:
-		return strdup("__stdcall");
+		return rz_str_dup("__stdcall");
 	case NEAR_SYS:
 	case FAR_SYS:
-		return strdup("__syscall");
+		return rz_str_dup("__syscall");
 	case THISCALL:
-		return strdup("__thiscall");
+		return rz_str_dup("__thiscall");
 	case NEAR_VEC:
-		return strdup("__vectorcall");
+		return rz_str_dup("__vectorcall");
 	default:
 		return NULL;
 	}
@@ -686,7 +686,7 @@ RZ_API ut64 rz_bin_pdb_get_type_val(RZ_NONNULL RzPdbTpiType *type) {
 		Tpi_LF_Array *a = type->data;
 		ut64 y = 0;
 		ut32 *x;
-		rz_vector_foreach(&a->dimensions, x) {
+		rz_vector_foreach (&a->dimensions, x) {
 			y = y == 0 ? *x : (*x * y);
 		}
 		return y;

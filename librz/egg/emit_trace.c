@@ -25,7 +25,7 @@ static void emit_init(RzEgg *egg) {
 static char *emit_syscall(RzEgg *egg, int num) {
 	char buf[32];
 	snprintf(buf, sizeof(buf), "syscall (%d)\n", num);
-	return strdup(buf);
+	return rz_str_dup(buf);
 }
 
 static void emit_frame(RzEgg *egg, int sz) {
@@ -169,12 +169,7 @@ static void emit_mathop(RzEgg *egg, int ch, int vs, int type, const char *eq, co
 	if (!p) {
 		p = RZ_AX;
 	}
-#if 0
-	// TODO:
-	eprintf ("TYPE = %c\n", type);
-	eprintf ("  %s%c %c%s, %s\n", op, vs, type, eq, p);
-	eprintf ("  %s %s, [%s]\n", op, p, eq);
-#endif
+
 	if (type == '*') {
 		rz_egg_printf(egg, "%s (%s, [%s])\n", op, p, eq);
 	} else {

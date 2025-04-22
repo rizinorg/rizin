@@ -110,7 +110,7 @@ static char *get_swift_field(const char *demangled, const char *classname) {
 	if (p) {
 		char *q = strstr(demangled, classname);
 		if (q && q[strlen(classname)] == '.') {
-			q = strdup(q + strlen(classname) + 1);
+			q = rz_str_dup(q + strlen(classname) + 1);
 			char *r = strchr(q, '.');
 			if (r) {
 				*r = 0;
@@ -136,14 +136,14 @@ RZ_IPI void rz_bin_process_swift(RzBinObject *o, char *classname, char *demangle
 #endif /* WITH_SWIFT_DEMANGLER */
 
 /**
- * \brief      Reset and initialize the data of the given RzBinObject using the defined RzBinPlugin
+ * \brief      Initialize the data of the given RzBinObject using the defined RzBinPlugin
  *
  * \param      bf    The RzBinFile to use
  * \param      o     The RzBinObject to initialize
  *
  * \return     On success returns true
  */
-RZ_API bool rz_bin_object_process_plugin_data(RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzBinObject *o) {
+RZ_IPI bool rz_bin_object_process_plugin_data(RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzBinObject *o) {
 	rz_return_val_if_fail(bf && bf->rbin && o && o->plugin, false);
 	const RzDemanglerPlugin *demangler = NULL;
 
@@ -159,12 +159,20 @@ RZ_API bool rz_bin_object_process_plugin_data(RZ_NONNULL RzBinFile *bf, RZ_NONNU
 
 	// we need to detect the language of the binary
 	// one way can be based on the compiler.
-	if (o->info && RZ_STR_ISEMPTY(o->info->compiler)) {
-		free(o->info->compiler);
-		o->info->compiler = rz_bin_file_golang_compiler(bf);
-		if (o->info->compiler) {
+	if (o->info) {
+		char *go_compiler = rz_bin_file_golang_compiler(bf);
+		if (go_compiler) {
 			o->info->lang = "go";
 			o->lang = RZ_BIN_LANGUAGE_GO;
+			if (RZ_STR_ISNOTEMPTY(o->info->compiler)) {
+				char *merge = rz_str_newf("%s %s", go_compiler, o->info->compiler);
+				free(o->info->compiler);
+				free(go_compiler);
+				o->info->compiler = merge;
+			} else {
+				free(o->info->compiler);
+				o->info->compiler = go_compiler;
+			}
 		}
 	}
 

@@ -68,6 +68,8 @@ static int bin_pe_init(RzBinPEObj *bin) {
 	(bin);
 	PE_(bin_pe_init_security)
 	(bin);
+	PE_(bin_pe_init_relocs)
+	(bin);
 
 	bin->big_endian = PE_(rz_bin_pe_is_big_endian)(bin);
 
@@ -81,7 +83,6 @@ static int bin_pe_init(RzBinPEObj *bin) {
 	(bin);
 	PE_(bin_pe_parse_resource)
 	(bin);
-	bin->relocs = NULL;
 	return true;
 }
 

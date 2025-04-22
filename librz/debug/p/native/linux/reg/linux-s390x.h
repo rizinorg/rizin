@@ -60,7 +60,7 @@ Linux (currently) always uses IEEE & emulates G5 IEEE format on older machines,
 ( provided the kernel is configured for this ).
 #endif
 
-return strdup(
+return rz_str_dup(
 	"=PC	pc\n"
 	"=LR	r14\n"
 	"=SP	r15\n"

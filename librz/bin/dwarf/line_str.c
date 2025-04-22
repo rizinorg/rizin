@@ -9,9 +9,9 @@ RZ_API RZ_OWN RzBinDwarfLineStr *rz_bin_dwarf_line_str_new(RZ_NONNULL RZ_OWN RzB
 }
 
 RZ_API RZ_OWN RzBinDwarfLineStr *rz_bin_dwarf_line_str_from_file(RZ_NONNULL RZ_BORROW RzBinFile *bf) {
-	RzBinEndianReader *r = RzBinEndianReader_from_file(bf, ".debug_line_str", false);
-	RET_NULL_IF_FAIL(r);
-	return rz_bin_dwarf_str_new(r);
+	RzBinEndianReader *R = RzBinEndianReader_from_file(bf, ".debug_line_str");
+	RET_NULL_IF_FAIL(R);
+	return rz_bin_dwarf_str_new(R);
 }
 
 RZ_API void rz_bin_dwarf_line_str_free(RZ_NULLABLE RzBinDwarfLineStr *str) {

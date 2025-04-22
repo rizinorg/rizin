@@ -1,8 +1,8 @@
 #ifndef RZ_LIST_H
 #define RZ_LIST_H
 
+#include <rz_util/rz_iterator.h>
 #include <rz_types.h>
-#include <rz_util/ht_pp.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,6 +34,9 @@ typedef int (*RzListComparator)(const void *value, const void *list_data, void *
 #define rz_list_foreach(list, it, pos) \
 	if (list) \
 		for (it = list->head; it && (pos = it->elem, 1); it = it->next)
+#define rz_list_foreach_enum(list, it, pos, i) \
+	if (list) \
+		for (it = list->head, i = 0; it && (pos = it->elem, 1); it = it->next, ++i)
 #define rz_list_foreach_iter(iter, it, pos) \
 	for (it = iter; it && (pos = it->elem, 1); it = it->next)
 /* Safe when calling rz_list_delete() while iterating over the list. */
@@ -62,7 +65,8 @@ typedef int (*RzListComparator)(const void *value, const void *list_data, void *
 
 RZ_API RZ_OWN RzList *rz_list_new(void);
 RZ_API RZ_OWN RzList *rz_list_newf(RZ_NULLABLE RzListFree f);
-RZ_API RZ_OWN RzList *rz_list_new_from_array(RZ_NONNULL const void **arr, size_t arr_size);
+RZ_API RZ_OWN RzList *rz_list_new_from_array(const void **arr, size_t arr_size);
+RZ_API RZ_OWN RzList *rz_list_new_from_iterator(RZ_BORROW RZ_NONNULL RzIterator *iter);
 RZ_API RZ_BORROW RzListIter *rz_list_iter_get_prev(RZ_NONNULL RzListIter *iter);
 RZ_API RZ_BORROW RzListIter *rz_list_iter_get_next(RZ_NONNULL RzListIter *iter);
 RZ_API RZ_BORROW void *rz_list_iter_get_prev_data(RZ_NONNULL RzListIter *iter);
@@ -82,6 +86,7 @@ RZ_API void rz_list_sort(RZ_NONNULL RzList *list, RZ_NONNULL RzListComparator cm
 RZ_API void rz_list_merge_sort(RZ_NONNULL RzList *list, RZ_NONNULL RzListComparator cmp, void *user);
 RZ_API void rz_list_insertion_sort(RZ_NONNULL RzList *list, RZ_NONNULL RzListComparator cmp, void *user);
 RZ_API RZ_OWN RzList *rz_list_uniq(RZ_NONNULL const RzList *list, RZ_NONNULL RzListComparator cmp, void *user);
+RZ_API void rz_list_sorted_uniq(RZ_NONNULL RzList *list, RZ_NONNULL RzListComparator cmp, void *user);
 RZ_API void rz_list_init(RZ_NONNULL RzList *list);
 RZ_API void rz_list_delete(RZ_NONNULL RzList *list, RZ_NONNULL RzListIter *iter);
 RZ_API bool rz_list_delete_data(RZ_NONNULL RzList *list, void *ptr);
@@ -93,18 +98,13 @@ RZ_API void rz_list_split_iter(RZ_NONNULL RzList *list, RZ_NONNULL RzListIter *i
 RZ_API bool rz_list_join(RZ_NONNULL RzList *list1, RZ_NONNULL RzList *list2);
 RZ_API RZ_BORROW void *rz_list_get_n(RZ_NONNULL const RzList *list, ut32 n);
 RZ_API ut32 rz_list_del_n(RZ_NONNULL RzList *list, ut32 n);
-RZ_API RZ_BORROW void *rz_list_get_top(RZ_NONNULL const RzList *list);
-RZ_API RZ_BORROW void *rz_list_get_bottom(RZ_NONNULL const RzList *list);
 RZ_API RZ_BORROW RzListIter *rz_list_iterator(RZ_NONNULL const RzList *list);
 RZ_API RZ_BORROW RzListIter *rz_list_push(RZ_NONNULL RzList *list, void *item);
 RZ_API RZ_OWN void *rz_list_pop(RZ_NONNULL RzList *list);
 RZ_API RZ_OWN void *rz_list_pop_head(RZ_NONNULL RzList *list);
 RZ_API void rz_list_reverse(RZ_NONNULL RzList *list);
-RZ_API RZ_BORROW void *rz_list_get_head_data(RZ_NONNULL RzList *list);
-RZ_API RZ_BORROW void *rz_list_get_tail_data(RZ_NONNULL RzList *list);
 RZ_API RZ_OWN RzList *rz_list_clone(RZ_NONNULL const RzList *list);
 RZ_API RZ_OWN char *rz_list_to_str(RZ_NONNULL RzList *list, char ch);
-RZ_API RZ_OWN RzList *rz_list_of_sdblist(SdbList *sl);
 
 /* hashlike api */
 RZ_API RZ_BORROW RzListIter *rz_list_contains(RZ_NONNULL const RzList *list, RZ_NONNULL const void *ptr);

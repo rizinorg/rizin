@@ -13,8 +13,7 @@ Sdb *get_ref_sdb() {
 	sdb_set(bp_sdb, "0x1337", "{\"cond\":\"bp_cond\",\"data\":\"bp_data\",\"delta\":2,\"enabled\":3,"
 				  "\"expr\":\"bp_expr\",\"hits\":4,\"hw\":0,\"internal\":5,\"module_delta\":42,"
 				  "\"module_name\":\"hax\",\"name\":\"spectre\",\"perm\":3,\"pids\":[0,1,2,3,4,5,6,7,8,9],"
-				  "\"size\":1,\"swstep\":false,\"togglehits\":11,\"trace\":2}",
-		0);
+				  "\"size\":1,\"swstep\":false,\"togglehits\":11,\"trace\":2}");
 
 	return ref_sdb;
 }

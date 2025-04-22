@@ -14,33 +14,33 @@
  *
  * \param newly_added list of strings where str is appended if it has been added to the cache in this pass
  */
-static RzType *parse_type_string_cached(RzTypeParser *parser, HtPP *cache, const char *str, char **error_msg, RZ_OUT RzList /*<char *>*/ *newly_added) {
+static RzType *parse_type_string_cached(RzTypeParser *parser, HtSP *cache, const char *str, char **error_msg, RZ_OUT RzList /*<char *>*/ *newly_added) {
 	rz_return_val_if_fail(str, NULL);
-	RzType *r = ht_pp_find(cache, str, NULL);
+	RzType *r = ht_sp_find(cache, str, NULL);
 	if (r) {
 		*error_msg = NULL;
 		return rz_type_clone(r);
 	}
 	r = rz_type_parse_string_single(parser, str, error_msg);
 	if (r) {
-		char *reminder = strdup(str);
+		char *reminder = rz_str_dup(str);
 		if (reminder) {
-			ht_pp_insert(cache, str, r);
+			ht_sp_insert(cache, str, r);
 			rz_list_push(newly_added, reminder);
 		}
 	}
 	return r;
 }
 
-static void type_string_cache_rollback(HtPP *cache, RzList /*<char *>*/ *newly_added) {
+static void type_string_cache_rollback(HtSP *cache, RzList /*<char *>*/ *newly_added) {
 	RzListIter *it;
 	char *s;
 	rz_list_foreach (newly_added, it, s) {
-		ht_pp_delete(cache, s);
+		ht_sp_delete(cache, s);
 	}
 }
 
-static RzCallable *get_callable_type(RzTypeDB *typedb, Sdb *sdb, const char *name, HtPP *type_str_cache) {
+static RzCallable *get_callable_type(RzTypeDB *typedb, Sdb *sdb, const char *name, HtSP *type_str_cache) {
 	rz_return_val_if_fail(typedb && sdb && RZ_STR_ISNOTEMPTY(name), NULL);
 
 	RzList *cache_newly_added = rz_list_newf(free);
@@ -55,14 +55,14 @@ static RzCallable *get_callable_type(RzTypeDB *typedb, Sdb *sdb, const char *nam
 	}
 
 	RzStrBuf key;
-	size_t arguments = sdb_num_get(sdb, rz_strbuf_initf(&key, "func.%s.args", name), 0);
+	size_t arguments = sdb_num_get(sdb, rz_strbuf_initf(&key, "func.%s.args", name));
 	if (arguments > 0 && !rz_pvector_reserve(callable->args, arguments)) {
 		goto error;
 	}
 
 	int i;
 	for (i = 0; i < arguments; i++) {
-		char *values = sdb_get(sdb, rz_strbuf_setf(&key, "func.%s.arg.%d", name, i), NULL);
+		char *values = sdb_get(sdb, rz_strbuf_setf(&key, "func.%s.arg.%d", name, i));
 
 		if (!values) {
 			goto error;
@@ -96,7 +96,7 @@ static RzCallable *get_callable_type(RzTypeDB *typedb, Sdb *sdb, const char *nam
 		}
 	}
 
-	const char *rettype = sdb_const_get(sdb, rz_strbuf_setf(&key, "func.%s.ret", name), 0);
+	const char *rettype = sdb_const_get(sdb, rz_strbuf_setf(&key, "func.%s.ret", name));
 	if (!rettype) {
 		// best we can do for a broken database
 		rettype = "void";
@@ -112,7 +112,7 @@ static RzCallable *get_callable_type(RzTypeDB *typedb, Sdb *sdb, const char *nam
 	callable->ret = ttype;
 
 	// Optional "noreturn" attribute
-	callable->noret = sdb_bool_get(sdb, rz_strbuf_setf(&key, "func.%s.noreturn", name), 0);
+	callable->noret = sdb_bool_get(sdb, rz_strbuf_setf(&key, "func.%s.noreturn", name));
 
 	rz_strbuf_fini(&key);
 	rz_list_free(cache_newly_added);
@@ -127,30 +127,29 @@ error:
 	return NULL;
 }
 
-static bool filter_func(void *user, const char *k, const char *v) {
-	return !strcmp(v, "func");
+static bool filter_func(void *user, const SdbKv *kv) {
+	return sdbkv_value_len(kv) == 4 && !strcmp(sdbkv_value(kv), "func");
 }
 
 static bool sdb_load_callables(RzTypeDB *typedb, Sdb *sdb) {
 	rz_return_val_if_fail(typedb && sdb, false);
-	HtPP *type_str_cache = ht_pp_new0(); // cache from a known C type extr to its RzType representation for skipping the parser if possible
+	HtSP *type_str_cache = ht_sp_new(HT_STR_DUP, NULL, NULL); // cache from a known C type extr to its RzType representation for skipping the parser if possible
 	if (!type_str_cache) {
 		return false;
 	}
-	RzCallable *callable;
-	SdbKv *kv;
-	SdbListIter *iter;
-	SdbList *l = sdb_foreach_list_filter(sdb, filter_func, false);
-	ls_foreach (l, iter, kv) {
+	void **iter;
+	RzPVector *items = sdb_get_items_filter(sdb, filter_func, NULL, false);
+	rz_pvector_foreach (items, iter) {
+		SdbKv *kv = *iter;
 		// eprintf("loading function: \"%s\"\n", sdbkv_key(kv));
-		callable = get_callable_type(typedb, sdb, sdbkv_key(kv), type_str_cache);
+		RzCallable *callable = get_callable_type(typedb, sdb, sdbkv_key(kv), type_str_cache);
 		if (callable) {
-			ht_pp_update(typedb->callables, callable->name, callable);
+			ht_sp_update(typedb->callables, callable->name, callable);
 			RZ_LOG_DEBUG("inserting the \"%s\" callable type\n", callable->name);
 		}
 	}
-	ht_pp_free(type_str_cache);
-	ls_free(l);
+	ht_sp_free(type_str_cache);
+	rz_pvector_free(items);
 	return true;
 }
 
@@ -194,11 +193,11 @@ static void save_callable(const RzTypeDB *typedb, Sdb *sdb, const RzCallable *ca
 	*/
 	const char *cname = callable->name;
 	// name=func
-	sdb_set(sdb, cname, "func", 0);
+	sdb_set(sdb, cname, "func");
 
 	// func.name.args=N
 	char *key = rz_str_newf("func.%s.args", cname);
-	sdb_num_set(sdb, key, rz_pvector_len(callable->args), 0);
+	sdb_num_set(sdb, key, rz_pvector_len(callable->args));
 	free(key);
 
 	RzStrBuf param_key;
@@ -215,7 +214,7 @@ static void save_callable(const RzTypeDB *typedb, Sdb *sdb, const RzCallable *ca
 		char *arg_type = rz_type_as_string(typedb, arg->type);
 		sdb_set(sdb,
 			rz_strbuf_setf(&param_key, "func.%s.arg.%zu", cname, i),
-			rz_strbuf_setf(&param_val, "%s,%s", arg_type, arg_name), 0ULL);
+			rz_strbuf_setf(&param_val, "%s,%s", arg_type, arg_name));
 		free(arg_name);
 		free(arg_type);
 	}
@@ -226,14 +225,14 @@ static void save_callable(const RzTypeDB *typedb, Sdb *sdb, const RzCallable *ca
 	if (callable->ret) {
 		key = rz_str_newf("func.%s.ret", cname);
 		char *ret_type = rz_type_as_string(typedb, callable->ret);
-		sdb_set_owned(sdb, key, ret_type, 0);
+		sdb_set_owned(sdb, key, ret_type);
 		free(key);
 	}
 
 	// Optional "noreturn" attribute
 	if (callable->noret) {
 		char *noreturn_key = rz_str_newf("func.%s.noreturn", cname);
-		sdb_bool_set(sdb, noreturn_key, true, 0);
+		sdb_bool_set(sdb, noreturn_key, true);
 		free(noreturn_key);
 	}
 }
@@ -243,7 +242,7 @@ struct typedb_sdb {
 	Sdb *sdb;
 };
 
-static bool export_callable_cb(void *user, const void *k, const void *v) {
+static bool export_callable_cb(void *user, RZ_UNUSED const char *k, const void *v) {
 	struct typedb_sdb *s = user;
 	RzCallable *callable = (RzCallable *)v;
 	save_callable(s->typedb, s->sdb, callable);
@@ -252,7 +251,7 @@ static bool export_callable_cb(void *user, const void *k, const void *v) {
 
 static bool callable_export_sdb(RZ_NONNULL Sdb *db, RZ_NONNULL const RzTypeDB *typedb) {
 	struct typedb_sdb tdb = { typedb, db };
-	ht_pp_foreach(typedb->callables, export_callable_cb, &tdb);
+	ht_sp_foreach(typedb->callables, export_callable_cb, &tdb);
 	return true;
 }
 

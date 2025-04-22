@@ -106,10 +106,10 @@ RZ_API bool rz_bin_file_object_new_from_xtr_data(RzBin *bin, RzBinFile *bf, RzBi
 	free(o->info->arch);
 	free(o->info->machine);
 	free(o->info->type);
-	o->info->file = strdup(bf->file);
-	o->info->arch = strdup(data->metadata->arch);
-	o->info->machine = strdup(data->metadata->machine);
-	o->info->type = strdup(data->metadata->type);
+	o->info->file = rz_str_dup(bf->file);
+	o->info->arch = rz_str_dup(data->metadata->arch);
+	o->info->machine = rz_str_dup(data->metadata->machine);
+	o->info->type = rz_str_dup(data->metadata->type);
 	o->info->bits = data->metadata->bits;
 	o->info->has_crypto = bf->o->info->has_crypto;
 	data->loaded = true;
@@ -378,8 +378,8 @@ static inline bool add_file_hash(RzHashCfg *md, const char *name, RzPVector /*<R
 		return false;
 	}
 
-	fh->type = strdup(name);
-	fh->hex = strdup(hash);
+	fh->type = rz_str_dup(name);
+	fh->hex = rz_str_dup(hash);
 	rz_pvector_push(vec, fh);
 	return true;
 }
@@ -410,6 +410,7 @@ RZ_API RZ_OWN RzPVector /*<RzBinFileHash *>*/ *rz_bin_file_compute_hashes(RzBin 
 		if (bin->verbose) {
 			RZ_LOG_WARN("rz_bin_file_hash: file exceeds bin.hashlimit\n");
 		}
+		rz_buf_free(buf);
 		return NULL;
 	}
 	file_hashes = rz_pvector_new((RzPVectorFree)rz_bin_file_hash_free);
@@ -456,12 +457,7 @@ RZ_API RZ_OWN RzPVector /*<RzBinFileHash *>*/ *rz_bin_file_compute_hashes(RzBin 
 
 	if (o->plugin && o->plugin->hashes) {
 		RzPVector *plugin_hashes = o->plugin->hashes(bf);
-		void **it;
-		rz_pvector_foreach (plugin_hashes, it) {
-			RzBinFileHash *h = *it;
-			rz_pvector_push(file_hashes, h);
-		}
-		plugin_hashes->v.free = NULL;
+		rz_pvector_join(file_hashes, plugin_hashes);
 		rz_pvector_free(plugin_hashes);
 	}
 

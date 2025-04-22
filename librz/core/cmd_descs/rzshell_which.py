@@ -9,7 +9,12 @@ import sys
 import subprocess
 
 import yaml
-from cmd_descs_util import CD_TYPE_OLDINPUT, compute_cname, get_handler_cname
+from cmd_descs_util import (
+    CD_TYPE_FAKE,
+    CD_TYPE_INNER,
+    compute_cname,
+    get_handler_cname,
+)
 
 
 def get_yaml_files(basedir):
@@ -29,7 +34,8 @@ def find_entry(commands, rzcommand):
             return None
 
         if c["name"] == rzcommand:
-            return c
+            if c.get("type") not in [CD_TYPE_FAKE, CD_TYPE_INNER]:
+                return c
 
     return None
 
@@ -38,9 +44,6 @@ def get_c_handler_name_from_entry(e):
     name = e["cname"]
     if "handler" in e and e["handler"]:
         name = e["handler"]
-
-    if "type" in e and e["type"] == CD_TYPE_OLDINPUT:
-        return f"rz_{name}"
 
     return f"rz_{name}_handler"
 
@@ -52,9 +55,7 @@ def find_c_name_handler(basedir, rzcommand):
             e = find_entry(y["commands"], rzcommand)
             if e is not None:
                 cname = e.get("cname", compute_cname(e["name"]))
-                return get_handler_cname(
-                    e.get("type", None), e.get("handler", None), cname
-                )
+                return get_handler_cname(e.get("handler", None), cname)
 
     return None
 

@@ -18,7 +18,7 @@ static char *readString(RzBuffer *buf, int off) {
 		return NULL;
 	}
 	symbol[sizeof(symbol) - 1] = 0;
-	return strdup(symbol);
+	return rz_str_dup(symbol);
 }
 
 const char *fileType(const ut8 *buf) {
@@ -99,7 +99,7 @@ static void walkSymbols(RzBuffer *buf, RzBinNXOObj *bin, ut64 symtab, ut64 strta
 			imp->ordinal = bin->imports_vec->v.len;
 			rz_pvector_push(bin->imports_vec, imp);
 			sym->is_imported = true;
-			sym->name = strdup(symName);
+			sym->name = rz_str_dup(symName);
 			if (!sym->name) {
 				goto out_walk_symbol;
 			}

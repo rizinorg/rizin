@@ -1,8 +1,8 @@
 d "trap" 00
 d "nop" 01
-d "block" 0240
-d "loop" 0340
-d "if" 0440
+d "block (result ?)" 0240
+d "loop (result ?)" 0340
+d "if (result ?)" 0440
 d "else" 05
 d "end" 0b
 d "br 0" 0c00
@@ -126,3 +126,5 @@ d "i16x8.any_true" fd8201
 d "i16x8.all_true" fd8301
 d "i16x8.narrow_i32x4_s" fd8501
 d "i16x8.narrow_i32x4_u" fd8601
+d "i32x4.abs" fda001
+d "i8x16.bitmask" fd64

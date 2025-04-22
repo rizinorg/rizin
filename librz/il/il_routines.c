@@ -244,3 +244,53 @@ RZ_API RZ_OWN RzILOpBool *rz_il_op_new_ne(RZ_NONNULL RzILOpPure *x, RZ_NONNULL R
 	}
 	return rz_il_op_new_bool_inv(result);
 }
+
+static inline RZ_OWN RzILOpBool *_any_fl_is_nan(RZ_NONNULL RZ_OWN RzILOpFloat *x, RZ_NONNULL RZ_OWN RzILOpFloat *y) {
+	return rz_il_op_new_bool_or(rz_il_op_new_is_nan(x), rz_il_op_new_is_nan(y));
+}
+
+static inline RZ_OWN RzILOpBool *_fl_is_less(RZ_NONNULL RZ_BORROW RzILOpFloat *x, RZ_NONNULL RZ_BORROW RzILOpFloat *y) {
+	RzILOpFloat *x_dup = rz_il_op_pure_dup(x);
+	RzILOpFloat *y_dup = rz_il_op_pure_dup(y);
+	return rz_il_op_new_forder(x_dup, y_dup);
+}
+
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_fneq(RZ_NONNULL RZ_OWN RzILOpFloat *x, RZ_NONNULL RZ_OWN RzILOpFloat *y) {
+	rz_return_val_if_fail(x && y, NULL);
+	RzILOpBool *is_nan = _any_fl_is_nan(x, y);
+	RzILOpBool *not_equal = rz_il_op_new_bool_or(_fl_is_less(x, y), _fl_is_less(y, x));
+	return rz_il_op_new_bool_or(is_nan, not_equal);
+}
+
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_feq(RZ_NONNULL RZ_OWN RzILOpFloat *x, RZ_NONNULL RZ_OWN RzILOpFloat *y) {
+	rz_return_val_if_fail(x && y, NULL);
+	return rz_il_op_new_bool_inv(rz_il_op_new_fneq(x, y));
+}
+
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_flt(RZ_NONNULL RZ_OWN RzILOpFloat *x, RZ_NONNULL RZ_OWN RzILOpFloat *y) {
+	rz_return_val_if_fail(x && y, NULL);
+	RzILOpBool *not_nan = rz_il_op_new_bool_inv(_any_fl_is_nan(x, y));
+	RzILOpBool *is_less = _fl_is_less(x, y);
+	return rz_il_op_new_bool_and(not_nan, is_less);
+}
+
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_fle(RZ_NONNULL RZ_OWN RzILOpFloat *x, RZ_NONNULL RZ_OWN RzILOpFloat *y) {
+	rz_return_val_if_fail(x && y, NULL);
+	RzILOpBool *not_nan = rz_il_op_new_bool_inv(_any_fl_is_nan(x, y));
+	RzILOpBool *is_great = _fl_is_less(y, x);
+	return rz_il_op_new_bool_and(not_nan, rz_il_op_new_bool_inv(is_great));
+}
+
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_fgt(RZ_NONNULL RZ_OWN RzILOpFloat *x, RZ_NONNULL RZ_OWN RzILOpFloat *y) {
+	rz_return_val_if_fail(x && y, NULL);
+	RzILOpBool *not_nan = rz_il_op_new_bool_inv(_any_fl_is_nan(x, y));
+	RzILOpBool *is_great = _fl_is_less(y, x);
+	return rz_il_op_new_bool_and(not_nan, is_great);
+}
+
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_fge(RZ_NONNULL RZ_OWN RzILOpFloat *x, RZ_NONNULL RZ_OWN RzILOpFloat *y) {
+	rz_return_val_if_fail(x && y, NULL);
+	RzILOpBool *not_nan = rz_il_op_new_bool_inv(_any_fl_is_nan(x, y));
+	RzILOpBool *is_less = _fl_is_less(x, y);
+	return rz_il_op_new_bool_and(not_nan, rz_il_op_new_bool_inv(is_less));
+}

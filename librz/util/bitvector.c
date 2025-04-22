@@ -177,8 +177,9 @@ RZ_API RZ_OWN RzBitVector *rz_bv_dup(const RZ_NONNULL RzBitVector *bv) {
 }
 
 /**
- * Copy from source bitvector to destination bitvector
- * the maximum copied size depends on MIN(src_len, dst_len)
+ * Copy from source bitvector to destination bitvector.
+ * The bitvectors must have the same length.
+ *
  * \param src RzBitVector, the source bitvector
  * \param dst RzBitVector, the destination bitvector
  * \return Actual size of copy
@@ -925,17 +926,15 @@ RZ_API RZ_OWN RzBitVector *rz_bv_sdiv(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBi
 		return ret;
 	}
 
-	if (mx && my) {
-		neg_x = rz_bv_neg(x);
-		neg_y = rz_bv_neg(y);
+	// mx && my
+	neg_x = rz_bv_neg(x);
+	neg_y = rz_bv_neg(y);
 
-		ret = rz_bv_div(neg_x, neg_y);
-		rz_bv_free(neg_x);
-		rz_bv_free(neg_y);
-		return ret;
-	}
+	ret = rz_bv_div(neg_x, neg_y);
+	rz_bv_free(neg_x);
+	rz_bv_free(neg_y);
 
-	return NULL; // something wrong
+	return ret;
 }
 
 /**
@@ -984,19 +983,16 @@ RZ_API RZ_OWN RzBitVector *rz_bv_smod(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBi
 		return ret;
 	}
 
-	if (mx && my) {
-		neg_x = rz_bv_neg(x);
-		neg_y = rz_bv_neg(y);
+	// mx && my
+	neg_x = rz_bv_neg(x);
+	neg_y = rz_bv_neg(y);
 
-		tmp = rz_bv_mod(neg_x, neg_y);
-		ret = rz_bv_neg(tmp);
-		rz_bv_free(neg_x);
-		rz_bv_free(neg_y);
-		rz_bv_free(tmp);
-		return ret;
-	}
-
-	return NULL; // something wrong
+	tmp = rz_bv_mod(neg_x, neg_y);
+	ret = rz_bv_neg(tmp);
+	rz_bv_free(neg_x);
+	rz_bv_free(neg_y);
+	rz_bv_free(tmp);
+	return ret;
 }
 
 /**

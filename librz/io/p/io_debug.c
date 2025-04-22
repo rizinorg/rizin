@@ -11,6 +11,8 @@
 #include <rz_debug.h> /* only used for BSD PTRACE redefinitions */
 #include <string.h>
 
+#include "rz_io_plugins.h"
+
 #define USE_RARUN 0
 
 #if __linux__ || __APPLE__ || __WINDOWS__ || __NetBSD__ || __KFBSD__ || __OpenBSD__
@@ -22,6 +24,13 @@
 #if DEBUGGER && DEBUGGER_SUPPORTED
 #define MAGIC_EXIT 123
 
+// POSIX_SPAWN_CLOEXEC_DEFAULT is available since macOS 10.7, but known to cause kernel panics until 10.8.
+#if __APPLE__ && defined(MAC_OS_X_VERSION_10_8)
+#define USE_POSIX_SPAWN 1
+#else
+#define USE_POSIX_SPAWN 0
+#endif
+
 #include <signal.h>
 #if __UNIX__
 #include <sys/ptrace.h>
@@ -29,10 +38,10 @@
 #include <sys/wait.h>
 #endif
 
-#if __APPLE__
-#if !__POWERPC__
+#if USE_POSIX_SPAWN
 #include <spawn.h>
 #endif
+#if __APPLE__
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <mach/exception_types.h>
@@ -118,7 +127,7 @@ static int fork_and_ptraceme(RzIO *io, int bits, const char *cmd) {
 		return -1;
 	}
 	setup_tokens();
-	char *_cmd = io->args ? rz_str_appendf(strdup(cmd), " %s", io->args) : strdup(cmd);
+	char *_cmd = io->args ? rz_str_appendf(rz_str_dup(cmd), " %s", io->args) : rz_str_dup(cmd);
 	char **argv = rz_str_argv(_cmd, NULL);
 	char *cmdline = NULL;
 	// We need to build a command line with quoted argument and escaped quotes
@@ -174,56 +183,6 @@ static int fork_and_ptraceme(RzIO *io, int bits, const char *cmd) {
 }
 #else // windows
 
-#if (__APPLE__ && __POWERPC__) || !__APPLE__
-
-#if __APPLE__ || __BSD__
-static void inferior_abort_handler(int pid) {
-	eprintf("Inferior received signal SIGABRT. Executing BKPT.\n");
-}
-#endif
-
-static void trace_me(void) {
-#if __APPLE__
-	rz_sys_signal(SIGTRAP, SIG_IGN); // NEED BY STEP
-#endif
-#if __APPLE__ || __BSD__
-	/* we can probably remove this #if..as long as PT_TRACE_ME is redefined for OSX in rz_debug.h */
-	rz_sys_signal(SIGABRT, inferior_abort_handler);
-	if (ptrace(PT_TRACE_ME, 0, 0, 0) != 0) {
-		rz_sys_perror("ptrace-traceme");
-	}
-#if __APPLE__
-	ptrace(PT_SIGEXC, getpid(), NULL, 0);
-#endif
-#else
-	if (ptrace(PTRACE_TRACEME, 0, NULL, NULL) != 0) {
-		rz_sys_perror("ptrace-traceme");
-		exit(MAGIC_EXIT);
-	}
-#endif
-}
-#endif
-
-#if __APPLE__ && !__POWERPC__
-static void handle_posix_error(int err) {
-	switch (err) {
-	case 0:
-		// eprintf ("Success\n");
-		break;
-	case 22:
-		eprintf("posix_spawnp: Invalid argument\n");
-		break;
-	case 86:
-		eprintf("Unsupported architecture. Please specify -b 32\n");
-		break;
-	default:
-		eprintf("posix_spawnp: unknown error %d\n", err);
-		perror("posix_spawnp");
-		break;
-	}
-}
-#endif
-
 static RzRunProfile *_get_run_profile(RzIO *io, int bits, char **argv) {
 	int i;
 	RzRunProfile *rp = rz_run_new(NULL);
@@ -238,7 +197,7 @@ static RzRunProfile *_get_run_profile(RzIO *io, int bits, char **argv) {
 		rz_run_free(rp);
 		return NULL;
 	}
-	rp->_program = strdup(argv[0]);
+	rp->_program = rz_str_dup(argv[0]);
 
 	rp->_dodebug = true;
 	if (RZ_STR_ISNOTEMPTY(io->runprofile)) {
@@ -265,7 +224,24 @@ static RzRunProfile *_get_run_profile(RzIO *io, int bits, char **argv) {
 	return rp;
 }
 
-#if __APPLE__ && !__POWERPC__
+#if USE_POSIX_SPAWN
+
+static void handle_posix_error(int err) {
+	switch (err) {
+	case 0:
+		// 0 means success
+		break;
+	case 22:
+		RZ_LOG_ERROR("posix_spawnp: Invalid argument\n");
+		break;
+	case 86:
+		RZ_LOG_ERROR("Unsupported architecture. Please specify -b 32\n");
+		break;
+	default:
+		RZ_LOG_ERROR("posix_spawnp: unknown error %d\n", err);
+		break;
+	}
+}
 
 static void handle_posix_redirection(RzRunProfile *rp, posix_spawn_file_actions_t *fileActions) {
 	const int mode = S_IRUSR | S_IWUSR;
@@ -280,8 +256,7 @@ static void handle_posix_redirection(RzRunProfile *rp, posix_spawn_file_actions_
 	}
 }
 
-// __UNIX__ (not windows)
-static int fork_and_ptraceme_for_mac(RzIO *io, int bits, const char *cmd) {
+static int fork_and_ptraceme_for_unix(RzIO *io, int bits, const char *cmd) {
 	pid_t p = -1;
 	char **argv;
 	posix_spawn_file_actions_t fileActions;
@@ -338,14 +313,41 @@ static int fork_and_ptraceme_for_mac(RzIO *io, int bits, const char *cmd) {
 	posix_spawn_file_actions_destroy(&fileActions);
 	return p; // -1 ?
 }
-#endif // __APPLE__ && !__POWERPC__
 
-#if (!(__APPLE__ && !__POWERPC__))
+#else // USE_POSIX_SPAWN
+
 typedef struct fork_child_data_t {
 	RzIO *io;
 	int bits;
 	const char *cmd;
 } fork_child_data;
+
+#if __APPLE__ || __BSD__
+static void inferior_abort_handler(int pid) {
+	eprintf("Inferior received signal SIGABRT. Executing BKPT.\n");
+}
+#endif
+
+static void trace_me(void) {
+#if __APPLE__
+	rz_sys_signal(SIGTRAP, SIG_IGN); // NEED BY STEP
+#endif
+#if __APPLE__ || __BSD__
+	/* we can probably remove this #if..as long as PT_TRACE_ME is redefined for OSX in rz_debug.h */
+	rz_sys_signal(SIGABRT, inferior_abort_handler);
+	if (ptrace(PT_TRACE_ME, 0, 0, 0) != 0) {
+		rz_sys_perror("ptrace-traceme");
+	}
+#if __APPLE__
+	ptrace(PT_SIGEXC, getpid(), NULL, 0);
+#endif
+#else
+	if (ptrace(PTRACE_TRACEME, 0, NULL, NULL) != 0) {
+		rz_sys_perror("ptrace-traceme");
+		exit(MAGIC_EXIT);
+	}
+#endif
+}
 
 static void fork_child_callback(void *user) {
 	fork_child_data *data = user;
@@ -406,20 +408,18 @@ static int fork_and_ptraceme_for_unix(RzIO *io, int bits, const char *cmd) {
 	}
 	return child_pid;
 }
-#endif
+
+#endif // USE_POSIX_SPAWN
 
 static int fork_and_ptraceme(RzIO *io, int bits, const char *cmd) {
 	// Before calling the platform implementation, append arguments to the command if they have been provided
-	char *_eff_cmd = io->args ? rz_str_appendf(strdup(cmd), " %s", io->args) : strdup(cmd);
+	char *eff_cmd = io->args ? rz_str_appendf(rz_str_dup(cmd), " %s", io->args) : rz_str_dup(cmd);
+	if (!eff_cmd) {
+		return -1;
+	}
 	int r = 0;
-
-#if __APPLE__ && !__POWERPC__
-	r = fork_and_ptraceme_for_mac(io, bits, _eff_cmd);
-#else
-	r = fork_and_ptraceme_for_unix(io, bits, _eff_cmd);
-#endif
-
-	free(_eff_cmd);
+	r = fork_and_ptraceme_for_unix(io, bits, eff_cmd);
+	free(eff_cmd);
 	return r;
 }
 #endif
@@ -531,7 +531,7 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 		}
 		if (ret) {
 			ret->plugin = _plugin;
-			ret->referer = strdup(file); // kill this
+			ret->referer = rz_str_dup(file); // kill this
 		}
 	}
 	return ret;

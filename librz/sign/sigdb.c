@@ -86,9 +86,9 @@ static bool sigdb_signature_resolve_details(RzSigDBEntry *entry, size_t path_len
 
 skip_details:
 	bin_end[0] = 0;
-	entry->bin_name = strdup(copy_path);
+	entry->bin_name = rz_str_dup(copy_path);
 	arch_end[0] = 0;
-	entry->arch_name = strdup(bin_end + strlen(RZ_SYS_DIR));
+	entry->arch_name = rz_str_dup(bin_end + strlen(RZ_SYS_DIR));
 	bits_end[0] = 0;
 	entry->arch_bits = rz_get_input_num_value(NULL, arch_end + strlen(RZ_SYS_DIR));
 
@@ -132,7 +132,7 @@ RZ_API RZ_OWN RzSigDb *rz_sign_sigdb_load_database(RZ_NONNULL const char *sigdb_
 			goto fail;
 		}
 
-		sig->file_path = strdup(file);
+		sig->file_path = rz_str_dup(file);
 		if (!sig->file_path || !sigdb_signature_resolve_details(sig, path_len, with_details)) {
 			rz_sign_sigdb_signature_free(sig);
 			goto fail;
@@ -187,7 +187,7 @@ RZ_API bool rz_sign_sigdb_merge(RZ_NONNULL RzSigDb *db, RZ_NONNULL RzSigDb *db2)
 		.src = db2,
 		.dst = db,
 	};
-	db2->entries->opt.freefn = NULL;
+	db2->entries->opt.finiKV = NULL;
 	ht_pu_foreach(db2->entries, sigdb_move_entry, &opt);
 	return true;
 }
@@ -247,7 +247,7 @@ static ut32 sigdb_entry_hash(const void *k) {
 	return r;
 }
 
-static void ht_pu_sigdb_freekv(HtPUKv *kv) {
+static void ht_pu_sigdb_finikv(HtPUKv *kv, RZ_UNUSED void *user) {
 	if (!kv) {
 		return;
 	}
@@ -265,7 +265,7 @@ RZ_API RZ_OWN RzSigDb *rz_sign_sigdb_new(void) {
 	HtPUOptions opt = { 0 };
 	opt.cmp = sigdb_entry_cmp,
 	opt.hashfn = sigdb_entry_hash,
-	opt.freefn = ht_pu_sigdb_freekv;
+	opt.finiKV = ht_pu_sigdb_finikv;
 	db->entries = ht_pu_new_opt(&opt);
 	if (!db->entries) {
 		free(db);

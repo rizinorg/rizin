@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2017-2018 deroad <wargio@libero.it>
+// SPDX-FileCopyrightText: 2017-2025 deroad <deroad@kumo.xn--q9jyb4c>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util.h>
@@ -86,14 +86,29 @@ static RzASN1Object *asn1_parse_header(const ut8 *buffer, ut64 length, const ut8
 		goto out_error;
 	}
 
+	object->total_size = (object->sector - buffer) + object->length;
 	if (object->tag == RZ_ASN1_TAG_BITSTRING && !object->sector[0] && object->length > 0) {
 		object->sector++; // real sector starts + 1
 		object->length--;
 	}
 	return object;
+
 out_error:
 	free(object);
 	return NULL;
+}
+
+/**
+ * \brief      Parse only the ASN1 DER/BER encoded header
+ *
+ * \param[in]  buffer  The buffer to decode
+ * \param[in]  length  The length of the buffer
+ *
+ * \return     On success returns a valid pointer, otherwise NULL
+ */
+RZ_API RZ_OWN RzASN1Object *rz_asn1_object_parse_header(RZ_NONNULL const ut8 *buffer, ut32 length) {
+	rz_return_val_if_fail(buffer && length > 0, NULL);
+	return asn1_parse_header(buffer, length, buffer);
 }
 
 static ut32 asn1_count_objects(RzASN1Object *object) {
@@ -298,7 +313,7 @@ RZ_API void rz_asn1_to_strbuf(RZ_NULLABLE RzASN1Object *object, ut32 depth, bool
 	}
 	// this shall not be freed. it's a pointer into the buffer.
 	RzASN1String *asn1str = NULL;
-	static char temp_name[4096] = { 0 };
+	char temp_name[4096] = { 0 };
 	const char *name = "";
 	const char *string = "";
 

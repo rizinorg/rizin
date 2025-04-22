@@ -77,7 +77,7 @@ typedef struct rz_io_t {
 	RzSkyline cache_skyline;
 	ut8 *write_mask;
 	int write_mask_len;
-	RzList /*<RzIOPlugin *>*/ *plugins;
+	HtSP /*<RzIOPlugin *>*/ *plugins;
 	char *runprofile;
 	char *envprofile;
 #if USE_PTRACE_WRAP
@@ -270,6 +270,20 @@ typedef struct rz_io_bind_t {
 #endif
 } RzIOBind;
 
+/**
+ * \brief Compare plugins by name (via strcmp).
+ */
+static inline int rz_io_plugin_cmp(RZ_NULLABLE const RzIOPlugin *a, RZ_NULLABLE const RzIOPlugin *b) {
+	if (!a && !b) {
+		return 0;
+	} else if (!a) {
+		return -1;
+	} else if (!b) {
+		return 1;
+	}
+	return rz_str_cmp(a->name, b->name, -1);
+}
+
 // map.c
 RZ_API RzIOMap *rz_io_map_new(RzIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size);
 RZ_API void rz_io_map_init(RzIO *io);
@@ -324,16 +338,17 @@ RZ_API int rz_io_close_all(RzIO *io);
 RZ_API int rz_io_pread_at(RzIO *io, ut64 paddr, ut8 *buf, size_t len);
 RZ_API int rz_io_pwrite_at(RzIO *io, ut64 paddr, const ut8 *buf, size_t len);
 RZ_API bool rz_io_vread_at_mapped(RzIO *io, ut64 vaddr, ut8 *buf, size_t len);
-RZ_API bool rz_io_read_at(RzIO *io, ut64 addr, ut8 *buf, size_t len);
-RZ_API bool rz_io_read_at_mapped(RzIO *io, ut64 addr, ut8 *buf, size_t len);
-RZ_API int rz_io_nread_at(RzIO *io, ut64 addr, ut8 *buf, size_t len);
+RZ_DEPRECATE RZ_API bool rz_io_read_at(RzIO *io, ut64 addr, ut8 *buf, size_t len);
+RZ_API bool rz_io_read_at_mapped(RZ_NONNULL RzIO *io, ut64 addr, RZ_OUT RZ_NONNULL ut8 *buf, size_t len);
+RZ_API int rz_io_nread_at(RZ_NONNULL RzIO *io, ut64 addr, RZ_OUT RZ_NONNULL ut8 *buf, size_t len);
+RZ_API RZ_OWN RzBuffer *rz_io_nread_at_new_buf(RZ_NONNULL RzIO *io, ut64 addr, size_t len);
 RZ_API bool rz_io_write_at(RzIO *io, ut64 addr, const ut8 *buf, size_t len);
 RZ_API bool rz_io_read(RzIO *io, ut8 *buf, size_t len);
 RZ_API bool rz_io_write(RzIO *io, const ut8 *buf, size_t len);
 RZ_API ut64 rz_io_size(RzIO *io);
 RZ_API bool rz_io_is_listener(RzIO *io);
 RZ_API char *rz_io_system(RzIO *io, const char *cmd);
-RZ_API bool rz_io_resize(RzIO *io, ut64 newsize);
+RZ_API bool rz_io_resize(RZ_NONNULL RzIO *io, ut64 newsize);
 RZ_API bool rz_io_extend_at(RzIO *io, ut64 addr, ut64 size);
 RZ_API bool rz_io_set_write_mask(RzIO *io, const ut8 *mask, size_t len);
 RZ_API void rz_io_bind(RzIO *io, RzIOBind *bnd);
@@ -445,38 +460,6 @@ RZ_API void *rz_io_ptrace_func(RzIO *io, void *(*func)(void *), void *user);
 #if __WINDOWS__
 RZ_API struct w32dbg_wrap_instance_t *rz_io_get_w32dbg_wrap(RzIO *io);
 #endif
-
-extern RzIOPlugin rz_io_plugin_procpid;
-extern RzIOPlugin rz_io_plugin_malloc;
-extern RzIOPlugin rz_io_plugin_sparse;
-extern RzIOPlugin rz_io_plugin_ptrace;
-extern RzIOPlugin rz_io_plugin_w32dbg;
-extern RzIOPlugin rz_io_plugin_windbg;
-extern RzIOPlugin rz_io_plugin_mach;
-extern RzIOPlugin rz_io_plugin_debug;
-extern RzIOPlugin rz_io_plugin_dmp;
-extern RzIOPlugin rz_io_plugin_shm;
-extern RzIOPlugin rz_io_plugin_gdb;
-extern RzIOPlugin rz_io_plugin_rap;
-extern RzIOPlugin rz_io_plugin_http;
-extern RzIOPlugin rz_io_plugin_bfdbg;
-extern RzIOPlugin rz_io_plugin_w32;
-extern RzIOPlugin rz_io_plugin_zip;
-extern RzIOPlugin rz_io_plugin_default;
-extern RzIOPlugin rz_io_plugin_ihex;
-extern RzIOPlugin rz_io_plugin_srec;
-extern RzIOPlugin rz_io_plugin_self;
-extern RzIOPlugin rz_io_plugin_gzip;
-extern RzIOPlugin rz_io_plugin_winkd;
-extern RzIOPlugin rz_io_plugin_rzpipe;
-extern RzIOPlugin rz_io_plugin_rzweb;
-extern RzIOPlugin rz_io_plugin_qnx;
-extern RzIOPlugin rz_io_plugin_tcp;
-extern RzIOPlugin rz_io_plugin_bochs;
-extern RzIOPlugin rz_io_plugin_null;
-extern RzIOPlugin rz_io_plugin_ar;
-extern RzIOPlugin rz_io_plugin_winedbg;
-extern RzIOPlugin rz_io_plugin_fd;
 
 #if __cplusplus
 }

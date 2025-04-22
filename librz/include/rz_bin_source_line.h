@@ -92,7 +92,7 @@ typedef struct {
 } RzBinSourceLineCacheItem;
 
 typedef struct {
-	HtPP /*<const char*, RzBinSourceLineCacheItem *>*/ *items;
+	HtSP /*<const char*, RzBinSourceLineCacheItem *>*/ *items;
 } RzBinSourceLineCache;
 
 typedef struct {

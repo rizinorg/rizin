@@ -990,6 +990,13 @@ commands:
         args:
           - name: address
             type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: aezsue
+        summary: Step until PC equals given address and output VM changes (read & write)
+        type: RZ_CMD_DESC_TYPE_ARGV
+        cname: il_vm_step_until_addr_with_events
+        args:
+          - name: address
+            type: RZ_CMD_ARG_TYPE_RZNUM
       - name: aezv
         summary: Print or modify the current status of the RzIL Virtual Machine
         cname: il_vm_status
@@ -1537,13 +1544,15 @@ commands:
       - name: avg
         summary: Global variables
         subcommands:
-          - name: avg
-            summary: show global variables
+          - name: avgl
+            summary: show/list global variables
             type: RZ_CMD_DESC_TYPE_ARGV_STATE
             cname: analysis_print_global_variable
             modes:
               - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_QUIET
               - RZ_OUTPUT_MODE_JSON
+              - RZ_OUTPUT_MODE_TABLE
             args:
               - name: var_name
                 type: RZ_CMD_ARG_TYPE_GLOBAL_VAR
@@ -2354,7 +2363,6 @@ commands:
         summary: List syscalls
         cname: analysis_syscall_print
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
-        default_mode: RZ_OUTPUT_MODE_STANDARD
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
@@ -2387,9 +2395,158 @@ commands:
             type: RZ_CMD_ARG_TYPE_NUM
   - name: aL
     summary: List all asm/analysis plugins (e asm.arch=?)
-    cname: list_plugins
-    args: []
-    type: RZ_CMD_DESC_TYPE_ARGV_STATE
-    modes:
-      - RZ_OUTPUT_MODE_STANDARD
-      - RZ_OUTPUT_MODE_JSON
+    subcommands: 
+      - name: aL
+        summary: List all asm/analysis plugins (e asm.arch=?) or CPU details for a plugin.
+        cname: list_plugins
+        args: []
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+      - name: aLc
+        summary: Shows the CPU details for a specific plugin.
+        cname: list_cpu_details
+        args: 
+          - name: plugin_name
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: false
+  - name: ae
+    summary: ESIL analysis commands
+    subcommands:
+      - name: ae
+        summary: Analyze all flags starting with sym. and entry
+        cname: analyze_esil_eval_expr
+        args:
+          - name: expr
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: aeH
+        summary: Show ESIL help.
+        cname: analyze_esil_expr_help
+        args: []
+      - name: aeb
+        summary: Emulate current block with ESIL.
+        cname: analyze_esil_emulate_block
+        args: []
+      - name: aepc
+        summary: Set ESIL PC to given address.
+        cname: analyze_esil_set_pc
+        args:
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_NUM
+      - name: aek
+        summary: SDB queries on ESIL info (emulation statistics).
+        subcommands:
+          - name: aek
+            summary: Perform sdb query on ESIL info.
+            cname: analyze_esil_sdb_query
+            args:
+              - name: query
+                type: RZ_CMD_ARG_TYPE_STRING
+                default_value: "123*"
+          - name: aek-
+            summary: Resets the ESIL info sdb instance.
+            cname: analyze_esil_sdb_reset
+            args: []
+      - name: aex
+        summary: Emulate the instruction encoded in the given bytes with ESIL.
+        cname: analyze_esil_eval_opcode_expr
+        args:
+          - name: bytes
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: aef
+        summary: Emulate functions with ESIL.
+        subcommands:
+          - name: aef
+            summary: Emulate the function at given or current offset with ESIL.
+            cname: analyze_esil_emu_fcn
+            args:
+              - name: addr
+                type: RZ_CMD_ARG_TYPE_NUM
+                optional: true
+          - name: aefa
+            summary: Emulate function at given or current offset to find arguments with ESIL.
+            cname: analyze_esil_emu_fcn_find_args
+            args:
+              - name: addr
+                type: RZ_CMD_ARG_TYPE_NUM
+                optional: true
+      - name: ael
+        summary: ESIL interrupt commands.
+        subcommands:
+          - name: aeli
+            summary: List ESIL interrupts or load them from the given shared object.
+            cname: analyze_esil_int_list_load
+            args:
+              - name: file
+                type: RZ_CMD_ARG_TYPE_STRING
+                optional: true
+          - name: aelir
+            summary: Remove ESIL interrupt and free it if needed.
+            cname: analyze_esil_int_remove
+            args:
+              - name: interrupt number
+                type: RZ_CMD_ARG_TYPE_NUM
+      - name: aea
+        summary: ESIL emulation to retrieve arguments.
+        subcommands:
+          - name: aea
+            summary: Show register and memory access of the next [len] instructions or bytes.
+            cname: analyze_esil_insn_access
+            args:
+              - name: len
+                type: RZ_CMD_ARG_TYPE_NUM
+                default_value: 0
+              - name: type
+                type: RZ_CMD_ARG_TYPE_CHOICES
+                choices: ['d', '*', 'r', 'w', 'n', 'b', 'f']
+                default_value: 'd'
+              - name: A
+                type: RZ_CMD_ARG_TYPE_OPTION
+                optional: true
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
+            details:
+              - name: "Flag"
+                entries:
+                  - text: "A"
+                    comment: "Interpret the [len] parameter as number of bytes. Not as number of instructions."
+              - name: "Options"
+                entries:
+                  - text: "*"
+                    comment: "Create mem.* flags for memory accesses."
+                  - text: "r"
+                    comment: "Show regs read in N instructions."
+                  - text: "w"
+                    comment: "Show regs written in N instructions."
+                  - text: "n"
+                    comment: "Show regs not written in N instructions."
+                  - text: "b"
+                    comment: >
+                      Show regs used in current basic block. The [len] parameter,
+                      if not 0, is interpreted as address.
+                  - text: "f"
+                    comment: "Show regs used in current function."
+                  - text: "d"
+                    comment: "Show memory and register access."
+              - name: Legend
+                entries:
+                  - text: "I"
+                    comment: "input registers (read before being set)"
+                  - text: "A"
+                    comment: "all regs accessed"
+                  - text: "R"
+                    comment: "register values read"
+                  - text: "W"
+                    comment: "registers written"
+                  - text: "N"
+                    comment: "read but never written"
+                  - text: "V"
+                    comment: "values"
+                  - text: "@R"
+                    comment: "memreads"
+                  - text: "@W"
+                    comment: "memwrites"
+                  - text: "NOTE:"
+                    comment: "mem{reads,writes} with PIC only fetch the offset"

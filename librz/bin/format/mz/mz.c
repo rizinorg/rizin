@@ -147,9 +147,9 @@ RzPVector /*<RzBinSection *>*/ *rz_bin_mz_get_segments(const struct rz_bin_mz_ob
 			ut32 cur_index = ptr_gap / sizeof(void **);
 			RzBinSection *p_section = NULL;
 			if (cur_index == 0) {
-				p_section = *rz_pvector_index_ptr(seg_vec, rz_pvector_len(seg_vec) - 1);
+				p_section = rz_pvector_tail(seg_vec);
 			} else {
-				p_section = *rz_pvector_index_ptr(seg_vec, cur_index - 1);
+				p_section = rz_pvector_at(seg_vec, cur_index - 1);
 			}
 			p_section->size = section->vaddr - p_section->vaddr;
 			p_section->vsize = p_section->size;
@@ -159,7 +159,7 @@ RzPVector /*<RzBinSection *>*/ *rz_bin_mz_get_segments(const struct rz_bin_mz_ob
 		section->perm = rz_str_rwx("rwx");
 		section_number++;
 	}
-	section = *rz_pvector_index_ptr(seg_vec, rz_pvector_len(seg_vec) - 1);
+	section = rz_pvector_tail(seg_vec);
 	section->size = bin->load_module_size - section->vaddr;
 	section->vsize = section->size;
 
@@ -232,7 +232,6 @@ static int rz_bin_mz_init_hdr(struct rz_bin_mz_obj_t *bin) {
 	int relocations_size, dos_file_size;
 	MZ_image_dos_header *mz;
 	if (!(mz = RZ_NEW0(MZ_image_dos_header))) {
-		RZ_LOG_ERROR("Cannot allocate MZ_image_dos_header");
 		return false;
 	}
 	if (!read_mz_header(mz, bin->b)) {
@@ -263,17 +262,16 @@ static int rz_bin_mz_init_hdr(struct rz_bin_mz_obj_t *bin) {
 		return false;
 	}
 
-	sdb_num_set(bin->kv, "mz.initial.cs", mz->cs, 0);
-	sdb_num_set(bin->kv, "mz.initial.ip", mz->ip, 0);
-	sdb_num_set(bin->kv, "mz.initial.ss", mz->ss, 0);
-	sdb_num_set(bin->kv, "mz.initial.sp", mz->sp, 0);
-	sdb_num_set(bin->kv, "mz.overlay_number", mz->overlay_number, 0);
-	sdb_num_set(bin->kv, "mz.dos_header.offset", 0, 0);
+	sdb_num_set(bin->kv, "mz.initial.cs", mz->cs);
+	sdb_num_set(bin->kv, "mz.initial.ip", mz->ip);
+	sdb_num_set(bin->kv, "mz.initial.ss", mz->ss);
+	sdb_num_set(bin->kv, "mz.initial.sp", mz->sp);
+	sdb_num_set(bin->kv, "mz.overlay_number", mz->overlay_number);
+	sdb_num_set(bin->kv, "mz.dos_header.offset", 0);
 	sdb_set(bin->kv, "mz.dos_header.format", "[2]zwwwwwwwwwwwww"
 						 " signature bytes_in_last_block blocks_in_file num_relocs "
 						 " header_paragraphs min_extra_paragraphs max_extra_paragraphs "
-						 " ss sp checksum ip cs reloc_table_offset overlay_number ",
-		0);
+						 " ss sp checksum ip cs reloc_table_offset overlay_number ");
 
 	bin->dos_extended_header_size = mz->reloc_table_offset -
 		sizeof(MZ_image_dos_header);

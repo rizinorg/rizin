@@ -61,18 +61,17 @@ RUN
 
 NAME=labels replacements (common prefix)
 FILE=malloc://1024
-BROKEN=1
+ARGS=-a x86 -b 32
 CMDS=<<EOF
-e asm.arch=x86
-e asm.bits=32
+p8 7 @ 0
 waf bins/other/asm/multiline_prefix.asm
-p8 7@0
+p8 7 @ 0
 EOF
 EXPECT=<<EOF
-9090e8fbffffff
+00000000000000
+9090e803000000
 EOF
 RUN
-
 
 NAME=wa
 FILE=malloc://1024
@@ -280,9 +279,8 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=wx 0x should behave like wv? imho nope
+NAME=wx 0x
 FILE=malloc://1024
-BROKEN=1
 CMDS=<<EOF
 e cfg.bigendian=false
 wx 0x1234
@@ -291,29 +289,33 @@ wx 0x12345678
 p8 4
 EOF
 EXPECT=<<EOF
-3412
-78563412
+1234
+12345678
 EOF
 RUN
 
 NAME=wci should commit the changes to the file
 FILE=malloc://1024
-BROKEN=1
 CMDS=<<EOF
 mkdir .tmp
-cp -f bins/pe/b.exe .tmp/.b.exe.orig
-cp -f bins/pe/b.exe .tmp/.b.exe.new
+cp bins/pe/b.exe .tmp/.b.exe.orig
+cp bins/pe/b.exe .tmp/.b.exe.new
 o+ .tmp/.b.exe.new
 wx ff
 wci
-e.src.null=true
-!!rz-diff .tmp/.b.exe.orig .tmp/.b.exe.new
+!!rz-diff -C -t command -0 "px 10" -1 "px 10" .tmp/.b.exe.orig .tmp/.b.exe.new
 o--
 rm .tmp/.b.exe.orig
 rm .tmp/.b.exe.new
 EOF
 EXPECT=<<EOF
-File size
+--- .tmp/.b.exe.orig
++++ .tmp/.b.exe.new
+@@ --1,4 +-1,4 @@
+ - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+-0x00401280  5589 e583 ec08 c704 2401                 U.......$.
++0x00401280  ff89 e583 ec08 c704 2401                 ........$.
+
 EOF
 RUN
 
@@ -335,9 +337,7 @@ RUN
 
 NAME=wx pcache
 FILE=bins/pe/b.exe
-
 CMDS=<<EOF
-
 e io.va=0
 e io.pcache=true
 s 0
@@ -363,9 +363,9 @@ w 0123456789abcde
 w a\57b\0
 w 1\0532\0 @ 0x4
 w 0\1741\0 @ 0x8
-ps @e:str.search.encoding=utf8
-ps @ 0x4 @e:str.search.encoding=utf8
-ps @ 0x8 @e:str.search.encoding=utf8
+ps @e:str.encoding=utf8
+ps @ 0x4 @e:str.encoding=utf8
+ps @ 0x8 @e:str.encoding=utf8
 EOF
 EXPECT=<<EOF
 a/b
@@ -442,9 +442,43 @@ izz~0x0
 px 16~0x0
 EOF
 EXPECT=<<EOF
-0   0x00000000 0x00000000 13  14           ascii \a\b\t\n\v\f\r\e\\@\a\r~
+  0 0x00000000 0x00000000  13   14         ascii \a\b\t\n\v\f\r\e\\@\a\r~
 0x00000000  0708 090a 0b0c 0d1b 5c40 070d 7e00 0000  ........\@..~...
 EOF
+RUN
+
+NAME=wz macro + \\ esc seq
+FILE==
+CMDS=<<EOF
+b 16
+$addr=$0
+$new_addr=%v \`$addr\`+16
+(wz_px str; wz ${str}; px~:1)
+(wz16 str; .(wz_px ${str}) @ `$addr`; $addr=$`$new_addr`)
+.(wz16 \\)
+.(wz16 \\\\)
+.(wz16 \\a)
+.(wz16 "a \\ b")
+.(wz16 a\\)
+.(wz16 "c `%vi 123+1` d")
+.(wz16 \`)
+.(wz16 "e \` f")
+..(wz16 \# "g \# h" "i \" j")
+EOF
+EXPECT=<<EOF
+0x00000000  5c00 0000 0000 0000 0000 0000 0000 0000  \...............
+0x00000010  5c5c 0000 0000 0000 0000 0000 0000 0000  \\..............
+0x00000020  5c61 0000 0000 0000 0000 0000 0000 0000  \a..............
+0x00000030  6120 5c20 6200 0000 0000 0000 0000 0000  a \ b...........
+0x00000040  615c 0000 0000 0000 0000 0000 0000 0000  a\..............
+0x00000050  6320 3132 3420 6400 0000 0000 0000 0000  c 124 d.........
+0x00000060  6000 0000 0000 0000 0000 0000 0000 0000  `...............
+0x00000070  6520 6020 6600 0000 0000 0000 0000 0000  e ` f...........
+0x00000080  2300 0000 0000 0000 0000 0000 0000 0000  #...............
+0x00000090  6720 2320 6800 0000 0000 0000 0000 0000  g # h...........
+0x000000a0  6920 2220 6a00 0000 0000 0000 0000 0000  i " j...........
+EOF
+EXPECT_ERR=
 RUN
 
 NAME=Automatically reanalyze function control flow after a write

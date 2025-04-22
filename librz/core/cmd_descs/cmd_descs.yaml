@@ -32,8 +32,7 @@
 #     RzCmdDescArg array
 #   handler: >
 #     name of the C handler that handles the command. If not specified it is based
-#     on the cname. For OLDINPUT, the handler has the form `rz_{cname}`, for all
-#     other cases it is `rz_{cname}_handler`.
+#     on the cname.
 #   subcommands: >
 #     array of RzCmdDesc/RzCmdDescHelp descriptors. When present the
 #     type is RZ_CMD_DESC_TYPE_GROUP. Only the first subcommand can contain a
@@ -96,9 +95,8 @@ commands:
             comment: Run foo.py python script and pass it arg1 as argument
     details_cb: rz_hash_bang_details_cb
   - name: $
-    cname: cmd_alias
     summary: Alias commands and strings
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    subcommands: cmd_alias
   - name: "&"
     summary: Manage tasks
     subcommands: cmd_tasks
@@ -149,13 +147,12 @@ commands:
           - text: "*"
             arg_str: "entry0"
             comment: read the value contained at the entrypoint
-  - name: .
+  - name: "."
     summary: Interpret commands
     subcommands: cmd_interpret
-  - name: /
-    cname: cmd_search
+  - name: "/"
     summary: Search for bytes, regexps, patterns, ..
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    subcommands: cmd_search
   - name: "R"
     summary: Connect with other instances of rizin
     subcommands: cmd_remote
@@ -177,20 +174,42 @@ commands:
     subcommands: cmd_math
   - name: <
     cname: push_escaped
-    summary: Push escaped string into the RzCons.readChar buffer
+    summary: Push escaped string into the RzCons.readChar (pressed keys) buffer
     args:
       - name: characters
         type: RZ_CMD_ARG_TYPE_STRING
+    details:
+      - name: "Examples"
+        entries:
+          - text: "< ppq; <command>"
+            comment: "Equivalent to running <command> and pressing the keys: p, p, q."
+          - text: "< \\n; <command>"
+            comment: "As above, but '\\n' is equivalent to pressing <enter>."
+      - name: "Escape sequences"
+        entries:
+          - text: "\\n"
+            comment: "newline (0x0a)."
+          - text: "\\b"
+            comment: "backspace (0x08)."
+          - text: "\\t"
+            comment: "horizontal tab (0x09)."
+          - text: "\\v"
+            comment: "vertical tab (0x0b)."
+          - text: "\\f"
+            comment: "new page (0x0c)."
+          - text: "\\r"
+            comment: "carriage return (0x0d)."
+          - text: "\\xHH"
+            comment: "Raw byte 0xHH (in hexadecimal)."
   - name: a
     cname: cmd_analysis
     summary: Analysis commands
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
     subcommands: cmd_analysis
   - name: b
     summary: Display or change the block size
     subcommands: cmd_block
   - name: B
-    summary: Computes the possibles firmware locations in memory (CPU intensive)
+    summary: Computes the possibles firmware locations in memory a.k.a basefind (CPU intensive)
     cname: basefind_compute
     type: RZ_CMD_DESC_TYPE_ARGV_STATE
     default_mode: RZ_OUTPUT_MODE_TABLE
@@ -203,6 +222,11 @@ commands:
         type: RZ_CMD_ARG_TYPE_CHOICES
         optional: true
         choices: ["32", "64"]
+    details:
+      - name: "Settings of this command"
+        entries:
+          - text: "Check out the settings for this command with 'el basefind.'"
+            comment: ""
   - name: c
     summary: Compare block with given data
     subcommands: cmd_cmp
@@ -235,9 +259,8 @@ commands:
     summary: Get info about opened binary file
     subcommands: cmd_info
   - name: k
-    cname: cmd_kuery
-    summary: Run sdb-query
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    summary: Run query (SDB)
+    subcommands: cmd_query
   - name: L
     summary: List, unload, load rizin plugins
     subcommands: cmd_plugins
@@ -247,7 +270,6 @@ commands:
   - name: p
     cname: cmd_print
     summary: Print commands
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
     subcommands: cmd_print
   - name: P
     summary: Project management
@@ -265,29 +287,41 @@ commands:
     summary: Types, noreturn, signatures, C parser and more
     subcommands: cmd_type
   - name: V
-    cname: cmd_visual
-    summary: Enter visual mode
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    summary: Interactive mode
+    subcommands: cmd_interactive
   - name: v
-    cname: cmd_panels
-    summary: Enter visual panel mode
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    summary: Interactive panel mode
+    subcommands: cmd_interactive_panel
   - name: w
     summary: Write commands
     subcommands: cmd_write
   - name: x
-    cname: cmd_hexdump
-    summary: Alias for 'px' (print hexadecimal)
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    summary: Alias for 'px' (print hexdump).
+    cname: print_hexdump_alias
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
+    args:
+      - name: len
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        optional: true
+  - name: xc
+    summary:  Alias for 'pxc' (show hexdump with comments).
+    cname: print_hexdump_comments_alias
+    args:
+      - name: len
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        optional: true
   - name: y
     summary: Yank/paste bytes from/to memory
     subcommands: cmd_yank
   - name: "@"
     cname: tmp_modifiers
     options: "[?]"
-    summary: "'@' help, temporary modifiers"
+    summary: "'@' help, temporary modifiers, applied left-to-right"
     type: RZ_CMD_DESC_TYPE_FAKE
-    usage: "<cmd> <@> <args>"
+    usage: "<cmd> <@> <args> [<@> <args> ...]"
     details:
       - name: ""
         entries:
@@ -497,7 +531,7 @@ commands:
           - text: "+"
             comment: "Set the grep as the opposite of search.case_sensitive"
           - text: "^"
-            comment: "Words must be placed at the beginning of line"
+            comment: "Words must be placed at the beginning of line, after whitespace if any"
           - text: "<"
             comment: "Perform zoom operation on the buffer"
           - text: "!"
@@ -568,7 +602,7 @@ commands:
     options: "[?]"
     summary: Command specifiers (table-output only for now)
     type: RZ_CMD_DESC_TYPE_FAKE
-    usage: "<command>[:<table_spec>[:<table_spec>:...]:<output_spec>]"
+    usage: "<command>[:<table_spec>[:<table_spec>...]][:<output_spec>]"
     details:
       - name: Table format specifiers (<table_spec>)
         entries:
@@ -576,7 +610,7 @@ commands:
             comment: Sort table by column <col> in increasing or decreasing order.
           - text: "<col>/sortlen/<inc|dec>"
             comment: Sort table length of column <col> in increasing or decreasing order.
-          - text: "<col>/cols[/<col2>[/<colN>...]"
+          - text: "<col>/cols[/<col2>[/<col3>...]]"
             comment: Show only specified columns in the table.
           - text: "<col>"
             comment: Show only column <col> (it must not have the same name as an output format specifier).

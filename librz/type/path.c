@@ -36,74 +36,189 @@ RZ_API void rz_type_path_free(RZ_NULLABLE RzTypePath *tpath) {
 	free(tpath);
 }
 
-static st64 path_walker(const RzTypeDB *typedb, const char *path) {
-	rz_return_val_if_fail(typedb && path, -1);
-	const char *member;
-	size_t membsize;
-	ut64 index;
-	st64 offset = 0;
-	RzType *parent = NULL;
-	const char *path_begin = path;
-	while (*path) {
-		switch (*path++) {
-		case '\0':
+/**
+ * \brief Parses the array subscription 'arr[3]'
+ * \param typedb
+ * \param arr_type Type of array.
+ * \param path String where struct path is stored.
+ * \param i Index in path pointing to the subscription bracket '['.
+ * \param offset Value to place resulting offset on success. Set to -1 on error.
+ * \return The type (RzType) of array element on success. NULL on error.
+ */
+static RZ_BORROW RzType *path_walker_parse_bracket(const RzTypeDB *typedb, RZ_BORROW RZ_NONNULL RzType *arr_type, RZ_NONNULL const char *path, RZ_NONNULL RZ_INOUT size_t *i, RZ_OUT st64 *offset) {
+	rz_return_val_if_fail(typedb && path, (*offset = -1, NULL));
+
+	size_t nd = 0;
+	RzType *typd = arr_type;
+	st64 cur_dim_off = 1; // product of all dimension sizes
+	while (typd->kind == RZ_TYPE_KIND_ARRAY) {
+		++nd;
+
+		if (!ST64_MUL_OVFCHK(cur_dim_off, typd->array.count)) { // check for overflow
+			cur_dim_off *= typd->array.count;
+		} else {
+			RZ_LOG_ERROR("Too many array subscriptions\n");
+			*offset = -1;
+			return NULL;
+		}
+
+		typd = typd->array.type;
+	}
+	cur_dim_off *= rz_type_get_base_type(typedb, typd)->size; // elem size in bits
+
+	typd = arr_type;
+	for (size_t id = 0; id < nd; ++id) {
+		if (path[*i] != '[') {
+			RZ_LOG_ERROR("Expected '[' got '%c'\n", path[*i]);
+			*offset = -1;
+			return NULL;
+		}
+
+		++*i; // skip '['
+		size_t tok_beg = *i;
+		for (; isdigit(path[*i]); ++*i)
+			;
+
+		if (path[*i] != ']') {
+			RZ_LOG_ERROR("Expected ']' got '%c'\n", path[*i]);
+			*offset = -1;
+			return NULL;
+		}
+
+		char *idx_str = rz_str_ndup(&path[tok_beg], *i - tok_beg);
+		size_t idx = rz_num_math(NULL, idx_str);
+		free(idx_str);
+
+		cur_dim_off /= typd->array.count;
+		*offset += cur_dim_off * idx;
+		typd = typd->array.type;
+
+		// DONT check for "idx < array size"
+		// because guy may be exploiting OOB or something else.
+		// so just continue.
+
+		++*i; // skip ']'
+	}
+
+	return typd;
+}
+
+/**
+ * \brief Parses the dot-separated token.
+ * \param typedb
+ * \param parent Previous token type.
+ * \param path String where struct path is stored.
+ * \param i Index in path pointing to the dot '.'.
+ * \param offset Value to place resulting offset on success. Set to -1 on error.
+ * \return On success, the type (RzType) of variable specified by token is returned. If token specifies array, the array's element type is returned. NULL on error.
+ */
+static RZ_BORROW RzType *path_walker_parse_dot(RZ_NONNULL const RzTypeDB *typedb, RZ_NONNULL RzType *parent, RZ_NONNULL RZ_BORROW const char *path, RZ_NONNULL RZ_INOUT size_t *i, RZ_NONNULL RZ_OUT st64 *offset) {
+	rz_return_val_if_fail(typedb && path, (*offset = -1, NULL));
+
+	++*i; // skip '.'
+	size_t tok_beg = *i;
+	for (; isalnum(path[*i]); ++*i)
+		;
+
+	char *tok = rz_str_ndup(&path[tok_beg], *i - tok_beg);
+
+	RzBaseType *parent_btype = rz_type_get_base_type(typedb, parent);
+	if (!parent_btype) {
+		RZ_LOG_ERROR("Could not found btype for parent '%s'\n", parent->identifier.name);
+		*offset = -1;
+		free(tok);
+		return NULL;
+	}
+
+	RzTypeStructMember *memb_it = NULL;
+	RzType *cur_type = NULL;
+	size_t cur_offset = -1;
+	rz_vector_foreach (&parent_btype->struct_data.members, memb_it) {
+		if (!strcmp(memb_it->name, tok)) {
+			cur_type = memb_it->type;
+			cur_offset = memb_it->offset; // in bytes
+			cur_offset *= 8; // in bits
 			break;
-		case '[':
-			member = path;
-			index = (ut64)strtoull(member, (char **)&path, 10);
-			if (member == path || *path != ']') {
-				eprintf("Type path: expected ] (\"%s\")", path - 1);
-				return -1;
-			}
-			++path;
-			if (!parent || parent->kind != RZ_TYPE_KIND_ARRAY) {
-				return -1;
-			}
-			offset += rz_type_db_get_bitsize(typedb, parent) * index;
-			break;
-		case '.':
-			member = path;
-			for (membsize = 0; member[membsize]; ++membsize) {
-				if (strchr(".[", member[membsize])) {
-					break;
-				}
-			}
-			if (membsize == 0) {
-				eprintf("Type path: expected member (\"%s\")", path - 1);
-				return -1;
-			}
-			if (!parent) {
-				if (member <= path) {
-					return -1;
-				}
-				size_t typenamesize = member - path_begin;
-				char *typename = malloc(typenamesize + 1);
-				if (!typename) {
-					return -1;
-				}
-				strncpy(typename, path_begin, typenamesize);
-				typename[typenamesize] = '\0';
-				parent = rz_type_identifier_of_base_type_str(typedb, typename);
-				free(typename);
-				if (!parent) {
-					return -1;
-				}
-			} else {
-				if (parent->kind != RZ_TYPE_KIND_IDENTIFIER) {
-					return -1;
-				}
-				if (parent->identifier.kind != RZ_TYPE_IDENTIFIER_KIND_STRUCT && parent->identifier.kind != RZ_TYPE_IDENTIFIER_KIND_UNION) {
-					return -1;
-				}
-			}
-			offset += rz_type_db_struct_member_packed_offset(typedb, parent->identifier.name, member);
-			path = member + membsize;
-			break;
-		default:
-			eprintf("Type path: unexpected char (\"%s\")", path - 1);
-			return -1;
 		}
 	}
+
+	if (!cur_type) {
+		RZ_LOG_ERROR("Invalid member '%s' for parent type\n", tok);
+		*offset = -1;
+		free(tok);
+		return NULL;
+	}
+
+	free(tok);
+
+	*offset += cur_offset;
+	if (path[*i] == '[') {
+		if (cur_type->kind != RZ_TYPE_KIND_ARRAY) {
+			RZ_LOG_ERROR("Expected array, got another type\n");
+			*offset = -1;
+			return NULL;
+		}
+
+		return path_walker_parse_bracket(typedb, cur_type, path, i, offset);
+	} else if (path[*i] == '.' || path[*i] == '\0') {
+		return cur_type;
+	}
+	RZ_LOG_ERROR("Unexpected character '%c' at position %lu\n", path[*i], *i);
+	*offset = -1;
+	return NULL;
+}
+
+/**
+ * \brief Walks through the given struct path and returns offset from base.
+ * \param typedb
+ * \param path Path to walk through (like "Struct.arr[30].member")
+ * \return Offset from base.
+ */
+static st64 path_walker(RZ_NONNULL const RzTypeDB *typedb, RZ_NONNULL const char *path) {
+	rz_return_val_if_fail(typedb && path, -1);
+
+	size_t i;
+	for (i = 0; isalnum(path[i]); ++i)
+		;
+
+	if (path[i] != '.') {
+		RZ_LOG_ERROR("Unexpected character '%c' at position %lu\n", path[i], i);
+		return -1;
+	}
+
+	char *parent_name = rz_str_ndup(path, i);
+	RzType *struct_type = rz_type_identifier_of_base_type_str(typedb, parent_name);
+	free(parent_name);
+
+	st64 offset = 0;
+	RzType *parent = struct_type;
+	while (path[i] != '\0') {
+		if (path[i] != '.') {
+			RZ_LOG_ERROR("Unexpected character '%c' at position %lu\n", path[i], i);
+			offset = -1;
+			goto out;
+		}
+
+		if (parent->kind != RZ_TYPE_KIND_IDENTIFIER) {
+			RZ_LOG_ERROR("parent is not identifier\n");
+			offset = -1;
+			goto out;
+		}
+
+		if (parent->identifier.kind != RZ_TYPE_IDENTIFIER_KIND_STRUCT && parent->identifier.kind != RZ_TYPE_IDENTIFIER_KIND_UNION) {
+			RZ_LOG_ERROR("parent type kind is not struct or union\n");
+			offset = -1;
+			goto out;
+		}
+
+		parent = path_walker_parse_dot(typedb, parent, path, &i, &offset);
+		if (!parent) {
+			offset = -1;
+			goto out;
+		}
+	}
+out:
+	rz_type_free(struct_type);
 	return offset;
 }
 
@@ -133,7 +248,7 @@ static void collect_base_type_paths(const RzTypeDB *typedb, RzList /*<RzTypePath
 	case RZ_BASE_TYPE_KIND_STRUCT: {
 		RzTypeStructMember *memb;
 		ut64 memb_offset = 0;
-		rz_vector_foreach(&btype->struct_data.members, memb) {
+		rz_vector_foreach (&btype->struct_data.members, memb) {
 			if (memb_offset == offset) {
 				RzTypePath *tpath = rz_type_path_new(memb->type, rz_str_newf("%s.%s", prefix, memb->name));
 				if (tpath) {
@@ -153,7 +268,7 @@ static void collect_base_type_paths(const RzTypeDB *typedb, RzList /*<RzTypePath
 	}
 	case RZ_BASE_TYPE_KIND_UNION: {
 		RzTypeUnionMember *memb;
-		rz_vector_foreach(&btype->union_data.members, memb) {
+		rz_vector_foreach (&btype->union_data.members, memb) {
 			char *newpath = rz_str_newf("%s.%s", prefix, memb->name);
 			if (offset == 0) {
 				RzTypePath *tpath = rz_type_path_new(memb->type, newpath);
@@ -295,7 +410,7 @@ RZ_API ut64 rz_type_db_struct_member_packed_offset(RZ_NONNULL const RzTypeDB *ty
 	}
 	RzTypeStructMember *memb;
 	ut64 result = 0;
-	rz_vector_foreach(&btype->struct_data.members, memb) {
+	rz_vector_foreach (&btype->struct_data.members, memb) {
 		if (!strcmp(memb->name, member)) {
 			return result;
 			break;
@@ -319,7 +434,7 @@ RZ_API ut64 rz_type_db_struct_member_offset(RZ_NONNULL const RzTypeDB *typedb, R
 		return 0;
 	}
 	RzTypeStructMember *memb;
-	rz_vector_foreach(&btype->struct_data.members, memb) {
+	rz_vector_foreach (&btype->struct_data.members, memb) {
 		if (!strcmp(memb->name, member)) {
 			return memb->offset;
 		}

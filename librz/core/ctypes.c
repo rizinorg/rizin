@@ -75,7 +75,7 @@ RZ_IPI void rz_core_types_enum_print(RzCore *core, const RzBaseType *btype, RzOu
 			pj_k(pj, "values");
 			pj_o(pj);
 			RzTypeEnumCase *cas;
-			rz_vector_foreach(&btype->enum_data.cases, cas) {
+			rz_vector_foreach (&btype->enum_data.cases, cas) {
 				pj_kn(pj, cas->name, cas->val);
 			}
 			pj_end(pj);
@@ -86,7 +86,7 @@ RZ_IPI void rz_core_types_enum_print(RzCore *core, const RzBaseType *btype, RzOu
 	case RZ_OUTPUT_MODE_STANDARD: {
 		if (btype && !rz_vector_empty(&btype->enum_data.cases)) {
 			RzTypeEnumCase *cas;
-			rz_vector_foreach(&btype->enum_data.cases, cas) {
+			rz_vector_foreach (&btype->enum_data.cases, cas) {
 				rz_cons_printf("%s = 0x%" PFMT64x "\n", cas->name, cas->val);
 			}
 		}
@@ -162,7 +162,7 @@ RZ_IPI void rz_core_types_union_print(RzCore *core, const RzBaseType *btype, RzO
 			pj_k(pj, "members");
 			pj_o(pj);
 			RzTypeUnionMember *memb;
-			rz_vector_foreach(&btype->union_data.members, memb) {
+			rz_vector_foreach (&btype->union_data.members, memb) {
 				char *mtype = rz_type_as_string(core->analysis->typedb, memb->type);
 				pj_ks(pj, memb->name, mtype);
 				free(mtype);
@@ -176,7 +176,7 @@ RZ_IPI void rz_core_types_union_print(RzCore *core, const RzBaseType *btype, RzO
 		rz_cons_printf("union %s:\n", btype->name);
 		if (btype && !rz_vector_empty(&btype->union_data.members)) {
 			RzTypeUnionMember *memb;
-			rz_vector_foreach(&btype->union_data.members, memb) {
+			rz_vector_foreach (&btype->union_data.members, memb) {
 				char *mtype = rz_type_as_string(core->analysis->typedb, memb->type);
 				ut64 size = rz_type_db_get_bitsize(core->analysis->typedb, memb->type) / 8;
 				rz_cons_printf("\t%s: %s (size = %" PFMT64d ")\n", memb->name, mtype, size);
@@ -255,7 +255,7 @@ RZ_IPI void rz_core_types_struct_print(RzCore *core, const RzBaseType *btype, Rz
 		pj_k(pj, "members");
 		pj_o(pj);
 		RzTypeStructMember *memb;
-		rz_vector_foreach(&btype->struct_data.members, memb) {
+		rz_vector_foreach (&btype->struct_data.members, memb) {
 			char *mtype = rz_type_as_string(core->analysis->typedb, memb->type);
 			pj_ks(pj, memb->name, mtype);
 			free(mtype);
@@ -269,7 +269,7 @@ RZ_IPI void rz_core_types_struct_print(RzCore *core, const RzBaseType *btype, Rz
 		if (btype && !rz_vector_empty(&btype->union_data.members)) {
 			RzTypeStructMember *memb;
 			ut64 offset = 0;
-			rz_vector_foreach(&btype->struct_data.members, memb) {
+			rz_vector_foreach (&btype->struct_data.members, memb) {
 				char *mtype = rz_type_as_string(core->analysis->typedb, memb->type);
 				ut64 size = rz_type_db_get_bitsize(core->analysis->typedb, memb->type) / 8;
 				rz_cons_printf("\t%s: %s (size = %" PFMT64d ", offset = %" PFMT64d ")\n",
@@ -566,11 +566,20 @@ RZ_IPI void rz_core_types_function_noreturn_print(RzCore *core, RzOutputMode mod
 // Type formatting
 
 RZ_IPI void rz_core_types_show_format(RzCore *core, const char *name, RzOutputMode mode) {
-	char *fmt = rz_type_format(core->analysis->typedb, name);
+	RzTypeDB *typedb = core->analysis->typedb;
+	char *fmt = rz_type_format(typedb, name);
+	if (!fmt) {
+		RZ_LOG_ERROR("core: cannot find '%s' type's format\n", name);
+		return;
+	}
+	RzBaseType *btype = rz_type_db_get_base_type(typedb, name);
 	if (!fmt) {
 		RZ_LOG_ERROR("core: cannot find '%s' type\n", name);
 		return;
 	}
+	ut64 type_size = rz_type_db_base_get_bitsize(typedb, btype);
+	const char *kind = rz_type_base_type_kind_as_string(btype->kind);
+
 	// Simply skip types with empty format
 	if (RZ_STR_ISEMPTY(fmt)) {
 		RZ_LOG_WARN("core: '%s' type has empty format\n", name);
@@ -586,19 +595,24 @@ RZ_IPI void rz_core_types_show_format(RzCore *core, const char *name, RzOutputMo
 		}
 		pj_o(pj);
 		pj_ks(pj, "name", name);
+		pj_ks(pj, "kind", kind);
 		pj_ks(pj, "format", fmt);
+		pj_ki(pj, "size", type_size);
 		pj_end(pj);
 		rz_cons_printf("%s", pj_string(pj));
 		pj_free(pj);
 	} break;
-	case RZ_OUTPUT_MODE_RIZIN: {
+	case RZ_OUTPUT_MODE_RIZIN:
 		rz_cons_printf("pfn \"%s\" \"%s\"\n", name, fmt);
-	} break;
-	case RZ_OUTPUT_MODE_STANDARD: {
+		break;
+	case RZ_OUTPUT_MODE_LONG:
+		rz_cons_printf("%s %s (0x%" PFMT64x ") \"%s\"\n", kind, name, type_size, fmt);
+		break;
+	case RZ_OUTPUT_MODE_STANDARD:
 		// FIXME: Not really a standard format
 		// We should think about better representation by default here
 		rz_cons_printf("pf \"%s\"\n", fmt);
-	} break;
+		break;
 	default:
 		break;
 	}
@@ -658,14 +672,14 @@ static void set_offset_hint(RzCore *core, RzAnalysisOp *op, RZ_BORROW RzTypePath
 	if (tpath->root->kind != RZ_TYPE_KIND_IDENTIFIER) {
 		return;
 	}
-	char *cmt = (offimm == 0) ? strdup(tpath->path->path) : rz_type_as_string(core->analysis->typedb, tpath->root);
+	char *cmt = (offimm == 0) ? rz_str_dup(tpath->path->path) : rz_type_as_string(core->analysis->typedb, tpath->root);
 	if (offimm > 0) {
 		// Set only the type path as the analysis hint
 		// only and only if the types are the exact match between
 		// possible member offset and the global variable at the laddr
 		RzList *paths = rz_analysis_type_paths_by_address(core->analysis, laddr + offimm);
 		if (paths && rz_list_length(paths)) {
-			RzTypePathTuple *match = rz_list_get_top(paths);
+			RzTypePathTuple *match = rz_list_last(paths);
 			rz_analysis_hint_set_offset(core->analysis, at, match->path->path);
 		}
 		rz_list_free(paths);
@@ -693,7 +707,7 @@ static void resolve_global_var_types(RzCore *core, ut64 at, struct GVTAnalysisCo
 
 	// TODO: Handle register based arg for types offset/path propagation
 	if (vtpaths && rz_list_length(vtpaths) && ctx->var && ctx->var->storage.type == RZ_ANALYSIS_VAR_STORAGE_STACK) {
-		RzTypePathTuple *vtpath = rz_list_get_top(vtpaths);
+		RzTypePathTuple *vtpath = rz_list_last(vtpaths);
 		// if a var addr matches with compound type, change its type and name
 		// var int local_e0h --> var struct foo
 		if (!*resolved) {
@@ -706,10 +720,10 @@ static void resolve_global_var_types(RzCore *core, ut64 at, struct GVTAnalysisCo
 			vtpath->root = NULL;
 		}
 	} else if (stpaths && rz_list_length(stpaths)) {
-		RzTypePathTuple *stpath = rz_list_get_top(stpaths);
+		RzTypePathTuple *stpath = rz_list_last(stpaths);
 		set_offset_hint(core, ctx->aop, stpath, ctx->src_addr, at - ret, ctx->src_imm);
 	} else if (dtpaths && rz_list_length(dtpaths)) {
-		RzTypePathTuple *dtpath = rz_list_get_top(dtpaths);
+		RzTypePathTuple *dtpath = rz_list_last(dtpaths);
 		set_offset_hint(core, ctx->aop, dtpath, ctx->dst_addr, at - ret, ctx->dst_imm);
 	}
 	rz_list_free(stpaths);
@@ -722,7 +736,7 @@ static void resolve_global_var_types(RzCore *core, ut64 at, struct GVTAnalysisCo
 RZ_API void rz_core_global_vars_propagate_types(RzCore *core, RzAnalysisFunction *fcn) {
 	rz_return_if_fail(core && core->analysis && fcn);
 	RzAnalysisBlock *bb;
-	RzListIter *it;
+	void **it;
 	RzAnalysisOp aop = { 0 };
 	bool ioCache = rz_config_get_i(core->config, "io.cache");
 	bool stack_set = false;
@@ -772,8 +786,10 @@ RZ_API void rz_core_global_vars_propagate_types(RzCore *core, RzAnalysisFunction
 	ut64 oldoff = core->offset;
 	rz_cons_break_push(NULL, NULL);
 	// TODO: The algorithm can be more accurate if blocks are followed by their jmp/fail, not just by address
-	rz_list_sort(fcn->bbs, bb_cmpaddr, NULL);
-	rz_list_foreach (fcn->bbs, it, bb) {
+
+	rz_pvector_sort(fcn->bbs, bb_cmpaddr, NULL);
+	rz_pvector_foreach (fcn->bbs, it) {
+		bb = (RzAnalysisBlock *)*it;
 		ut64 at = bb->addr;
 		ut64 to = bb->addr + bb->size;
 		rz_reg_set_value(esil->analysis->reg, pc, at);
@@ -790,6 +806,7 @@ RZ_API void rz_core_global_vars_propagate_types(RzCore *core, RzAnalysisFunction
 			if (!i) {
 				rz_io_read_at(core->io, at, buf, bsize);
 			}
+			rz_analysis_op_init(&aop);
 			ret = rz_analysis_op(core->analysis, &aop, at, buf + i, bsize - i, RZ_ANALYSIS_OP_MASK_VAL);
 			if (ret <= 0) {
 				i += minopcode;
@@ -895,10 +912,13 @@ RZ_IPI void rz_core_types_print_all(RzCore *core, RzOutputMode mode) {
 		}
 		pj_a(pj);
 		rz_list_foreach (types, it, btype) {
+			ut64 type_size = rz_type_db_base_get_bitsize(core->analysis->typedb, btype);
+			const char *kind = rz_type_base_type_kind_as_string(btype->kind);
 			pj_o(pj);
 			// rz_str_trim(format_s);
 			pj_ks(pj, "type", btype->name);
-			pj_ki(pj, "size", btype->size);
+			pj_ks(pj, "kind", kind);
+			pj_ki(pj, "size", type_size);
 			// pj_ks(pj, "format", format_s);
 			pj_end(pj);
 		}
@@ -910,6 +930,13 @@ RZ_IPI void rz_core_types_print_all(RzCore *core, RzOutputMode mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
 		rz_list_foreach (types, it, btype) {
 			rz_cons_println(btype->name);
+		}
+		break;
+	case RZ_OUTPUT_MODE_LONG:
+		rz_list_foreach (types, it, btype) {
+			ut64 type_size = rz_type_db_base_get_bitsize(core->analysis->typedb, btype);
+			const char *kind = rz_type_base_type_kind_as_string(btype->kind);
+			rz_cons_printf("%s %s (0x%" PFMT64x ")\n", kind, btype->name, type_size);
 		}
 		break;
 	case RZ_OUTPUT_MODE_RIZIN:

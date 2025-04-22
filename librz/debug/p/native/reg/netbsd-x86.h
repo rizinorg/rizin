@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2015 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-return strdup(
+return rz_str_dup(
 	"=PC	eip\n"
 	"=SP	esp\n"
 	"=BP	ebp\n"

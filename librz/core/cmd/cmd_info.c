@@ -51,9 +51,9 @@ static bool is_equal_file_hashes(RzPVector /*<RzBinFileHash *>*/ *lfile_hashes, 
 	return true;
 }
 
-static bool source_file_collect_cb(void *user, const void *k, const void *v) {
+static bool source_file_collect_cb(void *user, const char *k, const void *v) {
 	RzPVector *r = user;
-	char *f = strdup(k);
+	char *f = rz_str_dup(k);
 	if (f) {
 		rz_pvector_push(r, f);
 	}
@@ -84,7 +84,7 @@ static bool print_source_info(RzCore *core, PrintSourceInfoType type, RzCmdState
 	switch (type) {
 	case PRINT_SOURCE_INFO_FILES: {
 		// collect all filenames uniquely
-		HtPP *files = ht_pp_new0();
+		HtSP *files = ht_sp_new(HT_STR_DUP, NULL, NULL);
 		if (!files) {
 			return false;
 		}
@@ -93,14 +93,14 @@ static bool print_source_info(RzCore *core, PrintSourceInfoType type, RzCmdState
 			if (!s->line || !s->file) {
 				continue;
 			}
-			ht_pp_insert(files, s->file, NULL);
+			ht_sp_insert(files, s->file, NULL);
 		}
 		// sort them alphabetically
 		RzPVector sorter;
 		rz_pvector_init(&sorter, free);
-		ht_pp_foreach(files, source_file_collect_cb, &sorter);
+		ht_sp_foreach(files, source_file_collect_cb, &sorter);
 		rz_pvector_sort(&sorter, (RzPVectorComparator)compare_string, NULL);
-		ht_pp_free(files);
+		ht_sp_free(files);
 		// print them!
 		if (state->mode == RZ_OUTPUT_MODE_JSON) {
 			pj_a(state->d.pj);
@@ -135,49 +135,26 @@ static bool print_source_info(RzCore *core, PrintSourceInfoType type, RzCmdState
 	return true;
 }
 
-RZ_IPI int rz_cmd_info_kuery(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	RzBinObject *o = rz_bin_cur_object(core->bin);
-	Sdb *db = o ? o->kv : NULL;
-	switch (input[0]) {
-	case 'v':
-		if (db) {
-			char *o = sdb_querys(db, NULL, 0, input + 2);
-			if (o && *o) {
-				rz_cons_print(o);
-			}
-			free(o);
-		}
-		break;
-	case '*':
-		rz_core_bin_export_info(core, RZ_MODE_RIZINCMD);
-		break;
-	case '.':
-	case ' ':
-		if (db) {
-			char *o = sdb_querys(db, NULL, 0, input + 1);
-			if (o && *o) {
-				rz_cons_print(o);
-			}
-			free(o);
-		}
-		break;
-	case '\0':
-		if (db) {
-			char *o = sdb_querys(db, NULL, 0, "*");
-			if (o && *o) {
-				rz_cons_print(o);
-			}
-			free(o);
-		}
-		break;
-	case '?':
-	default:
-		RZ_LOG_ERROR("core: Usage: ik [sdb-query]\n");
-		RZ_LOG_ERROR("core: Usage: ik*    # load all header information\n");
-		return 1;
+RZ_IPI RzCmdStatus rz_cmd_info_query_handler(RzCore *core, int argc, const char **argv) {
+	RzBinObject *obj = rz_bin_cur_object(core->bin);
+	if (!obj || !obj->kv) {
+		RZ_LOG_ERROR("No object file loaded to query.\n");
+		return RZ_CMD_STATUS_ERROR;
 	}
-	return 0;
+	char *query_result = sdb_querys(obj->kv, NULL, 0, argc > 1 ? argv[1] : "*");
+	rz_cons_print(query_result);
+	free(query_result);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_info_show_header_info_handler(RzCore *core, int argc, const char **argv) {
+	RzBinObject *obj = rz_bin_cur_object(core->bin);
+	if (!obj || !obj->kv) {
+		RZ_LOG_ERROR("No object file loaded to query.\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_core_bin_export_info(core, RZ_MODE_RIZINCMD);
+	return RZ_CMD_STATUS_OK;
 }
 
 #define GET_CHECK_CUR_BINFILE(core) \
@@ -474,7 +451,7 @@ RZ_IPI RzCmdStatus rz_cmd_info_dwarf_handler(RzCore *core, int argc, const char 
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_pdb_load_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	char *filename = argc > 1 ? strdup(argv[1]) : rz_core_bin_pdb_get_filename(core);
+	char *filename = argc > 1 ? rz_str_dup(argv[1]) : rz_core_bin_pdb_get_filename(core);
 	if (!filename) {
 		RZ_LOG_ERROR("Cannot find the right PDB file to load\n");
 		return RZ_CMD_STATUS_ERROR;
@@ -491,7 +468,7 @@ RZ_IPI RzCmdStatus rz_cmd_info_pdb_load_handler(RzCore *core, int argc, const ch
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_pdb_show_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	char *filename = argc > 1 ? strdup(argv[1]) : rz_core_bin_pdb_get_filename(core);
+	char *filename = argc > 1 ? rz_str_dup(argv[1]) : rz_core_bin_pdb_get_filename(core);
 	if (!filename) {
 		RZ_LOG_ERROR("Cannot find the right PDB file to load\n");
 		return RZ_CMD_STATUS_ERROR;
@@ -557,6 +534,9 @@ static bool print_demangler_info(const RzDemanglerPlugin *plugin, RzDemanglerFla
 		pj_ks(state->d.pj, "author", plugin->author);
 		pj_end(state->d.pj);
 		break;
+	case RZ_OUTPUT_MODE_STANDARD:
+		rz_cons_printf("%-8s %-12s %s\n", plugin->language, plugin->license, plugin->author);
+		break;
 	case RZ_OUTPUT_MODE_TABLE:
 		rz_table_add_rowf(state->d.t, "sss", plugin->language, plugin->license, plugin->author);
 		break;
@@ -576,7 +556,7 @@ RZ_IPI char **rz_cmd_info_demangle_lang_choices(RzCore *core) {
 	RzListIter *it;
 	int i = 0;
 	rz_list_foreach (core->bin->demangler->plugins, it, plugin) {
-		res[i++] = strdup(plugin->language);
+		res[i++] = rz_str_dup(plugin->language);
 	}
 	return res;
 }
@@ -619,7 +599,8 @@ RZ_IPI RzCmdStatus rz_cmd_info_resources_handler(RzCore *core, int argc, const c
 
 RZ_IPI RzCmdStatus rz_cmd_info_hashes_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	ut64 limit = rz_config_get_i(core->config, "bin.hashlimit");
-	RzBinInfo *info = rz_bin_get_info(core->bin);
+	RzBinObject *obj = rz_bin_cur_object(core->bin);
+	RzBinInfo *info = obj ? (RzBinInfo *)rz_bin_object_get_info(obj) : NULL;
 	if (!info) {
 		RZ_LOG_ERROR("core: Cannot get bin info\n");
 		return RZ_CMD_STATUS_ERROR;
@@ -668,7 +649,7 @@ RZ_IPI RzCmdStatus rz_cmd_info_hashes_handler(RzCore *core, int argc, const char
 				fh_new = i < rz_pvector_len(new_hashes) ? (RzBinFileHash *)rz_pvector_at(new_hashes, i) : NULL;
 				fh_old = i < rz_pvector_len(old_hashes) ? (RzBinFileHash *)rz_pvector_at(old_hashes, i) : NULL;
 				if (fh_new && fh_old && strcmp(fh_new->type, fh_old->type)) {
-					RZ_LOG_ERROR("core: Wrong file hashes structure");
+					RZ_LOG_ERROR("core: Wrong file hashes structure\n");
 				}
 				if (fh_new && fh_old && !strcmp(fh_new->hex, fh_old->hex)) {
 					fprintf(stderr, "= %s %s\n", fh_new->type, fh_new->hex); // output one line because hash remains same `= hashtype hashval`
@@ -730,4 +711,9 @@ RZ_IPI RzCmdStatus rz_cmd_info_guess_size_handler(RzCore *core, int argc, const 
 		pj_end(state->d.pj);
 	}
 	return bool2status(res);
+}
+
+RZ_IPI RzCmdStatus rz_cmd_info_xrefs_strings_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzBinFile *bf = rz_bin_cur(core->bin);
+	return bool2status(rz_core_bin_xrefs_strings_print(core, bf, state));
 }

@@ -13,7 +13,6 @@ extern "C" {
 #endif
 
 #define RZ_PRINT_FLAGS_COLOR    0x00000001
-#define RZ_PRINT_FLAGS_ADDRMOD  0x00000002
 #define RZ_PRINT_FLAGS_CURSOR   0x00000004
 #define RZ_PRINT_FLAGS_HEADER   0x00000008
 #define RZ_PRINT_FLAGS_SPARSE   0x00000010
@@ -71,7 +70,7 @@ typedef struct {
 typedef struct {
 	ut32 op_type; ///< RzAnalysisOpType. Mnemonic color depends on this.
 	RzStrBuf *str; ///< Contains the raw asm string
-	RzVector /*<RzAsmToken>*/ *tokens; ///< Contains only the tokenization meta-info without strings, ordered by start for log2(n) access
+	RzPVector /*<RzAsmToken *>*/ *tokens; ///< Contains only the tokenization meta-info without strings, ordered by start for log2(n) access
 } RzAsmTokenString;
 
 typedef struct {
@@ -135,7 +134,6 @@ typedef struct rz_print_t {
 	int flags;
 	int seggrn;
 	bool use_comments;
-	int addrmod;
 	int col;
 	int stride;
 	int bytespace;
@@ -153,7 +151,7 @@ typedef struct rz_print_t {
 	RzConsBind consbind;
 	RzNum *num;
 	RzReg *reg;
-	RzRegItem *(*get_register)(RzReg *reg, const char *name, int type);
+	RzRegItem *(*get_register)(const RzReg *reg, const char *name, int type);
 	ut64 (*get_register_value)(RzReg *reg, RzRegItem *item);
 	bool (*exists_var)(struct rz_print_t *print, ut64 func_addr, char *str);
 	bool esc_bslash;
@@ -204,7 +202,6 @@ RZ_API const char *rz_print_byte_color(RzPrint *p, int ch);
 RZ_API void rz_print_raw(RzPrint *p, ut64 addr, const ut8 *buf, int len);
 RZ_API bool rz_print_have_cursor(RzPrint *p, int cur, int len);
 RZ_API bool rz_print_cursor_pointer(RzPrint *p, int cur, int len);
-RZ_API void rz_print_cursor(RzPrint *p, int cur, int len, int set);
 RZ_API int rz_print_get_cursor(RzPrint *p);
 RZ_API void rz_print_set_cursor(RzPrint *p, int curset, int ocursor, int cursor);
 #define SEEFLAG    -2
@@ -232,9 +229,8 @@ RZ_API int rz_print_row_at_off(RzPrint *p, ut32 offset);
 
 // WIP
 RZ_API void rz_print_set_screenbounds(RzPrint *p, ut64 addr);
-RZ_API char *rz_print_json_indent(const char *s, bool color, const char *tab, const char **colors);
+RZ_API RZ_OWN char *rz_print_json_indent(RZ_NULLABLE const char *s, bool color, const char *tab, RZ_NULLABLE const char **palette);
 RZ_API char *rz_print_json_human(const char *s);
-RZ_API char *rz_print_json_path(const char *s, int pos);
 
 RZ_API RZ_OWN RzStrBuf *rz_print_colorize_asm_str(RZ_BORROW RzPrint *p, const RzAsmTokenString *toks);
 RZ_API void rz_print_colored_help_option(const char *option, const char *arg, const char *description, size_t maxOptionAndArgLength);

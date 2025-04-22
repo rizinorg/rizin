@@ -2970,3 +2970,19 @@ d0 = 0x01c00df0fecadec0
 d1 = 0xaaaaaaaaaaaaaaaa
 EOF
 RUN
+
+NAME=reachable capstone assert
+FILE=malloc://0x100
+CMDS=<<EOF
+e esil.verbose=2
+e asm.arch=arm
+e asm.bits=32
+wx fbfd21b3 # msrlt cpsr_c, #0x3ec0
+pi 1
+pie 1
+EOF
+EXPECT=<<EOF
+msrlt cpsr_c, 0x3ec0
+0x00000000 nf,vf,^,?{,,}
+EOF
+RUN

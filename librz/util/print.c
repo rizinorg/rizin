@@ -66,12 +66,10 @@ RZ_API RzPrint *rz_print_new(void) {
 	p->cols = 16;
 	p->cur_enabled = false;
 	p->cur = p->ocur = -1;
-	p->addrmod = 4;
 	p->flags =
 		RZ_PRINT_FLAGS_COLOR |
 		RZ_PRINT_FLAGS_OFFSET |
-		RZ_PRINT_FLAGS_HEADER |
-		RZ_PRINT_FLAGS_ADDRMOD;
+		RZ_PRINT_FLAGS_HEADER;
 	p->seggrn = 4;
 	p->zoom = RZ_NEW0(RzPrintZoom);
 	p->reg = NULL;
@@ -152,12 +150,6 @@ RZ_API bool rz_print_cursor_pointer(RzPrint *p, int cur, int len) {
 		}
 	} while (--len);
 	return false;
-}
-
-RZ_API void rz_print_cursor(RzPrint *p, int cur, int len, int set) {
-	if (rz_print_have_cursor(p, cur, len)) {
-		p->cb_printf("%s", RZ_CONS_INVERT(set, 1));
-	}
 }
 
 RZ_API char *rz_print_hexpair(RzPrint *p, const char *str, int n) {
@@ -345,7 +337,7 @@ RZ_API void rz_print_hexii(RzPrint *rp, ut64 addr, const ut8 *buf, int len, int 
 		}
 		p("\n");
 	}
-	p("%8" PFMT64x " ]\n", addr + i);
+	p("%8" PFMT64x ": ]\n", addr + i);
 }
 
 /**
@@ -394,8 +386,7 @@ static inline void print_addr(RzStrBuf *sb, RzPrint *p, ut64 addr) {
 	bool use_segoff = p ? (p->flags & RZ_PRINT_FLAGS_SEGOFF) : false;
 	bool use_color = p ? (p->flags & RZ_PRINT_FLAGS_COLOR) : false;
 	bool dec = p ? (p->flags & RZ_PRINT_FLAGS_ADDRDEC) : false;
-	bool mod = p ? (p->flags & RZ_PRINT_FLAGS_ADDRMOD) : false;
-	char ch = p ? ((p->addrmod && mod) ? ((addr % p->addrmod) ? ' ' : ',') : ' ') : ' ';
+	char ch = ' ';
 	if (p && p->flags & RZ_PRINT_FLAGS_COMPACT && p->col == 1) {
 		ch = '|';
 	}
@@ -1394,7 +1385,7 @@ RZ_API RZ_OWN char *rz_print_jsondump_str(RZ_NONNULL RzPrint *p, RZ_NONNULL cons
 		pj_n(j, word);
 	}
 	pj_end(j);
-	char *str = strdup(pj_string(j));
+	char *str = rz_str_dup(pj_string(j));
 	pj_free(j);
 	return str;
 }
@@ -1423,8 +1414,9 @@ RZ_API RZ_OWN RzStrBuf *rz_print_colorize_asm_str(RZ_BORROW RzPrint *p, const Rz
 	rz_return_val_if_fail(out, NULL);
 
 	const char *color;
-	RzAsmToken *tok;
-	rz_vector_foreach(toks->tokens, tok) {
+	void **it;
+	rz_pvector_foreach (toks->tokens, it) {
+		RzAsmToken *tok = *it;
 		switch (tok->type) {
 		default:
 			rz_strbuf_free(out);

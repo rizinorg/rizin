@@ -167,3 +167,24 @@ Usage: e[?]   # List/get/set config evaluable vars
 Detailed help for e <key>[=<val|?>] [<key>[=<val|?>] ...]] is provided by e??.
 EOF
 RUN
+
+NAME=help with no arguments
+FILE=--
+CMDS=<<EOF
+La??
+EOF
+EXPECT=<<EOF
+Usage: La[jqt] [<features>]   # List the arch plugins
+| La [<features>]       # List the arch plugins
+| Laj [<features>]      # List the arch plugins (JSON mode)
+| Laq [<features>]      # List the arch plugins (quiet mode)
+| Lat [<features>]      # List the arch plugins (table mode)
+
+Legend:
+| a # Analysis plugin
+| d # Disassembler plugin
+| A # Assembler plugin
+| e # ESIL Support
+| I # RzIL Support
+EOF
+RUN

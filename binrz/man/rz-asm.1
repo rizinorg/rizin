@@ -8,6 +8,7 @@
 .Op Fl ABCdDeIEhjLpqrvxw
 .Op Fl a Ar arch
 .Op Fl b Ar bits
+.Op Fl m Ar plugin
 .Op Fl c Ar CPU
 .Op Fl O Ar file
 .Op Fl o Ar addr
@@ -60,6 +61,8 @@ Select operating system (linux, windows, darwin, ..)
 Input/Output length
 .It Fl L
 List asm plugins: (a=asm, d=disasm, A=analyze, e=ESIL)
+.It Fl m Ar plugin
+List supported CPUs for the chosen plugin
 .It Fl o, @ Ar addr
 Set start address for code (default 0)
 .It Fl O Ar file
@@ -137,6 +140,21 @@ Mark the start of the text section
 .It Ic .thumb
 Set the Thumb mode (as opposed to ARM) for ARM architecture
 .El
+.Sh ENVIRONMENT
+.Pp
+RZ_ARCH:      e asm.arch - architecture to assemble/disassemble (same as rz-asm -a)
+.Pp
+RZ_ASM_ARCH:  architecture to assemble/disassemble (same as rz-asm -a)
+.Pp
+RZ_ASM_BITS:  cpu register size (8, 16, 32, 64) (same as rz-asm -b)
+.Pp
+RZ_BITS:      e asm.bits - cpu register size (8, 16, 32, 64) (same as rz-asm -b)
+.Pp
+RZ_DEBUG:     if defined, show error messages and crash signal\n"
+.Pp
+RZ_NOPLUGINS: do not load shared plugins (speedup loading)\n"
+
+
 .Sh EXAMPLES
 .Pp
 Assemble opcode:

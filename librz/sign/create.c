@@ -111,7 +111,7 @@ static RzFlirtModule *flirt_module_new(RzAnalysis *analysis, RzAnalysisFunction 
 
 	module->length = rz_analysis_function_size_from_entry(func);
 
-	if (tail_bytes) {
+	if (tail_bytes && buffer) {
 		for (ut32 i = module->crc_length, k = 0; i < b_size && k < 0xFF; ++i, ++k) {
 			if (mask[i] != 0xff) {
 				continue;

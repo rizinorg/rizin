@@ -44,7 +44,7 @@ RZ_API ut64 rz_coff_perms_from_section_flags(ut32 flags);
 RZ_API struct rz_bin_coff_obj *rz_bin_coff_new_buf(RzBuffer *buf, bool verbose);
 RZ_API void rz_bin_coff_free(struct rz_bin_coff_obj *obj);
 RZ_API RzBinAddr *rz_coff_get_entry(struct rz_bin_coff_obj *obj);
-RZ_API char *rz_coff_symbol_name(struct rz_bin_coff_obj *obj, const ut8 *ptr);
+RZ_API RZ_OWN char *rz_coff_symbol_name(RZ_NONNULL struct rz_bin_coff_obj *obj, RZ_NULLABLE const ut8 *ptr);
 
 RZ_API ut64 rz_coff_import_index_addr(struct rz_bin_coff_obj *obj, ut64 imp_index);
 RZ_API ut64 rz_coff_get_reloc_targets_map_base(struct rz_bin_coff_obj *obj);

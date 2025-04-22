@@ -16,20 +16,9 @@ in any language in some specific places of the document.
 Build
 -----
 
-You can tweak some options with `./configure` (or copying your favourite `config.mk`)
-
 ```
-Optional Features:
-  --without-fork         build without depending on fork syscall
-  --enable-r2            compile against r2 r_util
-```
-
-The way to build is as easy as in any GNU program:
-
-```
-$ ./configure --prefix=/usr
-$ make
-$ make install
+$ meson setup build
+$ ninja -C build
 ```
 
 Usage
@@ -94,7 +83,7 @@ spp specific flags:
 Preprocessors
 =============
 
-There are 5 preprocessors that are available in spp by default.
+There are 3 preprocessors that are available in spp by default.
 You can write your own and just pass the struct reference as
 argument.
 
@@ -132,5 +121,3 @@ ASM
 .include t/syscalls.asm
 int3
 ```
-
-...

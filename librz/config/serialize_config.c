@@ -20,25 +20,25 @@ RZ_API void rz_serialize_config_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzConfig *co
 	RzListIter *iter;
 	RzConfigNode *node;
 	rz_list_foreach (config->nodes, iter, node) {
-		sdb_set(db, node->name, node->value, 0);
+		sdb_set(db, node->name, node->value);
 	}
 }
 
 typedef struct load_config_ctx_t {
 	RzConfig *config;
-	HtPP *exclude;
+	HtSP *exclude;
 } LoadConfigCtx;
 
-static bool load_config_cb(void *user, const char *k, const char *v) {
+static bool load_config_cb(void *user, const SdbKv *kv) {
 	LoadConfigCtx *ctx = user;
-	if (ctx->exclude && ht_pp_find_kv(ctx->exclude, k, NULL)) {
+	if (ctx->exclude && ht_sp_find_kv(ctx->exclude, sdbkv_key(kv), NULL)) {
 		return true;
 	}
-	RzConfigNode *node = rz_config_node_get(ctx->config, k);
+	RzConfigNode *node = rz_config_node_get(ctx->config, sdbkv_key(kv));
 	if (!node) {
 		return 1;
 	}
-	rz_config_set(ctx->config, k, v);
+	rz_config_set(ctx->config, sdbkv_key(kv), sdbkv_value(kv));
 	return 1;
 }
 
@@ -49,15 +49,15 @@ RZ_API bool rz_serialize_config_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzConfig *co
 	RZ_NULLABLE const char *const *exclude, RZ_NULLABLE RzSerializeResultInfo *res) {
 	LoadConfigCtx ctx = { config, NULL };
 	if (exclude) {
-		ctx.exclude = ht_pp_new0();
+		ctx.exclude = ht_sp_new(HT_STR_DUP, NULL, NULL);
 		if (!ctx.exclude) {
 			return false;
 		}
 		for (; *exclude; exclude++) {
-			ht_pp_insert(ctx.exclude, *exclude, NULL);
+			ht_sp_insert(ctx.exclude, *exclude, NULL);
 		}
 	}
 	sdb_foreach(db, load_config_cb, &ctx);
-	ht_pp_free(ctx.exclude);
+	ht_sp_free(ctx.exclude);
 	return true;
 }

@@ -1,0 +1,310 @@
+NAME=Error case - malformed interval I
+FILE==
+CMDS=<<EOF
+/v 4be (0xff,0x8a)
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: a > b is not defined.
+ERROR: Failed to parse interval: '(0xff,0x8a)'.
+EOF
+RUN
+
+NAME=Error case - malformed interval II
+FILE==
+CMDS=<<EOF
+/v 4be (1,0x8a) {}
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Failed to parse: '{}'.
+ERROR: Failed to parse interval: '{}'.
+EOF
+RUN
+
+NAME=from/to /v
+FILE==
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 01
+e cmd.hit="pi 1"
+e search.in=raw
+e search.from=0x00000000
+e search.to=0x00000004
+/v 1 1
+EOF
+EXPECT=<<EOF
+add dword [rax], eax
+EOF
+RUN
+
+NAME=from/to /v not in range
+FILE==
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 01
+e cmd.hit="pi 1"
+e search.in=raw
+e search.from=0x00000000
+e search.to=0x00000000
+/v 2a 1
+EOF
+EXPECT=<<EOF
+add dword [rax], eax
+EOF
+RUN
+
+NAME=from/to /V
+FILE==
+BROKEN=1
+CMDS=<<EOF
+wx 05
+e cmd.hit = pi 1
+e search.in =raw
+e search.from=0x00000000
+e search.to=0x00000004
+/v 1 1 5
+EOF
+EXPECT=<<EOF
+0x00000000 hit0_0 05
+add dword [rax], eax
+EOF
+RUN
+
+NAME=from/to /V not in range
+FILE==
+CMDS=<<EOF
+wx 05
+e cmd.hit=pi 1
+e search.in=raw
+e search.from=0x00000000
+e search.to=0x00000000
+/v 1 1 5
+EOF
+EXPECT=
+RUN
+
+NAME=/v{2,4,8} value search arch (LE)
+FILE==
+CMDS=<<EOF
+wx 0x12345678aabbccddeeff12345678
+e cfg.bigendian=false
+/v 2a 0x7856
+/v 2a 0x5678
+/v 4a 0x78563412
+/v 4a 0x12345678
+/v 8a 0x78563412ddccbbaa
+/v 8a 0xddccbbaa78563412
+/v 8a 0x12345678aabbccdd
+EOF
+EXPECT=<<EOF
+0x00000002 2 hit.value.0
+0x0000000c 2 hit.value.1
+0x00000000 4 hit.value.0
+0x0000000a 4 hit.value.1
+0x00000000 8 hit.value.0
+EOF
+RUN
+
+NAME=/v value alias
+FILE==
+CMDS=<<EOF
+wx 0x12345678aabbccddeeff12345678
+e cfg.bigendian=false
+/v2 0x7856
+/v2 0x5678
+/v4 0x78563412
+/v4 0x12345678
+/v8 0x78563412ddccbbaa
+/v8 0xddccbbaa78563412
+/v8 0x12345678aabbccdd
+EOF
+EXPECT=<<EOF
+0x00000002 2 hit.value.0
+0x0000000c 2 hit.value.1
+0x00000000 4 hit.value.0
+0x0000000a 4 hit.value.1
+0x00000000 8 hit.value.0
+EOF
+RUN
+
+NAME=/v{2,4,8} value search BE
+FILE==
+CMDS=<<EOF
+wx 0x12345678aabbccddeeff12345678
+e cfg.bigendian=true
+/v 2be 0x7856
+/v 2be 0x5678
+/v 4be 0x78563412
+/v 4be 0x12345678
+/v 8be 0x78563412ddccbbaa
+/v 8be 0xddccbbaa78563412
+/v 8be 0x12345678aabbccdd
+EOF
+EXPECT=<<EOF
+0x00000002 2 hit.value.0
+0x0000000c 2 hit.value.1
+0x00000000 4 hit.value.0
+0x0000000a 4 hit.value.1
+0x00000000 8 hit.value.0
+EOF
+RUN
+
+NAME=/V{2,4,8} value search in range LE
+FILE==
+CMDS=<<EOF
+wx 0x12345678aabbccddeeff13345678
+e cfg.bigendian=false
+/v 2le [0x7854,0x7858]
+echo ---
+/v 2le [0x5677,0x7854]
+/v 4le [0x78563412,0x78563420]
+echo ---
+/v 4le [0x12345678,0x20345678]
+/v 8le [0x12345678aabbccdd,0x14345678aabbccdd]
+EOF
+EXPECT=<<EOF
+0x00000002 2 hit.value.0
+0x0000000c 2 hit.value.1
+---
+0x00000000 4 hit.value.0
+0x0000000a 4 hit.value.1
+---
+0x00000007 4 hit.value.0
+0x00000003 8 hit.value.0
+EOF
+RUN
+
+NAME=/V{2,4,8} value search in range BE
+FILE==
+CMDS=<<EOF
+wx 0x12345678aabbccddeeff13345678
+/v 2be [0x7854,0x7858]
+echo ---
+/v 2be [0x5677,0x7854]
+/v 4be [0x78563412,0x78563420]
+echo ---
+/v 4be [0x12345670,0x20345678]
+/v 8be [0x12345678aabbccdd,0x14345678aabbccdd]
+EOF
+EXPECT=<<EOF
+---
+0x00000002 2 hit.value.0
+0x0000000c 2 hit.value.1
+---
+0x00000000 4 hit.value.0
+0x0000000a 4 hit.value.1
+0x00000000 8 hit.value.0
+0x0000000a 8 hit.value.1
+EOF
+RUN
+
+NAME=/V{2,4,8} alias
+FILE==
+CMDS=<<EOF
+e cfg.bigendian=true
+wx 0x12345678aabbccddeeff13345678
+/V2 0x7854 0x7858
+echo ---
+/V2 0x5677 0x7854
+/V4 0x78563412 0x78563420
+echo ---
+/V4 0x12345670 0x20345678
+/V8 0x12345678aabbccdd 0x14345678aabbccdd
+EOF
+EXPECT=<<EOF
+---
+0x00000002 2 hit.value.0
+0x0000000c 2 hit.value.1
+---
+0x00000000 4 hit.value.0
+0x0000000a 4 hit.value.1
+0x00000000 8 hit.value.0
+0x0000000a 8 hit.value.1
+EOF
+RUN
+
+NAME=/vj 4le search 4 byte with json output
+FILE==
+CMDS=<<EOF
+wx 0x12345678aabbccddeeff12345678
+/vj 4le 0x78563412
+EOF
+EXPECT=<<EOF
+[{"address":0,"size":4,"flag":"hit.value.0"},{"address":10,"size":4,"flag":"hit.value.1"}]
+EOF
+RUN
+
+NAME=/vj 4a search 4 byte in range with json
+FILE==
+CMDS=<<EOF
+wx 0x12345678aabbccddeeff12345678
+/vj 4a [0x78563412,0x78563420]
+EOF
+EXPECT=<<EOF
+[{"address":0,"size":4,"flag":"hit.value.0"},{"address":10,"size":4,"flag":"hit.value.1"}]
+EOF
+RUN
+
+NAME=empty interval
+FILE==
+CMDS=<<EOF
+wx 0x12345678aabbccddeeff12345678
+/v 1 "(1,1)"
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=Right open interval
+FILE==
+CMDS=<<EOF
+wx 0x010203
+/v 1 "[1,2)"
+EOF
+EXPECT=<<EOF
+0x00000000 1 hit.value.0
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=Left open interval
+FILE==
+CMDS=<<EOF
+wx 0x010203
+/v 1 "(1 , 2]"
+EOF
+EXPECT=<<EOF
+0x00000001 1 hit.value.0
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=Open interval
+FILE==
+CMDS=<<EOF
+wx 0x010203
+/v 1 "(1,3)"
+EOF
+EXPECT=<<EOF
+0x00000001 1 hit.value.0
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=Multiple intervals
+FILE==
+CMDS=<<EOF
+wx 0x12345678aabbccddeeff12345678
+/v 1 "(0x78, 0x8a]" 0xcc 0xee
+EOF
+EXPECT=<<EOF
+0x00000006 1 hit.value.0
+0x00000008 1 hit.value.1
+EOF
+EXPECT_ERR=
+RUN

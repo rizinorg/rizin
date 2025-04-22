@@ -360,7 +360,7 @@ static bool try_rename_function(RzAnalysis *analysis, RzAnalysisFunction *fcn, c
 	if (fcn->type == RZ_ANALYSIS_FCN_TYPE_SYM) {
 		// do not rename if is a symbol but check if
 		// another function has the same name
-		return ht_pp_find(analysis->ht_name_fun, name, NULL) == NULL;
+		return ht_sp_find(analysis->ht_name_fun, name, NULL) == NULL;
 	}
 	return rz_analysis_function_rename(fcn, name);
 }
@@ -428,9 +428,10 @@ static int module_match_buffer(RzAnalysis *analysis, const RzFlirtModule *module
 					if (fcn != next_module_function &&
 						fcn->addr >= next_module_function->addr + next_module_function_size &&
 						fcn->addr < next_module_function->addr + flirt_fcn_size) {
-						RzListIter *iter_bb;
+						void **iter_bb;
 						RzAnalysisBlock *block;
-						rz_list_foreach (fcn->bbs, iter_bb, block) {
+						rz_pvector_foreach (fcn->bbs, iter_bb) {
+							block = (RzAnalysisBlock *)*iter_bb;
 							rz_analysis_function_add_block(next_module_function, block);
 						}
 						next_module_function->ninstr += fcn->ninstr;
@@ -1279,7 +1280,7 @@ RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_parse_compressed_pattern_from_buffer(RZ
 	if (parse_tree(&ps, node)) {
 		ret = node;
 	} else {
-		free(node);
+		rz_sign_flirt_node_free(node);
 	}
 
 	if (info && ret) {

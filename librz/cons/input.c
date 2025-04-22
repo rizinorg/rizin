@@ -326,11 +326,7 @@ RZ_API int rz_cons_fgets(char *buf, int len, int argc, const char **argv) {
 		rz_cons_set_raw(false);
 		rz_cons_show_cursor(true);
 	}
-#if 0
-	int mouse = rz_cons_enable_mouse (false);
-	rz_cons_enable_mouse (false);
-	rz_cons_flush ();
-#endif
+
 	errno = 0;
 	if (cons->user_fgets) {
 		RETURN(cons->user_fgets(buf, len, cons->user_fgets_user));
@@ -704,5 +700,5 @@ RZ_API char *rz_cons_input(const char *msg) {
 	rz_cons_fgets(buf, sizeof(buf), 0, NULL);
 	rz_line_set_prompt(I->line, oprompt);
 	free(oprompt);
-	return strdup(buf);
+	return rz_str_dup(buf);
 }

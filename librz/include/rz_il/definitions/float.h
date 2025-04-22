@@ -12,6 +12,7 @@ RZ_API RZ_OWN RzFloat *rz_il_float_new(RZ_NONNULL RzFloatFormat format, RZ_NONNU
 
 // return const string for il_export
 RZ_API const char *rz_il_float_stringify_rmode(RzFloatRMode mode);
+RZ_API const char *rz_il_float_stringify_exception(RzFloatException e);
 RZ_API const char *rz_il_float_stringify_format(RzFloatFormat format);
 
 #ifdef __cplusplus

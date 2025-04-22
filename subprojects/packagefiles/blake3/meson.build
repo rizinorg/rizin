@@ -1,4 +1,11 @@
-project('blake3', 'c', version: '1.3.1', license : ['CC0-1.0'], meson_version: '>=0.55.0')
+project('blake3', 'c',
+  version: '1.3.1',
+  license: 'CC0-1.0',
+  meson_version: '>=0.55.0',
+  default_options: [
+    'c_std=c99',
+  ]
+)
 
 cc = meson.get_compiler('c')
 

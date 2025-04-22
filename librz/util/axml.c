@@ -310,7 +310,7 @@ RZ_API RZ_OWN char *rz_axml_decode(RZ_NONNULL const ut8 *data, const ut64 data_s
 
 	rz_return_val_if_fail(data, NULL);
 	if (data_size == 0) {
-		return strdup("");
+		return rz_str_dup("");
 	}
 
 	RzBuffer *buffer = rz_buf_new_with_pointers(data, data_size, false);

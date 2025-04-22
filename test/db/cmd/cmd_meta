@@ -3,8 +3,7 @@ FILE==
 CMDS=<<EOF
 Cf.
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=vars commenting
@@ -72,8 +71,7 @@ CMDS=<<EOF
 aaa
 Cvb local_10
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=CC.

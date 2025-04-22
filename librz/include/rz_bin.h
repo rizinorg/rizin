@@ -7,6 +7,7 @@
 #include <rz_io.h>
 #include <rz_cons.h>
 #include <rz_list.h>
+#include <rz_th.h>
 #include <rz_util/ht_pu.h>
 #include <rz_demangler.h>
 #include <rz_hash.h>
@@ -188,7 +189,6 @@ enum {
 
 #define RZ_BIN_STRING_SEARCH_MIN_STRING         4
 #define RZ_BIN_STRING_SEARCH_BUFFER_SIZE        2048
-#define RZ_BIN_STRING_SEARCH_MAX_UNI_BLOCKS     4
 #define RZ_BIN_STRING_SEARCH_MAX_REGION_SIZE    (1024 * 1024 * 10)
 #define RZ_BIN_STRING_SEARCH_RAW_FILE_ALIGNMENT 0x10000
 #define RZ_BIN_STRING_SEARCH_CHECK_ASCII_FREQ   true
@@ -200,10 +200,9 @@ typedef enum {
 } RzBinStringSearchMode;
 
 typedef struct rz_bin_string_search_opt_t {
-	size_t max_threads; ///< Maximum thread number (normally set to RZ_THREAD_POOL_ALL_CORES).
+	RzThreadNCores max_threads; ///< Maximum thread number (normally set to RZ_THREAD_N_CORES_ALL_AVAILABLE).
 	size_t min_length; ///< Smallest string length that is possible to find.
-	size_t buffer_size; ///< Maximum buffer size, which will also determine the maximum string length.
-	size_t max_uni_blocks; ///< Maximum number of unicode blocks
+	size_t max_length; ///< Maximum buffer size, which will also determine the maximum string length.
 	size_t max_region_size; ///< Maximum allowable size for the search interval between two memory regions.
 	size_t raw_alignment; ///< Memory sector alignment used for the raw string search.
 	bool check_ascii_freq; ///< If true, perform check on ASCII frequencies when looking for false positives
@@ -213,8 +212,16 @@ typedef struct rz_bin_string_search_opt_t {
 
 typedef struct rz_bin_addr_t {
 	ut64 vaddr;
+	/**
+	 * \brief The offset into the binary file.
+	 * Note: This is not related to the physical addresses an MMU would manage!
+	 */
 	ut64 paddr;
 	ut64 hvaddr;
+	/**
+	 * \brief The offset into the binary file where the header is.
+	 * Note: This is not related to the physical addresses an MMU would manage!
+	 */
 	ut64 hpaddr;
 	int type;
 	int bits;
@@ -302,16 +309,16 @@ typedef struct rz_bin_object_t {
 	 * \brief Acceleration structure for fast access of the symbol for a given import.
 	 * This associates the name of every symbol where is_imported == true to the symbol itself.
 	 */
-	HtPP /*<const char *, RzBinSymbol>*/ *import_name_symbols; // currently only used for imports, but could be extended to all symbols if needed.
-	RzList /*<RzBinAddr *>*/ *entries;
+	HtSP /*<const char *, RzBinSymbol>*/ *import_name_symbols; // currently only used for imports, but could be extended to all symbols if needed.
+	RzPVector /*<RzBinAddr *>*/ *entries;
 	RzPVector /*<RzBinField *>*/ *fields;
 	RzPVector /*<char *>*/ *libs;
 	RzBinRelocStorage *relocs;
 	RzBinStrDb *strings;
 	RzPVector /*<RzBinClass *>*/ *classes;
-	HtPP /*<char *, RzBinClass*>*/ *name_to_class_object;
-	HtPP /*<char *, RzBinSymbol*>*/ *glue_to_class_method;
-	HtPP /*<char *, RzBinClassField*>*/ *glue_to_class_field;
+	HtSP /*<char *, RzBinClass*>*/ *name_to_class_object;
+	HtSP /*<char *, RzBinSymbol*>*/ *glue_to_class_method;
+	HtSP /*<char *, RzBinClassField*>*/ *glue_to_class_field;
 	HtUP /*<vaddr , RzBinSymbol*>*/ *vaddr_to_class_method;
 	RzBinSourceLineInfo *lines;
 	RzPVector /*<RzBinMem *>*/ *mem;
@@ -349,7 +356,11 @@ typedef struct rz_bin_file_options_t {
 	int rawstr;
 	ut64 baddr; // base address
 	ut64 laddr; // load address
-	ut64 paddr; // offset
+	/**
+	 * \brief The offset into the binary file.
+	 * Note: This is not related to the physical addresses an MMU would manage!
+	 */
+	ut64 paddr;
 	const char *plugname; // force a plugin? why do i need this?
 	// const char *xtrname;
 } RzBinFileOptions;
@@ -366,8 +377,8 @@ struct rz_bin_t {
 	int rawstr;
 	RZ_DEPRECATE Sdb *sdb;
 	RzIDStorage *ids;
-	RzList /*<RzBinPlugin *>*/ *plugins;
-	RzList /*<RzBinXtrPlugin *>*/ *binxtrs;
+	HtSP /*<RzBinPlugin *>*/ *plugins;
+	HtSP /*<RzBinXtrPlugin *>*/ *binxtrs;
 	RzList /*<RzBinFile *>*/ *binfiles;
 	PrintfCallback cb_printf;
 	int loadany;
@@ -473,7 +484,7 @@ typedef struct rz_bin_plugin_t {
 	RzPVector /*<RzBinVirtualFile *>*/ *(*virtual_files)(RzBinFile *bf);
 	RzPVector /*<RzBinMap *>*/ *(*maps)(RzBinFile *bf);
 	RzBinAddr *(*binsym)(RzBinFile *bf, RzBinSpecialSymbol num);
-	RzList /*<RzBinAddr *>*/ *(*entries)(RzBinFile *bf);
+	RzPVector /*<RzBinAddr *>*/ *(*entries)(RzBinFile *bf);
 	RzPVector /*<RzBinSection *>*/ *(*sections)(RzBinFile *bf);
 	RZ_OWN RzBinSourceLineInfo *(*lines)(RzBinFile *bf); //< only called once on load, ownership is transferred to the caller
 	RzPVector /*<RzBinSymbol *>*/ *(*symbols)(RzBinFile *bf);
@@ -548,7 +559,11 @@ typedef struct rz_bin_virtual_file_t {
 
 /// Description of a single memory mapping into virtual memory from a binary
 typedef struct rz_bin_map_t {
-	ut64 paddr; ///< address of the map inside the file
+	/**
+	 * \brief The offset into the binary file.
+	 * Note: This is not related to the physical addresses an MMU would manage!
+	 */
+	ut64 paddr;
 	ut64 psize; ///< size of the data inside the file
 	ut64 vaddr; ///< address in the destination address space to map to
 	ut64 vsize; ///< size to map in the destination address space. If vsize > psize, excessive bytes are meant to be filled with 0
@@ -563,11 +578,27 @@ typedef struct rz_bin_map_t {
 	RZ_NULLABLE char *vfile_name;
 } RzBinMap;
 
+#define RZ_BIN_MAX_HANDLED_LAYOUT_SIZE (1024 * 1024 * 2)
+
+/**
+ * \brief A repetitive data layout of a section. The type will be applied to
+ * element_size * element_count.
+ */
+typedef struct rz_bin_section_format_t {
+	int /* RzAnalysisMetaType */ type; ///< The meta type of the elements.
+	ut64 element_size; ///< Size of an element in this section.
+	size_t count; ///< The number of consecutive elements in this section.
+} RzBinSectionLayout;
+
 typedef struct rz_bin_section_t {
 	char *name;
 	ut64 size;
 	ut64 vsize;
 	ut64 vaddr;
+	/**
+	 * \brief The offset into the binary file.
+	 * Note: This is not related to the physical addresses an MMU would manage!
+	 */
 	ut64 paddr;
 	ut32 perm;
 	ut64 align;
@@ -575,7 +606,7 @@ typedef struct rz_bin_section_t {
 	const char *arch;
 	ut64 type;
 	ut64 flags;
-	char *format;
+	RzBinSectionLayout layout;
 	int bits;
 	bool has_strings;
 	bool is_data;
@@ -633,6 +664,10 @@ typedef struct rz_bin_symbol_t {
 	// ----------------
 	// char descriptor[RZ_BIN_SIZEOF_STRINGS+1];
 	ut64 vaddr;
+	/**
+	 * \brief The offset into the binary file.
+	 * Note: This is not related to the physical addresses an MMU would manage!
+	 */
 	ut64 paddr;
 	ut32 size;
 	ut32 ordinal;
@@ -661,11 +696,16 @@ typedef struct rz_bin_reloc_t {
 	RzBinImport *import;
 	st64 addend;
 	ut64 vaddr; ///< the vaddr where the value should be patched into
-	ut64 paddr; ///< the paddr where the value should be patched into
+	/**
+	 * \brief The offset into the binary file.
+	 * Note: This is not related to the physical addresses an MMU would manage!
+	 */
+	ut64 paddr;
 	ut64 target_vaddr; ///< the target address that the patched reloc points to
 	ut64 section_vaddr; ///< the subsection address
 	ut32 visibility;
 	bool additive;
+	const char *print_name; ///< Name of the relocation type. NULL if none is specified. Not setting this field is deprecated.
 	/* is_ifunc: indirect function, `addend` points to a resolver function
 	 * that returns the actual relocation value, e.g. chooses
 	 * an optimized version depending on the CPU.
@@ -680,6 +720,7 @@ RZ_API ut64 rz_bin_reloc_size(RzBinReloc *reloc);
 struct rz_bin_reloc_storage_t {
 	RzBinReloc **relocs; ///< all relocs, ordered by their vaddr
 	size_t relocs_count;
+	RzPVectorFree relocs_free;
 	RzBinReloc **target_relocs; ///< all relocs that have a valid target_vaddr, ordered by their target_vaddr. size is target_relocs_count!
 	size_t target_relocs_count;
 }; // RzBinRelocStorage
@@ -699,6 +740,10 @@ typedef struct rz_bin_string_t {
 	// TODO: rename string->name (avoid colisions)
 	char *string;
 	ut64 vaddr;
+	/**
+	 * \brief The offset into the binary file.
+	 * Note: This is not related to the physical addresses an MMU would manage!
+	 */
 	ut64 paddr;
 	ut32 ordinal;
 	ut32 size; // size of buffer containing the string in bytes
@@ -708,6 +753,10 @@ typedef struct rz_bin_string_t {
 
 typedef struct rz_bin_field_t {
 	ut64 vaddr;
+	/**
+	 * \brief The offset into the binary file.
+	 * Note: This is not related to the physical addresses an MMU would manage!
+	 */
 	ut64 paddr;
 	int size;
 	int offset;
@@ -721,6 +770,10 @@ typedef struct rz_bin_field_t {
 
 typedef struct rz_bin_class_field_t {
 	ut64 vaddr;
+	/**
+	 * \brief The offset into the binary file.
+	 * Note: This is not related to the physical addresses an MMU would manage!
+	 */
 	ut64 paddr;
 	char *name;
 	char *classname;
@@ -767,6 +820,34 @@ typedef struct rz_bin_bind_t {
 	RzBinDemangle demangle;
 	ut32 visibility;
 } RzBinBind;
+
+/**
+ * \brief Compare plugins by name (via strcmp).
+ */
+static inline int rz_bin_plugin_cmp(RZ_NULLABLE const RzBinPlugin *a, RZ_NULLABLE const RzBinPlugin *b) {
+	if (!a && !b) {
+		return 0;
+	} else if (!a) {
+		return -1;
+	} else if (!b) {
+		return 1;
+	}
+	return rz_str_cmp(a->name, b->name, -1);
+}
+
+/**
+ * \brief Compare plugins by name (via strcmp).
+ */
+static inline int rz_bin_xtr_plugin_cmp(RZ_NULLABLE const RzBinXtrPlugin *a, RZ_NULLABLE const RzBinXtrPlugin *b) {
+	if (!a && !b) {
+		return 0;
+	} else if (!a) {
+		return -1;
+	} else if (!b) {
+		return 1;
+	}
+	return rz_str_cmp(a->name, b->name, -1);
+}
 
 RZ_API RzBinField *rz_bin_field_new(ut64 paddr, ut64 vaddr, int size, const char *name, const char *comment, const char *format, bool format_named);
 RZ_API void rz_bin_field_free(RZ_NULLABLE RzBinField *field);
@@ -855,7 +936,6 @@ RZ_API void rz_bin_force_plugin(RzBin *bin, const char *pname);
 RZ_API ut64 rz_bin_get_baddr(RzBin *bin);
 RZ_API ut64 rz_bin_file_get_baddr(RzBinFile *bf);
 RZ_API void rz_bin_set_user_ptr(RzBin *bin, void *user);
-RZ_DEPRECATE RZ_API RZ_BORROW RzBinInfo *rz_bin_get_info(RzBin *bin);
 RZ_API void rz_bin_set_baddr(RzBin *bin, ut64 baddr);
 RZ_API ut64 rz_bin_get_laddr(RzBin *bin);
 RZ_API ut64 rz_bin_get_size(RzBin *bin);
@@ -865,11 +945,10 @@ RZ_API void rz_bin_string_search_opt_init(RZ_NONNULL RzBinStringSearchOpt *opt);
 RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_bin_file_strings(RZ_NONNULL RzBinFile *bf, RZ_NONNULL const RzBinStringSearchOpt *opt);
 
 // use RzBinFile instead
-RZ_DEPRECATE RZ_API RZ_BORROW RzList /*<RzBinAddr *>*/ *rz_bin_get_entries(RZ_NONNULL RzBin *bin);
 RZ_DEPRECATE RZ_API int rz_bin_is_static(RZ_NONNULL RzBin *bin);
 RZ_API RZ_OWN RzPVector /*<RzBinTrycatch *>*/ *rz_bin_file_get_trycatch(RZ_NONNULL RzBinFile *bf);
 
-RZ_API const RzList /*<RzBinAddr *>*/ *rz_bin_object_get_entries(RZ_NONNULL RzBinObject *obj);
+RZ_API RZ_BORROW const RzPVector /*<RzBinAddr *>*/ *rz_bin_object_get_entries(RZ_NONNULL RzBinObject *obj);
 RZ_API const RzPVector /*<RzBinField *>*/ *rz_bin_object_get_fields(RZ_NONNULL RzBinObject *obj);
 RZ_API const RzPVector /*<RzBinImport *>*/ *rz_bin_object_get_imports(RZ_NONNULL RzBinObject *obj);
 RZ_API const RzBinInfo *rz_bin_object_get_info(RZ_NONNULL RzBinObject *obj);
@@ -908,6 +987,7 @@ RZ_API bool rz_bin_use_arch(RzBin *bin, const char *arch, int bits, const char *
 RZ_API RzBuffer *rz_bin_create(RzBin *bin, const char *plugin_name, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt);
 
 RZ_API const char *rz_bin_entry_type_string(int etype);
+RZ_API ut64 rz_bin_get_first_entrypoint(RZ_NULLABLE RzBinObject *obj);
 
 RZ_API bool rz_bin_file_object_new_from_xtr_data(RzBin *bin, RzBinFile *bf, RzBinObjectLoadOptions *opts, RzBinXtrData *data);
 
@@ -937,10 +1017,9 @@ static inline bool rz_bin_file_rclass_is(RzBinFile *bf, const char *x) {
 }
 
 // binobject functions
-RZ_API bool rz_bin_object_process_plugin_data(RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzBinObject *o);
 RZ_API ut64 rz_bin_object_addr_with_base(RzBinObject *o, ut64 addr);
 RZ_API ut64 rz_bin_object_get_vaddr(RzBinObject *o, ut64 paddr, ut64 vaddr);
-RZ_API const RzBinAddr *rz_bin_object_get_special_symbol(RzBinObject *o, RzBinSpecialSymbol sym);
+RZ_API RZ_BORROW const RzBinAddr *rz_bin_object_get_special_symbol(RZ_NULLABLE RzBinObject *o, RzBinSpecialSymbol sym);
 RZ_API RzBinRelocStorage *rz_bin_object_patch_relocs(RzBinFile *bf, RzBinObject *o);
 RZ_API RzBinSymbol *rz_bin_object_get_symbol_of_import(RzBinObject *o, RzBinImport *imp);
 RZ_API RzBinVirtualFile *rz_bin_object_get_virtual_file(RzBinObject *o, const char *name);
@@ -962,7 +1041,8 @@ RZ_API void rz_bin_demangle_with_flags(RZ_NONNULL RzBin *bin, RzDemanglerFlag fl
 RZ_API RZ_OWN char *rz_bin_demangle(RZ_NULLABLE RzBin *bin, RZ_NULLABLE const char *language, RZ_NULLABLE const char *mangled);
 RZ_API const char *rz_bin_get_meth_flag_string(ut64 flag, bool compact);
 
-RZ_API RZ_BORROW RzBinSection *rz_bin_get_section_at(RzBinObject *o, ut64 off, int va);
+RZ_API RZ_BORROW RzBinSection *rz_bin_get_section_at(RZ_NONNULL RzBinObject *o, ut64 off, bool va);
+RZ_API RZ_BORROW RzBinSection *rz_bin_get_segment_at(RZ_NONNULL RzBinObject *o, ut64 off, bool va);
 
 /* filter.c */
 RZ_API void rz_bin_load_filter(RzBin *bin, ut64 rules);
@@ -974,66 +1054,6 @@ RZ_API RZ_OWN RzBinStrDb *rz_bin_string_database_new(RZ_NULLABLE RZ_OWN RzPVecto
 RZ_API void rz_bin_string_database_free(RZ_NULLABLE RzBinStrDb *db);
 RZ_API bool rz_bin_string_database_add(RZ_NONNULL RzBinStrDb *db, RZ_NONNULL RzBinString *bstr);
 RZ_API bool rz_bin_string_database_remove(RZ_NONNULL RzBinStrDb *db, ut64 address, bool is_va);
-
-/* plugin pointers */
-extern RzBinPlugin rz_bin_plugin_any;
-extern RzBinPlugin rz_bin_plugin_fs;
-extern RzBinPlugin rz_bin_plugin_cgc;
-extern RzBinPlugin rz_bin_plugin_elf;
-extern RzBinPlugin rz_bin_plugin_elf64;
-extern RzBinPlugin rz_bin_plugin_p9;
-extern RzBinPlugin rz_bin_plugin_ne;
-extern RzBinPlugin rz_bin_plugin_le;
-extern RzBinPlugin rz_bin_plugin_luac;
-extern RzBinPlugin rz_bin_plugin_pe;
-extern RzBinPlugin rz_bin_plugin_mz;
-extern RzBinPlugin rz_bin_plugin_pe64;
-extern RzBinPlugin rz_bin_plugin_pebble;
-extern RzBinPlugin rz_bin_plugin_bios;
-extern RzBinPlugin rz_bin_plugin_bf;
-extern RzBinPlugin rz_bin_plugin_te;
-extern RzBinPlugin rz_bin_plugin_symbols;
-extern RzBinPlugin rz_bin_plugin_mach0;
-extern RzBinPlugin rz_bin_plugin_mach064;
-extern RzBinPlugin rz_bin_plugin_mdmp;
-extern RzBinPlugin rz_bin_plugin_java;
-extern RzBinPlugin rz_bin_plugin_dex;
-extern RzBinPlugin rz_bin_plugin_coff;
-extern RzBinPlugin rz_bin_plugin_ningb;
-extern RzBinPlugin rz_bin_plugin_ningba;
-extern RzBinPlugin rz_bin_plugin_ninds;
-extern RzBinPlugin rz_bin_plugin_nin3ds;
-extern RzBinPlugin rz_bin_plugin_xbe;
-extern RzBinPlugin rz_bin_plugin_bflt;
-extern RzBinXtrPlugin rz_bin_xtr_plugin_xtr_fatmach0;
-extern RzBinXtrPlugin rz_bin_xtr_plugin_xtr_dyldcache;
-extern RzBinXtrPlugin rz_bin_xtr_plugin_xtr_pemixed;
-extern RzBinXtrPlugin rz_bin_xtr_plugin_xtr_sep64;
-extern RzBinPlugin rz_bin_plugin_zimg;
-extern RzBinPlugin rz_bin_plugin_omf;
-extern RzBinPlugin rz_bin_plugin_art;
-extern RzBinPlugin rz_bin_plugin_bootimg;
-extern RzBinPlugin rz_bin_plugin_dol;
-extern RzBinPlugin rz_bin_plugin_nes;
-extern RzBinPlugin rz_bin_plugin_qnx;
-extern RzBinPlugin rz_bin_plugin_mbn;
-extern RzBinPlugin rz_bin_plugin_smd;
-extern RzBinPlugin rz_bin_plugin_sms;
-extern RzBinPlugin rz_bin_plugin_psxexe;
-extern RzBinPlugin rz_bin_plugin_spc700;
-extern RzBinPlugin rz_bin_plugin_vsf;
-extern RzBinPlugin rz_bin_plugin_dyldcache;
-extern RzBinPlugin rz_bin_plugin_xnu_kernelcache;
-extern RzBinPlugin rz_bin_plugin_avr;
-extern RzBinPlugin rz_bin_plugin_menuet;
-extern RzBinPlugin rz_bin_plugin_wasm;
-extern RzBinPlugin rz_bin_plugin_nro;
-extern RzBinPlugin rz_bin_plugin_nso;
-extern RzBinPlugin rz_bin_plugin_sfc;
-extern RzBinPlugin rz_bin_plugin_z64;
-extern RzBinPlugin rz_bin_plugin_prg;
-extern RzBinPlugin rz_bin_plugin_dmp64;
-extern RzBinPlugin rz_bin_plugin_pyc;
 
 #ifdef __cplusplus
 }

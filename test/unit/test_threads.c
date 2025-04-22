@@ -5,15 +5,31 @@
 #include <rz_th.h>
 #include <rz_util/rz_time.h>
 #include <rz_util/rz_sys.h>
+#include <rz_userconf.h>
 #include "minunit.h"
 
-bool test_thread_pool_cores(void) {
-	size_t cores = rz_th_physical_core_number();
+bool test_thread_limit(void) {
+	const RzThreadNCores n_thread_limit = N_THREAD_LIMIT;
+	const RzThreadNCores n_cores = rz_th_physical_core_number();
 
-	RzThreadPool *pool = rz_th_pool_new(RZ_THREAD_POOL_ALL_CORES);
-	mu_assert_notnull(pool, "rz_th_pool_new(RZ_THREAD_POOL_ALL_CORES) null check");
+	// ensure the core count is returned.
+	RzThreadNCores requested = rz_th_max_threads(RZ_THREAD_N_CORES_ALL_AVAILABLE);
+	mu_assert_eq(requested, n_cores, "RZ_THREAD_N_CORES_ALL_AVAILABLE == rz_th_physical_core_number");
+
+	// ensure the thread limit is returned.
+	requested = rz_th_max_threads(n_thread_limit + 1);
+	mu_assert_eq(requested, n_thread_limit, "N_THREAD_LIMIT == rz_th_max_threads(LIMIT + 1)");
+
+	mu_end;
+}
+
+bool test_thread_pool_cores(void) {
+	RzThreadNCores cores = rz_th_physical_core_number();
+
+	RzThreadPool *pool = rz_th_pool_new(RZ_THREAD_N_CORES_ALL_AVAILABLE);
+	mu_assert_notnull(pool, "rz_th_pool_new(RZ_THREAD_N_CORES_ALL_AVAILABLE) null check");
 	size_t pool_size = rz_th_pool_size(pool);
-	mu_assert_eq(pool_size, cores, "rz_th_pool_new(RZ_THREAD_POOL_ALL_CORES) core count check");
+	mu_assert_eq(pool_size, cores, "rz_th_pool_new(RZ_THREAD_N_CORES_ALL_AVAILABLE) core count check");
 	rz_th_pool_free(pool);
 
 	if (cores > 1) {
@@ -85,45 +101,47 @@ bool test_thread_ht(void) {
 	bool v_boolean = false;
 	const char *element = NULL;
 
-	RzThreadHtPP *ht = rz_th_ht_pp_new0();
-	mu_assert_notnull(ht, "rz_th_ht_pp_new0() null check");
+	HtSS *tab = ht_ss_new(HT_STR_DUP, HT_STR_DUP);
+	RzThreadHtSS *ht = rz_th_ht_ss_new(tab);
+	mu_assert_notnull(ht, "rz_th_ht_ss_new() null check");
 
 	v_boolean = true;
-	element = (const char *)rz_th_ht_pp_find(ht, "not found", &v_boolean);
+	element = rz_th_ht_ss_find(ht, "not found", &v_boolean);
 	mu_assert_false(v_boolean, "the search must say not found");
 	mu_assert_null(element, "the search must return NULL");
 
-	v_boolean = rz_th_ht_pp_insert(ht, "foo", "bar");
+	v_boolean = rz_th_ht_ss_insert(ht, "foo", "bar");
 	mu_assert_true(v_boolean, "the insert must succeed");
 
 	v_boolean = false;
-	element = (const char *)rz_th_ht_pp_find(ht, "foo", &v_boolean);
+	element = rz_th_ht_ss_find(ht, "foo", &v_boolean);
 	mu_assert_true(v_boolean, "the search must say found");
 	mu_assert_notnull(element, "the search must NOT return NULL");
 	mu_assert_streq(element, "bar", "expecting to find 'bar' when searching for 'foo'");
 
-	element = (const char *)rz_th_ht_pp_find(ht, "foo", NULL);
+	element = rz_th_ht_ss_find(ht, "foo", NULL);
 	mu_assert_notnull(element, "the search must NOT return NULL");
 	mu_assert_streq(element, "bar", "expecting to find 'bar' when searching for 'foo'");
 
-	v_boolean = rz_th_ht_pp_delete(ht, "not found");
+	v_boolean = rz_th_ht_ss_delete(ht, "not found");
 	mu_assert_false(v_boolean, "the delete must fail");
 
-	v_boolean = rz_th_ht_pp_delete(ht, "foo");
+	v_boolean = rz_th_ht_ss_delete(ht, "foo");
 	mu_assert_true(v_boolean, "the delete must succeed");
 
 	v_boolean = true;
-	element = (const char *)rz_th_ht_pp_find(ht, "foo", &v_boolean);
+	element = rz_th_ht_ss_find(ht, "foo", &v_boolean);
 	mu_assert_false(v_boolean, "the search must say not found");
 	mu_assert_null(element, "the search must return NULL");
 
-	rz_th_ht_pp_free(ht);
+	rz_th_ht_ss_free(ht);
 	mu_end;
 }
 
-void thread_set_bool_arg(bool *value, bool *user) {
+bool thread_set_bool_arg(bool *value, bool *user) {
 	*value = true;
 	*user = true;
+	return true;
 }
 
 bool test_thread_iterator_list(void) {
@@ -147,7 +165,7 @@ bool test_thread_iterator_list(void) {
 	rz_list_append(list, &bool4);
 
 	// test values are accessed
-	res = rz_th_iterate_list(list, (RzThreadIterator)thread_set_bool_arg, RZ_THREAD_POOL_ALL_CORES, &bool_user);
+	res = rz_th_iterate_list(list, (RzThreadIterator)thread_set_bool_arg, RZ_THREAD_N_CORES_ALL_AVAILABLE, &bool_user);
 	mu_assert_true(res, "list is not empty and must return true");
 	mu_assert_true(bool_user, "bool_user must be true");
 	mu_assert_true(bool0, "bool0 must be true");
@@ -167,7 +185,7 @@ bool test_thread_iterator_list(void) {
 	rz_list_append(list, NULL);
 	rz_list_append(list, NULL);
 	rz_list_append(list, NULL);
-	res = rz_th_iterate_list(list, (RzThreadIterator)thread_set_bool_arg, RZ_THREAD_POOL_ALL_CORES, &bool_user);
+	res = rz_th_iterate_list(list, (RzThreadIterator)thread_set_bool_arg, RZ_THREAD_N_CORES_ALL_AVAILABLE, &bool_user);
 	mu_assert_true(res, "pvec is not empty and must return true");
 	mu_assert_false(bool_user, "bool_user must be false");
 
@@ -198,7 +216,7 @@ bool test_thread_iterator_pvec(void) {
 	rz_pvector_push(pvec, &bool4);
 
 	// test values are accessed
-	res = rz_th_iterate_pvector(pvec, (RzThreadIterator)thread_set_bool_arg, RZ_THREAD_POOL_ALL_CORES, &bool_user);
+	res = rz_th_iterate_pvector(pvec, (RzThreadIterator)thread_set_bool_arg, RZ_THREAD_N_CORES_ALL_AVAILABLE, &bool_user);
 	mu_assert_true(res, "pvec is not empty and must return true");
 	mu_assert_true(bool_user, "bool_user must be true");
 	mu_assert_true(bool0, "bool0 must be true");
@@ -214,7 +232,7 @@ bool test_thread_iterator_pvec(void) {
 	rz_pvector_set(pvec, 2, NULL);
 	rz_pvector_set(pvec, 3, NULL);
 	rz_pvector_set(pvec, 4, NULL);
-	res = rz_th_iterate_pvector(pvec, (RzThreadIterator)thread_set_bool_arg, RZ_THREAD_POOL_ALL_CORES, &bool_user);
+	res = rz_th_iterate_pvector(pvec, (RzThreadIterator)thread_set_bool_arg, RZ_THREAD_N_CORES_ALL_AVAILABLE, &bool_user);
 	mu_assert_true(res, "pvec is not empty and must return true");
 	mu_assert_false(bool_user, "bool_user must be false");
 
@@ -223,6 +241,7 @@ bool test_thread_iterator_pvec(void) {
 }
 
 int all_tests() {
+	mu_run_test(test_thread_limit);
 	mu_run_test(test_thread_pool_cores);
 	mu_run_test(test_thread_queue);
 	mu_run_test(test_thread_ht);

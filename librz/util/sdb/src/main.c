@@ -140,7 +140,6 @@ static void synchronize(RZ_UNUSED int sig) {
 
 static int sdb_grep_dump(const char *dbname, int fmt, bool grep,
 	const char *expgrep) {
-	char *v, k[SDB_CDB_MAX_KEY] = { 0 };
 	// local db beacuse is readonly and we dont need to finalize in case of ^C
 	Sdb *db = sdb_new(NULL, dbname, 0);
 	if (!db) {
@@ -148,9 +147,11 @@ static int sdb_grep_dump(const char *dbname, int fmt, bool grep,
 	}
 	sdb_config(db, options);
 	sdb_dump_begin(db);
-	while (sdb_dump_dupnext(db, k, &v, NULL)) {
+	SdbKv it = { 0 };
+	while (sdb_dump_next(db, &it)) {
+		const char *k = sdbkv_key(&it);
+		const char *v = sdbkv_value(&it);
 		if (grep && !strstr(k, expgrep) && !strstr(v, expgrep)) {
-			free(v);
 			continue;
 		}
 		switch (fmt) {
@@ -161,7 +162,6 @@ static int sdb_grep_dump(const char *dbname, int fmt, bool grep,
 			printf("%s=%s\n", k, v);
 			break;
 		}
-		free(v);
 	}
 	switch (fmt) {
 	case MODE_ZERO:
@@ -181,27 +181,12 @@ static int sdb_dump(const char *db, int fmt) {
 	return sdb_grep_dump(db, fmt, false, NULL);
 }
 
-static int insertkeys(Sdb *s, const char **args, int nargs, int mode) {
+static int insertkeys(Sdb *s, const char **args, int nargs) {
 	int must_save = 0;
 	if (args && nargs > 0) {
 		int i;
 		for (i = 0; i < nargs; i++) {
-			switch (mode) {
-			case '-':
-				must_save |= sdb_query(s, args[i]);
-				break;
-			case '=':
-				if (strchr(args[i], '=')) {
-					char *v, *kv = (char *)strdup(args[i]);
-					v = strchr(kv, '=');
-					if (v) {
-						*v++ = 0;
-						sdb_disk_insert(s, kv, v);
-					}
-					free(kv);
-				}
-				break;
-			}
+			must_save |= sdb_query(s, args[i]);
 		}
 	}
 	return must_save;
@@ -415,7 +400,7 @@ int main(int argc, const char **argv) {
 			sdb_config(s, options);
 			int kvs = db0 + 2;
 			if (kvs < argc) {
-				save |= insertkeys(s, argv + argi + 2, argc - kvs, '-');
+				save |= insertkeys(s, argv + argi + 2, argc - kvs);
 			}
 			for (; (line = slurp(stdin, NULL));) {
 				save |= sdb_query(s, line);

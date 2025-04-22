@@ -27,11 +27,11 @@ static RzBinInfo *info(RzBinFile *bf) {
 	if (!ret) {
 		return NULL;
 	}
-	ret->file = strdup(bf->file);
-	ret->type = strdup("PRG");
-	ret->machine = strdup("Commodore 64");
-	ret->os = strdup("c64");
-	ret->arch = strdup("6502");
+	ret->file = rz_str_dup(bf->file);
+	ret->type = rz_str_dup("PRG");
+	ret->machine = rz_str_dup("Commodore 64");
+	ret->os = rz_str_dup("c64");
+	ret->arch = rz_str_dup("6502");
 	ret->bits = 8;
 	ret->has_va = 1;
 	return ret;
@@ -50,7 +50,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	if (!section) {
 		return ret;
 	}
-	section->name = strdup("prg");
+	section->name = rz_str_dup("prg");
 	section->paddr = 2;
 	section->size = sz - 2;
 	section->vaddr = baddr(bf);
@@ -60,8 +60,8 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
-	RzList *ret = rz_list_newf(free);
+static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+	RzPVector *ret = rz_pvector_new(free);
 	if (!ret) {
 		return NULL;
 	}
@@ -71,7 +71,7 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	}
 	binaddr->paddr = 2;
 	binaddr->vaddr = baddr(bf);
-	rz_list_append(ret, binaddr);
+	rz_pvector_push(ret, binaddr);
 	return ret;
 }
 

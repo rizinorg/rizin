@@ -275,10 +275,6 @@ EOF
 EXPECT=<<EOF
 0x400574
 EOF
-REGEXP_FILTER_ERR=(Continue\suntil\s[a-zA-Z0-9]+)
-EXPECT_ERR=<<EOF
-Continue until 0x00400574
-EOF
 RUN
 
 NAME=seek follows after ds on 1-byte ins
@@ -300,7 +296,7 @@ EXPECT=<<EOF
             ;-- rip:
             0x00400574      55             push  rbp
             ;-- r13:
-            0x00400575      ff1425580960.  call  qword [loc.pnt_0]     ; 0x600958 ; "/\x05@"
+            0x00400575      ff1425580960.  call  qword [loc.pnt_0]     ; 0x600958 ; "/\U00000005@"
 0x400574
 0x400575
 EOF

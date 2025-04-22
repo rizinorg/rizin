@@ -10,9 +10,9 @@ NAME=ELF: hexagon imports R_HEX_JMP_SLOT
 FILE=bins/elf/hexagon/hexagon-plt
 CMDS=ii
 EXPECT=<<EOF
-nth vaddr      bind   type lib name 
+nth      vaddr bind   type lib name 
 ------------------------------------
-1   0x78000430 GLOBAL FUNC     bar
-2   ---------- WEAK   FUNC     weak
+  1 0x78000430 GLOBAL FUNC     bar
+  2 ---------- WEAK   FUNC     weak
 EOF
 RUN

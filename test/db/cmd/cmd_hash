@@ -38,6 +38,5 @@ CMDS=<<EOF
 #}~?
 #~~?
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN

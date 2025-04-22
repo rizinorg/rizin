@@ -66,13 +66,13 @@ RUN apt-get install -y --no-install-recommends \
 	${with_arm32_as:+binutils-arm-linux-gnueabi} \
 	${with_ppc_as:+binutils-powerpc64le-linux-gnu}
 
-RUN pip3 install meson
+RUN pip3 install meson tomli
 
 # Build rizin in a volume to minimize space used by build
 COPY . /tmp/rizin/
 
 WORKDIR /tmp/rizin
-RUN meson --prefix=/usr -Dinstall_sigdb=true /tmp/build && \
+RUN meson setup --prefix=/usr -Dinstall_sigdb=true /tmp/build && \
 	meson compile -C /tmp/build && \
 	meson install --destdir /tmp/rizin-install -C /tmp/build
 

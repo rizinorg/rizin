@@ -17,11 +17,19 @@
 #define RZ_REGEX_ERROR_NOMATCH (-1) /* PCRE2_ERROR_NOMATCH */
 #define RZ_REGEX_ERROR_PARTIAL (-2) /* PCRE2_ERROR_PARTIAL */
 
+/**
+ * \brief Regex compilation flags. They are only used for rz_regex_new()
+ * C   alters what is compiled by rz_regex_new()
+ * J   alters what is compiled by rz_regex_new() (with JIT enabled).
+ * M   is inspected during rz_regex_match() execution
+ * D   is inspected during pcre2_dfa_match() execution (not used).
+ */
 #define RZ_REGEX_DEFAULT       0
-#define RZ_REGEX_CASELESS      0x00000008u /* PCRE2_CASELESS */
-#define RZ_REGEX_EXTENDED      0x00000080u /* PCRE2_EXTENDED */
-#define RZ_REGEX_EXTENDED_MORE 0x01000000u /* PCRE2_EXTENDED_MORE */
-#define RZ_REGEX_MULTILINE     0x00000400u /* PCRE2_MULTILINE */
+#define RZ_REGEX_LITERAL       0x02000000u /* PCRE2_LITERAL       - C      */
+#define RZ_REGEX_CASELESS      0x00000008u /* PCRE2_CASELESS      - C      */
+#define RZ_REGEX_EXTENDED      0x00000080u /* PCRE2_EXTENDED      - C      */
+#define RZ_REGEX_EXTENDED_MORE 0x01000000u /* PCRE2_EXTENDED_MORE - C      */
+#define RZ_REGEX_MULTILINE     0x00000400u /* PCRE2_MULTILINE     - C      */
 
 #define RZ_REGEX_JIT_PARTIAL_SOFT 0x00000002u /* PCRE2_JIT_PARTIAL_SOFT */
 #define RZ_REGEX_JIT_PARTIAL_HARD 0x00000004u /* PCRE2_JIT_PARTIAL_HARD */
@@ -37,6 +45,7 @@ typedef size_t RzRegexSize; ///< Size of a text or regex. This is the size measu
 typedef ut32 RzRegexFlags; ///< Regex flag bits.
 typedef uint8_t *RzRegexPattern; ///< A regex pattern string.
 typedef void RzRegex; ///< A regex expression.
+typedef void RzRegexCompContext; ///< A PCRE2 compile context.
 
 typedef struct {
 	RzRegexSize group_idx; ///< Index of the group. Used to determine name if any was given.
@@ -46,7 +55,10 @@ typedef struct {
 
 typedef void RzRegexMatchData; ///< PCRE2 internal match data type
 
-RZ_API RZ_OWN RzRegex *rz_regex_new(RZ_NONNULL const char *pattern, RzRegexFlags cflags, RzRegexFlags jflags);
+RZ_API RZ_OWN RzRegex *rz_regex_new(RZ_NONNULL const char *pattern, RzRegexFlags cflags, RzRegexFlags jflags,
+	RzRegexCompContext *ccontext);
+RZ_API RZ_OWN RzRegex *rz_regex_new_bytes(RZ_NONNULL const ut8 *pattern, size_t pattern_len, RzRegexFlags cflags, RzRegexFlags jflags,
+	RzRegexCompContext *ccontext);
 RZ_API void rz_regex_free(RZ_OWN RzRegex *regex);
 RZ_API void rz_regex_error_msg(RzRegexStatus errcode, RZ_OUT char *errbuf, RzRegexSize errbuf_size);
 RZ_API const ut8 *rz_regex_get_match_name(RZ_NONNULL const RzRegex *regex, ut32 name_idx);
@@ -73,6 +85,12 @@ RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all(
 	RzRegexSize text_size,
 	RzRegexSize text_offset,
 	RzRegexFlags mflags);
+RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all_overlap(
+	RZ_NONNULL const RzRegex *regex,
+	RZ_NONNULL const char *text,
+	RzRegexSize text_size,
+	RzRegexSize text_offset,
+	RzRegexFlags mflags);
 RZ_API bool rz_regex_contains(RZ_NONNULL const char *pattern, RZ_NONNULL const char *text,
 	RzRegexSize text_size,
 	RzRegexFlags cflags, RzRegexFlags mflags);
@@ -82,5 +100,9 @@ RZ_API RzRegexSize rz_regex_find(RZ_NONNULL const char *pattern, RZ_NONNULL RZ_B
 RZ_API RZ_OWN RzStrBuf *rz_regex_full_match_str(RZ_NONNULL const char *pattern, RZ_NONNULL const char *text,
 	RzRegexSize text_size,
 	RzRegexFlags cflags, RzRegexFlags mflags, RZ_NONNULL const char *separator);
+RZ_API RZ_OWN RzRegexCompContext *rz_regex_compile_context_new();
+RZ_API void rz_regex_compile_context_free(RzRegexCompContext *ccontext);
+RZ_API void rz_regex_set_nul_as_newline(RZ_NONNULL RzRegexCompContext *ccontext);
+RZ_API RzRegexFlags rz_regex_parse_flag_desc(RZ_NULLABLE const char *re_flags_desc);
 
 #endif /* RZ_REGEX_H */

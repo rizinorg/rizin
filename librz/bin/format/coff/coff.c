@@ -50,45 +50,57 @@ RZ_API ut64 rz_coff_perms_from_section_flags(ut32 flags) {
 	return r;
 }
 
-/*
- * Resolve a coff name to a C string.
- * \param ptr buffer of at least 8 bytes
+/**
+ * \brief      Resolve a coff name to a C string.
+ *
+ * \param      obj   The object
+ * \param[in]  ptr   The pointer to a buffer of at least 8 bytes
+ *
+ * \return     Returns always a valid pointer.
  */
-RZ_API char *rz_coff_symbol_name(struct rz_bin_coff_obj *obj, const ut8 *ptr) {
-	rz_return_val_if_fail(obj && ptr, NULL);
+RZ_API RZ_OWN char *rz_coff_symbol_name(RZ_NONNULL struct rz_bin_coff_obj *obj, RZ_NULLABLE const ut8 *ptr) {
+	rz_return_val_if_fail(obj, NULL);
+	if (!ptr) {
+		return rz_str_dup("");
+	}
 	ut32 zero = rz_read_at_ble32(ptr, 0, obj->endian == COFF_IS_BIG_ENDIAN);
 	ut32 offset = rz_read_at_ble32(ptr, 4, obj->endian == COFF_IS_BIG_ENDIAN);
-	if (!ptr) {
-		return strdup("");
-	}
 	if (zero) {
 		return rz_str_ndup((const char *)ptr, 8);
 	}
 	ut32 addr = obj->hdr.f_symptr + obj->hdr.f_nsyms * sizeof(struct coff_symbol) + offset;
 	if (addr > obj->size) {
-		return strdup("");
+		return rz_str_dup("");
 	}
 	char n[256] = { 0 };
 	st64 len = rz_buf_read_at(obj->b, addr, (ut8 *)n, sizeof(n) - 1);
 	if (len < 1) {
-		return strdup("");
+		return rz_str_dup("");
 	}
-	return strdup(n);
+	return rz_str_dup(n);
 }
 
-static int rz_coff_rebase_sym(struct rz_bin_coff_obj *obj, RzBinAddr *addr, struct coff_symbol *sym) {
+static bool coff_rebase_sym(struct rz_bin_coff_obj *obj, RzBinAddr *addr, struct coff_symbol *sym) {
 	if (sym->n_scnum < 1 || sym->n_scnum > obj->hdr.f_nscns) {
-		return 0;
+		return false;
 	}
 	addr->paddr = obj->scn_hdrs[sym->n_scnum - 1].s_scnptr + sym->n_value;
-	return 1;
+	return true;
+}
+
+static inline bool coff_is_symbol_name(const char *name, const char *expected) {
+	if (RZ_STR_ISEMPTY(name)) {
+		return false;
+	} else if (name[0] == '_') {
+		return RZ_STR_EQ(name + 1, expected);
+	}
+	return RZ_STR_EQ(name, expected);
 }
 
 /* Try to get a valid entrypoint using the methods outlined in
  * http://ftp.gnu.org/old-gnu/Manuals/ld-2.9.1/html_mono/ld.html#SEC24 */
 RZ_API RzBinAddr *rz_coff_get_entry(struct rz_bin_coff_obj *obj) {
 	RzBinAddr *addr = RZ_NEW0(RzBinAddr);
-	int i;
 	if (!addr) {
 		return NULL;
 	}
@@ -99,38 +111,21 @@ RZ_API RzBinAddr *rz_coff_get_entry(struct rz_bin_coff_obj *obj) {
 	}
 	/* No help from the header eh? Use the address of the symbols '_start'
 	 * or 'main' if present */
-	if (obj->symbols) {
-		for (i = 0; i < obj->hdr.f_nsyms; i++) {
-			if ((!strcmp(obj->symbols[i].n_name, "_start") ||
-				    !strcmp(obj->symbols[i].n_name, "start")) &&
-				rz_coff_rebase_sym(obj, addr, &obj->symbols[i])) {
-				return addr;
-			}
-		}
-		for (i = 0; i < obj->hdr.f_nsyms; i++) {
-			if ((!strcmp(obj->symbols[i].n_name, "_main") ||
-				    !strcmp(obj->symbols[i].n_name, "main")) &&
-				rz_coff_rebase_sym(obj, addr, &obj->symbols[i])) {
-				return addr;
-			}
+	if (!obj->symbols) {
+		free(addr);
+		return NULL;
+	}
+
+	for (size_t i = 0; i < obj->hdr.f_nsyms; i++) {
+		if ((coff_is_symbol_name(obj->symbols[i].n_name, "start") ||
+			    coff_is_symbol_name(obj->symbols[i].n_name, "main")) &&
+			coff_rebase_sym(obj, addr, &obj->symbols[i])) {
+			return addr;
 		}
 	}
-#if 0
-	/* Still clueless ? Let's just use the address of .text */
-	if (obj->scn_hdrs) {
-		for (i = 0; i < obj->hdr.f_nscns; i++) {
-			// avoid doing string matching and use x bit from the section
-			if (obj->scn_hdrs[i].s_flags & COFF_SCN_MEM_EXECUTE) {
-				addr->paddr = obj->scn_hdrs[i].s_scnptr;
-				return addr;
-			}
-		}
-	}
-#else
+
 	free(addr);
 	return NULL;
-#endif
-	return addr;
 }
 
 static bool rz_bin_coff_init_hdr(struct rz_bin_coff_obj *obj) {
@@ -240,9 +235,9 @@ static int rz_bin_coff_init(struct rz_bin_coff_obj *obj, RzBuffer *buf, bool ver
 	obj->b = rz_buf_ref(buf);
 	obj->size = rz_buf_size(buf);
 	obj->verbose = verbose;
-	obj->sym_ht = ht_up_new0();
-	obj->imp_ht = ht_up_new0();
-	obj->imp_index = ht_uu_new0();
+	obj->sym_ht = ht_up_new(NULL, NULL);
+	obj->imp_ht = ht_up_new(NULL, NULL);
+	obj->imp_index = ht_uu_new();
 	if (!rz_bin_coff_init_hdr(obj)) {
 		RZ_LOG_ERROR("failed to init hdr\n");
 		return false;

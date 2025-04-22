@@ -314,8 +314,8 @@ bool test_rz_analysis_block_split_in_function() {
 	mu_assert_eq(block->ref, 2, "first block refs after adding to function");
 	mu_assert_eq(second->ref, 2, "second block refs after adding to function");
 
-	mu_assert("function has first block after split", rz_list_contains(fcn->bbs, block));
-	mu_assert("function has second block after split", rz_list_contains(fcn->bbs, second));
+	mu_assert("function has first block after split", rz_pvector_contains(fcn->bbs, block));
+	mu_assert("function has second block after split", rz_pvector_contains(fcn->bbs, second));
 	mu_assert("second block is in function after split", rz_list_contains(block->fcns, fcn));
 	mu_assert("second block is in function after split", rz_list_contains(second->fcns, fcn));
 
@@ -395,9 +395,9 @@ bool test_rz_analysis_block_merge_in_function() {
 	assert_block_invariants(analysis);
 	mu_assert("merge success", success);
 	mu_assert_eq(blocks_count(analysis), 1, "count after merge");
-	mu_assert_eq(rz_list_length(fcn->bbs), 1, "fcn bbs after merge");
+	mu_assert_eq(rz_pvector_len(fcn->bbs), 1, "fcn bbs after merge");
 	mu_assert_eq(rz_list_length(first->fcns), 1, "bb functions after merge");
-	mu_assert("function has merged block", rz_list_contains(fcn->bbs, first));
+	mu_assert("function has merged block", rz_pvector_contains(fcn->bbs, first));
 	mu_assert("merged block is in function", rz_list_contains(first->fcns, fcn));
 
 	rz_analysis_block_unref(first);
@@ -421,13 +421,13 @@ bool test_rz_analysis_block_delete() {
 	rz_analysis_function_add_block(fcn, block);
 	assert_block_invariants(analysis);
 	mu_assert_eq(block->ref, 2, "refs after adding");
-	mu_assert_eq(rz_list_length(fcn->bbs), 1, "fcn bbs after add");
+	mu_assert_eq(rz_pvector_len(fcn->bbs), 1, "fcn bbs after add");
 	mu_assert_eq(rz_list_length(block->fcns), 1, "bb fcns after add");
 
 	rz_analysis_delete_block(block);
 	assert_block_invariants(analysis);
 	mu_assert_eq(block->ref, 1, "refs after delete");
-	mu_assert_eq(rz_list_length(fcn->bbs), 0, "fcn bbs after delete");
+	mu_assert_eq(rz_pvector_len(fcn->bbs), 0, "fcn bbs after delete");
 	mu_assert_eq(rz_list_length(block->fcns), 0, "bb fcns after delete");
 
 	rz_analysis_block_unref(block);
@@ -786,10 +786,10 @@ bool test_rz_analysis_block_automerge() {
 
 		// Randomize the order in which we give the automerge the block.
 		// The outcome should always be the same but it can have some delicate implications on the algorithm inside.
-		RzList *shuffled_blocks = rz_list_newf((RzListFree)rz_analysis_block_unref);
+		RzPVector *shuffled_blocks = rz_pvector_new((RzPVectorFree)rz_analysis_block_unref);
 		while (!rz_list_empty(all_blocks)) {
 			int n = rand() % rz_list_length(all_blocks);
-			rz_list_push(shuffled_blocks, rz_list_get_n(all_blocks, n));
+			rz_pvector_push(shuffled_blocks, rz_list_get_n(all_blocks, n));
 			rz_list_del_n(all_blocks, n);
 		}
 		rz_list_free(all_blocks);
@@ -797,17 +797,18 @@ bool test_rz_analysis_block_automerge() {
 		rz_analysis_block_automerge(shuffled_blocks);
 		assert_block_invariants(analysis);
 		// mu_assert_eq (rz_list_length (shuffled_blocks), 4, "length after automerge");
-		mu_assert("remaining blocks a", rz_list_contains(shuffled_blocks, a));
-		mu_assert("remaining blocks b", rz_list_contains(shuffled_blocks, b));
-		mu_assert("remaining blocks c", rz_list_contains(shuffled_blocks, c));
-		mu_assert("remaining blocks d", rz_list_contains(shuffled_blocks, d));
-		mu_assert_eq(blocks_count(analysis), rz_list_length(shuffled_blocks), "blocks in analysis count");
-		RzListIter *it;
+		mu_assert("remaining blocks a", rz_pvector_contains(shuffled_blocks, a));
+		mu_assert("remaining blocks b", rz_pvector_contains(shuffled_blocks, b));
+		mu_assert("remaining blocks c", rz_pvector_contains(shuffled_blocks, c));
+		mu_assert("remaining blocks d", rz_pvector_contains(shuffled_blocks, d));
+		mu_assert_eq(blocks_count(analysis), rz_pvector_len(shuffled_blocks), "blocks in analysis count");
+		void **it;
 		RzAnalysisBlock *block;
-		rz_list_foreach (shuffled_blocks, it, block) {
+		rz_pvector_foreach (shuffled_blocks, it) {
+			block = (RzAnalysisBlock *)*it;
 			mu_assert_ptreq(rz_analysis_get_block_at(analysis, block->addr), block, "remaining blocks in analysis");
 		}
-		rz_list_free(shuffled_blocks);
+		rz_pvector_free(shuffled_blocks);
 
 		assert_block_invariants(analysis);
 		assert_block_leaks(analysis);
@@ -997,7 +998,7 @@ int all_tests() {
 
 int main(int argc, char **argv) {
 	struct timeval tv;
-	rz_time_gettimeofday(&tv, NULL);
+	rz_time_gettimeofday(&tv);
 	unsigned int seed = argc > 1 ? strtoul(argv[1], NULL, 0) : tv.tv_sec + tv.tv_usec;
 	printf("seed for test_analysis_block: %u\n", seed);
 	return all_tests();

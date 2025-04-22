@@ -163,7 +163,7 @@ void file_badread(RzMagic *ms) {
 	file_error(ms, errno, "error reading");
 }
 
-int file_buffer(RzMagic *ms, int fd, const char *inname, const void *buf, size_t nb) {
+int file_buffer(RzMagic *ms, int fd, const char *inname, const ut8 *buf, size_t nb) {
 	int mime, m = 0;
 	if (!ms) {
 		return -1;
@@ -323,7 +323,8 @@ const char *file_getbuffer(RzMagic *ms) {
 
 int file_check_mem(RzMagic *ms, unsigned int level) {
 	if (level >= ms->c.len) {
-		size_t len = (ms->c.len += 20) * sizeof(*ms->c.li);
+		ms->c.len = level + 20;
+		size_t len = ms->c.len * sizeof(*ms->c.li);
 		ms->c.li = (!ms->c.li) ? malloc(len) : realloc(ms->c.li, len);
 		if (!ms->c.li) {
 			file_oomem(ms, len);

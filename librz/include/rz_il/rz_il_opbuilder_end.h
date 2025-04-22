@@ -55,7 +55,7 @@
 #undef FMOD
 #undef FPOW
 #undef FMAD
-#undef FNEQ
+#undef FNE
 #undef FEQ
 #undef FLT
 #undef FLE
@@ -95,6 +95,7 @@
 #undef MSB
 #undef LSB
 #undef EQ
+#undef NE
 #undef UGT
 #undef ULT
 #undef ULE
@@ -145,6 +146,5 @@
 #undef BSWAP16
 #undef BSWAP32
 #undef BSWAP64
-#undef NE
 
 #undef RZ_IL_OPBUILDER_BEGIN_H
