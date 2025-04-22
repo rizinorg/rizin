@@ -338,6 +338,7 @@ struct rz_core_t {
 	RzList /*<char *>*/ *ropchain;
 	RzCoreSeekHistory seek_history;
 	RzHash *hash;
+	RzList /*<char *>*/ *warnings_after;
 
 	bool marks_init;
 	ut64 marks[UT8_MAX + 1];
@@ -407,6 +408,8 @@ RZ_API void rz_core_notify_error(RZ_NONNULL RzCore *core, RZ_NONNULL const char 
 RZ_API void rz_core_notify_begin_str(RZ_NONNULL RzCore *core, RZ_NONNULL const char *text);
 RZ_API void rz_core_notify_done_str(RZ_NONNULL RzCore *core, RZ_NONNULL const char *text);
 RZ_API void rz_core_notify_error_str(RZ_NONNULL RzCore *core, RZ_NONNULL const char *text);
+
+RZ_API void rz_core_warn_after_output(RZ_NONNULL RzCore *core, RZ_NONNULL const char *warning);
 
 /**
  * \brief APIs to handle Visual Gadgets

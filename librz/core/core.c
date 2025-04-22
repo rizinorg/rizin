@@ -138,6 +138,26 @@ RZ_API void rz_core_notify_error_str(RZ_NONNULL RzCore *core, RZ_NONNULL const c
 	rz_core_notify_error(core, "%s", text);
 }
 
+/**
+ * \brief  Delays printing of a warning until after command output
+ *
+ * \param  core    The RzCore to use
+ * \param  warning The message to warn about (must be heap-allocated)
+ */
+RZ_API void rz_core_warn_after_output(RZ_NONNULL RzCore *core, RZ_NONNULL const char *warning) {
+	rz_return_if_fail(core && warning);
+	rz_list_append(core->warnings_after, (char *)warning);
+}
+
+RZ_IPI void rz_core_print_warnings_after(RZ_NONNULL RzCore *core) {
+	rz_return_if_fail(core);
+	for (ut32 i = 0; i < rz_list_length(core->warnings_after); i++) {
+		char *warn_str = rz_list_pop_head(core->warnings_after);
+		RZ_LOG_WARN("%s", warn_str);
+		free(warn_str);
+	}
+}
+
 static int on_fcn_new(RzAnalysis *_analysis, void *_user, RzAnalysisFunction *fcn) {
 	RzCore *core = (RzCore *)_user;
 	const char *cmd = rz_config_get(core->config, "cmd.fcn.new");
@@ -1541,6 +1561,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->egg = rz_egg_new();
 	rz_egg_setup(core->egg, RZ_SYS_ARCH, RZ_SYS_BITS, 0, RZ_SYS_OS);
 	core->crypto = rz_crypto_new();
+	core->warnings_after = rz_list_newf((RzListFree)free);
 
 	core->fixedarch = false;
 	core->fixedbits = false;
@@ -1778,6 +1799,7 @@ RZ_API void rz_core_fini(RzCore *c) {
 	RZ_FREE(c->rtr_host);
 	RZ_FREE(c->curtheme);
 	RZ_FREE_CUSTOM(c->visual, rz_core_visual_free);
+	RZ_FREE_CUSTOM(c->warnings_after, rz_list_free);
 }
 
 RZ_API void rz_core_free(RzCore *c) {
@@ -1937,6 +1959,7 @@ RZ_API int rz_core_prompt_exec(RzCore *r) {
 	if (r->cons && r->cons->line && r->cons->line->zerosep) {
 		rz_cons_zero();
 	}
+	rz_core_print_warnings_after(r);
 	return ret;
 }
 

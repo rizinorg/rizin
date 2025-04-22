@@ -2792,6 +2792,7 @@ DEFINE_HANDLE_TS_FCN(statements) {
 		RzCmdStatus cmd_res = handle_ts_stmt(state, command);
 		if (state->split_lines) {
 			rz_cons_flush();
+			rz_core_print_warnings_after(core);
 			rz_core_task_yield(&core->tasks);
 		}
 		core->cons->context->cmd_depth++;

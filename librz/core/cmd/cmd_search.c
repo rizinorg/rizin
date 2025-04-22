@@ -2782,9 +2782,9 @@ static RzCmdStatus cmd_string_search_generic(RzCore *core, const char *string, c
 	if (flags & RZ_REGEX_LITERAL) {
 		search_str_len = rz_utf8_strlen((const ut8 *)search_str);
 		if (search_str_len < core->bin->str_search_cfg.min_length) {
-			RZ_LOG_WARN("|%s| < search.str.min_length so some search hits may be hidden. Set "
-				    "search.str.min_length to %" PFMTSZu " to see them.\n",
-				search_str, search_str_len);
+			rz_core_warn_after_output(core, rz_str_newf("|%s| < search.str.min_length so some search hits may be hidden. Set "
+								    "search.str.min_length to %" PFMTSZu " to see them.\n",
+								search_str, search_str_len));
 		}
 	}
 
