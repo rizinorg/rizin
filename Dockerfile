@@ -35,7 +35,7 @@ FROM debian:10
 # rz-pipe python version
 ARG RZ_PIPE_PY_VERSION=master
 # rz-ghidra version
-ARG RZ_GHIDRA_VERSION=dev
+ARG RZ_GHIDRA_VERSION=stable
 
 ARG with_arm32_as
 ARG with_arm64_as
