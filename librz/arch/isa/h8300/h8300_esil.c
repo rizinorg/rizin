@@ -82,7 +82,7 @@ int h8300_analyze_op_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 
 		maskB(0);
 		setZ;
 		return 0;
-	case H8300_ADD_4BIT:
+	case H8300_ADD_4BIT_8:
 		rz_strbuf_appendf(&op->esil, "0x%02x,r%u%c,+=", imm, rdB(0));
 		// setZ
 		setV("%o");

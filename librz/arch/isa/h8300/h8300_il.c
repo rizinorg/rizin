@@ -2,7 +2,9 @@
 
 int h8300_analyze_op_il(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 	switch (cmd->id) {
-	case H8300_INSN_MOV_B: break;
+	case H8300_INSN_MOV_B: 
+    
+    break;
     case H8300_INSN_MOV_W: break;
 	case H8300_INSN_ADD_B: break;
     case H8300_INSN_ADD_W: break;
@@ -27,7 +29,7 @@ int h8300_analyze_op_il(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 	case H8300_INSN_SHR: break;
 	case H8300_INSN_ROTL: break;
 	case H8300_INSN_ROTR: break;
-	case H8300_INSN_NOT_NEG: break;
+	case H8300_INSN_NEG: break;
 	case H8300_INSN_DEC: break;
 	case H8300_INSN_SUBS: break;
 	case H8300_INSN_DAS: break;
