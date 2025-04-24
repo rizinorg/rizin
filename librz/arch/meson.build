@@ -158,6 +158,7 @@ arch_isa_sources = [
   # 'isa/gb/meta_gb_cmt.c',
   'isa/h8300/h8300_disas.c',
   'isa/h8300/h8300_esil.c',
+  'isa/h8300/h8300_il.c',
   'isa/hexagon/hexagon.c',
   'isa/hexagon/hexagon_arch.c',
   'isa/hexagon/hexagon_disas.c',

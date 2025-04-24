@@ -143,6 +143,11 @@ static int h8300_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
 		h8300_analyze_op_esil(analysis, op, addr, buf);
 	}
+
+	if (mask & RZ_ANALYSIS_OP_MASK_IL){
+		h8300_analyze_op_il(analysis, op, &cmd);
+	}
+
 	return ret;
 }
 

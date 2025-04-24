@@ -270,6 +270,7 @@ typedef struct h8300_cmd {
 } H8300Cmd;
 
 int h8300_analyze_op_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf);
+int h8300_analyze_op_il(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd);
 int h8300_decode_command(const ut8 *instr, struct h8300_cmd *cmd);
 
 #endif /* H8300_DISAS_H */
