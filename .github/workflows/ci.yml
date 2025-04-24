@@ -368,7 +368,7 @@ jobs:
         working-directory: rizin
       - name: Build
         run: |
-          meson setup --prefix=/usr build && ninja -C build
+          meson setup -Dc_std=gnu99 --prefix=/usr build && ninja -C build
         working-directory: rizin
       - name: Install
         run: ninja -C build install
@@ -450,7 +450,7 @@ jobs:
         run: find subprojects -name '*.wrap' | xargs sed -i '/^depth = 1$/d'
         working-directory: rizin
       - name: Build with Meson + Ninja
-        run: meson setup --prefix=/usr build && ninja -C build
+        run: meson setup -Dc_std=gnu99 --prefix=/usr build && ninja -C build
         working-directory: rizin
       - name: Install with Ninja
         run: ninja -C build install
