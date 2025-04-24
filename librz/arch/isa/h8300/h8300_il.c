@@ -1,5 +1,77 @@
 #include "h8300_disas.h"
 
-int h8300_analyze_op_il(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd){
-    return 0;
+int h8300_analyze_op_il(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
+	switch (cmd->id) {
+	case H8300_INSN_MOV_B: break;
+    case H8300_INSN_MOV_W: break;
+	case H8300_INSN_ADD_B: break;
+    case H8300_INSN_ADD_W: break;
+	case H8300_INSN_ADDX: break;
+	case H8300_INSN_CMP_B: break;
+    case H8300_INSN_CMP_W: break;
+	case H8300_INSN_SUBX: break;
+	case H8300_INSN_OR: break;
+	case H8300_INSN_XOR: break;
+	case H8300_INSN_AND: break;
+	case H8300_INSN_NOP: break;
+	case H8300_INSN_SLEEP: break;
+	case H8300_INSN_STC: break;
+	case H8300_INSN_LDC: break;
+	case H8300_INSN_ORC: break;
+	case H8300_INSN_XORC: break;
+	case H8300_INSN_ANDC: break;
+	case H8300_INSN_INC: break;
+	case H8300_INSN_ADDS: break;
+	case H8300_INSN_DAA: break;
+	case H8300_INSN_SHL: break;
+	case H8300_INSN_SHR: break;
+	case H8300_INSN_ROTL: break;
+	case H8300_INSN_ROTR: break;
+	case H8300_INSN_NOT_NEG: break;
+	case H8300_INSN_DEC: break;
+	case H8300_INSN_SUBS: break;
+	case H8300_INSN_DAS: break;
+	case H8300_INSN_BRA: break;
+	case H8300_INSN_BRN: break;
+	case H8300_INSN_BHI: break;
+	case H8300_INSN_BLS: break;
+	case H8300_INSN_BCC: break;
+	case H8300_INSN_BCS: break;
+	case H8300_INSN_BNE: break;
+	case H8300_INSN_BEQ: break;
+	case H8300_INSN_BVC: break;
+	case H8300_INSN_BVS: break;
+	case H8300_INSN_BPL: break;
+	case H8300_INSN_BMI: break;
+	case H8300_INSN_BGE: break;
+	case H8300_INSN_BLT: break;
+	case H8300_INSN_BGT: break;
+	case H8300_INSN_BLE: break;
+	case H8300_INSN_MULXU: break;
+	case H8300_INSN_DIVXU: break;
+	case H8300_INSN_RTS: break;
+	case H8300_INSN_BSR: break;
+	case H8300_INSN_RTE: break;
+	case H8300_INSN_JMP: break;
+	case H8300_INSN_JSR: break;
+	case H8300_INSN_BSET: break;
+	case H8300_INSN_BNOT: break;
+	case H8300_INSN_BCLR: break;
+	case H8300_INSN_BTST: break;
+	case H8300_INSN_BST: break;
+	case H8300_INSN_BST_BIST: break;
+	case H8300_INSN_BOR_BIOR: break;
+	case H8300_INSN_BXOR: break;
+	case H8300_INSN_BAND: break;
+	case H8300_INSN_BAND_BIAND: break;
+	case H8300_INSN_BILD: break;
+	case H8300_INSN_EEPMOV: break;
+	case H8300_INSN_BIAND: break;
+	case H8300_INSN_BIST: break;
+	case H8300_INSN_BOR: break;
+	case H8300_INSN_BIOR: break;
+	case H8300_INSN_BIXOR: break;
+	case H8300_INSN_BLD: break;
+	}
+	return 0;
 }

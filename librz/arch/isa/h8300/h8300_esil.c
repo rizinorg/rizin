@@ -145,7 +145,7 @@ int h8300_analyze_op_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 
 	case H8300_LDC_2:
 		rz_strbuf_appendf(&op->esil, "0x%02x,ccr,=", imm);
 		return 0;
-	case H8300_ADDB_DIRECT:
+	case H8300_ADD_B:
 		rz_strbuf_appendf(&op->esil, "r%u%c,r%u%c,+=", rsB(), rdB(1));
 		setH_B;
 		setV("%o");
@@ -155,7 +155,7 @@ int h8300_analyze_op_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 
 		maskB(1);
 		setZ;
 		return 0;
-	case H8300_ADDW_DIRECT:
+	case H8300_ADD_W:
 		rz_strbuf_appendf(&op->esil, "r%u,r%u,+=", rs(), rd());
 		setH_W;
 		setV("%o");
@@ -266,7 +266,7 @@ int h8300_analyze_op_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 
 		maskB(1);
 		setZ;
 		return 0;
-	case H8300_SUBW:
+	case H8300_SUB_W:
 		rz_strbuf_appendf(&op->esil, "r%u,r%u,-=", rs(), rd());
 		setHb_W;
 		setV("%o");
@@ -287,7 +287,7 @@ int h8300_analyze_op_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 
 		rz_strbuf_appendf(&op->esil, "%d,r%u,-=",
 			((buf[1] & 0xf0) == 0x80) ? 2 : 1, rd());
 		return 0;
-	case H8300_CMP_1:
+	case H8300_CMP_B:
 		rz_strbuf_appendf(&op->esil, "r%u%c,r%u%c,-", rsB(), rdB(1));
 		// setZ
 		setHb_B;
@@ -297,7 +297,7 @@ int h8300_analyze_op_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 
 		maskB(1);
 		setZ;
 		return 0;
-	case H8300_CMP_2:
+	case H8300_CMP_W:
 		rz_strbuf_appendf(&op->esil, "r%u,r%u,-", rs(), rd());
 		// setZ
 		setHb_W;

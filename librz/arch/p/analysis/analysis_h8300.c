@@ -63,11 +63,13 @@ static int h8300_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	}
 
 	switch (cmd.id) {
-	case H8300_INSN_MOV:
+	case H8300_INSN_MOV_B:
+	case H8300_INSN_MOV_W:
 	case H8300_INSN_EEPMOV:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		break;
-	case H8300_INSN_CMP:
+	case H8300_INSN_CMP_B:
+	case H8300_INSN_CMP_W:
 	case H8300_INSN_BTST:
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 		break;
@@ -93,15 +95,14 @@ static int h8300_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	case H8300_INSN_ANDC:
 		op->type = RZ_ANALYSIS_OP_TYPE_AND;
 		break;
-	case H8300_INSN_ADDB:
-	case H8300_INSN_ADDW:
+	case H8300_INSN_ADD_B:
+	case H8300_INSN_ADD_W:
 	case H8300_INSN_ADDS:
 	case H8300_INSN_ADDX:
-	case H8300_INSN_ADD:
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		break;
-	case H8300_INSN_SUB:
-	case H8300_INSN_SUBW:
+	case H8300_INSN_SUB_B:
+	case H8300_INSN_SUB_W:
 	case H8300_INSN_SUBS:
 	case H8300_INSN_SUBX:
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
