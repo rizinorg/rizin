@@ -29,6 +29,7 @@ static const char *commands[] = {
 	[H8300_INSN_ADDS] = "adds",
 	[H8300_INSN_AND] = "and",
 	[H8300_INSN_ADDX] = "addx",
+	[H8300_INSN_SUB_B] = "sub.b",
 	[H8300_INSN_SUB_W] = "sub.w",
 	[H8300_INSN_BNOT] = "bnot",
 	[H8300_INSN_BSET] = "bset",
@@ -879,7 +880,7 @@ int h8300_decode_command(const ut8 *instr, struct h8300_cmd *cmd) {
 		cmd->id = H8300_INSN_BAND_BIAND;
 		ret = decode_i3r8(instr, cmd);
 		break;
-	case H8300_BCLR_IMM2R8:
+	case 0x72:
 		cmd->id = H8300_INSN_BCLR;
 		ret = decode_i3r8(instr, cmd);
 		break;
@@ -1199,7 +1200,7 @@ int h8300_decode_command(const ut8 *instr, struct h8300_cmd *cmd) {
 		break;
 	case 0x68:
 		cmd->id = H8300_INSN_MOV_B;
-		ret = decode_ri16r16(instr, cmd);
+		ret = decode_r8ri16_type2(instr, cmd);
 		break;
 	case 0x69:
 		cmd->id = H8300_INSN_MOV_W;

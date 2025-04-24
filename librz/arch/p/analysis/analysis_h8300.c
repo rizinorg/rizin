@@ -203,4 +203,5 @@ RzAnalysisPlugin rz_analysis_plugin_h8300 = {
 	.op = &h8300_op,
 	.esil = true,
 	.get_reg_profile = get_reg_profile,
+	.il_config = h8300_il_config,
 };

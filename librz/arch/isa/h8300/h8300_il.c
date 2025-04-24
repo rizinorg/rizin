@@ -1,16 +1,79 @@
 #include "h8300_disas.h"
+#include <rz_il/rz_il_opbuilder_begin.h>
+
+#define OPS_GET(I) (cmd->ops[(I)])
+
+static const char *GPRs[] = {
+	"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7"
+};
+
+RzILOpPure *r8_op(H8300Cmd *cmd, ut8 i) {
+	H8300Operand *op = &OPS_GET(i);
+	if (op->typ != H8300_OP_R8) {
+		RZ_LOG_ERROR("invalid op type\n");
+		return NULL;
+	}
+	ut8 index = op->reg % 8;
+	bool low = op->reg & 8;
+	RzILOpPure *x = VARG(GPRs[index]);
+	return low ? UNSIGNED(8, x) : UNSIGNED(8, SHIFTR0(x, U8(8)));
+}
+
+RzILOpEffect *r8_op_set(H8300Cmd *cmd, ut8 i, RzILOpPure *x) {
+	H8300Operand *op = &OPS_GET(i);
+	if (op->typ != H8300_OP_R8) {
+		RZ_LOG_ERROR("invalid op type\n");
+		return NULL;
+	}
+	ut8 index = op->reg % 8;
+	bool low = op->reg & 8;
+	return SETG(GPRs[index],
+		UNSIGNED(16, DEPOSIT32(UNSIGNED(32, VARG(GPRs[index])), low ? U32(0) : U32(8), U32(8), UNSIGNED(32, x))));
+}
+
+RzILOpPure *r16_op(H8300Cmd *cmd, ut8 i) {
+	H8300Operand *op = &OPS_GET(i);
+	if (op->typ != H8300_OP_R16) {
+		RZ_LOG_ERROR("invalid op type\n");
+		return NULL;
+	}
+	ut8 index = op->reg % 8;
+	return VARG(GPRs[index]);
+}
+
+RzILOpEffect *r16_op_set(H8300Cmd *cmd, ut8 i, RzILOpPure *x) {
+	H8300Operand *op = &OPS_GET(i);
+	if (op->typ != H8300_OP_R16) {
+		RZ_LOG_ERROR("invalid op type\n");
+		return NULL;
+	}
+	ut8 index = op->reg % 8;
+	return SETG(GPRs[index], x);
+}
+
+#define R8_OP(I)    r8_op(cmd, (I))
+#define R8_X(I, X)  r8_op_set(cmd, (I), (X))
+#define R16_OP(I)   r16_op(cmd, (I))
+#define R16_X(I, X) r16_op_set(cmd, (I), (X))
 
 int h8300_analyze_op_il(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 	switch (cmd->id) {
-	case H8300_INSN_MOV_B: 
-    
-    break;
-    case H8300_INSN_MOV_W: break;
+	case H8300_INSN_MOV_B:
+		switch (cmd->fmt) {
+		case H8300_INSN_FORMAT_R8R8:
+			op->il_op = R8_X(1, R8_OP(0));
+			break;
+		default: break;
+		}
+		break;
+	case H8300_INSN_MOV_W: break;
 	case H8300_INSN_ADD_B: break;
-    case H8300_INSN_ADD_W: break;
+	case H8300_INSN_ADD_W: break;
 	case H8300_INSN_ADDX: break;
 	case H8300_INSN_CMP_B: break;
-    case H8300_INSN_CMP_W: break;
+	case H8300_INSN_CMP_W: break;
+    case H8300_INSN_SUB_B: break;
+    case H8300_INSN_SUB_W: break;
 	case H8300_INSN_SUBX: break;
 	case H8300_INSN_OR: break;
 	case H8300_INSN_XOR: break;
@@ -76,4 +139,14 @@ int h8300_analyze_op_il(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 	case H8300_INSN_BLD: break;
 	}
 	return 0;
+}
+
+RzAnalysisILConfig *h8300_il_config(RzAnalysis *a) {
+	rz_return_val_if_fail(a, NULL);
+
+	RzAnalysisILConfig *cfg = rz_analysis_il_config_new(16, a->big_endian, 16);
+	if (!cfg) {
+		return NULL;
+	}
+	return cfg;
 }
