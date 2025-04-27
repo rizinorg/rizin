@@ -151,6 +151,11 @@ RZ_API void rz_assert_log(RzLogLevel level, const char *fmt, ...) RZ_PRINTF_CHEC
 	do { \
 		assert(false); \
 	} while (0)
+#define rz_goto_if_reached(where) \
+	do { \
+		assert(false); \
+		goto where; \
+	} while (0)
 
 #endif // RZ_CHECKS_LEVEL
 
