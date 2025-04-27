@@ -198,7 +198,7 @@ bool test_cmd_descriptor_tree(void) {
 	RzCmdDesc *root = rz_cmd_get_root(cmd);
 	RzCmdDesc *a_cd = rz_cmd_desc_group_new(cmd, root, "a", NULL, NULL, &fake_help);
 	rz_cmd_desc_argv_new(cmd, a_cd, "ap", ap_handler, &fake_help);
-	rz_cmd_desc_group_new(cmd, root, "w", w_handler, NULL, NULL);
+	rz_cmd_desc_group_new(cmd, root, "w", w_handler, NULL, &fake_help);
 
 	void **it_cd;
 	rz_cmd_desc_children_foreach(root, it_cd) {
@@ -216,20 +216,20 @@ bool test_cmd_get_desc(void) {
 	RzCmdDesc *a_cd = rz_cmd_desc_group_new(cmd, root, "a", NULL, NULL, &fake_help);
 	RzCmdDesc *ap_cd = rz_cmd_desc_group_new(cmd, a_cd, "ap", ap_handler, NULL, &fake_help);
 	RzCmdDesc *apd_cd = rz_cmd_desc_argv_new(cmd, ap_cd, "apd", ap_handler, &fake_help);
-	RzCmdDesc *ae_cd = rz_cmd_desc_argv_new(cmd, a_cd, "ae", ae_handler, NULL);
+	RzCmdDesc *ae_cd = rz_cmd_desc_argv_new(cmd, a_cd, "ae", ae_handler, &fake_help);
 	RzCmdDesc *aeir_cd = rz_cmd_desc_argv_new(cmd, ae_cd, "aeir", aeir_handler, &fake_help);
-	RzCmdDesc *w_cd = rz_cmd_desc_argv_new(cmd, root, "w", w_handler, NULL);
+	rz_cmd_desc_argv_new(cmd, root, "w", w_handler, &fake_help);
 
 	mu_assert_null(rz_cmd_get_desc(cmd, "afl"), "afl does not have any handler");
 	mu_assert_ptreq(rz_cmd_get_desc(cmd, "ap"), ap_cd, "ap will be handled by ap");
-	mu_assert_ptreq(rz_cmd_get_desc(cmd, "wx"), w_cd, "wx will be handled by w");
-	mu_assert_ptreq(rz_cmd_get_desc(cmd, "wao"), w_cd, "wao will be handled by w");
+	mu_assert_null(rz_cmd_get_desc(cmd, "wx"), "wx does not have any handler");
+	mu_assert_null(rz_cmd_get_desc(cmd, "wao"), "wao does not have any handler");
 	mu_assert_null(rz_cmd_get_desc(cmd, "apx"), "apx does not have any handler");
 	mu_assert_ptreq(rz_cmd_get_desc(cmd, "apd"), apd_cd, "apd will be handled by apd");
 	mu_assert_ptreq(rz_cmd_get_desc(cmd, "ae"), ae_cd, "ae will be handled by ae");
-	mu_assert_ptreq(rz_cmd_get_desc(cmd, "aeim"), ae_cd, "aeim will be handled by ae");
+	mu_assert_null(rz_cmd_get_desc(cmd, "aeim"), "aeim does not have any handler");
 	mu_assert_ptreq(rz_cmd_get_desc(cmd, "aeir"), aeir_cd, "aeir will be handled by aeir");
-	mu_assert_ptreq(rz_cmd_get_desc(cmd, "aei"), ae_cd, "aei will be handled by ae");
+	mu_assert_null(rz_cmd_get_desc(cmd, "aei"), "aei does not have any handler");
 
 	rz_cmd_free(cmd);
 	mu_end;
@@ -1292,9 +1292,9 @@ bool test_get_best_match(void) {
 	RzCmdDesc *a_cd = rz_cmd_desc_group_new(cmd, root, "a", NULL, NULL, &fake_help);
 	RzCmdDesc *ap_cd = rz_cmd_desc_group_new(cmd, a_cd, "ap", ap_handler, NULL, &fake_help);
 	RzCmdDesc *apd_cd = rz_cmd_desc_argv_new(cmd, ap_cd, "apd", ap_handler, &fake_help);
-	RzCmdDesc *ae_cd = rz_cmd_desc_argv_new(cmd, a_cd, "ae", ae_handler, NULL);
+	RzCmdDesc *ae_cd = rz_cmd_desc_argv_new(cmd, a_cd, "ae", ae_handler, &fake_help);
 	rz_cmd_desc_argv_new(cmd, ae_cd, "aeir", aeir_handler, &fake_help);
-	rz_cmd_desc_argv_new(cmd, root, "w", w_handler, NULL);
+	rz_cmd_desc_argv_new(cmd, root, "w", w_handler, &fake_help);
 
 	mu_assert_ptreq(rz_cmd_get_desc_best(cmd, "ap"), ap_cd, "ap should be best match for ap");
 	mu_assert_ptreq(rz_cmd_get_desc_best(cmd, "apn"), ap_cd, "ap should be best match for apn");
