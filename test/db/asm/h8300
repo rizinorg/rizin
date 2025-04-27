@@ -73,17 +73,17 @@ d "jsr @@0x93:8" 5F93
 d "jsr @r4" 5D40
 d "ldc #0x14:8,ccr" 0714
 d "ldc r5h,ccr" 0305
-d "mov.b #0x99:8,r3h" F399
-d "mov.b @(0x9494:16,r3),r6h" 6E369494
-d "mov.b @0x7744:16,r1l" 6A097744
-d "mov.b @0x88:8,r5h" 2588
+d "mov.b #0x99:8,r3h" F399 0 ()
+d "mov.b @(0x9494:16,r3),r6h" 6E369494 0 ()
+d "mov.b @0x7744:16,r1l" 6A097744 0 ()
+d "mov.b @0x88:8,r5h" 2588 0 ()
 d "mov.b @r3+,r5h" 6C35
-d "mov.b @r4,r1l" 6849
-d "mov.b r0h,@0x2222:16" 6A802222
-d "mov.b r0l,r1l" 0C89
-d "mov.b r1l,@0x14:8" 3914
-d "mov.b r2h,@r0" 6882
-d "mov.b r2l,@(0x1111:16,r2)" 6EAA1111
+d "mov.b @r4,r1l" 6849 0 ()
+d "mov.b r0h,@0x2222:16" 6A802222 0 ()
+d "mov.b r0l,r1l" 0c89 0x0 (set r0 (cast 16 false (| (& (cast 32 false (var r0)) (~ (<< (>> (bv 32 0xffffffff) (- (bv 32 0x20) (bv 32 0x8)) false) (bv 32 0x8) false))) (& (<< (cast 32 false (cast 8 false (var r1))) (bv 32 0x8) false) (<< (>> (bv 32 0xffffffff) (- (bv 32 0x20) (bv 32 0x8)) false) (bv 32 0x8) false)))))
+d "mov.b r1l,@0x14:8" 3914 0 ()
+d "mov.b r2h,@r0" 6882 0 ()
+d "mov.b r2l,@(0x1111:16,r2)" 6EAA1111 0 ()
 d "mov.b r4h,@-r1" 6C94
 d "mov.w #0x5555:16,r3" 79035555
 d "mov.w @(0x7711:16,r7),r4" 6F747711

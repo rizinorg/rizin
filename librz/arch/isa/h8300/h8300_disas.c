@@ -410,7 +410,7 @@ static int decode_i3a8(const ut8 *bytes, struct h8300_cmd *cmd) {
 
 	cmd->fmt = H8300_INSN_FORMAT_IMMR8;
 	OPS_ADD(H8300_OP_IMM, imm, (bytes[3] >> 4) & 0x7);
-	OPS_ADD(H8300_OP_ABS, imm, bytes[1]);
+	OPS_ADD(H8300_OP_ABS, imm, 0xff00 | bytes[1]);
 
 	snprintf(cmd->operands, H8300_INSTR_MAXLEN, "#0x%x:3,@0x%x:8",
 		(bytes[3] >> 4) & 0x7, bytes[1]);
@@ -458,7 +458,7 @@ static int decode_r8ri16(const ut8 *bytes, struct h8300_cmd *cmd) {
 }
 
 /* [opcode] [ abs ] [opcode] [ rn | 0000 ] */
-static int decode_r8a8(const ut8 *bytes, struct h8300_cmd *cmd) {
+static int decode_r8abs8_type2(const ut8 *bytes, struct h8300_cmd *cmd) {
 	int ret = 4;
 
 	if (decode_opcode(bytes, cmd)) {
@@ -467,7 +467,7 @@ static int decode_r8a8(const ut8 *bytes, struct h8300_cmd *cmd) {
 
 	cmd->fmt = H8300_INSN_FORMAT_R8ABS;
 	OPS_ADD(H8300_OP_R8, reg, bytes[3] >> 4);
-	OPS_ADD(H8300_OP_ABS, imm, bytes[1]);
+	OPS_ADD(H8300_OP_ABS, imm, 0xff00 | bytes[1]);
 
 	snprintf(cmd->operands, H8300_INSTR_MAXLEN, "r%u%c,@0x%x:8",
 		(bytes[3] >> 4) & 0x7,
@@ -751,7 +751,7 @@ static int decode_nop(const ut8 *bytes, struct h8300_cmd *cmd) {
 	return ret;
 }
 
-static int decode_a8r8(const ut8 *bytes, struct h8300_cmd *cmd) {
+static int decode_abs8r8(const ut8 *bytes, struct h8300_cmd *cmd) {
 	int ret = 2;
 
 	if (decode_opcode(bytes, cmd)) {
@@ -759,7 +759,7 @@ static int decode_a8r8(const ut8 *bytes, struct h8300_cmd *cmd) {
 	}
 
 	cmd->fmt = H8300_INSN_FORMAT_ABSR8;
-	OPS_ADD(H8300_OP_ABS, imm, bytes[1]);
+	OPS_ADD(H8300_OP_ABS, imm, 0xff00 | bytes[1]);
 	OPS_ADD(H8300_OP_R8, reg, bytes[0] & 0xf);
 
 	snprintf(cmd->operands, H8300_INSTR_MAXLEN,
@@ -770,16 +770,16 @@ static int decode_a8r8(const ut8 *bytes, struct h8300_cmd *cmd) {
 	return ret;
 }
 
-static int decode_r8i8(const ut8 *bytes, struct h8300_cmd *cmd) {
+static int decode_r8abs8(const ut8 *bytes, struct h8300_cmd *cmd) {
 	int ret = 2;
 
 	if (decode_opcode(bytes, cmd)) {
 		return -1;
 	}
 
-	cmd->fmt = H8300_INSN_FORMAT_R8IMM;
+	cmd->fmt = H8300_INSN_FORMAT_R8ABS;
 	OPS_ADD(H8300_OP_R8, reg, bytes[0] & 0xf);
-	OPS_ADD(H8300_OP_IMM, imm, bytes[1]);
+	OPS_ADD(H8300_OP_ABS, imm, 0xff00 | bytes[1]);
 
 	snprintf(cmd->operands, H8300_INSTR_MAXLEN,
 		"r%u%c,@0x%x:8",
@@ -811,11 +811,11 @@ int h8300_decode_command(const ut8 *instr, struct h8300_cmd *cmd) {
 	switch (instr[0] >> 4) {
 	case 0x2:
 		cmd->id = H8300_INSN_MOV_B;
-		ret = decode_a8r8(instr, cmd);
+		ret = decode_abs8r8(instr, cmd);
 		break;
 	case 0x3:
 		cmd->id = H8300_INSN_MOV_B;
-		ret = decode_r8i8(instr, cmd);
+		ret = decode_r8abs8(instr, cmd);
 		break;
 	case 0xf:
 		cmd->id = H8300_INSN_MOV_B;
@@ -985,7 +985,7 @@ int h8300_decode_command(const ut8 *instr, struct h8300_cmd *cmd) {
 		case 0x60:
 		case 0x61:
 		case 0x62:
-			ret = decode_r8a8(instr, cmd);
+			ret = decode_r8abs8_type2(instr, cmd);
 			break;
 		case 0x67:
 		case 0x70:

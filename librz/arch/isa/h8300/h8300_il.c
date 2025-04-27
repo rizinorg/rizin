@@ -10,7 +10,7 @@ static const char *GPRs[] = {
 RzILOpPure *r8_op(H8300Cmd *cmd, ut8 i) {
 	H8300Operand *op = &OPS_GET(i);
 	if (op->typ != H8300_OP_R8) {
-		RZ_LOG_ERROR("invalid op type\n");
+		RZ_LOG_ERROR("invalid op type r8\n");
 		return NULL;
 	}
 	ut8 index = op->reg % 8;
@@ -22,7 +22,7 @@ RzILOpPure *r8_op(H8300Cmd *cmd, ut8 i) {
 RzILOpEffect *r8_op_set(H8300Cmd *cmd, ut8 i, RzILOpPure *x) {
 	H8300Operand *op = &OPS_GET(i);
 	if (op->typ != H8300_OP_R8) {
-		RZ_LOG_ERROR("invalid op type\n");
+		RZ_LOG_ERROR("invalid op type r8\n");
 		return NULL;
 	}
 	ut8 index = op->reg % 8;
@@ -33,8 +33,8 @@ RzILOpEffect *r8_op_set(H8300Cmd *cmd, ut8 i, RzILOpPure *x) {
 
 RzILOpPure *r16_op(H8300Cmd *cmd, ut8 i) {
 	H8300Operand *op = &OPS_GET(i);
-	if (op->typ != H8300_OP_R16) {
-		RZ_LOG_ERROR("invalid op type\n");
+	if (op->typ != H8300_OP_R16 && op->typ != H8300_OP_RI16) {
+		RZ_LOG_ERROR("invalid op type r16\n");
 		return NULL;
 	}
 	ut8 index = op->reg % 8;
@@ -44,17 +44,38 @@ RzILOpPure *r16_op(H8300Cmd *cmd, ut8 i) {
 RzILOpEffect *r16_op_set(H8300Cmd *cmd, ut8 i, RzILOpPure *x) {
 	H8300Operand *op = &OPS_GET(i);
 	if (op->typ != H8300_OP_R16) {
-		RZ_LOG_ERROR("invalid op type\n");
+		RZ_LOG_ERROR("invalid op type r16\n");
 		return NULL;
 	}
 	ut8 index = op->reg % 8;
 	return SETG(GPRs[index], x);
 }
 
+RzILOpPure *u16_op(H8300Cmd *cmd, ut8 i) {
+	H8300Operand *op = &OPS_GET(i);
+	if (op->typ != H8300_OP_IMM && op->typ != H8300_OP_ABS) {
+		RZ_LOG_ERROR("invalid op type u16/abs\n");
+		return NULL;
+	}
+	return U16(op->imm);
+}
+
+RzILOpPure *rd16_op(H8300Cmd *cmd, ut8 i) {
+	H8300Operand *op = &OPS_GET(i);
+	if (op->typ != H8300_OP_RD16) {
+		RZ_LOG_ERROR("invalid op type rd16\n");
+		return NULL;
+	}
+	return ADD(VARG(GPRs[op->rd.reg]), S16(op->rd.disp));
+}
+
 #define R8_OP(I)    r8_op(cmd, (I))
 #define R8_X(I, X)  r8_op_set(cmd, (I), (X))
 #define R16_OP(I)   r16_op(cmd, (I))
 #define R16_X(I, X) r16_op_set(cmd, (I), (X))
+#define U16_OP(I)   u16_op(cmd, (I))
+#define U8_OP(I)    UNSIGNED(8, u16_op(cmd, (I)))
+#define RD16_OP(I)  rd16_op(cmd, (I))
 
 int h8300_analyze_op_il(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 	switch (cmd->id) {
@@ -63,8 +84,30 @@ int h8300_analyze_op_il(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 		case H8300_INSN_FORMAT_R8R8:
 			op->il_op = R8_X(1, R8_OP(0));
 			break;
+		case H8300_INSN_FORMAT_ABSR8:
+			op->il_op = R8_X(1, LOAD(U16_OP(0)));
+			break;
+		case H8300_INSN_FORMAT_R8ABS:
+			op->il_op = STORE(U16_OP(1), R8_OP(0));
+			break;
+		case H8300_INSN_FORMAT_IMMR8:
+			op->il_op = R8_X(1, U8_OP(0));
+			break;
+		case H8300_INSN_FORMAT_R8RI16:
+			op->il_op = STORE(R16_OP(1), R8_OP(0));
+			break;
+		case H8300_INSN_FORMAT_RI16R8:
+			op->il_op = R8_X(1, LOAD(R16_OP(0)));
+			break;
+		case H8300_INSN_FORMAT_R8RD16:
+			op->il_op = STORE(RD16_OP(1), R8_OP(0));
+			break;
+		case H8300_INSN_FORMAT_RD16R8:
+			op->il_op = R8_X(1, LOAD(RD16_OP(0)));
+			break;
 		default: break;
 		}
+
 		break;
 	case H8300_INSN_MOV_W: break;
 	case H8300_INSN_ADD_B: break;
@@ -72,8 +115,8 @@ int h8300_analyze_op_il(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 	case H8300_INSN_ADDX: break;
 	case H8300_INSN_CMP_B: break;
 	case H8300_INSN_CMP_W: break;
-    case H8300_INSN_SUB_B: break;
-    case H8300_INSN_SUB_W: break;
+	case H8300_INSN_SUB_B: break;
+	case H8300_INSN_SUB_W: break;
 	case H8300_INSN_SUBX: break;
 	case H8300_INSN_OR: break;
 	case H8300_INSN_XOR: break;
