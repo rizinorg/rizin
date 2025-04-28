@@ -68,9 +68,11 @@ static RzCmdStatus cmd_last_opt_handler(RzCore *core, int argc, const char **arg
 	return RZ_CMD_STATUS_OK;
 }
 
+static RzCmd *old_rcmd = NULL;
+
 static RzCore *fake_core_new(void) {
 	RzCore *core = rz_core_new();
-	rz_cmd_free(core->rcmd);
+	old_rcmd = core->rcmd;
 	core->rcmd = rz_core_cmd_new(core, true);
 	RzCmdDesc *root = rz_cmd_get_root(core->rcmd);
 	rz_cmd_desc_argv_new(core->rcmd, root, "string", string_handler, &string_help);
@@ -81,11 +83,17 @@ static RzCore *fake_core_new(void) {
 	return core;
 }
 
+static void fake_core_free(RzCore *core) {
+	rz_cmd_free(core->rcmd);
+	core->rcmd = old_rcmd;
+	rz_core_free(core);
+}
+
 static bool test_arg_cmd(void) {
 	RzCore *core = fake_core_new();
 	RzCmdStatus s = rz_core_cmd0_rzshell(core, "cmd \"string hello\"");
 	mu_assert_eq(s, RZ_CMD_STATUS_OK, "argument cmd is passed");
-	rz_core_free(core);
+	fake_core_free(core);
 	mu_end;
 }
 
@@ -93,7 +101,7 @@ static bool test_arg_cmd_last(void) {
 	RzCore *core = fake_core_new();
 	RzCmdStatus s = rz_core_cmd0_rzshell(core, "cmd_last string hello");
 	mu_assert_eq(s, RZ_CMD_STATUS_OK, "argument cmd is passed as a single arg");
-	rz_core_free(core);
+	fake_core_free(core);
 	mu_end;
 }
 
@@ -101,7 +109,7 @@ static bool test_arg_cmd_last_with_at(void) {
 	RzCore *core = fake_core_new();
 	RzCmdStatus s = rz_core_cmd0_rzshell(core, "cmd_last_with_at string hello \\@ 0xdeadbeef");
 	mu_assert_eq(s, RZ_CMD_STATUS_OK, "argument cmd is passed as a single arg");
-	rz_core_free(core);
+	fake_core_free(core);
 	mu_end;
 }
 
@@ -111,7 +119,7 @@ static bool test_arg_cmd_last_opt(void) {
 	mu_assert_eq(s, RZ_CMD_STATUS_OK, "argument cmd is passed as a single arg");
 	s = rz_core_cmd0_rzshell(core, "cmd_last_opt \"string 'hello everybody'\"");
 	mu_assert_eq(s, RZ_CMD_STATUS_OK, "argument cmd is passed as a single arg");
-	rz_core_free(core);
+	fake_core_free(core);
 	mu_end;
 }
 
