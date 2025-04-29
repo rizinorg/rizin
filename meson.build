@@ -321,12 +321,9 @@ if r.returncode() == 1 and get_option('subprojects_check')
   error(subproject_clean_error_msg)
 endif
 
-rizin_grammar_c_dep = dependency('rizin-grammar-c', required: get_option('use_sys_tree_sitter'), static: is_static_build, fallback: [])
-if not rizin_grammar_c_dep.found()
-  rizin_grammar_c_proj = subproject('rizin-grammar-c', default_options: ['default_library=static'])
-  rizin_grammar_c_dep = rizin_grammar_c_proj.get_variable('rizin_grammar_c_dep')
-  # override done in rizin-grammar-c subproject
-endif
+rizin_grammar_c_proj = subproject('rizin-grammar-c', default_options: ['default_library=static'])
+rizin_grammar_c_dep = rizin_grammar_c_proj.get_variable('rizin_grammar_c_dep')
+# override done in rizin-grammar-c subproject
 
 has_debugger = get_option('debugger')
 have_ptrace = not ['windows', 'cygwin', 'sunos', 'haiku'].contains(host_machine.system())
