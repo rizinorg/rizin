@@ -952,7 +952,6 @@ int z80Asm(RzAsm *a, RzAsmOp *op, const char *buf) {
 		rz_str_replace_in(buf_asm, strlen(buf_asm), ", ", ",", true);
 		if (strlen(buf_asm) < 5)
 			return op->size = 0;
-
 		if (!strcmp(buf_asm + 4, "hl,bc")) {
 			opbuf[0] = 0xed;
 			opbuf[1] = 0x42;
