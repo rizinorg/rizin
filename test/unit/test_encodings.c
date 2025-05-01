@@ -242,8 +242,7 @@ bool test_rz_utf32_decode(void) {
 	const ut8 utf32le_red_general_black_tower[] = { 0x60, 0xFA, 0x01, 0x00, 0x41, 0xFA, 0x01, 0x00 };
 
 	RzCodePoint cp;
-	// Actually verboten under C99 to have an empty initializer list, but who's complaining?
-	mu_assert_eq(rz_utf32_decode((ut8[]){}, 0, &cp, false), 0, "Length check failed");
+	mu_assert_eq(rz_utf32_decode((ut8 *)INT_MIN, 0, &cp, false), 0, "Length check failed");
 	mu_assert_eq(rz_utf32_decode(utf32_size_1, sizeof(utf32_size_1), &cp, false), 0, "Length check failed");
 	mu_assert_eq(rz_utf32_decode(utf32_size_2, sizeof(utf32_size_2), &cp, false), 0, "Length check failed");
 	mu_assert_eq(rz_utf32_decode(utf32_size_3, sizeof(utf32_size_3), &cp, false), 0, "Length check failed");
