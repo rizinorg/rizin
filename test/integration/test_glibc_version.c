@@ -13,6 +13,7 @@ int int_round(double x) {
 bool test_get_glibc_version(void) {
 	RzCore *core = rz_core_new();
 	mu_assert_notnull(core, "new RzCore instance");
+	mu_assert_true(rz_core_file_open_load(core, "=", 0, RZ_PERM_R, false), "open =");
 
 	double version = rz_get_glibc_version_64(core, "bins/elf/libc-2.27.so", NULL);
 	int glibc_version = int_round((version * 100));
