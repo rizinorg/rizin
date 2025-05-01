@@ -347,7 +347,6 @@ static inline bool refline_kept(RzAnalysisRefline *ref, bool middle_after, ut64 
 // TODO: this is TOO SLOW. do not iterate over all reflines
 RZ_API RzAnalysisRefStr *rz_analysis_reflines_str(void *_core, ut64 addr, int opts) {
 	RzCore *core = _core;
-	RzCons *cons = core->cons;
 	RzAnalysis *analysis = core->analysis;
 	RzBuffer *b;
 	RzBuffer *c;
@@ -361,7 +360,7 @@ RZ_API RzAnalysisRefStr *rz_analysis_reflines_str(void *_core, ut64 addr, int op
 	char *str = NULL;
 	char *col_str = NULL;
 
-	rz_return_val_if_fail(cons && analysis && analysis->reflines, NULL);
+	rz_return_val_if_fail(core->cons && analysis && analysis->reflines, NULL);
 
 	RzList *lvls = rz_list_new();
 	if (!lvls) {
