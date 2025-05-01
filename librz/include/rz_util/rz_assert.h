@@ -70,6 +70,10 @@ RZ_API void rz_assert_log(RzLogLevel level, const char *fmt, ...) RZ_PRINTF_CHEC
 	do { \
 		return (val); \
 	} while (0)
+#define rz_goto_if_reached(where) \
+	do { \
+		goto where; \
+	} while (0)
 
 #elif RZ_CHECKS_LEVEL == 1 || RZ_CHECKS_LEVEL == 2 // RZ_CHECKS_LEVEL
 
