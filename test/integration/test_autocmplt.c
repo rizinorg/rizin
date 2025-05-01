@@ -69,13 +69,15 @@ static RzCmdStatus x_handler(RzCore *core, int argc, const char **argv) {
 	return RZ_CMD_STATUS_OK;
 }
 
+static RzCmd *old_rcmd = NULL;
+
 static RzCore *fake_core_new(void) {
 	RzCore *core = rz_core_new();
 	mu_assert_notnull(core, "core should be created");
 	RzCoreFile *cf = rz_core_file_open(core, "bins/elf/hello_world", RZ_PERM_R, 0);
 	mu_assert_notnull(cf, "file should be opened");
 	rz_core_bin_load(core, "bins/elf/hello_world", 0);
-	rz_cmd_free(core->rcmd);
+	old_rcmd = core->rcmd;
 	RzCmd *cmd = rz_core_cmd_new(core, true);
 	mu_assert_notnull(cmd, "cmd should be created");
 	RzCmdDesc *root = rz_cmd_get_root(cmd);
@@ -95,6 +97,12 @@ static RzCore *fake_core_new(void) {
 	core->rcmd = cmd;
 	rz_core_cmd(core, "", 0);
 	return core;
+}
+
+static void fake_core_free(RzCore *core) {
+	rz_cmd_free(core->rcmd);
+	core->rcmd = old_rcmd;
+	rz_core_free(core);
 }
 
 static RzCore *fake_core_new2(void) {
@@ -142,7 +150,7 @@ static bool test_autocmplt_cmdid(void) {
 	mu_assert_streq(rz_pvector_at(&r->options, 1), "xe", "one is xe");
 	rz_line_ns_completion_result_free(r);
 
-	rz_core_free(core);
+	fake_core_free(core);
 	mu_end;
 }
 
@@ -167,7 +175,7 @@ static bool test_autocmplt_newcommand(void) {
 	mu_assert_streq(rz_pvector_at(&r->options, 4), "z", "one is z");
 	rz_line_ns_completion_result_free(r);
 
-	rz_core_free(core);
+	fake_core_free(core);
 	mu_end;
 }
 
@@ -189,7 +197,7 @@ static bool test_autocmplt_argid(void) {
 	mu_assert_streq(rz_pvector_at(&r->options, 0), "." RZ_SYS_DIR "unit" RZ_SYS_DIR "test_intervaltree.c", "test_intervaltree.c");
 	rz_line_ns_completion_result_free(r);
 
-	rz_core_free(core);
+	fake_core_free(core);
 	mu_end;
 }
 
@@ -226,7 +234,7 @@ static bool test_autocmplt_quotedarg(void) {
 	mu_assert_streq(r->end_string, "' ", "double quotes should be put at the end of the string");
 	rz_line_ns_completion_result_free(r);
 
-	rz_core_free(core);
+	fake_core_free(core);
 	mu_end;
 }
 
@@ -272,7 +280,7 @@ static bool test_autocmplt_newarg(void) {
 	rz_sys_chdir(cwd);
 	free(cwd);
 
-	rz_core_free(core);
+	fake_core_free(core);
 	mu_end;
 }
 
@@ -333,7 +341,7 @@ static bool test_autocmplt_eval(void) {
 	mu_assert_eq(rz_pvector_len(&r->options), 4, "there are 4 options values for config eval search.in");
 	rz_line_ns_completion_result_free(r);
 
-	rz_core_free(core);
+	fake_core_free(core);
 	mu_end;
 }
 
@@ -402,7 +410,7 @@ static bool test_autocmplt_seek(void) {
 	mu_assert_streq(rz_pvector_at(&r->options, 1), "test4", "test4 found");
 	rz_line_ns_completion_result_free(r);
 
-	rz_core_free(core);
+	fake_core_free(core);
 	mu_end;
 }
 
@@ -517,7 +525,7 @@ static bool test_autocmplt_tmp_operators(void) {
 	}
 	rz_line_ns_completion_result_free(r);
 
-	rz_core_free(core);
+	fake_core_free(core);
 	mu_end;
 }
 
@@ -574,7 +582,7 @@ static bool test_autocmplt_iter_operators(void) {
 	}
 	rz_line_ns_completion_result_free(r);
 
-	rz_core_free(core);
+	fake_core_free(core);
 	mu_end;
 }
 
@@ -608,7 +616,7 @@ static bool test_autocmplt_tmp_seek(void) {
 	mu_assert_streq(rz_pvector_at(&r->options, 0), "str.Hello", "hello string is there");
 	mu_assert_streq(rz_pvector_at(&r->options, 1), "str.r2_folks", "r2_folks string is there");
 	rz_line_ns_completion_result_free(r);
-	rz_core_free(core);
+	fake_core_free(core);
 	mu_end;
 }
 
@@ -629,7 +637,7 @@ static bool test_autocmplt_tmp_config(void) {
 	mu_assert_true(rz_pvector_len(&r->options) > 20, "there are many possible eval vars");
 	rz_line_ns_completion_result_free(r);
 
-	rz_core_free(core);
+	fake_core_free(core);
 	mu_end;
 }
 
@@ -651,7 +659,7 @@ static bool test_autocmplt_tmp_arch(void) {
 	mu_assert_streq(rz_pvector_at(&r->options, 0), "wasm", "hello string is there");
 	rz_line_ns_completion_result_free(r);
 
-	rz_core_free(core);
+	fake_core_free(core);
 	mu_end;
 }
 
@@ -675,7 +683,7 @@ static bool test_autocmplt_choices_cb_arg(void) {
 	mu_assert_streq(rz_pvector_at(&r->options, 1), "World", "world choice is there");
 	rz_line_ns_completion_result_free(r);
 
-	rz_core_free(core);
+	fake_core_free(core);
 	mu_end;
 }
 

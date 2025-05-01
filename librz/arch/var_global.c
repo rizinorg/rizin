@@ -75,7 +75,8 @@ RZ_API bool rz_analysis_var_global_add(RzAnalysis *analysis, RZ_NONNULL RzAnalys
 
 	global_var->analysis = analysis;
 	rz_flag_space_push(global_var->analysis->flb.f, "globals");
-	rz_flag_set(global_var->analysis->flb.f, global_var->name, global_var->addr, rz_type_db_get_bitsize(global_var->analysis->typedb, global_var->type) / 8);
+	rz_flag_set(global_var->analysis->flb.f, global_var->name, global_var->addr,
+		global_var->type ? rz_type_db_get_bitsize(global_var->analysis->typedb, global_var->type) / 8 : 0);
 	rz_flag_space_pop(global_var->analysis->flb.f);
 
 	return true;
@@ -299,7 +300,7 @@ RZ_API RZ_BORROW RzAnalysisVarGlobal *rz_analysis_var_global_get_byaddr_in(RzAna
 	if (!var) {
 		return NULL;
 	}
-	ut64 size = rz_type_db_get_bitsize(analysis->typedb, var->type) / 8;
+	ut64 size = var->type ? rz_type_db_get_bitsize(analysis->typedb, var->type) / 8 : 0;
 	if (addr >= var->addr + size) {
 		return NULL;
 	}
