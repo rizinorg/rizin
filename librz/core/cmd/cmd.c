@@ -2868,7 +2868,9 @@ RZ_API RzCmd *rz_core_cmd_new(RzCore *core, bool has_cons) {
 static RzCmdStatus core_cmd_tsrzcmd(RzCore *core, const char *cstr, bool split_lines, bool log) {
 	TSParser *parser = ts_parser_new();
 	bool language_ok = ts_parser_set_language(parser, (TSLanguage *)core->rcmd->language);
-	rz_return_val_if_fail(language_ok, RZ_CMD_STATUS_INVALID);
+	if (!language_ok) {
+		rz_return_val_if_reached(RZ_CMD_STATUS_INVALID);
+	}
 
 	char *input = rz_str_dup(rz_str_trim_head_ro(cstr));
 
