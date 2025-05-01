@@ -64,11 +64,11 @@ RZ_API void rz_assert_log(RzLogLevel level, const char *fmt, ...) RZ_PRINTF_CHEC
 	} while (0)
 #define rz_return_if_reached() \
 	do { \
-		; \
+		return; \
 	} while (0)
 #define rz_return_val_if_reached(val) \
 	do { \
-		; \
+		return (val); \
 	} while (0)
 
 #elif RZ_CHECKS_LEVEL == 1 || RZ_CHECKS_LEVEL == 2 // RZ_CHECKS_LEVEL
