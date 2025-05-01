@@ -325,7 +325,7 @@ static RzAnalysisLiftedILOp op_addx8(XtensaContext *ctx) {
 	return SETG(REGN(0), ADD(SHIFTL0(IREG(1), U32(3)), IREG(2)));
 }
 
-static uint8_t RRR_s(XtensaContext *ctx) {
+static inline uint8_t RRR_s(XtensaContext *ctx) {
 	return ctx->insn->bytes[1] & 0xf;
 }
 
