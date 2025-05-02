@@ -1,0 +1,10 @@
+NAME=String search - warn if |search literal| < search.str.min_length (prompt version)
+FILE==
+CMDS=!rizin -e cfg.fortunes=0 -e scr.color=0 -c "< \n/z ab\nq\n" -1 =
+EXPECT=<<EOF
+[2K[0x00000000]> [0x00000000]> [2K[0x00000000]> 
+[2K[0x00000000]> [0x00000000]> [2K[2K[0x00000000]> /[0x00000000]> /[2K[2K[0x00000000]> /z[0x00000000]> /z[2K[2K[0x00000000]> /z [0x00000000]> /z [2K[2K[0x00000000]> /z a[0x00000000]> /z a[2K[2K[0x00000000]> /z ab[0x00000000]> /z ab[2K[0x00000000]> /z ab
+[2KWARNING: |ab| < search.str.min_length so some search hits may be hidden. Set search.str.min_length to 2 to see them.
+[2K[0x00000000]> [0x00000000]> [2K[2K[0x00000000]> q[0x00000000]> q[2K[0x00000000]> q
+EOF
+RUN
