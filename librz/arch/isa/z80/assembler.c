@@ -14,24 +14,17 @@ static void str_op(char *c) {
 }
 
 static int z80_reg_idx(char r) {
-	if (r == 'b')
-		return 0;
-	else if (r == 'c')
-		return 1;
-	else if (r == 'd')
-		return 2;
-	else if (r == 'e')
-		return 3;
-	else if (r == 'h')
-		return 4;
-	else if (r == 'l')
-		return 5;
-	else if (r == ' ')
-		return 6;
-	else if (r == 'a')
-		return 7;
-	else
-		return -1;
+	switch (r) {
+	case 'b': return 0;
+	case 'c': return 1;
+	case 'd': return 2;
+	case 'e': return 3;
+	case 'h': return 4;
+	case 'l': return 5;
+	case ' ': return 6;
+	case 'a': return 7;
+	default: return -1;
+	}
 }
 
 static int z80_parse_cb1(ut8 *buf, const int minlen, char *buf_asm, ut8 base) {
