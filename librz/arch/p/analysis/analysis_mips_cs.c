@@ -4,6 +4,7 @@
 
 #include <rz_asm.h>
 #include <rz_lib.h>
+#include <rz_util.h>
 #include <mips/mips_internal.h>
 
 // http://www.mrc.uidaho.edu/mrc/people/jff/digital/MIPSir.html
@@ -985,16 +986,39 @@ static char *mips_get_reg_profile(RzAnalysis *analysis) {
 	return rz_str_dup(p);
 }
 
+static bool mips_is_nanomips(RzAnalysis *a) {
+	return RZ_STR_EQ(a->cpu, "nanomips") ||
+		RZ_STR_EQ(a->cpu, "nms1") ||
+		RZ_STR_EQ(a->cpu, "i7200");
+}
+
+static bool mips_is_op_2_byte(RzAnalysis *a) {
+	return RZ_STR_EQ(a->cpu, "mips16") ||
+		RZ_STR_EQ(a->cpu, "micromips") ||
+		RZ_STR_EQ(a->cpu, "micro32r3") ||
+		RZ_STR_EQ(a->cpu, "micro32r6") ||
+		mips_is_nanomips(a);
+}
+
 static int mips_archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
 	switch (query) {
 	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
 		// mips-16, micromips, nanomips uses 16-bits
-		return 2;
+		if (mips_is_op_2_byte(a)) {
+			return 2;
+		}
+		return 4;
 	case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE:
 		// nanomips uses 48-bits
-		return 6;
+		if (mips_is_nanomips(a)) {
+			return 6;
+		}
+		return 4;
 	case RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN:
-		return 2;
+		if (mips_is_op_2_byte(a)) {
+			return 2;
+		}
+		return 4;
 	case RZ_ANALYSIS_ARCHINFO_DATA_ALIGN:
 		return 4;
 	case RZ_ANALYSIS_ARCHINFO_CAN_USE_POINTERS:
