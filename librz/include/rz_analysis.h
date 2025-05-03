@@ -419,6 +419,7 @@ typedef struct rz_analysis_options_t {
 	int searchstringrefs;
 	int followbrokenfcnsrefs;
 	int bb_max_size;
+	int fcn_max_size;
 	bool trycatch;
 	bool norevisit;
 	int afterjmp; // continue analysis after jmp eax or forward jmp // option
@@ -997,6 +998,8 @@ typedef struct rz_analysis_bb_t {
 	RzAnalysis *analysis;
 	int ref;
 } RzAnalysisBlock;
+
+#define RZ_ANALYSIS_BLOCK_MAX_SIZE UT16_MAX
 
 typedef struct rz_analysis_task_item {
 	RzAnalysisFunction *fcn; ///< current function

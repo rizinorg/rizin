@@ -640,17 +640,6 @@ RZ_API void rz_core_analysis_function_strings_print(RZ_NONNULL RzCore *core, RZ_
 	rz_list_free(xrefs);
 }
 
-static ut64 *next_append(ut64 *next, int *nexti, ut64 v) {
-	ut64 *tmp_next = realloc(next, sizeof(ut64) * (1 + *nexti));
-	if (!tmp_next) {
-		return NULL;
-	}
-	next = tmp_next;
-	next[*nexti] = v;
-	(*nexti)++;
-	return next;
-}
-
 static void rz_analysis_set_stringrefs(RzCore *core, RzAnalysisFunction *fcn) {
 	bool is_va = core->io->va;
 	RzBinObject *bobj = rz_bin_cur_object(core->bin);
@@ -826,8 +815,7 @@ static int __core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, in
 	}
 	int has_next = rz_config_get_i(core->config, "analysis.hasnext");
 	RzAnalysisHint *hint = NULL;
-	int i, nexti = 0;
-	ut64 *next = NULL;
+	ut64 next = UT64_MAX;
 	int fcnlen;
 	RzAnalysisFunction *fcn = rz_analysis_function_new(core->analysis);
 	const char *fcnpfx = rz_config_get(core->config, "analysis.fcnprefix");
@@ -863,11 +851,12 @@ static int __core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, in
 			break;
 		}
 		fcnlen = rz_analysis_fcn(core->analysis, fcn, at + delta, core->analysis->opt.bb_max_size, reftype);
+		at = fcn->addr; // potentially shifted by nopskip
 		if (core->analysis->opt.searchstringrefs) {
 			rz_analysis_set_stringrefs(core, fcn);
 		}
 		if (fcnlen == 0) {
-			RZ_LOG_DEBUG("Analyzed function has size of 0 at 0x%08" PFMT64x "\n", at + delta);
+			RZ_LOG_DEBUG("Analyzed function has size of 0 at 0x%08" PFMT64x "\n", fcn->addr);
 			goto error;
 		}
 		if (fcnlen < 0) {
@@ -938,27 +927,23 @@ static int __core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, in
 				RzIOMap *map = rz_io_map_get(core->io, addr);
 				// only get next if found on an executable section
 				if (!map || (map && map->perm & RZ_PERM_X)) {
-					for (i = 0; i < nexti; i++) {
-						if (next[i] == addr) {
+					ut64 at = rz_analysis_function_max_addr(fcn);
+					while (true) {
+						ut64 size;
+						RzAnalysisMetaItem *mi = rz_meta_get_at(core->analysis, at, RZ_META_TYPE_ANY, &size);
+						if (!mi) {
 							break;
 						}
+						at += size;
 					}
-					if (i == nexti) {
-						ut64 at = rz_analysis_function_max_addr(fcn);
-						while (true) {
-							ut64 size;
-							RzAnalysisMetaItem *mi = rz_meta_get_at(core->analysis, at, RZ_META_TYPE_ANY, &size);
-							if (!mi) {
-								break;
-							}
-							at += size;
-						}
-						// TODO: ensure next address is function after padding (nop or trap or wat)
-						// XXX noisy for test cases because we want to clear the stderr
-						rz_cons_clear_line(stderr);
-						loganalysis(fcn->addr, at, 10000 - depth);
-						next = next_append(next, &nexti, at);
-					}
+					// TODO: ensure next address is function after padding (nop or trap or wat)
+					// nopskip already does that in run_basic_block_analysis, but it might make sense
+					// to move it here
+
+					// XXX noisy for test cases because we want to clear the stderr
+					rz_cons_clear_line(stderr);
+					loganalysis(fcn->addr, at, 10000 - depth);
+					next = at;
 				}
 			}
 			if (!rz_analysis_analyze_fcn_refs(core, fcn, depth)) {
@@ -968,14 +953,8 @@ static int __core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, in
 	} while (fcnlen != RZ_ANALYSIS_RET_END);
 	rz_list_free(core->analysis->leaddrs);
 	core->analysis->leaddrs = NULL;
-	if (has_next) {
-		for (i = 0; i < nexti; i++) {
-			if (!next[i] || rz_analysis_get_fcn_in(core->analysis, next[i], 0)) {
-				continue;
-			}
-			rz_core_analysis_fcn(core, next[i], from, 0, depth - 1);
-		}
-		free(next);
+	if (has_next && next != UT64_MAX && !rz_analysis_get_fcn_in(core->analysis, next, 0)) {
+		rz_core_analysis_fcn(core, next, from, 0, depth - 1);
 	}
 	if (core->analysis->cur && core->analysis->cur->arch && !strcmp(core->analysis->cur->arch, "x86")) {
 		rz_analysis_function_check_bp_use(fcn);
@@ -1005,24 +984,18 @@ error:
 				rz_flag_space_pop(core->flags);
 			}
 			rz_analysis_add_function(core->analysis, fcn);
-		}
-		if (fcn && has_next) {
-			ut64 newaddr = rz_analysis_function_max_addr(fcn);
-			RzIOMap *map = rz_io_map_get(core->io, newaddr);
-			if (!map || (map && (map->perm & RZ_PERM_X))) {
-				next = next_append(next, &nexti, newaddr);
-				for (i = 0; i < nexti; i++) {
-					if (!next[i]) {
-						continue;
-					}
-					rz_core_analysis_fcn(core, next[i], next[i], 0, depth - 1);
+			if (has_next) {
+				ut64 newaddr = rz_analysis_function_max_addr(fcn);
+				RzIOMap *map = rz_io_map_get(core->io, newaddr);
+				if (!map || (map && (map->perm & RZ_PERM_X))) {
+					next = newaddr;
+					rz_core_analysis_fcn(core, next, next, 0, depth - 1);
 				}
-				free(next);
+			}
+			if (core->analysis->cur && core->analysis->cur->arch && !strcmp(core->analysis->cur->arch, "x86")) {
+				rz_analysis_function_check_bp_use(fcn);
 			}
 		}
-	}
-	if (fcn && core->analysis->cur && core->analysis->cur->arch && !strcmp(core->analysis->cur->arch, "x86")) {
-		rz_analysis_function_check_bp_use(fcn);
 	}
 	rz_analysis_hint_free(hint);
 	return false;
