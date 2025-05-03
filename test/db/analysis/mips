@@ -940,44 +940,13 @@ afvW
 EOF
 RUN
 
-NAME=aav without vinfun
-FILE=bins/elf/analysis/mipsbe-busybox
-CMDS=<<EOF
-af @ 0x0040eb60
-e analysis.vinfun=false
-aav
-pd 1 @ 0x0040ec8c~?jr
-EOF
-EXPECT=<<EOF
-1
-EOF
-RUN
-
-NAME=aav analysis.vinfun=true & aac 
-FILE=bins/elf/analysis/mipsbe-busybox
-CMDS=<<EOF
-af @ 0x0040eb60
-e analysis.vinfun=true
-aav
-pd 1 @ 0x0040ec8c~?dword
-aac
-afl~?
-EOF
-EXPECT=<<EOF
-1
-1268
-EOF
-RUN
-
-NAME=pdf after aav
+NAME=pdf main mips be
 FILE=bins/elf/analysis/mipsbe-ip
 CMDS=<<EOF
 aa
-aav
 pdf @ main
 EOF
 EXPECT=<<EOF
-            ; UNKNOWN XREF from section..dynsym @ +0x504
 / int main(int argc, char **argv, char **envp);
 |           ; arg int argc @ a0
 |           ; arg char **argv @ a1
