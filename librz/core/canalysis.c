@@ -4790,6 +4790,12 @@ RZ_IPI void rz_core_analysis_value_pointers(RzCore *core, RzOutputMode mode) {
 	rz_config_set_i(core->config, "search.align", archAlign < 1 ? 1 : archAlign);
 	rz_config_set(core->config, "analysis.in", "io.maps.x");
 	rz_core_notify_done(core, "Finding xrefs in noncode section with analysis.in=io.maps");
+	const char *arch = rz_config_get(core->config, "asm.arch");
+
+	if (RZ_STR_EQ(arch, "mips")) {
+		// forbid aav on mips
+		return;
+	}
 
 	int vsize = 4; // 32bit dword
 	if (core->rasm->bits == 64) {
