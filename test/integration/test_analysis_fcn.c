@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 KarlisS <karlis3p70l1ij@gmail.com>
+// SPDX-FileCopyrightText: 2025 KarlisS <karlis3p70l1ij@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
