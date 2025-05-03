@@ -991,3 +991,18 @@ EXPECT=<<EOF
 ++++++    _|  10
 EOF
 RUN
+
+NAME=pxf
+FILE=bins/elf/analysis/main
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+aaa
+pxf
+EOF
+EXPECT=<<EOF
+0x00400410  31ed 4989 d15e 4889 e248 83e4 f050 5449  1.I..^H..H...PTI
+0x00400420  c7c0 b005 4000 48c7 c120 0540 0048 c7c7  ....@.H.. .@.H..
+EOF
+RUN
+
