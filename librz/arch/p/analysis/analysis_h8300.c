@@ -49,7 +49,7 @@ static void h8300_analysis_jsr(RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 static int h8300_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	int ret;
-	struct h8300_cmd cmd;
+	struct h8300_cmd cmd = { 0 };
 
 	if (!op) {
 		return 2;
@@ -145,7 +145,7 @@ static int h8300_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 		h8300_analyze_op_esil(analysis, op, addr, buf);
 	}
 
-	if (mask & RZ_ANALYSIS_OP_MASK_IL){
+	if (mask & RZ_ANALYSIS_OP_MASK_IL) {
 		h8300_analyze_op_il(analysis, op, &cmd);
 	}
 

@@ -34,7 +34,7 @@ RzILOpEffect *r8_op_set(H8300Cmd *cmd, ut8 i, RzILOpPure *x) {
 RzILOpPure *r16_op(H8300Cmd *cmd, ut8 i) {
 	H8300Operand *op = &OPS_GET(i);
 	if (op->typ != H8300_OP_R16 && op->typ != H8300_OP_RI16) {
-		RZ_LOG_ERROR("invalid op type r16\n");
+		RZ_LOG_ERROR("invalid op type r16/ri16\n");
 		return NULL;
 	}
 	ut8 index = op->reg % 8;
@@ -54,7 +54,7 @@ RzILOpEffect *r16_op_set(H8300Cmd *cmd, ut8 i, RzILOpPure *x) {
 RzILOpPure *u16_op(H8300Cmd *cmd, ut8 i) {
 	H8300Operand *op = &OPS_GET(i);
 	if (op->typ != H8300_OP_IMM && op->typ != H8300_OP_ABS) {
-		RZ_LOG_ERROR("invalid op type u16/abs\n");
+		RZ_LOG_ERROR("invalid op type imm/abs!=%d\n", op->typ);
 		return NULL;
 	}
 	return U16(op->imm);

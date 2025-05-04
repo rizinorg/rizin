@@ -727,7 +727,7 @@ static int decode_r8abs16(const ut8 *bytes, struct h8300_cmd *cmd) {
 		snprintf(cmd->operands, H8300_INSTR_MAXLEN, "r%u%c,@0x%x:16",
 			bytes[1] & 0x7, bytes[1] & 0x8 ? 'l' : 'h', abs);
 	} else {
-		cmd->fmt = H8300_INSN_FORMAT_R8ABS;
+		cmd->fmt = H8300_INSN_FORMAT_ABSR8;
 		OPS_ADD(H8300_OP_ABS, imm, abs);
 		OPS_ADD(H8300_OP_R8, reg, bytes[1] & 0xf);
 
