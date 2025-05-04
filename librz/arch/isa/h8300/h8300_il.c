@@ -78,49 +78,68 @@ RzILOpPure *rd16_op(H8300Cmd *cmd, ut8 i) {
 #define U8_OP(I)    UNSIGNED(8, u16_op(cmd, (I)))
 #define RD16_OP(I)  rd16_op(cmd, (I))
 
-int h8300_analyze_op_il(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
+static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 	switch (cmd->id) {
 	case H8300_INSN_MOV_B:
 		switch (cmd->fmt) {
 		case H8300_INSN_FORMAT_R8R8:
-			op->il_op = R8_X(1, R8_OP(0));
-			break;
+			return R8_X(1, R8_OP(0));
 		case H8300_INSN_FORMAT_ABSR8:
-			op->il_op = R8_X(1, LOAD(U16_OP(0)));
-			break;
+			return R8_X(1, LOAD(U16_OP(0)));
 		case H8300_INSN_FORMAT_R8ABS:
-			op->il_op = STORE(U16_OP(1), R8_OP(0));
-			break;
+			return STORE(U16_OP(1), R8_OP(0));
 		case H8300_INSN_FORMAT_IMMR8:
-			op->il_op = R8_X(1, U8_OP(0));
-			break;
+			return R8_X(1, U8_OP(0));
 		case H8300_INSN_FORMAT_R8RI16:
-			op->il_op = STORE(R16_OP(1), R8_OP(0));
-			break;
+			return STORE(R16_OP(1), R8_OP(0));
 		case H8300_INSN_FORMAT_RI16R8:
-			op->il_op = R8_X(1, LOAD(R16_OP(0)));
-			break;
+			return R8_X(1, LOAD(R16_OP(0)));
 		case H8300_INSN_FORMAT_R8RD16:
-			op->il_op = STORE(RD16_OP(1), R8_OP(0));
-			break;
+			return STORE(RD16_OP(1), R8_OP(0));
 		case H8300_INSN_FORMAT_RD16R8:
-			op->il_op = R8_X(1, LOAD(RD16_OP(0)));
-			break;
+			return R8_X(1, LOAD(RD16_OP(0)));
 		case H8300_INSN_FORMAT_R8RDEC:
-			op->il_op = SEQ2(
+			return SEQ2(
 				R16_X(1, SUB(R16_OP(1), U16(1))),
 				STORE(R16_OP(1), R8_OP(0)));
-			break;
 		case H8300_INSN_FORMAT_RINCR8:
-			op->il_op = SEQ2(
+			return SEQ2(
 				R8_X(1, LOAD(R16_OP(0))),
 				R16_X(0, ADD(U16(1), R16_OP(0))));
-			break;
-		default: break;
+		default: NOT_IMPLEMENTED;
+		}
+		break;
+	case H8300_INSN_MOV_W:
+		switch (cmd->fmt) {
+		case H8300_INSN_FORMAT_R16R16:
+			return R16_X(1, R16_OP(0));
+		case H8300_INSN_FORMAT_IMMR16:
+			return R16_X(1, U16_OP(0));
+		case H8300_INSN_FORMAT_RI16R16:
+			return R16_X(1, LOADW(16, R16_OP(0)));
+		case H8300_INSN_FORMAT_R16RI16:
+			return STOREW(R16_OP(1), R16_OP(0));
+		case H8300_INSN_FORMAT_ABSR16:
+			return R16_X(1, LOADW(16, U16_OP(0)));
+		case H8300_INSN_FORMAT_R16ABS:
+			return STOREW(U16_OP(1), R16_OP(0));
+		case H8300_INSN_FORMAT_R16RD16:
+			return STOREW(RD16_OP(1), R16_OP(0));
+		case H8300_INSN_FORMAT_RD16R16:
+			return R16_X(1, LOADW(16, RD16_OP(0)));
+		case H8300_INSN_FORMAT_R16RDEC:
+			return SEQ2(
+				R16_X(1, SUB(R16_OP(1), U16(1))),
+				STOREW(R16_OP(1), R16_OP(0)));
+		case H8300_INSN_FORMAT_RINCR16:
+			return SEQ2(
+				R16_X(1, LOADW(16, R16_OP(0))),
+				R16_X(0, ADD(U16(1), R16_OP(0))));
+		default:
+			NOT_IMPLEMENTED;
 		}
 
 		break;
-	case H8300_INSN_MOV_W: break;
 	case H8300_INSN_ADD_B: break;
 	case H8300_INSN_ADD_W: break;
 	case H8300_INSN_ADDX: break;
@@ -189,6 +208,11 @@ int h8300_analyze_op_il(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 	case H8300_INSN_BIXOR: break;
 	case H8300_INSN_BLD: break;
 	}
+	NOT_IMPLEMENTED;
+}
+
+int h8300_analyze_op_il(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
+	op->il_op = aop(a, op, cmd);
 	return 0;
 }
 

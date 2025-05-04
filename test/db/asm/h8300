@@ -85,15 +85,15 @@ d "mov.b r1l,@0x14:8" 3914 0x0 (store 0 (bv 16 0xff14) (cast 8 false (var r1)))
 d "mov.b r2h,@r0" 6882 0x0 (store 0 (var r0) (cast 8 false (>> (var r2) (bv 8 0x8) false)))
 d "mov.b r2l,@(0x1111:16,r2)" 6eaa1111 0x0 (store 0 (+ (var r2) (bv 16 0x1111)) (cast 8 false (var r2)))
 d "mov.b r4h,@-r1" 6c94 0x0 (seq (set r1 (- (var r1) (bv 16 0x1))) (store 0 (var r1) (cast 8 false (>> (var r4) (bv 8 0x8) false))))
-d "mov.w #0x5555:16,r3" 79035555
-d "mov.w @(0x7711:16,r7),r4" 6F747711
-d "mov.w @0x1234:16,r1" 6B011234
-d "mov.w @r3,r5" 6935
-d "mov.w @r6+,r3" 6D63
-d "mov.w r1,@-r4" 6DC1
-d "mov.w r3,@r2" 69A3
-d "mov.w r3,r5" 0D35
-d "mov.w r4,@(0x101:16,r3)" 6FB40101
+d "mov.w #0x5555:16,r3" 79035555 0x0 (set r3 (bv 16 0x5555))
+d "mov.w @(0x7711:16,r7),r4" 6f747711 0x0 (set r4 (loadw 0 16 (+ (var r7) (bv 16 0x7711))))
+d "mov.w @0x1234:16,r1" 6b011234 0x0 (set r1 (loadw 0 16 (bv 16 0x1234)))
+d "mov.w @r3,r5" 6935 0x0 (set r5 (loadw 0 16 (var r3)))
+d "mov.w @r6+,r3" 6d63 0x0 (seq (set r3 (loadw 0 16 (var r6))) (set r6 (+ (bv 16 0x1) (var r6))))
+d "mov.w r1,@-r4" 6dc1 0x0 (seq (set r4 (- (var r4) (bv 16 0x1))) (storew 0 (var r4) (var r1)))
+d "mov.w r3,@r2" 69a3 0x0 (storew 0 (var r2) (var r3))
+d "mov.w r3,r5" 0d35 0x0 (set r5 (var r3))
+d "mov.w r4,@(0x101:16,r3)" 6fb40101 0x0 (storew 0 (+ (var r3) (bv 16 0x101)) (var r4))
 d "movfpe @0x3344:16,r2l" 6A4A3344
 d "movtpe r3l,@0x3322:16" 6AcB3322
 d "mulxu r4l,r3" 50C3
