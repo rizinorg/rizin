@@ -183,6 +183,7 @@ RZ_API RzILRegBinding *rz_il_reg_binding_exactly(RZ_NONNULL RzReg *reg, size_t r
 				continue;
 			}
 			// overlap detected
+			RZ_LOG_ERROR("Register \"%s\" overlaps with \"%s\".\n", regs[i], regs[j]);
 			goto err_regs;
 		}
 		rb->regs[i].name = rz_str_dup(regs[i]);
