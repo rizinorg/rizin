@@ -34,12 +34,7 @@ static const char *commands[] = {
 	[H8300_INSN_BNOT] = "bnot",
 	[H8300_INSN_BSET] = "bset",
 	[H8300_INSN_BCLR] = "bclr",
-	[H8300_INSN_BOR_BIOR] = "bior",
-
-	[H8300_INSN_BAND_BIAND] = "biand",
-	[H8300_INSN_BST_BIST] = "bist",
 	[H8300_INSN_BTST] = "btst",
-
 	[H8300_INSN_BSR] = "bsr",
 	[H8300_INSN_NOP] = "nop",
 	[H8300_INSN_DAA] = "daa",
@@ -877,7 +872,7 @@ int h8300_decode_command(const ut8 *instr, struct h8300_cmd *cmd) {
 		ret = decode_sr16(instr, cmd);
 		break;
 	case H8300_BAND_BIAND:
-		cmd->id = H8300_INSN_BAND_BIAND;
+		cmd->id = H8300_INSN_BIAND;
 		ret = decode_i3r8(instr, cmd);
 		break;
 	case 0x72:
@@ -885,7 +880,7 @@ int h8300_decode_command(const ut8 *instr, struct h8300_cmd *cmd) {
 		ret = decode_i3r8(instr, cmd);
 		break;
 	case H8300_BST_BIST:
-		cmd->id = H8300_INSN_BST_BIST;
+		cmd->id = H8300_INSN_BIST;
 		ret = decode_i3r8(instr, cmd);
 		break;
 	case H8300_BTST:
@@ -897,7 +892,7 @@ int h8300_decode_command(const ut8 *instr, struct h8300_cmd *cmd) {
 		ret = decode_i3r8(instr, cmd);
 		break;
 	case H8300_BOR_BIOR:
-		cmd->id = H8300_INSN_BOR_BIOR;
+		cmd->id = H8300_INSN_BIOR;
 		ret = decode_i3r8(instr, cmd);
 		break;
 	case H8300_BXOR_BIXOR:

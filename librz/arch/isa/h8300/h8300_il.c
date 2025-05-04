@@ -7,12 +7,22 @@ static const char *GPRs[] = {
 	"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7"
 };
 
-RzILOpPure *r8_op(H8300Cmd *cmd, ut8 i) {
-	H8300Operand *op = &OPS_GET(i);
-	if (op->typ != H8300_OP_R8) {
-		RZ_LOG_ERROR("invalid op type r8\n");
-		return NULL;
+#define R16_OP_DECL(I) \
+	H8300Operand *op = &OPS_GET(i); \
+	if (op->typ != H8300_OP_R16 && op->typ != H8300_OP_RI16 && op->typ != H8300_OP_RINC && op->typ != H8300_OP_RDEC) { \
+		RZ_LOG_ERROR("invalid op type r16/r+/-r\n"); \
+		return NULL; \
 	}
+
+#define R8_OP_DECL(I) \
+	H8300Operand *op = &OPS_GET(i); \
+	if (op->typ != H8300_OP_R8) { \
+		RZ_LOG_ERROR("invalid op type r8\n"); \
+		return NULL; \
+	}
+
+RzILOpPure *r8_op(H8300Cmd *cmd, ut8 i) {
+	R8_OP_DECL(i);
 	ut8 index = op->reg % 8;
 	bool low = op->reg & 8;
 	RzILOpPure *x = VARG(GPRs[index]);
@@ -20,11 +30,7 @@ RzILOpPure *r8_op(H8300Cmd *cmd, ut8 i) {
 }
 
 RzILOpEffect *r8_op_set(H8300Cmd *cmd, ut8 i, RzILOpPure *x) {
-	H8300Operand *op = &OPS_GET(i);
-	if (op->typ != H8300_OP_R8) {
-		RZ_LOG_ERROR("invalid op type r8\n");
-		return NULL;
-	}
+	R8_OP_DECL(i);
 	ut8 index = op->reg % 8;
 	bool low = op->reg & 8;
 	return SETG(GPRs[index],
@@ -32,21 +38,13 @@ RzILOpEffect *r8_op_set(H8300Cmd *cmd, ut8 i, RzILOpPure *x) {
 }
 
 RzILOpPure *r16_op(H8300Cmd *cmd, ut8 i) {
-	H8300Operand *op = &OPS_GET(i);
-	if (op->typ != H8300_OP_R16 && op->typ != H8300_OP_RI16) {
-		RZ_LOG_ERROR("invalid op type r16/ri16\n");
-		return NULL;
-	}
+	R16_OP_DECL(i);
 	ut8 index = op->reg % 8;
 	return VARG(GPRs[index]);
 }
 
 RzILOpEffect *r16_op_set(H8300Cmd *cmd, ut8 i, RzILOpPure *x) {
-	H8300Operand *op = &OPS_GET(i);
-	if (op->typ != H8300_OP_R16) {
-		RZ_LOG_ERROR("invalid op type r16\n");
-		return NULL;
-	}
+	R16_OP_DECL(i);
 	ut8 index = op->reg % 8;
 	return SETG(GPRs[index], x);
 }
@@ -104,6 +102,16 @@ int h8300_analyze_op_il(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 			break;
 		case H8300_INSN_FORMAT_RD16R8:
 			op->il_op = R8_X(1, LOAD(RD16_OP(0)));
+			break;
+		case H8300_INSN_FORMAT_R8RDEC:
+			op->il_op = SEQ2(
+				R16_X(1, SUB(R16_OP(1), U16(1))),
+				STORE(R16_OP(1), R8_OP(0)));
+			break;
+		case H8300_INSN_FORMAT_RINCR8:
+			op->il_op = SEQ2(
+				R8_X(1, LOAD(R16_OP(0))),
+				R16_X(0, ADD(U16(1), R16_OP(0))));
 			break;
 		default: break;
 		}
@@ -167,17 +175,14 @@ int h8300_analyze_op_il(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 	case H8300_INSN_BCLR: break;
 	case H8300_INSN_BTST: break;
 	case H8300_INSN_BST: break;
-	case H8300_INSN_BST_BIST: break;
-	case H8300_INSN_BOR_BIOR: break;
+	case H8300_INSN_BIST: break;
+	case H8300_INSN_BIOR: break;
 	case H8300_INSN_BXOR: break;
 	case H8300_INSN_BAND: break;
-	case H8300_INSN_BAND_BIAND: break;
+	case H8300_INSN_BIAND: break;
 	case H8300_INSN_BILD: break;
 	case H8300_INSN_EEPMOV: break;
-	case H8300_INSN_BIAND: break;
-	case H8300_INSN_BIST: break;
 	case H8300_INSN_BOR: break;
-	case H8300_INSN_BIOR: break;
 	case H8300_INSN_BIXOR: break;
 	case H8300_INSN_BLD: break;
 	}
