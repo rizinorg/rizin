@@ -1756,6 +1756,7 @@ static char *__op_refs(RzCore *core, RzAnalysisOp *op, int n) {
 		rz_list_foreach (list, iter, xref) {
 			rz_strbuf_appendf(sb, "0x%08" PFMT64x " ", xref->to);
 		}
+		rz_list_free(list);
 	} else {
 		if (op->jump != UT64_MAX) {
 			rz_strbuf_appendf(sb, "0x%08" PFMT64x " ", op->jump);

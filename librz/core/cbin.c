@@ -2965,7 +2965,7 @@ RZ_API bool rz_core_bin_xrefs_strings_print(RZ_NONNULL RzCore *core, RZ_NONNULL 
 	void **iter;
 	rz_pvector_foreach (whole_strings, iter) {
 		RzBinString *string = *iter;
-		const RzList *list = rz_analysis_xrefs_get_to(core->analysis, string->paddr);
+		RzList *list = rz_analysis_xrefs_get_to(core->analysis, string->paddr);
 		const RzAnalysisXRef *xref;
 		const RzListIter *iterator;
 		rz_list_foreach (list, iterator, xref) {
@@ -2980,6 +2980,7 @@ RZ_API bool rz_core_bin_xrefs_strings_print(RZ_NONNULL RzCore *core, RZ_NONNULL 
 				break;
 			}
 		}
+		rz_list_free(list);
 	}
 	bool res = strings_print(core, state, xrefs_strings);
 	rz_pvector_free(whole_strings);

@@ -5558,6 +5558,7 @@ static RzList /*<ut64 *>*/ *get_xrefs(RzAnalysisBlock *block) {
 			}
 			rz_list_push(list, ut64_new(xref->from));
 		}
+		rz_list_free(xrefs);
 	}
 	return list;
 }
