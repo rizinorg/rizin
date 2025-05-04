@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2025 Billow <billow.fun@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include "h8300_disas.h"
 #include <rz_il/rz_il_opbuilder_begin.h>
 
