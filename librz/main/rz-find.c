@@ -295,6 +295,9 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 				rz_pvector_foreach (imports, vec_it) {
 					import = *vec_it;
 					if (!strcmp(import->name, kw)) {
+						if (!ro->quiet) {
+							printf("File: %s\n", file);
+						}
 						printf("ordinal: %d %s\n", import->ordinal, kw);
 					}
 				}
@@ -314,6 +317,9 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 					}
 
 					if (!strcmp(symbol->name, kw)) {
+						if (!ro->quiet) {
+							printf("File: %s\n", file);
+						}
 						printf("paddr: 0x%08" PFMT64x " vaddr: 0x%08" PFMT64x " type: %s %s\n", symbol->paddr, symbol->vaddr, symbol->type, symbol->name);
 					}
 				}
