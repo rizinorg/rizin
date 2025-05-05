@@ -386,6 +386,8 @@ static ut64 rz_core_visual_analysis_refresh(RzCore *core) {
 		}
 		if (color) {
 			rz_cons_strcat("\n" Color_RESET);
+		} else {
+			rz_cons_strcat("\n");
 		}
 		if (!visual->view->hide_legend) {
 			rz_core_vmenu_append_help(buf, help_fun_visual);
