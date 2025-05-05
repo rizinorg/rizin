@@ -163,18 +163,9 @@ commands:
               - name: idx
                 type: RZ_CMD_ARG_TYPE_RZNUM
       - name: dbh
-        summary: List breakpoint plugin handlers / Set breakpoint plugin handler
+        summary: List archs which supports software breakpoints
         cname: cmd_debug_bp_plugin
-        args:
-          - name: handler
-            type: RZ_CMD_ARG_TYPE_STRING
-            optional: true
-      - name: dbh-
-        summary: Remove breakpoint plugin handler
-        cname: cmd_debug_remove_bp_plugin
-        args:
-          - name: handler
-            type: RZ_CMD_ARG_TYPE_STRING
+        args: []
       - name: dbt
         summary: Backtrace commands
         subcommands:

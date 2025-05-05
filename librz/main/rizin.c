@@ -45,7 +45,6 @@ static int rz_main_version_verify(int show) {
 		{ "rz_flag", rz_flag_version },
 		{ "rz_core", rz_core_version },
 		{ "rz_crypto", rz_crypto_version },
-		{ "rz_bp", rz_bp_version },
 		{ "rz_debug", rz_debug_version },
 		{ "rz_main", rz_main_version },
 		{ "rz_hash", rz_hash_version },

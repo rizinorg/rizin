@@ -690,9 +690,6 @@ static bool cb_asmbits(void *user, void *data) {
 		}
 		update_syscall_ns(core);
 		__setsegoff(core->config, asmarch, core->analysis->bits);
-		if (core->dbg) {
-			rz_bp_use(core->dbg->bp, asmarch);
-		}
 		/* set pcalign */
 		int v = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN);
 		rz_config_set_i(core->config, "asm.pcalign", (v != -1) ? v : 1);

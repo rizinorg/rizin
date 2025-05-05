@@ -1549,7 +1549,7 @@ RZ_API int rz_subprocess_ret(RzSubprocess *proc) {
 }
 
 RZ_API ut8 *rz_subprocess_out(RzSubprocess *proc, int *length) {
-	int bin_len = 0;
+	size_t bin_len = 0;
 	const ut8 *bin = rz_strbuf_getbin(&proc->out, &bin_len);
 	ut8 *buf = (ut8 *)rz_str_newlen((const char *)bin, bin_len);
 	if (length) {
@@ -1560,7 +1560,7 @@ RZ_API ut8 *rz_subprocess_out(RzSubprocess *proc, int *length) {
 }
 
 RZ_API ut8 *rz_subprocess_err(RzSubprocess *proc, int *length) {
-	int bin_len = 0;
+	size_t bin_len = 0;
 	const ut8 *bin = rz_strbuf_getbin(&proc->err, &bin_len);
 	ut8 *buf = (ut8 *)rz_str_newlen((const char *)bin, bin_len);
 	if (length) {

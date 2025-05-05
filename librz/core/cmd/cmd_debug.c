@@ -1981,24 +1981,29 @@ RZ_IPI RzCmdStatus rz_cmd_debug_toggle_bp_trace_index_handler(RzCore *core, int 
 
 // dbh
 RZ_IPI RzCmdStatus rz_cmd_debug_bp_plugin_handler(RzCore *core, int argc, const char **argv) {
-	if (argc == 1) {
-		rz_bp_plugin_print(core->dbg->bp);
-	} else if (argc == 2) {
-		if (!rz_bp_use(core->dbg->bp, argv[1])) {
-			RZ_LOG_ERROR("Failed to set breakpoint plugin handler to %s\n", argv[1]);
-			return RZ_CMD_STATUS_ERROR;
-		}
-	}
-	return RZ_CMD_STATUS_OK;
-}
+	rz_return_val_if_fail(core, RZ_CMD_STATUS_ERROR);
+	RzAsm *a = core->rasm;
 
-// dbh-
-RZ_IPI RzCmdStatus rz_cmd_debug_remove_bp_plugin_handler(RzCore *core, int argc, const char **argv) {
-	for (int i = 1; i < argc; i++) {
-		if (!rz_bp_plugin_del_byname(core->dbg->bp, argv[i])) {
-			RZ_LOG_ERROR("Failed to delete breakpoint plugin handler: %s\n", argv[i]);
-		}
+	RzIterator *iter = ht_sp_as_iter(a->plugins);
+	RzList *plugin_list = rz_list_new_from_iterator(iter);
+	if (!plugin_list) {
+		rz_iterator_free(iter);
+		return RZ_CMD_STATUS_ERROR;
 	}
+
+	rz_list_sort(plugin_list, (RzListComparator)rz_asm_plugin_cmp, NULL);
+	RzListIter *it;
+	RzAsmPlugin *ap;
+
+	rz_list_foreach (plugin_list, it, ap) {
+		if (!ap->sw_breakpoint) {
+			continue;
+		}
+		rz_cons_printf("%s\n", ap->name);
+	}
+
+	rz_list_free(plugin_list);
+	rz_iterator_free(iter);
 	return RZ_CMD_STATUS_OK;
 }
 

@@ -82,7 +82,7 @@ static int mips_assemble(RzAsm *a, RzAsmOp *op, const char *str) {
 	return mips_assemble_opcode(str, a->pc, &op->buf, a->big_endian);
 }
 
-char **mips_cpu_descriptions() {
+static char **mips_cpu_descriptions() {
 	static char *cpu_desc[] = {
 		"mips3", "MIPS III architecture.",
 		"mips1", "MIPS I architecture",
@@ -121,6 +121,16 @@ char **mips_cpu_descriptions() {
 	return cpu_desc;
 }
 
+static bool mips_sw_breakpoint(RzAsm *a, RzAsmOp *op) {
+	// mips32/64
+	// { 32, 4, 0, "\x0d\x00\x00\x00" },
+	// { 32, 4, 1, "\x00\x00\x00\x0d" },
+	// { 64, 4, 0, "\x0d\x00\x00\x00" },
+	// { 64, 4, 1, "\x00\x00\x00\x0d" },
+	rz_asm_op_set_buf(op, a->big_endian ? (const ut8 *)"\x00\x00\x00\x0d" : (const ut8 *)"\x0d\x00\x00\x00", 4);
+	return true;
+}
+
 RzAsmPlugin rz_asm_plugin_mips_cs = {
 	.name = "mips",
 	.desc = "MIPS Capstone-based disassembler",
@@ -135,6 +145,7 @@ RzAsmPlugin rz_asm_plugin_mips_cs = {
 	.mnemonics = mips_asm_mnemonics,
 	.assemble = &mips_assemble,
 	.get_cpu_desc = mips_cpu_descriptions,
+	.sw_breakpoint = mips_sw_breakpoint,
 };
 
 #ifndef RZ_PLUGIN_INCORE

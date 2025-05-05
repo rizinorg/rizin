@@ -151,7 +151,6 @@ rz_core_deps = [
   rz_crypto_dep,
   rz_io_dep,
   rz_reg_dep,
-  rz_bp_dep,
   rz_syscall_dep,
   rz_egg_dep,
   rz_search_dep,
@@ -209,7 +208,6 @@ modules += { 'rz_core': {
       'rz_config',
       'rz_bin',
       'rz_arch',
-      'rz_bp',
       'rz_sign',
       'rz_il'
     ],

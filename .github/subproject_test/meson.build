@@ -6,7 +6,6 @@ rz_deps = [
   dependency('rz_flag'),
   dependency('rz_hash'),
   dependency('rz_bin'),
-  dependency('rz_bp'),
   dependency('rz_io'),
   dependency('rz_search'),
   dependency('rz_sign'),

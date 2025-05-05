@@ -61,7 +61,7 @@ static char *tms320_mnemonics(RzAsm *a, int id, bool json) {
 	return tms320_c64x_mnemonics(a, id, json, ctx->c64x);
 }
 
-char **tms320_cpu_descriptions() {
+static char **tms320_cpu_descriptions() {
 	static char *cpu_desc[] = {
 		"c54x", "Texas Instruments TMS320C54x DSP family",
 		"c55x", "Texas Instruments TMS320C55x DSP family",

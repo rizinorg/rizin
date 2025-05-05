@@ -723,6 +723,25 @@ RZ_API void rz_asm_list_directives(void) {
 	}
 }
 
+/**
+ * \brief      Returns the software breakpoint instruction (binary encoded) of the current selected arch
+ *
+ * \param      a     The RzAsm structure to use
+ * \param      op    The RzAsmOp to fill.
+ *
+ * \return     On success true, otherwise false.
+ */
+RZ_API bool rz_asm_software_breakpoint(RZ_NONNULL RzAsm *a, RZ_NONNULL RzAsmOp *op) {
+	rz_return_val_if_fail(a && op, false);
+	memset(op, 0, sizeof(RzAsmOp));
+
+	if (a->cur && a->cur->sw_breakpoint) {
+		return a->cur->sw_breakpoint(a, op);
+	}
+
+	return false;
+}
+
 // returns instruction size
 RZ_API int rz_asm_assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
 	rz_return_val_if_fail(a && op && buf, 0);

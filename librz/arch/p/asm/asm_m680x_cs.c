@@ -79,7 +79,7 @@ static int m680x_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
-char **m680x_cpu_descriptions() {
+static char **m680x_cpu_descriptions() {
 	static char *cpu_desc[] = {
 		"6800", "Motorola 6800: 8-bit microprocessor launched in 1974",
 		"6801", "Motorola 6801: Enhanced version of the 6800 with additional features like on-chip RAM and timers.",

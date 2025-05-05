@@ -29,7 +29,6 @@ static bool lib_core_dt(RzLibPlugin *pl, void *user, void *data) {
 CB(io, io)
 CB(crypto, crypto)
 CB(debug, dbg)
-CB(bp, dbg->bp)
 CB(lang, lang)
 CB(analysis, analysis)
 CB(asm, rasm)
@@ -112,7 +111,6 @@ RZ_API void rz_core_loadlibs_init(RzCore *core) {
 	DF(CORE, "core plugins", core);
 	DF(CRYPTO, "crypto plugins", crypto);
 	DF(DBG, "debugger plugins", debug);
-	DF(BP, "debugger breakpoint plugins", bp);
 	DF(LANG, "language plugins", lang);
 	DF(ANALYSIS, "analysis plugins", analysis);
 	DF(ASM, "(dis)assembler plugins", asm);

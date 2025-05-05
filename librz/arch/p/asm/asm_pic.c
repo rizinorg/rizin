@@ -29,7 +29,7 @@ static int asm_pic_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *b, int l) {
 	return -1;
 }
 
-char **pic_cpu_descriptions() {
+static char **pic_cpu_descriptions() {
 	static char *cpu_desc[] = {
 		"baseline", "Baseline 12-bit instruction set microcontrollers: PIC10Fxxx, PIC12Fxxx, and PIC16Fxxx",
 		"midrange", "Mid-Range 14-bit instruction set microcontrollers: PIC10Fxxx, PIC12Fxxx, and PIC16Fxxx",

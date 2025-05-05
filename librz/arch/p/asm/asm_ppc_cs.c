@@ -116,7 +116,7 @@ static int ppc_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
-char **ppc_cpu_descriptions() {
+static char **ppc_cpu_descriptions() {
 	static char *cpu_desc[] = {
 		"ppc", "Generic PowerPC CPU",
 		"vle", "PowerPC with Variable Length Encoding extension",
@@ -125,6 +125,14 @@ char **ppc_cpu_descriptions() {
 		NULL
 	};
 	return cpu_desc;
+}
+
+static bool ppc_sw_breakpoint(RzAsm *a, RzAsmOp *op) {
+	// ppc | tw 31, 0, 0 | trap
+	// { 0x7f, 0xe0, 0x00, 0x08 } | big endian
+	// { 0x08, 0x00, 0xe0, 0x7f } | little endian
+	rz_asm_op_set_buf(op, a->big_endian ? (const ut8 *)"\x7f\xe0\x00\x08" : (const ut8 *)"\x08\x00\xe0\x7f", 4);
+	return true;
 }
 
 RzAsmPlugin rz_asm_plugin_ppc_cs = {
@@ -141,6 +149,7 @@ RzAsmPlugin rz_asm_plugin_ppc_cs = {
 	.disassemble = &ppc_disassemble,
 	.mnemonics = ppc_asm_mnemonics,
 	.get_cpu_desc = ppc_cpu_descriptions,
+	.sw_breakpoint = ppc_sw_breakpoint,
 };
 
 #ifndef RZ_PLUGIN_INCORE

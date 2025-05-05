@@ -1456,11 +1456,52 @@ static void bp_maps_sync(void *user) {
 	}
 }
 
-static int bp_bits_at(ut64 addr, void *user) {
-	RzCore *core = user;
-	int r = 0;
-	rz_core_arch_bits_at(core, addr, &r, NULL);
-	return r ? r : core->analysis->bits;
+static void core_set_rz_asm_by_hint(RzCore *core, ut64 addr) {
+	int bits = 0;
+	const char *arch = NULL;
+	rz_core_arch_bits_at(core, addr, &bits, &arch);
+	rz_asm_set_arch(core->rasm, arch, bits);
+}
+
+static void core_set_rz_asm_by_config(RzCore *core) {
+	const char *arch = rz_config_get(core->config, "asm.arch");
+	int bits = rz_config_get_i(core->config, "asm.bits");
+	rz_asm_set_arch(core->rasm, arch, bits);
+}
+
+static RzStrBuf *bp_get_sw_breakpoint_at(ut64 addr, void *user) {
+	RzCore *core = (RzCore *)user;
+	RzStrBuf *opcode = NULL;
+	RzAsmOp op = { 0 };
+
+	core_set_rz_asm_by_hint(core, addr);
+
+	rz_asm_op_init(&op);
+	if (rz_asm_software_breakpoint(core->rasm, &op) &&
+		(opcode = rz_strbuf_new(NULL))) {
+		rz_strbuf_copy(opcode, &op.buf);
+	}
+	rz_asm_op_fini(&op);
+
+	core_set_rz_asm_by_config(core);
+	return opcode;
+}
+
+static size_t bp_get_sw_breakpoint_size_at(ut64 addr, void *user) {
+	RzCore *core = (RzCore *)user;
+	size_t length = 0;
+	RzAsmOp op = { 0 };
+
+	core_set_rz_asm_by_hint(core, addr);
+
+	rz_asm_op_init(&op);
+	if (rz_asm_software_breakpoint(core->rasm, &op)) {
+		length = rz_strbuf_length(&op.buf);
+	}
+	rz_asm_op_fini(&op);
+
+	core_set_rz_asm_by_config(core);
+	return length;
 }
 
 static void ev_iowrite_cb(RzEvent *ev, int type, void *user, void *data) {
@@ -1670,7 +1711,8 @@ RZ_API bool rz_core_init(RzCore *core) {
 		.user = core,
 		.is_mapped = bp_is_mapped,
 		.maps_sync = bp_maps_sync,
-		.bits_at = bp_bits_at
+		.get_sw_breakpoint_at = bp_get_sw_breakpoint_at,
+		.get_sw_breakpoint_size_at = bp_get_sw_breakpoint_size_at,
 	};
 	core->dbg = rz_debug_new(&bp_ctx);
 
@@ -1705,7 +1747,6 @@ RZ_API bool rz_core_init(RzCore *core) {
 		}
 	}
 	rz_config_set(core->config, "asm.arch", RZ_SYS_ARCH);
-	rz_bp_use(core->dbg->bp, RZ_SYS_ARCH);
 	update_sdb(core);
 	{
 		char *a = rz_path_system(RZ_FLAGS);

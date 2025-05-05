@@ -727,7 +727,6 @@ if host_machine.system() == 'windows'
   test_env_common_path += [
     build_root / 'librz' / 'arch',
     build_root / 'librz' / 'bin',
-    build_root / 'librz' / 'bp',
     build_root / 'librz' / 'config',
     build_root / 'librz' / 'cons',
     build_root / 'librz' / 'signature',
@@ -859,7 +858,6 @@ summary({
   'Arch Plugins': arch_plugins.get('list'),
   'Binary Plugins': bin_plugins.get('list'),
   'BinXtr Plugins': bin_xtr_plugins.get('list'),
-  'Breakpoint Plugins': bp_plugins.get('list'),
   'Core Plugins': core_plugins.get('list'),
   'Crypto Plugins': crypto_plugins.get('list'),
   'Debug Plugins': debug_plugins.get('list'),

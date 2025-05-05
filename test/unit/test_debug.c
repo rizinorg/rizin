@@ -273,24 +273,22 @@ static RzDebugPlugin dbg_mock_plugin = {
 	.reg_profile = dbg_mock_reg_profile
 };
 
-static RzBreakpointArch bp_mock_plugin_bps[] = {
-	{ .bits = 0, .length = 4, .endian = 0, .bytes = (const ut8 *)"STOP" },
-	{ 0, 0, 0, NULL }
-};
-
-static RzBreakpointPlugin bp_mock_plugin = {
-	.name = "mock_bp",
-	.arch = "moch_arch",
-	.nbps = 1,
-	.bps = bp_mock_plugin_bps,
-};
-
-bool bp_everything_is_mapped(ut64 addr, int perm, void *user) {
+static bool bp_everything_is_mapped(ut64 addr, int perm, void *user) {
 	return true;
+}
+
+static RzStrBuf *bp_mock_sw_opcode_at(ut64 addr, void *user) {
+	return rz_strbuf_new("STOP");
+}
+
+static size_t bp_mock_sw_opcode_size_at(ut64 addr, void *user) {
+	return 4;
 }
 
 static RzBreakpointContext bp_ctx = {
 	.is_mapped = bp_everything_is_mapped,
+	.get_sw_breakpoint_at = bp_mock_sw_opcode_at,
+	.get_sw_breakpoint_size_at = bp_mock_sw_opcode_size_at,
 };
 
 /// @}
@@ -392,37 +390,20 @@ static RzDebugPlugin dbg_mock_multibits_plugin = {
 	.reg_profile = dbg_mock_reg_profile
 };
 
-static RzBreakpointArch bp_mock_multibits_plugin_bps[] = {
-	{ .bits = 16, .length = 2, .endian = 0, .bytes = (const ut8 *)"st" },
-	{ .bits = 32, .length = 4, .endian = 0, .bytes = (const ut8 *)"STOP" },
-	{ 0, 0, 0, NULL }
-};
-
-static RzBreakpointPlugin bp_mock_multibits_plugin = {
-	.name = "mock_multibits_bp",
-	.arch = "moch_multibits_arch",
-	.nbps = 2,
-	.bps = bp_mock_multibits_plugin_bps,
-};
-
 /// @}
 
-#define SETUP_DEBUG(dbg_plugin, bp_plugin, bp_ctx) \
+#define SETUP_DEBUG(dbg_plugin, bp_ctx) \
 	do { \
 		dbg_mock_failed = false; \
 		dbg = rz_debug_new(bp_ctx); \
 		mu_assert_notnull(dbg, "create debug"); \
 		bool succ = rz_debug_plugin_add(dbg, dbg_plugin); \
 		mu_assert_true(succ, "add mock debug plugin"); \
-		succ = rz_bp_plugin_add(dbg->bp, bp_plugin); \
-		mu_assert_true(succ, "add mock bp plugin"); \
 		io = rz_io_new(); \
 		rz_io_bind(io, &dbg->iob); \
 		rz_io_bind(io, &dbg->bp->iob); \
 		succ = rz_debug_use(dbg, (dbg_plugin)->name); \
 		mu_assert_true(succ, "use mock debug plugin"); \
-		rz_bp_use(dbg->bp, (bp_plugin)->name); \
-		mu_assert_true(succ, "use mock bp plugin"); \
 	} while (0)
 
 /**
@@ -432,7 +413,7 @@ static RzBreakpointPlugin bp_mock_multibits_plugin = {
 static bool test_debug_sw_bp(void) {
 	RzDebug *dbg;
 	RzIO *io;
-	SETUP_DEBUG(&dbg_mock_plugin, &bp_mock_plugin, &bp_ctx);
+	SETUP_DEBUG(&dbg_mock_plugin, &bp_ctx);
 
 	rz_io_open_at(io, "malloc://0x1000", RZ_PERM_RW, 0644, 0x0, NULL);
 	rz_io_write_at(io, 0x50, (const ut8 *)"PRNT", 4);
@@ -473,26 +454,32 @@ static bool test_debug_sw_bp(void) {
 }
 
 /**
- * \name Thumb/Non-thumb software breakpoint test
  * Set up some mixed thumb and non-thumb code, put breakpoints in both parts and check that
  * all of them are set up correctly (selecting the right byte patterns from the bp plugin) and hit.
- * @{
  */
-
-int sw_bp_multibits_bits_at(ut64 addr, void *user) {
+static RzStrBuf *bp_mock_sw_bp_multibits_opcode_at(ut64 addr, void *user) {
 	// this corresponds to the instruction of the program written into io in test_debug_sw_bp_multibits()
-	return addr >= 0x58 && addr < 0x60 ? 16 : 32;
+	if (addr >= 0x58 && addr < 0x60) {
+		return rz_strbuf_new("st");
+	}
+	return rz_strbuf_new("STOP");
+}
+
+static size_t bp_mock_sw_bp_multibits_size_at(ut64 addr, void *user) {
+	// this corresponds to the instruction of the program written into io in test_debug_sw_bp_multibits()
+	return addr >= 0x58 && addr < 0x60 ? 2 : 4;
 }
 
 static bool test_debug_sw_bp_multibits(void) {
 	RzBreakpointContext bp_ctx = {
 		.is_mapped = bp_everything_is_mapped,
-		.bits_at = sw_bp_multibits_bits_at
+		.get_sw_breakpoint_at = bp_mock_sw_bp_multibits_opcode_at,
+		.get_sw_breakpoint_size_at = bp_mock_sw_bp_multibits_size_at,
 	};
 
 	RzDebug *dbg;
 	RzIO *io;
-	SETUP_DEBUG(&dbg_mock_multibits_plugin, &bp_mock_multibits_plugin, &bp_ctx);
+	SETUP_DEBUG(&dbg_mock_multibits_plugin, &bp_ctx);
 
 	rz_io_open_at(io, "malloc://0x1000", RZ_PERM_RW, 0644, 0x0, NULL);
 	// program is some non-thumb code with a chunk of thumb in between
@@ -651,7 +638,7 @@ static bool test_debug_sw_bp_multibits(void) {
 static bool test_debug_hw_bp(void) {
 	RzDebug *dbg;
 	RzIO *io;
-	SETUP_DEBUG(&dbg_mock_plugin, &bp_mock_plugin, &bp_ctx);
+	SETUP_DEBUG(&dbg_mock_plugin, &bp_ctx);
 
 	rz_io_open_at(io, "malloc://0x1000", RZ_PERM_RW, 0644, 0x0, NULL);
 	rz_io_write_at(io, 0x50, (const ut8 *)"PRNT", 4);
@@ -713,7 +700,7 @@ static bool test_debug_hw_bp(void) {
 static bool test_debug_hw_watch(void) {
 	RzDebug *dbg;
 	RzIO *io;
-	SETUP_DEBUG(&dbg_mock_plugin, &bp_mock_plugin, &bp_ctx);
+	SETUP_DEBUG(&dbg_mock_plugin, &bp_ctx);
 
 	rz_io_open_at(io, "malloc://0x1000", RZ_PERM_RW, 0644, 0x0, NULL);
 	const char *code =

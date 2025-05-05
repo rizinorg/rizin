@@ -450,8 +450,6 @@ static const RzCmdDescArg cmd_debug_toggle_bp_index_args[2];
 static const RzCmdDescArg cmd_debug_enable_bp_trace_index_args[2];
 static const RzCmdDescArg cmd_debug_disable_bp_trace_index_args[2];
 static const RzCmdDescArg cmd_debug_toggle_bp_trace_index_args[2];
-static const RzCmdDescArg cmd_debug_bp_plugin_args[2];
-static const RzCmdDescArg cmd_debug_remove_bp_plugin_args[2];
 static const RzCmdDescArg cmd_debug_display_bt_oneline_args[2];
 static const RzCmdDescArg cmd_debug_bp_set_expr_cur_offset_args[2];
 static const RzCmdDescArg cmd_debug_add_watchpoint_args[3];
@@ -9258,32 +9256,11 @@ static const RzCmdDescHelp cmd_debug_toggle_bp_trace_index_help = {
 };
 
 static const RzCmdDescArg cmd_debug_bp_plugin_args[] = {
-	{
-		.name = "handler",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
-
-	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_bp_plugin_help = {
-	.summary = "List breakpoint plugin handlers / Set breakpoint plugin handler",
+	.summary = "List archs which supports software breakpoints",
 	.args = cmd_debug_bp_plugin_args,
-};
-
-static const RzCmdDescArg cmd_debug_remove_bp_plugin_args[] = {
-	{
-		.name = "handler",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_debug_remove_bp_plugin_help = {
-	.summary = "Remove breakpoint plugin handler",
-	.args = cmd_debug_remove_bp_plugin_args,
 };
 
 static const RzCmdDescHelp dbt_help = {
@@ -22676,9 +22653,6 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_debug_bp_plugin_cd = rz_cmd_desc_argv_new(core->rcmd, db_cd, "dbh", rz_cmd_debug_bp_plugin_handler, &cmd_debug_bp_plugin_help);
 	rz_warn_if_fail(cmd_debug_bp_plugin_cd);
-
-	RzCmdDesc *cmd_debug_remove_bp_plugin_cd = rz_cmd_desc_argv_new(core->rcmd, db_cd, "dbh-", rz_cmd_debug_remove_bp_plugin_handler, &cmd_debug_remove_bp_plugin_help);
-	rz_warn_if_fail(cmd_debug_remove_bp_plugin_cd);
 
 	RzCmdDesc *dbt_cd = rz_cmd_desc_group_state_new(core->rcmd, db_cd, "dbt", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_QUIET, rz_cmd_debug_display_bt_handler, &cmd_debug_display_bt_help, &dbt_help);
 	rz_warn_if_fail(dbt_cd);

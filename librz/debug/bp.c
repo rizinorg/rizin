@@ -2,11 +2,6 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_bp.h>
-#include "rz_bp_plugins.h"
-
-RZ_LIB_VERSION(rz_bp);
-
-static struct rz_bp_plugin_t *bp_static_plugins[] = { RZ_BP_STATIC_PLUGINS };
 
 static void rz_bp_item_free(RzBreakpointItem *b) {
 	free(b->name);
@@ -24,7 +19,8 @@ static void rz_bp_item_free(RzBreakpointItem *b) {
  * \param ctx global context in which the instance will operate (giving mappings, etc)
  */
 RZ_API RzBreakpoint *rz_bp_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *ctx) {
-	int i;
+	rz_return_val_if_fail(ctx, NULL);
+
 	RzBreakpoint *bp = RZ_NEW0(RzBreakpoint);
 	if (!bp) {
 		return NULL;
@@ -35,65 +31,50 @@ RZ_API RzBreakpoint *rz_bp_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *ctx) {
 	bp->stepcont = RZ_BP_CONT_NORMAL;
 	bp->traces = rz_bp_traptrace_new();
 	bp->cb_printf = (PrintfCallback)printf;
+	bp->opcode = NULL;
 	bp->bps = rz_list_newf((RzListFree)rz_bp_item_free);
-	bp->plugins = ht_sp_new(HT_STR_DUP, NULL, NULL);
 	bp->nhwbps = 0;
-	for (i = 0; i < RZ_ARRAY_SIZE(bp_static_plugins); i++) {
-		rz_bp_plugin_add(bp, bp_static_plugins[i]);
-	}
 	memset(&bp->iob, 0, sizeof(bp->iob));
 	return bp;
 }
 
-RZ_API RzBreakpoint *rz_bp_free(RzBreakpoint *bp) {
+RZ_API void rz_bp_free(RzBreakpoint *bp) {
+	if (!bp) {
+		return;
+	}
 	rz_list_free(bp->bps);
-	ht_sp_free(bp->plugins);
 	rz_list_free(bp->traces);
+	rz_strbuf_free(bp->opcode);
 	free(bp->bps_idx);
 	free(bp);
-	return NULL;
+}
+
+RZ_API bool rz_bp_set_opcode(RZ_NONNULL RzBreakpoint *bp, ut64 addr) {
+	rz_return_val_if_fail(bp, false);
+	RZ_FREE_CUSTOM(bp->opcode, rz_strbuf_free);
+	if (!bp->ctx.get_sw_breakpoint_at) {
+		return false;
+	}
+	bp->opcode = bp->ctx.get_sw_breakpoint_at(addr, bp->ctx.user);
+	return bp->opcode != NULL;
 }
 
 /**
  * Get the bytes to place at \p addr in order to set a sw breakpoint there
  * \p return the length of bytes or 0 on failure
  */
-RZ_API int rz_bp_get_bytes(RZ_NONNULL RzBreakpoint *bp, ut64 addr, RZ_NONNULL ut8 *buf, int len) {
+RZ_API size_t rz_bp_get_bytes(RZ_NONNULL RzBreakpoint *bp, ut64 addr, RZ_NONNULL ut8 *buf, int len) {
 	rz_return_val_if_fail(bp && buf, 0);
-	int endian = bp->endian;
-	int bits = bp->ctx.bits_at ? bp->ctx.bits_at(addr, bp->ctx.user) : 0;
-	struct rz_bp_arch_t *b;
-	if (!bp->cur) {
+	if (!rz_bp_set_opcode(bp, addr)) {
+		// cannot use get bytes of the opcode.
 		return 0;
 	}
-	// find matching size breakpoint
-repeat:
-	for (int i = 0; i < bp->cur->nbps; i++) {
-		b = &bp->cur->bps[i];
-		if (bp->cur->bps[i].bits) {
-			if (!bits || bits != bp->cur->bps[i].bits) {
-				continue;
-			}
-		}
-		if (bp->cur->bps[i].length == len && bp->cur->bps[i].endian == endian) {
-			memcpy(buf, b->bytes, b->length);
-			return b->length;
-		}
-	}
-	if (len != 4) {
-		len = 4;
-		goto repeat;
-	}
-	/* if not found try to pad with the first one */
-	b = &bp->cur->bps[0];
-	if (len % b->length) {
-		RZ_LOG_ERROR("No matching bpsize\n");
-		return 0;
-	}
-	for (int i = 0; i < len; i++) {
-		memcpy(buf + i, b->bytes, b->length);
-	}
-	return b->length;
+
+	size_t length = 0;
+	const ut8 *bytes = rz_strbuf_getbin(bp->opcode, &length);
+	memcpy(buf, bytes, RZ_MIN(length, len));
+
+	return length;
 }
 
 /**
@@ -168,14 +149,8 @@ RZ_API bool rz_bp_enable_all(RzBreakpoint *bp, int set) {
 	return true;
 }
 
-RZ_API int rz_bp_stepy_continuation(RzBreakpoint *bp) {
-	// TODO: implement
-	return bp->stepcont;
-}
-
 static void unlinkBreakpoint(RzBreakpoint *bp, RzBreakpointItem *b) {
-	int i;
-	for (i = 0; i < bp->bps_idx_count; i++) {
+	for (int i = 0; i < bp->bps_idx_count; i++) {
 		if (bp->bps_idx[i] == b) {
 			bp->bps_idx[i] = NULL;
 		}
@@ -257,7 +232,7 @@ static RzBreakpointItem *rz_bp_add(RzBreakpoint *bp, const ut8 *obytes, ut64 add
 		}
 		int ret = rz_bp_get_bytes(bp, b->addr, b->bbytes, size);
 		if (ret != size) {
-			RZ_LOG_ERROR("Cannot get breakpoint bytes. Incorrect architecture/bits selected for software breakpoints?\n");
+			RZ_LOG_ERROR("Cannot get breakpoint bytes at 0x%08" PFMT64x "\n", b->addr);
 			goto err;
 		}
 	}
@@ -266,11 +241,6 @@ static RzBreakpointItem *rz_bp_add(RzBreakpoint *bp, const ut8 *obytes, ut64 add
 err:
 	rz_bp_item_free(b);
 	return NULL;
-}
-
-RZ_API int rz_bp_add_fault(RzBreakpoint *bp, ut64 addr, int size, int perm) {
-	// TODO
-	return false;
 }
 
 /**
@@ -301,10 +271,9 @@ RZ_API RzBreakpointItem *rz_bp_add_hw(RzBreakpoint *bp, ut64 addr, int size, int
 }
 
 RZ_API bool rz_bp_del_all(RzBreakpoint *bp) {
-	int i;
 	if (!rz_list_empty(bp->bps)) {
 		rz_list_purge(bp->bps);
-		for (i = 0; i < bp->bps_idx_count; i++) {
+		for (int i = 0; i < bp->bps_idx_count; i++) {
 			bp->bps_idx[i] = NULL;
 		}
 		return true;
@@ -352,8 +321,7 @@ RZ_API RzBreakpointItem *rz_bp_get_index(RzBreakpoint *bp, int idx) {
 }
 
 RZ_API int rz_bp_get_index_at(RzBreakpoint *bp, ut64 addr) {
-	int i;
-	for (i = 0; i < bp->bps_idx_count; i++) {
+	for (int i = 0; i < bp->bps_idx_count; i++) {
 		if (bp->bps_idx[i] && bp->bps_idx[i]->addr == addr) {
 			return i;
 		}
@@ -371,35 +339,29 @@ RZ_API int rz_bp_del_index(RzBreakpoint *bp, int idx) {
 }
 
 /**
- * \brief Predict the software breakpoint size to use for the given arch-bitness
+ * \brief Current software breakpoint size
  * \param bits bitness or 0 if unspecified
  */
-RZ_API int rz_bp_size(RZ_NONNULL RzBreakpoint *bp, int bits) {
+RZ_API size_t rz_bp_size(RZ_NONNULL RzBreakpoint *bp) {
 	rz_return_val_if_fail(bp, 0);
-	RzBreakpointArch *bpa;
-	int i, bpsize = 8;
-	if (!bp || !bp->cur) {
+	if (!bp->opcode) {
+		// cannot use get the size of the opcode.
 		return 0;
 	}
-	for (i = 0; bp->cur->bps[i].bytes; i++) {
-		bpa = &bp->cur->bps[i];
-		if (bpa->bits && bpa->bits != bits) {
-			continue;
-		}
-		if (bpa->length < bpsize) {
-			bpsize = bpa->length;
-		}
-	}
-	return bpsize;
+
+	return rz_strbuf_length(bp->opcode);
 }
 
 /**
- * \brief Predict the software breakpoint size to use when placing a breakpoint at \p addr
+ * \brief Get the software breakpoint size at a given address
  */
-RZ_API int rz_bp_size_at(RZ_NONNULL RzBreakpoint *bp, ut64 addr) {
+RZ_API size_t rz_bp_size_at(RZ_NONNULL RzBreakpoint *bp, ut64 addr) {
 	rz_return_val_if_fail(bp, 0);
-	int bits = bp->ctx.bits_at ? bp->ctx.bits_at(addr, bp->ctx.user) : 0;
-	return rz_bp_size(bp, bits);
+	if (!bp->ctx.get_sw_breakpoint_size_at) {
+		// cannot use get the size of the opcode.
+		return 0;
+	}
+	return bp->ctx.get_sw_breakpoint_size_at(addr, bp->ctx.user);
 }
 
 // Check if the breakpoint is in a valid map

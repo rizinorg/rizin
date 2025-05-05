@@ -10,17 +10,8 @@
 extern "C" {
 #endif
 
-RZ_LIB_VERSION_HEADER(rz_bp);
-
 #define RZ_BP_MAXPIDS     10
 #define RZ_BP_CONT_NORMAL 0
-
-typedef struct rz_bp_arch_t {
-	int bits;
-	int length;
-	int endian;
-	const ut8 *bytes;
-} RzBreakpointArch;
 
 enum {
 	RZ_BP_TYPE_SW,
@@ -29,14 +20,6 @@ enum {
 	RZ_BP_TYPE_FAULT,
 	RZ_BP_TYPE_DELETE,
 };
-
-typedef struct rz_bp_plugin_t {
-	char *name;
-	char *arch;
-	int type; // RZ_BP_TYPE_SW
-	int nbps;
-	RzBreakpointArch *bps;
-} RzBreakpointPlugin;
 
 typedef struct rz_bp_item_t {
 	char *name;
@@ -72,7 +55,8 @@ typedef struct rz_bp_context_t {
 	void *user;
 	bool (*is_mapped)(ut64 addr, int perm, void *user); ///< check if the address is mapped and has the given permissions
 	void (*maps_sync)(void *user); ///< synchronize any maps from the debugee
-	int (*bits_at)(ut64 addr, void *user); ///< get the arch-bitness to use at the given address (e.g. thumb or 32)
+	RzStrBuf *(*get_sw_breakpoint_at)(ut64 addr, void *user); ///< get the software breakpoint based on the address hints
+	size_t (*get_sw_breakpoint_size_at)(ut64 addr, void *user); ///< get the software breakpoint based on the address hints
 } RzBreakpointContext;
 
 typedef struct rz_bp_t {
@@ -82,9 +66,8 @@ typedef struct rz_bp_t {
 	int endian;
 	bool bpinmaps; /* Only enable breakpoints inside a valid map */
 	RzIOBind iob; // compile time dependency
-	RzBreakpointPlugin *cur;
+	RzStrBuf *opcode;
 	RzList /*<RzBreakpointTrace *>*/ *traces; // XXX
-	HtSP /*<RzBreakpointPlugin *>*/ *plugins;
 	PrintfCallback cb_printf;
 	RzBreakpointCallback breakpoint;
 	/* storage of breakpoints */
@@ -106,38 +89,19 @@ typedef struct rz_bp_trace_t {
 	int bitlen;
 } RzBreakpointTrace;
 
-/**
- * \brief Compare plugins by name (via strcmp).
- */
-static inline int rz_breakpoint_plugin_cmp(RZ_NULLABLE const RzBreakpointPlugin *a, RZ_NULLABLE const RzBreakpointPlugin *b) {
-	if (!a && !b) {
-		return 0;
-	} else if (!a) {
-		return -1;
-	} else if (!b) {
-		return 1;
-	}
-	return rz_str_cmp(a->name, b->name, -1);
-}
-
 #ifdef RZ_API
 RZ_API RzBreakpoint *rz_bp_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *ctx);
-RZ_API RzBreakpoint *rz_bp_free(RzBreakpoint *bp);
+RZ_API void rz_bp_free(RzBreakpoint *bp);
 
+RZ_API bool rz_bp_set_opcode(RZ_NONNULL RzBreakpoint *bp, ut64 addr);
 RZ_API bool rz_bp_del(RzBreakpoint *bp, ut64 addr);
 RZ_API bool rz_bp_del_all(RzBreakpoint *bp);
 
-RZ_API bool rz_bp_plugin_add(RzBreakpoint *bp, RZ_BORROW RZ_NONNULL RzBreakpointPlugin *plugin);
-RZ_API bool rz_bp_plugin_del(RzBreakpoint *bp, RZ_BORROW RZ_NONNULL RzBreakpointPlugin *plugin);
-RZ_API int rz_bp_use(RZ_NONNULL RzBreakpoint *bp, RZ_NONNULL const char *name);
-RZ_API int rz_bp_plugin_del_byname(RzBreakpoint *bp, RZ_NONNULL const char *name);
-RZ_DEPRECATE RZ_API void rz_bp_plugin_print(RZ_NONNULL RzBreakpoint *bp);
-
-RZ_API int rz_bp_size(RZ_NONNULL RzBreakpoint *bp, int bits);
-RZ_API int rz_bp_size_at(RZ_NONNULL RzBreakpoint *bp, ut64 addr);
+RZ_API size_t rz_bp_size(RZ_NONNULL RzBreakpoint *bp);
+RZ_API size_t rz_bp_size_at(RZ_NONNULL RzBreakpoint *bp, ut64 addr);
 
 /* bp item attribs setters */
-RZ_API int rz_bp_get_bytes(RZ_NONNULL RzBreakpoint *bp, ut64 addr, RZ_NONNULL ut8 *buf, int len);
+RZ_API size_t rz_bp_get_bytes(RZ_NONNULL RzBreakpoint *bp, ut64 addr, RZ_NONNULL ut8 *buf, int len);
 RZ_API int rz_bp_set_trace(RzBreakpoint *bp, ut64 addr, int set);
 RZ_API int rz_bp_set_trace_all(RzBreakpoint *bp, int set);
 RZ_API RzBreakpointItem *rz_bp_enable(RzBreakpoint *bp, ut64 addr, int set, int count);
@@ -157,8 +121,6 @@ RZ_API bool rz_bp_item_set_cond(RZ_NONNULL RzBreakpointItem *item, RZ_NULLABLE c
 RZ_API bool rz_bp_item_set_data(RZ_NONNULL RzBreakpointItem *item, RZ_NULLABLE const char *data);
 RZ_API bool rz_bp_item_set_expr(RZ_NONNULL RzBreakpointItem *item, RZ_NULLABLE const char *expr);
 RZ_API bool rz_bp_item_set_name(RZ_NONNULL RzBreakpointItem *item, RZ_NULLABLE const char *name);
-
-RZ_API int rz_bp_add_fault(RzBreakpoint *bp, ut64 addr, int size, int perm);
 
 RZ_API RZ_BORROW RzBreakpointItem *rz_bp_add_sw(RZ_NONNULL RzBreakpoint *bp, ut64 addr, int size, int perm);
 RZ_API RzBreakpointItem *rz_bp_add_hw(RzBreakpoint *bp, ut64 addr, int size, int perm);

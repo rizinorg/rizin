@@ -65,7 +65,7 @@ fin:
 	return ret;
 }
 
-char **sparc_cpu_descriptions() {
+static char **sparc_cpu_descriptions() {
 	static char *cpu_desc[] = {
 		"v9", "SPARC V9: 64-bit RISC architecture specification",
 		NULL

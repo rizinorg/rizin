@@ -51,6 +51,11 @@ rz_debug_sources = [
   #'p/native/darwin.c',
   #'p/native/drx.c',
   #'p/native/maps/darwin.c',
+  'bp.c',
+  'bp_io.c',
+  'bp_traptrace.c',
+  'bp_watch.c',
+  'serialize_bp.c',
 ]
 
 rz_debug_deps = [
@@ -62,7 +67,6 @@ rz_debug_deps = [
   rz_io_dep,
   rz_bin_dep,
   rz_reg_dep,
-  rz_bp_dep,
   rz_syscall_dep,
   rz_egg_dep,
   rz_arch_dep,
@@ -161,7 +165,6 @@ modules += { 'rz_debug': {
       'rz_arch',
       'rz_io',
       'rz_bin',
-      'rz_bp',
       'rz_cons',
       'rz_egg',
       'rz_type'

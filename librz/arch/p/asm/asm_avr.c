@@ -37,7 +37,7 @@ static int assemble(RzAsm *a, RzAsmOp *ao, const char *str) {
 	return (int)written;
 }
 
-char **avr_cpu_descriptions() {
+static char **avr_cpu_descriptions() {
 	static char *cpu_desc[] = {
 		"ATmega8", "8-bit AVR microcontroller with 8KB Flash, 1KB SRAM",
 		"ATmega1280", "8-bit AVR microcontroller with 128KB Flash, 8KB SRAM",

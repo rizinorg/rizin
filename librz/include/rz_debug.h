@@ -445,7 +445,7 @@ static inline int rz_debug_plugin_cmp(RZ_NULLABLE const RzDebugPlugin *a, RZ_NUL
 }
 
 RZ_API RZ_OWN RzDebug *rz_debug_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *bp_ctx);
-RZ_API RzDebug *rz_debug_free(RzDebug *dbg);
+RZ_API void rz_debug_free(RzDebug *dbg);
 
 RZ_API int rz_debug_attach(RzDebug *dbg, int pid);
 RZ_API int rz_debug_detach(RzDebug *dbg, int pid);

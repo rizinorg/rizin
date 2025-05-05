@@ -51,7 +51,6 @@ if get_option('enable_tests') and cli_enabled
         rz_arch_dep,
         rz_debug_dep,
         rz_config_dep,
-        rz_bp_dep,
         rz_reg_dep,
         rz_syscall_dep,
         rz_type_dep,

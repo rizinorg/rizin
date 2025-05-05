@@ -103,7 +103,7 @@ beach:
 	return ret;
 }
 
-char **m68k_cpu_descriptions() {
+static char **m68k_cpu_descriptions() {
 	static char *cpu_desc[] = {
 		"68000", "Motorola 68000: 16/32-bit CISC microprocessor",
 		"68010", "Motorola 68010: 16/32-bit microprocessors. Successor to Motoroloa 68000",

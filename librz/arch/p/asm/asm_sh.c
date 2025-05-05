@@ -35,6 +35,13 @@ static int assemble(RzAsm *a, RzAsmOp *ao, const char *str) {
 	return 2;
 }
 
+static bool sh_sw_breakpoint(RzAsm *a, RzAsmOp *op) {
+	// 	{ 32, 2, 1, "\xc3\x20" }, // Big endian
+	// 	{ 32, 2, 0, "\x20\xc3" }, // Little endian
+	rz_asm_op_set_buf(op, a->big_endian ? (const ut8 *)"\xc3\x20" : (const ut8 *)"\x20\xc3", 2);
+	return true;
+}
+
 RzAsmPlugin rz_asm_plugin_sh = {
 	.name = "sh",
 	.arch = "sh",
@@ -44,5 +51,6 @@ RzAsmPlugin rz_asm_plugin_sh = {
 	.endian = RZ_SYS_ENDIAN_LITTLE | RZ_SYS_ENDIAN_BIG,
 	.desc = "Hitachi/Renesas SuperH-4 disassembler",
 	.disassemble = &disassemble,
-	.assemble = &assemble
+	.assemble = &assemble,
+	.sw_breakpoint = sh_sw_breakpoint,
 };

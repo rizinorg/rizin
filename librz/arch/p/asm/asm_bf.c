@@ -187,6 +187,13 @@ static bool bf_fini(void *user) {
 	return true;
 }
 
+static bool bf_sw_breakpoint(RzAsm *a, RzAsmOp *op) {
+	// { 0, 1, 0, (const ut8 *)"\xff" },
+	// { 0, 1, 0, (const ut8 *)"\x00" },
+	rz_asm_op_set_buf(op, (const ut8 *)"\xff", 1);
+	return true;
+}
+
 RzAsmPlugin rz_asm_plugin_bf = {
 	.name = "bf",
 	.author = "pancake, nibble",
@@ -199,5 +206,6 @@ RzAsmPlugin rz_asm_plugin_bf = {
 	.init = bf_init,
 	.fini = bf_fini,
 	.disassemble = &disassemble,
-	.assemble = &assemble
+	.assemble = &assemble,
+	.sw_breakpoint = bf_sw_breakpoint,
 };

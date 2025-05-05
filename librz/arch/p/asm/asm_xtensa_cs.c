@@ -29,7 +29,7 @@ beach:
 	return -1;
 }
 
-char **xtensa_cpu_descriptions() {
+static char **xtensa_cpu_descriptions() {
 	static char *cpu_desc[] = {
 		"esp32", "Xtensa microcontroller with Wi-Fi and Bluetooth capabilities",
 		"esp32s2", "Xtensa microcontroller with Wi-Fi and USB OTG support",

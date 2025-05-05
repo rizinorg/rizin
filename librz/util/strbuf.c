@@ -301,7 +301,7 @@ RZ_API char *rz_strbuf_get(RzStrBuf *sb) {
 	return sb->ptr ? sb->ptr : sb->buf;
 }
 
-RZ_API ut8 *rz_strbuf_getbin(RzStrBuf *sb, int *len) {
+RZ_API ut8 *rz_strbuf_getbin(RzStrBuf *sb, size_t *len) {
 	rz_return_val_if_fail(sb, NULL);
 	if (len) {
 		*len = sb->len;
