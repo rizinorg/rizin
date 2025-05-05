@@ -151,6 +151,7 @@ RzAsmPlugin rz_asm_plugin_x86_cs = {
 	.fini = x86_asm_fini,
 	.mnemonics = x86_asm_mnemonics,
 	.disassemble = &x86_disassemble,
+	.sw_breakpoint = x86_sw_breakpoint,
 	.features = "vm,3dnow,aes,adx,avx,avx2,avx512,bmi,bmi2,cmov,"
 		    "f16c,fma,fma4,fsgsbase,hle,mmx,rtm,sha,sse1,sse2,"
 		    "sse3,sse41,sse42,sse4a,ssse3,pclmul,xop"

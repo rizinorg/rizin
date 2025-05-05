@@ -321,13 +321,13 @@ RZ_API RZ_BORROW RzBreakpointItem *rz_debug_bp_add(RZ_NONNULL RzDebug *dbg, ut64
 				}
 				perm = ((map->perm & 1) << 2) | (map->perm & 2) | ((map->perm & 4) >> 2);
 				if (!(perm & RZ_PERM_X)) {
-					eprintf("WARNING: setting bp within mapped memory without exec perm\n");
+					RZ_LOG_WARN("setting bp within mapped memory without exec perm\n");
 				}
 				break;
 			}
 		}
 		if (!valid) {
-			eprintf("WARNING: module's base addr + delta is not a valid address\n");
+			RZ_LOG_WARN("module's base addr + delta is not a valid address\n");
 			return NULL;
 		}
 	}
