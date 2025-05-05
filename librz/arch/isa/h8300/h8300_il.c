@@ -340,6 +340,23 @@ static RzILOpEffect *ccr_cmp_w(RzILOpPure *a, RzILOpPure *b, RzILOpBool *c) {
 		ccr_set(CCR_V, V));
 }
 
+static RzILOpEffect *ccr_sub_b(RzILOpPure *a, RzILOpPure *b, RzILOpBool *c) {
+	RzILOpPure *low4 = SUB3(LOGAND(a, U8(0xf)), LOGAND(b, U8(0xf)), B_TO_8(c));
+	RzILOpPure *H = NON_ZERO(LOGAND(low4, U8(0x10)));
+
+	RzILOpPure *res = SUB3(SIGNED(16, DUP(a)), SIGNED(16, DUP(b)), B_TO_16(DUP(c)));
+	RzILOpPure *N = NON_ZERO(LOGAND(res, U16(0x80)));
+	RzILOpPure *Z = IS_ZERO(DUP(res));
+	RzILOpPure *C = SLT(DUP(res), S16(0));
+	RzILOpPure *V = AND(BNE(MSB(DUP(a)), MSB(DUP(b))), BNE(MSB(DUP(a)), DUP(N)));
+	return SEQ5(
+		ccr_set(CCR_H, H),
+		ccr_set(CCR_N, N),
+		ccr_set(CCR_Z, Z),
+		ccr_set(CCR_C, C),
+		ccr_set(CCR_V, V));
+}
+
 static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 	switch (cmd->id) {
 	case H8300_INSN_MOV_B: return op_mov_b(cmd);
@@ -360,11 +377,52 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 		switch (cmd->fmt) {
 		case H8300_INSN_FORMAT_R16R16:
 			return ccr_cmp_w(R16_OP(1), R16_OP(0), IL_FALSE);
-			default: NOT_IMPLEMENTED;
+		default: NOT_IMPLEMENTED;
 		}
-	case H8300_INSN_SUB_B: break;
-	case H8300_INSN_SUB_W: break;
-	case H8300_INSN_SUBX: break;
+	case H8300_INSN_SUB_B:
+		switch (cmd->fmt) {
+		case H8300_INSN_FORMAT_R8R8:
+			return SEQ4(
+				SETL("_0", R8_OP(0)),
+				SETL("_1", R8_OP(1)),
+				R8_X(1, SUB(VARL("_1"), VARL("_0"))),
+				ccr_sub_b(VARL("_1"), VARL("_0"), IL_FALSE));
+		default: NOT_IMPLEMENTED;
+		}
+	case H8300_INSN_SUB_W:
+		switch (cmd->fmt) {
+		case H8300_INSN_FORMAT_R16R16:
+			return SEQ4(
+				SETL("_0", R16_OP(0)),
+				SETL("_1", R16_OP(1)),
+				R16_X(1, SUB(VARL("_1"), VARL("_0"))),
+				ccr_cmp_w(VARL("_1"), VARL("_0"), IL_FALSE));
+		default: NOT_IMPLEMENTED;
+		}
+	case H8300_INSN_SUBX:
+		switch (cmd->fmt) {
+		case H8300_INSN_FORMAT_R8R8:
+			return SEQ5(
+				SETL("_c", ccr_val(CCR_C)),
+				SETL("_0", R8_OP(0)),
+				SETL("_1", R8_OP(1)),
+				R8_X(1, SUB(VARL("_1"), VARL("_0"))),
+				ccr_cmp_b(VARL("_1"), VARL("_0"), VARL("_c")));
+		case H8300_INSN_FORMAT_IMMR8:
+			return SEQ5(
+				SETL("_c", ccr_val(CCR_C)),
+				SETL("_0", U8_OP(0)),
+				SETL("_1", R8_OP(1)),
+				R8_X(1, SUB(VARL("_1"), VARL("_0"))),
+				ccr_cmp_b(VARL("_1"), VARL("_0"), VARL("_c")));
+		default: NOT_IMPLEMENTED;
+		}
+	case H8300_INSN_SUBS:
+		switch (cmd->fmt) {
+		case H8300_INSN_FORMAT_IMMR16:
+			return R16_X(1, SUB(R16_OP(1), U16_OP(0)));
+		default: NOT_IMPLEMENTED;
+		}
 	case H8300_INSN_OR: break;
 	case H8300_INSN_XOR: break;
 	case H8300_INSN_AND: break;
@@ -383,7 +441,6 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 	case H8300_INSN_ROTR: break;
 	case H8300_INSN_NEG: break;
 	case H8300_INSN_DEC: break;
-	case H8300_INSN_SUBS: break;
 	case H8300_INSN_DAS: break;
 	case H8300_INSN_BRA: break;
 	case H8300_INSN_BRN: break;
