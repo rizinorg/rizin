@@ -92,9 +92,14 @@ typedef enum {
 	CCR_I,
 } CCR_BIT;
 
+#define B_TO_8(x)  BOOL_TO_BV(x, 8)
 #define B_TO_16(x) BOOL_TO_BV(x, 16)
 
-static RzILOpEffect *ccr_set(CCR_BIT bit, RzILOpPure *x) {
+static RzILOpBool *ccr_val(CCR_BIT bit) {
+	return NON_ZERO(EXTRACT32(UNSIGNED(32, VARG("ccr")), U32(bit), U32(1)));
+}
+
+static RzILOpEffect *ccr_set(CCR_BIT bit, RzILOpBool *x) {
 	return SETG("ccr", DEPOSIT8(VARG("ccr"), U32(bit), U32(1), B_TO_16(x)));
 }
 
@@ -138,7 +143,6 @@ static RzILOpEffect *op_mov_b(H8300Cmd *cmd) {
 			ccr_mov(8, LOAD(R16_OP(0))));
 	default: NOT_IMPLEMENTED;
 	}
-	NOT_IMPLEMENTED;
 }
 
 static RzILOpEffect *op_mov_w(H8300Cmd *cmd) {
@@ -185,11 +189,11 @@ static RzILOpEffect *op_mov_w(H8300Cmd *cmd) {
 	default:
 		NOT_IMPLEMENTED;
 	}
-	NOT_IMPLEMENTED;
 }
 
-#define BEQ(X, Y) INV(XOR(X, Y))
-#define BNE(X, Y) XOR(X, Y)
+#define BEQ(X, Y)     INV(XOR(X, Y))
+#define BNE(X, Y)     XOR(X, Y)
+#define ADD3(X, Y, Z) ADD(X, ADD(Y, Z))
 
 /**
  * \brief Conditional code ADD
@@ -205,11 +209,11 @@ static RzILOpEffect *op_mov_w(H8300Cmd *cmd) {
  * C: Set to "1" if there is a carry from bit 7;
  * 	otherwise cleared to "0."
  */
-static RzILOpEffect *ccr_add_b(RzILOpPure *a, RzILOpPure *b) {
-	RzILOpPure *low4 = ADD(LOGAND(a, U8(0xf)), LOGAND(b, U8(0xf)));
+static RzILOpEffect *ccr_add_b(RzILOpPure *a, RzILOpPure *b, RzILOpBool *c) {
+	RzILOpPure *low4 = ADD3(LOGAND(a, U8(0xf)), LOGAND(b, U8(0xf)), B_TO_8(c));
 	RzILOpPure *H = NON_ZERO(LOGAND(low4, U8(0x10)));
 
-	RzILOpPure *sum = ADD(UNSIGNED(16, DUP(a)), UNSIGNED(16, DUP(b)));
+	RzILOpPure *sum = ADD3(UNSIGNED(16, DUP(a)), UNSIGNED(16, DUP(b)), B_TO_16(DUP(c)));
 	RzILOpPure *N = NON_ZERO(LOGAND(sum, U16(0x80)));
 	RzILOpPure *Z = IS_ZERO(DUP(sum));
 	RzILOpPure *C = NON_ZERO(LOGAND(DUP(sum), U16(0x100)));
@@ -246,16 +250,15 @@ static RzILOpEffect *op_add_b(H8300Cmd *cmd) {
 			SETL("_0", R8_OP(0)),
 			SETL("_1", R8_OP(1)),
 			R8_X(1, ADD(VARL("_0"), VARL("_1"))),
-			ccr_add_b(VARL("_0"), VARL("_1")));
+			ccr_add_b(VARL("_0"), VARL("_1"), IL_FALSE));
 	case H8300_INSN_FORMAT_IMMR8:
 		return SEQ4(
 			SETL("_0", U8_OP(0)),
 			SETL("_1", R8_OP(1)),
 			R8_X(1, ADD(VARL("_0"), VARL("_1"))),
-			ccr_add_b(VARL("_0"), VARL("_1")));
+			ccr_add_b(VARL("_0"), VARL("_1"), IL_FALSE));
 	default: NOT_IMPLEMENTED;
 	}
-	NOT_IMPLEMENTED;
 }
 
 static RzILOpEffect *op_add_w(H8300Cmd *cmd) {
@@ -268,7 +271,37 @@ static RzILOpEffect *op_add_w(H8300Cmd *cmd) {
 			ccr_add_w(VARL("_0"), VARL("_1")));
 	default: NOT_IMPLEMENTED;
 	}
-	NOT_IMPLEMENTED;
+}
+
+static RzILOpEffect *op_adds(H8300Cmd *cmd) {
+	switch (cmd->fmt) {
+	case H8300_INSN_FORMAT_IMMR16:
+		return R16_X(1, ADD(U16_OP(0), R16_OP(1)));
+	default: NOT_IMPLEMENTED;
+	}
+}
+
+static RzILOpEffect *op_addx(H8300Cmd *cmd) {
+	RzILOpBool *C = ccr_val(CCR_C);
+	switch (cmd->fmt) {
+	case H8300_INSN_FORMAT_IMMR8:
+		return SEQ5(
+			SETL("_c", C),
+			SETL("_0", U8_OP(0)),
+			SETL("_1", R8_OP(1)),
+			R8_X(1, ADD3(VARL("_0"), VARL("_1"), B_TO_8(VARL("_c")))),
+			ccr_add_b(VARL("_0"), VARL("_1"), VARL("_c")));
+	case H8300_INSN_FORMAT_R8R8:
+		return SEQ5(
+			SETL("_c", C),
+			SETL("_0", R8_OP(0)),
+			SETL("_1", R8_OP(1)),
+			R8_X(1, ADD3(VARL("_0"), VARL("_1"), B_TO_8(VARL("_c")))),
+			ccr_add_b(VARL("_0"), VARL("_1"), VARL("_c")));
+	default:
+		rz_il_op_pure_free(C);
+		NOT_IMPLEMENTED;
+	}
 }
 
 static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
@@ -277,7 +310,8 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 	case H8300_INSN_MOV_W: return op_mov_w(cmd);
 	case H8300_INSN_ADD_B: return op_add_b(cmd);
 	case H8300_INSN_ADD_W: return op_add_w(cmd);
-	case H8300_INSN_ADDX: break;
+	case H8300_INSN_ADDS: return op_adds(cmd);
+	case H8300_INSN_ADDX: return op_addx(cmd);
 	case H8300_INSN_CMP_B: break;
 	case H8300_INSN_CMP_W: break;
 	case H8300_INSN_SUB_B: break;
@@ -294,7 +328,6 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 	case H8300_INSN_XORC: break;
 	case H8300_INSN_ANDC: break;
 	case H8300_INSN_INC: break;
-	case H8300_INSN_ADDS: break;
 	case H8300_INSN_DAA: break;
 	case H8300_INSN_SHL: break;
 	case H8300_INSN_SHR: break;
