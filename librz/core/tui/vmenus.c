@@ -920,6 +920,8 @@ RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 			if (view->selectPanel) {
 				if (view->delta > 40) {
 					view->delta -= 40;
+				} else {
+					view->delta = 0;
 				}
 			} else {
 				int rows = 0;
