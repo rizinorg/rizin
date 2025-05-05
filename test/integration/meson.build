@@ -9,6 +9,7 @@ if get_option('enable_tests') and cli_enabled
   )
 
   tests = [
+    'analysis_fcn',
     'analysis_global_var',
     'analysis_graph',
     'analysis_il',

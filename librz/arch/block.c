@@ -336,6 +336,10 @@ RZ_API bool rz_analysis_block_merge(RzAnalysisBlock *a, RzAnalysisBlock *b) {
 		}
 	}
 
+	if (a->size + b->size > a->analysis->opt.bb_max_size) {
+		return false;
+	}
+
 	// Keep a ref to b, but remove all references of b from its functions
 	rz_analysis_block_ref(b);
 	while (!rz_list_empty(b->fcns)) {

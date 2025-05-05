@@ -2581,7 +2581,34 @@ RZ_IPI RzCmdStatus rz_print_hexdump_emoji_handler(RzCore *core, int argc, const 
 }
 
 RZ_IPI RzCmdStatus rz_print_hexdump_function_handler(RzCore *core, int argc, const char **argv) {
-	return RZ_CMD_STATUS_ERROR;
+	RzAnalysisFunction *function = rz_analysis_get_fcn_in(core->analysis, core->offset, RZ_ANALYSIS_FCN_TYPE_ROOT);
+	if (!function) {
+		function = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
+	}
+	if (!function) {
+		RZ_LOG_ERROR("Cannot find function at 0x%08" PFMT64x "\n", core->offset);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	// Disable printing header for RzPrint
+	int old_flags = core->print->flags;
+	core->print->flags &= ~RZ_PRINT_FLAGS_HEADER;
+
+	RzAnalysisBlock *b;
+	void **iter;
+	rz_pvector_foreach (function->bbs, iter) {
+		b = (RzAnalysisBlock *)*iter;
+		ut8 *buf = malloc(b->size);
+		if (!buf) {
+			RZ_LOG_ERROR("core: cannot allocate %" PFMT64u " byte(s)\n", b->size);
+			core->print->flags = old_flags;
+			return RZ_CMD_STATUS_ERROR;
+		}
+		rz_io_read_at(core->io, b->addr, buf, b->size);
+		rz_core_print_hexdump(core, b->addr, buf, b->size, 0, 16, 0);
+		free(buf);
+	}
+	core->print->flags = old_flags;
+	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_print_hexdump_hexii_handler(RzCore *core, int argc, const char **argv) {

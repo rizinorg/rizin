@@ -18,10 +18,6 @@
 // 16 KB is the maximum size for a basic block
 #define MAX_FLG_NAME_SIZE 64
 
-// 64KB max size
-// 256KB max function size
-#define MAX_FCN_SIZE (1024 * 256)
-
 #define DB             a->sdb_fcns
 #define EXISTS(x, ...) snprintf(key, sizeof(key) - 1, x, ##__VA_ARGS__), sdb_exists(DB, key)
 #define SETKEY(x, ...) snprintf(key, sizeof(key) - 1, x, ##__VA_ARGS__);
@@ -564,7 +560,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 	RzAnalysisFunction *fcn = item->fcn;
 	RzStackAddr sp = item->sp;
 	ut64 addr = item->start_address;
-	ut64 len = analysis->opt.bb_max_size;
+	ut64 len = RZ_MIN(analysis->opt.bb_max_size, RZ_ANALYSIS_BLOCK_MAX_SIZE);
 	ReadAhead read_ahead_cache = { 0 };
 	const int continue_after_jump = analysis->opt.afterjmp;
 	const int addrbytes = analysis->iob.io ? analysis->iob.io->addrbytes : 1;
@@ -698,11 +694,12 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 		}
 	}
 	if ((maxlen - (addrbytes * idx)) > MAX_SCAN_SIZE) {
+		// XXX idx is always 0 here, and maxlen comes from amalysis.bb.maxsize. This makes no sense.
 		RZ_LOG_DEBUG("Skipping large memory region during basic block analysis.\n");
 		maxlen = 0;
 	}
 
-	while (addrbytes * idx < maxlen) {
+	while (true) {
 		ut32 at_delta;
 		ut64 at;
 		if (!last_is_reg_mov_lea) {
@@ -719,7 +716,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			rz_analysis_task_item_new(analysis, tasks, fcn, bb, at, sp);
 			break;
 		}
-		ut64 bytes_read = RZ_MIN(len - at_delta, sizeof(buf));
+		ut64 bytes_read = sizeof(buf);
 		ret = read_ahead(&read_ahead_cache, analysis, at, buf, bytes_read);
 
 		if (ret < 0) {
@@ -786,8 +783,22 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 		}
 		if (!overlapped) {
 			ut64 newbbsize = bb->size + oplen;
-			if (newbbsize > MAX_FCN_SIZE) {
+			if (fcn->ninstr >= analysis->opt.fcn_max_size) {
 				gotoBeach(RZ_ANALYSIS_RET_ERROR);
+			}
+			if (newbbsize >= len) {
+				// Instruction offsets are stored in u16,
+				// artificially introduce bb split to keep the offsets within limits.
+				RzAnalysisBlock *next = fcn_append_basic_block(analysis, fcn, at);
+				if (!next) {
+					gotoBeach(RZ_ANALYSIS_RET_ERROR);
+				}
+				// If previous instruction was a jump there would already be a split.
+				// So setting jump here shouldn't overwrite any real jumps.
+				bb->jump = at;
+				item->block = bb = next;
+				next->sp_entry = sp;
+				newbbsize = bb->size + oplen;
 			}
 			bb->ninstr++;
 			rz_analysis_block_set_op_offset(bb, bb->ninstr - 1, at - bb->addr);

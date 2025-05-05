@@ -453,33 +453,47 @@ commands:
       - RZ_OUTPUT_MODE_JSON
     args: []
   - name: iz
-    cname: cmd_info_strings
-    summary: List strings
-    description: Lists the strings; the behavior can be modified via str.search.*
-    type: RZ_CMD_DESC_TYPE_ARGV_STATE
-    default_mode: RZ_OUTPUT_MODE_TABLE
-    modes:
-      - RZ_OUTPUT_MODE_TABLE
-      - RZ_OUTPUT_MODE_JSON
-      - RZ_OUTPUT_MODE_QUIET
-      - RZ_OUTPUT_MODE_QUIETEST
-    args: []
-  - name: izz
-    cname: cmd_info_whole_strings
-    summary: List strings in the whole binary
-    description: Lists the strings of the whole binary; the behavior can be modified via str.search.*
-    type: RZ_CMD_DESC_TYPE_ARGV_STATE
-    default_mode: RZ_OUTPUT_MODE_TABLE
-    modes:
-      - RZ_OUTPUT_MODE_TABLE
-      - RZ_OUTPUT_MODE_JSON
-      - RZ_OUTPUT_MODE_QUIET
-      - RZ_OUTPUT_MODE_QUIETEST
-    args: []
-  - name: iz-
-    cname: cmd_info_purge_string
-    summary: Purge string at current address via bin.str.purge
-    args: []
+    summary: String commands
+    subcommands:
+      - name: iz
+        cname: cmd_info_strings
+        summary: List strings
+        description: Lists the strings; the behavior can be modified via str.search.*
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        default_mode: RZ_OUTPUT_MODE_TABLE
+        modes:
+          - RZ_OUTPUT_MODE_TABLE
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
+          - RZ_OUTPUT_MODE_QUIETEST
+        args: []
+      - name: izz
+        cname: cmd_info_whole_strings
+        summary: List strings in the whole binary
+        description: Lists the strings of the whole binary; the behavior can be modified via str.search.*
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        default_mode: RZ_OUTPUT_MODE_TABLE
+        modes:
+          - RZ_OUTPUT_MODE_TABLE
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
+          - RZ_OUTPUT_MODE_QUIETEST
+        args: []
+      - name: iz-
+        cname: cmd_info_purge_string
+        summary: Purge string at current address via bin.str.purge
+        args: []
+      - name: izx
+        cname: cmd_info_xrefs_strings
+        summary: List all strings which have xrefs to them.
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        default_mode: RZ_OUTPUT_MODE_TABLE
+        modes:
+          - RZ_OUTPUT_MODE_TABLE
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
+          - RZ_OUTPUT_MODE_QUIETEST
+        args: []
   - name: iZ
     cname: cmd_info_guess_size
     summary: Guess size of binary program
@@ -488,15 +502,4 @@ commands:
       - RZ_OUTPUT_MODE_JSON
       - RZ_OUTPUT_MODE_STANDARD
       - RZ_OUTPUT_MODE_RIZIN
-    args: []
-  - name: izx
-    cname: cmd_info_xrefs_strings
-    summary: List all strings which have xrefs to them.
-    type: RZ_CMD_DESC_TYPE_ARGV_STATE
-    default_mode: RZ_OUTPUT_MODE_TABLE
-    modes:
-      - RZ_OUTPUT_MODE_TABLE
-      - RZ_OUTPUT_MODE_JSON
-      - RZ_OUTPUT_MODE_QUIET
-      - RZ_OUTPUT_MODE_QUIETEST
     args: []
