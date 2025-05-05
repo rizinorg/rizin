@@ -2301,7 +2301,7 @@ static void var_list_show(
 	}
 	rz_list_sort(list, (RzListComparator)var_comparator, NULL);
 
-	bool color_arg = (rz_config_get_b(core->config, "scr.color") && rz_config_get_b(core->config, "scr.color.args"));
+	bool color_arg = (rz_config_get_i(core->config, "scr.color") > 0 && rz_config_get_b(core->config, "scr.color.args"));
 	VarShowContext ctx = {
 		.core = core,
 		.out = state,
@@ -3692,24 +3692,27 @@ static void fcn_print_info(RzCore *core, RzAnalysisFunction *fcn, RzCmdStateOutp
 	RzListIter *iter;
 	RzAnalysisXRef *xrefi;
 	int ebbs = 0;
+	RzConsPrintablePalette *pal = &core->cons->context->pal;
 
-	rz_cons_printf("offset: 0x%08" PFMT64x "\nname: %s\nsize: %" PFMT64u "\n",
-		fcn->addr, fcn->name, rz_analysis_function_linear_size(fcn));
-	rz_cons_printf("is-pure: %s\n", rz_str_bool(rz_analysis_function_purity(fcn)));
-	rz_cons_printf("realsz: %" PFMT64d "\n", rz_analysis_function_realsize(fcn));
-	rz_cons_printf("stackframe: %d\n", fcn->maxstack);
+	rz_cons_printf("%soffset: %s0x%08" PFMT64x "\n%sname: %s%s\n%ssize: %s%" PFMT64u "\n",
+		pal->offset, pal->num, fcn->addr,
+		pal->offset, pal->fname, fcn->name,
+		pal->offset, pal->num, rz_analysis_function_linear_size(fcn));
+	rz_cons_printf("%sis-pure: %s%s\n", pal->offset, pal->push, rz_str_bool(rz_analysis_function_purity(fcn)));
+	rz_cons_printf("%srealsz: %s%" PFMT64d "\n", pal->offset, pal->num, rz_analysis_function_realsize(fcn));
+	rz_cons_printf("%sstackframe: %s%d\n", pal->offset, pal->num, fcn->maxstack);
 	if (fcn->cc) {
-		rz_cons_printf("call-convention: %s\n", fcn->cc);
+		rz_cons_printf("%scall-convention: %s%s\n", pal->offset, pal->call, fcn->cc);
 	}
-	rz_cons_printf("cyclomatic-cost: %d\n", rz_analysis_function_cost(fcn));
-	rz_cons_printf("cyclomatic-complexity: %d\n", rz_analysis_function_complexity(fcn));
-	rz_cons_printf("loops: %d\n", rz_analysis_function_loops(fcn));
-	rz_cons_printf("bits: %d\n", fcn->bits);
-	rz_cons_printf("type: %s\n", rz_analysis_fcntype_tostring(fcn->type));
-	rz_cons_printf("num-bbs: %" PFMTSZu "\n", rz_pvector_len(fcn->bbs));
-	rz_cons_printf("edges: %d\n", rz_analysis_function_count_edges(fcn, &ebbs));
-	rz_cons_printf("end-bbs: %d\n", ebbs);
-	rz_cons_printf("call-refs:");
+	rz_cons_printf("%scyclomatic-cost: %s%d\n", pal->offset, pal->num, rz_analysis_function_cost(fcn));
+	rz_cons_printf("%scyclomatic-complexity: %s%d\n", pal->offset, pal->num, rz_analysis_function_complexity(fcn));
+	rz_cons_printf("%sloops: %s%d\n", pal->offset, pal->num, rz_analysis_function_loops(fcn));
+	rz_cons_printf("%sbits: %s%d\n", pal->offset, pal->num, fcn->bits);
+	rz_cons_printf("%stype: %s%s\n", pal->offset, pal->offset, rz_analysis_fcntype_tostring(fcn->type));
+	rz_cons_printf("%snum-bbs: %s%" PFMTSZu "\n", pal->offset, pal->num, rz_pvector_len(fcn->bbs));
+	rz_cons_printf("%sedges: %s%d\n", pal->offset, pal->num, rz_analysis_function_count_edges(fcn, &ebbs));
+	rz_cons_printf("%send-bbs: %s%d\n", pal->offset, pal->num, ebbs);
+	rz_cons_printf("%scall-refs:", pal->offset);
 	int outdegree = 0;
 	RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
 	rz_list_foreach (xrefs, iter, xrefi) {
@@ -3717,36 +3720,36 @@ static void fcn_print_info(RzCore *core, RzAnalysisFunction *fcn, RzCmdStateOutp
 			outdegree++;
 		}
 		if (xrefi->type == RZ_ANALYSIS_XREF_TYPE_CODE || xrefi->type == RZ_ANALYSIS_XREF_TYPE_CALL) {
-			rz_cons_printf(" 0x%08" PFMT64x " %c", xrefi->to,
-				xrefi->type == RZ_ANALYSIS_XREF_TYPE_CALL ? 'C' : 'J');
+			rz_cons_printf(" %s0x%08" PFMT64x " %s%c", pal->num, xrefi->to,
+				pal->call, xrefi->type == RZ_ANALYSIS_XREF_TYPE_CALL ? 'C' : 'J');
 		}
 	}
-	rz_cons_printf("\ndata-refs:");
+	rz_cons_printf("\n%sdata-refs:", pal->offset);
 	rz_list_foreach (xrefs, iter, xrefi) {
 		// global or local?
 		if (xrefi->type == RZ_ANALYSIS_XREF_TYPE_DATA) {
-			rz_cons_printf(" 0x%08" PFMT64x, xrefi->to);
+			rz_cons_printf(" %s0x%08" PFMT64x, pal->num, xrefi->to);
 		}
 	}
 	rz_list_free(xrefs);
 
 	int indegree = 0;
-	rz_cons_printf("\ncode-xrefs:");
+	rz_cons_printf("\n%scode-xrefs:", pal->offset);
 	xrefs = rz_analysis_function_get_xrefs_to(fcn);
 	rz_list_foreach (xrefs, iter, xrefi) {
 		if (xrefi->type == RZ_ANALYSIS_XREF_TYPE_CODE || xrefi->type == RZ_ANALYSIS_XREF_TYPE_CALL) {
 			indegree++;
-			rz_cons_printf(" 0x%08" PFMT64x " %c", xrefi->from,
-				xrefi->type == RZ_ANALYSIS_XREF_TYPE_CALL ? 'C' : 'J');
+			rz_cons_printf(" %s0x%08" PFMT64x " %s%c", pal->num, xrefi->from,
+				pal->call, xrefi->type == RZ_ANALYSIS_XREF_TYPE_CALL ? 'C' : 'J');
 		}
 	}
-	rz_cons_printf("\nnoreturn: %s\n", rz_str_bool(fcn->is_noreturn));
-	rz_cons_printf("in-degree: %d\n", indegree);
-	rz_cons_printf("out-degree: %d\n", outdegree);
-	rz_cons_printf("data-xrefs:");
+	rz_cons_printf("\n%snoreturn: %s%s\n", pal->offset, pal->offset, rz_str_bool(fcn->is_noreturn));
+	rz_cons_printf("%sin-degree: %s%d\n", pal->offset, pal->num, indegree);
+	rz_cons_printf("%sout-degree: %s%d\n", pal->offset, pal->num, outdegree);
+	rz_cons_printf("%sdata-xrefs:", pal->offset);
 	rz_list_foreach (xrefs, iter, xrefi) {
 		if (xrefi->type == RZ_ANALYSIS_XREF_TYPE_DATA) {
-			rz_cons_printf(" 0x%08" PFMT64x, xrefi->from);
+			rz_cons_printf(" %s0x%08" PFMT64x, pal->num, xrefi->from);
 		}
 	}
 	rz_list_free(xrefs);
@@ -3756,7 +3759,9 @@ static void fcn_print_info(RzCore *core, RzAnalysisFunction *fcn, RzCmdStateOutp
 		ut32 args_count = rz_analysis_arg_count(fcn);
 		ut32 var_count = rz_analysis_var_local_count(fcn);
 
-		rz_cons_printf("locals: %u\nargs: %u\n", var_count, args_count);
+		rz_cons_printf("%slocals: %s%u\n%sargs: %s%u\n",
+			pal->offset, pal->num, var_count,
+			pal->offset, pal->num, args_count);
 		core_analysis_var_list_show(core, fcn, RZ_ANALYSIS_VAR_STORAGE_REG, state);
 		core_analysis_var_list_show(core, fcn, RZ_ANALYSIS_VAR_STORAGE_STACK, state);
 	}
