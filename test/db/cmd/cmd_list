@@ -188,119 +188,119 @@ Lit
 Liq
 EOF
 EXPECT=<<EOF
-any          LGPL3     nibble          Dummy format binary                    
-art          LGPL3     pancake         Android Runtime                        
-avr          LGPL3     deroad          ATmel AVR usermode                     
-bf           LGPL3     pancake         Brainfuck                              
-bflt         LGPL3     Oscar Salvador  bFLT uClinux binary                    
-bios         LGPL      pancake         BIOS binary                            
-bootimg      LGPL3     pancake         Android Boot Image                     
-cgc          LGPL3     ret2libc        CGC (Cyber Grand Challenge)            
-coff         LGPL3     Fedor Sakharov  COFF (Common Object File Format)       
-dex          LGPL3     deroad          DEX (Dalvik Executable)                
-dmp64        LGPL3     abcSup          Windows x64 Crash Dump                 
-dol          BSD       pancake         Nintendo Dolphin binary                
-dyldcache    LGPL3     pancake         Apple DYLD Cache                       
-elf          LGPL3     nibble          ELF (Executable and Linkable Format)   
-elf64        LGPL3     nibble          ELF64 (64-bit Executable and Linkable Format) 
-java         LGPL3     deroad          Java binary                            
-kernelcache  LGPL3     mrmacete        Apple Kernelcache                      
-le           LGPL3     GustavoLCR      LE/LX                                  
-luac         LGPL3     Heersin         Lua compiled binary                    
-mach0        LGPL3     pancake         Mach-O (Mach Object)                   
-mach064      LGPL3     nibble          Mach-O 64-bit                          
-mbn          LGPL3     pancake         MBN/SBL bootloader binary              
-mdmp         LGPL3     Davis           Windows MiniDump                       
-mdt          LGPL3     Rot127          Qualcomm Peripheral Image Loader (32bit only) 
-menuet       LGPL3     pancake         Menuet/KolibriOS binary                
-mz           MIT       nodepad         MZ (DOS MZ Executable)                 
-ne           LGPL3     GustavoLCR      NE (New Executable)                    
-nes          MIT       maijin          Nintendo NES                           
-nin3ds       LGPL3     a0rtega         Nintendo 3DS Firmware                  
-ninds        LGPL3     a0rtega         Nintendo DS binary                     
-ningb        LGPL3     condret         Nintendo Game Boy                      
-ningba       LGPL3     condret         Nintendo Game Boy Advance              
-nro          MIT       pancake         Nintendo Switch NRO                    
-nso          MIT       rkx1209         Nintendo Switch NSO                    
-omf          LGPL3     ampotos         OMF (Object Module Format)             
-p9           LGPL3     pancake         Plan9 binary                           
-pe           LGPL3     nibble          PE (Portable Executable)               
-pe64         LGPL3     nibble          PE64 (PE32+) binary                    
-pebble       LGPL      pancake         Pebble Watch App                       
-prg          LGPL3     thestr4ng3r     C64 PRG (Commodore 64)                 
-psxexe       LGPL3     Dax89           Sony PlayStation 1 executable          
-pyc          LGPL3     c0riolis        Python byte-compiled                   
-qnx          LGPL3     deepakchethan   QNX executable                         
-sfc          LGPL3     usrshare        Super NES / Super Famicom ROM          
-smd          LGPL3     pancake         SEGA Genesis / MegaDrive ROM           
-sms          LGPL3     shengdi         SEGA MasterSystem / GameGear ROM       
-spc700       LGPL3     maijin          SNES SPC700 sound data                 
-symbols      MIT       pancake         Apple Symbols file                     
-te           LGPL3     xvilka          TE (Terse Executable)                  
-vsf          LGPL3     riq             VICE snapshot file                     
-wasm         MIT       pancake         WebAssembly                            
-xbe          LGPL3     LemonBoy        Microsoft Xbox XBE (Xbox Executable)   
-z64          LGPL3     lowlyw          Nintendo 64 Big-Endian binary          
-zimg         LGPL3     ninjahacker     ZIMG format binary                     
+any          LGPL3     nibble          Dummy format binary
+art          LGPL3     pancake         Android Runtime
+avr          LGPL3     deroad          ATmel AVR usermode
+bf           LGPL3     pancake         Brainfuck
+bflt         LGPL3     Oscar Salvador  bFLT uClinux binary
+bios         LGPL      pancake         BIOS binary
+bootimg      LGPL3     pancake         Android Boot Image
+cgc          LGPL3     ret2libc        CGC (Cyber Grand Challenge)
+coff         LGPL3     Fedor Sakharov  COFF (Common Object File Format)
+dex          LGPL3     deroad          DEX (Dalvik Executable)
+dmp64        LGPL3     abcSup          Windows x64 Crash Dump
+dol          BSD       pancake         Nintendo Dolphin binary
+dyldcache    LGPL3     pancake         Apple DYLD Cache
+elf          LGPL3     nibble          ELF (Executable and Linkable Format)
+elf64        LGPL3     nibble          ELF64 (64-bit Executable and Linkable Format)
+java         LGPL3     deroad          Java binary
+kernelcache  LGPL3     mrmacete        Apple Kernelcache
+le           LGPL3     GustavoLCR      LE/LX
+luac         LGPL3     Heersin         Lua compiled binary
+mach0        LGPL3     pancake         Mach-O (Mach Object)
+mach064      LGPL3     nibble          Mach-O 64-bit
+mbn          LGPL3     pancake         MBN/SBL bootloader binary
+mdmp         LGPL3     Davis           Windows MiniDump
+mdt          LGPL3     Rot127          Qualcomm Peripheral Image Loader (32bit only)
+menuet       LGPL3     pancake         Menuet/KolibriOS binary
+mz           MIT       nodepad         MZ (DOS MZ Executable)
+ne           LGPL3     GustavoLCR      NE (New Executable)
+nes          MIT       maijin          Nintendo NES
+nin3ds       LGPL3     a0rtega         Nintendo 3DS Firmware
+ninds        LGPL3     a0rtega         Nintendo DS binary
+ningb        LGPL3     condret         Nintendo Game Boy
+ningba       LGPL3     condret         Nintendo Game Boy Advance
+nro          MIT       pancake         Nintendo Switch NRO
+nso          MIT       rkx1209         Nintendo Switch NSO
+omf          LGPL3     ampotos         OMF (Object Module Format)
+p9           LGPL3     pancake         Plan9 binary
+pe           LGPL3     nibble          PE (Portable Executable)
+pe64         LGPL3     nibble          PE64 (PE32+) binary
+pebble       LGPL      pancake         Pebble Watch App
+prg          LGPL3     thestr4ng3r     C64 PRG (Commodore 64)
+psxexe       LGPL3     Dax89           Sony PlayStation 1 executable
+pyc          LGPL3     c0riolis        Python byte-compiled
+qnx          LGPL3     deepakchethan   QNX executable
+sfc          LGPL3     usrshare        Super NES / Super Famicom ROM
+smd          LGPL3     pancake         SEGA Genesis / MegaDrive ROM
+sms          LGPL3     shengdi         SEGA MasterSystem / GameGear ROM
+spc700       LGPL3     maijin          SNES SPC700 sound data
+symbols      MIT       pancake         Apple Symbols file
+te           LGPL3     xvilka          TE (Terse Executable)
+vsf          LGPL3     riq             VICE snapshot file
+wasm         MIT       pancake         WebAssembly
+xbe          LGPL3     LemonBoy        Microsoft Xbox XBE (Xbox Executable)
+z64          LGPL3     lowlyw          Nintendo 64 Big-Endian binary
+zimg         LGPL3     ninjahacker     ZIMG format binary
 .fatmach0    LGPL3                     Fat Mach-O binary extractor
 .sep64       LGPL3                     64-bit SEP binary extractor
 [{"name":"any","description":"Dummy format binary","license":"LGPL3","author":"nibble"},{"name":"art","description":"Android Runtime","license":"LGPL3","author":"pancake"},{"name":"avr","description":"ATmel AVR usermode","license":"LGPL3","author":"deroad"},{"name":"bf","description":"Brainfuck","license":"LGPL3","author":"pancake"},{"name":"bflt","description":"bFLT uClinux binary","license":"LGPL3","author":"Oscar Salvador"},{"name":"bios","description":"BIOS binary","license":"LGPL","author":"pancake"},{"name":"bootimg","description":"Android Boot Image","license":"LGPL3","author":"pancake"},{"name":"cgc","description":"CGC (Cyber Grand Challenge)","license":"LGPL3","author":"ret2libc"},{"name":"coff","description":"COFF (Common Object File Format)","license":"LGPL3","author":"Fedor Sakharov"},{"name":"dex","description":"DEX (Dalvik Executable)","license":"LGPL3","author":"deroad"},{"name":"dmp64","description":"Windows x64 Crash Dump","license":"LGPL3","author":"abcSup"},{"name":"dol","description":"Nintendo Dolphin binary","license":"BSD","author":"pancake"},{"name":"dyldcache","description":"Apple DYLD Cache","license":"LGPL3","author":"pancake"},{"name":"elf","description":"ELF (Executable and Linkable Format)","license":"LGPL3","author":"nibble"},{"name":"elf64","description":"ELF64 (64-bit Executable and Linkable Format)","license":"LGPL3","author":"nibble"},{"name":"java","description":"Java binary","license":"LGPL3","author":"deroad"},{"name":"kernelcache","description":"Apple Kernelcache","license":"LGPL3","author":"mrmacete"},{"name":"le","description":"LE/LX","license":"LGPL3","author":"GustavoLCR"},{"name":"luac","description":"Lua compiled binary","license":"LGPL3","author":"Heersin"},{"name":"mach0","description":"Mach-O (Mach Object)","license":"LGPL3","author":"pancake"},{"name":"mach064","description":"Mach-O 64-bit","license":"LGPL3","author":"nibble"},{"name":"mbn","description":"MBN/SBL bootloader binary","license":"LGPL3","author":"pancake"},{"name":"mdmp","description":"Windows MiniDump","license":"LGPL3","author":"Davis"},{"name":"mdt","description":"Qualcomm Peripheral Image Loader (32bit only)","license":"LGPL3","author":"Rot127"},{"name":"menuet","description":"Menuet/KolibriOS binary","license":"LGPL3","author":"pancake"},{"name":"mz","description":"MZ (DOS MZ Executable)","license":"MIT","author":"nodepad"},{"name":"ne","description":"NE (New Executable)","license":"LGPL3","author":"GustavoLCR"},{"name":"nes","description":"Nintendo NES","license":"MIT","author":"maijin"},{"name":"nin3ds","description":"Nintendo 3DS Firmware","license":"LGPL3","author":"a0rtega"},{"name":"ninds","description":"Nintendo DS binary","license":"LGPL3","author":"a0rtega"},{"name":"ningb","description":"Nintendo Game Boy","license":"LGPL3","author":"condret"},{"name":"ningba","description":"Nintendo Game Boy Advance","license":"LGPL3","author":"condret"},{"name":"nro","description":"Nintendo Switch NRO","license":"MIT","author":"pancake"},{"name":"nso","description":"Nintendo Switch NSO","license":"MIT","author":"rkx1209"},{"name":"omf","description":"OMF (Object Module Format)","license":"LGPL3","author":"ampotos"},{"name":"p9","description":"Plan9 binary","license":"LGPL3","author":"pancake"},{"name":"pe","description":"PE (Portable Executable)","license":"LGPL3","author":"nibble"},{"name":"pe64","description":"PE64 (PE32+) binary","license":"LGPL3","author":"nibble"},{"name":"pebble","description":"Pebble Watch App","license":"LGPL","author":"pancake"},{"name":"prg","description":"C64 PRG (Commodore 64)","license":"LGPL3","author":"thestr4ng3r"},{"name":"psxexe","description":"Sony PlayStation 1 executable","license":"LGPL3","author":"Dax89"},{"name":"pyc","description":"Python byte-compiled","license":"LGPL3","author":"c0riolis"},{"name":"qnx","description":"QNX executable","license":"LGPL3","author":"deepakchethan"},{"name":"sfc","description":"Super NES / Super Famicom ROM","license":"LGPL3","author":"usrshare"},{"name":"smd","description":"SEGA Genesis / MegaDrive ROM","license":"LGPL3","author":"pancake"},{"name":"sms","description":"SEGA MasterSystem / GameGear ROM","license":"LGPL3","author":"shengdi"},{"name":"spc700","description":"SNES SPC700 sound data","license":"LGPL3","author":"maijin"},{"name":"symbols","description":"Apple Symbols file","license":"MIT","author":"pancake"},{"name":"te","description":"TE (Terse Executable)","license":"LGPL3","author":"xvilka"},{"name":"vsf","description":"VICE snapshot file","license":"LGPL3","author":"riq"},{"name":"wasm","description":"WebAssembly","license":"MIT","author":"pancake"},{"name":"xbe","description":"Microsoft Xbox XBE (Xbox Executable)","license":"LGPL3","author":"LemonBoy"},{"name":"z64","description":"Nintendo 64 Big-Endian binary","license":"LGPL3","author":"lowlyw"},{"name":"zimg","description":"ZIMG format binary","license":"LGPL3","author":"ninjahacker"},{"name":"xtr.fatmach0","description":"Fat Mach-O binary extractor","license":"LGPL3"},{"name":"xtr.sep64","description":"64-bit SEP binary extractor","license":"LGPL3"}]
-name         license author         description                                   version 
+name         license author         description                                   version
 ------------------------------------------------------------------------------------------
-any          LGPL3   nibble         Dummy format binary                           
-art          LGPL3   pancake        Android Runtime                               
-avr          LGPL3   deroad         ATmel AVR usermode                            
-bf           LGPL3   pancake        Brainfuck                                     
-bflt         LGPL3   Oscar Salvador bFLT uClinux binary                           
-bios         LGPL    pancake        BIOS binary                                   
-bootimg      LGPL3   pancake        Android Boot Image                            
-cgc          LGPL3   ret2libc       CGC (Cyber Grand Challenge)                   
-coff         LGPL3   Fedor Sakharov COFF (Common Object File Format)              
-dex          LGPL3   deroad         DEX (Dalvik Executable)                       
-dmp64        LGPL3   abcSup         Windows x64 Crash Dump                        
-dol          BSD     pancake        Nintendo Dolphin binary                       
-dyldcache    LGPL3   pancake        Apple DYLD Cache                              
-elf          LGPL3   nibble         ELF (Executable and Linkable Format)          
-elf64        LGPL3   nibble         ELF64 (64-bit Executable and Linkable Format) 
-java         LGPL3   deroad         Java binary                                   
-kernelcache  LGPL3   mrmacete       Apple Kernelcache                             
-le           LGPL3   GustavoLCR     LE/LX                                         
-luac         LGPL3   Heersin        Lua compiled binary                           
-mach0        LGPL3   pancake        Mach-O (Mach Object)                          
-mach064      LGPL3   nibble         Mach-O 64-bit                                 
-mbn          LGPL3   pancake        MBN/SBL bootloader binary                     
-mdmp         LGPL3   Davis          Windows MiniDump                              
-mdt          LGPL3   Rot127         Qualcomm Peripheral Image Loader (32bit only) 
-menuet       LGPL3   pancake        Menuet/KolibriOS binary                       
-mz           MIT     nodepad        MZ (DOS MZ Executable)                        
-ne           LGPL3   GustavoLCR     NE (New Executable)                           
-nes          MIT     maijin         Nintendo NES                                  
-nin3ds       LGPL3   a0rtega        Nintendo 3DS Firmware                         
-ninds        LGPL3   a0rtega        Nintendo DS binary                            
-ningb        LGPL3   condret        Nintendo Game Boy                             
-ningba       LGPL3   condret        Nintendo Game Boy Advance                     
-nro          MIT     pancake        Nintendo Switch NRO                           
-nso          MIT     rkx1209        Nintendo Switch NSO                           
-omf          LGPL3   ampotos        OMF (Object Module Format)                    
-p9           LGPL3   pancake        Plan9 binary                                  
-pe           LGPL3   nibble         PE (Portable Executable)                      
-pe64         LGPL3   nibble         PE64 (PE32+) binary                           
-pebble       LGPL    pancake        Pebble Watch App                              
-prg          LGPL3   thestr4ng3r    C64 PRG (Commodore 64)                        
-psxexe       LGPL3   Dax89          Sony PlayStation 1 executable                 
-pyc          LGPL3   c0riolis       Python byte-compiled                          
-qnx          LGPL3   deepakchethan  QNX executable                                
-sfc          LGPL3   usrshare       Super NES / Super Famicom ROM                 
-smd          LGPL3   pancake        SEGA Genesis / MegaDrive ROM                  
-sms          LGPL3   shengdi        SEGA MasterSystem / GameGear ROM              
-spc700       LGPL3   maijin         SNES SPC700 sound data                        
-symbols      MIT     pancake        Apple Symbols file                            
-te           LGPL3   xvilka         TE (Terse Executable)                         
-vsf          LGPL3   riq            VICE snapshot file                            
-wasm         MIT     pancake        WebAssembly                                   
-xbe          LGPL3   LemonBoy       Microsoft Xbox XBE (Xbox Executable)          
-z64          LGPL3   lowlyw         Nintendo 64 Big-Endian binary                 
-zimg         LGPL3   ninjahacker    ZIMG format binary                            
+any          LGPL3   nibble         Dummy format binary
+art          LGPL3   pancake        Android Runtime
+avr          LGPL3   deroad         ATmel AVR usermode
+bf           LGPL3   pancake        Brainfuck
+bflt         LGPL3   Oscar Salvador bFLT uClinux binary
+bios         LGPL    pancake        BIOS binary
+bootimg      LGPL3   pancake        Android Boot Image
+cgc          LGPL3   ret2libc       CGC (Cyber Grand Challenge)
+coff         LGPL3   Fedor Sakharov COFF (Common Object File Format)
+dex          LGPL3   deroad         DEX (Dalvik Executable)
+dmp64        LGPL3   abcSup         Windows x64 Crash Dump
+dol          BSD     pancake        Nintendo Dolphin binary
+dyldcache    LGPL3   pancake        Apple DYLD Cache
+elf          LGPL3   nibble         ELF (Executable and Linkable Format)
+elf64        LGPL3   nibble         ELF64 (64-bit Executable and Linkable Format)
+java         LGPL3   deroad         Java binary
+kernelcache  LGPL3   mrmacete       Apple Kernelcache
+le           LGPL3   GustavoLCR     LE/LX
+luac         LGPL3   Heersin        Lua compiled binary
+mach0        LGPL3   pancake        Mach-O (Mach Object)
+mach064      LGPL3   nibble         Mach-O 64-bit
+mbn          LGPL3   pancake        MBN/SBL bootloader binary
+mdmp         LGPL3   Davis          Windows MiniDump
+mdt          LGPL3   Rot127         Qualcomm Peripheral Image Loader (32bit only)
+menuet       LGPL3   pancake        Menuet/KolibriOS binary
+mz           MIT     nodepad        MZ (DOS MZ Executable)
+ne           LGPL3   GustavoLCR     NE (New Executable)
+nes          MIT     maijin         Nintendo NES
+nin3ds       LGPL3   a0rtega        Nintendo 3DS Firmware
+ninds        LGPL3   a0rtega        Nintendo DS binary
+ningb        LGPL3   condret        Nintendo Game Boy
+ningba       LGPL3   condret        Nintendo Game Boy Advance
+nro          MIT     pancake        Nintendo Switch NRO
+nso          MIT     rkx1209        Nintendo Switch NSO
+omf          LGPL3   ampotos        OMF (Object Module Format)
+p9           LGPL3   pancake        Plan9 binary
+pe           LGPL3   nibble         PE (Portable Executable)
+pe64         LGPL3   nibble         PE64 (PE32+) binary
+pebble       LGPL    pancake        Pebble Watch App
+prg          LGPL3   thestr4ng3r    C64 PRG (Commodore 64)
+psxexe       LGPL3   Dax89          Sony PlayStation 1 executable
+pyc          LGPL3   c0riolis       Python byte-compiled
+qnx          LGPL3   deepakchethan  QNX executable
+sfc          LGPL3   usrshare       Super NES / Super Famicom ROM
+smd          LGPL3   pancake        SEGA Genesis / MegaDrive ROM
+sms          LGPL3   shengdi        SEGA MasterSystem / GameGear ROM
+spc700       LGPL3   maijin         SNES SPC700 sound data
+symbols      MIT     pancake        Apple Symbols file
+te           LGPL3   xvilka         TE (Terse Executable)
+vsf          LGPL3   riq            VICE snapshot file
+wasm         MIT     pancake        WebAssembly
+xbe          LGPL3   LemonBoy       Microsoft Xbox XBE (Xbox Executable)
+z64          LGPL3   lowlyw         Nintendo 64 Big-Endian binary
+zimg         LGPL3   ninjahacker    ZIMG format binary
 xtr.fatmach0 LGPL3                  Fat Mach-O binary extractor
 xtr.sep64    LGPL3                  64-bit SEP binary extractor
 any
@@ -446,7 +446,7 @@ xor16          LGPL3      deroad                         XOR-16 checksum
 xor8           LGPL3      deroad                         XOR-8 checksum
 xxhash32       LGPL3      deroad                         xxHash32 non-cryptographic hash
 [{"name":"adler32","license":"LGPL3","author":"deroad","description":"Adler-32 checksum"},{"name":"blake3","license":"CC0","author":"Samuel Neves,Jack O'Connor","description":"BLAKE3 cryptographic hash"},{"name":"crc15can","license":"LGPL3","author":"deroad","description":"CRC-15 CAN checksum"},{"name":"crc16","license":"LGPL3","author":"deroad","description":"CRC-16 IBM/ARC checksum"},{"name":"crc16augccitt","license":"LGPL3","author":"deroad","description":"CRC-16 AUG-CCITT checksum"},{"name":"crc16buypass","license":"LGPL3","author":"deroad","description":"CRC-16 BUYPASS checksum"},{"name":"crc16cdma2000","license":"LGPL3","author":"deroad","description":"CRC-16 CDMA-2000 checksum"},{"name":"crc16citt","license":"LGPL3","author":"deroad","description":"CRC-16 CITT checksum"},{"name":"crc16dds110","license":"LGPL3","author":"deroad","description":"CRC-16 DDS110 checksum"},{"name":"crc16dectr","license":"LGPL3","author":"deroad","description":"CRC-16 DECT-R checksum"},{"name":"crc16dectx","license":"LGPL3","author":"deroad","description":"CRC-16 DECT-X checksum"},{"name":"crc16dnp","license":"LGPL3","author":"deroad","description":"CRC-16 DNP checksum"},{"name":"crc16en13757","license":"LGPL3","author":"deroad","description":"CRC-16 EN-13757 checksum"},{"name":"crc16genibus","license":"LGPL3","author":"deroad","description":"CRC-16 GENIBUS checksum"},{"name":"crc16hdlc","license":"LGPL3","author":"deroad","description":"CRC-16 HDLC checksum"},{"name":"crc16kermit","license":"LGPL3","author":"deroad","description":"CRC-16 KERMIT checksum"},{"name":"crc16maxim","license":"LGPL3","author":"deroad","description":"CRC-16 MAXIM checksum"},{"name":"crc16mcrf4xx","license":"LGPL3","author":"deroad","description":"CRC-16 MCRF4XX checksum"},{"name":"crc16modbus","license":"LGPL3","author":"deroad","description":"CRC-16 MODBUS checksum"},{"name":"crc16riello","license":"LGPL3","author":"deroad","description":"CRC-16 RIELLO checksum"},{"name":"crc16t10dif","license":"LGPL3","author":"deroad","description":"CRC-16 T10-DIF checksum"},{"name":"crc16teledisk","license":"LGPL3","author":"deroad","description":"CRC-16 TELEDISK checksum"},{"name":"crc16tms37157","license":"LGPL3","author":"deroad","description":"CRC-16 TMS37157 checksum"},{"name":"crc16usb","license":"LGPL3","author":"deroad","description":"CRC-16 USB checksum"},{"name":"crc16x25","license":"LGPL3","author":"deroad","description":"CRC-16 X25 checksum"},{"name":"crc16xmodem","license":"LGPL3","author":"deroad","description":"CRC-16 XMODEM checksum"},{"name":"crc24","license":"LGPL3","author":"deroad","description":"CRC-24 checksum"},{"name":"crc32","license":"LGPL3","author":"deroad","description":"CRC-32 checksum"},{"name":"crc32bzip2","license":"LGPL3","author":"deroad","description":"CRC-32 BZIP2 checksum"},{"name":"crc32c","license":"LGPL3","author":"deroad","description":"CRC-32C checksum"},{"name":"crc32d","license":"LGPL3","author":"deroad","description":"CRC-32D checksum"},{"name":"crc32ecma267","license":"LGPL3","author":"deroad","description":"CRC-32 ECMA-267 checksum (EDC for DVD sectors)"},{"name":"crc32jamcrc","license":"LGPL3","author":"deroad","description":"CRC-32 JAMCRC checksum"},{"name":"crc32mpeg2","license":"LGPL3","author":"deroad","description":"CRC-32 MPEG2 checksum"},{"name":"crc32posix","license":"LGPL3","author":"deroad","description":"CRC-32 POSIX checksum"},{"name":"crc32q","license":"LGPL3","author":"deroad","description":"CRC-32Q checksum"},{"name":"crc32xfer","license":"LGPL3","author":"deroad","description":"CRC-32 XFER checksum"},{"name":"crc64","license":"LGPL3","author":"deroad","description":"CRC-64 checksum"},{"name":"crc64ecma182","license":"LGPL3","author":"deroad","description":"CRC-64 ECMA-182 checksum"},{"name":"crc64iso","license":"LGPL3","author":"deroad","description":"CRC-64 ISO checksum"},{"name":"crc64we","license":"LGPL3","author":"deroad","description":"CRC-64 WE checksum"},{"name":"crc64xz","license":"LGPL3","author":"deroad","description":"CRC-64 XZ checksum"},{"name":"crc8cdma2000","license":"LGPL3","author":"deroad","description":"CRC-8 CDMA-2000 checksum"},{"name":"crc8darc","license":"LGPL3","author":"deroad","description":"CRC-8 DARC checksum"},{"name":"crc8dvbs2","license":"LGPL3","author":"deroad","description":"CRC-8 DVB-S2 checksum"},{"name":"crc8ebu","license":"LGPL3","author":"deroad","description":"CRC-8 EBU checksum"},{"name":"crc8icode","license":"LGPL3","author":"deroad","description":"CRC-8 I-CODE checksum"},{"name":"crc8itu","license":"LGPL3","author":"deroad","description":"CRC-8 ITU checksum"},{"name":"crc8maxim","license":"LGPL3","author":"deroad","description":"CRC-8 MAXIM checksum"},{"name":"crc8rohc","license":"LGPL3","author":"deroad","description":"CRC-8 ROHC checksum"},{"name":"crc8smbus","license":"LGPL3","author":"deroad","description":"CRC-8 SMBUS checksum"},{"name":"crc8wcdma","license":"LGPL3","author":"deroad","description":"CRC-8 WCDMA checksum"},{"name":"crca","license":"LGPL3","author":"deroad","description":"CRC-16/CRCA checksum"},{"name":"entropy","license":"LGPL3","author":"deroad","description":"Entropy [0.0-8.0] range"},{"name":"entropy_fract","license":"LGPL3","author":"deroad","description":"Fractional entropy [0.0-1.0] range"},{"name":"fletcher16","license":"LGPL3","author":"deroad","description":"Fletcher16 checksum"},{"name":"fletcher32","license":"LGPL3","author":"deroad","description":"Fletcher32 checksum"},{"name":"fletcher64","license":"LGPL3","author":"deroad","description":"Fletcher64 checksum"},{"name":"fletcher8","license":"LGPL3","author":"deroad","description":"Fletcher8 checksum"},{"name":"md2","license":"LGPL3","author":"swedenspy","description":"MD2 cryptographic hash"},{"name":"md4","license":"LGPL3","author":"deroad","description":"MD4 cryptographic hash"},{"name":"md5","license":"LGPL2","author":"Alan DeKok","description":"MD5 cryptographic hash"},{"name":"mod255","license":"LGPL3","author":"deroad","description":"Modulo 255 checksum"},{"name":"parity","license":"LGPL3","author":"deroad","description":"Parity checksum"},{"name":"sha1","license":"LGPL3","author":"deroad","description":"SHA-1 cryptographic hash"},{"name":"sha256","license":"BSD-3","author":"Aaron D. Gifford","description":"SHA-256 cryptographic hash"},{"name":"sha384","license":"BSD-3","author":"Aaron D. Gifford","description":"SHA-384 cryptographic hash"},{"name":"sha512","license":"BSD-3","author":"Aaron D. Gifford","description":"SHA-512 cryptographic hash"},{"name":"sm3","license":"LGPL2","author":"FSF/deroad","description":"ShangMi 3 (SM3) cryptographic hash"},{"name":"ssdeep","license":"LGPL3","author":"deroad","description":"SSDeep Context Triggered Piecewise Hash (CTPH, fuzzy hash)"},{"name":"temperature","license":"LGPL3","author":"Seva","description":"Binary temperature [0.0-1.0] range"},{"name":"xor16","license":"LGPL3","author":"deroad","description":"XOR-16 checksum"},{"name":"xor8","license":"LGPL3","author":"deroad","description":"XOR-8 checksum"},{"name":"xxhash32","license":"LGPL3","author":"deroad","description":"xxHash32 non-cryptographic hash"}]
-algorithm     license author                     description                                                
+algorithm     license author                     description
 ------------------------------------------------------------------------------------------------------------
 adler32       LGPL3   deroad                     Adler-32 checksum
 blake3        CC0     Samuel Neves,Jack O'Connor BLAKE3 cryptographic hash
@@ -668,7 +668,7 @@ adA__ 32 64      dalvik      LGPL3   Dalvik (Android VM) bytecode disassembler
 ad___ 16         dcpu16      PD      Mojang's DCPU-16 disassembler
 _dA__ 32 64      ebc         LGPL3   EFI bytecode disassembler (by Fedor Sakharov)
 adAeI 16         gb          LGPL3   GameBoy(TM) (z80-like) (by condret)
-_dAe_ 16         h8300       LGPL3   Hitachi/Renesas H8/300 disassembly plugin
+_dAeI 16         h8300       LGPL3   Hitachi/Renesas H8/300 disassembly plugin
 _dA_I 32         hexagon     LGPL3   Qualcomm Hexagon (QDSP6) V6 (by Rot127)
 _d___ 32         hppa        GPL3    HP PA-RISC
 _dA__ 4          i4004       LGPL3   Intel 4004 disassembler
@@ -738,7 +738,7 @@ adA__ 32 64    dalvik    LGPL3                           Dalvik (Android VM) byt
 ad___ 16       dcpu16    PD                              Mojang's DCPU-16 disassembler
 _dA__ 32 64    ebc       LGPL3           Fedor Sakharov  EFI bytecode disassembler
 adAeI 16       gb        LGPL3           condret         GameBoy(TM) (z80-like)
-_dAe_ 16       h8300     LGPL3                           Hitachi/Renesas H8/300 disassembly plugin
+_dAeI 16       h8300     LGPL3                           Hitachi/Renesas H8/300 disassembly plugin
 _dA_I 32       hexagon   LGPL3           Rot127          Qualcomm Hexagon (QDSP6) V6
 _d___ 32       hppa      GPL3                            HP PA-RISC
 _dA__ 4        i4004     LGPL3                           Intel 4004 disassembler
@@ -892,6 +892,7 @@ adAeI 16 32 64   arm         BSD     ARM Capstone-based disassembler
 adAeI 8 16       avr         LGPL3   Atmel AVR disassembler
 adA_I 16 32 64   bf          LGPL3   Brainfuck (by pancake, nibble) v4.0.0
 adAeI 16         gb          LGPL3   GameBoy(TM) (z80-like) (by condret)
+_dAeI 16         h8300       LGPL3   Hitachi/Renesas H8/300 disassembly plugin
 _dA_I 32         hexagon     LGPL3   Qualcomm Hexagon (QDSP6) V6 (by Rot127)
 adAeI 16 32 64   mips        BSD     MIPS Capstone-based disassembler
 _dA_I 16         msp430      LGPL3   Texas Instruments MSP430 disassembler
@@ -908,6 +909,7 @@ adAeI 8          8051        PD      Intel 8051 disassembler
 adAeI 16 32 64   arm         BSD     ARM Capstone-based disassembler
 adAeI 8 16       avr         LGPL3   Atmel AVR disassembler
 adAeI 16         gb          LGPL3   GameBoy(TM) (z80-like) (by condret)
+_dAeI 16         h8300       LGPL3   Hitachi/Renesas H8/300 disassembly plugin
 adAeI 16 32 64   mips        BSD     MIPS Capstone-based disassembler
 _dAeI 16 32      pic         LGPL3   Microchip PIC disassembler
 _dAeI 32 64      ppc         BSD     PowerPC Capstone-based disassembler (by pancake)
@@ -1022,7 +1024,7 @@ a____ 16 32 64   x86.as      LGPL3   Intel X86 GNU Assembler (Use RZ_X86_AS env)
 a____ 16 32 64   x86.nasm    LGPL3   X86 nasm assembler
 a____ 16 32 64   x86.nz      LGPL3   x86 handmade assembler
 adA__ 8          z80         GPL3    Zilog Z80 disassembler (by condret)
-["6502":{"bits":"8 16 ","license":"LGPL3","description":"6502/NES/C64/Tamagotchi/T-1000 CPU","features":"_dAeI"},"8051":{"bits":"8 ","license":"PD","description":"Intel 8051 disassembler","features":"adAeI"},"arm":{"bits":"16 32 64","license":"BSD","description":"ARM Capstone-based disassembler","features":"adAeI"},"avr":{"bits":"8 16 ","license":"LGPL3","description":"Atmel AVR disassembler","features":"adAeI"},"bf":{"bits":"16 32 64","license":"LGPL3","description":"Brainfuck","features":"adA_I","author":"pancake, nibble","version":"4.0.0"},"gb":{"bits":"16 ","license":"LGPL3","description":"GameBoy(TM) (z80-like)","features":"adAeI","author":"condret"},"hexagon":{"bits":"32 ","license":"LGPL3","description":"Qualcomm Hexagon (QDSP6) V6","features":"_dA_I","author":"Rot127"},"mips":{"bits":"16 32 64","license":"BSD","description":"MIPS Capstone-based disassembler","features":"adAeI"},"msp430":{"bits":"16 ","license":"LGPL3","description":"Texas Instruments MSP430 disassembler","features":"_dA_I"},"pic":{"bits":"16 32 ","license":"LGPL3","description":"Microchip PIC disassembler","features":"_dAeI"},"ppc":{"bits":"32 64","license":"BSD","description":"PowerPC Capstone-based disassembler","features":"_dAeI","author":"pancake"},"sh":{"bits":"32 ","license":"LGPL3","description":"Hitachi/Renesas SuperH-4 disassembler","features":"adAeI","author":"DMaroo"},"tricore":{"bits":"32 ","license":"BSD","description":"Siemens TriCore Capstone-based disassembler","features":"_dA_I","author":"billow"},"v810":{"bits":"32 ","license":"LGPL3","description":"NEC V810 disassembler","features":"_dAeI","author":"pancake"},"v850":{"bits":"32 ","license":"LGPL3","description":"NEC/Renesas V850 disassembler","features":"_dAeI"},"x86":{"bits":"16 32 64","license":"MIT","description":"X86/X86_64 Zydis-based disassembler","features":"_dAeI"},"xtensa":{"bits":"32 ","license":"LGPL3","description":"Tensilica Xtensa Capstone-based disassembler","features":"_dAeI","author":"billow"}]
+["6502":{"bits":"8 16 ","license":"LGPL3","description":"6502/NES/C64/Tamagotchi/T-1000 CPU","features":"_dAeI"},"8051":{"bits":"8 ","license":"PD","description":"Intel 8051 disassembler","features":"adAeI"},"arm":{"bits":"16 32 64","license":"BSD","description":"ARM Capstone-based disassembler","features":"adAeI"},"avr":{"bits":"8 16 ","license":"LGPL3","description":"Atmel AVR disassembler","features":"adAeI"},"bf":{"bits":"16 32 64","license":"LGPL3","description":"Brainfuck","features":"adA_I","author":"pancake, nibble","version":"4.0.0"},"gb":{"bits":"16 ","license":"LGPL3","description":"GameBoy(TM) (z80-like)","features":"adAeI","author":"condret"},"h8300":{"bits":"16 ","license":"LGPL3","description":"Hitachi/Renesas H8/300 disassembly plugin","features":"_dAeI"},"hexagon":{"bits":"32 ","license":"LGPL3","description":"Qualcomm Hexagon (QDSP6) V6","features":"_dA_I","author":"Rot127"},"mips":{"bits":"16 32 64","license":"BSD","description":"MIPS Capstone-based disassembler","features":"adAeI"},"msp430":{"bits":"16 ","license":"LGPL3","description":"Texas Instruments MSP430 disassembler","features":"_dA_I"},"pic":{"bits":"16 32 ","license":"LGPL3","description":"Microchip PIC disassembler","features":"_dAeI"},"ppc":{"bits":"32 64","license":"BSD","description":"PowerPC Capstone-based disassembler","features":"_dAeI","author":"pancake"},"sh":{"bits":"32 ","license":"LGPL3","description":"Hitachi/Renesas SuperH-4 disassembler","features":"adAeI","author":"DMaroo"},"tricore":{"bits":"32 ","license":"BSD","description":"Siemens TriCore Capstone-based disassembler","features":"_dA_I","author":"billow"},"v810":{"bits":"32 ","license":"LGPL3","description":"NEC V810 disassembler","features":"_dAeI","author":"pancake"},"v850":{"bits":"32 ","license":"LGPL3","description":"NEC/Renesas V850 disassembler","features":"_dAeI"},"x86":{"bits":"16 32 64","license":"MIT","description":"X86/X86_64 Zydis-based disassembler","features":"_dAeI"},"xtensa":{"bits":"32 ","license":"LGPL3","description":"Tensilica Xtensa Capstone-based disassembler","features":"_dAeI","author":"billow"}]
 name  bits     features license version author  description                                  
 ---------------------------------------------------------------------------------------------
 _dAeI 8 16     6502     LGPL3                   6502/NES/C64/Tamagotchi/T-1000 CPU
@@ -1030,6 +1032,7 @@ adAeI 8        8051     PD                      Intel 8051 disassembler
 adAeI 16 32 64 arm      BSD                     ARM Capstone-based disassembler
 adAeI 8 16     avr      LGPL3                   Atmel AVR disassembler
 adAeI 16       gb       LGPL3           condret GameBoy(TM) (z80-like)
+_dAeI 16       h8300    LGPL3                   Hitachi/Renesas H8/300 disassembly plugin
 adAeI 16 32 64 mips     BSD                     MIPS Capstone-based disassembler
 _dAeI 16 32    pic      LGPL3                   Microchip PIC disassembler
 _dAeI 32 64    ppc      BSD             pancake PowerPC Capstone-based disassembler

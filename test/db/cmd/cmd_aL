@@ -19,7 +19,7 @@ adA__ 32 64      dalvik      LGPL3   Dalvik (Android VM) bytecode disassembler
 ad___ 16         dcpu16      PD      Mojang's DCPU-16 disassembler
 _dA__ 32 64      ebc         LGPL3   EFI bytecode disassembler (by Fedor Sakharov)
 adAeI 16         gb          LGPL3   GameBoy(TM) (z80-like) (by condret)
-_dAe_ 16         h8300       LGPL3   Hitachi/Renesas H8/300 disassembly plugin
+_dAeI 16         h8300       LGPL3   Hitachi/Renesas H8/300 disassembly plugin
 _dA_I 32         hexagon     LGPL3   Qualcomm Hexagon (QDSP6) V6 (by Rot127)
 _d___ 32         hppa        GPL3    HP PA-RISC
 _dA__ 4          i4004       LGPL3   Intel 4004 disassembler
