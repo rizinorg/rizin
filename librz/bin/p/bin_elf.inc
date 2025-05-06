@@ -1025,6 +1025,45 @@ static void patch_reloc_hexagon(RZ_INOUT RzBuffer *buf_patched, const ut64 patch
 	}
 }
 
+/**
+ * \brief Patches the opcode at a given address depending on the relocation type.
+ *
+ * NOTE: Some relocation symbols are not yet implemented
+ *
+ * \param buf_patched Buffer from which the opcode is read and the patched opcode is written to.
+ * \param patch_addr The address of the opcode being patched.
+ * \param rel_type The relocation type.
+ * \param big_endian The endianness - true if BE, false if LE
+ * \param fs Formular values to calculate the new relocation value.
+ */
+static void patch_reloc_mips(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_addr, const int rel_type, bool big_endian, const RzBinRelocFormularSymbols *fs) {
+	rz_return_if_fail(buf_patched && fs);
+	ut8 buf[4] = { 0 };
+	ut64 val = 0;
+
+	switch (rel_type) {
+	default:
+		RZ_LOG_WARN("Patching for reloc type %d not implemented.\n", rel_type);
+		return;
+	case RZ_MIPS_16:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 16);
+		val = rz_read_ble16(buf, big_endian) + fs->S + fs->A;
+		rz_write_ble16(buf, val, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 16);
+		break;
+	case RZ_MIPS_32:
+	/* fall-thru */
+	case RZ_MIPS_REL32:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		val = rz_read_ble32(buf, big_endian) + fs->S + fs->A;
+		if (rel_type == RZ_MIPS_REL32) {
+			val -= fs->P;
+		}
+		rz_write_ble32(buf, val, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+	}
+}
+
 // AARCH64-specific defines
 // Take the PAGE component of an address or offset.
 #define PG(x)         ((x) & ~0xFFFULL)
@@ -1227,6 +1266,9 @@ static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel,
 		}
 		break;
 	}
+	case EM_MIPS:
+		patch_reloc_mips(obj->buf_patched, patch_addr, rel->type, big_endian, &formular_sym);
+		break;
 	case EM_386:
 		switch (rel->type) {
 		case RZ_386_32:
@@ -1588,6 +1630,20 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 		// FIXME: Quite a few relocatons missing here.
 		default:
 			RZ_LOG_WARN("unimplemented ELF/PPC reloc type %d\n", rel->type);
+			break;
+		}
+		break;
+	case EM_MIPS:
+		switch (rel->type) {
+		case RZ_MIPS_NONE: break;
+		case RZ_MIPS_COPY: ADD(32, 0, "R_MIPS_COPY"); // copy symbol at runtime
+		case RZ_MIPS_16: ADD(16, 0, "R_MIPS_16");
+		case RZ_MIPS_32: ADD(32, 0, "R_MIPS_32");
+		case RZ_MIPS_REL32: ADD(32, -P, "R_MIPS_REL32");
+		case RZ_MIPS_JUMP_SLOT: ADD(32, 0, "R_MIPS_JUMP_SLOT");
+		// FIXME: Quite a few relocatons missing here.
+		default:
+			RZ_LOG_WARN("unimplemented ELF/MIPS reloc type %d\n", rel->type);
 			break;
 		}
 		break;
