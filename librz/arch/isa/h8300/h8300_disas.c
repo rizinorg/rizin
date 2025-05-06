@@ -42,6 +42,7 @@ static const char *commands[] = {
 	[H8300_INSN_DEC] = "dec",
 	[H8300_INSN_INC] = "inc",
 	[H8300_INSN_NEG] = "neg",
+	[H8300_INSN_NOT] = "not",
 	[H8300_INSN_OR] = "or",
 	[H8300_INSN_DIVXU] = "divxu",
 	[H8300_INSN_MULXU] = "mulxu",
@@ -51,10 +52,14 @@ static const char *commands[] = {
 	[H8300_INSN_ORC] = "orc",
 	[H8300_INSN_ROTL] = "rotl",
 	[H8300_INSN_ROTR] = "rotr",
+	[H8300_INSN_ROTXL] = "rotxl",
+	[H8300_INSN_ROTXR] = "rotxr",
 	[H8300_INSN_RTE] = "rte",
 	[H8300_INSN_RTS] = "rts",
-	[H8300_INSN_SHL] = "shal",
-	[H8300_INSN_SHR] = "shar",
+	[H8300_INSN_SHAL] = "shal",
+	[H8300_INSN_SHAR] = "shar",
+	[H8300_INSN_SHLL] = "shll",
+	[H8300_INSN_SHLR] = "shlr",
 	[H8300_INSN_SLEEP] = "sleep",
 	[H8300_INSN_STC] = "stc",
 	[H8300_INSN_SUBS] = "subs",
@@ -473,23 +478,10 @@ static int decode_r8abs8_type2(const ut8 *bytes, struct h8300_cmd *cmd) {
 }
 
 /* [ opcode ] [ 0000 |  rd ] */
-static int decode_daa(const ut8 *bytes, struct h8300_cmd *cmd) {
+static int decode_r8(const ut8 *bytes, struct h8300_cmd *cmd) {
 	int ret = 2;
 
-	if (bytes[0] == 0x17 && bytes[1] >> 4 == 0) {
-		strncpy(cmd->instr, "not", H8300_INSTR_MAXLEN - 1);
-		cmd->instr[H8300_INSTR_MAXLEN - 1] = '\0';
-	} else if (bytes[0] == 0x12 && bytes[1] >> 4 == 0) {
-		strncpy(cmd->instr, "rotxl", H8300_INSTR_MAXLEN - 1);
-		cmd->instr[H8300_INSTR_MAXLEN - 1] = '\0';
-	} else if (bytes[0] == 0x13 && bytes[1] >> 4 == 0) {
-		strncpy(cmd->instr, "rotxr", H8300_INSTR_MAXLEN - 1);
-		cmd->instr[H8300_INSTR_MAXLEN - 1] = '\0';
-	} else if (bytes[0] == 0x10 && bytes[1] >> 4 == 0) {
-		strncpy(cmd->instr, "shll", H8300_INSTR_MAXLEN - 1);
-	} else if (bytes[0] == 0x11 && bytes[1] >> 4 == 0) {
-		strncpy(cmd->instr, "shlr", H8300_INSTR_MAXLEN - 1);
-	} else if (decode_opcode(bytes, cmd)) {
+	if (decode_opcode(bytes, cmd)) {
 		return -1;
 	}
 
@@ -850,6 +842,30 @@ int h8300_decode_command(const ut8 *instr, struct h8300_cmd *cmd) {
 		return ret;
 	}
 
+#define CASE_F_R8(X, I) \
+	case (X): \
+		cmd->id = H8300_INSN_##I; \
+		return decode_r8(instr, cmd);
+
+	switch (((ut16)instr[0] << 4) | (instr[1] >> 4)) {
+		CASE_F_R8(0x0f0, DAA);
+		CASE_F_R8(0x1f0, DAS);
+		CASE_F_R8(0x1a0, DEC);
+		CASE_F_R8(0x0a0, INC);
+		CASE_F_R8(0x178, NEG);
+		CASE_F_R8(0x170, NOT);
+		CASE_F_R8(0x128, ROTL);
+		CASE_F_R8(0x138, ROTR);
+		CASE_F_R8(0x120, ROTXL);
+		CASE_F_R8(0x130, ROTXR);
+		CASE_F_R8(0x108, SHAL);
+		CASE_F_R8(0x100, SHLL);
+		CASE_F_R8(0x118, SHAR);
+		CASE_F_R8(0x110, SHLR);
+	default:
+		break;
+	}
+
 	switch (instr[0]) {
 	case H8300_ANDC:
 		cmd->id = H8300_INSN_ANDC;
@@ -955,7 +971,7 @@ int h8300_decode_command(const ut8 *instr, struct h8300_cmd *cmd) {
 		cmd->id = H8300_INSN_BTST;
 		ret = decode_r8r8(instr, cmd);
 		break;
-	case H8300_BCLR_R2IND16:
+	case 0x7d:
 		cmd->id = H8300_INSN_BCLR;
 		switch (instr[2]) {
 		case 0x60:
@@ -1007,43 +1023,6 @@ int h8300_decode_command(const ut8 *instr, struct h8300_cmd *cmd) {
 	case H8300_NOP:
 		cmd->id = H8300_INSN_NOP;
 		ret = decode_nop(instr, cmd);
-		break;
-	/// DAA format
-	case H8300_DAA:
-		cmd->id = H8300_INSN_DAA;
-		ret = decode_daa(instr, cmd);
-		break;
-	case H8300_DAS:
-		cmd->id = H8300_INSN_DAS;
-		ret = decode_daa(instr, cmd);
-		break;
-	case H8300_DEC:
-		cmd->id = H8300_INSN_DEC;
-		ret = decode_daa(instr, cmd);
-		break;
-	case H8300_INC:
-		cmd->id = H8300_INSN_INC;
-		ret = decode_daa(instr, cmd);
-		break;
-	case H8300_NOT_NEG:
-		cmd->id = H8300_INSN_NEG;
-		ret = decode_daa(instr, cmd);
-		break;
-	case H8300_ROTL:
-		cmd->id = H8300_INSN_ROTL;
-		ret = decode_daa(instr, cmd);
-		break;
-	case H8300_ROTR:
-		cmd->id = H8300_INSN_ROTR;
-		ret = decode_daa(instr, cmd);
-		break;
-	case H8300_SHL:
-		cmd->id = H8300_INSN_SHL;
-		ret = decode_daa(instr, cmd);
-		break;
-	case H8300_SHR:
-		cmd->id = H8300_INSN_SHR;
-		ret = decode_daa(instr, cmd);
 		break;
 	case H8300_DIVXU:
 		cmd->id = H8300_INSN_DIVXU;
@@ -1226,8 +1205,8 @@ int h8300_decode_command(const ut8 *instr, struct h8300_cmd *cmd) {
 		ret = decode_rd16r16(instr, cmd);
 		break;
 
-	default:
-		return -1;
+	default: break;
 	}
+
 	return ret;
 }
