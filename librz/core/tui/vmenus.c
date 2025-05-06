@@ -386,6 +386,8 @@ static ut64 rz_core_visual_analysis_refresh(RzCore *core) {
 		}
 		if (color) {
 			rz_cons_strcat("\n" Color_RESET);
+		} else {
+			rz_cons_strcat("\n");
 		}
 		if (!visual->view->hide_legend) {
 			rz_core_vmenu_append_help(buf, help_fun_visual);
@@ -920,6 +922,8 @@ RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 			if (view->selectPanel) {
 				if (view->delta > 40) {
 					view->delta -= 40;
+				} else {
+					view->delta = 0;
 				}
 			} else {
 				int rows = 0;

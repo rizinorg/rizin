@@ -1629,6 +1629,17 @@ static bool cb_hex_pairs(void *user, void *data) {
 	return true;
 }
 
+static bool cb_hex_nodot(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	if (node->i_value) {
+		core->print->flags |= RZ_PRINT_FLAGS_NODOT;
+	} else {
+		core->print->flags &= ~RZ_PRINT_FLAGS_NODOT;
+	}
+	return true;
+}
+
 static bool cb_hex_section(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
@@ -3557,6 +3568,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB("hex.hdroff", "false", &cb_hex_hdroff, "Show aligned 1 byte in header instead of delta nibble");
 	SETCB("hex.style", "false", &cb_hex_style, "Improve the hexdump header style");
 	SETCB("hex.pairs", "true", &cb_hex_pairs, "Show bytes paired in 'px' hexdump");
+	SETCB("hex.nodot", "false", &cb_hex_nodot, "Hide the dot before printable characters in HexII mode (pxi)");
 	SETCB("hex.align", "false", &cb_hex_align, "Align hexdump with flag + flagsize");
 	SETCB("hex.section", "false", &cb_hex_section, "Show section name before the offset");
 	SETCB("hex.compact", "false", &cb_hexcompact, "Show smallest 16 byte col hexdump (60 columns)");

@@ -329,8 +329,10 @@ RZ_API void rz_print_hexii(RzPrint *rp, ut64 addr, const ut8 *buf, int len, int 
 				p("   ");
 			} else if (ch == 0xff) {
 				p("%s ##%s", color_0xff, color_reset);
-			} else if (IS_PRINTABLE(ch)) {
+			} else if (IS_PRINTABLE(ch) && !(rp->flags & RZ_PRINT_FLAGS_NODOT)) {
 				p("%s .%c%s", color_text, ch, color_reset);
+			} else if (IS_PRINTABLE(ch) && (rp->flags & RZ_PRINT_FLAGS_NODOT)) {
+				p("%s  %c%s", color_text, ch, color_reset);
 			} else {
 				p("%s %02x%s", color_other, ch, color_reset);
 			}

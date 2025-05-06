@@ -278,6 +278,7 @@ static bool objc_find_refs(RzCore *core) {
 					total_xrefs++;
 				}
 			}
+			rz_list_free(list);
 		}
 	}
 	rz_core_notify_done(core, "%s", notify);
