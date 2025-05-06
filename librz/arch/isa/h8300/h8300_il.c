@@ -377,6 +377,14 @@ static RzILOpEffect *op_logical2_formats(H8300Cmd *cmd, op2 f) {
 	}
 }
 
+static RzILOpEffect *op_logical_i8ccr(H8300Cmd *cmd, op2 f) {
+	switch (cmd->fmt) {
+	case H8300_INSN_FORMAT_IMM:
+		return SETG("ccr", f(U8_OP(0), VARG("ccr")));
+	default: NOT_IMPLEMENTED;
+	}
+}
+
 static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 	switch (cmd->id) {
 	case H8300_INSN_MOV_B: return op_mov_b(cmd);
@@ -449,10 +457,17 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 	case H8300_INSN_NOP:
 	case H8300_INSN_SLEEP: return NOP();
 	case H8300_INSN_STC: return R8_X(0, VARG("ccr"));
-	case H8300_INSN_LDC: break;
-	case H8300_INSN_ORC: break;
-	case H8300_INSN_XORC: break;
-	case H8300_INSN_ANDC: break;
+	case H8300_INSN_LDC:
+		switch (cmd->fmt) {
+		case H8300_INSN_FORMAT_IMM:
+			return SETG("ccr", U8_OP(0));
+		case H8300_INSN_FORMAT_R8:
+			return SETG("ccr", R8_OP(0));
+		default: NOT_IMPLEMENTED;
+		}
+	case H8300_INSN_ORC: return op_logical_i8ccr(cmd, rz_il_op_new_log_or);
+	case H8300_INSN_XORC: return op_logical_i8ccr(cmd, rz_il_op_new_log_xor);
+	case H8300_INSN_ANDC: return op_logical_i8ccr(cmd, rz_il_op_new_log_and);
 	case H8300_INSN_INC: break;
 	case H8300_INSN_DAA: break;
 	case H8300_INSN_SHL: break;
