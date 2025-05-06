@@ -196,11 +196,12 @@ static bool init_shstrtab_aux(ELFOBJ *bin, RzVector /*<Elf_(Shdr)>*/ *sections) 
 		return true;
 	}
 
-	Elf_(Shdr) *section = rz_vector_index_ptr(sections, bin->ehdr.e_shstrndx);
-	if (!section) {
-		RZ_LOG_WARN("Invalid ELF header e_shstrndx value.\n");
+	if (bin->ehdr.e_shstrndx >= rz_vector_len(sections)) {
+		RZ_LOG_WARN("ELF header e_shstrndx value (%" PFMT32u ") >= number of sections (%" PFMTSZu ").\n",
+			bin->ehdr.e_shstrndx, rz_vector_len(sections));
 		return false;
 	}
+	Elf_(Shdr) *section = rz_vector_index_ptr(sections, bin->ehdr.e_shstrndx);
 
 	bin->shstrtab = Elf_(rz_bin_elf_strtab_new)(bin, section->sh_offset, section->sh_size);
 	if (!bin->shstrtab) {
