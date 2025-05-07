@@ -197,6 +197,9 @@ RzList /*<RzBinSymbol *>*/ *PE_(rz_bin_mdmp_pe_get_symbols)(RzBin *rbin, struct 
 	if (!(ret = rz_list_new())) {
 		return NULL;
 	}
+	if (!pe_bin->bin) {
+		return ret;
+	}
 
 	/* TODO: Load symbol table from pdb file */
 	if ((symbols = PE_(rz_bin_pe_get_exports)(pe_bin->bin))) {
