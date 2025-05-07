@@ -617,10 +617,30 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 		}
 	case H8300_INSN_DAA: return op_daa(cmd);
 	case H8300_INSN_DAS: return op_das(cmd);
-	case H8300_INSN_SHAL: break;
-	case H8300_INSN_SHAR: break;
-	case H8300_INSN_SHLL: break;
-	case H8300_INSN_SHLR: break;
+	case H8300_INSN_SHAL: return SEQ5(
+		SETL("result", SHIFTL0(R8_OP(0), U8(1))),
+		ccr_set(CCR_V, XOR(MSB(VARL("result")), MSB(R8_OP(0)))),
+		ccr_set(CCR_C, MSB(R8_OP(0))),
+		ccr_unary_NZ(8, VARL("result")),
+		R8_X(0, VARL("result")));
+	case H8300_INSN_SHAR: return SEQ5(
+		SETL("result", SHIFTRA(R8_OP(0), U8(1))),
+		ccr_set(CCR_V, IL_FALSE),
+		ccr_set(CCR_C, LSB(R8_OP(0))),
+		ccr_unary_NZ(8, VARL("result")),
+		R8_X(0, VARL("result")));
+	case H8300_INSN_SHLL: return SEQ5(
+		SETL("result", SHIFTL0(R8_OP(0), U8(1))),
+		ccr_set(CCR_V, IL_FALSE),
+		ccr_set(CCR_C, MSB(R8_OP(0))),
+		ccr_unary_NZ(8, VARL("result")),
+		R8_X(0, VARL("result")));
+	case H8300_INSN_SHLR: return SEQ5(
+		SETL("result", SHIFTR0(R8_OP(0), U8(1))),
+		ccr_set(CCR_V, IL_FALSE),
+		ccr_set(CCR_C, LSB(R8_OP(0))),
+		ccr_unary_NZ(8, VARL("result")),
+		R8_X(0, VARL("result")));
 	case H8300_INSN_ROTL: break;
 	case H8300_INSN_ROTR: break;
 	case H8300_INSN_ROTXL: break;
