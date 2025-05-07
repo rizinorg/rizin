@@ -394,12 +394,12 @@ static RzILOpEffect *op_logical_i8ccr(H8300Cmd *cmd, op2 f) {
 #define U4(X)             UN(4, X)
 #define AND3(X, Y, Z)     AND(X, AND(Y, Z))
 #define IN_RANGE(X, L, H) AND(UGE(X, L), ULE(X, H))
+#define UNDEFINED8        U8(0)
 
 static RzILOpEffect *op_daa(H8300Cmd *cmd) {
 	RzILOpPure *ch = APPEND(BOOL_TO_BV(ccr_val(CCR_C), 1), BOOL_TO_BV(ccr_val(CCR_H), 1));
 	RzILOpPure *un = UNSIGNED(4, SHIFTR0(R8_OP(0), U8(4)));
 	RzILOpPure *ln = UNSIGNED(4, R8_OP(0));
-#define UNDEFINED8 U8(0)
 
 	RzILOpPure *cnd_ch_00_00 = AND(ULE(VARL("un"), U4(0x9)), ULE(VARL("ln"), U4(0x9)));
 	RzILOpPure *cnd_ch_00_06 = AND(ULE(VARL("un"), U4(0x8)), IN_RANGE(VARL("ln"), U4(0xa), U4(0xf)));
@@ -468,6 +468,56 @@ static RzILOpEffect *op_daa(H8300Cmd *cmd) {
 		R8_X(0, VARL("result")),
 		ccr_unary_NZ(8, VARL("result")),
 		ccr_set(CCR_C, result_c));
+}
+
+static RzILOpEffect *op_das(H8300Cmd *cmd) {
+	RzILOpPure *ch = APPEND(BOOL_TO_BV(ccr_val(CCR_C), 1), BOOL_TO_BV(ccr_val(CCR_H), 1));
+	RzILOpPure *un = UNSIGNED(4, SHIFTR0(R8_OP(0), U8(4)));
+	RzILOpPure *ln = UNSIGNED(4, R8_OP(0));
+
+	RzILOpPure *ch_00 = ITE(
+		AND(ULE(VARL("un"), U4(0x9)), ULE(VARL("ln"), U4(0x9))),
+		U8(0x00),
+		UNDEFINED8);
+
+	RzILOpPure *ch_01 = ITE(
+		AND(ULE(VARL("un"), U4(0x8)), IN_RANGE(VARL("ln"), U4(0x6), U4(0xf))),
+		U8(0xfa),
+		UNDEFINED8);
+
+	RzILOpPure *ch_10 = ITE(
+		AND(IN_RANGE(VARL("un"), U4(0x7), U4(0xf)), ULE(VARL("ln"), U4(0x9))),
+		U8(0xa0),
+		UNDEFINED8);
+
+	RzILOpPure *ch_11 = ITE(
+		AND(IN_RANGE(VARL("un"), U4(0x6), U4(0xf)), IN_RANGE(VARL("ln"), U4(0x6), U4(0xf))),
+		U8(0x9a),
+		UNDEFINED8);
+
+	RzILOpPure *added =
+		ITE(
+			EQ(VARL("ch"), UN(2, 0b00)),
+			ch_00,
+			ITE(
+				EQ(VARL("ch"), UN(2, 0b01)),
+				ch_01,
+				ITE(
+					EQ(VARL("ch"), UN(2, 0b10)),
+					ch_10,
+					ITE(
+						EQ(VARL("ch"), UN(2, 0b11)),
+						ch_11,
+						UNDEFINED8))));
+
+	return SEQ7(
+		SETL("un", un),
+		SETL("ln", ln),
+		SETL("ch", ch),
+		SETL("added", added),
+		SETL("result", ADD(R8_OP(0), VARL("added"))),
+		R8_X(0, VARL("result")),
+		ccr_unary_NZ(8, VARL("result")));
 }
 
 static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
@@ -566,6 +616,7 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 			break;
 		}
 	case H8300_INSN_DAA: return op_daa(cmd);
+	case H8300_INSN_DAS: return op_das(cmd);
 	case H8300_INSN_SHAL: break;
 	case H8300_INSN_SHAR: break;
 	case H8300_INSN_SHLL: break;
@@ -577,7 +628,6 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 	case H8300_INSN_NEG: break;
 	case H8300_INSN_NOT: break;
 	case H8300_INSN_DEC: break;
-	case H8300_INSN_DAS: break;
 	case H8300_INSN_BRA: break;
 	case H8300_INSN_BRN: break;
 	case H8300_INSN_BHI: break;
