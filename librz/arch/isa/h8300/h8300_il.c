@@ -92,6 +92,7 @@ typedef enum {
 	CCR_I,
 } CCR_BIT;
 
+#define B_TO_1(x)  BOOL_TO_BV(x, 1)
 #define B_TO_8(x)  BOOL_TO_BV(x, 8)
 #define B_TO_16(x) BOOL_TO_BV(x, 16)
 #define B_TO_32(x) BOOL_TO_BV(x, 32)
@@ -119,7 +120,7 @@ static RzILOpEffect *ccr_unary_NZV(ut8 N, RzILOpPure *x, RzILOpBool *v) {
 static RzILOpEffect *ccr_unary_NZVC(ut8 N, RzILOpPure *x, RzILOpBool *v, RzILOpBool *c) {
 	return SEQ2(
 		ccr_unary_NZV(N, x, v),
-		ccr_unary_NZ(N, x));
+		ccr_unary_NZ(N, DUP(x)));
 }
 
 #define ccr_unary_NZV0(N, X) ccr_unary_NZV(N, X, IL_FALSE)
@@ -647,10 +648,34 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 			IL_FALSE,
 			LSB(R8_OP(0))),
 		R8_X(0, VARL("result")));
-	case H8300_INSN_ROTL: break;
-	case H8300_INSN_ROTR: break;
-	case H8300_INSN_ROTXL: break;
-	case H8300_INSN_ROTXR: break;
+	case H8300_INSN_ROTL:
+		return SEQ3(
+			SETL("result", SHIFTL(MSB(R8_OP(0)), R8_OP(0), U8(1))),
+			ccr_unary_NZVC(8, VARL("result"),
+				IL_FALSE,
+				MSB(R8_OP(0))),
+			R8_X(0, VARL("result")));
+	case H8300_INSN_ROTR:
+		return SEQ3(
+			SETL("result", SHIFTR(LSB(R8_OP(0)), R8_OP(0), U8(1))),
+			ccr_unary_NZVC(8, VARL("result"),
+				IL_FALSE,
+				LSB(R8_OP(0))),
+			R8_X(0, VARL("result")));
+	case H8300_INSN_ROTXL:
+		return SEQ3(
+			SETL("result", SHIFTL(ccr_val(CCR_C), R8_OP(0), U8(1))),
+			ccr_unary_NZVC(8, VARL("result"),
+				IL_FALSE,
+				MSB(R8_OP(0))),
+			R8_X(0, VARL("result")));
+	case H8300_INSN_ROTXR:
+		return SEQ3(
+			SETL("result", SHIFTR(ccr_val(CCR_C), R8_OP(0), U8(1))),
+			ccr_unary_NZVC(8, VARL("result"),
+				IL_FALSE,
+				LSB(R8_OP(0))),
+			R8_X(0, VARL("result")));
 	case H8300_INSN_NEG: break;
 	case H8300_INSN_NOT: break;
 	case H8300_INSN_DEC: break;
