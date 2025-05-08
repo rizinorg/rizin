@@ -302,21 +302,8 @@ jobs:
           ASAN: ${{ matrix.asan }}
           ASAN_OPTIONS: ${{ matrix.asan_options }}
           CC: ${{ matrix.compiler }}
-      - name: Generate coverage data
-        if: matrix.coverage && matrix.enabled
-        run: |
-          gcovr --version
-          gcovr --gcov-ignore-parse-errors=all --txt build/coverage.txt --cobertura build/coverage.xml build
-      - name: Upload coverage to Codecov
-        if: matrix.coverage
-        uses: codecov/codecov-action@v5
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          directory: build/
-          fail_ci_if_error: true
-          verbose: true
       - name: Run fuzz tests
-        if: matrix.run_tests && matrix.enabled && (github.event_name != 'pull_request' || contains(github.event.pull_request.head.ref, 'fuzz'))
+        if: matrix.run_tests && matrix.enabled && (github.event_name != 'pull_request' || contains(github.event.pull_request.head.ref, 'fuzz') || matrix.coverage)
         run: |
           export PATH=${HOME}/bin:${HOME}/.local/bin:${PATH}
           export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
@@ -335,6 +322,19 @@ jobs:
           ASAN: ${{ matrix.asan }}
           ASAN_OPTIONS: ${{ matrix.asan_options }}
           CC: ${{ matrix.compiler }}
+      - name: Generate coverage data
+        if: matrix.coverage && matrix.enabled
+        run: |
+          gcovr --version
+          gcovr --gcov-ignore-parse-errors=all --txt build/coverage.txt --cobertura build/coverage.xml build
+      - name: Upload coverage to Codecov
+        if: matrix.coverage
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          directory: build/
+          fail_ci_if_error: true
+          verbose: true
       - name: Upload test results
         if: always() && matrix.run_tests && matrix.enabled
         uses: actions/upload-artifact@v4
