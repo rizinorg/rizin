@@ -3764,6 +3764,8 @@ static void fcn_print_info(RzCore *core, RzAnalysisFunction *fcn, RzCmdStateOutp
 			pal->offset, pal->num, args_count);
 		core_analysis_var_list_show(core, fcn, RZ_ANALYSIS_VAR_STORAGE_REG, state);
 		core_analysis_var_list_show(core, fcn, RZ_ANALYSIS_VAR_STORAGE_STACK, state);
+		core_analysis_var_list_show(core, fcn, RZ_ANALYSIS_VAR_STORAGE_COMPOSITE, state);
+		core_analysis_var_list_show(core, fcn, RZ_ANALYSIS_VAR_STORAGE_EVAL_PENDING, state);
 	}
 
 	// traced
