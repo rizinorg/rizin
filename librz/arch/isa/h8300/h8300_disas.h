@@ -270,11 +270,12 @@ typedef struct h8300_cmd {
 	H8300InsnFormat fmt;
 	H8300Operand ops[H8300_OPERAND_MAX];
 	ut8 operand_count;
+	ut64 pc;
 } H8300Cmd;
 
 int h8300_analyze_op_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf);
 int h8300_analyze_op_il(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd);
-int h8300_decode_command(const ut8 *instr, struct h8300_cmd *cmd);
+int h8300_decode_command(const ut8 *instr, struct h8300_cmd *cmd, ut64 pc);
 RzAnalysisILConfig *h8300_il_config(RzAnalysis *a);
 
 #endif /* H8300_DISAS_H */

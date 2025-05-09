@@ -213,6 +213,9 @@ static int decode_sr16(const ut8 *bytes, struct h8300_cmd *cmd) {
 	return ret;
 }
 
+#define SIGN_EXT(value, bits) \
+	((((int)(value)) << ((8 * sizeof(int)) - (bits))) >> ((8 * sizeof(int)) - (bits)))
+
 static int decode_pc_rel(const ut8 *bytes, struct h8300_cmd *cmd) {
 	int ret = 2;
 
@@ -220,11 +223,13 @@ static int decode_pc_rel(const ut8 *bytes, struct h8300_cmd *cmd) {
 		return -1;
 	}
 
-	cmd->fmt = H8300_INSN_FORMAT_PCREL8;
-	OPS_ADD(H8300_OP_PCREL8, disp, (st8)bytes[1]);
+	st8 disp = SIGN_EXT(bytes[1], 8);
 
-	snprintf(cmd->operands, H8300_INSTR_MAXLEN, ".%d",
-		(st8)bytes[1]);
+	cmd->fmt = H8300_INSN_FORMAT_PCREL8;
+	OPS_ADD(H8300_OP_PCREL8, disp, disp);
+
+	snprintf(cmd->operands, H8300_INSTR_MAXLEN, ".%s0x%02x",
+		disp < 0 ? "-" : "", disp & 0x7f);
 
 	return ret;
 }
@@ -792,7 +797,8 @@ static int decode_i8r8(const ut8 *bytes, struct h8300_cmd *cmd) {
 	return ret;
 }
 
-int h8300_decode_command(const ut8 *instr, struct h8300_cmd *cmd) {
+int h8300_decode_command(const ut8 *instr, struct h8300_cmd *cmd, ut64 pc) {
+	cmd->pc = pc;
 	int ret = 0;
 
 	switch (instr[0] >> 4) {
@@ -1074,67 +1080,67 @@ int h8300_decode_command(const ut8 *instr, struct h8300_cmd *cmd) {
 		break;
 	case H8300_BRA:
 		cmd->id = H8300_INSN_BRA;
-		ret = decode_mi8(instr, cmd);
+		ret = decode_pc_rel(instr, cmd);
 		break;
 	case H8300_BRN:
 		cmd->id = H8300_INSN_BRN;
-		ret = decode_mi8(instr, cmd);
+		ret = decode_pc_rel(instr, cmd);
 		break;
 	case H8300_BHI:
 		cmd->id = H8300_INSN_BHI;
-		ret = decode_mi8(instr, cmd);
+		ret = decode_pc_rel(instr, cmd);
 		break;
 	case H8300_BLS:
 		cmd->id = H8300_INSN_BLS;
-		ret = decode_mi8(instr, cmd);
+		ret = decode_pc_rel(instr, cmd);
 		break;
 	case H8300_BCC:
 		cmd->id = H8300_INSN_BCC;
-		ret = decode_mi8(instr, cmd);
+		ret = decode_pc_rel(instr, cmd);
 		break;
 	case H8300_BCS:
 		cmd->id = H8300_INSN_BCS;
-		ret = decode_mi8(instr, cmd);
+		ret = decode_pc_rel(instr, cmd);
 		break;
 	case H8300_BNE:
 		cmd->id = H8300_INSN_BNE;
-		ret = decode_mi8(instr, cmd);
+		ret = decode_pc_rel(instr, cmd);
 		break;
 	case H8300_BEQ:
 		cmd->id = H8300_INSN_BEQ;
-		ret = decode_mi8(instr, cmd);
+		ret = decode_pc_rel(instr, cmd);
 		break;
 	case H8300_BVC:
 		cmd->id = H8300_INSN_BVC;
-		ret = decode_mi8(instr, cmd);
+		ret = decode_pc_rel(instr, cmd);
 		break;
 	case H8300_BVS:
 		cmd->id = H8300_INSN_BVS;
-		ret = decode_mi8(instr, cmd);
+		ret = decode_pc_rel(instr, cmd);
 		break;
 	case H8300_BPL:
 		cmd->id = H8300_INSN_BPL;
-		ret = decode_mi8(instr, cmd);
+		ret = decode_pc_rel(instr, cmd);
 		break;
 	case H8300_BMI:
 		cmd->id = H8300_INSN_BMI;
-		ret = decode_mi8(instr, cmd);
+		ret = decode_pc_rel(instr, cmd);
 		break;
 	case H8300_BGE:
 		cmd->id = H8300_INSN_BGE;
-		ret = decode_mi8(instr, cmd);
+		ret = decode_pc_rel(instr, cmd);
 		break;
 	case H8300_BLT:
 		cmd->id = H8300_INSN_BLT;
-		ret = decode_mi8(instr, cmd);
+		ret = decode_pc_rel(instr, cmd);
 		break;
 	case H8300_BGT:
 		cmd->id = H8300_INSN_BGT;
-		ret = decode_mi8(instr, cmd);
+		ret = decode_pc_rel(instr, cmd);
 		break;
 	case H8300_BLE:
 		cmd->id = H8300_INSN_BLE;
-		ret = decode_mi8(instr, cmd);
+		ret = decode_pc_rel(instr, cmd);
 		break;
 	case H8300_ORC:
 		cmd->id = H8300_INSN_ORC;

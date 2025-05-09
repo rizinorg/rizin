@@ -73,6 +73,16 @@ static RzILOpPure *rd16_op(H8300Cmd *cmd, ut8 i) {
 	return ADD(VARG(GPRs[op->rd.reg]), S16(op->rd.disp));
 }
 
+static RzILOpPure *pc_rel_op(H8300Cmd *cmd, ut8 i) {
+	H8300Operand *op = &OPS_GET(i);
+	if (op->typ != H8300_OP_PCREL8) {
+		RZ_LOG_ERROR("invalid op type pc relative\n");
+		return NULL;
+	}
+	st32 dst = (st32)cmd->pc + op->disp;
+	return U16((ut16)dst);
+}
+
 #define R8_OP(I)    r8_op(cmd, (I))
 #define R8_X(I, X)  r8_op_set(cmd, (I), (X))
 #define R16_OP(I)   r16_op(cmd, (I))
@@ -80,6 +90,7 @@ static RzILOpPure *rd16_op(H8300Cmd *cmd, ut8 i) {
 #define U16_OP(I)   u16_op(cmd, (I))
 #define U8_OP(I)    UNSIGNED(8, u16_op(cmd, (I)))
 #define RD16_OP(I)  rd16_op(cmd, (I))
+#define PCREL_OP(I) pc_rel_op(cmd, (I))
 
 typedef enum {
 	CCR_C,
@@ -529,6 +540,10 @@ static RzILOpEffect *op_das(H8300Cmd *cmd) {
 		ccr_unary_NZ(8, VARL("result")));
 }
 
+static RzILOpEffect *op_Bcc(H8300Cmd *cmd, RzILOpPure *cnd) {
+	return BRANCH(cnd, JMP(PCREL_OP(0)), NOP());
+}
+
 static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 	switch (cmd->id) {
 	case H8300_INSN_MOV_B: return op_mov_b(cmd);
@@ -699,22 +714,36 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 			ccr_unary_NZV0(8, VARL("result")),
 			R8_X(0, VARL("result")));
 
-	case H8300_INSN_BRA: break;
-	case H8300_INSN_BRN: break;
-	case H8300_INSN_BHI: break;
-	case H8300_INSN_BLS: break;
-	case H8300_INSN_BCC: break;
-	case H8300_INSN_BCS: break;
-	case H8300_INSN_BNE: break;
-	case H8300_INSN_BEQ: break;
-	case H8300_INSN_BVC: break;
-	case H8300_INSN_BVS: break;
-	case H8300_INSN_BPL: break;
-	case H8300_INSN_BMI: break;
-	case H8300_INSN_BGE: break;
-	case H8300_INSN_BLT: break;
-	case H8300_INSN_BGT: break;
-	case H8300_INSN_BLE: break;
+	case H8300_INSN_BRA:
+		return JMP(PCREL_OP(0));
+	case H8300_INSN_BRN:
+		return NOP();
+	case H8300_INSN_BHI:
+		return op_Bcc(cmd, INV(OR(ccr_val(CCR_C), ccr_val(CCR_Z))));
+	case H8300_INSN_BLS:
+		return op_Bcc(cmd, OR(ccr_val(CCR_C), ccr_val(CCR_Z)));
+	case H8300_INSN_BCC:
+		return op_Bcc(cmd, INV(ccr_val(CCR_C)));
+	case H8300_INSN_BCS:
+		return op_Bcc(cmd, ccr_val(CCR_C));
+	case H8300_INSN_BNE:
+		return op_Bcc(cmd, INV(ccr_val(CCR_Z)));
+	case H8300_INSN_BEQ:
+		return op_Bcc(cmd, ccr_val(CCR_Z));
+	case H8300_INSN_BVC:
+		return op_Bcc(cmd, INV(ccr_val(CCR_V)));
+	case H8300_INSN_BVS:
+		return op_Bcc(cmd, ccr_val(CCR_V));
+	case H8300_INSN_BPL: return op_Bcc(cmd, INV(ccr_val(CCR_Z)));
+	case H8300_INSN_BMI: return op_Bcc(cmd, ccr_val(CCR_Z));
+	case H8300_INSN_BGE:
+		return op_Bcc(cmd, INV(XOR(ccr_val(CCR_N), ccr_val(CCR_V))));
+	case H8300_INSN_BLT:
+		return op_Bcc(cmd, XOR(ccr_val(CCR_N), ccr_val(CCR_V)));
+	case H8300_INSN_BGT:
+		return op_Bcc(cmd, INV(OR(ccr_val(CCR_Z), XOR(ccr_val(CCR_N), ccr_val(CCR_V)))));
+	case H8300_INSN_BLE:
+		return op_Bcc(cmd, OR(ccr_val(CCR_Z), XOR(ccr_val(CCR_N), ccr_val(CCR_V))));
 	case H8300_INSN_MULXU: break;
 	case H8300_INSN_DIVXU: break;
 	case H8300_INSN_RTS: break;
