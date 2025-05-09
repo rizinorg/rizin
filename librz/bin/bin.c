@@ -879,7 +879,7 @@ RZ_API void rz_bin_set_user_ptr(RzBin *bin, void *user) {
 
 static RzBinSection *__get_vsection_at(RzBin *bin, ut64 vaddr) {
 	rz_return_val_if_fail(bin, NULL);
-	if (!bin->cur) {
+	if (!bin->cur || !bin->cur->o) {
 		return NULL;
 	}
 	return rz_bin_get_section_at(bin->cur->o, vaddr, true);
