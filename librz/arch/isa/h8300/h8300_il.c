@@ -612,6 +612,15 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 	case H8300_INSN_ORC: return op_logical_i8ccr(cmd, rz_il_op_new_log_or);
 	case H8300_INSN_XORC: return op_logical_i8ccr(cmd, rz_il_op_new_log_xor);
 	case H8300_INSN_ANDC: return op_logical_i8ccr(cmd, rz_il_op_new_log_and);
+	case H8300_INSN_DEC:
+		switch (cmd->fmt) {
+		case H8300_INSN_FORMAT_R8:
+			return SEQ3(
+				SETL("_res", SUB(R8_OP(0), S8(1))),
+				R8_X(0, VARL("_res")),
+				ccr_unary_NZV(8, VARL("_res"), EQ(VARL("_res"), U8(0x80))));
+		default: NOT_IMPLEMENTED;
+		}
 	case H8300_INSN_INC:
 		switch (cmd->fmt) {
 		case H8300_INSN_FORMAT_R8:
@@ -689,7 +698,7 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 			SETL("result", LOGNOT(R8_OP(0))),
 			ccr_unary_NZV0(8, VARL("result")),
 			R8_X(0, VARL("result")));
-	case H8300_INSN_DEC: break;
+
 	case H8300_INSN_BRA: break;
 	case H8300_INSN_BRN: break;
 	case H8300_INSN_BHI: break;
