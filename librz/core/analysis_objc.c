@@ -195,7 +195,7 @@ static RzCoreObjc *core_objc_new(RzCore *core) {
 			o->_const = s;
 		}
 	}
-	if (!o->_const || ((o->_selrefs || o->_msgrefs) && !(o->_data && o->_const))) {
+	if (!o->_const || !o->_selrefs || ((o->_selrefs || o->_msgrefs) && !(o->_data && o->_const))) {
 		free(o);
 		return NULL;
 	}
