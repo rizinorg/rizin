@@ -679,8 +679,16 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 				IL_FALSE,
 				LSB(R8_OP(0))),
 			R8_X(0, VARL("result")));
-	case H8300_INSN_NEG: break;
-	case H8300_INSN_NOT: break;
+	case H8300_INSN_NEG:
+		return SEQ3(
+			SETL("result", NEG(R8_OP(0))),
+			ccr_sub_b(S8(0), R8_OP(0), IL_FALSE),
+			R8_X(0, VARL("result")));
+	case H8300_INSN_NOT:
+		return SEQ3(
+			SETL("result", LOGNOT(R8_OP(0))),
+			ccr_unary_NZV0(8, VARL("result")),
+			R8_X(0, VARL("result")));
 	case H8300_INSN_DEC: break;
 	case H8300_INSN_BRA: break;
 	case H8300_INSN_BRN: break;
