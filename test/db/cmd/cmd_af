@@ -370,6 +370,47 @@ arg int arg2 @ xmm1
 EOF
 RUN
 
+NAME=afi var display
+FILE=bins/v850/hello-v850e
+CMDS=<<EOF
+aaa
+afi @ dbg.__call_exitprocs
+EOF
+EXPECT=<<EOF
+offset: 0x00101e6c
+name: dbg.__call_exitprocs
+size: 170
+is-pure: true
+realsz: 170
+stackframe: 0
+cyclomatic-cost: 0
+cyclomatic-complexity: 18
+loops: 7
+bits: 32
+type: sym
+num-bbs: 20
+edges: 36
+end-bbs: 1
+call-refs:
+data-refs:
+code-xrefs: 0x00100122 C
+noreturn: false
+in-degree: 1
+out-degree: 0
+data-xrefs:
+locals: 6
+args: 2
+var void (*anonymous_fcn_0x4d93)() fn @ r12
+var int n @ r28
+arg int code @ r6
+arg void *d @ r7
+var struct _atexit *p @ LOCLIST
+var struct _atexit **lastp @ ...
+var struct _on_exit_args *args @ LOCLIST
+var int i @ LOCLIST
+EOF
+RUN
+
 NAME=duplicate af+
 FILE==
 CMDS=<<EOF
