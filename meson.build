@@ -336,13 +336,6 @@ message('HAVE_PTRACE: @0@'.format(have_ptrace))
 message('USE_PTRACE_WRAP: @0@'.format(use_ptrace_wrap))
 
 checks_level = get_option('checks_level')
-if checks_level == 9999
-  if get_option('buildtype') == 'release'
-    checks_level = 0
-  else
-    checks_level = 3
-  endif
-endif
 message('RZ_CHECKS_LEVEL: @0@'.format(checks_level))
 if checks_level < 0 or checks_level > 3
   error('`checks_level` must be between 0 and 3.')
