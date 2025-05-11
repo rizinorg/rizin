@@ -25,11 +25,7 @@ typedef enum rz_log_level {
 	RZ_LOGLVL_NONE = 0xFF
 } RzLogLevel;
 
-#if RZ_CHECKS_LEVEL >= 2
 #define RZ_DEFAULT_LOGLVL RZ_LOGLVL_WARN
-#else
-#define RZ_DEFAULT_LOGLVL RZ_LOGLVL_ERROR
-#endif
 
 typedef void (*RzLogCallback)(const char *output, const char *funcname, const char *filename,
 	ut32 lineno, RzLogLevel level, const char *tag, const char *fmtstr, ...) RZ_PRINTF_CHECK(7, 8);

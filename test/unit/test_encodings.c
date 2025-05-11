@@ -61,11 +61,11 @@ bool test_rz_utf8_decode(void) {
  * \brief Examples partially taken from: https://en.wikipedia.org/wiki/UTF-16#Examples
  */
 bool test_rz_utf16_decode(void) {
+	RzCodePoint codepoint = 0;
 	const ut8 utf16le_surrogate[] = { 0xd8, 0x00 };
-	mu_assert_eq(rz_utf16_decode(utf16le_surrogate, 2, NULL, true), 0, "Invalid decode");
+	mu_assert_eq(rz_utf16_decode(utf16le_surrogate, 2, &codepoint, true), 0, "Invalid decode");
 
 	char utf8_out[5] = { 0 };
-	RzCodePoint codepoint = 0;
 	const ut8 utf16le_A[] = { 0x41, 0x00 };
 	const ut8 utf16be_A[] = { 0x00, 0x41 };
 
@@ -242,7 +242,7 @@ bool test_rz_utf32_decode(void) {
 	const ut8 utf32le_red_general_black_tower[] = { 0x60, 0xFA, 0x01, 0x00, 0x41, 0xFA, 0x01, 0x00 };
 
 	RzCodePoint cp;
-	mu_assert_eq(rz_utf32_decode(NULL, 0, &cp, false), 0, "Length check failed");
+	mu_assert_eq(rz_utf32_decode((ut8 *)INT_MIN, 0, &cp, false), 0, "Length check failed");
 	mu_assert_eq(rz_utf32_decode(utf32_size_1, sizeof(utf32_size_1), &cp, false), 0, "Length check failed");
 	mu_assert_eq(rz_utf32_decode(utf32_size_2, sizeof(utf32_size_2), &cp, false), 0, "Length check failed");
 	mu_assert_eq(rz_utf32_decode(utf32_size_3, sizeof(utf32_size_3), &cp, false), 0, "Length check failed");

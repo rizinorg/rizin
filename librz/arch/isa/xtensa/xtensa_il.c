@@ -325,9 +325,11 @@ static RzAnalysisLiftedILOp op_addx8(XtensaContext *ctx) {
 	return SETG(REGN(0), ADD(SHIFTL0(IREG(1), U32(3)), IREG(2)));
 }
 
+#if RZ_CHECKS_LEVEL != 0
 static uint8_t RRR_s(XtensaContext *ctx) {
 	return ctx->insn->bytes[1] & 0xf;
 }
+#endif
 
 static RzAnalysisLiftedILOp op_binary4(XtensaContext *ctx, fn_op2 f) {
 	rz_return_val_if_fail(FORMAT == XTENSA_INSN_FORM_RRR && RRR_s(ctx) % 4 == 0, NULL);

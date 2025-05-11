@@ -6053,7 +6053,7 @@ RZ_API RZ_OWN char *rz_core_analysis_var_to_string(RZ_NONNULL RzCore *core, RZ_N
 		return NULL;
 	}
 
-	bool color = rz_config_get_b(core->config, "scr.color");
+	bool color = rz_config_get_i(core->config, "scr.color") > 0;
 	bool color_arg = color && rz_config_get_b(core->config, "scr.color.args");
 	RzConsPrintablePalette *pal = &core->cons->context->pal;
 

@@ -195,7 +195,7 @@ static RzCoreObjc *core_objc_new(RzCore *core) {
 			o->_const = s;
 		}
 	}
-	if (!o->_const || ((o->_selrefs || o->_msgrefs) && !(o->_data && o->_const))) {
+	if (!o->_const || !o->_selrefs || ((o->_selrefs || o->_msgrefs) && !(o->_data && o->_const))) {
 		free(o);
 		return NULL;
 	}
@@ -278,6 +278,7 @@ static bool objc_find_refs(RzCore *core) {
 					total_xrefs++;
 				}
 			}
+			rz_list_free(list);
 		}
 	}
 	rz_core_notify_done(core, "%s", notify);

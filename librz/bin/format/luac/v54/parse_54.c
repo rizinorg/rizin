@@ -408,10 +408,10 @@ static ut64 lua_parse_protos(LuaProto *proto, RzBuffer *buffer, ut64 offset, ut6
 }
 
 LuaProto *lua_parse_body_54(RzBuffer *buffer, ut64 base_offset, ut64 data_size) {
-	LuaProto *ret_proto; /* construted proto for return */
+	LuaProto *ret_proto = lua_new_proto_entry(); /* construted proto for return */
 	ut64 offset; /* record offset */
 	ut64 delta_offset;
-	rz_return_val_if_fail((ret_proto = lua_new_proto_entry()), NULL);
+	rz_return_val_if_fail(ret_proto, NULL);
 
 	// start parsing
 	offset = base_offset;

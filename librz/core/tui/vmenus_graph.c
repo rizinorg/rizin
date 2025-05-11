@@ -89,6 +89,7 @@ static RzList /*<RzCoreVisualViewGraphItem *>*/ *__xrefs(RzCore *core, ut64 addr
 		}
 		rz_list_append(r, item);
 	}
+	rz_list_free(xrefs);
 	return r;
 }
 

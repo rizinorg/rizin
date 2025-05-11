@@ -629,12 +629,14 @@ RZ_API void rz_analysis_class_method_recover(RzAnalysis *analysis, RzBinClass *c
 			method.vtable_offset = -1;
 			RzAnalysisFunction *fcn = rz_analysis_get_function_at(analysis, sym->vaddr);
 			char *method_name = rz_str_dup(sym->name);
-			rz_str_split(method_name, '(');
+			if (method_name) {
+				rz_str_split(method_name, '(');
+			}
 			method.name = fcn ? rz_str_dup(fcn->name) : rz_str_dup(method_name);
 			// this replace is required due SDB using commas to split the stored data.
 			// some c++ function names might have templates like foo<char, int>()
 			// which breaks the decoding from the SDB data
-			method.real_name = rz_str_replace(method_name, ",", "#_#", 1);
+			method.real_name = method_name ? rz_str_replace(method_name, ",", "#_#", 1) : method_name;
 			method.method_type = RZ_ANALYSIS_CLASS_METHOD_DEFAULT;
 			rz_analysis_class_method_set(analysis, cls->name, &method);
 			rz_analysis_class_method_fini(&method);

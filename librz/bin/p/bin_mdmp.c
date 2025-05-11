@@ -35,12 +35,16 @@ static RzPVector /*<RzBinAddr *>*/ *mdmp_entries(RzBinFile *bf) {
 
 	rz_list_foreach (obj->pe32_bins, it, pe32_bin) {
 		vec = Pe32_rz_bin_mdmp_pe_get_entrypoint(pe32_bin);
-		rz_pvector_join(ret, vec);
+		if (vec) {
+			rz_pvector_join(ret, vec);
+		}
 		rz_pvector_free(vec);
 	}
 	rz_list_foreach (obj->pe64_bins, it, pe64_bin) {
 		vec = Pe64_rz_bin_mdmp_pe_get_entrypoint(pe64_bin);
-		rz_pvector_join(ret, vec);
+		if (vec) {
+			rz_pvector_join(ret, vec);
+		}
 		rz_pvector_free(vec);
 	}
 

@@ -207,9 +207,7 @@ static ut64 find_next_readable_region(task_t task, ut64 min_addr, ut64 *size_out
 }
 
 static int __read(RzIO *io, RzIODesc *desc, ut8 *buf, size_t len) {
-	rz_return_val_if_fail(io && desc && buf && len >= 0, -1);
-	RzIODescData *dd = (RzIODescData *)desc->data;
-	rz_return_val_if_fail(dd, -1);
+	rz_return_val_if_fail(io && desc && desc->data && buf && len >= 0, -1);
 	ut64 base_addr = io->off;
 	if (UT64_ADD_OVFCHK(base_addr, len)) {
 		return -1;

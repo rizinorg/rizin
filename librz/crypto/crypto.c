@@ -113,13 +113,13 @@ RZ_API RZ_OWN RzCrypto *rz_crypto_new(void) {
 	}
 
 	cry->plugins = ht_sp_new(HT_STR_DUP, NULL, NULL);
+	if (!cry->plugins) {
+		goto rz_crypto_new_bad;
+	}
 	for (size_t i = 0; i < RZ_ARRAY_SIZE(crypto_static_plugins); ++i) {
 		if (!ht_sp_insert(cry->plugins, crypto_static_plugins[i]->name, crypto_static_plugins[i])) {
 			RZ_LOG_WARN("Plugin '%s' was already added.\n", crypto_static_plugins[i]->name);
 		}
-	}
-	if (!cry->plugins) {
-		goto rz_crypto_new_bad;
 	}
 	return cry;
 

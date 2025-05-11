@@ -1263,8 +1263,7 @@ RZ_IPI ILPureEffectPair x86_il_fsub_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat
  * \brief Subtract \p y from \p x (reverse of \ref x86_il_fsub_with_rmode)
  */
 RZ_IPI ILPureEffectPair x86_il_fsubr_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_OWN RZ_NONNULL RzILOpFloat *y, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
-	ILPureEffectPair ret = { .val = NULL, .eff = NULL };
-	rz_return_val_if_fail(x && y && ctx, ret);
+	rz_return_val_if_fail(x && y && ctx, ((ILPureEffectPair){ .val = NULL, .eff = NULL }));
 	return x86_il_fsub_with_rmode(y, x);
 }
 
@@ -1292,8 +1291,7 @@ RZ_IPI ILPureEffectPair x86_il_fdiv_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat
  * \brief Divide \p y from \p x (reverse of \ref x86_il_fdiv_with_rmode)
  */
 RZ_IPI ILPureEffectPair x86_il_fdivr_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_OWN RZ_NONNULL RzILOpFloat *y, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
-	ILPureEffectPair ret = { .val = NULL, .eff = NULL };
-	rz_return_val_if_fail(x && y && ctx, ret);
+	rz_return_val_if_fail(x && y && ctx, ((ILPureEffectPair){ .val = NULL, .eff = NULL }));
 	return x86_il_fdiv_with_rmode(y, x);
 }
 
