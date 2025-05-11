@@ -72,7 +72,7 @@ jobs:
             build_system: meson
             compiler: clang
             run_tests: true
-            meson_options: -Dbuildtype=release --werror
+            meson_options: -Dbuildtype=release -Dchecks_level=0 --werror
             enabled: ${{ (github.event_name != 'pull_request' || contains(github.head_ref, 'clang')) && needs.changes.outputs.edited == 'true' }}
             timeout: 45
             allow_failure: false
