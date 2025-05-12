@@ -1061,6 +1061,9 @@ static void patch_reloc_mips(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_ad
 		}
 		rz_write_ble32(buf, val, big_endian);
 		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		break;
+	case RZ_MIPS_NONE:
+		break;
 	}
 }
 
