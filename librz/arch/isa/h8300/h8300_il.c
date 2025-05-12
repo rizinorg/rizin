@@ -744,8 +744,14 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 		return op_Bcc(cmd, INV(OR(ccr_val(CCR_Z), XOR(ccr_val(CCR_N), ccr_val(CCR_V)))));
 	case H8300_INSN_BLE:
 		return op_Bcc(cmd, OR(ccr_val(CCR_Z), XOR(ccr_val(CCR_N), ccr_val(CCR_V))));
-	case H8300_INSN_MULXU: break;
-	case H8300_INSN_DIVXU: break;
+	case H8300_INSN_MULXU:
+		return R16_X(1, MUL(UNSIGNED(16, R8_OP(0)), LOGAND(R16_OP(1), U16(0x00ff))));
+	case H8300_INSN_DIVXU:
+		return SEQ4(
+			SETL("quotient", UNSIGNED(8, DIV(R16_OP(1), UNSIGNED(16, R8_OP(0))))),
+			SETL("remainder", UNSIGNED(8, MOD(R16_OP(1), UNSIGNED(16, R8_OP(0))))),
+			ccr_unary_NZ(8, R8_OP(0)),
+			R16_X(1, APPEND(VARL("remainder"), VARL("quotient"))));
 	case H8300_INSN_RTS: break;
 	case H8300_INSN_BSR: break;
 	case H8300_INSN_RTE: break;
