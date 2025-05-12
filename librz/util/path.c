@@ -84,11 +84,11 @@ err:
  * \brief Return \p path prefixed by the Rizin install prefix
  *
  * The install prefix is taken from the build-time configuration RZ_PREFIX,
- * unless Rizin was not compiled as "portable". In such a case the prefix is
- * either discovered from the path of the executable calling this function or
- * stored via the path variable
+ * unless Rizin was compiled as "portable". In such a case the prefix is either
+ * provided via the path argument or discovered from the path of the executable
+ * calling this function.
  *
- * \param path Path to use when to prefix or NULL to use the binary location
+ * \param path Path to use when prefixing or NULL to use the executable location
  */
 RZ_API void rz_path_set_prefix(RZ_NONNULL const char *path) {
 #if RZ_IS_PORTABLE
@@ -108,7 +108,7 @@ RZ_API void rz_path_set_prefix(RZ_NONNULL const char *path) {
  * \brief Return \p path prefixed by the Rizin install prefix
  *
  * The install prefix is taken from the build-time configuration RZ_PREFIX,
- * unless Rizin was not compiled as "portable". In such a case the prefix is
+ * unless Rizin was compiled as "portable". In such a case the prefix is
  * discovered from the path of the executable calling this function.
  *
  * \param path Path to put in the install prefix context or NULL to just get the install prefix
