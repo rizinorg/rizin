@@ -752,6 +752,15 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 			SETL("remainder", UNSIGNED(8, MOD(R16_OP(1), UNSIGNED(16, R8_OP(0))))),
 			ccr_unary_NZ(8, R8_OP(0)),
 			R16_X(1, APPEND(VARL("remainder"), VARL("quotient"))));
+	case H8300_INSN_EEPMOV:
+		return SEQ2(
+			SETL("i", U8(0)),
+			REPEAT(
+				ULT(VARL("i"), UNSIGNED(8, VARG("r4"))),
+				SEQ2(
+					STORE(ADD(VARG("r6"), UNSIGNED(16, MUL(VARL("i"), U8(8)))),
+						LOAD(ADD(VARG("r6"), UNSIGNED(16, MUL(VARL("i"), U8(8)))))),
+					SETL("i", ADD(VARL("i"), U8(1))))));
 	case H8300_INSN_RTS: break;
 	case H8300_INSN_BSR: break;
 	case H8300_INSN_RTE: break;
@@ -768,7 +777,6 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 	case H8300_INSN_BAND: break;
 	case H8300_INSN_BIAND: break;
 	case H8300_INSN_BILD: break;
-	case H8300_INSN_EEPMOV: break;
 	case H8300_INSN_BOR: break;
 	case H8300_INSN_BIXOR: break;
 	case H8300_INSN_BLD: break;
