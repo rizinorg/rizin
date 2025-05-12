@@ -761,9 +761,19 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 					STORE(ADD(VARG("r6"), UNSIGNED(16, MUL(VARL("i"), U8(8)))),
 						LOAD(ADD(VARG("r6"), UNSIGNED(16, MUL(VARL("i"), U8(8)))))),
 					SETL("i", ADD(VARL("i"), U8(1))))));
-	case H8300_INSN_RTS: break;
+	case H8300_INSN_RTS:
+		return SEQ3(
+			SETL("@sp", LOADW(16, MUL(VARG("r7"), U16(8)))),
+			SETG("r7", ADD(VARG("r7"), U16(1))),
+			JMP(VARL("@sp")));
+	case H8300_INSN_RTE:
+		return SEQ5(
+			SETL("_ccr", LOADW(16, MUL(VARG("r7"), U16(8)))),
+			SETL("_pc", LOADW(16, ADD(MUL(VARG("r7"), U16(8)), U16(16)))),
+			SETG("r7", ADD(VARG("r7"), U16(4))),
+			SETG("ccr", UNSIGNED(8, SHIFTR0(VARL("_ccr"), U8(8)))),
+			JMP(VARL("_pc")));
 	case H8300_INSN_BSR: break;
-	case H8300_INSN_RTE: break;
 	case H8300_INSN_JMP: break;
 	case H8300_INSN_JSR: break;
 	case H8300_INSN_BSET: break;
