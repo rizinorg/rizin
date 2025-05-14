@@ -1022,7 +1022,6 @@ RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_bin_java_class_strings(RZ_NONNUL
 				continue;
 			}
 			bstr->paddr = cpool->offset;
-			bstr->ordinal = i;
 			bstr->length = cpool->size;
 			bstr->size = cpool->size;
 			bstr->string = string;
@@ -1040,7 +1039,6 @@ RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_bin_java_class_strings(RZ_NONNUL
 				continue;
 			}
 			bstr->paddr = attr->offset;
-			bstr->ordinal = i;
 			bstr->length = attr->attribute_length;
 			bstr->size = attr->attribute_length;
 			bstr->string = rz_str_dup(attr->info);

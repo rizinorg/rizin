@@ -213,19 +213,6 @@ static bool create_string_search_thread(RzThreadPool *pool, RzThreadQueue *inter
 	return true;
 }
 
-static int string_compare_sort(const RzBinString *a, const RzBinString *b, void *user) {
-	if (b->paddr > a->paddr) {
-		return -1;
-	} else if (b->paddr < a->paddr) {
-		return 1;
-	} else if (b->vaddr > a->vaddr) {
-		return -1;
-	} else if (b->vaddr < a->vaddr) {
-		return 1;
-	}
-	return 0;
-}
-
 static void string_scan_range_cfstring(RzBinFile *bf, HtUP *strings_db, RzPVector /*<RzBinString *>*/ *results, const RzBinSection *section) {
 	// load objc/swift strings from CFstring table section
 
@@ -268,7 +255,6 @@ static void string_scan_range_cfstring(RzBinFile *bf, HtUP *strings_db, RzPVecto
 		bs->type = s->type;
 		bs->length = s->length;
 		bs->size = s->size;
-		bs->ordinal = s->ordinal;
 		bs->vaddr = cfstr_vaddr;
 		bs->paddr = rz_bin_object_v2p(o, bs->vaddr);
 		bs->string = rz_str_newf("cstr.%s", s->string);
@@ -276,6 +262,19 @@ static void string_scan_range_cfstring(RzBinFile *bf, HtUP *strings_db, RzPVecto
 		ht_up_insert(strings_db, bs->vaddr, bs);
 	}
 	free(sbuf);
+}
+
+static int string_compare_sort(const RzBinString *a, const RzBinString *b, void *user) {
+	if (b->paddr > a->paddr) {
+		return -1;
+	} else if (b->paddr < a->paddr) {
+		return 1;
+	} else if (b->vaddr > a->vaddr) {
+		return -1;
+	} else if (b->vaddr < a->vaddr) {
+		return 1;
+	}
+	return 0;
 }
 
 static void scan_cfstring_table(RzBinFile *bf, HtUP *strings_db, RzPVector /*<RzBinString *>*/ *results, ut64 max_region_size) {
@@ -505,17 +504,6 @@ RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_bin_file_strings(RZ_NONNULL RzBi
 		scan_cfstring_table(bf, strings_db, results, opt->max_region_size);
 	}
 	rz_pvector_sort(results, (RzPVectorComparator)string_compare_sort, NULL);
-
-	{
-		void **it;
-		RzBinString *bstr;
-		ut32 ordinal = 0;
-		rz_pvector_foreach (results, it) {
-			bstr = *it;
-			bstr->ordinal = ordinal;
-			ordinal++;
-		}
-	}
 
 fail:
 	if (pool) {

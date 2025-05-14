@@ -190,8 +190,8 @@ name size address flags mirror
 -------------------------------
 
 [Strings]
-nth paddr vaddr len size section type string 
----------------------------------------------
+paddr vaddr len size section type string 
+-----------------------------------------
 
 nth vaddr bind type lib name 
 -----------------------------
@@ -201,8 +201,8 @@ nth paddr vaddr bind type size lib name
 ----------------------------------------
 paddr size vaddr vsize align perm name type flags 
 --------------------------------------------------
-nth paddr vaddr len size section type string 
----------------------------------------------
+paddr vaddr len size section type string 
+-----------------------------------------
 EOF
 RUN
 
@@ -3234,24 +3234,24 @@ iz
 EOF
 EXPECT=<<EOF
 -- default --
-nth      paddr      vaddr len size section type  string       
---------------------------------------------------------------
-  0 0x000004b0 0x080484b0  12   13 .rodata ascii Hello world!
+     paddr      vaddr len size section type  string       
+----------------------------------------------------------
+0x000004b0 0x080484b0  12   13 .rodata ascii Hello world!
 -- geq 12 --
-nth      paddr      vaddr len size section type  string       
---------------------------------------------------------------
-  0 0x000004b0 0x080484b0  12   13 .rodata ascii Hello world!
+     paddr      vaddr len size section type  string       
+----------------------------------------------------------
+0x000004b0 0x080484b0  12   13 .rodata ascii Hello world!
 -- geq 13 --
-nth paddr vaddr len size section type string 
----------------------------------------------
+paddr vaddr len size section type string 
+-----------------------------------------
 -- geq 0 --
-nth      paddr      vaddr len size section type  string       
---------------------------------------------------------------
-  0 0x000004b0 0x080484b0  12   13 .rodata ascii Hello world!
+     paddr      vaddr len size section type  string       
+----------------------------------------------------------
+0x000004b0 0x080484b0  12   13 .rodata ascii Hello world!
 -- small buffer 12 --
-nth      paddr      vaddr len size section type  string       
---------------------------------------------------------------
-  0 0x000004b0 0x080484b0  12   12 .rodata ascii Hello world!
+     paddr      vaddr len size section type  string       
+----------------------------------------------------------
+0x000004b0 0x080484b0  12   12 .rodata ascii Hello world!
 EOF
 RUN
 
@@ -3266,31 +3266,31 @@ iz
 EOF
 EXPECT=<<EOF
 -- default --
-nth      paddr       vaddr len size section             type  string            
---------------------------------------------------------------------------------
-  0 0x00000d58 0x100000d58   9   10 2.__TEXT.__cstring  ascii sayHello:
-  1 0x00000d62 0x100000d62   4    5 2.__TEXT.__cstring  ascii init
-  2 0x00000d67 0x100000d67   5    6 2.__TEXT.__cstring  ascii alloc
-  3 0x00000d6d 0x100000d6d   5    6 2.__TEXT.__cstring  ascii Hahha
-  4 0x00000d73 0x100000d73  12   13 2.__TEXT.__cstring  ascii Hello World 
-  5 0x00000d86 0x100000d86   9   10 2.__TEXT.__cstring  ascii callMeNot
-  6 0x00000d90 0x100000d90   7    8 2.__TEXT.__cstring  ascii v16@0:8
-  7 0x00000d98 0x100000d98   9   10 2.__TEXT.__cstring  ascii sayHello2
-  8 0x00000da2 0x100000da2  10   11 2.__TEXT.__cstring  ascii v20@0:8i16
-  9 0x00000dad 0x100000dad  11   12 2.__TEXT.__cstring  ascii sayHello3::
- 10 0x00000db9 0x100000db9  13   14 2.__TEXT.__cstring  ascii v24@0:8i16i20
- 11 0x00000dc7 0x100000dc7   8    9 2.__TEXT.__cstring  ascii sayLong:
- 12 0x00000dd0 0x100000dd0  10   11 2.__TEXT.__cstring  ascii v24@0:8Q16
- 13 0x00000ddb 0x100000ddb   7    8 2.__TEXT.__cstring  ascii @16@0:8
- 14 0x00000de3 0x100000de3   4    5 2.__TEXT.__cstring  ascii Test
- 15 0x00001058 0x100001058   5    6 9.__DATA.__cfstring ascii cstr.Hahha
- 16 0x00001078 0x100001078  12   13 9.__DATA.__cfstring ascii cstr.Hello World 
+     paddr       vaddr len size section             type  string            
+----------------------------------------------------------------------------
+0x00000d58 0x100000d58   9   10 2.__TEXT.__cstring  ascii sayHello:
+0x00000d62 0x100000d62   4    5 2.__TEXT.__cstring  ascii init
+0x00000d67 0x100000d67   5    6 2.__TEXT.__cstring  ascii alloc
+0x00000d6d 0x100000d6d   5    6 2.__TEXT.__cstring  ascii Hahha
+0x00000d73 0x100000d73  12   13 2.__TEXT.__cstring  ascii Hello World 
+0x00000d86 0x100000d86   9   10 2.__TEXT.__cstring  ascii callMeNot
+0x00000d90 0x100000d90   7    8 2.__TEXT.__cstring  ascii v16@0:8
+0x00000d98 0x100000d98   9   10 2.__TEXT.__cstring  ascii sayHello2
+0x00000da2 0x100000da2  10   11 2.__TEXT.__cstring  ascii v20@0:8i16
+0x00000dad 0x100000dad  11   12 2.__TEXT.__cstring  ascii sayHello3::
+0x00000db9 0x100000db9  13   14 2.__TEXT.__cstring  ascii v24@0:8i16i20
+0x00000dc7 0x100000dc7   8    9 2.__TEXT.__cstring  ascii sayLong:
+0x00000dd0 0x100000dd0  10   11 2.__TEXT.__cstring  ascii v24@0:8Q16
+0x00000ddb 0x100000ddb   7    8 2.__TEXT.__cstring  ascii @16@0:8
+0x00000de3 0x100000de3   4    5 2.__TEXT.__cstring  ascii Test
+0x00001058 0x100001058   5    6 9.__DATA.__cfstring ascii cstr.Hahha
+0x00001078 0x100001078  12   13 9.__DATA.__cfstring ascii cstr.Hello World 
 -- geq 12 --
-nth      paddr       vaddr len size section             type  string            
---------------------------------------------------------------------------------
-  0 0x00000d73 0x100000d73  12   13 2.__TEXT.__cstring  ascii Hello World 
-  1 0x00000db9 0x100000db9  13   14 2.__TEXT.__cstring  ascii v24@0:8i16i20
-  2 0x00001078 0x100001078  12   13 9.__DATA.__cfstring ascii cstr.Hello World 
+     paddr       vaddr len size section             type  string            
+----------------------------------------------------------------------------
+0x00000d73 0x100000d73  12   13 2.__TEXT.__cstring  ascii Hello World 
+0x00000db9 0x100000db9  13   14 2.__TEXT.__cstring  ascii v24@0:8i16i20
+0x00001078 0x100001078  12   13 9.__DATA.__cfstring ascii cstr.Hello World 
 EOF
 RUN
 
@@ -3620,9 +3620,9 @@ NAME=iz (file x86_64)
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=iz
 EXPECT=<<EOF
-nth      paddr      vaddr len size section type  string      
--------------------------------------------------------------
-  0 0x000005c4 0x004005c4  11   12 .rodata ascii Hello World
+     paddr      vaddr len size section type  string      
+---------------------------------------------------------
+0x000005c4 0x004005c4  11   12 .rodata ascii Hello World
 EOF
 RUN
 
@@ -3679,8 +3679,8 @@ FILE=bins/elf/analysis/hello-linux-x86_64
 ARGS=-n
 CMDS=izz~puts
 EXPECT=<<EOF
-  4 0x000002fa 0x000002fa   4    5         ascii   puts
- 65 0x00001953 0x00001953  17   18         ascii   puts@@GLIBC_2.2.5
+0x000002fa 0x000002fa   4    5         ascii   puts
+0x00001953 0x00001953  17   18         ascii   puts@@GLIBC_2.2.5
 EOF
 RUN
 
@@ -3692,7 +3692,7 @@ e bin.str.purge=all,!0x2fa,!0x1953
 izzj
 EOF
 EXPECT=<<EOF
-[{"vaddr":762,"paddr":762,"ordinal":4,"size":5,"length":4,"section":"","type":"ascii","string":"puts"},{"vaddr":6483,"paddr":6483,"ordinal":65,"size":18,"length":17,"section":"","type":"ascii","string":"puts@@GLIBC_2.2.5"}]
+[{"vaddr":762,"paddr":762,"size":5,"length":4,"section":"","type":"ascii","string":"puts"},{"vaddr":6483,"paddr":6483,"size":18,"length":17,"section":"","type":"ascii","string":"puts@@GLIBC_2.2.5"}]
 EOF
 RUN
 
@@ -3703,7 +3703,7 @@ e bin.str.purge=all,!0x4002fa,!0x15b
 izzj
 EOF
 EXPECT=<<EOF
-[{"vaddr":4195066,"paddr":762,"ordinal":4,"size":5,"length":4,"section":".dynstr","type":"ascii","string":"puts"}]
+[{"vaddr":4195066,"paddr":762,"size":5,"length":4,"section":".dynstr","type":"ascii","string":"puts"}]
 EOF
 RUN
 
@@ -3740,8 +3740,8 @@ iz~green
 iz~wall
 EOF
 EXPECT=<<EOF
-  5 0x00002248 0x00402248  57  118 .rodata utf16le \nutf16le> \\u00a2\\u20ac\\U00010348 in green:\e[32m ¢€𐍈 \e[0m\n blocks=Basic Latin,Latin-1 Supplement,Currency Symbols,Gothic
-  7 0x000022c8 0x004022c8  33   68 .rodata utf16le is a wall with no embedded zeros\n
+0x00002248 0x00402248  57  118 .rodata utf16le \nutf16le> \\u00a2\\u20ac\\U00010348 in green:\e[32m ¢€𐍈 \e[0m\n blocks=Basic Latin,Latin-1 Supplement,Currency Symbols,Gothic
+0x000022c8 0x004022c8  33   68 .rodata utf16le is a wall with no embedded zeros\n
 EOF
 RUN
 
@@ -3755,9 +3755,9 @@ iz~Mountain
 izz~Linux_wide
 EOF
 EXPECT=<<EOF
- 16 0x0000258c 0x0040258c  55  224 .rodata utf32le utf32le> \\u00a2\\u20ac\\U00010348 in cyan:\e[36m ¢€𐍈 \e[0m\n blocks=Basic Latin,Latin-1 Supplement,Currency Symbols,Gothic
- 17 0x0000266c 0x0040266c  48  196 .rodata utf32le Mountain range with embedded quad zeros: 𐌀A𐌀A𐌀A\n blocks=Basic Latin,Old Italic
-135 0x00002528 0x00402528  24  100 .rodata            utf32le \tLinux_wide\\esc: \e[0m¡\r\n blocks=Basic Latin,Latin-1 Supplement
+0x0000258c 0x0040258c  55  224 .rodata utf32le utf32le> \\u00a2\\u20ac\\U00010348 in cyan:\e[36m ¢€𐍈 \e[0m\n blocks=Basic Latin,Latin-1 Supplement,Currency Symbols,Gothic
+0x0000266c 0x0040266c  48  196 .rodata utf32le Mountain range with embedded quad zeros: 𐌀A𐌀A𐌀A\n blocks=Basic Latin,Old Italic
+0x00002528 0x00402528  24  100 .rodata            utf32le \tLinux_wide\\esc: \e[0m¡\r\n blocks=Basic Latin,Latin-1 Supplement
 EOF
 RUN
 
@@ -3769,23 +3769,23 @@ iz~SRSPRHEX
 iz~SRSTASK
 EOF
 EXPECT=<<EOF
- 14 0x000002f6 0x000002f6   8    9         ibm037  SRSGENER
- 19 0x000004dc 0x000004dc   8    9         ibm037  SRSGENER
- 22 0x00000668 0x00000668  92   93         ibm037  SRSGENER_03/06/08_14.16 SRS Version 1.3.0_BASE    COPYRIGHT 1998-2008 DAVID W DANNER ALL RIG
- 63 0x00001682 0x00001682  30   31         ibm037  SRSGENERNO     *SRS>   NONHELD
-115 0x00002faa 0x00002faa  49   50         ibm037  SHUTDOWNSRSOPTS SRSTBLK SRSGENERALL     STARTINGS
- 10 0x0000029a 0x0000029a   8    9         ibm037  SRSPRHEX
- 17 0x00000362 0x00000362   8    9         ibm037  SRSPRHEX
- 64 0x000016d4 0x000016d4   8    9         ibm037  SRSPRHEX
- 67 0x00001861 0x00001861  27   28         ibm037  SRSPRHEX_03/06/08_14.17°Ö}\f
- 71 0x0000191f 0x0000191f   9   10         ibm037  ÏSRSPRHEX
-121 0x0000315b 0x0000315b  27   28         ibm037  SRSPRHEX_03/06/08_14.17°Ö}\f
-125 0x0000323f 0x0000323f   9   10         ibm037  3SRSPRHEX
-191 0x00004c0f 0x00004c0f  27   28         ibm037  SRSPRHEX_03/06/08_14.17°Ö}\f
- 18 0x000003ba 0x000003ba   8    9         ibm037  SRSTASK 
- 91 0x00002545 0x00002545  12   13         ibm037  «SRSTASK  \-
-124 0x00003230 0x00003230   8    9         ibm037  SRSTASK 
-130 0x000033e4 0x000033e4 103  104         ibm037  SRSTASK_12/31/08_20.31 SRS Version 1.3.0_A13001  COPYRIGHT 1998-2008 DAVID W DANNER ALL RIGHTS RESERVED
+0x000002f6 0x000002f6   8    9         ibm037  SRSGENER
+0x000004dc 0x000004dc   8    9         ibm037  SRSGENER
+0x00000668 0x00000668  92   93         ibm037  SRSGENER_03/06/08_14.16 SRS Version 1.3.0_BASE    COPYRIGHT 1998-2008 DAVID W DANNER ALL RIG
+0x00001682 0x00001682  30   31         ibm037  SRSGENERNO     *SRS>   NONHELD
+0x00002faa 0x00002faa  49   50         ibm037  SHUTDOWNSRSOPTS SRSTBLK SRSGENERALL     STARTINGS
+0x0000029a 0x0000029a   8    9         ibm037  SRSPRHEX
+0x00000362 0x00000362   8    9         ibm037  SRSPRHEX
+0x000016d4 0x000016d4   8    9         ibm037  SRSPRHEX
+0x00001861 0x00001861  27   28         ibm037  SRSPRHEX_03/06/08_14.17°Ö}\f
+0x0000191f 0x0000191f   9   10         ibm037  ÏSRSPRHEX
+0x0000315b 0x0000315b  27   28         ibm037  SRSPRHEX_03/06/08_14.17°Ö}\f
+0x0000323f 0x0000323f   9   10         ibm037  3SRSPRHEX
+0x00004c0f 0x00004c0f  27   28         ibm037  SRSPRHEX_03/06/08_14.17°Ö}\f
+0x000003ba 0x000003ba   8    9         ibm037  SRSTASK 
+0x00002545 0x00002545  12   13         ibm037  «SRSTASK  \-
+0x00003230 0x00003230   8    9         ibm037  SRSTASK 
+0x000033e4 0x000033e4 103  104         ibm037  SRSTASK_12/31/08_20.31 SRS Version 1.3.0_A13001  COPYRIGHT 1998-2008 DAVID W DANNER ALL RIGHTS RESERVED
 EOF
 RUN
 
@@ -3798,8 +3798,8 @@ e str.escbslash=false
 iz~Linux_wide
 EOF
 EXPECT=<<EOF
- 17 0x00002528 0x00402528  24  100 .rodata utf32le \tLinux_wide\\esc: \e[0m¡\r\n blocks=Basic Latin,Latin-1 Supplement
- 17 0x00002528 0x00402528  24  100 .rodata utf32le \tLinux_wide\esc: \e[0m¡\r\n blocks=Basic Latin,Latin-1 Supplement
+0x00002528 0x00402528  24  100 .rodata utf32le \tLinux_wide\\esc: \e[0m¡\r\n blocks=Basic Latin,Latin-1 Supplement
+0x00002528 0x00402528  24  100 .rodata utf32le \tLinux_wide\esc: \e[0m¡\r\n blocks=Basic Latin,Latin-1 Supplement
 EOF
 RUN
 
@@ -3811,10 +3811,10 @@ iz~abcdef
 iz~123456
 EOF
 EXPECT=<<EOF
-  1 0x0000060c 0x0040060c   6   24 .rodata utf32le ABCDEF
-  1 0x0000060c 0x0040060c   6   24 .rodata utf32le ABCDEF
-  2 0x00000650 0x00400650  10   40 .rodata utf32le abcdef𐍈  g blocks=Basic Latin,Gothic
-  3 0x00000694 0x00400694   6   24 .rodata utf32le 123456
+0x0000060c 0x0040060c   6   24 .rodata utf32le ABCDEF
+0x0000060c 0x0040060c   6   24 .rodata utf32le ABCDEF
+0x00000650 0x00400650  10   40 .rodata utf32le abcdef𐍈  g blocks=Basic Latin,Gothic
+0x00000694 0x00400694   6   24 .rodata utf32le 123456
 EOF
 RUN
 
@@ -3834,13 +3834,13 @@ EXPECT=<<EOF
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x00000000  5155 5657 5857 595a 5b5c 5d5e 5f52 0000  QUVWXWYZ[\]^_R..
 
-nth      paddr      vaddr len size section type  string         
-----------------------------------------------------------------
-  0 0x00000000 0x00000000  14   15         ascii QUVWXWYZ[\]^_R
+     paddr      vaddr len size section type  string         
+------------------------------------------------------------
+0x00000000 0x00000000  14   15         ascii QUVWXWYZ[\]^_R
 
-nth      paddr      vaddr len size section type  string          
------------------------------------------------------------------
-  0 0x00000000 0x00000000  14   15         ascii QUVWXWYZ[\\]^_R
+     paddr      vaddr len size section type  string          
+-------------------------------------------------------------
+0x00000000 0x00000000  14   15         ascii QUVWXWYZ[\\]^_R
 EOF
 RUN
 
@@ -3863,16 +3863,16 @@ wx 26252625262526250000
 .(izzenc utf16le)
 EOF
 EXPECT=<<EOF
-  0 0x00000004 0x00000004   8    9         ascii abcdefgh
-  0 0x00000004 0x00000004   8    9         ascii abcdefgh
-  0 0x00000004 0x00000004   8    9         ascii abcdefgh
-  0 0x00000000 0x00000000   6   14         utf16le ki扡摣晥桧 blocks=Basic Latin,CJK Unified Ideographs
+0x00000004 0x00000004   8    9         ascii abcdefgh
+0x00000004 0x00000004   8    9         ascii abcdefgh
+0x00000004 0x00000004   8    9         ascii abcdefgh
+0x00000000 0x00000000   6   14         utf16le ki扡摣晥桧 blocks=Basic Latin,CJK Unified Ideographs
 
-  0 0x00000001 0x00000001   6   14         utf16le %%%%最h blocks=Basic Latin,CJK Unified Ideographs
-  0 0x00000000 0x00000000   4   10         utf16le ──── blocks=Box Drawing
+0x00000001 0x00000001   6   14         utf16le %%%%最h blocks=Basic Latin,CJK Unified Ideographs
+0x00000000 0x00000000   4   10         utf16le ──── blocks=Box Drawing
 
-  0 0x00000000 0x00000000   8    9         ascii &%&%&%&%
-  0 0x00000000 0x00000000   4   10         utf16le ┦┦┦┦ blocks=Box Drawing
+0x00000000 0x00000000   8    9         ascii &%&%&%&%
+0x00000000 0x00000000   4   10         utf16le ┦┦┦┦ blocks=Box Drawing
 EOF
 RUN
 
@@ -3892,9 +3892,9 @@ o--
 rm .tmp/strenc-bin
 EOF
 EXPECT=<<EOF
-  0 0x000004b0 0x080484b0  12   13 .rodata ascii Hello world!
-  0 0x000004b4 0x080484b4   8    9 .rodata ascii abcdefgh
-  0 0x000004b4 0x080484b4   8    9 .rodata ascii abcdefgh
+0x000004b0 0x080484b0  12   13 .rodata ascii Hello world!
+0x000004b4 0x080484b4   8    9 .rodata ascii abcdefgh
+0x000004b4 0x080484b4   8    9 .rodata ascii abcdefgh
 EOF
 RUN
 
@@ -4004,7 +4004,7 @@ EXPECT=<<EOF
 0x004022df  0074 0068 0020 006e 006f 0020 0065 006d  .t.h. .n.o. .e.m
 0x004022ef  0062 0065 0064 0064 0065 0064 0020 007a  .b.e.d.d.e.d. .z
 
-[{"vaddr":4202996,"paddr":8692,"ordinal":2,"size":11,"length":10,"section":".rodata","type":"ascii","string":"en_US.utf8"},{"vaddr":4203007,"paddr":8703,"ordinal":3,"size":61,"length":54,"section":".rodata","type":"utf8","string":"utf8> \\u00a2\\u20ac\\U00010348 in yellow:\u001b[33m ¢€𐍈 \u001b[0m\n","blocks":["Basic Latin","Latin-1 Supplement","Currency Symbols","Gothic"]},{"vaddr":4203208,"paddr":8904,"ordinal":7,"size":68,"length":33,"section":".rodata","type":"utf16le","string":"is a wall with no embedded zeros\n"}]
+[{"vaddr":4202996,"paddr":8692,"size":11,"length":10,"section":".rodata","type":"ascii","string":"en_US.utf8"},{"vaddr":4203007,"paddr":8703,"size":61,"length":54,"section":".rodata","type":"utf8","string":"utf8> \\u00a2\\u20ac\\U00010348 in yellow:\u001b[33m ¢€𐍈 \u001b[0m\n","blocks":["Basic Latin","Latin-1 Supplement","Currency Symbols","Gothic"]},{"vaddr":4203208,"paddr":8904,"size":68,"length":33,"section":".rodata","type":"utf16le","string":"is a wall with no embedded zeros\n"}]
 EOF
 RUN
 
@@ -4015,7 +4015,7 @@ e bin.str.purge=all,!4195920
 izzj
 EOF
 EXPECT=<<EOF
-[{"vaddr":4195920,"paddr":1616,"ordinal":13,"size":40,"length":10,"section":".rodata","type":"utf32le","string":"abcdef𐍈  g","blocks":["Basic Latin","Gothic"]}]
+[{"vaddr":4195920,"paddr":1616,"size":40,"length":10,"section":".rodata","type":"utf32le","string":"abcdef𐍈  g","blocks":["Basic Latin","Gothic"]}]
 EOF
 RUN
 
@@ -4068,41 +4068,41 @@ e bin.str.purge=all,!0x413220-0x413235
 EOF
 EXPECT=<<EOF
 --1--
-1089 0x00012420 0x00412420   5    5 .text              ascii   AWAVA
+0x00012420 0x00412420   5    5 .text              ascii   AWAVA
 --2--
 --3--
-  0 0x000131d8 0x004131d8  11   12 .rodata ascii dev_ino_pop
-  1 0x00013228 0x00413228  10   11 .rodata ascii sort_files
-  2 0x00013233 0x00413233   6    7 .rodata ascii posix-
-  3 0x0001323a 0x0041323a   4    5 .rodata ascii main
+0x000131d8 0x004131d8  11   12 .rodata ascii dev_ino_pop
+0x00013228 0x00413228  10   11 .rodata ascii sort_files
+0x00013233 0x00413233   6    7 .rodata ascii posix-
+0x0001323a 0x0041323a   4    5 .rodata ascii main
 --4--
-  0 0x000131d8 0x004131d8  11   12 .rodata ascii dev_ino_pop
-  1 0x00013228 0x00413228  10   11 .rodata ascii sort_files
+0x000131d8 0x004131d8  11   12 .rodata ascii dev_ino_pop
+0x00013228 0x00413228  10   11 .rodata ascii sort_files
 --5--
-  2 0x00013233 0x00413233   6    7 .rodata ascii posix-
+0x00013233 0x00413233   6    7 .rodata ascii posix-
 --6--
-  0 0x000131d8 0x004131d8  11   12 .rodata ascii dev_ino_pop
+0x000131d8 0x004131d8  11   12 .rodata ascii dev_ino_pop
 --7--
-  3 0x0001323a 0x0041323a   4    5 .rodata ascii main
+0x0001323a 0x0041323a   4    5 .rodata ascii main
 --8--
-  1 0x00013228 0x00413228  10   11 .rodata ascii sort_files
+0x00013228 0x00413228  10   11 .rodata ascii sort_files
 --9--
-  0 0x000131d8 0x004131d8  11   12 .rodata ascii dev_ino_pop
+0x000131d8 0x004131d8  11   12 .rodata ascii dev_ino_pop
 --10--
-  2 0x00013233 0x00413233   6    7 .rodata ascii posix-
+0x00013233 0x00413233   6    7 .rodata ascii posix-
 --11--
-  0 0x000131d8 0x004131d8  11   12 .rodata ascii dev_ino_pop
-  1 0x00013228 0x00413228  10   11 .rodata ascii sort_files
-  3 0x0001323a 0x0041323a   4    5 .rodata ascii main
+0x000131d8 0x004131d8  11   12 .rodata ascii dev_ino_pop
+0x00013228 0x00413228  10   11 .rodata ascii sort_files
+0x0001323a 0x0041323a   4    5 .rodata ascii main
 --12--
-  0 0x000131d8 0x004131d8  11   12 .rodata ascii dev_ino_pop
-  1 0x00013228 0x00413228  10   11 .rodata ascii sort_files
+0x000131d8 0x004131d8  11   12 .rodata ascii dev_ino_pop
+0x00013228 0x00413228  10   11 .rodata ascii sort_files
 --13--
-  0 0x000131d8 0x004131d8  11   12 .rodata ascii dev_ino_pop
-  1 0x00013228 0x00413228  10   11 .rodata ascii sort_files
+0x000131d8 0x004131d8  11   12 .rodata ascii dev_ino_pop
+0x00013228 0x00413228  10   11 .rodata ascii sort_files
 --14--
-  1 0x00013228 0x00413228  10   11 .rodata ascii sort_files
-  2 0x00013233 0x00413233   6    7 .rodata ascii posix-
+0x00013228 0x00413228  10   11 .rodata ascii sort_files
+0x00013233 0x00413233   6    7 .rodata ascii posix-
 EOF
 RUN
 
@@ -4126,9 +4126,9 @@ RUN
 NAME=regression for #9370
 FILE=bins/elf/analysis/hello-arm32
 ARGS=-m 0x10000
-CMDS=izz~Hello[1,2,3,4,5,6,7,8]
+CMDS=izz~Hello[1,2,3,4,5,6,7]
 EXPECT=<<EOF
-0x00000200 0x00010200 11 12 .rodata ascii Hello World
+0x00010200 11 12 .rodata ascii Hello World
 EOF
 RUN
 
@@ -4644,7 +4644,7 @@ NAME=izz
 FILE=bins/mach0/fatmach0-3true
 CMDS=izz~http~codesigning
 EXPECT=<<EOF
- 94 0x00003f3c 0x100002f3c  47   48                         ascii  ,http://www.apple.com/appleca/codesigning.crl0\r
+0x00003f3c 0x100002f3c  47   48                         ascii  ,http://www.apple.com/appleca/codesigning.crl0\r
 EOF
 RUN
 
@@ -4750,12 +4750,12 @@ RUN
 
 NAME=ascii substring detection (#14499)
 FILE=bins/pe/Reborn_Stub-strings.exe
-CMDS=izz~pomf[1,2,3,4,5,6,7,8]
+CMDS=izz~pomf[1,2,3,4,5,6,7]
 EXPECT=<<EOF
-0x00087f8a 0x00489d8a 26 52 .text utf16le http://pomf.cat/upload.php
-0x000880dd 0x00489edd 19 38 .text utf16le https://a.pomf.cat/
-0x00089bed 0x0048b9ed 26 52 .text utf16le http://pomf.cat/upload.php
-0x00089c22 0x0048ba22 19 40 .text utf16le https://a.pomf.cat/
+0x00489d8a 26 52 .text utf16le http://pomf.cat/upload.php
+0x00489edd 19 38 .text utf16le https://a.pomf.cat/
+0x0048b9ed 26 52 .text utf16le http://pomf.cat/upload.php
+0x0048ba22 19 40 .text utf16le https://a.pomf.cat/
 EOF
 RUN
 
@@ -4922,8 +4922,12 @@ izz:/head/1:quiet
 izz~^0
 EOF
 EXPECT=<<EOF
-  0 0x00000004 0x00000004   7    8         ascii =%s%s%s
-  0 0x00000004 0x00000004   7    8         ascii =%s%s%s
+0x00000004 0x00000004   7    8         ascii =%s%s%s
+0x00000004 0x00000004   7    8         ascii =%s%s%s
+0x00000010 0x00000010   7    8         ascii +%s%s%s
+0x00000018 0x00000018   7    8         ascii -%s%s%s
+0x00000020 0x00000020   9   10         ascii cap_chown
+0x0000002a 0x0000002a   6    7         ascii cap_da
 EOF
 RUN
 
@@ -5083,14 +5087,14 @@ iz
 iz @e:search.str.min_length=2
 EOF
 EXPECT=<<EOF
-nth      paddr      vaddr len size section type  string 
---------------------------------------------------------
-  0 0x0000200d 0x0000200d   4    5 .rodata ascii 4444
-nth      paddr      vaddr len size section type  string 
---------------------------------------------------------
-  0 0x00002006 0x00002006   2    3 .rodata ascii 22
-  1 0x00002009 0x00002009   3    4 .rodata ascii 333
-  2 0x0000200d 0x0000200d   4    5 .rodata ascii 4444
+     paddr      vaddr len size section type  string 
+----------------------------------------------------
+0x0000200d 0x0000200d   4    5 .rodata ascii 4444
+     paddr      vaddr len size section type  string 
+----------------------------------------------------
+0x00002006 0x00002006   2    3 .rodata ascii 22
+0x00002009 0x00002009   3    4 .rodata ascii 333
+0x0000200d 0x0000200d   4    5 .rodata ascii 4444
 EOF
 RUN
 
@@ -5120,9 +5124,9 @@ EXPECT=<<EOF
 0x000000d0  4142 4a41 424b 4142 4c41 424d 4142 4e41  ABJABKABLABMABNA
 0x000000e0  424f 4142 5041 4251 4142 5241 4253 4142  BOABPABQABRABSAB
 0x000000f0  5441 4255 4142 5641 4257 4142 5841 4259  TABUABVABWABXABY
-nth      paddr      vaddr  len size section type  string                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-  0 0x00000000 0x00000000 6140 6141         ascii AAABAACAADAAEAAFAAGAAHAAIAAJAAKAALAAMAANAAOAAPAAQAARAASAATAAUAAVAAWAAXAAYAAZAAaAAbAAcAAdAAeAAfAAgAAhAAiAAjAAkAAlAAmAAnAAoAApAAqAArAAsAAtAAuAAvAAwAAxAAyAAzAA1AA2AA3AA4AA5AA6AA7AA8AA9AA0ABBABCABDABEABFABGABHABIABJABKABLABMABNABOABPABQABRABSABTABUABVABWABXABYABZABaABbABcABdABeABfABgABhABiABjABkABlABmABnABoABpABqABrABsABtABuABvABwABxAByABzAB1AB2AB3AB4AB5AB6AB7AB8AB9AB0ACBACCACDACEACFACGACHACIACJACKACLACMACNACOACPACQACRACSACTACUACVACWACXACYACZACaACbACcACdACeACfACgAChACiACjACkAClACmACnACoACpACqACrACsACtACuACvACwACxACyACzAC1AC2AC3AC4AC5AC6AC7AC8AC9AC0ADBADCADDADEADFADGADHADIADJADKADLADMADNADOADPADQADRADSADTADUADVADWADXADYADZADaADbADcADdADeADfADgADhADiADjADkADlADmADnADoADpADqADrADsADtADuADvADwADxADyADzAD1AD2AD3AD4AD5AD6AD7AD8AD9AD0AEBAECAEDAEEAEFAEGAEHAEIAEJAEKAELAEMAENAEOAEPAEQAERAESAETAEUAEVAEWAEXAEYAEZAEaAEbAEcAEdAEeAEfAEgAEhAEiAEjAEkAElAEmAEnAEoAEpAEqAErAEsAEtAEuAEvAEwAExAEyAEzAE1AE2AE3AE4AE5AE6AE7AE8AE9AE0AFBAFCAFDAFEAFFAFGAFHAFIAFJAFKAFLAFMAFNAFOAFPAFQAFRAFSAFTAFUAFVAFWAFXAFYAFZAFaAFbAFcAFdAFeAFfAFgAFhAFiAFjAFkAFlAFmAFnAFoAFpAFqAFrAFsAFtAFuAFvAFwAFxAFyAFzAF1AF2AF3AF4AF5AF6AF7AF8AF9AF0AGBAGCAGDAGEAGFAGGAGHAGIAGJAGKAGLAGMAGNAGOAGPAGQAGRAGSAGTAGUAGVAGWAGXAGYAGZAGaAGbAGcAGdAGeAGfAGgAGhAGiAGjAGkAGlAGmAGnAGoAGpAGqAGrAGsAGtAGuAGvAGwAGxAGyAGzAG1AG2AG3AG4AG5AG6AG7AG8AG9AG0AHBAHCAHDAHEAHFAHGAHHAHIAHJAHKAHLAHMAHNAHOAHPAHQAHRAHSAHTAHUAHVAHWAHXAHYAHZAHaAHbAHcAHdAHeAHfAHgAHhAHiAHjAHkAHlAHmAHnAHoAHpAHqAHrAHsAHtAHuAHvAHwAHxAHyAHzAH1AH2AH3AH4AH5AH6AH7AH8AH9AH0AIBAICAIDAIEAIFAIGAIHAIIAIJAIKAILAIMAINAIOAIPAIQAIRAISAITAIUAIVAIWAIXAIYAIZAIaAIbAIcAIdAIeAIfAIgAIhAIiAIjAIkAIlAImAInAIoAIpAIqAIrAIsAItAIuAIvAIwAIxAIyAIzAI1AI2AI3AI4AI5AI6AI7AI8AI9AI0AJBAJCAJDAJEAJFAJGAJHAJIAJJAJKAJLAJMAJNAJOAJPAJQAJRAJSAJTAJUAJVAJWAJXAJYAJZAJaAJbAJcAJdAJeAJfAJgAJhAJiAJjAJkAJlAJmAJnAJoAJpAJqAJrAJsAJtAJuAJvAJwAJxAJyAJzAJ1AJ2AJ3AJ4AJ5AJ6AJ7AJ8AJ9AJ0AKBAKCAKDAKEAKFAKGAKHAKIAKJAKKAKLAKMAKNAKOAKPAKQAKRAKSAKTAKUAKVAKWAKXAKYAKZAKaAKbAKcAKdAKeAKfAKgAKhAKiAKjAKkAKlAKmAKnAKoAKpAKqAKrAKsAKtAKuAKvAKwAKxAKyAKzAK1AK2AK3AK4AK5AK6AK7AK8AK9AK0ALBALCALDALEALFALGALHALIALJALKALLALMALNALOALPALQALRALSALTALUALVALWALXALYALZALaALbALcALdALeALfALgALhALiALjALkALlALmALnALoALpALqALrALsALtALuALvALwALxALyALzAL1AL2AL3AL4AL5AL6AL7AL8AL9AL0AMBAMCAMDAMEAMFAMGAMHAMIAMJAMKAMLAMMAMNAMOAMPAMQAMRAMSAMTAMUAMVAMWAMXAMYAMZAMaAMbAMcAMdAMeAMfAMgAMhAMiAMjAMkAMlAMmAMnAMoAMpAMqAMrAMsAMtAMuAMvAMwAMxAMyAMzAM1AM2AM3AM4AM5AM6AM7AM8AM9AM0ANBANCANDANEANFANGANHANIANJANKANLANMANNANOANPANQANRANSANTANUANVANWANXANYANZANaANbANcANdANeANfANgANhANiANjANkANlANmANnANoANpANqANrANsANtANuANvANwANxANyANzAN1AN2AN3AN4AN5AN6AN7AN8AN9AN0AOBAOCAODAOEAOFAOGAOHAOIAOJAOKAOLAOMAONAOOAOPAOQAORAOSAOTAOUAOVAOWAOXAOYAOZAOaAObAOcAOdAOeAOfAOgAOhAOiAOjAOkAOlAOmAOnAOoAOpAOqAOrAOsAOtAOuAOvAOwAOxAOyAOzAO1AO2AO3AO4AO5AO6AO7AO8AO9AO0APBAPCAPDAPEAPFAPGAPHAPIAPJAPKAPLAPMAPNAPOAPPAPQAPRAPSAPTAPUAPVAPWAPXAPYAPZAPaAPbAPcAPdAPeAPfAPgAPhAPiAPjAPkAPlAPmAPnAPoAPpAPqAPrAPsAPtAPuAPvAPwAPxAPyAPzAP1AP2AP3AP4AP5AP6AP7AP8AP9AP0AQBAQCAQDAQEAQFAQGAQHAQIAQJAQKAQLAQMAQNAQOAQPAQQAQRAQSAQTAQUAQVAQWAQXAQYAQZAQaAQbAQcAQdAQeAQfAQgAQhAQiAQjAQkAQlAQmAQnAQoAQpAQqAQrAQsAQtAQuAQvAQwAQxAQyAQzAQ1AQ2AQ3AQ4AQ5AQ6AQ7AQ8AQ9AQ0ARBARCARDAREARFARGARHARIARJARKARLARMARNAROARPARQARRARSARTARUARVARWARXARYARZARaARbARcARdAReARfARgARhARiARjARkARlARmARnARoARpARqARrARsARtARuARvARwARxARyARzAR1AR2AR3AR4AR5AR6AR7AR8AR9AR0ASBASCASDASEASFASGASHASIASJASKASLASMASNASOASPASQASRASSASTASUASVASWASXASYASZASaASbAScASdASeASfASgAShASiASjASkASlASmASnASoASpASqASrASsAStASuASvASwASxASyASzAS1AS2AS3AS4AS5AS6AS7AS8AS9AS0ATBATCATDATEATFATGATHATIATJATKATLATMATNATOATPATQATRATSATTATUATVATWATXATYATZATaATbATcATdATeATfATgAThATiATjATkATlATmATnAToAT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
+     paddr      vaddr  len size section type  string                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+0x00000000 0x00000000 6140 6141         ascii AAABAACAADAAEAAFAAGAAHAAIAAJAAKAALAAMAANAAOAAPAAQAARAASAATAAUAAVAAWAAXAAYAAZAAaAAbAAcAAdAAeAAfAAgAAhAAiAAjAAkAAlAAmAAnAAoAApAAqAArAAsAAtAAuAAvAAwAAxAAyAAzAA1AA2AA3AA4AA5AA6AA7AA8AA9AA0ABBABCABDABEABFABGABHABIABJABKABLABMABNABOABPABQABRABSABTABUABVABWABXABYABZABaABbABcABdABeABfABgABhABiABjABkABlABmABnABoABpABqABrABsABtABuABvABwABxAByABzAB1AB2AB3AB4AB5AB6AB7AB8AB9AB0ACBACCACDACEACFACGACHACIACJACKACLACMACNACOACPACQACRACSACTACUACVACWACXACYACZACaACbACcACdACeACfACgAChACiACjACkAClACmACnACoACpACqACrACsACtACuACvACwACxACyACzAC1AC2AC3AC4AC5AC6AC7AC8AC9AC0ADBADCADDADEADFADGADHADIADJADKADLADMADNADOADPADQADRADSADTADUADVADWADXADYADZADaADbADcADdADeADfADgADhADiADjADkADlADmADnADoADpADqADrADsADtADuADvADwADxADyADzAD1AD2AD3AD4AD5AD6AD7AD8AD9AD0AEBAECAEDAEEAEFAEGAEHAEIAEJAEKAELAEMAENAEOAEPAEQAERAESAETAEUAEVAEWAEXAEYAEZAEaAEbAEcAEdAEeAEfAEgAEhAEiAEjAEkAElAEmAEnAEoAEpAEqAErAEsAEtAEuAEvAEwAExAEyAEzAE1AE2AE3AE4AE5AE6AE7AE8AE9AE0AFBAFCAFDAFEAFFAFGAFHAFIAFJAFKAFLAFMAFNAFOAFPAFQAFRAFSAFTAFUAFVAFWAFXAFYAFZAFaAFbAFcAFdAFeAFfAFgAFhAFiAFjAFkAFlAFmAFnAFoAFpAFqAFrAFsAFtAFuAFvAFwAFxAFyAFzAF1AF2AF3AF4AF5AF6AF7AF8AF9AF0AGBAGCAGDAGEAGFAGGAGHAGIAGJAGKAGLAGMAGNAGOAGPAGQAGRAGSAGTAGUAGVAGWAGXAGYAGZAGaAGbAGcAGdAGeAGfAGgAGhAGiAGjAGkAGlAGmAGnAGoAGpAGqAGrAGsAGtAGuAGvAGwAGxAGyAGzAG1AG2AG3AG4AG5AG6AG7AG8AG9AG0AHBAHCAHDAHEAHFAHGAHHAHIAHJAHKAHLAHMAHNAHOAHPAHQAHRAHSAHTAHUAHVAHWAHXAHYAHZAHaAHbAHcAHdAHeAHfAHgAHhAHiAHjAHkAHlAHmAHnAHoAHpAHqAHrAHsAHtAHuAHvAHwAHxAHyAHzAH1AH2AH3AH4AH5AH6AH7AH8AH9AH0AIBAICAIDAIEAIFAIGAIHAIIAIJAIKAILAIMAINAIOAIPAIQAIRAISAITAIUAIVAIWAIXAIYAIZAIaAIbAIcAIdAIeAIfAIgAIhAIiAIjAIkAIlAImAInAIoAIpAIqAIrAIsAItAIuAIvAIwAIxAIyAIzAI1AI2AI3AI4AI5AI6AI7AI8AI9AI0AJBAJCAJDAJEAJFAJGAJHAJIAJJAJKAJLAJMAJNAJOAJPAJQAJRAJSAJTAJUAJVAJWAJXAJYAJZAJaAJbAJcAJdAJeAJfAJgAJhAJiAJjAJkAJlAJmAJnAJoAJpAJqAJrAJsAJtAJuAJvAJwAJxAJyAJzAJ1AJ2AJ3AJ4AJ5AJ6AJ7AJ8AJ9AJ0AKBAKCAKDAKEAKFAKGAKHAKIAKJAKKAKLAKMAKNAKOAKPAKQAKRAKSAKTAKUAKVAKWAKXAKYAKZAKaAKbAKcAKdAKeAKfAKgAKhAKiAKjAKkAKlAKmAKnAKoAKpAKqAKrAKsAKtAKuAKvAKwAKxAKyAKzAK1AK2AK3AK4AK5AK6AK7AK8AK9AK0ALBALCALDALEALFALGALHALIALJALKALLALMALNALOALPALQALRALSALTALUALVALWALXALYALZALaALbALcALdALeALfALgALhALiALjALkALlALmALnALoALpALqALrALsALtALuALvALwALxALyALzAL1AL2AL3AL4AL5AL6AL7AL8AL9AL0AMBAMCAMDAMEAMFAMGAMHAMIAMJAMKAMLAMMAMNAMOAMPAMQAMRAMSAMTAMUAMVAMWAMXAMYAMZAMaAMbAMcAMdAMeAMfAMgAMhAMiAMjAMkAMlAMmAMnAMoAMpAMqAMrAMsAMtAMuAMvAMwAMxAMyAMzAM1AM2AM3AM4AM5AM6AM7AM8AM9AM0ANBANCANDANEANFANGANHANIANJANKANLANMANNANOANPANQANRANSANTANUANVANWANXANYANZANaANbANcANdANeANfANgANhANiANjANkANlANmANnANoANpANqANrANsANtANuANvANwANxANyANzAN1AN2AN3AN4AN5AN6AN7AN8AN9AN0AOBAOCAODAOEAOFAOGAOHAOIAOJAOKAOLAOMAONAOOAOPAOQAORAOSAOTAOUAOVAOWAOXAOYAOZAOaAObAOcAOdAOeAOfAOgAOhAOiAOjAOkAOlAOmAOnAOoAOpAOqAOrAOsAOtAOuAOvAOwAOxAOyAOzAO1AO2AO3AO4AO5AO6AO7AO8AO9AO0APBAPCAPDAPEAPFAPGAPHAPIAPJAPKAPLAPMAPNAPOAPPAPQAPRAPSAPTAPUAPVAPWAPXAPYAPZAPaAPbAPcAPdAPeAPfAPgAPhAPiAPjAPkAPlAPmAPnAPoAPpAPqAPrAPsAPtAPuAPvAPwAPxAPyAPzAP1AP2AP3AP4AP5AP6AP7AP8AP9AP0AQBAQCAQDAQEAQFAQGAQHAQIAQJAQKAQLAQMAQNAQOAQPAQQAQRAQSAQTAQUAQVAQWAQXAQYAQZAQaAQbAQcAQdAQeAQfAQgAQhAQiAQjAQkAQlAQmAQnAQoAQpAQqAQrAQsAQtAQuAQvAQwAQxAQyAQzAQ1AQ2AQ3AQ4AQ5AQ6AQ7AQ8AQ9AQ0ARBARCARDAREARFARGARHARIARJARKARLARMARNAROARPARQARRARSARTARUARVARWARXARYARZARaARbARcARdAReARfARgARhARiARjARkARlARmARnARoARpARqARrARsARtARuARvARwARxARyARzAR1AR2AR3AR4AR5AR6AR7AR8AR9AR0ASBASCASDASEASFASGASHASIASJASKASLASMASNASOASPASQASRASSASTASUASVASWASXASYASZASaASbAScASdASeASfASgAShASiASjASkASlASmASnASoASpASqASrASsAStASuASvASwASxASyASzAS1AS2AS3AS4AS5AS6AS7AS8AS9AS0ATBATCATDATEATFATGATHATIATJATKATLATMATNATOATPATQATRATSATTATUATVATWATXATYATZATaATbATcATdATeATfATgAThATiATjATkATlATmATnAToAT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
 EOF
 RUN
 
@@ -5136,6 +5140,20 @@ EOF
 EXPECT=<<EOF
 0x00000000  7b7d 2022 205c 2220 5c20 5c5c 200a 205c  {} " \" \ \\ . \
 0x00000010  6e20 2320 5c23 2024 205c 2400 0000 0000  n # \# $ \$.....
-[{"vaddr":0,"paddr":0,"ordinal":0,"size":28,"length":27,"section":"","type":"ascii","string":"{} \" \\\" \\ \\\\ \n \\n # \\# $ \\$"}]
+[{"vaddr":0,"paddr":0,"size":28,"length":27,"section":"","type":"ascii","string":"{} \" \\\" \\ \\\\ \n \\n # \\# $ \\$"}]
+EOF
+RUN
+
+NAME=izx show strings with xrefs
+FILE=bins/arm/elf/hello_world
+CMDS=<<EOF
+aaa
+izx
+EOF
+EXPECT=<<EOF
+     paddr      vaddr flag                   len size section type  xref-from  string        
+---------------------------------------------------------------------------------------------
+0x00000574 0x00000574 str.Hello_world         12   13 .rodata ascii 0x00000512 Hello world!
+0x00000494 0x00000494 sym.register_tm_clones  10   11 .text   ascii 0x00000508 \bH\tKxD\tJ{D
 EOF
 RUN

@@ -178,7 +178,6 @@ static void print_bin_string(RzBinFile *bf, RzBinString *string, PJ *pj) {
 		pj_o(pj);
 		pj_kn(pj, "vaddr", string->vaddr);
 		pj_kn(pj, "paddr", string->paddr);
-		pj_kn(pj, "ordinal", string->ordinal);
 		pj_kn(pj, "size", string->size);
 		pj_kn(pj, "length", string->length);
 		pj_ks(pj, "section", section_name);

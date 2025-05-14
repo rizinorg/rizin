@@ -745,7 +745,6 @@ typedef struct rz_bin_string_t {
 	 * Note: This is not related to the physical addresses an MMU would manage!
 	 */
 	ut64 paddr;
-	ut32 ordinal;
 	ut32 size; // size of buffer containing the string in bytes
 	ut32 length; // length of string in chars
 	RzStrEnc type; // Ascii Wide cp850 utf8 mutf8 base64 ...

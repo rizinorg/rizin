@@ -329,25 +329,25 @@ iz~0x0033641a[1,2,3,4,5,6,7,8]
 iz~0x00337f88[1,2,3,4,5,6,7,8]
 EOF
 EXPECT=<<EOF
-0x0043cf24 0x77820352 4 10 C:_Windows_System32__tdll.dll utf16le Alpc
-0x0043cf2e 0x7782035c 4 10 C:_Windows_System32__tdll.dll utf16le Pool
-0x0043cf38 0x77820366 5 12 C:_Windows_System32__tdll.dll utf16le Timer
-0x00447247 0x7782a675 35 36 C:_Windows_System32__tdll.dll ascii RtlFindActivationContextSectionGuid
-0x0044726b 0x7782a699 37 38 C:_Windows_System32__tdll.dll ascii RtlFindActivationContextSectionString
-0x00447291 0x7782a6bf 26 27 C:_Windows_System32__tdll.dll ascii RtlFindCharInUnicodeString
-0x004472ac 0x7782a6da 16 17 C:_Windows_System32__tdll.dll ascii RtlFindClearBits
-0x0048acc8 0x7786e0f6 15 32 C:_Windows_System32__tdll.dll utf16le VS_VERSION_INFO
-0x0048b004 0x7786e432 11 24 C:_Windows_System32__tdll.dll utf16le VarFileInfo
-0x00168c38 0x7500d066 15 32 C:_Windows_System32_wow64.dll utf16le VS_VERSION_INFO
-0x00168f80 0x7500d3ae 11 24 C:_Windows_System32_wow64.dll utf16le VarFileInfo
-0x00128c38 0x74fc9066 15 32 C:_Windows_System32_wow64win.dll utf16le VS_VERSION_INFO
-0x00128fa8 0x74fc93d6 11 24 C:_Windows_System32_wow64win.dll utf16le VarFileInfo
-0x000cdc38 0x74f66066 15 32 C:_Windows_System32_wow64cpu.dll utf16le VS_VERSION_INFO
-0x000cdf84 0x74f663b2 11 24 C:_Windows_System32_wow64cpu.dll utf16le VarFileInfo
-0x00299106 0x77378534 11 12 C:_Windows_SysWOW64_kernel32.dll ascii _vfprintf_l
-0x001adff0 0x75d9341e 11 24 C:_Windows_SysWOW64_KERNELBASE.dll utf16le VarFileInfo
-0x0033641a 0x77415848 39 40 C:_Windows_SysWOW64_msvcrt.dll ascii Assertion failed:
-0x00337f88 0x774173b6 11 24 C:_Windows_SysWOW64_msvcrt.dll utf16le VarFileInfo
+0x77820352 4 10 C:_Windows_System32__tdll.dll utf16le Alpc
+0x7782035c 4 10 C:_Windows_System32__tdll.dll utf16le Pool
+0x77820366 5 12 C:_Windows_System32__tdll.dll utf16le Timer
+0x7782a675 35 36 C:_Windows_System32__tdll.dll ascii RtlFindActivationContextSectionGuid
+0x7782a699 37 38 C:_Windows_System32__tdll.dll ascii RtlFindActivationContextSectionString
+0x7782a6bf 26 27 C:_Windows_System32__tdll.dll ascii RtlFindCharInUnicodeString
+0x7782a6da 16 17 C:_Windows_System32__tdll.dll ascii RtlFindClearBits
+0x7786e0f6 15 32 C:_Windows_System32__tdll.dll utf16le VS_VERSION_INFO
+0x7786e432 11 24 C:_Windows_System32__tdll.dll utf16le VarFileInfo
+0x7500d066 15 32 C:_Windows_System32_wow64.dll utf16le VS_VERSION_INFO
+0x7500d3ae 11 24 C:_Windows_System32_wow64.dll utf16le VarFileInfo
+0x74fc9066 15 32 C:_Windows_System32_wow64win.dll utf16le VS_VERSION_INFO
+0x74fc93d6 11 24 C:_Windows_System32_wow64win.dll utf16le VarFileInfo
+0x74f66066 15 32 C:_Windows_System32_wow64cpu.dll utf16le VS_VERSION_INFO
+0x74f663b2 11 24 C:_Windows_System32_wow64cpu.dll utf16le VarFileInfo
+0x77378534 11 12 C:_Windows_SysWOW64_kernel32.dll ascii _vfprintf_l
+0x75d9341e 11 24 C:_Windows_SysWOW64_KERNELBASE.dll utf16le VarFileInfo
+0x77415848 39 40 C:_Windows_SysWOW64_msvcrt.dll ascii Assertion failed: %s
+0x774173b6 11 24 C:_Windows_SysWOW64_msvcrt.dll utf16le VarFileInfo
 EOF
 RUN
 
@@ -461,22 +461,22 @@ iz~0x00499cf5[1,2,3,4,5,6,7,8]
 iz~0x0049a045[1,2,3,4,5,6,7,8]
 EOF
 EXPECT=<<EOF
-0x002e2fe1 0x77820352 4 10 C:_Windows_System32__tdll.dll utf16le Alpc
-0x002e2feb 0x7782035c 4 10 C:_Windows_System32__tdll.dll utf16le Pool
-0x002e2ff5 0x77820366 5 12 C:_Windows_System32__tdll.dll utf16le Timer
-0x00330d85 0x7786e0f6 15 32 C:_Windows_System32__tdll.dll utf16le VS_VERSION_INFO
-0x003310c1 0x7786e432 11 24 C:_Windows_System32__tdll.dll utf16le VarFileInfo
-0x00161a37 0x7759dda8 7 16 C:_Windows_System32_kernel32.dll utf16le win.ini
-0x00161c7f 0x7759dff0 20 42 C:_Windows_System32_kernel32.dll utf16le \Classes\Wow6432Node
-0x00161dbf 0x7759e130 45 92 C:_Windows_System32_kernel32.dll utf16le \REGISTRY\USER\*\SOFTWARE\Classes\Wow6432Node
-0x001d9d45 0x776160b6 15 32 C:_Windows_System32_kernel32.dll utf16le VS_VERSION_INFO
-0x001da0a5 0x77616416 11 24 C:_Windows_System32_kernel32.dll utf16le VarFileInfo
-0x003fad45 0x7fefd5080b6 15 32 C:_Windows_System32_KERNELBASE.dll utf16le VS_VERSION_INFO
-0x003fb0ad 0x7fefd50841e 11 24 C:_Windows_System32_KERNELBASE.dll utf16le VarFileInfo
-0x00480857 0x7fefdb33bc8 4 10 C:_Windows_System32_msvcrt.dll utf16le PATH
-0x004808c7 0x7fefdb33c38 10 22 C:_Windows_System32_msvcrt.dll utf16le SystemRoot
-0x00499cf5 0x7fefdb4d066 15 32 C:_Windows_System32_msvcrt.dll utf16le VS_VERSION_INFO
-0x0049a045 0x7fefdb4d3b6 11 24 C:_Windows_System32_msvcrt.dll utf16le VarFileInfo
+0x77820352 4 10 C:_Windows_System32__tdll.dll utf16le Alpc
+0x7782035c 4 10 C:_Windows_System32__tdll.dll utf16le Pool
+0x77820366 5 12 C:_Windows_System32__tdll.dll utf16le Timer
+0x7786e0f6 15 32 C:_Windows_System32__tdll.dll utf16le VS_VERSION_INFO
+0x7786e432 11 24 C:_Windows_System32__tdll.dll utf16le VarFileInfo
+0x7759dda8 7 16 C:_Windows_System32_kernel32.dll utf16le win.ini
+0x7759dff0 20 42 C:_Windows_System32_kernel32.dll utf16le \Classes\Wow6432Node
+0x7759e130 45 92 C:_Windows_System32_kernel32.dll utf16le \REGISTRY\USER\*\SOFTWARE\Classes\Wow6432Node
+0x776160b6 15 32 C:_Windows_System32_kernel32.dll utf16le VS_VERSION_INFO
+0x77616416 11 24 C:_Windows_System32_kernel32.dll utf16le VarFileInfo
+0x7fefd5080b6 15 32 C:_Windows_System32_KERNELBASE.dll utf16le VS_VERSION_INFO
+0x7fefd50841e 11 24 C:_Windows_System32_KERNELBASE.dll utf16le VarFileInfo
+0x7fefdb33bc8 4 10 C:_Windows_System32_msvcrt.dll utf16le PATH
+0x7fefdb33c38 10 22 C:_Windows_System32_msvcrt.dll utf16le SystemRoot
+0x7fefdb4d066 15 32 C:_Windows_System32_msvcrt.dll utf16le VS_VERSION_INFO
+0x7fefdb4d3b6 11 24 C:_Windows_System32_msvcrt.dll utf16le VarFileInfo
 EOF
 RUN
 
