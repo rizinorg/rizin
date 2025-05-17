@@ -2588,7 +2588,7 @@ static RzILOpEffect *e_BS(RzAsmTriCoreContext *ctx, unsigned b, FUNC_BS f) {
 	return NULL;
 }
 
-#define IL_MIN(x, y)        ITE(UGT(x, y), DUP(x), DUP(y))
+#define IL_MIN(x, y)     ITE(UGT(x, y), DUP(x), DUP(y))
 #define CRC_32_GENERATOR 0xEDB88320
 static RzILOpPure *crc_div(RzILOpPure *c, RzILOpPure *g, RzILOpPure *crc_width, RzILOpPure *data_width) {
 	return LET("shift", IL_MIN(crc_width, data_width),
