@@ -14,3 +14,17 @@ RZ_API ut64 rz_debug_get_tls(RZ_NONNULL RzDebug *dbg, int tid) {
 RZ_API RZ_OWN RzList /*<RzDebugPid *>*/ *rz_debug_native_threads(RzDebug *dbg, int pid) {
 	return rz_list_new();
 }
+
+static int rz_debug_native_continue(RzDebug *dbg, int pid, int tid, int sig) {
+	return -1;
+}
+
+static int rz_debug_native_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
+	// TODO: this is returning a boolean, but for some reasons we have int
+	return false;
+}
+
+static int rz_debug_native_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
+	// TODO: this is returning a boolean, but for some reasons we have int
+	return false;
+}
