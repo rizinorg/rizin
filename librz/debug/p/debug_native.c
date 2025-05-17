@@ -30,6 +30,7 @@ static int rz_debug_native_reg_write(RzDebug *dbg, int type, const ut8 *buf, int
 #warning "Unsupported debugging platform"
 #undef DEBUGGER
 #define DEBUGGER 0
+#include "native/unsupported.c"
 #endif
 
 #elif __ANDROID__
@@ -43,6 +44,7 @@ static int rz_debug_native_reg_write(RzDebug *dbg, int type, const ut8 *buf, int
 #warning "Unsupported debugging platform"
 #undef DEBUGGER
 #define DEBUGGER 0
+#include "native/unsupported.c"
 #endif
 
 #elif __linux__
@@ -74,6 +76,7 @@ static int rz_debug_native_reg_write(RzDebug *dbg, int type, const ut8 *buf, int
 #warning "Unsupported debugging platform"
 #undef DEBUGGER
 #define DEBUGGER 0
+#include "native/unsupported.c"
 #endif
 
 #elif __sun
@@ -81,11 +84,12 @@ static int rz_debug_native_reg_write(RzDebug *dbg, int type, const ut8 *buf, int
 #undef DEBUGGER
 #define DEBUGGER 0
 #warning "No debugger support for SunOS yet"
-
+#include "native/unsupported.c"
 #else
 #warning "Unsupported debugging platform"
 #undef DEBUGGER
 #define DEBUGGER 0
+#include "native/unsupported.c"
 #endif // Native OS & Arch
 
 #if DEBUGGER
