@@ -36,7 +36,7 @@
 #define PANEL_CMD_FUNCTION      "afl"
 #define PANEL_CMD_GRAPH         "agf"
 #define PANEL_CMD_TINYGRAPH     "agft"
-#define PANEL_CMD_HEXDUMP       "xc"
+#define PANEL_CMD_HEXDUMP       "px"
 #define PANEL_CMD_CONSOLE       "$console"
 
 #define PANEL_CONFIG_MENU_MAX    64
@@ -4969,7 +4969,7 @@ void __init_sdb(RzCore *core) {
 	ht_ss_insert(db, "Info", "i");
 	ht_ss_insert(db, "Database", "k ***");
 	ht_ss_insert(db, "Console", "$console");
-	ht_ss_insert(db, "Hexdump", "xc $r*16");
+	ht_ss_insert(db, "Hexdump", "px");
 	ht_ss_insert(db, "Xrefs", "axl");
 	ht_ss_insert(db, "Functions", "afl");
 	ht_ss_insert(db, "Function Calls", "aflm");
@@ -4984,7 +4984,7 @@ void __init_sdb(RzCore *core) {
 	ht_ss_insert(db, "Maps", "dm");
 	ht_ss_insert(db, "Modules", "dmm");
 	ht_ss_insert(db, "Backtrace", "dbt");
-	ht_ss_insert(db, "Breakpoints", "db");
+	ht_ss_insert(db, "Breakpoints", "dbl");
 	ht_ss_insert(db, "Imports", "iiq");
 	ht_ss_insert(db, "Clipboard", "yx");
 	ht_ss_insert(db, "New", "o");
