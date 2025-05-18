@@ -1229,12 +1229,11 @@ RZ_API char *rz_sys_pid_to_path(int pid) {
 	}
 	return rz_str_dup(pathbuf);
 #else
-	int ret;
 #if __FreeBSD__ || __DragonFly__
 	char pathbuf[PATH_MAX];
 	size_t pathbufl = sizeof(pathbuf);
 	int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, pid };
-	ret = sysctl(mib, 4, pathbuf, &pathbufl, NULL, 0);
+	int ret = sysctl(mib, 4, pathbuf, &pathbufl, NULL, 0);
 	if (ret != 0) {
 		return NULL;
 	}
@@ -1245,7 +1244,7 @@ RZ_API char *rz_sys_pid_to_path(int pid) {
 	size_t len;
 
 	pathbuf[0] = '\0';
-	ret = sysctl(mib, 4, NULL, &len, NULL, 0);
+	int ret = sysctl(mib, 4, NULL, &len, NULL, 0);
 	if (ret < 0) {
 		return NULL;
 	}
@@ -1310,7 +1309,7 @@ RZ_API char *rz_sys_pid_to_path(int pid) {
 #else
 	char buf[128], pathbuf[1024];
 	snprintf(buf, sizeof(buf), "/proc/%d/exe", pid);
-	ret = readlink(buf, pathbuf, sizeof(pathbuf) - 1);
+	int ret = readlink(buf, pathbuf, sizeof(pathbuf) - 1);
 	if (ret < 1) {
 		return NULL;
 	}

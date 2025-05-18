@@ -472,10 +472,6 @@ RZ_API int rz_debug_continue_pass_exception(RzDebug *dbg);
 
 /* process/thread handling */
 RZ_API bool rz_debug_select(RzDebug *dbg, int pid, int tid);
-// RZ_API int rz_debug_pid_add(RzDebug *dbg);
-// RZ_API int rz_debug_pid_add_thread(RzDebug *dbg);
-// RZ_API int rz_debug_pid_del(RzDebug *dbg);
-// RZ_API int rz_debug_pid_del_thread(RzDebug *dbg);
 RZ_API RzDebugPid *rz_debug_pid_new(const char *path, int pid, int uid, char status, ut64 pc);
 RZ_API RzDebugPid *rz_debug_pid_free(RzDebugPid *pid);
 RZ_API RzList /*<RzDebugPid *>*/ *rz_debug_pids(RzDebug *dbg, int pid);
@@ -502,8 +498,6 @@ RZ_API int rz_debug_signal_set(RzDebug *dbg, int num, ut64 addr);
 RZ_API bool rz_debug_can_kill(RzDebug *dbg);
 RZ_API int rz_debug_kill(RzDebug *dbg, int pid, int tid, int sig);
 RZ_API RzList /*<void *>*/ *rz_debug_kill_list(RzDebug *dbg);
-// XXX: must be uint64 action
-RZ_API int rz_debug_kill_setup(RzDebug *dbg, int sig, int action);
 
 /* handle.c */
 RZ_API void rz_debug_plugin_init(RzDebug *dbg);
@@ -531,7 +525,6 @@ RZ_API int rz_debug_desc_dup(RzDebug *dbg, int fd, int newfd);
 RZ_API int rz_debug_desc_read(RzDebug *dbg, int fd, ut64 addr, int len);
 RZ_API int rz_debug_desc_seek(RzDebug *dbg, int fd, ut64 addr); // TODO: whence?
 RZ_API int rz_debug_desc_write(RzDebug *dbg, int fd, ut64 addr, int len);
-RZ_API int rz_debug_desc_list(RzDebug *dbg, int rad);
 
 /* registers */
 RZ_API bool rz_debug_reg_profile_sync(RzDebug *dbg);
@@ -588,7 +581,6 @@ RZ_API int rz_debug_esil_watch_empty(RzDebug *dbg);
 RZ_API void rz_debug_esil_prestep(RzDebug *d, int p);
 
 /* record & replay */
-// RZ_API ut8 rz_debug_get_byte(RzDebug *dbg, ut32 cnum, ut64 addr);
 RZ_API bool rz_debug_add_checkpoint(RzDebug *dbg);
 RZ_API bool rz_debug_session_add_reg_change(RzDebugSession *session, int arena, ut64 offset, ut64 data);
 RZ_API bool rz_debug_session_add_mem_change(RzDebugSession *session, ut64 addr, ut8 data);
@@ -635,25 +627,5 @@ static inline void *rz_debug_ptrace_func(RzDebug *dbg, void *(*func)(void *), vo
 #ifdef __cplusplus
 }
 #endif
-
-#endif
-
-/* regset */
-// RZ_API struct rz_regset_t* rz_regset_diff(struct rz_regset_t *a, struct rz_regset_t *b);
-// RZ_API int rz_regset_set(struct rz_regset_t *r, int idx, const char *name, ut64 value);
-// RZ_API struct rz_regset_t *rz_regset_new(int size);
-// RZ_API void rz_regset_free(struct rz_regset_t *r);
-
-#if 0
-Missing callbacks
-=================
- - alloc
- - dealloc
- - list maps (memory regions)
- - change memory protections
- - touchtrace
- - filedescriptor set/get/mod..
- - get/set signals
- - get regs, set regs
 
 #endif
