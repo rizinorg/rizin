@@ -57,7 +57,9 @@ static bool desc_list_visual_cb(void *user, void *data, ut32 id) {
 		.curpos = 0,
 		.color = rz_config_get_i(core->config, "scr.color")
 	};
-	RzStrBuf *strbuf = rz_progressbar(&opts, sz * 100 / u->fdsz, rz_cons_get_size(NULL) - 40);
+	// avoid divide-by-zero error when the total file size is zero.
+	int percent = u->fdsz == 0 ? 0 : sz * 100 / u->fdsz;
+	RzStrBuf *strbuf = rz_progressbar(&opts, percent, rz_cons_get_size(NULL) - 40);
 	if (!strbuf) {
 		RZ_LOG_ERROR("Cannot generate progressbar\n");
 	} else {
