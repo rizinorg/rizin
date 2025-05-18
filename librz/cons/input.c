@@ -103,6 +103,7 @@ RZ_API int rz_cons_arrow_to_hjkl(int ch) {
 			ch = 0xf1 + (ch & 0xf);
 			break;
 		}
+		// fall-thru
 	case '[': // 0x5b function keys (2)
 		/* Haiku need ESC + [ for PageUp and PageDown  */
 		if (ch < 'A' || ch == '[') {
