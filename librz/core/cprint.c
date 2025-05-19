@@ -261,7 +261,7 @@ static inline void len_fixup(RzCore *core, ut64 *addr, int *len) {
 	bool is_positive = *len > 0;
 	if (RZ_ABS(*len) > core->blocksize_max) {
 		RZ_LOG_ERROR("this <len> is too big (0x%" PFMT32x
-			     " < 0x%" PFMT32x ").",
+			     " < 0x%" PFMT32x ").\n",
 			*len, core->blocksize_max);
 		*len = (int)core->blocksize_max;
 	}
@@ -351,7 +351,6 @@ RZ_API RZ_OWN char *rz_core_print_hexdump_or_hexdiff_str(RZ_NONNULL RzCore *core
 	ut64 from = rz_config_get_i(core->config, "diff.from");
 	ut64 to = rz_config_get_i(core->config, "diff.to");
 	if (from == to && !from) {
-		len_fixup(core, &addr, &len);
 		ut8 *buffer = malloc(len);
 		if (!buffer) {
 			return NULL;
@@ -387,6 +386,11 @@ RZ_API RZ_OWN char *rz_core_print_hexdump_or_hexdiff_str(RZ_NONNULL RzCore *core
 
 RZ_IPI bool rz_core_print_hexdump_or_hexdiff(RZ_NONNULL RzCore *core, RZ_NULLABLE RzOutputMode mode, ut64 addr, int len,
 	bool use_comment) {
+	len_fixup(core, &addr, &len);
+	if (len > 0x1000
+		&& !rz_cons_yesno('n', "Do you want to read 0x%x bytes? (y/N)", len)) {
+		return true;
+	}
 	char *string = rz_core_print_hexdump_or_hexdiff_str(core, mode, addr, len, use_comment);
 	if (!string) {
 		RZ_LOG_ERROR("fail to print hexdump at 0x%" PFMT64x "\n", addr);
