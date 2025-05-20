@@ -106,6 +106,33 @@
  */
 #define ZYAN_MACRO_CONCAT_EXPAND(x, y) ZYAN_MACRO_CONCAT(x, y)
 
+/**
+ * Checks if a header can be included.
+ *
+ * @param name  Header file name.
+ *
+ * @return      True if header exists, false if it doesn't or it's not possible to check.
+ */
+#if defined(__has_include)
+#   define ZYAN_HAS_INCLUDE(name) __has_include(name)
+#else
+#   define ZYAN_HAS_INCLUDE(name) 0
+#endif
+
+/**
+ * Checks if a symbol is a recognized built-in function.
+ *
+ * @param symbol  Function name.
+ *
+ * @return        True if symbol is known, false otherwise.
+ */
+#if defined(__has_builtin)
+#   define ZYAN_HAS_BUILTIN(symbol) __has_builtin(symbol)
+#else
+#   define ZYAN_HAS_BUILTIN(symbol) 0
+#endif
+
+
 /* ============================================================================================== */
 /* Compiler detection                                                                             */
 /* ============================================================================================== */
@@ -194,12 +221,52 @@
 #   define ZYAN_PPC64
 #elif defined(__powerpc__)
 #   define ZYAN_PPC
-#elif defined(__riscv) && __riscv_xlen == 64
-#   define ZYAN_RISCV64
-#elif defined(__s390x__) || (__s390__)
-#   define ZYAN_S390X
+#elif defined(__riscv) || defined(__riscv__)
+#   if __riscv_xlen == 64
+#       define ZYAN_RISCV64
+#   else
+#       define ZYAN_RISCV32
+#   endif
+#elif defined(__arc__)
+#   define ZYAN_ARC
+#elif defined(__s390x__) || defined(__s390__)
+#   define ZYAN_S390
+#elif defined(__sparc__)
+#   define ZYAN_SPARC
+#elif defined(__mips__)
+#   define ZYAN_MIPS
 #else
 #   error "Unsupported architecture detected"
+#endif
+
+/* ============================================================================================== */
+/* Endianness detection                                                                           */
+/* ============================================================================================== */
+
+#define ZYAN_LITTLE_ENDIAN 0
+#define ZYAN_BIG_ENDIAN 1
+
+#if !defined(ZYAN_NO_LIBC) && ZYAN_HAS_INCLUDE(<stdbit.h>)
+#   include <stdbit.h>
+#   if __STDC_ENDIAN_NATIVE__ == __STDC_ENDIAN_LITTLE__
+#       define ZYAN_ENDIAN ZYAN_LITTLE_ENDIAN
+#   elif __STDC_ENDIAN_NATIVE__ == __STDC_ENDIAN_BIG__
+#       define ZYAN_ENDIAN ZYAN_BIG_ENDIAN
+#   else
+#       error "Unsupported endianness"
+#   endif
+#elif defined(__BYTE_ORDER__)
+#   if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#       define ZYAN_ENDIAN ZYAN_LITTLE_ENDIAN
+#   elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#       define ZYAN_ENDIAN ZYAN_BIG_ENDIAN
+#   else
+#       error "Unsupported endianness"
+#   endif
+#elif defined(ZYAN_S390) || defined(ZYAN_SPARC) || defined(ZYAN_MIPS)
+#   define ZYAN_ENDIAN ZYAN_BIG_ENDIAN
+#else
+#   define ZYAN_ENDIAN ZYAN_LITTLE_ENDIAN
 #endif
 
 /* ============================================================================================== */
@@ -299,8 +366,8 @@
 #   define ZYAN_NO_SANITIZE(what)
 #endif
 
-#if defined(ZYAN_MSVC) || defined(ZYAN_BORLAND)
-#   define ZYAN_INLINE __inline
+#if defined(ZYAN_BORLAND)
+#   define ZYAN_INLINE static __inline
 #else
 #   define ZYAN_INLINE static inline
 #endif
@@ -539,9 +606,9 @@
  */
 #if defined(ZYAN_LINUX) && defined(ZYAN_KERNEL)
 #   include <asm/div64.h> /* do_div */
-#   define ZYAN_DIV64(n, divisor) do_div(n, divisor)
+#   define ZYAN_DIV64(n, divisor) do_div((n), (divisor))
 #else
-#   define ZYAN_DIV64(n, divisor) (n /= divisor)
+#   define ZYAN_DIV64(n, divisor) ((n) /= (divisor))
 #endif
 
 /* ---------------------------------------------------------------------------------------------- */
@@ -936,6 +1003,86 @@ typedef char* ZyanCharPointer;
  * This type is most often used to represent null-terminated strings aka. C-style strings.
  */
 typedef const char* ZyanConstCharPointer;
+
+/* ============================================================================================== */
+/* Type conversion utils                                                                          */
+/* ============================================================================================== */
+
+/**
+ * Collection of functions for swapping byte order in 16/32/64-bit values respectively.
+ *
+ * @param   x       16/32/64-bit value.
+ *
+ * @return  16/32/64-bit value with byte order swapped.
+ */
+#if defined(ZYAN_MSVC)
+#   if defined(ZYAN_NO_LIBC)
+#       if defined(__cplusplus)
+        extern "C" {
+#       endif
+            unsigned short __cdecl _byteswap_ushort(unsigned short);
+            unsigned long  __cdecl _byteswap_ulong(unsigned long);
+            unsigned __int64 __cdecl _byteswap_uint64(unsigned __int64);
+#       if defined(__cplusplus)
+        }
+#       endif
+#   elif defined(ZYAN_KERNEL)
+#       include <wdm.h>
+#   else
+#       include <stdlib.h>
+#   endif
+
+#   define ZYAN_BYTESWAP16(x) _byteswap_ushort((x))
+#   define ZYAN_BYTESWAP32(x) _byteswap_ulong((x))
+#   define ZYAN_BYTESWAP64(x) _byteswap_uint64((x))
+#elif ZYAN_HAS_BUILTIN(__builtin_bswap16) && \
+      ZYAN_HAS_BUILTIN(__builtin_bswap32) && \
+      ZYAN_HAS_BUILTIN(__builtin_bswap64)
+#   define ZYAN_BYTESWAP16(x) __builtin_bswap16((x))
+#   define ZYAN_BYTESWAP32(x) __builtin_bswap32((x))
+#   define ZYAN_BYTESWAP64(x) __builtin_bswap64((x))
+#else
+ZYAN_INLINE ZyanU16 ZYAN_BYTESWAP16(ZyanU16 x)
+{
+    return (((x >> 8) & 0xFFU) | ((x & 0xFFU) << 8));
+}
+
+ZYAN_INLINE ZyanU32 ZYAN_BYTESWAP32(ZyanU32 x)
+{
+    return (((x & 0xFF000000U) >> 24) |
+            ((x & 0x00FF0000U) >> 8 ) |
+            ((x & 0x0000FF00U) << 8 ) |
+            ((x & 0x000000FFU) << 24));
+}
+
+ZYAN_INLINE ZyanU64 ZYAN_BYTESWAP64(ZyanU64 x)
+{
+    return (((x & 0xFF00000000000000ULL) >> 56) |
+            ((x & 0x00FF000000000000ULL) >> 40) |
+            ((x & 0x0000FF0000000000ULL) >> 24) |
+            ((x & 0x000000FF00000000ULL) >> 8 ) |
+            ((x & 0x00000000FF000000ULL) << 8 ) |
+            ((x & 0x0000000000FF0000ULL) << 24) |
+            ((x & 0x000000000000FF00ULL) << 40) |
+            ((x & 0x00000000000000FFULL) << 56));
+}
+#endif
+
+/**
+ * Collection of functions for converting 16/32/64-bit variables from little endian to native endian
+ * of the current platform.
+ *
+ * @param   x       16/32/64-bit variable.
+ */
+#if ZYAN_ENDIAN == ZYAN_LITTLE_ENDIAN
+#   define ZYAN_LE16_TO_NATIVE(x)
+#   define ZYAN_LE32_TO_NATIVE(x)
+#   define ZYAN_LE64_TO_NATIVE(x)
+#else
+#   define ZYAN_LE16_TO_NATIVE(x) (x) = ZYAN_BYTESWAP16((x))
+#   define ZYAN_LE32_TO_NATIVE(x) (x) = ZYAN_BYTESWAP32((x))
+#   define ZYAN_LE64_TO_NATIVE(x) (x) = ZYAN_BYTESWAP64((x))
+#endif
 
 /* ---------------------------------------------------------------------------------------------- */
 
