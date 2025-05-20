@@ -1054,25 +1054,25 @@ int h8300_decode_command(const ut8 *instr, struct h8300_cmd *cmd, ut64 pc) {
 		cmd->id = H8300_INSN_SLEEP;
 		ret = decode_eepmov(instr, cmd);
 		break;
-	case H8300_JMP_1:
+	case 0x59:
 		cmd->id = H8300_INSN_JMP;
 		ret = decode_ri16(instr, cmd);
+		break;
+	case 0x5a:
+		cmd->id = H8300_INSN_JMP;
+		ret = decode_abs16(instr, cmd);
+		break;
+	case 0x5b:
+		cmd->id = H8300_INSN_JMP;
+		ret = decode_mi8(instr, cmd);
 		break;
 	case H8300_JSR_1:
 		cmd->id = H8300_INSN_JSR;
 		ret = decode_ri16(instr, cmd);
 		break;
-	case H8300_JMP_2:
-		cmd->id = H8300_INSN_JMP;
-		ret = decode_abs16(instr, cmd);
-		break;
 	case H8300_JSR_2:
 		cmd->id = H8300_INSN_JSR;
 		ret = decode_abs16(instr, cmd);
-		break;
-	case H8300_JMP_3:
-		cmd->id = H8300_INSN_JMP;
-		ret = decode_mi8(instr, cmd);
 		break;
 	case H8300_JSR_3:
 		cmd->id = H8300_INSN_JSR;
