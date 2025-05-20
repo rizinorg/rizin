@@ -15,7 +15,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=Memory Allocation and memset
+NAME=Memory allocation and memset
 FILE=bins/elf/ppc64le/dbg_basic_test
 ARGS=-d
 CMDS=<<EOF
