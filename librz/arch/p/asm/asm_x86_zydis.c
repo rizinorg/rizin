@@ -136,6 +136,13 @@ static int x86_zydis_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len)
 	return op->size;
 }
 
+static bool x86_sw_breakpoint(RzAsm *a, RzAsmOp *op) {
+	// { 0, 1, 0, "\xcc" }, // valid for 16, 32, 64
+	// { 0, 2, 0, "\xcd\x03" },
+	rz_asm_op_set_buf(op, (const ut8 *)"\xcc", 1);
+	return true;
+}
+
 RzAsmPlugin rz_asm_plugin_x86_zydis = {
 	.name = "x86",
 	.desc = "X86/X86_64 Zydis-based disassembler",
@@ -147,6 +154,7 @@ RzAsmPlugin rz_asm_plugin_x86_zydis = {
 	.fini = x86_zydis_asm_fini,
 	.mnemonics = x86_zydis_asm_mnemonics,
 	.disassemble = &x86_zydis_disassemble,
+	.sw_breakpoint = x86_sw_breakpoint,
 	.features = "adox_adcx,aes,amd3dnow,amd3dnow_prefetch,amd_invlpgb,amx_bf16,"
 		    "amx_fp16,amx_int8,amx_tile,avx,avx2,avx2gather,avx512evex,avx512vex,avxaes,"
 		    "avx_ifma,avx_ne_convert,avx_vnni,avx_vnni_int16,avx_vnni_int8,base,bmi1,bmi2,"

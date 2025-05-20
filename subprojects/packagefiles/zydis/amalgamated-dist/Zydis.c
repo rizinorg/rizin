@@ -2591,6 +2591,7 @@ static ZyanStatus ZydisReadDisplacement(ZydisDecoderState* state,
     {
         ZyanU16 value;
         ZYAN_CHECK(ZydisInputNextBytes(state, instruction, (ZyanU8*)&value, 2));
+        ZYAN_LE16_TO_NATIVE(value);
         instruction->raw.disp.value = *(ZyanI16*)&value;
         break;
     }
@@ -2598,6 +2599,7 @@ static ZyanStatus ZydisReadDisplacement(ZydisDecoderState* state,
     {
         ZyanU32 value;
         ZYAN_CHECK(ZydisInputNextBytes(state, instruction, (ZyanU8*)&value, 4));
+        ZYAN_LE32_TO_NATIVE(value);
         instruction->raw.disp.value = *(ZyanI32*)&value;
         break;
     }
@@ -2605,6 +2607,7 @@ static ZyanStatus ZydisReadDisplacement(ZydisDecoderState* state,
     {
         ZyanU64 value;
         ZYAN_CHECK(ZydisInputNextBytes(state, instruction, (ZyanU8*)&value, 8));
+        ZYAN_LE64_TO_NATIVE(value);
         instruction->raw.disp.value = *(ZyanI64*)&value;
         break;
     }
@@ -2612,7 +2615,6 @@ static ZyanStatus ZydisReadDisplacement(ZydisDecoderState* state,
         ZYAN_UNREACHABLE;
     }
 
-    // TODO: Fix endianess on big-endian systems
 
     return ZYAN_STATUS_SUCCESS;
 }
@@ -2662,6 +2664,7 @@ static ZyanStatus ZydisReadImmediate(ZydisDecoderState* state,
     {
         ZyanU16 value;
         ZYAN_CHECK(ZydisInputNextBytes(state, instruction, (ZyanU8*)&value, 2));
+        ZYAN_LE16_TO_NATIVE(value);
         if (is_signed)
         {
             instruction->raw.imm[id].value.s = (ZyanI16)value;
@@ -2675,6 +2678,7 @@ static ZyanStatus ZydisReadImmediate(ZydisDecoderState* state,
     {
         ZyanU32 value;
         ZYAN_CHECK(ZydisInputNextBytes(state, instruction, (ZyanU8*)&value, 4));
+        ZYAN_LE32_TO_NATIVE(value);
         if (is_signed)
         {
             instruction->raw.imm[id].value.s = (ZyanI32)value;
@@ -2688,6 +2692,7 @@ static ZyanStatus ZydisReadImmediate(ZydisDecoderState* state,
     {
         ZyanU64 value;
         ZYAN_CHECK(ZydisInputNextBytes(state, instruction, (ZyanU8*)&value, 8));
+        ZYAN_LE64_TO_NATIVE(value);
         if (is_signed)
         {
             instruction->raw.imm[id].value.s = (ZyanI64)value;
@@ -2701,7 +2706,6 @@ static ZyanStatus ZydisReadImmediate(ZydisDecoderState* state,
         ZYAN_UNREACHABLE;
     }
 
-    // TODO: Fix endianess on big-endian systems
 
     return ZYAN_STATUS_SUCCESS;
 }
@@ -18443,13 +18447,14 @@ static ZyanStatus ZydisEmitUInt(ZyanU64 data, ZyanU8 size, ZydisEncoderBuffer *b
         return ZYAN_STATUS_INSUFFICIENT_BUFFER_SIZE;
     }
 
-    // TODO: fix for big-endian systems
     // The size variable is not passed on purpose to allow the compiler
     // to generate better code with a known size at compile time.
+
     if (size == 1)
     {
         ZYAN_MEMCPY(buffer->buffer + buffer->offset, &data, 1);
     }
+#if ZYAN_ENDIAN == ZYAN_LITTLE_ENDIAN
     else if (size == 2)
     {
         ZYAN_MEMCPY(buffer->buffer + buffer->offset, &data, 2);
@@ -18462,6 +18467,23 @@ static ZyanStatus ZydisEmitUInt(ZyanU64 data, ZyanU8 size, ZydisEncoderBuffer *b
     {
         ZYAN_MEMCPY(buffer->buffer + buffer->offset, &data, 8);
     }
+#else
+    else if (size == 2)
+    {
+        ZyanU16 value = ZYAN_BYTESWAP16((ZyanU16)data);
+        ZYAN_MEMCPY(buffer->buffer + buffer->offset, &value, 2);
+    }
+    else if (size == 4)
+    {
+        ZyanU32 value = ZYAN_BYTESWAP32((ZyanU32)data);
+        ZYAN_MEMCPY(buffer->buffer + buffer->offset, &value, 4);
+    }
+    else if (size == 8)
+    {
+        ZyanU64 value = ZYAN_BYTESWAP64((ZyanU64)data);
+        ZYAN_MEMCPY(buffer->buffer + buffer->offset, &value, 8);
+    }
+#endif
     else
     {
         ZYAN_UNREACHABLE;
