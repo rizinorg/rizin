@@ -83,9 +83,9 @@ d "inc r3l" 0a0b 0x0 (seq (set _res (+ (cast 8 false (var r3)) (bv 8 0x1))) (set
 d "jmp @0x1488:16" 5a001488 0x0 (jmp (bv 16 0x1488))
 d "jmp @@0x40:8" 5b40 0x0 (jmp (loadw 0 16 (cast 16 false (load 0 (bv 16 0x40)))))
 d "jmp @r4" 5940 0x0 (jmp (loadw 0 16 (var r4)))
-d "jsr @0x9999:16" 5E009999
-d "jsr @@0x93:8" 5F93
-d "jsr @r4" 5D40
+d "jsr @0x9999:16" 5e009999 0x0 (seq (set r7 (- (var r7) (bv 16 0x2))) (storew 0 (var r7) (bv 16 0x0)) (jmp (bv 16 0x9999)))
+d "jsr @@0x93:8" 5f93 0x0 (seq (set r7 (- (var r7) (bv 16 0x2))) (storew 0 (var r7) (bv 16 0x0)) (jmp (loadw 0 16 (cast 16 false (load 0 (bv 16 0x93))))))
+d "jsr @r4" 5d40 0x0 (seq (set r7 (- (var r7) (bv 16 0x2))) (storew 0 (var r7) (bv 16 0x0)) (jmp (loadw 0 16 (var r4))))
 d "ldc #0x14:8,ccr" 0714 0x0 (set ccr (bv 8 0x14))
 d "ldc r5h,ccr" 0305 0x0 (set ccr (cast 8 false (>> (var r5) (bv 8 0x8) false)))
 d "mov.b #0x99:8,r3h" f399 0x0 (seq (set r3 (cast 16 false (| (& (cast 32 false (var r3)) (~ (<< (>> (bv 32 0xffffffff) (- (bv 32 0x20) (bv 32 0x8)) false) (bv 32 0x8) false))) (& (<< (cast 32 false (bv 8 0x99)) (bv 32 0x8) false) (<< (>> (bv 32 0xffffffff) (- (bv 32 0x20) (bv 32 0x8)) false) (bv 32 0x8) false))))) (set ccr (cast 8 false (| (& (cast 32 false (var ccr)) (~ (<< (>> (bv 32 0xffffffff) (- (bv 32 0x20) (bv 32 0x1)) false) (bv 32 0x3) false))) (& (<< (cast 32 false (ite (&& (sle (bv 8 0x99) (bv 8 0x0)) (! (== (bv 8 0x99) (bv 8 0x0)))) (bv 16 0x1) (bv 16 0x0))) (bv 32 0x3) false) (<< (>> (bv 32 0xffffffff) (- (bv 32 0x20) (bv 32 0x1)) false) (bv 32 0x3) false))))) (set ccr (cast 8 false (| (& (cast 32 false (var ccr)) (~ (<< (>> (bv 32 0xffffffff) (- (bv 32 0x20) (bv 32 0x1)) false) (bv 32 0x2) false))) (& (<< (cast 32 false (ite (is_zero (bv 8 0x99)) (bv 16 0x1) (bv 16 0x0))) (bv 32 0x2) false) (<< (>> (bv 32 0xffffffff) (- (bv 32 0x20) (bv 32 0x1)) false) (bv 32 0x2) false))))) (set ccr (cast 8 false (| (& (cast 32 false (var ccr)) (~ (<< (>> (bv 32 0xffffffff) (- (bv 32 0x20) (bv 32 0x1)) false) (bv 32 0x1) false))) (& (<< (cast 32 false (ite false (bv 16 0x1) (bv 16 0x0))) (bv 32 0x1) false) (<< (>> (bv 32 0xffffffff) (- (bv 32 0x20) (bv 32 0x1)) false) (bv 32 0x1) false))))))
