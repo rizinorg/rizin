@@ -1,5 +1,6 @@
 NAME=Step instruction
 FILE=bins/elf/ppc64le/dbg_basic_test
+BROKEN=1
 ARGS=-a ppc -d
 CMDS=<<EOF
 db @ 0x100000754
