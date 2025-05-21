@@ -1,14 +1,20 @@
-NAME=Read and Write in registers
+NAME=Step instruction
 FILE=bins/elf/ppc64le/dbg_basic_test
 ARGS=-a ppc -d
 CMDS=<<EOF
-db 0x100000990
+db @ 0x100000754
+dr r9
 dc
+dr r9
+2ds
 dr r10
-dr r10=0x34
+ds
+dr r9
 EOF
 EXPECT=<<EOF
-r10 = 0xc8
+r9 = 0x0
+r9 = 0xc8
 r10 = 0x34
+r9 = 0xfc
 EOF
 RUN
