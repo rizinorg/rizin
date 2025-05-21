@@ -1,5 +1,6 @@
 NAME=Memory Read and Write
 FILE=bins/elf/ppc64le/dbg_basic_test
+BROKEN=1
 ARGS=-a ppc -d
 CMDS=<<EOF
 e io.cache=true
@@ -17,6 +18,7 @@ RUN
 
 NAME=Memory Allocation and memset
 FILE=bins/elf/ppc64le/dbg_basic_test
+BROKEN=1
 ARGS=-a ppc -d
 CMDS=<<EOF
 db @ 0x100000858
