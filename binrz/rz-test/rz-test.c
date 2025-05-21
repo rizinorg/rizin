@@ -193,6 +193,8 @@ int rz_test_main(int argc, const char **argv) {
 	char *cwd = NULL;
 	RzTestState state = { 0 };
 
+	eprintf("Running rz-test on %s\n", RZ_TEST_ARCH_OS);
+
 	if (!except_dir) {
 		RZ_LOG_ERROR("Fail to create RzPVector\n");
 		ret = -1;

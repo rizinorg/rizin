@@ -26,6 +26,10 @@
 #define RZ_TEST_ARCH "arm"
 #elif __arm64__
 #define RZ_TEST_ARCH "arm64"
+#elif __powerpc__ || __powerpc64__
+#define RZ_TEST_ARCH "ppc"
+#elif __s390__ || __s390x__
+#define RZ_TEST_ARCH "sysz"
 #else
 #define RZ_TEST_ARCH "unknown"
 #endif

@@ -3,7 +3,7 @@ FILE=bins/elf/ppc64le/dbg_basic_test
 ARGS=-a ppc -d
 CMDS=<<EOF
 e io.cache=true
-db 0x100000950
+db @ 0x100000950
 dc
 pxw 16 @ array_data
 wx 0x1234 @ 0x00020014
@@ -19,7 +19,7 @@ NAME=Memory Allocation and memset
 FILE=bins/elf/ppc64le/dbg_basic_test
 ARGS=-a ppc -d
 CMDS=<<EOF
-db 0x100000858
+db @ 0x100000858
 dc
 ds
 pxw 16 @ 0x75f812a77040
