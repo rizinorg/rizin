@@ -202,6 +202,37 @@ static void set_opdir(RzAnalysisOp *op) {
 		break;
 	}
 }
+#if CS_NEXT_VERSION >= 6
+static void mips_set_family(csh handle, cs_insn *insn, RzAnalysisOp *op) {
+	if (cs_insn_group(handle, insn, MIPS_GRP_PRIVILEGE)) {
+		op->family = RZ_ANALYSIS_OP_FAMILY_PRIV;
+	} else if (cs_insn_group(handle, insn, MIPS_FEATURE_ISFP64BIT)) {
+		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
+	} else if (cs_insn_group(handle, insn, MIPS_FEATURE_ISSINGLEFLOAT)) {
+		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
+	} else if (cs_insn_group(handle, insn, MIPS_FEATURE_HASMIPS3D)) {
+		op->family = RZ_ANALYSIS_OP_FAMILY_MMX;
+	} else if (cs_insn_group(handle, insn, MIPS_FEATURE_HASDSP)) {
+		op->family = RZ_ANALYSIS_OP_FAMILY_MMX;
+	} else if (cs_insn_group(handle, insn, MIPS_FEATURE_HASDSPR2)) {
+		op->family = RZ_ANALYSIS_OP_FAMILY_MMX;
+	} else if (cs_insn_group(handle, insn, MIPS_FEATURE_HASDSPR3)) {
+		op->family = RZ_ANALYSIS_OP_FAMILY_MMX;
+	} else if (cs_insn_group(handle, insn, MIPS_FEATURE_HASMSA)) {
+		op->family = RZ_ANALYSIS_OP_FAMILY_MMX;
+	} else if (cs_insn_group(handle, insn, MIPS_FEATURE_HASVIRT)) {
+		op->family = RZ_ANALYSIS_OP_FAMILY_VIRT;
+	} else if (cs_insn_group(handle, insn, MIPS_FEATURE_HASEVA)) {
+		op->family = RZ_ANALYSIS_OP_FAMILY_VIRT;
+	} else if (cs_insn_group(handle, insn, MIPS_FEATURE_HASMT)) {
+		op->family = RZ_ANALYSIS_OP_FAMILY_THREAD;
+	} else if (cs_insn_group(handle, insn, MIPS_FEATURE_HASCRC)) {
+		op->family = RZ_ANALYSIS_OP_FAMILY_CRYPTO;
+	} else {
+		op->family = RZ_ANALYSIS_OP_FAMILY_CPU;
+	}
+}
+#endif
 
 static int mips_analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	MIPSContext *ctx = (MIPSContext *)analysis->plugin_data;
@@ -242,6 +273,9 @@ static int mips_analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, co
 	if (mask & RZ_ANALYSIS_OP_MASK_IL) {
 		op->il_op = mips_il(&hndl, insn, gpr_size);
 	}
+#if CS_NEXT_VERSION >= 6
+	mips_set_family(hndl, insn, op);
+#endif
 
 	op->id = insn->id;
 	opsize = op->size = insn->size;

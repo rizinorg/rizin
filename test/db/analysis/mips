@@ -1262,3 +1262,236 @@ EXPECT=<<EOF
 \       `=< 0x00402c7c      b     0x402c50
 EOF
 RUN
+
+NAME=mips ensure family is set
+FILE==
+CMDS=<<EOF
+e asm.arch=mips
+e asm.cpu=mips32r2
+wx 20204401
+ao
+echo '==============='
+wx b01e727e
+ao
+echo '==============='
+wx 8e422046
+ao
+echo '==============='
+wx 9a92c746
+ao
+echo '==============='
+wx b019477e
+ao
+echo '==============='
+wx b018477e
+ao
+echo '==============='
+wx 12510778
+ao
+echo '==============='
+e asm.cpu=mips32r6
+wx 0a000042
+ao
+echo '==============='
+wx ac02447d
+ao
+echo '==============='
+wx 0920407d
+ao
+echo '==============='
+wx 0f00447d
+ao
+EOF
+EXPECT=<<EOF
+address: 0x0
+opcode: add a0, t2, a0
+esilcost: 0
+disasm: add a0, t2, a0
+pseudo: a0 = t2 + a0
+mnemonic: add
+description: adds two registers, trap on overflow
+mask: ffffffff
+prefix: 0
+id: 98
+bytes: 20204401
+refptr: 0
+size: 4
+sign: true
+type: add
+cycles: 0
+esil: 30,0x80000000,t2,a0,^,&,>>,31,0x80000000,t2,a0,+,&,>>,|,1,==,$z,?{,$$,1,TRAP,}{,t2,a0,+,a0,=,}
+rzil: (set a0 (cast 32 (msb (+ (var t2) (var a0))) (+ (var t2) (var a0))))
+family: cpu
+===============
+address: 0x0
+opcode: dpaqx_sa.w.ph ac3, s3, s2
+esilcost: 0
+disasm: dpaqx_sa.w.ph ac3, s3, s2
+pseudo: asm("dpaqx_sa.w.ph ac3, s3, s2")
+mnemonic: dpaqx_sa.w.ph
+mask: ffffffff
+prefix: 0
+id: 541
+bytes: b01e727e
+refptr: 0
+size: 4
+sign: false
+type: null
+cycles: 0
+family: mmx
+===============
+address: 0x0
+opcode: ceil.w.d f10, f8
+esilcost: 0
+disasm: ceil.w.d f10, f8
+pseudo: asm("ceil.w.d f10, f8")
+mnemonic: ceil.w.d
+mask: ffffffff
+prefix: 0
+id: 323
+bytes: 8e422046
+refptr: 0
+size: 4
+sign: false
+type: null
+cycles: 0
+family: fpu
+===============
+address: 0x0
+opcode: mulr.ps f10, f18, f7
+esilcost: 0
+disasm: mulr.ps f10, f18, f7
+pseudo: asm("mulr.ps f10, f18, f7")
+mnemonic: mulr.ps
+mask: ffffffff
+prefix: 0
+id: 1003
+bytes: 9a92c746
+refptr: 0
+size: 4
+sign: false
+type: null
+cycles: 0
+family: fpu
+===============
+address: 0x0
+opcode: mulsaq_s.w.ph ac3, s2, a3
+esilcost: 0
+disasm: mulsaq_s.w.ph ac3, s2, a3
+pseudo: asm("mulsaq_s.w.ph ac3, s2, a3")
+mnemonic: mulsaq_s.w.ph
+mask: ffffffff
+prefix: 0
+id: 1006
+bytes: b019477e
+refptr: 0
+size: 4
+sign: false
+type: mul
+cycles: 0
+family: mmx
+===============
+address: 0x0
+opcode: mulsa.w.ph ac3, s2, a3
+esilcost: 0
+disasm: mulsa.w.ph ac3, s2, a3
+pseudo: asm("mulsa.w.ph ac3, s2, a3")
+mnemonic: mulsa.w.ph
+mask: ffffffff
+prefix: 0
+id: 1007
+bytes: b018477e
+refptr: 0
+size: 4
+sign: false
+type: mul
+cycles: 0
+family: mmx
+===============
+address: 0x0
+opcode: mulv.b w4, w10, w7
+esilcost: 0
+disasm: mulv.b w4, w10, w7
+pseudo: asm("mulv.b w4, w10, w7")
+mnemonic: mulv.b
+mask: ffffffff
+prefix: 0
+id: 1011
+bytes: 12510778
+refptr: 0
+size: 4
+sign: false
+type: mul
+cycles: 0
+family: mmx
+===============
+address: 0x0
+opcode: tlbgwi
+esilcost: 0
+disasm: tlbgwi
+pseudo: asm("tlbgwi")
+mnemonic: tlbgwi
+mask: ffffffff
+prefix: 0
+id: 1321
+bytes: 0a000042
+refptr: 0
+size: 4
+sign: false
+type: null
+cycles: 0
+family: virt
+===============
+address: 0x0
+opcode: lbe a0, 5(t2)
+esilcost: 0
+disasm: lbe a0, 5(t2)
+pseudo: asm("lbe a0, 5(t2)")
+mnemonic: lbe
+mask: ffffffff
+prefix: 0
+id: 797
+bytes: ac02447d
+refptr: 0
+size: 4
+sign: false
+type: null
+cycles: 0
+rzil: (set a0 (cast 32 (msb (loadw 0 8 (+ (var t2) (bv 32 0x5)))) (loadw 0 8 (+ (var t2) (bv 32 0x5)))))
+family: virt
+===============
+address: 0x0
+opcode: yield a0, t2
+esilcost: 0
+disasm: yield a0, t2
+pseudo: asm("yield a0, t2")
+mnemonic: yield
+mask: ffffffff
+prefix: 0
+id: 1359
+bytes: 0920407d
+refptr: 0
+size: 4
+sign: false
+type: null
+cycles: 0
+family: thread
+===============
+address: 0x0
+opcode: crc32b a0, t2, a0
+esilcost: 0
+disasm: crc32b a0, t2, a0
+pseudo: asm("crc32b a0, t2, a0")
+mnemonic: crc32b
+mask: ffffffff
+prefix: 0
+id: 425
+bytes: 0f00447d
+refptr: 0
+size: 4
+sign: false
+type: null
+cycles: 0
+family: crpt
+EOF
+RUN
