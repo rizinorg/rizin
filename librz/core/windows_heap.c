@@ -5,7 +5,7 @@
 #include <rz_core.h>
 #include <TlHelp32.h>
 #include <windows_heap.h>
-#include "..\..\debug\p\native\maps\windows_maps.h"
+#include "..\..\debug\old\p\native\maps\windows_maps.h"
 #include "..\..\bin\pdb\pdb_downloader.h"
 #include "..\..\bin\pdb\pdb.h"
 
