@@ -5151,10 +5151,10 @@ aaa
 izx
 EOF
 EXPECT=<<EOF
-     paddr      vaddr flag                   len size section type  xref-from   string        
-----------------------------------------------------------------------------------------------
-0x00000574 0x00000574 str.Hello_world         12   13 .rodata ascii 0x00000512  Hello world!
-0x00000494 0x00000494 sym.register_tm_clones  10   11 .text   ascii entry.init0 \bH\tKxD\tJ{D
+     paddr      vaddr flag               len size section type  xref-from   string        
+------------------------------------------------------------------------------------------
+0x00000574 0x00000574 str.Hello_world     12   13 .rodata ascii 0x00000512  Hello world!
+0x00000494 0x00000494 register_tm_clones  10   11 .text   ascii entry.init0 \bH\tKxD\tJ{D
 EOF
 RUN
 
@@ -5165,6 +5165,6 @@ aaa
 izxj
 EOF
 EXPECT=<<EOF
-[{"vaddr":1396,"paddr":1396,"size":13,"length":12,"section":".rodata","type":"ascii","flag":"str.Hello_world","xref-from":"0x00000512","string":"Hello world!"},{"vaddr":1172,"paddr":1172,"size":11,"length":10,"section":".text","type":"ascii","flag":"sym.register_tm_clones","xref-from":"entry.init0","string":"\bH\tKxD\tJ{D"}]
+[{"vaddr":1396,"paddr":1396,"size":13,"length":12,"section":".rodata","type":"ascii","flag":"str.Hello_world","xref-from":"0x00000512","string":"Hello world!"},{"vaddr":1172,"paddr":1172,"size":11,"length":10,"section":".text","type":"ascii","flag":"register_tm_clones","xref-from":"entry.init0","string":"\bH\tKxD\tJ{D"}]
 EOF
 RUN

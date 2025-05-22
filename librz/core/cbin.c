@@ -2720,19 +2720,7 @@ static void collect_string_xrefs_and_flags(RzCore *core, ut64 paddr, char **xref
 	}
 	rz_list_free(xrefs);
 	*xref_address_str = rz_strbuf_drain(xref_addresses);
-
-	// search possible flag
-	const RzList *flags = rz_flag_get_list(core->flags, paddr);
-	RzFlagItem *flag;
-	RzListIter *flagIter;
-	RzStrBuf *flag_names = rz_strbuf_new("");
-	rz_list_foreach (flags, flagIter, flag) {
-		if (rz_strbuf_length(flag_names) > 0) {
-			rz_strbuf_append(flag_names, ",");
-		}
-		rz_strbuf_append(flag_names, flag->name);
-	}
-	*flag_name_str = rz_strbuf_drain(flag_names);
+	*flag_name_str = rz_flag_get_liststr(core->flags, paddr);
 }
 
 static bool strings_print(RzCore *core, RzCmdStateOutput *state, const RzPVector /*<RzBinString *>*/ *vec, bool print_xref) {
