@@ -1,3 +1,7 @@
+use_old_debugger = get_option('use_old_debugger')
+
+debugger_base_dir =  use_old_debugger? 'old/' : '/'
+
 debug_plugins_list = [
   'bf',
   'bochs',
@@ -21,43 +25,42 @@ if host_machine.system() == 'windows'
 endif
 
 rz_debug_sources = [
-  'ddesc.c',
-  'debug.c',
-  'dreg.c',
-  'desil.c',
-  'dmap.c',
-  'pid.c',
-  'plugin.c',
-  'dsession.c',
-  'dsignal.c',
-  'serialize_debug.c',
-  'snap.c',
-  'trace.c',
-  'p/bfvm.c',
-  'p/common_windows.c',
-  'p/common_winkd.c',
-  'p/debug_bf.c',
-  'p/debug_bochs.c',
-  'p/debug_dmp.c',
-  'p/debug_gdb.c',
-  'p/debug_io.c',
-  'p/debug_null.c',
-  'p/debug_winkd.c',
-  #'p/native/arm.c',
-  #'p/native/bt/fuzzy-all.c',
-  #'p/native/bt/generic-x64.c',
-  #'p/native/bt/generic-x86.c',
-  #'p/native/bt.c',
-  #'p/native/darwin.c',
-  #'p/native/drx.c',
-  #'p/native/maps/darwin.c',
-  'bp.c',
-  'bp_io.c',
-  'bp_traptrace.c',
-  'bp_watch.c',
-  'serialize_bp.c',
+  debugger_base_dir + 'ddesc.c',
+  debugger_base_dir + 'debug.c',
+  debugger_base_dir + 'dreg.c',
+  debugger_base_dir + 'desil.c',
+  debugger_base_dir + 'dmap.c',
+  debugger_base_dir + 'pid.c',
+  debugger_base_dir + 'plugin.c',
+  debugger_base_dir + 'dsession.c',
+  debugger_base_dir + 'dsignal.c',
+  debugger_base_dir + 'serialize_debug.c',
+  debugger_base_dir + 'snap.c',
+  debugger_base_dir + 'trace.c',
+  debugger_base_dir + 'p/bfvm.c',
+  debugger_base_dir + 'p/common_windows.c',
+  debugger_base_dir + 'p/common_winkd.c',
+  debugger_base_dir + 'p/debug_bf.c',
+  debugger_base_dir + 'p/debug_bochs.c',
+  debugger_base_dir + 'p/debug_dmp.c',
+  debugger_base_dir + 'p/debug_gdb.c',
+  debugger_base_dir + 'p/debug_io.c',
+  debugger_base_dir + 'p/debug_null.c',
+  debugger_base_dir + 'p/debug_winkd.c',
+  #debugger_base_dir + 'p/native/arm.c',
+  #debugger_base_dir + 'p/native/bt/fuzzy-all.c',
+  #debugger_base_dir + 'p/native/bt/generic-x64.c',
+  #debugger_base_dir + 'p/native/bt/generic-x86.c',
+  #debugger_base_dir + 'p/native/bt.c',
+  #debugger_base_dir + 'p/native/darwin.c',
+  #debugger_base_dir + 'p/native/drx.c',
+  #debugger_base_dir + 'p/native/maps/darwin.c',
+  debugger_base_dir + 'bp.c',
+  debugger_base_dir + 'bp_io.c',
+  debugger_base_dir + 'bp_traptrace.c',
+  debugger_base_dir + 'bp_watch.c',
+  debugger_base_dir + 'serialize_bp.c',
 ]
-
 rz_debug_deps = [
   dependency('rzgdb'),
   dependency('rzwinkd'),
@@ -76,49 +79,49 @@ rz_debug_deps = [
 
 if get_option('use_gpl')
   rz_debug_deps += dependency('rzqnx')
-  rz_debug_sources += 'p/debug_qnx.c'
+  rz_debug_sources += debugger_base_dir + 'p/debug_qnx.c'
 endif
 
 if has_debugger
-  rz_debug_sources += ['p/debug_native.c']
+  rz_debug_sources += [debugger_base_dir + 'p/debug_native.c']
 
   if host_machine.system() == 'linux' or host_machine.system() == 'android'
-    rz_debug_sources += ['p/native/linux/linux_debug.c']
+    rz_debug_sources += [debugger_base_dir + 'p/native/linux/linux_debug.c']
   endif
   if host_machine.system() == 'linux'
-    rz_debug_sources += ['p/native/linux/linux_coredump.c']
+    rz_debug_sources += [debugger_base_dir + 'p/native/linux/linux_coredump.c']
   endif
 
   if host_machine.system() != 'windows'
     rz_debug_sources += [
-      'p/native/procfs.c'
+      debugger_base_dir + 'p/native/procfs.c'
     ]
   endif
 
   if host_machine.system() == 'darwin'
     rz_debug_sources += [
-      'p/native/xnu/xnu_debug.c',
-      #'p/native/xnu/trap_arm.c',
-      #'p/native/xnu/trap_x86.c',
-      'p/native/xnu/xnu_excthreads.c',
-      'p/native/xnu/xnu_threads.c',
+      debugger_base_dir + 'p/native/xnu/xnu_debug.c',
+      #debugger_base_dir + 'p/native/xnu/trap_arm.c',
+      #debugger_base_dir + 'p/native/xnu/trap_x86.c',
+      debugger_base_dir + 'p/native/xnu/xnu_excthreads.c',
+      debugger_base_dir + 'p/native/xnu/xnu_threads.c',
     ]
   endif
 
   if ['netbsd', 'openbsd', 'freebsd', 'dragonfly'].contains(host_machine.system())
     rz_debug_deps += cc.find_library('kvm', required: true, static: is_static_build)
     rz_debug_sources += [
-      'p/native/bsd/bsd_debug.c',
+      debugger_base_dir + 'p/native/bsd/bsd_debug.c',
     ]
   endif
 endif
 
 if host_machine.system() == 'windows'
   rz_debug_sources += [
-    'p/debug_windbg.c',
-    'p/native/maps/windows_maps.c',
-    'p/native/windows/windows_debug.c',
-    'p/native/windows/windows_message.c',
+    debugger_base_dir + 'p/debug_windbg.c',
+    debugger_base_dir + 'p/native/maps/windows_maps.c',
+    debugger_base_dir + 'p/native/windows/windows_debug.c',
+    debugger_base_dir + 'p/native/windows/windows_message.c',
   ]
   rz_debug_deps += dependency('rzw32dbg_wrap')
 endif
