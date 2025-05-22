@@ -1326,7 +1326,7 @@ RZ_API bool rz_sign_flirt_apply(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL cons
 		return false;
 	}
 
-	if (!(flirt_buf = rz_buf_new_slurp(flirt_file))) {
+	if (!(flirt_buf = rz_buf_new_file(flirt_file, O_RDONLY, 0))) {
 		RZ_LOG_ERROR("FLIRT: Can't open %s\n", flirt_file);
 		return false;
 	}
