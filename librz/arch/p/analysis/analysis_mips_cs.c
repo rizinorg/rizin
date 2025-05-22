@@ -202,6 +202,7 @@ static void set_opdir(RzAnalysisOp *op) {
 		break;
 	}
 }
+
 #if CS_NEXT_VERSION >= 6
 static void mips_set_family(csh handle, cs_insn *insn, RzAnalysisOp *op) {
 	if (cs_insn_group(handle, insn, MIPS_GRP_PRIVILEGE)) {
