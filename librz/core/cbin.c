@@ -2686,6 +2686,55 @@ RZ_API bool rz_core_bin_segments_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBin
 	return true;
 }
 
+/**
+ * \brief Collect cross-references and flags for strings_print
+ *
+ * \param core Pointer to RzCore
+ * \param paddr Physical address
+ * \param xref_address_str Output parameter for cross-reference address string
+ * \param flag_name_str Output parameter for flag name string
+ */
+static void collect_string_xrefs_and_flags(RzCore *core, ut64 paddr, char **xref_address_str, char **flag_name_str) {
+	// search xrefs to string
+	RzList *xrefs = rz_analysis_xrefs_get_to(core->analysis, paddr);
+	RzAnalysisXRef *xref;
+	RzListIter *xrefIter;
+	RzStrBuf *xref_addresses = rz_strbuf_new("");
+	rz_list_foreach (xrefs, xrefIter, xref) {
+		if (rz_strbuf_length(xref_addresses) > 0) {
+			rz_strbuf_append(xref_addresses, ",");
+		}
+		RzFlagItem *f = rz_flag_get_at(core->flags, xref->from, false);
+		if (f) {
+			const char *name = core->flags->realnames && f->realname ? f->realname : f->name;
+			if (f->offset != xref->from) {
+				rz_strbuf_appendf(xref_addresses, "%s + %d\n", name, (int)(xref->from - f->offset));
+			} else {
+				rz_strbuf_append(xref_addresses, name);
+			}
+		} else {
+			char addr_str[32];
+			rz_strf(addr_str, "0x%08" PFMT64x, xref->from);
+			rz_strbuf_append(xref_addresses, addr_str);
+		}
+	}
+	rz_list_free(xrefs);
+	*xref_address_str = rz_strbuf_drain(xref_addresses);
+
+	// search possible flag
+	const RzList *flags = rz_flag_get_list(core->flags, paddr);
+	RzFlagItem *flag;
+	RzListIter *flagIter;
+	RzStrBuf *flag_names = rz_strbuf_new("");
+	rz_list_foreach (flags, flagIter, flag) {
+		if (rz_strbuf_length(flag_names) > 0) {
+			rz_strbuf_append(flag_names, ",");
+		}
+		rz_strbuf_append(flag_names, flag->name);
+	}
+	*flag_name_str = rz_strbuf_drain(flag_names);
+}
+
 static bool strings_print(RzCore *core, RzCmdStateOutput *state, const RzPVector /*<RzBinString *>*/ *vec, bool print_xref) {
 	bool b64str = rz_config_get_i(core->config, "bin.b64str");
 	int va = (core->io->va || core->bin->is_debugger) ? VA_TRUE : VA_FALSE;
@@ -2713,34 +2762,7 @@ static bool strings_print(RzCore *core, RzCmdStateOutput *state, const RzPVector
 		char *xref_address_str = NULL;
 		char *flag_name_str = NULL;
 		if (print_xref) {
-			// search xrefs to string
-			RzList *xrefs = rz_analysis_xrefs_get_to(core->analysis, paddr);
-			RzAnalysisXRef *xref;
-			RzListIter *xrefIter;
-			RzStrBuf *xref_addresses = rz_strbuf_new("");
-			rz_list_foreach (xrefs, xrefIter, xref) {
-				char addr_str[32];
-				rz_strf(addr_str, "0x%08" PFMT64x, xref->from);
-				if (rz_strbuf_length(xref_addresses) > 0) {
-					rz_strbuf_append(xref_addresses, ",");
-				}
-				rz_strbuf_append(xref_addresses, addr_str);
-			}
-			rz_list_free(xrefs);
-			xref_address_str = rz_strbuf_drain(xref_addresses);
-
-			// search possible flag
-			const RzList *flags = rz_flag_get_list(core->flags, paddr);
-			RzFlagItem *flag;
-			RzListIter *flagIter;
-			RzStrBuf *flag_names = rz_strbuf_new("");
-			rz_list_foreach (flags, flagIter, flag) {
-				if (rz_strbuf_length(flag_names) > 0) {
-					rz_strbuf_append(flag_names, ",");
-				}
-				rz_strbuf_append(flag_names, flag->name);
-			}
-			flag_name_str = rz_strbuf_drain(flag_names);
+			collect_string_xrefs_and_flags(core, paddr, &xref_address_str, &flag_name_str);
 		}
 
 		vaddr = obj ? rva(obj, paddr, string->vaddr, va) : paddr;

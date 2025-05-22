@@ -693,7 +693,7 @@ static void print_string(RzBinFile *bf, RzBinString *string, PJ *pj, int mode) {
 		printf("0x%" PFMT64x " %u %u %s\n", vaddr, string->size, string->length, string->string);
 		break;
 	case RZ_MODE_PRINT:
-		printf("0x%08" PFMT64x " 0x%08" PFMT64x " %u %u (%s) %s %s\n",
+		printf("0x%08" PFMT64x " 0x%08" PFMT64x " %" PFMT32u " %" PFMT32u " (%s) %s %s\n",
 			string->paddr, vaddr,
 			string->length, string->size,
 			section_name, type_string, string->string);
