@@ -80,6 +80,22 @@ a "nop" 90 # Assembly is correct
 dB "nopppp" 90 # Disassembly test is broken
 ```
 
+#### Multiple instructions in a single test
+
+Some instructions change if they appear together with another instructions.
+To test two or more instructions in a single test
+the instructions' assembly text and IL representations can be concatinated with a simicolon.
+
+Example: Branch delay in Sparc:
+```
+dE "call g1;nop" 9fc0600001000000 0x40 (set o7 (bv 64 0x40));(seq nop (jmp (var g1)))
+```
+
+Example: ARM conditional blocks with `it`.
+```
+d "ite eq;moveq r0, 1" 0cbf0120 0x0 nop;(branch (var zf) (set r0 (bv 32 0x1)) nop)
+```
+
 #### IL
 
 To also test lifting an instruction to RzIL, you can append the readable IL

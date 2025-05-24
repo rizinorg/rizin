@@ -1146,3 +1146,6 @@ ad "yield.w" aff30180
 d "add r1, pc" 7944 0x3ffd70ca (set r1 (+ (var r1) (bv 32 0x3ffd70ce)))
 d "adr.w r5, -0x27" aff22705 0x1000 (set r5 (bv 32 0xfdd))
 d "addw ip, ip, 0x604" 0cf2046c 0x0 (set r12 (+ (var r12) (bv 32 0x604)))
+d "ite eq;moveq r0, 1" 0cbf0120 0x0 nop;(branch (var zf) (set r0 (bv 32 0x1)) nop)
+d "ittte eq;moveq r1, 1;moveq r2, 2;moveq r2, 3;movne r1, 4" 03bf0121022203220421 0x0 nop;(branch (var zf) (set r1 (bv 32 0x1)) nop);(branch (var zf) (set r2 (bv 32 0x2)) nop);(branch (var zf) (set r2 (bv 32 0x3)) nop);(branch (! (var zf)) (set r1 (bv 32 0x4)) nop)
+d "b 0x14;b 0x16" 08e008e0 0x0 (jmp (bv 32 0x14));(jmp (bv 32 0x16))

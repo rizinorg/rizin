@@ -331,6 +331,7 @@ static int rasm_disasm(RzAsmState *as, ut64 addr, const char *buf, int len, int 
 				break;
 			}
 			ret += aop.size;
+			addr += aop.size;
 			rz_analysis_op_fini(&aop);
 		}
 		break;
@@ -351,6 +352,7 @@ static int rasm_disasm(RzAsmState *as, ut64 addr, const char *buf, int len, int 
 				break;
 			}
 			ret += aop.size;
+			addr += aop.size;
 			rz_analysis_op_fini(&aop);
 		}
 		break;
