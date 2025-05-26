@@ -22,6 +22,12 @@ bool rz_temperature_update(RzTemperature *ctx, const ut8 *data, size_t len) {
 
 bool rz_temperature_final(ut8 *digest, RzTemperature *ctx, bool fraction) {
 	rz_return_val_if_fail(ctx && digest, false);
+
+        if (ctx->size <= 1) {
+                rz_write_be_double(digest, 0.0);
+                return true;
+        }
+
 	double p, entropy = 0.0;
 	ut64 count;
 	for (size_t i = 0; i < 256; i++) {
@@ -31,13 +37,10 @@ bool rz_temperature_final(ut8 *digest, RzTemperature *ctx, bool fraction) {
 			entropy -= p * log2(p);
 		}
 	}
+
 	if (fraction && ctx->size) {
 		entropy /= log2((double)RZ_MIN(ctx->size, 256));
 	}
-        if (ctx->size <= 1) {
-                rz_write_be_double(digest, 0.0);
-                return true;
-        }
 
         double temperature = entropy / log2((double)ctx->size);
         if (fraction) {
