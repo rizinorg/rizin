@@ -128,6 +128,27 @@ RZ_API ut32 rz_hash_xxhash(RZ_NONNULL const ut8 *input, size_t size) {
 }
 
 /**
+ * \brief      Calculates the temperature of the given input
+ *
+ * \param[in]  data  The input buffer
+ * \param[in]  size  The size of the input
+ *
+ * \return     The resulting temperature of the input
+ */
+RZ_API double rz_hash_temperature(RZ_NONNULL const ut8 *data, ut64 len) {
+	rz_return_val_if_fail(data, 0.0);
+	const RzHashPlugin *plugin = &rz_hash_plugin_temperature;
+	ut8 *digest = NULL;
+	if (!plugin->small_block(data, len, &digest, NULL)) {
+		RZ_LOG_ERROR("msg digest: cannot calculate temperature\n");
+		return 0.0;
+	}
+	double e = rz_read_be_double(digest);
+	free(digest);
+	return e;
+}
+
+/**
  * \brief      Calculates the entropy of the given input
  *
  * \param[in]  data  The input buffer
@@ -583,7 +604,10 @@ RZ_API RZ_OWN char *rz_hash_cfg_get_result_string(RZ_NONNULL RzHashCfg *md, RZ_N
 		double entropy = rz_read_be_double(mdc->digest);
 		return rz_str_newf("%.8f", entropy);
 	} else if (!strcmp(name, "ssdeep")) {
-		return rz_str_dup((char *)mdc->digest);
+          
+	} else if (!strncmp(name, "temperature", strlen("temperature"))) {
+		double temperature = rz_read_be_double(mdc->digest);
+		return rz_str_newf("%.8f", temperature);
 	}
 
 	char *string = malloc((mdc->digest_size * 2) + 1);
@@ -658,6 +682,10 @@ RZ_API RZ_OWN char *rz_hash_cfg_calculate_small_block_string(RZ_NONNULL RzHash *
 		double entropy = rz_read_be_double(digest);
 		free(digest);
 		return rz_str_newf("%.8f", entropy);
+	} else if (!strncmp(name, "temperature", strlen("temperature"))) {
+		double temperature = rz_read_be_double(digest);
+		free(digest);
+		return rz_str_newf("%.8f", temperature);
 	} else if (!strcmp(name, "ssdeep")) {
 		return (char *)digest;
 	}

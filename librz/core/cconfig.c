@@ -3370,7 +3370,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB("bin.debase64", "false", &cb_debase64, "Try to debase64 all strings");
 	SETBPREF("bin.classes", "true", "Load classes from rbin on startup");
 	SETCB("bin.verbose", "false", &cb_binverbose, "Show RzBin warnings when loading binaries");
-	SETCB("bin.hashes.default", "md5,sha1,sha256,crc32,entropy", &cb_binhashesdefault, "Select hash algorithms");
+	SETCB("bin.hashes.default", "md5,sha1,sha256,crc32,entropy,temperature", &cb_binhashesdefault, "Select hash algorithms");
 
 	/* prj */
 	SETPREF("prj.file", "", "Path of the currently opened project");

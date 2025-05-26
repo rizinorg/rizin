@@ -71,6 +71,7 @@ hash_plugins_list = [
   'parity',
   'entropy',
   'entropy_fract',
+  'temperature',
 ]
 
 hash_plugins = {
@@ -102,9 +103,11 @@ rz_hash_sources = [
   'p/algo_parity.c',
   'p/algo_entropy.c',
   'p/algo_entropy_fractional.c',
+  'p/algo_temperature.c',
   'algorithms/mod255/mod255.c',
   'algorithms/parity/parity.c',
   'algorithms/entropy/entropy.c',
+  'algorithms/temperature/temperature.c',
   'algorithms/adler32/adler32.c',
   'algorithms/crc/crca.c',
   'algorithms/xor/xor.c',

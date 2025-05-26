@@ -1357,6 +1357,17 @@ static void handle_entropy(RzCore *core, const char *name, const ut8 *block, int
 	free(digest);
 }
 
+static void handle_temperature(RzCore *core, const char *name, const ut8 *block, int len) {
+	RzHashSize digest_size = 0;
+	ut8 *digest = rz_hash_cfg_calculate_small_block(core->hash, name, block, len, &digest_size);
+	if (!digest) {
+		return;
+	}
+	double temperature = rz_read_be_double(digest);
+	rz_cons_printf("%f\n", temperature);
+	free(digest);
+}
+
 static void handle_ssdeep(RzCore *core, const char *name, const ut8 *block, int len) {
 	RzHashSize digest_size = 0;
 	char *digest = (char *)rz_hash_cfg_calculate_small_block(core->hash, name, block, len, &digest_size);
@@ -1394,6 +1405,8 @@ RZ_IPI RzCmdStatus rz_cmd_print_hash_cfg_handler(RzCore *core, int argc, const c
 
 	if (!strncmp(plugin->name, "entropy", strlen("entropy"))) {
 		handle_entropy(core, plugin->name, core->block, core->blocksize);
+	} else if (!strncmp(plugin->name, "temperature", strlen("temperature"))) {
+		handle_temperature(core, plugin->name, core->block, core->blocksize);
 	} else if (!strcmp(plugin->name, "ssdeep")) {
 		handle_ssdeep(core, plugin->name, core->block, core->blocksize);
 	} else {

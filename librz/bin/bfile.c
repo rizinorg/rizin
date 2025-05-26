@@ -366,6 +366,9 @@ static inline bool add_file_hash(RzHashCfg *md, const char *name, RzPVector /*<R
 	if (!strncmp(name, "entropy", strlen("entropy"))) {
 		double entropy = rz_read_be_double(digest);
 		rz_strf(hash, "%f", entropy);
+	} else if (!strncmp(name, "temperature", strlen("temperature"))) {
+		double temperature = rz_read_be_double(digest);
+		rz_strf(hash, "%f", temperature);
 	} else if (!strcmp(name, "ssdeep")) {
 		rz_strf(hash, "%s", (const char *)digest);
 	} else {
