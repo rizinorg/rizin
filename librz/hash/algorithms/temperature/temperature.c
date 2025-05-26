@@ -34,14 +34,16 @@ bool rz_temperature_final(ut8 *digest, RzTemperature *ctx, bool fraction) {
 	if (fraction && ctx->size) {
 		entropy /= log2((double)RZ_MIN(ctx->size, 256));
 	}
-        double temperature = 0.0;
-	if (ctx->size > 1) {
-		temperature = entropy / log2((double)ctx->size);
-		if (fraction) {
-			temperature *= log2((double)ctx->size)
-			                / log2((double)RZ_MIN(ctx->size, 256));
-		}
-	}
-	rz_write_be_double(digest, temperature);
-	return true;
+        if (ctx->size <= 1) {
+                rz_write_be_double(digest, 0.0);
+                return true;
+        }
+
+        double temperature = entropy / log2((double)ctx->size);
+        if (fraction) {
+                temperature *= log2((double)ctx->size) /
+                               log2((double)RZ_MIN(ctx->size, 256));
+        }
+        rz_write_be_double(digest, temperature);
+        return true;
 }
