@@ -106,6 +106,7 @@ static hash_data_t hashes_to_test[] = {
 	{ INDATA("password"), .algo = "entropy", .expected = "2.75000000" },
 	{ INDATA("password"), .algo = "entropy_fract", .expected = "0.91666667" },
 	{ INDATA("abcdefgh"), .algo = "temperature", .expected = "1.00000000" },
+        { INDATA("a"), .algo = "temperature", .expected = "0.00000000" },
 #undef INDATA
 };
 
