@@ -919,6 +919,7 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 				if (skip > len) {
 					eprintf("rz-asm: invalid skip value (skip %" PFMT64u " > %" PFMT64u " len).\n", skip, len);
 					ret = 1;
+					free(usrstr);
 					goto beach;
 				}
 				// eprintf ("SKIP (%s) (%lld)\n", usrstr, skip);
