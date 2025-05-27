@@ -56,7 +56,7 @@ static int h8300_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	}
 
 	op->addr = addr;
-	ret = op->size = h8300_decode_command(buf, &cmd, addr);
+	ret = op->size = h8300_decode_command(buf, len, &cmd, addr);
 
 	if (ret < 0) {
 		return ret;

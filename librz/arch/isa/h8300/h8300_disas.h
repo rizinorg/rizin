@@ -231,6 +231,8 @@ typedef enum {
 	H8300_INSN_FORMAT_RI16R8,
 	H8300_INSN_FORMAT_IMMR8,
 	H8300_INSN_FORMAT_IMMR16,
+	H8300_INSN_FORMAT_IMMRI16,
+	H8300_INSN_FORMAT_IMMABS,
 	H8300_INSN_FORMAT_R8IMM,
 } H8300InsnFormat;
 
@@ -275,7 +277,7 @@ typedef struct h8300_cmd {
 
 int h8300_analyze_op_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf);
 int h8300_analyze_op_il(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd);
-int h8300_decode_command(const ut8 *instr, struct h8300_cmd *cmd, ut64 pc);
+int h8300_decode_command(const ut8 *instr, ut64 len, struct h8300_cmd *cmd, ut64 pc);
 RzAnalysisILConfig *h8300_il_config(RzAnalysis *a);
 
 #endif /* H8300_DISAS_H */
