@@ -604,7 +604,7 @@ RZ_API RZ_OWN char *rz_hash_cfg_get_result_string(RZ_NONNULL RzHashCfg *md, RZ_N
 		double entropy = rz_read_be_double(mdc->digest);
 		return rz_str_newf("%.8f", entropy);
 	} else if (!strcmp(name, "ssdeep")) {
-          
+		return rz_str_dup((char *)mdc->digest);
 	} else if (!strncmp(name, "temperature", strlen("temperature"))) {
 		double temperature = rz_read_be_double(mdc->digest);
 		return rz_str_newf("%.8f", temperature);
