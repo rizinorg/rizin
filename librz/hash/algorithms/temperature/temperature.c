@@ -1,6 +1,25 @@
 // SPDX-FileCopyrightText: 2025 Seva <little_scamp@yahoo.comt>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+/**
+ * @file temperature.c
+ * @brief Information-temperature hash plugin for Rizin
+ *
+ * Computes the *information temperature*
+ * \f$ T_{\text{info}} = \frac{H}{\log_2 N}\f$
+ * where **H** is the Shannon entropy of the byte block and **N**
+ * is the block length in bytes.
+ *
+ * Key points
+ * ----------
+ * * Range     : 0 ≤ T<sub>info</sub> ≤ 1 for blocks up to 256 bytes
+ *   (with `fraction=true` the value is explicitly normalised to [0, 1]
+ *
+ * @author Seva <little_scamp@yahoo.com>
+ * @copyright 2025
+ * @license LGPL-3.0-only
+ */
+
 #include "temperature.h"
 #include <math.h>
 #include <rz_util/rz_assert.h>

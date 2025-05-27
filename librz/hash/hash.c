@@ -128,7 +128,7 @@ RZ_API ut32 rz_hash_xxhash(RZ_NONNULL const ut8 *input, size_t size) {
 }
 
 /**
- * \brief      Calculates the temperature of the given input
+ * \brief      Calculates the information temperature of the given input
  *
  * \param[in]  data  The input buffer
  * \param[in]  size  The size of the input
