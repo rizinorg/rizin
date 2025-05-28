@@ -92,6 +92,7 @@ typedef enum {
 	RZ_OUTPUT_MODE_TABLE = 1 << 7,
 	RZ_OUTPUT_MODE_QUIETEST = 1 << 8,
 	RZ_OUTPUT_MODE_GRAPH = 1 << 9,
+	RZ_OUTPUT_MODE_PRINT = 1 << 10,
 } RzOutputMode;
 
 /**

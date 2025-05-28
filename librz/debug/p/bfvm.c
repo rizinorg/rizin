@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "bfvm.h"
+#include <rz_cmd.h> // For RzOutputMode
+#include <rz_cons.h> // For PJ_*, rz_cons_printf
 
 static ut8 bfvm_op(BfvmCPU *c) {
 	// XXX: this is slow :(
@@ -271,45 +273,86 @@ RZ_API int bfvm_trace(BfvmCPU *c, ut64 until) {
 	return 0;
 }
 
-RZ_API void bfvm_show_regs(BfvmCPU *c, int rad) {
-	if (rad) {
-		eprintf("fs regs\n");
-		eprintf("f eip @ 0x%08" PFMT64x "\n", (ut64)c->eip);
-		eprintf("f esp @ 0x%08" PFMT64x "\n", (ut64)c->esp);
-		eprintf("f ptr @ 0x%08" PFMT64x "\n", (ut64)c->ptr + c->base);
-		eprintf("fs *\n");
-	} else {
+RZ_API void bfvm_show_regs(BfvmCPU *c, RzOutputMode mode) {
+	PJ *pj = NULL;
+	switch (mode) {
+	case RZ_OUTPUT_MODE_RIZIN:
+		rz_cons_printf("fs regs\n");
+		rz_cons_printf("f eip @ 0x%08" PFMT64x "\n", (ut64)c->eip);
+		rz_cons_printf("f esp @ 0x%08" PFMT64x "\n", (ut64)c->esp);
+		rz_cons_printf("f ptr @ 0x%08" PFMT64x "\n", (ut64)c->ptr + c->base);
+		rz_cons_printf("fs *\n");
+		break;
+	case RZ_OUTPUT_MODE_JSON:
+		pj = pj_new();
+		pj_o(pj);
+		pj_kn(pj, "eip", (ut64)c->eip);
+		pj_kn(pj, "esp", (ut64)c->esp);
+		pj_kn(pj, "ptr_val", (ut64)c->ptr); // Value of ptr register
+		pj_kn(pj, "ptr_abs", (ut64)c->ptr + c->base); // Absolute address pointed by ptr
+		ut8 ch_json = bfvm_get(c);
+		pj_ki(pj, "ptr_deref_val", ch_json);
+		if (IS_PRINTABLE(ch_json)) {
+			char s[2] = { ch_json, 0 };
+			pj_ks(pj, "ptr_deref_char", s);
+		} else {
+			pj_ks(pj, "ptr_deref_char", ".");
+		}
+		pj_end(pj);
+		rz_cons_println(pj_string(pj));
+		pj_free(pj);
+		break;
+	case RZ_OUTPUT_MODE_STANDARD:
+	default: {
 		ut8 ch = bfvm_get(c);
-		eprintf("  eip  0x%08" PFMT64x "     esp  0x%08" PFMT64x "\n",
+		rz_cons_printf("  eip  0x%08" PFMT64x "     esp  0x%08" PFMT64x "\n",
 			(ut64)c->eip, (ut64)c->esp);
-		eprintf("  ptr  0x%08x     [ptr]  %d = 0x%02x '%c'\n",
-			(ut32)c->ptr, ch, ch, IS_PRINTABLE(ch) ? ch : ' ');
+		rz_cons_printf("  ptr  0x%08" PFMT64x "     [ptr]  %d = 0x%02x '%c'\n",
+			(ut64)c->ptr + c->base, ch, ch, IS_PRINTABLE(ch) ? ch : '.');
+		}
+		break;
 	}
 }
 
-RZ_API void bfvm_maps(BfvmCPU *c, int rad) {
-	if (rad) {
-		eprintf("fs sections\n");
-		eprintf("e cmd.vprompt=px@screen\n");
-		eprintf("f section_code @ 0x%08" PFMT64x "\n", (ut64)BFVM_CODE_ADDR);
-		eprintf("f section_code_end @ 0x%08" PFMT64x "\n", (ut64)BFVM_CODE_ADDR + BFVM_CODE_SIZE);
-		eprintf("f section_data @ 0x%08" PFMT64x "\n", (ut64)c->base);
-		eprintf("f section_data_end @ 0x%08" PFMT64x "\n", (ut64)c->base + c->size);
-		eprintf("f screen @ 0x%08" PFMT64x "\n", (ut64)c->screen);
-		eprintf("f section_screen @ 0x%08" PFMT64x "\n", (ut64)c->screen);
-		eprintf("f section_screen_end @ 0x%08" PFMT64x "\n", (ut64)c->screen + c->screen_size);
-		eprintf("f input @ 0x%08" PFMT64x "\n", (ut64)c->input);
-		eprintf("f section_input @ 0x%08" PFMT64x "\n", (ut64)c->input);
-		eprintf("f section_input_end @ 0x%08" PFMT64x "\n", (ut64)c->input + c->input_size);
-		eprintf("fs *\n");
-	} else {
-		eprintf("0x%08" PFMT64x " - 0x%08" PFMT64x " rwxu 0x%08" PFMT64x " .code\n",
+RZ_API void bfvm_maps(BfvmCPU *c, RzOutputMode mode) {
+	PJ *pj = NULL;
+	switch (mode) {
+	case RZ_OUTPUT_MODE_RIZIN:
+		rz_cons_printf("fs sections\n");
+		rz_cons_printf("e cmd.vprompt=px@screen\n");
+		rz_cons_printf("f section_code @ 0x%08" PFMT64x "\n", (ut64)BFVM_CODE_ADDR);
+		rz_cons_printf("f section_code_end @ 0x%08" PFMT64x "\n", (ut64)BFVM_CODE_ADDR + BFVM_CODE_SIZE);
+		rz_cons_printf("f section_data @ 0x%08" PFMT64x "\n", (ut64)c->base);
+		rz_cons_printf("f section_data_end @ 0x%08" PFMT64x "\n", (ut64)c->base + c->size);
+		rz_cons_printf("f screen @ 0x%08" PFMT64x "\n", (ut64)c->screen);
+		rz_cons_printf("f section_screen @ 0x%08" PFMT64x "\n", (ut64)c->screen);
+		rz_cons_printf("f section_screen_end @ 0x%08" PFMT64x "\n", (ut64)c->screen + c->screen_size);
+		rz_cons_printf("f input @ 0x%08" PFMT64x "\n", (ut64)c->input);
+		rz_cons_printf("f section_input @ 0x%08" PFMT64x "\n", (ut64)c->input);
+		rz_cons_printf("f section_input_end @ 0x%08" PFMT64x "\n", (ut64)c->input + c->input_size);
+		rz_cons_printf("fs *\n");
+		break;
+	case RZ_OUTPUT_MODE_JSON:
+		pj = pj_new();
+		pj_a(pj);
+		pj_o(pj); pj_kn(pj, "addr", (ut64)0); pj_kn(pj, "addr_end", (ut64)c->size); pj_ks(pj, "perm", "rwxu"); pj_kn(pj, "size", (ut64)c->size); pj_ks(pj, "name", ".code"); pj_end(pj);
+		pj_o(pj); pj_kn(pj, "addr", (ut64)c->base); pj_kn(pj, "addr_end", (ut64)(c->base + c->size)); pj_ks(pj, "perm", "rw--"); pj_kn(pj, "size", (ut64)c->size); pj_ks(pj, "name", ".data"); pj_end(pj);
+		pj_o(pj); pj_kn(pj, "addr", (ut64)c->screen); pj_kn(pj, "addr_end", (ut64)(c->screen + c->screen_size)); pj_ks(pj, "perm", "rw--"); pj_kn(pj, "size", (ut64)c->screen_size); pj_ks(pj, "name", ".screen"); pj_end(pj);
+		pj_o(pj); pj_kn(pj, "addr", (ut64)c->input); pj_kn(pj, "addr_end", (ut64)(c->input + c->input_size)); pj_ks(pj, "perm", "rw--"); pj_kn(pj, "size", (ut64)c->input_size); pj_ks(pj, "name", ".input"); pj_end(pj);
+		pj_end(pj);
+		rz_cons_println(pj_string(pj));
+		pj_free(pj);
+		break;
+	case RZ_OUTPUT_MODE_STANDARD:
+	default:
+		rz_cons_printf("0x%08" PFMT64x " - 0x%08" PFMT64x " rwxu 0x%08" PFMT64x " .code\n",
 			(ut64)0, (ut64)c->size, (ut64)c->size);
-		eprintf("0x%08" PFMT64x " - 0x%08" PFMT64x " rw-- 0x%08" PFMT64x " .data\n",
+		rz_cons_printf("0x%08" PFMT64x " - 0x%08" PFMT64x " rw-- 0x%08" PFMT64x " .data\n",
 			(ut64)c->base, (ut64)(c->base + c->size), (ut64)c->size);
-		eprintf("0x%08" PFMT64x " - 0x%08" PFMT64x " rw-- 0x%08" PFMT64x " .screen\n",
+		rz_cons_printf("0x%08" PFMT64x " - 0x%08" PFMT64x " rw-- 0x%08" PFMT64x " .screen\n",
 			(ut64)c->screen, (ut64)(c->screen + c->screen_size), (ut64)c->screen_size);
-		eprintf("0x%08" PFMT64x " - 0x%08" PFMT64x " rw-- 0x%08" PFMT64x " .input\n",
+		rz_cons_printf("0x%08" PFMT64x " - 0x%08" PFMT64x " rw-- 0x%08" PFMT64x " .input\n",
 			(ut64)c->input, (ut64)(c->input + c->input_size), (ut64)c->input_size);
+		break;
 	}
 }

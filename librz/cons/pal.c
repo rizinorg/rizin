@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_cons.h>
+#include <rz_util/rz_json.h> // For PJ
 
 #define RZCOLOR_AT(i) (RzColor *)(((ut8 *)&(rz_cons_singleton()->context->cpal)) + keys[i].coff)
 #define COLOR_AT(i)   (char **)(((ut8 *)&(rz_cons_singleton()->context->pal)) + keys[i].off)
@@ -608,89 +609,111 @@ RZ_API void rz_cons_pal_list(int rad, const char *arg) {
 		rz_cons_print("}\n");
 	}
 }
+=======
+}
 
-/* Modify the palette to set a color value.
- * rz_cons_pal_update_event () must be called after this function
- * so the changes take effect. */
-RZ_API int rz_cons_pal_set(const char *key, const char *val) {
+RZ_API void rz_cons_pal_list(RzOutputMode mode, const char *arg) {
+	char *name_processed, **color_str_ptr;
+	const char *hasnext;
 	int i;
-	RzColor *rcolor;
+	PJ *pj = NULL;
+
+	if (mode == RZ_OUTPUT_MODE_JSON) {
+		pj = pj_new();
+		if (!pj) {
+			return;
+		}
+		pj_o(pj); 
+	}
+
 	for (i = 0; keys[i].name; i++) {
-		if (!strcmp(key, keys[i].name)) {
-			rcolor = RZCOLOR_AT(i);
-			rz_cons_pal_parse(val, rcolor);
-			return true;
+		RzColor *rcolor = RZCOLOR_AT(i);
+		color_str_ptr = COLOR_AT(i); 
+
+		switch (mode) {
+		case RZ_OUTPUT_MODE_JSON:
+			pj_k(pj, keys[i].name);
+			pj_a(pj); 
+			pj_i(pj, rcolor->r);
+			pj_i(pj, rcolor->g);
+			pj_i(pj, rcolor->b);
+			// Alpha and attributes can be added if needed by JSON consumers
+			// if (rcolor->a != 0xff) { pj_i(pj, rcolor->a); } // Example for alpha
+			// if (rcolor->attr != 0) { pj_i(pj, rcolor->attr); } // Example for attributes
+			pj_end(pj); 
+			break;
+		case RZ_OUTPUT_MODE_RIZIN: 
+			rz_cons_printf("ec %s rgb:%02x%02x%02x",
+				keys[i].name, rcolor->r, rcolor->g, rcolor->b);
+			if (rcolor->a == ALPHA_FGBG) {
+				rz_cons_printf(" rgb:%02x%02x%02x",
+					rcolor->r2, rcolor->g2, rcolor->b2);
+			}
+			if (rcolor->attr) {
+				const RAttrStr attrs[] = {
+					{ RZ_CONS_ATTR_BOLD, "bold" },
+					{ RZ_CONS_ATTR_DIM, "dim" },
+					{ RZ_CONS_ATTR_ITALIC, "italic" },
+					{ RZ_CONS_ATTR_UNDERLINE, "underline" },
+					{ RZ_CONS_ATTR_BLINK, "blink" }
+				};
+				int j;
+				if (rcolor->a != ALPHA_FGBG) { 
+					rz_cons_strcat(" .");
+				}
+				for (j = 0; j < RZ_ARRAY_SIZE(attrs); j++) {
+					if (rcolor->attr & attrs[j].val) {
+						rz_cons_printf(" %s", attrs[j].str);
+					}
+				}
+			}
+			rz_cons_newline();
+			break;
+		case RZ_OUTPUT_MODE_SIMPLE: // Treat as QUIET
+		case RZ_OUTPUT_MODE_QUIET:
+			// Output a simple key=value for scripting, e.g., comment=ff0000
+			rz_cons_printf("%s=%02x%02x%02x", keys[i].name, rcolor->r, rcolor->g, rcolor->b);
+			if (rcolor->a == ALPHA_FGBG) {
+				rz_cons_printf(",bg=%02x%02x%02x", rcolor->r2, rcolor->g2, rcolor->b2);
+			}
+			rz_cons_newline();
+			break;
+		case RZ_OUTPUT_MODE_SIMPLEST:
+		case RZ_OUTPUT_MODE_QUIETEST:
+			// No output, or perhaps just the name if absolutely necessary for some tool
+			// rz_cons_println(keys[i].name);
+			break;
+		case RZ_OUTPUT_MODE_STANDARD:
+		default: 
+			// Handle specific char arguments 'c' and 'h' if passed via arg
+			if (arg && *arg == 'c') { 
+				const char *prefix = (arg[1] && arg[1] != ' ') ? arg + 1 : "";
+				hasnext = (keys[i + 1].name) ? "\n" : "";
+				name_processed = rz_str_dup(keys[i].name);
+				if (name_processed) {
+					rz_str_replace_char(name_processed, '.', '_'); 
+					rz_cons_printf(".%s%s { color: rgb(%d, %d, %d); }%s",
+						prefix, name_processed, rcolor->r, rcolor->g, rcolor->b, hasnext);
+					free(name_processed);
+				}
+			} else if (arg && *arg == 'h') { 
+				name_processed = rz_str_dup(keys[i].name);
+				if (name_processed) {
+					rz_str_replace_char(name_processed, '.', '_');
+					rz_cons_printf(".%s { color:#%02x%02x%02x }\n",
+						name_processed, rcolor->r, rcolor->g, rcolor->b);
+					free(name_processed);
+				}
+			} else { // Default standard textual representation (original default)
+				rz_cons_printf(" %s##%s  %s\n", *color_str_ptr, Color_RESET, keys[i].name);
+			}
+			break;
 		}
 	}
-	eprintf("rz_cons_pal_set: Invalid color %s\n", key);
-	return false;
-}
-
-/* Get the named RzColor */
-RZ_API RzColor rz_cons_pal_get(const char *key) {
-	int i;
-	RzColor *rcolor;
-	for (i = 0; keys[i].name; i++) {
-		if (!strcmp(key, keys[i].name)) {
-			rcolor = RZCOLOR_AT(i);
-			return *rcolor;
-		}
+	if (mode == RZ_OUTPUT_MODE_JSON) {
+		pj_end(pj); 
+		rz_cons_println(pj_string(pj));
+		pj_free(pj);
 	}
-	return (RzColor)RzColor_NULL;
 }
-
-/* Get the RzColor at specified index */
-RZ_API RzColor rz_cons_pal_get_i(int index) {
-	return *(RZCOLOR_AT(index));
-}
-
-/* Get color name at index */
-RZ_API const char *rz_cons_pal_get_name(int index) {
-	return (index >= 0 && index < keys_len) ? keys[index].name : NULL;
-}
-
-RZ_API int rz_cons_pal_len(void) {
-	return keys_len;
-}
-
-RZ_API void rz_cons_pal_update_event(void) {
-	__cons_pal_update_event(rz_cons_singleton()->context);
-}
-
-RZ_API void rz_cons_rainbow_new(RzConsContext *ctx, int sz) {
-	ctx->pal.rainbow_sz = sz;
-	free(ctx->pal.rainbow);
-	ctx->pal.rainbow = calloc(sizeof(char *), sz);
-}
-
-RZ_API void rz_cons_rainbow_free(RzConsContext *ctx) {
-	int i, sz = ctx->pal.rainbow_sz;
-	if (ctx->pal.rainbow) {
-		for (i = 0; i < sz; i++) {
-			free(ctx->pal.rainbow[i]);
-		}
-	}
-	ctx->pal.rainbow_sz = 0;
-	RZ_FREE(ctx->pal.rainbow);
-}
-
-RZ_API char *rz_cons_rainbow_get(int idx, int last, bool bg) {
-	RzCons *cons = rz_cons_singleton();
-	if (last < 0) {
-		last = cons->context->pal.rainbow_sz;
-	}
-	if (idx < 0 || idx >= last || !cons->context->pal.rainbow) {
-		return NULL;
-	}
-	int x = (last == cons->context->pal.rainbow_sz)
-		? idx
-		: (cons->context->pal.rainbow_sz * idx) / (last + 1);
-	const char *a = cons->context->pal.rainbow[x];
-	if (bg) {
-		char *dup = rz_str_newf("%s %s", a, a);
-		char *res = rz_cons_pal_parse(dup, NULL);
-		free(dup);
-		return res;
-	}
-	return rz_cons_pal_parse(a, NULL);
-}
+>>>>>>> REPLACE

@@ -524,6 +524,8 @@ RZ_IPI RzCmdStatus rz_flag_zone_list_handler(RzCore *core, int argc, const char 
 struct flagbar_t {
 	RzCore *core;
 	int cols;
+	RzOutputMode mode;
+	PJ *pj;
 };
 
 static bool flagbar_foreach(RzFlagItem *fi, void *user) {
@@ -534,35 +536,52 @@ static bool flagbar_foreach(RzFlagItem *fi, void *user) {
 		min = m->itv.addr;
 		max = m->itv.addr + m->itv.size;
 	}
-	rz_cons_printf("0x%08" PFMT64x " ", fi->offset);
-	RzBarOptions opts = {
-		.unicode = false,
-		.thinline = false,
-		.legend = true,
-		.offset = false,
-		.offpos = 0,
-		.cursor = false,
-		.curpos = 0,
-		.color = false
-	};
-	RzStrBuf *strbuf = rz_rangebar(&opts, fi->offset, fi->offset + fi->size, min, max, u->cols);
-	if (!strbuf) {
-		RZ_LOG_ERROR("Cannot generate rangebar\n");
-	} else {
-		rz_cons_print(rz_strbuf_drain(strbuf));
+
+	switch (u->mode) {
+	case RZ_OUTPUT_MODE_JSON:
+		pj_o(u->pj);
+		pj_ks(u->pj, "name", fi->name);
+		pj_kn(u->pj, "offset", fi->offset);
+		pj_kn(u->pj, "size", fi->size);
+		// TODO: Optionally add bar string representation if useful for JSON consumers
+		pj_end(u->pj);
+		break;
+	case RZ_OUTPUT_MODE_RIZIN:
+		rz_cons_printf("f %s %" PFMT64d " @ 0x%08" PFMT64x "\n", fi->name, fi->size, fi->offset);
+		break;
+	case RZ_OUTPUT_MODE_STANDARD:
+	default:
+		rz_cons_printf("0x%08" PFMT64x " ", fi->offset);
+		RzBarOptions opts = {
+			.unicode = false,
+			.thinline = false,
+			.legend = true,
+			.offset = false,
+			.offpos = 0,
+			.cursor = false,
+			.curpos = 0,
+			.color = false
+		};
+		RzStrBuf *strbuf = rz_rangebar(&opts, fi->offset, fi->offset + fi->size, min, max, u->cols);
+		if (!strbuf) {
+			RZ_LOG_ERROR("Cannot generate rangebar\n");
+		} else {
+			rz_cons_print(rz_strbuf_drain(strbuf));
+		}
+		rz_cons_printf("  %s\n", fi->name);
+		break;
 	}
-	rz_cons_printf("  %s\n", fi->name);
 	return true;
 }
 
-static void flagbars(RzCore *core, const char *glob) {
+static void flagbars(RzCore *core, const char *glob, RzOutputMode mode, PJ *pj) {
 	int cols = rz_cons_get_size(NULL);
 	cols -= 80;
 	if (cols < 0) {
 		cols += 80;
 	}
 
-	struct flagbar_t u = { .core = core, .cols = cols };
+	struct flagbar_t u = { .core = core, .cols = cols, .mode = mode, .pj = pj };
 	rz_flag_foreach_space_glob(core->flags, glob, rz_flag_space_cur(core->flags), flagbar_foreach, &u);
 }
 
@@ -849,12 +868,25 @@ RZ_IPI RzCmdStatus rz_flag_realname_handler(RzCore *core, int argc, const char *
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_flag_list_ascii_handler(RzCore *core, int argc, const char **argv) {
-	if (argc > 1) {
-		flagbars(core, argv[1]);
-	} else {
-		flagbars(core, NULL);
+RZ_IPI RzCmdStatus rz_flag_list_ascii_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	PJ *pj = NULL; // PJ object for JSON output, managed by RzCmdStateOutput normally
+	if (state->mode == RZ_OUTPUT_MODE_JSON) {
+		pj = state->d.pj;
+		// pj_a (pj); // Assuming RzCmdStateOutput handles array start/end for commands using it.
+		// If this handler is directly called, manual array management might be needed.
 	}
+	// For RZ_OUTPUT_MODE_RIZIN or RZ_OUTPUT_MODE_STANDARD, pj remains NULL.
+
+	if (argc > 1) {
+		flagbars(core, argv[1], state->mode, pj);
+	} else {
+		flagbars(core, NULL, state->mode, pj);
+	}
+
+	// if (state->mode == RZ_OUTPUT_MODE_JSON) {
+	// pj_end (pj);
+	// }
+	// rz_cons_flush(); // Ensure output if not handled by RzCmdStateOutput print
 	return RZ_CMD_STATUS_OK;
 }
 

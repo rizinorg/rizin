@@ -60,8 +60,9 @@ static void classes_as_source_print(RzCore *core, RzCmdStateOutput *state) {
 	}
 }
 
-static RzOutputMode rad2outputmode(int rad) {
-	switch (rad) {
+// Renamed from char_to_outputmode and updated to take RZ_MODE_* flags
+static RzOutputMode outputmode_from_legacy_flag(int legacy_mode) {
+	switch (legacy_mode) {
 	case RZ_MODE_JSON:
 		return RZ_OUTPUT_MODE_JSON;
 	case RZ_MODE_SIMPLE:
@@ -70,8 +71,9 @@ static RzOutputMode rad2outputmode(int rad) {
 		return RZ_OUTPUT_MODE_QUIETEST;
 	case RZ_MODE_RIZINCMD:
 		return RZ_OUTPUT_MODE_RIZIN;
-	case RZ_MODE_PRINT:
-	default:
+	// Removed RZ_MODE_PRINT as it's typically 0 and handled by default.
+	// case RZ_MODE_PRINT:
+	default: // Catches RZ_MODE_PRINT (0) and any other unmapped legacy modes
 		return RZ_OUTPUT_MODE_STANDARD;
 	}
 }
@@ -493,7 +495,7 @@ static bool __dumpSections(RzBin *bin, const char *scnname, const char *output, 
 	return true;
 }
 
-static int rzbin_do_operation(RzBin *bin, const char *op, int rad, const char *output, const char *file) {
+static int rzbin_do_operation(RzBin *bin, const char *op, RzOutputMode mode, const char *output, const char *file) {
 	char *arg = NULL, *ptr = NULL, *ptr2 = NULL;
 	bool rc = true;
 
@@ -564,7 +566,7 @@ static int rzbin_do_operation(RzBin *bin, const char *op, int rad, const char *o
 			}
 		}
 		if (plg && plg->signature) {
-			char *sign = plg->signature(cur, rad == RZ_MODE_JSON);
+			char *sign = plg->signature(cur, mode == RZ_OUTPUT_MODE_JSON);
 			if (sign) {
 				rz_cons_println(sign);
 				rz_cons_flush();
@@ -633,21 +635,21 @@ static bool lib_bin_xtr_dt(RzLibPlugin *pl, void *user, void *data) {
 	return rz_bin_xtr_plugin_del(user, (RzBinXtrPlugin *)data);
 }
 
-static void __listPlugins(RzBin *bin, const char *plugin_name, PJ *pj, int rad) {
-	int format = 0;
+static void __listPlugins(RzBin *bin, const char *plugin_name, PJ *pj, RzOutputMode mode) {
 	RzCmdStateOutput state = { 0 };
-	if (rad == RZ_MODE_JSON) {
-		format = 'j';
-		rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_JSON);
-	} else if (rad) {
-		format = 'q';
-		rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET);
-	} else {
-		rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD);
-	}
+	rz_cmd_state_output_init(&state, mode);
+
 	bin->cb_printf = (PrintfCallback)printf;
 	if (plugin_name) {
-		rz_bin_list_plugin(bin, plugin_name, pj, format);
+		// Determine the character format for rz_bin_list_plugin based on RzOutputMode
+		// This is a bit of a reverse mapping, assuming rz_bin_list_plugin expects 'j', 'q', or 0.
+		char char_format = 0;
+		if (mode == RZ_OUTPUT_MODE_JSON) {
+			char_format = 'j';
+		} else if (mode == RZ_OUTPUT_MODE_QUIET || mode == RZ_OUTPUT_MODE_QUIETEST) {
+			char_format = 'q';
+		}
+		rz_bin_list_plugin(bin, plugin_name, pj, char_format);
 	} else {
 		rz_core_bin_plugins_print(bin, &state);
 		rz_cmd_state_output_print(&state);
@@ -720,6 +722,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	char *tmp, *ptr, *arch_name = NULL;
 	const char *arch = NULL;
 	const char *forcebin = NULL;
+		// char_out_mode removed as out_mode (RZ_MODE_*) is now directly used
 	const char *chksum = NULL;
 	const char *op = NULL;
 	RzCoreFile *fh = NULL;
@@ -838,9 +841,12 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		case 'T': set_action(RZ_BIN_REQ_SIGNATURE); break;
 		case 'w': set_action(RZ_BIN_REQ_TRYCATCH); break;
 		case 'q':
-			out_mode = (out_mode & RZ_MODE_SIMPLE ? RZ_MODE_SIMPLEST : RZ_MODE_SIMPLE);
+			// Toggle between RZ_MODE_SIMPLE and RZ_MODE_SIMPLEST
+			out_mode = (out_mode == RZ_MODE_SIMPLE) ? RZ_MODE_SIMPLEST : RZ_MODE_SIMPLE;
 			break;
-		case 'j': out_mode = RZ_MODE_JSON; break;
+		case 'j':
+			out_mode = RZ_MODE_JSON;
+			break;
 		case 'A': set_action(RZ_BIN_REQ_LISTARCHS); break;
 		case 'a': arch = opt.arg; break;
 		case 'C':
@@ -1013,8 +1019,17 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			rz_core_fini(&core);
 			return 1;
 		}
-		__listPlugins(bin, plugin_name, pj, out_mode);
-		if (out_mode == RZ_MODE_JSON) {
+		// Determine RzOutputMode for __listPlugins based on char_out_mode or out_mode
+		RzOutputMode list_plugins_mode;
+		if (char_out_mode == 'j') {
+			list_plugins_mode = RZ_OUTPUT_MODE_JSON;
+		} else if (char_out_mode == 'q' || char_out_mode == 'Q') {
+			list_plugins_mode = RZ_OUTPUT_MODE_QUIET;
+		} else { // Default or RZ_MODE_PRINT
+			list_plugins_mode = RZ_OUTPUT_MODE_STANDARD;
+		}
+		__listPlugins(bin, plugin_name, pj, list_plugins_mode);
+		if (list_plugins_mode == RZ_OUTPUT_MODE_JSON) {
 			rz_cons_println(pj_string(pj));
 			rz_cons_flush();
 		}
@@ -1286,9 +1301,13 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	}
 	rz_cons_new()->context->is_interactive = false;
 
+	rz_cons_new()->context->is_interactive = false;
+
 	RzCmdStateOutput state;
-	RzOutputMode mode = rad2outputmode(out_mode);
-	if (!rz_cmd_state_output_init(&state, mode)) {
+	// The out_mode variable (RZ_MODE_JSON, RZ_MODE_SIMPLE, etc.) is converted to RzOutputMode
+	RzOutputMode current_output_mode = outputmode_from_legacy_flag(out_mode);
+
+	if (!rz_cmd_state_output_init(&state, current_output_mode)) {
 		result = 1;
 		goto chksum_err;
 	}
@@ -1296,7 +1315,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 
 	// List fatmach0 sub-binaries, etc
 	if (action & RZ_BIN_REQ_LISTARCHS || ((arch || bits || arch_name) && !rz_bin_select(bin, arch, bits, arch_name))) {
-		RzCmdStateOutput *st = add_header(&state, mode == RZ_OUTPUT_MODE_STANDARD ? RZ_OUTPUT_MODE_TABLE : mode, "archs");
+		RzCmdStateOutput *st = add_header(&state, current_output_mode == RZ_OUTPUT_MODE_STANDARD ? RZ_OUTPUT_MODE_TABLE : current_output_mode, "archs");
 		rz_core_bin_archs_print(bin, st);
 		add_footer(&state, st);
 		free(arch_name);
@@ -1311,7 +1330,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			RZ_FREE(tmp);
 		}
 		pdbopts.symbol_store_path = (char *)rz_config_get(core.config, "pdb.symstore");
-		result = rz_bin_pdb_download(core.bin, state.mode == RZ_OUTPUT_MODE_JSON ? state.d.pj : NULL, ismodejson, &pdbopts);
+		result = rz_bin_pdb_download(core.bin, current_output_mode == RZ_OUTPUT_MODE_JSON ? state.d.pj : NULL, current_output_mode == RZ_OUTPUT_MODE_JSON, &pdbopts);
 	}
 	if (action & RZ_BIN_REQ_DEBUGINFOD) {
 		rz_config_set_b(core.config, "bin.dbginfo.debuginfod", true);
@@ -1346,7 +1365,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		}
 	}
 	if (op && action & RZ_BIN_REQ_OPERATION) {
-		rzbin_do_operation(bin, op, out_mode, output, file);
+		rzbin_do_operation(bin, op, current_output_mode, output, file);
 	}
 	end_state(&state);
 	rz_cmd_state_output_fini(&state);

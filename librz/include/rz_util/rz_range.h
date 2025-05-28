@@ -34,7 +34,7 @@ RZ_API int rz_range_sub(RRange *rgs, ut64 from, ut64 to);
 RZ_API int rz_range_contains(RRange *rgs, ut64 addr);
 RZ_API int rz_range_sort(RRange *rgs);
 RZ_API void rz_range_percent(RRange *rgs);
-RZ_API int rz_range_list(RRange *rgs, int rad);
+RZ_API int rz_range_list(RRange *rgs, RzOutputMode mode);
 RZ_API int rz_range_get_n(RRange *rgs, int n, ut64 *from, ut64 *to);
 RZ_API RRange *rz_range_inverse(RRange *rgs, ut64 from, ut64 to, int flags);
 RZ_API int rz_range_overlap(ut64 a0, ut64 a1, ut64 b0, ut64 b1, int *d);

@@ -311,20 +311,37 @@ RZ_API void rz_range_percent(RRange *rgs) {
 }
 
 // TODO: total can be cached in rgs!!
-RZ_API int rz_range_list(RRange *rgs, int rad) {
+RZ_API int rz_range_list(RRange *rgs, RzOutputMode mode) {
 	ut64 total = 0;
 	RRangeItem *r;
 	RzListIter *iter;
 	rz_range_sort(rgs);
+	// TODO: Use RzPVector. RzList is deprecated.
 	rz_list_foreach (rgs->ranges, iter, r) {
-		if (rad) {
+		switch (mode) {
+		case RZ_OUTPUT_MODE_RIZIN:
 			printf("ar+ 0x%08" PFMT64x " 0x%08" PFMT64x "\n", r->fr, r->to);
-		} else {
+			break;
+		case RZ_OUTPUT_MODE_JSON:
+			// TODO: Implement JSON output
+			printf("{\"from\":%" PFMT64u ",\"to\":%" PFMT64u ",\"size\":%" PFMT64u "}%s",
+				r->fr, r->to, r->to - r->fr, iter->n ? "," : "");
+			break;
+		case RZ_OUTPUT_MODE_QUIET:
+			// No output
+			break;
+		default: // RZ_OUTPUT_MODE_STANDARD
 			printf("0x%08" PFMT64x " 0x%08" PFMT64x " ; %" PFMT64d "\n", r->fr, r->to, r->to - r->fr);
+			break;
 		}
 		total += (r->to - r->fr);
 	}
-	eprintf("Total bytes: %" PFMT64d "\n", total);
+	if (mode == RZ_OUTPUT_MODE_JSON) {
+		printf("]");
+	}
+	if (mode != RZ_OUTPUT_MODE_QUIET && mode != RZ_OUTPUT_MODE_JSON) {
+		eprintf("Total bytes: %" PFMT64d "\n", total);
+	}
 	return 0;
 }
 

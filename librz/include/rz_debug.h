@@ -522,6 +522,7 @@ RZ_API void rz_debug_desc_free(RzDebugDesc *p);
 RZ_API int rz_debug_desc_open(RzDebug *dbg, const char *path);
 RZ_API int rz_debug_desc_close(RzDebug *dbg, int fd);
 RZ_API int rz_debug_desc_dup(RzDebug *dbg, int fd, int newfd);
+RZ_API int rz_debug_desc_list(RzDebug *dbg, RzOutputMode mode);
 RZ_API int rz_debug_desc_read(RzDebug *dbg, int fd, ut64 addr, int len);
 RZ_API int rz_debug_desc_seek(RzDebug *dbg, int fd, ut64 addr); // TODO: whence?
 RZ_API int rz_debug_desc_write(RzDebug *dbg, int fd, ut64 addr, int len);
