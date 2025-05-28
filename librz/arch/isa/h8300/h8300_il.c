@@ -974,8 +974,32 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 			return ccr_set(CCR_C, INV(EXTRACTb(LOAD(ABS_OP(1)), BIT_NO)));
 		default: NOT_IMPLEMENTED;
 		}
-	case H8300_INSN_BXOR: break;
-	case H8300_INSN_BIXOR: break;
+	case H8300_INSN_BXOR:
+		switch (cmd->fmt) {
+		case H8300_INSN_FORMAT_IMMR8:
+		case H8300_INSN_FORMAT_R8R8:
+			return ccr_set(CCR_C, XOR(EXTRACTb(R8_OP(1), BIT_NO), ccr_val(CCR_C)));
+		case H8300_INSN_FORMAT_IMMRI16:
+		case H8300_INSN_FORMAT_R8RI16:
+			return ccr_set(CCR_C, XOR(EXTRACTb(LOAD(R16_OP(1)), BIT_NO), ccr_val(CCR_C)));
+		case H8300_INSN_FORMAT_IMMABS:
+		case H8300_INSN_FORMAT_R8ABS:
+			return ccr_set(CCR_C, XOR(EXTRACTb(LOAD(ABS_OP(1)), BIT_NO), ccr_val(CCR_C)));
+		default: NOT_IMPLEMENTED;
+		}
+	case H8300_INSN_BIXOR:
+		switch (cmd->fmt) {
+		case H8300_INSN_FORMAT_IMMR8:
+		case H8300_INSN_FORMAT_R8R8:
+			return ccr_set(CCR_C, XOR(INV(EXTRACTb(R8_OP(1), BIT_NO)), ccr_val(CCR_C)));
+		case H8300_INSN_FORMAT_IMMRI16:
+		case H8300_INSN_FORMAT_R8RI16:
+			return ccr_set(CCR_C, XOR(INV(EXTRACTb(LOAD(R16_OP(1)), BIT_NO)), ccr_val(CCR_C)));
+		case H8300_INSN_FORMAT_IMMABS:
+		case H8300_INSN_FORMAT_R8ABS:
+			return ccr_set(CCR_C, XOR(INV(EXTRACTb(LOAD(ABS_OP(1)), BIT_NO)), ccr_val(CCR_C)));
+		default: NOT_IMPLEMENTED;
+		}
 	}
 	NOT_IMPLEMENTED;
 }
