@@ -896,14 +896,26 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 			return STORE(ABS_OP(1), DEPOSIT8(LOAD(ABS_OP(1)), BIT_NO, U32(1), LOGNOT(B_TO_1(ccr_val(CCR_C)))));
 		default: NOT_IMPLEMENTED;
 		}
+	case H8300_INSN_BOR:
+		switch (cmd->fmt) {
+		case H8300_INSN_FORMAT_IMMR8:
+		case H8300_INSN_FORMAT_R8R8:
+			return ccr_set(CCR_C, OR(EXTRACTb(R8_OP(1), BIT_NO), ccr_val(CCR_C)));
+		case H8300_INSN_FORMAT_IMMRI16:
+		case H8300_INSN_FORMAT_R8RI16:
+			return ccr_set(CCR_C, OR(EXTRACTb(LOAD(R16_OP(1)), BIT_NO), ccr_val(CCR_C)));
+		case H8300_INSN_FORMAT_IMMABS:
+		case H8300_INSN_FORMAT_R8ABS:
+			return ccr_set(CCR_C, OR(EXTRACTb(LOAD(ABS_OP(1)), BIT_NO), ccr_val(CCR_C)));
+		default: NOT_IMPLEMENTED;
+		}
 	case H8300_INSN_BIOR: break;
-	case H8300_INSN_BXOR: break;
 	case H8300_INSN_BAND: break;
 	case H8300_INSN_BIAND: break;
-	case H8300_INSN_BILD: break;
-	case H8300_INSN_BOR: break;
-	case H8300_INSN_BIXOR: break;
 	case H8300_INSN_BLD: break;
+	case H8300_INSN_BILD: break;
+	case H8300_INSN_BXOR: break;
+	case H8300_INSN_BIXOR: break;
 	}
 	NOT_IMPLEMENTED;
 }
