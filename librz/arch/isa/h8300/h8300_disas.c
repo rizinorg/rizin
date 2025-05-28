@@ -1027,6 +1027,7 @@ int h8300_decode_command(const ut8 *instr, ut64 len, struct h8300_cmd *cmd, ut64
 	case H8300_BTST_R2R8:
 		cmd->id = H8300_INSN_BTST;
 		ret = decode_r8r8(instr, cmd);
+		break;
 	case H8300_BSR:
 		cmd->id = H8300_INSN_BSR;
 		ret = decode_pc_rel(instr, cmd);
