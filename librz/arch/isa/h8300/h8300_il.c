@@ -36,6 +36,7 @@ static RzILOpPure *r8_op(H8300Cmd *cmd, ut8 i) {
 #define DEPOSIT16(V, S, L, F) UNSIGNED(16, DEPOSIT32(UNSIGNED(32, V), S, L, UNSIGNED(32, F)))
 #define DEPOSIT8(V, S, L, F)  UNSIGNED(8, DEPOSIT32(UNSIGNED(32, V), S, L, UNSIGNED(32, F)))
 #define EXTRACT1(V, S)        UNSIGNED(1, EXTRACT32(UNSIGNED(32, V), S, U32(1)))
+#define EXTRACTb(V, S)        NON_ZERO(EXTRACT32(UNSIGNED(32, V), S, U32(1)))
 
 static RzILOpEffect *r8_op_set(H8300Cmd *cmd, ut8 i, RzILOpPure *x) {
 	R8_OP_DECL(i);
@@ -856,7 +857,19 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 			return STORE(ABS_OP(1), DEPOSIT8(LOAD(ABS_OP(1)), BIT_NO, U32(1), U32(0)));
 		default: NOT_IMPLEMENTED;
 		}
-	case H8300_INSN_BTST: break;
+	case H8300_INSN_BTST:
+		switch (cmd->fmt) {
+		case H8300_INSN_FORMAT_IMMR8:
+		case H8300_INSN_FORMAT_R8R8:
+			return ccr_set(CCR_Z, EXTRACTb(R8_OP(1), BIT_NO));
+		case H8300_INSN_FORMAT_IMMRI16:
+		case H8300_INSN_FORMAT_R8RI16:
+			return ccr_set(CCR_Z, EXTRACTb(LOAD(R16_OP(1)), BIT_NO));
+		case H8300_INSN_FORMAT_IMMABS:
+		case H8300_INSN_FORMAT_R8ABS:
+			return ccr_set(CCR_Z, EXTRACTb(LOAD(ABS_OP(1)), BIT_NO));
+		default: NOT_IMPLEMENTED;
+		}
 	case H8300_INSN_BST: break;
 	case H8300_INSN_BIST: break;
 	case H8300_INSN_BIOR: break;
