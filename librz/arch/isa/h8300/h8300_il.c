@@ -820,18 +820,20 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 		switch (cmd->fmt) {
 		case H8300_INSN_FORMAT_IMMR8:
 		case H8300_INSN_FORMAT_R8R8:
-			return R8_X(1, DEPOSIT32(R8_OP(1), BIT_NO, U32(1), U32(1)));
-		case H8300_INSN_FORMAT_IMMR16:
-		case H8300_INSN_FORMAT_R8R16:
-			return STORE(R16_OP(1), DEPOSIT32(LOAD(R16_OP(1)), BIT_NO, U32(1), U32(1)));
+			return R8_X(1, DEPOSIT8(R8_OP(1), BIT_NO, U32(1), U32(1)));
+		case H8300_INSN_FORMAT_IMMRI16:
+		case H8300_INSN_FORMAT_R8RI16:
+			return STORE(R16_OP(1), DEPOSIT8(LOAD(R16_OP(1)), BIT_NO, U32(1), U32(1)));
 		case H8300_INSN_FORMAT_IMMABS:
 		case H8300_INSN_FORMAT_R8ABS:
-			return STORE(ABS_OP(1), DEPOSIT32(LOAD(ABS_OP(1)), BIT_NO, U32(1), U32(1)));
+			return STORE(ABS_OP(1), DEPOSIT8(LOAD(ABS_OP(1)), BIT_NO, U32(1), U32(1)));
 		default: NOT_IMPLEMENTED;
 		}
 #undef BIT_NO
 	}
-	case H8300_INSN_BNOT: break;
+	case H8300_INSN_BNOT:
+
+		break;
 	case H8300_INSN_BCLR: break;
 	case H8300_INSN_BTST: break;
 	case H8300_INSN_BST: break;
