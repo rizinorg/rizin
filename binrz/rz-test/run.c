@@ -382,6 +382,7 @@ RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest 
 		}
 		char *disasm = (char *)crlf2lf(rz_subprocess_out(proc, NULL));
 		rz_str_trim(disasm);
+		rz_str_replace_char(disasm, '\n', ';');
 		out->disasm = disasm;
 	ship:
 		free(hex);
@@ -403,6 +404,7 @@ RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest 
 		} else {
 			char *il = (char *)crlf2lf(rz_subprocess_out(proc, NULL));
 			rz_str_trim(il);
+			rz_str_replace_char(il, '\n', ';');
 			char *il_err = (char *)crlf2lf(rz_subprocess_err(proc, NULL));
 			rz_str_trim(il_err);
 			out->il = il;

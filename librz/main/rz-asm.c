@@ -331,6 +331,7 @@ static int rasm_disasm(RzAsmState *as, ut64 addr, const char *buf, int len, int 
 				break;
 			}
 			ret += aop.size;
+			addr += aop.size;
 			rz_analysis_op_fini(&aop);
 		}
 		break;
@@ -351,6 +352,7 @@ static int rasm_disasm(RzAsmState *as, ut64 addr, const char *buf, int len, int 
 				break;
 			}
 			ret += aop.size;
+			addr += aop.size;
 			rz_analysis_op_fini(&aop);
 		}
 		break;
@@ -917,6 +919,7 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 				if (skip > len) {
 					eprintf("rz-asm: invalid skip value (skip %" PFMT64u " > %" PFMT64u " len).\n", skip, len);
 					ret = 1;
+					free(usrstr);
 					goto beach;
 				}
 				// eprintf ("SKIP (%s) (%lld)\n", usrstr, skip);
