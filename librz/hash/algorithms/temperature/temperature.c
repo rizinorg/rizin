@@ -15,8 +15,6 @@
  * * Range : 0 ≤ T<sub>info</sub> ≤ 1 for blocks ≤ 256 bytes.
  *   If `fraction == true`, the value is additionally normalised to [0, 1]
  *   exactly like “fractional entropy”.
- *
- * \author Seva <little_scamp@yahoo.com>
  */
 
 #include "temperature.h"
@@ -41,10 +39,10 @@ bool rz_temperature_update(RzTemperature *ctx, const ut8 *data, size_t len) {
 bool rz_temperature_final(ut8 *digest, RzTemperature *ctx, bool fraction) {
 	rz_return_val_if_fail(ctx && digest, false);
 
-        if (ctx->size <= 1) {
-                rz_write_be_double(digest, 0.0);
-                return true;
-        }
+	if (ctx->size <= 1) {
+		rz_write_be_double(digest, 0.0);
+		return true;
+	}
 
 	double p, entropy = 0.0;
 	ut64 count;
@@ -60,11 +58,11 @@ bool rz_temperature_final(ut8 *digest, RzTemperature *ctx, bool fraction) {
 		entropy /= log2((double)RZ_MIN(ctx->size, 256));
 	}
 
-        double temperature = entropy / log2((double)ctx->size);
-        if (fraction) {
-                temperature *= log2((double)ctx->size) /
-                               log2((double)RZ_MIN(ctx->size, 256));
-        }
-        rz_write_be_double(digest, temperature);
-        return true;
+	double temperature = entropy / log2((double)ctx->size);
+	if (fraction) {
+		temperature *= log2((double)ctx->size) /
+			log2((double)RZ_MIN(ctx->size, 256));
+	}
+	rz_write_be_double(digest, temperature);
+	return true;
 }
