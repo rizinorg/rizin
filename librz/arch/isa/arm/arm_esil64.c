@@ -298,6 +298,18 @@ static void cmp(RzAnalysisOp *op, csh *handle, cs_insn *insn) {
 	}
 }
 
+static void tst(RzAnalysisOp *op, csh *handle, cs_insn *insn) {
+	// update esil, cpu flags
+	int bits = arm64_reg_width(REGID64(1));
+	if (ISIMM64(2)) {
+		rz_strbuf_setf(&op->esil, "%" PFMT64d ",%s,&,$z,zf,:=,%d,$s,nf,:=,%d,$b,!,cf,:=,%d,$o,vf,:=", IMM64(2) << LSHIFT2_64(2), REG64(1), bits - 1, bits, bits - 1);
+	} else {
+		// tst w10, w11
+		SHIFTED_REG64_APPEND(&op->esil, 2);
+		rz_strbuf_appendf(&op->esil, ",%s,&,$z,zf,:=,%d,$s,nf,:=,%d,$b,!,cf,:=,%d,$o,vf,:=", REG64(1), bits - 1, bits, bits - 1);
+	}
+}
+
 static void bfm(RzAnalysisOp *op, csh *handle, cs_insn *insn) {
 	ut64 lsb = IMM64(2);
 	ut64 width = IMM64(3);
@@ -865,11 +877,25 @@ RZ_IPI int rz_arm_cs_analysis_op_64_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 a
 		}
 		break;
 	}
+#if CS_NEXT_VERSION < 6
+	case ARM64_INS_TST: // tst w8, 0xd
+	{
+		// update esil, cpu flags
+		int bits = arm64_reg_width(REGID64(0));
+		if (ISIMM64(1)) {
+			rz_strbuf_setf(&op->esil, "%" PFMT64d ",%s,&,$z,zf,:=,%d,$s,nf,:=,%d,$b,!,cf,:=,%d,$o,vf,:=", IMM64(1) << LSHIFT2_64(1), REG64(0), bits - 1, bits, bits - 1);
+		} else {
+			// tst w10, w11
+			SHIFTED_REG64_APPEND(&op->esil, 1);
+			rz_strbuf_appendf(&op->esil, ",%s,&,$z,zf,:=,%d,$s,nf,:=,%d,$b,!,cf,:=,%d,$o,vf,:=", REG64(0), bits - 1, bits, bits - 1);
+		}
+		break;
+	}
+#endif
 	case ARM64_INS_FCMP:
 	case ARM64_INS_CCMP:
 	case ARM64_INS_CCMN:
 #if CS_NEXT_VERSION < 6
-	case ARM64_INS_TST: // cmp w8, 0xd
 	case ARM64_INS_CMP: // cmp w8, 0xd
 	case ARM64_INS_CMN: // cmp w8, 0xd
 #endif
@@ -898,6 +924,21 @@ RZ_IPI int rz_arm_cs_analysis_op_64_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 a
 			rz_strbuf_setf(&op->esil, "%" PFMT64d ",%s,==,$z,zf,:=,%d,$s,nf,:=,%d,$b,!,cf,:=,%d,$o,vf,:=", IMM64(2) << LSHIFT2_64(2), REG64(1), bits - 1, bits, bits - 1);
 		} else {
 			// cmp w10, w11
+			SHIFTED_REG64_APPEND(&op->esil, 2);
+			rz_strbuf_appendf(&op->esil, ",%s,==,$z,zf,:=,%d,$s,nf,:=,%d,$b,!,cf,:=,%d,$o,vf,:=", REG64(1), bits - 1, bits, bits - 1);
+		}
+		break;
+	case AARCH64_INS_ANDS:
+		if (insn->alias_id != AARCH64_INS_ALIAS_TST) {
+			tst(op, handle, insn);
+			break;
+		}
+		// update esil, cpu flags
+		bits = arm64_reg_width(REGID64(1));
+		if (ISIMM64(2)) {
+			rz_strbuf_setf(&op->esil, "%" PFMT64d ",%s,&,$z,zf,:=,%d,$s,nf,:=,%d,$b,!,cf,:=,%d,$o,vf,:=", IMM64(2) << LSHIFT2_64(2), REG64(1), bits - 1, bits, bits - 1);
+		} else {
+			// tst w10, w11
 			SHIFTED_REG64_APPEND(&op->esil, 2);
 			rz_strbuf_appendf(&op->esil, ",%s,==,$z,zf,:=,%d,$s,nf,:=,%d,$b,!,cf,:=,%d,$o,vf,:=", REG64(1), bits - 1, bits, bits - 1);
 		}
