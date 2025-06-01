@@ -96,6 +96,8 @@ static const char *commands[] = {
 	[H8300_INSN_BILD] = "bild",
 	[H8300_INSN_CMP_B] = "cmp.b",
 	[H8300_INSN_CMP_W] = "cmp.w",
+	[H8300_INSN_POP] = "pop",
+	[H8300_INSN_PUSH] = "push",
 };
 
 static int decode_opcode(const ut8 *bytes, struct h8300_cmd *cmd) {
@@ -290,13 +292,12 @@ static int decode_rd16r16(const ut8 *bytes, struct h8300_cmd *cmd) {
 	return ret;
 }
 
-static int decode_pop(const ut8 *bytes, struct h8300_cmd *cmd) {
+static int decode_r16(const ut8 *bytes, struct h8300_cmd *cmd) {
 	int ret = 2;
-	ut8 tmp = bytes[1] >> 4;
 
-	strncpy(cmd->instr, tmp == 0x7 ? "pop" : "push",
-		H8300_INSTR_MAXLEN - 1);
-	cmd->instr[H8300_INSTR_MAXLEN - 1] = '\0';
+	if (decode_opcode(bytes, cmd)) {
+		return -1;
+	}
 
 	cmd->fmt = H8300_INSN_FORMAT_R16;
 	OPS_ADD(H8300_OP_R16, reg, bytes[1] & 0x7);
@@ -310,11 +311,6 @@ static int decode_pop(const ut8 *bytes, struct h8300_cmd *cmd) {
 /* [ opcode ] [ 0 r2 | 0 rd ] @rs+,@rd */
 static int decode_incdecr16(const ut8 *bytes, struct h8300_cmd *cmd) {
 	int ret = 2;
-	ut8 tmp = bytes[1] >> 4;
-
-	if (bytes[0] == 0x6D && (tmp == 7 || tmp == 0xF)) {
-		return decode_pop(bytes, cmd);
-	}
 
 	if (decode_opcode(bytes, cmd)) {
 		return -1;
@@ -937,6 +933,13 @@ int h8300_decode_command(const ut8 *instr, ut64 len, struct h8300_cmd *cmd, ut64
 		CASE_F_R8(0x100, SHLL);
 		CASE_F_R8(0x118, SHAR);
 		CASE_F_R8(0x110, SHLR);
+	default:
+		break;
+	}
+
+	switch (((ut16)instr[0] << 8) | (instr[1] & 0xf8)) {
+		CASE_F_F(decode_r16, 0x6d70, POP);
+		CASE_F_F(decode_r16, 0x6df0, PUSH);
 	default:
 		break;
 	}

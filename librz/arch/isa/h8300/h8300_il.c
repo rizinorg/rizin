@@ -1000,7 +1000,10 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 			return ccr_set(CCR_C, XOR(INV(EXTRACTb(LOAD(ABS_OP(1)), BIT_NO)), ccr_val(CCR_C)));
 		default: NOT_IMPLEMENTED;
 		}
+	case H8300_INSN_POP: break;
+	case H8300_INSN_PUSH: break;
 	}
+
 	NOT_IMPLEMENTED;
 }
 
