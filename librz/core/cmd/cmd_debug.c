@@ -1186,7 +1186,7 @@ RZ_IPI void rz_core_static_debug_stop(void *u) {
 }
 
 #if __WINDOWS__
-#include "..\debug\p\native\windows\windows_message.h"
+#include "..\debug\old\p\native\windows\windows_message.h"
 #endif
 
 RZ_IPI void rz_core_debug_bp_add(RzCore *core, ut64 addr, const char *arg_perm, const char *arg_size, bool hwbp, bool watch) {
