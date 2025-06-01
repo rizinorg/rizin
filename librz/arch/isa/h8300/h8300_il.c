@@ -219,8 +219,8 @@ static RzILOpEffect *op_mov_w(H8300Cmd *cmd) {
 			ccr_unary_NZV0(16, R16_OP(0)));
 	case H8300_INSN_FORMAT_RINCR16:
 		return SEQ4(
-			R16_X(1, LOADW(16, R16_OP(0))),
-			SETL("data_value", ADD(U16(1), R16_OP(0))),
+			SETL("data_value", LOADW(16, R16_OP(0))),
+			R16_X(1, VARL("data_value")),
 			R16_X(0, ADD(U16(1), R16_OP(0))),
 			ccr_unary_NZV0(16, VARL("data_value")));
 	default:
@@ -1000,8 +1000,16 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 			return ccr_set(CCR_C, XOR(INV(EXTRACTb(LOAD(ABS_OP(1)), BIT_NO)), ccr_val(CCR_C)));
 		default: NOT_IMPLEMENTED;
 		}
-	case H8300_INSN_POP: break;
-	case H8300_INSN_PUSH: break;
+	case H8300_INSN_POP:
+		return SEQ3(
+			R16_X(0, LOADW(16, VARG("r7"))),
+			SETG("r7", ADD(VARG("r7"), U16(2))),
+			ccr_unary_NZV0(16, LOADW(16, VARG("r7"))));
+	case H8300_INSN_PUSH:
+		return SEQ3(
+			SETG("r7", SUB(VARG("r7"), U16(2))),
+			STOREW(VARG("r7"), R16_OP(0)),
+			ccr_unary_NZV0(16, R16_OP(0)));
 	}
 
 	NOT_IMPLEMENTED;
