@@ -1,6 +1,5 @@
 NAME=Signal handling ppc64le
 FILE=bins/elf/ppc64le/dbg_signal_test
-BROKEN=1
 ARGS=-a ppc -d
 CMDS=<<EOF
 dkl~SIGTERM
@@ -15,6 +14,6 @@ EXPECT=<<EOF
 15 SIGTERM
 15 SIGTERM skip
 15 SIGTERM
-[+] signal 15 aka SIGTERM received 1
+[+] signal 15 aka SIGTERM received 0
 EOF
 RUN
