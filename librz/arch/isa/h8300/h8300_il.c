@@ -1022,7 +1022,7 @@ int h8300_analyze_op_il(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 
 static const char *reg_bindings[] = {
 	"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7",
-	"pc", "ccr", NULL
+	"ccr", NULL
 };
 
 RzAnalysisILConfig *h8300_il_config(RzAnalysis *a) {
