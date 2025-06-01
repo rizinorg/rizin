@@ -216,7 +216,7 @@ static int decode_sr16(const ut8 *bytes, struct h8300_cmd *cmd) {
 }
 
 #define SIGN_EXT(value, bits) \
-	((((int)(value)) << ((8 * sizeof(int)) - (bits))) >> ((8 * sizeof(int)) - (bits)))
+	((int)(((unsigned int)(value) << (32 - (bits))) >> (32 - (bits))))
 
 static int decode_pc_rel(const ut8 *bytes, struct h8300_cmd *cmd) {
 	int ret = 2;
