@@ -260,13 +260,12 @@ static int decode_imm16r16(const ut8 *bytes, struct h8300_cmd *cmd) {
 /* [ opcode ] [ 0 rs | 0 rd ] [         disp    ] */
 static int decode_rd16r16(const ut8 *bytes, struct h8300_cmd *cmd) {
 	int ret = 4;
-	ut16 disp;
 
 	if (decode_opcode(bytes, cmd)) {
 		return -1;
 	}
 
-	disp = rz_read_at_be16(bytes, 2);
+	st16 disp = (st16)rz_read_at_be16(bytes, 2);
 
 	if (bytes[1] & 0x80) {
 		cmd->fmt = H8300_INSN_FORMAT_R16RD16;
@@ -275,7 +274,7 @@ static int decode_rd16r16(const ut8 *bytes, struct h8300_cmd *cmd) {
 			(bytes[1] >> 4) & 0x7, disp);
 
 		snprintf(cmd->operands, H8300_INSTR_MAXLEN,
-			"r%u,@(0x%x:16,r%u)",
+			"r%u,@(%+d,r%u)",
 			bytes[1] & 0x7, disp,
 			(bytes[1] >> 4) & 0x7);
 	} else {
@@ -285,7 +284,7 @@ static int decode_rd16r16(const ut8 *bytes, struct h8300_cmd *cmd) {
 		OPS_ADD(H8300_OP_R16, reg, bytes[1] & 0x7);
 
 		snprintf(cmd->operands, H8300_INSTR_MAXLEN,
-			"@(0x%x:16,r%u),r%u", disp,
+			"@(%+d,r%u),r%u", disp,
 			(bytes[1] >> 4) & 0x7, bytes[1] & 0x7);
 	}
 
@@ -630,13 +629,12 @@ static int decode_r8ri16_type2(const ut8 *bytes, struct h8300_cmd *cmd) {
 /* [ opcode ] [ 1 rd |  rs ] [       disp     ] */
 static int decode_r8rd16(const ut8 *bytes, struct h8300_cmd *cmd) {
 	int ret = 4;
-	ut16 disp;
 
 	if (decode_opcode(bytes, cmd)) {
 		return -1;
 	}
 
-	disp = rz_read_at_be16(bytes, 2);
+	st16 disp = (st16)rz_read_at_be16(bytes, 2);
 	if (bytes[1] & 0x80) {
 		cmd->fmt = H8300_INSN_FORMAT_R8RD16;
 		OPS_ADD(H8300_OP_R8, reg, bytes[1] & 0xf);
@@ -644,7 +642,7 @@ static int decode_r8rd16(const ut8 *bytes, struct h8300_cmd *cmd) {
 			(bytes[1] >> 4) & 0x7, disp);
 
 		snprintf(cmd->operands, H8300_INSTR_MAXLEN,
-			"r%u%c,@(0x%x:16,r%u)",
+			"r%u%c,@(%+d,r%u)",
 			bytes[1] & 0x7, bytes[1] & 0x8 ? 'l' : 'h',
 			disp, (bytes[1] >> 4) & 0x7);
 	} else {
@@ -654,7 +652,7 @@ static int decode_r8rd16(const ut8 *bytes, struct h8300_cmd *cmd) {
 		OPS_ADD(H8300_OP_R8, reg, bytes[1] & 0xf);
 
 		snprintf(cmd->operands, H8300_INSTR_MAXLEN,
-			"@(0x%x:16,r%u),r%u%c",
+			"@(%+d,r%u),r%u%c",
 			disp, (bytes[1] >> 4) & 0x7,
 			bytes[1] & 0x7, bytes[1] & 0x8 ? 'l' : 'h');
 	}
