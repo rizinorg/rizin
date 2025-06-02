@@ -799,57 +799,12 @@ int h8300_decode_command(const ut8 *instr, ut64 len, struct h8300_cmd *cmd, ut64
 		return 0;
 	}
 
-	switch (instr[0] >> 4) {
-	case 0x2:
-		cmd->id = H8300_INSN_MOV_B;
-		ret = decode_abs8r8(instr, cmd);
-		break;
-	case 0x3:
-		cmd->id = H8300_INSN_MOV_B;
-		ret = decode_r8abs8(instr, cmd);
-		break;
-	case 0xf:
-		cmd->id = H8300_INSN_MOV_B;
-		ret = decode_i8r8(instr, cmd);
-		break;
-	case H8300_AND_4BIT:
-		cmd->id = H8300_INSN_AND;
-		ret = decode_i8r8(instr, cmd);
-		break;
-	case H8300_ADDX_4BIT:
-		cmd->id = H8300_INSN_ADDX;
-		ret = decode_i8r8(instr, cmd);
-		break;
-	case H8300_ADD_4BIT_8:
-		cmd->id = H8300_INSN_ADD_B;
-		ret = decode_i8r8(instr, cmd);
-		break;
-	case H8300_CMP_4BIT:
-		cmd->id = H8300_INSN_CMP_B;
-		ret = decode_i8r8(instr, cmd);
-		break;
-	case H8300_OR_4BIT:
-		cmd->id = H8300_INSN_OR;
-		ret = decode_i8r8(instr, cmd);
-		break;
-	case H8300_SUBX_4BIT:
-		cmd->id = H8300_INSN_SUBX;
-		ret = decode_i8r8(instr, cmd);
-		break;
-	case H8300_XOR_4BIT:
-		cmd->id = H8300_INSN_XOR;
-		ret = decode_i8r8(instr, cmd);
-		break;
-	}
-
-	if (ret) {
-		return ret;
-	}
-
 #define CASE_F_F(F, X, I) \
 	case (X): \
 		cmd->id = H8300_INSN_##I; \
-		return F(instr, cmd);
+		cmd->size = F(instr, cmd); \
+		return cmd->size;
+#define CASE_F_R8(X, I) CASE_F_F(decode_r8, X, I)
 
 	if (len >= 4) {
 		ut32 x = ((ut32)instr[0] << 24) | (instr[1] << 16) | (instr[2] << 8) | instr[3];
@@ -911,10 +866,20 @@ int h8300_decode_command(const ut8 *instr, ut64 len, struct h8300_cmd *cmd, ut64
 		}
 	}
 
-#define CASE_F_R8(X, I) \
-	case (X): \
-		cmd->id = H8300_INSN_##I; \
-		return decode_r8(instr, cmd);
+	switch (instr[0] >> 4) {
+		CASE_F_F(decode_abs8r8, 0x2, MOV_B);
+		CASE_F_F(decode_r8abs8, 0x3, MOV_B);
+
+		CASE_F_F(decode_i8r8, 0xf, MOV_B);
+		CASE_F_F(decode_i8r8, H8300_AND_4BIT, AND);
+		CASE_F_F(decode_i8r8, H8300_ADDX_4BIT, ADDX);
+		CASE_F_F(decode_i8r8, H8300_ADD_4BIT_8, ADD_B);
+		CASE_F_F(decode_i8r8, H8300_CMP_4BIT, CMP_B);
+		CASE_F_F(decode_i8r8, H8300_OR_4BIT, OR);
+		CASE_F_F(decode_i8r8, H8300_SUBX_4BIT, SUBX);
+		CASE_F_F(decode_i8r8, H8300_XOR_4BIT, XOR);
+	default: break;
+	}
 
 	switch (((ut16)instr[0] << 4) | (instr[1] >> 4)) {
 		CASE_F_R8(0x0f0, DAA);
@@ -1221,5 +1186,6 @@ int h8300_decode_command(const ut8 *instr, ut64 len, struct h8300_cmd *cmd, ut64
 	default: break;
 	}
 
+	cmd->size = ret;
 	return ret;
 }

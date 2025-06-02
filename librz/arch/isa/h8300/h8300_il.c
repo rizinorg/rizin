@@ -92,7 +92,7 @@ static RzILOpPure *pc_rel_op(H8300Cmd *cmd, ut8 i) {
 		RZ_LOG_ERROR("invalid op type pc relative\n");
 		return NULL;
 	}
-	st32 dst = (st32)cmd->pc + op->disp;
+	st32 dst = (st32)cmd->pc + cmd->size + op->disp;
 	return U16((ut16)dst);
 }
 
