@@ -1045,24 +1045,24 @@ static void patch_reloc_mips(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_ad
 	default:
 		RZ_LOG_WARN("Patching for mips reloc type %d not implemented.\n", rel_type);
 		return;
-	case RZ_MIPS_16:
+	case R_MIPS_16:
 		rz_buf_read_at(buf_patched, patch_addr, buf, 16);
 		val = rz_read_ble16(buf, big_endian) + fs->S + fs->A;
 		rz_write_ble16(buf, val, big_endian);
 		rz_buf_write_at(buf_patched, patch_addr, buf, 16);
 		break;
-	case RZ_MIPS_32:
+	case R_MIPS_32:
 	/* fall-thru */
-	case RZ_MIPS_REL32:
+	case R_MIPS_REL32:
 		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 		val = rz_read_ble32(buf, big_endian) + fs->S + fs->A;
-		if (rel_type == RZ_MIPS_REL32) {
+		if (rel_type == R_MIPS_REL32) {
 			val -= fs->P;
 		}
 		rz_write_ble32(buf, val, big_endian);
 		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
 		break;
-	case RZ_MIPS_NONE:
+	case R_MIPS_NONE:
 		return;
 	}
 }
@@ -1087,11 +1087,11 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 
 	rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 	switch (rel->type) {
-	case RZ_ARM_NONE:
+	case R_ARM_NONE:
 		return;
-	case RZ_ARM_THM_JUMP24:
+	case R_ARM_THM_JUMP24:
 		/* fall-thru */
-	case RZ_ARM_THM_PC22:
+	case R_ARM_THM_PC22:
 		// Encoding B  T4, BL T1, BLX T2: Val = S:I1:I2:imm10:imm11:0
 		// I1 = NOT(J1 EOR S)
 		// I2 = NOT(J2 EOR S)
@@ -1147,73 +1147,73 @@ static void patch_reloc_arm64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 	ut64 val = 0;
 	rz_buf_read_at(buf_patched, patch_addr, buf, 8);
 	switch (rel->type) {
-	case RZ_AARCH64_NONE:
+	case R_AARCH64_NONE:
 		return;
-	case RZ_AARCH64_ABS16:
+	case R_AARCH64_ABS16:
 		val = fs->S + fs->A;
 		rz_write_le16(buf, val);
 		nbytes = 2;
 		break;
-	case RZ_AARCH64_ABS32:
+	case R_AARCH64_ABS32:
 		val = fs->S + fs->A;
 		rz_write_le32(buf, val);
 		break;
-	case RZ_AARCH64_GLOB_DAT:
+	case R_AARCH64_GLOB_DAT:
 	/* fall-thru */
-	case RZ_AARCH64_ABS64:
+	case R_AARCH64_ABS64:
 	/* fall-thru */
-	case RZ_AARCH64_JUMP_SLOT:
+	case R_AARCH64_JUMP_SLOT:
 		val = fs->S + fs->A;
 		rz_write_le64(buf, val);
 		nbytes = 8;
 		break;
-	case RZ_AARCH64_PREL16:
+	case R_AARCH64_PREL16:
 		val = fs->S + fs->A - fs->P;
 		rz_write_le16(buf, val);
 		nbytes = 2;
 		break;
-	case RZ_AARCH64_PREL32:
+	case R_AARCH64_PREL32:
 		val = fs->S + fs->A - fs->P;
 		rz_write_le32(buf, val);
 		break;
-	case RZ_AARCH64_PREL64:
+	case R_AARCH64_PREL64:
 		val = fs->S + fs->A - fs->P;
 		rz_write_le64(buf, val);
 		nbytes = 8;
 		break;
-	case RZ_AARCH64_RELATIVE:
+	case R_AARCH64_RELATIVE:
 		val = fs->B + fs->A;
 		rz_write_le64(buf, val);
 		nbytes = 8;
 		break;
-	case RZ_AARCH64_ADR_PREL_PG_HI21:
+	case R_AARCH64_ADR_PREL_PG_HI21:
 	/* fall-thru */
-	case RZ_AARCH64_ADR_PREL_PG_HI21_NC:
+	case R_AARCH64_ADR_PREL_PG_HI21_NC:
 	/* fall-thru */
-	case RZ_AARCH64_ADR_GOT_PAGE:
+	case R_AARCH64_ADR_GOT_PAGE:
 		// Reencode ADR imm
 		keep = rz_read_le32(buf) & ~(ADR_IMM_MASK1 | ADR_IMM_MASK2);
 		val = ((st64)(PG(fs->S + fs->A) - PG(fs->P))) >> 12;
 		rz_write_le32(buf, keep | ((val & RZ_BIT_MASK32(2, 0)) << 29) | ((val & ADR_IMM_MASK3) << 3));
 		break;
-	case RZ_AARCH64_JUMP26:
+	case R_AARCH64_JUMP26:
 	/* fall-thru */
-	case RZ_AARCH64_CALL26:
+	case R_AARCH64_CALL26:
 		// Reencode 26 bits of the offset
 		keep = rz_read_le32(buf) & ~RZ_BIT_MASK32(26, 0);
 		val = ((st64)(fs->S + fs->A - fs->P)) >> 2;
 		rz_write_le32(buf, keep | (val & RZ_BIT_MASK32(26, 0)));
 		break;
-	case RZ_AARCH64_LDST8_ABS_LO12_NC:
+	case R_AARCH64_LDST8_ABS_LO12_NC:
 	/* fall-thru */
-	case RZ_AARCH64_ADD_ABS_LO12_NC:
+	case R_AARCH64_ADD_ABS_LO12_NC:
 		keep = rz_read_le32(buf) & ~(RZ_BIT_MASK32(12, 0) << 10);
 		val = PG_OFFSET(fs->S + fs->A);
 		rz_write_le32(buf, keep | ((val & RZ_BIT_MASK32(12, 0)) << 10));
 		break;
-	case RZ_AARCH64_LD64_GOT_LO12_NC:
+	case R_AARCH64_LD64_GOT_LO12_NC:
 	/* fall-thru */
-	case RZ_AARCH64_LDST64_ABS_LO12_NC:
+	case R_AARCH64_LDST64_ABS_LO12_NC:
 		// Reencode LD/ST imm
 		keep = rz_read_le32(buf) & ~(RZ_BIT_MASK32(12, 0) << 10);
 		val = PG_OFFSET(fs->S + fs->A) >> 3;
@@ -1249,41 +1249,41 @@ static void patch_reloc_ppc64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 	ut64 val = 0;
 	ut32 low = 0, word = 0;
 	switch (rel_type) {
-	case RZ_PPC64_NONE:
+	case R_PPC64_NONE:
 		return;
-	case RZ_PPC64_ADDR24:
+	case R_PPC64_ADDR24:
 		low = 24;
 		val = (fs->S + fs->A) >> 2;
 		break;
-	case RZ_PPC64_ADDR16_HI:
+	case R_PPC64_ADDR16_HI:
 		word = 2;
 		val = (fs->S + fs->A) >> 16;
 		break;
-	case RZ_PPC64_ADDR16_HA:
+	case R_PPC64_ADDR16_HA:
 		word = 2;
 		val = (fs->S + fs->A + 0x8000) >> 16;
 		break;
-	case RZ_PPC64_REL16_HA:
+	case R_PPC64_REL16_HA:
 		word = 2;
 		val = (fs->S + fs->A - fs->P + 0x8000) >> 16;
 		break;
-	case RZ_PPC64_ADDR16_LO:
+	case R_PPC64_ADDR16_LO:
 		word = 2;
 		val = (fs->S + fs->A) & 0xffff;
 		break;
-	case RZ_PPC64_REL16_LO:
+	case R_PPC64_REL16_LO:
 		word = 2;
 		val = (fs->S + fs->A - fs->P) & 0xffff;
 		break;
-	case RZ_PPC64_REL14:
+	case R_PPC64_REL14:
 		low = 14;
 		val = (st64)(fs->S + fs->A - fs->P) >> 2;
 		break;
-	case RZ_PPC64_REL24:
+	case R_PPC64_REL24:
 		low = 24;
 		val = (st64)(fs->S + fs->A - fs->P) >> 2;
 		break;
-	case RZ_PPC64_REL32:
+	case R_PPC64_REL32:
 		word = 4;
 		val = fs->S + fs->A - fs->P;
 		break;
@@ -1343,14 +1343,14 @@ static void patch_reloc_intel_80386(RZ_INOUT RzBuffer *buf_patched, const ut64 p
 	ut8 buf[4] = { 0 };
 	ut64 val = 0;
 	switch (rel_type) {
-	case RZ_386_NONE:
+	case R_386_NONE:
 		return;
-	case RZ_386_32:
+	case R_386_32:
 		/* fall-thru */
-	case RZ_386_PC32:
+	case R_386_PC32:
 		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 		val = rz_read_le32(buf) + fs->S + fs->A;
-		if (rel_type == RZ_386_PC32) {
+		if (rel_type == R_386_PC32) {
 			val -= fs->P;
 		}
 		rz_write_le32(buf, val);
@@ -1378,55 +1378,55 @@ static void patch_reloc_amd64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 	ut64 val = 0;
 	int word = 0;
 	switch (rel_type) {
-	case RZ_X86_64_NONE:
+	case R_X86_64_NONE:
 		/* fall-thru */
-	case RZ_X86_64_COPY:
+	case R_X86_64_COPY:
 		return;
-	case RZ_X86_64_8:
+	case R_X86_64_8:
 		word = 1;
 		val = fs->S + fs->A;
 		break;
-	case RZ_X86_64_16:
+	case R_X86_64_16:
 		word = 2;
 		val = fs->S + fs->A;
 		break;
-	case RZ_X86_64_32:
+	case R_X86_64_32:
 		/* fall-thru */
-	case RZ_X86_64_32S:
+	case R_X86_64_32S:
 		word = 4;
 		val = fs->S + fs->A;
 		break;
-	case RZ_X86_64_64:
+	case R_X86_64_64:
 		word = 8;
 		val = fs->S + fs->A;
 		break;
-	case RZ_X86_64_GLOB_DAT:
+	case R_X86_64_GLOB_DAT:
 		/* fall-thru */
-	case RZ_X86_64_JUMP_SLOT:
+	case R_X86_64_JUMP_SLOT:
 		word = 4;
 		val = fs->S;
 		break;
-	case RZ_X86_64_PC8:
+	case R_X86_64_PC8:
 		word = 1;
 		val = fs->S + fs->A - fs->P;
 		break;
-	case RZ_X86_64_PC16:
+	case R_X86_64_PC16:
 		word = 2;
 		val = fs->S + fs->A - fs->P;
 		break;
-	case RZ_X86_64_PC32:
+	case R_X86_64_PC32:
 		word = 4;
 		val = fs->S + fs->A - fs->P;
 		break;
-	case RZ_X86_64_PC64:
+	case R_X86_64_PC64:
 		word = 8;
 		val = fs->S + fs->A - fs->P;
 		break;
-	case RZ_X86_64_PLT32:
+	case R_X86_64_PLT32:
 		word = 4;
 		val = fs->L + fs->A - fs->P;
 		break;
-	case RZ_X86_64_RELATIVE:
+	case R_X86_64_RELATIVE:
 		word = 8;
 		val = fs->B + fs->A;
 		break;
@@ -1518,17 +1518,17 @@ static void patch_reloc_alpha(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 	ut64 val = 0;
 
 	switch (rel_type) {
-	case RZ_ALPHA_NONE:
+	case R_ALPHA_NONE:
 		return;
-	case RZ_ALPHA_REFLONG:
+	case R_ALPHA_REFLONG:
 		val = fs->S + fs->A;
 		rz_buf_write_ble32_at(buf_patched, patch_addr, val, big_endian);
 		break;
-	case RZ_ALPHA_REFQUAD:
+	case R_ALPHA_REFQUAD:
 		val = fs->S + fs->A;
 		rz_buf_write_ble64_at(buf_patched, patch_addr, val, big_endian);
 		break;
-	case RZ_ALPHA_SREL16:
+	case R_ALPHA_SREL16:
 		val = fs->S + fs->A - fs->P + 1;
 		if (big_endian) {
 			buf[1] = val;
@@ -1539,7 +1539,7 @@ static void patch_reloc_alpha(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 		}
 		rz_buf_write_at(buf_patched, patch_addr, buf, 2);
 		break;
-	case RZ_ALPHA_SREL32:
+	case R_ALPHA_SREL32:
 		val = fs->S + fs->A - fs->P + 1;
 		if (big_endian) {
 			buf[3] = val;
@@ -1727,20 +1727,20 @@ static RzBinReloc *reloc_convert_intel_80386(ELFOBJ *bin, RzBinElfReloc *rel, ut
 
 	// FIXME: Quite a few relocatons missing here.
 	switch (rel->type) {
-	case RZ_386_NONE: UNHANDL("R_386_NONE");
-	case RZ_386_32: ADD(32, 0, "R_386_32");
-	case RZ_386_PC32: ADD(32, -P, "R_386_PC32");
-	case RZ_386_GLOB_DAT: SET(32, "R_386_GLOB_DAT");
-	case RZ_386_JMP_SLOT: SET(32, "R_386_JMP_SLOT");
-	case RZ_386_RELATIVE: ADD(32, B, "R_386_RELATIVE");
-	case RZ_386_GOTOFF: ADD(32, -GOT, "R_386_GOTOFF");
-	case RZ_386_GOTPC: ADD(32, GOT - P, "R_386_GOTPC");
-	case RZ_386_16: ADD(16, 0, "R_386_16");
-	case RZ_386_PC16: ADD(16, -P, "R_386_PC16");
-	case RZ_386_8: ADD(8, 0, "R_386_8");
-	case RZ_386_PC8: ADD(8, -P, "R_386_PC8");
-	case RZ_386_COPY: ADD(32, 0, "R_386_COPY"); // copy symbol at runtime
-	case RZ_386_IRELATIVE: IFCN(32, "R_386_IRELATIVE");
+	case R_386_NONE: UNHANDL("R_386_NONE");
+	case R_386_32: ADD(32, 0, "R_386_32");
+	case R_386_PC32: ADD(32, -P, "R_386_PC32");
+	case R_386_GLOB_DAT: SET(32, "R_386_GLOB_DAT");
+	case R_386_JMP_SLOT: SET(32, "R_386_JMP_SLOT");
+	case R_386_RELATIVE: ADD(32, B, "R_386_RELATIVE");
+	case R_386_GOTOFF: ADD(32, -GOT, "R_386_GOTOFF");
+	case R_386_GOTPC: ADD(32, GOT - P, "R_386_GOTPC");
+	case R_386_16: ADD(16, 0, "R_386_16");
+	case R_386_PC16: ADD(16, -P, "R_386_PC16");
+	case R_386_8: ADD(8, 0, "R_386_8");
+	case R_386_PC8: ADD(8, -P, "R_386_PC8");
+	case R_386_COPY: ADD(32, 0, "R_386_COPY"); // copy symbol at runtime
+	case R_386_IRELATIVE: IFCN(32, "R_386_IRELATIVE");
 	default: UNSUPP("X86_32");
 	}
 }
@@ -1751,23 +1751,23 @@ static RzBinReloc *reloc_convert_amd64(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT
 
 	// FIXME: Quite a few relocatons missing here.
 	switch (rel->type) {
-	case RZ_X86_64_NONE: UNHANDL("R_X86_64_NONE");
-	case RZ_X86_64_64: ADD(64, 0, "R_X86_64_64");
-	case RZ_X86_64_PLT32: ADD(32, -P /* +L */, "R_X86_64_PLT32");
-	case RZ_X86_64_GOT32: ADD(32, GOT, "R_X86_64_GOT32");
-	case RZ_X86_64_PC32: ADD(32, -P, "R_X86_64_PC32");
-	case RZ_X86_64_GLOB_DAT: VADDR(64, P - rel->sto, "R_X86_64_GLOB_DAT");
-	case RZ_X86_64_JUMP_SLOT: VADDR(64, P - rel->sto, "R_X86_64_JUMP_SLOT");
-	case RZ_X86_64_RELATIVE: ADD(64, B, "R_X86_64_RELATIVE");
-	case RZ_X86_64_32: ADD(32, 0, "R_X86_64_32");
-	case RZ_X86_64_32S: ADD(32, 0, "R_X86_64_32S");
-	case RZ_X86_64_16: ADD(16, 0, "R_X86_64_16");
-	case RZ_X86_64_PC16: ADD(16, -P, "R_X86_64_PC16");
-	case RZ_X86_64_8: ADD(8, 0, "R_X86_64_8");
-	case RZ_X86_64_PC8: ADD(8, -P, "R_X86_64_PC8");
-	case RZ_X86_64_GOTPCREL: ADD(64, GOT - P, "R_X86_64_GOTPCREL");
-	case RZ_X86_64_COPY: ADD(64, 0, "R_X86_64_COPY"); // copy symbol at runtime
-	case RZ_X86_64_IRELATIVE: IFCN(64, "R_X86_64_IRELATIVE");
+	case R_X86_64_NONE: UNHANDL("R_X86_64_NONE");
+	case R_X86_64_64: ADD(64, 0, "R_X86_64_64");
+	case R_X86_64_PLT32: ADD(32, -P /* +L */, "R_X86_64_PLT32");
+	case R_X86_64_GOT32: ADD(32, GOT, "R_X86_64_GOT32");
+	case R_X86_64_PC32: ADD(32, -P, "R_X86_64_PC32");
+	case R_X86_64_GLOB_DAT: VADDR(64, P - rel->sto, "R_X86_64_GLOB_DAT");
+	case R_X86_64_JUMP_SLOT: VADDR(64, P - rel->sto, "R_X86_64_JUMP_SLOT");
+	case R_X86_64_RELATIVE: ADD(64, B, "R_X86_64_RELATIVE");
+	case R_X86_64_32: ADD(32, 0, "R_X86_64_32");
+	case R_X86_64_32S: ADD(32, 0, "R_X86_64_32S");
+	case R_X86_64_16: ADD(16, 0, "R_X86_64_16");
+	case R_X86_64_PC16: ADD(16, -P, "R_X86_64_PC16");
+	case R_X86_64_8: ADD(8, 0, "R_X86_64_8");
+	case R_X86_64_PC8: ADD(8, -P, "R_X86_64_PC8");
+	case R_X86_64_GOTPCREL: ADD(64, GOT - P, "R_X86_64_GOTPCREL");
+	case R_X86_64_COPY: ADD(64, 0, "R_X86_64_COPY"); // copy symbol at runtime
+	case R_X86_64_IRELATIVE: IFCN(64, "R_X86_64_IRELATIVE");
 	default: UNSUPP("X86_64");
 	}
 }
@@ -1777,41 +1777,41 @@ static RzBinReloc *reloc_convert_arm(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) 
 	ut64 P = rel->vaddr;
 
 	switch (rel->type) {
-	case RZ_ARM_NONE: UNHANDL("R_ARM_NONE");
-	case RZ_ARM_ABS32: ADD(32, 0, "R_ARM_ABS32");
-	case RZ_ARM_REL32: ADD(32, -P, "R_ARM_REL32");
-	case RZ_ARM_ABS16: ADD(16, 0, "R_ARM_ABS16");
-	case RZ_ARM_ABS8: ADD(8, 0, "R_ARM_ABS8");
-	case RZ_ARM_SBREL32: ADD(32, -B, "R_ARM_SBREL32");
-	case RZ_ARM_GLOB_DAT: ADD(32, 0, "R_ARM_GLOB_DAT");
-	case RZ_ARM_JUMP_SLOT: ADD(32, 0, "R_ARM_JUMP_SLOT");
-	case RZ_ARM_COPY: ADD(32, 0, "R_ARM_COPY"); // copy symbol at runtime
-	case RZ_ARM_RELATIVE: ADD(32, B, "R_ARM_RELATIVE");
-	case RZ_ARM_GOTOFF: ADD(32, -GOT, "R_ARM_GOTOFF");
-	case RZ_ARM_GOTPC: ADD(32, GOT - P, "R_ARM_GOTPC");
-	case RZ_ARM_CALL: ADD(24, -P, "R_ARM_CALL");
-	case RZ_ARM_JUMP24: ADD(24, -P, "R_ARM_JUMP24");
-	case RZ_ARM_THM_JUMP24: ADD(24, -P, "R_ARM_THM_JUMP24");
-	case RZ_ARM_THM_PC22: ADD(24, -P, "R_ARM_THM_PC22");
-	case RZ_ARM_PREL31: ADD(32, -P, "R_ARM_PREL31");
-	case RZ_ARM_MOVW_PREL_NC: ADD(16, -P, "R_ARM_MOVW_PREL_NC");
-	case RZ_ARM_MOVT_PREL: ADD(32, -P, "R_ARM_MOVT_PREL");
-	case RZ_ARM_THM_MOVW_PREL_NC: ADD(16, -P, "R_ARM_THM_MOVW_PREL_NC");
-	case RZ_ARM_REL32_NOI: ADD(32, -P, "R_ARM_REL32_NOI");
-	case RZ_ARM_ABS32_NOI: ADD(32, 0, "R_ARM_ABS32_NOI");
-	case RZ_ARM_ALU_PC_G0_NC: ADD(32, -P, "R_ARM_ALU_PC_G0_NC");
-	case RZ_ARM_ALU_PC_G0: ADD(32, -P, "R_ARM_ALU_PC_G0");
-	case RZ_ARM_ALU_PC_G1_NC: ADD(32, -P, "R_ARM_ALU_PC_G1_NC");
-	case RZ_ARM_ALU_PC_G1: ADD(32, -P, "R_ARM_ALU_PC_G1");
-	case RZ_ARM_ALU_PC_G2: ADD(32, -P, "R_ARM_ALU_PC_G2");
-	case RZ_ARM_LDR_PC_G1: ADD(32, -P, "R_ARM_LDR_PC_G1");
-	case RZ_ARM_LDR_PC_G2: ADD(32, -P, "R_ARM_LDR_PC_G2");
-	case RZ_ARM_LDRS_PC_G0: ADD(32, -P, "R_ARM_LDRS_PC_G0");
-	case RZ_ARM_LDRS_PC_G1: ADD(32, -P, "R_ARM_LDRS_PC_G1");
-	case RZ_ARM_LDRS_PC_G2: ADD(32, -P, "R_ARM_LDRS_PC_G2");
-	case RZ_ARM_LDC_PC_G0: ADD(32, -P, "R_ARM_LDC_PC_G0");
-	case RZ_ARM_LDC_PC_G1: ADD(32, -P, "R_ARM_LDC_PC_G1");
-	case RZ_ARM_LDC_PC_G2: ADD(32, -P, "R_ARM_LDC_PC_G2");
+	case R_ARM_NONE: UNHANDL("R_ARM_NONE");
+	case R_ARM_ABS32: ADD(32, 0, "R_ARM_ABS32");
+	case R_ARM_REL32: ADD(32, -P, "R_ARM_REL32");
+	case R_ARM_ABS16: ADD(16, 0, "R_ARM_ABS16");
+	case R_ARM_ABS8: ADD(8, 0, "R_ARM_ABS8");
+	case R_ARM_SBREL32: ADD(32, -B, "R_ARM_SBREL32");
+	case R_ARM_GLOB_DAT: ADD(32, 0, "R_ARM_GLOB_DAT");
+	case R_ARM_JUMP_SLOT: ADD(32, 0, "R_ARM_JUMP_SLOT");
+	case R_ARM_COPY: ADD(32, 0, "R_ARM_COPY"); // copy symbol at runtime
+	case R_ARM_RELATIVE: ADD(32, B, "R_ARM_RELATIVE");
+	case R_ARM_GOTOFF: ADD(32, -GOT, "R_ARM_GOTOFF");
+	case R_ARM_GOTPC: ADD(32, GOT - P, "R_ARM_GOTPC");
+	case R_ARM_CALL: ADD(24, -P, "R_ARM_CALL");
+	case R_ARM_JUMP24: ADD(24, -P, "R_ARM_JUMP24");
+	case R_ARM_THM_JUMP24: ADD(24, -P, "R_ARM_THM_JUMP24");
+	case R_ARM_THM_PC22: ADD(24, -P, "R_ARM_THM_PC22");
+	case R_ARM_PREL31: ADD(32, -P, "R_ARM_PREL31");
+	case R_ARM_MOVW_PREL_NC: ADD(16, -P, "R_ARM_MOVW_PREL_NC");
+	case R_ARM_MOVT_PREL: ADD(32, -P, "R_ARM_MOVT_PREL");
+	case R_ARM_THM_MOVW_PREL_NC: ADD(16, -P, "R_ARM_THM_MOVW_PREL_NC");
+	case R_ARM_REL32_NOI: ADD(32, -P, "R_ARM_REL32_NOI");
+	case R_ARM_ABS32_NOI: ADD(32, 0, "R_ARM_ABS32_NOI");
+	case R_ARM_ALU_PC_G0_NC: ADD(32, -P, "R_ARM_ALU_PC_G0_NC");
+	case R_ARM_ALU_PC_G0: ADD(32, -P, "R_ARM_ALU_PC_G0");
+	case R_ARM_ALU_PC_G1_NC: ADD(32, -P, "R_ARM_ALU_PC_G1_NC");
+	case R_ARM_ALU_PC_G1: ADD(32, -P, "R_ARM_ALU_PC_G1");
+	case R_ARM_ALU_PC_G2: ADD(32, -P, "R_ARM_ALU_PC_G2");
+	case R_ARM_LDR_PC_G1: ADD(32, -P, "R_ARM_LDR_PC_G1");
+	case R_ARM_LDR_PC_G2: ADD(32, -P, "R_ARM_LDR_PC_G2");
+	case R_ARM_LDRS_PC_G0: ADD(32, -P, "R_ARM_LDRS_PC_G0");
+	case R_ARM_LDRS_PC_G1: ADD(32, -P, "R_ARM_LDRS_PC_G1");
+	case R_ARM_LDRS_PC_G2: ADD(32, -P, "R_ARM_LDRS_PC_G2");
+	case R_ARM_LDC_PC_G0: ADD(32, -P, "R_ARM_LDC_PC_G0");
+	case R_ARM_LDC_PC_G1: ADD(32, -P, "R_ARM_LDC_PC_G1");
+	case R_ARM_LDC_PC_G2: ADD(32, -P, "R_ARM_LDC_PC_G2");
 	// FIXME: Quite a few relocatons missing here. It's incorrect to place them all under "reg relocations".
 	default: ADD(32, GOT, "ARM REG RELOC");
 	}
@@ -1821,9 +1821,9 @@ static RzBinReloc *reloc_convert_riscv(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT
 	ut64 B = bin->baddr;
 
 	switch (rel->type) {
-	case RZ_RISCV_NONE: UNHANDL("R_RISCV_NONE");
-	case RZ_RISCV_JUMP_SLOT: ADD(64, 0, "R_RISCV_JUMP_SLOT");
-	case RZ_RISCV_RELATIVE: ADD(64, B, "R_RISCV_RELATIVE");
+	case R_RISCV_NONE: UNHANDL("R_RISCV_NONE");
+	case R_RISCV_JUMP_SLOT: ADD(64, 0, "R_RISCV_JUMP_SLOT");
+	case R_RISCV_RELATIVE: ADD(64, B, "R_RISCV_RELATIVE");
 	// FIXME: Quite a few relocatons missing here. It's incorrect to place them all under "reg relocations".
 	default: ADD(64, GOT, "RISC-V REG RELOC");
 	}
@@ -1833,26 +1833,26 @@ static RzBinReloc *reloc_convert_aarch64(ELFOBJ *bin, RzBinElfReloc *rel, ut64 G
 	ut64 B = bin->baddr;
 
 	switch (rel->type) {
-	case RZ_AARCH64_NONE: UNHANDL("R_AARCH64_NONE");
-	case RZ_AARCH64_ABS64: ADD(64, 0, "R_AARCH64_ABS64");
-	case RZ_AARCH64_ABS32: ADD(32, 0, "R_AARCH64_ABS32");
-	case RZ_AARCH64_ABS16: ADD(16, 0, "R_AARCH64_ABS16");
-	case RZ_AARCH64_PREL64: ADD(64, 0, "R_AARCH64_PREL64");
-	case RZ_AARCH64_PREL32: ADD(32, 0, "R_AARCH64_PREL32");
-	case RZ_AARCH64_PREL16: ADD(16, 0, "R_AARCH64_PREL16");
-	case RZ_AARCH64_GLOB_DAT: SET(64, "R_AARCH64_GLOB_DAT");
-	case RZ_AARCH64_JUMP_SLOT: SET(64, "R_AARCH64_JUMP_SLOT");
-	case RZ_AARCH64_RELATIVE: ADD(64, B, "R_AARCH64_RELATIVE");
-	case RZ_AARCH64_LDST8_ABS_LO12_NC: ADD(16, 0, "R_AARCH64_LDST8_ABS_LO12_NC");
-	case RZ_AARCH64_ADD_ABS_LO12_NC: ADD(16, 0, "R_AARCH64_ADD_ABS_LO12_NC");
-	case RZ_AARCH64_JUMP26: ADD(32, 0, "R_AARCH64_JUMP26");
-	case RZ_AARCH64_CALL26: ADD(32, 0, "R_AARCH64_CALL26");
-	case RZ_AARCH64_LDST64_ABS_LO12_NC: ADD(32, 0, "R_AARCH64_LDST64_ABS_LO12_NC");
-	case RZ_AARCH64_LD64_GOT_LO12_NC: ADD(32, 0, "R_AARCH64_LD64_GOT_LO12_NC");
+	case R_AARCH64_NONE: UNHANDL("R_AARCH64_NONE");
+	case R_AARCH64_ABS64: ADD(64, 0, "R_AARCH64_ABS64");
+	case R_AARCH64_ABS32: ADD(32, 0, "R_AARCH64_ABS32");
+	case R_AARCH64_ABS16: ADD(16, 0, "R_AARCH64_ABS16");
+	case R_AARCH64_PREL64: ADD(64, 0, "R_AARCH64_PREL64");
+	case R_AARCH64_PREL32: ADD(32, 0, "R_AARCH64_PREL32");
+	case R_AARCH64_PREL16: ADD(16, 0, "R_AARCH64_PREL16");
+	case R_AARCH64_GLOB_DAT: SET(64, "R_AARCH64_GLOB_DAT");
+	case R_AARCH64_JUMP_SLOT: SET(64, "R_AARCH64_JUMP_SLOT");
+	case R_AARCH64_RELATIVE: ADD(64, B, "R_AARCH64_RELATIVE");
+	case R_AARCH64_LDST8_ABS_LO12_NC: ADD(16, 0, "R_AARCH64_LDST8_ABS_LO12_NC");
+	case R_AARCH64_ADD_ABS_LO12_NC: ADD(16, 0, "R_AARCH64_ADD_ABS_LO12_NC");
+	case R_AARCH64_JUMP26: ADD(32, 0, "R_AARCH64_JUMP26");
+	case R_AARCH64_CALL26: ADD(32, 0, "R_AARCH64_CALL26");
+	case R_AARCH64_LDST64_ABS_LO12_NC: ADD(32, 0, "R_AARCH64_LDST64_ABS_LO12_NC");
+	case R_AARCH64_LD64_GOT_LO12_NC: ADD(32, 0, "R_AARCH64_LD64_GOT_LO12_NC");
 	// Page-relative relocations
-	case RZ_AARCH64_ADR_GOT_PAGE: ADD(32, 0, "R_AARCH64_ADR_GOT_PAGE");
-	case RZ_AARCH64_ADR_PREL_PG_HI21: ADD(32, 0, "R_AARCH64_ADR_PREL_PG_HI21");
-	case RZ_AARCH64_ADR_PREL_PG_HI21_NC: ADD(32, 0, "R_AARCH64_ADR_PREL_PG_HI21_NC");
+	case R_AARCH64_ADR_GOT_PAGE: ADD(32, 0, "R_AARCH64_ADR_GOT_PAGE");
+	case R_AARCH64_ADR_PREL_PG_HI21: ADD(32, 0, "R_AARCH64_ADR_PREL_PG_HI21");
+	case R_AARCH64_ADR_PREL_PG_HI21_NC: ADD(32, 0, "R_AARCH64_ADR_PREL_PG_HI21_NC");
 	// FIXME: Quite a few relocations missing here
 	default: UNSUPP("AArch64");
 	}
@@ -1862,17 +1862,17 @@ static RzBinReloc *reloc_convert_ppc(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) 
 	ut64 P = rel->vaddr;
 
 	switch (rel->type) {
-	case RZ_PPC_NONE: UNHANDL("R_PPC_NONE");
-	case RZ_PPC_GLOB_DAT: ADD(32, 0, "R_PPC_GLOB_DAT");
-	case RZ_PPC_JMP_SLOT: ADD(32, 0, "R_PPC_JMP_SLOT");
-	case RZ_PPC_COPY: ADD(32, 0, "R_PPC_COPY"); // copy symbol at runtime
-	case RZ_PPC_REL24: ADD(24, -P, "R_PPC_REL24");
-	case RZ_PPC_REL14: ADD(16, -P, "R_PPC_REL14");
-	case RZ_PPC_REL32: ADD(32, -P, "R_PPC_REL32");
-	case RZ_PPC_RELATIVE: ADD(32, -P, "R_PPC_RELATIVE");
-	case RZ_PPC_PLT32: ADD(32, -P, "R_PPC_PLT32");
-	case RZ_PPC_ADDR16: ADD(16, 0, "R_PPC_ADDR16");
-	case RZ_PPC_ADDR32: ADD(32, 0, "R_PPC_ADDR32");
+	case R_PPC_NONE: UNHANDL("R_PPC_NONE");
+	case R_PPC_GLOB_DAT: ADD(32, 0, "R_PPC_GLOB_DAT");
+	case R_PPC_JMP_SLOT: ADD(32, 0, "R_PPC_JMP_SLOT");
+	case R_PPC_COPY: ADD(32, 0, "R_PPC_COPY"); // copy symbol at runtime
+	case R_PPC_REL24: ADD(24, -P, "R_PPC_REL24");
+	case R_PPC_REL14: ADD(16, -P, "R_PPC_REL14");
+	case R_PPC_REL32: ADD(32, -P, "R_PPC_REL32");
+	case R_PPC_RELATIVE: ADD(32, -P, "R_PPC_RELATIVE");
+	case R_PPC_PLT32: ADD(32, -P, "R_PPC_PLT32");
+	case R_PPC_ADDR16: ADD(16, 0, "R_PPC_ADDR16");
+	case R_PPC_ADDR32: ADD(32, 0, "R_PPC_ADDR32");
 
 	// FIXME: Quite a few relocatons missing here.
 	default: UNSUPP("PPC");
@@ -1883,12 +1883,12 @@ static RzBinReloc *reloc_convert_mips(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT)
 	ut64 P = rel->vaddr;
 
 	switch (rel->type) {
-	case RZ_MIPS_NONE: UNHANDL("R_MIPS_NONE");
-	case RZ_MIPS_COPY: ADD(32, 0, "R_MIPS_COPY"); // copy symbol at runtime
-	case RZ_MIPS_16: ADD(16, 0, "R_MIPS_16");
-	case RZ_MIPS_32: ADD(32, 0, "R_MIPS_32");
-	case RZ_MIPS_REL32: ADD(32, -P, "R_MIPS_REL32");
-	case RZ_MIPS_JUMP_SLOT: ADD(32, 0, "R_MIPS_JUMP_SLOT");
+	case R_MIPS_NONE: UNHANDL("R_MIPS_NONE");
+	case R_MIPS_COPY: ADD(32, 0, "R_MIPS_COPY"); // copy symbol at runtime
+	case R_MIPS_16: ADD(16, 0, "R_MIPS_16");
+	case R_MIPS_32: ADD(32, 0, "R_MIPS_32");
+	case R_MIPS_REL32: ADD(32, -P, "R_MIPS_REL32");
+	case R_MIPS_JUMP_SLOT: ADD(32, 0, "R_MIPS_JUMP_SLOT");
 
 	// FIXME: Quite a few relocatons missing here.
 	default: UNSUPP("MIPS");
@@ -1912,15 +1912,15 @@ static RzBinReloc *reloc_convert_alpha(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT
 	ut64 P = rel->vaddr;
 
 	switch (rel->type) {
-	case RZ_ALPHA_NONE: UNHANDL("R_ALPHA_NONE");
-	case RZ_ALPHA_REFLONG: SET(32, "R_ALPHA_REFLONG");
-	case RZ_ALPHA_REFQUAD: SET(64, "R_ALPHA_REFQUAD");
-	case RZ_ALPHA_SREL16: ADD(16, -P, "R_ALPHA_SREL16");
-	case RZ_ALPHA_SREL32: ADD(32, -P, "R_ALPHA_SREL32");
-	case RZ_ALPHA_SREL64: ADD(64, -P, "R_ALPHA_SREL64");
-	case RZ_ALPHA_COPY: ADD(32, 0, "R_ALPHA_COPY"); // copy symbol at runtime
-	case RZ_ALPHA_GLOB_DAT: ADD(32, 0, "R_ALPHA_GLOB_DAT");
-	case RZ_ALPHA_JMP_SLOT: ADD(32, 0, "R_ALPHA_JMP_SLOT");
+	case R_ALPHA_NONE: UNHANDL("R_ALPHA_NONE");
+	case R_ALPHA_REFLONG: SET(32, "R_ALPHA_REFLONG");
+	case R_ALPHA_REFQUAD: SET(64, "R_ALPHA_REFQUAD");
+	case R_ALPHA_SREL16: ADD(16, -P, "R_ALPHA_SREL16");
+	case R_ALPHA_SREL32: ADD(32, -P, "R_ALPHA_SREL32");
+	case R_ALPHA_SREL64: ADD(64, -P, "R_ALPHA_SREL64");
+	case R_ALPHA_COPY: ADD(32, 0, "R_ALPHA_COPY"); // copy symbol at runtime
+	case R_ALPHA_GLOB_DAT: ADD(32, 0, "R_ALPHA_GLOB_DAT");
+	case R_ALPHA_JMP_SLOT: ADD(32, 0, "R_ALPHA_JMP_SLOT");
 
 	// FIXME: Quite a few relocatons missing here.
 	default: UNSUPP("ALPHA");

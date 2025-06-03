@@ -59,17 +59,17 @@ static ut64 get_size_rel_mode(ut64 mode) {
 }
 
 static bool read_reloc_entry_aux(ELFOBJ *bin, Elf_(Rela) * reloc, ut64 offset, ut64 mode) {
-	if (!Elf_(rz_bin_elf_read_addr)(bin, &offset, &reloc->rz_offset) ||
-		!Elf_(rz_bin_elf_read_word_xword)(bin, &offset, &reloc->rz_info)) {
+	if (!Elf_(rz_bin_elf_read_addr)(bin, &offset, &reloc->r_offset) ||
+		!Elf_(rz_bin_elf_read_word_xword)(bin, &offset, &reloc->r_info)) {
 		return false;
 	}
 
 	if (mode == DT_REL) {
-		reloc->rz_addend = 0;
+		reloc->r_addend = 0;
 		return true;
 	}
 
-	return Elf_(rz_bin_elf_read_sword_sxword)(bin, &offset, &reloc->rz_addend);
+	return Elf_(rz_bin_elf_read_sword_sxword)(bin, &offset, &reloc->r_addend);
 }
 
 static bool read_reloc_entry(ELFOBJ *bin, Elf_(Rela) * reloc, ut64 offset, ut64 mode) {
@@ -88,10 +88,10 @@ static bool get_reloc_entry(ELFOBJ *bin, RzBinElfReloc *reloc, ut64 offset, ut64
 	}
 
 	reloc->mode = mode;
-	reloc->offset = tmp.rz_offset;
-	reloc->sym = ELF_R_SYM(tmp.rz_info);
-	reloc->type = ELF_R_TYPE(tmp.rz_info);
-	reloc->addend = tmp.rz_addend;
+	reloc->offset = tmp.r_offset;
+	reloc->sym = ELF_R_SYM(tmp.r_info);
+	reloc->type = ELF_R_TYPE(tmp.r_info);
+	reloc->addend = tmp.r_addend;
 
 	return true;
 }
