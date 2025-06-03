@@ -307,6 +307,12 @@ static RzILOpEffect *op_add_w(H8300Cmd *cmd) {
 			SETL("_1", R16_OP(1)),
 			R16_X(1, ADD(VARL("_0"), VARL("_1"))),
 			ccr_add_w(VARL("_0"), VARL("_1")));
+	case H8300_INSN_FORMAT_IMMR16:
+		return SEQ4(
+			SETL("_0", IMM_OP(0)),
+			SETL("_1", R16_OP(1)),
+			R16_X(1, ADD(VARL("_0"), VARL("_1"))),
+			ccr_add_w(VARL("_0"), VARL("_1")));
 	default: NOT_IMPLEMENTED;
 	}
 }
