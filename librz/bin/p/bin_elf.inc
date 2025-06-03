@@ -1628,7 +1628,7 @@ static ut64 get_got_addr(ELFOBJ *bin) {
 	return 0;
 }
 
-static RzBinReloc *elf_reloc_convert_new(ELFOBJ *bin, RzBinElfReloc *rel) {
+static RzBinReloc *reloc_convert_new(ELFOBJ *bin, RzBinElfReloc *rel) {
 	RzBinReloc *reloc = RZ_NEW0(RzBinReloc);
 	if (!reloc) {
 		return NULL;
@@ -1653,18 +1653,18 @@ static RzBinReloc *elf_reloc_convert_new(ELFOBJ *bin, RzBinElfReloc *rel) {
 }
 
 static RzBinReloc *reloc_convert_set(ELFOBJ *bin, RzBinElfReloc *rel, RzBinRelocType type, const char *print_name) {
-	RzBinReloc *r = elf_reloc_convert_new(bin, rel);
+	RzBinReloc *r = reloc_convert_new(bin, rel);
 	if (!r) {
 		return NULL;
 	}
 
 	r->type = type;
 	r->print_name = print_name;
-	return r
+	return r;
 }
 
 static RzBinReloc *reloc_convert_add(ELFOBJ *bin, RzBinElfReloc *rel, RzBinRelocType type, st64 addend, const char *print_name) {
-	RzBinReloc *r = elf_reloc_convert_new(bin, rel);
+	RzBinReloc *r = reloc_convert_new(bin, rel);
 	if (!r) {
 		return NULL;
 	}
@@ -1672,11 +1672,11 @@ static RzBinReloc *reloc_convert_add(ELFOBJ *bin, RzBinElfReloc *rel, RzBinReloc
 	r->addend += addend;
 	r->type = type;
 	r->print_name = print_name;
-	return r
+	return r;
 }
 
 static RzBinReloc *reloc_convert_vaddr(ELFOBJ *bin, RzBinElfReloc *rel, RzBinRelocType type, ut64 vaddr, const char *print_name) {
-	RzBinReloc *r = elf_reloc_convert_new(bin, rel);
+	RzBinReloc *r = reloc_convert_new(bin, rel);
 	if (!r) {
 		return NULL;
 	}
@@ -1684,11 +1684,11 @@ static RzBinReloc *reloc_convert_vaddr(ELFOBJ *bin, RzBinElfReloc *rel, RzBinRel
 	r->vaddr = vaddr;
 	r->type = type;
 	r->print_name = print_name;
-	return r
+	return r;
 }
 
 static RzBinReloc *reloc_convert_ifunc(ELFOBJ *bin, RzBinElfReloc *rel, RzBinRelocType type, const char *print_name) {
-	RzBinReloc *r = elf_reloc_convert_new(bin, rel);
+	RzBinReloc *r = reloc_convert_new(bin, rel);
 	if (!r) {
 		return NULL;
 	}
@@ -1696,7 +1696,7 @@ static RzBinReloc *reloc_convert_ifunc(ELFOBJ *bin, RzBinElfReloc *rel, RzBinRel
 	r->is_ifunc = true;
 	r->type = type;
 	r->print_name = print_name;
-	return r
+	return r;
 }
 
 #define UNIMPL(ARCH_NAME) \
