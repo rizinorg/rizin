@@ -1606,7 +1606,7 @@ static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel,
 		patch_reloc_alpha(obj->buf_patched, patch_addr, rel->type, big_endian, &formular_sym);
 		break;
 	default:
-		RZ_LOG_INFO("Unhandled reloc machine %d.\n", (int)e_machine);
+		RZ_LOG_INFO("Unhandled reloc patching machine %d.\n", (int)e_machine);
 	}
 }
 
@@ -1699,9 +1699,15 @@ static RzBinReloc *reloc_convert_ifunc(ELFOBJ *bin, RzBinElfReloc *rel, RzBinRel
 	return r;
 }
 
-#define UNIMPL(ARCH_NAME) \
-	RZ_LOG_WARN("Unhandled ELF " ARCH_NAME " reloc %d\n", rel->type); \
+#define UNSUPP(ARCH_NAME) \
+	RZ_LOG_WARN("Unsupported ELF " ARCH_NAME " reloc %d\n", rel->type); \
 	return reloc_convert_new(bin, rel)
+
+#define UNHANDL(RELOC_NAME) \
+	return reloc_convert_set(bin, rel, 0, RELOC_NAME)
+
+#define SET(BIT_SIZE, RELOC_NAME) \
+	return reloc_convert_set(bin, rel, RZ_BIN_RELOC_##BIT_SIZE, RELOC_NAME)
 
 #define SET(BIT_SIZE, RELOC_NAME) \
 	return reloc_convert_set(bin, rel, RZ_BIN_RELOC_##BIT_SIZE, RELOC_NAME)
@@ -1721,7 +1727,7 @@ static RzBinReloc *reloc_convert_intel_80386(ELFOBJ *bin, RzBinElfReloc *rel, ut
 
 	// FIXME: Quite a few relocatons missing here.
 	switch (rel->type) {
-	case RZ_386_NONE: SET(32, "R_386_NONE");
+	case RZ_386_NONE: UNHANDL("R_386_NONE");
 	case RZ_386_32: ADD(32, 0, "R_386_32");
 	case RZ_386_PC32: ADD(32, -P, "R_386_PC32");
 	case RZ_386_GLOB_DAT: SET(32, "R_386_GLOB_DAT");
@@ -1735,7 +1741,7 @@ static RzBinReloc *reloc_convert_intel_80386(ELFOBJ *bin, RzBinElfReloc *rel, ut
 	case RZ_386_PC8: ADD(8, -P, "R_386_PC8");
 	case RZ_386_COPY: ADD(32, 0, "R_386_COPY"); // copy symbol at runtime
 	case RZ_386_IRELATIVE: IFCN(32, "R_386_IRELATIVE");
-	default: UNIMPL("X86_32");
+	default: UNSUPP("X86_32");
 	}
 }
 
@@ -1745,7 +1751,7 @@ static RzBinReloc *reloc_convert_amd64(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT
 
 	// FIXME: Quite a few relocatons missing here.
 	switch (rel->type) {
-	case RZ_X86_64_NONE: SET(64, "R_X86_64_NONE");
+	case RZ_X86_64_NONE: UNHANDL("R_X86_64_NONE");
 	case RZ_X86_64_64: ADD(64, 0, "R_X86_64_64");
 	case RZ_X86_64_PLT32: ADD(32, -P /* +L */, "R_X86_64_PLT32");
 	case RZ_X86_64_GOT32: ADD(32, GOT, "R_X86_64_GOT32");
@@ -1762,7 +1768,7 @@ static RzBinReloc *reloc_convert_amd64(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT
 	case RZ_X86_64_GOTPCREL: ADD(64, GOT - P, "R_X86_64_GOTPCREL");
 	case RZ_X86_64_COPY: ADD(64, 0, "R_X86_64_COPY"); // copy symbol at runtime
 	case RZ_X86_64_IRELATIVE: IFCN(64, "R_X86_64_IRELATIVE");
-	default: UNIMPL("X86_64");
+	default: UNSUPP("X86_64");
 	}
 }
 
@@ -1771,7 +1777,7 @@ static RzBinReloc *reloc_convert_arm(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) 
 	ut64 P = rel->vaddr;
 
 	switch (rel->type) {
-	case RZ_ARM_NONE: SET(32, "R_ARM_NONE");
+	case RZ_ARM_NONE: UNHANDL("R_ARM_NONE");
 	case RZ_ARM_ABS32: ADD(32, 0, "R_ARM_ABS32");
 	case RZ_ARM_REL32: ADD(32, -P, "R_ARM_REL32");
 	case RZ_ARM_ABS16: ADD(16, 0, "R_ARM_ABS16");
@@ -1815,7 +1821,7 @@ static RzBinReloc *reloc_convert_riscv(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT
 	ut64 B = bin->baddr;
 
 	switch (rel->type) {
-	case RZ_RISCV_NONE: SET(64, "R_RISCV_NONE");
+	case RZ_RISCV_NONE: UNHANDL("R_RISCV_NONE");
 	case RZ_RISCV_JUMP_SLOT: ADD(64, 0, "R_RISCV_JUMP_SLOT");
 	case RZ_RISCV_RELATIVE: ADD(64, B, "R_RISCV_RELATIVE");
 	// FIXME: Quite a few relocatons missing here. It's incorrect to place them all under "reg relocations".
@@ -1827,7 +1833,7 @@ static RzBinReloc *reloc_convert_aarch64(ELFOBJ *bin, RzBinElfReloc *rel, ut64 G
 	ut64 B = bin->baddr;
 
 	switch (rel->type) {
-	case RZ_AARCH64_NONE: SET(64, "R_AARCH64_NONE");
+	case RZ_AARCH64_NONE: UNHANDL("R_AARCH64_NONE");
 	case RZ_AARCH64_ABS64: ADD(64, 0, "R_AARCH64_ABS64");
 	case RZ_AARCH64_ABS32: ADD(32, 0, "R_AARCH64_ABS32");
 	case RZ_AARCH64_ABS16: ADD(16, 0, "R_AARCH64_ABS16");
@@ -1848,7 +1854,7 @@ static RzBinReloc *reloc_convert_aarch64(ELFOBJ *bin, RzBinElfReloc *rel, ut64 G
 	case RZ_AARCH64_ADR_PREL_PG_HI21: ADD(32, 0, "R_AARCH64_ADR_PREL_PG_HI21");
 	case RZ_AARCH64_ADR_PREL_PG_HI21_NC: ADD(32, 0, "R_AARCH64_ADR_PREL_PG_HI21_NC");
 	// FIXME: Quite a few relocations missing here
-	default: UNIMPL("AArch64");
+	default: UNSUPP("AArch64");
 	}
 }
 
@@ -1856,7 +1862,7 @@ static RzBinReloc *reloc_convert_ppc(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) 
 	ut64 P = rel->vaddr;
 
 	switch (rel->type) {
-	case RZ_PPC_NONE: SET(32, "R_PPC_NONE");
+	case RZ_PPC_NONE: UNHANDL("R_PPC_NONE");
 	case RZ_PPC_GLOB_DAT: ADD(32, 0, "R_PPC_GLOB_DAT");
 	case RZ_PPC_JMP_SLOT: ADD(32, 0, "R_PPC_JMP_SLOT");
 	case RZ_PPC_COPY: ADD(32, 0, "R_PPC_COPY"); // copy symbol at runtime
@@ -1869,7 +1875,7 @@ static RzBinReloc *reloc_convert_ppc(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) 
 	case RZ_PPC_ADDR32: ADD(32, 0, "R_PPC_ADDR32");
 
 	// FIXME: Quite a few relocatons missing here.
-	default: UNIMPL("PPC");
+	default: UNSUPP("PPC");
 	}
 }
 
@@ -1877,7 +1883,7 @@ static RzBinReloc *reloc_convert_mips(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT)
 	ut64 P = rel->vaddr;
 
 	switch (rel->type) {
-	case RZ_MIPS_NONE: SET(32, "R_MIPS_NONE");
+	case RZ_MIPS_NONE: UNHANDL("R_MIPS_NONE");
 	case RZ_MIPS_COPY: ADD(32, 0, "R_MIPS_COPY"); // copy symbol at runtime
 	case RZ_MIPS_16: ADD(16, 0, "R_MIPS_16");
 	case RZ_MIPS_32: ADD(32, 0, "R_MIPS_32");
@@ -1885,7 +1891,7 @@ static RzBinReloc *reloc_convert_mips(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT)
 	case RZ_MIPS_JUMP_SLOT: ADD(32, 0, "R_MIPS_JUMP_SLOT");
 
 	// FIXME: Quite a few relocatons missing here.
-	default: UNIMPL("MIPS");
+	default: UNSUPP("MIPS");
 	}
 }
 
@@ -1893,12 +1899,12 @@ static RzBinReloc *reloc_convert_rx(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 	ut64 P = rel->vaddr;
 
 	switch (rel->type) {
-	case R_RX_NONE: SET(32, "R_RX_NONE");
+	case R_RX_NONE: UNHANDL("R_RX_NONE");
 	case R_RX_DIR24S_PCREL: ADD(24, -P, "RX_DIR24S_PCREL");
 	case R_RX_DIR32: SET(32, "RX_DIR32");
 
 	// FIXME: Quite a few relocatons missing here.
-	default: UNIMPL("RX");
+	default: UNSUPP("RX");
 	}
 }
 
@@ -1906,7 +1912,7 @@ static RzBinReloc *reloc_convert_alpha(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT
 	ut64 P = rel->vaddr;
 
 	switch (rel->type) {
-	case RZ_ALPHA_NONE: SET(64, "R_ALPHA_NONE");
+	case RZ_ALPHA_NONE: UNHANDL("R_ALPHA_NONE");
 	case RZ_ALPHA_REFLONG: SET(32, "R_ALPHA_REFLONG");
 	case RZ_ALPHA_REFQUAD: SET(64, "R_ALPHA_REFQUAD");
 	case RZ_ALPHA_SREL16: ADD(16, -P, "R_ALPHA_SREL16");
@@ -1917,20 +1923,131 @@ static RzBinReloc *reloc_convert_alpha(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT
 	case RZ_ALPHA_JMP_SLOT: ADD(32, 0, "R_ALPHA_JMP_SLOT");
 
 	// FIXME: Quite a few relocatons missing here.
-	default: UNIMPL("ALPHA");
+	default: UNSUPP("ALPHA");
 	}
 }
 
-static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
-	rz_return_val_if_fail(bin && rel, NULL);
+static RzBinReloc *reloc_convert_hexagon(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 	ut64 P = rel->vaddr;
 
-	RzBinReloc *r = reloc_convert_new(bin, rel);
-	if (!r) {
-		return NULL;
+	switch (rel->type) {
+	case R_HEX_B22_PCREL: ADD(32, -P, "R_HEX_B22_PCREL");
+	case R_HEX_B15_PCREL: ADD(32, -P, "R_HEX_B15_PCREL");
+	case R_HEX_B7_PCREL: ADD(32, -P, "R_HEX_B7_PCREL");
+	case R_HEX_LO16: ADD(32, 0, "R_HEX_LO16");
+	case R_HEX_HI16: ADD(32, 0, "R_HEX_HI16");
+	case R_HEX_32: ADD(32, 0, "R_HEX_32");
+	case R_HEX_16: ADD(16, 0, "R_HEX_16");
+	case R_HEX_8: ADD(8, 0, "R_HEX_8");
+	case R_HEX_HL16: ADD(64, 0, "R_HEX_HL16");
+	case R_HEX_B13_PCREL: ADD(32, -P, "R_HEX_B13_PCREL");
+	case R_HEX_B9_PCREL: ADD(32, -P, "R_HEX_B9_PCREL");
+	case R_HEX_B32_PCREL_X: ADD(32, -P, "R_HEX_B32_PCREL_X");
+	case R_HEX_32_6_X: ADD(32, 0, "R_HEX_32_6_X");
+	case R_HEX_B22_PCREL_X: ADD(32, -P, "R_HEX_B22_PCREL_X");
+	case R_HEX_B15_PCREL_X: ADD(32, -P, "R_HEX_B15_PCREL_X");
+	case R_HEX_B13_PCREL_X: ADD(32, -P, "R_HEX_B13_PCREL_X");
+	case R_HEX_B9_PCREL_X: ADD(32, -P, "R_HEX_B9_PCREL_X");
+	case R_HEX_B7_PCREL_X: ADD(32, -P, "R_HEX_B7_PCREL_X");
+	case R_HEX_16_X: ADD(32, 0, "R_HEX_16_X");
+	case R_HEX_12_X: ADD(32, 0, "R_HEX_12_X");
+	case R_HEX_11_X: ADD(32, 0, "R_HEX_11_X");
+	case R_HEX_10_X: ADD(32, 0, "R_HEX_10_X");
+	case R_HEX_9_X: ADD(32, 0, "R_HEX_9_X");
+	case R_HEX_8_X: ADD(32, 0, "R_HEX_8_X");
+	case R_HEX_7_X: ADD(32, 0, "R_HEX_7_X");
+	case R_HEX_6_X: ADD(32, 0, "R_HEX_6_X");
+	case R_HEX_32_PCREL: ADD(32, -P, "R_HEX_32_PCREL");
+	case R_HEX_GLOB_DAT: ADD(32, 0, "R_HEX_GLOB_DAT");
+	case R_HEX_JMP_SLOT: ADD(32, 0, "R_HEX_JMP_SLOT");
+	case R_HEX_GOTREL_LO16: ADD(32, -GOT, "R_HEX_GOTREL_LO16");
+	case R_HEX_GOTREL_HI16: ADD(32, -GOT, "R_HEX_GOTREL_HI16");
+	case R_HEX_GOTREL_32: ADD(32, -GOT, "R_HEX_GOTREL_32");
+	case R_HEX_6_PCREL_X: ADD(32, -P, "R_HEX_6_PCREL_X");
+	case R_HEX_GOTREL_32_6_X: ADD(32, -GOT, "R_HEX_GOTREL_32_6_X");
+	case R_HEX_GOTREL_16_X: ADD(32, -GOT, "R_HEX_GOTREL_16_X");
+	case R_HEX_GOTREL_11_X: ADD(32, -GOT, "R_HEX_GOTREL_11_X");
+	case R_HEX_GD_PLT_B22_PCREL_X: ADD(32, -P, "R_HEX_GD_PLT_B22_PCREL_X");
+	case R_HEX_GD_PLT_B32_PCREL_X: ADD(32, -P, "R_HEX_GD_PLT_B32_PCREL_X");
+	case R_HEX_LD_PLT_B22_PCREL_X: ADD(32, -P, "R_HEX_LD_PLT_B22_PCREL_X");
+	case R_HEX_LD_PLT_B32_PCREL_X: ADD(32, -P, "R_HEX_LD_PLT_B32_PCREL_X");
+	case R_HEX_COPY: SET(32, "R_HEX_COPY");
+	case R_HEX_NONE: UNHANDL("R_HEX_NONE");
+	case R_HEX_RELATIVE: UNHANDL("R_HEX_RELATIVE"); // Preview not supported, patching is implemented
+	case R_HEX_PLT_B22_PCREL: UNHANDL("R_HEX_PLT_B22_PCREL"); // Preview not supported, patching is implemented
+	case R_HEX_GOT_LO16: UNHANDL("R_HEX_GOT_LO16");
+	case R_HEX_GOT_HI16: UNHANDL("R_HEX_GOT_HI16");
+	case R_HEX_GOT_32: UNHANDL("R_HEX_GOT_32");
+	case R_HEX_GOT_16: UNHANDL("R_HEX_GOT_16");
+	case R_HEX_DTPMOD_32: UNHANDL("R_HEX_DTPMOD_32");
+	case R_HEX_GD_PLT_B22_PCREL: UNHANDL("R_HEX_GD_PLT_B22_PCREL"); // Preview not supported, patching is implemented
+	case R_HEX_GD_GOT_LO16: UNHANDL("R_HEX_GD_GOT_LO16");
+	case R_HEX_GD_GOT_HI16: UNHANDL("R_HEX_GD_GOT_HI16");
+	case R_HEX_GD_GOT_32: UNHANDL("R_HEX_GD_GOT_32");
+	case R_HEX_GD_GOT_16: UNHANDL("R_HEX_GD_GOT_16");
+	case R_HEX_IE_LO16: UNHANDL("R_HEX_IE_LO16");
+	case R_HEX_IE_HI16: UNHANDL("R_HEX_IE_HI16");
+	case R_HEX_IE_32: UNHANDL("R_HEX_IE_32");
+	case R_HEX_IE_GOT_LO16: UNHANDL("R_HEX_IE_GOT_LO16");
+	case R_HEX_IE_GOT_HI16: UNHANDL("R_HEX_IE_GOT_HI16");
+	case R_HEX_IE_GOT_32: UNHANDL("R_HEX_IE_GOT_32");
+	case R_HEX_IE_GOT_16: UNHANDL("R_HEX_IE_GOT_16");
+	case R_HEX_TPREL_LO16: UNHANDL("R_HEX_TPREL_LO16");
+	case R_HEX_TPREL_HI16: UNHANDL("R_HEX_TPREL_HI16");
+	case R_HEX_TPREL_32: UNHANDL("R_HEX_TPREL_32");
+	case R_HEX_TPREL_16: UNHANDL("R_HEX_TPREL_16");
+	case R_HEX_GOT_32_6_X: UNHANDL("R_HEX_GOT_32_6_X");
+	case R_HEX_GOT_16_X: UNHANDL("R_HEX_GOT_16_X");
+	case R_HEX_GOT_11_X: UNHANDL("R_HEX_GOT_11_X");
+	case R_HEX_GD_GOT_32_6_X: UNHANDL("R_HEX_GD_GOT_32_6_X");
+	case R_HEX_GD_GOT_16_X: UNHANDL("R_HEX_GD_GOT_16_X");
+	case R_HEX_GD_GOT_11_X: UNHANDL("R_HEX_GD_GOT_11_X");
+	case R_HEX_IE_32_6_X: UNHANDL("R_HEX_IE_32_6_X");
+	case R_HEX_IE_16_X: UNHANDL("R_HEX_IE_16_X");
+	case R_HEX_IE_GOT_32_6_X: UNHANDL("R_HEX_IE_GOT_32_6_X");
+	case R_HEX_IE_GOT_16_X: UNHANDL("R_HEX_IE_GOT_16_X");
+	case R_HEX_IE_GOT_11_X: UNHANDL("R_HEX_IE_GOT_11_X");
+	case R_HEX_TPREL_32_6_X: UNHANDL("R_HEX_TPREL_32_6_X");
+	case R_HEX_TPREL_16_X: UNHANDL("R_HEX_TPREL_16_X");
+	case R_HEX_TPREL_11_X: UNHANDL("R_HEX_TPREL_11_X");
+	case R_HEX_LD_PLT_B22_PCREL: UNHANDL("R_HEX_LD_PLT_B22_PCREL"); // Preview not supported, patching is implemented
+	case R_HEX_LD_GOT_LO16: UNHANDL("R_HEX_LD_GOT_LO16");
+	case R_HEX_LD_GOT_HI16: UNHANDL("R_HEX_LD_GOT_HI16");
+	case R_HEX_LD_GOT_32: UNHANDL("R_HEX_LD_GOT_32");
+	case R_HEX_LD_GOT_16: UNHANDL("R_HEX_LD_GOT_16");
+	case R_HEX_LD_GOT_32_6_X: UNHANDL("R_HEX_LD_GOT_32_6_X");
+	case R_HEX_LD_GOT_16_X: UNHANDL("R_HEX_LD_GOT_16_X");
+	case R_HEX_LD_GOT_11_X: UNHANDL("R_HEX_LD_GOT_11_X");
+	case R_HEX_27_REG: UNHANDL("R_HEX_27_REG");
+	case R_HEX_23_REG: UNHANDL("R_HEX_23_REG");
+	case R_HEX_DTPREL_32_6_X: UNHANDL("R_HEX_DTPREL_32_6_X"); // Preview not supported, patching is implemented
+	case R_HEX_DTPREL_16_X: UNHANDL("R_HEX_DTPREL_16_X"); // Preview not supported, patching is implemented
+	case R_HEX_DTPREL_11_X: UNHANDL("R_HEX_DTPREL_11_X"); // Preview not supported, patching is implemented
+	case R_HEX_DTPREL_LO16: UNHANDL("R_HEX_DTPREL_LO16");
+	case R_HEX_DTPREL_HI16: UNHANDL("R_HEX_DTPREL_HI16");
+	case R_HEX_DTPREL_32: UNHANDL("R_HEX_DTPREL_32");
+	case R_HEX_DTPREL_16: UNHANDL("R_HEX_DTPREL_16");
+	case R_HEX_GPREL16_0: UNHANDL("R_HEX_GPREL16_0");
+	case R_HEX_GPREL16_1: UNHANDL("R_HEX_GPREL16_1");
+	case R_HEX_GPREL16_2: UNHANDL("R_HEX_GPREL16_2");
+	case R_HEX_GPREL16_3: UNHANDL("R_HEX_GPREL16_3");
+	default: UNSUPP("Hexagon");
 	}
+}
 
-	switch (bin->ehdr.e_machine) {
+#undef UNSUPP
+#undef UNHANDL
+#undef SET
+#undef SET
+#undef ADD
+#undef VADDR
+#undef IFCN
+
+static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
+	rz_return_val_if_fail(bin && rel, NULL);
+	ut16 e_machine = bin->ehdr.e_machine;
+
+	switch (e_machine) {
 	case EM_386:
 		return reloc_convert_intel_80386(bin, rel, GOT);
 	case EM_X86_64:
@@ -1950,236 +2067,11 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 	case EM_ALPHA:
 		return reloc_convert_alpha(bin, rel, GOT);
 	case EM_QDSP6:
-		switch (rel->type) {
-		case R_HEX_B22_PCREL: ADD(32, -P, "R_HEX_B22_PCREL");
-		case R_HEX_B15_PCREL: ADD(32, -P, "R_HEX_B15_PCREL");
-		case R_HEX_B7_PCREL: ADD(32, -P, "R_HEX_B7_PCREL");
-		case R_HEX_LO16: ADD(32, 0, "R_HEX_LO16");
-		case R_HEX_HI16: ADD(32, 0, "R_HEX_HI16");
-		case R_HEX_32: ADD(32, 0, "R_HEX_32");
-		case R_HEX_16: ADD(16, 0, "R_HEX_16");
-		case R_HEX_8: ADD(8, 0, "R_HEX_8");
-		case R_HEX_HL16: ADD(64, 0, "R_HEX_HL16");
-		case R_HEX_B13_PCREL: ADD(32, -P, "R_HEX_B13_PCREL");
-		case R_HEX_B9_PCREL: ADD(32, -P, "R_HEX_B9_PCREL");
-		case R_HEX_B32_PCREL_X: ADD(32, -P, "R_HEX_B32_PCREL_X");
-		case R_HEX_32_6_X: ADD(32, 0, "R_HEX_32_6_X");
-		case R_HEX_B22_PCREL_X: ADD(32, -P, "R_HEX_B22_PCREL_X");
-		case R_HEX_B15_PCREL_X: ADD(32, -P, "R_HEX_B15_PCREL_X");
-		case R_HEX_B13_PCREL_X: ADD(32, -P, "R_HEX_B13_PCREL_X");
-		case R_HEX_B9_PCREL_X: ADD(32, -P, "R_HEX_B9_PCREL_X");
-		case R_HEX_B7_PCREL_X: ADD(32, -P, "R_HEX_B7_PCREL_X");
-		case R_HEX_16_X: ADD(32, 0, "R_HEX_16_X");
-		case R_HEX_12_X: ADD(32, 0, "R_HEX_12_X");
-		case R_HEX_11_X: ADD(32, 0, "R_HEX_11_X");
-		case R_HEX_10_X: ADD(32, 0, "R_HEX_10_X");
-		case R_HEX_9_X: ADD(32, 0, "R_HEX_9_X");
-		case R_HEX_8_X: ADD(32, 0, "R_HEX_8_X");
-		case R_HEX_7_X: ADD(32, 0, "R_HEX_7_X");
-		case R_HEX_6_X: ADD(32, 0, "R_HEX_6_X");
-		case R_HEX_32_PCREL: ADD(32, -P, "R_HEX_32_PCREL");
-		case R_HEX_GLOB_DAT: ADD(32, 0, "R_HEX_GLOB_DAT");
-		case R_HEX_JMP_SLOT: ADD(32, 0, "R_HEX_JMP_SLOT");
-		case R_HEX_GOTREL_LO16: ADD(32, -GOT, "R_HEX_GOTREL_LO16");
-		case R_HEX_GOTREL_HI16: ADD(32, -GOT, "R_HEX_GOTREL_HI16");
-		case R_HEX_GOTREL_32: ADD(32, -GOT, "R_HEX_GOTREL_32");
-		case R_HEX_6_PCREL_X: ADD(32, -P, "R_HEX_6_PCREL_X");
-		case R_HEX_GOTREL_32_6_X: ADD(32, -GOT, "R_HEX_GOTREL_32_6_X");
-		case R_HEX_GOTREL_16_X: ADD(32, -GOT, "R_HEX_GOTREL_16_X");
-		case R_HEX_GOTREL_11_X: ADD(32, -GOT, "R_HEX_GOTREL_11_X");
-		case R_HEX_GD_PLT_B22_PCREL_X: ADD(32, -P, "R_HEX_GD_PLT_B22_PCREL_X");
-		case R_HEX_GD_PLT_B32_PCREL_X: ADD(32, -P, "R_HEX_GD_PLT_B32_PCREL_X");
-		case R_HEX_LD_PLT_B22_PCREL_X: ADD(32, -P, "R_HEX_LD_PLT_B22_PCREL_X");
-		case R_HEX_LD_PLT_B32_PCREL_X: ADD(32, -P, "R_HEX_LD_PLT_B32_PCREL_X");
-		case R_HEX_COPY: SET(32, "R_HEX_COPY");
-		case R_HEX_NONE:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_NONE\n");
-			break;
-		case R_HEX_RELATIVE:
-			RZ_LOG_WARN("R_HEX_RELATIVE - Preview not supported, patching is implemented\n");
-			break;
-		case R_HEX_PLT_B22_PCREL:
-			RZ_LOG_WARN("R_HEX_PLT_B22_PCREL - Preview not supported, patching is implemented\n");
-			break;
-		case R_HEX_GOT_LO16:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_GOT_LO16\n");
-			break;
-		case R_HEX_GOT_HI16:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_GOT_HI16\n");
-			break;
-		case R_HEX_GOT_32:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_GOT_32\n");
-			break;
-		case R_HEX_GOT_16:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_GOT_16\n");
-			break;
-		case R_HEX_DTPMOD_32:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_DTPMOD_32\n");
-			break;
-		case R_HEX_GD_PLT_B22_PCREL:
-			RZ_LOG_WARN("R_HEX_GD_PLT_B22_PCREL - Preview not supported, patching is implemented\n");
-			break;
-		case R_HEX_GD_GOT_LO16:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_GD_GOT_LO16\n");
-			break;
-		case R_HEX_GD_GOT_HI16:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_GD_GOT_HI16\n");
-			break;
-		case R_HEX_GD_GOT_32:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_GD_GOT_32\n");
-			break;
-		case R_HEX_GD_GOT_16:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_GD_GOT_16\n");
-			break;
-		case R_HEX_IE_LO16:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_IE_LO16\n");
-			break;
-		case R_HEX_IE_HI16:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_IE_HI16\n");
-			break;
-		case R_HEX_IE_32:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_IE_32\n");
-			break;
-		case R_HEX_IE_GOT_LO16:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_IE_GOT_LO16\n");
-			break;
-		case R_HEX_IE_GOT_HI16:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_IE_GOT_HI16\n");
-			break;
-		case R_HEX_IE_GOT_32:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_IE_GOT_32\n");
-			break;
-		case R_HEX_IE_GOT_16:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_IE_GOT_16\n");
-			break;
-		case R_HEX_TPREL_LO16:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_TPREL_LO16\n");
-			break;
-		case R_HEX_TPREL_HI16:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_TPREL_HI16\n");
-			break;
-		case R_HEX_TPREL_32:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_TPREL_32\n");
-			break;
-		case R_HEX_TPREL_16:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_TPREL_16\n");
-			break;
-		case R_HEX_GOT_32_6_X:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_GOT_32_6_X\n");
-			break;
-		case R_HEX_GOT_16_X:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_GOT_16_X\n");
-			break;
-		case R_HEX_GOT_11_X:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_GOT_11_X\n");
-			break;
-		case R_HEX_GD_GOT_32_6_X:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_GD_GOT_32_6_X\n");
-			break;
-		case R_HEX_GD_GOT_16_X:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_GD_GOT_16_X\n");
-			break;
-		case R_HEX_GD_GOT_11_X:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_GD_GOT_11_X\n");
-			break;
-		case R_HEX_IE_32_6_X:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_IE_32_6_X\n");
-			break;
-		case R_HEX_IE_16_X:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_IE_16_X\n");
-			break;
-		case R_HEX_IE_GOT_32_6_X:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_IE_GOT_32_6_X\n");
-			break;
-		case R_HEX_IE_GOT_16_X:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_IE_GOT_16_X\n");
-			break;
-		case R_HEX_IE_GOT_11_X:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_IE_GOT_11_X\n");
-			break;
-		case R_HEX_TPREL_32_6_X:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_TPREL_32_6_X\n");
-			break;
-		case R_HEX_TPREL_16_X:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_TPREL_16_X\n");
-			break;
-		case R_HEX_TPREL_11_X:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_TPREL_11_X\n");
-			break;
-		case R_HEX_LD_PLT_B22_PCREL:
-			RZ_LOG_WARN("R_HEX_LD_PLT_B22_PCREL - Preview not supported, patching is implemented\n");
-			break;
-		case R_HEX_LD_GOT_LO16:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_LD_GOT_LO16\n");
-			break;
-		case R_HEX_LD_GOT_HI16:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_LD_GOT_HI16\n");
-			break;
-		case R_HEX_LD_GOT_32:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_LD_GOT_32\n");
-			break;
-		case R_HEX_LD_GOT_16:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_LD_GOT_16\n");
-			break;
-		case R_HEX_LD_GOT_32_6_X:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_LD_GOT_32_6_X\n");
-			break;
-		case R_HEX_LD_GOT_16_X:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_LD_GOT_16_X\n");
-			break;
-		case R_HEX_LD_GOT_11_X:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_LD_GOT_11_X\n");
-			break;
-		case R_HEX_27_REG:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_27_REG\n");
-			break;
-		case R_HEX_23_REG:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_23_REG\n");
-			break;
-		case R_HEX_DTPREL_32_6_X:
-			RZ_LOG_WARN("R_HEX_DTPREL_32_6_X - Preview not supported, patching is implemented\n");
-			break;
-		case R_HEX_DTPREL_16_X:
-			RZ_LOG_WARN("R_HEX_DTPREL_16_X - Preview not supported, patching is implemented\n");
-			break;
-		case R_HEX_DTPREL_11_X:
-			RZ_LOG_WARN("R_HEX_DTPREL_11_X - Preview not supported, patching is implemented\n");
-			break;
-		case R_HEX_DTPREL_LO16:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_DTPREL_LO16\n");
-			break;
-		case R_HEX_DTPREL_HI16:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_DTPREL_HI16\n");
-			break;
-		case R_HEX_DTPREL_32:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_DTPREL_32\n");
-			break;
-		case R_HEX_DTPREL_16:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_DTPREL_16\n");
-			break;
-		case R_HEX_GPREL16_0:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_GPREL16_0\n");
-			break;
-		case R_HEX_GPREL16_1:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_GPREL16_1\n");
-			break;
-		case R_HEX_GPREL16_2:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_GPREL16_2\n");
-			break;
-		case R_HEX_GPREL16_3:
-			RZ_LOG_WARN("Unsupported reloc: R_HEX_GPREL16_3\n");
-			break;
-		}
-		break;
+		return reloc_convert_hexagon(bin, rel, GOT);
 	default:
-		break;
+		RZ_LOG_INFO("Unhandled reloc convert machine %d.\n", (int)e_machine);
+		return NULL;
 	}
-
-#undef SET
-#undef ADD
-
-	rz_bin_reloc_free(r);
-	return NULL;
 }
 
 static void patch_relocs(RzBinFile *bf, ELFOBJ *bin) {
