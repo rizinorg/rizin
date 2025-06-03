@@ -150,6 +150,7 @@ typedef struct rz_bin_reloc_formular_symbols_t {
 	ut64 T; // Base address of the static thread-local tmeplate that contains a thread-local symbol.
 	ut64 MB; // Base address of all strings consumed by compiler message base optimization (Hexagon specific).
 	ut64 GP; // Value of GP register (Hexagon specific).
+	ut64 AHL; // Special value used by MIPS to handle R_MIPS_HI16 & R_MIPS_LO16 relocs
 } RzBinRelocFormularSymbols;
 
 static RzBinInfo *info(RzBinFile *bf);
@@ -817,6 +818,10 @@ static void patch_val_hexagon(RZ_INOUT RzBuffer *buf_patched, const ut32 addr, c
 	rz_buf_write_at(buf_patched, addr, buf, 4);
 }
 
+#define UNHANDL(NAME) \
+	RZ_LOG_WARN("Unhandled " NAME " reloc\n"); \
+	return
+
 /**
  * \brief Patches the opcode at a given address depending on the relocation type.
  *
@@ -1036,7 +1041,7 @@ static void patch_reloc_hexagon(RZ_INOUT RzBuffer *buf_patched, const ut64 patch
  * \param big_endian The endianness - true if BE, false if LE
  * \param fs Formular values to calculate the new relocation value.
  */
-static void patch_reloc_mips(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_addr, const int rel_type, bool big_endian, const RzBinRelocFormularSymbols *fs) {
+static void patch_reloc_mips(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_addr, const int rel_type, bool big_endian, RzBinRelocFormularSymbols *fs) {
 	rz_return_if_fail(buf_patched && fs);
 	ut8 buf[4] = { 0 };
 	ut64 val = 0;
@@ -1045,25 +1050,136 @@ static void patch_reloc_mips(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_ad
 	default:
 		RZ_LOG_WARN("Patching for mips reloc type %d not implemented.\n", rel_type);
 		return;
-	case R_MIPS_16:
-		rz_buf_read_at(buf_patched, patch_addr, buf, 16);
-		val = rz_read_ble16(buf, big_endian) + fs->S + fs->A;
-		rz_write_ble16(buf, val, big_endian);
-		rz_buf_write_at(buf_patched, patch_addr, buf, 16);
-		break;
-	case R_MIPS_32:
-	/* fall-thru */
-	case R_MIPS_REL32:
-		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
-		val = rz_read_ble32(buf, big_endian) + fs->S + fs->A;
-		if (rel_type == R_MIPS_REL32) {
-			val -= fs->P;
-		}
-		rz_write_ble32(buf, val, big_endian);
-		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
-		break;
 	case R_MIPS_NONE:
 		return;
+	case R_MIPS_16: // S + sign–extend(A)
+		rz_buf_read_at(buf_patched, patch_addr, buf, 2);
+		val = rz_read_ble16(buf, big_endian);
+		val += fs->S + fs->A;
+		rz_write_ble16(buf, val, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 2);
+		return;
+	case R_MIPS_32: // S + A
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		val = rz_read_ble32(buf, big_endian);
+		val += fs->S + fs->A;
+		rz_write_ble32(buf, val, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		return;
+	case R_MIPS_REL32: // A – EA + S
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		val = rz_read_ble32(buf, big_endian);
+		val += fs->S + fs->A - fs->P;
+		rz_write_ble32(buf, val, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		return;
+	case R_MIPS_26: // (((A << 2) | (P & 0xf0000000) + S) >> 2
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		val = rz_read_ble32(buf, big_endian);
+		val += ((fs->A << 2) | (fs->P & 0xf0000000));
+		val += fs->S;
+		val >>= 2;
+		rz_write_ble32(buf, val, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		return;
+	case R_MIPS_HI16:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 2);
+		fs->AHL = rz_read_ble16(buf, big_endian) << 16;
+		return;
+	case R_MIPS_LO16:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 2);
+		val = rz_read_ble16(buf, big_endian);
+		val += fs->AHL;
+		val += fs->S;
+		return;
+	case R_MIPS_GPREL16:
+		UNHANDL("R_MIPS_GPREL16");
+	case R_MIPS_LITERAL:
+		UNHANDL("R_MIPS_LITERAL");
+	case R_MIPS_GOT16:
+		UNHANDL("R_MIPS_GOT16");
+	case R_MIPS_PC16:
+		UNHANDL("R_MIPS_PC16");
+	case R_MIPS_CALL16:
+		UNHANDL("R_MIPS_CALL16");
+	case R_MIPS_GPREL32:
+		UNHANDL("R_MIPS_GPREL32");
+	case R_MIPS_SHIFT5:
+		UNHANDL("R_MIPS_SHIFT5");
+	case R_MIPS_SHIFT6:
+		UNHANDL("R_MIPS_SHIFT6");
+	case R_MIPS_64:
+		UNHANDL("R_MIPS_64");
+	case R_MIPS_GOT_DISP:
+		UNHANDL("R_MIPS_GOT_DISP");
+	case R_MIPS_GOT_PAGE:
+		UNHANDL("R_MIPS_GOT_PAGE");
+	case R_MIPS_GOT_OFST:
+		UNHANDL("R_MIPS_GOT_OFST");
+	case R_MIPS_GOT_HI16:
+		UNHANDL("R_MIPS_GOT_HI16");
+	case R_MIPS_GOT_LO16:
+		UNHANDL("R_MIPS_GOT_LO16");
+	case R_MIPS_SUB:
+		UNHANDL("R_MIPS_SUB");
+	case R_MIPS_INSERT_A:
+		UNHANDL("R_MIPS_INSERT_A");
+	case R_MIPS_INSERT_B:
+		UNHANDL("R_MIPS_INSERT_B");
+	case R_MIPS_DELETE:
+		UNHANDL("R_MIPS_DELETE");
+	case R_MIPS_HIGHER:
+		UNHANDL("R_MIPS_HIGHER");
+	case R_MIPS_HIGHEST:
+		UNHANDL("R_MIPS_HIGHEST");
+	case R_MIPS_CALL_HI16:
+		UNHANDL("R_MIPS_CALL_HI16");
+	case R_MIPS_CALL_LO16:
+		UNHANDL("R_MIPS_CALL_LO16");
+	case R_MIPS_SCN_DISP:
+		UNHANDL("R_MIPS_SCN_DISP");
+	case R_MIPS_REL16:
+		UNHANDL("R_MIPS_REL16");
+	case R_MIPS_ADD_IMMEDIATE:
+		UNHANDL("R_MIPS_ADD_IMMEDIATE");
+	case R_MIPS_PJUMP:
+		UNHANDL("R_MIPS_PJUMP");
+	case R_MIPS_RELGOT:
+		UNHANDL("R_MIPS_RELGOT");
+	case R_MIPS_JALR:
+		UNHANDL("R_MIPS_JALR");
+	case R_MIPS_TLS_DTPMOD32:
+		UNHANDL("R_MIPS_TLS_DTPMOD32");
+	case R_MIPS_TLS_DTPREL32:
+		UNHANDL("R_MIPS_TLS_DTPREL32");
+	case R_MIPS_TLS_DTPMOD64:
+		UNHANDL("R_MIPS_TLS_DTPMOD64");
+	case R_MIPS_TLS_DTPREL64:
+		UNHANDL("R_MIPS_TLS_DTPREL64");
+	case R_MIPS_TLS_GD:
+		UNHANDL("R_MIPS_TLS_GD");
+	case R_MIPS_TLS_LDM:
+		UNHANDL("R_MIPS_TLS_LDM");
+	case R_MIPS_TLS_DTPREL_HI16:
+		UNHANDL("R_MIPS_TLS_DTPREL_HI16");
+	case R_MIPS_TLS_DTPREL_LO16:
+		UNHANDL("R_MIPS_TLS_DTPREL_LO16");
+	case R_MIPS_TLS_GOTTPREL:
+		UNHANDL("R_MIPS_TLS_GOTTPREL");
+	case R_MIPS_TLS_TPREL32:
+		UNHANDL("R_MIPS_TLS_TPREL32");
+	case R_MIPS_TLS_TPREL64:
+		UNHANDL("R_MIPS_TLS_TPREL64");
+	case R_MIPS_TLS_TPREL_HI16:
+		UNHANDL("R_MIPS_TLS_TPREL_HI16");
+	case R_MIPS_TLS_TPREL_LO16:
+		UNHANDL("R_MIPS_TLS_TPREL_LO16");
+	case R_MIPS_GLOB_DAT:
+		UNHANDL("R_MIPS_GLOB_DAT");
+	case R_MIPS_COPY:
+		UNHANDL("R_MIPS_COPY");
+	case R_MIPS_JUMP_SLOT:
+		UNHANDL("R_MIPS_JUMP_SLOT");
 	}
 }
 
@@ -1560,7 +1676,9 @@ static void patch_reloc_alpha(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 	}
 }
 
-static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel, ut64 S, ut64 B, ut64 L, ut64 GOT) {
+#undef UNHANDL
+
+static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel, ut64 S, ut64 B, ut64 L, ut64 GOT, ut64 *AHL) {
 	ut16 e_machine = obj->ehdr.e_machine;
 	RzBinRelocFormularSymbols formular_sym = {
 		.A = rel->addend,
@@ -1573,7 +1691,8 @@ static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel,
 		.G = 0,
 		.GP = 0,
 		.T = 0,
-		.TLS = 0
+		.TLS = 0,
+		.AHL = *AHL,
 	};
 	ut64 patch_addr = rel->paddr != UT64_MAX ? rel->paddr : Elf_(rz_bin_elf_v2p)(obj, rel->vaddr);
 	bool big_endian = obj->big_endian;
@@ -1592,6 +1711,10 @@ static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel,
 		break;
 	case EM_MIPS:
 		patch_reloc_mips(obj->buf_patched, patch_addr, rel->type, big_endian, &formular_sym);
+		// This is a special value used only in mips
+		// An R_MIPS_HI16 must be followed immediately by an R_MIPS_LO16 relocation record in a SHT_REL section.
+		// The contents of the two fields to be relocated are combined to form a full 32-bit addend AHL.
+		*AHL = formular_sym.AHL;
 		break;
 	case EM_386:
 		patch_reloc_intel_80386(obj->buf_patched, patch_addr, rel->type, &formular_sym);
@@ -1884,12 +2007,56 @@ static RzBinReloc *reloc_convert_mips(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT)
 
 	switch (rel->type) {
 	case R_MIPS_NONE: UNHANDL("R_MIPS_NONE");
-	case R_MIPS_COPY: ADD(32, 0, "R_MIPS_COPY"); // copy symbol at runtime
 	case R_MIPS_16: ADD(16, 0, "R_MIPS_16");
 	case R_MIPS_32: ADD(32, 0, "R_MIPS_32");
 	case R_MIPS_REL32: ADD(32, -P, "R_MIPS_REL32");
+	case R_MIPS_26: UNHANDL("R_MIPS_26");
+	case R_MIPS_HI16: UNHANDL("R_MIPS_HI16");
+	case R_MIPS_LO16: UNHANDL("R_MIPS_LO16");
+	case R_MIPS_GPREL16: UNHANDL("R_MIPS_GPREL16");
+	case R_MIPS_LITERAL: UNHANDL("R_MIPS_LITERAL");
+	case R_MIPS_GOT16: UNHANDL("R_MIPS_GOT16");
+	case R_MIPS_PC16: UNHANDL("R_MIPS_PC16");
+	case R_MIPS_CALL16: UNHANDL("R_MIPS_CALL16");
+	case R_MIPS_GPREL32: UNHANDL("R_MIPS_GPREL32");
+	case R_MIPS_SHIFT5: UNHANDL("R_MIPS_SHIFT5");
+	case R_MIPS_SHIFT6: UNHANDL("R_MIPS_SHIFT6");
+	case R_MIPS_64: UNHANDL("R_MIPS_64");
+	case R_MIPS_GOT_DISP: UNHANDL("R_MIPS_GOT_DISP");
+	case R_MIPS_GOT_PAGE: UNHANDL("R_MIPS_GOT_PAGE");
+	case R_MIPS_GOT_OFST: UNHANDL("R_MIPS_GOT_OFST");
+	case R_MIPS_GOT_HI16: UNHANDL("R_MIPS_GOT_HI16");
+	case R_MIPS_GOT_LO16: UNHANDL("R_MIPS_GOT_LO16");
+	case R_MIPS_SUB: UNHANDL("R_MIPS_SUB");
+	case R_MIPS_INSERT_A: UNHANDL("R_MIPS_INSERT_A");
+	case R_MIPS_INSERT_B: UNHANDL("R_MIPS_INSERT_B");
+	case R_MIPS_DELETE: UNHANDL("R_MIPS_DELETE");
+	case R_MIPS_HIGHER: UNHANDL("R_MIPS_HIGHER");
+	case R_MIPS_HIGHEST: UNHANDL("R_MIPS_HIGHEST");
+	case R_MIPS_CALL_HI16: UNHANDL("R_MIPS_CALL_HI16");
+	case R_MIPS_CALL_LO16: UNHANDL("R_MIPS_CALL_LO16");
+	case R_MIPS_SCN_DISP: UNHANDL("R_MIPS_SCN_DISP");
+	case R_MIPS_REL16: UNHANDL("R_MIPS_REL16");
+	case R_MIPS_ADD_IMMEDIATE: UNHANDL("R_MIPS_ADD_IMMEDIATE");
+	case R_MIPS_PJUMP: UNHANDL("R_MIPS_PJUMP");
+	case R_MIPS_RELGOT: UNHANDL("R_MIPS_RELGOT");
+	case R_MIPS_JALR: UNHANDL("R_MIPS_JALR");
+	case R_MIPS_TLS_DTPMOD32: UNHANDL("R_MIPS_TLS_DTPMOD32");
+	case R_MIPS_TLS_DTPREL32: UNHANDL("R_MIPS_TLS_DTPREL32");
+	case R_MIPS_TLS_DTPMOD64: UNHANDL("R_MIPS_TLS_DTPMOD64");
+	case R_MIPS_TLS_DTPREL64: UNHANDL("R_MIPS_TLS_DTPREL64");
+	case R_MIPS_TLS_GD: UNHANDL("R_MIPS_TLS_GD");
+	case R_MIPS_TLS_LDM: UNHANDL("R_MIPS_TLS_LDM");
+	case R_MIPS_TLS_DTPREL_HI16: UNHANDL("R_MIPS_TLS_DTPREL_HI16");
+	case R_MIPS_TLS_DTPREL_LO16: UNHANDL("R_MIPS_TLS_DTPREL_LO16");
+	case R_MIPS_TLS_GOTTPREL: UNHANDL("R_MIPS_TLS_GOTTPREL");
+	case R_MIPS_TLS_TPREL32: UNHANDL("R_MIPS_TLS_TPREL32");
+	case R_MIPS_TLS_TPREL64: UNHANDL("R_MIPS_TLS_TPREL64");
+	case R_MIPS_TLS_TPREL_HI16: UNHANDL("R_MIPS_TLS_TPREL_HI16");
+	case R_MIPS_TLS_TPREL_LO16: UNHANDL("R_MIPS_TLS_TPREL_LO16");
+	case R_MIPS_GLOB_DAT: UNHANDL("R_MIPS_GLOB_DAT");
+	case R_MIPS_COPY: ADD(32, 0, "R_MIPS_COPY");
 	case R_MIPS_JUMP_SLOT: ADD(32, 0, "R_MIPS_JUMP_SLOT");
-
 	// FIXME: Quite a few relocatons missing here.
 	default: UNSUPP("MIPS");
 	}
@@ -2101,6 +2268,7 @@ static void patch_relocs(RzBinFile *bf, ELFOBJ *bin) {
 	RzBinElfReloc *reloc;
 	ut64 got_addr = get_got_addr(bin);
 	ut64 baddr = bf->o->opts.baseaddr;
+	ut64 mips_AHL = 0;
 
 	rz_bin_elf_foreach_relocs(bin, reloc) {
 		ut64 sym_addr = 0;
@@ -2120,7 +2288,7 @@ static void patch_relocs(RzBinFile *bf, ELFOBJ *bin) {
 				}
 			}
 		}
-		patch_reloc(bin, reloc, sym_addr, baddr, sym_addr, got_addr);
+		patch_reloc(bin, reloc, sym_addr, baddr, sym_addr, got_addr, &mips_AHL);
 		reloc->target_vaddr = sym_addr;
 	}
 	rz_bin_reloc_target_builder_free(targets);
