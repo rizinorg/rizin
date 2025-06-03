@@ -1498,6 +1498,66 @@ static void patch_reloc_rx(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_addr
 		return;
 	}
 }
+
+/**
+ * \brief Patches the opcode at a given address depending on the relocation type.
+ *
+ * NOTE: Some relocation symbols are not yet implemented
+ *
+ * \param buf_patched Buffer from which the opcode is read and the patched opcode is written to.
+ * \param patch_addr The address of the opcode being patched.
+ * \param rel_type The relocation type.
+ * \param big_endian The endianness - true if BE, false if LE
+ * \param fs Formular values to calculate the new relocation value.
+ */
+static void patch_reloc_alpha(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_addr, const int rel_type, bool big_endian, const RzBinRelocFormularSymbols *fs) {
+	rz_return_if_fail(buf_patched && fs);
+	ut8 buf[4] = { 0 };
+	ut64 val = 0;
+
+	switch (rel_type) {
+	case RZ_ALPHA_NONE:
+		return;
+	case RZ_ALPHA_REFLONG:
+		val = fs->S + fs->A;
+		rz_buf_write_ble32_at(buf_patched, patch_addr, val, big_endian);
+		break;
+	case RZ_ALPHA_REFQUAD:
+		val = fs->S + fs->A;
+		rz_buf_write_ble64_at(buf_patched, patch_addr, val, big_endian);
+		break;
+	case RZ_ALPHA_SREL16:
+		val = fs->S + fs->A - fs->P + 1;
+		if (big_endian) {
+			buf[1] = val;
+			buf[0] = val >> 8;
+		} else {
+			buf[0] = val;
+			buf[1] = val >> 8;
+		}
+		rz_buf_write_at(buf_patched, patch_addr, buf, 2);
+		break;
+	case RZ_ALPHA_SREL32:
+		val = fs->S + fs->A - fs->P + 1;
+		if (big_endian) {
+			buf[3] = val;
+			buf[2] = val >> 8;
+			buf[1] = val >> 16;
+			buf[0] = val >> 24;
+		} else {
+			buf[0] = val;
+			buf[1] = val >> 8;
+			buf[2] = val >> 16;
+			buf[3] = val >> 24;
+		}
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		break;
+	default:
+		RZ_LOG_WARN("Unhandled alpha reloc type %d.\n", rel_type);
+		return;
+	}
+}
+
 static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel, ut64 S, ut64 B, ut64 L, ut64 GOT) {
 	ut16 e_machine = obj->ehdr.e_machine;
 	ut64 val = 0;
@@ -1532,47 +1592,10 @@ static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel,
 		patch_reloc_rx(obj->buf_patched, patch_addr, rel->type, big_endian, &formular_sym);
 		break;
 	case EM_ALPHA:
-		switch (rel->type) {
-		case RZ_ALPHA_NONE: break;
-		case RZ_ALPHA_REFLONG:
-			val = S + A;
-			rz_buf_write_ble32_at(obj->buf_patched, patch_addr, val, obj->big_endian);
-			break;
-		case RZ_ALPHA_REFQUAD:
-			val = S + A;
-			rz_buf_write_ble64_at(obj->buf_patched, patch_addr, val, obj->big_endian);
-			break;
-		case RZ_ALPHA_SREL16:
-			val = S + A - P + 1;
-			if (obj->big_endian) {
-				buf[1] = val;
-				buf[0] = val >> 8;
-			} else {
-				buf[0] = val;
-				buf[1] = val >> 8;
-			}
-			rz_buf_write_at(obj->buf_patched, patch_addr, buf, 2);
-			break;
-		case RZ_ALPHA_SREL32:
-			val = S + A - P + 1;
-			if (obj->big_endian) {
-				buf[3] = val;
-				buf[2] = val >> 8;
-				buf[1] = val >> 16;
-				buf[0] = val >> 24;
-			} else {
-				buf[0] = val;
-				buf[1] = val >> 8;
-				buf[2] = val >> 16;
-				buf[3] = val >> 24;
-			}
-			rz_buf_write_at(obj->buf_patched, patch_addr, buf, 4);
-			break;
-		default:
-			RZ_LOG_WARN("Reloc type %d for DEC Alpha is not implemented yet.\n", rel->type);
-			break;
-		}
+		patch_reloc_alpha(obj->buf_patched, patch_addr, rel->type, big_endian, &formular_sym);
 		break;
+	default:
+		RZ_LOG_INFO("Unhandled reloc machine %d.\n", (int)e_machine);
 	}
 }
 
