@@ -1766,8 +1766,60 @@ static RzBinReloc *reloc_convert_amd64(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT
 	}
 }
 
+static RzBinReloc *reloc_convert_arm(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
+	ut64 B = bin->baddr;
+	ut64 P = rel->vaddr;
+
+	switch (rel->type) {
+	case RZ_ARM_NONE: SET(32, "R_ARM_NONE");
+	case RZ_ARM_ABS32: ADD(32, 0, "R_ARM_ABS32");
+	case RZ_ARM_REL32: ADD(32, -P, "R_ARM_REL32");
+	case RZ_ARM_ABS16: ADD(16, 0, "R_ARM_ABS16");
+	case RZ_ARM_ABS8: ADD(8, 0, "R_ARM_ABS8");
+	case RZ_ARM_SBREL32: ADD(32, -B, "R_ARM_SBREL32");
+	case RZ_ARM_GLOB_DAT: ADD(32, 0, "R_ARM_GLOB_DAT");
+	case RZ_ARM_JUMP_SLOT: ADD(32, 0, "R_ARM_JUMP_SLOT");
+	case RZ_ARM_COPY: ADD(32, 0, "R_ARM_COPY"); // copy symbol at runtime
+	case RZ_ARM_RELATIVE: ADD(32, B, "R_ARM_RELATIVE");
+	case RZ_ARM_GOTOFF: ADD(32, -GOT, "R_ARM_GOTOFF");
+	case RZ_ARM_GOTPC: ADD(32, GOT - P, "R_ARM_GOTPC");
+	case RZ_ARM_CALL: ADD(24, -P, "R_ARM_CALL");
+	case RZ_ARM_JUMP24: ADD(24, -P, "R_ARM_JUMP24");
+	case RZ_ARM_THM_JUMP24: ADD(24, -P, "R_ARM_THM_JUMP24");
+	case RZ_ARM_THM_PC22: ADD(24, -P, "R_ARM_THM_PC22");
+	case RZ_ARM_PREL31: ADD(32, -P, "R_ARM_PREL31");
+	case RZ_ARM_MOVW_PREL_NC: ADD(16, -P, "R_ARM_MOVW_PREL_NC");
+	case RZ_ARM_MOVT_PREL: ADD(32, -P, "R_ARM_MOVT_PREL");
+	case RZ_ARM_THM_MOVW_PREL_NC: ADD(16, -P, "R_ARM_THM_MOVW_PREL_NC");
+	case RZ_ARM_REL32_NOI: ADD(32, -P, "R_ARM_REL32_NOI");
+	case RZ_ARM_ABS32_NOI: ADD(32, 0, "R_ARM_ABS32_NOI");
+	case RZ_ARM_ALU_PC_G0_NC: ADD(32, -P, "R_ARM_ALU_PC_G0_NC");
+	case RZ_ARM_ALU_PC_G0: ADD(32, -P, "R_ARM_ALU_PC_G0");
+	case RZ_ARM_ALU_PC_G1_NC: ADD(32, -P, "R_ARM_ALU_PC_G1_NC");
+	case RZ_ARM_ALU_PC_G1: ADD(32, -P, "R_ARM_ALU_PC_G1");
+	case RZ_ARM_ALU_PC_G2: ADD(32, -P, "R_ARM_ALU_PC_G2");
+	case RZ_ARM_LDR_PC_G1: ADD(32, -P, "R_ARM_LDR_PC_G1");
+	case RZ_ARM_LDR_PC_G2: ADD(32, -P, "R_ARM_LDR_PC_G2");
+	case RZ_ARM_LDRS_PC_G0: ADD(32, -P, "R_ARM_LDRS_PC_G0");
+	case RZ_ARM_LDRS_PC_G1: ADD(32, -P, "R_ARM_LDRS_PC_G1");
+	case RZ_ARM_LDRS_PC_G2: ADD(32, -P, "R_ARM_LDRS_PC_G2");
+	case RZ_ARM_LDC_PC_G0: ADD(32, -P, "R_ARM_LDC_PC_G0");
+	case RZ_ARM_LDC_PC_G1: ADD(32, -P, "R_ARM_LDC_PC_G1");
+	case RZ_ARM_LDC_PC_G2: ADD(32, -P, "R_ARM_LDC_PC_G2");
+	// FIXME: Quite a few relocatons missing here. It's incorrect to place them all under "reg relocations".
+	default: ADD(32, GOT, "ARM REG RELOC");
+	}
+}
+
 static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 	rz_return_val_if_fail(bin && rel, NULL);
+	ut64 B = bin->baddr;
+	ut64 P = rel->vaddr;
+
+	RzBinReloc *r = reloc_convert_new(bin, rel);
+	if (!r) {
+		return NULL;
+	}
 
 	switch (bin->ehdr.e_machine) {
 	case EM_386:
@@ -1775,46 +1827,7 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 	case EM_X86_64:
 		return reloc_convert_amd64(bin, rel, GOT);
 	case EM_ARM:
-		switch (rel->type) {
-		case RZ_ARM_NONE: break;
-		case RZ_ARM_ABS32: ADD(32, 0, "R_ARM_ABS32");
-		case RZ_ARM_REL32: ADD(32, -P, "R_ARM_REL32");
-		case RZ_ARM_ABS16: ADD(16, 0, "R_ARM_ABS16");
-		case RZ_ARM_ABS8: ADD(8, 0, "R_ARM_ABS8");
-		case RZ_ARM_SBREL32: ADD(32, -B, "R_ARM_SBREL32");
-		case RZ_ARM_GLOB_DAT: ADD(32, 0, "R_ARM_GLOB_DAT");
-		case RZ_ARM_JUMP_SLOT: ADD(32, 0, "R_ARM_JUMP_SLOT");
-		case RZ_ARM_COPY: ADD(32, 0, "R_ARM_COPY"); // copy symbol at runtime
-		case RZ_ARM_RELATIVE: ADD(32, B, "R_ARM_RELATIVE");
-		case RZ_ARM_GOTOFF: ADD(32, -GOT, "R_ARM_GOTOFF");
-		case RZ_ARM_GOTPC: ADD(32, GOT - P, "R_ARM_GOTPC");
-		case RZ_ARM_CALL: ADD(24, -P, "R_ARM_CALL");
-		case RZ_ARM_JUMP24: ADD(24, -P, "R_ARM_JUMP24");
-		case RZ_ARM_THM_JUMP24: ADD(24, -P, "R_ARM_THM_JUMP24");
-		case RZ_ARM_THM_PC22: ADD(24, -P, "R_ARM_THM_PC22");
-		case RZ_ARM_PREL31: ADD(32, -P, "R_ARM_PREL31");
-		case RZ_ARM_MOVW_PREL_NC: ADD(16, -P, "R_ARM_MOVW_PREL_NC");
-		case RZ_ARM_MOVT_PREL: ADD(32, -P, "R_ARM_MOVT_PREL");
-		case RZ_ARM_THM_MOVW_PREL_NC: ADD(16, -P, "R_ARM_THM_MOVW_PREL_NC");
-		case RZ_ARM_REL32_NOI: ADD(32, -P, "R_ARM_REL32_NOI");
-		case RZ_ARM_ABS32_NOI: ADD(32, 0, "R_ARM_ABS32_NOI");
-		case RZ_ARM_ALU_PC_G0_NC: ADD(32, -P, "R_ARM_ALU_PC_G0_NC");
-		case RZ_ARM_ALU_PC_G0: ADD(32, -P, "R_ARM_ALU_PC_G0");
-		case RZ_ARM_ALU_PC_G1_NC: ADD(32, -P, "R_ARM_ALU_PC_G1_NC");
-		case RZ_ARM_ALU_PC_G1: ADD(32, -P, "R_ARM_ALU_PC_G1");
-		case RZ_ARM_ALU_PC_G2: ADD(32, -P, "R_ARM_ALU_PC_G2");
-		case RZ_ARM_LDR_PC_G1: ADD(32, -P, "R_ARM_LDR_PC_G1");
-		case RZ_ARM_LDR_PC_G2: ADD(32, -P, "R_ARM_LDR_PC_G2");
-		case RZ_ARM_LDRS_PC_G0: ADD(32, -P, "R_ARM_LDRS_PC_G0");
-		case RZ_ARM_LDRS_PC_G1: ADD(32, -P, "R_ARM_LDRS_PC_G1");
-		case RZ_ARM_LDRS_PC_G2: ADD(32, -P, "R_ARM_LDRS_PC_G2");
-		case RZ_ARM_LDC_PC_G0: ADD(32, -P, "R_ARM_LDC_PC_G0");
-		case RZ_ARM_LDC_PC_G1: ADD(32, -P, "R_ARM_LDC_PC_G1");
-		case RZ_ARM_LDC_PC_G2: ADD(32, -P, "R_ARM_LDC_PC_G2");
-		// FIXME: Quite a few relocatons missing here. It's incorrect to place them all under "reg relocations".
-		default: ADD(32, GOT, "ARM REG RELOC"); break;
-		}
-		break;
+		return reloc_convert_arm(bin, rel, GOT);
 	case EM_RISCV:
 		switch (rel->type) {
 		case RZ_RISCV_NONE: break;
