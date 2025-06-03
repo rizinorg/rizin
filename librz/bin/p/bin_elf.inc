@@ -1873,6 +1873,22 @@ static RzBinReloc *reloc_convert_ppc(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) 
 	}
 }
 
+static RzBinReloc *reloc_convert_mips(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
+	ut64 P = rel->vaddr;
+
+	switch (rel->type) {
+	case RZ_MIPS_NONE: SET(32, "R_MIPS_NONE");
+	case RZ_MIPS_COPY: ADD(32, 0, "R_MIPS_COPY"); // copy symbol at runtime
+	case RZ_MIPS_16: ADD(16, 0, "R_MIPS_16");
+	case RZ_MIPS_32: ADD(32, 0, "R_MIPS_32");
+	case RZ_MIPS_REL32: ADD(32, -P, "R_MIPS_REL32");
+	case RZ_MIPS_JUMP_SLOT: ADD(32, 0, "R_MIPS_JUMP_SLOT");
+
+	// FIXME: Quite a few relocatons missing here.
+	default: UNIMPL("MIPS");
+	}
+}
+
 static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 	rz_return_val_if_fail(bin && rel, NULL);
 	ut64 P = rel->vaddr;
@@ -1896,19 +1912,7 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 	case EM_PPC:
 		return reloc_convert_ppc(bin, rel, GOT);
 	case EM_MIPS:
-		switch (rel->type) {
-		case RZ_MIPS_NONE: break;
-		case RZ_MIPS_COPY: ADD(32, 0, "R_MIPS_COPY"); // copy symbol at runtime
-		case RZ_MIPS_16: ADD(16, 0, "R_MIPS_16");
-		case RZ_MIPS_32: ADD(32, 0, "R_MIPS_32");
-		case RZ_MIPS_REL32: ADD(32, -P, "R_MIPS_REL32");
-		case RZ_MIPS_JUMP_SLOT: ADD(32, 0, "R_MIPS_JUMP_SLOT");
-		// FIXME: Quite a few relocatons missing here.
-		default:
-			RZ_LOG_WARN("unimplemented ELF/MIPS reloc type %d\n", rel->type);
-			break;
-		}
-		break;
+		return reloc_convert_mips(bin, rel, GOT);
 	case EM_RX:
 		switch (rel->type) {
 		case R_RX_NONE: break;
