@@ -1811,6 +1811,18 @@ static RzBinReloc *reloc_convert_arm(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) 
 	}
 }
 
+static RzBinReloc *reloc_convert_riscv(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
+	ut64 B = bin->baddr;
+
+	switch (rel->type) {
+	case RZ_RISCV_NONE: SET(64, "R_RISCV_NONE");
+	case RZ_RISCV_JUMP_SLOT: ADD(64, 0, "R_RISCV_JUMP_SLOT");
+	case RZ_RISCV_RELATIVE: ADD(64, B, "R_RISCV_RELATIVE");
+	// FIXME: Quite a few relocatons missing here. It's incorrect to place them all under "reg relocations".
+	default: ADD(64, GOT, "RISC-V REG RELOC");
+	}
+}
+
 static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 	rz_return_val_if_fail(bin && rel, NULL);
 	ut64 B = bin->baddr;
@@ -1829,14 +1841,7 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 	case EM_ARM:
 		return reloc_convert_arm(bin, rel, GOT);
 	case EM_RISCV:
-		switch (rel->type) {
-		case RZ_RISCV_NONE: break;
-		case RZ_RISCV_JUMP_SLOT: ADD(64, 0, "R_RISCV_JUMP_SLOT");
-		case RZ_RISCV_RELATIVE: ADD(64, B, "R_RISCV_RELATIVE");
-		// FIXME: Quite a few relocatons missing here. It's incorrect to place them all under "reg relocations".
-		default: ADD(64, GOT, "RISC-V REG RELOC"); break; // reg relocations
-		}
-		break;
+		return reloc_convert_riscv(bin, rel, GOT);
 	case EM_AARCH64:
 		switch (rel->type) {
 		case RZ_AARCH64_NONE: break;
