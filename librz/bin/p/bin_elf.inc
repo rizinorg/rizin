@@ -1889,6 +1889,19 @@ static RzBinReloc *reloc_convert_mips(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT)
 	}
 }
 
+static RzBinReloc *reloc_convert_rx(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
+	ut64 P = rel->vaddr;
+
+	switch (rel->type) {
+	case R_RX_NONE: SET(32, "R_RX_NONE");
+	case R_RX_DIR24S_PCREL: ADD(24, -P, "RX_DIR24S_PCREL");
+	case R_RX_DIR32: SET(32, "RX_DIR32");
+
+	// FIXME: Quite a few relocatons missing here.
+	default: UNIMPL("RX");
+	}
+}
+
 static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 	rz_return_val_if_fail(bin && rel, NULL);
 	ut64 P = rel->vaddr;
@@ -1914,16 +1927,7 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 	case EM_MIPS:
 		return reloc_convert_mips(bin, rel, GOT);
 	case EM_RX:
-		switch (rel->type) {
-		case R_RX_NONE: break;
-		case R_RX_DIR24S_PCREL: ADD(24, -P, "RX_DIR24S_PCREL");
-		case R_RX_DIR32: SET(32, "RX_DIR32");
-		// FIXME: Quite a few relocatons missing here.
-		default:
-			RZ_LOG_WARN("unimplemented ELF/RX reloc type %d\n", rel->type);
-			break;
-		}
-		break;
+		return reloc_convert_rx(bin, rel, GOT);
 	case EM_ALPHA:
 		switch (rel->type) {
 		case RZ_ALPHA_NONE: break;
