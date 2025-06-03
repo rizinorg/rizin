@@ -1043,7 +1043,7 @@ static void patch_reloc_mips(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_ad
 
 	switch (rel_type) {
 	default:
-		RZ_LOG_WARN("Patching for reloc type %d not implemented.\n", rel_type);
+		RZ_LOG_WARN("Patching for mips reloc type %d not implemented.\n", rel_type);
 		return;
 	case RZ_MIPS_16:
 		rz_buf_read_at(buf_patched, patch_addr, buf, 16);
