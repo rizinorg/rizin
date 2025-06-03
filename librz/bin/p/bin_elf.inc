@@ -1063,7 +1063,7 @@ static void patch_reloc_mips(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_ad
 		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
 		break;
 	case RZ_MIPS_NONE:
-		break;
+		return;
 	}
 }
 
@@ -1087,6 +1087,8 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 
 	rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 	switch (rel->type) {
+	case RZ_ARM_NONE:
+		return;
 	case RZ_ARM_THM_JUMP24:
 		/* fall-thru */
 	case RZ_ARM_THM_PC22:
@@ -1145,6 +1147,8 @@ static void patch_reloc_arm64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 	ut64 val = 0;
 	rz_buf_read_at(buf_patched, patch_addr, buf, 8);
 	switch (rel->type) {
+	case RZ_AARCH64_NONE:
+		return;
 	case RZ_AARCH64_ABS16:
 		val = fs->S + fs->A;
 		rz_write_le16(buf, val);
@@ -1245,6 +1249,8 @@ static void patch_reloc_ppc64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 	ut64 val = 0;
 	ut32 low = 0, word = 0;
 	switch (rel_type) {
+	case RZ_PPC64_NONE:
+		return;
 	case RZ_PPC64_ADDR24:
 		low = 24;
 		val = (fs->S + fs->A) >> 2;
