@@ -1902,6 +1902,25 @@ static RzBinReloc *reloc_convert_rx(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 	}
 }
 
+static RzBinReloc *reloc_convert_alpha(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
+	ut64 P = rel->vaddr;
+
+	switch (rel->type) {
+	case RZ_ALPHA_NONE: SET(64, "R_ALPHA_NONE");
+	case RZ_ALPHA_REFLONG: SET(32, "R_ALPHA_REFLONG");
+	case RZ_ALPHA_REFQUAD: SET(64, "R_ALPHA_REFQUAD");
+	case RZ_ALPHA_SREL16: ADD(16, -P, "R_ALPHA_SREL16");
+	case RZ_ALPHA_SREL32: ADD(32, -P, "R_ALPHA_SREL32");
+	case RZ_ALPHA_SREL64: ADD(64, -P, "R_ALPHA_SREL64");
+	case RZ_ALPHA_COPY: ADD(32, 0, "R_ALPHA_COPY"); // copy symbol at runtime
+	case RZ_ALPHA_GLOB_DAT: ADD(32, 0, "R_ALPHA_GLOB_DAT");
+	case RZ_ALPHA_JMP_SLOT: ADD(32, 0, "R_ALPHA_JMP_SLOT");
+
+	// FIXME: Quite a few relocatons missing here.
+	default: UNIMPL("ALPHA");
+	}
+}
+
 static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 	rz_return_val_if_fail(bin && rel, NULL);
 	ut64 P = rel->vaddr;
@@ -1929,21 +1948,7 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 	case EM_RX:
 		return reloc_convert_rx(bin, rel, GOT);
 	case EM_ALPHA:
-		switch (rel->type) {
-		case RZ_ALPHA_NONE: break;
-		case RZ_ALPHA_REFLONG: SET(32, "R_ALPHA_REFLONG");
-		case RZ_ALPHA_REFQUAD: SET(64, "R_ALPHA_REFQUAD");
-		case RZ_ALPHA_SREL16: ADD(16, -P, "R_ALPHA_SREL16");
-		case RZ_ALPHA_SREL32: ADD(32, -P, "R_ALPHA_SREL32");
-		case RZ_ALPHA_SREL64: ADD(64, -P, "R_ALPHA_SREL64");
-		case RZ_ALPHA_COPY: ADD(32, 0, "R_ALPHA_COPY"); // copy symbol at runtime
-		case RZ_ALPHA_GLOB_DAT: ADD(32, 0, "R_ALPHA_GLOB_DAT");
-		case RZ_ALPHA_JMP_SLOT: ADD(32, 0, "R_ALPHA_JMP_SLOT");
-		default:
-			RZ_LOG_WARN("unimplemented ELF/Alpha reloc type %d\n", rel->type);
-			break;
-		}
-		break;
+		return reloc_convert_alpha(bin, rel, GOT);
 	case EM_QDSP6:
 		switch (rel->type) {
 		case R_HEX_B22_PCREL: ADD(32, -P, "R_HEX_B22_PCREL");
