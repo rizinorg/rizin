@@ -1328,6 +1328,40 @@ static void patch_reloc_ppc64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 	}
 }
 
+/**
+ * \brief Patches the opcode at a given address depending on the relocation type.
+ *
+ * NOTE: Some relocation symbols are not yet implemented
+ *
+ * \param buf_patched Buffer from which the opcode is read and the patched opcode is written to.
+ * \param patch_addr The address of the opcode being patched.
+ * \param rel_type The relocation type.
+ * \param fs Formular values to calculate the new relocation value.
+ */
+static void patch_reloc_intel_80386(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_addr, const int rel_type, const RzBinRelocFormularSymbols *fs) {
+	rz_return_if_fail(buf_patched && fs);
+	ut8 buf[4] = { 0 };
+	ut64 val = 0;
+	switch (rel_type) {
+	case RZ_386_NONE:
+		return;
+	case RZ_386_32:
+		/* fall-thru */
+	case RZ_386_PC32:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		val = rz_read_le32(buf) + fs->S + fs->A;
+		if (rel_type == RZ_386_PC32) {
+			val -= fs->P;
+		}
+		rz_write_le32(buf, val);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		break;
+	default:
+		RZ_LOG_WARN("Unhandled intel 80386 reloc type %d.\n", rel_type);
+		return;
+	}
+}
+
 static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel, ut64 S, ut64 B, ut64 L, ut64 GOT) {
 	ut16 e_machine = obj->ehdr.e_machine;
 	ut64 val = 0;
@@ -1356,19 +1390,7 @@ static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel,
 		patch_reloc_mips(obj->buf_patched, patch_addr, rel->type, big_endian, &formular_sym);
 		break;
 	case EM_386:
-		switch (rel->type) {
-		case RZ_386_32:
-		case RZ_386_PC32:
-			rz_buf_read_at(obj->buf_patched, patch_addr, buf, 4);
-			val = rz_read_le32(buf) + S + A;
-			if (rel->type == RZ_386_PC32) {
-				val -= P;
-			}
-			rz_write_le32(buf, val);
-			rz_buf_write_at(obj->buf_patched, patch_addr, buf, 4);
-		default:
-			break;
-		}
+		patch_reloc_intel_80386(obj->buf_patched, patch_addr, rel->type, &formular_sym);
 		break;
 	case EM_X86_64: {
 		int word = 0;
