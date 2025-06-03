@@ -1560,11 +1560,20 @@ static void patch_reloc_alpha(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 
 static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel, ut64 S, ut64 B, ut64 L, ut64 GOT) {
 	ut16 e_machine = obj->ehdr.e_machine;
-	ut64 val = 0;
-	ut64 A = rel->addend, P = rel->vaddr;
-	RzBinRelocFormularSymbols formular_sym = { .A = A, .B = B, .GOT = GOT, .L = L, .S = S, .P = P, .MB = 0, .G = 0, .GP = 0, .T = 0, .TLS = 0 };
+	RzBinRelocFormularSymbols formular_sym = {
+		.A = rel->addend,
+		.B = B,
+		.GOT = GOT,
+		.L = L,
+		.S = S,
+		.P = rel->vaddr,
+		.MB = 0,
+		.G = 0,
+		.GP = 0,
+		.T = 0,
+		.TLS = 0
+	};
 	ut64 patch_addr = rel->paddr != UT64_MAX ? rel->paddr : Elf_(rz_bin_elf_v2p)(obj, rel->vaddr);
-	ut8 buf[8];
 	bool big_endian = obj->big_endian;
 	switch (e_machine) {
 	case EM_QDSP6:
