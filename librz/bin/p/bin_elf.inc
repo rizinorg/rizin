@@ -1675,6 +1675,18 @@ static RzBinReloc *reloc_convert_add(ELFOBJ *bin, RzBinElfReloc *rel, RzBinReloc
 	return r
 }
 
+static RzBinReloc *reloc_convert_vaddr(ELFOBJ *bin, RzBinElfReloc *rel, RzBinRelocType type, ut64 vaddr, const char *print_name) {
+	RzBinReloc *r = elf_reloc_convert_new(bin, rel);
+	if (!r) {
+		return NULL;
+	}
+
+	r->vaddr = vaddr;
+	r->type = type;
+	r->print_name = print_name;
+	return r
+}
+
 static RzBinReloc *reloc_convert_ifunc(ELFOBJ *bin, RzBinElfReloc *rel, RzBinRelocType type, const char *print_name) {
 	RzBinReloc *r = elf_reloc_convert_new(bin, rel);
 	if (!r) {
@@ -1687,11 +1699,18 @@ static RzBinReloc *reloc_convert_ifunc(ELFOBJ *bin, RzBinElfReloc *rel, RzBinRel
 	return r
 }
 
+#define UNIMPL(ARCH_NAME) \
+	RZ_LOG_WARN("Unhandled ELF " ARCH_NAME " reloc %d\n", rel->type); \
+	return reloc_convert_new(bin, rel)
+
 #define SET(BIT_SIZE, RELOC_NAME) \
 	return reloc_convert_set(bin, rel, RZ_BIN_RELOC_##BIT_SIZE, RELOC_NAME)
 
 #define ADD(BIT_SIZE, ADDEND, RELOC_NAME) \
 	return reloc_convert_add(bin, rel, RZ_BIN_RELOC_##BIT_SIZE, ADDEND, RELOC_NAME)
+
+#define VADDR(BIT_SIZE, ADDR, RELOC_NAME) \
+	return reloc_convert_vaddr(bin, rel, RZ_BIN_RELOC_##BIT_SIZE, ADDR, RELOC_NAME)
 
 #define IFCN(BIT_SIZE, RELOC_NAME) \
 	return reloc_convert_ifunc(bin, rel, RZ_BIN_RELOC_##BIT_SIZE, RELOC_NAME)
@@ -1719,6 +1738,31 @@ static RzBinReloc *reloc_convert_intel_80386(ELFOBJ *bin, RzBinElfReloc *rel, ut
 	default: UNIMPL("X86_32");
 	}
 }
+
+static RzBinReloc *reloc_convert_amd64(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
+	ut64 B = bin->baddr;
+	ut64 P = rel->vaddr;
+
+	// FIXME: Quite a few relocatons missing here.
+	switch (rel->type) {
+	case RZ_X86_64_NONE: SET(64, "R_X86_64_NONE");
+	case RZ_X86_64_64: ADD(64, 0, "R_X86_64_64");
+	case RZ_X86_64_PLT32: ADD(32, -P /* +L */, "R_X86_64_PLT32");
+	case RZ_X86_64_GOT32: ADD(32, GOT, "R_X86_64_GOT32");
+	case RZ_X86_64_PC32: ADD(32, -P, "R_X86_64_PC32");
+	case RZ_X86_64_GLOB_DAT: VADDR(64, P - rel->sto, "R_X86_64_GLOB_DAT");
+	case RZ_X86_64_JUMP_SLOT: VADDR(64, P - rel->sto, "R_X86_64_JUMP_SLOT");
+	case RZ_X86_64_RELATIVE: ADD(64, B, "R_X86_64_RELATIVE");
+	case RZ_X86_64_32: ADD(32, 0, "R_X86_64_32");
+	case RZ_X86_64_32S: ADD(32, 0, "R_X86_64_32S");
+	case RZ_X86_64_16: ADD(16, 0, "R_X86_64_16");
+	case RZ_X86_64_PC16: ADD(16, -P, "R_X86_64_PC16");
+	case RZ_X86_64_8: ADD(8, 0, "R_X86_64_8");
+	case RZ_X86_64_PC8: ADD(8, -P, "R_X86_64_PC8");
+	case RZ_X86_64_GOTPCREL: ADD(64, GOT - P, "R_X86_64_GOTPCREL");
+	case RZ_X86_64_COPY: ADD(64, 0, "R_X86_64_COPY"); // copy symbol at runtime
+	case RZ_X86_64_IRELATIVE: IFCN(64, "R_X86_64_IRELATIVE");
+	default: UNIMPL("X86_64");
 	}
 }
 
@@ -1729,30 +1773,7 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 	case EM_386:
 		return reloc_convert_intel_80386(bin, rel, GOT);
 	case EM_X86_64:
-		switch (rel->type) {
-		case RZ_X86_64_NONE: break; // malloc then free. meh. then again, there's no real world use for _NONE.
-		case RZ_X86_64_64: ADD(64, 0, "R_X86_64_64");
-		case RZ_X86_64_PLT32: ADD(32, -P /* +L */, "R_X86_64_PLT32");
-		case RZ_X86_64_GOT32: ADD(32, GOT, "R_X86_64_GOT32");
-		case RZ_X86_64_PC32: ADD(32, -P, "R_X86_64_PC32");
-		case RZ_X86_64_GLOB_DAT: r->vaddr -= rel->sto; SET(64, "R_X86_64_GLOB_DAT");
-		case RZ_X86_64_JUMP_SLOT: r->vaddr -= rel->sto; SET(64, "R_X86_64_JUMP_SLOT");
-		case RZ_X86_64_RELATIVE: ADD(64, B, "R_X86_64_RELATIVE");
-		case RZ_X86_64_32: ADD(32, 0, "R_X86_64_32");
-		case RZ_X86_64_32S: ADD(32, 0, "R_X86_64_32S");
-		case RZ_X86_64_16: ADD(16, 0, "R_X86_64_16");
-		case RZ_X86_64_PC16: ADD(16, -P, "R_X86_64_PC16");
-		case RZ_X86_64_8: ADD(8, 0, "R_X86_64_8");
-		case RZ_X86_64_PC8: ADD(8, -P, "R_X86_64_PC8");
-		case RZ_X86_64_GOTPCREL: ADD(64, GOT - P, "R_X86_64_GOTPCREL");
-		case RZ_X86_64_COPY: ADD(64, 0, "R_X86_64_COPY"); // copy symbol at runtime
-		case RZ_X86_64_IRELATIVE: r->is_ifunc = true; SET(64, "R_X86_64_IRELATIVE");
-		// FIXME: Quite a few relocatons missing here.
-		default:
-			RZ_LOG_WARN("unimplemented ELF/X86_64 reloc type %d\n", rel->type);
-			break;
-		}
-		break;
+		return reloc_convert_amd64(bin, rel, GOT);
 	case EM_ARM:
 		switch (rel->type) {
 		case RZ_ARM_NONE: break;
