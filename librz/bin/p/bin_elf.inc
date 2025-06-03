@@ -835,7 +835,7 @@ static void patch_reloc_hexagon(RZ_INOUT RzBuffer *buf_patched, const ut64 patch
 
 	switch (rel_type) {
 	default:
-		RZ_LOG_WARN("Patching for reloc type %d not implemented.\n", rel_type);
+		RZ_LOG_WARN("Patching for hexagon reloc type %d not implemented.\n", rel_type);
 		rz_warn_if_reached();
 		// For more implementetations check out the LLVM src:
 		// https://github.com/llvm/llvm-project/blob/abc17a67519747be36f1fd03e227c5103da4c677/lld/ELF/Arch/Hexagon.cpp
