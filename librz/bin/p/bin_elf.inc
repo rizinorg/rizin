@@ -1079,7 +1079,8 @@ static void patch_reloc_mips(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_ad
  * \param fs Formular values to calculate the new relocation value.
  */
 static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_addr, const RzBinElfReloc *rel, bool big_endian, const RzBinRelocFormularSymbols *fs) {
-	ut16 keephw1, keephw2;
+	rz_return_if_fail(buf_patched && rel && fs);
+	ut16 keephw1 = 0, keephw2 = 0;
 	ut32 nbytes = 4;
 	ut8 buf[4] = { 0 };
 	ut64 val = 0;
@@ -1129,6 +1130,7 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
  * \param fs Formular values to calculate the new relocation value.
  */
 static void patch_reloc_arm64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_addr, const RzBinElfReloc *rel, const RzBinRelocFormularSymbols *fs) {
+	rz_return_if_fail(buf_patched && rel && fs);
 // AARCH64-specific defines
 // Take the PAGE component of an address or offset.
 #define PG(x)         ((x) & ~0xFFFULL)
