@@ -1067,6 +1067,57 @@ static void patch_reloc_mips(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_ad
 	}
 }
 
+/**
+ * \brief Patches the opcode at a given address depending on the relocation type.
+ *
+ * NOTE: Some relocation symbols are not yet implemented
+ *
+ * \param buf_patched Buffer from which the opcode is read and the patched opcode is written to.
+ * \param patch_addr The address of the opcode being patched.
+ * \param rel_type The relocation type.
+ * \param big_endian The endianness - true if BE, false if LE
+ * \param fs Formular values to calculate the new relocation value.
+ */
+static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_addr, const RzBinElfReloc *rel, bool big_endian, const RzBinRelocFormularSymbols *fs) {
+	ut16 keephw1, keephw2;
+	ut32 nbytes = 4;
+	ut8 buf[4] = { 0 };
+	ut64 val = 0;
+
+	rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+	switch (rel->type) {
+	case RZ_ARM_THM_JUMP24:
+		/* fall-thru */
+	case RZ_ARM_THM_PC22:
+		// Encoding B  T4, BL T1, BLX T2: Val = S:I1:I2:imm10:imm11:0
+		// I1 = NOT(J1 EOR S)
+		// I2 = NOT(J2 EOR S)
+		val = fs->S + fs->A;
+		keephw1 = rz_read_ble16(&buf[0], big_endian);
+		keephw2 = rz_read_ble16(&buf[2], big_endian);
+		rz_write_ble16(&buf[0],
+			(keephw1 & 0xF800U) | // opcode
+				((val >> 14) & 0x0400U) | // sign
+				((val >> 12) & 0x03FFU), // imm 10
+			big_endian);
+		rz_write_ble16(&buf[2],
+			(keephw2 & 0xD000U) | // opcode
+				(((~(val >> 10)) ^ (val >> 11)) & 0x2000) | // J1
+				(((~(val >> 11)) ^ (val >> 13)) & 0x0800) | // J2
+				((val >> 1) & 0x07ff), // imm11
+			big_endian);
+		break;
+	default:
+		val = fs->S + fs->A;
+		if (!rel->sym && rel->mode == DT_REL) {
+			val += rz_read_ble32(buf, big_endian);
+		}
+		rz_write_ble32(buf, val, big_endian);
+		break;
+	}
+	rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
+}
+
 // AARCH64-specific defines
 // Take the PAGE component of an address or offset.
 #define PG(x)         ((x) & ~0xFFFULL)
@@ -1088,38 +1139,7 @@ static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel,
 		patch_reloc_hexagon(obj->buf_patched, patch_addr, rel->type, &formular_sym);
 		break;
 	case EM_ARM: {
-		ut16 keephw1, keephw2;
-		ut32 nbytes = 4;
-		rz_buf_read_at(obj->buf_patched, patch_addr, buf, 4);
-		switch (rel->type) {
-		case RZ_ARM_THM_JUMP24:
-		case RZ_ARM_THM_PC22:
-			// Encoding B  T4, BL T1, BLX T2: Val = S:I1:I2:imm10:imm11:0
-			// I1 = NOT(J1 EOR S)
-			// I2 = NOT(J2 EOR S)
-			val = S + A;
-			keephw1 = rz_read_ble16(&buf[0], big_endian);
-			keephw2 = rz_read_ble16(&buf[2], big_endian);
-			rz_write_ble16(&buf[0],
-				(keephw1 & 0xF800U) | // opcode
-					((val >> 14) & 0x0400U) | // sign
-					((val >> 12) & 0x03FFU), // imm 10
-				big_endian);
-			rz_write_ble16(&buf[2],
-				(keephw2 & 0xD000U) | // opcode
-					(((~(val >> 10)) ^ (val >> 11)) & 0x2000) | // J1
-					(((~(val >> 11)) ^ (val >> 13)) & 0x0800) | // J2
-					((val >> 1) & 0x07ff), // imm11
-				big_endian);
-			break;
-		default:
-			val = S + A;
-			if (!rel->sym && rel->mode == DT_REL) {
-				val += rz_read_ble32(buf, big_endian);
-			}
-			rz_write_ble32(buf, val, big_endian);
-		}
-		rz_buf_write_at(obj->buf_patched, patch_addr, buf, nbytes);
+		patch_reloc_arm(obj->buf_patched, patch_addr, rel, big_endian, &formular_sym);
 		break;
 	}
 	case EM_AARCH64: {
