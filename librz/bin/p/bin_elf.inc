@@ -1228,6 +1228,100 @@ static void patch_reloc_arm64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 #undef ADR_IMM_MASK3
 }
 
+/**
+ * \brief Patches the opcode at a given address depending on the relocation type.
+ *
+ * NOTE: Some relocation symbols are not yet implemented
+ *
+ * \param buf_patched Buffer from which the opcode is read and the patched opcode is written to.
+ * \param patch_addr The address of the opcode being patched.
+ * \param rel_type The relocation type.
+ * \param big_endian The endianness - true if BE, false if LE
+ * \param fs Formular values to calculate the new relocation value.
+ */
+static void patch_reloc_ppc64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_addr, const int rel_type, bool big_endian, const RzBinRelocFormularSymbols *fs) {
+	rz_return_if_fail(buf_patched && fs);
+	ut8 buf[8] = { 0 };
+	ut64 val = 0;
+	ut32 low = 0, word = 0;
+	switch (rel_type) {
+	case RZ_PPC64_ADDR24:
+		low = 24;
+		val = (fs->S + fs->A) >> 2;
+		break;
+	case RZ_PPC64_ADDR16_HI:
+		word = 2;
+		val = (fs->S + fs->A) >> 16;
+		break;
+	case RZ_PPC64_ADDR16_HA:
+		word = 2;
+		val = (fs->S + fs->A + 0x8000) >> 16;
+		break;
+	case RZ_PPC64_REL16_HA:
+		word = 2;
+		val = (fs->S + fs->A - fs->P + 0x8000) >> 16;
+		break;
+	case RZ_PPC64_ADDR16_LO:
+		word = 2;
+		val = (fs->S + fs->A) & 0xffff;
+		break;
+	case RZ_PPC64_REL16_LO:
+		word = 2;
+		val = (fs->S + fs->A - fs->P) & 0xffff;
+		break;
+	case RZ_PPC64_REL14:
+		low = 14;
+		val = (st64)(fs->S + fs->A - fs->P) >> 2;
+		break;
+	case RZ_PPC64_REL24:
+		low = 24;
+		val = (st64)(fs->S + fs->A - fs->P) >> 2;
+		break;
+	case RZ_PPC64_REL32:
+		word = 4;
+		val = fs->S + fs->A - fs->P;
+		break;
+	default:
+		RZ_LOG_WARN("Patching for ppc64 reloc type %d not implemented.\n", rel_type);
+		return;
+	}
+	if (low) {
+		switch (low) {
+		case 14:
+			val &= (1 << 14) - 1;
+			rz_buf_read_at(buf_patched, patch_addr, buf, 2);
+			rz_write_ble32(buf, (rz_read_ble32(buf, big_endian) & ~(RZ_BIT_MASK32(16, 2))) | val << 2, big_endian);
+			rz_buf_write_at(buf_patched, patch_addr, buf, 2);
+			break;
+		case 24:
+			val &= (1 << 24) - 1;
+			rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+			rz_write_ble32(buf, (rz_read_ble32(buf, big_endian) & ~(RZ_BIT_MASK32(26, 2))) | val << 2, big_endian);
+			rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+			break;
+		default:
+			RZ_LOG_WARN("Unhandled ppc64 reloc type %d with low %u bits.\n", rel_type, low);
+			return;
+		}
+	} else if (word) {
+		switch (word) {
+		case 2:
+			rz_write_ble16(buf, val, big_endian);
+			rz_buf_write_at(buf_patched, patch_addr, buf, 2);
+			break;
+		case 4:
+			rz_write_ble32(buf, val, big_endian);
+			rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+			break;
+		default:
+			RZ_LOG_WARN("Unhandled ppc64 reloc type %d with word size %u.\n", rel_type, word);
+			return;
+		}
+	} else {
+		RZ_LOG_WARN("Unhandled ppc64 reloc type %d.\n", rel_type);
+	}
+}
+
 static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel, ut64 S, ut64 B, ut64 L, ut64 GOT) {
 	ut16 e_machine = obj->ehdr.e_machine;
 	ut64 val = 0;
@@ -1249,75 +1343,7 @@ static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel,
 		break;
 	}
 	case EM_PPC64: {
-		int low = 0, word = 0;
-		switch (rel->type) {
-		case RZ_PPC64_ADDR24:
-			low = 24;
-			val = (S + A) >> 2;
-			break;
-		case RZ_PPC64_ADDR16_HI:
-			word = 2;
-			val = (S + A) >> 16;
-			break;
-		case RZ_PPC64_ADDR16_HA:
-			word = 2;
-			val = (S + A + 0x8000) >> 16;
-			break;
-		case RZ_PPC64_REL16_HA:
-			word = 2;
-			val = (S + A - P + 0x8000) >> 16;
-			break;
-		case RZ_PPC64_ADDR16_LO:
-			word = 2;
-			val = (S + A) & 0xffff;
-			break;
-		case RZ_PPC64_REL16_LO:
-			word = 2;
-			val = (S + A - P) & 0xffff;
-			break;
-		case RZ_PPC64_REL14:
-			low = 14;
-			val = (st64)(S + A - P) >> 2;
-			break;
-		case RZ_PPC64_REL24:
-			low = 24;
-			val = (st64)(S + A - P) >> 2;
-			break;
-		case RZ_PPC64_REL32:
-			word = 4;
-			val = S + A - P;
-			break;
-		default:
-			RZ_LOG_WARN("Reloc type %d not implemented.\n", rel->type);
-			break;
-		}
-		if (low) {
-			switch (low) {
-			case 14:
-				val &= (1 << 14) - 1;
-				rz_buf_read_at(obj->buf_patched, patch_addr, buf, 2);
-				rz_write_ble32(buf, (rz_read_ble32(buf, big_endian) & ~(RZ_BIT_MASK32(16, 2))) | val << 2, big_endian);
-				rz_buf_write_at(obj->buf_patched, patch_addr, buf, 2);
-				break;
-			case 24:
-				val &= (1 << 24) - 1;
-				rz_buf_read_at(obj->buf_patched, patch_addr, buf, 4);
-				rz_write_ble32(buf, (rz_read_ble32(buf, big_endian) & ~(RZ_BIT_MASK32(26, 2))) | val << 2, big_endian);
-				rz_buf_write_at(obj->buf_patched, patch_addr, buf, 4);
-				break;
-			}
-		} else if (word) {
-			switch (word) {
-			case 2:
-				rz_write_ble16(buf, val, big_endian);
-				rz_buf_write_at(obj->buf_patched, patch_addr, buf, 2);
-				break;
-			case 4:
-				rz_write_ble32(buf, val, big_endian);
-				rz_buf_write_at(obj->buf_patched, patch_addr, buf, 4);
-				break;
-			}
-		}
+		patch_reloc_ppc64(obj->buf_patched, patch_addr, rel->type, big_endian, &formular_sym);
 		break;
 	}
 	case EM_MIPS:
