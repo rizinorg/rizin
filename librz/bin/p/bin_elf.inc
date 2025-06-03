@@ -1379,6 +1379,8 @@ static void patch_reloc_amd64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 	int word = 0;
 	switch (rel_type) {
 	case RZ_X86_64_NONE:
+		/* fall-thru */
+	case RZ_X86_64_COPY:
 		return;
 	case RZ_X86_64_8:
 		word = 1;
