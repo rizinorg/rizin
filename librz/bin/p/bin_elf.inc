@@ -1362,6 +1362,98 @@ static void patch_reloc_intel_80386(RZ_INOUT RzBuffer *buf_patched, const ut64 p
 	}
 }
 
+/**
+ * \brief Patches the opcode at a given address depending on the relocation type.
+ *
+ * NOTE: Some relocation symbols are not yet implemented
+ *
+ * \param buf_patched Buffer from which the opcode is read and the patched opcode is written to.
+ * \param patch_addr The address of the opcode being patched.
+ * \param rel_type The relocation type.
+ * \param fs Formular values to calculate the new relocation value.
+ */
+static void patch_reloc_amd64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_addr, const int rel_type, const RzBinRelocFormularSymbols *fs) {
+	rz_return_if_fail(buf_patched && fs);
+	ut8 buf[8] = { 0 };
+	ut64 val = 0;
+	int word = 0;
+	switch (rel_type) {
+	case RZ_X86_64_NONE:
+		return;
+	case RZ_X86_64_8:
+		word = 1;
+		val = fs->S + fs->A;
+		break;
+	case RZ_X86_64_16:
+		word = 2;
+		val = fs->S + fs->A;
+		break;
+	case RZ_X86_64_32:
+		/* fall-thru */
+	case RZ_X86_64_32S:
+		word = 4;
+		val = fs->S + fs->A;
+		break;
+	case RZ_X86_64_64:
+		word = 8;
+		val = fs->S + fs->A;
+		break;
+	case RZ_X86_64_GLOB_DAT:
+		/* fall-thru */
+	case RZ_X86_64_JUMP_SLOT:
+		word = 4;
+		val = fs->S;
+		break;
+	case RZ_X86_64_PC8:
+		word = 1;
+		val = fs->S + fs->A - fs->P;
+		break;
+	case RZ_X86_64_PC16:
+		word = 2;
+		val = fs->S + fs->A - fs->P;
+		break;
+	case RZ_X86_64_PC32:
+		word = 4;
+		val = fs->S + fs->A - fs->P;
+		break;
+	case RZ_X86_64_PC64:
+		word = 8;
+		val = fs->S + fs->A - fs->P;
+		break;
+	case RZ_X86_64_PLT32:
+		word = 4;
+		val = fs->L + fs->A - fs->P;
+		break;
+	case RZ_X86_64_RELATIVE:
+		word = 8;
+		val = fs->B + fs->A;
+		break;
+	default:
+		RZ_LOG_WARN("Unhandled x64 reloc type %d.\n", rel_type);
+		return;
+	}
+	switch (word) {
+	default:
+		break;
+	case 1:
+		buf[0] = val;
+		rz_buf_write_at(buf_patched, patch_addr, buf, 1);
+		break;
+	case 2:
+		rz_write_le16(buf, val);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 2);
+		break;
+	case 4:
+		rz_write_le32(buf, val);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		break;
+	case 8:
+		rz_write_le64(buf, val);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 8);
+		break;
+	}
+}
+
 static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel, ut64 S, ut64 B, ut64 L, ut64 GOT) {
 	ut16 e_machine = obj->ehdr.e_machine;
 	ut64 val = 0;
@@ -1374,99 +1466,24 @@ static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel,
 	case EM_QDSP6:
 		patch_reloc_hexagon(obj->buf_patched, patch_addr, rel->type, &formular_sym);
 		break;
-	case EM_ARM: {
+	case EM_ARM:
 		patch_reloc_arm(obj->buf_patched, patch_addr, rel, big_endian, &formular_sym);
 		break;
-	}
-	case EM_AARCH64: {
+	case EM_AARCH64:
 		patch_reloc_arm64(obj->buf_patched, patch_addr, rel, &formular_sym);
 		break;
-	}
-	case EM_PPC64: {
+	case EM_PPC64:
 		patch_reloc_ppc64(obj->buf_patched, patch_addr, rel->type, big_endian, &formular_sym);
 		break;
-	}
 	case EM_MIPS:
 		patch_reloc_mips(obj->buf_patched, patch_addr, rel->type, big_endian, &formular_sym);
 		break;
 	case EM_386:
 		patch_reloc_intel_80386(obj->buf_patched, patch_addr, rel->type, &formular_sym);
 		break;
-	case EM_X86_64: {
-		int word = 0;
-		switch (rel->type) {
-		case RZ_X86_64_8:
-			word = 1;
-			val = S + A;
-			break;
-		case RZ_X86_64_16:
-			word = 2;
-			val = S + A;
-			break;
-		case RZ_X86_64_32:
-		case RZ_X86_64_32S:
-			word = 4;
-			val = S + A;
-			break;
-		case RZ_X86_64_64:
-			word = 8;
-			val = S + A;
-			break;
-		case RZ_X86_64_GLOB_DAT:
-		case RZ_X86_64_JUMP_SLOT:
-			word = 4;
-			val = S;
-			break;
-		case RZ_X86_64_PC8:
-			word = 1;
-			val = S + A - P;
-			break;
-		case RZ_X86_64_PC16:
-			word = 2;
-			val = S + A - P;
-			break;
-		case RZ_X86_64_PC32:
-			word = 4;
-			val = S + A - P;
-			break;
-		case RZ_X86_64_PC64:
-			word = 8;
-			val = S + A - P;
-			break;
-		case RZ_X86_64_PLT32:
-			word = 4;
-			val = L + A - P;
-			break;
-		case RZ_X86_64_RELATIVE:
-			word = 8;
-			val = B + A;
-			break;
-		default:
-			// RZ_LOG_ERROR("relocation %d not handle at this time\n", rel->type);
-			break;
-		}
-		switch (word) {
-		case 0:
-			break;
-		case 1:
-			buf[0] = val;
-			rz_buf_write_at(obj->buf_patched, patch_addr, buf, 1);
-			break;
-		case 2:
-			rz_write_le16(buf, val);
-			rz_buf_write_at(obj->buf_patched, patch_addr, buf, 2);
-			break;
-		case 4:
-			rz_write_le32(buf, val);
-			rz_buf_write_at(obj->buf_patched, patch_addr, buf, 4);
-			break;
-		case 8:
-			rz_write_le64(buf, val);
-			rz_buf_write_at(obj->buf_patched, patch_addr, buf, 8);
-			break;
-		}
+	case EM_X86_64:
+		patch_reloc_amd64(obj->buf_patched, patch_addr, rel->type, &formular_sym);
 		break;
-	}
 	case EM_RX:
 		// no dynamic for rx-elf program, handle rx elf object reloc type (emulate linkage map)
 		// and no GOT/PLT for existed for rx-elf, leave no imports info for extern symbol
