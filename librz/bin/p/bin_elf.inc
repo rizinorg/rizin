@@ -1823,6 +1823,35 @@ static RzBinReloc *reloc_convert_riscv(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT
 	}
 }
 
+static RzBinReloc *reloc_convert_aarch64(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
+	ut64 B = bin->baddr;
+
+	switch (rel->type) {
+	case RZ_AARCH64_NONE: SET(64, "R_AARCH64_NONE");
+	case RZ_AARCH64_ABS64: ADD(64, 0, "R_AARCH64_ABS64");
+	case RZ_AARCH64_ABS32: ADD(32, 0, "R_AARCH64_ABS32");
+	case RZ_AARCH64_ABS16: ADD(16, 0, "R_AARCH64_ABS16");
+	case RZ_AARCH64_PREL64: ADD(64, 0, "R_AARCH64_PREL64");
+	case RZ_AARCH64_PREL32: ADD(32, 0, "R_AARCH64_PREL32");
+	case RZ_AARCH64_PREL16: ADD(16, 0, "R_AARCH64_PREL16");
+	case RZ_AARCH64_GLOB_DAT: SET(64, "R_AARCH64_GLOB_DAT");
+	case RZ_AARCH64_JUMP_SLOT: SET(64, "R_AARCH64_JUMP_SLOT");
+	case RZ_AARCH64_RELATIVE: ADD(64, B, "R_AARCH64_RELATIVE");
+	case RZ_AARCH64_LDST8_ABS_LO12_NC: ADD(16, 0, "R_AARCH64_LDST8_ABS_LO12_NC");
+	case RZ_AARCH64_ADD_ABS_LO12_NC: ADD(16, 0, "R_AARCH64_ADD_ABS_LO12_NC");
+	case RZ_AARCH64_JUMP26: ADD(32, 0, "R_AARCH64_JUMP26");
+	case RZ_AARCH64_CALL26: ADD(32, 0, "R_AARCH64_CALL26");
+	case RZ_AARCH64_LDST64_ABS_LO12_NC: ADD(32, 0, "R_AARCH64_LDST64_ABS_LO12_NC");
+	case RZ_AARCH64_LD64_GOT_LO12_NC: ADD(32, 0, "R_AARCH64_LD64_GOT_LO12_NC");
+	// Page-relative relocations
+	case RZ_AARCH64_ADR_GOT_PAGE: ADD(32, 0, "R_AARCH64_ADR_GOT_PAGE");
+	case RZ_AARCH64_ADR_PREL_PG_HI21: ADD(32, 0, "R_AARCH64_ADR_PREL_PG_HI21");
+	case RZ_AARCH64_ADR_PREL_PG_HI21_NC: ADD(32, 0, "R_AARCH64_ADR_PREL_PG_HI21_NC");
+	// FIXME: Quite a few relocations missing here
+	default: UNIMPL("AArch64");
+	}
+}
+
 static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 	rz_return_val_if_fail(bin && rel, NULL);
 	ut64 B = bin->baddr;
@@ -1843,33 +1872,7 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 	case EM_RISCV:
 		return reloc_convert_riscv(bin, rel, GOT);
 	case EM_AARCH64:
-		switch (rel->type) {
-		case RZ_AARCH64_NONE: break;
-		case RZ_AARCH64_ABS64: ADD(64, 0, "R_AARCH64_ABS64");
-		case RZ_AARCH64_ABS32: ADD(32, 0, "R_AARCH64_ABS32");
-		case RZ_AARCH64_ABS16: ADD(16, 0, "R_AARCH64_ABS16");
-		case RZ_AARCH64_PREL64: ADD(64, 0, "R_AARCH64_PREL64");
-		case RZ_AARCH64_PREL32: ADD(32, 0, "R_AARCH64_PREL32");
-		case RZ_AARCH64_PREL16: ADD(16, 0, "R_AARCH64_PREL16");
-		case RZ_AARCH64_GLOB_DAT: SET(64, "R_AARCH64_GLOB_DAT");
-		case RZ_AARCH64_JUMP_SLOT: SET(64, "R_AARCH64_JUMP_SLOT");
-		case RZ_AARCH64_RELATIVE: ADD(64, B, "R_AARCH64_RELATIVE");
-		case RZ_AARCH64_LDST8_ABS_LO12_NC: ADD(16, 0, "R_AARCH64_LDST8_ABS_LO12_NC");
-		case RZ_AARCH64_ADD_ABS_LO12_NC: ADD(16, 0, "R_AARCH64_ADD_ABS_LO12_NC");
-		case RZ_AARCH64_JUMP26: ADD(32, 0, "R_AARCH64_JUMP26");
-		case RZ_AARCH64_CALL26: ADD(32, 0, "R_AARCH64_CALL26");
-		case RZ_AARCH64_LDST64_ABS_LO12_NC: ADD(32, 0, "R_AARCH64_LDST64_ABS_LO12_NC");
-		case RZ_AARCH64_LD64_GOT_LO12_NC: ADD(32, 0, "R_AARCH64_LD64_GOT_LO12_NC");
-		// Page-relative relocations
-		case RZ_AARCH64_ADR_GOT_PAGE: ADD(32, 0, "R_AARCH64_ADR_GOT_PAGE");
-		case RZ_AARCH64_ADR_PREL_PG_HI21: ADD(32, 0, "R_AARCH64_ADR_PREL_PG_HI21");
-		case RZ_AARCH64_ADR_PREL_PG_HI21_NC: ADD(32, 0, "R_AARCH64_ADR_PREL_PG_HI21_NC");
-		// FIXME: Quite a few relocations missing here
-		default:
-			RZ_LOG_WARN("unimplemented ELF/AARCH64 reloc type %d\n", rel->type);
-			break;
-		}
-		break;
+		return reloc_convert_aarch64(bin, rel, GOT);
 	case EM_PPC:
 		switch (rel->type) {
 		case RZ_PPC_NONE: break;
