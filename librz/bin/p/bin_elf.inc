@@ -1628,66 +1628,106 @@ static ut64 get_got_addr(ELFOBJ *bin) {
 	return 0;
 }
 
-static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
-	rz_return_val_if_fail(bin && rel, NULL);
-
-	ut64 B = bin->baddr;
-	ut64 P = rel->vaddr; // rva has taken baddr into account
-	RzBinReloc *r = RZ_NEW0(RzBinReloc);
-	if (!r) {
+static RzBinReloc *elf_reloc_convert_new(ELFOBJ *bin, RzBinElfReloc *rel) {
+	RzBinReloc *reloc = RZ_NEW0(RzBinReloc);
+	if (!reloc) {
 		return NULL;
 	}
-	r->import = NULL;
-	r->symbol = NULL;
-	r->is_ifunc = false;
-	r->addend = rel->addend;
+
+	reloc->addend = rel->addend;
 	if (rel->sym) {
-		r->import = get_import(bin, rel->sym);
-		if (!r->import) {
-			r->symbol = get_symbol(bin, rel->sym);
+		reloc->import = get_import(bin, rel->sym);
+		if (!reloc->import) {
+			reloc->symbol = get_symbol(bin, rel->sym);
 		}
 	}
-	r->vaddr = rel->vaddr;
-	r->paddr = rel->paddr;
-	r->target_vaddr = rel->target_vaddr;
+	reloc->vaddr = rel->vaddr;
+	reloc->paddr = rel->paddr;
+	reloc->target_vaddr = rel->target_vaddr;
 
 	RzBinElfSection *section = rel->section > 0 ? Elf_(rz_bin_elf_get_section)(bin, rel->section) : NULL;
 	if (section) {
-		r->section_vaddr = section->rva;
+		reloc->section_vaddr = section->rva;
+	}
+	return reloc;
+}
+
+static RzBinReloc *reloc_convert_set(ELFOBJ *bin, RzBinElfReloc *rel, RzBinRelocType type, const char *print_name) {
+	RzBinReloc *r = elf_reloc_convert_new(bin, rel);
+	if (!r) {
+		return NULL;
 	}
 
-#define SET(BIT_SIZE, RELOC_NAME) \
-	r->type = RZ_BIN_RELOC_##BIT_SIZE; \
-	r->print_name = (RELOC_NAME); \
+	r->type = type;
+	r->print_name = print_name;
 	return r
+}
+
+static RzBinReloc *reloc_convert_add(ELFOBJ *bin, RzBinElfReloc *rel, RzBinRelocType type, st64 addend, const char *print_name) {
+	RzBinReloc *r = elf_reloc_convert_new(bin, rel);
+	if (!r) {
+		return NULL;
+	}
+
+	r->addend += addend;
+	r->type = type;
+	r->print_name = print_name;
+	return r
+}
+
+static RzBinReloc *reloc_convert_ifunc(ELFOBJ *bin, RzBinElfReloc *rel, RzBinRelocType type, const char *print_name) {
+	RzBinReloc *r = elf_reloc_convert_new(bin, rel);
+	if (!r) {
+		return NULL;
+	}
+
+	r->is_ifunc = true;
+	r->type = type;
+	r->print_name = print_name;
+	return r
+}
+
+#define SET(BIT_SIZE, RELOC_NAME) \
+	return reloc_convert_set(bin, rel, RZ_BIN_RELOC_##BIT_SIZE, RELOC_NAME)
+
 #define ADD(BIT_SIZE, ADDEND, RELOC_NAME) \
-	r->addend += (ADDEND); \
-	SET(BIT_SIZE, RELOC_NAME)
+	return reloc_convert_add(bin, rel, RZ_BIN_RELOC_##BIT_SIZE, ADDEND, RELOC_NAME)
+
+#define IFCN(BIT_SIZE, RELOC_NAME) \
+	return reloc_convert_ifunc(bin, rel, RZ_BIN_RELOC_##BIT_SIZE, RELOC_NAME)
+
+static RzBinReloc *reloc_convert_intel_80386(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
+	ut64 B = bin->baddr;
+	ut64 P = rel->vaddr;
+
+	// FIXME: Quite a few relocatons missing here.
+	switch (rel->type) {
+	case RZ_386_NONE: SET(32, "R_386_NONE");
+	case RZ_386_32: ADD(32, 0, "R_386_32");
+	case RZ_386_PC32: ADD(32, -P, "R_386_PC32");
+	case RZ_386_GLOB_DAT: SET(32, "R_386_GLOB_DAT");
+	case RZ_386_JMP_SLOT: SET(32, "R_386_JMP_SLOT");
+	case RZ_386_RELATIVE: ADD(32, B, "R_386_RELATIVE");
+	case RZ_386_GOTOFF: ADD(32, -GOT, "R_386_GOTOFF");
+	case RZ_386_GOTPC: ADD(32, GOT - P, "R_386_GOTPC");
+	case RZ_386_16: ADD(16, 0, "R_386_16");
+	case RZ_386_PC16: ADD(16, -P, "R_386_PC16");
+	case RZ_386_8: ADD(8, 0, "R_386_8");
+	case RZ_386_PC8: ADD(8, -P, "R_386_PC8");
+	case RZ_386_COPY: ADD(32, 0, "R_386_COPY"); // copy symbol at runtime
+	case RZ_386_IRELATIVE: IFCN(32, "R_386_IRELATIVE");
+	default: UNIMPL("X86_32");
+	}
+}
+	}
+}
+
+static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
+	rz_return_val_if_fail(bin && rel, NULL);
 
 	switch (bin->ehdr.e_machine) {
 	case EM_386:
-		// TODO: We're missing a lot of architectures!
-		switch (rel->type) {
-		case RZ_386_NONE: break; // malloc then free. meh. then again, there's no real world use for _NONE.
-		case RZ_386_32: ADD(32, 0, "R_386_32");
-		case RZ_386_PC32: ADD(32, -P, "R_386_PC32");
-		case RZ_386_GLOB_DAT: SET(32, "R_386_GLOB_DAT");
-		case RZ_386_JMP_SLOT: SET(32, "R_386_JMP_SLOT");
-		case RZ_386_RELATIVE: ADD(32, B, "R_386_RELATIVE");
-		case RZ_386_GOTOFF: ADD(32, -GOT, "R_386_GOTOFF");
-		case RZ_386_GOTPC: ADD(32, GOT - P, "R_386_GOTPC");
-		case RZ_386_16: ADD(16, 0, "R_386_16");
-		case RZ_386_PC16: ADD(16, -P, "R_386_PC16");
-		case RZ_386_8: ADD(8, 0, "R_386_8");
-		case RZ_386_PC8: ADD(8, -P, "R_386_PC8");
-		case RZ_386_COPY: ADD(32, 0, "R_386_COPY"); // copy symbol at runtime
-		case RZ_386_IRELATIVE: r->is_ifunc = true; SET(32, "R_386_IRELATIVE");
-		// FIXME: Quite a few relocatons missing here.
-		default:
-			RZ_LOG_WARN("unimplemented ELF/X86_32 reloc type %d\n", rel->type);
-			break;
-		}
-		break;
+		return reloc_convert_intel_80386(bin, rel, GOT);
 	case EM_X86_64:
 		switch (rel->type) {
 		case RZ_X86_64_NONE: break; // malloc then free. meh. then again, there's no real world use for _NONE.
