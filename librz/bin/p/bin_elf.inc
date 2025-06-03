@@ -1852,9 +1852,29 @@ static RzBinReloc *reloc_convert_aarch64(ELFOBJ *bin, RzBinElfReloc *rel, ut64 G
 	}
 }
 
+static RzBinReloc *reloc_convert_ppc(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
+	ut64 P = rel->vaddr;
+
+	switch (rel->type) {
+	case RZ_PPC_NONE: SET(32, "R_PPC_NONE");
+	case RZ_PPC_GLOB_DAT: ADD(32, 0, "R_PPC_GLOB_DAT");
+	case RZ_PPC_JMP_SLOT: ADD(32, 0, "R_PPC_JMP_SLOT");
+	case RZ_PPC_COPY: ADD(32, 0, "R_PPC_COPY"); // copy symbol at runtime
+	case RZ_PPC_REL24: ADD(24, -P, "R_PPC_REL24");
+	case RZ_PPC_REL14: ADD(16, -P, "R_PPC_REL14");
+	case RZ_PPC_REL32: ADD(32, -P, "R_PPC_REL32");
+	case RZ_PPC_RELATIVE: ADD(32, -P, "R_PPC_RELATIVE");
+	case RZ_PPC_PLT32: ADD(32, -P, "R_PPC_PLT32");
+	case RZ_PPC_ADDR16: ADD(16, 0, "R_PPC_ADDR16");
+	case RZ_PPC_ADDR32: ADD(32, 0, "R_PPC_ADDR32");
+
+	// FIXME: Quite a few relocatons missing here.
+	default: UNIMPL("PPC");
+	}
+}
+
 static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 	rz_return_val_if_fail(bin && rel, NULL);
-	ut64 B = bin->baddr;
 	ut64 P = rel->vaddr;
 
 	RzBinReloc *r = reloc_convert_new(bin, rel);
@@ -1874,24 +1894,7 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 	case EM_AARCH64:
 		return reloc_convert_aarch64(bin, rel, GOT);
 	case EM_PPC:
-		switch (rel->type) {
-		case RZ_PPC_NONE: break;
-		case RZ_PPC_GLOB_DAT: ADD(32, 0, "R_PPC_GLOB_DAT");
-		case RZ_PPC_JMP_SLOT: ADD(32, 0, "R_PPC_JMP_SLOT");
-		case RZ_PPC_COPY: ADD(32, 0, "R_PPC_COPY"); // copy symbol at runtime
-		case RZ_PPC_REL24: ADD(24, -P, "R_PPC_REL24");
-		case RZ_PPC_REL14: ADD(16, -P, "R_PPC_REL14");
-		case RZ_PPC_REL32: ADD(32, -P, "R_PPC_REL32");
-		case RZ_PPC_RELATIVE: ADD(32, -P, "R_PPC_RELATIVE");
-		case RZ_PPC_PLT32: ADD(32, -P, "R_PPC_PLT32");
-		case RZ_PPC_ADDR16: ADD(16, 0, "R_PPC_ADDR16");
-		case RZ_PPC_ADDR32: ADD(32, 0, "R_PPC_ADDR32");
-		// FIXME: Quite a few relocatons missing here.
-		default:
-			RZ_LOG_WARN("unimplemented ELF/PPC reloc type %d\n", rel->type);
-			break;
-		}
-		break;
+		return reloc_convert_ppc(bin, rel, GOT);
 	case EM_MIPS:
 		switch (rel->type) {
 		case RZ_MIPS_NONE: break;
