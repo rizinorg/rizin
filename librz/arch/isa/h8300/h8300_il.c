@@ -630,7 +630,7 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 		}
 	case H8300_INSN_OR: return op_logical2_formats(cmd, rz_il_op_new_log_or);
 	case H8300_INSN_XOR: return op_logical2_formats(cmd, rz_il_op_new_log_xor);
-	case H8300_INSN_AND: return op_logical2_formats(cmd, rz_il_op_new_log_and);
+	case H8300_INSN_AND_B: return op_logical2_formats(cmd, rz_il_op_new_log_and);
 	case H8300_INSN_NOP:
 	case H8300_INSN_SLEEP: return NOP();
 	case H8300_INSN_STC: return R8_X(0, VARG("ccr"));

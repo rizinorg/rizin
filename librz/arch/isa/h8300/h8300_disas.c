@@ -28,7 +28,9 @@ static const char *commands[] = {
 	[H8300_INSN_ADD_W] = "add.w",
 	[H8300_INSN_ADD_L] = "add.l",
 	[H8300_INSN_ADDS] = "adds",
-	[H8300_INSN_AND] = "and",
+	[H8300_INSN_AND_B] = "and.b",
+	[H8300_INSN_AND_W] = "and.w",
+	[H8300_INSN_AND_L] = "and.l",
 	[H8300_INSN_ADDX] = "addx",
 	[H8300_INSN_SUB_B] = "sub.b",
 	[H8300_INSN_SUB_W] = "sub.w",
@@ -929,8 +931,8 @@ int h8300_decode_command(const ut8 *instr, ut64 len, struct h8300_cmd *cmd, ut64
 		CASE_F_F(decode_r8abs8, 0x3, MOV_B);
 
 		CASE_F_F(decode_i8r8, 0xf, MOV_B);
-		CASE_F_F(decode_i8r8, H8300_AND_4BIT, AND);
-		CASE_F_F(decode_i8r8, H8300_ADDX_4BIT, ADDX);
+		CASE_F_F(decode_i8r8, 0xe, AND_B);
+		CASE_F_F(decode_i8r8, 0x9, ADDX);
 		CASE_F_F(decode_i8r8, 0x8, ADD_B);
 		CASE_F_F(decode_i8r8, H8300_CMP_4BIT, CMP_B);
 		CASE_F_F(decode_i8r8, H8300_OR_4BIT, OR);
@@ -1016,8 +1018,8 @@ int h8300_decode_command(const ut8 *instr, ut64 len, struct h8300_cmd *cmd, ut64
 		cmd->id = H8300_INSN_CMP_W;
 		ret = decode_r16r16(instr, cmd);
 		break;
-	case H8300_AND:
-		cmd->id = H8300_INSN_AND;
+	case 0x16:
+		cmd->id = H8300_INSN_AND_B;
 		ret = decode_r8r8(instr, cmd);
 		break;
 	case H8300_BCLR_R2R8:
@@ -1032,7 +1034,7 @@ int h8300_decode_command(const ut8 *instr, ut64 len, struct h8300_cmd *cmd, ut64
 		cmd->id = H8300_INSN_SUBX;
 		ret = decode_r8r8(instr, cmd);
 		break;
-	case H8300_ADDX:
+	case 0x0e:
 		cmd->id = H8300_INSN_ADDX;
 		ret = decode_r8r8(instr, cmd);
 		break;
