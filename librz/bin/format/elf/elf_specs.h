@@ -74,6 +74,7 @@
 #endif
 
 #include "glibc_elf.h"
+#include "nanomips_elf.h"
 
 #ifndef _INCLUDE_ELF_SPECS_H
 #define _INCLUDE_ELF_SPECS_H
