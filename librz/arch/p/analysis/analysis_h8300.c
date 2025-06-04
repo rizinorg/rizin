@@ -74,6 +74,8 @@ static int h8300_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 		break;
 	case H8300_INSN_AND_B:
+	case H8300_INSN_AND_W:
+	case H8300_INSN_AND_L:
 		op->type = RZ_ANALYSIS_OP_TYPE_AND;
 		break;
 	case H8300_INSN_RTS:
