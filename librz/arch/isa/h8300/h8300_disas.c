@@ -236,7 +236,25 @@ static int decode_pc_rel(const ut8 *bytes, struct h8300_cmd *cmd) {
 	st8 disp = SIGN_EXT(bytes[1], 8);
 
 	cmd->fmt = H8300_INSN_FORMAT_PCREL8;
-	OPS_ADD(H8300_OP_PCREL8, disp, disp);
+	OPS_ADD(H8300_OP_PCREL, disp, disp);
+
+	snprintf(cmd->operands, H8300_INSTR_MAXLEN, ".%s0x%02x",
+		disp < 0 ? "-" : "", disp & 0x7f);
+
+	return ret;
+}
+
+static int decode_pc_rel16(const ut8 *bytes, struct h8300_cmd *cmd) {
+	int ret = 4;
+
+	if (decode_opcode(bytes, cmd)) {
+		return -1;
+	}
+
+	st16 disp = SIGN_EXT(rz_read_at_be16(bytes, 2), 16);
+
+	cmd->fmt = H8300_INSN_FORMAT_PCREL8;
+	OPS_ADD(H8300_OP_PCREL, disp, disp);
 
 	snprintf(cmd->operands, H8300_INSTR_MAXLEN, ".%s0x%02x",
 		disp < 0 ? "-" : "", disp & 0x7f);
@@ -868,6 +886,25 @@ int h8300_decode_command(const ut8 *instr, ut64 len, struct h8300_cmd *cmd, ut64
 
 	if (len >= 4) {
 		ut32 x4 = rz_read_be32(instr);
+		switch (x2) {
+			CASE_F_F(decode_pc_rel16, 0x5800, BRA);
+			CASE_F_F(decode_pc_rel16, 0x5810, BRN);
+			CASE_F_F(decode_pc_rel16, 0x5820, BHI);
+			CASE_F_F(decode_pc_rel16, 0x5830, BLS);
+			CASE_F_F(decode_pc_rel16, 0x5840, BCC);
+			CASE_F_F(decode_pc_rel16, 0x5850, BCS);
+			CASE_F_F(decode_pc_rel16, 0x5860, BNE);
+			CASE_F_F(decode_pc_rel16, 0x5870, BEQ);
+			CASE_F_F(decode_pc_rel16, 0x5880, BVC);
+			CASE_F_F(decode_pc_rel16, 0x5890, BVS);
+			CASE_F_F(decode_pc_rel16, 0x58a0, BPL);
+			CASE_F_F(decode_pc_rel16, 0x58b0, BMI);
+			CASE_F_F(decode_pc_rel16, 0x58c0, BGE);
+			CASE_F_F(decode_pc_rel16, 0x58d0, BLT);
+			CASE_F_F(decode_pc_rel16, 0x58e0, BGT);
+			CASE_F_F(decode_pc_rel16, 0x58f0, BLE);
+		default: break;
+		}
 
 		switch (x4 & ~0x00700070) {
 			CASE_F_F(decode_i3ri16, 0x7d007000, BSET);
@@ -1132,70 +1169,24 @@ int h8300_decode_command(const ut8 *instr, ut64 len, struct h8300_cmd *cmd, ut64
 		cmd->id = H8300_INSN_JSR;
 		ret = decode_mi8(instr, cmd);
 		break;
-	case H8300_BRA:
-		cmd->id = H8300_INSN_BRA;
-		ret = decode_pc_rel(instr, cmd);
-		break;
-	case H8300_BRN:
-		cmd->id = H8300_INSN_BRN;
-		ret = decode_pc_rel(instr, cmd);
-		break;
-	case H8300_BHI:
-		cmd->id = H8300_INSN_BHI;
-		ret = decode_pc_rel(instr, cmd);
-		break;
-	case H8300_BLS:
-		cmd->id = H8300_INSN_BLS;
-		ret = decode_pc_rel(instr, cmd);
-		break;
-	case H8300_BCC:
-		cmd->id = H8300_INSN_BCC;
-		ret = decode_pc_rel(instr, cmd);
-		break;
-	case H8300_BCS:
-		cmd->id = H8300_INSN_BCS;
-		ret = decode_pc_rel(instr, cmd);
-		break;
-	case H8300_BNE:
-		cmd->id = H8300_INSN_BNE;
-		ret = decode_pc_rel(instr, cmd);
-		break;
-	case H8300_BEQ:
-		cmd->id = H8300_INSN_BEQ;
-		ret = decode_pc_rel(instr, cmd);
-		break;
-	case H8300_BVC:
-		cmd->id = H8300_INSN_BVC;
-		ret = decode_pc_rel(instr, cmd);
-		break;
-	case H8300_BVS:
-		cmd->id = H8300_INSN_BVS;
-		ret = decode_pc_rel(instr, cmd);
-		break;
-	case H8300_BPL:
-		cmd->id = H8300_INSN_BPL;
-		ret = decode_pc_rel(instr, cmd);
-		break;
-	case H8300_BMI:
-		cmd->id = H8300_INSN_BMI;
-		ret = decode_pc_rel(instr, cmd);
-		break;
-	case H8300_BGE:
-		cmd->id = H8300_INSN_BGE;
-		ret = decode_pc_rel(instr, cmd);
-		break;
-	case H8300_BLT:
-		cmd->id = H8300_INSN_BLT;
-		ret = decode_pc_rel(instr, cmd);
-		break;
-	case H8300_BGT:
-		cmd->id = H8300_INSN_BGT;
-		ret = decode_pc_rel(instr, cmd);
-		break;
-	case H8300_BLE:
-		cmd->id = H8300_INSN_BLE;
-		ret = decode_pc_rel(instr, cmd);
-		break;
+
+		CASE_F_F(decode_pc_rel, 0x40, BRA);
+		CASE_F_F(decode_pc_rel, 0x41, BRN);
+		CASE_F_F(decode_pc_rel, 0x42, BHI);
+		CASE_F_F(decode_pc_rel, 0x43, BLS);
+		CASE_F_F(decode_pc_rel, 0x44, BCC);
+		CASE_F_F(decode_pc_rel, 0x45, BCS);
+		CASE_F_F(decode_pc_rel, 0x46, BNE);
+		CASE_F_F(decode_pc_rel, 0x47, BEQ);
+		CASE_F_F(decode_pc_rel, 0x48, BVC);
+		CASE_F_F(decode_pc_rel, 0x49, BVS);
+		CASE_F_F(decode_pc_rel, 0x4a, BPL);
+		CASE_F_F(decode_pc_rel, 0x4b, BMI);
+		CASE_F_F(decode_pc_rel, 0x4c, BGE);
+		CASE_F_F(decode_pc_rel, 0x4d, BLT);
+		CASE_F_F(decode_pc_rel, 0x4e, BGT);
+		CASE_F_F(decode_pc_rel, 0x4f, BLE);
+
 	case H8300_ORC:
 		cmd->id = H8300_INSN_ORC;
 		ret = decode_i8ccr(instr, cmd);
