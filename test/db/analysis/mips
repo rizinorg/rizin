@@ -164,7 +164,7 @@ features o32 n32
 |     ::    0x0040054e      lw    a3, 0(a3)
 |     ::    0x00400550      move  a1, a3
 |     ::    0x00400552      lapc.h a0, loc..LC0
-|     ::    0x00400556      lw    a3, 0x28(gp)
+|     ::    0x00400556      lw    a3, 0x28(gp)                         ; [0x420044:4]=0x4003ba ; reloc.printf
 |     ::    0x0040055a      jalrc ra, a3
 |     ::    0x0040055c      li    a3, 1
 |     ::,=< 0x0040055e      bc    loc..L10
@@ -178,7 +178,7 @@ features o32 n32
 |     ::|   0x0040056e      move  a3, a0
 |     :`==< 0x00400570      beqic a3, 0x10, 0x400582
 |     : |   0x00400574      lapc.h a0, loc..LC1
-|     : |   0x00400578      lw    a3, 0x2c(gp)
+|     : |   0x00400578      lw    a3, 0x2c(gp)                         ; [0x420048:4]=0x4003c0 ; reloc.puts
 |     : |   0x0040057c      jalrc ra, a3
 |     : |   0x0040057e      li    a3, 1
 |     :,==< 0x00400580      bc    loc..L10
@@ -188,14 +188,14 @@ features o32 n32
 |      ||   0x00400586      move  a3, a0
 |     ,===< 0x00400588      bnezc a3, loc..L12
 |     |||   0x0040058a      lapc.h a0, loc..LC2
-|     |||   0x0040058e      lw    a3, 0x2c(gp)
+|     |||   0x0040058e      lw    a3, 0x2c(gp)                         ; [0x420048:4]=0x4003c0 ; reloc.puts
 |     |||   0x00400592      jalrc ra, a3
 |     |||   0x00400594      li    a3, 1
 |    ,====< 0x00400596      bc    loc..L10
 |    ||||   ;-- .L12:
 |    |`---> 0x00400598      lapc.h a1, obj.seckrit
 |    | ||   0x0040059c      lapc.h a0, loc..LC3
-|    | ||   0x004005a0      lw    a3, 0x28(gp)
+|    | ||   0x004005a0      lw    a3, 0x28(gp)                         ; [0x420044:4]=0x4003ba ; reloc.printf
 |    | ||   0x004005a4      jalrc ra, a3
 |    | ||   0x004005a6      move  a3, zero
 |    | ||   ;-- .L10:
