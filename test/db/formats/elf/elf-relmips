@@ -18,6 +18,7 @@ nth      vaddr bind   type   lib name
  15 ---------- WEAK   FUNC       __cxa_finalize
      vaddr      paddr type         name          
 -------------------------------------------------
+0x00000000 0x00000000 R_MIPS_NONE  
 0x000109c4 0x000009c4 R_MIPS_REL32  - 0x000109c4
 0x000109c8 0x000009c8 R_MIPS_REL32  - 0x000109c8
 0x00010a4c 0x00000a4c R_MIPS_REL32  - 0x00010a4c
@@ -48,6 +49,7 @@ nth      vaddr bind   type   lib name
  15 ---------- WEAK   FUNC       __cxa_finalize
      vaddr      paddr type         name          
 -------------------------------------------------
+0x00000000 0x00000000 R_MIPS_NONE  
 0x00010984 0x00000984 R_MIPS_REL32  - 0x00010984
 0x00010988 0x00000988 R_MIPS_REL32  - 0x00010988
 0x00010a0c 0x00000a0c R_MIPS_REL32  - 0x00010a0c
@@ -117,6 +119,7 @@ nth      vaddr bind   type   lib name
  59 0x00400eb0 GLOBAL FUNC       free
      vaddr      paddr type             name                  
 -------------------------------------------------------------
+0x00000000 0x00000000 R_MIPS_NONE      
 0x004137ec 0x000037ec R_MIPS_JUMP_SLOT strcpy
 0x004137f0 0x000037f0 R_MIPS_JUMP_SLOT writev
 0x004137f4 0x000037f4 R_MIPS_JUMP_SLOT uloop_run
@@ -507,6 +510,7 @@ nth      vaddr bind   type   lib name
 344 0x0045b744 GLOBAL FUNC       __cxa_atexit
      vaddr      paddr type             name             
 --------------------------------------------------------
+0x00000000 0x00000000 R_MIPS_NONE      
 0x00478654 0x00068654 R_MIPS_JUMP_SLOT longjmp
 0x00478658 0x00068658 R_MIPS_JUMP_SLOT stpcpy
 0x0047865c 0x0006865c R_MIPS_JUMP_SLOT __umoddi3
