@@ -18,7 +18,7 @@
 #include "arm_accessors64.h"
 
 #define REG64(x)      rz_str_get_null(cs_reg_name(*handle, insn->detail->arm64.operands[x].reg))
-#define MEMBASE64(x)  rz_str_get_null(cs_reg_name(*handle, insn->detail->arm64.operands[x].mem.base))
+#define MEMBASE64(x)  rz_str_get_null(insn->detail->arm64.operands[x].mem.base == AARCH64_REG_INVALID ? "0" : cs_reg_name(*handle, insn->detail->arm64.operands[x].mem.base))
 #define MEMINDEX64(x) rz_str_get_null(cs_reg_name(*handle, insn->detail->arm64.operands[x].mem.index))
 
 RZ_IPI const char *rz_arm64_cs_esil_prefix_cond(RzAnalysisOp *op, arm64_cc cond_type) {
