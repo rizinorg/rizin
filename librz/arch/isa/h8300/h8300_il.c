@@ -567,6 +567,7 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 	case H8300_INSN_MOV_W: return op_mov_w(cmd);
 	case H8300_INSN_ADD_B: return op_add_b(cmd);
 	case H8300_INSN_ADD_W: return op_add_w(cmd);
+	case H8300_INSN_ADD_L: NOT_IMPLEMENTED;
 	case H8300_INSN_ADDS: return op_adds(cmd);
 	case H8300_INSN_ADDX: return op_addx(cmd);
 	case H8300_INSN_CMP_B:

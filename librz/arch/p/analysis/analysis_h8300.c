@@ -97,6 +97,7 @@ static int h8300_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 		break;
 	case H8300_INSN_ADD_B:
 	case H8300_INSN_ADD_W:
+	case H8300_INSN_ADD_L:
 	case H8300_INSN_ADDS:
 	case H8300_INSN_ADDX:
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
