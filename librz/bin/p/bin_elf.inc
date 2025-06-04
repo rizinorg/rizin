@@ -1092,6 +1092,8 @@ static void patch_reloc_mips(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_ad
 		val = rz_read_ble16(buf, big_endian);
 		val += fs->AHL;
 		val += fs->S;
+		rz_write_ble32(buf, val, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
 		return;
 	case R_MIPS_GPREL16: UNHANDL("R_MIPS_GPREL16");
 	case R_MIPS_LITERAL: UNHANDL("R_MIPS_LITERAL");
