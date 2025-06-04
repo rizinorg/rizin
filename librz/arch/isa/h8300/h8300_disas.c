@@ -206,7 +206,7 @@ static int decode_sr16(const ut8 *bytes, struct h8300_cmd *cmd) {
 
 	reg = bytes[1] & 0x7;
 	switch ((bytes[1] >> 4)) {
-	case 0x0: val = 0; break;
+	case 0x0: val = 1; break;
 	case 0x8: val = 2; break;
 	case 0x9: val = 4; break;
 	default: return -1;
