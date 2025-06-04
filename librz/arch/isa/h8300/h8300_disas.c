@@ -205,7 +205,12 @@ static int decode_sr16(const ut8 *bytes, struct h8300_cmd *cmd) {
 	}
 
 	reg = bytes[1] & 0x7;
-	val = bytes[1] & 0x80 ? 2 : 1;
+	switch ((bytes[1] >> 4)) {
+	case 0x0: val = 0; break;
+	case 0x8: val = 2; break;
+	case 0x9: val = 4; break;
+	default: return -1;
+	}
 
 	cmd->fmt = H8300_INSN_FORMAT_IMMR16;
 	OPS_ADD(H8300_OP_IMM, imm, val);
@@ -840,11 +845,13 @@ int h8300_decode_command(const ut8 *instr, ut64 len, struct h8300_cmd *cmd, ut64
 		return 0;
 	}
 
+#define CASE_F_F_IMPL(F, I) \
+	cmd->id = H8300_INSN_##I; \
+	cmd->size = F(instr, cmd); \
+	return cmd->size;
 #define CASE_F_F(F, X, I) \
 	case (X): \
-		cmd->id = H8300_INSN_##I; \
-		cmd->size = F(instr, cmd); \
-		return cmd->size;
+		CASE_F_F_IMPL(F, I)
 #define CASE_F_R8(X, I) CASE_F_F(decode_r8, X, I)
 
 	ut32 x2 = rz_read_be16(instr);
@@ -960,8 +967,15 @@ int h8300_decode_command(const ut8 *instr, ut64 len, struct h8300_cmd *cmd, ut64
 		CASE_F_F(decode_imm16r16, 0x7900, MOV_W);
 		CASE_F_F(decode_abs16r16, 0x6b00, MOV_W);
 
-		CASE_F_F(decode_sr16, 0x1b00, SUBS);
-		CASE_F_F(decode_sr16, 0x1b80, SUBS);
+	case 0x0b00:
+	case 0x0b80:
+	case 0x0b90:
+		CASE_F_F_IMPL(decode_sr16, ADDS);
+	case 0x1b00:
+	case 0x1b80:
+	case 0x1b90:
+		CASE_F_F_IMPL(decode_sr16, SUBS);
+
 	default:
 		break;
 	}
@@ -1001,10 +1015,6 @@ int h8300_decode_command(const ut8 *instr, ut64 len, struct h8300_cmd *cmd, ut64
 	case H8300_CMP_W:
 		cmd->id = H8300_INSN_CMP_W;
 		ret = decode_r16r16(instr, cmd);
-		break;
-	case H8300_ADDS:
-		cmd->id = H8300_INSN_ADDS;
-		ret = decode_sr16(instr, cmd);
 		break;
 	case H8300_AND:
 		cmd->id = H8300_INSN_AND;
