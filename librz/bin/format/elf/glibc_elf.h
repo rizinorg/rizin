@@ -2021,46 +2021,84 @@ typedef struct
 #define R_MIPS_CALL16  11 /* 16 bit GOT entry for function */
 #define R_MIPS_GPREL32 12 /* GP relative 32 bit */
 
-#define R_MIPS_SHIFT5          16
-#define R_MIPS_SHIFT6          17
-#define R_MIPS_64              18
-#define R_MIPS_GOT_DISP        19
-#define R_MIPS_GOT_PAGE        20
-#define R_MIPS_GOT_OFST        21
-#define R_MIPS_GOT_HI16        22
-#define R_MIPS_GOT_LO16        23
-#define R_MIPS_SUB             24
-#define R_MIPS_INSERT_A        25
-#define R_MIPS_INSERT_B        26
-#define R_MIPS_DELETE          27
-#define R_MIPS_HIGHER          28
-#define R_MIPS_HIGHEST         29
-#define R_MIPS_CALL_HI16       30
-#define R_MIPS_CALL_LO16       31
-#define R_MIPS_SCN_DISP        32
-#define R_MIPS_REL16           33
-#define R_MIPS_ADD_IMMEDIATE   34
-#define R_MIPS_PJUMP           35
-#define R_MIPS_RELGOT          36
-#define R_MIPS_JALR            37
-#define R_MIPS_TLS_DTPMOD32    38 /* Module number 32 bit */
-#define R_MIPS_TLS_DTPREL32    39 /* Module-relative offset 32 bit */
-#define R_MIPS_TLS_DTPMOD64    40 /* Module number 64 bit */
-#define R_MIPS_TLS_DTPREL64    41 /* Module-relative offset 64 bit */
-#define R_MIPS_TLS_GD          42 /* 16 bit GOT offset for GD */
-#define R_MIPS_TLS_LDM         43 /* 16 bit GOT offset for LDM */
-#define R_MIPS_TLS_DTPREL_HI16 44 /* Module-relative offset, high 16 bits */
-#define R_MIPS_TLS_DTPREL_LO16 45 /* Module-relative offset, low 16 bits */
-#define R_MIPS_TLS_GOTTPREL    46 /* 16 bit GOT offset for IE */
-#define R_MIPS_TLS_TPREL32     47 /* TP-relative offset, 32 bit */
-#define R_MIPS_TLS_TPREL64     48 /* TP-relative offset, 64 bit */
-#define R_MIPS_TLS_TPREL_HI16  49 /* TP-relative offset, high 16 bits */
-#define R_MIPS_TLS_TPREL_LO16  50 /* TP-relative offset, low 16 bits */
-#define R_MIPS_GLOB_DAT        51
-#define R_MIPS_COPY            126
-#define R_MIPS_JUMP_SLOT       127
+#define R_MIPS_SHIFT5               16
+#define R_MIPS_SHIFT6               17
+#define R_MIPS_64                   18
+#define R_MIPS_GOT_DISP             19
+#define R_MIPS_GOT_PAGE             20
+#define R_MIPS_GOT_OFST             21
+#define R_MIPS_GOT_HI16             22
+#define R_MIPS_GOT_LO16             23
+#define R_MIPS_SUB                  24
+#define R_MIPS_INSERT_A             25
+#define R_MIPS_INSERT_B             26
+#define R_MIPS_DELETE               27
+#define R_MIPS_HIGHER               28
+#define R_MIPS_HIGHEST              29
+#define R_MIPS_CALL_HI16            30
+#define R_MIPS_CALL_LO16            31
+#define R_MIPS_SCN_DISP             32
+#define R_MIPS_REL16                33
+#define R_MIPS_ADD_IMMEDIATE        34
+#define R_MIPS_PJUMP                35
+#define R_MIPS_RELGOT               36
+#define R_MIPS_JALR                 37
+#define R_MIPS_TLS_DTPMOD32         38 /* Module number 32 bit */
+#define R_MIPS_TLS_DTPREL32         39 /* Module-relative offset 32 bit */
+#define R_MIPS_TLS_DTPMOD64         40 /* Module number 64 bit */
+#define R_MIPS_TLS_DTPREL64         41 /* Module-relative offset 64 bit */
+#define R_MIPS_TLS_GD               42 /* 16 bit GOT offset for GD */
+#define R_MIPS_TLS_LDM              43 /* 16 bit GOT offset for LDM */
+#define R_MIPS_TLS_DTPREL_HI16      44 /* Module-relative offset, high 16 bits */
+#define R_MIPS_TLS_DTPREL_LO16      45 /* Module-relative offset, low 16 bits */
+#define R_MIPS_TLS_GOTTPREL         46 /* 16 bit GOT offset for IE */
+#define R_MIPS_TLS_TPREL32          47 /* TP-relative offset, 32 bit */
+#define R_MIPS_TLS_TPREL64          48 /* TP-relative offset, 64 bit */
+#define R_MIPS_TLS_TPREL_HI16       49 /* TP-relative offset, high 16 bits */
+#define R_MIPS_TLS_TPREL_LO16       50 /* TP-relative offset, low 16 bits */
+#define R_MIPS_GLOB_DAT             51
+#define R_MIPS_COPY                 126
+#define R_MIPS_JUMP_SLOT            127
+#define R_MIPS_RELATIVE             128
+#define R_MICROMIPS_26_S1           133
+#define R_MICROMIPS_HI16            134
+#define R_MICROMIPS_LO16            135
+#define R_MICROMIPS_GPREL16         136
+#define R_MICROMIPS_LITERAL         137
+#define R_MICROMIPS_GOT16           138
+#define R_MICROMIPS_PC7_S1          139
+#define R_MICROMIPS_PC10_S1         140
+#define R_MICROMIPS_PC16_S1         141
+#define R_MICROMIPS_CALL16          142
+#define R_MICROMIPS_GOT_DISP        145
+#define R_MICROMIPS_GOT_PAGE        146
+#define R_MICROMIPS_GOT_OFST        147
+#define R_MICROMIPS_GOT_HI16        148
+#define R_MICROMIPS_GOT_LO16        149
+#define R_MICROMIPS_SUB             150
+#define R_MICROMIPS_HIGHER          151
+#define R_MICROMIPS_HIGHEST         152
+#define R_MICROMIPS_CALL_HI16       153
+#define R_MICROMIPS_CALL_LO16       154
+#define R_MICROMIPS_SCN_DISP        155
+#define R_MICROMIPS_JALR            156
+#define R_MICROMIPS_HI0_LO16        157
+#define R_MICROMIPS_TLS_GD          162
+#define R_MICROMIPS_TLS_LDM         163
+#define R_MICROMIPS_TLS_DTPREL_HI16 164
+#define R_MICROMIPS_TLS_DTPREL_LO16 165
+#define R_MICROMIPS_TLS_GOTTPREL    166
+#define R_MICROMIPS_TLS_TPREL_HI16  169
+#define R_MICROMIPS_TLS_TPREL_LO16  170
+#define R_MICROMIPS_GPREL7_S2       172
+#define R_MICROMIPS_PC23_S2         173
+#define R_MIPS_PC32                 248
+#define R_MIPS_EH                   249
+#define R_MIPS_GNU_REL16_S2         250
+#define R_MIPS_GNU_VTINHERIT        253
+#define R_MIPS_GNU_VTENTRY          254
 /* Keep this the last entry.  */
-#define R_MIPS_NUM 128
+#define R_MIPS_NUM 255
 
 /* Legal values for p_type field of Elf32_Phdr.  */
 
