@@ -99,6 +99,7 @@ static const char *commands[] = {
 	[H8300_INSN_BILD] = "bild",
 	[H8300_INSN_CMP_B] = "cmp.b",
 	[H8300_INSN_CMP_W] = "cmp.w",
+	[H8300_INSN_CMP_L] = "cmp.l",
 	[H8300_INSN_POP] = "pop",
 	[H8300_INSN_PUSH] = "push",
 };
@@ -880,6 +881,7 @@ int h8300_decode_command(const ut8 *instr, ut64 len, struct h8300_cmd *cmd, ut64
 		switch (x2 & 0xfff8) {
 			CASE_F_F(decode_i32r32, 0x7a10, ADD_L);
 			CASE_F_F(decode_i32r32, 0x7a60, AND_L);
+			CASE_F_F(decode_i32r32, 0x7a20, CMP_L);
 		default: break;
 		}
 	}
@@ -1034,6 +1036,7 @@ int h8300_decode_command(const ut8 *instr, ut64 len, struct h8300_cmd *cmd, ut64
 
 	switch (x2 & 0xff88) {
 		CASE_F_F(decode_r32r32, 0x0a80, ADD_L);
+		CASE_F_F(decode_r32r32, 0x1f80, CMP_L);
 	default:
 		break;
 	}
