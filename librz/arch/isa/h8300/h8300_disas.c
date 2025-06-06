@@ -966,6 +966,7 @@ int h8300_decode_command(const ut8 *instr, ut64 len, struct h8300_cmd *cmd, ut64
 		switch (x2 & 0xfff0) {
 			CASE_F_F(decode_imm16r16, 0x7960, AND_W);
 			CASE_F_F(decode_imm16r16, 0x7910, ADD_W);
+			CASE_F_F(decode_imm16r16, 0x7920, CMP_W);
 		default:
 			break;
 		}
@@ -985,7 +986,7 @@ int h8300_decode_command(const ut8 *instr, ut64 len, struct h8300_cmd *cmd, ut64
 		CASE_F_F(decode_i8r8, 0xe, AND_B);
 		CASE_F_F(decode_i8r8, 0x9, ADDX);
 		CASE_F_F(decode_i8r8, 0x8, ADD_B);
-		CASE_F_F(decode_i8r8, H8300_CMP_4BIT, CMP_B);
+		CASE_F_F(decode_i8r8, 0xa, CMP_B);
 		CASE_F_F(decode_i8r8, H8300_OR_4BIT, OR);
 		CASE_F_F(decode_i8r8, H8300_SUBX_4BIT, SUBX);
 		CASE_F_F(decode_i8r8, H8300_XOR_4BIT, XOR);
@@ -1063,7 +1064,7 @@ int h8300_decode_command(const ut8 *instr, ut64 len, struct h8300_cmd *cmd, ut64
 		cmd->id = H8300_INSN_ANDC;
 		ret = decode_i8ccr(instr, cmd);
 		break;
-	case H8300_CMP_W:
+	case 0x1d:
 		cmd->id = H8300_INSN_CMP_W;
 		ret = decode_r16r16(instr, cmd);
 		break;
@@ -1072,7 +1073,7 @@ int h8300_decode_command(const ut8 *instr, ut64 len, struct h8300_cmd *cmd, ut64
 		ret = decode_r8r8(instr, cmd);
 		break;
 		CASE_F_F(decode_r8r8, 0x66, AND_W);
-	case H8300_BCLR_R2R8:
+	case 0x62:
 		cmd->id = H8300_INSN_BCLR;
 		ret = decode_r8r8(instr, cmd);
 		break;
@@ -1100,7 +1101,7 @@ int h8300_decode_command(const ut8 *instr, ut64 len, struct h8300_cmd *cmd, ut64
 		cmd->id = H8300_INSN_BSET;
 		ret = decode_r8r8(instr, cmd);
 		break;
-	case H8300_CMP_B:
+	case 0x1c:
 		cmd->id = H8300_INSN_CMP_B;
 		ret = decode_r8r8(instr, cmd);
 		break;

@@ -582,6 +582,8 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 		switch (cmd->fmt) {
 		case H8300_INSN_FORMAT_R16R16:
 			return ccr_cmp_w(R16_OP(1), R16_OP(0), IL_FALSE);
+		case H8300_INSN_FORMAT_IMMR16:
+			return ccr_cmp_w(R16_OP(1), IMM_OP(0), IL_FALSE);
 		default: NOT_IMPLEMENTED;
 		}
 	case H8300_INSN_SUB_B:
