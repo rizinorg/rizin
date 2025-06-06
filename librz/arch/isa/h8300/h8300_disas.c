@@ -965,6 +965,7 @@ int h8300_decode_command(const ut8 *instr, ut64 len, struct h8300_cmd *cmd, ut64
 
 		switch (x2 & 0xfff0) {
 			CASE_F_F(decode_imm16r16, 0x7960, AND_W);
+			CASE_F_F(decode_imm16r16, 0x7910, ADD_W);
 		default:
 			break;
 		}
@@ -1006,8 +1007,6 @@ int h8300_decode_command(const ut8 *instr, ut64 len, struct h8300_cmd *cmd, ut64
 		CASE_F_R8(0x1000, SHLL);
 		CASE_F_R8(0x1180, SHAR);
 		CASE_F_R8(0x1100, SHLR);
-
-		CASE_F_F(decode_imm16r16, 0x7910, ADD_W);
 	default:
 		break;
 	}
