@@ -42,7 +42,9 @@ static const char *commands[] = {
 	[H8300_INSN_NOP] = "nop",
 	[H8300_INSN_DAA] = "daa",
 	[H8300_INSN_DAS] = "das",
-	[H8300_INSN_DEC] = "dec",
+	[H8300_INSN_DEC_B] = "dec.b",
+	[H8300_INSN_DEC_W] = "dec.w",
+	[H8300_INSN_DEC_L] = "dec.l",
 	[H8300_INSN_INC] = "inc",
 	[H8300_INSN_NEG] = "neg",
 	[H8300_INSN_NOT] = "not",
@@ -220,6 +222,25 @@ static int decode_sr16(const ut8 *bytes, struct h8300_cmd *cmd) {
 	OPS_ADD(H8300_OP_R16, reg, reg);
 
 	snprintf(cmd->operands, H8300_INSTR_MAXLEN, "#%u,r%u", val, reg);
+
+	return ret;
+}
+
+static int decode_xr16(const ut8 *bytes, struct h8300_cmd *cmd, ut16 x) {
+	int ret = 2;
+	unsigned reg;
+
+	if (decode_opcode(bytes, cmd)) {
+		return -1;
+	}
+
+	reg = bytes[1] & 0x7;
+
+	cmd->fmt = H8300_INSN_FORMAT_IMMR16;
+	OPS_ADD(H8300_OP_IMM, imm, x);
+	OPS_ADD(H8300_OP_R16, reg, reg);
+
+	snprintf(cmd->operands, H8300_INSTR_MAXLEN, "#%u,r%u", x, reg);
 
 	return ret;
 }
@@ -874,6 +895,11 @@ int h8300_decode_command(const ut8 *instr, ut64 len, struct h8300_cmd *cmd, ut64
 	case (X): \
 		CASE_F_F_IMPL(F, I)
 #define CASE_F_R8(X, I) CASE_F_F(decode_r8, X, I)
+#define CASE_F_F_VA(F, X, I, ...) \
+	case (X): \
+		cmd->id = H8300_INSN_##I; \
+		cmd->size = F(instr, cmd, __VA_ARGS__); \
+		return cmd->size;
 
 	ut32 x2 = rz_read_be16(instr);
 
@@ -998,7 +1024,7 @@ int h8300_decode_command(const ut8 *instr, ut64 len, struct h8300_cmd *cmd, ut64
 	switch (x2 & 0xfff0) {
 		CASE_F_R8(0x0f00, DAA);
 		CASE_F_R8(0x1f00, DAS);
-		CASE_F_R8(0x1a00, DEC);
+		CASE_F_R8(0x1a00, DEC_B);
 		CASE_F_R8(0x0a00, INC);
 		CASE_F_R8(0x1780, NEG);
 		CASE_F_R8(0x1700, NOT);
@@ -1010,6 +1036,9 @@ int h8300_decode_command(const ut8 *instr, ut64 len, struct h8300_cmd *cmd, ut64
 		CASE_F_R8(0x1000, SHLL);
 		CASE_F_R8(0x1180, SHAR);
 		CASE_F_R8(0x1100, SHLR);
+
+		CASE_F_F_VA(decode_xr16, 0x1b50, DEC_W, 1);
+		CASE_F_F_VA(decode_xr16, 0x1bd0, DEC_W, 2);
 	default:
 		break;
 	}
@@ -1020,6 +1049,9 @@ int h8300_decode_command(const ut8 *instr, ut64 len, struct h8300_cmd *cmd, ut64
 
 		CASE_F_F(decode_imm16r16, 0x7900, MOV_W);
 		CASE_F_F(decode_abs16r16, 0x6b00, MOV_W);
+
+		CASE_F_F_VA(decode_xr16, 0x1b70, DEC_L, 1);
+		CASE_F_F_VA(decode_xr16, 0x1bf0, DEC_L, 2);
 
 	case 0x0b00:
 	case 0x0b80:

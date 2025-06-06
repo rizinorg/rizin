@@ -649,7 +649,7 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 	case H8300_INSN_ORC: return op_logical_i8ccr(cmd, rz_il_op_new_log_or);
 	case H8300_INSN_XORC: return op_logical_i8ccr(cmd, rz_il_op_new_log_xor);
 	case H8300_INSN_ANDC: return op_logical_i8ccr(cmd, rz_il_op_new_log_and);
-	case H8300_INSN_DEC:
+	case H8300_INSN_DEC_B:
 		switch (cmd->fmt) {
 		case H8300_INSN_FORMAT_R8:
 			return SEQ3(
