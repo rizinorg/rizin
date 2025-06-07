@@ -823,6 +823,9 @@ static void patch_val_hexagon(RZ_INOUT RzBuffer *buf_patched, const ut32 addr, c
 	RZ_LOG_WARN("Unhandled " NAME " reloc\n"); \
 	return
 
+#define UNHANDL_DEF(NAME, NUM) \
+	RZ_LOG_WARN(NAME ": Unhandled patching case for relocation %d.\n", NUM)
+
 /**
  * \brief Patches the opcode at a given address depending on the relocation type.
  *
@@ -841,10 +844,9 @@ static void patch_reloc_hexagon(RZ_INOUT RzBuffer *buf_patched, const ut64 patch
 
 	switch (rel_type) {
 	default:
-		RZ_LOG_WARN("Patching for hexagon reloc type %d not implemented.\n", rel_type);
-		rz_warn_if_reached();
 		// For more implementetations check out the LLVM src:
 		// https://github.com/llvm/llvm-project/blob/abc17a67519747be36f1fd03e227c5103da4c677/lld/ELF/Arch/Hexagon.cpp
+		UNHANDL_DEF("Hexagon", rel_type);
 		return;
 	case R_HEX_NONE:
 		return;
@@ -1049,7 +1051,7 @@ static void patch_reloc_mips(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_ad
 
 	switch (rel_type) {
 	default:
-		RZ_LOG_WARN("Patching for mips reloc type %d not implemented.\n", rel_type);
+		UNHANDL_DEF("MIPS", rel_type);
 		return;
 	case R_MIPS_NONE:
 		return;
@@ -1332,7 +1334,7 @@ static void patch_reloc_arm64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 		rz_write_le32(buf, keep | ((val & RZ_BIT_MASK32(12, 0)) << 10));
 		break;
 	default:
-		RZ_LOG_WARN("Patching for aarch64 reloc type %d not implemented.\n", rel->type);
+		UNHANDL_DEF("AArch64", rel->type);
 		return;
 	}
 	rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
@@ -1400,7 +1402,7 @@ static void patch_reloc_ppc64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 		val = fs->S + fs->A - fs->P;
 		break;
 	default:
-		RZ_LOG_WARN("Patching for ppc64 reloc type %d not implemented.\n", rel_type);
+		UNHANDL_DEF("PowerPC 64", rel_type);
 		return;
 	}
 	if (low) {
@@ -1418,7 +1420,7 @@ static void patch_reloc_ppc64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 			rz_buf_write_at(buf_patched, patch_addr, buf, 4);
 			break;
 		default:
-			RZ_LOG_WARN("Unhandled ppc64 reloc type %d with low %u bits.\n", rel_type, low);
+			RZ_LOG_WARN("PowerPC 64: Unhandled patching case for relocation %d with low %u bits.\n", rel_type, low);
 			return;
 		}
 	} else if (word) {
@@ -1432,11 +1434,11 @@ static void patch_reloc_ppc64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 			rz_buf_write_at(buf_patched, patch_addr, buf, 4);
 			break;
 		default:
-			RZ_LOG_WARN("Unhandled ppc64 reloc type %d with word size %u.\n", rel_type, word);
+			RZ_LOG_WARN("PowerPC 64: Unhandled patching case for relocation %d with word size %u.\n", rel_type, word);
 			return;
 		}
 	} else {
-		RZ_LOG_WARN("Unhandled ppc64 reloc type %d.\n", rel_type);
+		UNHANDL_DEF("PowerPC 64", rel_type);
 	}
 }
 
@@ -1450,7 +1452,7 @@ static void patch_reloc_ppc64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
  * \param rel_type The relocation type.
  * \param fs Formular values to calculate the new relocation value.
  */
-static void patch_reloc_intel_80386(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_addr, const int rel_type, const RzBinRelocFormularSymbols *fs) {
+static void patch_reloc_x86_32(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_addr, const int rel_type, const RzBinRelocFormularSymbols *fs) {
 	rz_return_if_fail(buf_patched && fs);
 	ut8 buf[4] = { 0 };
 	ut64 val = 0;
@@ -1469,7 +1471,7 @@ static void patch_reloc_intel_80386(RZ_INOUT RzBuffer *buf_patched, const ut64 p
 		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
 		break;
 	default:
-		RZ_LOG_WARN("Unhandled intel 80386 reloc type %d.\n", rel_type);
+		UNHANDL_DEF("x86_32", rel_type);
 		return;
 	}
 }
@@ -1484,7 +1486,7 @@ static void patch_reloc_intel_80386(RZ_INOUT RzBuffer *buf_patched, const ut64 p
  * \param rel_type The relocation type.
  * \param fs Formular values to calculate the new relocation value.
  */
-static void patch_reloc_amd64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_addr, const int rel_type, const RzBinRelocFormularSymbols *fs) {
+static void patch_reloc_x86_64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_addr, const int rel_type, const RzBinRelocFormularSymbols *fs) {
 	rz_return_if_fail(buf_patched && fs);
 	ut8 buf[8] = { 0 };
 	ut64 val = 0;
@@ -1543,7 +1545,7 @@ static void patch_reloc_amd64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 		val = fs->B + fs->A;
 		break;
 	default:
-		RZ_LOG_WARN("Unhandled x64 reloc type %d.\n", rel_type);
+		UNHANDL_DEF("x86_64", rel_type);
 		return;
 	}
 	switch (word) {
@@ -1608,7 +1610,7 @@ static void patch_reloc_rx(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_addr
 		rz_buf_write_at(buf_patched, patch_addr, buf, 3);
 		break;
 	default:
-		RZ_LOG_WARN("Unhandled renesas rx family reloc type %d.\n", rel_type);
+		UNHANDL_DEF("Renesas RX", rel_type);
 		return;
 	}
 }
@@ -1667,15 +1669,16 @@ static void patch_reloc_alpha(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
 		break;
 	default:
-		RZ_LOG_WARN("Unhandled alpha reloc type %d.\n", rel_type);
+		UNHANDL_DEF("Alpha", rel_type);
 		return;
 	}
 }
 
 #undef UNHANDL
+#undef UNHANDL_DEF
 
-#define MISSING(NAME) \
-	RZ_LOG_WARN("Unhandled reloc patching for machine " NAME ".\n"); \
+#define ARCH_MISSING(NAME) \
+	RZ_LOG_WARN("Relocation patching for " NAME " is not implemented.\n"); \
 	return
 
 static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel, ut64 S, ut64 B, ut64 L, ut64 GOT, ut64 *AHL) {
@@ -1721,10 +1724,10 @@ static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel,
 		*AHL = formular_sym.AHL;
 		break;
 	case EM_386:
-		patch_reloc_intel_80386(obj->buf_patched, patch_addr, rel->type, &formular_sym);
+		patch_reloc_x86_32(obj->buf_patched, patch_addr, rel->type, &formular_sym);
 		break;
 	case EM_X86_64:
-		patch_reloc_amd64(obj->buf_patched, patch_addr, rel->type, &formular_sym);
+		patch_reloc_x86_64(obj->buf_patched, patch_addr, rel->type, &formular_sym);
 		break;
 	case EM_RX:
 		patch_reloc_rx(obj->buf_patched, patch_addr, rel->type, big_endian, &formular_sym);
@@ -1732,224 +1735,225 @@ static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel,
 	case EM_ALPHA:
 		patch_reloc_alpha(obj->buf_patched, patch_addr, rel->type, big_endian, &formular_sym);
 		break;
-	case EM_M32: MISSING("EM_M32");
-	case EM_SPARC: MISSING("EM_SPARC");
-	case EM_68K: MISSING("EM_68K");
-	case EM_88K: MISSING("EM_88K");
-	case EM_IAMCU: MISSING("EM_IAMCU");
-	case EM_860: MISSING("EM_860");
-	case EM_S370: MISSING("EM_S370");
-	case EM_PARISC: MISSING("EM_PARISC");
-	case EM_VPP500: MISSING("EM_VPP500");
-	case EM_SPARC32PLUS: MISSING("EM_SPARC32PLUS");
-	case EM_960: MISSING("EM_960");
-	case EM_PPC: MISSING("EM_PPC");
-	case EM_S390: MISSING("EM_S390");
-	case EM_SPU: MISSING("EM_SPU");
-	case EM_V800: MISSING("EM_V800");
-	case EM_FR20: MISSING("EM_FR20");
-	case EM_RH32: MISSING("EM_RH32");
-	case EM_RCE: MISSING("EM_RCE");
-	case EM_FAKE_ALPHA: MISSING("EM_FAKE_ALPHA");
-	case EM_SH: MISSING("EM_SH");
-	case EM_SPARCV9: MISSING("EM_SPARCV9");
-	case EM_TRICORE: MISSING("EM_TRICORE");
-	case EM_ARC: MISSING("EM_ARC");
-	case EM_H8_300: MISSING("EM_H8_300");
-	case EM_H8_300H: MISSING("EM_H8_300H");
-	case EM_H8S: MISSING("EM_H8S");
-	case EM_H8_500: MISSING("EM_H8_500");
-	case EM_IA_64: MISSING("EM_IA_64");
-	case EM_COLDFIRE: MISSING("EM_COLDFIRE");
-	case EM_68HC12: MISSING("EM_68HC12");
-	case EM_MMA: MISSING("EM_MMA");
-	case EM_PCP: MISSING("EM_PCP");
-	case EM_NCPU: MISSING("EM_NCPU");
-	case EM_NDR1: MISSING("EM_NDR1");
-	case EM_STARCORE: MISSING("EM_STARCORE");
-	case EM_ME16: MISSING("EM_ME16");
-	case EM_ST100: MISSING("EM_ST100");
-	case EM_TINYJ: MISSING("EM_TINYJ");
-	case EM_PDSP: MISSING("EM_PDSP");
-	case EM_PDP10: MISSING("EM_PDP10");
-	case EM_PDP11: MISSING("EM_PDP11");
-	case EM_FX66: MISSING("EM_FX66");
-	case EM_ST9PLUS: MISSING("EM_ST9PLUS");
-	case EM_ST7: MISSING("EM_ST7");
-	case EM_68HC16: MISSING("EM_68HC16");
-	case EM_68HC11: MISSING("EM_68HC11");
-	case EM_68HC08: MISSING("EM_68HC08");
-	case EM_68HC05: MISSING("EM_68HC05");
-	case EM_SVX: MISSING("EM_SVX");
-	case EM_ST19: MISSING("EM_ST19");
-	case EM_VAX: MISSING("EM_VAX");
-	case EM_CRIS: MISSING("EM_CRIS");
-	case EM_JAVELIN: MISSING("EM_JAVELIN");
-	case EM_FIREPATH: MISSING("EM_FIREPATH");
-	case EM_ZSP: MISSING("EM_ZSP");
-	case EM_MMIX: MISSING("EM_MMIX");
-	case EM_HUANY: MISSING("EM_HUANY");
-	case EM_PRISM: MISSING("EM_PRISM");
-	case EM_AVR: MISSING("EM_AVR");
-	case EM_FR30: MISSING("EM_FR30");
-	case EM_D10V: MISSING("EM_D10V");
-	case EM_D30V: MISSING("EM_D30V");
-	case EM_V850: MISSING("EM_V850");
-	case EM_M32R: MISSING("EM_M32R");
-	case EM_MN10300: MISSING("EM_MN10300");
-	case EM_MN10200: MISSING("EM_MN10200");
-	case EM_PJ: MISSING("EM_PJ");
-	case EM_OR1K: MISSING("EM_OR1K");
-	case EM_ARC_COMPACT: MISSING("EM_ARC_COMPACT");
-	case EM_XTENSA: MISSING("EM_XTENSA");
-	case EM_VIDEOCORE: MISSING("EM_VIDEOCORE");
-	case EM_TMM_GPP: MISSING("EM_TMM_GPP");
-	case EM_NS32K: MISSING("EM_NS32K");
-	case EM_TPC: MISSING("EM_TPC");
-	case EM_SNP1K: MISSING("EM_SNP1K");
-	case EM_ST200: MISSING("EM_ST200");
-	case EM_IP2K: MISSING("EM_IP2K");
-	case EM_MAX: MISSING("EM_MAX");
-	case EM_CR: MISSING("EM_CR");
-	case EM_F2MC16: MISSING("EM_F2MC16");
-	case EM_MSP430: MISSING("EM_MSP430");
-	case EM_BLACKFIN: MISSING("EM_BLACKFIN");
-	case EM_SE_C33: MISSING("EM_SE_C33");
-	case EM_SEP: MISSING("EM_SEP");
-	case EM_ARCA: MISSING("EM_ARCA");
-	case EM_UNICORE: MISSING("EM_UNICORE");
-	case EM_EXCESS: MISSING("EM_EXCESS");
-	case EM_DXP: MISSING("EM_DXP");
-	case EM_ALTERA_NIOS2: MISSING("EM_ALTERA_NIOS2");
-	case EM_CRX: MISSING("EM_CRX");
-	case EM_XGATE: MISSING("EM_XGATE");
-	case EM_C166: MISSING("EM_C166");
-	case EM_M16C: MISSING("EM_M16C");
-	case EM_DSPIC30F: MISSING("EM_DSPIC30F");
-	case EM_CE: MISSING("EM_CE");
-	case EM_M32C: MISSING("EM_M32C");
-	case EM_TSK3000: MISSING("EM_TSK3000");
-	case EM_RS08: MISSING("EM_RS08");
-	case EM_SHARC: MISSING("EM_SHARC");
-	case EM_ECOG2: MISSING("EM_ECOG2");
-	case EM_SCORE7: MISSING("EM_SCORE7");
-	case EM_DSP24: MISSING("EM_DSP24");
-	case EM_VIDEOCORE3: MISSING("EM_VIDEOCORE3");
-	case EM_LATTICEMICO32: MISSING("EM_LATTICEMICO32");
-	case EM_SE_C17: MISSING("EM_SE_C17");
-	case EM_TI_C6000: MISSING("EM_TI_C6000");
-	case EM_TI_C2000: MISSING("EM_TI_C2000");
-	case EM_TI_C5500: MISSING("EM_TI_C5500");
-	case EM_TI_ARP32: MISSING("EM_TI_ARP32");
-	case EM_TI_PRU: MISSING("EM_TI_PRU");
-	case EM_MMDSP_PLUS: MISSING("EM_MMDSP_PLUS");
-	case EM_CYPRESS_M8C: MISSING("EM_CYPRESS_M8C");
-	case EM_R32C: MISSING("EM_R32C");
-	case EM_TRIMEDIA: MISSING("EM_TRIMEDIA");
-	case EM_8051: MISSING("EM_8051");
-	case EM_STXP7X: MISSING("EM_STXP7X");
-	case EM_NDS32: MISSING("EM_NDS32");
-	case EM_ECOG1X: MISSING("EM_ECOG1X");
-	case EM_MAXQ30: MISSING("EM_MAXQ30");
-	case EM_XIMO16: MISSING("EM_XIMO16");
-	case EM_MANIK: MISSING("EM_MANIK");
-	case EM_CRAYNV2: MISSING("EM_CRAYNV2");
-	case EM_METAG: MISSING("EM_METAG");
-	case EM_MCST_ELBRUS: MISSING("EM_MCST_ELBRUS");
-	case EM_ECOG16: MISSING("EM_ECOG16");
-	case EM_CR16: MISSING("EM_CR16");
-	case EM_ETPU: MISSING("EM_ETPU");
-	case EM_SLE9X: MISSING("EM_SLE9X");
-	case EM_L10M: MISSING("EM_L10M");
-	case EM_K10M: MISSING("EM_K10M");
-	case EM_AVR32: MISSING("EM_AVR32");
-	case EM_STM8: MISSING("EM_STM8");
-	case EM_TILE64: MISSING("EM_TILE64");
-	case EM_TILEPRO: MISSING("EM_TILEPRO");
-	case EM_MICROBLAZE: MISSING("EM_MICROBLAZE");
-	case EM_CUDA: MISSING("EM_CUDA");
-	case EM_TILEGX: MISSING("EM_TILEGX");
-	case EM_CLOUDSHIELD: MISSING("EM_CLOUDSHIELD");
-	case EM_COREA_1ST: MISSING("EM_COREA_1ST");
-	case EM_COREA_2ND: MISSING("EM_COREA_2ND");
-	case EM_ARCV2: MISSING("EM_ARCV2");
-	case EM_OPEN8: MISSING("EM_OPEN8");
-	case EM_RL78: MISSING("EM_RL78");
-	case EM_VIDEOCORE5: MISSING("EM_VIDEOCORE5");
-	case EM_78KOR: MISSING("EM_78KOR");
-	case EM_56800EX: MISSING("EM_56800EX");
-	case EM_BA1: MISSING("EM_BA1");
-	case EM_BA2: MISSING("EM_BA2");
-	case EM_XCORE: MISSING("EM_XCORE");
-	case EM_MCHP_PIC: MISSING("EM_MCHP_PIC");
-	case EM_KM32: MISSING("EM_KM32");
-	case EM_KMX32: MISSING("EM_KMX32");
-	case EM_EMX16: MISSING("EM_EMX16");
-	case EM_EMX8: MISSING("EM_EMX8");
-	case EM_KVARC: MISSING("EM_KVARC");
-	case EM_CDP: MISSING("EM_CDP");
-	case EM_COGE: MISSING("EM_COGE");
-	case EM_COOL: MISSING("EM_COOL");
-	case EM_NORC: MISSING("EM_NORC");
-	case EM_CSR_KALIMBA: MISSING("EM_CSR_KALIMBA");
-	case EM_Z80: MISSING("EM_Z80");
-	case EM_VISIUM: MISSING("EM_VISIUM");
-	case EM_FT32: MISSING("EM_FT32");
-	case EM_MOXIE: MISSING("EM_MOXIE");
-	case EM_AMDGPU: MISSING("EM_AMDGPU");
-	case EM_LANAI_OLD: MISSING("EM_LANAI_OLD");
-	case EM_CEVA: MISSING("EM_CEVA");
-	case EM_CEVA_X2: MISSING("EM_CEVA_X2");
-	case EM_BPF: MISSING("EM_BPF");
-	case EM_GRAPHCORE_IPU: MISSING("EM_GRAPHCORE_IPU");
-	case EM_IMG1: MISSING("EM_IMG1");
-	case EM_NFP: MISSING("EM_NFP");
-	case EM_VE: MISSING("EM_VE");
-	case EM_CSKY: MISSING("EM_CSKY");
-	case EM_ARC_COMPACT3_64: MISSING("EM_ARC_COMPACT3_64");
-	case EM_MCS6502: MISSING("EM_MCS6502");
-	case EM_ARC_COMPACT3: MISSING("EM_ARC_COMPACT3");
-	case EM_KVX: MISSING("EM_KVX");
-	case EM_65816: MISSING("EM_65816");
-	case EM_LOONGARCH: MISSING("EM_LOONGARCH");
-	case EM_KF32: MISSING("EM_KF32");
-	case EM_U16_U8CORE: MISSING("EM_U16_U8CORE");
-	case EM_TACHYUM: MISSING("EM_TACHYUM");
-	case EM_56800EF: MISSING("EM_56800EF");
-	case EM_AVR_OLD: MISSING("EM_AVR_OLD");
-	case EM_MSP430_OLD: MISSING("EM_MSP430_OLD");
-	case EM_MT: MISSING("EM_MT");
-	case EM_CYGNUS_FR30: MISSING("EM_CYGNUS_FR30");
-	case EM_WEBASSEMBLY: MISSING("EM_WEBASSEMBLY");
-	case EM_S12Z: MISSING("EM_S12Z");
-	case EM_DLX: MISSING("EM_DLX");
-	case EM_CYGNUS_FRV: MISSING("EM_CYGNUS_FRV");
-	case EM_XC16X: MISSING("EM_XC16X");
-	case EM_CYGNUS_D10V: MISSING("EM_CYGNUS_D10V");
-	case EM_CYGNUS_D30V: MISSING("EM_CYGNUS_D30V");
-	case EM_IP2K_OLD: MISSING("EM_IP2K_OLD");
-	case EM_CYGNUS_POWERPC: MISSING("EM_CYGNUS_POWERPC");
-	case EM_CYGNUS_M32R: MISSING("EM_CYGNUS_M32R");
-	case EM_CYGNUS_V850: MISSING("EM_CYGNUS_V850");
-	case EM_S390_OLD: MISSING("EM_S390_OLD");
-	case EM_XTENSA_OLD: MISSING("EM_XTENSA_OLD");
-	case EM_XSTORMY16: MISSING("EM_XSTORMY16");
-	case EM_CYGNUS_MN10300: MISSING("EM_CYGNUS_MN10300");
-	case EM_CYGNUS_MN10200: MISSING("EM_CYGNUS_MN10200");
-	case EM_M32C_OLD: MISSING("EM_M32C_OLD");
-	case EM_IQ2000: MISSING("EM_IQ2000");
-	case EM_NIOS32: MISSING("EM_NIOS32");
-	case EM_CYGNUS_MEP: MISSING("EM_CYGNUS_MEP");
-	case EM_MOXIE_OLD: MISSING("EM_MOXIE_OLD");
-	case EM_MICROBLAZE_OLD: MISSING("EM_MICROBLAZE_OLD");
-	case EM_ADAPTEVA_EPIPHANY: MISSING("EM_ADAPTEVA_EPIPHANY");
-	case EM_V810: MISSING("EM_V810");
+	case EM_M32: ARCH_MISSING("EM_M32");
+	case EM_SPARC: ARCH_MISSING("EM_SPARC");
+	case EM_68K: ARCH_MISSING("EM_68K");
+	case EM_88K: ARCH_MISSING("EM_88K");
+	case EM_IAMCU: ARCH_MISSING("EM_IAMCU");
+	case EM_860: ARCH_MISSING("EM_860");
+	case EM_S370: ARCH_MISSING("EM_S370");
+	case EM_PARISC: ARCH_MISSING("EM_PARISC");
+	case EM_VPP500: ARCH_MISSING("EM_VPP500");
+	case EM_SPARC32PLUS: ARCH_MISSING("EM_SPARC32PLUS");
+	case EM_960: ARCH_MISSING("EM_960");
+	case EM_PPC: ARCH_MISSING("EM_PPC");
+	case EM_S390: ARCH_MISSING("EM_S390");
+	case EM_SPU: ARCH_MISSING("EM_SPU");
+	case EM_V800: ARCH_MISSING("EM_V800");
+	case EM_FR20: ARCH_MISSING("EM_FR20");
+	case EM_RH32: ARCH_MISSING("EM_RH32");
+	case EM_RCE: ARCH_MISSING("EM_RCE");
+	case EM_FAKE_ALPHA: ARCH_MISSING("EM_FAKE_ALPHA");
+	case EM_SH: ARCH_MISSING("EM_SH");
+	case EM_SPARCV9: ARCH_MISSING("EM_SPARCV9");
+	case EM_TRICORE: ARCH_MISSING("EM_TRICORE");
+	case EM_ARC: ARCH_MISSING("EM_ARC");
+	case EM_H8_300: ARCH_MISSING("EM_H8_300");
+	case EM_H8_300H: ARCH_MISSING("EM_H8_300H");
+	case EM_H8S: ARCH_MISSING("EM_H8S");
+	case EM_H8_500: ARCH_MISSING("EM_H8_500");
+	case EM_IA_64: ARCH_MISSING("EM_IA_64");
+	case EM_COLDFIRE: ARCH_MISSING("EM_COLDFIRE");
+	case EM_68HC12: ARCH_MISSING("EM_68HC12");
+	case EM_MMA: ARCH_MISSING("EM_MMA");
+	case EM_PCP: ARCH_MISSING("EM_PCP");
+	case EM_NCPU: ARCH_MISSING("EM_NCPU");
+	case EM_NDR1: ARCH_MISSING("EM_NDR1");
+	case EM_STARCORE: ARCH_MISSING("EM_STARCORE");
+	case EM_ME16: ARCH_MISSING("EM_ME16");
+	case EM_ST100: ARCH_MISSING("EM_ST100");
+	case EM_TINYJ: ARCH_MISSING("EM_TINYJ");
+	case EM_PDSP: ARCH_MISSING("EM_PDSP");
+	case EM_PDP10: ARCH_MISSING("EM_PDP10");
+	case EM_PDP11: ARCH_MISSING("EM_PDP11");
+	case EM_FX66: ARCH_MISSING("EM_FX66");
+	case EM_ST9PLUS: ARCH_MISSING("EM_ST9PLUS");
+	case EM_ST7: ARCH_MISSING("EM_ST7");
+	case EM_68HC16: ARCH_MISSING("EM_68HC16");
+	case EM_68HC11: ARCH_MISSING("EM_68HC11");
+	case EM_68HC08: ARCH_MISSING("EM_68HC08");
+	case EM_68HC05: ARCH_MISSING("EM_68HC05");
+	case EM_SVX: ARCH_MISSING("EM_SVX");
+	case EM_ST19: ARCH_MISSING("EM_ST19");
+	case EM_VAX: ARCH_MISSING("EM_VAX");
+	case EM_CRIS: ARCH_MISSING("EM_CRIS");
+	case EM_JAVELIN: ARCH_MISSING("EM_JAVELIN");
+	case EM_FIREPATH: ARCH_MISSING("EM_FIREPATH");
+	case EM_ZSP: ARCH_MISSING("EM_ZSP");
+	case EM_MMIX: ARCH_MISSING("EM_MMIX");
+	case EM_HUANY: ARCH_MISSING("EM_HUANY");
+	case EM_PRISM: ARCH_MISSING("EM_PRISM");
+	case EM_AVR: ARCH_MISSING("EM_AVR");
+	case EM_FR30: ARCH_MISSING("EM_FR30");
+	case EM_D10V: ARCH_MISSING("EM_D10V");
+	case EM_D30V: ARCH_MISSING("EM_D30V");
+	case EM_V850: ARCH_MISSING("EM_V850");
+	case EM_M32R: ARCH_MISSING("EM_M32R");
+	case EM_MN10300: ARCH_MISSING("EM_MN10300");
+	case EM_MN10200: ARCH_MISSING("EM_MN10200");
+	case EM_PJ: ARCH_MISSING("EM_PJ");
+	case EM_OR1K: ARCH_MISSING("EM_OR1K");
+	case EM_ARC_COMPACT: ARCH_MISSING("EM_ARC_COMPACT");
+	case EM_XTENSA: ARCH_MISSING("EM_XTENSA");
+	case EM_VIDEOCORE: ARCH_MISSING("EM_VIDEOCORE");
+	case EM_TMM_GPP: ARCH_MISSING("EM_TMM_GPP");
+	case EM_NS32K: ARCH_MISSING("EM_NS32K");
+	case EM_TPC: ARCH_MISSING("EM_TPC");
+	case EM_SNP1K: ARCH_MISSING("EM_SNP1K");
+	case EM_ST200: ARCH_MISSING("EM_ST200");
+	case EM_IP2K: ARCH_MISSING("EM_IP2K");
+	case EM_MAX: ARCH_MISSING("EM_MAX");
+	case EM_CR: ARCH_MISSING("EM_CR");
+	case EM_F2MC16: ARCH_MISSING("EM_F2MC16");
+	case EM_MSP430: ARCH_MISSING("EM_MSP430");
+	case EM_BLACKFIN: ARCH_MISSING("EM_BLACKFIN");
+	case EM_SE_C33: ARCH_MISSING("EM_SE_C33");
+	case EM_SEP: ARCH_MISSING("EM_SEP");
+	case EM_ARCA: ARCH_MISSING("EM_ARCA");
+	case EM_UNICORE: ARCH_MISSING("EM_UNICORE");
+	case EM_EXCESS: ARCH_MISSING("EM_EXCESS");
+	case EM_DXP: ARCH_MISSING("EM_DXP");
+	case EM_ALTERA_NIOS2: ARCH_MISSING("EM_ALTERA_NIOS2");
+	case EM_CRX: ARCH_MISSING("EM_CRX");
+	case EM_XGATE: ARCH_MISSING("EM_XGATE");
+	case EM_C166: ARCH_MISSING("EM_C166");
+	case EM_M16C: ARCH_MISSING("EM_M16C");
+	case EM_DSPIC30F: ARCH_MISSING("EM_DSPIC30F");
+	case EM_CE: ARCH_MISSING("EM_CE");
+	case EM_M32C: ARCH_MISSING("EM_M32C");
+	case EM_TSK3000: ARCH_MISSING("EM_TSK3000");
+	case EM_RS08: ARCH_MISSING("EM_RS08");
+	case EM_SHARC: ARCH_MISSING("EM_SHARC");
+	case EM_ECOG2: ARCH_MISSING("EM_ECOG2");
+	case EM_SCORE7: ARCH_MISSING("EM_SCORE7");
+	case EM_DSP24: ARCH_MISSING("EM_DSP24");
+	case EM_VIDEOCORE3: ARCH_MISSING("EM_VIDEOCORE3");
+	case EM_LATTICEMICO32: ARCH_MISSING("EM_LATTICEMICO32");
+	case EM_SE_C17: ARCH_MISSING("EM_SE_C17");
+	case EM_TI_C6000: ARCH_MISSING("EM_TI_C6000");
+	case EM_TI_C2000: ARCH_MISSING("EM_TI_C2000");
+	case EM_TI_C5500: ARCH_MISSING("EM_TI_C5500");
+	case EM_TI_ARP32: ARCH_MISSING("EM_TI_ARP32");
+	case EM_TI_PRU: ARCH_MISSING("EM_TI_PRU");
+	case EM_MMDSP_PLUS: ARCH_MISSING("EM_MMDSP_PLUS");
+	case EM_CYPRESS_M8C: ARCH_MISSING("EM_CYPRESS_M8C");
+	case EM_R32C: ARCH_MISSING("EM_R32C");
+	case EM_TRIMEDIA: ARCH_MISSING("EM_TRIMEDIA");
+	case EM_8051: ARCH_MISSING("EM_8051");
+	case EM_STXP7X: ARCH_MISSING("EM_STXP7X");
+	case EM_NDS32: ARCH_MISSING("EM_NDS32");
+	case EM_ECOG1X: ARCH_MISSING("EM_ECOG1X");
+	case EM_MAXQ30: ARCH_MISSING("EM_MAXQ30");
+	case EM_XIMO16: ARCH_MISSING("EM_XIMO16");
+	case EM_MANIK: ARCH_MISSING("EM_MANIK");
+	case EM_CRAYNV2: ARCH_MISSING("EM_CRAYNV2");
+	case EM_METAG: ARCH_MISSING("EM_METAG");
+	case EM_MCST_ELBRUS: ARCH_MISSING("EM_MCST_ELBRUS");
+	case EM_ECOG16: ARCH_MISSING("EM_ECOG16");
+	case EM_CR16: ARCH_MISSING("EM_CR16");
+	case EM_ETPU: ARCH_MISSING("EM_ETPU");
+	case EM_SLE9X: ARCH_MISSING("EM_SLE9X");
+	case EM_L10M: ARCH_MISSING("EM_L10M");
+	case EM_K10M: ARCH_MISSING("EM_K10M");
+	case EM_AVR32: ARCH_MISSING("EM_AVR32");
+	case EM_STM8: ARCH_MISSING("EM_STM8");
+	case EM_TILE64: ARCH_MISSING("EM_TILE64");
+	case EM_TILEPRO: ARCH_MISSING("EM_TILEPRO");
+	case EM_MICROBLAZE: ARCH_MISSING("EM_MICROBLAZE");
+	case EM_CUDA: ARCH_MISSING("EM_CUDA");
+	case EM_TILEGX: ARCH_MISSING("EM_TILEGX");
+	case EM_CLOUDSHIELD: ARCH_MISSING("EM_CLOUDSHIELD");
+	case EM_COREA_1ST: ARCH_MISSING("EM_COREA_1ST");
+	case EM_COREA_2ND: ARCH_MISSING("EM_COREA_2ND");
+	case EM_ARCV2: ARCH_MISSING("EM_ARCV2");
+	case EM_OPEN8: ARCH_MISSING("EM_OPEN8");
+	case EM_RL78: ARCH_MISSING("EM_RL78");
+	case EM_VIDEOCORE5: ARCH_MISSING("EM_VIDEOCORE5");
+	case EM_78KOR: ARCH_MISSING("EM_78KOR");
+	case EM_56800EX: ARCH_MISSING("EM_56800EX");
+	case EM_BA1: ARCH_MISSING("EM_BA1");
+	case EM_BA2: ARCH_MISSING("EM_BA2");
+	case EM_XCORE: ARCH_MISSING("EM_XCORE");
+	case EM_MCHP_PIC: ARCH_MISSING("EM_MCHP_PIC");
+	case EM_KM32: ARCH_MISSING("EM_KM32");
+	case EM_KMX32: ARCH_MISSING("EM_KMX32");
+	case EM_EMX16: ARCH_MISSING("EM_EMX16");
+	case EM_EMX8: ARCH_MISSING("EM_EMX8");
+	case EM_KVARC: ARCH_MISSING("EM_KVARC");
+	case EM_CDP: ARCH_MISSING("EM_CDP");
+	case EM_COGE: ARCH_MISSING("EM_COGE");
+	case EM_COOL: ARCH_MISSING("EM_COOL");
+	case EM_NORC: ARCH_MISSING("EM_NORC");
+	case EM_CSR_KALIMBA: ARCH_MISSING("EM_CSR_KALIMBA");
+	case EM_Z80: ARCH_MISSING("EM_Z80");
+	case EM_VISIUM: ARCH_MISSING("EM_VISIUM");
+	case EM_FT32: ARCH_MISSING("EM_FT32");
+	case EM_MOXIE: ARCH_MISSING("EM_MOXIE");
+	case EM_AMDGPU: ARCH_MISSING("EM_AMDGPU");
+	case EM_LANAI_OLD: ARCH_MISSING("EM_LANAI_OLD");
+	case EM_CEVA: ARCH_MISSING("EM_CEVA");
+	case EM_CEVA_X2: ARCH_MISSING("EM_CEVA_X2");
+	case EM_BPF: ARCH_MISSING("EM_BPF");
+	case EM_GRAPHCORE_IPU: ARCH_MISSING("EM_GRAPHCORE_IPU");
+	case EM_IMG1: ARCH_MISSING("EM_IMG1");
+	case EM_NFP: ARCH_MISSING("EM_NFP");
+	case EM_VE: ARCH_MISSING("EM_VE");
+	case EM_CSKY: ARCH_MISSING("EM_CSKY");
+	case EM_ARC_COMPACT3_64: ARCH_MISSING("EM_ARC_COMPACT3_64");
+	case EM_MCS6502: ARCH_MISSING("EM_MCS6502");
+	case EM_ARC_COMPACT3: ARCH_MISSING("EM_ARC_COMPACT3");
+	case EM_KVX: ARCH_MISSING("EM_KVX");
+	case EM_65816: ARCH_MISSING("EM_65816");
+	case EM_LOONGARCH: ARCH_MISSING("EM_LOONGARCH");
+	case EM_KF32: ARCH_MISSING("EM_KF32");
+	case EM_U16_U8CORE: ARCH_MISSING("EM_U16_U8CORE");
+	case EM_TACHYUM: ARCH_MISSING("EM_TACHYUM");
+	case EM_56800EF: ARCH_MISSING("EM_56800EF");
+	case EM_AVR_OLD: ARCH_MISSING("EM_AVR_OLD");
+	case EM_MSP430_OLD: ARCH_MISSING("EM_MSP430_OLD");
+	case EM_MT: ARCH_MISSING("EM_MT");
+	case EM_CYGNUS_FR30: ARCH_MISSING("EM_CYGNUS_FR30");
+	case EM_WEBASSEMBLY: ARCH_MISSING("EM_WEBASSEMBLY");
+	case EM_S12Z: ARCH_MISSING("EM_S12Z");
+	case EM_DLX: ARCH_MISSING("EM_DLX");
+	case EM_CYGNUS_FRV: ARCH_MISSING("EM_CYGNUS_FRV");
+	case EM_XC16X: ARCH_MISSING("EM_XC16X");
+	case EM_CYGNUS_D10V: ARCH_MISSING("EM_CYGNUS_D10V");
+	case EM_CYGNUS_D30V: ARCH_MISSING("EM_CYGNUS_D30V");
+	case EM_IP2K_OLD: ARCH_MISSING("EM_IP2K_OLD");
+	case EM_CYGNUS_POWERPC: ARCH_MISSING("EM_CYGNUS_POWERPC");
+	case EM_CYGNUS_M32R: ARCH_MISSING("EM_CYGNUS_M32R");
+	case EM_CYGNUS_V850: ARCH_MISSING("EM_CYGNUS_V850");
+	case EM_S390_OLD: ARCH_MISSING("EM_S390_OLD");
+	case EM_XTENSA_OLD: ARCH_MISSING("EM_XTENSA_OLD");
+	case EM_XSTORMY16: ARCH_MISSING("EM_XSTORMY16");
+	case EM_CYGNUS_MN10300: ARCH_MISSING("EM_CYGNUS_MN10300");
+	case EM_CYGNUS_MN10200: ARCH_MISSING("EM_CYGNUS_MN10200");
+	case EM_M32C_OLD: ARCH_MISSING("EM_M32C_OLD");
+	case EM_IQ2000: ARCH_MISSING("EM_IQ2000");
+	case EM_NIOS32: ARCH_MISSING("EM_NIOS32");
+	case EM_CYGNUS_MEP: ARCH_MISSING("EM_CYGNUS_MEP");
+	case EM_MOXIE_OLD: ARCH_MISSING("EM_MOXIE_OLD");
+	case EM_MICROBLAZE_OLD: ARCH_MISSING("EM_MICROBLAZE_OLD");
+	case EM_ADAPTEVA_EPIPHANY: ARCH_MISSING("EM_ADAPTEVA_EPIPHANY");
+	case EM_V810: ARCH_MISSING("EM_V810");
 	default:
-		RZ_LOG_INFO("Unhandled reloc patching for machine %d.\n", (int)e_machine);
+		RZ_LOG_INFO("Relocation patching for machine %d is not implemented.\n", (int)e_machine);
+		return;
 	}
 }
 
-#undef MISSING
+#undef ARCH_MISSING
 
 static ut64 get_got_addr(ELFOBJ *bin) {
 	if (!Elf_(rz_bin_elf_has_sections)(bin)) {
@@ -2040,8 +2044,8 @@ static RzBinReloc *reloc_convert_ifunc(ELFOBJ *bin, RzBinElfReloc *rel, RzBinRel
 	return r;
 }
 
-#define UNSUPP(ARCH_NAME) \
-	RZ_LOG_WARN("Unsupported ELF " ARCH_NAME " reloc %d\n", rel->type); \
+#define UNSUPP(NAME) \
+	RZ_LOG_WARN(NAME ": Unsupported ELF reloc %d\n", rel->type); \
 	return reloc_convert_new(bin, rel)
 
 #define UNHANDL(RELOC_NAME) \
@@ -3059,8 +3063,8 @@ static RzBinReloc *reloc_convert_hexagon(ELFOBJ *bin, RzBinElfReloc *rel, ut64 G
 #undef VADDR
 #undef IFCN
 
-#define MISSING(NAME) \
-	RZ_LOG_WARN("Unhandled reloc convert for machine " NAME ".\n"); \
+#define ARCH_MISSING(NAME) \
+	RZ_LOG_WARN("Relocation conversion for " NAME " is not implemented.\n"); \
 	return NULL
 
 static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
@@ -3096,224 +3100,223 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 		return reloc_convert_mips(bin, rel, GOT);
 	case EM_IMG1: // nanomips
 		return reloc_convert_nanomips(bin, rel, GOT);
-	case EM_M32: MISSING("EM_M32");
-	case EM_SPARC: MISSING("EM_SPARC");
-	case EM_68K: MISSING("EM_68K");
-	case EM_88K: MISSING("EM_88K");
-	case EM_IAMCU: MISSING("EM_IAMCU");
-	case EM_860: MISSING("EM_860");
-	case EM_S370: MISSING("EM_S370");
-	case EM_PARISC: MISSING("EM_PARISC");
-	case EM_VPP500: MISSING("EM_VPP500");
-	case EM_SPARC32PLUS: MISSING("EM_SPARC32PLUS");
-	case EM_960: MISSING("EM_960");
-	case EM_S390: MISSING("EM_S390");
-	case EM_SPU: MISSING("EM_SPU");
-	case EM_V800: MISSING("EM_V800");
-	case EM_FR20: MISSING("EM_FR20");
-	case EM_RH32: MISSING("EM_RH32");
-	case EM_RCE: MISSING("EM_RCE");
-	case EM_FAKE_ALPHA: MISSING("EM_FAKE_ALPHA");
-	case EM_SH: MISSING("EM_SH");
-	case EM_SPARCV9: MISSING("EM_SPARCV9");
-	case EM_TRICORE: MISSING("EM_TRICORE");
-	case EM_ARC: MISSING("EM_ARC");
-	case EM_H8_300: MISSING("EM_H8_300");
-	case EM_H8_300H: MISSING("EM_H8_300H");
-	case EM_H8S: MISSING("EM_H8S");
-	case EM_H8_500: MISSING("EM_H8_500");
-	case EM_IA_64: MISSING("EM_IA_64");
-	case EM_COLDFIRE: MISSING("EM_COLDFIRE");
-	case EM_68HC12: MISSING("EM_68HC12");
-	case EM_MMA: MISSING("EM_MMA");
-	case EM_PCP: MISSING("EM_PCP");
-	case EM_NCPU: MISSING("EM_NCPU");
-	case EM_NDR1: MISSING("EM_NDR1");
-	case EM_STARCORE: MISSING("EM_STARCORE");
-	case EM_ME16: MISSING("EM_ME16");
-	case EM_ST100: MISSING("EM_ST100");
-	case EM_TINYJ: MISSING("EM_TINYJ");
-	case EM_PDSP: MISSING("EM_PDSP");
-	case EM_PDP10: MISSING("EM_PDP10");
-	case EM_PDP11: MISSING("EM_PDP11");
-	case EM_FX66: MISSING("EM_FX66");
-	case EM_ST9PLUS: MISSING("EM_ST9PLUS");
-	case EM_ST7: MISSING("EM_ST7");
-	case EM_68HC16: MISSING("EM_68HC16");
-	case EM_68HC11: MISSING("EM_68HC11");
-	case EM_68HC08: MISSING("EM_68HC08");
-	case EM_68HC05: MISSING("EM_68HC05");
-	case EM_SVX: MISSING("EM_SVX");
-	case EM_ST19: MISSING("EM_ST19");
-	case EM_VAX: MISSING("EM_VAX");
-	case EM_CRIS: MISSING("EM_CRIS");
-	case EM_JAVELIN: MISSING("EM_JAVELIN");
-	case EM_FIREPATH: MISSING("EM_FIREPATH");
-	case EM_ZSP: MISSING("EM_ZSP");
-	case EM_MMIX: MISSING("EM_MMIX");
-	case EM_HUANY: MISSING("EM_HUANY");
-	case EM_PRISM: MISSING("EM_PRISM");
-	case EM_AVR: MISSING("EM_AVR");
-	case EM_FR30: MISSING("EM_FR30");
-	case EM_D10V: MISSING("EM_D10V");
-	case EM_D30V: MISSING("EM_D30V");
-	case EM_V850: MISSING("EM_V850");
-	case EM_M32R: MISSING("EM_M32R");
-	case EM_MN10300: MISSING("EM_MN10300");
-	case EM_MN10200: MISSING("EM_MN10200");
-	case EM_PJ: MISSING("EM_PJ");
-	case EM_OR1K: MISSING("EM_OR1K");
-	case EM_ARC_COMPACT: MISSING("EM_ARC_COMPACT");
-	case EM_XTENSA: MISSING("EM_XTENSA");
-	case EM_VIDEOCORE: MISSING("EM_VIDEOCORE");
-	case EM_TMM_GPP: MISSING("EM_TMM_GPP");
-	case EM_NS32K: MISSING("EM_NS32K");
-	case EM_TPC: MISSING("EM_TPC");
-	case EM_SNP1K: MISSING("EM_SNP1K");
-	case EM_ST200: MISSING("EM_ST200");
-	case EM_IP2K: MISSING("EM_IP2K");
-	case EM_MAX: MISSING("EM_MAX");
-	case EM_CR: MISSING("EM_CR");
-	case EM_F2MC16: MISSING("EM_F2MC16");
-	case EM_MSP430: MISSING("EM_MSP430");
-	case EM_BLACKFIN: MISSING("EM_BLACKFIN");
-	case EM_SE_C33: MISSING("EM_SE_C33");
-	case EM_SEP: MISSING("EM_SEP");
-	case EM_ARCA: MISSING("EM_ARCA");
-	case EM_UNICORE: MISSING("EM_UNICORE");
-	case EM_EXCESS: MISSING("EM_EXCESS");
-	case EM_DXP: MISSING("EM_DXP");
-	case EM_ALTERA_NIOS2: MISSING("EM_ALTERA_NIOS2");
-	case EM_CRX: MISSING("EM_CRX");
-	case EM_XGATE: MISSING("EM_XGATE");
-	case EM_C166: MISSING("EM_C166");
-	case EM_M16C: MISSING("EM_M16C");
-	case EM_DSPIC30F: MISSING("EM_DSPIC30F");
-	case EM_CE: MISSING("EM_CE");
-	case EM_M32C: MISSING("EM_M32C");
-	case EM_TSK3000: MISSING("EM_TSK3000");
-	case EM_RS08: MISSING("EM_RS08");
-	case EM_SHARC: MISSING("EM_SHARC");
-	case EM_ECOG2: MISSING("EM_ECOG2");
-	case EM_SCORE7: MISSING("EM_SCORE7");
-	case EM_DSP24: MISSING("EM_DSP24");
-	case EM_VIDEOCORE3: MISSING("EM_VIDEOCORE3");
-	case EM_LATTICEMICO32: MISSING("EM_LATTICEMICO32");
-	case EM_SE_C17: MISSING("EM_SE_C17");
-	case EM_TI_C6000: MISSING("EM_TI_C6000");
-	case EM_TI_C2000: MISSING("EM_TI_C2000");
-	case EM_TI_C5500: MISSING("EM_TI_C5500");
-	case EM_TI_ARP32: MISSING("EM_TI_ARP32");
-	case EM_TI_PRU: MISSING("EM_TI_PRU");
-	case EM_MMDSP_PLUS: MISSING("EM_MMDSP_PLUS");
-	case EM_CYPRESS_M8C: MISSING("EM_CYPRESS_M8C");
-	case EM_R32C: MISSING("EM_R32C");
-	case EM_TRIMEDIA: MISSING("EM_TRIMEDIA");
-	case EM_8051: MISSING("EM_8051");
-	case EM_STXP7X: MISSING("EM_STXP7X");
-	case EM_NDS32: MISSING("EM_NDS32");
-	case EM_ECOG1X: MISSING("EM_ECOG1X");
-	case EM_MAXQ30: MISSING("EM_MAXQ30");
-	case EM_XIMO16: MISSING("EM_XIMO16");
-	case EM_MANIK: MISSING("EM_MANIK");
-	case EM_CRAYNV2: MISSING("EM_CRAYNV2");
-	case EM_METAG: MISSING("EM_METAG");
-	case EM_MCST_ELBRUS: MISSING("EM_MCST_ELBRUS");
-	case EM_ECOG16: MISSING("EM_ECOG16");
-	case EM_CR16: MISSING("EM_CR16");
-	case EM_ETPU: MISSING("EM_ETPU");
-	case EM_SLE9X: MISSING("EM_SLE9X");
-	case EM_L10M: MISSING("EM_L10M");
-	case EM_K10M: MISSING("EM_K10M");
-	case EM_AVR32: MISSING("EM_AVR32");
-	case EM_STM8: MISSING("EM_STM8");
-	case EM_TILE64: MISSING("EM_TILE64");
-	case EM_TILEPRO: MISSING("EM_TILEPRO");
-	case EM_MICROBLAZE: MISSING("EM_MICROBLAZE");
-	case EM_CUDA: MISSING("EM_CUDA");
-	case EM_TILEGX: MISSING("EM_TILEGX");
-	case EM_CLOUDSHIELD: MISSING("EM_CLOUDSHIELD");
-	case EM_COREA_1ST: MISSING("EM_COREA_1ST");
-	case EM_COREA_2ND: MISSING("EM_COREA_2ND");
-	case EM_ARCV2: MISSING("EM_ARCV2");
-	case EM_OPEN8: MISSING("EM_OPEN8");
-	case EM_RL78: MISSING("EM_RL78");
-	case EM_VIDEOCORE5: MISSING("EM_VIDEOCORE5");
-	case EM_78KOR: MISSING("EM_78KOR");
-	case EM_56800EX: MISSING("EM_56800EX");
-	case EM_BA1: MISSING("EM_BA1");
-	case EM_BA2: MISSING("EM_BA2");
-	case EM_XCORE: MISSING("EM_XCORE");
-	case EM_MCHP_PIC: MISSING("EM_MCHP_PIC");
-	case EM_KM32: MISSING("EM_KM32");
-	case EM_KMX32: MISSING("EM_KMX32");
-	case EM_EMX16: MISSING("EM_EMX16");
-	case EM_EMX8: MISSING("EM_EMX8");
-	case EM_KVARC: MISSING("EM_KVARC");
-	case EM_CDP: MISSING("EM_CDP");
-	case EM_COGE: MISSING("EM_COGE");
-	case EM_COOL: MISSING("EM_COOL");
-	case EM_NORC: MISSING("EM_NORC");
-	case EM_CSR_KALIMBA: MISSING("EM_CSR_KALIMBA");
-	case EM_Z80: MISSING("EM_Z80");
-	case EM_VISIUM: MISSING("EM_VISIUM");
-	case EM_FT32: MISSING("EM_FT32");
-	case EM_MOXIE: MISSING("EM_MOXIE");
-	case EM_AMDGPU: MISSING("EM_AMDGPU");
-	case EM_LANAI_OLD: MISSING("EM_LANAI_OLD");
-	case EM_CEVA: MISSING("EM_CEVA");
-	case EM_CEVA_X2: MISSING("EM_CEVA_X2");
-	case EM_BPF: MISSING("EM_BPF");
-	case EM_GRAPHCORE_IPU: MISSING("EM_GRAPHCORE_IPU");
-	case EM_NFP: MISSING("EM_NFP");
-	case EM_VE: MISSING("EM_VE");
-	case EM_CSKY: MISSING("EM_CSKY");
-	case EM_ARC_COMPACT3_64: MISSING("EM_ARC_COMPACT3_64");
-	case EM_MCS6502: MISSING("EM_MCS6502");
-	case EM_ARC_COMPACT3: MISSING("EM_ARC_COMPACT3");
-	case EM_KVX: MISSING("EM_KVX");
-	case EM_65816: MISSING("EM_65816");
-	case EM_LOONGARCH: MISSING("EM_LOONGARCH");
-	case EM_KF32: MISSING("EM_KF32");
-	case EM_U16_U8CORE: MISSING("EM_U16_U8CORE");
-	case EM_TACHYUM: MISSING("EM_TACHYUM");
-	case EM_56800EF: MISSING("EM_56800EF");
-	case EM_AVR_OLD: MISSING("EM_AVR_OLD");
-	case EM_MSP430_OLD: MISSING("EM_MSP430_OLD");
-	case EM_MT: MISSING("EM_MT");
-	case EM_CYGNUS_FR30: MISSING("EM_CYGNUS_FR30");
-	case EM_WEBASSEMBLY: MISSING("EM_WEBASSEMBLY");
-	case EM_S12Z: MISSING("EM_S12Z");
-	case EM_DLX: MISSING("EM_DLX");
-	case EM_CYGNUS_FRV: MISSING("EM_CYGNUS_FRV");
-	case EM_XC16X: MISSING("EM_XC16X");
-	case EM_CYGNUS_D10V: MISSING("EM_CYGNUS_D10V");
-	case EM_CYGNUS_D30V: MISSING("EM_CYGNUS_D30V");
-	case EM_IP2K_OLD: MISSING("EM_IP2K_OLD");
-	case EM_CYGNUS_POWERPC: MISSING("EM_CYGNUS_POWERPC");
-	case EM_CYGNUS_M32R: MISSING("EM_CYGNUS_M32R");
-	case EM_CYGNUS_V850: MISSING("EM_CYGNUS_V850");
-	case EM_S390_OLD: MISSING("EM_S390_OLD");
-	case EM_XTENSA_OLD: MISSING("EM_XTENSA_OLD");
-	case EM_XSTORMY16: MISSING("EM_XSTORMY16");
-	case EM_CYGNUS_MN10300: MISSING("EM_CYGNUS_MN10300");
-	case EM_CYGNUS_MN10200: MISSING("EM_CYGNUS_MN10200");
-	case EM_M32C_OLD: MISSING("EM_M32C_OLD");
-	case EM_IQ2000: MISSING("EM_IQ2000");
-	case EM_NIOS32: MISSING("EM_NIOS32");
-	case EM_CYGNUS_MEP: MISSING("EM_CYGNUS_MEP");
-	case EM_MOXIE_OLD: MISSING("EM_MOXIE_OLD");
-	case EM_MICROBLAZE_OLD: MISSING("EM_MICROBLAZE_OLD");
-	case EM_ADAPTEVA_EPIPHANY: MISSING("EM_ADAPTEVA_EPIPHANY");
-	case EM_V810: MISSING("EM_V810");
-
+	case EM_M32: ARCH_MISSING("EM_M32");
+	case EM_SPARC: ARCH_MISSING("EM_SPARC");
+	case EM_68K: ARCH_MISSING("EM_68K");
+	case EM_88K: ARCH_MISSING("EM_88K");
+	case EM_IAMCU: ARCH_MISSING("EM_IAMCU");
+	case EM_860: ARCH_MISSING("EM_860");
+	case EM_S370: ARCH_MISSING("EM_S370");
+	case EM_PARISC: ARCH_MISSING("EM_PARISC");
+	case EM_VPP500: ARCH_MISSING("EM_VPP500");
+	case EM_SPARC32PLUS: ARCH_MISSING("EM_SPARC32PLUS");
+	case EM_960: ARCH_MISSING("EM_960");
+	case EM_S390: ARCH_MISSING("EM_S390");
+	case EM_SPU: ARCH_MISSING("EM_SPU");
+	case EM_V800: ARCH_MISSING("EM_V800");
+	case EM_FR20: ARCH_MISSING("EM_FR20");
+	case EM_RH32: ARCH_MISSING("EM_RH32");
+	case EM_RCE: ARCH_MISSING("EM_RCE");
+	case EM_FAKE_ALPHA: ARCH_MISSING("EM_FAKE_ALPHA");
+	case EM_SH: ARCH_MISSING("EM_SH");
+	case EM_SPARCV9: ARCH_MISSING("EM_SPARCV9");
+	case EM_TRICORE: ARCH_MISSING("EM_TRICORE");
+	case EM_ARC: ARCH_MISSING("EM_ARC");
+	case EM_H8_300: ARCH_MISSING("EM_H8_300");
+	case EM_H8_300H: ARCH_MISSING("EM_H8_300H");
+	case EM_H8S: ARCH_MISSING("EM_H8S");
+	case EM_H8_500: ARCH_MISSING("EM_H8_500");
+	case EM_IA_64: ARCH_MISSING("EM_IA_64");
+	case EM_COLDFIRE: ARCH_MISSING("EM_COLDFIRE");
+	case EM_68HC12: ARCH_MISSING("EM_68HC12");
+	case EM_MMA: ARCH_MISSING("EM_MMA");
+	case EM_PCP: ARCH_MISSING("EM_PCP");
+	case EM_NCPU: ARCH_MISSING("EM_NCPU");
+	case EM_NDR1: ARCH_MISSING("EM_NDR1");
+	case EM_STARCORE: ARCH_MISSING("EM_STARCORE");
+	case EM_ME16: ARCH_MISSING("EM_ME16");
+	case EM_ST100: ARCH_MISSING("EM_ST100");
+	case EM_TINYJ: ARCH_MISSING("EM_TINYJ");
+	case EM_PDSP: ARCH_MISSING("EM_PDSP");
+	case EM_PDP10: ARCH_MISSING("EM_PDP10");
+	case EM_PDP11: ARCH_MISSING("EM_PDP11");
+	case EM_FX66: ARCH_MISSING("EM_FX66");
+	case EM_ST9PLUS: ARCH_MISSING("EM_ST9PLUS");
+	case EM_ST7: ARCH_MISSING("EM_ST7");
+	case EM_68HC16: ARCH_MISSING("EM_68HC16");
+	case EM_68HC11: ARCH_MISSING("EM_68HC11");
+	case EM_68HC08: ARCH_MISSING("EM_68HC08");
+	case EM_68HC05: ARCH_MISSING("EM_68HC05");
+	case EM_SVX: ARCH_MISSING("EM_SVX");
+	case EM_ST19: ARCH_MISSING("EM_ST19");
+	case EM_VAX: ARCH_MISSING("EM_VAX");
+	case EM_CRIS: ARCH_MISSING("EM_CRIS");
+	case EM_JAVELIN: ARCH_MISSING("EM_JAVELIN");
+	case EM_FIREPATH: ARCH_MISSING("EM_FIREPATH");
+	case EM_ZSP: ARCH_MISSING("EM_ZSP");
+	case EM_MMIX: ARCH_MISSING("EM_MMIX");
+	case EM_HUANY: ARCH_MISSING("EM_HUANY");
+	case EM_PRISM: ARCH_MISSING("EM_PRISM");
+	case EM_AVR: ARCH_MISSING("EM_AVR");
+	case EM_FR30: ARCH_MISSING("EM_FR30");
+	case EM_D10V: ARCH_MISSING("EM_D10V");
+	case EM_D30V: ARCH_MISSING("EM_D30V");
+	case EM_V850: ARCH_MISSING("EM_V850");
+	case EM_M32R: ARCH_MISSING("EM_M32R");
+	case EM_MN10300: ARCH_MISSING("EM_MN10300");
+	case EM_MN10200: ARCH_MISSING("EM_MN10200");
+	case EM_PJ: ARCH_MISSING("EM_PJ");
+	case EM_OR1K: ARCH_MISSING("EM_OR1K");
+	case EM_ARC_COMPACT: ARCH_MISSING("EM_ARC_COMPACT");
+	case EM_XTENSA: ARCH_MISSING("EM_XTENSA");
+	case EM_VIDEOCORE: ARCH_MISSING("EM_VIDEOCORE");
+	case EM_TMM_GPP: ARCH_MISSING("EM_TMM_GPP");
+	case EM_NS32K: ARCH_MISSING("EM_NS32K");
+	case EM_TPC: ARCH_MISSING("EM_TPC");
+	case EM_SNP1K: ARCH_MISSING("EM_SNP1K");
+	case EM_ST200: ARCH_MISSING("EM_ST200");
+	case EM_IP2K: ARCH_MISSING("EM_IP2K");
+	case EM_MAX: ARCH_MISSING("EM_MAX");
+	case EM_CR: ARCH_MISSING("EM_CR");
+	case EM_F2MC16: ARCH_MISSING("EM_F2MC16");
+	case EM_MSP430: ARCH_MISSING("EM_MSP430");
+	case EM_BLACKFIN: ARCH_MISSING("EM_BLACKFIN");
+	case EM_SE_C33: ARCH_MISSING("EM_SE_C33");
+	case EM_SEP: ARCH_MISSING("EM_SEP");
+	case EM_ARCA: ARCH_MISSING("EM_ARCA");
+	case EM_UNICORE: ARCH_MISSING("EM_UNICORE");
+	case EM_EXCESS: ARCH_MISSING("EM_EXCESS");
+	case EM_DXP: ARCH_MISSING("EM_DXP");
+	case EM_ALTERA_NIOS2: ARCH_MISSING("EM_ALTERA_NIOS2");
+	case EM_CRX: ARCH_MISSING("EM_CRX");
+	case EM_XGATE: ARCH_MISSING("EM_XGATE");
+	case EM_C166: ARCH_MISSING("EM_C166");
+	case EM_M16C: ARCH_MISSING("EM_M16C");
+	case EM_DSPIC30F: ARCH_MISSING("EM_DSPIC30F");
+	case EM_CE: ARCH_MISSING("EM_CE");
+	case EM_M32C: ARCH_MISSING("EM_M32C");
+	case EM_TSK3000: ARCH_MISSING("EM_TSK3000");
+	case EM_RS08: ARCH_MISSING("EM_RS08");
+	case EM_SHARC: ARCH_MISSING("EM_SHARC");
+	case EM_ECOG2: ARCH_MISSING("EM_ECOG2");
+	case EM_SCORE7: ARCH_MISSING("EM_SCORE7");
+	case EM_DSP24: ARCH_MISSING("EM_DSP24");
+	case EM_VIDEOCORE3: ARCH_MISSING("EM_VIDEOCORE3");
+	case EM_LATTICEMICO32: ARCH_MISSING("EM_LATTICEMICO32");
+	case EM_SE_C17: ARCH_MISSING("EM_SE_C17");
+	case EM_TI_C6000: ARCH_MISSING("EM_TI_C6000");
+	case EM_TI_C2000: ARCH_MISSING("EM_TI_C2000");
+	case EM_TI_C5500: ARCH_MISSING("EM_TI_C5500");
+	case EM_TI_ARP32: ARCH_MISSING("EM_TI_ARP32");
+	case EM_TI_PRU: ARCH_MISSING("EM_TI_PRU");
+	case EM_MMDSP_PLUS: ARCH_MISSING("EM_MMDSP_PLUS");
+	case EM_CYPRESS_M8C: ARCH_MISSING("EM_CYPRESS_M8C");
+	case EM_R32C: ARCH_MISSING("EM_R32C");
+	case EM_TRIMEDIA: ARCH_MISSING("EM_TRIMEDIA");
+	case EM_8051: ARCH_MISSING("EM_8051");
+	case EM_STXP7X: ARCH_MISSING("EM_STXP7X");
+	case EM_NDS32: ARCH_MISSING("EM_NDS32");
+	case EM_ECOG1X: ARCH_MISSING("EM_ECOG1X");
+	case EM_MAXQ30: ARCH_MISSING("EM_MAXQ30");
+	case EM_XIMO16: ARCH_MISSING("EM_XIMO16");
+	case EM_MANIK: ARCH_MISSING("EM_MANIK");
+	case EM_CRAYNV2: ARCH_MISSING("EM_CRAYNV2");
+	case EM_METAG: ARCH_MISSING("EM_METAG");
+	case EM_MCST_ELBRUS: ARCH_MISSING("EM_MCST_ELBRUS");
+	case EM_ECOG16: ARCH_MISSING("EM_ECOG16");
+	case EM_CR16: ARCH_MISSING("EM_CR16");
+	case EM_ETPU: ARCH_MISSING("EM_ETPU");
+	case EM_SLE9X: ARCH_MISSING("EM_SLE9X");
+	case EM_L10M: ARCH_MISSING("EM_L10M");
+	case EM_K10M: ARCH_MISSING("EM_K10M");
+	case EM_AVR32: ARCH_MISSING("EM_AVR32");
+	case EM_STM8: ARCH_MISSING("EM_STM8");
+	case EM_TILE64: ARCH_MISSING("EM_TILE64");
+	case EM_TILEPRO: ARCH_MISSING("EM_TILEPRO");
+	case EM_MICROBLAZE: ARCH_MISSING("EM_MICROBLAZE");
+	case EM_CUDA: ARCH_MISSING("EM_CUDA");
+	case EM_TILEGX: ARCH_MISSING("EM_TILEGX");
+	case EM_CLOUDSHIELD: ARCH_MISSING("EM_CLOUDSHIELD");
+	case EM_COREA_1ST: ARCH_MISSING("EM_COREA_1ST");
+	case EM_COREA_2ND: ARCH_MISSING("EM_COREA_2ND");
+	case EM_ARCV2: ARCH_MISSING("EM_ARCV2");
+	case EM_OPEN8: ARCH_MISSING("EM_OPEN8");
+	case EM_RL78: ARCH_MISSING("EM_RL78");
+	case EM_VIDEOCORE5: ARCH_MISSING("EM_VIDEOCORE5");
+	case EM_78KOR: ARCH_MISSING("EM_78KOR");
+	case EM_56800EX: ARCH_MISSING("EM_56800EX");
+	case EM_BA1: ARCH_MISSING("EM_BA1");
+	case EM_BA2: ARCH_MISSING("EM_BA2");
+	case EM_XCORE: ARCH_MISSING("EM_XCORE");
+	case EM_MCHP_PIC: ARCH_MISSING("EM_MCHP_PIC");
+	case EM_KM32: ARCH_MISSING("EM_KM32");
+	case EM_KMX32: ARCH_MISSING("EM_KMX32");
+	case EM_EMX16: ARCH_MISSING("EM_EMX16");
+	case EM_EMX8: ARCH_MISSING("EM_EMX8");
+	case EM_KVARC: ARCH_MISSING("EM_KVARC");
+	case EM_CDP: ARCH_MISSING("EM_CDP");
+	case EM_COGE: ARCH_MISSING("EM_COGE");
+	case EM_COOL: ARCH_MISSING("EM_COOL");
+	case EM_NORC: ARCH_MISSING("EM_NORC");
+	case EM_CSR_KALIMBA: ARCH_MISSING("EM_CSR_KALIMBA");
+	case EM_Z80: ARCH_MISSING("EM_Z80");
+	case EM_VISIUM: ARCH_MISSING("EM_VISIUM");
+	case EM_FT32: ARCH_MISSING("EM_FT32");
+	case EM_MOXIE: ARCH_MISSING("EM_MOXIE");
+	case EM_AMDGPU: ARCH_MISSING("EM_AMDGPU");
+	case EM_LANAI_OLD: ARCH_MISSING("EM_LANAI_OLD");
+	case EM_CEVA: ARCH_MISSING("EM_CEVA");
+	case EM_CEVA_X2: ARCH_MISSING("EM_CEVA_X2");
+	case EM_BPF: ARCH_MISSING("EM_BPF");
+	case EM_GRAPHCORE_IPU: ARCH_MISSING("EM_GRAPHCORE_IPU");
+	case EM_NFP: ARCH_MISSING("EM_NFP");
+	case EM_VE: ARCH_MISSING("EM_VE");
+	case EM_CSKY: ARCH_MISSING("EM_CSKY");
+	case EM_ARC_COMPACT3_64: ARCH_MISSING("EM_ARC_COMPACT3_64");
+	case EM_MCS6502: ARCH_MISSING("EM_MCS6502");
+	case EM_ARC_COMPACT3: ARCH_MISSING("EM_ARC_COMPACT3");
+	case EM_KVX: ARCH_MISSING("EM_KVX");
+	case EM_65816: ARCH_MISSING("EM_65816");
+	case EM_LOONGARCH: ARCH_MISSING("EM_LOONGARCH");
+	case EM_KF32: ARCH_MISSING("EM_KF32");
+	case EM_U16_U8CORE: ARCH_MISSING("EM_U16_U8CORE");
+	case EM_TACHYUM: ARCH_MISSING("EM_TACHYUM");
+	case EM_56800EF: ARCH_MISSING("EM_56800EF");
+	case EM_AVR_OLD: ARCH_MISSING("EM_AVR_OLD");
+	case EM_MSP430_OLD: ARCH_MISSING("EM_MSP430_OLD");
+	case EM_MT: ARCH_MISSING("EM_MT");
+	case EM_CYGNUS_FR30: ARCH_MISSING("EM_CYGNUS_FR30");
+	case EM_WEBASSEMBLY: ARCH_MISSING("EM_WEBASSEMBLY");
+	case EM_S12Z: ARCH_MISSING("EM_S12Z");
+	case EM_DLX: ARCH_MISSING("EM_DLX");
+	case EM_CYGNUS_FRV: ARCH_MISSING("EM_CYGNUS_FRV");
+	case EM_XC16X: ARCH_MISSING("EM_XC16X");
+	case EM_CYGNUS_D10V: ARCH_MISSING("EM_CYGNUS_D10V");
+	case EM_CYGNUS_D30V: ARCH_MISSING("EM_CYGNUS_D30V");
+	case EM_IP2K_OLD: ARCH_MISSING("EM_IP2K_OLD");
+	case EM_CYGNUS_POWERPC: ARCH_MISSING("EM_CYGNUS_POWERPC");
+	case EM_CYGNUS_M32R: ARCH_MISSING("EM_CYGNUS_M32R");
+	case EM_CYGNUS_V850: ARCH_MISSING("EM_CYGNUS_V850");
+	case EM_S390_OLD: ARCH_MISSING("EM_S390_OLD");
+	case EM_XTENSA_OLD: ARCH_MISSING("EM_XTENSA_OLD");
+	case EM_XSTORMY16: ARCH_MISSING("EM_XSTORMY16");
+	case EM_CYGNUS_MN10300: ARCH_MISSING("EM_CYGNUS_MN10300");
+	case EM_CYGNUS_MN10200: ARCH_MISSING("EM_CYGNUS_MN10200");
+	case EM_M32C_OLD: ARCH_MISSING("EM_M32C_OLD");
+	case EM_IQ2000: ARCH_MISSING("EM_IQ2000");
+	case EM_NIOS32: ARCH_MISSING("EM_NIOS32");
+	case EM_CYGNUS_MEP: ARCH_MISSING("EM_CYGNUS_MEP");
+	case EM_MOXIE_OLD: ARCH_MISSING("EM_MOXIE_OLD");
+	case EM_MICROBLAZE_OLD: ARCH_MISSING("EM_MICROBLAZE_OLD");
+	case EM_ADAPTEVA_EPIPHANY: ARCH_MISSING("EM_ADAPTEVA_EPIPHANY");
+	case EM_V810: ARCH_MISSING("EM_V810");
 	default:
-		RZ_LOG_INFO("Unhandled reloc convert for machine %d.\n", (int)e_machine);
+		RZ_LOG_INFO("Relocation conversion for machine %d is not implemented.\n", (int)e_machine);
 		return NULL;
 	}
 }
 
-#undef MISSING
+#undef ARCH_MISSING
 
 static void patch_relocs(RzBinFile *bf, ELFOBJ *bin) {
 	rz_return_if_fail(bf && bin);
