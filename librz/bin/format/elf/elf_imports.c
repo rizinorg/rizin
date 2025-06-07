@@ -273,6 +273,32 @@ static ut64 get_import_addr_arm(ELFOBJ *bin, RzBinElfReloc *rel) {
 			plt_addr--;
 		}
 		return plt_addr;
+	default: UNHANDL_IMPORT("ARM", rel->type);
+	}
+	return UT64_MAX;
+}
+
+static ut64 get_import_addr_aarch64(ELFOBJ *bin, RzBinElfReloc *rel) {
+	ut64 got_addr;
+
+	if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_PLTGOT, &got_addr)) {
+		return UT64_MAX;
+	}
+
+	ut64 plt_addr = get_got_entry(bin, rel);
+	if (plt_addr == UT64_MAX) {
+		return UT64_MAX;
+	}
+
+	ut64 pos = COMPUTE_PLTGOT_POSITION(rel, got_addr, 0x3);
+
+	switch (rel->type) {
+	case R_ARM_JUMP_SLOT: // AArch64 supports ARM32 relocs.
+		plt_addr += pos * 12 + 20;
+		if (Elf_(rz_bin_elf_is_thumb_addr)(plt_addr)) {
+			plt_addr--;
+		}
+		return plt_addr;
 	case R_AARCH64_IRELATIVE:
 		if (rel->addend > plt_addr) { // start
 			return (plt_addr + pos * 16 + 32) + rel->addend;
@@ -281,7 +307,7 @@ static ut64 get_import_addr_arm(ELFOBJ *bin, RzBinElfReloc *rel) {
 		return plt_addr + pos * 16 + 32;
 	case R_AARCH64_JUMP_SLOT:
 		return plt_addr + pos * 16 + 32;
-	default: UNHANDL_IMPORT("ARM", rel->type);
+	default: UNHANDL_IMPORT("AArch64", rel->type);
 	}
 	return UT64_MAX;
 }
@@ -314,8 +340,9 @@ static ut64 get_import_addr_alpha(ELFOBJ *bin, RzBinElfReloc *rel) {
 static ut64 get_import_addr_aux(ELFOBJ *bin, RzBinElfReloc *reloc) {
 	switch (bin->ehdr.e_machine) {
 	case EM_ARM:
-	case EM_AARCH64:
 		return get_import_addr_arm(bin, reloc);
+	case EM_AARCH64:
+		return get_import_addr_aarch64(bin, reloc);
 	case EM_ALPHA:
 		return get_import_addr_alpha(bin, reloc);
 	case EM_MIPS: // MIPS32 BIG ENDIAN relocs
