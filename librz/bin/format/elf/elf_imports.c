@@ -16,6 +16,10 @@
 #define X86_OFFSET_PLT_ENTRY_FROM_GOT_ADDR   -0x6
 #define X86_PLT_ENTRY_SIZE                   0x10
 
+#define UNHANDL_IMPORT(NAME, NUM) \
+	RZ_LOG_WARN(NAME ": Unhandled ELF relocation for import %d\n", NUM); \
+	return UT64_MAX
+
 #define COMPUTE_PLTGOT_POSITION(rel, pltgot_addr, n_initial_unused_entries) \
 	((rel->vaddr - pltgot_addr - n_initial_unused_entries * sizeof(Elf_(Addr))) / sizeof(Elf_(Addr)))
 
@@ -84,9 +88,7 @@ static ut64 get_import_addr_hexagon(ELFOBJ *eo, RzBinElfReloc *rel) {
 	const ut64 pos = COMPUTE_PLTGOT_POSITION(rel, got_addr, 0x3);
 
 	switch (rel->type) {
-	default:
-		RZ_LOG_WARN("Unhandled hexagon reloc type %d\n", rel->type);
-		return UT64_MAX;
+	default: UNHANDL_IMPORT("Hexagon", rel->type);
 	case R_HEX_JMP_SLOT:
 		return plt_addr + pos * 16 + 32;
 	}
@@ -126,8 +128,7 @@ static ut64 get_import_addr_riscv(ELFOBJ *bin, RzBinElfReloc *rel) {
 
 static ut64 get_import_addr_sparc(ELFOBJ *bin, RzBinElfReloc *rel) {
 	if (rel->type != R_SPARC_JMP_SLOT) {
-		RZ_LOG_WARN("Unknown sparc reloc type %d\n", rel->type);
-		return UT64_MAX;
+		UNHANDL_IMPORT("SPARC", rel->type);
 	}
 	ut64 tmp = get_got_entry(bin, rel);
 
@@ -272,9 +273,6 @@ static ut64 get_import_addr_arm(ELFOBJ *bin, RzBinElfReloc *rel) {
 			plt_addr--;
 		}
 		return plt_addr;
-	case R_AARCH64_RELATIVE:
-		RZ_LOG_WARN("Unsupported relocation type for imports %d\n", rel->type);
-		return UT64_MAX;
 	case R_AARCH64_IRELATIVE:
 		if (rel->addend > plt_addr) { // start
 			return (plt_addr + pos * 16 + 32) + rel->addend;
@@ -283,17 +281,14 @@ static ut64 get_import_addr_arm(ELFOBJ *bin, RzBinElfReloc *rel) {
 		return plt_addr + pos * 16 + 32;
 	case R_AARCH64_JUMP_SLOT:
 		return plt_addr + pos * 16 + 32;
-	default:
-		RZ_LOG_WARN("Unsupported relocation type for imports %d\n", rel->type);
-		return UT64_MAX;
+	default: UNHANDL_IMPORT("ARM", rel->type);
 	}
 	return UT64_MAX;
 }
 
 static ut64 get_import_addr_alpha(ELFOBJ *bin, RzBinElfReloc *rel) {
 	if (rel->type != R_ALPHA_JMP_SLOT) {
-		RZ_LOG_WARN("Unknown alpha reloc type %d\n", rel->type);
-		return UT64_MAX;
+		UNHANDL_IMPORT("Alpha", rel->type);
 	}
 	ut64 got_addr;
 	if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_PLTGOT, &got_addr)) {
