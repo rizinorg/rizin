@@ -6099,6 +6099,11 @@ RZ_IPI RzCmdStatus rz_delete_global_imports_handler(RzCore *core, int argc, cons
 	return RZ_CMD_STATUS_OK;
 }
 
+RZ_IPI RzCmdStatus rz_analysis_devirtualize_handler(RzCore *core, int argc, const char **argv) {
+	rz_analysis_devirtualize_methods(core->analysis);
+	return RZ_CMD_STATUS_OK;
+}
+
 RZ_IPI RzCmdStatus rz_analysis_data_handler(RzCore *core, int argc, const char **argv) {
 	int count = argc > 1 ? rz_num_math(core->num, argv[1]) : 2 + (core->blocksize / 4);
 	if (count < 1) {

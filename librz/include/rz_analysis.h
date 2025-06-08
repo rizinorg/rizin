@@ -2292,6 +2292,10 @@ RZ_API void rz_analysis_rtti_recover_all(RzAnalysis *analysis);
 RZ_API RzList /*<RzSearchKeyword *>*/ *rz_analysis_preludes(RzAnalysis *analysis);
 RZ_API bool rz_analysis_is_prelude(RzAnalysis *analysis, const ut8 *data, int len);
 
+/* devirualize */
+RZ_API void rz_analysis_mark_classes(RzAnalysis *analysis);
+RZ_API void rz_analysis_devirtualize_methods(RzAnalysis *analysis);
+
 /* classes */
 typedef enum {
 	RZ_ANALYSIS_CLASS_METHOD_DEFAULT = 0,

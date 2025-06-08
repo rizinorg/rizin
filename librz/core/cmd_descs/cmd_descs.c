@@ -6137,6 +6137,14 @@ static const RzCmdDescHelp analysis_list_vtables_help = {
 	.args = analysis_list_vtables_args,
 };
 
+static const RzCmdDescArg analysis_devirtualize_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_devirtualize_help = {
+	.summary = "devirtualize virtual calls",
+	.args = analysis_devirtualize_args,
+};
+
 static const RzCmdDescHelp avg_help = {
 	.summary = "Global variables",
 };
@@ -22004,6 +22012,10 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *av_cd = rz_cmd_desc_group_modes_new(core->rcmd, cmd_analysis_cd, "av", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_analysis_list_vtables_handler, &analysis_list_vtables_help, &av_help);
 	rz_warn_if_fail(av_cd);
+
+	RzCmdDesc *analysis_devirtualize_cd = rz_cmd_desc_argv_new(core->rcmd, av_cd, "avD", rz_analysis_devirtualize_handler, &analysis_devirtualize_help);
+	rz_warn_if_fail(analysis_devirtualize_cd);
+
 	RzCmdDesc *avg_cd = rz_cmd_desc_group_new(core->rcmd, av_cd, "avg", NULL, NULL, &avg_help);
 	rz_warn_if_fail(avg_cd);
 	RzCmdDesc *analysis_print_global_variable_cd = rz_cmd_desc_argv_state_new(core->rcmd, avg_cd, "avgl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_TABLE, rz_analysis_print_global_variable_handler, &analysis_print_global_variable_help);

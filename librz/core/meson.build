@@ -49,6 +49,7 @@ rz_core_sources = [
   'ctypes.c',
   'cvfile.c',
   'csyscall.c',
+  'devirtualize_cxx.c',
   'disasm.c',
   'fortune.c',
   'golang.c',
