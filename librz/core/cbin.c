@@ -4940,7 +4940,7 @@ out:
 RZ_IPI RzCmdStatus rz_core_bin_plugin_print(const RzBinPlugin *bp, RzCmdStateOutput *state) {
 	rz_return_val_if_fail(bp && state, RZ_CMD_STATUS_ERROR);
 
-	rz_cmd_state_output_set_columnsf(state, "sss", "type", "name", "description");
+	rz_cmd_state_output_set_columnsf(state, "sssss", "type", "name", "license", "author", "description");
 
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_QUIET:
@@ -4962,10 +4962,10 @@ RZ_IPI RzCmdStatus rz_core_bin_plugin_print(const RzBinPlugin *bp, RzCmdStateOut
 		pj_end(state->d.pj);
 		break;
 	case RZ_OUTPUT_MODE_STANDARD:
-		rz_cons_printf("bin  %-11s %s (%s) %s %s\n",
-			bp->name, bp->desc, bp->license ? bp->license : "???",
-			bp->version ? bp->version : "",
-			bp->author ? bp->author : "");
+		rz_cons_printf("%-12s %-38s %-10s %-15s %s\n", bp->name, bp->desc,
+			bp->license ? bp->license : "???",
+			bp->author ? bp->author : "",
+			bp->version ? bp->version : "");
 		break;
 	case RZ_OUTPUT_MODE_TABLE:
 		rz_table_add_rowf(state->d.t, "sss", "bin", bp->name, bp->desc);
@@ -4996,7 +4996,7 @@ RZ_IPI RzCmdStatus rz_core_binxtr_plugin_print(const RzBinXtrPlugin *bx, RzCmdSt
 		break;
 	case RZ_OUTPUT_MODE_STANDARD:
 		name = strncmp(bx->name, "xtr.", 4) ? bx->name : bx->name + 3;
-		rz_cons_printf("xtr  %-11s %s (%s)\n", name,
+		rz_cons_printf("%-12s %-38s %-10s\n", name,
 			bx->desc, bx->license ? bx->license : "???");
 		break;
 	case RZ_OUTPUT_MODE_TABLE:
