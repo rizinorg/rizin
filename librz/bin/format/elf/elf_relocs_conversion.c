@@ -144,6 +144,7 @@ static RzBinReloc *reloc_convert_ifunc(ELFOBJ *bin, RzBinElfReloc *rel, RzBinRel
 	return reloc_convert_new(bin, rel)
 
 #define UNHANDL(RELOC_NAME) \
+	RZ_LOG_WARN("Unhandled ELF reloc %d (" RELOC_NAME ")\n", rel->type); \
 	return reloc_convert_set(bin, rel, 0, RELOC_NAME)
 
 #define SET(BIT_SIZE, RELOC_NAME) \
@@ -165,9 +166,9 @@ static RzBinReloc *reloc_convert_intel_80386(ELFOBJ *bin, RzBinElfReloc *rel, ut
 	ut64 B = bin->baddr;
 	ut64 P = rel->vaddr;
 
-	// FIXME: Quite a few relocatons missing here.
 	switch (rel->type) {
-	case R_386_NONE: UNHANDL("R_386_NONE");
+	case R_386_NONE:
+		return reloc_convert_set(bin, rel, 0, "R_386_NONE");
 	case R_386_32: ADD(32, 0, "R_386_32");
 	case R_386_PC32: ADD(32, -P, "R_386_PC32");
 	case R_386_GLOB_DAT: SET(32, "R_386_GLOB_DAT");
@@ -209,6 +210,8 @@ static RzBinReloc *reloc_convert_intel_80386(ELFOBJ *bin, RzBinElfReloc *rel, ut
 	case R_386_TLS_DESC_CALL: UNHANDL("R_386_TLS_DESC_CALL");
 	case R_386_TLS_DESC: UNHANDL("R_386_TLS_DESC");
 	case R_386_GOT32X: UNHANDL("R_386_GOT32X");
+
+	// FIXME: Quite a few relocatons missing here.
 	default: UNSUPP("X86_32");
 	}
 }
@@ -217,9 +220,9 @@ static RzBinReloc *reloc_convert_amd64(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT
 	ut64 B = bin->baddr;
 	ut64 P = rel->vaddr;
 
-	// FIXME: Quite a few relocatons missing here.
 	switch (rel->type) {
-	case R_X86_64_NONE: UNHANDL("R_X86_64_NONE");
+	case R_X86_64_NONE:
+		return reloc_convert_set(bin, rel, 0, "R_X86_64_NONE");
 	case R_X86_64_64: ADD(64, 0, "R_X86_64_64");
 	case R_X86_64_PLT32: ADD(32, -P /* +L */, "R_X86_64_PLT32");
 	case R_X86_64_GOT32: ADD(32, GOT, "R_X86_64_GOT32");
@@ -260,6 +263,8 @@ static RzBinReloc *reloc_convert_amd64(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT
 	case R_X86_64_RELATIVE64: UNHANDL("R_X86_64_RELATIVE64");
 	case R_X86_64_GOTPCRELX: UNHANDL("R_X86_64_GOTPCRELX");
 	case R_X86_64_REX_GOTPCRELX: UNHANDL("R_X86_64_REX_GOTPCRELX");
+
+	// FIXME: Quite a few relocatons missing here.
 	default: UNSUPP("X86_64");
 	}
 }
@@ -269,7 +274,8 @@ static RzBinReloc *reloc_convert_arm(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) 
 	ut64 P = rel->vaddr;
 
 	switch (rel->type) {
-	case R_ARM_NONE: UNHANDL("R_ARM_NONE");
+	case R_ARM_NONE:
+		return reloc_convert_set(bin, rel, 0, "R_ARM_NONE");
 	case R_ARM_ABS32: ADD(32, 0, "R_ARM_ABS32");
 	case R_ARM_REL32: ADD(32, -P, "R_ARM_REL32");
 	case R_ARM_ABS16: ADD(16, 0, "R_ARM_ABS16");
@@ -403,7 +409,8 @@ static RzBinReloc *reloc_convert_riscv(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT
 	ut64 B = bin->baddr;
 
 	switch (rel->type) {
-	case R_RISCV_NONE: UNHANDL("R_RISCV_NONE");
+	case R_RISCV_NONE:
+		return reloc_convert_set(bin, rel, 0, "R_RISCV_NONE");
 	case R_RISCV_32: ADD(32, 0, "R_RISCV_32");
 	case R_RISCV_64: ADD(64, 0, "R_RISCV_64");
 	case R_RISCV_RELATIVE: ADD(64, B, "R_RISCV_RELATIVE");
@@ -467,7 +474,8 @@ static RzBinReloc *reloc_convert_aarch64(ELFOBJ *bin, RzBinElfReloc *rel, ut64 G
 	ut64 B = bin->baddr;
 
 	switch (rel->type) {
-	case R_AARCH64_NONE: UNHANDL("R_AARCH64_NONE");
+	case R_AARCH64_NONE:
+		return reloc_convert_set(bin, rel, 0, "R_AARCH64_NONE");
 	case R_AARCH64_ABS64: ADD(64, 0, "R_AARCH64_ABS64");
 	case R_AARCH64_ABS32: ADD(32, 0, "R_AARCH64_ABS32");
 	case R_AARCH64_ABS16: ADD(16, 0, "R_AARCH64_ABS16");
@@ -595,12 +603,13 @@ static RzBinReloc *reloc_convert_aarch64(ELFOBJ *bin, RzBinElfReloc *rel, ut64 G
 	case R_AARCH64_TLSLE_LDST128_TPREL_LO12_NC: UNHANDL("R_AARCH64_TLSLE_LDST128_TPREL_LO12_NC");
 	case R_AARCH64_TLSLD_LDST128_DTPREL_LO12: UNHANDL("R_AARCH64_TLSLD_LDST128_DTPREL_LO12");
 	case R_AARCH64_TLSLD_LDST128_DTPREL_LO12_NC: UNHANDL("R_AARCH64_TLSLD_LDST128_DTPREL_LO12_NC");
-	case R_AARCH64_COPY: UNHANDL("R_AARCH64_COPY");
+	case R_AARCH64_COPY: ADD(64, 0, "R_AARCH64_COPY"); // copy symbol at runtime
 	case R_AARCH64_TLS_DTPMOD: UNHANDL("R_AARCH64_TLS_DTPMOD");
 	case R_AARCH64_TLS_DTPREL: UNHANDL("R_AARCH64_TLS_DTPREL");
 	case R_AARCH64_TLS_TPREL: UNHANDL("R_AARCH64_TLS_TPREL");
 	case R_AARCH64_TLSDESC: UNHANDL("R_AARCH64_TLSDESC");
 	case R_AARCH64_IRELATIVE: UNHANDL("R_AARCH64_IRELATIVE");
+
 	// FIXME: Quite a few relocations missing here
 	default: UNSUPP("AArch64");
 	}
@@ -610,7 +619,8 @@ static RzBinReloc *reloc_convert_ppc(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) 
 	ut64 P = rel->vaddr;
 
 	switch (rel->type) {
-	case R_PPC_NONE: UNHANDL("R_PPC_NONE");
+	case R_PPC_NONE:
+		return reloc_convert_set(bin, rel, 0, "R_PPC_NONE");
 	case R_PPC_GLOB_DAT: ADD(32, 0, "R_PPC_GLOB_DAT");
 	case R_PPC_JMP_SLOT: ADD(32, 0, "R_PPC_JMP_SLOT");
 	case R_PPC_COPY: ADD(32, 0, "R_PPC_COPY"); // copy symbol at runtime
@@ -714,7 +724,8 @@ static RzBinReloc *reloc_convert_ppc64(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT
 	ut64 P = rel->vaddr;
 
 	switch (rel->type) {
-	case R_PPC64_NONE: UNHANDL("R_PPC64_NONE");
+	case R_PPC64_NONE:
+		return reloc_convert_set(bin, rel, 0, "R_PPC64_NONE");
 	case R_PPC64_ADDR32: ADD(32, 0, "R_PPC64_ADDR32");
 	case R_PPC64_ADDR24: ADD(24, 0, "R_PPC64_ADDR24");
 	case R_PPC64_ADDR16: ADD(16, 0, "R_PPC64_ADDR16");
@@ -841,7 +852,8 @@ static RzBinReloc *reloc_convert_mips(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT)
 	ut64 P = rel->vaddr;
 
 	switch (rel->type) {
-	case R_MIPS_NONE: UNHANDL("R_MIPS_NONE");
+	case R_MIPS_NONE:
+		return reloc_convert_set(bin, rel, 0, "R_MIPS_NONE");
 	case R_MIPS_16: ADD(16, 0, "R_MIPS_16");
 	case R_MIPS_32: ADD(32, 0, "R_MIPS_32");
 	case R_MIPS_REL32: ADD(32, -P, "R_MIPS_REL32");
@@ -935,7 +947,8 @@ static RzBinReloc *reloc_convert_mips(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT)
 
 static RzBinReloc *reloc_convert_nanomips(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 	switch (rel->type) {
-	case R_NANOMIPS_NONE: UNHANDL("R_MIPS_NONE");
+	case R_NANOMIPS_NONE:
+		return reloc_convert_set(bin, rel, 0, "R_NANOMIPS_NONE");
 	case R_NANOMIPS_32: ADD(32, 0, "R_NANOMIPS_32");
 	case R_NANOMIPS_64: ADD(64, 0, "R_NANOMIPS_64");
 	case R_NANOMIPS_NEG: UNHANDL("R_NANOMIPS_NEG");
@@ -1014,7 +1027,8 @@ static RzBinReloc *reloc_convert_rx(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 	ut64 P = rel->vaddr;
 
 	switch (rel->type) {
-	case R_RX_NONE: UNHANDL("R_RX_NONE");
+	case R_RX_NONE:
+		return reloc_convert_set(bin, rel, 0, "R_RX_NONE");
 	case R_RX_DIR24S_PCREL: ADD(24, -P, "RX_DIR24S_PCREL");
 	case R_RX_DIR32: SET(32, "RX_DIR32");
 
@@ -1027,7 +1041,8 @@ static RzBinReloc *reloc_convert_alpha(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT
 	ut64 P = rel->vaddr;
 
 	switch (rel->type) {
-	case R_ALPHA_NONE: UNHANDL("R_ALPHA_NONE");
+	case R_ALPHA_NONE:
+		return reloc_convert_set(bin, rel, 0, "R_ALPHA_NONE");
 	case R_ALPHA_REFLONG: SET(32, "R_ALPHA_REFLONG");
 	case R_ALPHA_REFQUAD: SET(64, "R_ALPHA_REFQUAD");
 	case R_ALPHA_SREL16: ADD(16, -P, "R_ALPHA_SREL16");
@@ -1046,6 +1061,8 @@ static RzBinReloc *reloc_convert_hexagon(ELFOBJ *bin, RzBinElfReloc *rel, ut64 G
 	ut64 P = rel->vaddr;
 
 	switch (rel->type) {
+	case R_HEX_NONE:
+		return reloc_convert_set(bin, rel, 0, "R_HEX_NONE");
 	case R_HEX_B22_PCREL: ADD(32, -P, "R_HEX_B22_PCREL");
 	case R_HEX_B15_PCREL: ADD(32, -P, "R_HEX_B15_PCREL");
 	case R_HEX_B7_PCREL: ADD(32, -P, "R_HEX_B7_PCREL");
@@ -1087,7 +1104,6 @@ static RzBinReloc *reloc_convert_hexagon(ELFOBJ *bin, RzBinElfReloc *rel, ut64 G
 	case R_HEX_LD_PLT_B22_PCREL_X: ADD(32, -P, "R_HEX_LD_PLT_B22_PCREL_X");
 	case R_HEX_LD_PLT_B32_PCREL_X: ADD(32, -P, "R_HEX_LD_PLT_B32_PCREL_X");
 	case R_HEX_COPY: SET(32, "R_HEX_COPY");
-	case R_HEX_NONE: UNHANDL("R_HEX_NONE");
 	case R_HEX_RELATIVE: UNHANDL("R_HEX_RELATIVE"); // Preview not supported, patching is implemented
 	case R_HEX_PLT_B22_PCREL: UNHANDL("R_HEX_PLT_B22_PCREL"); // Preview not supported, patching is implemented
 	case R_HEX_GOT_LO16: UNHANDL("R_HEX_GOT_LO16");
