@@ -45,7 +45,9 @@ static const char *commands[] = {
 	[H8300_INSN_DEC_B] = "dec.b",
 	[H8300_INSN_DEC_W] = "dec.w",
 	[H8300_INSN_DEC_L] = "dec.l",
-	[H8300_INSN_INC] = "inc",
+	[H8300_INSN_INC_B] = "inc.b",
+	[H8300_INSN_INC_W] = "inc.w",
+	[H8300_INSN_INC_L] = "inc.l",
 	[H8300_INSN_NEG] = "neg",
 	[H8300_INSN_NOT] = "not",
 	[H8300_INSN_OR] = "or",
@@ -1101,7 +1103,7 @@ int h8300_decode_command(const ut8 *instr, ut64 len, struct h8300_cmd *cmd, ut64
 		CASE_F_R8(0x0f00, DAA);
 		CASE_F_R8(0x1f00, DAS);
 		CASE_F_R8(0x1a00, DEC_B);
-		CASE_F_R8(0x0a00, INC);
+		CASE_F_R8(0x0a00, INC_B);
 		CASE_F_R8(0x1780, NEG);
 		CASE_F_R8(0x1700, NOT);
 		CASE_F_R8(0x1280, ROTL);
@@ -1120,6 +1122,8 @@ int h8300_decode_command(const ut8 *instr, ut64 len, struct h8300_cmd *cmd, ut64
 
 		CASE_F_F_VA(decode_xr16, 0x1b50, DEC_W, 1);
 		CASE_F_F_VA(decode_xr16, 0x1bd0, DEC_W, 2);
+		CASE_F_F_VA(decode_xr16, 0x0b50, INC_W, 1);
+		CASE_F_F_VA(decode_xr16, 0x0bd0, INC_W, 2);
 	default:
 		break;
 	}
@@ -1133,6 +1137,8 @@ int h8300_decode_command(const ut8 *instr, ut64 len, struct h8300_cmd *cmd, ut64
 
 		CASE_F_F_VA(decode_xr16, 0x1b70, DEC_L, 1);
 		CASE_F_F_VA(decode_xr16, 0x1bf0, DEC_L, 2);
+		CASE_F_F_VA(decode_xr16, 0x0b70, INC_L, 1);
+		CASE_F_F_VA(decode_xr16, 0x0bf0, INC_L, 2);
 
 	case 0x0b00:
 	case 0x0b80:

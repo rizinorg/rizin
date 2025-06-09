@@ -658,7 +658,7 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 				ccr_unary_NZV(8, VARL("_res"), EQ(VARL("_res"), U8(0x80))));
 		default: NOT_IMPLEMENTED;
 		}
-	case H8300_INSN_INC:
+	case H8300_INSN_INC_B:
 		switch (cmd->fmt) {
 		case H8300_INSN_FORMAT_R8:
 			return SEQ3(
