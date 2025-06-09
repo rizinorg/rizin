@@ -89,6 +89,7 @@ RzBinPlugin rz_bin_plugin_ningba = {
 	.name = "ningba",
 	.desc = "Nintendo Gameboy Advance plugin",
 	.license = "LGPL3",
+	.author = "condret",
 	.load_buffer = &load_buffer,
 	.check_buffer = &check_buffer,
 	.entries = &entries,

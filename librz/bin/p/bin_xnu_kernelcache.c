@@ -1915,6 +1915,7 @@ RzBinPlugin rz_bin_plugin_xnu_kernelcache = {
 	.name = "kernelcache",
 	.desc = "kernelcache bin plugin",
 	.license = "LGPL3",
+	.author = "mrmacete",
 	.destroy = &destroy,
 	.load_buffer = &load_buffer,
 	.entries = &entries,

@@ -274,6 +274,7 @@ RzBinPlugin rz_bin_plugin_sfc = {
 	.name = "sfc",
 	.desc = "Super NES / Super Famicom ROM file",
 	.license = "LGPL3",
+	.author = "usrshare",
 	.load_buffer = &load_buffer,
 	.check_buffer = &check_buffer,
 	.entries = &entries,

@@ -58,6 +58,7 @@ RzBinPlugin rz_bin_plugin_zimg = {
 	.name = "zimg",
 	.desc = "zimg format bin plugin",
 	.license = "LGPL3",
+	.author = "ninjahacker",
 	.get_sdb = &get_sdb,
 	.load_buffer = &load_buffer,
 	.check_buffer = &check_buffer,

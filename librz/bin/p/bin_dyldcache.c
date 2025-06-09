@@ -736,6 +736,7 @@ RzBinPlugin rz_bin_plugin_dyldcache = {
 	.name = "dyldcache",
 	.desc = "dyldcache bin plugin",
 	.license = "LGPL3",
+	.author = "pancake",
 	.load_buffer = &load_buffer,
 	.entries = &entries,
 	.baddr = &baddr,

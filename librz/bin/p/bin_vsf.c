@@ -535,6 +535,7 @@ RzBinPlugin rz_bin_plugin_vsf = {
 	.name = "vsf",
 	.desc = "VICE Snapshot File",
 	.license = "LGPL3",
+	.author = "riq",
 	.get_sdb = &get_sdb,
 	.load_buffer = &load_buffer,
 	.check_buffer = &check_buffer,

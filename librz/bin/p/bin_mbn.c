@@ -195,6 +195,7 @@ RzBinPlugin rz_bin_plugin_mbn = {
 	.name = "mbn",
 	.desc = "MBN/SBL bootloader things",
 	.license = "LGPL3",
+	.author = "pancake",
 	.load_buffer = &load_buffer,
 	.destroy = &destroy,
 	.size = &size,

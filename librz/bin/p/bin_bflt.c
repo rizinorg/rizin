@@ -252,6 +252,7 @@ RzBinPlugin rz_bin_plugin_bflt = {
 	.name = "bflt",
 	.desc = "bFLT uClinux executable",
 	.license = "LGPL3",
+	.author = "Oscar Salvador",
 	.load_buffer = &load_buffer,
 	.destroy = &destroy,
 	.check_buffer = &check_buffer,

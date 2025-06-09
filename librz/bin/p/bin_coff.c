@@ -587,6 +587,7 @@ RzBinPlugin rz_bin_plugin_coff = {
 	.name = "coff",
 	.desc = "COFF format rz_bin plugin",
 	.license = "LGPL3",
+	.author = "Fedor Sakharov",
 	.get_sdb = &get_sdb,
 	.load_buffer = &load_buffer,
 	.destroy = &destroy,

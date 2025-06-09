@@ -79,6 +79,7 @@ RzBinPlugin rz_bin_plugin_prg = {
 	.name = "prg",
 	.desc = "C64 PRG",
 	.license = "LGPL3",
+	.author = "thestr4ng3r",
 	.load_buffer = load_buffer,
 	.baddr = baddr,
 	.check_buffer = check_buffer,

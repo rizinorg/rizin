@@ -63,6 +63,7 @@ RzBinPlugin rz_bin_plugin_any = {
 	.name = "any",
 	.desc = "Dummy format rz_bin plugin",
 	.license = "LGPL3",
+	.author = "nibble",
 	.load_buffer = &load_buffer,
 	.destroy = &destroy,
 	.baddr = &baddr,

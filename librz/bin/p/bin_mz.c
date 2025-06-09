@@ -260,6 +260,7 @@ RzBinPlugin rz_bin_plugin_mz = {
 	.name = "mz",
 	.desc = "MZ bin plugin",
 	.license = "MIT",
+	.author = "nodepad",
 	.get_sdb = &get_sdb,
 	.load_buffer = &load,
 	.destroy = &destroy,

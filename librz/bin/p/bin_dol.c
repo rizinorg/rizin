@@ -171,6 +171,7 @@ RzBinPlugin rz_bin_plugin_dol = {
 	.name = "dol",
 	.desc = "Nintendo Dolphin binary format",
 	.license = "BSD",
+	.author = "pancake",
 	.load_buffer = &load_buffer,
 	.baddr = &baddr,
 	.check_buffer = &check_buffer,

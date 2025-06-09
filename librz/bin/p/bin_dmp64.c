@@ -273,6 +273,7 @@ RzBinPlugin rz_bin_plugin_dmp64 = {
 	.name = "dmp64",
 	.desc = "Windows Crash Dump x64 rz_bin plugin",
 	.license = "LGPL3",
+	.author = "abcSup",
 	.destroy = &destroy,
 	.get_sdb = &get_sdb,
 	.header = &header,

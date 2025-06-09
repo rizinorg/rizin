@@ -104,6 +104,7 @@ RzBinPlugin rz_bin_plugin_cgc = {
 	.name = "cgc",
 	.desc = "CGC format rz_bin plugin",
 	.license = "LGPL3",
+	.author = "ret2libc",
 	.get_sdb = &get_sdb,
 	.load_buffer = load_buffer,
 	.check_buffer = &check_buffer,

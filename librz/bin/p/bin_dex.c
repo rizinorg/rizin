@@ -233,6 +233,7 @@ RzBinPlugin rz_bin_plugin_dex = {
 	.name = "dex",
 	.desc = "dex bin plugin",
 	.license = "LGPL3",
+	.author = "deroad",
 	.get_sdb = &get_sdb,
 	.load_buffer = &load_buffer,
 	.destroy = &destroy,

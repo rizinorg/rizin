@@ -151,6 +151,7 @@ RzBinPlugin rz_bin_plugin_z64 = {
 	.name = "z64",
 	.desc = "Nintendo 64 Bin-BE plugin",
 	.license = "LGPL3",
+	.author = "lowlyw",
 	.load_buffer = &load_buffer,
 	.check_buffer = &check_buffer,
 	.baddr = baddr,

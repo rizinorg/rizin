@@ -161,6 +161,7 @@ RzBinPlugin rz_bin_plugin_luac = {
 	.name = "luac",
 	.desc = "LUA Compiled File",
 	.license = "LGPL3",
+	.author = "Heersin",
 	.get_sdb = NULL,
 	.load_buffer = &load_buffer,
 	.destroy = &destroy,

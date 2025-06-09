@@ -122,6 +122,7 @@ RzBinPlugin rz_bin_plugin_psxexe = {
 	.name = "psxexe",
 	.desc = "Sony PlayStation 1 Executable",
 	.license = "LGPL3",
+	.author = "Dax89",
 	.load_buffer = &load_buffer,
 	.check_buffer = &check_buffer,
 	.info = &info,

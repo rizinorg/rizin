@@ -328,6 +328,7 @@ RzBinPlugin rz_bin_plugin_smd = {
 	.name = "smd",
 	.desc = "SEGA Genesis/Megadrive",
 	.license = "LGPL3",
+	.author = "pancake",
 	.load_buffer = &load_buffer,
 	.check_buffer = &check_buffer,
 	.baddr = &baddr,

@@ -204,6 +204,7 @@ RzBinPlugin rz_bin_plugin_avr = {
 	.name = "avr",
 	.desc = "ATmel AVR MCUs",
 	.license = "LGPL3",
+	.author = "pancake",
 	.load_buffer = &load_buffer,
 	.destroy = &destroy,
 	.entries = &entries,

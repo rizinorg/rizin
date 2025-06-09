@@ -336,6 +336,7 @@ RzBinPlugin rz_bin_plugin_ninds = {
 	.name = "ninds",
 	.desc = "Nintendo DS plugin",
 	.license = "LGPL3",
+	.author = "a0rtega",
 	.load_buffer = &nds_load_buffer,
 	.check_buffer = &nds_check_buffer,
 	.destroy = &nds_destroy,

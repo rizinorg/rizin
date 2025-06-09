@@ -315,6 +315,7 @@ RzBinPlugin rz_bin_plugin_nin3ds = {
 	.name = "nin3ds",
 	.desc = "Nintendo 3DS Firmware plugin",
 	.license = "LGPL3",
+	.author = "a0rtega",
 	.load_buffer = &n3ds_load_buffer,
 	.check_buffer = &n3ds_check_buffer,
 	.destroy = &n3ds_destroy,

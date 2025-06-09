@@ -256,6 +256,7 @@ RzBinPlugin rz_bin_plugin_p9 = {
 	.name = "p9",
 	.desc = "Plan9 bin plugin",
 	.license = "LGPL3",
+	.author = "pancake",
 	.load_buffer = &load_buffer,
 	.size = &size,
 	.destroy = &destroy,

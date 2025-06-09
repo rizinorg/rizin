@@ -202,6 +202,7 @@ RzBinPlugin rz_bin_plugin_menuet = {
 	.name = "menuet",
 	.desc = "Menuet/KolibriOS bin plugin",
 	.license = "LGPL3",
+	.author = "pancake",
 	.load_buffer = &load_buffer,
 	.size = &size,
 	.check_buffer = &check_buffer,

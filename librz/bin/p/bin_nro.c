@@ -336,6 +336,7 @@ RzBinPlugin rz_bin_plugin_nro = {
 	.name = "nro",
 	.desc = "Nintendo Switch NRO0 binaries",
 	.license = "MIT",
+	.author = "pancake",
 	.load_buffer = &load_buffer,
 	.check_buffer = &check_buffer,
 	.baddr = &baddr,

@@ -466,6 +466,7 @@ RzBinPlugin rz_bin_plugin_symbols = {
 	.name = "symbols",
 	.desc = "Apple Symbols file",
 	.license = "MIT",
+	.author = "pancake",
 	.load_buffer = &load_buffer,
 	.check_buffer = &check_buffer,
 	.symbols = &symbols,

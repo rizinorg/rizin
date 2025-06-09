@@ -322,6 +322,7 @@ RzBinPlugin rz_bin_plugin_wasm = {
 	.name = "wasm",
 	.desc = "WebAssembly bin plugin",
 	.license = "MIT",
+	.author = "pancake",
 	.load_buffer = &load_buffer,
 	.size = &size,
 	.destroy = &destroy,

@@ -209,6 +209,7 @@ RzBinPlugin rz_bin_plugin_art = {
 	.name = "art",
 	.desc = "Android Runtime",
 	.license = "LGPL3",
+	.author = "pancake",
 	.get_sdb = &get_sdb,
 	.load_buffer = &load_buffer,
 	.destroy = &destroy,

@@ -392,6 +392,7 @@ RzBinPlugin rz_bin_plugin_nso = {
 	.name = "nso",
 	.desc = "Nintendo Switch NSO0 binaries",
 	.license = "MIT",
+	.author = "rkx1209",
 	.load_buffer = &load_buffer,
 	.destroy = &destroy,
 	.check_buffer = &check_buffer,

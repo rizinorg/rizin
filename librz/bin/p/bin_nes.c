@@ -223,6 +223,7 @@ RzBinPlugin rz_bin_plugin_nes = {
 	.name = "nes",
 	.desc = "NES",
 	.license = "MIT",
+	.author = "maijin",
 	.load_buffer = &load_buffer,
 	.baddr = &baddr,
 	.check_buffer = &check_buffer,

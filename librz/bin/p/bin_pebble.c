@@ -196,6 +196,7 @@ RzBinPlugin rz_bin_plugin_pebble = {
 	.name = "pebble",
 	.desc = "Pebble Watch App",
 	.license = "LGPL",
+	.author = "pancake",
 	.load_buffer = &pebble_load_buffer,
 	.check_buffer = &pebble_check_buffer,
 	.baddr = &pebble_baddr,

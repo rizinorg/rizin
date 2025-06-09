@@ -243,6 +243,7 @@ RzBinPlugin rz_bin_plugin_bootimg = {
 	.name = "bootimg",
 	.desc = "Android Boot Image",
 	.license = "LGPL3",
+	.author = "pancake",
 	.get_sdb = &get_sdb,
 	.load_buffer = &load_buffer,
 	.destroy = &destroy,

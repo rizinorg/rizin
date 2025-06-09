@@ -19,6 +19,7 @@ RzBinPlugin rz_bin_plugin_elf64 = {
 	.name = "elf64",
 	.desc = "elf64 bin plugin",
 	.license = "LGPL3",
+	.author = "nibble",
 	.get_sdb = &get_sdb,
 	.check_buffer = &check_buffer,
 	.load_buffer = &load_buffer,

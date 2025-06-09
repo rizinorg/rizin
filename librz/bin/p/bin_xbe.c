@@ -370,6 +370,7 @@ RzBinPlugin rz_bin_plugin_xbe = {
 	.name = "xbe",
 	.desc = "Microsoft Xbox XBE plugin",
 	.license = "LGPL3",
+	.author = "LemonBoy",
 	.load_buffer = &load_buffer,
 	.destroy = &destroy,
 	.check_buffer = &check_buffer,

@@ -112,6 +112,7 @@ RzBinPlugin rz_bin_plugin_sms = {
 	.name = "sms",
 	.desc = "SEGA MasterSystem/GameGear",
 	.license = "LGPL3",
+	.author = "shengdi",
 	.load_buffer = &load_buffer,
 	.check_buffer = &check_buffer,
 	.info = &info,

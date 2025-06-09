@@ -462,6 +462,7 @@ RzBinPlugin rz_bin_plugin_pe = {
 	.name = "pe",
 	.desc = "PE bin plugin",
 	.license = "LGPL3",
+	.author = "nibble",
 	.get_sdb = &get_sdb,
 	.load_buffer = &load_buffer,
 	.destroy = &destroy,

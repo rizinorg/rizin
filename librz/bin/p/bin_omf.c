@@ -166,6 +166,7 @@ RzBinPlugin rz_bin_plugin_omf = {
 	.name = "omf",
 	.desc = "omf bin plugin",
 	.license = "LGPL3",
+	.author = "ampotos",
 	.load_buffer = &load_buffer,
 	.destroy = &destroy,
 	.check_buffer = &check_buffer,
