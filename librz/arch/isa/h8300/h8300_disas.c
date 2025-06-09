@@ -56,6 +56,10 @@ static const char *commands[] = {
 	[H8300_INSN_MULXU] = "mulxu",
 	[H8300_INSN_EEPMOV_B] = "eepmov.b",
 	[H8300_INSN_EEPMOV_W] = "eepmov.w",
+	[H8300_INSN_EXTS_W] = "exts.w",
+	[H8300_INSN_EXTS_L] = "exts.l",
+	[H8300_INSN_EXTU_W] = "extu.w",
+	[H8300_INSN_EXTU_L] = "extu.l",
 	[H8300_INSN_JMP] = "jmp",
 	[H8300_INSN_JSR] = "jsr",
 	[H8300_INSN_ORC] = "orc",
@@ -1108,6 +1112,11 @@ int h8300_decode_command(const ut8 *instr, ut64 len, struct h8300_cmd *cmd, ut64
 		CASE_F_R8(0x1000, SHLL);
 		CASE_F_R8(0x1180, SHAR);
 		CASE_F_R8(0x1100, SHLR);
+
+		CASE_F_R8(0x17d0, EXTS_W);
+		CASE_F_R8(0x17f0, EXTS_L);
+		CASE_F_R8(0x1750, EXTU_W);
+		CASE_F_R8(0x1770, EXTU_L);
 
 		CASE_F_F_VA(decode_xr16, 0x1b50, DEC_W, 1);
 		CASE_F_F_VA(decode_xr16, 0x1bd0, DEC_W, 2);
