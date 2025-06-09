@@ -25,11 +25,11 @@
 
 #define LOAD_BSS_MALLOC 0
 
-#define IS_MODE_SET(mode)      ((mode)&RZ_MODE_SET)
-#define IS_MODE_SIMPLE(mode)   ((mode)&RZ_MODE_SIMPLE)
-#define IS_MODE_SIMPLEST(mode) ((mode)&RZ_MODE_SIMPLEST)
-#define IS_MODE_JSON(mode)     ((mode)&RZ_MODE_JSON)
-#define IS_MODE_RZCMD(mode)    ((mode)&RZ_MODE_RIZINCMD)
+#define IS_MODE_SET(mode)      ((mode) & RZ_MODE_SET)
+#define IS_MODE_SIMPLE(mode)   ((mode) & RZ_MODE_SIMPLE)
+#define IS_MODE_SIMPLEST(mode) ((mode) & RZ_MODE_SIMPLEST)
+#define IS_MODE_JSON(mode)     ((mode) & RZ_MODE_JSON)
+#define IS_MODE_RZCMD(mode)    ((mode) & RZ_MODE_RIZINCMD)
 #define IS_MODE_NORMAL(mode)   (!(mode))
 
 // dup from cmd_info
@@ -4940,7 +4940,7 @@ out:
 RZ_IPI RzCmdStatus rz_core_bin_plugin_print(const RzBinPlugin *bp, RzCmdStateOutput *state) {
 	rz_return_val_if_fail(bp && state, RZ_CMD_STATUS_ERROR);
 
-	rz_cmd_state_output_set_columnsf(state, "sssss", "type", "name", "license", "author", "description");
+	rz_cmd_state_output_set_columnsf(state, "sssss", "name", "license", "description", "author", "version");
 
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_QUIET:
@@ -4962,13 +4962,18 @@ RZ_IPI RzCmdStatus rz_core_bin_plugin_print(const RzBinPlugin *bp, RzCmdStateOut
 		pj_end(state->d.pj);
 		break;
 	case RZ_OUTPUT_MODE_STANDARD:
-		rz_cons_printf("%-12s %-38s %-10s %-15s %s\n", bp->name, bp->desc,
+		rz_cons_printf("%-12s %-9s %-38s %-15s %s\n", bp->name,
 			bp->license ? bp->license : "???",
+			bp->desc,
 			bp->author ? bp->author : "",
 			bp->version ? bp->version : "");
 		break;
 	case RZ_OUTPUT_MODE_TABLE:
-		rz_table_add_rowf(state->d.t, "sss", "bin", bp->name, bp->desc);
+		rz_table_add_rowf(state->d.t, "sssss", bp->name,
+			bp->license ? bp->license : "",
+			bp->desc,
+			bp->author ? bp->author : "",
+			bp->version ? bp->version : "");
 		break;
 	default:
 		rz_warn_if_reached();
@@ -4982,7 +4987,7 @@ RZ_IPI RzCmdStatus rz_core_binxtr_plugin_print(const RzBinXtrPlugin *bx, RzCmdSt
 
 	const char *name = NULL;
 
-	rz_cmd_state_output_set_columnsf(state, "sss", "type", "name", "description");
+	rz_cmd_state_output_set_columnsf(state, "sss", "name", "license", "description");
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_QUIET:
 		rz_cons_println(bx->name);
@@ -4996,11 +5001,12 @@ RZ_IPI RzCmdStatus rz_core_binxtr_plugin_print(const RzBinXtrPlugin *bx, RzCmdSt
 		break;
 	case RZ_OUTPUT_MODE_STANDARD:
 		name = strncmp(bx->name, "xtr.", 4) ? bx->name : bx->name + 3;
-		rz_cons_printf("%-12s %-38s %-10s\n", name,
-			bx->desc, bx->license ? bx->license : "???");
+		rz_cons_printf("%-12s %-9s %s\n", name,
+			bx->license ? bx->license : "???",
+			bx->desc);
 		break;
 	case RZ_OUTPUT_MODE_TABLE:
-		rz_table_add_rowf(state->d.t, "sss", "xtr", bx->name, bx->desc);
+		rz_table_add_rowf(state->d.t, "sss", bx->name, bx->license, bx->desc);
 		break;
 	default:
 		rz_warn_if_reached();
