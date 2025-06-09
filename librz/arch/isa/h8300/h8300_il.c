@@ -774,7 +774,7 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 			SETL("remainder", UNSIGNED(8, MOD(R16_OP(1), UNSIGNED(16, R8_OP(0))))),
 			ccr_unary_NZ(8, R8_OP(0)),
 			R16_X(1, APPEND(VARL("remainder"), VARL("quotient"))));
-	case H8300_INSN_EEPMOV:
+	case H8300_INSN_EEPMOV_B:
 		return SEQ2(
 			SETL("i", U8(0)),
 			REPEAT(

@@ -54,7 +54,8 @@ static const char *commands[] = {
 	[H8300_INSN_DIVXS_B] = "divxs.b",
 	[H8300_INSN_DIVXS_W] = "divxs.w",
 	[H8300_INSN_MULXU] = "mulxu",
-	[H8300_INSN_EEPMOV] = "eepmov",
+	[H8300_INSN_EEPMOV_B] = "eepmov.b",
+	[H8300_INSN_EEPMOV_W] = "eepmov.w",
 	[H8300_INSN_JMP] = "jmp",
 	[H8300_INSN_JSR] = "jsr",
 	[H8300_INSN_ORC] = "orc",
@@ -120,22 +121,11 @@ static int decode_opcode(const ut8 *bytes, struct h8300_cmd *cmd) {
 	return 0;
 }
 
-static int decode_eepmov(const ut8 *bytes, struct h8300_cmd *cmd) {
-	int ret = 4;
-
+static int decode_none(const ut8 *bytes, struct h8300_cmd *cmd, ut8 sz) {
 	if (decode_opcode(bytes, cmd)) {
 		return -1;
 	}
-	cmd->operands[0] = '\0';
-
-	switch (bytes[0]) {
-	case H8300_RTS:
-	case H8300_RTE:
-		ret = 2;
-		break;
-	}
-
-	return ret;
+	return sz;
 }
 
 static int decode_i8ccr(const ut8 *bytes, struct h8300_cmd *cmd) {
@@ -999,6 +989,13 @@ int h8300_decode_command(const ut8 *instr, ut64 len, struct h8300_cmd *cmd, ut64
 		default: break;
 		}
 
+		switch (x4) {
+			CASE_F_F_VA(decode_none, 0x7b5c598f, EEPMOV_B, 4);
+			CASE_F_F_VA(decode_none, 0x7bd4598f, EEPMOV_W, 4);
+		default:
+			break;
+		}
+
 		switch (x4 & ~0x00700070) {
 			CASE_F_F(decode_i3ri16, 0x7d007000, BSET);
 			CASE_F_F(decode_i3ri16, 0x7d007200, BCLR);
@@ -1086,6 +1083,14 @@ int h8300_decode_command(const ut8 *instr, ut64 len, struct h8300_cmd *cmd, ut64
 		CASE_F_F(decode_i8r8, H8300_SUBX_4BIT, SUBX);
 		CASE_F_F(decode_i8r8, H8300_XOR_4BIT, XOR);
 	default: break;
+	}
+
+	switch (x2) {
+		CASE_F_F_VA(decode_none, 0x5670, RTE, 2);
+		CASE_F_F_VA(decode_none, 0x5470, RTS, 2);
+		CASE_F_F_VA(decode_none, 0x0180, SLEEP, 2);
+	default:
+		break;
 	}
 
 	switch (x2 & 0xfff0) {
@@ -1233,22 +1238,6 @@ int h8300_decode_command(const ut8 *instr, ut64 len, struct h8300_cmd *cmd, ut64
 	case H8300_MULXU:
 		cmd->id = H8300_INSN_MULXU;
 		ret = decode_r8r16(instr, cmd);
-		break;
-	case H8300_EEPMOV:
-		cmd->id = H8300_INSN_EEPMOV;
-		ret = decode_eepmov(instr, cmd);
-		break;
-	case H8300_RTS:
-		cmd->id = H8300_INSN_RTS;
-		ret = decode_eepmov(instr, cmd);
-		break;
-	case H8300_RTE:
-		cmd->id = H8300_INSN_RTE;
-		ret = decode_eepmov(instr, cmd);
-		break;
-	case H8300_SLEEP:
-		cmd->id = H8300_INSN_SLEEP;
-		ret = decode_eepmov(instr, cmd);
 		break;
 	case 0x59:
 		cmd->id = H8300_INSN_JMP;

@@ -65,7 +65,8 @@ static int h8300_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	switch (cmd.id) {
 	case H8300_INSN_MOV_B:
 	case H8300_INSN_MOV_W:
-	case H8300_INSN_EEPMOV:
+	case H8300_INSN_EEPMOV_B:
+	case H8300_INSN_EEPMOV_W:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		break;
 	case H8300_INSN_CMP_B:
