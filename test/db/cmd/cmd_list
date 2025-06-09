@@ -188,119 +188,119 @@ Lit
 Liq
 EOF
 EXPECT=<<EOF
-bin  any         Dummy format rz_bin plugin (LGPL3)  
-bin  art         Android Runtime (LGPL3)  
-bin  avr         ATmel AVR MCUs (LGPL3)  
-bin  bf          brainfuck (LGPL3)  
-bin  bflt        bFLT uClinux executable (LGPL3)  
-bin  bios        BIOS bin plugin (LGPL)  
-bin  bootimg     Android Boot Image (LGPL3)  
-bin  cgc         CGC format rz_bin plugin (LGPL3)  
-bin  coff        COFF format rz_bin plugin (LGPL3)  
-bin  dex         dex bin plugin (LGPL3)  
-bin  dmp64       Windows Crash Dump x64 rz_bin plugin (LGPL3)  
-bin  dol         Nintendo Dolphin binary format (BSD)  
-bin  dyldcache   dyldcache bin plugin (LGPL3)  
-bin  elf         ELF format plugin (LGPL3)  
-bin  elf64       elf64 bin plugin (LGPL3)  
-bin  java        java bin plugin (LGPL3)  
-bin  kernelcache kernelcache bin plugin (LGPL3)  
-bin  le          LE/LX format plugin (LGPL3)  GustavoLCR
-bin  luac        LUA Compiled File (LGPL3)  
-bin  mach0       mach0 bin plugin (LGPL3)  
-bin  mach064     mach064 bin plugin (LGPL3)  
-bin  mbn         MBN/SBL bootloader things (LGPL3)  
-bin  mdmp        Windows MiniDump plugin (LGPL3)  
-bin  menuet      Menuet/KolibriOS bin plugin (LGPL3)  
-bin  mz          MZ bin plugin (MIT)  
-bin  ne          NE format plugin (LGPL3)  GustavoLCR
-bin  nes         NES (MIT)  
-bin  nin3ds      Nintendo 3DS Firmware plugin (LGPL3)  
-bin  ninds       Nintendo DS plugin (LGPL3)  
-bin  ningb       Nintendo Gameboy plugin (LGPL3)  
-bin  ningba      Nintendo Gameboy Advance plugin (LGPL3)  
-bin  nro         Nintendo Switch NRO0 binaries (MIT)  
-bin  nso         Nintendo Switch NSO0 binaries (MIT)  
-bin  omf         omf bin plugin (LGPL3)  
-bin  p9          Plan9 bin plugin (LGPL3)  
-bin  pe          PE bin plugin (LGPL3)  
-bin  pe64        PE64 (PE32+) bin plugin (LGPL3)  
-bin  pebble      Pebble Watch App (LGPL)  
-bin  prg         C64 PRG (LGPL3)  
-bin  psxexe      Sony PlayStation 1 Executable (LGPL3)  
-bin  pyc         Python byte-compiled file plugin (LGPL3)  
-bin  qnx         QNX executable file support (LGPL3)  deepakchethan
-bin  sfc         Super NES / Super Famicom ROM file (LGPL3)  
-bin  smd         SEGA Genesis/Megadrive (LGPL3)  
-bin  sms         SEGA MasterSystem/GameGear (LGPL3)  
-bin  spc700      SNES-SPC700 Sound File Data (LGPL3)  
-bin  symbols     Apple Symbols file (MIT)  
-bin  te          TE bin plugin (LGPL3)  
-bin  vsf         VICE Snapshot File (LGPL3)  
-bin  wasm        WebAssembly bin plugin (MIT)  
-bin  xbe         Microsoft Xbox XBE plugin (LGPL3)  
-bin  z64         Nintendo 64 Bin-BE plugin (LGPL3)  
-bin  zimg        zimg format bin plugin (LGPL3)  
-xtr  .fatmach0   fat mach0 bin extractor plugin (LGPL3)
-xtr  .sep64      64-bit SEP bin extractor plugin (LGPL3)
-[{"name":"any","description":"Dummy format rz_bin plugin","license":"LGPL3"},{"name":"art","description":"Android Runtime","license":"LGPL3"},{"name":"avr","description":"ATmel AVR MCUs","license":"LGPL3"},{"name":"bf","description":"brainfuck","license":"LGPL3"},{"name":"bflt","description":"bFLT uClinux executable","license":"LGPL3"},{"name":"bios","description":"BIOS bin plugin","license":"LGPL"},{"name":"bootimg","description":"Android Boot Image","license":"LGPL3"},{"name":"cgc","description":"CGC format rz_bin plugin","license":"LGPL3"},{"name":"coff","description":"COFF format rz_bin plugin","license":"LGPL3"},{"name":"dex","description":"dex bin plugin","license":"LGPL3"},{"name":"dmp64","description":"Windows Crash Dump x64 rz_bin plugin","license":"LGPL3"},{"name":"dol","description":"Nintendo Dolphin binary format","license":"BSD"},{"name":"dyldcache","description":"dyldcache bin plugin","license":"LGPL3"},{"name":"elf","description":"ELF format plugin","license":"LGPL3"},{"name":"elf64","description":"elf64 bin plugin","license":"LGPL3"},{"name":"java","description":"java bin plugin","license":"LGPL3"},{"name":"kernelcache","description":"kernelcache bin plugin","license":"LGPL3"},{"name":"le","description":"LE/LX format plugin","license":"LGPL3","author":"GustavoLCR"},{"name":"luac","description":"LUA Compiled File","license":"LGPL3"},{"name":"mach0","description":"mach0 bin plugin","license":"LGPL3"},{"name":"mach064","description":"mach064 bin plugin","license":"LGPL3"},{"name":"mbn","description":"MBN/SBL bootloader things","license":"LGPL3"},{"name":"mdmp","description":"Windows MiniDump plugin","license":"LGPL3"},{"name":"menuet","description":"Menuet/KolibriOS bin plugin","license":"LGPL3"},{"name":"mz","description":"MZ bin plugin","license":"MIT"},{"name":"ne","description":"NE format plugin","license":"LGPL3","author":"GustavoLCR"},{"name":"nes","description":"NES","license":"MIT"},{"name":"nin3ds","description":"Nintendo 3DS Firmware plugin","license":"LGPL3"},{"name":"ninds","description":"Nintendo DS plugin","license":"LGPL3"},{"name":"ningb","description":"Nintendo Gameboy plugin","license":"LGPL3"},{"name":"ningba","description":"Nintendo Gameboy Advance plugin","license":"LGPL3"},{"name":"nro","description":"Nintendo Switch NRO0 binaries","license":"MIT"},{"name":"nso","description":"Nintendo Switch NSO0 binaries","license":"MIT"},{"name":"omf","description":"omf bin plugin","license":"LGPL3"},{"name":"p9","description":"Plan9 bin plugin","license":"LGPL3"},{"name":"pe","description":"PE bin plugin","license":"LGPL3"},{"name":"pe64","description":"PE64 (PE32+) bin plugin","license":"LGPL3"},{"name":"pebble","description":"Pebble Watch App","license":"LGPL"},{"name":"prg","description":"C64 PRG","license":"LGPL3"},{"name":"psxexe","description":"Sony PlayStation 1 Executable","license":"LGPL3"},{"name":"pyc","description":"Python byte-compiled file plugin","license":"LGPL3"},{"name":"qnx","description":"QNX executable file support","license":"LGPL3","author":"deepakchethan"},{"name":"sfc","description":"Super NES / Super Famicom ROM file","license":"LGPL3"},{"name":"smd","description":"SEGA Genesis/Megadrive","license":"LGPL3"},{"name":"sms","description":"SEGA MasterSystem/GameGear","license":"LGPL3"},{"name":"spc700","description":"SNES-SPC700 Sound File Data","license":"LGPL3"},{"name":"symbols","description":"Apple Symbols file","license":"MIT"},{"name":"te","description":"TE bin plugin","license":"LGPL3"},{"name":"vsf","description":"VICE Snapshot File","license":"LGPL3"},{"name":"wasm","description":"WebAssembly bin plugin","license":"MIT"},{"name":"xbe","description":"Microsoft Xbox XBE plugin","license":"LGPL3"},{"name":"z64","description":"Nintendo 64 Bin-BE plugin","license":"LGPL3"},{"name":"zimg","description":"zimg format bin plugin","license":"LGPL3"},{"name":"xtr.fatmach0","description":"fat mach0 bin extractor plugin","license":"LGPL3"},{"name":"xtr.sep64","description":"64-bit SEP bin extractor plugin","license":"LGPL3"}]
-type name         description                          
--------------------------------------------------------
-bin  any          Dummy format rz_bin plugin
-bin  art          Android Runtime
-bin  avr          ATmel AVR MCUs
-bin  bf           brainfuck
-bin  bflt         bFLT uClinux executable
-bin  bios         BIOS bin plugin
-bin  bootimg      Android Boot Image
-bin  cgc          CGC format rz_bin plugin
-bin  coff         COFF format rz_bin plugin
-bin  dex          dex bin plugin
-bin  dmp64        Windows Crash Dump x64 rz_bin plugin
-bin  dol          Nintendo Dolphin binary format
-bin  dyldcache    dyldcache bin plugin
-bin  elf          ELF format plugin
-bin  elf64        elf64 bin plugin
-bin  java         java bin plugin
-bin  kernelcache  kernelcache bin plugin
-bin  le           LE/LX format plugin
-bin  luac         LUA Compiled File
-bin  mach0        mach0 bin plugin
-bin  mach064      mach064 bin plugin
-bin  mbn          MBN/SBL bootloader things
-bin  mdmp         Windows MiniDump plugin
-bin  menuet       Menuet/KolibriOS bin plugin
-bin  mz           MZ bin plugin
-bin  ne           NE format plugin
-bin  nes          NES
-bin  nin3ds       Nintendo 3DS Firmware plugin
-bin  ninds        Nintendo DS plugin
-bin  ningb        Nintendo Gameboy plugin
-bin  ningba       Nintendo Gameboy Advance plugin
-bin  nro          Nintendo Switch NRO0 binaries
-bin  nso          Nintendo Switch NSO0 binaries
-bin  omf          omf bin plugin
-bin  p9           Plan9 bin plugin
-bin  pe           PE bin plugin
-bin  pe64         PE64 (PE32+) bin plugin
-bin  pebble       Pebble Watch App
-bin  prg          C64 PRG
-bin  psxexe       Sony PlayStation 1 Executable
-bin  pyc          Python byte-compiled file plugin
-bin  qnx          QNX executable file support
-bin  sfc          Super NES / Super Famicom ROM file
-bin  smd          SEGA Genesis/Megadrive
-bin  sms          SEGA MasterSystem/GameGear
-bin  spc700       SNES-SPC700 Sound File Data
-bin  symbols      Apple Symbols file
-bin  te           TE bin plugin
-bin  vsf          VICE Snapshot File
-bin  wasm         WebAssembly bin plugin
-bin  xbe          Microsoft Xbox XBE plugin
-bin  z64          Nintendo 64 Bin-BE plugin
-bin  zimg         zimg format bin plugin
-xtr  xtr.fatmach0 fat mach0 bin extractor plugin
-xtr  xtr.sep64    64-bit SEP bin extractor plugin
+any          LGPL3     Dummy format rz_bin plugin             nibble          
+art          LGPL3     Android Runtime                        pancake         
+avr          LGPL3     ATmel AVR MCUs                         pancake         
+bf           LGPL3     brainfuck                              pancake         
+bflt         LGPL3     bFLT uClinux executable                Oscar Salvador  
+bios         LGPL      BIOS bin plugin                        pancake         
+bootimg      LGPL3     Android Boot Image                     pancake         
+cgc          LGPL3     CGC format rz_bin plugin               ret2libc        
+coff         LGPL3     COFF format rz_bin plugin              Fedor Sakharov  
+dex          LGPL3     dex bin plugin                         deroad          
+dmp64        LGPL3     Windows Crash Dump x64 rz_bin plugin   abcSup          
+dol          BSD       Nintendo Dolphin binary format         pancake         
+dyldcache    LGPL3     dyldcache bin plugin                   pancake         
+elf          LGPL3     ELF format plugin                      nibble          
+elf64        LGPL3     elf64 bin plugin                       nibble          
+java         LGPL3     java bin plugin                        deroad          
+kernelcache  LGPL3     kernelcache bin plugin                 mrmacete        
+le           LGPL3     LE/LX format plugin                    GustavoLCR      
+luac         LGPL3     LUA Compiled File                      Heersin         
+mach0        LGPL3     mach0 bin plugin                       pancake         
+mach064      LGPL3     mach064 bin plugin                     nibble          
+mbn          LGPL3     MBN/SBL bootloader things              pancake         
+mdmp         LGPL3     Windows MiniDump plugin                Davis           
+menuet       LGPL3     Menuet/KolibriOS bin plugin            pancake         
+mz           MIT       MZ bin plugin                          nodepad         
+ne           LGPL3     NE format plugin                       GustavoLCR      
+nes          MIT       NES                                    maijin          
+nin3ds       LGPL3     Nintendo 3DS Firmware plugin           a0rtega         
+ninds        LGPL3     Nintendo DS plugin                     a0rtega         
+ningb        LGPL3     Nintendo Gameboy plugin                condret         
+ningba       LGPL3     Nintendo Gameboy Advance plugin        condret         
+nro          MIT       Nintendo Switch NRO0 binaries          pancake         
+nso          MIT       Nintendo Switch NSO0 binaries          rkx1209         
+omf          LGPL3     omf bin plugin                         ampotos         
+p9           LGPL3     Plan9 bin plugin                       pancake         
+pe           LGPL3     PE bin plugin                          nibble          
+pe64         LGPL3     PE64 (PE32+) bin plugin                nibble          
+pebble       LGPL      Pebble Watch App                       pancake         
+prg          LGPL3     C64 PRG                                thestr4ng3r     
+psxexe       LGPL3     Sony PlayStation 1 Executable          Dax89           
+pyc          LGPL3     Python byte-compiled file plugin       x0urc3          
+qnx          LGPL3     QNX executable file support            deepakchethan   
+sfc          LGPL3     Super NES / Super Famicom ROM file     usrshare        
+smd          LGPL3     SEGA Genesis/Megadrive                 pancake         
+sms          LGPL3     SEGA MasterSystem/GameGear             shengdi         
+spc700       LGPL3     SNES-SPC700 Sound File Data            maijin          
+symbols      MIT       Apple Symbols file                     pancake         
+te           LGPL3     TE bin plugin                          xvilka          
+vsf          LGPL3     VICE Snapshot File                     riq             
+wasm         MIT       WebAssembly bin plugin                 pancake         
+xbe          LGPL3     Microsoft Xbox XBE plugin              LemonBoy        
+z64          LGPL3     Nintendo 64 Bin-BE plugin              lowlyw          
+zimg         LGPL3     zimg format bin plugin                 ninjahacker     
+.fatmach0    LGPL3     fat mach0 bin extractor plugin
+.sep64       LGPL3     64-bit SEP bin extractor plugin
+[{"name":"any","description":"Dummy format rz_bin plugin","license":"LGPL3","author":"nibble"},{"name":"art","description":"Android Runtime","license":"LGPL3","author":"pancake"},{"name":"avr","description":"ATmel AVR MCUs","license":"LGPL3","author":"pancake"},{"name":"bf","description":"brainfuck","license":"LGPL3","author":"pancake"},{"name":"bflt","description":"bFLT uClinux executable","license":"LGPL3","author":"Oscar Salvador"},{"name":"bios","description":"BIOS bin plugin","license":"LGPL","author":"pancake"},{"name":"bootimg","description":"Android Boot Image","license":"LGPL3","author":"pancake"},{"name":"cgc","description":"CGC format rz_bin plugin","license":"LGPL3","author":"ret2libc"},{"name":"coff","description":"COFF format rz_bin plugin","license":"LGPL3","author":"Fedor Sakharov"},{"name":"dex","description":"dex bin plugin","license":"LGPL3","author":"deroad"},{"name":"dmp64","description":"Windows Crash Dump x64 rz_bin plugin","license":"LGPL3","author":"abcSup"},{"name":"dol","description":"Nintendo Dolphin binary format","license":"BSD","author":"pancake"},{"name":"dyldcache","description":"dyldcache bin plugin","license":"LGPL3","author":"pancake"},{"name":"elf","description":"ELF format plugin","license":"LGPL3","author":"nibble"},{"name":"elf64","description":"elf64 bin plugin","license":"LGPL3","author":"nibble"},{"name":"java","description":"java bin plugin","license":"LGPL3","author":"deroad"},{"name":"kernelcache","description":"kernelcache bin plugin","license":"LGPL3","author":"mrmacete"},{"name":"le","description":"LE/LX format plugin","license":"LGPL3","author":"GustavoLCR"},{"name":"luac","description":"LUA Compiled File","license":"LGPL3","author":"Heersin"},{"name":"mach0","description":"mach0 bin plugin","license":"LGPL3","author":"pancake"},{"name":"mach064","description":"mach064 bin plugin","license":"LGPL3","author":"nibble"},{"name":"mbn","description":"MBN/SBL bootloader things","license":"LGPL3","author":"pancake"},{"name":"mdmp","description":"Windows MiniDump plugin","license":"LGPL3","author":"Davis"},{"name":"menuet","description":"Menuet/KolibriOS bin plugin","license":"LGPL3","author":"pancake"},{"name":"mz","description":"MZ bin plugin","license":"MIT","author":"nodepad"},{"name":"ne","description":"NE format plugin","license":"LGPL3","author":"GustavoLCR"},{"name":"nes","description":"NES","license":"MIT","author":"maijin"},{"name":"nin3ds","description":"Nintendo 3DS Firmware plugin","license":"LGPL3","author":"a0rtega"},{"name":"ninds","description":"Nintendo DS plugin","license":"LGPL3","author":"a0rtega"},{"name":"ningb","description":"Nintendo Gameboy plugin","license":"LGPL3","author":"condret"},{"name":"ningba","description":"Nintendo Gameboy Advance plugin","license":"LGPL3","author":"condret"},{"name":"nro","description":"Nintendo Switch NRO0 binaries","license":"MIT","author":"pancake"},{"name":"nso","description":"Nintendo Switch NSO0 binaries","license":"MIT","author":"rkx1209"},{"name":"omf","description":"omf bin plugin","license":"LGPL3","author":"ampotos"},{"name":"p9","description":"Plan9 bin plugin","license":"LGPL3","author":"pancake"},{"name":"pe","description":"PE bin plugin","license":"LGPL3","author":"nibble"},{"name":"pe64","description":"PE64 (PE32+) bin plugin","license":"LGPL3","author":"nibble"},{"name":"pebble","description":"Pebble Watch App","license":"LGPL","author":"pancake"},{"name":"prg","description":"C64 PRG","license":"LGPL3","author":"thestr4ng3r"},{"name":"psxexe","description":"Sony PlayStation 1 Executable","license":"LGPL3","author":"Dax89"},{"name":"pyc","description":"Python byte-compiled file plugin","license":"LGPL3","author":"x0urc3"},{"name":"qnx","description":"QNX executable file support","license":"LGPL3","author":"deepakchethan"},{"name":"sfc","description":"Super NES / Super Famicom ROM file","license":"LGPL3","author":"usrshare"},{"name":"smd","description":"SEGA Genesis/Megadrive","license":"LGPL3","author":"pancake"},{"name":"sms","description":"SEGA MasterSystem/GameGear","license":"LGPL3","author":"shengdi"},{"name":"spc700","description":"SNES-SPC700 Sound File Data","license":"LGPL3","author":"maijin"},{"name":"symbols","description":"Apple Symbols file","license":"MIT","author":"pancake"},{"name":"te","description":"TE bin plugin","license":"LGPL3","author":"xvilka"},{"name":"vsf","description":"VICE Snapshot File","license":"LGPL3","author":"riq"},{"name":"wasm","description":"WebAssembly bin plugin","license":"MIT","author":"pancake"},{"name":"xbe","description":"Microsoft Xbox XBE plugin","license":"LGPL3","author":"LemonBoy"},{"name":"z64","description":"Nintendo 64 Bin-BE plugin","license":"LGPL3","author":"lowlyw"},{"name":"zimg","description":"zimg format bin plugin","license":"LGPL3","author":"ninjahacker"},{"name":"xtr.fatmach0","description":"fat mach0 bin extractor plugin","license":"LGPL3"},{"name":"xtr.sep64","description":"64-bit SEP bin extractor plugin","license":"LGPL3"}]
+name         license description                          author         version 
+---------------------------------------------------------------------------------
+any          LGPL3   Dummy format rz_bin plugin           nibble         
+art          LGPL3   Android Runtime                      pancake        
+avr          LGPL3   ATmel AVR MCUs                       pancake        
+bf           LGPL3   brainfuck                            pancake        
+bflt         LGPL3   bFLT uClinux executable              Oscar Salvador 
+bios         LGPL    BIOS bin plugin                      pancake        
+bootimg      LGPL3   Android Boot Image                   pancake        
+cgc          LGPL3   CGC format rz_bin plugin             ret2libc       
+coff         LGPL3   COFF format rz_bin plugin            Fedor Sakharov 
+dex          LGPL3   dex bin plugin                       deroad         
+dmp64        LGPL3   Windows Crash Dump x64 rz_bin plugin abcSup         
+dol          BSD     Nintendo Dolphin binary format       pancake        
+dyldcache    LGPL3   dyldcache bin plugin                 pancake        
+elf          LGPL3   ELF format plugin                    nibble         
+elf64        LGPL3   elf64 bin plugin                     nibble         
+java         LGPL3   java bin plugin                      deroad         
+kernelcache  LGPL3   kernelcache bin plugin               mrmacete       
+le           LGPL3   LE/LX format plugin                  GustavoLCR     
+luac         LGPL3   LUA Compiled File                    Heersin        
+mach0        LGPL3   mach0 bin plugin                     pancake        
+mach064      LGPL3   mach064 bin plugin                   nibble         
+mbn          LGPL3   MBN/SBL bootloader things            pancake        
+mdmp         LGPL3   Windows MiniDump plugin              Davis          
+menuet       LGPL3   Menuet/KolibriOS bin plugin          pancake        
+mz           MIT     MZ bin plugin                        nodepad        
+ne           LGPL3   NE format plugin                     GustavoLCR     
+nes          MIT     NES                                  maijin         
+nin3ds       LGPL3   Nintendo 3DS Firmware plugin         a0rtega        
+ninds        LGPL3   Nintendo DS plugin                   a0rtega        
+ningb        LGPL3   Nintendo Gameboy plugin              condret        
+ningba       LGPL3   Nintendo Gameboy Advance plugin      condret        
+nro          MIT     Nintendo Switch NRO0 binaries        pancake        
+nso          MIT     Nintendo Switch NSO0 binaries        rkx1209        
+omf          LGPL3   omf bin plugin                       ampotos        
+p9           LGPL3   Plan9 bin plugin                     pancake        
+pe           LGPL3   PE bin plugin                        nibble         
+pe64         LGPL3   PE64 (PE32+) bin plugin              nibble         
+pebble       LGPL    Pebble Watch App                     pancake        
+prg          LGPL3   C64 PRG                              thestr4ng3r    
+psxexe       LGPL3   Sony PlayStation 1 Executable        Dax89          
+pyc          LGPL3   Python byte-compiled file plugin     x0urc3         
+qnx          LGPL3   QNX executable file support          deepakchethan  
+sfc          LGPL3   Super NES / Super Famicom ROM file   usrshare       
+smd          LGPL3   SEGA Genesis/Megadrive               pancake        
+sms          LGPL3   SEGA MasterSystem/GameGear           shengdi        
+spc700       LGPL3   SNES-SPC700 Sound File Data          maijin         
+symbols      MIT     Apple Symbols file                   pancake        
+te           LGPL3   TE bin plugin                        xvilka         
+vsf          LGPL3   VICE Snapshot File                   riq            
+wasm         MIT     WebAssembly bin plugin               pancake        
+xbe          LGPL3   Microsoft Xbox XBE plugin            LemonBoy       
+z64          LGPL3   Nintendo 64 Bin-BE plugin            lowlyw         
+zimg         LGPL3   zimg format bin plugin               ninjahacker    
+xtr.fatmach0 LGPL3   fat mach0 bin extractor plugin
+xtr.sep64    LGPL3   64-bit SEP bin extractor plugin
 any
 art
 avr
