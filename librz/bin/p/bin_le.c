@@ -121,7 +121,6 @@ RzBinPlugin rz_bin_plugin_le = {
 	.desc = "LE/LX format plugin",
 	.author = "GustavoLCR",
 	.license = "LGPL3",
-	.author = "GustavoLCR",
 	.check_buffer = &rz_bin_le_check_buffer,
 	.load_buffer = &rz_bin_le_load_buffer,
 	.destroy = &rz_bin_le_destroy,
