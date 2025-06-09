@@ -723,7 +723,6 @@ RZ_API RzDebugReasonType rz_debug_wait(RzDebug *dbg, RzBreakpointItem **bp) {
 			rz_debug_stop(dbg);
 		}
 #endif
-
 		/* propagate errors from the plugin */
 		if (reason == RZ_DEBUG_REASON_ERROR) {
 			return RZ_DEBUG_REASON_ERROR;

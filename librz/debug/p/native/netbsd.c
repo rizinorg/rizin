@@ -77,17 +77,14 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 	RzDebugReasonType reason = RZ_DEBUG_REASON_UNKNOWN;
 
 	if (pid == -1) {
-		eprintf("ERROR: rz_debug_native_wait called with pid -1\n");
+		RZ_LOG_ERROR("rz_debug_native_wait called with pid -1\n");
 		return RZ_DEBUG_REASON_ERROR;
 	}
 	int status = -1;
 #ifdef WAIT_ON_ALL_CHILDREN
-	int ret = waitpid(-1, &status, WAITPID_FLAGS);
-#else
 	int ret = waitpid(-1, &status, 0);
-	if (ret != -1) {
-		reason = RZ_DEBUG_REASON_TRAP;
-	}
+#else
+	int ret = waitpid(pid, &status, 0);
 #endif
 	if (ret == -1) {
 		rz_sys_perror("waitpid");
@@ -101,17 +98,16 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 	/* we don't know what to do yet, let's try harder to figure it out. */
 	if (reason == RZ_DEBUG_REASON_UNKNOWN) {
 		if (WIFEXITED(status)) {
-			eprintf("child exited with status %d\n", WEXITSTATUS(status));
+			if(dbg->pid == pid){
+				eprintf("(%d) Process exited with status=0x%x\n", pid, WEXITSTATUS(status));
+			}else{
+				eprintf("(%d) Thread exited with status=0x%x\n", pid, WEXITSTATUS(status));
+			}
 			reason = RZ_DEBUG_REASON_DEAD;
 		} else if (WIFSIGNALED(status)) {
 			eprintf("child received signal %d\n", WTERMSIG(status));
 			reason = RZ_DEBUG_REASON_SIGNAL;
 		} else if (WIFSTOPPED(status)) {
-			if (WSTOPSIG(status) != SIGTRAP &&
-				WSTOPSIG(status) != SIGSTOP) {
-				eprintf("Child stopped with signal %d\n", WSTOPSIG(status));
-			}
-
 			/* the ptrace documentation says GETSIGINFO is only necessary for
 			 * differentiating the various stops.
 			 *
