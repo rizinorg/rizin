@@ -92,12 +92,16 @@ RZ_API const char *rz_il_float_stringify_exception(RzFloatException e) {
  */
 RZ_API const char *rz_il_float_stringify_format(RzFloatFormat format) {
 	switch (format) {
+	case RZ_FLOAT_IEEE754_BIN_16:
+		return "ieee754-bin16";
 	case RZ_FLOAT_IEEE754_BIN_32:
 		return "ieee754-bin32";
 	case RZ_FLOAT_IEEE754_BIN_64:
 		return "ieee754-bin64";
 	case RZ_FLOAT_IEEE754_BIN_80:
 		return "ieee754-bin80";
+	case RZ_FLOAT_IEEE754_BIN_128:
+		return "ieee754-bin128";
 	case RZ_FLOAT_IEEE754_DEC_64:
 		return "ieee754-dec64";
 	case RZ_FLOAT_IEEE754_DEC_128:
