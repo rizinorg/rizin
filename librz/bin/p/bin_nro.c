@@ -334,7 +334,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 
 RzBinPlugin rz_bin_plugin_nro = {
 	.name = "nro",
-	.desc = "Nintendo Switch NRO (Nintendo Relocatable Object)",
+	.desc = "Nintendo Switch NRO",
 	.license = "MIT",
 	.author = "pancake",
 	.load_buffer = &load_buffer,

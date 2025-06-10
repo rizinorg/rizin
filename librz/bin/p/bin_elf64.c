@@ -17,7 +17,7 @@ static ut64 get_elf_vaddr64(RzBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
 
 RzBinPlugin rz_bin_plugin_elf64 = {
 	.name = "elf64",
-	.desc = "ELF64 (64-bit Executable and Linkable Format)",
+	.desc = "ELF64",
 	.license = "LGPL3",
 	.author = "nibble",
 	.get_sdb = &get_sdb,

@@ -221,7 +221,7 @@ static ut64 baddr(RzBinFile *bf) {
 
 RzBinPlugin rz_bin_plugin_nes = {
 	.name = "nes",
-	.desc = "Nintendo NES (Nintendo Entertainment System)",
+	.desc = "Nintendo NES",
 	.license = "MIT",
 	.author = "maijin",
 	.load_buffer = &load_buffer,
