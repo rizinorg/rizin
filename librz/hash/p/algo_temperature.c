@@ -66,6 +66,7 @@ RzHashPlugin rz_hash_plugin_temperature = {
 	.name = "temperature",
 	.license = "LGPL3",
 	.author = "Seva",
+	.description = "Binary temperature [0.0-1.0] range",
 	.support_hmac = false,
 	.context_new = plugin_temperature_context_new,
 	.context_free = plugin_temperature_context_free,

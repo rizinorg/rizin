@@ -204,101 +204,102 @@ FILE==
 CMDS=!rz-hash -L
 EXPECT=<<EOF
 flags  algorithm      license    author
-____h_ adler32        LGPL3      deroad
-____h_ blake3         CC0        Samuel Neves,Jack O'Connor
-____h_ crc15can       LGPL3      deroad
-____h_ crc16          LGPL3      deroad
-____h_ crc16augccitt  LGPL3      deroad
-____h_ crc16buypass   LGPL3      deroad
-____h_ crc16cdma2000  LGPL3      deroad
-____h_ crc16citt      LGPL3      deroad
-____h_ crc16dds110    LGPL3      deroad
-____h_ crc16dectr     LGPL3      deroad
-____h_ crc16dectx     LGPL3      deroad
-____h_ crc16dnp       LGPL3      deroad
-____h_ crc16en13757   LGPL3      deroad
-____h_ crc16genibus   LGPL3      deroad
-____h_ crc16hdlc      LGPL3      deroad
-____h_ crc16kermit    LGPL3      deroad
-____h_ crc16maxim     LGPL3      deroad
-____h_ crc16mcrf4xx   LGPL3      deroad
-____h_ crc16modbus    LGPL3      deroad
-____h_ crc16riello    LGPL3      deroad
-____h_ crc16t10dif    LGPL3      deroad
-____h_ crc16teledisk  LGPL3      deroad
-____h_ crc16tms37157  LGPL3      deroad
-____h_ crc16usb       LGPL3      deroad
-____h_ crc16x25       LGPL3      deroad
-____h_ crc16xmodem    LGPL3      deroad
-____h_ crc24          LGPL3      deroad
-____h_ crc32          LGPL3      deroad
-____h_ crc32bzip2     LGPL3      deroad
-____h_ crc32c         LGPL3      deroad
-____h_ crc32d         LGPL3      deroad
-____h_ crc32ecma267   LGPL3      deroad
-____h_ crc32jamcrc    LGPL3      deroad
-____h_ crc32mpeg2     LGPL3      deroad
-____h_ crc32posix     LGPL3      deroad
-____h_ crc32q         LGPL3      deroad
-____h_ crc32xfer      LGPL3      deroad
-____h_ crc64          LGPL3      deroad
-____h_ crc64ecma182   LGPL3      deroad
-____h_ crc64iso       LGPL3      deroad
-____h_ crc64we        LGPL3      deroad
-____h_ crc64xz        LGPL3      deroad
-____h_ crc8cdma2000   LGPL3      deroad
-____h_ crc8darc       LGPL3      deroad
-____h_ crc8dvbs2      LGPL3      deroad
-____h_ crc8ebu        LGPL3      deroad
-____h_ crc8icode      LGPL3      deroad
-____h_ crc8itu        LGPL3      deroad
-____h_ crc8maxim      LGPL3      deroad
-____h_ crc8rohc       LGPL3      deroad
-____h_ crc8smbus      LGPL3      deroad
-____h_ crc8wcdma      LGPL3      deroad
-____h_ crca           LGPL3      deroad
-____h_ entropy        LGPL3      deroad
-____h_ entropy_fract  LGPL3      deroad
-____h_ fletcher16     LGPL3      deroad
-____h_ fletcher32     LGPL3      deroad
-____h_ fletcher64     LGPL3      deroad
-____h_ fletcher8      LGPL3      deroad
-____hm md2            LGPL3      swedenspy
-____hm md4            LGPL3      deroad
-____hm md5            LGPL2      Alan DeKok
-____h_ parity         LGPL3      deroad
-____hm sha1           LGPL3      deroad
-____hm sha256         BSD-3      Aaron D. Gifford
-____hm sha384         BSD-3      Aaron D. Gifford
-____hm sha512         BSD-3      Aaron D. Gifford
-____hm sm3            LGPL2      FSF/deroad
-____h_ ssdeep         LGPL3      deroad
-____h_ temperature    LGPL3      Seva
-____h_ xor16          LGPL3      deroad
-____h_ xor8           LGPL3      deroad
-____h_ xxhash32       LGPL3      deroad
-ED____ rc4            LGPL-3     pancake
-ED____ rc6            LGPL-3     rakholiyajenish.07
-_D____ ror            LGPL-3     pancake
-__ed__ base64         LGPL-3     rakholiyajenish.07
-ED____ xor            LGPL-3     pancake
-ED____ rc2            LGPL-3     lionaneesh
-ED____ cps2           LGPL-3     pancake,esanfelix,pof
-ED____ rot            LGPL-3     pancake
-__ed__ punycode       LGPL-3     pancake
-ED____ serpent-ecb    LGPL-3     NicsTr
-ED____ sm4-ecb        LGPL-3     0xSh4dy
-ED____ aes-cbc        LGPL-3     rakholiyajenish.07
-E_____ rol            LGPL-3     pancake
-ED____ aes-ecb        LGPL3      Nettle project,pancake
-ED____ des-ecb        LGPL-3     deroad
-ED____ blowfish       LGPL3      kishorbhat
-__ed__ base91         LGPL-3     rakholiyajenish.07
+____h_ adler32        LGPL3      deroad                         Adler-32 checksum
+____h_ blake3         CC0        Samuel Neves,Jack O'Connor     BLAKE3 cryptographic hash
+____h_ crc15can       LGPL3      deroad                         CRC-15 CAN checksum
+____h_ crc16          LGPL3      deroad                         CRC-16 IBM/ARC checksum
+____h_ crc16augccitt  LGPL3      deroad                         CRC-16 AUG-CCITT checksum
+____h_ crc16buypass   LGPL3      deroad                         CRC-16 BUYPASS checksum
+____h_ crc16cdma2000  LGPL3      deroad                         CRC-16 CDMA-2000 checksum
+____h_ crc16citt      LGPL3      deroad                         CRC-16 CITT checksum
+____h_ crc16dds110    LGPL3      deroad                         CRC-16 DDS110 checksum
+____h_ crc16dectr     LGPL3      deroad                         CRC-16 DECT-R checksum
+____h_ crc16dectx     LGPL3      deroad                         CRC-16 DECT-X checksum
+____h_ crc16dnp       LGPL3      deroad                         CRC-16 DNP checksum
+____h_ crc16en13757   LGPL3      deroad                         CRC-16 EN-13757 checksum
+____h_ crc16genibus   LGPL3      deroad                         CRC-16 GENIBUS checksum
+____h_ crc16hdlc      LGPL3      deroad                         CRC-16 HDLC checksum
+____h_ crc16kermit    LGPL3      deroad                         CRC-16 KERMIT checksum
+____h_ crc16maxim     LGPL3      deroad                         CRC-16 MAXIM checksum
+____h_ crc16mcrf4xx   LGPL3      deroad                         CRC-16 MCRF4XX checksum
+____h_ crc16modbus    LGPL3      deroad                         CRC-16 MODBUS checksum
+____h_ crc16riello    LGPL3      deroad                         CRC-16 RIELLO checksum
+____h_ crc16t10dif    LGPL3      deroad                         CRC-16 T10-DIF checksum
+____h_ crc16teledisk  LGPL3      deroad                         CRC-16 TELEDISK checksum
+____h_ crc16tms37157  LGPL3      deroad                         CRC-16 TMS37157 checksum
+____h_ crc16usb       LGPL3      deroad                         CRC-16 USB checksum
+____h_ crc16x25       LGPL3      deroad                         CRC-16 X25 checksum
+____h_ crc16xmodem    LGPL3      deroad                         CRC-16 XMODEM checksum
+____h_ crc24          LGPL3      deroad                         CRC-24 checksum
+____h_ crc32          LGPL3      deroad                         CRC-32 checksum
+____h_ crc32bzip2     LGPL3      deroad                         CRC-32 BZIP2 checksum
+____h_ crc32c         LGPL3      deroad                         CRC-32C checksum
+____h_ crc32d         LGPL3      deroad                         CRC-32D checksum
+____h_ crc32ecma267   LGPL3      deroad                         CRC-32 ECMA-267 checksum (EDC for DVD sectors)
+____h_ crc32jamcrc    LGPL3      deroad                         CRC-32 JAMCRC checksum
+____h_ crc32mpeg2     LGPL3      deroad                         CRC-32 MPEG2 checksum
+____h_ crc32posix     LGPL3      deroad                         CRC-32 POSIX checksum
+____h_ crc32q         LGPL3      deroad                         CRC-32Q checksum
+____h_ crc32xfer      LGPL3      deroad                         CRC-32 XFER checksum
+____h_ crc64          LGPL3      deroad                         CRC-64 checksum
+____h_ crc64ecma182   LGPL3      deroad                         CRC-64 ECMA-182 checksum
+____h_ crc64iso       LGPL3      deroad                         CRC-64 ISO checksum
+____h_ crc64we        LGPL3      deroad                         CRC-64 WE checksum
+____h_ crc64xz        LGPL3      deroad                         CRC-64 XZ checksum
+____h_ crc8cdma2000   LGPL3      deroad                         CRC-8 CDMA-2000 checksum
+____h_ crc8darc       LGPL3      deroad                         CRC-8 DARC checksum
+____h_ crc8dvbs2      LGPL3      deroad                         CRC-8 DVB-S2 checksum
+____h_ crc8ebu        LGPL3      deroad                         CRC-8 EBU checksum
+____h_ crc8icode      LGPL3      deroad                         CRC-8 I-CODE checksum
+____h_ crc8itu        LGPL3      deroad                         CRC-8 ITU checksum
+____h_ crc8maxim      LGPL3      deroad                         CRC-8 MAXIM checksum
+____h_ crc8rohc       LGPL3      deroad                         CRC-8 ROHC checksum
+____h_ crc8smbus      LGPL3      deroad                         CRC-8 SMBUS checksum
+____h_ crc8wcdma      LGPL3      deroad                         CRC-8 WCDMA checksum
+____h_ crca           LGPL3      deroad                         CRC-16/CRCA checksum
+____h_ entropy        LGPL3      deroad                         Entropy [0.0-8.0] range
+____h_ entropy_fract  LGPL3      deroad                         Fractional entropy [0.0-1.0] range
+____h_ fletcher16     LGPL3      deroad                         Fletcher16 checksum
+____h_ fletcher32     LGPL3      deroad                         Fletcher32 checksum
+____h_ fletcher64     LGPL3      deroad                         Fletcher64 checksum
+____h_ fletcher8      LGPL3      deroad                         Fletcher8 checksum
+____hm md2            LGPL3      swedenspy                      MD2 cryptographic hash
+____hm md4            LGPL3      deroad                         MD4 cryptographic hash
+____hm md5            LGPL2      Alan DeKok                     MD5 cryptographic hash
+____h_ mod255         LGPL3      deroad                         Modulo 255 checksum
+____h_ parity         LGPL3      deroad                         Parity checksum
+____hm sha1           LGPL3      deroad                         SHA-1 cryptographic hash
+____hm sha256         BSD-3      Aaron D. Gifford               SHA-256 cryptographic hash
+____hm sha384         BSD-3      Aaron D. Gifford               SHA-384 cryptographic hash
+____hm sha512         BSD-3      Aaron D. Gifford               SHA-512 cryptographic hash
+____hm sm3            LGPL2      FSF/deroad                     ShangMi 3 (SM3) cryptographic hash
+____h_ ssdeep         LGPL3      deroad                         SSDeep Context Triggered Piecewise Hash (CTPH, fuzzy hash)
+____h_ temperature    LGPL3      Seva                           Binary temperature [0.0-1.0] range
+____h_ xor16          LGPL3      deroad                         XOR-16 checksum
+____h_ xor8           LGPL3      deroad                         XOR-8 checksum
+____h_ xxhash32       LGPL3      deroad                         xxHash32 non-cryptographic hash
+ED____ rc4            LGPL-3     pancake                        RC4 symmetric-key block cipher
+ED____ rc6            LGPL-3     rakholiyajenish.07             RC6 symmetric-key block cipher
+_D____ ror            LGPL-3     pancake                        Rotate Right symmetric-key block cipher
+__ed__ base64         LGPL-3     rakholiyajenish.07             Base64 encoder/decoder
+ED____ xor            LGPL-3     pancake                        XOR symmetric-key block cipher
+ED____ rc2            LGPL-3     lionaneesh                     RC2 symmetric-key block cipher
+ED____ cps2           LGPL-3     pancake,esanfelix,pof          Capcom Play System 2 (CPS-2) symmetric-key block cipher
+ED____ rot            LGPL-3     pancake                        Caesar symmetric-key cipher
+__ed__ punycode       LGPL-3     pancake                        Punycode encoder/decoder
+ED____ serpent-ecb    LGPL-3     NicsTr                         Serpent symmetric-key block cipher (ECB block mode)
+ED____ sm4-ecb        LGPL-3     0xSh4dy                        ShangMi 4 symmetric-key block cipher (ECB block mode)
+ED____ aes-cbc        LGPL-3     rakholiyajenish.07             AES symmetric-key block cipher (CBC block mode)
+E_____ rol            LGPL-3     pancake                        Rotate Left symmetric-key block cipher
+ED____ aes-ecb        LGPL3      Nettle project,pancake         AES symmetric-key block cipher (ECB block mode)
+ED____ des-ecb        LGPL-3     deroad                         DES symmetric-key block cipher (ECB block mode)
+ED____ blowfish       LGPL3      kishorbhat                     Blowfish symmetric-key block cipher
+__ed__ base91         LGPL-3     rakholiyajenish.07             Base91 encoder/decoder
 
 flags legenda:
     E = encryption, D = decryption
     e = encoding, d = encoding
-    h = hash, m = hmac
+    h = hash/crc, m = hmac
 EOF
 RUN
 
@@ -734,6 +735,7 @@ string: 0x00000000-0x00000005 fletcher8: computed hash doesn't match the expecte
 string: 0x00000000-0x00000005 md2: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 md4: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 md5: computed hash matches the expected one
+string: 0x00000000-0x00000005 mod255: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 parity: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 sha1: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 sha256: computed hash doesn't match the expected one

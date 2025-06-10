@@ -220,6 +220,7 @@ RzCryptoPlugin rz_crypto_plugin_rc6 = {
 	.name = "rc6",
 	.author = "rakholiyajenish.07",
 	.license = "LGPL-3",
+	.description = "RC6 symmetric-key block cipher",
 	.set_key = rc6_set_key,
 	.get_key_size = rc6_get_key_size,
 	.use = rc6_use,

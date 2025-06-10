@@ -66,6 +66,7 @@ RzHashPlugin rz_hash_plugin_md2 = {
 	.name = "md2",
 	.license = "LGPL3",
 	.author = "swedenspy",
+	.description = "MD2 cryptographic hash",
 	.support_hmac = true,
 	.context_new = plugin_md2_context_new,
 	.context_free = plugin_md2_context_free,

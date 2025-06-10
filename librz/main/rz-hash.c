@@ -141,7 +141,7 @@ static void rz_hash_show_algorithms(RzHashContext *ctx) {
 	const RzHashPlugin *rmdp;
 	rz_list_foreach (plugin_list, it, rmdp) {
 		snprintf(flags, sizeof(flags), "____h%c", rmdp->support_hmac ? 'm' : '_');
-		printf("%6s %-14s %-10s %s\n", flags, rmdp->name, rmdp->license, rmdp->author);
+		printf("%6s %-14s %-10s %-30s %s\n", flags, rmdp->name, rmdp->license, rmdp->author, rmdp->description);
 	}
 	rz_list_free(plugin_list);
 	rz_iterator_free(iter);
@@ -157,14 +157,14 @@ static void rz_hash_show_algorithms(RzHashContext *ctx) {
 		} else {
 			snprintf(flags, sizeof(flags), "ED____");
 		}
-		printf("%6s %-14s %-10s %s\n", flags, rcp->name, rcp->license, rcp->author);
+		printf("%6s %-14s %-10s %-30s %s\n", flags, rcp->name, rcp->license, rcp->author, rcp->description);
 	}
 	printf(
 		"\n"
 		"flags legenda:\n"
 		"    E = encryption, D = decryption\n"
 		"    e = encoding, d = encoding\n"
-		"    h = hash, m = hmac\n");
+		"    h = hash/crc, m = hmac\n");
 }
 
 #define rz_hash_bool_error(x, o, f, ...) \

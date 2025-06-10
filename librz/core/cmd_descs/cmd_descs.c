@@ -23991,7 +23991,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_print_default_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_cd, "ph", rz_cmd_print_hash_cfg_handler, &cmd_print_hash_cfg_help, &cmd_print_default_help);
 	rz_warn_if_fail(cmd_print_default_cd);
-	RzCmdDesc *cmd_print_hash_cfg_algo_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, cmd_print_default_cd, "phl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_print_hash_cfg_algo_list_handler, &cmd_print_hash_cfg_algo_list_help);
+	RzCmdDesc *cmd_print_hash_cfg_algo_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, cmd_print_default_cd, "phl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_print_hash_cfg_algo_list_handler, &cmd_print_hash_cfg_algo_list_help);
 	rz_warn_if_fail(cmd_print_hash_cfg_algo_list_cd);
 
 	RzCmdDesc *pi_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_cd, "pi", rz_print_instr_handler, &print_instr_help, &pi_help);

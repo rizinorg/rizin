@@ -368,155 +368,157 @@ Lht
 Lhq
 EOF
 EXPECT=<<EOF
-adler32        LGPL3      deroad
-blake3         CC0        Samuel Neves,Jack O'Connor
-crc15can       LGPL3      deroad
-crc16          LGPL3      deroad
-crc16augccitt  LGPL3      deroad
-crc16buypass   LGPL3      deroad
-crc16cdma2000  LGPL3      deroad
-crc16citt      LGPL3      deroad
-crc16dds110    LGPL3      deroad
-crc16dectr     LGPL3      deroad
-crc16dectx     LGPL3      deroad
-crc16dnp       LGPL3      deroad
-crc16en13757   LGPL3      deroad
-crc16genibus   LGPL3      deroad
-crc16hdlc      LGPL3      deroad
-crc16kermit    LGPL3      deroad
-crc16maxim     LGPL3      deroad
-crc16mcrf4xx   LGPL3      deroad
-crc16modbus    LGPL3      deroad
-crc16riello    LGPL3      deroad
-crc16t10dif    LGPL3      deroad
-crc16teledisk  LGPL3      deroad
-crc16tms37157  LGPL3      deroad
-crc16usb       LGPL3      deroad
-crc16x25       LGPL3      deroad
-crc16xmodem    LGPL3      deroad
-crc24          LGPL3      deroad
-crc32          LGPL3      deroad
-crc32bzip2     LGPL3      deroad
-crc32c         LGPL3      deroad
-crc32d         LGPL3      deroad
-crc32ecma267   LGPL3      deroad
-crc32jamcrc    LGPL3      deroad
-crc32mpeg2     LGPL3      deroad
-crc32posix     LGPL3      deroad
-crc32q         LGPL3      deroad
-crc32xfer      LGPL3      deroad
-crc64          LGPL3      deroad
-crc64ecma182   LGPL3      deroad
-crc64iso       LGPL3      deroad
-crc64we        LGPL3      deroad
-crc64xz        LGPL3      deroad
-crc8cdma2000   LGPL3      deroad
-crc8darc       LGPL3      deroad
-crc8dvbs2      LGPL3      deroad
-crc8ebu        LGPL3      deroad
-crc8icode      LGPL3      deroad
-crc8itu        LGPL3      deroad
-crc8maxim      LGPL3      deroad
-crc8rohc       LGPL3      deroad
-crc8smbus      LGPL3      deroad
-crc8wcdma      LGPL3      deroad
-crca           LGPL3      deroad
-entropy        LGPL3      deroad
-entropy_fract  LGPL3      deroad
-fletcher16     LGPL3      deroad
-fletcher32     LGPL3      deroad
-fletcher64     LGPL3      deroad
-fletcher8      LGPL3      deroad
-md2            LGPL3      swedenspy
-md4            LGPL3      deroad
-md5            LGPL2      Alan DeKok
-parity         LGPL3      deroad
-sha1           LGPL3      deroad
-sha256         BSD-3      Aaron D. Gifford
-sha384         BSD-3      Aaron D. Gifford
-sha512         BSD-3      Aaron D. Gifford
-sm3            LGPL2      FSF/deroad
-ssdeep         LGPL3      deroad
-temperature    LGPL3      Seva
-xor16          LGPL3      deroad
-xor8           LGPL3      deroad
-xxhash32       LGPL3      deroad
-[{"name":"adler32","license":"LGPL3","author":"deroad"},{"name":"blake3","license":"CC0","author":"Samuel Neves,Jack O'Connor"},{"name":"crc15can","license":"LGPL3","author":"deroad"},{"name":"crc16","license":"LGPL3","author":"deroad"},{"name":"crc16augccitt","license":"LGPL3","author":"deroad"},{"name":"crc16buypass","license":"LGPL3","author":"deroad"},{"name":"crc16cdma2000","license":"LGPL3","author":"deroad"},{"name":"crc16citt","license":"LGPL3","author":"deroad"},{"name":"crc16dds110","license":"LGPL3","author":"deroad"},{"name":"crc16dectr","license":"LGPL3","author":"deroad"},{"name":"crc16dectx","license":"LGPL3","author":"deroad"},{"name":"crc16dnp","license":"LGPL3","author":"deroad"},{"name":"crc16en13757","license":"LGPL3","author":"deroad"},{"name":"crc16genibus","license":"LGPL3","author":"deroad"},{"name":"crc16hdlc","license":"LGPL3","author":"deroad"},{"name":"crc16kermit","license":"LGPL3","author":"deroad"},{"name":"crc16maxim","license":"LGPL3","author":"deroad"},{"name":"crc16mcrf4xx","license":"LGPL3","author":"deroad"},{"name":"crc16modbus","license":"LGPL3","author":"deroad"},{"name":"crc16riello","license":"LGPL3","author":"deroad"},{"name":"crc16t10dif","license":"LGPL3","author":"deroad"},{"name":"crc16teledisk","license":"LGPL3","author":"deroad"},{"name":"crc16tms37157","license":"LGPL3","author":"deroad"},{"name":"crc16usb","license":"LGPL3","author":"deroad"},{"name":"crc16x25","license":"LGPL3","author":"deroad"},{"name":"crc16xmodem","license":"LGPL3","author":"deroad"},{"name":"crc24","license":"LGPL3","author":"deroad"},{"name":"crc32","license":"LGPL3","author":"deroad"},{"name":"crc32bzip2","license":"LGPL3","author":"deroad"},{"name":"crc32c","license":"LGPL3","author":"deroad"},{"name":"crc32d","license":"LGPL3","author":"deroad"},{"name":"crc32ecma267","license":"LGPL3","author":"deroad"},{"name":"crc32jamcrc","license":"LGPL3","author":"deroad"},{"name":"crc32mpeg2","license":"LGPL3","author":"deroad"},{"name":"crc32posix","license":"LGPL3","author":"deroad"},{"name":"crc32q","license":"LGPL3","author":"deroad"},{"name":"crc32xfer","license":"LGPL3","author":"deroad"},{"name":"crc64","license":"LGPL3","author":"deroad"},{"name":"crc64ecma182","license":"LGPL3","author":"deroad"},{"name":"crc64iso","license":"LGPL3","author":"deroad"},{"name":"crc64we","license":"LGPL3","author":"deroad"},{"name":"crc64xz","license":"LGPL3","author":"deroad"},{"name":"crc8cdma2000","license":"LGPL3","author":"deroad"},{"name":"crc8darc","license":"LGPL3","author":"deroad"},{"name":"crc8dvbs2","license":"LGPL3","author":"deroad"},{"name":"crc8ebu","license":"LGPL3","author":"deroad"},{"name":"crc8icode","license":"LGPL3","author":"deroad"},{"name":"crc8itu","license":"LGPL3","author":"deroad"},{"name":"crc8maxim","license":"LGPL3","author":"deroad"},{"name":"crc8rohc","license":"LGPL3","author":"deroad"},{"name":"crc8smbus","license":"LGPL3","author":"deroad"},{"name":"crc8wcdma","license":"LGPL3","author":"deroad"},{"name":"crca","license":"LGPL3","author":"deroad"},{"name":"entropy","license":"LGPL3","author":"deroad"},{"name":"entropy_fract","license":"LGPL3","author":"deroad"},{"name":"fletcher16","license":"LGPL3","author":"deroad"},{"name":"fletcher32","license":"LGPL3","author":"deroad"},{"name":"fletcher64","license":"LGPL3","author":"deroad"},{"name":"fletcher8","license":"LGPL3","author":"deroad"},{"name":"md2","license":"LGPL3","author":"swedenspy"},{"name":"md4","license":"LGPL3","author":"deroad"},{"name":"md5","license":"LGPL2","author":"Alan DeKok"},{"name":"parity","license":"LGPL3","author":"deroad"},{"name":"sha1","license":"LGPL3","author":"deroad"},{"name":"sha256","license":"BSD-3","author":"Aaron D. Gifford"},{"name":"sha384","license":"BSD-3","author":"Aaron D. Gifford"},{"name":"sha512","license":"BSD-3","author":"Aaron D. Gifford"},{"name":"sm3","license":"LGPL2","author":"FSF/deroad"},{"name":"ssdeep","license":"LGPL3","author":"deroad"},{"name":"temperature","license":"LGPL3","author":"Seva"},{"name":"xor16","license":"LGPL3","author":"deroad"},{"name":"xor8","license":"LGPL3","author":"deroad"},{"name":"xxhash32","license":"LGPL3","author":"deroad"}]
-algorithm     license author                     
--------------------------------------------------
-adler32       LGPL3   deroad
-blake3        CC0     Samuel Neves,Jack O'Connor
-crc15can      LGPL3   deroad
-crc16         LGPL3   deroad
-crc16augccitt LGPL3   deroad
-crc16buypass  LGPL3   deroad
-crc16cdma2000 LGPL3   deroad
-crc16citt     LGPL3   deroad
-crc16dds110   LGPL3   deroad
-crc16dectr    LGPL3   deroad
-crc16dectx    LGPL3   deroad
-crc16dnp      LGPL3   deroad
-crc16en13757  LGPL3   deroad
-crc16genibus  LGPL3   deroad
-crc16hdlc     LGPL3   deroad
-crc16kermit   LGPL3   deroad
-crc16maxim    LGPL3   deroad
-crc16mcrf4xx  LGPL3   deroad
-crc16modbus   LGPL3   deroad
-crc16riello   LGPL3   deroad
-crc16t10dif   LGPL3   deroad
-crc16teledisk LGPL3   deroad
-crc16tms37157 LGPL3   deroad
-crc16usb      LGPL3   deroad
-crc16x25      LGPL3   deroad
-crc16xmodem   LGPL3   deroad
-crc24         LGPL3   deroad
-crc32         LGPL3   deroad
-crc32bzip2    LGPL3   deroad
-crc32c        LGPL3   deroad
-crc32d        LGPL3   deroad
-crc32ecma267  LGPL3   deroad
-crc32jamcrc   LGPL3   deroad
-crc32mpeg2    LGPL3   deroad
-crc32posix    LGPL3   deroad
-crc32q        LGPL3   deroad
-crc32xfer     LGPL3   deroad
-crc64         LGPL3   deroad
-crc64ecma182  LGPL3   deroad
-crc64iso      LGPL3   deroad
-crc64we       LGPL3   deroad
-crc64xz       LGPL3   deroad
-crc8cdma2000  LGPL3   deroad
-crc8darc      LGPL3   deroad
-crc8dvbs2     LGPL3   deroad
-crc8ebu       LGPL3   deroad
-crc8icode     LGPL3   deroad
-crc8itu       LGPL3   deroad
-crc8maxim     LGPL3   deroad
-crc8rohc      LGPL3   deroad
-crc8smbus     LGPL3   deroad
-crc8wcdma     LGPL3   deroad
-crca          LGPL3   deroad
-entropy       LGPL3   deroad
-entropy_fract LGPL3   deroad
-fletcher16    LGPL3   deroad
-fletcher32    LGPL3   deroad
-fletcher64    LGPL3   deroad
-fletcher8     LGPL3   deroad
-md2           LGPL3   swedenspy
-md4           LGPL3   deroad
-md5           LGPL2   Alan DeKok
-parity        LGPL3   deroad
-sha1          LGPL3   deroad
-sha256        BSD-3   Aaron D. Gifford
-sha384        BSD-3   Aaron D. Gifford
-sha512        BSD-3   Aaron D. Gifford
-sm3           LGPL2   FSF/deroad
-ssdeep        LGPL3   deroad
-temperature   LGPL3   Seva
-xor16         LGPL3   deroad
-xor8          LGPL3   deroad
-xxhash32      LGPL3   deroad
+adler32        LGPL3      deroad                         Adler-32 checksum
+blake3         CC0        Samuel Neves,Jack O'Connor     BLAKE3 cryptographic hash
+crc15can       LGPL3      deroad                         CRC-15 CAN checksum
+crc16          LGPL3      deroad                         CRC-16 IBM/ARC checksum
+crc16augccitt  LGPL3      deroad                         CRC-16 AUG-CCITT checksum
+crc16buypass   LGPL3      deroad                         CRC-16 BUYPASS checksum
+crc16cdma2000  LGPL3      deroad                         CRC-16 CDMA-2000 checksum
+crc16citt      LGPL3      deroad                         CRC-16 CITT checksum
+crc16dds110    LGPL3      deroad                         CRC-16 DDS110 checksum
+crc16dectr     LGPL3      deroad                         CRC-16 DECT-R checksum
+crc16dectx     LGPL3      deroad                         CRC-16 DECT-X checksum
+crc16dnp       LGPL3      deroad                         CRC-16 DNP checksum
+crc16en13757   LGPL3      deroad                         CRC-16 EN-13757 checksum
+crc16genibus   LGPL3      deroad                         CRC-16 GENIBUS checksum
+crc16hdlc      LGPL3      deroad                         CRC-16 HDLC checksum
+crc16kermit    LGPL3      deroad                         CRC-16 KERMIT checksum
+crc16maxim     LGPL3      deroad                         CRC-16 MAXIM checksum
+crc16mcrf4xx   LGPL3      deroad                         CRC-16 MCRF4XX checksum
+crc16modbus    LGPL3      deroad                         CRC-16 MODBUS checksum
+crc16riello    LGPL3      deroad                         CRC-16 RIELLO checksum
+crc16t10dif    LGPL3      deroad                         CRC-16 T10-DIF checksum
+crc16teledisk  LGPL3      deroad                         CRC-16 TELEDISK checksum
+crc16tms37157  LGPL3      deroad                         CRC-16 TMS37157 checksum
+crc16usb       LGPL3      deroad                         CRC-16 USB checksum
+crc16x25       LGPL3      deroad                         CRC-16 X25 checksum
+crc16xmodem    LGPL3      deroad                         CRC-16 XMODEM checksum
+crc24          LGPL3      deroad                         CRC-24 checksum
+crc32          LGPL3      deroad                         CRC-32 checksum
+crc32bzip2     LGPL3      deroad                         CRC-32 BZIP2 checksum
+crc32c         LGPL3      deroad                         CRC-32C checksum
+crc32d         LGPL3      deroad                         CRC-32D checksum
+crc32ecma267   LGPL3      deroad                         CRC-32 ECMA-267 checksum (EDC for DVD sectors)
+crc32jamcrc    LGPL3      deroad                         CRC-32 JAMCRC checksum
+crc32mpeg2     LGPL3      deroad                         CRC-32 MPEG2 checksum
+crc32posix     LGPL3      deroad                         CRC-32 POSIX checksum
+crc32q         LGPL3      deroad                         CRC-32Q checksum
+crc32xfer      LGPL3      deroad                         CRC-32 XFER checksum
+crc64          LGPL3      deroad                         CRC-64 checksum
+crc64ecma182   LGPL3      deroad                         CRC-64 ECMA-182 checksum
+crc64iso       LGPL3      deroad                         CRC-64 ISO checksum
+crc64we        LGPL3      deroad                         CRC-64 WE checksum
+crc64xz        LGPL3      deroad                         CRC-64 XZ checksum
+crc8cdma2000   LGPL3      deroad                         CRC-8 CDMA-2000 checksum
+crc8darc       LGPL3      deroad                         CRC-8 DARC checksum
+crc8dvbs2      LGPL3      deroad                         CRC-8 DVB-S2 checksum
+crc8ebu        LGPL3      deroad                         CRC-8 EBU checksum
+crc8icode      LGPL3      deroad                         CRC-8 I-CODE checksum
+crc8itu        LGPL3      deroad                         CRC-8 ITU checksum
+crc8maxim      LGPL3      deroad                         CRC-8 MAXIM checksum
+crc8rohc       LGPL3      deroad                         CRC-8 ROHC checksum
+crc8smbus      LGPL3      deroad                         CRC-8 SMBUS checksum
+crc8wcdma      LGPL3      deroad                         CRC-8 WCDMA checksum
+crca           LGPL3      deroad                         CRC-16/CRCA checksum
+entropy        LGPL3      deroad                         Entropy [0.0-8.0] range
+entropy_fract  LGPL3      deroad                         Fractional entropy [0.0-1.0] range
+fletcher16     LGPL3      deroad                         Fletcher16 checksum
+fletcher32     LGPL3      deroad                         Fletcher32 checksum
+fletcher64     LGPL3      deroad                         Fletcher64 checksum
+fletcher8      LGPL3      deroad                         Fletcher8 checksum
+md2            LGPL3      swedenspy                      MD2 cryptographic hash
+md4            LGPL3      deroad                         MD4 cryptographic hash
+md5            LGPL2      Alan DeKok                     MD5 cryptographic hash
+mod255         LGPL3      deroad                         Modulo 255 checksum
+parity         LGPL3      deroad                         Parity checksum
+sha1           LGPL3      deroad                         SHA-1 cryptographic hash
+sha256         BSD-3      Aaron D. Gifford               SHA-256 cryptographic hash
+sha384         BSD-3      Aaron D. Gifford               SHA-384 cryptographic hash
+sha512         BSD-3      Aaron D. Gifford               SHA-512 cryptographic hash
+sm3            LGPL2      FSF/deroad                     ShangMi 3 (SM3) cryptographic hash
+ssdeep         LGPL3      deroad                         SSDeep Context Triggered Piecewise Hash (CTPH, fuzzy hash)
+temperature    LGPL3      Seva                           Binary temperature [0.0-1.0] range
+xor16          LGPL3      deroad                         XOR-16 checksum
+xor8           LGPL3      deroad                         XOR-8 checksum
+xxhash32       LGPL3      deroad                         xxHash32 non-cryptographic hash
+[{"name":"adler32","license":"LGPL3","author":"deroad","description":"Adler-32 checksum"},{"name":"blake3","license":"CC0","author":"Samuel Neves,Jack O'Connor","description":"BLAKE3 cryptographic hash"},{"name":"crc15can","license":"LGPL3","author":"deroad","description":"CRC-15 CAN checksum"},{"name":"crc16","license":"LGPL3","author":"deroad","description":"CRC-16 IBM/ARC checksum"},{"name":"crc16augccitt","license":"LGPL3","author":"deroad","description":"CRC-16 AUG-CCITT checksum"},{"name":"crc16buypass","license":"LGPL3","author":"deroad","description":"CRC-16 BUYPASS checksum"},{"name":"crc16cdma2000","license":"LGPL3","author":"deroad","description":"CRC-16 CDMA-2000 checksum"},{"name":"crc16citt","license":"LGPL3","author":"deroad","description":"CRC-16 CITT checksum"},{"name":"crc16dds110","license":"LGPL3","author":"deroad","description":"CRC-16 DDS110 checksum"},{"name":"crc16dectr","license":"LGPL3","author":"deroad","description":"CRC-16 DECT-R checksum"},{"name":"crc16dectx","license":"LGPL3","author":"deroad","description":"CRC-16 DECT-X checksum"},{"name":"crc16dnp","license":"LGPL3","author":"deroad","description":"CRC-16 DNP checksum"},{"name":"crc16en13757","license":"LGPL3","author":"deroad","description":"CRC-16 EN-13757 checksum"},{"name":"crc16genibus","license":"LGPL3","author":"deroad","description":"CRC-16 GENIBUS checksum"},{"name":"crc16hdlc","license":"LGPL3","author":"deroad","description":"CRC-16 HDLC checksum"},{"name":"crc16kermit","license":"LGPL3","author":"deroad","description":"CRC-16 KERMIT checksum"},{"name":"crc16maxim","license":"LGPL3","author":"deroad","description":"CRC-16 MAXIM checksum"},{"name":"crc16mcrf4xx","license":"LGPL3","author":"deroad","description":"CRC-16 MCRF4XX checksum"},{"name":"crc16modbus","license":"LGPL3","author":"deroad","description":"CRC-16 MODBUS checksum"},{"name":"crc16riello","license":"LGPL3","author":"deroad","description":"CRC-16 RIELLO checksum"},{"name":"crc16t10dif","license":"LGPL3","author":"deroad","description":"CRC-16 T10-DIF checksum"},{"name":"crc16teledisk","license":"LGPL3","author":"deroad","description":"CRC-16 TELEDISK checksum"},{"name":"crc16tms37157","license":"LGPL3","author":"deroad","description":"CRC-16 TMS37157 checksum"},{"name":"crc16usb","license":"LGPL3","author":"deroad","description":"CRC-16 USB checksum"},{"name":"crc16x25","license":"LGPL3","author":"deroad","description":"CRC-16 X25 checksum"},{"name":"crc16xmodem","license":"LGPL3","author":"deroad","description":"CRC-16 XMODEM checksum"},{"name":"crc24","license":"LGPL3","author":"deroad","description":"CRC-24 checksum"},{"name":"crc32","license":"LGPL3","author":"deroad","description":"CRC-32 checksum"},{"name":"crc32bzip2","license":"LGPL3","author":"deroad","description":"CRC-32 BZIP2 checksum"},{"name":"crc32c","license":"LGPL3","author":"deroad","description":"CRC-32C checksum"},{"name":"crc32d","license":"LGPL3","author":"deroad","description":"CRC-32D checksum"},{"name":"crc32ecma267","license":"LGPL3","author":"deroad","description":"CRC-32 ECMA-267 checksum (EDC for DVD sectors)"},{"name":"crc32jamcrc","license":"LGPL3","author":"deroad","description":"CRC-32 JAMCRC checksum"},{"name":"crc32mpeg2","license":"LGPL3","author":"deroad","description":"CRC-32 MPEG2 checksum"},{"name":"crc32posix","license":"LGPL3","author":"deroad","description":"CRC-32 POSIX checksum"},{"name":"crc32q","license":"LGPL3","author":"deroad","description":"CRC-32Q checksum"},{"name":"crc32xfer","license":"LGPL3","author":"deroad","description":"CRC-32 XFER checksum"},{"name":"crc64","license":"LGPL3","author":"deroad","description":"CRC-64 checksum"},{"name":"crc64ecma182","license":"LGPL3","author":"deroad","description":"CRC-64 ECMA-182 checksum"},{"name":"crc64iso","license":"LGPL3","author":"deroad","description":"CRC-64 ISO checksum"},{"name":"crc64we","license":"LGPL3","author":"deroad","description":"CRC-64 WE checksum"},{"name":"crc64xz","license":"LGPL3","author":"deroad","description":"CRC-64 XZ checksum"},{"name":"crc8cdma2000","license":"LGPL3","author":"deroad","description":"CRC-8 CDMA-2000 checksum"},{"name":"crc8darc","license":"LGPL3","author":"deroad","description":"CRC-8 DARC checksum"},{"name":"crc8dvbs2","license":"LGPL3","author":"deroad","description":"CRC-8 DVB-S2 checksum"},{"name":"crc8ebu","license":"LGPL3","author":"deroad","description":"CRC-8 EBU checksum"},{"name":"crc8icode","license":"LGPL3","author":"deroad","description":"CRC-8 I-CODE checksum"},{"name":"crc8itu","license":"LGPL3","author":"deroad","description":"CRC-8 ITU checksum"},{"name":"crc8maxim","license":"LGPL3","author":"deroad","description":"CRC-8 MAXIM checksum"},{"name":"crc8rohc","license":"LGPL3","author":"deroad","description":"CRC-8 ROHC checksum"},{"name":"crc8smbus","license":"LGPL3","author":"deroad","description":"CRC-8 SMBUS checksum"},{"name":"crc8wcdma","license":"LGPL3","author":"deroad","description":"CRC-8 WCDMA checksum"},{"name":"crca","license":"LGPL3","author":"deroad","description":"CRC-16/CRCA checksum"},{"name":"entropy","license":"LGPL3","author":"deroad","description":"Entropy [0.0-8.0] range"},{"name":"entropy_fract","license":"LGPL3","author":"deroad","description":"Fractional entropy [0.0-1.0] range"},{"name":"fletcher16","license":"LGPL3","author":"deroad","description":"Fletcher16 checksum"},{"name":"fletcher32","license":"LGPL3","author":"deroad","description":"Fletcher32 checksum"},{"name":"fletcher64","license":"LGPL3","author":"deroad","description":"Fletcher64 checksum"},{"name":"fletcher8","license":"LGPL3","author":"deroad","description":"Fletcher8 checksum"},{"name":"md2","license":"LGPL3","author":"swedenspy","description":"MD2 cryptographic hash"},{"name":"md4","license":"LGPL3","author":"deroad","description":"MD4 cryptographic hash"},{"name":"md5","license":"LGPL2","author":"Alan DeKok","description":"MD5 cryptographic hash"},{"name":"mod255","license":"LGPL3","author":"deroad","description":"Modulo 255 checksum"},{"name":"parity","license":"LGPL3","author":"deroad","description":"Parity checksum"},{"name":"sha1","license":"LGPL3","author":"deroad","description":"SHA-1 cryptographic hash"},{"name":"sha256","license":"BSD-3","author":"Aaron D. Gifford","description":"SHA-256 cryptographic hash"},{"name":"sha384","license":"BSD-3","author":"Aaron D. Gifford","description":"SHA-384 cryptographic hash"},{"name":"sha512","license":"BSD-3","author":"Aaron D. Gifford","description":"SHA-512 cryptographic hash"},{"name":"sm3","license":"LGPL2","author":"FSF/deroad","description":"ShangMi 3 (SM3) cryptographic hash"},{"name":"ssdeep","license":"LGPL3","author":"deroad","description":"SSDeep Context Triggered Piecewise Hash (CTPH, fuzzy hash)"},{"name":"temperature","license":"LGPL3","author":"Seva","description":"Binary temperature [0.0-1.0] range"},{"name":"xor16","license":"LGPL3","author":"deroad","description":"XOR-16 checksum"},{"name":"xor8","license":"LGPL3","author":"deroad","description":"XOR-8 checksum"},{"name":"xxhash32","license":"LGPL3","author":"deroad","description":"xxHash32 non-cryptographic hash"}]
+algorithm     license author                     description                                                
+------------------------------------------------------------------------------------------------------------
+adler32       LGPL3   deroad                     Adler-32 checksum
+blake3        CC0     Samuel Neves,Jack O'Connor BLAKE3 cryptographic hash
+crc15can      LGPL3   deroad                     CRC-15 CAN checksum
+crc16         LGPL3   deroad                     CRC-16 IBM/ARC checksum
+crc16augccitt LGPL3   deroad                     CRC-16 AUG-CCITT checksum
+crc16buypass  LGPL3   deroad                     CRC-16 BUYPASS checksum
+crc16cdma2000 LGPL3   deroad                     CRC-16 CDMA-2000 checksum
+crc16citt     LGPL3   deroad                     CRC-16 CITT checksum
+crc16dds110   LGPL3   deroad                     CRC-16 DDS110 checksum
+crc16dectr    LGPL3   deroad                     CRC-16 DECT-R checksum
+crc16dectx    LGPL3   deroad                     CRC-16 DECT-X checksum
+crc16dnp      LGPL3   deroad                     CRC-16 DNP checksum
+crc16en13757  LGPL3   deroad                     CRC-16 EN-13757 checksum
+crc16genibus  LGPL3   deroad                     CRC-16 GENIBUS checksum
+crc16hdlc     LGPL3   deroad                     CRC-16 HDLC checksum
+crc16kermit   LGPL3   deroad                     CRC-16 KERMIT checksum
+crc16maxim    LGPL3   deroad                     CRC-16 MAXIM checksum
+crc16mcrf4xx  LGPL3   deroad                     CRC-16 MCRF4XX checksum
+crc16modbus   LGPL3   deroad                     CRC-16 MODBUS checksum
+crc16riello   LGPL3   deroad                     CRC-16 RIELLO checksum
+crc16t10dif   LGPL3   deroad                     CRC-16 T10-DIF checksum
+crc16teledisk LGPL3   deroad                     CRC-16 TELEDISK checksum
+crc16tms37157 LGPL3   deroad                     CRC-16 TMS37157 checksum
+crc16usb      LGPL3   deroad                     CRC-16 USB checksum
+crc16x25      LGPL3   deroad                     CRC-16 X25 checksum
+crc16xmodem   LGPL3   deroad                     CRC-16 XMODEM checksum
+crc24         LGPL3   deroad                     CRC-24 checksum
+crc32         LGPL3   deroad                     CRC-32 checksum
+crc32bzip2    LGPL3   deroad                     CRC-32 BZIP2 checksum
+crc32c        LGPL3   deroad                     CRC-32C checksum
+crc32d        LGPL3   deroad                     CRC-32D checksum
+crc32ecma267  LGPL3   deroad                     CRC-32 ECMA-267 checksum (EDC for DVD sectors)
+crc32jamcrc   LGPL3   deroad                     CRC-32 JAMCRC checksum
+crc32mpeg2    LGPL3   deroad                     CRC-32 MPEG2 checksum
+crc32posix    LGPL3   deroad                     CRC-32 POSIX checksum
+crc32q        LGPL3   deroad                     CRC-32Q checksum
+crc32xfer     LGPL3   deroad                     CRC-32 XFER checksum
+crc64         LGPL3   deroad                     CRC-64 checksum
+crc64ecma182  LGPL3   deroad                     CRC-64 ECMA-182 checksum
+crc64iso      LGPL3   deroad                     CRC-64 ISO checksum
+crc64we       LGPL3   deroad                     CRC-64 WE checksum
+crc64xz       LGPL3   deroad                     CRC-64 XZ checksum
+crc8cdma2000  LGPL3   deroad                     CRC-8 CDMA-2000 checksum
+crc8darc      LGPL3   deroad                     CRC-8 DARC checksum
+crc8dvbs2     LGPL3   deroad                     CRC-8 DVB-S2 checksum
+crc8ebu       LGPL3   deroad                     CRC-8 EBU checksum
+crc8icode     LGPL3   deroad                     CRC-8 I-CODE checksum
+crc8itu       LGPL3   deroad                     CRC-8 ITU checksum
+crc8maxim     LGPL3   deroad                     CRC-8 MAXIM checksum
+crc8rohc      LGPL3   deroad                     CRC-8 ROHC checksum
+crc8smbus     LGPL3   deroad                     CRC-8 SMBUS checksum
+crc8wcdma     LGPL3   deroad                     CRC-8 WCDMA checksum
+crca          LGPL3   deroad                     CRC-16/CRCA checksum
+entropy       LGPL3   deroad                     Entropy [0.0-8.0] range
+entropy_fract LGPL3   deroad                     Fractional entropy [0.0-1.0] range
+fletcher16    LGPL3   deroad                     Fletcher16 checksum
+fletcher32    LGPL3   deroad                     Fletcher32 checksum
+fletcher64    LGPL3   deroad                     Fletcher64 checksum
+fletcher8     LGPL3   deroad                     Fletcher8 checksum
+md2           LGPL3   swedenspy                  MD2 cryptographic hash
+md4           LGPL3   deroad                     MD4 cryptographic hash
+md5           LGPL2   Alan DeKok                 MD5 cryptographic hash
+mod255        LGPL3   deroad                     Modulo 255 checksum
+parity        LGPL3   deroad                     Parity checksum
+sha1          LGPL3   deroad                     SHA-1 cryptographic hash
+sha256        BSD-3   Aaron D. Gifford           SHA-256 cryptographic hash
+sha384        BSD-3   Aaron D. Gifford           SHA-384 cryptographic hash
+sha512        BSD-3   Aaron D. Gifford           SHA-512 cryptographic hash
+sm3           LGPL2   FSF/deroad                 ShangMi 3 (SM3) cryptographic hash
+ssdeep        LGPL3   deroad                     SSDeep Context Triggered Piecewise Hash (CTPH, fuzzy hash)
+temperature   LGPL3   Seva                       Binary temperature [0.0-1.0] range
+xor16         LGPL3   deroad                     XOR-16 checksum
+xor8          LGPL3   deroad                     XOR-8 checksum
+xxhash32      LGPL3   deroad                     xxHash32 non-cryptographic hash
 adler32
 blake3
 crc15can
@@ -579,6 +581,7 @@ fletcher8
 md2
 md4
 md5
+mod255
 parity
 sha1
 sha256

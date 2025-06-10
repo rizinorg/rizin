@@ -8,6 +8,7 @@ static RzCmdStatus core_crypto_plugin_print(RzCmdStateOutput *state, const RzCry
 	const char *name = rz_str_get(plugin->name);
 	const char *license = rz_str_get(plugin->license);
 	const char *author = rz_str_get(plugin->author);
+	const char *description = rz_str_get(plugin->description);
 
 	PJ *pj = state->d.pj;
 	switch (state->mode) {
@@ -19,13 +20,14 @@ static RzCmdStatus core_crypto_plugin_print(RzCmdStateOutput *state, const RzCry
 		pj_ks(pj, "name", name);
 		pj_ks(pj, "license", license);
 		pj_ks(pj, "author", author);
+		pj_ks(pj, "description", description);
 		pj_end(pj);
 		break;
 	case RZ_OUTPUT_MODE_STANDARD:
-		rz_cons_printf("%-14s %-10s %s\n", name, license, author);
+		rz_cons_printf("%-14s %-10s %-24s %s\n", name, license, author, description);
 		break;
 	case RZ_OUTPUT_MODE_TABLE:
-		rz_table_add_rowf(state->d.t, "sss", name, license, author);
+		rz_table_add_rowf(state->d.t, "ssss", name, license, author, description);
 		break;
 	default:
 		rz_warn_if_reached();
@@ -38,7 +40,7 @@ RZ_API RzCmdStatus rz_core_crypto_plugins_print(RzCrypto *cry, RzCmdStateOutput 
 	rz_return_val_if_fail(cry, RZ_CMD_STATUS_ERROR);
 
 	rz_cmd_state_output_array_start(state);
-	rz_cmd_state_output_set_columnsf(state, "sss", "algorithm", "license", "author");
+	rz_cmd_state_output_set_columnsf(state, "ssss", "algorithm", "license", "author", "description");
 
 	RzIterator *iter = ht_sp_as_iter(cry->plugins);
 	RzList *plugin_list = rz_list_new_from_iterator(iter);

@@ -66,6 +66,7 @@ RzHashPlugin rz_hash_plugin_adler32 = {
 	.name = "adler32",
 	.license = "LGPL3",
 	.author = "deroad",
+	.description = "Adler-32 checksum",
 	.support_hmac = false,
 	.context_new = plugin_adler32_context_new,
 	.context_free = plugin_adler32_context_free,

@@ -127,6 +127,7 @@ RzCryptoPlugin rz_crypto_plugin_rc4 = {
 	.name = "rc4",
 	.author = "pancake",
 	.license = "LGPL-3",
+	.description = "RC4 symmetric-key block cipher",
 	.set_key = rc4_set_key,
 	.get_key_size = rc4_get_key_size,
 	.use = rc4_use,

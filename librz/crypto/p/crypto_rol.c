@@ -5,17 +5,15 @@
 #include <rz_crypto.h>
 #include <rz_util.h>
 
-#define NAME "rol"
-
-enum { MAX_rol_KEY_SIZE = 32768 };
+#define MAX_ROL_KEY_SIZE 32768
 
 struct rol_state {
-	ut8 key[MAX_rol_KEY_SIZE];
+	ut8 key[MAX_ROL_KEY_SIZE];
 	int key_size;
 };
 
 static bool rol_init_state(struct rol_state *const state, const ut8 *key, int keylen) {
-	if (!state || !key || keylen < 1 || keylen > MAX_rol_KEY_SIZE) {
+	if (!state || !key || keylen < 1 || keylen > MAX_ROL_KEY_SIZE) {
 		return false;
 	}
 	int i;
@@ -51,7 +49,7 @@ static int rol_get_key_size(RzCrypto *cry) {
 }
 
 static bool rol_use(const char *algo) {
-	return !strcmp(algo, NAME);
+	return !strcmp(algo, "rol");
 }
 
 static bool update(RzCrypto *cry, const ut8 *buf, int len) {
@@ -87,9 +85,10 @@ static bool rol_fini(RzCrypto *cry) {
 }
 
 RzCryptoPlugin rz_crypto_plugin_rol = {
-	.name = NAME,
+	.name = "rol",
 	.author = "pancake",
 	.license = "LGPL-3",
+	.description = "Rotate Left symmetric-key block cipher",
 	.set_key = rol_set_key,
 	.get_key_size = rol_get_key_size,
 	.use = rol_use,

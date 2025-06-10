@@ -67,6 +67,7 @@ RzHashPlugin rz_hash_plugin_xxhash32 = {
 	.name = "xxhash32",
 	.license = "LGPL3",
 	.author = "deroad",
+	.description = "xxHash32 non-cryptographic hash",
 	.support_hmac = false,
 	.context_new = plugin_xxhash32_context_new,
 	.context_free = plugin_xxhash32_context_free,

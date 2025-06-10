@@ -189,6 +189,7 @@ RzCryptoPlugin rz_crypto_plugin_aes_cbc = {
 	.name = "aes-cbc",
 	.author = "rakholiyajenish.07",
 	.license = "LGPL-3",
+	.description = "AES symmetric-key block cipher (CBC block mode)",
 	.set_key = aes_cbc_set_key,
 	.get_key_size = aes_cbc_get_key_size,
 	.set_iv = aes_cbc_set_iv,

@@ -66,6 +66,7 @@ RzHashPlugin rz_hash_plugin_entropy_fract = {
 	.name = "entropy_fract",
 	.license = "LGPL3",
 	.author = "deroad",
+	.description = "Fractional entropy [0.0-1.0] range",
 	.support_hmac = false,
 	.context_new = plugin_entropy_context_new,
 	.context_free = plugin_entropy_context_free,

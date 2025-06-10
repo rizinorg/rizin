@@ -72,6 +72,7 @@ RzHashPlugin rz_hash_plugin_ssdeep = {
 	.name = "ssdeep",
 	.license = "LGPL3",
 	.author = "deroad",
+	.description = "SSDeep Context Triggered Piecewise Hash (CTPH, fuzzy hash)",
 	.support_hmac = false,
 	.context_new = plugin_ssdeep_context_new,
 	.context_free = plugin_ssdeep_context_free,

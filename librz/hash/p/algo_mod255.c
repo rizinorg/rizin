@@ -66,6 +66,7 @@ RzHashPlugin rz_hash_plugin_mod255 = {
 	.name = "mod255",
 	.license = "LGPL3",
 	.author = "deroad",
+	.description = "Modulo 255 checksum",
 	.support_hmac = false,
 	.context_new = plugin_mod255_context_new,
 	.context_free = plugin_mod255_context_free,

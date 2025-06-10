@@ -79,6 +79,7 @@ RzHashPlugin rz_hash_plugin_sha384 = {
 	.name = "sha384",
 	.author = "Aaron D. Gifford",
 	.license = "BSD-3",
+	.description = "SHA-384 cryptographic hash",
 	.support_hmac = true,
 	.context_new = plugin_sha384_context_new,
 	.context_free = plugin_sha384_context_free,

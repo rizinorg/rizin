@@ -66,6 +66,7 @@ RzHashPlugin rz_hash_plugin_entropy = {
 	.name = "entropy",
 	.license = "LGPL3",
 	.author = "deroad",
+	.description = "Entropy [0.0-8.0] range",
 	.support_hmac = false,
 	.context_new = plugin_entropy_context_new,
 	.context_free = plugin_entropy_context_free,

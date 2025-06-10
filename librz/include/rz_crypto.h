@@ -42,6 +42,7 @@ typedef struct rz_crypto_plugin_t {
 	const char *name;
 	const char *license;
 	const char *author;
+	const char *description;
 	int (*get_key_size)(RzCrypto *cry);
 	bool (*set_iv)(RzCrypto *cry, const ut8 *iv, int ivlen);
 	bool (*set_key)(RzCrypto *cry, const ut8 *key, int keylen, int mode, int direction);

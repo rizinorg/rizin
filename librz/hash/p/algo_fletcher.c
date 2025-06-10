@@ -83,6 +83,7 @@
 		.name = "fletcher" #bits, \
 		.license = "LGPL3", \
 		.author = "deroad", \
+		.description = "Fletcher" #bits " checksum", \
 		.support_hmac = false, \
 		.context_new = plugin_fletcher##bits##_context_new, \
 		.context_free = plugin_fletcher##bits##_context_free, \

@@ -349,6 +349,7 @@ RzCryptoPlugin rz_crypto_plugin_blowfish = {
 	.name = "blowfish",
 	.license = "LGPL3",
 	.author = "kishorbhat",
+	.description = "Blowfish symmetric-key block cipher",
 	.set_key = blowfish_set_key,
 	.get_key_size = blowfish_get_key_size,
 	.use = blowfish_use,

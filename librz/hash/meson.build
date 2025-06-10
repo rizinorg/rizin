@@ -13,6 +13,7 @@ hash_plugins_list = [
   'fletcher32',
   'fletcher64',
   'adler32',
+  'mod255',
   'crca_crc8smbus',
   'crca_crc8cdma2000',
   'crca_crc8darc',

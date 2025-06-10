@@ -29,6 +29,7 @@ typedef struct rz_hash_plugin_t {
 	const char *name;
 	const char *license;
 	const char *author;
+	const char *description;
 	bool support_hmac;
 	void *(*context_new)();
 	void (*context_free)(void *context);
@@ -111,6 +112,7 @@ extern RzHashPlugin rz_hash_plugin_fletcher16;
 extern RzHashPlugin rz_hash_plugin_fletcher32;
 extern RzHashPlugin rz_hash_plugin_fletcher64;
 extern RzHashPlugin rz_hash_plugin_adler32;
+extern RzHashPlugin rz_hash_plugin_mod255;
 extern RzHashPlugin rz_hash_plugin_crca_crc8smbus;
 extern RzHashPlugin rz_hash_plugin_crca_crc8cdma2000;
 extern RzHashPlugin rz_hash_plugin_crca_crc8darc;
@@ -171,6 +173,7 @@ extern RzHashPlugin rz_hash_plugin_entropy_fract;
 extern RzHashPlugin rz_hash_plugin_blake3;
 extern RzHashPlugin rz_hash_plugin_ssdeep;
 extern RzHashPlugin rz_hash_plugin_sm3;
+extern RzHashPlugin rz_hash_plugin_temperature;
 
 #ifdef __cplusplus
 }
