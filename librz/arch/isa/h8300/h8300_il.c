@@ -7,10 +7,6 @@
 #define OPS_GET(I) (cmd->ops[(I)])
 #define PC_VAL     U16(cmd->pc)
 
-static const char *GPRs[] = {
-	"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7"
-};
-
 #define R16_OP_DECL(I) \
 	H8300Operand *op = &OPS_GET(i); \
 	if (op->typ != H8300_OP_R16 && op->typ != H8300_OP_RI16 && op->typ != H8300_OP_RINC && op->typ != H8300_OP_RDEC) { \
@@ -29,7 +25,7 @@ static RzILOpPure *r8_op(H8300Cmd *cmd, ut8 i) {
 	R8_OP_DECL(i);
 	ut8 index = op->reg % 8;
 	bool low = op->reg & 8;
-	RzILOpPure *x = VARG(GPRs[index]);
+	RzILOpPure *x = VARG(h8300_get_register16_name(index));
 	return low ? UNSIGNED(8, x) : UNSIGNED(8, SHIFTR0(x, U8(8)));
 }
 
@@ -42,20 +38,20 @@ static RzILOpEffect *r8_op_set(H8300Cmd *cmd, ut8 i, RzILOpPure *x) {
 	R8_OP_DECL(i);
 	ut8 index = op->reg % 8;
 	bool low = op->reg & 8;
-	return SETG(GPRs[index],
-		DEPOSIT16(VARG(GPRs[index]), low ? U32(0) : U32(8), U32(8), x));
+	return SETG(h8300_get_register16_name(index),
+		DEPOSIT16(VARG(h8300_get_register16_name(index)), low ? U32(0) : U32(8), U32(8), x));
 }
 
 static RzILOpPure *r16_op(H8300Cmd *cmd, ut8 i) {
 	R16_OP_DECL(i);
 	ut8 index = op->reg % 8;
-	return VARG(GPRs[index]);
+	return VARG(h8300_get_register16_name(index));
 }
 
 static RzILOpEffect *r16_op_set(H8300Cmd *cmd, ut8 i, RzILOpPure *x) {
 	R16_OP_DECL(i);
 	ut8 index = op->reg % 8;
-	return SETG(GPRs[index], x);
+	return SETG(h8300_get_register16_name(index), x);
 }
 
 #define X_OP_GET_IMPL(E, T, X) \
@@ -83,7 +79,7 @@ static RzILOpPure *rd16_op(H8300Cmd *cmd, ut8 i) {
 		RZ_LOG_ERROR("invalid op type rd16\n");
 		return NULL;
 	}
-	return ADD(VARG(GPRs[op->rd.reg]), S16(op->rd.disp));
+	return ADD(VARG(h8300_get_register16_name(op->rd.reg)), S16(op->rd.disp));
 }
 
 static RzILOpPure *pc_rel_op(H8300Cmd *cmd, ut8 i) {
@@ -156,6 +152,8 @@ static RzILOpEffect *op_mov_b(H8300Cmd *cmd) {
 			ccr_unary_NZV0(8, VARL("data_value")));
 	case H8300_INSN_FORMAT_ABSR8:
 		return SEQ2(R8_X(1, LOAD(ABS_OP(0))), ccr_unary_NZV0(8, LOAD(ABS_OP(0))));
+	case H8300_INSN_FORMAT_ABSR16:
+		return SEQ2(R16_X(1, LOADW(16, ABS_OP(0))), ccr_unary_NZV0(16, LOADW(16, ABS_OP(0))));
 	case H8300_INSN_FORMAT_R8ABS:
 		return SEQ2(STORE(ABS_OP(1), R8_OP(0)), ccr_unary_NZV0(8, R8_OP(0)));
 	case H8300_INSN_FORMAT_IMMR8:
@@ -565,6 +563,7 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 	switch (cmd->id) {
 	case H8300_INSN_MOV_B: return op_mov_b(cmd);
 	case H8300_INSN_MOV_W: return op_mov_w(cmd);
+	case H8300_INSN_MOV_L: NOT_IMPLEMENTED;
 	case H8300_INSN_ADD_B: return op_add_b(cmd);
 	case H8300_INSN_ADD_W: return op_add_w(cmd);
 	case H8300_INSN_ADD_L: NOT_IMPLEMENTED;
@@ -586,6 +585,7 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 			return ccr_cmp_w(R16_OP(1), IMM_OP(0), IL_FALSE);
 		default: NOT_IMPLEMENTED;
 		}
+	case H8300_INSN_CMP_L: NOT_IMPLEMENTED;
 	case H8300_INSN_SUB_B:
 		switch (cmd->fmt) {
 		case H8300_INSN_FORMAT_R8R8:
@@ -637,7 +637,7 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 	case H8300_INSN_AND_L: NOT_IMPLEMENTED;
 	case H8300_INSN_NOP:
 	case H8300_INSN_SLEEP: return NOP();
-	case H8300_INSN_STC: return R8_X(0, VARG("ccr"));
+	case H8300_INSN_STC: return R8_X(1, VARG("ccr"));
 	case H8300_INSN_LDC_B:
 		switch (cmd->fmt) {
 		case H8300_INSN_FORMAT_IMM:
@@ -646,6 +646,7 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 			return SETG("ccr", R8_OP(0));
 		default: NOT_IMPLEMENTED;
 		}
+	case H8300_INSN_LDC_W: NOT_IMPLEMENTED;
 	case H8300_INSN_ORC: return op_logical_i8ccr(cmd, rz_il_op_new_log_or);
 	case H8300_INSN_XORC: return op_logical_i8ccr(cmd, rz_il_op_new_log_xor);
 	case H8300_INSN_ANDC: return op_logical_i8ccr(cmd, rz_il_op_new_log_and);
@@ -658,6 +659,8 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 				ccr_unary_NZV(8, VARL("_res"), EQ(VARL("_res"), U8(0x80))));
 		default: NOT_IMPLEMENTED;
 		}
+	case H8300_INSN_DEC_W:
+	case H8300_INSN_DEC_L: NOT_IMPLEMENTED;
 	case H8300_INSN_INC_B:
 		switch (cmd->fmt) {
 		case H8300_INSN_FORMAT_R8:
@@ -667,6 +670,8 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 				ccr_unary_NZV(8, VARL("_res"), EQ(VARL("_res"), U8(0))));
 		default: NOT_IMPLEMENTED;
 		}
+	case H8300_INSN_INC_L:
+	case H8300_INSN_INC_W: NOT_IMPLEMENTED;
 	case H8300_INSN_DAA: return op_daa(cmd);
 	case H8300_INSN_DAS: return op_das(cmd);
 	case H8300_INSN_SHAL:
@@ -774,6 +779,10 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 			SETL("remainder", UNSIGNED(8, MOD(R16_OP(1), UNSIGNED(16, R8_OP(0))))),
 			ccr_unary_NZ(8, R8_OP(0)),
 			R16_X(1, APPEND(VARL("remainder"), VARL("quotient"))));
+	case H8300_INSN_DIVXU_W:
+	case H8300_INSN_DIVXS_B:
+	case H8300_INSN_DIVXS_W: NOT_IMPLEMENTED;
+
 	case H8300_INSN_EEPMOV_B:
 		return SEQ2(
 			SETL("i", U8(0)),
@@ -782,6 +791,11 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 				SEQ2(
 					STORE(ADD(VARG("r6"), UNSIGNED(16, VARL("i"))), LOAD(ADD(VARG("r6"), UNSIGNED(16, VARL("i"))))),
 					SETL("i", ADD(VARL("i"), U8(1))))));
+	case H8300_INSN_EEPMOV_W:
+	case H8300_INSN_EXTS_W:
+	case H8300_INSN_EXTS_L:
+	case H8300_INSN_EXTU_W:
+	case H8300_INSN_EXTU_L: NOT_IMPLEMENTED;
 	case H8300_INSN_RTS:
 		return SEQ3(
 			SETL("@sp", LOADW(16, VARG("r7"))),
@@ -1021,6 +1035,9 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 			SETG("r7", SUB(VARG("r7"), U16(2))),
 			STOREW(VARG("r7"), R16_OP(0)),
 			ccr_unary_NZV0(16, R16_OP(0)));
+	case H8300_INSN_INVALID: return NOP();
+	case H8300_INSN_MOVFPE:
+	case H8300_INSN_MOVTPE: NOT_IMPLEMENTED;
 	}
 
 	NOT_IMPLEMENTED;
@@ -1033,6 +1050,7 @@ int h8300_analyze_op_il(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 
 static const char *reg_bindings[] = {
 	"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7",
+	"e0", "e1", "e2", "e3", "e4", "e5", "e6", "e7",
 	"ccr", NULL
 };
 

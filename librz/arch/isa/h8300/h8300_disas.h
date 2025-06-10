@@ -125,8 +125,12 @@ enum h8300_opcodes_9bit {
 };
 
 typedef enum h8300_insn_id {
+	H8300_INSN_INVALID,
 	H8300_INSN_MOV_B,
 	H8300_INSN_MOV_W,
+	H8300_INSN_MOV_L,
+	H8300_INSN_MOVFPE,
+	H8300_INSN_MOVTPE,
 	H8300_INSN_ADDX,
 	H8300_INSN_ADD_B,
 	H8300_INSN_ADD_W,
@@ -237,12 +241,22 @@ typedef enum {
 	H8300_INSN_FORMAT_R16R16,
 	H8300_INSN_FORMAT_R16R32,
 	H8300_INSN_FORMAT_R32R32,
+	H8300_INSN_FORMAT_RI32R32,
+	H8300_INSN_FORMAT_R32RI32,
+	H8300_INSN_FORMAT_RIINC32R32,
+	H8300_INSN_FORMAT_R32RIINC32,
 	H8300_INSN_FORMAT_R16ABS,
 	H8300_INSN_FORMAT_ABSR16,
+	H8300_INSN_FORMAT_ABSR32,
+	H8300_INSN_FORMAT_R32ABS,
 	H8300_INSN_FORMAT_RD16R16,
 	H8300_INSN_FORMAT_R8RD16,
 	H8300_INSN_FORMAT_RD16R8,
 	H8300_INSN_FORMAT_RD32,
+	H8300_INSN_FORMAT_RD32R32,
+	H8300_INSN_FORMAT_R32RD32,
+	H8300_INSN_FORMAT_RD32R8,
+	H8300_INSN_FORMAT_R8RD32,
 	H8300_INSN_FORMAT_R16RD16,
 	H8300_INSN_FORMAT_R16RDEC,
 	H8300_INSN_FORMAT_RINCR16,
@@ -273,9 +287,11 @@ typedef enum {
 	H8300_OP_RD16,
 	H8300_OP_RD32,
 	H8300_OP_RI16,
+	H8300_OP_RI32,
 	H8300_OP_RINC, ///< Register indirect with post-increment @Rn+
 	H8300_OP_RDEC, ///< Register indirect with pre-decrement @–Rn
 	H8300_OP_RIINC32,
+	H8300_OP_CCR,
 } H8300OperandType;
 
 typedef struct {
@@ -283,10 +299,10 @@ typedef struct {
 	union {
 		ut8 reg;
 		ut32 imm;
-		st16 disp;
+		st32 disp;
 		struct {
 			ut8 reg;
-			st16 disp;
+			st32 disp;
 		} rd;
 	};
 } H8300Operand;
@@ -308,5 +324,10 @@ int h8300_analyze_op_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 
 int h8300_analyze_op_il(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd);
 int h8300_decode_command(const ut8 *instr, ut64 len, struct h8300_cmd *cmd, ut64 pc);
 RzAnalysisILConfig *h8300_il_config(RzAnalysis *a);
+
+const char *h8300_get_opcode_name(H8300InsnId id);
+const char *h8300_get_register8_name(ut8 id);
+const char *h8300_get_register16_name(ut8 id);
+const char *h8300_get_register32_name(ut8 id);
 
 #endif /* H8300_DISAS_H */

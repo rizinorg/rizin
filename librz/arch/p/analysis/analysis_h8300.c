@@ -62,6 +62,7 @@ static int h8300_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 		return ret;
 	}
 
+	op->type = RZ_ANALYSIS_OP_TYPE_UNK;
 	switch (cmd.id) {
 	case H8300_INSN_MOV_B:
 	case H8300_INSN_MOV_W:
@@ -140,9 +141,59 @@ static int h8300_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 		op->jump = addr + 2 + (st8)(buf[1]);
 		op->fail = addr + 2;
 		break;
-	default:
-		op->type = RZ_ANALYSIS_OP_TYPE_UNK;
 		break;
+	case H8300_INSN_INVALID: break;
+	case H8300_INSN_MOV_L: break;
+	case H8300_INSN_MOVFPE: break;
+	case H8300_INSN_MOVTPE: break;
+	case H8300_INSN_CMP_L: break;
+	case H8300_INSN_OR: break;
+	case H8300_INSN_SLEEP: break;
+	case H8300_INSN_STC: break;
+	case H8300_INSN_LDC_B: break;
+	case H8300_INSN_LDC_W: break;
+	case H8300_INSN_ORC: break;
+	case H8300_INSN_INC_B: break;
+	case H8300_INSN_INC_W: break;
+	case H8300_INSN_INC_L: break;
+	case H8300_INSN_DAA: break;
+	case H8300_INSN_SHLL: break;
+	case H8300_INSN_SHLR: break;
+	case H8300_INSN_ROTL: break;
+	case H8300_INSN_ROTR: break;
+	case H8300_INSN_ROTXL: break;
+	case H8300_INSN_ROTXR: break;
+	case H8300_INSN_NEG: break;
+	case H8300_INSN_NOT: break;
+	case H8300_INSN_DEC_B: break;
+	case H8300_INSN_DEC_W: break;
+	case H8300_INSN_DEC_L: break;
+	case H8300_INSN_DAS: break;
+	case H8300_INSN_DIVXU_B: break;
+	case H8300_INSN_DIVXU_W: break;
+	case H8300_INSN_DIVXS_B: break;
+	case H8300_INSN_DIVXS_W: break;
+	case H8300_INSN_BSR: break;
+	case H8300_INSN_RTE: break;
+	case H8300_INSN_BSET: break;
+	case H8300_INSN_BNOT: break;
+	case H8300_INSN_BCLR: break;
+	case H8300_INSN_BST: break;
+	case H8300_INSN_BXOR: break;
+	case H8300_INSN_BAND: break;
+	case H8300_INSN_BILD: break;
+	case H8300_INSN_EXTS_W: break;
+	case H8300_INSN_EXTS_L: break;
+	case H8300_INSN_EXTU_W: break;
+	case H8300_INSN_EXTU_L: break;
+	case H8300_INSN_BIAND: break;
+	case H8300_INSN_BIST: break;
+	case H8300_INSN_BOR: break;
+	case H8300_INSN_BIOR: break;
+	case H8300_INSN_BIXOR: break;
+	case H8300_INSN_BLD: break;
+	case H8300_INSN_POP: break;
+	case H8300_INSN_PUSH: break;
 	}
 
 	if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
@@ -191,6 +242,14 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"gpr	r7l	.8	15	0\n"
 		"gpr	pc	.16	16	0\n"
 		"gpr	ccr	.8	18	0\n"
+		"gpr	e0	.16	30	0\n"
+		"gpr	e1	.16	32	0\n"
+		"gpr	e2	.16	34	0\n"
+		"gpr	e3	.16	36	0\n"
+		"gpr	e4	.16	38	0\n"
+		"gpr	e5	.16	40	0\n"
+		"gpr	e6	.16	44	0\n"
+		"gpr	e7	.16	46	0\n"
 		"gpr	I	.1	.151	0\n"
 		"gpr	U1	.1	.150	0\n"
 		"gpr	H	.1	.149	0\n"
