@@ -1,0 +1,86 @@
+NAME=dcu + read
+FILE=bins/rizin-testbins/elf/netbsd-hello-x64
+ARGS=-d
+CMDS=<<EOF
+dcu main
+pi 5
+dc
+EOF
+EXPECT=<<EOF
+push rbp
+mov rbp, rsp
+mov edi, str.Hello_World
+call sym.imp.puts
+mov eax, 0x00
+Hello World
+EOF
+RUN
+
+NAME=maps
+FILE=bins/rizin-testbins/elf/netbsd-hello-x64
+ARGS=-d
+CMDS=<<EOF
+dm~hello~[3-9]
+dc
+EOF
+EXPECT=<<EOF
+- usr 4K s r-x 155519 /usr/home/rizin/rizin/rizin-testbins/elf/netbsd-hello-x64
+Hello World
+EOF
+RUN
+
+NAME=step and check pc
+FILE=bins/rizin-testbins/elf/netbsd-calculate-x64
+ARGS=-d
+CMDS=<<EOF
+dcu main
+5 ds
+dr rip
+ds
+dr rip
+dc
+EOF
+EXPECT=<<EOF
+rip = 0x0000000000400984
+rip = 0x0000000000400988
+Result = 42
+EOF
+RUN
+
+NAME=write gpr
+FILE=bins/rizin-testbins/elf/netbsd-calculate-x64
+ARGS=-d
+CMDS=<<EOF
+db @ main + 64
+dc
+dr rax
+dr rax = 1337
+dr rax
+dc
+EOF
+EXPECT=<<EOF
+rax = 0x0000000000000028
+rax = 0x0000000000000539
+Result = 1339
+EOF
+RUN
+
+NAME=Signal handling ppc64le
+FILE=bins/rizin-testbins/elf/netbsd-calculate-x64
+ARGS=-d
+CMDS=<<EOF
+dkl~SIGTERM
+dko 15 skip
+dkl~SIGTERM
+dko 15 reset
+dkl~SIGTERM
+dk 15
+dc
+EOF
+EXPECT=<<EOF
+15 SIGTERM
+15 SIGTERM skip
+15 SIGTERM
+[+] signal 15 aka SIGTERM received 0
+EOF
+RUN

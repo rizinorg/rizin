@@ -14,6 +14,8 @@
 #define RZ_TEST_OS "darwin"
 #elif __WINDOWS__
 #define RZ_TEST_OS "windows"
+#elif __NetBSD__
+#define RZ_TEST_OS "netbsd"
 #else
 #define RZ_TEST_OS "unknown"
 #endif
