@@ -381,7 +381,7 @@ static ut64 get_vaddr(RzBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
 // Declaration of the plugin
 RzBinPlugin rz_bin_plugin_qnx = {
 	.name = "qnx",
-	.desc = "QNX executable file support",
+	.desc = "QNX executable",
 	.license = "LGPL3",
 	.load_buffer = &load_buffer,
 	.destroy = &destroy,

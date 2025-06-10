@@ -117,7 +117,7 @@ RzPVector /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 
 RzBinPlugin rz_bin_plugin_ne = {
 	.name = "ne",
-	.desc = "NE format plugin",
+	.desc = "NE (New Executable)",
 	.author = "GustavoLCR",
 	.license = "LGPL3",
 	.check_buffer = &check_buffer,

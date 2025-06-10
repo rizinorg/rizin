@@ -169,7 +169,7 @@ static ut64 baddr(RzBinFile *bf) {
 
 RzBinPlugin rz_bin_plugin_dol = {
 	.name = "dol",
-	.desc = "Nintendo Dolphin binary format",
+	.desc = "Nintendo Dolphin binary",
 	.license = "BSD",
 	.author = "pancake",
 	.load_buffer = &load_buffer,

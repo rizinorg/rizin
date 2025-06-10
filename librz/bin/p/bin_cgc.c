@@ -102,7 +102,7 @@ static RzBuffer *create(RzBin *bin, const ut8 *code, int codelen, const ut8 *dat
 
 RzBinPlugin rz_bin_plugin_cgc = {
 	.name = "cgc",
-	.desc = "CGC format rz_bin plugin",
+	.desc = "CGC (Cyber Grand Challenge)",
 	.license = "LGPL3",
 	.author = "ret2libc",
 	.get_sdb = &get_sdb,

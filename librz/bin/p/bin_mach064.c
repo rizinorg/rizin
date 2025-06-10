@@ -289,7 +289,7 @@ static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol sym) {
 
 RzBinPlugin rz_bin_plugin_mach064 = {
 	.name = "mach064",
-	.desc = "mach064 bin plugin",
+	.desc = "Mach-O 64-bit",
 	.license = "LGPL3",
 	.author = "nibble",
 	.get_sdb = &get_sdb,

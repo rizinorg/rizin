@@ -61,7 +61,7 @@ static ut64 baddr(RzBinFile *bf) {
 
 RzBinPlugin rz_bin_plugin_any = {
 	.name = "any",
-	.desc = "Dummy format rz_bin plugin",
+	.desc = "Dummy format binary",
 	.license = "LGPL3",
 	.author = "nibble",
 	.load_buffer = &load_buffer,

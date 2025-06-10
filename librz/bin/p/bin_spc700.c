@@ -81,7 +81,7 @@ static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 
 RzBinPlugin rz_bin_plugin_spc700 = {
 	.name = "spc700",
-	.desc = "SNES-SPC700 Sound File Data",
+	.desc = "SNES SPC700 sound data",
 	.license = "LGPL3",
 	.author = "maijin",
 	.load_buffer = &load_buffer,

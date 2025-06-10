@@ -149,7 +149,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 
 RzBinPlugin rz_bin_plugin_z64 = {
 	.name = "z64",
-	.desc = "Nintendo 64 Bin-BE plugin",
+	.desc = "Nintendo 64 Big-Endian binary",
 	.license = "LGPL3",
 	.author = "lowlyw",
 	.load_buffer = &load_buffer,

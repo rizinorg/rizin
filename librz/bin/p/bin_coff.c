@@ -585,7 +585,7 @@ RzList /*<char *>*/ *coff_section_flag_to_rzlist(ut64 flag) {
 
 RzBinPlugin rz_bin_plugin_coff = {
 	.name = "coff",
-	.desc = "COFF format rz_bin plugin",
+	.desc = "COFF (Common Object File Format)",
 	.license = "LGPL3",
 	.author = "Fedor Sakharov",
 	.get_sdb = &get_sdb,

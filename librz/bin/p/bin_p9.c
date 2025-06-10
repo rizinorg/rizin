@@ -254,7 +254,7 @@ static RzBuffer *create(RzBin *bin, const ut8 *code, int codelen, const ut8 *dat
 
 RzBinPlugin rz_bin_plugin_p9 = {
 	.name = "p9",
-	.desc = "Plan9 bin plugin",
+	.desc = "Plan9 binary",
 	.license = "LGPL3",
 	.author = "pancake",
 	.load_buffer = &load_buffer,

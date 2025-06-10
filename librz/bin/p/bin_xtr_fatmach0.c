@@ -150,7 +150,7 @@ static RzList /*<RzBinXtrData *>*/ *oneshotall_buffer(RzBin *bin, RzBuffer *b) {
 
 RzBinXtrPlugin rz_bin_xtr_plugin_fatmach0 = {
 	.name = "xtr.fatmach0",
-	.desc = "fat mach0 bin extractor plugin",
+	.desc = "Fat Mach-O binary extractor",
 	.license = "LGPL3",
 	.load = &load,
 	.size = &size,

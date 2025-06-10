@@ -110,7 +110,7 @@ static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 
 RzBinPlugin rz_bin_plugin_sms = {
 	.name = "sms",
-	.desc = "SEGA MasterSystem/GameGear",
+	.desc = "SEGA MasterSystem / GameGear ROM",
 	.license = "LGPL3",
 	.author = "shengdi",
 	.load_buffer = &load_buffer,

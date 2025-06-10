@@ -169,7 +169,7 @@ static void destroy(RzBinFile *bf) {
 
 RzBinPlugin rz_bin_plugin_pyc = {
 	.name = "pyc",
-	.desc = "Python byte-compiled file plugin",
+	.desc = "Python byte-compiled",
 	.license = "LGPL3",
 	.author = "c0riolis",
 	.info = &info,

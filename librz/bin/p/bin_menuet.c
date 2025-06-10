@@ -200,7 +200,7 @@ static RzBuffer *create(RzBin *bin, const ut8 *code, int codelen, const ut8 *dat
 
 RzBinPlugin rz_bin_plugin_menuet = {
 	.name = "menuet",
-	.desc = "Menuet/KolibriOS bin plugin",
+	.desc = "Menuet/KolibriOS binary",
 	.license = "LGPL3",
 	.author = "pancake",
 	.load_buffer = &load_buffer,

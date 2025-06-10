@@ -149,7 +149,7 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 
 RzBinPlugin rz_bin_plugin_bf = {
 	.name = "bf",
-	.desc = "brainfuck",
+	.desc = "Brainfuck",
 	.license = "LGPL3",
 	.author = "pancake",
 	.load_buffer = &load_buffer,

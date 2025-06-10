@@ -734,7 +734,7 @@ beach:
 
 RzBinPlugin rz_bin_plugin_dyldcache = {
 	.name = "dyldcache",
-	.desc = "dyldcache bin plugin",
+	.desc = "Apple DYLD Cache",
 	.license = "LGPL3",
 	.author = "pancake",
 	.load_buffer = &load_buffer,

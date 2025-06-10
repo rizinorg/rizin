@@ -1913,7 +1913,7 @@ static void rz_rebase_info_free(RzXNUKernelCacheRebaseInfo *info) {
 
 RzBinPlugin rz_bin_plugin_xnu_kernelcache = {
 	.name = "kernelcache",
-	.desc = "kernelcache bin plugin",
+	.desc = "Apple Kernelcache",
 	.license = "LGPL3",
 	.author = "mrmacete",
 	.destroy = &destroy,

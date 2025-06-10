@@ -368,7 +368,7 @@ static ut64 baddr(RzBinFile *bf) {
 
 RzBinPlugin rz_bin_plugin_xbe = {
 	.name = "xbe",
-	.desc = "Microsoft Xbox XBE plugin",
+	.desc = "Microsoft Xbox XBE (Xbox Executable)",
 	.license = "LGPL3",
 	.author = "LemonBoy",
 	.load_buffer = &load_buffer,

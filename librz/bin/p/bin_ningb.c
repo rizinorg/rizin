@@ -321,7 +321,7 @@ RzPVector /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
 
 RzBinPlugin rz_bin_plugin_ningb = {
 	.name = "ningb",
-	.desc = "Nintendo Gameboy plugin",
+	.desc = "Nintendo Game Boy",
 	.license = "LGPL3",
 	.author = "condret",
 	.load_buffer = &load_buffer,

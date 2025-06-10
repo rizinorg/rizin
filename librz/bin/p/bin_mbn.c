@@ -193,7 +193,7 @@ static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 
 RzBinPlugin rz_bin_plugin_mbn = {
 	.name = "mbn",
-	.desc = "MBN/SBL bootloader things",
+	.desc = "MBN/SBL bootloader binary",
 	.license = "LGPL3",
 	.author = "pancake",
 	.load_buffer = &load_buffer,

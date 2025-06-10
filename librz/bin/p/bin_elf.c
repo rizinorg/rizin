@@ -11,7 +11,7 @@ static bool check_buffer(RzBuffer *buf) {
 
 RzBinPlugin rz_bin_plugin_elf = {
 	.name = "elf",
-	.desc = "ELF format plugin",
+	.desc = "ELF (Executable and Linkable Format)",
 	.license = "LGPL3",
 	.author = "nibble",
 	.get_sdb = &get_sdb,

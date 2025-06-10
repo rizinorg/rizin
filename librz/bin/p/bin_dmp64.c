@@ -271,7 +271,7 @@ static bool check_buffer(RzBuffer *b) {
 
 RzBinPlugin rz_bin_plugin_dmp64 = {
 	.name = "dmp64",
-	.desc = "Windows Crash Dump x64 rz_bin plugin",
+	.desc = "Windows x64 Crash Dump",
 	.license = "LGPL3",
 	.author = "abcSup",
 	.destroy = &destroy,

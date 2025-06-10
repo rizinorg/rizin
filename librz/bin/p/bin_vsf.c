@@ -533,7 +533,7 @@ static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 
 RzBinPlugin rz_bin_plugin_vsf = {
 	.name = "vsf",
-	.desc = "VICE Snapshot File",
+	.desc = "VICE snapshot file",
 	.license = "LGPL3",
 	.author = "riq",
 	.get_sdb = &get_sdb,

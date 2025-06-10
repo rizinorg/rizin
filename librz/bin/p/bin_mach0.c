@@ -818,7 +818,7 @@ static ut64 size(RzBinFile *bf) {
 
 RzBinPlugin rz_bin_plugin_mach0 = {
 	.name = "mach0",
-	.desc = "mach0 bin plugin",
+	.desc = "Mach-O (Mach Object)",
 	.license = "LGPL3",
 	.author = "pancake",
 	.get_sdb = &get_sdb,

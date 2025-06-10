@@ -460,7 +460,7 @@ static void header(RzBinFile *bf) {
 
 RzBinPlugin rz_bin_plugin_pe = {
 	.name = "pe",
-	.desc = "PE bin plugin",
+	.desc = "PE (Portable Executable)",
 	.license = "LGPL3",
 	.author = "nibble",
 	.get_sdb = &get_sdb,

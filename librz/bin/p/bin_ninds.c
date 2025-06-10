@@ -334,7 +334,7 @@ static RzBinInfo *nds_info(RzBinFile *bf) {
 
 RzBinPlugin rz_bin_plugin_ninds = {
 	.name = "ninds",
-	.desc = "Nintendo DS plugin",
+	.desc = "Nintendo DS binary",
 	.license = "LGPL3",
 	.author = "a0rtega",
 	.load_buffer = &nds_load_buffer,

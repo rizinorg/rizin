@@ -326,7 +326,7 @@ static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 
 RzBinPlugin rz_bin_plugin_smd = {
 	.name = "smd",
-	.desc = "SEGA Genesis/Megadrive",
+	.desc = "SEGA Genesis / MegaDrive ROM",
 	.license = "LGPL3",
 	.author = "pancake",
 	.load_buffer = &load_buffer,

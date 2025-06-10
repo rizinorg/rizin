@@ -87,7 +87,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 
 RzBinPlugin rz_bin_plugin_ningba = {
 	.name = "ningba",
-	.desc = "Nintendo Gameboy Advance plugin",
+	.desc = "Nintendo Game Boy Advance",
 	.license = "LGPL3",
 	.author = "condret",
 	.load_buffer = &load_buffer,

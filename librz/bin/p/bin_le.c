@@ -118,7 +118,7 @@ static void le_header(RzBinFile *bf) {
 
 RzBinPlugin rz_bin_plugin_le = {
 	.name = "le",
-	.desc = "LE/LX format plugin",
+	.desc = "LE/LX (Linear Executable / Linear eXtended)",
 	.author = "GustavoLCR",
 	.license = "LGPL3",
 	.check_buffer = &rz_bin_le_check_buffer,

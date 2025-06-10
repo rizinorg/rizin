@@ -579,7 +579,7 @@ static RzPVector /*<RzBinTrycatch *>*/ *trycatch(RzBinFile *bf) {
 
 RzBinPlugin rz_bin_plugin_pe64 = {
 	.name = "pe64",
-	.desc = "PE64 (PE32+) bin plugin",
+	.desc = "PE64 (PE32+ / 64-bit Portable Executable)",
 	.license = "LGPL3",
 	.author = "nibble",
 	.get_sdb = &get_sdb,
