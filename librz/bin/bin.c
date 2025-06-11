@@ -1120,6 +1120,35 @@ RZ_API void rz_bin_virtual_file_free(RZ_NULLABLE RzBinVirtualFile *vfile) {
 	free(vfile);
 }
 
+/**
+ * \brief Clones the virtual file. If the buffer associated with it is owned, it will also clone the buffer.
+ * If it is not owned, it will copy the pointer.
+ *
+ * \param vfile The virtual file to clone.
+ *
+ * \return The virtual file clone or NULL in case of failure.
+ */
+RZ_API RZ_OWN RzBinVirtualFile *rz_bin_virtual_file_clone(RZ_BORROW RZ_NONNULL RzBinVirtualFile *vfile) {
+	rz_return_val_if_fail(vfile, NULL);
+	RzBinVirtualFile *clone = RZ_NEW0(RzBinVirtualFile);
+	if (!clone) {
+		return NULL;
+	}
+	clone->buf_owned = vfile->buf_owned;
+	clone->buf = vfile->buf_owned ? rz_buf_new_with_buf(vfile->buf) : vfile->buf;
+	if (!clone->buf) {
+		return NULL;
+	}
+	clone->name = rz_str_dup(vfile->name);
+	if (!clone->name) {
+		if (clone->buf_owned) {
+			rz_buf_free(clone->buf);
+		}
+		return NULL;
+	}
+	return clone;
+}
+
 RZ_API void rz_bin_map_free(RZ_NULLABLE RzBinMap *map) {
 	if (!map) {
 		return;
@@ -1127,6 +1156,25 @@ RZ_API void rz_bin_map_free(RZ_NULLABLE RzBinMap *map) {
 	free(map->vfile_name);
 	free(map->name);
 	free(map);
+}
+
+/**
+ * \brief Clones an RzBinMap.
+ *
+ * \param map The map to clone.
+ *
+ * \return The clone of \p map or NULL in case of failure.
+ */
+RZ_API RZ_OWN RzBinMap *rz_bin_map_clone(RZ_NONNULL RzBinMap *map) {
+	rz_return_val_if_fail(map, NULL);
+	RzBinMap *clone = RZ_NEW0(RzBinMap);
+	if (!clone) {
+		return NULL;
+	}
+	rz_mem_copy(clone, sizeof(RzBinMap), map, sizeof(RzBinMap));
+	clone->name = rz_str_dup(map->name);
+	clone->vfile_name = map->vfile_name ? rz_str_dup(map->vfile_name) : NULL;
+	return clone;
 }
 
 /**
