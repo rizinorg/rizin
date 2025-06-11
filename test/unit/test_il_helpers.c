@@ -801,6 +801,17 @@ static bool test_il_fge() {
 	mu_end;
 }
 
+bool test_float_print_format(void) {
+	mu_assert_streq(rz_il_float_stringify_format(RZ_FLOAT_IEEE754_BIN_16), "ieee754-bin16", "Update name.");
+	mu_assert_streq(rz_il_float_stringify_format(RZ_FLOAT_IEEE754_BIN_32), "ieee754-bin32", "Update name.");
+	mu_assert_streq(rz_il_float_stringify_format(RZ_FLOAT_IEEE754_BIN_64), "ieee754-bin64", "Update name.");
+	mu_assert_streq(rz_il_float_stringify_format(RZ_FLOAT_IEEE754_BIN_80), "ieee754-bin80", "Update name.");
+	mu_assert_streq(rz_il_float_stringify_format(RZ_FLOAT_IEEE754_BIN_128), "ieee754-bin128", "Update name.");
+	mu_assert_streq(rz_il_float_stringify_format(RZ_FLOAT_IEEE754_DEC_64), "ieee754-dec64", "Update name.");
+	mu_assert_streq(rz_il_float_stringify_format(RZ_FLOAT_IEEE754_DEC_128), "ieee754-dec128", "Update name.");
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_il_extract32);
 	mu_run_test(test_il_extract64);
@@ -816,6 +827,7 @@ bool all_tests() {
 	mu_run_test(test_il_fle);
 	mu_run_test(test_il_fgt);
 	mu_run_test(test_il_fge);
+	mu_run_test(test_float_print_format);
 
 	return tests_passed != tests_run;
 }
