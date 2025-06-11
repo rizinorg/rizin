@@ -51,7 +51,6 @@ static Sdb *get_sdb(RzBinFile *bf) {
 	return bin->kv;
 }
 
-#ifndef RZ_BIN_CGC
 static int check_buffer_aux(RzBuffer *buf) {
 	rz_return_val_if_fail(buf, ELFCLASSNONE);
 
@@ -67,7 +66,6 @@ static int check_buffer_aux(RzBuffer *buf) {
 
 	return tmp[SELFMAG];
 }
-#endif
 
 static bool load_buffer(RZ_UNUSED RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, RZ_UNUSED Sdb *sdb) {
 	rz_return_val_if_fail(obj, false);
@@ -85,7 +83,7 @@ static ut64 baddr(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o, UT64_MAX);
 
 	ELFOBJ *bin = rz_bin_file_get_elf(bf);
-	return Elf_(rz_bin_elf_get_baddr)(bin);
+	return Elf_(rz_bin_elf_get_baddr)(bin, &bf->o->opts);
 }
 
 static ut64 boffset(RzBinFile *bf) {
@@ -253,13 +251,16 @@ static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	return result;
 }
 
-#ifndef RZ_BIN_CGC
+static void headers_obj(ELFOBJ *bin, RZ_NONNULL PrintfCallback cb) {
+	Elf_(rz_bin_elf_print_ehdr)(bin, cb);
+}
+
 static void headers(RzBinFile *bf) {
 	rz_return_if_fail(bf && bf->o && bf->o->bin_obj);
 
 	ELFOBJ *bin = rz_bin_file_get_elf(bf);
 
-	Elf_(rz_bin_elf_print_ehdr)(bin, bf->rbin->cb_printf);
+	headers_obj(bin, bf->rbin->cb_printf);
 }
 
 static bool create_set_e_ident(RzBuffer *result) {
@@ -359,7 +360,6 @@ static RzBuffer *create_elf(RzBin *bin, const ut8 *code, int codelen, const ut8 
 
 	return result;
 }
-#endif
 
 static void destroy(RzBinFile *bf) {
 	Elf_(rz_bin_elf_free)(bf->o->bin_obj);
@@ -472,8 +472,8 @@ static ut32 section_perms_from_flags(ut32 flags) {
 	return r;
 }
 
-static RzPVector /*<RzBinMap *>*/ *maps_unpatched(RzBinFile *bf) {
-	struct Elf_(rz_bin_elf_obj_t) *obj = (bf && bf->o) ? bf->o->bin_obj : NULL;
+static RzPVector /*<RzBinMap *>*/ *maps_unpatched_obj(void *elf_obj, size_t size) {
+	struct Elf_(rz_bin_elf_obj_t) *obj = elf_obj;
 	if (!obj) {
 		return NULL;
 	}
@@ -546,9 +546,9 @@ static RzPVector /*<RzBinMap *>*/ *maps_unpatched(RzBinFile *bf) {
 		}
 		map->name = rz_str_dup("uphdr");
 		map->paddr = 0;
-		map->psize = bf->size;
+		map->psize = size;
 		map->vaddr = 0x10000;
-		map->vsize = bf->size;
+		map->vsize = size;
 		map->perm = RZ_PERM_RWX;
 		rz_pvector_push(ret, map);
 	}
@@ -559,8 +559,8 @@ static RzPVector /*<RzBinMap *>*/ *maps_unpatched(RzBinFile *bf) {
 			return ret;
 		}
 		ut64 ehdr_size = sizeof(obj->ehdr);
-		if (bf->size < ehdr_size) {
-			ehdr_size = bf->size;
+		if (size < ehdr_size) {
+			ehdr_size = size;
 		}
 		map->name = rz_str_dup("ehdr");
 		map->paddr = 0;
@@ -571,6 +571,14 @@ static RzPVector /*<RzBinMap *>*/ *maps_unpatched(RzBinFile *bf) {
 		rz_pvector_push(ret, map);
 	}
 	return ret;
+}
+
+static RzPVector /*<RzBinMap *>*/ *maps_unpatched(RzBinFile *bf) {
+	struct Elf_(rz_bin_elf_obj_t) *obj = (bf && bf->o) ? bf->o->bin_obj : NULL;
+	if (!obj) {
+		return NULL;
+	}
+	return maps_unpatched_obj(obj, bf->size);
 }
 
 static ut64 reloc_target_size(ELFOBJ *obj) {
@@ -607,18 +615,17 @@ static ut64 get_got_addr(ELFOBJ *bin) {
 	return 0;
 }
 
-static void patch_relocs(RzBinFile *bf, ELFOBJ *bin) {
-	rz_return_if_fail(bf && bin);
+static void patch_relocs_obj(ELFOBJ *bin, ut64 baddr, RzBuffer *patch_buf) {
+	rz_return_if_fail(bin && patch_buf);
 	if (bin->relocs_patched || !Elf_(rz_bin_elf_has_relocs)(bin)) {
 		return;
 	}
 	bin->relocs_patched = true; // run this function just once (lazy relocs patching)
-	RzBinObject *obj = bf->o;
-	if (!obj || !obj->opts.patch_relocs || (bin->ehdr.e_type != ET_REL && bin->ehdr.e_type != ET_DYN)) {
+	if ((bin->ehdr.e_type != ET_REL && bin->ehdr.e_type != ET_DYN)) {
 		return;
 	}
 	ut64 cdsz = reloc_target_size(bin);
-	ut64 size = reloc_targets_vfile_size(bf, bin);
+	ut64 size = Elf_(rz_bin_elf_get_relocs_count)(bin) * reloc_target_size(bin);
 	if (!size) {
 		return;
 	}
@@ -626,14 +633,13 @@ static void patch_relocs(RzBinFile *bf, ELFOBJ *bin) {
 	if (!targets) {
 		return;
 	}
-	bin->buf_patched = rz_buf_new_sparse_overlay(bf->buf, RZ_BUF_SPARSE_WRITE_MODE_SPARSE);
+	bin->buf_patched = rz_buf_new_sparse_overlay(patch_buf, RZ_BUF_SPARSE_WRITE_MODE_SPARSE);
 	if (!bin->buf_patched) {
 		rz_bin_reloc_target_builder_free(targets);
 		return;
 	}
 	RzBinElfReloc *reloc;
 	ut64 got_addr = get_got_addr(bin);
-	ut64 baddr = bf->o->opts.baseaddr;
 	ut64 mips_AHL = 0;
 
 	rz_bin_elf_foreach_relocs(bin, reloc) {
@@ -660,6 +666,15 @@ static void patch_relocs(RzBinFile *bf, ELFOBJ *bin) {
 	rz_bin_reloc_target_builder_free(targets);
 	// from now on, all writes should propagate through to the actual file
 	rz_buf_sparse_set_write_mode(bin->buf_patched, RZ_BUF_SPARSE_WRITE_MODE_THROUGH);
+}
+
+static void patch_relocs(RzBinFile *bf, ELFOBJ *bin) {
+	rz_return_if_fail(bf && bin);
+	RzBinObject *obj = bf->o;
+	if (!obj || !obj->opts.patch_relocs || (bin->ehdr.e_type != ET_REL && bin->ehdr.e_type != ET_DYN)) {
+		return;
+	}
+	patch_relocs_obj(bin, bf->o->opts.baseaddr, bf->buf);
 }
 
 static RzPVector /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
@@ -722,8 +737,7 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	return ret;
 }
 
-static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
-	ELFOBJ *obj = (bf && bf->o) ? bf->o->bin_obj : NULL;
+static RzPVector /*<RzBinSection *>*/ *sections_obj(ELFOBJ *obj, size_t psize) {
 	RzBinSection *ptr = NULL;
 	RzPVector *ret = NULL;
 
@@ -838,8 +852,8 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ptr = RZ_NEW0(RzBinSection);
 	if (ptr) {
 		ut64 ehdr_size = sizeof(obj->ehdr);
-		if (bf->size < ehdr_size) {
-			ehdr_size = bf->size;
+		if (psize < ehdr_size) {
+			ehdr_size = psize;
 		}
 		ptr->name = rz_str_dup("ehdr");
 		ptr->paddr = 0;
@@ -854,10 +868,13 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	return ret;
 }
 
-static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
-	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+	ELFOBJ *obj = (bf && bf->o) ? bf->o->bin_obj : NULL;
+	return sections_obj(obj, bf->size);
+}
 
-	ELFOBJ *bin = bf->o->bin_obj;
+static RzPVector /*<RzBinSymbol *>*/ *symbols_obj(void *elf_obj) {
+	ELFOBJ *bin = elf_obj;
 	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_symbol_free);
 	if (!ret) {
 		return NULL;
@@ -888,6 +905,13 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	}
 
 	return ret;
+}
+
+static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
+
+	ELFOBJ *bin = bf->o->bin_obj;
+	return symbols_obj(bin);
 }
 
 static RzPVector /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
@@ -923,11 +947,36 @@ static RzPVector /*<char *>*/ *libs(RzBinFile *bf) {
 	return Elf_(rz_bin_elf_get_libs)(bf->o->bin_obj);
 }
 
-static RzPVector /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
-	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
+static RzPVector /*<RzBinReloc *>*/ *relocs_obj(ELFOBJ *obj, ut64 baddr, RzBuffer *patch_buf) {
+	rz_return_val_if_fail(obj, NULL);
 	RzPVector *ret = NULL;
 	RzBinReloc *ptr = NULL;
+	patch_relocs_obj(obj, baddr, patch_buf);
 
+	if (!(ret = rz_pvector_new((RzPVectorFree)rz_bin_reloc_free))) {
+		return NULL;
+	}
+
+	ut64 got_addr = get_got_addr(obj);
+
+	if (!got_addr) {
+		got_addr = obj->reloc_targets_map_base;
+	}
+
+	RzBinElfReloc *reloc;
+	rz_bin_elf_foreach_relocs(obj, reloc) {
+		if (!(ptr = Elf_(rz_bin_elf_convert_relocation)(obj, reloc, got_addr))) {
+			continue;
+		}
+
+		rz_pvector_push(ret, ptr);
+	}
+
+	return ret;
+}
+
+static RzPVector /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 	if (!bf->o) {
 		return NULL;
 	}
@@ -937,28 +986,7 @@ static RzPVector /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 		return NULL;
 	}
 
-	patch_relocs(bf, bin);
-
-	if (!(ret = rz_pvector_new((RzPVectorFree)rz_bin_reloc_free))) {
-		return NULL;
-	}
-
-	ut64 got_addr = get_got_addr(bin);
-
-	if (!got_addr) {
-		got_addr = bin->reloc_targets_map_base;
-	}
-
-	RzBinElfReloc *reloc;
-	rz_bin_elf_foreach_relocs(bin, reloc) {
-		if (!(ptr = Elf_(rz_bin_elf_convert_relocation)(bin, reloc, got_addr))) {
-			continue;
-		}
-
-		rz_pvector_push(ret, ptr);
-	}
-
-	return ret;
+	return relocs_obj(bin, bf->o->opts.baseaddr, bf->buf);
 }
 
 static void lookup_symbols(RzBinFile *bf, RzBinInfo *ret) {

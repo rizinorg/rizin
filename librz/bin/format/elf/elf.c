@@ -316,9 +316,11 @@ static bool init(ELFOBJ *bin, RzBinObjectLoadOptions *options) {
 	}
 
 	if (bin->ehdr.e_type != ET_CORE) {
-		bin->baddr = Elf_(rz_bin_elf_get_baddr)(bin);
-		init_shstrtab(bin, sections);
-		init_shdr(bin, options, sections);
+		bin->baddr = Elf_(rz_bin_elf_get_baddr)(bin, options);
+		if (options->elf_load_sections) {
+			init_shstrtab(bin, sections);
+			init_shdr(bin, options, sections);
+		}
 	}
 
 	bin->boffset = Elf_(rz_bin_elf_get_boffset)(bin);
@@ -364,8 +366,10 @@ RZ_OWN ELFOBJ *Elf_(rz_bin_elf_new_buf)(RZ_NONNULL RzBuffer *buf, RZ_NONNULL RzB
  *
  * ...
  */
-void Elf_(rz_bin_elf_free)(RZ_NONNULL ELFOBJ *bin) {
-	rz_return_if_fail(bin);
+void Elf_(rz_bin_elf_free)(RZ_NULLABLE ELFOBJ *bin) {
+	if (!bin) {
+		return;
+	}
 
 	rz_buf_free(bin->b);
 	rz_buf_free(bin->buf_patched);

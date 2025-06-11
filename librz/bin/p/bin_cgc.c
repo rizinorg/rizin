@@ -2,8 +2,7 @@
 // SPDX-FileCopyrightText: 2009-2019 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#define RZ_BIN_CGC 1
-#include "bin_elf.inc"
+#include "../format/elf/elf_parser.h"
 
 extern struct rz_bin_dbginfo_t rz_bin_dbginfo_elf;
 
@@ -105,27 +104,28 @@ RzBinPlugin rz_bin_plugin_cgc = {
 	.desc = "CGC (Cyber Grand Challenge)",
 	.license = "LGPL3",
 	.author = "ret2libc",
-	.get_sdb = &get_sdb,
-	.load_buffer = load_buffer,
+	.get_sdb = &elf_get_sdb,
+
+	.load_buffer = elf_load_buffer,
 	.check_buffer = &check_buffer,
-	.baddr = &baddr,
-	.boffset = &boffset,
-	.binsym = &binsym,
-	.entries = &entries,
-	.virtual_files = &virtual_files,
-	.maps = &maps,
-	.sections = &sections,
-	.symbols = &symbols,
-	.imports = &imports,
-	.info = &info,
-	.fields = &fields,
-	.size = &size,
-	.libs = &libs,
-	.relocs = &relocs,
+	.baddr = &elf_baddr,
+	.boffset = &elf_boffset,
+	.binsym = &elf_binsym,
+	.entries = &elf_entries,
+	.virtual_files = &elf_virtual_files,
+	.maps = &elf_maps,
+	.sections = &elf_sections,
+	.symbols = &elf_symbols,
+	.imports = &elf_imports,
+	.info = &elf_info,
+	.fields = &elf_fields,
+	.size = &elf_size,
+	.libs = &elf_libs,
+	.relocs = &elf_relocs,
 	.create = &create,
-	.file_type = get_file_type,
-	.regstate = regstate,
+	.file_type = elf_get_file_type,
+	.regstate = elf_regstate,
 	.section_type_to_string = &Elf_(rz_bin_elf_section_type_to_string),
 	.section_flag_to_rzlist = &Elf_(rz_bin_elf_section_flag_to_rzlist),
-	.destroy = destroy
+	.destroy = elf_destroy
 };

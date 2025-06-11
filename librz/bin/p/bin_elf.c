@@ -3,10 +3,10 @@
 // SPDX-FileCopyrightText: 2009-2020 dso <dso@rice.edu>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "bin_elf.inc"
+#include "../format/elf/elf_parser.h"
 
 static bool check_buffer(RzBuffer *buf) {
-	return check_buffer_aux(buf) == ELFCLASS32;
+	return elf_check_buffer_aux(buf) == ELFCLASS32;
 }
 
 RzBinPlugin rz_bin_plugin_elf = {
@@ -14,30 +14,30 @@ RzBinPlugin rz_bin_plugin_elf = {
 	.desc = "ELF (Executable and Linkable Format)",
 	.license = "LGPL3",
 	.author = "nibble",
-	.get_sdb = &get_sdb,
-	.load_buffer = &load_buffer,
+	.get_sdb = &elf_get_sdb,
+	.load_buffer = &elf_load_buffer,
 	.check_buffer = &check_buffer,
-	.baddr = &baddr,
-	.boffset = &boffset,
-	.binsym = &binsym,
-	.entries = &entries,
-	.virtual_files = &virtual_files,
-	.maps = &maps,
-	.sections = &sections,
-	.symbols = &symbols,
-	.imports = &imports,
-	.info = &info,
-	.fields = &fields,
-	.header = &headers,
-	.size = &size,
-	.libs = &libs,
-	.relocs = &relocs,
-	.create = &create_elf,
-	.file_type = &get_file_type,
-	.regstate = &regstate,
+	.baddr = &elf_baddr,
+	.boffset = &elf_boffset,
+	.binsym = &elf_binsym,
+	.entries = &elf_entries,
+	.virtual_files = &elf_virtual_files,
+	.maps = &elf_maps,
+	.sections = &elf_sections,
+	.symbols = &elf_symbols,
+	.imports = &elf_imports,
+	.info = &elf_info,
+	.fields = &elf_fields,
+	.header = &elf_headers,
+	.size = &elf_size,
+	.libs = &elf_libs,
+	.relocs = &elf_relocs,
+	.create = &elf_create_elf,
+	.file_type = &elf_get_file_type,
+	.regstate = &elf_regstate,
 	.section_type_to_string = &Elf_(rz_bin_elf_section_type_to_string),
 	.section_flag_to_rzlist = &Elf_(rz_bin_elf_section_flag_to_rzlist),
-	.destroy = destroy,
+	.destroy = elf_destroy,
 };
 
 #ifndef RZ_PLUGIN_INCORE

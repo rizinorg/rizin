@@ -21,6 +21,13 @@
 #define RZ_BIN_ELF_PART_RELRO 1
 #define RZ_BIN_ELF_FULL_RELRO 2
 
+/**
+ * \brief This is the minimum number of bytes required for a functional ELF header.
+ * Empirically it was determined in:
+ * https://www.muppetlabs.com/~breadbox/software/tiny/teensy.html
+ */
+#define RZ_BIN_ELF_TINY_SIZE 45
+
 #define ELFOBJ struct Elf_(rz_bin_elf_obj_t)
 
 #define rz_bin_elf_foreach_segments(bin, segment) \
@@ -183,6 +190,8 @@ RzBinElfNote;
 
 typedef struct rz_bin_elf_strtab RzBinElfStrtab;
 
+#define RZ_BIN_ELF_DEFAULT_BADDR_RELOC 0x08000000
+
 struct Elf_(rz_bin_elf_obj_t) {
 	RzBuffer *b;
 
@@ -220,7 +229,7 @@ struct Elf_(rz_bin_elf_obj_t) {
 
 // elf.c
 RZ_OWN ELFOBJ *Elf_(rz_bin_elf_new_buf)(RZ_NONNULL RzBuffer *buf, RZ_NONNULL RzBinObjectLoadOptions *options);
-void Elf_(rz_bin_elf_free)(RZ_NONNULL ELFOBJ *bin);
+void Elf_(rz_bin_elf_free)(RZ_NULLABLE ELFOBJ *bin);
 ut64 Elf_(rz_bin_elf_p2v)(RZ_NONNULL ELFOBJ *bin, ut64 paddr);
 ut64 Elf_(rz_bin_elf_v2p)(RZ_NONNULL ELFOBJ *bin, ut64 vaddr);
 
@@ -300,7 +309,7 @@ bool Elf_(rz_bin_elf_is_stripped)(RZ_NONNULL ELFOBJ *bin);
 int Elf_(rz_bin_elf_get_bits)(RZ_NONNULL ELFOBJ *bin);
 int Elf_(rz_bin_elf_has_relro)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_has_nobtcfi)(RZ_NONNULL ELFOBJ *bin);
-ut64 Elf_(rz_bin_elf_get_baddr)(RZ_NONNULL ELFOBJ *bin);
+ut64 Elf_(rz_bin_elf_get_baddr)(RZ_NONNULL ELFOBJ *bin, RZ_NULLABLE RzBinObjectLoadOptions *opts);
 ut64 Elf_(rz_bin_elf_get_boffset)(RZ_NONNULL ELFOBJ *bin);
 ut64 Elf_(rz_bin_elf_get_entry_offset)(RZ_NONNULL ELFOBJ *bin);
 ut64 Elf_(rz_bin_elf_get_fini_offset)(RZ_NONNULL ELFOBJ *bin);

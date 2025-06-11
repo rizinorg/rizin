@@ -2,11 +2,10 @@
 // SPDX-FileCopyrightText: 2009-2019 nibble <nibble.ds@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#define RZ_BIN_ELF64 1
-#include "bin_elf.inc"
+#include "../format/elf/elf64_parser.h"
 
 static bool check_buffer(RzBuffer *buf) {
-	return check_buffer_aux(buf) == ELFCLASS64;
+	return elf64_check_buffer_aux(buf) == ELFCLASS64;
 }
 
 static ut64 get_elf_vaddr64(RzBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
@@ -20,31 +19,31 @@ RzBinPlugin rz_bin_plugin_elf64 = {
 	.desc = "ELF64 (64-bit Executable and Linkable Format)",
 	.license = "LGPL3",
 	.author = "nibble",
-	.get_sdb = &get_sdb,
+	.get_sdb = &elf64_get_sdb,
 	.check_buffer = &check_buffer,
-	.load_buffer = &load_buffer,
-	.baddr = &baddr,
-	.boffset = &boffset,
-	.binsym = &binsym,
-	.entries = &entries,
-	.virtual_files = &virtual_files,
-	.maps = &maps,
-	.sections = &sections,
-	.symbols = &symbols,
-	.imports = &imports,
-	.info = &info,
-	.fields = &fields,
-	.header = &headers,
-	.size = &size,
-	.libs = &libs,
-	.relocs = &relocs,
-	.create = &create_elf,
+	.load_buffer = &elf64_load_buffer,
+	.baddr = &elf64_baddr,
+	.boffset = &elf64_boffset,
+	.binsym = &elf64_binsym,
+	.entries = &elf64_entries,
+	.virtual_files = &elf64_virtual_files,
+	.maps = &elf64_maps,
+	.sections = &elf64_sections,
+	.symbols = &elf64_symbols,
+	.imports = &elf64_imports,
+	.info = &elf64_info,
+	.fields = &elf64_fields,
+	.header = &elf64_headers,
+	.size = &elf64_size,
+	.libs = &elf64_libs,
+	.relocs = &elf64_relocs,
+	.create = &elf64_create_elf,
 	.get_vaddr = &get_elf_vaddr64,
-	.file_type = &get_file_type,
-	.regstate = &regstate,
+	.file_type = &elf64_get_file_type,
+	.regstate = &elf64_regstate,
 	.section_type_to_string = &Elf_(rz_bin_elf_section_type_to_string),
 	.section_flag_to_rzlist = &Elf_(rz_bin_elf_section_flag_to_rzlist),
-	.destroy = destroy,
+	.destroy = elf64_destroy,
 };
 
 #ifndef RZ_PLUGIN_INCORE

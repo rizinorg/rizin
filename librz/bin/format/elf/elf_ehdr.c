@@ -16,7 +16,7 @@ static Elf_(Half) get_tiny_elf_phnum(ELFOBJ *bin) {
 }
 
 static bool is_tiny_elf(ELFOBJ *bin) {
-	return bin->size == 45;
+	return bin->size == RZ_BIN_ELF_TINY_SIZE;
 }
 
 static bool read_ehdr_other_aux(ELFOBJ *bin, ut64 *offset) {
