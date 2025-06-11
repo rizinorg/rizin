@@ -296,33 +296,6 @@ static void print_trampolines(RzCore *core, ut64 minimum, ut64 maximum,
 	}
 }
 
-static int mw(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf, int len) {
-	int *ec = (int *)esil->user;
-	*ec += (len * 2);
-	return 1;
-}
-
-static int mr(RzAnalysisEsil *esil, ut64 addr, ut8 *buf, int len) {
-	int *ec = (int *)esil->user;
-	*ec += len;
-	return 1;
-}
-
-static int esil_cost(RzCore *core, ut64 addr, const char *expr) {
-	if (RZ_STR_ISEMPTY(expr)) {
-		return 0;
-	}
-	int ec = 0;
-	RzAnalysisEsil *e = rz_analysis_esil_new(256, 0, 0);
-	rz_analysis_esil_setup(e, core->analysis, false, false, false);
-	e->user = &ec;
-	e->cb.mem_read = mr;
-	e->cb.mem_write = mw;
-	rz_analysis_esil_parse(e, expr);
-	rz_analysis_esil_free(e);
-	return ec;
-}
-
 static void core_analysis_bytes_size(RzCore *core, const ut8 *buf, int len, int nops) {
 	core->parser->subrel = rz_config_get_i(core->config, "asm.sub.rel");
 	int ret, i, idx;
@@ -477,9 +450,6 @@ static void core_analysis_bytes_json(RzCore *core, const ut8 *buf, int len, int 
 		pj_ki(pj, "size", op->size);
 		PJ_KS(pj, "type", rz_analysis_optype_to_string((int)op->type));
 		PJ_KS(pj, "datatype", rz_analysis_datatype_to_string(op->datatype));
-		if (esilstr) {
-			pj_ki(pj, "esilcost", esil_cost(core, op->addr, esilstr));
-		}
 		PJ_KS(pj, "reg", op->reg);
 		PJ_KS(pj, "ireg", op->ireg);
 		pj_ki(pj, "scale", op->scale);
@@ -549,9 +519,6 @@ static void core_analysis_bytes_standard(RzCore *core, const ut8 *buf, int len, 
 
 		PRINTF_LN("address", "0x%" PFMT64x "\n", op->addr);
 		PRINTF_LN("opcode", "%s\n", ab->opcode);
-		if (esilstr) {
-			PRINTF_LN("esilcost", "%d\n", esil_cost(core, op->addr, esilstr));
-		}
 		PRINTF_LN("disasm", "%s\n", ab->disasm);
 		PRINTF_LN_STR("pseudo", ab->pseudo);
 		PRINTF_LN("mnemonic", "%s\n", op->mnemonic);

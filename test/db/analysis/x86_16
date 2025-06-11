@@ -495,7 +495,6 @@ EXPECT=<<EOF
     "bytes": "9c",
     "size": 1,
     "type": "rpush",
-    "esilcost": 0,
     "scale": 0,
     "refptr": 0,
     "cycles": 1,

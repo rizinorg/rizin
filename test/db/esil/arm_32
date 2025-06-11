@@ -512,9 +512,7 @@ EOF
 EXPECT=<<EOF
             0x00000000      050010e3       tst   r0, 5
             0x00000004      0100a003       moveq r0, 1
-esilcost: 0
 esil: 0,5,r0,&,==,$z,zf,:=,31,$s,nf,:=
-esilcost: 0
 esil: zf,?{,1,r0,=,}
 r0 = 0x00000004
 EOF

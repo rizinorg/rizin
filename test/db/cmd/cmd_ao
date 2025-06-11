@@ -10,7 +10,6 @@ EOF
 EXPECT=<<EOF
 address: 0x0
 opcode: mov dword [rbp-0x0c], 0x00
-esilcost: 12
 disasm: mov dword [rbp-0x0c], 0x00
 pseudo: dword [rbp-0x0c] = 0x00
 mnemonic: mov
@@ -92,7 +91,6 @@ stackptr: 8
     "disp": 18446744073709551604,
     "size": 7,
     "type": "mov",
-    "esilcost": 12,
     "scale": 0,
     "refptr": 4,
     "cycles": 1,

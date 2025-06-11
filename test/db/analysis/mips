@@ -1305,7 +1305,6 @@ EOF
 EXPECT=<<EOF
 address: 0x0
 opcode: add a0, t2, a0
-esilcost: 0
 disasm: add a0, t2, a0
 pseudo: a0 = t2 + a0
 mnemonic: add
@@ -1325,7 +1324,6 @@ family: cpu
 ===============
 address: 0x0
 opcode: dpaqx_sa.w.ph ac3, s3, s2
-esilcost: 0
 disasm: dpaqx_sa.w.ph ac3, s3, s2
 pseudo: asm("dpaqx_sa.w.ph ac3, s3, s2")
 mnemonic: dpaqx_sa.w.ph
@@ -1342,7 +1340,6 @@ family: mmx
 ===============
 address: 0x0
 opcode: ceil.w.d f10, f8
-esilcost: 0
 disasm: ceil.w.d f10, f8
 pseudo: asm("ceil.w.d f10, f8")
 mnemonic: ceil.w.d
@@ -1359,7 +1356,6 @@ family: fpu
 ===============
 address: 0x0
 opcode: mulr.ps f10, f18, f7
-esilcost: 0
 disasm: mulr.ps f10, f18, f7
 pseudo: asm("mulr.ps f10, f18, f7")
 mnemonic: mulr.ps
@@ -1376,7 +1372,6 @@ family: fpu
 ===============
 address: 0x0
 opcode: mulsaq_s.w.ph ac3, s2, a3
-esilcost: 0
 disasm: mulsaq_s.w.ph ac3, s2, a3
 pseudo: asm("mulsaq_s.w.ph ac3, s2, a3")
 mnemonic: mulsaq_s.w.ph
@@ -1393,7 +1388,6 @@ family: mmx
 ===============
 address: 0x0
 opcode: mulsa.w.ph ac3, s2, a3
-esilcost: 0
 disasm: mulsa.w.ph ac3, s2, a3
 pseudo: asm("mulsa.w.ph ac3, s2, a3")
 mnemonic: mulsa.w.ph
@@ -1410,7 +1404,6 @@ family: mmx
 ===============
 address: 0x0
 opcode: mulv.b w4, w10, w7
-esilcost: 0
 disasm: mulv.b w4, w10, w7
 pseudo: asm("mulv.b w4, w10, w7")
 mnemonic: mulv.b
@@ -1427,7 +1420,6 @@ family: mmx
 ===============
 address: 0x0
 opcode: tlbgwi
-esilcost: 0
 disasm: tlbgwi
 pseudo: asm("tlbgwi")
 mnemonic: tlbgwi
@@ -1444,7 +1436,6 @@ family: virt
 ===============
 address: 0x0
 opcode: lbe a0, 5(t2)
-esilcost: 0
 disasm: lbe a0, 5(t2)
 pseudo: asm("lbe a0, 5(t2)")
 mnemonic: lbe
@@ -1462,7 +1453,6 @@ family: virt
 ===============
 address: 0x0
 opcode: yield a0, t2
-esilcost: 0
 disasm: yield a0, t2
 pseudo: asm("yield a0, t2")
 mnemonic: yield
@@ -1479,7 +1469,6 @@ family: thread
 ===============
 address: 0x0
 opcode: crc32b a0, t2, a0
-esilcost: 0
 disasm: crc32b a0, t2, a0
 pseudo: asm("crc32b a0, t2, a0")
 mnemonic: crc32b
