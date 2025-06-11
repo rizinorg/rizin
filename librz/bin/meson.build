@@ -215,6 +215,7 @@ rz_bin_sources = [
   'format/mach0/mach064.c',
   'format/mach0/mach064_relocs.c',
   'format/mach0/mach064_chained_fixups.c',
+  'format/mbn/mbn.c',
   'format/xnu/rz_cf_dict.c',
   'format/mdmp/mdmp.c',
   'format/mdmp/mdmp_pe.c',
