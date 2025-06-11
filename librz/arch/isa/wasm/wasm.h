@@ -500,6 +500,13 @@ typedef struct {
 	size_t min, max;
 } WasmOpDef;
 
+typedef struct wasm_context_t {
+	ut64 scope_hint;
+	ut64 addr_old;
+} WasmContext;
+
+RZ_IPI bool wasm_init(void **user); ///< initialize a context of type WasmContext
+RZ_IPI bool wasm_fini(void *user); ///< free WasmContext*
 RZ_IPI int wasm_asm(const char *str, unsigned char *buf, int buf_len);
 RZ_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len);
 
