@@ -4940,7 +4940,7 @@ out:
 RZ_IPI RzCmdStatus rz_core_bin_plugin_print(const RzBinPlugin *bp, RzCmdStateOutput *state) {
 	rz_return_val_if_fail(bp && state, RZ_CMD_STATUS_ERROR);
 
-	rz_cmd_state_output_set_columnsf(state, "sssss", "name", "license", "description", "author", "version");
+	rz_cmd_state_output_set_columnsf(state, "sssss", "name", "license", "author", "description", "version");
 
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_QUIET:
@@ -4962,17 +4962,17 @@ RZ_IPI RzCmdStatus rz_core_bin_plugin_print(const RzBinPlugin *bp, RzCmdStateOut
 		pj_end(state->d.pj);
 		break;
 	case RZ_OUTPUT_MODE_STANDARD:
-		rz_cons_printf("%-12s %-9s %-38s %-15s %s\n", bp->name,
+		rz_cons_printf("%-12s %-9s %-15s %-38s %s\n", bp->name,
 			bp->license ? bp->license : "???",
-			bp->desc,
 			bp->author ? bp->author : "",
+			bp->desc,
 			bp->version ? bp->version : "");
 		break;
 	case RZ_OUTPUT_MODE_TABLE:
 		rz_table_add_rowf(state->d.t, "sssss", bp->name,
 			bp->license ? bp->license : "",
-			bp->desc,
 			bp->author ? bp->author : "",
+			bp->desc,
 			bp->version ? bp->version : "");
 		break;
 	default:
@@ -4987,7 +4987,7 @@ RZ_IPI RzCmdStatus rz_core_binxtr_plugin_print(const RzBinXtrPlugin *bx, RzCmdSt
 
 	const char *name = NULL;
 
-	rz_cmd_state_output_set_columnsf(state, "sss", "name", "license", "description");
+	rz_cmd_state_output_set_columnsf(state, "ssss", "name", "license", "author", "description");
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_QUIET:
 		rz_cons_println(bx->name);
@@ -5001,12 +5001,16 @@ RZ_IPI RzCmdStatus rz_core_binxtr_plugin_print(const RzBinXtrPlugin *bx, RzCmdSt
 		break;
 	case RZ_OUTPUT_MODE_STANDARD:
 		name = strncmp(bx->name, "xtr.", 4) ? bx->name : bx->name + 3;
-		rz_cons_printf("%-12s %-9s %s\n", name,
+		rz_cons_printf("%-12s %-9s %-15s %s\n", name,
 			bx->license ? bx->license : "???",
+			"",
 			bx->desc);
 		break;
 	case RZ_OUTPUT_MODE_TABLE:
-		rz_table_add_rowf(state->d.t, "sss", bx->name, bx->license, bx->desc);
+		rz_table_add_rowf(state->d.t, "ssss", bx->name,
+			bx->license,
+			"",
+			bx->desc);
 		break;
 	default:
 		rz_warn_if_reached();
