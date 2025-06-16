@@ -643,7 +643,6 @@ static int get_rz_status(int stat) {
 }
 #endif
 
-
 #if __NetBSD__
 static int get_rz_status(int stat) {
 	switch (stat) {
@@ -727,16 +726,16 @@ RzList *bsd_thread_list(RzDebug *dbg, int pid, RzList *list) {
 	}
 
 	max = len / sizeof(*kp);
-	
+
 	for (i = 0; i < max; i++) {
 		RzDebugPid *pid_info;
 		int pid_stat;
 
 		pid_stat = get_rz_status(kp[i].p_stat);
-		
+
 		pid_info = rz_debug_pid_new(kp[i].p_comm, kp[i].p_pid,
 			kp[i].p_uid, pid_stat, (ut64)kp[i].p_wchan);
-		
+
 		if (pid_info) {
 			rz_list_append(list, pid_info);
 		}
