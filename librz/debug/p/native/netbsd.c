@@ -49,23 +49,25 @@ int match_pid(const void *pid_o, const void *th_o, void *user) {
 static RZ_OWN RzList /*<RzDebugPid *>*/ *get_pid_thread_list(RZ_NONNULL RzDebug *dbg, int main_pid) {
 	rz_return_val_if_fail(dbg, NULL);
 	RzList *list = rz_list_new();
-	if (list) {
-		list = bsd_thread_list(dbg, main_pid, list);
-		dbg->main_pid = main_pid;
+	if (!list) {
+		RZ_LOG_ERROR("Cannot create thread list\n");
+		return NULL;
 	}
+	list = bsd_thread_list(dbg, main_pid, list);
+	dbg->main_pid = main_pid;
 	return list;
 }
 
 static int rz_debug_native_attach(RzDebug *dbg, int pid) {
 	if (!dbg->threads) {
 		dbg->threads = get_pid_thread_list(dbg, pid);
-	} else {
-		if (!rz_list_find(dbg->threads, &pid, &match_pid, NULL)) {
-			int ret = ptrace(PTRACE_ATTACH, pid, 0, 0);
-			if (ret == -1) {
-				eprintf("Trying to attach to %d\n", pid);
-				perror("ptrace (PT_ATTACH)");
-			}
+		return pid;
+	}
+	if (!rz_list_find(dbg->threads, &pid, &match_pid, NULL)) {
+		int ret = ptrace(PTRACE_ATTACH, pid, 0, 0);
+		if (ret == -1) {
+			RZ_LOG_ERROR("Trying to attach to %d\n", pid);
+			perror("ptrace (PT_ATTACH)");
 		}
 	}
 	return pid;

@@ -641,31 +641,8 @@ static int get_rz_status(int stat) {
 		return RZ_DBG_PROC_DEAD;
 	}
 }
-#endif
 
-#if __NetBSD__
-static int get_rz_status(int stat) {
-	switch (stat) {
-	case LSRUN:
-	case LSONPROC:
-	case LSIDL:
-		return RZ_DBG_PROC_RUN;
-	case LSSTOP:
-		return RZ_DBG_PROC_STOP;
-	case LSZOMB:
-		return RZ_DBG_PROC_ZOMBIE;
-	case LSSLEEP:
-		return RZ_DBG_PROC_SLEEP;
-	case LSSUSPENDED:
-		return RZ_DBG_PROC_STOP;
-	default:
-		return RZ_DBG_PROC_DEAD;
-	}
-}
-#endif
-
-RzList *bsd_thread_list(RzDebug *dbg, int pid, RzList *list) {
-#if __KFBSD__
+static RzList *kfbsd_thread_list(RzDebug *dbg, int pid, RzList *list) {
 	int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_PID | KERN_PROC_INC_THREAD, pid };
 	struct kinfo_proc *kp;
 	size_t len = 0;
@@ -698,7 +675,30 @@ RzList *bsd_thread_list(RzDebug *dbg, int pid, RzList *list) {
 
 	free(kp);
 	return list;
-#elif __NetBSD__
+}
+#endif
+
+#if __NetBSD__
+static int get_rz_status(int stat) {
+	switch (stat) {
+	case LSRUN:
+	case LSONPROC:
+	case LSIDL:
+		return RZ_DBG_PROC_RUN;
+	case LSSTOP:
+		return RZ_DBG_PROC_STOP;
+	case LSZOMB:
+		return RZ_DBG_PROC_ZOMBIE;
+	case LSSLEEP:
+		return RZ_DBG_PROC_SLEEP;
+	case LSSUSPENDED:
+		return RZ_DBG_PROC_STOP;
+	default:
+		return RZ_DBG_PROC_DEAD;
+	}
+}
+
+static RzList *netbsd_thread_list(RzDebug *dbg, int pid, RzList *list) {
 	int mib[6] = { CTL_KERN, KERN_PROC2, KERN_PROC_PID, pid, sizeof(struct kinfo_proc2), 0 };
 	struct kinfo_proc2 *kp;
 	size_t len = 0;
@@ -743,8 +743,18 @@ RzList *bsd_thread_list(RzDebug *dbg, int pid, RzList *list) {
 
 	free(kp);
 	return list;
+}
+#endif
+
+RzList *bsd_thread_list(RzDebug *dbg, int pid, RzList *list) {
+#if __KFBSD__
+	RzList *thread_list = kfbsd_thread_list(dbg, pid, list);
+	return thread_list;
+#elif __NetBSD__
+	RzList *thread_list = netbsd_thread_list(dbg, pid, list);
+	return thread_list;
 #else
-	eprintf("bsd_thread_list unsupported on this platform\n");
+	RZ_LOG_ERROR("bsd_thread_list unsupported on this platform\n");
 	rz_list_free(list);
 	return NULL;
 #endif

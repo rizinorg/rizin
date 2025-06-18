@@ -13,6 +13,7 @@ mov edi, str.Hello_World
 call sym.imp.puts
 mov eax, 0x00
 Hello World
+Bye
 EOF
 RUN
 
@@ -30,7 +31,7 @@ EOF
 RUN
 
 NAME=step and check pc
-FILE=bins/rizin-testbins/elf/netbsd-calculate-x64
+FILE=bins/elf/netbsd-calculate-x64
 ARGS=-d
 CMDS=<<EOF
 dcu main
@@ -48,7 +49,7 @@ EOF
 RUN
 
 NAME=write gpr
-FILE=bins/rizin-testbins/elf/netbsd-calculate-x64
+FILE=bins/elf/netbsd-calculate-x64
 ARGS=-d
 CMDS=<<EOF
 db @ main + 64
@@ -65,8 +66,8 @@ Result = 1339
 EOF
 RUN
 
-NAME=Signal handling ppc64le
-FILE=bins/rizin-testbins/elf/netbsd-calculate-x64
+NAME=Signal handling
+FILE=bins/elf/netbsd-calculate-x64
 ARGS=-d
 CMDS=<<EOF
 dkl~SIGTERM
@@ -82,5 +83,27 @@ EXPECT=<<EOF
 15 SIGTERM skip
 15 SIGTERM
 [+] signal 15 aka SIGTERM received 0
+EOF
+RUN
+
+NAME=Step and Step over
+FILE=bins/elf/netbsd_basic_test-x64
+ARGS=-d
+CMDS=<<EOF
+db @ main + 73
+dc
+ds 3
+dr rax
+dr rdx
+dso
+dr rax
+dr rdx
+dc
+EOF
+EXPECT=<<EOF
+rax = 0x0000000000000034
+rdx = 0x00000000000000c8
+rax = 0x00000000000000fc
+rdx = 0x0000000000000034
 EOF
 RUN
