@@ -1,5 +1,5 @@
 NAME=dcu + read
-FILE=bins/rizin-testbins/elf/netbsd-hello-x64
+FILE=bins/elf/netbsd-hello-x64
 ARGS=-d
 CMDS=<<EOF
 dcu main
@@ -13,12 +13,11 @@ mov edi, str.Hello_World
 call sym.imp.puts
 mov eax, 0x00
 Hello World
-Bye
 EOF
 RUN
 
 NAME=maps
-FILE=bins/rizin-testbins/elf/netbsd-hello-x64
+FILE=bins/elf/netbsd-hello-x64
 ARGS=-d
 CMDS=<<EOF
 dm~hello~[3-9]

@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2009-2019 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_util/rz_log.h>
 #include <errno.h>
 #if !defined(__HAIKU__) && !defined(__sun)
 #include <sys/ptrace.h>
@@ -123,9 +124,9 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 	if (reason == RZ_DEBUG_REASON_UNKNOWN) {
 		if (WIFEXITED(status)) {
 			if (dbg->pid == pid) {
-				eprintf("(%d) Process exited with status=0x%x\n", pid, WEXITSTATUS(status));
+				RZ_LOG_WARN("(%d) Process exited with status=0x%x\n", pid, WEXITSTATUS(status));
 			} else {
-				eprintf("(%d) Thread exited with status=0x%x\n", pid, WEXITSTATUS(status));
+				RZ_LOG_WARN("(%d) Thread exited with status=0x%x\n", pid, WEXITSTATUS(status));
 			}
 			reason = RZ_DEBUG_REASON_DEAD;
 		} else if (WIFSIGNALED(status)) {

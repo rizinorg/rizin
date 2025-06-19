@@ -664,12 +664,11 @@ static RzList *kfbsd_thread_list(RzDebug *dbg, int pid, RzList *list) {
 
 	max = len / sizeof(*kp);
 	for (i = 0; i < max; i++) {
-		RzDebugPid *pid_info;
-		int pid_stat;
+		int pid_stat = get_rz_status(kp[i].ki_stat);
 
-		pid_stat = get_rz_status(kp[i].ki_stat);
-		pid_info = rz_debug_pid_new(kp[i].ki_comm, kp[i].ki_tid,
+		RzDebugPid *pid_info = rz_debug_pid_new(kp[i].ki_comm, kp[i].ki_tid,
 			kp[i].ki_uid, pid_stat, (ut64)kp[i].ki_wchan);
+
 		rz_list_append(list, pid_info);
 	}
 
@@ -728,12 +727,9 @@ static RzList *netbsd_thread_list(RzDebug *dbg, int pid, RzList *list) {
 	max = len / sizeof(*kp);
 
 	for (i = 0; i < max; i++) {
-		RzDebugPid *pid_info;
-		int pid_stat;
+		int pid_stat = get_rz_status(kp[i].p_stat);
 
-		pid_stat = get_rz_status(kp[i].p_stat);
-
-		pid_info = rz_debug_pid_new(kp[i].p_comm, kp[i].p_pid,
+		RzDebugPid *pid_info = rz_debug_pid_new(kp[i].p_comm, kp[i].p_pid,
 			kp[i].p_uid, pid_stat, (ut64)kp[i].p_wchan);
 
 		if (pid_info) {
