@@ -200,12 +200,22 @@ const char *h8300_get_register32_name(ut8 id) {
 #define SIGN_EXT(value, bits) \
 	((int)((unsigned int)(value) << (32 - (bits))) >> (32 - (bits)))
 
+static ut32 read_abs8(const ut8 *bytes, ut32 off) {
+	ut8 x = rz_read_at_be8(bytes, off);
+	return (ut32)x | 0xffff00;
+}
+
 static ut32 read_abs16(const ut8 *bytes, ut32 off) {
 	ut16 x = rz_read_at_be16(bytes, off);
 	st32 sx32 = SIGN_EXT(x, 16);
 	return sx32 & 0xffffff;
 }
 
+static ut32 read_abs24(const ut8 *bytes, ut32 off) {
+	return rz_read_at_be24(bytes, off);
+}
+
+#define read_abs(T, BS)  read_abs##T(BS, (ret - T / 8))
 #define read_disp(T, BS) (SIGN_EXT(rz_read_at_be##T(BS, (ret - T / 8)), T))
 
 static ut8 r8_low(ut8 x) {
@@ -606,42 +616,43 @@ static int decode_ri32(const ut8 *bytes, struct h8300_cmd *cmd) {
 	return ret;
 }
 
-/* [ opcode ] [ 0000 | 0 rd ] [     abs    ] */
-static int decode_abs16r8(const ut8 *bytes, struct h8300_cmd *cmd) {
-	int ret = 4;
+#define ABSR_IMPL(B, BABS, BR, OFR) \
+	static int decode_abs##BABS##r##BR##_##B(const ut8 *bytes, struct h8300_cmd *cmd) { \
+		int ret = B; \
+		ut32 abs = read_abs(BABS, bytes); \
+		ut8 r = r##BR##_low(bytes[OFR]); \
+		cmd->fmt = H8300_INSN_FORMAT_ABSR##BR; \
+		OPS_ADD(H8300_OP_ABS, imm, abs); \
+		OPS_ADD(H8300_OP_R##BR, reg, r); \
+		return ret; \
+	}
+#define RABS_IMPL(B, BABS, BR, OFR) \
+	static int decode_r##BR##abs##BABS##_##B(const ut8 *bytes, struct h8300_cmd *cmd) { \
+		int ret = B; \
+		ut32 abs = read_abs(BABS, bytes); \
+		ut8 r = r##BR##_low(bytes[OFR]); \
+		cmd->fmt = H8300_INSN_FORMAT_R##BR##ABS; \
+		OPS_ADD(H8300_OP_R##BR, reg, r); \
+		OPS_ADD(H8300_OP_ABS, imm, abs); \
+		return ret; \
+	}
 
-	ut16 abs = read_abs16(bytes, 2);
-	ut8 r = bytes[1] & 0xf;
-	cmd->fmt = H8300_INSN_FORMAT_ABSR16;
-	OPS_ADD(H8300_OP_ABS, imm, abs);
-	OPS_ADD(H8300_OP_R16, reg, r);
+ABSR_IMPL(2, 8, 8, 0);
+RABS_IMPL(2, 8, 8, 0);
 
-	return ret;
-}
+ABSR_IMPL(4, 16, 8, 1);
+RABS_IMPL(4, 16, 8, 1);
+ABSR_IMPL(4, 16, 16, 1);
+RABS_IMPL(4, 16, 16, 1);
 
-static int decode_abs16r16_4(const ut8 *bytes, struct h8300_cmd *cmd) {
-	int ret = 4;
+ABSR_IMPL(6, 24, 8, 1);
+RABS_IMPL(6, 24, 8, 1);
 
-	ut16 abs = read_abs16(bytes, 2);
-	ut8 r = bytes[1] & 0xf;
-	cmd->fmt = H8300_INSN_FORMAT_ABSR16;
-	OPS_ADD(H8300_OP_ABS, imm, abs);
-	OPS_ADD(H8300_OP_R16, reg, r);
+ABSR_IMPL(6, 16, 32, 3);
+RABS_IMPL(6, 16, 32, 3);
 
-	return ret;
-}
-
-static int decode_r16abs16_4(const ut8 *bytes, struct h8300_cmd *cmd) {
-	int ret = 4;
-
-	ut16 abs = read_abs16(bytes, 2);
-	ut8 r = bytes[1] & 0xf;
-	cmd->fmt = H8300_INSN_FORMAT_R16ABS;
-	OPS_ADD(H8300_OP_R16, reg, r);
-	OPS_ADD(H8300_OP_ABS, imm, abs);
-
-	return ret;
-}
+ABSR_IMPL(8, 24, 32, 3);
+RABS_IMPL(8, 24, 32, 3);
 
 /* [ opcode ] [ 1 rd | rs ] */
 static int decode_r8ri32_2(const ut8 *bytes, struct h8300_cmd *cmd) {
@@ -748,46 +759,8 @@ static int decode_incdecr8(const ut8 *bytes, struct h8300_cmd *cmd) {
 	return ret;
 }
 
-/* [opcode ] [ 8 | rs ] [    abs    ] */
-static int decode_r8abs16(const ut8 *bytes, struct h8300_cmd *cmd) {
-	int ret = 4;
-	ut16 abs = read_abs16(bytes, 2);
-
-	if (bytes[1] & 0x80) {
-		cmd->fmt = H8300_INSN_FORMAT_R8ABS;
-		OPS_ADD(H8300_OP_R8, reg, bytes[1] & 0xf);
-		OPS_ADD(H8300_OP_ABS, imm, abs);
-	} else {
-		cmd->fmt = H8300_INSN_FORMAT_ABSR8;
-		OPS_ADD(H8300_OP_ABS, imm, abs);
-		OPS_ADD(H8300_OP_R8, reg, bytes[1] & 0xf);
-	}
-
-	return ret;
-}
-
 static int decode_nop(const ut8 *bytes, struct h8300_cmd *cmd) {
 	int ret = 2;
-	return ret;
-}
-
-static int decode_abs8r8(const ut8 *bytes, struct h8300_cmd *cmd) {
-	int ret = 2;
-
-	cmd->fmt = H8300_INSN_FORMAT_ABSR8;
-	OPS_ADD(H8300_OP_ABS, imm, 0xff00 | bytes[1]);
-	OPS_ADD(H8300_OP_R8, reg, bytes[0] & 0xf);
-
-	return ret;
-}
-
-static int decode_r8abs8(const ut8 *bytes, struct h8300_cmd *cmd) {
-	int ret = 2;
-
-	cmd->fmt = H8300_INSN_FORMAT_R8ABS;
-	OPS_ADD(H8300_OP_R8, reg, bytes[0] & 0xf);
-	OPS_ADD(H8300_OP_ABS, imm, 0xff00 | bytes[1]);
-
 	return ret;
 }
 
@@ -801,82 +774,10 @@ static int decode_abs16_6(const ut8 *bytes, struct h8300_cmd *cmd) {
 	return ret;
 }
 
-static int decode_abs16r32_6(const ut8 *bytes, struct h8300_cmd *cmd) {
-	int ret = 6;
-
-	ut32 abs_addr = read_abs16(bytes, 4);
-	ut8 r = bytes[3] & 0x7;
-	cmd->fmt = H8300_INSN_FORMAT_ABSR32;
-	OPS_ADD(H8300_OP_ABS, imm, abs_addr);
-	OPS_ADD(H8300_OP_R32, reg, r);
-
-	return ret;
-}
-
-static int decode_r32abs16_6(const ut8 *bytes, struct h8300_cmd *cmd) {
-	int ret = 6;
-
-	ut32 abs_addr = read_abs16(bytes, 4);
-	ut8 r = bytes[3] & 0x7;
-	cmd->fmt = H8300_INSN_FORMAT_R32ABS;
-	OPS_ADD(H8300_OP_R32, reg, r);
-	OPS_ADD(H8300_OP_ABS, imm, abs_addr);
-
-	return ret;
-}
-
 static int decode_abs24_8(const ut8 *bytes, struct h8300_cmd *cmd) {
 	int ret = 8;
 	ut32 abs_addr = rz_read_at_be24(bytes, 5);
 	cmd->fmt = H8300_INSN_FORMAT_ABS;
-	OPS_ADD(H8300_OP_ABS, imm, abs_addr);
-
-	return ret;
-}
-
-static int decode_abs24r8_6(const ut8 *bytes, struct h8300_cmd *cmd) {
-	int ret = 6;
-
-	ut32 abs_addr = rz_read_at_be24(bytes, 3);
-	ut8 r = bytes[1] & 0xf;
-	cmd->fmt = H8300_INSN_FORMAT_ABSR8;
-	OPS_ADD(H8300_OP_ABS, imm, abs_addr);
-	OPS_ADD(H8300_OP_R8, reg, r);
-
-	return ret;
-}
-
-static int decode_r8abs24_6(const ut8 *bytes, struct h8300_cmd *cmd) {
-	int ret = 6;
-
-	ut32 abs_addr = rz_read_at_be24(bytes, 3);
-	ut8 r = bytes[1] & 0xf;
-	cmd->fmt = H8300_INSN_FORMAT_R8ABS;
-	OPS_ADD(H8300_OP_R8, reg, r);
-	OPS_ADD(H8300_OP_ABS, imm, abs_addr);
-
-	return ret;
-}
-
-static int decode_abs24r32_8(const ut8 *bytes, struct h8300_cmd *cmd) {
-	int ret = 8;
-
-	ut32 abs_addr = rz_read_at_be24(bytes, 5);
-	ut8 r = bytes[3] & 0x7;
-	cmd->fmt = H8300_INSN_FORMAT_ABSR32;
-	OPS_ADD(H8300_OP_ABS, imm, abs_addr);
-	OPS_ADD(H8300_OP_R32, reg, r);
-
-	return ret;
-}
-
-static int decode_r32abs24_8(const ut8 *bytes, struct h8300_cmd *cmd) {
-	int ret = 8;
-
-	ut32 abs_addr = rz_read_at_be24(bytes, 5);
-	ut8 r = bytes[3] & 0x7;
-	cmd->fmt = H8300_INSN_FORMAT_R32ABS;
-	OPS_ADD(H8300_OP_R32, reg, r);
 	OPS_ADD(H8300_OP_ABS, imm, abs_addr);
 
 	return ret;
@@ -1094,14 +995,14 @@ static int h8300_decode_4(const ut8 *instr, struct h8300_cmd *cmd) {
 		CASE_F_F(decode_i16r16_4, 0x7910, ADD_W);
 		CASE_F_F(decode_i16r16_4, 0x7920, CMP_W);
 
-		CASE_F_F(decode_abs16r8, 0x6a00, MOV_B);
-		CASE_F_F(decode_r8abs16, 0x6a80, MOV_B);
+		CASE_F_F(decode_abs16r8_4, 0x6a00, MOV_B);
+		CASE_F_F(decode_r8abs16_4, 0x6a80, MOV_B);
 		CASE_F_F(decode_i16r16_4, 0x7900, MOV_W);
 		CASE_F_F(decode_abs16r16_4, 0x6b00, MOV_W);
 		CASE_F_F(decode_r16abs16_4, 0x6b80, MOV_W);
 
-		CASE_F_F(decode_r8abs16, 0x6a40, MOVFPE);
-		CASE_F_F(decode_r8abs16, 0x6ac0, MOVTPE);
+		CASE_F_F(decode_abs16r8_4, 0x6a40, MOVFPE);
+		CASE_F_F(decode_r8abs16_4, 0x6ac0, MOVTPE);
 	default:
 		break;
 	}
@@ -1203,8 +1104,8 @@ static int h8300_decode_2(const ut8 *instr, struct h8300_cmd *cmd) {
 	ut32 x2 = rz_read_be16(instr);
 
 	switch (instr[0] >> 4) {
-		CASE_F_F(decode_abs8r8, 0x2, MOV_B);
-		CASE_F_F(decode_r8abs8, 0x3, MOV_B);
+		CASE_F_F(decode_abs8r8_2, 0x2, MOV_B);
+		CASE_F_F(decode_r8abs8_2, 0x3, MOV_B);
 
 		CASE_F_F(decode_i8r8, 0xf, MOV_B);
 		CASE_F_F(decode_i8r8, 0xe, AND_B);
@@ -1259,7 +1160,7 @@ static int h8300_decode_2(const ut8 *instr, struct h8300_cmd *cmd) {
 		CASE_F_F(decode_r16, 0x6df0, PUSH);
 
 		CASE_F_F(decode_i16r16_4, 0x7900, MOV_W);
-		CASE_F_F(decode_abs16r8, 0x6b00, MOV_W);
+		CASE_F_F(decode_abs16r8_4, 0x6b00, MOV_W);
 
 		CASE_F_F_VA(decode_xr16, 0x1b70, DEC_L, 1);
 		CASE_F_F_VA(decode_xr16, 0x1bf0, DEC_L, 2);
