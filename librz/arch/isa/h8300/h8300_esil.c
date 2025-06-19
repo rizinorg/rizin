@@ -372,7 +372,7 @@ int h8300_analyze_op_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 
 	case H8300_BLE:
 		rz_strbuf_appendf(&op->esil, "Z,N,V,^,|,?{0x%02x,pc,+=}", buf[1]);
 		return 0;
-	case H8300_MULXU:
+	case H8300_MULXU_B:
 		// Refer to pg. 100 of the manual linked at the beginning
 		rz_strbuf_appendf(&op->esil, "r%u%c,r%ul,*,r%u,=",
 			rsB(), rd(), rd());
