@@ -1137,13 +1137,12 @@ RZ_API RZ_OWN RzBinVirtualFile *rz_bin_virtual_file_clone(RZ_BORROW RZ_NONNULL R
 	clone->buf_owned = vfile->buf_owned;
 	clone->buf = vfile->buf_owned ? rz_buf_new_with_buf(vfile->buf) : vfile->buf;
 	if (!clone->buf) {
+		rz_bin_virtual_file_free(clone);
 		return NULL;
 	}
 	clone->name = rz_str_dup(vfile->name);
 	if (!clone->name) {
-		if (clone->buf_owned) {
-			rz_buf_free(clone->buf);
-		}
+		rz_bin_virtual_file_free(clone);
 		return NULL;
 	}
 	return clone;

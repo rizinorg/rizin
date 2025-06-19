@@ -577,6 +577,7 @@ RzPVector /*<RzBinReloc *>*/ *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 		while (off < start + length * sizeof(NE_image_reloc_item) && off + sizeof(NE_image_reloc_item) <= bufsz) {
 			RzBinReloc *reloc = RZ_NEW0(RzBinReloc);
 			if (!reloc) {
+				rz_path_free(sys_path);
 				return NULL;
 			}
 			NE_image_reloc_item rel;

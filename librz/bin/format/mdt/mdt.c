@@ -315,6 +315,7 @@ static RzBinMdtPart *segment_to_mdt_part(RzBinElfSegment *segment, size_t part_n
 
 	map = RZ_NEW0(RzBinMap);
 	if (!map) {
+		rz_bin_virtual_file_free(vfile);
 		goto error;
 	}
 	map->paddr = 0;

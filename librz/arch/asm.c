@@ -291,6 +291,7 @@ RZ_API RzAsm *rz_asm_new(void) {
 	}
 	a->plugins = ht_sp_new(HT_STR_DUP, NULL, NULL);
 	if (!a->plugins) {
+		rz_path_free(a->sdb_opcodes_path);
 		free(a);
 		return NULL;
 	}

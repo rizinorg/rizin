@@ -75,6 +75,7 @@ RZ_API RzAnalysis *rz_analysis_new(RZ_NULLABLE const char *sdb_types_path) {
 	if (!sdb_types_path) {
 		RzPath *path = rz_path_new();
 		if (!path) {
+			rz_path_free(path);
 			free(analysis);
 			return NULL;
 		}
@@ -88,11 +89,13 @@ RZ_API RzAnalysis *rz_analysis_new(RZ_NULLABLE const char *sdb_types_path) {
 		analysis->sdb_types_path = rz_str_dup(sdb_types_path);
 	}
 	if (!rz_str_constpool_init(&analysis->constpool)) {
+		free(analysis->sdb_types_path);
 		free(analysis);
 		return NULL;
 	}
 	analysis->esilinterstate = RZ_NEW0(RzAnalysisEsilInterState);
 	if (!analysis->esilinterstate) {
+		free(analysis->sdb_types_path);
 		free(analysis);
 		return NULL;
 	}
