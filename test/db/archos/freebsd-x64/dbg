@@ -42,7 +42,7 @@ xor eax, eax
 add rsp, 0x10
 pop rbp
 EOF
-REGEXP_FILTER_ERR=(([a-zA-Z:]+|[0-9a-f][0-9a-f][0-9a-f])\s+)
+#REGEXP_FILTER_ERR=(([a-zA-Z:]+|[0-9a-f][0-9a-f][0-9a-f])\s+)
 EXPECT_ERR=<<EOF
 Continue until c88
 hit breakpoint at: c88
@@ -55,7 +55,7 @@ ARGS=-d
 CMDS=<<EOF
 dm~hello~[3-]
 EOF
-REGEXP_FILTER_OUT=([a-zA-Z0-9_\.-]+\s+)
+#REGEXP_FILTER_OUT=([a-zA-Z0-9_\.-]+\s+)
 EXPECT=<<EOF
 - usr 4K s --x /usr/home/rizin/rizin/rizin-testbins/elf/hello-freebsd-x64 ? usr_home_rizin_rizin_rizin_testbins_elf_hello_freebsd_x64.__x
 - usr 4K s r-x /usr/home/rizin/rizin/rizin-testbins/elf/hello-freebsd-x64 ? usr_home_rizin_rizin_rizin_testbins_elf_hello_freebsd_x64.r_x
@@ -68,7 +68,7 @@ FILE=bins/elf/hello-freebsd-x64
 ARGS=-d
 CMDS=<<EOF
 fl@F:maps~hello~[1-]
-?e --
+#?e --
 dm*~hello~[0-2]
 EOF
 EXPECT=<<EOF
@@ -90,7 +90,6 @@ dcu main
 5 ds
 dr rip
 dr rdx
-?e --
 ds
 dr rip
 dr rdx
@@ -99,11 +98,10 @@ REGEXP_FILTER_OUT=(([a-zA-Z:=-]+|[0-9a-f][0-9a-f][0-9a-f]|x[0-9]+ = [a-z0-9]+)\s
 EXPECT=<<EOF
 pc = f44
 x8 = 0x0000000000000000
---
 pc = f48
 x8 = 0x0000000000000064
 EOF
-REGEXP_FILTER_ERR=(([a-zA-Z:]+|[0-9a-f][0-9a-f][0-9a-f])\s+)
+#REGEXP_FILTER_ERR=(([a-zA-Z:]+|[0-9a-f][0-9a-f][0-9a-f])\s+)
 EXPECT_ERR=<<EOF
 Continue until f30
 hit breakpoint at: f30
@@ -119,11 +117,9 @@ db @ main + 20
 db @ main + 24
 dc
 dr rip
-?e --
 dc
 dr rip
 dr rax
-?e --
 dc
 dr rip
 dr rax
@@ -131,10 +127,8 @@ EOF
 REGEXP_FILTER_OUT=(([a-zA-Z:=-]+|[0-9a-f][0-9a-f][0-9a-f]|x[0-9]+ = [a-z0-9]+)\s+)
 EXPECT=<<EOF
 rip = f30
---
 rip = f44
 rax = 0x0000000000000000
---
 rip = f48
 rax = 0x0000000000000064
 EOF
@@ -160,7 +154,7 @@ EXPECT=<<EOF
 rax = 0x000000000000002a
 Result = 1337
 EOF
-REGEXP_FILTER_ERR=(([a-zA-Z:]+|[0-9a-f][0-9a-f][0-9a-f])\s+)
+#REGEXP_FILTER_ERR=(([a-zA-Z:]+|[0-9a-f][0-9a-f][0-9a-f])\s+)
 EXPECT_ERR=<<EOF
 hit breakpoint at: f70
 
