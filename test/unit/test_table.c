@@ -348,6 +348,66 @@ bool test_rz_table_add_row_columnsf() {
 	mu_end;
 }
 
+bool test_rz_table_query(void) {
+	RzTable *t = __table_test_data1();
+	bool qr = rz_table_query(t, "code/sort/dec");
+	mu_assert_true(qr, "table sorted decrementally");
+	char *s = rz_table_tostring(t);
+	mu_assert_streq(s,
+		"ascii code \n"
+		"-----------\n"
+		"c       99\n"
+		"b       98\n"
+		"a       97\n",
+		"sort table by number column");
+	free(s);
+	qr = rz_table_query(t, "code/sort/dec");
+	mu_assert_true(qr, "table sorted incrementally");
+	qr = rz_table_query(t, "code/le/98");
+	mu_assert_true(qr, "table filter by <=98");
+	s = rz_table_tostring(t);
+	mu_assert_streq(s,
+		"ascii code \n"
+		"-----------\n"
+		"b       98\n"
+		"a       97\n",
+		"filter table by <=98");
+	free(s);
+	qr = rz_table_query(t, "ascii");
+	mu_assert_true(qr, "table columns extraction");
+	s = rz_table_tostring(t);
+	mu_assert_streq(s,
+		"ascii \n"
+		"------\n"
+		"b\n"
+		"a\n",
+		"extract only one table column");
+	free(s);
+	rz_table_free(t);
+	t = __table_test_data1();
+	qr = rz_table_query(t, ":csv");
+	mu_assert_true(qr, "table as CSV");
+	s = rz_table_tostring(t);
+	mu_assert_streq(s,
+		"ascii,code\n"
+		"a,97\n"
+		"b,98\n"
+		"c,99\n",
+		"table as CSV");
+	free(s);
+	qr = rz_table_query(t, ":json");
+	mu_assert_true(qr, "table as JSON");
+	s = rz_table_tostring(t);
+	mu_assert_streq(s,
+		"[{\"ascii\":\"a\",\"code\":97},"
+		"{\"ascii\":\"b\",\"code\":98},"
+		"{\"ascii\":\"c\",\"code\":99}]\n",
+		"table as JSON");
+	free(s);
+	rz_table_free(t);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_table);
 	mu_run_test(test_rz_table_column_type);
@@ -358,6 +418,7 @@ bool all_tests() {
 	mu_run_test(test_rz_table_columns);
 	mu_run_test(test_rz_table_transpose);
 	mu_run_test(test_rz_table_add_row_columnsf);
+	mu_run_test(test_rz_table_query);
 	return tests_passed != tests_run;
 }
 

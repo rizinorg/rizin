@@ -1090,6 +1090,7 @@ RZ_API void rz_table_filter_columns(RzTable *t, RzList /*<char *>*/ *list) {
 }
 
 static bool set_table_format(RzTable *t, const char *q) {
+	// CSV and JSON modes are mutually exclusive
 	if (!strcmp(q, "quiet")) {
 		t->showHeader = false;
 		t->showFancy = false;
@@ -1099,8 +1100,10 @@ static bool set_table_format(RzTable *t, const char *q) {
 		t->showFancy = false;
 	} else if (!strcmp(q, "csv")) {
 		t->showCSV = true;
+		t->showJSON = false;
 	} else if (!strcmp(q, "json")) {
 		t->showJSON = true;
+		t->showCSV = false;
 	} else {
 		return false;
 	}
