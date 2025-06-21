@@ -368,6 +368,9 @@ RzList *bsd_native_sysctl_map(RzDebug *dbg) {
 	struct kinfo_vmentry *kve;
 	RzList *list = NULL;
 	RzDebugMap *map;
+	char *name;
+	ut64 map_start, map_end;
+	int perm = 0;
 
 	len = 0;
 	mib[0] = CTL_KERN;
@@ -395,10 +398,24 @@ RzList *bsd_native_sysctl_map(RzDebug *dbg) {
 	}
 	while (bp < eb) {
 		kve = (struct kinfo_vmentry *)(uintptr_t)bp;
-		map = rz_debug_map_new(kve->kve_path, kve->kve_start,
-			kve->kve_end, kve->kve_protection, 0);
-		if (!map)
+		name = kve->kve_path;
+		map_start = kve->kve_start;
+		map_end = kve->kve_end;
+
+		if (kve->kve_protection & VM_PROT_READ)
+			perm |= RZ_PERM_R;
+		if (kve->kve_protection & VM_PROT_WRITE)
+			perm |= RZ_PERM_W;
+		if (kve->kve_protection & VM_PROT_EXECUTE)
+			perm |= RZ_PERM_X;
+
+		map = rz_debug_map_new(name, map_start, map_end, perm, 0);
+		if (!map) {
+			RZ_LOG_ERROR("Cannot create map entry for %s\n", name);
 			break;
+		}
+		map->offset = kve->kve_offset;
+		map->file = rz_str_dup(name);
 		rz_list_append(list, map);
 		bp += kve->kve_structsize;
 	}
