@@ -2293,8 +2293,16 @@ RZ_API RzList /*<RzSearchKeyword *>*/ *rz_analysis_preludes(RzAnalysis *analysis
 RZ_API bool rz_analysis_is_prelude(RzAnalysis *analysis, const ut8 *data, int len);
 
 /* devirualize */
-RZ_API void rz_analysis_mark_classes(RzAnalysis *analysis);
+typedef struct rz_variable_book_t {
+	RzAnalysisFunction *function;
+	HtUP /*<ut64, RzVariable*>*/ *class_variables;
+	RzList *stack_variables;
+	RzList *class_var_list;
+} RzVariableBook;
+
+RZ_API RzVariableBook *rz_analysis_mark_classes(RzAnalysis *analysis);
 RZ_API void rz_analysis_devirtualize_methods(RzAnalysis *analysis);
+RZ_API void rz_analysis_devirtualize(RzAnalysis *analysis, RzVariableBook *var_book);
 
 /* classes */
 typedef enum {

@@ -19,14 +19,9 @@ typedef struct var_t {
 	char *name; ///< for now, checks varibles discovered by ESIL
 	ut64 stack_addr; ///< address of the stack where variable is stored according to RzIL VM
 	ut64 instr_addr; ///< address of instruction which writes to variable
-	RzList *class_names; ///< Single variable might store multiple classes based on conditionals
+	RzList /*<char*>*/ *class_names; ///< Single variable might store multiple classes based on conditionals
+	RzList /*<ut64>*/ *object_addr; ///< Address of allocated object which stores vtable ptr
 } Variable;
-
-typedef struct rz_variable_book_t {
-	RzAnalysisFunction *function;
-	HtUP /*<ut64, RzVariable*>*/ *class_variables;
-	RzList *stack_variables;
-} RzVariableBook;
 
 typedef struct rz_taint_state_t {
 	RzTaintDevirt taint;
@@ -35,6 +30,10 @@ typedef struct rz_taint_state_t {
 	char *class_name;
 	RzVariableBook *var_book;
 } RzTaintState;
+
+typedef struct rz_virtual_calls_t {
+	HtUP /*<ut64,RzSetU*>*/ *virt_calls;
+} RzVirtualCalls;
 
 #define RZ_TAINT_VALUE 0x1A2B3C
 
@@ -117,11 +116,9 @@ void rz_taint_init(RzAnalysis *analysis, RzCore *core) {
 	if (!rz_str_cmp(analysis->arch_target->arch, "x86", -1)) {
 		rz_core_analysis_il_vm_set(core, "rbp", 0x1fff);
 		rz_core_analysis_il_vm_set(core, "rsp", 0x1fff);
-		rz_core_analysis_il_vm_set(core, "rax", RZ_TAINT_VALUE);
 	} else if (!rz_str_cmp(analysis->arch_target->arch, "arm", -1)) {
 		rz_core_analysis_il_vm_set(core, "fp", 0x1fff);
 		rz_core_analysis_il_vm_set(core, "sp", 0x1fff);
-		rz_core_analysis_il_vm_set(core, "x0", RZ_TAINT_VALUE);
 	}
 }
 
@@ -140,6 +137,7 @@ RzList *get_variable_writes(RzAnalysisFunction *fcn) {
 			write_var->instr_addr = addr;
 			write_var->name = rz_str_dup(var->name);
 			write_var->class_names = rz_list_new();
+			write_var->object_addr = rz_list_new();
 			rz_list_push(var_list, write_var);
 		}
 	}
@@ -159,6 +157,7 @@ static Variable *var_at_write(RzTaintState *state, RzList *var_write_list, ut64 
 		if (var->instr_addr == state->addr) {
 			var->stack_addr = stack_addr;
 			ht_up_insert(stack_vars, stack_addr, var);
+			rz_list_insert(state->var_book->class_var_list, 0, var);
 			return var;
 		}
 	}
@@ -232,11 +231,11 @@ static void add_taint_value(RzAnalysis *analysis) {
 static ut64 rz_var_stack_address_track(RzAnalysis *analysis) {
 	RzCore *core = analysis->core;
 	if (!rz_core_il_step(core, 1)) {
-		return -1;
+		return 0;
 	}
 
 	if (!core->analysis || !core->analysis->il_vm) {
-		return -1;
+		return 0;
 	}
 
 	RzILVM *vm = core->analysis->il_vm->vm;
@@ -252,14 +251,13 @@ static ut64 rz_var_stack_address_track(RzAnalysis *analysis) {
 		switch (evt->type) {
 		case RZ_IL_EVENT_MEM_WRITE: {
 			return rz_bv_to_ut64(evt->data.mem_write.address);
-			break;
 		}
 		default: {
 			break;
 		}
 		}
 	}
-	return -1;
+	return 0;
 }
 
 static void add_class_name_to_var(Variable *var, char *name) {
@@ -271,7 +269,7 @@ static void add_class_name_to_var(Variable *var, char *name) {
 			return;
 		}
 	}
-	rz_list_insert(class_names, 1, rz_str_dup(name));
+	rz_list_insert(class_names, 0, rz_str_dup(name));
 }
 
 static void define_and_mark_variable(RzAnalysis *analysis, RzTaintState *state, const Variable *var) {
@@ -351,18 +349,17 @@ static bool rz_taint_red_step(RzAnalysis *analysis, RzTaintState *state) {
 }
 
 static bool rz_taint_blue_step(RzAnalysis *analysis, RzTaintState *state) {
-	RzCore *core = analysis->core;
 	RzAnalysisOp *op = state->op;
 
 	if (is_call_instruction(op)) {
 		return true;
 	}
-	bool ret = rz_taint_vm_step(core, &(state->taint));
-	if (!ret) {
-		return false;
-	}
 
 	ut64 stack_addr = rz_var_stack_address_track(analysis);
+
+	if (stack_addr == 0) {
+		return false;
+	}
 	Variable *var = var_at_write(state, state->var_book->stack_variables, stack_addr);
 	add_class_name_to_var(var, state->class_name);
 	define_and_mark_variable(analysis, state, var);
@@ -370,7 +367,7 @@ static bool rz_taint_blue_step(RzAnalysis *analysis, RzTaintState *state) {
 	return false;
 }
 
-RZ_API void rz_analysis_mark_classes(RzAnalysis *analysis) {
+RZ_API RzVariableBook *rz_analysis_mark_classes(RzAnalysis *analysis) {
 
 	RzList *list = list_of_operator_new_functions(analysis->core);
 
@@ -388,7 +385,7 @@ RZ_API void rz_analysis_mark_classes(RzAnalysis *analysis) {
 	}
 	if (!function) {
 		RZ_LOG_ERROR("Cannot find function at 0x%08" PFMT64x "\n", core->offset);
-		return;
+		return NULL;
 	}
 
 	RzTaintState *state = RZ_NEW0(RzTaintState);
@@ -412,6 +409,7 @@ RZ_API void rz_analysis_mark_classes(RzAnalysis *analysis) {
 	var_book->class_variables = ht_up_new(NULL, NULL);
 	var_book->function = function;
 	var_book->stack_variables = var_write_list;
+	var_book->class_var_list = rz_list_new();
 	state->var_book = var_book;
 
 	while (state->addr < end) {
@@ -449,10 +447,197 @@ RZ_API void rz_analysis_mark_classes(RzAnalysis *analysis) {
 	rz_analysis_op_fini(op);
 	rz_list_free(list);
 	free(bytes);
+	return var_book;
+}
+
+static ut64 allocate_and_store(RzCore *core, RzVector *vtables, Variable *var, ut64 addr) {
+	RzAnalysisVTable *vtable;
+	rz_vector_foreach (vtables, vtable) {
+		ut8 buf[8];
+		rz_write_le64(buf, vtable->addr);
+		char str[17]; // 2 chars per byte + null terminator
+		for (int i = 0; i < 8; i++) {
+			sprintf(&str[i * 2], "%02x", buf[i]);
+		}
+		str[16] = '\0'; // null-terminate
+
+		rz_core_write_hexpair(core, addr, str);
+		ut64 *ptr = RZ_NEW0(ut64);
+		*ptr = addr;
+		rz_list_insert(var->object_addr, 0, ptr);
+		addr += 0x8;
+	}
+	return addr;
+}
+
+static void allocate_objects(RzAnalysis *analysis, RzVariableBook *var_book) {
+	RzList *var_list = var_book->class_var_list;
+	RzListIter *it;
+	Variable *var;
+	ut64 addr = 0x3000;
+	rz_list_foreach (var_list, it, var) {
+		RzListIter *itt;
+		char *name;
+		rz_list_foreach (var->class_names, itt, name) {
+			RzVector *vtables = rz_analysis_class_vtable_get_all(analysis, name);
+			addr = allocate_and_store(analysis->core, vtables, var, addr);
+		}
+	}
+}
+
+static void fill_value_at_stack_address(RzCore *core, ut64 stack_addr, ut64 value) {
+	ut8 buf[8];
+	rz_write_le64(buf, value);
+	char str[17];
+	for (int i = 0; i < 8; i++) {
+		sprintf(&str[i * 2], "%02x", buf[i]);
+	}
+	str[16] = '\0';
+	rz_core_write_hexpair(core, stack_addr, str);
+}
+
+static void rz_preserve_stack(RzAnalysis *analysis, RzVariableBook *var_book, Variable *m_var, ut64 obj_addr) {
+	// Preserve stack and set value for var as obj_addr
+	RzCore *core = analysis->core;
+	RzListIter *it;
+	Variable *var;
+	rz_list_foreach (var_book->class_var_list, it, var) {
+		RzListIter *itt;
+		ut64 *curr_obj_addr;
+		rz_list_foreach (var->object_addr, itt, curr_obj_addr) {
+			fill_value_at_stack_address(core, var->stack_addr, *curr_obj_addr);
+		}
+	}
+	fill_value_at_stack_address(core, m_var->stack_addr, obj_addr);
+}
+
+static void devirtualize_variable_vtable(RzAnalysis *analysis, RzVariableBook *var_book, Variable *var, ut64 obj_addr, RzVirtualCalls *virt_calls) {
+	RzCore *core = analysis->core;
+
+	RzAnalysisFunction *function = rz_analysis_get_fcn_in(core->analysis, core->offset, RZ_ANALYSIS_FCN_TYPE_ROOT);
+	if (!function) {
+		function = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
+	}
+	if (!function) {
+		RZ_LOG_ERROR("Cannot find function at 0x%08" PFMT64x "\n", core->offset);
+		return;
+	}
+
+	ut64 start = function->addr; // start of the function
+	ut64 end = rz_analysis_function_max_addr(function);
+	RzAnalysisOp *op = rz_analysis_op_new();
+
+	ut8 *bytes = malloc(end - start);
+	rz_io_read_at(core->io, start, bytes, end - start);
+	ut64 offset = 0;
+
+	rz_taint_init(analysis, core);
+	rz_preserve_stack(analysis, var_book, var, obj_addr);
+
+	bool refresh_vm = false;
+
+	while (start < end) {
+		rz_analysis_op(analysis, op, start, bytes + offset, end - start, RZ_ANALYSIS_OP_MASK_ALL);
+		if (refresh_vm) {
+			rz_core_analysis_il_reinit(core);
+			refresh_vm = false;
+		}
+		refresh_vm = is_call_instruction(op);
+
+		rz_core_il_step(core, 1);
+		rz_preserve_stack(analysis, var_book, var, obj_addr);
+
+		if (op->type == RZ_ANALYSIS_OP_TYPE_RCALL) {
+			// devirtualizing
+			RzAnalysisILVM *vm = core->analysis->il_vm;
+			RzILVal *reg = rz_il_vm_get_var_value(vm->vm, RZ_IL_VAR_KIND_GLOBAL, op->reg);
+			if (reg) {
+
+				RzBitVector *bv = rz_il_value_to_bv(reg);
+				ut64 vf_addr = rz_bv_to_ut64(bv);
+				rz_core_analysis_il_vm_set(core, op->reg, 0);
+
+				RzAnalysisFunction *vfunc = rz_analysis_get_fcn_in(core->analysis, vf_addr, RZ_ANALYSIS_FCN_TYPE_ROOT);
+				if (!vfunc) {
+					vfunc = rz_analysis_get_fcn_in(core->analysis, vf_addr, 0);
+				}
+				if (vfunc) {
+					bool found = false;
+					RzSetS *curr_set = ht_up_find(virt_calls->virt_calls, start, &found);
+					if (found) {
+						rz_set_s_add(curr_set, vfunc->name);
+					} else {
+						RzSetS *set = rz_set_s_new(HT_STR_DUP);
+						rz_set_s_add(set, vfunc->name);
+						ht_up_insert(virt_calls->virt_calls, start, set);
+					}
+				}
+			}
+		}
+		start += op->size;
+		offset += op->size;
+		core->offset = start;
+	}
+
+	core->offset = function->addr;
+	rz_core_analysis_il_reinit(core);
+
+	rz_analysis_op_fini(op);
+}
+
+static bool add_comment(void *user, const ut64 key, const void *v) {
+	RzCore *core = (RzCore *)user;
+	RzSetS *set = (RzSetS *)v;
+
+	RzPVector *vect = rz_set_s_to_vector(set);
+	void **it;
+
+	char *comment = NULL;
+
+	bool first = true;
+	rz_pvector_foreach (vect, it) {
+		const char *vfunc_name = *it;
+		if (first) {
+			comment = rz_str_newf("Virtual Call : %s", vfunc_name);
+			first = false;
+			continue;
+		}
+		comment = rz_str_append(comment, rz_str_newf("\nVirtual Call : %s", vfunc_name));
+	}
+
+	rz_core_meta_comment_add(core, comment, key);
+	free(comment);
+
+	// TODO : Add free for vect
+	return true;
+}
+
+RZ_API void rz_analysis_devirtualize(RzAnalysis *analysis, RzVariableBook *var_book) {
+	rz_core_analysis_esil_init_mem(analysis->core, NULL, 0x3000, 0x1000); // Memory allocation for obbjects
+	allocate_objects(analysis, var_book);
+	RzListIter *it;
+	Variable *var;
+
+	RzVirtualCalls *virt_calls = RZ_NEW0(RzVirtualCalls);
+	virt_calls->virt_calls = ht_up_new(NULL, NULL);
+
+	rz_list_foreach (var_book->class_var_list, it, var) {
+		RzListIter *itt;
+		ut64 *obj_addr;
+		rz_list_foreach (var->object_addr, itt, obj_addr) {
+			devirtualize_variable_vtable(analysis, var_book, var, *obj_addr, virt_calls);
+		}
+	}
+
+	ht_up_foreach(virt_calls->virt_calls, add_comment, analysis->core);
+	// TODO : Add free for virt_calls
 }
 
 RZ_API void rz_analysis_devirtualize_methods(RzAnalysis *analysis) {
 	// TODO : Generalize for classes
-
-	rz_analysis_mark_classes(analysis);
+	RzVariableBook *var_book = rz_analysis_mark_classes(analysis);
+	if (!var_book) {
+		return;
+	}
+	rz_analysis_devirtualize(analysis, var_book);
 }
