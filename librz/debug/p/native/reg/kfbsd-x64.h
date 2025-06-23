@@ -84,10 +84,4 @@ return rz_str_dup(
 	"gpr	esp	.32	160	0\n"
 	"gpr	sp	.16	160	0\n"
 	"gpr	spl	.8	160	0\n"
-	"seg	ss	.64	168	0\n"
-	"drx	dr0	.64	0	0\n"
-	"drx	dr1	.64	8	0\n"
-	"drx	dr2	.64	16	0\n"
-	"drx	dr3	.64	24	0\n"
-	"drx	dr6	.64	48	0\n"
-	"drx	dr7	.64	56	0\n");
+	"seg	ss	.64	168	0\n");

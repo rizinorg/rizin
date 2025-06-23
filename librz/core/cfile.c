@@ -586,8 +586,9 @@ static ut64 get_base_from_maps(RzCore *core, const char *file) {
 	ut64 b = 0LL;
 
 	rz_debug_map_sync(core->dbg); // update process memory maps
+	//check for the first entry which has read permission
 	rz_list_foreach (core->dbg->maps, iter, map) {
-		if ((map->perm & 5) == 5) {
+		if (map->perm & 4) {
 			// TODO: make this more flexible
 			// XXX - why "copy/" here?
 			if (map->name && strstr(map->name, "copy/")) {
@@ -604,8 +605,9 @@ static ut64 get_base_from_maps(RzCore *core, const char *file) {
 		}
 	}
 	// fallback resolution copied from cmd_debug.c:rz_debug_get_baddr
+	//check for the first entry which has read permission
 	rz_list_foreach (core->dbg->maps, iter, map) {
-		if (map->perm == 5) { // r-x
+		if (map->perm & 4) { // r--
 			return map->addr;
 		}
 	}

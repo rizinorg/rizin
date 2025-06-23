@@ -78,12 +78,6 @@ int bsd_handle_signals(RzDebug *dbg) {
 		return -1;
 	}
 
-	// Not stopped by the signal
-	if (linfo.pl_event == PL_EVENT_NONE) {
-		dbg->reason.type = RZ_DEBUG_REASON_BREAKPOINT;
-		return 0;
-	}
-
 	siginfo = linfo.pl_siginfo;
 #else
 	struct ptrace_siginfo sinfo = { 0 };
@@ -108,13 +102,11 @@ int bsd_handle_signals(RzDebug *dbg) {
 	case SIGSEGV:
 		dbg->reason.type = RZ_DEBUG_REASON_SEGFAULT;
 		break;
-#if __NetBSD__
 	case SIGTRAP:
 		if (siginfo.si_code == TRAP_BRKPT) {
 			dbg->reason.type = RZ_DEBUG_REASON_BREAKPOINT;
 		}
 		break;
-#endif
 	}
 
 	return 0;

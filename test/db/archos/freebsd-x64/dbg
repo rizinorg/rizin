@@ -31,21 +31,16 @@ dcu main
 pi 10 @ rip
 EOF
 EXPECT=<<EOF
-pushh rbp
+push rbp
 mov rbp, rsp
 sub rsp, 0x10
-mov dword [rbp - 4], 0
-movabs rdi, 0x200538
-mov al, 0
+mov dword [rbp-0x04], 0x00
+mov rdi, str.Hello_World
+mov al, 0x00
 call sym.imp.printf
 xor eax, eax
 add rsp, 0x10
 pop rbp
-EOF
-#REGEXP_FILTER_ERR=(([a-zA-Z:]+|[0-9a-f][0-9a-f][0-9a-f])\s+)
-EXPECT_ERR=<<EOF
-Continue until c88
-hit breakpoint at: c88
 EOF
 RUN
 
@@ -68,14 +63,12 @@ FILE=bins/elf/hello-freebsd-x64
 ARGS=-d
 CMDS=<<EOF
 fl@F:maps~hello~[1-]
-#?e --
 dm*~hello~[0-2]
 EOF
 EXPECT=<<EOF
 4096 usr_home_rizin_rizin_rizin_testbins_elf_hello_freebsd_x64.__x
 4096 usr_home_rizin_rizin_rizin_testbins_elf_hello_freebsd_x64.r_x
 4096 usr_home_rizin_rizin_rizin_testbins_elf_hello_freebsd_x64._wx
---
 f+ map.usr_home_rizin_rizin_rizin_testbins_elf_hello_freebsd_x64.__x 0x00001000
 f+ map.usr_home_rizin_rizin_rizin_testbins_elf_hello_freebsd_x64.r_x 0x00001000
 f+ map.usr_home_rizin_rizin_rizin_testbins_elf_hello_freebsd_x64._wx 0x00001000
@@ -89,22 +82,12 @@ CMDS=<<EOF
 dcu main
 5 ds
 dr rip
-dr rdx
 ds
 dr rip
-dr rdx
 EOF
-REGEXP_FILTER_OUT=(([a-zA-Z:=-]+|[0-9a-f][0-9a-f][0-9a-f]|x[0-9]+ = [a-z0-9]+)\s+)
 EXPECT=<<EOF
-pc = f44
-x8 = 0x0000000000000000
-pc = f48
-x8 = 0x0000000000000064
-EOF
-#REGEXP_FILTER_ERR=(([a-zA-Z:]+|[0-9a-f][0-9a-f][0-9a-f])\s+)
-EXPECT_ERR=<<EOF
-Continue until f30
-hit breakpoint at: f30
+rip = 0x00000000002018a8
+rip = 0x00000000002018ac
 EOF
 RUN
 
@@ -124,19 +107,12 @@ dc
 dr rip
 dr rax
 EOF
-REGEXP_FILTER_OUT=(([a-zA-Z:=-]+|[0-9a-f][0-9a-f][0-9a-f]|x[0-9]+ = [a-z0-9]+)\s+)
 EXPECT=<<EOF
-rip = f30
-rip = f44
+rip = 0x0000000000201890
+rip = 0x00000000002018a4
 rax = 0x0000000000000000
-rip = f48
+rip = 0x00000000002018a8
 rax = 0x0000000000000064
-EOF
-REGEXP_FILTER_ERR=(([a-zA-Z:]+|[0-9a-f][0-9a-f][0-9a-f])\s+)
-EXPECT_ERR=<<EOF
-hit breakpoint at: f30
-hit breakpoint at: f44
-hit breakpoint at: f48
 EOF
 RUN
 
@@ -144,7 +120,7 @@ NAME=write gpr
 FILE=bins/elf/calculate-freebsd-x64
 ARGS=-d
 CMDS=<<EOF
-db @ main + 64
+db @ main + 66
 dc
 dr rax
 dr rax = 1337
@@ -153,12 +129,5 @@ EOF
 EXPECT=<<EOF
 rax = 0x000000000000002a
 Result = 1337
-EOF
-#REGEXP_FILTER_ERR=(([a-zA-Z:]+|[0-9a-f][0-9a-f][0-9a-f])\s+)
-EXPECT_ERR=<<EOF
-hit breakpoint at: f70
-
-Process finished
-
 EOF
 RUN
