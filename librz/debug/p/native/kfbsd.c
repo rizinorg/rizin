@@ -170,7 +170,7 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 	}
 	dbg->reason.tid = pid;
 	dbg->reason.type = reason;
-	eprintf("Here is your reason for wait %d\n",reason);
+	eprintf("Here is your reason for wait %d\n", reason);
 	return reason;
 }
 
@@ -314,9 +314,7 @@ static RzList /*<RzDebugMap *>*/ *rz_debug_native_map_get(RzDebug *dbg) {
 	snprintf(path, sizeof(path), "/proc/%d/map", dbg->pid);
 	fd = rz_sys_fopen(path, "r");
 	if (!fd) {
-		char *errmsg = rz_str_newf("Cannot open '%s'", path);
-		perror(errmsg);
-		free(errmsg);
+		RZ_LOG_ERROR("Cannot open '%s, Try mounting procfs in /proc/", path);
 		return NULL;
 	}
 
