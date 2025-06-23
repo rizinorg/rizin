@@ -52,9 +52,9 @@ dm~hello~[3-]
 EOF
 #REGEXP_FILTER_OUT=([a-zA-Z0-9_\.-]+\s+)
 EXPECT=<<EOF
-- usr 4K s --x /usr/home/rizin/rizin/rizin-testbins/elf/hello-freebsd-x64 ? usr_home_rizin_rizin_rizin_testbins_elf_hello_freebsd_x64.__x
-- usr 4K s r-x /usr/home/rizin/rizin/rizin-testbins/elf/hello-freebsd-x64 ? usr_home_rizin_rizin_rizin_testbins_elf_hello_freebsd_x64.r_x
-* usr 4K s -wx /usr/home/rizin/rizin/rizin-testbins/elf/hello-freebsd-x64 ? usr_home_rizin_rizin_rizin_testbins_elf_hello_freebsd_x64._wx
+- usr 4K s r-- /home/build/rizin-testbins/elf/hello-freebsd-x64 /home/build/rizin-testbins/elf/hello-freebsd-x64 home_build_rizin_testbins_elf_hello_freebsd_x64.r
+- usr 4K s r-x /home/build/rizin-testbins/elf/hello-freebsd-x64 /home/build/rizin-testbins/elf/hello-freebsd-x64 home_build_rizin_testbins_elf_hello_freebsd_x64.r_x
+- usr 4K s rwx /home/build/rizin-testbins/elf/hello-freebsd-x64 /home/build/rizin-testbins/elf/hello-freebsd-x64 home_build_rizin_testbins_elf_hello_freebsd_x64.rwx
 EOF
 RUN
 
@@ -66,12 +66,12 @@ fl@F:maps~hello~[1-]
 dm*~hello~[0-2]
 EOF
 EXPECT=<<EOF
-4096 usr_home_rizin_rizin_rizin_testbins_elf_hello_freebsd_x64.__x
-4096 usr_home_rizin_rizin_rizin_testbins_elf_hello_freebsd_x64.r_x
-4096 usr_home_rizin_rizin_rizin_testbins_elf_hello_freebsd_x64._wx
-f+ map.usr_home_rizin_rizin_rizin_testbins_elf_hello_freebsd_x64.__x 0x00001000
-f+ map.usr_home_rizin_rizin_rizin_testbins_elf_hello_freebsd_x64.r_x 0x00001000
-f+ map.usr_home_rizin_rizin_rizin_testbins_elf_hello_freebsd_x64._wx 0x00001000
+4096 home_build_rizin_testbins_elf_hello_freebsd_x64.r
+4096 home_build_rizin_testbins_elf_hello_freebsd_x64.r_x
+4096 home_build_rizin_testbins_elf_hello_freebsd_x64.rwx
+f+ map.home_build_rizin_testbins_elf_hello_freebsd_x64.r 0x00001000
+f+ map.home_build_rizin_testbins_elf_hello_freebsd_x64.r_x 0x00001000
+f+ map.home_build_rizin_testbins_elf_hello_freebsd_x64.rwx 0x00001000
 EOF
 RUN
 

@@ -394,12 +394,15 @@ RzList *bsd_native_sysctl_map(RzDebug *dbg) {
 		map_start = kve->kve_start;
 		map_end = kve->kve_end;
 
-		if (kve->kve_protection & VM_PROT_READ)
+		if (kve->kve_protection & VM_PROT_READ) {
 			perm |= RZ_PERM_R;
-		if (kve->kve_protection & VM_PROT_WRITE)
+		}
+		if (kve->kve_protection & VM_PROT_WRITE) {
 			perm |= RZ_PERM_W;
-		if (kve->kve_protection & VM_PROT_EXECUTE)
+		}
+		if (kve->kve_protection & VM_PROT_EXECUTE) {
 			perm |= RZ_PERM_X;
+		}
 
 		map = rz_debug_map_new(name, map_start, map_end, perm, 0);
 		if (!map) {
