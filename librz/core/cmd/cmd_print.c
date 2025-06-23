@@ -1466,13 +1466,6 @@ static void _pointer_table(RzCore *core, ut64 origin, ut64 offset, const ut8 *bu
 		!rz_io_is_valid_offset(core->io, offset, 0)) {
 		return;
 	}
-	if (origin != offset) {
-		if (mode == RZ_OUTPUT_MODE_RIZIN) {
-			rz_cons_printf("CC-@ 0x%08" PFMT64x "\n", origin);
-			rz_cons_printf("CC switch table @ 0x%08" PFMT64x "\n", origin);
-			rz_cons_printf("axd 0x%" PFMT64x " @ 0x%08" PFMT64x "\n", origin, offset);
-		}
-	}
 	for (size_t i = 0, n = 0; (i + sizeof(st32)) <= len; i += step, n++) {
 		st32 delta = rz_read_le32(buf + i);
 		ut64 addr = offset + delta;
@@ -1484,16 +1477,7 @@ static void _pointer_table(RzCore *core, ut64 origin, ut64 offset, const ut8 *bu
 			}
 			addr = delta;
 		}
-		if (mode == RZ_OUTPUT_MODE_RIZIN) {
-			rz_cons_printf("af case.%zu.0x%" PFMT64x " 0x%08" PFMT64x "\n", n, offset, addr);
-			rz_cons_printf("ax 0x%" PFMT64x " @ 0x%08" PFMT64x "\n", offset, addr);
-			rz_cons_printf("ax 0x%" PFMT64x " @ 0x%08" PFMT64x "\n", addr, offset); // wrong, but useful because forward xrefs dont work :?
-			// FIXME: "aho" doesn't accept anything here after the "case" word
-			rz_cons_printf("aho case 0x%" PFMT64x " 0x%08" PFMT64x " @ 0x%08" PFMT64x "\n", (ut64)i, addr, offset + i); // wrong, but useful because forward xrefs dont work :?
-			rz_cons_printf("ahs %d @ 0x%08" PFMT64x "\n", step, offset + i);
-		} else {
-			rz_cons_printf("0x%08" PFMT64x " -> 0x%08" PFMT64x "\n", offset + i, addr);
-		}
+		rz_cons_printf("0x%08" PFMT64x " -> 0x%08" PFMT64x "\n", offset + i, addr);
 	}
 }
 
@@ -1860,12 +1844,6 @@ static bool cmd_pxr(RzCore *core, ut64 at, int len, RzCmdStateOutput *state, int
 			char *refs = __refs(core, val);
 			rz_strbuf_appendf(sb, "%s\n", refs);
 		}
-	} else if (mode == RZ_OUTPUT_MODE_RIZIN) {
-		for (ut64 i = 0; i + wordsize < end; i += wordsize) {
-			ut64 addr = at + i;
-			ut64 val = rz_read_ble(buf + i, be, bitsize);
-			rz_strbuf_appendf(sb, "f pxr.%" PFMT64x " @ 0x%" PFMT64x "\n", val, addr);
-		}
 	} else if (mode == RZ_OUTPUT_MODE_STANDARD) {
 		char *hexdump_str = rz_core_print_hexdump_refs(core, core->offset, len, wordsize);
 		rz_strbuf_append(sb, hexdump_str);
@@ -1875,7 +1853,7 @@ static bool cmd_pxr(RzCore *core, ut64 at, int len, RzCmdStateOutput *state, int
 		rz_strbuf_free(sb);
 		return false;
 	}
-	if (mode == RZ_OUTPUT_MODE_RIZIN || mode == RZ_OUTPUT_MODE_STANDARD || mode == RZ_OUTPUT_MODE_QUIET) {
+	if (mode == RZ_OUTPUT_MODE_STANDARD || mode == RZ_OUTPUT_MODE_QUIET) {
 		char *res = rz_strbuf_drain(sb);
 		rz_cons_print(res);
 		free(res);
@@ -3840,9 +3818,6 @@ typedef struct {
 
 static void print_value_single(RzCore *core, PrintValueOptions *opts, ut64 address, ut64 value, RzCmdStateOutput *state) {
 	switch (state->mode) {
-	case RZ_OUTPUT_MODE_RIZIN:
-		rz_cons_printf("f pval.0x%08" PFMT64x " @ %" PFMT64d "\n", address, value);
-		break;
 	case RZ_OUTPUT_MODE_STANDARD:
 		switch (opts->size) {
 		case 1:
@@ -6255,9 +6230,6 @@ static RzCmdStatus print_format(RzCore *core, const char *fmt, int mode, RzCmdSt
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_JSON:
 			mode = RZ_PRINT_JSON;
-			break;
-		case RZ_OUTPUT_MODE_RIZIN:
-			mode = RZ_PRINT_SEEFLAGS;
 			break;
 		case RZ_OUTPUT_MODE_QUIET:
 			mode |= RZ_PRINT_QUIET | RZ_PRINT_MUSTSEE;

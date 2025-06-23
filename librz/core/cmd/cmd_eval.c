@@ -189,9 +189,6 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_list_handler(RzCore *core, int argc, const 
 		return RZ_CMD_STATUS_OK;
 	}
 	switch (mode) {
-	case RZ_OUTPUT_MODE_RIZIN:
-		rz_cons_pal_list(1, NULL);
-		break;
 	case RZ_OUTPUT_MODE_JSON:
 		rz_cons_pal_list('j', NULL);
 		break;

@@ -1682,8 +1682,6 @@ RZ_IPI RzCmdStatus rz_cmd_info_imports_handler(RzCore *core, int argc, const cha
 RZ_IPI RzCmdStatus rz_cmd_info_binary_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "ik"
 RZ_IPI RzCmdStatus rz_cmd_info_query_handler(RzCore *core, int argc, const char **argv);
-// "ik*"
-RZ_IPI RzCmdStatus rz_cmd_info_show_header_info_handler(RzCore *core, int argc, const char **argv);
 // "il"
 RZ_IPI RzCmdStatus rz_cmd_info_libs_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "iL"
@@ -1714,8 +1712,6 @@ RZ_IPI RzCmdStatus rz_cmd_info_cur_segment_handler(RzCore *core, int argc, const
 RZ_IPI RzCmdStatus rz_cmd_info_hashes_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "iV"
 RZ_IPI RzCmdStatus rz_cmd_info_versions_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
-// "iw"
-RZ_IPI RzCmdStatus rz_cmd_info_trycatch_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "ix"
 RZ_IPI RzCmdStatus rz_cmd_info_sourcelines_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "ix."

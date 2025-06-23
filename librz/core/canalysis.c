@@ -451,9 +451,6 @@ static void bb_info_print(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisBlock
 	case RZ_OUTPUT_MODE_TABLE:
 		rz_table_add_rowf(t, "xdxx", bb->addr, bb->size, bb->jump, bb->fail);
 		break;
-	case RZ_OUTPUT_MODE_RIZIN:
-		rz_cons_printf("f bb.%05" PFMT64x " @ 0x%08" PFMT64x "\n", bb->addr & 0xFFFFF, bb->addr);
-		break;
 	case RZ_OUTPUT_MODE_QUIET:
 		rz_cons_printf("0x%08" PFMT64x "\n", bb->addr);
 		break;
@@ -487,9 +484,6 @@ RZ_IPI void rz_core_analysis_bbs_info_print(RzCore *core, RzAnalysisFunction *fc
 	RzAnalysisBlock *bb;
 	rz_cmd_state_output_array_start(state);
 	rz_cmd_state_output_set_columnsf(state, "xdxx", "addr", "size", "jump", "fail");
-	if (state->mode == RZ_OUTPUT_MODE_RIZIN) {
-		rz_cons_printf("fs blocks\n");
-	}
 
 	rz_pvector_sort(fcn->bbs, bb_cmp, NULL);
 	rz_pvector_foreach (fcn->bbs, iter) {
@@ -1147,78 +1141,6 @@ static void print_hint_h_format(HintNode *node) {
 
 static void hint_node_print(HintNode *node, RzOutputMode mode, PJ *pj) {
 	switch (mode) {
-	case RZ_OUTPUT_MODE_RIZIN:
-#define HINTCMD_ADDR(hint, fmt, x) rz_cons_printf(fmt " @ 0x%" PFMT64x "\n", x, (hint)->addr)
-		switch (node->type) {
-		case HINT_NODE_ADDR: {
-			const RzAnalysisAddrHintRecord *record;
-			rz_vector_foreach (node->addr_hints, record) {
-				switch (record->type) {
-				case RZ_ANALYSIS_ADDR_HINT_TYPE_IMMBASE:
-					HINTCMD_ADDR(node, "ahi %d", record->immbase);
-					break;
-				case RZ_ANALYSIS_ADDR_HINT_TYPE_JUMP:
-					HINTCMD_ADDR(node, "ahc 0x%" PFMT64x, record->jump);
-					break;
-				case RZ_ANALYSIS_ADDR_HINT_TYPE_FAIL:
-					HINTCMD_ADDR(node, "ahf 0x%" PFMT64x, record->fail);
-					break;
-				case RZ_ANALYSIS_ADDR_HINT_TYPE_STACKFRAME:
-					HINTCMD_ADDR(node, "ahF 0x%" PFMT64x, record->stackframe);
-					break;
-				case RZ_ANALYSIS_ADDR_HINT_TYPE_PTR:
-					HINTCMD_ADDR(node, "ahp 0x%" PFMT64x, record->ptr);
-					break;
-				case RZ_ANALYSIS_ADDR_HINT_TYPE_NWORD:
-					// no command for this
-					break;
-				case RZ_ANALYSIS_ADDR_HINT_TYPE_RET:
-					HINTCMD_ADDR(node, "ahr 0x%" PFMT64x, record->retval);
-					break;
-				case RZ_ANALYSIS_ADDR_HINT_TYPE_NEW_BITS:
-					// no command for this
-					break;
-				case RZ_ANALYSIS_ADDR_HINT_TYPE_SIZE:
-					HINTCMD_ADDR(node, "ahs 0x%" PFMT64x, record->size);
-					break;
-				case RZ_ANALYSIS_ADDR_HINT_TYPE_SYNTAX:
-					HINTCMD_ADDR(node, "ahS %s", record->syntax); // TODO: escape for newcmd
-					break;
-				case RZ_ANALYSIS_ADDR_HINT_TYPE_OPTYPE: {
-					const char *type = rz_analysis_optype_to_string(record->optype);
-					if (type) {
-						HINTCMD_ADDR(node, "aho %s", type); // TODO: escape for newcmd
-					}
-					break;
-				}
-				case RZ_ANALYSIS_ADDR_HINT_TYPE_OPCODE:
-					HINTCMD_ADDR(node, "ahd %s", record->opcode);
-					break;
-				case RZ_ANALYSIS_ADDR_HINT_TYPE_TYPE_OFFSET:
-					HINTCMD_ADDR(node, "aht %s", record->type_offset); // TODO: escape for newcmd
-					break;
-				case RZ_ANALYSIS_ADDR_HINT_TYPE_ESIL:
-					HINTCMD_ADDR(node, "ahe %s", record->esil); // TODO: escape for newcmd
-					break;
-				case RZ_ANALYSIS_ADDR_HINT_TYPE_HIGH:
-					rz_cons_printf("ahh @ 0x%" PFMT64x "\n", node->addr);
-					break;
-				case RZ_ANALYSIS_ADDR_HINT_TYPE_VAL:
-					// no command for this
-					break;
-				}
-			}
-			break;
-		}
-		case HINT_NODE_ARCH:
-			HINTCMD_ADDR(node, "aha %s", node->arch ? node->arch : "0");
-			break;
-		case HINT_NODE_BITS:
-			HINTCMD_ADDR(node, "ahb %d", node->bits);
-			break;
-		}
-#undef HINTCMD_ADDR
-		break;
 	case RZ_OUTPUT_MODE_JSON:
 		switch (node->type) {
 		case HINT_NODE_ADDR: {
@@ -4718,7 +4640,6 @@ static bool archIsThumbable(RzCore *core) {
 }
 
 static void cb_in_range_aav(RzCore *core, ut64 from, ut64 to, int vsize, void *user) {
-	bool pretend = (user && *(RzOutputMode *)user == RZ_OUTPUT_MODE_RIZIN);
 	int arch_align = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN);
 	bool vinfun = rz_config_get_b(core->config, "analysis.vinfun");
 	int searchAlign = rz_config_get_i(core->config, "search.align");
@@ -4743,18 +4664,12 @@ static void cb_in_range_aav(RzCore *core, ut64 from, ut64 to, int vsize, void *u
 			return;
 		}
 	}
-	if (pretend) {
-		rz_cons_printf("ax 0x%" PFMT64x " @ 0x%" PFMT64x "\n", to, from);
-		rz_cons_printf("Cd %d @ 0x%" PFMT64x "\n", vsize, from);
-		rz_cons_printf("f+ aav.0x%08" PFMT64x "= 0x%08" PFMT64x, to, to);
-	} else {
-		rz_analysis_xrefs_set(core->analysis, from, to, RZ_ANALYSIS_XREF_TYPE_NULL);
-		rz_meta_set(core->analysis, RZ_META_TYPE_DATA, from, vsize, NULL);
-		if (!rz_flag_get_at(core->flags, to, false)) {
-			char *name = rz_str_newf("aav.0x%08" PFMT64x, to);
-			rz_flag_set(core->flags, name, to, vsize);
-			free(name);
-		}
+	rz_analysis_xrefs_set(core->analysis, from, to, RZ_ANALYSIS_XREF_TYPE_NULL);
+	rz_meta_set(core->analysis, RZ_META_TYPE_DATA, from, vsize, NULL);
+	if (!rz_flag_get_at(core->flags, to, false)) {
+		char *name = rz_str_newf("aav.0x%08" PFMT64x, to);
+		rz_flag_set(core->flags, name, to, vsize);
+		free(name);
 	}
 }
 

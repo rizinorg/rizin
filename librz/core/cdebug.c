@@ -552,16 +552,9 @@ RZ_API void rz_core_debug_map_print(RzCore *core, ut64 addr, RzCmdStateOutput *s
 	rz_cmd_state_output_set_columnsf(state, "xxssbsss",
 		"begin", "end", "type", "size",
 		"user", "perms", "file", "name");
-	if (state->mode == RZ_OUTPUT_MODE_RIZIN) {
-		rz_cons_print("fss+ " RZ_FLAGS_FS_DEBUG_MAPS "\n");
-	}
 	for (i = 0; i < 2; i++) { // Iterate over dbg::maps and dbg::maps_user
 		RzList *maps = rz_debug_map_list(dbg, (bool)i);
 		if (!maps) {
-			continue;
-		}
-		if (state->mode == RZ_OUTPUT_MODE_RIZIN) { // "dm*"
-			apply_maps_as_flags(core, maps, true);
 			continue;
 		}
 		rz_list_foreach (maps, iter, map) {
@@ -581,9 +574,6 @@ RZ_API void rz_core_debug_map_print(RzCore *core, ut64 addr, RzCmdStateOutput *s
 				break;
 			}
 		}
-	}
-	if (state->mode == RZ_OUTPUT_MODE_RIZIN) {
-		rz_cons_print("fss-\n");
 	}
 	rz_cmd_state_output_array_end(state);
 }
@@ -728,9 +718,6 @@ RZ_API void rz_debug_trace_print(RzDebug *dbg, RzCmdStateOutput *state, ut64 off
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_QUIET:
 			rz_cons_printf("0x%" PFMT64x "\n", trace->addr);
-			break;
-		case RZ_OUTPUT_MODE_RIZIN:
-			rz_cons_printf("dt+ 0x%" PFMT64x " %d\n", trace->addr, trace->times);
 			break;
 		case RZ_OUTPUT_MODE_STANDARD:
 		default:

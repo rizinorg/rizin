@@ -35,7 +35,6 @@ commands:
     summary: List config variables with their descriptions
     modes:
       - RZ_OUTPUT_MODE_STANDARD
-      - RZ_OUTPUT_MODE_RIZIN
       - RZ_OUTPUT_MODE_JSON
       - RZ_OUTPUT_MODE_QUIET
       - RZ_OUTPUT_MODE_LONG
@@ -62,7 +61,6 @@ commands:
         cname: cmd_eval_color_list
         modes:
           - RZ_OUTPUT_MODE_STANDARD
-          - RZ_OUTPUT_MODE_RIZIN
           - RZ_OUTPUT_MODE_JSON
         args:
           - name: key
@@ -91,7 +89,6 @@ commands:
             args: []
             modes:
               - RZ_OUTPUT_MODE_JSON
-              - RZ_OUTPUT_MODE_RIZIN
           - name: ecHi
             summary: Highlight current instruction with the given color as background
             cname: cmd_eval_color_highlight_current_instruction

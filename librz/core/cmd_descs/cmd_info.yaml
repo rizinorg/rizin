@@ -43,7 +43,6 @@ commands:
         modes:
           - RZ_OUTPUT_MODE_TABLE
           - RZ_OUTPUT_MODE_JSON
-          - RZ_OUTPUT_MODE_RIZIN
           - RZ_OUTPUT_MODE_QUIET
           - RZ_OUTPUT_MODE_QUIETEST
         args: []
@@ -122,7 +121,6 @@ commands:
             type: RZ_CMD_DESC_TYPE_ARGV_STATE
             modes:
               - RZ_OUTPUT_MODE_STANDARD
-              - RZ_OUTPUT_MODE_RIZIN
               - RZ_OUTPUT_MODE_JSON
             args:
               - name: file.pdb
@@ -264,10 +262,6 @@ commands:
               - text: "ik"
                 arg_str: " versioninfo/versym/*"
                 comment: "Show all key value pairs in the 'versioninfo/versym/' namespace."
-      - name: ik*
-        summary: Show all binary header information.
-        cname: cmd_info_show_header_info
-        args: []
   - name: il
     cname: cmd_info_libs
     summary: List libraries
@@ -420,14 +414,6 @@ commands:
       - RZ_OUTPUT_MODE_STANDARD
       - RZ_OUTPUT_MODE_JSON
     args: []
-  - name: iw
-    cname: cmd_info_trycatch
-    summary: Show try/catch blocks
-    type: RZ_CMD_DESC_TYPE_ARGV_STATE
-    default_mode: RZ_OUTPUT_MODE_RIZIN
-    modes:
-      - RZ_OUTPUT_MODE_RIZIN
-    args: []
   - name: ix
     cname: cmd_info_sourcelines
     summary: Display source file line info
@@ -501,5 +487,4 @@ commands:
     modes:
       - RZ_OUTPUT_MODE_JSON
       - RZ_OUTPUT_MODE_STANDARD
-      - RZ_OUTPUT_MODE_RIZIN
     args: []

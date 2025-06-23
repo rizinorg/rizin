@@ -16,7 +16,6 @@ commands:
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
         default_mode: RZ_OUTPUT_MODE_TABLE
         modes:
-          - RZ_OUTPUT_MODE_RIZIN
           - RZ_OUTPUT_MODE_JSON
           - RZ_OUTPUT_MODE_QUIET
         details:
@@ -177,7 +176,6 @@ commands:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_JSON
               - RZ_OUTPUT_MODE_TABLE
-              - RZ_OUTPUT_MODE_RIZIN
               - RZ_OUTPUT_MODE_QUIET
             args: []
           - name: dbt=
@@ -431,7 +429,6 @@ commands:
           - RZ_OUTPUT_MODE_JSON
           - RZ_OUTPUT_MODE_TABLE
           - RZ_OUTPUT_MODE_STANDARD
-          - RZ_OUTPUT_MODE_RIZIN
       - name: dec
         summary: Continue execution until matching expression
         cname: cmd_debug_esil_continue
@@ -581,7 +578,6 @@ commands:
         modes:
           - RZ_OUTPUT_MODE_QUIET
           - RZ_OUTPUT_MODE_STANDARD
-          - RZ_OUTPUT_MODE_RIZIN
       - name: dtl=
         summary: List all traces in ascii art
         cname: cmd_debug_traces_ascii
@@ -647,7 +643,6 @@ commands:
             args: []
             modes:
               - RZ_OUTPUT_MODE_STANDARD
-              - RZ_OUTPUT_MODE_RIZIN
           - name: dtgi
             summary: Interactive debug trace
             cname: cmd_debug_trace_interactive
@@ -691,7 +686,6 @@ commands:
     type: RZ_CMD_DESC_TYPE_ARGV_STATE
     modes:
       - RZ_OUTPUT_MODE_STANDARD
-      - RZ_OUTPUT_MODE_RIZIN
       - RZ_OUTPUT_MODE_JSON
       - RZ_OUTPUT_MODE_QUIET
     args: []
@@ -774,7 +768,6 @@ commands:
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_TABLE
-          - RZ_OUTPUT_MODE_RIZIN
           - RZ_OUTPUT_MODE_JSON
           - RZ_OUTPUT_MODE_QUIET
         args: []
@@ -802,14 +795,12 @@ commands:
             type: RZ_CMD_DESC_TYPE_ARGV_STATE
             modes:
               - RZ_OUTPUT_MODE_STANDARD
-              - RZ_OUTPUT_MODE_RIZIN
               - RZ_OUTPUT_MODE_JSON
             args: []
           - name: dmm.
             cname: cmd_debug_current_modules
             modes:
               - RZ_OUTPUT_MODE_STANDARD
-              - RZ_OUTPUT_MODE_RIZIN
             summary: List memory map of current module
             args: []
       - name: dm-
@@ -853,7 +844,6 @@ commands:
             type: RZ_CMD_DESC_TYPE_ARGV_STATE
             modes:
               - RZ_OUTPUT_MODE_STANDARD
-              - RZ_OUTPUT_MODE_RIZIN
               - RZ_OUTPUT_MODE_JSON
               - RZ_OUTPUT_MODE_QUIET
               - RZ_OUTPUT_MODE_QUIETEST
@@ -867,7 +857,6 @@ commands:
             type: RZ_CMD_DESC_TYPE_ARGV_STATE
             modes:
               - RZ_OUTPUT_MODE_STANDARD
-              - RZ_OUTPUT_MODE_RIZIN
               - RZ_OUTPUT_MODE_JSON
               - RZ_OUTPUT_MODE_QUIET
               - RZ_OUTPUT_MODE_QUIETEST
@@ -878,7 +867,6 @@ commands:
             type: RZ_CMD_DESC_TYPE_ARGV_STATE
             modes:
               - RZ_OUTPUT_MODE_STANDARD
-              - RZ_OUTPUT_MODE_RIZIN
               - RZ_OUTPUT_MODE_JSON
               - RZ_OUTPUT_MODE_QUIET
               - RZ_OUTPUT_MODE_QUIETEST
@@ -911,7 +899,6 @@ commands:
         cname: cmd_debug_dmS
         modes:
           - RZ_OUTPUT_MODE_STANDARD
-          - RZ_OUTPUT_MODE_RIZIN
         args:
           - name: addr|libname
             type: RZ_CMD_ARG_TYPE_STRING
@@ -1090,7 +1077,6 @@ commands:
         args_str: " [<filter> [= <value>]]"
         modes:
           - RZ_OUTPUT_MODE_STANDARD
-          - RZ_OUTPUT_MODE_RIZIN
           - RZ_OUTPUT_MODE_TABLE
           - RZ_OUTPUT_MODE_JSON
           - RZ_OUTPUT_MODE_QUIET
@@ -1151,7 +1137,6 @@ commands:
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
           - RZ_OUTPUT_MODE_STANDARD
-          - RZ_OUTPUT_MODE_RIZIN
           - RZ_OUTPUT_MODE_TABLE
           - RZ_OUTPUT_MODE_JSON
           - RZ_OUTPUT_MODE_QUIET
