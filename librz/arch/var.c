@@ -802,7 +802,7 @@ RZ_API int rz_analysis_var_get_argnum(RzAnalysisVar *var) {
 
 RZ_API RZ_BORROW RzPVector /*<RzAnalysisVar *>*/ *rz_analysis_function_get_vars_used_at(RzAnalysisFunction *fcn, ut64 op_addr) {
 	rz_return_val_if_fail(fcn, NULL);
-	return ht_up_find(fcn->inst_vars, (st64)op_addr - (st64)fcn->addr, NULL);
+	return ht_up_find(fcn->inst_vars, op_addr - fcn->addr, NULL);
 }
 
 RZ_DEPRECATE RZ_API RzAnalysisVar *rz_analysis_get_used_function_var(RzAnalysis *analysis, ut64 addr) {
@@ -850,7 +850,7 @@ RZ_API RzAnalysisVar *rz_analysis_var_get_dst_var(RzAnalysisVar *var) {
 
 RZ_API void rz_analysis_var_set_access(RzAnalysisVar *var, const char *reg, ut64 access_addr, int access_type, st64 reg_addend) {
 	rz_return_if_fail(var);
-	st64 offset = (st64)access_addr - (st64)var->fcn->addr;
+	st64 offset = access_addr - var->fcn->addr;
 
 	// accesses are stored ordered by offset, use binary search to get the matching existing or the index to insert a new one
 	size_t index;
@@ -885,7 +885,7 @@ RZ_API void rz_analysis_var_set_access(RzAnalysisVar *var, const char *reg, ut64
 
 RZ_API void rz_analysis_var_remove_access_at(RzAnalysisVar *var, ut64 address) {
 	rz_return_if_fail(var);
-	st64 offset = (st64)address - (st64)var->fcn->addr;
+	st64 offset = address - var->fcn->addr;
 	size_t index;
 	rz_vector_lower_bound(&var->accesses, offset, index, ACCESS_CMP);
 	if (index >= var->accesses.len) {
@@ -918,7 +918,7 @@ RZ_API void rz_analysis_var_clear_accesses(RzAnalysisVar *var) {
 
 RZ_API RzAnalysisVarAccess *rz_analysis_var_get_access_at(RzAnalysisVar *var, ut64 addr) {
 	rz_return_val_if_fail(var, NULL);
-	st64 offset = (st64)addr - (st64)var->fcn->addr;
+	st64 offset = addr - var->fcn->addr;
 	size_t index;
 	rz_vector_lower_bound(&var->accesses, offset, index, ACCESS_CMP);
 	if (index >= var->accesses.len) {

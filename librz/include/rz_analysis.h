@@ -157,7 +157,12 @@ typedef struct rz_analysis_function_t {
 	HtSP /*<char *, ut64 *>*/ *label_addrs;
 	RzPVector /*<RzAnalysisVar *>*/ vars;
 	RzType *ret_type;
-	HtUP /*<st64, RzPVector<RzAnalysisVar *>>*/ *inst_vars; // offset of instructions => the variables they access
+	/**
+	 * \brief Maps the function's instruction to the variables they use.
+	 * key: Instruction offset from function entry point.
+	 * value: Vector of variables the instruction accesses.
+	 */
+	HtUP /*<st64, RzPVector<RzAnalysisVar *>>*/ *inst_vars;
 	st64 bp_off; // offset of bp inside owned stack frame
 	RZ_DEPRECATE st64 stack; // stack frame size
 	int maxstack;

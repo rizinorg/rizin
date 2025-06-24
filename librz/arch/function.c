@@ -232,7 +232,7 @@ RZ_API bool rz_analysis_function_relocate(RzAnalysisFunction *fcn, ut64 addr) {
 	ht_up_delete(fcn->analysis->ht_addr_fun, fcn->addr);
 
 	// relocate the var accesses (their addrs are relative to the function addr)
-	st64 delta = (st64)addr - (st64)fcn->addr;
+	st64 delta = addr - fcn->addr;
 	void **it;
 	rz_pvector_foreach (&fcn->vars, it) {
 		RzAnalysisVar *var = *it;
