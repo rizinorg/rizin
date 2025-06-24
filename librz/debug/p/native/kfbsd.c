@@ -123,7 +123,7 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 	if (reason == RZ_DEBUG_REASON_UNKNOWN) {
 		if (WIFEXITED(status)) {
 			if (dbg->pid == pid) {
-				RZ_LOG_WARN("(%d) Process exited with status=0x%x\n", pid, WEXITSTATUS(status));
+				RZ_LOG_WARN("(%" PFMT32d ") Process exited with status=0x%x\n", pid, WEXITSTATUS(status));
 			} else {
 				RZ_LOG_WARN("(%d) Thread exited with status=0x%x\n", pid, WEXITSTATUS(status));
 			}
