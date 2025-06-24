@@ -131,3 +131,25 @@ rax = 0x000000000000002a
 Result = 1337
 EOF
 RUN
+
+NAME=Step over
+FILE=bins/elf/calculate-freebsd-x64
+ARGS=-d
+CMDS=<<EOF
+e dbg.follow=1
+db @ main + 86
+dc
+pd 2
+dso
+pd 1
+dc
+EOF
+EXPECT=<<EOF
+            ;-- rip:
+            0x002018e6 b    call  sym.imp.printf
+            0x002018eb      xor   eax, eax
+            ;-- rip:
+            0x002018eb      xor   eax, eax
+Result = 42
+EOF
+RUN

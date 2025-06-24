@@ -43,7 +43,7 @@ static bool rz_debug_native_step(RzDebug *dbg) {
 int match_pid(const void *pid_o, const void *th_o, void *user) {
 	int pid = *(int *)pid_o;
 	RzDebugPid *th = (RzDebugPid *)th_o;
-	return (pid == th->pid) ? 0 : 1;
+	return pid != th->pid;
 }
 
 static RZ_OWN RzList /*<RzDebugPid *>*/ *get_pid_thread_list(RZ_NONNULL RzDebug *dbg, int main_pid) {
@@ -170,7 +170,6 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 	}
 	dbg->reason.tid = pid;
 	dbg->reason.type = reason;
-	eprintf("Here is your reason for wait %d\n", reason);
 	return reason;
 }
 

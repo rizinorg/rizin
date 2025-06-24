@@ -20,6 +20,7 @@
 #include <kvm.h>
 #include <limits.h>
 #include "bsd_debug.h"
+#include <rz_util/rz_log.h>
 #if __KFBSD__ || __DragonFly__
 #include <sys/user.h>
 #include <libutil.h>
@@ -355,16 +356,18 @@ RzList *bsd_pid_list(RzDebug *dbg, int pid, RzList *list) {
 RzList *bsd_native_sysctl_map(RzDebug *dbg) {
 #if __KFBSD__
 	int mib[4];
-	size_t len;
-	char *buf, *bp, *eb;
-	struct kinfo_vmentry *kve;
+	size_t len = 0;
+	char *buf = NULL;
+	char *bp = NULL;
+	char *eb = NULL;
+	struct kinfo_vmentry *kve = NULL;
 	RzList *list = NULL;
-	RzDebugMap *map;
-	char *name;
-	ut64 map_start, map_end;
+	RzDebugMap *map = NULL;
+	char *name = NULL;
+	ut64 map_start = 0;
+	ut64 map_end = 0;
 	int perm = 0;
 
-	len = 0;
 	mib[0] = CTL_KERN;
 	mib[1] = KERN_PROC;
 	mib[2] = KERN_PROC_VMMAP;
