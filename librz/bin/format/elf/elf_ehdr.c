@@ -67,18 +67,6 @@ static bool is_valid_elf_ident(ut8 *e_ident) {
 	return !memcmp(e_ident, ELFMAG, SELFMAG) || !memcmp(e_ident, CGCMAG, SCGCMAG);
 }
 
-static bool print_ehdr_aux(ELFOBJ *bin, PrintfCallback cb, ut64 offset, const char *name, char *(*get_value)(ELFOBJ *bin)) {
-	char *tmp = get_value(bin);
-	if (!tmp) {
-		return false;
-	}
-
-	cb("0x%08" PFMT64x "  %-10s  %s\n", offset, name, tmp);
-
-	free(tmp);
-	return true;
-}
-
 RZ_OWN char *Elf_(rz_bin_elf_get_e_ehsize_as_string)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
@@ -199,21 +187,61 @@ bool Elf_(rz_bin_elf_get_ehdr)(RZ_NONNULL ELFOBJ *bin) {
 	return read_ehdr_other(bin);
 }
 
-bool Elf_(rz_bin_elf_print_ehdr)(ELFOBJ *bin, RZ_NONNULL PrintfCallback cb) {
-	rz_return_val_if_fail(bin && cb, false);
+RzStructFactory *Elf_(rz_bin_elf_ehdr)(ELFOBJ *bin) {
+	rz_return_val_if_fail(bin, NULL);
 
-	return print_ehdr_aux(bin, cb, E_IDENT_OFFSET, "MAGIC", Elf_(rz_bin_elf_get_e_indent_as_string)) &&
-		print_ehdr_aux(bin, cb, E_TYPE_OFFSET, "Type", Elf_(rz_bin_elf_get_e_type_as_string)) &&
-		print_ehdr_aux(bin, cb, E_MACHINE_OFFSET, "Machine", Elf_(rz_bin_elf_get_e_machine_as_string)) &&
-		print_ehdr_aux(bin, cb, E_VERSION_OFFSET, "Version", Elf_(rz_bin_elf_get_e_version_as_string)) &&
-		print_ehdr_aux(bin, cb, E_ENTRYPOINT_OFFSET, "Entrypoint", Elf_(rz_bin_elf_get_e_entry_as_string)) &&
-		print_ehdr_aux(bin, cb, E_PHOFF_OFFSET, "PhOff", Elf_(rz_bin_elf_get_e_phoff_as_string)) &&
-		print_ehdr_aux(bin, cb, E_SHOFF_OFFSET, "ShOff", Elf_(rz_bin_elf_get_e_shoff_as_string)) &&
-		print_ehdr_aux(bin, cb, E_FLAGS_OFFSET, "Flags", Elf_(rz_bin_elf_get_e_flags_as_string)) &&
-		print_ehdr_aux(bin, cb, E_EHSIZE_OFFSET, "EhSize", Elf_(rz_bin_elf_get_e_ehsize_as_string)) &&
-		print_ehdr_aux(bin, cb, E_PHENTSIZE_OFFSET, "PhentSize", Elf_(rz_bin_elf_get_e_phentsize_as_string)) &&
-		print_ehdr_aux(bin, cb, E_PHNUM_OFFSET, "PhNum", Elf_(rz_bin_elf_get_e_phnum_as_string)) &&
-		print_ehdr_aux(bin, cb, E_SHENTSIZE_OFFSET, "ShentSize", Elf_(rz_bin_elf_get_e_shentsize_as_string)) &&
-		print_ehdr_aux(bin, cb, E_SHNUM_OFFSET, "ShNum", Elf_(rz_bin_elf_get_e_shnum_as_string)) &&
-		print_ehdr_aux(bin, cb, E_SHSTRNDX_OFFSET, "ShStrndx", Elf_(rz_bin_elf_get_e_shstrndx_as_string));
+	RzStructFactory *header = rz_struct_factory_new_map();
+	if (!header) {
+		return NULL;
+	}
+
+	RzStructFactory *elf = rz_struct_factory_map_add_map(header, "elf");
+	if (!elf) {
+		goto fail;
+	}
+
+	RzStructFactory *e_ident = rz_struct_factory_map_add_map(elf, "e_ident");
+	if (!e_ident) {
+		goto fail;
+	}
+
+	char *e_ident_bytes = Elf_(rz_bin_elf_get_e_indent_as_string)(bin);
+	if (!e_ident_bytes) {
+		goto fail;
+	}
+
+	if (!(rz_struct_factory_map_add_string(e_ident, "bytes", e_ident_bytes) &&
+		    rz_struct_factory_map_add_unsigned(e_ident, "ei_mag0", bin->ehdr.e_ident[EI_MAG0]) &&
+		    rz_struct_factory_map_add_unsigned(e_ident, "ei_mag1", bin->ehdr.e_ident[EI_MAG1]) &&
+		    rz_struct_factory_map_add_unsigned(e_ident, "ei_mag2", bin->ehdr.e_ident[EI_MAG2]) &&
+		    rz_struct_factory_map_add_unsigned(e_ident, "ei_mag3", bin->ehdr.e_ident[EI_MAG3]) &&
+		    rz_struct_factory_map_add_unsigned(e_ident, "ei_class", bin->ehdr.e_ident[EI_CLASS]) &&
+		    rz_struct_factory_map_add_unsigned(e_ident, "ei_data", bin->ehdr.e_ident[EI_DATA]) &&
+		    rz_struct_factory_map_add_unsigned(e_ident, "ei_version", bin->ehdr.e_ident[EI_VERSION]) &&
+		    rz_struct_factory_map_add_unsigned(e_ident, "ei_osabi", bin->ehdr.e_ident[EI_OSABI]) &&
+		    rz_struct_factory_map_add_unsigned(e_ident, "ei_abiversion", bin->ehdr.e_ident[EI_ABIVERSION]))) {
+		goto fail;
+	}
+	free(e_ident_bytes);
+
+	if (!(rz_struct_factory_map_add_unsigned(elf, "e_machine", bin->ehdr.e_machine) &&
+		    rz_struct_factory_map_add_unsigned(elf, "e_version", bin->ehdr.e_version) &&
+		    rz_struct_factory_map_add_unsigned(elf, "e_entry", bin->ehdr.e_entry) &&
+		    rz_struct_factory_map_add_unsigned(elf, "e_phoff", bin->ehdr.e_phoff) &&
+		    rz_struct_factory_map_add_unsigned(elf, "e_shoff", bin->ehdr.e_shoff) &&
+		    rz_struct_factory_map_add_unsigned(elf, "e_flags", bin->ehdr.e_flags) &&
+		    rz_struct_factory_map_add_signed(elf, "e_ehsize", bin->ehdr.e_ehsize) &&
+		    rz_struct_factory_map_add_signed(elf, "e_phentsize", bin->ehdr.e_phentsize) &&
+		    rz_struct_factory_map_add_signed(elf, "e_phnum", bin->ehdr.e_phnum) &&
+		    rz_struct_factory_map_add_signed(elf, "e_shentsize", bin->ehdr.e_shentsize) &&
+		    rz_struct_factory_map_add_signed(elf, "e_shnum", bin->ehdr.e_shnum) &&
+		    rz_struct_factory_map_add_signed(elf, "e_shstrndx", bin->ehdr.e_shstrndx))) {
+		goto fail;
+	}
+
+	return header;
+
+fail:
+	rz_struct_factory_free(header);
+	return NULL;
 }

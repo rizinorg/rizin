@@ -72,6 +72,10 @@ RzBinInfo *elf64_info(RzBinFile *bf) {
 	return info(bf);
 }
 
+RzStructFactory *elf64_structure(RzBinFile *bf) {
+	return info_structure(bf);
+}
+
 RzPVector /*<RzBinField *>*/ *elf64_fields(RzBinFile *bf) {
 	return fields(bf);
 }
@@ -106,10 +110,6 @@ int elf64_check_buffer_aux(RzBuffer *buf) {
 
 void elf64_headers(RzBinFile *bf) {
 	headers(bf);
-}
-
-void elf64_headers_obj(ELFOBJ *bin, RZ_NONNULL PrintfCallback cb) {
-	headers_obj(bin, cb);
 }
 
 RzBuffer *elf64_create_elf(RzBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt) {

@@ -51,6 +51,11 @@ RZ_IPI void rz_bin_set_and_process_file(RzBinFile *bf, RzBinObject *o) {
 		o->info = NULL;
 	}
 
+	rz_struct_factory_free(o->structure);
+	if (!plugin->structure || !(o->structure = plugin->structure(bf))) {
+		o->structure = NULL;
+	}
+
 	rz_bin_source_line_info_free(o->lines);
 	if (!plugin->lines || !(o->lines = plugin->lines(bf))) {
 		o->lines = NULL;

@@ -622,7 +622,7 @@ RZ_IPI void rz_bin_mdt_print_header(RzBinFile *bf) {
 			bf->rbin->cb_printf(" | ELF\n");
 			if (part->obj.elf) {
 				bf->rbin->cb_printf(" -- ELF HEADER BEGIN -- \n");
-				elf_headers_obj((ELFOBJ *)part->obj.elf, bf->rbin->cb_printf);
+				// elf_headers_obj((ELFOBJ *)part->obj.elf, bf->rbin->cb_printf);
 				bf->rbin->cb_printf(" --- ELF HEADER END --- \n\n");
 			} else {
 				bf->rbin->cb_printf(" ------- FAILED ------- \n");

@@ -193,6 +193,7 @@ RZ_IPI void rz_bin_object_free(RzBinObject *o) {
 	ht_sp_free(o->import_name_symbols);
 	ht_up_free(o->vaddr_to_class_method);
 	rz_bin_info_free(o->info);
+	rz_struct_factory_free(o->structure);
 	rz_bin_reloc_storage_free(o->relocs);
 	rz_bin_source_line_info_free(o->lines);
 	rz_bin_string_database_free(o->strings);
@@ -688,6 +689,11 @@ RZ_API const RzPVector /*<RzBinImport *>*/ *rz_bin_object_get_imports(RZ_NONNULL
 RZ_API const RzBinInfo *rz_bin_object_get_info(RZ_NONNULL RzBinObject *obj) {
 	rz_return_val_if_fail(obj, NULL);
 	return obj->info;
+}
+
+RZ_API const RzStructFactory *rz_bin_object_get_structure(RZ_NONNULL RzBinObject *obj) {
+	rz_return_val_if_fail(obj, NULL);
+	return obj->structure;
 }
 
 /**

@@ -3313,7 +3313,7 @@ RZ_API int rz_str_do_until_token(str_operation op, char *str, const char tok) {
 	return ret;
 }
 
-RZ_API RZ_OWN char *rz_str_pad(const char ch, int sz) {
+RZ_API RZ_OWN char *rz_str_pad(const char ch, ssize_t sz) {
 	if (sz < 0) {
 		sz = 0;
 	}

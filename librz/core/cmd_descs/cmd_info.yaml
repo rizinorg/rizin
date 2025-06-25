@@ -222,6 +222,10 @@ commands:
   - name: iH
     cname: cmd_info_headers
     summary: Show binary headers
+    type: RZ_CMD_DESC_TYPE_ARGV_MODES
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
     args: []
   - name: ii
     cname: cmd_info_imports
