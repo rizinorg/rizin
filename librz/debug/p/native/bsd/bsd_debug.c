@@ -675,7 +675,7 @@ static int get_rz_status(int stat) {
 	}
 }
 
-static RzList *kfbsd_thread_list(RzDebug *dbg, int pid, RzList *list) {
+static RzList *openbsd_thread_list(RzDebug *dbg, int pid, RzList *list) {
 	int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_PID, pid };
 	struct kinfo_proc *kp;
 	size_t len = 0;
@@ -729,7 +729,7 @@ static int get_rz_status(int stat) {
 	}
 }
 
-static RzList *openbsd_thread_list(RzDebug *dbg, int pid, RzList *list) {
+static RzList *kfbsd_thread_list(RzDebug *dbg, int pid, RzList *list) {
 	int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_PID | KERN_PROC_INC_THREAD, pid };
 	struct kinfo_proc *kp;
 	size_t len = 0;
