@@ -16,6 +16,8 @@
 #define RZ_TEST_OS "windows"
 #elif __NetBSD__
 #define RZ_TEST_OS "netbsd"
+#elif __OpenBSD__
+#define RZ_TEST_OS "openbsd"
 #else
 #define RZ_TEST_OS "unknown"
 #endif
