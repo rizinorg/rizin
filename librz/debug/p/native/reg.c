@@ -25,7 +25,7 @@ static char *rz_debug_native_reg_profile(RzDebug *dbg) {
 #elif defined(__i386__)
 #include "reg/windows-x86.h"
 #endif
-#elif (__OpenBSD__ || __NetBSD__)
+#elif __NetBSD__
 /*                           __.--..__
        \-/-/-/    _ __  _.--'  _.--'
   _  \'       \   \\  ''      `------.__
@@ -62,6 +62,13 @@ static char *rz_debug_native_reg_profile(RzDebug *dbg) {
 #include "reg/kfbsd-arm64.h"
 #else
 #error "Unsupported BSD architecture"
+#endif
+
+#elif __OpenBSD__
+#if _x86_64__ || __amd64__
+#include "reg/openbsd-x64.h"
+#else
+#error "Unsupported OpenBSD architectue"
 #endif
 
 #else
