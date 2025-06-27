@@ -410,11 +410,11 @@ RZ_API void rz_core_notify_begin_str(RZ_NONNULL RzCore *core, RZ_NONNULL const c
 RZ_API void rz_core_notify_done_str(RZ_NONNULL RzCore *core, RZ_NONNULL const char *text);
 RZ_API void rz_core_notify_error_str(RZ_NONNULL RzCore *core, RZ_NONNULL const char *text);
 
-RZ_API void rz_core_log_warn_after(RZ_NONNULL RzCore *core, const char *funcname, const char *filename,
-	ut32 lineno, const char *fmtstr, ...) RZ_PRINTF_CHECK(5, 6);
+RZ_API void rz_core_log_after(RZ_NONNULL RzCore *core, const char *funcname, const char *filename,
+	ut32 lineno, RzLogLevel level, const char *fmtstr, ...) RZ_PRINTF_CHECK(6, 7);
 
-#define RZ_LOG_WARN_AFTER(core, fmtstr, ...) rz_core_log_warn_after(core, MACRO_LOG_FUNC, __FILE__, \
-	__LINE__, fmtstr, ##__VA_ARGS__);
+#define RZ_LOG_WARN_AFTER(core, fmtstr, ...) rz_core_log_after(core, MACRO_LOG_FUNC, __FILE__, \
+	__LINE__, RZ_LOGLVL_WARN, fmtstr, ##__VA_ARGS__);
 
 /**
  * \brief APIs to handle Visual Gadgets

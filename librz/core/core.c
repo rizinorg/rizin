@@ -144,20 +144,25 @@ RZ_API void rz_core_notify_error_str(RZ_NONNULL RzCore *core, RZ_NONNULL const c
  * \param  funcname Contains the function name of the calling function
  * \param  filename Contains the filename that funcname is defined in
  * \param  lineno   The line number that this log call is being made from in filename
+ * \param  level    Logging level for output
  * \param  fmtstr   A printf like string
 
-  This function is used by the RZ_LOG_WARN_AFTER preprocessor macro for logging.
+  This function is used by the RZ_LOG_*_AFTER preprocessor macro for logging.
 */
-RZ_API void rz_core_log_warn_after(RZ_NONNULL RzCore *core, const char *funcname, const char *filename,
-	ut32 lineno, const char *fmtstr, ...) {
+RZ_API void rz_core_log_after(RZ_NONNULL RzCore *core, const char *funcname, const char *filename,
+	ut32 lineno, RzLogLevel level, const char *fmtstr, ...) {
 	va_list args;
-	const char *warning;
+	const char *msg;
 
 	rz_return_if_fail(core);
 	va_start(args, fmtstr);
-	rz_vlog(funcname, filename, lineno, RZ_LOGLVL_WARN, "", &warning, fmtstr, args);
+	rz_vlog(funcname, filename, lineno, level, "", &msg, fmtstr, args);
 	va_end(args);
-	rz_list_append(core->warnings_after, (char *)warning);
+	if (level == RZ_LOGLVL_WARN) {
+		rz_list_append(core->warnings_after, (char *)msg);
+	} else {
+		RZ_LOG_ERROR("rz_core_log_after: Not implemented");
+	}
 }
 
 RZ_IPI void rz_core_print_warnings_after(RZ_NONNULL RzCore *core) {
