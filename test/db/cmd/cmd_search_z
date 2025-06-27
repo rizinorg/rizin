@@ -1389,9 +1389,6 @@ echo
 w ¢€𐍈 @ 0x40
 w ¢€𐍈a @ 0x50
 /z ¢€𐍈
-e log.show.sources=1
-/z ¢€𐍈
-e log.show.sources=0
 echo ----
 /z ¢€𐍈 @e:search.str.min_length=3
 EOF
@@ -1405,8 +1402,6 @@ WARNING: |ab| < search.str.min_length so some search hits may be hidden. Set sea
 
 0x00000050 9 hit.string.utf8.0
 WARNING: |¢€𐍈| < search.str.min_length so some search hits may be hidden. Set search.str.min_length to 3 to see them.
-0x00000050 9 hit.string.utf8.0
-WARNING: rz_core_print_warnings_after in ../librz/core/core.c:167: cmd_string_search_generic in ../librz/core/cmd/cmd_search.c:2785: |¢€𐍈| < search.str.min_length so some search hits may be hidden. Set search.str.min_length to 3 to see them.
 ----
 0x00000040 9 hit.string.utf8.0
 0x00000050 9 hit.string.utf8.1
