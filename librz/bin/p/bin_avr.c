@@ -1,234 +1,849 @@
-// SPDX-FileCopyrightText: 2016-2017 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2025 deroad <deroad@kumo.xn--q9jyb4c>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_bin.h>
 #include <rz_lib.h>
 
-#define CHECK4INSTR(b, instr, size) \
-	if (!instr(b, 0) || \
-		!instr((b), (size)) || \
-		!instr((b), (size)*2) || \
-		!instr((b), (size)*3)) { \
-		return false; \
-	}
+typedef struct bin_avr_int_table {
+	ut64 address;
+	const char *name;
+} BinAvrIntTable;
 
-#define CHECK3INSTR(b, instr, size) \
-	if (!instr((b), (size)) || \
-		!instr((b), (size)*2) || \
-		!instr((b), (size)*3)) { \
-		return false; \
-	}
+typedef struct bin_avr_board {
+	const char *name; ///< board name
+	const char *cpu; ///< cpu name
+	const BinAvrIntTable *interrupt_table; ///< Interrupt table
+	size_t n_interrupts; ///< number of elements in the interrupt table
+	ut32 n_bytes; ///< defines the size in bytes of each interrupt vector
+} BinAvrBoard;
 
-static bool rjmp(RzBuffer *b, ut64 addr) {
-	ut8 tmp;
-	if (!rz_buf_read8_at(b, addr + 1, &tmp)) {
-		return false;
-	}
+typedef struct bin_avr_rom {
+	ut64 n_bytes; ///< detected size of each interrupt vector
+	ut64 bad_interrupt; ///< offset of the rom __bad_interrupt symbol
+	const BinAvrBoard *board; ///< AVR board Info
+	RzVector /*<ut64>*/ *interrupt_handlers; ///< Parsed interrupt handlers addresses
+} BinAvrRom;
 
-	return (tmp & 0xf0) == 0xc0;
+// ATmega8/L datasheet
+// expect rjmp EXT_INT1
+static const BinAvrIntTable ATmega8_L_table[] = {
+	{ (0x0000 << 1), "RESET" }, ///< Reset Handler
+	{ (0x0001 << 1), "EXT_INT0" }, ///< IRQ0 Handler
+	{ (0x0002 << 1), "EXT_INT1" }, ///< IRQ1 Handler
+	{ (0x0003 << 1), "TIM2_COMP" }, ///< Timer2 Compare Handler
+	{ (0x0004 << 1), "TIM2_OVF" }, ///< Timer2 Overflow Handler
+	{ (0x0005 << 1), "TIM1_CAPT" }, ///< Timer1 Capture Handler
+	{ (0x0006 << 1), "TIM1_COMPA" }, ///< Timer1 CompareA Handler
+	{ (0x0007 << 1), "TIM1_COMPB" }, ///< Timer1 CompareB Handler
+	{ (0x0008 << 1), "TIM1_OVF" }, ///< Timer1 Overflow Handler
+	{ (0x0009 << 1), "TIM0_OVF" }, ///< Timer0 Overflow Handler
+	{ (0x000A << 1), "SPI_STC" }, ///< SPI Transfer Complete Handler
+	{ (0x000B << 1), "USART_RXC" }, ///< USART RX Complete Handler
+	{ (0x000C << 1), "USART_UDRE" }, ///< UDR Empty Handler
+	{ (0x000D << 1), "USART_TXC" }, ///< USART TX Complete Handler
+	{ (0x000E << 1), "ADC" }, ///< ADC Conversion Complete Handler
+	{ (0x000F << 1), "EE_RDY" }, ///< EEPROM Ready Handler
+	{ (0x0010 << 1), "ANA_COMP" }, ///< Analog Comparator Handler
+	{ (0x0011 << 1), "TWSI" }, ///< Two-wire Serial Interface Handler
+	{ (0x0012 << 1), "SPM_RDY" }, ///< Store Program Memory Ready Handler
+};
+
+// ATmega640/1280/1281/2560/2561 datasheet
+// expect jmp USART2_UDRE
+static const BinAvrIntTable ATmega640_1280_1281_2560_2561_table[] = {
+	{ (0x0000 << 1), "RESET" }, ///< Reset Handler
+	{ (0x0002 << 1), "INT0" }, ///< IRQ0 Handler
+	{ (0x0004 << 1), "INT1" }, ///< IRQ1 Handler
+	{ (0x0006 << 1), "INT2" }, ///< IRQ2 Handler
+	{ (0x0008 << 1), "INT3" }, ///< IRQ3 Handler
+	{ (0x000A << 1), "INT4" }, ///< IRQ4 Handler
+	{ (0x000C << 1), "INT5" }, ///< IRQ5 Handler
+	{ (0x000E << 1), "INT6" }, ///< IRQ6 Handler
+	{ (0x0010 << 1), "INT7" }, ///< IRQ7 Handler
+	{ (0x0012 << 1), "PCINT0" }, ///< PCINT0 Handler
+	{ (0x0014 << 1), "PCINT1" }, ///< PCINT1 Handler
+	{ (0x0016 << 1), "PCINT2" }, ///< PCINT2 Handler
+	{ (0x0018 << 1), "WDT" }, ///< Watchdog Timeout Handler
+	{ (0x001A << 1), "TIM2_COMPA" }, ///< Timer2 CompareA Handler
+	{ (0x001C << 1), "TIM2_COMPB" }, ///< Timer2 CompareB Handler
+	{ (0x001E << 1), "TIM2_OVF" }, ///< Timer2 Overflow Handler
+	{ (0x0020 << 1), "TIM1_CAPT" }, ///< Timer1 Capture Handler
+	{ (0x0022 << 1), "TIM1_COMPA" }, ///< Timer1 CompareA Handler
+	{ (0x0024 << 1), "TIM1_COMPB" }, ///< Timer1 CompareB Handler
+	{ (0x0026 << 1), "TIM1_COMPC" }, ///< Timer1 CompareC Handle
+	{ (0x0028 << 1), "TIM1_OVF" }, ///< Timer1 Overflow Handler
+	{ (0x002A << 1), "TIM0_COMPA" }, ///< Timer0 CompareA Handler
+	{ (0x002C << 1), "TIM0_COMPB" }, ///< Timer0 CompareB Handler
+	{ (0x002E << 1), "TIM0_OVF" }, ///< Timer0 Overflow Handler
+	{ (0x0030 << 1), "SPI_STC" }, ///< SPI Transfer Complete Handler
+	{ (0x0032 << 1), "USART0_RXC" }, ///< USART0 RX Complete Handler
+	{ (0x0034 << 1), "USART0_UDRE" }, ///< USART0,UDR Empty Handler
+	{ (0x0036 << 1), "USART0_TXC" }, ///< USART0 TX Complete Handler
+	{ (0x0038 << 1), "ANA_COMP" }, ///< Analog Comparator Handler
+	{ (0x003A << 1), "ADC" }, ///< ADC Conversion Complete
+	{ (0x003C << 1), "EE_RDY" }, ///< EEPROM Ready Handler
+	{ (0x003E << 1), "TIM3_CAPT" }, ///< Timer3 Capture Handler
+	{ (0x0040 << 1), "TIM3_COMPA" }, ///< Timer3 CompareA Handler
+	{ (0x0042 << 1), "TIM3_COMPB" }, ///< Timer3 CompareB Handler
+	{ (0x0044 << 1), "TIM3_COMPC" }, ///< Timer3 CompareC Handler
+	{ (0x0046 << 1), "TIM3_OVF" }, ///< Timer3 Overflow Handler
+	{ (0x0048 << 1), "USART1_RXC" }, ///< USART1 RX Complete Handler
+	{ (0x004A << 1), "USART1_UDRE" }, ///< USART1,UDR Empty Handler
+	{ (0x004C << 1), "USART1_TXC" }, ///< USART1 TX Complete Handler
+	{ (0x004E << 1), "TWI" }, ///< 2-wire Serial Handler
+	{ (0x0050 << 1), "SPM_RDY" }, ///< SPM Ready Handler
+	{ (0x0052 << 1), "TIM4_CAPT" }, ///< Timer4 Capture Handler
+	{ (0x0054 << 1), "TIM4_COMPA" }, ///< Timer4 CompareA Handler
+	{ (0x0056 << 1), "TIM4_COMPB" }, ///< Timer4 CompareB Handler
+	{ (0x0058 << 1), "TIM4_COMPC" }, ///< Timer4 CompareC Handler
+	{ (0x005A << 1), "TIM4_OVF" }, ///< Timer4 Overflow Handler
+	{ (0x005C << 1), "TIM5_CAPT" }, ///< Timer5 Capture Handler
+	{ (0x005E << 1), "TIM5_COMPA" }, ///< Timer5 CompareA Handler
+	{ (0x0060 << 1), "TIM5_COMPB" }, ///< Timer5 CompareB Handler
+	{ (0x0062 << 1), "TIM5_COMPC" }, ///< Timer5 CompareC Handler
+	{ (0x0064 << 1), "TIM5_OVF" }, ///< Timer5 Overflow Handler
+	{ (0x0066 << 1), "USART2_RXC" }, ///< USART2 RX Complete Handler
+	{ (0x0068 << 1), "USART2_UDRE" }, ///< USART2,UDR Empty Handler
+	{ (0x006A << 1), "USART2_TXC" }, ///< USART2 TX Complete Handler
+	{ (0x006C << 1), "USART3_RXC" }, ///< USART3 RX Complete Handler
+	{ (0x006E << 1), "USART3_UDRE" }, ///< USART3,UDR Empty Handler
+	{ (0x0070 << 1), "USART3_TXC" }, ///< USART3 TX Complete Handler
+};
+
+// ATmega16 datasheet
+// expect jmp SPI_STC
+static const BinAvrIntTable ATmega16_table[] = {
+	{ (0x0000 << 1), "RESET" }, ///< Reset Handler
+	{ (0x0002 << 1), "EXT_INT0" }, ///< IRQ0 Handler
+	{ (0x0004 << 1), "EXT_INT1" }, ///< IRQ1 Handler
+	{ (0x0006 << 1), "TIM2_COMP" }, ///< Timer2 Compare Handler
+	{ (0x0008 << 1), "TIM2_OVF" }, ///< Timer2 Overflow Handler
+	{ (0x000A << 1), "TIM1_CAPT" }, ///< Timer1 Capture Handler
+	{ (0x000C << 1), "TIM1_COMPA" }, ///< Timer1 CompareA Handler
+	{ (0x000E << 1), "TIM1_COMPB" }, ///< Timer1 CompareB Handler
+	{ (0x0010 << 1), "TIM1_OVF" }, ///< Timer1 Overflow Handler
+	{ (0x0012 << 1), "TIM0_OVF" }, ///< Timer0 Overflow Handler
+	{ (0x0014 << 1), "SPI_STC" }, ///< SPI Transfer Complete Handler
+	{ (0x0016 << 1), "USART_RXC" }, ///< USART RX Complete Handler
+	{ (0x0018 << 1), "USART_UDRE" }, ///< UDR Empty Handler
+	{ (0x001A << 1), "USART_TXC" }, ///< USART TX Complete Handler
+	{ (0x001C << 1), "ADC" }, ///< ADC Conversion Complete Handler
+	{ (0x001E << 1), "EE_RDY" }, ///< EEPROM Ready Handler
+	{ (0x0020 << 1), "ANA_COMP" }, ///< Analog Comparator Handler
+	{ (0x0022 << 1), "TWSI" }, ///< Two-wire Serial Interface Handler
+	{ (0x0024 << 1), "EXT_INT2" }, ///< IRQ2 Handler
+	{ (0x0026 << 1), "TIM0_COMP" }, ///< Timer0 Compare Handler
+	{ (0x0028 << 1), "SPM_RDY" }, ///< Store Program Memory Ready Handler
+};
+
+// ATmega88/ATmega168 datasheet
+// expect rjmp PCINT2
+static const BinAvrIntTable ATmega88_168_table[] = {
+	{ (0x000 << 1), "RESET" }, ///< Reset Handler
+	{ (0x001 << 1), "EXT_INT0" }, ///< IRQ0 Handler
+	{ (0x002 << 1), "EXT_INT1" }, ///< IRQ1 Handler
+	{ (0x003 << 1), "PCINT0" }, ///< PCINT0 Handler
+	{ (0x004 << 1), "PCINT1" }, ///< PCINT1 Handler
+	{ (0x005 << 1), "PCINT2" }, ///< PCINT2 Handler
+	{ (0x006 << 1), "WDT" }, ///< Watchdog Timer Handler
+	{ (0x007 << 1), "TIM2_COMPA" }, ///< Timer2 Compare A Handler
+	{ (0x008 << 1), "TIM2_COMPB" }, ///< Timer2 Compare B Handler
+	{ (0x009 << 1), "TIM2_OVF" }, ///< Timer2 Overflow Handler
+	{ (0x00A << 1), "TIM1_CAPT" }, ///< Timer1 Capture Handler
+	{ (0x00B << 1), "TIM1_COMPA" }, ///< Timer1 Compare A Handler
+	{ (0x00C << 1), "TIM1_COMPB" }, ///< Timer1 Compare B Handler
+	{ (0x00D << 1), "TIM1_OVF" }, ///< Timer1 Overflow Handler
+	{ (0x00E << 1), "TIM0_COMPA" }, ///< Timer0 Compare A Handler
+	{ (0x00F << 1), "TIM0_COMPB" }, ///< Timer0 Compare B Handler
+	{ (0x010 << 1), "TIM0_OVF" }, ///< Timer0 Overflow Handler
+	{ (0x011 << 1), "SPI_STC" }, ///< SPI Transfer Complete Handler
+	{ (0x012 << 1), "USART_RXC" }, ///< USART, RX Complete Handler
+	{ (0x013 << 1), "USART_UDRE" }, ///< USART, UDR Empty Handler
+	{ (0x014 << 1), "USART_TXC" }, ///< USART, TX Complete Handler
+	{ (0x015 << 1), "ADC" }, ///< ADC Conversion Complete Handler
+	{ (0x016 << 1), "EE_RDY" }, ///< EEPROM Ready Handler
+	{ (0x017 << 1), "ANA_COMP" }, ///< Analog Comparator Handler
+	{ (0x018 << 1), "TWI" }, ///< 2-wire Serial Interface Handler
+	{ (0x019 << 1), "SPM_RDY" }, ///< Store Program Memory Ready Handler
+};
+
+// ATmega328p datasheet
+// expects jmp TIM1_CAPT
+static const BinAvrIntTable ATmega328p_table[] = {
+	{ (0x0000 << 1), "RESET" }, ///< Reset Handler
+	{ (0x0002 << 1), "EXT_INT0" }, ///< IRQ0 Handler
+	{ (0x0004 << 1), "EXT_INT1" }, ///< IRQ1 Handler
+	{ (0x0006 << 1), "PCINT0" }, ///< PCINT0 Handler
+	{ (0x0008 << 1), "PCINT1" }, ///< PCINT1 Handler
+	{ (0x000A << 1), "PCINT2" }, ///< PCINT2 Handler
+	{ (0x000C << 1), "WDT" }, ///< Watchdog Timer Handler
+	{ (0x000E << 1), "TIM2_COMPA" }, ///< Timer2 Compare A Handler
+	{ (0x0010 << 1), "TIM2_COMPB" }, ///< Timer2 Compare B Handler
+	{ (0x0012 << 1), "TIM2_OVF" }, ///< Timer2 Overflow Handler
+	{ (0x0014 << 1), "TIM1_CAPT" }, ///< Timer1 Capture Handler
+	{ (0x0016 << 1), "TIM1_COMPA" }, ///< Timer1 Compare A Handler
+	{ (0x0018 << 1), "TIM1_COMPB" }, ///< Timer1 Compare B Handler
+	{ (0x001A << 1), "TIM1_OVF" }, ///< Timer1 Overflow Handler
+	{ (0x001C << 1), "TIM0_COMPA" }, ///< Timer0 Compare A Handler
+	{ (0x001E << 1), "TIM0_COMPB" }, ///< Timer0 Compare B Handler
+	{ (0x0020 << 1), "TIM0_OVF" }, ///< Timer0 Overflow Handler
+	{ (0x0022 << 1), "SPI_STC" }, ///< SPI Transfer Complete Handler
+	{ (0x0024 << 1), "USART_RXC" }, ///< USART, RX Complete Handler
+	{ (0x0026 << 1), "USART_UDRE" }, ///< USART, UDR Empty Handler
+	{ (0x0028 << 1), "USART_TXC" }, ///< USART, TX Complete Handler
+	{ (0x002A << 1), "ADC" }, ///< ADC Conversion Complete Handler
+	{ (0x002C << 1), "EE_RDY" }, ///< EEPROM Ready Handler
+	{ (0x002E << 1), "ANA_COMP" }, ///< Analog Comparator Handler
+	{ (0x0030 << 1), "TWI" }, ///< 2-wire Serial Interface Handler
+	{ (0x0032 << 1), "SPM_RDY" }, ///< Store Program Memory Ready Handler
+};
+
+// ATmega16U4/ATmega32U4
+// expects jmp INT0
+static const BinAvrIntTable ATmega16U4_32U4_table[] = {
+	{ (0x0000 << 1), "RESET" }, ///< Reset Handler
+	{ (0x0002 << 1), "EXT_INT0" }, ///< IRQ0 Handler
+	{ (0x0004 << 1), "EXT_INT1" }, ///< IRQ1 Handler
+	{ (0x0006 << 1), "EXT_INT2" }, ///< IRQ2 Handler
+	{ (0x0008 << 1), "EXT_INT3" }, ///< IRQ3 Handler
+	{ (0x000A << 1), "Reserved_6" }, ///< Reserved Handler
+	{ (0x000C << 1), "Reserved_7" }, ///< Reserved Handler
+	{ (0x000E << 1), "INT6" }, ///< External Interrupt Request 6
+	{ (0x0010 << 1), "Reserved_9" }, ///< Reserved Handler
+	{ (0x0012 << 1), "PCINT0" }, ///< PCINT0 Handler
+	{ (0x0014 << 1), "GEN_USB" }, ///< General USB General Handler
+	{ (0x0016 << 1), "END_USB" }, ///< Endpoint USB Endpoint Handler
+	{ (0x0018 << 1), "WDT" }, ///< Watchdog Time-out Interrupt
+	{ (0x001A << 1), "Reserved_14" }, ///< Reserved Handler
+	{ (0x001C << 1), "Reserved_15" }, ///< Reserved Handler
+	{ (0x001E << 1), "Reserved_16" }, ///< Reserved Handler
+	{ (0x0020 << 1), "TIM1_CAPT" }, ///< Timer/Counter1 Capture Event
+	{ (0x0022 << 1), "TIM1_COMPA" }, ///< Timer/Counter1 Compare Match A
+	{ (0x0024 << 1), "TIM1_COMPB" }, ///< Timer/Counter1 Compare Match B
+	{ (0x0026 << 1), "TIM1_COMPC" }, ///< Timer/Counter1 Compare Match C
+	{ (0x0028 << 1), "TIM1_OVF" }, ///< Timer/Counter1 Overflow
+	{ (0x002A << 1), "TIM0_COMPA" }, ///< Timer/Counter0 Compare Match A
+	{ (0x002C << 1), "TIM0_COMPB" }, ///< Timer/Counter0 Compare match B
+	{ (0x002E << 1), "TIM0_OVF" }, ///< Timer/Counter0 Overflow
+	{ (0x0030 << 1), "SPI" }, ///< (STC) SPI Serial Transfer Complete
+	{ (0x0032 << 1), "USART1_RXC" }, ///< RX USART1 Rx Complete
+	{ (0x0034 << 1), "USART1_UDRE" }, ///< UDRE USART1 Data Register Empty
+	{ (0x0036 << 1), "USART1_TXC" }, ///< USART1 Tx Complete
+	{ (0x0038 << 1), "ANA_COMP" }, ///< Analog Comparator
+	{ (0x003A << 1), "ADC" }, ///< ADC Conversion Complete
+	{ (0x003C << 1), "EE_RDY" }, ///< EEPROM Ready Handler
+	{ (0x003E << 1), "TIM3_CAPT" }, ///< Timer/Counter3 Capture Event
+	{ (0x0040 << 1), "TIM3_COMPA" }, ///< Timer/Counter3 Compare Match A
+	{ (0x0042 << 1), "TIM3_COMPB" }, ///< Timer/Counter3 Compare Match B
+	{ (0x0044 << 1), "TIM3_COMPC" }, ///< Timer/Counter3 Compare Match C
+	{ (0x0046 << 1), "TIM3_OVF" }, ///< Timer/Counter3 Overflow
+	{ (0x0048 << 1), "TWI" }, ///< 2-wire Serial Interface
+	{ (0x004A << 1), "SPM_RDY" }, ///< SPM Ready Handler
+	{ (0x004C << 1), "TIM4_COMPA" }, ///< Timer/Counter4 Compare Match A
+	{ (0x004E << 1), "TIM4_COMPB" }, ///< Timer/Counter4 Compare Match B
+	{ (0x0050 << 1), "TIM4_COMPD" }, ///< Timer/Counter4 Compare Match D
+	{ (0x0052 << 1), "TIM4_OVF" }, ///< Timer/Counter4 Overflow
+	{ (0x0054 << 1), "TIM4_FPF" }, ///< Timer/Counter4 Fault Protection Interrupt
+};
+
+// ATmega48/V/88/V/168/V
+// expects rjmp PCINT0
+static const BinAvrIntTable ATmega48_V_88_V_168_V_table[] = {
+	{ (0x000 << 1), "RESET" }, ///< Reset Handler
+	{ (0x001 << 1), "EXT_INT0" }, ///< IRQ0 Handler
+	{ (0x002 << 1), "EXT_INT1" }, ///< IRQ1 Handler
+	{ (0x003 << 1), "PCINT0" }, ///< PCINT0 Handler
+	{ (0x004 << 1), "PCINT1" }, ///< PCINT1 Handler
+	{ (0x005 << 1), "PCINT2" }, ///< PCINT2 Handler
+	{ (0x006 << 1), "WDT" }, ///< Watchdog Timer Handler
+	{ (0x007 << 1), "TIM2_COMPA" }, ///< Timer2 Compare A Handler
+	{ (0x008 << 1), "TIM2_COMPB" }, ///< Timer2 Compare B Handler
+	{ (0x009 << 1), "TIM2_OVF" }, ///< Timer2 Overflow Handler
+	{ (0x00A << 1), "TIM1_CAPT" }, ///< Timer1 Capture Handler
+	{ (0x00B << 1), "TIM1_COMPA" }, ///< Timer1 Compare A Handler
+	{ (0x00C << 1), "TIM1_COMPB" }, ///< Timer1 Compare B Handler
+	{ (0x00D << 1), "TIM1_OVF" }, ///< Timer1 Overflow Handler
+	{ (0x00E << 1), "TIM0_COMPA" }, ///< Timer0 Compare A Handler
+	{ (0x00F << 1), "TIM0_COMPB" }, ///< Timer0 Compare B Handler
+	{ (0x010 << 1), "TIM0_OVF" }, ///< Timer0 Overflow Handler
+	{ (0x011 << 1), "SPI_STC" }, ///< SPI Transfer Complete Handler
+	{ (0x012 << 1), "USART_RXC" }, ///< USART, RX Complete Handler
+	{ (0x013 << 1), "USART_UDRE" }, ///< USART, UDR Empty Handler
+	{ (0x014 << 1), "USART_TXC" }, ///< USART, TX Complete Handler
+	{ (0x015 << 1), "ADC" }, ///< ADC Conversion Complete Handler
+	{ (0x016 << 1), "EE_RDY" }, ///< EEPROM Ready Handler
+	{ (0x017 << 1), "ANA_COMP" }, ///< Analog Comparator Handler
+	{ (0x018 << 1), "TWI" }, ///< 2-wire Serial Interface Handler
+	{ (0x019 << 1), "SPM_RDY" }, ///< Store Program Memory Ready Handler
+};
+
+// ATxmega128/64/32/16A4U
+// expects jmp XXX (this uses a base approach to the vector table)
+// it's also missing a lot of values.
+static const BinAvrIntTable ATxmega128_64_32_16A4U_table[] = {
+	{ (0x000 << 1), "RESET" }, ///< Reset Handler
+	{ (0x002 << 1), "OSCF_INT" }, ///< Crystal oscillator failure interrupt vector (NMI)
+	{ (0x004 << 1), "PORTC_INT" }, ///< Port C interrupt base
+	{ (0x008 << 1), "PORTR_INT" }, ///< Port R interrupt base
+	{ (0x00C << 1), "DMA_INT" }, ///< DMA controller interrupt base
+	{ (0x014 << 1), "RTC_INT" }, ///< Real time counter interrupt base
+	{ (0x018 << 1), "TWIC_INT" }, ///< Two-Wire Interface on Port C interrupt base
+	{ (0x01C << 1), "TCC0_INT" }, ///< Timer/counter 0 on port C interrupt base
+	{ (0x028 << 1), "TCC1_INT" }, ///< Timer/counter 1 on port C interrupt base
+	{ (0x030 << 1), "SPIC_INT" }, ///< SPI on port C interrupt vector
+	{ (0x032 << 1), "USARTC0_INT" }, ///< USART 0 on port C interrupt base
+	{ (0x038 << 1), "USARTC1_INT" }, ///< USART 1 on port C interrupt base
+	{ (0x03E << 1), "AES_INT" }, ///< AES interrupt vector
+	{ (0x040 << 1), "NVM_INT" }, ///< Nonvolatile Memory interrupt base
+	{ (0x044 << 1), "PORTB_INT" }, ///< Port B interrupt base
+	{ (0x056 << 1), "PORTE_INT" }, ///< Port E interrupt base
+	{ (0x05A << 1), "TWIE_INT" }, ///< Two-wire Interface on Port E interrupt base
+	{ (0x05E << 1), "TCE0_INT" }, ///< Timer/counter 0 on port E interrupt base
+	{ (0x06A << 1), "TCE1_INT" }, ///< Timer/counter 1 on port E interrupt base
+	{ (0x074 << 1), "USARTE0_INT" }, ///< USART 0 on port E interrupt base
+	{ (0x080 << 1), "PORTD_INT" }, ///< Port D interrupt base
+	{ (0x084 << 1), "PORTA_INT" }, ///< Port A interrupt base
+	{ (0x088 << 1), "ACA_INT" }, ///< Analog Comparator on Port A interrupt base
+	{ (0x08E << 1), "ADCA_INT" }, ///< Analog to Digital Converter on Port A interrupt base
+	{ (0x09A << 1), "TCD0_INT" }, ///< Timer/counter 0 on port D interrupt base
+	{ (0x0A6 << 1), "TCD1_INT" }, ///< Timer/counter 1 on port D interrupt base
+	{ (0x0AE << 1), "SPID_INT" }, ///< SPI on port D interrupt vector
+	{ (0x0B0 << 1), "USARTD0_INT" }, ///< USART 0 on port D interrupt base
+	{ (0x0B6 << 1), "USARTD1_INT" }, ///< USART 1 on port D interrupt base
+	{ (0x0FA << 1), "USB_INT" }, ///< USB on port D interrupt base
+};
+
+// ATTiny48/88 (same datasheet from ATmega48/88)
+// expects rjmp PCINT0
+static const BinAvrIntTable ATTiny48_88_table[] = {
+	{ (0x000 << 1), "RESET" }, ///< Reset Handler
+	{ (0x001 << 1), "EXT_INT0" }, ///< IRQ0 Handler
+	{ (0x002 << 1), "EXT_INT1" }, ///< IRQ1 Handler
+	{ (0x003 << 1), "PCINT0" }, ///< PCINT0 Handler
+	{ (0x004 << 1), "PCINT1" }, ///< PCINT1 Handler
+	{ (0x005 << 1), "PCINT2" }, ///< PCINT2 Handler
+	{ (0x006 << 1), "PCINT3" }, ///< PCINT3 Handler
+	{ (0x007 << 1), "WDT" }, ///< Watchdog Timer Handler
+	{ (0x008 << 1), "TIM1_CAPT" }, ///< Timer1 Capture Handler
+	{ (0x009 << 1), "TIM1_COMPA" }, ///< Timer1 Compare A Handler
+	{ (0x00A << 1), "TIM1_COMPB" }, ///< Timer1 Compare B Handler
+	{ (0x00B << 1), "TIM1_OVF" }, ///< Timer1 Overflow Handler
+	{ (0x00C << 1), "TIM0_COMPA" }, ///< Timer0 Compare A Handler
+	{ (0x00D << 1), "TIM0_COMPB" }, ///< Timer0 Compare B Handler
+	{ (0x00E << 1), "TIM0_OVF" }, ///< Timer0 Overflow Handler
+	{ (0x00F << 1), "SPI_STC" }, ///< SPI Transfer Complete Handler
+	{ (0x010 << 1), "ADC" }, ///< ADC Conversion Complete Handler
+	{ (0x011 << 1), "EE_RDY" }, ///< EEPROM Ready Handler
+	{ (0x012 << 1), "ANA_COMP" }, ///< Analog Comparator Handler
+	{ (0x013 << 1), "TWI" }, ///< 2-wire Serial Interface Handler
+};
+
+static const BinAvrBoard ATmega8_L = {
+	"ATmega8/L",
+	"ATmega8",
+	ATmega8_L_table,
+	RZ_ARRAY_SIZE(ATmega8_L_table),
+	2,
+};
+
+static const BinAvrBoard ATmega640_1280_1281_2560_2561 = {
+	"ATmega640/1280/1281/2560/2561",
+	"ATmega2561", // best effort
+	ATmega640_1280_1281_2560_2561_table,
+	RZ_ARRAY_SIZE(ATmega640_1280_1281_2560_2561_table),
+	4,
+};
+
+static const BinAvrBoard ATmega16 = {
+	"ATmega16",
+	"ATmega16",
+	ATmega16_table,
+	RZ_ARRAY_SIZE(ATmega16_table),
+	4,
+};
+
+static const BinAvrBoard ATmega88_168 = {
+	"ATmega88/168",
+	"ATmega168", // best effort
+	ATmega88_168_table,
+	RZ_ARRAY_SIZE(ATmega88_168_table),
+	2,
+};
+
+static const BinAvrBoard ATmega328p = {
+	"ATmega328p",
+	"ATmega328p",
+	ATmega328p_table,
+	RZ_ARRAY_SIZE(ATmega328p_table),
+	4,
+};
+
+static const BinAvrBoard ATmega16U4_32U4 = {
+	"ATmega16u4/32u4",
+	"ATmega32u4", // best effort
+	ATmega16U4_32U4_table,
+	RZ_ARRAY_SIZE(ATmega16U4_32U4_table),
+	4,
+};
+
+static const BinAvrBoard ATmega48_V_88_V_168_V = {
+	"ATmega48/V/88/V/168/V",
+	"ATmega168", // best effort
+	ATmega48_V_88_V_168_V_table,
+	RZ_ARRAY_SIZE(ATmega48_V_88_V_168_V_table),
+	2,
+};
+
+static const BinAvrBoard ATxmega128_64_32_16A4U = {
+	"ATxmega128/64/32/16a4u",
+	"ATxmega128a4u", // best effort
+	ATxmega128_64_32_16A4U_table,
+	RZ_ARRAY_SIZE(ATxmega128_64_32_16A4U_table),
+	4,
+};
+
+static const BinAvrBoard ATTiny48_88 = {
+	"ATTiny48/88",
+	"ATTiny88", // best effort
+	ATTiny48_88_table,
+	RZ_ARRAY_SIZE(ATTiny48_88_table),
+	2,
+};
+
+// sorted by reverse size
+static const BinAvrBoard *boards[] = {
+	/* 57 */ &ATmega640_1280_1281_2560_2561,
+	/* 43 */ &ATmega16U4_32U4,
+	/* 26 */ &ATxmega128_64_32_16A4U,
+	/* 26 */ &ATmega88_168,
+	/* 26 */ &ATmega328p,
+	/* 21 */ &ATmega48_V_88_V_168_V,
+	/* 21 */ &ATmega16,
+	/* 20 */ &ATTiny48_88,
+	/* 19 */ &ATmega8_L,
+};
+
+static bool read_opcode32_at(RzBuffer *b, ut64 addr, ut16 opcode[2]) {
+	return rz_buf_read_ble16_at(b, addr, &opcode[0], false) &&
+		rz_buf_read_ble16_at(b, addr + sizeof(ut16), &opcode[1], false);
 }
 
-static bool jmp(RzBuffer *b, ut64 addr) {
-	ut8 tmp;
-	if (!rz_buf_read8_at(b, addr, &tmp)) {
-		return false;
-	}
-
-	if (tmp != 0x0c) {
-		return false;
-	}
-
-	return rz_buf_read8_at(b, addr + 1, &tmp) && tmp == 0x94;
+static bool read_opcode16_at(RzBuffer *b, ut64 addr, ut16 *opcode) {
+	return rz_buf_read_ble16_at(b, addr, opcode, false);
 }
 
-static bool rjmp_dest(RzBuffer *b, ut64 addr, ut64 *result) {
-	ut8 tmp;
-	if (!rz_buf_read8_at(b, addr, &tmp)) {
+static bool is_filler(RzBuffer *b, ut64 addr) {
+	ut16 opcode = 0;
+	if (!read_opcode16_at(b, addr, &opcode)) {
+		return false;
+	}
+	// 0x0000 is nop, 0xffff is invalid opcode.
+	return opcode == 0x0000 || opcode == 0xffff;
+}
+
+static bool is_reti(RzBuffer *b, ut64 addr) {
+	ut16 opcode = 0;
+	if (!read_opcode16_at(b, addr, &opcode)) {
+		return false;
+	}
+	return opcode == 0x9518;
+}
+
+#define is_rjmp(b, addr)             parse_rjmp(b, addr, NULL)
+#define parse_rjmp32(b, addr, value) (is_filler(b, addr + sizeof(ut16)) && parse_rjmp(b, addr, value))
+#define is_rjmp32(b, addr)           parse_rjmp32(b, addr, NULL)
+
+static bool parse_rjmp(RzBuffer *b, ut64 addr, ut64 *value) {
+	ut16 opcode = 0;
+	if (!read_opcode16_at(b, addr, &opcode)) {
 		return false;
 	}
 
-	ut64 dst = 2 + addr + (ut64)tmp * 2;
-
-	if (!rz_buf_read8_at(b, addr + 1, &tmp)) {
+	if ((opcode & 0xF000) != 0xC000) {
 		return false;
 	}
 
-	*result = dst + ((((ut64)tmp & 0xf) * 2) << 8);
+	if (!value) {
+		return true;
+	}
 
+	st16 k = opcode & 0x0FFF;
+	k *= 2;
+	if (k & 0x1000) {
+		// manually extend signed value
+		k |= 0xF000;
+		k = -(~k) + 1;
+	} else {
+		k += 2;
+	}
+
+	*value = addr + (st64)k;
 	return true;
 }
 
-static bool jmp_dest(RzBuffer *b, ut64 addr, ut64 *result) {
-	ut8 tmp;
-	if (!rz_buf_read8_at(b, addr + 2, &tmp)) {
+#define is_rcall(b, addr) parse_rcall(b, addr, NULL)
+
+static bool parse_rcall(RzBuffer *b, ut64 addr, ut64 *value) {
+	ut16 opcode = 0;
+	if (!read_opcode16_at(b, addr, &opcode)) {
 		return false;
 	}
 
-	*result = tmp;
-
-	if (!rz_buf_read8_at(b, addr + 3, &tmp)) {
+	if ((opcode & 0xF000) != 0xD000) {
 		return false;
 	}
 
-	*result += (ut64)tmp << 8;
-	*result *= 2;
+	if (!value) {
+		return true;
+	}
 
+	st16 k = opcode & 0x0FFF;
+	k *= 2;
+	if (k & 0x1000) {
+		// manually extend signed value
+		k |= 0xF000;
+		k = -(~k) + 1;
+	} else {
+		k += 2;
+	}
+
+	*value = addr + (st64)k;
 	return true;
 }
 
-static bool check_buffer_rjmp(RzBuffer *b, RZ_OUT ut64 *entry) {
-	CHECK3INSTR(b, rjmp, 4);
-	ut64 dst;
-	if (!rjmp_dest(b, 0, &dst)) {
+#define is_jmp(b, addr) parse_jmp(b, addr, NULL)
+
+static bool parse_jmp(RzBuffer *b, ut64 addr, ut64 *value) {
+	ut16 opcode[2] = { 0 };
+	if (!read_opcode32_at(b, addr, opcode)) {
 		return false;
 	}
 
-	if (dst < 1 || dst > rz_buf_size(b)) {
+	if ((opcode[0] & 0xFE0E) != 0x940C) {
 		return false;
 	}
-	if (entry) {
-		*entry = dst;
+
+	if (!value) {
+		return true;
 	}
+
+	st32 k = opcode[0] & 0x0001;
+	k |= ((opcode[0] & 0x01F0) >> 3);
+	k <<= 16;
+	k |= opcode[1];
+	k *= 2;
+
+	*value = (st64)k;
 	return true;
 }
 
-static bool check_buffer_jmp(RzBuffer *b, RZ_OUT ut64 *entry) {
-	CHECK4INSTR(b, jmp, 4);
-	ut64 dst;
-	if (!jmp_dest(b, 0, &dst)) {
-		return false;
-	}
-
-	if (dst < 1 || dst > rz_buf_size(b)) {
-		return false;
-	}
-	if (entry) {
-		*entry = dst;
-	}
-	return true;
-}
-
-static bool find_magic(RzBuffer *buf, RZ_OUT ut64 *entry) {
+static bool avr_check_buffer(RzBuffer *buf) {
 	if (rz_buf_size(buf) < 32) {
 		return false;
 	}
-	if (!rjmp(buf, 0)) {
-		return check_buffer_jmp(buf, entry);
-	}
-	return check_buffer_rjmp(buf, entry);
+	return is_jmp(buf, 0) || is_rjmp(buf, 0);
 }
 
-static bool check_buffer(RzBuffer *buf) {
-	return find_magic(buf, NULL);
+static bool avr_check_if_bad_interrupt(bool bytes_4, ut64 offset, RzBuffer *buf) {
+	ut64 jump = UT64_MAX;
+	if (bytes_4 && parse_jmp(buf, offset, &jump)) {
+		return !jump;
+	}
+	return parse_rjmp(buf, offset, &jump);
 }
 
-static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
-	ut64 *entry = RZ_NEW0(ut64);
-	if (!entry) {
-		return false;
+static bool avr_parse_interrupt(size_t n_bytes, ut64 offset, RzBuffer *buf, ut64 *jump) {
+	if (n_bytes == 4) {
+		if (parse_jmp(buf, offset, jump)) {
+			return true;
+		} else if (parse_rjmp32(buf, offset, jump)) {
+			return true;
+		}
+
+		return parse_rcall(buf, offset, jump);
 	}
-	*entry = UT64_MAX;
-	if (find_magic(buf, entry)) {
-		obj->bin_obj = entry;
+
+	if (is_reti(buf, offset)) {
+		// allow reti
+		*jump = UT64_MAX;
 		return true;
 	}
-	free(entry);
-	return false;
+	return parse_rjmp(buf, offset, jump) || parse_rcall(buf, offset, jump);
 }
 
-static void destroy(RzBinFile *bf) {
-	free(bf->o->bin_obj);
-}
+static void avr_parse_interrupt_vectors(RzBuffer *buf, RzVector /*<ut64>*/ *interrupt_handlers, size_t n_bytes, ut64 *bad_interrupt) {
+	rz_vector_clear(interrupt_handlers);
 
-static RzBinInfo *info(RzBinFile *bf) {
-	rz_return_val_if_fail(bf, NULL);
-	RzBinInfo *bi = RZ_NEW0(RzBinInfo);
-	if (bi) {
-		bi->file = rz_str_dup(bf->file);
-		bi->type = rz_str_dup("ROM");
-		bi->machine = rz_str_dup("ATmel");
-		bi->os = rz_str_dup("avr");
-		bi->has_va = 0; // 1;
-		bi->arch = rz_str_dup("avr");
-		bi->bits = 8;
+	for (size_t offset = 0;; offset += n_bytes) {
+		ut64 jump = UT64_MAX;
+		if (!avr_parse_interrupt(n_bytes, offset, buf, &jump)) {
+			break;
+		}
+
+		if (offset > 0 && jump && jump != UT64_MAX && avr_check_if_bad_interrupt(n_bytes == 4, jump, buf)) {
+			// checks if the interrupt vector is jumping to an address which contains a jump
+			// to the reset vector; if it does, then it's an __bad_interrupt symbol
+			if (*bad_interrupt == UT64_MAX) {
+				*bad_interrupt = jump;
+			}
+		}
+		rz_vector_push(interrupt_handlers, &jump);
 	}
+
+	rz_vector_shrink(interrupt_handlers);
+}
+
+static bool avr_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
+	if (rz_buf_size(buf) < 32) {
+		return false;
+	}
+
+	size_t n_bytes = 2;
+	if (is_jmp(buf, 0) || is_rjmp32(buf, 0)) {
+		n_bytes = 4;
+	} else if (!is_rjmp(buf, 0)) {
+		return false;
+	}
+
+	ut64 entry = UT64_MAX;
+	bool has_rjmp = parse_rjmp(buf, 0, &entry);
+	bool has_jmp = parse_jmp(buf, 0, &entry);
+
+	if (!has_rjmp && !has_jmp) {
+		return false;
+	}
+
+	ut64 bad_interrupt = UT64_MAX;
+	const BinAvrBoard *rom_board = NULL;
+
+	RzVector /*<ut64>*/ *interrupt_handlers = rz_vector_new(sizeof(ut64), NULL, NULL);
+	if (!interrupt_handlers) {
+		return false;
+	}
+
+	avr_parse_interrupt_vectors(buf, interrupt_handlers, n_bytes, &bad_interrupt);
+
+	for (size_t i = 0, expected = rz_vector_len(interrupt_handlers); i < RZ_ARRAY_SIZE(boards); ++i) {
+		const BinAvrBoard *board = boards[i];
+		if (board->n_interrupts != expected || board->n_bytes != n_bytes) {
+			continue;
+		}
+		rom_board = board;
+		break;
+	}
+
+	BinAvrRom *rom = RZ_NEW0(BinAvrRom);
+	if (!rom) {
+		return false;
+	}
+
+	rom->n_bytes = n_bytes;
+	rom->bad_interrupt = bad_interrupt;
+	rom->board = rom_board;
+	rom->interrupt_handlers = interrupt_handlers;
+	obj->bin_obj = rom;
+	return true;
+}
+
+static void avr_destroy(RzBinFile *bf) {
+	BinAvrRom *rom = bf->o->bin_obj;
+	if (!rom) {
+		return;
+	}
+	rz_vector_free(rom->interrupt_handlers);
+	free(rom);
+}
+
+static RzBinInfo *avr_info(RzBinFile *bf) {
+	rz_return_val_if_fail(bf, NULL);
+	BinAvrRom *rom = bf->o->bin_obj;
+
+	RzBinInfo *bi = RZ_NEW0(RzBinInfo);
+	if (!bi) {
+		return NULL;
+	}
+
+	bi->file = rz_str_dup(bf->file);
+	bi->type = rz_str_dup("ROM");
+	bi->machine = rz_str_dup(rom->board ? rom->board->name : "ATmel (unknown)");
+	bi->os = rz_str_dup("avr usermode");
+	bi->has_va = false;
+	bi->arch = rz_str_dup("avr");
+	bi->bits = 8;
 	return bi;
 }
 
-static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
-	RzPVector *ret;
-	RzBinAddr *ptr = NULL;
-	ut64 *entry = bf->o->bin_obj;
-	if (*entry == UT64_MAX) {
-		return false;
+static RzBinAddr *avr_get_main(const BinAvrRom *rom) {
+	if (rz_vector_empty(rom->interrupt_handlers)) {
+		return NULL;
 	}
+
+	RzBinAddr *ptr = NULL;
+	ut64 *main = rz_vector_index_ptr(rom->interrupt_handlers, 0);
+	if (*main == UT64_MAX || !(ptr = RZ_NEW0(RzBinAddr))) {
+		return NULL;
+	}
+
+	ptr->type = RZ_BIN_SPECIAL_SYMBOL_MAIN;
+	ptr->paddr = *main;
+	ptr->vaddr = *main;
+	ptr->hpaddr = *main;
+	ptr->hvaddr = *main;
+	return ptr;
+}
+
+static RzPVector /*<RzBinAddr *>*/ *avr_entries(RzBinFile *bf) {
+	RzPVector *ret = NULL;
+	RzBinAddr *ptr = NULL;
+	BinAvrRom *rom = bf->o->bin_obj;
 	if (!(ret = rz_pvector_new(free))) {
 		return NULL;
 	}
+
+	if (rz_vector_empty(rom->interrupt_handlers)) {
+		return ret;
+	}
+
 	if ((ptr = RZ_NEW0(RzBinAddr))) {
-		ut64 addr = *entry;
-		ptr->vaddr = ptr->paddr = addr;
+		// entrypoint is always 0x0000
+		ptr->type = RZ_BIN_SPECIAL_SYMBOL_ENTRY;
+		rz_pvector_push(ret, ptr);
+	}
+
+	if (rz_vector_empty(rom->interrupt_handlers)) {
+		return ret;
+	}
+
+	ptr = avr_get_main(rom);
+	if (ptr) {
 		rz_pvector_push(ret, ptr);
 	}
 	return ret;
 }
 
-static void addsym(RzPVector /*<RzBinSymbol *>*/ *ret, const char *name, ut64 addr) {
+static void avr_add_symbol(RzPVector /*<RzBinSymbol *>*/ *ret, char *name, ut64 addr) {
 	RzBinSymbol *ptr = RZ_NEW0(RzBinSymbol);
-	if (ptr) {
-		ptr->name = rz_str_dup(name ? name : "");
-		ptr->paddr = ptr->vaddr = addr;
-		ptr->size = 0;
-		ptr->ordinal = 0;
-		rz_pvector_push(ret, ptr);
+	if (!ptr) {
+		free(name);
+		return;
 	}
+
+	ptr->name = name;
+	ptr->paddr = addr;
+	ptr->vaddr = addr;
+	ptr->size = 0;
+	ptr->ordinal = 0;
+	rz_pvector_push(ret, ptr);
 }
 
-static void addptr(RzPVector /*<RzBinSymbol *>*/ *ret, const char *name, ut64 addr, RzBuffer *b) {
-	if (b && rjmp(b, 0)) {
-		char tmpbuf[128];
-		addsym(ret, rz_strf(tmpbuf, "vector.%s", name), addr);
-		ut64 ptr_addr;
-		if (rjmp_dest(b, addr, &ptr_addr)) {
-			addsym(ret, rz_strf(tmpbuf, "syscall.%s", name), ptr_addr);
+static void avr_add_vector_and_syscall(RzPVector /*<RzBinSymbol *>*/ *ret, HtUU *set, const char *name, ut64 vector_addr, ut64 handler_addr) {
+	char *sym_name = rz_str_newf("vector.%s", name);
+	avr_add_symbol(ret, sym_name, vector_addr);
+	if (handler_addr == UT64_MAX || !handler_addr) {
+		return;
+	}
+
+	if (!ht_uu_insert(set, handler_addr, 1)) {
+		return;
+	}
+
+	sym_name = rz_str_newf("handler.%s", name);
+	avr_add_symbol(ret, sym_name, handler_addr);
+}
+
+static const char *avr_find_handler_name(const BinAvrBoard *board, ut64 addr) {
+	if (!board) {
+		return NULL;
+	}
+
+	for (size_t i = 0; i < board->n_interrupts; ++i) {
+		if (board->interrupt_table[i].address == addr) {
+			return board->interrupt_table[i].name;
 		}
 	}
+	return NULL;
 }
 
-static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
+static RzPVector /*<RzBinSymbol *>*/ *avr_symbols(RzBinFile *bf) {
 	RzPVector *ret = NULL;
-	RzBuffer *buf = bf->buf;
+	const BinAvrRom *rom = bf->o->bin_obj;
 
 	if (!(ret = rz_pvector_new((RzPVectorFree)rz_bin_symbol_free))) {
 		return NULL;
 	}
-	/* atmega8 */
-	addptr(ret, "int0", 2, buf);
-	addptr(ret, "int1", 4, buf);
-	addptr(ret, "timer2cmp", 6, buf);
-	addptr(ret, "timer2ovf", 8, buf);
-	addptr(ret, "timer1capt", 10, buf);
-	addptr(ret, "timer1cmpa", 12, buf);
+
+	HtUU *set = ht_uu_new();
+	if (!set) {
+		rz_pvector_free(ret);
+		return NULL;
+	}
+
+	if (rom->bad_interrupt != UT64_MAX) {
+		avr_add_symbol(ret, strdup("__bad_interrupt"), rom->bad_interrupt);
+		ht_uu_insert(set, rom->bad_interrupt, 1);
+	}
+
+	char tmp_name[256];
+	const char *handler_name = NULL;
+	ut64 n_interrupts = rz_vector_len(rom->interrupt_handlers);
+
+	for (ut64 i = 0, vector_addr = 0; i < n_interrupts; ++i, vector_addr += rom->n_bytes) {
+		if (i == 0) {
+			handler_name = "RESET";
+		} else {
+			handler_name = avr_find_handler_name(rom->board, vector_addr);
+			if (!handler_name) {
+				// if missing name
+				ut64 id = vector_addr >> 1;
+				rz_strf(tmp_name, "unknown_%" PFMT64x, id);
+				handler_name = tmp_name;
+			}
+		}
+		ut64 *handler_addr = rz_vector_index_ptr(rom->interrupt_handlers, i);
+		avr_add_vector_and_syscall(ret, set, handler_name, vector_addr, *handler_addr);
+	}
+
+	ht_uu_free(set);
 	return ret;
 }
 
-static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
+static RzPVector /*<RzBinString *>*/ *avr_strings(RzBinFile *bf) {
 	// we dont want to find strings in avr bins because there are lot of false positives
 	return rz_pvector_new((RzPVectorFree)rz_bin_string_free);
 }
 
+static RzBinAddr *avr_binsym(RzBinFile *bf, RzBinSpecialSymbol sym) {
+	rz_return_val_if_fail(bf && bf->o && bf->o, NULL);
+
+	RzBinAddr *ptr = NULL;
+	const BinAvrRom *rom = bf->o->bin_obj;
+
+	switch (sym) {
+	case RZ_BIN_SPECIAL_SYMBOL_ENTRY:
+		// entrypoint is always RESET vector (0x0000)
+		ptr = RZ_NEW0(RzBinAddr);
+		ptr->type = RZ_BIN_SPECIAL_SYMBOL_ENTRY;
+		return ptr;
+	case RZ_BIN_SPECIAL_SYMBOL_MAIN:
+		return avr_get_main(rom);
+	default:
+		return NULL;
+	}
+}
+
 RzBinPlugin rz_bin_plugin_avr = {
 	.name = "avr",
-	.desc = "ATmel AVR MCUs",
+	.desc = "ATmel AVR usermode",
 	.license = "LGPL3",
-	.author = "pancake",
-	.load_buffer = &load_buffer,
-	.destroy = &destroy,
-	.entries = &entries,
-	.symbols = &symbols,
-	.check_buffer = &check_buffer,
-	.info = &info,
-	.strings = &strings,
+	.author = "deroad",
+	.load_buffer = &avr_load_buffer,
+	.destroy = &avr_destroy,
+	.binsym = &avr_binsym,
+	.entries = &avr_entries,
+	.symbols = &avr_symbols,
+	.check_buffer = &avr_check_buffer,
+	.info = &avr_info,
+	.strings = &avr_strings,
 };
 
 #ifndef RZ_PLUGIN_INCORE
