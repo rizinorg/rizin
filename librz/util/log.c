@@ -191,7 +191,8 @@ RZ_API void rz_log_del_callback(RZ_NULLABLE RzLogCallback cbfunc) {
 #endif /* RZ_BUILD_DEBUG */
 
 RZ_API void rz_vlog(const char *funcname, const char *filename,
-	ut32 lineno, RzLogLevel level, const char *tag, const char *fmtstr, va_list args) {
+	ut32 lineno, RzLogLevel level, const char *tag, RZ_OWN RZ_NULLABLE const char **out,
+	const char *fmtstr, va_list args) {
 	log_init();
 
 	if (is_log_quiet(level)) {
@@ -212,7 +213,9 @@ RZ_API void rz_vlog(const char *funcname, const char *filename,
 		tag = RZ_BETWEEN(0, level, (RZ_LOGLVL_SIZE - 1)) ? logcfg.tags[level] : "";
 	}
 	rz_strbuf_append(&sb, tag);
-	rz_strbuf_append(&sb, ": ");
+	if (*tag) {
+		rz_strbuf_append(&sb, ": ");
+	}
 	if (logcfg.show_sources) {
 		rz_strbuf_appendf(&sb, "%s in %s:%i: ", funcname, filename, lineno);
 	}
@@ -222,7 +225,9 @@ RZ_API void rz_vlog(const char *funcname, const char *filename,
 
 	// critical section
 	rz_th_lock_enter(logcfg.lock);
-	if (rz_list_length(logcfg.callbacks) > 0) {
+	if (out) {
+		*out = strdup(output_buf);
+	} else if (rz_list_length(logcfg.callbacks) > 0) {
 		// Print the log using the callbacks
 		RzListIter *it;
 		RzLogCallback cb;
@@ -270,7 +275,7 @@ RZ_API void rz_log(const char *funcname, const char *filename,
 	va_list args;
 
 	va_start(args, fmtstr);
-	rz_vlog(funcname, filename, lineno, level, tag, fmtstr, args);
+	rz_vlog(funcname, filename, lineno, level, tag, NULL, fmtstr, args);
 	va_end(args);
 }
 
