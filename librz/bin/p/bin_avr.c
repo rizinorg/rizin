@@ -662,6 +662,8 @@ static void avr_parse_interrupt_vectors(RzBuffer *buf, RzVector /*<ut64>*/ *inte
 }
 
 static bool avr_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
+	rz_return_val_if_fail(bf && obj && buf && sdb, false);
+
 	if (rz_buf_size(buf) < 32) {
 		return false;
 	}
@@ -724,6 +726,7 @@ static void avr_destroy(RzBinFile *bf) {
 
 static RzBinInfo *avr_info(RzBinFile *bf) {
 	rz_return_val_if_fail(bf, NULL);
+
 	BinAvrRom *rom = bf->o->bin_obj;
 
 	RzBinInfo *bi = RZ_NEW0(RzBinInfo);
@@ -761,6 +764,8 @@ static RzBinAddr *avr_get_main(const BinAvrRom *rom) {
 }
 
 static RzPVector /*<RzBinAddr *>*/ *avr_entries(RzBinFile *bf) {
+	rz_return_val_if_fail(bf, NULL);
+
 	RzPVector *ret = NULL;
 	RzBinAddr *ptr = NULL;
 	BinAvrRom *rom = bf->o->bin_obj;
@@ -833,6 +838,8 @@ static const char *avr_find_handler_name(const BinAvrBoard *board, ut64 addr) {
 }
 
 static RzPVector /*<RzBinSymbol *>*/ *avr_symbols(RzBinFile *bf) {
+	rz_return_val_if_fail(bf, NULL);
+
 	RzPVector *ret = NULL;
 	const BinAvrRom *rom = bf->o->bin_obj;
 
