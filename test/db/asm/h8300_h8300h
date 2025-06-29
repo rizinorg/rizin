@@ -91,3 +91,11 @@ d "or.l #0x11111111,er1" 7a4111111111
 d "or.l er1,er2" 01f06412
 d "pop.l er1" 01006d71
 d "push.l er1" 01006df1
+d "rotl.w r1" 1291
+d "rotr.w r1" 1391
+d "rotxl.w r1" 1211
+d "rotxr.w r1" 1311
+d "rotl.l er1" 12b1
+d "rotr.l er1" 13b1
+d "rotxl.l er1" 1231
+d "rotxr.l er1" 1331

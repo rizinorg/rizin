@@ -77,10 +77,18 @@ static const char *commands[] = {
 	[H8300_INSN_JMP] = "jmp",
 	[H8300_INSN_JSR] = "jsr",
 	[H8300_INSN_ORC] = "orc",
-	[H8300_INSN_ROTL] = "rotl",
-	[H8300_INSN_ROTR] = "rotr",
-	[H8300_INSN_ROTXL] = "rotxl",
-	[H8300_INSN_ROTXR] = "rotxr",
+	[H8300_INSN_ROTL_B] = "rotl.b",
+	[H8300_INSN_ROTR_B] = "rotr.b",
+	[H8300_INSN_ROTXL_B] = "rotxl.b",
+	[H8300_INSN_ROTXR_B] = "rotxr.b",
+	[H8300_INSN_ROTL_W] = "rotl.w",
+	[H8300_INSN_ROTR_W] = "rotr.w",
+	[H8300_INSN_ROTXL_W] = "rotxl.w",
+	[H8300_INSN_ROTXR_W] = "rotxr.w",
+	[H8300_INSN_ROTL_L] = "rotl.l",
+	[H8300_INSN_ROTR_L] = "rotr.l",
+	[H8300_INSN_ROTXL_L] = "rotxl.l",
+	[H8300_INSN_ROTXR_L] = "rotxr.l",
 	[H8300_INSN_RTE] = "rte",
 	[H8300_INSN_RTS] = "rts",
 	[H8300_INSN_SHAL] = "shal",
@@ -1094,10 +1102,21 @@ static int h8300_decode_2(const ut8 *instr, struct h8300_cmd *cmd) {
 		CASE_F_F(decode_r16_2, 0x1710, NOT_W);
 		CASE_F_F(decode_r32_2, 0x1730, NOT_L);
 
-		CASE_F_R8(0x1280, ROTL);
-		CASE_F_R8(0x1380, ROTR);
-		CASE_F_R8(0x1200, ROTXL);
-		CASE_F_R8(0x1300, ROTXR);
+		CASE_F_R8(0x1280, ROTL_B);
+		CASE_F_R8(0x1380, ROTR_B);
+		CASE_F_R8(0x1200, ROTXL_B);
+		CASE_F_R8(0x1300, ROTXR_B);
+
+		CASE_F_F(decode_r16_2, 0x1290, ROTL_W);
+		CASE_F_F(decode_r16_2, 0x1390, ROTR_W);
+		CASE_F_F(decode_r16_2, 0x1210, ROTXL_W);
+		CASE_F_F(decode_r16_2, 0x1310, ROTXR_W);
+
+		CASE_F_F(decode_r32_2, 0x12b0, ROTL_L);
+		CASE_F_F(decode_r32_2, 0x13b0, ROTR_L);
+		CASE_F_F(decode_r32_2, 0x1230, ROTXL_L);
+		CASE_F_F(decode_r32_2, 0x1330, ROTXR_L);
+
 		CASE_F_R8(0x1080, SHAL);
 		CASE_F_R8(0x1000, SHLL);
 		CASE_F_R8(0x1180, SHAR);

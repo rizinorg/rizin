@@ -714,28 +714,28 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 				IL_FALSE,
 				LSB(R8_OP(0))),
 			R8_X(0, VARL("result")));
-	case H8300_INSN_ROTL:
+	case H8300_INSN_ROTL_B:
 		return SEQ3(
 			SETL("result", SHIFTL(MSB(R8_OP(0)), R8_OP(0), U8(1))),
 			ccr_unary_NZVC(8, VARL("result"),
 				IL_FALSE,
 				MSB(R8_OP(0))),
 			R8_X(0, VARL("result")));
-	case H8300_INSN_ROTR:
+	case H8300_INSN_ROTR_B:
 		return SEQ3(
 			SETL("result", SHIFTR(LSB(R8_OP(0)), R8_OP(0), U8(1))),
 			ccr_unary_NZVC(8, VARL("result"),
 				IL_FALSE,
 				LSB(R8_OP(0))),
 			R8_X(0, VARL("result")));
-	case H8300_INSN_ROTXL:
+	case H8300_INSN_ROTXL_B:
 		return SEQ3(
 			SETL("result", SHIFTL(ccr_val(CCR_C), R8_OP(0), U8(1))),
 			ccr_unary_NZVC(8, VARL("result"),
 				IL_FALSE,
 				MSB(R8_OP(0))),
 			R8_X(0, VARL("result")));
-	case H8300_INSN_ROTXR:
+	case H8300_INSN_ROTXR_B:
 		return SEQ3(
 			SETL("result", SHIFTR(ccr_val(CCR_C), R8_OP(0), U8(1))),
 			ccr_unary_NZVC(8, VARL("result"),
@@ -1050,9 +1050,7 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 	case H8300_INSN_INVALID: return NOP();
 	case H8300_INSN_MOVFPE:
 	case H8300_INSN_MOVTPE:
-	case H8300_INSN_MULXU_W:
-	case H8300_INSN_MULXS_B:
-	case H8300_INSN_MULXS_W: NOT_IMPLEMENTED;
+	default: NOT_IMPLEMENTED;
 	}
 
 	NOT_IMPLEMENTED;
