@@ -37,10 +37,10 @@ d "divxu.w r1,er2" 5312
 d "divxs.b r1h,r2" 01d05112
 d "divxs.w r1,er2" 01d05312
 d "eepmov.w" 7bd4598f
-d "exts.w r0h" 17d0
-d "exts.l r0h" 17f0
-d "extu.w r0h" 1750
-d "extu.l r0h" 1770
+d "exts.w r0" 17d0
+d "exts.l er0" 17f0
+d "extu.w r0" 1750
+d "extu.l er0" 1770
 d "ldc.w er1,ccr" 01406910
 d "ldc.w @(+4369,er1),ccr" 01406f101111
 d "ldc.w @(+1118481,er1),ccr" 014078106b2000111111

@@ -1181,10 +1181,10 @@ static int h8300_decode_2(const ut8 *instr, struct h8300_cmd *cmd) {
 		CASE_F_F(decode_r32_2, 0x11b0, SHAR_L);
 		CASE_F_F(decode_r32_2, 0x1130, SHLR_L);
 
-		CASE_F_R8(0x17d0, EXTS_W);
-		CASE_F_R8(0x17f0, EXTS_L);
-		CASE_F_R8(0x1750, EXTU_W);
-		CASE_F_R8(0x1770, EXTU_L);
+		CASE_F_F(decode_r16_2, 0x17d0, EXTS_W);
+		CASE_F_F(decode_r32_2, 0x17f0, EXTS_L);
+		CASE_F_F(decode_r16_2, 0x1750, EXTU_W);
+		CASE_F_F(decode_r32_2, 0x1770, EXTU_L);
 
 		CASE_F_F_VA(decode_xr16, 0x1b50, DEC_W, 1);
 		CASE_F_F_VA(decode_xr16, 0x1bd0, DEC_W, 2);
