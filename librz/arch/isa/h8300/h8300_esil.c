@@ -130,7 +130,7 @@ int h8300_analyze_op_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 
 		return 0;
 	case H8300_SLEEP: /* TODO */
 		return 0;
-	case H8300_STC:
+	case H8300_STC_B:
 		rz_strbuf_appendf(&op->esil, "ccr,r%u%c,=", rdB(1));
 		return 0;
 	case H8300_LDC:

@@ -649,7 +649,7 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 	case H8300_INSN_AND_L: NOT_IMPLEMENTED;
 	case H8300_INSN_NOP:
 	case H8300_INSN_SLEEP: return NOP();
-	case H8300_INSN_STC: return R8_X(1, VARG("ccr"));
+	case H8300_INSN_STC_B: return R8_X(1, VARG("ccr"));
 	case H8300_INSN_LDC_B:
 		switch (cmd->fmt) {
 		case H8300_INSN_FORMAT_IMM:

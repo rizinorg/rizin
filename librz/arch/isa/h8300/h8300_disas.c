@@ -104,7 +104,8 @@ static const char *commands[] = {
 	[H8300_INSN_SHLL_L] = "shll.l",
 	[H8300_INSN_SHLR_L] = "shlr.l",
 	[H8300_INSN_SLEEP] = "sleep",
-	[H8300_INSN_STC] = "stc",
+	[H8300_INSN_STC_B] = "stc.b",
+	[H8300_INSN_STC_W] = "stc.w",
 	[H8300_INSN_SUBS] = "subs",
 	[H8300_INSN_SUBX] = "subx",
 	[H8300_INSN_XOR] = "xor",
@@ -466,6 +467,14 @@ static int decode_rinc_4(const ut8 *bytes, struct h8300_cmd *cmd) {
 	ut8 r = r32_high(bytes[3]);
 	cmd->fmt = H8300_INSN_FORMAT_RINC;
 	OPS_ADD(H8300_OP_RINC, reg, r);
+	return ret;
+}
+
+static int decode_rdec_4(const ut8 *bytes, struct h8300_cmd *cmd) {
+	int ret = 4;
+	ut8 r = r32_high(bytes[3]);
+	cmd->fmt = H8300_INSN_FORMAT_RDEC;
+	OPS_ADD(H8300_OP_RDEC, reg, r);
 	return ret;
 }
 
@@ -848,11 +857,18 @@ static int decode_r32riinc32_4(const ut8 *bytes, struct h8300_cmd *cmd) {
 		cmd->size = F(instr, cmd); \
 		OPS_ADD(H8300_OP_CCR, imm, 0); \
 		return cmd->size;
+#define CASE_F_CCR_F(F, X, I) \
+	case (X): \
+		cmd->id = H8300_INSN_##I; \
+		OPS_ADD(H8300_OP_CCR, imm, 0); \
+		cmd->size = F(instr, cmd); \
+		return cmd->size;
 
 static int h8300_decode_10(const ut8 *instr, struct h8300_cmd *cmd) {
 	ut64 x7 = rz_read_be64(instr) >> 8;
 	switch (x7 & 0xffffff8fffffff) {
 		CASE_F_F_CCR(decode_rd3224_10, 0x014078006b2000, LDC_W);
+		CASE_F_CCR_F(decode_rd3224_10, 0x014078006ba000, STC_W);
 	default: break;
 	}
 	switch (x7 & 0xffffff8ffff8ff) {
@@ -866,6 +882,7 @@ static int h8300_decode_8(const ut8 *instr, struct h8300_cmd *cmd) {
 	ut64 x5 = rz_read_be64(instr) >> 24;
 	switch (x5) {
 		CASE_F_F_CCR(decode_abs24_8, 0x01406b2000, LDC_W);
+		CASE_F_CCR_F(decode_abs24_8, 0x01406ba000, STC_W);
 	default: break;
 	}
 	switch (x5 & 0xff8ffff0ff) {
@@ -897,6 +914,7 @@ static int h8300_decode_6(const ut8 *instr, struct h8300_cmd *cmd) {
 	ut32 x4 = rz_read_be32(instr);
 	switch (x4 & 0xffffff8f) {
 		CASE_F_F_CCR(decode_rd3216_6, 0x01406f00, LDC_W);
+		CASE_F_CCR_F(decode_rd3216_6, 0x01406f80, STC_W);
 	default: break;
 	}
 	switch (x4 & 0xfffffff8) {
@@ -917,6 +935,7 @@ static int h8300_decode_6(const ut8 *instr, struct h8300_cmd *cmd) {
 	}
 	switch (x4) {
 		CASE_F_F_CCR(decode_abs16_6, 0x01406b00, LDC_W);
+		CASE_F_CCR_F(decode_abs16_6, 0x01406b80, STC_W);
 	default: break;
 	}
 	return -1;
@@ -1036,6 +1055,9 @@ static int h8300_decode_4(const ut8 *instr, struct h8300_cmd *cmd) {
 	switch (x4 & 0xffffff8f) {
 		CASE_F_F_CCR(decode_r32_4h, 0x01406900, LDC_W);
 		CASE_F_F_CCR(decode_rinc_4, 0x01406d00, LDC_W);
+
+		CASE_F_CCR_F(decode_r32_4h, 0x01406980, STC_W);
+		CASE_F_CCR_F(decode_rdec_4, 0x01406d80, STC_W);
 	default:
 		break;
 	}
@@ -1336,8 +1358,8 @@ static int h8300_decode_2(const ut8 *instr, struct h8300_cmd *cmd) {
 		cmd->id = H8300_INSN_LDC_B;
 		ret = decode_i8ccr(instr, cmd);
 		break;
-	case H8300_STC:
-		cmd->id = H8300_INSN_STC;
+	case H8300_STC_B:
+		cmd->id = H8300_INSN_STC_B;
 		ret = decode_ccrr8(instr, cmd);
 		break;
 	case H8300_XORC:
