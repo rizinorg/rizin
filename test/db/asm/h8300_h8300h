@@ -95,7 +95,15 @@ d "rotl.w r1" 1291
 d "rotr.w r1" 1391
 d "rotxl.w r1" 1211
 d "rotxr.w r1" 1311
+d "shal.w r0" 1090
+d "shll.w r0" 1010
+d "shar.w r0" 1190
+d "shlr.w r0" 1110
 d "rotl.l er1" 12b1
 d "rotr.l er1" 13b1
 d "rotxl.l er1" 1231
 d "rotxr.l er1" 1331
+d "shal.l er0" 10b0
+d "shll.l er0" 1030
+d "shar.l er0" 11b0
+d "shlr.l er0" 1130

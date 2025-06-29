@@ -686,28 +686,28 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 	case H8300_INSN_INC_W: NOT_IMPLEMENTED;
 	case H8300_INSN_DAA: return op_daa(cmd);
 	case H8300_INSN_DAS: return op_das(cmd);
-	case H8300_INSN_SHAL:
+	case H8300_INSN_SHAL_B:
 		return SEQ3(
 			SETL("result", SHIFTL0(R8_OP(0), U8(1))),
 			ccr_unary_NZVC(8, VARL("result"),
 				XOR(MSB(VARL("result")), MSB(R8_OP(0))),
 				MSB(R8_OP(0))),
 			R8_X(0, VARL("result")));
-	case H8300_INSN_SHAR:
+	case H8300_INSN_SHAR_B:
 		return SEQ3(
 			SETL("result", SHIFTRA(R8_OP(0), U8(1))),
 			ccr_unary_NZVC(8, VARL("result"),
 				IL_FALSE,
 				LSB(R8_OP(0))),
 			R8_X(0, VARL("result")));
-	case H8300_INSN_SHLL:
+	case H8300_INSN_SHLL_B:
 		return SEQ3(
 			SETL("result", SHIFTL0(R8_OP(0), U8(1))),
 			ccr_unary_NZVC(8, VARL("result"),
 				IL_FALSE,
 				MSB(R8_OP(0))),
 			R8_X(0, VARL("result")));
-	case H8300_INSN_SHLR:
+	case H8300_INSN_SHLR_B:
 		return SEQ3(
 			SETL("result", SHIFTR0(R8_OP(0), U8(1))),
 			ccr_unary_NZVC(8, VARL("result"),
