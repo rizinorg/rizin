@@ -89,7 +89,7 @@ static int h8300_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	case H8300_INSN_SHAR_B:
 		op->type = RZ_ANALYSIS_OP_TYPE_SHR;
 		break;
-	case H8300_INSN_XOR:
+	case H8300_INSN_XOR_B:
 	case H8300_INSN_XORC:
 		op->type = RZ_ANALYSIS_OP_TYPE_XOR;
 		break;

@@ -109,7 +109,9 @@ static const char *commands[] = {
 	[H8300_INSN_STC_W] = "stc.w",
 	[H8300_INSN_SUBS] = "subs",
 	[H8300_INSN_SUBX] = "subx",
-	[H8300_INSN_XOR] = "xor",
+	[H8300_INSN_XOR_B] = "xor.b",
+	[H8300_INSN_XOR_W] = "xor.w",
+	[H8300_INSN_XOR_L] = "xor.l",
 	[H8300_INSN_XORC] = "xorc",
 	[H8300_INSN_LDC_B] = "ldc.b",
 	[H8300_INSN_LDC_W] = "ldc.w",
@@ -919,6 +921,7 @@ static int h8300_decode_6(const ut8 *instr, struct h8300_cmd *cmd) {
 		CASE_F_F(decode_i32r32_6, 0x7a20, CMP_L);
 		CASE_F_F(decode_i32r32_6, 0x7a00, MOV_L);
 		CASE_F_F(decode_i32r32_6, 0x7a40, OR_L);
+		CASE_F_F(decode_i32r32_6, 0x7a50, XOR_L);
 	default: break;
 	}
 
@@ -988,6 +991,7 @@ static int h8300_decode_4(const ut8 *instr, struct h8300_cmd *cmd) {
 		CASE_F_F(decode_i16r16_4, 0x7930, SUB_W);
 		CASE_F_F(decode_i16r16_4, 0x7920, CMP_W);
 		CASE_F_F(decode_i16r16_4, 0x7940, OR_W);
+		CASE_F_F(decode_i16r16_4, 0x7950, XOR_W);
 
 		CASE_F_F(decode_abs16r8_4, 0x6a00, MOV_B);
 		CASE_F_F(decode_r8abs16_4, 0x6a80, MOV_B);
@@ -1088,6 +1092,7 @@ static int h8300_decode_4(const ut8 *instr, struct h8300_cmd *cmd) {
 		CASE_F_F(decode_r32riinc32_4, 0x01006d80, MOV_L);
 
 		CASE_F_F(decode_r32r32_4, 0x01f06400, OR_L);
+		CASE_F_F(decode_r32r32_4, 0x01f06500, XOR_L);
 	default:
 		break;
 	}
@@ -1125,7 +1130,7 @@ static int h8300_decode_2(const ut8 *instr, struct h8300_cmd *cmd) {
 		CASE_F_F(decode_i8r8, 0xa, CMP_B);
 		CASE_F_F(decode_i8r8, 0xc, OR_B);
 		CASE_F_F(decode_i8r8, 0xb, SUBX);
-		CASE_F_F(decode_i8r8, H8300_XOR_4BIT, XOR);
+		CASE_F_F(decode_i8r8, 0xd, XOR_B);
 	default: break;
 	}
 
@@ -1260,6 +1265,9 @@ static int h8300_decode_2(const ut8 *instr, struct h8300_cmd *cmd) {
 
 		CASE_F_F(decode_r8r8_2, 0x1e, SUBX);
 
+		CASE_F_F(decode_r8r8_2, 0x15, XOR_B);
+		CASE_F_F(decode_r16r16_2, 0x65, XOR_W);
+
 	case H8300_ANDC:
 		cmd->id = H8300_INSN_ANDC;
 		ret = decode_i8ccr(instr, cmd);
@@ -1279,10 +1287,6 @@ static int h8300_decode_2(const ut8 *instr, struct h8300_cmd *cmd) {
 		break;
 	case 0x0e:
 		cmd->id = H8300_INSN_ADDX;
-		ret = decode_r8r8_2(instr, cmd);
-		break;
-	case 0x15:
-		cmd->id = H8300_INSN_XOR;
 		ret = decode_r8r8_2(instr, cmd);
 		break;
 	case H8300_BNOT_1:

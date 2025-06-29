@@ -118,3 +118,7 @@ d "sub.w #0x1111,r1" 79311111
 d "sub.l #0x11111111,er1" 7a3111111111
 d "sub.l er1,er2" 1a92
 d "trapa #0x1" 5710
+d "xor.w #0x1111,r1" 79511111
+d "xor.w r1,r2" 6512
+d "xor.l #0x11111111,er1" 7a5111111111
+d "xor.l er1,er2" 01f06512
