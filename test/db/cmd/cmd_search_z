@@ -1418,3 +1418,11 @@ WARNING: |ab| < search.str.min_length so some search hits may be hidden. Set sea
 [2K[0x00000000]> [0x00000000]> [2K[2K[0x00000000]> q[0x00000000]> q[2K[0x00000000]> q
 EOF
 RUN
+
+NAME=String search - log.show.sources
+FILE=--
+CMDS=!!rizin -1 -qc "e search.show_progress=0 search.str.min_length=4 log.show.sources=1; /z ¢€𐍈" = | sed "s/[0-9]/#/g"
+EXPECT=<<EOF
+WARNING: rz_core_print_warnings_after in ../librz/core/core.c:###: cmd_string_search_generic in ../librz/core/cmd/cmd_search.c:####: |¢€𐍈| < search.str.min_length so some search hits may be hidden. Set search.str.min_length to # to see them.
+EOF
+RUN
