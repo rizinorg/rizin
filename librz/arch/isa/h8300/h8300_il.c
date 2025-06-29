@@ -642,7 +642,7 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 			return R16_X(1, SUB(R16_OP(1), IMM_OP(0)));
 		default: NOT_IMPLEMENTED;
 		}
-	case H8300_INSN_OR: return op_logical2_formats(cmd, rz_il_op_new_log_or);
+	case H8300_INSN_OR_B: return op_logical2_formats(cmd, rz_il_op_new_log_or);
 	case H8300_INSN_XOR: return op_logical2_formats(cmd, rz_il_op_new_log_xor);
 	case H8300_INSN_AND_B: return op_logical2_formats(cmd, rz_il_op_new_log_and);
 	case H8300_INSN_AND_W:
@@ -742,12 +742,12 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 				IL_FALSE,
 				LSB(R8_OP(0))),
 			R8_X(0, VARL("result")));
-	case H8300_INSN_NEG:
+	case H8300_INSN_NEG_B:
 		return SEQ3(
 			SETL("result", NEG(R8_OP(0))),
 			ccr_sub_b(S8(0), R8_OP(0), IL_FALSE),
 			R8_X(0, VARL("result")));
-	case H8300_INSN_NOT:
+	case H8300_INSN_NOT_B:
 		return SEQ3(
 			SETL("result", LOGNOT(R8_OP(0))),
 			ccr_unary_NZV0(8, VARL("result")),

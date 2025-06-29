@@ -147,7 +147,7 @@ static int h8300_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	case H8300_INSN_MOVFPE: break;
 	case H8300_INSN_MOVTPE: break;
 	case H8300_INSN_CMP_L: break;
-	case H8300_INSN_OR: break;
+	case H8300_INSN_OR_B: break;
 	case H8300_INSN_SLEEP: break;
 	case H8300_INSN_STC: break;
 	case H8300_INSN_LDC_B: break;
@@ -163,8 +163,8 @@ static int h8300_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	case H8300_INSN_ROTR: break;
 	case H8300_INSN_ROTXL: break;
 	case H8300_INSN_ROTXR: break;
-	case H8300_INSN_NEG: break;
-	case H8300_INSN_NOT: break;
+	case H8300_INSN_NEG_B: break;
+	case H8300_INSN_NOT_B: break;
 	case H8300_INSN_DEC_B: break;
 	case H8300_INSN_DEC_W: break;
 	case H8300_INSN_DEC_L: break;
