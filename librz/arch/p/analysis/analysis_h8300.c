@@ -192,8 +192,8 @@ static int h8300_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	case H8300_INSN_BIOR: break;
 	case H8300_INSN_BIXOR: break;
 	case H8300_INSN_BLD: break;
-	case H8300_INSN_POP: break;
-	case H8300_INSN_PUSH: break;
+	case H8300_INSN_POP_W: break;
+	case H8300_INSN_PUSH_W: break;
 	}
 
 	if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {

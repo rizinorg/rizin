@@ -1037,12 +1037,12 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 			return ccr_set(CCR_C, XOR(INV(EXTRACTb(LOAD(ABS_OP(1)), BIT_NO)), ccr_val(CCR_C)));
 		default: NOT_IMPLEMENTED;
 		}
-	case H8300_INSN_POP:
+	case H8300_INSN_POP_W:
 		return SEQ3(
 			R16_X(0, LOADW(16, VARG("r7"))),
 			SETG("r7", ADD(VARG("r7"), U16(2))),
 			ccr_unary_NZV0(16, LOADW(16, VARG("r7"))));
-	case H8300_INSN_PUSH:
+	case H8300_INSN_PUSH_W:
 		return SEQ3(
 			SETG("r7", SUB(VARG("r7"), U16(2))),
 			STOREW(VARG("r7"), R16_OP(0)),

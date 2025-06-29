@@ -89,3 +89,5 @@ d "or.w #0x1111,r1" 79411111
 d "or.w r1,r2" 6412
 d "or.l #0x11111111,er1" 7a4111111111
 d "or.l er1,er2" 01f06412
+d "pop.l er1" 01006d71
+d "push.l er1" 01006df1

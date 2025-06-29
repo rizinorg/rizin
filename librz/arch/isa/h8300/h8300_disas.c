@@ -125,8 +125,10 @@ static const char *commands[] = {
 	[H8300_INSN_CMP_B] = "cmp.b",
 	[H8300_INSN_CMP_W] = "cmp.w",
 	[H8300_INSN_CMP_L] = "cmp.l",
-	[H8300_INSN_POP] = "pop",
-	[H8300_INSN_PUSH] = "push",
+	[H8300_INSN_POP_W] = "pop.w",
+	[H8300_INSN_POP_L] = "pop.l",
+	[H8300_INSN_PUSH_W] = "push.w",
+	[H8300_INSN_PUSH_L] = "push.l",
 };
 
 static const char *register8_names[] = {
@@ -429,10 +431,17 @@ static int decode_r32_2(const ut8 *bytes, struct h8300_cmd *cmd) {
 	return ret;
 }
 
-static int decode_r32_4(const ut8 *bytes, struct h8300_cmd *cmd) {
+static int decode_r32_4h(const ut8 *bytes, struct h8300_cmd *cmd) {
 	int ret = 4;
 	cmd->fmt = H8300_INSN_FORMAT_R32;
 	OPS_ADD(H8300_OP_R32, reg, r32_high(bytes[3]));
+	return ret;
+}
+
+static int decode_r32_4l(const ut8 *bytes, struct h8300_cmd *cmd) {
+	int ret = 4;
+	cmd->fmt = H8300_INSN_FORMAT_R32;
+	OPS_ADD(H8300_OP_R32, reg, r32_low(bytes[3]));
 	return ret;
 }
 
@@ -1008,16 +1017,15 @@ static int h8300_decode_4(const ut8 *instr, struct h8300_cmd *cmd) {
 	default:
 		break;
 	}
-
-	switch (x4 & 0xffffff00) {
-		CASE_F_F(decode_r8r16_4, 0x01d05100, DIVXS_B);
-		CASE_F_F(decode_r8r16_4, 0x01c05000, MULXS_B);
+	switch (x4 & 0xffffff8f) {
+		CASE_F_F_CCR(decode_r32_4h, 0x01406900, LDC_W);
+		CASE_F_F_CCR(decode_rinc_4, 0x01406d00, LDC_W);
 	default:
 		break;
 	}
-	switch (x4 & 0xffffff08) {
-		CASE_F_F(decode_r16r32_4, 0x01d05300, DIVXS_W);
-		CASE_F_F(decode_r16r32_4, 0x01c05200, MULXS_W);
+	switch (x4 & 0xfffffff8) {
+		CASE_F_F(decode_r32_4l, 0x01006d70, POP_L);
+		CASE_F_F(decode_r32_4l, 0x01006df0, PUSH_L);
 	default:
 		break;
 	}
@@ -1033,9 +1041,15 @@ static int h8300_decode_4(const ut8 *instr, struct h8300_cmd *cmd) {
 	default:
 		break;
 	}
-	switch (x4 & 0xffffff8f) {
-		CASE_F_F_CCR(decode_r32_4, 0x01406900, LDC_W);
-		CASE_F_F_CCR(decode_rinc_4, 0x01406d00, LDC_W);
+	switch (x4 & 0xffffff00) {
+		CASE_F_F(decode_r8r16_4, 0x01d05100, DIVXS_B);
+		CASE_F_F(decode_r8r16_4, 0x01c05000, MULXS_B);
+	default:
+		break;
+	}
+	switch (x4 & 0xffffff08) {
+		CASE_F_F(decode_r16r32_4, 0x01d05300, DIVXS_W);
+		CASE_F_F(decode_r16r32_4, 0x01c05200, MULXS_W);
 	default:
 		break;
 	}
@@ -1103,8 +1117,8 @@ static int h8300_decode_2(const ut8 *instr, struct h8300_cmd *cmd) {
 	}
 
 	switch (x2 & 0xfff8) {
-		CASE_F_F(decode_r16_2, 0x6d70, POP);
-		CASE_F_F(decode_r16_2, 0x6df0, PUSH);
+		CASE_F_F(decode_r16_2, 0x6d70, POP_W);
+		CASE_F_F(decode_r16_2, 0x6df0, PUSH_W);
 
 		CASE_F_F(decode_i16r16_4, 0x7900, MOV_W);
 		CASE_F_F(decode_abs16r8_4, 0x6b00, MOV_W);
