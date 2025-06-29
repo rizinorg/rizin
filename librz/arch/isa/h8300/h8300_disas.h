@@ -251,6 +251,7 @@ typedef enum h8300_insn_id {
 	H8300_INSN_PUSH_W,
 	H8300_INSN_POP_L,
 	H8300_INSN_PUSH_L,
+	H8300_INSN_TRAPA,
 } H8300InsnId;
 
 typedef enum {

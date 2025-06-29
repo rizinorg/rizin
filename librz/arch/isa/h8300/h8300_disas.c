@@ -147,6 +147,7 @@ static const char *commands[] = {
 	[H8300_INSN_POP_L] = "pop.l",
 	[H8300_INSN_PUSH_W] = "push.w",
 	[H8300_INSN_PUSH_L] = "push.l",
+	[H8300_INSN_TRAPA] = "trapa",
 };
 
 static const char *register8_names[] = {
@@ -432,6 +433,14 @@ static int decode_i16r16_4(const ut8 *bytes, struct h8300_cmd *cmd) {
 	cmd->fmt = H8300_INSN_FORMAT_IMMR16;
 	OPS_ADD(H8300_OP_IMM, imm, imm);
 	OPS_ADD(H8300_OP_R16, reg, bytes[1] & 0x7);
+	return ret;
+}
+
+static int decode_i2_2(const ut8 *bytes, struct h8300_cmd *cmd) {
+	int ret = 2;
+	cmd->fmt = H8300_INSN_FORMAT_IMM;
+	ut8 i2 = (bytes[1] >> 4) & 0x3;
+	OPS_ADD(H8300_OP_IMM, imm, i2);
 	return ret;
 }
 
@@ -1100,6 +1109,11 @@ static int h8300_decode_4(const ut8 *instr, struct h8300_cmd *cmd) {
 static int h8300_decode_2(const ut8 *instr, struct h8300_cmd *cmd) {
 	ut32 x2 = rz_read_be16(instr);
 
+	switch (x2 & 0xffcf) {
+		CASE_F_F(decode_i2_2, 0x5700, TRAPA);
+	default: break;
+	}
+
 	switch (instr[0] >> 4) {
 		CASE_F_F(decode_abs8r8_2, 0x2, MOV_B);
 		CASE_F_F(decode_r8abs8_2, 0x3, MOV_B);
@@ -1110,7 +1124,7 @@ static int h8300_decode_2(const ut8 *instr, struct h8300_cmd *cmd) {
 		CASE_F_F(decode_i8r8, 0x8, ADD_B);
 		CASE_F_F(decode_i8r8, 0xa, CMP_B);
 		CASE_F_F(decode_i8r8, 0xc, OR_B);
-		CASE_F_F(decode_i8r8, H8300_SUBX_4BIT, SUBX);
+		CASE_F_F(decode_i8r8, 0xb, SUBX);
 		CASE_F_F(decode_i8r8, H8300_XOR_4BIT, XOR);
 	default: break;
 	}
@@ -1244,6 +1258,8 @@ static int h8300_decode_2(const ut8 *instr, struct h8300_cmd *cmd) {
 		CASE_F_F(decode_r8r8_2, 0x14, OR_B);
 		CASE_F_F(decode_r16r16_2, 0x64, OR_W);
 
+		CASE_F_F(decode_r8r8_2, 0x1e, SUBX);
+
 	case H8300_ANDC:
 		cmd->id = H8300_INSN_ANDC;
 		ret = decode_i8ccr(instr, cmd);
@@ -1259,10 +1275,6 @@ static int h8300_decode_2(const ut8 *instr, struct h8300_cmd *cmd) {
 		CASE_F_F(decode_r8r8_2, 0x66, AND_W);
 	case 0x62:
 		cmd->id = H8300_INSN_BCLR;
-		ret = decode_r8r8_2(instr, cmd);
-		break;
-	case H8300_SUBX:
-		cmd->id = H8300_INSN_SUBX;
 		ret = decode_r8r8_2(instr, cmd);
 		break;
 	case 0x0e:
