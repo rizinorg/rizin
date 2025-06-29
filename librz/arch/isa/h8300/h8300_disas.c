@@ -37,6 +37,7 @@ static const char *commands[] = {
 	[H8300_INSN_ADDX] = "addx",
 	[H8300_INSN_SUB_B] = "sub.b",
 	[H8300_INSN_SUB_W] = "sub.w",
+	[H8300_INSN_SUB_L] = "sub.l",
 	[H8300_INSN_BNOT] = "bnot",
 	[H8300_INSN_BSET] = "bset",
 	[H8300_INSN_BCLR] = "bclr",
@@ -904,6 +905,7 @@ static int h8300_decode_6(const ut8 *instr, struct h8300_cmd *cmd) {
 	ut32 x2 = rz_read_be16(instr);
 	switch (x2 & 0xfff8) {
 		CASE_F_F(decode_i32r32_6, 0x7a10, ADD_L);
+		CASE_F_F(decode_i32r32_6, 0x7a30, SUB_L);
 		CASE_F_F(decode_i32r32_6, 0x7a60, AND_L);
 		CASE_F_F(decode_i32r32_6, 0x7a20, CMP_L);
 		CASE_F_F(decode_i32r32_6, 0x7a00, MOV_L);
@@ -974,6 +976,7 @@ static int h8300_decode_4(const ut8 *instr, struct h8300_cmd *cmd) {
 	switch (x2 & 0xfff0) {
 		CASE_F_F(decode_i16r16_4, 0x7960, AND_W);
 		CASE_F_F(decode_i16r16_4, 0x7910, ADD_W);
+		CASE_F_F(decode_i16r16_4, 0x7930, SUB_W);
 		CASE_F_F(decode_i16r16_4, 0x7920, CMP_W);
 		CASE_F_F(decode_i16r16_4, 0x7940, OR_W);
 
@@ -1199,6 +1202,7 @@ static int h8300_decode_2(const ut8 *instr, struct h8300_cmd *cmd) {
 
 	switch (x2 & 0xff88) {
 		CASE_F_F(decode_r32r32_2, 0x0a80, ADD_L);
+		CASE_F_F(decode_r32r32_2, 0x1a80, SUB_L);
 		CASE_F_F(decode_r32r32_2, 0x1f80, CMP_L);
 		CASE_F_F(decode_r32r32_2, 0x0f80, MOV_L);
 	default:
@@ -1234,6 +1238,9 @@ static int h8300_decode_2(const ut8 *instr, struct h8300_cmd *cmd) {
 		CASE_F_F(decode_r16r16_2, 0x09, ADD_W);
 		CASE_F_F(decode_r16r32_2, 0x52, MULXU_W);
 
+		CASE_F_F(decode_r8r8_2, 0x18, SUB_B);
+		CASE_F_F(decode_r16r16_2, 0x19, SUB_W);
+
 		CASE_F_F(decode_r8r8_2, 0x14, OR_B);
 		CASE_F_F(decode_r16r16_2, 0x64, OR_W);
 
@@ -1252,10 +1259,6 @@ static int h8300_decode_2(const ut8 *instr, struct h8300_cmd *cmd) {
 		CASE_F_F(decode_r8r8_2, 0x66, AND_W);
 	case 0x62:
 		cmd->id = H8300_INSN_BCLR;
-		ret = decode_r8r8_2(instr, cmd);
-		break;
-	case H8300_SUB_1:
-		cmd->id = H8300_INSN_SUB_B;
 		ret = decode_r8r8_2(instr, cmd);
 		break;
 	case H8300_SUBX:
@@ -1365,10 +1368,6 @@ static int h8300_decode_2(const ut8 *instr, struct h8300_cmd *cmd) {
 	case H8300_XORC:
 		cmd->id = H8300_INSN_XORC;
 		ret = decode_i8ccr(instr, cmd);
-		break;
-	case H8300_SUB_W:
-		cmd->id = H8300_INSN_SUB_W;
-		ret = decode_r16r16_2(instr, cmd);
 		break;
 	case 0x0d:
 		cmd->id = H8300_INSN_MOV_W;
