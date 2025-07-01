@@ -38,14 +38,20 @@ static int h8300_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	case H8300_INSN_MOV_L:
 	case H8300_INSN_EEPMOV_B:
 	case H8300_INSN_EEPMOV_W:
+	case H8300_INSN_MOVFPE:
+	case H8300_INSN_MOVTPE:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		break;
 	case H8300_INSN_LDC_B:
 	case H8300_INSN_LDC_W:
+	case H8300_INSN_BLD:
+	case H8300_INSN_BILD:
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		break;
 	case H8300_INSN_STC_B:
 	case H8300_INSN_STC_W:
+	case H8300_INSN_BST:
+	case H8300_INSN_BIST:
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 		break;
 	case H8300_INSN_CMP_B:
@@ -57,6 +63,9 @@ static int h8300_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	case H8300_INSN_AND_B:
 	case H8300_INSN_AND_W:
 	case H8300_INSN_AND_L:
+	case H8300_INSN_ANDC:
+	case H8300_INSN_BAND:
+	case H8300_INSN_BIAND:
 		op->type = RZ_ANALYSIS_OP_TYPE_AND;
 		break;
 	case H8300_INSN_RTS:
@@ -87,16 +96,16 @@ static int h8300_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	case H8300_INSN_XOR_W:
 	case H8300_INSN_XOR_L:
 	case H8300_INSN_XORC:
+	case H8300_INSN_BXOR:
+	case H8300_INSN_BIXOR:
 		op->type = RZ_ANALYSIS_OP_TYPE_XOR;
-		break;
-	case H8300_INSN_ANDC:
-	case H8300_INSN_BAND:
-		op->type = RZ_ANALYSIS_OP_TYPE_AND;
 		break;
 	case H8300_INSN_OR_B:
 	case H8300_INSN_OR_W:
 	case H8300_INSN_OR_L:
 	case H8300_INSN_ORC:
+	case H8300_INSN_BOR:
+	case H8300_INSN_BIOR:
 		op->type = RZ_ANALYSIS_OP_TYPE_OR;
 		break;
 	case H8300_INSN_ADD_B:
@@ -104,6 +113,10 @@ static int h8300_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	case H8300_INSN_ADD_L:
 	case H8300_INSN_ADDS:
 	case H8300_INSN_ADDX:
+	case H8300_INSN_INC_B:
+	case H8300_INSN_INC_W:
+	case H8300_INSN_INC_L:
+	case H8300_INSN_DAA:
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		break;
 	case H8300_INSN_SUB_B:
@@ -111,10 +124,16 @@ static int h8300_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	case H8300_INSN_SUB_L:
 	case H8300_INSN_SUBS:
 	case H8300_INSN_SUBX:
+	case H8300_INSN_DEC_B:
+	case H8300_INSN_DEC_W:
+	case H8300_INSN_DEC_L:
+	case H8300_INSN_DAS:
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 		break;
 	case H8300_INSN_MULXU_B:
 	case H8300_INSN_MULXU_W:
+	case H8300_INSN_MULXS_B:
+	case H8300_INSN_MULXS_W:
 		op->type = RZ_ANALYSIS_OP_TYPE_MUL;
 		break;
 	case H8300_INSN_DIVXS_B:
@@ -125,6 +144,10 @@ static int h8300_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 		break;
 	case H8300_INSN_NOP:
 		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
+		break;
+	case H8300_INSN_BSR:
+		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
+		op->jump = cmd.pc + cmd.size + INS_OP(0).disp;
 		break;
 	case H8300_INSN_JSR:
 	case H8300_INSN_JMP:
@@ -164,10 +187,59 @@ static int h8300_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	case H8300_INSN_BLE:
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 		op->jump = addr + cmd.size + INS_OP(0).disp;
-		op->fail = addr + +cmd.size;
+		op->fail = addr + cmd.size;
 		break;
+	case H8300_INSN_ROTR_B:
+	case H8300_INSN_ROTXR_B:
+	case H8300_INSN_ROTR_W:
+	case H8300_INSN_ROTXR_W:
+	case H8300_INSN_ROTR_L:
+	case H8300_INSN_ROTXR_L:
+		op->type = RZ_ANALYSIS_OP_TYPE_ROR;
+		break;
+	case H8300_INSN_ROTL_B:
+	case H8300_INSN_ROTL_W:
+	case H8300_INSN_ROTL_L:
+	case H8300_INSN_ROTXL_B:
+	case H8300_INSN_ROTXL_W:
+	case H8300_INSN_ROTXL_L:
+		op->type = RZ_ANALYSIS_OP_TYPE_ROL;
+		break;
+	case H8300_INSN_NEG_B:
+	case H8300_INSN_NEG_W:
+	case H8300_INSN_NEG_L:
+	case H8300_INSN_NOT_B:
+	case H8300_INSN_NOT_W:
+	case H8300_INSN_NOT_L:
+	case H8300_INSN_BNOT:
+		op->type = RZ_ANALYSIS_OP_TYPE_NOT;
+		break;
+	case H8300_INSN_EXTS_W:
+	case H8300_INSN_EXTS_L:
+		op->type = RZ_ANALYSIS_OP_TYPE_CAST;
+		break;
+	case H8300_INSN_EXTU_W:
+	case H8300_INSN_EXTU_L:
+		op->type = RZ_ANALYSIS_OP_TYPE_CAST;
+		break;
+	case H8300_INSN_POP_W:
+	case H8300_INSN_POP_L:
+		op->type = RZ_ANALYSIS_OP_TYPE_POP;
+		break;
+	case H8300_INSN_PUSH_W:
+	case H8300_INSN_PUSH_L:
+		op->type = RZ_ANALYSIS_OP_TYPE_PUSH;
+		break;
+	case H8300_INSN_TRAPA:
+		op->type = RZ_ANALYSIS_OP_TYPE_TRAP;
+		break;
+	case H8300_INSN_SLEEP:
+	case H8300_INSN_BSET:
+	case H8300_INSN_BCLR:
+		op->type = RZ_ANALYSIS_OP_TYPE_UNK;
+		break;
+
 	case H8300_INSN_INVALID: break;
-	default: break;
 	}
 
 	if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
