@@ -150,7 +150,7 @@ static RzILOpEffect *ccr_unary_NZV(ut8 N, RzILOpPure *x, RzILOpBool *v) {
 static RzILOpEffect *ccr_unary_NZVC(ut8 N, RzILOpPure *x, RzILOpBool *v, RzILOpBool *c) {
 	return SEQ2(
 		ccr_unary_NZV(N, x, v),
-		ccr_unary_NZ(N, DUP(x)));
+		ccr_set(CCR_C, c));
 }
 
 #define ccr_unary_NZV0(N, X) ccr_unary_NZV(N, X, IL_FALSE)
