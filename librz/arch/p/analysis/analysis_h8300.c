@@ -13,38 +13,7 @@
 
 #include <h8300/h8300_disas.h>
 
-static void h8300_analysis_jmp(RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
-	switch (buf[0]) {
-	case H8300_JMP_1:
-		op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
-		break;
-	case H8300_JMP_2:
-		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
-		op->jump = rz_read_at_be16(buf, 2);
-		break;
-	case H8300_JMP_3:
-		op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
-		op->jump = buf[1];
-		break;
-	}
-}
-
-static void h8300_analysis_jsr(RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
-	switch (buf[0]) {
-	case H8300_JSR_1:
-		op->type = RZ_ANALYSIS_OP_TYPE_UCALL;
-		break;
-	case H8300_JSR_2:
-		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
-		op->jump = rz_read_at_be16(buf, 2);
-		op->fail = addr + 4;
-		break;
-	case H8300_JSR_3:
-		op->type = RZ_ANALYSIS_OP_TYPE_UCALL;
-		op->jump = buf[1];
-		break;
-	}
-}
+#define INS_OP(I) (cmd.ops[(I)])
 
 static int h8300_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	const ut8 *buf, int len, RzAnalysisOpMask mask) {
@@ -66,12 +35,22 @@ static int h8300_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	switch (cmd.id) {
 	case H8300_INSN_MOV_B:
 	case H8300_INSN_MOV_W:
+	case H8300_INSN_MOV_L:
 	case H8300_INSN_EEPMOV_B:
 	case H8300_INSN_EEPMOV_W:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		break;
+	case H8300_INSN_LDC_B:
+	case H8300_INSN_LDC_W:
+		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
+		break;
+	case H8300_INSN_STC_B:
+	case H8300_INSN_STC_W:
+		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
+		break;
 	case H8300_INSN_CMP_B:
 	case H8300_INSN_CMP_W:
+	case H8300_INSN_CMP_L:
 	case H8300_INSN_BTST:
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 		break;
@@ -81,23 +60,44 @@ static int h8300_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 		op->type = RZ_ANALYSIS_OP_TYPE_AND;
 		break;
 	case H8300_INSN_RTS:
+	case H8300_INSN_RTE:
 		op->type = RZ_ANALYSIS_OP_TYPE_RET;
 		break;
 	case H8300_INSN_SHAL_B:
-		op->type = RZ_ANALYSIS_OP_TYPE_SHL;
+	case H8300_INSN_SHAL_W:
+	case H8300_INSN_SHAL_L:
+		op->type = RZ_ANALYSIS_OP_TYPE_SAL;
 		break;
 	case H8300_INSN_SHAR_B:
+	case H8300_INSN_SHAR_W:
+	case H8300_INSN_SHAR_L:
+		op->type = RZ_ANALYSIS_OP_TYPE_SAR;
+		break;
+	case H8300_INSN_SHLL_B:
+	case H8300_INSN_SHLL_W:
+	case H8300_INSN_SHLL_L:
+		op->type = RZ_ANALYSIS_OP_TYPE_SHL;
+		break;
+	case H8300_INSN_SHLR_B:
+	case H8300_INSN_SHLR_W:
+	case H8300_INSN_SHLR_L:
 		op->type = RZ_ANALYSIS_OP_TYPE_SHR;
 		break;
 	case H8300_INSN_XOR_B:
+	case H8300_INSN_XOR_W:
+	case H8300_INSN_XOR_L:
 	case H8300_INSN_XORC:
 		op->type = RZ_ANALYSIS_OP_TYPE_XOR;
 		break;
-	case H8300_INSN_MULXU_B:
-		op->type = RZ_ANALYSIS_OP_TYPE_MUL;
-		break;
 	case H8300_INSN_ANDC:
+	case H8300_INSN_BAND:
 		op->type = RZ_ANALYSIS_OP_TYPE_AND;
+		break;
+	case H8300_INSN_OR_B:
+	case H8300_INSN_OR_W:
+	case H8300_INSN_OR_L:
+	case H8300_INSN_ORC:
+		op->type = RZ_ANALYSIS_OP_TYPE_OR;
 		break;
 	case H8300_INSN_ADD_B:
 	case H8300_INSN_ADD_W:
@@ -108,18 +108,43 @@ static int h8300_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 		break;
 	case H8300_INSN_SUB_B:
 	case H8300_INSN_SUB_W:
+	case H8300_INSN_SUB_L:
 	case H8300_INSN_SUBS:
 	case H8300_INSN_SUBX:
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
+		break;
+	case H8300_INSN_MULXU_B:
+	case H8300_INSN_MULXU_W:
+		op->type = RZ_ANALYSIS_OP_TYPE_MUL;
+		break;
+	case H8300_INSN_DIVXS_B:
+	case H8300_INSN_DIVXS_W:
+	case H8300_INSN_DIVXU_B:
+	case H8300_INSN_DIVXU_W:
+		op->type = RZ_ANALYSIS_OP_TYPE_DIV;
 		break;
 	case H8300_INSN_NOP:
 		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 		break;
 	case H8300_INSN_JSR:
-		h8300_analysis_jsr(op, addr, buf);
-		break;
 	case H8300_INSN_JMP:
-		h8300_analysis_jmp(op, addr, buf);
+		switch (cmd.fmt) {
+		case H8300_INSN_FORMAT_RI:
+			op->type = RZ_ANALYSIS_OP_TYPE_IRJMP;
+			op->ireg = h8300_get_register32_name(INS_OP(0).reg);
+			break;
+		case H8300_INSN_FORMAT_ABS:
+			op->type = RZ_ANALYSIS_OP_TYPE_JMP;
+			op->jump = INS_OP(0).imm;
+			break;
+		case H8300_INSN_FORMAT_MI8:
+			op->type = RZ_ANALYSIS_OP_TYPE_MJMP;
+			op->ptr = INS_OP(0).imm;
+			op->disp = INS_OP(0).imm;
+			break;
+		default: break;
+		}
+		op->fail = addr + cmd.size;
 		break;
 	case H8300_INSN_BRA:
 	case H8300_INSN_BRN:
@@ -138,15 +163,15 @@ static int h8300_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	case H8300_INSN_BGT:
 	case H8300_INSN_BLE:
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-		op->jump = addr + 2 + (st8)(buf[1]);
-		op->fail = addr + 2;
+		op->jump = addr + cmd.size + INS_OP(0).disp;
+		op->fail = addr + +cmd.size;
 		break;
 	case H8300_INSN_INVALID: break;
 	default: break;
 	}
 
 	if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
-		op->mnemonic = rz_str_newf("%s%s%s", cmd.instr, RZ_STR_ISEMPTY(cmd.operands) ? "" : " ", cmd.operands);
+		op->mnemonic = rz_str_newf("%s%s%s", cmd.instr, RZ_STR_ISEMPTY(cmd.ops_str) ? "" : " ", cmd.ops_str);
 	}
 
 	if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
@@ -210,6 +235,16 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 	return rz_str_dup(p);
 }
 
+static RzList /*<RzSearchKeyword *>*/ *h8300_preludes(RzAnalysis *analysis) {
+#define KW(d, m) rz_list_append(kws, rz_search_keyword_new_hexmask(d, m))
+	RzList *kws = rz_list_newf((RzListFree)rz_search_keyword_free);
+	if (!kws) {
+		return kws;
+	}
+	KW("01006df6", "ffffffff");
+	return kws;
+}
+
 RzAnalysisPlugin rz_analysis_plugin_h8300 = {
 	.name = "h8300",
 	.desc = "H8300 code analysis plugin",
@@ -220,4 +255,5 @@ RzAnalysisPlugin rz_analysis_plugin_h8300 = {
 	.esil = true,
 	.get_reg_profile = get_reg_profile,
 	.il_config = h8300_il_config,
+	.preludes = h8300_preludes,
 };

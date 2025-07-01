@@ -339,11 +339,11 @@ typedef struct {
 
 typedef struct h8300_cmd {
 	char instr[H8300_INSTR_MAXLEN];
-	char operands[H8300_INSTR_MAXLEN];
+	char ops_str[H8300_INSTR_MAXLEN];
 	H8300InsnId id;
 	H8300InsnFormat fmt;
 	H8300Operand ops[H8300_OPERAND_MAX];
-	ut8 operand_count;
+	ut8 ops_count;
 	ut8 size;
 	ut64 pc;
 } H8300Cmd;

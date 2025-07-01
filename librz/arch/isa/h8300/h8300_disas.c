@@ -7,17 +7,17 @@
 
 #define OPS_ADD(T, F, X) \
 	do { \
-		cmd->ops[cmd->operand_count].typ = T; \
-		cmd->ops[cmd->operand_count].F = (X); \
-		cmd->operand_count++; \
+		cmd->ops[cmd->ops_count].typ = T; \
+		cmd->ops[cmd->ops_count].F = (X); \
+		cmd->ops_count++; \
 	} while (0)
 
 #define OPS_ADD_EXT2(T, F, F1, F2, X1, X2) \
 	do { \
-		cmd->ops[cmd->operand_count].typ = T; \
-		cmd->ops[cmd->operand_count].F.F1 = (X1); \
-		cmd->ops[cmd->operand_count].F.F2 = (X2); \
-		cmd->operand_count++; \
+		cmd->ops[cmd->ops_count].typ = T; \
+		cmd->ops[cmd->ops_count].F.F1 = (X1); \
+		cmd->ops[cmd->ops_count].F.F2 = (X2); \
+		cmd->ops_count++; \
 	} while (0)
 
 static const char *commands[] = {
@@ -270,57 +270,57 @@ static ut8 r32_high(ut8 x) {
 }
 
 static void decode_operands(struct h8300_cmd *cmd) {
-	for (int i = 0; i < cmd->operand_count; ++i) {
+	for (int i = 0; i < cmd->ops_count; ++i) {
 		H8300Operand *op = cmd->ops + i;
 		switch (op->typ) {
 		case H8300_OP_NONE: break;
 		case H8300_OP_R8:
-			rz_str_cat(cmd->operands, register8_names[op->reg]);
+			rz_str_cat(cmd->ops_str, register8_names[op->reg]);
 			break;
 		case H8300_OP_R16:
-			rz_str_cat(cmd->operands, register16_names[op->reg]);
+			rz_str_cat(cmd->ops_str, register16_names[op->reg]);
 			break;
 		case H8300_OP_R32:
-			rz_str_cat(cmd->operands, register32_names[op->reg]);
+			rz_str_cat(cmd->ops_str, register32_names[op->reg]);
 			break;
 		case H8300_OP_CCR:
-			rz_str_cat(cmd->operands, "ccr");
+			rz_str_cat(cmd->ops_str, "ccr");
 			break;
 		case H8300_OP_IMM:
-			snprintf(cmd->operands + strlen(cmd->operands), RZ_ARRAY_SIZE(cmd->operands),
+			snprintf(cmd->ops_str + strlen(cmd->ops_str), RZ_ARRAY_SIZE(cmd->ops_str),
 				"#%#x", op->imm);
 			break;
 		case H8300_OP_ABS:
-			snprintf(cmd->operands + strlen(cmd->operands), RZ_ARRAY_SIZE(cmd->operands),
+			snprintf(cmd->ops_str + strlen(cmd->ops_str), RZ_ARRAY_SIZE(cmd->ops_str),
 				"@%#x", op->imm);
 			break;
 		case H8300_OP_PCREL:
-			snprintf(cmd->operands + strlen(cmd->operands), RZ_ARRAY_SIZE(cmd->operands),
+			snprintf(cmd->ops_str + strlen(cmd->ops_str), RZ_ARRAY_SIZE(cmd->ops_str),
 				".%+d", op->disp);
 			break;
 		case H8300_OP_MI8:
-			snprintf(cmd->operands + strlen(cmd->operands), RZ_ARRAY_SIZE(cmd->operands),
+			snprintf(cmd->ops_str + strlen(cmd->ops_str), RZ_ARRAY_SIZE(cmd->ops_str),
 				"@@%x:8", op->imm);
 			break;
 		case H8300_OP_RD:
-			snprintf(cmd->operands + strlen(cmd->operands), RZ_ARRAY_SIZE(cmd->operands),
+			snprintf(cmd->ops_str + strlen(cmd->ops_str), RZ_ARRAY_SIZE(cmd->ops_str),
 				"@(%+d,%s)", op->rd.disp, register32_names[op->rd.reg]);
 			break;
 		case H8300_OP_RI:
-			snprintf(cmd->operands + strlen(cmd->operands), RZ_ARRAY_SIZE(cmd->operands),
+			snprintf(cmd->ops_str + strlen(cmd->ops_str), RZ_ARRAY_SIZE(cmd->ops_str),
 				"@%s", register32_names[op->reg]);
 			break;
 		case H8300_OP_RINC:
-			snprintf(cmd->operands + strlen(cmd->operands), RZ_ARRAY_SIZE(cmd->operands),
+			snprintf(cmd->ops_str + strlen(cmd->ops_str), RZ_ARRAY_SIZE(cmd->ops_str),
 				"@%s+", register32_names[op->reg]);
 			break;
 		case H8300_OP_RDEC:
-			snprintf(cmd->operands + strlen(cmd->operands), RZ_ARRAY_SIZE(cmd->operands),
+			snprintf(cmd->ops_str + strlen(cmd->ops_str), RZ_ARRAY_SIZE(cmd->ops_str),
 				"@-%s", register32_names[op->reg]);
 			break;
 		}
-		if (cmd->operand_count > 1 && i < cmd->operand_count - 1) {
-			rz_str_cat(cmd->operands, ",");
+		if (cmd->ops_count > 1 && i < cmd->ops_count - 1) {
+			rz_str_cat(cmd->ops_str, ",");
 		}
 	}
 }
