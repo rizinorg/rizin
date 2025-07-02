@@ -28,7 +28,7 @@
 #define RZ_TEST_ARCH "x64"
 #elif __arm__
 #define RZ_TEST_ARCH "arm"
-#elif __arm64__
+#elif __arm64__ || __aarch64__
 #define RZ_TEST_ARCH "arm64"
 #elif __powerpc__ || __powerpc64__
 #define RZ_TEST_ARCH "ppc"
