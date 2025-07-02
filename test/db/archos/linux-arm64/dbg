@@ -8,9 +8,9 @@ EOF
 EXPECT=<<EOF
 stp fp, lr, [sp, -0x10]!
 mov fp, sp
-adrp x0, sym..comment
-add x0, x0, 0x790
-bl sym.imp.printf
+adrp x0, 0x457000
+add x0, x0, 0xf8
+bl sym.__printf
 mov w0, 0
 ldp fp, lr, [sp], 0x10
 ret
@@ -21,12 +21,11 @@ NAME=maps
 FILE=bins/arm/elf/hello-linux-arm64
 ARGS=-d
 CMDS=<<EOF
-dm~hello~[3-]
+dm~hello~[3-8]
 EOF
 EXPECT=<<EOF
-* usr 4K s r-x /home/travis/build/rizinorg/rizin-testbins/hello-linux-arm64
-- usr 4K s r-- /home/travis/build/rizinorg/rizin-testbins/hello-linux-arm64
-- usr 4K s rw- /home/travis/build/rizinorg/rizin-testbins/hello-linux-arm64
+* usr 500K s r-x /home/travis/build/rizinorg/rizin/test/bins/arm/elf/hello-linux-arm64
+- usr 28K s rw- /home/travis/build/rizinorg/rizin/test/bins/arm/elf/hello-linux-arm64
 EOF
 RUN
 
@@ -42,8 +41,8 @@ ds
 dr x8
 EOF
 EXPECT=<<EOF
-x8 = 0x00000000000000d7
-x8 = 0x00000000000000d7
+x8 = 0x00000000000000e2
+x8 = 0x00000000000000e2
 EOF
 RUN
 
@@ -58,7 +57,7 @@ dr x8 = 0x1234
 dr x8
 EOF
 EXPECT=<<EOF
-x8 = 0x00000000000000d7
+x8 = 0x00000000000000e2
 x8 = 0x0000000000001234
 EOF
 RUN
@@ -78,10 +77,10 @@ pd 1~[1-]
 EOF
 EXPECT=<<EOF
 pc:
-b add x0 x0 0x790
-bl sym.imp.printf
+b add x0 x0 0xf8
+bl sym.__printf
 pc:
-bl sym.imp.printf
+bl sym.__printf
 mov w0 0
 x30:
 pc:
