@@ -602,7 +602,7 @@ static bool add_comment(void *user, const ut64 key, const void *v) {
 			first = false;
 			continue;
 		}
-		comment = rz_str_append(comment, rz_str_newf("\nVirtual Call : %s", vfunc_name));
+		comment = rz_str_append(comment, rz_str_newf(" / %s", vfunc_name));
 	}
 
 	rz_core_meta_comment_add(core, comment, key);

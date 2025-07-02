@@ -1,0 +1,605 @@
+NAME=cxx class analysis simple (x86-64)
+FILE=bins/elf/analysis/x86-class-C
+CMDS=<<EOF
+aaaa
+avD @ main
+pdf @ main
+EOF
+EXPECT=<<EOF
+            ; DATA XREF from sym._start_c @ 0x40074b
+            ;-- rip:
+/ int main(int argc, char **argv, char **envp);
+|           ; var struct C *var_20h @ stack - 0x20
+|           0x0040088d      push  rbp
+|           0x0040088e      mov   rbp, rsp
+|           0x00400891      push  rbx
+|           0x00400892      sub   rsp, 0x18
+|           0x00400896      mov   edi, 0x10                            ; 16
+|           0x0040089b      call  sym.imp.operator_new_unsigned_long
+|           0x004008a0      mov   rbx, rax
+|           0x004008a3      mov   esi, 0x05                            ; int64_t arg2
+|           0x004008a8      mov   rdi, rbx                             ; int64_t arg1
+|           0x004008ab      call  method.C.C_int                       ;  method.C.C_int(int64_t arg1, int64_t arg2)
+|           0x004008b0      mov   qword [var_20h], rbx
+|           0x004008b4      mov   rax, qword [var_20h]
+|           0x004008b8      mov   rax, qword [rax]
+|           0x004008bb      mov   rdx, qword [rax]
+|           0x004008be      mov   rax, qword [var_20h]
+|           0x004008c2      mov   rdi, rax
+|           0x004008c5      call  rdx                                  ; Virtual Call : method.C.print
+|           0x004008c7      mov   eax, 0x00
+|           0x004008cc      add   rsp, 0x18
+|           0x004008d0      pop   rbx
+|           0x004008d1      pop   rbp
+\           0x004008d2      ret
+EOF
+RUN
+
+NAME=cxx class analysis for inherited classes (x86-64)
+FILE=bins/elf/analysis/x86-class-inherit
+CMDS=<<EOF
+aaaa
+avD @ main
+pdf @ main
+EOF
+EXPECT=<<EOF
+            ; DATA XREF from sym._start_c @ 0x40096b
+            ;-- rip:
+/ int main(int argc, char **argv, char **envp);
+|           ; var struct Human *var_30h @ stack - 0x30
+|           ; var struct Cat *var_28h @ stack - 0x28
+|           ; var struct Dog *var_20h @ stack - 0x20
+|           0x00400aad      push  rbp
+|           0x00400aae      mov   rbp, rsp
+|           0x00400ab1      push  r12
+|           0x00400ab3      push  rbx
+|           0x00400ab4      sub   rsp, 0x20
+|           0x00400ab8      mov   edi, 0x08
+|           0x00400abd      call  sym.imp.operator_new_unsigned_long
+|           0x00400ac2      mov   rbx, rax
+|           0x00400ac5      mov   rdi, rbx                             ; int64_t arg1
+|           0x00400ac8      call  method.Dog.Dog                       ;  method.Dog.Dog(int64_t arg1)
+|           0x00400acd      mov   qword [var_20h], rbx
+|           0x00400ad1      mov   rax, qword [var_20h]
+|           0x00400ad5      mov   rax, qword [rax]
+|           0x00400ad8      add   rax, 0x10                            ; 16
+|           0x00400adc      mov   rdx, qword [rax]
+|           0x00400adf      mov   rax, qword [var_20h]
+|           0x00400ae3      mov   rdi, rax
+|           0x00400ae6      call  rdx                                  ; Virtual Call : method.Dog.run
+|           0x00400ae8      mov   edi, 0x08
+|           0x00400aed      call  sym.imp.operator_new_unsigned_long
+|           0x00400af2      mov   rbx, rax
+|           0x00400af5      mov   rdi, rbx                             ; int64_t arg1
+|           0x00400af8      call  method.Cat.Cat                       ;  method.Cat.Cat(int64_t arg1)
+|           0x00400afd      mov   qword [var_28h], rbx
+|           0x00400b01      mov   rax, qword [var_28h]
+|           0x00400b05      mov   rax, qword [rax]
+|           0x00400b08      add   rax, 0x10                            ; 16
+|           0x00400b0c      mov   rdx, qword [rax]
+|           0x00400b0f      mov   rax, qword [var_28h]
+|           0x00400b13      mov   rdi, rax
+|           0x00400b16      call  rdx                                  ; Virtual Call : method.Cat.run
+|           0x00400b18      mov   edi, 0x08
+|           0x00400b1d      call  sym.imp.operator_new_unsigned_long
+|           0x00400b22      mov   rbx, rax
+|           0x00400b25      mov   rdi, rbx                             ; int64_t arg1
+|           0x00400b28      call  method.Human.Human                   ;  method.Human.Human(int64_t arg1)
+|           0x00400b2d      mov   qword [var_30h], rbx
+|           0x00400b31      mov   rax, qword [var_30h]
+|           0x00400b35      mov   rax, qword [rax]
+|           0x00400b38      add   rax, 0x10                            ; 16
+|           0x00400b3c      mov   rdx, qword [rax]
+|           0x00400b3f      mov   rax, qword [var_30h]
+|           0x00400b43      mov   rdi, rax
+|           0x00400b46      call  rdx                                  ; Virtual Call : method.Human.run
+|           0x00400b48      mov   rax, qword [var_20h]
+|           0x00400b4c      test  rax, rax
+|       ,=< 0x00400b4f      jz    0x400b60
+|       |   0x00400b51      mov   rdx, qword [rax]
+|       |   0x00400b54      add   rdx, 0x08
+|       |   0x00400b58      mov   rdx, qword [rdx]
+|       |   0x00400b5b      mov   rdi, rax
+|       |   0x00400b5e      call  rdx                                  ; Virtual Call : sym.Dog::_Dog_0x400e6e
+|       `-> 0x00400b60      mov   rax, qword [var_28h]
+|           0x00400b64      test  rax, rax
+|       ,=< 0x00400b67      jz    0x400b78
+|       |   0x00400b69      mov   rdx, qword [rax]
+|       |   0x00400b6c      add   rdx, 0x08
+|       |   0x00400b70      mov   rdx, qword [rdx]
+|       |   0x00400b73      mov   rdi, rax
+|       |   0x00400b76      call  rdx                                  ; Virtual Call : sym.Cat::_Cat_0x400d78
+|       `-> 0x00400b78      mov   rax, qword [var_30h]
+|           0x00400b7c      test  rax, rax
+|       ,=< 0x00400b7f      jz    0x400b90
+|       |   0x00400b81      mov   rdx, qword [rax]
+|       |   0x00400b84      add   rdx, 0x08
+|       |   0x00400b88      mov   rdx, qword [rdx]
+|       |   0x00400b8b      mov   rdi, rax
+|       |   0x00400b8e      call  rdx                                  ; Virtual Call : sym.Human::_Human_0x400f64
+|       |   ;-- rbp:
+|       `-> 0x00400b90      mov   eax, 0x00
+|       ,=< 0x00400b95      jmp   0x400be8
+..
+        |   ;-- r12:
+        |   ;-- rbx:
+|       |   ; CODE XREF from main @ 0x400b95
+|       `-> 0x00400be8      add   rsp, 0x20
+|           0x00400bec      pop   rbx
+|           0x00400bed      pop   r12
+|           0x00400bef      pop   rbp
+\           0x00400bf0      ret
+EOF
+RUN
+
+NAME=cxx class analysis for classes with conditionals (x86-64)
+FILE=bins/elf/analysis/x86-class-conditional
+CMDS=<<EOF
+aaaa
+avD @ main
+pdf @ main
+EOF
+EXPECT=<<EOF
+            ; DATA XREF from sym._start_c @ 0x400a3b
+            ;-- rip:
+/ int main(int argc, char **argv, char **envp);
+|           ; var int var_24h @ stack - 0x24
+|           ; var union RZ_var_20h_HYBRID var_20h @ stack - 0x20
+|           0x00400b7d      push  rbp
+|           0x00400b7e      mov   rbp, rsp
+|           0x00400b81      push  r12
+|           0x00400b83      push  rbx
+|           0x00400b84      sub   rsp, 0x10
+|           0x00400b88      mov   edi, 0x00                            ; time_t *timer
+|           0x00400b8d      call  sym.imp.time                         ; time_t time(time_t *timer)
+|           0x00400b92      mov   edi, eax                             ; int seed
+|           0x00400b94      call  sym.imp.srand                        ; void srand(int seed)
+|           0x00400b99      call  sym.imp.rand                         ; int rand(void)
+|           0x00400b9e      mov   dword [var_24h], eax
+|           0x00400ba1      mov   ecx, dword [var_24h]
+|           0x00400ba4      movsxd rax, ecx
+|           0x00400ba7      imul  rax, rax, 0x55555556
+|           0x00400bae      shr   rax, 0x20
+|           0x00400bb2      mov   rdx, rax
+|           0x00400bb5      mov   eax, ecx
+|           0x00400bb7      sar   eax, 0x1f
+|           0x00400bba      sub   edx, eax
+|           0x00400bbc      mov   eax, edx
+|           0x00400bbe      add   eax, eax
+|           0x00400bc0      add   eax, edx
+|           0x00400bc2      sub   ecx, eax
+|           0x00400bc4      mov   edx, ecx
+|           0x00400bc6      cmp   edx, 0x02                            ; 2
+|       ,=< 0x00400bc9      jnz   0x400c00
+|       |   0x00400bcb      mov   edi, 0x08
+|       |   0x00400bd0      call  sym.imp.operator_new_unsigned_long
+|       |   0x00400bd5      mov   rbx, rax
+|       |   0x00400bd8      mov   rdi, rbx                             ; int64_t arg1
+|       |   0x00400bdb      call  method.Dog.Dog                       ;  method.Dog.Dog(int64_t arg1)
+|       |   0x00400be0      mov   qword [var_20h.var_20h], rbx
+|       |   0x00400be4      mov   rax, qword [var_20h.var_20h]
+|       |   0x00400be8      mov   rax, qword [rax]
+|       |   0x00400beb      add   rax, 0x10                            ; 16
+|       |   0x00400bef      mov   rdx, qword [rax]
+|       |   0x00400bf2      mov   rax, qword [var_20h.var_20h]
+|       |   0x00400bf6      mov   rdi, rax
+|       |   0x00400bf9      call  rdx                                  ; Virtual Call : method.Dog.run / method.Cat.run / method.Human.run
+|      ,==< 0x00400bfb      jmp   0x400c8c
+|      |`-> 0x00400c00      mov   ecx, dword [var_24h]
+|      |    0x00400c03      movsxd rax, ecx
+|      |    0x00400c06      imul  rax, rax, 0x55555556
+|      |    0x00400c0d      shr   rax, 0x20
+|      |    0x00400c11      mov   rdx, rax
+|      |    0x00400c14      mov   eax, ecx
+|      |    0x00400c16      sar   eax, 0x1f
+|      |    0x00400c19      sub   edx, eax
+|      |    0x00400c1b      mov   eax, edx
+|      |    0x00400c1d      add   eax, eax
+|      |    0x00400c1f      add   eax, edx
+|      |    0x00400c21      sub   ecx, eax
+|      |    0x00400c23      mov   edx, ecx
+|      |    0x00400c25      cmp   edx, 0x01                            ; 1
+|      |,=< 0x00400c28      jnz   0x400c5c
+|      ||   0x00400c2a      mov   edi, 0x08
+|      ||   0x00400c2f      call  sym.imp.operator_new_unsigned_long
+|      ||   0x00400c34      mov   rbx, rax
+|      ||   0x00400c37      mov   rdi, rbx                             ; int64_t arg1
+|      ||   0x00400c3a      call  method.Cat.Cat                       ;  method.Cat.Cat(int64_t arg1)
+|      ||   0x00400c3f      mov   qword [var_20h.var_20h], rbx
+|      ||   0x00400c43      mov   rax, qword [var_20h.var_20h]
+|      ||   0x00400c47      mov   rax, qword [rax]
+|      ||   0x00400c4a      add   rax, 0x10                            ; 16
+|      ||   0x00400c4e      mov   rdx, qword [rax]
+|      ||   0x00400c51      mov   rax, qword [var_20h.var_20h]
+|      ||   0x00400c55      mov   rdi, rax
+|      ||   0x00400c58      call  rdx                                  ; Virtual Call : method.Dog.run / method.Cat.run / method.Human.run
+|     ,===< 0x00400c5a      jmp   0x400c8c
+|     ||`-> 0x00400c5c      mov   edi, 0x08
+|     ||    0x00400c61      call  sym.imp.operator_new_unsigned_long
+|     ||    0x00400c66      mov   rbx, rax
+|     ||    0x00400c69      mov   rdi, rbx                             ; int64_t arg1
+|     ||    0x00400c6c      call  method.Human.Human                   ;  method.Human.Human(int64_t arg1)
+|     ||    0x00400c71      mov   qword [var_20h.var_20h], rbx
+|     ||    0x00400c75      mov   rax, qword [var_20h.var_20h]
+|     ||    0x00400c79      mov   rax, qword [rax]
+|     ||    0x00400c7c      add   rax, 0x10                            ; 16
+|     ||    0x00400c80      mov   rdx, qword [rax]
+|     ||    0x00400c83      mov   rax, qword [var_20h.var_20h]
+|     ||    0x00400c87      mov   rdi, rax
+|     ||    0x00400c8a      call  rdx                                  ; Virtual Call : method.Dog.run / method.Cat.run / method.Human.run
+|     ||    ; CODE XREFS from main @ 0x400bfb, 0x400c5a
+|     ``--> 0x00400c8c      mov   rax, qword [var_20h.var_20h]
+|           0x00400c90      mov   rax, qword [rax]
+|           0x00400c93      add   rax, 0x18                            ; 24
+|           0x00400c97      mov   rdx, qword [rax]
+|           0x00400c9a      mov   rax, qword [var_20h.var_20h]
+|           0x00400c9e      mov   rdi, rax
+|           0x00400ca1      call  rdx                                  ; Virtual Call : method.Dog.walk / method.Cat.walk / method.Human.walk
+|           0x00400ca3      mov   rax, qword [var_20h.var_20h]
+|           0x00400ca7      test  rax, rax
+|       ,=< 0x00400caa      jz    0x400cbb
+|       |   0x00400cac      mov   rdx, qword [rax]
+|       |   0x00400caf      add   rdx, 0x08
+|       |   0x00400cb3      mov   rdx, qword [rdx]
+|       |   0x00400cb6      mov   rdi, rax
+|       |   0x00400cb9      call  rdx                                  ; Virtual Call : sym.Human::_Human_0x401090 / sym.Dog::_Dog_0x400f9a / sym.Cat::_Cat_0x400ea4
+|       `-> 0x00400cbb      mov   eax, 0x00
+|       ,=< 0x00400cc0      jmp   0x400d13
+..
+        |   ;-- rbp:
+        |   ;-- r12:
+        |   ;-- rbx:
+|       |   ; CODE XREF from main @ 0x400cc0
+|       `-> 0x00400d13      add   rsp, 0x10
+|           0x00400d17      pop   rbx
+|           0x00400d18      pop   r12
+|           0x00400d1a      pop   rbp
+\           0x00400d1b      ret
+EOF
+RUN
+
+NAME=cxx class analysis for classes with multiple vtables (x86-64)
+FILE=bins/elf/analysis/x86-class-multi-vtable
+CMDS=<<EOF
+aaaa
+avD @ main
+pdf @ main
+EOF
+EXPECT=<<EOF
+            ; DATA XREF from sym._start_c @ 0x40088b
+            ;-- rip:
+/ int main(int argc, char **argv, char **envp);
+|           ; var struct C *var_20h @ stack - 0x20
+|           0x004009cd      push  rbp
+|           0x004009ce      mov   rbp, rsp
+|           0x004009d1      push  rbx
+|           0x004009d2      sub   rsp, 0x18
+|           0x004009d6      mov   edi, 0x10                            ; rflags
+|           0x004009db      call  sym.imp.operator_new_unsigned_long
+|           ;-- rbp:
+|           0x004009e0      mov   rbx, rax
+|           0x004009e3      mov   qword [rbx], 0x00
+|           0x004009ea      mov   qword [rbx+0x08], 0x00
+|           0x004009f2      mov   rdi, rbx                             ; int64_t arg1
+|           0x004009f5      call  method.C.C                           ;  method.C.C(int64_t arg1)
+|           ;-- rbx:
+|           0x004009fa      mov   qword [var_20h], rbx
+|           0x004009fe      mov   rax, qword [var_20h]
+|           0x00400a02      mov   rax, qword [rax]
+|           0x00400a05      mov   rdx, qword [rax]
+|           0x00400a08      mov   rax, qword [var_20h]
+|           0x00400a0c      mov   rdi, rax
+|           0x00400a0f      call  rdx                                  ; Virtual Call : sym.non_virtual_thunk_to_C::showB / method.C.showA
+|           0x00400a11      mov   rax, qword [var_20h]
+|           0x00400a15      mov   rax, qword [rax]
+|           0x00400a18      add   rax, 0x08
+|           0x00400a1c      mov   rdx, qword [rax]
+|           0x00400a1f      mov   rax, qword [var_20h]
+|           0x00400a23      mov   rdi, rax
+|           0x00400a26      call  rdx                                  ; Virtual Call : method.C.showB
+|           0x00400a28      mov   rax, qword [var_20h]
+|           0x00400a2c      mov   rax, qword [rax]
+|           0x00400a2f      add   rax, 0x10                            ; rflags
+|           0x00400a33      mov   rdx, qword [rax]
+|           0x00400a36      mov   rax, qword [var_20h]
+|           0x00400a3a      mov   rdi, rax
+|           0x00400a3d      call  rdx                                  ; Virtual Call : method.C.showC
+|           0x00400a3f      mov   eax, 0x00
+|           0x00400a44      add   rsp, 0x18
+|           0x00400a48      pop   rbx
+|           0x00400a49      pop   rbp
+\           0x00400a4a      ret
+EOF
+RUN
+
+NAME=cxx class analysis for inherited classes (arm64)
+FILE=bins/mach0/arm64-class-inherit
+CMDS=<<EOF
+aaaa
+avD @ main
+pdf @ main
+EOF
+EXPECT=<<EOF
+            ; UNKNOWN XREF from aav.0x100000028 @ +0xa8
+            ;-- main:
+            ;-- section.0.__TEXT.__text:
+            ;-- _main:
+            ;-- func.100002878:
+            ;-- pc:
+/ entry0(int64_t arg1);
+|           ; arg int64_t arg1 @ x0
+|           ; var int64_t var_70h @ stack - 0x70
+|           ; var int64_t var_68h @ stack - 0x68
+|           ; var int64_t var_60h @ stack - 0x60
+|           ; var int64_t var_58h @ stack - 0x58
+|           ; var int64_t var_50h @ stack - 0x50
+|           ; var int64_t var_48h @ stack - 0x48
+|           ; var struct Human *var_30h @ stack - 0x30
+|           ; var struct Cat *var_28h @ stack - 0x28
+|           ; var struct Dog *var_20h @ stack - 0x20
+|           ; var int64_t var_14h @ stack - 0x14
+|           ; var int64_t var_10h @ stack - 0x10
+|           ; var int64_t var_8h @ stack - 0x8
+|           0x100002878      sub   sp, sp, 0x70                        ; [00] -r-x section size 4944 named 0.__TEXT.__text
+|           0x10000287c      stp   fp, lr, [var_10h]
+|           0x100002880      add   fp, sp, 0x60
+|           0x100002884      stur  wzr, [var_14h]                      ; arg1
+|           0x100002888      mov   x0, 8
+|           0x10000288c      bl    sym.imp.operator_new_unsigned_long
+|           0x100002890      str   x0, [var_48h]
+|           0x100002894      bl    method.Dog.Dog                      ;  method.Dog.Dog(int64_t arg1)
+|       ,=< 0x100002898      b     0x10000289c
+|       |   ; CODE XREF from entry0 @ 0x100002898
+|       `-> 0x10000289c      ldr   x8, [var_48h]                       ; [0x28:4]=-1 ; 40
+|           0x1000028a0      stur  x8, [var_20h]
+|           0x1000028a4      ldur  x0, [var_20h]
+|           0x1000028a8      ldr   x8, [x0]
+|           0x1000028ac      ldr   x8, [x8, 0x10]                      ; [0x10:4]=-1 ; 16
+|           0x1000028b0      blr   x8                                  ; Virtual Call : method.Dog.run
+|           0x1000028b4      mov   x0, 8
+|           0x1000028b8      bl    sym.imp.operator_new_unsigned_long
+|           0x1000028bc      str   x0, [var_50h]
+|           0x1000028c0      bl    method.Cat.Cat                      ;  method.Cat.Cat(int64_t arg1)
+|       ,=< 0x1000028c4      b     0x1000028c8
+|       |   ; CODE XREF from entry0 @ 0x1000028c4
+|       `-> 0x1000028c8      ldr   x8, [var_50h]                       ; [0x20:4]=-1 ; 32
+|           0x1000028cc      stur  x8, [var_28h]
+|           0x1000028d0      ldur  x0, [var_28h]
+|           0x1000028d4      ldr   x8, [x0]
+|           0x1000028d8      ldr   x8, [x8, 0x10]                      ; [0x10:4]=-1 ; 16
+|           0x1000028dc      blr   x8                                  ; Virtual Call : method.Cat.run
+|           0x1000028e0      mov   x0, 8
+|           0x1000028e4      bl    sym.imp.operator_new_unsigned_long
+|           0x1000028e8      str   x0, [var_58h]
+|           0x1000028ec      bl    method.Human.Human                  ;  method.Human.Human(int64_t arg1)
+|       ,=< 0x1000028f0      b     0x1000028f4
+|       |   ; CODE XREF from entry0 @ 0x1000028f0
+|       `-> 0x1000028f4      ldr   x8, [var_58h]                       ; [0x18:4]=-1 ; 24
+|           0x1000028f8      stur  x8, [var_30h]
+|           0x1000028fc      ldur  x0, [var_30h]
+|           0x100002900      ldr   x8, [x0]
+|           0x100002904      ldr   x8, [x8, 0x10]                      ; [0x10:4]=-1 ; 16
+|           0x100002908      blr   x8                                  ; Virtual Call : method.Human.run
+|           0x10000290c      ldur  x8, [var_20h]
+|           0x100002910      str   x8, [var_60h]
+|           0x100002914      subs  x8, x8, 0
+|           0x100002918      cset  w8, eq
+|       ,=< 0x10000291c      tbnz  w8, 0, 0x100002938
+|      ,==< 0x100002920      b     0x100002924
+|      ||   ; CODE XREF from entry0 @ 0x100002920
+|      `--> 0x100002924      ldr   x0, [var_60h]                       ; [0x10:4]=-1 ; 16
+|       |   0x100002928      ldr   x8, [x0]
+|       |   0x10000292c      ldr   x8, [x8, 8]                         ; [0x8:4]=-1 ; 8
+|       |   0x100002930      blr   x8                                  ; Virtual Call : sym.Dog::_Dog_0x100002c18
+|      ,==< 0x100002934      b     0x100002938
+|      ||   ; CODE XREF from entry0 @ 0x100002934
+|      ``-> 0x100002938      ldur  x8, [var_28h]
+|           0x10000293c      str   x8, [var_68h]
+|           0x100002940      subs  x8, x8, 0
+|           0x100002944      cset  w8, eq
+|       ,=< 0x100002948      tbnz  w8, 0, 0x100002964
+|      ,==< 0x10000294c      b     0x100002950
+|      ||   ; CODE XREF from entry0 @ 0x10000294c
+|      `--> 0x100002950      ldr   x0, [var_68h]                       ; [0x8:4]=-1 ; 8
+|       |   0x100002954      ldr   x8, [x0]
+|       |   0x100002958      ldr   x8, [x8, 8]                         ; [0x8:4]=-1 ; 8
+|       |   0x10000295c      blr   x8                                  ; Virtual Call : sym.Cat::_Cat_0x100003940
+|      ,==< 0x100002960      b     0x100002964
+|      ||   ; CODE XREF from entry0 @ 0x100002960
+|      ``-> 0x100002964      ldur  x8, [var_30h]
+|           0x100002968      str   x8, [sp]
+|           0x10000296c      subs  x8, x8, 0
+|           0x100002970      cset  w8, eq
+|       ,=< 0x100002974      tbnz  w8, 0, 0x100002990
+|      ,==< 0x100002978      b     0x10000297c
+|      ||   ; CODE XREF from entry0 @ 0x100002978
+|      `--> 0x10000297c      ldr   x0, [sp]
+|       |   0x100002980      ldr   x8, [x0]
+|       |   0x100002984      ldr   x8, [x8, 8]                         ; [0x8:4]=-1 ; 8
+|       |   0x100002988      blr   x8                                  ; Virtual Call : sym.Human::_Human_0x100003adc
+|      ,==< 0x10000298c      b     0x100002990
+|      ||   ; CODE XREF from entry0 @ 0x10000298c
+|      ``-> 0x100002990      ldur  w0, [var_14h]
+|           0x100002994      ldp   fp, lr, [var_10h]
+|           0x100002998      add   sp, sp, 0x70
+\           0x10000299c      ret
+EOF
+RUN
+
+NAME=cxx class analysis for classes with conditionals (arm64)
+FILE=bins/mach0/arm64-class-conditional
+CMDS=<<EOF
+aaaa
+avD @ main
+pdf @ main
+EOF
+EXPECT=<<EOF
+            ; UNKNOWN XREF from aav.0x100000028 @ +0xa8
+            ;-- main:
+            ;-- section.0.__TEXT.__text:
+            ;-- _main:
+            ;-- func.10000282c:
+            ;-- pc:
+/ entry0(int64_t arg1);
+|           ; arg int64_t arg1 @ x0
+|           ; var int64_t var_58h @ stack - 0x58
+|           ; var int64_t var_50h @ stack - 0x50
+|           ; var int64_t var_48h @ stack - 0x48
+|           ; var int64_t var_40h @ stack - 0x40
+|           ; var int64_t var_24h @ stack - 0x24
+|           ; var union RZ_var_20h_HYBRID var_20h @ stack - 0x20
+|           ; var int64_t var_14h @ stack - 0x14
+|           ; var int64_t var_10h @ stack - 0x10
+|           ; var int64_t var_8h @ stack - 0x8
+|           0x10000282c      sub   sp, sp, 0x60                        ; [00] -r-x section size 4980 named 0.__TEXT.__text
+|           0x100002830      stp   fp, lr, [var_10h]
+|           0x100002834      add   fp, sp, 0x50
+|           0x100002838      stur  wzr, [var_14h]                      ; arg1
+|           0x10000283c      mov   x0, 0                               ; int seed
+|           0x100002840      bl    sym.imp.time                        ; time_t time(time_t *timer)
+|           0x100002844      bl    sym.imp.srand                       ; void srand(int seed)
+|           0x100002848      bl    sym.imp.rand                        ; int rand(void)
+|           0x10000284c      stur  w0, [var_24h]
+|           0x100002850      ldur  w8, [var_24h]
+|           0x100002854      mov   w10, 3
+|           0x100002858      sdiv  w9, w8, w10
+|           0x10000285c      mul   w9, w9, w10
+|           0x100002860      subs  w8, w8, w9
+|           0x100002864      subs  w8, w8, 2
+|           0x100002868      cset  w8, ne
+|       ,=< 0x10000286c      tbnz  w8, 0, 0x1000028c0
+|      ,==< 0x100002870      b     0x100002874
+|      ||   ; CODE XREF from entry0 @ 0x100002870
+|      `--> 0x100002874      mov   x0, 8
+|       |   0x100002878      bl    sym.imp.operator_new_unsigned_long
+|       |   0x10000287c      str   x0, [var_40h]
+|       |   0x100002880      bl    method.Dog.Dog                      ;  method.Dog.Dog(int64_t arg1)
+|      ,==< 0x100002884      b     0x100002888
+|      ||   ; CODE XREF from entry0 @ 0x100002884
+|      `--> 0x100002888      ldr   x8, [var_40h]                       ; [0x20:4]=-1 ; 32
+|       |   0x10000288c      stur  x8, [var_20h.var_20h]
+|       |   0x100002890      ldur  x0, [var_20h.var_20h]
+|       |   0x100002894      ldr   x8, [x0]
+|       |   0x100002898      ldr   x8, [x8, 0x10]                      ; [0x10:4]=-1 ; 16
+|       |   0x10000289c      blr   x8                                  ; Virtual Call : method.Dog.run / method.Cat.run / method.Human.run
+|      ,==< 0x1000028a0      b     0x100002980
+..
+|     ||`-> 0x1000028c0      ldur  w8, [var_24h]
+|     ||    0x1000028c4      mov   w10, 3
+|     ||    0x1000028c8      sdiv  w9, w8, w10
+|     ||    0x1000028cc      mul   w9, w9, w10
+|     ||    0x1000028d0      subs  w8, w8, w9
+|     ||    0x1000028d4      subs  w8, w8, 1
+|     ||    0x1000028d8      cset  w8, ne
+|     ||,=< 0x1000028dc      tbnz  w8, 0, 0x100002930
+|    ,====< 0x1000028e0      b     0x1000028e4
+|    ||||   ; CODE XREF from entry0 @ 0x1000028e0
+|    `----> 0x1000028e4      mov   x0, 8
+|     |||   0x1000028e8      bl    sym.imp.operator_new_unsigned_long
+|     |||   0x1000028ec      str   x0, [var_48h]
+|     |||   0x1000028f0      bl    method.Cat.Cat                      ;  method.Cat.Cat(int64_t arg1)
+|    ,====< 0x1000028f4      b     0x1000028f8
+|    ||||   ; CODE XREF from entry0 @ 0x1000028f4
+|    `----> 0x1000028f8      ldr   x8, [var_48h]                       ; [0x18:4]=-1 ; 24
+|     |||   0x1000028fc      stur  x8, [var_20h.var_20h]
+|     |||   0x100002900      ldur  x0, [var_20h.var_20h]
+|     |||   0x100002904      ldr   x8, [x0]
+|     |||   0x100002908      ldr   x8, [x8, 0x10]                      ; [0x10:4]=-1 ; 16
+|     |||   0x10000290c      blr   x8                                  ; Virtual Call : method.Dog.run / method.Cat.run / method.Human.run
+|    ,====< 0x100002910      b     0x10000297c
+..
+|   ||||`-> 0x100002930      mov   x0, 8
+|   ||||    0x100002934      bl    sym.imp.operator_new_unsigned_long
+|   ||||    0x100002938      str   x0, [var_50h]
+|   ||||    0x10000293c      bl    method.Human.Human                  ;  method.Human.Human(int64_t arg1)
+|   ||||,=< 0x100002940      b     0x100002944
+|   |||||   ; CODE XREF from entry0 @ 0x100002940
+|   ||||`-> 0x100002944      ldr   x8, [var_50h]                       ; [0x10:4]=-1 ; 16
+|   ||||    0x100002948      stur  x8, [var_20h.var_20h]
+|   ||||    0x10000294c      ldur  x0, [var_20h.var_20h]
+|   ||||    0x100002950      ldr   x8, [x0]
+|   ||||    0x100002954      ldr   x8, [x8, 0x10]                      ; [0x10:4]=-1 ; 16
+|   ||||    0x100002958      blr   x8                                  ; Virtual Call : method.Dog.run / method.Cat.run / method.Human.run
+|   ||||,=< 0x10000295c      b     0x10000297c
+..
+|  ||||||   ; CODE XREFS from entry0 @ 0x100002910, 0x10000295c
+| ,==`--`-> 0x10000297c      b     0x100002980
+| ||| ||    ; CODE XREFS from entry0 @ 0x1000028a0, 0x10000297c
+| `----`--> 0x100002980      ldur  x0, [var_20h.var_20h]
+|  || |     0x100002984      ldr   x8, [x0]
+|  || |     0x100002988      ldr   x8, [x8, 0x18]                      ; [0x18:4]=-1 ; 24
+|  || |     0x10000298c      blr   x8                                  ; Virtual Call : method.Dog.walk / method.Cat.walk / method.Human.walk
+|  || |     0x100002990      ldur  x8, [var_20h.var_20h]
+|  || |     0x100002994      str   x8, [var_58h]
+|  || |     0x100002998      subs  x8, x8, 0
+|  || |     0x10000299c      cset  w8, eq
+|  || | ,=< 0x1000029a0      tbnz  w8, 0, 0x1000029bc
+|  || |,==< 0x1000029a4      b     0x1000029a8
+|  || |||   ; CODE XREF from entry0 @ 0x1000029a4
+|  || |`--> 0x1000029a8      ldr   x0, [var_58h]                       ; [0x8:4]=-1 ; 8
+|  || | |   0x1000029ac      ldr   x8, [x0]
+|  || | |   0x1000029b0      ldr   x8, [x8, 8]                         ; [0x8:4]=-1 ; 8
+|  || | |   0x1000029b4      blr   x8                                  ; Virtual Call : sym.Dog::_Dog_0x100002bf0 / sym.Human::_Human_0x100003ab4 / sym.Cat::_Cat_0x100003918
+|  || |,==< 0x1000029b8      b     0x1000029bc
+|  || |||   ; CODE XREF from entry0 @ 0x1000029b8
+|  || |``-> 0x1000029bc      ldur  w0, [var_14h]
+|  || |     0x1000029c0      ldp   fp, lr, [var_10h]
+|  || |     0x1000029c4      add   sp, sp, 0x60
+\  || |     0x1000029c8      ret
+EOF
+RUN
+
+NAME=cxx class analysis for classes with multiple vtables (arm64)
+FILE=bins/mach0/arm64-class-multi-vtable
+CMDS=<<EOF
+aaaa
+avD @ main
+pdf @ main
+EOF
+EXPECT=<<EOF
+            ; UNKNOWN XREF from aav.0x100000028 @ +0xa8
+            ;-- main:
+            ;-- section.0.__TEXT.__text:
+            ;-- _main:
+            ;-- func.100002ea0:
+            ;-- pc:
+/ entry0(int64_t arg1);
+|           ; arg int64_t arg1 @ x0
+|           ; var int64_t var_30h @ stack - 0x30
+|           ; var int64_t var_24h @ stack - 0x24
+|           ; var struct C *var_20h @ stack - 0x20
+|           ; var int64_t var_14h @ stack - 0x14
+|           ; var int64_t var_10h @ stack - 0x10
+|           ; var int64_t var_8h @ stack - 0x8
+|           0x100002ea0      sub   sp, sp, 0x30                        ; [00] -r-x section size 3740 named 0.__TEXT.__text
+|           0x100002ea4      stp   fp, lr, [var_10h]
+|           0x100002ea8      add   fp, sp, 0x20
+|           0x100002eac      mov   w8, 0
+|           0x100002eb0      str   w8, [var_24h]
+|           0x100002eb4      stur  wzr, [var_14h]                      ; arg1
+|           0x100002eb8      mov   x0, 0x10
+|           0x100002ebc      bl    sym.imp.operator_new_unsigned_long
+|           0x100002ec0      str   x0, [sp]
+|           0x100002ec4      str   xzr, [x0]
+|           0x100002ec8      str   xzr, [x0, 8]
+|           0x100002ecc      bl    method.C.C                          ;  method.C.C(int64_t arg1)
+|           0x100002ed0      ldr   x0, [sp]
+|           0x100002ed4      str   x0, [var_20h]
+|           0x100002ed8      ldr   x0, [var_20h]                       ; [0x10:4]=-1 ; 16
+|           0x100002edc      ldr   x8, [x0]
+|           0x100002ee0      ldr   x8, [x8]
+|           0x100002ee4      blr   x8                                  ; Virtual Call : sym.non_virtual_thunk_to_C::showB / method.C.showA
+|           0x100002ee8      ldr   x0, [var_20h]                       ; [0x10:4]=-1 ; 16
+|           0x100002eec      ldr   x8, [x0]
+|           0x100002ef0      ldr   x8, [x8, 8]                         ; [0x8:4]=-1 ; 8
+|           0x100002ef4      blr   x8                                  ; Virtual Call : method.C.showB
+|           0x100002ef8      ldr   x0, [var_20h]                       ; [0x10:4]=-1 ; 16
+|           0x100002efc      ldr   x8, [x0]
+|           0x100002f00      ldr   x8, [x8, 0x10]                      ; [0x10:4]=-1 ; 16
+|           0x100002f04      blr   x8                                  ; Virtual Call : method.C.showC
+|           0x100002f08      ldr   w0, [var_24h]                       ; [0xc:4]=-1 ; 12
+|           0x100002f0c      ldp   fp, lr, [var_10h]
+|           0x100002f10      add   sp, sp, 0x30
+\           0x100002f14      ret
+EOF
+RUN

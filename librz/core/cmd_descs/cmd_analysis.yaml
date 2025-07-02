@@ -1541,6 +1541,11 @@ commands:
           - RZ_OUTPUT_MODE_RIZIN
           - RZ_OUTPUT_MODE_JSON
         args: []
+      - name: avD
+        summary: devirtualize virtual calls
+        type: RZ_CMD_DESC_TYPE_ARGV
+        cname: analysis_devirtualize
+        args: []
       - name: avg
         summary: Global variables
         subcommands:
