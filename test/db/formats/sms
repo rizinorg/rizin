@@ -1,8 +1,59 @@
 NAME=SMS: Open/iI
 FILE=bins/sms/demo.sms
-CMDS=iI~?SEGA
+CMDS=iH;iI
 EXPECT=<<EOF
-1
+ROM Offset: 0x00007ff0
+ROM Reserved0: 255 (0xff)
+ROM Reserved1: 255 (0xff)
+ROM Checksum: 0x0000
+ROM Product Code: 000000
+ROM Version: 0
+ROM Console: 
+ROM Region: Unknown
+ROM Size: 256KB
+SDSC Offset: 0x00007fe0
+SDSC Version: 01.00
+SDSC Date: 2001-07-30
+SDSC Author: 
+SDSC Name: 64-Color Palette Test Program
+SDSC Description: Author: Charles MacDonald
+arch     z80
+cpu      N/A
+features N/A
+baddr    ----------
+binsz    0x00008000
+bintype  N/A
+bits     8
+retguard false
+class    N/A
+compiler N/A
+dbg_file N/A
+endian   LE
+hdr.csum N/A
+guid     N/A
+intrp    N/A
+laddr    0x00000000
+lang     N/A
+machine  SEGA MasterSystem/GameGear
+maxopsz  1
+minopsz  1
+os       sms
+cc       N/A
+pcalign  1
+rpath    N/A
+subsys   
+stripped false
+crypto   false
+havecode true
+va       true
+sanitiz  false
+static   true
+linenum  false
+lsyms    false
+canary   false
+PIE      false
+RELROCS  false
+NX       false
 EOF
 RUN
 
@@ -16,11 +67,54 @@ RUN
 
 NAME=SMS: maps
 FILE=bins/sms/colorcheck.sms
-CMDS=iH
+CMDS=iH;iI
 EXPECT=<<EOF
-Checksum: 0x5e2a
-ProductCode: 000000
-RomSize: 256KB
+ROM Offset: 0x00007ff0
+ROM Reserved0: 0 (0x00)
+ROM Reserved1: 0 (0x00)
+ROM Checksum: 0x5e2a
+ROM Product Code: 000000
+ROM Version: 0
+ROM Console: 
+ROM Region: Unknown
+ROM Size: 256KB
+arch     z80
+cpu      N/A
+features N/A
+baddr    ----------
+binsz    0x00008000
+bintype  N/A
+bits     8
+retguard false
+class    N/A
+compiler N/A
+dbg_file N/A
+endian   LE
+hdr.csum N/A
+guid     N/A
+intrp    N/A
+laddr    0x00000000
+lang     N/A
+machine  SEGA MasterSystem/GameGear
+maxopsz  1
+minopsz  1
+os       sms
+cc       N/A
+pcalign  1
+rpath    N/A
+subsys   
+stripped false
+crypto   false
+havecode true
+va       true
+sanitiz  false
+static   true
+linenum  false
+lsyms    false
+canary   false
+PIE      false
+RELROCS  false
+NX       false
 EOF
 RUN
 
