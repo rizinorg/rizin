@@ -826,13 +826,17 @@ static int decode_r32riinc32_4(const ut8 *bytes, struct h8300_cmd *cmd) {
 	return ret;
 }
 
-#define CASE_F_F_IMPL(F, I) \
+#define CASE_F_F_IMPL_BODY(F, I) \
 	cmd->id = H8300_INSN_##I; \
 	cmd->size = F(instr, cmd);
+#define CASE_F_F_IMPL(F, I) \
+	cmd->id = H8300_INSN_##I; \
+	cmd->size = F(instr, cmd); \
+	return cmd->size;
+
 #define CASE_F_F(F, X, I) \
 	case (X): \
-		CASE_F_F_IMPL(F, I) \
-		return cmd->size;
+		CASE_F_F_IMPL(F, I);
 #define CASE_F_R8(X, I) CASE_F_F(decode_r8_2, X, I)
 #define CASE_F_F_VA(F, X, I, ...) \
 	case (X): \
@@ -841,13 +845,13 @@ static int decode_r32riinc32_4(const ut8 *bytes, struct h8300_cmd *cmd) {
 		return cmd->size;
 #define CASE_F_F_CCR(F, X, I) \
 	case (X): \
-		CASE_F_F_IMPL(F, I) \
+		CASE_F_F_IMPL_BODY(F, I) \
 		OPS_ADD(H8300_OP_CCR, imm, 0); \
 		return cmd->size;
 #define CASE_F_CCR_F(F, X, I) \
 	case (X): \
 		OPS_ADD(H8300_OP_CCR, imm, 0); \
-		CASE_F_F_IMPL(F, I) \
+		CASE_F_F_IMPL_BODY(F, I) \
 		return cmd->size;
 
 static int h8300_decode_10(const ut8 *instr, struct h8300_cmd *cmd) {
@@ -1184,6 +1188,7 @@ static int h8300_decode_2(const ut8 *instr, struct h8300_cmd *cmd) {
 	case 0x0b80:
 	case 0x0b90:
 		CASE_F_F_IMPL(decode_sr16, ADDS);
+
 	case 0x1b00:
 	case 0x1b80:
 	case 0x1b90:
