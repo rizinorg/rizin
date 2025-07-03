@@ -4,7 +4,7 @@
 
 /** \file bin_nin64.c
  *
- * This format is for parsing the Nintendo 64 ROM.
+ * This plugin is for parsing the Nintendo 64 ROM.
  *
  * References:
  * - https://n64brew.dev/wiki/ROM_Header
