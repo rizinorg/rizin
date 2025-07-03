@@ -109,7 +109,9 @@ enum h8300_opcodes {
 	H8300_BCLR_R2ABS8 = 0x7F,
 };
 
-#define H8300_INSTR_MAXLEN 20
+#define H8300_INSTR_MAXLEN 16
+#define H8300_OPS_MAXLEN   64
+#define H8300_OPERAND_MAX  8
 
 enum h8300_opcodes_9bit {
 	H8300_BST = 0x6700 >> 7,
@@ -335,11 +337,9 @@ typedef struct {
 	};
 } H8300Operand;
 
-#define H8300_OPERAND_MAX 8
-
 typedef struct h8300_cmd {
 	char instr[H8300_INSTR_MAXLEN];
-	char ops_str[H8300_INSTR_MAXLEN];
+	char ops_str[H8300_OPS_MAXLEN];
 	H8300InsnId id;
 	H8300InsnFormat fmt;
 	H8300Operand ops[H8300_OPERAND_MAX];
