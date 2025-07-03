@@ -127,6 +127,7 @@ rz_bin_sources = [
   'p/bin_ninds.c',
   'p/bin_ningb.c',
   'p/bin_ningba.c',
+  'p/bin_nin64.c',
   'p/bin_nro.c',
   'p/bin_nso.c',
   'p/bin_omf.c',
@@ -152,7 +153,6 @@ rz_bin_sources = [
   # this was never built.
   # 'p/bin_xtr_pemixed.c',
   'p/bin_xtr_sep64.c',
-  'p/bin_z64.c',
   'p/bin_zimg.c',
 
 
