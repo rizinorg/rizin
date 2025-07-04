@@ -365,9 +365,6 @@ error:
 
 RZ_IPI bool rz_bin_mdt_check_filename(const char *filename) {
 	rz_return_val_if_fail(filename, NULL);
-	if (!filename) {
-		return false;
-	}
 	return rz_str_endswith_icase(filename, ".mdt");
 	;
 }
