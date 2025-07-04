@@ -24,7 +24,7 @@ dm~hello~[3-9]
 dc
 EOF
 EXPECT=<<EOF
-- usr 4K s r-x 1581273 /home/build/rizin-testbins/elf/netbsd-hello-x64
+- usr 4K s r-x 1581277 /home/build/rizin-testbins/elf/netbsd-hello-x64
 Hello World
 EOF
 RUN
