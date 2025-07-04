@@ -1319,6 +1319,10 @@
                   },
                   {
                     "type": "STRING",
+                    "value": "?**e"
+                  },
+                  {
+                    "type": "STRING",
                     "value": "?***"
                   }
                 ]

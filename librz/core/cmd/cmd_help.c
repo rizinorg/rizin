@@ -151,6 +151,24 @@ RZ_IPI RzCmdStatus rz_cmd_help_search_interactive_handler(RzCore *core, int argc
 	return RZ_CMD_STATUS_OK;
 }
 
+// "?**e"
+RZ_IPI RzCmdStatus rz_cmd_help_search_interactive_settings_handler(RzCore *core, int argc, const char **argv) {
+	RzCmdStateOutput state = { 0 };
+	rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STR_BUF);
+	rz_core_config_print_all(core->config, "", &state);
+
+	RzConfig **cfg;
+	RzIterator *it = ht_sp_as_iter(core->plugin_configs);
+	rz_iterator_foreach(it, cfg) {
+		rz_core_config_print_all(*cfg, "", &state);
+	}
+
+	// Run it in the hub.
+	free(rz_cons_hud_string(rz_strbuf_get(state.d.sbuf)));
+	rz_strbuf_free(state.d.sbuf);
+	return RZ_CMD_STATUS_OK;
+}
+
 // "?***"
 RZ_IPI RzCmdStatus rz_cmd_help_search_interactive_everything_handler(RzCore *core, int argc, const char **argv) {
 	RzHelpSearch hs = {

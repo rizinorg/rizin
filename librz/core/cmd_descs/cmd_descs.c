@@ -2768,12 +2768,23 @@ static const RzCmdDescHelp cmd_help_search_help = {
 	.args = cmd_help_search_args,
 };
 
+static const RzCmdDescHelp question__star__star__help = {
+	.summary = "Search command and setting summaries.",
+};
 static const RzCmdDescArg cmd_help_search_interactive_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_help_search_interactive_help = {
 	.summary = "Search command summaries interactively (alias for ?*~...).",
 	.args = cmd_help_search_interactive_args,
+};
+
+static const RzCmdDescArg cmd_help_search_interactive_settings_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_help_search_interactive_settings_help = {
+	.summary = "Search settings interactively (alias for el~...).",
+	.args = cmd_help_search_interactive_settings_args,
 };
 
 static const RzCmdDescArg cmd_help_search_interactive_everything_args[] = {
@@ -21323,8 +21334,10 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *question__star__cd = rz_cmd_desc_group_modes_new(core->rcmd, root_cd, "?*", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_help_search_handler, &cmd_help_search_help, &question__star__help);
 	rz_warn_if_fail(question__star__cd);
-	RzCmdDesc *cmd_help_search_interactive_cd = rz_cmd_desc_argv_new(core->rcmd, question__star__cd, "?**", rz_cmd_help_search_interactive_handler, &cmd_help_search_interactive_help);
-	rz_warn_if_fail(cmd_help_search_interactive_cd);
+	RzCmdDesc *question__star__star__cd = rz_cmd_desc_group_new(core->rcmd, question__star__cd, "?**", rz_cmd_help_search_interactive_handler, &cmd_help_search_interactive_help, &question__star__star__help);
+	rz_warn_if_fail(question__star__star__cd);
+	RzCmdDesc *cmd_help_search_interactive_settings_cd = rz_cmd_desc_argv_new(core->rcmd, question__star__star__cd, "?**e", rz_cmd_help_search_interactive_settings_handler, &cmd_help_search_interactive_settings_help);
+	rz_warn_if_fail(cmd_help_search_interactive_settings_cd);
 
 	RzCmdDesc *cmd_help_search_interactive_everything_cd = rz_cmd_desc_argv_new(core->rcmd, question__star__cd, "?***", rz_cmd_help_search_interactive_everything_handler, &cmd_help_search_interactive_everything_help);
 	rz_warn_if_fail(cmd_help_search_interactive_everything_cd);

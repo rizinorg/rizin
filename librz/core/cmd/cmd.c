@@ -1378,6 +1378,11 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(help_stmt) {
 		const char *argv[1] = { node_string };
 		int argc = 1;
 		return rz_cmd_help_search_interactive_handler(state->core, argc, argv);
+	} else if (node_str_len >= 4 && RZ_STR_EQ(node_string + node_str_len - 4, "?**e")) {
+		node_string[4] = 0;
+		const char *argv[1] = { node_string };
+		int argc = 1;
+		return rz_cmd_help_search_interactive_settings_handler(state->core, argc, argv);
 	} else if (node_str_len >= 4 && RZ_STR_EQ(node_string + node_str_len - 4, "?***")) {
 		node_string[4] = 0;
 		const char *argv[1] = { node_string };
@@ -3120,9 +3125,16 @@ RZ_IPI RzCmdStatus rz_basefind_compute_handler(RzCore *core, int argc, const cha
 }
 
 RZ_IPI RzCmdStatus rz_help_handler(RzCore *core, int argc, const char **argv) {
-	const char *cmd_color = rz_cons_singleton()->context->pal.help;
-	const char *reset = rz_cons_singleton()->context->pal.reset;
+	bool use_color = rz_config_get_i(core->config, "scr.color") != 0;
+	const char *cmd_color = use_color ? rz_cons_singleton()->context->pal.help : "";
+	const char *cmd_bold = use_color ? rz_cons_singleton()->context->pal.btext : "";
+	const char *reset = use_color ? rz_cons_singleton()->context->pal.reset : "";
 	rz_cons_printf("Welcome to Rizin!\n\n");
+	rz_cons_printf("%sFastest way to help yourself%s\n", cmd_bold, reset);
+	rz_cons_printf("Type %s?**%s to search all commands' short descriptions.\n", cmd_color, reset);
+	rz_cons_printf("Type %s?***%s to search all commands' long descriptions.\n", cmd_color, reset);
+	rz_cons_printf("Type %s?**e%s to search all settings' descriptions.\n", cmd_color, reset);
+	rz_cons_printf("\n");
 	rz_cons_printf("Type %s?%s for a list of commands available.\n", cmd_color, reset);
 	rz_cons_printf("Append %s?%s to any command to get the list of sub-commands or more details about a specific command.\n", cmd_color, reset);
 	rz_cons_printf("Append %s??%s to any command to get the full description of a command, e.g. with examples.\n", cmd_color, reset);

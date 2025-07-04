@@ -37,6 +37,23 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=?**e search
+FILE==
+CMDS=<<EOF
+e scr.interactive=true
+e scr.columns=120
+e scr.rows=3
+e scr.color=0
+< \n; ?**e
+echo
+EOF
+EXPECT=<<EOF
+[?25l[0m[2J[0;0H0> |                                                                                                                   [0m[2J[0;0H0> |
+ - analysis.apply.signature:       bool - enables/disables auto-applying signatures to the loaded binary (see also flirt[0J[0m
+          analysis.arch:        str - Select the architecture to use                                                    [?25h
+EOF
+RUN
+
 NAME=?*** search
 FILE==
 CMDS=<<EOF

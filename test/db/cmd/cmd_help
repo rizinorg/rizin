@@ -188,3 +188,48 @@ Legend:
 | I # RzIL Support
 EOF
 RUN
+
+NAME="help"
+FILE==
+CMDS=<<EOF
+help
+EOF
+EXPECT=<<EOF
+Welcome to Rizin!
+
+Fastest way to help yourself
+Type ?** to search all commands' short descriptions.
+Type ?*** to search all commands' long descriptions.
+Type ?**e to search all settings' descriptions.
+
+Type ? for a list of commands available.
+Append ? to any command to get the list of sub-commands or more details about a specific command.
+Append ?? to any command to get the full description of a command, e.g. with examples.
+
+Commands output can be redirected as in a regular shell, see >? for more info.
+You can grep commands output with the 'internal grep', see ~? for more info.
+You can pipe an internal Rizin command to a system program, see |? for more info.
+
+Chain multiple commands with ;.
+Temporary modifiers are your friends, see @? for more info, but here some useful ones:
+ - @  temporarily switch to a different address
+ - @a:<arch> temporarily switch to a different architecture
+ - @e:<varname>=<varvalue> temporarily change an eval variable
+
+There are a lot of settings that customize Rizin's behaviour, see them with el. Have a look at e? to know how to interact with them.
+You can save your preferred settings in ~/.rizinrc.
+EOF
+RUN
+
+NAME=Interactive help
+FILE==
+CMDS=<<EOF
+?*?
+EOF
+EXPECT=<<EOF
+Usage: ?*[j*?]   # Search help commands
+| ?*[j] [<search_cmd>] # Search help
+| ?**[e]               # Search command and setting summaries.
+| ?***                 # Search command summaries and their extended help interactively.
+EOF
+RUN
