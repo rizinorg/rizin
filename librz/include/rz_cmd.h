@@ -92,6 +92,7 @@ typedef enum {
 	RZ_OUTPUT_MODE_TABLE = 1 << 7,
 	RZ_OUTPUT_MODE_QUIETEST = 1 << 8,
 	RZ_OUTPUT_MODE_GRAPH = 1 << 9,
+	RZ_OUTPUT_MODE_STR_BUF = 1 << 10,
 } RzOutputMode;
 
 /**
@@ -112,6 +113,7 @@ typedef struct rz_cmd_state_output_t {
 	union {
 		PJ *pj;
 		RzTable *t;
+		RzStrBuf *sbuf;
 	} d;
 } RzCmdStateOutput;
 

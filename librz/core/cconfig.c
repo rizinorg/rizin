@@ -1917,6 +1917,11 @@ static void config_print_node(RzConfig *cfg, RzConfigNode *node, RzCmdStateOutpu
 		rz_cons_printf("%20s: %s\n", node->name,
 			node->desc ? node->desc : "");
 		break;
+	case RZ_OUTPUT_MODE_STR_BUF:
+		rz_strbuf_appendf(state->d.sbuf, "%20s: %10s - %s\n", node->name,
+			rz_config_node_type(node),
+			node->desc ? node->desc : "");
+		break;
 	default:
 		rz_warn_if_reached();
 		break;
