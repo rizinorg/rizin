@@ -1,0 +1,684 @@
+NAME=snes speed_test_v51
+FILE=bins/snes/speed_test_v51.sfc
+CMDS=<<EOF
+iI
+iH
+im
+iS
+is
+EOF
+EXPECT=<<EOF
+arch     snes
+cpu      N/A
+features N/A
+baddr    ----------
+binsz    0x00010000
+bintype  N/A
+bits     16
+retguard false
+class    N/A
+compiler N/A
+dbg_file N/A
+endian   LE
+hdr.csum N/A
+guid     N/A
+intrp    N/A
+laddr    0x00000000
+lang     N/A
+machine  Super NES / Super Famicom
+minopsz  1
+os       snes
+cc       N/A
+rpath    N/A
+subsys   
+stripped false
+crypto   false
+havecode true
+va       true
+sanitiz  false
+static   true
+linenum  false
+lsyms    false
+canary   false
+PIE      false
+RELROCS  false
+NX       false
+ROM Game Title: SA-1 Support Test    
+ROM Speed: Slow
+ROM Map Mode: LoROM 32K Banks + SA-1 (LoROM Emulates Super MMC) (0x03)
+ROM Cartridge: ROM+RAM+Battery+SA-1 (0x35)
+ROM Size: 512 KB (0x09)
+ROM SRAM: 32 KB (0x05)
+ROM Country: Japan (NTSC) (0x00)
+ROM Developer: Unknown (0x33)
+ROM Version: 0x01
+ROM Checksum: 0xffff (complement: 0x0000)
+ROM unused: 0x00000000
+ROM cop:    0x8347 (native vector)
+ROM br:     0x8347 (native vector)
+ROM abort:  0x8347 (native vector)
+ROM nmi:    0x0a00 (native vector)
+ROM unused: 0x8347 (native vector)
+ROM irq:    0x8347 (native vector)
+ROM unused: 0x00000000
+ROM cop:    0x8347 (emulator vector)
+ROM unused: 0x8347 (emulator vector)
+ROM abort:  0x8347 (emulator vector)
+ROM nmi:    0x8347 (emulator vector)
+ROM reset:  0x8000 (emulator vector)
+ROM irq:    0x8347 (emulator vector)
+name         size    address flags mirror    
+---------------------------------------------
+SRAM_70   0x10000 0x00700000 rwx   
+SRAM_71   0x10000 0x00710000 rwx   
+SRAM_72   0x10000 0x00720000 rwx   
+SRAM_73   0x10000 0x00730000 rwx   
+SRAM_74   0x10000 0x00740000 rwx   
+SRAM_75   0x10000 0x00750000 rwx   
+SRAM_76   0x10000 0x00760000 rwx   
+SRAM_77   0x10000 0x00770000 rwx   
+SRAM_78   0x10000 0x00780000 rwx   
+SRAM_79   0x10000 0x00790000 rwx   
+SRAM_7a   0x10000 0x007a0000 rwx   
+SRAM_7b   0x10000 0x007b0000 rwx   
+SRAM_7c   0x10000 0x007c0000 rwx   
+SRAM_7d   0x10000 0x007d0000 rwx   
+WRAM_7e   0x10000 0x007e0000 rwx   
+WRAM_7f   0x10000 0x007f0000 rwx   
+LowRAM_80  0x2000 0x00800000 rwx   
+LowRAM_00  0x2000 0x00000000 rwx   LowRAM_80
+IO_80      0x4000 0x00802000 rwx   
+IO_00      0x4000 0x00002000 rwx   IO_80
+ROM_80     0x8000 0x00808000 rwx   
+ROM_00     0x8000 0x00008000 rwx   ROM_80
+LowRAM_81  0x2000 0x00810000 rwx   
+LowRAM_01  0x2000 0x00010000 rwx   LowRAM_81
+IO_81      0x4000 0x00812000 rwx   
+IO_01      0x4000 0x00012000 rwx   IO_81
+ROM_81     0x8000 0x00818000 rwx   
+ROM_01     0x8000 0x00018000 rwx   ROM_81
+LowRAM_82  0x2000 0x00820000 rwx   
+LowRAM_02  0x2000 0x00020000 rwx   LowRAM_82
+IO_82      0x4000 0x00822000 rwx   
+IO_02      0x4000 0x00022000 rwx   IO_82
+ROM_82     0x8000 0x00828000 rwx   
+ROM_02     0x8000 0x00028000 rwx   ROM_82
+LowRAM_83  0x2000 0x00830000 rwx   
+LowRAM_03  0x2000 0x00030000 rwx   LowRAM_83
+IO_83      0x4000 0x00832000 rwx   
+IO_03      0x4000 0x00032000 rwx   IO_83
+ROM_83     0x8000 0x00838000 rwx   
+ROM_03     0x8000 0x00038000 rwx   ROM_83
+LowRAM_84  0x2000 0x00840000 rwx   
+LowRAM_04  0x2000 0x00040000 rwx   LowRAM_84
+IO_84      0x4000 0x00842000 rwx   
+IO_04      0x4000 0x00042000 rwx   IO_84
+ROM_84     0x8000 0x00848000 rwx   
+ROM_04     0x8000 0x00048000 rwx   ROM_84
+LowRAM_85  0x2000 0x00850000 rwx   
+LowRAM_05  0x2000 0x00050000 rwx   LowRAM_85
+IO_85      0x4000 0x00852000 rwx   
+IO_05      0x4000 0x00052000 rwx   IO_85
+ROM_85     0x8000 0x00858000 rwx   
+ROM_05     0x8000 0x00058000 rwx   ROM_85
+LowRAM_86  0x2000 0x00860000 rwx   
+LowRAM_06  0x2000 0x00060000 rwx   LowRAM_86
+IO_86      0x4000 0x00862000 rwx   
+IO_06      0x4000 0x00062000 rwx   IO_86
+ROM_86     0x8000 0x00868000 rwx   
+ROM_06     0x8000 0x00068000 rwx   ROM_86
+LowRAM_87  0x2000 0x00870000 rwx   
+LowRAM_07  0x2000 0x00070000 rwx   LowRAM_87
+IO_87      0x4000 0x00872000 rwx   
+IO_07      0x4000 0x00072000 rwx   IO_87
+ROM_87     0x8000 0x00878000 rwx   
+ROM_07     0x8000 0x00078000 rwx   ROM_87
+LowRAM_88  0x2000 0x00880000 rwx   
+LowRAM_08  0x2000 0x00080000 rwx   LowRAM_88
+IO_88      0x4000 0x00882000 rwx   
+IO_08      0x4000 0x00082000 rwx   IO_88
+ROM_88     0x8000 0x00888000 rwx   
+ROM_08     0x8000 0x00088000 rwx   ROM_88
+LowRAM_89  0x2000 0x00890000 rwx   
+LowRAM_09  0x2000 0x00090000 rwx   LowRAM_89
+IO_89      0x4000 0x00892000 rwx   
+IO_09      0x4000 0x00092000 rwx   IO_89
+ROM_89     0x8000 0x00898000 rwx   
+ROM_09     0x8000 0x00098000 rwx   ROM_89
+LowRAM_8a  0x2000 0x008a0000 rwx   
+LowRAM_0a  0x2000 0x000a0000 rwx   LowRAM_8a
+IO_8a      0x4000 0x008a2000 rwx   
+IO_0a      0x4000 0x000a2000 rwx   IO_8a
+ROM_8a     0x8000 0x008a8000 rwx   
+ROM_0a     0x8000 0x000a8000 rwx   ROM_8a
+LowRAM_8b  0x2000 0x008b0000 rwx   
+LowRAM_0b  0x2000 0x000b0000 rwx   LowRAM_8b
+IO_8b      0x4000 0x008b2000 rwx   
+IO_0b      0x4000 0x000b2000 rwx   IO_8b
+ROM_8b     0x8000 0x008b8000 rwx   
+ROM_0b     0x8000 0x000b8000 rwx   ROM_8b
+LowRAM_8c  0x2000 0x008c0000 rwx   
+LowRAM_0c  0x2000 0x000c0000 rwx   LowRAM_8c
+IO_8c      0x4000 0x008c2000 rwx   
+IO_0c      0x4000 0x000c2000 rwx   IO_8c
+ROM_8c     0x8000 0x008c8000 rwx   
+ROM_0c     0x8000 0x000c8000 rwx   ROM_8c
+LowRAM_8d  0x2000 0x008d0000 rwx   
+LowRAM_0d  0x2000 0x000d0000 rwx   LowRAM_8d
+IO_8d      0x4000 0x008d2000 rwx   
+IO_0d      0x4000 0x000d2000 rwx   IO_8d
+ROM_8d     0x8000 0x008d8000 rwx   
+ROM_0d     0x8000 0x000d8000 rwx   ROM_8d
+LowRAM_8e  0x2000 0x008e0000 rwx   
+LowRAM_0e  0x2000 0x000e0000 rwx   LowRAM_8e
+IO_8e      0x4000 0x008e2000 rwx   
+IO_0e      0x4000 0x000e2000 rwx   IO_8e
+ROM_8e     0x8000 0x008e8000 rwx   
+ROM_0e     0x8000 0x000e8000 rwx   ROM_8e
+LowRAM_8f  0x2000 0x008f0000 rwx   
+LowRAM_0f  0x2000 0x000f0000 rwx   LowRAM_8f
+IO_8f      0x4000 0x008f2000 rwx   
+IO_0f      0x4000 0x000f2000 rwx   IO_8f
+ROM_8f     0x8000 0x008f8000 rwx   
+ROM_0f     0x8000 0x000f8000 rwx   ROM_8f
+LowRAM_90  0x2000 0x00900000 rwx   
+LowRAM_10  0x2000 0x00100000 rwx   LowRAM_90
+IO_90      0x4000 0x00902000 rwx   
+IO_10      0x4000 0x00102000 rwx   IO_90
+ROM_90     0x8000 0x00908000 rwx   
+ROM_10     0x8000 0x00108000 rwx   ROM_90
+LowRAM_91  0x2000 0x00910000 rwx   
+LowRAM_11  0x2000 0x00110000 rwx   LowRAM_91
+IO_91      0x4000 0x00912000 rwx   
+IO_11      0x4000 0x00112000 rwx   IO_91
+ROM_91     0x8000 0x00918000 rwx   
+ROM_11     0x8000 0x00118000 rwx   ROM_91
+LowRAM_92  0x2000 0x00920000 rwx   
+LowRAM_12  0x2000 0x00120000 rwx   LowRAM_92
+IO_92      0x4000 0x00922000 rwx   
+IO_12      0x4000 0x00122000 rwx   IO_92
+ROM_92     0x8000 0x00928000 rwx   
+ROM_12     0x8000 0x00128000 rwx   ROM_92
+LowRAM_93  0x2000 0x00930000 rwx   
+LowRAM_13  0x2000 0x00130000 rwx   LowRAM_93
+IO_93      0x4000 0x00932000 rwx   
+IO_13      0x4000 0x00132000 rwx   IO_93
+ROM_93     0x8000 0x00938000 rwx   
+ROM_13     0x8000 0x00138000 rwx   ROM_93
+LowRAM_94  0x2000 0x00940000 rwx   
+LowRAM_14  0x2000 0x00140000 rwx   LowRAM_94
+IO_94      0x4000 0x00942000 rwx   
+IO_14      0x4000 0x00142000 rwx   IO_94
+ROM_94     0x8000 0x00948000 rwx   
+ROM_14     0x8000 0x00148000 rwx   ROM_94
+LowRAM_95  0x2000 0x00950000 rwx   
+LowRAM_15  0x2000 0x00150000 rwx   LowRAM_95
+IO_95      0x4000 0x00952000 rwx   
+IO_15      0x4000 0x00152000 rwx   IO_95
+ROM_95     0x8000 0x00958000 rwx   
+ROM_15     0x8000 0x00158000 rwx   ROM_95
+LowRAM_96  0x2000 0x00960000 rwx   
+LowRAM_16  0x2000 0x00160000 rwx   LowRAM_96
+IO_96      0x4000 0x00962000 rwx   
+IO_16      0x4000 0x00162000 rwx   IO_96
+ROM_96     0x8000 0x00968000 rwx   
+ROM_16     0x8000 0x00168000 rwx   ROM_96
+LowRAM_97  0x2000 0x00970000 rwx   
+LowRAM_17  0x2000 0x00170000 rwx   LowRAM_97
+IO_97      0x4000 0x00972000 rwx   
+IO_17      0x4000 0x00172000 rwx   IO_97
+ROM_97     0x8000 0x00978000 rwx   
+ROM_17     0x8000 0x00178000 rwx   ROM_97
+LowRAM_98  0x2000 0x00980000 rwx   
+LowRAM_18  0x2000 0x00180000 rwx   LowRAM_98
+IO_98      0x4000 0x00982000 rwx   
+IO_18      0x4000 0x00182000 rwx   IO_98
+ROM_98     0x8000 0x00988000 rwx   
+ROM_18     0x8000 0x00188000 rwx   ROM_98
+LowRAM_99  0x2000 0x00990000 rwx   
+LowRAM_19  0x2000 0x00190000 rwx   LowRAM_99
+IO_99      0x4000 0x00992000 rwx   
+IO_19      0x4000 0x00192000 rwx   IO_99
+ROM_99     0x8000 0x00998000 rwx   
+ROM_19     0x8000 0x00198000 rwx   ROM_99
+LowRAM_9a  0x2000 0x009a0000 rwx   
+LowRAM_1a  0x2000 0x001a0000 rwx   LowRAM_9a
+IO_9a      0x4000 0x009a2000 rwx   
+IO_1a      0x4000 0x001a2000 rwx   IO_9a
+ROM_9a     0x8000 0x009a8000 rwx   
+ROM_1a     0x8000 0x001a8000 rwx   ROM_9a
+LowRAM_9b  0x2000 0x009b0000 rwx   
+LowRAM_1b  0x2000 0x001b0000 rwx   LowRAM_9b
+IO_9b      0x4000 0x009b2000 rwx   
+IO_1b      0x4000 0x001b2000 rwx   IO_9b
+ROM_9b     0x8000 0x009b8000 rwx   
+ROM_1b     0x8000 0x001b8000 rwx   ROM_9b
+LowRAM_9c  0x2000 0x009c0000 rwx   
+LowRAM_1c  0x2000 0x001c0000 rwx   LowRAM_9c
+IO_9c      0x4000 0x009c2000 rwx   
+IO_1c      0x4000 0x001c2000 rwx   IO_9c
+ROM_9c     0x8000 0x009c8000 rwx   
+ROM_1c     0x8000 0x001c8000 rwx   ROM_9c
+LowRAM_9d  0x2000 0x009d0000 rwx   
+LowRAM_1d  0x2000 0x001d0000 rwx   LowRAM_9d
+IO_9d      0x4000 0x009d2000 rwx   
+IO_1d      0x4000 0x001d2000 rwx   IO_9d
+ROM_9d     0x8000 0x009d8000 rwx   
+ROM_1d     0x8000 0x001d8000 rwx   ROM_9d
+LowRAM_9e  0x2000 0x009e0000 rwx   
+LowRAM_1e  0x2000 0x001e0000 rwx   LowRAM_9e
+IO_9e      0x4000 0x009e2000 rwx   
+IO_1e      0x4000 0x001e2000 rwx   IO_9e
+ROM_9e     0x8000 0x009e8000 rwx   
+ROM_1e     0x8000 0x001e8000 rwx   ROM_9e
+LowRAM_9f  0x2000 0x009f0000 rwx   
+LowRAM_1f  0x2000 0x001f0000 rwx   LowRAM_9f
+IO_9f      0x4000 0x009f2000 rwx   
+IO_1f      0x4000 0x001f2000 rwx   IO_9f
+ROM_9f     0x8000 0x009f8000 rwx   
+ROM_1f     0x8000 0x001f8000 rwx   ROM_9f
+LowRAM_a0  0x2000 0x00a00000 rwx   
+LowRAM_20  0x2000 0x00200000 rwx   LowRAM_a0
+IO_a0      0x4000 0x00a02000 rwx   
+IO_20      0x4000 0x00202000 rwx   IO_a0
+ROM_a0     0x8000 0x00a08000 rwx   
+ROM_20     0x8000 0x00208000 rwx   ROM_a0
+LowRAM_a1  0x2000 0x00a10000 rwx   
+LowRAM_21  0x2000 0x00210000 rwx   LowRAM_a1
+IO_a1      0x4000 0x00a12000 rwx   
+IO_21      0x4000 0x00212000 rwx   IO_a1
+ROM_a1     0x8000 0x00a18000 rwx   
+ROM_21     0x8000 0x00218000 rwx   ROM_a1
+LowRAM_a2  0x2000 0x00a20000 rwx   
+LowRAM_22  0x2000 0x00220000 rwx   LowRAM_a2
+IO_a2      0x4000 0x00a22000 rwx   
+IO_22      0x4000 0x00222000 rwx   IO_a2
+ROM_a2     0x8000 0x00a28000 rwx   
+ROM_22     0x8000 0x00228000 rwx   ROM_a2
+LowRAM_a3  0x2000 0x00a30000 rwx   
+LowRAM_23  0x2000 0x00230000 rwx   LowRAM_a3
+IO_a3      0x4000 0x00a32000 rwx   
+IO_23      0x4000 0x00232000 rwx   IO_a3
+ROM_a3     0x8000 0x00a38000 rwx   
+ROM_23     0x8000 0x00238000 rwx   ROM_a3
+LowRAM_a4  0x2000 0x00a40000 rwx   
+LowRAM_24  0x2000 0x00240000 rwx   LowRAM_a4
+IO_a4      0x4000 0x00a42000 rwx   
+IO_24      0x4000 0x00242000 rwx   IO_a4
+ROM_a4     0x8000 0x00a48000 rwx   
+ROM_24     0x8000 0x00248000 rwx   ROM_a4
+LowRAM_a5  0x2000 0x00a50000 rwx   
+LowRAM_25  0x2000 0x00250000 rwx   LowRAM_a5
+IO_a5      0x4000 0x00a52000 rwx   
+IO_25      0x4000 0x00252000 rwx   IO_a5
+ROM_a5     0x8000 0x00a58000 rwx   
+ROM_25     0x8000 0x00258000 rwx   ROM_a5
+LowRAM_a6  0x2000 0x00a60000 rwx   
+LowRAM_26  0x2000 0x00260000 rwx   LowRAM_a6
+IO_a6      0x4000 0x00a62000 rwx   
+IO_26      0x4000 0x00262000 rwx   IO_a6
+ROM_a6     0x8000 0x00a68000 rwx   
+ROM_26     0x8000 0x00268000 rwx   ROM_a6
+LowRAM_a7  0x2000 0x00a70000 rwx   
+LowRAM_27  0x2000 0x00270000 rwx   LowRAM_a7
+IO_a7      0x4000 0x00a72000 rwx   
+IO_27      0x4000 0x00272000 rwx   IO_a7
+ROM_a7     0x8000 0x00a78000 rwx   
+ROM_27     0x8000 0x00278000 rwx   ROM_a7
+LowRAM_a8  0x2000 0x00a80000 rwx   
+LowRAM_28  0x2000 0x00280000 rwx   LowRAM_a8
+IO_a8      0x4000 0x00a82000 rwx   
+IO_28      0x4000 0x00282000 rwx   IO_a8
+ROM_a8     0x8000 0x00a88000 rwx   
+ROM_28     0x8000 0x00288000 rwx   ROM_a8
+LowRAM_a9  0x2000 0x00a90000 rwx   
+LowRAM_29  0x2000 0x00290000 rwx   LowRAM_a9
+IO_a9      0x4000 0x00a92000 rwx   
+IO_29      0x4000 0x00292000 rwx   IO_a9
+ROM_a9     0x8000 0x00a98000 rwx   
+ROM_29     0x8000 0x00298000 rwx   ROM_a9
+LowRAM_aa  0x2000 0x00aa0000 rwx   
+LowRAM_2a  0x2000 0x002a0000 rwx   LowRAM_aa
+IO_aa      0x4000 0x00aa2000 rwx   
+IO_2a      0x4000 0x002a2000 rwx   IO_aa
+ROM_aa     0x8000 0x00aa8000 rwx   
+ROM_2a     0x8000 0x002a8000 rwx   ROM_aa
+LowRAM_ab  0x2000 0x00ab0000 rwx   
+LowRAM_2b  0x2000 0x002b0000 rwx   LowRAM_ab
+IO_ab      0x4000 0x00ab2000 rwx   
+IO_2b      0x4000 0x002b2000 rwx   IO_ab
+ROM_ab     0x8000 0x00ab8000 rwx   
+ROM_2b     0x8000 0x002b8000 rwx   ROM_ab
+LowRAM_ac  0x2000 0x00ac0000 rwx   
+LowRAM_2c  0x2000 0x002c0000 rwx   LowRAM_ac
+IO_ac      0x4000 0x00ac2000 rwx   
+IO_2c      0x4000 0x002c2000 rwx   IO_ac
+ROM_ac     0x8000 0x00ac8000 rwx   
+ROM_2c     0x8000 0x002c8000 rwx   ROM_ac
+LowRAM_ad  0x2000 0x00ad0000 rwx   
+LowRAM_2d  0x2000 0x002d0000 rwx   LowRAM_ad
+IO_ad      0x4000 0x00ad2000 rwx   
+IO_2d      0x4000 0x002d2000 rwx   IO_ad
+ROM_ad     0x8000 0x00ad8000 rwx   
+ROM_2d     0x8000 0x002d8000 rwx   ROM_ad
+LowRAM_ae  0x2000 0x00ae0000 rwx   
+LowRAM_2e  0x2000 0x002e0000 rwx   LowRAM_ae
+IO_ae      0x4000 0x00ae2000 rwx   
+IO_2e      0x4000 0x002e2000 rwx   IO_ae
+ROM_ae     0x8000 0x00ae8000 rwx   
+ROM_2e     0x8000 0x002e8000 rwx   ROM_ae
+LowRAM_af  0x2000 0x00af0000 rwx   
+LowRAM_2f  0x2000 0x002f0000 rwx   LowRAM_af
+IO_af      0x4000 0x00af2000 rwx   
+IO_2f      0x4000 0x002f2000 rwx   IO_af
+ROM_af     0x8000 0x00af8000 rwx   
+ROM_2f     0x8000 0x002f8000 rwx   ROM_af
+LowRAM_b0  0x2000 0x00b00000 rwx   
+LowRAM_30  0x2000 0x00300000 rwx   LowRAM_b0
+IO_b0      0x4000 0x00b02000 rwx   
+IO_30      0x4000 0x00302000 rwx   IO_b0
+ROM_b0     0x8000 0x00b08000 rwx   
+ROM_30     0x8000 0x00308000 rwx   ROM_b0
+LowRAM_b1  0x2000 0x00b10000 rwx   
+LowRAM_31  0x2000 0x00310000 rwx   LowRAM_b1
+IO_b1      0x4000 0x00b12000 rwx   
+IO_31      0x4000 0x00312000 rwx   IO_b1
+ROM_b1     0x8000 0x00b18000 rwx   
+ROM_31     0x8000 0x00318000 rwx   ROM_b1
+LowRAM_b2  0x2000 0x00b20000 rwx   
+LowRAM_32  0x2000 0x00320000 rwx   LowRAM_b2
+IO_b2      0x4000 0x00b22000 rwx   
+IO_32      0x4000 0x00322000 rwx   IO_b2
+ROM_b2     0x8000 0x00b28000 rwx   
+ROM_32     0x8000 0x00328000 rwx   ROM_b2
+LowRAM_b3  0x2000 0x00b30000 rwx   
+LowRAM_33  0x2000 0x00330000 rwx   LowRAM_b3
+IO_b3      0x4000 0x00b32000 rwx   
+IO_33      0x4000 0x00332000 rwx   IO_b3
+ROM_b3     0x8000 0x00b38000 rwx   
+ROM_33     0x8000 0x00338000 rwx   ROM_b3
+LowRAM_b4  0x2000 0x00b40000 rwx   
+LowRAM_34  0x2000 0x00340000 rwx   LowRAM_b4
+IO_b4      0x4000 0x00b42000 rwx   
+IO_34      0x4000 0x00342000 rwx   IO_b4
+ROM_b4     0x8000 0x00b48000 rwx   
+ROM_34     0x8000 0x00348000 rwx   ROM_b4
+LowRAM_b5  0x2000 0x00b50000 rwx   
+LowRAM_35  0x2000 0x00350000 rwx   LowRAM_b5
+IO_b5      0x4000 0x00b52000 rwx   
+IO_35      0x4000 0x00352000 rwx   IO_b5
+ROM_b5     0x8000 0x00b58000 rwx   
+ROM_35     0x8000 0x00358000 rwx   ROM_b5
+LowRAM_b6  0x2000 0x00b60000 rwx   
+LowRAM_36  0x2000 0x00360000 rwx   LowRAM_b6
+IO_b6      0x4000 0x00b62000 rwx   
+IO_36      0x4000 0x00362000 rwx   IO_b6
+ROM_b6     0x8000 0x00b68000 rwx   
+ROM_36     0x8000 0x00368000 rwx   ROM_b6
+LowRAM_b7  0x2000 0x00b70000 rwx   
+LowRAM_37  0x2000 0x00370000 rwx   LowRAM_b7
+IO_b7      0x4000 0x00b72000 rwx   
+IO_37      0x4000 0x00372000 rwx   IO_b7
+ROM_b7     0x8000 0x00b78000 rwx   
+ROM_37     0x8000 0x00378000 rwx   ROM_b7
+LowRAM_b8  0x2000 0x00b80000 rwx   
+LowRAM_38  0x2000 0x00380000 rwx   LowRAM_b8
+IO_b8      0x4000 0x00b82000 rwx   
+IO_38      0x4000 0x00382000 rwx   IO_b8
+ROM_b8     0x8000 0x00b88000 rwx   
+ROM_38     0x8000 0x00388000 rwx   ROM_b8
+LowRAM_b9  0x2000 0x00b90000 rwx   
+LowRAM_39  0x2000 0x00390000 rwx   LowRAM_b9
+IO_b9      0x4000 0x00b92000 rwx   
+IO_39      0x4000 0x00392000 rwx   IO_b9
+ROM_b9     0x8000 0x00b98000 rwx   
+ROM_39     0x8000 0x00398000 rwx   ROM_b9
+LowRAM_ba  0x2000 0x00ba0000 rwx   
+LowRAM_3a  0x2000 0x003a0000 rwx   LowRAM_ba
+IO_ba      0x4000 0x00ba2000 rwx   
+IO_3a      0x4000 0x003a2000 rwx   IO_ba
+ROM_ba     0x8000 0x00ba8000 rwx   
+ROM_3a     0x8000 0x003a8000 rwx   ROM_ba
+LowRAM_bb  0x2000 0x00bb0000 rwx   
+LowRAM_3b  0x2000 0x003b0000 rwx   LowRAM_bb
+IO_bb      0x4000 0x00bb2000 rwx   
+IO_3b      0x4000 0x003b2000 rwx   IO_bb
+ROM_bb     0x8000 0x00bb8000 rwx   
+ROM_3b     0x8000 0x003b8000 rwx   ROM_bb
+LowRAM_bc  0x2000 0x00bc0000 rwx   
+LowRAM_3c  0x2000 0x003c0000 rwx   LowRAM_bc
+IO_bc      0x4000 0x00bc2000 rwx   
+IO_3c      0x4000 0x003c2000 rwx   IO_bc
+ROM_bc     0x8000 0x00bc8000 rwx   
+ROM_3c     0x8000 0x003c8000 rwx   ROM_bc
+LowRAM_bd  0x2000 0x00bd0000 rwx   
+LowRAM_3d  0x2000 0x003d0000 rwx   LowRAM_bd
+IO_bd      0x4000 0x00bd2000 rwx   
+IO_3d      0x4000 0x003d2000 rwx   IO_bd
+ROM_bd     0x8000 0x00bd8000 rwx   
+ROM_3d     0x8000 0x003d8000 rwx   ROM_bd
+LowRAM_be  0x2000 0x00be0000 rwx   
+LowRAM_3e  0x2000 0x003e0000 rwx   LowRAM_be
+IO_be      0x4000 0x00be2000 rwx   
+IO_3e      0x4000 0x003e2000 rwx   IO_be
+ROM_be     0x8000 0x00be8000 rwx   
+ROM_3e     0x8000 0x003e8000 rwx   ROM_be
+LowRAM_bf  0x2000 0x00bf0000 rwx   
+LowRAM_3f  0x2000 0x003f0000 rwx   LowRAM_bf
+IO_bf      0x4000 0x00bf2000 rwx   
+IO_3f      0x4000 0x003f2000 rwx   IO_bf
+ROM_bf     0x8000 0x00bf8000 rwx   
+ROM_3f     0x8000 0x003f8000 rwx   ROM_bf
+ROM_c0     0x8000 0x00c08000 rwx   
+ROM_40     0x8000 0x00408000 rwx   ROM_c0
+ROM_c1     0x8000 0x00c18000 rwx   
+ROM_41     0x8000 0x00418000 rwx   ROM_c1
+ROM_c2     0x8000 0x00c28000 rwx   
+ROM_42     0x8000 0x00428000 rwx   ROM_c2
+ROM_c3     0x8000 0x00c38000 rwx   
+ROM_43     0x8000 0x00438000 rwx   ROM_c3
+ROM_c4     0x8000 0x00c48000 rwx   
+ROM_44     0x8000 0x00448000 rwx   ROM_c4
+ROM_c5     0x8000 0x00c58000 rwx   
+ROM_45     0x8000 0x00458000 rwx   ROM_c5
+ROM_c6     0x8000 0x00c68000 rwx   
+ROM_46     0x8000 0x00468000 rwx   ROM_c6
+ROM_c7     0x8000 0x00c78000 rwx   
+ROM_47     0x8000 0x00478000 rwx   ROM_c7
+ROM_c8     0x8000 0x00c88000 rwx   
+ROM_48     0x8000 0x00488000 rwx   ROM_c8
+ROM_c9     0x8000 0x00c98000 rwx   
+ROM_49     0x8000 0x00498000 rwx   ROM_c9
+ROM_ca     0x8000 0x00ca8000 rwx   
+ROM_4a     0x8000 0x004a8000 rwx   ROM_ca
+ROM_cb     0x8000 0x00cb8000 rwx   
+ROM_4b     0x8000 0x004b8000 rwx   ROM_cb
+ROM_cc     0x8000 0x00cc8000 rwx   
+ROM_4c     0x8000 0x004c8000 rwx   ROM_cc
+ROM_cd     0x8000 0x00cd8000 rwx   
+ROM_4d     0x8000 0x004d8000 rwx   ROM_cd
+ROM_ce     0x8000 0x00ce8000 rwx   
+ROM_4e     0x8000 0x004e8000 rwx   ROM_ce
+ROM_cf     0x8000 0x00cf8000 rwx   
+ROM_4f     0x8000 0x004f8000 rwx   ROM_cf
+ROM_d0     0x8000 0x00d08000 rwx   
+ROM_50     0x8000 0x00508000 rwx   ROM_d0
+ROM_d1     0x8000 0x00d18000 rwx   
+ROM_51     0x8000 0x00518000 rwx   ROM_d1
+ROM_d2     0x8000 0x00d28000 rwx   
+ROM_52     0x8000 0x00528000 rwx   ROM_d2
+ROM_d3     0x8000 0x00d38000 rwx   
+ROM_53     0x8000 0x00538000 rwx   ROM_d3
+ROM_d4     0x8000 0x00d48000 rwx   
+ROM_54     0x8000 0x00548000 rwx   ROM_d4
+ROM_d5     0x8000 0x00d58000 rwx   
+ROM_55     0x8000 0x00558000 rwx   ROM_d5
+ROM_d6     0x8000 0x00d68000 rwx   
+ROM_56     0x8000 0x00568000 rwx   ROM_d6
+ROM_d7     0x8000 0x00d78000 rwx   
+ROM_57     0x8000 0x00578000 rwx   ROM_d7
+ROM_d8     0x8000 0x00d88000 rwx   
+ROM_58     0x8000 0x00588000 rwx   ROM_d8
+ROM_d9     0x8000 0x00d98000 rwx   
+ROM_59     0x8000 0x00598000 rwx   ROM_d9
+ROM_da     0x8000 0x00da8000 rwx   
+ROM_5a     0x8000 0x005a8000 rwx   ROM_da
+ROM_db     0x8000 0x00db8000 rwx   
+ROM_5b     0x8000 0x005b8000 rwx   ROM_db
+ROM_dc     0x8000 0x00dc8000 rwx   
+ROM_5c     0x8000 0x005c8000 rwx   ROM_dc
+ROM_dd     0x8000 0x00dd8000 rwx   
+ROM_5d     0x8000 0x005d8000 rwx   ROM_dd
+ROM_de     0x8000 0x00de8000 rwx   
+ROM_5e     0x8000 0x005e8000 rwx   ROM_de
+ROM_df     0x8000 0x00df8000 rwx   
+ROM_5f     0x8000 0x005f8000 rwx   ROM_df
+ROM_e0     0x8000 0x00e08000 rwx   
+ROM_60     0x8000 0x00608000 rwx   ROM_e0
+ROM_e1     0x8000 0x00e18000 rwx   
+ROM_61     0x8000 0x00618000 rwx   ROM_e1
+ROM_e2     0x8000 0x00e28000 rwx   
+ROM_62     0x8000 0x00628000 rwx   ROM_e2
+ROM_e3     0x8000 0x00e38000 rwx   
+ROM_63     0x8000 0x00638000 rwx   ROM_e3
+ROM_e4     0x8000 0x00e48000 rwx   
+ROM_64     0x8000 0x00648000 rwx   ROM_e4
+ROM_e5     0x8000 0x00e58000 rwx   
+ROM_65     0x8000 0x00658000 rwx   ROM_e5
+ROM_e6     0x8000 0x00e68000 rwx   
+ROM_66     0x8000 0x00668000 rwx   ROM_e6
+ROM_e7     0x8000 0x00e78000 rwx   
+ROM_67     0x8000 0x00678000 rwx   ROM_e7
+ROM_e8     0x8000 0x00e88000 rwx   
+ROM_68     0x8000 0x00688000 rwx   ROM_e8
+ROM_e9     0x8000 0x00e98000 rwx   
+ROM_69     0x8000 0x00698000 rwx   ROM_e9
+ROM_ea     0x8000 0x00ea8000 rwx   
+ROM_6a     0x8000 0x006a8000 rwx   ROM_ea
+ROM_eb     0x8000 0x00eb8000 rwx   
+ROM_6b     0x8000 0x006b8000 rwx   ROM_eb
+ROM_ec     0x8000 0x00ec8000 rwx   
+ROM_6c     0x8000 0x006c8000 rwx   ROM_ec
+ROM_ed     0x8000 0x00ed8000 rwx   
+ROM_6d     0x8000 0x006d8000 rwx   ROM_ed
+ROM_ee     0x8000 0x00ee8000 rwx   
+ROM_6e     0x8000 0x006e8000 rwx   ROM_ee
+ROM_ef     0x8000 0x00ef8000 rwx   
+ROM_6f     0x8000 0x006f8000 rwx   ROM_ef
+ROM_f0     0x8000 0x00f08000 rwx   
+ROM_70     0x8000 0x00708000 rwx   ROM_f0
+ROM_f1     0x8000 0x00f18000 rwx   
+ROM_71     0x8000 0x00718000 rwx   ROM_f1
+ROM_f2     0x8000 0x00f28000 rwx   
+ROM_72     0x8000 0x00728000 rwx   ROM_f2
+ROM_f3     0x8000 0x00f38000 rwx   
+ROM_73     0x8000 0x00738000 rwx   ROM_f3
+ROM_f4     0x8000 0x00f48000 rwx   
+ROM_74     0x8000 0x00748000 rwx   ROM_f4
+ROM_f5     0x8000 0x00f58000 rwx   
+ROM_75     0x8000 0x00758000 rwx   ROM_f5
+ROM_f6     0x8000 0x00f68000 rwx   
+ROM_76     0x8000 0x00768000 rwx   ROM_f6
+ROM_f7     0x8000 0x00f78000 rwx   
+ROM_77     0x8000 0x00778000 rwx   ROM_f7
+ROM_f8     0x8000 0x00f88000 rwx   
+ROM_78     0x8000 0x00788000 rwx   ROM_f8
+ROM_f9     0x8000 0x00f98000 rwx   
+ROM_79     0x8000 0x00798000 rwx   ROM_f9
+ROM_fa     0x8000 0x00fa8000 rwx   
+ROM_7a     0x8000 0x007a8000 rwx   ROM_fa
+ROM_fb     0x8000 0x00fb8000 rwx   
+ROM_7b     0x8000 0x007b8000 rwx   ROM_fb
+ROM_fc     0x8000 0x00fc8000 rwx   
+ROM_7c     0x8000 0x007c8000 rwx   ROM_fc
+ROM_fd     0x8000 0x00fd8000 rwx   
+ROM_7d     0x8000 0x007d8000 rwx   ROM_fd
+     paddr   size      vaddr  vsize align perm name      type flags 
+--------------------------------------------------------------------
+0x00000000 0x8000 0x00808000 0x8000   0x0 -r-x rom_80         
+0x00008000 0x8000 0x00818000 0x8000   0x0 -r-x rom_81         
+0x00000000 0x8000 0x00008000 0x8000   0x0 -r-x mirror_00      
+0x00008000 0x8000 0x00018000 0x8000   0x0 -r-x mirror_01      
+nth              paddr      vaddr bind type size lib name                  
+---------------------------------------------------------------------------
+  0         0x00000347 0x00008347 NONE NONE    0     cop_vector_native
+  0         0x00000347 0x00008347 NONE NONE    0     br_vector_native
+  0         0x00000347 0x00008347 NONE NONE    0     abort_vector_native
+  0 0xffffffffffff8a00 0x00000a00 NONE NONE    0     nmi_vector_native
+  0         0x00000347 0x00008347 NONE NONE    0     irq_vector_native
+  0         0x00000347 0x00008347 NONE NONE    0     cop_vector_emulator
+  0         0x00000347 0x00008347 NONE NONE    0     abort_vector_emulator
+  0         0x00000347 0x00008347 NONE NONE    0     nmi_vector_emulator
+  0         0x00000000 0x00008000 NONE NONE    0     reset_vector_emulator
+  0         0x00000347 0x00008347 NONE NONE    0     irq_vector_emulator
+EOF
+RUN
+
+NAME=snes cx4test
+FILE=bins/snes/cx4test.sfc
+CMDS=<<EOF
+iI
+iH
+EOF
+EXPECT=<<EOF
+arch     snes
+cpu      N/A
+features N/A
+baddr    ----------
+binsz    0x00008000
+bintype  N/A
+bits     16
+retguard false
+class    N/A
+compiler N/A
+dbg_file N/A
+endian   LE
+hdr.csum N/A
+guid     N/A
+intrp    N/A
+laddr    0x00000000
+lang     N/A
+machine  Super NES / Super Famicom
+minopsz  1
+os       snes
+cc       N/A
+rpath    N/A
+subsys   
+stripped false
+crypto   false
+havecode true
+va       true
+sanitiz  false
+static   true
+linenum  false
+lsyms    false
+canary   false
+PIE      false
+RELROCS  false
+NX       false
+ROM Game Title: CX4 TEST PROGRAM
+ROM Speed: Slow
+ROM Map Mode: LoROM 32K Banks (LoROM) (0x00)
+ROM Cartridge: ROM+CX4 (0xf3)
+ROM Size: 32 KB (0x05)
+ROM SRAM: missing (0x00)
+ROM Country: Japan (NTSC) (0x00)
+ROM Developer: Unknown (0x33)
+ROM Version: 0x00
+ROM Checksum: 0xaf96 (complement: 0x5069)
+ROM unused: 0x00000000
+ROM cop:    0x8333 (native vector)
+ROM br:     0x8333 (native vector)
+ROM abort:  0x8333 (native vector)
+ROM nmi:    0x8333 (native vector)
+ROM unused: 0x0000 (native vector)
+ROM irq:    0x8333 (native vector)
+ROM unused: 0x00000000
+ROM cop:    0x8333 (emulator vector)
+ROM unused: 0x0000 (emulator vector)
+ROM abort:  0x8333 (emulator vector)
+ROM nmi:    0x8333 (emulator vector)
+ROM reset:  0x8000 (emulator vector)
+ROM irq:    0x8333 (emulator vector)
+EOF
+RUN
