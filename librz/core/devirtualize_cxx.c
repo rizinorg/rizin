@@ -32,12 +32,12 @@ typedef struct rz_taint_state_t {
 } RzTaintState;
 
 typedef struct rz_virtual_calls_t {
-	HtUP /*<ut64,RzSetU*>*/ *virt_calls;
+	HtUP /*<ut64,RzSetS*>*/ *virt_calls;
 } RzVirtualCalls;
 
 #define RZ_TAINT_VALUE 0x1A2B3C
 
-RzList *list_of_operator_new_functions(RzCore *core) {
+RzList *list_new_fcns(RzCore *core) {
 	RzList *list = rz_analysis_function_list(core->analysis);
 	if (!list) {
 		return NULL;
@@ -93,8 +93,20 @@ static void xrefs_of_new(RzList *list, RzAnalysis *analysis, ut64 addr) {
 	RzListIter *it;
 	RzAnalysisXRef *xref;
 	rz_list_foreach (curr_list, it, xref) {
-		rz_list_append(list, &(xref->from));
+		ut64 *p_addr = RZ_NEW0(ut64);
+		*p_addr = xref->from;
+		rz_list_append(list, p_addr);
 	}
+	rz_list_free(curr_list);
+}
+
+static void free_xrefs_of_new(RzList *list_xrefs) {
+	RzListIter *it;
+	ut64 *addr = NULL;
+	rz_list_foreach (list_xrefs, it, addr) {
+		free(addr);
+	}
+	rz_list_free(list_xrefs);
 }
 
 static int compare(const void *void_value, const void *void_list_data, void *user) {
@@ -199,10 +211,11 @@ static char *get_class_name(RzAnalysis *analysis, ut64 addr) {
 		}
 		char *class_name = get_class_name_from_func(function->name);
 		if (class_name) {
+			rz_list_free(list);
 			return class_name;
 		}
-		free(class_name);
 	}
+	rz_list_free(list);
 	return NULL;
 }
 
@@ -282,7 +295,7 @@ static void define_and_mark_variable(RzAnalysis *analysis, RzTaintState *state, 
 
 	if (len == 1) {
 		type = rz_str_newf("struct %s{}", class_name);
-		old_type = class_name;
+		old_type = rz_str_dup(class_name);
 		var_type = rz_str_newf("%s*", class_name);
 	} else {
 		type = rz_str_newf("union RZ_%s_HYBRID{%s* %s;", var->name, class_name, var->name);
@@ -291,9 +304,9 @@ static void define_and_mark_variable(RzAnalysis *analysis, RzTaintState *state, 
 			char *other_class_name = rz_list_get_n(class_names, i);
 			type = rz_str_append(type, rz_str_newf(" %s* %s;", other_class_name, var->name));
 		}
-		rz_str_append(type, "}");
+		type = rz_str_append(type, "}");
 		old_type = rz_str_newf("RZ_%s_HYBRID", var->name);
-		var_type = old_type;
+		var_type = rz_str_dup(old_type);
 	}
 
 	char *exists = rz_type_format(analysis->typedb, old_type);
@@ -304,10 +317,14 @@ static void define_and_mark_variable(RzAnalysis *analysis, RzTaintState *state, 
 	RzType *v_type = rz_type_parse_string_single(analysis->typedb->parser, var_type, NULL);
 	RzAnalysisVar *v = rz_analysis_function_get_var_byname(state->var_book->function, var->name);
 	rz_analysis_var_set_type(v, v_type, true);
+
+	free(type);
+	free(old_type);
+	free(var_type);
 }
 
 static bool rz_taint_off_step(RzAnalysis *analysis, RzTaintState *state) {
-	RzList *list = list_of_operator_new_functions(analysis->core);
+	RzList *list = list_new_fcns(analysis->core);
 	RzList *list_xrefs = rz_list_new();
 	RzListIter *it;
 	RzAnalysisFunction *fcn;
@@ -320,12 +337,18 @@ static bool rz_taint_off_step(RzAnalysis *analysis, RzTaintState *state) {
 	if (rz_list_find(list_xrefs, p_addr, compare, NULL) != NULL) {
 		state->taint = RZ_TAINT_MODE_RED;
 		add_taint_value(analysis);
+		free_xrefs_of_new(list_xrefs);
+		rz_list_free(list);
 		return true;
 	}
 	if (is_call_instruction(op)) {
+		free_xrefs_of_new(list_xrefs);
+		rz_list_free(list);
 		return true;
 	}
 	rz_taint_vm_step(core, &(state->taint));
+	free_xrefs_of_new(list_xrefs);
+	rz_list_free(list);
 	return false;
 }
 
@@ -367,16 +390,40 @@ static bool rz_taint_blue_step(RzAnalysis *analysis, RzTaintState *state) {
 	return false;
 }
 
+static void free_taint_state(RzTaintState *state) {
+	if (state->class_name != NULL) {
+		free(state->class_name);
+	}
+	rz_analysis_op_free(state->op);
+	free(state);
+}
+
+static void free_variable(Variable *var) {
+	RzListIter *it;
+
+	// Free class names
+	char *name;
+	rz_list_foreach (var->class_names, it, name) {
+		free(name);
+	}
+	rz_list_free(var->class_names);
+
+	// Free object addresses
+	ut64 *p_addr;
+	rz_list_foreach (var->object_addr, it, p_addr) {
+		free(p_addr);
+	}
+	rz_list_free(var->object_addr);
+
+	// Free variable name
+	free(var->name);
+
+	free(var);
+}
+
 RZ_API RzVariableBook *rz_analysis_mark_classes(RzAnalysis *analysis) {
 
-	RzList *list = list_of_operator_new_functions(analysis->core);
-
-	RzList *list_xrefs = rz_list_new();
-	RzListIter *it;
-	RzAnalysisFunction *fcn;
-	rz_list_foreach (list, it, fcn) {
-		xrefs_of_new(list_xrefs, analysis, fcn->addr);
-	}
+	RzList *list = list_new_fcns(analysis->core);
 
 	RzCore *core = analysis->core;
 	RzAnalysisFunction *function = rz_analysis_get_fcn_in(core->analysis, core->offset, RZ_ANALYSIS_FCN_TYPE_ROOT);
@@ -438,13 +485,14 @@ RZ_API RzVariableBook *rz_analysis_mark_classes(RzAnalysis *analysis) {
 		state->addr += op->size;
 		offset += op->size;
 		core->offset = state->addr;
+		rz_analysis_op_fini(op);
 	}
 	core->offset = function->addr;
 	rz_core_analysis_il_reinit(core);
 
 	// TODO : Check for leaks
 	// TODO : Implement free for lists
-	rz_analysis_op_fini(op);
+	free_taint_state(state);
 	rz_list_free(list);
 	free(bytes);
 	return var_book;
@@ -481,6 +529,9 @@ static void allocate_objects(RzAnalysis *analysis, RzVariableBook *var_book) {
 		rz_list_foreach (var->class_names, itt, name) {
 			RzVector *vtables = rz_analysis_class_vtable_get_all(analysis, name);
 			addr = allocate_and_store(analysis->core, vtables, var, addr);
+			if (vtables != NULL) {
+				rz_vector_free(vtables);
+			}
 		}
 	}
 }
@@ -556,6 +607,7 @@ static void devirtualize_variable_vtable(RzAnalysis *analysis, RzVariableBook *v
 				RzBitVector *bv = rz_il_value_to_bv(reg);
 				ut64 vf_addr = rz_bv_to_ut64(bv);
 				rz_core_analysis_il_vm_set(core, op->reg, 0);
+				rz_bv_free(bv);
 
 				RzAnalysisFunction *vfunc = rz_analysis_get_fcn_in(core->analysis, vf_addr, RZ_ANALYSIS_FCN_TYPE_ROOT);
 				if (!vfunc) {
@@ -577,12 +629,13 @@ static void devirtualize_variable_vtable(RzAnalysis *analysis, RzVariableBook *v
 		start += op->size;
 		offset += op->size;
 		core->offset = start;
+		rz_analysis_op_fini(op);
 	}
 
 	core->offset = function->addr;
 	rz_core_analysis_il_reinit(core);
-
-	rz_analysis_op_fini(op);
+	free(bytes);
+	rz_analysis_op_free(op);
 }
 
 static bool add_comment(void *user, const ut64 key, const void *v) {
@@ -593,7 +646,6 @@ static bool add_comment(void *user, const ut64 key, const void *v) {
 	void **it;
 
 	char *comment = NULL;
-
 	bool first = true;
 	rz_pvector_foreach (vect, it) {
 		const char *vfunc_name = *it;
@@ -602,18 +654,33 @@ static bool add_comment(void *user, const ut64 key, const void *v) {
 			first = false;
 			continue;
 		}
-		comment = rz_str_append(comment, rz_str_newf(" / %s", vfunc_name));
+		char *add_class = rz_str_newf(" / %s", vfunc_name);
+		comment = rz_str_append(comment, add_class);
+		RZ_FREE(add_class);
 	}
 
 	rz_core_meta_comment_add(core, comment, key);
-	free(comment);
+	rz_pvector_fini(vect);
+	if (comment) {
+		RZ_FREE(comment);
+	}
 
-	// TODO : Add free for vect
+	rz_pvector_foreach (vect, it) {
+		free(*it);
+	}
+	rz_pvector_free(vect);
+
+	return true;
+}
+
+static bool free_virt_calls(void *user, const ut64 key, const void *v) {
+	RzSetS *set = (RzSetS *)v;
+	ht_sp_free(set);
 	return true;
 }
 
 RZ_API void rz_analysis_devirtualize(RzAnalysis *analysis, RzVariableBook *var_book) {
-	rz_core_analysis_esil_init_mem(analysis->core, NULL, 0x3000, 0x1000); // Memory allocation for obbjects
+	rz_core_analysis_esil_init_mem(analysis->core, "simulated object space", 0x3000, 0x1000); // Memory allocation for obbjects
 	allocate_objects(analysis, var_book);
 	RzListIter *it;
 	Variable *var;
@@ -630,7 +697,32 @@ RZ_API void rz_analysis_devirtualize(RzAnalysis *analysis, RzVariableBook *var_b
 	}
 
 	ht_up_foreach(virt_calls->virt_calls, add_comment, analysis->core);
-	// TODO : Add free for virt_calls
+	ht_up_foreach(virt_calls->virt_calls, free_virt_calls, NULL);
+	ht_up_free(virt_calls->virt_calls);
+	free(virt_calls);
+	rz_core_analysis_esil_init_mem_del(analysis->core, "simulated object space", 0x3000, 0x1000);
+}
+
+static void free_variable_book(RzVariableBook *var_book) {
+	if (var_book == NULL) {
+		return;
+	}
+
+	// free all stack variables
+	RzListIter *it;
+	Variable *var;
+	rz_list_foreach (var_book->stack_variables, it, var) {
+		free_variable(var);
+	}
+	rz_list_free(var_book->stack_variables);
+
+	// free class variables
+	ht_up_free(var_book->class_variables);
+
+	// free class var list
+	rz_list_free(var_book->class_var_list);
+
+	free(var_book);
 }
 
 RZ_API void rz_analysis_devirtualize_methods(RzAnalysis *analysis) {
@@ -640,4 +732,5 @@ RZ_API void rz_analysis_devirtualize_methods(RzAnalysis *analysis) {
 		return;
 	}
 	rz_analysis_devirtualize(analysis, var_book);
+	free_variable_book(var_book);
 }
