@@ -218,7 +218,7 @@ static RzPVector /*<RzBinSection *>*/ *n64_sections(RzBinFile *bf) {
 	size_t file_size = rz_buf_size(bf->buf);
 	RzBinSection *sect = NULL;
 
-	RzPVector /*<RzBinSection *>*/ *ret = rz_pvector_new(NULL);
+	RzPVector /*<RzBinSection *>*/ *ret = rz_pvector_new((RzPVectorFree)rz_bin_section_free);
 	if (!ret) {
 		return NULL;
 	}
