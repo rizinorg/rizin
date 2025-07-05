@@ -4,9 +4,112 @@ CMDS=<<EOF
 e analysis.hasnext=true
 e asm.arch=snes
 afr
-aflc
+aflt
 EOF
 EXPECT=<<EOF
-102
+      addr name           size xrefsTo xrefsFrom calls nbbs edges cc cost noreturn 
+-----------------------------------------------------------------------------------
+0x00000000 fcn.00000000    182       0        66     6    5     6  3    0 false
+0x000000b6 fcn.000000b6    361       3         6     4   19    25 10    0 false
+0x0000318d fcn.0000318d    256       1         0     0    1     1  0    0 false
+0x0000328d fcn.0000328d    897       1         1     0    5     5  2    0 false
+0x0000360e fcn.0000360e     26       0         1     0    1     0  1    0 false
+0x00003628 fcn.00003628     24       1         0     0    1     0  1    0 false
+0x00003640 fcn.00003640 524290       1         1     0   10     9  1    0 false
+0x00008182 fcn.00008182     75       2         1     0    5     7  2    0 false
+0x000081a6 fcn.000081a6     36       0         1     0    1     1  0    0 false
+0x000081ca fcn.000081ca     66       1         2     1    3     3  2    0 false
+0x0000820c fcn.0000820c     66       1         1     1    3     3  2    0 false
+0x0000824e fcn.0000824e     44       1         1     0    5     7  2    0 false
+0x0000827a fcn.0000827a     56       2         1     0    5     7  2    0 false
+0x000082b2 fcn.000082b2    124       2         2     0   10    14  6    0 false
+0x0000833b fcn.0000833b      7       0        23     0    1     0  1    0 false
+0x00008342 fcn.00008342      3       1         0     0    1     0  1    0 false
+0x00008345 fcn.00008345      3       1         0     0    1     0  1    0 false
+0x00008348 fcn.00008348      3       1         0     0    1     0  1    0 false
+0x0000834b fcn.0000834b      3       1         0     0    1     0  1    0 false
+0x0000834e fcn.0000834e      3       1         0     0    1     0  1    0 false
+0x00008351 fcn.00008351      3       1         0     0    1     0  1    0 false
+0x00008354 fcn.00008354      3       1         0     0    1     0  1    0 false
+0x00008357 fcn.00008357      3       1         0     0    1     0  1    0 false
+0x0000835a fcn.0000835a      3       1         0     0    1     0  1    0 false
+0x0000835d fcn.0000835d      3       1         0     0    1     0  1    0 false
+0x00008360 fcn.00008360      3       1         0     0    1     0  1    0 false
+0x00008363 fcn.00008363      3       1         0     0    1     0  1    0 false
+0x00008366 fcn.00008366      3       1         0     0    1     0  1    0 false
+0x00008369 fcn.00008369      3       1         0     0    1     0  1    0 false
+0x0000836c fcn.0000836c      3       1         0     0    1     0  1    0 false
+0x0000836f fcn.0000836f      3       1         0     0    1     0  1    0 false
+0x00008372 fcn.00008372      3       1         0     0    1     0  1    0 false
+0x00008375 fcn.00008375      3       1         0     0    1     0  1    0 false
+0x00008378 fcn.00008378      3       1         0     0    1     0  1    0 false
+0x0000837b fcn.0000837b      3       1         0     0    1     0  1    0 false
+0x0000837e fcn.0000837e      3       1         0     0    1     0  1    0 false
+0x00008381 fcn.00008381      3       1         0     0    1     0  1    0 false
+0x00008384 fcn.00008384      3       1         0     0    1     0  1    0 false
+0x00008399 fcn.00008399      3       1         0     0    1     0  1    0 false
+0x0000839c fcn.0000839c      3       1         0     0    1     0  1    0 false
+0x0000839f fcn.0000839f      3       1         0     0    1     0  1    0 false
+0x000083a2 fcn.000083a2      3       1         0     0    1     0  1    0 false
+0x000083a5 fcn.000083a5      3       1         0     0    1     0  1    0 false
+0x000083a8 fcn.000083a8      1       1         0     0    1     1  0    0 false
+0x000083a9 fcn.000083a9      2       0         0     0    1     0  1    0 false
+0x000083ab fcn.000083ab      3       1         0     0    1     0  1    0 false
+0x000083ae fcn.000083ae      3       1         0     0    1     0  1    0 false
+0x000083b1 fcn.000083b1      3       1         0     0    1     0  1    0 false
+0x000083b4 fcn.000083b4      3       1         0     0    1     0  1    0 false
+0x000083b7 fcn.000083b7      3       1         0     0    1     0  1    0 false
+0x000083ba fcn.000083ba      3       1         0     0    1     0  1    0 false
+0x000083bd fcn.000083bd      3       1         0     0    1     0  1    0 false
+0x000083c0 fcn.000083c0      3       1         0     0    1     0  1    0 false
+0x000083c3 fcn.000083c3      3       1         0     0    1     0  1    0 false
+0x000083c6 fcn.000083c6      3       1         0     0    1     0  1    0 false
+0x000083c9 fcn.000083c9      3       1         0     0    1     0  1    0 false
+0x000083cc fcn.000083cc      3       1         0     0    1     0  1    0 false
+0x000083cf fcn.000083cf      3       1         0     0    1     0  1    0 false
+0x000083d2 fcn.000083d2      3       1         0     0    1     0  1    0 false
+0x000083d5 fcn.000083d5      2       1         0     0    1     1  0    0 false
+0x000083d7 fcn.000083d7      1       0         0     0    1     0  1    0 false
+0x000083d8 fcn.000083d8      3       1         0     0    1     0  1    0 false
+0x000083db fcn.000083db      3       1         0     0    1     0  1    0 false
+0x000083de fcn.000083de      3       1         0     0    1     0  1    0 false
+0x000083e1 fcn.000083e1      3       1         0     0    1     0  1    0 false
+0x000083e4 fcn.000083e4      3       1         0     0    1     0  1    0 false
+0x000083e7 fcn.000083e7      3       1         0     0    1     0  1    0 false
+0x000083ea fcn.000083ea      3       1         0     0    1     0  1    0 false
+0x000083ed fcn.000083ed      3       1         0     0    1     0  1    0 false
+0x000083f0 fcn.000083f0      3       1         0     0    1     0  1    0 false
+0x000083f3 fcn.000083f3      3       1         0     0    1     0  1    0 false
+0x00008404 fcn.00008404      7       1         0     0    1     0  1    0 false
+0x0000840b fcn.0000840b      3       1         0     0    1     0  1    0 false
+0x0000840e fcn.0000840e      3       1         0     0    1     0  1    0 false
+0x00008411 fcn.00008411      3       1         0     0    1     0  1    0 false
+0x00008414 fcn.00008414      3       1         0     0    1     0  1    0 false
+0x00008417 fcn.00008417      3       1         0     0    1     0  1    0 false
+0x0000841a fcn.0000841a      3       1         0     0    1     0  1    0 false
+0x0000841d fcn.0000841d      3       1         0     0    1     0  1    0 false
+0x00008420 fcn.00008420      3       1         0     0    1     0  1    0 false
+0x00008423 fcn.00008423      3       1         0     0    1     0  1    0 false
+0x00008426 fcn.00008426      3       1         0     0    1     0  1    0 false
+0x00008429 fcn.00008429      3       1         0     0    1     0  1    0 false
+0x0000842c fcn.0000842c      3       1         0     0    1     0  1    0 false
+0x0000842f fcn.0000842f      3       1         0     0    1     0  1    0 false
+0x00008432 fcn.00008432      3       1         0     0    1     0  1    0 false
+0x00008435 fcn.00008435      3       1         0     0    1     0  1    0 false
+0x00008438 fcn.00008438      3       1         0     0    1     0  1    0 false
+0x0000843b fcn.0000843b      3       1         0     0    1     0  1    0 false
+0x0000843e fcn.0000843e      3       1         0     0    1     0  1    0 false
+0x00008441 fcn.00008441      3       1         0     0    1     0  1    0 false
+0x00008444 fcn.00008444      3       1         0     0    1     0  1    0 false
+0x00008447 fcn.00008447      3       1         0     0    1     0  1    0 false
+0x0000844a fcn.0000844a      3       1         0     0    1     0  1    0 false
+0x0000844d fcn.0000844d      3       1         0     0    1     0  1    0 false
+0x00008450 fcn.00008450      3       1         0     0    1     0  1    0 false
+0x00008453 fcn.00008453      3       1         0     0    1     0  1    0 false
+0x00008456 fcn.00008456      3       1         0     0    1     0  1    0 false
+0x00008459 fcn.00008459      3       1         0     0    1     0  1    0 false
+0x0000845c fcn.0000845c      3       1         0     0    1     0  1    0 false
+0x0000845f fcn.0000845f      3       1         0     0    1     0  1    0 false
+0x00008462 fcn.00008462      3       1         0     0    1     0  1    0 false
 EOF
 RUN
