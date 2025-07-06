@@ -19,10 +19,7 @@ RUN
 NAME=maps
 FILE=bins/elf/netbsd-hello-x64
 ARGS=-d
-CMDS=<<EOF
-dm~hello~[3-9]
-dc
-EOF
+CMDS=dm~hello~[3-9]
 REGEXP_FILTER_OUT=(?:(\-\susr\s4K\ss\sr-x)|(?:\s[0-9]+\s(?=\d))|(\/home\/build\/rizin-testbins\/elf\/netbsd-hello-x64))
 EXPECT=<<EOF
 - usr 4K s r-x
