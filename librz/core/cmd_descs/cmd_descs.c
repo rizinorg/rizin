@@ -22012,7 +22012,6 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *av_cd = rz_cmd_desc_group_modes_new(core->rcmd, cmd_analysis_cd, "av", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_analysis_list_vtables_handler, &analysis_list_vtables_help, &av_help);
 	rz_warn_if_fail(av_cd);
-
 	RzCmdDesc *analysis_devirtualize_cd = rz_cmd_desc_argv_new(core->rcmd, av_cd, "avD", rz_analysis_devirtualize_handler, &analysis_devirtualize_help);
 	rz_warn_if_fail(analysis_devirtualize_cd);
 

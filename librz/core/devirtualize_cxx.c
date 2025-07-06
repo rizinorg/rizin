@@ -19,8 +19,8 @@ typedef struct var_t {
 	char *name; ///< for now, checks varibles discovered by ESIL
 	ut64 stack_addr; ///< address of the stack where variable is stored according to RzIL VM
 	ut64 instr_addr; ///< address of instruction which writes to variable
-	RzList /*<char*>*/ *class_names; ///< Single variable might store multiple classes based on conditionals
-	RzList /*<ut64>*/ *object_addr; ///< Address of allocated object which stores vtable ptr
+	RzList /*<char *>*/ *class_names; ///< Single variable might store multiple classes based on conditionals
+	RzList /*<ut64 *>*/ *object_addr; ///< Address of allocated object which stores vtable ptr
 } Variable;
 
 typedef struct rz_taint_state_t {
@@ -37,7 +37,7 @@ typedef struct rz_virtual_calls_t {
 
 #define RZ_TAINT_VALUE 0x1A2B3C
 
-RzList *list_new_fcns(RzCore *core) {
+RzList /*<RzAnalysisFunction *>*/ *list_new_fcns(RzCore *core) {
 	RzList *list = rz_analysis_function_list(core->analysis);
 	if (!list) {
 		return NULL;
@@ -88,7 +88,7 @@ static bool rz_taint_vm_step(RzCore *core, RzTaintDevirt *taint) {
 	return false;
 }
 
-static void xrefs_of_new(RzList *list, RzAnalysis *analysis, ut64 addr) {
+static void xrefs_of_new(RzList /*<RzAnalysisFunction *>*/ *list, RzAnalysis *analysis, ut64 addr) {
 	RzList *curr_list = rz_analysis_xrefs_get_to(analysis, addr);
 	RzListIter *it;
 	RzAnalysisXRef *xref;
@@ -100,7 +100,7 @@ static void xrefs_of_new(RzList *list, RzAnalysis *analysis, ut64 addr) {
 	rz_list_free(curr_list);
 }
 
-static void free_xrefs_of_new(RzList *list_xrefs) {
+static void free_xrefs_of_new(RzList /*<ut64 *>*/ *list_xrefs) {
 	RzListIter *it;
 	ut64 *addr = NULL;
 	rz_list_foreach (list_xrefs, it, addr) {
@@ -134,7 +134,7 @@ void rz_taint_init(RzAnalysis *analysis, RzCore *core) {
 	}
 }
 
-RzList *get_variable_writes(RzAnalysisFunction *fcn) {
+RzList /*<Variable *>*/ *get_variable_writes(RzAnalysisFunction *fcn) {
 	void **it;
 	RzList *var_list = rz_list_new();
 	rz_pvector_foreach (&fcn->vars, it) {
@@ -156,7 +156,7 @@ RzList *get_variable_writes(RzAnalysisFunction *fcn) {
 	return var_list;
 }
 
-static Variable *var_at_write(RzTaintState *state, RzList *var_write_list, ut64 stack_addr) {
+static Variable *var_at_write(RzTaintState *state, RzList /*<Variable *>*/ *var_write_list, ut64 stack_addr) {
 	HtUP *stack_vars = state->var_book->class_variables;
 	bool found = false;
 	Variable *ht_var = ht_up_find(stack_vars, stack_addr, &found);
@@ -498,7 +498,7 @@ RZ_API RzVariableBook *rz_analysis_mark_classes(RzAnalysis *analysis) {
 	return var_book;
 }
 
-static ut64 allocate_and_store(RzCore *core, RzVector *vtables, Variable *var, ut64 addr) {
+static ut64 allocate_and_store(RzCore *core, RzVector /*<RzAnalysisVtable>*/ *vtables, Variable *var, ut64 addr) {
 	RzAnalysisVTable *vtable;
 	rz_vector_foreach (vtables, vtable) {
 		ut8 buf[8];

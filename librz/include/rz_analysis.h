@@ -2295,9 +2295,9 @@ RZ_API bool rz_analysis_is_prelude(RzAnalysis *analysis, const ut8 *data, int le
 /* devirualize */
 typedef struct rz_variable_book_t {
 	RzAnalysisFunction *function;
-	HtUP /*<ut64, RzVariable*>*/ *class_variables;
-	RzList *stack_variables;
-	RzList *class_var_list;
+	HtUP /*<ut64, RzVariable *>*/ *class_variables;
+	RzList /*<Variable *>*/ *stack_variables;
+	RzList /*<Variable *>*/ *class_var_list;
 } RzVariableBook;
 
 RZ_API RzVariableBook *rz_analysis_mark_classes(RzAnalysis *analysis);
