@@ -73,7 +73,7 @@ rz_util_common_sources = [
   'thread_types.c',
   'time.c',
   'tree.c',
-  'ubase64.c',
+  'base64.c',
   'uleb128.c',
   'unum.c',
   'utf16.c',
