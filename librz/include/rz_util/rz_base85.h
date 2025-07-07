@@ -7,8 +7,11 @@
 extern "C" {
 #endif
 
-RZ_API void rz_base85_encode(FILE *fp, int delims, int wrap, int y_abbr);
-RZ_API bool rz_base85_decode(FILE *fp, int delims, int ignore_garbage);
+RZ_API int rz_base85_encode(char *dest, const char *src, size_t n, int delims, int wrap, int y_abbr);
+RZ_API st64 rz_base85_decode(char *dest, const char *src, st64 len, int delims, int ignore_garbage);
+
+RZ_API RZ_OWN char *rz_base85_encode_dyn(const char *src, size_t n, int delims, int wrap, int y_abbr);
+RZ_API RZ_OWN char *rz_base85_decode_dyn(const char *src, st64 len, int delims, int ignore_garbage, size_t *out_len);
 
 #ifdef __cplusplus
 }
