@@ -41,6 +41,7 @@ static const struct {
 	{ "base64", RZ_CODEC_B64 },
 	{ "base91", RZ_CODEC_B91 },
 	{ "punycode", RZ_CODEC_PUNYCODE },
+  { "base85", RZ_CODEC_B85 },
 };
 
 RZ_API RZ_BORROW const char *rz_crypto_name(const RzCryptoSelector bit) {
