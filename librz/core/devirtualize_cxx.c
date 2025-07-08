@@ -7,9 +7,14 @@
 #include "core_private.h"
 
 /**
+ * \file
+ * Partially uses ESIL uplifting but will be ported to RzIL
+ */
+
+/**
  * \brief Used to describe current state of tainting
  */
-typedef enum {
+typedef enum rz_taint_devirt_t {
 	RZ_TAINT_MODE_OFF, ///< No tainting in this mode
 	RZ_TAINT_MODE_RED, ///< Mode when `new` is identified but constructor is yet to be identified
 	RZ_TAINT_MODE_BLUE, ///< Mode after constructor is also identified, write to variable is yet to be identified
@@ -21,22 +26,25 @@ typedef struct var_t {
 	ut64 instr_addr; ///< address of instruction which writes to variable
 	RzList /*<char *>*/ *class_names; ///< Single variable might store multiple classes based on conditionals
 	RzList /*<ut64 *>*/ *object_addr; ///< Address of allocated object which stores vtable ptr
-} Variable;
+} CppVariable;
 
 typedef struct rz_taint_state_t {
-	RzTaintDevirt taint;
-	RzAnalysisOp *op;
-	ut64 addr;
-	char *class_name;
-	RzVariableBook *var_book;
+	RzTaintDevirt taint; ///< current taint mode
+	RzAnalysisOp *op; ///< analysis instruction op
+	ut64 addr; ///< current instruction address
+	char *class_name; ///< class name to be stored in variable
+	RzCppVariableBook *var_book; ///< collection of all stack variables
 } RzTaintState;
 
 typedef struct rz_virtual_calls_t {
-	HtUP /*<ut64,RzSetS*>*/ *virt_calls;
+	HtUP /*<ut64,RzSetS *>*/ *virt_calls; ///< hash map of instruction address and class method name
 } RzVirtualCalls;
 
 #define RZ_TAINT_VALUE 0x1A2B3C
 
+/**
+ * \return list of `RzAnalysisFunction *` of all allocator i.e. `new` functions
+ */
 RzList /*<RzAnalysisFunction *>*/ *list_new_fcns(RzCore *core) {
 	RzList *list = rz_analysis_function_list(core->analysis);
 	if (!list) {
@@ -54,13 +62,13 @@ RzList /*<RzAnalysisFunction *>*/ *list_new_fcns(RzCore *core) {
 	return ret_list;
 }
 
-static bool rz_taint_vm_step(RzCore *core, RzTaintDevirt *taint) {
+static void rz_taint_vm_step(RzCore *core) {
 	if (!rz_core_il_step(core, 1)) {
-		return false;
+		return;
 	}
 
 	if (!core->analysis || !core->analysis->il_vm) {
-		return false;
+		return;
 	}
 
 	RzILVM *vm = core->analysis->il_vm->vm;
@@ -77,7 +85,7 @@ static bool rz_taint_vm_step(RzCore *core, RzTaintDevirt *taint) {
 		case RZ_IL_EVENT_MEM_WRITE: {
 			ut64 new_val = rz_bv_to_ut64(evt->data.mem_write.new_value);
 			if (new_val == RZ_TAINT_VALUE) {
-				return true;
+				return;
 			}
 		}
 		default: {
@@ -85,10 +93,12 @@ static bool rz_taint_vm_step(RzCore *core, RzTaintDevirt *taint) {
 		}
 		}
 	}
-	return false;
 }
 
-static void xrefs_of_new(RzList /*<RzAnalysisFunction *>*/ *list, RzAnalysis *analysis, ut64 addr) {
+/**
+ * \brief adds xrefs to an addr to `list`
+ */
+static void xrefs_of_new(RZ_OUT RzList /*<RzAnalysisFunction *>*/ *list, RzAnalysis *analysis, ut64 addr) {
 	RzList *curr_list = rz_analysis_xrefs_get_to(analysis, addr);
 	RzListIter *it;
 	RzAnalysisXRef *xref;
@@ -121,8 +131,12 @@ static int compare(const void *void_value, const void *void_list_data, void *use
 	}
 }
 
+/**
+ * \brief initialises stack and registers for tainting
+ */
 void rz_taint_init(RzAnalysis *analysis, RzCore *core) {
-	rz_core_analysis_esil_init_mem(core, NULL, 0x1000, 0x1050); // Memory allocation
+	// Random Memory allocation representing function stack
+	rz_core_analysis_esil_init_mem(core, NULL, 0x1000, 0x1050);
 	rz_core_analysis_il_reinit(core); // initializing VM
 	// TODO : Make general for other archs
 	if (!rz_str_cmp(analysis->arch_target->arch, "x86", -1)) {
@@ -134,7 +148,10 @@ void rz_taint_init(RzAnalysis *analysis, RzCore *core) {
 	}
 }
 
-RzList /*<Variable *>*/ *get_variable_writes(RzAnalysisFunction *fcn) {
+/**
+ * \return list of all stack variables written in the function call
+ */
+static RzList /*<CppVariable *>*/ *get_variable_writes(RzAnalysisFunction *fcn) {
 	void **it;
 	RzList *var_list = rz_list_new();
 	rz_pvector_foreach (&fcn->vars, it) {
@@ -145,7 +162,7 @@ RzList /*<Variable *>*/ *get_variable_writes(RzAnalysisFunction *fcn) {
 				continue;
 			}
 			ut64 addr = fcn->addr + acc->offset;
-			Variable *write_var = RZ_NEW0(Variable);
+			CppVariable *write_var = RZ_NEW0(CppVariable);
 			write_var->instr_addr = addr;
 			write_var->name = rz_str_dup(var->name);
 			write_var->class_names = rz_list_new();
@@ -156,15 +173,21 @@ RzList /*<Variable *>*/ *get_variable_writes(RzAnalysisFunction *fcn) {
 	return var_list;
 }
 
-static Variable *var_at_write(RzTaintState *state, RzList /*<Variable *>*/ *var_write_list, ut64 stack_addr) {
+/**
+ * \param state current tainting state
+ * \param var_write_list list of all stack variables\
+ * \param stack_addr stack address accessed during write operation
+ * \return returns variable with stack address \p stack_addr
+ */
+static CppVariable *var_at_write(RzTaintState *state, RzList /*<CppVariable *>*/ *var_write_list, ut64 stack_addr) {
 	HtUP *stack_vars = state->var_book->class_variables;
 	bool found = false;
-	Variable *ht_var = ht_up_find(stack_vars, stack_addr, &found);
+	CppVariable *ht_var = ht_up_find(stack_vars, stack_addr, &found);
 	if (found) {
 		return ht_var;
 	}
 	RzListIter *it;
-	Variable *var;
+	CppVariable *var;
 	rz_list_foreach (var_write_list, it, var) {
 		if (var->instr_addr == state->addr) {
 			var->stack_addr = stack_addr;
@@ -176,6 +199,10 @@ static Variable *var_at_write(RzTaintState *state, RzList /*<Variable *>*/ *var_
 	return NULL;
 }
 
+// TODO : Convert this into a hashmap of func name v/s class name
+/**
+ * \brief returns class name from function name
+ */
 static char *get_class_name_from_func(const char *func_name) {
 	// Get class name from method.class_name.init
 	const char *first = strchr(func_name, '.');
@@ -199,6 +226,10 @@ static char *get_class_name_from_func(const char *func_name) {
 	return class_name;
 }
 
+/**
+ * \param addr instruction address of constructor call
+ * \return class name if a valid constructor call else `NULL`
+ */
 static char *get_class_name(RzAnalysis *analysis, ut64 addr) {
 	RzList *list = rz_analysis_xrefs_get_from(analysis, addr);
 	RzListIter *it;
@@ -232,7 +263,10 @@ static bool is_call_instruction(RzAnalysisOp *op) {
 	}
 }
 
-static void add_taint_value(RzAnalysis *analysis) {
+/**
+ * \brief changes the value in register to `RZ_TAINT_VALUE` during tainting
+ */
+static void taint_register(RzAnalysis *analysis) {
 	RzCore *core = analysis->core;
 	if (!rz_str_cmp(analysis->arch_target->arch, "x86", -1)) {
 		rz_core_analysis_il_vm_set(core, "rax", RZ_TAINT_VALUE);
@@ -241,6 +275,9 @@ static void add_taint_value(RzAnalysis *analysis) {
 	}
 }
 
+/**
+ * \return stack address of memory write operation else 0
+ */
 static ut64 rz_var_stack_address_track(RzAnalysis *analysis) {
 	RzCore *core = analysis->core;
 	if (!rz_core_il_step(core, 1)) {
@@ -273,7 +310,11 @@ static ut64 rz_var_stack_address_track(RzAnalysis *analysis) {
 	return 0;
 }
 
-static void add_class_name_to_var(Variable *var, char *name) {
+/**
+ * \param var variable containing object(s)
+ * \brief adds class name to \p var (can have multiple class names)
+ */
+static void add_class_name_to_var(CppVariable *var, char *name) {
 	RzList *class_names = var->class_names;
 	RzListIter *it;
 	char *elem_name;
@@ -285,7 +326,12 @@ static void add_class_name_to_var(Variable *var, char *name) {
 	rz_list_insert(class_names, 0, rz_str_dup(name));
 }
 
-static void define_and_mark_variable(RzAnalysis *analysis, RzTaintState *state, const Variable *var) {
+/**
+ * \param state current tainting state
+ * \param var variable to be marked
+ * \brief labels the type of the variable with appropriate class name
+ */
+static void define_and_mark_variable(RzAnalysis *analysis, RzTaintState *state, const CppVariable *var) {
 	RzList *class_names = var->class_names;
 	ut64 len = rz_list_length(class_names);
 	char *type = NULL;
@@ -323,6 +369,11 @@ static void define_and_mark_variable(RzAnalysis *analysis, RzTaintState *state, 
 	free(var_type);
 }
 
+/**
+ * \param state current taint state
+ * \brief tainting step when state if `RZ_TAINT_MODE_OFF`
+ * \return `true` if skipping an instruction is required else `false`
+ */
 static bool rz_taint_off_step(RzAnalysis *analysis, RzTaintState *state) {
 	RzList *list = list_new_fcns(analysis->core);
 	RzList *list_xrefs = rz_list_new();
@@ -336,7 +387,7 @@ static bool rz_taint_off_step(RzAnalysis *analysis, RzTaintState *state) {
 	RzCore *core = analysis->core;
 	if (rz_list_find(list_xrefs, p_addr, compare, NULL) != NULL) {
 		state->taint = RZ_TAINT_MODE_RED;
-		add_taint_value(analysis);
+		taint_register(analysis);
 		free_xrefs_of_new(list_xrefs);
 		rz_list_free(list);
 		return true;
@@ -346,12 +397,17 @@ static bool rz_taint_off_step(RzAnalysis *analysis, RzTaintState *state) {
 		rz_list_free(list);
 		return true;
 	}
-	rz_taint_vm_step(core, &(state->taint));
+	rz_taint_vm_step(core);
 	free_xrefs_of_new(list_xrefs);
 	rz_list_free(list);
 	return false;
 }
 
+/**
+ * \param state current taint state
+ * \brief tainting step when state if `RZ_TAINT_MODE_RED`
+ * \return `true` if skipping an instruction is required else `false`
+ */
 static bool rz_taint_red_step(RzAnalysis *analysis, RzTaintState *state) {
 	RzAnalysisOp *op = state->op;
 	RzCore *core = analysis->core;
@@ -367,10 +423,15 @@ static bool rz_taint_red_step(RzAnalysis *analysis, RzTaintState *state) {
 		state->taint = RZ_TAINT_MODE_BLUE;
 		return true;
 	}
-	rz_taint_vm_step(core, &(state->taint));
+	rz_taint_vm_step(core);
 	return false;
 }
 
+/**
+ * \param state current taint state
+ * \brief tainting step when state if `RZ_TAINT_MODE_BLUE`
+ * \return `true` if skipping an instruction is required else `false`
+ */
 static bool rz_taint_blue_step(RzAnalysis *analysis, RzTaintState *state) {
 	RzAnalysisOp *op = state->op;
 
@@ -383,7 +444,7 @@ static bool rz_taint_blue_step(RzAnalysis *analysis, RzTaintState *state) {
 	if (stack_addr == 0) {
 		return false;
 	}
-	Variable *var = var_at_write(state, state->var_book->stack_variables, stack_addr);
+	CppVariable *var = var_at_write(state, state->var_book->stack_variables, stack_addr);
 	add_class_name_to_var(var, state->class_name);
 	define_and_mark_variable(analysis, state, var);
 	state->taint = RZ_TAINT_MODE_OFF;
@@ -398,7 +459,7 @@ static void free_taint_state(RzTaintState *state) {
 	free(state);
 }
 
-static void free_variable(Variable *var) {
+static void free_variable(CppVariable *var) {
 	RzListIter *it;
 
 	// Free class names
@@ -421,7 +482,12 @@ static void free_variable(Variable *var) {
 	free(var);
 }
 
-RZ_API RzVariableBook *rz_analysis_mark_classes(RzAnalysis *analysis) {
+/**
+ * \param analysis rizin analysis object
+ * \brief marks all variables that store object(s) with respective class name(s)
+ * \return pointer to `RzCppVariableBook` book containing marked variable information
+ */
+RZ_API RzCppVariableBook *rz_analysis_mark_classes(RzAnalysis *analysis) {
 
 	RzList *list = list_new_fcns(analysis->core);
 
@@ -452,7 +518,7 @@ RZ_API RzVariableBook *rz_analysis_mark_classes(RzAnalysis *analysis) {
 
 	rz_taint_init(analysis, core);
 
-	RzVariableBook *var_book = RZ_NEW0(RzVariableBook);
+	RzCppVariableBook *var_book = RZ_NEW0(RzCppVariableBook);
 	var_book->class_variables = ht_up_new(NULL, NULL);
 	var_book->function = function;
 	var_book->stack_variables = var_write_list;
@@ -498,7 +564,14 @@ RZ_API RzVariableBook *rz_analysis_mark_classes(RzAnalysis *analysis) {
 	return var_book;
 }
 
-static ut64 allocate_and_store(RzCore *core, RzVector /*<RzAnalysisVtable>*/ *vtables, Variable *var, ut64 addr) {
+/**
+ * \param vtables `RzVector` of virtual tables
+ * \param var variable to be simulated
+ * \param addr start of simulated object
+ * \brief stores virtual table addresses on simulated object memory
+ * \return address for starting vtable store for next variable
+ */
+static ut64 store_objects(RzCore *core, RzVector /*<RzAnalysisVtable>*/ *vtables, CppVariable *var, ut64 addr) {
 	RzAnalysisVTable *vtable;
 	rz_vector_foreach (vtables, vtable) {
 		ut8 buf[8];
@@ -518,17 +591,21 @@ static ut64 allocate_and_store(RzCore *core, RzVector /*<RzAnalysisVtable>*/ *vt
 	return addr;
 }
 
-static void allocate_objects(RzAnalysis *analysis, RzVariableBook *var_book) {
+/**
+ * \param var_book collection of stack variables
+ * \brief allocates simulated objects of all class variables
+ */
+static void allocate_objects(RzAnalysis *analysis, RzCppVariableBook *var_book) {
 	RzList *var_list = var_book->class_var_list;
 	RzListIter *it;
-	Variable *var;
+	CppVariable *var;
 	ut64 addr = 0x3000;
 	rz_list_foreach (var_list, it, var) {
 		RzListIter *itt;
 		char *name;
 		rz_list_foreach (var->class_names, itt, name) {
 			RzVector *vtables = rz_analysis_class_vtable_get_all(analysis, name);
-			addr = allocate_and_store(analysis->core, vtables, var, addr);
+			addr = store_objects(analysis->core, vtables, var, addr);
 			if (vtables != NULL) {
 				rz_vector_free(vtables);
 			}
@@ -547,11 +624,17 @@ static void fill_value_at_stack_address(RzCore *core, ut64 stack_addr, ut64 valu
 	rz_core_write_hexpair(core, stack_addr, str);
 }
 
-static void rz_preserve_stack(RzAnalysis *analysis, RzVariableBook *var_book, Variable *m_var, ut64 obj_addr) {
+/**
+ * \param var_book collection of stack variables
+ * \param m_var variable getting analysed
+ * \param obj_addr address of start simulated object
+ * \brief preserves values in all variables and makes sure that \p m_var is marked as \p obj_addr (useful for conditional object storing)
+ */
+static void rz_preserve_stack(RzAnalysis *analysis, RzCppVariableBook *var_book, CppVariable *m_var, ut64 obj_addr) {
 	// Preserve stack and set value for var as obj_addr
 	RzCore *core = analysis->core;
 	RzListIter *it;
-	Variable *var;
+	CppVariable *var;
 	rz_list_foreach (var_book->class_var_list, it, var) {
 		RzListIter *itt;
 		ut64 *curr_obj_addr;
@@ -562,7 +645,14 @@ static void rz_preserve_stack(RzAnalysis *analysis, RzVariableBook *var_book, Va
 	fill_value_at_stack_address(core, m_var->stack_addr, obj_addr);
 }
 
-static void devirtualize_variable_vtable(RzAnalysis *analysis, RzVariableBook *var_book, Variable *var, ut64 obj_addr, RzVirtualCalls *virt_calls) {
+/**
+ * \param var_book collection of stack variables
+ * \param var variable to be analyzed for devirtualization
+ * \param obj_addr start address of simulated object
+ * \param virt_calls devirtualization information
+ * \brief devirtualizes all virtual calls for a variable \p var and stores information in \p virt_calls
+ */
+static void devirtualize_variable_vtable(RzAnalysis *analysis, RzCppVariableBook *var_book, CppVariable *var, ut64 obj_addr, RzVirtualCalls *virt_calls) {
 	RzCore *core = analysis->core;
 
 	RzAnalysisFunction *function = rz_analysis_get_fcn_in(core->analysis, core->offset, RZ_ANALYSIS_FCN_TYPE_ROOT);
@@ -679,11 +769,11 @@ static bool free_virt_calls(void *user, const ut64 key, const void *v) {
 	return true;
 }
 
-RZ_API void rz_analysis_devirtualize(RzAnalysis *analysis, RzVariableBook *var_book) {
+RZ_API void rz_analysis_devirtualize(RzAnalysis *analysis, RzCppVariableBook *var_book) {
 	rz_core_analysis_esil_init_mem(analysis->core, "simulated object space", 0x3000, 0x1000); // Memory allocation for obbjects
 	allocate_objects(analysis, var_book);
 	RzListIter *it;
-	Variable *var;
+	CppVariable *var;
 
 	RzVirtualCalls *virt_calls = RZ_NEW0(RzVirtualCalls);
 	virt_calls->virt_calls = ht_up_new(NULL, NULL);
@@ -696,21 +786,22 @@ RZ_API void rz_analysis_devirtualize(RzAnalysis *analysis, RzVariableBook *var_b
 		}
 	}
 
-	ht_up_foreach(virt_calls->virt_calls, add_comment, analysis->core);
+	ht_up_foreach(virt_calls->virt_calls, add_comment, analysis->core); // add devirtualization information
+
 	ht_up_foreach(virt_calls->virt_calls, free_virt_calls, NULL);
 	ht_up_free(virt_calls->virt_calls);
 	free(virt_calls);
 	rz_core_analysis_esil_init_mem_del(analysis->core, "simulated object space", 0x3000, 0x1000);
 }
 
-static void free_variable_book(RzVariableBook *var_book) {
+static void free_variable_book(RzCppVariableBook *var_book) {
 	if (var_book == NULL) {
 		return;
 	}
 
 	// free all stack variables
 	RzListIter *it;
-	Variable *var;
+	CppVariable *var;
 	rz_list_foreach (var_book->stack_variables, it, var) {
 		free_variable(var);
 	}
@@ -725,9 +816,12 @@ static void free_variable_book(RzVariableBook *var_book) {
 	free(var_book);
 }
 
+/**
+ * \brief devirtualize virtual calls in cpp
+ */
 RZ_API void rz_analysis_devirtualize_methods(RzAnalysis *analysis) {
 	// TODO : Generalize for classes
-	RzVariableBook *var_book = rz_analysis_mark_classes(analysis);
+	RzCppVariableBook *var_book = rz_analysis_mark_classes(analysis);
 	if (!var_book) {
 		return;
 	}

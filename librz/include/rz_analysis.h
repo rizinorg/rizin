@@ -2294,15 +2294,15 @@ RZ_API bool rz_analysis_is_prelude(RzAnalysis *analysis, const ut8 *data, int le
 
 /* devirualize */
 typedef struct rz_variable_book_t {
-	RzAnalysisFunction *function;
-	HtUP /*<ut64, RzVariable *>*/ *class_variables;
-	RzList /*<Variable *>*/ *stack_variables;
-	RzList /*<Variable *>*/ *class_var_list;
-} RzVariableBook;
+	RzAnalysisFunction *function; ///< function to analyze
+	HtUP /*<ut64, RzVariable *>*/ *class_variables; ///< hash map of stack address and variables that store objects
+	RzList /*<CppVariable *>*/ *stack_variables; ///< list of all stack variables
+	RzList /*<CppVariable *>*/ *class_var_list; ///< list of all variables that store objects
+} RzCppVariableBook;
 
-RZ_API RzVariableBook *rz_analysis_mark_classes(RzAnalysis *analysis);
+RZ_API RzCppVariableBook *rz_analysis_mark_classes(RzAnalysis *analysis);
 RZ_API void rz_analysis_devirtualize_methods(RzAnalysis *analysis);
-RZ_API void rz_analysis_devirtualize(RzAnalysis *analysis, RzVariableBook *var_book);
+RZ_API void rz_analysis_devirtualize(RzAnalysis *analysis, RzCppVariableBook *var_book);
 
 /* classes */
 typedef enum {
