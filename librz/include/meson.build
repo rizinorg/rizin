@@ -65,6 +65,7 @@ rz_util_files = [
   'rz_util/rz_asn1.h',
   'rz_util/rz_assert.h',
   'rz_util/rz_axml.h',
+  'rz_util/rz_base36.h',
   'rz_util/rz_base64.h',
   'rz_util/rz_base85.h',
   'rz_util/rz_base91.h',
