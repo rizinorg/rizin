@@ -105,7 +105,9 @@ static void *iob_net_open(const char *path) {
 		if (nkey) {
 			*nkey++ = 0;
 		}
-		rz_write_le64(obj->key + i * 8, rz_base36_decode(key, strlen(key)));
+    st64 decoded_val = rz_base36_decode(key, strlen(key));
+    decoded_val = decoded_val >= 0 ? decoded_val : 0;
+		rz_write_le64(obj->key + i * 8, (ut64)decoded_val);
 	}
 
 	// HMAC Key is the negation of AES-256 Control Key bytes
