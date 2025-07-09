@@ -25,6 +25,43 @@ static const ut64 pow36[] = { 1, 36, 1296, 46656, 1679616, 60466176, 2176782336,
 	131621703842267136, 4738381338321616896 };
 
 /**
+ * \brief Dynamically allocate and return the Base 36 representation of a 64‑bit value.
+ *
+ * \param val  The unsigned 64‑bit integer to encode.
+ * \return     Pointer to a freshly allocated, NUL‑terminated digit string,
+ *             or \c NULL if memory allocation fails.
+ *
+ * The caller \b must free the returned buffer with \c free().
+ *
+ */
+RZ_API RZ_OWN char *rz_base36_encode_dyn(ut64 val)
+{
+    static const char alphabet[] = "0123456789abcdefghijklmnopqrstuvwxyz";
+
+    char  tmp[RZ_BASE36_BUFSZ];
+    size_t n = 0;
+
+    if (val == 0) {
+        tmp[n++] = '0';
+    } else {
+        while (val && n < RZ_BASE36_BUFSZ) {
+            tmp[n++] = alphabet[val % 36];
+            val /= 36;
+        }
+    }
+
+    char *out = (char *)malloc(n + 1);
+    if (!out) {
+        return NULL;
+    }
+    for (size_t i = 0; i < n; i++) {
+        out[i] = tmp[n - 1 - i];
+    }
+    out[n] = '\0';
+    return out;
+}
+
+/**
  * \brief Convert an ASCII Base 36 string to a 64‑bit unsigned integer.
  *
  * \param[in]  str  Pointer to the digit sequence (no NUL required).
