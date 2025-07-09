@@ -29,6 +29,7 @@
 #include "rz_util/rz_rbtree.h"
 #include "rz_util/rz_intervaltree.h"
 #include "rz_util/rz_big.h"
+#include "rz_util/rz_base36.h"
 #include "rz_util/rz_base64.h"
 #include "rz_util/rz_base85.h"
 #include "rz_util/rz_base91.h"

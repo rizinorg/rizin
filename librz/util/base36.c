@@ -1,0 +1,78 @@
+// SPDX-FileCopyrightText: 2014-2020 abcSup <zifan.tan@gmail.com>
+// SPDX-FileCopyrightText: 2025 Ahmed Ibrahim <a.ibrahim8686@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
+/**
+ * \file
+ * \brief Base36 encoding and decoding functions.
+ *
+ */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <rz_types_base.h>
+#include <rz_util.h>
+
+#define RZ_BASE36_BUFSZ 13
+
+// Constants to convert ASCII to its base36 value
+static const char d32[] = "[\\]^_`abcd$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$efghijklmnopqrstuvwxyz{|}~";
+
+// The powers of 36 up to the 13th for 64-bit values
+static const ut64 pow36[] = { 1, 36, 1296, 46656, 1679616, 60466176, 2176782336,
+	78364164096, 2821109907456, 101559956668416, 3656158440062976,
+	131621703842267136, 4738381338321616896 };
+
+/**
+ * \brief Convert an ASCII Base 36 string to a 64‑bit unsigned integer.
+ *
+ * \param[in]  str  Pointer to the digit sequence (no NUL required).
+ * \param      len  Number of characters in \p str.  
+ *                  A value greater than 13 implies overflow and is rejected.
+ * \return The decoded value, or \c 0 on any error (invalid digit, overflow,
+ *         or length > 13).  Error details are printed to \c stderr via
+ *         \c eprintf.
+ *
+ * The function treats the right‑most character as the least‑significant digit,
+ * multiplies each digit by the corresponding 36‑power from \a pow36, and
+ * accumulates the result.  
+ * Digits are validated in constant time with the lookup table \a d32.  When
+ * processing the most‑significant position (index 12) the routine performs an
+ * explicit overflow check: the digit must be ≤ 3 and the addition
+ * <code>ret + v × pow36[12]</code> must not wrap.
+ */
+RZ_API ut64 rz_base36_decode(const char *str, const size_t len) {
+	ut64 ret = 0;
+	size_t i;
+	// 64-bit base36 str has at most 13 characters
+	if (len > RZ_BASE36_BUFSZ) {
+		eprintf("Error: base36_decode supports up to 64-bit values only\n");
+		return 0;
+	}
+	for (i = 0; i < len; i++) {
+		char c = str[len - i - 1];
+		// "01234567890abcdefghijklmnopqrstuvwxyz"
+		if (c < '0' || c > 'z' || ('9' < c && c < 'a')) {
+			eprintf("Error: %s is not a valid base36 encoded string\n", str);
+			return 0;
+		}
+		ut8 v = d32[c - '0'];
+		// Character does not exist in base36 encoding
+		if (v == '$') {
+			eprintf("Error: %s is not a valid base36 encoded string\n", str);
+			return 0;
+		}
+		v -= 91;
+		// Check for overflow
+		if (i == 12) {
+			if (v > 3 || UT64_ADD_OVFCHK(ret, v * pow36[i])) {
+				printf("Error: base36_decode supports up to 64-bit values only\n");
+				return 0;
+			}
+		}
+		ret += v * pow36[i];
+	}
+	return ret;
+}
+
