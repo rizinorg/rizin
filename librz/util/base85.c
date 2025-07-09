@@ -78,7 +78,7 @@ static int getc_nospace_buf(const char *src, st64 len, st64 *pos) {
  *
  * If \p wrap is non‑zero and the column counter referenced by \p col is
  * greater than or equal to \p wrap, the function first appends a newline
- * (<code>'\n'</code>) to the buffer and resets \p *col to 0.  
+ * (<code>'\n'</code>) to the buffer and resets \p *col to 0.
  * It then appends \p c, advancing \p *d, and increments both \p *len
  * and \p *col to reflect the newly written character.
  */
@@ -98,7 +98,7 @@ static void putc_wrap_buf(char **d, size_t *len, int wrap, int *col, char c) {
  * \brief Encode up to four input bytes and append their Ascii 85 representation to a buffer.
  *
  * \param tuple   A big‑endian 32‑bit value holding the pending input bytes.
- * \param count   Number of meaningful bytes inside \p tuple ( 1 – 4 ).  
+ * \param count   Number of meaningful bytes inside \p tuple ( 1 – 4 ).
  *                A value of 4 represents a full 32‑bit group; smaller values
  *                occur only for the final, partial block at end‑of‑input.
  * \param wrap    Maximum printable‑column width before a newline is inserted;
@@ -117,8 +117,8 @@ static void putc_wrap_buf(char **d, size_t *len, int wrap, int *col, char c) {
  * - With \p y_abbr ≠ 0, the tuple 0x20202020 (<tt>count == 4</tt>) is emitted
  *   as a single <tt>'y'</tt> (Adobe extension).
  *
- * **General case**  
- * Otherwise the 32‑bit value is converted to five base‑85 digits.  
+ * **General case**
+ * Otherwise the 32‑bit value is converted to five base‑85 digits.
  * For partial final blocks only the leading <tt>count + 1</tt> digits are
  * appended, exactly matching the Adobe/ RFC 1924 padding rule.
  */
@@ -152,7 +152,7 @@ static void encode_tuple_buf(unsigned long tuple, int count, int wrap, char **d,
  *
  * The formula derives from:
  *
- *  * **Expansion** – Each full 4‑byte block produces 5 digits.  
+ *  * **Expansion** – Each full 4‑byte block produces 5 digits.
  *    A partial final block of <i>r</i> ∈ {1,2,3} bytes produces <i>r + 1</i> digits.
  *  * **Delimiters** – When \p delims ≠ 0, exactly four characters
  *    (<tt><~</tt> and <tt>~></tt>) are added.
@@ -214,7 +214,7 @@ static void decode_tuple_buf(unsigned long tuple, int count, char **d, size_t *l
  *
  * Rationale
  * ---------
- * A full group of five digits expands to four bytes.  
+ * A full group of five digits expands to four bytes.
  * A partial final group of <i>r</i> ∈ {2, 3, 4} digits expands to
  * <i>r − 1</i> bytes.  A quick arithmetic upper bound is therefore
  *
@@ -233,7 +233,7 @@ static size_t rz_base85_dec_buflen(size_t enc_len) {
 /**
  * \brief Base‑encode a memory buffer to Ascii 85.
  *
- * \param dest    Destination buffer that receives the encoded text.  
+ * \param dest    Destination buffer that receives the encoded text.
  *                The caller must allocate at least
  *                \c 1 + 5 × ((n + 3)/4) bytes, plus room for optional
  *                delimiters and line‑wrap newlines.
@@ -263,7 +263,7 @@ RZ_API int rz_base85_encode(char *dest, const char *src, size_t n, int delims, i
 
 	char *d = dest;
 	size_t out = 0;
-	int col = 0;   
+	int col = 0;
 
 	if (delims) {
 		putc_wrap_buf(&d, &out, wrap, &col, '<');
@@ -271,9 +271,9 @@ RZ_API int rz_base85_encode(char *dest, const char *src, size_t n, int delims, i
 	}
 
 	unsigned long tuple = 0;
-	int           count = 0;
+	int count = 0;
 
-	for (size_t i = 0; i < n || count > 0; ) {
+	for (size_t i = 0; i < n || count > 0;) {
 		if (i < n) {
 			tuple |= (unsigned long)src[i++] << ((3 - count) * 8);
 			if (++count < 4) {
@@ -288,7 +288,7 @@ RZ_API int rz_base85_encode(char *dest, const char *src, size_t n, int delims, i
 		putc_wrap_buf(&d, &out, wrap, &col, '~');
 		putc_wrap_buf(&d, &out, wrap, &col, '>');
 	}
-	*d = '\0';                   /* NUL‑terminate the C‑string   */
+	*d = '\0'; /* NUL‑terminate the C‑string   */
 	return (int)out;
 }
 
@@ -339,24 +339,24 @@ RZ_API RZ_OWN char *rz_base85_encode_dyn(RZ_NULLABLE const char *src, size_t n, 
  */
 RZ_API st64 rz_base85_decode(char *dest, const char *src, st64 len, int delims, int ignore_garbage) {
 	rz_return_val_if_fail(dest, -1);
-	rz_return_val_if_fail(src,  -1);
+	rz_return_val_if_fail(src, -1);
 
 	if (len < 0) {
 		len = (st64)strlen(src);
 	}
 
 	st64 pos = 0;
-	int  count = 0;
-	int  have_end = 0;
+	int count = 0;
+	int have_end = 0;
 	size_t out = 0;
 
 	unsigned long tuple = 0;
 	const unsigned long pows[5] = {
-	    85u * 85u * 85u * 85u,
-	    85u * 85u * 85u,
-	    85u * 85u,
-	    85u,
-	    1u
+		85u * 85u * 85u * 85u,
+		85u * 85u * 85u,
+		85u * 85u,
+		85u,
+		1u
 	};
 
 	if (delims) {
@@ -398,8 +398,8 @@ RZ_API st64 rz_base85_decode(char *dest, const char *src, st64 len, int delims, 
 		tuple += (unsigned long)(c - '!') * pows[count++];
 		if (count == 5) {
 			decode_tuple_buf(tuple, count, &dest, &out);
-			tuple  = 0;
-			count  = 0;
+			tuple = 0;
+			count = 0;
 		}
 	}
 
@@ -407,8 +407,8 @@ RZ_API st64 rz_base85_decode(char *dest, const char *src, st64 len, int delims, 
 		eprintf("ascii85: missing ~>\n");
 		return -1;
 	}
-	if (count > 0) {                     /* partial final group */
-		tuple += pows[count - 1];       /* implicit 'u' padding */
+	if (count > 0) { /* partial final group */
+		tuple += pows[count - 1]; /* implicit 'u' padding */
 		decode_tuple_buf(tuple, count, &dest, &out);
 	}
 	return (st64)out;
