@@ -34,38 +34,37 @@ static const ut64 pow36[] = { 1, 36, 1296, 46656, 1679616, 60466176, 2176782336,
  * The caller \b must free the returned buffer with \c free().
  *
  */
-RZ_API RZ_OWN char *rz_base36_encode_dyn(ut64 val)
-{
-    static const char alphabet[] = "0123456789abcdefghijklmnopqrstuvwxyz";
+RZ_API RZ_OWN char *rz_base36_encode_dyn(ut64 val) {
+	static const char alphabet[] = "0123456789abcdefghijklmnopqrstuvwxyz";
 
-    char  tmp[RZ_BASE36_BUFSZ];
-    size_t n = 0;
+	char tmp[RZ_BASE36_BUFSZ];
+	size_t n = 0;
 
-    if (val == 0) {
-        tmp[n++] = '0';
-    } else {
-        while (val && n < RZ_BASE36_BUFSZ) {
-            tmp[n++] = alphabet[val % 36];
-            val /= 36;
-        }
-    }
+	if (val == 0) {
+		tmp[n++] = '0';
+	} else {
+		while (val && n < RZ_BASE36_BUFSZ) {
+			tmp[n++] = alphabet[val % 36];
+			val /= 36;
+		}
+	}
 
-    char *out = (char *)malloc(n + 1);
-    if (!out) {
-        return NULL;
-    }
-    for (size_t i = 0; i < n; i++) {
-        out[i] = tmp[n - 1 - i];
-    }
-    out[n] = '\0';
-    return out;
+	char *out = (char *)malloc(n + 1);
+	if (!out) {
+		return NULL;
+	}
+	for (size_t i = 0; i < n; i++) {
+		out[i] = tmp[n - 1 - i];
+	}
+	out[n] = '\0';
+	return out;
 }
 
 /**
  * \brief Convert an ASCII Base 36 string to a 64‑bit unsigned integer.
  *
  * \param[in]  str  Pointer to the digit sequence (no NUL required).
- * \param      len  Number of characters in \p str.  
+ * \param      len  Number of characters in \p str.
  *                  A value greater than 13 implies overflow and is rejected.
  * \return The decoded value, or \c 0 on any error (invalid digit, overflow,
  *         or length > 13).  Error details are printed to \c stderr via
@@ -73,7 +72,7 @@ RZ_API RZ_OWN char *rz_base36_encode_dyn(ut64 val)
  *
  * The function treats the right‑most character as the least‑significant digit,
  * multiplies each digit by the corresponding 36‑power from \a pow36, and
- * accumulates the result.  
+ * accumulates the result.
  * Digits are validated in constant time with the lookup table \a d32.  When
  * processing the most‑significant position (index 12) the routine performs an
  * explicit overflow check: the digit must be ≤ 3 and the addition
@@ -112,4 +111,3 @@ RZ_API st64 rz_base36_decode(const char *str, const size_t len) {
 	}
 	return ret;
 }
-

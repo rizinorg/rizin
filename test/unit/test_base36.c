@@ -6,7 +6,7 @@
 #include "minunit.h"
 
 static const struct {
-	ut64  value;
+	ut64 value;
 	const char *str;
 } vectors[] = {
 	{ 0ULL, "0" },
@@ -66,8 +66,8 @@ int all_tests(void) {
 	mu_run_test(test_rz_base36_encode_dyn_basic);
 	mu_run_test(test_rz_base36_decode_basic);
 	mu_run_test(test_rz_base36_roundtrip_large);
-  mu_run_test(test_rz_base36_decode_invalid_char);
-  mu_run_test(test_rz_base36_decode_overflow);
+	mu_run_test(test_rz_base36_decode_invalid_char);
+	mu_run_test(test_rz_base36_decode_overflow);
 
 	return tests_passed != tests_run;
 }
