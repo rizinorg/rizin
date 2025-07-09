@@ -15,4 +15,3 @@ RZ_API st64 rz_base36_decode(const char *str, const size_t len);
 #endif
 
 #endif //  RZ_base36_H
-

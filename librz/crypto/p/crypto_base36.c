@@ -26,7 +26,7 @@ static bool update(RzCrypto *cry, const ut8 *buf, int len) {
 	size_t out_len = 0;
 
 	if (cry->dir == RZ_CRYPTO_DIR_ENCRYPT) {
-		if (len > 8) {           /* > 64‑bit won’t fit in our encoder */
+		if (len > 8) { /* > 64‑bit won’t fit in our encoder */
 			eprintf("base36: encoder supports up to 64‑bit values (%d > 8 bytes)\n", len);
 			return false;
 		}
@@ -47,8 +47,8 @@ static bool update(RzCrypto *cry, const ut8 *buf, int len) {
 		 * We consider empty input an error.  */
 		if (val < 0) {
 			return false;
-		} 
-    val = (ut64)val;
+		}
+		val = (ut64)val;
 
 		// convert val →  big‑endian byte array
 		ut8 tmp[8];
@@ -103,5 +103,3 @@ RZ_API RzLibStruct rizin_plugin = {
 	.version = RZ_VERSION
 };
 #endif
-
-
