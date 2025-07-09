@@ -79,33 +79,33 @@ RZ_API RZ_OWN char *rz_base36_encode_dyn(ut64 val)
  * explicit overflow check: the digit must be ≤ 3 and the addition
  * <code>ret + v × pow36[12]</code> must not wrap.
  */
-RZ_API ut64 rz_base36_decode(const char *str, const size_t len) {
+RZ_API st64 rz_base36_decode(const char *str, const size_t len) {
 	ut64 ret = 0;
 	size_t i;
 	// 64-bit base36 str has at most 13 characters
 	if (len > RZ_BASE36_BUFSZ) {
 		eprintf("Error: base36_decode supports up to 64-bit values only\n");
-		return 0;
+		return -1;
 	}
 	for (i = 0; i < len; i++) {
 		char c = str[len - i - 1];
 		// "01234567890abcdefghijklmnopqrstuvwxyz"
 		if (c < '0' || c > 'z' || ('9' < c && c < 'a')) {
 			eprintf("Error: %s is not a valid base36 encoded string\n", str);
-			return 0;
+			return -1;
 		}
 		ut8 v = d32[c - '0'];
 		// Character does not exist in base36 encoding
 		if (v == '$') {
 			eprintf("Error: %s is not a valid base36 encoded string\n", str);
-			return 0;
+			return -1;
 		}
 		v -= 91;
 		// Check for overflow
 		if (i == 12) {
 			if (v > 3 || UT64_ADD_OVFCHK(ret, v * pow36[i])) {
-				printf("Error: base36_decode supports up to 64-bit values only\n");
-				return 0;
+				eprintf("Error: base36_decode supports up to 64-bit values only\n");
+				return -1;
 			}
 		}
 		ret += v * pow36[i];
