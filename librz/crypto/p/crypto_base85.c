@@ -25,19 +25,19 @@ static bool update(RzCrypto *cry, const ut8 *buf, int len) {
 	ut8 *out = NULL;
 	size_t out_len = 0;
 	if (cry->dir == RZ_CRYPTO_DIR_ENCRYPT) {
-		char *enc = rz_base85_encode_dyn((char*)buf, (size_t)len, 0, 0, 1);
+		char *enc = rz_base85_encode_dyn((char *)buf, (size_t)len, 0, 0, 1);
 		if (!enc) {
 			return false;
 		}
 		out = (ut8 *)enc;
 		out_len = strlen(enc);
 	} else if (cry->dir == RZ_CRYPTO_DIR_DECRYPT) {
-		out = (ut8*)rz_base85_decode_dyn((const char *)buf, (st64)len, 0, 0, &out_len);
+		out = (ut8 *)rz_base85_decode_dyn((const char *)buf, (st64)len, 0, 0, &out_len);
 		if (!out) {
 			return false;
 		}
 	} else {
-		return false; 
+		return false;
 	}
 	rz_crypto_append(cry, out, (int)out_len);
 	free(out);
@@ -70,4 +70,3 @@ RZ_API RzLibStruct rizin_plugin = {
 	.version = RZ_VERSION
 };
 #endif
-

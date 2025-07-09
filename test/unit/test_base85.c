@@ -10,7 +10,7 @@
 
 bool test_rz_base85_encode_dyn_nodelims(void) {
 	const char *src = "hello, ascii85";
-  char *dest = rz_base85_encode_dyn(src, strlen(src), 0, 0, 1);
+	char *dest = rz_base85_encode_dyn(src, strlen(src), 0, 0, 1);
 	mu_assert_streq(dest, "BOu!rD_*#>F(8ou3&L", "ascii85 encode mismatch");
 	free(dest);
 	mu_end;
@@ -18,7 +18,7 @@ bool test_rz_base85_encode_dyn_nodelims(void) {
 
 bool test_rz_base85_encode_dyn_delims(void) {
 	const char *src = "hello, ascii85";
-  char *dest = rz_base85_encode_dyn(src, strlen(src), 1, 0, 1);
+	char *dest = rz_base85_encode_dyn(src, strlen(src), 1, 0, 1);
 	mu_assert_streq(dest, "<~BOu!rD_*#>F(8ou3&L~>", "ascii85 encode mismatch");
 	free(dest);
 	mu_end;
@@ -59,8 +59,8 @@ bool test_rz_base85_encode_decode_wrap10(void) {
 	}
 	mu_assert_true(col <= 10, "final line exceeds wrap length");
 
-  size_t decoded_len;
-  char *decoded = rz_base85_decode_dyn(encoded, strlen(encoded), 0, 0, &decoded_len);
+	size_t decoded_len;
+	char *decoded = rz_base85_decode_dyn(encoded, strlen(encoded), 0, 0, &decoded_len);
 
 	mu_assert_eq(decoded_len, 50U, "decoded length mismatch");
 	mu_assert_true(memcmp(decoded, src, 50) == 0, "decoded data mismatch");
