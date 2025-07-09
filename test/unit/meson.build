@@ -23,6 +23,7 @@ if get_option('enable_tests')
     'analysis_var',
     'analysis_xrefs',
     'annotated_code',
+    'base36',
     'base64',
     'base85',
     'big',
