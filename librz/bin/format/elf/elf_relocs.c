@@ -81,11 +81,32 @@ static bool read_reloc_entry(ELFOBJ *bin, Elf_(Rela) * reloc, ut64 offset, ut64 
 	return true;
 }
 
+/**
+ * In mipsel64 objects r_info isn't really a le64 value
+ * it has a le32 symbol index followed by 4 byte fields.
+ *
+ * this function reorders the information field accordingly.
+ */
+static void fix_elf_rel_mipsel64(ELFOBJ *bin, Elf_(Rela) * tmp) {
+	if (bin->ehdr.e_machine != EM_MIPS ||
+		bin->ehdr.e_ident[EI_CLASS] != ELFCLASS64 ||
+		bin->ehdr.e_ident[EI_DATA] == ELFDATA2MSB) {
+		// ignore if not MIPS64 little endian
+		return;
+	}
+
+	ut64 info = tmp->r_info;
+	info = (((info & 0xffffffffull) << 32) | ((info >> 56) & 0xffull) | ((info >> 40) & 0xff00ull) | ((info >> 24) & 0xff0000ull) | ((info >> 8) & 0xff000000ull));
+	tmp->r_info = info;
+}
+
 static bool get_reloc_entry(ELFOBJ *bin, RzBinElfReloc *reloc, ut64 offset, ut64 mode) {
 	Elf_(Rela) tmp;
 	if (!read_reloc_entry(bin, &tmp, offset, mode)) {
 		return false;
 	}
+
+	fix_elf_rel_mipsel64(bin, &tmp);
 
 	reloc->mode = mode;
 	reloc->offset = tmp.r_offset;

@@ -139,9 +139,11 @@ static RzBinReloc *reloc_convert_ifunc(ELFOBJ *bin, RzBinElfReloc *rel, RzBinRel
 	return r;
 }
 
-#define UNSUPP(NAME) \
-	RZ_LOG_WARN(NAME ": Unsupported ELF reloc %d\n", rel->type); \
+#define UNSUPP_RELOC(NAME, V) \
+	RZ_LOG_WARN(NAME ": Unsupported ELF reloc %u (0x%x)\n", (ut32)V, (ut32)V); \
 	return reloc_convert_new(bin, rel)
+
+#define UNSUPP(NAME) UNSUPP_RELOC(NAME, rel->type)
 
 #define UNHANDL(RELOC_NAME) \
 	RZ_LOG_WARN("Unhandled ELF reloc %d (" RELOC_NAME ")\n", rel->type); \
@@ -848,10 +850,20 @@ static RzBinReloc *reloc_convert_ppc64(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT
 	}
 }
 
+// MIPS64 has subtypes for relocs but we do not support it.
+#define ELF64_MIPS_R_TYPE3(i) (((i) >> 16) & 0xff)
+#define ELF64_MIPS_R_TYPE2(i) (((i) >> 8) & 0xff)
+#define ELF64_MIPS_R_TYPE(i)  ((i)&0xff)
+
 static RzBinReloc *reloc_convert_mips(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 	ut64 P = rel->vaddr;
 
-	switch (rel->type) {
+	ut32 rel_type = rel->type;
+	if (bin->ehdr.e_ident[EI_CLASS] == ELFCLASS64) {
+		rel_type = ELF64_MIPS_R_TYPE(rel_type);
+	}
+
+	switch (rel_type) {
 	case R_MIPS_NONE:
 		return reloc_convert_set(bin, rel, 0, "R_MIPS_NONE");
 	case R_MIPS_16: ADD(16, 0, "R_MIPS_16");
@@ -941,7 +953,7 @@ static RzBinReloc *reloc_convert_mips(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT)
 	case R_MIPS_GNU_REL16_S2: UNHANDL("R_MIPS_GNU_REL16_S2");
 	case R_MIPS_GNU_VTINHERIT: UNHANDL("R_MIPS_GNU_VTINHERIT");
 	case R_MIPS_GNU_VTENTRY: UNHANDL("R_MIPS_GNU_VTENTRY");
-	default: UNSUPP("MIPS");
+	default: UNSUPP_RELOC("MIPS", rel_type);
 	}
 }
 
