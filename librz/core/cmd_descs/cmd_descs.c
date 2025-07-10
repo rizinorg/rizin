@@ -152,7 +152,6 @@ static const RzCmdDescArg cmd_search_blocks_args[2];
 static const RzCmdDescArg cmd_search_graph_path_args[3];
 static const RzCmdDescArg cmd_search_graph_path_follow_calls_args[3];
 static const RzCmdDescArg cmd_search_magic_const_args[2];
-static const RzCmdDescArg cmd_search_esil_args[2];
 static const RzCmdDescArg cmd_search_reference_args[2];
 static const RzCmdDescArg cmd_info_gadget_args[2];
 static const RzCmdDescArg cmd_search_gadget_args[2];
@@ -2092,20 +2091,6 @@ static const RzCmdDescArg cmd_search_magic_bin_headers_args[] = {
 static const RzCmdDescHelp cmd_search_magic_bin_headers_help = {
 	.summary = "Search recognized RzBin headers.",
 	.args = cmd_search_magic_bin_headers_args,
-};
-
-static const RzCmdDescArg cmd_search_esil_args[] = {
-	{
-		.name = "esil-expr",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_search_esil_help = {
-	.summary = "offset matching given esil expressions $$ = here.",
-	.args = cmd_search_esil_args,
 };
 
 static const RzCmdDescHelp slash_r_help = {
@@ -21227,9 +21212,6 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(slash_m_cd);
 	RzCmdDesc *cmd_search_magic_bin_headers_cd = rz_cmd_desc_argv_new(core->rcmd, slash_m_cd, "/mb", rz_cmd_search_magic_bin_headers_handler, &cmd_search_magic_bin_headers_help);
 	rz_warn_if_fail(cmd_search_magic_bin_headers_cd);
-
-	RzCmdDesc *cmd_search_esil_cd = rz_cmd_desc_argv_modes_new(core->rcmd, slash__cd, "/E", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_search_esil_handler, &cmd_search_esil_help);
-	rz_warn_if_fail(cmd_search_esil_cd);
 
 	RzCmdDesc *slash_r_cd = rz_cmd_desc_group_new(core->rcmd, slash__cd, "/r", rz_cmd_search_reference_handler, &cmd_search_reference_help, &slash_r_help);
 	rz_warn_if_fail(slash_r_cd);

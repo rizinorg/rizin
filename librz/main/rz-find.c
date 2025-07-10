@@ -426,13 +426,6 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 		free(tostr);
 		goto done;
 	}
-	if (ro->mode == RZ_SEARCH_ESIL) {
-		/* TODO: implement using api */
-		rz_list_foreach (ro->keywords, iter, kw) {
-			rz_sys_cmdf("rizin -qc \"/E %s\" \"%s\"", kw, efile);
-		}
-		goto done;
-	}
 	if (ro->mode == RZ_SEARCH_KEYWORD) {
 		rz_list_foreach (ro->keywords, iter, kw) {
 			if (ro->hexstr) {

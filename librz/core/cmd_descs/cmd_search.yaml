@@ -473,16 +473,6 @@ commands:
       cname: cmd_search_magic_bin_headers
       args: []
 
-  - name: "/E"
-    summary: offset matching given esil expressions $$ = here.
-    cname: cmd_search_esil
-    modes:
-      - RZ_OUTPUT_MODE_STANDARD
-      - RZ_OUTPUT_MODE_JSON
-    args:
-      - name: esil-expr
-        type: RZ_CMD_ARG_TYPE_STRING
-
   - name: "/r"
     summary: Reference search.
     subcommands:
