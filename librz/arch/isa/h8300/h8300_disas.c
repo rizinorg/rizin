@@ -800,7 +800,7 @@ static int decode_incdecr8(const ut8 *bytes, struct h8300_cmd *cmd) {
 	return ret;
 }
 
-static int decode_riinc32r32_4(const ut8 *bytes, struct h8300_cmd *cmd) {
+static int decode_rincr32_4(const ut8 *bytes, struct h8300_cmd *cmd) {
 	int ret = 4;
 
 	ut8 regsval = (bytes[3] >> 4) & 0x7;
@@ -813,15 +813,15 @@ static int decode_riinc32r32_4(const ut8 *bytes, struct h8300_cmd *cmd) {
 	return ret;
 }
 
-static int decode_r32riinc32_4(const ut8 *bytes, struct h8300_cmd *cmd) {
+static int decode_r32rdec_4(const ut8 *bytes, struct h8300_cmd *cmd) {
 	int ret = 4;
 
-	ut8 regsval = (bytes[3] >> 4) & 0x7;
-	ut8 regdval = bytes[3] & 0x7;
+	ut8 rs = r32_low(bytes[3]);
+	ut8 rd = r32_high(bytes[3]);
 
-	cmd->fmt = H8300_INSN_FORMAT_R32RINC;
-	OPS_ADD(H8300_OP_R32, reg, regdval);
-	OPS_ADD(H8300_OP_RINC, reg, regsval);
+	cmd->fmt = H8300_INSN_FORMAT_R32RDEC;
+	OPS_ADD(H8300_OP_R32, reg, rs);
+	OPS_ADD(H8300_OP_RDEC, reg, rd);
 
 	return ret;
 }
@@ -1066,8 +1066,8 @@ static int h8300_decode_4(const ut8 *instr, struct h8300_cmd *cmd) {
 
 		CASE_F_F(decode_rir32_4, 0x01006900, MOV_L);
 		CASE_F_F(decode_rir32_4, 0x01006980, MOV_L);
-		CASE_F_F(decode_riinc32r32_4, 0x01006d00, MOV_L);
-		CASE_F_F(decode_r32riinc32_4, 0x01006d80, MOV_L);
+		CASE_F_F(decode_rincr32_4, 0x01006d00, MOV_L);
+		CASE_F_F(decode_r32rdec_4, 0x01006d80, MOV_L);
 
 		CASE_F_F(decode_r32r32_4, 0x01f06400, OR_L);
 		CASE_F_F(decode_r32r32_4, 0x01f06500, XOR_L);

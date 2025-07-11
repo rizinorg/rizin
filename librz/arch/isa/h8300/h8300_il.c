@@ -125,13 +125,14 @@ static RzILOpEffect *abs_op_set(H8300Cmd *cmd, ut8 i, RzILOpPure *x) {
 }
 
 static RzILOpPure *pc_rel_op(H8300Cmd *cmd, ut8 i) {
-	H8300Operand *op = &OPS_GET(i);
-	if (op->typ != H8300_OP_PCREL) {
-		RZ_LOG_ERROR("invalid op type pc relative\n");
-		return NULL;
-	}
+	T_OP_DECL(H8300_OP_PCREL, i);
 	st32 dst = (st32)cmd->pc + cmd->size + op->disp;
 	return UADDR(dst);
+}
+
+static RzILOpPure *imm_op(ut8 N, H8300Cmd *cmd, ut8 i) {
+	T_OP_DECL(H8300_OP_IMM, i);
+	return UN(N, op->imm);
 }
 
 #define X_OP_GET_IMPL(E, T, X) \
@@ -144,22 +145,22 @@ static RzILOpPure *pc_rel_op(H8300Cmd *cmd, ut8 i) {
 		return T(op->imm); \
 	}
 
-X_OP_GET_IMPL(H8300_OP_IMM, U16, imm);
-X_OP_GET_IMPL(H8300_OP_IMM, U8, imm8);
 X_OP_GET_IMPL(H8300_OP_MI8, UADDR, mi8);
 
-#define IMM_OP(I)   imm_op(cmd, I)
-#define IMM8_OP(I)  imm8_op(cmd, I)
-#define MI8_OP(I)   mi8_op(cmd, I)
-#define RD_OP(N, I) rd_op(N, cmd, (I))
-#define PCREL_OP(I) pc_rel_op(cmd, (I))
+#define IMM_OP(N, I) imm_op(N, cmd, I)
+#define IMM8_OP(I)   imm_op(8, cmd, I)
+#define MI8_OP(I)    mi8_op(cmd, I)
+#define RD_OP(N, I)  rd_op(N, cmd, (I))
+#define PCREL_OP(I)  pc_rel_op(cmd, (I))
 
-#define R8_OP(I)    r8_op(cmd, (I))
-#define R8_X(I, X)  r8_op_set(cmd, (I), (X))
-#define R16_OP(I)   r16_op(cmd, (I))
-#define R16_X(I, X) r16_op_set(cmd, (I), (X))
-#define R32_OP(I)   r32_op(cmd, (I))
-#define R32_X(I, X) r32_op_set(cmd, (I), (X))
+#define R8_OP(I)      r8_op(cmd, (I))
+#define R8_X(I, X)    r8_op_set(cmd, (I), (X))
+#define R16_OP(I)     r16_op(cmd, (I))
+#define R16_X(I, X)   r16_op_set(cmd, (I), (X))
+#define R32_OP(I)     r32_op(cmd, (I))
+#define R32_OP_I(I)   r32_op_i((OPS_GET(I).reg))
+#define R32_X(I, X)   r32_op_set(cmd, (I), (X))
+#define R32_I_X(I, X) r32_op_i_set((OPS_GET(I).reg), (X))
 
 typedef enum {
 	CCR_C,
@@ -250,7 +251,7 @@ static RzILOpEffect *op_mov_w(H8300Cmd *cmd) {
 			R16_X(1, VARL("data_value")),
 			ccr_unary_NZV0(16, VARL("data_value")));
 	case H8300_INSN_FORMAT_IMMR16:
-		return SEQ2(R16_X(1, IMM_OP(0)), ccr_unary_NZV0(16, IMM_OP(0)));
+		return SEQ2(R16_X(1, IMM_OP(16, 0)), ccr_unary_NZV0(16, IMM_OP(16, 0)));
 	case H8300_INSN_FORMAT_RIR16:
 		return SEQ3(
 			SETL("data_value", ri_op(16, cmd, 0)),
@@ -295,40 +296,40 @@ static RzILOpEffect *op_mov_l(H8300Cmd *cmd) {
 			SETL("data_value", R32_OP(0)),
 			R32_X(1, VARL("data_value")),
 			ccr_unary_NZV0(32, VARL("data_value")));
-	case H8300_INSN_FORMAT_IMMR16:
-		return SEQ2(R16_X(1, IMM_OP(0)), ccr_unary_NZV0(16, IMM_OP(0)));
-	case H8300_INSN_FORMAT_RIR16:
+	case H8300_INSN_FORMAT_IMMR32:
+		return SEQ2(R32_X(1, IMM_OP(32, 0)), ccr_unary_NZV0(32, IMM_OP(32, 0)));
+	case H8300_INSN_FORMAT_RIR32:
 		return SEQ3(
-			SETL("data_value", ri_op(16, cmd, 1)),
-			R16_X(1, VARL("data_value")),
-			ccr_unary_NZV0(16, VARL("data_value")));
-	case H8300_INSN_FORMAT_R16RI:
-		return SEQ2(ri_op_set(cmd, 1, R16_OP(0)), ccr_unary_NZV0(16, R16_OP(0)));
-	case H8300_INSN_FORMAT_ABSR16:
+			SETL("data_value", ri_op(32, cmd, 0)),
+			R32_X(1, VARL("data_value")),
+			ccr_unary_NZV0(32, VARL("data_value")));
+	case H8300_INSN_FORMAT_R32RI:
+		return SEQ2(ri_op_set(cmd, 1, R32_OP(0)), ccr_unary_NZV0(32, R32_OP(0)));
+	case H8300_INSN_FORMAT_ABSR32:
 		return SEQ3(
-			SETL("data_value", abs_op(16, cmd, 0)),
-			R16_X(1, VARL("data_value")),
-			ccr_unary_NZV0(16, VARL("data_value")));
-	case H8300_INSN_FORMAT_R16ABS:
-		return SEQ2(abs_op_set(cmd, 1, R16_OP(0)), ccr_unary_NZV0(16, R16_OP(0)));
-	case H8300_INSN_FORMAT_R16RD:
-		return SEQ2(rd_op_set(cmd, 1, R16_OP(0)), ccr_unary_NZV0(16, R16_OP(0)));
-	case H8300_INSN_FORMAT_RDR16:
+			SETL("data_value", abs_op(32, cmd, 0)),
+			R32_X(1, VARL("data_value")),
+			ccr_unary_NZV0(32, VARL("data_value")));
+	case H8300_INSN_FORMAT_R32ABS:
+		return SEQ2(abs_op_set(cmd, 1, R32_OP(0)), ccr_unary_NZV0(32, R32_OP(0)));
+	case H8300_INSN_FORMAT_R32RD:
+		return SEQ2(rd_op_set(cmd, 1, R32_OP(0)), ccr_unary_NZV0(32, R32_OP(0)));
+	case H8300_INSN_FORMAT_RDR32:
 		return SEQ3(
-			SETL("data_value", RD_OP(16, 0)),
-			R16_X(1, VARL("data_value")),
-			ccr_unary_NZV0(16, VARL("data_value")));
-	case H8300_INSN_FORMAT_R16RDEC:
+			SETL("data_value", RD_OP(32, 0)),
+			R32_X(1, VARL("data_value")),
+			ccr_unary_NZV0(32, VARL("data_value")));
+	case H8300_INSN_FORMAT_R32RDEC:
 		return SEQ3(
-			R16_X(1, SUB(R16_OP(1), U16(1))),
-			STOREW(R16_OP(1), R16_OP(0)),
-			ccr_unary_NZV0(16, R16_OP(0)));
-	case H8300_INSN_FORMAT_RINCR16:
+			R32_I_X(1, SUB(R32_OP_I(1), U32(1))),
+			STOREW(AS_ADDR(R32_OP_I(1)), R32_OP(0)),
+			ccr_unary_NZV0(32, R32_OP(0)));
+	case H8300_INSN_FORMAT_RINCR32:
 		return SEQ4(
-			SETL("data_value", LOADW(16, R16_OP(0))),
-			R16_X(1, VARL("data_value")),
-			R16_X(0, ADD(U16(1), R16_OP(0))),
-			ccr_unary_NZV0(16, VARL("data_value")));
+			SETL("data_value", LOADW(32, AS_ADDR(R32_OP_I(0)))),
+			R32_X(1, VARL("data_value")),
+			R32_I_X(0, ADD(U32(1), R32_OP_I(0))),
+			ccr_unary_NZV0(32, VARL("data_value")));
 	default:
 		NOT_IMPLEMENTED;
 	}
@@ -415,7 +416,7 @@ static RzILOpEffect *op_add_w(H8300Cmd *cmd) {
 			ccr_add_w(VARL("_0"), VARL("_1")));
 	case H8300_INSN_FORMAT_IMMR16:
 		return SEQ4(
-			SETL("_0", IMM_OP(0)),
+			SETL("_0", IMM_OP(16, 0)),
 			SETL("_1", R16_OP(1)),
 			R16_X(1, ADD(VARL("_0"), VARL("_1"))),
 			ccr_add_w(VARL("_0"), VARL("_1")));
@@ -426,7 +427,7 @@ static RzILOpEffect *op_add_w(H8300Cmd *cmd) {
 static RzILOpEffect *op_adds(H8300Cmd *cmd) {
 	switch (cmd->fmt) {
 	case H8300_INSN_FORMAT_IMMR16:
-		return R16_X(1, ADD(IMM_OP(0), R16_OP(1)));
+		return R16_X(1, ADD(IMM_OP(16, 0), R16_OP(1)));
 	default: NOT_IMPLEMENTED;
 	}
 }
@@ -690,7 +691,7 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 		case H8300_INSN_FORMAT_R16R16:
 			return ccr_cmp_w(R16_OP(1), R16_OP(0), IL_FALSE);
 		case H8300_INSN_FORMAT_IMMR16:
-			return ccr_cmp_w(R16_OP(1), IMM_OP(0), IL_FALSE);
+			return ccr_cmp_w(R16_OP(1), IMM_OP(16, 0), IL_FALSE);
 		default: NOT_IMPLEMENTED;
 		}
 	case H8300_INSN_CMP_L: NOT_IMPLEMENTED;
@@ -735,7 +736,7 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 	case H8300_INSN_SUBS:
 		switch (cmd->fmt) {
 		case H8300_INSN_FORMAT_IMMR16:
-			return R16_X(1, SUB(R16_OP(1), IMM_OP(0)));
+			return R16_X(1, SUB(R16_OP(1), IMM_OP(16, 0)));
 		default: NOT_IMPLEMENTED;
 		}
 	case H8300_INSN_OR_B: return op_logical2_formats(cmd, rz_il_op_new_log_or);
