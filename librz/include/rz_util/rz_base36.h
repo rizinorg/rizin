@@ -1,5 +1,5 @@
-#ifndef RZ_base36_H
-#define RZ_base36_H
+#ifndef RZ_BASE36_H
+#define RZ_BASE36_H
 
 #include <rz_types.h>
 
@@ -14,4 +14,4 @@ RZ_API st64 rz_base36_decode(const char *str, const size_t len);
 }
 #endif
 
-#endif //  RZ_base36_H
+#endif //  RZ_BASE36_H
