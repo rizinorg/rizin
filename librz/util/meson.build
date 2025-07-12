@@ -72,6 +72,7 @@ rz_util_common_sources = [
   'time.c',
   'tree.c',
   'base36.c',
+  'base32.c',
   'base64.c',
   'base85.c',
   'base91.c',
