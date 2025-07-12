@@ -714,6 +714,7 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 				ccr_cmp_w(VARL("_1"), VARL("_0"), IL_FALSE));
 		default: NOT_IMPLEMENTED;
 		}
+	case H8300_INSN_SUB_L: NOT_IMPLEMENTED;
 	case H8300_INSN_SUBX:
 		switch (cmd->fmt) {
 		case H8300_INSN_FORMAT_R8R8:
@@ -742,10 +743,15 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 	case H8300_INSN_XOR_B: return op_logical2_formats_8(cmd, rz_il_op_new_log_xor);
 	case H8300_INSN_AND_B: return op_logical2_formats_8(cmd, rz_il_op_new_log_and);
 	case H8300_INSN_AND_W: return op_logical2_formats_16(cmd, rz_il_op_new_log_and);
+	case H8300_INSN_XOR_W: return op_logical2_formats_16(cmd, rz_il_op_new_log_xor);
+	case H8300_INSN_OR_W: return op_logical2_formats_16(cmd, rz_il_op_new_log_or);
 	case H8300_INSN_AND_L: return op_logical2_formats_32(cmd, rz_il_op_new_log_and);
+	case H8300_INSN_XOR_L: return op_logical2_formats_32(cmd, rz_il_op_new_log_xor);
+	case H8300_INSN_OR_L: return op_logical2_formats_32(cmd, rz_il_op_new_log_or);
 	case H8300_INSN_NOP:
 	case H8300_INSN_SLEEP: return NOP();
 	case H8300_INSN_STC_B: return R8_X(1, VARG("ccr"));
+	case H8300_INSN_STC_W: return R16_X(1, UNSIGNED(16, VARG("ccr")));
 	case H8300_INSN_LDC_B:
 		switch (cmd->fmt) {
 		case H8300_INSN_FORMAT_IMM:
@@ -848,6 +854,27 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 			SETL("result", LOGNOT(R8_OP(0))),
 			ccr_unary_NZV0(8, VARL("result")),
 			R8_X(0, VARL("result")));
+	case H8300_INSN_ROTL_W:
+	case H8300_INSN_ROTR_W:
+	case H8300_INSN_ROTXL_W:
+	case H8300_INSN_ROTXR_W:
+	case H8300_INSN_SHAL_W:
+	case H8300_INSN_SHAR_W:
+	case H8300_INSN_SHLL_W:
+	case H8300_INSN_SHLR_W:
+	case H8300_INSN_ROTL_L:
+	case H8300_INSN_ROTR_L:
+	case H8300_INSN_ROTXL_L:
+	case H8300_INSN_ROTXR_L:
+	case H8300_INSN_SHAL_L:
+	case H8300_INSN_SHAR_L:
+	case H8300_INSN_SHLL_L:
+	case H8300_INSN_SHLR_L:
+	case H8300_INSN_NEG_W:
+	case H8300_INSN_NOT_W:
+	case H8300_INSN_NEG_L:
+	case H8300_INSN_NOT_L:
+		NOT_IMPLEMENTED;
 
 	case H8300_INSN_BRA:
 		return JMP(PCREL_OP(0));
@@ -887,6 +914,9 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 			SETL("remainder", UNSIGNED(8, MOD(R16_OP(1), UNSIGNED(16, R8_OP(0))))),
 			ccr_unary_NZ(8, R8_OP(0)),
 			R16_X(1, APPEND(VARL("remainder"), VARL("quotient"))));
+	case H8300_INSN_MULXS_B:
+	case H8300_INSN_MULXU_W:
+	case H8300_INSN_MULXS_W:
 	case H8300_INSN_DIVXU_W:
 	case H8300_INSN_DIVXS_B:
 	case H8300_INSN_DIVXS_W: NOT_IMPLEMENTED;
@@ -1144,9 +1174,11 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 			STOREW(sp_op(), R16_OP(0)),
 			ccr_unary_NZV0(16, R16_OP(0)));
 	case H8300_INSN_INVALID: return NOP();
+	case H8300_INSN_POP_L:
+	case H8300_INSN_PUSH_L:
+	case H8300_INSN_TRAPA:
 	case H8300_INSN_MOVFPE:
-	case H8300_INSN_MOVTPE:
-	default: NOT_IMPLEMENTED;
+	case H8300_INSN_MOVTPE: NOT_IMPLEMENTED;
 	}
 
 	NOT_IMPLEMENTED;
