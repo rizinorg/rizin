@@ -751,7 +751,7 @@ static int decode_i32r32_6(const ut8 *bytes, struct h8300_cmd *cmd) {
 	int ret = 6;
 
 	ut32 immval = rz_read_at_be32(bytes, 2);
-	ut8 regval = bytes[1] & 0x7;
+	ut8 regval = r32_low(bytes[1]);
 
 	cmd->fmt = H8300_INSN_FORMAT_IMMR32;
 	OPS_ADD(H8300_OP_IMM, imm, immval);
@@ -1062,7 +1062,7 @@ static int h8300_decode_4(const ut8 *instr, struct h8300_cmd *cmd) {
 		break;
 	}
 	switch (x4 & 0xffffff88) {
-		CASE_F_F(decode_i16r16_4, 0x01f06600, AND_L);
+		CASE_F_F(decode_r32r32_4, 0x01f06600, AND_L);
 
 		CASE_F_F(decode_rir32_4, 0x01006900, MOV_L);
 		CASE_F_F(decode_rir32_4, 0x01006980, MOV_L);
@@ -1255,11 +1255,9 @@ static int h8300_decode_2(const ut8 *instr, struct h8300_cmd *cmd) {
 		cmd->id = H8300_INSN_CMP_W;
 		ret = decode_r16r16_2(instr, cmd);
 		break;
-	case 0x16:
-		cmd->id = H8300_INSN_AND_B;
-		ret = decode_r8r8_2(instr, cmd);
-		break;
-		CASE_F_F(decode_r8r8_2, 0x66, AND_W);
+
+		CASE_F_F(decode_r8r8_2, 0x16, AND_B);
+		CASE_F_F(decode_r16r16_2, 0x66, AND_W);
 	case 0x62:
 		cmd->id = H8300_INSN_BCLR;
 		ret = decode_r8r8_2(instr, cmd);

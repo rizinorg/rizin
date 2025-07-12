@@ -149,6 +149,8 @@ X_OP_GET_IMPL(H8300_OP_MI8, UADDR, mi8);
 
 #define IMM_OP(N, I) imm_op(N, cmd, I)
 #define IMM8_OP(I)   imm_op(8, cmd, I)
+#define IMM16_OP(I)  imm_op(16, cmd, I)
+#define IMM32_OP(I)  imm_op(32, cmd, I)
 #define MI8_OP(I)    mi8_op(cmd, I)
 #define RD_OP(N, I)  rd_op(N, cmd, (I))
 #define PCREL_OP(I)  pc_rel_op(cmd, (I))
@@ -340,28 +342,15 @@ static RzILOpEffect *op_mov_l(H8300Cmd *cmd) {
 #define ADD3(X, Y, Z) ADD(X, ADD(Y, Z))
 #define SUB3(X, Y, Z) SUB(X, ADD(Y, Z))
 
-/**
- * \brief Conditional code ADD
- * I: Previous value remains unchanged.
- * H: Set to "1" when there is a carry from bit 3;
- *  otherwise cleared to "0."
- * N: Set to "1" when the result is negative;
- * 	otherwise cleared to "0."
- * Z: Set to "1" when the result is zero;
- * 	otherwise cleared to "0."
- * V: Set to "1" if an overflow occurs;
- * 	otherwise cleared to "0."
- * C: Set to "1" if there is a carry from bit 7;
- * 	otherwise cleared to "0."
- */
-static RzILOpEffect *ccr_add_b(RzILOpPure *a, RzILOpPure *b, RzILOpBool *c) {
-	RzILOpPure *low4 = ADD3(LOGAND(a, U8(0xf)), LOGAND(b, U8(0xf)), B_TO_8(c));
-	RzILOpPure *H = NON_ZERO(LOGAND(low4, U8(0x10)));
+static RzILOpEffect *ccr_add(RzILOpPure *a, RzILOpPure *b, RzILOpBool *c, ut8 n, ut8 carry_h, ut8 carry_c) {
+	RzILOpPure *lown = ADD3(LOGAND(a, UN(n, (1 << (carry_h + 1)) - 1)),
+		LOGAND(b, UN(n, (1 << (carry_h + 1)) - 1)), BOOL_TO_BV(c, n));
+	RzILOpPure *H = NON_ZERO(LOGAND(lown, UN(n, 1 << (carry_h + 1))));
 
-	RzILOpPure *sum = ADD3(UNSIGNED(16, DUP(a)), UNSIGNED(16, DUP(b)), B_TO_16(DUP(c)));
-	RzILOpPure *N = NON_ZERO(LOGAND(sum, U16(0x80)));
+	RzILOpPure *sum = ADD3(UNSIGNED(n * 2, DUP(a)), UNSIGNED(n * 2, DUP(b)), BOOL_TO_BV(DUP(c), n * 2));
+	RzILOpPure *N = NON_ZERO(LOGAND(sum, UN(n * 2, 1 << (n - 1))));
 	RzILOpPure *Z = IS_ZERO(DUP(sum));
-	RzILOpPure *C = NON_ZERO(LOGAND(DUP(sum), U16(0x100)));
+	RzILOpPure *C = NON_ZERO(LOGAND(DUP(sum), UN(n * 2, 1 << (carry_c + 1))));
 	RzILOpPure *V = AND(BEQ(MSB(DUP(a)), MSB(DUP(b))), BNE(MSB(DUP(a)), DUP(N)));
 	return SEQ5(
 		ccr_set(CCR_H, H),
@@ -371,22 +360,7 @@ static RzILOpEffect *ccr_add_b(RzILOpPure *a, RzILOpPure *b, RzILOpBool *c) {
 		ccr_set(CCR_V, V));
 }
 
-static RzILOpEffect *ccr_add_w(RzILOpPure *a, RzILOpPure *b) {
-	RzILOpPure *low12 = ADD(LOGAND(a, U16(0xfff)), LOGAND(b, U16(0xfff)));
-	RzILOpPure *H = NON_ZERO(LOGAND(low12, U16(0x1000)));
-
-	RzILOpPure *sum = ADD(UNSIGNED(32, DUP(a)), UNSIGNED(32, DUP(b)));
-	RzILOpPure *N = NON_ZERO(LOGAND(sum, U32(0x800)));
-	RzILOpPure *Z = IS_ZERO(DUP(sum));
-	RzILOpPure *C = NON_ZERO(LOGAND(DUP(sum), U32(0x10000)));
-	RzILOpPure *V = AND(BEQ(MSB(DUP(a)), MSB(DUP(b))), BNE(MSB(DUP(a)), DUP(N)));
-	return SEQ5(
-		ccr_set(CCR_H, H),
-		ccr_set(CCR_N, N),
-		ccr_set(CCR_Z, Z),
-		ccr_set(CCR_C, C),
-		ccr_set(CCR_V, V));
-}
+#define ccr_add_b(A, B, C) ccr_add(A, B, C, 8, 3, 7)
 
 static RzILOpEffect *op_add_b(H8300Cmd *cmd) {
 	switch (cmd->fmt) {
@@ -413,13 +387,31 @@ static RzILOpEffect *op_add_w(H8300Cmd *cmd) {
 			SETL("_0", R16_OP(0)),
 			SETL("_1", R16_OP(1)),
 			R16_X(1, ADD(VARL("_0"), VARL("_1"))),
-			ccr_add_w(VARL("_0"), VARL("_1")));
+			ccr_add(VARL("_0"), VARL("_1"), IL_FALSE, 16, 11, 15));
 	case H8300_INSN_FORMAT_IMMR16:
 		return SEQ4(
 			SETL("_0", IMM_OP(16, 0)),
 			SETL("_1", R16_OP(1)),
 			R16_X(1, ADD(VARL("_0"), VARL("_1"))),
-			ccr_add_w(VARL("_0"), VARL("_1")));
+			ccr_add(VARL("_0"), VARL("_1"), IL_FALSE, 16, 11, 15));
+	default: NOT_IMPLEMENTED;
+	}
+}
+
+static RzILOpEffect *op_add_l(H8300Cmd *cmd) {
+	switch (cmd->fmt) {
+	case H8300_INSN_FORMAT_R32R32:
+		return SEQ4(
+			SETL("_0", R32_OP(0)),
+			SETL("_1", R32_OP(1)),
+			R32_X(1, ADD(VARL("_0"), VARL("_1"))),
+			ccr_add(VARL("_0"), VARL("_1"), IL_FALSE, 32, 27, 31));
+	case H8300_INSN_FORMAT_IMMR32:
+		return SEQ4(
+			SETL("_0", IMM_OP(32, 0)),
+			SETL("_1", R32_OP(1)),
+			R32_X(1, ADD(VARL("_0"), VARL("_1"))),
+			ccr_add(VARL("_0"), VARL("_1"), IL_FALSE, 32, 27, 31));
 	default: NOT_IMPLEMENTED;
 	}
 }
@@ -441,7 +433,9 @@ static RzILOpEffect *op_addx(H8300Cmd *cmd) {
 			SETL("_0", IMM8_OP(0)),
 			SETL("_1", R8_OP(1)),
 			R8_X(1, ADD3(VARL("_0"), VARL("_1"), B_TO_8(VARL("_c")))),
-			ccr_add_b(VARL("_0"), VARL("_1"), VARL("_c")));
+			ccr_add_b(VARL("_0"), VARL("_1"), VARL("_c"))
+
+		);
 	case H8300_INSN_FORMAT_R8R8:
 		return SEQ5(
 			SETL("_c", C),
@@ -509,22 +503,27 @@ static RzILOpEffect *ccr_sub_b(RzILOpPure *a, RzILOpPure *b, RzILOpBool *c) {
 typedef RzILOpPure *(*op2)(RzILOpPure *a, RzILOpPure *b);
 typedef RzILOpEffect *(*setter)(H8300Cmd *, ut8, RzILOpPure *);
 
-static RzILOpEffect *op_logical2(H8300Cmd *cmd, RzILOpPure *a, RzILOpPure *b, op2 f, setter s) {
+static RzILOpEffect *op_logical2(H8300Cmd *cmd, RzILOpPure *a, RzILOpPure *b, op2 f, setter s, ut8 N) {
 	return SEQ3(
 		SETL("_res", f(a, b)),
 		s(cmd, 1, VARL("_res")),
-		ccr_unary_NZV0(8, VARL("_res")));
+		ccr_unary_NZV0(N, VARL("_res")));
 }
 
-static RzILOpEffect *op_logical2_formats(H8300Cmd *cmd, op2 f) {
-	switch (cmd->fmt) {
-	case H8300_INSN_FORMAT_IMMR8:
-		return op_logical2(cmd, IMM8_OP(0), R8_OP(1), f, r8_op_set);
-	case H8300_INSN_FORMAT_R8R8:
-		return op_logical2(cmd, R8_OP(0), R8_OP(1), f, r8_op_set);
-	default: NOT_IMPLEMENTED;
+#define op_logical2_formats_IMPL(N) \
+	static RzILOpEffect *op_logical2_formats_##N(H8300Cmd *cmd, op2 f) { \
+		switch (cmd->fmt) { \
+		case H8300_INSN_FORMAT_IMMR##N: \
+			return op_logical2(cmd, IMM##N##_OP(0), R##N##_OP(1), f, r##N##_op_set, N); \
+		case H8300_INSN_FORMAT_R##N##R##N: \
+			return op_logical2(cmd, R##N##_OP(0), R##N##_OP(1), f, r##N##_op_set, N); \
+		default: NOT_IMPLEMENTED; \
+		} \
 	}
-}
+
+op_logical2_formats_IMPL(8);
+op_logical2_formats_IMPL(16);
+op_logical2_formats_IMPL(32);
 
 static RzILOpEffect *op_logical_i8ccr(H8300Cmd *cmd, op2 f) {
 	switch (cmd->fmt) {
@@ -675,7 +674,7 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 	case H8300_INSN_MOV_L: return op_mov_l(cmd);
 	case H8300_INSN_ADD_B: return op_add_b(cmd);
 	case H8300_INSN_ADD_W: return op_add_w(cmd);
-	case H8300_INSN_ADD_L: NOT_IMPLEMENTED;
+	case H8300_INSN_ADD_L: return op_add_l(cmd);
 	case H8300_INSN_ADDS: return op_adds(cmd);
 	case H8300_INSN_ADDX: return op_addx(cmd);
 	case H8300_INSN_CMP_B:
@@ -739,11 +738,11 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 			return R16_X(1, SUB(R16_OP(1), IMM_OP(16, 0)));
 		default: NOT_IMPLEMENTED;
 		}
-	case H8300_INSN_OR_B: return op_logical2_formats(cmd, rz_il_op_new_log_or);
-	case H8300_INSN_XOR_B: return op_logical2_formats(cmd, rz_il_op_new_log_xor);
-	case H8300_INSN_AND_B: return op_logical2_formats(cmd, rz_il_op_new_log_and);
-	case H8300_INSN_AND_W:
-	case H8300_INSN_AND_L: NOT_IMPLEMENTED;
+	case H8300_INSN_OR_B: return op_logical2_formats_8(cmd, rz_il_op_new_log_or);
+	case H8300_INSN_XOR_B: return op_logical2_formats_8(cmd, rz_il_op_new_log_xor);
+	case H8300_INSN_AND_B: return op_logical2_formats_8(cmd, rz_il_op_new_log_and);
+	case H8300_INSN_AND_W: return op_logical2_formats_16(cmd, rz_il_op_new_log_and);
+	case H8300_INSN_AND_L: return op_logical2_formats_32(cmd, rz_il_op_new_log_and);
 	case H8300_INSN_NOP:
 	case H8300_INSN_SLEEP: return NOP();
 	case H8300_INSN_STC_B: return R8_X(1, VARG("ccr"));
