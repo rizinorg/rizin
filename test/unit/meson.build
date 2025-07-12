@@ -24,6 +24,7 @@ if get_option('enable_tests')
     'analysis_xrefs',
     'annotated_code',
     'base36',
+    'base32',
     'base64',
     'base85',
     'big',
