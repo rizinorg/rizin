@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #define PCRE2_STATIC
-#define PCRE2_CODE_UNIT_WIDTH 8
+#define PCRE2_CODE_UNIT_WIDTH 0
 #include <pcre2.h>
 
 #include <rz_util/rz_strbuf.h>
@@ -12,44 +12,45 @@
 #include <rz_util/rz_assert.h>
 #include <rz_util.h>
 
-typedef pcre2_general_context RzRegexGeneralContext; ///< General context.
+typedef pcre2_general_context_8 RzRegexGeneralContext8; ///< General context.
 // typedef pcre2_compile_context RzRegexCompContext; ///< The context for compiling.
-typedef pcre2_match_context RzRegexMatchContext; ///< The context for matching.
+typedef pcre2_match_context_8 RzRegexMatchContext8; ///< The context for matching.
 
 typedef struct {
-	RzRegexGeneralContext *general;
+	RzRegexGeneralContext8 *general;
 	RzRegexCompContext *compile;
-	RzRegexMatchContext *match;
-} RzRegexContexts;
+	RzRegexMatchContext8 *match;
+} RzRegexContexts8;
 
-static void print_pcre2_err(RZ_NULLABLE const char *pattern, RzRegexStatus err_num, size_t err_off) {
-	PCRE2_UCHAR buffer[256];
-	pcre2_get_error_message(err_num, buffer, sizeof(buffer));
-	RZ_LOG_ERROR("Regex compilation for '%s' failed at %" PFMTSZu ": %s\n", pattern ? pattern : "(null)", err_off,
+static void check_faulty_pcre2_word_width(size_t pcre2_word_width) {
+	if (pcre2_word_width != 8 && pcre2_word_width != 16 && pcre2_word_width != 32) {
+		RZ_LOG_FATAL("PCRE2 word with of %" PFMTSZu " is not supported.\n", pcre2_word_width);
+		abort();
+	}
+}
+
+static void print_pcre2_err(RZ_NULLABLE const char *utf8_pattern, RzRegexStatus err_num, size_t err_off) {
+	PCRE2_UCHAR8 buffer[256];
+	pcre2_get_error_message_8(err_num, buffer, sizeof(buffer));
+	RZ_LOG_ERROR("Regex compilation for '%s' failed at %" PFMTSZu ": %s\n", utf8_pattern ? utf8_pattern : "(null)", err_off,
 		buffer);
 }
 
-/**
- * \brief Compile a regex pattern to a RzRegex and return it.
- * In case of an error, an error message is printed and NULL is returned.
- *
- * \param pattern The regex pattern string.
- * \param cflags The compilation flags or zero for default.
- * \param jflags The compilation flags for the JIT compiler.
- * You can pass RZ_REGEX_JIT_PARTIAL_SOFT or RZ_REGEX_JIT_PARTIAL_HARD if you
- * intend to use the pattern for partial matching. Otherwise set it to 0.
- * \param ccontext A compile context or NULL.
- *
- * \return The compiled regex or NULL in case of failure.
- */
-RZ_API RZ_OWN RzRegex *rz_regex_new(RZ_NONNULL const char *pattern, RzRegexFlags cflags, RzRegexFlags jflags,
-	RzRegexCompContext *ccontext) {
+static RZ_OWN void *regex_new(RZ_NONNULL const char *pattern, RzRegexFlags cflags, RzRegexFlags jflags,
+	RzRegexCompContext *ccontext, size_t pcre2_word_width) {
 	rz_return_val_if_fail(pattern, NULL);
+	check_faulty_pcre2_word_width(pcre2_word_width);
 
 	RzRegexStatus err_num;
 	RzRegexSize err_off;
 	ut32 supported = 0;
-	pcre2_config(PCRE2_CONFIG_UNICODE, &supported);
+	if (pcre2_word_width == 32) {
+		pcre2_config_32(PCRE2_CONFIG_UNICODE, &supported);
+	} else if (pcre2_word_width == 16) {
+		pcre2_config_16(PCRE2_CONFIG_UNICODE, &supported);
+	} else {
+		pcre2_config_8(PCRE2_CONFIG_UNICODE, &supported);
+	}
 	if (supported != 1) {
 		RZ_LOG_ERROR("Unicode not supported by PCRE2 library.\n");
 		return NULL;
@@ -69,26 +70,91 @@ RZ_API RZ_OWN RzRegex *rz_regex_new(RZ_NONNULL const char *pattern, RzRegexFlags
 		pat = pattern;
 	}
 
-	RzRegex *regex = pcre2_compile(
-		(PCRE2_SPTR)pat,
-		PCRE2_ZERO_TERMINATED,
-		cflags | PCRE2_UTF | PCRE2_MATCH_INVALID_UTF,
-		&err_num,
-		&err_off,
-		ccontext);
-	if (!regex) {
-		print_pcre2_err(pat, err_num, err_off);
-		free(fixed_pat);
-		return NULL;
-	}
+	void *regex;
+	if (pcre2_word_width == 32) {
+		ut8 *utf32_pat = pat;
+		regex = pcre2_compile_32(
+			(PCRE2_SPTR32)utf32_pat,
+			PCRE2_ZERO_TERMINATED,
+			cflags | PCRE2_UTF | PCRE2_MATCH_INVALID_UTF,
+			&err_num,
+			&err_off,
+			ccontext);
+		if (!regex) {
+			print_pcre2_err(pat, err_num, err_off);
+			free(fixed_pat);
+			// TODO free(utf32_pat);
+			return NULL;
+		}
 #ifdef SUPPORTS_PCRE2_JIT
-	RzRegexStatus jit_err = pcre2_jit_compile(regex, jflags | PCRE2_JIT_COMPLETE);
-	if (jit_err < 0) {
-		print_pcre2_err(pat, jit_err, 0);
-	}
+		RzRegexStatus jit_err = pcre2_jit_compile_32(regex, jflags | PCRE2_JIT_COMPLETE);
+		if (jit_err < 0) {
+			print_pcre2_err(pat, jit_err, 0);
+		}
 #endif
+	} else if (pcre2_word_width == 16) {
+		ut8 *utf16_pat = pat;
+		regex = pcre2_compile_16(
+			(PCRE2_SPTR16)utf16_pat,
+			PCRE2_ZERO_TERMINATED,
+			cflags | PCRE2_UTF | PCRE2_MATCH_INVALID_UTF,
+			&err_num,
+			&err_off,
+			ccontext);
+		if (!regex) {
+			print_pcre2_err(pat, err_num, err_off);
+			free(fixed_pat);
+			// TODO free(utf16_pat);
+			return NULL;
+		}
+#ifdef SUPPORTS_PCRE2_JIT
+		RzRegexStatus jit_err = pcre2_jit_compile_16(regex, jflags | PCRE2_JIT_COMPLETE);
+		if (jit_err < 0) {
+			print_pcre2_err(pat, jit_err, 0);
+		}
+#endif
+	} else {
+		regex = pcre2_compile_8(
+			(PCRE2_SPTR8)pat,
+			PCRE2_ZERO_TERMINATED,
+			cflags | PCRE2_UTF | PCRE2_MATCH_INVALID_UTF,
+			&err_num,
+			&err_off,
+			ccontext);
+		if (!regex) {
+			print_pcre2_err(pat, err_num, err_off);
+			free(fixed_pat);
+			return NULL;
+		}
+#ifdef SUPPORTS_PCRE2_JIT
+		RzRegexStatus jit_err = pcre2_jit_compile_8(regex, jflags | PCRE2_JIT_COMPLETE);
+		if (jit_err < 0) {
+			print_pcre2_err(pat, jit_err, 0);
+		}
+#endif
+	}
 	free(fixed_pat);
 	return regex;
+}
+
+/**
+ * \brief Compile a regex pattern to a RzRegex and return it.
+ * In case of an error, an error message is printed and NULL is returned.
+ *
+ * \param pattern The regex pattern string.
+ * \param cflags The compilation flags or zero for default.
+ * PCRE2_UTF | PCRE2_MATCH_INVALID_UTF are enforced currently.
+ * \param jflags The compilation flags for the JIT compiler.
+ * You can pass RZ_REGEX_JIT_PARTIAL_SOFT or RZ_REGEX_JIT_PARTIAL_HARD if you
+ * intend to use the pattern for partial matching. Otherwise set it to 0.
+ * \param ccontext A compile context or NULL.
+ *
+ * \return The compiled regex or NULL in case of failure.
+ */
+RZ_API RZ_OWN RzRegex *rz_regex_new(RZ_NONNULL const char *pattern, RzRegexFlags cflags, RzRegexFlags jflags,
+	RzRegexCompContext *ccontext) {
+	rz_return_val_if_fail(pattern, NULL);
+	return regex_new(pattern, cflags, jflags, ccontext, 8);
 }
 
 /**
@@ -115,7 +181,7 @@ RZ_API RZ_OWN RzRegex *rz_regex_new_bytes(RZ_NONNULL const ut8 *pattern, size_t 
 	RzRegexStatus err_num;
 	RzRegexSize err_off;
 
-	RzRegex *regex = pcre2_compile(
+	RzRegex *regex = pcre2_compile_8(
 		pattern,
 		pattern_len,
 		cflags,
@@ -127,7 +193,7 @@ RZ_API RZ_OWN RzRegex *rz_regex_new_bytes(RZ_NONNULL const ut8 *pattern, size_t 
 		return NULL;
 	}
 #ifdef SUPPORTS_PCRE2_JIT
-	RzRegexStatus jit_err = pcre2_jit_compile(regex, jflags | PCRE2_JIT_COMPLETE);
+	RzRegexStatus jit_err = pcre2_jit_compile_8(regex, jflags | PCRE2_JIT_COMPLETE);
 	if (jit_err < 0) {
 		print_pcre2_err((const char *)pattern, jit_err, 0);
 	}
@@ -141,11 +207,11 @@ RZ_API RZ_OWN RzRegex *rz_regex_new_bytes(RZ_NONNULL const ut8 *pattern, size_t 
  * \param regex The RzRegex to free.
  */
 RZ_API void rz_regex_free(RZ_OWN RzRegex *regex) {
-	pcre2_code_free(regex);
+	pcre2_code_free_8(regex);
 }
 
 static void rz_regex_match_data_free(RZ_OWN RzRegexMatchData *match_data) {
-	pcre2_match_data_free(match_data);
+	pcre2_match_data_free_8(match_data);
 }
 
 /**
@@ -166,9 +232,9 @@ RZ_API RzRegexStatus rz_regex_match(RZ_NONNULL const RzRegex *regex, RZ_NONNULL 
 	RzRegexFlags mflags) {
 	rz_return_val_if_fail(regex && text, RZ_REGEX_ERROR_NOMATCH);
 
-	pcre2_match_data *mdata = pcre2_match_data_create_from_pattern(regex, NULL);
-	RzRegexStatus rc = pcre2_match(regex, (PCRE2_SPTR)text, text_size, text_offset, mflags, mdata, NULL);
-	pcre2_match_data_free(mdata);
+	pcre2_match_data_8 *mdata = pcre2_match_data_create_from_pattern_8(regex, NULL);
+	RzRegexStatus rc = pcre2_match_8(regex, (PCRE2_SPTR8)text, text_size, text_offset, mflags, mdata, NULL);
+	pcre2_match_data_free_8(mdata);
 	return rc;
 }
 
@@ -180,7 +246,7 @@ RZ_API RzRegexStatus rz_regex_match(RZ_NONNULL const RzRegex *regex, RZ_NONNULL 
  * \param errbuf_size The error message buffer size in bytes.
  */
 RZ_API void rz_regex_error_msg(RzRegexStatus errcode, RZ_OUT char *errbuf, RzRegexSize errbuf_size) {
-	pcre2_get_error_message(errcode, (PCRE2_UCHAR *)errbuf, errbuf_size);
+	pcre2_get_error_message_8(errcode, (PCRE2_UCHAR8 *)errbuf, errbuf_size);
 }
 
 /**
@@ -196,19 +262,19 @@ RZ_API const ut8 *rz_regex_get_match_name(RZ_NONNULL const RzRegex *regex, ut32 
 
 	ut32 namecount;
 	ut32 name_entry_size;
-	PCRE2_SPTR nametable_ptr;
+	PCRE2_SPTR8 nametable_ptr;
 
-	pcre2_pattern_info(
+	pcre2_pattern_info_8(
 		regex,
 		PCRE2_INFO_NAMECOUNT,
 		&namecount);
 
-	pcre2_pattern_info(
+	pcre2_pattern_info_8(
 		regex,
 		PCRE2_INFO_NAMETABLE,
 		&nametable_ptr);
 
-	pcre2_pattern_info(
+	pcre2_pattern_info_8(
 		regex,
 		PCRE2_INFO_NAMEENTRYSIZE,
 		&name_entry_size);
@@ -236,19 +302,19 @@ RZ_API RzRegexStatus rz_regex_get_group_idx_by_name(RZ_NONNULL const RzRegex *re
 
 	ut32 namecount;
 	ut32 name_entry_size;
-	PCRE2_SPTR nametable_ptr;
+	PCRE2_SPTR8 nametable_ptr;
 
-	pcre2_pattern_info(
+	pcre2_pattern_info_8(
 		regex,
 		PCRE2_INFO_NAMECOUNT,
 		&namecount);
 
-	pcre2_pattern_info(
+	pcre2_pattern_info_8(
 		regex,
 		PCRE2_INFO_NAMETABLE,
 		&nametable_ptr);
 
-	pcre2_pattern_info(
+	pcre2_pattern_info_8(
 		regex,
 		PCRE2_INFO_NAMEENTRYSIZE,
 		&name_entry_size);
@@ -261,6 +327,115 @@ RZ_API RzRegexStatus rz_regex_get_group_idx_by_name(RZ_NONNULL const RzRegex *re
 		nametable_ptr += name_entry_size;
 	}
 	return RZ_REGEX_ERROR_NOMATCH;
+}
+
+static RZ_OWN RzPVector /*<RzRegexMatch *>*/ *match_first(
+	RZ_NONNULL const void *regex,
+	RZ_NONNULL const char *text,
+	RzRegexSize text_size,
+	RzRegexSize text_offset,
+	RzRegexFlags mflags,
+	size_t pcre2_word_width) {
+	rz_return_val_if_fail(regex && text, NULL);
+	check_faulty_pcre2_word_width(pcre2_word_width);
+
+	RzPVector *matches = rz_pvector_new(free);
+	RzRegexMatchData *mdata = NULL;
+	if (pcre2_word_width == 32) {
+		mdata = pcre2_match_data_create_from_pattern_32(regex, NULL);
+	} else if (pcre2_word_width == 16) {
+		mdata = pcre2_match_data_create_from_pattern_16(regex, NULL);
+	} else {
+		mdata = pcre2_match_data_create_from_pattern_8(regex, NULL);
+	}
+	RzRegexStatus rc = 0;
+	if (pcre2_word_width == 32) {
+		rc = pcre2_match_32(regex, (PCRE2_SPTR32)text, text_size, text_offset, mflags, mdata, NULL);
+	} else if (pcre2_word_width == 16) {
+		rc = pcre2_match_16(regex, (PCRE2_SPTR16)text, text_size, text_offset, mflags, mdata, NULL);
+	} else {
+		rc = pcre2_match_8(regex, (PCRE2_SPTR8)text, text_size, text_offset, mflags, mdata, NULL);
+	}
+
+	if (rc == PCRE2_ERROR_NOMATCH) {
+		// Nothing matched return empty vector.
+		goto fini;
+	}
+
+	if (rc < 0) {
+		// Some error happend. Inform the user.
+		PCRE2_UCHAR8 buffer[256];
+		pcre2_get_error_message_8(rc, buffer, sizeof(buffer));
+		RZ_LOG_WARN("Regex matching failed: %s\n", buffer);
+		goto fini;
+	}
+
+	// Add groups to vector
+	PCRE2_SIZE *ovector = pcre2_get_ovector_pointer_8(mdata);
+
+	ut32 name_entry_size;
+	PCRE2_SPTR8 nametable_ptr8;
+	PCRE2_SPTR16 nametable_ptr16;
+	PCRE2_SPTR32 nametable_ptr32;
+
+	if (pcre2_word_width == 32) {
+		pcre2_pattern_info_32(
+			regex,
+			PCRE2_INFO_NAMETABLE,
+			&nametable_ptr32);
+
+		pcre2_pattern_info_32(
+			regex,
+			PCRE2_INFO_NAMEENTRYSIZE,
+			&name_entry_size);
+	} else if (pcre2_word_width == 16) {
+		pcre2_pattern_info_16(
+			regex,
+			PCRE2_INFO_NAMETABLE,
+			&nametable_ptr16);
+
+		pcre2_pattern_info_16(
+			regex,
+			PCRE2_INFO_NAMEENTRYSIZE,
+			&name_entry_size);
+	} else {
+		pcre2_pattern_info_8(
+			regex,
+			PCRE2_INFO_NAMETABLE,
+			&nametable_ptr8);
+
+		pcre2_pattern_info_8(
+			regex,
+			PCRE2_INFO_NAMEENTRYSIZE,
+			&name_entry_size);
+	}
+
+	for (size_t i = 0; i < rc; i++) {
+		if (ovector[2 * i] > ovector[2 * i + 1]) {
+			// This happens for \K lookaround. We fail if used.
+			// See pcre2demo.c for details.
+			RZ_LOG_ERROR("Usage of \\K to set start of the pattern later than the end, is not implemented.\n");
+			goto fini;
+		}
+
+		// Offset and length of match
+		RzRegexMatch *match = RZ_NEW0(RzRegexMatch);
+		match->start = ovector[2 * i];
+		match->len = ovector[2 * i + 1] - match->start;
+		match->group_idx = i;
+		if (pcre2_word_width == 32) {
+			nametable_ptr32 += name_entry_size;
+		} else if (pcre2_word_width == 16) {
+			nametable_ptr16 += name_entry_size;
+		} else {
+			nametable_ptr8 += name_entry_size;
+		}
+		rz_pvector_push(matches, match);
+	}
+
+fini:
+	rz_regex_match_data_free(mdata);
+	return matches;
 }
 
 /**
@@ -283,60 +458,68 @@ RZ_API RZ_OWN RzPVector /*<RzRegexMatch *>*/ *rz_regex_match_first(
 	RzRegexSize text_offset,
 	RzRegexFlags mflags) {
 	rz_return_val_if_fail(regex && text, NULL);
-
-	RzPVector *matches = rz_pvector_new(free);
-	RzRegexMatchData *mdata = pcre2_match_data_create_from_pattern(regex, NULL);
-	RzRegexStatus rc = pcre2_match(regex, (PCRE2_SPTR)text, text_size, text_offset, mflags, mdata, NULL);
-
-	if (rc == PCRE2_ERROR_NOMATCH) {
-		// Nothing matched return empty vector.
-		goto fini;
-	}
-
-	if (rc < 0) {
-		// Some error happend. Inform the user.
-		PCRE2_UCHAR buffer[256];
-		pcre2_get_error_message(rc, buffer, sizeof(buffer));
-		RZ_LOG_WARN("Regex matching failed: %s\n", buffer);
-		goto fini;
-	}
-
-	// Add groups to vector
-	PCRE2_SIZE *ovector = pcre2_get_ovector_pointer(mdata);
-
-	ut32 name_entry_size;
-	PCRE2_SPTR nametable_ptr;
-
-	pcre2_pattern_info(
+	return match_first(
 		regex,
-		PCRE2_INFO_NAMETABLE,
-		&nametable_ptr);
+		text,
+		text_size,
+		text_offset,
+		mflags, 8);
+}
 
-	pcre2_pattern_info(
+/**
+ * \brief Finds the first match in a UTF-16 text and returns it as a pvector.
+ * First element in the vector is always the whole match, the following possible groups.
+ *
+ * \param regex The regex pattern to match.
+ * \param text The text to search in. It should be UTF-16 (host-endianess) encoded.
+ * \param text_size The length of the buffer pointed to by \p text.
+ * Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
+ * \param text_offset The offset into \p text from where the search starts.
+ * \param mflags Match flags.
+ *
+ * \return The matches as pvector. NULL in case of failure. Empty for no matches or regex related errors.
+ */
+RZ_API RZ_OWN RzPVector /*<RzRegexMatch *>*/ *rz_regex_match_first_16(
+	RZ_NONNULL const RzRegex16 *regex,
+	RZ_NONNULL const char *text,
+	RzRegexSize text_size,
+	RzRegexSize text_offset,
+	RzRegexFlags mflags) {
+	rz_return_val_if_fail(regex && text, NULL);
+	return match_first(
 		regex,
-		PCRE2_INFO_NAMEENTRYSIZE,
-		&name_entry_size);
+		text,
+		text_size,
+		text_offset,
+		mflags, 16);
+}
 
-	for (size_t i = 0; i < rc; i++) {
-		if (ovector[2 * i] > ovector[2 * i + 1]) {
-			// This happens for \K lookaround. We fail if used.
-			// See pcre2demo.c for details.
-			RZ_LOG_ERROR("Usage of \\K to set start of the pattern later than the end, is not implemented.\n");
-			goto fini;
-		}
-
-		// Offset and length of match
-		RzRegexMatch *match = RZ_NEW0(RzRegexMatch);
-		match->start = ovector[2 * i];
-		match->len = ovector[2 * i + 1] - match->start;
-		match->group_idx = i;
-		nametable_ptr += name_entry_size;
-		rz_pvector_push(matches, match);
-	}
-
-fini:
-	rz_regex_match_data_free(mdata);
-	return matches;
+/**
+ * \brief Finds the first match in a UTF-32 text and returns it as a pvector.
+ * First element in the vector is always the whole match, the following possible groups.
+ *
+ * \param regex The regex pattern to match.
+ * \param text The text to search in. It should be UTF-32 (host-endianess) encoded.
+ * \param text_size The length of the buffer pointed to by \p text.
+ * Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
+ * \param text_offset The offset into \p text from where the search starts.
+ * \param mflags Match flags.
+ *
+ * \return The matches as pvector. NULL in case of failure. Empty for no matches or regex related errors.
+ */
+RZ_API RZ_OWN RzPVector /*<RzRegexMatch *>*/ *rz_regex_match_first_32(
+	RZ_NONNULL const RzRegex32 *regex,
+	RZ_NONNULL const char *text,
+	RzRegexSize text_size,
+	RzRegexSize text_offset,
+	RzRegexFlags mflags) {
+	rz_return_val_if_fail(regex && text, NULL);
+	return match_first(
+		regex,
+		text,
+		text_size,
+		text_offset,
+		mflags, 32);
 }
 
 /**
@@ -567,7 +750,7 @@ RZ_API RzRegexSize rz_regex_find(RZ_NONNULL const char *pattern, RZ_NONNULL RZ_B
  * \return A PCRE2 compile context, or NULL in case of failure.
  */
 RZ_API RZ_OWN RzRegexCompContext *rz_regex_compile_context_new() {
-	return pcre2_compile_context_create(NULL);
+	return pcre2_compile_context_create_8(NULL);
 }
 
 /**
@@ -576,7 +759,7 @@ RZ_API RZ_OWN RzRegexCompContext *rz_regex_compile_context_new() {
  * \param A PCRE2 compile context.
  */
 RZ_API void rz_regex_compile_context_free(RzRegexCompContext *ccontext) {
-	pcre2_compile_context_free(ccontext);
+	pcre2_compile_context_free_8(ccontext);
 }
 
 /**
@@ -585,7 +768,7 @@ RZ_API void rz_regex_compile_context_free(RzRegexCompContext *ccontext) {
  * \param A PCRE2 compile context.
  */
 RZ_API void rz_regex_set_nul_as_newline(RZ_NONNULL RzRegexCompContext *ccontext) {
-	pcre2_set_newline(ccontext, PCRE2_NEWLINE_NUL);
+	pcre2_set_newline_8(ccontext, PCRE2_NEWLINE_NUL);
 }
 
 /**

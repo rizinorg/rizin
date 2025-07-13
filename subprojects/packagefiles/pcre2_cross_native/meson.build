@@ -22,9 +22,7 @@ config_h = configure_file(input : 'src/config.h.generic',
 
 libpcre2_c_args = [
   '-DHAVE_CONFIG_H', # Default values from config.h
-  '-DPCRE2_CODE_UNIT_WIDTH=8',
   '-DHAVE_MEMMOVE',
-  '-DSUPPORT_PCRE2_8',
   '-DSUPPORT_UNICODE',
   '-fvisibility=default',
 ]
@@ -83,14 +81,28 @@ pcre2_includes = [
   include_directories('src/'),
 ]
 
-libpcre2_cross_native = static_library('pcre2_cross_native', pcre2_files,
-  c_args: libpcre2_c_args,
+libpcre2_8_cross_native = static_library('pcre2_8_cross_native', pcre2_files,
+  c_args: libpcre2_c_args + ['-DPCRE2_CODE_UNIT_WIDTH=8', '-DSUPPORT_PCRE2_8'],
+  include_directories: pcre2_includes,
+  install: false,
+  native: true,
+)
+
+libpcre2_1_cross_native6 = static_library('pcre2_16_cross_native', pcre2_files,
+  c_args: libpcre2_c_args + ['-DPCRE2_CODE_UNIT_WIDTH=16', '-DSUPPORT_PCRE2_16'],
+  include_directories: pcre2_includes,
+  install: false,
+  native: true,
+)
+
+libpcre2_3_cross_native2 = static_library('pcre2_32_cross_native', pcre2_files,
+  c_args: libpcre2_c_args + ['-DPCRE2_CODE_UNIT_WIDTH=32', '-DSUPPORT_PCRE2_32'],
   include_directories: pcre2_includes,
   install: false,
   native: true,
 )
 
 pcre2_cross_native_dep = declare_dependency(
-  link_with: libpcre2_cross_native,
-  include_directories: pcre2_includes,
+  link_with: [ libpcre2_8_cross_native, libpcre2_16_cross_native, libpcre2_32_cross_native ],
+  include_directories: pcre2_includes
 )

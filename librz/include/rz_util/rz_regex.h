@@ -44,8 +44,12 @@ typedef int RzRegexStatus; ///< An status number returned by the regex API.
 typedef size_t RzRegexSize; ///< Size of a text or regex. This is the size measured in code width. For UTF-8: bytes.
 typedef ut32 RzRegexFlags; ///< Regex flag bits.
 typedef uint8_t *RzRegexPattern; ///< A regex pattern string.
-typedef void RzRegex; ///< A regex expression.
-typedef void RzRegexCompContext; ///< A PCRE2 compile context.
+typedef void RzRegex; ///< A regex expression for UTF-8 strings.
+typedef void RzRegexCompContext; ///< A PCRE2 compile context for UTF-8 strings.
+typedef void RzRegex16; ///< A regex expression for UTF-16 strings (host endianess).
+typedef void RzRegexCompContext16; ///< A PCRE2 compile context for UTF-16 strings (host endianess).
+typedef void RzRegex32; ///< A regex expression for UTF-32 strings (host endianess).
+typedef void RzRegexCompContext32; ///< A PCRE2 compile context for UTF-32 strings (host endianess).
 
 typedef struct {
 	RzRegexSize group_idx; ///< Index of the group. Used to determine name if any was given.
@@ -75,6 +79,18 @@ RZ_API RZ_OWN RzPVector /*<RzRegexMatch *>*/ *rz_regex_match_all_not_grouped(
 	RzRegexFlags mflags);
 RZ_API RZ_OWN RzPVector /*<RzRegexMatch *>*/ *rz_regex_match_first(
 	RZ_NONNULL const RzRegex *regex,
+	RZ_NONNULL const char *text,
+	RzRegexSize text_size,
+	RzRegexSize text_offset,
+	RzRegexFlags mflags);
+RZ_API RZ_OWN RzPVector /*<RzRegexMatch *>*/ *rz_regex_match_first_16(
+	RZ_NONNULL const RzRegex16 *regex,
+	RZ_NONNULL const char *text,
+	RzRegexSize text_size,
+	RzRegexSize text_offset,
+	RzRegexFlags mflags);
+RZ_API RZ_OWN RzPVector /*<RzRegexMatch *>*/ *rz_regex_match_first_32(
+	RZ_NONNULL const RzRegex32 *regex,
 	RZ_NONNULL const char *text,
 	RzRegexSize text_size,
 	RzRegexSize text_offset,
