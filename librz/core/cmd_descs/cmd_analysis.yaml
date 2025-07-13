@@ -1650,6 +1650,13 @@ commands:
         args:
           - name: classname
             type: RZ_CMD_ARG_TYPE_STRING
+      - name: avx
+        summary: show addresses of virtual calls of virtual function
+        type: RZ_CMD_DESC_TYPE_ARGV
+        cname: analysis_virtual_xrefs
+        args:
+          - name: vfunction name
+            type: RZ_CMD_ARG_TYPE_STRING
   - name: ax
     summary: Cross references (xrefs)
     subcommands:

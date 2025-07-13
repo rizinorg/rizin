@@ -34,6 +34,7 @@ typedef struct rz_taint_state_t {
 	ut64 addr; ///< current instruction address
 	char *class_name; ///< class name to be stored in variable
 	RzCppVariableBook *var_book; ///< collection of all stack variables
+	HtSP /*<char *,char *>*/ *method_class_map; ///< maps methods to class name
 } RzTaintState;
 
 typedef struct rz_virtual_calls_t {
@@ -200,37 +201,60 @@ static CppVariable *var_at_write(RzTaintState *state, RzList /*<CppVariable *>*/
 }
 
 // TODO : Convert this into a hashmap of func name v/s class name
+
+static void get_method_class_map(RzCore *core, RZ_OUT HtSP *method_class_map) {
+	RzAnalysis *analysis = core->analysis;
+	RzPVector *classes = rz_analysis_class_get_all(analysis, false);
+
+	char *name = NULL;
+
+	void **iter;
+	rz_pvector_foreach (classes, iter) {
+		SdbKv *kv = *iter;
+		const char *class_name = sdbkv_key(kv);
+
+		RzVector *methods = rz_analysis_class_method_get_all(analysis, class_name);
+		RzAnalysisMethod *meth;
+		rz_vector_foreach (methods, meth) {
+			ut64 addr = meth->addr;
+			RzAnalysisFunction *function = rz_analysis_get_fcn_in(core->analysis, addr, RZ_ANALYSIS_FCN_TYPE_ROOT);
+			if (!function) {
+				function = rz_analysis_get_fcn_in(core->analysis, addr, 0);
+			}
+			if (function) {
+				bool found = false;
+				ht_sp_find(method_class_map, function->name, &found);
+				if (!found) { // since we only care about constructors in this use case
+					ht_sp_insert(method_class_map, function->name, rz_str_dup(class_name));
+				}
+			}
+		}
+		rz_vector_free(methods);
+		if (name != NULL) {
+			break;
+		}
+	}
+	rz_pvector_free(classes);
+}
+
 /**
  * \brief returns class name from function name
  */
-static char *get_class_name_from_func(const char *func_name) {
-	// Get class name from method.class_name.init
-	const char *first = strchr(func_name, '.');
-	if (!first) {
-		return NULL;
+static char *get_class_name_from_func(HtSP *method_class_map, const char *func_name) {
+	bool found = false;
+	const char *class_name = ht_sp_find(method_class_map, func_name, &found);
+	if (found) {
+		return rz_str_dup(class_name);
 	}
-
-	const char *second = strchr(first + 1, '.');
-	if (!second) {
-		return NULL;
-	}
-
-	uint32_t len = second - first - 1;
-	if (len == 0) {
-		return NULL;
-	}
-
-	char *class_name = malloc(len + 1);
-	rz_str_ncpy(class_name, first + 1, len + 1);
-
-	return class_name;
+	return NULL;
 }
 
 /**
  * \param addr instruction address of constructor call
  * \return class name if a valid constructor call else `NULL`
  */
-static char *get_class_name(RzAnalysis *analysis, ut64 addr) {
+static char *get_class_name(RzAnalysis *analysis, RzTaintState *state) {
+	ut64 addr = state->addr;
 	RzList *list = rz_analysis_xrefs_get_from(analysis, addr);
 	RzListIter *it;
 	RzAnalysisXRef *xref;
@@ -240,7 +264,7 @@ static char *get_class_name(RzAnalysis *analysis, ut64 addr) {
 		if (!function) {
 			function = rz_analysis_get_fcn_in(core->analysis, xref->to, 0);
 		}
-		char *class_name = get_class_name_from_func(function->name);
+		char *class_name = get_class_name_from_func(state->method_class_map, function->name);
 		if (class_name) {
 			rz_list_free(list);
 			return class_name;
@@ -412,7 +436,7 @@ static bool rz_taint_red_step(RzAnalysis *analysis, RzTaintState *state) {
 	RzAnalysisOp *op = state->op;
 	RzCore *core = analysis->core;
 	if (is_call_instruction(op)) {
-		char *temp = get_class_name(analysis, state->addr);
+		char *temp = get_class_name(analysis, state);
 		if (!temp) {
 			return true;
 		}
@@ -456,6 +480,9 @@ static void free_taint_state(RzTaintState *state) {
 		free(state->class_name);
 	}
 	rz_analysis_op_free(state->op);
+
+	ht_sp_free(state->method_class_map);
+
 	free(state);
 }
 
@@ -524,6 +551,9 @@ RZ_API RzCppVariableBook *rz_analysis_mark_classes(RzAnalysis *analysis) {
 	var_book->stack_variables = var_write_list;
 	var_book->class_var_list = rz_list_new();
 	state->var_book = var_book;
+
+	state->method_class_map = ht_sp_new(HT_STR_DUP, NULL, free);
+	get_method_class_map(core, state->method_class_map);
 
 	while (state->addr < end) {
 		rz_analysis_op(analysis, op, state->addr, bytes + offset, end - state->addr, RZ_ANALYSIS_OP_MASK_ALL);
@@ -646,6 +676,37 @@ static void rz_preserve_stack(RzAnalysis *analysis, RzCppVariableBook *var_book,
 }
 
 /**
+ * \brief devirtualizing step to mark virtual calls
+ */
+static void devirtualize_step(RzCore *core, RzVirtualCalls *virt_calls, RzAnalysisOp *op, ut64 start) {
+	RzAnalysisILVM *vm = core->analysis->il_vm;
+	RzILVal *reg = rz_il_vm_get_var_value(vm->vm, RZ_IL_VAR_KIND_GLOBAL, op->reg);
+	if (reg) {
+
+		RzBitVector *bv = rz_il_value_to_bv(reg);
+		ut64 vf_addr = rz_bv_to_ut64(bv);
+		rz_core_analysis_il_vm_set(core, op->reg, 0);
+		rz_bv_free(bv);
+
+		RzAnalysisFunction *vfunc = rz_analysis_get_fcn_in(core->analysis, vf_addr, RZ_ANALYSIS_FCN_TYPE_ROOT);
+		if (!vfunc) {
+			vfunc = rz_analysis_get_fcn_in(core->analysis, vf_addr, 0);
+		}
+		if (vfunc) {
+			bool found = false;
+			RzSetS *curr_set = ht_up_find(virt_calls->virt_calls, start, &found);
+			if (found) {
+				rz_set_s_add(curr_set, vfunc->name);
+			} else {
+				RzSetS *set = rz_set_s_new(HT_STR_DUP);
+				rz_set_s_add(set, vfunc->name);
+				ht_up_insert(virt_calls->virt_calls, start, set);
+			}
+		}
+	}
+}
+
+/**
  * \param var_book collection of stack variables
  * \param var variable to be analyzed for devirtualization
  * \param obj_addr start address of simulated object
@@ -690,31 +751,7 @@ static void devirtualize_variable_vtable(RzAnalysis *analysis, RzCppVariableBook
 
 		if (op->type == RZ_ANALYSIS_OP_TYPE_RCALL) {
 			// devirtualizing
-			RzAnalysisILVM *vm = core->analysis->il_vm;
-			RzILVal *reg = rz_il_vm_get_var_value(vm->vm, RZ_IL_VAR_KIND_GLOBAL, op->reg);
-			if (reg) {
-
-				RzBitVector *bv = rz_il_value_to_bv(reg);
-				ut64 vf_addr = rz_bv_to_ut64(bv);
-				rz_core_analysis_il_vm_set(core, op->reg, 0);
-				rz_bv_free(bv);
-
-				RzAnalysisFunction *vfunc = rz_analysis_get_fcn_in(core->analysis, vf_addr, RZ_ANALYSIS_FCN_TYPE_ROOT);
-				if (!vfunc) {
-					vfunc = rz_analysis_get_fcn_in(core->analysis, vf_addr, 0);
-				}
-				if (vfunc) {
-					bool found = false;
-					RzSetS *curr_set = ht_up_find(virt_calls->virt_calls, start, &found);
-					if (found) {
-						rz_set_s_add(curr_set, vfunc->name);
-					} else {
-						RzSetS *set = rz_set_s_new(HT_STR_DUP);
-						rz_set_s_add(set, vfunc->name);
-						ht_up_insert(virt_calls->virt_calls, start, set);
-					}
-				}
-			}
+			devirtualize_step(core, virt_calls, op, start);
 		}
 		start += op->size;
 		offset += op->size;
@@ -769,6 +806,23 @@ static bool free_virt_calls(void *user, const ut64 key, const void *v) {
 	return true;
 }
 
+static bool add_virtual_xref(RzAnalysis *analysis, const ut64 key, RzSetS *vfunc_set) {
+	HtSP *virtual_xref = analysis->ht_cpp_virtual_xrefs;
+	RzPVector *pvect = rz_set_s_to_vector(vfunc_set);
+	void **it;
+	rz_pvector_foreach (pvect, it) {
+		const char *vfunc = (const char *)(*it);
+		bool found = false;
+		RzSetU *set = ht_sp_find(virtual_xref, vfunc, &found);
+		if (!found) {
+			set = rz_set_u_new();
+			ht_sp_insert(virtual_xref, vfunc, set);
+		}
+		rz_set_u_add(set, key);
+	}
+	return true;
+}
+
 RZ_API void rz_analysis_devirtualize(RzAnalysis *analysis, RzCppVariableBook *var_book) {
 	rz_core_analysis_esil_init_mem(analysis->core, "simulated object space", 0x3000, 0x1000); // Memory allocation for obbjects
 	allocate_objects(analysis, var_book);
@@ -786,6 +840,7 @@ RZ_API void rz_analysis_devirtualize(RzAnalysis *analysis, RzCppVariableBook *va
 		}
 	}
 
+	ht_up_foreach(virt_calls->virt_calls, (HtUPForeachCallback)add_virtual_xref, analysis);
 	ht_up_foreach(virt_calls->virt_calls, add_comment, analysis->core); // add devirtualization information
 
 	ht_up_foreach(virt_calls->virt_calls, free_virt_calls, NULL);
@@ -827,4 +882,27 @@ RZ_API void rz_analysis_devirtualize_methods(RzAnalysis *analysis) {
 	}
 	rz_analysis_devirtualize(analysis, var_book);
 	free_variable_book(var_book);
+}
+
+static bool print_virtual_xrefs(RzCore *core, ut64 key, void *val) {
+	rz_cons_printf("C 0x%08" PFMT64x " ", key);
+	rz_core_seek(core, key, true);
+	rz_core_print_disasm_instructions(core, 0, 1);
+	return true;
+}
+
+/**
+ * \brief print xrefs of a virtual function
+ */
+RZ_API void rz_analysis_virtual_xrefs_print(RzAnalysis *analysis, const char *vfunc) {
+	RzCore *core = analysis->core;
+	HtSP *ht_virtual_xrefs = analysis->ht_cpp_virtual_xrefs;
+	bool found = false;
+	RzSetU *set = ht_sp_find(ht_virtual_xrefs, vfunc, &found);
+	if (!found) {
+		RZ_LOG_ERROR("Cannot find virtual xrefs to function %s", vfunc);
+		return;
+	}
+	rz_cons_printf("Virtual xrefs to %s\n", vfunc);
+	ht_up_foreach(set, (HtUPForeachCallback)print_virtual_xrefs, core);
 }

@@ -6145,6 +6145,18 @@ static const RzCmdDescHelp analysis_devirtualize_help = {
 	.args = analysis_devirtualize_args,
 };
 
+static const RzCmdDescArg analysis_virtual_xrefs_args[] = {
+	{
+		.name = "vfunction name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_virtual_xrefs_help = {
+	.summary = "show addresses of virtual calls of virtual function",
+	.args = analysis_virtual_xrefs_args,
+};
+
 static const RzCmdDescHelp avg_help = {
 	.summary = "Global variables",
 };
@@ -22052,6 +22064,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *analysis_rtti_demangle_class_name_cd = rz_cmd_desc_argv_new(core->rcmd, av_cd, "avrD", rz_analysis_rtti_demangle_class_name_handler, &analysis_rtti_demangle_class_name_help);
 	rz_warn_if_fail(analysis_rtti_demangle_class_name_cd);
+
+	RzCmdDesc *analysis_virtual_xrefs_cd = rz_cmd_desc_argv_new(core->rcmd, av_cd, "avx", rz_analysis_virtual_xrefs_handler, &analysis_virtual_xrefs_help);
+	rz_warn_if_fail(analysis_virtual_xrefs_cd);
 
 	RzCmdDesc *ax_cd = rz_cmd_desc_group_new(core->rcmd, cmd_analysis_cd, "ax", rz_analysis_xrefs_set_0_handler, &analysis_xrefs_set_0_help, &ax_help);
 	rz_warn_if_fail(ax_cd);

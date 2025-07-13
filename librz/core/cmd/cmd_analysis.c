@@ -1605,6 +1605,15 @@ RZ_IPI RzCmdStatus rz_analysis_recover_rtti_all_handler(RzCore *core, int argc, 
 	return RZ_CMD_STATUS_OK;
 }
 
+RZ_IPI RzCmdStatus rz_analysis_virtual_xrefs_handler(RzCore *core, int argc, const char **argv) {
+	if (argc == 2) {
+		const char *vfunc_name = (const char *)argv[1];
+		rz_analysis_virtual_xrefs_print(core->analysis, vfunc_name);
+		return RZ_CMD_STATUS_OK;
+	}
+	return RZ_CMD_STATUS_ERROR;
+}
+
 RZ_IPI RzCmdStatus rz_analysis_rtti_demangle_class_name_handler(RzCore *core, int argc, const char **argv) {
 	if (argc == 2) {
 		char *classname = (char *)argv[1];
