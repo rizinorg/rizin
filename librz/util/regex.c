@@ -167,7 +167,7 @@ RZ_API RzRegexStatus rz_regex_match(RZ_NONNULL const RzRegex *regex, RZ_NONNULL 
 	rz_return_val_if_fail(regex && text, RZ_REGEX_ERROR_NOMATCH);
 
 	pcre2_match_data *mdata = pcre2_match_data_create_from_pattern(regex, NULL);
-	RzRegexStatus rc = pcre2_match(regex, (PCRE2_SPTR)text, text_size, text_offset, mflags | PCRE2_NO_UTF_CHECK, mdata, NULL);
+	RzRegexStatus rc = pcre2_match(regex, (PCRE2_SPTR)text, text_size, text_offset, mflags, mdata, NULL);
 	pcre2_match_data_free(mdata);
 	return rc;
 }
@@ -286,7 +286,7 @@ RZ_API RZ_OWN RzPVector /*<RzRegexMatch *>*/ *rz_regex_match_first(
 
 	RzPVector *matches = rz_pvector_new(free);
 	RzRegexMatchData *mdata = pcre2_match_data_create_from_pattern(regex, NULL);
-	RzRegexStatus rc = pcre2_match(regex, (PCRE2_SPTR)text, text_size, text_offset, mflags | PCRE2_NO_UTF_CHECK, mdata, NULL);
+	RzRegexStatus rc = pcre2_match(regex, (PCRE2_SPTR)text, text_size, text_offset, mflags, mdata, NULL);
 
 	if (rc == PCRE2_ERROR_NOMATCH) {
 		// Nothing matched return empty vector.
