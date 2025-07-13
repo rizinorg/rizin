@@ -81,22 +81,24 @@ name size address flags mirror
 paddr vaddr len size section type string 
 -----------------------------------------
 
-ROM Reserved0: 0x80
-ROM Release Timing (PI_BSD_DOM1_RLS): 0x03
-ROM Page Size (PI_BSD_DOM1_PGS): 0x07
-ROM Pulse Width (PI_BSD_DOM1_PWD): 0x12
-ROM Latency (PI_BSD_DOM1_LAT): 0x40
-ROM Clock rate: 0x03b9aca0
-ROM Boot Address: 0x80001000
-ROM Libultra Version: 2.0D
-ROM Check Code: 0x877efaee94e765a8
-ROM Reserved1: 0x0000000000000000
-ROM Game Title: shut up and code    
-ROM Reserved2: 0x00000000000000
-ROM Game Category: Unset
-ROM Game Unique Code: ..
-ROM Game Destination: Unset
-ROM Version: 0
+n64_rom:
+  reserved_0: 0x80
+  PI_BSD_DOM1_RLS: 0x3
+  PI_BSD_DOM1_PGS: 0x7
+  PI_BSD_DOM1_PWD: 0x12
+  PI_BSD_DOM1_LAT: 0x40
+  clock_rate: 0x3b9aca0
+  boot_address: 0x80001000
+  libultra_version: "2.0D"
+  check_code: 0x877efaee94e765a8
+  reserved_1: "0000000000000000"
+  game_title: "shut up and code    "
+  reserved_2: "00000000000000"
+  game_category: "Unset"
+  game_unique_code: ".."
+  game_destination: "Unset"
+  version: 0
+
  1 fd: 3 +0x00000000 0x04000000 * 0x04000fff r-x fmap.ipl3
  2 fd: 3 +0x00001000 0x80001000 - 0x8013ffff r-x fmap.text
 EOF
@@ -106,29 +108,37 @@ NAME=Nintendo 64 Advanced Homebrew Transfer Pak
 FILE=bins/z64/PokeMe64.z64
 CMDS=iH
 EXPECT=<<EOF
-ROM Reserved0: 0x80
-ROM Release Timing (PI_BSD_DOM1_RLS): 0x03
-ROM Page Size (PI_BSD_DOM1_PGS): 0x07
-ROM Pulse Width (PI_BSD_DOM1_PWD): 0x12
-ROM Latency (PI_BSD_DOM1_LAT): 0x40
-ROM Clock rate: 0x03b9aca0
-ROM Boot Address: 0x80000400
-ROM Libultra Version: 0.0
-ROM Check Code: 0x0000000000000000
-ROM Reserved1: 0x0000000000000000
-ROM Game Title: PokeMe64
-ROM Reserved2: 0x03000000000000
-ROM Game Category: Homebrew
-ROM Game Unique Code: ED
-ROM Game Destination: Region Free
-ROM Version: 2
-HB Controller 1: Transfer Pak (0x03)
-HB Controller 2: Not Used (0x00)
-HB Controller 3: Not Used (0x00)
-HB Controller 4: Not Used (0x00)
-HB Enable RTC: no
-HB Region Free: yes
-HB Savetype Size: 
+n64_rom:
+  reserved_0: 0x80
+  PI_BSD_DOM1_RLS: 0x3
+  PI_BSD_DOM1_PGS: 0x7
+  PI_BSD_DOM1_PWD: 0x12
+  PI_BSD_DOM1_LAT: 0x40
+  clock_rate: 0x3b9aca0
+  boot_address: 0x80000400
+  libultra_version: "0.0"
+  check_code: 0x0
+  reserved_1: "0000000000000000"
+  game_title: "PokeMe64"
+  reserved_2: "03000000000000"
+  game_category: "Homebrew"
+  game_unique_code: "ED"
+  game_destination: "Region Free"
+  version: 2
+  homebrew:
+    controllers:
+      - description: "Transfer Pak"
+        value: 0x3
+      - description: "Not Used"
+        value: 0x0
+      - description: "Not Used"
+        value: 0x0
+      - description: "Not Used"
+        value: 0x0
+    enable_rtc: false
+    region_free: true
+    savetype_size: ""
+
 EOF
 RUN
 
@@ -136,29 +146,37 @@ NAME=Nintendo 64 Advanced Homebrew 1M SRAM
 FILE=bins/z64/omnispeak64_ep4.z64
 CMDS=iH
 EXPECT=<<EOF
-ROM Reserved0: 0x80
-ROM Release Timing (PI_BSD_DOM1_RLS): 0x03
-ROM Page Size (PI_BSD_DOM1_PGS): 0x07
-ROM Pulse Width (PI_BSD_DOM1_PWD): 0x12
-ROM Latency (PI_BSD_DOM1_LAT): 0x40
-ROM Clock rate: 0x03b9aca0
-ROM Boot Address: 0x80000400
-ROM Libultra Version: 0.0
-ROM Check Code: 0x0000000000000000
-ROM Reserved1: 0x0000000000000000
-ROM Game Title: Made with libdragon
-ROM Reserved2: 0x00000000000000
-ROM Game Category: Homebrew
-ROM Game Unique Code: ED
-ROM Game Destination: Region Free
-ROM Version: 98
-HB Controller 1: Not Used (0x00)
-HB Controller 2: Not Used (0x00)
-HB Controller 3: Not Used (0x00)
-HB Controller 4: Not Used (0x00)
-HB Enable RTC: no
-HB Region Free: yes
-HB Savetype Size: 1M SRAM
+n64_rom:
+  reserved_0: 0x80
+  PI_BSD_DOM1_RLS: 0x3
+  PI_BSD_DOM1_PGS: 0x7
+  PI_BSD_DOM1_PWD: 0x12
+  PI_BSD_DOM1_LAT: 0x40
+  clock_rate: 0x3b9aca0
+  boot_address: 0x80000400
+  libultra_version: "0.0"
+  check_code: 0x0
+  reserved_1: "0000000000000000"
+  game_title: "Made with libdragon"
+  reserved_2: "00000000000000"
+  game_category: "Homebrew"
+  game_unique_code: "ED"
+  game_destination: "Region Free"
+  version: 98
+  homebrew:
+    controllers:
+      - description: "Not Used"
+        value: 0x0
+      - description: "Not Used"
+        value: 0x0
+      - description: "Not Used"
+        value: 0x0
+      - description: "Not Used"
+        value: 0x0
+    enable_rtc: false
+    region_free: true
+    savetype_size: "1M SRAM"
+
 EOF
 RUN
 
@@ -166,28 +184,36 @@ NAME=Nintendo 64 Advanced Homebrew 256K SRAM
 FILE=bins/z64/cosmo64_ep1.z64
 CMDS=iH
 EXPECT=<<EOF
-ROM Reserved0: 0x80
-ROM Release Timing (PI_BSD_DOM1_RLS): 0x03
-ROM Page Size (PI_BSD_DOM1_PGS): 0x07
-ROM Pulse Width (PI_BSD_DOM1_PWD): 0x12
-ROM Latency (PI_BSD_DOM1_LAT): 0x40
-ROM Clock rate: 0x03b9aca0
-ROM Boot Address: 0x80000400
-ROM Libultra Version: 2.0D
-ROM Check Code: 0x7fe520a3473b1fb4
-ROM Reserved1: 0x0000000000000000
-ROM Game Title: cosmo64_ep1
-ROM Reserved2: 0x00000000000000
-ROM Game Category: Homebrew
-ROM Game Unique Code: ED
-ROM Game Destination: Region Free
-ROM Version: 50
-HB Controller 1: Not Used (0x00)
-HB Controller 2: Not Used (0x00)
-HB Controller 3: Not Used (0x00)
-HB Controller 4: Not Used (0x00)
-HB Enable RTC: no
-HB Region Free: yes
-HB Savetype Size: 256K SRAM
+n64_rom:
+  reserved_0: 0x80
+  PI_BSD_DOM1_RLS: 0x3
+  PI_BSD_DOM1_PGS: 0x7
+  PI_BSD_DOM1_PWD: 0x12
+  PI_BSD_DOM1_LAT: 0x40
+  clock_rate: 0x3b9aca0
+  boot_address: 0x80000400
+  libultra_version: "2.0D"
+  check_code: 0x7fe520a3473b1fb4
+  reserved_1: "0000000000000000"
+  game_title: "cosmo64_ep1"
+  reserved_2: "00000000000000"
+  game_category: "Homebrew"
+  game_unique_code: "ED"
+  game_destination: "Region Free"
+  version: 50
+  homebrew:
+    controllers:
+      - description: "Not Used"
+        value: 0x0
+      - description: "Not Used"
+        value: 0x0
+      - description: "Not Used"
+        value: 0x0
+      - description: "Not Used"
+        value: 0x0
+    enable_rtc: false
+    region_free: true
+    savetype_size: "256K SRAM"
+
 EOF
 RUN
