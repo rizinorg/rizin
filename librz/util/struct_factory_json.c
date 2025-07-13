@@ -22,7 +22,7 @@ static void builder_json_key(RZ_NULLABLE void *user, RZ_NONNULL const char *key)
 	pj_k((PJ *)user, key);
 }
 
-static void builder_json_val_unsigned(RZ_NULLABLE void *user, ut64 n) {
+static void builder_json_val_unsigned(RZ_NULLABLE void *user, ut64 n, bool hex) {
 	pj_n((PJ *)user, n);
 }
 

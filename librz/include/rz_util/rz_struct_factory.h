@@ -20,7 +20,7 @@ typedef struct rz_struct_factory_t RzStructFactory;
 typedef void (*RzStructFactoryIteratorNew)(RZ_NULLABLE void *user, RzStructFactoryBlock block);
 typedef void (*RzStructFactoryIteratorEnd)(RZ_NULLABLE void *user);
 typedef void (*RzStructFactoryIteratorKey)(RZ_NULLABLE void *user, RZ_NONNULL const char *key);
-typedef void (*RzStructFactoryIteratorValueUnsigned)(RZ_NULLABLE void *user, ut64 n);
+typedef void (*RzStructFactoryIteratorValueUnsigned)(RZ_NULLABLE void *user, ut64 n, bool hex);
 typedef void (*RzStructFactoryIteratorValueSigned)(RZ_NULLABLE void *user, st64 n);
 typedef void (*RzStructFactoryIteratorValueDouble)(RZ_NULLABLE void *user, double d);
 typedef void (*RzStructFactoryIteratorValueBool)(RZ_NULLABLE void *user, bool b);
@@ -44,19 +44,21 @@ RZ_API void rz_struct_factory_free(RZ_NULLABLE RzStructFactory *sf);
 /* primitive types for maps */
 RZ_API RZ_BORROW RzStructFactory *rz_struct_factory_map_add_map(RZ_NONNULL RzStructFactory *sf, RZ_NONNULL const char *key);
 RZ_API RZ_BORROW RzStructFactory *rz_struct_factory_map_add_array(RZ_NONNULL RzStructFactory *sf, RZ_NONNULL const char *key);
-RZ_API bool rz_struct_factory_map_add_unsigned(RZ_NONNULL RzStructFactory *sf, RZ_NONNULL const char *key, ut64 n);
+RZ_API bool rz_struct_factory_map_add(RZ_NONNULL RzStructFactory *sf, RZ_NONNULL const char *key, RZ_NONNULL RZ_OWN RzStructFactory *value);
+RZ_API bool rz_struct_factory_map_add_unsigned(RZ_NONNULL RzStructFactory *sf, RZ_NONNULL const char *key, ut64 n, bool hex);
 RZ_API bool rz_struct_factory_map_add_signed(RZ_NONNULL RzStructFactory *sf, RZ_NONNULL const char *key, st64 n);
 RZ_API bool rz_struct_factory_map_add_double(RZ_NONNULL RzStructFactory *sf, RZ_NONNULL const char *key, double d);
-RZ_API bool rz_struct_factory_map_add_bool(RZ_NONNULL RzStructFactory *sf, RZ_NONNULL const char *key, bool b);
+RZ_API bool rz_struct_factory_map_add_boolean(RZ_NONNULL RzStructFactory *sf, RZ_NONNULL const char *key, bool b);
 RZ_API bool rz_struct_factory_map_add_string(RZ_NONNULL RzStructFactory *sf, RZ_NONNULL const char *key, RZ_NONNULL const char *v);
 
 /* primitive types for arrays */
 RZ_API RZ_BORROW RzStructFactory *rz_struct_factory_array_add_map(RZ_NONNULL RzStructFactory *sf);
 RZ_API RZ_BORROW RzStructFactory *rz_struct_factory_array_add_array(RZ_NONNULL RzStructFactory *sf);
-RZ_API bool rz_struct_factory_array_add_unsigned(RZ_NONNULL RzStructFactory *sf, ut64 n);
+RZ_API bool rz_struct_factory_array_add(RZ_NONNULL RzStructFactory *sf, RZ_NONNULL RZ_OWN RzStructFactory *value);
+RZ_API bool rz_struct_factory_array_add_unsigned(RZ_NONNULL RzStructFactory *sf, ut64 n, bool hex);
 RZ_API bool rz_struct_factory_array_add_signed(RZ_NONNULL RzStructFactory *sf, st64 n);
 RZ_API bool rz_struct_factory_array_add_double(RZ_NONNULL RzStructFactory *sf, double d);
-RZ_API bool rz_struct_factory_array_add_bool(RZ_NONNULL RzStructFactory *sf, bool b);
+RZ_API bool rz_struct_factory_array_add_boolean(RZ_NONNULL RzStructFactory *sf, bool b);
 RZ_API bool rz_struct_factory_array_add_string(RZ_NONNULL RzStructFactory *sf, RZ_NONNULL const char *v);
 
 RZ_API void rz_struct_factory_iterate(RZ_NONNULL const RzStructFactory *sf, RZ_NONNULL const RzStructFactoryIterator *iterator, RZ_NULLABLE void *user);

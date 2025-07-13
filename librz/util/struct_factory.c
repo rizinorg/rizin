@@ -10,6 +10,7 @@ typedef enum {
 	STRUCT_FACTORY_TYPE_MAP = 0,
 	STRUCT_FACTORY_TYPE_ARRAY,
 	STRUCT_FACTORY_TYPE_UNSIGNED,
+	STRUCT_FACTORY_TYPE_HEXADECIMAL,
 	STRUCT_FACTORY_TYPE_SIGNED,
 	STRUCT_FACTORY_TYPE_DOUBLE,
 	STRUCT_FACTORY_TYPE_BOOL,
@@ -79,12 +80,12 @@ static RzStructFactory *struct_factory_new_array() {
 	return sf;
 }
 
-static RzStructFactory *struct_factory_new_unsigned(ut64 v_unsigned) {
+static RzStructFactory *struct_factory_new_unsigned(ut64 v_unsigned, bool hex) {
 	RzStructFactory *sf = RZ_NEW0(RzStructFactory);
 	if (!sf) {
 		return NULL;
 	}
-	sf->type = STRUCT_FACTORY_TYPE_UNSIGNED;
+	sf->type = hex ? STRUCT_FACTORY_TYPE_HEXADECIMAL : STRUCT_FACTORY_TYPE_UNSIGNED;
 	sf->v_unsigned = v_unsigned;
 	return sf;
 }
@@ -207,10 +208,16 @@ RZ_API RZ_BORROW RzStructFactory *rz_struct_factory_map_add_array(RZ_NONNULL RzS
 	return value;
 }
 
-RZ_API bool rz_struct_factory_map_add_unsigned(RZ_NONNULL RzStructFactory *sf, RZ_NONNULL const char *key, ut64 n) {
+RZ_API bool rz_struct_factory_map_add(RZ_NONNULL RzStructFactory *sf, RZ_NONNULL const char *key, RZ_NONNULL RZ_OWN RzStructFactory *value) {
+	rz_return_val_if_fail(sf && sf->type == STRUCT_FACTORY_TYPE_MAP && key && value, false);
+
+	return struct_factory_map_add(sf, key, value);
+}
+
+RZ_API bool rz_struct_factory_map_add_unsigned(RZ_NONNULL RzStructFactory *sf, RZ_NONNULL const char *key, ut64 n, bool hex) {
 	rz_return_val_if_fail(sf && sf->type == STRUCT_FACTORY_TYPE_MAP && key, false);
 
-	RzStructFactory *value = struct_factory_new_unsigned(n);
+	RzStructFactory *value = struct_factory_new_unsigned(n, hex);
 	return struct_factory_map_add(sf, key, value);
 }
 
@@ -228,7 +235,7 @@ RZ_API bool rz_struct_factory_map_add_double(RZ_NONNULL RzStructFactory *sf, RZ_
 	return struct_factory_map_add(sf, key, value);
 }
 
-RZ_API bool rz_struct_factory_map_add_bool(RZ_NONNULL RzStructFactory *sf, RZ_NONNULL const char *key, bool b) {
+RZ_API bool rz_struct_factory_map_add_boolean(RZ_NONNULL RzStructFactory *sf, RZ_NONNULL const char *key, bool b) {
 	rz_return_val_if_fail(sf && sf->type == STRUCT_FACTORY_TYPE_MAP && key, false);
 
 	RzStructFactory *value = struct_factory_new_bool(b);
@@ -269,10 +276,16 @@ RZ_API RZ_BORROW RzStructFactory *rz_struct_factory_array_add_array(RZ_NONNULL R
 	return value;
 }
 
-RZ_API bool rz_struct_factory_array_add_unsigned(RZ_NONNULL RzStructFactory *sf, ut64 n) {
+RZ_API bool rz_struct_factory_array_add(RZ_NONNULL RzStructFactory *sf, RZ_NONNULL RZ_OWN RzStructFactory *value) {
+	rz_return_val_if_fail(sf && sf->type == STRUCT_FACTORY_TYPE_ARRAY && value, false);
+
+	return struct_factory_array_add(sf, value);
+}
+
+RZ_API bool rz_struct_factory_array_add_unsigned(RZ_NONNULL RzStructFactory *sf, ut64 n, bool hex) {
 	rz_return_val_if_fail(sf && sf->type == STRUCT_FACTORY_TYPE_ARRAY, false);
 
-	RzStructFactory *value = struct_factory_new_unsigned(n);
+	RzStructFactory *value = struct_factory_new_unsigned(n, hex);
 	return struct_factory_array_add(sf, value);
 }
 
@@ -290,7 +303,7 @@ RZ_API bool rz_struct_factory_array_add_double(RZ_NONNULL RzStructFactory *sf, d
 	return struct_factory_array_add(sf, value);
 }
 
-RZ_API bool rz_struct_factory_array_add_bool(RZ_NONNULL RzStructFactory *sf, bool b) {
+RZ_API bool rz_struct_factory_array_add_boolean(RZ_NONNULL RzStructFactory *sf, bool b) {
 	rz_return_val_if_fail(sf && sf->type == STRUCT_FACTORY_TYPE_ARRAY, false);
 
 	RzStructFactory *value = struct_factory_new_bool(b);
@@ -345,8 +358,11 @@ static void struct_factory_iterate_over(StructFactoryIterOver *sfio, const RzStr
 	case STRUCT_FACTORY_TYPE_ARRAY:
 		struct_factory_iterate_over_array(sfio, sf);
 		return;
+	case STRUCT_FACTORY_TYPE_HEXADECIMAL:
+		sfio->fit->val_unsigned(sfio->user, sf->v_unsigned, true);
+		return;
 	case STRUCT_FACTORY_TYPE_UNSIGNED:
-		sfio->fit->val_unsigned(sfio->user, sf->v_unsigned);
+		sfio->fit->val_unsigned(sfio->user, sf->v_unsigned, false);
 		return;
 	case STRUCT_FACTORY_TYPE_SIGNED:
 		sfio->fit->val_signed(sfio->user, sf->v_signed);
@@ -367,7 +383,7 @@ static void struct_factory_iterate_over(StructFactoryIterOver *sfio, const RzStr
 }
 
 RZ_API void rz_struct_factory_iterate(RZ_NONNULL const RzStructFactory *sf, RZ_NONNULL const RzStructFactoryIterator *iterator, RZ_NULLABLE void *user) {
-	rz_return_if_fail(sf && iterator);
+	rz_return_if_fail(sf && iterator && iterator);
 
 	StructFactoryIterOver sfio = {
 		.fit = iterator,

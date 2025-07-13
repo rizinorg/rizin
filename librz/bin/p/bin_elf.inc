@@ -251,17 +251,6 @@ static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	return result;
 }
 
-static void headers(RzBinFile *bf) {
-	/* REMOVE ME */
-}
-
-static RzStructFactory *info_structure(RzBinFile *bf) {
-	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
-
-	ELFOBJ *bin = rz_bin_file_get_elf(bf);
-	return Elf_(rz_bin_elf_ehdr)(bin);
-}
-
 static bool create_set_e_ident(RzBuffer *result) {
 	return rz_buf_append_bytes(result, (ut8 *)ELFMAG, SELFMAG) &&
 #ifdef RZ_BIN_ELF64

@@ -4,79 +4,104 @@ CMDS=<<EOF
 iH
 EOF
 EXPECT=<<EOF
-==== MDT Segment 0 ====
-     priv_p_flags: 0b00000111: layout | ELF
- -- ELF HEADER BEGIN -- 
-0x00000000  MAGIC       7f 45 4c 46 01 01 01 00 00 00 00 00 00 00 00 00
-0x00000010  Type        0x0002
-0x00000012  Machine     0x00a4
-0x00000014  Version     0x00000001
-0x00000018  Entrypoint  0x87400000
-0x0000001c  PhOff       0x00000034
-0x00000020  ShOff       0x00000000
-0x00000024  Flags       0x0066
-0x00000028  EhSize      52
-0x0000002a  PhentSize   32
-0x0000002c  PhNum       5
-0x0000002e  ShentSize   40
-0x00000030  ShNum       0
-0x00000032  ShStrndx    0
- --- ELF HEADER END --- 
-
-==== MDT Segment 1 ====
-     priv_p_flags: 0b00000010: | MBN signature segment
- -- MBN AUTH HEADER BEGIN -- 
-0x00 image_id:   kMbnImageNone (0x0)
-0x04 version:    0x0
-0x08 paddr:      0x0
-0x0c vaddr:      0x0
-0x10 psize:      0x0
-0x14 code_pa:    0x0
-0x18 sign_va:    0x0
-0x1c sign_sz:    0x0
-0x20 cert_va:    0x0
-0x24 cert_sz:    0x0
- --- MBN AUTH HEADER END --- 
-
-==== MDT Segment 2 ====
-     priv_p_flags: 0b00001000: reloc | Unidentified
-==== MDT Segment 3 ====
-     priv_p_flags: 0b00001000: reloc | ELF
- -- ELF HEADER BEGIN -- 
-0x00000000  MAGIC       7f 45 4c 46 01 01 01 00 00 00 00 00 00 00 00 00
-0x00000010  Type        0x0002
-0x00000012  Machine     0x00a4
-0x00000014  Version     0x00000001
-0x00000018  Entrypoint  0x00000000
-0x0000001c  PhOff       0x00000034
-0x00000020  ShOff       0x00011ee0
-0x00000024  Flags       0x0060
-0x00000028  EhSize      52
-0x0000002a  PhentSize   32
-0x0000002c  PhNum       3
-0x0000002e  ShentSize   40
-0x00000030  ShNum       16
-0x00000032  ShStrndx    13
- --- ELF HEADER END --- 
-
-==== MDT Segment 4 ====
-     priv_p_flags: 0b00001000: reloc | ELF
- -- ELF HEADER BEGIN -- 
-0x00000000  MAGIC       7f 45 4c 46 01 01 01 00 00 00 00 00 00 00 00 00
-0x00000010  Type        0x0001
-0x00000012  Machine     0x00a4
-0x00000014  Version     0x00000001
-0x00000018  Entrypoint  0x00000000
-0x0000001c  PhOff       0x00000000
-0x00000020  ShOff       0x000004ec
-0x00000024  Flags       0x0060
-0x00000028  EhSize      52
-0x0000002a  PhentSize   0
-0x0000002c  PhNum       0
-0x0000002e  ShentSize   40
-0x00000030  ShNum       5
-0x00000032  ShStrndx    1
- --- ELF HEADER END --- 
+mdt_segments:
+  - priv_p_flags: "0b00000111"
+    is_layout: true
+    is_relocatable: false
+    format: "elf binary"
+    content:
+      elf:
+        e_ident:
+          bytes: "7f 45 4c 46 01 01 01 00 00 00 00 00 00 00 00 00"
+          ei_class: 1
+          ei_data: 1
+          ei_version: 1
+          ei_osabi: 0
+          ei_abiversion: 0
+        e_machine: 164
+        e_version: 1
+        e_entry: 0x87400000
+        e_phoff: 0x34
+        e_shoff: 0x0
+        e_flags: 0x66
+        e_ehsize: 52
+        e_phentsize: 32
+        e_phnum: 5
+        e_shentsize: 40
+        e_shnum: 0
+        e_shstrndx: 0
+  - priv_p_flags: "0b00000010"
+    is_layout: false
+    is_relocatable: false
+    format: "mbn signature"
+    content:
+      mbn:
+        image:
+          name: "kMbnImageNone"
+          id: 0x0
+        version: 0x0
+        paddr: 0x0
+        vaddr: 0x0
+        psize: 0x0
+        code_pa: 0x0
+        sign_va: 0x0
+        sign_sz: 0x0
+        cert_va: 0x0
+        cert_sz: 0x0
+  - priv_p_flags: "0b00001000"
+    is_layout: false
+    is_relocatable: true
+    format: "unidentified"
+  - priv_p_flags: "0b00001000"
+    is_layout: false
+    is_relocatable: true
+    format: "elf binary"
+    content:
+      elf:
+        e_ident:
+          bytes: "7f 45 4c 46 01 01 01 00 00 00 00 00 00 00 00 00"
+          ei_class: 1
+          ei_data: 1
+          ei_version: 1
+          ei_osabi: 0
+          ei_abiversion: 0
+        e_machine: 164
+        e_version: 1
+        e_entry: 0x0
+        e_phoff: 0x34
+        e_shoff: 0x11ee0
+        e_flags: 0x60
+        e_ehsize: 52
+        e_phentsize: 32
+        e_phnum: 3
+        e_shentsize: 40
+        e_shnum: 16
+        e_shstrndx: 13
+  - priv_p_flags: "0b00001000"
+    is_layout: false
+    is_relocatable: true
+    format: "elf binary"
+    content:
+      elf:
+        e_ident:
+          bytes: "7f 45 4c 46 01 01 01 00 00 00 00 00 00 00 00 00"
+          ei_class: 1
+          ei_data: 1
+          ei_version: 1
+          ei_osabi: 0
+          ei_abiversion: 0
+        e_machine: 164
+        e_version: 1
+        e_entry: 0x0
+        e_phoff: 0x0
+        e_shoff: 0x4ec
+        e_flags: 0x60
+        e_ehsize: 52
+        e_phentsize: 0
+        e_phnum: 0
+        e_shentsize: 40
+        e_shnum: 5
+        e_shstrndx: 1
 
 EOF
 RUN
