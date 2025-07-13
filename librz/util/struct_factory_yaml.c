@@ -61,7 +61,7 @@ static void builder_yaml_key(RZ_NULLABLE void *user, RZ_NONNULL const char *key)
 static void builder_yaml_val_unsigned(RZ_NULLABLE void *user, ut64 n, bool hex) {
 	StructYamlPrinter *yaml = (StructYamlPrinter *)user;
 
-	if (!yaml->first && builder_yaml_is_array(yaml)) {
+	if (builder_yaml_is_array(yaml)) {
 		builder_yaml_add_padding(yaml);
 		if (hex) {
 			rz_strbuf_appendf(&yaml->sb, "- 0x%" PFMT64x "\n", n);
@@ -81,7 +81,7 @@ static void builder_yaml_val_unsigned(RZ_NULLABLE void *user, ut64 n, bool hex) 
 static void builder_yaml_val_signed(RZ_NULLABLE void *user, st64 n) {
 	StructYamlPrinter *yaml = (StructYamlPrinter *)user;
 
-	if (!yaml->first && builder_yaml_is_array(yaml)) {
+	if (builder_yaml_is_array(yaml)) {
 		builder_yaml_add_padding(yaml);
 		rz_strbuf_appendf(&yaml->sb, "- %" PFMT64d "\n", n);
 	} else {
@@ -93,7 +93,7 @@ static void builder_yaml_val_signed(RZ_NULLABLE void *user, st64 n) {
 static void builder_yaml_val_double(RZ_NULLABLE void *user, double d) {
 	StructYamlPrinter *yaml = (StructYamlPrinter *)user;
 
-	if (!yaml->first && builder_yaml_is_array(yaml)) {
+	if (builder_yaml_is_array(yaml)) {
 		builder_yaml_add_padding(yaml);
 		rz_strbuf_appendf(&yaml->sb, "- %f\n", d);
 	} else {
@@ -106,7 +106,7 @@ static void builder_yaml_val_bool(RZ_NULLABLE void *user, bool b) {
 	const char *s = b ? "true" : "false";
 	StructYamlPrinter *yaml = (StructYamlPrinter *)user;
 
-	if (!yaml->first && builder_yaml_is_array(yaml)) {
+	if (builder_yaml_is_array(yaml)) {
 		builder_yaml_add_padding(yaml);
 		rz_strbuf_appendf(&yaml->sb, "- %s\n", s);
 	} else {
@@ -120,7 +120,7 @@ static void builder_yaml_val_string(RZ_NULLABLE void *user, RZ_NONNULL const cha
 
 	char *escaped = rz_str_escape_utf8_for_json(s, -1);
 
-	if (!yaml->first && builder_yaml_is_array(yaml)) {
+	if (builder_yaml_is_array(yaml)) {
 		builder_yaml_add_padding(yaml);
 		rz_strbuf_appendf(&yaml->sb, "- \"%s\"\n", escaped);
 	} else {
