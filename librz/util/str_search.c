@@ -99,7 +99,7 @@ static UTF8StringInfo calculate_utf8_string_info(ut8 *str, int size) {
 	const ut8 *str_end = str + size;
 	RzCodePoint ch = 0;
 	while (str_ptr < str_end) {
-		int ch_bytes = rz_utf8_decode(str_ptr, str_end - str_ptr, &ch);
+		int ch_bytes = rz_utf8_decode(str_ptr, str_end - str_ptr, &ch, true);
 		if (!ch_bytes) {
 			break;
 		}
@@ -259,16 +259,16 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 
 		switch (str_type) {
 		case RZ_STRING_ENC_UTF32LE:
-			char_bytes = rz_utf32le_decode(buf + needle - from, to - needle, &r);
+			char_bytes = rz_utf32le_decode(buf + needle - from, to - needle, &r, !(opt->allow_undefined & RZ_STR_SCAN_UTF32_UNDEF));
 			break;
 		case RZ_STRING_ENC_UTF16LE:
-			char_bytes = rz_utf16le_decode(buf + needle - from, to - needle, &r);
+			char_bytes = rz_utf16le_decode(buf + needle - from, to - needle, &r, !(opt->allow_undefined & RZ_STR_SCAN_UTF16_UNDEF));
 			break;
 		case RZ_STRING_ENC_UTF32BE:
-			char_bytes = rz_utf32be_decode(buf + needle - from, to - needle, &r);
+			char_bytes = rz_utf32be_decode(buf + needle - from, to - needle, &r, !(opt->allow_undefined & RZ_STR_SCAN_UTF32_UNDEF));
 			break;
 		case RZ_STRING_ENC_UTF16BE:
-			char_bytes = rz_utf16be_decode(buf + needle - from, to - needle, &r);
+			char_bytes = rz_utf16be_decode(buf + needle - from, to - needle, &r, !(opt->allow_undefined & RZ_STR_SCAN_UTF16_UNDEF));
 			break;
 		case RZ_STRING_ENC_IBM037:
 			char_bytes = rz_str_ibm037_to_unicode(*(buf + needle - from), &r);
@@ -290,7 +290,7 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 			RZ_LOG_ERROR("Illegal state reached. 'settings' encoding is not a valid value here.\n");
 			return NULL;
 		default:
-			char_bytes = rz_utf8_decode(buf + needle - from, to - needle, &r);
+			char_bytes = rz_utf8_decode(buf + needle - from, to - needle, &r, !(opt->allow_undefined & RZ_STR_SCAN_UTF8_UNDEF));
 			if (char_bytes > 1) {
 				str_type = RZ_STRING_ENC_UTF8;
 				look_ahead = buf_look_ahead(opt, RZ_STRING_ENC_UTF8);
@@ -374,7 +374,7 @@ error:
 }
 
 static inline bool can_be_utf16_le(const ut8 *buf, ut64 size) {
-	int rc = rz_utf8_decode(buf, size, NULL);
+	int rc = rz_utf8_decode(buf, size, NULL, true);
 	if (!rc || (size - rc) < 5) {
 		return false;
 	}
@@ -390,7 +390,7 @@ static inline bool can_be_utf16_be(const ut8 *buf, ut64 size) {
 }
 
 static inline bool can_be_utf32_le(const ut8 *buf, ut64 size) {
-	int rc = rz_utf8_decode(buf, size, NULL);
+	int rc = rz_utf8_decode(buf, size, NULL, true);
 	if (!rc || (size - rc) < 5) {
 		return false;
 	}
@@ -567,7 +567,7 @@ RZ_API int rz_scan_strings_raw(RZ_NONNULL const ut8 *buf, RZ_NONNULL RzList /*<R
 					continue;
 				}
 			} else {
-				int rc = rz_utf8_decode(ptr, size, NULL);
+				int rc = rz_utf8_decode(ptr, size, NULL, !(opt->allow_undefined & RZ_STR_SCAN_UTF8_UNDEF));
 				if (!rc) {
 					needle++;
 					continue;

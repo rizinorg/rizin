@@ -68,6 +68,7 @@ static bool string_find(RzSearchFindOpt *fopt, void *user, ut64 offset, const Rz
 	// race-conditions editing and freeing it.
 	RzUtilStrScanOptions options = ss->options;
 	options.utf8_to_mem_offset_map = ht_uu_new();
+	options.allow_undefined = RZ_STR_SCAN_ONLY_DEFINED;
 
 	int n_str_in_buf = rz_scan_strings_whole_buf(buffer, found, &options, ss->encoding);
 	if (n_str_in_buf < 0) {

@@ -1727,15 +1727,15 @@ static char *rz_str_escape_utf(const char *buf, int buf_size, RzStrEnc enc, cons
 		case RZ_STRING_ENC_UTF32LE:
 		case RZ_STRING_ENC_UTF32BE:
 			if (enc == RZ_STRING_ENC_UTF16LE || enc == RZ_STRING_ENC_UTF16BE) {
-				ch_bytes = rz_utf16_decode((ut8 *)p, end - p, &ch, enc == RZ_STRING_ENC_UTF16BE);
+				ch_bytes = rz_utf16_decode((ut8 *)p, end - p, &ch, enc == RZ_STRING_ENC_UTF16BE, true);
 				min_char_width = 2;
 			} else {
-				ch_bytes = rz_utf32_decode((ut8 *)p, end - p, &ch, enc == RZ_STRING_ENC_UTF32BE);
+				ch_bytes = rz_utf32_decode((ut8 *)p, end - p, &ch, enc == RZ_STRING_ENC_UTF32BE, true);
 				min_char_width = 4;
 			}
 			break;
 		default:
-			ch_bytes = rz_utf8_decode((ut8 *)p, end - p, &ch);
+			ch_bytes = rz_utf8_decode((ut8 *)p, end - p, &ch, true);
 			min_char_width = 1;
 		}
 		if (!rz_str_escape_code_point(ch, ch_bytes, esc_opts)) {
@@ -1844,7 +1844,7 @@ static char *escape_utf8_for_json(const char *buf, int buf_size, bool mutf8) {
 	q = new_buf;
 	while (p < end) {
 		ptrdiff_t bytes_left = end - p;
-		ch_bytes = mutf8 ? rz_mutf8_decode(p, bytes_left, &ch) : rz_utf8_decode(p, bytes_left, &ch);
+		ch_bytes = mutf8 ? rz_mutf8_decode(p, bytes_left, &ch) : rz_utf8_decode(p, bytes_left, &ch, true);
 		if (ch_bytes == 1) {
 			switch (*p) {
 			case '\n':
@@ -2129,7 +2129,7 @@ RZ_API bool rz_str_is_utf8(RZ_NONNULL const char *str) {
 	const ut8 *ptr = (const ut8 *)str;
 	size_t len = strlen(str);
 	while (len) {
-		int bytes = rz_utf8_decode(ptr, len, NULL);
+		int bytes = rz_utf8_decode(ptr, len, NULL, true);
 		if (!bytes) {
 			return false;
 		}
@@ -2141,7 +2141,7 @@ RZ_API bool rz_str_is_utf8(RZ_NONNULL const char *str) {
 
 RZ_API bool rz_str_is_printable(const char *str) {
 	while (*str) {
-		int ulen = rz_utf8_decode((const ut8 *)str, strlen(str), NULL);
+		int ulen = rz_utf8_decode((const ut8 *)str, strlen(str), NULL, true);
 		if (ulen > 1) {
 			str += ulen;
 			continue;
@@ -2156,7 +2156,7 @@ RZ_API bool rz_str_is_printable(const char *str) {
 
 RZ_API bool rz_str_is_printable_limited(const char *str, int size) {
 	while (size > 0 && *str) {
-		int ulen = rz_utf8_decode((const ut8 *)str, strlen(str), NULL);
+		int ulen = rz_utf8_decode((const ut8 *)str, strlen(str), NULL, true);
 		if (ulen > 1) {
 			str += ulen;
 			continue;
@@ -2172,7 +2172,7 @@ RZ_API bool rz_str_is_printable_limited(const char *str, int size) {
 
 RZ_API bool rz_str_is_printable_incl_newlines(const char *str) {
 	while (*str) {
-		int ulen = rz_utf8_decode((const ut8 *)str, strlen(str), NULL);
+		int ulen = rz_utf8_decode((const ut8 *)str, strlen(str), NULL, true);
 		if (ulen > 1) {
 			str += ulen;
 			continue;
@@ -4155,22 +4155,22 @@ RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NU
 	rz_strbuf_init(&sb);
 	for (ut32 i = 0, line_runes = 0; i < buflen; i += rsize) {
 		if (enc == RZ_STRING_ENC_UTF32LE) {
-			rsize = rz_utf32le_decode(&buf[i], buflen - i, &code_point);
+			rsize = rz_utf32le_decode(&buf[i], buflen - i, &code_point, true);
 			if (rsize) {
 				rsize = 4;
 			}
 		} else if (enc == RZ_STRING_ENC_UTF16LE) {
-			rsize = rz_utf16le_decode(&buf[i], buflen - i, &code_point);
+			rsize = rz_utf16le_decode(&buf[i], buflen - i, &code_point, true);
 			if (rsize == 1) {
 				rsize = 2;
 			}
 		} else if (enc == RZ_STRING_ENC_UTF32BE) {
-			rsize = rz_utf32be_decode(&buf[i], buflen - i, &code_point);
+			rsize = rz_utf32be_decode(&buf[i], buflen - i, &code_point, true);
 			if (rsize) {
 				rsize = 4;
 			}
 		} else if (enc == RZ_STRING_ENC_UTF16BE) {
-			rsize = rz_utf16be_decode(&buf[i], buflen - i, &code_point);
+			rsize = rz_utf16be_decode(&buf[i], buflen - i, &code_point, true);
 			if (rsize == 1) {
 				rsize = 2;
 			}
@@ -4188,7 +4188,7 @@ RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NU
 			code_point = buf[i];
 			rsize = code_point < 0x7F ? 1 : 0;
 		} else {
-			rsize = rz_utf8_decode(&buf[i], buflen - i, &code_point);
+			rsize = rz_utf8_decode(&buf[i], buflen - i, &code_point, true);
 		}
 
 		if (rsize == 0) {

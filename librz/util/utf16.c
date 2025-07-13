@@ -25,13 +25,18 @@ static RzCodePoint utf16_surrogate_to_codepoint(ut16 high_surrogate, ut16 low_su
  *
  * \param buf       The buffer to read the bytes from.
  * \param buf_len   The buffer length.
- * \param ch The decoded code point. It is only written if a valid
- * Unicode code point was decoded.
+ * \param cp The decoded code point.
+ * \param check_is_def If true, checks the code point against the defined
+ * Unicode table. It will not write \p cp and return 0 if the decoded code
+ * point is undefined.
+ * If false, it won't perform any checks and just decode.
+ * Be aware, the check has a runtime of O(log n).
+ * Where n: number of undefined Unicode ranges.
  * \param bigendian Flag if the \p buf holds UTF-16 bytes in big endian.
  *
  * \return Number of bytes decoded.
  */
-RZ_API size_t rz_utf16_decode(RZ_NONNULL const ut8 *buf, size_t buf_len, RZ_NONNULL RZ_OUT RzCodePoint *ch, bool bigendian) {
+RZ_API size_t rz_utf16_decode(RZ_NONNULL const ut8 *buf, size_t buf_len, RZ_NONNULL RZ_OUT RzCodePoint *ch, bool check_is_def, bool bigendian) {
 	rz_return_val_if_fail(buf && ch, 0);
 	if (buf_len <= 1) {
 		return 0;
@@ -54,7 +59,7 @@ RZ_API size_t rz_utf16_decode(RZ_NONNULL const ut8 *buf, size_t buf_len, RZ_NONN
 	bytes_used = 2;
 
 check_assign:
-	if (!rz_unicode_code_point_is_legal_decode(cp)) {
+	if (rz_unicode_code_point_is_surrogate(cp) || (check_is_def && !rz_unicode_code_point_is_defined(cp))) {
 		return 0;
 	}
 	*ch = cp;
@@ -67,12 +72,18 @@ check_assign:
  * \param buf       The buffer to read the bytes from.
  * \param buf_len   The buffer length.
  * \param codepoint The decoded code point.
+ * \param check_is_def If true, checks the code point against the defined
+ * Unicode table. It will not write \p cp and return 0 if the decoded code
+ * point is undefined.
+ * If false, it won't perform any checks and just decode.
+ * Be aware, the check has a runtime of O(log n).
+ * Where n: number of undefined Unicode ranges.
  *
  * \return Number of bytes decoded.
  */
-RZ_API size_t rz_utf16le_decode(RZ_NONNULL const ut8 *buf, size_t buf_len, RZ_NONNULL RZ_OUT RzCodePoint *codepoint) {
+RZ_API size_t rz_utf16le_decode(RZ_NONNULL const ut8 *buf, size_t buf_len, RZ_NONNULL RZ_OUT RzCodePoint *codepoint, bool check_is_def) {
 	rz_return_val_if_fail(buf && codepoint, 0);
-	return rz_utf16_decode(buf, buf_len, codepoint, false);
+	return rz_utf16_decode(buf, buf_len, codepoint, check_is_def, false);
 }
 
 /**
@@ -81,12 +92,18 @@ RZ_API size_t rz_utf16le_decode(RZ_NONNULL const ut8 *buf, size_t buf_len, RZ_NO
  * \param buf       The buffer to read the bytes from.
  * \param buf_len   The buffer length.
  * \param codepoint The decoded code point.
+ * \param check_is_def If true, checks the code point against the defined
+ * Unicode table. It will not write \p cp and return 0 if the decoded code
+ * point is undefined.
+ * If false, it won't perform any checks and just decode.
+ * Be aware, the check has a runtime of O(log n).
+ * Where n: number of undefined Unicode ranges.
  *
  * \return Number of bytes decoded.
  */
-RZ_API size_t rz_utf16be_decode(RZ_NONNULL const ut8 *buf, size_t buf_len, RZ_NONNULL RZ_OUT RzCodePoint *codepoint) {
+RZ_API size_t rz_utf16be_decode(RZ_NONNULL const ut8 *buf, size_t buf_len, RZ_NONNULL RZ_OUT RzCodePoint *codepoint, bool check_is_def) {
 	rz_return_val_if_fail(buf && codepoint, 0);
-	return rz_utf16_decode(buf, buf_len, codepoint, true);
+	return rz_utf16_decode(buf, buf_len, codepoint, check_is_def, true);
 }
 
 /**
@@ -145,7 +162,7 @@ RZ_API bool rz_utf16_is_printable_code_point(RZ_NONNULL const ut8 *buf, size_t b
 	size_t offset = 0;
 	RzCodePoint cp = 0;
 	while (lookahead > 0) {
-		size_t dec_bytes = rz_utf16_decode(buf + offset, buf_len - offset, &cp, big_endian);
+		size_t dec_bytes = rz_utf16_decode(buf + offset, buf_len - offset, &cp, true, big_endian);
 		if (!rz_unicode_code_point_is_printable(cp) || dec_bytes == 0) {
 			return false;
 		}
