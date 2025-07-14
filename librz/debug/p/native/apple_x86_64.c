@@ -225,16 +225,6 @@ static bool rz_debug_native_kill(RzDebug *dbg, int pid, int tid, int sig) {
 	return ret;
 }
 
-struct rz_debug_desc_plugin_t rz_debug_desc_plugin_native;
-static bool rz_debug_native_init(RzDebug *dbg, void **user) {
-	dbg->cur->desc = rz_debug_desc_plugin_native;
-	return rz_xnu_debug_init(dbg, user);
-}
-
-static void rz_debug_native_fini(RzDebug *dbg, void *user) {
-	rz_xnu_debug_fini(dbg, user);
-}
-
 static void sync_drx_regs(RzDebug *dbg, drxt *regs, size_t num_regs) {
 	/* sanity check, we rely on this assumption */
 	if (num_regs != NUM_DRX_REGISTERS) {
@@ -373,4 +363,18 @@ static int rz_debug_desc_native_open(const char *path) {
 static bool rz_debug_gcore(RzDebug *dbg, char *path, RzBuffer *dest) {
 	(void)path;
 	return xnu_generate_corefile(dbg, dest);
+}
+
+struct rz_debug_desc_plugin_t rz_debug_desc_plugin_native = {
+	.open = rz_debug_desc_native_open,
+	.list = rz_debug_desc_native_list,
+};
+
+static bool rz_debug_native_init(RzDebug *dbg, void **user) {
+	dbg->cur->desc = rz_debug_desc_plugin_native;
+	return rz_xnu_debug_init(dbg, user);
+}
+
+static void rz_debug_native_fini(RzDebug *dbg, void *user) {
+	rz_xnu_debug_fini(dbg, user);
 }
