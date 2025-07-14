@@ -819,31 +819,6 @@ RZ_API int rz_sys_cmdf(const char *fmt, ...) {
 	return ret;
 }
 
-RZ_API int rz_sys_cmdbg(const char *str) {
-#if __UNIX__
-	int ret, pid = rz_sys_fork();
-	if (pid == -1) {
-		return -1;
-	}
-	if (pid) {
-		return pid;
-	}
-	char *bin_sh = rz_file_binsh();
-	ret = rz_sys_execl(bin_sh, "sh", "-c", str, (const char *)NULL);
-	free(bin_sh);
-	eprintf("{exit: %d, pid: %d, cmd: \"%s\"}", ret, pid, str);
-	exit(0);
-	return -1;
-#else
-#ifdef _MSC_VER
-#pragma message("rz_sys_cmdbg is not implemented for this platform")
-#else
-#warning rz_sys_cmdbg is not implemented for this platform
-#endif
-	return -1;
-#endif
-}
-
 RZ_API char *rz_sys_cmd_str(const char *cmd, const char *input, int *len) {
 	char *output = NULL;
 	if (rz_sys_cmd_str_full(cmd, input, &output, len, NULL)) {
