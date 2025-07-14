@@ -343,14 +343,14 @@ static RzILOpEffect *op_mov_l(H8300Cmd *cmd) {
 #define SUB3(X, Y, Z) SUB(X, ADD(Y, Z))
 
 static RzILOpEffect *ccr_add(RzILOpPure *a, RzILOpPure *b, RzILOpBool *c, ut8 n, ut8 carry_h, ut8 carry_c) {
-	RzILOpPure *lown = ADD3(LOGAND(a, UN(n, (1 << (carry_h + 1)) - 1)),
-		LOGAND(b, UN(n, (1 << (carry_h + 1)) - 1)), BOOL_TO_BV(c, n));
-	RzILOpPure *H = NON_ZERO(LOGAND(lown, UN(n, 1 << (carry_h + 1))));
+	RzILOpPure *lown = ADD3(LOGAND(a, UN(n, (1ULL << (carry_h + 1)) - 1)),
+		LOGAND(b, UN(n, (1ULL << (carry_h + 1)) - 1)), BOOL_TO_BV(c, n));
+	RzILOpPure *H = NON_ZERO(LOGAND(lown, UN(n, 1ULL << (carry_h + 1))));
 
 	RzILOpPure *sum = ADD3(UNSIGNED(n * 2, DUP(a)), UNSIGNED(n * 2, DUP(b)), BOOL_TO_BV(DUP(c), n * 2));
-	RzILOpPure *N = NON_ZERO(LOGAND(sum, UN(n * 2, 1 << (n - 1))));
+	RzILOpPure *N = NON_ZERO(LOGAND(sum, UN(n * 2, 1ULL << (n - 1))));
 	RzILOpPure *Z = IS_ZERO(DUP(sum));
-	RzILOpPure *C = NON_ZERO(LOGAND(DUP(sum), UN(n * 2, 1 << (carry_c + 1))));
+	RzILOpPure *C = NON_ZERO(LOGAND(DUP(sum), UN(n * 2, 1ULL << (carry_c + 1))));
 	RzILOpPure *V = AND(BEQ(MSB(DUP(a)), MSB(DUP(b))), BNE(MSB(DUP(a)), DUP(N)));
 	return SEQ5(
 		ccr_set(CCR_H, H),
