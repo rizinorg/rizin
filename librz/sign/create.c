@@ -494,7 +494,8 @@ RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_node_new(RZ_NONNULL RzAnalysis *analysi
 
 		RzFlirtNode *child = flirt_create_child_from_function(analysis, func, tail_bytes);
 		if (!child) {
-			goto fail;
+			// do not fail immediately, maybe is just a bad function
+			continue;
 		} else if (!rz_list_append(root->child_list, child)) {
 			RZ_LOG_ERROR("FLIRT: cannot append child to root list.\n");
 			rz_sign_flirt_node_free(child);
