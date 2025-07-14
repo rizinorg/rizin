@@ -768,13 +768,13 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 				SETL("_prev", R16_OP(1)),
 				SETL("_res", SUB(R16_OP(1), IMM16_OP(0))),
 				R16_X(1, VARL("_res")),
-				ccr_unary_NZV(16, VARL("_res"), SLT(VARL("_prev"), S16(0x8001))));
+				ccr_unary_NZV(16, VARL("_res"), SLE(VARL("_prev"), S16(0x8001))));
 		case H8300_INSN_FORMAT_IMMR32:
 			return SEQ4(
 				SETL("_prev", R32_OP(1)),
 				SETL("_res", SUB(R32_OP(1), IMM32_OP(0))),
 				R32_X(1, VARL("_res")),
-				ccr_unary_NZV(32, VARL("_res"), ULT(VARL("_prev"), S32(0x80000001))));
+				ccr_unary_NZV(32, VARL("_res"), SLE(VARL("_prev"), S32(0x80000001))));
 		default: NOT_IMPLEMENTED;
 		}
 	case H8300_INSN_INC_B:
@@ -792,13 +792,13 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 				SETL("_prev", R16_OP(1)),
 				SETL("_res", ADD(R16_OP(1), IMM16_OP(0))),
 				R16_X(1, VARL("_res")),
-				ccr_unary_NZV(16, VARL("_res"), SGT(VARL("_prev"), S16(0x7ffe))));
+				ccr_unary_NZV(16, VARL("_res"), SGE(VARL("_prev"), S16(0x7ffe))));
 		case H8300_INSN_FORMAT_IMMR32:
 			return SEQ4(
 				SETL("_prev", R32_OP(1)),
 				SETL("_res", ADD(R32_OP(1), IMM32_OP(0))),
 				R32_X(1, VARL("_res")),
-				ccr_unary_NZV(32, VARL("_res"), SGT(VARL("_prev"), S32(0x7ffffffe))));
+				ccr_unary_NZV(32, VARL("_res"), SGE(VARL("_prev"), S32(0x7ffffffe))));
 		default: NOT_IMPLEMENTED;
 		}
 	case H8300_INSN_DAA: return op_daa(cmd);
