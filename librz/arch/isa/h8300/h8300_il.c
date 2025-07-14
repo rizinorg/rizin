@@ -754,27 +754,53 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 	case H8300_INSN_XORC: return op_logical_i8ccr(cmd, rz_il_op_new_log_xor);
 	case H8300_INSN_ANDC: return op_logical_i8ccr(cmd, rz_il_op_new_log_and);
 	case H8300_INSN_DEC_B:
+	case H8300_INSN_DEC_W:
+	case H8300_INSN_DEC_L:
 		switch (cmd->fmt) {
 		case H8300_INSN_FORMAT_R8:
-			return SEQ3(
+			return SEQ4(
+				SETL("_prev", R8_OP(0)),
 				SETL("_res", SUB(R8_OP(0), S8(1))),
 				R8_X(0, VARL("_res")),
-				ccr_unary_NZV(8, VARL("_res"), EQ(VARL("_res"), U8(0x80))));
+				ccr_unary_NZV(8, VARL("_res"), EQ(VARL("_prev"), U8(0x80))));
+		case H8300_INSN_FORMAT_IMMR16:
+			return SEQ4(
+				SETL("_prev", R16_OP(1)),
+				SETL("_res", SUB(R16_OP(1), IMM16_OP(0))),
+				R16_X(1, VARL("_res")),
+				ccr_unary_NZV(16, VARL("_res"), SLT(VARL("_prev"), S16(0x8001))));
+		case H8300_INSN_FORMAT_IMMR32:
+			return SEQ4(
+				SETL("_prev", R32_OP(1)),
+				SETL("_res", SUB(R32_OP(1), IMM32_OP(0))),
+				R32_X(1, VARL("_res")),
+				ccr_unary_NZV(32, VARL("_res"), ULT(VARL("_prev"), S32(0x80000001))));
 		default: NOT_IMPLEMENTED;
 		}
-	case H8300_INSN_DEC_W:
-	case H8300_INSN_DEC_L: NOT_IMPLEMENTED;
 	case H8300_INSN_INC_B:
+	case H8300_INSN_INC_L:
+	case H8300_INSN_INC_W:
 		switch (cmd->fmt) {
 		case H8300_INSN_FORMAT_R8:
-			return SEQ3(
-				SETL("_res", ADD(R8_OP(0), U8(1))),
+			return SEQ4(
+				SETL("_prev", R8_OP(0)),
+				SETL("_res", ADD(R8_OP(0), S8(1))),
 				R8_X(0, VARL("_res")),
-				ccr_unary_NZV(8, VARL("_res"), EQ(VARL("_res"), U8(0))));
+				ccr_unary_NZV(8, VARL("_res"), EQ(VARL("_prev"), S8(0x7f))));
+		case H8300_INSN_FORMAT_IMMR16:
+			return SEQ4(
+				SETL("_prev", R16_OP(1)),
+				SETL("_res", ADD(R16_OP(1), IMM16_OP(0))),
+				R16_X(1, VARL("_res")),
+				ccr_unary_NZV(16, VARL("_res"), SGT(VARL("_prev"), S16(0x7ffe))));
+		case H8300_INSN_FORMAT_IMMR32:
+			return SEQ4(
+				SETL("_prev", R32_OP(1)),
+				SETL("_res", ADD(R32_OP(1), IMM32_OP(0))),
+				R32_X(1, VARL("_res")),
+				ccr_unary_NZV(32, VARL("_res"), SGT(VARL("_prev"), S32(0x7ffffffe))));
 		default: NOT_IMPLEMENTED;
 		}
-	case H8300_INSN_INC_L:
-	case H8300_INSN_INC_W: NOT_IMPLEMENTED;
 	case H8300_INSN_DAA: return op_daa(cmd);
 	case H8300_INSN_DAS: return op_das(cmd);
 	case H8300_INSN_SHAL_B:

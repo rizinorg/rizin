@@ -393,12 +393,21 @@ static int decode_sr16(const ut8 *bytes, struct h8300_cmd *cmd) {
 
 static int decode_xr16(const ut8 *bytes, struct h8300_cmd *cmd, ut16 x) {
 	int ret = 2;
-	unsigned reg;
-	reg = bytes[1] & 0x7;
+	unsigned reg = r16_low(bytes[1]);
 
 	cmd->fmt = H8300_INSN_FORMAT_IMMR16;
 	OPS_ADD(H8300_OP_IMM, imm, x);
 	OPS_ADD(H8300_OP_R16, reg, reg);
+	return ret;
+}
+
+static int decode_xr32(const ut8 *bytes, struct h8300_cmd *cmd, ut16 x) {
+	int ret = 2;
+	unsigned reg = r32_low(bytes[1]);
+
+	cmd->fmt = H8300_INSN_FORMAT_IMMR32;
+	OPS_ADD(H8300_OP_IMM, imm, x);
+	OPS_ADD(H8300_OP_R32, reg, reg);
 	return ret;
 }
 
@@ -1179,10 +1188,10 @@ static int h8300_decode_2(const ut8 *instr, struct h8300_cmd *cmd) {
 		CASE_F_F(decode_i16r16_4, 0x7900, MOV_W);
 		CASE_F_F(decode_abs16r8_4, 0x6b00, MOV_W);
 
-		CASE_F_F_VA(decode_xr16, 0x1b70, DEC_L, 1);
-		CASE_F_F_VA(decode_xr16, 0x1bf0, DEC_L, 2);
-		CASE_F_F_VA(decode_xr16, 0x0b70, INC_L, 1);
-		CASE_F_F_VA(decode_xr16, 0x0bf0, INC_L, 2);
+		CASE_F_F_VA(decode_xr32, 0x1b70, DEC_L, 1);
+		CASE_F_F_VA(decode_xr32, 0x1bf0, DEC_L, 2);
+		CASE_F_F_VA(decode_xr32, 0x0b70, INC_L, 1);
+		CASE_F_F_VA(decode_xr32, 0x0bf0, INC_L, 2);
 
 	case 0x0b00:
 	case 0x0b80:
