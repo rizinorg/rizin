@@ -449,31 +449,15 @@ static RzILOpEffect *op_addx(H8300Cmd *cmd) {
 	}
 }
 
-static RzILOpEffect *ccr_cmp_b(RzILOpPure *a, RzILOpPure *b, RzILOpBool *c) {
-	RzILOpPure *low4 = SUB3(LOGAND(a, U8(0xf)), LOGAND(b, U8(0xf)), B_TO_8(c));
-	RzILOpPure *H = NON_ZERO(LOGAND(low4, U8(0x10)));
+static RzILOpEffect *ccr_cmp(RzILOpPure *a, RzILOpPure *b, RzILOpBool *c, ut8 n, ut8 carry_h, ut8 carry_c) {
+	RzILOpPure *lown = ADD3(LOGAND(a, UN(n, (1ULL << (carry_h + 1)) - 1)),
+		LOGAND(b, UN(n, (1ULL << (carry_h + 1)) - 1)), BOOL_TO_BV(c, n));
+	RzILOpPure *H = NON_ZERO(LOGAND(lown, UN(n, 1ULL << (carry_h + 1))));
 
-	RzILOpPure *res = SUB3(SIGNED(16, DUP(a)), SIGNED(16, DUP(b)), B_TO_16(DUP(c)));
-	RzILOpPure *N = NON_ZERO(LOGAND(res, U16(0x80)));
-	RzILOpPure *Z = ITE(IS_ZERO(DUP(res)), ccr_val(CCR_Z), IL_FALSE);
-	RzILOpPure *C = SLT(DUP(res), S16(0));
-	RzILOpPure *V = AND(BNE(MSB(DUP(a)), MSB(DUP(b))), BNE(MSB(DUP(a)), DUP(N)));
-	return SEQ5(
-		ccr_set(CCR_H, H),
-		ccr_set(CCR_N, N),
-		ccr_set(CCR_Z, Z),
-		ccr_set(CCR_C, C),
-		ccr_set(CCR_V, V));
-}
-
-static RzILOpEffect *ccr_cmp_w(RzILOpPure *a, RzILOpPure *b, RzILOpBool *c) {
-	RzILOpPure *low12 = SUB3(LOGAND(a, U16(0xfff)), LOGAND(b, U16(0xfff)), B_TO_16(c));
-	RzILOpPure *H = NON_ZERO(LOGAND(low12, U16(0x1000)));
-
-	RzILOpPure *res = SUB3(SIGNED(32, DUP(a)), SIGNED(32, DUP(b)), B_TO_32(DUP(c)));
-	RzILOpPure *N = NON_ZERO(LOGAND(res, U32(0x8000)));
+	RzILOpPure *res = SUB3(SIGNED(n * 2, DUP(a)), SIGNED(n * 2, DUP(b)), BOOL_TO_BV(DUP(c), n * 2));
+	RzILOpPure *N = NON_ZERO(LOGAND(res, UN(n * 2, 1ULL << (n - 1))));
 	RzILOpPure *Z = IS_ZERO(DUP(res));
-	RzILOpPure *C = SLT(DUP(res), S32(0));
+	RzILOpPure *C = SLT(DUP(a), DUP(b));
 	RzILOpPure *V = AND(BNE(MSB(DUP(a)), MSB(DUP(b))), BNE(MSB(DUP(a)), DUP(N)));
 	return SEQ5(
 		ccr_set(CCR_H, H),
@@ -482,6 +466,10 @@ static RzILOpEffect *ccr_cmp_w(RzILOpPure *a, RzILOpPure *b, RzILOpBool *c) {
 		ccr_set(CCR_C, C),
 		ccr_set(CCR_V, V));
 }
+
+#define ccr_cmp_b(a, b) ccr_cmp(a, b, IL_FALSE, 8, 3, 7)
+#define ccr_cmp_w(a, b) ccr_cmp(a, b, IL_FALSE, 16, 11, 15)
+#define ccr_cmp_l(a, b) ccr_cmp(a, b, IL_FALSE, 32, 27, 31)
 
 static RzILOpEffect *ccr_sub_b(RzILOpPure *a, RzILOpPure *b, RzILOpBool *c) {
 	RzILOpPure *low4 = SUB3(LOGAND(a, U8(0xf)), LOGAND(b, U8(0xf)), B_TO_8(c));
@@ -678,22 +666,23 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 	case H8300_INSN_ADDS: return op_adds(cmd);
 	case H8300_INSN_ADDX: return op_addx(cmd);
 	case H8300_INSN_CMP_B:
+	case H8300_INSN_CMP_W:
+	case H8300_INSN_CMP_L:
 		switch (cmd->fmt) {
 		case H8300_INSN_FORMAT_IMMR8:
-			return ccr_cmp_b(R8_OP(1), IMM8_OP(0), IL_FALSE);
+			return ccr_cmp_b(R8_OP(1), IMM8_OP(0));
 		case H8300_INSN_FORMAT_R8R8:
-			return ccr_cmp_b(R8_OP(1), R8_OP(0), IL_FALSE);
-		default: NOT_IMPLEMENTED;
-		}
-	case H8300_INSN_CMP_W:
-		switch (cmd->fmt) {
+			return ccr_cmp_b(R8_OP(1), R8_OP(0));
 		case H8300_INSN_FORMAT_R16R16:
-			return ccr_cmp_w(R16_OP(1), R16_OP(0), IL_FALSE);
+			return ccr_cmp_w(R16_OP(1), R16_OP(0));
 		case H8300_INSN_FORMAT_IMMR16:
-			return ccr_cmp_w(R16_OP(1), IMM_OP(16, 0), IL_FALSE);
+			return ccr_cmp_w(R16_OP(1), IMM_OP(16, 0));
+		case H8300_INSN_FORMAT_R32R32:
+			return ccr_cmp_l(R32_OP(1), R32_OP(0));
+		case H8300_INSN_FORMAT_IMMR32:
+			return ccr_cmp_l(R32_OP(1), IMM_OP(32, 0));
 		default: NOT_IMPLEMENTED;
 		}
-	case H8300_INSN_CMP_L: NOT_IMPLEMENTED;
 	case H8300_INSN_SUB_B:
 		switch (cmd->fmt) {
 		case H8300_INSN_FORMAT_R8R8:
@@ -711,7 +700,7 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 				SETL("_0", R16_OP(0)),
 				SETL("_1", R16_OP(1)),
 				R16_X(1, SUB(VARL("_1"), VARL("_0"))),
-				ccr_cmp_w(VARL("_1"), VARL("_0"), IL_FALSE));
+				ccr_cmp_w(VARL("_1"), VARL("_0")));
 		default: NOT_IMPLEMENTED;
 		}
 	case H8300_INSN_SUB_L: NOT_IMPLEMENTED;
@@ -723,14 +712,14 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 				SETL("_0", R8_OP(0)),
 				SETL("_1", R8_OP(1)),
 				R8_X(1, SUB(VARL("_1"), VARL("_0"))),
-				ccr_cmp_b(VARL("_1"), VARL("_0"), VARL("_c")));
+				ccr_cmp(VARL("_1"), VARL("_0"), VARL("_c"), 8, 3, 7));
 		case H8300_INSN_FORMAT_IMMR8:
 			return SEQ5(
 				SETL("_c", ccr_val(CCR_C)),
 				SETL("_0", IMM8_OP(0)),
 				SETL("_1", R8_OP(1)),
 				R8_X(1, SUB(VARL("_1"), VARL("_0"))),
-				ccr_cmp_b(VARL("_1"), VARL("_0"), VARL("_c")));
+				ccr_cmp(VARL("_1"), VARL("_0"), VARL("_c"), 8, 3, 7));
 		default: NOT_IMPLEMENTED;
 		}
 	case H8300_INSN_SUBS:
