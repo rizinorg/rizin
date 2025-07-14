@@ -54,8 +54,8 @@ static int rz_debug_native_reg_write(RzDebug *dbg, int type, const ut8 *buf, int
 #include "native/linux_arm.c"
 #elif __arm64__
 #include "native/linux_arm64.c"
-#elif __aarch64__
-#include "native/linux_aarch64.c"
+// #elif __SYSZ__
+// #include "native/linux_s390x.c"
 #else
 #include "native/linux_other.c"
 #endif
@@ -133,6 +133,10 @@ RzDebugPlugin rz_debug_plugin_native = {
 #endif
 	.arch = "ppc",
 	.canstep = 1,
+#elif __SYSZ__
+	.bits = RZ_SYS_BITS_64,
+	.arch = "sysz",
+	.canstep = 0,
 #else
 	.bits = 0,
 	.arch = 0,
