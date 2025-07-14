@@ -22,6 +22,9 @@ void *rz_il_handler_fbits(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 
 	RzILOpArgsFbits op_fbits = op->op.fbits;
 	RzFloat *f = rz_il_evaluate_float(vm, op_fbits.f);
+	if (!f) {
+		return NULL;
+	}
 	RzBitVector *ret = rz_bv_dup(f->s);
 
 	rz_float_free(f);
@@ -35,6 +38,9 @@ void *rz_il_handler_is_finite(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 
 	RzILOpArgsIsFinite is_finite = op->op.is_finite;
 	RzFloat *f = rz_il_evaluate_float(vm, is_finite.f);
+	if (!f) {
+		return NULL;
+	}
 	RzILBool *ret = rz_il_bool_new(!rz_float_is_inf(f));
 
 	rz_float_free(f);
@@ -48,6 +54,9 @@ void *rz_il_handler_is_nan(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 
 	RzILOpArgsIsNan is_nan = op->op.is_nan;
 	RzFloat *f = rz_il_evaluate_float(vm, is_nan.f);
+	if (!f) {
+		return NULL;
+	}
 	RzILBool *ret = rz_il_bool_new(rz_float_is_nan(f));
 
 	rz_float_free(f);
@@ -61,6 +70,9 @@ void *rz_il_handler_is_inf(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 
 	RzILOpArgsIsInf is_inf = op->op.is_inf;
 	RzFloat *f = rz_il_evaluate_float(vm, is_inf.f);
+	if (!f) {
+		return NULL;
+	}
 	RzILBool *ret = rz_il_bool_new(rz_float_is_inf(f));
 
 	rz_float_free(f);
@@ -74,6 +86,9 @@ void *rz_il_handler_is_fzero(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 
 	RzILOpArgsIsFzero is_fzero = op->op.is_fzero;
 	RzFloat *f = rz_il_evaluate_float(vm, is_fzero.f);
+	if (!f) {
+		return NULL;
+	}
 	RzILBool *ret = rz_il_bool_new(rz_float_is_zero(f));
 
 	rz_float_free(f);
@@ -87,6 +102,9 @@ void *rz_il_handler_is_fneg(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 
 	RzILOpArgsIsFneg is_fneg = op->op.is_fneg;
 	RzFloat *f = rz_il_evaluate_float(vm, is_fneg.f);
+	if (!f) {
+		return NULL;
+	}
 	RzILBool *ret = rz_il_bool_new(rz_float_is_negative(f));
 
 	rz_float_free(f);
@@ -100,6 +118,9 @@ void *rz_il_handler_is_fpos(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 
 	RzILOpArgsIsFpos is_fpos = op->op.is_fpos;
 	RzFloat *f = rz_il_evaluate_float(vm, is_fpos.f);
+	if (!f) {
+		return NULL;
+	}
 	RzILBool *ret = rz_il_bool_new(!rz_float_is_negative(f));
 
 	rz_float_free(f);
@@ -113,6 +134,9 @@ void *rz_il_handler_fneg(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 
 	RzILOpArgsFneg fneg = op->op.fneg;
 	RzFloat *f = rz_il_evaluate_float(vm, fneg.f);
+	if (!f) {
+		return NULL;
+	}
 	RzFloat *ret = rz_float_neg(f);
 
 	rz_float_free(f);
@@ -126,6 +150,9 @@ void *rz_il_handler_fabs(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 
 	RzILOpArgsFabs fabs = op->op.fabs;
 	RzFloat *f = rz_il_evaluate_float(vm, fabs.f);
+	if (!f) {
+		return NULL;
+	}
 	RzFloat *ret = rz_float_abs(f);
 
 	rz_float_free(f);
@@ -139,6 +166,9 @@ void *rz_il_handler_fcast_int(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 
 	RzILOpArgsFCastint cast_int = op->op.fcast_int;
 	RzFloat *f = rz_il_evaluate_float(vm, cast_int.f);
+	if (!f) {
+		return NULL;
+	}
 	ut32 length = cast_int.length;
 	RzFloatRMode mode = cast_int.mode;
 	RzBitVector *ret = rz_float_cast_int(f, length, mode);
@@ -154,6 +184,9 @@ void *rz_il_handler_fcast_sint(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 
 	RzILOpArgsFCastint cast_sint = op->op.fcast_sint;
 	RzFloat *f = rz_il_evaluate_float(vm, cast_sint.f);
+	if (!f) {
+		return NULL;
+	}
 	ut32 length = cast_sint.length;
 	RzFloatRMode mode = cast_sint.mode;
 	RzBitVector *ret = rz_float_cast_sint(f, length, mode);
@@ -199,6 +232,9 @@ void *rz_il_handler_fconvert(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 
 	RzILOpArgsFconvert convert = op->op.fconvert;
 	RzFloat *f = rz_il_evaluate_float(vm, convert.f);
+	if (!f) {
+		return NULL;
+	}
 	RzFloatFormat format = convert.format;
 	RzFloatRMode mode = convert.mode;
 	RzFloat *ret = rz_float_convert(f, format, mode);
@@ -223,6 +259,9 @@ void *rz_il_handler_fsucc(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 
 	RzILOpArgsFsucc fsucc = op->op.fsucc;
 	RzFloat *f = rz_il_evaluate_float(vm, fsucc.f);
+	if (!f) {
+		return NULL;
+	}
 	RzFloat *ret = rz_float_succ(f);
 
 	rz_float_free(f);
@@ -236,6 +275,9 @@ void *rz_il_handler_fpred(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 
 	RzILOpArgsFpred fpred = op->op.fpred;
 	RzFloat *f = rz_il_evaluate_float(vm, fpred.f);
+	if (!f) {
+		return NULL;
+	}
 	RzFloat *ret = rz_float_pred(f);
 
 	rz_float_free(f);
@@ -264,6 +306,9 @@ void *rz_il_handler_fround(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 
 	RzILOpArgsFround fround = op->op.fround;
 	RzFloat *f = rz_il_evaluate_float(vm, fround.f);
+	if (!f) {
+		return NULL;
+	}
 	RzFloatRMode mode = fround.rmode;
 	RzFloat *ret = rz_float_round_to_integral(f, mode);
 
