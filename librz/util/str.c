@@ -2817,7 +2817,7 @@ RZ_API size_t rz_str_len_utf8(const char *s) {
  *
  * \return The number of Unicode code points *including* the final NUL.
  */
-RZ_API size_t rz_str_utf8_num_ucp(const char *str) {
+RZ_API size_t rz_str_utf8_num_ucp(RZ_NONNULL const char *str) {
 	size_t i = 0, char_cnt = 0;
 	while (str[i]) {
 		if ((str[i] & 0xc0) != 0x80) {
@@ -2834,7 +2834,7 @@ RZ_API size_t rz_str_utf8_num_ucp(const char *str) {
  *
  * \return The number of bytes required for an UTF16 string, *including* the final NUL.
  */
-RZ_API size_t rz_str_utf8_get_width_utf16(const char *str) {
+RZ_API size_t rz_str_utf8_get_width_utf16(RZ_NONNULL const char *str) {
 	size_t i = 0, byte_cnt = 0, extend_cnt = 0;
 	while (str[i]) {
 		if ((str[i] & 0xc0) != 0x80) {
@@ -3137,7 +3137,7 @@ RZ_API char *rz_str_utf16_decode(const ut8 *s, int len) {
  *
  * \return The NUL terminated UTF-16 string or NULL in case of failure.
  */
-RZ_API ut8 *rz_str_utf8_to_utf16(const char *utf8_str, bool big_endian) {
+RZ_API RZ_OWN ut8 *rz_str_utf8_to_utf16(RZ_NONNULL const char *utf8_str, bool big_endian) {
 	rz_return_val_if_fail(utf8_str, NULL);
 	size_t utf16_len = rz_str_utf8_get_width_utf16(utf8_str);
 	ut8 *utf16_str = RZ_NEWS0(ut8, utf16_len);
