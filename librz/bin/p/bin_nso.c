@@ -386,8 +386,6 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-#if !RZ_BIN_NSO
-
 RzBinPlugin rz_bin_plugin_nso = {
 	.name = "nso",
 	.desc = "Nintendo Switch NSO",
@@ -412,5 +410,4 @@ RZ_API RzLibStruct rizin_plugin = {
 	.data = &rz_bin_plugin_nso,
 	.version = RZ_VERSION
 };
-#endif
 #endif

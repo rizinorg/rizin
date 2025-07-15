@@ -4,12 +4,12 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #define RZ_BIN_MACH064 1
-#include "bin_mach0.c"
+#include "bin_mach0.inc"
 
 #include "objc/mach064_classes.h"
 #include "../format/mach0/kernelcache.h"
 
-static bool check_buffer(RzBuffer *b) {
+static bool mach064_check_buffer(RzBuffer *b) {
 	ut8 buf[4] = { 0 };
 	if (rz_buf_size(b) > 4) {
 		rz_buf_read_at(b, 0, buf, sizeof(buf));
@@ -23,7 +23,7 @@ static bool check_buffer(RzBuffer *b) {
 	return false;
 }
 
-static RzBuffer *create(RzBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt) {
+static RzBuffer *mach064_create(RzBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt) {
 	const bool use_pagezero = true;
 	const bool use_main = true;
 	const bool use_dylinker = true;
@@ -270,7 +270,7 @@ static RzBuffer *create(RzBin *bin, const ut8 *code, int codelen, const ut8 *dat
 	return buf;
 }
 
-static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol sym) {
+static RzBinAddr *mach064_binsym(RzBinFile *bf, RzBinSpecialSymbol sym) {
 	ut64 addr;
 	RzBinAddr *ret = NULL;
 	switch (sym) {
@@ -292,28 +292,28 @@ RzBinPlugin rz_bin_plugin_mach064 = {
 	.desc = "Mach-O 64-bit",
 	.license = "LGPL3",
 	.author = "nibble",
-	.get_sdb = &get_sdb,
-	.load_buffer = &load_buffer,
-	.destroy = &destroy,
-	.check_buffer = &check_buffer,
-	.baddr = &baddr,
-	.binsym = binsym,
-	.entries = &entries,
-	.virtual_files = &virtual_files,
-	.maps = &maps,
-	.sections = &sections,
-	.signature = &entitlements,
-	.symbols = &symbols,
-	.imports = &imports,
-	.info = &info,
-	.libs = &libs,
-	.header = &MACH0_(mach_headerfields),
-	.relocs = &relocs,
-	.fields = &MACH0_(mach_fields),
-	.create = &create,
-	.classes = &classes,
-	.section_type_to_string = &MACH0_(section_type_to_string),
-	.section_flag_to_rzlist = &MACH0_(section_flag_to_rzlist),
+	.get_sdb = &mach0_get_sdb,
+	.load_buffer = &mach0_load_buffer,
+	.destroy = &mach0_destroy,
+	.check_buffer = &mach064_check_buffer,
+	.baddr = &mach0_baddr,
+	.binsym = &mach064_binsym,
+	.entries = &mach0_entries,
+	.virtual_files = &mach0_virtual_files,
+	.maps = &mach0_maps,
+	.sections = &mach0_sections,
+	.signature = &mach0_entitlements,
+	.symbols = &mach0_symbols,
+	.imports = &mach0_imports,
+	.info = &mach0_info,
+	.libs = &mach0_libs,
+	.header = MACH0_(mach_headerfields),
+	.relocs = &mach0_relocs,
+	.fields = MACH0_(mach_fields),
+	.create = &mach064_create,
+	.classes = &mach0_classes,
+	.section_type_to_string = MACH0_(section_type_to_string),
+	.section_flag_to_rzlist = MACH0_(section_flag_to_rzlist),
 };
 
 #ifndef RZ_PLUGIN_INCORE

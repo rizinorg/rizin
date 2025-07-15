@@ -230,8 +230,6 @@ static ut64 size(RzBinFile *bf) {
 	return text + data + syms + spsz + (6 * 4);
 }
 
-#if !RZ_BIN_P9
-
 /* inspired in http://www.phreedom.org/solar/code/tinype/tiny.97/tiny.asm */
 static RzBuffer *create(RzBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt) {
 	RzBuffer *buf = rz_buf_new_with_bytes(NULL, 0);
@@ -279,5 +277,4 @@ RZ_API RzLibStruct rizin_plugin = {
 	.data = &rz_bin_plugin_p9,
 	.version = RZ_VERSION
 };
-#endif
 #endif
