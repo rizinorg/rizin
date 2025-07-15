@@ -1,6 +1,7 @@
 crypto_plugins_list = [
   'aes',
   'aes_cbc',
+  'base32',
   'base36',
   'base64',
   'base85',
@@ -31,6 +32,7 @@ rz_crypto_sources = [
   'crypto.c',
   'p/crypto_aes.c',
   'p/crypto_aes_cbc.c',
+  'p/crypto_base32.c',
   'p/crypto_base36.c',
   'p/crypto_base64.c',
   'p/crypto_base91.c',
