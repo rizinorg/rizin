@@ -808,6 +808,51 @@ bool test_rz_str_utf8_count_ucp(void) {
 	mu_end;
 }
 
+bool test_rz_str_utf8_to_utf16(void) {
+	const char *a = "a";
+	const ut8 a16_le[] = { 0x61, 0x00, 0x00, 0x00 };
+	const ut8 a16_be[] = { 0x00, 0x61, 0x00, 0x00 };
+	const char *pine = "🍍";
+	const ut8 pine16_le[] = { 0x3c, 0xd8, 0x4d, 0xdf, 0x00, 0x00 };
+	const ut8 pine16_be[] = { 0xd8, 0x3c, 0xdf, 0x4d, 0x00, 0x00 };
+	const char *apine = "aa🍍🍍🍍aa";
+	const ut8 apine16_le[] = { 0x61, 0x00, 0x61, 0x00, 0x3c, 0xd8, 0x4d, 0xdf, 0x3c, 0xd8, 0x4d, 0xdf, 0x3c, 0xd8, 0x4d, 0xdf, 0x61, 0x00, 0x61, 0x00, 0x00, 0x00 };
+	const ut8 apine16_be[] = { 0x00, 0x61, 0x00, 0x61, 0xd8, 0x3c, 0xdf, 0x4d, 0xd8, 0x3c, 0xdf, 0x4d, 0xd8, 0x3c, 0xdf, 0x4d, 0x00, 0x61, 0x00, 0x61, 0x00, 0x00 };
+	const char *nul = "";
+	const ut8 nul16_le[] = { 0x0, 0x0 };
+	const ut8 nul16_be[] = { 0x0, 0x0 };
+
+	ut8 *out = rz_str_utf8_to_utf16(a, true);
+	mu_assert_memeq(out, a16_be, sizeof(a16_be), "string mismatch");
+	free(out);
+	out = rz_str_utf8_to_utf16(a, false);
+	mu_assert_memeq(out, a16_le, sizeof(a16_le), "string mismatch");
+	free(out);
+
+	out = rz_str_utf8_to_utf16(pine, true);
+	mu_assert_memeq(out, pine16_be, sizeof(pine16_be), "string mismatch");
+	free(out);
+	out = rz_str_utf8_to_utf16(pine, false);
+	mu_assert_memeq(out, pine16_le, sizeof(pine16_le), "string mismatch");
+	free(out);
+
+	out = rz_str_utf8_to_utf16(apine, true);
+	mu_assert_memeq(out, apine16_be, sizeof(apine16_be), "string mismatch");
+	free(out);
+	out = rz_str_utf8_to_utf16(apine, false);
+	mu_assert_memeq(out, apine16_le, sizeof(apine16_le), "string mismatch");
+	free(out);
+
+	out = rz_str_utf8_to_utf16(nul, true);
+	mu_assert_memeq(out, nul16_be, sizeof(nul16_be), "string mismatch");
+	free(out);
+	out = rz_str_utf8_to_utf16(nul, false);
+	mu_assert_memeq(out, nul16_le, sizeof(nul16_le), "string mismatch");
+	free(out);
+
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_str_newf);
 	mu_run_test(test_rz_str_replace_char_once);
@@ -853,6 +898,7 @@ bool all_tests() {
 	mu_run_test(test_rz_str_isXutf8);
 	mu_run_test(test_rz_str_utf8_conversions);
 	mu_run_test(test_rz_str_utf8_count_ucp);
+	mu_run_test(test_rz_str_utf8_to_utf16);
 	return tests_passed != tests_run;
 }
 
