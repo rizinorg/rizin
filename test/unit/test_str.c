@@ -853,6 +853,51 @@ bool test_rz_str_utf8_to_utf16(void) {
 	mu_end;
 }
 
+bool test_rz_str_utf8_to_utf32(void) {
+	const char *a = "a";
+	const ut8 a32_le[] = { 0x61, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+	const ut8 a32_be[] = { 0x00, 0x00, 0x00, 0x61, 0x00, 0x00, 0x00, 0x00 };
+	const char *pine = "🍍";
+	const ut8 pine32_le[] = { 0x4d, 0xf3, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00 };
+	const ut8 pine32_be[] = { 0x00, 0x01, 0xf3, 0x4d, 0x00, 0x00, 0x00, 0x00 };
+	const char *apine = "aa🍍🍍🍍aa";
+	const ut8 apine32_le[] = { 0x61, 0x00, 0x00, 0x00, 0x61, 0x00, 0x00, 0x00, 0x4d, 0xf3, 0x01, 0x00, 0x4d, 0xf3, 0x01, 0x00, 0x4d, 0xf3, 0x01, 0x00, 0x61, 0x00, 0x00, 0x00, 0x61, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+	const ut8 apine32_be[] = { 0x00, 0x00, 0x00, 0x61, 0x00, 0x00, 0x00, 0x61, 0x00, 0x01, 0xf3, 0x4d, 0x00, 0x01, 0xf3, 0x4d, 0x00, 0x01, 0xf3, 0x4d, 0x00, 0x00, 0x00, 0x61, 0x00, 0x00, 0x00, 0x61, 0x00, 0x00, 0x00, 0x00 };
+	const char *nul = "";
+	const ut8 nul32_le[] = { 0x0, 0x00, 0x00, 0x0 };
+	const ut8 nul32_be[] = { 0x0, 0x00, 0x00, 0x0 };
+
+	ut8 *out = rz_str_utf8_to_utf32(a, true);
+	mu_assert_memeq(out, a32_be, sizeof(a32_be), "string mismatch");
+	free(out);
+	out = rz_str_utf8_to_utf32(a, false);
+	mu_assert_memeq(out, a32_le, sizeof(a32_le), "string mismatch");
+	free(out);
+
+	out = rz_str_utf8_to_utf32(pine, true);
+	mu_assert_memeq(out, pine32_be, sizeof(pine32_be), "string mismatch");
+	free(out);
+	out = rz_str_utf8_to_utf32(pine, false);
+	mu_assert_memeq(out, pine32_le, sizeof(pine32_le), "string mismatch");
+	free(out);
+
+	out = rz_str_utf8_to_utf32(apine, true);
+	mu_assert_memeq(out, apine32_be, sizeof(apine32_be), "string mismatch");
+	free(out);
+	out = rz_str_utf8_to_utf32(apine, false);
+	mu_assert_memeq(out, apine32_le, sizeof(apine32_le), "string mismatch");
+	free(out);
+
+	out = rz_str_utf8_to_utf32(nul, true);
+	mu_assert_memeq(out, nul32_be, sizeof(nul32_be), "string mismatch");
+	free(out);
+	out = rz_str_utf8_to_utf32(nul, false);
+	mu_assert_memeq(out, nul32_le, sizeof(nul32_le), "string mismatch");
+	free(out);
+
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_str_newf);
 	mu_run_test(test_rz_str_replace_char_once);
@@ -899,6 +944,7 @@ bool all_tests() {
 	mu_run_test(test_rz_str_utf8_conversions);
 	mu_run_test(test_rz_str_utf8_count_ucp);
 	mu_run_test(test_rz_str_utf8_to_utf16);
+	mu_run_test(test_rz_str_utf8_to_utf32);
 	return tests_passed != tests_run;
 }
 

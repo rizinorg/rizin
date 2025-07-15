@@ -82,3 +82,24 @@ RZ_API bool rz_utf32_valid_code_point(RZ_NONNULL const ut8 *buf, size_t buf_len,
 	}
 	return true;
 }
+
+/**
+ * \brief Encodes the Unicode code point \p ucp into \p buf.
+ *
+ * \param buf The buffer to write the UTF-32 character into.
+ * The buffer must be at least 4 bytes in size.
+ * \param ucp The Unicode code point to encode.
+ * \param big_endian If true it will encode \p ucp as a big endian character. If false, as little endian.
+ *
+ * \return Number of bytes written into \p buf. 0 in case of failure, 4 otherwise.
+ */
+RZ_API size_t rz_utf32_encode(RZ_NONNULL RZ_OUT ut8 *buf, RzCodePoint ucp, bool big_endian) {
+	if (ucp > RZ_UNICODE_LAST_CODE_POINT || rz_unicode_code_point_is_surrogate(ucp)) {
+		return 0;
+	}
+	buf[big_endian ? 3 : 0] = ucp & 0xff;
+	buf[big_endian ? 2 : 1] = (ucp >> 8) & 0xff;
+	buf[big_endian ? 1 : 2] = (ucp >> 16) & 0xff;
+	buf[big_endian ? 0 : 3] = (ucp >> 24) & 0xff;
+	return 4;
+}

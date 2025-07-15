@@ -3154,6 +3154,34 @@ RZ_API RZ_OWN ut8 *rz_str_utf8_to_utf16(RZ_NONNULL const char *utf8_str, bool bi
 	return utf16_str;
 }
 
+/**
+ * \brief Converts an UTF-8 string to an UTF-32 string of the
+ * requested endianess.
+ * If the \p utf8_str contains invalid Unicode code points, the new string
+ * will end at the first invalid one.
+ *
+ * \param utf8_str The UTF-8 encoded string.
+ * \param big_endian If true the returned UTF-32 string will be in big endian.
+ *
+ * \return The NUL terminated UTF-32 string or NULL in case of failure.
+ */
+RZ_API RZ_OWN ut8 *rz_str_utf8_to_utf32(RZ_NONNULL const char *utf8_str, bool big_endian) {
+	rz_return_val_if_fail(utf8_str, NULL);
+	size_t utf32_len = rz_str_utf8_num_ucp(utf8_str) * RZ_UTF32_WIDTH_CHAR;
+	ut8 *utf32_str = RZ_NEWS0(ut8, utf32_len);
+	size_t utf32_idx = 0;
+	RzCodePoint ucp;
+	size_t char_width = 1;
+	size_t utf8_size = strlen(utf8_str) + 1;
+	for (size_t i = 0; i < utf8_size; i += char_width) {
+		if (!(char_width = rz_utf8_decode((ut8 *)utf8_str + i, utf8_size - i, &ucp, true))) {
+			break;
+		}
+		utf32_idx += rz_utf32_encode(utf32_str + utf32_idx, ucp, big_endian);
+	}
+	return utf32_str;
+}
+
 // TODO: kill this completely, it makes no sense:
 RZ_API char *rz_str_utf16_encode(const char *s, int len) {
 	int i;
