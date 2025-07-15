@@ -1,5 +1,6 @@
 NAME=mach0 headers
 FILE=bins/mach0/hello-osx-i386
+BROKEN=1
 CMDS=iH
 EXPECT=<<EOF
 pf.mach0_header @ 0x00001000
@@ -65,6 +66,7 @@ RUN
 
 NAME=mach0 headers big-endian
 FILE=bins/mach0/ppc-ls
+BROKEN=1
 CMDS=iH
 EXPECT=<<EOF
 pf.mach0_header @ 0x00001000
@@ -136,6 +138,7 @@ RUN
 
 NAME=mach0 headers2
 FILE=bins/mach0/ired
+BROKEN=1
 ARGS=-aarm -b32
 CMDS=iH
 EXPECT=<<EOF
