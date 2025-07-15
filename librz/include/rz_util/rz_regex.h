@@ -62,7 +62,16 @@ typedef void RzRegexCompContext32; ///< A PCRE2 compile context for UTF-32 strin
 
 typedef struct {
 	RzRegexSize group_idx; ///< Index of the group. Used to determine name if any was given.
-	RzRegexSize start; ///< Start offset into the text where the match starts.
+	/**
+	 * \brief Start offset into the text where the match starts.
+	 * The offset is in code units, not in characters!
+	 * One code unit is 1 byte for UTF-8, 2 bytes for UTF-16, and 4 bytes for UTF-32.
+	 */
+	RzRegexSize start;
+	/**
+	 * \brief The length of the match in number of code units.
+	 * One code unit is 1 byte for UTF-8, 2 bytes for UTF-16, and 4 bytes for UTF-32.
+	 */
 	RzRegexSize len; ///< Length of match in bytes.
 } RzRegexMatch;
 
