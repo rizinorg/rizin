@@ -13,6 +13,8 @@
 extern "C" {
 #endif
 
+#define RZ_HOST_BIG_ENDIAN (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
+
 typedef struct rz_platform_profile_t {
 	ut64 rom_size;
 	ut64 ram_size;

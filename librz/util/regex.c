@@ -11,6 +11,7 @@
 #include <rz_types.h>
 #include <rz_util/rz_assert.h>
 #include <rz_util.h>
+#include <rz_platform.h>
 
 typedef pcre2_general_context_8 RzRegexGeneralContext8; ///< General context.
 // typedef pcre2_compile_context RzRegexCompContext; ///< The context for compiling.
@@ -72,7 +73,7 @@ static RZ_OWN void *regex_new(RZ_NONNULL const char *pattern, RzRegexFlags cflag
 
 	void *regex;
 	if (pcre2_word_width == 32) {
-		ut8 *utf32_pat = pat;
+		ut8 *utf32_pat = rz_str_utf8_to_utf32(pat, RZ_HOST_BIG_ENDIAN);
 		regex = pcre2_compile_32(
 			(PCRE2_SPTR32)utf32_pat,
 			PCRE2_ZERO_TERMINATED,
@@ -81,11 +82,12 @@ static RZ_OWN void *regex_new(RZ_NONNULL const char *pattern, RzRegexFlags cflag
 			&err_off,
 			ccontext);
 		if (!regex) {
-			print_pcre2_err(pat, err_num, err_off);
+			print_pcre2_err(pat, err_num, err_off / 4);
 			free(fixed_pat);
-			// TODO free(utf32_pat);
+			free(utf32_pat);
 			return NULL;
 		}
+		free(utf32_pat);
 #ifdef SUPPORTS_PCRE2_JIT
 		RzRegexStatus jit_err = pcre2_jit_compile_32(regex, jflags | PCRE2_JIT_COMPLETE);
 		if (jit_err < 0) {
@@ -93,7 +95,7 @@ static RZ_OWN void *regex_new(RZ_NONNULL const char *pattern, RzRegexFlags cflag
 		}
 #endif
 	} else if (pcre2_word_width == 16) {
-		ut8 *utf16_pat = pat;
+		ut8 *utf16_pat = rz_str_utf8_to_utf16(pat, RZ_HOST_BIG_ENDIAN);
 		regex = pcre2_compile_16(
 			(PCRE2_SPTR16)utf16_pat,
 			PCRE2_ZERO_TERMINATED,
@@ -103,10 +105,12 @@ static RZ_OWN void *regex_new(RZ_NONNULL const char *pattern, RzRegexFlags cflag
 			ccontext);
 		if (!regex) {
 			print_pcre2_err(pat, err_num, err_off);
+			RZ_LOG_WARN("PCRE2 pattern offset might be invalid, due to different encoding.\n");
 			free(fixed_pat);
-			// TODO free(utf16_pat);
+			free(utf16_pat);
 			return NULL;
 		}
+		free(utf16_pat);
 #ifdef SUPPORTS_PCRE2_JIT
 		RzRegexStatus jit_err = pcre2_jit_compile_16(regex, jflags | PCRE2_JIT_COMPLETE);
 		if (jit_err < 0) {
@@ -155,6 +159,50 @@ RZ_API RZ_OWN RzRegex *rz_regex_new(RZ_NONNULL const char *pattern, RzRegexFlags
 	RzRegexCompContext *ccontext) {
 	rz_return_val_if_fail(pattern, NULL);
 	return regex_new(pattern, cflags, jflags, ccontext, 8);
+}
+
+/**
+ * \brief Compile an UTF-16 regex pattern to a RzRegex16 and return it.
+ * In case of an error, an error message is printed and NULL is returned.
+ *
+ * NOTE: The pattern and matching will always be in the host's endianness.
+ *
+ * \param pattern The regex pattern string. It must be an UTF-8 encoded string.
+ * \param cflags The compilation flags or zero for default.
+ * PCRE2_UTF | PCRE2_MATCH_INVALID_UTF are enforced currently.
+ * \param jflags The compilation flags for the JIT compiler.
+ * You can pass RZ_REGEX_JIT_PARTIAL_SOFT or RZ_REGEX_JIT_PARTIAL_HARD if you
+ * intend to use the pattern for partial matching. Otherwise set it to 0.
+ * \param ccontext A compile context or NULL.
+ *
+ * \return The compiled regex or NULL in case of failure.
+ */
+RZ_API RZ_OWN RzRegex16 *rz_regex_new_16(RZ_NONNULL const char *pattern, RzRegexFlags cflags, RzRegexFlags jflags,
+	RzRegexCompContext16 *ccontext) {
+	rz_return_val_if_fail(pattern, NULL);
+	return regex_new(pattern, cflags, jflags, ccontext, 16);
+}
+
+/**
+ * \brief Compile an UTF-32 regex pattern to a RzRegex32 and return it.
+ * In case of an error, an error message is printed and NULL is returned.
+ *
+ * NOTE: The pattern and matching will always be in the host's endianness.
+ *
+ * \param pattern The regex pattern string. It must be an UTF-8 encoded string.
+ * \param cflags The compilation flags or zero for default.
+ * PCRE2_UTF | PCRE2_MATCH_INVALID_UTF are enforced currently.
+ * \param jflags The compilation flags for the JIT compiler.
+ * You can pass RZ_REGEX_JIT_PARTIAL_SOFT or RZ_REGEX_JIT_PARTIAL_HARD if you
+ * intend to use the pattern for partial matching. Otherwise set it to 0.
+ * \param ccontext A compile context or NULL.
+ *
+ * \return The compiled regex or NULL in case of failure.
+ */
+RZ_API RZ_OWN RzRegex32 *rz_regex_new_32(RZ_NONNULL const char *pattern, RzRegexFlags cflags, RzRegexFlags jflags,
+	RzRegexCompContext32 *ccontext) {
+	rz_return_val_if_fail(pattern, NULL);
+	return regex_new(pattern, cflags, jflags, ccontext, 32);
 }
 
 /**
@@ -235,6 +283,58 @@ RZ_API RzRegexStatus rz_regex_match(RZ_NONNULL const RzRegex *regex, RZ_NONNULL 
 	pcre2_match_data_8 *mdata = pcre2_match_data_create_from_pattern_8(regex, NULL);
 	RzRegexStatus rc = pcre2_match_8(regex, (PCRE2_SPTR8)text, text_size, text_offset, mflags, mdata, NULL);
 	pcre2_match_data_free_8(mdata);
+	return rc;
+}
+
+/**
+ * \brief Matches the \p regex in the \p text and returns a status code with the result.
+ *
+ * NOTE: This matches against UTF-16 strings (host-endianness).
+ *
+ * \param regex The regex pattern to match.
+ * \param text The text to search in. UTF-16 encoded in the host's endianness.
+ * \param text_size The length of the buffer pointed to by \p text.
+ * Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
+ * \param text_offset The offset into \p text from where the search starts.
+ * \param mflags Match flags.
+ *
+ * \return A status code which describes the result.
+ */
+RZ_API RzRegexStatus rz_regex_match_16(RZ_NONNULL const RzRegex16 *regex, RZ_NONNULL const ut16 *text,
+	RzRegexSize text_size,
+	RzRegexSize text_offset,
+	RzRegexFlags mflags) {
+	rz_return_val_if_fail(regex && text, RZ_REGEX_ERROR_NOMATCH);
+
+	pcre2_match_data_16 *mdata = pcre2_match_data_create_from_pattern_16(regex, NULL);
+	RzRegexStatus rc = pcre2_match_16(regex, (PCRE2_SPTR16)text, text_size, text_offset, mflags, mdata, NULL);
+	pcre2_match_data_free_16(mdata);
+	return rc;
+}
+
+/**
+ * \brief Matches the \p regex in the \p text and returns a status code with the result.
+ *
+ * NOTE: This matches against UTF-32 strings (host-endianness).
+ *
+ * \param regex The regex pattern to match.
+ * \param text The text to search in. UTF-32 encoded in the host's endianness.
+ * \param text_size The length of the buffer pointed to by \p text.
+ * Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
+ * \param text_offset The offset into \p text from where the search starts.
+ * \param mflags Match flags.
+ *
+ * \return A status code which describes the result.
+ */
+RZ_API RzRegexStatus rz_regex_match_32(RZ_NONNULL const RzRegex32 *regex, RZ_NONNULL const ut32 *text,
+	RzRegexSize text_size,
+	RzRegexSize text_offset,
+	RzRegexFlags mflags) {
+	rz_return_val_if_fail(regex && text, RZ_REGEX_ERROR_NOMATCH);
+
+	pcre2_match_data_32 *mdata = pcre2_match_data_create_from_pattern_32(regex, NULL);
+	RzRegexStatus rc = pcre2_match_32(regex, (PCRE2_SPTR32)text, text_size, text_offset, mflags, mdata, NULL);
+	pcre2_match_data_free_32(mdata);
 	return rc;
 }
 
@@ -331,7 +431,7 @@ RZ_API RzRegexStatus rz_regex_get_group_idx_by_name(RZ_NONNULL const RzRegex *re
 
 static RZ_OWN RzPVector /*<RzRegexMatch *>*/ *match_first(
 	RZ_NONNULL const void *regex,
-	RZ_NONNULL const char *text,
+	RZ_NONNULL const ut8 *text,
 	RzRegexSize text_size,
 	RzRegexSize text_offset,
 	RzRegexFlags mflags,
@@ -460,7 +560,7 @@ RZ_API RZ_OWN RzPVector /*<RzRegexMatch *>*/ *rz_regex_match_first(
 	rz_return_val_if_fail(regex && text, NULL);
 	return match_first(
 		regex,
-		text,
+		(ut8 *)text,
 		text_size,
 		text_offset,
 		mflags, 8);
@@ -470,8 +570,10 @@ RZ_API RZ_OWN RzPVector /*<RzRegexMatch *>*/ *rz_regex_match_first(
  * \brief Finds the first match in a UTF-16 text and returns it as a pvector.
  * First element in the vector is always the whole match, the following possible groups.
  *
+ * NOTE: This matches against UTF-16 host's endianness strings.
+ *
  * \param regex The regex pattern to match.
- * \param text The text to search in. It should be UTF-16 (host-endianess) encoded.
+ * \param text The text to search in. It should be UTF-16 (host-endianness) encoded.
  * \param text_size The length of the buffer pointed to by \p text.
  * Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
  * \param text_offset The offset into \p text from where the search starts.
@@ -481,7 +583,7 @@ RZ_API RZ_OWN RzPVector /*<RzRegexMatch *>*/ *rz_regex_match_first(
  */
 RZ_API RZ_OWN RzPVector /*<RzRegexMatch *>*/ *rz_regex_match_first_16(
 	RZ_NONNULL const RzRegex16 *regex,
-	RZ_NONNULL const char *text,
+	RZ_NONNULL const ut8 *text,
 	RzRegexSize text_size,
 	RzRegexSize text_offset,
 	RzRegexFlags mflags) {
@@ -498,8 +600,10 @@ RZ_API RZ_OWN RzPVector /*<RzRegexMatch *>*/ *rz_regex_match_first_16(
  * \brief Finds the first match in a UTF-32 text and returns it as a pvector.
  * First element in the vector is always the whole match, the following possible groups.
  *
+ * NOTE: This matches against UTF-32 host's endianness strings.
+ *
  * \param regex The regex pattern to match.
- * \param text The text to search in. It should be UTF-32 (host-endianess) encoded.
+ * \param text The text to search in. It should be UTF-32 (host-endianness) encoded.
  * \param text_size The length of the buffer pointed to by \p text.
  * Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
  * \param text_offset The offset into \p text from where the search starts.
@@ -509,7 +613,7 @@ RZ_API RZ_OWN RzPVector /*<RzRegexMatch *>*/ *rz_regex_match_first_16(
  */
 RZ_API RZ_OWN RzPVector /*<RzRegexMatch *>*/ *rz_regex_match_first_32(
 	RZ_NONNULL const RzRegex32 *regex,
-	RZ_NONNULL const char *text,
+	RZ_NONNULL const ut8 *text,
 	RzRegexSize text_size,
 	RzRegexSize text_offset,
 	RzRegexFlags mflags) {
@@ -568,21 +672,36 @@ RZ_API RZ_OWN RzPVector /*<RzRegexMatch *>*/ *rz_regex_match_all_not_grouped(
 
 static RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all_internal(
 	RZ_NONNULL const RzRegex *regex,
-	RZ_NONNULL const char *text,
+	RZ_NONNULL const ut8 *text,
 	RzRegexSize text_size,
 	RzRegexSize text_offset,
 	RzRegexFlags mflags,
-	bool allow_overlap) {
+	bool allow_overlap,
+	size_t pcre2_word_width) {
 	rz_return_val_if_fail(regex && text, NULL);
+	check_faulty_pcre2_word_width(pcre2_word_width);
 
 	RzPVector *all_matches = rz_pvector_new((RzPVectorFree)rz_pvector_free);
-	RzPVector *matches = rz_regex_match_first(regex, text, text_size, text_offset, mflags);
+	RzPVector *matches = NULL;
+	if (pcre2_word_width == 32) {
+		matches = rz_regex_match_first_32(regex, text, text_size, text_offset, mflags);
+	} else if (pcre2_word_width == 16) {
+		matches = rz_regex_match_first_16(regex, text, text_size, text_offset, mflags);
+	} else {
+		matches = rz_regex_match_first(regex, (char *)text, text_size, text_offset, mflags);
+	}
 	while (matches && rz_pvector_len(matches) > 0) {
 		rz_pvector_push(all_matches, matches);
 		RzRegexMatch *m = rz_pvector_head(matches);
 		// Search again after the last match.
 		text_offset = allow_overlap ? m->start + 1 : m->start + m->len;
-		matches = rz_regex_match_first(regex, text, text_size, text_offset, mflags);
+		if (pcre2_word_width == 32) {
+			matches = rz_regex_match_first_32(regex, text, text_size, text_offset, mflags);
+		} else if (pcre2_word_width == 16) {
+			matches = rz_regex_match_first_16(regex, text, text_size, text_offset, mflags);
+		} else {
+			matches = rz_regex_match_first(regex, (char *)text, text_size, text_offset, mflags);
+		}
 	}
 
 	// Free last vector without matches.
@@ -599,7 +718,7 @@ static RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all_int
  * Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
  * \param text_offset The offset into \p text from where the search starts.
  * \param mflags Match flags.
- * \param allow_overlap If true it will match also overlaping patterns.
+ * \param allow_overlap If true it will match also overlapping patterns.
  *
  * \return PVector of every match in the given string or NULL in case of failure.
  * One match with all its groups is again assembled in a pvector.
@@ -610,7 +729,7 @@ RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all_ove
 	RzRegexSize text_size,
 	RzRegexSize text_offset,
 	RzRegexFlags mflags) {
-	return rz_regex_match_all_internal(regex, text, text_size, text_offset, mflags, true);
+	return rz_regex_match_all_internal(regex, (ut8 *)text, text_size, text_offset, mflags, true, 8);
 }
 
 /**
@@ -632,7 +751,105 @@ RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all(
 	RzRegexSize text_size,
 	RzRegexSize text_offset,
 	RzRegexFlags mflags) {
-	return rz_regex_match_all_internal(regex, text, text_size, text_offset, mflags, false);
+	return rz_regex_match_all_internal(regex, (ut8 *)text, text_size, text_offset, mflags, false, 8);
+}
+
+/**
+ * \brief Finds all matches in a text and returns them as vector of vector matches.
+ *
+ * NOTE: This matches against UTF-16 host's endianness strings.
+ *
+ * \param pattern The regex pattern to match.
+ * \param text The text to search in. It should be UTF-16 host-endianness encoded.
+ * \param text_size The length of the buffer pointed to by \p text.
+ * Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
+ * \param text_offset The offset into \p text from where the search starts.
+ * \param mflags Match flags.
+ * \param allow_overlap If true it will match also overlapping patterns.
+ *
+ * \return PVector of every match in the given string or NULL in case of failure.
+ * One match with all its groups is again assembled in a pvector.
+ */
+RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all_overlap_16(
+	RZ_NONNULL const RzRegex16 *regex,
+	RZ_NONNULL const ut8 *text,
+	RzRegexSize text_size,
+	RzRegexSize text_offset,
+	RzRegexFlags mflags) {
+	return rz_regex_match_all_internal(regex, (ut8 *)text, text_size, text_offset, mflags, true, 16);
+}
+
+/**
+ * \brief Finds all matches in a text and returns them as vector of vector matches.
+ *
+ * NOTE: This matches against UTF-16 host's endianness strings.
+ *
+ * \param pattern The regex pattern to match.
+ * \param text The text to search in. It should be UTF-16 host-endianness encoded.
+ * \param text_size The length of the buffer pointed to by \p text.
+ * Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
+ * \param text_offset The offset into \p text from where the search starts.
+ * \param mflags Match flags.
+ *
+ * \return PVector of every match in the given string or NULL in case of failure.
+ * One match with all its groups is again assembled in a pvector.
+ */
+RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all_16(
+	RZ_NONNULL const RzRegex16 *regex,
+	RZ_NONNULL const ut8 *text,
+	RzRegexSize text_size,
+	RzRegexSize text_offset,
+	RzRegexFlags mflags) {
+	return rz_regex_match_all_internal(regex, (ut8 *)text, text_size, text_offset, mflags, false, 16);
+}
+
+/**
+ * \brief Finds all matches in a text and returns them as vector of vector matches.
+ *
+ * NOTE: This matches against UTF-32 host's endianness strings.
+ *
+ * \param pattern The regex pattern to match.
+ * \param text The text to search in. It should be UTF-32 host-endianness encoded.
+ * \param text_size The length of the buffer pointed to by \p text.
+ * Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
+ * \param text_offset The offset into \p text from where the search starts.
+ * \param mflags Match flags.
+ * \param allow_overlap If true it will match also overlapping patterns.
+ *
+ * \return PVector of every match in the given string or NULL in case of failure.
+ * One match with all its groups is again assembled in a pvector.
+ */
+RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all_overlap_32(
+	RZ_NONNULL const RzRegex32 *regex,
+	RZ_NONNULL const ut8 *text,
+	RzRegexSize text_size,
+	RzRegexSize text_offset,
+	RzRegexFlags mflags) {
+	return rz_regex_match_all_internal(regex, (ut8 *)text, text_size, text_offset, mflags, true, 32);
+}
+
+/**
+ * \brief Finds all matches in a text and returns them as vector of vector matches.
+ *
+ * NOTE: This matches against UTF-32 host's endianness strings.
+ *
+ * \param pattern The regex pattern to match.
+ * \param text The text to search in. It should be UTF-32 host-endianness encoded.
+ * \param text_size The length of the buffer pointed to by \p text.
+ * Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
+ * \param text_offset The offset into \p text from where the search starts.
+ * \param mflags Match flags.
+ *
+ * \return PVector of every match in the given string or NULL in case of failure.
+ * One match with all its groups is again assembled in a pvector.
+ */
+RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all_32(
+	RZ_NONNULL const RzRegex32 *regex,
+	RZ_NONNULL const ut8 *text,
+	RzRegexSize text_size,
+	RzRegexSize text_offset,
+	RzRegexFlags mflags) {
+	return rz_regex_match_all_internal(regex, (ut8 *)text, text_size, text_offset, mflags, false, 32);
 }
 
 /**

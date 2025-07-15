@@ -85,13 +85,13 @@ RZ_API RZ_OWN RzPVector /*<RzRegexMatch *>*/ *rz_regex_match_first(
 	RzRegexFlags mflags);
 RZ_API RZ_OWN RzPVector /*<RzRegexMatch *>*/ *rz_regex_match_first_16(
 	RZ_NONNULL const RzRegex16 *regex,
-	RZ_NONNULL const char *text,
+	RZ_NONNULL const ut8 *text,
 	RzRegexSize text_size,
 	RzRegexSize text_offset,
 	RzRegexFlags mflags);
 RZ_API RZ_OWN RzPVector /*<RzRegexMatch *>*/ *rz_regex_match_first_32(
 	RZ_NONNULL const RzRegex32 *regex,
-	RZ_NONNULL const char *text,
+	RZ_NONNULL const ut8 *text,
 	RzRegexSize text_size,
 	RzRegexSize text_offset,
 	RzRegexFlags mflags);
@@ -104,6 +104,30 @@ RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all(
 RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all_overlap(
 	RZ_NONNULL const RzRegex *regex,
 	RZ_NONNULL const char *text,
+	RzRegexSize text_size,
+	RzRegexSize text_offset,
+	RzRegexFlags mflags);
+RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all_16(
+	RZ_NONNULL const RzRegex16 *regex,
+	RZ_NONNULL const ut8 *text,
+	RzRegexSize text_size,
+	RzRegexSize text_offset,
+	RzRegexFlags mflags);
+RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all_overlap_16(
+	RZ_NONNULL const RzRegex16 *regex,
+	RZ_NONNULL const ut8 *text,
+	RzRegexSize text_size,
+	RzRegexSize text_offset,
+	RzRegexFlags mflags);
+RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all_32(
+	RZ_NONNULL const RzRegex32 *regex,
+	RZ_NONNULL const ut8 *text,
+	RzRegexSize text_size,
+	RzRegexSize text_offset,
+	RzRegexFlags mflags);
+RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all_overlap_32(
+	RZ_NONNULL const RzRegex32 *regex,
+	RZ_NONNULL const ut8 *text,
 	RzRegexSize text_size,
 	RzRegexSize text_offset,
 	RzRegexFlags mflags);
