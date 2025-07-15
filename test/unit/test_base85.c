@@ -73,7 +73,7 @@ bool test_rz_base85_encode_decode_wrap10(void) {
 bool test_rz_base85_encode_decode_z_abbrev(void) {
 	const ut8 zeros[4] = { 0, 0, 0, 0 };
 
-	char *enc = rz_base85_encode_dyn(zeros, 4, 0, 0, 0);
+	char *enc = rz_base85_encode_dyn((const char *)zeros, 4, 0, 0, 0);
 	mu_assert_notnull(enc, "rz_base85_encode_dyn returned NULL");
 	mu_assert_streq(enc, "z", "encode zeros should be 'z'");
 
