@@ -125,7 +125,7 @@ RZ_API RzSearchKeyword *rz_search_keyword_new_wide(const char *kwbuf, const char
 		if (ignore_case && ch <= 0xff) {
 			ch = tolower(ch);
 		}
-		int num_wide_bytes = rz_utf16le_encode((ut8 *)p, ch);
+		int num_wide_bytes = rz_utf16_encode((ut8 *)p, ch, false);
 		rz_warn_if_fail(num_wide_bytes != 0);
 		p2 += num_utf8_bytes;
 		p += num_wide_bytes;

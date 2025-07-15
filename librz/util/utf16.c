@@ -111,16 +111,17 @@ RZ_API size_t rz_utf16be_decode(RZ_NONNULL const ut8 *buf, size_t buf_len, RZ_NU
 /**
  * \brief Encodes a Unicode code point to little endian UTF16 bytes.
  *
- * \param buf       The buffer to write the bytes to. Must be at least 4 bytes.
- * \param codepoint The code point to encode.
+ * \param buf        The buffer to write the bytes to. Must be at least 4 bytes.
+ * \param codepoint  The code point to encode.
+ * \param big_endian Encodes in big endian order if set.
  *
  * \return Number of bytes encoded.
  */
-RZ_API size_t rz_utf16le_encode(RZ_NONNULL RZ_OUT ut8 *buf, RzCodePoint codepoint) {
+RZ_API size_t rz_utf16_encode(RZ_NONNULL RZ_OUT ut8 *buf, RzCodePoint codepoint, bool big_endian) {
 	rz_return_val_if_fail(buf, 0);
 	if (codepoint < 0x10000) {
-		buf[0] = codepoint & 0xff;
-		buf[1] = codepoint >> 8 & 0xff;
+		buf[big_endian ? 1 : 0] = codepoint & 0xff;
+		buf[big_endian ? 0 : 1] = codepoint >> 8 & 0xff;
 		return 2;
 	}
 	if (codepoint > 0x10FFFF) {
@@ -129,10 +130,10 @@ RZ_API size_t rz_utf16le_encode(RZ_NONNULL RZ_OUT ut8 *buf, RzCodePoint codepoin
 	codepoint -= 0x10000;
 	RzCodePoint high = 0xd800 + ((codepoint >> 10) & 0x3ff);
 	RzCodePoint low = 0xdc00 + (codepoint & 0x3ff);
-	buf[0] = high & 0xff;
-	buf[1] = high >> 8 & 0xff;
-	buf[2] = low & 0xff;
-	buf[3] = low >> 8 & 0xff;
+	buf[big_endian ? 1 : 0] = high & 0xff;
+	buf[big_endian ? 0 : 1] = high >> 8 & 0xff;
+	buf[big_endian ? 3 : 2] = low & 0xff;
+	buf[big_endian ? 2 : 3] = low >> 8 & 0xff;
 	return 4;
 }
 

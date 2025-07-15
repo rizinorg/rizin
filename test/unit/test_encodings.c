@@ -188,39 +188,58 @@ bool test_rz_utf16_encode(void) {
 	ut8 utf16_out[5] = { 0 };
 
 	const ut8 utf16le[] = { 0xAC, 0x20 };
+	const ut8 utf16be[] = { 0x20, 0xAC };
 	RzCodePoint codepoint = 0x20AC;
-	int nbytes = rz_utf16le_encode(utf16_out, codepoint);
+	int nbytes = rz_utf16_encode(utf16_out, codepoint, false);
 	mu_assert_eq(nbytes, 2, "Decoded number of bytes mismatch.");
 	mu_assert_memeq(utf16_out, utf16le, sizeof(utf16le), "Encode failed.");
+	nbytes = rz_utf16_encode(utf16_out, codepoint, true);
+	mu_assert_eq(nbytes, 2, "Decoded number of bytes mismatch.");
+	mu_assert_memeq(utf16_out, utf16be, sizeof(utf16be), "Encode failed.");
 	memset(utf16_out, 0, sizeof(utf16_out));
 
 	// With surrogate
 	const ut8 utf16le_surr[] = { 0x01, 0xD8, 0x37, 0xDC };
+	const ut8 utf16be_surr[] = { 0xD8, 0x01, 0xDC, 0x37 };
 	codepoint = 0x10437;
-	nbytes = rz_utf16le_encode(utf16_out, codepoint);
+	nbytes = rz_utf16_encode(utf16_out, codepoint, false);
 	mu_assert_eq(nbytes, 4, "Decoded number of bytes mismatch.");
 	mu_assert_memeq(utf16_out, utf16le_surr, sizeof(utf16le), "Encode failed.");
+	nbytes = rz_utf16_encode(utf16_out, codepoint, true);
+	mu_assert_eq(nbytes, 4, "Decoded number of bytes mismatch.");
+	mu_assert_memeq(utf16_out, utf16be_surr, sizeof(utf16be_surr), "Encode failed.");
 	memset(utf16_out, 0, sizeof(utf16_out));
 
 	const ut8 utf16le_first_surr[] = { 0x00, 0xD8, 0x00, 0xDC };
+	const ut8 utf16be_first_surr[] = { 0xD8, 0x00, 0xDC, 0x00 };
 	codepoint = 0x10000;
-	nbytes = rz_utf16le_encode(utf16_out, codepoint);
+	nbytes = rz_utf16_encode(utf16_out, codepoint, false);
 	mu_assert_eq(nbytes, 4, "Decoded number of bytes mismatch.");
-	mu_assert_memeq(utf16_out, utf16le_first_surr, sizeof(utf16le), "Encode failed.");
+	mu_assert_memeq(utf16_out, utf16le_first_surr, sizeof(utf16le_first_surr), "Encode failed.");
+	nbytes = rz_utf16_encode(utf16_out, codepoint, true);
+	mu_assert_eq(nbytes, 4, "Decoded number of bytes mismatch.");
+	mu_assert_memeq(utf16_out, utf16be_first_surr, sizeof(utf16be_first_surr), "Encode failed.");
 	memset(utf16_out, 0, sizeof(utf16_out));
 
 	const ut8 utf16le_last_surr[] = { 0xFF, 0xDB, 0xFF, 0xDF };
+	const ut8 utf16be_last_surr[] = { 0xDB, 0xFF, 0xDF, 0xFF };
 	codepoint = RZ_UNICODE_LAST_CODE_POINT;
-	nbytes = rz_utf16le_encode(utf16_out, codepoint);
+	nbytes = rz_utf16_encode(utf16_out, codepoint, false);
 	mu_assert_eq(nbytes, 4, "Decoded number of bytes mismatch.");
-	mu_assert_memeq(utf16_out, utf16le_last_surr, sizeof(utf16le), "Encode failed.");
+	mu_assert_memeq(utf16_out, utf16le_last_surr, sizeof(utf16le_last_surr), "Encode failed.");
+	nbytes = rz_utf16_encode(utf16_out, codepoint, true);
+	mu_assert_eq(nbytes, 4, "Decoded number of bytes mismatch.");
+	mu_assert_memeq(utf16_out, utf16be_last_surr, sizeof(utf16be_last_surr), "Encode failed.");
+
 	memset(utf16_out, 0, sizeof(utf16_out));
 
 	ut8 zero[5] = { 0 };
 	codepoint = 0x110000;
-	nbytes = rz_utf16le_encode(utf16_out, codepoint);
+	nbytes = rz_utf16_encode(utf16_out, codepoint, false);
 	mu_assert_eq(nbytes, 0, "Decoded number of bytes mismatch.");
-	mu_assert_memeq(utf16_out, zero, sizeof(utf16le), "Encode failed.");
+	nbytes = rz_utf16_encode(utf16_out, codepoint, true);
+	mu_assert_eq(nbytes, 0, "Decoded number of bytes mismatch.");
+	mu_assert_memeq(utf16_out, zero, sizeof(zero), "Encode failed.");
 
 	mu_end;
 }
