@@ -516,7 +516,6 @@ typedef struct rz_bin_plugin_t {
 	RzPVector /*<RzBinReloc *>*/ *(*patch_relocs)(RzBinFile *bf);
 	RzPVector /*<RzBinFileHash *>*/ *(*hashes)(RzBinFile *bf);
 	RzPVector /*<RzBinResource *>*/ *(*resources)(RzBinFile *bf);
-	void (*header)(RzBinFile *bf);
 	char *(*signature)(RzBinFile *bf, bool json);
 	int (*demangle_type)(const char *str);
 	char *(*enrich_asm)(RzBinFile *bf, const char *asm_str, int asm_len);
