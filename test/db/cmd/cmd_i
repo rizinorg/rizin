@@ -3372,20 +3372,27 @@ NAME=iH (file x86_64)
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=iH
 EXPECT=<<EOF
-0x00000000  MAGIC       7f 45 4c 46 02 01 01 00 00 00 00 00 00 00 00 00
-0x00000010  Type        0x0002
-0x00000012  Machine     0x003e
-0x00000014  Version     0x00000001
-0x00000018  Entrypoint  0x00400410
-0x00000020  PhOff       0x00000040
-0x00000028  ShOff       0x00000a30
-0x00000030  Flags       0x0000
-0x00000034  EhSize      64
-0x00000036  PhentSize   56
-0x00000038  PhNum       8
-0x0000003a  ShentSize   64
-0x0000003c  ShNum       30
-0x0000003e  ShStrndx    27
+elf:
+  e_ident:
+    bytes: "7f 45 4c 46 02 01 01 00 00 00 00 00 00 00 00 00"
+    ei_class: 2
+    ei_data: 1
+    ei_version: 1
+    ei_osabi: 0
+    ei_abiversion: 0
+  e_machine: 62
+  e_version: 1
+  e_entry: 0x400410
+  e_phoff: 0x40
+  e_shoff: 0xa30
+  e_flags: 0x0
+  e_ehsize: 64
+  e_phentsize: 56
+  e_phnum: 8
+  e_shentsize: 64
+  e_shnum: 30
+  e_shstrndx: 27
+
 EOF
 RUN
 
