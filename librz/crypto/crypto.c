@@ -43,7 +43,8 @@ static const struct {
 	{ "punycode", RZ_CODEC_PUNYCODE },
 	{ "base85", RZ_CODEC_B85 },
 	{ "base36", RZ_CODEC_B36 },
-  { "base32", RZ_CODEC_B32 },
+	{ "base32", RZ_CODEC_B32 },
+	{ "base16", RZ_CODEC_B16 },
 };
 
 RZ_API RZ_BORROW const char *rz_crypto_name(const RzCryptoSelector bit) {
