@@ -43,30 +43,36 @@ canary   false
 PIE      false
 RELROCS  false
 NX       false
-ROM Game Title: SA-1 Support Test    
-ROM Speed: Slow
-ROM Map Mode: LoROM 32K Banks + SA-1 (LoROM Emulates Super MMC) (0x03)
-ROM Cartridge: ROM+RAM+Battery+SA-1 (0x35)
-ROM Size: 512 KB (0x09)
-ROM SRAM: 32 KB (0x05)
-ROM Country: Japan (NTSC) (0x00)
-ROM Developer: Unknown (0x33)
-ROM Version: 0x01
-ROM Checksum: 0xffff (complement: 0x0000)
-ROM unused: 0x00000000
-ROM cop:    0x8347 (native vector)
-ROM br:     0x8347 (native vector)
-ROM abort:  0x8347 (native vector)
-ROM nmi:    0x0a00 (native vector)
-ROM unused: 0x8347 (native vector)
-ROM irq:    0x8347 (native vector)
-ROM unused: 0x00000000
-ROM cop:    0x8347 (emulator vector)
-ROM unused: 0x8347 (emulator vector)
-ROM abort:  0x8347 (emulator vector)
-ROM nmi:    0x8347 (emulator vector)
-ROM reset:  0x8000 (emulator vector)
-ROM irq:    0x8347 (emulator vector)
+snes_rom:
+  game_title: "SA-1 Support Test    "
+  speed: "slow"
+  map_mode: "LoROM 32K Banks + SA-1 (LoROM Emulates Super MMC)"
+  cartridge: "ROM+RAM+Battery+SA-1"
+  size: "512 KB"
+  sram_size: "32 KB"
+  country: "Japan (NTSC)"
+  developer: "unknown 0x33"
+  version: 0x1
+  checksum: 0xffff
+  checksum_compl: 0x0
+  vectors:
+    native:
+      unused0: 0x0
+      cop: 0x8347
+      br: 0x8347
+      abort: 0x8347
+      nmi: 0xa00
+      unused1: 0x8347
+      irq: 0x8347
+    emulator:
+      unused2: 0x0
+      cop: 0x8347
+      unused3: 0x8347
+      abort: 0x8347
+      nmi: 0x8347
+      reset: 0x8000
+      irq: 0x8347
+
 name         size    address flags mirror    
 ---------------------------------------------
 SRAM_70   0x10000 0x00700000 rwx   
@@ -656,29 +662,34 @@ canary   false
 PIE      false
 RELROCS  false
 NX       false
-ROM Game Title: CX4 TEST PROGRAM
-ROM Speed: Slow
-ROM Map Mode: LoROM 32K Banks (LoROM) (0x00)
-ROM Cartridge: ROM+CX4 (0xf3)
-ROM Size: 32 KB (0x05)
-ROM SRAM: missing (0x00)
-ROM Country: Japan (NTSC) (0x00)
-ROM Developer: Unknown (0x33)
-ROM Version: 0x00
-ROM Checksum: 0xaf96 (complement: 0x5069)
-ROM unused: 0x00000000
-ROM cop:    0x8333 (native vector)
-ROM br:     0x8333 (native vector)
-ROM abort:  0x8333 (native vector)
-ROM nmi:    0x8333 (native vector)
-ROM unused: 0x0000 (native vector)
-ROM irq:    0x8333 (native vector)
-ROM unused: 0x00000000
-ROM cop:    0x8333 (emulator vector)
-ROM unused: 0x0000 (emulator vector)
-ROM abort:  0x8333 (emulator vector)
-ROM nmi:    0x8333 (emulator vector)
-ROM reset:  0x8000 (emulator vector)
-ROM irq:    0x8333 (emulator vector)
+snes_rom:
+  game_title: "CX4 TEST PROGRAM"
+  speed: "slow"
+  map_mode: "LoROM 32K Banks (LoROM)"
+  cartridge: "ROM+CX4"
+  size: "32 KB"
+  country: "Japan (NTSC)"
+  developer: "unknown 0x33"
+  version: 0x0
+  checksum: 0xaf96
+  checksum_compl: 0x5069
+  vectors:
+    native:
+      unused0: 0x0
+      cop: 0x8333
+      br: 0x8333
+      abort: 0x8333
+      nmi: 0x8333
+      unused1: 0x0
+      irq: 0x8333
+    emulator:
+      unused2: 0x0
+      cop: 0x8333
+      unused3: 0x0
+      abort: 0x8333
+      nmi: 0x8333
+      reset: 0x8000
+      irq: 0x8333
+
 EOF
 RUN
