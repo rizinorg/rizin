@@ -2797,19 +2797,6 @@ RZ_API const char *rz_str_lastbut(const char *s, char ch, const char *but) {
 	return lp;
 }
 
-// Must be merged inside strlen
-RZ_API size_t rz_str_len_utf8char(const char *s, int left) {
-	size_t i = 1;
-	while (s[i] && (!left || i < left)) {
-		if ((s[i] & 0xc0) != 0x80) {
-			i++;
-		} else {
-			break;
-		}
-	}
-	return i;
-}
-
 RZ_API size_t rz_str_len_utf8(const char *s) {
 	size_t i = 0, j = 0, fullwidths = 0;
 	while (s[i]) {
@@ -2860,7 +2847,7 @@ RZ_API size_t rz_str_utf8_get_width_utf16(const char *str) {
 		extend_cnt++;
 		if (extend_cnt == 3) {
 			RzCodePoint cp = 0;
-			rz_utf8_decode((ut8*)str + (i - 3), 4, &cp, false);
+			rz_utf8_decode((ut8 *)str + (i - 3), 4, &cp, false);
 			if (cp >= RZ_UTF16_FIRST_4BYTES_CODE_POINT) {
 				byte_cnt += 2; // Add the additional two bytes needed.
 			}
