@@ -26,7 +26,7 @@ RzPVector /*<RzBinSymbol *>*/ *elf64_symbols_obj(void *elf_obj);
 RzPVector /*<RzBinSymbol *>*/ *elf64_symbols(RzBinFile *bf);
 RzPVector /*<RzBinImport *>*/ *elf64_imports(RzBinFile *bf);
 RzBinInfo *elf64_info(RzBinFile *bf);
-RzStructFactory *elf64_structure(ELFOBJ *bin);
+RzStructuredData *elf64_structure(ELFOBJ *bin);
 RzPVector /*<RzBinField *>*/ *elf64_fields(RzBinFile *bf);
 ut64 elf64_size(RzBinFile *bf);
 RzPVector /*<char *>*/ *elf64_libs(RzBinFile *bf);

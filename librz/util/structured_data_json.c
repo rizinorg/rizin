@@ -1,12 +1,12 @@
 // SPDX-FileCopyrightText: 2025 deroad <deroad@kumo.xn--q9jyb4c>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-static void builder_json_new_struct(RZ_NULLABLE void *user, RzStructFactoryBlock block) {
+static void builder_json_new_struct(RZ_NULLABLE void *user, RzStructuredDataBlock block) {
 	switch (block) {
-	case RZ_STRUCT_FACTORY_BLOCK_MAP:
+	case RZ_STRUCTURED_DATA_BLOCK_MAP:
 		pj_o((PJ *)user);
 		break;
-	case RZ_STRUCT_FACTORY_BLOCK_ARRAY:
+	case RZ_STRUCTURED_DATA_BLOCK_ARRAY:
 		pj_a((PJ *)user);
 		break;
 	default:
@@ -42,7 +42,7 @@ static void builder_json_val_string(RZ_NULLABLE void *user, RZ_NONNULL const cha
 	pj_s((PJ *)user, v);
 }
 
-static const RzStructFactoryIterator factory_iterator_json = {
+static const RzStructuredDataIterator builder_json_iterator = {
 	.new_struct = builder_json_new_struct,
 	.end_struct = builder_json_end_struct,
 	.key = builder_json_key,

@@ -191,19 +191,19 @@ static RzBinInfo *mz_info(RzBinFile *bf) {
 	return ret;
 }
 
-static RzStructFactory *mz_structure(RzBinFile *bf) {
+static RzStructuredData *mz_structure(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
 	const struct rz_bin_mz_obj_t *mz_obj = (struct rz_bin_mz_obj_t *)bf->o->bin_obj;
 
-	RzStructFactory *info = rz_struct_factory_new_map();
+	RzStructuredData *info = rz_structured_data_new_map();
 	if (!info) {
 		return NULL;
 	}
 
-	RzStructFactory *mz = rz_struct_factory_map_add_map(info, "mz");
+	RzStructuredData *mz = rz_structured_data_map_add_map(info, "mz");
 	if (!mz) {
-		rz_struct_factory_free(info);
+		rz_structured_data_free(info);
 		return NULL;
 	}
 
@@ -212,20 +212,20 @@ static RzStructFactory *mz_structure(RzBinFile *bf) {
 	signature[1] = mz_obj->dos_header->signature >> 8;
 	signature[2] = 0;
 
-	rz_struct_factory_map_add_string(mz, "Signature", signature);
-	rz_struct_factory_map_add_unsigned(mz, "BytesInLastBlock", mz_obj->dos_header->bytes_in_last_block, true);
-	rz_struct_factory_map_add_unsigned(mz, "BlocksInFile", mz_obj->dos_header->blocks_in_file, true);
-	rz_struct_factory_map_add_unsigned(mz, "NumRelocs", mz_obj->dos_header->num_relocs, false);
-	rz_struct_factory_map_add_unsigned(mz, "HeaderParagraphs", mz_obj->dos_header->header_paragraphs, true);
-	rz_struct_factory_map_add_unsigned(mz, "MinExtraParagraphs", mz_obj->dos_header->min_extra_paragraphs, true);
-	rz_struct_factory_map_add_unsigned(mz, "MaxExtraParagraphs", mz_obj->dos_header->max_extra_paragraphs, true);
-	rz_struct_factory_map_add_unsigned(mz, "InitialSs", mz_obj->dos_header->ss, true);
-	rz_struct_factory_map_add_unsigned(mz, "InitialSp", mz_obj->dos_header->sp, true);
-	rz_struct_factory_map_add_unsigned(mz, "Checksum", mz_obj->dos_header->checksum, true);
-	rz_struct_factory_map_add_unsigned(mz, "InitialIp", mz_obj->dos_header->ip, true);
-	rz_struct_factory_map_add_unsigned(mz, "InitialCs", mz_obj->dos_header->cs, true);
-	rz_struct_factory_map_add_unsigned(mz, "RelocTableOffset", mz_obj->dos_header->reloc_table_offset, true);
-	rz_struct_factory_map_add_unsigned(mz, "OverlayNumber", mz_obj->dos_header->overlay_number, false);
+	rz_structured_data_map_add_string(mz, "Signature", signature);
+	rz_structured_data_map_add_unsigned(mz, "BytesInLastBlock", mz_obj->dos_header->bytes_in_last_block, true);
+	rz_structured_data_map_add_unsigned(mz, "BlocksInFile", mz_obj->dos_header->blocks_in_file, true);
+	rz_structured_data_map_add_unsigned(mz, "NumRelocs", mz_obj->dos_header->num_relocs, false);
+	rz_structured_data_map_add_unsigned(mz, "HeaderParagraphs", mz_obj->dos_header->header_paragraphs, true);
+	rz_structured_data_map_add_unsigned(mz, "MinExtraParagraphs", mz_obj->dos_header->min_extra_paragraphs, true);
+	rz_structured_data_map_add_unsigned(mz, "MaxExtraParagraphs", mz_obj->dos_header->max_extra_paragraphs, true);
+	rz_structured_data_map_add_unsigned(mz, "InitialSs", mz_obj->dos_header->ss, true);
+	rz_structured_data_map_add_unsigned(mz, "InitialSp", mz_obj->dos_header->sp, true);
+	rz_structured_data_map_add_unsigned(mz, "Checksum", mz_obj->dos_header->checksum, true);
+	rz_structured_data_map_add_unsigned(mz, "InitialIp", mz_obj->dos_header->ip, true);
+	rz_structured_data_map_add_unsigned(mz, "InitialCs", mz_obj->dos_header->cs, true);
+	rz_structured_data_map_add_unsigned(mz, "RelocTableOffset", mz_obj->dos_header->reloc_table_offset, true);
+	rz_structured_data_map_add_unsigned(mz, "OverlayNumber", mz_obj->dos_header->overlay_number, false);
 
 	return info;
 }
@@ -276,7 +276,7 @@ RzBinPlugin rz_bin_plugin_mz = {
 	.maps = &rz_bin_maps_of_file_sections,
 	.sections = &mz_sections,
 	.info = &mz_info,
-	.structure = &mz_structure,
+	.bin_structure = &mz_structure,
 	.relocs = &mz_relocs,
 };
 

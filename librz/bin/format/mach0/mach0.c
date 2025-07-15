@@ -3285,7 +3285,7 @@ void MACH0_(mach_headerfields)(RzBinFile *bf) {
 	free(mh);
 }
 
-RzStructFactory *MACH0_(mach_structure)(RzBinFile *bf) {
+RzStructuredData *MACH0_(mach_structure)(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
 	RzBuffer *buf = bf->buf;
@@ -3303,78 +3303,78 @@ RzStructFactory *MACH0_(mach_structure)(RzBinFile *bf) {
 	bool big_endian = (mh->cputype & CPU_TYPE_POWERPC) != 0;
 	bool is_64bit = mh->cputype >> 16;
 
-	RzStructFactory *info = rz_struct_factory_new_map();
+	RzStructuredData *info = rz_structured_data_new_map();
 	if (!info) {
 		return NULL;
 	}
 
 #if RZ_BIN_MACH064
-	RzStructFactory *mach0 = rz_struct_factory_map_add_map(info, "mach0_64");
+	RzStructuredData *mach0 = rz_structured_data_map_add_map(info, "mach0_64");
 #else
-	RzStructFactory *mach0 = rz_struct_factory_map_add_map(info, "mach0");
+	RzStructuredData *mach0 = rz_structured_data_map_add_map(info, "mach0");
 #endif
 	if (!mach0) {
-		rz_struct_factory_free(info);
+		rz_structured_data_free(info);
 		return NULL;
 	}
 
-	rz_struct_factory_map_add_unsigned(mach0, "Magic", mh->magic, true);
+	rz_structured_data_map_add_unsigned(mach0, "Magic", mh->magic, true);
 	switch (mh->cputype) {
 	case CPU_TYPE_VAX:
-		rz_struct_factory_map_add_string(mach0, "CpuType", "vax");
+		rz_structured_data_map_add_string(mach0, "CpuType", "vax");
 		break;
 	case CPU_TYPE_MC680x0:
-		rz_struct_factory_map_add_string(mach0, "CpuType", "mc680x0");
+		rz_structured_data_map_add_string(mach0, "CpuType", "mc680x0");
 		break;
 	case CPU_TYPE_X86:
-		rz_struct_factory_map_add_string(mach0, "CpuType", "x86");
+		rz_structured_data_map_add_string(mach0, "CpuType", "x86");
 		break;
 	case CPU_TYPE_X86_64:
-		rz_struct_factory_map_add_string(mach0, "CpuType", "x86_64");
+		rz_structured_data_map_add_string(mach0, "CpuType", "x86_64");
 		break;
 	case CPU_TYPE_MIPS:
-		rz_struct_factory_map_add_string(mach0, "CpuType", "mips");
+		rz_structured_data_map_add_string(mach0, "CpuType", "mips");
 		break;
 	case CPU_TYPE_MC98000:
-		rz_struct_factory_map_add_string(mach0, "CpuType", "mc98000");
+		rz_structured_data_map_add_string(mach0, "CpuType", "mc98000");
 		break;
 	case CPU_TYPE_HPPA:
-		rz_struct_factory_map_add_string(mach0, "CpuType", "HPPA");
+		rz_structured_data_map_add_string(mach0, "CpuType", "HPPA");
 		break;
 	case CPU_TYPE_ARM:
-		rz_struct_factory_map_add_string(mach0, "CpuType", "arm");
+		rz_structured_data_map_add_string(mach0, "CpuType", "arm");
 		break;
 	case CPU_TYPE_ARM64:
-		rz_struct_factory_map_add_string(mach0, "CpuType", "arm64");
+		rz_structured_data_map_add_string(mach0, "CpuType", "arm64");
 		break;
 	case CPU_TYPE_ARM64_32:
-		rz_struct_factory_map_add_string(mach0, "CpuType", "arm64_32");
+		rz_structured_data_map_add_string(mach0, "CpuType", "arm64_32");
 		break;
 	case CPU_TYPE_MC88000:
-		rz_struct_factory_map_add_string(mach0, "CpuType", "mc88000");
+		rz_structured_data_map_add_string(mach0, "CpuType", "mc88000");
 		break;
 	case CPU_TYPE_SPARC:
-		rz_struct_factory_map_add_string(mach0, "CpuType", "sparc");
+		rz_structured_data_map_add_string(mach0, "CpuType", "sparc");
 		break;
 	case CPU_TYPE_I860:
-		rz_struct_factory_map_add_string(mach0, "CpuType", "i860");
+		rz_structured_data_map_add_string(mach0, "CpuType", "i860");
 		break;
 	case CPU_TYPE_POWERPC:
-		rz_struct_factory_map_add_string(mach0, "CpuType", "ppc");
+		rz_structured_data_map_add_string(mach0, "CpuType", "ppc");
 		break;
 	case CPU_TYPE_POWERPC64:
-		rz_struct_factory_map_add_string(mach0, "CpuType", "ppc64");
+		rz_structured_data_map_add_string(mach0, "CpuType", "ppc64");
 		break;
 	default:
-		rz_struct_factory_map_add_unsigned(mach0, "CpuType", mh->cputype, true);
+		rz_structured_data_map_add_unsigned(mach0, "CpuType", mh->cputype, true);
 		break;
 	}
 
-	rz_struct_factory_map_add_unsigned(mach0, "CpuSubType", mh->cpusubtype, true);
-	rz_struct_factory_map_add_unsigned(mach0, "FileType", mh->filetype, true);
-	rz_struct_factory_map_add_unsigned(mach0, "nCmds", mh->ncmds, false);
-	rz_struct_factory_map_add_unsigned(mach0, "sizeOfCmds", mh->sizeofcmds, false);
-	rz_struct_factory_map_add_unsigned(mach0, "Flags", mh->flags, true);
+	rz_structured_data_map_add_unsigned(mach0, "CpuSubType", mh->cpusubtype, true);
+	rz_structured_data_map_add_unsigned(mach0, "FileType", mh->filetype, true);
+	rz_structured_data_map_add_unsigned(mach0, "nCmds", mh->ncmds, false);
+	rz_structured_data_map_add_unsigned(mach0, "sizeOfCmds", mh->sizeofcmds, false);
+	rz_structured_data_map_add_unsigned(mach0, "Flags", mh->flags, true);
 
 #define MACH0_READ_WORD_HERE() \
 	do { \
@@ -3392,9 +3392,9 @@ RzStructFactory *MACH0_(mach_structure)(RzBinFile *bf) {
 		return info;
 	}
 
-	RzStructFactory *lcmds = rz_struct_factory_map_add_array(mach0, "LoadCommands");
+	RzStructuredData *lcmds = rz_structured_data_map_add_array(mach0, "LoadCommands");
 	if (!lcmds) {
-		rz_struct_factory_free(info);
+		rz_structured_data_free(info);
 		return NULL;
 	}
 
@@ -3402,18 +3402,18 @@ RzStructFactory *MACH0_(mach_structure)(RzBinFile *bf) {
 		MACH0_READ_WORD_HERE();
 		ut32 lcType = word;
 
-		RzStructFactory *lc_info = rz_struct_factory_array_add_map(lcmds);
+		RzStructuredData *lc_info = rz_structured_data_array_add_map(lcmds);
 		if (!lc_info) {
 			rz_warn_if_reached();
-			rz_struct_factory_free(info);
+			rz_structured_data_free(info);
 			return NULL;
 		}
 
 		const char *lc_name = cmd_to_string(lcType);
 		if (RZ_STR_ISNOTEMPTY(lc_name)) {
-			rz_struct_factory_map_add_string(lc_info, "LcType", lc_name);
+			rz_structured_data_map_add_string(lc_info, "LcType", lc_name);
 		} else {
-			rz_struct_factory_map_add_unsigned(lc_info, "LcType", lcType, true);
+			rz_structured_data_map_add_unsigned(lc_info, "LcType", lcType, true);
 		}
 
 		MACH0_READ_WORD_HERE();
@@ -3427,7 +3427,7 @@ RzStructFactory *MACH0_(mach_structure)(RzBinFile *bf) {
 			RZ_LOG_ERROR("Invalid size for a load command\n");
 			break;
 		}
-		rz_struct_factory_map_add_unsigned(lc_info, "CmdSize", word, false);
+		rz_structured_data_map_add_unsigned(lc_info, "CmdSize", word, false);
 
 		switch (lcType) {
 		case LC_BUILD_VERSION: {
@@ -3435,7 +3435,7 @@ RzStructFactory *MACH0_(mach_structure)(RzBinFile *bf) {
 			if (!rz_buf_read_le32_at(buf, addr, &platform)) {
 				break;
 			}
-			rz_struct_factory_map_add_string(lc_info, "Platform", rz_mach0_platform_to_string(platform));
+			rz_structured_data_map_add_string(lc_info, "Platform", rz_mach0_platform_to_string(platform));
 
 			ut16 minos1;
 			if (!rz_buf_read_le16_at(buf, addr + 6, &minos1)) {
@@ -3450,7 +3450,7 @@ RzStructFactory *MACH0_(mach_structure)(RzBinFile *bf) {
 				break;
 			}
 			rz_strf(tmp, "%d.%d.%d", minos1, minos2, minos3);
-			rz_struct_factory_map_add_string(lc_info, "MinOS", tmp);
+			rz_structured_data_map_add_string(lc_info, "MinOS", tmp);
 
 			ut16 sdk1;
 			if (!rz_buf_read_le16_at(buf, addr + 10, &sdk1)) {
@@ -3465,27 +3465,27 @@ RzStructFactory *MACH0_(mach_structure)(RzBinFile *bf) {
 				break;
 			}
 			rz_strf(tmp, "%d.%d.%d", sdk1, sdk2, sdk3);
-			rz_struct_factory_map_add_string(lc_info, "SDK", tmp);
+			rz_structured_data_map_add_string(lc_info, "SDK", tmp);
 
 			ut32 ntools;
 			if (!rz_buf_read_le32_at(buf, addr + 12, &ntools)) {
 				break;
 			}
-			rz_struct_factory_map_add_unsigned(lc_info, "nTools", ntools, false);
+			rz_structured_data_map_add_unsigned(lc_info, "nTools", ntools, false);
 
-			RzStructFactory *build_vers = rz_struct_factory_map_add_array(lc_info, "BuildVersionTool");
+			RzStructuredData *build_vers = rz_structured_data_map_add_array(lc_info, "BuildVersionTool");
 			if (!build_vers) {
 				rz_warn_if_reached();
-				rz_struct_factory_free(info);
+				rz_structured_data_free(info);
 				return NULL;
 			}
 
 			ut64 off = 16;
 			while (off < (lcSize - 8) && ntools--) {
-				RzStructFactory *build = rz_struct_factory_array_add_map(build_vers);
+				RzStructuredData *build = rz_structured_data_array_add_map(build_vers);
 				if (!build) {
 					rz_warn_if_reached();
-					rz_struct_factory_free(info);
+					rz_structured_data_free(info);
 					return NULL;
 				}
 
@@ -3493,7 +3493,7 @@ RzStructFactory *MACH0_(mach_structure)(RzBinFile *bf) {
 				if (!rz_buf_read_le32_at(buf, addr + off, &tool)) {
 					break;
 				}
-				rz_struct_factory_map_add_string(build, "Tool", rz_mach0_build_version_tool_to_string(tool));
+				rz_structured_data_map_add_string(build, "Tool", rz_mach0_build_version_tool_to_string(tool));
 
 				off += 4;
 				if (off >= (lcSize - 8)) {
@@ -3514,7 +3514,7 @@ RzStructFactory *MACH0_(mach_structure)(RzBinFile *bf) {
 				}
 
 				rz_strf(tmp, "%d.%d.%d", version1, version2, version3);
-				rz_struct_factory_map_add_string(build, "Version", tmp);
+				rz_structured_data_map_add_string(build, "Version", tmp);
 
 				off += 4;
 			}
@@ -3530,8 +3530,8 @@ RzStructFactory *MACH0_(mach_structure)(RzBinFile *bf) {
 			ut32 ep = rz_read_ble32(&data, false); //  bin->big_endian);
 			ut32 ss = rz_read_ble32(&data[4], false); //  bin->big_endian);
 #endif
-			rz_struct_factory_map_add_unsigned(lc_info, "Entry", ep, true);
-			rz_struct_factory_map_add_unsigned(lc_info, "StackSize", ss, false);
+			rz_structured_data_map_add_unsigned(lc_info, "Entry", ep, true);
+			rz_structured_data_map_add_unsigned(lc_info, "StackSize", ss, false);
 		} break;
 		case LC_SYMTAB:
 			break;
@@ -3543,7 +3543,7 @@ RzStructFactory *MACH0_(mach_structure)(RzBinFile *bf) {
 
 			char *id = rz_buf_get_string(buf, addr + str_off - 8);
 			if (RZ_STR_ISNOTEMPTY(id)) {
-				rz_struct_factory_map_add_string(lc_info, "Id", id);
+				rz_structured_data_map_add_string(lc_info, "Id", id);
 			}
 			free(id);
 
@@ -3560,7 +3560,7 @@ RzStructFactory *MACH0_(mach_structure)(RzBinFile *bf) {
 				break;
 			}
 			rz_strf(tmp, "%d.%d.%d", current1, current2, current3);
-			rz_struct_factory_map_add_string(lc_info, "Current", tmp);
+			rz_structured_data_map_add_string(lc_info, "Current", tmp);
 
 			ut16 compat1;
 			if (!rz_buf_read_le16_at(buf, addr + 14, &compat1)) {
@@ -3576,7 +3576,7 @@ RzStructFactory *MACH0_(mach_structure)(RzBinFile *bf) {
 			}
 
 			rz_strf(tmp, "%d.%d.%d", compat1, compat2, compat3);
-			rz_struct_factory_map_add_string(lc_info, "Compat", tmp);
+			rz_structured_data_map_add_string(lc_info, "Compat", tmp);
 
 			break;
 		}
@@ -3587,19 +3587,19 @@ RzStructFactory *MACH0_(mach_structure)(RzBinFile *bf) {
 			}
 
 			rz_hex_bin2str(uuid, sizeof(uuid), tmp);
-			rz_struct_factory_map_add_string(lc_info, "UUID", tmp);
+			rz_structured_data_map_add_string(lc_info, "UUID", tmp);
 		} break;
 		case LC_SEGMENT:
 		case LC_SEGMENT_64: {
 			char name[17] = { 0 };
 			rz_buf_read_at(buf, addr, (ut8 *)name, sizeof(name) - 1);
-			rz_struct_factory_map_add_string(lc_info, "Name", name);
+			rz_structured_data_map_add_string(lc_info, "Name", name);
 
 			ut32 nsects;
 			if (!rz_buf_read_le32_at(buf, addr - 8 + (is_64bit ? 64 : 48), &nsects)) {
 				break;
 			}
-			rz_struct_factory_map_add_unsigned(lc_info, "nSects", nsects, false);
+			rz_structured_data_map_add_unsigned(lc_info, "nSects", nsects, false);
 		} break;
 		case LC_LOAD_DYLIB:
 		case LC_LOAD_WEAK_DYLIB: {
@@ -3610,7 +3610,7 @@ RzStructFactory *MACH0_(mach_structure)(RzBinFile *bf) {
 
 			char *load_dylib = rz_buf_get_string(buf, addr + str_off - 8);
 			if (RZ_STR_ISNOTEMPTY(load_dylib)) {
-				rz_struct_factory_map_add_string(lc_info, "LoadDyLib", load_dylib);
+				rz_structured_data_map_add_string(lc_info, "LoadDyLib", load_dylib);
 			}
 			free(load_dylib);
 
@@ -3627,7 +3627,7 @@ RzStructFactory *MACH0_(mach_structure)(RzBinFile *bf) {
 				break;
 			}
 			rz_strf(tmp, "%d.%d.%d", current1, current2, current3);
-			rz_struct_factory_map_add_string(lc_info, "Current", tmp);
+			rz_structured_data_map_add_string(lc_info, "Current", tmp);
 
 			ut16 compat1;
 			if (!rz_buf_read_le16_at(buf, addr + 14, &compat1)) {
@@ -3642,13 +3642,13 @@ RzStructFactory *MACH0_(mach_structure)(RzBinFile *bf) {
 				break;
 			}
 			rz_strf(tmp, "%d.%d.%d", compat1, compat2, compat3);
-			rz_struct_factory_map_add_string(lc_info, "Compat", tmp);
+			rz_structured_data_map_add_string(lc_info, "Compat", tmp);
 			break;
 		}
 		case LC_RPATH: {
 			char *rpath = rz_buf_get_string(buf, addr + 4);
 			if (RZ_STR_ISNOTEMPTY(rpath)) {
-				rz_struct_factory_map_add_string(lc_info, "rPath", rpath);
+				rz_structured_data_map_add_string(lc_info, "rPath", rpath);
 			}
 			free(rpath);
 			break;
@@ -3659,17 +3659,17 @@ RzStructFactory *MACH0_(mach_structure)(RzBinFile *bf) {
 			if (!rz_buf_read_le32_at(buf, addr, &word)) {
 				break;
 			}
-			rz_struct_factory_map_add_unsigned(lc_info, "CryptOffset", word, true);
+			rz_structured_data_map_add_unsigned(lc_info, "CryptOffset", word, true);
 
 			if (!rz_buf_read_le32_at(buf, addr + 4, &word)) {
 				break;
 			}
-			rz_struct_factory_map_add_unsigned(lc_info, "CryptSize", word, false);
+			rz_structured_data_map_add_unsigned(lc_info, "CryptSize", word, false);
 
 			if (!rz_buf_read_le32_at(buf, addr + 8, &word)) {
 				break;
 			}
-			rz_struct_factory_map_add_unsigned(lc_info, "CryptId", word, false);
+			rz_structured_data_map_add_unsigned(lc_info, "CryptId", word, false);
 			break;
 		}
 		case LC_CODE_SIGNATURE: {
@@ -3677,8 +3677,8 @@ RzStructFactory *MACH0_(mach_structure)(RzBinFile *bf) {
 			if (!rz_buf_read_at(buf, addr, (ut8 *)words, sizeof(words))) {
 				break;
 			}
-			rz_struct_factory_map_add_unsigned(lc_info, "DataOffset", words[0], true);
-			rz_struct_factory_map_add_unsigned(lc_info, "DataSize", words[1], false);
+			rz_structured_data_map_add_unsigned(lc_info, "DataOffset", words[0], true);
+			rz_structured_data_map_add_unsigned(lc_info, "DataSize", words[1], false);
 			break;
 		}
 		}

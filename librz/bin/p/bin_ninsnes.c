@@ -913,7 +913,7 @@ static char *snes_rom_get_developer(const SNESRom *rom) {
 	}
 }
 
-static RzStructFactory *snes_structure(RzBinFile *bf) {
+static RzStructuredData *snes_structure(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
 	const SNESRom *rom = bf->o->bin_obj;
@@ -924,70 +924,70 @@ static RzStructFactory *snes_structure(RzBinFile *bf) {
 	char *size = NULL;
 	char *developer_id = snes_rom_get_developer(rom);
 
-	RzStructFactory *info = rz_struct_factory_new_map();
+	RzStructuredData *info = rz_structured_data_new_map();
 	if (!info) {
 		return NULL;
 	}
 
-	RzStructFactory *rom_data = rz_struct_factory_map_add_map(info, "snes_rom");
+	RzStructuredData *rom_data = rz_structured_data_map_add_map(info, "snes_rom");
 	if (!rom_data) {
-		rz_struct_factory_free(info);
+		rz_structured_data_free(info);
 		return NULL;
 	}
 
-	rz_struct_factory_map_add_string(rom_data, "game_title", game_title);
-	rz_struct_factory_map_add_string(rom_data, "speed", rom->mode.fast_rom ? "fast" : "slow");
-	rz_struct_factory_map_add_string(rom_data, "map_mode", map_mode);
-	rz_struct_factory_map_add_string(rom_data, "cartridge", cartridge_type);
+	rz_structured_data_map_add_string(rom_data, "game_title", game_title);
+	rz_structured_data_map_add_string(rom_data, "speed", rom->mode.fast_rom ? "fast" : "slow");
+	rz_structured_data_map_add_string(rom_data, "map_mode", map_mode);
+	rz_structured_data_map_add_string(rom_data, "cartridge", cartridge_type);
 
 	size = snes_rom_get_rom_size(rom);
-	rz_struct_factory_map_add_string(rom_data, "size", size);
+	rz_structured_data_map_add_string(rom_data, "size", size);
 	RZ_FREE(size);
 
 	if ((size = snes_rom_get_sram_size(rom))) {
-		rz_struct_factory_map_add_string(rom_data, "sram_size", size);
+		rz_structured_data_map_add_string(rom_data, "sram_size", size);
 		RZ_FREE(size);
 	}
 
-	rz_struct_factory_map_add_string(rom_data, "country", snes_rom_get_country(rom));
-	rz_struct_factory_map_add_string(rom_data, "developer", developer_id);
-	rz_struct_factory_map_add_unsigned(rom_data, "version", rom->rom_version, true);
-	rz_struct_factory_map_add_unsigned(rom_data, "checksum", rom->checksum, true);
-	rz_struct_factory_map_add_unsigned(rom_data, "checksum_compl", rom->checksum_compl, true);
+	rz_structured_data_map_add_string(rom_data, "country", snes_rom_get_country(rom));
+	rz_structured_data_map_add_string(rom_data, "developer", developer_id);
+	rz_structured_data_map_add_unsigned(rom_data, "version", rom->rom_version, true);
+	rz_structured_data_map_add_unsigned(rom_data, "checksum", rom->checksum, true);
+	rz_structured_data_map_add_unsigned(rom_data, "checksum_compl", rom->checksum_compl, true);
 
-	RzStructFactory *vectors = rz_struct_factory_map_add_map(rom_data, "vectors");
+	RzStructuredData *vectors = rz_structured_data_map_add_map(rom_data, "vectors");
 	if (!vectors) {
-		rz_struct_factory_free(info);
+		rz_structured_data_free(info);
 		return NULL;
 	}
 
-	RzStructFactory *native = rz_struct_factory_map_add_map(vectors, "native");
+	RzStructuredData *native = rz_structured_data_map_add_map(vectors, "native");
 	if (!native) {
-		rz_struct_factory_free(info);
+		rz_structured_data_free(info);
 		return NULL;
 	}
 
-	rz_struct_factory_map_add_unsigned(native, "unused0", rom->vectors.unused0, true);
-	rz_struct_factory_map_add_unsigned(native, "cop", rom->vectors.native_cop, true);
-	rz_struct_factory_map_add_unsigned(native, "br", rom->vectors.native_br, true);
-	rz_struct_factory_map_add_unsigned(native, "abort", rom->vectors.native_abort, true);
-	rz_struct_factory_map_add_unsigned(native, "nmi", rom->vectors.native_nmi, true);
-	rz_struct_factory_map_add_unsigned(native, "unused1", rom->vectors.unused1, true);
-	rz_struct_factory_map_add_unsigned(native, "irq", rom->vectors.native_irq, true);
+	rz_structured_data_map_add_unsigned(native, "unused0", rom->vectors.unused0, true);
+	rz_structured_data_map_add_unsigned(native, "cop", rom->vectors.native_cop, true);
+	rz_structured_data_map_add_unsigned(native, "br", rom->vectors.native_br, true);
+	rz_structured_data_map_add_unsigned(native, "abort", rom->vectors.native_abort, true);
+	rz_structured_data_map_add_unsigned(native, "nmi", rom->vectors.native_nmi, true);
+	rz_structured_data_map_add_unsigned(native, "unused1", rom->vectors.unused1, true);
+	rz_structured_data_map_add_unsigned(native, "irq", rom->vectors.native_irq, true);
 
-	RzStructFactory *emulator = rz_struct_factory_map_add_map(vectors, "emulator");
+	RzStructuredData *emulator = rz_structured_data_map_add_map(vectors, "emulator");
 	if (!emulator) {
-		rz_struct_factory_free(info);
+		rz_structured_data_free(info);
 		return NULL;
 	}
 
-	rz_struct_factory_map_add_unsigned(emulator, "unused2", rom->vectors.unused2, true);
-	rz_struct_factory_map_add_unsigned(emulator, "cop", rom->vectors.emu_cop, true);
-	rz_struct_factory_map_add_unsigned(emulator, "unused3", rom->vectors.unused3, true);
-	rz_struct_factory_map_add_unsigned(emulator, "abort", rom->vectors.emu_abort, true);
-	rz_struct_factory_map_add_unsigned(emulator, "nmi", rom->vectors.emu_nmi, true);
-	rz_struct_factory_map_add_unsigned(emulator, "reset", rom->vectors.reset, true);
-	rz_struct_factory_map_add_unsigned(emulator, "irq", rom->vectors.emu_irq, true);
+	rz_structured_data_map_add_unsigned(emulator, "unused2", rom->vectors.unused2, true);
+	rz_structured_data_map_add_unsigned(emulator, "cop", rom->vectors.emu_cop, true);
+	rz_structured_data_map_add_unsigned(emulator, "unused3", rom->vectors.unused3, true);
+	rz_structured_data_map_add_unsigned(emulator, "abort", rom->vectors.emu_abort, true);
+	rz_structured_data_map_add_unsigned(emulator, "nmi", rom->vectors.emu_nmi, true);
+	rz_structured_data_map_add_unsigned(emulator, "reset", rom->vectors.reset, true);
+	rz_structured_data_map_add_unsigned(emulator, "irq", rom->vectors.emu_irq, true);
 
 	free(developer_id);
 	free(cartridge_type);
@@ -1003,7 +1003,7 @@ RzBinPlugin rz_bin_plugin_sfc = {
 	.author = "usrshare",
 	.load_buffer = &snes_load_buffer,
 	.check_buffer = &snes_check_buffer,
-	.structure = &snes_structure,
+	.bin_structure = &snes_structure,
 	.entries = &snes_entries,
 	.maps = &rz_bin_maps_of_file_sections,
 	.sections = snes_sections,

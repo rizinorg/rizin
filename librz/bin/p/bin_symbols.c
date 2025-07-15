@@ -395,7 +395,7 @@ static void coresyms_destroy(RzBinFile *bf) {
 	rz_coresym_cache_element_free(bf->o->bin_obj);
 }
 
-static RzStructFactory *coresyms_structure(RzBinFile *bf) {
+static RzStructuredData *coresyms_structure(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
 	char uuidstr[RZ_UUID_LENGTH] = { 0 };
@@ -404,35 +404,35 @@ static RzStructFactory *coresyms_structure(RzBinFile *bf) {
 		return NULL;
 	}
 
-	RzStructFactory *info = rz_struct_factory_new_map();
+	RzStructuredData *info = rz_structured_data_new_map();
 	if (!info) {
 		return NULL;
 	}
 
-	RzStructFactory *csyms = rz_struct_factory_map_add_map(info, "symbols");
+	RzStructuredData *csyms = rz_structured_data_map_add_map(info, "symbols");
 	if (!csyms) {
-		rz_struct_factory_free(info);
+		rz_structured_data_free(info);
 		return NULL;
 	}
 
-	rz_struct_factory_map_add_unsigned(csyms, "cs_version", element->hdr->version, false);
-	rz_struct_factory_map_add_unsigned(csyms, "size", element->hdr->size, false);
-	RzStructFactory *binary = rz_struct_factory_map_add_map(csyms, "binary");
+	rz_structured_data_map_add_unsigned(csyms, "cs_version", element->hdr->version, false);
+	rz_structured_data_map_add_unsigned(csyms, "size", element->hdr->size, false);
+	RzStructuredData *binary = rz_structured_data_map_add_map(csyms, "binary");
 	if (!binary) {
-		rz_struct_factory_free(info);
+		rz_structured_data_free(info);
 		return NULL;
 	}
-	rz_struct_factory_map_add_string(binary, "name", rz_str_get(element->file_name));
-	rz_struct_factory_map_add_string(binary, "version", rz_str_get(element->binary_version));
+	rz_structured_data_map_add_string(binary, "name", rz_str_get(element->file_name));
+	rz_structured_data_map_add_string(binary, "version", rz_str_get(element->binary_version));
 
 	rz_hex_bin2str(element->hdr->uuid, sizeof(element->hdr->uuid), uuidstr);
-	rz_struct_factory_map_add_string(csyms, "uuid", uuidstr);
+	rz_structured_data_map_add_string(csyms, "uuid", uuidstr);
 
-	rz_struct_factory_map_add_unsigned(csyms, "n_segments", element->hdr->n_segments, false);
-	rz_struct_factory_map_add_unsigned(csyms, "n_sections", element->hdr->n_sections, false);
-	rz_struct_factory_map_add_unsigned(csyms, "n_symbols", element->hdr->n_symbols, false);
-	rz_struct_factory_map_add_unsigned(csyms, "n_lined_symbols", element->hdr->n_lined_symbols, false);
-	rz_struct_factory_map_add_unsigned(csyms, "n_line_info", element->hdr->n_line_info, false);
+	rz_structured_data_map_add_unsigned(csyms, "n_segments", element->hdr->n_segments, false);
+	rz_structured_data_map_add_unsigned(csyms, "n_sections", element->hdr->n_sections, false);
+	rz_structured_data_map_add_unsigned(csyms, "n_symbols", element->hdr->n_symbols, false);
+	rz_structured_data_map_add_unsigned(csyms, "n_lined_symbols", element->hdr->n_lined_symbols, false);
+	rz_structured_data_map_add_unsigned(csyms, "n_line_info", element->hdr->n_line_info, false);
 
 	return info;
 }
@@ -479,7 +479,7 @@ RzBinPlugin rz_bin_plugin_symbols = {
 	.size = &coresyms_size,
 	.baddr = &coresyms_baddr,
 	.info = &coresyms_info,
-	.structure = &coresyms_structure,
+	.bin_structure = &coresyms_structure,
 	.destroy = &coresyms_destroy,
 	.lines = coresyms_lines
 };

@@ -72,7 +72,7 @@ RzBinInfo *elf64_info(RzBinFile *bf) {
 	return info(bf);
 }
 
-RzStructFactory *elf64_structure(ELFOBJ *bin) {
+RzStructuredData *elf64_structure(ELFOBJ *bin) {
 	return Elf_(rz_bin_elf_ehdr)(bin);
 }
 

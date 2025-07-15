@@ -396,59 +396,59 @@ static bool n64_parse_homebrew_header(N64Rom *rom, N64Homebrew *hb) {
 	return true;
 }
 
-static bool n64_structure_homebrew(N64Rom *rom, RzStructFactory *rom_data) {
+static bool n64_structure_homebrew(N64Rom *rom, RzStructuredData *rom_data) {
 	N64Homebrew hb = { 0 };
 	if (!n64_parse_homebrew_header(rom, &hb)) {
 		return true;
 	}
 
-	RzStructFactory *homebrew = rz_struct_factory_map_add_map(rom_data, "homebrew");
+	RzStructuredData *homebrew = rz_structured_data_map_add_map(rom_data, "homebrew");
 	if (!homebrew) {
 		return false;
 	}
 
-	RzStructFactory *controllers = rz_struct_factory_map_add_array(homebrew, "controllers");
+	RzStructuredData *controllers = rz_structured_data_map_add_array(homebrew, "controllers");
 	if (!controllers) {
 		return false;
 	}
 
-	RzStructFactory *controller = rz_struct_factory_array_add_map(controllers);
+	RzStructuredData *controller = rz_structured_data_array_add_map(controllers);
 	if (!controller) {
 		return false;
 	}
 
-	rz_struct_factory_map_add_string(controller, "description", n64_decode_controller(hb.controller_1));
-	rz_struct_factory_map_add_unsigned(controller, "value", hb.controller_1, true);
+	rz_structured_data_map_add_string(controller, "description", n64_decode_controller(hb.controller_1));
+	rz_structured_data_map_add_unsigned(controller, "value", hb.controller_1, true);
 
-	if (!(controller = rz_struct_factory_array_add_map(controllers))) {
+	if (!(controller = rz_structured_data_array_add_map(controllers))) {
 		return false;
 	}
 
-	rz_struct_factory_map_add_string(controller, "description", n64_decode_controller(hb.controller_2));
-	rz_struct_factory_map_add_unsigned(controller, "value", hb.controller_2, true);
+	rz_structured_data_map_add_string(controller, "description", n64_decode_controller(hb.controller_2));
+	rz_structured_data_map_add_unsigned(controller, "value", hb.controller_2, true);
 
-	if (!(controller = rz_struct_factory_array_add_map(controllers))) {
+	if (!(controller = rz_structured_data_array_add_map(controllers))) {
 		return false;
 	}
 
-	rz_struct_factory_map_add_string(controller, "description", n64_decode_controller(hb.controller_3));
-	rz_struct_factory_map_add_unsigned(controller, "value", hb.controller_3, true);
+	rz_structured_data_map_add_string(controller, "description", n64_decode_controller(hb.controller_3));
+	rz_structured_data_map_add_unsigned(controller, "value", hb.controller_3, true);
 
-	if (!(controller = rz_struct_factory_array_add_map(controllers))) {
+	if (!(controller = rz_structured_data_array_add_map(controllers))) {
 		return false;
 	}
 
-	rz_struct_factory_map_add_string(controller, "description", n64_decode_controller(hb.controller_4));
-	rz_struct_factory_map_add_unsigned(controller, "value", hb.controller_4, true);
+	rz_structured_data_map_add_string(controller, "description", n64_decode_controller(hb.controller_4));
+	rz_structured_data_map_add_unsigned(controller, "value", hb.controller_4, true);
 
-	rz_struct_factory_map_add_boolean(homebrew, "enable_rtc", hb.enable_rtc);
-	rz_struct_factory_map_add_boolean(homebrew, "region_free", hb.is_region_free);
-	rz_struct_factory_map_add_string(homebrew, "savetype_size", n64_decode_savetype_size(hb.save_size));
+	rz_structured_data_map_add_boolean(homebrew, "enable_rtc", hb.enable_rtc);
+	rz_structured_data_map_add_boolean(homebrew, "region_free", hb.is_region_free);
+	rz_structured_data_map_add_string(homebrew, "savetype_size", n64_decode_savetype_size(hb.save_size));
 
 	return true;
 }
 
-static RzStructFactory *n64_structure(RzBinFile *bf) {
+static RzStructuredData *n64_structure(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
 	N64Rom *rom = bf->o->bin_obj;
@@ -467,33 +467,33 @@ static RzStructFactory *n64_structure(RzBinFile *bf) {
 	char *libultra_version = n64_decode_libultra_version(rom);
 	char *reserved2 = rz_hex_bin2strdup(rom->reserved2, sizeof(rom->reserved2));
 
-	RzStructFactory *info = rz_struct_factory_new_map();
+	RzStructuredData *info = rz_structured_data_new_map();
 	if (!info) {
 		return NULL;
 	}
 
-	RzStructFactory *rom_data = rz_struct_factory_map_add_map(info, "n64_rom");
+	RzStructuredData *rom_data = rz_structured_data_map_add_map(info, "n64_rom");
 	if (!rom_data) {
-		rz_struct_factory_free(info);
+		rz_structured_data_free(info);
 		return NULL;
 	}
 
-	rz_struct_factory_map_add_unsigned(rom_data, "reserved_0", rom->reserved0, true);
-	rz_struct_factory_map_add_unsigned(rom_data, "PI_BSD_DOM1_RLS", rls, true);
-	rz_struct_factory_map_add_unsigned(rom_data, "PI_BSD_DOM1_PGS", pgs, true);
-	rz_struct_factory_map_add_unsigned(rom_data, "PI_BSD_DOM1_PWD", rom->pulse_width, true);
-	rz_struct_factory_map_add_unsigned(rom_data, "PI_BSD_DOM1_LAT", rom->latency, true);
-	rz_struct_factory_map_add_unsigned(rom_data, "clock_rate", clock_rate, true);
-	rz_struct_factory_map_add_unsigned(rom_data, "boot_address", rom->boot_address, true);
-	rz_struct_factory_map_add_string(rom_data, "libultra_version", rz_str_get(libultra_version));
-	rz_struct_factory_map_add_unsigned(rom_data, "check_code", rom->check_code, true);
-	rz_struct_factory_map_add_string(rom_data, "reserved_1", reserved1);
-	rz_struct_factory_map_add_string(rom_data, "game_title", rz_str_get(game_title));
-	rz_struct_factory_map_add_string(rom_data, "reserved_2", reserved2);
-	rz_struct_factory_map_add_string(rom_data, "game_category", n64_decode_game_category(rom));
-	rz_struct_factory_map_add_string(rom_data, "game_unique_code", game_code);
-	rz_struct_factory_map_add_string(rom_data, "game_destination", n64_decode_game_destination(rom));
-	rz_struct_factory_map_add_unsigned(rom_data, "version", rom->rom_version, false);
+	rz_structured_data_map_add_unsigned(rom_data, "reserved_0", rom->reserved0, true);
+	rz_structured_data_map_add_unsigned(rom_data, "PI_BSD_DOM1_RLS", rls, true);
+	rz_structured_data_map_add_unsigned(rom_data, "PI_BSD_DOM1_PGS", pgs, true);
+	rz_structured_data_map_add_unsigned(rom_data, "PI_BSD_DOM1_PWD", rom->pulse_width, true);
+	rz_structured_data_map_add_unsigned(rom_data, "PI_BSD_DOM1_LAT", rom->latency, true);
+	rz_structured_data_map_add_unsigned(rom_data, "clock_rate", clock_rate, true);
+	rz_structured_data_map_add_unsigned(rom_data, "boot_address", rom->boot_address, true);
+	rz_structured_data_map_add_string(rom_data, "libultra_version", rz_str_get(libultra_version));
+	rz_structured_data_map_add_unsigned(rom_data, "check_code", rom->check_code, true);
+	rz_structured_data_map_add_string(rom_data, "reserved_1", reserved1);
+	rz_structured_data_map_add_string(rom_data, "game_title", rz_str_get(game_title));
+	rz_structured_data_map_add_string(rom_data, "reserved_2", reserved2);
+	rz_structured_data_map_add_string(rom_data, "game_category", n64_decode_game_category(rom));
+	rz_structured_data_map_add_string(rom_data, "game_unique_code", game_code);
+	rz_structured_data_map_add_string(rom_data, "game_destination", n64_decode_game_destination(rom));
+	rz_structured_data_map_add_unsigned(rom_data, "version", rom->rom_version, false);
 
 	free(reserved2);
 	free(libultra_version);
@@ -501,7 +501,7 @@ static RzStructFactory *n64_structure(RzBinFile *bf) {
 	free(reserved1);
 
 	if (!n64_structure_homebrew(rom, rom_data)) {
-		rz_struct_factory_free(info);
+		rz_structured_data_free(info);
 		return NULL;
 	}
 
@@ -516,7 +516,7 @@ RzBinPlugin rz_bin_plugin_z64 = {
 	.load_buffer = &n64_load_buffer,
 	.check_buffer = &n64_check_buffer,
 	.destroy = &n64_destroy,
-	.structure = &n64_structure,
+	.bin_structure = &n64_structure,
 	.baddr = n64_baddr,
 	.boffset = &n64_boffset,
 	.entries = &n64_entries,

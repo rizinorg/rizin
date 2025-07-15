@@ -280,7 +280,7 @@ static RzPVector /*<RzBinField *>*/ *pe64_fields(RzBinFile *bf) {
 	return ret;
 }
 
-static RzStructFactory *pe64_structure(RzBinFile *bf) {
+static RzStructuredData *pe64_structure(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
 	struct PE_(rz_bin_pe_obj_t) *bin = bf->o->bin_obj;
@@ -288,92 +288,92 @@ static RzStructFactory *pe64_structure(RzBinFile *bf) {
 		return NULL;
 	}
 
-	RzStructFactory *info = rz_struct_factory_new_map();
+	RzStructuredData *info = rz_structured_data_new_map();
 	if (!info) {
 		return NULL;
 	}
 
-	RzStructFactory *pe64 = rz_struct_factory_map_add_map(info, "pe64");
+	RzStructuredData *pe64 = rz_structured_data_map_add_map(info, "pe64");
 	if (!pe64) {
-		rz_struct_factory_free(info);
+		rz_structured_data_free(info);
 		return NULL;
 	}
 
-	RzStructFactory *image = rz_struct_factory_map_add_map(pe64, "IMAGE_NT_HEADERS");
+	RzStructuredData *image = rz_structured_data_map_add_map(pe64, "IMAGE_NT_HEADERS");
 	if (!image) {
-		rz_struct_factory_free(info);
+		rz_structured_data_free(info);
 		return NULL;
 	}
 
-	rz_struct_factory_map_add_unsigned(image, "Signature", bin->nt_headers->Signature, true);
+	rz_structured_data_map_add_unsigned(image, "Signature", bin->nt_headers->Signature, true);
 
-	if (!(image = rz_struct_factory_map_add_map(pe64, "IMAGE_FILE_HEADERS"))) {
-		rz_struct_factory_free(info);
+	if (!(image = rz_structured_data_map_add_map(pe64, "IMAGE_FILE_HEADERS"))) {
+		rz_structured_data_free(info);
 		return NULL;
 	}
 
-	rz_struct_factory_map_add_unsigned(image, "Machine", bin->nt_headers->file_header.Machine, true);
-	rz_struct_factory_map_add_unsigned(image, "NumberOfSections", bin->nt_headers->file_header.NumberOfSections, false);
-	rz_struct_factory_map_add_unsigned(image, "TimeDateStamp", bin->nt_headers->file_header.TimeDateStamp, false);
-	rz_struct_factory_map_add_unsigned(image, "PointerToSymbolTable", bin->nt_headers->file_header.PointerToSymbolTable, true);
-	rz_struct_factory_map_add_unsigned(image, "NumberOfSymbols", bin->nt_headers->file_header.NumberOfSymbols, false);
-	rz_struct_factory_map_add_unsigned(image, "SizeOfOptionalHeader", bin->nt_headers->file_header.SizeOfOptionalHeader, false);
-	rz_struct_factory_map_add_unsigned(image, "Characteristics", bin->nt_headers->file_header.Characteristics, true);
+	rz_structured_data_map_add_unsigned(image, "Machine", bin->nt_headers->file_header.Machine, true);
+	rz_structured_data_map_add_unsigned(image, "NumberOfSections", bin->nt_headers->file_header.NumberOfSections, false);
+	rz_structured_data_map_add_unsigned(image, "TimeDateStamp", bin->nt_headers->file_header.TimeDateStamp, false);
+	rz_structured_data_map_add_unsigned(image, "PointerToSymbolTable", bin->nt_headers->file_header.PointerToSymbolTable, true);
+	rz_structured_data_map_add_unsigned(image, "NumberOfSymbols", bin->nt_headers->file_header.NumberOfSymbols, false);
+	rz_structured_data_map_add_unsigned(image, "SizeOfOptionalHeader", bin->nt_headers->file_header.SizeOfOptionalHeader, false);
+	rz_structured_data_map_add_unsigned(image, "Characteristics", bin->nt_headers->file_header.Characteristics, true);
 
-	if (!(image = rz_struct_factory_map_add_map(pe64, "IMAGE_OPTIONAL_HEADERS"))) {
-		rz_struct_factory_free(info);
+	if (!(image = rz_structured_data_map_add_map(pe64, "IMAGE_OPTIONAL_HEADERS"))) {
+		rz_structured_data_free(info);
 		return NULL;
 	}
 
-	rz_struct_factory_map_add_unsigned(image, "Magic", bin->nt_headers->optional_header.Magic, true);
-	rz_struct_factory_map_add_unsigned(image, "MajorLinkerVersion", bin->nt_headers->optional_header.MajorLinkerVersion, false);
-	rz_struct_factory_map_add_unsigned(image, "MinorLinkerVersion", bin->nt_headers->optional_header.MinorLinkerVersion, false);
-	rz_struct_factory_map_add_unsigned(image, "SizeOfCode", bin->nt_headers->optional_header.SizeOfCode, false);
-	rz_struct_factory_map_add_unsigned(image, "SizeOfInitializedData", bin->nt_headers->optional_header.SizeOfInitializedData, false);
-	rz_struct_factory_map_add_unsigned(image, "SizeOfUninitializedData", bin->nt_headers->optional_header.SizeOfUninitializedData, false);
-	rz_struct_factory_map_add_unsigned(image, "AddressOfEntryPoint", bin->nt_headers->optional_header.AddressOfEntryPoint, true);
-	rz_struct_factory_map_add_unsigned(image, "BaseOfCode", bin->nt_headers->optional_header.BaseOfCode, true);
-	rz_struct_factory_map_add_unsigned(image, "ImageBase", bin->nt_headers->optional_header.ImageBase, true);
-	rz_struct_factory_map_add_unsigned(image, "SectionAlignment", bin->nt_headers->optional_header.SectionAlignment, true);
-	rz_struct_factory_map_add_unsigned(image, "FileAlignment", bin->nt_headers->optional_header.FileAlignment, true);
-	rz_struct_factory_map_add_unsigned(image, "MajorOperatingSystemVersion", bin->nt_headers->optional_header.MajorOperatingSystemVersion, true);
-	rz_struct_factory_map_add_unsigned(image, "MinorOperatingSystemVersion", bin->nt_headers->optional_header.MinorOperatingSystemVersion, true);
-	rz_struct_factory_map_add_unsigned(image, "MajorImageVersion", bin->nt_headers->optional_header.MajorImageVersion, true);
-	rz_struct_factory_map_add_unsigned(image, "MinorImageVersion", bin->nt_headers->optional_header.MinorImageVersion, true);
-	rz_struct_factory_map_add_unsigned(image, "MajorSubsystemVersion", bin->nt_headers->optional_header.MajorSubsystemVersion, true);
-	rz_struct_factory_map_add_unsigned(image, "MinorSubsystemVersion", bin->nt_headers->optional_header.MinorSubsystemVersion, true);
-	rz_struct_factory_map_add_unsigned(image, "Win32VersionValue", bin->nt_headers->optional_header.Win32VersionValue, true);
-	rz_struct_factory_map_add_unsigned(image, "SizeOfImage", bin->nt_headers->optional_header.SizeOfImage, false);
-	rz_struct_factory_map_add_unsigned(image, "SizeOfHeaders", bin->nt_headers->optional_header.SizeOfHeaders, false);
-	rz_struct_factory_map_add_unsigned(image, "CheckSum", bin->nt_headers->optional_header.CheckSum, true);
-	rz_struct_factory_map_add_unsigned(image, "Subsystem", bin->nt_headers->optional_header.Subsystem, true);
-	rz_struct_factory_map_add_unsigned(image, "DllCharacteristics", bin->nt_headers->optional_header.DllCharacteristics, true);
-	rz_struct_factory_map_add_unsigned(image, "SizeOfStackReserve", bin->nt_headers->optional_header.SizeOfStackReserve, false);
-	rz_struct_factory_map_add_unsigned(image, "SizeOfStackCommit", bin->nt_headers->optional_header.SizeOfStackCommit, false);
-	rz_struct_factory_map_add_unsigned(image, "SizeOfHeapReserve", bin->nt_headers->optional_header.SizeOfHeapReserve, false);
-	rz_struct_factory_map_add_unsigned(image, "SizeOfHeapCommit", bin->nt_headers->optional_header.SizeOfHeapCommit, false);
-	rz_struct_factory_map_add_unsigned(image, "LoaderFlags", bin->nt_headers->optional_header.LoaderFlags, true);
-	rz_struct_factory_map_add_unsigned(image, "NumberOfRvaAndSizes", bin->nt_headers->optional_header.NumberOfRvaAndSizes, false);
+	rz_structured_data_map_add_unsigned(image, "Magic", bin->nt_headers->optional_header.Magic, true);
+	rz_structured_data_map_add_unsigned(image, "MajorLinkerVersion", bin->nt_headers->optional_header.MajorLinkerVersion, false);
+	rz_structured_data_map_add_unsigned(image, "MinorLinkerVersion", bin->nt_headers->optional_header.MinorLinkerVersion, false);
+	rz_structured_data_map_add_unsigned(image, "SizeOfCode", bin->nt_headers->optional_header.SizeOfCode, false);
+	rz_structured_data_map_add_unsigned(image, "SizeOfInitializedData", bin->nt_headers->optional_header.SizeOfInitializedData, false);
+	rz_structured_data_map_add_unsigned(image, "SizeOfUninitializedData", bin->nt_headers->optional_header.SizeOfUninitializedData, false);
+	rz_structured_data_map_add_unsigned(image, "AddressOfEntryPoint", bin->nt_headers->optional_header.AddressOfEntryPoint, true);
+	rz_structured_data_map_add_unsigned(image, "BaseOfCode", bin->nt_headers->optional_header.BaseOfCode, true);
+	rz_structured_data_map_add_unsigned(image, "ImageBase", bin->nt_headers->optional_header.ImageBase, true);
+	rz_structured_data_map_add_unsigned(image, "SectionAlignment", bin->nt_headers->optional_header.SectionAlignment, true);
+	rz_structured_data_map_add_unsigned(image, "FileAlignment", bin->nt_headers->optional_header.FileAlignment, true);
+	rz_structured_data_map_add_unsigned(image, "MajorOperatingSystemVersion", bin->nt_headers->optional_header.MajorOperatingSystemVersion, true);
+	rz_structured_data_map_add_unsigned(image, "MinorOperatingSystemVersion", bin->nt_headers->optional_header.MinorOperatingSystemVersion, true);
+	rz_structured_data_map_add_unsigned(image, "MajorImageVersion", bin->nt_headers->optional_header.MajorImageVersion, true);
+	rz_structured_data_map_add_unsigned(image, "MinorImageVersion", bin->nt_headers->optional_header.MinorImageVersion, true);
+	rz_structured_data_map_add_unsigned(image, "MajorSubsystemVersion", bin->nt_headers->optional_header.MajorSubsystemVersion, true);
+	rz_structured_data_map_add_unsigned(image, "MinorSubsystemVersion", bin->nt_headers->optional_header.MinorSubsystemVersion, true);
+	rz_structured_data_map_add_unsigned(image, "Win32VersionValue", bin->nt_headers->optional_header.Win32VersionValue, true);
+	rz_structured_data_map_add_unsigned(image, "SizeOfImage", bin->nt_headers->optional_header.SizeOfImage, false);
+	rz_structured_data_map_add_unsigned(image, "SizeOfHeaders", bin->nt_headers->optional_header.SizeOfHeaders, false);
+	rz_structured_data_map_add_unsigned(image, "CheckSum", bin->nt_headers->optional_header.CheckSum, true);
+	rz_structured_data_map_add_unsigned(image, "Subsystem", bin->nt_headers->optional_header.Subsystem, true);
+	rz_structured_data_map_add_unsigned(image, "DllCharacteristics", bin->nt_headers->optional_header.DllCharacteristics, true);
+	rz_structured_data_map_add_unsigned(image, "SizeOfStackReserve", bin->nt_headers->optional_header.SizeOfStackReserve, false);
+	rz_structured_data_map_add_unsigned(image, "SizeOfStackCommit", bin->nt_headers->optional_header.SizeOfStackCommit, false);
+	rz_structured_data_map_add_unsigned(image, "SizeOfHeapReserve", bin->nt_headers->optional_header.SizeOfHeapReserve, false);
+	rz_structured_data_map_add_unsigned(image, "SizeOfHeapCommit", bin->nt_headers->optional_header.SizeOfHeapCommit, false);
+	rz_structured_data_map_add_unsigned(image, "LoaderFlags", bin->nt_headers->optional_header.LoaderFlags, true);
+	rz_structured_data_map_add_unsigned(image, "NumberOfRvaAndSizes", bin->nt_headers->optional_header.NumberOfRvaAndSizes, false);
 
 	if (rz_list_length(bin->rich_entries) > 0) {
-		if (!(image = rz_struct_factory_map_add_array(pe64, "RICH_FIELDS"))) {
-			rz_struct_factory_free(info);
+		if (!(image = rz_structured_data_map_add_array(pe64, "RICH_FIELDS"))) {
+			rz_structured_data_free(info);
 			return NULL;
 		}
 
 		RzListIter *it;
 		Pe_image_rich_entry *entry;
 		rz_list_foreach (bin->rich_entries, it, entry) {
-			RzStructFactory *field = rz_struct_factory_array_add_map(image);
+			RzStructuredData *field = rz_structured_data_array_add_map(image);
 			if (!field) {
-				rz_struct_factory_free(info);
+				rz_structured_data_free(info);
 				return NULL;
 			}
 
-			rz_struct_factory_map_add_unsigned(field, "Product", entry->productId, false);
-			rz_struct_factory_map_add_string(field, "Name", entry->productName);
-			rz_struct_factory_map_add_unsigned(field, "Version", entry->minVersion, false);
-			rz_struct_factory_map_add_unsigned(field, "Times", entry->timesUsed, false);
+			rz_structured_data_map_add_unsigned(field, "Product", entry->productId, false);
+			rz_structured_data_map_add_string(field, "Name", entry->productName);
+			rz_structured_data_map_add_unsigned(field, "Version", entry->minVersion, false);
+			rz_structured_data_map_add_unsigned(field, "Times", entry->timesUsed, false);
 		}
 	}
 
@@ -432,12 +432,12 @@ static RzStructFactory *pe64_structure(RzBinFile *bf) {
 			break;
 		}
 
-		if (!(image = rz_struct_factory_map_add_map(pe64, name))) {
-			rz_struct_factory_free(info);
+		if (!(image = rz_structured_data_map_add_map(pe64, name))) {
+			rz_structured_data_free(info);
 			return NULL;
 		}
-		rz_struct_factory_map_add_unsigned(image, "VirtualAddress", bin->nt_headers->optional_header.DataDirectory[i].VirtualAddress, true);
-		rz_struct_factory_map_add_unsigned(image, "Size", bin->nt_headers->optional_header.DataDirectory[i].Size, false);
+		rz_structured_data_map_add_unsigned(image, "VirtualAddress", bin->nt_headers->optional_header.DataDirectory[i].VirtualAddress, true);
+		rz_structured_data_map_add_unsigned(image, "Size", bin->nt_headers->optional_header.DataDirectory[i].Size, false);
 	}
 
 	return info;
@@ -650,7 +650,7 @@ RzBinPlugin rz_bin_plugin_pe64 = {
 	.symbols = &pe_symbols,
 	.imports = &pe_imports,
 	.info = &pe_info,
-	.structure = &pe64_structure,
+	.bin_structure = &pe64_structure,
 	.fields = &pe64_fields,
 	.libs = &pe_libs,
 	.relocs = &pe_relocs,

@@ -9,7 +9,7 @@ static bool check_buffer(RzBuffer *buf) {
 	return elf_check_buffer_aux(buf) == ELFCLASS32;
 }
 
-static RzStructFactory *elf_info_structure(RzBinFile *bf) {
+static RzStructuredData *elf_info_structure(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
 	ELFOBJ *bin = (ELFOBJ *)bf->o->bin_obj;
@@ -34,7 +34,7 @@ RzBinPlugin rz_bin_plugin_elf = {
 	.symbols = &elf_symbols,
 	.imports = &elf_imports,
 	.info = &elf_info,
-	.structure = &elf_info_structure,
+	.bin_structure = &elf_info_structure,
 	.fields = &elf_fields,
 	.size = &elf_size,
 	.libs = &elf_libs,

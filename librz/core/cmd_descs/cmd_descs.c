@@ -12948,12 +12948,12 @@ static const RzCmdDescHelp cmd_info_fields_help = {
 	.args = cmd_info_fields_args,
 };
 
-static const RzCmdDescArg cmd_info_headers_args[] = {
+static const RzCmdDescArg cmd_info_structured_data_args[] = {
 	{ 0 },
 };
-static const RzCmdDescHelp cmd_info_headers_help = {
-	.summary = "Show binary headers",
-	.args = cmd_info_headers_args,
+static const RzCmdDescHelp cmd_info_structured_data_help = {
+	.summary = "Show binary structured data",
+	.args = cmd_info_structured_data_args,
 };
 
 static const RzCmdDescArg cmd_info_imports_args[] = {
@@ -23491,8 +23491,8 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(cmd_info_fields_cd);
 	rz_cmd_desc_set_default_mode(cmd_info_fields_cd, RZ_OUTPUT_MODE_TABLE);
 
-	RzCmdDesc *cmd_info_headers_cd = rz_cmd_desc_argv_modes_new(core->rcmd, i_cd, "iH", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_info_headers_handler, &cmd_info_headers_help);
-	rz_warn_if_fail(cmd_info_headers_cd);
+	RzCmdDesc *cmd_info_structured_data_cd = rz_cmd_desc_argv_modes_new(core->rcmd, i_cd, "iH", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_info_structured_data_handler, &cmd_info_structured_data_help);
+	rz_warn_if_fail(cmd_info_structured_data_cd);
 
 	RzCmdDesc *cmd_info_imports_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "ii", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_imports_handler, &cmd_info_imports_help);
 	rz_warn_if_fail(cmd_info_imports_cd);

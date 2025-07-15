@@ -1683,7 +1683,7 @@ RZ_IPI RzCmdStatus rz_cmd_info_cur_export_handler(RzCore *core, int argc, const 
 // "ih"
 RZ_IPI RzCmdStatus rz_cmd_info_fields_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "iH"
-RZ_IPI RzCmdStatus rz_cmd_info_headers_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+RZ_IPI RzCmdStatus rz_cmd_info_structured_data_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "ii"
 RZ_IPI RzCmdStatus rz_cmd_info_imports_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "iI"

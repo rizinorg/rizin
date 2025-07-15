@@ -2,18 +2,19 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 // use the same max depth as pj
-#define STRUCT_YAML_PRINTER_DEPTH_MAX (RZ_PRINT_JSON_DEPTH_LIMIT << 1)
+#define STRUCT_YAML_MAX_DEPTH   RZ_PRINT_JSON_DEPTH_LIMIT
+#define STRUCT_YAML_MAX_PAD_LEN (STRUCT_YAML_MAX_DEPTH << 1)
 
 typedef struct struct_yaml_printer_t {
 	RzStrBuf sb;
 	size_t depth;
-	ut8 stack[STRUCT_YAML_PRINTER_DEPTH_MAX];
-	char pad[STRUCT_YAML_PRINTER_DEPTH_MAX];
 	bool first;
+	ut8 stack[STRUCT_YAML_MAX_DEPTH];
+	char pad[STRUCT_YAML_MAX_PAD_LEN];
 } StructYamlPrinter;
 
-#define builder_yaml_is_array(y)  (y->stack[y->depth - 1] == RZ_STRUCT_FACTORY_BLOCK_ARRAY)
-#define builder_yaml_was_array(y) (y->depth > 2 && y->stack[y->depth - 2] == RZ_STRUCT_FACTORY_BLOCK_ARRAY)
+#define builder_yaml_is_array(y)  (y->stack[y->depth - 1] == RZ_STRUCTURED_DATA_BLOCK_ARRAY)
+#define builder_yaml_was_array(y) (y->depth > 2 && y->stack[y->depth - 2] == RZ_STRUCTURED_DATA_BLOCK_ARRAY)
 #define builder_yaml_add_padding(y) \
 	do { \
 		if (y->depth > 1) { \
@@ -25,7 +26,17 @@ typedef struct struct_yaml_printer_t {
 		} \
 	} while (0)
 
-static void builder_yaml_new_struct(RZ_NULLABLE void *user, RzStructFactoryBlock block) {
+static void builder_yaml_init_printer(StructYamlPrinter *yaml) {
+	memset(yaml, 0, sizeof(StructYamlPrinter));
+	rz_strbuf_init(&yaml->sb);
+	memset(yaml->pad, ' ', sizeof(yaml->pad));
+}
+
+static char *builder_yaml_fini_printer(StructYamlPrinter *yaml) {
+	return rz_strbuf_drain_nofree(&yaml->sb);
+}
+
+static void builder_yaml_new_struct(RZ_NULLABLE void *user, RzStructuredDataBlock block) {
 	StructYamlPrinter *yaml = (StructYamlPrinter *)user;
 
 	if (yaml->depth > 0) {
@@ -131,7 +142,7 @@ static void builder_yaml_val_string(RZ_NULLABLE void *user, RZ_NONNULL const cha
 	free(escaped);
 }
 
-static const RzStructFactoryIterator factory_iterator_yaml = {
+static const RzStructuredDataIterator builder_yaml_iterator = {
 	.new_struct = builder_yaml_new_struct,
 	.end_struct = builder_yaml_end_struct,
 	.key = builder_yaml_key,

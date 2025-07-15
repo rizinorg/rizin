@@ -4270,11 +4270,11 @@ RZ_API bool rz_core_bin_fields_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFi
 	return true;
 }
 
-RZ_API bool rz_core_bin_info_extra_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf, RzOutputMode mode) {
+RZ_API bool rz_core_bin_structured_data_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf, RzOutputMode mode) {
 	rz_return_val_if_fail(core && bf, false);
 
 	RzBinObject *obj = rz_bin_cur_object(core->bin);
-	const RzStructFactory *sf = obj ? rz_bin_object_get_structure(obj) : NULL;
+	const RzStructuredData *sf = obj ? rz_bin_object_get_structured_data(obj) : NULL;
 	if (!sf) {
 		if (mode == RZ_OUTPUT_MODE_JSON) {
 			rz_cons_print("{}\n");
@@ -4285,10 +4285,10 @@ RZ_API bool rz_core_bin_info_extra_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzB
 	char *output = NULL;
 	switch (mode) {
 	case RZ_OUTPUT_MODE_JSON:
-		output = rz_struct_factory_to_json(sf);
+		output = rz_structured_data_to_json(sf);
 		break;
 	case RZ_OUTPUT_MODE_STANDARD:
-		output = rz_struct_factory_to_yaml(sf);
+		output = rz_structured_data_to_yaml(sf);
 		break;
 	default:
 		rz_warn_if_reached();

@@ -58,7 +58,7 @@ rz_util_common_sources = [
   'str_trim.c',
   'strbuf.c',
   'strpool.c',
-  'struct_factory.c',
+  'structured_data.c',
   'subprocess.c',
   'sys.c',
   'syscmd.c',

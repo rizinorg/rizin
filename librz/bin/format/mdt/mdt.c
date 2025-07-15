@@ -596,19 +596,19 @@ RZ_IPI RZ_OWN RzPVector /*<RzBinReloc *>*/ *rz_bin_mdt_relocs(RzBinFile *bf) {
 	return relocs;
 }
 
-RZ_IPI RzStructFactory *rz_bin_mdt_structure(RzBinFile *bf) {
+RZ_IPI RzStructuredData *rz_bin_mdt_structure(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 	const RzBinMdtObj *mdt = bf->o->bin_obj;
 
-	RzStructFactory *content = NULL;
-	RzStructFactory *info = rz_struct_factory_new_map();
+	RzStructuredData *content = NULL;
+	RzStructuredData *info = rz_structured_data_new_map();
 	if (!info) {
 		return NULL;
 	}
 
-	RzStructFactory *mdt_segments = rz_struct_factory_map_add_array(info, "mdt_segments");
+	RzStructuredData *mdt_segments = rz_structured_data_map_add_array(info, "mdt_segments");
 	if (!mdt_segments) {
-		rz_struct_factory_free(info);
+		rz_structured_data_free(info);
 		return NULL;
 	}
 
@@ -621,39 +621,39 @@ RZ_IPI RzStructFactory *rz_bin_mdt_structure(RzBinFile *bf) {
 		RzBinMdtPart *part = *it;
 		rz_str_bits64(&bits[2], qcom_p_flags(part->pflags));
 
-		RzStructFactory *segment = rz_struct_factory_array_add_map(mdt_segments);
+		RzStructuredData *segment = rz_structured_data_array_add_map(mdt_segments);
 		if (!segment) {
-			rz_struct_factory_free(info);
+			rz_structured_data_free(info);
 			return NULL;
 		}
-		rz_struct_factory_map_add_string(segment, "priv_p_flags", bits);
-		rz_struct_factory_map_add_boolean(segment, "is_layout", part->is_layout);
-		rz_struct_factory_map_add_boolean(segment, "is_relocatable", part->relocatable);
+		rz_structured_data_map_add_string(segment, "priv_p_flags", bits);
+		rz_structured_data_map_add_boolean(segment, "is_layout", part->is_layout);
+		rz_structured_data_map_add_boolean(segment, "is_relocatable", part->relocatable);
 
 		switch (part->format) {
 		default:
 			/* fall-thru */
 		case RZ_BIN_MDT_PART_UNIDENTIFIED:
-			rz_struct_factory_map_add_string(segment, "format", "unidentified");
+			rz_structured_data_map_add_string(segment, "format", "unidentified");
 			break;
 		case RZ_BIN_MDT_PART_ELF:
-			rz_struct_factory_map_add_string(segment, "format", "elf binary");
+			rz_structured_data_map_add_string(segment, "format", "elf binary");
 			content = elf_structure(part->obj.elf);
-			rz_struct_factory_map_add(segment, "content", content);
+			rz_structured_data_map_add(segment, "content", content);
 			break;
 		case RZ_BIN_MDT_PART_MBN:
-			rz_struct_factory_map_add_string(segment, "format", "mbn signature");
+			rz_structured_data_map_add_string(segment, "format", "mbn signature");
 			content = mbn_structure(part->obj.mbn);
-			rz_struct_factory_map_add(segment, "content", content);
+			rz_structured_data_map_add(segment, "content", content);
 			break;
 		case RZ_BIN_MDT_PART_COMPRESSED_Q6ZIP:
-			rz_struct_factory_map_add_string(segment, "format", "Q6ZIP compressed");
+			rz_structured_data_map_add_string(segment, "format", "Q6ZIP compressed");
 			break;
 		case RZ_BIN_MDT_PART_COMPRESSED_CLADE2:
-			rz_struct_factory_map_add_string(segment, "format", "CLADE2 compressed");
+			rz_structured_data_map_add_string(segment, "format", "CLADE2 compressed");
 			break;
 		case RZ_BIN_MDT_PART_COMPRESSED_ZLIB:
-			rz_struct_factory_map_add_string(segment, "format", "ZLIB compressed");
+			rz_structured_data_map_add_string(segment, "format", "ZLIB compressed");
 			break;
 		}
 	}

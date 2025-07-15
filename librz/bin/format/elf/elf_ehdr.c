@@ -187,20 +187,20 @@ bool Elf_(rz_bin_elf_get_ehdr)(RZ_NONNULL ELFOBJ *bin) {
 	return read_ehdr_other(bin);
 }
 
-RzStructFactory *Elf_(rz_bin_elf_ehdr)(ELFOBJ *bin) {
+RzStructuredData *Elf_(rz_bin_elf_ehdr)(ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
-	RzStructFactory *header = rz_struct_factory_new_map();
+	RzStructuredData *header = rz_structured_data_new_map();
 	if (!header) {
 		return NULL;
 	}
 
-	RzStructFactory *elf = rz_struct_factory_map_add_map(header, "elf");
+	RzStructuredData *elf = rz_structured_data_map_add_map(header, "elf");
 	if (!elf) {
 		goto fail;
 	}
 
-	RzStructFactory *e_ident = rz_struct_factory_map_add_map(elf, "e_ident");
+	RzStructuredData *e_ident = rz_structured_data_map_add_map(elf, "e_ident");
 	if (!e_ident) {
 		goto fail;
 	}
@@ -210,34 +210,34 @@ RzStructFactory *Elf_(rz_bin_elf_ehdr)(ELFOBJ *bin) {
 		goto fail;
 	}
 
-	if (!(rz_struct_factory_map_add_string(e_ident, "bytes", e_ident_bytes) &&
-		    rz_struct_factory_map_add_unsigned(e_ident, "ei_class", bin->ehdr.e_ident[EI_CLASS], false) &&
-		    rz_struct_factory_map_add_unsigned(e_ident, "ei_data", bin->ehdr.e_ident[EI_DATA], false) &&
-		    rz_struct_factory_map_add_unsigned(e_ident, "ei_version", bin->ehdr.e_ident[EI_VERSION], false) &&
-		    rz_struct_factory_map_add_unsigned(e_ident, "ei_osabi", bin->ehdr.e_ident[EI_OSABI], false) &&
-		    rz_struct_factory_map_add_unsigned(e_ident, "ei_abiversion", bin->ehdr.e_ident[EI_ABIVERSION], false))) {
+	if (!(rz_structured_data_map_add_string(e_ident, "bytes", e_ident_bytes) &&
+		    rz_structured_data_map_add_unsigned(e_ident, "ei_class", bin->ehdr.e_ident[EI_CLASS], false) &&
+		    rz_structured_data_map_add_unsigned(e_ident, "ei_data", bin->ehdr.e_ident[EI_DATA], false) &&
+		    rz_structured_data_map_add_unsigned(e_ident, "ei_version", bin->ehdr.e_ident[EI_VERSION], false) &&
+		    rz_structured_data_map_add_unsigned(e_ident, "ei_osabi", bin->ehdr.e_ident[EI_OSABI], false) &&
+		    rz_structured_data_map_add_unsigned(e_ident, "ei_abiversion", bin->ehdr.e_ident[EI_ABIVERSION], false))) {
 		goto fail;
 	}
 	free(e_ident_bytes);
 
-	if (!(rz_struct_factory_map_add_unsigned(elf, "e_machine", bin->ehdr.e_machine, false) &&
-		    rz_struct_factory_map_add_unsigned(elf, "e_version", bin->ehdr.e_version, false) &&
-		    rz_struct_factory_map_add_unsigned(elf, "e_entry", bin->ehdr.e_entry, true) &&
-		    rz_struct_factory_map_add_unsigned(elf, "e_phoff", bin->ehdr.e_phoff, true) &&
-		    rz_struct_factory_map_add_unsigned(elf, "e_shoff", bin->ehdr.e_shoff, true) &&
-		    rz_struct_factory_map_add_unsigned(elf, "e_flags", bin->ehdr.e_flags, true) &&
-		    rz_struct_factory_map_add_unsigned(elf, "e_ehsize", bin->ehdr.e_ehsize, false) &&
-		    rz_struct_factory_map_add_unsigned(elf, "e_phentsize", bin->ehdr.e_phentsize, false) &&
-		    rz_struct_factory_map_add_unsigned(elf, "e_phnum", bin->ehdr.e_phnum, false) &&
-		    rz_struct_factory_map_add_unsigned(elf, "e_shentsize", bin->ehdr.e_shentsize, false) &&
-		    rz_struct_factory_map_add_unsigned(elf, "e_shnum", bin->ehdr.e_shnum, false) &&
-		    rz_struct_factory_map_add_unsigned(elf, "e_shstrndx", bin->ehdr.e_shstrndx, false))) {
+	if (!(rz_structured_data_map_add_unsigned(elf, "e_machine", bin->ehdr.e_machine, false) &&
+		    rz_structured_data_map_add_unsigned(elf, "e_version", bin->ehdr.e_version, false) &&
+		    rz_structured_data_map_add_unsigned(elf, "e_entry", bin->ehdr.e_entry, true) &&
+		    rz_structured_data_map_add_unsigned(elf, "e_phoff", bin->ehdr.e_phoff, true) &&
+		    rz_structured_data_map_add_unsigned(elf, "e_shoff", bin->ehdr.e_shoff, true) &&
+		    rz_structured_data_map_add_unsigned(elf, "e_flags", bin->ehdr.e_flags, true) &&
+		    rz_structured_data_map_add_unsigned(elf, "e_ehsize", bin->ehdr.e_ehsize, false) &&
+		    rz_structured_data_map_add_unsigned(elf, "e_phentsize", bin->ehdr.e_phentsize, false) &&
+		    rz_structured_data_map_add_unsigned(elf, "e_phnum", bin->ehdr.e_phnum, false) &&
+		    rz_structured_data_map_add_unsigned(elf, "e_shentsize", bin->ehdr.e_shentsize, false) &&
+		    rz_structured_data_map_add_unsigned(elf, "e_shnum", bin->ehdr.e_shnum, false) &&
+		    rz_structured_data_map_add_unsigned(elf, "e_shstrndx", bin->ehdr.e_shstrndx, false))) {
 		goto fail;
 	}
 
 	return header;
 
 fail:
-	rz_struct_factory_free(header);
+	rz_structured_data_free(header);
 	return NULL;
 }

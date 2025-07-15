@@ -19,93 +19,93 @@ static void dmp64_destroy(RzBinFile *bf) {
 	rz_bin_dmp64_free((struct rz_bin_dmp64_obj_t *)bf->o->bin_obj);
 }
 
-static RzStructFactory *dmp64_structure(RzBinFile *bf) {
+static RzStructuredData *dmp64_structure(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->rbin && bf->o && bf->o->bin_obj, NULL);
 	struct rz_bin_dmp64_obj_t *obj = (struct rz_bin_dmp64_obj_t *)bf->o->bin_obj;
 
-	RzStructFactory *info = rz_struct_factory_new_map();
+	RzStructuredData *info = rz_structured_data_new_map();
 	if (!info) {
 		return NULL;
 	}
 
-	RzStructFactory *dmp64 = rz_struct_factory_map_add_map(info, "dmp64");
+	RzStructuredData *dmp64 = rz_structured_data_map_add_map(info, "dmp64");
 	if (!dmp64) {
-		rz_struct_factory_free(info);
+		rz_structured_data_free(info);
 		return NULL;
 	}
 
-	rz_struct_factory_map_add_unsigned(dmp64, "MajorVersion", obj->header->MajorVersion, true);
-	rz_struct_factory_map_add_unsigned(dmp64, "MinorVersion", obj->header->MinorVersion, true);
-	rz_struct_factory_map_add_unsigned(dmp64, "DirectoryTableBase", obj->header->DirectoryTableBase, true);
-	rz_struct_factory_map_add_unsigned(dmp64, "PfnDataBase", obj->header->PfnDataBase, true);
-	rz_struct_factory_map_add_unsigned(dmp64, "PsLoadedModuleList", obj->header->PsLoadedModuleList, true);
-	rz_struct_factory_map_add_unsigned(dmp64, "PsActiveProcessHead", obj->header->PsActiveProcessHead, true);
-	rz_struct_factory_map_add_unsigned(dmp64, "MachineImageType", obj->header->MachineImageType, true);
-	rz_struct_factory_map_add_unsigned(dmp64, "NumberProcessors", obj->header->NumberProcessors, true);
+	rz_structured_data_map_add_unsigned(dmp64, "MajorVersion", obj->header->MajorVersion, true);
+	rz_structured_data_map_add_unsigned(dmp64, "MinorVersion", obj->header->MinorVersion, true);
+	rz_structured_data_map_add_unsigned(dmp64, "DirectoryTableBase", obj->header->DirectoryTableBase, true);
+	rz_structured_data_map_add_unsigned(dmp64, "PfnDataBase", obj->header->PfnDataBase, true);
+	rz_structured_data_map_add_unsigned(dmp64, "PsLoadedModuleList", obj->header->PsLoadedModuleList, true);
+	rz_structured_data_map_add_unsigned(dmp64, "PsActiveProcessHead", obj->header->PsActiveProcessHead, true);
+	rz_structured_data_map_add_unsigned(dmp64, "MachineImageType", obj->header->MachineImageType, true);
+	rz_structured_data_map_add_unsigned(dmp64, "NumberProcessors", obj->header->NumberProcessors, true);
 	{
-		RzStructFactory *bug_check_code = rz_struct_factory_map_add_map(dmp64, "BugCheckCode");
+		RzStructuredData *bug_check_code = rz_structured_data_map_add_map(dmp64, "BugCheckCode");
 		if (!bug_check_code) {
-			rz_struct_factory_free(info);
+			rz_structured_data_free(info);
 			return NULL;
 		}
-		rz_struct_factory_map_add_unsigned(bug_check_code, "Value", obj->header->BugCheckCode, true);
-		rz_struct_factory_map_add_string(bug_check_code, "Meaning", rz_bin_dmp64_bugcheckcode_as_str(obj->header->BugCheckCode));
+		rz_structured_data_map_add_unsigned(bug_check_code, "Value", obj->header->BugCheckCode, true);
+		rz_structured_data_map_add_string(bug_check_code, "Meaning", rz_bin_dmp64_bugcheckcode_as_str(obj->header->BugCheckCode));
 	}
-	rz_struct_factory_map_add_unsigned(dmp64, "BugCheckParameter1", obj->header->BugCheckParameter1, true);
-	rz_struct_factory_map_add_unsigned(dmp64, "BugCheckParameter2", obj->header->BugCheckParameter2, true);
-	rz_struct_factory_map_add_unsigned(dmp64, "BugCheckParameter3", obj->header->BugCheckParameter3, true);
-	rz_struct_factory_map_add_unsigned(dmp64, "BugCheckParameter4", obj->header->BugCheckParameter4, true);
-	rz_struct_factory_map_add_unsigned(dmp64, "KdDebuggerDataBlock", obj->header->KdDebuggerDataBlock, true);
-	rz_struct_factory_map_add_unsigned(dmp64, "SecondaryDataState", obj->header->SecondaryDataState, true);
-	rz_struct_factory_map_add_unsigned(dmp64, "ProductType", obj->header->ProductType, true);
-	rz_struct_factory_map_add_unsigned(dmp64, "SuiteMask", obj->header->SuiteMask, true);
+	rz_structured_data_map_add_unsigned(dmp64, "BugCheckParameter1", obj->header->BugCheckParameter1, true);
+	rz_structured_data_map_add_unsigned(dmp64, "BugCheckParameter2", obj->header->BugCheckParameter2, true);
+	rz_structured_data_map_add_unsigned(dmp64, "BugCheckParameter3", obj->header->BugCheckParameter3, true);
+	rz_structured_data_map_add_unsigned(dmp64, "BugCheckParameter4", obj->header->BugCheckParameter4, true);
+	rz_structured_data_map_add_unsigned(dmp64, "KdDebuggerDataBlock", obj->header->KdDebuggerDataBlock, true);
+	rz_structured_data_map_add_unsigned(dmp64, "SecondaryDataState", obj->header->SecondaryDataState, true);
+	rz_structured_data_map_add_unsigned(dmp64, "ProductType", obj->header->ProductType, true);
+	rz_structured_data_map_add_unsigned(dmp64, "SuiteMask", obj->header->SuiteMask, true);
 
 	if (obj->bmp_header) {
-		RzStructFactory *bitmap = rz_struct_factory_map_add_map(dmp64, "Bitmap");
+		RzStructuredData *bitmap = rz_structured_data_map_add_map(dmp64, "Bitmap");
 		if (!bitmap) {
-			rz_struct_factory_free(info);
+			rz_structured_data_free(info);
 			return NULL;
 		}
-		rz_struct_factory_map_add_unsigned(bitmap, "HeaderSize", obj->bmp_header->FirstPage, true);
-		rz_struct_factory_map_add_unsigned(bitmap, "BitmapSize", obj->bmp_header->Pages, true);
-		rz_struct_factory_map_add_unsigned(bitmap, "Pages", obj->bmp_header->TotalPresentPages, true);
+		rz_structured_data_map_add_unsigned(bitmap, "HeaderSize", obj->bmp_header->FirstPage, true);
+		rz_structured_data_map_add_unsigned(bitmap, "BitmapSize", obj->bmp_header->Pages, true);
+		rz_structured_data_map_add_unsigned(bitmap, "Pages", obj->bmp_header->TotalPresentPages, true);
 	}
 
 	if (obj->triage64_header) {
-		RzStructFactory *triage64 = rz_struct_factory_map_add_map(dmp64, "TriageDump64");
+		RzStructuredData *triage64 = rz_structured_data_map_add_map(dmp64, "TriageDump64");
 		if (!triage64) {
-			rz_struct_factory_free(info);
+			rz_structured_data_free(info);
 			return NULL;
 		}
-		rz_struct_factory_map_add_unsigned(triage64, "ServicePackBuild", obj->triage64_header->ServicePackBuild, true);
-		rz_struct_factory_map_add_unsigned(triage64, "SizeOfDump", obj->triage64_header->SizeOfDump, true);
-		rz_struct_factory_map_add_unsigned(triage64, "ValidOffset", obj->triage64_header->ValidOffset, true);
-		rz_struct_factory_map_add_unsigned(triage64, "ContextOffset", obj->triage64_header->ContextOffset, true);
-		rz_struct_factory_map_add_unsigned(triage64, "ExceptionOffset", obj->triage64_header->ExceptionOffset, true);
-		rz_struct_factory_map_add_unsigned(triage64, "MmOffset", obj->triage64_header->MmOffset, true);
-		rz_struct_factory_map_add_unsigned(triage64, "UnloadedDriversOffset", obj->triage64_header->UnloadedDriversOffset, true);
-		rz_struct_factory_map_add_unsigned(triage64, "PrcbOffset", obj->triage64_header->PrcbOffset, true);
-		rz_struct_factory_map_add_unsigned(triage64, "ProcessOffset", obj->triage64_header->ProcessOffset, true);
-		rz_struct_factory_map_add_unsigned(triage64, "ThreadOffset", obj->triage64_header->ThreadOffset, true);
-		rz_struct_factory_map_add_unsigned(triage64, "CallStackOffset", obj->triage64_header->CallStackOffset, true);
-		rz_struct_factory_map_add_unsigned(triage64, "SizeOfCallStack", obj->triage64_header->SizeOfCallStack, true);
-		rz_struct_factory_map_add_unsigned(triage64, "DriverListOffset", obj->triage64_header->DriverListOffset, true);
-		rz_struct_factory_map_add_unsigned(triage64, "DriverCount", obj->triage64_header->DriverCount, true);
-		rz_struct_factory_map_add_unsigned(triage64, "StringPoolOffset", obj->triage64_header->StringPoolOffset, true);
-		rz_struct_factory_map_add_unsigned(triage64, "StringPoolSize", obj->triage64_header->StringPoolSize, true);
-		rz_struct_factory_map_add_unsigned(triage64, "BrokenDriverOffset", obj->triage64_header->BrokenDriverOffset, true);
-		rz_struct_factory_map_add_unsigned(triage64, "TriageOptions", obj->triage64_header->TriageOptions, true);
-		rz_struct_factory_map_add_unsigned(triage64, "TopOfStack", obj->triage64_header->TopOfStack, true);
-		rz_struct_factory_map_add_unsigned(triage64, "BStoreOffset", rz_read_le32(&obj->triage64_header->ArchitectureSpecific.Ia64.BStoreOffset), true);
-		rz_struct_factory_map_add_unsigned(triage64, "SizeOfBStore", rz_read_le32(&obj->triage64_header->ArchitectureSpecific.Ia64.SizeOfBStore), true);
-		rz_struct_factory_map_add_unsigned(triage64, "LimitOfBStore", rz_read_le64(&obj->triage64_header->ArchitectureSpecific.Ia64.LimitOfBStore), true);
-		rz_struct_factory_map_add_unsigned(triage64, "DataPageAddress", obj->triage64_header->DataPageAddress, true);
-		rz_struct_factory_map_add_unsigned(triage64, "DataPageOffset", obj->triage64_header->DataPageOffset, true);
-		rz_struct_factory_map_add_unsigned(triage64, "DataPageSize", obj->triage64_header->DataPageSize, true);
-		rz_struct_factory_map_add_unsigned(triage64, "DebuggerDataOffset", obj->triage64_header->DebuggerDataOffset, true);
-		rz_struct_factory_map_add_unsigned(triage64, "DebuggerDataSize", obj->triage64_header->DebuggerDataSize, true);
-		rz_struct_factory_map_add_unsigned(triage64, "DataBlocksOffset", obj->triage64_header->DataBlocksOffset, true);
-		rz_struct_factory_map_add_unsigned(triage64, "DataBlocksCount", obj->triage64_header->DataBlocksCount, true);
+		rz_structured_data_map_add_unsigned(triage64, "ServicePackBuild", obj->triage64_header->ServicePackBuild, true);
+		rz_structured_data_map_add_unsigned(triage64, "SizeOfDump", obj->triage64_header->SizeOfDump, true);
+		rz_structured_data_map_add_unsigned(triage64, "ValidOffset", obj->triage64_header->ValidOffset, true);
+		rz_structured_data_map_add_unsigned(triage64, "ContextOffset", obj->triage64_header->ContextOffset, true);
+		rz_structured_data_map_add_unsigned(triage64, "ExceptionOffset", obj->triage64_header->ExceptionOffset, true);
+		rz_structured_data_map_add_unsigned(triage64, "MmOffset", obj->triage64_header->MmOffset, true);
+		rz_structured_data_map_add_unsigned(triage64, "UnloadedDriversOffset", obj->triage64_header->UnloadedDriversOffset, true);
+		rz_structured_data_map_add_unsigned(triage64, "PrcbOffset", obj->triage64_header->PrcbOffset, true);
+		rz_structured_data_map_add_unsigned(triage64, "ProcessOffset", obj->triage64_header->ProcessOffset, true);
+		rz_structured_data_map_add_unsigned(triage64, "ThreadOffset", obj->triage64_header->ThreadOffset, true);
+		rz_structured_data_map_add_unsigned(triage64, "CallStackOffset", obj->triage64_header->CallStackOffset, true);
+		rz_structured_data_map_add_unsigned(triage64, "SizeOfCallStack", obj->triage64_header->SizeOfCallStack, true);
+		rz_structured_data_map_add_unsigned(triage64, "DriverListOffset", obj->triage64_header->DriverListOffset, true);
+		rz_structured_data_map_add_unsigned(triage64, "DriverCount", obj->triage64_header->DriverCount, true);
+		rz_structured_data_map_add_unsigned(triage64, "StringPoolOffset", obj->triage64_header->StringPoolOffset, true);
+		rz_structured_data_map_add_unsigned(triage64, "StringPoolSize", obj->triage64_header->StringPoolSize, true);
+		rz_structured_data_map_add_unsigned(triage64, "BrokenDriverOffset", obj->triage64_header->BrokenDriverOffset, true);
+		rz_structured_data_map_add_unsigned(triage64, "TriageOptions", obj->triage64_header->TriageOptions, true);
+		rz_structured_data_map_add_unsigned(triage64, "TopOfStack", obj->triage64_header->TopOfStack, true);
+		rz_structured_data_map_add_unsigned(triage64, "BStoreOffset", rz_read_le32(&obj->triage64_header->ArchitectureSpecific.Ia64.BStoreOffset), true);
+		rz_structured_data_map_add_unsigned(triage64, "SizeOfBStore", rz_read_le32(&obj->triage64_header->ArchitectureSpecific.Ia64.SizeOfBStore), true);
+		rz_structured_data_map_add_unsigned(triage64, "LimitOfBStore", rz_read_le64(&obj->triage64_header->ArchitectureSpecific.Ia64.LimitOfBStore), true);
+		rz_structured_data_map_add_unsigned(triage64, "DataPageAddress", obj->triage64_header->DataPageAddress, true);
+		rz_structured_data_map_add_unsigned(triage64, "DataPageOffset", obj->triage64_header->DataPageOffset, true);
+		rz_structured_data_map_add_unsigned(triage64, "DataPageSize", obj->triage64_header->DataPageSize, true);
+		rz_structured_data_map_add_unsigned(triage64, "DebuggerDataOffset", obj->triage64_header->DebuggerDataOffset, true);
+		rz_structured_data_map_add_unsigned(triage64, "DebuggerDataSize", obj->triage64_header->DebuggerDataSize, true);
+		rz_structured_data_map_add_unsigned(triage64, "DataBlocksOffset", obj->triage64_header->DataBlocksOffset, true);
+		rz_structured_data_map_add_unsigned(triage64, "DataBlocksCount", obj->triage64_header->DataBlocksCount, true);
 	}
 
 	return info;
@@ -307,7 +307,7 @@ RzBinPlugin rz_bin_plugin_dmp64 = {
 	.author = "abcSup",
 	.destroy = &dmp64_destroy,
 	.get_sdb = &dmp64_get_sdb,
-	.structure = &dmp64_structure,
+	.bin_structure = &dmp64_structure,
 	.info = &dmp64_info,
 	.load_buffer = &dmp64_load_buffer,
 	.check_buffer = &dmp64_check_buffer,

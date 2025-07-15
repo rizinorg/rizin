@@ -338,7 +338,7 @@ typedef struct rz_bin_object_t {
 	RzPVector /*<RzBinMem *>*/ *mem;
 	char *regstate;
 	RzBinInfo *info;
-	RzStructFactory *structure;
+	RzStructuredData *structured_data;
 	RzBinAddr *binsym[RZ_BIN_SPECIAL_SYMBOL_LAST];
 	struct rz_bin_plugin_t *plugin;
 	RzBinLanguage lang;
@@ -506,7 +506,7 @@ typedef struct rz_bin_plugin_t {
 	RzPVector /*<RzBinImport *>*/ *(*imports)(RzBinFile *bf);
 	RzPVector /*<RzBinString *>*/ *(*strings)(RzBinFile *bf);
 	RzBinInfo *(*info)(RzBinFile *bf);
-	RzStructFactory *(*structure)(RzBinFile *bf);
+	RzStructuredData *(*bin_structure)(RzBinFile *bf);
 	RzPVector /*<RzBinField *>*/ *(*fields)(RzBinFile *bf);
 	RzPVector /*<char *>*/ *(*libs)(RzBinFile *bf);
 	RzPVector /*<RzBinReloc *>*/ *(*relocs)(RzBinFile *bf);
@@ -968,7 +968,7 @@ RZ_API RZ_BORROW const RzPVector /*<RzBinAddr *>*/ *rz_bin_object_get_entries(RZ
 RZ_API const RzPVector /*<RzBinField *>*/ *rz_bin_object_get_fields(RZ_NONNULL RzBinObject *obj);
 RZ_API const RzPVector /*<RzBinImport *>*/ *rz_bin_object_get_imports(RZ_NONNULL RzBinObject *obj);
 RZ_API const RzBinInfo *rz_bin_object_get_info(RZ_NONNULL RzBinObject *obj);
-RZ_API const RzStructFactory *rz_bin_object_get_structure(RZ_NONNULL RzBinObject *obj);
+RZ_API const RzStructuredData *rz_bin_object_get_structured_data(RZ_NONNULL RzBinObject *obj);
 RZ_API const RzPVector /*<char *>*/ *rz_bin_object_get_libs(RZ_NONNULL RzBinObject *obj);
 RZ_API const RzPVector /*<RzBinSection *>*/ *rz_bin_object_get_sections_all(RZ_NONNULL RzBinObject *obj);
 RZ_API RZ_OWN RzPVector /*<RzBinSection *>*/ *rz_bin_object_get_sections(RZ_NONNULL RzBinObject *obj);

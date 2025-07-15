@@ -114,7 +114,7 @@ rz_util_files = [
   'rz_util/rz_str_util.h',
   'rz_util/rz_strbuf.h',
   'rz_util/rz_strpool.h',
-  'rz_util/rz_struct_factory.h',
+  'rz_util/rz_structured_data.h',
   'rz_util/rz_subprocess.h',
   'rz_util/rz_sys.h',
   'rz_util/rz_table.h',

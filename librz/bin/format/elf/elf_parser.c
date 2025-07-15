@@ -148,7 +148,7 @@ RzBinInfo *elf_info(RzBinFile *bf) {
 	return info(bf);
 }
 
-RzStructFactory *elf_structure(ELFOBJ *bin) {
+RzStructuredData *elf_structure(ELFOBJ *bin) {
 	return Elf_(rz_bin_elf_ehdr)(bin);
 }
 

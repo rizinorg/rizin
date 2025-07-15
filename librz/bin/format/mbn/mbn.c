@@ -191,40 +191,40 @@ RzPVector /*<RzBinString *>*/ *mbn_strings(RzBinFile *bf) {
 	return rz_bin_file_strings(bf, &opt);
 }
 
-RzStructFactory *mbn_structure(SblHeader *sb) {
-	RzStructFactory *info = rz_struct_factory_new_map();
+RzStructuredData *mbn_structure(SblHeader *sb) {
+	RzStructuredData *info = rz_structured_data_new_map();
 	if (!info) {
 		return NULL;
 	}
 
-	RzStructFactory *mbn = rz_struct_factory_map_add_map(info, "mbn");
+	RzStructuredData *mbn = rz_structured_data_map_add_map(info, "mbn");
 	if (!mbn) {
-		rz_struct_factory_free(info);
+		rz_structured_data_free(info);
 		return NULL;
 	}
 
-	RzStructFactory *image = rz_struct_factory_map_add_map(mbn, "image");
+	RzStructuredData *image = rz_structured_data_map_add_map(mbn, "image");
 	if (!image) {
-		rz_struct_factory_free(info);
+		rz_structured_data_free(info);
 		return NULL;
 	}
 
-	rz_struct_factory_map_add_string(image, "name", rz_mbn_image_id_str(sb->image_id));
-	rz_struct_factory_map_add_unsigned(image, "id", sb->image_id, true);
-	rz_struct_factory_map_add_unsigned(mbn, "version", sb->version, true);
-	rz_struct_factory_map_add_unsigned(mbn, "paddr", sb->paddr, true);
-	rz_struct_factory_map_add_unsigned(mbn, "vaddr", sb->vaddr, true);
-	rz_struct_factory_map_add_unsigned(mbn, "psize", sb->psize, true);
-	rz_struct_factory_map_add_unsigned(mbn, "code_pa", sb->code_pa, true);
-	rz_struct_factory_map_add_unsigned(mbn, "sign_va", sb->sign_va, true);
-	rz_struct_factory_map_add_unsigned(mbn, "sign_sz", sb->sign_sz, true);
-	rz_struct_factory_map_add_unsigned(mbn, "cert_va", sb->cert_va, true);
-	rz_struct_factory_map_add_unsigned(mbn, "cert_sz", sb->cert_sz, true);
+	rz_structured_data_map_add_string(image, "name", rz_mbn_image_id_str(sb->image_id));
+	rz_structured_data_map_add_unsigned(image, "id", sb->image_id, true);
+	rz_structured_data_map_add_unsigned(mbn, "version", sb->version, true);
+	rz_structured_data_map_add_unsigned(mbn, "paddr", sb->paddr, true);
+	rz_structured_data_map_add_unsigned(mbn, "vaddr", sb->vaddr, true);
+	rz_structured_data_map_add_unsigned(mbn, "psize", sb->psize, true);
+	rz_structured_data_map_add_unsigned(mbn, "code_pa", sb->code_pa, true);
+	rz_structured_data_map_add_unsigned(mbn, "sign_va", sb->sign_va, true);
+	rz_structured_data_map_add_unsigned(mbn, "sign_sz", sb->sign_sz, true);
+	rz_structured_data_map_add_unsigned(mbn, "cert_va", sb->cert_va, true);
+	rz_structured_data_map_add_unsigned(mbn, "cert_sz", sb->cert_sz, true);
 
 	return info;
 }
 
-RzStructFactory *mbn_structure_bin(RzBinFile *bf) {
+RzStructuredData *mbn_structure_bin(RzBinFile *bf) {
 	SblHeader *sb = mbn_file_get_hdr(bf);
 	return mbn_structure(sb);
 }

@@ -267,54 +267,54 @@ static RzPVector /*<RzBinReloc *>*/ *qnx_relocs(RzBinFile *bf) {
 	return relocs;
 }
 
-static RzStructFactory *qnx_structure(RzBinFile *bf) {
+static RzStructuredData *qnx_structure(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
 	QnxObj *bin = bf->o->bin_obj;
 
-	RzStructFactory *info = rz_struct_factory_new_map();
+	RzStructuredData *info = rz_structured_data_new_map();
 	if (!info) {
 		return NULL;
 	}
 
-	RzStructFactory *qnx_lmf = rz_struct_factory_map_add_map(info, "qnx_lmf");
+	RzStructuredData *qnx_lmf = rz_structured_data_map_add_map(info, "qnx_lmf");
 	if (!qnx_lmf) {
-		rz_struct_factory_free(info);
+		rz_structured_data_free(info);
 		return NULL;
 	}
 
-	rz_struct_factory_map_add_unsigned(qnx_lmf, "version", bin->lmfh.version, false);
-	rz_struct_factory_map_add_unsigned(qnx_lmf, "cflags", bin->lmfh.cflags, true);
-	rz_struct_factory_map_add_unsigned(qnx_lmf, "cpu", bin->lmfh.cpu, false);
-	rz_struct_factory_map_add_unsigned(qnx_lmf, "fpu", bin->lmfh.fpu, false);
-	rz_struct_factory_map_add_unsigned(qnx_lmf, "code_index", bin->lmfh.code_index, false);
-	rz_struct_factory_map_add_unsigned(qnx_lmf, "stack_index", bin->lmfh.stack_index, false);
-	rz_struct_factory_map_add_unsigned(qnx_lmf, "heap_index", bin->lmfh.heap_index, false);
-	rz_struct_factory_map_add_unsigned(qnx_lmf, "argv_index", bin->lmfh.argv_index, false);
+	rz_structured_data_map_add_unsigned(qnx_lmf, "version", bin->lmfh.version, false);
+	rz_structured_data_map_add_unsigned(qnx_lmf, "cflags", bin->lmfh.cflags, true);
+	rz_structured_data_map_add_unsigned(qnx_lmf, "cpu", bin->lmfh.cpu, false);
+	rz_structured_data_map_add_unsigned(qnx_lmf, "fpu", bin->lmfh.fpu, false);
+	rz_structured_data_map_add_unsigned(qnx_lmf, "code_index", bin->lmfh.code_index, false);
+	rz_structured_data_map_add_unsigned(qnx_lmf, "stack_index", bin->lmfh.stack_index, false);
+	rz_structured_data_map_add_unsigned(qnx_lmf, "heap_index", bin->lmfh.heap_index, false);
+	rz_structured_data_map_add_unsigned(qnx_lmf, "argv_index", bin->lmfh.argv_index, false);
 
-	RzStructFactory *spare2 = rz_struct_factory_map_add_array(qnx_lmf, "spare2");
+	RzStructuredData *spare2 = rz_structured_data_map_add_array(qnx_lmf, "spare2");
 	if (!spare2) {
-		rz_struct_factory_free(info);
+		rz_structured_data_free(info);
 		return NULL;
 	}
 
 	for (size_t i = 0; i < RZ_ARRAY_SIZE(bin->lmfh.spare2); ++i) {
-		rz_struct_factory_array_add_unsigned(spare2, bin->lmfh.spare2[i], true);
+		rz_structured_data_array_add_unsigned(spare2, bin->lmfh.spare2[i], true);
 	}
 
-	rz_struct_factory_map_add_unsigned(qnx_lmf, "code_offset", bin->lmfh.code_offset, true);
-	rz_struct_factory_map_add_unsigned(qnx_lmf, "stack_nbytes", bin->lmfh.stack_nbytes, true);
-	rz_struct_factory_map_add_unsigned(qnx_lmf, "heap_nbytes", bin->lmfh.heap_nbytes, true);
-	rz_struct_factory_map_add_unsigned(qnx_lmf, "image_base", bin->lmfh.image_base, true);
+	rz_structured_data_map_add_unsigned(qnx_lmf, "code_offset", bin->lmfh.code_offset, true);
+	rz_structured_data_map_add_unsigned(qnx_lmf, "stack_nbytes", bin->lmfh.stack_nbytes, true);
+	rz_structured_data_map_add_unsigned(qnx_lmf, "heap_nbytes", bin->lmfh.heap_nbytes, true);
+	rz_structured_data_map_add_unsigned(qnx_lmf, "image_base", bin->lmfh.image_base, true);
 
-	RzStructFactory *spare3 = rz_struct_factory_map_add_array(qnx_lmf, "spare3");
+	RzStructuredData *spare3 = rz_structured_data_map_add_array(qnx_lmf, "spare3");
 	if (!spare3) {
-		rz_struct_factory_free(info);
+		rz_structured_data_free(info);
 		return NULL;
 	}
 
 	for (size_t i = 0; i < RZ_ARRAY_SIZE(bin->lmfh.spare3); ++i) {
-		rz_struct_factory_array_add_unsigned(spare3, bin->lmfh.spare3[i], true);
+		rz_structured_data_array_add_unsigned(spare3, bin->lmfh.spare3[i], true);
 	}
 
 	return info;
@@ -421,7 +421,7 @@ RzBinPlugin rz_bin_plugin_qnx = {
 	.baddr = &qnx_baddr,
 	.author = "deepakchethan",
 	.check_buffer = &qnx_check_buffer,
-	.structure = &qnx_structure,
+	.bin_structure = &qnx_structure,
 	.get_sdb = &qnx_get_sdb,
 	.entries = &qnx_entries,
 	.maps = &qnx_maps,
