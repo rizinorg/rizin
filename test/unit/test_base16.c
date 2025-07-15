@@ -27,10 +27,10 @@ bool test_rz_base16_decode_invalid(void) {
 }
 
 bool test_rz_base16_encode_dyn(void) {
-  char *enc = rz_base16_encode_dyn((const ut8 *)"hello", 5);
-  mu_assert_streq(enc, "68656C6C6F", "encode_dyn mismatch");
-  free(enc);
-  mu_end;
+	char *enc = rz_base16_encode_dyn((const ut8 *)"hello", 5);
+	mu_assert_streq(enc, "68656C6C6F", "encode_dyn mismatch");
+	free(enc);
+	mu_end;
 }
 
 bool test_rz_base16_encode(void) {
@@ -62,4 +62,3 @@ int all_tests() {
 }
 
 mu_main(all_tests)
-
