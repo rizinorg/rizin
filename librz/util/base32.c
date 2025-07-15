@@ -293,7 +293,7 @@ RZ_API st64 rz_base32_decode(RZ_OUT RZ_NULLABLE ut8 *dest, RZ_NULLABLE const cha
 			buf[j] = 'A'; // zero padding for partial group
 		}
 		unpack_from5((ut8 *)tmp, (const ut8 *)buf);
-    // decide how many of the unpacked bytes are valid based on how many base32 symbols you originally had.
+		// decide how many of the unpacked bytes are valid based on how many base32 symbols you originally had.
 		static const int rem2bytes[8] = { 0, 0, 1, 0, 2, 3, 0, 4 };
 		int bytes = rem2bytes[rem];
 		if (bytes == 0) {

@@ -22,16 +22,16 @@ static const char cb16[] = "0123456789ABCDEF";
  * \brief Map a Base‑16 symbol to its 4‑bit index (0 – 15).
  */
 static size_t cd16(int c) {
-    if (c >= '0' && c <= '9') {
-        return (size_t)(c - '0');
-    }
-    if (c >= 'A' && c <= 'F') {
-        return (size_t)(10 + (c - 'A'));
-    }
-    if (c >= 'a' && c <= 'f') {
-        return (size_t)(10 + (c - 'a'));
-    }
-    return SIZE_MAX;
+	if (c >= '0' && c <= '9') {
+		return (size_t)(c - '0');
+	}
+	if (c >= 'A' && c <= 'F') {
+		return (size_t)(10 + (c - 'A'));
+	}
+	if (c >= 'a' && c <= 'f') {
+		return (size_t)(10 + (c - 'a'));
+	}
+	return SIZE_MAX;
 }
 
 /** \internal
@@ -40,8 +40,8 @@ static size_t cd16(int c) {
  * \param[out] dest  Two‑character output (no padding chars).
  */
 static void pack_to4(ut8 dest[2], const ut8 src[1]) {
-    dest[0] = cb16[(src[0] >> 4) & 0x0F];  // High 4 bits
-    dest[1] = cb16[src[0] & 0x0F];         // Low 4 bits
+	dest[0] = cb16[(src[0] >> 4) & 0x0F]; // High 4 bits
+	dest[1] = cb16[src[0] & 0x0F]; // Low 4 bits
 }
 
 /** \internal
@@ -53,9 +53,9 @@ static void pack_to4(ut8 dest[2], const ut8 src[1]) {
  * the original byte (2 × 4 bits = 8 bits = 1 byte).
  */
 static void unpack_from4(ut8 dest[1], const ut8 src[2]) {
-    size_t high = cd16(src[0]);
-    size_t low = cd16(src[1]);
-    dest[0] = (high << 4) | low;
+	size_t high = cd16(src[0]);
+	size_t low = cd16(src[1]);
+	dest[0] = (high << 4) | low;
 }
 
 /** \internal
