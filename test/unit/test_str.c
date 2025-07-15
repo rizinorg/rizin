@@ -780,6 +780,34 @@ bool test_rz_str_isXutf8(void) {
 	mu_end;
 }
 
+bool test_rz_str_utf8_conversions(void) {
+	const char *needs_4 = "a";
+	const char *needs_6 = "🍍";
+	const char *needs_22 = "aa🍍🍍🍍aa";
+	const char *only_nul_needs_2 = "";
+
+	mu_assert_eq(rz_str_utf8_get_width_utf16(only_nul_needs_2), 2, "Should have been 0 + 2 = 2.");
+	mu_assert_eq(rz_str_utf8_get_width_utf16(needs_4), 4, "Should have been 2 + 2 = 4.");
+	mu_assert_eq(rz_str_utf8_get_width_utf16(needs_6), 6, "Should have been 4 + 2 = 6.");
+	mu_assert_eq(rz_str_utf8_get_width_utf16(needs_22), 22, "Should have been 20 + 2 = 22.");
+
+	mu_end;
+}
+
+bool test_rz_str_utf8_count_ucp(void) {
+	const char *a = "a";
+	const char *pine = "🍍";
+	const char *apine = "aa🍍🍍🍍aa";
+	const char *nul = "";
+
+	mu_assert_eq(rz_str_utf8_num_ucp(nul), 1, "Should have been 1 code point.");
+	mu_assert_eq(rz_str_utf8_num_ucp(a), 2, "Should have been 2 code points.");
+	mu_assert_eq(rz_str_utf8_num_ucp(pine), 2, "Should have been 2 code points.");
+	mu_assert_eq(rz_str_utf8_num_ucp(apine), 8, "Should have been 8 code points.");
+
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_str_newf);
 	mu_run_test(test_rz_str_replace_char_once);
@@ -823,6 +851,8 @@ bool all_tests() {
 	mu_run_test(test_rz_str_filter);
 	mu_run_test(test_rz_str_strchr);
 	mu_run_test(test_rz_str_isXutf8);
+	mu_run_test(test_rz_str_utf8_conversions);
+	mu_run_test(test_rz_str_utf8_count_ucp);
 	return tests_passed != tests_run;
 }
 

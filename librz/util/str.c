@@ -2824,6 +2824,53 @@ RZ_API size_t rz_str_len_utf8(const char *s) {
 	return j + fullwidths;
 }
 
+/**
+ * \brief Counts the number of UTF-8 encoded
+ * Unicode code points in the given string.
+ *
+ * \return The number of Unicode code points *including* the final NUL.
+ */
+RZ_API size_t rz_str_utf8_num_ucp(const char *str) {
+	size_t i = 0, char_cnt = 0;
+	while (str[i]) {
+		if ((str[i] & 0xc0) != 0x80) {
+			char_cnt++;
+		}
+		i++;
+	}
+	return char_cnt + 1;
+}
+
+/**
+ * \brief Determines the number of bytes required to encode the given UTF-8
+ * string into an UTF-16 string.
+ *
+ * \return The number of bytes required for an UTF16 string, *including* the final NUL.
+ */
+RZ_API size_t rz_str_utf8_get_width_utf16(const char *str) {
+	size_t i = 0, byte_cnt = 0, extend_cnt = 0;
+	while (str[i]) {
+		if ((str[i] & 0xc0) != 0x80) {
+			extend_cnt = 0;
+			byte_cnt += 2;
+			i++;
+			continue;
+		}
+		// Check if code point is >= 0x10000
+		extend_cnt++;
+		if (extend_cnt == 3) {
+			RzCodePoint cp = 0;
+			rz_utf8_decode((ut8*)str + (i - 3), 4, &cp, false);
+			if (cp >= RZ_UTF16_FIRST_4BYTES_CODE_POINT) {
+				byte_cnt += 2; // Add the additional two bytes needed.
+			}
+			extend_cnt = 0;
+		}
+		i++;
+	}
+	return byte_cnt + 2; // NUL terminator
+}
+
 RZ_API size_t rz_str_len_utf8_ansi(const char *str) {
 	int i = 0, len = 0, fullwidths = 0;
 	while (str[i]) {
