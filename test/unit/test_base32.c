@@ -21,45 +21,45 @@ bool test_rz_base32_decode(void) {
 }
 
 bool test_rz_base32_decode_invalid(void) {
-    ut8 buf[16];
-    mu_assert_eq(rz_base32_decode(buf, "MZXW@===", -1), -1, "decoder accepted invalid char");
-    mu_end;
+	ut8 buf[16];
+	mu_assert_eq(rz_base32_decode(buf, "MZXW@===", -1), -1, "decoder accepted invalid char");
+	mu_end;
 }
 
 bool test_rz_base32_encode_dyn(void) {
-    static const struct {
-        const char *in;
-        const char *exp;
-    } vec[] = {
-        { "hello",    "NBSWY3DP"             },
-        { "hello1",   "NBSWY3DPGE======"     },
-        { "hello12",  "NBSWY3DPGEZA===="     },
-        { "hello123", "NBSWY3DPGEZDG==="     } 
-    };
+	static const struct {
+		const char *in;
+		const char *exp;
+	} vec[] = {
+		{ "hello", "NBSWY3DP" },
+		{ "hello1", "NBSWY3DPGE======" },
+		{ "hello12", "NBSWY3DPGEZA====" },
+		{ "hello123", "NBSWY3DPGEZDG===" }
+	};
 
-    for (size_t i = 0; i < RZ_ARRAY_SIZE(vec); i++) {
-        char *enc = rz_base32_encode_dyn((const ut8 *)vec[i].in, strlen(vec[i].in));
-        mu_assert_streq(enc, vec[i].exp, "encode_dyn mismatch");
-        free(enc);
-    }
-    mu_end;
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(vec); i++) {
+		char *enc = rz_base32_encode_dyn((const ut8 *)vec[i].in, strlen(vec[i].in));
+		mu_assert_streq(enc, vec[i].exp, "encode_dyn mismatch");
+		free(enc);
+	}
+	mu_end;
 }
 
 bool test_rz_base32_encode(void) {
-    char enc[32];
-    rz_base32_encode(enc, (const ut8 *)"hello", 5);
-    mu_assert_streq(enc, "NBSWY3DP", "encode mismatch");
-    mu_end;
+	char enc[32];
+	rz_base32_encode(enc, (const ut8 *)"hello", 5);
+	mu_assert_streq(enc, "NBSWY3DP", "encode mismatch");
+	mu_end;
 }
 
 bool test_rz_base32_decode_offby1(void) {
-    unsigned char msg[4] = { 'A', 0, 'B', 0 };
-    char enc[32] = {0};
+	unsigned char msg[4] = { 'A', 0, 'B', 0 };
+	char enc[32] = { 0 };
 
-    rz_base32_encode(enc, msg, 1);
-    rz_base32_decode(msg,  enc, strlen(enc));
-    mu_assert_eq(msg[2], 'B', "decoder wrote past end");
-    mu_end;
+	rz_base32_encode(enc, msg, 1);
+	rz_base32_decode(msg, enc, strlen(enc));
+	mu_assert_eq(msg[2], 'B', "decoder wrote past end");
+	mu_end;
 }
 
 int all_tests() {
