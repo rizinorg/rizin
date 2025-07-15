@@ -27,6 +27,15 @@
 #define RZ_REGEX_DEFAULT       0
 #define RZ_REGEX_LITERAL       0x02000000u /* PCRE2_LITERAL       - C      */
 #define RZ_REGEX_CASELESS      0x00000008u /* PCRE2_CASELESS      - C      */
+/**
+ * \brief If RZ_REGEX_EXTENDED is passed to rz_regex_new_16() or rz_regex_new_32()
+ * spaces in the pattern **will** be skipped! You need to replace them with \s.
+ * This is in accordance with the PCRE2 documentation.
+ *
+ * If RZ_REGEX_EXTENDED is passed to rz_regex_new() (the UTF-8 regular expressions)
+ * the spaces **will not** be skipped but interally be replaced with '\s'.
+ * This was done to keep our interal regex matching stable.
+ */
 #define RZ_REGEX_EXTENDED      0x00000080u /* PCRE2_EXTENDED      - C      */
 #define RZ_REGEX_EXTENDED_MORE 0x01000000u /* PCRE2_EXTENDED_MORE - C      */
 #define RZ_REGEX_MULTILINE     0x00000400u /* PCRE2_MULTILINE     - C      */
@@ -60,6 +69,10 @@ typedef struct {
 typedef void RzRegexMatchData; ///< PCRE2 internal match data type
 
 RZ_API RZ_OWN RzRegex *rz_regex_new(RZ_NONNULL const char *pattern, RzRegexFlags cflags, RzRegexFlags jflags,
+	RzRegexCompContext *ccontext);
+RZ_API RZ_OWN RzRegex16 *rz_regex_new_16(RZ_NONNULL const char *pattern, RzRegexFlags cflags, RzRegexFlags jflags,
+	RzRegexCompContext *ccontext);
+RZ_API RZ_OWN RzRegex32 *rz_regex_new_32(RZ_NONNULL const char *pattern, RzRegexFlags cflags, RzRegexFlags jflags,
 	RzRegexCompContext *ccontext);
 RZ_API RZ_OWN RzRegex *rz_regex_new_bytes(RZ_NONNULL const ut8 *pattern, size_t pattern_len, RzRegexFlags cflags, RzRegexFlags jflags,
 	RzRegexCompContext *ccontext);

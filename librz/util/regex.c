@@ -45,12 +45,12 @@ static RZ_OWN void *regex_new(RZ_NONNULL const char *pattern, RzRegexFlags cflag
 	RzRegexStatus err_num;
 	RzRegexSize err_off;
 	ut32 supported = 0;
-	if (pcre2_word_width == 32) {
-		pcre2_config_32(PCRE2_CONFIG_UNICODE, &supported);
+	if (pcre2_word_width == 8) {
+		pcre2_config_8(PCRE2_CONFIG_UNICODE, &supported);
 	} else if (pcre2_word_width == 16) {
 		pcre2_config_16(PCRE2_CONFIG_UNICODE, &supported);
 	} else {
-		pcre2_config_8(PCRE2_CONFIG_UNICODE, &supported);
+		pcre2_config_32(PCRE2_CONFIG_UNICODE, &supported);
 	}
 	if (supported != 1) {
 		RZ_LOG_ERROR("Unicode not supported by PCRE2 library.\n");
@@ -58,12 +58,12 @@ static RZ_OWN void *regex_new(RZ_NONNULL const char *pattern, RzRegexFlags cflag
 	}
 	char *fixed_pat = NULL;
 	const char *pat = NULL;
-	if ((cflags & RZ_REGEX_EXTENDED) || (cflags & RZ_REGEX_EXTENDED_MORE)) {
+	if (pcre2_word_width == 8 && ((cflags & RZ_REGEX_EXTENDED) || (cflags & RZ_REGEX_EXTENDED_MORE))) {
+		// In PCRE2 with the extended flag set, ascii space characters ' ' are skipped.
+		// We need to replace them with \s unfortunately to keep our API stable.
 		if (!strchr(pattern, ' ')) {
 			pat = pattern;
 		} else {
-			// In PCRE2 with the extended flag set, ascii space characters ' ' are skipped.
-			// We need to replace them with \s unfortunately to keep our API stable.
 			fixed_pat = rz_str_replace(rz_str_dup(pattern), " ", "\\s", 1);
 			pat = fixed_pat;
 		}
@@ -72,24 +72,21 @@ static RZ_OWN void *regex_new(RZ_NONNULL const char *pattern, RzRegexFlags cflag
 	}
 
 	void *regex;
-	if (pcre2_word_width == 32) {
-		ut8 *utf32_pat = rz_str_utf8_to_utf32(pat, RZ_HOST_BIG_ENDIAN);
-		regex = pcre2_compile_32(
-			(PCRE2_SPTR32)utf32_pat,
+	if (pcre2_word_width == 8) {
+		regex = pcre2_compile_8(
+			(PCRE2_SPTR8)pat,
 			PCRE2_ZERO_TERMINATED,
 			cflags | PCRE2_UTF | PCRE2_MATCH_INVALID_UTF,
 			&err_num,
 			&err_off,
 			ccontext);
 		if (!regex) {
-			print_pcre2_err(pat, err_num, err_off / 4);
+			print_pcre2_err(pat, err_num, err_off);
 			free(fixed_pat);
-			free(utf32_pat);
 			return NULL;
 		}
-		free(utf32_pat);
 #ifdef SUPPORTS_PCRE2_JIT
-		RzRegexStatus jit_err = pcre2_jit_compile_32(regex, jflags | PCRE2_JIT_COMPLETE);
+		RzRegexStatus jit_err = pcre2_jit_compile_8(regex, jflags | PCRE2_JIT_COMPLETE);
 		if (jit_err < 0) {
 			print_pcre2_err(pat, jit_err, 0);
 		}
@@ -118,20 +115,23 @@ static RZ_OWN void *regex_new(RZ_NONNULL const char *pattern, RzRegexFlags cflag
 		}
 #endif
 	} else {
-		regex = pcre2_compile_8(
-			(PCRE2_SPTR8)pat,
+		ut8 *utf32_pat = rz_str_utf8_to_utf32(pat, RZ_HOST_BIG_ENDIAN);
+		regex = pcre2_compile_32(
+			(PCRE2_SPTR32)utf32_pat,
 			PCRE2_ZERO_TERMINATED,
 			cflags | PCRE2_UTF | PCRE2_MATCH_INVALID_UTF,
 			&err_num,
 			&err_off,
 			ccontext);
 		if (!regex) {
-			print_pcre2_err(pat, err_num, err_off);
+			print_pcre2_err(pat, err_num, err_off / 4);
 			free(fixed_pat);
+			free(utf32_pat);
 			return NULL;
 		}
+		free(utf32_pat);
 #ifdef SUPPORTS_PCRE2_JIT
-		RzRegexStatus jit_err = pcre2_jit_compile_8(regex, jflags | PCRE2_JIT_COMPLETE);
+		RzRegexStatus jit_err = pcre2_jit_compile_32(regex, jflags | PCRE2_JIT_COMPLETE);
 		if (jit_err < 0) {
 			print_pcre2_err(pat, jit_err, 0);
 		}
@@ -144,6 +144,9 @@ static RZ_OWN void *regex_new(RZ_NONNULL const char *pattern, RzRegexFlags cflag
 /**
  * \brief Compile a regex pattern to a RzRegex and return it.
  * In case of an error, an error message is printed and NULL is returned.
+ *
+ * NOTE: If RZ_REGEX_EXTENDED is passed, spaces in the pattern will **not** be skipped!
+ * This is contrary to the PCRE2 documentation. But keeps our internal regex usage stable.
  *
  * \param pattern The regex pattern string.
  * \param cflags The compilation flags or zero for default.
@@ -166,6 +169,8 @@ RZ_API RZ_OWN RzRegex *rz_regex_new(RZ_NONNULL const char *pattern, RzRegexFlags
  * In case of an error, an error message is printed and NULL is returned.
  *
  * NOTE: The pattern and matching will always be in the host's endianness.
+ * NOTE: If RZ_REGEX_EXTENDED is passed, spaces in the pattern **will** be skipped!
+ * This is the opposite behavior to the default UTF-8 regular expressions.
  *
  * \param pattern The regex pattern string. It must be an UTF-8 encoded string.
  * \param cflags The compilation flags or zero for default.
@@ -188,6 +193,8 @@ RZ_API RZ_OWN RzRegex16 *rz_regex_new_16(RZ_NONNULL const char *pattern, RzRegex
  * In case of an error, an error message is printed and NULL is returned.
  *
  * NOTE: The pattern and matching will always be in the host's endianness.
+ * NOTE: If RZ_REGEX_EXTENDED is passed, spaces in the pattern **will** be skipped!
+ * This is the opposite behavior to the default UTF-8 regular expressions.
  *
  * \param pattern The regex pattern string. It must be an UTF-8 encoded string.
  * \param cflags The compilation flags or zero for default.
@@ -441,20 +448,20 @@ static RZ_OWN RzPVector /*<RzRegexMatch *>*/ *match_first(
 
 	RzPVector *matches = rz_pvector_new(free);
 	RzRegexMatchData *mdata = NULL;
-	if (pcre2_word_width == 32) {
-		mdata = pcre2_match_data_create_from_pattern_32(regex, NULL);
+	if (pcre2_word_width == 8) {
+		mdata = pcre2_match_data_create_from_pattern_8(regex, NULL);
 	} else if (pcre2_word_width == 16) {
 		mdata = pcre2_match_data_create_from_pattern_16(regex, NULL);
 	} else {
-		mdata = pcre2_match_data_create_from_pattern_8(regex, NULL);
+		mdata = pcre2_match_data_create_from_pattern_32(regex, NULL);
 	}
 	RzRegexStatus rc = 0;
-	if (pcre2_word_width == 32) {
-		rc = pcre2_match_32(regex, (PCRE2_SPTR32)text, text_size, text_offset, mflags, mdata, NULL);
+	if (pcre2_word_width == 8) {
+		rc = pcre2_match_8(regex, (PCRE2_SPTR8)text, text_size, text_offset, mflags, mdata, NULL);
 	} else if (pcre2_word_width == 16) {
 		rc = pcre2_match_16(regex, (PCRE2_SPTR16)text, text_size, text_offset, mflags, mdata, NULL);
 	} else {
-		rc = pcre2_match_8(regex, (PCRE2_SPTR8)text, text_size, text_offset, mflags, mdata, NULL);
+		rc = pcre2_match_32(regex, (PCRE2_SPTR32)text, text_size, text_offset, mflags, mdata, NULL);
 	}
 
 	if (rc == PCRE2_ERROR_NOMATCH) {
@@ -471,20 +478,27 @@ static RZ_OWN RzPVector /*<RzRegexMatch *>*/ *match_first(
 	}
 
 	// Add groups to vector
-	PCRE2_SIZE *ovector = pcre2_get_ovector_pointer_8(mdata);
+	PCRE2_SIZE *ovector;
+	if (pcre2_word_width == 8) {
+		ovector = pcre2_get_ovector_pointer_8(mdata);
+	} else if (pcre2_word_width == 16) {
+		ovector = pcre2_get_ovector_pointer_16(mdata);
+	} else {
+		ovector = pcre2_get_ovector_pointer_32(mdata);
+	}
 
 	ut32 name_entry_size;
 	PCRE2_SPTR8 nametable_ptr8;
 	PCRE2_SPTR16 nametable_ptr16;
 	PCRE2_SPTR32 nametable_ptr32;
 
-	if (pcre2_word_width == 32) {
-		pcre2_pattern_info_32(
+	if (pcre2_word_width == 8) {
+		pcre2_pattern_info_8(
 			regex,
 			PCRE2_INFO_NAMETABLE,
-			&nametable_ptr32);
+			&nametable_ptr8);
 
-		pcre2_pattern_info_32(
+		pcre2_pattern_info_8(
 			regex,
 			PCRE2_INFO_NAMEENTRYSIZE,
 			&name_entry_size);
@@ -499,12 +513,12 @@ static RZ_OWN RzPVector /*<RzRegexMatch *>*/ *match_first(
 			PCRE2_INFO_NAMEENTRYSIZE,
 			&name_entry_size);
 	} else {
-		pcre2_pattern_info_8(
+		pcre2_pattern_info_32(
 			regex,
 			PCRE2_INFO_NAMETABLE,
-			&nametable_ptr8);
+			&nametable_ptr32);
 
-		pcre2_pattern_info_8(
+		pcre2_pattern_info_32(
 			regex,
 			PCRE2_INFO_NAMEENTRYSIZE,
 			&name_entry_size);
@@ -523,12 +537,12 @@ static RZ_OWN RzPVector /*<RzRegexMatch *>*/ *match_first(
 		match->start = ovector[2 * i];
 		match->len = ovector[2 * i + 1] - match->start;
 		match->group_idx = i;
-		if (pcre2_word_width == 32) {
-			nametable_ptr32 += name_entry_size;
+		if (pcre2_word_width == 8) {
+			nametable_ptr8 += name_entry_size;
 		} else if (pcre2_word_width == 16) {
 			nametable_ptr16 += name_entry_size;
 		} else {
-			nametable_ptr8 += name_entry_size;
+			nametable_ptr32 += name_entry_size;
 		}
 		rz_pvector_push(matches, match);
 	}
@@ -683,24 +697,24 @@ static RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all_int
 
 	RzPVector *all_matches = rz_pvector_new((RzPVectorFree)rz_pvector_free);
 	RzPVector *matches = NULL;
-	if (pcre2_word_width == 32) {
-		matches = rz_regex_match_first_32(regex, text, text_size, text_offset, mflags);
+	if (pcre2_word_width == 8) {
+		matches = rz_regex_match_first(regex, (char *)text, text_size, text_offset, mflags);
 	} else if (pcre2_word_width == 16) {
 		matches = rz_regex_match_first_16(regex, text, text_size, text_offset, mflags);
 	} else {
-		matches = rz_regex_match_first(regex, (char *)text, text_size, text_offset, mflags);
+		matches = rz_regex_match_first_32(regex, text, text_size, text_offset, mflags);
 	}
 	while (matches && rz_pvector_len(matches) > 0) {
 		rz_pvector_push(all_matches, matches);
 		RzRegexMatch *m = rz_pvector_head(matches);
 		// Search again after the last match.
 		text_offset = allow_overlap ? m->start + 1 : m->start + m->len;
-		if (pcre2_word_width == 32) {
-			matches = rz_regex_match_first_32(regex, text, text_size, text_offset, mflags);
+		if (pcre2_word_width == 8) {
+			matches = rz_regex_match_first(regex, (char *)text, text_size, text_offset, mflags);
 		} else if (pcre2_word_width == 16) {
 			matches = rz_regex_match_first_16(regex, text, text_size, text_offset, mflags);
 		} else {
-			matches = rz_regex_match_first(regex, (char *)text, text_size, text_offset, mflags);
+			matches = rz_regex_match_first_32(regex, text, text_size, text_offset, mflags);
 		}
 	}
 
