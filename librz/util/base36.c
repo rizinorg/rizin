@@ -66,7 +66,7 @@ RZ_API RZ_OWN char *rz_base36_encode_dyn(ut64 val) {
  * \param[in]  str  Pointer to the digit sequence (no NUL required).
  * \param      len  Number of characters in \p str.
  *                  A value greater than 13 implies overflow and is rejected.
- * \return The decoded value, or \c 0 on any error (invalid digit, overflow,
+ * \return The decoded value, or \c -1 on any error (invalid digit, overflow,
  *         or length > 13).  Error details are printed to \c stderr via
  *         \c eprintf.
  *
@@ -74,7 +74,7 @@ RZ_API RZ_OWN char *rz_base36_encode_dyn(ut64 val) {
  * multiplies each digit by the corresponding 36‑power from \a pow36, and
  * accumulates the result.
  * Digits are validated in constant time with the lookup table \a d32.  When
- * processing the most‑significant position (index 12) the routine performs an
+ * processing the most‑significant position (index 12) the function performs an
  * explicit overflow check: the digit must be ≤ 3 and the addition
  * <code>ret + v × pow36[12]</code> must not wrap.
  */

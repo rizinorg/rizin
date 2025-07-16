@@ -36,8 +36,7 @@
 #include <rz_types.h>
 #include <rz_util.h>
 
-/**
- * \internal
+/** \internal
  * \brief Return the next non‑whitespace character from an in‑memory buffer.
  *
  * \param src  Pointer to the start of the Ascii 85 text.
@@ -46,12 +45,7 @@
  *             past the character that was delivered.
  *
  * \return The first non‑space character at or after \p *pos, or <tt>EOF</tt>
- *         when the cursor reaches \p len.
- *
- * Whitespace is determined by the C library’s \c isspace() predicate.
- * This helper lets the new buffer‑oriented decoder mirror the control flow
- * of the original streaming version while operating on a plain
- * <code>char[]</code>.
+ *         when the cursor reaches \p len. Whitespace is determined by the C library’s \c isspace() predicate.
  *
  */
 static int getc_nospace_buf(const char *src, st64 len, st64 *pos) {
@@ -64,13 +58,12 @@ static int getc_nospace_buf(const char *src, st64 len, st64 *pos) {
 	return (unsigned char)src[(*pos)++];
 }
 
-/**
- * \internal
+/** \internal
  * \brief Append a character to an output buffer, inserting a newline when the wrap width is reached.
  *
  * \param d    Pointer to the current write cursor inside the destination buffer.
  *             The pointer is advanced as characters are written.
- * \param len  Pointer to a running count of bytes already written; incremented by this routine.
+ * \param len  Pointer to a running count of bytes already written; incremented by this function.
  * \param wrap Maximum printable‐character column before a automatic newline is inserted.
  *             A value of \c 0 disables wrapping entirely.
  * \param col  Pointer to the column counter (characters since the last newline); reset when a wrap occurs.
@@ -78,8 +71,7 @@ static int getc_nospace_buf(const char *src, st64 len, st64 *pos) {
  *
  * If \p wrap is non‑zero and the column counter referenced by \p col is
  * greater than or equal to \p wrap, the function first appends a newline
- * (<code>'\n'</code>) to the buffer and resets \p *col to 0.
- * It then appends \p c, advancing \p *d, and increments both \p *len
+ * to the buffer and resets \p *col to 0. It then appends \p c, advancing \p *d, and increments both \p *len
  * and \p *col to reflect the newly written character.
  */
 static void putc_wrap_buf(char **d, size_t *len, int wrap, int *col, char c) {
@@ -93,9 +85,8 @@ static void putc_wrap_buf(char **d, size_t *len, int wrap, int *col, char c) {
 	(*col)++;
 }
 
-/**
- * \internal
- * \brief Encode up to four input bytes and append their Ascii 85 representation to a buffer.
+/** \internal
+ * \brief Encoding up to four input bytes and append their Ascii 85 representation to a buffer.
  *
  * \param tuple   A big‑endian 32‑bit value holding the pending input bytes.
  * \param count   Number of meaningful bytes inside \p tuple ( 1 – 4 ).
@@ -106,7 +97,7 @@ static void putc_wrap_buf(char **d, size_t *len, int wrap, int *col, char c) {
  * \param d       Pointer to the current write cursor inside the destination
  *                buffer. The cursor is advanced as characters are written.
  * \param len     Pointer to a running total of bytes written so far; incremented
- *                by this routine.
+ *                by this function.
  * \param col     Pointer to the current column counter (characters since the
  *                last newline); reset to 0 whenever a wrap occurs.
  * \param y_abbr  When non‑zero, emit the non‑standard abbreviation
@@ -140,10 +131,10 @@ static void encode_tuple_buf(unsigned long tuple, int count, int wrap, char **d,
 	}
 }
 
-/**
+/** \internal
  * \brief Calculate the buffer size required for an Ascii 85 encoding.
  *
- * \param n       Length of the binary input in bytes.
+ * \param n       The length of the binary input in bytes.
  * \param delims  Non‑zero if the encoding will be wrapped in the Adobe
  *                delimiters <code>"<~"</code> and <code>"~>"</code>.
  * \param wrap    Line‑wrap column width.  A value of 0 disables wrapping.
@@ -175,8 +166,7 @@ static size_t rz_base85_enc_buflen(size_t n, int delims, int wrap) {
 	return chars + 1;
 }
 
-/**
- * \internal
+/** \internal
  * \brief Append up to four bytes decoded from an Ascii 85 tuple to a buffer.
  *
  * \param tuple   The 32‑bit value obtained by accumulating five base‑85 digits.
@@ -186,12 +176,10 @@ static size_t rz_base85_enc_buflen(size_t n, int delims, int wrap) {
  * \param d       Pointer to the current write cursor inside the destination
  *                buffer; advanced as bytes are written.
  * \param len     Pointer to a running total of bytes written so far; incremented
- *                by this routine.
+ *                by this function.
  *
  * The function starts with the most‑significant decoded byte and appends up to
- * four bytes to the buffer referenced by \p d.  It is the in‑memory counterpart
- * of the original streaming routine and is used by the new buffer‑oriented
- * decoder API.
+ * four bytes to the buffer referenced by \p d.
  */
 static void decode_tuple_buf(unsigned long tuple, int count, char **d, size_t *len) {
 	for (int i = 1; i < count; i++) {
@@ -200,51 +188,37 @@ static void decode_tuple_buf(unsigned long tuple, int count, char **d, size_t *l
 	}
 }
 
-/**
- * \internal
+/** \internal
  * \brief Compute the buffer size required to hold the decoded bytes.
  *
- * \param enc_len  Length, in characters, of the Ascii 85 text that will be
+ * \param enc_len  The length, in characters, of the Ascii 85 text that will be
  *                 passed to the decoder <b>after</b> stripping any
  *                 delimiters, line‑breaks, or whitespace.
  *
  * \return  A value large enough to store every possible decoding of a string
  *          of length \p enc_len, <em>plus</em> one extra byte for a NUL
  *          terminator.
- *
- * Rationale
- * ---------
- * A full group of five digits expands to four bytes.
- * A partial final group of <i>r</i> ∈ {2, 3, 4} digits expands to
- * <i>r − 1</i> bytes.  A quick arithmetic upper bound is therefore
- *
- * \f[
- *    1 \;+\; 3 \times \Bigl\lceil\frac{\texttt{enc\_len}+1}{4}\Bigr\rceil
- * \f]
- *
- * which in integer arithmetic becomes
- * <code>1 + 3 × ((enc_len&nbsp;+&nbsp;1)&nbsp;/&nbsp;4)</code>.
  */
 static size_t rz_base85_dec_buflen(size_t enc_len) {
 	/* 1 for NUL + 3 bytes per (roughly) 4 input chars */
 	return 1 + 3 * ((enc_len + 1) / 4);
 }
 
-/**
+/** \internal
  * \brief Base‑encode a memory buffer to Ascii 85.
  *
  * \param dest    Destination buffer that receives the encoded text.
- *                The caller must allocate at least
- *                \c 1 + 5 × ((n + 3)/4) bytes, plus room for optional
- *                delimiters and line‑wrap newlines.
  * \param src     Pointer to the binary data to encode.
- * \param n       Length of \p src in bytes.
+ * \param n       The length of \p src in bytes.
  * \param delims  When non‑zero, wrap the output between literal
  *                <code>"<~"</code> and <code>"~>"</code>.
  * \param wrap    Column width for automatic line wrapping.
  *                A value of 0 disables wrapping.
  * \param y_abbr  When non‑zero, enable the non‑standard abbreviation
  *                <code>'y'</code> for the pattern 0x20 0x20 0x20 0x20.
+ *
+ * \attention The caller must allocate at least \c 1 + 5 × ((n + 3)/4) bytes,
+ * plus room for optional delimiters and line‑wrap newlines.
  *
  * The function processes the input four bytes at a time, converts each group
  * into five base‑85 digits, and appends the result to \p dest.  Special‑case
@@ -296,7 +270,7 @@ RZ_API int rz_base85_encode(char *dest, const char *src, size_t n, int delims, i
  * \brief Dynamically allocate and return an Ascii 85 encoding.
  *
  * \param src     Pointer to the binary data to encode.
- * \param n       Length of \p src in bytes.
+ * \param n       The length of \p src in bytes.
  * \param delims  Non‑zero to surround the payload with <tt>"<~"</tt> … <tt>"~>"</tt>.
  * \param wrap    Column width for automatic line wrapping (0 = none).
  * \param y_abbr  Non‑zero to enable the <tt>'y'</tt> abbreviation for four spaces.
@@ -334,7 +308,7 @@ RZ_API RZ_OWN char *rz_base85_encode_dyn(RZ_NULLABLE const char *src, size_t n, 
  * \return The number of decoded bytes on success, or –1 on error
  *         (malformed input or delimiter mismatch).
  *
- * The caller must allocate \p dest large enough.  A safe upper bound is
+ * \attention The caller must allocate \p dest large enough.  A safe upper bound is
  * \c 1 + 3 × ((len + 1)/4) bytes.
  */
 RZ_API st64 rz_base85_decode(char *dest, const char *src, st64 len, int delims, int ignore_garbage) {
@@ -418,7 +392,7 @@ RZ_API st64 rz_base85_decode(char *dest, const char *src, st64 len, int delims, 
  * \brief Decode an Ascii 85 string, allocating the output buffer automatically.
  *
  * \param src             Ascii 85 text to decode (may contain NUL‑bytes).
- * \param len             Length of \p src in bytes, or –1 to use strlen().
+ * \param len             The length of \p src in bytes, or –1 to use strlen().
  * \param delims          Expect <tt>"<~"</tt> … <tt>"~>"</tt> delimiters.
  * \param ignore_garbage  Skip vs. error on invalid characters.
  * \param[out] out_len    Optional pointer that receives the decoded size.
