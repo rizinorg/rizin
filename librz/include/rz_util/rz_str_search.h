@@ -17,7 +17,7 @@ extern "C" {
  */
 typedef struct {
 	char *string; ///< The detected string. Note that this one is always in UTF-8. No matter what the ecoding is in memory.
-	RzRegex *regex; ///< Regex matching the string. If set, the string member is the pattern.
+	RzRegexMulti *regex; ///< Regex matching the string. If set, the string member is the pattern.
 	ut64 addr; ///< Address/offset of the string in the RzBuffer
 	ut32 size; ///< Size of buffer containing the string in bytes
 	ut32 length; ///< Length of string in chars

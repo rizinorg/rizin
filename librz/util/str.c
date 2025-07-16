@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util/rz_regex.h>
+#include <rz_platform.h>
 #include "rz_list.h"
 #include "rz_types.h"
 #include <rz_util.h>
@@ -4420,4 +4421,60 @@ RZ_API const char *rz_str_indent(int indent) {
 		return "";
 	}
 	return indent_tbl[indent];
+}
+
+/**
+ * \brief Checks given encoding if it is UTF-8, UTF16, or UTF-32
+ * of the host's endianness.
+ *
+ * \return true For UTF-8/ASCII.
+ * \return true For UTF-16-LE/UTF-32-LE if Rizin was built for a little endian architecture.
+ * \return true For UTF-16-BB/UTF-32-BB if Rizin was built for a big endian architecture.
+ * \return false Otherwise.
+ */
+RZ_API bool rz_string_enc_is_utf_native_endian(RzStrEnc enc) {
+	switch (enc) {
+	default:
+		return false;
+	case RZ_STRING_ENC_8BIT:
+	case RZ_STRING_ENC_UTF8:
+		return true;
+	case RZ_STRING_ENC_UTF16LE:
+	case RZ_STRING_ENC_UTF32LE:
+		return !RZ_HOST_BIG_ENDIAN;
+	case RZ_STRING_ENC_UTF16BE:
+	case RZ_STRING_ENC_UTF32BE:
+		return RZ_HOST_BIG_ENDIAN;
+	}
+}
+
+/**
+ * \brief Returns the size of the code point in bytes.
+ * UTF-8 = 1, UTF-16 = 2, UTF-32 = 4 etc.
+ *
+ * \return Size of code point in bytes or 0 if given encoding is invalid.
+ */
+RZ_API size_t rz_string_enc_code_point_width(RzStrEnc enc) {
+	switch (enc) {
+	default:
+	case RZ_STRING_ENC_GUESS:
+	case RZ_STRING_ENC_BASE64:
+	case RZ_STRING_ENC_SETTINGS:
+		return 0;
+	case RZ_STRING_ENC_8BIT:
+	case RZ_STRING_ENC_UTF8:
+	case RZ_STRING_ENC_MUTF8:
+	case RZ_STRING_ENC_IBM037:
+	case RZ_STRING_ENC_IBM290:
+	case RZ_STRING_ENC_EBCDIC_UK:
+	case RZ_STRING_ENC_EBCDIC_US:
+	case RZ_STRING_ENC_EBCDIC_ES:
+		return 1;
+	case RZ_STRING_ENC_UTF16LE:
+	case RZ_STRING_ENC_UTF16BE:
+		return 2;
+	case RZ_STRING_ENC_UTF32LE:
+	case RZ_STRING_ENC_UTF32BE:
+		return 4;
+	}
 }

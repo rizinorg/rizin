@@ -49,11 +49,67 @@ static void align_offsets(RzUtilStrScanOptions options, RzStrEnc encoding, RzDet
 	}
 }
 
+static bool native_string_find(RzSearchFindOpt *fopt, StringSearch *ss, ut64 offset, const RzBuffer *buffer,
+	RZ_OUT RzThreadQueue *hits, RZ_OUT size_t *n_hits) {
+
+	RzStrEnc encoding = ss->encoding;
+
+	ut64 size;
+	const ut8 *raw_buf = rz_buf_get_whole_hot_paths((RzBuffer *)buffer, &size);
+	void **it_m = NULL;
+	rz_pvector_foreach (ss->strings, it_m) {
+		RzDetectedString *find = *it_m;
+		RzPVector *matches = NULL;
+
+		if (fopt->match_overlap) {
+			matches = rz_regex_match_all_overlap_multi(find->regex, raw_buf, size, 0, RZ_REGEX_DEFAULT);
+		} else {
+			matches = rz_regex_match_all_multi(find->regex, raw_buf, size, 0, RZ_REGEX_DEFAULT);
+		}
+		if (!matches) {
+			return false;
+		}
+		void **it;
+		rz_pvector_foreach (matches, it) {
+			RzPVector *match = *it;
+			RzRegexMatch *group0 = rz_pvector_at(match, 0);
+			if (!group0) {
+				RZ_LOG_ERROR("search: Failed to get group of match.\n");
+				rz_pvector_free(matches);
+				return false;
+			}
+			ut64 str_mem_len = group0->len * rz_string_enc_code_point_width(encoding);
+			ut64 str_mem_offset = group0->start * rz_string_enc_code_point_width(encoding);
+			if (fopt->alignment > 1 && rz_mem_align_padding(str_mem_offset, fopt->alignment) != 0) {
+				// Match has not the correct alignment in memory.
+				continue;
+			}
+			char hit_type[64] = { 0 };
+			rz_strf(hit_type, "string.%s", rz_str_enc_as_string(encoding));
+			RzSearchHit *hit = rz_search_hit_new(hit_type, str_mem_offset + offset, str_mem_len, NULL);
+			if (!hit || !rz_th_queue_push(hits, hit, true)) {
+				rz_search_hit_free(hit);
+				rz_pvector_free(matches);
+				return false;
+			}
+			(*n_hits)++;
+			rz_pvector_free(matches);
+		}
+	}
+	return true;
+}
+
 static bool string_find(RzSearchFindOpt *fopt, void *user, ut64 offset, const RzBuffer *buffer,
 	RZ_OUT RzThreadQueue *hits, RZ_OUT size_t *n_hits) {
 	rz_return_val_if_fail(fopt, false);
 
 	StringSearch *ss = (StringSearch *)user;
+	if (rz_string_enc_is_utf_native_endian(ss->encoding)) {
+		// The expected encoding is UTF with native endian.
+		// For those we can do simple regex matching, skipping the whole decoding stuff.
+		return native_string_find(fopt, ss, offset, buffer, hits, n_hits);
+	}
+
 	RzDetectedString *detected = NULL;
 	RzListIter *it_s = NULL;
 
@@ -84,7 +140,7 @@ static bool string_find(RzSearchFindOpt *fopt, void *user, ut64 offset, const Rz
 		void **it_m = NULL;
 		rz_pvector_foreach (ss->strings, it_m) {
 			RzDetectedString *find = *it_m;
-			RzPVector *matches = fopt->match_overlap ? rz_regex_match_all_overlap(find->regex, detected->string, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT) : rz_regex_match_all(find->regex, detected->string, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT);
+			RzPVector *matches = fopt->match_overlap ? rz_regex_match_all_overlap(find->regex->re8, detected->string, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT) : rz_regex_match_all(find->regex->re8, detected->string, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT);
 			void **it;
 			rz_pvector_foreach (matches, it) {
 				RzPVector *match = *it;
@@ -170,13 +226,35 @@ RZ_API RZ_OWN RzSearchCollection *rz_search_collection_strings(RZ_NONNULL RzUtil
 	return rz_search_collection_new_bytes_space(string_find, string_is_empty, string_free, ss);
 }
 
-static RzDetectedString *setup_str_regex(const char *re_pattern, RzRegexFlags flags) {
+static RzDetectedString *setup_str_regex(const char *re_pattern, RzRegexFlags flags, RzStrEnc encoding) {
 	char *re_pattern_clone = rz_str_dup(re_pattern);
 	if (!re_pattern_clone) {
 		RZ_LOG_ERROR("Failed to clone regex pattern\n");
 		return NULL;
 	}
-	RzRegex *re = rz_regex_new(re_pattern, flags, RZ_REGEX_DEFAULT, NULL);
+
+	RzRegexMulti *re;
+	if (rz_string_enc_is_utf_native_endian(encoding)) {
+		switch (encoding) {
+		default:
+			rz_warn_if_reached();
+			return NULL;
+		case RZ_STRING_ENC_UTF8:
+		case RZ_STRING_ENC_8BIT:
+			re = rz_regex_new_multi(re_pattern, flags, RZ_REGEX_DEFAULT, NULL, RZ_REGEX_UTF8);
+			break;
+		case RZ_STRING_ENC_UTF16LE:
+		case RZ_STRING_ENC_UTF16BE:
+			re = rz_regex_new_multi(re_pattern, flags, RZ_REGEX_DEFAULT, NULL, RZ_REGEX_UTF16);
+			break;
+		case RZ_STRING_ENC_UTF32LE:
+		case RZ_STRING_ENC_UTF32BE:
+			re = rz_regex_new_multi(re_pattern, flags, RZ_REGEX_DEFAULT, NULL, RZ_REGEX_UTF32);
+			break;
+		}
+	} else {
+		re = rz_regex_new_multi(re_pattern, flags, RZ_REGEX_DEFAULT, NULL, RZ_REGEX_UTF8);
+	}
 	if (!re) {
 		RZ_LOG_ERROR("Failed to compile regex pattern: '%s'\n", re_pattern);
 		free(re_pattern_clone);
@@ -216,7 +294,7 @@ RZ_API bool rz_search_collection_string_add(RZ_NONNULL RzSearchCollection *col, 
 	}
 	StringSearch *ss = (StringSearch *)col->user;
 
-	RzDetectedString *s = setup_str_regex(regex_pattern, flags);
+	RzDetectedString *s = setup_str_regex(regex_pattern, flags, ss->encoding);
 	if (!s || !rz_pvector_push(ss->strings, s)) {
 		RZ_LOG_ERROR("search: cannot add the string '%s'.\n", regex_pattern);
 		rz_detected_string_free(s);

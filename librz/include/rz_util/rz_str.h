@@ -17,7 +17,11 @@ typedef enum {
 } RzStrType;
 
 typedef enum {
-	RZ_STRING_ENC_8BIT = 'b', // unknown 8bit encoding but with ASCII from 0 to 0x7f
+	/**
+	 * \brief Unknown 8bit encoding but with ASCII from 0 to 0x7f.
+	 * It is also used everywhere like it is ASCII.
+	 */
+	RZ_STRING_ENC_8BIT = 'b',
 	RZ_STRING_ENC_UTF8 = '8',
 	RZ_STRING_ENC_MUTF8 = 'm', // modified utf8
 	RZ_STRING_ENC_UTF16LE = 'u',
@@ -287,6 +291,9 @@ RZ_API const char *rz_str_indent(int indent);
 static inline bool rz_string_enc_is_utf8_compatible(RzStrEnc enc) {
 	return enc == RZ_STRING_ENC_UTF8 || enc == RZ_STRING_ENC_8BIT;
 }
+
+RZ_API bool rz_string_enc_is_utf_native_endian(RzStrEnc enc);
+RZ_API size_t rz_string_enc_code_point_width(RzStrEnc enc);
 
 #ifdef __cplusplus
 }

@@ -212,6 +212,35 @@ RZ_API RZ_OWN RzRegex32 *rz_regex_new_32(RZ_NONNULL const char *pattern, RzRegex
 	return regex_new(pattern, cflags, jflags, ccontext, 32);
 }
 
+RZ_API RZ_OWN RzRegexMulti *rz_regex_new_multi(RZ_NONNULL const char *pattern, RzRegexFlags cflags, RzRegexFlags jflags,
+	RzRegexCompContext *ccontext, RzRegexType type) {
+	RzRegexMulti *re = RZ_NEW0(RzRegexMulti);
+	if (!re) {
+		return NULL;
+	}
+	re->re_type = type;
+	switch (type) {
+	default:
+		rz_warn_if_reached();
+		free(re);
+		return NULL;
+	case RZ_REGEX_UTF8:
+		re->re8 = rz_regex_new(pattern, cflags, jflags, ccontext);
+		break;
+	case RZ_REGEX_UTF16:
+		re->re16 = rz_regex_new_16(pattern, cflags, jflags, ccontext);
+		break;
+	case RZ_REGEX_UTF32:
+		re->re32 = rz_regex_new_32(pattern, cflags, jflags, ccontext);
+		break;
+	}
+	if (!re->re8 && !re->re16 && !re->re32) {
+		free(re);
+		return NULL;
+	}
+	return re;
+}
+
 /**
  * \brief Compile a regex pattern with raw bytes.
  * In case of an error, an error message is printed and NULL is returned.
@@ -263,6 +292,47 @@ RZ_API RZ_OWN RzRegex *rz_regex_new_bytes(RZ_NONNULL const ut8 *pattern, size_t 
  */
 RZ_API void rz_regex_free(RZ_OWN RzRegex *regex) {
 	pcre2_code_free_8(regex);
+}
+
+/**
+ * \brief Frees a given RzRegex16.
+ *
+ * \param regex The RzRegex16 to free.
+ */
+RZ_API void rz_regex_free_16(RZ_OWN RzRegex16 *regex) {
+	pcre2_code_free_8(regex);
+}
+
+/**
+ * \brief Frees a given RzRegex32.
+ *
+ * \param regex The RzRegex32 to free.
+ */
+RZ_API void rz_regex_free_32(RZ_OWN RzRegex32 *regex) {
+	pcre2_code_free_8(regex);
+}
+
+/**
+ * \brief Frees a given RzRegexMulti.
+ *
+ * \param regex The RzRegexMulti to free.
+ */
+RZ_API void rz_regex_free_multi(RZ_OWN RzRegexMulti *regex_multi) {
+	if (!regex_multi) {
+		return;
+	}
+	switch (regex_multi->re_type) {
+	case RZ_REGEX_UTF8:
+		rz_regex_free(regex_multi->re8);
+		break;
+	case RZ_REGEX_UTF16:
+		rz_regex_free_16(regex_multi->re16);
+		break;
+	case RZ_REGEX_UTF32:
+		rz_regex_free_32(regex_multi->re32);
+		break;
+	}
+	free(regex_multi);
 }
 
 static void rz_regex_match_data_free(RZ_OWN RzRegexMatchData *match_data) {
@@ -840,6 +910,42 @@ RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all_ove
 	RzRegexSize text_offset,
 	RzRegexFlags mflags) {
 	return rz_regex_match_all_internal(regex, (ut8 *)text, text_size, text_offset, mflags, true, 32);
+}
+
+RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all_overlap_multi(
+	RZ_NONNULL const RzRegexMulti *regex,
+	RZ_NONNULL const ut8 *text,
+	RzRegexSize text_size,
+	RzRegexSize text_offset,
+	RzRegexFlags mflags) {
+	switch (regex->re_type) {
+	case RZ_REGEX_UTF8:
+		return rz_regex_match_all_internal(regex->re8, text, text_size, text_offset, mflags, true, 8);
+	case RZ_REGEX_UTF16:
+		return rz_regex_match_all_internal(regex->re16, text, text_size, text_offset, mflags, true, 16);
+	case RZ_REGEX_UTF32:
+		return rz_regex_match_all_internal(regex->re32, text, text_size, text_offset, mflags, true, 32);
+	}
+	rz_warn_if_reached();
+	return NULL;
+}
+
+RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all_multi(
+	RZ_NONNULL const RzRegexMulti *regex,
+	RZ_NONNULL const ut8 *text,
+	RzRegexSize text_size,
+	RzRegexSize text_offset,
+	RzRegexFlags mflags) {
+	switch (regex->re_type) {
+	case RZ_REGEX_UTF8:
+		return rz_regex_match_all_internal(regex->re8, text, text_size, text_offset, mflags, false, 8);
+	case RZ_REGEX_UTF16:
+		return rz_regex_match_all_internal(regex->re16, text, text_size, text_offset, mflags, false, 16);
+	case RZ_REGEX_UTF32:
+		return rz_regex_match_all_internal(regex->re32, text, text_size, text_offset, mflags, false, 32);
+	}
+	rz_warn_if_reached();
+	return NULL;
 }
 
 /**

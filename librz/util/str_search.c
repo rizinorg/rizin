@@ -80,7 +80,7 @@ RZ_API void rz_detected_string_free(RzDetectedString *str) {
 		return;
 	}
 	free(str->string);
-	rz_regex_free(str->regex);
+	rz_regex_free_multi(str->regex);
 	free(str);
 }
 
