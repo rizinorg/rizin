@@ -101,7 +101,7 @@ static st64 calculate_src_length(const char *src, st64 len) {
 
 /** \internal
  * \brief Calculate the length, in bytes, of the Base‑16 encoded result.
- * \param      len Length of the binary input in bytes.
+ * \param      len the length of the binary input in bytes.
  *
  * Base‑16 encodes each byte as two hexadecimal characters. Therefore,
  * the output length is always exactly twice the input length.
@@ -143,14 +143,13 @@ RZ_API size_t rz_base16_encode(RZ_OUT RZ_NULLABLE char *dest, RZ_NULLABLE const 
 /**
  * \brief Base‑16‑encode binary data and return the result in a newly allocated buffer.
  * \param[in] src  Pointer to the binary data to encode.
- * \param      n   Length of the binary data in bytes.
+ * \param      n   The length of the binary data in bytes.
  * \return A pointer to a NUL‑terminated Base‑16 string allocated with
  *         \c malloc, or \c NULL if \p src is \c NULL or a memory‑allocation
  *         failure occurs. The caller is responsible for \c free()‑ing the
  *         returned buffer.
  *
- * This routine is the Base‑16 analogue of \c rz_base32_encode_dyn. It first
- * computes the exact output size—\c 1 + 2 × n bytes to accommodate two
+ * This function first computes the exact output size—\c 1 + 2 × n bytes to accommodate two
  * hexadecimal characters per input byte plus a terminating NUL—allocates
  * that much memory, and then invokes \c rz_base16_encode to fill the buffer.
  *
@@ -245,7 +244,7 @@ RZ_API st64 rz_base16_decode(RZ_OUT RZ_NULLABLE ut8 *dest, RZ_NULLABLE const cha
 /**
  * \brief Dynamically decode a Base16‑encoded string.
  * \param[in]  src  Pointer to the Base16 text.
- * \param      len  Length of \p src; pass \c -1 to use \c strlen(src).
+ * \param      len  The length of \p src; pass \c -1 to use \c strlen(src).
  * \return A newly allocated buffer holding the decoded binary data and
  *         terminated with a NUL byte, or \c NULL on error.
  *

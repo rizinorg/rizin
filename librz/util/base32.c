@@ -40,7 +40,7 @@ static size_t cd32(int c) {
  * \param[out] dest  Eight‑character output (no padding chars).
  *
  * The caller must pad any partial final block with zeros *before*
- * invoking this routine; the encoder later converts the surplus
+ * invoking this function; the encoder later converts the surplus
  * characters to ‘=’ if RFC‑4648 padding is desired.
  */
 static void pack_to5(ut8 dest[8], const ut8 src[5]) {
@@ -119,7 +119,7 @@ static st64 calculate_src_length(const char *src, st64 len) {
 
 /** \internal
  * \brief Calculate the length, in bytes, of the Base‑32 encoded result.
- * \param      len Length of the binary input in bytes.
+ * \param      len the length of the binary input in bytes.
  *
  * Base‑32 processes the data in 5‑byte blocks and produces an 8‑character
  * output block for each full 40‑bit chunk.  When the input is not an exact
@@ -187,13 +187,13 @@ RZ_API size_t rz_base32_encode(RZ_OUT RZ_NULLABLE char *dest, RZ_NULLABLE const 
 /**
  * \brief Base‑32‑encode binary data and return the result in a newly allocated buffer.
  * \param[in] src  Pointer to the binary data to encode.
- * \param      n   Length of the binary data in bytes.
+ * \param      n   the length of the binary data in bytes.
  * \return A pointer to a NUL‑terminated Base‑32 string allocated with
  *         \c malloc, or \c NULL if \p src is \c NULL or a memory‑allocation
  *         failure occurs.  The caller is responsible for \c free()‑ing the
  *         returned buffer.
  *
- * This routine is the Base‑32 analogue of \c rz_base64_encode_dyn.  It first
+ * This function is the Base‑32 analogue of \c rz_base64_encode_dyn.  It first
  * computes the exact output size—\c 1 + 8 × ((n + 4)/5) bytes to accommodate
  * complete 8‑character blocks plus a terminating NUL—allocates that much
  * memory, and then invokes \c rz_base32_encode to fill the buffer.
@@ -231,7 +231,7 @@ RZ_API RZ_OWN char *rz_base32_encode_dyn(RZ_NULLABLE const ut8 *src, size_t n) {
  *
  * Decode a Base32-encoded message. The \p n parameter may be
  * negative, in which case \p src is treated as a C string and its
- * string length is calculated. The decoded output is stored in \p
+ * string length is calculated via strlen. The decoded output is stored in \p
  * dest, and will be NUL byte terminated.
  *
  * If either \p dest or \p src is \c NULL, nothing is done and the
@@ -308,7 +308,7 @@ RZ_API st64 rz_base32_decode(RZ_OUT RZ_NULLABLE ut8 *dest, RZ_NULLABLE const cha
 /**
  * \brief Dynamically decode a Base32‑encoded string.
  * \param[in]  src  Pointer to the Base32 text.
- * \param      len  Length of \p src; pass \c -1 to use \c strlen(src).
+ * \param      len  The length of \p src; pass \c -1 to use \c strlen(src).
  * \return A newly allocated buffer holding the decoded binary data and
  *         terminated with a NUL byte, or \c NULL on error.
  *
