@@ -45,7 +45,7 @@ a____ 32 64      ppc.as      LGPL3   as PPC Assembler (use RZ_PPC_AS environment
 _dA__ 32         propeller   LGPL3   Parallax Propeller disassembler
 _dA__ 8 16       pyc         LGPL3   Python bytecode (PYC) disassembler
 _dAe_ 32 64      riscv       GPL3    RISC-V disassembler
-_dAe_ 32 64      riscv.cs    BSD     RISC-V Capstone-based disassembler
+_dA__ 32 64      riscv.cs    BSD     RISC-V Capstone-based disassembler
 adA__ 32         rl78        LGPL3   Renesas RL78 disassembler (by Bastian Engel)
 _dA__ 32         rsp         LGPL3   Nintendo N64 Reality Signal Processor disassembler
 _dA__ 32         rx          LGPL3   Renesas RX Family disassembler (by Heersin)

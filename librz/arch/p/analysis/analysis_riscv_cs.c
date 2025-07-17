@@ -57,47 +57,6 @@
 		SET_SRC_DST_3_REGS(op); \
 	}
 
-// ESIL macros:
-
-// put the sign bit on the stack
-#define ES_IS_NEGATIVE(arg) "1," arg ",<<<,1,&"
-
-// call with delay slot
-#define ES_CALL_DR(ra, addr) "pc,4,+," ra ",=," ES_J(addr)
-#define ES_CALL_D(addr)      ES_CALL_DR("ra", addr)
-
-// call without delay slot
-#define ES_CALL_NDR(ra, addr) "pc," ra ",=," ES_J(addr)
-#define ES_CALL_ND(addr)      ES_CALL_NDR("ra", addr)
-
-#define USE_DS 0
-#if USE_DS
-// emit ERR trap if executed in a delay slot
-#define ES_TRAP_DS() "$ds,!,!,?{,$$,1,TRAP,BREAK,},"
-// jump to address
-#define ES_J(addr) addr ",SETJT,1,SETD"
-#else
-#define ES_TRAP_DS() ""
-#define ES_J(addr)   addr ",pc,="
-#endif
-
-// sign extend 32 -> 64
-#define ES_SIGN_EXT64(arg) \
-	arg ",0x80000000,&,0,<,?{," \
-	    "0xffffffff00000000," arg ",|=," \
-	    "}"
-
-#define PROTECT_ZERO() \
-	if (REG(0)[0] == 'z') { \
-		rz_strbuf_appendf(&op->esil, ","); \
-	} else
-
-#define ESIL_LOAD(size) \
-	PROTECT_ZERO() { \
-		rz_strbuf_appendf(&op->esil, "%s,[" size "],%s,=", \
-			ARG(1), REG(0)); \
-	}
-
 static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
 	PJ *pj = pj_new();
@@ -138,65 +97,6 @@ static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
 	rz_strbuf_init(buf);
 	rz_strbuf_append(buf, pj_string(pj));
 	pj_free(pj);
-}
-
-static const char *arg(csh *handle, cs_insn *insn, char *buf, int n) {
-	*buf = 0;
-	switch (insn->detail->riscv.operands[n].type) {
-	case RISCV_OP_INVALID:
-		break;
-	case RISCV_OP_REG:
-		sprintf(buf, "%s",
-			cs_reg_name(*handle,
-				insn->detail->riscv.operands[n].reg));
-		break;
-	case RISCV_OP_IMM: {
-		st64 x = (st64)insn->detail->riscv.operands[n].imm;
-		sprintf(buf, "%" PFMT64d, x);
-		break;
-	}
-	case RISCV_OP_MEM: {
-		st64 disp = insn->detail->riscv.operands[n].mem.disp;
-		if (disp < 0) {
-			sprintf(buf, "%" PFMT64d ",%s,-",
-				(ut64)-insn->detail->riscv.operands[n].mem.disp,
-				cs_reg_name(*handle,
-					insn->detail->riscv.operands[n].mem.base));
-		} else {
-			sprintf(buf, "0x%" PFMT64x ",%s,+",
-				(ut64)insn->detail->riscv.operands[n].mem.disp,
-				cs_reg_name(*handle,
-					insn->detail->riscv.operands[n].mem.base));
-		}
-		break;
-	}
-	}
-	return buf;
-}
-
-#define ARG(x) (*str[x] != 0) ? str[x] : arg(handle, insn, str[x], x)
-
-static int analyze_op_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
-	char str[8][32] = { { 0 } };
-	int i;
-
-	rz_strbuf_init(&op->esil);
-	rz_strbuf_set(&op->esil, "");
-
-	if (insn) {
-		// caching operands
-		for (i = 0; i < insn->detail->riscv.op_count && i < 8; i++) {
-			*str[i] = 0;
-			ARG(i);
-		}
-	}
-
-	switch (insn->id) {
-		// case RISCV_INS_NOP:
-		//	rz_strbuf_setf (&op->esil, ",");
-		//	break;
-	}
-	return 0;
 }
 
 static int parse_reg_name(RzRegItem *reg, csh handle, cs_insn *insn, int reg_num) {
@@ -366,11 +266,6 @@ beach:
 	set_opdir(op);
 	if (insn && mask & RZ_ANALYSIS_OP_MASK_OPEX) {
 		opex(&op->opex, ctx->hndl, insn);
-	}
-	if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
-		if (analyze_op_esil(analysis, op, addr, buf, len, &ctx->hndl, insn) != 0) {
-			rz_strbuf_fini(&op->esil);
-		}
 	}
 	if (mask & RZ_ANALYSIS_OP_MASK_VAL) {
 		op_fillval(analysis, op, &ctx->hndl, insn);
@@ -592,7 +487,7 @@ RzAnalysisPlugin rz_analysis_plugin_riscv_cs = {
 	.name = "riscv.cs",
 	.desc = "Capstone RISCV analyzer",
 	.license = "BSD",
-	.esil = true,
+	.esil = false,
 	.arch = "riscv",
 	.get_reg_profile = get_reg_profile,
 	.archinfo = archinfo,
