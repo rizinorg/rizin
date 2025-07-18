@@ -97,9 +97,15 @@ RZ_API size_t rz_utf32_encode(RZ_NONNULL RZ_OUT ut8 *buf, RzCodePoint ucp, bool 
 	if (ucp > RZ_UNICODE_LAST_CODE_POINT || rz_unicode_code_point_is_surrogate(ucp)) {
 		return 0;
 	}
-	buf[big_endian ? 3 : 0] = ucp & 0xff;
-	buf[big_endian ? 2 : 1] = (ucp >> 8) & 0xff;
-	buf[big_endian ? 1 : 2] = (ucp >> 16) & 0xff;
-	buf[big_endian ? 0 : 3] = (ucp >> 24) & 0xff;
+	if (big_endian) {
+		buf[3] = ucp & 0xff;
+		buf[2] = (ucp >> 8) & 0xff;
+		buf[1] = (ucp >> 16) & 0xff;
+		buf[0] = (ucp >> 24) & 0xff;
+	}
+	buf[0] = ucp & 0xff;
+	buf[1] = (ucp >> 8) & 0xff;
+	buf[2] = (ucp >> 16) & 0xff;
+	buf[3] = (ucp >> 24) & 0xff;
 	return 4;
 }

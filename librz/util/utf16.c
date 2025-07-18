@@ -119,9 +119,27 @@ RZ_API size_t rz_utf16be_decode(RZ_NONNULL const ut8 *buf, size_t buf_len, RZ_NU
  */
 RZ_API size_t rz_utf16_encode(RZ_NONNULL RZ_OUT ut8 *buf, RzCodePoint codepoint, bool big_endian) {
 	rz_return_val_if_fail(buf, 0);
+	if (big_endian) {
+		if (codepoint < 0x10000) {
+			buf[1] = codepoint & 0xff;
+			buf[0] = codepoint >> 8 & 0xff;
+			return 2;
+		}
+		if (codepoint > 0x10FFFF) {
+			return 0;
+		}
+		codepoint -= 0x10000;
+		RzCodePoint high = 0xd800 + ((codepoint >> 10) & 0x3ff);
+		RzCodePoint low = 0xdc00 + (codepoint & 0x3ff);
+		buf[1] = high & 0xff;
+		buf[0] = high >> 8 & 0xff;
+		buf[3] = low & 0xff;
+		buf[2] = low >> 8 & 0xff;
+		return 4;
+	}
 	if (codepoint < 0x10000) {
-		buf[big_endian ? 1 : 0] = codepoint & 0xff;
-		buf[big_endian ? 0 : 1] = codepoint >> 8 & 0xff;
+		buf[0] = codepoint & 0xff;
+		buf[1] = codepoint >> 8 & 0xff;
 		return 2;
 	}
 	if (codepoint > 0x10FFFF) {
@@ -130,10 +148,10 @@ RZ_API size_t rz_utf16_encode(RZ_NONNULL RZ_OUT ut8 *buf, RzCodePoint codepoint,
 	codepoint -= 0x10000;
 	RzCodePoint high = 0xd800 + ((codepoint >> 10) & 0x3ff);
 	RzCodePoint low = 0xdc00 + (codepoint & 0x3ff);
-	buf[big_endian ? 1 : 0] = high & 0xff;
-	buf[big_endian ? 0 : 1] = high >> 8 & 0xff;
-	buf[big_endian ? 3 : 2] = low & 0xff;
-	buf[big_endian ? 2 : 3] = low >> 8 & 0xff;
+	buf[0] = high & 0xff;
+	buf[1] = high >> 8 & 0xff;
+	buf[2] = low & 0xff;
+	buf[3] = low >> 8 & 0xff;
 	return 4;
 }
 
