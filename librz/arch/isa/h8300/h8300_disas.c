@@ -305,10 +305,10 @@ static void decode_operands(struct h8300_cmd *cmd) {
 		case H8300_OP_RI:
 			STR_APPENDF(cmd->ops_str, "@%s", register32_names[op->reg]);
 			break;
-		case H8300_OP_RINC:
+		case H8300_OP_RPOSTINC:
 			STR_APPENDF(cmd->ops_str, "@%s+", register32_names[op->reg]);
 			break;
-		case H8300_OP_RDEC:
+		case H8300_OP_RPREDEC:
 			STR_APPENDF(cmd->ops_str, "@-%s", register32_names[op->reg]);
 			break;
 		}
@@ -462,13 +462,6 @@ static int decode_r32_2(const ut8 *bytes, struct h8300_cmd *cmd) {
 	return ret;
 }
 
-static int decode_r32_4h(const ut8 *bytes, struct h8300_cmd *cmd) {
-	int ret = 4;
-	cmd->fmt = H8300_INSN_FORMAT_R32;
-	OPS_ADD(H8300_OP_R32, reg, r32_high(bytes[3]));
-	return ret;
-}
-
 static int decode_r32_4l(const ut8 *bytes, struct h8300_cmd *cmd) {
 	int ret = 4;
 	cmd->fmt = H8300_INSN_FORMAT_R32;
@@ -479,16 +472,16 @@ static int decode_r32_4l(const ut8 *bytes, struct h8300_cmd *cmd) {
 static int decode_rinc_4(const ut8 *bytes, struct h8300_cmd *cmd) {
 	int ret = 4;
 	ut8 r = r32_high(bytes[3]);
-	cmd->fmt = H8300_INSN_FORMAT_RINC;
-	OPS_ADD(H8300_OP_RINC, reg, r);
+	cmd->fmt = H8300_INSN_FORMAT_RPOSTINC;
+	OPS_ADD(H8300_OP_RPOSTINC, reg, r);
 	return ret;
 }
 
 static int decode_rdec_4(const ut8 *bytes, struct h8300_cmd *cmd) {
 	int ret = 4;
 	ut8 r = r32_high(bytes[3]);
-	cmd->fmt = H8300_INSN_FORMAT_RDEC;
-	OPS_ADD(H8300_OP_RDEC, reg, r);
+	cmd->fmt = H8300_INSN_FORMAT_RPREDEC;
+	OPS_ADD(H8300_OP_RPREDEC, reg, r);
 	return ret;
 }
 
@@ -499,10 +492,10 @@ static int decode_incdecr16(const ut8 *bytes, struct h8300_cmd *cmd) {
 	if (bytes[1] & 0x80) {
 		cmd->fmt = H8300_INSN_FORMAT_R16RDEC;
 		OPS_ADD(H8300_OP_R16, reg, bytes[1] & 0x7);
-		OPS_ADD(H8300_OP_RDEC, reg, (bytes[1] >> 4) & 0x7);
+		OPS_ADD(H8300_OP_RPREDEC, reg, (bytes[1] >> 4) & 0x7);
 	} else {
 		cmd->fmt = H8300_INSN_FORMAT_RINCR16;
-		OPS_ADD(H8300_OP_RINC, reg, (bytes[1] >> 4) & 0x7);
+		OPS_ADD(H8300_OP_RPOSTINC, reg, (bytes[1] >> 4) & 0x7);
 		OPS_ADD(H8300_OP_R16, reg, bytes[1] & 0x7);
 	}
 
@@ -634,10 +627,17 @@ ABSR_IMPL(8, 24, 32, 3);
 RABS_IMPL(8, 24, 32, 3);
 
 /* [opcode] [0 rn 0000] */
-static int decode_ri32(const ut8 *bytes, struct h8300_cmd *cmd) {
+static int decode_ri_2(const ut8 *bytes, struct h8300_cmd *cmd) {
 	int ret = 2;
 	cmd->fmt = H8300_INSN_FORMAT_RI;
 	OPS_ADD(H8300_OP_RI, reg, (bytes[1] >> 4) & 0x7);
+	return ret;
+}
+
+static int decode_ri_4(const ut8 *bytes, struct h8300_cmd *cmd) {
+	int ret = 4;
+	cmd->fmt = H8300_INSN_FORMAT_RI;
+	OPS_ADD(H8300_OP_RI, reg, r32_high(bytes[3]));
 	return ret;
 }
 
@@ -800,10 +800,10 @@ static int decode_incdecr8(const ut8 *bytes, struct h8300_cmd *cmd) {
 	if (bytes[1] & 0x80) {
 		cmd->fmt = H8300_INSN_FORMAT_R8RDEC;
 		OPS_ADD(H8300_OP_R8, reg, bytes[1] & 0xf);
-		OPS_ADD(H8300_OP_RDEC, reg, (bytes[1] >> 4) & 0x7);
+		OPS_ADD(H8300_OP_RPREDEC, reg, (bytes[1] >> 4) & 0x7);
 	} else {
 		cmd->fmt = H8300_INSN_FORMAT_RINCR8;
-		OPS_ADD(H8300_OP_RINC, reg, (bytes[1] >> 4) & 0x7);
+		OPS_ADD(H8300_OP_RPOSTINC, reg, (bytes[1] >> 4) & 0x7);
 		OPS_ADD(H8300_OP_R8, reg, bytes[1] & 0xf);
 	}
 	return ret;
@@ -816,7 +816,7 @@ static int decode_rincr32_4(const ut8 *bytes, struct h8300_cmd *cmd) {
 	ut8 regdval = bytes[3] & 0x7;
 
 	cmd->fmt = H8300_INSN_FORMAT_RINCR32;
-	OPS_ADD(H8300_OP_RINC, reg, regsval);
+	OPS_ADD(H8300_OP_RPOSTINC, reg, regsval);
 	OPS_ADD(H8300_OP_R32, reg, regdval);
 
 	return ret;
@@ -830,7 +830,7 @@ static int decode_r32rdec_4(const ut8 *bytes, struct h8300_cmd *cmd) {
 
 	cmd->fmt = H8300_INSN_FORMAT_R32RDEC;
 	OPS_ADD(H8300_OP_R32, reg, rs);
-	OPS_ADD(H8300_OP_RDEC, reg, rd);
+	OPS_ADD(H8300_OP_RPREDEC, reg, rd);
 
 	return ret;
 }
@@ -1056,10 +1056,10 @@ static int h8300_decode_4(const ut8 *instr, struct h8300_cmd *cmd) {
 		break;
 	}
 	switch (x4 & 0xffffff8f) {
-		CASE_F_F_CCR(decode_r32_4h, 0x01406900, LDC_W);
+		CASE_F_F_CCR(decode_ri_4, 0x01406900, LDC_W);
 		CASE_F_F_CCR(decode_rinc_4, 0x01406d00, LDC_W);
 
-		CASE_F_CCR_F(decode_r32_4h, 0x01406980, STC_W);
+		CASE_F_CCR_F(decode_ri_4, 0x01406980, STC_W);
 		CASE_F_CCR_F(decode_rdec_4, 0x01406d80, STC_W);
 	default:
 		break;
@@ -1311,7 +1311,7 @@ static int h8300_decode_2(const ut8 *instr, struct h8300_cmd *cmd) {
 		break;
 	case 0x59:
 		cmd->id = H8300_INSN_JMP;
-		ret = decode_ri32(instr, cmd);
+		ret = decode_ri_2(instr, cmd);
 		break;
 	case 0x5a:
 		cmd->id = H8300_INSN_JMP;
@@ -1323,7 +1323,7 @@ static int h8300_decode_2(const ut8 *instr, struct h8300_cmd *cmd) {
 		break;
 	case 0x5d:
 		cmd->id = H8300_INSN_JSR;
-		ret = decode_ri32(instr, cmd);
+		ret = decode_ri_2(instr, cmd);
 		break;
 	case 0x5e:
 		cmd->id = H8300_INSN_JSR;

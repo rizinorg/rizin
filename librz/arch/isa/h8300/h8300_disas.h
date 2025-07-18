@@ -293,8 +293,8 @@ typedef enum {
 	H8300_INSN_FORMAT_R16RDEC,
 	H8300_INSN_FORMAT_RINCR16,
 	H8300_INSN_FORMAT_R8RDEC,
-	H8300_INSN_FORMAT_RINC,
-	H8300_INSN_FORMAT_RDEC,
+	H8300_INSN_FORMAT_RPOSTINC,
+	H8300_INSN_FORMAT_RPREDEC,
 	H8300_INSN_FORMAT_RINCR8,
 	H8300_INSN_FORMAT_R16RI,
 	H8300_INSN_FORMAT_RIR16,
@@ -319,8 +319,8 @@ typedef enum {
 	H8300_OP_MI8,
 	H8300_OP_RD,
 	H8300_OP_RI,
-	H8300_OP_RINC, ///< Register indirect with post-increment @Rn+
-	H8300_OP_RDEC, ///< Register indirect with pre-decrement @–Rn
+	H8300_OP_RPOSTINC, ///< Register indirect with post-increment @Rn+
+	H8300_OP_RPREDEC, ///< Register indirect with pre-decrement @–Rn
 	H8300_OP_CCR,
 } H8300OperandType;
 
