@@ -93,8 +93,8 @@ static bool native_string_find(RzSearchFindOpt *fopt, StringSearch *ss, ut64 off
 				return false;
 			}
 			(*n_hits)++;
-			rz_pvector_free(matches);
 		}
+		rz_pvector_free(matches);
 	}
 	return true;
 }
