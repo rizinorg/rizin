@@ -514,7 +514,7 @@ static RZ_OWN RzPVector /*<RzRegexMatch *>*/ *match_first_8(
 	RzRegexFlags mflags) {
 	rz_return_val_if_fail(regex && text, NULL);
 
-	RzPVector *matches = rz_pvector_new(free);
+	RzPVector *matches = NULL;
 	RzRegexMatchData *mdata = NULL;
 	mdata = pcre2_match_data_create_from_pattern_8(regex, NULL);
 	RzRegexStatus rc = 0;
@@ -550,6 +550,7 @@ static RZ_OWN RzPVector /*<RzRegexMatch *>*/ *match_first_8(
 		PCRE2_INFO_NAMEENTRYSIZE,
 		&name_entry_size);
 
+	matches = rz_pvector_new(free);
 	for (size_t i = 0; i < rc; i++) {
 		if (ovector[2 * i] > ovector[2 * i + 1]) {
 			// This happens for \K lookaround. We fail if used.
@@ -580,7 +581,7 @@ static RZ_OWN RzPVector /*<RzRegexMatch *>*/ *match_first_16(
 	RzRegexFlags mflags) {
 	rz_return_val_if_fail(regex && text, NULL);
 
-	RzPVector *matches = rz_pvector_new(free);
+	RzPVector *matches = NULL;
 	RzRegexMatchData *mdata = NULL;
 	mdata = pcre2_match_data_create_from_pattern_16(regex, NULL);
 	RzRegexStatus rc = 0;
@@ -616,6 +617,7 @@ static RZ_OWN RzPVector /*<RzRegexMatch *>*/ *match_first_16(
 		PCRE2_INFO_NAMEENTRYSIZE,
 		&name_entry_size);
 
+	matches = rz_pvector_new(free);
 	for (size_t i = 0; i < rc; i++) {
 		if (ovector[2 * i] > ovector[2 * i + 1]) {
 			// This happens for \K lookaround. We fail if used.
@@ -646,7 +648,7 @@ static RZ_OWN RzPVector /*<RzRegexMatch *>*/ *match_first_32(
 	RzRegexFlags mflags) {
 	rz_return_val_if_fail(regex && text, NULL);
 
-	RzPVector *matches = rz_pvector_new(free);
+	RzPVector *matches = NULL;
 	RzRegexMatchData *mdata = NULL;
 	mdata = pcre2_match_data_create_from_pattern_32(regex, NULL);
 	RzRegexStatus rc = 0;
@@ -682,6 +684,7 @@ static RZ_OWN RzPVector /*<RzRegexMatch *>*/ *match_first_32(
 		PCRE2_INFO_NAMEENTRYSIZE,
 		&name_entry_size);
 
+	matches = rz_pvector_new(free);
 	for (size_t i = 0; i < rc; i++) {
 		if (ovector[2 * i] > ovector[2 * i + 1]) {
 			// This happens for \K lookaround. We fail if used.
