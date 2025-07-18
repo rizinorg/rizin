@@ -78,9 +78,9 @@ d "mov.l er1,@0xff8111" 01006b818111 0x0 (seq (storew 0 (bv 24 0xff8111) (append
 d "mov.l er1,@0x111111" 01006ba100111111 0x0 (seq (storew 0 (bv 24 0x111111) (append (var e1) (var r1))) (set ccr (cast 8 false (| (& (cast 32 false (var ccr)) (~ (<< (>> (bv 32 0xffffffff) (- (bv 32 0x20) (bv 32 0x1)) false) (bv 32 0x3) false))) (& (<< (cast 32 false (ite (&& (sle (append (var e1) (var r1)) (bv 32 0x0)) (! (== (append (var e1) (var r1)) (bv 32 0x0)))) (bv 16 0x1) (bv 16 0x0))) (bv 32 0x3) false) (<< (>> (bv 32 0xffffffff) (- (bv 32 0x20) (bv 32 0x1)) false) (bv 32 0x3) false))))) (set ccr (cast 8 false (| (& (cast 32 false (var ccr)) (~ (<< (>> (bv 32 0xffffffff) (- (bv 32 0x20) (bv 32 0x1)) false) (bv 32 0x2) false))) (& (<< (cast 32 false (ite (is_zero (append (var e1) (var r1))) (bv 16 0x1) (bv 16 0x0))) (bv 32 0x2) false) (<< (>> (bv 32 0xffffffff) (- (bv 32 0x20) (bv 32 0x1)) false) (bv 32 0x2) false))))) (set ccr (cast 8 false (| (& (cast 32 false (var ccr)) (~ (<< (>> (bv 32 0xffffffff) (- (bv 32 0x20) (bv 32 0x1)) false) (bv 32 0x1) false))) (& (<< (cast 32 false (ite false (bv 16 0x1) (bv 16 0x0))) (bv 32 0x1) false) (<< (>> (bv 32 0xffffffff) (- (bv 32 0x20) (bv 32 0x1)) false) (bv 32 0x1) false))))))
 d "movfpe @0x3344,r2l" 6a4a3344
 d "movtpe r3l,@0x3322" 6acb3322
-d "mulxu.w r1,er2" 5212
-d "mulxs.b r1h,r2" 01c05012
-d "mulxs.w r1,er2" 01c05212
+d "mulxu.w r1,er2" 5212 0x0 (seq (set e2 (cast 16 false (>> (* (cast 32 false (var r1)) (& (append (var e2) (var r2)) (bv 32 0xffff))) (bv 8 0x10) false))) (set r2 (cast 16 false (* (cast 32 false (var r1)) (& (append (var e2) (var r2)) (bv 32 0xffff))))))
+d "mulxs.b r1h,r2" 01c05012 0x0 (set r2 (* (cast 16 (msb (cast 8 false (>> (var r1) (bv 8 0x8) false))) (cast 8 false (>> (var r1) (bv 8 0x8) false))) (& (var r2) (bv 16 0xff))))
+d "mulxs.w r1,er2" 01c05212 0x0 (seq (set e2 (cast 16 false (>> (* (cast 32 (msb (var r1)) (var r1)) (& (append (var e2) (var r2)) (bv 32 0xffff))) (bv 8 0x10) false))) (set r2 (cast 16 false (* (cast 32 (msb (var r1)) (var r1)) (& (append (var e2) (var r2)) (bv 32 0xffff))))))
 d "not.w r1" 1711
 d "not.l er1" 1731
 d "neg.w r1" 1791

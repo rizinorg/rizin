@@ -692,6 +692,14 @@ static RzILOpEffect *op_divxs(H8300Cmd *cmd, ut8 N) {
 		RX_X(N * 2, 1, APPEND(VARL("remainder"), VARL("quotient"))));
 }
 
+static RzILOpEffect *op_mulxu(H8300Cmd *cmd, ut8 N) {
+	return RX_X(N * 2, 1, MUL(UNSIGNED(N * 2, RX_OP(N, 0)), LOGAND(RX_OP(N * 2, 1), UN(N * 2, (1 << N) - 1))));
+}
+
+static RzILOpEffect *op_mulxs(H8300Cmd *cmd, ut8 N) {
+	return RX_X(N * 2, 1, MUL(SIGNED(N * 2, RX_OP(N, 0)), LOGAND(RX_OP(N * 2, 1), UN(N * 2, (1 << N) - 1))));
+}
+
 static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 	switch (cmd->id) {
 	case H8300_INSN_MOV_B: return op_mov_b(cmd);
@@ -958,8 +966,6 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 		return op_Bcc(cmd, INV(OR(ccr_val(CCR_Z), XOR(ccr_val(CCR_N), ccr_val(CCR_V)))));
 	case H8300_INSN_BLE:
 		return op_Bcc(cmd, OR(ccr_val(CCR_Z), XOR(ccr_val(CCR_N), ccr_val(CCR_V))));
-	case H8300_INSN_MULXU_B:
-		return R16_X(1, MUL(UNSIGNED(16, R8_OP(0)), LOGAND(R16_OP(1), U16(0x00ff))));
 	case H8300_INSN_DIVXU_B:
 		return op_divxu(cmd, 8);
 	case H8300_INSN_DIVXU_W:
@@ -968,9 +974,10 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 		return op_divxs(cmd, 8);
 	case H8300_INSN_DIVXS_W:
 		return op_divxs(cmd, 16);
-	case H8300_INSN_MULXS_B:
-	case H8300_INSN_MULXU_W:
-	case H8300_INSN_MULXS_W: NOT_IMPLEMENTED;
+	case H8300_INSN_MULXU_B: return op_mulxu(cmd, 8);
+	case H8300_INSN_MULXS_B: return op_mulxs(cmd, 8);
+	case H8300_INSN_MULXU_W: return op_mulxu(cmd, 16);
+	case H8300_INSN_MULXS_W: return op_mulxs(cmd, 16);
 
 	case H8300_INSN_EEPMOV_B:
 		return SEQ2(
