@@ -102,6 +102,7 @@ RZ_API size_t rz_utf32_encode(RZ_NONNULL RZ_OUT ut8 *buf, RzCodePoint ucp, bool 
 		buf[2] = (ucp >> 8) & 0xff;
 		buf[1] = (ucp >> 16) & 0xff;
 		buf[0] = (ucp >> 24) & 0xff;
+		return 4;
 	}
 	buf[0] = ucp & 0xff;
 	buf[1] = (ucp >> 8) & 0xff;

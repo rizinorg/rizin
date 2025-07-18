@@ -652,7 +652,7 @@ static RZ_OWN RzPVector /*<RzRegexMatch *>*/ *match_first_32(
 	RzRegexMatchData *mdata = NULL;
 	mdata = pcre2_match_data_create_from_pattern_32(regex, NULL);
 	RzRegexStatus rc = 0;
-	rc = pcre2_match_32(regex, (PCRE2_SPTR32)text, text_size / sizeof(PCRE2_SPTR16), text_offset, mflags, mdata, NULL);
+	rc = pcre2_match_32(regex, (PCRE2_SPTR32)text, text_size / sizeof(PCRE2_SPTR32), text_offset, mflags, mdata, NULL);
 
 	if (rc == PCRE2_ERROR_NOMATCH) {
 		// Nothing matched return empty vector.
