@@ -822,32 +822,32 @@ bool test_rz_str_utf8_to_utf16(void) {
 	const ut8 nul16_le[] = { 0x0, 0x0 };
 	const ut8 nul16_be[] = { 0x0, 0x0 };
 
-	ut8 *out = rz_str_utf8_to_utf16(a, true);
-	mu_assert_memeq(out, a16_be, sizeof(a16_be), "string mismatch");
+	ut16 *out = rz_str_utf8_to_utf16(a, true);
+	mu_assert_memeq((ut8 *)out, a16_be, sizeof(a16_be), "string mismatch");
 	free(out);
 	out = rz_str_utf8_to_utf16(a, false);
-	mu_assert_memeq(out, a16_le, sizeof(a16_le), "string mismatch");
+	mu_assert_memeq((ut8 *)out, a16_le, sizeof(a16_le), "string mismatch");
 	free(out);
 
 	out = rz_str_utf8_to_utf16(pine, true);
-	mu_assert_memeq(out, pine16_be, sizeof(pine16_be), "string mismatch");
+	mu_assert_memeq((ut8 *)out, pine16_be, sizeof(pine16_be), "string mismatch");
 	free(out);
 	out = rz_str_utf8_to_utf16(pine, false);
-	mu_assert_memeq(out, pine16_le, sizeof(pine16_le), "string mismatch");
+	mu_assert_memeq((ut8 *)out, pine16_le, sizeof(pine16_le), "string mismatch");
 	free(out);
 
 	out = rz_str_utf8_to_utf16(apine, true);
-	mu_assert_memeq(out, apine16_be, sizeof(apine16_be), "string mismatch");
+	mu_assert_memeq((ut8 *)out, apine16_be, sizeof(apine16_be), "string mismatch");
 	free(out);
 	out = rz_str_utf8_to_utf16(apine, false);
-	mu_assert_memeq(out, apine16_le, sizeof(apine16_le), "string mismatch");
+	mu_assert_memeq((ut8 *)out, apine16_le, sizeof(apine16_le), "string mismatch");
 	free(out);
 
 	out = rz_str_utf8_to_utf16(nul, true);
-	mu_assert_memeq(out, nul16_be, sizeof(nul16_be), "string mismatch");
+	mu_assert_memeq((ut8 *)out, nul16_be, sizeof(nul16_be), "string mismatch");
 	free(out);
 	out = rz_str_utf8_to_utf16(nul, false);
-	mu_assert_memeq(out, nul16_le, sizeof(nul16_le), "string mismatch");
+	mu_assert_memeq((ut8 *)out, nul16_le, sizeof(nul16_le), "string mismatch");
 	free(out);
 
 	mu_end;
@@ -867,32 +867,32 @@ bool test_rz_str_utf8_to_utf32(void) {
 	const ut8 nul32_le[] = { 0x0, 0x00, 0x00, 0x0 };
 	const ut8 nul32_be[] = { 0x0, 0x00, 0x00, 0x0 };
 
-	ut8 *out = rz_str_utf8_to_utf32(a, true);
-	mu_assert_memeq(out, a32_be, sizeof(a32_be), "string mismatch");
+	ut32 *out = rz_str_utf8_to_utf32(a, true);
+	mu_assert_memeq((ut8 *)out, a32_be, sizeof(a32_be), "string mismatch");
 	free(out);
 	out = rz_str_utf8_to_utf32(a, false);
-	mu_assert_memeq(out, a32_le, sizeof(a32_le), "string mismatch");
+	mu_assert_memeq((ut8 *)out, a32_le, sizeof(a32_le), "string mismatch");
 	free(out);
 
 	out = rz_str_utf8_to_utf32(pine, true);
-	mu_assert_memeq(out, pine32_be, sizeof(pine32_be), "string mismatch");
+	mu_assert_memeq((ut8 *)out, pine32_be, sizeof(pine32_be), "string mismatch");
 	free(out);
 	out = rz_str_utf8_to_utf32(pine, false);
-	mu_assert_memeq(out, pine32_le, sizeof(pine32_le), "string mismatch");
+	mu_assert_memeq((ut8 *)out, pine32_le, sizeof(pine32_le), "string mismatch");
 	free(out);
 
 	out = rz_str_utf8_to_utf32(apine, true);
-	mu_assert_memeq(out, apine32_be, sizeof(apine32_be), "string mismatch");
+	mu_assert_memeq((ut8 *)out, apine32_be, sizeof(apine32_be), "string mismatch");
 	free(out);
 	out = rz_str_utf8_to_utf32(apine, false);
-	mu_assert_memeq(out, apine32_le, sizeof(apine32_le), "string mismatch");
+	mu_assert_memeq((ut8 *)out, apine32_le, sizeof(apine32_le), "string mismatch");
 	free(out);
 
 	out = rz_str_utf8_to_utf32(nul, true);
-	mu_assert_memeq(out, nul32_be, sizeof(nul32_be), "string mismatch");
+	mu_assert_memeq((ut8 *)out, nul32_be, sizeof(nul32_be), "string mismatch");
 	free(out);
 	out = rz_str_utf8_to_utf32(nul, false);
-	mu_assert_memeq(out, nul32_le, sizeof(nul32_le), "string mismatch");
+	mu_assert_memeq((ut8 *)out, nul32_le, sizeof(nul32_le), "string mismatch");
 	free(out);
 
 	mu_end;
