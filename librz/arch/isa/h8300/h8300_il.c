@@ -164,6 +164,27 @@ X_OP_GET_IMPL(H8300_OP_MI8, UADDR, mi8);
 #define R32_X(I, X)   r32_op_set(cmd, (I), (X))
 #define R32_I_X(I, X) r32_op_i_set((OPS_GET(I).reg), (X))
 
+static RzILOpPure *rx_op(H8300Cmd *cmd, ut8 N, ut8 I) {
+	switch (N) {
+	case 8: return R8_OP(I);
+	case 16: return R16_OP(I);
+	case 32: return R32_OP(I);
+	default: NOT_IMPLEMENTED;
+	}
+}
+
+static RzILOpEffect *rx_op_set(H8300Cmd *cmd, ut8 N, ut8 I, RzILOpPure *x) {
+	switch (N) {
+	case 8: return r8_op_set(cmd, I, x);
+	case 16: return r16_op_set(cmd, I, x);
+	case 32: return r32_op_set(cmd, I, x);
+	default: NOT_IMPLEMENTED;
+	}
+}
+
+#define RX_OP(N, I)   rx_op(cmd, N, I)
+#define RX_X(N, I, X) rx_op_set(cmd, N, I, X)
+
 typedef enum {
 	CCR_C,
 	CCR_V,
@@ -655,6 +676,22 @@ static RzILOpEffect *op_Bcc(H8300Cmd *cmd, RzILOpPure *cnd) {
 	return BRANCH(cnd, JMP(PCREL_OP(0)), NOP());
 }
 
+static RzILOpEffect *op_divxu(H8300Cmd *cmd, ut8 N) {
+	return SEQ4(
+		SETL("quotient", UNSIGNED(N, DIV(RX_OP(N * 2, 1), UNSIGNED(N * 2, RX_OP(N, 0))))),
+		SETL("remainder", UNSIGNED(N, MOD(RX_OP(N * 2, 1), UNSIGNED(N * 2, RX_OP(N, 0))))),
+		ccr_unary_NZ(N, RX_OP(N, 0)),
+		RX_X(N * 2, 1, APPEND(VARL("remainder"), VARL("quotient"))));
+}
+
+static RzILOpEffect *op_divxs(H8300Cmd *cmd, ut8 N) {
+	return SEQ4(
+		SETL("quotient", SIGNED(N, SDIV(RX_OP(N * 2, 1), SIGNED(N * 2, RX_OP(N, 0))))),
+		SETL("remainder", SIGNED(N, SMOD(RX_OP(N * 2, 1), SIGNED(N * 2, RX_OP(N, 0))))),
+		ccr_unary_NZ(N, RX_OP(N, 0)),
+		RX_X(N * 2, 1, APPEND(VARL("remainder"), VARL("quotient"))));
+}
+
 static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 	switch (cmd->id) {
 	case H8300_INSN_MOV_B: return op_mov_b(cmd);
@@ -924,17 +961,16 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 	case H8300_INSN_MULXU_B:
 		return R16_X(1, MUL(UNSIGNED(16, R8_OP(0)), LOGAND(R16_OP(1), U16(0x00ff))));
 	case H8300_INSN_DIVXU_B:
-		return SEQ4(
-			SETL("quotient", UNSIGNED(8, DIV(R16_OP(1), UNSIGNED(16, R8_OP(0))))),
-			SETL("remainder", UNSIGNED(8, MOD(R16_OP(1), UNSIGNED(16, R8_OP(0))))),
-			ccr_unary_NZ(8, R8_OP(0)),
-			R16_X(1, APPEND(VARL("remainder"), VARL("quotient"))));
+		return op_divxu(cmd, 8);
+	case H8300_INSN_DIVXU_W:
+		return op_divxu(cmd, 16);
+	case H8300_INSN_DIVXS_B:
+		return op_divxs(cmd, 8);
+	case H8300_INSN_DIVXS_W:
+		return op_divxs(cmd, 16);
 	case H8300_INSN_MULXS_B:
 	case H8300_INSN_MULXU_W:
-	case H8300_INSN_MULXS_W:
-	case H8300_INSN_DIVXU_W:
-	case H8300_INSN_DIVXS_B:
-	case H8300_INSN_DIVXS_W: NOT_IMPLEMENTED;
+	case H8300_INSN_MULXS_W: NOT_IMPLEMENTED;
 
 	case H8300_INSN_EEPMOV_B:
 		return SEQ2(
