@@ -506,33 +506,19 @@ RZ_API RzRegexStatus rz_regex_get_group_idx_by_name(RZ_NONNULL const RzRegex *re
 	return RZ_REGEX_ERROR_NOMATCH;
 }
 
-static RZ_OWN RzPVector /*<RzRegexMatch *>*/ *match_first(
+static RZ_OWN RzPVector /*<RzRegexMatch *>*/ *match_first_8(
 	RZ_NONNULL const void *regex,
 	RZ_NONNULL const ut8 *text,
 	RzRegexSize text_size,
 	RzRegexSize text_offset,
-	RzRegexFlags mflags,
-	size_t pcre2_word_width) {
+	RzRegexFlags mflags) {
 	rz_return_val_if_fail(regex && text, NULL);
-	check_faulty_pcre2_word_width(pcre2_word_width);
 
 	RzPVector *matches = rz_pvector_new(free);
 	RzRegexMatchData *mdata = NULL;
-	if (pcre2_word_width == 8) {
-		mdata = pcre2_match_data_create_from_pattern_8(regex, NULL);
-	} else if (pcre2_word_width == 16) {
-		mdata = pcre2_match_data_create_from_pattern_16(regex, NULL);
-	} else {
-		mdata = pcre2_match_data_create_from_pattern_32(regex, NULL);
-	}
+	mdata = pcre2_match_data_create_from_pattern_8(regex, NULL);
 	RzRegexStatus rc = 0;
-	if (pcre2_word_width == 8) {
-		rc = pcre2_match_8(regex, (PCRE2_SPTR8)text, text_size, text_offset, mflags, mdata, NULL);
-	} else if (pcre2_word_width == 16) {
-		rc = pcre2_match_16(regex, (PCRE2_SPTR16)text, text_size, text_offset, mflags, mdata, NULL);
-	} else {
-		rc = pcre2_match_32(regex, (PCRE2_SPTR32)text, text_size, text_offset, mflags, mdata, NULL);
-	}
+	rc = pcre2_match_8(regex, (PCRE2_SPTR8)text, text_size, text_offset, mflags, mdata, NULL);
 
 	if (rc == PCRE2_ERROR_NOMATCH) {
 		// Nothing matched return empty vector.
@@ -549,50 +535,20 @@ static RZ_OWN RzPVector /*<RzRegexMatch *>*/ *match_first(
 
 	// Add groups to vector
 	PCRE2_SIZE *ovector;
-	if (pcre2_word_width == 8) {
-		ovector = pcre2_get_ovector_pointer_8(mdata);
-	} else if (pcre2_word_width == 16) {
-		ovector = pcre2_get_ovector_pointer_16(mdata);
-	} else {
-		ovector = pcre2_get_ovector_pointer_32(mdata);
-	}
+	ovector = pcre2_get_ovector_pointer_8(mdata);
 
 	ut32 name_entry_size;
 	PCRE2_SPTR8 nametable_ptr8;
-	PCRE2_SPTR16 nametable_ptr16;
-	PCRE2_SPTR32 nametable_ptr32;
 
-	if (pcre2_word_width == 8) {
-		pcre2_pattern_info_8(
-			regex,
-			PCRE2_INFO_NAMETABLE,
-			&nametable_ptr8);
+	pcre2_pattern_info_8(
+		regex,
+		PCRE2_INFO_NAMETABLE,
+		&nametable_ptr8);
 
-		pcre2_pattern_info_8(
-			regex,
-			PCRE2_INFO_NAMEENTRYSIZE,
-			&name_entry_size);
-	} else if (pcre2_word_width == 16) {
-		pcre2_pattern_info_16(
-			regex,
-			PCRE2_INFO_NAMETABLE,
-			&nametable_ptr16);
-
-		pcre2_pattern_info_16(
-			regex,
-			PCRE2_INFO_NAMEENTRYSIZE,
-			&name_entry_size);
-	} else {
-		pcre2_pattern_info_32(
-			regex,
-			PCRE2_INFO_NAMETABLE,
-			&nametable_ptr32);
-
-		pcre2_pattern_info_32(
-			regex,
-			PCRE2_INFO_NAMEENTRYSIZE,
-			&name_entry_size);
-	}
+	pcre2_pattern_info_8(
+		regex,
+		PCRE2_INFO_NAMEENTRYSIZE,
+		&name_entry_size);
 
 	for (size_t i = 0; i < rc; i++) {
 		if (ovector[2 * i] > ovector[2 * i + 1]) {
@@ -607,13 +563,139 @@ static RZ_OWN RzPVector /*<RzRegexMatch *>*/ *match_first(
 		match->start = ovector[2 * i];
 		match->len = ovector[2 * i + 1] - match->start;
 		match->group_idx = i;
-		if (pcre2_word_width == 8) {
-			nametable_ptr8 += name_entry_size;
-		} else if (pcre2_word_width == 16) {
-			nametable_ptr16 += name_entry_size;
-		} else {
-			nametable_ptr32 += name_entry_size;
+		nametable_ptr8 += name_entry_size;
+		rz_pvector_push(matches, match);
+	}
+
+fini:
+	rz_regex_match_data_free(mdata);
+	return matches;
+}
+
+static RZ_OWN RzPVector /*<RzRegexMatch *>*/ *match_first_16(
+	RZ_NONNULL const void *regex,
+	RZ_NONNULL const ut8 *text,
+	RzRegexSize text_size,
+	RzRegexSize text_offset,
+	RzRegexFlags mflags) {
+	rz_return_val_if_fail(regex && text, NULL);
+
+	RzPVector *matches = rz_pvector_new(free);
+	RzRegexMatchData *mdata = NULL;
+	mdata = pcre2_match_data_create_from_pattern_16(regex, NULL);
+	RzRegexStatus rc = 0;
+	rc = pcre2_match_16(regex, (PCRE2_SPTR16)text, text_size, text_offset, mflags, mdata, NULL);
+
+	if (rc == PCRE2_ERROR_NOMATCH) {
+		// Nothing matched return empty vector.
+		goto fini;
+	}
+
+	if (rc < 0) {
+		// Some error happend. Inform the user.
+		PCRE2_UCHAR8 buffer[256];
+		pcre2_get_error_message_8(rc, buffer, sizeof(buffer));
+		RZ_LOG_WARN("Regex matching failed: %s\n", buffer);
+		goto fini;
+	}
+
+	// Add groups to vector
+	PCRE2_SIZE *ovector;
+	ovector = pcre2_get_ovector_pointer_16(mdata);
+
+	ut32 name_entry_size;
+	PCRE2_SPTR16 nametable_ptr16;
+
+	pcre2_pattern_info_16(
+		regex,
+		PCRE2_INFO_NAMETABLE,
+		&nametable_ptr16);
+
+	pcre2_pattern_info_16(
+		regex,
+		PCRE2_INFO_NAMEENTRYSIZE,
+		&name_entry_size);
+
+	for (size_t i = 0; i < rc; i++) {
+		if (ovector[2 * i] > ovector[2 * i + 1]) {
+			// This happens for \K lookaround. We fail if used.
+			// See pcre2demo.c for details.
+			RZ_LOG_ERROR("Usage of \\K to set start of the pattern later than the end, is not implemented.\n");
+			goto fini;
 		}
+
+		// Offset and length of match
+		RzRegexMatch *match = RZ_NEW0(RzRegexMatch);
+		match->start = ovector[2 * i];
+		match->len = ovector[2 * i + 1] - match->start;
+		match->group_idx = i;
+		nametable_ptr16 += name_entry_size;
+		rz_pvector_push(matches, match);
+	}
+
+fini:
+	rz_regex_match_data_free(mdata);
+	return matches;
+}
+
+static RZ_OWN RzPVector /*<RzRegexMatch *>*/ *match_first_32(
+	RZ_NONNULL const void *regex,
+	RZ_NONNULL const ut8 *text,
+	RzRegexSize text_size,
+	RzRegexSize text_offset,
+	RzRegexFlags mflags) {
+	rz_return_val_if_fail(regex && text, NULL);
+
+	RzPVector *matches = rz_pvector_new(free);
+	RzRegexMatchData *mdata = NULL;
+	mdata = pcre2_match_data_create_from_pattern_32(regex, NULL);
+	RzRegexStatus rc = 0;
+	rc = pcre2_match_32(regex, (PCRE2_SPTR32)text, text_size, text_offset, mflags, mdata, NULL);
+
+	if (rc == PCRE2_ERROR_NOMATCH) {
+		// Nothing matched return empty vector.
+		goto fini;
+	}
+
+	if (rc < 0) {
+		// Some error happend. Inform the user.
+		PCRE2_UCHAR8 buffer[256];
+		pcre2_get_error_message_8(rc, buffer, sizeof(buffer));
+		RZ_LOG_WARN("Regex matching failed: %s\n", buffer);
+		goto fini;
+	}
+
+	// Add groups to vector
+	PCRE2_SIZE *ovector;
+	ovector = pcre2_get_ovector_pointer_32(mdata);
+
+	ut32 name_entry_size;
+	PCRE2_SPTR32 nametable_ptr32;
+
+	pcre2_pattern_info_32(
+		regex,
+		PCRE2_INFO_NAMETABLE,
+		&nametable_ptr32);
+
+	pcre2_pattern_info_32(
+		regex,
+		PCRE2_INFO_NAMEENTRYSIZE,
+		&name_entry_size);
+
+	for (size_t i = 0; i < rc; i++) {
+		if (ovector[2 * i] > ovector[2 * i + 1]) {
+			// This happens for \K lookaround. We fail if used.
+			// See pcre2demo.c for details.
+			RZ_LOG_ERROR("Usage of \\K to set start of the pattern later than the end, is not implemented.\n");
+			goto fini;
+		}
+
+		// Offset and length of match
+		RzRegexMatch *match = RZ_NEW0(RzRegexMatch);
+		match->start = ovector[2 * i];
+		match->len = ovector[2 * i + 1] - match->start;
+		match->group_idx = i;
+		nametable_ptr32 += name_entry_size;
 		rz_pvector_push(matches, match);
 	}
 
@@ -642,12 +724,12 @@ RZ_API RZ_OWN RzPVector /*<RzRegexMatch *>*/ *rz_regex_match_first(
 	RzRegexSize text_offset,
 	RzRegexFlags mflags) {
 	rz_return_val_if_fail(regex && text, NULL);
-	return match_first(
+	return match_first_8(
 		regex,
 		(ut8 *)text,
 		text_size,
 		text_offset,
-		mflags, 8);
+		mflags);
 }
 
 /**
@@ -672,12 +754,12 @@ RZ_API RZ_OWN RzPVector /*<RzRegexMatch *>*/ *rz_regex_match_first_16(
 	RzRegexSize text_offset,
 	RzRegexFlags mflags) {
 	rz_return_val_if_fail(regex && text, NULL);
-	return match_first(
+	return match_first_16(
 		regex,
 		text,
 		text_size,
 		text_offset,
-		mflags, 16);
+		mflags);
 }
 
 /**
@@ -702,12 +784,12 @@ RZ_API RZ_OWN RzPVector /*<RzRegexMatch *>*/ *rz_regex_match_first_32(
 	RzRegexSize text_offset,
 	RzRegexFlags mflags) {
 	rz_return_val_if_fail(regex && text, NULL);
-	return match_first(
+	return match_first_32(
 		regex,
 		text,
 		text_size,
 		text_offset,
-		mflags, 32);
+		mflags);
 }
 
 /**
