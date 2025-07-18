@@ -58,7 +58,7 @@ static RZ_OWN void *regex_new(RZ_NONNULL const char *pattern, RzRegexFlags cflag
 	}
 	char *fixed_pat = NULL;
 	const char *pat = NULL;
-	if (pcre2_word_width == 8 && ((cflags & RZ_REGEX_EXTENDED) || (cflags & RZ_REGEX_EXTENDED_MORE))) {
+	if (((cflags & RZ_REGEX_EXTENDED) || (cflags & RZ_REGEX_EXTENDED_MORE))) {
 		// In PCRE2 with the extended flag set, ascii space characters ' ' are skipped.
 		// We need to replace them with \s unfortunately to keep our API stable.
 		if (!strchr(pattern, ' ')) {
