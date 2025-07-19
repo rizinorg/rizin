@@ -433,7 +433,30 @@ static RzILOpEffect *ccr_add(RzILOpPure *a, RzILOpPure *b, RzILOpBool *c, ut8 n,
 		ccr_set(CCR_V, V));
 }
 
+static RzILOpEffect *ccr_sub(RzILOpPure *a, RzILOpPure *b, RzILOpBool *c, ut8 n, ut8 carry_h, ut8 carry_c) {
+	RzILOpPure *lown = SUB3(LOGAND(a, UN(n, (1ULL << (carry_h + 1)) - 1)),
+		LOGAND(b, UN(n, (1ULL << (carry_h + 1)) - 1)), BOOL_TO_BV(c, n));
+	RzILOpPure *H = NON_ZERO(LOGAND(lown, UN(n, 1ULL << (carry_h + 1))));
+
+	RzILOpPure *res = SUB3(SIGNED(n * 2, DUP(a)), SIGNED(n * 2, DUP(b)), BOOL_TO_BV(DUP(c), n * 2));
+	RzILOpPure *N = NON_ZERO(LOGAND(res, UN(n * 2, 1ULL << (n - 1))));
+	RzILOpPure *Z = IS_ZERO(DUP(res));
+	RzILOpPure *C = SLT(DUP(res), SN(n * 2, 0));
+	RzILOpPure *V = AND(BNE(MSB(DUP(a)), MSB(DUP(b))), BNE(MSB(DUP(a)), DUP(N)));
+	return SEQ5(
+		ccr_set(CCR_H, H),
+		ccr_set(CCR_N, N),
+		ccr_set(CCR_Z, Z),
+		ccr_set(CCR_C, C),
+		ccr_set(CCR_V, V));
+}
+
 #define ccr_add_b(A, B, C) ccr_add(A, B, C, 8, 3, 7)
+#define ccr_add_w(A, B, C) ccr_add(A, B, C, 16, 11, 15)
+#define ccr_add_l(A, B, C) ccr_add(A, B, C, 32, 27, 31)
+#define ccr_sub_b(A, B, C) ccr_sub(A, B, C, 8, 3, 7)
+#define ccr_sub_w(A, B, C) ccr_sub(A, B, C, 16, 11, 15)
+#define ccr_sub_l(A, B, C) ccr_sub(A, B, C, 32, 27, 31)
 
 static RzILOpEffect *op_add_b(H8300Cmd *cmd) {
 	switch (cmd->fmt) {
@@ -544,24 +567,8 @@ static RzILOpEffect *ccr_cmp(RzILOpPure *a, RzILOpPure *b, RzILOpBool *c, ut8 n,
 #define ccr_cmp_w(a, b) ccr_cmp(a, b, IL_FALSE, 16, 11, 15)
 #define ccr_cmp_l(a, b) ccr_cmp(a, b, IL_FALSE, 32, 27, 31)
 
-static RzILOpEffect *ccr_sub_b(RzILOpPure *a, RzILOpPure *b, RzILOpBool *c) {
-	RzILOpPure *low4 = SUB3(LOGAND(a, U8(0xf)), LOGAND(b, U8(0xf)), B_TO_8(c));
-	RzILOpPure *H = NON_ZERO(LOGAND(low4, U8(0x10)));
-
-	RzILOpPure *res = SUB3(SIGNED(16, DUP(a)), SIGNED(16, DUP(b)), B_TO_16(DUP(c)));
-	RzILOpPure *N = NON_ZERO(LOGAND(res, U16(0x80)));
-	RzILOpPure *Z = IS_ZERO(DUP(res));
-	RzILOpPure *C = SLT(DUP(res), S16(0));
-	RzILOpPure *V = AND(BNE(MSB(DUP(a)), MSB(DUP(b))), BNE(MSB(DUP(a)), DUP(N)));
-	return SEQ5(
-		ccr_set(CCR_H, H),
-		ccr_set(CCR_N, N),
-		ccr_set(CCR_Z, Z),
-		ccr_set(CCR_C, C),
-		ccr_set(CCR_V, V));
-}
-
 typedef RzILOpPure *(*op2)(RzILOpPure *a, RzILOpPure *b);
+typedef RzILOpPure *(*op1)(RzILOpPure *a);
 typedef RzILOpEffect *(*setter)(H8300Cmd *, ut8, RzILOpPure *);
 
 static RzILOpEffect *op_logical2(H8300Cmd *cmd, RzILOpPure *a, RzILOpPure *b, op2 f, setter s, ut8 N) {
@@ -585,6 +592,38 @@ static RzILOpEffect *op_logical2(H8300Cmd *cmd, RzILOpPure *a, RzILOpPure *b, op
 op_logical2_formats_IMPL(8);
 op_logical2_formats_IMPL(16);
 op_logical2_formats_IMPL(32);
+
+static RzILOpEffect *op_logical1(H8300Cmd *cmd, RzILOpPure *a, op1 f, RzILOpEffect *ccr_setter, ut8 N) {
+	return SEQ3(
+		SETL("_res", f(a)),
+		ccr_setter,
+		RX_X(N, 0, VARL("_res")));
+}
+
+static RzILOpEffect *op_neg(H8300Cmd *cmd) {
+	switch (cmd->fmt) {
+	case H8300_INSN_FORMAT_R8:
+		// TODO: fix ccr_sub
+		return op_logical1(cmd, R8_OP(0), rz_il_op_new_neg, ccr_sub_b(S8(0), R8_OP(0), IL_FALSE), 8);
+	case H8300_INSN_FORMAT_R16:
+		return op_logical1(cmd, R16_OP(0), rz_il_op_new_neg, ccr_sub_w(S16(0), R16_OP(0), IL_FALSE), 16);
+	case H8300_INSN_FORMAT_R32:
+		return op_logical1(cmd, R32_OP(0), rz_il_op_new_neg, ccr_sub_l(S32(0), R32_OP(0), IL_FALSE), 32);
+	default: NOT_IMPLEMENTED;
+	}
+}
+
+static RzILOpEffect *op_not(H8300Cmd *cmd) {
+	switch (cmd->fmt) {
+	case H8300_INSN_FORMAT_R8:
+		return op_logical1(cmd, R8_OP(0), rz_il_op_new_log_not, ccr_xNZV0(8, VARL("_res")), 8);
+	case H8300_INSN_FORMAT_R16:
+		return op_logical1(cmd, R16_OP(0), rz_il_op_new_log_not, ccr_xNZV0(16, VARL("_res")), 16);
+	case H8300_INSN_FORMAT_R32:
+		return op_logical1(cmd, R32_OP(0), rz_il_op_new_log_not, ccr_xNZV0(32, VARL("_res")), 32);
+	default: NOT_IMPLEMENTED;
+	}
+}
 
 static RzILOpEffect *op_logical_i8ccr(H8300Cmd *cmd, op2 f) {
 	switch (cmd->fmt) {
@@ -1007,15 +1046,11 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 				LSB(R8_OP(0))),
 			R8_X(0, VARL("result")));
 	case H8300_INSN_NEG_B:
-		return SEQ3(
-			SETL("result", NEG(R8_OP(0))),
-			ccr_sub_b(S8(0), R8_OP(0), IL_FALSE),
-			R8_X(0, VARL("result")));
+	case H8300_INSN_NEG_W:
+	case H8300_INSN_NEG_L: return op_neg(cmd);
 	case H8300_INSN_NOT_B:
-		return SEQ3(
-			SETL("result", LOGNOT(R8_OP(0))),
-			ccr_xNZV0(8, VARL("result")),
-			R8_X(0, VARL("result")));
+	case H8300_INSN_NOT_W:
+	case H8300_INSN_NOT_L: return op_not(cmd);
 	case H8300_INSN_ROTL_W:
 	case H8300_INSN_ROTR_W:
 	case H8300_INSN_ROTXL_W:
@@ -1032,10 +1067,6 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 	case H8300_INSN_SHAR_L:
 	case H8300_INSN_SHLL_L:
 	case H8300_INSN_SHLR_L:
-	case H8300_INSN_NEG_W:
-	case H8300_INSN_NOT_W:
-	case H8300_INSN_NEG_L:
-	case H8300_INSN_NOT_L:
 		NOT_IMPLEMENTED;
 
 	case H8300_INSN_BRA:
