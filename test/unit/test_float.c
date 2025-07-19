@@ -266,6 +266,58 @@ bool f32_ieee_div_test(void) {
 	mu_end;
 }
 
+bool f32_ieee_neg_test(void) {
+	RzFloat *f0 = rz_float_new_from_f32(0.0f);
+	RzFloat *nf0 = rz_float_new_from_f32(-0.0f);
+	RzFloat *calc_negf0 = rz_float_neg(f0);
+	mu_assert_true(is_equal_bv(nf0->s, calc_negf0->s), "Negating float 0.0 failed.");
+
+	RzFloat *d0 = rz_float_new_from_f64(0.0);
+	RzFloat *nd0 = rz_float_new_from_f64(-0.0);
+	RzFloat *calc_negd0 = rz_float_neg(d0);
+	mu_assert_true(is_equal_bv(nd0->s, calc_negd0->s), "Negating double 0.0 failed.");
+
+	RzFloat *l0 = rz_float_new_from_f80(0.0);
+	RzFloat *nl0 = rz_float_new_from_f80(-0.0);
+	RzFloat *calc_negl0 = rz_float_neg(l0);
+	mu_assert_true(is_equal_bv(nl0->s, calc_negl0->s), "Negating 80bit 0.0 failed.");
+
+	RzFloat *inf32 = rz_float_new_from_f32(INFINITY);
+	RzFloat *ninf32 = rz_float_new_from_f32(-INFINITY);
+	RzFloat *calc_neginf32 = rz_float_neg(inf32);
+	mu_assert_true(is_equal_bv(ninf32->s, calc_neginf32->s), "Negating float inf failed.");
+
+	RzFloat *inf64 = rz_float_new_from_f64(INFINITY);
+	RzFloat *ninf64 = rz_float_new_from_f64(-INFINITY);
+	RzFloat *calc_neginf64 = rz_float_neg(inf64);
+	mu_assert_true(is_equal_bv(ninf64->s, calc_neginf64->s), "Negating double inf failed.");
+
+	RzFloat *inf80 = rz_float_new_from_f80(INFINITY);
+	RzFloat *ninf80 = rz_float_new_from_f80(-INFINITY);
+	RzFloat *calc_neginf80 = rz_float_neg(inf80);
+	mu_assert_true(is_equal_bv(ninf80->s, calc_neginf80->s), "Negating 80bit inf failed.");
+
+	rz_float_free(f0);
+	rz_float_free(nf0);
+	rz_float_free(calc_negf0);
+	rz_float_free(d0);
+	rz_float_free(nd0);
+	rz_float_free(calc_negd0);
+	rz_float_free(l0);
+	rz_float_free(nl0);
+	rz_float_free(calc_negl0);
+	rz_float_free(inf32);
+	rz_float_free(ninf32);
+	rz_float_free(calc_neginf32);
+	rz_float_free(inf64);
+	rz_float_free(ninf64);
+	rz_float_free(calc_neginf64);
+	rz_float_free(inf80);
+	rz_float_free(ninf80);
+	rz_float_free(calc_neginf80);
+	mu_end;
+}
+
 bool rz_float_trunc_test(void) {
 	RzFloat *f1 = rz_float_new_from_f32(1.111f);
 	RzFloat *f2 = rz_float_new_from_f32(234.12345f);
@@ -1614,6 +1666,7 @@ bool all_tests() {
 	mu_run_test(f32_ieee_rem_test);
 	mu_run_test(f32_ieee_mod_test);
 	mu_run_test(f32_ieee_special_num_test);
+	mu_run_test(f32_ieee_neg_test);
 	mu_run_test(float_load_from_bitvector);
 	mu_run_test(float_print_num);
 	mu_run_test(f32_ieee_format_extra_test);
