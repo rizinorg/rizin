@@ -1329,9 +1329,15 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 	case H8300_INSN_INVALID: return NOP();
 	case H8300_INSN_POP_L:
 	case H8300_INSN_PUSH_L:
-	case H8300_INSN_TRAPA:
+	case H8300_INSN_TRAPA: NOT_IMPLEMENTED;
 	case H8300_INSN_MOVFPE:
-	case H8300_INSN_MOVTPE: NOT_IMPLEMENTED;
+		return SEQ2(
+			R8_X(1, abs_op(8, cmd, 0)),
+			ccr_xNZV0(8, abs_op(8, cmd, 0)));
+	case H8300_INSN_MOVTPE:
+		return SEQ2(
+			abs_op_set(cmd, 1, R8_OP(0)),
+			ccr_xNZV0(8, R8_OP(0)));
 	}
 
 	NOT_IMPLEMENTED;
