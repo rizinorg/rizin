@@ -862,7 +862,20 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 	case H8300_INSN_NOP:
 	case H8300_INSN_SLEEP: return NOP();
 	case H8300_INSN_STC_B: return R8_X(1, VARG("ccr"));
-	case H8300_INSN_STC_W: return R16_X(1, UNSIGNED(16, VARG("ccr")));
+	case H8300_INSN_STC_W:
+		switch (cmd->fmt) {
+		case H8300_INSN_FORMAT_RI:
+			return ri_op_set(cmd, 1, UNSIGNED(16, VARG("ccr")));
+		case H8300_INSN_FORMAT_RD:
+			return rd_op_set(cmd, 1, UNSIGNED(16, VARG("ccr")));
+		case H8300_INSN_FORMAT_RPREDEC:
+			return SEQ2(
+				rpredec_op_dec(cmd, 1, 2),
+				STOREW(AS_ADDR(rpredec_op(cmd, 1)), UNSIGNED(16, VARG("ccr"))));
+		case H8300_INSN_FORMAT_ABS:
+			return abs_op_set(cmd, 1, UNSIGNED(16, VARG("ccr")));
+		default: NOT_IMPLEMENTED;
+		}
 	case H8300_INSN_LDC_B:
 		switch (cmd->fmt) {
 		case H8300_INSN_FORMAT_IMM:

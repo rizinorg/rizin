@@ -107,12 +107,12 @@ d "shal.l er0" 10b0
 d "shll.l er0" 1030
 d "shar.l er0" 11b0
 d "shlr.l er0" 1130
-d "stc.w ccr,@er1" 01406990
-d "stc.w ccr,@(+4369,er1)" 01406f901111
-d "stc.w ccr,@(+1118481,er1)" 014078106ba000111111
-d "stc.w ccr,@-er1" 01406d90
-d "stc.w ccr,@0x1111" 01406b801111
-d "stc.w ccr,@0x111111" 01406ba000111111
+d "stc.w ccr,@er1" 01406990 0x0 (storew 0 (cast 24 false (append (var e1) (var r1))) (cast 16 false (var ccr)))
+d "stc.w ccr,@(+4369,er1)" 01406f901111 0x0 (storew 0 (cast 24 false (+ (append (var e1) (var r1)) (bv 32 0x1111))) (cast 16 false (var ccr)))
+d "stc.w ccr,@(+1118481,er1)" 014078106ba000111111 0x0 (storew 0 (cast 24 false (+ (append (var e1) (var r1)) (bv 32 0x111111))) (cast 16 false (var ccr)))
+d "stc.w ccr,@-er1" 01406d90 0x0 (seq (set e1 (cast 16 false (>> (- (append (var e1) (var r1)) (bv 32 0x2)) (bv 8 0x10) false))) (set r1 (cast 16 false (- (append (var e1) (var r1)) (bv 32 0x2)))) (storew 0 (cast 24 false (append (var e1) (var r1))) (cast 16 false (var ccr))))
+d "stc.w ccr,@0x1111" 01406b801111 0x0 (storew 0 (bv 24 0x1111) (cast 16 false (var ccr)))
+d "stc.w ccr,@0x111111" 01406ba000111111 0x0 (storew 0 (bv 24 0x111111) (cast 16 false (var ccr)))
 d "sub.w #0x1111,r1" 79311111
 d "sub.l #0x11111111,er1" 7a3111111111
 d "sub.l er1,er2" 1a92
