@@ -113,7 +113,15 @@ static RzILOpPure *sp_op() {
 }
 
 static RzILOpEffect *sp_set(RzILOpPure *x) {
-	return r32_op_i_set(7, x);
+	return STOREW(sp_op(), x);
+}
+
+static RzILOpEffect *sp_dec(ut8 x) {
+	return r32_op_i_set(7, SUB(r32_op_i(7), U32(x)));
+}
+
+static RzILOpEffect *sp_inc(ut8 x) {
+	return r32_op_i_set(7, ADD(r32_op_i(7), U32(x)));
 }
 
 static RzILOpPure *ri_op(ut8 N, H8300Cmd *cmd, ut8 i) {
@@ -816,6 +824,17 @@ static RzILOpEffect *op_exts(H8300Cmd *cmd, ut8 N) {
 		ccr_xNZV0(N, VARL("val")));
 }
 
+static RzILOpPure *vector_addr(H8300Cmd *cmd, ut8 x) {
+	// TODO: This is a temporary solution, distinguish between normal and advanced mode
+	switch (x) {
+	case 0: return UADDR(0x20);
+	case 1: return UADDR(0x24);
+	case 2: return UADDR(0x28);
+	case 3: return UADDR(0x2c);
+	default: NOT_IMPLEMENTED;
+	}
+}
+
 static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 	switch (cmd->id) {
 	case H8300_INSN_MOV_B: return op_mov_b(cmd);
@@ -1136,18 +1155,18 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 	case H8300_INSN_RTS:
 		return SEQ3(
 			SETL("@sp", LOADW(24, sp_op())),
-			sp_set(ADD(sp_op(), UADDR(2))),
+			sp_inc(2),
 			JMP(VARL("@sp")));
 	case H8300_INSN_RTE:
 		return SEQ5(
 			SETL("_ccr", LOADW(24, sp_op())),
 			SETL("_pc", LOADW(24, ADD(sp_op(), UADDR(8)))),
-			sp_set(ADD(sp_op(), UADDR(6))),
+			sp_inc(6),
 			SETG("ccr", UNSIGNED(8, SHIFTR0(VARL("_ccr"), U8(16)))),
 			JMP(VARL("_pc")));
 	case H8300_INSN_BSR:
 		return SEQ3(
-			sp_set(SUB(sp_op(), UADDR(2))),
+			sp_dec(2),
 			STOREW(sp_op(), PC_VAL),
 			JMP(ADD(PC_VAL, PCREL_OP(0))));
 	case H8300_INSN_JMP:
@@ -1164,17 +1183,17 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 		switch (cmd->fmt) {
 		case H8300_INSN_FORMAT_RI:
 			return SEQ3(
-				sp_set(SUB(sp_op(), UADDR(2))),
+				sp_dec(2),
 				STOREW(sp_op(), PC_VAL),
 				JMP(ri_op(24, cmd, 0)));
 		case H8300_INSN_FORMAT_ABS:
 			return SEQ3(
-				sp_set(SUB(sp_op(), UADDR(2))),
+				sp_dec(2),
 				STOREW(sp_op(), PC_VAL),
 				JMP(UADDR(OPS_GET(0).imm)));
 		case H8300_INSN_FORMAT_MI8:
 			return SEQ3(
-				sp_set(SUB(sp_op(), UADDR(2))),
+				sp_dec(2),
 				STOREW(sp_op(), PC_VAL),
 				JMP(LOADW(24, MI8_OP(0))));
 		default: NOT_IMPLEMENTED;
@@ -1365,17 +1384,23 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 	case H8300_INSN_POP_W:
 		return SEQ3(
 			R16_X(0, LOADW(16, sp_op())),
-			sp_set(ADD(sp_op(), UADDR(2))),
+			sp_inc(2),
 			ccr_xNZV0(16, LOADW(16, sp_op())));
 	case H8300_INSN_PUSH_W:
 		return SEQ3(
-			sp_set(SUB(sp_op(), UADDR(2))),
+			sp_dec(2),
 			STOREW(sp_op(), R16_OP(0)),
 			ccr_xNZV0(16, R16_OP(0)));
 	case H8300_INSN_INVALID: return NOP();
 	case H8300_INSN_POP_L:
-	case H8300_INSN_PUSH_L:
-	case H8300_INSN_TRAPA: NOT_IMPLEMENTED;
+	case H8300_INSN_PUSH_L: NOT_IMPLEMENTED;
+	case H8300_INSN_TRAPA:
+		return SEQ5(
+			sp_dec(4),
+			sp_set(U32(cmd->pc)),
+			sp_dec(2),
+			sp_set(VARG("ccr")),
+			JMP(vector_addr(cmd, OPS_GET(0).imm)));
 	case H8300_INSN_MOVFPE:
 		return SEQ2(
 			R8_X(1, abs_op(8, cmd, 0)),
