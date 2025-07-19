@@ -845,6 +845,8 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 		default: NOT_IMPLEMENTED;
 		}
 	case H8300_INSN_SUB_B:
+	case H8300_INSN_SUB_W:
+	case H8300_INSN_SUB_L:
 		switch (cmd->fmt) {
 		case H8300_INSN_FORMAT_R8R8:
 			return SEQ4(
@@ -852,19 +854,32 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 				SETL("_1", R8_OP(1)),
 				R8_X(1, SUB(VARL("_1"), VARL("_0"))),
 				ccr_sub_b(VARL("_1"), VARL("_0"), IL_FALSE));
-		default: NOT_IMPLEMENTED;
-		}
-	case H8300_INSN_SUB_W:
-		switch (cmd->fmt) {
 		case H8300_INSN_FORMAT_R16R16:
 			return SEQ4(
 				SETL("_0", R16_OP(0)),
 				SETL("_1", R16_OP(1)),
 				R16_X(1, SUB(VARL("_1"), VARL("_0"))),
-				ccr_cmp_w(VARL("_1"), VARL("_0")));
+				ccr_sub_w(VARL("_1"), VARL("_0"), IL_FALSE));
+		case H8300_INSN_FORMAT_IMMR16:
+			return SEQ4(
+				SETL("_0", IMM16_OP(0)),
+				SETL("_1", R16_OP(1)),
+				R16_X(1, SUB(VARL("_1"), VARL("_0"))),
+				ccr_sub_w(VARL("_1"), VARL("_0"), IL_FALSE));
+		case H8300_INSN_FORMAT_R32R32:
+			return SEQ4(
+				SETL("_0", R32_OP(0)),
+				SETL("_1", R32_OP(1)),
+				R32_X(1, SUB(VARL("_1"), VARL("_0"))),
+				ccr_sub_l(VARL("_1"), VARL("_0"), IL_FALSE));
+		case H8300_INSN_FORMAT_IMMR32:
+			return SEQ4(
+				SETL("_0", IMM32_OP(0)),
+				SETL("_1", R32_OP(1)),
+				R32_X(1, SUB(VARL("_1"), VARL("_0"))),
+				ccr_sub_l(VARL("_1"), VARL("_0"), IL_FALSE));
 		default: NOT_IMPLEMENTED;
 		}
-	case H8300_INSN_SUB_L: NOT_IMPLEMENTED;
 	case H8300_INSN_SUBX:
 		switch (cmd->fmt) {
 		case H8300_INSN_FORMAT_R8R8:
