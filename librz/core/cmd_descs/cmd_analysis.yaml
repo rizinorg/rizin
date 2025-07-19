@@ -1542,7 +1542,7 @@ commands:
           - RZ_OUTPUT_MODE_JSON
         args: []
       - name: avD
-        summary: devirtualize virtual calls
+        summary: Mark objects and devirtualize calls to virtual functions for function at the current offset
         type: RZ_CMD_DESC_TYPE_ARGV
         cname: analysis_devirtualize
         args: []
@@ -1651,11 +1651,14 @@ commands:
           - name: classname
             type: RZ_CMD_ARG_TYPE_STRING
       - name: avx
-        summary: show addresses of virtual calls of virtual function
-        type: RZ_CMD_DESC_TYPE_ARGV
+        summary: Show the addresses of calls to the virtual function.
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
         cname: analysis_virtual_xrefs
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_TABLE
         args:
-          - name: vfunction name
+          - name: virtual function name
             type: RZ_CMD_ARG_TYPE_STRING
   - name: ax
     summary: Cross references (xrefs)

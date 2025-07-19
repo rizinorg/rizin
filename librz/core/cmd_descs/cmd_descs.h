@@ -706,7 +706,7 @@ RZ_IPI RzCmdStatus rz_analysis_recover_rtti_all_handler(RzCore *core, int argc, 
 // "avrD"
 RZ_IPI RzCmdStatus rz_analysis_rtti_demangle_class_name_handler(RzCore *core, int argc, const char **argv);
 // "avx"
-RZ_IPI RzCmdStatus rz_analysis_virtual_xrefs_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_analysis_virtual_xrefs_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "ax"
 RZ_IPI RzCmdStatus rz_analysis_xrefs_set_0_handler(RzCore *core, int argc, const char **argv);
 // "axc"

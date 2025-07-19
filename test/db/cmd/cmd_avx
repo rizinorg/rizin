@@ -25,3 +25,20 @@ C 0x10000289c blr x8
 C 0x10000290c blr x8
 EOF
 RUN
+
+
+NAME=cxx virtual xrefs multiple with table output (arm64)
+FILE=bins/mach0/arm64-class-conditional
+CMDS=<<EOF
+aaaa
+avD @ main
+avxt method.Dog.run
+EOF
+EXPECT=<<EOF
+       from 
+------------
+0x100002958
+0x10000289c
+0x10000290c
+EOF
+RUN

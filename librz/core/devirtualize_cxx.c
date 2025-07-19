@@ -7,8 +7,37 @@
 #include "core_private.h"
 
 /**
- * \file
+ * \file devirtualize_cxx.c
  * Partially uses ESIL uplifting but will be ported to RzIL
+ *
+ * Tainting of values in register and stack, Simulating objects on memory and Devirtualizing
+ *
+ * STEP 1 : Marking the object using the allocator (`new`)
+ *
+ * The first step of the process is to mark the object on the stack.
+ * For allocated objects, the pointer to their location on heap is
+ * stored on the stack. Their identification is done as follows :
+ * 		- Identify call to allocator and taint the register which accepts return value
+ * 		- Identify call to constructor and hence the class of the object
+ * 		- Identify the variable which stores the pointer and mark it with the class name
+ *
+ * STEP 2 : Simulating objects on memory
+ *
+ * The next step is to simulate the objects on memory. We form objects with their
+ * initial entries as pointer to virtual tables. This is used when these objects
+ * are used to access methods. This is done as follows :
+ * 		- Identify virtual tables of each class type, an information already analysed by Rizin
+ * 		- Store the objects on memory with pointers to virtual tables
+ * 		- Store the pointer to simulated objects in marked stack variables
+ *
+ * STEP 3 : Devirtualization
+ *
+ * The last step is used to give the devirtualized result to the user. It uses the marked variables
+ * with the pointer of simulated objects to get the information about virtual table called. This is
+ * done as follows :
+ * 		- Extract the object from the pointer stored in stack
+ * 		- Extract vtable address and hence, the required virtual function
+ * 		- Mark all register calls with the function address stored while simulating virtual call
  */
 
 /**
@@ -21,7 +50,7 @@ typedef enum rz_taint_devirt_t {
 } RzTaintDevirt;
 
 typedef struct var_t {
-	char *name; ///< for now, checks varibles discovered by ESIL
+	char *name; ///< ESIL variable name.
 	ut64 stack_addr; ///< address of the stack where variable is stored according to RzIL VM
 	ut64 instr_addr; ///< address of instruction which writes to variable
 	RzList /*<char *>*/ *class_names; ///< Single variable might store multiple classes based on conditionals
@@ -41,12 +70,12 @@ typedef struct rz_virtual_calls_t {
 	HtUP /*<ut64,RzSetS *>*/ *virt_calls; ///< hash map of instruction address and class method name
 } RzVirtualCalls;
 
-#define RZ_TAINT_VALUE 0x1A2B3C
+#define RZ_TAINT_VALUE 0x1A2B3D // unaligned random taint value
 
 /**
  * \return list of `RzAnalysisFunction *` of all allocator i.e. `new` functions
  */
-RzList /*<RzAnalysisFunction *>*/ *list_new_fcns(RzCore *core) {
+static RzList /*<RzAnalysisFunction *>*/ *list_new_fcns(RzCore *core) {
 	RzList *list = rz_analysis_function_list(core->analysis);
 	if (!list) {
 		return NULL;
@@ -77,21 +106,14 @@ static void rz_taint_vm_step(RzCore *core) {
 	void **it;
 	RzILEvent *evt;
 
-	rz_config_set_cb(core->config, "rzil.step.events.read", "true", NULL);
-	rz_config_set_cb(core->config, "rzil.step.events.write", "true", NULL);
-
 	rz_pvector_foreach (vm->events, it) {
 		evt = *it;
-		switch (evt->type) {
-		case RZ_IL_EVENT_MEM_WRITE: {
-			ut64 new_val = rz_bv_to_ut64(evt->data.mem_write.new_value);
-			if (new_val == RZ_TAINT_VALUE) {
-				return;
-			}
+		if (evt->type != RZ_IL_EVENT_MEM_WRITE) {
+			continue;
 		}
-		default: {
-			break;
-		}
+		ut64 new_val = rz_bv_to_ut64(evt->data.mem_write.new_value);
+		if (new_val == RZ_TAINT_VALUE) {
+			return;
 		}
 	}
 }
@@ -99,7 +121,7 @@ static void rz_taint_vm_step(RzCore *core) {
 /**
  * \brief adds xrefs to an addr to `list`
  */
-static void xrefs_of_new(RZ_OUT RzList /*<RzAnalysisFunction *>*/ *list, RzAnalysis *analysis, ut64 addr) {
+static void xrefs_of_new(RZ_OUT RzList /*<ut64 *>*/ *list, RzAnalysis *analysis, ut64 addr) {
 	RzList *curr_list = rz_analysis_xrefs_get_to(analysis, addr);
 	RzListIter *it;
 	RzAnalysisXRef *xref;
@@ -127,15 +149,14 @@ static int compare(const void *void_value, const void *void_list_data, void *use
 		return 0;
 	} else if (*value > *list_data) {
 		return 1;
-	} else {
-		return -1;
 	}
+	return -1;
 }
 
 /**
  * \brief initialises stack and registers for tainting
  */
-void rz_taint_init(RzAnalysis *analysis, RzCore *core) {
+static void rz_taint_init(RzAnalysis *analysis, RzCore *core) {
 	// Random Memory allocation representing function stack
 	rz_core_analysis_esil_init_mem(core, NULL, 0x1000, 0x1050);
 	rz_core_analysis_il_reinit(core); // initializing VM
@@ -176,9 +197,10 @@ static RzList /*<CppVariable *>*/ *get_variable_writes(RzAnalysisFunction *fcn) 
 
 /**
  * \param state current tainting state
- * \param var_write_list list of all stack variables\
+ * \param var_write_list list of all stack variables
  * \param stack_addr stack address accessed during write operation
- * \return returns variable with stack address \p stack_addr
+ * \brief used to find and return the variable at \p stack_addr that is written by instruction(s)
+ * \return returns variable with stack address \p stack_addr, `NULL` if does not exist
  */
 static CppVariable *var_at_write(RzTaintState *state, RzList /*<CppVariable *>*/ *var_write_list, ut64 stack_addr) {
 	HtUP *stack_vars = state->var_book->class_variables;
@@ -219,7 +241,7 @@ static void get_method_class_map(RzCore *core, RZ_OUT HtSP *method_class_map) {
 			ut64 addr = meth->addr;
 			RzAnalysisFunction *function = rz_analysis_get_fcn_in(core->analysis, addr, RZ_ANALYSIS_FCN_TYPE_ROOT);
 			if (!function) {
-				function = rz_analysis_get_fcn_in(core->analysis, addr, 0);
+				function = rz_analysis_get_fcn_in(core->analysis, addr, RZ_ANALYSIS_FCN_TYPE_NULL);
 			}
 			if (function) {
 				bool found = false;
@@ -250,7 +272,8 @@ static char *get_class_name_from_func(HtSP *method_class_map, const char *func_n
 }
 
 /**
- * \param addr instruction address of constructor call
+ * \param state taint state
+ * \brief gets the class name from constructor method at \p state->addr
  * \return class name if a valid constructor call else `NULL`
  */
 static char *get_class_name(RzAnalysis *analysis, RzTaintState *state) {
@@ -262,7 +285,7 @@ static char *get_class_name(RzAnalysis *analysis, RzTaintState *state) {
 	rz_list_foreach (list, it, xref) {
 		RzAnalysisFunction *function = rz_analysis_get_fcn_in(core->analysis, xref->to, RZ_ANALYSIS_FCN_TYPE_ROOT);
 		if (!function) {
-			function = rz_analysis_get_fcn_in(core->analysis, xref->to, 0);
+			function = rz_analysis_get_fcn_in(core->analysis, xref->to, RZ_ANALYSIS_FCN_TYPE_NULL);
 		}
 		char *class_name = get_class_name_from_func(state->method_class_map, function->name);
 		if (class_name) {
@@ -274,12 +297,10 @@ static char *get_class_name(RzAnalysis *analysis, RzTaintState *state) {
 	return NULL;
 }
 
-static bool is_call_instruction(RzAnalysisOp *op) {
+static bool is_branch_type_to_method(RzAnalysisOp *op) {
 	switch (op->type) {
 	case RZ_ANALYSIS_OP_TYPE_CALL:
-		return true;
 	case RZ_ANALYSIS_OP_TYPE_RCALL:
-		return true;
 	case RZ_ANALYSIS_OP_TYPE_JMP:
 		return true;
 	default:
@@ -288,7 +309,7 @@ static bool is_call_instruction(RzAnalysisOp *op) {
 }
 
 /**
- * \brief changes the value in register to `RZ_TAINT_VALUE` during tainting
+ * \brief Changes the value in the `ARG0` register to `RZ_TAINT_VALUE`.
  */
 static void taint_register(RzAnalysis *analysis) {
 	RzCore *core = analysis->core;
@@ -300,9 +321,10 @@ static void taint_register(RzAnalysis *analysis) {
 }
 
 /**
+ * \brief returns value stored in stack memory
  * \return stack address of memory write operation else 0
  */
-static ut64 rz_var_stack_address_track(RzAnalysis *analysis) {
+static ut64 rz_var_stack_value(RzAnalysis *analysis) {
 	RzCore *core = analysis->core;
 	if (!rz_core_il_step(core, 1)) {
 		return 0;
@@ -317,28 +339,21 @@ static ut64 rz_var_stack_address_track(RzAnalysis *analysis) {
 	void **it;
 	RzILEvent *evt;
 
-	rz_config_set_cb(core->config, "rzil.step.events.read", "true", NULL);
-	rz_config_set_cb(core->config, "rzil.step.events.write", "true", NULL);
-
 	rz_pvector_foreach (vm->events, it) {
 		evt = *it;
-		switch (evt->type) {
-		case RZ_IL_EVENT_MEM_WRITE: {
-			return rz_bv_to_ut64(evt->data.mem_write.address);
+		if (evt->type != RZ_IL_EVENT_MEM_WRITE) {
+			continue;
 		}
-		default: {
-			break;
-		}
-		}
+		return rz_bv_to_ut64(evt->data.mem_write.address);
 	}
 	return 0;
 }
 
 /**
- * \param var variable containing object(s)
- * \brief adds class name to \p var (can have multiple class names)
+ * \brief Adds a class name to \p var (can have multiple class names).
+ * \param var Variable containing object(s)
  */
-static void add_class_name_to_var(CppVariable *var, char *name) {
+static void add_class_name_to_var(CppVariable *var, const char *name) {
 	RzList *class_names = var->class_names;
 	RzListIter *it;
 	char *elem_name;
@@ -358,39 +373,65 @@ static void add_class_name_to_var(CppVariable *var, char *name) {
 static void define_and_mark_variable(RzAnalysis *analysis, RzTaintState *state, const CppVariable *var) {
 	RzList *class_names = var->class_names;
 	ut64 len = rz_list_length(class_names);
-	char *type = NULL;
 	char *class_name = rz_list_get_n(class_names, 0);
-	char *old_type = NULL;
-	char *var_type = NULL;
+	RzType *var_type = NULL;
+
+	RzListIter *it;
+	char *name;
+	rz_list_foreach (class_names, it, name) {
+		RzBaseType *base_type = rz_type_db_get_struct(analysis->typedb, name);
+		if (!base_type) {
+			RzBaseType *base_type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_STRUCT);
+			base_type->name = rz_str_dup(name);
+			rz_type_db_save_base_type(analysis->typedb, base_type);
+		}
+	}
 
 	if (len == 1) {
-		type = rz_str_newf("struct %s{}", class_name);
-		old_type = rz_str_dup(class_name);
-		var_type = rz_str_newf("%s*", class_name);
-	} else {
-		type = rz_str_newf("union RZ_%s_HYBRID{%s* %s;", var->name, class_name, var->name);
+		RzBaseType *base_type = rz_type_db_get_struct(analysis->typedb, class_name);
+		var_type = rz_type_pointer_of_base_type(analysis->typedb, base_type, false);
+		RzAnalysisVar *v = rz_analysis_function_get_var_byname(state->var_book->function, var->name);
+		rz_analysis_var_set_type(v, var_type, true);
+		return;
+	}
 
-		for (size_t i = 1; i < len; i++) {
-			char *other_class_name = rz_list_get_n(class_names, i);
-			type = rz_str_append(type, rz_str_newf(" %s* %s;", other_class_name, var->name));
+	// union of structs
+	char *union_name = rz_str_newf("RZ_%s_HYBRID", var->name);
+	RzBaseType *base_type = rz_type_db_get_union(analysis->typedb, union_name);
+	if (!base_type) {
+		base_type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_UNION);
+		base_type->name = rz_str_dup(union_name);
+		rz_type_db_save_base_type(analysis->typedb, base_type);
+	}
+	free(union_name);
+
+	RzVector *vect = &(base_type->union_data.members);
+	RzTypeUnionMember *mem;
+
+	rz_list_foreach (class_names, it, name) {
+		bool found = false;
+		rz_vector_foreach (vect, mem) {
+			const char *struct_type = mem->type->pointer.type->identifier.name;
+			if (rz_str_cmp(name, struct_type, -1) == 0) {
+				found = true;
+				break;
+			}
 		}
-		type = rz_str_append(type, "}");
-		old_type = rz_str_newf("RZ_%s_HYBRID", var->name);
-		var_type = rz_str_dup(old_type);
+		if (found) {
+			continue;
+		}
+
+		RzTypeUnionMember *new_mem = RZ_NEW0(RzTypeUnionMember);
+		new_mem->name = rz_str_dup(var->name);
+		RzBaseType *base_type = rz_type_db_get_struct(analysis->typedb, name);
+		RzType *mem_type = rz_type_pointer_of_base_type(analysis->typedb, base_type, false);
+		new_mem->type = mem_type;
+		rz_vector_push(vect, new_mem);
 	}
 
-	char *exists = rz_type_format(analysis->typedb, old_type);
-	if (exists) {
-		rz_type_db_del(analysis->typedb, old_type);
-	}
-	rz_types_define(analysis->core, type);
-	RzType *v_type = rz_type_parse_string_single(analysis->typedb->parser, var_type, NULL);
+	var_type = rz_type_identifier_of_base_type(analysis->typedb, base_type, false);
 	RzAnalysisVar *v = rz_analysis_function_get_var_byname(state->var_book->function, var->name);
-	rz_analysis_var_set_type(v, v_type, true);
-
-	free(type);
-	free(old_type);
-	free(var_type);
+	rz_analysis_var_set_type(v, var_type, true);
 }
 
 /**
@@ -416,7 +457,7 @@ static bool rz_taint_off_step(RzAnalysis *analysis, RzTaintState *state) {
 		rz_list_free(list);
 		return true;
 	}
-	if (is_call_instruction(op)) {
+	if (is_branch_type_to_method(op)) {
 		free_xrefs_of_new(list_xrefs);
 		rz_list_free(list);
 		return true;
@@ -435,7 +476,7 @@ static bool rz_taint_off_step(RzAnalysis *analysis, RzTaintState *state) {
 static bool rz_taint_red_step(RzAnalysis *analysis, RzTaintState *state) {
 	RzAnalysisOp *op = state->op;
 	RzCore *core = analysis->core;
-	if (is_call_instruction(op)) {
+	if (is_branch_type_to_method(op)) {
 		char *temp = get_class_name(analysis, state);
 		if (!temp) {
 			return true;
@@ -459,11 +500,11 @@ static bool rz_taint_red_step(RzAnalysis *analysis, RzTaintState *state) {
 static bool rz_taint_blue_step(RzAnalysis *analysis, RzTaintState *state) {
 	RzAnalysisOp *op = state->op;
 
-	if (is_call_instruction(op)) {
+	if (is_branch_type_to_method(op)) {
 		return true;
 	}
 
-	ut64 stack_addr = rz_var_stack_address_track(analysis);
+	ut64 stack_addr = rz_var_stack_value(analysis);
 
 	if (stack_addr == 0) {
 		return false;
@@ -510,9 +551,9 @@ static void free_variable(CppVariable *var) {
 }
 
 /**
- * \param analysis rizin analysis object
- * \brief marks all variables that store object(s) with respective class name(s)
- * \return pointer to `RzCppVariableBook` book containing marked variable information
+ * \param analysis Rizin analysis object
+ * \brief Marks all variables that store object(s) with their respective class name(s).
+ * \return Pointer to an `RzCppVariableBook` containing the marked variable information.
  */
 RZ_API RzCppVariableBook *rz_analysis_mark_classes(RzAnalysis *analysis) {
 
@@ -521,7 +562,7 @@ RZ_API RzCppVariableBook *rz_analysis_mark_classes(RzAnalysis *analysis) {
 	RzCore *core = analysis->core;
 	RzAnalysisFunction *function = rz_analysis_get_fcn_in(core->analysis, core->offset, RZ_ANALYSIS_FCN_TYPE_ROOT);
 	if (!function) {
-		function = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
+		function = rz_analysis_get_fcn_in(core->analysis, core->offset, RZ_ANALYSIS_FCN_TYPE_NULL);
 	}
 	if (!function) {
 		RZ_LOG_ERROR("Cannot find function at 0x%08" PFMT64x "\n", core->offset);
@@ -529,9 +570,20 @@ RZ_API RzCppVariableBook *rz_analysis_mark_classes(RzAnalysis *analysis) {
 	}
 
 	RzTaintState *state = RZ_NEW0(RzTaintState);
+	if (!state) {
+		RZ_LOG_ERROR("Cannot allocate taint state\n");
+		rz_list_free(list);
+		return NULL;
+	}
 	state->addr = function->addr; // start of the function
 	ut64 end = rz_analysis_function_max_addr(function);
 	RzAnalysisOp *op = rz_analysis_op_new();
+	if (!op) {
+		RZ_LOG_ERROR("Cannot create analysis op\n");
+		free_taint_state(state);
+		rz_list_free(list);
+		return NULL;
+	}
 	state->op = op;
 	state->taint = RZ_TAINT_MODE_OFF;
 	core->offset = state->addr;
@@ -540,12 +592,20 @@ RZ_API RzCppVariableBook *rz_analysis_mark_classes(RzAnalysis *analysis) {
 	bool refresh_vm = false;
 
 	ut8 *bytes = malloc(end - state->addr);
-	rz_io_read_at(core->io, state->addr, bytes, end - state->addr);
+	if (!rz_io_read_at(core->io, state->addr, bytes, end - state->addr)) {
+		RZ_LOG_ERROR("Cannot read at offset 0x%08" PFMT64x "\n", core->offset);
+	}
 	ut64 offset = 0;
 
 	rz_taint_init(analysis, core);
 
 	RzCppVariableBook *var_book = RZ_NEW0(RzCppVariableBook);
+	if (!var_book) {
+		RZ_LOG_ERROR("Cannot create variable book\n");
+		free_taint_state(state);
+		rz_list_free(list);
+		RZ_FREE(bytes);
+	}
 	var_book->class_variables = ht_up_new(NULL, NULL);
 	var_book->function = function;
 	var_book->stack_variables = var_write_list;
@@ -574,9 +634,8 @@ RZ_API RzCppVariableBook *rz_analysis_mark_classes(RzAnalysis *analysis) {
 			refresh_vm = rz_taint_blue_step(analysis, state);
 			break;
 		}
-		default: {
+		default:
 			break;
-		}
 		}
 		state->addr += op->size;
 		offset += op->size;
@@ -586,11 +645,9 @@ RZ_API RzCppVariableBook *rz_analysis_mark_classes(RzAnalysis *analysis) {
 	core->offset = function->addr;
 	rz_core_analysis_il_reinit(core);
 
-	// TODO : Check for leaks
-	// TODO : Implement free for lists
 	free_taint_state(state);
 	rz_list_free(list);
-	free(bytes);
+	RZ_FREE(bytes);
 	return var_book;
 }
 
@@ -606,16 +663,16 @@ static ut64 store_objects(RzCore *core, RzVector /*<RzAnalysisVtable>*/ *vtables
 	rz_vector_foreach (vtables, vtable) {
 		ut8 buf[8];
 		rz_write_le64(buf, vtable->addr);
-		char str[17]; // 2 chars per byte + null terminator
-		for (int i = 0; i < 8; i++) {
-			sprintf(&str[i * 2], "%02x", buf[i]);
-		}
-		str[16] = '\0'; // null-terminate
-
+		const char *str = rz_hex_bin2strdup(buf, sizeof(buf));
 		rz_core_write_hexpair(core, addr, str);
 		ut64 *ptr = RZ_NEW0(ut64);
+		if (!ptr) {
+			RZ_FREE(str);
+			continue;
+		}
 		*ptr = addr;
 		rz_list_insert(var->object_addr, 0, ptr);
+		RZ_FREE(str);
 		addr += 0x8;
 	}
 	return addr;
@@ -646,12 +703,9 @@ static void allocate_objects(RzAnalysis *analysis, RzCppVariableBook *var_book) 
 static void fill_value_at_stack_address(RzCore *core, ut64 stack_addr, ut64 value) {
 	ut8 buf[8];
 	rz_write_le64(buf, value);
-	char str[17];
-	for (int i = 0; i < 8; i++) {
-		sprintf(&str[i * 2], "%02x", buf[i]);
-	}
-	str[16] = '\0';
+	const char *str = rz_hex_bin2strdup(buf, sizeof(buf));
 	rz_core_write_hexpair(core, stack_addr, str);
+	RZ_FREE(str);
 }
 
 /**
@@ -681,28 +735,30 @@ static void rz_preserve_stack(RzAnalysis *analysis, RzCppVariableBook *var_book,
 static void devirtualize_step(RzCore *core, RzVirtualCalls *virt_calls, RzAnalysisOp *op, ut64 start) {
 	RzAnalysisILVM *vm = core->analysis->il_vm;
 	RzILVal *reg = rz_il_vm_get_var_value(vm->vm, RZ_IL_VAR_KIND_GLOBAL, op->reg);
-	if (reg) {
+	if (!reg) {
+		return;
+	}
 
-		RzBitVector *bv = rz_il_value_to_bv(reg);
-		ut64 vf_addr = rz_bv_to_ut64(bv);
-		rz_core_analysis_il_vm_set(core, op->reg, 0);
-		rz_bv_free(bv);
+	RzBitVector *bv = rz_il_value_to_bv(reg);
+	ut64 vf_addr = rz_bv_to_ut64(bv);
+	rz_core_analysis_il_vm_set(core, op->reg, 0);
+	rz_bv_free(bv);
 
-		RzAnalysisFunction *vfunc = rz_analysis_get_fcn_in(core->analysis, vf_addr, RZ_ANALYSIS_FCN_TYPE_ROOT);
-		if (!vfunc) {
-			vfunc = rz_analysis_get_fcn_in(core->analysis, vf_addr, 0);
-		}
-		if (vfunc) {
-			bool found = false;
-			RzSetS *curr_set = ht_up_find(virt_calls->virt_calls, start, &found);
-			if (found) {
-				rz_set_s_add(curr_set, vfunc->name);
-			} else {
-				RzSetS *set = rz_set_s_new(HT_STR_DUP);
-				rz_set_s_add(set, vfunc->name);
-				ht_up_insert(virt_calls->virt_calls, start, set);
-			}
-		}
+	RzAnalysisFunction *vfunc = rz_analysis_get_fcn_in(core->analysis, vf_addr, RZ_ANALYSIS_FCN_TYPE_ROOT);
+	if (!vfunc) {
+		vfunc = rz_analysis_get_fcn_in(core->analysis, vf_addr, RZ_ANALYSIS_FCN_TYPE_NULL);
+	}
+	if (!vfunc) {
+		return;
+	}
+	bool found = false;
+	RzSetS *curr_set = ht_up_find(virt_calls->virt_calls, start, &found);
+	if (found) {
+		rz_set_s_add(curr_set, vfunc->name);
+	} else {
+		RzSetS *set = rz_set_s_new(HT_STR_DUP);
+		rz_set_s_add(set, vfunc->name);
+		ht_up_insert(virt_calls->virt_calls, start, set);
 	}
 }
 
@@ -718,7 +774,7 @@ static void devirtualize_variable_vtable(RzAnalysis *analysis, RzCppVariableBook
 
 	RzAnalysisFunction *function = rz_analysis_get_fcn_in(core->analysis, core->offset, RZ_ANALYSIS_FCN_TYPE_ROOT);
 	if (!function) {
-		function = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
+		function = rz_analysis_get_fcn_in(core->analysis, core->offset, RZ_ANALYSIS_FCN_TYPE_NULL);
 	}
 	if (!function) {
 		RZ_LOG_ERROR("Cannot find function at 0x%08" PFMT64x "\n", core->offset);
@@ -730,7 +786,9 @@ static void devirtualize_variable_vtable(RzAnalysis *analysis, RzCppVariableBook
 	RzAnalysisOp *op = rz_analysis_op_new();
 
 	ut8 *bytes = malloc(end - start);
-	rz_io_read_at(core->io, start, bytes, end - start);
+	if (!rz_io_read_at(core->io, start, bytes, end - start)) {
+		RZ_LOG_ERROR("Cannot read at offset 0x%08" PFMT64x "\n", start);
+	}
 	ut64 offset = 0;
 
 	rz_taint_init(analysis, core);
@@ -744,7 +802,7 @@ static void devirtualize_variable_vtable(RzAnalysis *analysis, RzCppVariableBook
 			rz_core_analysis_il_reinit(core);
 			refresh_vm = false;
 		}
-		refresh_vm = is_call_instruction(op);
+		refresh_vm = is_branch_type_to_method(op);
 
 		rz_core_il_step(core, 1);
 		rz_preserve_stack(analysis, var_book, var, obj_addr);
@@ -772,25 +830,21 @@ static bool add_comment(void *user, const ut64 key, const void *v) {
 	RzPVector *vect = rz_set_s_to_vector(set);
 	void **it;
 
-	char *comment = NULL;
+	RzStrBuf *comment = rz_strbuf_new(NULL);
 	bool first = true;
 	rz_pvector_foreach (vect, it) {
 		const char *vfunc_name = *it;
 		if (first) {
-			comment = rz_str_newf("Virtual Call : %s", vfunc_name);
+			rz_strbuf_setf(comment, "Virtual Call : %s", vfunc_name);
 			first = false;
 			continue;
 		}
-		char *add_class = rz_str_newf(" / %s", vfunc_name);
-		comment = rz_str_append(comment, add_class);
-		RZ_FREE(add_class);
+		rz_strbuf_appendf(comment, " / %s", vfunc_name);
 	}
+	const char *str_comment = rz_strbuf_drain(comment);
+	rz_core_meta_comment_add(core, str_comment, key);
 
-	rz_core_meta_comment_add(core, comment, key);
 	rz_pvector_fini(vect);
-	if (comment) {
-		RZ_FREE(comment);
-	}
 
 	rz_pvector_foreach (vect, it) {
 		free(*it);
@@ -811,7 +865,7 @@ static bool add_virtual_xref(RzAnalysis *analysis, const ut64 key, RzSetS *vfunc
 	RzPVector *pvect = rz_set_s_to_vector(vfunc_set);
 	void **it;
 	rz_pvector_foreach (pvect, it) {
-		const char *vfunc = (const char *)(*it);
+		const char *vfunc = *it;
 		bool found = false;
 		RzSetU *set = ht_sp_find(virtual_xref, vfunc, &found);
 		if (!found) {
@@ -887,7 +941,10 @@ RZ_API void rz_analysis_devirtualize_methods(RzAnalysis *analysis) {
 static bool print_virtual_xrefs(RzCore *core, ut64 key, void *val) {
 	rz_cons_printf("C 0x%08" PFMT64x " ", key);
 	rz_core_seek(core, key, true);
-	rz_core_print_disasm_instructions(core, 0, 1);
+	int nb_opcodes = 1;
+	int nb_bytes = 0;
+	ut64 offset = rz_core_backward_offset(core, core->offset, &nb_opcodes, &nb_bytes);
+	rz_core_print_disasm_instructions_with_buf(core, offset, NULL, nb_bytes, nb_opcodes);
 	return true;
 }
 
@@ -900,9 +957,29 @@ RZ_API void rz_analysis_virtual_xrefs_print(RzAnalysis *analysis, const char *vf
 	bool found = false;
 	RzSetU *set = ht_sp_find(ht_virtual_xrefs, vfunc, &found);
 	if (!found) {
-		RZ_LOG_ERROR("Cannot find virtual xrefs to function %s", vfunc);
+		RZ_LOG_ERROR("Cannot find virtual xrefs to function %s\n", vfunc);
 		return;
 	}
 	rz_cons_printf("Virtual xrefs to %s\n", vfunc);
 	ht_up_foreach(set, (HtUPForeachCallback)print_virtual_xrefs, core);
+}
+
+static bool add_virtual_xref_row(RzTable *table, const ut64 addr, void *val) {
+	rz_table_add_rowf(table, "X", addr);
+	return true;
+}
+
+/**
+ * \brief print xrefs of virtual functions as table
+ */
+RZ_API void rz_analysis_virtual_xrefs_print_table(RzAnalysis *analysis, const char *vfunc, RzTable *table) {
+	HtSP *ht_virtual_xrefs = analysis->ht_cpp_virtual_xrefs;
+	bool found = false;
+	RzSetU *set = ht_sp_find(ht_virtual_xrefs, vfunc, &found);
+	if (!found) {
+		RZ_LOG_ERROR("Cannot find virtual xrefs to function %s\n", vfunc);
+		return;
+	}
+
+	ht_up_foreach(set, (HtUPForeachCallback)add_virtual_xref_row, table);
 }
