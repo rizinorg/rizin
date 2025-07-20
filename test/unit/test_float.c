@@ -282,18 +282,18 @@ bool f32_ieee_neg_test(void) {
 	RzFloat *calc_negl0 = rz_float_neg(l0);
 	mu_assert_true(is_equal_bv(nl0->s, calc_negl0->s), "Negating 80bit 0.0 failed.");
 
-	RzFloat *inf32 = rz_float_new_from_f32(INFINITY);
-	RzFloat *ninf32 = rz_float_new_from_f32(-INFINITY);
+	RzFloat *inf32 = rz_float_new_from_f32(F32_PINF);
+	RzFloat *ninf32 = rz_float_new_from_f32(F32_NINF);
 	RzFloat *calc_neginf32 = rz_float_neg(inf32);
 	mu_assert_true(is_equal_bv(ninf32->s, calc_neginf32->s), "Negating float inf failed.");
 
-	RzFloat *inf64 = rz_float_new_from_f64(INFINITY);
-	RzFloat *ninf64 = rz_float_new_from_f64(-INFINITY);
+	RzFloat *inf64 = rz_float_new_from_f64(F64_PINF);
+	RzFloat *ninf64 = rz_float_new_from_f64(F64_NINF);
 	RzFloat *calc_neginf64 = rz_float_neg(inf64);
 	mu_assert_true(is_equal_bv(ninf64->s, calc_neginf64->s), "Negating double inf failed.");
 
-	RzFloat *inf80 = rz_float_new_from_f80(INFINITY);
-	RzFloat *ninf80 = rz_float_new_from_f80(-INFINITY);
+	RzFloat *inf80 = rz_float_new_from_f80(F80_PINF);
+	RzFloat *ninf80 = rz_float_new_from_f80(F80_NINF);
 	RzFloat *calc_neginf80 = rz_float_neg(inf80);
 	mu_assert_true(is_equal_bv(ninf80->s, calc_neginf80->s), "Negating 80bit inf failed.");
 

@@ -102,21 +102,21 @@ typedef struct rz_float_t {
 
 static inline bool rz_float_is_neg_zero_f32(float zero) {
 	if (zero == 0.0f) {
-		return 1.0f / zero == -INFINITY;
+		return 1.0f / zero == F32_NINF;
 	}
 	return false;
 }
 
 static inline bool rz_float_is_neg_zero_f64(double zero) {
 	if (zero == 0.0) {
-		return 1.0 / zero == -INFINITY;
+		return 1.0 / zero == F64_NINF;
 	}
 	return false;
 }
 
 static inline bool rz_float_is_neg_zero_long_double(long double zero) {
 	if (zero == 0.0l) {
-		return 1.0l / zero == -INFINITY;
+		return 1.0l / zero == F128_NINF;
 	}
 	return false;
 }
