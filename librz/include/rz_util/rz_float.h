@@ -195,8 +195,7 @@ RZ_API bool rz_float_set_from_zero(RZ_NONNULL RzFloat *f);
 RZ_API bool rz_float_set_from_qnan(RZ_NONNULL RzFloat *f);
 RZ_API bool rz_float_set_from_snan(RZ_NONNULL RzFloat *f);
 RZ_API RZ_OWN RzFloat *rz_float_new_inf(RzFloatFormat format, bool is_negative);
-RZ_API RZ_OWN RzFloat *rz_float_new_zero(RzFloatFormat format);
-RZ_API RZ_OWN RzFloat *rz_float_new_zero_neg(RzFloatFormat format);
+RZ_API RZ_OWN RzFloat *rz_float_new_zero(RzFloatFormat format, bool negative);
 RZ_API RZ_OWN RzFloat *rz_float_new_qnan(RzFloatFormat format);
 RZ_API RZ_OWN RzFloat *rz_float_new_snan(RzFloatFormat format);
 

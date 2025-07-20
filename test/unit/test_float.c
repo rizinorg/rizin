@@ -51,7 +51,7 @@ bool rz_float_detect_spec_test(void) {
 	RzFloat *qnan = rz_float_new_qnan(format);
 	RzFloat *pinf = rz_float_new_inf(format, false);
 	RzFloat *ninf = rz_float_new_inf(format, true);
-	RzFloat *zero = rz_float_new_zero(format);
+	RzFloat *zero = rz_float_new_zero(format, false);
 	RzFloat *snan = rz_float_new_snan(format);
 	RzFloat *cst = rz_float_new_from_f64(42.0);
 
@@ -522,7 +522,7 @@ bool f32_ieee_special_num_test(void) {
 	RzFloat *nan = rz_float_new_qnan(RZ_FLOAT_IEEE754_BIN_32);
 	RzFloat *pinf = rz_float_new_inf(RZ_FLOAT_IEEE754_BIN_32, false);
 	RzFloat *ninf = rz_float_new_inf(RZ_FLOAT_IEEE754_BIN_32, true);
-	RzFloat *zero = rz_float_new_zero(RZ_FLOAT_IEEE754_BIN_32);
+	RzFloat *zero = rz_float_new_zero(RZ_FLOAT_IEEE754_BIN_32, false);
 	RzFloat *cst_num = rz_float_new_from_f32(2.0f);
 
 	// Basic Operations
@@ -771,7 +771,7 @@ bool float_print_num(void) {
 	mu_assert_streq_free(rz_float_as_dec_string(f128), "3.125", "float128 numeric value");
 	rz_float_free(f128);
 
-	RzFloat *tmp = rz_float_new_zero(RZ_FLOAT_IEEE754_BIN_32);
+	RzFloat *tmp = rz_float_new_zero(RZ_FLOAT_IEEE754_BIN_32, false);
 	mu_assert_streq_free(rz_float_as_dec_string(tmp), "0.0", "float32 zero");
 	rz_float_free(tmp);
 

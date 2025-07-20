@@ -918,7 +918,7 @@ static bool test_rzil_vm_op_float() {
 	// test float -> bool operations
 	RzFloat *pinf = rz_float_new_inf(RZ_FLOAT_IEEE754_BIN_64, false);
 	RzFloat *nan = rz_float_new_qnan(RZ_FLOAT_IEEE754_BIN_64);
-	RzFloat *zero = rz_float_new_zero(RZ_FLOAT_IEEE754_BIN_64);
+	RzFloat *zero = rz_float_new_zero(RZ_FLOAT_IEEE754_BIN_64, false);
 
 	// bind value to var, ownership transfered
 	rz_il_vm_create_global_var(vm, "inf", rz_il_sort_pure_float(RZ_FLOAT_IEEE754_BIN_64));

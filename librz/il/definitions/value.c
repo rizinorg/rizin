@@ -89,7 +89,7 @@ RZ_API RZ_OWN RzILVal *rz_il_value_new_zero_of(RzILSortPure sort) {
 		}
 		break;
 	case RZ_IL_TYPE_PURE_FLOAT:
-		ret->data.f = rz_float_new_zero(sort.props.f.format);
+		ret->data.f = rz_float_new_zero(sort.props.f.format, false);
 		if (!ret->data.f) {
 			rz_il_value_free(ret);
 			return NULL;
