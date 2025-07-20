@@ -91,7 +91,7 @@ static inline extFloat80_t to_float80(RzFloat *f80) {
 }
 
 static inline float128_t to_float128(RzFloat *f128) {
-	rz_warn_if_fail(f128->r != RZ_FLOAT_IEEE754_BIN_128);
+	rz_warn_if_fail(f128->r == RZ_FLOAT_IEEE754_BIN_128);
 
 	float128_t ret;
 	ret.v[0] = rz_bv_to_ut64(f128->s);
