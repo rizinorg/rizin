@@ -1556,6 +1556,22 @@ bool f80_ieee_div_test(void) {
 	mu_end;
 }
 
+bool f128_ieee_div_test(void) {
+	RzFloat *x_f128 = rz_float_new_from_f128(0.0l);
+	RzFloat *y_f128 = rz_float_new_from_f128(0.0l);
+	RzFloat *quot_f128 = rz_float_div(x_f128, y_f128, RZ_FLOAT_RMODE_RNE);
+	rz_bv_rshift(quot_f128->s, 110);
+	RzBitVector *exp = rz_bv_new_from_ut64(18, 0x1ffff);
+	mu_assert_false(rz_bv_eq(quot_f128->s, exp), "Divide 128-bit 0.0/0.0");
+
+	rz_float_free(x_f128);
+	rz_float_free(y_f128);
+	rz_float_free(quot_f128);
+	rz_bv_free(exp);
+
+	mu_end;
+}
+
 bool f80_ieee_sqrt_test(void) {
 	RzFloat *x_f80 = new_f80_from_bytes("\x3f\xff\xab\x27\x32\x90\xa7\x8b\x0c\x29");
 	RzFloat *sqrt_f80 = rz_float_sqrt(x_f80, RZ_FLOAT_RMODE_RNE);
@@ -1628,6 +1644,7 @@ bool all_tests() {
 	mu_run_test(f80_ieee_div_test);
 	mu_run_test(f80_ieee_sqrt_test);
 	mu_run_test(f80_ieee_cast_test);
+	mu_run_test(f128_ieee_div_test);
 	return tests_passed != tests_run;
 }
 
