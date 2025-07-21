@@ -93,6 +93,11 @@ static int rz_debug_native_reg_write(RzDebug *dbg, int type, const ut8 *buf, int
 #endif // Native OS & Arch
 
 #if DEBUGGER
+struct rz_debug_desc_plugin_t rz_debug_desc_plugin_native = {
+	.open = rz_debug_desc_native_open,
+	.list = rz_debug_desc_native_list,
+};
+
 RzDebugPlugin rz_debug_plugin_native = {
 	.name = "native",
 	.license = "LGPL3",

@@ -7,7 +7,6 @@
 
 #include "procfs.h"
 #include "linux/linux_debug.h"
-#include "linux/linux_coredump.h"
 
 #define PROC_NAME_SZ   1024
 #define PROC_REGION_SZ 100
@@ -16,6 +15,15 @@
 #define PROC_REGION_LEFT_SZ 98
 #define PROC_PERM_SZ        5
 #define PROC_UNKSTR_SZ      128
+
+static bool rz_debug_native_step(RzDebug *dbg) {
+	return linux_step(dbg);
+}
+
+static void interrupt_process(RzDebug *dbg) {
+	rz_debug_kill(dbg, dbg->pid, dbg->tid, SIGINT);
+	rz_cons_break_pop();
+}
 
 static int rz_debug_native_continue(RzDebug *dbg, int pid, int tid, int sig) {
 	int contsig = dbg->reason.signum;
@@ -346,21 +354,30 @@ static bool rz_debug_gcore(RzDebug *dbg, char *path, RzBuffer *dest) {
 	return false;
 }
 
-struct rz_debug_desc_plugin_t rz_debug_desc_plugin_native = {
-	.open = rz_debug_desc_native_open,
-	.list = rz_debug_desc_native_list,
-};
+// struct rz_debug_desc_plugin_t rz_debug_desc_plugin_native = {
+// 	.open = rz_debug_desc_native_open,
+// 	.list = rz_debug_desc_native_list,
+// };
 
+// static bool rz_debug_native_init(RzDebug *dbg, void **user) {
+// 	dbg->cur->desc = rz_debug_desc_plugin_native;
+// 	return true;
+// }
+
+// static void rz_debug_native_fini(RzDebug *dbg, void *user) {
+// 	if (!user) {
+// 		return;
+// 	}
+// 	free(user);
+// }
+
+struct rz_debug_desc_plugin_t rz_debug_desc_plugin_native;
 static bool rz_debug_native_init(RzDebug *dbg, void **user) {
 	dbg->cur->desc = rz_debug_desc_plugin_native;
 	return true;
 }
 
 static void rz_debug_native_fini(RzDebug *dbg, void *user) {
-	if (!user) {
-		return;
-	}
-	free(user);
 }
 
 RZ_API ut64 rz_debug_get_tls(RZ_NONNULL RzDebug *dbg, int tid) {
