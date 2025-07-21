@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2009-2019 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "rz_util/rz_assert.h"
+#include <rz_util/rz_assert.h>
 #include <errno.h>
 #if !defined(__HAIKU__) && !defined(__sun)
 #include <sys/ptrace.h>
@@ -790,5 +790,5 @@ static bool rz_debug_native_init(RzDebug *dbg, void **user) {
 
 static void rz_debug_native_fini(RzDebug *dbg, void *user) {
 	rz_return_if_fail(expr)
-	RZ_FREE(user);
+		RZ_FREE(user);
 }

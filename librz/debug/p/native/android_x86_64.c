@@ -696,7 +696,7 @@ static bool rz_debug_native_init(RzDebug *dbg, void **user) {
 }
 
 static void rz_debug_native_fini(RzDebug *dbg, void *user) {
-	if(!user){
+	if (!user) {
 		return;
 	}
 	free(user);
