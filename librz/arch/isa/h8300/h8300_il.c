@@ -1382,18 +1382,29 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 		default: NOT_IMPLEMENTED;
 		}
 	case H8300_INSN_POP_W:
-		return SEQ3(
-			R16_X(0, LOADW(16, sp_op())),
+		return SEQ4(
+			SETL("val", LOADW(16, sp_op())),
+			R32_X(0, VARL("val")),
 			sp_inc(2),
-			ccr_xNZV0(16, LOADW(16, sp_op())));
+			ccr_xNZV0(16, VARL("val")));
+	case H8300_INSN_POP_L:
+		return SEQ4(
+			SETL("val", LOADW(32, sp_op())),
+			R32_X(0, VARL("val")),
+			sp_inc(4),
+			ccr_xNZV0(32, VARL("val")));
 	case H8300_INSN_PUSH_W:
 		return SEQ3(
 			sp_dec(2),
 			STOREW(sp_op(), R16_OP(0)),
 			ccr_xNZV0(16, R16_OP(0)));
+	case H8300_INSN_PUSH_L:
+		return SEQ3(
+			sp_dec(4),
+			STOREW(sp_op(), R32_OP(0)),
+			ccr_xNZV0(32, R32_OP(0)));
 	case H8300_INSN_INVALID: return NOP();
-	case H8300_INSN_POP_L:
-	case H8300_INSN_PUSH_L: NOT_IMPLEMENTED;
+
 	case H8300_INSN_TRAPA:
 		return SEQ5(
 			sp_dec(4),
