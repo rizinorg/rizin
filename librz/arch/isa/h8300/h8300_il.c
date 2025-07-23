@@ -860,6 +860,42 @@ static RzILOpEffect *op_rotxr(H8300Cmd *cmd, ut8 N) {
 		RX_X(N, 0, VARL("result")));
 }
 
+static RzILOpEffect *op_shal(H8300Cmd *cmd, ut8 N) {
+	return SEQ3(
+		SETL("result", SHIFTL0(RX_OP(N, 0), UN(N, 1))),
+		ccr_xNZVC(N, VARL("result"),
+			XOR(MSB(VARL("result")), MSB(RX_OP(N, 0))),
+			MSB(RX_OP(N, 0))),
+		RX_X(N, 0, VARL("result")));
+}
+
+static RzILOpEffect *op_shar(H8300Cmd *cmd, ut8 N) {
+	return SEQ3(
+		SETL("result", SHIFTRA(RX_OP(N, 0), UN(N, 1))),
+		ccr_xNZVC(N, VARL("result"),
+			IL_FALSE,
+			LSB(RX_OP(N, 0))),
+		RX_X(N, 0, VARL("result")));
+}
+
+static RzILOpEffect *op_shll(H8300Cmd *cmd, ut8 N) {
+	return SEQ3(
+		SETL("result", SHIFTL0(RX_OP(N, 0), UN(N, 1))),
+		ccr_xNZVC(N, VARL("result"),
+			IL_FALSE,
+			MSB(RX_OP(N, 0))),
+		RX_X(N, 0, VARL("result")));
+}
+
+static RzILOpEffect *op_shlr(H8300Cmd *cmd, ut8 N) {
+	return SEQ3(
+		SETL("result", SHIFTR0(RX_OP(N, 0), UN(N, 1))),
+		ccr_xNZVC(N, VARL("result"),
+			IL_FALSE,
+			LSB(RX_OP(N, 0))),
+		RX_X(N, 0, VARL("result")));
+}
+
 static RzILOpPure *vector_addr(H8300Cmd *cmd, ut8 x) {
 	// TODO: This is a temporary solution, distinguish between normal and advanced mode
 	switch (x) {
@@ -1059,34 +1095,22 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 		}
 	case H8300_INSN_DAA: return op_daa(cmd);
 	case H8300_INSN_DAS: return op_das(cmd);
-	case H8300_INSN_SHAL_B:
-		return SEQ3(
-			SETL("result", SHIFTL0(R8_OP(0), U8(1))),
-			ccr_xNZVC(8, VARL("result"),
-				XOR(MSB(VARL("result")), MSB(R8_OP(0))),
-				MSB(R8_OP(0))),
-			R8_X(0, VARL("result")));
-	case H8300_INSN_SHAR_B:
-		return SEQ3(
-			SETL("result", SHIFTRA(R8_OP(0), U8(1))),
-			ccr_xNZVC(8, VARL("result"),
-				IL_FALSE,
-				LSB(R8_OP(0))),
-			R8_X(0, VARL("result")));
-	case H8300_INSN_SHLL_B:
-		return SEQ3(
-			SETL("result", SHIFTL0(R8_OP(0), U8(1))),
-			ccr_xNZVC(8, VARL("result"),
-				IL_FALSE,
-				MSB(R8_OP(0))),
-			R8_X(0, VARL("result")));
-	case H8300_INSN_SHLR_B:
-		return SEQ3(
-			SETL("result", SHIFTR0(R8_OP(0), U8(1))),
-			ccr_xNZVC(8, VARL("result"),
-				IL_FALSE,
-				LSB(R8_OP(0))),
-			R8_X(0, VARL("result")));
+	case H8300_INSN_SHAL_B: return op_shal(cmd, 8);
+	case H8300_INSN_SHAL_W: return op_shal(cmd, 16);
+	case H8300_INSN_SHAL_L: return op_shal(cmd, 32);
+
+	case H8300_INSN_SHAR_B: return op_shar(cmd, 8);
+	case H8300_INSN_SHAR_W: return op_shar(cmd, 16);
+	case H8300_INSN_SHAR_L: return op_shar(cmd, 32);
+
+	case H8300_INSN_SHLL_B: return op_shll(cmd, 8);
+	case H8300_INSN_SHLL_W: return op_shll(cmd, 16);
+	case H8300_INSN_SHLL_L: return op_shll(cmd, 32);
+
+	case H8300_INSN_SHLR_B: return op_shlr(cmd, 8);
+	case H8300_INSN_SHLR_W: return op_shlr(cmd, 16);
+	case H8300_INSN_SHLR_L: return op_shlr(cmd, 32);
+
 	case H8300_INSN_ROTL_B: return op_rotl(cmd, 8);
 	case H8300_INSN_ROTL_W: return op_rotl(cmd, 16);
 	case H8300_INSN_ROTL_L: return op_rotl(cmd, 32);
@@ -1109,15 +1133,6 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 	case H8300_INSN_NOT_B:
 	case H8300_INSN_NOT_W:
 	case H8300_INSN_NOT_L: return op_not(cmd);
-	case H8300_INSN_SHAL_W:
-	case H8300_INSN_SHAR_W:
-	case H8300_INSN_SHLL_W:
-	case H8300_INSN_SHLR_W:
-	case H8300_INSN_SHAL_L:
-	case H8300_INSN_SHAR_L:
-	case H8300_INSN_SHLL_L:
-	case H8300_INSN_SHLR_L:
-		NOT_IMPLEMENTED;
 
 	case H8300_INSN_BRA:
 		return JMP(PCREL_OP(0));
@@ -1400,7 +1415,7 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 	case H8300_INSN_POP_W:
 		return SEQ4(
 			SETL("val", LOADW(16, sp_op())),
-			R32_X(0, VARL("val")),
+			R16_X(0, VARL("val")),
 			sp_inc(2),
 			ccr_xNZV0(16, VARL("val")));
 	case H8300_INSN_POP_L:
