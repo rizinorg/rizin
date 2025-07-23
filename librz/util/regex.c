@@ -41,6 +41,9 @@ static RZ_OWN void *regex_new(RZ_NONNULL const char *pattern, RzRegexFlags cflag
 	RzRegexCompContext *ccontext, size_t pcre2_word_width) {
 	rz_return_val_if_fail(pattern, NULL);
 	check_faulty_pcre2_word_width(pcre2_word_width);
+	if (jflags == RZ_REGEX_DEFAULT) {
+		jflags = PCRE2_JIT_COMPLETE;
+	}
 
 	RzRegexStatus err_num;
 	RzRegexSize err_off;
@@ -86,7 +89,7 @@ static RZ_OWN void *regex_new(RZ_NONNULL const char *pattern, RzRegexFlags cflag
 			return NULL;
 		}
 #ifdef SUPPORTS_PCRE2_JIT
-		RzRegexStatus jit_err = pcre2_jit_compile_8(regex, jflags | PCRE2_JIT_COMPLETE);
+		RzRegexStatus jit_err = pcre2_jit_compile_8(regex, jflags);
 		if (jit_err < 0) {
 			print_pcre2_err(pat, jit_err, 0);
 		}
@@ -109,7 +112,7 @@ static RZ_OWN void *regex_new(RZ_NONNULL const char *pattern, RzRegexFlags cflag
 		}
 		free(utf16_pat);
 #ifdef SUPPORTS_PCRE2_JIT
-		RzRegexStatus jit_err = pcre2_jit_compile_16(regex, jflags | PCRE2_JIT_COMPLETE);
+		RzRegexStatus jit_err = pcre2_jit_compile_16(regex, jflags);
 		if (jit_err < 0) {
 			print_pcre2_err(pat, jit_err, 0);
 		}
@@ -131,7 +134,7 @@ static RZ_OWN void *regex_new(RZ_NONNULL const char *pattern, RzRegexFlags cflag
 		}
 		free(utf32_pat);
 #ifdef SUPPORTS_PCRE2_JIT
-		RzRegexStatus jit_err = pcre2_jit_compile_32(regex, jflags | PCRE2_JIT_COMPLETE);
+		RzRegexStatus jit_err = pcre2_jit_compile_32(regex, jflags);
 		if (jit_err < 0) {
 			print_pcre2_err(pat, jit_err, 0);
 		}
@@ -276,6 +279,9 @@ RZ_API RZ_OWN RzRegexMulti *rz_regex_new_multi(RZ_NONNULL const char *pattern, R
 RZ_API RZ_OWN RzRegex *rz_regex_new_bytes(RZ_NONNULL const ut8 *pattern, size_t pattern_len, RzRegexFlags cflags, RzRegexFlags jflags,
 	RzRegexCompContext *ccontext) {
 	rz_return_val_if_fail(pattern, NULL);
+	if (jflags == RZ_REGEX_DEFAULT) {
+		jflags = PCRE2_JIT_COMPLETE;
+	}
 
 	RzRegexStatus err_num;
 	RzRegexSize err_off;
@@ -292,7 +298,7 @@ RZ_API RZ_OWN RzRegex *rz_regex_new_bytes(RZ_NONNULL const ut8 *pattern, size_t 
 		return NULL;
 	}
 #ifdef SUPPORTS_PCRE2_JIT
-	RzRegexStatus jit_err = pcre2_jit_compile_8(regex, jflags | PCRE2_JIT_COMPLETE);
+	RzRegexStatus jit_err = pcre2_jit_compile_8(regex, jflags);
 	if (jit_err < 0) {
 		print_pcre2_err((const char *)pattern, jit_err, 0);
 	}
