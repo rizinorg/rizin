@@ -440,7 +440,7 @@ static void rz_regex_match_data_free(RZ_OWN RzRegexMatchData *match_data) {
  * \param text_size The length of the buffer pointed to by \p text.
  * Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
  * \param text_offset The offset into \p text from where the search starts.
- * \param mflags Match flags.
+ * \param mflags Match flags. PCRE2_NO_UTF_CHECK is enforced currently.
  *
  * \return A status code which describes the result.
  */
@@ -451,7 +451,7 @@ RZ_API RzRegexStatus rz_regex_match(RZ_NONNULL const RzRegex *regex, RZ_NONNULL 
 	rz_return_val_if_fail(regex && text, RZ_REGEX_ERROR_NOMATCH);
 
 	pcre2_match_data_8 *mdata = pcre2_match_data_create_from_pattern_8(regex, NULL);
-	RzRegexStatus rc = pcre2_match_8(regex, (PCRE2_SPTR8)text, text_size, text_offset, mflags, mdata, NULL);
+	RzRegexStatus rc = pcre2_match_8(regex, (PCRE2_SPTR8)text, text_size, text_offset, mflags | PCRE2_NO_UTF_CHECK, mdata, NULL);
 	pcre2_match_data_free_8(mdata);
 	return rc;
 }
@@ -466,7 +466,7 @@ RZ_API RzRegexStatus rz_regex_match(RZ_NONNULL const RzRegex *regex, RZ_NONNULL 
  * \param text_size The length of the buffer pointed to by \p text.
  * Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
  * \param text_offset The offset into \p text from where the search starts.
- * \param mflags Match flags.
+ * \param mflags Match flags. PCRE2_NO_UTF_CHECK is enforced currently.
  *
  * \return A status code which describes the result.
  */
@@ -477,7 +477,7 @@ RZ_API RzRegexStatus rz_regex_match_16(RZ_NONNULL const RzRegex16 *regex, RZ_NON
 	rz_return_val_if_fail(regex && text, RZ_REGEX_ERROR_NOMATCH);
 
 	pcre2_match_data_16 *mdata = pcre2_match_data_create_from_pattern_16(regex, NULL);
-	RzRegexStatus rc = pcre2_match_16(regex, (PCRE2_SPTR16)text, text_size, text_offset, mflags, mdata, NULL);
+	RzRegexStatus rc = pcre2_match_16(regex, (PCRE2_SPTR16)text, text_size, text_offset, mflags | PCRE2_NO_UTF_CHECK, mdata, NULL);
 	pcre2_match_data_free_16(mdata);
 	return rc;
 }
@@ -492,7 +492,7 @@ RZ_API RzRegexStatus rz_regex_match_16(RZ_NONNULL const RzRegex16 *regex, RZ_NON
  * \param text_size The length of the buffer pointed to by \p text.
  * Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
  * \param text_offset The offset into \p text from where the search starts.
- * \param mflags Match flags.
+ * \param mflags Match flags. PCRE2_NO_UTF_CHECK is enforced currently.
  *
  * \return A status code which describes the result.
  */
@@ -503,7 +503,7 @@ RZ_API RzRegexStatus rz_regex_match_32(RZ_NONNULL const RzRegex32 *regex, RZ_NON
 	rz_return_val_if_fail(regex && text, RZ_REGEX_ERROR_NOMATCH);
 
 	pcre2_match_data_32 *mdata = pcre2_match_data_create_from_pattern_32(regex, NULL);
-	RzRegexStatus rc = pcre2_match_32(regex, (PCRE2_SPTR32)text, text_size, text_offset, mflags, mdata, NULL);
+	RzRegexStatus rc = pcre2_match_32(regex, (PCRE2_SPTR32)text, text_size, text_offset, mflags | PCRE2_NO_UTF_CHECK, mdata, NULL);
 	pcre2_match_data_free_32(mdata);
 	return rc;
 }
@@ -611,7 +611,7 @@ static RZ_OWN RzPVector /*<RzRegexMatch *>*/ *match_first_8(
 	RzRegexMatchData *mdata = NULL;
 	mdata = pcre2_match_data_create_from_pattern_8(regex, NULL);
 	RzRegexStatus rc = 0;
-	rc = pcre2_match_8(regex, (PCRE2_SPTR8)text, text_size, text_offset, mflags, mdata, NULL);
+	rc = pcre2_match_8(regex, (PCRE2_SPTR8)text, text_size, text_offset, mflags | PCRE2_NO_UTF_CHECK, mdata, NULL);
 
 	if (rc == PCRE2_ERROR_NOMATCH) {
 		// Nothing matched return empty vector.
@@ -678,7 +678,7 @@ static RZ_OWN RzPVector /*<RzRegexMatch *>*/ *match_first_16(
 	RzRegexMatchData *mdata = NULL;
 	mdata = pcre2_match_data_create_from_pattern_16(regex, NULL);
 	RzRegexStatus rc = 0;
-	rc = pcre2_match_16(regex, (PCRE2_SPTR16)text, text_size_code_units, text_offset_code_units, mflags, mdata, NULL);
+	rc = pcre2_match_16(regex, (PCRE2_SPTR16)text, text_size_code_units, text_offset_code_units, mflags | PCRE2_NO_UTF_CHECK, mdata, NULL);
 
 	if (rc == PCRE2_ERROR_NOMATCH) {
 		// Nothing matched return empty vector.
@@ -745,7 +745,7 @@ static RZ_OWN RzPVector /*<RzRegexMatch *>*/ *match_first_32(
 	RzRegexMatchData *mdata = NULL;
 	mdata = pcre2_match_data_create_from_pattern_32(regex, NULL);
 	RzRegexStatus rc = 0;
-	rc = pcre2_match_32(regex, (PCRE2_SPTR32)text, text_size_code_units, text_offset_code_units, mflags, mdata, NULL);
+	rc = pcre2_match_32(regex, (PCRE2_SPTR32)text, text_size_code_units, text_offset_code_units, mflags | PCRE2_NO_UTF_CHECK, mdata, NULL);
 
 	if (rc == PCRE2_ERROR_NOMATCH) {
 		// Nothing matched return empty vector.
