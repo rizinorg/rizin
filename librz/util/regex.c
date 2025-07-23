@@ -76,7 +76,7 @@ static RZ_OWN void *regex_new(RZ_NONNULL const char *pattern, RzRegexFlags cflag
 		regex = pcre2_compile_8(
 			(PCRE2_SPTR8)pat,
 			PCRE2_ZERO_TERMINATED,
-			cflags | PCRE2_UTF | PCRE2_MATCH_INVALID_UTF,
+			cflags | PCRE2_UTF | PCRE2_NO_UTF_CHECK | PCRE2_MATCH_INVALID_UTF,
 			&err_num,
 			&err_off,
 			ccontext);
@@ -96,7 +96,7 @@ static RZ_OWN void *regex_new(RZ_NONNULL const char *pattern, RzRegexFlags cflag
 		regex = pcre2_compile_16(
 			(PCRE2_SPTR16)utf16_pat,
 			PCRE2_ZERO_TERMINATED,
-			cflags | PCRE2_UTF | PCRE2_MATCH_INVALID_UTF,
+			cflags | PCRE2_UTF | PCRE2_NO_UTF_CHECK | PCRE2_MATCH_INVALID_UTF,
 			&err_num,
 			&err_off,
 			ccontext);
@@ -119,7 +119,7 @@ static RZ_OWN void *regex_new(RZ_NONNULL const char *pattern, RzRegexFlags cflag
 		regex = pcre2_compile_32(
 			(PCRE2_SPTR32)utf32_pat,
 			PCRE2_ZERO_TERMINATED,
-			cflags | PCRE2_UTF | PCRE2_MATCH_INVALID_UTF,
+			cflags | PCRE2_UTF | PCRE2_NO_UTF_CHECK | PCRE2_MATCH_INVALID_UTF,
 			&err_num,
 			&err_off,
 			ccontext);
@@ -150,7 +150,7 @@ static RZ_OWN void *regex_new(RZ_NONNULL const char *pattern, RzRegexFlags cflag
  *
  * \param pattern The regex pattern string.
  * \param cflags The compilation flags or zero for default.
- * PCRE2_UTF | PCRE2_MATCH_INVALID_UTF are enforced currently.
+ * PCRE2_UTF | PCRE2_NO_UTF_CHECK | PCRE2_MATCH_INVALID_UTF are enforced currently.
  * \param jflags The compilation flags for the JIT compiler.
  * You can pass RZ_REGEX_JIT_PARTIAL_SOFT or RZ_REGEX_JIT_PARTIAL_HARD if you
  * intend to use the pattern for partial matching. Otherwise set it to 0.
@@ -174,7 +174,7 @@ RZ_API RZ_OWN RzRegex *rz_regex_new(RZ_NONNULL const char *pattern, RzRegexFlags
  *
  * \param pattern The regex pattern string. It must be an UTF-8 encoded string.
  * \param cflags The compilation flags or zero for default.
- * PCRE2_UTF | PCRE2_MATCH_INVALID_UTF are enforced currently.
+ * PCRE2_UTF | PCRE2_NO_UTF_CHECK | PCRE2_MATCH_INVALID_UTF are enforced currently.
  * \param jflags The compilation flags for the JIT compiler.
  * You can pass RZ_REGEX_JIT_PARTIAL_SOFT or RZ_REGEX_JIT_PARTIAL_HARD if you
  * intend to use the pattern for partial matching. Otherwise set it to 0.
@@ -193,12 +193,10 @@ RZ_API RZ_OWN RzRegex16 *rz_regex_new_16(RZ_NONNULL const char *pattern, RzRegex
  * In case of an error, an error message is printed and NULL is returned.
  *
  * NOTE: The pattern and matching will always be in the host's endianness.
- * NOTE: If RZ_REGEX_EXTENDED is passed, spaces in the pattern **will** be skipped!
- * This is the opposite behavior to the default UTF-8 regular expressions.
  *
  * \param pattern The regex pattern string. It must be an UTF-8 encoded string.
  * \param cflags The compilation flags or zero for default.
- * PCRE2_UTF | PCRE2_MATCH_INVALID_UTF are enforced currently.
+ * PCRE2_UTF | PCRE2_NO_UTF_CHECK | PCRE2_MATCH_INVALID_UTF are enforced currently.
  * \param jflags The compilation flags for the JIT compiler.
  * You can pass RZ_REGEX_JIT_PARTIAL_SOFT or RZ_REGEX_JIT_PARTIAL_HARD if you
  * intend to use the pattern for partial matching. Otherwise set it to 0.
@@ -212,6 +210,22 @@ RZ_API RZ_OWN RzRegex32 *rz_regex_new_32(RZ_NONNULL const char *pattern, RzRegex
 	return regex_new(pattern, cflags, jflags, ccontext, 32);
 }
 
+/**
+ * \brief Compile an Regex pattern of \p type.
+ *
+ * NOTE: The pattern and matching will always be in the host's endianness.
+ *
+ * \param pattern The regex pattern string. It must be an UTF-8 encoded string.
+ * \param cflags The compilation flags or zero for default.
+ * PCRE2_UTF | PCRE2_NO_UTF_CHECK | PCRE2_MATCH_INVALID_UTF are enforced currently.
+ * \param jflags The compilation flags for the JIT compiler.
+ * You can pass RZ_REGEX_JIT_PARTIAL_SOFT or RZ_REGEX_JIT_PARTIAL_HARD if you
+ * intend to use the pattern for partial matching. Otherwise set it to RZ_REGEX_DEFAULT.
+ * \param ccontext A compile context or NULL.
+ * \param type The string encoding type the pattern should match.
+ *
+ * \return The compiled regex or NULL in case of failure.
+ */
 RZ_API RZ_OWN RzRegexMulti *rz_regex_new_multi(RZ_NONNULL const char *pattern, RzRegexFlags cflags, RzRegexFlags jflags,
 	RzRegexCompContext *ccontext, RzRegexType type) {
 	RzRegexMulti *re = RZ_NEW0(RzRegexMulti);
@@ -219,6 +233,7 @@ RZ_API RZ_OWN RzRegexMulti *rz_regex_new_multi(RZ_NONNULL const char *pattern, R
 		return NULL;
 	}
 	re->re_type = type;
+	re->compile_flags_jit = jflags;
 	switch (type) {
 	default:
 		rz_warn_if_reached();
@@ -313,11 +328,89 @@ RZ_API void rz_regex_free_32(RZ_OWN RzRegex32 *regex) {
 }
 
 /**
+ * \brief Makes a clone of the given multi \p regex object.
+ *
+ * NOTE: Cloning is only performed if the library is build with JIT support.
+ * JIT patterns cannot be used by multiple threads.
+ * Patterns without JIT matching can be used by multiple threads.
+ * So JIT compiled patterns need to be clonedbefore being used
+ * in a thread save manner.
+ *
+ * After usage the returned pointer should always
+ * be freed via rz_regex_free_multi_clone().
+ *
+ * \param regex The multi regex to clone.
+ * \param clone_jit If set, the clone will also have JIT pattern matching.
+ * If unset it still clones the pattern, but the clone won't support
+ * JIT pattern matching.
+ *
+ * \return The clone for \p regex or NULL in case of failure.
+ */
+RZ_API RZ_OWN RzRegexMulti *rz_regex_multi_clone(RZ_NONNULL const RzRegexMulti *regex, bool clone_jit) {
+	rz_return_val_if_fail(regex, NULL);
+#ifndef SUPPORTS_PCRE2_JIT
+	return regex;
+#else
+	RzRegexMulti *clone = RZ_NEW0(RzRegexMulti);
+	if (!clone) {
+		return NULL;
+	}
+	clone->re_type = regex->re_type;
+	clone->compile_flags_jit = regex->compile_flags_jit;
+	switch (regex->re_type) {
+	case RZ_REGEX_UTF8:
+		clone->re8 = pcre2_code_copy_with_tables_8(regex->re8);
+		if (clone_jit) {
+			pcre2_jit_compile_8(clone->re8, clone->compile_flags_jit);
+		}
+		break;
+	case RZ_REGEX_UTF16:
+		clone->re16 = pcre2_code_copy_with_tables_16(regex->re16);
+		if (clone_jit) {
+			pcre2_jit_compile_16(clone->re16, clone->compile_flags_jit);
+		}
+		break;
+	case RZ_REGEX_UTF32:
+		clone->re32 = pcre2_code_copy_with_tables_32(regex->re32);
+		if (clone_jit) {
+			pcre2_jit_compile_32(clone->re32, clone->compile_flags_jit);
+		}
+		break;
+	}
+	if (!(clone->re8 || clone->re16 || clone->re32)) {
+		free(clone);
+		return NULL;
+	}
+	return clone;
+#endif
+}
+
+/**
+ * \brief Frees a cloned RzRegexMulti object.
+ * Only RzRegexMulti returned by rz_regex_clone_multi() should be passed here.
+ *
+ * This function behaves differently if Rizin is compiled with or without
+ * JIT support. Without JIT support enabled, it will just return.
+ * With JIT support it will free the \p regex.
+ *
+ * Please see rz_regex_clone_multi() for details.
+ *
+ * \param regex The cloned multi regex to free.
+ */
+RZ_API void rz_regex_free_multi_clone(RZ_NULLABLE RZ_OWN RzRegexMulti *regex) {
+#ifndef SUPPORTS_PCRE2_JIT
+	return;
+#else
+	rz_regex_free_multi(regex);
+#endif
+}
+
+/**
  * \brief Frees a given RzRegexMulti.
  *
  * \param regex The RzRegexMulti to free.
  */
-RZ_API void rz_regex_free_multi(RZ_OWN RzRegexMulti *regex_multi) {
+RZ_API void rz_regex_free_multi(RZ_NULLABLE RZ_OWN RzRegexMulti *regex_multi) {
 	if (!regex_multi) {
 		return;
 	}

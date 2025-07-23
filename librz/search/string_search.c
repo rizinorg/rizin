@@ -56,16 +56,18 @@ static bool native_string_find(RzSearchFindOpt *fopt, StringSearch *ss, ut64 off
 
 	ut64 size;
 	const ut8 *raw_buf = rz_buf_get_whole_hot_paths((RzBuffer *)buffer, &size);
-	void **it_m = NULL;
+	void **it_m;
 	rz_pvector_foreach (ss->strings, it_m) {
 		RzDetectedString *find = *it_m;
 		RzPVector *matches = NULL;
 
+		RzRegexMulti *re = rz_regex_multi_clone(find->regex, true);
 		if (fopt->match_overlap) {
-			matches = rz_regex_match_all_overlap_multi(find->regex, raw_buf, size, 0, RZ_REGEX_DEFAULT);
+			matches = rz_regex_match_all_overlap_multi(re, raw_buf, size, 0, RZ_REGEX_DEFAULT);
 		} else {
-			matches = rz_regex_match_all_multi(find->regex, raw_buf, size, 0, RZ_REGEX_DEFAULT);
+			matches = rz_regex_match_all_multi(re, raw_buf, size, 0, RZ_REGEX_DEFAULT);
 		}
+		rz_regex_free_multi_clone(re);
 		if (!matches) {
 			return false;
 		}
@@ -140,7 +142,14 @@ static bool string_find(RzSearchFindOpt *fopt, void *user, ut64 offset, const Rz
 		void **it_m = NULL;
 		rz_pvector_foreach (ss->strings, it_m) {
 			RzDetectedString *find = *it_m;
-			RzPVector *matches = fopt->match_overlap ? rz_regex_match_all_overlap(find->regex->re8, detected->string, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT) : rz_regex_match_all(find->regex->re8, detected->string, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT);
+			RzRegexMulti *re = rz_regex_multi_clone(find->regex, true);
+			RzPVector *matches = NULL;
+			if  (fopt->match_overlap) {
+				matches = rz_regex_match_all_overlap(re->re8, detected->string, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT);
+			} else {
+				matches = rz_regex_match_all(re->re8, detected->string, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT);
+			}
+			rz_regex_free_multi_clone(re);
 			void **it;
 			rz_pvector_foreach (matches, it) {
 				RzPVector *match = *it;

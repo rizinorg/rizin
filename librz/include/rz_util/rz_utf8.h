@@ -4,6 +4,8 @@
 /* For RzStrEnc definition */
 #include "rz_unicode.h"
 
+#define RZ_UTF8_CODE_POINT_WIDTH 1
+
 /**
  * \brief An Unicode code point.
  */

@@ -68,6 +68,7 @@ typedef enum {
 
 typedef struct {
 	RzRegexType re_type;
+	RzRegexFlags compile_flags_jit;
 	union {
 		RzRegex *re8;
 		RzRegex16 *re16;
@@ -105,7 +106,9 @@ RZ_API RZ_OWN RzRegex *rz_regex_new_bytes(RZ_NONNULL const ut8 *pattern, size_t 
 RZ_API void rz_regex_free(RZ_OWN RzRegex *regex);
 RZ_API void rz_regex_free_16(RZ_OWN RzRegex16 *regex);
 RZ_API void rz_regex_free_32(RZ_OWN RzRegex32 *regex);
-RZ_API void rz_regex_free_multi(RZ_OWN RzRegexMulti *regex);
+RZ_API void rz_regex_free_multi(RZ_NULLABLE RZ_OWN RzRegexMulti *regex);
+RZ_API RZ_OWN RzRegexMulti *rz_regex_multi_clone(RZ_NONNULL const RzRegexMulti *regex, bool clone_jit);
+RZ_API void rz_regex_free_multi_clone(RZ_OWN RzRegexMulti *regex);
 RZ_API void rz_regex_error_msg(RzRegexStatus errcode, RZ_OUT char *errbuf, RzRegexSize errbuf_size);
 RZ_API const ut8 *rz_regex_get_match_name(RZ_NONNULL const RzRegex *regex, ut32 name_idx);
 RZ_API st32 rz_regex_get_group_idx_by_name(RZ_NONNULL const RzRegex *regex, const char *group);
