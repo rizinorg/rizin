@@ -842,6 +842,24 @@ static RzILOpEffect *op_rotr(H8300Cmd *cmd, ut8 N) {
 		RX_X(N, 0, VARL("result")));
 }
 
+static RzILOpEffect *op_rotxl(H8300Cmd *cmd, ut8 N) {
+	return SEQ3(
+		SETL("result", SHIFTL(ccr_val(CCR_C), RX_OP(N, 0), UN(N, 1))),
+		ccr_xNZVC(N, VARL("result"),
+			IL_FALSE,
+			MSB(RX_OP(N, 0))),
+		RX_X(N, 0, VARL("result")));
+}
+
+static RzILOpEffect *op_rotxr(H8300Cmd *cmd, ut8 N) {
+	return SEQ3(
+		SETL("result", SHIFTR(ccr_val(CCR_C), RX_OP(N, 0), UN(N, 1))),
+		ccr_xNZVC(N, VARL("result"),
+			IL_FALSE,
+			LSB(RX_OP(N, 0))),
+		RX_X(N, 0, VARL("result")));
+}
+
 static RzILOpPure *vector_addr(H8300Cmd *cmd, ut8 x) {
 	// TODO: This is a temporary solution, distinguish between normal and advanced mode
 	switch (x) {
@@ -1077,34 +1095,24 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 	case H8300_INSN_ROTR_W: return op_rotr(cmd, 16);
 	case H8300_INSN_ROTR_L: return op_rotr(cmd, 32);
 
-	case H8300_INSN_ROTXL_B:
-		return SEQ3(
-			SETL("result", SHIFTL(ccr_val(CCR_C), R8_OP(0), U8(1))),
-			ccr_xNZVC(8, VARL("result"),
-				IL_FALSE,
-				MSB(R8_OP(0))),
-			R8_X(0, VARL("result")));
-	case H8300_INSN_ROTXR_B:
-		return SEQ3(
-			SETL("result", SHIFTR(ccr_val(CCR_C), R8_OP(0), U8(1))),
-			ccr_xNZVC(8, VARL("result"),
-				IL_FALSE,
-				LSB(R8_OP(0))),
-			R8_X(0, VARL("result")));
+	case H8300_INSN_ROTXL_B: return op_rotxl(cmd, 8);
+	case H8300_INSN_ROTXL_W: return op_rotxl(cmd, 16);
+	case H8300_INSN_ROTXL_L: return op_rotxl(cmd, 32);
+
+	case H8300_INSN_ROTXR_B: return op_rotxr(cmd, 8);
+	case H8300_INSN_ROTXR_W: return op_rotxr(cmd, 16);
+	case H8300_INSN_ROTXR_L: return op_rotxr(cmd, 32);
+
 	case H8300_INSN_NEG_B:
 	case H8300_INSN_NEG_W:
 	case H8300_INSN_NEG_L: return op_neg(cmd);
 	case H8300_INSN_NOT_B:
 	case H8300_INSN_NOT_W:
 	case H8300_INSN_NOT_L: return op_not(cmd);
-	case H8300_INSN_ROTXL_W:
-	case H8300_INSN_ROTXR_W:
 	case H8300_INSN_SHAL_W:
 	case H8300_INSN_SHAR_W:
 	case H8300_INSN_SHLL_W:
 	case H8300_INSN_SHLR_W:
-	case H8300_INSN_ROTXL_L:
-	case H8300_INSN_ROTXR_L:
 	case H8300_INSN_SHAL_L:
 	case H8300_INSN_SHAR_L:
 	case H8300_INSN_SHLL_L:
