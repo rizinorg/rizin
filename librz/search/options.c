@@ -102,6 +102,11 @@ RZ_API bool rz_search_opt_set_find_options(RZ_NONNULL RzSearchOpt *opt, RZ_OWN R
 	return true;
 }
 
+RZ_API const RzSearchFindOpt *rz_search_opt_get_find_options(RZ_NONNULL const RzSearchOpt *opt) {
+	rz_return_val_if_fail(opt, NULL);
+	return opt->find_opts;
+}
+
 RZ_API RZ_OWN RzSearchFindOpt *rz_search_find_opt_new() {
 	return RZ_NEW0(RzSearchFindOpt);
 }
@@ -138,7 +143,7 @@ RZ_API bool rz_search_find_opt_set_alignment(RZ_NONNULL RzSearchFindOpt *opt, si
 	return true;
 }
 
-RZ_API ut16 rz_search_find_opt_get_alignment(RZ_NONNULL RzSearchFindOpt *opt) {
+RZ_API ut16 rz_search_find_opt_get_alignment(RZ_NONNULL const RzSearchFindOpt *opt) {
 	rz_return_val_if_fail(opt, 0);
 	return opt->alignment;
 }

@@ -470,22 +470,6 @@ EOF
 EXPECT_ERR=
 RUN
 
-NAME=String Search - Encoding: utf16be - Armenian
-FILE=bins/cmd/search/string_encodings/Armenian-Lipsum.utf16be
-CMDS=<<EOF
-/z "դեֆինիթիոնես ին վիս, ծասե պեռթինա" l utf16be
-# Requires increasing the block size because -.-
-b 0x1000
-# Check string is actually at offset of the hit.
-ps utf16be unprintable @ hit.string.utf16be.0
-EOF
-EXPECT=<<EOF
-0x0000020c 66 hit.string.utf16be.0
-դեֆինիթիոնես ին վիս, ծասե պեռթինածիա նե վիս. ին մելիուս ֆածիլիս եոս, եսթ եռոս պոպուլո թիմեամ թե. իուս նո ծոնսուլաթու.
-EOF
-EXPECT_ERR=
-RUN
-
 NAME=String Search - Encoding: utf16be - Chinese
 FILE=bins/cmd/search/string_encodings/Chinese-Lipsum.utf16be
 CMDS=<<EOF
@@ -625,22 +609,6 @@ b 0x1000
 EOF
 EXPECT=<<EOF
 0x00000138 48 hit.string.utf16le.0
-EOF
-EXPECT_ERR=
-RUN
-
-NAME=String Search - Encoding: utf16le - Armenian
-FILE=bins/cmd/search/string_encodings/Armenian-Lipsum.utf16le
-CMDS=<<EOF
-/z "դեֆինիթիոնես ին վիս, ծասե պեռթինա" l utf16le
-# Requires increasing the block size because -.-
-b 0x1000
-# Check string is actually at offset of the hit.
-ps utf16le unprintable @ hit.string.utf16le.0
-EOF
-EXPECT=<<EOF
-0x0000020c 66 hit.string.utf16le.0
-դեֆինիթիոնես ին վիս, ծասե պեռթինածիա նե վիս. ին մելիուս ֆածիլիս եոս, եսթ եռոս պոպուլո թիմեամ թե. իուս նո ծոնսուլաթու.
 EOF
 EXPECT_ERR=
 RUN
@@ -805,22 +773,6 @@ EOF
 EXPECT_ERR=
 RUN
 
-NAME=String Search - Encoding: utf32be - Chinese
-FILE=bins/cmd/search/string_encodings/Chinese-Lipsum.utf32be
-CMDS=<<EOF
-/z "京確年禁読応米新報書了号活修佐。" l utf32be
-# Requires increasing the block size because -.-
-b 0x1000
-# Check string is actually at offset of the hit.
-ps utf32be unprintable @ hit.string.utf32be.0
-EOF
-EXPECT=<<EOF
-0x00000128 64 hit.string.utf32be.0
-京確年禁読応米新報書了号活修佐。央良持著宣込警石寂益好独田接読仕。漂戦辺量食害恐人給景族缶掲価済教放。響城引真際通御芭情査男倍淺早住。金握崎利契事用鹿仮交体受寄終山率大。
-EOF
-EXPECT_ERR=
-RUN
-
 NAME=String Search - Encoding: utf32be - Georgian
 FILE=bins/cmd/search/string_encodings/Georgian-Lipsum.utf32be
 CMDS=<<EOF
@@ -929,21 +881,6 @@ EOF
 EXPECT=<<EOF
 0x000000bc 108 hit.string.utf32be.0
 тани ад. Цум хендрерит персецути ех, миним еяуидем цонсецтетуер яуи ид. Либер малуиссет нам еа, еа граеце дефиниебас.
-EOF
-EXPECT_ERR=
-RUN
-
-NAME=String Search - Encoding: utf32le - Arabic
-FILE=bins/cmd/search/string_encodings/Arabic-Lipsum.utf32le
-CMDS=<<EOF
-/z "ا الأوضاع, لم بوابة المب" l utf32le
-# Requires increasing the block size because -.-
-b 0x1000
-# Check string is actually at offset of the hit.
-# psutf3 unprintable @ hit.string.utf32le.0
-EOF
-EXPECT=<<EOF
-0x00000270 96 hit.string.utf32le.0
 EOF
 EXPECT_ERR=
 RUN
@@ -1393,16 +1330,28 @@ echo ----
 /z ¢€𐍈 @e:search.str.min_length=3
 EOF
 EXPECT=<<EOF
+WARNING: The string encoding for the search is set to "guess".
+The search will consume vastly more resources and the guessing is unreliable.
+You can set a specific encoding with 'e str.encoding'.
 0x00000030 2 hit.string.ascii.0
 WARNING: |ab| < search.str.min_length so some search hits may be hidden. Set search.str.min_length to 2 to see them.
 ----
+WARNING: The string encoding for the search is set to "guess".
+The search will consume vastly more resources and the guessing is unreliable.
+You can set a specific encoding with 'e str.encoding'.
 0x00000010 2 hit.string.ascii.0
 0x00000020 2 hit.string.ascii.1
 0x00000030 2 hit.string.ascii.2
 
+WARNING: The string encoding for the search is set to "guess".
+The search will consume vastly more resources and the guessing is unreliable.
+You can set a specific encoding with 'e str.encoding'.
 0x00000050 9 hit.string.utf8.0
 WARNING: |¢€𐍈| < search.str.min_length so some search hits may be hidden. Set search.str.min_length to 3 to see them.
 ----
+WARNING: The string encoding for the search is set to "guess".
+The search will consume vastly more resources and the guessing is unreliable.
+You can set a specific encoding with 'e str.encoding'.
 0x00000040 9 hit.string.utf8.0
 0x00000050 9 hit.string.utf8.1
 EOF
@@ -1414,6 +1363,9 @@ CMDS=!rizin -e cfg.fortunes=0 -e scr.color=0 -e search.show_progress=false -c "<
 EXPECT=<<EOF
 [2K[0x00000000]> [0x00000000]> [2K[0x00000000]> 
 [2K[0x00000000]> [0x00000000]> [2K[2K[0x00000000]> /[0x00000000]> /[2K[2K[0x00000000]> /z[0x00000000]> /z[2K[2K[0x00000000]> /z [0x00000000]> /z [2K[2K[0x00000000]> /z a[0x00000000]> /z a[2K[2K[0x00000000]> /z ab[0x00000000]> /z ab[2K[0x00000000]> /z ab
+WARNING: The string encoding for the search is set to "guess".
+The search will consume vastly more resources and the guessing is unreliable.
+You can set a specific encoding with 'e str.encoding'.
 WARNING: |ab| < search.str.min_length so some search hits may be hidden. Set search.str.min_length to 2 to see them.
 [2K[0x00000000]> [0x00000000]> [2K[2K[0x00000000]> q[0x00000000]> q[2K[0x00000000]> q
 EOF
@@ -1423,6 +1375,122 @@ NAME=String search - log.show.sources
 FILE=--
 CMDS=!!rizin -1 -qc "e search.show_progress=0 search.str.min_length=4 log.show.sources=1; /z ¢€𐍈" = | tr 0-9 "#" | tr \134 / | sed "s,C:/projects/rizin,..,g"
 EXPECT=<<EOF
+WARNING: rz_search_collection_strings_check_config_improvements in ../librz/search/string_search.c:###: The string encoding for the search is set to "guess".
+The search will consume vastly more resources and the guessing is unreliable.
+You can set a specific encoding with 'e str.encoding'.
 WARNING: rz_core_print_warnings_after in ../librz/core/core.c:###: cmd_string_search_generic in ../librz/core/cmd/cmd_search.c:####: |¢€𐍈| < search.str.min_length so some search hits may be hidden. Set search.str.min_length to # to see them.
 EOF
+RUN
+
+#
+# Test alignment of string encoding to code point widths
+#
+
+NAME=String Search - Encoding: utf32le - Arabic - fast on LE systems
+FILE=bins/cmd/search/string_encodings/Arabic-Lipsum.utf32le
+CMDS=<<EOF
+# Align to UTF32 code point width
+e search.align=4
+e str.encoding=utf32le
+/z "ا الأوضاع, لم بوابة المب" l utf32le
+# Requires increasing the block size because -.-
+b 0x1000
+# Check string is actually at offset of the hit.
+# psutf3 unprintable @ hit.string.utf32le.0
+EOF
+EXPECT=<<EOF
+0x00000270 96 hit.string.utf32le.0
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=String Search - Encoding: utf32be - Chinese - Fast on BE systems
+FILE=bins/cmd/search/string_encodings/Chinese-Lipsum.utf32be
+CMDS=<<EOF
+# Align to UTF32 code point width
+e search.align=4
+e str.encoding=utf32be
+/z "京確年禁読応米新報書了号活修佐。" l utf32be
+# Requires increasing the block size because -.-
+b 0x1000
+# Check string is actually at offset of the hit.
+ps utf32be unprintable @ hit.string.utf32be.0
+EOF
+EXPECT=<<EOF
+0x00000128 64 hit.string.utf32be.0
+京確年禁読応米新報書了号活修佐。央良持著宣込警石寂益好独田接読仕。漂戦辺量食害恐人給景族缶掲価済教放。響城引真際通御芭情査男倍淺早住。金握崎利契事用鹿仮交体受寄終山率大。
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=String Search - Encoding: utf16be - Armenian - Fast on BE systems
+FILE=bins/cmd/search/string_encodings/Armenian-Lipsum.utf16be
+CMDS=<<EOF
+# Align to UTF16 code point width
+e search.align=2
+e str.encoding=utf16be
+/z "դեֆինիթիոնես ին վիս, ծասե պեռթինա" l utf16be
+# Requires increasing the block size because -.-
+b 0x1000
+# Check string is actually at offset of the hit.
+ps utf16be unprintable @ hit.string.utf16be.0
+EOF
+EXPECT=<<EOF
+0x0000020c 66 hit.string.utf16be.0
+դեֆինիթիոնես ին վիս, ծասե պեռթինածիա նե վիս. ին մելիուս ֆածիլիս եոս, եսթ եռոս պոպուլո թիմեամ թե. իուս նո ծոնսուլաթու.
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=String Search - Encoding: utf16le - Armenian - Fast on LE systems
+FILE=bins/cmd/search/string_encodings/Armenian-Lipsum.utf16le
+CMDS=<<EOF
+# Align to UTF16 code point width
+e search.align=2
+e str.encoding=utf16le
+/z "դեֆինիթիոնես ին վիս, ծասե պեռթինա" l utf16le
+# Requires increasing the block size because -.-
+b 0x1000
+# Check string is actually at offset of the hit.
+ps utf16le unprintable @ hit.string.utf16le.0
+EOF
+EXPECT=<<EOF
+0x0000020c 66 hit.string.utf16le.0
+դեֆինիթիոնես ին վիս, ծասե պեռթինածիա նե վիս. ին մելիուս ֆածիլիս եոս, եսթ եռոս պոպուլո թիմեամ թե. իուս նո ծոնսուլաթու.
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=String Search - Encoding: utf32le - Arabic - Fast search, aligned to code point width
+FILE=bins/cmd/search/string_encodings/Arabic-Lipsum.utf32le
+CMDS=<<EOF
+e search.align=4
+/z "ا الأوضاع, لم بوابة المب" l utf32le
+# Requires increasing the block size lecause -.-
+b 0x1000
+# Check string is actually at offset of the hit.
+ps utf32le unprintable @ hit.string.utf32le.0
+EOF
+EXPECT=<<EOF
+0x00000270 96 hit.string.utf32le.0
+ا الأوضاع, لم بوابة المبرمة عرض. إبّان اسبوعين البشريةً تعد في. كنقطة إيطاليا قام بل, أضف أن وبغطاء الباهضة.
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=String Search - Encoding: utf16le - Armenian - Fast search, aligned to code point width
+FILE=bins/cmd/search/string_encodings/Armenian-Lipsum.utf16le
+CMDS=<<EOF
+e search.align=2
+/z "դեֆինիթիոնես ին վիս, ծասե պեռթինա" l utf16le
+# Requires increasing the block size because -.-
+b 0x1000
+# Check string is actually at offset of the hit.
+ps utf16le unprintable @ hit.string.utf16le.0
+EOF
+EXPECT=<<EOF
+0x0000020c 66 hit.string.utf16le.0
+դեֆինիթիոնես ին վիս, ծասե պեռթինածիա նե վիս. ին մելիուս ֆածիլիս եոս, եսթ եռոս պոպուլո թիմեամ թե. իուս նո ծոնսուլաթու.
+EOF
+EXPECT_ERR=
 RUN

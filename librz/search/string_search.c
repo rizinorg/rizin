@@ -86,6 +86,10 @@ static bool native_string_find(RzSearchFindOpt *fopt, StringSearch *ss, ut64 off
 				// Match has not the correct alignment in memory.
 				continue;
 			}
+			if (find->alignment > 1 && rz_mem_align_padding(str_mem_offset, find->alignment) != 0) {
+				// Match has not the correct alignment in memory.
+				continue;
+			}
 			char hit_type[64] = { 0 };
 			rz_strf(hit_type, "string.%s", rz_str_enc_as_string(encoding));
 			RzSearchHit *hit = rz_search_hit_new(hit_type, str_mem_offset + offset, str_mem_len, NULL);
@@ -106,7 +110,9 @@ static bool string_find(RzSearchFindOpt *fopt, void *user, ut64 offset, const Rz
 	rz_return_val_if_fail(fopt, false);
 
 	StringSearch *ss = (StringSearch *)user;
-	if (rz_string_enc_is_utf_native_endian(ss->encoding)) {
+	bool code_point_matches_alignment = rz_string_code_points_align(ss->encoding, fopt->alignment);
+	if (rz_string_enc_is_utf_native_endian(ss->encoding) &&
+		code_point_matches_alignment) {
 		// The expected encoding is UTF with native endian.
 		// For those we can do simple regex matching, skipping the whole decoding stuff.
 		return native_string_find(fopt, ss, offset, buffer, hits, n_hits);
@@ -144,7 +150,7 @@ static bool string_find(RzSearchFindOpt *fopt, void *user, ut64 offset, const Rz
 			RzDetectedString *find = *it_m;
 			RzRegexMulti *re = rz_regex_multi_clone(find->regex, true);
 			RzPVector *matches = NULL;
-			if  (fopt->match_overlap) {
+			if (fopt->match_overlap) {
 				matches = rz_regex_match_all_overlap(re->re8, detected->string, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT);
 			} else {
 				matches = rz_regex_match_all(re->re8, detected->string, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT);
@@ -164,7 +170,11 @@ static bool string_find(RzSearchFindOpt *fopt, void *user, ut64 offset, const Rz
 				ut64 str_mem_len;
 				ut64 str_mem_offset;
 				align_offsets(options, detected->type, detected, group0, &str_mem_offset, &str_mem_len, found_idx << 32);
-				if (fopt->alignment > 1 && rz_mem_align_padding(str_mem_offset + group0->start, fopt->alignment) != 0) {
+				if (fopt->alignment > 1 && rz_mem_align_padding(str_mem_offset, fopt->alignment) != 0) {
+					// Match has not the correct alignment in memory.
+					continue;
+				}
+				if (find->alignment > 1 && rz_mem_align_padding(str_mem_offset, find->alignment) != 0) {
 					// Match has not the correct alignment in memory.
 					continue;
 				}
@@ -209,11 +219,10 @@ static void string_free(void *user) {
  *
  * \param      opts      The RzUtilStrScanOptions options to use
  * \param[in]  expected  The expected encoding
- * \param[in]  flags     The regex flags to the \p re_pattern.
  *
  * \return     On success returns a valid pointer, otherwise NULL
  */
-RZ_API RZ_OWN RzSearchCollection *rz_search_collection_strings(RZ_NONNULL RzUtilStrScanOptions *opts, RzStrEnc expected, RzRegexFlags flags) {
+RZ_API RZ_OWN RzSearchCollection *rz_search_collection_strings(RZ_NONNULL RzUtilStrScanOptions *opts, RzStrEnc expected) {
 	rz_return_val_if_fail(opts, NULL);
 
 	StringSearch *ss = RZ_NEW0(StringSearch);
@@ -235,7 +244,7 @@ RZ_API RZ_OWN RzSearchCollection *rz_search_collection_strings(RZ_NONNULL RzUtil
 	return rz_search_collection_new_bytes_space(string_find, string_is_empty, string_free, ss);
 }
 
-static RzDetectedString *setup_str_regex(const char *re_pattern, RzRegexFlags flags, RzStrEnc encoding) {
+static RzDetectedString *setup_str_regex(const char *re_pattern, RzRegexFlags cflags, RzStrEnc encoding) {
 	char *re_pattern_clone = rz_str_dup(re_pattern);
 	if (!re_pattern_clone) {
 		RZ_LOG_ERROR("Failed to clone regex pattern\n");
@@ -250,19 +259,19 @@ static RzDetectedString *setup_str_regex(const char *re_pattern, RzRegexFlags fl
 			return NULL;
 		case RZ_STRING_ENC_UTF8:
 		case RZ_STRING_ENC_8BIT:
-			re = rz_regex_new_multi(re_pattern, flags, RZ_REGEX_DEFAULT, NULL, RZ_REGEX_UTF8);
+			re = rz_regex_new_multi(re_pattern, cflags, RZ_REGEX_DEFAULT, NULL, RZ_REGEX_UTF8);
 			break;
 		case RZ_STRING_ENC_UTF16LE:
 		case RZ_STRING_ENC_UTF16BE:
-			re = rz_regex_new_multi(re_pattern, flags, RZ_REGEX_DEFAULT, NULL, RZ_REGEX_UTF16);
+			re = rz_regex_new_multi(re_pattern, cflags, RZ_REGEX_DEFAULT, NULL, RZ_REGEX_UTF16);
 			break;
 		case RZ_STRING_ENC_UTF32LE:
 		case RZ_STRING_ENC_UTF32BE:
-			re = rz_regex_new_multi(re_pattern, flags, RZ_REGEX_DEFAULT, NULL, RZ_REGEX_UTF32);
+			re = rz_regex_new_multi(re_pattern, cflags, RZ_REGEX_DEFAULT, NULL, RZ_REGEX_UTF32);
 			break;
 		}
 	} else {
-		re = rz_regex_new_multi(re_pattern, flags, RZ_REGEX_DEFAULT, NULL, RZ_REGEX_UTF8);
+		re = rz_regex_new_multi(re_pattern, cflags, RZ_REGEX_DEFAULT, NULL, RZ_REGEX_UTF8);
 	}
 	if (!re) {
 		RZ_LOG_ERROR("Failed to compile regex pattern: '%s'\n", re_pattern);
@@ -285,13 +294,14 @@ static RzDetectedString *setup_str_regex(const char *re_pattern, RzRegexFlags fl
 /**
  * \brief      Adds a new regex pattern into a string RzSearchCollection.
  *
- * \param[in]  col            The RzSearchCollection to use.
- * \param[in]  regex_pattern  The regular expression to add.
- * \param[in]  flags          The regular expression flags.
+ * \param[in]  col             The RzSearchCollection to use.
+ * \param[in]  regex_pattern   The regular expression to add.
+ * \param[in]  cflags          The regular expression compile flags.
+ * \param[in]  match_alignment The memory address alignment all matches must have.
  *
  * \return     On success returns true, otherwise false.
  */
-RZ_API bool rz_search_collection_string_add(RZ_NONNULL RzSearchCollection *col, RZ_NONNULL const char *regex_pattern, RzRegexFlags flags) {
+RZ_API bool rz_search_collection_string_add(RZ_NONNULL RzSearchCollection *col, RZ_NONNULL const char *regex_pattern, RzRegexFlags cflags, size_t match_alignment) {
 	rz_return_val_if_fail(col && regex_pattern, false);
 
 	if (!rz_search_collection_has_find_callback(col, string_find)) {
@@ -303,10 +313,52 @@ RZ_API bool rz_search_collection_string_add(RZ_NONNULL RzSearchCollection *col, 
 	}
 	StringSearch *ss = (StringSearch *)col->user;
 
-	RzDetectedString *s = setup_str_regex(regex_pattern, flags, ss->encoding);
+	bool code_point_matches_alignment = rz_string_code_points_align(ss->encoding, match_alignment);
+	RzDetectedString *s = setup_str_regex(regex_pattern, cflags, code_point_matches_alignment ? ss->encoding : RZ_STRING_ENC_UTF8);
+	s->alignment = match_alignment;
 	if (!s || !rz_pvector_push(ss->strings, s)) {
 		RZ_LOG_ERROR("search: cannot add the string '%s'.\n", regex_pattern);
 		rz_detected_string_free(s);
+		return false;
+	}
+	return true;
+}
+
+/**
+ * \brief Checks the elements of a string search and warns the user about possible optimizations.
+ *
+ * \param col The string search collection.
+ * \param boundaries The search boundaries.
+ * \param search_options The search options.
+ * \param scan_opts The string scan options.
+ * \param If true, it will print suggestions to improve the search performance as warning.
+ *
+ * \return Returns true if the config is optional. False otherwise.
+ */
+RZ_API bool rz_search_collection_strings_check_config_improvements(
+	RZ_NULLABLE const RzSearchCollection *col,
+	RZ_NULLABLE const RzList /*<RzIOMap *>*/ *boundaries,
+	RZ_NULLABLE const RzSearchOpt *search_options,
+	RZ_NULLABLE const RzUtilStrScanOptions *scan_opt,
+	bool log_suggestions) {
+	if (!search_options || !search_options->find_opts || !col) {
+		return true;
+	}
+	StringSearch *ss = col->user;
+	if (ss->encoding == RZ_STRING_ENC_GUESS) {
+		if (log_suggestions) {
+			RZ_LOG_WARN("The string encoding for the search is set to \"guess\".\n"
+				    "The search will consume vastly more resources and the guessing is unreliable.\n"
+				    "You can set a specific encoding with 'e str.encoding'.\n");
+		}
+		return false;
+	}
+	if (!rz_string_code_points_align(ss->encoding, search_options->find_opts->alignment)) {
+		if (log_suggestions) {
+			RZ_LOG_INFO("The string encoding has code points of more than 1 byte. But setting search.align = 1.\n"
+				    "The search will take consume more resources, because alignment is not a multiple of the code point size.\n"
+				    "For larget binaries consider changing the encoding to a multiple of 2 (UTF-16) or 4 (UTF-32).\n");
+		}
 		return false;
 	}
 	return true;

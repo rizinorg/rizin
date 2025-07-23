@@ -2,6 +2,7 @@
 #define RZ_STR_H
 
 #include <wchar.h>
+#include "rz_assert.h"
 #include "rz_str_util.h"
 #include "rz_list.h"
 #include "rz_types.h"
@@ -294,6 +295,21 @@ static inline bool rz_string_enc_is_utf8_compatible(RzStrEnc enc) {
 
 RZ_API bool rz_string_enc_is_utf_native_endian(RzStrEnc enc);
 RZ_API size_t rz_string_enc_code_point_width(RzStrEnc enc);
+static inline bool rz_string_code_points_align(RzStrEnc enc, size_t memory_alignment) {
+	if (rz_string_enc_code_point_width(enc) == memory_alignment) {
+		return true;
+	}
+	switch (enc) {
+	case RZ_STRING_ENC_BASE64:
+	case RZ_STRING_ENC_SETTINGS:
+		rz_warn_if_reached();
+		return false;
+	case RZ_STRING_ENC_GUESS:
+		return false;
+	default:
+		return memory_alignment % rz_string_enc_code_point_width(enc) == 0;
+	}
+}
 
 #ifdef __cplusplus
 }

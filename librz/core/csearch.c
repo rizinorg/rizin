@@ -161,8 +161,6 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_bytes(RZ_NONNULL RzCore
 		}
 	}
 
-	// Don't pass the user provided search options.
-	// They were set up by the user and we respect them.
 	boundaries = rz_core_setup_io_search_parameters(core, user_opts);
 	if (!boundaries) {
 		RZ_LOG_ERROR("core: Setting up search from core failed.\n");
@@ -219,8 +217,6 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_values(RZ_NONNULL RzCor
 		}
 	}
 
-	// Don't pass the user provided search options.
-	// They were set up by the user and we respect them.
 	boundaries = rz_core_setup_io_search_parameters(core, user_opts);
 	if (!boundaries) {
 		RZ_LOG_ERROR("core: Setting up search from core failed.\n");
@@ -253,7 +249,7 @@ quit:
  *
  * \return     On success returns a valid pointer to a list of search hits, otherwise NULL.
  */
-RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_string(RZ_NONNULL RzCore *core, RZ_BORROW RZ_NONNULL RzSearchOpt *user_opts, RZ_NONNULL const char *re_pattern, size_t re_pattern_len, RzRegexFlags flags, RzStrEnc expected) {
+RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_string(RZ_NONNULL RzCore *core, RZ_BORROW RZ_NONNULL RzSearchOpt *user_opts, RZ_NONNULL const char *re_pattern, size_t re_pattern_len, RzRegexFlags cflags, RzStrEnc expected) {
 	rz_return_val_if_fail(core && user_opts && re_pattern, NULL);
 
 	if (RZ_STR_ISEMPTY(re_pattern)) {
@@ -278,14 +274,7 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_string(RZ_NONNULL RzCor
 	RzList *hits = NULL;
 	RzList *boundaries = NULL;
 	RzSearchOpt *search_opts = NULL;
-
-	RzSearchCollection *collection = rz_search_collection_strings(&scan_opt, expected, flags);
-	if (!collection ||
-		!rz_search_collection_string_add(collection, re_pattern, flags)) {
-		rz_search_collection_free(collection);
-		RZ_LOG_ERROR("core: Failed to initialize search collection.\n");
-		return NULL;
-	}
+	RzSearchCollection *collection = NULL;
 
 	if (!user_opts) {
 		// override user_opts with default one
@@ -304,6 +293,18 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_string(RZ_NONNULL RzCor
 		RZ_LOG_ERROR("search: Failed to update chunk size in the search options.\n");
 		goto quit;
 	}
+
+	collection = rz_search_collection_strings(&scan_opt, expected);
+	size_t match_alignment = rz_search_find_opt_get_alignment(rz_search_opt_get_find_options(user_opts));
+	if (!collection ||
+		!rz_search_collection_string_add(collection, re_pattern, cflags, match_alignment)) {
+		rz_search_collection_free(collection);
+		RZ_LOG_ERROR("core: Failed to initialize search collection.\n");
+		return NULL;
+	}
+
+	rz_search_collection_strings_check_config_improvements(
+		collection, boundaries, user_opts, &scan_opt, true);
 
 	hits = perform_search_on_core_io(core, user_opts, boundaries, collection);
 
