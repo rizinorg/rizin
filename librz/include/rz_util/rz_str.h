@@ -289,7 +289,23 @@ RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NU
 
 RZ_API const char *rz_str_indent(int indent);
 
-static inline bool rz_string_enc_is_utf8_compatible(RzStrEnc enc) {
+/**
+ * \brief Returns true if the given encoding has the same byte character width as UTF-8.
+ * This is only true for UTF-8 and ASCII.
+ *
+ * Examples:
+ *
+ * ```c
+ * // IBM290 character width is always one byte, but the equivalent Japanes
+ * // characters in UTF-8 are 3 bytes.
+ * assert(rz_string_enc_same_char_width_as_utf8(RZ_STR_ENC_IBM290) == false);
+ *
+ * // ASCII character width is always one byte, and the equivalent
+ * // UTF-8 characters are also always 1 bytes.
+ * assert(rz_string_enc_same_char_width_as_utf8(RZ_STR_ENC_8BIT) == true);
+ * ```
+ */
+static inline bool rz_string_enc_same_char_width_as_utf8(RzStrEnc enc) {
 	return enc == RZ_STRING_ENC_UTF8 || enc == RZ_STRING_ENC_8BIT;
 }
 

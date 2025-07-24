@@ -21,32 +21,15 @@ typedef struct string_search {
  * For example, if the real string is UTF-16 or UTF-32.
  * Here we set the real (in memory encoded) string offsets and string length.
  */
-static void align_offsets(RzUtilStrScanOptions options, RzStrEnc encoding, RzDetectedString *detected, RzRegexMatch *group0, ut64 *str_mem_offset, ut64 *str_mem_len, ut64 found_idx) {
-	if (rz_string_enc_is_utf8_compatible(encoding)) {
+static void align_offsets(RzUtilStrScanOptions options, RzStrEnc encoding, RzDetectedString *detected, RzRegexMatch *group0, ut64 *str_mem_offset, ut64 *str_mem_len) {
+	if (rz_string_enc_same_char_width_as_utf8(encoding) || !detected->byte_mem_map) {
 		*str_mem_offset = detected->addr + group0->start;
 		*str_mem_len = group0->len;
 		return;
 	}
 
-	bool offset_found = false;
-	bool len_found = false;
-
-	*str_mem_offset = ht_uu_find(options.utf8_to_mem_offset_map, found_idx | (group0->start), &offset_found);
-	if (!offset_found) {
-		RZ_LOG_WARN("Could not determine memory offset of %s string in search. String offset will be off for: %s\n",
-			rz_str_enc_as_string(detected->type), detected->string);
-		*str_mem_offset = detected->addr + group0->start;
-	}
-	*str_mem_len = ht_uu_find(options.utf8_to_mem_offset_map, found_idx | (group0->start + group0->len), &len_found) - *str_mem_offset;
-	if (!len_found) {
-		if (!offset_found) {
-			// If the previous offset was not found, we know something is broken.
-			// If it was found on the other hand, the string is exactly as long as the whole buffer.
-			// So `start + len` is OOB and hence not in the hash table.
-			RZ_LOG_WARN("Could not determine length of string in memory. String length will be off.\n");
-		}
-		*str_mem_len = group0->len;
-	}
+	*str_mem_offset = detected->byte_mem_map[group0->start];
+	*str_mem_len = detected->byte_mem_map[group0->start + group0->len] - *str_mem_offset;
 }
 
 static bool native_string_find(RzSearchFindOpt *fopt, StringSearch *ss, ut64 offset, const RzBuffer *buffer,
@@ -131,18 +114,15 @@ static bool string_find(RzSearchFindOpt *fopt, void *user, ut64 offset, const Rz
 	// The search options are a shared resource and we might get
 	// race-conditions editing and freeing it.
 	RzUtilStrScanOptions options = ss->options;
-	options.utf8_to_mem_offset_map = ht_uu_new();
 	options.allow_undefined = RZ_STR_SCAN_ONLY_DEFINED;
 
 	int n_str_in_buf = rz_scan_strings_whole_buf(buffer, found, &options, ss->encoding);
 	if (n_str_in_buf < 0) {
 		RZ_LOG_ERROR("Failed to scan buffer for strings.\n");
-		ht_uu_free(options.utf8_to_mem_offset_map);
 		rz_list_free(found);
 		return false;
 	}
 
-	ut64 found_idx = 0;
 	*n_hits = 0;
 	rz_list_foreach (found, it_s, detected) {
 		void **it_m = NULL;
@@ -162,14 +142,13 @@ static bool string_find(RzSearchFindOpt *fopt, void *user, ut64 offset, const Rz
 				RzRegexMatch *group0 = rz_pvector_at(match, 0);
 				if (!group0) {
 					RZ_LOG_ERROR("search: Failed to get group of match.\n");
-					ht_uu_free(options.utf8_to_mem_offset_map);
 					rz_list_free(found);
 					rz_pvector_free(matches);
 					return false;
 				}
 				ut64 str_mem_len;
 				ut64 str_mem_offset;
-				align_offsets(options, detected->type, detected, group0, &str_mem_offset, &str_mem_len, found_idx << 32);
+				align_offsets(options, detected->type, detected, group0, &str_mem_offset, &str_mem_len);
 				if (fopt->alignment > 1 && rz_mem_align_padding(str_mem_offset, fopt->alignment) != 0) {
 					// Match has not the correct alignment in memory.
 					continue;
@@ -183,7 +162,6 @@ static bool string_find(RzSearchFindOpt *fopt, void *user, ut64 offset, const Rz
 				RzSearchHit *hit = rz_search_hit_new(hit_type, str_mem_offset + offset, str_mem_len, NULL);
 				if (!hit || !rz_th_queue_push(hits, hit, true)) {
 					rz_search_hit_free(hit);
-					ht_uu_free(options.utf8_to_mem_offset_map);
 					rz_list_free(found);
 					rz_pvector_free(matches);
 					return false;
@@ -192,10 +170,8 @@ static bool string_find(RzSearchFindOpt *fopt, void *user, ut64 offset, const Rz
 			}
 			rz_pvector_free(matches);
 		}
-		found_idx++;
 	}
 
-	ht_uu_free(options.utf8_to_mem_offset_map);
 	rz_list_free(found);
 	return true;
 }

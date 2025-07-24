@@ -80,6 +80,7 @@ RZ_API void rz_detected_string_free(RzDetectedString *str) {
 		return;
 	}
 	free(str->string);
+	free(str->byte_mem_map);
 	rz_regex_free_multi(str->regex);
 	free(str);
 }
@@ -230,8 +231,11 @@ static inline size_t buf_look_ahead(const RzUtilStrScanOptions *opt, RzStrEnc en
 	}
 }
 
+#define SCANNING_STACK_BUF_CHARS 16
+#define SCANNING_STACK_BUF_SIZE  (RZ_UNICODE_MAX_BYTES_PER_CHAR * SCANNING_STACK_BUF_CHARS)
+
 static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut64 needle, const ut64 to,
-	RzStrEnc str_type, bool ascii_only, const RzUtilStrScanOptions *opt, ut64 str_list_idx, bool test_false_positives) {
+	RzStrEnc str_type, bool ascii_only, const RzUtilStrScanOptions *opt, bool test_false_positives) {
 	rz_return_val_if_fail(str_type != RZ_STRING_ENC_GUESS, NULL);
 	size_t look_ahead = buf_look_ahead(opt, str_type);
 	if (look_ahead == 0) {
@@ -241,10 +245,12 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 	// Most calls to this function never produce a valid string (e.g. because they are too short).
 	// To save allocations and frees, we first decode the first few code points onto the stack.
 	// Then, if the stack buffer is full, we move it to the heap.
-	ut8 stack_alloc[RZ_UNICODE_MAX_BYTES_PER_CHAR * 5] = { 0 };
+	ut8 stack_alloc[SCANNING_STACK_BUF_SIZE] = { 0 };
 	// Gets only set if the stack buffer is full.
 	ut8 *heap_alloc = NULL;
 	ut8 *output_buf = stack_alloc;
+	ut64 *byte_mem_map = NULL;
+	size_t byte_mem_map_size = 0;
 
 	ut64 str_addr = needle;
 	// Bytes of a decoded/encoded character/code point.
@@ -304,9 +310,18 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 			break;
 		}
 
-		if (opt->utf8_to_mem_offset_map && !rz_string_enc_is_utf8_compatible(str_type)) {
-			ut64 offset_id = ((str_list_idx) << 32) | i;
-			ht_uu_insert(opt->utf8_to_mem_offset_map, offset_id, needle);
+		if (!rz_string_enc_same_char_width_as_utf8(str_type)) {
+			size_t utf8_char_offset = i;
+			if (!byte_mem_map) {
+				byte_mem_map = RZ_NEWS0(ut64, SCANNING_STACK_BUF_SIZE);
+				byte_mem_map_size += SCANNING_STACK_BUF_SIZE;
+			} else if (utf8_char_offset >= byte_mem_map_size) {
+				byte_mem_map = realloc(byte_mem_map, (byte_mem_map_size + SCANNING_STACK_BUF_SIZE) * sizeof(ut64));
+				byte_mem_map_size += SCANNING_STACK_BUF_SIZE;
+			}
+			size_t mem_offset = needle;
+			byte_mem_map[utf8_char_offset] = mem_offset;
+			// printf("mem_char_map[0x%llx] = 0x%lx\n", utf8_char_offset, mem_offset);
 		}
 
 		needle += char_bytes;
@@ -347,7 +362,7 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 				goto error;
 			} else if (false_positive_result == RETRY_ASCII) {
 				free(heap_alloc);
-				return process_one_string(buf, from, str_addr, to, str_type, true, opt, str_list_idx, false);
+				return process_one_string(buf, from, str_addr, to, str_type, true, opt, false);
 			}
 		}
 
@@ -359,6 +374,7 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 		ds->length = char_count;
 		ds->size = needle - str_addr;
 		ds->addr = str_addr;
+		ds->byte_mem_map = byte_mem_map;
 
 		ut64 off_adj = adjust_offset(str_type, buf, ds->addr - from);
 		ds->addr -= off_adj;
@@ -480,8 +496,8 @@ RZ_API int rz_scan_strings_raw(RZ_NONNULL const ut8 *buf, RZ_NONNULL RzList /*<R
 			} else if (can_be_utf32_be(ptr, size)) {
 				if (to - needle > 3 && can_be_utf32_le(ptr + 3, size - 3)) {
 					// The string can be either utf32-le or utf32-be
-					RzDetectedString *ds_le = process_one_string(buf, from, needle + 3, to, RZ_STRING_ENC_UTF32LE, false, opt, rz_list_length(list), false);
-					RzDetectedString *ds_be = process_one_string(buf, from, needle, to, RZ_STRING_ENC_UTF32BE, false, opt, rz_list_length(list), false);
+					RzDetectedString *ds_le = process_one_string(buf, from, needle + 3, to, RZ_STRING_ENC_UTF32LE, false, opt, false);
+					RzDetectedString *ds_be = process_one_string(buf, from, needle, to, RZ_STRING_ENC_UTF32BE, false, opt, false);
 
 					RzDetectedString *to_add = NULL;
 					RzDetectedString *to_delete = NULL;
@@ -516,8 +532,8 @@ RZ_API int rz_scan_strings_raw(RZ_NONNULL const ut8 *buf, RZ_NONNULL RzList /*<R
 			} else if (can_be_utf16_be(ptr, size)) {
 				if (to - needle > 1 && can_be_utf16_le(ptr + 1, size - 1)) {
 					// The string can be either utf16-le or utf16-be
-					RzDetectedString *ds_le = process_one_string(buf, from, needle + 1, to, RZ_STRING_ENC_UTF16LE, false, opt, rz_list_length(list), false);
-					RzDetectedString *ds_be = process_one_string(buf, from, needle, to, RZ_STRING_ENC_UTF16BE, false, opt, rz_list_length(list), false);
+					RzDetectedString *ds_le = process_one_string(buf, from, needle + 1, to, RZ_STRING_ENC_UTF16LE, false, opt, false);
+					RzDetectedString *ds_be = process_one_string(buf, from, needle, to, RZ_STRING_ENC_UTF16BE, false, opt, false);
 
 					RzDetectedString *to_add = NULL;
 					RzDetectedString *to_delete = NULL;
@@ -580,7 +596,7 @@ RZ_API int rz_scan_strings_raw(RZ_NONNULL const ut8 *buf, RZ_NONNULL RzList /*<R
 			str_type = RZ_STRING_ENC_8BIT;
 		}
 
-		RzDetectedString *ds = process_one_string(buf, from, needle, to, str_type, false, opt, rz_list_length(list), test_false_positives);
+		RzDetectedString *ds = process_one_string(buf, from, needle, to, str_type, false, opt, test_false_positives);
 		if (!ds) {
 			needle++;
 			continue;
