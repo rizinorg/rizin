@@ -694,14 +694,14 @@ static int decode_rd3224_10(const ut8 *bytes, struct h8300_cmd *cmd) {
 		st32 d = read_disp(Bd, bytes); \
 		ut8 rrd = r32_high(bytes[OFRD]); \
 		ut8 r = r8_low(bytes[OFR]); \
-		if (bytes[OFRD] & 0x8) { \
-			cmd->fmt = H8300_INSN_FORMAT_RDR##Br; \
-			OPS_ADD_EXT2(H8300_OP_RD, rd, reg, disp, rrd, d); \
-			OPS_ADD(H8300_OP_R##Br, reg, r); \
-		} else { \
+		if (bytes[OFRD] & 0x80) { \
 			cmd->fmt = H8300_INSN_FORMAT_R##Br##RD; \
 			OPS_ADD(H8300_OP_R##Br, reg, r); \
 			OPS_ADD_EXT2(H8300_OP_RD, rd, reg, disp, rrd, d); \
+		} else { \
+			cmd->fmt = H8300_INSN_FORMAT_RDR##Br; \
+			OPS_ADD_EXT2(H8300_OP_RD, rd, reg, disp, rrd, d); \
+			OPS_ADD(H8300_OP_R##Br, reg, r); \
 		} \
 		return ret; \
 	}
@@ -1394,10 +1394,6 @@ static int h8300_decode_2(const ut8 *instr, struct h8300_cmd *cmd) {
 	case 0x6e:
 		cmd->id = H8300_INSN_MOV_B;
 		ret = decode_rd3216r8_4(instr, cmd);
-		break;
-	case 0x6f:
-		cmd->id = H8300_INSN_MOV_W;
-		ret = decode_rd3216r16_4(instr, cmd);
 		break;
 
 	default: break;
