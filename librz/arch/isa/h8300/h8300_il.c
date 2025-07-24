@@ -4,8 +4,9 @@
 #include "h8300_disas.h"
 #include <rz_il/rz_il_opbuilder_begin.h>
 
-#define OPS_GET(I) (cmd->ops[(I)])
-#define PC_VAL     UADDR(cmd->pc)
+#define OPS_GET(I)  (cmd->ops[(I)])
+#define PC_VAL      UADDR(cmd->pc)
+#define PC_NEXT_VAL UADDR(cmd->pc + cmd->size)
 
 #define T_OP_DECL(T, I) \
 	H8300Operand *op = &OPS_GET(i); \
@@ -1185,16 +1186,15 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 	case H8300_INSN_EXTU_L: return op_extu(cmd, 32);
 	case H8300_INSN_RTS:
 		return SEQ3(
-			SETL("@sp", LOADW(24, sp_op())),
-			sp_inc(2),
-			JMP(VARL("@sp")));
+			SETL("@sp", LOADW(32, sp_op())),
+			sp_inc(4),
+			JMP(UNSIGNED(24, VARL("@sp"))));
 	case H8300_INSN_RTE:
-		return SEQ5(
-			SETL("_ccr", LOADW(24, sp_op())),
-			SETL("_pc", LOADW(24, ADD(sp_op(), UADDR(8)))),
-			sp_inc(6),
-			SETG("ccr", UNSIGNED(8, SHIFTR0(VARL("_ccr"), U8(16)))),
-			JMP(VARL("_pc")));
+		return SEQ4(
+			SETL("ccr_pc", LOADW(32, sp_op())),
+			sp_inc(4),
+			SETG("ccr", UNSIGNED(8, SHIFTR0(VARL("ccr_pc"), U8(24)))),
+			JMP(UNSIGNED(24, VARL("ccr_pc"))));
 	case H8300_INSN_BSR:
 		return SEQ3(
 			sp_dec(2),
@@ -1214,18 +1214,18 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 		switch (cmd->fmt) {
 		case H8300_INSN_FORMAT_RI:
 			return SEQ3(
-				sp_dec(2),
-				STOREW(sp_op(), PC_VAL),
+				sp_dec(4),
+				STOREW(sp_op(), UNSIGNED(32, PC_NEXT_VAL)),
 				JMP(ri_op(24, cmd, 0)));
 		case H8300_INSN_FORMAT_ABS:
 			return SEQ3(
-				sp_dec(2),
-				STOREW(sp_op(), PC_VAL),
+				sp_dec(4),
+				STOREW(sp_op(), UNSIGNED(32, PC_NEXT_VAL)),
 				JMP(UADDR(OPS_GET(0).imm)));
 		case H8300_INSN_FORMAT_MI8:
 			return SEQ3(
-				sp_dec(2),
-				STOREW(sp_op(), PC_VAL),
+				sp_dec(4),
+				STOREW(sp_op(), UNSIGNED(32, PC_NEXT_VAL)),
 				JMP(LOADW(24, MI8_OP(0))));
 		default: NOT_IMPLEMENTED;
 		}
@@ -1475,6 +1475,13 @@ RzAnalysisILConfig *h8300_il_config(RzAnalysis *a) {
 		return NULL;
 	}
 	cfg->reg_bindings = reg_bindings;
+	cfg->init_state = rz_analysis_il_init_state_new();
+	if (!cfg->init_state) {
+		rz_analysis_il_config_free(cfg);
+		return NULL;
+	}
 
+	rz_analysis_il_init_state_set_var(cfg->init_state,
+		"ccr", rz_il_value_new_bitv(rz_bv_new_from_ut64(8, 1 << CCR_I)));
 	return cfg;
 }
