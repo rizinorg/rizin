@@ -235,6 +235,9 @@ RZ_API RZ_OWN RzRegexMulti *rz_regex_new_multi(RZ_NONNULL const char *pattern, R
 	if (!re) {
 		return NULL;
 	}
+	if (jflags == RZ_REGEX_DEFAULT) {
+		jflags = PCRE2_JIT_COMPLETE;
+	}
 	re->re_type = type;
 	re->compile_flags_jit = jflags;
 	switch (type) {
