@@ -385,6 +385,7 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 	}
 
 error:
+	free(byte_mem_map);
 	free(heap_alloc);
 	return NULL;
 }
