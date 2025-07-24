@@ -352,7 +352,7 @@ RZ_API void rz_regex_free_32(RZ_OWN RzRegex32 *regex) {
  *
  * \return The clone for \p regex or NULL in case of failure.
  */
-RZ_API RZ_OWN RzRegexMulti *rz_regex_multi_clone(RZ_NONNULL const RzRegexMulti *regex, bool clone_jit) {
+RZ_API RZ_OWN RzRegexMulti *rz_regex_multi_clone(RZ_NONNULL RzRegexMulti *regex, bool clone_jit) {
 	rz_return_val_if_fail(regex, NULL);
 #ifndef SUPPORTS_PCRE2_JIT
 	return regex;
