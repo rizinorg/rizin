@@ -34,17 +34,6 @@ typedef struct {
 } RzDetectedString;
 
 /**
- * \brief Flags to allow undefined unicode code points during string scanning.
- */
-typedef enum {
-	RZ_STR_SCAN_ONLY_DEFINED = 0,
-	RZ_STR_SCAN_UTF8_UNDEF = 1,
-	RZ_STR_SCAN_UTF16_UNDEF = 2,
-	RZ_STR_SCAN_UTF32_UNDEF = 4,
-	RZ_STR_SCAN_UTF_UNDEF = RZ_STR_SCAN_UTF8_UNDEF | RZ_STR_SCAN_UTF16_UNDEF | RZ_STR_SCAN_UTF32_UNDEF,
-} RzStrScanAllowedUndef;
-
-/**
  * Defines the search parameters for rz_scan_strings
  */
 typedef struct {
@@ -52,23 +41,6 @@ typedef struct {
 	size_t min_str_length; ///< Minimum string length
 	bool prefer_big_endian; ///< True if the preferred endianess for UTF strings is big-endian
 	bool check_ascii_freq; ///< If true, perform check on ASCII frequencies when looking for false positives
-	/**
-	 * \brief Flags for allowing undefined code points during scanning.
-	 * If set the scan accepts code points in strings even
-	 * if they are undefined by unicode standards.
-	 * This can improve performance, because checking code point definitons
-	 * has a runtime complexity of O(log n): n = number of undefined ranges.
-	 *
-	 * NOTE: "Undefined" is not the same as an invalid decode.
-	 * The scanner won't add bytes to the string if they don't decode at all.
-	 * Or if they decode to a surrogate.
-	 *
-	 * This is relevant for UTF-16 and UTF-32.
-	 * Because they always decode to some code code.
-	 * Allowing undefined code points for them, will effectively allow any
-	 * byte pattern into the string, *except* surrogates.
-	 */
-	RzStrScanAllowedUndef allow_undefined;
 } RzUtilStrScanOptions;
 
 RZ_API void rz_detected_string_free(RzDetectedString *str);

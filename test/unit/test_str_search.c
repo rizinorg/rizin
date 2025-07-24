@@ -9,7 +9,6 @@ static RzUtilStrScanOptions g_opt = {
 	.min_str_length = 4,
 	.prefer_big_endian = false,
 	.check_ascii_freq = true,
-	.allow_undefined = RZ_STR_SCAN_ONLY_DEFINED
 };
 
 bool test_rz_scan_strings_detect_ascii(void) {

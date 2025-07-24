@@ -265,16 +265,16 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 
 		switch (str_type) {
 		case RZ_STRING_ENC_UTF32LE:
-			char_bytes = rz_utf32le_decode(buf + needle - from, to - needle, &r, !(opt->allow_undefined & RZ_STR_SCAN_UTF32_UNDEF));
+			char_bytes = rz_utf32le_decode(buf + needle - from, to - needle, &r, false);
 			break;
 		case RZ_STRING_ENC_UTF16LE:
-			char_bytes = rz_utf16le_decode(buf + needle - from, to - needle, &r, !(opt->allow_undefined & RZ_STR_SCAN_UTF16_UNDEF));
+			char_bytes = rz_utf16le_decode(buf + needle - from, to - needle, &r, false);
 			break;
 		case RZ_STRING_ENC_UTF32BE:
-			char_bytes = rz_utf32be_decode(buf + needle - from, to - needle, &r, !(opt->allow_undefined & RZ_STR_SCAN_UTF32_UNDEF));
+			char_bytes = rz_utf32be_decode(buf + needle - from, to - needle, &r, false);
 			break;
 		case RZ_STRING_ENC_UTF16BE:
-			char_bytes = rz_utf16be_decode(buf + needle - from, to - needle, &r, !(opt->allow_undefined & RZ_STR_SCAN_UTF16_UNDEF));
+			char_bytes = rz_utf16be_decode(buf + needle - from, to - needle, &r, false);
 			break;
 		case RZ_STRING_ENC_IBM037:
 			char_bytes = rz_str_ibm037_to_unicode(*(buf + needle - from), &r);
@@ -296,7 +296,7 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 			RZ_LOG_ERROR("Illegal state reached. 'settings' encoding is not a valid value here.\n");
 			return NULL;
 		default:
-			char_bytes = rz_utf8_decode(buf + needle - from, to - needle, &r, !(opt->allow_undefined & RZ_STR_SCAN_UTF8_UNDEF));
+			char_bytes = rz_utf8_decode(buf + needle - from, to - needle, &r, false);
 			if (char_bytes > 1) {
 				str_type = RZ_STRING_ENC_UTF8;
 				look_ahead = buf_look_ahead(opt, RZ_STRING_ENC_UTF8);
@@ -583,7 +583,7 @@ RZ_API int rz_scan_strings_raw(RZ_NONNULL const ut8 *buf, RZ_NONNULL RzList /*<R
 					continue;
 				}
 			} else {
-				int rc = rz_utf8_decode(ptr, size, NULL, !(opt->allow_undefined & RZ_STR_SCAN_UTF8_UNDEF));
+				int rc = rz_utf8_decode(ptr, size, NULL, false);
 				if (!rc) {
 					needle++;
 					continue;
