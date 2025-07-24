@@ -101,6 +101,15 @@ static bool string_find(RzSearchFindOpt *fopt, void *user, ut64 offset, const Rz
 		return native_string_find(fopt, ss, offset, buffer, hits, n_hits);
 	}
 
+	// Everything below is the slow and resource extensive route to search strings.
+	// It will scan the whole buffer for strings, decoding each one with the
+	// correct encoding and length and match them.
+	// This costs a lot. So it is only done for strings with:
+	// A) A funny encodig we can't match directly with RzRegex/PCRE2 (e.g. EBCDIC).
+	// B) Encoding must be guessed.
+	// C) Matches can be at misaligned memory addresses
+	//    (PCRE2 only matches strings aligned to their code point width).
+
 	RzDetectedString *detected = NULL;
 	RzListIter *it_s = NULL;
 
