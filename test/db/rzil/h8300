@@ -1,0 +1,15 @@
+NAME=Run emulateme.h8300.elf
+FILE=bins/elf/h8300/emulateme.h8300.elf
+TIMEOUT=15
+CMDS=<<EOF
+e scr.color=0
+e io.cache=1
+s 0xc4
+aezi
+aezsu 0xf4
+ps @ obj._seckrit
+EOF
+EXPECT=<<EOF
+Hello from RzIL!
+EOF
+RUN
