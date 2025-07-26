@@ -37,7 +37,7 @@ static const ut64 pow36[] = { 1, 36, 1296, 46656, 1679616, 60466176, 2176782336,
 RZ_API RZ_OWN char *rz_base36_encode_dyn(ut64 val) {
 	static const char alphabet[] = "0123456789abcdefghijklmnopqrstuvwxyz";
 
-	char tmp[RZ_BASE36_BUFSZ];
+	char tmp[RZ_BASE36_BUFSZ] = { 0 };
 	size_t n = 0;
 
 	if (val == 0) {
