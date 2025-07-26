@@ -51,6 +51,7 @@ RZ_API RZ_OWN RzStrBuf *rz_histogram_horizontal(RZ_NONNULL RzHistogramOptions *o
 		for (i = 0; i < rows; i++) {
 			size_t threshold = i * (0xff / rows);
 			size_t koli = i * 5 / rows;
+			rz_strbuf_appendf(buf, " %3zu%s", (255 - threshold), vline);
 			for (j = 0; j < cols; j++) {
 				int realJ = j * width / cols;
 				if (255 - data[realJ] < threshold || (i + 1 == rows)) {
@@ -70,6 +71,7 @@ RZ_API RZ_OWN RzStrBuf *rz_histogram_horizontal(RZ_NONNULL RzHistogramOptions *o
 
 	for (i = 0; i < rows; i++) {
 		size_t threshold = i * (0xff / rows);
+		rz_strbuf_appendf(buf, " %3zu%s", (255 - threshold), vline);
 		for (j = 0; j < cols; j++) {
 			size_t realJ = j * width / cols;
 			if (255 - data[realJ] < threshold) {
