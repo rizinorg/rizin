@@ -121,11 +121,10 @@ static size_t calculate_dest_length(size_t len) {
  * If \p dest or \p src is \c NULL, nothing is written and \c 0 is returned.
  */
 RZ_API size_t rz_base16_encode(RZ_OUT RZ_NULLABLE char *dest, RZ_NULLABLE const ut8 *src, size_t n) {
-	ut8 group[1];
-	size_t ret;
-	rz_return_val_if_fail(src, 0);
-	rz_return_val_if_fail(dest, 0);
-	ret = calculate_dest_length(n);
+	rz_return_val_if_fail(src && dest, 0);
+
+  ut8 group[1] = { 0 };
+	size_t ret = calculate_dest_length(n);
 
 	while (n--) {
 		group[0] = *src++;
