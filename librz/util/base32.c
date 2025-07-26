@@ -158,11 +158,9 @@ static size_t calculate_dest_length(size_t len) {
  * \endcode
  */
 RZ_API size_t rz_base32_encode(RZ_OUT RZ_NULLABLE char *dest, RZ_NULLABLE const ut8 *src, size_t n) {
+  rz_return_val_if_fail(src && dest, 0);
 	ut8 final_group[5] = { 0 };
-	size_t ret;
-	rz_return_val_if_fail(src, 0);
-	rz_return_val_if_fail(dest, 0);
-	ret = calculate_dest_length(n);
+	size_t ret = calculate_dest_length(n);
 	while (n >= 5) {
 		pack_to5((ut8 *)dest, src);
 		src += 5;
@@ -249,13 +247,12 @@ RZ_API RZ_OWN char *rz_base32_encode_dyn(RZ_NULLABLE const ut8 *src, size_t n) {
  * \endcode
  */
 RZ_API st64 rz_base32_decode(RZ_OUT RZ_NULLABLE ut8 *dest, RZ_NULLABLE const char *src, st64 n) {
+  rz_return_val_if_fail(src && dest, 0);
+
 	char buf[8], tmp[5];
 	int c;
 	size_t i, j;
 	st64 ret = 0;
-
-	rz_return_val_if_fail(src, 0);
-	rz_return_val_if_fail(dest, 0);
 
 	n = calculate_src_length(src, n);
 	if (n == -1) {
