@@ -210,6 +210,7 @@ RZ_API RZ_OWN char *rz_base32_encode_dyn(RZ_NULLABLE const ut8 *src, size_t n) {
 		return NULL;
 	}
 	(void)rz_base32_encode(out, src, n);
+  out[buf_sz-1] = '\0';
 	return out;
 }
 
