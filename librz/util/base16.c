@@ -88,15 +88,12 @@ static bool is_base16(int c) {
  * provided in lieu of modifying the decoding API parameter list.
  */
 static st64 calculate_src_length(const char *src, st64 len) {
-	size_t real_len;
-	if (len < 0) {
-		real_len = strlen(src);
-		if (ST64_MAX < real_len) {
-			return -1;
-		}
-		len = (st64)real_len;
-	}
-	return len;
+  if(len >= 0) return len;
+  size_t real_len = strlen(src);
+  if (ST64_MAX < real_len) {
+    return -1;
+  }
+  return (st64)real_len;
 }
 
 /** \internal
