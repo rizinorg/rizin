@@ -220,18 +220,15 @@ RZ_API st64 rz_base16_decode(RZ_OUT RZ_NULLABLE ut8 *dest, RZ_NULLABLE const cha
 	}
 
 	for (i = j = 0; i < (size_t)n; i++) {
-		int c = src[i];
-		if (is_base16(c)) {
-			buf[j++] = c;
-			if (j == 2) {
-				unpack_from4(tmp, (const ut8 *)buf);
-				*dest++ = tmp[0];
-				ret += 1;
-				j = 0;
-			}
-		} else {
-			return -1;
-		}
+    int c = src[i];
+    if(!is_base16(c)) return -1;
+    buf[j++] = c;
+    if (j == 2) {
+      unpack_from4(tmp, (const ut8 *)buf);
+      *dest++ = tmp[0];
+      ret += 1;
+      j = 0;
+    }
 	}
 
 	*dest = '\0';
