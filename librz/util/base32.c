@@ -282,22 +282,22 @@ RZ_API st64 rz_base32_decode(RZ_OUT RZ_NULLABLE ut8 *dest, RZ_NULLABLE const cha
 		return ret;
 	} else if (j <= 1) {
 		return -1;
-	} else {
-		size_t rem = j;
-		for (; j < 8; j++) {
-			buf[j] = 'A'; // zero padding for partial group
-		}
-		unpack_from5((ut8 *)tmp, (const ut8 *)buf);
-		// decide how many of the unpacked bytes are valid based on how many base32 symbols you originally had.
-		static const int rem2bytes[8] = { 0, 0, 1, 0, 2, 3, 0, 4 };
-		int bytes = rem2bytes[rem];
-		if (bytes == 0) {
-			return -1;
-		}
-		memcpy(dest, tmp, bytes);
-		dest[bytes] = '\0';
-		return ret + bytes;
 	}
+
+  size_t rem = j;
+  for (; j < 8; j++) {
+    buf[j] = 'A'; // zero padding for partial group
+  }
+  unpack_from5((ut8 *)tmp, (const ut8 *)buf);
+  // decide how many of the unpacked bytes are valid based on how many base32 symbols you originally had.
+  static const int rem2bytes[8] = { 0, 0, 1, 0, 2, 3, 0, 4 };
+  int bytes = rem2bytes[rem];
+  if (bytes == 0) {
+    return -1;
+  }
+  memcpy(dest, tmp, bytes);
+  dest[bytes] = '\0';
+  return ret + bytes;
 }
 
 /**
@@ -327,7 +327,7 @@ RZ_API RZ_OWN ut8 *rz_base32_decode_dyn(RZ_NULLABLE const char *src, st64 len) {
 		return NULL;
 	}
 
-	st64 cap = 1 + 5 * ((len + 7) / 8);
+	st64 cap = 1 + (5 * ((len + 7) / 8));
 	ut8 *buf = (ut8 *)malloc((size_t)cap);
 	if (!buf) {
 		return NULL;
