@@ -250,9 +250,9 @@ RZ_API RZ_OWN char *rz_base32_encode_dyn(RZ_NULLABLE const ut8 *src, size_t n) {
 RZ_API st64 rz_base32_decode(RZ_OUT RZ_NULLABLE ut8 *dest, RZ_NULLABLE const char *src, st64 n) {
   rz_return_val_if_fail(src && dest, 0);
 
-	char buf[8], tmp[5];
-	int c;
-	size_t i, j;
+	char buf[8] = { 0 }, tmp[5] = { 0 };
+	int c = 0;
+	size_t i = 0, j = 0;
 	st64 ret = 0;
 
 	n = calculate_src_length(src, n);
