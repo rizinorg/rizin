@@ -67,8 +67,7 @@ RZ_API RZ_OWN char *rz_base36_encode_dyn(ut64 val) {
  * \param      len  Number of characters in \p str.
  *                  A value greater than 13 implies overflow and is rejected.
  * \return The decoded value, or \c -1 on any error (invalid digit, overflow,
- *         or length > 13).  Error details are printed to \c stderr via
- *         \c eprintf.
+ *         or length > 13).
  *
  * The function treats the right‑most character as the least‑significant digit,
  * multiplies each digit by the corresponding 36‑power from \a pow36, and
@@ -83,27 +82,27 @@ RZ_API st64 rz_base36_decode(const char *str, const size_t len) {
 	size_t i;
 	// 64-bit base36 str has at most 13 characters
 	if (len > RZ_BASE36_BUFSZ) {
-		eprintf("Error: base36_decode supports up to 64-bit values only\n");
+		RZ_LOG_ERROR("base36_decode supports up to 64-bit values only\n");
 		return -1;
 	}
 	for (i = 0; i < len; i++) {
 		char c = str[len - i - 1];
 		// "01234567890abcdefghijklmnopqrstuvwxyz"
 		if (c < '0' || c > 'z' || ('9' < c && c < 'a')) {
-			eprintf("Error: %s is not a valid base36 encoded string\n", str);
+			RZ_LOG_ERROR("%s is not a valid base36 encoded string\n", str);
 			return -1;
 		}
 		ut8 v = d32[c - '0'];
 		// Character does not exist in base36 encoding
 		if (v == '$') {
-			eprintf("Error: %s is not a valid base36 encoded string\n", str);
+			RZ_LOG_ERROR("Error: %s is not a valid base36 encoded string\n", str);
 			return -1;
 		}
 		v -= 91;
 		// Check for overflow
 		if (i == 12) {
 			if (v > 3 || UT64_ADD_OVFCHK(ret, v * pow36[i])) {
-				eprintf("Error: base36_decode supports up to 64-bit values only\n");
+				RZ_LOG_ERROR("Error: base36_decode supports up to 64-bit values only\n");
 				return -1;
 			}
 		}
