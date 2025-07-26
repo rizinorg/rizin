@@ -5178,6 +5178,7 @@ static bool print_histogram(RzCore *core, RZ_NULLABLE RzHistogramOptions *opts, 
 		RzHistogramOptions default_opts = {
 			.unicode = rz_config_get_b(core->config, "scr.utf8"),
 			.thinline = !rz_config_get_b(core->config, "scr.hist.block"),
+			.ruler = rz_config_get_b(core->config, "scr.hist.ruler"),
 			.legend = false,
 			.offset = rz_config_get_b(core->config, "hex.offset"),
 			.offpos = offset,

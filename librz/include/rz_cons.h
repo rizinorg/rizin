@@ -829,6 +829,7 @@ typedef struct rz_cons_canvas_line_style_t {
 typedef struct rz_histogram_options_t {
 	bool unicode; //<< Use Unicode characters instead of ASCII
 	bool thinline; //<< Use thin lines instead of block lines
+	bool ruler; //<< Show ruler
 	bool legend; //<< Show axes and legend
 	bool offset; //<< Show offsets
 	ut64 offpos; //<< Starting offset value
