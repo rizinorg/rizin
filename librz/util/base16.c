@@ -256,7 +256,7 @@ RZ_API RZ_OWN ut8 *rz_base16_decode_dyn(RZ_NULLABLE const char *src, st64 len) {
 	rz_return_val_if_fail(src, NULL);
 
 	len = calculate_src_length(src, len);
-	if (len < 0 || (len % 2) != 0) {
+	if (len < 0 || len & 1) {
 		return NULL;
 	}
 
