@@ -58,6 +58,7 @@ bool test_rz_base85_encode_decode_wrap10(void) {
 		}
 	}
 	mu_assert_true(col <= 10, "final line exceeds wrap length");
+  mu_assert_true(newlines > 0, "no line breaks were inserted");
 
 	size_t decoded_len;
 	char *decoded = rz_base85_decode_dyn(encoded, strlen(encoded), 0, 0, &decoded_len);
