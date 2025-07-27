@@ -336,7 +336,7 @@ RZ_API st64 rz_base85_decode(RZ_OUT RZ_NULLABLE char *dest, RZ_NULLABLE const ch
 	if (delims) {
 		int c = getc_nospace_buf(src, len, &pos);
 		if (c != '<' || getc_nospace_buf(src, len, &pos) != '~') {
-			eprintf("ascii85: missing <~\n");
+			RZ_LOG_ERROR("ascii85: missing <~\n");
 			return -1;
 		}
 	}
@@ -353,7 +353,7 @@ RZ_API st64 rz_base85_decode(RZ_OUT RZ_NULLABLE char *dest, RZ_NULLABLE const ch
 		}
 		if (c == '~' && delims) {
 			if (getc_nospace_buf(src, len, &pos) != '>') {
-				eprintf("ascii85: '~' not followed by '>'\n");
+				RZ_LOG_ERROR("ascii85: '~' not followed by '>'\n");
 				return -1;
 			}
 			have_end = 1;
@@ -366,7 +366,7 @@ RZ_API st64 rz_base85_decode(RZ_OUT RZ_NULLABLE char *dest, RZ_NULLABLE const ch
 			if (ignore_garbage) {
 				continue;
 			}
-			eprintf("ascii85: invalid character '%c'\n", c);
+			RZ_LOG_ERROR("ascii85: invalid character '%c'\n", c);
 			return -1;
 		}
 		tuple += (unsigned long)(c - '!') * pows[count++];
@@ -378,7 +378,7 @@ RZ_API st64 rz_base85_decode(RZ_OUT RZ_NULLABLE char *dest, RZ_NULLABLE const ch
 	}
 
 	if (delims && !have_end) {
-		eprintf("ascii85: missing ~>\n");
+		RZ_LOG_ERROR("ascii85: missing ~>\n");
 		return -1;
 	}
 	if (count > 0) { /* partial final group */
