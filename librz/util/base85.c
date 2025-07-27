@@ -288,8 +288,7 @@ RZ_API RZ_OWN char *rz_base85_encode_dyn(RZ_NULLABLE const char *src, size_t n, 
 	if (!ret) {
 		return NULL;
 	}
-	int out_len = rz_base85_encode(ret, src, n, delims, wrap, y_abbr);
-	(void)out_len;
+	rz_base85_encode(ret, src, n, delims, wrap, y_abbr);
 	return ret;
 }
 
