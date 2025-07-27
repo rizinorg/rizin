@@ -181,8 +181,8 @@ static size_t rz_base85_enc_buflen(size_t n, int delims, int wrap) {
  * The function starts with the most‑significant decoded byte and appends up to
  * four bytes to the buffer referenced by \p d.
  */
-static void decode_tuple_buf(unsigned long tuple, int count, char **d, size_t *len) {
-	for (int i = 1; i < count; i++) {
+static void decode_tuple_buf(unsigned long tuple, size_t count, char **d, size_t *len) {
+	for (size_t i = 1; i < count; i++) {
 		*(*d)++ = (char)(tuple >> ((4 - i) * 8));
 		(*len)++;
 	}
