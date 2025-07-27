@@ -230,7 +230,7 @@ static size_t rz_base85_dec_buflen(size_t enc_len) {
  * (not counting that NUL).  If either \p dest or \p src is <code>NULL</code>,
  * nothing is written and the function returns 0.
  */
-RZ_API int rz_base85_encode(char *dest, const char *src, size_t n, int delims, int wrap, int y_abbr) {
+RZ_API int rz_base85_encode(RZ_OUT RZ_NULLABLE char *dest, RZ_NULLABLE const char *src, size_t n, int delims, int wrap, int y_abbr) {
 	if (!dest || !src) {
 		return 0;
 	}
@@ -311,7 +311,7 @@ RZ_API RZ_OWN char *rz_base85_encode_dyn(RZ_NULLABLE const char *src, size_t n, 
  * \attention The caller must allocate \p dest large enough.  A safe upper bound is
  * \c 1 + 3 × ((len + 1)/4) bytes.
  */
-RZ_API st64 rz_base85_decode(char *dest, const char *src, st64 len, int delims, int ignore_garbage) {
+RZ_API st64 rz_base85_decode(RZ_OUT RZ_NULLABLE char *dest, RZ_NULLABLE const char *src, st64 len, int delims, int ignore_garbage) {
 	rz_return_val_if_fail(dest, -1);
 	rz_return_val_if_fail(src, -1);
 
@@ -400,7 +400,7 @@ RZ_API st64 rz_base85_decode(char *dest, const char *src, st64 len, int delims, 
  * \return Pointer to a newly allocated buffer containing the raw bytes,
  *         or \c NULL on error.  The buffer is NUL‑terminated for convenience.
  */
-RZ_API RZ_OWN char *rz_base85_decode_dyn(const char *src, st64 len, int delims, int ignore_garbage, size_t *out_len) {
+RZ_API RZ_OWN char *rz_base85_decode_dyn(RZ_NULLABLE const char *src, st64 len, int delims, int ignore_garbage, size_t *out_len) {
 	rz_return_val_if_fail(src, NULL);
 
 	if (len < 0) {
