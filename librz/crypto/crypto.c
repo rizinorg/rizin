@@ -38,13 +38,13 @@ static const struct {
 	RzCryptoSelector bit;
 } codec_name_bytes[] = {
 	{ "all", UT64_MAX },
-  { "base16", RZ_CODEC_B16 },
-  { "base32", RZ_CODEC_B32 },
-  { "base36", RZ_CODEC_B36 },
-  { "base64", RZ_CODEC_B64 },
+	{ "base16", RZ_CODEC_B16 },
+	{ "base32", RZ_CODEC_B32 },
+	{ "base36", RZ_CODEC_B36 },
+	{ "base64", RZ_CODEC_B64 },
 	{ "base85", RZ_CODEC_B85 },
 	{ "base91", RZ_CODEC_B91 },
-  { "punycode", RZ_CODEC_PUNYCODE },
+	{ "punycode", RZ_CODEC_PUNYCODE },
 };
 
 RZ_API RZ_BORROW const char *rz_crypto_name(const RzCryptoSelector bit) {

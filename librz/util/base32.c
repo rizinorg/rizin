@@ -106,12 +106,13 @@ static bool is_base32(int c) {
  * provided in lieu of modifying the decoding API parameter list.
  */
 static st64 calculate_src_length(const char *src, st64 len) {
-  if (len >= 0) return len;
-  size_t real_len = strlen(src);
-  if (ST64_MAX < real_len) {
-    return -1;
-  }
-  return real_len;
+	if (len >= 0)
+		return len;
+	size_t real_len = strlen(src);
+	if (ST64_MAX < real_len) {
+		return -1;
+	}
+	return real_len;
 }
 
 /** \internal
@@ -158,7 +159,7 @@ static size_t calculate_dest_length(size_t len) {
  * \endcode
  */
 RZ_API size_t rz_base32_encode(RZ_OUT RZ_NULLABLE char *dest, RZ_NULLABLE const ut8 *src, size_t n) {
-  rz_return_val_if_fail(src && dest, 0);
+	rz_return_val_if_fail(src && dest, 0);
 	ut8 final_group[5] = { 0 };
 	size_t ret = calculate_dest_length(n);
 	while (n >= 5) {
@@ -210,7 +211,7 @@ RZ_API RZ_OWN char *rz_base32_encode_dyn(RZ_NULLABLE const ut8 *src, size_t n) {
 		return NULL;
 	}
 	(void)rz_base32_encode(out, src, n);
-  out[buf_sz-1] = '\0';
+	out[buf_sz - 1] = '\0';
 	return out;
 }
 
@@ -248,7 +249,7 @@ RZ_API RZ_OWN char *rz_base32_encode_dyn(RZ_NULLABLE const ut8 *src, size_t n) {
  * \endcode
  */
 RZ_API st64 rz_base32_decode(RZ_OUT RZ_NULLABLE ut8 *dest, RZ_NULLABLE const char *src, st64 n) {
-  rz_return_val_if_fail(src && dest, 0);
+	rz_return_val_if_fail(src && dest, 0);
 
 	char buf[8] = { 0 }, tmp[5] = { 0 };
 	int c = 0;
@@ -284,20 +285,20 @@ RZ_API st64 rz_base32_decode(RZ_OUT RZ_NULLABLE ut8 *dest, RZ_NULLABLE const cha
 		return -1;
 	}
 
-  size_t rem = j;
-  for (; j < 8; j++) {
-    buf[j] = 'A'; // zero padding for partial group
-  }
-  unpack_from5((ut8 *)tmp, (const ut8 *)buf);
-  // decide how many of the unpacked bytes are valid based on how many base32 symbols you originally had.
-  static const int rem2bytes[8] = { 0, 0, 1, 0, 2, 3, 0, 4 };
-  int bytes = rem2bytes[rem];
-  if (bytes == 0) {
-    return -1;
-  }
-  memcpy(dest, tmp, bytes);
-  dest[bytes] = '\0';
-  return ret + bytes;
+	size_t rem = j;
+	for (; j < 8; j++) {
+		buf[j] = 'A'; // zero padding for partial group
+	}
+	unpack_from5((ut8 *)tmp, (const ut8 *)buf);
+	// decide how many of the unpacked bytes are valid based on how many base32 symbols you originally had.
+	static const int rem2bytes[8] = { 0, 0, 1, 0, 2, 3, 0, 4 };
+	int bytes = rem2bytes[rem];
+	if (bytes == 0) {
+		return -1;
+	}
+	memcpy(dest, tmp, bytes);
+	dest[bytes] = '\0';
+	return ret + bytes;
 }
 
 /**
