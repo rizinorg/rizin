@@ -77,7 +77,7 @@ RZ_API RZ_OWN char *rz_base36_encode_dyn(ut64 val) {
  * explicit overflow check: the digit must be ≤ 3 and the addition
  * <code>ret + v × pow36[12]</code> must not wrap.
  */
-RZ_API st64 rz_base36_decode(const char *str, const size_t len) {
+RZ_API st64 rz_base36_decode(RZ_NULLABLE const char *str, const size_t len) {
 	ut64 ret = 0;
 	size_t i;
 	// 64-bit base36 str has at most 13 characters
