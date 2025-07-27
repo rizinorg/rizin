@@ -200,7 +200,7 @@ static void decode_tuple_buf(unsigned long tuple, size_t count, char **d, size_t
  *          terminator.
  */
 static size_t rz_base85_dec_buflen(size_t enc_len) {
-  /* Upper bound: each Ascii85 char can produce up to 4 bytes, plus NUL */
+	/* Upper bound: each Ascii85 char can produce up to 4 bytes, plus NUL */
 	return 1 + 4 * enc_len;
 }
 

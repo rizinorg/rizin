@@ -88,12 +88,13 @@ static bool is_base16(int c) {
  * provided in lieu of modifying the decoding API parameter list.
  */
 static st64 calculate_src_length(const char *src, st64 len) {
-  if(len >= 0) return len;
-  size_t real_len = strlen(src);
-  if (ST64_MAX < real_len) {
-    return -1;
-  }
-  return (st64)real_len;
+	if (len >= 0)
+		return len;
+	size_t real_len = strlen(src);
+	if (ST64_MAX < real_len) {
+		return -1;
+	}
+	return (st64)real_len;
 }
 
 /** \internal
@@ -123,7 +124,7 @@ static size_t calculate_dest_length(size_t len) {
 RZ_API size_t rz_base16_encode(RZ_OUT RZ_NULLABLE char *dest, RZ_NULLABLE const ut8 *src, size_t n) {
 	rz_return_val_if_fail(src && dest, 0);
 
-  ut8 group[1] = { 0 };
+	ut8 group[1] = { 0 };
 	size_t ret = calculate_dest_length(n);
 
 	while (n--) {
@@ -166,7 +167,7 @@ RZ_API RZ_OWN char *rz_base16_encode_dyn(RZ_NULLABLE const ut8 *src, size_t n) {
 		return NULL;
 	}
 	(void)rz_base16_encode(out, src, n);
-  out[buf_sz-1] = '\0';
+	out[buf_sz - 1] = '\0';
 	return out;
 }
 
@@ -220,15 +221,16 @@ RZ_API st64 rz_base16_decode(RZ_OUT RZ_NULLABLE ut8 *dest, RZ_NULLABLE const cha
 	}
 
 	for (i = j = 0; i < (size_t)n; i++) {
-    int c = src[i];
-    if(!is_base16(c)) return -1;
-    buf[j++] = c;
-    if (j == 2) {
-      unpack_from4(tmp, (const ut8 *)buf);
-      *dest++ = tmp[0];
-      ret += 1;
-      j = 0;
-    }
+		int c = src[i];
+		if (!is_base16(c))
+			return -1;
+		buf[j++] = c;
+		if (j == 2) {
+			unpack_from4(tmp, (const ut8 *)buf);
+			*dest++ = tmp[0];
+			ret += 1;
+			j = 0;
+		}
 	}
 
 	*dest = '\0';
