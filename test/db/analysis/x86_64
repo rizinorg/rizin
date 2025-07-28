@@ -4390,3 +4390,17 @@ EXPECT=<<EOF
 d 0x11f4 str.Missing_argument
 EOF
 RUN
+
+NAME=aoj incorrect immediate value
+FILE==
+CMDS=<<EOF
+e io.va=true
+e asm.arch=x86
+e asm.bits=64
+wx "c6442428d6"
+aoj~{[0].opex.operands[1].value}
+EOF
+EXPECT=<<EOF
+214
+EOF
+RUN
