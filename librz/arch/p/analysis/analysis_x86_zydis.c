@@ -55,10 +55,9 @@ struct Getarg {
 
 static inline ut64 get_imm_reg_value(ZydisDecodedOperand *zydeop, ut64 addr, ut64 op_size, int bitness) {
 	ut64 value = (zydeop->imm.is_relative ? (zydeop->imm.value.s + addr + op_size) : zydeop->imm.value.u);
-	if (bitness == 32) {
-		value &= 0xFFFFFFFF;
-	} else if (bitness == 16) {
-		value &= 0xFFFF;
+	ut32 exponent = zydeop->size * 8;
+	if (exponent < 64) {
+		value &= ((1ull << exponent) - 1);
 	}
 	return value;
 }
