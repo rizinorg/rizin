@@ -405,9 +405,9 @@ ahi 10u
 pd 1
 EOF
 EXPECT=<<EOF
-            0x00000000      cmp   eax, 0xffffffff
-            0x00000000      cmp   eax, -1
-            0x00000000      cmp   eax, 4294967295
+            0x00000000      cmp   eax, 0xffffffff                      ; -1
+            0x00000000      cmp   eax, -1                              ; 0xffffffff ; -1
+            0x00000000      cmp   eax, 4294967295                      ; 0xffffffff ; -1
 
             0x00000000      cmp   rax, 0xffffffffffffffff
             0x00000000      cmp   rax, -1

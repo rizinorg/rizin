@@ -164,7 +164,7 @@ e asm.lines.bb=0
 pd 1
 EOF
 EXPECT=<<EOF
-  0x00000000      b8ffffffff     mov   eax, 0xffffffff
+  0x00000000      b8ffffffff     mov   eax, 0xffffffff                 ; -1
 EOF
 RUN
 
