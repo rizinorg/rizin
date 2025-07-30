@@ -482,6 +482,7 @@ static const char *map_dwarf_reg_to_riscv_reg(ut32 reg_num) {
 #include <x86/x86_dwarf_regnum_table.h>
 #include <xtensa/xtensa_dwarf_regnum_table.h>
 #include <alpha/alpha_dwarf_regnum_table.h>
+#include <h8300/h8300_dwarf_regnum_table.h>
 
 /**
  * \brief Returns a function that maps a DWARF register number to a register name
@@ -554,6 +555,13 @@ static DWARF_RegisterMapping dwarf_register_mapping_query(RZ_NONNULL const char 
 	}
 	if (RZ_STR_EQ(arch, "alpha")) {
 		return map_dwarf_reg_to_alpha_reg;
+	}
+
+	if (RZ_STR_EQ(arch, "h8300")) {
+		return h8300_register_name;
+	}
+	if (RZ_STR_EQ(arch, "h8300h")) {
+		return h8300h_register_name;
 	}
 
 	RZ_LOG_ERROR("No DWARF register mapping function defined for %s %d bits\n", arch, bits);
