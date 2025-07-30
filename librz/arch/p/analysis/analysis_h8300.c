@@ -15,6 +15,92 @@
 
 #define INS_OP(I) (cmd.ops[(I)])
 
+static const char *h8300_register_name(H8300Operand *op) {
+	switch (op->typ) {
+	case H8300_OP_R8:
+		return h8300_get_register8_name(op->reg);
+	case H8300_OP_R16:
+		return h8300_get_register16_name(op->reg);
+	case H8300_OP_R32:
+		return h8300_get_register32_name(op->reg);
+	default: return NULL;
+	}
+}
+
+static void h8300_op2val(RzAnalysis *analysis, struct h8300_cmd *cmd, RzAnalysisValue *av, H8300Operand *iop) {
+	switch (iop->typ) {
+	case H8300_OP_NONE: break;
+	case H8300_OP_R8:
+	case H8300_OP_R16:
+	case H8300_OP_R32:
+		av->type = RZ_ANALYSIS_VAL_REG;
+		av->reg = rz_reg_get(analysis->reg, h8300_register_name(iop), RZ_REG_TYPE_ANY);
+		break;
+	case H8300_OP_IMM:
+		av->type = RZ_ANALYSIS_VAL_IMM;
+		av->imm = iop->imm;
+		break;
+	case H8300_OP_ABS:
+		av->type = RZ_ANALYSIS_VAL_MEM;
+		av->absolute = iop->imm;
+		break;
+	case H8300_OP_PCREL:
+		av->type = RZ_ANALYSIS_VAL_MEM;
+		av->base = cmd->pc;
+		av->delta = iop->disp;
+		break;
+	case H8300_OP_MI8:
+		av->type = RZ_ANALYSIS_VAL_MEM;
+		av->memref = iop->imm;
+		break;
+	case H8300_OP_RD:
+		av->type = RZ_ANALYSIS_VAL_MEM;
+		av->reg = rz_reg_get(analysis->reg, h8300_get_register32_name(iop->rd.reg), RZ_REG_TYPE_ANY);
+		av->delta = iop->rd.disp;
+		break;
+	case H8300_OP_RI:
+		av->type = RZ_ANALYSIS_VAL_MEM;
+		av->reg = rz_reg_get(analysis->reg, h8300_get_register32_name(iop->reg), RZ_REG_TYPE_ANY);
+		break;
+	case H8300_OP_RPOSTINC:
+	case H8300_OP_RPREDEC:
+		av->type = RZ_ANALYSIS_VAL_MEM;
+		av->reg = rz_reg_get(analysis->reg, h8300_get_register32_name(iop->reg), RZ_REG_TYPE_ANY);
+		break;
+	case H8300_OP_CCR:
+		av->type = RZ_ANALYSIS_VAL_REG;
+		av->reg = rz_reg_get(analysis->reg, "ccr", RZ_REG_TYPE_ANY);
+		break;
+	}
+}
+
+static void h8300_analyze_val(RzAnalysis *analysis, RzAnalysisOp *aop, struct h8300_cmd *cmd) {
+	uint8_t srci = 0;
+	for (uint8_t i = 0; i < cmd->ops_count; ++i) {
+		H8300Operand *iop = cmd->ops + i;
+		RzAnalysisValue *av = rz_analysis_value_new();
+		if (!av) {
+			rz_warn_if_reached();
+			return;
+		}
+		h8300_op2val(analysis, cmd, av, iop);
+		if (cmd->ops_count > 1 && i < cmd->ops_count - 1) {
+			av->access |= RZ_ANALYSIS_ACC_R;
+			aop->src[srci++] = av;
+		}
+		if (cmd->ops_count == 1 || i == cmd->ops_count - 1) {
+			av->access |= RZ_ANALYSIS_ACC_W;
+			if (aop->dst) {
+				rz_warn_if_reached();
+			}
+			if (srci > 0 && av == aop->src[srci - 1]) {
+				av = rz_mem_dup(av, sizeof(RzAnalysisValue));
+			}
+			aop->dst = av;
+		}
+	}
+}
+
 static int h8300_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	int ret;
@@ -32,6 +118,8 @@ static int h8300_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	}
 
 	op->type = RZ_ANALYSIS_OP_TYPE_UNK;
+	op->id = cmd.id;
+
 	switch (cmd.id) {
 	case H8300_INSN_MOV_B:
 	case H8300_INSN_MOV_W:
@@ -41,6 +129,12 @@ static int h8300_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	case H8300_INSN_MOVFPE:
 	case H8300_INSN_MOVTPE:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
+		if (cmd.ops_count == 2) {
+			H8300Operand *dst = &INS_OP(1);
+			if (dst->typ == H8300_OP_R32 && dst->reg == 7) {
+				op->stackop = RZ_ANALYSIS_STACK_SET;
+			}
+		}
 		break;
 	case H8300_INSN_LDC_B:
 	case H8300_INSN_LDC_W:
@@ -71,6 +165,8 @@ static int h8300_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	case H8300_INSN_RTS:
 	case H8300_INSN_RTE:
 		op->type = RZ_ANALYSIS_OP_TYPE_RET;
+		op->stackop = RZ_ANALYSIS_STACK_INC;
+		op->stackptr = 4;
 		break;
 	case H8300_INSN_SHAL_B:
 	case H8300_INSN_SHAL_W:
@@ -150,6 +246,26 @@ static int h8300_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 		op->jump = cmd.pc + cmd.size + INS_OP(0).disp;
 		break;
 	case H8300_INSN_JSR:
+		switch (cmd.fmt) {
+		case H8300_INSN_FORMAT_RI:
+			op->type = RZ_ANALYSIS_OP_TYPE_IRCALL;
+			op->ireg = h8300_get_register32_name(INS_OP(0).reg);
+			break;
+		case H8300_INSN_FORMAT_ABS:
+			op->type = RZ_ANALYSIS_OP_TYPE_CALL;
+			op->jump = INS_OP(0).imm;
+			break;
+		case H8300_INSN_FORMAT_MI8:
+			op->type = RZ_ANALYSIS_OP_TYPE_ICALL;
+			op->ptr = INS_OP(0).imm;
+			op->disp = INS_OP(0).imm;
+			break;
+		default: break;
+		}
+		op->fail = addr + cmd.size;
+		op->stackop = RZ_ANALYSIS_STACK_DEC;
+		op->stackptr = 4;
+		break;
 	case H8300_INSN_JMP:
 		switch (cmd.fmt) {
 		case H8300_INSN_FORMAT_RI:
@@ -225,10 +341,14 @@ static int h8300_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	case H8300_INSN_POP_W:
 	case H8300_INSN_POP_L:
 		op->type = RZ_ANALYSIS_OP_TYPE_POP;
+		op->stackop = RZ_ANALYSIS_STACK_INC;
+		op->stackptr = op->id == H8300_INSN_PUSH_W ? 2 : 4;
 		break;
 	case H8300_INSN_PUSH_W:
 	case H8300_INSN_PUSH_L:
 		op->type = RZ_ANALYSIS_OP_TYPE_PUSH;
+		op->stackop = RZ_ANALYSIS_STACK_DEC;
+		op->stackptr = op->id == H8300_INSN_PUSH_W ? 2 : 4;
 		break;
 	case H8300_INSN_TRAPA:
 		op->type = RZ_ANALYSIS_OP_TYPE_TRAP;
@@ -244,6 +364,10 @@ static int h8300_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 
 	if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
 		op->mnemonic = rz_str_newf("%s%s%s", cmd.instr, RZ_STR_ISEMPTY(cmd.ops_str) ? "" : " ", cmd.ops_str);
+	}
+
+	if (mask & RZ_ANALYSIS_OP_MASK_VAL) {
+		h8300_analyze_val(analysis, op, &cmd);
 	}
 
 	if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {

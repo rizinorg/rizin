@@ -1197,7 +1197,7 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 			JMP(UNSIGNED(24, VARL("ccr_pc"))));
 	case H8300_INSN_BSR:
 		return SEQ3(
-			sp_dec(2),
+			sp_dec(4),
 			STOREW(sp_op(), PC_VAL),
 			JMP(ADD(PC_VAL, PCREL_OP(0))));
 	case H8300_INSN_JMP:
@@ -1439,7 +1439,7 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd) {
 	case H8300_INSN_TRAPA:
 		return SEQ5(
 			sp_dec(4),
-			sp_set(U32(cmd->pc)),
+			sp_set(PC_NEXT_VAL),
 			sp_dec(2),
 			sp_set(VARG("ccr")),
 			JMP(vector_addr(cmd, OPS_GET(0).imm)));

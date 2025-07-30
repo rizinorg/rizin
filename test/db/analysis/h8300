@@ -25,3 +25,474 @@ e6 = 0x0000
 e7 = 0x0000
 EOF
 RUN
+
+NAME=h8300 analysis main.elf
+FILE=bins/elf/h8300/main.elf
+CMDS=<<EOF
+aaa
+afl
+afi
+pdf
+agf @ dbg.test_branch
+EOF
+EXPECT=<<EOF
+0x00000090    1 24           dbg.test_addition
+0x000000a8    1 24           dbg.test_subtraction
+0x000000c0    1 24           dbg.test_multiplication
+0x000000d8    1 24           dbg.test_division
+0x000000f0    1 24           dbg.test_logical_and
+0x00000108    1 24           dbg.test_logical_or
+0x00000120    1 24           dbg.test_bitwise_not
+0x00000138    1 24           dbg.test_comparison
+0x00000150    3 56           dbg.test_branch
+0x00000188    6 86           dbg.test_loop
+0x000001de    3 52           dbg.test_increment
+0x00000212    3 52           dbg.test_decrement
+0x00000246    1 24           dbg.test_xor
+0x0000025e    1 24           dbg.test_shift_left
+0x00000276    1 24           dbg.test_shift_right
+0x0000028e    3 42           dbg.test_assign
+0x000002b8    3 42           dbg.test_zero_compare
+0x000002e2    3 42           dbg.test_nonzero_compare
+0x0000030c    3 52           dbg.test_unsigned_wraparound
+0x00000340    3 52           dbg.test_large_addition
+0x00000374    4 46           dbg.test_rodata
+0x000003a2    9 160          dbg.test_data
+0x00000442    5 54           dbg.test_bss
+0x00000478    8 260          dbg.main
+0x0000057c    1 22           dbg.st_battery_level
+0x00000592    3 38           dbg.st_button_center
+0x000005b8    3 38           dbg.st_button_left
+0x000005de    3 38           dbg.st_button_right
+0x00000604    1 74           dbg.st_lcd_out_data
+0x0000064e    1 52           dbg.st_lcd_out_single
+0x00000682    1 84           dbg.st_lcd_out_double
+0x000006d6    1 222          dbg.st_lcd_init
+0x000007b4    1 32           dbg.st_led_on
+0x000007d4    1 32           dbg.st_led_off
+0x000007f4    1 32           dbg.st_led_green
+0x00000814    1 32           dbg.st_led_red
+0x00000834    3 40           dbg.st_led_is_on
+0x0000085c    4 42           dbg.st_led_color
+0x00000886    6 142          dbg.st_ssu_out
+0x00000914    1 31           dbg.st_ssu_out_singleton
+0x00000933    3 63           fcn.00000933
+0x00000972    1 18           dbg.st_init
+offset: 0x00000478
+name: dbg.main
+size: 260
+is-pure: true
+realsz: 260
+stackframe: 8
+cyclomatic-cost: 0
+cyclomatic-complexity: 5
+loops: 3
+bits: 32
+type: fcn
+num-bbs: 8
+edges: 13
+end-bbs: 0
+call-refs: 0x00000090 C 0x000000a8 C 0x000000c0 C 0x000000d8 C 0x000000f0 C 0x00000108 C 0x00000120 C 0x00000138 C 0x00000150 C 0x00000188 C 0x000001de C 0x00000212 C 0x00000246 C 0x0000025e C 0x00000276 C 0x0000028e C 0x000002b8 C 0x000002e2 C 0x0000030c C 0x00000340 C 0x00000374 C 0x000003a2 C 0x00000442 C 0x00000972 C 0x0000064e C 0x00000604 C
+data-refs:
+code-xrefs: 0x0000008c J
+noreturn: false
+in-degree: 1
+out-degree: 26
+data-xrefs:
+locals: 3
+args: 0
+var int a @ stack - 0x6
+var int j @ stack - 0x4
+var int i @ stack - 0x2
+            ; CODE XREF from loc.start_bss_loop @ +0xa
+            ;-- entry0:
+            ;-- .LFB23:
+            ;-- .LM123:
+            ;-- _main:
+            ;-- pc:
+/ int main()
+|           ; var int i @ stack - 0x2
+|           ; var int j @ stack - 0x4
+|           ; var int a @ stack - 0x6
+|           0x00000478      push.l er6                                 ; main.c:186
+|           0x0000047c      mov.l er7,er6
+|           0x0000047e      sub.l #0x8,er7
+|           ;-- .LM124:
+|           0x00000484      sub.w r2,r2                                ; main.c:187
+|           0x00000486      mov.w r2,@(+2,er6)
+|           ;-- .LM125:
+|           0x0000048a      sub.w r2,r2
+|           0x0000048c      mov.w r2,@er6
+|           ;-- .LM126:
+|           0x0000048e      sub.w r2,r2
+|           ;-- (0x00000492) .Ldebug_info0:
+|           0x00000490  ~   mov.w r2,@(-2,er6)
+|           ;-- .LM127:
+|           0x00000494      jsr   @0x90                                ; main.c:189 ; dbg.test_addition ;  test_addition(void)
+|           ;-- .LM128:
+|           0x00000498      jsr   @0xa8                                ; main.c:190 ; dbg.test_subtraction ;  test_subtraction(void)
+|           ;-- .LM129:
+|           0x0000049c      jsr   @0xc0                                ; main.c:191 ; dbg.test_multiplication ;  test_multiplication(void)
+|           ;-- .LM130:
+|           0x000004a0      jsr   @0xd8                                ; main.c:192 ; dbg.test_division ;  test_division(void)
+|           ;-- .LM131:
+|           0x000004a4      jsr   @0xf0                                ; main.c:193 ; dbg.test_logical_and ;  test_logical_and(void)
+|           ;-- .LM132:
+|           0x000004a8      jsr   @dbg.test_logical_or                 ; main.c:194 ;  test_logical_or(void)
+|           ;-- .LM133:
+|           0x000004ac      jsr   @dbg.test_bitwise_not                ; main.c:195 ;  test_bitwise_not(void)
+|           ;-- .LM134:
+|           0x000004b0      jsr   @dbg.test_comparison                 ; main.c:196 ;  test_comparison(void)
+|           ;-- .LM135:
+|           0x000004b4      jsr   @dbg.test_branch                     ; main.c:197 ;  test_branch(void)
+|           ;-- .LM136:
+|           0x000004b8      jsr   @dbg.test_loop                       ; main.c:198 ;  test_loop(void)
+|           ;-- .LM137:
+|           0x000004bc      jsr   @dbg.test_increment                  ; main.c:199 ;  test_increment(void)
+|           ;-- .LM138:
+|           0x000004c0      jsr   @dbg.test_decrement                  ; main.c:200 ;  test_decrement(void)
+|           ;-- .LM139:
+|           0x000004c4      jsr   @dbg.test_xor                        ; main.c:201 ;  test_xor(void)
+|           ;-- .LM140:
+|           0x000004c8      jsr   @dbg.test_shift_left                 ; main.c:202 ;  test_shift_left(void)
+|           ;-- .LM141:
+|           0x000004cc      jsr   @dbg.test_shift_right                ; main.c:203 ;  test_shift_right(void)
+|           ;-- .LM142:
+|           0x000004d0      jsr   @dbg.test_assign                     ; main.c:204 ;  test_assign(void)
+|           ;-- .LM143:
+|           0x000004d4      jsr   @dbg.test_zero_compare               ; main.c:205 ;  test_zero_compare(void)
+|           ;-- .LM144:
+|           0x000004d8      jsr   @dbg.test_nonzero_compare            ; main.c:206 ;  test_nonzero_compare(void)
+|           ;-- .LM145:
+|           0x000004dc      jsr   @dbg.test_unsigned_wraparound        ; main.c:207 ;  test_unsigned_wraparound(void)
+|           ;-- .LM146:
+|           0x000004e0      jsr   @dbg.test_large_addition             ; main.c:208 ;  test_large_addition(void)
+|           ;-- .LM147:
+|           0x000004e4      jsr   @dbg.test_rodata                     ; main.c:209 ;  test_rodata(void)
+|           ;-- .LM148:
+|           0x000004e8      jsr   @dbg.test_data                       ; main.c:210 ;  test_data(void)
+|           ;-- .LM149:
+|           0x000004ec      jsr   @dbg.test_bss                        ; main.c:211 ;  test_bss(void)
+|           ;-- .LM150:
+|           0x000004f0      jsr   @dbg.st_init                         ; main.c:213 ;  st_init(void)
+|           ;-- .L59:
+|           ;-- .LBB2:
+|           ;-- .LM151:
+|       .-> 0x000004f4      mov.w @(-2,er6),r2                         ; main.c:217
+|       :   0x000004f8      exts.l er2
+|       :   0x000004fa      mov.b @(+obj._colors,er2),r2l
+|       :   ;-- .LM152:
+|       :   0x00000502      mov.b r2l,@(-4,er6)
+|       :   ;-- .LM153:
+|       :   0x00000506      mov.w @(-2,er6),r2
+|       :   0x0000050a      exts.l er2
+|       :   0x0000050c      mov.b @(+obj._colors,er2),r2l
+|       :   ;-- .LM154:
+|       :   0x00000514      mov.b r2l,@(-3,er6)
+|       :   ;-- .LM155:
+|       :   0x00000518      sub.w r2,r2                                ; main.c:219
+|       :   0x0000051a      mov.w r2,@(+2,er6)
+|       :   ;-- .LM156:
+|      ,==< 0x0000051e      bra   .+56
+|      |:   ;-- .L58:
+|      |:   ;-- .LM157:
+|     .---> 0x00000520      mov.w @(+2,er6),r2                         ; main.c:221
+|     :|:   0x00000524      add.b #0xb0,r2l
+|     :|:   0x00000526      mov.b r2l,r0l
+|     :|:   0x00000528      jsr   @dbg.st_lcd_out_single               ;  st_lcd_out_single(unsigned char output)
+|     :|:   ;-- .LM158:
+|     :|:   0x0000052c      sub.w r2,r2                                ; main.c:222
+|     :|:   0x0000052e      mov.w r2,@er6
+|     :|:   ;-- .LM159:
+|    ,====< 0x00000530      bra   .+20
+|    |:|:   ;-- .L57:
+|    |:|:   ;-- .LM160:
+|   .-----> 0x00000532      mov.l er6,er2                              ; main.c:223
+|   :|:|:   0x00000534      subs  #0x4,r2
+|   :|:|:   0x00000536      mov.w #0x2,r1
+|   :|:|:   0x0000053a      mov.l er2,er0
+|   :|:|:   0x0000053c      jsr   @dbg.st_lcd_out_data                 ;  st_lcd_out_data(const unsigned char *buffer, unsigned int length)
+|   :|:|:   ;-- .LM161:
+|   :|:|:   0x00000540      mov.w @er6,r2                              ; main.c:222
+|   :|:|:   0x00000542      inc.w #0x1,r2
+|   :|:|:   0x00000544      mov.w r2,@er6
+|   :|:|:   ;-- .L56:
+|   :|:|:   ;-- .LM162:
+|   :`----> 0x00000546      mov.w @er6,r2
+|   : :|:   0x00000548      cmp.w #0x7f,r2
+|   `=====< 0x0000054c      ble   .-28
+|     :|:   ;-- .LM163:
+|     :|:   0x0000054e      mov.w @(+2,er6),r2                         ; main.c:219
+|     :|:   0x00000552      inc.w #0x1,r2
+|     :|:   0x00000554      mov.w r2,@(+2,er6)
+|     :|:   ;-- .L55:
+|     :|:   ;-- .LM164:
+|     :`--> 0x00000558      mov.w @(+2,er6),r2
+|     : :   0x0000055c      cmp.w #0xf,r2
+|     `===< 0x00000560      ble   .-66
+|       :   ;-- .LM165:
+|       :   0x00000562      mov.w @(-2,er6),r2                         ; main.c:226
+|       :   0x00000566      inc.w #0x1,r2
+|       :   0x00000568      mov.w r2,@(-2,er6)
+|       :   ;-- .LM166:
+|       :   0x0000056c      mov.w @(-2,er6),r2                         ; main.c:228
+|       :   0x00000570      and.w #0x3,r2
+|       :   0x00000574      mov.w r2,@(-2,er6)
+|       |   ;-- .LM167:
+\       `=< 0x00000578      bra   .-136                                ; main.c:216
+.-------------------------------------.
+|  0x150                              |
+|   ; CALL XREF from dbg.main @ 0x4b4 |
+|   ;-- .LFB8:                        |
+|   ;-- .LM25:                        |
+|   ;-- _test_branch:                 |
+| void test_branch()                  |
+| ; var int a @ stack - 0x6           |
+| ; var int b @ stack - 0x8           |
+| push.l er6                          |
+| mov.l er7,er6                       |
+| subs #0x4,r7                        |
+| ;-- .LM26:                          |
+| mov.w #0x5,r2                       |
+| mov.w r2,@(-2,er6)                  |
+| ;-- .LM27:                          |
+| ;-- (0x00000161) .Ldebug_abbrev0:   |
+| mov.w #0x3,r2                       |
+| mov.w r2,@(-4,er6)                  |
+| ;-- .LM28:                          |
+| mov.w @(-2,er6),r3                  |
+| mov.w @(-4,er6),r2                  |
+| ;-- .LM29:                          |
+| cmp.w r2,r3                         |
+| ble .+10                            |
+`-------------------------------------'
+        f t
+        | |
+        | '---------------.
+      .-'                 |
+      |                   |
+  .-------------------.   |
+  |  0x174            |   |
+  | ;-- .LM30:        |   |
+  | mov.l #0xf7a9,er2 |   |
+  | mov.b #0x9,r3l    |   |
+  | mov.b r3l,@er2    |   |
+  `-------------------'   |
+      v                   |
+      |                   |
+      '----------.        |
+                 | .------'
+                 | |
+           .--------------.
+           |  0x17e       |
+           | ;-- .L11:    |
+           | ;-- .LM31:   |
+           | nop          |
+           | adds #0x4,r7 |
+           | pop.l er6    |
+           | rts          |
+           `--------------'
+EOF
+RUN
+
+NAME=h8300 analysis main.elf
+FILE=bins/elf/h8300/main-nodebug.elf
+CMDS=<<EOF
+aaa
+afl
+afi
+pdf
+agf @ loc._test_branch
+EOF
+EXPECT=<<EOF
+0x00000090    1 24           loc._test_addition
+0x000000a8    1 24           loc._test_subtraction
+0x000000c0    1 24           loc._test_multiplication
+0x000000d8    1 24           loc._test_division
+0x000000f0    1 24           loc._test_logical_and
+0x00000108    1 24           loc._test_logical_or
+0x00000120    1 24           loc._test_bitwise_not
+0x00000138    1 24           loc._test_comparison
+0x00000150    3 56           loc._test_branch
+0x00000188    6 86           loc._test_loop
+0x000001de    3 52           loc._test_increment
+0x00000212    3 52           loc._test_decrement
+0x00000246    1 24           loc._test_xor
+0x0000025e    1 24           loc._test_shift_left
+0x00000276    1 24           loc._test_shift_right
+0x0000028e    3 42           loc._test_assign
+0x000002b8    3 42           loc._test_zero_compare
+0x000002e2    3 42           loc._test_nonzero_compare
+0x0000030c    3 52           loc._test_unsigned_wraparound
+0x00000340    3 52           loc._test_large_addition
+0x00000374    4 46           loc._test_rodata
+0x000003a2    9 160          loc._test_data
+0x00000442    5 54           loc._test_bss
+0x00000478    8 260          entry0
+0x0000057c    1 22           loc._st_battery_level
+0x00000592    3 38           loc._st_button_center
+0x000005b8    3 38           loc._st_button_left
+0x000005de    3 38           loc._st_button_right
+0x00000604    1 74           loc._st_lcd_out_data
+0x0000064e    1 52           loc._st_lcd_out_single
+0x00000682    1 84           loc._st_lcd_out_double
+0x000006d6    1 222          loc._st_lcd_init
+0x000007b4    1 32           loc._st_led_on
+0x000007d4    1 32           loc._st_led_off
+0x000007f4    1 32           loc._st_led_green
+0x00000814    1 32           loc._st_led_red
+0x00000834    3 40           loc._st_led_is_on
+0x0000085c    4 42           loc._st_led_color
+0x00000886    6 142          loc._st_ssu_out
+0x00000914    1 31           loc._st_ssu_out_singleton
+0x00000933    3 63           fcn.00000933
+0x00000972    1 18           loc._st_init
+offset: 0x00000478
+name: entry0
+size: 260
+is-pure: true
+realsz: 260
+stackframe: 8
+cyclomatic-cost: 0
+cyclomatic-complexity: 5
+loops: 3
+bits: 32
+type: fcn
+num-bbs: 8
+edges: 13
+end-bbs: 0
+call-refs: 0x00000090 C 0x000000a8 C 0x000000c0 C 0x000000d8 C 0x000000f0 C 0x00000108 C 0x00000120 C 0x00000138 C 0x00000150 C 0x00000188 C 0x000001de C 0x00000212 C 0x00000246 C 0x0000025e C 0x00000276 C 0x0000028e C 0x000002b8 C 0x000002e2 C 0x0000030c C 0x00000340 C 0x00000374 C 0x000003a2 C 0x00000442 C 0x00000972 C 0x0000064e C 0x00000604 C
+data-refs:
+code-xrefs: 0x0000008c J
+noreturn: false
+in-degree: 1
+out-degree: 26
+data-xrefs:
+locals: 0
+args: 0
+            ; CODE XREF from loc.start_bss_loop @ +0xa
+            ;-- _main:
+            ;-- pc:
+/ entry0();
+|           0x00000478      push.l er6
+|           0x0000047c      mov.l er7,er6
+|           0x0000047e      sub.l #0x8,er7
+|           0x00000484      sub.w r2,r2
+|           0x00000486      mov.w r2,@(+2,er6)
+|           0x0000048a      sub.w r2,r2
+|           0x0000048c      mov.w r2,@er6
+|           0x0000048e      sub.w r2,r2
+|           0x00000490      mov.w r2,@(-2,er6)
+|           0x00000494      jsr   @0x90                                ; loc._test_addition
+|           0x00000498      jsr   @0xa8                                ; loc._test_subtraction
+|           0x0000049c      jsr   @0xc0                                ; loc._test_multiplication
+|           0x000004a0      jsr   @0xd8                                ; loc._test_division
+|           0x000004a4      jsr   @0xf0                                ; loc._test_logical_and
+|           0x000004a8      jsr   @loc._test_logical_or
+|           0x000004ac      jsr   @loc._test_bitwise_not
+|           0x000004b0      jsr   @loc._test_comparison
+|           0x000004b4      jsr   @loc._test_branch
+|           0x000004b8      jsr   @loc._test_loop
+|           0x000004bc      jsr   @loc._test_increment
+|           0x000004c0      jsr   @loc._test_decrement
+|           0x000004c4      jsr   @loc._test_xor
+|           0x000004c8      jsr   @loc._test_shift_left
+|           0x000004cc      jsr   @loc._test_shift_right
+|           0x000004d0      jsr   @loc._test_assign
+|           0x000004d4      jsr   @loc._test_zero_compare
+|           0x000004d8      jsr   @loc._test_nonzero_compare
+|           0x000004dc      jsr   @loc._test_unsigned_wraparound
+|           0x000004e0      jsr   @loc._test_large_addition
+|           0x000004e4      jsr   @loc._test_rodata
+|           0x000004e8      jsr   @loc._test_data
+|           0x000004ec      jsr   @loc._test_bss
+|           0x000004f0      jsr   @loc._st_init
+|           ;-- .L59:
+|       .-> 0x000004f4      mov.w @(-2,er6),r2
+|       :   0x000004f8      exts.l er2
+|       :   0x000004fa      mov.b @(+obj._colors,er2),r2l
+|       :   0x00000502      mov.b r2l,@(-4,er6)
+|       :   0x00000506      mov.w @(-2,er6),r2
+|       :   0x0000050a      exts.l er2
+|       :   0x0000050c      mov.b @(+obj._colors,er2),r2l
+|       :   0x00000514      mov.b r2l,@(-3,er6)
+|       :   0x00000518      sub.w r2,r2
+|       :   0x0000051a      mov.w r2,@(+2,er6)
+|      ,==< 0x0000051e      bra   .+56
+|      |:   ;-- .L58:
+|     .---> 0x00000520      mov.w @(+2,er6),r2
+|     :|:   0x00000524      add.b #0xb0,r2l
+|     :|:   0x00000526      mov.b r2l,r0l
+|     :|:   0x00000528      jsr   @loc._st_lcd_out_single
+|     :|:   0x0000052c      sub.w r2,r2
+|     :|:   0x0000052e      mov.w r2,@er6
+|    ,====< 0x00000530      bra   .+20
+|    |:|:   ;-- .L57:
+|   .-----> 0x00000532      mov.l er6,er2
+|   :|:|:   0x00000534      subs  #0x4,r2
+|   :|:|:   0x00000536      mov.w #0x2,r1
+|   :|:|:   0x0000053a      mov.l er2,er0
+|   :|:|:   0x0000053c      jsr   @loc._st_lcd_out_data
+|   :|:|:   0x00000540      mov.w @er6,r2
+|   :|:|:   0x00000542      inc.w #0x1,r2
+|   :|:|:   0x00000544      mov.w r2,@er6
+|   :|:|:   ;-- .L56:
+|   :`----> 0x00000546      mov.w @er6,r2
+|   : :|:   0x00000548      cmp.w #0x7f,r2
+|   `=====< 0x0000054c      ble   .-28
+|     :|:   0x0000054e      mov.w @(+2,er6),r2
+|     :|:   0x00000552      inc.w #0x1,r2
+|     :|:   0x00000554      mov.w r2,@(+2,er6)
+|     :|:   ;-- .L55:
+|     :`--> 0x00000558      mov.w @(+2,er6),r2
+|     : :   0x0000055c      cmp.w #0xf,r2
+|     `===< 0x00000560      ble   .-66
+|       :   0x00000562      mov.w @(-2,er6),r2
+|       :   0x00000566      inc.w #0x1,r2
+|       :   0x00000568      mov.w r2,@(-2,er6)
+|       :   0x0000056c      mov.w @(-2,er6),r2
+|       :   0x00000570      and.w #0x3,r2
+|       :   0x00000574      mov.w r2,@(-2,er6)
+\       `=< 0x00000578      bra   .-136
+.-----------------------------------.
+|  0x150                            |
+|   ; CALL XREF from entry0 @ 0x4b4 |
+| loc._test_branch();               |
+| push.l er6                        |
+| mov.l er7,er6                     |
+| subs #0x4,r7                      |
+| mov.w #0x5,r2                     |
+| mov.w r2,@(-2,er6)                |
+| mov.w #0x3,r2                     |
+| mov.w r2,@(-4,er6)                |
+| mov.w @(-2,er6),r3                |
+| mov.w @(-4,er6),r2                |
+| cmp.w r2,r3                       |
+| ble .+10                          |
+`-----------------------------------'
+        f t
+        | |
+        | '--------------.
+     .--'                |
+     |                   |
+ .-------------------.   |
+ |  0x174            |   |
+ | mov.l #0xf7a9,er2 |   |
+ | mov.b #0x9,r3l    |   |
+ | mov.b r3l,@er2    |   |
+ `-------------------'   |
+     v                   |
+     |                   |
+     '----------.        |
+                | .------'
+                | |
+          .--------------.
+          |  0x17e       |
+          | ;-- .L11:    |
+          | nop          |
+          | adds #0x4,r7 |
+          | pop.l er6    |
+          | rts          |
+          `--------------'
+EOF
+RUN
