@@ -562,7 +562,7 @@ static RzILOpEffect *ccr_cmp(RzILOpPure *a, RzILOpPure *b, RzILOpBool *c, ut8 n,
 	RzILOpPure *res = SUB3(SIGNED(n * 2, DUP(a)), SIGNED(n * 2, DUP(b)), BOOL_TO_BV(DUP(c), n * 2));
 	RzILOpPure *N = NON_ZERO(LOGAND(res, UN(n * 2, 1ULL << (n - 1))));
 	RzILOpPure *Z = IS_ZERO(DUP(res));
-	RzILOpPure *C = SLT(DUP(a), DUP(b));
+	RzILOpPure *C = ULT(DUP(a), DUP(b));
 	RzILOpPure *V = AND(BNE(MSB(DUP(a)), MSB(DUP(b))), BNE(MSB(DUP(a)), DUP(N)));
 	return SEQ5(
 		ccr_set(CCR_H, H),

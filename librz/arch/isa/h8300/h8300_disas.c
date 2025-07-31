@@ -436,7 +436,7 @@ static int decode_i16r16_4(const ut8 *bytes, struct h8300_cmd *cmd) {
 
 	cmd->fmt = H8300_INSN_FORMAT_IMMR16;
 	OPS_ADD(H8300_OP_IMM, imm, imm);
-	OPS_ADD(H8300_OP_R16, reg, bytes[1] & 0x7);
+	OPS_ADD(H8300_OP_R16, reg, r16_low(bytes[1]));
 	return ret;
 }
 
