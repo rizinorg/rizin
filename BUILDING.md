@@ -132,6 +132,34 @@ copied on other systems if necessary. On *NIX systems, this adds the classic
 $ meson --buildtype=release --default-library=static -Dstatic_runtime=true build
 ```
 
+## Build and generate coverage report
+
+Use `-Db_coverage=true` during the setup phase.
+
+```
+$ meson -Db_coverage=true --buildtype=debug build
+```
+
+Run the command you need the coverage for.
+
+```sh
+# For example the ARM asm tests
+rz-test test/db/asm/arm*
+```
+
+Generate the coverage report as HTML with `gcovr`.
+
+```bash
+# Install gcovr via pip or any other way
+pip install gcovr
+mkdir cov_report
+cd cov_report
+# Generate coverage report for each directory and file
+gcovr -r .. --html-nested coverage.html
+```
+
+Open `coverage.html` in your browser and explore.
+
 ## Cross-compilation for Android
 
 You can cross-compile rizin from your main machine to target your Android
