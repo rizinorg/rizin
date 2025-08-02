@@ -260,7 +260,9 @@ static int h8300_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 			op->ptr = INS_OP(0).imm;
 			op->disp = INS_OP(0).imm;
 			break;
-		default: break;
+		default:
+			op->type = RZ_ANALYSIS_OP_TYPE_ICALL;
+			break;
 		}
 		op->fail = addr + cmd.size;
 		op->stackop = RZ_ANALYSIS_STACK_DEC;
