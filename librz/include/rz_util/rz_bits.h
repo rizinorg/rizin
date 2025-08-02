@@ -74,6 +74,30 @@ static inline int rz_bits_leading_zeros(ut64 x) {
 #endif
 }
 
+/**
+ * \brief Sign-extends a value from a specified bit-width to full width of type.
+ *
+ * This macro defines an inline function that performs sign extension on an
+ * unsigned integer value of `bits` significant bits, extending it to a signed
+ * integer of full bit-width `B`. It works for 8, 16, 32, and 64-bit integers.
+ *
+ * The function shifts the value left to discard higher bits, then arithmetically
+ * shifts it back right, preserving the sign.
+ *
+ * \param value The input unsigned integer of type ut##B.
+ * \param bits The number of significant bits in `value` (must be less than or equal to B).
+ * \return The sign-extended signed integer of type st##B.
+ */
+#define SIGN_EXT_IMPL(B) \
+	static inline st##B rz_bits_sign_ext##B(ut##B value, ut##B bits) { \
+		return (st##B)(value << (B - bits)) >> (B - bits); \
+	}
+
+SIGN_EXT_IMPL(8);
+SIGN_EXT_IMPL(16);
+SIGN_EXT_IMPL(32);
+SIGN_EXT_IMPL(64);
+
 #ifdef __cplusplus
 }
 #endif

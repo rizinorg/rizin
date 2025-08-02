@@ -3,6 +3,7 @@
 
 #include <rz_types.h>
 #include <rz_util.h>
+#include <rz_util/rz_bits.h>
 #include "h8300_disas.h"
 
 #define OPS_ADD(T, F, X) \
@@ -229,9 +230,6 @@ const char *h8300_get_register32_name(ut8 id) {
 	return register32_names[id];
 }
 
-#define SIGN_EXT(value, bits) \
-	((int)((unsigned int)(value) << (32 - (bits))) >> (32 - (bits)))
-
 static ut32 read_abs8(const ut8 *bytes, ut32 off) {
 	ut8 x = rz_read_at_be8(bytes, off);
 	return (ut32)x | 0xffff00;
@@ -239,7 +237,7 @@ static ut32 read_abs8(const ut8 *bytes, ut32 off) {
 
 static ut32 read_abs16(const ut8 *bytes, ut32 off) {
 	ut16 x = rz_read_at_be16(bytes, off);
-	st32 sx32 = SIGN_EXT(x, 16);
+	st32 sx32 = rz_bits_sign_ext32(x, 16);
 	return sx32 & 0xffffff;
 }
 
@@ -248,7 +246,7 @@ static ut32 read_abs24(const ut8 *bytes, ut32 off) {
 }
 
 #define read_abs(T, BS)  read_abs##T(BS, (ret - T / 8))
-#define read_disp(T, BS) (SIGN_EXT(rz_read_at_be##T(BS, (ret - T / 8)), T))
+#define read_disp(T, BS) (rz_bits_sign_ext32(rz_read_at_be##T(BS, (ret - T / 8)), T))
 
 static ut8 r8_low(ut8 x) {
 	return x & 0xf;
@@ -413,7 +411,7 @@ static int decode_xr32(const ut8 *bytes, struct h8300_cmd *cmd, ut16 x) {
 
 static int decode_pc_rel(const ut8 *bytes, struct h8300_cmd *cmd) {
 	int ret = 2;
-	st16 disp = SIGN_EXT(bytes[1], 8);
+	st32 disp = rz_bits_sign_ext32(bytes[1], 8);
 
 	cmd->fmt = H8300_INSN_FORMAT_PCREL8;
 	OPS_ADD(H8300_OP_PCREL, disp, disp);
@@ -422,7 +420,7 @@ static int decode_pc_rel(const ut8 *bytes, struct h8300_cmd *cmd) {
 
 static int decode_pc_rel16(const ut8 *bytes, struct h8300_cmd *cmd) {
 	int ret = 4;
-	st16 disp = SIGN_EXT(rz_read_at_be16(bytes, 2), 16);
+	st32 disp = rz_bits_sign_ext32(rz_read_at_be16(bytes, 2), 16);
 
 	cmd->fmt = H8300_INSN_FORMAT_PCREL8;
 	OPS_ADD(H8300_OP_PCREL, disp, disp);
