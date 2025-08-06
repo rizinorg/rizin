@@ -603,3 +603,63 @@ EXPECT=<<EOF
 \           0x100002f14      ret
 EOF
 RUN
+
+NAME=cxx class analysis for classes with multiple vtables & w/o rtti (x86)
+FILE=bins/elf/analysis/x86-no-rtti-class-multi-vtable
+CMDS=<<EOF
+aaaa
+avD @ main
+pdf @ main
+EOF
+EXPECT=<<EOF
+            ; DATA XREF from sym._start_c @ 0x40086b
+            ;-- rip:
+/ int main(int argc, char **argv, char **envp);
+|           ; var struct Dog *var_20h @ stack - 0x20
+|           0x004009ad      push  rbp
+|           0x004009ae      mov   rbp, rsp
+|           0x004009b1      push  r12
+|           0x004009b3      push  rbx
+|           0x004009b4      sub   rsp, 0x10
+|           0x004009b8      mov   edi, 0x10                            ; rsi
+|           0x004009bd      call  sym.imp.operator_new_unsigned_long
+|           0x004009c2      mov   rbx, rax
+|           0x004009c5      mov   rdi, rbx                             ; int64_t arg1
+|           0x004009c8      call  method.Dog.Dog                       ;  method.Dog.Dog(int64_t arg1)
+|           0x004009cd      mov   qword [var_20h], rbx
+|           0x004009d1      mov   rax, qword [var_20h]
+|           0x004009d5      mov   rax, qword [rax]
+|           0x004009d8      add   rax, 0x18                            ; 24
+|           0x004009dc      mov   rdx, qword [rax]
+|           0x004009df      mov   rax, qword [var_20h]
+|           0x004009e3      mov   rdi, rax
+|           0x004009e6      call  rdx                                  ; Virtual Call : method.Dog.walk
+|           ;-- rbp:
+|           0x004009e8      mov   rax, qword [var_20h]
+|           0x004009ec      mov   rax, qword [rax]
+|           0x004009ef      add   rax, 0x10                            ; rsi
+|           0x004009f3      mov   rdx, qword [rax]
+|           0x004009f6      mov   rax, qword [var_20h]
+|           0x004009fa      mov   rdi, rax
+|           0x004009fd      call  rdx                                  ; Virtual Call : method.Dog.eat / sym.non_virtual_thunk_to_Dog::walk
+|           ;-- r12:
+|           0x004009ff      mov   rax, qword [var_20h]
+|           0x00400a03      test  rax, rax
+|       ,=< 0x00400a06      jz    0x400a17
+|       |   0x00400a08      mov   rdx, qword [rax]
+|       |   0x00400a0b      add   rdx, 0x08
+|       |   0x00400a0f      mov   rdx, qword [rdx]
+|       |   0x00400a12      mov   rdi, rax
+|       |   0x00400a15      call  rdx                                  ; Virtual Call : sym.non_virtual_thunk_to_Dog::_Dog_0x400ca5 / sym.Dog::_Dog_0x400c7a
+|       |   ;-- rbx:
+|       `-> 0x00400a17      mov   eax, 0x00
+|       ,=< 0x00400a1c      jmp   0x400a39
+..
+|       |   ; CODE XREF from main @ 0x400a1c
+|       `-> 0x00400a39      add   rsp, 0x10
+|           0x00400a3d      pop   rbx
+|           0x00400a3e      pop   r12
+|           0x00400a40      pop   rbp
+\           0x00400a41      ret
+EOF
+RUN

@@ -96,6 +96,7 @@ RZ_API void rz_analysis_rtti_recover_all(RzAnalysis *analysis) {
 		} else {
 			rz_analysis_rtti_itanium_recover_all(&context, vtables);
 		}
+		rz_analysis_no_rtti_analysis(&context, vtables);
 	}
 	rz_list_free(vtables);
 	rz_cons_break_pop();

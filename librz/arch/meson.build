@@ -425,6 +425,7 @@ arch_common_sources = [
   'jmptbl.c',
   'labels.c',
   'meta.c',
+  'no_rtti.c',
   'op.c',
   'parse.c',
   'parse_helper.c',
