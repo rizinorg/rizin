@@ -688,6 +688,10 @@ struct rz_il_op_pure_t {
 	} op;
 };
 
+typedef RzILOpBool *(rz_il_bool_2args_op)(RzILOpBitVector *, RzILOpBitVector *);
+typedef RzILOpBitVector *(rz_il_pure_2args_op)(RzILOpBitVector *, RzILOpBitVector *);
+typedef RzILOpBitVector *(rz_il_pure_3args_op)(RzILOpBitVector *, RzILOpBitVector *, RzILOpBitVector *);
+
 RZ_API void rz_il_op_pure_free(RZ_NULLABLE RzILOpPure *op);
 RZ_API RzILOpPure *rz_il_op_pure_dup(RZ_NONNULL RzILOpPure *op);
 

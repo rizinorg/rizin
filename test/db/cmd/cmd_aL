@@ -51,7 +51,7 @@ _dA__ 32         rsp         LGPL3   Nintendo N64 Reality Signal Processor disas
 _dA__ 32         rx          LGPL3   Renesas RX Family disassembler (by Heersin)
 adAeI 32         sh          LGPL3   Hitachi/Renesas SuperH-4 disassembler (by DMaroo)
 _dA__ 8 16       snes        LGPL3   SuperNES CPU disassembler
-_dA__ 32 64      sparc       BSD     Sun SPARC Capstone-based disassembler
+_dA_I 32 64      sparc       BSD     Sun SPARC Capstone-based disassembler
 _dA__ 16         spc700      LGPL3   Sony SPC700 (Nintendo SuperNES sound-chip) disassembler
 _dA__ 32 64      sysz        BSD     IBM SystemZ (S/390) Capstone-based disassembler
 _dA__ 32         tms320      LGPL3   Texas Instruments TMS320 DSP family (c54x,c55x,c55x+,c64x) disassembler

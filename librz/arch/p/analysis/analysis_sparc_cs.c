@@ -6,27 +6,9 @@
 #include <capstone/capstone.h>
 #include <capstone/sparc.h>
 
-#define INSDETAIL() insn->detail->sparc
-#define INSOP(n)    insn->detail->sparc.operands[n]
-#if CS_API_MAJOR >= 6
-#define INSCC_NORM() (insn->detail->sparc.cc & ~(SPARC_CC_FCC_BEGIN | SPARC_CC_CPCC_BEGIN | SPARC_CC_REG_BEGIN))
-#else
-#define INSCC_NORM() (insn->detail->sparc.cc)
-#endif
-#define INSCC_RAW() (insn->detail->sparc.cc)
-#define INSHINT()   (insn->detail->sparc.hint)
-
-#define IN_64BIT_MODE   ((mode & CS_MODE_64) == CS_MODE_64)
-#define SPARC_ARCH_BITS (IN_64BIT_MODE ? 64 : 32)
-
-#define SPARC_INSN_SIZE 4
-
-#define SPARC_BYTE          (8 * 1)
-#define SPARC_HALF_WORD     (8 * 2)
-#define SPARC_WORD          (8 * 4)
-#define SPARC_DOUBLE_WORD   (8 * 8)
-#define SPARC_EXTENDED_WORD (8 * 8)
-#define SPARC_QUAD_WORD     (8 * 16)
+#include "isa/sparc/sparc_il.h"
+#include "rz_il/rz_il_opcodes.h"
+#include "rz_util/rz_assert.h"
 
 static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
@@ -89,16 +71,11 @@ static int parse_reg_name(RzRegItem *reg, csh handle, cs_insn *insn, int reg_num
 	return 0;
 }
 
-typedef struct {
-	RzRegItem *reg;
-	csh handle;
-	int omode;
-} RzAnalysisValueSPARC;
-
 static bool sparc_init(void **user) {
 	RzAnalysisValueSPARC *sparc = RZ_NEW0(RzAnalysisValueSPARC);
 	rz_return_val_if_fail(sparc, false);
 	sparc->handle = 0;
+	sparc->delayed_branch = ht_up_new(NULL, NULL);
 	*user = sparc;
 	return true;
 }
@@ -167,9 +144,30 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	n = cs_disasm(sparc->handle, (const ut8 *)buf, len, addr, 1, &insn);
 	if (n < 1) {
 		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
-		cs_free(insn, n);
 		return 0;
 	}
+#if CS_API_MAJOR >= 6
+	if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+		bool has_delayed_branch = false;
+		RzSparcDelatedBranchOp *delayed_branch = ht_up_find(sparc->delayed_branch, addr, &has_delayed_branch);
+
+		op->il_op = rz_sparc_cs_get_il_op(sparc->handle, insn, mode, sparc);
+		if (has_delayed_branch) {
+			if (op->il_op && delayed_branch->cond) {
+				// The branch is conditionally and annuls the delay slot if not taken (skips op->il_op).
+				op->il_op = rz_il_op_new_branch(delayed_branch->cond,
+					rz_il_op_new_seq(delayed_branch->set_ea, rz_il_op_new_seq(op->il_op, delayed_branch->perform_jmp)),
+					delayed_branch->perform_fail_jmp);
+			} else if (op->il_op) {
+				op->il_op = rz_il_op_new_seq(delayed_branch->set_ea, rz_il_op_new_seq(op->il_op, delayed_branch->perform_jmp));
+			}
+			// Just free the RzSparcDelatedBranchOp struct.
+			// The effects are freed by the SEQ handler.
+			free(delayed_branch);
+			ht_up_delete(sparc->delayed_branch, addr);
+		}
+	}
+#endif
 	if (mask & RZ_ANALYSIS_OP_MASK_OPEX) {
 		opex(&op->opex, sparc->handle, insn);
 	}
@@ -388,59 +386,329 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 }
 
 static char *get_reg_profile(RzAnalysis *analysis) {
-	const char *p =
-		"=PC	pc\n"
-		"=SP	sp\n"
-		"=BP	fp\n"
-		"=A0	i0\n"
-		"=A1	i1\n"
-		"=A2	i2\n"
-		"=A3	i3\n"
-		"=A4	i4\n"
-		"=A5	i5\n"
-		"=R0	i7\n"
-		"gpr	psr	.32	0	0\n"
-		"gpr	pc	.32	4	0\n"
-		"gpr	npc	.32	8	0\n"
-		"gpr	y	.32	12	0\n"
-		/* r0-r7 are global aka g0-g7 */
-		"gpr	g0	.32	16	0\n"
-		"gpr	g1	.32	20	0\n"
-		"gpr	g2	.32	24	0\n"
-		"gpr	g3	.32	28	0\n"
-		"gpr	g4	.32	32	0\n"
-		"gpr	g5	.32	36	0\n"
-		"gpr	g6	.32	40	0\n"
-		"gpr	g7	.32	44	0\n"
-		/* r8-15 are out (o0-o7) */
-		"gpr	o0	.32	48	0\n"
-		"gpr	o1	.32	52	0\n"
-		"gpr	o2	.32	56	0\n"
-		"gpr	o3	.32	60	0\n"
-		"gpr	o4	.32	64	0\n"
-		"gpr	o5	.32	68	0\n"
-		"gpr	o6	.32	72	0\n"
-		"gpr	sp	.32	72	0\n"
-		"gpr	o7	.32	76	0\n"
-		/* r16-23 are local (l0-l7) */
-		"gpr	l0	.32	80	0\n"
-		"gpr	l1	.32	84	0\n"
-		"gpr	l2	.32	88	0\n"
-		"gpr	l3	.32	92	0\n"
-		"gpr	l4	.32	96	0\n"
-		"gpr	l5	.32	100	0\n"
-		"gpr	l6	.32	104	0\n"
-		"gpr	l7	.32	108	0\n"
-		/* r24-31 are in (i0-i7) */
-		"gpr	i0	.32	112	0\n"
-		"gpr	i1	.32	116	0\n"
-		"gpr	i2	.32	120	0\n"
-		"gpr	i3	.32	124	0\n"
-		"gpr	i4	.32	128	0\n"
-		"gpr	i5	.32	132	0\n"
-		"gpr	i6	.32	136	0\n"
-		"gpr	fp	.32	136	0\n"
-		"gpr	i7	.32	140	0\n";
+	const char *p = NULL;
+	if (analysis->bits == 32) {
+		// Sparc V8
+		p =
+			"=PC	pc\n"
+			"=SP	sp\n"
+			"=BP	fp\n"
+			// These are defined from the callees point of view.
+			// Meaning: The in-registers of the callee are the out-registers of the caller.
+			"=A0	i0\n"
+			"=A1	i1\n"
+			"=A2	i2\n"
+			"=A3	i3\n"
+			"=A4	i4\n"
+			"=A5	i5\n"
+
+			"=R0	i0\n"
+			"=R1	i1\n"
+			"=R2	i2\n"
+			"=R3	i3\n"
+
+			"gpr	psr	.32	0	0\n"
+			"gpr	pc	.32	4	0\n"
+			"gpr	npc	.32	8	0\n"
+			"gpr	y	.32  	12	0\n"
+			"gpr	tbr	.32	16	0\n"
+			"gpr	wim	.32	20	0\n"
+			"gpr	asr	.32	24	0\n"
+			"gpr	fsr	.32	28	0\n"
+			"gpr	csr	.32	36	0\n"
+			"gpr	asi	.32	40	0\n"
+			/* r0-r7 are global aka g0-g7 */
+			"gpr	g0	.32	44	0\n"
+			"gpr	g1	.32	48	0\n"
+			"gpr	g2	.32	52	0\n"
+			"gpr	g3	.32	56	0\n"
+			"gpr	g4	.32	60	0\n"
+			"gpr	g5	.32	64	0\n"
+			"gpr	g6	.32	68	0\n"
+			"gpr	g7	.32	72	0\n"
+			/* r8-15 are out (o0-o7) */
+			"gpr	o0	.32	76	0\n"
+			"gpr	o1	.32	80	0\n"
+			"gpr	o2	.32	84	0\n"
+			"gpr	o3	.32	88	0\n"
+			"gpr	o4	.32	92	0\n"
+			"gpr	o5	.32	96	0\n"
+			"gpr	sp	.32	100	0\n"
+			"gpr	o7	.32	104	0\n"
+			/* r16-23 are local (l0-l7) */
+			"gpr	l0	.32	108	0\n"
+			"gpr	l1	.32	112	0\n"
+			"gpr	l2	.32	116	0\n"
+			"gpr	l3	.32	120	0\n"
+			"gpr	l4	.32	124	0\n"
+			"gpr	l5	.32	128	0\n"
+			"gpr	l6	.32	132	0\n"
+			"gpr	l7	.32	136	0\n"
+			/* r24-31 are in (i0-i7) */
+			"gpr	i0	.32	140	0\n"
+			"gpr	i1	.32	144	0\n"
+			"gpr	i2	.32	148	0\n"
+			"gpr	i3	.32	152	0\n"
+			"gpr	i4	.32	156	0\n"
+			"gpr	i5	.32	160	0\n"
+			"gpr	fp	.32	164	0\n"
+			"gpr	i7	.32	168	0\n"
+			"ctr	ccr	.8	172	0\n"
+			// Those are technically not part of the Sparc V8 ISA.
+			// But for simplicity we define them here so
+			// the RzIL implementation is easier.
+			// Also tnpc is used by rett.
+			"sys	tpc					.32 180 0\n"
+			"sys	tnpc				.32 184 0\n"
+			"sys	tstate			.32 188 0\n"
+			"sys	tt					.32 192 0\n"
+			"sys	tick				.32 196 0\n"
+			"sys	tba					.32 200 0\n"
+			"sys	pstate			.32 204 0\n"
+			"sys	tl					.32 208 0\n"
+			"sys	pil					.32 212 0\n"
+			"sys	cwp					.32 216 0\n"
+			"sys	cansave			.32 220 0\n"
+			"sys	canrestore	.32 224 0\n"
+			"sys	cleanwin		.32 228 0\n"
+			"sys	otherwin		.32 232 0\n"
+			"sys	wstate			.32 236 0\n"
+			"sys	fq					.32 240 0\n"
+			"sys	ver					.32 244 0\n"
+			"fpu	f0					.32 248 0\n"
+			"fpu	f1					.32 252 0\n"
+			"fpu	f2					.32 256 0\n"
+			"fpu	f3					.32 260 0\n"
+			"fpu	f4					.32 264 0\n"
+			"fpu	f5					.32 268 0\n"
+			"fpu	f6					.32 272 0\n"
+			"fpu	f7					.32 276 0\n"
+			"fpu	f8					.32 280 0\n"
+			"fpu	f9					.32 284 0\n"
+			"fpu	f10					.32 288 0\n"
+			"fpu	f11					.32 292 0\n"
+			"fpu	f12					.32 296 0\n"
+			"fpu	f13					.32 300 0\n"
+			"fpu	f14					.32 304 0\n"
+			"fpu	f15					.32 308 0\n"
+			"fpu	f16					.32 312 0\n"
+			"fpu	f17					.32 316 0\n"
+			"fpu	f18					.32 320 0\n"
+			"fpu	f19					.32 324 0\n"
+			"fpu	f20					.32 328 0\n"
+			"fpu	f21					.32 332 0\n"
+			"fpu	f22					.32 336 0\n"
+			"fpu	f23					.32 340 0\n"
+			"fpu	f24					.32 344 0\n"
+			"fpu	f25					.32 348 0\n"
+			"fpu	f26					.32 352 0\n"
+			"fpu	f27					.32 356 0\n"
+			"fpu	f28					.32 360 0\n"
+			"fpu	f29					.32 364 0\n"
+			"fpu	f30					.32 368 0\n"
+			"fpu	f31					.32 372 0\n"
+			"ctr	asr0				.32 376 0\n"
+			"ctr	asr1				.32 380 0\n"
+			"ctr	asr2				.32 384 0\n"
+			"ctr	asr3				.32 388 0\n"
+			"ctr	asr4				.32 392 0\n"
+			"ctr	asr5				.32 396 0\n"
+			"ctr	asr6				.32 400 0\n"
+			"ctr	asr7				.32 404 0\n"
+			"ctr	asr8				.32 408 0\n"
+			"ctr	asr9				.32 412 0\n"
+			"ctr	asr10				.32 416 0\n"
+			"ctr	asr11				.32 420 0\n"
+			"ctr	asr12				.32 424 0\n"
+			"ctr	asr13				.32 428 0\n"
+			"ctr	asr14				.32 432 0\n"
+			"ctr	asr15				.32 436 0\n"
+			"ctr	asr16				.32 440 0\n"
+			"ctr	asr17				.32 444 0\n"
+			"ctr	asr18				.32 448 0\n"
+			"ctr	asr19				.32 452 0\n"
+			"ctr	asr20				.32 456 0\n"
+			"ctr	asr21				.32 460 0\n"
+			"ctr	asr22				.32 464 0\n"
+			"ctr	asr23				.32 468 0\n"
+			"ctr	asr24				.32 472 0\n"
+			"ctr	asr25				.32 476 0\n"
+			"ctr	asr26				.32 480 0\n"
+			"ctr	asr27				.32 484 0\n"
+			"ctr	asr28				.32 488 0\n"
+			"ctr	asr29				.32 492 0\n"
+			"ctr	asr30				.32 496 0\n"
+			"ctr	asr31				.32 500 0\n"
+			"ctr	fprs				.3 504 0\n";
+	} else if (analysis->bits == 64) {
+		// Sparc V9 and later liek from Oracle
+		p =
+			"=PC	pc\n"
+			"=SP	sp\n"
+			"=BP	fp\n"
+			// These are defined from the callees point of view.
+			// Meaning: The in-registers of the callee are the out-registers of the caller.
+			"=A0	i0\n"
+			"=A1	i1\n"
+			"=A2	i2\n"
+			"=A3	i3\n"
+			"=A4	i4\n"
+			"=A5	i5\n"
+
+			"=R0	i0\n"
+			"=R1	i1\n"
+			"=R2	i2\n"
+			"=R3	i3\n"
+
+			// PSR, WIM and TBR are replaced by several other registers.
+			// From V9 onwards.
+			"gpr	pc	.64	0	0\n"
+			"gpr	npc	.64	8	0\n"
+			"gpr	y	.64	16	0\n"
+			"gpr	asr	.64	24	0\n"
+			"gpr	fsr	.64	32	0\n"
+			"gpr	csr	.64	48	0\n"
+			"gpr	asi	.64	56	0\n"
+			/* r0-r7 are global aka g0-g7 */
+			"gpr	g0	.64	64	0\n"
+			"gpr	g1	.64	72	0\n"
+			"gpr	g2	.64	80	0\n"
+			"gpr	g3	.64	88	0\n"
+			"gpr	g4	.64	96	0\n"
+			"gpr	g5	.64	104	0\n"
+			"gpr	g6	.64	112	0\n"
+			"gpr	g7	.64	120	0\n"
+			/* r8-15 are out (o0-o7) */
+			"gpr	o0	.64	128	0\n"
+			"gpr	o1	.64	136	0\n"
+			"gpr	o2	.64	144	0\n"
+			"gpr	o3	.64	152	0\n"
+			"gpr	o4	.64	160	0\n"
+			"gpr	o5	.64	168	0\n"
+			"gpr	sp	.64	176	0\n"
+			"gpr	o7	.64	184	0\n"
+			/* r16-23 are local (l0-l7) */
+			"gpr	l0	.64	192	0\n"
+			"gpr	l1	.64	200	0\n"
+			"gpr	l2	.64	208	0\n"
+			"gpr	l3	.64	216	0\n"
+			"gpr	l4	.64	224	0\n"
+			"gpr	l5	.64	232	0\n"
+			"gpr	l6	.64	240	0\n"
+			"gpr	l7	.64	248	0\n"
+			/* r24-31 are in (i0-i7) */
+			"gpr	i0	.64	256	0\n"
+			"gpr	i1	.64	264	0\n"
+			"gpr	i2	.64	272	0\n"
+			"gpr	i3	.64	280	0\n"
+			"gpr	i4	.64	288	0\n"
+			"gpr	i5	.64	296	0\n"
+			"gpr	fp	.64	304	0\n"
+			"gpr	i7	.64	312	0\n"
+			"ctr	ccr	.8	312	0\n"
+			"sys	tpc					.64 320 0\n"
+			"sys	tnpc				.64 328 0\n"
+			"sys	tstate			.64 336 0\n"
+			"sys	tt					.64 344 0\n"
+			"sys	tick				.64 352 0\n"
+			"sys	tba					.64 360 0\n"
+			"sys	pstate			.64 368 0\n"
+			"sys	tl					.64 376 0\n"
+			"sys	pil					.64 384 0\n"
+			"sys	cwp					.64 392 0\n"
+			"sys	cansave			.64 400 0\n"
+			"sys	canrestore	.64 408 0\n"
+			"sys	cleanwin		.64 416 0\n"
+			"sys	otherwin		.64 424 0\n"
+			"sys	wstate			.64 432 0\n"
+			"sys	fq					.64 440 0\n"
+			"sys	ver					.64 448 0\n"
+			"fpu	f0					.32 456 0\n"
+			"fpu	f1					.32 460 0\n"
+			"fpu	f2					.32 464 0\n"
+			"fpu	f3					.32 468 0\n"
+			"fpu	f4					.32 472 0\n"
+			"fpu	f5					.32 476 0\n"
+			"fpu	f6					.32 480 0\n"
+			"fpu	f7					.32 484 0\n"
+			"fpu	f8					.32 488 0\n"
+			"fpu	f9					.32 492 0\n"
+			"fpu	f10					.32 496 0\n"
+			"fpu	f11					.32 500 0\n"
+			"fpu	f12					.32 504 0\n"
+			"fpu	f13					.32 508 0\n"
+			"fpu	f14					.32 512 0\n"
+			"fpu	f15					.32 516 0\n"
+			"fpu	f16					.32 520 0\n"
+			"fpu	f17					.32 524 0\n"
+			"fpu	f18					.32 528 0\n"
+			"fpu	f19					.32 532 0\n"
+			"fpu	f20					.32 536 0\n"
+			"fpu	f21					.32 540 0\n"
+			"fpu	f22					.32 544 0\n"
+			"fpu	f23					.32 548 0\n"
+			"fpu	f24					.32 552 0\n"
+			"fpu	f25					.32 556 0\n"
+			"fpu	f26					.32 560 0\n"
+			"fpu	f27					.32 564 0\n"
+			"fpu	f28					.32 568 0\n"
+			"fpu	f29					.32 572 0\n"
+			"fpu	f30					.32 576 0\n"
+			"fpu	f31					.32 580 0\n"
+			"fpu	f32					.64 584 0\n"
+			"fpu	f34					.64 592 0\n"
+			"fpu	f36					.64 600 0\n"
+			"fpu	f38					.64 608 0\n"
+			"fpu	f40					.64 616 0\n"
+			"fpu	f42					.64 624 0\n"
+			"fpu	f44					.64 632 0\n"
+			"fpu	f46					.64 640 0\n"
+			"fpu	f48					.64 648 0\n"
+			"fpu	f50					.64 656 0\n"
+			"fpu	f52					.64 664 0\n"
+			"fpu	f54					.64 672 0\n"
+			"fpu	f56					.64 680 0\n"
+			"fpu	f58					.64 688 0\n"
+			"fpu	f60					.64 696 0\n"
+			"fpu	f62					.64 704 0\n"
+			"ctr	gsr					.64 712 0\n"
+			"ctr	fprs				.3 720 0\n"
+			"ctr	asr0				.64 728 0\n"
+			"ctr	asr1				.64 736 0\n"
+			"ctr	asr2				.64 744 0\n"
+			"ctr	asr3				.64 752 0\n"
+			"ctr	asr4				.64 760 0\n"
+			"ctr	asr5				.64 768 0\n"
+			"ctr	asr6				.64 776 0\n"
+			"ctr	asr7				.64 784 0\n"
+			"ctr	asr8				.64 792 0\n"
+			"ctr	asr9				.64 800 0\n"
+			"ctr	asr10				.64 808 0\n"
+			"ctr	asr11				.64 816 0\n"
+			"ctr	asr12				.64 824 0\n"
+			"ctr	asr13				.64 832 0\n"
+			"ctr	asr14				.64 840 0\n"
+			"ctr	asr15				.64 848 0\n"
+			"ctr	asr16				.64 856 0\n"
+			"ctr	asr17				.64 864 0\n"
+			"ctr	asr18				.64 872 0\n"
+			"ctr	asr19				.64 880 0\n"
+			"ctr	asr20				.64 888 0\n"
+			"ctr	asr21				.64 896 0\n"
+			"ctr	asr22				.64 904 0\n"
+			"ctr	asr23				.64 912 0\n"
+			"ctr	asr24				.64 920 0\n"
+			"ctr	asr25				.64 928 0\n"
+			"ctr	asr26				.64 936 0\n"
+			"ctr	asr27				.64 944 0\n"
+			"ctr	asr28				.64 952 0\n"
+			"ctr	asr29				.64 960 0\n"
+			"ctr	asr30				.64 968 0\n"
+			"ctr	asr31				.64 976 0\n";
+	} else {
+		rz_warn_if_reached();
+		return NULL;
+	}
 	return rz_str_dup(p);
 }
 
@@ -464,9 +732,27 @@ static int archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
 static bool sparc_fini(void *user) {
 	RzAnalysisValueSPARC *sparc = (RzAnalysisValueSPARC *)user;
 	if (sparc) {
+		RzIterator *iter = ht_up_as_iter(sparc->delayed_branch);
+		RzSparcDelatedBranchOp **eff;
+		rz_iterator_foreach(iter, eff) {
+			rz_il_op_effect_free((*eff)->perform_fail_jmp);
+			rz_il_op_effect_free((*eff)->perform_jmp);
+			rz_il_op_effect_free((*eff)->set_ea);
+			free(*eff);
+		}
+		ht_up_free(sparc->delayed_branch);
+		rz_iterator_free(iter);
+
 		RZ_FREE(sparc);
 	}
 	return true;
+}
+
+static RzAnalysisILConfig *il_config(RzAnalysis *analysis) {
+	if (analysis->bits == 64) {
+		return rz_sparc_cs_64_il_config(analysis->big_endian);
+	}
+	return rz_sparc_cs_32_il_config(analysis->big_endian);
 }
 
 RzAnalysisPlugin rz_analysis_plugin_sparc_cs = {
@@ -481,6 +767,7 @@ RzAnalysisPlugin rz_analysis_plugin_sparc_cs = {
 	.init = sparc_init,
 	.fini = sparc_fini,
 	.get_reg_profile = &get_reg_profile,
+	.il_config = il_config,
 };
 
 #ifndef RZ_PLUGIN_INCORE
