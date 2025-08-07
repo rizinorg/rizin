@@ -359,7 +359,6 @@ if get_option('use_gpl')
     'hppa_gnu',
     'lanai_gnu',
     'riscv_gnu',
-    'sparc_gnu',
     'vax_gnu',
     'z80_gnu',
   ]
@@ -371,7 +370,6 @@ if get_option('use_gpl')
     'p_gnu/arch_hppa.c',
     'p_gnu/arch_lanai.c',
     'p_gnu/arch_riscv.c',
-    'p_gnu/arch_sparc.c',
     'p_gnu/arch_vax.c',
     'p_gnu/arch_z80.c',
   ]
@@ -389,7 +387,6 @@ if get_option('use_gpl')
     'isa_gnu/lanai/lanai-opc.c',
     # 'isa_gnu/riscv/riscv-opc.c',
     # 'isa_gnu/riscv/riscv.c',
-    'isa_gnu/sparc/sparc-dis.c',
     'isa_gnu/sparc/sparc-opc.c',
     'isa_gnu/vax/vax-dis.c',
     # 'isa_gnu/z80/expressions.c',
