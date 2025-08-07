@@ -91,21 +91,26 @@ static RzAnalysisMethod get_class_method(RzAnalysis *analysis, RVTableMethodInfo
 }
 
 /**
- * \param context Vtble context object
- * \param vtables List of virtual tables
- * \brief Runs non-rtti required analysis on binaries
+ * \param analysis Rizin analysis object
+ * \param vtable_info Information about current virtual table
+ * \param addr_vect Vector of addresses to calculate xrefs to. For first call, this should have a single address pointing to vtable saadr
+ * \param method_class_map Map between methods and their class
+ * \param depth Recursion depth, for first call, it should be 0
+ * \brief Recursively calculates xrefs to virtual tables. Stops analysis when the first class method (in a branch) is discovered which uses the vtable.
  */
-RZ_API void rz_analysis_no_rtti_analysis(RVTableContext *context, RzList /*<RVTableInfo *>*/ *vtables) {
-	RzAnalysis *analysis = context->analysis;
-	RzCore *core = analysis->core;
+static void xrefs_to_vtables_recursive(RzAnalysis *analysis, RVTableInfo *vtable_info, RzVector /*<ut64>*/ *addr_vect, HtSS *method_class_map, ut16 depth) {
+	// Limiting the depth because class virtual table analysis is generally done in first few depths.
+	// This prevents redundant recursive analysis of vtables containing debug functions / non-virtual method vtables
+	if (rz_vector_len(addr_vect) == 0 || depth == 5) {
+		return;
+	}
+	RzVector *new_addr_vect = rz_vector_new(sizeof(ut64), NULL, NULL);
+	ut64 *it;
 
-	HtSS *method_class_map = ht_ss_new(HT_STR_DUP, HT_STR_DUP);
-	get_method_class_map(core, method_class_map);
-
-	RzListIter *it;
-	RVTableInfo *vtable_info;
-	rz_list_foreach (vtables, it, vtable_info) {
-		RzList *xref_list = rz_analysis_xrefs_get_to(analysis, vtable_info->saddr);
+	bool found = false;
+	rz_vector_foreach (addr_vect, it) {
+		ut64 addr = *it;
+		RzList *xref_list = rz_analysis_xrefs_get_to(analysis, addr);
 		if (!xref_list) {
 			continue;
 		}
@@ -116,10 +121,12 @@ RZ_API void rz_analysis_no_rtti_analysis(RVTableContext *context, RzList /*<RVTa
 			if (!func) {
 				continue;
 			}
+			rz_vector_push(new_addr_vect, &func->addr);
 			const char *class_name = class_name_from_method(method_class_map, func);
 			if (!class_name) {
 				continue;
 			}
+			found = true;
 			RzAnalysisVTable vtable = { 0 };
 			vtable.addr = vtable_info->saddr;
 			RVTableMethodInfo *vmethod;
@@ -131,7 +138,33 @@ RZ_API void rz_analysis_no_rtti_analysis(RVTableContext *context, RzList /*<RVTa
 			rz_analysis_class_vtable_set(analysis, class_name, &vtable);
 			rz_analysis_class_vtable_fini(&vtable);
 		}
+		rz_list_free(xref_list);
 	}
+	if (!found) {
+		xrefs_to_vtables_recursive(analysis, vtable_info, new_addr_vect, method_class_map, depth + 1);
+	}
+	rz_vector_free(new_addr_vect);
+}
 
+/**
+ * \brief Runs non-rtti required analysis on binaries : connecting vtables to classes using recursive data xrefs
+ * \param context Vtble context object
+ * \param vtables List of virtual tables
+ */
+RZ_API void rz_analysis_no_rtti_analysis(RZ_NONNULL RVTableContext *context, RZ_NONNULL RzList /*<RVTableInfo *>*/ *vtables) {
+	RzAnalysis *analysis = context->analysis;
+	RzCore *core = analysis->core;
+
+	HtSS *method_class_map = ht_ss_new(HT_STR_DUP, HT_STR_DUP);
+	get_method_class_map(core, method_class_map);
+
+	RzListIter *it;
+	RVTableInfo *vtable_info;
+	rz_list_foreach (vtables, it, vtable_info) {
+		RzVector *addr_vect = rz_vector_new(sizeof(ut64), NULL, NULL);
+		rz_vector_push(addr_vect, &vtable_info->saddr);
+		xrefs_to_vtables_recursive(analysis, vtable_info, addr_vect, method_class_map, 0);
+		rz_vector_free(addr_vect);
+	}
 	ht_ss_free(method_class_map);
 }
