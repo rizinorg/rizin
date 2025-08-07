@@ -108,8 +108,10 @@
 
 #undef LOAD
 #undef LOADW
+#undef LOADWI
 #undef STORE
 #undef STOREW
+#undef STOREWI
 
 #undef VARG
 #undef VARL
