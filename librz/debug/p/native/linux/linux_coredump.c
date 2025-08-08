@@ -79,7 +79,7 @@ static prpsinfo_t *linux_get_prpsinfo(RzDebug *dbg, proc_per_process_t *proc_dat
 
 	p = RZ_NEW0(prpsinfo_t);
 	if (!p) {
-		eprintf("Couldn't allocate memory for prpsinfo_t\n");
+		RZ_LOG_ERROR("Couldn't allocate memory for prpsinfo_t\n");
 		return NULL;
 	}
 
@@ -88,7 +88,7 @@ static prpsinfo_t *linux_get_prpsinfo(RzDebug *dbg, proc_per_process_t *proc_dat
 	file = rz_strf(tmpbuf, "/proc/%d/cmdline", mypid);
 	buffer = rz_file_slurp(file, &len);
 	if (!buffer) {
-		eprintf("buffer NULL\n");
+		RZ_LOG_ERROR("buffer NULL\n");
 		goto error;
 	}
 	buffer[len] = 0;
@@ -527,7 +527,7 @@ static linux_map_entry_t *linux_get_mapped_files(RzDebug *dbg, ut8 filter_flags)
 			pmentry->file_backed = true;
 		}
 		pmentry->dumpeable = dump_this_map(buff_smaps, pmentry, filter_flags);
-		eprintf(fmt_addr " - anonymous: %d, kernel_mapping: %d, file_backed: %d, dumpeable: %d\n",
+		rz_cons_printf(fmt_addr " - anonymous: %d, kernel_mapping: %d, file_backed: %d, dumpeable: %d\n",
 			pmentry->start_addr, pmentry->end_addr,
 			pmentry->anonymous, pmentry->kernel_mapping,
 			pmentry->file_backed, pmentry->dumpeable);
@@ -753,7 +753,7 @@ static bool dump_elf_map_content(RzDebug *dbg, RzBuffer *dest, linux_map_entry_t
 	size_t size;
 	bool ret;
 
-	eprintf("dump_elf_map_content starting\n\n");
+	rz_cons_printf("dump_elf_map_content starting\n\n");
 
 	for (p = head; p; p = p->n) {
 		if (!p->dumpeable) {
@@ -766,16 +766,16 @@ static bool dump_elf_map_content(RzDebug *dbg, RzBuffer *dest, linux_map_entry_t
 		}
 		ret = dbg->iob.read_at(dbg->iob.io, p->start_addr, map_content, size);
 		if (!ret) {
-			eprintf("Problems reading %" PFMTSZd " bytes at %" PFMT64x "\n", size, (ut64)p->start_addr);
+			RZ_LOG_ERROR("Problems reading %" PFMTSZd " bytes at %" PFMT64x "\n", size, (ut64)p->start_addr);
 		} else {
 			ret = rz_buf_append_bytes(dest, (const ut8 *)map_content, size);
 			if (!ret) {
-				eprintf("rz_buf_append_bytes - failed\n");
+				RZ_LOG_ERROR("rz_buf_append_bytes - failed\n");
 			}
 		}
 		free(map_content);
 	}
-	eprintf("dump_elf_map_content - done\n");
+	rz_cons_printf("dump_elf_map_content - done\n");
 	return true;
 }
 
@@ -816,7 +816,7 @@ static proc_per_process_t *get_proc_process_content(RzDebug *dbg) {
 	}
 	if (!p->num_threads || p->num_threads < 1) {
 		free(p);
-		eprintf("Warning: number of threads is < 1\n");
+		RZ_LOG_WARN("number of threads is < 1\n");
 		return NULL;
 	}
 	file = rz_strf(tmpbuf, "/proc/%d/status", dbg->pid);

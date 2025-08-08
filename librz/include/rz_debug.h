@@ -14,9 +14,7 @@
 #include <rz_cmd.h>
 
 #include <rz_config.h>
-#include "rz_bind.h"
-#include "rz_util/rz_assert.h"
-#include "rz_util/rz_str.h"
+#include <rz_bind.h>
 #ifdef __cplusplus
 extern "C" {
 #endif

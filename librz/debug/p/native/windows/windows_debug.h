@@ -10,7 +10,6 @@
  |___|___|
 */
 
-#include <rz_types.h>
 #include <rz_debug.h>
 #include <rz_windows.h>
 #include <tlhelp32.h> // CreateToolhelp32Snapshot
