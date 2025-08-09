@@ -2,10 +2,6 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
 #include "minunit.h"
 
 bool test_rz_base85_encode_dyn_nodelims(void) {
