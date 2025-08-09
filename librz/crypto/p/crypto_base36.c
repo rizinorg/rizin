@@ -27,7 +27,7 @@ static bool update(RzCrypto *cry, const ut8 *buf, int len) {
 
 	if (cry->dir == RZ_CRYPTO_DIR_ENCRYPT) {
 		if (len > 8) { /* > 64‑bit won’t fit in our encoder */
-			eprintf("base36: encoder supports up to 64‑bit values (%d > 8 bytes)\n", len);
+			RZ_LOG_ERROR("base36: encoder supports up to 64‑bit values (%d > 8 bytes)\n", len);
 			return false;
 		}
 		ut64 val = 0;
