@@ -34,23 +34,23 @@ static bool update(RzCrypto *cry, const ut8 *buf, int len) {
 		free(encoded);
 
 	} else {
-    size_t outlen = (size_t)(len / 2 + 1);
-    ut8 *decoded = malloc(outlen);
-    if (!decoded) {
-      return false;
-    }
+		size_t outlen = (size_t)(len / 2 + 1);
+		ut8 *decoded = malloc(outlen);
+		if (!decoded) {
+			return false;
+		}
 
-    st64 decoded_len = rz_base16_decode(decoded, (const char *)buf);
-    if (decoded_len == 0) { // truly invalid
-      free(decoded);
-      return false;
-    }
-    if (decoded_len < 0) { // odd nibbles handled, still valid
-      decoded_len = -decoded_len;
-    }
+		st64 decoded_len = rz_base16_decode(decoded, (const char *)buf);
+		if (decoded_len == 0) { // truly invalid
+			free(decoded);
+			return false;
+		}
+		if (decoded_len < 0) { // odd nibbles handled, still valid
+			decoded_len = -decoded_len;
+		}
 
-    rz_crypto_append(cry, decoded, (size_t)decoded_len);
-    free(decoded);
+		rz_crypto_append(cry, decoded, (size_t)decoded_len);
+		free(decoded);
 	}
 
 	return true;
