@@ -36,7 +36,7 @@ static st64 calculate_src_length(const char *src, st64 len) {
 
 /**
  * \brief Base-16-encode binary data.
- * \param[out] dest Buffer to receive NUL-terminated encoded output.  
+ * \param[out] dest Buffer to receive NUL-terminated encoded output.
  *                  Must have at least \c (2 × n) + 1 bytes.
  * \param[in]  src  Pointer to the binary input.
  * \param[in]  n    Number of bytes in \p src.
@@ -48,8 +48,8 @@ static st64 calculate_src_length(const char *src, st64 len) {
  */
 RZ_API int rz_base16_encode(RZ_OUT RZ_NULLABLE char *dest, RZ_NULLABLE const ut8 *src, size_t n) {
 	rz_return_val_if_fail(src && dest, 0);
-  rz_hex_bin2str(src, (int)n, dest);
-  return n * 2;
+	rz_hex_bin2str(src, (int)n, dest);
+	return n * 2;
 }
 
 /**
@@ -74,10 +74,10 @@ RZ_API RZ_OWN char *rz_base16_encode_dyn(RZ_NULLABLE const ut8 *src, size_t n) {
 
 /**
  * \brief Decode a Base-16 string into binary form.
- * \param[out] dest Output buffer for decoded bytes.  
+ * \param[out] dest Output buffer for decoded bytes.
  *                  Must have at least (\c strlen(src) / 2) + 1 bytes.
  * \param[in]  src  NUL-terminated Base-16 string.
- * \return Number of decoded bytes on success,  
+ * \return Number of decoded bytes on success,
  *         or a negative value if an odd number of nibbles was parsed,
  *         or \c 0 if parameters are invalid.
  *
@@ -85,18 +85,18 @@ RZ_API RZ_OWN char *rz_base16_encode_dyn(RZ_NULLABLE const ut8 *src, size_t n) {
  * Output is **not** automatically NUL-terminated unless you add it yourself.
  */
 RZ_API int rz_base16_decode(RZ_OUT RZ_NULLABLE ut8 *dest, RZ_NULLABLE const char *src) {
-    rz_return_val_if_fail(src && dest, 0);
+	rz_return_val_if_fail(src && dest, 0);
 
-    int out_len = rz_hex_str2bin(src, dest);
-    if (out_len < 0) {
-        // Odd number of nibbles — still terminate after absolute length
-        dest[-out_len] = '\0';
-        return out_len;
-    }
+	int out_len = rz_hex_str2bin(src, dest);
+	if (out_len < 0) {
+		// Odd number of nibbles — still terminate after absolute length
+		dest[-out_len] = '\0';
+		return out_len;
+	}
 
-    // NUL terminate after the decoded bytes
-    dest[out_len] = '\0';
-    return out_len;
+	// NUL terminate after the decoded bytes
+	dest[out_len] = '\0';
+	return out_len;
 }
 
 /**
@@ -111,34 +111,34 @@ RZ_API int rz_base16_decode(RZ_OUT RZ_NULLABLE ut8 *dest, RZ_NULLABLE const char
  * Caller must \c free() the returned pointer.
  */
 RZ_API RZ_OWN ut8 *rz_base16_decode_dyn(RZ_NULLABLE const char *src, st64 len) {
-  rz_return_val_if_fail(src, NULL);
+	rz_return_val_if_fail(src, NULL);
 
-  len = calculate_src_length(src, len);
-  if (len < 0) {
-    return NULL;
-  }
+	len = calculate_src_length(src, len);
+	if (len < 0) {
+		return NULL;
+	}
 
-  st64 cap = (len / 2) + 1;
-  ut8 *buf = (ut8 *)malloc((size_t)cap);
-  if (!buf) {
-    return NULL;
-  }
+	st64 cap = (len / 2) + 1;
+	ut8 *buf = (ut8 *)malloc((size_t)cap);
+	if (!buf) {
+		return NULL;
+	}
 
-  st64 out_len = rz_base16_decode(buf, src);
-  if (out_len == 0) { // truly invalid hex
-    free(buf);
-    return NULL;
-  }
-  if (out_len < 0) { // odd nibble count — still valid, pad added
-    out_len = -out_len;
-  }
+	st64 out_len = rz_base16_decode(buf, src);
+	if (out_len == 0) { // truly invalid hex
+		free(buf);
+		return NULL;
+	}
+	if (out_len < 0) { // odd nibble count — still valid, pad added
+		out_len = -out_len;
+	}
 
-  buf[out_len] = '\0';
-  if (out_len + 1 < cap) {
-    ut8 *tmp = (ut8 *)realloc(buf, (size_t)out_len + 1);
-    if (tmp) {
-      buf = tmp;
-    }
-  }
-  return buf;
+	buf[out_len] = '\0';
+	if (out_len + 1 < cap) {
+		ut8 *tmp = (ut8 *)realloc(buf, (size_t)out_len + 1);
+		if (tmp) {
+			buf = tmp;
+		}
+	}
+	return buf;
 }
