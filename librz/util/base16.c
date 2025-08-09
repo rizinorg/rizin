@@ -203,13 +203,12 @@ RZ_API RZ_OWN char *rz_base16_encode_dyn(RZ_NULLABLE const ut8 *src, size_t n) {
  * \endcode
  */
 RZ_API st64 rz_base16_decode(RZ_OUT RZ_NULLABLE ut8 *dest, RZ_NULLABLE const char *src, st64 n) {
+  rz_return_val_if_fail(src && dest, 0);
+
 	char buf[2];
 	ut8 tmp[1];
 	size_t i, j;
 	st64 ret = 0;
-
-	rz_return_val_if_fail(src, 0);
-	rz_return_val_if_fail(dest, 0);
 
 	n = calculate_src_length(src, n);
 	if (n == -1) {
