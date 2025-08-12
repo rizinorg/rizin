@@ -38,6 +38,23 @@ static void process_cxx_symbol(RzBinObject *o, RzBinSymbol *symbol) {
 }
 
 static void process_swift_symbol(RzBinObject *o, RzBinSymbol *symbol) {
+	if (!symbol->dname) {
+		return;
+	}
+	// Before the second dot, we have the class name
+	char *dot = strchr(symbol->dname, '.');
+	dot = dot ? strchr(dot + 1, '.') : NULL;
+	if (!dot) {
+		return;
+	}
+	char *classname = rz_str_ndup(symbol->dname, dot - symbol->dname);
+	// classname should not have any spaces or ( or )
+	if (strchr(classname, ' ') || strchr(classname, '(') || strchr(classname, ')')) {
+		free(classname);
+		return;
+	}
+	symbol->classname = classname;
+	rz_bin_object_add_class(o, symbol->classname, NULL, UT64_MAX);
 	rz_bin_process_swift(o, symbol->classname, symbol->dname, symbol->paddr, symbol->vaddr);
 }
 

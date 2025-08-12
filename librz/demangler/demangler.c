@@ -7,6 +7,7 @@
 #include <rz_libdemangle.h>
 #include <rz_libswift.h>
 #include <rz_lib.h>
+#include <rz_libswift.h>
 
 #include "rz_demangler_plugins.h"
 

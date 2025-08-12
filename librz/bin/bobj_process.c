@@ -93,18 +93,32 @@ RZ_IPI void rz_bin_process_cxx(RzBinObject *o, char *demangled, ut64 paddr, ut64
 	*name = ':';
 }
 
+static char *find_swift_methodname(RZ_NONNULL char *demangled) {
+	// methods can be main.Tost.deinit or main.Tost.init() -> main.Tost
+	// so we will return after second dot
+	char *dot = strchr(demangled, '.');
+	dot = dot ? strchr(dot + 1, '.') : NULL;
+	if (!dot) {
+		return NULL;
+	}
+	char *methodname = dot + 1;
+	if (RZ_STR_ISEMPTY(methodname)) {
+		return NULL;
+	}
+	return methodname;
+}
+
 // this process function does not work with the Apple demangler.
 RZ_IPI void rz_bin_process_swift(RzBinObject *o, char *classname, char *demangled, ut64 paddr, ut64 vaddr) {
-	// if (!classname) {
-	// 	return;
-	// }
+	if (RZ_STR_ISEMPTY(classname) || RZ_STR_ISEMPTY(demangled)) {
+		return;
+	}
 
-	// char *name = get_swift_field(demangled, classname);
-	// if (name) {
-	// 	rz_bin_object_add_field(o, classname, name, paddr, vaddr);
-	// 	free(name);
-	// 	return;
-	// }
+	char *methodname = find_swift_methodname(demangled);
+	if (!methodname) {
+		return;
+	}
+	rz_bin_object_add_method(o, classname, methodname, paddr, vaddr);
 }
 
 /**
