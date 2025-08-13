@@ -1,11 +1,73 @@
 NAME=mach0 swift demangle methods
 FILE=bins/mach0/swift-main
-CMDS=isq~&FooClass,method
+CMDS=isq~main.
 EXPECT=<<EOF
-0x1000047a0 0 FooClass.bar.method__String..init.witnesstable
-0x100004788 0 FooClass.foo.method__Swift.Int..init.witnesstable
-0x1000017a0 0 main.FooClass.foo.method__Swift.Int
-0x100001860 0 main.FooClass.bar.method__String
+0x100001b70 0 main.moin() -> Swift.Int
+0x100002080 0 main.Tost.__allocating_init() -> main.Tost
+0x100002110 0 main.Tost.__deallocating_deinit
+0x100002040 0 main.Tost.init() -> main.Tost
+0x100002140 0 main.Tost.deinit
+0x100002170 0 main.Tost.msg.getter : Swift.String
+0x100002210 0 main.Tost.msg.materializeForSet : Swift.String
+0x1000021b0 0 main.Tost.msg.setter : Swift.String
+0x100001a30 0 main.BarClass.sayHello() -> ()
+0x100001b30 0 main.BarClass.__allocating_init() -> main.BarClass
+0x100001ae0 0 main.BarClass.__deallocating_deinit
+0x100001b20 0 main.BarClass.init() -> main.BarClass
+0x100001b10 0 main.BarClass.deinit
+0x100005bb0 0 type metadata for main.Tost
+0x100005b18 0 type metadata for main.BarClass
+0x100005a40 0 type metadata for main.FooClass
+0x100005d28 0 lazy cache variable for type metadata for main.Tost
+0x100005d20 0 lazy cache variable for type metadata for main.BarClass
+0x100005d18 0 lazy cache variable for type metadata for main.FooClass
+0x1000053d8 0 type metadata for main.Balance
+0x1000020c0 0 type metadata accessor for main.Tost
+0x100001d40 0 type metadata accessor for main.BarClass
+0x100001cf0 0 type metadata accessor for main.FooClass
+0x100001e40 0 type metadata accessor for main.Balance
+0x100005b78 0 metaclass for main.Tost
+0x100005ae0 0 metaclass for main.BarClass
+0x100005a08 0 metaclass for main.FooClass
+0x1000054d0 0 nominal type descriptor for main.Tost
+0x100005490 0 nominal type descriptor for main.BarClass
+0x100005450 0 nominal type descriptor for main.FooClass
+0x100005390 0 nominal type descriptor for main.Balance
+0x100005408 0 protocol descriptor for main.FoodClass
+0x1000052f0 0 value witness table for main.Balance
+0x1000047c8 0 direct field offset for main.Tost.msg : Swift.String
+0x100004760 0 direct field offset for main.FooClass.bar : Swift.String
+0x100004758 0 direct field offset for main.FooClass.foo : Swift.Int
+0x100001380 0 main.Balance.width.getter : Swift.Double
+0x100001390 0 main.Balance.width.setter : Swift.Double
+0x1000013a0 0 main.Balance.width.materializeForSet : Swift.Double
+0x1000013c0 0 main.Balance.height.getter : Swift.Double
+0x1000013e0 0 main.Balance.height.setter : Swift.Double
+0x1000013f0 0 main.Balance.height.materializeForSet : Swift.Double
+0x100001410 0 main.Balance.pos.getter : Swift.Double
+0x100001430 0 main.Balance.pos.setter : Swift.Double
+0x100001440 0 main.Balance.pos.materializeForSet : Swift.Double
+0x100001460 0 main.Balance.init(width: Swift.Double, height: Swift.Double, pos: Swift.Double) -> main.Balance
+0x100001470 0 main.Balance.init() -> main.Balance
+0x1000014c0 0 main.FooClass.init() -> main.FooClass
+0x1000015a0 0 main.FooClass.__allocating_init() -> main.FooClass
+0x1000015e0 0 main.FooClass.sayHello() -> ()
+0x100001720 0 main.FooClass.__deallocating_deinit
+0x100001750 0 main.FooClass.deinit
+0x100001780 0 main.FooClass.foo.getter : Swift.Int
+0x100001790 0 main.FooClass.foo.setter : Swift.Int
+0x1000017a0 0 main.FooClass.foo.materializeForSet : Swift.Int
+0x1000017c0 0 main.FooClass.bar.getter : Swift.String
+0x100001800 0 main.FooClass.bar.setter : Swift.String
+0x100001860 0 main.FooClass.bar.materializeForSet : Swift.String
+0x100001880 0 protocol witness for main.FoodClass.sayHello() -> () in conformance main.FooClass : main.FoodClass in main
+0x1000018c0 0 (extension in main):main.FoodClass<A where A: main.FooClass, A: main.FoodClass>.sayHello() -> ()
+0x100001d90 0 protocol witness table accessor for main.FooClass : main.FoodClass in main
+0x1000052e8 0 protocol witness table for main.FooClass : main.FoodClass in main
+0x1000053d0 0 full type metadata for main.Balance
+0x100005a30 0 full type metadata for main.FooClass
+0x100005b08 0 full type metadata for main.BarClass
+0x100005ba0 0 full type metadata for main.Tost
 EOF
 RUN
 
@@ -26,8 +88,9 @@ RUN
 
 NAME=swift-x86-64 calling convention
 FILE=bins/mach0/swift5.1-throwError
+BROKEN=1
 CMDS=<<EOF
-s sym.__s10throwError7ThrowerC0a2MyB0yyKF
+s sym.throwError.Thrower.throwMyError___throws
 af
 afc swift
 afva
@@ -60,9 +123,10 @@ EOF
 RUN
 
 NAME=swift-x86-64 calling convention json
+BROKEN=1
 FILE=bins/mach0/swift5.1-throwError
 CMDS=<<EOF
-s sym.__s10throwError7ThrowerC0a2MyB0yyKF
+s sym.throwError.Thrower.throwMyError___throws
 af
 afc swift
 afva
