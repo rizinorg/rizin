@@ -21,7 +21,7 @@
 		.demangle = &handler##_cast, \
 	}
 
-static char *libdemangle_handler_swift(RZ_NULLABLE const char *symbol, RzDemanglerFlag flags) {
+static char *libdemangle_handler_swift(RZ_NULLABLE const char *symbol, RzDemangleOpts flags) {
 	(void)flags;
 	if (RZ_STR_ISEMPTY(symbol)) {
 		return NULL;
