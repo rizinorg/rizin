@@ -93,47 +93,19 @@ RZ_IPI void rz_bin_process_cxx(RzBinObject *o, char *demangled, ut64 paddr, ut64
 	*name = ':';
 }
 
-#if WITH_SWIFT_DEMANGLER
 // this process function does not work with the Apple demangler.
-static char *get_swift_field(const char *demangled, const char *classname) {
-	if (!demangled || !classname) {
-		return NULL;
-	}
-
-	char *p = strstr(demangled, ".getter_");
-	if (!p) {
-		p = strstr(demangled, ".setter_");
-		if (!p) {
-			p = strstr(demangled, ".method_");
-		}
-	}
-	if (p) {
-		char *q = strstr(demangled, classname);
-		if (q && q[strlen(classname)] == '.') {
-			q = rz_str_dup(q + strlen(classname) + 1);
-			char *r = strchr(q, '.');
-			if (r) {
-				*r = 0;
-			}
-			return q;
-		}
-	}
-	return NULL;
-}
-
 RZ_IPI void rz_bin_process_swift(RzBinObject *o, char *classname, char *demangled, ut64 paddr, ut64 vaddr) {
-	if (!classname) {
-		return;
-	}
+	// if (!classname) {
+	// 	return;
+	// }
 
-	char *name = get_swift_field(demangled, classname);
-	if (name) {
-		rz_bin_object_add_field(o, classname, name, paddr, vaddr);
-		free(name);
-		return;
-	}
+	// char *name = get_swift_field(demangled, classname);
+	// if (name) {
+	// 	rz_bin_object_add_field(o, classname, name, paddr, vaddr);
+	// 	free(name);
+	// 	return;
+	// }
 }
-#endif /* WITH_SWIFT_DEMANGLER */
 
 /**
  * \brief      Initialize the data of the given RzBinObject using the defined RzBinPlugin

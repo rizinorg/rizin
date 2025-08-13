@@ -37,12 +37,9 @@ static void process_cxx_symbol(RzBinObject *o, RzBinSymbol *symbol) {
 	rz_bin_process_cxx(o, symbol->dname, symbol->paddr, symbol->vaddr);
 }
 
-#if WITH_SWIFT_DEMANGLER
-// this process function does not work with the Apple demangler.
 static void process_swift_symbol(RzBinObject *o, RzBinSymbol *symbol) {
 	rz_bin_process_swift(o, symbol->classname, symbol->dname, symbol->paddr, symbol->vaddr);
 }
-#endif
 
 RZ_IPI RzBinProcessLanguage rz_bin_process_language_symbol(RzBinObject *o) {
 	switch (o->lang) {
@@ -52,11 +49,8 @@ RZ_IPI RzBinProcessLanguage rz_bin_process_language_symbol(RzBinObject *o) {
 		return (RzBinProcessLanguage)process_cxx_symbol;
 	case RZ_BIN_LANGUAGE_OBJC:
 		return (RzBinProcessLanguage)process_objc_symbol;
-#if WITH_SWIFT_DEMANGLER
-	// this process function does not work with the Apple demangler.
 	case RZ_BIN_LANGUAGE_SWIFT:
 		return (RzBinProcessLanguage)process_swift_symbol;
-#endif
 	default:
 		return NULL;
 	}

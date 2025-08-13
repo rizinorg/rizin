@@ -296,20 +296,32 @@ if r.returncode() == 1 and get_option('subprojects_check')
   error(subproject_clean_error_msg)
 endif
 
-libdemangle_options = ['default_library=static']
+libdemangle_options = [
+  'default_library=static',
+  'use_swift_demangler=false',
+]
 if get_option('use_gpl')
   libdemangle_options += 'use_gpl=true'
 else
   libdemangle_options += 'use_gpl=false'
 endif
-if get_option('use_swift_demangler')
-  libdemangle_options += 'use_swift_demangler=true'
-else
-  libdemangle_options += 'use_swift_demangler=false'
-endif
 
 libdemangle_proj = subproject('libdemangle', default_options: libdemangle_options)
 libdemangle_dep = libdemangle_proj.get_variable('libdemangle_dep')
+
+# handle libswift
+r = run_command(py3_exe, check_meson_subproject_py, 'libswift', check: false)
+if r.returncode() == 1 and get_option('subprojects_check')
+  error(subproject_clean_error_msg)
+endif
+
+# we do not want the rizin plugin, but a library to integrate 
+libswift_options = [
+  'default_library=static',
+  'enable_plugin=false',
+]
+libswift_proj = subproject('libswift', default_options: libswift_options)
+libswift_dep = libswift_proj.get_variable('libswift_dep')
 
 # handle blake3 algo
 blake3_proj = subproject('blake3', default_options: ['default_library=static', 'werror=false'])
@@ -430,7 +442,6 @@ foreach it : ccs
   it_userconf.set10('HAVE_PTRACE', have_ptrace)
   it_userconf.set10('USE_PTRACE_WRAP', use_ptrace_wrap)
   it_userconf.set10('WITH_GPL', get_option('use_gpl'))
-  it_userconf.set10('WITH_SWIFT_DEMANGLER', get_option('use_swift_demangler'))
   it_userconf.set10('RZ_BUILD_DEBUG', get_option('buildtype').startswith('debug'))
   ok = it_cc.has_header_symbol('sys/personality.h', 'ADDR_NO_RANDOMIZE')
   it_userconf.set10('HAVE_DECL_ADDR_NO_RANDOMIZE', ok)
@@ -824,7 +835,6 @@ summary({
 summary({
   'GPL code': get_option('use_gpl'),
   'Install sigdb': get_option('install_sigdb'),
-  'Swift demangler': get_option('use_swift_demangler'),
   'Debugger enabled': has_debugger,
   'Capstone version': capstone_dep.version(),
   'PCRE2 version': pcre2_dep.version(),

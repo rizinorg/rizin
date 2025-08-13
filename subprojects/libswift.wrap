@@ -1,0 +1,4 @@
+[wrap-git]
+url = https://github.com/rizinorg/rz-libswift.git
+revision = 81a2d39d628c252d2055dbcba485ef758139828d
+depth = 1
