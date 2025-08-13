@@ -319,6 +319,7 @@ endif
 libswift_options = [
   'default_library=static',
   'enable_plugin=false',
+  'werror=false'
 ]
 libswift_proj = subproject('libswift', default_options: libswift_options)
 libswift_dep = libswift_proj.get_variable('libswift_dep')
