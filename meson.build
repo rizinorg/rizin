@@ -1,4 +1,4 @@
-project('rizin', 'c',
+project('rizin', 'c', 'cpp',
   version: 'v0.9.0',
   license: 'LGPL-3.0-only',
   meson_version: '>=0.57.0',
