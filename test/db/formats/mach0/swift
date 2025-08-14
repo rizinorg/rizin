@@ -138,3 +138,60 @@ EXPECT=<<EOF
 {"stack":[{"name":"var_30h","arg":false,"type":"int64_t","storage":{"type":"stack","stack":-48}},{"name":"var_28h","arg":false,"type":"int64_t","storage":{"type":"stack","stack":-40}},{"name":"var_20h","arg":false,"type":"int64_t","storage":{"type":"stack","stack":-32}},{"name":"var_18h","arg":false,"type":"int64_t","storage":{"type":"stack","stack":-24}}],"reg":[{"name":"error","arg":false,"type":"int64_t","storage":{"type":"reg","reg":"r12"}},{"name":"self","arg":false,"type":"int64_t","storage":{"type":"reg","reg":"r13"}}]}
 EOF
 RUN
+
+NAME=swift-x86-64 bin classes and methods
+FILE=bins/mach0/swift-main
+CMDS=<<EOF
+ic
+icm
+EOF
+EXPECT=<<EOF
+    address         min         max name          super       
+--------------------------------------------------------------
+ ---------- 0x10000440a 0x10000441c Swift.String  
+ ---------- 0x100001380 0x100001470 main.Balance  
+0x100005ae0 0x100001a30 0x100001b30 main.BarClass SwiftObject
+0x100005a08 0x1000014c0 0x100001860 main.FooClass SwiftObject
+0x100005b78 0x100002040 0x100002210 main.Tost     SwiftObject
+    address index class         flags name                                                                                                           
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+0x10000440a     0 Swift.String        init(_builtinStringLiteral: Builtin.RawPointer, byteSize: Builtin.Word, isASCII: Builtin.Int1) -> Swift.String
+0x100004410     1 Swift.String        init(stringInterpolationSegment: Swift.String) -> Swift.String
+0x100004416     2 Swift.String        init(stringInterpolationSegment: Swift.Int) -> Swift.String
+0x10000441c     3 Swift.String        init(stringInterpolation: Swift.Array<Swift.String>...) -> Swift.String
+0x100001380     4 main.Balance        width.getter : Swift.Double
+0x100001390     5 main.Balance        width.setter : Swift.Double
+0x1000013a0     6 main.Balance        width.materializeForSet : Swift.Double
+0x1000013c0     7 main.Balance        height.getter : Swift.Double
+0x1000013e0     8 main.Balance        height.setter : Swift.Double
+0x1000013f0     9 main.Balance        height.materializeForSet : Swift.Double
+0x100001410    10 main.Balance        pos.getter : Swift.Double
+0x100001430    11 main.Balance        pos.setter : Swift.Double
+0x100001440    12 main.Balance        pos.materializeForSet : Swift.Double
+0x100001460    13 main.Balance        init(width: Swift.Double, height: Swift.Double, pos: Swift.Double) -> main.Balance
+0x100001470    14 main.Balance        init() -> main.Balance
+0x100001a30    15 main.BarClass       sayHello() -> ()
+0x100001ae0    16 main.BarClass       __deallocating_deinit
+0x100001b10    17 main.BarClass       deinit
+0x100001b20    18 main.BarClass       init() -> main.BarClass
+0x100001b30    19 main.BarClass       __allocating_init() -> main.BarClass
+0x1000014c0    20 main.FooClass       init() -> main.FooClass
+0x1000015a0    21 main.FooClass       __allocating_init() -> main.FooClass
+0x1000015e0    22 main.FooClass       sayHello() -> ()
+0x100001720    23 main.FooClass       __deallocating_deinit
+0x100001750    24 main.FooClass       deinit
+0x100001780    25 main.FooClass       foo.getter : Swift.Int
+0x100001790    26 main.FooClass       foo.setter : Swift.Int
+0x1000017a0    27 main.FooClass       foo.materializeForSet : Swift.Int
+0x1000017c0    28 main.FooClass       bar.getter : Swift.String
+0x100001800    29 main.FooClass       bar.setter : Swift.String
+0x100001860    30 main.FooClass       bar.materializeForSet : Swift.String
+0x100002040    31 main.Tost           init() -> main.Tost
+0x100002080    32 main.Tost           __allocating_init() -> main.Tost
+0x100002110    33 main.Tost           __deallocating_deinit
+0x100002140    34 main.Tost           deinit
+0x100002170    35 main.Tost           msg.getter : Swift.String
+0x1000021b0    36 main.Tost           msg.setter : Swift.String
+0x100002210    37 main.Tost           msg.materializeForSet : Swift.String
+EOF
+RUN
