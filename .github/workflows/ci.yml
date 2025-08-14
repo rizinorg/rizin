@@ -338,7 +338,7 @@ jobs:
           gcovr --version
           gcovr --gcov-ignore-parse-errors=all --txt build/coverage.txt --cobertura build/coverage.xml build
       - name: Upload coverage to Codecov
-        if: matrix.coverage
+        if: matrix.coverage && matrix.enabled
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
