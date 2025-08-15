@@ -53,7 +53,7 @@ static bool final(RzCrypto *cry, const ut8 *buf, int len) {
 
 RzCryptoPlugin rz_crypto_plugin_base85 = {
 	.name = "base85",
-	.author = "Remy Oukaour",
+	.author = "Ahmed Ibrahim",
 	.license = "LGPL-3",
 	.description = "Base85 encoder/decoder",
 	.set_key = base85_set_key,

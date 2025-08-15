@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2025 Ahmed Ibrahim <a.ibrahim8686@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_BASE16_H
 #define RZ_BASE16_H
 

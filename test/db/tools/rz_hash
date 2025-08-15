@@ -291,7 +291,7 @@ __ed__ punycode       LGPL-3     pancake                        Punycode encoder
 ED____ serpent-ecb    LGPL-3     NicsTr                         Serpent symmetric-key block cipher (ECB block mode)
 ED____ sm4-ecb        LGPL-3     0xSh4dy                        ShangMi 4 symmetric-key block cipher (ECB block mode)
 __ed__ base36         LGPL-3     abcSup                         Base36 encoder/decoder
-__ed__ base85         LGPL-3     Remy Oukaour                   Base85 encoder/decoder
+__ed__ base85         LGPL-3     Ahmed Ibrahim                  Base85 encoder/decoder
 ED____ aes-cbc        LGPL-3     rakholiyajenish.07             AES symmetric-key block cipher (CBC block mode)
 E_____ rol            LGPL-3     pancake                        Rotate Left symmetric-key block cipher
 ED____ aes-ecb        LGPL3      Nettle project,pancake         AES symmetric-key block cipher (ECB block mode)
