@@ -228,7 +228,7 @@ static size_t rz_base85_dec_buflen(size_t enc_len) {
  *   - <code>'z'</code> for four zero bytes,
  *   - <code>'y'</code> for four space bytes when \p y_abbr is true.
  */
-RZ_API int rz_base85_encode(RZ_OUT RZ_NULLABLE char *dest, RZ_NULLABLE const char *src, size_t n, int delims, int wrap, int y_abbr) {
+RZ_API int rz_base85_encode(RZ_OUT RZ_NONNULL char *dest, RZ_NONNULL const char *src, size_t n, int delims, int wrap, int y_abbr) {
 	if (!dest || !src) {
 		return 0;
 	}
@@ -276,10 +276,8 @@ RZ_API int rz_base85_encode(RZ_OUT RZ_NULLABLE char *dest, RZ_NULLABLE const cha
  * \return Pointer to a freshly‑allocated, NUL‑terminated string containing
  *         the Ascii 85 representation, or <code>NULL</code> if either
  *         <code>src == NULL</code> or a memory allocation fails.
- *
- * The caller becomes owner of the returned buffer and must <tt>free()</tt> it.
  */
-RZ_API RZ_OWN char *rz_base85_encode_dyn(RZ_NULLABLE const char *src, size_t n, int delims, int wrap, int y_abbr) {
+RZ_API RZ_OWN char *rz_base85_encode_dyn(RZ_NONNULL const char *src, size_t n, int delims, int wrap, int y_abbr) {
 	rz_return_val_if_fail(src, NULL);
 
 	char *ret = (char *)malloc(rz_base85_enc_buflen(n, delims, wrap));
@@ -308,7 +306,7 @@ RZ_API RZ_OWN char *rz_base85_encode_dyn(RZ_NULLABLE const char *src, size_t n, 
  * \attention The caller must allocate \p dest large enough.  A safe upper bound is
  * \c 1 + 3 × ((len + 1)/4) bytes.
  */
-RZ_API st64 rz_base85_decode(RZ_OUT RZ_NULLABLE char *dest, RZ_NULLABLE const char *src, st64 len, int delims, int ignore_garbage) {
+RZ_API st64 rz_base85_decode(RZ_OUT RZ_NONNULL char *dest, RZ_NONNULL const char *src, st64 len, int delims, int ignore_garbage) {
 	rz_return_val_if_fail(dest, -1);
 	rz_return_val_if_fail(src, -1);
 
@@ -397,7 +395,7 @@ RZ_API st64 rz_base85_decode(RZ_OUT RZ_NULLABLE char *dest, RZ_NULLABLE const ch
  * \return Pointer to a newly allocated buffer containing the raw bytes,
  *         or \c NULL on error.  The buffer is NUL‑terminated for convenience.
  */
-RZ_API RZ_OWN char *rz_base85_decode_dyn(RZ_NULLABLE const char *src, st64 len, int delims, int ignore_garbage, size_t *out_len) {
+RZ_API RZ_OWN char *rz_base85_decode_dyn(RZ_NONNULL const char *src, st64 len, int delims, int ignore_garbage, size_t *out_len) {
 	rz_return_val_if_fail(src, NULL);
 
 	if (len < 0) {
