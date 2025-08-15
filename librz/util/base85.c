@@ -204,31 +204,29 @@ static size_t rz_base85_dec_buflen(size_t enc_len) {
 	return 1 + 4 * enc_len;
 }
 
-/** \internal
- * \brief Base‑encode a memory buffer to Ascii 85.
+/**
+ * \brief Base-encode a memory buffer to Ascii 85.
  *
  * \param dest    Destination buffer that receives the encoded text.
  * \param src     Pointer to the binary data to encode.
  * \param n       The length of \p src in bytes.
- * \param delims  When non‑zero, wrap the output between literal
+ * \param delims  When non-zero, wrap the output between literal
  *                <code>"<~"</code> and <code>"~>"</code>.
  * \param wrap    Column width for automatic line wrapping.
- *                A value of 0 disables wrapping.
- * \param y_abbr  When non‑zero, enable the non‑standard abbreviation
+ *                A value of 0 disables wrapping.
+ * \param y_abbr  When non-zero, enable the non-standard abbreviation
  *                <code>'y'</code> for the pattern 0x20 0x20 0x20 0x20.
+ * \return The number of characters written to \p dest (excluding the
+ *         terminating NUL), or \c 0 if either \p dest or \p src is <code>NULL</code>.
  *
- * \attention The caller must allocate at least \c 1 + 5 × ((n + 3)/4) bytes,
- * plus room for optional delimiters and line‑wrap newlines.
+ * \attention The caller must allocate at least \c 1 + 5 × ((n + 3)/4) bytes,
+ * plus room for optional delimiters and line-wrap newlines.
  *
  * The function processes the input four bytes at a time, converts each group
- * into five base‑85 digits, and appends the result to \p dest.  Special‑case
+ * into five base-85 digits, and appends the result to \p dest.  Special-case
  * abbreviations are emitted where possible:
  *   - <code>'z'</code> for four zero bytes,
  *   - <code>'y'</code> for four space bytes when \p y_abbr is true.
- *
- * It always writes a terminating NUL and returns the number of encoded bytes
- * (not counting that NUL).  If either \p dest or \p src is <code>NULL</code>,
- * nothing is written and the function returns 0.
  */
 RZ_API int rz_base85_encode(RZ_OUT RZ_NULLABLE char *dest, RZ_NULLABLE const char *src, size_t n, int delims, int wrap, int y_abbr) {
 	if (!dest || !src) {
