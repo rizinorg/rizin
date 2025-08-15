@@ -48,7 +48,9 @@ static st64 calculate_src_length(const char *src, st64 len) {
  */
 RZ_API int rz_base16_encode(RZ_OUT RZ_NONNULL char *dest, RZ_NONNULL const ut8 *src, size_t n) {
 	rz_return_val_if_fail(src && dest, 0);
-	rz_hex_bin2str(src, (int)n, dest);
+	if (rz_hex_bin2str(src, (int)n, dest) == 0) {
+    return 0;
+  }
 	return n * 2;
 }
 
@@ -68,7 +70,9 @@ RZ_API RZ_OWN char *rz_base16_encode_dyn(RZ_NONNULL const ut8 *src, size_t n) {
 	if (!out) {
 		return NULL;
 	}
-	(void)rz_base16_encode(out, src, n);
+	if(rz_base16_encode(out, src, n) == 0) {
+    return NULL;
+  }
 	return out;
 }
 
