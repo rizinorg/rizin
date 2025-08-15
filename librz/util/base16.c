@@ -46,7 +46,7 @@ static st64 calculate_src_length(const char *src, st64 len) {
  * This function converts each input byte to two lowercase hexadecimal
  * characters using \c rz_hex_bin2str().
  */
-RZ_API int rz_base16_encode(RZ_OUT RZ_NULLABLE char *dest, RZ_NULLABLE const ut8 *src, size_t n) {
+RZ_API int rz_base16_encode(RZ_OUT RZ_NONNULL char *dest, RZ_NONNULL const ut8 *src, size_t n) {
 	rz_return_val_if_fail(src && dest, 0);
 	rz_hex_bin2str(src, (int)n, dest);
 	return n * 2;
@@ -62,7 +62,7 @@ RZ_API int rz_base16_encode(RZ_OUT RZ_NULLABLE char *dest, RZ_NULLABLE const ut8
  *
  * Allocates exactly \c (2 × n) + 1 bytes, encodes the input, and NUL-terminates.
  */
-RZ_API RZ_OWN char *rz_base16_encode_dyn(RZ_NULLABLE const ut8 *src, size_t n) {
+RZ_API RZ_OWN char *rz_base16_encode_dyn(RZ_NONNULL const ut8 *src, size_t n) {
 	rz_return_val_if_fail(src, NULL);
 	char *out = (char *)malloc(2 * n + 1);
 	if (!out) {
@@ -84,7 +84,7 @@ RZ_API RZ_OWN char *rz_base16_encode_dyn(RZ_NULLABLE const ut8 *src, size_t n) {
  * This is a thin wrapper around \c rz_hex_str2bin().
  * Output is **not** automatically NUL-terminated unless you add it yourself.
  */
-RZ_API int rz_base16_decode(RZ_OUT RZ_NULLABLE ut8 *dest, RZ_NULLABLE const char *src) {
+RZ_API int rz_base16_decode(RZ_OUT RZ_NONNULL ut8 *dest, RZ_NONNULL const char *src) {
 	rz_return_val_if_fail(src && dest, 0);
 
 	int out_len = rz_hex_str2bin(src, dest);
@@ -107,10 +107,9 @@ RZ_API int rz_base16_decode(RZ_OUT RZ_NULLABLE ut8 *dest, RZ_NULLABLE const char
  *         binary data followed by a NUL byte, or \c NULL on error.
  *
  * Accepts even or odd numbers of hex digits. For odd lengths, the final
- * nibble is padded with zero. The returned buffer is always NUL-terminated.
- * Caller must \c free() the returned pointer.
+ * nibble is padded with zero.
  */
-RZ_API RZ_OWN ut8 *rz_base16_decode_dyn(RZ_NULLABLE const char *src, st64 len) {
+RZ_API RZ_OWN ut8 *rz_base16_decode_dyn(RZ_NONNULL const char *src, st64 len) {
 	rz_return_val_if_fail(src, NULL);
 
 	len = calculate_src_length(src, len);
