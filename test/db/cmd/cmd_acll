@@ -428,7 +428,7 @@ nth        addr  vt_offset type    name
 EOF
 RUN
 
-NAME=Analyze classes in swift (x86)
+NAME=Analyze classes in swift
 FILE=bins/mach0/swift-main
 CMDS=<<EOF
 aaa
@@ -493,5 +493,90 @@ nth        addr  vt_offset type    name
   6 0x1000021b0 ---------- DEFAULT msg.setter : Swift.String
   7 0x100002210 ---------- DEFAULT msg.materializeForSet : Swift.String
 
+EOF
+RUN
+
+NAME=Analyze class inheritance in swift
+FILE=bins/mach0/swift-bin-multi-inherit
+CMDS=<<EOF
+aaa
+acll
+acg main_Dog
+EOF
+EXPECT=<<EOF
+[Swift_Array]
+nth        addr  vt_offset type    name         
+------------------------------------------------
+  1 0x100003bcc ---------- DEFAULT _endMutation
+
+[Swift_String]
+nth        addr  vt_offset type    name 
+----------------------------------------
+  1 0x100003bd8 ---------- DEFAULT init
+
+[main_Cat: main_Mammal]
+nth        addr  vt_offset type    name                  
+---------------------------------------------------------
+  1 0x100003280 ---------- DEFAULT __allocating_init
+  2 0x10000371c ---------- DEFAULT speak
+  3 0x1000037f0 ---------- DEFAULT init
+  4 0x10000383c ---------- DEFAULT deinit
+  5 0x100003864 ---------- DEFAULT __deallocating_deinit
+
+[main_Dog: main_Mammal]
+nth        addr  vt_offset type    name                  
+---------------------------------------------------------
+  1 0x1000032dc ---------- DEFAULT __allocating_init
+  2 0x1000038a0 ---------- DEFAULT speak
+  3 0x100003974 ---------- DEFAULT init
+  4 0x1000039c0 ---------- DEFAULT deinit
+  5 0x1000039e8 ---------- DEFAULT __deallocating_deinit
+
+[main_Human: main_Mammal]
+nth        addr  vt_offset type    name                  
+---------------------------------------------------------
+  1 0x100003224 ---------- DEFAULT __allocating_init
+  2 0x100003598 ---------- DEFAULT speak
+  3 0x10000366c ---------- DEFAULT init
+  4 0x1000036b8 ---------- DEFAULT deinit
+  5 0x1000036e0 ---------- DEFAULT __deallocating_deinit
+
+[main_Mammal]
+nth        addr  vt_offset type    name                  
+---------------------------------------------------------
+  1 0x100003370 ---------- DEFAULT speak
+  2 0x1000034dc ---------- DEFAULT deinit
+  3 0x100003500 ---------- DEFAULT __deallocating_deinit
+  4 0x10000353c ---------- DEFAULT __allocating_init
+  5 0x100003574 ---------- DEFAULT init
+
+[main_Shepherd: main_Dog]
+nth        addr  vt_offset type    name                  
+---------------------------------------------------------
+  1 0x100003338 ---------- DEFAULT __allocating_init
+  2 0x100003a24 ---------- DEFAULT speak
+  3 0x100003af8 ---------- DEFAULT init
+  4 0x100003b44 ---------- DEFAULT deinit
+  5 0x100003b6c ---------- DEFAULT __deallocating_deinit
+
+.---------------.   .----------------.    .---------------.
+|  Swift_Array  |   |  Swift_String  |    |  main_Mammal  |
+`---------------'   `----------------'    `---------------'
+                                              v v v
+                                              | | |
+                                              | | '----------.
+                         .--------------------' |            |
+                         |                 .----'            |
+                         |                 |                 |
+                     .------------.    .------------.    .--------------.
+                     |  main_Cat  |    |  main_Dog  |    |  main_Human  |
+                     `------------'    `------------'    `--------------'
+                                           v
+                                           |
+                                         .-'
+                                         |
+                                     .-----------------.
+                                     |  main_Shepherd  |
+                                     `-----------------'
 EOF
 RUN

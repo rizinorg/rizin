@@ -44,7 +44,7 @@ RZ_IPI int rz_bin_compare_class_field(RzBinClassField *a, RzBinClassField *b);
 typedef void (*RzBinProcessLanguage)(RzBinObject *o, const void *user);
 RZ_IPI void rz_bin_process_rust(RzBinObject *o, char *demangled, ut64 paddr, ut64 vaddr, bool is_method);
 RZ_IPI void rz_bin_process_cxx(RzBinObject *o, char *demangled, ut64 paddr, ut64 vaddr);
-RZ_IPI void rz_bin_process_swift(RzBinObject *o, char *classname, char *demangled, ut64 paddr, ut64 vaddr);
+RZ_IPI void rz_bin_process_swift(RzBinObject *o, RzBinSymbol *symbol);
 RZ_IPI bool rz_bin_object_process_plugin_data(RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzBinObject *o);
 
 RZ_IPI const RzDemanglerPlugin *rz_bin_process_get_demangler_plugin_from_lang(RzBin *bin, RzBinLanguage language);

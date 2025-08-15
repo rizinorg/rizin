@@ -358,6 +358,7 @@ EXPECT=<<EOF
  ---------- 0x100009a08 0x100009a08 Swift.String                      
  ---------- 0x100008e24 0x100008ebc __C.UIApplicationLaunchOptionsKey 
  ---------- 0x1000086b8 0x1000086b8 __C.UISceneConfiguration          
+ ----------  ----------  ---------- __C.UISceneSession                
 EOF
 RUN
 

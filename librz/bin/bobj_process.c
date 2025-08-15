@@ -108,17 +108,51 @@ static char *find_swift_methodname(RZ_NONNULL char *demangled) {
 	return methodname;
 }
 
-// this process function does not work with the Apple demangler.
-RZ_IPI void rz_bin_process_swift(RzBinObject *o, char *classname, char *demangled, ut64 paddr, ut64 vaddr) {
-	if (RZ_STR_ISEMPTY(classname) || RZ_STR_ISEMPTY(demangled)) {
+static void bin_process_metaclass(RzBinObject *o, RzBinSymbol *symbol) {
+	if (RZ_STR_ISEMPTY(symbol->dname)) {
+		return;
+	}
+	char *no_classname = strstr(symbol->dname, "full type metadata for ");
+	char *classname = strstr(symbol->dname, "type metadata for ");
+	if (!classname || no_classname) { // only for "type metadata for class"
+		return;
+	}
+	rz_bin_object_add_field(o, classname + strlen("type metadata for "), symbol->dname, symbol->paddr, symbol->vaddr);
+}
+
+// This function is used to process Swift methods.
+static void bin_process_swift_class_method(RzBinObject *o, RzBinSymbol *symbol) {
+	// Before the second dot, we have the class name
+	char *dot = strchr(symbol->dname, '.');
+	dot = dot ? strchr(dot + 1, '.') : NULL;
+	if (!dot) {
+		return;
+	}
+	char *classname = rz_str_ndup(symbol->dname, dot - symbol->dname);
+	// classname should not have any spaces or ( or )
+	if (strchr(classname, ' ') || strchr(classname, '(') || strchr(classname, ')')) {
+		free(classname);
+		return;
+	}
+	symbol->classname = classname;
+	char *methodname = find_swift_methodname(symbol->dname);
+
+	if (!methodname) {
+		free(classname);
 		return;
 	}
 
-	char *methodname = find_swift_methodname(demangled);
-	if (!methodname) {
+	rz_bin_object_add_class(o, classname, NULL, UT64_MAX);
+	rz_bin_object_add_method(o, classname, methodname, symbol->paddr, symbol->vaddr);
+}
+
+// this process function does not work with the Apple demangler.
+RZ_IPI void rz_bin_process_swift(RzBinObject *o, RzBinSymbol *symbol) {
+	if (RZ_STR_ISEMPTY(symbol->dname)) {
 		return;
 	}
-	rz_bin_object_add_method(o, classname, methodname, paddr, vaddr);
+	bin_process_metaclass(o, symbol);
+	bin_process_swift_class_method(o, symbol);
 }
 
 /**
