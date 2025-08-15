@@ -30,9 +30,6 @@ static const ut64 pow36[] = { 1, 36, 1296, 46656, 1679616, 60466176, 2176782336,
  * \param val  The unsigned 64‑bit integer to encode.
  * \return     Pointer to a freshly allocated, NUL‑terminated digit string,
  *             or \c NULL if memory allocation fails.
- *
- * The caller \b must free the returned buffer with \c free().
- *
  */
 RZ_API RZ_OWN char *rz_base36_encode_dyn(ut64 val) {
 	static const char alphabet[] = "0123456789abcdefghijklmnopqrstuvwxyz";
@@ -77,7 +74,7 @@ RZ_API RZ_OWN char *rz_base36_encode_dyn(ut64 val) {
  * explicit overflow check: the digit must be ≤ 3 and the addition
  * <code>ret + v × pow36[12]</code> must not wrap.
  */
-RZ_API st64 rz_base36_decode(RZ_NULLABLE const char *str, const size_t len) {
+RZ_API st64 rz_base36_decode(RZ_NONNULL const char *str, const size_t len) {
 	ut64 ret = 0;
 	size_t i;
 	// 64-bit base36 str has at most 13 characters
