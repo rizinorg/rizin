@@ -88,7 +88,7 @@ static void unpack_from5(ut8 dest[5], const ut8 src[8]) {
  *
  * Any other value yields \c false.
  */
-static bool is_base32(int c) {
+static inline bool is_base32(int c) {
 	return (c >= 'A' && c <= 'Z') ||
 		(c >= 'a' && c <= 'z') || /* allow lower‑case */
 		(c >= '2' && c <= '7');
@@ -210,7 +210,9 @@ RZ_API RZ_OWN char *rz_base32_encode_dyn(RZ_NONNULL const ut8 *src, size_t n) {
 	if (!out) {
 		return NULL;
 	}
-	(void)rz_base32_encode(out, src, n);
+	if(rz_base32_encode(out, src, n) == 0) {
+    return NULL;
+  }
 	out[buf_sz - 1] = '\0';
 	return out;
 }
