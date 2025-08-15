@@ -158,7 +158,7 @@ static size_t calculate_dest_length(size_t len) {
  * free(enc);
  * \endcode
  */
-RZ_API size_t rz_base32_encode(RZ_OUT RZ_NULLABLE char *dest, RZ_NULLABLE const ut8 *src, size_t n) {
+RZ_API size_t rz_base32_encode(RZ_OUT RZ_NONNULL char *dest, RZ_NONNULL const ut8 *src, size_t n) {
 	rz_return_val_if_fail(src && dest, 0);
 	ut8 final_group[5] = { 0 };
 	size_t ret = calculate_dest_length(n);
@@ -203,7 +203,7 @@ RZ_API size_t rz_base32_encode(RZ_OUT RZ_NULLABLE char *dest, RZ_NULLABLE const 
  * free(enc);
  * \endcode
  */
-RZ_API RZ_OWN char *rz_base32_encode_dyn(RZ_NULLABLE const ut8 *src, size_t n) {
+RZ_API RZ_OWN char *rz_base32_encode_dyn(RZ_NONNULL const ut8 *src, size_t n) {
 	rz_return_val_if_fail(src, NULL);
 	size_t buf_sz = calculate_dest_length(n) + 1;
 	char *out = (char *)malloc(buf_sz);
@@ -248,7 +248,7 @@ RZ_API RZ_OWN char *rz_base32_encode_dyn(RZ_NULLABLE const ut8 *src, size_t n) {
  * assert(memcmp(buf, "foo", 3) == 0);
  * \endcode
  */
-RZ_API st64 rz_base32_decode(RZ_OUT RZ_NULLABLE ut8 *dest, RZ_NULLABLE const char *src, st64 n) {
+RZ_API st64 rz_base32_decode(RZ_OUT RZ_NONNULL ut8 *dest, RZ_NONNULL const char *src, st64 n) {
 	rz_return_val_if_fail(src && dest, 0);
 
 	char buf[8] = { 0 }, tmp[5] = { 0 };
@@ -320,7 +320,7 @@ RZ_API st64 rz_base32_decode(RZ_OUT RZ_NULLABLE ut8 *dest, RZ_NULLABLE const cha
  * This bound is used to pre‑allocate the buffer and then \c realloc
  * trims it to the exact number of bytes actually produced.
  */
-RZ_API RZ_OWN ut8 *rz_base32_decode_dyn(RZ_NULLABLE const char *src, st64 len) {
+RZ_API RZ_OWN ut8 *rz_base32_decode_dyn(RZ_NONNULL const char *src, st64 len) {
 	rz_return_val_if_fail(src, NULL);
 
 	len = calculate_src_length(src, len);
