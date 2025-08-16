@@ -42,13 +42,13 @@ static bool update(RzCrypto *cry, const ut8 *buf, int len) {
 		out_len = strlen(enc);
 
 	} else if (cry->dir == RZ_CRYPTO_DIR_DECRYPT) {
-		st64 val = rz_base36_decode((const char *)buf, (size_t)len);
+		ut64 val = 0;
+		st64 ret = rz_base36_decode(&val, (const char *)buf, (size_t)len);
 		/* Here, rz_base36_decode returns 0 either for the value 0 or on error.
 		 * We consider empty input an error.  */
-		if (val < 0) {
+		if (ret < 0) {
 			return false;
 		}
-		val = (ut64)val;
 
 		// convert val →  big‑endian byte array
 		ut8 tmp[8];

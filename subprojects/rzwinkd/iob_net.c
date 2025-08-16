@@ -105,8 +105,10 @@ static void *iob_net_open(const char *path) {
 		if (nkey) {
 			*nkey++ = 0;
 		}
-		st64 decoded_val = rz_base36_decode(key, strlen(key));
-		decoded_val = decoded_val >= 0 ? decoded_val : 0;
+
+		ut64 decoded_val = 0;
+		st64 ret = rz_base36_decode(&decoded_val, key, strlen(key));
+		decoded_val = ret >= 0 ? decoded_val : 0;
 		rz_write_le64(obj->key + i * 8, (ut64)decoded_val);
 	}
 

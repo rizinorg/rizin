@@ -25,16 +25,21 @@ static const ut64 pow36[] = { 1, 36, 1296, 46656, 1679616, 60466176, 2176782336,
 	131621703842267136, 4738381338321616896 };
 
 /**
- * \brief Dynamically allocate and return the Base 36 representation of a 64‑bit value.
+ * \brief Encode a 64-bit unsigned integer as a Base 36 digit string.
  *
- * \param val  The unsigned 64‑bit integer to encode.
- * \return     Pointer to a freshly allocated, NUL‑terminated digit string,
- *             or \c NULL if memory allocation fails.
+ * \param[out] bout Buffer to receive the NUL-terminated encoded output.
+ *                  Must have at least \c RZ_BASE36_BUFSZ bytes (\c 13 characters plus the terminator).
+ * \param      val  The unsigned 64-bit integer to encode.
+ * \return Number of characters written (excluding the NUL terminator), or \c 0 if \p bout is \c NULL.
+ *
+ * This function converts \p val to its lowercase Base 36 representation,
+ * writing the result to \p bout followed by a NUL terminator.
+ * The most-significant digit appears first in the output.
  */
-RZ_API RZ_OWN char *rz_base36_encode_dyn(ut64 val) {
+RZ_API size_t rz_base36_encode(RZ_OUT RZ_NONNULL char *bout, ut64 val) {
+	rz_return_val_if_fail(bout, 0);
 	static const char alphabet[] = "0123456789abcdefghijklmnopqrstuvwxyz";
-
-	char tmp[RZ_BASE36_BUFSZ] = { 0 };
+	char tmp[RZ_BASE36_BUFSZ];
 	size_t n = 0;
 
 	if (val == 0) {
@@ -46,36 +51,48 @@ RZ_API RZ_OWN char *rz_base36_encode_dyn(ut64 val) {
 		}
 	}
 
-	char *out = (char *)malloc(n + 1);
+	// reverse into output buffer
+	for (size_t i = 0; i < n; i++) {
+		bout[i] = tmp[n - 1 - i];
+	}
+	bout[n] = '\0';
+	return n;
+}
+
+/**
+ * \brief Dynamically allocate and return the Base 36 representation of a 64‑bit value.
+ *
+ * \param val  The unsigned 64‑bit integer to encode.
+ * \return     Pointer to a freshly allocated, NUL‑terminated digit string,
+ *             or \c NULL if memory allocation fails.
+ */
+RZ_API RZ_OWN char *rz_base36_encode_dyn(ut64 val) {
+	char *out = (char *)malloc(RZ_BASE36_BUFSZ + 1);
 	if (!out) {
 		return NULL;
 	}
-	for (size_t i = 0; i < n; i++) {
-		out[i] = tmp[n - 1 - i];
+	if (rz_base36_encode(out, val) == 0) {
+		free(out);
+		return NULL;
 	}
-	out[n] = '\0';
 	return out;
 }
 
 /**
- * \brief Convert an ASCII Base 36 string to a 64‑bit unsigned integer.
+ * \brief Decode a Base36 string into a 64-bit unsigned integer.
  *
- * \param[in]  str  Pointer to the digit sequence (no NUL required).
- * \param      len  Number of characters in \p str.
- *                  A value greater than 13 implies overflow and is rejected.
- * \return The decoded value, or \c -1 on any error (invalid digit, overflow,
- *         or length > 13).
+ * \param[out] bout Pointer to a ut64 that will receive the decoded value.
+ * \param[in]  bin  Input Base36-encoded string (not necessarily NUL-terminated).
+ * \param[in]  len  Length of the Base36 string.
+ * \return Number of characters consumed on success, or -1 on error.
  *
- * The function treats the right‑most character as the least‑significant digit,
- * multiplies each digit by the corresponding 36‑power from \a pow36, and
- * accumulates the result.
- * Digits are validated in constant time with the lookup table \a d32.  When
- * processing the most‑significant position (index 12) the function performs an
- * explicit overflow check: the digit must be ≤ 3 and the addition
- * <code>ret + v × pow36[12]</code> must not wrap.
+ * This function decodes the given Base36 string \p bin of length \p len into
+ * a 64-bit unsigned integer. The maximum supported length is
+ * \c RZ_BASE36_BUFSZ (13 characters). Input is case-sensitive and only
+ * lowercase 'a'–'z' and '0'–'9' are accepted.
  */
-RZ_API st64 rz_base36_decode(RZ_NONNULL const char *str, const size_t len) {
-	ut64 ret = 0;
+RZ_API st64 rz_base36_decode(RZ_OUT RZ_NONNULL ut64 *bout, RZ_NONNULL const char *bin, st64 len) {
+	rz_return_val_if_fail(bin && bout, -1);
 	size_t i;
 	// 64-bit base36 str has at most 13 characters
 	if (len > RZ_BASE36_BUFSZ) {
@@ -83,27 +100,50 @@ RZ_API st64 rz_base36_decode(RZ_NONNULL const char *str, const size_t len) {
 		return -1;
 	}
 	for (i = 0; i < len; i++) {
-		char c = str[len - i - 1];
+		char c = bin[len - i - 1];
 		// "01234567890abcdefghijklmnopqrstuvwxyz"
 		if (c < '0' || c > 'z' || ('9' < c && c < 'a')) {
-			RZ_LOG_ERROR("%s is not a valid base36 encoded string\n", str);
+			RZ_LOG_ERROR("%s is not a valid base36 encoded string\n", bin);
 			return -1;
 		}
 		ut8 v = d32[c - '0'];
 		// Character does not exist in base36 encoding
 		if (v == '$') {
-			RZ_LOG_ERROR("Error: %s is not a valid base36 encoded string\n", str);
+			RZ_LOG_ERROR("Error: %s is not a valid base36 encoded string\n", bin);
 			return -1;
 		}
 		v -= 91;
 		// Check for overflow
 		if (i == 12) {
-			if (v > 3 || UT64_ADD_OVFCHK(ret, v * pow36[i])) {
+			if (v > 3 || UT64_ADD_OVFCHK(*bout, v * pow36[i])) {
 				RZ_LOG_ERROR("Error: base36_decode supports up to 64-bit values only\n");
 				return -1;
 			}
 		}
-		ret += v * pow36[i];
+		*bout += v * pow36[i];
 	}
-	return ret;
+	return i;
+}
+
+/**
+ * \brief Decode a Base36 string into a newly allocated 64-bit integer.
+ *
+ * \param[in] bin Base36-encoded string (not necessarily NUL-terminated).
+ * \param[in] len Length of the string.
+ * \return A newly allocated \c ut64* holding the decoded value,
+ *         or \c NULL on error.
+ */
+RZ_API RZ_OWN ut64 *rz_base36_decode_dyn(RZ_NONNULL const char *bin, const size_t len) {
+	rz_return_val_if_fail(bin, NULL);
+	ut64 *out = RZ_NEW0(ut64);
+	if (!out) {
+		return NULL;
+	}
+
+	if (rz_base36_decode(out, bin, (st64)len) < 0) {
+		free(out);
+		return NULL;
+	}
+
+	return out;
 }
