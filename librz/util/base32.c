@@ -210,9 +210,9 @@ RZ_API RZ_OWN char *rz_base32_encode_dyn(RZ_NONNULL const ut8 *src, size_t n) {
 	if (!out) {
 		return NULL;
 	}
-	if(rz_base32_encode(out, src, n) == 0) {
-    return NULL;
-  }
+	if (rz_base32_encode(out, src, n) == 0) {
+		return NULL;
+	}
 	out[buf_sz - 1] = '\0';
 	return out;
 }
