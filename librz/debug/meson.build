@@ -105,6 +105,9 @@ if has_debugger
     ]
   endif
 
+  if host_machine.system() == 'freebsd'
+    rz_debug_deps += cc.find_library('util', required: true, static: is_static_build)
+  endif
   if ['netbsd', 'openbsd', 'freebsd', 'dragonfly'].contains(host_machine.system())
     rz_debug_deps += cc.find_library('kvm', required: true, static: is_static_build)
     rz_debug_sources += [
