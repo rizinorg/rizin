@@ -3911,6 +3911,19 @@ static bool is_apple_target(RzCore *core) {
 	return bo ? strstr(bo->plugin->name, "mach") : false;
 }
 
+static bool is_omf166_format(RzCore *core) {
+	const char *arch = rz_config_get(core->config, "asm.arch");
+	if (!strstr(arch, "c166")) {
+		return false;
+	}
+	RzBinObject *bo = rz_bin_cur_object(core->bin);
+	if (!bo || !bo->info || !bo->info->rclass)
+		return false;
+	RzBinInfo *info = bo ? bo->info : NULL;
+	rz_return_val_if_fail((info && info->rclass), false);
+	return strcmp(info->rclass, "OMF166") ? false : true;
+}
+
 static void core_analysis_using_plugins(RzCore *core) {
 	RzIterator *it = ht_sp_as_iter(core->plugins);
 	RzCorePlugin **val;
@@ -3959,6 +3972,7 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 	bool plugin_supports_esil = rz_analysis_plugin_support_esil(core->analysis);
 	bool is_apple = is_apple_target(core);
 	RzAnalysisOptions *aopts = rz_analysis_get_options(core->analysis);
+	bool is_omf166 = is_omf166_format(core);
 
 	if (rz_str_startswith(rz_config_get(core->config, "bin.lang"), "go")) {
 		rz_core_notify_done(core, "Find function and symbol names from golang binaries");
@@ -4111,6 +4125,14 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 		notify = "Integrate dwarf function information.";
 		rz_core_notify_begin(core, "%s", notify);
 		rz_analysis_dwarf_integrate_functions(core->analysis, core->flags);
+		rz_core_notify_done(core, "%s", notify);
+	}
+
+	// Apply OMF166 function information
+	if (is_omf166) {
+		notify = "Integrate OMF166 function information.";
+		rz_core_notify_begin(core, "%s", notify);
+		rz_analysis_omf166_integrate_functions(core->analysis);
 		rz_core_notify_done(core, "%s", notify);
 	}
 
