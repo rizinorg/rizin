@@ -1033,6 +1033,7 @@ RZ_API void rz_core_recover_vars(RzCore *core, RzAnalysisFunction *fcn, bool arg
 #define RZ_CORE_BIN_ACC_LIBS             0x200
 #define RZ_CORE_BIN_ACC_CLASSES          0x400
 #define RZ_CORE_BIN_ACC_DWARF            0x800
+#define RZ_CORE_BIN_ACC_OMF_DEBUG        0x900
 #define RZ_CORE_BIN_ACC_SIZE             0x1000
 #define RZ_CORE_BIN_ACC_PDB              0x2000
 #define RZ_CORE_BIN_ACC_MEM              0x4000

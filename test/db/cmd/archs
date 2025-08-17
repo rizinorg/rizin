@@ -66,6 +66,59 @@ strb w10, [x0], 7
 EOF
 RUN
 
+NAME=instruction length wrong byte: c166
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=c166
+e asm.bytes=true
+wx 3B @ 0
+ao 1~size
+#pdq 1
+EOF
+EXPECT=<<EOF
+size: 2
+EOF
+RUN
+
+NAME=instruction length wrong byte in code: c166
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=c166
+e asm.bytes=true
+wx 0012 @ 0
+wx 3B @ 2
+wx 6034 @ 3
+ao 3~size
+#pdq 3
+EOF
+EXPECT=<<EOF
+size: 2
+size: 2
+size: 4
+EOF
+RUN
+
+NAME=instruction length on NEG opcode: c166
+FILE=malloc://24
+CMDS=<<EOF
+e asm.arch=c166
+e asm.bytes=true
+wb 8111 @ 0
+wb 8110 @ 2
+wb 8185 @ 4
+ao 3~size
+pdq 3
+EOF
+EXPECT=<<EOF
+size: 2
+size: 2
+size: 2
+0x00000000                 8111  .word 0x8111
+0x00000002                 8110  neg r1
+0x00000004                 8185  .word 0x8185
+EOF
+RUN
+
 NAME=endian tests: sparc
 FILE==
 CMDS=<<EOF
