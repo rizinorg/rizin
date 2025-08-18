@@ -436,62 +436,62 @@ acll
 EOF
 EXPECT=<<EOF
 [Swift_String]
-nth        addr  vt_offset type    name 
-----------------------------------------
-  1 0x10000440a ---------- DEFAULT init
-  2 0x100004410 ---------- DEFAULT init
-  3 0x100004416 ---------- DEFAULT init
-  4 0x10000441c ---------- DEFAULT init
+nth        addr  vt_offset type        name 
+--------------------------------------------
+  1 0x10000440a ---------- CONSTRUCTOR init
+  2 0x100004410 ---------- CONSTRUCTOR init
+  3 0x100004416 ---------- CONSTRUCTOR init
+  4 0x10000441c ---------- CONSTRUCTOR init
 
 [main_Balance]
-nth        addr  vt_offset type    name                                    
----------------------------------------------------------------------------
-  1 0x100001380 ---------- DEFAULT width.getter : Swift.Double
-  2 0x100001390 ---------- DEFAULT width.setter : Swift.Double
-  3 0x1000013a0 ---------- DEFAULT width.materializeForSet : Swift.Double
-  4 0x1000013c0 ---------- DEFAULT height.getter : Swift.Double
-  5 0x1000013e0 ---------- DEFAULT height.setter : Swift.Double
-  6 0x1000013f0 ---------- DEFAULT height.materializeForSet : Swift.Double
-  7 0x100001410 ---------- DEFAULT pos.getter : Swift.Double
-  8 0x100001430 ---------- DEFAULT pos.setter : Swift.Double
-  9 0x100001440 ---------- DEFAULT pos.materializeForSet : Swift.Double
- 10 0x100001460 ---------- DEFAULT init
- 11 0x100001470 ---------- DEFAULT init
+nth        addr  vt_offset type        name                                    
+-------------------------------------------------------------------------------
+  1 0x100001380 ---------- DEFAULT     width.getter : Swift.Double
+  2 0x100001390 ---------- DEFAULT     width.setter : Swift.Double
+  3 0x1000013a0 ---------- DEFAULT     width.materializeForSet : Swift.Double
+  4 0x1000013c0 ---------- DEFAULT     height.getter : Swift.Double
+  5 0x1000013e0 ---------- DEFAULT     height.setter : Swift.Double
+  6 0x1000013f0 ---------- DEFAULT     height.materializeForSet : Swift.Double
+  7 0x100001410 ---------- DEFAULT     pos.getter : Swift.Double
+  8 0x100001430 ---------- DEFAULT     pos.setter : Swift.Double
+  9 0x100001440 ---------- DEFAULT     pos.materializeForSet : Swift.Double
+ 10 0x100001460 ---------- CONSTRUCTOR init
+ 11 0x100001470 ---------- CONSTRUCTOR init
 
 [main_BarClass]
-nth        addr  vt_offset type    name                  
----------------------------------------------------------
-  1 0x100001a30 ---------- DEFAULT sayHello
-  2 0x100001ae0 ---------- DEFAULT __deallocating_deinit
-  3 0x100001b10 ---------- DEFAULT deinit
-  4 0x100001b20 ---------- DEFAULT init
-  5 0x100001b30 ---------- DEFAULT __allocating_init
+nth        addr  vt_offset type        name                  
+-------------------------------------------------------------
+  1 0x100001a30 ---------- DEFAULT     sayHello
+  2 0x100001ae0 ---------- DEFAULT     __deallocating_deinit
+  3 0x100001b10 ---------- DESTRUCTOR  deinit
+  4 0x100001b20 ---------- CONSTRUCTOR init
+  5 0x100001b30 ---------- DEFAULT     __allocating_init
 
 [main_FooClass]
-nth        addr  vt_offset type    name                                 
-------------------------------------------------------------------------
-  1 0x1000014c0 ---------- DEFAULT init
-  2 0x1000015a0 ---------- DEFAULT __allocating_init
-  3 0x1000015e0 ---------- DEFAULT sayHello
-  4 0x100001720 ---------- DEFAULT __deallocating_deinit
-  5 0x100001750 ---------- DEFAULT deinit
-  6 0x100001780 ---------- DEFAULT foo.getter : Swift.Int
-  7 0x100001790 ---------- DEFAULT foo.setter : Swift.Int
-  8 0x1000017a0 ---------- DEFAULT foo.materializeForSet : Swift.Int
-  9 0x1000017c0 ---------- DEFAULT bar.getter : Swift.String
- 10 0x100001800 ---------- DEFAULT bar.setter : Swift.String
- 11 0x100001860 ---------- DEFAULT bar.materializeForSet : Swift.String
+nth        addr  vt_offset type        name                                 
+----------------------------------------------------------------------------
+  1 0x1000014c0 ---------- CONSTRUCTOR init
+  2 0x1000015a0 ---------- DEFAULT     __allocating_init
+  3 0x1000015e0 ---------- DEFAULT     sayHello
+  4 0x100001720 ---------- DEFAULT     __deallocating_deinit
+  5 0x100001750 ---------- DESTRUCTOR  deinit
+  6 0x100001780 ---------- DEFAULT     foo.getter : Swift.Int
+  7 0x100001790 ---------- DEFAULT     foo.setter : Swift.Int
+  8 0x1000017a0 ---------- DEFAULT     foo.materializeForSet : Swift.Int
+  9 0x1000017c0 ---------- DEFAULT     bar.getter : Swift.String
+ 10 0x100001800 ---------- DEFAULT     bar.setter : Swift.String
+ 11 0x100001860 ---------- DEFAULT     bar.materializeForSet : Swift.String
 
 [main_Tost]
-nth        addr  vt_offset type    name                                 
-------------------------------------------------------------------------
-  1 0x100002040 ---------- DEFAULT init
-  2 0x100002080 ---------- DEFAULT __allocating_init
-  3 0x100002110 ---------- DEFAULT __deallocating_deinit
-  4 0x100002140 ---------- DEFAULT deinit
-  5 0x100002170 ---------- DEFAULT msg.getter : Swift.String
-  6 0x1000021b0 ---------- DEFAULT msg.setter : Swift.String
-  7 0x100002210 ---------- DEFAULT msg.materializeForSet : Swift.String
+nth        addr  vt_offset type        name                                 
+----------------------------------------------------------------------------
+  1 0x100002040 ---------- CONSTRUCTOR init
+  2 0x100002080 ---------- DEFAULT     __allocating_init
+  3 0x100002110 ---------- DEFAULT     __deallocating_deinit
+  4 0x100002140 ---------- DESTRUCTOR  deinit
+  5 0x100002170 ---------- DEFAULT     msg.getter : Swift.String
+  6 0x1000021b0 ---------- DEFAULT     msg.setter : Swift.String
+  7 0x100002210 ---------- DEFAULT     msg.materializeForSet : Swift.String
 
 EOF
 RUN
@@ -510,54 +510,54 @@ nth        addr  vt_offset type    name
   1 0x100003bcc ---------- DEFAULT _endMutation
 
 [Swift_String]
-nth        addr  vt_offset type    name 
-----------------------------------------
-  1 0x100003bd8 ---------- DEFAULT init
+nth        addr  vt_offset type        name 
+--------------------------------------------
+  1 0x100003bd8 ---------- CONSTRUCTOR init
 
 [main_Cat: main_Mammal]
-nth        addr  vt_offset type    name                  
----------------------------------------------------------
-  1 0x100003280 ---------- DEFAULT __allocating_init
-  2 0x10000371c ---------- DEFAULT speak
-  3 0x1000037f0 ---------- DEFAULT init
-  4 0x10000383c ---------- DEFAULT deinit
-  5 0x100003864 ---------- DEFAULT __deallocating_deinit
+nth        addr  vt_offset type        name                  
+-------------------------------------------------------------
+  1 0x100003280 ---------- DEFAULT     __allocating_init
+  2 0x10000371c ---------- DEFAULT     speak
+  3 0x1000037f0 ---------- CONSTRUCTOR init
+  4 0x10000383c ---------- DESTRUCTOR  deinit
+  5 0x100003864 ---------- DEFAULT     __deallocating_deinit
 
 [main_Dog: main_Mammal]
-nth        addr  vt_offset type    name                  
----------------------------------------------------------
-  1 0x1000032dc ---------- DEFAULT __allocating_init
-  2 0x1000038a0 ---------- DEFAULT speak
-  3 0x100003974 ---------- DEFAULT init
-  4 0x1000039c0 ---------- DEFAULT deinit
-  5 0x1000039e8 ---------- DEFAULT __deallocating_deinit
+nth        addr  vt_offset type        name                  
+-------------------------------------------------------------
+  1 0x1000032dc ---------- DEFAULT     __allocating_init
+  2 0x1000038a0 ---------- DEFAULT     speak
+  3 0x100003974 ---------- CONSTRUCTOR init
+  4 0x1000039c0 ---------- DESTRUCTOR  deinit
+  5 0x1000039e8 ---------- DEFAULT     __deallocating_deinit
 
 [main_Human: main_Mammal]
-nth        addr  vt_offset type    name                  
----------------------------------------------------------
-  1 0x100003224 ---------- DEFAULT __allocating_init
-  2 0x100003598 ---------- DEFAULT speak
-  3 0x10000366c ---------- DEFAULT init
-  4 0x1000036b8 ---------- DEFAULT deinit
-  5 0x1000036e0 ---------- DEFAULT __deallocating_deinit
+nth        addr  vt_offset type        name                  
+-------------------------------------------------------------
+  1 0x100003224 ---------- DEFAULT     __allocating_init
+  2 0x100003598 ---------- DEFAULT     speak
+  3 0x10000366c ---------- CONSTRUCTOR init
+  4 0x1000036b8 ---------- DESTRUCTOR  deinit
+  5 0x1000036e0 ---------- DEFAULT     __deallocating_deinit
 
 [main_Mammal]
-nth        addr  vt_offset type    name                  
----------------------------------------------------------
-  1 0x100003370 ---------- DEFAULT speak
-  2 0x1000034dc ---------- DEFAULT deinit
-  3 0x100003500 ---------- DEFAULT __deallocating_deinit
-  4 0x10000353c ---------- DEFAULT __allocating_init
-  5 0x100003574 ---------- DEFAULT init
+nth        addr  vt_offset type        name                  
+-------------------------------------------------------------
+  1 0x100003370 ---------- DEFAULT     speak
+  2 0x1000034dc ---------- DESTRUCTOR  deinit
+  3 0x100003500 ---------- DEFAULT     __deallocating_deinit
+  4 0x10000353c ---------- DEFAULT     __allocating_init
+  5 0x100003574 ---------- CONSTRUCTOR init
 
 [main_Shepherd: main_Dog]
-nth        addr  vt_offset type    name                  
----------------------------------------------------------
-  1 0x100003338 ---------- DEFAULT __allocating_init
-  2 0x100003a24 ---------- DEFAULT speak
-  3 0x100003af8 ---------- DEFAULT init
-  4 0x100003b44 ---------- DEFAULT deinit
-  5 0x100003b6c ---------- DEFAULT __deallocating_deinit
+nth        addr  vt_offset type        name                  
+-------------------------------------------------------------
+  1 0x100003338 ---------- DEFAULT     __allocating_init
+  2 0x100003a24 ---------- DEFAULT     speak
+  3 0x100003af8 ---------- CONSTRUCTOR init
+  4 0x100003b44 ---------- DESTRUCTOR  deinit
+  5 0x100003b6c ---------- DEFAULT     __deallocating_deinit
 
 .---------------.   .----------------.    .---------------.
 |  Swift_Array  |   |  Swift_String  |    |  main_Mammal  |

@@ -56,6 +56,30 @@ static void rz_add_swift_base_classes(RzAnalysis *analysis, RzBinClass *bin_clas
 	}
 }
 
+static void identify_constructor_destructor(RzAnalysis *analysis) {
+	RzPVector *vect = rz_analysis_class_get_all(analysis, false);
+	void **iter;
+	rz_pvector_foreach (vect, iter) {
+		SdbKv *kv = *iter;
+		const char *class_name = sdbkv_key(kv);
+		RzVector *methods = rz_analysis_class_method_get_all(analysis, class_name);
+		RzAnalysisMethod *method;
+		rz_vector_foreach (methods, method) {
+			if (!method || !method->name) {
+				continue;
+			}
+			if (strstr(method->name, "_init") != NULL && strstr(method->name, "_allocating_init") == NULL) {
+				method->method_type = RZ_ANALYSIS_CLASS_METHOD_CONSTRUCTOR;
+				rz_analysis_class_method_set(analysis, class_name, method);
+			} else if (strstr(method->name, "_deinit") != NULL && strstr(method->name, "_deallocating_deinit") == NULL) {
+				method->method_type = RZ_ANALYSIS_CLASS_METHOD_DESTRUCTOR;
+				rz_analysis_class_method_set(analysis, class_name, method);
+			}
+		}
+	}
+	rz_pvector_free(vect);
+}
+
 /**
  * \brief Process Swift RTTI information.
  * This function processes Swift RTTI information from the given RzBinObject.
@@ -86,4 +110,6 @@ RZ_API void rz_analysis_rtti_swift(RzAnalysis *analysis) {
 		class = *iter_class;
 		rz_add_swift_base_classes(analysis, class, swift_metaclass_info);
 	}
+
+	identify_constructor_destructor(analysis);
 }
