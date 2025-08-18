@@ -88,9 +88,8 @@ RUN
 
 NAME=swift-x86-64 calling convention
 FILE=bins/mach0/swift5.1-throwError
-BROKEN=1
 CMDS=<<EOF
-s sym.throwError.Thrower.throwMyError___throws
+s sym.throwError.Thrower.throwError.Thrower.throwMyError___throws
 af
 afc swift
 afva
@@ -123,10 +122,9 @@ EOF
 RUN
 
 NAME=swift-x86-64 calling convention json
-BROKEN=1
 FILE=bins/mach0/swift5.1-throwError
 CMDS=<<EOF
-s sym.throwError.Thrower.throwMyError___throws
+s sym.throwError.Thrower.throwError.Thrower.throwMyError___throws
 af
 afc swift
 afva

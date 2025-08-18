@@ -5,7 +5,7 @@
 #include "rz_core.h"
 #include "rz_io.h"
 
-static void add_metaclass_info(HtUP *swift_metaclass_info, RzList *fields, char *class_name) {
+static void add_metaclass_info(HtUP *swift_metaclass_info, RzList /*<RzBinClassField *>*/ *fields, char *class_name) {
 	RzListIter *iter;
 	RzBinClassField *field;
 	rz_list_foreach (fields, iter, field) {
