@@ -46,13 +46,15 @@ static void rz_add_swift_base_classes(RzAnalysis *analysis, RzBinClass *bin_clas
 	// check hexa value ar vaddr + 0x8
 	// it should be address to type metadata of superclass
 	ut64 super_vaddr = 0;
-	if (rz_io_nread_at(core->io, vaddr, (ut8 *)&super_vaddr, sizeof(super_vaddr))) {
-		bool found = false;
-		char *super_class_name = ht_up_find(swift_metaclass_info, super_vaddr, &found);
-		if (found) {
-			// If found, we can use the superclass name
-			add_class_base(analysis, bin_class->name, super_class_name);
-		}
+	ut8 buffer[sizeof(ut64)] = { 0 };
+	if (rz_io_nread_at(core->io, vaddr, (ut8 *)&buffer, sizeof(super_vaddr))) {
+		super_vaddr = rz_read_ble64(buffer, analysis->big_endian);
+	}
+	bool found = false;
+	char *super_class_name = ht_up_find(swift_metaclass_info, super_vaddr, &found);
+	if (found) {
+		// If found, we can use the superclass name
+		add_class_base(analysis, bin_class->name, super_class_name);
 	}
 }
 
