@@ -364,11 +364,16 @@ static ut64 __opaddr(RzAnalysisBlock *b, ut64 addr) {
 	return UT64_MAX;
 }
 
-static void bb_info_print(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisBlock *bb,
+static RZ_OWN char *bb_info_to_string(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisBlock *bb,
 	ut64 addr, RzOutputMode mode, PJ *pj, RzTable *t) {
 	RzDebugTracepoint *tp = NULL;
+	RzStrBuf *buf = rz_strbuf_new("");
+	if (!buf) {
+		return NULL;
+	}
 	int outputs = (bb->jump != UT64_MAX) + (bb->fail != UT64_MAX);
 	int inputs = 0;
+	char *table_str = NULL;
 
 	void **iter;
 	RzAnalysisBlock *bb2;
@@ -386,26 +391,26 @@ static void bb_info_print(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisBlock
 	switch (mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
 		tp = rz_debug_trace_get(core->dbg, bb->addr);
-		rz_cons_printf("0x%08" PFMT64x " 0x%08" PFMT64x " %02X:%04X %" PFMT64d,
+		rz_strbuf_appendf(buf, "0x%08" PFMT64x " 0x%08" PFMT64x " %02X:%04X %" PFMT64d,
 			bb->addr, bb->addr + bb->size,
 			tp ? tp->times : 0, tp ? tp->count : 0,
 			bb->size);
 		if (bb->jump != UT64_MAX) {
-			rz_cons_printf(" j 0x%08" PFMT64x, bb->jump);
+			rz_strbuf_appendf(buf, " j 0x%08" PFMT64x, bb->jump);
 		}
 		if (bb->fail != UT64_MAX) {
-			rz_cons_printf(" f 0x%08" PFMT64x, bb->fail);
+			rz_strbuf_appendf(buf, " f 0x%08" PFMT64x, bb->fail);
 		}
 		if (bb->switch_op) {
 			RzAnalysisCaseOp *cop;
 			RzListIter *iter;
 			RzList *unique_cases = rz_list_uniq(bb->switch_op->cases, casecmp, NULL);
 			rz_list_foreach (unique_cases, iter, cop) {
-				rz_cons_printf(" s 0x%08" PFMT64x, cop->addr);
+				rz_strbuf_appendf(buf, " s 0x%08" PFMT64x, cop->addr);
 			}
 			rz_list_free(unique_cases);
 		}
-		rz_cons_newline();
+		rz_strbuf_append(buf, "\n");
 		break;
 	case RZ_OUTPUT_MODE_JSON: {
 		pj_o(pj);
@@ -446,26 +451,31 @@ static void bb_info_print(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisBlock
 		pj_ki(pj, "ninstr", bb->ninstr);
 		pj_kb(pj, "traced", bb->traced);
 		pj_end(pj);
+		char *json_str = rz_str_dup(pj_string(pj));
+		pj_free(pj);
+		rz_strbuf_append(buf, json_str);
 		break;
 	}
 	case RZ_OUTPUT_MODE_TABLE:
-		rz_table_add_rowf(t, "xdxx", bb->addr, bb->size, bb->jump, bb->fail);
+		table_str = rz_table_tostring(t);
+		rz_strbuf_append(buf, table_str);
+		RZ_FREE(table_str);
 		break;
 	case RZ_OUTPUT_MODE_RIZIN:
-		rz_cons_printf("f bb.%05" PFMT64x " @ 0x%08" PFMT64x "\n", bb->addr & 0xFFFFF, bb->addr);
+		rz_strbuf_appendf(buf, "f bb.%05" PFMT64x " @ 0x%08" PFMT64x "\n", bb->addr & 0xFFFFF, bb->addr);
 		break;
 	case RZ_OUTPUT_MODE_QUIET:
-		rz_cons_printf("0x%08" PFMT64x "\n", bb->addr);
+		rz_strbuf_appendf(buf, "0x%08" PFMT64x "\n", bb->addr);
 		break;
 	case RZ_OUTPUT_MODE_LONG: {
 		if (bb->jump != UT64_MAX) {
-			rz_cons_printf("jump: 0x%08" PFMT64x "\n", bb->jump);
+			rz_strbuf_appendf(buf, "jump: 0x%08" PFMT64x "\n", bb->jump);
 		}
 		if (bb->fail != UT64_MAX) {
-			rz_cons_printf("fail: 0x%08" PFMT64x "\n", bb->fail);
+			rz_strbuf_appendf(buf, "fail: 0x%08" PFMT64x "\n", bb->fail);
 		}
-		rz_cons_printf("opaddr: 0x%08" PFMT64x "\n", opaddr);
-		rz_cons_printf("addr: 0x%08" PFMT64x "\nsize: %" PFMT64d "\ninputs: %d\noutputs: %d\nninstr: %d\ntraced: %s\n",
+		rz_strbuf_appendf(buf, "opaddr: 0x%08" PFMT64x "\n", opaddr);
+		rz_strbuf_appendf(buf, "addr: 0x%08" PFMT64x "\nsize: %" PFMT64d "\ninputs: %d\noutputs: %d\nninstr: %d\ntraced: %s\n",
 			bb->addr, bb->size, inputs, outputs, bb->ninstr, rz_str_bool(bb->traced));
 		break;
 	}
@@ -473,6 +483,8 @@ static void bb_info_print(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisBlock
 		rz_warn_if_reached();
 		break;
 	}
+
+	return rz_strbuf_drain(buf);
 }
 
 static int bb_cmp(const void *a, const void *b, void *user) {
@@ -481,30 +493,41 @@ static int bb_cmp(const void *a, const void *b, void *user) {
 	return ba->addr - bb->addr;
 }
 
-RZ_IPI void rz_core_analysis_bbs_info_print(RzCore *core, RzAnalysisFunction *fcn, RzCmdStateOutput *state) {
-	rz_return_if_fail(core && fcn && state);
+RZ_IPI RZ_OWN char *rz_core_analysis_bbs_as_string(RzCore *core, RzAnalysisFunction *fcn, RzCmdStateOutput *state) {
+	rz_return_val_if_fail(core && fcn && state, NULL);
 	void **iter;
 	RzAnalysisBlock *bb;
+	RzStrBuf *buf = rz_strbuf_new("");
+	if (!buf) {
+		return NULL;
+	}
 	rz_cmd_state_output_array_start(state);
 	rz_cmd_state_output_set_columnsf(state, "xdxx", "addr", "size", "jump", "fail");
 	if (state->mode == RZ_OUTPUT_MODE_RIZIN) {
-		rz_cons_printf("fs blocks\n");
+		rz_strbuf_append(buf, "fs blocks\n");
 	}
 
 	rz_pvector_sort(fcn->bbs, bb_cmp, NULL);
 	rz_pvector_foreach (fcn->bbs, iter) {
 		bb = (RzAnalysisBlock *)*iter;
-		bb_info_print(core, fcn, bb, bb->addr, state->mode, state->d.pj, state->d.t);
+		char *bb_info = bb_info_to_string(core, fcn, bb, bb->addr, state->mode, state->d.pj, state->d.t);
+		rz_strbuf_append(buf, bb_info);
+		RZ_FREE(bb_info);
 	}
 
 	rz_cmd_state_output_array_end(state);
+	return rz_strbuf_drain(buf);
 }
 
 RZ_IPI void rz_core_analysis_bb_info_print(RzCore *core, RzAnalysisBlock *bb, ut64 addr, RzCmdStateOutput *state) {
 	rz_return_if_fail(core && bb && state);
 	rz_cmd_state_output_set_columnsf(state, "xdxx", "addr", "size", "jump", "fail");
 	RzAnalysisFunction *fcn = rz_list_first(bb->fcns);
-	bb_info_print(core, fcn, bb, addr, state->mode, state->d.pj, state->d.t);
+	char *bb_info = bb_info_to_string(core, fcn, bb, addr, state->mode, state->d.pj, state->d.t);
+	if (bb_info) {
+		rz_cons_printf("%s", bb_info);
+		RZ_FREE(bb_info);
+	}
 }
 
 /*this only autoname those function that start with fcn.* or sym.func.* */
