@@ -35,8 +35,23 @@ bool test_rz_bits_count(void) {
 	mu_end;
 }
 
+bool test_rz_bits_spread(void) {
+	mu_assert_eq(rz_bits_spread(0xffffffffffffffff, 0xffffffffffffffff), 0xffffffffffffffff, "Spread mismatch.");
+	mu_assert_eq(rz_bits_spread(0, 0xffffffffffffffff), 0, "Spread mismatch.");
+	mu_assert_eq(rz_bits_spread(0x1, 0xfffffffffffffffe), 0, "Spread mismatch.");
+	mu_assert_eq(rz_bits_spread(0x8000000000000000, 0x7fffffffffffffff), 0x8000000000000000, "Spread mismatch.");
+	mu_assert_eq(rz_bits_spread(0x0000000055555555, 0xffffffffffffffff), 0x55555555, "Spread mismatch.");
+	mu_assert_eq(rz_bits_spread(0xf300021, 0xff), 0xf300021, "Spread mismatch.");
+	mu_assert_eq(rz_bits_spread(0xf300021, 0xfe), 0xf300020, "Spread mismatch.");
+	mu_assert_eq(rz_bits_spread(0xf300021, 0x7e), 0x7300020, "Spread mismatch.");
+	mu_assert_eq(rz_bits_spread(0xf301021, 0x7e), 0x3301020, "Spread mismatch.");
+
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_bits_count);
+	mu_run_test(test_rz_bits_spread);
 
 	return tests_passed != tests_run;
 }
