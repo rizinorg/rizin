@@ -42,6 +42,13 @@
 #define ELF_M_INFO        ELF32_M_INFO
 #endif
 
+/**
+ * \brief An extension for Sparc64's ELF64.
+ */
+#define ELF64_SPARC_R_TYPE_DATA(info) (((ut64)(info) << 32) >> 40)
+#define ELF64_R_TYPE_ID(info)         (((u64)(info) << 56) >> 56)
+#define ELF64_R_TYPE_INFO(data, type) (((u64)(data) << 8) + (ut64)(type))
+
 #define E_IDENT_OFFSET      offsetof(Elf_(Ehdr), e_ident)
 #define E_TYPE_OFFSET       offsetof(Elf_(Ehdr), e_type)
 #define E_MACHINE_OFFSET    offsetof(Elf_(Ehdr), e_machine)

@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "elf.h"
+#include "elf/glibc_elf.h"
 
 #define VERSYM_VERSION 0x7fff
 
@@ -738,6 +739,12 @@ static bool arch_is_mips(ELFOBJ *bin) {
 		bin->ehdr.e_machine == EM_MIPS_RS3_LE ||
 		bin->ehdr.e_machine == EM_MIPS_X ||
 		arch_is_nanomips(bin);
+}
+
+static bool arch_is_sparc(ELFOBJ *bin) {
+	return bin->ehdr.e_machine == EM_SPARC ||
+		bin->ehdr.e_machine == EM_SPARC32PLUS ||
+		bin->ehdr.e_machine == EM_SPARCV9;
 }
 
 static bool arch_is_arcompact(ELFOBJ *bin) {
@@ -1632,6 +1639,10 @@ RZ_OWN char *Elf_(rz_bin_elf_get_cpu)(RZ_NONNULL ELFOBJ *bin) {
 	} else if (arch_is_mips(bin)) {
 		// check which is the correct known mips cpus.
 		return get_cpu_mips(bin);
+	} else if (arch_is_sparc(bin)) {
+		// Capstone has only v8 and v9 for now.
+		// So no finer distinction necessary.
+		return bin->ehdr.e_machine == EM_SPARC ? strdup("v8") : strdup("v9");
 	}
 
 	return NULL;

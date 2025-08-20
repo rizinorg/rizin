@@ -175,9 +175,6 @@ EXPECT=<<EOF
 0x0002bca4    1 8            root.0002bca4
 0x0002c05c    1 8            root.0002c05c
 0x0002c880    1 72           root.0002c880
-0x0003f9b0    1 8            root.0003f9b0
-0x0003f9bc    1 8            root.0003f9bc
-0x0003f9c8    1 8            root.0003f9c8
 EOF
 RUN
 
