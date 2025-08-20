@@ -684,17 +684,17 @@ static void loongarch_op_set_type(RzAsmLoongArchContext *ctx, RzAnalysisOp *op) 
 		break;
 	case LOONGARCH_INS_PCADDI:
 		op->val = op->addr;
-		op->val += ((st64)loongarch_op_as_imm(ctx, 1) << 2);
+		op->val += ((ut64)loongarch_op_as_imm(ctx, 1) << 2);
 		op->type = RZ_ANALYSIS_OP_TYPE_LEA;
 		break;
 	case LOONGARCH_INS_PCADDU12I:
 		op->val = op->addr;
-		op->val += ((st64)loongarch_op_as_imm(ctx, 1) << 12);
+		op->val += ((ut64)loongarch_op_as_imm(ctx, 1) << 12);
 		op->type = RZ_ANALYSIS_OP_TYPE_LEA;
 		break;
 	case LOONGARCH_INS_PCADDU18I:
 		op->val = op->addr;
-		op->val += ((st64)loongarch_op_as_imm(ctx, 1) << 18);
+		op->val += ((ut64)loongarch_op_as_imm(ctx, 1) << 18);
 		op->type = RZ_ANALYSIS_OP_TYPE_LEA;
 		break;
 	case LOONGARCH_INS_PCALAU12I: {
