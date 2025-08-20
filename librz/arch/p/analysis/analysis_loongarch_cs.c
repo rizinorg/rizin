@@ -154,7 +154,7 @@ static void loongarch_fillval(RzAsmLoongArchContext *ctx, RzAnalysis *a, RzAnaly
 		}
 		if (loongarchop->access & CS_AC_WRITE) {
 			av->access |= RZ_ANALYSIS_ACC_W;
-			if (av == op->src[srci - 1]) {
+			if (loongarchop->access & CS_AC_READ) {
 				av = rz_mem_dup(av, sizeof(RzAnalysisValue));
 			}
 			op->dst = av;
