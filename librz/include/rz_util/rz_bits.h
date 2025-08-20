@@ -98,6 +98,8 @@ SIGN_EXT_IMPL(16);
 SIGN_EXT_IMPL(32);
 SIGN_EXT_IMPL(64);
 
+RZ_API ut64 rz_bits_spread(const ut64 mask, const ut64 value);
+
 #ifdef __cplusplus
 }
 #endif
