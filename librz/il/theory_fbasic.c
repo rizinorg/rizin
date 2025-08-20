@@ -343,18 +343,22 @@ void *rz_il_handler_fexcept(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 	switch (args.e) {
 	case RZ_FLOAT_E_DIV_ZERO:
 		e = n->exception & RZ_FLOAT_E_DIV_ZERO;
+		RZ_LOG_WARN("VM: FP division by zero exception at: 0x%" PFMT64x "\n", rz_bv_to_ut64(vm->pc));
 		rz_il_vm_event_add(vm, rz_il_event_exception_new("float division by zero"));
 		break;
 	case RZ_FLOAT_E_OVERFLOW:
 		e = n->exception & RZ_FLOAT_E_OVERFLOW;
+		RZ_LOG_WARN("VM: FP overflow exception at: 0x%" PFMT64x "\n", rz_bv_to_ut64(vm->pc));
 		rz_il_vm_event_add(vm, rz_il_event_exception_new("float overflow"));
 		break;
 	case RZ_FLOAT_E_UNDERFLOW:
 		e = n->exception & RZ_FLOAT_E_UNDERFLOW;
+		RZ_LOG_WARN("VM: FP underflow exception at: 0x%" PFMT64x "\n", rz_bv_to_ut64(vm->pc));
 		rz_il_vm_event_add(vm, rz_il_event_exception_new("float underflow"));
 		break;
 	case RZ_FLOAT_E_INEXACT:
 		e = n->exception & RZ_FLOAT_E_INEXACT;
+		RZ_LOG_WARN("VM: FP inexact exception at: 0x%" PFMT64x "\n", rz_bv_to_ut64(vm->pc));
 		rz_il_vm_event_add(vm, rz_il_event_exception_new("float inexact"));
 		break;
 	default:;

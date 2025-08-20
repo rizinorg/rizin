@@ -230,6 +230,7 @@ void *rz_il_handler_div(RzILVM *vm, RzILOpBitVector *op, RzILTypePure *type) {
 		if (rz_bv_is_zero_vector(y)) {
 			result = rz_bv_new(y->len);
 			rz_bv_set_all(result, true);
+			RZ_LOG_WARN("VM: Division by zero exception at: 0x%" PFMT64x "\n", rz_bv_to_ut64(vm->pc));
 			rz_il_vm_event_add(vm, rz_il_event_exception_new("division by zero"));
 		} else {
 			result = rz_bv_div(x, y);
