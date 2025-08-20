@@ -8,6 +8,7 @@ rz_util_common_sources = [
   'assert.c',
   'astr.c',
   'axml.c',
+  'bits.c',
   'bitvector.c',
   'buf.c',
   'calc.c',
