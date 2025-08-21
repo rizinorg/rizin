@@ -284,6 +284,10 @@ RZ_API void rz_il_vm_event_add(RzILVM *vm, RzILEvent *evt) {
 		rz_warn_if_reached();
 		rz_il_event_free(evt);
 	}
+	if (evt->type == RZ_IL_EVENT_EXCEPTION && (vm->halt_exceptions & evt->data.exception)) {
+		RZ_LOG_WARN("Reached exception '%s'. Requesting VM to halt.\n", rz_il_event_exception_msg(evt->data.exception));
+		vm->halt = true;
+	}
 }
 
 /**
@@ -305,12 +309,23 @@ RZ_API bool rz_il_vm_step(RzILVM *vm, RzILOpEffect *op, ut64 fallthrough_addr) {
 	rz_il_vm_clear_events(vm);
 
 	// Set the successor pc **before** evaluating. Any jmp/goto may then overwrite it again.
+	ut64 old_pc = rz_bv_to_ut64(vm->pc);
 	RzBitVector *next_pc = rz_bv_new_from_ut64(vm->pc->len, fallthrough_addr);
 	rz_il_vm_event_add(vm, rz_il_event_pc_write_new(vm->pc, next_pc));
 	rz_bv_free(vm->pc);
 	vm->pc = next_pc;
 
 	bool succ = rz_il_evaluate_effect(vm, op);
+	if (vm->halt) {
+		RZ_LOG_WARN("Halting VM at 0x%" PFMT64x "!\n", old_pc);
+		// Reset PC to halting instruction.
+		RzBitVector *prev_pc = rz_bv_new_from_ut64(vm->pc->len, old_pc);
+		rz_bv_free(vm->pc);
+		vm->pc = prev_pc;
+		// Don't reset vm->halt flag.
+		// User should re-init VM.
+		return false;
+	}
 
 	// remove any local defined variable (local pure vars are unbound automatically)
 	rz_il_var_set_reset(&vm->local_vars);

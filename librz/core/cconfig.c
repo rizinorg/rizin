@@ -3024,6 +3024,16 @@ static bool cb_flirt(void *user, void *data) {
 	return true;
 }
 
+static bool rzil_halt_on_exec(void *user, void *data) {
+	rz_return_val_if_fail(data, false);
+	RzConfigNode *node = (RzConfigNode *)data;
+	if (*node->value == '?') {
+		print_node_options(node);
+		return false;
+	}
+	return true;
+}
+
 RZ_API int rz_core_config_init(RzCore *core) {
 	int i;
 	char buf[128], *p, *tmpdir;
@@ -3920,6 +3930,9 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	/* RzIL config */
 	SETB("rzil.step.events.read", false, "enables/disables printing aezse read event");
 	SETB("rzil.step.events.write", true, "enables/disables printing aezse write event");
+	n = NODECB("rzil.step.events.halt_on_exc", "div0,fp_invalid_op", &rzil_halt_on_exec);
+	SETDESC(n, "Enables/disable exceptions the VM should halt if reached.");
+	SETOPTIONS(n, "div0", "fp_div0", "fp_inexact", "fp_underflow", "fp_overflow", "fp_invalid_op", "none", "all", NULL);
 
 	/* FLIRT config */
 	SETBPREF("flirt.sig.library", RZ_FLIRT_LIBRARY_NAME_DFL, "FLIRT library name for sig format");

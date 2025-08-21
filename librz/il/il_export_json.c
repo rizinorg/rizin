@@ -872,7 +872,7 @@ RZ_API void rz_il_event_json(RZ_NONNULL RzILEvent *evt, RZ_NONNULL PJ *pj) {
 	case RZ_IL_EVENT_EXCEPTION:
 		pj_o(pj);
 		pj_ks(pj, "type", "exception");
-		pj_ks(pj, "exception", evt->data.exception);
+		pj_ks(pj, "exception", rz_il_event_exception_msg(evt->data.exception));
 		pj_end(pj);
 		break;
 	case RZ_IL_EVENT_PC_WRITE:

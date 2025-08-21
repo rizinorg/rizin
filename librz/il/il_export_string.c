@@ -1069,7 +1069,7 @@ RZ_API void rz_il_event_stringify(RZ_NONNULL const RzILEvent *evt, RZ_NONNULL Rz
 
 	switch (evt->type) {
 	case RZ_IL_EVENT_EXCEPTION:
-		rz_strbuf_appendf(sb, "exception(%s)", evt->data.exception);
+		rz_strbuf_appendf(sb, "exception(%s)", rz_il_event_exception_msg(evt->data.exception));
 		break;
 	case RZ_IL_EVENT_PC_WRITE:
 		tmp0 = rz_bv_as_hex_string(evt->data.pc_write.old_pc, false);

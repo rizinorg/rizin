@@ -1,0 +1,79 @@
+NAME=Halt VM on exception
+FILE==
+ARGS=-a ppc -e cfg.bigendian=true -b 64
+CMDS=<<EOF
+
+# li	3, 4
+# li	4, 0
+# divdu 5, 3, 4
+# invalid
+wx 38600004388000007ca3239200000000
+pd 4
+
+e rzil.step.events.halt_on_exc=none
+aezi
+aezse 4
+aezv PC
+
+e rzil.step.events.halt_on_exc=div0
+s 0x0
+aezi
+aezse 4
+aezv PC
+
+e rzil.step.events.halt_on_exc=all
+s 0x0
+aezi
+aezse 4
+aezv PC
+
+e rzil.step.events.halt_on_exc=fp_div0
+s 0x0
+aezi
+aezse 4
+aezv PC
+EOF
+EXPECT_ERR=<<EOF
+WARNING: Reached exception 'division by zero'. Requesting VM to halt.
+WARNING: Halting VM at 0x8!
+ERROR: RzIL: stepping failed with PC at 0x8.
+WARNING: Reached exception 'division by zero'. Requesting VM to halt.
+WARNING: Halting VM at 0x8!
+ERROR: RzIL: stepping failed with PC at 0x8.
+EOF
+EXPECT=<<EOF
+            0x00000000      li    r3, 4
+            0x00000004      li    r4, 0
+            0x00000008      divdu r5, r3, r4
+            0x0000000c      invalid
+pc_write(old: 0x0, new: 0x4)
+var_write(name: r3, old: 0x0, new: 0x4)
+pc_write(old: 0x4, new: 0x8)
+var_write(name: r4, old: 0x0, new: 0x0)
+pc_write(old: 0x8, new: 0xc)
+exception(division by zero)
+var_write(name: r5, old: 0x0, new: 0xffffffffffffffff)
+pc_write(old: 0xc, new: 0x10)
+ PC: 0x0000000000000010
+pc_write(old: 0x0, new: 0x4)
+var_write(name: r3, old: 0x4, new: 0x4)
+pc_write(old: 0x4, new: 0x8)
+var_write(name: r4, old: 0x0, new: 0x0)
+ PC: 0x0000000000000008
+pc_write(old: 0x0, new: 0x4)
+var_write(name: r3, old: 0x4, new: 0x4)
+pc_write(old: 0x4, new: 0x8)
+var_write(name: r4, old: 0x0, new: 0x0)
+ PC: 0x0000000000000008
+pc_write(old: 0x0, new: 0x4)
+var_write(name: r3, old: 0x4, new: 0x4)
+pc_write(old: 0x4, new: 0x8)
+var_write(name: r4, old: 0x0, new: 0x0)
+pc_write(old: 0x8, new: 0xc)
+exception(division by zero)
+var_write(name: r5, old: 0xffffffffffffffff, new: 0xffffffffffffffff)
+pc_write(old: 0xc, new: 0x10)
+ PC: 0x0000000000000010
+EOF
+RUN
+
