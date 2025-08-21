@@ -1,6 +1,6 @@
 [wrap-git]
 url = https://github.com/capstone-engine/capstone.git
-revision = 42fbce6c524a3a57748f9de2b5460a7135e236c1
+revision = 9539045d675a30eed43869325f7f51cfc26de0b7
 directory = capstone-next
 patch_directory = capstone-next
 depth = 1

@@ -56,6 +56,7 @@ cs_files = [
   'arch/PowerPC/PPCMapping.c',
   'arch/PowerPC/PPCModule.c',
   'arch/Sparc/SparcDisassembler.c',
+  'arch/Sparc/SparcDisassemblerExtension.c',
   'arch/Sparc/SparcInstPrinter.c',
   'arch/Sparc/SparcMapping.c',
   'arch/Sparc/SparcModule.c',
