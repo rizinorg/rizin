@@ -3,6 +3,14 @@
 
 #include <rz_util.h>
 
+/**
+ * \file structured_data.c
+ * 
+ * Generates a structured data which can be converted
+ * in a human readable output (like json or yaml).
+ * 
+ */
+
 #include "structured_data_json.c"
 #include "structured_data_yaml.c"
 
@@ -135,7 +143,7 @@ static RzStructuredData *structured_data_new_string(char *v_string) {
 	return sd;
 }
 
-static bool structured_data_map_add(RzStructuredData *parent, const char *key, RZ_OWN RzStructuredData *child) {
+static bool structured_data_map_add(RZ_NONNULL RzStructuredData *parent, const char *key, RZ_NONNULL RZ_OWN RzStructuredData *child) {
 	RzPVector *pvec = parent->v_array;
 	HtSP *map = parent->v_map;
 	if (!map || !pvec || !child || RZ_STR_ISEMPTY(key)) {
@@ -163,7 +171,7 @@ static bool structured_data_map_add(RzStructuredData *parent, const char *key, R
 	return rz_pvector_push(pvec, key_copy);
 }
 
-static bool structured_data_array_add(RzStructuredData *parent, RZ_OWN RzStructuredData *child) {
+static bool structured_data_array_add(RZ_NONNULL RzStructuredData *parent, RZ_NONNULL RZ_OWN RzStructuredData *child) {
 	RzPVector *pvec = parent->v_array;
 	if (!pvec || !child) {
 		RZ_LOG_ERROR("struct_factory: invalid array value\n");
@@ -253,7 +261,7 @@ RZ_API bool rz_structured_data_map_add(RZ_NONNULL RzStructuredData *parent, RZ_N
  * \param      n       The value to assign to the child
  * \param      hex     When true the type is going to be set as base16 number instead of base10 unsigned number.
  *
- * \return     On success returns true, otherwise the child gets deallocated by the function and return false.
+ * \return     On success returns true, otherwise false.
  */
 RZ_API bool rz_structured_data_map_add_unsigned(RZ_NONNULL RzStructuredData *parent, RZ_NONNULL const char *key, ut64 n, bool hex) {
 	rz_return_val_if_fail(parent && parent->type == STRUCTURED_DATA_TYPE_MAP && key, false);
@@ -269,7 +277,7 @@ RZ_API bool rz_structured_data_map_add_unsigned(RZ_NONNULL RzStructuredData *par
  * \param[in]  key     The key to assign the child RzStructuredData
  * \param      n       The value to assign to the child
  *
- * \return     On success returns true, otherwise the child gets deallocated by the function and return false.
+ * \return     On success returns true, otherwise false.
  */
 RZ_API bool rz_structured_data_map_add_signed(RZ_NONNULL RzStructuredData *parent, RZ_NONNULL const char *key, st64 n) {
 	rz_return_val_if_fail(parent && parent->type == STRUCTURED_DATA_TYPE_MAP && key, false);
@@ -285,7 +293,7 @@ RZ_API bool rz_structured_data_map_add_signed(RZ_NONNULL RzStructuredData *paren
  * \param[in]  key     The key to assign the child RzStructuredData
  * \param      d       The value to assign to the child
  *
- * \return     On success returns true, otherwise the child gets deallocated by the function and return false.
+ * \return     On success returns true, otherwise false.
  */
 RZ_API bool rz_structured_data_map_add_double(RZ_NONNULL RzStructuredData *parent, RZ_NONNULL const char *key, double d) {
 	rz_return_val_if_fail(parent && parent->type == STRUCTURED_DATA_TYPE_MAP && key, false);
@@ -301,7 +309,7 @@ RZ_API bool rz_structured_data_map_add_double(RZ_NONNULL RzStructuredData *paren
  * \param[in]  key     The key to assign the child RzStructuredData
  * \param      b       The value to assign to the child
  *
- * \return     On success returns true, otherwise the child gets deallocated by the function and return false.
+ * \return     On success returns true, otherwise false.
  */
 RZ_API bool rz_structured_data_map_add_boolean(RZ_NONNULL RzStructuredData *parent, RZ_NONNULL const char *key, bool b) {
 	rz_return_val_if_fail(parent && parent->type == STRUCTURED_DATA_TYPE_MAP && key, false);
@@ -317,7 +325,7 @@ RZ_API bool rz_structured_data_map_add_boolean(RZ_NONNULL RzStructuredData *pare
  * \param[in]  key     The key to assign the child RzStructuredData
  * \param      s       The value to assign to the child
  *
- * \return     On success returns true, otherwise the child gets deallocated by the function and return false.
+ * \return     On success returns true, otherwise false.
  */
 RZ_API bool rz_structured_data_map_add_string(RZ_NONNULL RzStructuredData *parent, RZ_NONNULL const char *key, RZ_NONNULL const char *s) {
 	rz_return_val_if_fail(parent && parent->type == STRUCTURED_DATA_TYPE_MAP && key && s, false);
@@ -388,7 +396,7 @@ RZ_API bool rz_structured_data_array_add(RZ_NONNULL RzStructuredData *parent, RZ
  * \param      n       The value to assign to the child
  * \param      hex     When true the type is going to be set as base16 number instead of base10 unsigned number.
  *
- * \return     On success returns true, otherwise the child gets deallocated by the function and return false.
+ * \return     On success returns true, otherwise false.
  */
 RZ_API bool rz_structured_data_array_add_unsigned(RZ_NONNULL RzStructuredData *parent, ut64 n, bool hex) {
 	rz_return_val_if_fail(parent && parent->type == STRUCTURED_DATA_TYPE_ARRAY, false);
@@ -402,9 +410,8 @@ RZ_API bool rz_structured_data_array_add_unsigned(RZ_NONNULL RzStructuredData *p
  *
  * \param      parent  Where to add the child RzStructuredData
  * \param      n       The value to assign to the child
- * \param      hex     When true the type is going to be set as base16 number instead of base10 unsigned number.
  *
- * \return     On success returns true, otherwise the child gets deallocated by the function and return false.
+ * \return     On success returns true, otherwise false.
  */
 RZ_API bool rz_structured_data_array_add_signed(RZ_NONNULL RzStructuredData *parent, st64 n) {
 	rz_return_val_if_fail(parent && parent->type == STRUCTURED_DATA_TYPE_ARRAY, false);
@@ -419,7 +426,7 @@ RZ_API bool rz_structured_data_array_add_signed(RZ_NONNULL RzStructuredData *par
  * \param      parent  Where to add the child RzStructuredData
  * \param      n       The value to assign to the child
  *
- * \return     On success returns true, otherwise the child gets deallocated by the function and return false.
+ * \return     On success returns true, otherwise false.
  */
 RZ_API bool rz_structured_data_array_add_double(RZ_NONNULL RzStructuredData *parent, double d) {
 	rz_return_val_if_fail(parent && parent->type == STRUCTURED_DATA_TYPE_ARRAY, false);
@@ -434,7 +441,7 @@ RZ_API bool rz_structured_data_array_add_double(RZ_NONNULL RzStructuredData *par
  * \param      parent  Where to add the child RzStructuredData
  * \param      n       The value to assign to the child
  *
- * \return     On success returns true, otherwise the child gets deallocated by the function and return false.
+ * \return     On success returns true, otherwise false.
  */
 RZ_API bool rz_structured_data_array_add_boolean(RZ_NONNULL RzStructuredData *parent, bool b) {
 	rz_return_val_if_fail(parent && parent->type == STRUCTURED_DATA_TYPE_ARRAY, false);
@@ -449,7 +456,7 @@ RZ_API bool rz_structured_data_array_add_boolean(RZ_NONNULL RzStructuredData *pa
  * \param      parent  Where to add the child RzStructuredData
  * \param      n       The value to assign to the child
  *
- * \return     On success returns true, otherwise the child gets deallocated by the function and return false.
+ * \return     On success returns true, otherwise false.
  */
 RZ_API bool rz_structured_data_array_add_string(RZ_NONNULL RzStructuredData *parent, RZ_NONNULL const char *s) {
 	rz_return_val_if_fail(parent && parent->type == STRUCTURED_DATA_TYPE_ARRAY && s, false);

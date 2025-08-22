@@ -691,7 +691,7 @@ RZ_API const RzBinInfo *rz_bin_object_get_info(RZ_NONNULL RzBinObject *obj) {
 	return obj->info;
 }
 
-RZ_API const RzStructuredData *rz_bin_object_get_structured_data(RZ_NONNULL RzBinObject *obj) {
+RZ_API const RzStructuredData *rz_bin_object_get_structured_data(RZ_BORROW RZ_NONNULL RzBinObject *obj) {
 	rz_return_val_if_fail(obj, NULL);
 	return obj->structured_data;
 }
