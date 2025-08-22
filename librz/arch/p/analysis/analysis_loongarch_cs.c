@@ -349,11 +349,11 @@ static void loongarch_op_set_type(RzAsmLoongArchContext *ctx, RzAnalysisOp *op) 
 	case LOONGARCH_INS_B:
 		op->delay = 1;
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
-		op->jump = op->addr + loongarch_op_as_imm(ctx, 0);
+		op->jump = loongarch_op_as_imm(ctx, 0);
 		break;
 	case LOONGARCH_INS_BL:
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
-		op->jump = op->addr + loongarch_op_as_imm(ctx, 0);
+		op->jump = loongarch_op_as_imm(ctx, 0);
 		op->fail = op->addr + op->size;
 		op->delay = 1;
 		break;
@@ -364,7 +364,7 @@ static void loongarch_op_set_type(RzAsmLoongArchContext *ctx, RzAnalysisOp *op) 
 	case LOONGARCH_INS_BEQ:
 	case LOONGARCH_INS_BNE:
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-		op->jump = op->addr + loongarch_op_as_imm(ctx, 2);
+		op->jump = loongarch_op_as_imm(ctx, 2);
 		op->fail = op->addr + op->size;
 		op->delay = 1;
 		break;
@@ -373,7 +373,7 @@ static void loongarch_op_set_type(RzAsmLoongArchContext *ctx, RzAnalysisOp *op) 
 	case LOONGARCH_INS_BEQZ:
 	case LOONGARCH_INS_BNEZ:
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-		op->jump = op->addr + loongarch_op_as_imm(ctx, 1);
+		op->jump = loongarch_op_as_imm(ctx, 1);
 		op->fail = op->addr + op->size;
 		op->delay = 1;
 		break;

@@ -120,7 +120,7 @@ bits     64
 |           0x0001029c      jirl  ra, t0, 0
 |           0x000102a0      ld.d  t1, sp, 8
 |           0x000102a4      ldptr.d t0, s1, 0
-|       ,=< 0x000102a8      bne   t1, t0, 0x1c
+|       ,=< 0x000102a8      bne   t1, t0, 0x102c4
 |       |   0x000102ac      ld.d  ra, sp, 0x28
 |       |   0x000102b0      ld.d  s0, sp, 0x20
 |       |   0x000102b4      ld.d  s1, sp, 0x18
