@@ -5,10 +5,10 @@
 
 /**
  * \file structured_data.c
- * 
+ *
  * Generates a structured data which can be converted
  * in a human readable output (like json or yaml).
- * 
+ *
  */
 
 #include "structured_data_json.c"
