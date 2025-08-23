@@ -1,5 +1,5 @@
-// SPDX-bileCopyrightText: 2025 PremadeS <emadsohail001@gmail.com>
-// SPDX-License-Identibier: LGPL-3.0-only
+// SPDX-FileCopyrightText: 2025 PremadeS <emadsohail001@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_bookmark.h>
 #include "minunit.h"

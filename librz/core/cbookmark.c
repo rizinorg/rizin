@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2025 PremadeS <emadsohail001@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include "rz_util/rz_str.h"
 #include <rz_cmd.h>
 #include <rz_bookmark.h>

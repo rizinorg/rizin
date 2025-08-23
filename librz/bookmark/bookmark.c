@@ -1,9 +1,12 @@
+// SPDX-FileCopyrightText: 2025 PremadeS <emadsohail001@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include "rz_bookmark.h"
 #include <rz_bookmark.h>
 #include <rz_util.h>
 #include <rz_cons.h>
 
-RZ_LIB_VERSION(rz_flag);
+RZ_LIB_VERSION(rz_bookmark);
 
 #define STRDUP_OR_NULL(s) (!RZ_STR_ISEMPTY(s) ? strdup(s) : NULL)
 

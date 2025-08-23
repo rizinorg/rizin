@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: 2021 Florian Märkl <info@florianmaerkl.de>
-// SPDX-License-Identifier: LGPL-3.0-only
+// -License-Identifier: LGPL-3.0-only
 
 #include "sdb.h"
 #include <rz_project.h>
@@ -701,6 +701,23 @@ RZ_API bool rz_project_migrate_v18_v19(RzProject *prj, RzSerializeResultInfo *re
 	return true;
 }
 
+// --
+// Migration 19 -> 20
+//
+// Changes from c6a7acf8492881938188fc97d782b6bf2957cce7:
+//  Introduced /core/bookmarks sub-db (RzBookmark API)
+//  This prepares the project schema for the new bookmark system
+
+RZ_API bool rz_project_migrate_v19_v20(RzProject *prj, RzSerializeResultInfo *res) {
+	Sdb *core_db;
+	RZ_SERIALIZE_SUB(prj, core_db, res, "core", return false;);
+	Sdb *bookmarks_db = sdb_ns(core_db, "bookmarks", 1);
+	if (!bookmarks_db) {
+		return false;
+	}
+	return true;
+}
+
 static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = {
 	rz_project_migrate_v1_v2,
 	rz_project_migrate_v2_v3,
@@ -720,6 +737,7 @@ static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = 
 	rz_project_migrate_v16_v17,
 	rz_project_migrate_v17_v18,
 	rz_project_migrate_v18_v19,
+	rz_project_migrate_v19_v20,
 };
 
 /// Migrate the given project to the current version in-place
