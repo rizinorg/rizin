@@ -9,7 +9,7 @@
 /* half-magic */
 #define HM(x) (int)((int)(x[0] << 8) | (int)(x[1]))
 
-static Sdb *get_sdb(RzBinFile *bf) {
+static Sdb *mz_get_sdb(RzBinFile *bf) {
 	const struct rz_bin_mz_obj_t *bin;
 	if (bf && bf->o && bf->o->bin_obj) {
 		bin = (struct rz_bin_mz_obj_t *)bf->o->bin_obj;
@@ -86,7 +86,7 @@ static bool checkEntrypointBuffer(RzBuffer *b) {
 	return false;
 }
 
-static bool check_buffer(RzBuffer *b) {
+static bool mz_check_buffer(RzBuffer *b) {
 	rz_return_val_if_fail(b, false);
 	ut64 b_size = rz_buf_size(b);
 	if (b_size <= 0x3d) {
@@ -121,7 +121,7 @@ static bool check_buffer(RzBuffer *b) {
 	return true;
 }
 
-static bool load(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
+static bool mz_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
 	struct rz_bin_mz_obj_t *mz_obj = rz_bin_mz_new_buf(buf);
 	if (mz_obj) {
 		sdb_ns_set(sdb, "info", mz_obj->kv);
@@ -131,11 +131,11 @@ static bool load(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
 	return false;
 }
 
-static void destroy(RzBinFile *bf) {
+static void mz_destroy(RzBinFile *bf) {
 	rz_bin_mz_free((struct rz_bin_mz_obj_t *)bf->o->bin_obj);
 }
 
-static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol type) {
+static RzBinAddr *mz_binsym(RzBinFile *bf, RzBinSpecialSymbol type) {
 	RzBinAddr *mzaddr = NULL;
 	if (bf && bf->o && bf->o->bin_obj) {
 		switch (type) {
@@ -149,7 +149,7 @@ static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol type) {
 	return mzaddr;
 }
 
-static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+static RzPVector /*<RzBinAddr *>*/ *mz_entries(RzBinFile *bf) {
 	RzBinAddr *ptr = NULL;
 	RzPVector *res = NULL;
 	if (!(res = rz_pvector_new(free))) {
@@ -162,11 +162,11 @@ static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	return res;
 }
 
-static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+static RzPVector /*<RzBinSection *>*/ *mz_sections(RzBinFile *bf) {
 	return rz_bin_mz_get_segments(bf->o->bin_obj);
 }
 
-static RzBinInfo *info(RzBinFile *bf) {
+static RzBinInfo *mz_info(RzBinFile *bf) {
 	RzBinInfo *const ret = RZ_NEW0(RzBinInfo);
 	if (!ret) {
 		return NULL;
@@ -191,40 +191,46 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-static void header(RzBinFile *bf) {
-	const struct rz_bin_mz_obj_t *mz = (struct rz_bin_mz_obj_t *)bf->o->bin_obj;
-	eprintf("[0000:0000]  Signature           %c%c\n",
-		mz->dos_header->signature & 0xFF,
-		mz->dos_header->signature >> 8);
-	eprintf("[0000:0002]  BytesInLastBlock    0x%04x\n",
-		mz->dos_header->bytes_in_last_block);
-	eprintf("[0000:0004]  BlocksInFile        0x%04x\n",
-		mz->dos_header->blocks_in_file);
-	eprintf("[0000:0006]  NumRelocs           0x%04x\n",
-		mz->dos_header->num_relocs);
-	eprintf("[0000:0008]  HeaderParagraphs    0x%04x\n",
-		mz->dos_header->header_paragraphs);
-	eprintf("[0000:000a]  MinExtraParagraphs  0x%04x\n",
-		mz->dos_header->min_extra_paragraphs);
-	eprintf("[0000:000c]  MaxExtraParagraphs  0x%04x\n",
-		mz->dos_header->max_extra_paragraphs);
-	eprintf("[0000:000e]  InitialSs           0x%04x\n",
-		mz->dos_header->ss);
-	eprintf("[0000:0010]  InitialSp           0x%04x\n",
-		mz->dos_header->sp);
-	eprintf("[0000:0012]  Checksum            0x%04x\n",
-		mz->dos_header->checksum);
-	eprintf("[0000:0014]  InitialIp           0x%04x\n",
-		mz->dos_header->ip);
-	eprintf("[0000:0016]  InitialCs           0x%04x\n",
-		mz->dos_header->cs);
-	eprintf("[0000:0018]  RelocTableOffset    0x%04x\n",
-		mz->dos_header->reloc_table_offset);
-	eprintf("[0000:001a]  OverlayNumber       0x%04x\n",
-		mz->dos_header->overlay_number);
+static RzStructuredData *mz_structure(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
+
+	const struct rz_bin_mz_obj_t *mz_obj = (struct rz_bin_mz_obj_t *)bf->o->bin_obj;
+
+	RzStructuredData *info = rz_structured_data_new_map();
+	if (!info) {
+		return NULL;
+	}
+
+	RzStructuredData *mz = rz_structured_data_map_add_map(info, "mz");
+	if (!mz) {
+		rz_structured_data_free(info);
+		return NULL;
+	}
+
+	char signature[3];
+	signature[0] = mz_obj->dos_header->signature & 0xFF;
+	signature[1] = mz_obj->dos_header->signature >> 8;
+	signature[2] = 0;
+
+	rz_structured_data_map_add_string(mz, "Signature", signature);
+	rz_structured_data_map_add_unsigned(mz, "BytesInLastBlock", mz_obj->dos_header->bytes_in_last_block, true);
+	rz_structured_data_map_add_unsigned(mz, "BlocksInFile", mz_obj->dos_header->blocks_in_file, true);
+	rz_structured_data_map_add_unsigned(mz, "NumRelocs", mz_obj->dos_header->num_relocs, false);
+	rz_structured_data_map_add_unsigned(mz, "HeaderParagraphs", mz_obj->dos_header->header_paragraphs, true);
+	rz_structured_data_map_add_unsigned(mz, "MinExtraParagraphs", mz_obj->dos_header->min_extra_paragraphs, true);
+	rz_structured_data_map_add_unsigned(mz, "MaxExtraParagraphs", mz_obj->dos_header->max_extra_paragraphs, true);
+	rz_structured_data_map_add_unsigned(mz, "InitialSs", mz_obj->dos_header->ss, true);
+	rz_structured_data_map_add_unsigned(mz, "InitialSp", mz_obj->dos_header->sp, true);
+	rz_structured_data_map_add_unsigned(mz, "Checksum", mz_obj->dos_header->checksum, true);
+	rz_structured_data_map_add_unsigned(mz, "InitialIp", mz_obj->dos_header->ip, true);
+	rz_structured_data_map_add_unsigned(mz, "InitialCs", mz_obj->dos_header->cs, true);
+	rz_structured_data_map_add_unsigned(mz, "RelocTableOffset", mz_obj->dos_header->reloc_table_offset, true);
+	rz_structured_data_map_add_unsigned(mz, "OverlayNumber", mz_obj->dos_header->overlay_number, false);
+
+	return info;
 }
 
-static RzPVector /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
+static RzPVector /*<RzBinReloc *>*/ *mz_relocs(RzBinFile *bf) {
 	RzPVector *ret = NULL;
 	RzBinReloc *rel = NULL;
 	const struct rz_bin_mz_reloc_t *relocs = NULL;
@@ -261,17 +267,17 @@ RzBinPlugin rz_bin_plugin_mz = {
 	.desc = "MZ (DOS MZ Executable)",
 	.license = "MIT",
 	.author = "nodepad",
-	.get_sdb = &get_sdb,
-	.load_buffer = &load,
-	.destroy = &destroy,
-	.check_buffer = &check_buffer,
-	.binsym = &binsym,
-	.entries = &entries,
+	.get_sdb = &mz_get_sdb,
+	.load_buffer = &mz_load_buffer,
+	.destroy = &mz_destroy,
+	.check_buffer = &mz_check_buffer,
+	.binsym = &mz_binsym,
+	.entries = &mz_entries,
 	.maps = &rz_bin_maps_of_file_sections,
-	.sections = &sections,
-	.info = &info,
-	.header = &header,
-	.relocs = &relocs,
+	.sections = &mz_sections,
+	.info = &mz_info,
+	.bin_structure = &mz_structure,
+	.relocs = &mz_relocs,
 };
 
 #ifndef RZ_PLUGIN_INCORE

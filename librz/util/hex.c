@@ -456,6 +456,19 @@ RZ_API int rz_hex_pair2bin(const char *arg) {
 	return (int)c;
 }
 
+/**
+ * \brief Convert binary data to a lowercase hexadecimal string.
+ * \param[in]  in   Pointer to the binary input.
+ * \param[in]  len  Number of bytes in \p in. Must be non-negative.
+ * \param[out] out  Buffer to receive NUL-terminated hexadecimal output.
+ *                  Must have at least \c (2 × len) + 1 bytes.
+ * \return Number of bytes processed (same as \p len), or \c 0 if \p len
+ *         is negative.
+ *
+ * This function encodes each input byte as two lowercase hexadecimal
+ * characters (e.g., \c 0xAF becomes "af") using \c snprintf() and writes
+ * them sequentially to the output buffer, followed by a NUL terminator.
+ */
 RZ_API int rz_hex_bin2str(const ut8 *in, int len, char *out) {
 	int i, idx;
 	char tmp[8];

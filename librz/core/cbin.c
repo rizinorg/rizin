@@ -4270,14 +4270,34 @@ RZ_API bool rz_core_bin_fields_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFi
 	return true;
 }
 
-RZ_API bool rz_core_bin_headers_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf) {
-	rz_return_val_if_fail(core, false);
+RZ_API bool rz_core_bin_structured_data_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf, RzOutputMode mode) {
+	rz_return_val_if_fail(core && bf, false);
 
-	RzBinFile *cur = rz_bin_cur(core->bin);
-	RzBinPlugin *plg = rz_bin_file_cur_plugin(cur);
-	if (plg && plg->header) {
-		plg->header(cur);
+	RzBinObject *obj = rz_bin_cur_object(core->bin);
+	const RzStructuredData *sf = obj ? rz_bin_object_get_structured_data(obj) : NULL;
+	if (!sf) {
+		if (mode == RZ_OUTPUT_MODE_JSON) {
+			rz_cons_print("{}\n");
+		}
+		return true;
 	}
+
+	char *output = NULL;
+	switch (mode) {
+	case RZ_OUTPUT_MODE_JSON:
+		output = rz_structured_data_to_json(sf);
+		break;
+	case RZ_OUTPUT_MODE_STANDARD:
+		output = rz_structured_data_to_yaml(sf);
+		break;
+	default:
+		rz_warn_if_reached();
+		break;
+	}
+
+	rz_cons_printf("%s\n", output);
+	free(output);
+
 	return true;
 }
 

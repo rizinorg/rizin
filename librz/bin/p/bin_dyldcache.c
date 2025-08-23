@@ -58,7 +58,7 @@ static struct MACH0_(obj_t) * bin_to_mach0(RzBinFile *bf, RzDyldBinImage *bin) {
 	return mach0;
 }
 
-static bool check_buffer(RzBuffer *buf) {
+static bool dyldcache_check_buffer(RzBuffer *buf) {
 	if (rz_buf_size(buf) < 32) {
 		return false;
 	}
@@ -72,7 +72,7 @@ static bool check_buffer(RzBuffer *buf) {
 	return rz_dyldcache_check_magic(hdr);
 }
 
-static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
+static bool dyldcache_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
 	RzDyldCache *cache = rz_dyldcache_new_buf(buf);
 	if (!cache) {
 		return false;
@@ -81,7 +81,7 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 	return true;
 }
 
-static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+static RzPVector /*<RzBinAddr *>*/ *dyldcache_entries(RzBinFile *bf) {
 	RzBinAddr *ptr = NULL;
 	RzPVector *ret = rz_pvector_new(free);
 	if (!ret) {
@@ -93,7 +93,7 @@ static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	return ret;
 }
 
-static RzBinInfo *info(RzBinFile *bf) {
+static RzBinInfo *dyldcache_info(RzBinFile *bf) {
 	RzBinInfo *ret = NULL;
 
 	if (!bf || !bf->o) {
@@ -129,7 +129,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-static ut64 baddr(RzBinFile *bf) {
+static ut64 dyldcache_baddr(RzBinFile *bf) {
 	// XXX hardcoded
 	return 0x180000000;
 }
@@ -240,7 +240,7 @@ static void sections_from_bin(RzPVector /*<RzBinSection *>*/ *ret, RzBinFile *bf
 	(mach0);
 }
 
-static RzPVector /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
+static RzPVector /*<RzBinVirtualFile *>*/ *dyldcache_virtual_files(RzBinFile *bf) {
 	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_virtual_file_free);
 	if (!ret) {
 		return NULL;
@@ -273,7 +273,7 @@ static int prot2perm(int x) {
 	return r;
 }
 
-static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
+static RzPVector /*<RzBinMap *>*/ *dyldcache_maps(RzBinFile *bf) {
 	RzDyldCache *cache = (RzDyldCache *)bf->o->bin_obj;
 	if (!cache) {
 		return NULL;
@@ -303,7 +303,7 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	return ret;
 }
 
-static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+static RzPVector /*<RzBinSection *>*/ *dyldcache_sections(RzBinFile *bf) {
 	RzDyldCache *cache = (RzDyldCache *)bf->o->bin_obj;
 	if (!cache) {
 		return NULL;
@@ -329,7 +329,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	return ret;
 }
 
-static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
+static RzPVector /*<RzBinSymbol *>*/ *dyldcache_symbols(RzBinFile *bf) {
 	RzDyldCache *cache = (RzDyldCache *)bf->o->bin_obj;
 	if (!cache) {
 		return NULL;
@@ -366,12 +366,12 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	return ret;
 }
 
-static void destroy(RzBinFile *bf) {
+static void dyldcache_destroy(RzBinFile *bf) {
 	RzDyldCache *cache = (RzDyldCache *)bf->o->bin_obj;
 	rz_dyldcache_free(cache);
 }
 
-static RzPVector /*<RzBinClass *>*/ *classes(RzBinFile *bf) {
+static RzPVector /*<RzBinClass *>*/ *dyldcache_classes(RzBinFile *bf) {
 	RzDyldCache *cache = (RzDyldCache *)bf->o->bin_obj;
 	if (!cache) {
 		return NULL;
@@ -502,234 +502,251 @@ beach:
 	return NULL;
 }
 
-static void header(RzBinFile *bf) {
-	if (!bf || !bf->o) {
-		return;
-	}
+static RzStructuredData *dyldcache_structure(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
+	char uuidstr[128] = { 0 };
 	RzDyldCache *cache = (RzDyldCache *)bf->o->bin_obj;
 	if (!cache) {
-		return;
+		return NULL;
 	}
 
-	RzBin *bin = bf->rbin;
 	ut64 slide = rz_dyldcache_get_slide(cache);
-	PrintfCallback p = bin->cb_printf;
 
-	PJ *pj = pj_new();
-	if (!pj) {
-		return;
+	RzStructuredData *info = rz_structured_data_new_map();
+	if (!info) {
+		return NULL;
 	}
 
-	pj_o(pj);
+	RzStructuredData *dyldcache = rz_structured_data_map_add_map(info, "dyldcache");
+	if (!dyldcache) {
+		rz_structured_data_free(info);
+		return NULL;
+	}
 
-	pj_k(pj, "version");
 	RzDyldCacheHeaderVersion ver = rz_dyldcache_header_version(cache->hdr);
 	switch (ver) {
 	case RZ_DYLD_CACHE_HEADER_BEFORE_940:
-		pj_s(pj, "<940");
+		rz_structured_data_map_add_string(dyldcache, "version", "<940");
 		break;
 	case RZ_DYLD_CACHE_HEADER_940_OR_AFTER:
-		pj_s(pj, "940");
+		rz_structured_data_map_add_string(dyldcache, "version", "940");
 		break;
 	case RZ_DYLD_CACHE_HEADER_1042_1_OR_AFTER:
-		pj_s(pj, "1042.1");
+		rz_structured_data_map_add_string(dyldcache, "version", "1042.1");
 		break;
 	}
 
-	pj_k(pj, "header");
-	pj_o(pj);
-	pj_ks(pj, "magic", cache->hdr->magic);
-	pj_kn(pj, "mappingOffset", cache->hdr->mappingOffset);
-	pj_kn(pj, "mappingCount", cache->hdr->mappingCount);
-	pj_kn(pj, "imagesOffset", cache->hdr->imagesOffset);
-	pj_kn(pj, "imagesCount", cache->hdr->imagesCount);
-	pj_kn(pj, "dyldBaseAddress", cache->hdr->dyldBaseAddress);
-	pj_kn(pj, "codeSignatureOffset", cache->hdr->codeSignatureOffset);
-	pj_kn(pj, "codeSignatureSize", cache->hdr->codeSignatureSize);
-	pj_kn(pj, "slideInfoOffset", cache->hdr->slideInfoOffset);
-	pj_kn(pj, "slideInfoSize", cache->hdr->slideInfoSize);
-	pj_kn(pj, "localSymbolsOffset", cache->hdr->localSymbolsOffset);
-	pj_kn(pj, "localSymbolsSize", cache->hdr->localSymbolsSize);
-	char uuidstr[128];
-	rz_hex_bin2str((ut8 *)cache->hdr->uuid, 16, uuidstr);
-	pj_ks(pj, "uuid", uuidstr);
-	pj_ks(pj, "cacheType", (cache->hdr->cacheType == 0) ? "development" : "production");
-	pj_kn(pj, "branchPoolsOffset", cache->hdr->branchPoolsOffset);
-	pj_kn(pj, "branchPoolsCount", cache->hdr->branchPoolsCount);
-	if (rz_dyldcache_header_may_have_accel(cache->hdr)) {
-		pj_kn(pj, "accelerateInfoAddr", cache->hdr->accelerateInfoAddr + slide);
-		pj_kn(pj, "accelerateInfoSize", cache->hdr->accelerateInfoSize);
-	} else {
-		pj_kn(pj, "dyldInCacheMH", cache->hdr->dyldInCacheMH);
-		pj_kn(pj, "dyldInCacheEntry", cache->hdr->dyldInCacheEntry);
+	RzStructuredData *header = rz_structured_data_map_add_map(dyldcache, "header");
+	if (!header) {
+		rz_structured_data_free(info);
+		return NULL;
 	}
-	pj_kn(pj, "imagesTextOffset", cache->hdr->imagesTextOffset);
-	pj_kn(pj, "imagesTextCount", cache->hdr->imagesTextCount);
-	pj_kn(pj, "patchInfoAddr", cache->hdr->patchInfoAddr);
-	pj_kn(pj, "patchInfoSize", cache->hdr->patchInfoSize);
-	pj_kn(pj, "otherImageGroupAddrUnused", cache->hdr->otherImageGroupAddrUnused);
-	pj_kn(pj, "otherImageGroupSizeUnused", cache->hdr->otherImageGroupSizeUnused);
-	pj_kn(pj, "progClosuresAddr", cache->hdr->progClosuresAddr);
-	pj_kn(pj, "progClosuresSize", cache->hdr->progClosuresSize);
-	pj_kn(pj, "progClosuresTrieAddr", cache->hdr->progClosuresTrieAddr);
-	pj_kn(pj, "progClosuresTrieSize", cache->hdr->progClosuresTrieSize);
-	pj_kn(pj, "platform", cache->hdr->platform);
-	pj_kn(pj, "formatVersion", cache->hdr->formatVersion);
-	pj_kn(pj, "dylibsExpectedOnDisk", cache->hdr->dylibsExpectedOnDisk);
-	pj_kn(pj, "simulator", cache->hdr->simulator);
-	pj_kn(pj, "locallyBuiltCache", cache->hdr->locallyBuiltCache);
-	pj_kn(pj, "builtFromChainedFixups", cache->hdr->builtFromChainedFixups);
-	pj_kn(pj, "padding", cache->hdr->padding);
-	pj_kn(pj, "sharedRegionStart", cache->hdr->sharedRegionStart);
-	pj_kn(pj, "sharedRegionSize", cache->hdr->sharedRegionSize);
-	pj_kn(pj, "maxSlide", cache->hdr->maxSlide);
-	pj_kn(pj, "dylibsImageArrayAddr", cache->hdr->dylibsImageArrayAddr);
-	pj_kn(pj, "dylibsImageArraySize", cache->hdr->dylibsImageArraySize);
-	pj_kn(pj, "dylibsTrieAddr", cache->hdr->dylibsTrieAddr);
-	pj_kn(pj, "dylibsTrieSize", cache->hdr->dylibsTrieSize);
-	pj_kn(pj, "otherImageArrayAddr", cache->hdr->otherImageArrayAddr);
-	pj_kn(pj, "otherImageArraySize", cache->hdr->otherImageArraySize);
-	pj_kn(pj, "otherTrieAddr", cache->hdr->otherTrieAddr);
-	pj_kn(pj, "otherTrieSize", cache->hdr->otherTrieSize);
-	pj_kn(pj, "mappingWithSlideOffset", cache->hdr->mappingWithSlideOffset);
-	pj_kn(pj, "mappingWithSlideCount", cache->hdr->mappingWithSlideCount);
+
+	rz_structured_data_map_add_string(header, "magic", cache->hdr->magic);
+	rz_structured_data_map_add_unsigned(header, "mappingOffset", cache->hdr->mappingOffset, true);
+	rz_structured_data_map_add_unsigned(header, "mappingCount", cache->hdr->mappingCount, false);
+	rz_structured_data_map_add_unsigned(header, "imagesOffset", cache->hdr->imagesOffset, true);
+	rz_structured_data_map_add_unsigned(header, "imagesCount", cache->hdr->imagesCount, false);
+	rz_structured_data_map_add_unsigned(header, "dyldBaseAddress", cache->hdr->dyldBaseAddress, true);
+	rz_structured_data_map_add_unsigned(header, "codeSignatureOffset", cache->hdr->codeSignatureOffset, true);
+	rz_structured_data_map_add_unsigned(header, "codeSignatureSize", cache->hdr->codeSignatureSize, false);
+	rz_structured_data_map_add_unsigned(header, "slideInfoOffset", cache->hdr->slideInfoOffset, true);
+	rz_structured_data_map_add_unsigned(header, "slideInfoSize", cache->hdr->slideInfoSize, false);
+	rz_structured_data_map_add_unsigned(header, "localSymbolsOffset", cache->hdr->localSymbolsOffset, true);
+	rz_structured_data_map_add_unsigned(header, "localSymbolsSize", cache->hdr->localSymbolsSize, false);
+	rz_hex_bin2str((ut8 *)cache->hdr->uuid, 16, uuidstr);
+	rz_structured_data_map_add_string(header, "uuid", uuidstr);
+	rz_structured_data_map_add_string(header, "cacheType", (cache->hdr->cacheType == 0) ? "development" : "production");
+	rz_structured_data_map_add_unsigned(header, "branchPoolsOffset", cache->hdr->branchPoolsOffset, true);
+	rz_structured_data_map_add_unsigned(header, "branchPoolsCount", cache->hdr->branchPoolsCount, false);
+	if (rz_dyldcache_header_may_have_accel(cache->hdr)) {
+		rz_structured_data_map_add_unsigned(header, "accelerateInfoAddr", cache->hdr->accelerateInfoAddr + slide, false);
+		rz_structured_data_map_add_unsigned(header, "accelerateInfoSize", cache->hdr->accelerateInfoSize, false);
+	} else {
+		rz_structured_data_map_add_unsigned(header, "dyldInCacheMH", cache->hdr->dyldInCacheMH, true);
+		rz_structured_data_map_add_unsigned(header, "dyldInCacheEntry", cache->hdr->dyldInCacheEntry, true);
+	}
+	rz_structured_data_map_add_unsigned(header, "imagesTextOffset", cache->hdr->imagesTextOffset, true);
+	rz_structured_data_map_add_unsigned(header, "imagesTextCount", cache->hdr->imagesTextCount, false);
+	rz_structured_data_map_add_unsigned(header, "patchInfoAddr", cache->hdr->patchInfoAddr, false);
+	rz_structured_data_map_add_unsigned(header, "patchInfoSize", cache->hdr->patchInfoSize, false);
+	rz_structured_data_map_add_unsigned(header, "otherImageGroupAddrUnused", cache->hdr->otherImageGroupAddrUnused, true);
+	rz_structured_data_map_add_unsigned(header, "otherImageGroupSizeUnused", cache->hdr->otherImageGroupSizeUnused, false);
+	rz_structured_data_map_add_unsigned(header, "progClosuresAddr", cache->hdr->progClosuresAddr, true);
+	rz_structured_data_map_add_unsigned(header, "progClosuresSize", cache->hdr->progClosuresSize, false);
+	rz_structured_data_map_add_unsigned(header, "progClosuresTrieAddr", cache->hdr->progClosuresTrieAddr, true);
+	rz_structured_data_map_add_unsigned(header, "progClosuresTrieSize", cache->hdr->progClosuresTrieSize, false);
+	rz_structured_data_map_add_unsigned(header, "platform", cache->hdr->platform, false);
+	rz_structured_data_map_add_unsigned(header, "formatVersion", cache->hdr->formatVersion, false);
+	rz_structured_data_map_add_unsigned(header, "dylibsExpectedOnDisk", cache->hdr->dylibsExpectedOnDisk, false);
+	rz_structured_data_map_add_unsigned(header, "simulator", cache->hdr->simulator, false);
+	rz_structured_data_map_add_unsigned(header, "locallyBuiltCache", cache->hdr->locallyBuiltCache, false);
+	rz_structured_data_map_add_unsigned(header, "builtFromChainedFixups", cache->hdr->builtFromChainedFixups, false);
+	rz_structured_data_map_add_unsigned(header, "padding", cache->hdr->padding, true);
+	rz_structured_data_map_add_unsigned(header, "sharedRegionStart", cache->hdr->sharedRegionStart, false);
+	rz_structured_data_map_add_unsigned(header, "sharedRegionSize", cache->hdr->sharedRegionSize, false);
+	rz_structured_data_map_add_unsigned(header, "maxSlide", cache->hdr->maxSlide, false);
+	rz_structured_data_map_add_unsigned(header, "dylibsImageArrayAddr", cache->hdr->dylibsImageArrayAddr, true);
+	rz_structured_data_map_add_unsigned(header, "dylibsImageArraySize", cache->hdr->dylibsImageArraySize, false);
+	rz_structured_data_map_add_unsigned(header, "dylibsTrieAddr", cache->hdr->dylibsTrieAddr, true);
+	rz_structured_data_map_add_unsigned(header, "dylibsTrieSize", cache->hdr->dylibsTrieSize, false);
+	rz_structured_data_map_add_unsigned(header, "otherImageArrayAddr", cache->hdr->otherImageArrayAddr, true);
+	rz_structured_data_map_add_unsigned(header, "otherImageArraySize", cache->hdr->otherImageArraySize, false);
+	rz_structured_data_map_add_unsigned(header, "otherTrieAddr", cache->hdr->otherTrieAddr, true);
+	rz_structured_data_map_add_unsigned(header, "otherTrieSize", cache->hdr->otherTrieSize, false);
+	rz_structured_data_map_add_unsigned(header, "mappingWithSlideOffset", cache->hdr->mappingWithSlideOffset, true);
+	rz_structured_data_map_add_unsigned(header, "mappingWithSlideCount", cache->hdr->mappingWithSlideCount, false);
 	if (ver >= RZ_DYLD_CACHE_HEADER_940_OR_AFTER) {
-		pj_kn(pj, "dylibsPBLStateArrayAddrUnused", cache->hdr->dylibsPBLStateArrayAddrUnused);
-		pj_kn(pj, "dylibsPBLSetAddr", cache->hdr->dylibsPBLSetAddr);
-		pj_kn(pj, "programsPBLSetPoolAddr", cache->hdr->programsPBLSetPoolAddr);
-		pj_kn(pj, "programsPBLSetPoolSize", cache->hdr->programsPBLSetPoolSize);
-		pj_kn(pj, "programTrieAddr", cache->hdr->programTrieAddr);
-		pj_kn(pj, "programTrieSize", cache->hdr->programTrieSize);
-		pj_kn(pj, "osVersion", cache->hdr->osVersion);
-		pj_kn(pj, "altPlatform", cache->hdr->altPlatform);
-		pj_kn(pj, "altOsVersion", cache->hdr->altOsVersion);
-		pj_kn(pj, "swiftOptsOffset", cache->hdr->swiftOptsOffset);
-		pj_kn(pj, "swiftOptsSize", cache->hdr->swiftOptsSize);
-		pj_kn(pj, "subCacheArrayOffset", cache->hdr->subCacheArrayOffset);
-		pj_kn(pj, "subCacheArrayCount", cache->hdr->subCacheArrayCount);
+		rz_structured_data_map_add_unsigned(header, "dylibsPBLStateArrayAddrUnused", cache->hdr->dylibsPBLStateArrayAddrUnused, true);
+		rz_structured_data_map_add_unsigned(header, "dylibsPBLSetAddr", cache->hdr->dylibsPBLSetAddr, true);
+		rz_structured_data_map_add_unsigned(header, "programsPBLSetPoolAddr", cache->hdr->programsPBLSetPoolAddr, true);
+		rz_structured_data_map_add_unsigned(header, "programsPBLSetPoolSize", cache->hdr->programsPBLSetPoolSize, false);
+		rz_structured_data_map_add_unsigned(header, "programTrieAddr", cache->hdr->programTrieAddr, true);
+		rz_structured_data_map_add_unsigned(header, "programTrieSize", cache->hdr->programTrieSize, false);
+		rz_structured_data_map_add_unsigned(header, "osVersion", cache->hdr->osVersion, false);
+		rz_structured_data_map_add_unsigned(header, "altPlatform", cache->hdr->altPlatform, false);
+		rz_structured_data_map_add_unsigned(header, "altOsVersion", cache->hdr->altOsVersion, false);
+		rz_structured_data_map_add_unsigned(header, "swiftOptsOffset", cache->hdr->swiftOptsOffset, true);
+		rz_structured_data_map_add_unsigned(header, "swiftOptsSize", cache->hdr->swiftOptsSize, false);
+		rz_structured_data_map_add_unsigned(header, "subCacheArrayOffset", cache->hdr->subCacheArrayOffset, true);
+		rz_structured_data_map_add_unsigned(header, "subCacheArrayCount", cache->hdr->subCacheArrayCount, false);
 		rz_hex_bin2str(cache->hdr->symbolFileUUID, sizeof(cache->hdr->symbolFileUUID), uuidstr);
-		pj_ks(pj, "symbolFileUUID", uuidstr);
-		pj_kn(pj, "rosettaReadOnlyAddr", cache->hdr->rosettaReadOnlyAddr);
-		pj_kn(pj, "rosettaReadOnlySize", cache->hdr->rosettaReadOnlySize);
-		pj_kn(pj, "rosettaReadWriteAddr", cache->hdr->rosettaReadWriteAddr);
-		pj_kn(pj, "rosettaReadWriteSize", cache->hdr->rosettaReadWriteSize);
+		rz_structured_data_map_add_string(header, "symbolFileUUID", uuidstr);
+		rz_structured_data_map_add_unsigned(header, "rosettaReadOnlyAddr", cache->hdr->rosettaReadOnlyAddr, true);
+		rz_structured_data_map_add_unsigned(header, "rosettaReadOnlySize", cache->hdr->rosettaReadOnlySize, false);
+		rz_structured_data_map_add_unsigned(header, "rosettaReadWriteAddr", cache->hdr->rosettaReadWriteAddr, true);
+		rz_structured_data_map_add_unsigned(header, "rosettaReadWriteSize", cache->hdr->rosettaReadWriteSize, false);
 	}
 	if (ver >= RZ_DYLD_CACHE_HEADER_1042_1_OR_AFTER) {
-		pj_kn(pj, "cacheSubType", cache->hdr->cacheSubType);
-		pj_kn(pj, "objcOptsOffset", cache->hdr->objcOptsOffset);
-		pj_kn(pj, "objcOptsSize", cache->hdr->objcOptsSize);
-		pj_kn(pj, "cacheAtlasOffset", cache->hdr->cacheAtlasOffset);
-		pj_kn(pj, "cacheAtlasSize", cache->hdr->cacheAtlasSize);
-		pj_kn(pj, "dynamicDataOffset", cache->hdr->dynamicDataOffset);
-		pj_kn(pj, "dynamicDataMaxSize", cache->hdr->dynamicDataMaxSize);
+		rz_structured_data_map_add_unsigned(header, "cacheSubType", cache->hdr->cacheSubType, false);
+		rz_structured_data_map_add_unsigned(header, "objcOptsOffset", cache->hdr->objcOptsOffset, true);
+		rz_structured_data_map_add_unsigned(header, "objcOptsSize", cache->hdr->objcOptsSize, false);
+		rz_structured_data_map_add_unsigned(header, "cacheAtlasOffset", cache->hdr->cacheAtlasOffset, true);
+		rz_structured_data_map_add_unsigned(header, "cacheAtlasSize", cache->hdr->cacheAtlasSize, false);
+		rz_structured_data_map_add_unsigned(header, "dynamicDataOffset", cache->hdr->dynamicDataOffset, true);
+		rz_structured_data_map_add_unsigned(header, "dynamicDataMaxSize", cache->hdr->dynamicDataMaxSize, false);
 	}
-	pj_end(pj);
 
 	if (cache->accel) {
-		pj_k(pj, "accelerator");
-		pj_o(pj);
-		pj_kn(pj, "version", cache->accel->version);
-		pj_kn(pj, "imageExtrasCount", cache->accel->imageExtrasCount);
-		pj_kn(pj, "imagesExtrasOffset", cache->accel->imagesExtrasOffset);
-		pj_kn(pj, "bottomUpListOffset", cache->accel->bottomUpListOffset);
-		pj_kn(pj, "dylibTrieOffset", cache->accel->dylibTrieOffset);
-		pj_kn(pj, "dylibTrieSize", cache->accel->dylibTrieSize);
-		pj_kn(pj, "initializersOffset", cache->accel->initializersOffset);
-		pj_kn(pj, "initializersCount", cache->accel->initializersCount);
-		pj_kn(pj, "dofSectionsOffset", cache->accel->dofSectionsOffset);
-		pj_kn(pj, "dofSectionsCount", cache->accel->dofSectionsCount);
-		pj_kn(pj, "reExportListOffset", cache->accel->reExportListOffset);
-		pj_kn(pj, "reExportCount", cache->accel->reExportCount);
-		pj_kn(pj, "depListOffset", cache->accel->depListOffset);
-		pj_kn(pj, "depListCount", cache->accel->depListCount);
-		pj_kn(pj, "rangeTableOffset", cache->accel->rangeTableOffset);
-		pj_kn(pj, "rangeTableCount", cache->accel->rangeTableCount);
-		pj_kn(pj, "dyldSectionAddr", cache->accel->dyldSectionAddr + slide);
-		pj_end(pj);
+		RzStructuredData *acc = rz_structured_data_map_add_map(dyldcache, "accelerator");
+		if (!acc) {
+			rz_structured_data_free(info);
+			return NULL;
+		}
+		rz_structured_data_map_add_unsigned(acc, "version", cache->accel->version, false);
+		rz_structured_data_map_add_unsigned(acc, "imageExtrasCount", cache->accel->imageExtrasCount, false);
+		rz_structured_data_map_add_unsigned(acc, "imagesExtrasOffset", cache->accel->imagesExtrasOffset, true);
+		rz_structured_data_map_add_unsigned(acc, "bottomUpListOffset", cache->accel->bottomUpListOffset, true);
+		rz_structured_data_map_add_unsigned(acc, "dylibTrieOffset", cache->accel->dylibTrieOffset, true);
+		rz_structured_data_map_add_unsigned(acc, "dylibTrieSize", cache->accel->dylibTrieSize, false);
+		rz_structured_data_map_add_unsigned(acc, "initializersOffset", cache->accel->initializersOffset, true);
+		rz_structured_data_map_add_unsigned(acc, "initializersCount", cache->accel->initializersCount, false);
+		rz_structured_data_map_add_unsigned(acc, "dofSectionsOffset", cache->accel->dofSectionsOffset, true);
+		rz_structured_data_map_add_unsigned(acc, "dofSectionsCount", cache->accel->dofSectionsCount, false);
+		rz_structured_data_map_add_unsigned(acc, "reExportListOffset", cache->accel->reExportListOffset, true);
+		rz_structured_data_map_add_unsigned(acc, "reExportCount", cache->accel->reExportCount, false);
+		rz_structured_data_map_add_unsigned(acc, "depListOffset", cache->accel->depListOffset, true);
+		rz_structured_data_map_add_unsigned(acc, "depListCount", cache->accel->depListCount, false);
+		rz_structured_data_map_add_unsigned(acc, "rangeTableOffset", cache->accel->rangeTableOffset, true);
+		rz_structured_data_map_add_unsigned(acc, "rangeTableCount", cache->accel->rangeTableCount, false);
+		rz_structured_data_map_add_unsigned(acc, "dyldSectionAddr", cache->accel->dyldSectionAddr + slide, true);
 	}
 
 	if (cache->rebase_infos) {
-		size_t i;
-		pj_k(pj, "slideInfo");
-		pj_a(pj);
-		for (i = 0; i < cache->rebase_infos->length; i++) {
-			RzDyldRebaseInfo *rebase_info = cache->rebase_infos->entries[i].info;
-			pj_o(pj);
-			pj_kn(pj, "start", cache->rebase_infos->entries[i].start);
-			pj_kn(pj, "end", cache->rebase_infos->entries[i].end);
-			if (rebase_info) {
-				ut8 version = rebase_info->version;
-				pj_kn(pj, "version", version);
-				pj_kn(pj, "slide", slide);
-				if (version == 3) {
-					RzDyldRebaseInfo3 *info3 = (RzDyldRebaseInfo3 *)rebase_info;
-					pj_kn(pj, "page_starts_count", info3->page_starts_count);
-					pj_kn(pj, "page_size", info3->page_size);
-					pj_kn(pj, "auth_value_add", info3->auth_value_add);
-				} else if (version == 2 || version == 4) {
-					RzDyldRebaseInfo2 *info2 = (RzDyldRebaseInfo2 *)rebase_info;
-					pj_kn(pj, "page_starts_count", info2->page_starts_count);
-					pj_kn(pj, "page_extras_count", info2->page_extras_count);
-					pj_kn(pj, "delta_mask", info2->delta_mask);
-					pj_kn(pj, "value_mask", info2->value_mask);
-					pj_kn(pj, "value_add", info2->value_add);
-					pj_kn(pj, "delta_shift", info2->delta_shift);
-					pj_kn(pj, "page_size", info2->page_size);
-				} else if (version == 1) {
-					RzDyldRebaseInfo1 *info1 = (RzDyldRebaseInfo1 *)rebase_info;
-					pj_kn(pj, "toc_count", info1->toc_count);
-					pj_kn(pj, "entries_size", info1->entries_size);
-					pj_kn(pj, "page_size", 4096);
-				}
-			}
-			pj_end(pj);
+		RzStructuredData *slideInfo = rz_structured_data_map_add_array(dyldcache, "slideInfo");
+		if (!slideInfo) {
+			rz_structured_data_free(info);
+			return NULL;
 		}
-		pj_end(pj);
+		for (size_t i = 0; i < cache->rebase_infos->length; i++) {
+			RzStructuredData *rbi = rz_structured_data_array_add_map(slideInfo);
+			if (!rbi) {
+				rz_structured_data_free(info);
+				return NULL;
+			}
+			RzDyldRebaseInfo *rebase_info = cache->rebase_infos->entries[i].info;
+
+			rz_structured_data_map_add_unsigned(rbi, "start", cache->rebase_infos->entries[i].start, true);
+			rz_structured_data_map_add_unsigned(rbi, "end", cache->rebase_infos->entries[i].end, true);
+			if (!rebase_info) {
+				continue;
+			}
+
+			ut8 version = rebase_info->version;
+			rz_structured_data_map_add_unsigned(rbi, "version", version, false);
+			rz_structured_data_map_add_unsigned(rbi, "slide", slide, false);
+			if (version == 3) {
+				RzDyldRebaseInfo3 *info3 = (RzDyldRebaseInfo3 *)rebase_info;
+				rz_structured_data_map_add_unsigned(rbi, "page_starts_count", info3->page_starts_count, false);
+				rz_structured_data_map_add_unsigned(rbi, "page_size", info3->page_size, false);
+				rz_structured_data_map_add_unsigned(rbi, "auth_value_add", info3->auth_value_add, false);
+			} else if (version == 2 || version == 4) {
+				RzDyldRebaseInfo2 *info2 = (RzDyldRebaseInfo2 *)rebase_info;
+				rz_structured_data_map_add_unsigned(rbi, "page_starts_count", info2->page_starts_count, false);
+				rz_structured_data_map_add_unsigned(rbi, "page_extras_count", info2->page_extras_count, false);
+				rz_structured_data_map_add_unsigned(rbi, "delta_mask", info2->delta_mask, true);
+				rz_structured_data_map_add_unsigned(rbi, "value_mask", info2->value_mask, true);
+				rz_structured_data_map_add_unsigned(rbi, "value_add", info2->value_add, false);
+				rz_structured_data_map_add_unsigned(rbi, "delta_shift", info2->delta_shift, false);
+				rz_structured_data_map_add_unsigned(rbi, "page_size", info2->page_size, false);
+			} else if (version == 1) {
+				RzDyldRebaseInfo1 *info1 = (RzDyldRebaseInfo1 *)rebase_info;
+				rz_structured_data_map_add_unsigned(rbi, "toc_count", info1->toc_count, false);
+				rz_structured_data_map_add_unsigned(rbi, "entries_size", info1->entries_size, false);
+				rz_structured_data_map_add_unsigned(rbi, "page_size", 4096, false);
+			}
+		}
 	}
 
 	if (cache->hdr->imagesTextCount) {
-		pj_k(pj, "images");
-		pj_a(pj);
+		char file[256] = { 0 };
+		RzStructuredData *images = rz_structured_data_map_add_array(dyldcache, "images");
+		if (!images) {
+			rz_structured_data_free(info);
+			return NULL;
+		}
+
 		ut64 total_size = cache->hdr->imagesTextCount * sizeof(cache_text_info_t);
 		cache_text_info_t *text_infos = malloc(total_size);
 		if (!text_infos) {
-			goto beach;
+			RZ_LOG_ERROR("dyldcache: failed to allocate size: %" PFMT64u "\n", total_size);
+			return info;
 		}
 		if (rz_buf_fread_at(cache->buf, cache->hdr->imagesTextOffset, (ut8 *)text_infos, "16clii", cache->hdr->imagesTextCount) != total_size) {
 			free(text_infos);
-			goto beach;
+			RZ_LOG_ERROR("dyldcache: failed to read size: %" PFMT64u "\n", total_size);
+			return info;
 		}
-		size_t i;
-		for (i = 0; i != cache->hdr->imagesTextCount; i++) {
+
+		for (size_t i = 0; i != cache->hdr->imagesTextCount; i++) {
+			RzStructuredData *ti = rz_structured_data_array_add_map(images);
+			if (!ti) {
+				rz_structured_data_free(info);
+				return NULL;
+			}
+
 			cache_text_info_t *text_info = &text_infos[i];
 			rz_hex_bin2str((ut8 *)text_info->uuid, 16, uuidstr);
-			pj_o(pj);
-			pj_ks(pj, "uuid", uuidstr);
-			pj_kn(pj, "address", text_info->loadAddress + slide);
-			pj_kn(pj, "textSegmentSize", text_info->textSegmentSize);
-			char file[256];
+			rz_structured_data_map_add_string(ti, "uuid", uuidstr);
+			rz_structured_data_map_add_unsigned(ti, "address", text_info->loadAddress + slide, true);
+			rz_structured_data_map_add_unsigned(ti, "textSegmentSize", text_info->textSegmentSize, false);
+
 			if (rz_buf_read_at(cache->buf, text_info->pathOffset, (ut8 *)&file, sizeof(file)) == sizeof(file)) {
 				file[255] = 0;
-				pj_ks(pj, "path", file);
+				rz_structured_data_map_add_string(ti, "path", file);
 				char *last_slash = strrchr(file, '/');
-				if (last_slash && *last_slash) {
-					pj_ks(pj, "name", last_slash + 1);
+				if (RZ_STR_ISNOTEMPTY(last_slash)) {
+					rz_structured_data_map_add_string(ti, "name", last_slash + 1);
 				} else {
-					pj_ks(pj, "name", file);
+					rz_structured_data_map_add_string(ti, "name", file);
 				}
 			}
-			pj_end(pj);
 		}
-		pj_end(pj);
 		free(text_infos);
 	}
 
-	pj_end(pj);
-	p("%s\n", pj_string(pj));
-
-beach:
-	pj_free(pj);
+	return info;
 }
 
 RzBinPlugin rz_bin_plugin_dyldcache = {
@@ -737,18 +754,18 @@ RzBinPlugin rz_bin_plugin_dyldcache = {
 	.desc = "Apple DYLD Cache",
 	.license = "LGPL3",
 	.author = "pancake",
-	.load_buffer = &load_buffer,
-	.entries = &entries,
-	.baddr = &baddr,
-	.symbols = &symbols,
-	.virtual_files = &virtual_files,
-	.maps = &maps,
-	.sections = &sections,
-	.check_buffer = &check_buffer,
-	.destroy = &destroy,
-	.classes = &classes,
-	.header = &header,
-	.info = &info,
+	.load_buffer = &dyldcache_load_buffer,
+	.entries = &dyldcache_entries,
+	.baddr = &dyldcache_baddr,
+	.symbols = &dyldcache_symbols,
+	.virtual_files = &dyldcache_virtual_files,
+	.maps = &dyldcache_maps,
+	.sections = &dyldcache_sections,
+	.check_buffer = &dyldcache_check_buffer,
+	.destroy = &dyldcache_destroy,
+	.classes = &dyldcache_classes,
+	.bin_structure = &dyldcache_structure,
+	.info = &dyldcache_info,
 };
 
 #ifndef RZ_PLUGIN_INCORE

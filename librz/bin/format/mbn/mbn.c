@@ -191,22 +191,40 @@ RzPVector /*<RzBinString *>*/ *mbn_strings(RzBinFile *bf) {
 	return rz_bin_file_strings(bf, &opt);
 }
 
-void mbn_header_obj(SblHeader *sb, RZ_NONNULL PrintfCallback cb) {
-	rz_return_if_fail(sb && cb);
-	cb("0x%02" PFMTSZx " image_id:   %s (0x%" PFMT32x ")\n", offsetof(SblHeader, image_id), rz_mbn_image_id_str(sb->image_id), sb->image_id);
-	cb("0x%02" PFMTSZx " version:    0x%" PFMT32x "\n", offsetof(SblHeader, version), sb->version);
-	cb("0x%02" PFMTSZx " paddr:      0x%" PFMT32x "\n", offsetof(SblHeader, paddr), sb->paddr);
-	cb("0x%02" PFMTSZx " vaddr:      0x%" PFMT32x "\n", offsetof(SblHeader, vaddr), sb->vaddr);
-	cb("0x%02" PFMTSZx " psize:      0x%" PFMT32x "\n", offsetof(SblHeader, psize), sb->psize);
-	cb("0x%02" PFMTSZx " code_pa:    0x%" PFMT32x "\n", offsetof(SblHeader, code_pa), sb->code_pa);
-	cb("0x%02" PFMTSZx " sign_va:    0x%" PFMT32x "\n", offsetof(SblHeader, sign_va), sb->sign_va);
-	cb("0x%02" PFMTSZx " sign_sz:    0x%" PFMT32x "\n", offsetof(SblHeader, sign_sz), sb->sign_sz);
-	cb("0x%02" PFMTSZx " cert_va:    0x%" PFMT32x "\n", offsetof(SblHeader, cert_va), sb->cert_va);
-	cb("0x%02" PFMTSZx " cert_sz:    0x%" PFMT32x "\n", offsetof(SblHeader, cert_sz), sb->cert_sz);
+RzStructuredData *mbn_structure(SblHeader *sb) {
+	RzStructuredData *info = rz_structured_data_new_map();
+	if (!info) {
+		return NULL;
+	}
+
+	RzStructuredData *mbn = rz_structured_data_map_add_map(info, "mbn");
+	if (!mbn) {
+		rz_structured_data_free(info);
+		return NULL;
+	}
+
+	RzStructuredData *image = rz_structured_data_map_add_map(mbn, "image");
+	if (!image) {
+		rz_structured_data_free(info);
+		return NULL;
+	}
+
+	rz_structured_data_map_add_string(image, "name", rz_mbn_image_id_str(sb->image_id));
+	rz_structured_data_map_add_unsigned(image, "id", sb->image_id, true);
+	rz_structured_data_map_add_unsigned(mbn, "version", sb->version, true);
+	rz_structured_data_map_add_unsigned(mbn, "paddr", sb->paddr, true);
+	rz_structured_data_map_add_unsigned(mbn, "vaddr", sb->vaddr, true);
+	rz_structured_data_map_add_unsigned(mbn, "psize", sb->psize, true);
+	rz_structured_data_map_add_unsigned(mbn, "code_pa", sb->code_pa, true);
+	rz_structured_data_map_add_unsigned(mbn, "sign_va", sb->sign_va, true);
+	rz_structured_data_map_add_unsigned(mbn, "sign_sz", sb->sign_sz, true);
+	rz_structured_data_map_add_unsigned(mbn, "cert_va", sb->cert_va, true);
+	rz_structured_data_map_add_unsigned(mbn, "cert_sz", sb->cert_sz, true);
+
+	return info;
 }
 
-void mbn_header(RzBinFile *bf) {
-	rz_return_if_fail(bf && bf->o && bf->o->bin_obj && bf->rbin && bf->rbin->cb_printf);
+RzStructuredData *mbn_structure_bin(RzBinFile *bf) {
 	SblHeader *sb = mbn_file_get_hdr(bf);
-	mbn_header_obj(sb, bf->rbin->cb_printf);
+	return mbn_structure(sb);
 }

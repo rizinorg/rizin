@@ -56,20 +56,27 @@ NAME=get header info
 FILE=bins/qnx/test.x
 CMDS=iH
 EXPECT=<<EOF
-QNX file header:
-version : 0x190H
-cflags : 0x16H
-cpu : 0x182H
-fpu : 0x0H
-code_index : 0x0H
-stack_index : 0x1H
-heap_index : 0x1H
-argv_index : 0x1H
-spare2[4] : 0x0H
-code_offset : 0x21cH
-stack_nbytes : 0x8000H
-heap_nbytes : 0x1000H
-image_base : 0xa000H
-spare3[2] : 0x0H
+qnx_lmf:
+  version: 400
+  cflags: 0x16
+  cpu: 386
+  fpu: 0
+  code_index: 0
+  stack_index: 1
+  heap_index: 1
+  argv_index: 1
+  spare2:
+    - 0x0
+    - 0x0
+    - 0x0
+    - 0x0
+  code_offset: 0x21c
+  stack_nbytes: 0x8000
+  heap_nbytes: 0x1000
+  image_base: 0xa000
+  spare3:
+    - 0x0
+    - 0x0
+
 EOF
 RUN

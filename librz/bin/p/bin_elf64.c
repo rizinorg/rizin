@@ -14,6 +14,13 @@ static ut64 get_elf_vaddr64(RzBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
 	return bin->baddr - bin->boffset + vaddr;
 }
 
+static RzStructuredData *elf64_info_structure(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
+
+	ELFOBJ *bin = (ELFOBJ *)bf->o->bin_obj;
+	return elf64_structure(bin);
+}
+
 RzBinPlugin rz_bin_plugin_elf64 = {
 	.name = "elf64",
 	.desc = "ELF64 (64-bit Executable and Linkable Format)",
@@ -32,8 +39,8 @@ RzBinPlugin rz_bin_plugin_elf64 = {
 	.symbols = &elf64_symbols,
 	.imports = &elf64_imports,
 	.info = &elf64_info,
+	.bin_structure = &elf64_info_structure,
 	.fields = &elf64_fields,
-	.header = &elf64_headers,
 	.size = &elf64_size,
 	.libs = &elf64_libs,
 	.relocs = &elf64_relocs,

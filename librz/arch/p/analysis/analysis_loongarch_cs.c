@@ -154,7 +154,7 @@ static void loongarch_fillval(RzAsmLoongArchContext *ctx, RzAnalysis *a, RzAnaly
 		}
 		if (loongarchop->access & CS_AC_WRITE) {
 			av->access |= RZ_ANALYSIS_ACC_W;
-			if (av == op->src[srci - 1]) {
+			if (loongarchop->access & CS_AC_READ) {
 				av = rz_mem_dup(av, sizeof(RzAnalysisValue));
 			}
 			op->dst = av;
@@ -349,11 +349,11 @@ static void loongarch_op_set_type(RzAsmLoongArchContext *ctx, RzAnalysisOp *op) 
 	case LOONGARCH_INS_B:
 		op->delay = 1;
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
-		op->jump = op->addr + loongarch_op_as_imm(ctx, 0);
+		op->jump = loongarch_op_as_imm(ctx, 0);
 		break;
 	case LOONGARCH_INS_BL:
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
-		op->jump = op->addr + loongarch_op_as_imm(ctx, 0);
+		op->jump = loongarch_op_as_imm(ctx, 0);
 		op->fail = op->addr + op->size;
 		op->delay = 1;
 		break;
@@ -364,7 +364,7 @@ static void loongarch_op_set_type(RzAsmLoongArchContext *ctx, RzAnalysisOp *op) 
 	case LOONGARCH_INS_BEQ:
 	case LOONGARCH_INS_BNE:
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-		op->jump = op->addr + loongarch_op_as_imm(ctx, 2);
+		op->jump = loongarch_op_as_imm(ctx, 2);
 		op->fail = op->addr + op->size;
 		op->delay = 1;
 		break;
@@ -373,7 +373,7 @@ static void loongarch_op_set_type(RzAsmLoongArchContext *ctx, RzAnalysisOp *op) 
 	case LOONGARCH_INS_BEQZ:
 	case LOONGARCH_INS_BNEZ:
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-		op->jump = op->addr + loongarch_op_as_imm(ctx, 1);
+		op->jump = loongarch_op_as_imm(ctx, 1);
 		op->fail = op->addr + op->size;
 		op->delay = 1;
 		break;
@@ -684,17 +684,17 @@ static void loongarch_op_set_type(RzAsmLoongArchContext *ctx, RzAnalysisOp *op) 
 		break;
 	case LOONGARCH_INS_PCADDI:
 		op->val = op->addr;
-		op->val += ((st64)loongarch_op_as_imm(ctx, 1) << 2);
+		op->val += ((ut64)loongarch_op_as_imm(ctx, 1) << 2);
 		op->type = RZ_ANALYSIS_OP_TYPE_LEA;
 		break;
 	case LOONGARCH_INS_PCADDU12I:
 		op->val = op->addr;
-		op->val += ((st64)loongarch_op_as_imm(ctx, 1) << 12);
+		op->val += ((ut64)loongarch_op_as_imm(ctx, 1) << 12);
 		op->type = RZ_ANALYSIS_OP_TYPE_LEA;
 		break;
 	case LOONGARCH_INS_PCADDU18I:
 		op->val = op->addr;
-		op->val += ((st64)loongarch_op_as_imm(ctx, 1) << 18);
+		op->val += ((ut64)loongarch_op_as_imm(ctx, 1) << 18);
 		op->type = RZ_ANALYSIS_OP_TYPE_LEA;
 		break;
 	case LOONGARCH_INS_PCALAU12I: {

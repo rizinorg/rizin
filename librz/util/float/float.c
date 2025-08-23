@@ -1582,6 +1582,7 @@ RZ_API RZ_OWN RzBitVector *rz_float_cast_sint(RZ_NONNULL RzFloat *f, ut32 length
 	// 1.MM..M * 2^exp = 1MM..M * 2^0 (integer)
 	bool should_inc = false;
 	RzBitVector *sig = rz_float_get_mantissa(f);
+	bool is_zero = rz_bv_is_zero_vector(sig) && exp == 0;
 
 	// sub normal one has no hidden bit, others should set to 1
 	if (!is_subnormal) {
@@ -1629,7 +1630,7 @@ RZ_API RZ_OWN RzBitVector *rz_float_cast_sint(RZ_NONNULL RzFloat *f, ut32 length
 
 	// assume we r handling absolute value
 	// now for negative, convert it to 2's complement
-	if (sign) {
+	if (sign && !is_zero) {
 		// to keep it an negative, make ret all set to bit 1
 		rz_bv_toggle_all(ret);
 		tmp = rz_bv_complement_2(rounded);

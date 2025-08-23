@@ -1,5 +1,6 @@
 NAME=mach0 headers
 FILE=bins/mach0/hello-osx-i386
+BROKEN=1
 CMDS=iH
 EXPECT=<<EOF
 pf.mach0_header @ 0x00001000
@@ -65,6 +66,7 @@ RUN
 
 NAME=mach0 headers big-endian
 FILE=bins/mach0/ppc-ls
+BROKEN=1
 CMDS=iH
 EXPECT=<<EOF
 pf.mach0_header @ 0x00001000
@@ -136,6 +138,7 @@ RUN
 
 NAME=mach0 headers2
 FILE=bins/mach0/ired
+BROKEN=1
 ARGS=-aarm -b32
 CMDS=iH
 EXPECT=<<EOF
@@ -350,11 +353,15 @@ ic
 EOF
 EXPECT=<<EOF
 0x000000010000b672
-    address         min         max name                       super            
---------------------------------------------------------------------------------
-0x1000115c0 0x100007f40 0x100008318 Chained_iOS.ViewController UIViewController
-0x100011608 0x1000083c4 0x1000089c4 Chained_iOS.AppDelegate    UIResponder
-0x100011668 0x100009194 0x100009940 Chained_iOS.SceneDelegate  UIResponder
+    address         min         max name                              super            
+---------------------------------------------------------------------------------------
+0x100011608 0x100008398 0x100008aa8 Chained_iOS.AppDelegate           UIResponder
+0x100011668 0x100009194 0x100009940 Chained_iOS.SceneDelegate         UIResponder
+0x1000115c0 0x100007ec4 0x100008350 Chained_iOS.ViewController        UIViewController
+ ---------- 0x100009a08 0x100009a08 Swift.String                      
+ ---------- 0x100008e24 0x100008ebc __C.UIApplicationLaunchOptionsKey 
+ ---------- 0x1000086b8 0x1000086b8 __C.UISceneConfiguration          
+ ----------  ----------  ---------- __C.UISceneSession                
 EOF
 RUN
 

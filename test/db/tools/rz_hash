@@ -282,16 +282,20 @@ ED____ rc4            LGPL-3     pancake                        RC4 symmetric-ke
 ED____ rc6            LGPL-3     rakholiyajenish.07             RC6 symmetric-key block cipher
 _D____ ror            LGPL-3     pancake                        Rotate Right symmetric-key block cipher
 __ed__ base64         LGPL-3     rakholiyajenish.07             Base64 encoder/decoder
-ED____ xor            LGPL-3     pancake                        XOR symmetric-key block cipher
+__ed__ base32         LGPL-3     Ahmed Ibrahim                  Base32 encoder/decoder
 ED____ rc2            LGPL-3     lionaneesh                     RC2 symmetric-key block cipher
+ED____ xor            LGPL-3     pancake                        XOR symmetric-key block cipher
 ED____ cps2           LGPL-3     pancake,esanfelix,pof          Capcom Play System 2 (CPS-2) symmetric-key block cipher
 ED____ rot            LGPL-3     pancake                        Caesar symmetric-key cipher
 __ed__ punycode       LGPL-3     pancake                        Punycode encoder/decoder
 ED____ serpent-ecb    LGPL-3     NicsTr                         Serpent symmetric-key block cipher (ECB block mode)
 ED____ sm4-ecb        LGPL-3     0xSh4dy                        ShangMi 4 symmetric-key block cipher (ECB block mode)
+__ed__ base36         LGPL-3     abcSup                         Base36 encoder/decoder
+__ed__ base85         LGPL-3     Ahmed Ibrahim                  Base85 encoder/decoder
 ED____ aes-cbc        LGPL-3     rakholiyajenish.07             AES symmetric-key block cipher (CBC block mode)
 E_____ rol            LGPL-3     pancake                        Rotate Left symmetric-key block cipher
 ED____ aes-ecb        LGPL3      Nettle project,pancake         AES symmetric-key block cipher (ECB block mode)
+__ed__ base16         LGPL-3     Ahmed Ibrahim                  Base16 encoder/decoder
 ED____ des-ecb        LGPL-3     deroad                         DES symmetric-key block cipher (ECB block mode)
 ED____ blowfish       LGPL3      kishorbhat                     Blowfish symmetric-key block cipher
 __ed__ base91         LGPL-3     rakholiyajenish.07             Base91 encoder/decoder

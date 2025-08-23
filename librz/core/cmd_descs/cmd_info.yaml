@@ -220,8 +220,12 @@ commands:
       - RZ_OUTPUT_MODE_QUIET
     args: []
   - name: iH
-    cname: cmd_info_headers
-    summary: Show binary headers
+    cname: cmd_info_structured_data
+    summary: Show binary structured data
+    type: RZ_CMD_DESC_TYPE_ARGV_MODES
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
     args: []
   - name: ii
     cname: cmd_info_imports

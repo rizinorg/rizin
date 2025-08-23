@@ -396,15 +396,70 @@ static bool n64_parse_homebrew_header(N64Rom *rom, N64Homebrew *hb) {
 	return true;
 }
 
-static void n64_header(RzBinFile *bf) {
-	rz_return_if_fail(bf);
+static bool n64_structure_homebrew(N64Rom *rom, RzStructuredData *rom_data) {
+	N64Homebrew hb = { 0 };
+	if (!n64_parse_homebrew_header(rom, &hb)) {
+		return true;
+	}
 
-	RzBin *rbin = bf->rbin;
+	RzStructuredData *homebrew = rz_structured_data_map_add_map(rom_data, "homebrew");
+	if (!homebrew) {
+		return false;
+	}
+
+	RzStructuredData *controllers = rz_structured_data_map_add_array(homebrew, "controllers");
+	if (!controllers) {
+		return false;
+	}
+
+	RzStructuredData *controller = rz_structured_data_array_add_map(controllers);
+	if (!controller) {
+		return false;
+	}
+
+	rz_structured_data_map_add_string(controller, "description", n64_decode_controller(hb.controller_1));
+	rz_structured_data_map_add_unsigned(controller, "value", hb.controller_1, true);
+
+	if (!(controller = rz_structured_data_array_add_map(controllers))) {
+		return false;
+	}
+
+	rz_structured_data_map_add_string(controller, "description", n64_decode_controller(hb.controller_2));
+	rz_structured_data_map_add_unsigned(controller, "value", hb.controller_2, true);
+
+	if (!(controller = rz_structured_data_array_add_map(controllers))) {
+		return false;
+	}
+
+	rz_structured_data_map_add_string(controller, "description", n64_decode_controller(hb.controller_3));
+	rz_structured_data_map_add_unsigned(controller, "value", hb.controller_3, true);
+
+	if (!(controller = rz_structured_data_array_add_map(controllers))) {
+		return false;
+	}
+
+	rz_structured_data_map_add_string(controller, "description", n64_decode_controller(hb.controller_4));
+	rz_structured_data_map_add_unsigned(controller, "value", hb.controller_4, true);
+
+	rz_structured_data_map_add_boolean(homebrew, "enable_rtc", hb.enable_rtc);
+	rz_structured_data_map_add_boolean(homebrew, "region_free", hb.is_region_free);
+	rz_structured_data_map_add_string(homebrew, "savetype_size", n64_decode_savetype_size(hb.save_size));
+
+	return true;
+}
+
+static RzStructuredData *n64_structure(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
+
 	N64Rom *rom = bf->o->bin_obj;
 
-	N64Homebrew hb = { 0 };
+	char game_code[4] = { 0 };
 	ut8 rls = 0, pgs = 0;
 	n64_decode_rls_pgs(rom, &rls, &pgs);
+
+	// only the 3rd & 4th value
+	game_code[0] = rom->game_code[1];
+	game_code[1] = rom->game_code[2];
 
 	ut32 clock_rate = n64_decode_clock_rate(rom);
 	char *reserved1 = rz_hex_bin2strdup(rom->reserved1, sizeof(rom->reserved1));
@@ -412,37 +467,45 @@ static void n64_header(RzBinFile *bf) {
 	char *libultra_version = n64_decode_libultra_version(rom);
 	char *reserved2 = rz_hex_bin2strdup(rom->reserved2, sizeof(rom->reserved2));
 
-	rbin->cb_printf("ROM Reserved0: 0x%02x\n", rom->reserved0);
-	rbin->cb_printf("ROM Release Timing (PI_BSD_DOM1_RLS): 0x%02x\n", rls);
-	rbin->cb_printf("ROM Page Size (PI_BSD_DOM1_PGS): 0x%02x\n", pgs);
-	rbin->cb_printf("ROM Pulse Width (PI_BSD_DOM1_PWD): 0x%02x\n", rom->pulse_width);
-	rbin->cb_printf("ROM Latency (PI_BSD_DOM1_LAT): 0x%02x\n", rom->latency);
-	rbin->cb_printf("ROM Clock rate: 0x%08x\n", clock_rate);
-	rbin->cb_printf("ROM Boot Address: 0x%08x\n", rom->boot_address);
-	rbin->cb_printf("ROM Libultra Version: %s\n", rz_str_get(libultra_version));
-	rbin->cb_printf("ROM Check Code: 0x%016" PFMT64x "\n", rom->check_code);
-	rbin->cb_printf("ROM Reserved1: 0x%s\n", rz_str_get(reserved1));
-	rbin->cb_printf("ROM Game Title: %s\n", rz_str_get(game_title));
-	rbin->cb_printf("ROM Reserved2: 0x%s\n", rz_str_get(reserved2));
-	rbin->cb_printf("ROM Game Category: %s\n", n64_decode_game_category(rom));
-	rbin->cb_printf("ROM Game Unique Code: %c%c\n", rom->game_code[1], rom->game_code[2]);
-	rbin->cb_printf("ROM Game Destination: %s\n", n64_decode_game_destination(rom));
-	rbin->cb_printf("ROM Version: %u\n", (ut32)rom->rom_version);
-
-	if (n64_parse_homebrew_header(rom, &hb)) {
-		rbin->cb_printf("HB Controller 1: %s (0x%02x)\n", n64_decode_controller(hb.controller_1), hb.controller_1);
-		rbin->cb_printf("HB Controller 2: %s (0x%02x)\n", n64_decode_controller(hb.controller_2), hb.controller_2);
-		rbin->cb_printf("HB Controller 3: %s (0x%02x)\n", n64_decode_controller(hb.controller_3), hb.controller_3);
-		rbin->cb_printf("HB Controller 4: %s (0x%02x)\n", n64_decode_controller(hb.controller_4), hb.controller_4);
-		rbin->cb_printf("HB Enable RTC: %s\n", hb.enable_rtc ? "yes" : "no");
-		rbin->cb_printf("HB Region Free: %s\n", hb.is_region_free ? "yes" : "no");
-		rbin->cb_printf("HB Savetype Size: %s\n", n64_decode_savetype_size(hb.save_size));
+	RzStructuredData *info = rz_structured_data_new_map();
+	if (!info) {
+		return NULL;
 	}
+
+	RzStructuredData *rom_data = rz_structured_data_map_add_map(info, "n64_rom");
+	if (!rom_data) {
+		rz_structured_data_free(info);
+		return NULL;
+	}
+
+	rz_structured_data_map_add_unsigned(rom_data, "reserved_0", rom->reserved0, true);
+	rz_structured_data_map_add_unsigned(rom_data, "PI_BSD_DOM1_RLS", rls, true);
+	rz_structured_data_map_add_unsigned(rom_data, "PI_BSD_DOM1_PGS", pgs, true);
+	rz_structured_data_map_add_unsigned(rom_data, "PI_BSD_DOM1_PWD", rom->pulse_width, true);
+	rz_structured_data_map_add_unsigned(rom_data, "PI_BSD_DOM1_LAT", rom->latency, true);
+	rz_structured_data_map_add_unsigned(rom_data, "clock_rate", clock_rate, true);
+	rz_structured_data_map_add_unsigned(rom_data, "boot_address", rom->boot_address, true);
+	rz_structured_data_map_add_string(rom_data, "libultra_version", rz_str_get(libultra_version));
+	rz_structured_data_map_add_unsigned(rom_data, "check_code", rom->check_code, true);
+	rz_structured_data_map_add_string(rom_data, "reserved_1", reserved1);
+	rz_structured_data_map_add_string(rom_data, "game_title", rz_str_get(game_title));
+	rz_structured_data_map_add_string(rom_data, "reserved_2", reserved2);
+	rz_structured_data_map_add_string(rom_data, "game_category", n64_decode_game_category(rom));
+	rz_structured_data_map_add_string(rom_data, "game_unique_code", game_code);
+	rz_structured_data_map_add_string(rom_data, "game_destination", n64_decode_game_destination(rom));
+	rz_structured_data_map_add_unsigned(rom_data, "version", rom->rom_version, false);
 
 	free(reserved2);
 	free(libultra_version);
 	free(game_title);
 	free(reserved1);
+
+	if (!n64_structure_homebrew(rom, rom_data)) {
+		rz_structured_data_free(info);
+		return NULL;
+	}
+
+	return info;
 }
 
 RzBinPlugin rz_bin_plugin_z64 = {
@@ -453,7 +516,7 @@ RzBinPlugin rz_bin_plugin_z64 = {
 	.load_buffer = &n64_load_buffer,
 	.check_buffer = &n64_check_buffer,
 	.destroy = &n64_destroy,
-	.header = &n64_header,
+	.bin_structure = &n64_structure,
 	.baddr = n64_baddr,
 	.boffset = &n64_boffset,
 	.entries = &n64_entries,

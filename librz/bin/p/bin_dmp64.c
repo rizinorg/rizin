@@ -9,78 +9,109 @@
 
 #include "dmp/dmp64.h"
 
-static Sdb *get_sdb(RzBinFile *bf) {
+static Sdb *dmp64_get_sdb(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o, NULL);
 	struct rz_bin_dmp64_obj_t *obj = (struct rz_bin_dmp64_obj_t *)bf->o->bin_obj;
 	return (obj && obj->kv) ? obj->kv : NULL;
 }
 
-static void destroy(RzBinFile *bf) {
+static void dmp64_destroy(RzBinFile *bf) {
 	rz_bin_dmp64_free((struct rz_bin_dmp64_obj_t *)bf->o->bin_obj);
 }
 
-static void header(RzBinFile *bf) {
+static RzStructuredData *dmp64_structure(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->rbin && bf->o && bf->o->bin_obj, NULL);
 	struct rz_bin_dmp64_obj_t *obj = (struct rz_bin_dmp64_obj_t *)bf->o->bin_obj;
-	struct rz_bin_t *rbin = bf->rbin;
-	rbin->cb_printf("DUMP_HEADER64:\n");
-	rbin->cb_printf("  MajorVersion : 0x%08" PFMT32x "\n", obj->header->MajorVersion);
-	rbin->cb_printf("  MinorVersion : 0x%08" PFMT32x "\n", obj->header->MinorVersion);
-	rbin->cb_printf("  DirectoryTableBase : 0x%016" PFMT64x "\n", obj->header->DirectoryTableBase);
-	rbin->cb_printf("  PfnDataBase : 0x%016" PFMT64x "\n", obj->header->PfnDataBase);
-	rbin->cb_printf("  PsLoadedModuleList : 0x%016" PFMT64x "\n", obj->header->PsLoadedModuleList);
-	rbin->cb_printf("  PsActiveProcessHead : 0x%016" PFMT64x "\n", obj->header->PsActiveProcessHead);
-	rbin->cb_printf("  MachineImageType : 0x%08" PFMT32x "\n", obj->header->MachineImageType);
-	rbin->cb_printf("  NumberProcessors : 0x%08" PFMT32x "\n", obj->header->NumberProcessors);
-	rbin->cb_printf("  BugCheckCode : 0x%08" PFMT32x " (%s)\n", obj->header->BugCheckCode, rz_bin_dmp64_bugcheckcode_as_str(obj->header->BugCheckCode));
-	rbin->cb_printf("  BugCheckParameter1 : 0x%016" PFMT64x "\n", obj->header->BugCheckParameter1);
-	rbin->cb_printf("  BugCheckParameter2 : 0x%016" PFMT64x "\n", obj->header->BugCheckParameter2);
-	rbin->cb_printf("  BugCheckParameter3 : 0x%016" PFMT64x "\n", obj->header->BugCheckParameter3);
-	rbin->cb_printf("  BugCheckParameter4 : 0x%016" PFMT64x "\n", obj->header->BugCheckParameter4);
-	rbin->cb_printf("  KdDebuggerDataBlock : 0x%016" PFMT64x "\n", obj->header->KdDebuggerDataBlock);
-	rbin->cb_printf("  SecondaryDataState : 0x%08" PFMT32x "\n", obj->header->SecondaryDataState);
-	rbin->cb_printf("  ProductType : 0x%08" PFMT32x "\n", obj->header->ProductType);
-	rbin->cb_printf("  SuiteMask : 0x%08" PFMT32x "\n", obj->header->SuiteMask);
+
+	RzStructuredData *info = rz_structured_data_new_map();
+	if (!info) {
+		return NULL;
+	}
+
+	RzStructuredData *dmp64 = rz_structured_data_map_add_map(info, "dmp64");
+	if (!dmp64) {
+		rz_structured_data_free(info);
+		return NULL;
+	}
+
+	rz_structured_data_map_add_unsigned(dmp64, "MajorVersion", obj->header->MajorVersion, true);
+	rz_structured_data_map_add_unsigned(dmp64, "MinorVersion", obj->header->MinorVersion, true);
+	rz_structured_data_map_add_unsigned(dmp64, "DirectoryTableBase", obj->header->DirectoryTableBase, true);
+	rz_structured_data_map_add_unsigned(dmp64, "PfnDataBase", obj->header->PfnDataBase, true);
+	rz_structured_data_map_add_unsigned(dmp64, "PsLoadedModuleList", obj->header->PsLoadedModuleList, true);
+	rz_structured_data_map_add_unsigned(dmp64, "PsActiveProcessHead", obj->header->PsActiveProcessHead, true);
+	rz_structured_data_map_add_unsigned(dmp64, "MachineImageType", obj->header->MachineImageType, true);
+	rz_structured_data_map_add_unsigned(dmp64, "NumberProcessors", obj->header->NumberProcessors, true);
+	{
+		RzStructuredData *bug_check_code = rz_structured_data_map_add_map(dmp64, "BugCheckCode");
+		if (!bug_check_code) {
+			rz_structured_data_free(info);
+			return NULL;
+		}
+		rz_structured_data_map_add_unsigned(bug_check_code, "Value", obj->header->BugCheckCode, true);
+		rz_structured_data_map_add_string(bug_check_code, "Meaning", rz_bin_dmp64_bugcheckcode_as_str(obj->header->BugCheckCode));
+	}
+	rz_structured_data_map_add_unsigned(dmp64, "BugCheckParameter1", obj->header->BugCheckParameter1, true);
+	rz_structured_data_map_add_unsigned(dmp64, "BugCheckParameter2", obj->header->BugCheckParameter2, true);
+	rz_structured_data_map_add_unsigned(dmp64, "BugCheckParameter3", obj->header->BugCheckParameter3, true);
+	rz_structured_data_map_add_unsigned(dmp64, "BugCheckParameter4", obj->header->BugCheckParameter4, true);
+	rz_structured_data_map_add_unsigned(dmp64, "KdDebuggerDataBlock", obj->header->KdDebuggerDataBlock, true);
+	rz_structured_data_map_add_unsigned(dmp64, "SecondaryDataState", obj->header->SecondaryDataState, true);
+	rz_structured_data_map_add_unsigned(dmp64, "ProductType", obj->header->ProductType, true);
+	rz_structured_data_map_add_unsigned(dmp64, "SuiteMask", obj->header->SuiteMask, true);
 
 	if (obj->bmp_header) {
-		rbin->cb_printf("\nBITMAP_DUMP:\n");
-		rbin->cb_printf("  HeaderSize : 0x%08" PFMT64x "\n", obj->bmp_header->FirstPage);
-		rbin->cb_printf("  BitmapSize : 0x%08" PFMT64x "\n", obj->bmp_header->Pages);
-		rbin->cb_printf("  Pages : 0x%08" PFMT64x "\n", obj->bmp_header->TotalPresentPages);
-	} else if (obj->triage64_header) {
-		rbin->cb_printf("\nTRIAGE_DUMP64:\n");
-		rbin->cb_printf("  ServicePackBuild : 0x%08" PFMT32x "\n", obj->triage64_header->ServicePackBuild);
-		rbin->cb_printf("  SizeOfDump : 0x%08" PFMT32x "\n", obj->triage64_header->SizeOfDump);
-		rbin->cb_printf("  ValidOffset : 0x%08" PFMT32x "\n", obj->triage64_header->ValidOffset);
-		rbin->cb_printf("  ContextOffset : 0x%08" PFMT32x "\n", obj->triage64_header->ContextOffset);
-		rbin->cb_printf("  ExceptionOffset : 0x%08" PFMT32x "\n", obj->triage64_header->ExceptionOffset);
-		rbin->cb_printf("  MmOffset : 0x%08" PFMT32x "\n", obj->triage64_header->MmOffset);
-		rbin->cb_printf("  UnloadedDriversOffset : 0x%08" PFMT32x "\n", obj->triage64_header->UnloadedDriversOffset);
-		rbin->cb_printf("  PrcbOffset : 0x%08" PFMT32x "\n", obj->triage64_header->PrcbOffset);
-		rbin->cb_printf("  ProcessOffset : 0x%08" PFMT32x "\n", obj->triage64_header->ProcessOffset);
-		rbin->cb_printf("  ThreadOffset : 0x%08" PFMT32x "\n", obj->triage64_header->ThreadOffset);
-		rbin->cb_printf("  CallStackOffset : 0x%08" PFMT32x "\n", obj->triage64_header->CallStackOffset);
-		rbin->cb_printf("  SizeOfCallStack : 0x%08" PFMT32x "\n", obj->triage64_header->SizeOfCallStack);
-		rbin->cb_printf("  DriverListOffset : 0x%08" PFMT32x "\n", obj->triage64_header->DriverListOffset);
-		rbin->cb_printf("  DriverCount : 0x%08" PFMT32x "\n", obj->triage64_header->DriverCount);
-		rbin->cb_printf("  StringPoolOffset : 0x%08" PFMT32x "\n", obj->triage64_header->StringPoolOffset);
-		rbin->cb_printf("  StringPoolSize : 0x%08" PFMT32x "\n", obj->triage64_header->StringPoolSize);
-		rbin->cb_printf("  BrokenDriverOffset : 0x%08" PFMT32x "\n", obj->triage64_header->BrokenDriverOffset);
-		rbin->cb_printf("  TriageOptions : 0x%08" PFMT32x "\n", obj->triage64_header->TriageOptions);
-		rbin->cb_printf("  TopOfStack : 0x%016" PFMT64x "\n", obj->triage64_header->TopOfStack);
-		rbin->cb_printf("  BStoreOffset : 0x%08" PFMT32x "\n", rz_read_le32(&obj->triage64_header->ArchitectureSpecific.Ia64.BStoreOffset));
-		rbin->cb_printf("  SizeOfBStore : 0x%08" PFMT32x "\n", rz_read_le32(&obj->triage64_header->ArchitectureSpecific.Ia64.SizeOfBStore));
-		rbin->cb_printf("  LimitOfBStore : 0x%016" PFMT64x "\n", rz_read_le64(&obj->triage64_header->ArchitectureSpecific.Ia64.LimitOfBStore));
-		rbin->cb_printf("  DataPageAddress : 0x%016" PFMT64x "\n", obj->triage64_header->DataPageAddress);
-		rbin->cb_printf("  DataPageOffset : 0x%08" PFMT32x "\n", obj->triage64_header->DataPageOffset);
-		rbin->cb_printf("  DataPageSize : 0x%08" PFMT32x "\n", obj->triage64_header->DataPageSize);
-		rbin->cb_printf("  DebuggerDataOffset : 0x%08" PFMT32x "\n", obj->triage64_header->DebuggerDataOffset);
-		rbin->cb_printf("  DebuggerDataSize : 0x%08" PFMT32x "\n", obj->triage64_header->DebuggerDataSize);
-		rbin->cb_printf("  DataBlocksOffset : 0x%08" PFMT32x "\n", obj->triage64_header->DataBlocksOffset);
-		rbin->cb_printf("  DataBlocksCount : 0x%08" PFMT32x "\n", obj->triage64_header->DataBlocksCount);
+		RzStructuredData *bitmap = rz_structured_data_map_add_map(dmp64, "Bitmap");
+		if (!bitmap) {
+			rz_structured_data_free(info);
+			return NULL;
+		}
+		rz_structured_data_map_add_unsigned(bitmap, "HeaderSize", obj->bmp_header->FirstPage, true);
+		rz_structured_data_map_add_unsigned(bitmap, "BitmapSize", obj->bmp_header->Pages, true);
+		rz_structured_data_map_add_unsigned(bitmap, "Pages", obj->bmp_header->TotalPresentPages, true);
 	}
+
+	if (obj->triage64_header) {
+		RzStructuredData *triage64 = rz_structured_data_map_add_map(dmp64, "TriageDump64");
+		if (!triage64) {
+			rz_structured_data_free(info);
+			return NULL;
+		}
+		rz_structured_data_map_add_unsigned(triage64, "ServicePackBuild", obj->triage64_header->ServicePackBuild, true);
+		rz_structured_data_map_add_unsigned(triage64, "SizeOfDump", obj->triage64_header->SizeOfDump, true);
+		rz_structured_data_map_add_unsigned(triage64, "ValidOffset", obj->triage64_header->ValidOffset, true);
+		rz_structured_data_map_add_unsigned(triage64, "ContextOffset", obj->triage64_header->ContextOffset, true);
+		rz_structured_data_map_add_unsigned(triage64, "ExceptionOffset", obj->triage64_header->ExceptionOffset, true);
+		rz_structured_data_map_add_unsigned(triage64, "MmOffset", obj->triage64_header->MmOffset, true);
+		rz_structured_data_map_add_unsigned(triage64, "UnloadedDriversOffset", obj->triage64_header->UnloadedDriversOffset, true);
+		rz_structured_data_map_add_unsigned(triage64, "PrcbOffset", obj->triage64_header->PrcbOffset, true);
+		rz_structured_data_map_add_unsigned(triage64, "ProcessOffset", obj->triage64_header->ProcessOffset, true);
+		rz_structured_data_map_add_unsigned(triage64, "ThreadOffset", obj->triage64_header->ThreadOffset, true);
+		rz_structured_data_map_add_unsigned(triage64, "CallStackOffset", obj->triage64_header->CallStackOffset, true);
+		rz_structured_data_map_add_unsigned(triage64, "SizeOfCallStack", obj->triage64_header->SizeOfCallStack, true);
+		rz_structured_data_map_add_unsigned(triage64, "DriverListOffset", obj->triage64_header->DriverListOffset, true);
+		rz_structured_data_map_add_unsigned(triage64, "DriverCount", obj->triage64_header->DriverCount, true);
+		rz_structured_data_map_add_unsigned(triage64, "StringPoolOffset", obj->triage64_header->StringPoolOffset, true);
+		rz_structured_data_map_add_unsigned(triage64, "StringPoolSize", obj->triage64_header->StringPoolSize, true);
+		rz_structured_data_map_add_unsigned(triage64, "BrokenDriverOffset", obj->triage64_header->BrokenDriverOffset, true);
+		rz_structured_data_map_add_unsigned(triage64, "TriageOptions", obj->triage64_header->TriageOptions, true);
+		rz_structured_data_map_add_unsigned(triage64, "TopOfStack", obj->triage64_header->TopOfStack, true);
+		rz_structured_data_map_add_unsigned(triage64, "BStoreOffset", rz_read_le32(&obj->triage64_header->ArchitectureSpecific.Ia64.BStoreOffset), true);
+		rz_structured_data_map_add_unsigned(triage64, "SizeOfBStore", rz_read_le32(&obj->triage64_header->ArchitectureSpecific.Ia64.SizeOfBStore), true);
+		rz_structured_data_map_add_unsigned(triage64, "LimitOfBStore", rz_read_le64(&obj->triage64_header->ArchitectureSpecific.Ia64.LimitOfBStore), true);
+		rz_structured_data_map_add_unsigned(triage64, "DataPageAddress", obj->triage64_header->DataPageAddress, true);
+		rz_structured_data_map_add_unsigned(triage64, "DataPageOffset", obj->triage64_header->DataPageOffset, true);
+		rz_structured_data_map_add_unsigned(triage64, "DataPageSize", obj->triage64_header->DataPageSize, true);
+		rz_structured_data_map_add_unsigned(triage64, "DebuggerDataOffset", obj->triage64_header->DebuggerDataOffset, true);
+		rz_structured_data_map_add_unsigned(triage64, "DebuggerDataSize", obj->triage64_header->DebuggerDataSize, true);
+		rz_structured_data_map_add_unsigned(triage64, "DataBlocksOffset", obj->triage64_header->DataBlocksOffset, true);
+		rz_structured_data_map_add_unsigned(triage64, "DataBlocksCount", obj->triage64_header->DataBlocksCount, true);
+	}
+
+	return info;
 }
 
-static RzPVector /*<RzBinField *>*/ *fields(RzBinFile *bf) {
+static RzPVector /*<RzBinField *>*/ *dmp64_fields(RzBinFile *bf) {
 	RzPVector *fields = rz_pvector_new((RzPVectorFree)rz_bin_field_free);
 	struct rz_bin_dmp64_obj_t *obj = (struct rz_bin_dmp64_obj_t *)bf->o->bin_obj;
 #define FIELD_COMMENT(header, field, comment) \
@@ -144,7 +175,7 @@ static RzPVector /*<RzBinField *>*/ *fields(RzBinFile *bf) {
 	return fields;
 }
 
-static RzBinInfo *info(RzBinFile *bf) {
+static RzBinInfo *dmp64_info(RzBinFile *bf) {
 	RzBinInfo *ret;
 	if (!(ret = RZ_NEW0(RzBinInfo))) {
 		return NULL;
@@ -181,7 +212,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
+static RzPVector /*<RzBinMap *>*/ *dmp64_maps(RzBinFile *bf) {
 	dmp_page_desc *page;
 	dmp64_triage_datablock *datablock;
 	RzPVector *ret;
@@ -223,7 +254,7 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	return ret;
 }
 
-static RzPVector /*<char *>*/ *libs(RzBinFile *bf) {
+static RzPVector /*<char *>*/ *dmp64_libs(RzBinFile *bf) {
 	struct rz_bin_dmp64_obj_t *obj = (struct rz_bin_dmp64_obj_t *)bf->o->bin_obj;
 	if (!obj->drivers) {
 		return NULL;
@@ -241,16 +272,16 @@ static RzPVector /*<char *>*/ *libs(RzBinFile *bf) {
 	return ret;
 }
 
-static int file_type(RzBinFile *bf) {
+static int dmp64_file_type(RzBinFile *bf) {
 	return RZ_BIN_TYPE_CORE;
 }
 
-static char *regstate(RzBinFile *bf) {
+static char *dmp64_regstate(RzBinFile *bf) {
 	struct rz_bin_dmp64_obj_t *dmp64 = bf->o->bin_obj;
 	return rz_hex_bin2strdup(dmp64->header->ContextRecord, sizeof(dmp64->header->ContextRecord));
 }
 
-static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
+static bool dmp64_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
 	rz_return_val_if_fail(buf, false);
 	struct rz_bin_dmp64_obj_t *res = rz_bin_dmp64_new_buf(buf);
 	if (res) {
@@ -261,7 +292,7 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 	return false;
 }
 
-static bool check_buffer(RzBuffer *b) {
+static bool dmp64_check_buffer(RzBuffer *b) {
 	ut8 magic[8];
 	if (rz_buf_read_at(b, 0, magic, sizeof(magic)) == 8) {
 		return !memcmp(magic, DMP64_MAGIC, 8);
@@ -274,17 +305,17 @@ RzBinPlugin rz_bin_plugin_dmp64 = {
 	.desc = "Windows x64 Crash Dump",
 	.license = "LGPL3",
 	.author = "abcSup",
-	.destroy = &destroy,
-	.get_sdb = &get_sdb,
-	.header = &header,
-	.info = &info,
-	.load_buffer = &load_buffer,
-	.check_buffer = &check_buffer,
-	.maps = &maps,
-	.libs = &libs,
-	.regstate = &regstate,
-	.file_type = &file_type,
-	.fields = &fields
+	.destroy = &dmp64_destroy,
+	.get_sdb = &dmp64_get_sdb,
+	.bin_structure = &dmp64_structure,
+	.info = &dmp64_info,
+	.load_buffer = &dmp64_load_buffer,
+	.check_buffer = &dmp64_check_buffer,
+	.maps = &dmp64_maps,
+	.libs = &dmp64_libs,
+	.regstate = &dmp64_regstate,
+	.file_type = &dmp64_file_type,
+	.fields = &dmp64_fields
 };
 
 #ifndef RZ_PLUGIN_INCORE
