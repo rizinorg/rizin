@@ -39,48 +39,6 @@ typedef struct iobnet_t {
 	RzCrypto *crypto;
 } iobnet_t;
 
-// Constants to convert ASCII to its base36 value
-static const char d32[] = "[\\]^_`abcd$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$efghijklmnopqrstuvwxyz{|}~";
-// The powers of 36 up to the 13th for 64-bit values
-static const ut64 pow36[] = { 1, 36, 1296, 46656, 1679616, 60466176, 2176782336,
-	78364164096, 2821109907456, 101559956668416, 3656158440062976,
-	131621703842267136, 4738381338321616896 };
-
-static ut64 base36_decode(const char *str) {
-	ut64 ret = 0;
-	size_t i;
-	size_t len = strlen(str);
-	// 64-bit base36 str has at most 13 characters
-	if (len > 13) {
-		eprintf("Error: base36_decode supports up to 64-bit values only\n");
-		return 0;
-	}
-	for (i = 0; i < len; i++) {
-		char c = str[len - i - 1];
-		// "01234567890abcdefghijklmnopqrstuvwxyz"
-		if (c < '0' || c > 'z' || ('9' < c && c < 'a')) {
-			eprintf("Error: %s is not a valid base36 encoded string\n", str);
-			return 0;
-		}
-		ut8 v = d32[c - '0'];
-		// Character does not exist in base36 encoding
-		if (v == '$') {
-			eprintf("Error: %s is not a valid base36 encoded string\n", str);
-			return 0;
-		}
-		v -= 91;
-		// Check for overflow
-		if (i == 12) {
-			if (v > 3 || UT64_ADD_OVFCHK(ret, v * pow36[i])) {
-				printf("Error: base36_decode supports up to 64-bit values only\n");
-				return 0;
-			}
-		}
-		ret += v * pow36[i];
-	}
-	return ret;
-}
-
 /*
  * @brief Initialize the key for enc/decrypting KDNet packet with the type Data.
  *
@@ -147,7 +105,11 @@ static void *iob_net_open(const char *path) {
 		if (nkey) {
 			*nkey++ = 0;
 		}
-		rz_write_le64(obj->key + i * 8, base36_decode(key));
+
+		ut64 decoded_val = 0;
+		st64 ret = rz_base36_decode(&decoded_val, key, strlen(key));
+		decoded_val = ret >= 0 ? decoded_val : 0;
+		rz_write_le64(obj->key + i * 8, (ut64)decoded_val);
 	}
 
 	// HMAC Key is the negation of AES-256 Control Key bytes

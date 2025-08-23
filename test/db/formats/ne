@@ -1061,3 +1061,43 @@ EXPECT=<<EOF
 0x0000d544 0x0000d544 POI_32_IMPORTED_ORD GDI.SETDIBITSTODEVICE
 EOF
 RUN
+
+NAME=NE header
+FILE=bins/ne/anim8.exe
+CMDS=iH
+EXPECT=<<EOF
+ne:
+  MajLinkerVersion: 5
+  MinLinkerVersion: 10
+  EntryTableOffset: 0x3c4
+  EntryTableLength: 16
+  FileLoadCRC: 0x0
+  ProgFlags: 0xa
+  ApplFlags: 0x3
+  AutoDataSegIndex: 2
+  InitHeapSize: 1024
+  InitStackSize: 30000
+  EntryPointCSIndex: 1
+  EntryPointIPOff: 0x0
+  InitStack: 0x20000
+  SegCount: 2
+  ModuleRefsCount: 4
+  NonResNamesTblSiz: 0x9
+  SegTableOffset: 0x40
+  ResourceTblOff: 0x50
+  ResidentNameTblOff: 0x383
+  ModuleRefTblOff: 0x3a3
+  ImportNameTblOff: 0x3ab
+  OffStartNonResTab: 1572
+  MovEntryCount: 2
+  FileAlnSzShftCnt: 9
+  nResTabEntries: 0
+  OS: "Windows"
+  OS2EXEFlags: 0x8
+  retThunkOffset: 0x4
+  segRefThunksOff: 0x58
+  mincodeswap: 0
+  winver: "3.0"
+
+EOF
+RUN

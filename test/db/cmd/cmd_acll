@@ -166,3 +166,417 @@ nth       addr  vt_offset type    name
 
 EOF
 RUN
+
+NAME=Analyze single class & without rtti
+FILE=bins/elf/analysis/x86-no-rtti-class-C
+CMDS=<<EOF
+aaa
+acll
+EOF
+EXPECT=<<EOF
+[C]
+  (vtable at 0x400968)
+nth       addr  vt_offset type    name  
+----------------------------------------
+  1 0x004008b6 ---------- DEFAULT C
+  2 0x004008da 0x00000000 VIRTUAL print
+
+[std]
+[std::basic_ostream_char__std::char_traits_char_____std]
+nth       addr  vt_offset type    name                                 
+-----------------------------------------------------------------------
+  1 0x00400660 ---------- DEFAULT operator<< <std::char_traits<char> >
+
+[std::ios_base::Init]
+nth       addr  vt_offset type    name  
+----------------------------------------
+  1 0x00400630 ---------- DEFAULT Init
+  2 0x00400650 ---------- DEFAULT ~Init
+
+EOF
+RUN
+
+NAME=Analyze single class with multiple vtables & without rtti
+FILE=bins/elf/analysis/x86-no-rtti-class-multi-vtable
+CMDS=<<EOF
+aaa
+acll
+EOF
+EXPECT=<<EOF
+[Animal]
+nth       addr  vt_offset type    name    
+------------------------------------------
+  1 0x00400b16 ---------- DEFAULT Animal
+  2 0x00400b6a ---------- DEFAULT ~Animal
+
+[Dog]
+  (vtable at 0x400dc0)
+  (vtable at 0x400df0)
+nth       addr  vt_offset type    name                                        
+------------------------------------------------------------------------------
+  1 0x00400b96 ---------- DEFAULT Dog
+  2 0x00400c20 0x00000000 VIRTUAL ~Dog
+  3 0x00400cac 0x00000018 VIRTUAL walk
+  4 0x00400cd0 0x00000010 VIRTUAL eat
+  5 0x00400c7a 0x00000008 VIRTUAL sym.Dog::_Dog_0x400c7a
+  6 0x00400c73 0x00000000 VIRTUAL sym.non_virtual_thunk_to_Dog::_Dog
+  7 0x00400ca5 0x00000008 VIRTUAL sym.non_virtual_thunk_to_Dog::_Dog_0x400ca5
+  8 0x00400cca 0x00000010 VIRTUAL sym.non_virtual_thunk_to_Dog::walk
+
+[Mammal]
+nth       addr  vt_offset type    name    
+------------------------------------------
+  1 0x00400a96 ---------- DEFAULT Mammal
+  2 0x00400ac0 ---------- DEFAULT ~Mammal
+
+[std]
+[std::basic_ostream_char__std::char_traits_char_____std]
+nth       addr  vt_offset type    name                                 
+-----------------------------------------------------------------------
+  1 0x004007c0 ---------- DEFAULT operator<< <std::char_traits<char> >
+
+[std::ios_base::Init]
+nth       addr  vt_offset type    name  
+----------------------------------------
+  1 0x00400790 ---------- DEFAULT Init
+  2 0x004007b0 ---------- DEFAULT ~Init
+
+EOF
+RUN
+
+NAME=Analyze single class with multiple vtables & without rtti (arm64)
+FILE=bins/mach0/arm64-no-rtti-class-multi-vtable
+CMDS=<<EOF
+aaa
+acll
+EOF
+EXPECT=<<EOF
+[Animal]
+  (vtable at 0x100004118)
+nth        addr  vt_offset type    name                            
+-------------------------------------------------------------------
+  1 0x100002e08 ---------- DEFAULT Animal
+  2 0x100002f3c ---------- DEFAULT ~Animal
+  3 0x100003098 0x00000000 VIRTUAL sym.Animal::_Animal_0x100003098
+  4 0x1000030ac 0x00000008 VIRTUAL sym.Animal::_Animal_0x1000030ac
+
+[Dog]
+  (vtable at 0x1000040c0)
+  (vtable at 0x1000040f0)
+nth        addr  vt_offset type    name                                           
+----------------------------------------------------------------------------------
+  1 0x100002d1c ---------- DEFAULT Dog
+  2 0x100002f90 0x00000000 VIRTUAL ~Dog
+  3 0x100002fec 0x00000010 VIRTUAL eat
+  4 0x10000301c 0x00000018 VIRTUAL walk
+  5 0x100002fbc 0x00000008 VIRTUAL sym.Dog::_Dog_0x100002fbc
+  6 0x10000304c 0x00000000 VIRTUAL sym.non_virtual_thunk_to_Dog::_Dog
+  7 0x100003068 0x00000008 VIRTUAL sym.non_virtual_thunk_to_Dog::_Dog_0x100003068
+  8 0x100003080 0x00000010 VIRTUAL sym.non_virtual_thunk_to_Dog::walk
+
+[Mammal]
+  (vtable at 0x100004140)
+nth        addr  vt_offset type    name                            
+-------------------------------------------------------------------
+  1 0x100002e54 ---------- DEFAULT Mammal
+  2 0x100002ee8 ---------- DEFAULT ~Mammal
+  3 0x1000030b8 0x00000000 VIRTUAL sym.Mammal::_Mammal_0x1000030b8
+  4 0x1000030cc 0x00000008 VIRTUAL sym.Mammal::_Mammal_0x1000030cc
+
+[char__std::__1]
+nth        addr  vt_offset type    name                            
+-------------------------------------------------------------------
+  1 0x1000038a4 ---------- DEFAULT __to_address[abi:v160006]<char>
+
+[std]
+nth        addr  vt_offset type    name      
+---------------------------------------------
+  1 0x100003d24 ---------- DEFAULT terminate
+
+[std::__1]
+nth        addr  vt_offset type    name                            
+-------------------------------------------------------------------
+  1 0x100003bf4 ---------- DEFAULT __constexpr_strlen[abi:v160006]
+
+[std::__1::__compressed_pair_elem_std::__1::allocator_char___1__true_]
+nth        addr  vt_offset type    name                                
+-----------------------------------------------------------------------
+  1 0x100003838 ---------- DEFAULT __compressed_pair_elem[abi:v160006]
+
+[std::__1::__compressed_pair_elem_std::__1::basic_string_char__std::__1::char_traits_char___std::__1::allocator_char___::__rep__0__false_]
+nth        addr  vt_offset type    name                                
+-----------------------------------------------------------------------
+  1 0x100003824 ---------- DEFAULT __compressed_pair_elem[abi:v160006]
+  2 0x1000039b8 ---------- DEFAULT __get[abi:v160006]
+  3 0x1000039f0 ---------- DEFAULT __get[abi:v160006]
+
+[std::__1::__compressed_pair_std::__1::basic_string_char__std::__1::char_traits_char___std::__1::allocator_char___::__rep__std::__1::allocator_char___]
+nth        addr  vt_offset type    name               
+------------------------------------------------------
+  1 0x100003994 ---------- DEFAULT first[abi:v160006]
+  2 0x1000039cc ---------- DEFAULT first[abi:v160006]
+
+[std::__1::__default_init_tag___std::__1::__compressed_pair_std::__1::basic_string_char__std::__1::char_traits_char___std::__1::allocator_char___::__rep__std::__1::allocator_char___]
+nth        addr  vt_offset type    name                                                                                       
+------------------------------------------------------------------------------------------------------------------------------
+  1 0x10000379c ---------- DEFAULT __compressed_pair[abi:v160006]<std::__1::__default_init_tag, std::__1::__default_init_tag>
+
+[std::__1::__non_trivial_if_true__std::__1::allocator_char___]
+nth        addr  vt_offset type    name                          
+-----------------------------------------------------------------
+  1 0x100003890 ---------- DEFAULT __non_trivial_if[abi:v160006]
+
+[std::__1::allocator_char_]
+nth        addr  vt_offset type    name                   
+----------------------------------------------------------
+  1 0x100003864 ---------- DEFAULT allocator[abi:v160006]
+
+[std::__1::basic_ios_char__std::__1::char_traits_char___]
+nth        addr  vt_offset type    name                  
+---------------------------------------------------------
+  1 0x1000035a0 ---------- DEFAULT fill[abi:v160006]
+  2 0x100003628 ---------- DEFAULT setstate[abi:v160006]
+  3 0x100003a6c ---------- DEFAULT rdbuf[abi:v160006]
+  4 0x100003ad8 ---------- DEFAULT widen[abi:v160006]
+
+[std::__1::basic_ostream_char__std::__1::char_traits_char___::sentry]
+nth        addr  vt_offset type    name                       
+--------------------------------------------------------------
+  1 0x1000032f8 ---------- DEFAULT operator bool[abi:v160006]
+  2 0x100003ce8 ---------- DEFAULT sentry
+  3 0x100003cf4 ---------- DEFAULT ~sentry
+
+[std::__1::basic_ostream_char__std::__1::char_traits_char_____std::__1]
+nth        addr  vt_offset type    name                                                                      
+-------------------------------------------------------------------------------------------------------------
+  1 0x100002ea0 ---------- DEFAULT operator<<[abi:v160006]<std::__1::char_traits<char> >
+  2 0x1000030d8 ---------- DEFAULT __put_character_sequence[abi:v160006]<char, std::__1::char_traits<char> >
+
+[std::__1::basic_streambuf_char__std::__1::char_traits_char___]
+nth        addr  vt_offset type    name               
+------------------------------------------------------
+  1 0x10000367c ---------- DEFAULT sputn[abi:v160006]
+
+[std::__1::basic_string_char__std::__1::char_traits_char___std::__1::allocator_char___]
+nth        addr  vt_offset type    name                             
+--------------------------------------------------------------------
+  1 0x1000036b8 ---------- DEFAULT basic_string[abi:v160006]
+  2 0x1000036f4 ---------- DEFAULT data[abi:v160006]
+  3 0x1000038b8 ---------- DEFAULT __get_pointer[abi:v160006]
+  4 0x10000390c ---------- DEFAULT __is_long[abi:v160006]
+  5 0x100003944 ---------- DEFAULT __get_long_pointer[abi:v160006]
+  6 0x10000396c ---------- DEFAULT __get_short_pointer[abi:v160006]
+  7 0x100003cd0 ---------- DEFAULT __init
+  8 0x100003cdc ---------- DEFAULT ~basic_string
+
+[std::__1::char_traits_char_]
+nth        addr  vt_offset type    name        
+-----------------------------------------------
+  1 0x1000032c4 ---------- DEFAULT length
+  2 0x100003aa8 ---------- DEFAULT eq_int_type
+  3 0x100003ad0 ---------- DEFAULT eof
+
+[std::__1::ctype_char_]
+nth        addr  vt_offset type    name               
+------------------------------------------------------
+  1 0x100003b88 ---------- DEFAULT widen[abi:v160006]
+
+[std::__1::ctype_char__const__std::__1]
+nth        addr  vt_offset type    name                                           
+----------------------------------------------------------------------------------
+  1 0x100003b5c ---------- DEFAULT use_facet[abi:v160006]<std::__1::ctype<char> >
+
+[std::__1::ios_base]
+nth        addr  vt_offset type    name                              
+---------------------------------------------------------------------
+  1 0x100003588 ---------- DEFAULT flags[abi:v160006]
+  2 0x100003664 ---------- DEFAULT width[abi:v160006]
+  3 0x10000371c ---------- DEFAULT width[abi:v160006]
+  4 0x100003a90 ---------- DEFAULT rdbuf[abi:v160006]
+  5 0x100003bc0 ---------- DEFAULT setstate[abi:v160006]
+  6 0x100003ca0 ---------- DEFAULT getloc
+  7 0x100003d0c ---------- DEFAULT __set_badbit_and_consider_rethrow
+  8 0x100003d18 ---------- DEFAULT clear
+
+[std::__1::locale]
+nth        addr  vt_offset type    name      
+---------------------------------------------
+  1 0x100003c94 ---------- DEFAULT use_facet
+  2 0x100003d00 ---------- DEFAULT ~locale
+
+[std::__1::ostreambuf_iterator_char__std::__1::char_traits_char___]
+nth        addr  vt_offset type    name                             
+--------------------------------------------------------------------
+  1 0x100003554 ---------- DEFAULT ostreambuf_iterator[abi:v160006]
+  2 0x100003604 ---------- DEFAULT failed[abi:v160006]
+
+[std::__1::ostreambuf_iterator_char__std::__1::char_traits_char____std::__1]
+nth        addr  vt_offset type    name                                                              
+-----------------------------------------------------------------------------------------------------
+  1 0x100003314 ---------- DEFAULT __pad_and_output[abi:v160006]<char, std::__1::char_traits<char> >
+
+[std::__1::pointer_traits_char__]
+nth        addr  vt_offset type    name                    
+-----------------------------------------------------------
+  1 0x100003a04 ---------- DEFAULT pointer_to[abi:v160006]
+
+[void_std::__1]
+nth        addr  vt_offset type    name                                                                                                                     
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+  1 0x1000037d8 ---------- DEFAULT __debug_db_insert_c[abi:v160006]<std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char> > >
+
+EOF
+RUN
+
+NAME=Analyze classes in swift
+FILE=bins/mach0/swift-main
+CMDS=<<EOF
+aaa
+acll
+EOF
+EXPECT=<<EOF
+[Swift_String]
+nth        addr  vt_offset type        name 
+--------------------------------------------
+  1 0x10000440a ---------- CONSTRUCTOR init
+  2 0x100004410 ---------- CONSTRUCTOR init
+  3 0x100004416 ---------- CONSTRUCTOR init
+  4 0x10000441c ---------- CONSTRUCTOR init
+
+[main_Balance]
+nth        addr  vt_offset type        name                                    
+-------------------------------------------------------------------------------
+  1 0x100001380 ---------- DEFAULT     width.getter : Swift.Double
+  2 0x100001390 ---------- DEFAULT     width.setter : Swift.Double
+  3 0x1000013a0 ---------- DEFAULT     width.materializeForSet : Swift.Double
+  4 0x1000013c0 ---------- DEFAULT     height.getter : Swift.Double
+  5 0x1000013e0 ---------- DEFAULT     height.setter : Swift.Double
+  6 0x1000013f0 ---------- DEFAULT     height.materializeForSet : Swift.Double
+  7 0x100001410 ---------- DEFAULT     pos.getter : Swift.Double
+  8 0x100001430 ---------- DEFAULT     pos.setter : Swift.Double
+  9 0x100001440 ---------- DEFAULT     pos.materializeForSet : Swift.Double
+ 10 0x100001460 ---------- CONSTRUCTOR init
+ 11 0x100001470 ---------- CONSTRUCTOR init
+
+[main_BarClass]
+nth        addr  vt_offset type        name                  
+-------------------------------------------------------------
+  1 0x100001a30 ---------- DEFAULT     sayHello
+  2 0x100001ae0 ---------- DEFAULT     __deallocating_deinit
+  3 0x100001b10 ---------- DESTRUCTOR  deinit
+  4 0x100001b20 ---------- CONSTRUCTOR init
+  5 0x100001b30 ---------- DEFAULT     __allocating_init
+
+[main_FooClass]
+nth        addr  vt_offset type        name                                 
+----------------------------------------------------------------------------
+  1 0x1000014c0 ---------- CONSTRUCTOR init
+  2 0x1000015a0 ---------- DEFAULT     __allocating_init
+  3 0x1000015e0 ---------- DEFAULT     sayHello
+  4 0x100001720 ---------- DEFAULT     __deallocating_deinit
+  5 0x100001750 ---------- DESTRUCTOR  deinit
+  6 0x100001780 ---------- DEFAULT     foo.getter : Swift.Int
+  7 0x100001790 ---------- DEFAULT     foo.setter : Swift.Int
+  8 0x1000017a0 ---------- DEFAULT     foo.materializeForSet : Swift.Int
+  9 0x1000017c0 ---------- DEFAULT     bar.getter : Swift.String
+ 10 0x100001800 ---------- DEFAULT     bar.setter : Swift.String
+ 11 0x100001860 ---------- DEFAULT     bar.materializeForSet : Swift.String
+
+[main_Tost]
+nth        addr  vt_offset type        name                                 
+----------------------------------------------------------------------------
+  1 0x100002040 ---------- CONSTRUCTOR init
+  2 0x100002080 ---------- DEFAULT     __allocating_init
+  3 0x100002110 ---------- DEFAULT     __deallocating_deinit
+  4 0x100002140 ---------- DESTRUCTOR  deinit
+  5 0x100002170 ---------- DEFAULT     msg.getter : Swift.String
+  6 0x1000021b0 ---------- DEFAULT     msg.setter : Swift.String
+  7 0x100002210 ---------- DEFAULT     msg.materializeForSet : Swift.String
+
+EOF
+RUN
+
+NAME=Analyze class inheritance in swift
+FILE=bins/mach0/swift-bin-multi-inherit
+CMDS=<<EOF
+aaa
+acll
+acg main_Dog
+EOF
+EXPECT=<<EOF
+[Swift_Array]
+nth        addr  vt_offset type    name         
+------------------------------------------------
+  1 0x100003bcc ---------- DEFAULT _endMutation
+
+[Swift_String]
+nth        addr  vt_offset type        name 
+--------------------------------------------
+  1 0x100003bd8 ---------- CONSTRUCTOR init
+
+[main_Cat: main_Mammal]
+nth        addr  vt_offset type        name                  
+-------------------------------------------------------------
+  1 0x100003280 ---------- DEFAULT     __allocating_init
+  2 0x10000371c ---------- DEFAULT     speak
+  3 0x1000037f0 ---------- CONSTRUCTOR init
+  4 0x10000383c ---------- DESTRUCTOR  deinit
+  5 0x100003864 ---------- DEFAULT     __deallocating_deinit
+
+[main_Dog: main_Mammal]
+nth        addr  vt_offset type        name                  
+-------------------------------------------------------------
+  1 0x1000032dc ---------- DEFAULT     __allocating_init
+  2 0x1000038a0 ---------- DEFAULT     speak
+  3 0x100003974 ---------- CONSTRUCTOR init
+  4 0x1000039c0 ---------- DESTRUCTOR  deinit
+  5 0x1000039e8 ---------- DEFAULT     __deallocating_deinit
+
+[main_Human: main_Mammal]
+nth        addr  vt_offset type        name                  
+-------------------------------------------------------------
+  1 0x100003224 ---------- DEFAULT     __allocating_init
+  2 0x100003598 ---------- DEFAULT     speak
+  3 0x10000366c ---------- CONSTRUCTOR init
+  4 0x1000036b8 ---------- DESTRUCTOR  deinit
+  5 0x1000036e0 ---------- DEFAULT     __deallocating_deinit
+
+[main_Mammal]
+nth        addr  vt_offset type        name                  
+-------------------------------------------------------------
+  1 0x100003370 ---------- DEFAULT     speak
+  2 0x1000034dc ---------- DESTRUCTOR  deinit
+  3 0x100003500 ---------- DEFAULT     __deallocating_deinit
+  4 0x10000353c ---------- DEFAULT     __allocating_init
+  5 0x100003574 ---------- CONSTRUCTOR init
+
+[main_Shepherd: main_Dog]
+nth        addr  vt_offset type        name                  
+-------------------------------------------------------------
+  1 0x100003338 ---------- DEFAULT     __allocating_init
+  2 0x100003a24 ---------- DEFAULT     speak
+  3 0x100003af8 ---------- CONSTRUCTOR init
+  4 0x100003b44 ---------- DESTRUCTOR  deinit
+  5 0x100003b6c ---------- DEFAULT     __deallocating_deinit
+
+.---------------.   .----------------.    .---------------.
+|  Swift_Array  |   |  Swift_String  |    |  main_Mammal  |
+`---------------'   `----------------'    `---------------'
+                                              v v v
+                                              | | |
+                                              | | '----------.
+                         .--------------------' |            |
+                         |                 .----'            |
+                         |                 |                 |
+                     .------------.    .------------.    .--------------.
+                     |  main_Cat  |    |  main_Dog  |    |  main_Human  |
+                     `------------'    `------------'    `--------------'
+                                           v
+                                           |
+                                         .-'
+                                         |
+                                     .-----------------.
+                                     |  main_Shepherd  |
+                                     `-----------------'
+EOF
+RUN

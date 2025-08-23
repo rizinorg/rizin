@@ -1,8 +1,63 @@
 NAME=Open LE cdogs.exe
 FILE=bins/le/cdogs.exe
-CMDS=iH~Signature[1]
+CMDS=iH
 EXPECT=<<EOF
-LE
+le:
+  signature: "LE"
+  le_offset: 0x2d98
+  byte_order: "little endian"
+  word_order: "little endian"
+  format_level: 0
+  module_name: "cdogs"
+  type: "Program module (EXE)"
+  cpu: "80386"
+  os: "OS/2"
+  arch: "x86"
+  version: 0
+  mflags: 0x200
+  flags:
+    - "PMWINAPI"
+    - "EXE"
+  mpages: 61
+  initial_eip_obj: 1
+  initial_eip: 0x16058
+  initial_stack_obj: 2
+  initial_esp: 0x26030
+  page_size: 0x1000
+  last_page_size: 0xd8c
+  fixup_size: 0xa14a
+  fixup_checksum: 0x0
+  loader_size: 0xa278
+  loader_checksum: 0x0
+  obj_table: 0xc4
+  obj_count: 2
+  obj_page_map: 0xf4
+  obj_iter_data_map: 0x0
+  resource_table: 0x1e8
+  resource_count: 0
+  resident_name_table: 0x1e8
+  entry_table: 0x1f1
+  directives_table: 0x0
+  directives_count: 0
+  fixup_page_table: 0x1f2
+  fixup_record_table: 0x2ea
+  import_module_name_table: 0xa33b
+  import_module_name_count: 0
+  import_procedure_name_table: 0xa33b
+  per_page_checksum_table: 0x0
+  enumerated_data_pages: 0xd200
+  number_of_preload_pages: 0
+  non_resident_names_table: 0x0
+  size_non_resident_names: 0
+  checksum_non_resident_names: 0x0
+  autodata_obj: 2
+  debug_info: 0x0
+  debug_length: 0x0
+  preload_pages: 0
+  demand_pages: 0
+  heap_size: 0x0
+  stack_size: 0x0
+
 EOF
 RUN
 
@@ -166,9 +221,65 @@ RUN
 
 NAME=Open LX GCC.EXE
 FILE=bins/le/GCC.EXE
-CMDS=iH~Signature[1]
+CMDS=iH
 EXPECT=<<EOF
-LX
+le:
+  signature: "LX"
+  le_offset: 0x600
+  byte_order: "little endian"
+  word_order: "little endian"
+  format_level: 0
+  module_name: "gcc"
+  type: "Program module (EXE)"
+  cpu: "80386"
+  os: "OS/2"
+  arch: "x86"
+  version: 0
+  mflags: 0x210
+  flags:
+    - "NOINTFIXUPS"
+    - "PMWINAPI"
+    - "EXE"
+  mpages: 16
+  initial_eip_obj: 1
+  initial_eip: 0x0
+  initial_stack_obj: 4
+  initial_esp: 0x800000
+  page_size: 0x1000
+  page_shift: 0xc
+  fixup_size: 0x9b
+  fixup_checksum: 0x0
+  loader_size: 0xe8
+  loader_checksum: 0x0
+  obj_table: 0xc4
+  obj_count: 4
+  obj_page_map: 0x124
+  obj_iter_data_map: 0x0
+  resource_table: 0x0
+  resource_count: 0
+  resident_name_table: 0x1a4
+  entry_table: 0x1ab
+  directives_table: 0x0
+  directives_count: 0
+  fixup_page_table: 0x1ac
+  fixup_record_table: 0x1f0
+  import_module_name_table: 0x239
+  import_module_name_count: 2
+  import_procedure_name_table: 0x246
+  per_page_checksum_table: 0x0
+  enumerated_data_pages: 0x1000
+  number_of_preload_pages: 0
+  non_resident_names_table: 0x0
+  size_non_resident_names: 0
+  checksum_non_resident_names: 0x0
+  autodata_obj: 2
+  debug_info: 0x0
+  debug_length: 0x0
+  preload_pages: 0
+  demand_pages: 1
+  heap_size: 0x0
+  stack_size: 0x0
+
 EOF
 RUN
 
@@ -226,9 +337,63 @@ RUN
 
 NAME=Open LX GNUGREP.DLL
 FILE=bins/le/GNUGREP.DLL
-CMDS=iH~Signature[1]
+CMDS=iH
 EXPECT=<<EOF
-LX
+le:
+  signature: "LX"
+  le_offset: 0x80
+  byte_order: "little endian"
+  word_order: "little endian"
+  format_level: 0
+  module_name: "GNUGREP"
+  type: "Library module (DLL)"
+  cpu: "80386"
+  os: "OS/2"
+  arch: "x86"
+  version: 131073
+  mflags: 0x8002
+  flags:
+    - "DLL"
+  mpages: 11
+  initial_eip_obj: 1
+  initial_eip: 0x0
+  initial_stack_obj: 0
+  initial_esp: 0x0
+  page_size: 0x1000
+  page_shift: 0x9
+  fixup_size: 0x10be
+  fixup_checksum: 0x0
+  loader_size: 0xcd
+  loader_checksum: 0x0
+  obj_table: 0xc4
+  obj_count: 4
+  obj_page_map: 0x124
+  obj_iter_data_map: 0x0
+  resource_table: 0x0
+  resource_count: 0
+  resident_name_table: 0x17c
+  entry_table: 0x187
+  directives_table: 0x0
+  directives_count: 0
+  fixup_page_table: 0x191
+  fixup_record_table: 0x1c1
+  import_module_name_table: 0x123a
+  import_module_name_count: 3
+  import_procedure_name_table: 0x124f
+  per_page_checksum_table: 0x0
+  enumerated_data_pages: 0x1400
+  number_of_preload_pages: 0
+  non_resident_names_table: 0x9800
+  size_non_resident_names: 38
+  checksum_non_resident_names: 0x0
+  autodata_obj: 4
+  debug_info: 0x0
+  debug_length: 0x0
+  preload_pages: 0
+  demand_pages: 1
+  heap_size: 0x0
+  stack_size: 0x0
+
 EOF
 RUN
 
@@ -365,10 +530,65 @@ RUN
 
 NAME=DOSEXT.EXE open extender binary
 FILE=bins/le/DOSEXT.EXE
-CMDS=iH~header offset
+CMDS=iH
 EXPECT=<<EOF
-MZ header offset: 0x352a4
-LE header offset: 0x3803c
+le:
+  signature: "LE"
+  le_offset: 0x3803c
+  mz_offset: 0x352a4
+  byte_order: "little endian"
+  word_order: "little endian"
+  format_level: 0
+  module_name: "hello"
+  type: "Program module (EXE)"
+  cpu: "80386"
+  os: "OS/2"
+  arch: "x86"
+  version: 0
+  mflags: 0x200
+  flags:
+    - "PMWINAPI"
+    - "EXE"
+  mpages: 7
+  initial_eip_obj: 1
+  initial_eip: 0xc4
+  initial_stack_obj: 2
+  initial_esp: 0x1f30
+  page_size: 0x1000
+  last_page_size: 0x96e
+  fixup_size: 0xfbe
+  fixup_checksum: 0x0
+  loader_size: 0x56
+  loader_checksum: 0x0
+  obj_table: 0xc4
+  obj_count: 2
+  obj_page_map: 0xf4
+  obj_iter_data_map: 0x0
+  resource_table: 0x110
+  resource_count: 0
+  resident_name_table: 0x110
+  entry_table: 0x119
+  directives_table: 0x0
+  directives_count: 0
+  fixup_page_table: 0x11a
+  fixup_record_table: 0x13a
+  import_module_name_table: 0x10d7
+  import_module_name_count: 0
+  import_procedure_name_table: 0x10d7
+  per_page_checksum_table: 0x0
+  enumerated_data_pages: 0x4000
+  number_of_preload_pages: 0
+  non_resident_names_table: 0x0
+  size_non_resident_names: 0
+  checksum_non_resident_names: 0x0
+  autodata_obj: 2
+  debug_info: 0x0
+  debug_length: 0x0
+  preload_pages: 0
+  demand_pages: 0
+  heap_size: 0x0
+  stack_size: 0x1000
+
 EOF
 RUN
 

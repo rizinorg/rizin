@@ -2,21 +2,24 @@ NAME=SMS: Open/iI
 FILE=bins/sms/demo.sms
 CMDS=iH;iI
 EXPECT=<<EOF
-ROM Offset: 0x00007ff0
-ROM Reserved0: 255 (0xff)
-ROM Reserved1: 255 (0xff)
-ROM Checksum: 0x0000
-ROM Product Code: 000000
-ROM Version: 0
-ROM Console: 
-ROM Region: Unknown
-ROM Size: 256KB
-SDSC Offset: 0x00007fe0
-SDSC Version: 01.00
-SDSC Date: 2001-07-30
-SDSC Author: 
-SDSC Name: 64-Color Palette Test Program
-SDSC Description: Author: Charles MacDonald
+sms_rom:
+  offset: 0x7ff0
+  reserved0: 255
+  reserved1: 255
+  checksum: 0x0
+  product_code: "000000"
+  version: 0
+  console: ""
+  region: "Unknown"
+  size_kb: 256
+  sdsc:
+    offset: 0x7fe0
+    version: "01.00\n"
+    date: "2001-07-30\n"
+    author: ""
+    name: "64-Color Palette Test Program"
+    description: "Author: Charles MacDonald"
+
 arch     z80
 cpu      N/A
 features N/A
@@ -69,15 +72,17 @@ NAME=SMS: maps
 FILE=bins/sms/colorcheck.sms
 CMDS=iH;iI
 EXPECT=<<EOF
-ROM Offset: 0x00007ff0
-ROM Reserved0: 0 (0x00)
-ROM Reserved1: 0 (0x00)
-ROM Checksum: 0x5e2a
-ROM Product Code: 000000
-ROM Version: 0
-ROM Console: 
-ROM Region: Unknown
-ROM Size: 256KB
+sms_rom:
+  offset: 0x7ff0
+  reserved0: 0
+  reserved1: 0
+  checksum: 0x5e2a
+  product_code: "000000"
+  version: 0
+  console: ""
+  region: "Unknown"
+  size_kb: 256
+
 arch     z80
 cpu      N/A
 features N/A

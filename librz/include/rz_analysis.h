@@ -2280,10 +2280,12 @@ RZ_API void rz_analysis_rtti_msvc_print_class_hierarchy_descriptor(RVTableContex
 RZ_API void rz_analysis_rtti_msvc_print_base_class_descriptor(RVTableContext *context, ut64 addr, int mode);
 RZ_API bool rz_analysis_rtti_msvc_print_at_vtable(RVTableContext *context, ut64 addr, RzOutputMode mode, bool strict);
 RZ_API void rz_analysis_rtti_msvc_recover_all(RVTableContext *vt_context, RzList /*<RVTableInfo *>*/ *vtables);
+RZ_API void rz_analysis_rtti_swift(RzAnalysis *analysis);
 
 RZ_API char *rz_analysis_rtti_itanium_demangle_class_name(RVTableContext *context, const char *name);
 RZ_API bool rz_analysis_rtti_itanium_print_at_vtable(RVTableContext *context, ut64 addr, RzOutputMode mode);
 RZ_API void rz_analysis_rtti_itanium_recover_all(RVTableContext *vt_context, RzList /*<RVTableInfo *>*/ *vtables);
+RZ_API void rz_analysis_no_rtti_analysis(RZ_NONNULL RVTableContext *context, RZ_NONNULL RzList /*<RVTableInfo *>*/ *vtables);
 
 RZ_API char *rz_analysis_rtti_demangle_class_name(RzAnalysis *analysis, const char *name);
 RZ_API void rz_analysis_rtti_print_at_vtable(RzAnalysis *analysis, ut64 addr, RzOutputMode mode);

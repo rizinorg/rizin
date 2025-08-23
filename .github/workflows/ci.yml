@@ -122,7 +122,8 @@ jobs:
             build_system: meson
             compiler: clang
             cflags: "-DASAN=1 -DRZ_ASSERT_STDOUT=1 -fno-sanitize=function"
-            meson_options: -Dbuildtype=debugoptimized -Db_lundef=false -Db_sanitize=address,undefined --werror
+            # deroad: i had to remove `-Db_lundef=false -Db_sanitize=address` because it was crashing in a C++ library
+            meson_options: -Dbuildtype=debugoptimized -Db_sanitize=undefined --werror
             asan: true
             asan_options: detect_leaks=0,allocator_may_return_null=1
             run_tests: true
@@ -198,7 +199,7 @@ jobs:
         run: sudo apt-get --assume-yes install python3-wheel python3-setuptools libcapstone4 libcapstone-dev
       - name: Install meson and ninja
         if: matrix.build_system == 'meson' && matrix.enabled
-        run: pip3 install --user meson ninja PyYAML
+        run: pip3 install --user meson==1.8.3 ninja PyYAML
       - name: Install meson and ninja
         if: matrix.coverage && matrix.enabled
         run: pip3 install --user gcovr
@@ -338,7 +339,7 @@ jobs:
           gcovr --version
           gcovr --gcov-ignore-parse-errors=all --txt build/coverage.txt --cobertura build/coverage.xml build
       - name: Upload coverage to Codecov
-        if: matrix.coverage
+        if: matrix.coverage && matrix.enabled
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}

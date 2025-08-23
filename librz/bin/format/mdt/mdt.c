@@ -596,57 +596,67 @@ RZ_IPI RZ_OWN RzPVector /*<RzBinReloc *>*/ *rz_bin_mdt_relocs(RzBinFile *bf) {
 	return relocs;
 }
 
-RZ_IPI void rz_bin_mdt_print_header(RzBinFile *bf) {
-	rz_return_if_fail(bf && bf->o && bf->o->bin_obj && bf->rbin && bf->rbin->cb_printf);
+RZ_IPI RzStructuredData *rz_bin_mdt_structure(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 	const RzBinMdtObj *mdt = bf->o->bin_obj;
-	char bits[65] = { 0 };
-	size_t i;
-	void **it;
+
+	RzStructuredData *content = NULL;
+	RzStructuredData *info = rz_structured_data_new_map();
+	if (!info) {
+		return NULL;
+	}
+
+	RzStructuredData *mdt_segments = rz_structured_data_map_add_array(info, "mdt_segments");
+	if (!mdt_segments) {
+		rz_structured_data_free(info);
+		return NULL;
+	}
+
+	size_t i = 0;
+	void **it = NULL;
+	char bits[70] = { 0 };
+	bits[0] = '0';
+	bits[1] = 'b';
 	rz_pvector_enumerate (mdt->parts, it, i) {
 		RzBinMdtPart *part = *it;
-		rz_str_bits64(bits, qcom_p_flags(part->pflags));
-		bf->rbin->cb_printf("==== MDT Segment %" PFMTSZu " ====\n", i);
-		bf->rbin->cb_printf("     priv_p_flags: 0b%s:", bits);
-		if (part->is_layout) {
-			bf->rbin->cb_printf(" layout");
+		rz_str_bits64(&bits[2], qcom_p_flags(part->pflags));
+
+		RzStructuredData *segment = rz_structured_data_array_add_map(mdt_segments);
+		if (!segment) {
+			rz_structured_data_free(info);
+			return NULL;
 		}
-		if (part->relocatable) {
-			bf->rbin->cb_printf(" reloc");
-		}
+		rz_structured_data_map_add_string(segment, "priv_p_flags", bits);
+		rz_structured_data_map_add_boolean(segment, "is_layout", part->is_layout);
+		rz_structured_data_map_add_boolean(segment, "is_relocatable", part->relocatable);
+
 		switch (part->format) {
 		default:
+			/* fall-thru */
 		case RZ_BIN_MDT_PART_UNIDENTIFIED:
-			bf->rbin->cb_printf(" | Unidentified\n");
+			rz_structured_data_map_add_string(segment, "format", "unidentified");
 			break;
 		case RZ_BIN_MDT_PART_ELF:
-			bf->rbin->cb_printf(" | ELF\n");
-			if (part->obj.elf) {
-				bf->rbin->cb_printf(" -- ELF HEADER BEGIN -- \n");
-				elf_headers_obj((ELFOBJ *)part->obj.elf, bf->rbin->cb_printf);
-				bf->rbin->cb_printf(" --- ELF HEADER END --- \n\n");
-			} else {
-				bf->rbin->cb_printf(" ------- FAILED ------- \n");
-			}
+			rz_structured_data_map_add_string(segment, "format", "elf binary");
+			content = elf_structure(part->obj.elf);
+			rz_structured_data_map_add(segment, "content", content);
 			break;
 		case RZ_BIN_MDT_PART_MBN:
-			bf->rbin->cb_printf(" | MBN signature segment\n");
-			if (part->obj.mbn) {
-				bf->rbin->cb_printf(" -- MBN AUTH HEADER BEGIN -- \n");
-				mbn_header_obj(part->obj.mbn, bf->rbin->cb_printf);
-				bf->rbin->cb_printf(" --- MBN AUTH HEADER END --- \n\n");
-			} else {
-				bf->rbin->cb_printf(" ------- FAILED ------- \n");
-			}
+			rz_structured_data_map_add_string(segment, "format", "mbn signature");
+			content = mbn_structure(part->obj.mbn);
+			rz_structured_data_map_add(segment, "content", content);
 			break;
 		case RZ_BIN_MDT_PART_COMPRESSED_Q6ZIP:
-			bf->rbin->cb_printf(" | Q6ZIP compressed\n");
+			rz_structured_data_map_add_string(segment, "format", "Q6ZIP compressed");
 			break;
 		case RZ_BIN_MDT_PART_COMPRESSED_CLADE2:
-			bf->rbin->cb_printf(" | CLADE2 compressed\n");
+			rz_structured_data_map_add_string(segment, "format", "CLADE2 compressed");
 			break;
 		case RZ_BIN_MDT_PART_COMPRESSED_ZLIB:
-			bf->rbin->cb_printf(" | ZLIB compressed\n");
+			rz_structured_data_map_add_string(segment, "format", "ZLIB compressed");
 			break;
 		}
 	}
+
+	return info;
 }

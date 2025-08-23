@@ -1578,9 +1578,88 @@ RUN
 
 NAME=pe32 header
 FILE=bins/pe/single_import.exe
-CMDS=iH~Signature~0x4550?
+CMDS=iH
 EXPECT=<<EOF
-1
+pe32:
+  IMAGE_NT_HEADERS:
+    Signature: 0x4550
+  IMAGE_FILE_HEADERS:
+    Machine: 0x14c
+    NumberOfSections: 2
+    TimeDateStamp: 1264260641
+    PointerToSymbolTable: 0x0
+    NumberOfSymbols: 0
+    SizeOfOptionalHeader: 224
+    Characteristics: 0x103
+  IMAGE_OPTIONAL_HEADERS:
+    Magic: 0x10b
+    MajorLinkerVersion: 9
+    MinorLinkerVersion: 0
+    SizeOfCode: 76800
+    SizeOfInitializedData: 1536
+    SizeOfUninitializedData: 0
+    AddressOfEntryPoint: 0x13bc8
+    BaseOfCode: 0x1000
+    BaseOfData: 0x14000
+    ImageBase: 0x400000
+    SectionAlignment: 0x1000
+    FileAlignment: 0x200
+    MajorOperatingSystemVersion: 0x5
+    MinorOperatingSystemVersion: 0x0
+    MajorImageVersion: 0x0
+    MinorImageVersion: 0x0
+    MajorSubsystemVersion: 0x5
+    MinorSubsystemVersion: 0x0
+    Win32VersionValue: 0x0
+    SizeOfImage: 90112
+    SizeOfHeaders: 1024
+    CheckSum: 0x0
+    Subsystem: 0x2
+    DllCharacteristics: 0x8000
+    SizeOfStackReserve: 1048576
+    SizeOfStackCommit: 4096
+    SizeOfHeapReserve: 1048576
+    SizeOfHeapCommit: 4096
+    LoaderFlags: 0x0
+    NumberOfRvaAndSizes: 16
+  RICH_FIELDS:
+    - Product: 145
+      Name: "Linker900"
+      Version: 30729
+      Times: 1
+    - Product: 148
+      Name: "Cvtres900"
+      Version: 30729
+      Times: 1
+    - Product: 149
+      Name: "Masm900"
+      Version: 30729
+      Times: 1
+    - Product: 138
+      Name: "Utc1500_LTCG_CPP"
+      Version: 30729
+      Times: 1
+    - Product: 1
+      Name: "Import0"
+      Version: 0
+      Times: 1
+    - Product: 93
+      Name: "Implib710"
+      Version: 4035
+      Times: 3
+  IMAGE_DIRECTORY_ENTRY_IMPORT:
+    VirtualAddress: 0x14008
+    Size: 40
+  IMAGE_DIRECTORY_ENTRY_RESOURCE:
+    VirtualAddress: 0x15000
+    Size: 992
+  IMAGE_DIRECTORY_ENTRY_IAT:
+    VirtualAddress: 0x14000
+    Size: 8
+  IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT:
+    VirtualAddress: 0x0
+    Size: 65535
+
 EOF
 RUN
 

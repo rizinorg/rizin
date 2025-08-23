@@ -295,30 +295,54 @@ static void sms_destroy(RzBinFile *bf) {
 	sms_info_free(bf->o->bin_obj);
 }
 
-static void sms_header(RzBinFile *bf) {
-	RzBin *rbin = bf->rbin;
+static RzStructuredData *sms_structure(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
+
+	char tmp[256] = { 0 };
 	SMSInfo *sms = bf->o->bin_obj;
 
-	rbin->cb_printf("ROM Offset: 0x%08" PFMT64x "\n", sms->rom.offset);
-	rbin->cb_printf("ROM Reserved0: %u (0x%02x)\n", (ut32)sms->rom.reserved[0], (ut32)sms->rom.reserved[0]);
-	rbin->cb_printf("ROM Reserved1: %u (0x%02x)\n", (ut32)sms->rom.reserved[1], (ut32)sms->rom.reserved[1]);
-	rbin->cb_printf("ROM Checksum: 0x%04x\n", sms->rom.checksum);
-	rbin->cb_printf("ROM Product Code: %06u\n", sms->rom.product_code);
-	rbin->cb_printf("ROM Version: %u\n", sms->rom.version);
-	rbin->cb_printf("ROM Console: %s\n", rz_str_get(sms->rom.system));
-	rbin->cb_printf("ROM Region: %s\n", rz_str_get(sms->rom.region));
-	rbin->cb_printf("ROM Size: %dKB\n", sms->rom.size_kb);
-
-	if (sms->sdsc.offset == UT64_MAX) {
-		return;
+	RzStructuredData *info = rz_structured_data_new_map();
+	if (!info) {
+		return NULL;
 	}
 
-	rbin->cb_printf("SDSC Offset: 0x%08" PFMT64x "\n", sms->sdsc.offset);
-	rbin->cb_printf("SDSC Version: %02u.%02u\n", sms->sdsc.version.major, sms->sdsc.version.minor);
-	rbin->cb_printf("SDSC Date: %04u-%02u-%02u\n", sms->sdsc.date.year, sms->sdsc.date.month, sms->sdsc.date.day);
-	rbin->cb_printf("SDSC Author: %s\n", rz_str_get(sms->sdsc.author));
-	rbin->cb_printf("SDSC Name: %s\n", rz_str_get(sms->sdsc.name));
-	rbin->cb_printf("SDSC Description: %s\n", rz_str_get(sms->sdsc.description));
+	RzStructuredData *rom = rz_structured_data_map_add_map(info, "sms_rom");
+	if (!rom) {
+		rz_structured_data_free(info);
+		return NULL;
+	}
+
+	rz_structured_data_map_add_unsigned(rom, "offset", sms->rom.offset, true);
+	rz_structured_data_map_add_unsigned(rom, "reserved0", sms->rom.reserved[0], false);
+	rz_structured_data_map_add_unsigned(rom, "reserved1", sms->rom.reserved[1], false);
+	rz_structured_data_map_add_unsigned(rom, "checksum", sms->rom.checksum, true);
+	rz_strf(tmp, "%06u", sms->rom.product_code);
+	rz_structured_data_map_add_string(rom, "product_code", tmp);
+	rz_structured_data_map_add_unsigned(rom, "version", sms->rom.version, false);
+	rz_structured_data_map_add_string(rom, "console", rz_str_get(sms->rom.system));
+	rz_structured_data_map_add_string(rom, "region", rz_str_get(sms->rom.region));
+	rz_structured_data_map_add_unsigned(rom, "size_kb", sms->rom.size_kb, false);
+
+	if (sms->sdsc.offset == UT64_MAX) {
+		return info;
+	}
+
+	RzStructuredData *sdsc = rz_structured_data_map_add_map(rom, "sdsc");
+	if (!sdsc) {
+		rz_structured_data_free(info);
+		return NULL;
+	}
+
+	rz_structured_data_map_add_unsigned(sdsc, "offset", sms->sdsc.offset, true);
+	rz_strf(tmp, "%02u.%02u\n", sms->sdsc.version.major, sms->sdsc.version.minor);
+	rz_structured_data_map_add_string(sdsc, "version", tmp);
+	rz_strf(tmp, "%04u-%02u-%02u\n", sms->sdsc.date.year, sms->sdsc.date.month, sms->sdsc.date.day);
+	rz_structured_data_map_add_string(sdsc, "date", tmp);
+	rz_structured_data_map_add_string(sdsc, "author", rz_str_get(sms->sdsc.author));
+	rz_structured_data_map_add_string(sdsc, "name", rz_str_get(sms->sdsc.name));
+	rz_structured_data_map_add_string(sdsc, "description", rz_str_get(sms->sdsc.description));
+
+	return info;
 }
 
 static RzBinInfo *sms_info(RzBinFile *bf) {
@@ -355,7 +379,7 @@ RzBinPlugin rz_bin_plugin_sms = {
 	.load_buffer = &sms_load_buffer,
 	.check_buffer = &sms_check_buffer,
 	.destroy = &sms_destroy,
-	.header = &sms_header,
+	.bin_structure = &sms_structure,
 	.info = &sms_info,
 	.strings = &sms_strings,
 	.strfilter = 'U'

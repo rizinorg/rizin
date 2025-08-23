@@ -152,5 +152,5 @@ ut64 mbn_size(RzBinFile *bf);
 void mbn_destroy_obj(SblHeader *sb);
 void mbn_destroy(RzBinFile *bf);
 RzPVector /*<RzBinString *>*/ *mbn_strings(RzBinFile *bf);
-void mbn_header_obj(SblHeader *sb, RZ_NONNULL PrintfCallback cb);
-void mbn_header(RzBinFile *bf);
+RzStructuredData *mbn_structure(SblHeader *sb);
+RzStructuredData *mbn_structure_bin(RzBinFile *bf);

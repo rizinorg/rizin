@@ -269,7 +269,7 @@ RZ_OWN char *Elf_(rz_bin_elf_get_e_shstrndx_as_string)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN char *Elf_(rz_bin_elf_get_e_type_as_string)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN char *Elf_(rz_bin_elf_get_e_version_as_string)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_get_ehdr)(RZ_NONNULL ELFOBJ *bin);
-bool Elf_(rz_bin_elf_print_ehdr)(ELFOBJ *bin, RZ_NONNULL PrintfCallback cb);
+RzStructuredData *Elf_(rz_bin_elf_ehdr)(ELFOBJ *bin);
 
 // elf_hash.c
 bool Elf_(rz_bin_elf_get_gnu_hash_table)(RZ_NONNULL ELFOBJ *bin, RzBinElfGnuHashTable *result);

@@ -4056,12 +4056,6 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 	}
 	rz_core_task_yield(&core->tasks);
 
-	notify = "Check for classes";
-	rz_core_notify_begin(core, "%s", notify);
-	rz_analysis_class_recover_all(core->analysis);
-	rz_core_notify_done(core, "%s", notify);
-	rz_core_task_yield(&core->tasks);
-
 	rz_config_set_i(core->config, "analysis.calls", c);
 	rz_core_task_yield(&core->tasks);
 	if (rz_cons_is_breaked()) {
@@ -4136,6 +4130,12 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 	notify = "Propagate noreturn information";
 	rz_core_notify_begin(core, "%s", notify);
 	rz_core_analysis_propagate_noreturn(core, UT64_MAX);
+	rz_core_notify_done(core, "%s", notify);
+	rz_core_task_yield(&core->tasks);
+
+	notify = "Check for classes";
+	rz_core_notify_begin(core, "%s", notify);
+	rz_analysis_class_recover_all(core->analysis);
 	rz_core_notify_done(core, "%s", notify);
 	rz_core_task_yield(&core->tasks);
 

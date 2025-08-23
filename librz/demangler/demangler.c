@@ -5,6 +5,7 @@
 #include <rz_demangler.h>
 #include <rz_util.h>
 #include <rz_libdemangle.h>
+#include <rz_libswift.h>
 #include <rz_lib.h>
 
 #include "rz_demangler_plugins.h"
@@ -20,6 +21,19 @@
 		.demangle = &handler##_cast, \
 	}
 
+static char *libdemangle_handler_swift(RZ_NULLABLE const char *symbol, RzDemangleOpts flags) {
+	(void)flags;
+	if (RZ_STR_ISEMPTY(symbol)) {
+		return NULL;
+	}
+
+	if (symbol[0] == '_' && symbol[1] == '_') {
+		symbol++;
+	}
+
+	return rz_libswift_demangle_line(symbol);
+}
+
 #if WITH_GPL
 // cpp demangler contains GPL2 code and LGPL3 for delphi
 DEFINE_DEMANGLER_PLUGIN(cpp, "c++", "GPL-2,LGPL3", "FSF/deroad", libdemangle_handler_cxx);
@@ -28,15 +42,12 @@ DEFINE_DEMANGLER_PLUGIN(cpp, "c++", "GPL-2,LGPL3", "FSF/deroad", libdemangle_han
 DEFINE_DEMANGLER_PLUGIN(cpp, "c++", "LGPL3", "deroad", libdemangle_handler_cxx);
 #endif /* WITH_GPL */
 
-#if WITH_SWIFT_DEMANGLER
-DEFINE_DEMANGLER_PLUGIN(swift, "swift", "MIT", "pancake", libdemangle_handler_swift);
-#endif
-
 DEFINE_DEMANGLER_PLUGIN(rust, "rust", "LGPL3", "Dhruv Maroo/RizinOrg", libdemangle_handler_rust);
 DEFINE_DEMANGLER_PLUGIN(java, "java", "LGPL3", "deroad", libdemangle_handler_java);
 DEFINE_DEMANGLER_PLUGIN(msvc, "msvc", "LGPL3", "inisider", libdemangle_handler_msvc);
 DEFINE_DEMANGLER_PLUGIN(objc, "objc", "LGPL3", "pancake", libdemangle_handler_objc);
 DEFINE_DEMANGLER_PLUGIN(pascal, "pascal", "LGPL3", "deroad", libdemangle_handler_pascal);
+DEFINE_DEMANGLER_PLUGIN(swift, "swift", "Apache-2.0", "deroad", libdemangle_handler_swift);
 
 static RzDemanglerPlugin *demangler_static_plugins[] = { RZ_DEMANGLER_STATIC_PLUGINS };
 
@@ -82,6 +93,13 @@ RZ_API RZ_OWN char *rz_demangler_rust(RZ_NONNULL const char *symbol, RzDemangler
  */
 RZ_API RZ_OWN char *rz_demangler_msvc(RZ_NONNULL const char *symbol, RzDemanglerFlag flags) {
 	return libdemangle_handler_msvc(symbol, (RzDemangleOpts)flags);
+}
+
+/**
+ * \brief Demangles Microsoft VC symbols
+ */
+RZ_API RZ_OWN char *rz_demangler_swift(RZ_NONNULL const char *symbol, RzDemanglerFlag flags) {
+	return libdemangle_handler_swift(symbol, (RzDemangleOpts)flags);
 }
 
 /**

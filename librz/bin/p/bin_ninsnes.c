@@ -760,22 +760,22 @@ static RzPVector /*<RzBinAddr *>*/ *snes_entries(RzBinFile *bf) {
 	return ret;
 }
 
-static const char *snes_rom_get_map_mode(const SNESRom *rom) {
+static char *snes_rom_get_map_mode(const SNESRom *rom) {
 	switch (rom->mode.map) {
 	case SNES_ROM_MODE_LOROM_32K:
-		return "LoROM 32K Banks (LoROM)";
+		return rz_str_dup("LoROM 32K Banks (LoROM)");
 	case SNES_ROM_MODE_HIROM_64K:
-		return "HiROM 64K Banks (HiROM)";
+		return rz_str_dup("HiROM 64K Banks (HiROM)");
 	case SNES_ROM_MODE_LOROM_32K_S_DD1:
-		return "LoROM 32K Banks + S-DD1 (LoROM Super MMC)";
+		return rz_str_dup("LoROM 32K Banks + S-DD1 (LoROM Super MMC)");
 	case SNES_ROM_MODE_LOROM_32K_SA_1:
-		return "LoROM 32K Banks + SA-1 (LoROM Emulates Super MMC)";
+		return rz_str_dup("LoROM 32K Banks + SA-1 (LoROM Emulates Super MMC)");
 	case SNES_ROM_MODE_EXTHIROM_64K:
-		return "HiROM 64K Banks (ExtHiROM)";
+		return rz_str_dup("HiROM 64K Banks (ExtHiROM)");
 	case SNES_ROM_MODE_HIROM_64K_SPC7110:
-		return "HiROM 64K Banks + SPC7110 (HiROM)";
+		return rz_str_dup("HiROM 64K Banks + SPC7110 (HiROM)");
 	default:
-		return "Unknown";
+		return rz_str_newf("unknown %u", (ut32)rom->mode.map);
 	}
 }
 
@@ -861,28 +861,24 @@ static char *snes_rom_get_cartridge_type(const SNESRom *rom) {
 	return rz_str_newf("%s+%s", base, cop);
 }
 
-static ut32 snes_rom_get_rom_size(const SNESRom *rom, const char **unit) {
+static char *snes_rom_get_rom_size(const SNESRom *rom) {
+	ut32 size = 1u << rom->rom_size;
 	if (rom->rom_size > 10) {
-		*unit = "MB";
-	} else {
-		*unit = "KB";
+		return rz_str_newf("%u MB", size);
 	}
-	if (!rom->rom_size) {
-		return 0;
-	}
-	return 1u << rom->rom_size;
+	return rz_str_newf("%u KB", size);
 }
 
-static ut32 snes_rom_get_sram_size(const SNESRom *rom, const char **unit) {
-	if (rom->rom_size > 10) {
-		*unit = "MB";
-	} else {
-		*unit = "KB";
-	}
+static char *snes_rom_get_sram_size(const SNESRom *rom) {
 	if (!rom->sram_size) {
-		return 0;
+		return NULL;
 	}
-	return 1u << rom->sram_size;
+
+	ut32 size = 1u << rom->sram_size;
+	if (rom->sram_size > 10) {
+		return rz_str_newf("%u MB", size);
+	}
+	return rz_str_newf("%u KB", size);
 }
 
 static const char *snes_rom_get_country(const SNESRom *rom) {
@@ -909,62 +905,95 @@ static const char *snes_rom_get_country(const SNESRom *rom) {
 	}
 }
 
-static const char *snes_rom_get_developer(const SNESRom *rom) {
+static char *snes_rom_get_developer(const SNESRom *rom) {
 	switch (rom->developer_id) {
-	case 0x00: return "None/Homebrew";
-	case 0x01: return "Nintendo";
-	default: return "Unknown";
+	case 0x00: return rz_str_dup("None/Homebrew");
+	case 0x01: return rz_str_dup("Nintendo");
+	default: return rz_str_newf("unknown 0x%02x", (ut32)rom->developer_id);
 	}
 }
 
-static void snes_header(RzBinFile *bf) {
-	rz_return_if_fail(bf);
+static RzStructuredData *snes_structure(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
-	RzBin *rbin = bf->rbin;
 	const SNESRom *rom = bf->o->bin_obj;
 
 	char *game_title = rz_str_ndup(rom->game_title, sizeof(rom->game_title));
+	char *map_mode = snes_rom_get_map_mode(rom);
 	char *cartridge_type = snes_rom_get_cartridge_type(rom);
-	const char *unit = "";
-	ut32 size = 0;
+	char *size = NULL;
+	char *developer_id = snes_rom_get_developer(rom);
 
-	rbin->cb_printf("ROM Game Title: %s\n", game_title);
-	rbin->cb_printf("ROM Speed: %s\n", rom->mode.fast_rom ? "Fast" : "Slow");
-	rbin->cb_printf("ROM Map Mode: %s (0x%02x)\n", snes_rom_get_map_mode(rom), rom->mode.map);
-	rbin->cb_printf("ROM Cartridge: %s (0x%02x)\n", cartridge_type, rom->cartridge_type);
-
-	size = snes_rom_get_rom_size(rom, &unit);
-	rbin->cb_printf("ROM Size: %u %s (0x%02x)\n", size, unit, rom->rom_size);
-
-	size = snes_rom_get_sram_size(rom, &unit);
-	if (size > 0) {
-		rbin->cb_printf("ROM SRAM: %u %s (0x%02x)\n", size, unit, rom->sram_size);
-	} else {
-		rbin->cb_printf("ROM SRAM: missing (0x%02x)\n", rom->sram_size);
+	RzStructuredData *info = rz_structured_data_new_map();
+	if (!info) {
+		return NULL;
 	}
 
-	rbin->cb_printf("ROM Country: %s (0x%02x)\n", snes_rom_get_country(rom), rom->country);
-	rbin->cb_printf("ROM Developer: %s (0x%02x)\n", snes_rom_get_developer(rom), rom->developer_id);
-	rbin->cb_printf("ROM Version: 0x%02x\n", rom->rom_version);
-	rbin->cb_printf("ROM Checksum: 0x%04x (complement: 0x%04x)\n", rom->checksum, rom->checksum_compl);
+	RzStructuredData *rom_data = rz_structured_data_map_add_map(info, "snes_rom");
+	if (!rom_data) {
+		rz_structured_data_free(info);
+		return NULL;
+	}
 
-	rbin->cb_printf("ROM unused: 0x%08x\n", rom->vectors.unused0);
-	rbin->cb_printf("ROM cop:    0x%04x (native vector)\n", (ut32)rom->vectors.native_cop);
-	rbin->cb_printf("ROM br:     0x%04x (native vector)\n", (ut32)rom->vectors.native_br);
-	rbin->cb_printf("ROM abort:  0x%04x (native vector)\n", (ut32)rom->vectors.native_abort);
-	rbin->cb_printf("ROM nmi:    0x%04x (native vector)\n", (ut32)rom->vectors.native_nmi);
-	rbin->cb_printf("ROM unused: 0x%04x (native vector)\n", (ut32)rom->vectors.unused1);
-	rbin->cb_printf("ROM irq:    0x%04x (native vector)\n", (ut32)rom->vectors.native_irq);
-	rbin->cb_printf("ROM unused: 0x%08x\n", rom->vectors.unused2);
-	rbin->cb_printf("ROM cop:    0x%04x (emulator vector)\n", (ut32)rom->vectors.emu_cop);
-	rbin->cb_printf("ROM unused: 0x%04x (emulator vector)\n", (ut32)rom->vectors.unused3);
-	rbin->cb_printf("ROM abort:  0x%04x (emulator vector)\n", (ut32)rom->vectors.emu_abort);
-	rbin->cb_printf("ROM nmi:    0x%04x (emulator vector)\n", (ut32)rom->vectors.emu_nmi);
-	rbin->cb_printf("ROM reset:  0x%04x (emulator vector)\n", (ut32)rom->vectors.reset);
-	rbin->cb_printf("ROM irq:    0x%04x (emulator vector)\n", (ut32)rom->vectors.emu_irq);
+	rz_structured_data_map_add_string(rom_data, "game_title", game_title);
+	rz_structured_data_map_add_string(rom_data, "speed", rom->mode.fast_rom ? "fast" : "slow");
+	rz_structured_data_map_add_string(rom_data, "map_mode", map_mode);
+	rz_structured_data_map_add_string(rom_data, "cartridge", cartridge_type);
 
+	size = snes_rom_get_rom_size(rom);
+	rz_structured_data_map_add_string(rom_data, "size", size);
+	RZ_FREE(size);
+
+	if ((size = snes_rom_get_sram_size(rom))) {
+		rz_structured_data_map_add_string(rom_data, "sram_size", size);
+		RZ_FREE(size);
+	}
+
+	rz_structured_data_map_add_string(rom_data, "country", snes_rom_get_country(rom));
+	rz_structured_data_map_add_string(rom_data, "developer", developer_id);
+	rz_structured_data_map_add_unsigned(rom_data, "version", rom->rom_version, true);
+	rz_structured_data_map_add_unsigned(rom_data, "checksum", rom->checksum, true);
+	rz_structured_data_map_add_unsigned(rom_data, "checksum_compl", rom->checksum_compl, true);
+
+	RzStructuredData *vectors = rz_structured_data_map_add_map(rom_data, "vectors");
+	if (!vectors) {
+		rz_structured_data_free(info);
+		return NULL;
+	}
+
+	RzStructuredData *native = rz_structured_data_map_add_map(vectors, "native");
+	if (!native) {
+		rz_structured_data_free(info);
+		return NULL;
+	}
+
+	rz_structured_data_map_add_unsigned(native, "unused0", rom->vectors.unused0, true);
+	rz_structured_data_map_add_unsigned(native, "cop", rom->vectors.native_cop, true);
+	rz_structured_data_map_add_unsigned(native, "br", rom->vectors.native_br, true);
+	rz_structured_data_map_add_unsigned(native, "abort", rom->vectors.native_abort, true);
+	rz_structured_data_map_add_unsigned(native, "nmi", rom->vectors.native_nmi, true);
+	rz_structured_data_map_add_unsigned(native, "unused1", rom->vectors.unused1, true);
+	rz_structured_data_map_add_unsigned(native, "irq", rom->vectors.native_irq, true);
+
+	RzStructuredData *emulator = rz_structured_data_map_add_map(vectors, "emulator");
+	if (!emulator) {
+		rz_structured_data_free(info);
+		return NULL;
+	}
+
+	rz_structured_data_map_add_unsigned(emulator, "unused2", rom->vectors.unused2, true);
+	rz_structured_data_map_add_unsigned(emulator, "cop", rom->vectors.emu_cop, true);
+	rz_structured_data_map_add_unsigned(emulator, "unused3", rom->vectors.unused3, true);
+	rz_structured_data_map_add_unsigned(emulator, "abort", rom->vectors.emu_abort, true);
+	rz_structured_data_map_add_unsigned(emulator, "nmi", rom->vectors.emu_nmi, true);
+	rz_structured_data_map_add_unsigned(emulator, "reset", rom->vectors.reset, true);
+	rz_structured_data_map_add_unsigned(emulator, "irq", rom->vectors.emu_irq, true);
+
+	free(developer_id);
 	free(cartridge_type);
+	free(map_mode);
 	free(game_title);
+	return info;
 }
 
 RzBinPlugin rz_bin_plugin_sfc = {
@@ -974,7 +1003,7 @@ RzBinPlugin rz_bin_plugin_sfc = {
 	.author = "usrshare",
 	.load_buffer = &snes_load_buffer,
 	.check_buffer = &snes_check_buffer,
-	.header = &snes_header,
+	.bin_structure = &snes_structure,
 	.entries = &snes_entries,
 	.maps = &rz_bin_maps_of_file_sections,
 	.sections = snes_sections,

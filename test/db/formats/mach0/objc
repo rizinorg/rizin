@@ -106,8 +106,9 @@ CMDS=ic
 EXPECT=<<EOF
     address         min         max name                                  super    
 -----------------------------------------------------------------------------------
+ ---------- 0x100001d9c 0x100001d9c Swift.String                          
+0x1000031e8 0x100001b50 0x100001d80 TestSwiftObjc.ThisIsASwiftClass       NSObject
 0x100003078 0x100001ad0 0x100001ad0 TestSwiftObjc.ThisIsASwiftClass(TEST) 
-0x1000031e8 0x100001d80 0x100001d80 TestSwiftObjc.ThisIsASwiftClass       NSObject
 EOF
 RUN
 

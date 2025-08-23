@@ -25,16 +25,16 @@ typedef struct {
 	int j;
 	int symbols_count;
 	HtSP *hash;
-} RSymCtx;
+} SymCtx;
 
-typedef void (*RExportsIterator)(struct MACH0_(obj_t) * bin, const char *name, ut64 flags, ut64 offset, void *ctx);
+typedef void (*ExportsIterator)(struct MACH0_(obj_t) * bin, const char *name, ut64 flags, ut64 offset, void *ctx);
 
 typedef struct {
 	ut8 *node;
 	char *label;
 	int i;
 	ut8 *next_child;
-} RTrieState;
+} TrieState;
 
 // OMG; THIS SHOULD BE KILLED; this var exposes the local native endian, which is completely unnecessary
 // USE THIS: int ws = bf->o->info->big_endian;
@@ -2304,7 +2304,7 @@ RZ_API RZ_OWN char *MACH0_(get_name)(struct MACH0_(obj_t) * mo, ut32 stridx, boo
 	return NULL;
 }
 
-static int walk_exports(struct MACH0_(obj_t) * bin, RExportsIterator iterator, void *ctx) {
+static int walk_exports(struct MACH0_(obj_t) * bin, ExportsIterator iterator, void *ctx) {
 	rz_return_val_if_fail(bin, 0);
 	if (!bin->dyld_info) {
 		return 0;
@@ -2333,7 +2333,7 @@ static int walk_exports(struct MACH0_(obj_t) * bin, RExportsIterator iterator, v
 		goto beach;
 	}
 
-	RTrieState *root = RZ_NEW0(RTrieState);
+	TrieState *root = RZ_NEW0(TrieState);
 	if (!root) {
 		goto beach;
 	}
@@ -2343,7 +2343,7 @@ static int walk_exports(struct MACH0_(obj_t) * bin, RExportsIterator iterator, v
 	rz_list_push(states, root);
 
 	do {
-		RTrieState *state = rz_list_last(states);
+		TrieState *state = rz_list_last(states);
 		p = state->node;
 		ut64 len = read_uleb128(&p, end);
 		if (len == UT64_MAX) {
@@ -2377,7 +2377,7 @@ static int walk_exports(struct MACH0_(obj_t) * bin, RExportsIterator iterator, v
 			if (iterator && !isReexport) {
 				char *name = NULL;
 				RzListIter *iter;
-				RTrieState *s;
+				TrieState *s;
 				rz_list_foreach (states, iter, s) {
 					if (!s->label) {
 						continue;
@@ -2418,7 +2418,7 @@ static int walk_exports(struct MACH0_(obj_t) * bin, RExportsIterator iterator, v
 		} else {
 			p = state->next_child;
 		}
-		RTrieState *next = RZ_NEW0(RTrieState);
+		TrieState *next = RZ_NEW0(TrieState);
 		if (!next) {
 			goto beach;
 		}
@@ -2443,7 +2443,7 @@ static int walk_exports(struct MACH0_(obj_t) * bin, RExportsIterator iterator, v
 		{
 			// avoid loops
 			RzListIter *it;
-			RTrieState *s;
+			TrieState *s;
 			rz_list_foreach (states, it, s) {
 				if (s->node == next->node) {
 					RZ_LOG_ERROR("malformed export trie\n");
@@ -2465,7 +2465,7 @@ beach:
 }
 
 static void assign_export_symbol_t(struct MACH0_(obj_t) * bin, const char *name, ut64 flags, ut64 offset, void *ctx) {
-	RSymCtx *sym_ctx = (RSymCtx *)ctx;
+	SymCtx *sym_ctx = (SymCtx *)ctx;
 	int j = sym_ctx->j;
 	if (j < sym_ctx->symbols_count) {
 		sym_ctx->symbols[j].offset = offset;
@@ -2650,7 +2650,7 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) * bin) {
 		}
 	}
 	if (n_exports && (symbols_count - j) >= n_exports) {
-		RSymCtx sym_ctx;
+		SymCtx sym_ctx;
 		sym_ctx.symbols = symbols;
 		sym_ctx.j = j;
 		sym_ctx.symbols_count = symbols_count;
@@ -3007,6 +3007,7 @@ void MACH0_(mach_headerfields)(RzBinFile *bf) {
 	addr += 4; \
 	pvaddr += 4; \
 	word = isBe ? rz_read_be32(wordbuf) : rz_read_le32(wordbuf);
+
 	if (is64) {
 		addr += 4;
 		pvaddr += 4;
@@ -3282,6 +3283,411 @@ void MACH0_(mach_headerfields)(RzBinFile *bf) {
 		pvaddr += word - 8;
 	}
 	free(mh);
+}
+
+RzStructuredData *MACH0_(mach_structure)(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
+
+	RzBuffer *buf = bf->buf;
+	ut64 length = rz_buf_size(buf);
+
+	struct MACH0_(mach_header) *mh = MACH0_(get_hdr)(buf);
+	if (!mh) {
+		return NULL;
+	}
+
+	ut64 addr = 0x20 - 4;
+	ut32 word = 0;
+	char tmp[256] = { 0 };
+
+	bool big_endian = (mh->cputype & CPU_TYPE_POWERPC) != 0;
+	bool is_64bit = mh->cputype >> 16;
+
+	RzStructuredData *info = rz_structured_data_new_map();
+	if (!info) {
+		return NULL;
+	}
+
+#if RZ_BIN_MACH064
+	RzStructuredData *mach0 = rz_structured_data_map_add_map(info, "mach0_64");
+#else
+	RzStructuredData *mach0 = rz_structured_data_map_add_map(info, "mach0");
+#endif
+	if (!mach0) {
+		rz_structured_data_free(info);
+		return NULL;
+	}
+
+	rz_structured_data_map_add_unsigned(mach0, "Magic", mh->magic, true);
+	switch (mh->cputype) {
+	case CPU_TYPE_VAX:
+		rz_structured_data_map_add_string(mach0, "CpuType", "vax");
+		break;
+	case CPU_TYPE_MC680x0:
+		rz_structured_data_map_add_string(mach0, "CpuType", "mc680x0");
+		break;
+	case CPU_TYPE_X86:
+		rz_structured_data_map_add_string(mach0, "CpuType", "x86");
+		break;
+	case CPU_TYPE_X86_64:
+		rz_structured_data_map_add_string(mach0, "CpuType", "x86_64");
+		break;
+	case CPU_TYPE_MIPS:
+		rz_structured_data_map_add_string(mach0, "CpuType", "mips");
+		break;
+	case CPU_TYPE_MC98000:
+		rz_structured_data_map_add_string(mach0, "CpuType", "mc98000");
+		break;
+	case CPU_TYPE_HPPA:
+		rz_structured_data_map_add_string(mach0, "CpuType", "HPPA");
+		break;
+	case CPU_TYPE_ARM:
+		rz_structured_data_map_add_string(mach0, "CpuType", "arm");
+		break;
+	case CPU_TYPE_ARM64:
+		rz_structured_data_map_add_string(mach0, "CpuType", "arm64");
+		break;
+	case CPU_TYPE_ARM64_32:
+		rz_structured_data_map_add_string(mach0, "CpuType", "arm64_32");
+		break;
+	case CPU_TYPE_MC88000:
+		rz_structured_data_map_add_string(mach0, "CpuType", "mc88000");
+		break;
+	case CPU_TYPE_SPARC:
+		rz_structured_data_map_add_string(mach0, "CpuType", "sparc");
+		break;
+	case CPU_TYPE_I860:
+		rz_structured_data_map_add_string(mach0, "CpuType", "i860");
+		break;
+	case CPU_TYPE_POWERPC:
+		rz_structured_data_map_add_string(mach0, "CpuType", "ppc");
+		break;
+	case CPU_TYPE_POWERPC64:
+		rz_structured_data_map_add_string(mach0, "CpuType", "ppc64");
+		break;
+	default:
+		rz_structured_data_map_add_unsigned(mach0, "CpuType", mh->cputype, true);
+		break;
+	}
+
+	rz_structured_data_map_add_unsigned(mach0, "CpuSubType", mh->cpusubtype, true);
+	rz_structured_data_map_add_unsigned(mach0, "FileType", mh->filetype, true);
+	rz_structured_data_map_add_unsigned(mach0, "nCmds", mh->ncmds, false);
+	rz_structured_data_map_add_unsigned(mach0, "sizeOfCmds", mh->sizeofcmds, false);
+	rz_structured_data_map_add_unsigned(mach0, "Flags", mh->flags, true);
+
+#define MACH0_READ_WORD_HERE() \
+	do { \
+		if (!rz_buf_read_ble32_offset(buf, &addr, &word, big_endian)) { \
+			break; \
+		} \
+	} while (0)
+
+	if (is_64bit) {
+		addr += 4;
+	}
+
+	if (mh->ncmds < 1) {
+		free(mh);
+		return info;
+	}
+
+	RzStructuredData *lcmds = rz_structured_data_map_add_array(mach0, "LoadCommands");
+	if (!lcmds) {
+		rz_structured_data_free(info);
+		return NULL;
+	}
+
+	for (ut32 n = 0; n < mh->ncmds; n++) {
+		MACH0_READ_WORD_HERE();
+		ut32 lcType = word;
+
+		RzStructuredData *lc_info = rz_structured_data_array_add_map(lcmds);
+		if (!lc_info) {
+			rz_warn_if_reached();
+			rz_structured_data_free(info);
+			return NULL;
+		}
+
+		const char *lc_name = cmd_to_string(lcType);
+		if (RZ_STR_ISNOTEMPTY(lc_name)) {
+			rz_structured_data_map_add_string(lc_info, "LcType", lc_name);
+		} else {
+			rz_structured_data_map_add_unsigned(lc_info, "LcType", lcType, true);
+		}
+
+		MACH0_READ_WORD_HERE();
+		if (addr > length) {
+			break;
+		}
+
+		int lcSize = word;
+		word &= 0xFFFFFF;
+		if (lcSize < 1) {
+			RZ_LOG_ERROR("Invalid size for a load command\n");
+			break;
+		}
+		rz_structured_data_map_add_unsigned(lc_info, "CmdSize", word, false);
+
+		switch (lcType) {
+		case LC_BUILD_VERSION: {
+			ut32 platform;
+			if (!rz_buf_read_le32_at(buf, addr, &platform)) {
+				break;
+			}
+			rz_structured_data_map_add_string(lc_info, "Platform", rz_mach0_platform_to_string(platform));
+
+			ut16 minos1;
+			if (!rz_buf_read_le16_at(buf, addr + 6, &minos1)) {
+				break;
+			}
+			ut8 minos2;
+			if (!rz_buf_read8_at(buf, addr + 5, &minos2)) {
+				break;
+			}
+			ut8 minos3;
+			if (!rz_buf_read8_at(buf, addr + 4, &minos3)) {
+				break;
+			}
+			rz_strf(tmp, "%d.%d.%d", minos1, minos2, minos3);
+			rz_structured_data_map_add_string(lc_info, "MinOS", tmp);
+
+			ut16 sdk1;
+			if (!rz_buf_read_le16_at(buf, addr + 10, &sdk1)) {
+				break;
+			}
+			ut8 sdk2;
+			if (!rz_buf_read8_at(buf, addr + 9, &sdk2)) {
+				break;
+			}
+			ut8 sdk3;
+			if (!rz_buf_read8_at(buf, addr + 8, &sdk3)) {
+				break;
+			}
+			rz_strf(tmp, "%d.%d.%d", sdk1, sdk2, sdk3);
+			rz_structured_data_map_add_string(lc_info, "SDK", tmp);
+
+			ut32 ntools;
+			if (!rz_buf_read_le32_at(buf, addr + 12, &ntools)) {
+				break;
+			}
+			rz_structured_data_map_add_unsigned(lc_info, "nTools", ntools, false);
+
+			RzStructuredData *build_vers = rz_structured_data_map_add_array(lc_info, "BuildVersionTool");
+			if (!build_vers) {
+				rz_warn_if_reached();
+				rz_structured_data_free(info);
+				return NULL;
+			}
+
+			ut64 off = 16;
+			while (off < (lcSize - 8) && ntools--) {
+				RzStructuredData *build = rz_structured_data_array_add_map(build_vers);
+				if (!build) {
+					rz_warn_if_reached();
+					rz_structured_data_free(info);
+					return NULL;
+				}
+
+				ut32 tool;
+				if (!rz_buf_read_le32_at(buf, addr + off, &tool)) {
+					break;
+				}
+				rz_structured_data_map_add_string(build, "Tool", rz_mach0_build_version_tool_to_string(tool));
+
+				off += 4;
+				if (off >= (lcSize - 8)) {
+					break;
+				}
+
+				ut16 version1;
+				if (!rz_buf_read_le16_at(buf, addr + off + 2, &version1)) {
+					break;
+				}
+				ut8 version2;
+				if (!rz_buf_read8_at(buf, addr + off + 1, &version2)) {
+					break;
+				}
+				ut8 version3;
+				if (!rz_buf_read8_at(buf, addr + off, &version3)) {
+					break;
+				}
+
+				rz_strf(tmp, "%d.%d.%d", version1, version2, version3);
+				rz_structured_data_map_add_string(build, "Version", tmp);
+
+				off += 4;
+			}
+			break;
+		}
+		case LC_MAIN: {
+			ut8 data[64] = { 0 };
+			rz_buf_read_at(buf, addr, data, sizeof(data));
+#if RZ_BIN_MACH064
+			ut64 ep = rz_read_ble64(&data, false); //  bin->big_endian);
+			ut64 ss = rz_read_ble64(&data[8], false); //  bin->big_endian);
+#else
+			ut32 ep = rz_read_ble32(&data, false); //  bin->big_endian);
+			ut32 ss = rz_read_ble32(&data[4], false); //  bin->big_endian);
+#endif
+			rz_structured_data_map_add_unsigned(lc_info, "Entry", ep, true);
+			rz_structured_data_map_add_unsigned(lc_info, "StackSize", ss, false);
+		} break;
+		case LC_SYMTAB:
+			break;
+		case LC_ID_DYLIB: { // install_name_tool
+			ut32 str_off;
+			if (!rz_buf_read_ble32_at(buf, addr, &str_off, big_endian)) {
+				break;
+			}
+
+			char *id = rz_buf_get_string(buf, addr + str_off - 8);
+			if (RZ_STR_ISNOTEMPTY(id)) {
+				rz_structured_data_map_add_string(lc_info, "Id", id);
+			}
+			free(id);
+
+			ut16 current1;
+			if (!rz_buf_read_le16_at(buf, addr + 10, &current1)) {
+				break;
+			}
+			ut8 current2;
+			if (!rz_buf_read8_at(buf, addr + 9, &current2)) {
+				break;
+			}
+			ut8 current3;
+			if (!rz_buf_read8_at(buf, addr + 8, &current3)) {
+				break;
+			}
+			rz_strf(tmp, "%d.%d.%d", current1, current2, current3);
+			rz_structured_data_map_add_string(lc_info, "Current", tmp);
+
+			ut16 compat1;
+			if (!rz_buf_read_le16_at(buf, addr + 14, &compat1)) {
+				break;
+			}
+			ut8 compat2;
+			if (!rz_buf_read8_at(buf, addr + 13, &compat2)) {
+				break;
+			}
+			ut8 compat3;
+			if (!rz_buf_read8_at(buf, addr + 12, &compat3)) {
+				break;
+			}
+
+			rz_strf(tmp, "%d.%d.%d", compat1, compat2, compat3);
+			rz_structured_data_map_add_string(lc_info, "Compat", tmp);
+
+			break;
+		}
+		case LC_UUID: {
+			ut8 uuid[16];
+			if (rz_buf_read_at(buf, addr, uuid, sizeof(uuid)) != sizeof(uuid)) {
+				break;
+			}
+
+			rz_hex_bin2str(uuid, sizeof(uuid), tmp);
+			rz_structured_data_map_add_string(lc_info, "UUID", tmp);
+		} break;
+		case LC_SEGMENT:
+		case LC_SEGMENT_64: {
+			char name[17] = { 0 };
+			rz_buf_read_at(buf, addr, (ut8 *)name, sizeof(name) - 1);
+			rz_structured_data_map_add_string(lc_info, "Name", name);
+
+			ut32 nsects;
+			if (!rz_buf_read_le32_at(buf, addr - 8 + (is_64bit ? 64 : 48), &nsects)) {
+				break;
+			}
+			rz_structured_data_map_add_unsigned(lc_info, "nSects", nsects, false);
+		} break;
+		case LC_LOAD_DYLIB:
+		case LC_LOAD_WEAK_DYLIB: {
+			ut32 str_off;
+			if (!rz_buf_read_ble32_at(buf, addr, &str_off, big_endian)) {
+				break;
+			}
+
+			char *load_dylib = rz_buf_get_string(buf, addr + str_off - 8);
+			if (RZ_STR_ISNOTEMPTY(load_dylib)) {
+				rz_structured_data_map_add_string(lc_info, "LoadDyLib", load_dylib);
+			}
+			free(load_dylib);
+
+			ut16 current1;
+			if (!rz_buf_read_le16_at(buf, addr + 10, &current1)) {
+				break;
+			}
+			ut8 current2;
+			if (!rz_buf_read8_at(buf, addr + 9, &current2)) {
+				break;
+			}
+			ut8 current3;
+			if (!rz_buf_read8_at(buf, addr + 8, &current3)) {
+				break;
+			}
+			rz_strf(tmp, "%d.%d.%d", current1, current2, current3);
+			rz_structured_data_map_add_string(lc_info, "Current", tmp);
+
+			ut16 compat1;
+			if (!rz_buf_read_le16_at(buf, addr + 14, &compat1)) {
+				break;
+			}
+			ut8 compat2;
+			if (!rz_buf_read8_at(buf, addr + 13, &compat2)) {
+				break;
+			}
+			ut8 compat3;
+			if (!rz_buf_read8_at(buf, addr + 12, &compat3)) {
+				break;
+			}
+			rz_strf(tmp, "%d.%d.%d", compat1, compat2, compat3);
+			rz_structured_data_map_add_string(lc_info, "Compat", tmp);
+			break;
+		}
+		case LC_RPATH: {
+			char *rpath = rz_buf_get_string(buf, addr + 4);
+			if (RZ_STR_ISNOTEMPTY(rpath)) {
+				rz_structured_data_map_add_string(lc_info, "rPath", rpath);
+			}
+			free(rpath);
+			break;
+		}
+		case LC_ENCRYPTION_INFO:
+		case LC_ENCRYPTION_INFO_64: {
+			ut32 word;
+			if (!rz_buf_read_le32_at(buf, addr, &word)) {
+				break;
+			}
+			rz_structured_data_map_add_unsigned(lc_info, "CryptOffset", word, true);
+
+			if (!rz_buf_read_le32_at(buf, addr + 4, &word)) {
+				break;
+			}
+			rz_structured_data_map_add_unsigned(lc_info, "CryptSize", word, false);
+
+			if (!rz_buf_read_le32_at(buf, addr + 8, &word)) {
+				break;
+			}
+			rz_structured_data_map_add_unsigned(lc_info, "CryptId", word, false);
+			break;
+		}
+		case LC_CODE_SIGNATURE: {
+			ut32 words[2];
+			if (!rz_buf_read_at(buf, addr, (ut8 *)words, sizeof(words))) {
+				break;
+			}
+			rz_structured_data_map_add_unsigned(lc_info, "DataOffset", words[0], true);
+			rz_structured_data_map_add_unsigned(lc_info, "DataSize", words[1], false);
+			break;
+		}
+		}
+		addr += word - 8;
+	}
+
+	free(mh);
+
+	return info;
 }
 
 RzPVector /*<RzBinField *>*/ *MACH0_(mach_fields)(RzBinFile *bf) {

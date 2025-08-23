@@ -49,13 +49,13 @@ static bool lmf_header_load(lmf_header *lmfh, RzBuffer *buf, Sdb *db) {
 	return true;
 }
 
-static bool check_buffer(RzBuffer *buf) {
+static bool qnx_check_buffer(RzBuffer *buf) {
 	ut8 tmp[6];
 	int r = rz_buf_read_at(buf, 0, tmp, sizeof(tmp));
 	return r == sizeof(tmp) && !memcmp(tmp, QNX_MAGIC, sizeof(tmp));
 }
 
-static void destroy(RzBinFile *bf) {
+static void qnx_destroy(RzBinFile *bf) {
 	QnxObj *qo = bf->o->bin_obj;
 	rz_pvector_free(qo->sections);
 	rz_pvector_free(qo->maps);
@@ -64,7 +64,7 @@ static void destroy(RzBinFile *bf) {
 	free(qo);
 }
 
-static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
+static bool qnx_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
 	lmf_record lrec;
 	lmf_resource lres;
 	lmf_data ldata;
@@ -225,7 +225,7 @@ beach:
  * @param RzBinFile to extract the data from
  * @return RzBinInfo file with the info
  */
-static RzBinInfo *info(RzBinFile *bf) {
+static RzBinInfo *qnx_info(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 	RzBinInfo *ret = RZ_NEW0(RzBinInfo);
 	if (!ret) {
@@ -244,7 +244,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-static RzPVector /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
+static RzPVector /*<RzBinReloc *>*/ *qnx_relocs(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o, NULL);
 	QnxObj *qo = bf->o->bin_obj;
 	RzBinReloc *reloc = NULL;
@@ -267,42 +267,74 @@ static RzPVector /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 	return relocs;
 }
 
-static void header(RzBinFile *bf) {
-	rz_return_if_fail(bf && bf->o && bf->rbin);
+static RzStructuredData *qnx_structure(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
+
 	QnxObj *bin = bf->o->bin_obj;
-	RzBin *rbin = bf->rbin;
-	rbin->cb_printf("QNX file header:\n");
-	rbin->cb_printf("version : 0x%xH\n", bin->lmfh.version);
-	rbin->cb_printf("cflags : 0x%xH\n", bin->lmfh.cflags);
-	rbin->cb_printf("cpu : 0x%xH\n", bin->lmfh.cpu);
-	rbin->cb_printf("fpu : 0x%xH\n", bin->lmfh.fpu);
-	rbin->cb_printf("code_index : 0x%xH\n", bin->lmfh.code_index);
-	rbin->cb_printf("stack_index : 0x%xH\n", bin->lmfh.stack_index);
-	rbin->cb_printf("heap_index : 0x%xH\n", bin->lmfh.heap_index);
-	rbin->cb_printf("argv_index : 0x%xH\n", bin->lmfh.argv_index);
-	rbin->cb_printf("spare2[4] : 0x0H\n");
-	rbin->cb_printf("code_offset : 0x%xH\n", bin->lmfh.code_offset);
-	rbin->cb_printf("stack_nbytes : 0x%xH\n", bin->lmfh.stack_nbytes);
-	rbin->cb_printf("heap_nbytes : 0x%xH\n", bin->lmfh.heap_nbytes);
-	rbin->cb_printf("image_base : 0x%xH\n", bin->lmfh.image_base);
-	rbin->cb_printf("spare3[2] : 0x0H\n");
+
+	RzStructuredData *info = rz_structured_data_new_map();
+	if (!info) {
+		return NULL;
+	}
+
+	RzStructuredData *qnx_lmf = rz_structured_data_map_add_map(info, "qnx_lmf");
+	if (!qnx_lmf) {
+		rz_structured_data_free(info);
+		return NULL;
+	}
+
+	rz_structured_data_map_add_unsigned(qnx_lmf, "version", bin->lmfh.version, false);
+	rz_structured_data_map_add_unsigned(qnx_lmf, "cflags", bin->lmfh.cflags, true);
+	rz_structured_data_map_add_unsigned(qnx_lmf, "cpu", bin->lmfh.cpu, false);
+	rz_structured_data_map_add_unsigned(qnx_lmf, "fpu", bin->lmfh.fpu, false);
+	rz_structured_data_map_add_unsigned(qnx_lmf, "code_index", bin->lmfh.code_index, false);
+	rz_structured_data_map_add_unsigned(qnx_lmf, "stack_index", bin->lmfh.stack_index, false);
+	rz_structured_data_map_add_unsigned(qnx_lmf, "heap_index", bin->lmfh.heap_index, false);
+	rz_structured_data_map_add_unsigned(qnx_lmf, "argv_index", bin->lmfh.argv_index, false);
+
+	RzStructuredData *spare2 = rz_structured_data_map_add_array(qnx_lmf, "spare2");
+	if (!spare2) {
+		rz_structured_data_free(info);
+		return NULL;
+	}
+
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(bin->lmfh.spare2); ++i) {
+		rz_structured_data_array_add_unsigned(spare2, bin->lmfh.spare2[i], true);
+	}
+
+	rz_structured_data_map_add_unsigned(qnx_lmf, "code_offset", bin->lmfh.code_offset, true);
+	rz_structured_data_map_add_unsigned(qnx_lmf, "stack_nbytes", bin->lmfh.stack_nbytes, true);
+	rz_structured_data_map_add_unsigned(qnx_lmf, "heap_nbytes", bin->lmfh.heap_nbytes, true);
+	rz_structured_data_map_add_unsigned(qnx_lmf, "image_base", bin->lmfh.image_base, true);
+
+	RzStructuredData *spare3 = rz_structured_data_map_add_array(qnx_lmf, "spare3");
+	if (!spare3) {
+		rz_structured_data_free(info);
+		return NULL;
+	}
+
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(bin->lmfh.spare3); ++i) {
+		rz_structured_data_array_add_unsigned(spare3, bin->lmfh.spare3[i], true);
+	}
+
+	return info;
 }
 
 /*
  * No mention of symbols in the doc
  */
-static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
+static RzPVector /*<RzBinSymbol *>*/ *qnx_symbols(RzBinFile *bf) {
 	return NULL;
 }
 
-static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
+static RzPVector /*<RzBinMap *>*/ *qnx_maps(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o, NULL);
 	QnxObj *qo = bf->o->bin_obj;
 	return rz_pvector_clone(qo->maps);
 }
 
 // Returns the sections
-static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+static RzPVector /*<RzBinSection *>*/ *qnx_sections(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o, NULL);
 	QnxObj *qo = bf->o->bin_obj;
 	return rz_pvector_clone(qo->sections);
@@ -313,7 +345,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
  * @param RzBinFile
  * @return sdb of the bin_obj
  */
-static Sdb *get_sdb(RzBinFile *bf) {
+static Sdb *qnx_get_sdb(RzBinFile *bf) {
 	RzBinObject *o = bf->o;
 	if (!o) {
 		return NULL;
@@ -327,7 +359,7 @@ static Sdb *get_sdb(RzBinFile *bf) {
  * @param RzBinFile
  * @return image_base address
  */
-static ut64 baddr(RzBinFile *bf) {
+static ut64 qnx_baddr(RzBinFile *bf) {
 	QnxObj *qo = bf->o->bin_obj;
 	return qo ? qo->lmfh.image_base : 0;
 }
@@ -336,7 +368,7 @@ static ut64 baddr(RzBinFile *bf) {
  * Currently both physical and virtual address are set to 0
  * The memory map has different values for entry
  */
-static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+static RzPVector /*<RzBinAddr *>*/ *qnx_entries(RzBinFile *bf) {
 	RzPVector *ret;
 	RzBinAddr *ptr = NULL;
 	QnxObj *qo = bf->o->bin_obj;
@@ -347,7 +379,7 @@ static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 		return ret;
 	}
 	ptr->paddr = qo->lmfh.code_offset;
-	ptr->vaddr = qo->lmfh.code_offset + baddr(bf);
+	ptr->vaddr = qo->lmfh.code_offset + qnx_baddr(bf);
 	rz_pvector_push(ret, ptr);
 	return ret;
 }
@@ -356,7 +388,7 @@ static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
  * @param RzBinFile
  * @return signature of the binary
  */
-static char *signature(RzBinFile *bf, bool json) {
+static char *qnx_signature(RzBinFile *bf, bool json) {
 	char buf[64];
 	QnxObj *qo = bf->o->bin_obj;
 	if (!qo) {
@@ -374,7 +406,7 @@ static char *signature(RzBinFile *bf, bool json) {
 /*
  * @return: returns the vaddr
  */
-static ut64 get_vaddr(RzBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
+static ut64 qnx_get_vaddr(RzBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
 	return vaddr;
 }
 
@@ -383,21 +415,21 @@ RzBinPlugin rz_bin_plugin_qnx = {
 	.name = "qnx",
 	.desc = "QNX executable",
 	.license = "LGPL3",
-	.load_buffer = &load_buffer,
-	.destroy = &destroy,
-	.relocs = &relocs,
-	.baddr = &baddr,
+	.load_buffer = &qnx_load_buffer,
+	.destroy = &qnx_destroy,
+	.relocs = &qnx_relocs,
+	.baddr = &qnx_baddr,
 	.author = "deepakchethan",
-	.check_buffer = &check_buffer,
-	.header = &header,
-	.get_sdb = &get_sdb,
-	.entries = &entries,
-	.maps = &maps,
-	.sections = &sections,
-	.symbols = &symbols,
-	.signature = &signature,
-	.get_vaddr = &get_vaddr,
-	.info = &info
+	.check_buffer = &qnx_check_buffer,
+	.bin_structure = &qnx_structure,
+	.get_sdb = &qnx_get_sdb,
+	.entries = &qnx_entries,
+	.maps = &qnx_maps,
+	.sections = &qnx_sections,
+	.symbols = &qnx_symbols,
+	.signature = &qnx_signature,
+	.get_vaddr = &qnx_get_vaddr,
+	.info = &qnx_info
 };
 
 #ifndef RZ_PLUGIN_INCORE

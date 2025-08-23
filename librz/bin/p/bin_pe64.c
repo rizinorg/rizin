@@ -32,7 +32,7 @@ static bool windows_unwind_info_read(WinUnwindInfo *info, RzBuffer *b, ut64 at) 
 	return true;
 }
 
-static bool check_buffer(RzBuffer *b) {
+static bool pe64_check_buffer(RzBuffer *b) {
 	ut64 length = rz_buf_size(b);
 	if (length <= 0x3d) {
 		return false;
@@ -62,7 +62,7 @@ static bool check_buffer(RzBuffer *b) {
 	return false;
 }
 
-static RzPVector /*<RzBinField *>*/ *fields(RzBinFile *bf) {
+static RzPVector /*<RzBinField *>*/ *pe64_fields(RzBinFile *bf) {
 	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_field_free);
 	if (!ret) {
 		return NULL;
@@ -280,111 +280,167 @@ static RzPVector /*<RzBinField *>*/ *fields(RzBinFile *bf) {
 	return ret;
 }
 
-static void header(RzBinFile *bf) {
+static RzStructuredData *pe64_structure(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
+
 	struct PE_(rz_bin_pe_obj_t) *bin = bf->o->bin_obj;
-	struct rz_bin_t *rbin = bf->rbin;
-	rbin->cb_printf("PE file header:\n");
-	rbin->cb_printf("IMAGE_NT_HEADERS\n");
-	rbin->cb_printf("  Signature : 0x%x\n", bin->nt_headers->Signature);
-	rbin->cb_printf("IMAGE_FILE_HEADERS\n");
-	rbin->cb_printf("  Machine : 0x%x\n", bin->nt_headers->file_header.Machine);
-	rbin->cb_printf("  NumberOfSections : 0x%x\n", bin->nt_headers->file_header.NumberOfSections);
-	rbin->cb_printf("  TimeDateStamp : 0x%x\n", bin->nt_headers->file_header.TimeDateStamp);
-	rbin->cb_printf("  PointerToSymbolTable : 0x%x\n", bin->nt_headers->file_header.PointerToSymbolTable);
-	rbin->cb_printf("  NumberOfSymbols : 0x%x\n", bin->nt_headers->file_header.NumberOfSymbols);
-	rbin->cb_printf("  SizeOfOptionalHeader : 0x%x\n", bin->nt_headers->file_header.SizeOfOptionalHeader);
-	rbin->cb_printf("  Characteristics : 0x%x\n", bin->nt_headers->file_header.Characteristics);
-	rbin->cb_printf("IMAGE_OPTIONAL_HEADERS\n");
-	rbin->cb_printf("  Magic : 0x%x\n", bin->nt_headers->optional_header.Magic);
-	rbin->cb_printf("  MajorLinkerVersion : 0x%x\n", bin->nt_headers->optional_header.MajorLinkerVersion);
-	rbin->cb_printf("  MinorLinkerVersion : 0x%x\n", bin->nt_headers->optional_header.MinorLinkerVersion);
-	rbin->cb_printf("  SizeOfCode : 0x%x\n", bin->nt_headers->optional_header.SizeOfCode);
-	rbin->cb_printf("  SizeOfInitializedData : 0x%x\n", bin->nt_headers->optional_header.SizeOfInitializedData);
-	rbin->cb_printf("  SizeOfUninitializedData : 0x%x\n", bin->nt_headers->optional_header.SizeOfUninitializedData);
-	rbin->cb_printf("  AddressOfEntryPoint : 0x%x\n", bin->nt_headers->optional_header.AddressOfEntryPoint);
-	rbin->cb_printf("  BaseOfCode : 0x%x\n", bin->nt_headers->optional_header.BaseOfCode);
-	rbin->cb_printf("  ImageBase : 0x%" PFMT64x "\n", bin->nt_headers->optional_header.ImageBase);
-	rbin->cb_printf("  SectionAlignment : 0x%x\n", bin->nt_headers->optional_header.SectionAlignment);
-	rbin->cb_printf("  FileAlignment : 0x%x\n", bin->nt_headers->optional_header.FileAlignment);
-	rbin->cb_printf("  MajorOperatingSystemVersion : 0x%x\n", bin->nt_headers->optional_header.MajorOperatingSystemVersion);
-	rbin->cb_printf("  MinorOperatingSystemVersion : 0x%x\n", bin->nt_headers->optional_header.MinorOperatingSystemVersion);
-	rbin->cb_printf("  MajorImageVersion : 0x%x\n", bin->nt_headers->optional_header.MajorImageVersion);
-	rbin->cb_printf("  MinorImageVersion : 0x%x\n", bin->nt_headers->optional_header.MinorImageVersion);
-	rbin->cb_printf("  MajorSubsystemVersion : 0x%x\n", bin->nt_headers->optional_header.MajorSubsystemVersion);
-	rbin->cb_printf("  MinorSubsystemVersion : 0x%x\n", bin->nt_headers->optional_header.MinorSubsystemVersion);
-	rbin->cb_printf("  Win32VersionValue : 0x%x\n", bin->nt_headers->optional_header.Win32VersionValue);
-	rbin->cb_printf("  SizeOfImage : 0x%x\n", bin->nt_headers->optional_header.SizeOfImage);
-	rbin->cb_printf("  SizeOfHeaders : 0x%x\n", bin->nt_headers->optional_header.SizeOfHeaders);
-	rbin->cb_printf("  CheckSum : 0x%x\n", bin->nt_headers->optional_header.CheckSum);
-	rbin->cb_printf("  Subsystem : 0x%x\n", bin->nt_headers->optional_header.Subsystem);
-	rbin->cb_printf("  DllCharacteristics : 0x%x\n", bin->nt_headers->optional_header.DllCharacteristics);
-	rbin->cb_printf("  SizeOfStackReserve : 0x%" PFMT64x "\n", bin->nt_headers->optional_header.SizeOfStackReserve);
-	rbin->cb_printf("  SizeOfStackCommit : 0x%" PFMT64x "\n", bin->nt_headers->optional_header.SizeOfStackCommit);
-	rbin->cb_printf("  SizeOfHeapReserve : 0x%" PFMT64x "\n", bin->nt_headers->optional_header.SizeOfHeapReserve);
-	rbin->cb_printf("  SizeOfHeapCommit : 0x%" PFMT64x "\n", bin->nt_headers->optional_header.SizeOfHeapCommit);
-	rbin->cb_printf("  LoaderFlags : 0x%x\n", bin->nt_headers->optional_header.LoaderFlags);
-	rbin->cb_printf("  NumberOfRvaAndSizes : 0x%x\n", bin->nt_headers->optional_header.NumberOfRvaAndSizes);
-	RzListIter *it;
-	Pe_image_rich_entry *entry;
-	rbin->cb_printf("RICH_FIELDS\n");
-	rz_list_foreach (bin->rich_entries, it, entry) {
-		rbin->cb_printf("  Product: %d Name: %s Version: %d Times: %d\n", entry->productId, entry->productName, entry->minVersion, entry->timesUsed);
+	if (!bin) {
+		return NULL;
 	}
-	int i;
-	for (i = 0; i < PE_IMAGE_DIRECTORY_ENTRIES - 1; i++) {
-		if (bin->nt_headers->optional_header.DataDirectory[i].Size > 0) {
-			switch (i) {
-			case PE_IMAGE_DIRECTORY_ENTRY_EXPORT:
-				rbin->cb_printf("IMAGE_DIRECTORY_ENTRY_EXPORT\n");
-				break;
-			case PE_IMAGE_DIRECTORY_ENTRY_IMPORT:
-				rbin->cb_printf("IMAGE_DIRECTORY_ENTRY_IMPORT\n");
-				break;
-			case PE_IMAGE_DIRECTORY_ENTRY_RESOURCE:
-				rbin->cb_printf("IMAGE_DIRECTORY_ENTRY_RESOURCE\n");
-				break;
-			case PE_IMAGE_DIRECTORY_ENTRY_EXCEPTION:
-				rbin->cb_printf("IMAGE_DIRECTORY_ENTRY_EXCEPTION\n");
-				break;
-			case PE_IMAGE_DIRECTORY_ENTRY_SECURITY:
-				rbin->cb_printf("IMAGE_DIRECTORY_ENTRY_SECURITY\n");
-				break;
-			case PE_IMAGE_DIRECTORY_ENTRY_BASERELOC:
-				rbin->cb_printf("IMAGE_DIRECTORY_ENTRY_BASERELOC\n");
-				break;
-			case PE_IMAGE_DIRECTORY_ENTRY_DEBUG:
-				rbin->cb_printf("IMAGE_DIRECTORY_ENTRY_DEBUG\n");
-				break;
-			case PE_IMAGE_DIRECTORY_ENTRY_COPYRIGHT:
-				rbin->cb_printf("IMAGE_DIRECTORY_ENTRY_COPYRIGHT\n");
-				rbin->cb_printf("IMAGE_DIRECTORY_ENTRY_ARCHITECTURE\n");
-				break;
-			case PE_IMAGE_DIRECTORY_ENTRY_GLOBALPTR:
-				rbin->cb_printf("IMAGE_DIRECTORY_ENTRY_GLOBALPTR\n");
-				break;
-			case PE_IMAGE_DIRECTORY_ENTRY_TLS:
-				rbin->cb_printf("IMAGE_DIRECTORY_ENTRY_TLS\n");
-				break;
-			case PE_IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG:
-				rbin->cb_printf("IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG\n");
-				break;
-			case PE_IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT:
-				rbin->cb_printf("IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT\n");
-				break;
-			case PE_IMAGE_DIRECTORY_ENTRY_IAT:
-				rbin->cb_printf("IMAGE_DIRECTORY_ENTRY_IAT\n");
-				break;
-			case PE_IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT:
-				rbin->cb_printf("IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT\n");
-				break;
-			case PE_IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR:
-				rbin->cb_printf("IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR\n");
-				break;
+
+	RzStructuredData *info = rz_structured_data_new_map();
+	if (!info) {
+		return NULL;
+	}
+
+	RzStructuredData *pe64 = rz_structured_data_map_add_map(info, "pe64");
+	if (!pe64) {
+		rz_structured_data_free(info);
+		return NULL;
+	}
+
+	RzStructuredData *image = rz_structured_data_map_add_map(pe64, "IMAGE_NT_HEADERS");
+	if (!image) {
+		rz_structured_data_free(info);
+		return NULL;
+	}
+
+	rz_structured_data_map_add_unsigned(image, "Signature", bin->nt_headers->Signature, true);
+
+	if (!(image = rz_structured_data_map_add_map(pe64, "IMAGE_FILE_HEADERS"))) {
+		rz_structured_data_free(info);
+		return NULL;
+	}
+
+	rz_structured_data_map_add_unsigned(image, "Machine", bin->nt_headers->file_header.Machine, true);
+	rz_structured_data_map_add_unsigned(image, "NumberOfSections", bin->nt_headers->file_header.NumberOfSections, false);
+	rz_structured_data_map_add_unsigned(image, "TimeDateStamp", bin->nt_headers->file_header.TimeDateStamp, false);
+	rz_structured_data_map_add_unsigned(image, "PointerToSymbolTable", bin->nt_headers->file_header.PointerToSymbolTable, true);
+	rz_structured_data_map_add_unsigned(image, "NumberOfSymbols", bin->nt_headers->file_header.NumberOfSymbols, false);
+	rz_structured_data_map_add_unsigned(image, "SizeOfOptionalHeader", bin->nt_headers->file_header.SizeOfOptionalHeader, false);
+	rz_structured_data_map_add_unsigned(image, "Characteristics", bin->nt_headers->file_header.Characteristics, true);
+
+	if (!(image = rz_structured_data_map_add_map(pe64, "IMAGE_OPTIONAL_HEADERS"))) {
+		rz_structured_data_free(info);
+		return NULL;
+	}
+
+	rz_structured_data_map_add_unsigned(image, "Magic", bin->nt_headers->optional_header.Magic, true);
+	rz_structured_data_map_add_unsigned(image, "MajorLinkerVersion", bin->nt_headers->optional_header.MajorLinkerVersion, false);
+	rz_structured_data_map_add_unsigned(image, "MinorLinkerVersion", bin->nt_headers->optional_header.MinorLinkerVersion, false);
+	rz_structured_data_map_add_unsigned(image, "SizeOfCode", bin->nt_headers->optional_header.SizeOfCode, false);
+	rz_structured_data_map_add_unsigned(image, "SizeOfInitializedData", bin->nt_headers->optional_header.SizeOfInitializedData, false);
+	rz_structured_data_map_add_unsigned(image, "SizeOfUninitializedData", bin->nt_headers->optional_header.SizeOfUninitializedData, false);
+	rz_structured_data_map_add_unsigned(image, "AddressOfEntryPoint", bin->nt_headers->optional_header.AddressOfEntryPoint, true);
+	rz_structured_data_map_add_unsigned(image, "BaseOfCode", bin->nt_headers->optional_header.BaseOfCode, true);
+	rz_structured_data_map_add_unsigned(image, "ImageBase", bin->nt_headers->optional_header.ImageBase, true);
+	rz_structured_data_map_add_unsigned(image, "SectionAlignment", bin->nt_headers->optional_header.SectionAlignment, true);
+	rz_structured_data_map_add_unsigned(image, "FileAlignment", bin->nt_headers->optional_header.FileAlignment, true);
+	rz_structured_data_map_add_unsigned(image, "MajorOperatingSystemVersion", bin->nt_headers->optional_header.MajorOperatingSystemVersion, true);
+	rz_structured_data_map_add_unsigned(image, "MinorOperatingSystemVersion", bin->nt_headers->optional_header.MinorOperatingSystemVersion, true);
+	rz_structured_data_map_add_unsigned(image, "MajorImageVersion", bin->nt_headers->optional_header.MajorImageVersion, true);
+	rz_structured_data_map_add_unsigned(image, "MinorImageVersion", bin->nt_headers->optional_header.MinorImageVersion, true);
+	rz_structured_data_map_add_unsigned(image, "MajorSubsystemVersion", bin->nt_headers->optional_header.MajorSubsystemVersion, true);
+	rz_structured_data_map_add_unsigned(image, "MinorSubsystemVersion", bin->nt_headers->optional_header.MinorSubsystemVersion, true);
+	rz_structured_data_map_add_unsigned(image, "Win32VersionValue", bin->nt_headers->optional_header.Win32VersionValue, true);
+	rz_structured_data_map_add_unsigned(image, "SizeOfImage", bin->nt_headers->optional_header.SizeOfImage, false);
+	rz_structured_data_map_add_unsigned(image, "SizeOfHeaders", bin->nt_headers->optional_header.SizeOfHeaders, false);
+	rz_structured_data_map_add_unsigned(image, "CheckSum", bin->nt_headers->optional_header.CheckSum, true);
+	rz_structured_data_map_add_unsigned(image, "Subsystem", bin->nt_headers->optional_header.Subsystem, true);
+	rz_structured_data_map_add_unsigned(image, "DllCharacteristics", bin->nt_headers->optional_header.DllCharacteristics, true);
+	rz_structured_data_map_add_unsigned(image, "SizeOfStackReserve", bin->nt_headers->optional_header.SizeOfStackReserve, false);
+	rz_structured_data_map_add_unsigned(image, "SizeOfStackCommit", bin->nt_headers->optional_header.SizeOfStackCommit, false);
+	rz_structured_data_map_add_unsigned(image, "SizeOfHeapReserve", bin->nt_headers->optional_header.SizeOfHeapReserve, false);
+	rz_structured_data_map_add_unsigned(image, "SizeOfHeapCommit", bin->nt_headers->optional_header.SizeOfHeapCommit, false);
+	rz_structured_data_map_add_unsigned(image, "LoaderFlags", bin->nt_headers->optional_header.LoaderFlags, true);
+	rz_structured_data_map_add_unsigned(image, "NumberOfRvaAndSizes", bin->nt_headers->optional_header.NumberOfRvaAndSizes, false);
+
+	if (rz_list_length(bin->rich_entries) > 0) {
+		if (!(image = rz_structured_data_map_add_array(pe64, "RICH_FIELDS"))) {
+			rz_structured_data_free(info);
+			return NULL;
+		}
+
+		RzListIter *it;
+		Pe_image_rich_entry *entry;
+		rz_list_foreach (bin->rich_entries, it, entry) {
+			RzStructuredData *field = rz_structured_data_array_add_map(image);
+			if (!field) {
+				rz_structured_data_free(info);
+				return NULL;
 			}
-			rbin->cb_printf("  VirtualAddress : 0x%x\n", bin->nt_headers->optional_header.DataDirectory[i].VirtualAddress);
-			rbin->cb_printf("  Size : 0x%x\n", bin->nt_headers->optional_header.DataDirectory[i].Size);
+
+			rz_structured_data_map_add_unsigned(field, "Product", entry->productId, false);
+			rz_structured_data_map_add_string(field, "Name", entry->productName);
+			rz_structured_data_map_add_unsigned(field, "Version", entry->minVersion, false);
+			rz_structured_data_map_add_unsigned(field, "Times", entry->timesUsed, false);
 		}
 	}
+
+	for (size_t i = 0; i < PE_IMAGE_DIRECTORY_ENTRIES - 1; i++) {
+		if (bin->nt_headers->optional_header.DataDirectory[i].Size < 1) {
+			continue;
+		}
+
+		const char *name = "unknown";
+		switch (i) {
+		case PE_IMAGE_DIRECTORY_ENTRY_EXPORT:
+			name = "IMAGE_DIRECTORY_ENTRY_EXPORT";
+			break;
+		case PE_IMAGE_DIRECTORY_ENTRY_IMPORT:
+			name = "IMAGE_DIRECTORY_ENTRY_IMPORT";
+			break;
+		case PE_IMAGE_DIRECTORY_ENTRY_RESOURCE:
+			name = "IMAGE_DIRECTORY_ENTRY_RESOURCE";
+			break;
+		case PE_IMAGE_DIRECTORY_ENTRY_EXCEPTION:
+			name = "IMAGE_DIRECTORY_ENTRY_EXCEPTION";
+			break;
+		case PE_IMAGE_DIRECTORY_ENTRY_SECURITY:
+			name = "IMAGE_DIRECTORY_ENTRY_SECURITY";
+			break;
+		case PE_IMAGE_DIRECTORY_ENTRY_BASERELOC:
+			name = "IMAGE_DIRECTORY_ENTRY_BASERELOC";
+			break;
+		case PE_IMAGE_DIRECTORY_ENTRY_DEBUG:
+			name = "IMAGE_DIRECTORY_ENTRY_DEBUG";
+			break;
+		case PE_IMAGE_DIRECTORY_ENTRY_COPYRIGHT:
+			name = "IMAGE_DIRECTORY_ENTRY_COPYRIGHT";
+			name = "IMAGE_DIRECTORY_ENTRY_ARCHITECTURE";
+			break;
+		case PE_IMAGE_DIRECTORY_ENTRY_GLOBALPTR:
+			name = "IMAGE_DIRECTORY_ENTRY_GLOBALPTR";
+			break;
+		case PE_IMAGE_DIRECTORY_ENTRY_TLS:
+			name = "IMAGE_DIRECTORY_ENTRY_TLS";
+			break;
+		case PE_IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG:
+			name = "IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG";
+			break;
+		case PE_IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT:
+			name = "IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT";
+			break;
+		case PE_IMAGE_DIRECTORY_ENTRY_IAT:
+			name = "IMAGE_DIRECTORY_ENTRY_IAT";
+			break;
+		case PE_IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT:
+			name = "IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT";
+			break;
+		case PE_IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR:
+			name = "IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR";
+			break;
+		}
+
+		if (!(image = rz_structured_data_map_add_map(pe64, name))) {
+			rz_structured_data_free(info);
+			return NULL;
+		}
+		rz_structured_data_map_add_unsigned(image, "VirtualAddress", bin->nt_headers->optional_header.DataDirectory[i].VirtualAddress, true);
+		rz_structured_data_map_add_unsigned(image, "Size", bin->nt_headers->optional_header.DataDirectory[i].Size, false);
+	}
+
+	return info;
 }
 
 #define RzBinPEObj struct PE_(rz_bin_pe_obj_t)
@@ -434,7 +490,7 @@ static bool read_pe64_scope_record(RzBuffer *buf, ut64 base, PE64_SCOPE_RECORD *
 		rz_buf_read_ble32_offset(buf, &offset, &record->JumpTarget, big_endian);
 }
 
-static RzPVector /*<RzBinTrycatch *>*/ *trycatch(RzBinFile *bf) {
+static RzPVector /*<RzBinTrycatch *>*/ *pe64_trycatch(RzBinFile *bf) {
 	ut64 baseAddr = bf->o->opts.baseaddr;
 	ut64 offset;
 
@@ -582,27 +638,27 @@ RzBinPlugin rz_bin_plugin_pe64 = {
 	.desc = "PE64 (PE32+) binary",
 	.license = "LGPL3",
 	.author = "nibble",
-	.get_sdb = &get_sdb,
-	.load_buffer = &load_buffer,
-	.destroy = &destroy,
-	.check_buffer = &check_buffer,
-	.baddr = &baddr,
-	.binsym = &binsym,
-	.entries = &entries,
-	.maps = &maps,
-	.sections = &sections,
-	.symbols = &symbols,
-	.imports = &imports,
-	.info = &info,
-	.header = &header,
-	.fields = &fields,
-	.libs = &libs,
-	.relocs = &relocs,
-	.get_offset = &get_offset,
-	.get_vaddr = &get_vaddr,
-	.trycatch = &trycatch,
-	.hashes = &compute_hashes,
-	.resources = &resources,
+	.get_sdb = &pe_get_sdb,
+	.load_buffer = &pe_load_buffer,
+	.destroy = &pe_destroy,
+	.check_buffer = &pe64_check_buffer,
+	.baddr = &pe_baddr,
+	.binsym = &pe_binsym,
+	.entries = &pe_entries,
+	.maps = &pe_maps,
+	.sections = &pe_sections,
+	.symbols = &pe_symbols,
+	.imports = &pe_imports,
+	.info = &pe_info,
+	.bin_structure = &pe64_structure,
+	.fields = &pe64_fields,
+	.libs = &pe_libs,
+	.relocs = &pe_relocs,
+	.get_offset = &pe_get_offset,
+	.get_vaddr = &pe_get_vaddr,
+	.trycatch = &pe64_trycatch,
+	.hashes = &pe_compute_hashes,
+	.resources = &pe_resources,
 	.section_flag_to_rzlist = &PE_(section_flag_to_rzlist),
 };
 

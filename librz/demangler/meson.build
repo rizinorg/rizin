@@ -3,14 +3,11 @@ demangler_plugins_list = [
   'msvc',
   'objc',
   'pascal',
+  'swift'
 ]
 
 if get_option('use_gpl')
   demangler_plugins_list += ['cpp', 'rust']
-endif
-
-if get_option('use_swift_demangler')
-  demangler_plugins_list += 'swift'
 endif
 
 demangler_plugins = {
@@ -23,7 +20,7 @@ rz_demangler_sources = [
   'demangler.c'
 ]
 
-dependencies = [rz_util_dep, libdemangle_dep]
+dependencies = [rz_util_dep, libdemangle_dep, libswift_dep]
 
 rz_demangler = library('rz_demangler', rz_demangler_sources,
   include_directories: [platform_inc],

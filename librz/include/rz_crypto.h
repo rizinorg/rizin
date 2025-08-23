@@ -108,6 +108,10 @@ RZ_API RZ_BORROW const RzCryptoPlugin *rz_crypto_plugin_by_index(RZ_NONNULL RzCr
 #define RZ_CODEC_B64      1ULL
 #define RZ_CODEC_B91      1ULL << 1
 #define RZ_CODEC_PUNYCODE 1ULL << 2
+#define RZ_CODEC_B85      1ULL << 3
+#define RZ_CODEC_B36      1ULL << 4
+#define RZ_CODEC_B32      1ULL << 5
+#define RZ_CODEC_B16      1ULL << 6
 #define RZ_CODEC_ALL      0xFFFF
 
 #ifdef __cplusplus

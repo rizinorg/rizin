@@ -97,77 +97,102 @@ nth      paddr      vaddr bind type size lib                               name
   1 0x00000e44 0x00402044 NONE FUNC    0 api-ms-win-crt-math-l1-1-0.dll    imp.__setusermatherr
   1 0x00000e3c 0x0040203c NONE FUNC    0 api-ms-win-crt-locale-l1-1-0.dll  imp._configthreadlocale
   1 0x00000e34 0x00402034 NONE FUNC    0 api-ms-win-crt-heap-l1-1-0.dll    imp._set_new_mode
-PE file header:
-IMAGE_NT_HEADERS
-  Signature : 0x4550
-IMAGE_FILE_HEADERS
-  Machine : 0x1c4
-  NumberOfSections : 0x5
-  TimeDateStamp : 0x61149c1c
-  PointerToSymbolTable : 0x0
-  NumberOfSymbols : 0x0
-  SizeOfOptionalHeader : 0xe0
-  Characteristics : 0x122
-IMAGE_OPTIONAL_HEADERS
-  Magic : 0x10b
-  MajorLinkerVersion : 0xe
-  MinorLinkerVersion : 0x1d
-  SizeOfCode : 0xa00
-  SizeOfInitializedData : 0x1000
-  SizeOfUninitializedData : 0x0
-  AddressOfEntryPoint : 0x11d5
-  BaseOfCode : 0x1000
-  BaseOfData : 0x2000
-  ImageBase : 0x400000
-  SectionAlignment : 0x1000
-  FileAlignment : 0x200
-  MajorOperatingSystemVersion : 0x6
-  MinorOperatingSystemVersion : 0x2
-  MajorImageVersion : 0x0
-  MinorImageVersion : 0x0
-  MajorSubsystemVersion : 0x6
-  MinorSubsystemVersion : 0x2
-  Win32VersionValue : 0x0
-  SizeOfImage : 0x6000
-  SizeOfHeaders : 0x400
-  CheckSum : 0x0
-  Subsystem : 0x3
-  DllCharacteristics : 0x8140
-  SizeOfStackReserve : 0x100000
-  SizeOfStackCommit : 0x1000
-  SizeOfHeapReserve : 0x100000
-  SizeOfHeapCommit : 0x1000
-  LoaderFlags : 0x0
-  NumberOfRvaAndSizes : 0x10
-RICH_FIELDS
-  Product: 258 Name: Linker1400 Version: 30133 Times: 1
-  Product: 260 Name: Utc1900_C Version: 30133 Times: 1
-  Product: 260 Name: Utc1900_C Version: 30034 Times: 9
-  Product: 261 Name: Utc1900_CPP Version: 30034 Times: 17
-  Product: 1 Name: Import0 Version: 0 Times: 41
-  Product: 257 Name: Implib1400 Version: 27412 Times: 3
-  Product: 257 Name: Implib1400 Version: 30034 Times: 2
-  Product: 147 Name: Implib900 Version: 30729 Times: 10
-IMAGE_DIRECTORY_ENTRY_IMPORT
-  VirtualAddress : 0x2494
-  Size : 0xa0
-IMAGE_DIRECTORY_ENTRY_EXCEPTION
-  VirtualAddress : 0x4000
-  Size : 0x120
-IMAGE_DIRECTORY_ENTRY_BASERELOC
-  VirtualAddress : 0x5000
-  Size : 0xac
-IMAGE_DIRECTORY_ENTRY_DEBUG
-  VirtualAddress : 0x20e8
-  Size : 0x1c
-IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG
-  VirtualAddress : 0x2108
-  Size : 0xbc
-IMAGE_DIRECTORY_ENTRY_IAT
-  VirtualAddress : 0x2000
-  Size : 0xa8
-IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT
-  VirtualAddress : 0x0
-  Size : 0xffff
+pe32:
+  IMAGE_NT_HEADERS:
+    Signature: 0x4550
+  IMAGE_FILE_HEADERS:
+    Machine: 0x1c4
+    NumberOfSections: 5
+    TimeDateStamp: 1628740636
+    PointerToSymbolTable: 0x0
+    NumberOfSymbols: 0
+    SizeOfOptionalHeader: 224
+    Characteristics: 0x122
+  IMAGE_OPTIONAL_HEADERS:
+    Magic: 0x10b
+    MajorLinkerVersion: 14
+    MinorLinkerVersion: 29
+    SizeOfCode: 2560
+    SizeOfInitializedData: 4096
+    SizeOfUninitializedData: 0
+    AddressOfEntryPoint: 0x11d5
+    BaseOfCode: 0x1000
+    BaseOfData: 0x2000
+    ImageBase: 0x400000
+    SectionAlignment: 0x1000
+    FileAlignment: 0x200
+    MajorOperatingSystemVersion: 0x6
+    MinorOperatingSystemVersion: 0x2
+    MajorImageVersion: 0x0
+    MinorImageVersion: 0x0
+    MajorSubsystemVersion: 0x6
+    MinorSubsystemVersion: 0x2
+    Win32VersionValue: 0x0
+    SizeOfImage: 24576
+    SizeOfHeaders: 1024
+    CheckSum: 0x0
+    Subsystem: 0x3
+    DllCharacteristics: 0x8140
+    SizeOfStackReserve: 1048576
+    SizeOfStackCommit: 4096
+    SizeOfHeapReserve: 1048576
+    SizeOfHeapCommit: 4096
+    LoaderFlags: 0x0
+    NumberOfRvaAndSizes: 16
+  RICH_FIELDS:
+    - Product: 258
+      Name: "Linker1400"
+      Version: 30133
+      Times: 1
+    - Product: 260
+      Name: "Utc1900_C"
+      Version: 30133
+      Times: 1
+    - Product: 260
+      Name: "Utc1900_C"
+      Version: 30034
+      Times: 9
+    - Product: 261
+      Name: "Utc1900_CPP"
+      Version: 30034
+      Times: 17
+    - Product: 1
+      Name: "Import0"
+      Version: 0
+      Times: 41
+    - Product: 257
+      Name: "Implib1400"
+      Version: 27412
+      Times: 3
+    - Product: 257
+      Name: "Implib1400"
+      Version: 30034
+      Times: 2
+    - Product: 147
+      Name: "Implib900"
+      Version: 30729
+      Times: 10
+  IMAGE_DIRECTORY_ENTRY_IMPORT:
+    VirtualAddress: 0x2494
+    Size: 160
+  IMAGE_DIRECTORY_ENTRY_EXCEPTION:
+    VirtualAddress: 0x4000
+    Size: 288
+  IMAGE_DIRECTORY_ENTRY_BASERELOC:
+    VirtualAddress: 0x5000
+    Size: 172
+  IMAGE_DIRECTORY_ENTRY_DEBUG:
+    VirtualAddress: 0x20e8
+    Size: 28
+  IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG:
+    VirtualAddress: 0x2108
+    Size: 188
+  IMAGE_DIRECTORY_ENTRY_IAT:
+    VirtualAddress: 0x2000
+    Size: 168
+  IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT:
+    VirtualAddress: 0x0
+    Size: 65535
+
 EOF
 RUN

@@ -413,9 +413,9 @@ RZ_IPI RzCmdStatus rz_cmd_info_fields_handler(RzCore *core, int argc, const char
 	return bool2status(rz_core_bin_fields_print(core, bf, state));
 }
 
-RZ_IPI RzCmdStatus rz_cmd_info_headers_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_cmd_info_structured_data_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	GET_CHECK_CUR_BINFILE(core);
-	return bool2status(rz_core_bin_headers_print(core, bf));
+	return bool2status(rz_core_bin_structured_data_print(core, bf, mode));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_binary_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {

@@ -94,7 +94,7 @@ RZ_IPI RZ_OWN RzPVector /*<RzBinMap *>*/ *rz_bin_mdt_get_maps(RzBinFile *bf);
 RZ_IPI RZ_OWN RzPVector /*<RzBinAddr *>*/ *rz_bin_mdt_get_entry_points(RzBinFile *bf);
 RZ_IPI RZ_OWN RzPVector /*<RzBinVirtualFile *>*/ *rz_bin_mdt_virtual_files(RzBinFile *bf);
 RZ_IPI RZ_OWN RzPVector /*<RzBinSymbol *>*/ *rz_bin_mdt_symbols(RzBinFile *bf);
-RZ_IPI void rz_bin_mdt_print_header(RzBinFile *bf);
+RZ_IPI RzStructuredData *rz_bin_mdt_structure(RzBinFile *bf);
 RZ_IPI RZ_OWN RzPVector /*<RzBinSection *>*/ *rz_bin_mdt_sections(RzBinFile *bf);
 RZ_IPI RZ_OWN RzPVector /*<RzBinReloc *>*/ *rz_bin_mdt_relocs(RzBinFile *bf);
 

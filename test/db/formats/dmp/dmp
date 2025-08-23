@@ -54,29 +54,31 @@ NAME=: DMP header & bmp header
 FILE=bins/dmp/bmp.dmp
 CMDS=iH
 EXPECT=<<EOF
-DUMP_HEADER64:
-  MajorVersion : 0x0000000f
-  MinorVersion : 0x000047ba
-  DirectoryTableBase : 0x00000000006d4002
-  PfnDataBase : 0xfffff80510c22468
-  PsLoadedModuleList : 0xfffff80510af62f0
-  PsActiveProcessHead : 0xfffff80510ae6980
-  MachineImageType : 0x00008664
-  NumberProcessors : 0x00000001
-  BugCheckCode : 0x00000000 (Not a crash)
-  BugCheckParameter1 : 0x0000000000000000
-  BugCheckParameter2 : 0x0000000000000000
-  BugCheckParameter3 : 0x0000000000000000
-  BugCheckParameter4 : 0x0000000000000000
-  KdDebuggerDataBlock : 0xfffff80510ad45e0
-  SecondaryDataState : 0x45474150
-  ProductType : 0x45474150
-  SuiteMask : 0x45474150
+dmp64:
+  MajorVersion: 0xf
+  MinorVersion: 0x47ba
+  DirectoryTableBase: 0x6d4002
+  PfnDataBase: 0xfffff80510c22468
+  PsLoadedModuleList: 0xfffff80510af62f0
+  PsActiveProcessHead: 0xfffff80510ae6980
+  MachineImageType: 0x8664
+  NumberProcessors: 0x1
+  BugCheckCode:
+    Value: 0x0
+    Meaning: "Not a crash"
+  BugCheckParameter1: 0x0
+  BugCheckParameter2: 0x0
+  BugCheckParameter3: 0x0
+  BugCheckParameter4: 0x0
+  KdDebuggerDataBlock: 0xfffff80510ad45e0
+  SecondaryDataState: 0x45474150
+  ProductType: 0x45474150
+  SuiteMask: 0x45474150
+  Bitmap:
+    HeaderSize: 0xa038
+    BitmapSize: 0x40000
+    Pages: 0x544b
 
-BITMAP_DUMP:
-  HeaderSize : 0x0000a038
-  BitmapSize : 0x00040000
-  Pages : 0x0000544b
 EOF
 RUN
 
@@ -116,55 +118,57 @@ pi 4
 dbt
 EOF
 EXPECT=<<EOF
-DUMP_HEADER64:
-  MajorVersion : 0x0000000f
-  MinorVersion : 0x00004a61
-  DirectoryTableBase : 0x00000000001ad000
-  PfnDataBase : 0xfffff8047c6fc500
-  PsLoadedModuleList : 0xfffff8047c62a390
-  PsActiveProcessHead : 0xfffff8047c61e200
-  MachineImageType : 0x00008664
-  NumberProcessors : 0x00000010
-  BugCheckCode : 0x1000007e (SYSTEM_THREAD_EXCEPTION_NOT_HANDLED_M)
-  BugCheckParameter1 : 0xffffffffc0000005
-  BugCheckParameter2 : 0xfffff8048b58334c
-  BugCheckParameter3 : 0xffff850429891ee8
-  BugCheckParameter4 : 0xffff850429891720
-  KdDebuggerDataBlock : 0xfffff8047c600b20
-  SecondaryDataState : 0x45474150
-  ProductType : 0x00000001
-  SuiteMask : 0x00000110
+dmp64:
+  MajorVersion: 0xf
+  MinorVersion: 0x4a61
+  DirectoryTableBase: 0x1ad000
+  PfnDataBase: 0xfffff8047c6fc500
+  PsLoadedModuleList: 0xfffff8047c62a390
+  PsActiveProcessHead: 0xfffff8047c61e200
+  MachineImageType: 0x8664
+  NumberProcessors: 0x10
+  BugCheckCode:
+    Value: 0x1000007e
+    Meaning: "SYSTEM_THREAD_EXCEPTION_NOT_HANDLED_M"
+  BugCheckParameter1: 0xffffffffc0000005
+  BugCheckParameter2: 0xfffff8048b58334c
+  BugCheckParameter3: 0xffff850429891ee8
+  BugCheckParameter4: 0xffff850429891720
+  KdDebuggerDataBlock: 0xfffff8047c600b20
+  SecondaryDataState: 0x45474150
+  ProductType: 0x1
+  SuiteMask: 0x110
+  TriageDump64:
+    ServicePackBuild: 0x0
+    SizeOfDump: 0x13a28c
+    ValidOffset: 0x13a288
+    ContextOffset: 0x348
+    ExceptionOffset: 0xf00
+    MmOffset: 0x2080
+    UnloadedDriversOffset: 0x20d0
+    PrcbOffset: 0x21b8
+    ProcessOffset: 0xd0b8
+    ThreadOffset: 0xdaf8
+    CallStackOffset: 0xe390
+    SizeOfCallStack: 0x2118
+    DriverListOffset: 0x10828
+    DriverCount: 0x97
+    StringPoolOffset: 0x15d18
+    StringPoolSize: 0x3720
+    BrokenDriverOffset: 0x0
+    TriageOptions: 0xffffffff
+    TopOfStack: 0xffff850429890ee8
+    BStoreOffset: 0x0
+    SizeOfBStore: 0x0
+    LimitOfBStore: 0x0
+    DataPageAddress: 0x0
+    DataPageOffset: 0x0
+    DataPageSize: 0x0
+    DebuggerDataOffset: 0x104a8
+    DebuggerDataSize: 0x380
+    DataBlocksOffset: 0x19438
+    DataBlocksCount: 0x727
 
-TRIAGE_DUMP64:
-  ServicePackBuild : 0x00000000
-  SizeOfDump : 0x0013a28c
-  ValidOffset : 0x0013a288
-  ContextOffset : 0x00000348
-  ExceptionOffset : 0x00000f00
-  MmOffset : 0x00002080
-  UnloadedDriversOffset : 0x000020d0
-  PrcbOffset : 0x000021b8
-  ProcessOffset : 0x0000d0b8
-  ThreadOffset : 0x0000daf8
-  CallStackOffset : 0x0000e390
-  SizeOfCallStack : 0x00002118
-  DriverListOffset : 0x00010828
-  DriverCount : 0x00000097
-  StringPoolOffset : 0x00015d18
-  StringPoolSize : 0x00003720
-  BrokenDriverOffset : 0x00000000
-  TriageOptions : 0xffffffff
-  TopOfStack : 0xffff850429890ee8
-  BStoreOffset : 0x00000000
-  SizeOfBStore : 0x00000000
-  LimitOfBStore : 0x0000000000000000
-  DataPageAddress : 0x0000000000000000
-  DataPageOffset : 0x00000000
-  DataPageSize : 0x00000000
-  DebuggerDataOffset : 0x000104a8
-  DebuggerDataSize : 0x00000380
-  DataBlocksOffset : 0x00019438
-  DataBlocksCount : 0x00000727
 mxcsr = 0x00001f80
 rflags = 0x0000000000040286
 rax = 0xffff850429891720
@@ -244,55 +248,57 @@ pi 4
 dbt
 EOF
 EXPECT=<<EOF
-DUMP_HEADER64:
-  MajorVersion : 0x0000000f
-  MinorVersion : 0x000055f0
-  DirectoryTableBase : 0x00000000946aa000
-  PfnDataBase : 0xfffff803f3b19960
-  PsLoadedModuleList : 0xfffff803f3a2aa20
-  PsActiveProcessHead : 0xfffff803f3a1d1c0
-  MachineImageType : 0x0000aa64
-  NumberProcessors : 0x00000008
-  BugCheckCode : 0x000001c8 (MANUALLY_INITIATED_POWER_BUTTON_HOLD)
-  BugCheckParameter1 : 0x0000000000001b58
-  BugCheckParameter2 : 0xfffff803f3a20860
-  BugCheckParameter3 : 0x0000000000000000
-  BugCheckParameter4 : 0x0000000000000000
-  KdDebuggerDataBlock : 0xfffff803f3a00d00
-  SecondaryDataState : 0x45474150
-  ProductType : 0x00000001
-  SuiteMask : 0x00000110
+dmp64:
+  MajorVersion: 0xf
+  MinorVersion: 0x55f0
+  DirectoryTableBase: 0x946aa000
+  PfnDataBase: 0xfffff803f3b19960
+  PsLoadedModuleList: 0xfffff803f3a2aa20
+  PsActiveProcessHead: 0xfffff803f3a1d1c0
+  MachineImageType: 0xaa64
+  NumberProcessors: 0x8
+  BugCheckCode:
+    Value: 0x1c8
+    Meaning: "MANUALLY_INITIATED_POWER_BUTTON_HOLD"
+  BugCheckParameter1: 0x1b58
+  BugCheckParameter2: 0xfffff803f3a20860
+  BugCheckParameter3: 0x0
+  BugCheckParameter4: 0x0
+  KdDebuggerDataBlock: 0xfffff803f3a00d00
+  SecondaryDataState: 0x45474150
+  ProductType: 0x1
+  SuiteMask: 0x110
+  TriageDump64:
+    ServicePackBuild: 0x0
+    SizeOfDump: 0xac46c
+    ValidOffset: 0xac468
+    ContextOffset: 0x348
+    ExceptionOffset: 0xf00
+    MmOffset: 0x2080
+    UnloadedDriversOffset: 0x20d0
+    PrcbOffset: 0x2340
+    ProcessOffset: 0xb9c0
+    ThreadOffset: 0xc640
+    CallStackOffset: 0xcf50
+    SizeOfCallStack: 0xb60
+    DriverListOffset: 0xde30
+    DriverCount: 0xf5
+    StringPoolOffset: 0x16800
+    StringPoolSize: 0x6eb0
+    BrokenDriverOffset: 0x0
+    TriageOptions: 0xffffffff
+    TopOfStack: 0xffffe00e0e4bc4a0
+    BStoreOffset: 0x0
+    SizeOfBStore: 0x0
+    LimitOfBStore: 0x0
+    DataPageAddress: 0x0
+    DataPageOffset: 0x0
+    DataPageSize: 0x0
+    DebuggerDataOffset: 0xdab0
+    DebuggerDataSize: 0x380
+    DataBlocksOffset: 0x1d6b0
+    DataBlocksCount: 0x2a7
 
-TRIAGE_DUMP64:
-  ServicePackBuild : 0x00000000
-  SizeOfDump : 0x000ac46c
-  ValidOffset : 0x000ac468
-  ContextOffset : 0x00000348
-  ExceptionOffset : 0x00000f00
-  MmOffset : 0x00002080
-  UnloadedDriversOffset : 0x000020d0
-  PrcbOffset : 0x00002340
-  ProcessOffset : 0x0000b9c0
-  ThreadOffset : 0x0000c640
-  CallStackOffset : 0x0000cf50
-  SizeOfCallStack : 0x00000b60
-  DriverListOffset : 0x0000de30
-  DriverCount : 0x000000f5
-  StringPoolOffset : 0x00016800
-  StringPoolSize : 0x00006eb0
-  BrokenDriverOffset : 0x00000000
-  TriageOptions : 0xffffffff
-  TopOfStack : 0xffffe00e0e4bc4a0
-  BStoreOffset : 0x00000000
-  SizeOfBStore : 0x00000000
-  LimitOfBStore : 0x0000000000000000
-  DataPageAddress : 0x0000000000000000
-  DataPageOffset : 0x00000000
-  DataPageSize : 0x00000000
-  DebuggerDataOffset : 0x0000dab0
-  DebuggerDataSize : 0x00000380
-  DataBlocksOffset : 0x0001d6b0
-  DataBlocksCount : 0x000002a7
 cpsr = 0x80000144
 x0 = 0x0000000000000000
 x1 = 0x0000000000000001
@@ -358,29 +364,31 @@ dbt
 oml
 EOF
 EXPECT=<<EOF
-DUMP_HEADER64:
-  MajorVersion : 0x0000000f
-  MinorVersion : 0x000047ba
-  DirectoryTableBase : 0x00000000006d4002
-  PfnDataBase : 0xfffff80510c22468
-  PsLoadedModuleList : 0xfffff80510af62f0
-  PsActiveProcessHead : 0xfffff80510ae6980
-  MachineImageType : 0x00008664
-  NumberProcessors : 0x00000001
-  BugCheckCode : 0x00000000 (Not a crash)
-  BugCheckParameter1 : 0x0000000000000000
-  BugCheckParameter2 : 0x0000000000000000
-  BugCheckParameter3 : 0x0000000000000000
-  BugCheckParameter4 : 0x0000000000000000
-  KdDebuggerDataBlock : 0xfffff80510ad45e0
-  SecondaryDataState : 0x45474150
-  ProductType : 0x45474150
-  SuiteMask : 0x45474150
+dmp64:
+  MajorVersion: 0xf
+  MinorVersion: 0x47ba
+  DirectoryTableBase: 0x6d4002
+  PfnDataBase: 0xfffff80510c22468
+  PsLoadedModuleList: 0xfffff80510af62f0
+  PsActiveProcessHead: 0xfffff80510ae6980
+  MachineImageType: 0x8664
+  NumberProcessors: 0x1
+  BugCheckCode:
+    Value: 0x0
+    Meaning: "Not a crash"
+  BugCheckParameter1: 0x0
+  BugCheckParameter2: 0x0
+  BugCheckParameter3: 0x0
+  BugCheckParameter4: 0x0
+  KdDebuggerDataBlock: 0xfffff80510ad45e0
+  SecondaryDataState: 0x45474150
+  ProductType: 0x45474150
+  SuiteMask: 0x45474150
+  Bitmap:
+    HeaderSize: 0xa038
+    BitmapSize: 0x40000
+    Pages: 0x544b
 
-BITMAP_DUMP:
-  HeaderSize : 0x0000a038
-  BitmapSize : 0x00040000
-  Pages : 0x0000544b
 mxcsr = 0x00001f80
 rflags = 0x0000000000040202
 rax = 0x0000000000000003

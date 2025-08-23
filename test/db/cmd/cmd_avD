@@ -603,3 +603,125 @@ EXPECT=<<EOF
 \           0x100002f14      ret
 EOF
 RUN
+
+NAME=cxx class analysis for classes with multiple vtables & w/o rtti (x86)
+FILE=bins/elf/analysis/x86-no-rtti-class-multi-vtable
+CMDS=<<EOF
+aaaa
+avD @ main
+pdf @ main
+EOF
+EXPECT=<<EOF
+            ; DATA XREF from sym._start_c @ 0x40086b
+            ;-- rip:
+/ int main(int argc, char **argv, char **envp);
+|           ; var struct Dog *var_20h @ stack - 0x20
+|           0x004009ad      push  rbp
+|           0x004009ae      mov   rbp, rsp
+|           0x004009b1      push  r12
+|           0x004009b3      push  rbx
+|           0x004009b4      sub   rsp, 0x10
+|           0x004009b8      mov   edi, 0x10                            ; rsi
+|           0x004009bd      call  sym.imp.operator_new_unsigned_long
+|           0x004009c2      mov   rbx, rax
+|           0x004009c5      mov   rdi, rbx                             ; int64_t arg1
+|           0x004009c8      call  method.Dog.Dog                       ;  method.Dog.Dog(int64_t arg1)
+|           0x004009cd      mov   qword [var_20h], rbx
+|           0x004009d1      mov   rax, qword [var_20h]
+|           0x004009d5      mov   rax, qword [rax]
+|           0x004009d8      add   rax, 0x18                            ; 24
+|           0x004009dc      mov   rdx, qword [rax]
+|           0x004009df      mov   rax, qword [var_20h]
+|           0x004009e3      mov   rdi, rax
+|           0x004009e6      call  rdx                                  ; Virtual Call : method.Dog.walk
+|           ;-- rbp:
+|           0x004009e8      mov   rax, qword [var_20h]
+|           0x004009ec      mov   rax, qword [rax]
+|           0x004009ef      add   rax, 0x10                            ; rsi
+|           0x004009f3      mov   rdx, qword [rax]
+|           0x004009f6      mov   rax, qword [var_20h]
+|           0x004009fa      mov   rdi, rax
+|           0x004009fd      call  rdx                                  ; Virtual Call : method.Dog.eat / sym.non_virtual_thunk_to_Dog::walk
+|           ;-- r12:
+|           0x004009ff      mov   rax, qword [var_20h]
+|           0x00400a03      test  rax, rax
+|       ,=< 0x00400a06      jz    0x400a17
+|       |   0x00400a08      mov   rdx, qword [rax]
+|       |   0x00400a0b      add   rdx, 0x08
+|       |   0x00400a0f      mov   rdx, qword [rdx]
+|       |   0x00400a12      mov   rdi, rax
+|       |   0x00400a15      call  rdx                                  ; Virtual Call : sym.non_virtual_thunk_to_Dog::_Dog_0x400ca5 / sym.Dog::_Dog_0x400c7a
+|       |   ;-- rbx:
+|       `-> 0x00400a17      mov   eax, 0x00
+|       ,=< 0x00400a1c      jmp   0x400a39
+..
+|       |   ; CODE XREF from main @ 0x400a1c
+|       `-> 0x00400a39      add   rsp, 0x10
+|           0x00400a3d      pop   rbx
+|           0x00400a3e      pop   r12
+|           0x00400a40      pop   rbp
+\           0x00400a41      ret
+EOF
+RUN
+
+NAME=cxx class analysis for classes with multiple vtables & w/o rtti (arm64)
+FILE=bins/mach0/arm64-no-rtti-class-multi-vtable
+CMDS=<<EOF
+aaaa
+avD @ main
+pdf @ main
+EOF
+EXPECT=<<EOF
+            ; UNKNOWN XREF from aav.0x100000028 @ +0xa8
+            ;-- main:
+            ;-- section.0.__TEXT.__text:
+            ;-- _main:
+            ;-- func.100002c70:
+            ;-- pc:
+/ entry0(int64_t arg1);
+|           ; arg int64_t arg1 @ x0
+|           ; var int64_t var_40h @ stack - 0x40
+|           ; var int64_t var_38h @ stack - 0x38
+|           ; var struct Dog *var_20h @ stack - 0x20
+|           ; var int64_t var_14h @ stack - 0x14
+|           ; var int64_t var_10h @ stack - 0x10
+|           ; var int64_t var_8h @ stack - 0x8
+|           0x100002c70      sub   sp, sp, 0x40                        ; [00] -r-x section size 4120 named 0.__TEXT.__text
+|           0x100002c74      stp   fp, lr, [sp, 0lr]
+|           0x100002c78      add   fp, sp, 0x30
+|           0x100002c7c      stur  wzr, [var_14h]                      ; arg1
+|           0x100002c80      mov   x0, 0x10
+|           0x100002c84      bl    sym.imp.operator_new_unsigned_long
+|           0x100002c88      str   x0, [var_38h]
+|           0x100002c8c      bl    method.Dog.Dog                      ;  method.Dog.Dog(int64_t arg1)
+|       ,=< 0x100002c90      b     0x100002c94
+|       |   ; CODE XREF from entry0 @ 0x100002c90
+|       `-> 0x100002c94      ldr   x8, [var_38h]                       ; [0x8:4]=-1 ; 8
+|           0x100002c98      stur  x8, [var_20h]
+|           0x100002c9c      ldur  x0, [var_20h]
+|           0x100002ca0      ldr   x8, [x0]
+|           0x100002ca4      ldr   x8, [x8, 0x18]                      ; [0x18:4]=-1 ; 24
+|           0x100002ca8      blr   x8                                  ; Virtual Call : method.Dog.walk
+|           0x100002cac      ldur  x0, [var_20h]
+|           0x100002cb0      ldr   x8, [x0]
+|           0x100002cb4      ldr   x8, [x8, 0x10]                      ; [0x10:4]=-1 ; 16
+|           0x100002cb8      blr   x8                                  ; Virtual Call : method.Dog.eat / sym.non_virtual_thunk_to_Dog::walk
+|           0x100002cbc      ldur  x8, [var_20h]
+|           0x100002cc0      str   x8, [sp]
+|           0x100002cc4      subs  x8, x8, 0
+|           0x100002cc8      cset  w8, eq
+|       ,=< 0x100002ccc      tbnz  w8, 0, 0x100002ce8
+|      ,==< 0x100002cd0      b     0x100002cd4
+|      ||   ; CODE XREF from entry0 @ 0x100002cd0
+|      `--> 0x100002cd4      ldr   x0, [sp]
+|       |   0x100002cd8      ldr   x8, [x0]
+|       |   0x100002cdc      ldr   x8, [x8, 8]                         ; [0x8:4]=-1 ; 8
+|       |   0x100002ce0      blr   x8                                  ; Virtual Call : sym.Dog::_Dog_0x100002fbc / sym.non_virtual_thunk_to_Dog::_Dog_0x100003068
+|      ,==< 0x100002ce4      b     0x100002ce8
+|      ||   ; CODE XREF from entry0 @ 0x100002ce4
+|      ``-> 0x100002ce8      ldur  w0, [var_14h]
+|           0x100002cec      ldp   fp, lr, [sp, 0lr]
+|           0x100002cf0      add   sp, sp, 0x40
+\           0x100002cf4      ret
+EOF
+RUN

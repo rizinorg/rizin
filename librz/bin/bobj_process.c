@@ -93,47 +93,67 @@ RZ_IPI void rz_bin_process_cxx(RzBinObject *o, char *demangled, ut64 paddr, ut64
 	*name = ':';
 }
 
-#if WITH_SWIFT_DEMANGLER
-// this process function does not work with the Apple demangler.
-static char *get_swift_field(const char *demangled, const char *classname) {
-	if (!demangled || !classname) {
+static char *find_swift_methodname(RZ_NONNULL char *demangled) {
+	// methods can be main.Tost.deinit or main.Tost.init() -> main.Tost
+	// so we will return after second dot
+	char *dot = strchr(demangled, '.');
+	dot = dot ? strchr(dot + 1, '.') : NULL;
+	if (!dot) {
 		return NULL;
 	}
-
-	char *p = strstr(demangled, ".getter_");
-	if (!p) {
-		p = strstr(demangled, ".setter_");
-		if (!p) {
-			p = strstr(demangled, ".method_");
-		}
+	char *methodname = dot + 1;
+	if (RZ_STR_ISEMPTY(methodname)) {
+		return NULL;
 	}
-	if (p) {
-		char *q = strstr(demangled, classname);
-		if (q && q[strlen(classname)] == '.') {
-			q = rz_str_dup(q + strlen(classname) + 1);
-			char *r = strchr(q, '.');
-			if (r) {
-				*r = 0;
-			}
-			return q;
-		}
-	}
-	return NULL;
+	return methodname;
 }
 
-RZ_IPI void rz_bin_process_swift(RzBinObject *o, char *classname, char *demangled, ut64 paddr, ut64 vaddr) {
-	if (!classname) {
+static void bin_process_metaclass(RzBinObject *o, RzBinSymbol *symbol) {
+	if (RZ_STR_ISEMPTY(symbol->dname)) {
+		return;
+	}
+	char *no_classname = strstr(symbol->dname, "full type metadata for ");
+	char *classname = strstr(symbol->dname, "type metadata for ");
+	if (!classname || no_classname) { // only for "type metadata for class"
+		return;
+	}
+	rz_bin_object_add_field(o, classname + strlen("type metadata for "), symbol->dname, symbol->paddr, symbol->vaddr);
+}
+
+// This function is used to process Swift methods.
+static void bin_process_swift_class_method(RzBinObject *o, RzBinSymbol *symbol) {
+	// Before the second dot, we have the class name
+	char *dot = strchr(symbol->dname, '.');
+	dot = dot ? strchr(dot + 1, '.') : NULL;
+	if (!dot) {
+		return;
+	}
+	char *classname = rz_str_ndup(symbol->dname, dot - symbol->dname);
+	// classname should not have any spaces or ( or )
+	if (strchr(classname, ' ') || strchr(classname, '(') || strchr(classname, ')')) {
+		free(classname);
+		return;
+	}
+	symbol->classname = classname;
+	char *methodname = find_swift_methodname(symbol->dname);
+
+	if (!methodname) {
+		free(classname);
 		return;
 	}
 
-	char *name = get_swift_field(demangled, classname);
-	if (name) {
-		rz_bin_object_add_field(o, classname, name, paddr, vaddr);
-		free(name);
+	rz_bin_object_add_class(o, classname, NULL, UT64_MAX);
+	rz_bin_object_add_method(o, classname, methodname, symbol->paddr, symbol->vaddr);
+}
+
+// this process function does not work with the Apple demangler.
+RZ_IPI void rz_bin_process_swift(RzBinObject *o, RzBinSymbol *symbol) {
+	if (RZ_STR_ISEMPTY(symbol->dname)) {
 		return;
 	}
+	bin_process_metaclass(o, symbol);
+	bin_process_swift_class_method(o, symbol);
 }
-#endif /* WITH_SWIFT_DEMANGLER */
 
 /**
  * \brief      Initialize the data of the given RzBinObject using the defined RzBinPlugin

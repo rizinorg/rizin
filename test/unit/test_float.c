@@ -1513,6 +1513,24 @@ bool f32_ieee_cast_test(void) {
 	rz_bv_free(cast_bv);
 	rz_bv_free(expect_bv);
 
+	// Cast (negative) zero
+	fval = rz_float_new_zero(RZ_FLOAT_IEEE754_BIN_32, true);
+	expect_bv = rz_bv_new_zero(16);
+	cast_bv = rz_float_cast_sint(fval, 16, RZ_FLOAT_RMODE_RNE);
+	mu_assert_true(rz_bv_eq(expect_bv, cast_bv), "test (cast-sint -0.0f), rne");
+	rz_float_free(fval);
+	rz_bv_free(cast_bv);
+	rz_bv_free(expect_bv);
+
+	// Cast zero
+	fval = rz_float_new_zero(RZ_FLOAT_IEEE754_BIN_32, false);
+	expect_bv = rz_bv_new_zero(16);
+	cast_bv = rz_float_cast_sint(fval, 16, RZ_FLOAT_RMODE_RNE);
+	mu_assert_true(rz_bv_eq(expect_bv, cast_bv), "test (cast-sint -0.0f), rne");
+	rz_float_free(fval);
+	rz_bv_free(cast_bv);
+	rz_bv_free(expect_bv);
+
 	// 3. convert
 	RzFloat *old_f = rz_float_new_from_f32(42.0f);
 	RzFloat *expect_f = rz_float_new_from_f64(42.0);

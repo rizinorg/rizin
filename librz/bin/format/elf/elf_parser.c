@@ -148,6 +148,10 @@ RzBinInfo *elf_info(RzBinFile *bf) {
 	return info(bf);
 }
 
+RzStructuredData *elf_structure(ELFOBJ *bin) {
+	return Elf_(rz_bin_elf_ehdr)(bin);
+}
+
 RzPVector /*<RzBinField *>*/ *elf_fields(RzBinFile *bf) {
 	return fields(bf);
 }
@@ -178,14 +182,6 @@ void elf_destroy(RzBinFile *bf) {
 
 int elf_check_buffer_aux(RzBuffer *buf) {
 	return check_buffer_aux(buf);
-}
-
-void elf_headers(RzBinFile *bf) {
-	headers(bf);
-}
-
-void elf_headers_obj(ELFOBJ *bin, RZ_NONNULL PrintfCallback cb) {
-	headers_obj(bin, cb);
 }
 
 RzBuffer *elf_create_elf(RzBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt) {
