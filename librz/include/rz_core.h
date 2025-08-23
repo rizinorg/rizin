@@ -34,6 +34,7 @@
 #include <rz_util/rz_annotated_code.h>
 #include <rz_heap_glibc.h>
 #include <rz_windows_heap.h>
+#include <rz_bookmark.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -282,6 +283,7 @@ struct rz_core_t {
 	RzLang *lang;
 	RzDebug *dbg;
 	RzFlag *flags;
+	RzBookmark *bookmarks;
 	char *lastsearch; ///< Legacy search. Will be removed
 	RzSearch *search; ///< Legacy search. Will be removed
 	RzEgg *egg;

@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include "rz_bookmark.h"
+#include "rz_util/rz_str.h"
 #include <rz_config.h>
 #include <rz_util/ht_sp.h>
 #include <rz_util/rz_regex.h>
@@ -957,6 +959,15 @@ RZ_API int rz_core_fgets(char *buf, int len, void *user) {
 
 static const char *rz_core_print_offname(void *p, ut64 addr) {
 	RzCore *c = (RzCore *)p;
+	// Check for bookmark before flag
+	RzBookmarkItem *bi = rz_bookmark_get_start(c->bookmarks, addr);
+	if (bi) {
+		return rz_str_newf("[s] %s", bi->name); // [s] indicates start of bookmark
+	}
+	bi = rz_bookmark_get_end(c->bookmarks, addr);
+	if (bi) {
+		return rz_str_newf("[e] %s", bi->name); // [e] indicates end of bookmark
+	}
 	RzFlagItem *item = rz_flag_get_i(c->flags, addr);
 	return item ? item->name : NULL;
 }
@@ -1692,6 +1703,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->io->ff = 1;
 	core->search = rz_search_new(RZ_SEARCH_KEYWORD);
 	core->flags = rz_flag_new();
+	core->bookmarks = rz_bookmark_new();
 	core->graph = rz_agraph_new(rz_cons_canvas_new(1, 1));
 	core->graph->need_reload_nodes = false;
 	core->asmqjmps_size = RZ_CORE_ASMQJMPS_NUM;

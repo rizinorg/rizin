@@ -235,6 +235,9 @@ commands:
   - name: f
     summary: Manage flags
     subcommands: cmd_flag
+  - name: m
+    summary: Manage bookmarks
+    subcommands: cmd_bookmark
   - name: F
     summary: FLIRT signature management
     subcommands: cmd_flirt

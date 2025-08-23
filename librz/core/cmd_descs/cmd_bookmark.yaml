@@ -1,0 +1,150 @@
+# SPDX-FileCopyrightText: 2022 RizinOrg <info@rizin.re>
+# SPDX-License-Identifier: LGPL-3.0-only
+---
+name: cmd_bookmark
+commands:
+  - name: m
+    cname: bookmark_add
+    summary: Add the bookmark if there are no existing bookmarks
+    description: >
+      Adds the bookmark to the current offset only if
+      no bookmark exists at this range already
+    args:
+      - name: name
+        type: RZ_CMD_ARG_TYPE_STRING
+      - name: end
+        type: RZ_CMD_ARG_TYPE_NUM
+      - name: comment
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: true
+  - name: m+
+    cname: bookmark_append
+    summary: Add bookmark
+    description: >
+      Adds the bookmark to the current offset
+    args:
+      - name: name
+        type: RZ_CMD_ARG_TYPE_STRING
+      - name: end
+        type: RZ_CMD_ARG_TYPE_NUM
+      - name: comment
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: true
+  - name: m-
+    cname: bookmark_remove
+    summary: Remove bookmark
+    description: >
+      If the glob is supplied it removes just bookmark items matching the pattern.
+      Otherwise, it removes all bookmarks that contain the current offset in their range.
+    args:
+      - name: glob
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: true
+  - name: m-*
+    cname: bookmark_remove_all
+    summary: Remove all bookmarks
+    args: []
+  - name: ml
+    cname: bookmark_list
+    summary: List all bookmarks
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_RIZIN
+      - RZ_OUTPUT_MODE_QUIET
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_TABLE
+    args: []
+  - name: ml.
+    cname: bookmark_list_at
+    summary: List all bookmarks containing the current offset
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_RIZIN
+      - RZ_OUTPUT_MODE_QUIET
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_TABLE
+    args: []
+  - name: mc
+    cname: bookmark_color
+    summary: Set a color for the given bookmark / Show the color for the given bookmark
+    args:
+      - name: name
+        type: RZ_CMD_ARG_TYPE_FLAG
+      - name: color
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: true
+  - name: mC
+    cname: bookmark_comment
+    summary: Set a comment for the given bookmark / Show the comment for the given bookmark
+    args:
+      - name: name
+        type: RZ_CMD_ARG_TYPE_FLAG
+      - name: comment
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: true
+  - name: mr
+    cname: bookmark_rename
+    summary: Rename bookmark
+    args:
+      - name: old
+        type: RZ_CMD_ARG_TYPE_FLAG
+      - name: new
+        type: RZ_CMD_ARG_TYPE_STRING
+  - name: mN
+    cname: bookmark_realname
+    summary: Show the realname of the bookmark / Set the realname of the bookmark
+    args:
+      - name: name
+        type: RZ_CMD_ARG_TYPE_FLAG
+      - name: realname
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: true 
+  - name: mm
+    cname: bookmark_move
+    summary: Move a bookmark to new location
+    args:
+      - name: name
+        type: RZ_CMD_ARG_TYPE_FLAG
+      - name: new_start
+        type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: new_end
+        type: RZ_CMD_ARG_TYPE_RZNUM
+  - name: mf
+    cname: bookmark_distance
+    summary: Distance in bytes to reach the next bookmark
+    args:
+      - name: glob
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: true
+  - name: md
+    summary: Describe bookmark
+    subcommands:
+      - name: md
+        cname: bookmark_describe
+        summary: Describe bookmark containing current offset or using name + delta from current offset 
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_TABLE
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: name
+            type: RZ_CMD_ARG_TYPE_FLAG
+            optional: true
+  - name: mi
+    cname: bookmark_range
+    summary: Show bookmarks in the block or custom range
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_RIZIN
+      - RZ_OUTPUT_MODE_QUIET
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_TABLE
+    args:
+      - name: size
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        optional: true
+  

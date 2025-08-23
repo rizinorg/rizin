@@ -1,0 +1,159 @@
+// SPDX-FileCopyrightText: 2025 PremadeS <emadsohail001@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
+#include <rz_util.h>
+#include <rz_bookmark.h>
+
+/*
+ * SDB Format:
+ *
+ *   /bookmarks
+ *     <bookmark name>={"realname":<str>,"from":<uint>,"to":<uint>,"color":<str>,"comment":<str>,}
+ */
+
+static bool bookmark_save_cb(RzBookmarkItem *bm, void *user) {
+	Sdb *db = user;
+	PJ *j = pj_new();
+	if (!j) {
+		return false;
+	}
+	pj_o(j);
+	if (bm->realname) {
+		pj_ks(j, "realname", bm->realname);
+	}
+	pj_kn(j, "from", bm->from);
+	pj_kn(j, "to", bm->to);
+	if (bm->color) {
+		pj_ks(j, "color", bm->color);
+	}
+	if (bm->comment) {
+		pj_ks(j, "comment", bm->comment);
+	}
+	pj_end(j);
+	sdb_set(db, bm->name, pj_string(j));
+	pj_free(j);
+	return true;
+}
+
+RZ_API void rz_serialize_bookmark_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzBookmark *bm) {
+	rz_bookmark_foreach(bm, bookmark_save_cb, sdb_ns(db, "bookmarks", true));
+}
+
+typedef enum {
+	BOOKMARK_FIELD_REALNAME,
+	BOOKMARK_FIELD_FROM,
+	BOOKMARK_FIELD_TO,
+	BOOKMARK_FIELD_COLOR,
+	BOOKMARK_FIELD_COMMENT,
+} BookmarkField;
+
+typedef struct {
+	RzBookmark *bookmark;
+	RzKeyParser *parser;
+} BookmarkLoadCtx;
+
+static bool bookmarks_load_cb(void *user, const SdbKv *kv) {
+	BookmarkLoadCtx *ctx = user;
+
+	char *json_str = sdbkv_dup_value(kv);
+	if (!json_str) {
+		return true;
+	}
+	RzJson *json = rz_json_parse(json_str);
+	if (!json || json->type != RZ_JSON_OBJECT) {
+		free(json_str);
+		return false;
+	}
+
+	RzBookmarkItem proto = { 0 };
+	bool offset_set = false;
+	bool size_set = false;
+
+	RZ_KEY_PARSER_JSON(ctx->parser, json, child, {
+		case BOOKMARK_FIELD_REALNAME:
+			if (child->type != RZ_JSON_STRING) {
+				break;
+			}
+			proto.realname = (char *)child->str_value;
+			break;
+		case BOOKMARK_FIELD_FROM:
+			if (child->type != RZ_JSON_INTEGER) {
+				break;
+			}
+			proto.from = child->num.u_value;
+			offset_set = true;
+			break;
+		case BOOKMARK_FIELD_TO:
+			if (child->type != RZ_JSON_INTEGER) {
+				break;
+			}
+			proto.to = child->num.u_value;
+			size_set = true;
+			break;
+		case BOOKMARK_FIELD_COLOR:
+			if (child->type != RZ_JSON_STRING) {
+				break;
+			}
+			proto.color = (char *)child->str_value;
+			break;
+		case BOOKMARK_FIELD_COMMENT:
+			if (child->type != RZ_JSON_STRING) {
+				break;
+			}
+			proto.comment = (char *)child->str_value;
+			break;
+		default:
+			break;
+	});
+
+	bool res = true;
+	if (!offset_set || !size_set) {
+		res = false;
+		goto beach;
+	}
+
+	RzBookmarkItem *item = rz_bookmark_set(ctx->bookmark, sdbkv_key(kv), proto.from, proto.to);
+	if (proto.realname) {
+		rz_bookmark_item_set_realname(item, proto.realname);
+	}
+	if (proto.color) {
+		rz_bookmark_item_set_color(item, proto.color);
+	}
+	if (proto.comment) {
+		rz_bookmark_item_set_comment(item, proto.comment);
+	}
+beach:
+	rz_json_free(json);
+	free(json_str);
+	return res;
+}
+
+static bool load_bookmarks(RZ_NONNULL Sdb *bookmarks_db, RZ_NONNULL RzBookmark *bm) {
+	BookmarkLoadCtx ctx = { bm, rz_key_parser_new() };
+	if (!ctx.parser) {
+		return false;
+	}
+	rz_key_parser_add(ctx.parser, "realname", BOOKMARK_FIELD_REALNAME);
+	rz_key_parser_add(ctx.parser, "from", BOOKMARK_FIELD_FROM);
+	rz_key_parser_add(ctx.parser, "to", BOOKMARK_FIELD_TO);
+	rz_key_parser_add(ctx.parser, "color", BOOKMARK_FIELD_COLOR);
+	rz_key_parser_add(ctx.parser, "comment", BOOKMARK_FIELD_COMMENT);
+	bool r = sdb_foreach(bookmarks_db, bookmarks_load_cb, &ctx);
+	rz_key_parser_free(ctx.parser);
+	return r;
+}
+
+RZ_API bool rz_serialize_bookmark_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzBookmark *bm, RZ_NULLABLE RzSerializeResultInfo *res) {
+	rz_bookmark_unset_all(bm);
+
+	Sdb *bookmarks_db = sdb_ns(db, "bookmarks", false);
+	if (!bookmarks_db) {
+		RZ_SERIALIZE_ERR(res, "missing bookmarks sub-namespace");
+		return false;
+	}
+	if (!load_bookmarks(bookmarks_db, bm)) {
+		RZ_SERIALIZE_ERR(res, "failed to parse bookmark json");
+		return false;
+	}
+	return true;
+}
