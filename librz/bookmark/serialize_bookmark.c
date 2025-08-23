@@ -148,8 +148,8 @@ RZ_API bool rz_serialize_bookmark_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzBookmark
 
 	Sdb *bookmarks_db = sdb_ns(db, "bookmarks", false);
 	if (!bookmarks_db) {
-		RZ_SERIALIZE_ERR(res, "missing bookmarks sub-namespace");
-		return false;
+		// Old project, no bookmarks saved -> treat as empty, not an error
+		return true;
 	}
 	if (!load_bookmarks(bookmarks_db, bm)) {
 		RZ_SERIALIZE_ERR(res, "failed to parse bookmark json");
