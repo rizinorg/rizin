@@ -66,6 +66,26 @@ bool test_rz_str_ncpy(void) {
 	mu_end;
 }
 
+bool test_rz_str_ncat(void) {
+	char buf[25];
+
+	rz_str_ncpy(buf, "\0", 25); // clearing buffer.
+
+	rz_str_ncat(buf, "hello ", 25);
+	mu_assert_streq(buf, "hello ", "error, while concatenating n bytes");
+
+	rz_str_ncat(buf, "world ", 25);
+	mu_assert_streq(buf, "hello world ", "error, while concatenating n bytes");
+
+	rz_str_ncat(buf, "from ", 25);
+	mu_assert_streq(buf, "hello world from ", "error, while concatenating n bytes");
+
+	rz_str_ncat(buf, "rizin", 25);
+	mu_assert_streq(buf, "hello world from rizin", "error, while concatenating n bytes");
+
+	mu_end;
+}
+
 bool test_rz_str_replace_char(void) {
 	char *str = strdup("hello world");
 	(void)rz_str_replace_char(str, 'l', 'x');
@@ -764,6 +784,7 @@ bool all_tests() {
 	mu_run_test(test_rz_str_newf);
 	mu_run_test(test_rz_str_replace_char_once);
 	mu_run_test(test_rz_str_ncpy);
+	mu_run_test(test_rz_str_ncat);
 	mu_run_test(test_rz_str_replace_char);
 	mu_run_test(test_rz_str_replace);
 	mu_run_test(test_rz_str_bits64);

@@ -986,6 +986,27 @@ RZ_API size_t rz_str_ncpy(char *dst, const char *src, size_t dst_size) {
 #endif
 }
 
+/**
+ * \brief Secure string concat with null terminator
+ *
+ * 	This API behaves like strlcat.
+ */
+RZ_API size_t rz_str_ncat(RZ_NONNULL RZ_OUT char *dst, RZ_NONNULL const char *src, size_t dst_size) {
+	rz_return_val_if_fail(dst && src, 0);
+
+	// do not do anything if dst_size is 0
+	if (dst_size == 0) {
+		return 0;
+	}
+#if HAVE_STRLCAT
+	return strlcat(dst, src, dst_size);
+#else
+	strncat(dst, src, dst_size - 1);
+	dst[dst_size - 1] = '\0';
+	return strlen(src);
+#endif
+}
+
 /* memccmp("foo.bar", "foo.cow, '.') == 0 */
 // Returns 1 if src and dst are equal up until the first instance of ch in src.
 RZ_API bool rz_str_ccmp(const char *dst, const char *src, int ch) {

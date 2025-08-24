@@ -501,6 +501,7 @@ foreach it : ccs
       ['nice', '#include <unistd.h>', []],
       ['copyfile', '#include <copyfile.h>', []],
       ['strlcpy', '#include <string.h>', []],
+      ['strlcat', '#include <string.h>', []],
       ['strnlen', '#include <string.h>', []],
       ['shm_open', '#include <sys/mman.h>', [it_lrt]],
       ['openpty', '', [it_utl]],
