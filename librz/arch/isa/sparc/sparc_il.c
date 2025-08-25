@@ -8,6 +8,7 @@
 #include "rz_il/rz_il_opbuilder_begin.h"
 #include "rz_util/rz_assert.h"
 
+#if CS_API_MAJOR >= 6
 /**
  * \brief All registers we bind to the RzIL VM.
  * They are the same as for the 64bit reg profile, but without npc and pc.
@@ -581,5 +582,6 @@ RZ_IPI RzILOpEffect *rz_sparc_set_g(const char *gname, RzILOpPure *gval) {
 
 	return set_seq;
 }
+#endif
 
 #include "rz_il/rz_il_opbuilder_end.h"

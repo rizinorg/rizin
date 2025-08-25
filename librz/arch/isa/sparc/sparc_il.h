@@ -182,6 +182,8 @@ typedef struct {
 	RzSparcSetTask xcc_c;
 } RzSparcCCRBits;
 
+#if CS_API_MAJOR >= 6
+
 static inline bool is_float_upper(sparc_reg reg) {
 	return RZ_BETWEEN(SPARC_REG_D16, reg, SPARC_REG_D31) ||
 		RZ_BETWEEN(SPARC_REG_Q8, reg, SPARC_REG_Q15);
@@ -223,6 +225,7 @@ static inline bool is_float_reg(sparc_reg reg) {
 		RZ_BETWEEN(SPARC_REG_D0, reg, SPARC_REG_D31) ||
 		RZ_BETWEEN(SPARC_REG_Q0, reg, SPARC_REG_Q15);
 }
+#endif
 
 RZ_IPI RzAnalysisILConfig *rz_sparc_cs_64_il_config(bool big_endian);
 RZ_IPI RzAnalysisILConfig *rz_sparc_cs_32_il_config(bool big_endian);

@@ -748,12 +748,14 @@ static bool sparc_fini(void *user) {
 	return true;
 }
 
+#if CS_API_MAJOR >= 6
 static RzAnalysisILConfig *il_config(RzAnalysis *analysis) {
 	if (analysis->bits == 64) {
 		return rz_sparc_cs_64_il_config(analysis->big_endian);
 	}
 	return rz_sparc_cs_32_il_config(analysis->big_endian);
 }
+#endif
 
 RzAnalysisPlugin rz_analysis_plugin_sparc_cs = {
 	.name = "sparc",
@@ -767,7 +769,9 @@ RzAnalysisPlugin rz_analysis_plugin_sparc_cs = {
 	.init = sparc_init,
 	.fini = sparc_fini,
 	.get_reg_profile = &get_reg_profile,
+#if CS_API_MAJOR >= 6
 	.il_config = il_config,
+#endif
 };
 
 #ifndef RZ_PLUGIN_INCORE

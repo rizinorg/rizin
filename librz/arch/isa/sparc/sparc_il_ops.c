@@ -10,6 +10,7 @@
 #include "sparc.h"
 #include "sparc_il.h"
 
+#if CS_API_MAJOR >= 6
 static RzILOpEffect *arithmetic_int_op(const csh handle, const cs_insn *insn, const cs_mode mode) {
 	rz_return_val_if_fail(insn, NULL);
 	RzILOpPure *src0 = CAST_UA(rz_sparc_cs_get_operand(handle, insn, mode, 0, 0));
@@ -2329,6 +2330,7 @@ static RzILOpEffect *mov_op(const csh handle, const cs_insn *insn, const cs_mode
 	}
 	NOT_IMPLEMENTED;
 }
+#endif
 
 /**
  * \brief Returns the RZIL implementation of a given capstone instruction.
@@ -2343,6 +2345,7 @@ static RzILOpEffect *mov_op(const csh handle, const cs_insn *insn, const cs_mode
  */
 RZ_IPI RzILOpEffect *rz_sparc_cs_get_il_op(const csh handle, const cs_insn *insn, const cs_mode mode, RZ_NULLABLE RzAnalysisValueSPARC *state) {
 	rz_return_val_if_fail(insn, NULL);
+#if CS_API_MAJOR >= 6
 	switch (insn->id) {
 	default:
 		RZ_LOG_WARN("Capstone instruction with id = %" PFMT32d " not handled.\n", insn->id);
@@ -2681,6 +2684,7 @@ RZ_IPI RzILOpEffect *rz_sparc_cs_get_il_op(const csh handle, const cs_insn *insn
 		// Not modeled.
 		return NOP();
 	}
+#endif
 	NOT_IMPLEMENTED;
 }
 
