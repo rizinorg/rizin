@@ -211,7 +211,7 @@ else
 endif
 
 # Handle PCRE2
-cpu_jit_supported = [ 'aarch64', 'arm', 'mips', 'mips64', 'ppc', 'ppc64', 'riscv32', 'riscv64', 's390x', 'x86', 'x86_64' ]
+cpu_jit_supported = [ 'aarch64', 'arm', 'mips', 'mips64', 'ppc', 'ppc64', 'riscv32', 'riscv64', 'x86', 'x86_64' ]
 pcre2_jit_supported = target_machine.cpu_family() in cpu_jit_supported and cc.get_id() != 'tcc' and target_machine.system() != 'darwin'
 if pcre2_jit_supported
   add_project_arguments(['-DSUPPORTS_PCRE2_JIT'], language: 'c')

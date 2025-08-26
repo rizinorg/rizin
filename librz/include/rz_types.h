@@ -24,7 +24,7 @@ extern "C" {
 #undef __KFBSD__
 #undef __UNIX__
 #undef __WINDOWS__
-
+#undef __SYSZ__
 // TODO: these modes should be dropped when oldshell is removed in favour of RzOutputMode.
 #define RZ_MODE_PRINT    0x000
 #define RZ_MODE_RIZINCMD 0x001
@@ -115,6 +115,12 @@ extern "C" {
 #define __KFBSD__ 1
 #else
 #define __KFBSD__ 0
+#endif
+
+#if defined(__s390x__) || defined(__zarch__) || defined(__SYSC_ZARCH__)
+#define __SYSZ__ 1
+#else
+#define __SYSZ__ 0
 #endif
 
 #ifdef __MSYS__

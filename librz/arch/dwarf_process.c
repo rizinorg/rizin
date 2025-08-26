@@ -516,6 +516,9 @@ static DWARF_RegisterMapping dwarf_register_mapping_query(RZ_NONNULL const char 
 	if (RZ_STR_EQ(arch, "s390")) {
 		return map_dwarf_reg_to_s390_reg;
 	}
+	if (RZ_STR_EQ(arch, "sysz")) {
+		return map_dwarf_reg_to_s390_reg;
+	}
 	if (RZ_STR_EQ(arch, "riscv")) {
 		return map_dwarf_reg_to_riscv_reg;
 	}

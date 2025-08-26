@@ -18,6 +18,7 @@
 #include <elf.h>
 
 #include "linux_ptrace.h"
+#include <rz_util/rz_sys.h>
 
 #ifdef __GLIBC__
 #define HAVE_YMM 1
@@ -81,7 +82,7 @@ char *linux_reg_profile(RzDebug *dbg) {
 	} else {
 #include "reg/linux-ppc64.h"
 	}
-#elif __s390x__
+#elif __SYSZ__
 #include "reg/linux-s390x.h"
 #elif __loongarch64
 #include "reg/linux-loongarch64.h"
@@ -240,6 +241,12 @@ static void linux_remove_fork_bps(RzDebug *dbg) {
  */
 RzDebugReasonType linux_ptrace_event(RzDebug *dbg, int ptid, int status, bool dowait) {
 	ut32 pt_evt;
+	// if(dbg->cur->bits & RZ_SYS_BITS_64){
+	// 	ut64 data;
+	// }
+	// else{
+	// 	ut32 data;
+	// }
 #if __powerpc64__ || __arm64__ || __aarch64__ || __x86_64__
 	ut64 data;
 #else
@@ -1256,7 +1263,7 @@ int linux_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 		RZ_DEBUG_REG_T regs;
 		memset(&regs, 0, sizeof(regs));
 		memset(buf, 0, size);
-#if (__arm64__ || __aarch64__ || __s390x__) && defined(PTRACE_GETREGSET)
+#if (__arm64__ || __aarch64__ || __SYSZ__) && defined(PTRACE_GETREGSET)
 		struct iovec io = {
 			.iov_base = &regs,
 			.iov_len = sizeof(regs)
@@ -1344,7 +1351,7 @@ int linux_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
 #endif
 	}
 	if (type == RZ_REG_TYPE_GPR) {
-#if __arm64__ || __aarch64__ || __s390x__
+#if __arm64__ || __aarch64__ || __SYSZ__
 		struct iovec io = {
 			.iov_base = (void *)buf,
 			.iov_len = sizeof(RZ_DEBUG_REG_T)
