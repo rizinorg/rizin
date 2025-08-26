@@ -1,5 +1,6 @@
 NAME=mach0 swift demangle methods
 FILE=bins/mach0/swift-main
+BROKEN=1
 CMDS=isq~main.
 EXPECT=<<EOF
 0x100001b70 0 main.moin() -> Swift.Int
@@ -73,6 +74,7 @@ RUN
 
 NAME=mach0 swift-x86-64 aav
 FILE=bins/mach0/swift-main
+BROKEN=1
 CMDS=<<EOF
 C*~^?Cd
 aav
@@ -88,6 +90,7 @@ RUN
 
 NAME=swift-x86-64 calling convention
 FILE=bins/mach0/swift5.1-throwError
+BROKEN=1
 CMDS=<<EOF
 s sym.throwError.Thrower.throwError.Thrower.throwMyError___throws
 af
@@ -123,6 +126,7 @@ RUN
 
 NAME=swift-x86-64 calling convention json
 FILE=bins/mach0/swift5.1-throwError
+BROKEN=1
 CMDS=<<EOF
 s sym.throwError.Thrower.throwError.Thrower.throwMyError___throws
 af
@@ -139,6 +143,7 @@ RUN
 
 NAME=swift-x86-64 bin classes and methods
 FILE=bins/mach0/swift-main
+BROKEN=1
 CMDS=<<EOF
 ic
 icm

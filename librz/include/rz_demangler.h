@@ -39,7 +39,6 @@ typedef bool (*RzDemanglerIter)(const RzDemanglerPlugin *plugin, RzDemanglerFlag
 
 RZ_API RZ_OWN char *rz_demangler_java(RZ_NULLABLE const char *symbol, RzDemanglerFlag flags);
 RZ_API RZ_OWN char *rz_demangler_cxx(RZ_NONNULL const char *symbol, RzDemanglerFlag flags);
-RZ_API RZ_OWN char *rz_demangler_swift(RZ_NONNULL const char *symbol, RzDemanglerFlag flags);
 RZ_API RZ_OWN char *rz_demangler_objc(RZ_NONNULL const char *symbol, RzDemanglerFlag flags);
 RZ_API RZ_OWN char *rz_demangler_pascal(RZ_NONNULL const char *symbol, RzDemanglerFlag flags);
 RZ_API RZ_OWN char *rz_demangler_rust(RZ_NONNULL const char *symbol, RzDemanglerFlag flags);

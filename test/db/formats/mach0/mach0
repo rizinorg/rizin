@@ -347,6 +347,7 @@ RUN
 
 NAME=DYLD_CHAINED_PTR_64
 FILE=bins/mach0/ios-DYLD_CHAINED_PTR_64
+BROKEN=1
 CMDS=<<EOF
 pv8 @ 0x100011538 # resolved pointer to "v32@0:8@16@24" string
 ic

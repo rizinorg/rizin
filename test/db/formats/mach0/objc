@@ -102,6 +102,7 @@ RUN
 
 NAME=objc categories (swift)
 FILE=bins/mach0/TestSwiftObjc
+BROKEN=1
 CMDS=ic
 EXPECT=<<EOF
     address         min         max name                                  super    

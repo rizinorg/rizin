@@ -1,4 +1,4 @@
-project('rizin', 'c', 'cpp',
+project('rizin', 'c',
   version: 'v0.9.0',
   license: 'LGPL-3.0-only',
   meson_version: '>=0.57.0',
@@ -308,21 +308,6 @@ endif
 
 libdemangle_proj = subproject('libdemangle', default_options: libdemangle_options)
 libdemangle_dep = libdemangle_proj.get_variable('libdemangle_dep')
-
-# handle libswift
-r = run_command(py3_exe, check_meson_subproject_py, 'libswift', check: false)
-if r.returncode() == 1 and get_option('subprojects_check')
-  error(subproject_clean_error_msg)
-endif
-
-# we do not want the rizin plugin, but a library to integrate 
-libswift_options = [
-  'default_library=static',
-  'enable_plugin=false',
-  'werror=false'
-]
-libswift_proj = subproject('libswift', default_options: libswift_options)
-libswift_dep = libswift_proj.get_variable('libswift_dep')
 
 # handle blake3 algo
 blake3_proj = subproject('blake3', default_options: ['default_library=static', 'werror=false'])
