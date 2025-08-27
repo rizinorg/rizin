@@ -5,20 +5,51 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "elf.h"
+#include "elf/glibc_elf.h"
 
 #define ROUND_UP_4(x) ((x) + (4 - 1)) / 4 * 4
 
-#define X86      0
-#define X86_64   1
-#define ARM      2
-#define AARCH64  3
-#define ARCH_LEN 4
+#define X86          0
+#define X86_64       1
+#define ARM          2
+#define AARCH64      3
+#define SPARC        4
+#define SPARC_V8PLUS 5
+#define SPARC_V9     6
+#define ARCH_LEN     7
+
+// See elf.c::elfcore_grok_solaris_note_impl() of binutil's bfd
+// https://sourceware.org/git/?p=binutils-gdb.git;a=blob;f=bfd/elf.c;h=6ef603010918f14eda69f0d0dc1637b4d51e8157;hb=HEAD#l11777
+#define SPARC32_N_REGS        38
+#define SPARC64_N_REGS        36
+#define SPARC32_PR_REG_OFFSET 0x164
+#define SPARC64_PR_REG_OFFSET 0x258
+// o6 is the stack pointer. So g0-g7,o0-5 come before it.
+#define SPARC32_PR_REG_OFFSET_SP (4 * 14)
+#define SPARC64_PR_REG_OFFSET_SP (8 * 14)
 
 static RzBinElfPrStatusLayout prstatus_layouts[ARCH_LEN] = {
 	[X86] = { 160, 0x48, 32, 0x3c },
 	[X86_64] = { 216, 0x70, 64, 0x98 },
 	[ARM] = { 72, 0x48, 32, 0x34 },
-	[AARCH64] = { 272, 0x70, 64, 0xf8 }
+	[AARCH64] = { 272, 0x70, 64, 0xf8 },
+	/* Layout is:
+	 * 	G0 --> G7
+	 *	O0 --> O7
+	 *	L0 --> L7
+	 *	I0 --> I7
+	 *	PSR, PC, nPC, Y, WIM, TBR
+	 */
+	[SPARC] = { SPARC32_N_REGS, SPARC32_PR_REG_OFFSET, 32, SPARC32_PR_REG_OFFSET_SP },
+	[SPARC_V8PLUS] = { SPARC32_N_REGS, SPARC32_PR_REG_OFFSET, 32, SPARC32_PR_REG_OFFSET_SP },
+	/* Layout is:
+	 * 	G0 --> G7
+	 *	O0 --> O7
+	 *	L0 --> L7
+	 *	I0 --> I7
+	 *	TSTATE, TPC, TNPC, Y
+	 */
+	[SPARC_V9] = { SPARC32_N_REGS, SPARC64_PR_REG_OFFSET, 64, SPARC64_PR_REG_OFFSET_SP },
 };
 
 static bool parse_note_prstatus(ELFOBJ *bin, RzVector /*<RzBinElfNote>*/ *notes, Elf_(Nhdr) * note_segment_header, ut64 offset) {
@@ -210,6 +241,12 @@ RZ_BORROW RzBinElfPrStatusLayout *Elf_(rz_bin_elf_get_prstatus_layout)(RZ_NONNUL
 		return prstatus_layouts + X86;
 	case EM_X86_64:
 		return prstatus_layouts + X86_64;
+	case EM_SPARC:
+		return prstatus_layouts + SPARC;
+	case EM_SPARC32PLUS:
+		return prstatus_layouts + SPARC_V8PLUS;
+	case EM_SPARCV9:
+		return prstatus_layouts + SPARC_V9;
 	}
 
 	return NULL;
