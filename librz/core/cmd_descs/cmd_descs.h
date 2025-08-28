@@ -1604,33 +1604,33 @@ RZ_IPI RzCmdStatus rz_flag_zone_list_handler(RzCore *core, int argc, const char 
 // "fx"
 RZ_IPI RzCmdStatus rz_flag_hexdump_handler(RzCore *core, int argc, const char **argv);
 // "m"
-RZ_IPI RzCmdStatus rz_bookmark_add_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_mark_add_handler(RzCore *core, int argc, const char **argv);
 // "m+"
-RZ_IPI RzCmdStatus rz_bookmark_append_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_mark_append_handler(RzCore *core, int argc, const char **argv);
 // "m-"
-RZ_IPI RzCmdStatus rz_bookmark_remove_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_mark_remove_handler(RzCore *core, int argc, const char **argv);
 // "m-*"
-RZ_IPI RzCmdStatus rz_bookmark_remove_all_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_mark_remove_all_handler(RzCore *core, int argc, const char **argv);
 // "ml"
-RZ_IPI RzCmdStatus rz_bookmark_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+RZ_IPI RzCmdStatus rz_mark_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "ml."
-RZ_IPI RzCmdStatus rz_bookmark_list_at_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+RZ_IPI RzCmdStatus rz_mark_list_at_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "mc"
-RZ_IPI RzCmdStatus rz_bookmark_color_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_mark_color_handler(RzCore *core, int argc, const char **argv);
 // "mC"
-RZ_IPI RzCmdStatus rz_bookmark_comment_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_mark_comment_handler(RzCore *core, int argc, const char **argv);
 // "mr"
-RZ_IPI RzCmdStatus rz_bookmark_rename_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_mark_rename_handler(RzCore *core, int argc, const char **argv);
 // "mN"
-RZ_IPI RzCmdStatus rz_bookmark_realname_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_mark_realname_handler(RzCore *core, int argc, const char **argv);
 // "mm"
-RZ_IPI RzCmdStatus rz_bookmark_move_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_mark_move_handler(RzCore *core, int argc, const char **argv);
 // "mf"
-RZ_IPI RzCmdStatus rz_bookmark_distance_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_mark_distance_handler(RzCore *core, int argc, const char **argv);
 // "md"
-RZ_IPI RzCmdStatus rz_bookmark_describe_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+RZ_IPI RzCmdStatus rz_mark_describe_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "mi"
-RZ_IPI RzCmdStatus rz_bookmark_range_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+RZ_IPI RzCmdStatus rz_mark_range_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "Fc"
 RZ_IPI RzCmdStatus rz_flirt_create_handler(RzCore *core, int argc, const char **argv);
 // "Fd"

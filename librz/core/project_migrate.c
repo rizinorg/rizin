@@ -705,14 +705,14 @@ RZ_API bool rz_project_migrate_v18_v19(RzProject *prj, RzSerializeResultInfo *re
 // Migration 19 -> 20
 //
 // Changes from c6a7acf8492881938188fc97d782b6bf2957cce7:
-//  Introduced /core/bookmarks sub-db (RzBookmark API)
-//  This prepares the project schema for the new bookmark system.
+//  Introduced /core/marks sub-db (Rzmark API)
+//  This prepares the project schema for the new mark system.
 
 RZ_API bool rz_project_migrate_v19_v20(RzProject *prj, RzSerializeResultInfo *res) {
 	Sdb *core_db;
 	RZ_SERIALIZE_SUB(prj, core_db, res, "core", return false;);
-	Sdb *bookmarks_db = sdb_ns(core_db, "bookmarks", 1);
-	if (!bookmarks_db) {
+	Sdb *marks_db = sdb_ns(core_db, "marks", 1);
+	if (!marks_db) {
 		return false;
 	}
 	return true;

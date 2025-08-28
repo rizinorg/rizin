@@ -34,7 +34,7 @@
 #include <rz_util/rz_annotated_code.h>
 #include <rz_heap_glibc.h>
 #include <rz_windows_heap.h>
-#include <rz_bookmark.h>
+#include <rz_mark.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -283,7 +283,7 @@ struct rz_core_t {
 	RzLang *lang;
 	RzDebug *dbg;
 	RzFlag *flags;
-	RzBookmark *bookmarks;
+	RzMark *marks;
 	char *lastsearch; ///< Legacy search. Will be removed
 	RzSearch *search; ///< Legacy search. Will be removed
 	RzEgg *egg;
@@ -343,8 +343,8 @@ struct rz_core_t {
 	RzList /*<char *>*/ *warnings_after;
 	RzPath *sys_path; ///< pointer to RzPath, contains path prefix of the system
 
-	bool marks_init;
-	ut64 marks[UT8_MAX + 1];
+	bool vmarks_init;
+	ut64 vmarks[UT8_MAX + 1];
 
 	RzMainCallback rz_main_rizin;
 	// int (*rz_main_rizin)(int argc, char **argv);

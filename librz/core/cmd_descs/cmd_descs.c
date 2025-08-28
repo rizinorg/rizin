@@ -583,17 +583,17 @@ static const RzCmdDescArg flag_tag_search_args[2];
 static const RzCmdDescArg flag_zone_add_args[2];
 static const RzCmdDescArg flag_zone_remove_args[2];
 static const RzCmdDescArg flag_hexdump_args[2];
-static const RzCmdDescArg bookmark_add_args[4];
-static const RzCmdDescArg bookmark_append_args[4];
-static const RzCmdDescArg bookmark_remove_args[2];
-static const RzCmdDescArg bookmark_color_args[3];
-static const RzCmdDescArg bookmark_comment_args[3];
-static const RzCmdDescArg bookmark_rename_args[3];
-static const RzCmdDescArg bookmark_realname_args[3];
-static const RzCmdDescArg bookmark_move_args[4];
-static const RzCmdDescArg bookmark_distance_args[2];
-static const RzCmdDescArg bookmark_describe_args[2];
-static const RzCmdDescArg bookmark_range_args[2];
+static const RzCmdDescArg mark_add_args[4];
+static const RzCmdDescArg mark_append_args[4];
+static const RzCmdDescArg mark_remove_args[2];
+static const RzCmdDescArg mark_color_args[3];
+static const RzCmdDescArg mark_comment_args[3];
+static const RzCmdDescArg mark_rename_args[3];
+static const RzCmdDescArg mark_realname_args[3];
+static const RzCmdDescArg mark_move_args[4];
+static const RzCmdDescArg mark_distance_args[2];
+static const RzCmdDescArg mark_describe_args[2];
+static const RzCmdDescArg mark_range_args[2];
 static const RzCmdDescArg flirt_create_args[2];
 static const RzCmdDescArg flirt_dump_args[2];
 static const RzCmdDescArg flirt_scan_args[2];
@@ -12469,9 +12469,9 @@ static const RzCmdDescHelp flag_hexdump_help = {
 };
 
 static const RzCmdDescHelp m_help = {
-	.summary = "Manage bookmarks",
+	.summary = "Manage marks",
 };
-static const RzCmdDescArg bookmark_add_args[] = {
+static const RzCmdDescArg mark_add_args[] = {
 	{
 		.name = "name",
 		.type = RZ_CMD_ARG_TYPE_STRING,
@@ -12491,13 +12491,13 @@ static const RzCmdDescArg bookmark_add_args[] = {
 	},
 	{ 0 },
 };
-static const RzCmdDescHelp bookmark_add_help = {
-	.summary = "Add the bookmark if there are no existing bookmarks",
-	.description = "Adds the bookmark to the current offset only if no bookmark exists at this range already",
-	.args = bookmark_add_args,
+static const RzCmdDescHelp mark_add_help = {
+	.summary = "Add the mark if there are no existing marks",
+	.description = "Adds the mark to the current offset only if no mark exists at this range already",
+	.args = mark_add_args,
 };
 
-static const RzCmdDescArg bookmark_append_args[] = {
+static const RzCmdDescArg mark_append_args[] = {
 	{
 		.name = "name",
 		.type = RZ_CMD_ARG_TYPE_STRING,
@@ -12517,13 +12517,13 @@ static const RzCmdDescArg bookmark_append_args[] = {
 	},
 	{ 0 },
 };
-static const RzCmdDescHelp bookmark_append_help = {
-	.summary = "Add bookmark",
-	.description = "Adds the bookmark to the current offset",
-	.args = bookmark_append_args,
+static const RzCmdDescHelp mark_append_help = {
+	.summary = "Add mark",
+	.description = "Adds the mark to the current offset",
+	.args = mark_append_args,
 };
 
-static const RzCmdDescArg bookmark_remove_args[] = {
+static const RzCmdDescArg mark_remove_args[] = {
 	{
 		.name = "glob",
 		.type = RZ_CMD_ARG_TYPE_STRING,
@@ -12533,37 +12533,37 @@ static const RzCmdDescArg bookmark_remove_args[] = {
 	},
 	{ 0 },
 };
-static const RzCmdDescHelp bookmark_remove_help = {
-	.summary = "Remove bookmark",
-	.description = "If the glob is supplied it removes just bookmark items matching the pattern. Otherwise, it removes all bookmarks that contain the current offset in their range.",
-	.args = bookmark_remove_args,
+static const RzCmdDescHelp mark_remove_help = {
+	.summary = "Remove mark",
+	.description = "If the glob is supplied it removes just mark items matching the pattern. Otherwise, it removes all marks that contain the current offset in their range.",
+	.args = mark_remove_args,
 };
 
-static const RzCmdDescArg bookmark_remove_all_args[] = {
+static const RzCmdDescArg mark_remove_all_args[] = {
 	{ 0 },
 };
-static const RzCmdDescHelp bookmark_remove_all_help = {
-	.summary = "Remove all bookmarks",
-	.args = bookmark_remove_all_args,
+static const RzCmdDescHelp mark_remove_all_help = {
+	.summary = "Remove all marks",
+	.args = mark_remove_all_args,
 };
 
-static const RzCmdDescArg bookmark_list_args[] = {
+static const RzCmdDescArg mark_list_args[] = {
 	{ 0 },
 };
-static const RzCmdDescHelp bookmark_list_help = {
-	.summary = "List all bookmarks",
-	.args = bookmark_list_args,
+static const RzCmdDescHelp mark_list_help = {
+	.summary = "List all marks",
+	.args = mark_list_args,
 };
 
-static const RzCmdDescArg bookmark_list_at_args[] = {
+static const RzCmdDescArg mark_list_at_args[] = {
 	{ 0 },
 };
-static const RzCmdDescHelp bookmark_list_at_help = {
-	.summary = "List all bookmarks containing the current offset",
-	.args = bookmark_list_at_args,
+static const RzCmdDescHelp mark_list_at_help = {
+	.summary = "List all marks containing the current offset",
+	.args = mark_list_at_args,
 };
 
-static const RzCmdDescArg bookmark_color_args[] = {
+static const RzCmdDescArg mark_color_args[] = {
 	{
 		.name = "name",
 		.type = RZ_CMD_ARG_TYPE_FLAG,
@@ -12578,12 +12578,12 @@ static const RzCmdDescArg bookmark_color_args[] = {
 	},
 	{ 0 },
 };
-static const RzCmdDescHelp bookmark_color_help = {
-	.summary = "Set a color for the given bookmark / Show the color for the given bookmark",
-	.args = bookmark_color_args,
+static const RzCmdDescHelp mark_color_help = {
+	.summary = "Set a color for the given mark / Show the color for the given mark",
+	.args = mark_color_args,
 };
 
-static const RzCmdDescArg bookmark_comment_args[] = {
+static const RzCmdDescArg mark_comment_args[] = {
 	{
 		.name = "name",
 		.type = RZ_CMD_ARG_TYPE_FLAG,
@@ -12598,12 +12598,12 @@ static const RzCmdDescArg bookmark_comment_args[] = {
 	},
 	{ 0 },
 };
-static const RzCmdDescHelp bookmark_comment_help = {
-	.summary = "Set a comment for the given bookmark / Show the comment for the given bookmark",
-	.args = bookmark_comment_args,
+static const RzCmdDescHelp mark_comment_help = {
+	.summary = "Set a comment for the given mark / Show the comment for the given mark",
+	.args = mark_comment_args,
 };
 
-static const RzCmdDescArg bookmark_rename_args[] = {
+static const RzCmdDescArg mark_rename_args[] = {
 	{
 		.name = "old",
 		.type = RZ_CMD_ARG_TYPE_FLAG,
@@ -12617,12 +12617,12 @@ static const RzCmdDescArg bookmark_rename_args[] = {
 	},
 	{ 0 },
 };
-static const RzCmdDescHelp bookmark_rename_help = {
-	.summary = "Rename bookmark",
-	.args = bookmark_rename_args,
+static const RzCmdDescHelp mark_rename_help = {
+	.summary = "Rename mark",
+	.args = mark_rename_args,
 };
 
-static const RzCmdDescArg bookmark_realname_args[] = {
+static const RzCmdDescArg mark_realname_args[] = {
 	{
 		.name = "name",
 		.type = RZ_CMD_ARG_TYPE_FLAG,
@@ -12637,12 +12637,12 @@ static const RzCmdDescArg bookmark_realname_args[] = {
 	},
 	{ 0 },
 };
-static const RzCmdDescHelp bookmark_realname_help = {
-	.summary = "Show the realname of the bookmark / Set the realname of the bookmark",
-	.args = bookmark_realname_args,
+static const RzCmdDescHelp mark_realname_help = {
+	.summary = "Show the realname of the mark / Set the realname of the mark",
+	.args = mark_realname_args,
 };
 
-static const RzCmdDescArg bookmark_move_args[] = {
+static const RzCmdDescArg mark_move_args[] = {
 	{
 		.name = "name",
 		.type = RZ_CMD_ARG_TYPE_FLAG,
@@ -12661,12 +12661,12 @@ static const RzCmdDescArg bookmark_move_args[] = {
 	},
 	{ 0 },
 };
-static const RzCmdDescHelp bookmark_move_help = {
-	.summary = "Move a bookmark to new location",
-	.args = bookmark_move_args,
+static const RzCmdDescHelp mark_move_help = {
+	.summary = "Move a mark to new location",
+	.args = mark_move_args,
 };
 
-static const RzCmdDescArg bookmark_distance_args[] = {
+static const RzCmdDescArg mark_distance_args[] = {
 	{
 		.name = "glob",
 		.type = RZ_CMD_ARG_TYPE_STRING,
@@ -12676,15 +12676,15 @@ static const RzCmdDescArg bookmark_distance_args[] = {
 	},
 	{ 0 },
 };
-static const RzCmdDescHelp bookmark_distance_help = {
-	.summary = "Distance in bytes to reach the next bookmark",
-	.args = bookmark_distance_args,
+static const RzCmdDescHelp mark_distance_help = {
+	.summary = "Distance in bytes to reach the next mark",
+	.args = mark_distance_args,
 };
 
 static const RzCmdDescHelp md_help = {
-	.summary = "Describe bookmark",
+	.summary = "Describe mark",
 };
-static const RzCmdDescArg bookmark_describe_args[] = {
+static const RzCmdDescArg mark_describe_args[] = {
 	{
 		.name = "name",
 		.type = RZ_CMD_ARG_TYPE_FLAG,
@@ -12693,12 +12693,12 @@ static const RzCmdDescArg bookmark_describe_args[] = {
 	},
 	{ 0 },
 };
-static const RzCmdDescHelp bookmark_describe_help = {
-	.summary = "Describe bookmark containing current offset or using name + delta from current offset",
-	.args = bookmark_describe_args,
+static const RzCmdDescHelp mark_describe_help = {
+	.summary = "Describe mark containing current offset or using name + delta from current offset",
+	.args = mark_describe_args,
 };
 
-static const RzCmdDescArg bookmark_range_args[] = {
+static const RzCmdDescArg mark_range_args[] = {
 	{
 		.name = "size",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
@@ -12708,9 +12708,9 @@ static const RzCmdDescArg bookmark_range_args[] = {
 	},
 	{ 0 },
 };
-static const RzCmdDescHelp bookmark_range_help = {
-	.summary = "Show bookmarks in the block or custom range",
-	.args = bookmark_range_args,
+static const RzCmdDescHelp mark_range_help = {
+	.summary = "Show marks in the block or custom range",
+	.args = mark_range_args,
 };
 
 static const RzCmdDescHelp F_help = {
@@ -23624,46 +23624,46 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *flag_hexdump_cd = rz_cmd_desc_argv_new(core->rcmd, f_cd, "fx", rz_flag_hexdump_handler, &flag_hexdump_help);
 	rz_warn_if_fail(flag_hexdump_cd);
 
-	RzCmdDesc *m_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "m", rz_bookmark_add_handler, &bookmark_add_help, &m_help);
+	RzCmdDesc *m_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "m", rz_mark_add_handler, &mark_add_help, &m_help);
 	rz_warn_if_fail(m_cd);
-	RzCmdDesc *bookmark_append_cd = rz_cmd_desc_argv_new(core->rcmd, m_cd, "m+", rz_bookmark_append_handler, &bookmark_append_help);
-	rz_warn_if_fail(bookmark_append_cd);
+	RzCmdDesc *mark_append_cd = rz_cmd_desc_argv_new(core->rcmd, m_cd, "m+", rz_mark_append_handler, &mark_append_help);
+	rz_warn_if_fail(mark_append_cd);
 
-	RzCmdDesc *bookmark_remove_cd = rz_cmd_desc_argv_new(core->rcmd, m_cd, "m-", rz_bookmark_remove_handler, &bookmark_remove_help);
-	rz_warn_if_fail(bookmark_remove_cd);
+	RzCmdDesc *mark_remove_cd = rz_cmd_desc_argv_new(core->rcmd, m_cd, "m-", rz_mark_remove_handler, &mark_remove_help);
+	rz_warn_if_fail(mark_remove_cd);
 
-	RzCmdDesc *bookmark_remove_all_cd = rz_cmd_desc_argv_new(core->rcmd, m_cd, "m-*", rz_bookmark_remove_all_handler, &bookmark_remove_all_help);
-	rz_warn_if_fail(bookmark_remove_all_cd);
+	RzCmdDesc *mark_remove_all_cd = rz_cmd_desc_argv_new(core->rcmd, m_cd, "m-*", rz_mark_remove_all_handler, &mark_remove_all_help);
+	rz_warn_if_fail(mark_remove_all_cd);
 
-	RzCmdDesc *bookmark_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, m_cd, "ml", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_TABLE, rz_bookmark_list_handler, &bookmark_list_help);
-	rz_warn_if_fail(bookmark_list_cd);
+	RzCmdDesc *mark_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, m_cd, "ml", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_TABLE, rz_mark_list_handler, &mark_list_help);
+	rz_warn_if_fail(mark_list_cd);
 
-	RzCmdDesc *bookmark_list_at_cd = rz_cmd_desc_argv_state_new(core->rcmd, m_cd, "ml.", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_TABLE, rz_bookmark_list_at_handler, &bookmark_list_at_help);
-	rz_warn_if_fail(bookmark_list_at_cd);
+	RzCmdDesc *mark_list_at_cd = rz_cmd_desc_argv_state_new(core->rcmd, m_cd, "ml.", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_TABLE, rz_mark_list_at_handler, &mark_list_at_help);
+	rz_warn_if_fail(mark_list_at_cd);
 
-	RzCmdDesc *bookmark_color_cd = rz_cmd_desc_argv_new(core->rcmd, m_cd, "mc", rz_bookmark_color_handler, &bookmark_color_help);
-	rz_warn_if_fail(bookmark_color_cd);
+	RzCmdDesc *mark_color_cd = rz_cmd_desc_argv_new(core->rcmd, m_cd, "mc", rz_mark_color_handler, &mark_color_help);
+	rz_warn_if_fail(mark_color_cd);
 
-	RzCmdDesc *bookmark_comment_cd = rz_cmd_desc_argv_new(core->rcmd, m_cd, "mC", rz_bookmark_comment_handler, &bookmark_comment_help);
-	rz_warn_if_fail(bookmark_comment_cd);
+	RzCmdDesc *mark_comment_cd = rz_cmd_desc_argv_new(core->rcmd, m_cd, "mC", rz_mark_comment_handler, &mark_comment_help);
+	rz_warn_if_fail(mark_comment_cd);
 
-	RzCmdDesc *bookmark_rename_cd = rz_cmd_desc_argv_new(core->rcmd, m_cd, "mr", rz_bookmark_rename_handler, &bookmark_rename_help);
-	rz_warn_if_fail(bookmark_rename_cd);
+	RzCmdDesc *mark_rename_cd = rz_cmd_desc_argv_new(core->rcmd, m_cd, "mr", rz_mark_rename_handler, &mark_rename_help);
+	rz_warn_if_fail(mark_rename_cd);
 
-	RzCmdDesc *bookmark_realname_cd = rz_cmd_desc_argv_new(core->rcmd, m_cd, "mN", rz_bookmark_realname_handler, &bookmark_realname_help);
-	rz_warn_if_fail(bookmark_realname_cd);
+	RzCmdDesc *mark_realname_cd = rz_cmd_desc_argv_new(core->rcmd, m_cd, "mN", rz_mark_realname_handler, &mark_realname_help);
+	rz_warn_if_fail(mark_realname_cd);
 
-	RzCmdDesc *bookmark_move_cd = rz_cmd_desc_argv_new(core->rcmd, m_cd, "mm", rz_bookmark_move_handler, &bookmark_move_help);
-	rz_warn_if_fail(bookmark_move_cd);
+	RzCmdDesc *mark_move_cd = rz_cmd_desc_argv_new(core->rcmd, m_cd, "mm", rz_mark_move_handler, &mark_move_help);
+	rz_warn_if_fail(mark_move_cd);
 
-	RzCmdDesc *bookmark_distance_cd = rz_cmd_desc_argv_new(core->rcmd, m_cd, "mf", rz_bookmark_distance_handler, &bookmark_distance_help);
-	rz_warn_if_fail(bookmark_distance_cd);
+	RzCmdDesc *mark_distance_cd = rz_cmd_desc_argv_new(core->rcmd, m_cd, "mf", rz_mark_distance_handler, &mark_distance_help);
+	rz_warn_if_fail(mark_distance_cd);
 
-	RzCmdDesc *md_cd = rz_cmd_desc_group_state_new(core->rcmd, m_cd, "md", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON, rz_bookmark_describe_handler, &bookmark_describe_help, &md_help);
+	RzCmdDesc *md_cd = rz_cmd_desc_group_state_new(core->rcmd, m_cd, "md", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON, rz_mark_describe_handler, &mark_describe_help, &md_help);
 	rz_warn_if_fail(md_cd);
 
-	RzCmdDesc *bookmark_range_cd = rz_cmd_desc_argv_state_new(core->rcmd, m_cd, "mi", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_TABLE, rz_bookmark_range_handler, &bookmark_range_help);
-	rz_warn_if_fail(bookmark_range_cd);
+	RzCmdDesc *mark_range_cd = rz_cmd_desc_argv_state_new(core->rcmd, m_cd, "mi", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_TABLE, rz_mark_range_handler, &mark_range_help);
+	rz_warn_if_fail(mark_range_cd);
 
 	RzCmdDesc *F_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "F", NULL, NULL, &F_help);
 	rz_warn_if_fail(F_cd);

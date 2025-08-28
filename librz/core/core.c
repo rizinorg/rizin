@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "rz_bookmark.h"
+#include "rz_mark.h"
 #include "rz_util/rz_str.h"
 #include <rz_config.h>
 #include <rz_util/ht_sp.h>
@@ -957,19 +957,39 @@ RZ_API int rz_core_fgets(char *buf, int len, void *user) {
 	return rz_str_ncpy(buf, ptr, len - 1);
 }
 
+static void append_marks(RzStrBuf *sb, RzList *list, ut64 addr, bool is_start) {
+	RzListIter *it;
+	RzMarkItem *bi;
+	bool first = (rz_strbuf_length(sb) == 0);
+
+	rz_list_foreach (list, it, bi) {
+		if ((is_start && addr == bi->from) || (!is_start && addr == bi->to)) {
+			if (!first)
+				rz_strbuf_append(sb, "  ; ");
+			rz_strbuf_appendf(sb, is_start ? "[s] %s (0x%" PFMT64x "-0x%" PFMT64x ")" : "[e] %s (0x%" PFMT64x "-0x%" PFMT64x ")",
+				bi->name, bi->from, bi->to);
+			first = false;
+		}
+	}
+}
+
 static const char *rz_core_print_offname(void *p, ut64 addr) {
 	RzCore *c = (RzCore *)p;
-	// Check for bookmark before flag
-	RzBookmarkItem *bi = rz_bookmark_get_start(c->bookmarks, addr);
-	if (bi) {
-		return rz_str_newf("[s] %s", bi->name); // [s] indicates start of bookmark
+	RzStrBuf *sb = rz_strbuf_new("");
+	RzList *all = rz_mark_get_all_off(c->marks, addr);
+
+	append_marks(sb, all, addr, true);
+	append_marks(sb, all, addr, false);
+
+	rz_list_free(all);
+
+	if (rz_strbuf_length(sb) == 0) {
+		RzFlagItem *item = rz_flag_get_i(c->flags, addr);
+		if (item)
+			rz_strbuf_set(sb, item->name);
 	}
-	bi = rz_bookmark_get_end(c->bookmarks, addr);
-	if (bi) {
-		return rz_str_newf("[e] %s", bi->name); // [e] indicates end of bookmark
-	}
-	RzFlagItem *item = rz_flag_get_i(c->flags, addr);
-	return item ? item->name : NULL;
+
+	return rz_strbuf_drain(sb);
 }
 
 static int rz_core_print_offsize(void *p, ut64 addr) {
@@ -1703,7 +1723,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->io->ff = 1;
 	core->search = rz_search_new(RZ_SEARCH_KEYWORD);
 	core->flags = rz_flag_new();
-	core->bookmarks = rz_bookmark_new();
+	core->marks = rz_mark_new();
 	core->graph = rz_agraph_new(rz_cons_canvas_new(1, 1));
 	core->graph->need_reload_nodes = false;
 	core->asmqjmps_size = RZ_CORE_ASMQJMPS_NUM;

@@ -1,0 +1,150 @@
+# SPDX-FileCopyrightText: 2022 RizinOrg <info@rizin.re>
+# SPDX-License-Identifier: LGPL-3.0-only
+---
+name: cmd_mark
+commands:
+  - name: m
+    cname: mark_add
+    summary: Add the mark if there are no existing marks
+    description: >
+      Adds the mark to the current offset only if
+      no mark exists at this range already
+    args:
+      - name: name
+        type: RZ_CMD_ARG_TYPE_STRING
+      - name: end
+        type: RZ_CMD_ARG_TYPE_NUM
+      - name: comment
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: true
+  - name: m+
+    cname: mark_append
+    summary: Add mark
+    description: >
+      Adds the mark to the current offset
+    args:
+      - name: name
+        type: RZ_CMD_ARG_TYPE_STRING
+      - name: end
+        type: RZ_CMD_ARG_TYPE_NUM
+      - name: comment
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: true
+  - name: m-
+    cname: mark_remove
+    summary: Remove mark
+    description: >
+      If the glob is supplied it removes just mark items matching the pattern.
+      Otherwise, it removes all marks that contain the current offset in their range.
+    args:
+      - name: glob
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: true
+  - name: m-*
+    cname: mark_remove_all
+    summary: Remove all marks
+    args: []
+  - name: ml
+    cname: mark_list
+    summary: List all marks
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_RIZIN
+      - RZ_OUTPUT_MODE_QUIET
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_TABLE
+    args: []
+  - name: ml.
+    cname: mark_list_at
+    summary: List all marks containing the current offset
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_RIZIN
+      - RZ_OUTPUT_MODE_QUIET
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_TABLE
+    args: []
+  - name: mc
+    cname: mark_color
+    summary: Set a color for the given mark / Show the color for the given mark
+    args:
+      - name: name
+        type: RZ_CMD_ARG_TYPE_FLAG
+      - name: color
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: true
+  - name: mC
+    cname: mark_comment
+    summary: Set a comment for the given mark / Show the comment for the given mark
+    args:
+      - name: name
+        type: RZ_CMD_ARG_TYPE_FLAG
+      - name: comment
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: true
+  - name: mr
+    cname: mark_rename
+    summary: Rename mark
+    args:
+      - name: old
+        type: RZ_CMD_ARG_TYPE_FLAG
+      - name: new
+        type: RZ_CMD_ARG_TYPE_STRING
+  - name: mN
+    cname: mark_realname
+    summary: Show the realname of the mark / Set the realname of the mark
+    args:
+      - name: name
+        type: RZ_CMD_ARG_TYPE_FLAG
+      - name: realname
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: true 
+  - name: mm
+    cname: mark_move
+    summary: Move a mark to new location
+    args:
+      - name: name
+        type: RZ_CMD_ARG_TYPE_FLAG
+      - name: new_start
+        type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: new_end
+        type: RZ_CMD_ARG_TYPE_RZNUM
+  - name: mf
+    cname: mark_distance
+    summary: Distance in bytes to reach the next mark
+    args:
+      - name: glob
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: true
+  - name: md
+    summary: Describe mark
+    subcommands:
+      - name: md
+        cname: mark_describe
+        summary: Describe mark containing current offset or using name + delta from current offset 
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_TABLE
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: name
+            type: RZ_CMD_ARG_TYPE_FLAG
+            optional: true
+  - name: mi
+    cname: mark_range
+    summary: Show marks in the block or custom range
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_RIZIN
+      - RZ_OUTPUT_MODE_QUIET
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_TABLE
+    args:
+      - name: size
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        optional: true
+  

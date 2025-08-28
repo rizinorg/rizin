@@ -3,7 +3,7 @@ cmd_descs_yaml = files(
   'cmd_alias.yaml',
   'cmd_analysis.yaml',
   'cmd_block.yaml',
-  'cmd_bookmark.yaml',
+  'cmd_mark.yaml',
   'cmd_cmp.yaml',
   'cmd_debug.yaml',
   'cmd_descs.yaml',
