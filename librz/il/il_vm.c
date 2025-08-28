@@ -18,8 +18,9 @@ extern RZ_IPI RzILOpEffectHandler rz_il_op_handler_effect_table_default[RZ_IL_OP
  * \param vm RzILVM, pointer to an empty VM
  * \param start_addr ut64, initiation pc address
  * \param addr_size  ut32, size of the address in VM
+ * \param halt_exc The exceptions the VM should halt for if encountered.
  */
-RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, ut32 addr_size, bool big_endian) {
+RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, ut32 addr_size, bool big_endian, RzILEventException halt_exc) {
 	rz_return_val_if_fail(vm, false);
 
 	if (!rz_il_var_set_init(&vm->global_vars)) {
@@ -60,6 +61,8 @@ RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, ut32 addr_size, bool big_
 	vm->val_count = 0;
 	vm->addr_size = addr_size;
 	vm->big_endian = big_endian;
+	vm->halt_exceptions = halt_exc;
+	vm->halt = false;
 
 	vm->events = rz_pvector_new((RzPVectorFree)rz_il_event_free);
 	if (!vm->events) {
@@ -101,13 +104,14 @@ RZ_API void rz_il_vm_fini(RzILVM *vm) {
  * \param vm RzILVM, pointer to an empty VM
  * \param start_addr ut64, initiation pc address
  * \param addr_size  ut32, size of the address in VM
+ * \param halt_exc The exceptions the VM should halt for if encountered.
  */
-RZ_API RzILVM *rz_il_vm_new(ut64 start_addr, ut32 addr_size, bool big_endian) {
+RZ_API RzILVM *rz_il_vm_new(ut64 start_addr, ut32 addr_size, bool big_endian, RzILEventException halt_exc) {
 	RzILVM *vm = RZ_NEW0(RzILVM);
 	if (!vm) {
 		return NULL;
 	}
-	rz_il_vm_init(vm, start_addr, addr_size, big_endian);
+	rz_il_vm_init(vm, start_addr, addr_size, big_endian, halt_exc);
 	return vm;
 }
 

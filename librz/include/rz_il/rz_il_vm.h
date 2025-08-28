@@ -49,12 +49,14 @@ struct rz_il_vm_t {
 	RzILOpEffectHandler *op_handler_effect_table; ///< Array of Handler, handler can be indexed by opcode
 	RzPVector /*<RzILEvent *>*/ *events; ///< List of events that has happened in the last step
 	bool big_endian; ///< Sets the endianness of the memory reads/writes operations
+	RzILEventException halt_exceptions; ///< The exceptions the VM should halt if encountered.
+	bool halt; ///< If set the VM should halt and notify the user.
 };
 
 // VM high level operations
-RZ_API RzILVM *rz_il_vm_new(ut64 start_addr, ut32 addr_size, bool big_endian);
+RZ_API RzILVM *rz_il_vm_new(ut64 start_addr, ut32 addr_size, bool big_endian, RzILEventException halt_exc);
 RZ_API void rz_il_vm_free(RzILVM *vm);
-RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, ut32 addr_size, bool big_endian);
+RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, ut32 addr_size, bool big_endian, RzILEventException halt_exc);
 RZ_API void rz_il_vm_fini(RzILVM *vm);
 
 RZ_API ut32 rz_il_vm_get_pc_len(RzILVM *vm);

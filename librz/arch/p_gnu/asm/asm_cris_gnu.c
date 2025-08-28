@@ -21,19 +21,23 @@ http://developer.axis.com/old/documentation/hw/etraxfs/iop_howto/iop_howto.pdf
 
 #include <common_gnu/disas-asm.h>
 
-static unsigned long Offset = 0;
-static RzStrBuf *buf_global = NULL;
-static unsigned char bytes[8];
+typedef struct {
+	struct disassemble_info disasm_obj;
+	unsigned long Offset;
+	RzStrBuf *buf_global;
+	unsigned char bytes[8];
+} CrisContext;
 
-static int cris_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
-	int delta = (memaddr - Offset);
+static int cris_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info, void *data) {
+	CrisContext *ctx = (CrisContext *)data;
+	int delta = (memaddr - ctx->Offset);
 	if (delta < 0) {
 		return -1; // disable backward reads
 	}
 	if ((delta + length) > 8) {
 		return -1;
 	}
-	memcpy(myaddr, bytes + delta, length);
+	memcpy(myaddr, ctx->bytes + delta, length);
 	return 0;
 }
 
@@ -45,33 +49,52 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 	//--
 }
 
-DECLARE_GENERIC_PRINT_ADDRESS_FUNC()
-DECLARE_GENERIC_FPRINTF_FUNC()
+static void generic_print_address_func(bfd_vma address, void *data, struct disassemble_info *info) {
+	CrisContext *ctx = (CrisContext *)data;
+	if (!ctx->buf_global) {
+		return;
+	}
+	rz_strbuf_appendf(ctx->buf_global, "0x%08" PFMT64x, (ut64)address);
+}
+
+static int generic_fprintf_func(void *stream, void *data, const char *format, ...) {
+	CrisContext *ctx = (CrisContext *)data;
+	int ret;
+	va_list ap;
+	if (!ctx->buf_global || !format) {
+		return 0;
+	}
+	va_start(ap, format);
+	ret = rz_strbuf_vappendf(ctx->buf_global, format, ap);
+	va_end(ap);
+	return ret;
+}
 
 bfd_boolean cris_parse_disassembler_options(disassemble_info *info, int distype);
 
 // TODO: refactor the gnu code to have a getter instead of exposing so many disasm entrypoints
-int print_insn_crisv10_v32_with_register_prefix(bfd_vma vma, disassemble_info *info);
-int print_insn_crisv10_v32_without_register_prefix(bfd_vma vma, disassemble_info *info);
-int print_insn_cris_with_register_prefix(bfd_vma vma, disassemble_info *info);
-int print_insn_cris_without_register_prefix(bfd_vma vma, disassemble_info *info);
-int print_insn_crisv32_with_register_prefix(bfd_vma vma, disassemble_info *info);
-int print_insn_crisv32_without_register_prefix(bfd_vma vma, disassemble_info *info);
+int print_insn_crisv10_v32_with_register_prefix(bfd_vma vma, disassemble_info *info, void *data);
+int print_insn_crisv10_v32_without_register_prefix(bfd_vma vma, disassemble_info *info, void *data);
+int print_insn_cris_with_register_prefix(bfd_vma vma, disassemble_info *info, void *data);
+int print_insn_cris_without_register_prefix(bfd_vma vma, disassemble_info *info, void *data);
+int print_insn_crisv32_with_register_prefix(bfd_vma vma, disassemble_info *info, void *data);
+int print_insn_crisv32_without_register_prefix(bfd_vma vma, disassemble_info *info, void *data);
 
-static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int cris_gnu_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+	CrisContext *ctx = (CrisContext *)a->plugin_data;
 	struct disassemble_info disasm_obj;
 	int mode = 2;
 	if (len < 4) {
 		return -1;
 	}
-	buf_global = &op->buf_asm;
-	Offset = a->pc;
-	memcpy(bytes, buf, RZ_MIN(len, 8)); // TODO handle thumb
+	ctx->buf_global = &op->buf_asm;
+	ctx->Offset = a->pc;
+	memcpy(ctx->bytes, buf, RZ_MIN(len, 8)); // TODO handle thumb
 
 	/* prepare disassembler */
 	memset(&disasm_obj, '\0', sizeof(struct disassemble_info));
 	disasm_obj.disassembler_options = (a->bits == 64) ? "64" : "";
-	disasm_obj.buffer = bytes;
+	disasm_obj.buffer = ctx->bytes;
 	disasm_obj.read_memory_func = &cris_buffer_read_memory;
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
 	disasm_obj.memory_error_func = &memory_error_func;
@@ -99,25 +122,25 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	if (a->syntax == RZ_ASM_SYNTAX_ATT) {
 		switch (mode) {
 		case 0:
-			op->size = print_insn_cris_with_register_prefix((bfd_vma)Offset, &disasm_obj);
+			op->size = print_insn_cris_with_register_prefix((bfd_vma)ctx->Offset, &disasm_obj, ctx);
 			break;
 		case 1:
-			op->size = print_insn_crisv10_v32_with_register_prefix((bfd_vma)Offset, &disasm_obj);
+			op->size = print_insn_crisv10_v32_with_register_prefix((bfd_vma)ctx->Offset, &disasm_obj, ctx);
 			break;
 		default:
-			op->size = print_insn_crisv32_with_register_prefix((bfd_vma)Offset, &disasm_obj);
+			op->size = print_insn_crisv32_with_register_prefix((bfd_vma)ctx->Offset, &disasm_obj, ctx);
 			break;
 		}
 	} else {
 		switch (mode) {
 		case 0:
-			op->size = print_insn_cris_without_register_prefix((bfd_vma)Offset, &disasm_obj);
+			op->size = print_insn_cris_without_register_prefix((bfd_vma)ctx->Offset, &disasm_obj, ctx);
 			break;
 		case 1:
-			op->size = print_insn_crisv10_v32_without_register_prefix((bfd_vma)Offset, &disasm_obj);
+			op->size = print_insn_crisv10_v32_without_register_prefix((bfd_vma)ctx->Offset, &disasm_obj, ctx);
 			break;
 		default:
-			op->size = print_insn_crisv32_without_register_prefix((bfd_vma)Offset, &disasm_obj);
+			op->size = print_insn_crisv32_without_register_prefix((bfd_vma)ctx->Offset, &disasm_obj, ctx);
 			break;
 		}
 	}
@@ -125,6 +148,21 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		rz_strbuf_set(&op->buf_asm, "(data)");
 	}
 	return op->size;
+}
+
+static bool cris_gnu_init(void **user) {
+	CrisContext *ctx = RZ_NEW0(CrisContext);
+	rz_return_val_if_fail(ctx, false);
+	*user = ctx;
+	return true;
+}
+
+static bool cris_gnu_fini(void *p) {
+	CrisContext *ctx = (CrisContext *)p;
+	if (ctx) {
+		RZ_FREE(ctx);
+	}
+	return true;
 }
 
 RzAsmPlugin rz_asm_plugin_cris_gnu = {
@@ -136,5 +174,7 @@ RzAsmPlugin rz_asm_plugin_cris_gnu = {
 	.bits = 32,
 	.endian = RZ_SYS_ENDIAN_LITTLE,
 	.desc = "Axis Communications 32-bit embedded processor disassembler",
-	.disassemble = &disassemble
+	.disassemble = &cris_gnu_disassemble,
+	.init = &cris_gnu_init,
+	.fini = &cris_gnu_fini
 };

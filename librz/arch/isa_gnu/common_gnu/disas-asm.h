@@ -36,13 +36,14 @@ extern "C" {
 
 #include <stdio.h>
 #include <string.h>
+#include <rz_util.h>
 #include <common_gnu/mybfd.h>
 
 #define bfd_zalloc calloc
 #define bfd_malloc malloc
 #define xmalloc    malloc
 
-typedef int (*fprintf_ftype)(void *, const char *, ...) ATTRIBUTE_FPTR_PRINTF_2;
+typedef int (*fprintf_ftype)(void *, void *, const char *, ...) ATTRIBUTE_FPTR_PRINTF_3;
 
 enum dis_insn_type {
 	dis_noninsn, /* Not a valid instruction.  */
@@ -131,7 +132,7 @@ typedef struct disassemble_info {
      INFO is a pointer to this struct.
      Returns an errno value or 0 for success.  */
 	int (*read_memory_func)(bfd_vma memaddr, bfd_byte *myaddr, unsigned int length,
-		struct disassemble_info *dinfo);
+		struct disassemble_info *dinfo, void *data);
 
 	/* Function which should be called if we get an error that we can't
      recover from.  STATUS is the errno value from read_memory_func and
@@ -140,7 +141,7 @@ typedef struct disassemble_info {
 	void (*memory_error_func)(int status, bfd_vma memaddr, struct disassemble_info *dinfo);
 
 	/* Function called to print ADDR.  */
-	void (*print_address_func)(bfd_vma addr, struct disassemble_info *dinfo);
+	void (*print_address_func)(bfd_vma addr, void *data, struct disassemble_info *dinfo);
 
 	/* Function called to determine if there is a symbol at the given ADDR.
      If there is, the function returns 1, otherwise it returns 0.
@@ -235,7 +236,7 @@ typedef struct
 
 /* Standard disassemblers.  Disassemble one instruction at the given
    target address.  Return number of octets processed.  */
-typedef int (*disassembler_ftype)(bfd_vma, disassemble_info *);
+typedef int (*disassembler_ftype)(bfd_vma, disassemble_info *, void *);
 
 extern int print_insn_aarch64(bfd_vma, disassemble_info *);
 extern int print_insn_alpha(bfd_vma, disassemble_info *);
@@ -259,8 +260,8 @@ extern int print_insn_h8300(bfd_vma, disassemble_info *);
 extern int print_insn_h8300h(bfd_vma, disassemble_info *);
 extern int print_insn_h8300s(bfd_vma, disassemble_info *);
 extern int print_insn_h8500(bfd_vma, disassemble_info *);
-extern int print_insn_lanai(bfd_vma, disassemble_info *);
-extern int print_insn_hppa(bfd_vma, disassemble_info *);
+extern int print_insn_lanai(bfd_vma, disassemble_info *, void *);
+extern int print_insn_hppa(bfd_vma, disassemble_info *, void *);
 extern int print_insn_i370(bfd_vma, disassemble_info *);
 extern int print_insn_i386(bfd_vma, disassemble_info *);
 extern int print_insn_i386_att(bfd_vma, disassemble_info *);
@@ -306,7 +307,7 @@ extern int print_insn_s390(bfd_vma, disassemble_info *);
 extern int print_insn_sh(bfd_vma, disassemble_info *);
 extern int print_insn_sh64(bfd_vma, disassemble_info *);
 extern int print_insn_sh64x_media(bfd_vma, disassemble_info *);
-extern int print_insn_sparc(bfd_vma, disassemble_info *);
+extern int print_insn_sparc(bfd_vma, disassemble_info *, void *);
 extern int print_insn_spu(bfd_vma, disassemble_info *);
 extern int print_insn_tic30(bfd_vma, disassemble_info *);
 extern int print_insn_tic4x(bfd_vma, disassemble_info *);
@@ -316,7 +317,7 @@ extern int print_insn_tic80(bfd_vma, disassemble_info *);
 extern int print_insn_tilegx(bfd_vma, disassemble_info *);
 extern int print_insn_tilepro(bfd_vma, disassemble_info *);
 extern int print_insn_v850(bfd_vma, disassemble_info *);
-extern int print_insn_vax(bfd_vma, disassemble_info *);
+extern int print_insn_vax(bfd_vma, disassemble_info *, void *);
 extern int print_insn_visium(bfd_vma, disassemble_info *);
 extern int print_insn_w65(bfd_vma, disassemble_info *);
 extern int print_insn_xc16x(bfd_vma, disassemble_info *);
@@ -418,27 +419,6 @@ extern int print_insn_tricore(bfd_vma memaddr, struct disassemble_info *info);
 	init_disassemble_info(&(INFO), (STREAM), (fprintf_ftype)(FPRINTF_FUNC))
 #define INIT_DISASSEMBLE_INFO_NO_ARCH(INFO, STREAM, FPRINTF_FUNC) \
 	init_disassemble_info(&(INFO), (STREAM), (fprintf_ftype)(FPRINTF_FUNC))
-
-#define DECLARE_GENERIC_FPRINTF_FUNC() \
-	static int generic_fprintf_func(void *stream, const char *format, ...) { \
-		int ret; \
-		va_list ap; \
-		if (!buf_global || !format) { \
-			return 0; \
-		} \
-		va_start(ap, format); \
-		ret = rz_strbuf_vappendf(buf_global, format, ap); \
-		va_end(ap); \
-		return ret; \
-	}
-
-#define DECLARE_GENERIC_PRINT_ADDRESS_FUNC() \
-	static void generic_print_address_func(bfd_vma address, struct disassemble_info *info) { \
-		if (!buf_global) { \
-			return; \
-		} \
-		rz_strbuf_appendf(buf_global, "0x%08" PFMT64x, (ut64)address); \
-	}
 
 #ifdef __cplusplus
 }

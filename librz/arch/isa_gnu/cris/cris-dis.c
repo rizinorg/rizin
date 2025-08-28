@@ -755,7 +755,8 @@ print_with_operands (const struct cris_opcode *opcodep,
 		     const struct cris_opcode *prefix_opcodep,
 		     unsigned int prefix_insn,
 		     unsigned char *prefix_buffer,
-		     bool with_reg_prefix)
+		     bool with_reg_prefix,
+			 void *data)
 {
   /* Get a buffer of somewhat reasonable size where we store
      intermediate parts of the insn.  */
@@ -768,7 +769,7 @@ print_with_operands (const struct cris_opcode *opcodep,
     = (struct cris_disasm_data *) info->private_data;
 
   /* Print out the name first thing we do.  */
-  (*info->fprintf_func) (info->stream, "%s", opcodep->name);
+  (*info->fprintf_func) (info->stream, data, "%s", opcodep->name);
 
   cs = opcodep->args;
   s = cs;
@@ -871,10 +872,10 @@ print_with_operands (const struct cris_opcode *opcodep,
 	  /* Finish off and output previous formatted bytes.  */
 	  *tp = 0;
 	  if (temp[0])
-	    (*info->fprintf_func) (info->stream, "%s", temp);
+	    (*info->fprintf_func) (info->stream, data, "%s", temp);
 	  tp = temp;
 
-	  (*info->print_address_func) (addr + number, info);
+	  (*info->print_address_func) (addr + number, data, info);
 	}
 	break;
 
@@ -886,10 +887,10 @@ print_with_operands (const struct cris_opcode *opcodep,
 	  /* Finish off and output previous formatted bytes.  */
 	  *tp = 0;
 	  if (temp[0])
-	    (*info->fprintf_func) (info->stream, "%s", temp);
+	    (*info->fprintf_func) (info->stream, data, "%s", temp);
 	  tp = temp;
 
-	  (*info->print_address_func) (addr + number, info);
+	  (*info->print_address_func) (addr + number, data, info);
 	}
 	break;
 
@@ -987,9 +988,9 @@ print_with_operands (const struct cris_opcode *opcodep,
 		    *tp = 0;
 		    tp = temp;
 		    if (temp[0])
-		      (*info->fprintf_func) (info->stream, "%s", temp);
+		      (*info->fprintf_func) (info->stream, data, "%s", temp);
 
-		    (*info->print_address_func) ((bfd_vma) number, info);
+		    (*info->print_address_func) ((bfd_vma) number, data, info);
 
 		    info->target = number;
 		  }
@@ -1067,9 +1068,9 @@ print_with_operands (const struct cris_opcode *opcodep,
 			*tp = 0;
 			tp = temp;
 			if (temp[0])
-			  (*info->fprintf_func) (info->stream, "%s", temp);
+			  (*info->fprintf_func) (info->stream, data, "%s", temp);
 
-			(*info->print_address_func) ((bfd_vma) number, info);
+			(*info->print_address_func) ((bfd_vma) number, data, info);
 		      }
 		    else
 		      {
@@ -1193,9 +1194,9 @@ print_with_operands (const struct cris_opcode *opcodep,
 			    *tp++ = '+';
 			    *tp = 0;
 			    tp = temp;
-			    (*info->fprintf_func) (info->stream, "%s", temp);
+			    (*info->fprintf_func) (info->stream, data, "%s", temp);
 
-			    (*info->print_address_func) ((bfd_vma) number, info);
+			    (*info->print_address_func) ((bfd_vma) number, data, info);
 			  }
 			else
 			  {
@@ -1231,7 +1232,7 @@ print_with_operands (const struct cris_opcode *opcodep,
 		    break;
 
 		  default:
-		    (*info->fprintf_func) (info->stream, "?prefix-bug");
+		    (*info->fprintf_func) (info->stream, data, "?prefix-bug");
 		  }
 
 		/* To mark that the prefix is used, reset it.  */
@@ -1279,10 +1280,10 @@ print_with_operands (const struct cris_opcode *opcodep,
 
 	  *tp = 0;
 	  tp = temp;
-	  (*info->fprintf_func) (info->stream, "%s%s ",
+	  (*info->fprintf_func) (info->stream, data, "%s%s ",
 				 temp, cris_cc_strings[insn >> 12]);
 
-	  (*info->print_address_func) ((bfd_vma) where, info);
+	  (*info->print_address_func) ((bfd_vma) where, data, info);
 	}
       break;
 
@@ -1311,8 +1312,8 @@ print_with_operands (const struct cris_opcode *opcodep,
 	info->target = target;
 	*tp = 0;
 	tp = temp;
-	(*info->fprintf_func) (info->stream, "%s", temp);
-	(*info->print_address_func) (target, info);
+	(*info->fprintf_func) (info->stream, data, "%s", temp);
+	(*info->print_address_func) (target, data, info);
       }
       break;
 
@@ -1367,10 +1368,10 @@ if (sregp) {
   *tp = 0;
 
   if (prefix_opcodep)
-    (*info->fprintf_func) (info->stream, " (OOPS unused prefix \"%s: %s\")",
+    (*info->fprintf_func) (info->stream, data, " (OOPS unused prefix \"%s: %s\")",
 			   prefix_opcodep->name, prefix_opcodep->args);
 
-  (*info->fprintf_func) (info->stream, "%s", temp);
+  (*info->fprintf_func) (info->stream, data, "%s", temp);
 
   /* Get info for matching case-tables, if we don't have any active.
      We assume that the last constant seen is used; either in the insn
@@ -1406,6 +1407,7 @@ if (sregp) {
 static int
 print_insn_cris_generic (bfd_vma memaddr,
 			 disassemble_info *info,
+			 void *data,
 			 bool with_reg_prefix)
 {
   int nbytes;
@@ -1431,7 +1433,7 @@ print_insn_cris_generic (bfd_vma memaddr,
 
   for (nbytes = MAX_BYTES_PER_CRIS_INSN; nbytes > 0; nbytes -= 2)
     {
-      status = (*info->read_memory_func) (memaddr, buffer, nbytes, info);
+      status = (*info->read_memory_func) (memaddr, buffer, nbytes, info, data);
       if (status == 0)
 	break;
     }
@@ -1467,7 +1469,7 @@ print_insn_cris_generic (bfd_vma memaddr,
 	  advance += 2;
 
 	  /* If to print data as offsets, then shortcut here.  */
-	  (*info->fprintf_func) (info->stream, "case %ld%s: -> ",
+	  (*info->fprintf_func) (info->stream, data, "case %ld%s: -> ",
 				 case_offset + no_of_case_offsets
 				 - case_offset_counter,
 				 case_offset_counter == 1 ? "/default" :
@@ -1478,7 +1480,7 @@ print_insn_cris_generic (bfd_vma memaddr,
 					+ (long) (addr
 						  - (no_of_case_offsets
 						     - case_offset_counter)
-						  * 2)), info);
+						  * 2)), data, info);
 	  case_offset_counter--;
 
 	  /* The default case start (without a "sub" or "add") must be
@@ -1493,6 +1495,7 @@ print_insn_cris_generic (bfd_vma memaddr,
 	     of a nuiscance that we will just output "bcc .+2" for it
 	     and signal it as a noninsn.  */
 	  (*info->fprintf_func) (info->stream,
+				 data,
 				 disdata->distype == cris_dis_v32
 				 ? "bcc ." : "bcc .+2");
 	  info->insn_type = dis_noninsn;
@@ -1539,7 +1542,7 @@ print_insn_cris_generic (bfd_vma memaddr,
 
 	  if (matchedp == NULL)
 	    {
-	      (*info->fprintf_func) (info->stream, "??0x%x", insn);
+	      (*info->fprintf_func) (info->stream, data, "??0x%x", insn);
 	      advance += 2;
 
 	      info->insn_type = dis_noninsn;
@@ -1554,7 +1557,8 @@ print_insn_cris_generic (bfd_vma memaddr,
 		 to the operands.   */
 	      print_with_operands (matchedp, insn, bufp, addr, info,
 				   prefix_opcodep, prefix_insn,
-				   prefix_buffer, with_reg_prefix);
+				   prefix_buffer, with_reg_prefix,
+				   data);
 	    }
 	}
     }
@@ -1593,24 +1597,24 @@ print_insn_cris_generic (bfd_vma memaddr,
 
 int
 print_insn_cris_with_register_prefix (bfd_vma vma,
-				      disassemble_info *info)
+				      disassemble_info *info, void *data)
 {
   if (info->private_data == NULL
       && !cris_parse_disassembler_options (info, cris_dis_v0_v10))
     return -1;
-  return print_insn_cris_generic (vma, info, true);
+  return print_insn_cris_generic (vma, info, data, true);
 }
 
 /* Disassemble, prefixing register names with `$'.  CRIS v32.  */
 
 int
 print_insn_crisv32_with_register_prefix (bfd_vma vma,
-					 disassemble_info *info)
+					 disassemble_info *info, void *data)
 {
   if (info->private_data == NULL
       && !cris_parse_disassembler_options (info, cris_dis_v32))
     return -1;
-  return print_insn_cris_generic (vma, info, true);
+  return print_insn_cris_generic (vma, info, data, true);
 }
 
 /* Disassemble, prefixing register names with `$'.
@@ -1618,36 +1622,36 @@ print_insn_crisv32_with_register_prefix (bfd_vma vma,
 
 int
 print_insn_crisv10_v32_with_register_prefix (bfd_vma vma,
-					     disassemble_info *info)
+					     disassemble_info *info, void *data)
 {
   if (info->private_data == NULL
       && !cris_parse_disassembler_options (info, cris_dis_common_v10_v32))
     return -1;
-  return print_insn_cris_generic (vma, info, true);
+  return print_insn_cris_generic (vma, info, data, true);
 }
 
 /* Disassemble, no prefixes on register names.  CRIS v0..v10.  */
 
 int
 print_insn_cris_without_register_prefix (bfd_vma vma,
-					 disassemble_info *info)
+					 disassemble_info *info, void *data)
 {
   if (info->private_data == NULL
       && !cris_parse_disassembler_options (info, cris_dis_v0_v10))
     return -1;
-  return print_insn_cris_generic (vma, info, false);
+  return print_insn_cris_generic (vma, info, data, false);
 }
 
 /* Disassemble, no prefixes on register names.  CRIS v32.  */
 
 int
 print_insn_crisv32_without_register_prefix (bfd_vma vma,
-					    disassemble_info *info)
+					    disassemble_info *info, void *data)
 {
   if (info->private_data == NULL
       && !cris_parse_disassembler_options (info, cris_dis_v32))
     return -1;
-  return print_insn_cris_generic (vma, info, false);
+  return print_insn_cris_generic (vma, info, data, false);
 }
 
 /* Disassemble, no prefixes on register names.
@@ -1655,12 +1659,12 @@ print_insn_crisv32_without_register_prefix (bfd_vma vma,
 
 int
 print_insn_crisv10_v32_without_register_prefix (bfd_vma vma,
-						disassemble_info *info)
+						disassemble_info *info, void *data)
 {
   if (info->private_data == NULL
       && !cris_parse_disassembler_options (info, cris_dis_common_v10_v32))
     return -1;
-  return print_insn_cris_generic (vma, info, false);
+  return print_insn_cris_generic (vma, info, data, false);
 }
 
 /* Return a disassembler-function that prints registers with a `$' prefix,

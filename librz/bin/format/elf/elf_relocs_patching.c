@@ -13,11 +13,17 @@ typedef struct reloc_formular_symbols_t {
 	ut64 L; // Offset into POT for symbol entry.
 	ut64 P; // Place address of the field being relocated. The address of the bytes to patch.
 	ut64 S; // Value of symbol.
+	ut64 Z; // Size of symbol.
 	ut64 TLS; // Thread-pointer-relative offset to a thread-local symbol.
 	ut64 T; // Base address of the static thread-local tmeplate that contains a thread-local symbol.
 	ut64 MB; // Base address of all strings consumed by compiler message base optimization (Hexagon specific).
 	ut64 GP; // Value of GP register (Hexagon specific).
 	ut64 AHL; // Special value used by MIPS to handle R_MIPS_HI16 & R_MIPS_LO16 relocs
+	/**
+	 * \brief Sparc64: Secondary addend, extracted from the r_info field by
+	 * applying the ELF_SPARC64_R_TYPE_DATA macro (alias for ELF64_R_TYPE_DATA).
+	 */
+	ut64 O;
 } RelocFormularSymbols;
 
 typedef struct {
@@ -132,48 +138,43 @@ static ut32 hexagon_get_bitmask_r16(ut32 insn) {
 }
 
 /**
- * \brief Spreads the value bits according to the bitmask and returns the result.
+ * \brief Patches a given value into an opcode at \p addr in \p buf_patched.
+ * The bits from \p val are spread into the resulting value according to \p mask.
  *
- * The immediated bits in Hexagon opcodes are not sequential.
- * If a relocation value is patched into the opcode, its bits must be aligned with bit locations in the opcode.
- * The parameter \p bitmask indicates where the immediate bits are located.
+ * Often immediated bits in opcodes are not sequential.
+ * If a relocation value is patched into the opcode,
+ * its bits must be aligned with bit locations in the opcode.
+ * The parameter \p mask indicates where the immediate bits are located.
  *
- * \param mask The bitmask which indicates where the value bits should be placed.
- * \param val The relocation value.
- * \return ut32 New value which can be patched into the opcode.
+ * \param buf_patched Pointer to buffer.
+ * \param big_endian If set reads and writes the buffer in big endian.
+ * \param addr Address the opcode is located.
+ * \param mask The bitmask (patchable bits) of the opcode bits to set.
+ * \param val The value patched into the opcode.
  */
-static ut32 apply_bitmask(const ut32 mask, const ut32 val) {
-	ut32 result = 0;
-	ut32 off = 0;
+static void patch_val_over_mask_32(RZ_INOUT RzBuffer *buf_patched, bool big_endian, const ut32 addr, const ut32 mask, const ut32 val) {
+	rz_return_if_fail(buf_patched);
+	ut8 buf[4] = { 0 };
 
-	for (ut32 bit = 0; bit != 32; ++bit) {
-		ut32 valBit = (val >> off) & 1;
-		ut32 maskBit = (mask >> bit) & 1;
-		if (maskBit) {
-			result |= (valBit << bit);
-			++off;
-		}
-	}
-	return result;
+	rz_buf_read_at(buf_patched, addr, buf, 4);
+	ut32 opcode = rz_read_ble32(buf, big_endian) | rz_bits_spread(mask, val);
+
+	rz_write_ble32(buf, opcode, big_endian);
+	rz_buf_write_at(buf_patched, addr, buf, 4);
 }
 
 /**
- * \brief Patches a given value into a Hexagon opcode.
- *
- * \param buf_patched Pointer to buffer.
- * \param addr Address the opcode is located.
- * \param mask The bitmask (patchable bits) of the opcode.
- * \param val The value patched into opcode.
+ * \brief Does the same as patch_val_over_mask_32 but for 64bit values.
  */
-static void patch_val_hexagon(RZ_INOUT RzBuffer *buf_patched, const ut32 addr, const ut32 mask, const ut32 val) {
+static void patch_val_over_mask_64(RZ_INOUT RzBuffer *buf_patched, bool big_endian, const ut64 addr, const ut64 mask, const ut64 val) {
 	rz_return_if_fail(buf_patched);
 	ut8 buf[8] = { 0 };
 
-	rz_buf_read_at(buf_patched, addr, buf, 4);
-	ut32 opcode = rz_read_le32(buf) | apply_bitmask(mask, val);
+	rz_buf_read_at(buf_patched, addr, buf, 8);
+	ut64 opcode = rz_read_ble64(buf, big_endian) | rz_bits_spread(mask, val);
 
-	rz_write_le32(buf, opcode);
-	rz_buf_write_at(buf_patched, addr, buf, 4);
+	rz_write_ble64(buf, opcode, big_endian);
+	rz_buf_write_at(buf_patched, addr, buf, 8);
 }
 
 #define UNHANDL(NAME) \
@@ -383,10 +384,293 @@ static void patch_reloc_hexagon(RZ_INOUT RzBuffer *buf_patched, const ut64 patch
 	}
 	// Patch two opcodes at once.
 	if (rel_type == R_HEX_HL16) {
-		patch_val_hexagon(buf_patched, patch_addr, bitmask, val & 0xffffffff);
-		patch_val_hexagon(buf_patched, patch_addr + 4, bitmask, val >> 32);
+		patch_val_over_mask_32(buf_patched, false, patch_addr, bitmask, val & 0xffffffff);
+		patch_val_over_mask_32(buf_patched, false, patch_addr + 4, bitmask, val >> 32);
 	} else {
-		patch_val_hexagon(buf_patched, patch_addr, bitmask, val);
+		patch_val_over_mask_32(buf_patched, false, patch_addr, bitmask, val);
+	}
+}
+
+static void patch_reloc_sparc(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_addr, const int rel_type, bool big_endian, const RelocFormularSymbols *fs) {
+	ut64 val = 0;
+	ut64 bitmask = 0;
+
+	switch (rel_type) {
+	default:
+		UNHANDL_DEF("Sparc", rel_type);
+		return;
+	case R_SPARC_GOTDATA_OP:
+		// bitmask = R_SPARC_BITMASK_WORD32;
+		// I can't find details how this one is patched.
+		// The docs all refer to "the explanation following this table."
+		// But there is no explanation in all the docs I could find.
+		// There is a related LLVM issue about those though:
+		// https://github.com/llvm/llvm-project/issues/100320
+		//
+		// But in https://docs.oracle.com/cd/E53394_01/html/E54833/gpvxz.html
+		// it looks like this relocation simply signals the
+		// linker to check for an optimization.
+		// So return her silently.
+		return;
+	case R_SPARC_JMP_SLOT:
+		// PLT entry patched by the runtime linker are of these reloc types.
+		// The values written there depend on %g1.
+		// %g1 seems to be used to store the relative offset from the PC
+		// to a section base address is made in.
+		// So for JMP_SLOT it would hold the offset to the PLT at patch time.
+		// At least this is how it is done for the GOT patching in here
+		// https://docs.oracle.com/cd/E53394_01/html/E54833/gpvxz.html
+	case R_SPARC_COPY:
+		// Copies data from a shared library to the
+		// dynamic executable's pre-allocated space for this data.
+		UNHANDL_DEF("Sparc", rel_type);
+	case R_SPARC_NONE:
+		return;
+	case R_SPARC_8:
+		bitmask = R_SPARC_BITMASK_BYTE8;
+		val = (fs->S + fs->A);
+		break;
+	case R_SPARC_16:
+		bitmask = R_SPARC_BITMASK_HALF16;
+		val = (fs->S + fs->A);
+		break;
+	case R_SPARC_32:
+		bitmask = R_SPARC_BITMASK_WORD32;
+		val = (fs->S + fs->A);
+		break;
+	case R_SPARC_DISP8:
+		bitmask = R_SPARC_BITMASK_BYTE8;
+		val = (fs->S + fs->A - fs->P);
+		break;
+	case R_SPARC_DISP16:
+		bitmask = R_SPARC_BITMASK_HALF16;
+		val = (fs->S + fs->A - fs->P);
+		break;
+	case R_SPARC_DISP32:
+		bitmask = R_SPARC_BITMASK_DISP32;
+		val = (fs->S + fs->A - fs->P);
+		break;
+	case R_SPARC_WDISP30:
+		bitmask = R_SPARC_BITMASK_DISP30;
+		val = ((fs->S + fs->A - fs->P) >> 2);
+		break;
+	case R_SPARC_WDISP22:
+		bitmask = R_SPARC_BITMASK_DISP22;
+		val = ((fs->S + fs->A - fs->P) >> 2);
+		break;
+	case R_SPARC_HI22:
+		bitmask = R_SPARC_BITMASK_IMM22;
+		val = ((fs->S + fs->A) >> 10);
+		break;
+	case R_SPARC_22:
+		bitmask = R_SPARC_BITMASK_IMM22;
+		val = (fs->S + fs->A);
+		break;
+	case R_SPARC_13:
+		bitmask = R_SPARC_BITMASK_SIMM13;
+		val = (fs->S + fs->A);
+		break;
+	case R_SPARC_LO10:
+		bitmask = R_SPARC_BITMASK_SIMM13;
+		val = ((fs->S + fs->A) & 0x3ff);
+		break;
+	case R_SPARC_GOT10:
+		bitmask = R_SPARC_BITMASK_SIMM13;
+		val = (fs->G & 0x3ff);
+		break;
+	case R_SPARC_GOT13:
+		bitmask = R_SPARC_BITMASK_SIMM13;
+		val = (fs->G);
+		break;
+	case R_SPARC_GOT22:
+		bitmask = R_SPARC_BITMASK_SIMM22;
+		val = (fs->G >> 10);
+		break;
+	case R_SPARC_PC10:
+		bitmask = R_SPARC_BITMASK_SIMM13;
+		val = ((fs->S + fs->A - fs->P) & 0x3ff);
+		break;
+	case R_SPARC_PC22:
+		bitmask = R_SPARC_BITMASK_DISP22;
+		val = ((fs->S + fs->A - fs->P) >> 10);
+		break;
+	case R_SPARC_WPLT30:
+		bitmask = R_SPARC_BITMASK_DISP30;
+		val = ((fs->L + fs->A - fs->P) >> 2);
+		break;
+	case R_SPARC_GLOB_DAT:
+		bitmask = R_SPARC_BITMASK_WORD32;
+		val = (fs->S + fs->A);
+		break;
+	case R_SPARC_RELATIVE:
+		bitmask = R_SPARC_BITMASK_WORD32;
+		val = (fs->B + fs->A);
+		break;
+	case R_SPARC_UA32:
+		bitmask = R_SPARC_BITMASK_WORD32;
+		val = (fs->S + fs->A);
+		break;
+	case R_SPARC_PLT32:
+		bitmask = R_SPARC_BITMASK_WORD32;
+		val = (fs->L + fs->A);
+		break;
+	case R_SPARC_HIPLT22:
+		bitmask = R_SPARC_BITMASK_IMM22;
+		val = ((fs->L + fs->A) >> 10);
+		break;
+	case R_SPARC_LOPLT10:
+		bitmask = R_SPARC_BITMASK_SIMM13;
+		val = ((fs->L + fs->A) & 0x3ff);
+		break;
+	case R_SPARC_PCPLT32:
+		bitmask = R_SPARC_BITMASK_WORD32;
+		val = (fs->L + fs->A - fs->P);
+		break;
+	case R_SPARC_PCPLT22:
+		bitmask = R_SPARC_BITMASK_DISP22;
+		val = ((fs->L + fs->A - fs->P) >> 10);
+		break;
+	case R_SPARC_PCPLT10:
+		bitmask = R_SPARC_BITMASK_SIMM13;
+		val = ((fs->L + fs->A - fs->P) & 0x3ff);
+		break;
+	case R_SPARC_10:
+		bitmask = R_SPARC_BITMASK_SIMM10;
+		val = (fs->S + fs->A);
+		break;
+	case R_SPARC_11:
+		bitmask = R_SPARC_BITMASK_SIMM11;
+		val = (fs->S + fs->A);
+		break;
+	case R_SPARC_64:
+		bitmask = R_SPARC_BITMASK_XWORD64;
+		val = (fs->S + fs->A);
+		break;
+	case R_SPARC_OLO10:
+		bitmask = R_SPARC_BITMASK_SIMM13;
+		val = (((fs->S + fs->A) & 0x3ff) + fs->O);
+		break;
+	case R_SPARC_HH22:
+		bitmask = R_SPARC_BITMASK_IMM22;
+		val = ((fs->S + fs->A) >> 42);
+		break;
+	case R_SPARC_HM10:
+		bitmask = R_SPARC_BITMASK_SIMM13;
+		val = (((fs->S + fs->A) >> 32) & 0x3ff);
+		break;
+	case R_SPARC_LM22:
+		bitmask = R_SPARC_BITMASK_IMM22;
+		val = ((fs->S + fs->A) >> 10);
+		break;
+	case R_SPARC_PC_HH22:
+		bitmask = R_SPARC_BITMASK_IMM22;
+		val = ((fs->S + fs->A - fs->P) >> 42);
+		break;
+	case R_SPARC_PC_HM10:
+		bitmask = R_SPARC_BITMASK_SIMM13;
+		val = (((fs->S + fs->A - fs->P) >> 32) & 0x3ff);
+		break;
+	case R_SPARC_PC_LM22:
+		bitmask = R_SPARC_BITMASK_IMM22;
+		val = ((fs->S + fs->A - fs->P) >> 10);
+		break;
+	case R_SPARC_WDISP16:
+		bitmask = R_SPARC_BITMASK_D2_DISP14;
+		val = ((fs->S + fs->A - fs->P) >> 2);
+		break;
+	case R_SPARC_WDISP19:
+		bitmask = R_SPARC_BITMASK_DISP19;
+		val = ((fs->S + fs->A - fs->P) >> 2);
+		break;
+	case R_SPARC_7:
+		bitmask = R_SPARC_BITMASK_IMM7;
+		val = (fs->S + fs->A);
+		break;
+	case R_SPARC_5:
+		bitmask = R_SPARC_BITMASK_IMM5;
+		val = (fs->S + fs->A);
+		break;
+	case R_SPARC_6:
+		bitmask = R_SPARC_BITMASK_IMM6;
+		val = (fs->S + fs->A);
+		break;
+	case R_SPARC_DISP64:
+		bitmask = R_SPARC_BITMASK_XWORD64;
+		val = (fs->S + fs->A - fs->P);
+		break;
+	case R_SPARC_PLT64:
+		bitmask = R_SPARC_BITMASK_XWORD64;
+		val = (fs->L + fs->A);
+		break;
+	case R_SPARC_HIX22:
+		bitmask = R_SPARC_BITMASK_IMM22;
+		val = (((fs->S + fs->A) ^ 0xffffffffffffffff) >> 10);
+		break;
+	case R_SPARC_LOX10:
+		bitmask = R_SPARC_BITMASK_SIMM13;
+		val = (((fs->S + fs->A) & 0x3ff) | 0x1c00);
+		break;
+	case R_SPARC_H44:
+		bitmask = R_SPARC_BITMASK_IMM22;
+		val = ((fs->S + fs->A) >> 22);
+		break;
+	case R_SPARC_M44:
+		bitmask = R_SPARC_BITMASK_IMM10;
+		val = (((fs->S + fs->A) >> 12) & 0x3ff);
+		break;
+	case R_SPARC_L44:
+		bitmask = R_SPARC_BITMASK_IMM13;
+		val = ((fs->S + fs->A) & 0xfff);
+		break;
+	case R_SPARC_REGISTER:
+		bitmask = R_SPARC_BITMASK_WORD32;
+		val = (fs->S + fs->A);
+		break;
+	case R_SPARC_UA64:
+		bitmask = R_SPARC_BITMASK_XWORD64;
+		val = (fs->S + fs->A);
+		break;
+	case R_SPARC_UA16:
+		bitmask = R_SPARC_BITMASK_HALF16;
+		val = (fs->S + fs->A);
+		break;
+	case R_SPARC_H34:
+		bitmask = R_SPARC_BITMASK_IMM22;
+		val = ((fs->S + fs->A) >> 12);
+		break;
+	case R_SPARC_SIZE64:
+		bitmask = R_SPARC_BITMASK_XWORD64;
+		val = (fs->Z + fs->A);
+		break;
+	case R_SPARC_GOTDATA_HIX22:
+		bitmask = R_SPARC_BITMASK_IMM22;
+		val = (((fs->S + fs->A - fs->GOT) >> 10) ^ ((fs->S + fs->A - fs->GOT) >> 31));
+		break;
+	case R_SPARC_GOTDATA_LOX10:
+		bitmask = R_SPARC_BITMASK_IMM13;
+		val = (((fs->S + fs->A - fs->GOT) & 0x3ff) | (((fs->S + fs->A - fs->GOT) >> 31) & 0x1c00));
+		break;
+	case R_SPARC_GOTDATA_OP_HIX22:
+		bitmask = R_SPARC_BITMASK_IMM22;
+		val = ((fs->G >> 10) ^ (fs->G >> 31));
+		break;
+	case R_SPARC_GOTDATA_OP_LOX10:
+		bitmask = R_SPARC_BITMASK_IMM13;
+		val = ((fs->G & 0x3ff) | ((fs->G >> 31) & 0x1c00));
+		break;
+	case R_SPARC_SIZE32:
+		bitmask = R_SPARC_BITMASK_WORD32;
+		val = (fs->Z + fs->A);
+		break;
+	case R_SPARC_WDISP10:
+		bitmask = R_SPARC_BITMASK_D2_DISP8;
+		val = ((fs->S + fs->A - fs->P) >> 2);
+		break;
+	}
+	if (bitmask == R_SPARC_BITMASK_XWORD64) {
+		patch_val_over_mask_64(buf_patched, big_endian, patch_addr, bitmask, val);
+	} else {
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, bitmask, val);
 	}
 }
 
@@ -1038,7 +1322,7 @@ static void patch_reloc_alpha(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 	RZ_LOG_WARN("Relocation patching for " NAME " is not implemented.\n"); \
 	return
 
-void Elf_(rz_bin_elf_patch_relocation)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinElfReloc *rel, ut64 S, ut64 B, ut64 L, ut64 GOT, RZ_NONNULL ut64 *AHL) {
+void Elf_(rz_bin_elf_patch_relocation)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinElfReloc *rel, ut64 S, ut64 Z, ut64 B, ut64 L, ut64 GOT, RZ_NONNULL ut64 *AHL) {
 	rz_return_if_fail(bin && rel && AHL);
 	ut16 e_machine = bin->ehdr.e_machine;
 	RelocFormularSymbols formular_sym = {
@@ -1047,13 +1331,15 @@ void Elf_(rz_bin_elf_patch_relocation)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinE
 		.GOT = GOT,
 		.L = L,
 		.S = S,
+		.Z = Z,
 		.P = rel->vaddr,
 		.MB = 0,
-		.G = 0,
+		.G = Elf_(rz_bin_get_reloc_sym_offset_in_got)(bin, rel->sym),
 		.GP = 0,
 		.T = 0,
 		.TLS = 0,
 		.AHL = *AHL,
+		.O = rel->sparc_secondary_addend,
 	};
 	ut64 patch_addr = rel->paddr != UT64_MAX ? rel->paddr : Elf_(rz_bin_elf_v2p)(bin, rel->vaddr);
 	bool big_endian = bin->big_endian;
@@ -1093,8 +1379,12 @@ void Elf_(rz_bin_elf_patch_relocation)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinE
 	case EM_ALPHA:
 		patch_reloc_alpha(bin->buf_patched, patch_addr, rel->type, big_endian, &formular_sym);
 		break;
+	case EM_SPARC:
+	case EM_SPARC32PLUS:
+	case EM_SPARCV9:
+		patch_reloc_sparc(bin->buf_patched, patch_addr, rel->type, big_endian, &formular_sym);
+		break;
 	case EM_M32: ARCH_MISSING("EM_M32");
-	case EM_SPARC: ARCH_MISSING("EM_SPARC");
 	case EM_68K: ARCH_MISSING("EM_68K");
 	case EM_88K: ARCH_MISSING("EM_88K");
 	case EM_IAMCU: ARCH_MISSING("EM_IAMCU");
@@ -1102,7 +1392,6 @@ void Elf_(rz_bin_elf_patch_relocation)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinE
 	case EM_S370: ARCH_MISSING("EM_S370");
 	case EM_PARISC: ARCH_MISSING("EM_PARISC");
 	case EM_VPP500: ARCH_MISSING("EM_VPP500");
-	case EM_SPARC32PLUS: ARCH_MISSING("EM_SPARC32PLUS");
 	case EM_960: ARCH_MISSING("EM_960");
 	case EM_PPC: ARCH_MISSING("EM_PPC");
 	case EM_S390: ARCH_MISSING("EM_S390");
@@ -1113,7 +1402,6 @@ void Elf_(rz_bin_elf_patch_relocation)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinE
 	case EM_RCE: ARCH_MISSING("EM_RCE");
 	case EM_FAKE_ALPHA: ARCH_MISSING("EM_FAKE_ALPHA");
 	case EM_SH: ARCH_MISSING("EM_SH");
-	case EM_SPARCV9: ARCH_MISSING("EM_SPARCV9");
 	case EM_TRICORE: ARCH_MISSING("EM_TRICORE");
 	case EM_ARC: ARCH_MISSING("EM_ARC");
 	case EM_H8_300: ARCH_MISSING("EM_H8_300");

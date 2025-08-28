@@ -12,7 +12,7 @@ static bool test_il_extract32() {
 	RzILValidateReport report;
 	RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_empty(24);
 	bool valid = false;
-	RzILVM *vm = rz_il_vm_new(0, 32, false);
+	RzILVM *vm = rz_il_vm_new(0, 32, false, RZ_IL_EVENT_EXC_NONE);
 	RzILVal *vm_result = NULL;
 
 	// Extract all
@@ -65,7 +65,7 @@ static bool test_il_extract64() {
 	RzILValidateReport report;
 	RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_empty(24);
 	bool valid = false;
-	RzILVM *vm = rz_il_vm_new(0, 64, false);
+	RzILVM *vm = rz_il_vm_new(0, 64, false, RZ_IL_EVENT_EXC_NONE);
 	RzILVal *vm_result = NULL;
 
 	// Extract all
@@ -118,7 +118,7 @@ static bool test_il_sextract64() {
 	RzILValidateReport report;
 	RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_empty(24);
 	bool valid = false;
-	RzILVM *vm = rz_il_vm_new(0, 64, false);
+	RzILVM *vm = rz_il_vm_new(0, 64, false, RZ_IL_EVENT_EXC_NONE);
 	RzILVal *vm_result = NULL;
 
 	// Extract all
@@ -171,7 +171,7 @@ static bool test_il_deposit32() {
 	RzILValidateReport report;
 	RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_empty(24);
 	bool valid = false;
-	RzILVM *vm = rz_il_vm_new(0, 32, false);
+	RzILVM *vm = rz_il_vm_new(0, 32, false, RZ_IL_EVENT_EXC_NONE);
 	RzILVal *vm_result = NULL;
 
 	// Deposit all
@@ -241,7 +241,7 @@ static bool test_il_deposit64() {
 	RzILValidateReport report;
 	RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_empty(24);
 	bool valid = false;
-	RzILVM *vm = rz_il_vm_new(0, 32, false);
+	RzILVM *vm = rz_il_vm_new(0, 32, false, RZ_IL_EVENT_EXC_NONE);
 	RzILVal *vm_result = NULL;
 
 	// Deposit all
@@ -311,7 +311,7 @@ static bool test_il_bswap16() {
 	RzILValidateReport report;
 	RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_empty(24);
 	bool valid = false;
-	RzILVM *vm = rz_il_vm_new(0, 32, false);
+	RzILVM *vm = rz_il_vm_new(0, 32, false, RZ_IL_EVENT_EXC_NONE);
 	RzILVal *vm_result = NULL;
 
 	// Deposit all
@@ -336,7 +336,7 @@ static bool test_il_bswap32() {
 	RzILValidateReport report;
 	RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_empty(24);
 	bool valid = false;
-	RzILVM *vm = rz_il_vm_new(0, 32, false);
+	RzILVM *vm = rz_il_vm_new(0, 32, false, RZ_IL_EVENT_EXC_NONE);
 	RzILVal *vm_result = NULL;
 
 	// Deposit all
@@ -361,7 +361,7 @@ static bool test_il_bswap64() {
 	RzILValidateReport report;
 	RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_empty(24);
 	bool valid = false;
-	RzILVM *vm = rz_il_vm_new(0, 32, false);
+	RzILVM *vm = rz_il_vm_new(0, 32, false, RZ_IL_EVENT_EXC_NONE);
 	RzILVal *vm_result = NULL;
 
 	// Deposit all
@@ -382,7 +382,7 @@ static bool test_il_bswap64() {
 }
 
 static bool test_il_fneq() {
-	RzILVM *vm = rz_il_vm_new(0, 64, false);
+	RzILVM *vm = rz_il_vm_new(0, 64, false, RZ_IL_EVENT_EXC_NONE);
 	RzILBool *vm_result = NULL;
 	RzILOpBool *result = NULL;
 
@@ -452,7 +452,7 @@ static bool test_il_fneq() {
 }
 
 static bool test_il_feq() {
-	RzILVM *vm = rz_il_vm_new(0, 64, false);
+	RzILVM *vm = rz_il_vm_new(0, 64, false, RZ_IL_EVENT_EXC_NONE);
 	RzILBool *vm_result = NULL;
 	RzILOpBool *result = NULL;
 
@@ -522,7 +522,7 @@ static bool test_il_feq() {
 }
 
 static bool test_il_flt() {
-	RzILVM *vm = rz_il_vm_new(0, 64, false);
+	RzILVM *vm = rz_il_vm_new(0, 64, false, RZ_IL_EVENT_EXC_NONE);
 	RzILBool *vm_result = NULL;
 	RzILOpBool *result = NULL;
 
@@ -592,7 +592,7 @@ static bool test_il_flt() {
 }
 
 static bool test_il_fle() {
-	RzILVM *vm = rz_il_vm_new(0, 64, false);
+	RzILVM *vm = rz_il_vm_new(0, 64, false, RZ_IL_EVENT_EXC_NONE);
 	RzILBool *vm_result = NULL;
 	RzILOpBool *result = NULL;
 
@@ -662,7 +662,7 @@ static bool test_il_fle() {
 }
 
 static bool test_il_fgt() {
-	RzILVM *vm = rz_il_vm_new(0, 64, false);
+	RzILVM *vm = rz_il_vm_new(0, 64, false, RZ_IL_EVENT_EXC_NONE);
 	RzILBool *vm_result = NULL;
 	RzILOpBool *result = NULL;
 
@@ -732,7 +732,7 @@ static bool test_il_fgt() {
 }
 
 static bool test_il_fge() {
-	RzILVM *vm = rz_il_vm_new(0, 64, false);
+	RzILVM *vm = rz_il_vm_new(0, 64, false, RZ_IL_EVENT_EXC_NONE);
 	RzILBool *vm_result = NULL;
 	RzILOpBool *result = NULL;
 

@@ -125,7 +125,7 @@ static int compare_opcodes(char *a, char *b);
    is preceded by a findable `sethi' and it either adds an immediate
    displacement to that register, or it is an `add' or `or' instruction
    on that register.  */
-extern int print_insn_lanai(bfd_vma memaddr, disassemble_info *info) {
+extern int print_insn_lanai(bfd_vma memaddr, disassemble_info *info, void *data) {
 	FILE *stream = info->stream;
 	bfd_byte buffer[4];
 	unsigned int insn;
@@ -140,7 +140,7 @@ extern int print_insn_lanai(bfd_vma memaddr, disassemble_info *info) {
 
 	{
 		int status =
-			(*info->read_memory_func)(memaddr, buffer, sizeof(buffer), info);
+			(*info->read_memory_func)(memaddr, buffer, sizeof(buffer), info, data);
 		if (status != 0) {
 			(*info->memory_error_func)(status, memaddr, info);
 			return -1;
@@ -181,7 +181,7 @@ extern int print_insn_lanai(bfd_vma memaddr, disassemble_info *info) {
 				continue;
 #endif
 
-			(*info->fprintf_func)(stream, "%s", opcode->name);
+			(*info->fprintf_func)(stream, data, "%s", opcode->name);
 
 			{
 				register CONST char *s;
@@ -189,45 +189,45 @@ extern int print_insn_lanai(bfd_vma memaddr, disassemble_info *info) {
 
 				for (s = opcode->args; *s != '\0'; ++s) {
 
-					(*info->fprintf_func)(stream, " ");
+					(*info->fprintf_func)(stream, data, " ");
 
 					switch (*s) {
 					/* By default, just print the character. */
 					default:
-						(*info->fprintf_func)(stream, "%c", *s);
+						(*info->fprintf_func)(stream, data, "%c", *s);
 						break;
 
-#define reg(n) (*info->fprintf_func)(stream, "%s", reg_names[n])
+#define reg(n,data) (*info->fprintf_func)(stream, data, "%s", reg_names[n])
 						// #define	reg(n)	(*info->fprintf_func) (stream, "%%%s", reg_names[n])
 					case '1':
-						reg(X_RS1(insn));
+						reg(X_RS1(insn), data);
 						break;
 
 					case '2':
-						reg(X_RS2(insn));
+						reg(X_RS2(insn), data);
 						break;
 
 					case '3':
-						reg(X_RS3(insn));
+						reg(X_RS3(insn), data);
 						break;
 
 					case 'd':
-						reg(X_RD(insn));
+						reg(X_RD(insn), data);
 						break;
 
 #undef reg
 
 					case '4': /* Op1 (for RRR) */
-						(*info->fprintf_func)(stream, "%s", op_names[X_OP1(insn)]);
+						(*info->fprintf_func)(stream, data, "%s", op_names[X_OP1(insn)]);
 						break;
 					case '5': /* Op2 (for RRR) */
-						(*info->fprintf_func)(stream, "%s", op_names[X_OP2(insn)]);
+						(*info->fprintf_func)(stream, data, "%s", op_names[X_OP2(insn)]);
 						if (insn & L3_RRR_F) {
-							(*info->fprintf_func)(stream, ".f");
+							(*info->fprintf_func)(stream, data, ".f");
 						}
 						break;
 					case '6': /* Op2 (for RRM) */
-						(*info->fprintf_func)(stream, "%s", op_names[X_OP2(insn)]);
+						(*info->fprintf_func)(stream, data, "%s", op_names[X_OP2(insn)]);
 						break;
 
 					case 'J':
@@ -244,7 +244,7 @@ extern int print_insn_lanai(bfd_vma memaddr, disassemble_info *info) {
 						goto print_immediate;
 					case 'k':
 						/* This should never happen */
-						(*info->fprintf_func)(stream, "***ERROR***");
+						(*info->fprintf_func)(stream, data, "***ERROR***");
 						break;
 					case 'o':
 						imm = SIGN_EXT(X_C16(insn), 16);
@@ -275,45 +275,45 @@ extern int print_insn_lanai(bfd_vma memaddr, disassemble_info *info) {
 						goto print_address;
 
 					print_immediate:
-						(*info->fprintf_func)(stream, "0x%x", imm);
+						(*info->fprintf_func)(stream, data, "0x%x", imm);
 						break;
 					print_address:
 						info->target = imm;
-						(*info->print_address_func)(imm, info);
+						(*info->print_address_func)(imm, data, info);
 						break;
 
 						/* Named registers */
 
 					case 'P':
-						(*info->fprintf_func)(stream, "%%pc");
+						(*info->fprintf_func)(stream, data, "%%pc");
 						break;
 
 					case 'p':
-						(*info->fprintf_func)(stream, "%%ps");
+						(*info->fprintf_func)(stream, data, "%%ps");
 						break;
 
 					case 'Q':
-						(*info->fprintf_func)(stream, "%%apc");
+						(*info->fprintf_func)(stream, data, "%%apc");
 						break;
 
 					case 'q':
-						(*info->fprintf_func)(stream, "%%aps");
+						(*info->fprintf_func)(stream, data, "%%aps");
 						break;
 
 					case 'S':
-						(*info->fprintf_func)(stream, "%%isr");
+						(*info->fprintf_func)(stream, data, "%%isr");
 						break;
 
 					case 'M':
-						(*info->fprintf_func)(stream, "%%imr");
+						(*info->fprintf_func)(stream, data, "%%imr");
 						break;
 
 					case '!':
-						(*info->fprintf_func)(stream, "%%r1");
+						(*info->fprintf_func)(stream, data, "%%r1");
 						break;
 
 					case '0':
-						(*info->fprintf_func)(stream, "%%r0");
+						(*info->fprintf_func)(stream, data, "%%r0");
 						break;
 					}
 				}
@@ -330,7 +330,7 @@ extern int print_insn_lanai(bfd_vma memaddr, disassemble_info *info) {
 				int errcode;
 
 				errcode =
-					(*info->read_memory_func)(memaddr - 4, buffer, sizeof(buffer), info);
+					(*info->read_memory_func)(memaddr - 4, buffer, sizeof(buffer), info, data);
 				prev_insn = bfd_getb32(buffer);
 
 				if (errcode == 0) {
@@ -344,7 +344,7 @@ extern int print_insn_lanai(bfd_vma memaddr, disassemble_info *info) {
 					   */
 
 					if (is_delayed_branch(prev_insn)) {
-						errcode = (*info->read_memory_func)(memaddr - 8, buffer, sizeof(buffer), info);
+						errcode = (*info->read_memory_func)(memaddr - 8, buffer, sizeof(buffer), info, data);
 						prev_insn = bfd_getb32(buffer);
 					}
 				}
@@ -354,14 +354,14 @@ extern int print_insn_lanai(bfd_vma memaddr, disassemble_info *info) {
 				if (errcode == 0) {
 					/* Is it an "{and,or} %r0,0x????????,%rd" to the same reg  */
 					if (((prev_insn & 0xf07c0000) == 0x00000000 || (prev_insn & 0xf07c0000) == 0x50000000) && X_RD(prev_insn) == X_RS1(insn) && X_RD(prev_insn)) {
-						(*info->fprintf_func)(stream, "\t! ");
+						(*info->fprintf_func)(stream, data, "\t! ");
 						info->target = X_C16(insn) << (L3_RI_H & insn ? 16 : 0);
 						if ((prev_insn & 0xf07c0000) == 0x50000000) {
 							info->target |= X_C16(prev_insn) << (L3_RI_H & prev_insn ? 16 : 0);
 						} else {
 							info->target += X_C16(prev_insn) << (L3_RI_H & prev_insn ? 16 : 0);
 						}
-						(*info->print_address_func)(info->target, info);
+						(*info->print_address_func)(info->target, data, info);
 						info->insn_type = dis_dref;
 						info->data_size = 4; /* FIXME!!! */
 					}
@@ -388,7 +388,7 @@ extern int print_insn_lanai(bfd_vma memaddr, disassemble_info *info) {
 	}
 
 	info->insn_type = dis_noninsn; /* Mark as non-valid instruction */
-	(*info->fprintf_func)(stream, "%#8x", insn);
+	(*info->fprintf_func)(stream, data, "%#8x", insn);
 	return sizeof(buffer);
 }
 

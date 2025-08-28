@@ -1027,7 +1027,7 @@ _instName(void *_this ATTRIBUTE_UNUSED, int majop, int minop, int *flags) {
    in bytes or zero if unrecognized.
    ADDRESS is the address of this instruction.  */
 
-int ARCTangent_decodeInstr(bfd_vma address, disassemble_info *info) {
+int ARCTangent_decodeInstr(bfd_vma address, disassemble_info *info, void *data) {
 	int status;
 	bfd_byte buffer[4];
 	struct arcDisState s; /* ARC Disassembler state.  */
@@ -1037,7 +1037,7 @@ int ARCTangent_decodeInstr(bfd_vma address, disassemble_info *info) {
 	memset(&s, 0, sizeof(struct arcDisState));
 
 	/* Read first instruction.  */
-	status = (*info->read_memory_func)(address, buffer, 4, info);
+	status = (*info->read_memory_func)(address, buffer, 4, info, data);
 	if (status != 0) {
 		(*info->memory_error_func)(status, address, info);
 		return -1;
@@ -1049,7 +1049,7 @@ int ARCTangent_decodeInstr(bfd_vma address, disassemble_info *info) {
 	}
 	/* Always read second word in case of limm.  */
 	/* We ignore the result since last insn may not have a limm.  */
-	(*info->read_memory_func)(address + 4, buffer, 4, info);
+	(*info->read_memory_func)(address + 4, buffer, 4, info, data);
 	if (info->endian == BFD_ENDIAN_LITTLE) {
 		s.words[1] = bfd_getl32(buffer);
 	} else {
@@ -1070,15 +1070,15 @@ int ARCTangent_decodeInstr(bfd_vma address, disassemble_info *info) {
       (*func) (stream, "%08lx ", s.words[0]);
       (*func) (stream, "  ");
     */
-	(*func)(stream, "%s ", s.instrBuffer);
+	(*func)(stream, data, "%s ", s.instrBuffer);
 
 	if (__TRANSLATION_REQUIRED(s)) {
 		bfd_vma addr = s.addresses[s.operandBuffer[1] - '0'];
 
-		(*info->print_address_func)((bfd_vma)addr, info);
+		(*info->print_address_func)((bfd_vma)addr, data, info);
 		//(*func) (stream, "\n");
 	} else {
-		(*func)(stream, "%s", s.operandBuffer);
+		(*func)(stream, data, "%s", s.operandBuffer);
 	}
 
 	return s.instructionLen;

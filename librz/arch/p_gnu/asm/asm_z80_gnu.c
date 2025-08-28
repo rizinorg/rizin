@@ -6,11 +6,11 @@
 #include <rz_lib.h>
 #include <rz_asm.h>
 
-static int do_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int z80_gnu_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	return op->size = z80Disass(op, buf, len);
 }
 
-static int do_assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
+static int z80_gnu_assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
 	return op->size = z80asm((ut8 *)rz_strbuf_get(&op->buf), buf);
 }
 
@@ -22,6 +22,6 @@ RzAsmPlugin rz_asm_plugin_z80_gnu = {
 	.arch = "z80",
 	.bits = 8,
 	.endian = RZ_SYS_ENDIAN_NONE,
-	.disassemble = &do_disassemble,
-	.assemble = &do_assemble,
+	.disassemble = &z80_gnu_disassemble,
+	.assemble = &z80_gnu_assemble,
 };

@@ -53,6 +53,7 @@ void elf_patch_relocs_elfobj_only(ELFOBJ *obj, RzBuffer *bin_buf, ut64 baseaddr)
 
 	rz_bin_elf_foreach_relocs(obj, reloc) {
 		ut64 sym_addr = 0;
+		ut64 sym_size = 0;
 		if (!reloc->sym) {
 			continue;
 		}
@@ -69,8 +70,9 @@ void elf_patch_relocs_elfobj_only(ELFOBJ *obj, RzBuffer *bin_buf, ut64 baseaddr)
 			} else {
 				sym_addr = rz_bin_reloc_target_builder_get_target(targets, reloc->sym);
 			}
+			sym_size = symbol->size;
 		}
-		Elf_(rz_bin_elf_patch_relocation)(obj, reloc, sym_addr, baddr, sym_addr, got_addr, &mips_AHL);
+		Elf_(rz_bin_elf_patch_relocation)(obj, reloc, sym_addr, sym_size, baddr, sym_addr, got_addr, &mips_AHL);
 		reloc->target_vaddr = sym_addr;
 	}
 	rz_bin_reloc_target_builder_free(targets);

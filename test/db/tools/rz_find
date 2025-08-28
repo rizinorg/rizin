@@ -95,7 +95,6 @@ FILE==
 CMDS=!!rz-find -i bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
 0x00000000 ELF 32-bit LSB executable, Intel 80386, version 1
-0x00001d70 very short file (no magic)
 EOF
 RUN
 
@@ -104,7 +103,6 @@ FILE==
 CMDS=!!rz-find -m bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
 0x00000000 0 hit.magic.0 ELF 32-bit LSB executable, Intel 80386, version 1
-0x00001d70 0 hit.magic.1 very short file (no magic)
 EOF
 RUN
 

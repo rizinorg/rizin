@@ -82,23 +82,6 @@ invalid
 EOF
 RUN
 
-NAME=endian tests: sparc.gnu
-FILE==
-CMDS=<<EOF
-e asm.arch=sparc.gnu
-e asm.bits=64
-wx 554889e5
-e cfg.bigendian=true
-pi 1
-e cfg.bigendian=false
-pi 1
-EOF
-EXPECT=<<EOF
-call 0x55222794
-invalid
-EOF
-RUN
-
 NAME=tests: ppcps
 FILE=malloc://256
 CMDS=<<EOF

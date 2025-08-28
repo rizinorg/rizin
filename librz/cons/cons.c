@@ -616,6 +616,7 @@ RZ_API RzCons *rz_cons_new(void) {
 	I.fdout = 1;
 	I.break_lines = false;
 	I.lines = 0;
+	I.oldraw = -1;
 
 	I.input = RZ_NEW0(RzConsInputContext);
 	I.input->bufactive = true;
@@ -681,6 +682,7 @@ RZ_API RzCons *rz_cons_free(void) {
 	RZ_FREE(CTX(buffer));
 	RZ_FREE(I.break_word);
 	cons_context_deinit(I.context);
+	rz_strbuf_free(I.echobuf);
 	RZ_FREE(CTX(lastOutput));
 	CTX(lastLength) = 0;
 	RZ_FREE(I.pager);
@@ -950,20 +952,21 @@ static bool lastMatters(void) {
 }
 
 RZ_API void rz_cons_echo(const char *msg) {
-	static RzStrBuf *echodata = NULL; // TODO: move into RzConsInstance? maybe nope
+	RzCons *cons = rz_cons_singleton();
+
 	if (msg) {
-		if (echodata) {
-			rz_strbuf_append(echodata, msg);
-			rz_strbuf_append(echodata, "\n");
+		if (cons->echobuf) {
+			rz_strbuf_append(cons->echobuf, msg);
+			rz_strbuf_append(cons->echobuf, "\n");
 		} else {
-			echodata = rz_strbuf_new(msg);
+			cons->echobuf = rz_strbuf_new(msg);
 		}
 	} else {
-		if (echodata) {
-			char *data = rz_strbuf_drain(echodata);
+		if (cons->echobuf) {
+			char *data = rz_strbuf_drain(cons->echobuf);
 			rz_cons_strcat(data);
 			rz_cons_newline();
-			echodata = NULL;
+			cons->echobuf = NULL;
 			free(data);
 		}
 	}
@@ -1670,9 +1673,8 @@ RZ_API void rz_cons_show_cursor(int cursor) {
  *
  */
 RZ_API void rz_cons_set_raw(bool is_raw) {
-	static int oldraw = -1;
-	if (oldraw != -1) {
-		if (is_raw == oldraw) {
+	if (I.oldraw != -1) {
+		if (is_raw == I.oldraw) {
 			return;
 		}
 	}
@@ -1707,7 +1709,7 @@ RZ_API void rz_cons_set_raw(bool is_raw) {
 #warning No raw console supported for this platform
 #endif
 	fflush(stdout);
-	oldraw = is_raw;
+	I.oldraw = is_raw;
 }
 
 RZ_API void rz_cons_set_utf8(bool b) {
@@ -1773,16 +1775,13 @@ RZ_API void rz_cons_column(int c) {
 	free(b);
 }
 
-//  XXX deprecate must be push/pop context state
-static bool lasti = false; /* last interactive mode */
-
 RZ_API void rz_cons_set_interactive(bool x) {
-	lasti = rz_cons_singleton()->context->is_interactive;
+	rz_cons_singleton()->context->last_interactive_option = rz_cons_singleton()->context->is_interactive;
 	rz_cons_singleton()->context->is_interactive = x;
 }
 
 RZ_API void rz_cons_set_last_interactive(void) {
-	rz_cons_singleton()->context->is_interactive = lasti;
+	rz_cons_singleton()->context->is_interactive = rz_cons_singleton()->context->last_interactive_option;
 }
 
 RZ_API void rz_cons_set_title(const char *str) {

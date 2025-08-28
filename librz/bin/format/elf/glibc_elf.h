@@ -4433,6 +4433,31 @@ enum {
 #define R_HEX_BITMASK_WORD32_R6  0x000007e0
 #define R_HEX_BITMASK_WORD32_X26 0x0fff3fff
 
+#define R_SPARC_BITMASK_BYTE8   0xff
+#define R_SPARC_BITMASK_HALF16  0xffff
+#define R_SPARC_BITMASK_WORD32  0xffffffff
+#define R_SPARC_BITMASK_XWORD64 0xffffffffffffffff
+#define R_SPARC_BITMASK_DISP19  0x0007ffff
+#define R_SPARC_BITMASK_DISP22  0x003fffff
+#define R_SPARC_BITMASK_DISP30  0x3fffffff
+/**
+ * \brief The mask for DISP32 is guessed from the DISP masks above.
+ * I struggle to find the documentation for it.
+ */
+#define R_SPARC_BITMASK_DISP32    0xffffffff
+#define R_SPARC_BITMASK_D2_DISP8  0x00101fe0
+#define R_SPARC_BITMASK_D2_DISP14 0x00201fff
+#define R_SPARC_BITMASK_IMM5      0x0000001f
+#define R_SPARC_BITMASK_IMM6      0x0000003f
+#define R_SPARC_BITMASK_IMM7      0x0000007f
+#define R_SPARC_BITMASK_IMM10     0x000003ff
+#define R_SPARC_BITMASK_IMM13     0x00001fff
+#define R_SPARC_BITMASK_IMM22     0x003fffff
+#define R_SPARC_BITMASK_SIMM10    0x000003ff
+#define R_SPARC_BITMASK_SIMM11    0x000007ff
+#define R_SPARC_BITMASK_SIMM13    0x00001fff
+#define R_SPARC_BITMASK_SIMM22    0x003fffff
+
 /* Dynamic array tags */
 
 #define DT_HEXAGON_SYMSZ 0x70000000

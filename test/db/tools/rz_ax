@@ -579,3 +579,11 @@ EXPECT=<<EOF
 [5-6]: 1
 EOF
 RUN
+
+NAME=rz-ax stdin input
+FILE==
+CMDS=!echo 0xff | rz-ax
+EXPECT=<<EOF
+255
+EOF
+RUN

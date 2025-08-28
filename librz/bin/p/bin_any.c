@@ -11,7 +11,7 @@
 static char *get_filetype(RzBuffer *b) {
 	ut8 buf[4096] = { 0 };
 	char *res = NULL;
-	RzMagic *ck = rz_magic_new(0);
+	RzMagic *ck = rz_magic_new();
 	if (!ck) {
 		return NULL;
 	}
@@ -20,7 +20,7 @@ static char *get_filetype(RzBuffer *b) {
 		rz_magic_free(ck);
 		return NULL;
 	}
-	const char *tmp = NULL;
+	char *tmp = NULL;
 	// TODO: dir.magic not honored here
 	char *m = rz_path_system(sys_path, RZ_SDB_MAGIC);
 	if (!m) {
@@ -35,6 +35,7 @@ static char *get_filetype(RzBuffer *b) {
 	if (tmp) {
 		res = rz_str_dup(tmp);
 	}
+	free(tmp);
 	rz_magic_free(ck);
 	rz_path_free(sys_path);
 	return res;

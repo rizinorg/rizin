@@ -8,6 +8,44 @@
  * @{
  */
 
+static RzILEventException get_halt_exc_options(RzCoreBind *coreb, void *core) {
+	// core might be NULL for rz-asm.
+	const char *exc = core ? coreb->cfgGet(core, "rzil.step.events.halt_on_exc") : NULL;
+	if (RZ_STR_ISEMPTY(exc) || RZ_STR_EQ(exc, "none")) {
+		return RZ_IL_EVENT_EXC_NONE;
+	} else if (RZ_STR_EQ(exc, "all")) {
+		return RZ_IL_EVENT_EXC_DIV_ZERO |
+			RZ_IL_EVENT_EXC_FP_DIV_ZERO |
+			RZ_IL_EVENT_EXC_FP_INVALID_OP |
+			RZ_IL_EVENT_EXC_FP_OVERFLOW |
+			RZ_IL_EVENT_EXC_FP_UNDERFLOW |
+			RZ_IL_EVENT_EXC_FP_INEXACT;
+	}
+	RzILEventException he = 0;
+	RzList *opts = rz_str_split_duplist_n(exc, ",", 0, true);
+	RzListIter *it;
+	const char *e;
+	rz_list_foreach (opts, it, e) {
+		if (RZ_STR_EQ("div0", e)) {
+			he |= RZ_IL_EVENT_EXC_DIV_ZERO;
+		} else if (RZ_STR_EQ("fp_div0", e)) {
+			he |= RZ_IL_EVENT_EXC_FP_DIV_ZERO;
+		} else if (RZ_STR_EQ("fp_inexact", e)) {
+			he |= RZ_IL_EVENT_EXC_FP_INEXACT;
+		} else if (RZ_STR_EQ("fp_underflow", e)) {
+			he |= RZ_IL_EVENT_EXC_FP_UNDERFLOW;
+		} else if (RZ_STR_EQ("fp_overflow", e)) {
+			he |= RZ_IL_EVENT_EXC_FP_OVERFLOW;
+		} else if (RZ_STR_EQ("fp_invalid_op", e)) {
+			he |= RZ_IL_EVENT_EXC_FP_INVALID_OP;
+		} else {
+			RZ_LOG_WARN("Exception type '%s' in rzil.step.events.halt_on_exc is not handled!\n", e);
+		}
+	}
+	rz_list_free(opts);
+	return he;
+}
+
 static void var_state_free(void *e, void *user) {
 	RzAnalysisILInitStateVar *s = e;
 	if (!s) {
@@ -175,7 +213,7 @@ new_real:
 }
 
 static void setup_vm_from_config(RzAnalysis *analysis, RzAnalysisILVM *vm, RzAnalysisILConfig *cfg) {
-	vm->vm = rz_il_vm_new(0, cfg->pc_size, cfg->big_endian);
+	vm->vm = rz_il_vm_new(0, cfg->pc_size, cfg->big_endian, get_halt_exc_options(&analysis->coreb, analysis->core));
 	if (!vm->vm) {
 		return;
 	}

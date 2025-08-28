@@ -18,8 +18,9 @@ static int sparc_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	}
 	if (a->cpu && *a->cpu) {
 		if (RZ_STR_EQ(a->cpu, "v9")) {
-			mode |= CS_MODE_V9 | CS_MODE_64;
-		} else if (a->bits == 64) {
+			mode |= CS_MODE_V9;
+		}
+		if (a->bits == 64) {
 			mode |= CS_MODE_64;
 		} else {
 			mode |= CS_MODE_32;

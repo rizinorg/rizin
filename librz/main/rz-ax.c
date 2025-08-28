@@ -747,10 +747,10 @@ dotherax:
 RZ_API int rz_main_rz_ax(int argc, const char **argv) {
 	int i, fm = 0;
 	RzNum *num = rz_num_new(NULL, NULL, NULL);
+	ut64 flags = 0;
 	if (argc == 1) {
-		use_stdin(num, 0, &fm);
+		use_stdin(num, &flags, &fm);
 	} else {
-		ut64 flags = 0;
 		for (i = 1; i < argc; i++) {
 			char *argv_i = rz_str_dup(argv[i]);
 			rz_str_unescape(argv_i);

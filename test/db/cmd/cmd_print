@@ -658,7 +658,6 @@ ARGS=-n
 CMDS=pm bins/src/olf.magic
 EXPECT=<<EOF
 0x00000000 OLF 32-bit LSB
-0x00001d70 very short file (no magic)
 EOF
 RUN
 
@@ -689,7 +688,6 @@ FILE=bins/src/hello.c
 CMDS=pm
 EXPECT=<<EOF
 0x00000000 C source code
-0x00000048 very short file (no magic)
 EOF
 RUN
 
@@ -716,7 +714,7 @@ FILE=bins/mach0/fatmach0-3true
 ARGS=-n
 CMDS=pm
 EXPECT=<<EOF
-0x00000000 Fat-Mach-O
+0x00000000 Fat-Mach-O version 3.0 Mach-O fat file with 3 architectures
 0x00001000 Mach-O
 0x00003140 MacOS Deteched Code Signature
 0x00005000 Mach-O
@@ -726,13 +724,30 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=pm perl/exam.pm
+FILE=bins/perl/exam.pm
+ARGS=-n
+CMDS=pm
+EXPECT=<<EOF
+0x00000000 Perl5 module source text
+EOF
+RUN
+
+NAME=pm perl/exam.pl
+FILE=bins/perl/exam.pl
+ARGS=-n
+CMDS=pm
+EXPECT=<<EOF
+0x00000000 Perl script text executable
+EOF
+RUN
+
 NAME=pm java/Hello.class
 FILE=bins/java/Hello.class
 ARGS=-n
 CMDS=pm
 EXPECT=<<EOF
 0x00000000 Java CLASS
-0x000002d4 very short file (no magic)
 EOF
 RUN
 

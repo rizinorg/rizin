@@ -119,16 +119,16 @@ typedef struct prstatus_layout_t {
 } RzBinElfPrStatusLayout;
 
 typedef struct rz_bin_elf_section_t {
-	ut32 flags;
-	ut32 info;
-	ut32 link;
-	ut32 type;
-	ut64 align;
-	ut64 offset;
-	ut64 rva;
-	ut64 size;
-	char *name;
-	bool is_valid;
+	ut32 flags; ///< sh_flags: One bit flags.
+	ut32 info; ///< sh_info: Section dependent additional information.
+	ut32 link; ///< sh_link: This member holds a section header table index link.
+	ut32 type; ////< sh_type: The section type.
+	ut64 align; ///< sh_align: The section alignment.
+	ut64 offset; ///< sh_offset: The offset into the binary where the section starts.
+	ut64 rva; ///< sh_addr: The section base virtual address.
+	ut64 size; ///< sh_size: Size of the section in bytes.
+	char *name; ///< sh_name: Section name.
+	bool is_valid; ///< True if section is valid. False if information is inconsistent.
 } RzBinElfSection;
 
 typedef struct Elf_(rz_bin_elf_segment_t) {
@@ -154,10 +154,15 @@ typedef struct rz_bin_elf_reloc_t {
 	st64 addend; ///< exact addend value taken from the ELF, meaning depends on type
 	ut64 offset; ///< exact offset value taken from the ELF, meaning depends on the binary type
 	ut64 paddr; ///< absolute paddr in the file, calculated from offset, or UT64_MAX if no such addr exists
-	ut64 vaddr; ///< source vaddr of the reloc, calculated from offset
+	ut64 vaddr; ///< source vaddr of the reloc, calculated from offset. This is the address the patch is applied.
 	ut64 target_vaddr; ///< after patching, the target that this reloc points to
 	ut16 section;
+	ut64 info; ///< The r_info field from Elf32_Rel/ELF32_Rela/ELF64_Rel/ELF64_Rela.
 	ut64 sto;
+	/**
+	 * \brief Sparc specific ELF relocation value.
+	 */
+	ut64 sparc_secondary_addend;
 } RzBinElfReloc;
 
 typedef struct rz_bin_elf_dt_dynamic_t RzBinElfDtDynamic; // elf_dynamic.h
@@ -352,7 +357,8 @@ size_t Elf_(rz_bin_elf_get_relocs_count)(RZ_NONNULL ELFOBJ *bin);
 ut64 Elf_(rz_bin_elf_get_num_relocs_dynamic_plt)(RZ_NONNULL ELFOBJ *bin);
 
 // elf_relocs_patching.c
-void Elf_(rz_bin_elf_patch_relocation)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinElfReloc *rel, ut64 S, ut64 B, ut64 L, ut64 GOT, RZ_NONNULL ut64 *AHL);
+void Elf_(rz_bin_elf_patch_relocation)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinElfReloc *rel, ut64 S, ut64 Z, ut64 B, ut64 L, ut64 GOT, RZ_NONNULL ut64 *AHL);
+RZ_IPI ut64 Elf_(rz_bin_get_reloc_sym_offset_in_got)(RZ_NONNULL ELFOBJ *bin, ut64 sym_id);
 
 // elf_relocs_conversion.c
 RZ_OWN RzBinSymbol *Elf_(rz_bin_elf_convert_symbol)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinElfSymbol *elf_symbol);

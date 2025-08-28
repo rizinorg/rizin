@@ -27,6 +27,16 @@ typedef enum rz_il_event_id_t {
 	RZ_IL_EVENT_VAR_WRITE,
 } RzILEventId;
 
+typedef enum {
+	RZ_IL_EVENT_EXC_NONE = 0,
+	RZ_IL_EVENT_EXC_DIV_ZERO = 1 << 1,
+	RZ_IL_EVENT_EXC_FP_INVALID_OP = 1 << 2,
+	RZ_IL_EVENT_EXC_FP_DIV_ZERO = 1 << 3,
+	RZ_IL_EVENT_EXC_FP_OVERFLOW = 1 << 4,
+	RZ_IL_EVENT_EXC_FP_UNDERFLOW = 1 << 5,
+	RZ_IL_EVENT_EXC_FP_INEXACT = 1 << 6,
+} RzILEventException;
+
 typedef struct rz_il_vm_event_mem_read_t {
 	RzILMemIndex index;
 	RZ_NONNULL RzBitVector *address;
@@ -59,7 +69,7 @@ typedef struct rz_il_vm_event_var_write_t {
 typedef struct rz_il_vm_event_t {
 	RzILEventId type;
 	union {
-		char *exception;
+		RzILEventException exception;
 		RzILEventPCWrite pc_write;
 		RzILEventMemRead mem_read;
 		RzILEventMemWrite mem_write;
@@ -68,13 +78,14 @@ typedef struct rz_il_vm_event_t {
 	} data;
 } RzILEvent;
 
-RZ_API RZ_OWN RzILEvent *rz_il_event_exception_new(RZ_NONNULL const char *exception);
+RZ_API RZ_OWN RzILEvent *rz_il_event_exception_new(RzILEventException type);
 RZ_API RZ_OWN RzILEvent *rz_il_event_pc_write_new(RZ_NONNULL const RzBitVector *old_pc, RZ_NONNULL const RzBitVector *new_pc);
 RZ_API RZ_OWN RzILEvent *rz_il_event_mem_read_new(RzILMemIndex index, RZ_NONNULL const RzBitVector *addr, RZ_NULLABLE const RzBitVector *value);
 RZ_API RZ_OWN RzILEvent *rz_il_event_var_read_new(RZ_NONNULL const char *name, RZ_NULLABLE const RzILVal *value);
 RZ_API RZ_OWN RzILEvent *rz_il_event_mem_write_new(RzILMemIndex index, RZ_NONNULL const RzBitVector *addr, RZ_NONNULL const RzBitVector *old_v, RZ_NONNULL const RzBitVector *new_v);
 RZ_API RZ_OWN RzILEvent *rz_il_event_var_write_new(RZ_NONNULL const char *name, RZ_NULLABLE const RzILVal *old_v, RZ_NONNULL const RzILVal *new_v);
 RZ_API void rz_il_event_free(RZ_NULLABLE RzILEvent *evt);
+RZ_API const char *rz_il_event_exception_msg(const RzILEventException id);
 
 // Printing/Export
 RZ_API void rz_il_event_stringify(RZ_NONNULL const RzILEvent *evt, RZ_NONNULL RzStrBuf *sb);

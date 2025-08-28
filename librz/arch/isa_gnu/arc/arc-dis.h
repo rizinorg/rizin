@@ -103,9 +103,9 @@ struct arcDisState
 };
 
 #if 0
-int ARCTangent_decodeInstr(bfd_vma address, disassemble_info* info);
+int ARCTangent_decodeInstr(bfd_vma address, disassemble_info* info, void *data);
 #endif
-int ARCompact_decodeInstr (bfd_vma address, disassemble_info* info);
+int ARCompact_decodeInstr (bfd_vma address, disassemble_info* info, void *data);
 
 #define __TRANSLATION_REQUIRED(state)	((state).acnt != 0)
 

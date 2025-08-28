@@ -343,19 +343,19 @@ void *rz_il_handler_fexcept(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 	switch (args.e) {
 	case RZ_FLOAT_E_DIV_ZERO:
 		e = n->exception & RZ_FLOAT_E_DIV_ZERO;
-		rz_il_vm_event_add(vm, rz_il_event_exception_new("float division by zero"));
+		rz_il_vm_event_add(vm, rz_il_event_exception_new(RZ_IL_EVENT_EXC_FP_DIV_ZERO));
 		break;
 	case RZ_FLOAT_E_OVERFLOW:
 		e = n->exception & RZ_FLOAT_E_OVERFLOW;
-		rz_il_vm_event_add(vm, rz_il_event_exception_new("float overflow"));
+		rz_il_vm_event_add(vm, rz_il_event_exception_new(RZ_IL_EVENT_EXC_FP_OVERFLOW));
 		break;
 	case RZ_FLOAT_E_UNDERFLOW:
 		e = n->exception & RZ_FLOAT_E_UNDERFLOW;
-		rz_il_vm_event_add(vm, rz_il_event_exception_new("float underflow"));
+		rz_il_vm_event_add(vm, rz_il_event_exception_new(RZ_IL_EVENT_EXC_FP_UNDERFLOW));
 		break;
 	case RZ_FLOAT_E_INEXACT:
 		e = n->exception & RZ_FLOAT_E_INEXACT;
-		rz_il_vm_event_add(vm, rz_il_event_exception_new("float inexact"));
+		rz_il_vm_event_add(vm, rz_il_event_exception_new(RZ_IL_EVENT_EXC_FP_INEXACT));
 		break;
 	default:;
 	}

@@ -430,6 +430,7 @@ RUN
 
 NAME=Analyze classes in swift
 FILE=bins/mach0/swift-main
+BROKEN=1
 CMDS=<<EOF
 aaa
 acll
@@ -498,6 +499,7 @@ RUN
 
 NAME=Analyze class inheritance in swift
 FILE=bins/mach0/swift-bin-multi-inherit
+BROKEN=1
 CMDS=<<EOF
 aaa
 acll

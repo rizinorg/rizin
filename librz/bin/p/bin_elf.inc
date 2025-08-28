@@ -603,6 +603,38 @@ static ut64 get_got_addr(ELFOBJ *bin) {
 	return 0;
 }
 
+/**
+ * \brief Returns the offset into the GOT where the symbol with \p sym_id
+ * has it's relocation address.
+ *
+ * \param bin The Elf object.
+ * \param sym_id The symbol id retrieved via ELF_R_SYM().
+ *
+ * \return The offset into the GOT in bytes. Or UT64_MAX if no GOT exists or
+ * the symbol has no indirection in the GOT.
+ */
+RZ_IPI ut64 Elf_(rz_bin_get_reloc_sym_offset_in_got)(RZ_NONNULL ELFOBJ *bin, ut64 sym_id) {
+	RzBinElfSection *got = Elf_(rz_bin_elf_get_section_with_name)(bin, ".got");
+	if (!got) {
+		got = Elf_(rz_bin_elf_get_section_with_name)(bin, ".got.plt");
+		if (!got) {
+			return UT64_MAX;
+		}
+	}
+	// Search all entries of the GOT for the matching symbol id.
+	RzBinElfReloc *reloc;
+	rz_bin_elf_foreach_relocs(bin, reloc) {
+		if (!RZ_BETWEEN(got->rva, reloc->vaddr, got->rva + got->size)) {
+			// Not a GOT entry.
+			continue;
+		}
+		if (sym_id == reloc->sym) {
+			return reloc->offset;
+		}
+	}
+	return UT64_MAX;
+}
+
 static void patch_relocs_obj(ELFOBJ *bin, ut64 baddr, RzBuffer *patch_buf) {
 	rz_return_if_fail(bin && patch_buf);
 	if (bin->relocs_patched || !Elf_(rz_bin_elf_has_relocs)(bin)) {
@@ -632,6 +664,7 @@ static void patch_relocs_obj(ELFOBJ *bin, ut64 baddr, RzBuffer *patch_buf) {
 
 	rz_bin_elf_foreach_relocs(bin, reloc) {
 		ut64 sym_addr = 0;
+		ut64 sym_size = 0;
 		if (reloc->sym) {
 			RzBinElfSymbol *import = Elf_(rz_bin_elf_get_import)(bin, reloc->sym);
 			if (import) {
@@ -643,12 +676,13 @@ static void patch_relocs_obj(ELFOBJ *bin, ut64 baddr, RzBuffer *patch_buf) {
 					if (Elf_(rz_bin_elf_is_arm_binary_supporting_thumb)(bin) && Elf_(rz_bin_elf_is_thumb_addr)(sym_addr)) {
 						Elf_(rz_bin_elf_fix_arm_thumb_addr)(&sym_addr);
 					}
+					sym_size = symbol->size;
 				} else {
 					sym_addr = rz_bin_reloc_target_builder_get_target(targets, reloc->sym);
 				}
 			}
 		}
-		Elf_(rz_bin_elf_patch_relocation)(bin, reloc, sym_addr, baddr, sym_addr, got_addr, &mips_AHL);
+		Elf_(rz_bin_elf_patch_relocation)(bin, reloc, sym_addr, sym_size, baddr, sym_addr, got_addr, &mips_AHL);
 		reloc->target_vaddr = sym_addr;
 	}
 	rz_bin_reloc_target_builder_free(targets);

@@ -113,6 +113,8 @@ static bool get_reloc_entry(ELFOBJ *bin, RzBinElfReloc *reloc, ut64 offset, ut64
 	reloc->sym = ELF_R_SYM(tmp.r_info);
 	reloc->type = ELF_R_TYPE(tmp.r_info);
 	reloc->addend = tmp.r_addend;
+	reloc->info = tmp.r_info;
+	reloc->sparc_secondary_addend = ELF64_SPARC_R_TYPE_DATA(tmp.r_info);
 
 	return true;
 }

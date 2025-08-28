@@ -992,12 +992,14 @@ RZ_API size_t rz_str_ncpy(char *dst, const char *src, size_t dst_size) {
  * 	This API behaves like strlcat.
  */
 RZ_API size_t rz_str_ncat(RZ_NONNULL RZ_OUT char *dst, RZ_NONNULL const char *src, size_t dst_size) {
+
 	rz_return_val_if_fail(dst && src, 0);
 
 	// do not do anything if dst_size is 0
 	if (dst_size == 0) {
 		return 0;
 	}
+
 #if HAVE_STRLCAT
 	return strlcat(dst, src, dst_size);
 #else

@@ -140,13 +140,13 @@ static RzBinReloc *reloc_convert_ifunc(ELFOBJ *bin, RzBinElfReloc *rel, RzBinRel
 }
 
 #define UNSUPP_RELOC(NAME, V) \
-	RZ_LOG_WARN(NAME ": Unsupported ELF reloc %u (0x%x)\n", (ut32)V, (ut32)V); \
+	RZ_LOG_WARN(NAME ": Unsupported conversion of ELF reloc %u (0x%x)\n", (ut32)V, (ut32)V); \
 	return reloc_convert_new(bin, rel)
 
 #define UNSUPP(NAME) UNSUPP_RELOC(NAME, rel->type)
 
 #define UNHANDL(RELOC_NAME) \
-	RZ_LOG_WARN("Unhandled ELF reloc %d (" RELOC_NAME ")\n", rel->type); \
+	RZ_LOG_WARN("Unhandled conversion of ELF reloc %d (" RELOC_NAME ")\n", rel->type); \
 	return reloc_convert_set(bin, rel, 0, RELOC_NAME)
 
 #define SET(BIT_SIZE, RELOC_NAME) \
@@ -1178,6 +1178,190 @@ static RzBinReloc *reloc_convert_hexagon(ELFOBJ *bin, RzBinElfReloc *rel, ut64 G
 	}
 }
 
+static RzBinReloc *reloc_convert_sparc(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
+	ut64 P = rel->vaddr;
+
+	switch (rel->type) {
+	default: UNSUPP("Sparc");
+	case R_SPARC_NONE:
+		return reloc_convert_set(bin, rel, 0, "R_SPARC_NONE");
+
+	case R_SPARC_GOTDATA_OP:
+		UNHANDL("R_SPARC_GOTDATA_OP");
+	case R_SPARC_JMP_SLOT:
+		// The patching depends on runtime values.
+		// But the relocation just points to an entry in the PLT.
+		// Because it would write the symbol address into this PLT entry,
+		// converting it to a "set value" relocation seems close enough.
+		SET(32, "R_SPARC_JMP_SLOT");
+	case R_SPARC_COPY:
+		// The patching depends on runtime values (like the library the value is
+		// is copied from).
+		// The relocation just points to an offset where the copy should be stored.
+		// Because it would write the copied data to the offset the relocation gives,
+		// converting it to a "set value" relocation seems close enough.
+		SET(32, "R_SPARC_COPY");
+	case R_SPARC_8:
+		ADD(8, 0, "R_SPARC_8");
+	case R_SPARC_16:
+		ADD(16, 0, "R_SPARC_16");
+	case R_SPARC_32:
+		ADD(32, 0, "R_SPARC_32");
+	case R_SPARC_DISP8:
+		ADD(8, -P, "R_SPARC_DISP8");
+	case R_SPARC_DISP16:
+		ADD(16, -P, "R_SPARC_DISP16");
+	case R_SPARC_DISP32:
+		ADD(32, -P, "R_SPARC_DISP32");
+	case R_SPARC_WDISP30:
+		// ((S + A - P) >> 2);
+		UNHANDL("R_SPARC_WDISP30");
+	case R_SPARC_WDISP22:
+		// ((S + A - P) >> 2);
+		UNHANDL("R_SPARC_WDISP22");
+	case R_SPARC_HI22:
+		// ((S + A) >> 10);
+		UNHANDL("R_SPARC_HI22");
+	case R_SPARC_22:
+		ADD(32, 0, "R_SPARC_22");
+	case R_SPARC_13:
+		ADD(32, 0, "R_SPARC_13");
+	case R_SPARC_LO10:
+		// ((S + A) & 0x3ff);
+		UNHANDL("R_SPARC_LO10");
+	case R_SPARC_GOT10:
+		// (G & 0x3ff);
+		UNHANDL("R_SPARC_GOT10");
+	case R_SPARC_GOT13:
+		// (G);
+		UNHANDL("R_SPARC_GOT13");
+	case R_SPARC_GOT22:
+		// (G >> 10);
+		UNHANDL("R_SPARC_GOT22");
+	case R_SPARC_PC10:
+		// ((S + A - P) & 0x3ff);
+		UNHANDL("R_SPARC_PC10");
+	case R_SPARC_PC22:
+		// ((S + A - P) >> 10);
+		UNHANDL("R_SPARC_PC22");
+	case R_SPARC_WPLT30:
+		// ((L + A - P) >> 2);
+		UNHANDL("R_SPARC_WPLT30");
+	case R_SPARC_GLOB_DAT:
+		ADD(32, 0, "R_SPARC_GLOB_DAT");
+	case R_SPARC_RELATIVE:
+		// (B + A);
+		UNHANDL("R_SPARC_RELATIVE");
+	case R_SPARC_UA32:
+		ADD(32, 0, "R_SPARC_UA32");
+	case R_SPARC_PLT32:
+		ADD(32, 0, "R_SPARC_PLT32");
+	case R_SPARC_HIPLT22:
+		// ((L + A) >> 10);
+		UNHANDL("R_SPARC_HIPLT22");
+	case R_SPARC_LOPLT10:
+		// ((L + A) & 0x3ff);
+		UNHANDL("R_SPARC_LOPLT10");
+	case R_SPARC_PCPLT32:
+		ADD(32, -P, "R_SPARC_PCPLT32");
+	case R_SPARC_PCPLT22:
+		// ((L + A - P) >> 10);
+		UNHANDL("R_SPARC_PCPLT22");
+	case R_SPARC_PCPLT10:
+		// ((L + A - P) & 0x3ff);
+		UNHANDL("R_SPARC_PCPLT10");
+	case R_SPARC_10:
+		ADD(32, 0, "R_SPARC_10");
+	case R_SPARC_11:
+		ADD(32, 0, "R_SPARC_11");
+	case R_SPARC_64:
+		ADD(64, 0, "R_SPARC_64");
+	case R_SPARC_OLO10:
+		// (((S + A) & 0x3ff) + O);
+		UNHANDL("R_SPARC_OLO10");
+	case R_SPARC_HH22:
+		// ((S + A) >> 42);
+		UNHANDL("R_SPARC_HH22");
+	case R_SPARC_HM10:
+		// (((S + A) >> 32) & 0x3ff);
+		UNHANDL("R_SPARC_HM10");
+	case R_SPARC_LM22:
+		// ((S + A) >> 10);
+		UNHANDL("R_SPARC_LM22");
+	case R_SPARC_PC_HH22:
+		// ((S + A - P) >> 42);
+		UNHANDL("R_SPARC_PC_HH22");
+	case R_SPARC_PC_HM10:
+		// (((S + A - P) >> 32) & 0x3ff);
+		UNHANDL("R_SPARC_PC_HM10");
+	case R_SPARC_PC_LM22:
+		// ((S + A - P) >> 10);
+		UNHANDL("R_SPARC_PC_LM22");
+	case R_SPARC_WDISP16:
+		// ((S + A - P) >> 2);
+		UNHANDL("R_SPARC_WDISP16");
+	case R_SPARC_WDISP19:
+		// ((S + A - P) >> 2);
+		UNHANDL("R_SPARC_WDISP19");
+	case R_SPARC_7:
+		ADD(32, 0, "R_SPARC_7");
+	case R_SPARC_5:
+		ADD(32, 0, "R_SPARC_5");
+	case R_SPARC_6:
+		ADD(32, 0, "R_SPARC_6");
+	case R_SPARC_DISP64:
+		ADD(64, -P, "R_SPARC_DISP64");
+	case R_SPARC_PLT64:
+		// (L + A);
+		UNHANDL("R_SPARC_PLT64");
+	case R_SPARC_HIX22:
+		// (((S + A) ^ 0xffffffffffffffff) >> 10);
+		UNHANDL("R_SPARC_HIX22");
+	case R_SPARC_LOX10:
+		// (((S + A) & 0x3ff) | 0x1c00);
+		UNHANDL("R_SPARC_LOX10");
+	case R_SPARC_H44:
+		// ((S + A) >> 22);
+		UNHANDL("R_SPARC_H44");
+	case R_SPARC_M44:
+		// (((S + A) >> 12) & 0x3ff);
+		UNHANDL("R_SPARC_M44");
+	case R_SPARC_L44:
+		// ((S + A) & 0xfff);
+		UNHANDL("R_SPARC_L44");
+	case R_SPARC_REGISTER:
+		ADD(32, 0, "R_SPARC_REGISTER");
+	case R_SPARC_UA64:
+		ADD(32, 0, "R_SPARC_UA64");
+	case R_SPARC_UA16:
+		ADD(32, 0, "R_SPARC_UA16");
+	case R_SPARC_H34:
+		// ((S + A) >> 12);
+		UNHANDL("R_SPARC_H34");
+	case R_SPARC_SIZE64:
+		// (Z + A);
+		UNHANDL("R_SPARC_SIZE64");
+	case R_SPARC_GOTDATA_HIX22:
+		// (((S + A - GOT) >> 10) ^ ((S + A - GOT) >> 31));
+		UNHANDL("R_SPARC_GOTDATA_HIX22");
+	case R_SPARC_GOTDATA_LOX10:
+		// (((S + A - GOT) & 0x3ff) | (((S + A - GOT) >> 31) & 0x1c00));
+		UNHANDL("R_SPARC_GOTDATA_LOX10");
+	case R_SPARC_GOTDATA_OP_HIX22:
+		// ((G >> 10) ^ (G >> 31));
+		UNHANDL("R_SPARC_GOTDATA_OP_HIX22");
+	case R_SPARC_GOTDATA_OP_LOX10:
+		// ((G & 0x3ff) | ((G >> 31) & 0x1c00));
+		UNHANDL("R_SPARC_GOTDATA_OP_LOX10");
+	case R_SPARC_SIZE32:
+		// (Z + A);
+		UNHANDL("R_SPARC_SIZE32");
+	case R_SPARC_WDISP10:
+		// ((S + A - P) >> 2);
+		UNHANDL("R_SPARC_WDISP10");
+	}
+}
+
 #undef UNSUPP
 #undef UNHANDL
 #undef SET
@@ -1215,6 +1399,10 @@ RZ_OWN RzBinReloc *Elf_(rz_bin_elf_convert_relocation)(RZ_NONNULL ELFOBJ *bin, R
 		return reloc_convert_alpha(bin, rel, GOT);
 	case EM_QDSP6:
 		return reloc_convert_hexagon(bin, rel, GOT);
+	case EM_SPARC:
+	case EM_SPARC32PLUS:
+	case EM_SPARCV9:
+		return reloc_convert_sparc(bin, rel, GOT);
 	case EM_MIPS_X:
 		/* fall-thru */
 	case EM_MIPS_RS3_LE:
@@ -1224,7 +1412,6 @@ RZ_OWN RzBinReloc *Elf_(rz_bin_elf_convert_relocation)(RZ_NONNULL ELFOBJ *bin, R
 	case EM_IMG1: // nanomips
 		return reloc_convert_nanomips(bin, rel, GOT);
 	case EM_M32: ARCH_MISSING("EM_M32");
-	case EM_SPARC: ARCH_MISSING("EM_SPARC");
 	case EM_68K: ARCH_MISSING("EM_68K");
 	case EM_88K: ARCH_MISSING("EM_88K");
 	case EM_IAMCU: ARCH_MISSING("EM_IAMCU");
@@ -1232,7 +1419,6 @@ RZ_OWN RzBinReloc *Elf_(rz_bin_elf_convert_relocation)(RZ_NONNULL ELFOBJ *bin, R
 	case EM_S370: ARCH_MISSING("EM_S370");
 	case EM_PARISC: ARCH_MISSING("EM_PARISC");
 	case EM_VPP500: ARCH_MISSING("EM_VPP500");
-	case EM_SPARC32PLUS: ARCH_MISSING("EM_SPARC32PLUS");
 	case EM_960: ARCH_MISSING("EM_960");
 	case EM_S390: ARCH_MISSING("EM_S390");
 	case EM_SPU: ARCH_MISSING("EM_SPU");
@@ -1242,7 +1428,6 @@ RZ_OWN RzBinReloc *Elf_(rz_bin_elf_convert_relocation)(RZ_NONNULL ELFOBJ *bin, R
 	case EM_RCE: ARCH_MISSING("EM_RCE");
 	case EM_FAKE_ALPHA: ARCH_MISSING("EM_FAKE_ALPHA");
 	case EM_SH: ARCH_MISSING("EM_SH");
-	case EM_SPARCV9: ARCH_MISSING("EM_SPARCV9");
 	case EM_TRICORE: ARCH_MISSING("EM_TRICORE");
 	case EM_ARC: ARCH_MISSING("EM_ARC");
 	case EM_H8_300: ARCH_MISSING("EM_H8_300");
