@@ -751,7 +751,7 @@ if host_machine.system() == 'windows'
     build_root / 'librz' / 'debug',
     build_root / 'librz' / 'egg',
     build_root / 'librz' / 'flag',
-    build_root / 'librz' / 'bookmark',
+    build_root / 'librz' / 'mark',
     build_root / 'librz' / 'hash',
     build_root / 'librz' / 'io',
     build_root / 'librz' / 'lang',
