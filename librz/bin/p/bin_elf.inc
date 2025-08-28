@@ -14,6 +14,7 @@
 #include <rz_cons.h>
 #include "../i/private.h"
 #include "elf/elf.h"
+#include "elf/glibc_elf.h"
 #include <rz_analysis.h>
 #include <rz_util/ht_uu.h>
 
@@ -368,12 +369,18 @@ static char *regstate(RzBinFile *bf) {
 	rz_bin_elf_foreach_notes_segment(obj, notes) {
 		RzBinElfNote *tmp;
 		rz_vector_foreach (notes, tmp) {
-			if (tmp->type != NT_PRSTATUS) {
+			switch (tmp->type) {
+			default:
 				continue;
+			case NT_PRSTATUS:
+			case NT_FPREGSET:
+			case NT_OPENBSD_REGS:
+			case NT_OPENBSD_FPREGS:
+			case NT_OPENBSD_XFPREGS: {
+				RzBinElfNotePrStatus *note = &tmp->prstatus;
+				return rz_hex_bin2strdup(note->regstate, note->regstate_size);
 			}
-
-			RzBinElfNotePrStatus *note = &tmp->prstatus;
-			return rz_hex_bin2strdup(note->regstate, note->regstate_size);
+			}
 		}
 	}
 
