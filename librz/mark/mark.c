@@ -166,7 +166,7 @@ static bool mark_item_matches(RzMarkItem *bi, ut64 off, RzMarkMatchMode mode) {
 }
 
 static void mark_iterate_matches(RzMark *b, ut64 off, RzMarkMatchMode mode,
-	bool stop_on_first, RzList *out) {
+	bool stop_on_first, RzList /*<RzMarkItem *>*/ *out) {
 	RzMarksAtOffset *cur = rz_mark_get_nearest_list(b, off, -1);
 	while (cur) {
 		RzListIter *it;
@@ -197,7 +197,7 @@ static RzMarkItem *mark_match(RzMark *b, ut64 off, RzMarkMatchMode mode) {
 	return ret;
 }
 
-static RzList *mark_match_all(RzMark *b, ut64 off, RzMarkMatchMode mode) {
+static RzList /*<RzMarkItem *>*/ *mark_match_all(RzMark *b, ut64 off, RzMarkMatchMode mode) {
 	rz_return_val_if_fail(b, NULL);
 
 	RzList *results = rz_list_newf(NULL);

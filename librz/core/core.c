@@ -957,7 +957,7 @@ RZ_API int rz_core_fgets(char *buf, int len, void *user) {
 	return rz_str_ncpy(buf, ptr, len - 1);
 }
 
-static void append_marks(RzStrBuf *sb, RzList *list, ut64 addr, bool is_start) {
+static void append_marks(RzStrBuf *sb, RzList /*<RzMarkItem *>*/ *list, ut64 addr, bool is_start) {
 	RzListIter *it;
 	RzMarkItem *bi;
 	bool first = (rz_strbuf_length(sb) == 0);
