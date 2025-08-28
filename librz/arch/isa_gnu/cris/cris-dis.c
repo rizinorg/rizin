@@ -28,6 +28,7 @@
 #include <common_gnu/sysdep.h>
 #include <common_gnu/opcode/cris.h>
 #include <common_gnu/libiberty.h>
+#include <cris/cris_context.h>
 
 /* Return TRUE if the start of STR matches PREFIX, FALSE otherwise.  */
 
@@ -92,18 +93,6 @@ struct cris_disasm_data
      that includes "compatible".  */
   enum cris_disass_family distype;
 };
-
-/* Value of first element in switch.  */
-static long case_offset = 0;
-
-/* How many more case-offsets to print.  */
-static long case_offset_counter = 0;
-
-/* Number of case offsets.  */
-static long no_of_case_offsets = 0;
-
-/* Candidate for next case_offset.  */
-static long last_immediate = 0;
 
 static int cris_constraint
   (const char *, unsigned, unsigned, struct cris_disasm_data *);
@@ -570,7 +559,8 @@ cris_constraint (const char *cs,
 static char *
 format_hex (unsigned long number,
 	    char *outbuffer,
-	    struct cris_disasm_data *disdata)
+	    struct cris_disasm_data *disdata, 
+		void *data)
 {
   /* Truncate negative numbers on >32-bit hosts.  */
   number &= 0xffffffff;
@@ -578,8 +568,9 @@ format_hex (unsigned long number,
   sprintf (outbuffer, "0x%lx", number);
 
   /* Save this value for the "case" support.  */
+  CrisContext *ctx = (CrisContext *)data;
   if (TRACE_CASE)
-    last_immediate = number;
+    ctx->last_immediate = number;
 
   return outbuffer + strlen (outbuffer);
 }
@@ -589,11 +580,12 @@ format_hex (unsigned long number,
    unsigned (== 0).  */
 
 static char *
-format_dec (long number, char *outbuffer, int signedp)
+format_dec (long number, char *outbuffer, int signedp, void *data)
 {
   if (!outbuffer)
     return NULL;
-  last_immediate = number;
+  CrisContext *ctx = (CrisContext *)data;
+  ctx->last_immediate = number;
   if (signedp)
     sprintf (outbuffer, "%ld", number);
   else
@@ -767,6 +759,8 @@ print_with_operands (const struct cris_opcode *opcodep,
   const char *cs;
   struct cris_disasm_data *disdata
     = (struct cris_disasm_data *) info->private_data;
+
+  CrisContext *ctx = (CrisContext *)data;
 
   /* Print out the name first thing we do.  */
   (*info->fprintf_func) (info->stream, data, "%s", opcodep->name);
@@ -968,7 +962,7 @@ print_with_operands (const struct cris_opcode *opcodep,
 	    if ((*cs == 'z' && (insn & 0x20))
 		|| (opcodep->match == BDAP_QUICK_OPCODE
 		    && (nbytes <= 2 || buffer[1 + nbytes] == 0)))
-	      tp = format_dec (number, tp, signedp);
+	      tp = format_dec (number, tp, signedp, data);
 	    else
 	      {
 		unsigned int highbyte = (number >> 24) & 0xff;
@@ -995,7 +989,7 @@ print_with_operands (const struct cris_opcode *opcodep,
 		    info->target = number;
 		  }
 		else
-		  tp = format_hex (number, tp, disdata);
+		  tp = format_hex (number, tp, disdata, data);
 	      }
 	  }
 	else
@@ -1104,7 +1098,7 @@ print_with_operands (const struct cris_opcode *opcodep,
 				       with_reg_prefix);
 		      if (number >= 0)
 			*tp++ = '+';
-		      tp = format_dec (number, tp, 1);
+		      tp = format_dec (number, tp, 1, data);
 
 		      info->flags |= CRIS_DIS_FLAG_MEM_TARGET_IS_REG;
 		      info->target = (prefix_insn >> 12) & 15;
@@ -1134,7 +1128,7 @@ print_with_operands (const struct cris_opcode *opcodep,
 		    /* Is it the casejump?  It's a "adds.w [pc+r%d.w],pc".  */
 		    if (insn == 0xf83f && (prefix_insn & ~0xf000) == 0x55f)
 		      /* Then start interpreting data as offsets.  */
-		      case_offset_counter = no_of_case_offsets;
+		      ctx->case_offset_counter = ctx->no_of_case_offsets;
 		    break;
 
 		  case BDAP_INDIR_OPCODE:
@@ -1202,7 +1196,7 @@ print_with_operands (const struct cris_opcode *opcodep,
 			  {
 			    if (number >= 0)
 			      *tp++ = '+';
-			    tp = format_dec (number, tp, 1);
+			    tp = format_dec (number, tp, 1, data);
 			  }
 		      }
 		    else
@@ -1259,7 +1253,7 @@ print_with_operands (const struct cris_opcode *opcodep,
 	break;
 
       case 'I':
-	tp = format_dec (insn & 63, tp, 0);
+	tp = format_dec (insn & 63, tp, 0, data);
 	break;
 
       case 'b':
@@ -1288,11 +1282,11 @@ print_with_operands (const struct cris_opcode *opcodep,
       break;
 
     case 'c':
-      tp = format_dec (insn & 31, tp, 0);
+      tp = format_dec (insn & 31, tp, 0, data);
       break;
 
     case 'C':
-      tp = format_dec (insn & 15, tp, 0);
+      tp = format_dec (insn & 15, tp, 0, data);
       break;
 
     case 'o':
@@ -1325,7 +1319,7 @@ print_with_operands (const struct cris_opcode *opcodep,
 	if (number > 127)
 	  number = number - 256;
 
-	tp = format_dec (number, tp, 1);
+	tp = format_dec (number, tp, 1, data);
 	*tp++ = ',';
 	tp = format_reg (disdata, (insn >> 12) & 15, tp, with_reg_prefix);
       }
@@ -1336,7 +1330,7 @@ print_with_operands (const struct cris_opcode *opcodep,
       break;
 
     case 'i':
-      tp = format_dec ((insn & 32) ? (insn & 31) | ~31L : insn & 31, tp, 1);
+      tp = format_dec ((insn & 32) ? (insn & 31) | ~31L : insn & 31, tp, 1, data);
       break;
 
     case 'P':
@@ -1376,26 +1370,26 @@ if (sregp) {
   /* Get info for matching case-tables, if we don't have any active.
      We assume that the last constant seen is used; either in the insn
      itself or in a "move.d const,rN, sub.d rN,rM"-like sequence.  */
-  if (TRACE_CASE && case_offset_counter == 0)
+  if (TRACE_CASE && ctx->case_offset_counter == 0)
     {
       if (startswith (opcodep->name, "sub"))
-	case_offset = last_immediate;
+	ctx->case_offset = ctx->last_immediate;
 
       /* It could also be an "add", if there are negative case-values.  */
       else if (startswith (opcodep->name, "add"))
 	/* The first case is the negated operand to the add.  */
-	case_offset = -last_immediate;
+	ctx->case_offset = -ctx->last_immediate;
 
       /* A bound insn will tell us the number of cases.  */
       else if (startswith (opcodep->name, "bound"))
-	no_of_case_offsets = last_immediate + 1;
+	ctx->no_of_case_offsets = ctx->last_immediate + 1;
 
       /* A jump or jsr or branch breaks the chain of insns for a
 	 case-table, so assume default first-case again.  */
       else if (info->insn_type == dis_jsr
 	       || info->insn_type == dis_branch
 	       || info->insn_type == dis_condbranch)
-	case_offset = 0;
+	ctx->case_offset = 0;
     }
 }
 
@@ -1423,6 +1417,7 @@ print_insn_cris_generic (bfd_vma memaddr,
   unsigned char *bufp;
   int status = 0;
   bfd_vma addr;
+  CrisContext *ctx = (CrisContext *)data;
 
   /* There will be an "out of range" error after the last instruction.
      Reading pairs of bytes in decreasing number, we hope that we will get
@@ -1463,30 +1458,30 @@ print_insn_cris_generic (bfd_vma memaddr,
       insn = bufp[0] + bufp[1] * 256;
 
       /* If we're in a case-table, don't disassemble the offsets.  */
-      if (TRACE_CASE && case_offset_counter != 0)
+      if (TRACE_CASE && ctx->case_offset_counter != 0)
 	{
 	  info->insn_type = dis_noninsn;
 	  advance += 2;
 
 	  /* If to print data as offsets, then shortcut here.  */
 	  (*info->fprintf_func) (info->stream, data, "case %ld%s: -> ",
-				 case_offset + no_of_case_offsets
-				 - case_offset_counter,
-				 case_offset_counter == 1 ? "/default" :
+				 ctx->case_offset + ctx->no_of_case_offsets
+				 - ctx->case_offset_counter,
+				 ctx->case_offset_counter == 1 ? "/default" :
 				 "");
 
 	  (*info->print_address_func) ((bfd_vma)
 				       ((short) (insn)
 					+ (long) (addr
-						  - (no_of_case_offsets
-						     - case_offset_counter)
+						  - (ctx->no_of_case_offsets
+						     - ctx->case_offset_counter)
 						  * 2)), data, info);
-	  case_offset_counter--;
+	  ctx->case_offset_counter--;
 
 	  /* The default case start (without a "sub" or "add") must be
 	     zero.  */
-	  if (case_offset_counter == 0)
-	    case_offset = 0;
+	  if (ctx->case_offset_counter == 0)
+	    ctx->case_offset = 0;
 	}
       else if (insn == 0)
 	{

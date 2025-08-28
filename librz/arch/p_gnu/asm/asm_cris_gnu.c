@@ -14,19 +14,10 @@ http://developer.axis.com/old/documentation/hw/etraxfs/iop_howto/iop_howto.pdf
 #include <stdarg.h>
 #include <string.h>
 
+#include <rz_asm.h>
 #include <rz_types.h>
 #include <rz_lib.h>
-#include <rz_util.h>
-#include <rz_asm.h>
-
-#include <common_gnu/disas-asm.h>
-
-typedef struct {
-	struct disassemble_info disasm_obj;
-	unsigned long Offset;
-	RzStrBuf *buf_global;
-	unsigned char bytes[8];
-} CrisContext;
+#include <cris/cris_context.h>
 
 static int cris_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info, void *data) {
 	CrisContext *ctx = (CrisContext *)data;
