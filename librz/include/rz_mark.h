@@ -34,17 +34,17 @@ typedef struct rz_marks_at_offset_t {
 } RzMarksAtOffset;
 
 typedef struct rz_mark_t {
-	HtSP *ht_name; // name -> RzMarkItem*
-	RzList /*<RzMarkItem *>*/ *items; // All marks
-	RzSkipList *by_off; // offset -> RzMarksAtOffset*
+	HtSP *ht_name; ///< name -> RzBookmarkItem*
+	RzList /*<RzBookmarkItem *>*/ *items; ///< All bookmarks
+	RzSkipList *by_off; ///< offset -> RzBookmarksAtOffset*
 } RzMark;
 
 typedef bool (*RzMarkItemCb)(RzMarkItem *item, void *user);
 
 typedef enum {
-	RZ_BMARK_MATCH_CONTAINS,
-	RZ_BMARK_MATCH_START,
-	RZ_BMARK_MATCH_END
+	RZ_MARK_MATCH_CONTAINS,
+	RZ_MARK_MATCH_START,
+	RZ_MARK_MATCH_END
 } RzMarkMatchMode;
 
 #ifdef RZ_API
@@ -54,16 +54,17 @@ RZ_API RzMarkItem *rz_mark_set(RzMark *b, const char *name, ut64 from, ut64 to);
 RZ_API RzMarkItem *rz_mark_get(RzMark *b, const char *name);
 RZ_API RzMarkItem *rz_mark_get_start(RzMark *b, ut64 off);
 RZ_API RzMarkItem *rz_mark_get_end(RzMark *b, ut64 off);
-RZ_API RzMarkItem *rz_mark_get_at(RzMark *b, ut64 addr);
-RZ_API RzList *rz_mark_get_all_off(RzMark *b, ut64 addr);
-RZ_API bool rz_mark_starts_or_ends(RzMark *b, ut64 from, ut64 to);
+RZ_API RzMarkItem *rz_mark_get_at(RzMark *b, ut64 off);
+RZ_API RzList /*<RzMarkItem *>*/ *rz_mark_get_all_off(RzMark *b, ut64 off);
 RZ_API RzList /*<RzMarkItem *>*/ *rz_mark_all_list(RzMark *b);
+RZ_API const RzList /*<RzMarkItem *>*/ *rz_mark_get_list(RzMark *b, ut64 off);
 RZ_API void rz_mark_item_free(RzMarkItem *item);
 RZ_API RzMarkItem *rz_mark_set(RzMark *b, const char *name, ut64 from, ut64 to);
 RZ_API void rz_mark_item_set_comment(RzMarkItem *item, const char *comment);
 RZ_API const char *rz_mark_item_set_color(RzMarkItem *item, const char *color);
 RZ_API void rz_mark_item_set_realname(RzMarkItem *item, const char *realname);
 RZ_API int rz_mark_rename(RzMark *b, RzMarkItem *item, const char *name);
+RZ_API bool rz_mark_starts_or_ends(RzMark *b, ut64 from, ut64 to);
 RZ_API bool rz_mark_unset(RzMark *b, RzMarkItem *item);
 RZ_API bool rz_mark_unset_all_off(RzMark *b, ut64 off);
 RZ_API void rz_mark_unset_all(RzMark *b);

@@ -155,11 +155,11 @@ static bool update_mark_item_name(RzMark *b, RzMarkItem *item, const char *newna
 
 static bool mark_item_matches(RzMarkItem *bi, ut64 off, RzMarkMatchMode mode) {
 	switch (mode) {
-	case RZ_BMARK_MATCH_CONTAINS:
+	case RZ_MARK_MATCH_CONTAINS:
 		return (off >= bi->from && off <= bi->to);
-	case RZ_BMARK_MATCH_START:
+	case RZ_MARK_MATCH_START:
 		return (off == bi->from);
-	case RZ_BMARK_MATCH_END:
+	case RZ_MARK_MATCH_END:
 		return (off == bi->to);
 	}
 	return false;
@@ -235,7 +235,7 @@ static bool append_bi(RzMarkItem *item, void *user) {
 }
 
 /* returns all defined marks in a list */
-RZ_API RzList *rz_mark_all_list(RzMark *b) {
+RZ_API RzList /*<RzMarkItem *>*/ *rz_mark_all_list(RzMark *b) {
 	RzList *ret = rz_list_new();
 	if (!b || !ret) {
 		return ret;
@@ -253,26 +253,26 @@ RZ_API bool rz_mark_starts_or_ends(RzMark *b, ut64 from, ut64 to) {
 
 /* returns all mark items that contains the given offset.
  * NULL is returned if such a item is not found. */
-RZ_API RzList *rz_mark_get_all_off(RzMark *b, ut64 off) {
-	return mark_match_all(b, off, RZ_BMARK_MATCH_CONTAINS);
+RZ_API RzList /*<RzMarkItem *>*/ *rz_mark_get_all_off(RzMark *b, ut64 off) {
+	return mark_match_all(b, off, RZ_MARK_MATCH_CONTAINS);
 }
 
 /* returns the last mark item that contains the given offset.
  * NULL is returned if such a item is not found. */
 RZ_API RzMarkItem *rz_mark_get_at(RzMark *b, ut64 off) {
-	return mark_match(b, off, RZ_BMARK_MATCH_CONTAINS);
+	return mark_match(b, off, RZ_MARK_MATCH_CONTAINS);
 }
 
 /* returns the mark item that starts at the given offset.
  * NULL is returned if such an item is not found. */
 RZ_API RzMarkItem *rz_mark_get_start(RzMark *b, ut64 off) {
-	return mark_match(b, off, RZ_BMARK_MATCH_START);
+	return mark_match(b, off, RZ_MARK_MATCH_START);
 }
 
 /* returns the mark item that ends at the given offset.
  * NULL is returned if such an item is not found. */
 RZ_API RzMarkItem *rz_mark_get_end(RzMark *b, ut64 off) {
-	return mark_match(b, off, RZ_BMARK_MATCH_END);
+	return mark_match(b, off, RZ_MARK_MATCH_END);
 }
 
 /* return the mark item with name "name" in the RzMark "b", if it exists.

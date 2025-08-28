@@ -55,11 +55,11 @@ static void mark_add_flag(RzFlag *f, RzMarkItem *bi) {
 		return;
 	}
 	RzSpace *prev_space = rz_flag_space_cur(f);
-	RzSpace *mark_space = rz_flag_space_get(f, "mark");
+	RzSpace *mark_space = rz_flag_space_get(f, "marks");
 	if (!mark_space) {
-		mark_space = rz_flag_space_set(f, "mark");
+		mark_space = rz_flag_space_set(f, "marks");
 	} else {
-		rz_flag_space_set(f, "mark");
+		rz_flag_space_set(f, "marks");
 	}
 
 	rz_flag_set(f, bi->name, bi->from, (ut32)(bi->to - bi->from));
