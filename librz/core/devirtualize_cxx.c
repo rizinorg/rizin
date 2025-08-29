@@ -928,7 +928,7 @@ static void free_variable_book(RzCppVariableBook *var_book) {
 /**
  * \brief devirtualize virtual calls in cpp
  */
-RZ_API void rz_analysis_devirtualize_methods(RzAnalysis *analysis) {
+RZ_API void rz_analysis_devirtualize_cxx_methods(RzAnalysis *analysis) {
 	// TODO : Generalize for classes
 	RzCppVariableBook *var_book = rz_analysis_mark_classes(analysis);
 	if (!var_book) {

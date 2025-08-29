@@ -2304,7 +2304,8 @@ typedef struct rz_variable_book_t {
 } RzCppVariableBook;
 
 RZ_API RzCppVariableBook *rz_analysis_mark_classes(RzAnalysis *analysis);
-RZ_API void rz_analysis_devirtualize_methods(RzAnalysis *analysis);
+RZ_API void rz_analysis_devirtualize_cxx_methods(RzAnalysis *analysis);
+RZ_API void rz_analysis_devirtualize_objc_methods(RzAnalysis *analysis);
 RZ_API void rz_analysis_devirtualize(RzAnalysis *analysis, RzCppVariableBook *var_book);
 RZ_API void rz_analysis_virtual_xrefs_print(RzAnalysis *analysis, const char *vfunc);
 RZ_API void rz_analysis_virtual_xrefs_print_table(RzAnalysis *analysis, const char *vfunc, RzTable *table);
