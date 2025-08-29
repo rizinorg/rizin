@@ -56,7 +56,7 @@ static RzMarksAtOffset *rz_mark_get_nearest_list(RzMark *b, ut64 off, int dir) {
 	return (dir == 0 && marks && marks->off != off) ? NULL : marks;
 }
 
-RZ_API RzMark *rz_mark_new(void) {
+RZ_API RZ_OWN RzMark *rz_mark_new(void) {
 	RzMark *b = RZ_NEW0(RzMark);
 	if (!b) {
 		return NULL;

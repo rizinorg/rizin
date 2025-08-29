@@ -151,7 +151,7 @@ commands:
             - text: "md"
               comment: "Describe all marks containing the current offset"
             - text: "md foo"
-              comment: "Describe the mark named 'foo' and show distance from current offset to reach the starting/ending of foo in bytes"
+              comment: "Describe the mark named 'foo' and show distance from current offset to reach 'foo' in bytes"
   - name: mi
     cname: mark_range
     summary: Show marks in the current block or in the next <size> bytes.

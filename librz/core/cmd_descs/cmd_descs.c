@@ -12687,7 +12687,7 @@ static const RzCmdDescHelp md_help = {
 };
 static const RzCmdDescDetailEntry mark_describe_Usage_space_example_detail_entries[] = {
 	{ .text = "md", .arg_str = NULL, .comment = "Describe all marks containing the current offset" },
-	{ .text = "md foo", .arg_str = NULL, .comment = "Describe the mark named 'foo' and show distance from current offset to reach the starting/ending of foo in bytes" },
+	{ .text = "md foo", .arg_str = NULL, .comment = "Describe the mark named 'foo' and show distance from current offset to reach 'foo' in bytes" },
 	{ 0 },
 };
 static const RzCmdDescDetail mark_describe_details[] = {
