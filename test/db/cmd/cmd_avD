@@ -725,3 +725,500 @@ EXPECT=<<EOF
 \           0x100002cf4      ret
 EOF
 RUN
+
+NAME=objc msg dispatch (amd64)
+FILE=bins/mach0/objc-employee
+CMDS=<<EOF
+aaaa
+avD @ main
+pdf @ main
+EOF
+EXPECT=<<EOF
+            ;-- main:
+            ;-- section.0.__TEXT.__text:
+            ;-- _main:
+            ;-- func.1000018c0:
+/ entry0(int64_t arg1, int64_t arg2);
+|           ; arg int64_t arg1 @ rdi
+|           ; arg int64_t arg2 @ rsi
+|           ; var int var_a8h @ stack - 0xa8
+|           ; var int var_a4h @ stack - 0xa4
+|           ; var int var_a0h @ stack - 0xa0
+|           ; var int var_9ch @ stack - 0x9c
+|           ; var void *var_98h @ stack - 0x98
+|           ; var int var_8ch @ stack - 0x8c
+|           ; var void *var_88h @ stack - 0x88
+|           ; var int var_7ch @ stack - 0x7c
+|           ; var void *var_78h @ stack - 0x78
+|           ; var int var_6ch @ stack - 0x6c
+|           ; var void *var_68h @ stack - 0x68
+|           ; var int64_t var_60h @ stack - 0x60
+|           ; var int64_t var_58h @ stack - 0x58
+|           ; var void *var_50h @ stack - 0x50
+|           ; var int64_t var_48h @ stack - 0x48
+|           ; var const char *var_40h @ stack - 0x40
+|           ; var int64_t var_34h @ stack - 0x34
+|           ; var int64_t var_30h @ stack - 0x30
+|           ; var void *var_28h @ stack - 0x28
+|           ; var const char **format @ stack - 0x20
+|           ; var int64_t var_18h @ stack - 0x18
+|           ; var int64_t var_10h @ stack - 0x10
+|           ; var int64_t var_ch @ stack - 0xc
+|           0x1000018c0      push  rbp                                 ; [00] -r-x section size 1126 named 0.__TEXT.__text
+|           0x1000018c1      mov   rbp, rsp
+|           0x1000018c4      sub   rsp, 0xb0
+|           0x1000018cb      mov   dword [var_ch], 0x00
+|           0x1000018d2      mov   dword [var_10h], edi                ; arg1
+|           0x1000018d5      mov   qword [var_18h], rsi                ; arg2
+|           0x1000018d9      call  sym.imp.objc_autoreleasePoolPush
+|           0x1000018de      lea   rsi, qword reloc.__CFConstantStringClassReference ; str.cstr.Hello_World_Object
+|                                                                      ; 0x100002010
+|           0x1000018e5      mov   rdi, rsi
+|           0x1000018e8      mov   qword [var_48h], rax
+|           0x1000018ec      mov   al, 0x00
+|           0x1000018ee      call  sym.imp.NSLog
+|           0x1000018f3      mov   rsi, qword [section.15.__DATA.__objc_classrefs] ; [0x100003320:8]=0x100003370 sym.class_Employee ; "p3"
+|           0x1000018fa      mov   rdi, rsi
+|           0x1000018fd      call  sym.imp.objc_alloc_init
+|           0x100001902      mov   qword [format], rax
+|           0x100001906      mov   rax, qword [format]
+|           0x10000190a      mov   rsi, qword [section.14.__DATA.__objc_selrefs] ; [0x1000032f8:8]=0x100001ecf section.4.__TEXT.__objc_methname
+|           0x100001911      mov   rdi, rax
+|           0x100001914      call  qword [reloc.objc_msgSend]          ; [0x100002000:8]=0 ; Message dispatch to method_Employee_sayHello
+|           0x10000191a      mov   rsi, qword [section.15.__DATA.__objc_classrefs] ; [0x100003320:8]=0x100003370 sym.class_Employee ; "p3"
+|           0x100001921      mov   rdi, qword [section.14.__DATA.__objc_selrefs] ; [0x1000032f8:8]=0x100001ecf section.4.__TEXT.__objc_methname
+|           0x100001928      mov   qword [var_50h], rdi
+|           0x10000192c      mov   rdi, rsi
+|           0x10000192f      mov   rsi, qword [var_50h]
+|           0x100001933      mov   qword [var_58h], rax
+|           0x100001937      call  qword [reloc.objc_msgSend]          ; [0x100002000:8]=0 ; Message dispatch to method_Employee_sayHello
+|           0x10000193d      mov   rsi, qword [format]
+|           0x100001941      lea   rdi, qword str.base__p              ; 0x100001dbe ; "base %p\n" ; const char *format
+|           0x100001948      mov   qword [var_60h], rax
+|           0x10000194c      mov   al, 0x00
+|           0x10000194e      call  sym.imp.printf                      ; int printf(const char *format)
+|           0x100001953      mov   rsi, qword [format]
+|           0x100001957      mov   qword [var_28h], rsi
+|           0x10000195b      mov   rsi, qword [format]
+|           0x10000195f      mov   rdi, qword [data.100003300]         ; [0x100003300:8]=0x100001ed8 "p0"
+|           0x100001966      mov   qword [var_68h], rdi
+|           0x10000196a      mov   rdi, rsi
+|           0x10000196d      mov   rsi, qword [var_68h]
+|           0x100001971      mov   dword [var_6ch], eax
+|           0x100001974      call  qword [reloc.objc_msgSend]          ; [0x100002000:8]=0
+|           0x10000197a      mov   rsi, qword [var_28h]
+|           0x10000197e      sub   rax, rsi
+|           0x100001981      lea   rdi, qword str.iii__p__username     ; 0x100001dc7 ; "iii %p _username\n" ; const char *format
+|           0x100001988      mov   rsi, rax
+|           0x10000198b      mov   al, 0x00
+|           0x10000198d      call  sym.imp.printf                      ; int printf(const char *format)
+|           0x100001992      mov   rsi, qword [format]
+|           0x100001996      mov   rdi, qword [data.100003308]         ; [0x100003308:8]=0x100001edb "p1"
+|           0x10000199d      mov   qword [var_78h], rdi
+|           0x1000019a1      mov   rdi, rsi
+|           0x1000019a4      mov   rsi, qword [var_78h]
+|           0x1000019a8      mov   dword [var_7ch], eax
+|           0x1000019ab      call  qword [reloc.objc_msgSend]          ; [0x100002000:8]=0
+|           0x1000019b1      mov   rsi, qword [var_28h]
+|           0x1000019b5      sub   rax, rsi
+|           0x1000019b8      lea   rdi, qword str.iii__p__firstName    ; 0x100001dd9 ; "iii %p _firstName\n" ; const char *format
+|           0x1000019bf      mov   rsi, rax
+|           0x1000019c2      mov   al, 0x00
+|           0x1000019c4      call  sym.imp.printf                      ; int printf(const char *format)
+|           0x1000019c9      mov   rsi, qword [format]
+|           0x1000019cd      mov   rdi, qword [data.100003310]         ; [0x100003310:8]=0x100001ede "p2"
+|           0x1000019d4      mov   qword [var_88h], rdi
+|           0x1000019d8      mov   rdi, rsi
+|           0x1000019db      mov   rsi, qword [var_88h]
+|           0x1000019df      mov   dword [var_8ch], eax
+|           0x1000019e5      call  qword [reloc.objc_msgSend]          ; [0x100002000:8]=0
+|           0x1000019eb      mov   rsi, qword [var_28h]
+|           0x1000019ef      sub   rax, rsi
+|           0x1000019f2      lea   rdi, qword str.iii__p__shortWord    ; 0x100001dec ; "iii %p _shortWord\n" ; const char *format
+|           0x1000019f9      mov   rsi, rax
+|           0x1000019fc      mov   al, 0x00
+|           0x1000019fe      call  sym.imp.printf                      ; int printf(const char *format)
+|           0x100001a03      mov   rsi, qword [format]
+|           0x100001a07      mov   rdi, qword [data.100003318]         ; [0x100003318:8]=0x100001ee1 "p3"
+|           0x100001a0e      mov   qword [var_98h], rdi
+|           0x100001a15      mov   rdi, rsi
+|           0x100001a18      mov   rsi, qword [var_98h]
+|           0x100001a1f      mov   dword [var_9ch], eax
+|           0x100001a25      call  qword [reloc.objc_msgSend]          ; [0x100002000:8]=0
+|           0x100001a2b      mov   rsi, qword [var_28h]
+|           0x100001a2f      sub   rax, rsi
+|           0x100001a32      lea   rdi, qword str.iii__p__wideWord     ; 0x100001dff ; "iii %p _wideWord\n" ; const char *format
+|           0x100001a39      mov   rsi, rax
+|           0x100001a3c      mov   al, 0x00
+|           0x100001a3e      call  sym.imp.printf                      ; int printf(const char *format)
+|           0x100001a43      mov   rsi, qword [format]
+|           0x100001a47      mov   qword [var_30h], rsi
+|           0x100001a4b      mov   dword [var_34h], 0x00
+|           0x100001a52      mov   dword [var_a0h], eax
+|           ; CODE XREF from entry0 @ 0x100001a8b
+|       .-> 0x100001a58      cmp   dword [var_34h], 0x20
+|      ,==< 0x100001a5c      jnl   0x100001a90
+|      |:   0x100001a62      mov   rax, qword [var_30h]
+|      |:   0x100001a66      movsxd rcx, dword [var_34h]
+|      |:   0x100001a6a      movzx esi, byte [rax+rcx*1]
+|      |:   0x100001a6e      lea   rdi, qword str.02x                  ; 0x100001e11 ; "%02x " ; const char *format
+|      |:   0x100001a75      mov   al, 0x00
+|      |:   0x100001a77      call  sym.imp.printf                      ; int printf(const char *format)
+|      |:   0x100001a7c      mov   dword [var_a4h], eax
+|      |:   0x100001a82      mov   eax, dword [var_34h]
+|      |:   0x100001a85      add   eax, 0x01
+|      |:   0x100001a88      mov   dword [var_34h], eax
+|      |`=< 0x100001a8b      jmp   0x100001a58
+|      `--> 0x100001a90      lea   rdi, qword data.100001e17           ; 0x100001e17 ; "\n" ; const char *format
+|           0x100001a97      mov   al, 0x00
+|           0x100001a99      call  sym.imp.printf                      ; int printf(const char *format)
+|           0x100001a9e      lea   rdi, qword reloc.__CFConstantStringClassReference.100002030 ; rsi
+|                                                                      ; 0x100002030
+|           0x100001aa5      mov   qword [var_40h], rdi
+|           0x100001aa9      mov   rsi, qword [var_40h]
+|           0x100001aad      lea   rdi, qword data.100001e28           ; 0x100001e28 ; "%p\n" ; const char *format
+|           0x100001ab4      mov   dword [var_a8h], eax
+|           0x100001aba      mov   al, 0x00
+|           0x100001abc      call  sym.imp.printf                      ; int printf(const char *format)
+\           0x100001ac1      int3
+EOF
+RUN
+
+NAME=objc msg dispatch (arm64)
+FILE=bins/mach0/objc-employee-ios14-arm64
+CMDS=<<EOF
+aaaa
+avD @ main
+pdf @ main
+EOF
+EXPECT=<<EOF
+            ; UNKNOWN XREF from segment.TEXT @ +0xd0
+            ;-- main:
+            ;-- section.0.__TEXT.__text:
+            ;-- _main:
+            ;-- func.100007714:
+/ entry0(int64_t arg1, int64_t arg2);
+|           ; arg int64_t arg1 @ x0
+|           ; arg int64_t arg2 @ x1
+|           ; var int64_t var_80h @ stack - 0x80
+|           ; var int64_t var_68h @ stack - 0x68
+|           ; var int64_t var_60h @ stack - 0x60
+|           ; var int64_t var_58h @ stack - 0x58
+|           ; var int64_t var_50h @ stack - 0x50
+|           ; var int64_t var_48h @ stack - 0x48
+|           ; var int64_t var_3ch @ stack - 0x3c
+|           ; var int64_t var_38h @ stack - 0x38
+|           ; var int64_t var_30h @ stack - 0x30
+|           ; var int64_t var_28h @ stack - 0x28
+|           ; var int64_t var_20h @ stack - 0x20
+|           ; var int64_t var_18h @ stack - 0x18
+|           ; var int64_t var_14h @ stack - 0x14
+|           ; var int64_t var_10h @ stack - 0x10
+|           ; var int64_t var_8h @ stack - 0x8
+|           0x100007714      sub   sp, sp, 0x80                        ; [00] -r-x section size 1180 named 0.__TEXT.__text
+|           0x100007718      stp   fp, lr, [var_10h]
+|           0x10000771c      add   fp, sp, 0x70
+|           0x100007720      stur  wzr, [var_14h]                      ; arg1
+|           0x100007724      stur  w0, [var_18h]                       ; arg1
+|           0x100007728      stur  x1, [var_20h]                       ; arg2
+|           0x10000772c      bl    fcn.100007bd4
+|           0x100007730      adrp  x8, reloc.dyld_stub_binder          ; 0x100008000
+|           0x100007734      add   x8, x8, 8                           ; 0x100008008
+|                                                                      ; reloc.__CFConstantStringClassReference
+|           0x100007738      str   x0, [var_50h]
+|           0x10000773c      mov   x0, x8
+|           0x100007740      bl    section.1.__TEXT.__stubs            ;  section.1.__TEXT.__stubs(void)
+|           0x100007744      adrp  x8, reloc.NSLog                     ; 0x10000c000
+|           0x100007748      add   x8, x8, 0x220                       ; 0x10000c220 ; "`\xc2"
+|           0x10000774c      ldr   x0, [x8]                            ; [0x10000c220:4]=0xc260 ; "`\xc2"
+|           0x100007750      str   x8, [var_58h]
+|           0x100007754      bl    fcn.100007bbc
+|           0x100007758      stur  x0, [var_28h]
+|           0x10000775c      ldur  x0, [var_28h]
+|           0x100007760      adrp  x8, reloc.NSLog                     ; 0x10000c000
+|           0x100007764      add   x8, x8, 0x1f0
+|           0x100007768      ldr   x1, [x8]                            ; [0x100007ea9:4]=0x48796173 ; "sayHello"
+|           0x10000776c      str   x8, [var_60h]
+|           0x100007770      bl    fcn.100007bec                       ; Message dispatch to method_Employee_sayHello
+|           0x100007774      ldr   x8, [var_58h]                       ; [0x28:4]=-1 ; 40
+|           0x100007778      ldr   x0, [x8]
+|           0x10000777c      ldr   x9, [var_60h]                       ; [0x20:4]=-1 ; 32
+|           0x100007780      ldr   x1, [x9]
+|           0x100007784      bl    fcn.100007bec                       ; Message dispatch to method_Employee_sayHello
+|           0x100007788      ldur  x8, [var_28h]
+|           0x10000778c      adrp  x0, data.100007000                  ; 0x100007000
+|           0x100007790      add   x0, x0, 0xd98                       ; 0x100007d98 ; "base %p\n"
+|           0x100007794      mov   x9, sp
+|           0x100007798      str   x8, [x9]
+|           0x10000779c      bl    fcn.100007c1c
+|           0x1000077a0      ldur  x8, [var_28h]
+|           0x1000077a4      adrp  x9, reloc.NSLog                     ; 0x10000c000
+|           0x1000077a8      add   x9, x9, 0x1f8
+|           0x1000077ac      ldr   x1, [x9]                            ; [0x100007eb2:4]=0x65736162 ; "base"
+|           0x1000077b0      mov   x0, x8
+|           0x1000077b4      bl    fcn.100007bec                       ; Message dispatch to method_Employee_base
+|           0x1000077b8      stur  x0, [var_30h]
+|           0x1000077bc      ldur  x0, [var_28h]
+|           0x1000077c0      adrp  x8, reloc.NSLog                     ; 0x10000c000
+|           0x1000077c4      add   x8, x8, 0x200
+|           0x1000077c8      ldr   x1, [x8]
+|           0x1000077cc      bl    fcn.100007bec
+|           0x1000077d0      ldur  x8, [var_30h]
+|           0x1000077d4      subs  x8, x0, x8
+|           0x1000077d8      adrp  x0, data.100007000                  ; 0x100007000
+|           0x1000077dc      add   x0, x0, 0xda1                       ; 0x100007da1 ; "iii %p _username\n"
+|           0x1000077e0      mov   x9, sp
+|           0x1000077e4      str   x8, [x9]
+|           0x1000077e8      bl    fcn.100007c1c
+|           0x1000077ec      ldur  x8, [var_28h]
+|           0x1000077f0      adrp  x9, reloc.NSLog                     ; 0x10000c000
+|           0x1000077f4      add   x9, x9, 0x208
+|           0x1000077f8      ldr   x1, [x9]
+|           0x1000077fc      mov   x0, x8
+|           0x100007800      bl    fcn.100007bec
+|           0x100007804      ldur  x8, [var_30h]
+|           0x100007808      subs  x8, x0, x8
+|           0x10000780c      adrp  x0, data.100007000                  ; 0x100007000
+|           0x100007810      add   x0, x0, 0xdb3                       ; 0x100007db3 ; "iii %p _firstName\n"
+|           0x100007814      mov   x9, sp
+|           0x100007818      str   x8, [x9]
+|           0x10000781c      bl    fcn.100007c1c
+|           0x100007820      ldur  x8, [var_28h]
+|           0x100007824      adrp  x9, reloc.NSLog                     ; 0x10000c000
+|           0x100007828      add   x9, x9, 0x210
+|           0x10000782c      ldr   x1, [x9]
+|           0x100007830      mov   x0, x8
+|           0x100007834      bl    fcn.100007bec
+|           0x100007838      ldur  x8, [var_30h]
+|           0x10000783c      subs  x8, x0, x8
+|           0x100007840      adrp  x0, data.100007000                  ; 0x100007000
+|           0x100007844      add   x0, x0, 0xdc6                       ; 0x100007dc6 ; "iii %p _shortWord\n"
+|           0x100007848      mov   x9, sp
+|           0x10000784c      str   x8, [x9]
+|           0x100007850      bl    fcn.100007c1c
+|           0x100007854      ldur  x8, [var_28h]
+|           0x100007858      adrp  x9, reloc.NSLog                     ; 0x10000c000
+|           0x10000785c      add   x9, x9, 0x218
+|           0x100007860      ldr   x1, [x9]
+|           0x100007864      mov   x0, x8
+|           0x100007868      bl    fcn.100007bec
+|           0x10000786c      ldur  x8, [var_30h]
+|           0x100007870      subs  x8, x0, x8
+|           0x100007874      adrp  x0, data.100007000                  ; 0x100007000
+|           0x100007878      add   x0, x0, 0xdd9                       ; 0x100007dd9 ; "iii %p _wideWord\n"
+|           0x10000787c      mov   x9, sp
+|           0x100007880      str   x8, [x9]
+|           0x100007884      bl    fcn.100007c1c
+|           0x100007888      ldur  x8, [var_28h]
+|           0x10000788c      stur  x8, [var_38h]
+|           0x100007890      stur  wzr, [var_3ch]
+|           ; CODE XREF from entry0 @ 0x1000078d0
+|       .-> 0x100007894      ldur  w8, [var_3ch]
+|       :   0x100007898      cmp   w8, 0x20
+|      ,==< 0x10000789c      b.ge  0x1000078d4
+|      |:   0x1000078a0      ldur  x8, [var_38h]
+|      |:   0x1000078a4      ldursw x9, [var_3ch]
+|      |:   0x1000078a8      ldrb  w10, [x8, x9]
+|      |:   0x1000078ac      adrp  x0, data.100007000                  ; 0x100007000
+|      |:   0x1000078b0      add   x0, x0, 0xdeb                       ; 0x100007deb ; "%02x "
+|      |:   0x1000078b4      mov   x8, sp
+|      |:   0x1000078b8      mov   x1, x10
+|      |:   0x1000078bc      str   x1, [x8]
+|      |:   0x1000078c0      bl    fcn.100007c1c
+|      |:   0x1000078c4      ldur  w8, [var_3ch]
+|      |:   0x1000078c8      add   w8, w8, 1
+|      |:   0x1000078cc      stur  w8, [var_3ch]
+|      |`=< 0x1000078d0      b     0x100007894
+|      `--> 0x1000078d4      adrp  x0, data.100007000                  ; 0x100007000
+|           0x1000078d8      add   x0, x0, 0xdf1
+|           0x1000078dc      bl    fcn.100007c1c
+|           0x1000078e0      adrp  x8, reloc.dyld_stub_binder          ; 0x100008000
+|           0x1000078e4      add   x8, x8, 0x28                        ; 0x100008028
+|                                                                      ; x9
+|           0x1000078e8      mov   x0, x8
+|           0x1000078ec      bl    fcn.100007bf8
+|           0x1000078f0      add   x8, var_48h
+|           0x1000078f4      str   x0, [var_48h]
+|           0x1000078f8      ldr   x9, [var_48h]                       ; x1
+|                                                                      ; [0x38:4]=-1
+|           0x1000078fc      adrp  x0, data.100007000                  ; 0x100007000
+|           0x100007900      add   x0, x0, 0xe02                       ; 0x100007e02 ; "%p\n"
+|           0x100007904      mov   x10, sp
+|           0x100007908      str   x9, [x10]
+|           0x10000790c      str   x8, [var_68h]
+|           0x100007910      bl    fcn.100007c1c
+|           ;-- x30:
+|           ;-- lr:
+|           ;-- pc:
+\           0x100007914      brk   1
+EOF
+RUN
+
+NAME=objc msg dispatch (arm64)
+FILE=bins/mach0/objc-employee-ios14-arm64e
+CMDS=<<EOF
+aaaa
+avD @ main
+pdf @ main
+EOF
+EXPECT=<<EOF
+            ; UNKNOWN XREF from segment.TEXT @ +0xd0
+            ;-- main:
+            ;-- section.0.__TEXT.__text:
+            ;-- _main:
+            ;-- func.100007760:
+/ entry0(int64_t arg1, int64_t arg2);
+|           ; arg int64_t arg1 @ x0
+|           ; arg int64_t arg2 @ x1
+|           ; var int64_t var_80h @ stack - 0x80
+|           ; var int64_t var_68h @ stack - 0x68
+|           ; var int64_t var_60h @ stack - 0x60
+|           ; var int64_t var_58h @ stack - 0x58
+|           ; var int64_t var_50h @ stack - 0x50
+|           ; var int64_t var_48h @ stack - 0x48
+|           ; var int64_t var_3ch @ stack - 0x3c
+|           ; var int64_t var_38h @ stack - 0x38
+|           ; var int64_t var_30h @ stack - 0x30
+|           ; var void *instance @ stack - 0x28
+|           ; var int64_t var_20h @ stack - 0x20
+|           ; var int64_t var_18h @ stack - 0x18
+|           ; var int64_t var_14h @ stack - 0x14
+|           ; var int64_t var_10h @ stack - 0x10
+|           ; var int64_t var_8h @ stack - 0x8
+|           0x100007760      pacibsp                                   ; [00] -r-x section size 1208 named 0.__TEXT.__text
+|           0x100007764      sub   sp, sp, 0x80
+|           0x100007768      stp   fp, lr, [var_10h]
+|           0x10000776c      add   fp, sp, 0x70
+|           0x100007770      stur  wzr, [var_14h]                      ; arg1
+|           0x100007774      stur  w0, [var_18h]                       ; arg1
+|           0x100007778      stur  x1, [var_20h]                       ; arg2
+|           0x10000777c      bl    sym.imp.objc_autoreleasePoolPush
+|           0x100007780      adrp  x8, reloc.NSLog                     ; 0x100008000
+|           0x100007784      add   x8, x8, 0x50                        ; 0x100008050 ; "X\x80\U00000001"
+|           0x100007788      str   x0, [var_50h]
+|           0x10000778c      mov   x0, x8
+|           0x100007790      bl    sym.imp.NSLog
+|           0x100007794      adrp  x8, sym.__OBJC_METACLASS_RO___Employee ; 0x10000c000
+|           0x100007798      add   x8, x8, 0x1d0                       ; 0x10000c1d0
+|                                                                      ; section.14.__DATA.__objc_classrefs
+|           0x10000779c      ldr   x0, [x8]                            ; [0x10000c1d0:4]=0xc210 ; section.14.__DATA.__objc_classrefs
+|           0x1000077a0      str   x8, [var_58h]
+|           0x1000077a4      bl    sym.imp.objc_alloc_init
+|           0x1000077a8      stur  x0, [instance]
+|           0x1000077ac      ldur  x0, [instance]                      ; void *instance
+|           0x1000077b0      adrp  x8, sym.__OBJC_METACLASS_RO___Employee ; 0x10000c000
+|           0x1000077b4      add   x8, x8, 0x1a0
+|           0x1000077b8      ldr   x1, [x8]                            ; [0x100007ea9:4]=0x48796173 ; "sayHello" ; char *selector
+|           0x1000077bc      str   x8, [var_60h]
+|           0x1000077c0      bl    sym.imp.objc_msgSend                ; Message dispatch to method_Employee_sayHello ; void *objc_msgSend(void *instance, char *selector)
+|           0x1000077c4      ldr   x8, [var_58h]                       ; [0x28:4]=-1 ; 40
+|           0x1000077c8      ldr   x0, [x8]                            ; void *instance
+|           0x1000077cc      ldr   x9, [var_60h]                       ; [0x20:4]=-1 ; 32
+|           0x1000077d0      ldr   x1, [x9]                            ; char *selector
+|           0x1000077d4      bl    sym.imp.objc_msgSend                ; Message dispatch to method_Employee_sayHello ; void *objc_msgSend(void *instance, char *selector)
+|           0x1000077d8      ldur  x8, [instance]
+|           0x1000077dc      adrp  x0, data.100007000                  ; 0x100007000
+|           0x1000077e0      add   x0, x0, 0xd98                       ; 0x100007d98 ; "base %p\n" ; const char *format
+|           0x1000077e4      mov   x9, sp
+|           0x1000077e8      str   x8, [x9]
+|           0x1000077ec      bl    sym.imp.printf                      ; int printf(const char *format)
+|           0x1000077f0      ldur  x8, [instance]
+|           0x1000077f4      adrp  x9, sym.__OBJC_METACLASS_RO___Employee ; 0x10000c000
+|           0x1000077f8      add   x9, x9, 0x1a8
+|           0x1000077fc      ldr   x1, [x9]                            ; [0x100007eb2:4]=0x65736162 ; "base" ; char *selector
+|           0x100007800      mov   x0, x8                              ; void *instance
+|           0x100007804      bl    sym.imp.objc_msgSend                ; Message dispatch to method_Employee_base ; void *objc_msgSend(void *instance, char *selector)
+|           0x100007808      stur  x0, [var_30h]
+|           0x10000780c      ldur  x0, [instance]                      ; void *instance
+|           0x100007810      adrp  x8, sym.__OBJC_METACLASS_RO___Employee ; 0x10000c000
+|           0x100007814      add   x8, x8, 0x1b0
+|           0x100007818      ldr   x1, [x8]                            ; char *selector
+|           0x10000781c      bl    sym.imp.objc_msgSend                ; void *objc_msgSend(void *instance, char *selector)
+|           0x100007820      ldur  x8, [var_30h]
+|           0x100007824      subs  x8, x0, x8
+|           0x100007828      adrp  x0, data.100007000                  ; 0x100007000
+|           0x10000782c      add   x0, x0, 0xda1                       ; 0x100007da1 ; "iii %p _username\n" ; const char *format
+|           0x100007830      mov   x9, sp
+|           0x100007834      str   x8, [x9]
+|           0x100007838      bl    sym.imp.printf                      ; int printf(const char *format)
+|           0x10000783c      ldur  x8, [instance]
+|           0x100007840      adrp  x9, sym.__OBJC_METACLASS_RO___Employee ; 0x10000c000
+|           0x100007844      add   x9, x9, 0x1b8
+|           0x100007848      ldr   x1, [x9]                            ; char *selector
+|           0x10000784c      mov   x0, x8                              ; void *instance
+|           0x100007850      bl    sym.imp.objc_msgSend                ; void *objc_msgSend(void *instance, char *selector)
+|           0x100007854      ldur  x8, [var_30h]
+|           0x100007858      subs  x8, x0, x8
+|           0x10000785c      adrp  x0, data.100007000                  ; 0x100007000
+|           0x100007860      add   x0, x0, 0xdb3                       ; 0x100007db3 ; "iii %p _firstName\n" ; const char *format
+|           0x100007864      mov   x9, sp
+|           0x100007868      str   x8, [x9]
+|           0x10000786c      bl    sym.imp.printf                      ; int printf(const char *format)
+|           0x100007870      ldur  x8, [instance]
+|           0x100007874      adrp  x9, sym.__OBJC_METACLASS_RO___Employee ; 0x10000c000
+|           0x100007878      add   x9, x9, 0x1c0
+|           0x10000787c      ldr   x1, [x9]                            ; char *selector
+|           0x100007880      mov   x0, x8                              ; void *instance
+|           0x100007884      bl    sym.imp.objc_msgSend                ; void *objc_msgSend(void *instance, char *selector)
+|           0x100007888      ldur  x8, [var_30h]
+|           0x10000788c      subs  x8, x0, x8
+|           0x100007890      adrp  x0, data.100007000                  ; 0x100007000
+|           0x100007894      add   x0, x0, 0xdc6                       ; 0x100007dc6 ; "iii %p _shortWord\n" ; const char *format
+|           0x100007898      mov   x9, sp
+|           0x10000789c      str   x8, [x9]
+|           0x1000078a0      bl    sym.imp.printf                      ; int printf(const char *format)
+|           0x1000078a4      ldur  x8, [instance]
+|           0x1000078a8      adrp  x9, sym.__OBJC_METACLASS_RO___Employee ; 0x10000c000
+|           0x1000078ac      add   x9, x9, 0x1c8
+|           0x1000078b0      ldr   x1, [x9]                            ; char *selector
+|           0x1000078b4      mov   x0, x8                              ; void *instance
+|           0x1000078b8      bl    sym.imp.objc_msgSend                ; void *objc_msgSend(void *instance, char *selector)
+|           0x1000078bc      ldur  x8, [var_30h]
+|           0x1000078c0      subs  x8, x0, x8
+|           0x1000078c4      adrp  x0, data.100007000                  ; 0x100007000
+|           0x1000078c8      add   x0, x0, 0xdd9                       ; 0x100007dd9 ; "iii %p _wideWord\n" ; const char *format
+|           0x1000078cc      mov   x9, sp
+|           0x1000078d0      str   x8, [x9]
+|           0x1000078d4      bl    sym.imp.printf                      ; int printf(const char *format)
+|           0x1000078d8      ldur  x8, [instance]
+|           0x1000078dc      stur  x8, [var_38h]
+|           0x1000078e0      stur  wzr, [var_3ch]
+|           ; CODE XREF from entry0 @ 0x100007920
+|       .-> 0x1000078e4      ldur  w8, [var_3ch]
+|       :   0x1000078e8      cmp   w8, 0x20
+|      ,==< 0x1000078ec      b.ge  0x100007924
+|      |:   0x1000078f0      ldur  x8, [var_38h]
+|      |:   0x1000078f4      ldursw x9, [var_3ch]
+|      |:   0x1000078f8      ldrb  w10, [x8, x9]
+|      |:   0x1000078fc      adrp  x0, data.100007000                  ; 0x100007000
+|      |:   0x100007900      add   x0, x0, 0xdeb                       ; 0x100007deb ; "%02x " ; const char *format
+|      |:   0x100007904      mov   x8, sp
+|      |:   0x100007908      mov   x1, x10
+|      |:   0x10000790c      str   x1, [x8]
+|      |:   0x100007910      bl    sym.imp.printf                      ; int printf(const char *format)
+|      |:   0x100007914      ldur  w8, [var_3ch]
+|      |:   0x100007918      add   w8, w8, 1
+|      |:   0x10000791c      stur  w8, [var_3ch]
+|      |`=< 0x100007920      b     0x1000078e4
+|      `--> 0x100007924      adrp  x0, data.100007000                  ; 0x100007000
+|           0x100007928      add   x0, x0, 0xdf1                       ; const char *format
+|           0x10000792c      bl    sym.imp.printf                      ; int printf(const char *format)
+|           0x100007930      adrp  x8, reloc.NSLog                     ; 0x100008000
+|           0x100007934      add   x8, x8, 0x70                        ; 0x100008070 ; "X\x80\U00000001"
+|           0x100007938      mov   x0, x8                              ; void *instance
+|           0x10000793c      bl    sym.imp.objc_retain                 ; void objc_retain(void *instance)
+|           0x100007940      add   x8, var_48h
+|           0x100007944      str   x0, [var_48h]
+|           0x100007948      ldr   x9, [var_48h]                       ; [0x38:4]=-1 ; 56
+|           0x10000794c      adrp  x0, data.100007000                  ; 0x100007000
+|           0x100007950      add   x0, x0, 0xe02                       ; 0x100007e02 ; "%p\n" ; const char *format
+|           0x100007954      mov   x10, sp
+|           0x100007958      str   x9, [x10]
+|           0x10000795c      str   x8, [var_68h]
+|           0x100007960      bl    sym.imp.printf                      ; int printf(const char *format)
+|           ;-- x30:
+|           ;-- lr:
+|           ;-- pc:
+\           0x100007964      brk   1
+EOF
+RUN
