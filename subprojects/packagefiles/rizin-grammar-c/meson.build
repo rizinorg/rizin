@@ -1,10 +1,8 @@
 project('rizin-grammar-c', 'c',
   license: 'MIT',
   meson_version: '>=0.55.0',
-  default_options: [
-    'werror=false'
-  ]
 )
+add_project_arguments('-Wno-error', language: ['c'])
 
 cc = meson.get_compiler('c')
 
