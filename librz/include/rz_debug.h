@@ -318,6 +318,8 @@ typedef struct rz_debug_t {
 	int glibc_version;
 	bool is_glibc_resolved;
 	bool nt_x86_xstate_supported; ///< Track whether X86_FEATURE_XSAVE feature is supported on current kernel
+	size_t RtlpHpHeapGlobalsOffset; ///< Related to windows heap
+	size_t RtlpLFHKeyOffset; ///< Related to windows heap
 } RzDebug;
 
 typedef struct rz_debug_desc_plugin_t {

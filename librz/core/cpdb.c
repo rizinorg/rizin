@@ -120,7 +120,7 @@ typedef struct {
 	RzCmdStateOutput *state;
 } PDBDumpContext;
 
-static bool symbol_dump(const RzPdb *pdb, const PDBSymbol *symbol, void *u) {
+static bool symbol_dump(RzPdb *pdb, const PDBSymbol *symbol, void *u) {
 	PDBDumpContext *ctx = u;
 	PJ *pj = ctx->state->d.pj;
 	if (symbol->kind == PDB_Public) {
@@ -171,7 +171,7 @@ static bool symbol_dump(const RzPdb *pdb, const PDBSymbol *symbol, void *u) {
  * \return char *
  */
 RZ_API char *rz_core_bin_pdb_gvars_as_string(
-	RZ_NONNULL const RzPdb *pdb, const ut64 baddr, RzCmdStateOutput *state) {
+	RZ_NONNULL RzPdb *pdb, const ut64 baddr, RzCmdStateOutput *state) {
 	rz_return_val_if_fail(pdb && state, NULL);
 	RzStrBuf *buf = rz_strbuf_new(NULL);
 	if (!buf) {
@@ -201,7 +201,7 @@ RZ_API char *rz_core_bin_pdb_gvars_as_string(
 	return rz_strbuf_drain(buf);
 }
 
-static void rz_core_bin_pdb_gvars_print(const RzPdb *pdb, const ut64 baddr, RzCmdStateOutput *state) {
+static void rz_core_bin_pdb_gvars_print(RzPdb *pdb, const ut64 baddr, RzCmdStateOutput *state) {
 	rz_return_if_fail(pdb && state);
 	char *str = rz_core_bin_pdb_gvars_as_string(pdb, baddr, state);
 	// We don't need to print the output of JSON because the RzCmdStateOutput will handle it.
@@ -217,7 +217,7 @@ typedef struct {
 	const char *file;
 } PDBLoadContext;
 
-static bool symbol_load(const RzPdb *pdb, const PDBSymbol *symbol, void *u) {
+static bool symbol_load(RzPdb *pdb, const PDBSymbol *symbol, void *u) {
 	if (!symbol) {
 		return true;
 	}
@@ -285,7 +285,7 @@ static bool symbol_load(const RzPdb *pdb, const PDBSymbol *symbol, void *u) {
 }
 
 static void pdb_symbols_load(
-	const RzCore *core, const RzPdb *pdb, const char *pdbfile) {
+	const RzCore *core, RzPdb *pdb, const char *pdbfile) {
 	rz_return_if_fail(core && pdb);
 	if (!(pdb->s_pe && pdb->s_gdata)) {
 		return;

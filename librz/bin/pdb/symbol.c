@@ -231,8 +231,8 @@ RZ_IPI bool PDBSymbolIter_collect(PDBSymbolIter *iter, RzPVector /*<PDBSymbol *>
 }
 
 RZ_API bool rz_pdb_all_symbols_foreach(
-	RZ_BORROW RZ_NONNULL const RzPdb *pdb,
-	RZ_BORROW RZ_NONNULL bool (*f)(const RzPdb *, const PDBSymbol *, void *),
+	RZ_BORROW RZ_NONNULL RzPdb *pdb,
+	RZ_BORROW RZ_NONNULL bool (*f)(RzPdb *, const PDBSymbol *, void *),
 	RZ_BORROW RZ_NULLABLE void *u) {
 	rz_return_val_if_fail(pdb && f, false);
 	if (!(pdb->s_gdata && pdb->s_gdata->global_symbols)) {
