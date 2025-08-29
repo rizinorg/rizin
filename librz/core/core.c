@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "rz_mark.h"
-#include "rz_util/rz_str.h"
+#include <rz_mark.h>
+#include <rz_util/rz_str.h>
 #include <rz_config.h>
 #include <rz_util/ht_sp.h>
 #include <rz_util/rz_regex.h>
@@ -966,7 +966,7 @@ static void append_marks(RzStrBuf *sb, RzList /*<RzMarkItem *>*/ *list, ut64 add
 		if ((is_start && addr == bi->from) || (!is_start && addr == bi->to)) {
 			if (!first)
 				rz_strbuf_append(sb, "  ; ");
-			rz_strbuf_appendf(sb, is_start ? "[s] %s (0x%" PFMT64x "-0x%" PFMT64x ")" : "[e] %s (0x%" PFMT64x "-0x%" PFMT64x ")",
+			rz_strbuf_appendf(sb, is_start ? "[s] %s [0x%" PFMT64x "-0x%" PFMT64x "]" : "[e] %s [0x%" PFMT64x "-0x%" PFMT64x "]",
 				bi->name, bi->from, bi->to);
 			first = false;
 		}

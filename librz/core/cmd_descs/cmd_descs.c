@@ -72,6 +72,7 @@ static const RzCmdDescDetail cmd_debug_inject_opcode_details[2];
 static const RzCmdDescDetail cmd_debug_inject_assembly_details[2];
 static const RzCmdDescDetail cmd_debug_inject_syscall_details[2];
 static const RzCmdDescDetail eval_getset_details[2];
+static const RzCmdDescDetail mark_describe_details[2];
 static const RzCmdDescDetail egg_config_details[2];
 static const RzCmdDescDetail history_list_or_exec_details[2];
 static const RzCmdDescDetail cmd_info_query_details[2];
@@ -12492,8 +12493,8 @@ static const RzCmdDescArg mark_add_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp mark_add_help = {
-	.summary = "Add the mark if there are no existing marks",
-	.description = "Adds the mark to the current offset only if no mark exists at this range already",
+	.summary = "Adds a mark if there are no existing marks.",
+	.description = "Adds the mark to the current offset only if no mark covers this offset already",
 	.args = mark_add_args,
 };
 
@@ -12518,14 +12519,14 @@ static const RzCmdDescArg mark_append_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp mark_append_help = {
-	.summary = "Add mark",
-	.description = "Adds the mark to the current offset",
+	.summary = "Add mark.",
+	.description = "Adds a mark at the current offset, replacing any existing mark with the same name.",
 	.args = mark_append_args,
 };
 
 static const RzCmdDescArg mark_remove_args[] = {
 	{
-		.name = "glob",
+		.name = "regex_pattern",
 		.type = RZ_CMD_ARG_TYPE_STRING,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
@@ -12534,8 +12535,8 @@ static const RzCmdDescArg mark_remove_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp mark_remove_help = {
-	.summary = "Remove mark",
-	.description = "If the glob is supplied it removes just mark items matching the pattern. Otherwise, it removes all marks that contain the current offset in their range.",
+	.summary = "Remove mark.",
+	.description = "Removes marks by name. If <regex_pattern> is given, only marks whose name matches the regex are removed. Otherwise, all marks covering the current offset are removed.",
 	.args = mark_remove_args,
 };
 
@@ -12543,7 +12544,7 @@ static const RzCmdDescArg mark_remove_all_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp mark_remove_all_help = {
-	.summary = "Remove all marks",
+	.summary = "Remove all marks.",
 	.args = mark_remove_all_args,
 };
 
@@ -12551,7 +12552,7 @@ static const RzCmdDescArg mark_list_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp mark_list_help = {
-	.summary = "List all marks",
+	.summary = "List all marks.",
 	.args = mark_list_args,
 };
 
@@ -12559,7 +12560,7 @@ static const RzCmdDescArg mark_list_at_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp mark_list_at_help = {
-	.summary = "List all marks containing the current offset",
+	.summary = "List all marks containing the current offset.",
 	.args = mark_list_at_args,
 };
 
@@ -12579,7 +12580,7 @@ static const RzCmdDescArg mark_color_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp mark_color_help = {
-	.summary = "Set a color for the given mark / Show the color for the given mark",
+	.summary = "Set a color for the given mark / Show the color for the given mark.",
 	.args = mark_color_args,
 };
 
@@ -12599,7 +12600,7 @@ static const RzCmdDescArg mark_comment_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp mark_comment_help = {
-	.summary = "Set a comment for the given mark / Show the comment for the given mark",
+	.summary = "Set a comment for the given mark. If no comment is given, it shows the current one for the mark.",
 	.args = mark_comment_args,
 };
 
@@ -12618,7 +12619,7 @@ static const RzCmdDescArg mark_rename_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp mark_rename_help = {
-	.summary = "Rename mark",
+	.summary = "Rename mark.",
 	.args = mark_rename_args,
 };
 
@@ -12638,7 +12639,8 @@ static const RzCmdDescArg mark_realname_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp mark_realname_help = {
-	.summary = "Show the realname of the mark / Set the realname of the mark",
+	.summary = "Show the realname of the mark / Set the realname of the mark.",
+	.description = "Each mark has two identifiers. <name> is the unique, escaped identifier used internally by Rizin. <realname> is the original, unescaped name, kept as given by the user.",
 	.args = mark_realname_args,
 };
 
@@ -12662,27 +12664,35 @@ static const RzCmdDescArg mark_move_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp mark_move_help = {
-	.summary = "Move a mark to new location",
+	.summary = "Move a mark to new a location.",
 	.args = mark_move_args,
 };
 
 static const RzCmdDescArg mark_distance_args[] = {
 	{
-		.name = "glob",
+		.name = "regex_pattern",
 		.type = RZ_CMD_ARG_TYPE_STRING,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
 
 	},
 	{ 0 },
 };
 static const RzCmdDescHelp mark_distance_help = {
-	.summary = "Distance in bytes to reach the next mark",
+	.summary = "Distance in bytes to reach the starting of mark from the current offset.",
 	.args = mark_distance_args,
 };
 
 static const RzCmdDescHelp md_help = {
-	.summary = "Describe mark",
+	.summary = "Describe mark.",
+};
+static const RzCmdDescDetailEntry mark_describe_Usage_space_example_detail_entries[] = {
+	{ .text = "md", .arg_str = NULL, .comment = "Describe all marks containing the current offset" },
+	{ .text = "md foo", .arg_str = NULL, .comment = "Describe the mark named 'foo' and show distance from current offset to reach the starting/ending of foo in bytes" },
+	{ 0 },
+};
+static const RzCmdDescDetail mark_describe_details[] = {
+	{ .name = "Usage example", .entries = mark_describe_Usage_space_example_detail_entries },
+	{ 0 },
 };
 static const RzCmdDescArg mark_describe_args[] = {
 	{
@@ -12694,7 +12704,9 @@ static const RzCmdDescArg mark_describe_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp mark_describe_help = {
-	.summary = "Describe mark containing current offset or using name + delta from current offset",
+	.summary = "Describe marks at the current offset or a named mark with distance from the offset.",
+	.description = "Displays information about marks. Without arguments, it describes all marks that contain the current offset. With a <name> argument, it shows details of that mark and the distance in bytes from the current offset to reach the mark. If the mark begins after the current offset, it shows <name> - <bytes> (distance from current offset to  start of the mark). If the mark ends before the current offset, it shows  <name> + <bytes> (distance from current offset to the end of the mark).",
+	.details = mark_describe_details,
 	.args = mark_describe_args,
 };
 
@@ -12709,7 +12721,7 @@ static const RzCmdDescArg mark_range_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp mark_range_help = {
-	.summary = "Show marks in the block or custom range",
+	.summary = "Show marks in the current block or in the next <size> bytes.",
 	.args = mark_range_args,
 };
 

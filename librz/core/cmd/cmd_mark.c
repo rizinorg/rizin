@@ -4,11 +4,11 @@
 #include <stddef.h>
 #include <rz_cons.h>
 #include <rz_core.h>
-#include "../core_private.h"
-#include "rz_mark.h"
-#include "rz_cmd.h"
-#include "rz_flag.h"
-#include "rz_util/rz_log.h"
+#include <../core_private.h>
+#include <rz_mark.h>
+#include <rz_cmd.h>
+#include <rz_flag.h>
+#include <rz_util/rz_log.h>
 
 static bool mark_set_comment(RzMarkItem *item, const char *comment) {
 	if (!strncmp(comment, "base64:", 7)) {
@@ -40,6 +40,7 @@ static bool mark_to_mark_foreach(RzMarkItem *bi, void *user) {
 }
 
 static int mark_to_mark(RzCore *core, const char *glob) {
+	rz_return_val_if_fail(core, 0);
 	rz_return_val_if_fail(glob, 0);
 	glob = rz_str_trim_head_ro(glob);
 	struct mark_to_mark_t u = { .next = UT64_MAX, .offset = core->offset };
@@ -164,7 +165,9 @@ RZ_IPI RzCmdStatus rz_mark_color_handler(RzCore *core, int argc, const char **ar
 		return RZ_CMD_STATUS_ERROR;
 	}
 	if (argc < 3) {
-		rz_cons_println(bi->color);
+		if (bi->color) {
+			rz_cons_println(bi->color);
+		}
 		return RZ_CMD_STATUS_OK;
 	}
 	const char *ret = rz_mark_item_set_color(bi, argv[2]);
@@ -190,11 +193,11 @@ RZ_IPI RzCmdStatus rz_mark_comment_handler(RzCore *core, int argc, const char **
 		return bool2status(mark_set_comment(item, argv[2]));
 	} else {
 		item = rz_mark_get(core->marks, argv[1]);
-		if (item && item->comment) {
-			rz_cons_println(item->comment);
-		} else {
-			RZ_LOG_ERROR("Cannot find the mark\n");
+		if (!item) {
+			RZ_LOG_ERROR("Cannot find mark\n");
 			return RZ_CMD_STATUS_ERROR;
+		} else if (item->comment) {
+			rz_cons_println(item->comment);
 		}
 	}
 	return RZ_CMD_STATUS_OK;
@@ -210,7 +213,7 @@ RZ_IPI RzCmdStatus rz_mark_rename_handler(RzCore *core, int argc, const char **a
 		RZ_LOG_ERROR("Invalid new mark name\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	RzFlagItem *fi = rz_flag_get(core->flags, item->name);
+	RzFlagItem *fi = rz_flag_get(core->flags, argv[1]);
 	rz_flag_rename(core->flags, fi, argv[2]);
 	return RZ_CMD_STATUS_OK;
 }
@@ -266,7 +269,9 @@ RZ_IPI RzCmdStatus rz_core_mark_describe(RzCore *core, ut64 addr, RzMarkItem *b,
 		pj_kn(pj, "from", b->from);
 		pj_kn(pj, "to", b->to);
 		pj_kn(pj, "size", size);
-		pj_ks(pj, "comment", b->comment);
+		if (b->comment) {
+			pj_ks(pj, "comment", b->comment);
+		}
 		if (b->realname) {
 			pj_ks(pj, "realname", b->realname);
 		}

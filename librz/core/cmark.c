@@ -1,7 +1,8 @@
 // SPDX-FileCopyrightText: 2025 PremadeS <emadsohail001@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "rz_util/rz_str.h"
+#include <rz_types_base.h>
+#include <rz_util/rz_str.h>
 #include <rz_cmd.h>
 #include <rz_mark.h>
 #include <rz_util.h>
@@ -18,7 +19,9 @@ struct print_mark_t {
 
 static bool print_mark_name(RzMarkItem *bm, void *user) {
 	struct print_mark_t *u = (struct print_mark_t *)user;
-	if (u->in_range && (bm->to < u->range_from || bm->from > u->range_to)) {
+	if (u->in_range &&
+		!(RZ_BETWEEN(u->range_from, bm->from, u->range_to) || RZ_BETWEEN(u->range_from, bm->to, u->range_to) ||
+			RZ_BETWEEN(bm->from, u->range_from, bm->to) || RZ_BETWEEN(bm->from, u->range_to, bm->to))) {
 		return true;
 	}
 	rz_cons_printf("%s\n", bm->name);
@@ -27,7 +30,9 @@ static bool print_mark_name(RzMarkItem *bm, void *user) {
 
 static bool print_mark_json(RzMarkItem *bm, void *user) {
 	struct print_mark_t *u = (struct print_mark_t *)user;
-	if (u->in_range && (bm->to < u->range_from || bm->from > u->range_to)) {
+	if (u->in_range &&
+		!(RZ_BETWEEN(u->range_from, bm->from, u->range_to) || RZ_BETWEEN(u->range_from, bm->to, u->range_to) ||
+			RZ_BETWEEN(bm->from, u->range_from, bm->to) || RZ_BETWEEN(bm->from, u->range_to, bm->to))) {
 		return true;
 	}
 	const char *realname = RZ_STR_ISEMPTY(bm->realname) ? bm->name : bm->realname;
@@ -46,7 +51,9 @@ static bool print_mark_json(RzMarkItem *bm, void *user) {
 
 static bool print_mark_range_name(RzMarkItem *bm, void *user) {
 	struct print_mark_t *u = (struct print_mark_t *)user;
-	if (u->in_range && (bm->to < u->range_from || bm->from > u->range_to)) {
+	if (u->in_range &&
+		!(RZ_BETWEEN(u->range_from, bm->from, u->range_to) || RZ_BETWEEN(u->range_from, bm->to, u->range_to) ||
+			RZ_BETWEEN(bm->from, u->range_from, bm->to) || RZ_BETWEEN(bm->from, u->range_to, bm->to))) {
 		return true;
 	}
 	rz_cons_printf("[0x%08" PFMT64x " - 0x%08" PFMT64x "] %s\n",
@@ -56,7 +63,9 @@ static bool print_mark_range_name(RzMarkItem *bm, void *user) {
 
 static bool print_mark_rizin(RzMarkItem *bm, void *user) {
 	struct print_mark_t *u = (struct print_mark_t *)user;
-	if (u->in_range && (bm->to < u->range_from || bm->from > u->range_to)) {
+	if (u->in_range &&
+		!(RZ_BETWEEN(u->range_from, bm->from, u->range_to) || RZ_BETWEEN(u->range_from, bm->to, u->range_to) ||
+			RZ_BETWEEN(bm->from, u->range_from, bm->to) || RZ_BETWEEN(bm->from, u->range_to, bm->to))) {
 		return true;
 	}
 	char *comment_b64 = NULL, *tmp = NULL;
@@ -78,7 +87,9 @@ static bool print_mark_rizin(RzMarkItem *bm, void *user) {
 
 static bool print_mark_table(RzMarkItem *bm, void *user) {
 	struct print_mark_t *u = (struct print_mark_t *)user;
-	if (u->in_range && (bm->to < u->range_from || bm->from > u->range_to)) {
+	if (u->in_range &&
+		!(RZ_BETWEEN(u->range_from, bm->from, u->range_to) || RZ_BETWEEN(u->range_from, bm->to, u->range_to) ||
+			RZ_BETWEEN(bm->from, u->range_from, bm->to) || RZ_BETWEEN(bm->from, u->range_to, bm->to))) {
 		return true;
 	}
 	if (!RZ_STR_ISEMPTY(bm->name)) {

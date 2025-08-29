@@ -5,10 +5,10 @@ name: cmd_mark
 commands:
   - name: m
     cname: mark_add
-    summary: Add the mark if there are no existing marks
+    summary: Adds a mark if there are no existing marks.
     description: >
       Adds the mark to the current offset only if
-      no mark exists at this range already
+      no mark covers this offset already
     args:
       - name: name
         type: RZ_CMD_ARG_TYPE_STRING
@@ -19,9 +19,9 @@ commands:
         optional: true
   - name: m+
     cname: mark_append
-    summary: Add mark
+    summary: Add mark.
     description: >
-      Adds the mark to the current offset
+      Adds a mark at the current offset, replacing any existing mark with the same name.
     args:
       - name: name
         type: RZ_CMD_ARG_TYPE_STRING
@@ -32,21 +32,22 @@ commands:
         optional: true
   - name: m-
     cname: mark_remove
-    summary: Remove mark
+    summary: Remove mark.
     description: >
-      If the glob is supplied it removes just mark items matching the pattern.
-      Otherwise, it removes all marks that contain the current offset in their range.
+      Removes marks by name.
+      If <regex_pattern> is given, only marks whose name matches the regex
+      are removed. Otherwise, all marks covering the current offset are removed.
     args:
-      - name: glob
+      - name: regex_pattern
         type: RZ_CMD_ARG_TYPE_STRING
         optional: true
   - name: m-*
     cname: mark_remove_all
-    summary: Remove all marks
+    summary: Remove all marks.
     args: []
   - name: ml
     cname: mark_list
-    summary: List all marks
+    summary: List all marks.
     type: RZ_CMD_DESC_TYPE_ARGV_STATE
     modes:
       - RZ_OUTPUT_MODE_STANDARD
@@ -57,7 +58,7 @@ commands:
     args: []
   - name: ml.
     cname: mark_list_at
-    summary: List all marks containing the current offset
+    summary: List all marks containing the current offset.
     type: RZ_CMD_DESC_TYPE_ARGV_STATE
     modes:
       - RZ_OUTPUT_MODE_STANDARD
@@ -68,7 +69,7 @@ commands:
     args: []
   - name: mc
     cname: mark_color
-    summary: Set a color for the given mark / Show the color for the given mark
+    summary: Set a color for the given mark / Show the color for the given mark.
     args:
       - name: name
         type: RZ_CMD_ARG_TYPE_FLAG
@@ -77,7 +78,7 @@ commands:
         optional: true
   - name: mC
     cname: mark_comment
-    summary: Set a comment for the given mark / Show the comment for the given mark
+    summary: Set a comment for the given mark. If no comment is given, it shows the current one for the mark.
     args:
       - name: name
         type: RZ_CMD_ARG_TYPE_FLAG
@@ -86,7 +87,7 @@ commands:
         optional: true
   - name: mr
     cname: mark_rename
-    summary: Rename mark
+    summary: Rename mark.
     args:
       - name: old
         type: RZ_CMD_ARG_TYPE_FLAG
@@ -94,7 +95,11 @@ commands:
         type: RZ_CMD_ARG_TYPE_STRING
   - name: mN
     cname: mark_realname
-    summary: Show the realname of the mark / Set the realname of the mark
+    summary: Show the realname of the mark / Set the realname of the mark.
+    description: >
+      Each mark has two identifiers.
+      <name> is the unique, escaped identifier used internally by Rizin.
+      <realname> is the original, unescaped name, kept as given by the user.
     args:
       - name: name
         type: RZ_CMD_ARG_TYPE_FLAG
@@ -103,7 +108,7 @@ commands:
         optional: true 
   - name: mm
     cname: mark_move
-    summary: Move a mark to new location
+    summary: Move a mark to new a location.
     args:
       - name: name
         type: RZ_CMD_ARG_TYPE_FLAG
@@ -113,17 +118,24 @@ commands:
         type: RZ_CMD_ARG_TYPE_RZNUM
   - name: mf
     cname: mark_distance
-    summary: Distance in bytes to reach the next mark
+    summary: Distance in bytes to reach the starting of mark from the current offset.
     args:
-      - name: glob
+      - name: regex_pattern
         type: RZ_CMD_ARG_TYPE_STRING
-        optional: true
   - name: md
-    summary: Describe mark
+    summary: Describe mark.
     subcommands:
       - name: md
         cname: mark_describe
-        summary: Describe mark containing current offset or using name + delta from current offset 
+        summary: Describe marks at the current offset or a named mark with distance from the offset.
+        description: >
+          Displays information about marks.
+          Without arguments, it describes all marks that contain the current offset.
+          With a <name> argument, it shows details of that mark and the distance in bytes
+          from the current offset to reach the mark. If the mark begins after the
+          current offset, it shows <name> - <bytes> (distance from current offset to 
+          start of the mark). If the mark ends before the current offset, it shows 
+          <name> + <bytes> (distance from current offset to the end of the mark).
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
           - RZ_OUTPUT_MODE_STANDARD
@@ -133,9 +145,16 @@ commands:
           - name: name
             type: RZ_CMD_ARG_TYPE_FLAG
             optional: true
+        details:
+        - name: Usage example
+          entries:
+            - text: "md"
+              comment: "Describe all marks containing the current offset"
+            - text: "md foo"
+              comment: "Describe the mark named 'foo' and show distance from current offset to reach the starting/ending of foo in bytes"
   - name: mi
     cname: mark_range
-    summary: Show marks in the block or custom range
+    summary: Show marks in the current block or in the next <size> bytes.
     type: RZ_CMD_DESC_TYPE_ARGV_STATE
     modes:
       - RZ_OUTPUT_MODE_STANDARD
@@ -147,4 +166,3 @@ commands:
       - name: size
         type: RZ_CMD_ARG_TYPE_RZNUM
         optional: true
-  
