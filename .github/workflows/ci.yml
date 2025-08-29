@@ -198,7 +198,7 @@ jobs:
         run: sudo apt-get --assume-yes install python3-wheel python3-setuptools libcapstone4 libcapstone-dev
       - name: Install meson and ninja
         if: matrix.build_system == 'meson' && matrix.enabled
-        run: pip3 install --user meson==1.8.3 ninja PyYAML
+        run: pip3 install --user meson ninja PyYAML
       - name: Install meson and ninja
         if: matrix.coverage && matrix.enabled
         run: pip3 install --user gcovr
@@ -487,7 +487,7 @@ jobs:
     timeout-minutes: 45
     steps:
       - name: Install meson and ninja
-        run: sudo pip3 install meson==1.8.3 ninja
+        run: sudo pip3 install meson ninja
       - name: Install test dependency
         run: sudo pip3 install 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
       - name: Checkout rizin
