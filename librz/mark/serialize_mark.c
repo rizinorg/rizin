@@ -45,7 +45,7 @@ static bool mark_save_cb(RzMarkItem *bm, void *user) {
  * \param db Database to save into.
  * \param bm Mark container to serialize.
  */
-RZ_API void rz_serialize_mark_save(RZ_NONNULL Sdb *db, RZ_BORROW RzMark *bm) {
+RZ_API void rz_serialize_mark_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzMark *bm) {
 	rz_mark_foreach(bm, mark_save_cb, sdb_ns(db, "marks", true));
 }
 
@@ -167,7 +167,7 @@ static bool load_marks(RZ_NONNULL Sdb *marks_db, RZ_NONNULL RzMark *bm) {
  * \note If no "marks" namespace exists, this is treated as an empty set
  *       of marks (not an error).
  */
-RZ_API bool rz_serialize_mark_load(RZ_NONNULL Sdb *db, RZ_BORROW RzMark *bm, RZ_NULLABLE RzSerializeResultInfo *res) {
+RZ_API bool rz_serialize_mark_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzMark *bm, RZ_NULLABLE RzSerializeResultInfo *res) {
 	rz_mark_unset_all(bm);
 
 	Sdb *marks_db = sdb_ns(db, "marks", false);

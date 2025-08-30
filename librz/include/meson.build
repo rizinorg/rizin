@@ -34,6 +34,7 @@ include_files = [
   'rz_list.h',
   'rz_magic.h',
   'rz_main.h',
+  'rz_mark.h',
   'rz_parse.h',
   'rz_pdb.h',
   'rz_platform.h',

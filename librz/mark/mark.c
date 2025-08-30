@@ -242,7 +242,7 @@ static bool append_bi(RzMarkItem *item, void *user) {
  * \param b The mark container.
  * \return A newly allocated list of all mark items (\p RzMarkItem*).
  */
-RZ_API RZ_OWN RzList /*<RzMarkItem *>*/ *rz_mark_all_list(RZ_BORROW RzMark *b) {
+RZ_API RZ_OWN RzList /*<RzMarkItem *>*/ *rz_mark_all_list(RZ_NONNULL RzMark *b) {
 	RzList *ret = rz_list_new();
 	if (!b || !ret) {
 		return ret;
@@ -260,7 +260,7 @@ RZ_API RZ_OWN RzList /*<RzMarkItem *>*/ *rz_mark_all_list(RZ_BORROW RzMark *b) {
  * \param to End of the range.
  * \return True if a mark starts or ends in the given range, False otherwise.
  */
-RZ_API bool rz_mark_starts_or_ends(RZ_BORROW RzMark *b, ut64 from, ut64 to) {
+RZ_API bool rz_mark_starts_or_ends(RZ_NONNULL RzMark *b, ut64 from, ut64 to) {
 	return mark_starts_or_ends(b, from, to);
 }
 
@@ -271,7 +271,7 @@ RZ_API bool rz_mark_starts_or_ends(RZ_BORROW RzMark *b, ut64 from, ut64 to) {
  * \param off The offset to query.
  * \return A list of all matching mark items. NULL if none are found.
  */
-RZ_API RZ_OWN RzList /*<RzMarkItem *>*/ *rz_mark_get_all_off(RZ_BORROW RzMark *b, ut64 off) {
+RZ_API RZ_OWN RzList /*<RzMarkItem *>*/ *rz_mark_get_all_off(RZ_NONNULL RzMark *b, ut64 off) {
 	return mark_match_all(b, off, RZ_MARK_MATCH_CONTAINS);
 }
 
@@ -282,7 +282,7 @@ RZ_API RZ_OWN RzList /*<RzMarkItem *>*/ *rz_mark_get_all_off(RZ_BORROW RzMark *b
  * \param off The offset to query.
  * \return The matching mark item. NULL if none is found.
  */
-RZ_API RZ_BORROW RzMarkItem *rz_mark_get_at(RZ_BORROW RzMark *b, ut64 off) {
+RZ_API RZ_BORROW RzMarkItem *rz_mark_get_at(RZ_NONNULL RzMark *b, ut64 off) {
 	return mark_match(b, off, RZ_MARK_MATCH_CONTAINS);
 }
 
@@ -293,7 +293,7 @@ RZ_API RZ_BORROW RzMarkItem *rz_mark_get_at(RZ_BORROW RzMark *b, ut64 off) {
  * \param off The offset to query.
  * \return The mark item starting at \p off. NULL if none is found.
  */
-RZ_API RZ_BORROW RzMarkItem *rz_mark_get_start(RZ_BORROW RzMark *b, ut64 off) {
+RZ_API RZ_BORROW RzMarkItem *rz_mark_get_start(RZ_NONNULL RzMark *b, ut64 off) {
 	return mark_match(b, off, RZ_MARK_MATCH_START);
 }
 
@@ -304,7 +304,7 @@ RZ_API RZ_BORROW RzMarkItem *rz_mark_get_start(RZ_BORROW RzMark *b, ut64 off) {
  * \param off The offset to query.
  * \return The mark item ending at \p off. NULL if none is found.
  */
-RZ_API RZ_BORROW RzMarkItem *rz_mark_get_end(RZ_BORROW RzMark *b, ut64 off) {
+RZ_API RZ_BORROW RzMarkItem *rz_mark_get_end(RZ_NONNULL RzMark *b, ut64 off) {
 	return mark_match(b, off, RZ_MARK_MATCH_END);
 }
 
@@ -315,7 +315,7 @@ RZ_API RZ_BORROW RzMarkItem *rz_mark_get_end(RZ_BORROW RzMark *b, ut64 off) {
  * \param name The name of the mark to retrieve.
  * \return The matching mark item. NULL if not found.
  */
-RZ_API RZ_BORROW RzMarkItem *rz_mark_get(RZ_BORROW RzMark *b, RZ_BORROW const char *name) {
+RZ_API RZ_BORROW RzMarkItem *rz_mark_get(RZ_NONNULL RzMark *b, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(b, NULL);
 	RzMarkItem *r = ht_sp_find(b->ht_name, name, NULL);
 	return r;
@@ -328,7 +328,7 @@ RZ_API RZ_BORROW RzMarkItem *rz_mark_get(RZ_BORROW RzMark *b, RZ_BORROW const ch
  * \param off The offset to query.
  * \return A list of mark items. NULL if none are found.
  */
-RZ_API RZ_BORROW const RzList /*<RzMarkItem *>*/ *rz_mark_get_list(RZ_BORROW RzMark *b, ut64 off) {
+RZ_API RZ_BORROW const RzList /*<RzMarkItem *>*/ *rz_mark_get_list(RZ_NONNULL RzMark *b, ut64 off) {
 	const RzMarksAtOffset *item = rz_mark_get_nearest_list(b, off, 0);
 	return item ? item->marks : NULL;
 }
@@ -345,7 +345,7 @@ RZ_API RZ_BORROW const RzList /*<RzMarkItem *>*/ *rz_mark_get_list(RZ_BORROW RzM
  * \param to End offset.
  * \return The created or updated mark item. NULL on error.
  */
-RZ_API RZ_OWN RzMarkItem *rz_mark_set(RZ_BORROW RzMark *b, RZ_BORROW const char *name, ut64 from, ut64 to) {
+RZ_API RZ_OWN RzMarkItem *rz_mark_set(RZ_NONNULL RzMark *b, RZ_NONNULL const char *name, ut64 from, ut64 to) {
 	rz_return_val_if_fail(b && name && *name, NULL);
 
 	bool is_new = false;
@@ -429,7 +429,7 @@ RZ_API void rz_mark_item_free(RZ_OWN RzMarkItem *item) {
  * \param cb Callback function to invoke for each mark item.
  * \param user User-provided data passed to the callback.
  */
-RZ_API void rz_mark_foreach(RZ_BORROW RzMark *b, RzMarkItemCb cb, void *user) {
+RZ_API void rz_mark_foreach(RZ_NONNULL RzMark *b, RZ_NONNULL RzMarkItemCb cb, RZ_NULLABLE void *user) {
 	FOREACH_BODY(true);
 }
 
@@ -441,7 +441,7 @@ RZ_API void rz_mark_foreach(RZ_BORROW RzMark *b, RzMarkItemCb cb, void *user) {
  * \param cb Callback function to invoke for each matching mark item.
  * \param user User-provided data passed to the callback.
  */
-RZ_API void rz_mark_foreach_glob(RZ_BORROW RzMark *b, RZ_BORROW const char *glob, RzMarkItemCb cb, void *user) {
+RZ_API void rz_mark_foreach_glob(RZ_NONNULL RzMark *b, RZ_NONNULL const char *glob, RZ_NONNULL RzMarkItemCb cb, RZ_NULLABLE void *user) {
 	FOREACH_BODY(!glob || rz_str_glob(bi->name, glob));
 }
 
@@ -459,7 +459,7 @@ struct unset_off_foreach_t {
  * \param item The mark item to unset.
  * \return True if successfully unset. False otherwise.
  */
-RZ_API bool rz_mark_unset(RZ_BORROW RzMark *b, RZ_BORROW RzMarkItem *item) {
+RZ_API bool rz_mark_unset(RZ_NONNULL RzMark *b, RZ_NONNULL RzMarkItem *item) {
 	rz_return_val_if_fail(b && item, false);
 	remove_offsetmap(b, item);
 	ht_sp_delete(b->ht_name, item->name);
@@ -484,7 +484,7 @@ static bool unset_off_foreach(void *user, const char *k, const void *v) {
  * \param off The offset to clear marks from.
  * \return True if at least one mark was unset. False otherwise.
  */
-RZ_API bool rz_mark_unset_all_off(RZ_BORROW RzMark *b, ut64 off) {
+RZ_API bool rz_mark_unset_all_off(RZ_NONNULL RzMark *b, ut64 off) {
 	rz_return_val_if_fail(b, false);
 	struct unset_off_foreach_t u = { b, off };
 	ht_sp_foreach(b->ht_name, unset_off_foreach, &u);
@@ -510,7 +510,7 @@ static bool unset_foreach(RzMarkItem *bi, void *user) {
  * \param glob Glob/Regex pattern to filter mark names.
  * \return The number of marks unset. -1 on error.
  */
-RZ_API int rz_mark_unset_glob(RZ_BORROW RzMark *b, RZ_BORROW const char *glob) {
+RZ_API int rz_mark_unset_glob(RZ_NONNULL RzMark *b, RZ_NONNULL const char *glob) {
 	rz_return_val_if_fail(b, -1);
 	struct unset_foreach_t u = { .b = b, .n = 0 };
 	rz_mark_foreach_glob(b, glob, unset_foreach, &u);
@@ -522,7 +522,7 @@ RZ_API int rz_mark_unset_glob(RZ_BORROW RzMark *b, RZ_BORROW const char *glob) {
  *
  * \param b The mark container.
  */
-RZ_API void rz_mark_unset_all(RZ_BORROW RzMark *b) {
+RZ_API void rz_mark_unset_all(RZ_NONNULL RzMark *b) {
 	rz_return_if_fail(b);
 	ht_sp_free(b->ht_name);
 	b->ht_name = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_mark_item_free);
@@ -536,7 +536,7 @@ RZ_API void rz_mark_unset_all(RZ_BORROW RzMark *b) {
  * \param color The new color string, or NULL to remove.
  * \return The updated color string. NULL if unset.
  */
-RZ_API const char *rz_mark_item_set_color(RZ_BORROW RzMarkItem *item, RZ_BORROW const char *color) {
+RZ_API RZ_NULLABLE const char *rz_mark_item_set_color(RZ_NONNULL RzMarkItem *item, RZ_NONNULL const char *color) {
 	rz_return_val_if_fail(item, NULL);
 	free(item->color);
 	item->color = STRDUP_OR_NULL(color);
@@ -549,7 +549,7 @@ RZ_API const char *rz_mark_item_set_color(RZ_BORROW RzMarkItem *item, RZ_BORROW 
  * \param item The mark item.
  * \param comment The new comment string.
  */
-RZ_API void rz_mark_item_set_comment(RZ_BORROW RzMarkItem *item, RZ_BORROW const char *comment) {
+RZ_API void rz_mark_item_set_comment(RZ_NONNULL RzMarkItem *item, RZ_NULLABLE const char *comment) {
 	rz_return_if_fail(item);
 	free(item->comment);
 	item->comment = RZ_STR_ISEMPTY(comment) ? NULL : rz_str_dup(comment);
@@ -563,7 +563,7 @@ RZ_API void rz_mark_item_set_comment(RZ_BORROW RzMarkItem *item, RZ_BORROW const
  * \param name The new name.
  * \return True if renamed successfully. False otherwise.
  */
-RZ_API int rz_mark_rename(RZ_BORROW RzMark *b, RZ_BORROW RzMarkItem *item, RZ_BORROW const char *name) {
+RZ_API int rz_mark_rename(RZ_NONNULL RzMark *b, RZ_NONNULL RzMarkItem *item, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(b && item && name && *name, false);
 	return update_mark_item_name(b, item, name, false);
 }
@@ -574,7 +574,7 @@ RZ_API int rz_mark_rename(RZ_BORROW RzMark *b, RZ_BORROW RzMarkItem *item, RZ_BO
  * \param item The mark item.
  * \param realname The new real name.
  */
-RZ_API void rz_mark_item_set_realname(RZ_BORROW RzMarkItem *item, RZ_BORROW const char *realname) {
+RZ_API void rz_mark_item_set_realname(RZ_NONNULL RzMarkItem *item, RZ_NONNULL const char *realname) {
 	rz_return_if_fail(item);
 	free_item_realname(item);
 	item->realname = RZ_STR_ISEMPTY(realname) ? NULL : rz_str_dup(realname);
@@ -593,7 +593,7 @@ static bool mark_count_foreach(RzMarkItem *fi, void *user) {
  * \param glob Glob/Regex pattern to filter mark names.
  * \return The number of matching marks. -1 on error.
  */
-RZ_API int rz_mark_count(RZ_BORROW RzMark *b, RZ_BORROW const char *glob) {
+RZ_API int rz_mark_count(RZ_NONNULL RzMark *b, RZ_NONNULL const char *glob) {
 	int count = 0;
 	rz_return_val_if_fail(b, -1);
 	rz_mark_foreach_glob(b, glob, mark_count_foreach, &count);
