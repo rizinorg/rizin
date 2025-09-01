@@ -12,8 +12,8 @@
 #ifndef LINUX_DEBUG_H
 #define LINUX_DEBUG_H
 
+#include <rz_debug.h>
 #include <limits.h>
-#include <sys/ptrace.h>
 
 struct user_regs_struct_x86_64 {
 	ut64 r15;
@@ -183,5 +183,9 @@ int linux_handle_signals(RzDebug *dbg, int tid);
 RzDebugReasonType linux_dbg_wait(RzDebug *dbg, int pid);
 char *linux_reg_profile(RzDebug *dbg);
 int match_pid(const void *pid_o, const void *th_o, void *user);
+RzDebugMap *linux_map_alloc(RzDebug *dbg, ut64 addr, int size, bool thp);
+int linux_map_dealloc(RzDebug *dbg, ut64 addr, int size);
+RzList /*<RzDebugMap *>*/ *linux_map_get(RzDebug *dbg);
+int linux_map_protect(RzDebug *dbg, ut64 addr, int size, int perms);
 
 #endif

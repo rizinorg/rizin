@@ -281,33 +281,6 @@ int xnu_continue(RzDebug *dbg, int pid, int tid, int sig) {
 	return true;
 }
 
-char *xnu_reg_profile(RzDebug *dbg) {
-#if __POWERPC__
-#include "reg/darwin-ppc.h"
-#else
-	RzXnuDebug *ctx = dbg->plugin_data;
-	if (!ctx || !ctx->cpu) {
-		// not yet attached, arch still unknown
-		return NULL;
-	}
-#if __i386__ || __x86_64__
-	if (ctx->cpu == CPU_TYPE_X86_64) {
-#include "reg/darwin-x64.h"
-	} else {
-#include "reg/darwin-x86.h"
-	}
-#elif __APPLE__ && (__aarch64__ || __arm64__ || __arm__)
-	if (ctx->cpu == CPU_TYPE_ARM64) {
-#include "reg/darwin-arm64.h"
-	} else {
-#include "reg/darwin-arm.h"
-	}
-#else
-#error "Unsupported Apple architecture"
-#endif
-#endif
-}
-
 // rz_debug_select
 // using getcurthread has some drawbacks. You lose the ability to select
 // the thread you want to write or read from. but how that feature

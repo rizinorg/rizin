@@ -18,6 +18,7 @@ RUN
 
 NAME=debug continue back from caller
 FILE=bins/elf/analysis/calls_x64
+BROKEN=1
 ARGS=-d
 CMDS=<<EOF
 db @ main

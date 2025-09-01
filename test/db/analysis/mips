@@ -1484,3 +1484,33 @@ cycles: 0
 family: crpt
 EOF
 RUN
+
+NAME=pdf main mips be
+FILE=bins/elf/analysis/crackmips
+CMDS=<<EOF
+aaa
+agf @ 0x00400820
+EOF
+EXPECT=<<EOF
+.-----------------------------------------.
+|  0x400820                               |
+| ; [13] -r-x section size 272 named .plt |
+|   ; XREFS(23)                           |
+|   ;-- section..plt:                     |
+|   ;-- .plt:                             |
+| sym._PROCEDURE_LINKAGE_TABLE();         |
+| ; 'A'                                   |
+| lui gp, 0x41                            |
+| ; [0x422884:4]=-1                       |
+| lw t9, 0x5424(gp)                       |
+| ;-- waitpid:                            |
+| addiu gp, gp, 0x5424                    |
+| subu t8, t8, gp                         |
+| move t7, ra                             |
+| srl t8, t8, 2                           |
+| ;-- SHA256_Update:                      |
+| jalr t9                                 |
+| addiu t8, t8, -2                        |
+`-----------------------------------------'
+EOF
+RUN

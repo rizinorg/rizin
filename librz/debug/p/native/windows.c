@@ -2,6 +2,10 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "windows/windows_debug.h"
+#include "drx.c"
+#include "bt.c"
+#include <rz_drx.h>
+#include <rz_core.h>
 // TODO: Move these onto windows.h?
 RZ_API RzList *rz_w32_dbg_modules(RzDebug *); // ugly!
 RZ_API RzList *rz_w32_dbg_maps(RzDebug *);
@@ -27,7 +31,20 @@ RZ_API RzList *rz_w32_dbg_maps(RzDebug *);
 #define PROC_PERM_SZ        5
 #define PROC_UNKSTR_SZ      128
 
-#include "reg.c"
+static char *rz_debug_native_reg_profile(RzDebug *dbg) {
+#if __aarch64__ /* arm64 */
+#include "reg/windows-arm64.h"
+#elif __arm__ /* arm32 */
+#include "reg/windows-arm.h"
+#elif __x86_64__ /* x86_64 */
+#include "reg/windows-x64.h"
+#elif __i386__ /* x86 */
+#include "reg/windows-x86.h"
+#else /* other architectures */
+	RZ_LOG_ERROR("Unsupported architecture\n");
+	return NULL;
+#endif /* end */
+}
 
 static bool rz_debug_native_step(RzDebug *dbg) {
 	return w32_step(dbg);
@@ -46,7 +63,7 @@ static int rz_debug_native_select(RzDebug *dbg, int pid, int tid) {
 }
 
 static int rz_debug_native_continue_syscall(RzDebug *dbg, int pid, int num) {
-	eprintf("TODO: continue syscall not implemented yet\n");
+	RZ_LOG_WARN("TODO: continue syscall not implemented yet\n");
 	return -1;
 }
 
@@ -212,7 +229,7 @@ static RzList /*<RzDebugPid *>*/ *rz_debug_native_pids(RzDebug *dbg, int pid) {
 RZ_API RZ_OWN RzList /*<RzDebugPid *>*/ *rz_debug_native_threads(RzDebug *dbg, int pid) {
 	RzList *list = rz_list_new();
 	if (!list) {
-		eprintf("No list?\n");
+		RZ_LOG_ERROR("Cannot create list\n");
 		return NULL;
 	}
 	return w32_thread_list(dbg, pid, list);
@@ -242,7 +259,9 @@ static int rz_debug_native_reg_write(RzDebug *dbg, int type, const ut8 *buf, int
 		return w32_reg_write(dbg, type, buf, size);
 	} else if (type == RZ_REG_TYPE_FPU) {
 		return false;
-	} // else eprintf ("TODO: reg_write_non-gpr (%d)\n", type);
+	} else {
+		RZ_LOG_DEBUG("TODO: reg_write_non-gpr (%d)\n", type);
+	}
 	return false;
 }
 
@@ -312,20 +331,11 @@ static bool rz_debug_native_kill(RzDebug *dbg, int pid, int tid, int sig) {
 	return ret;
 }
 
-struct rz_debug_desc_plugin_t rz_debug_desc_plugin_native;
-static bool rz_debug_native_init(RzDebug *dbg, void **user) {
-	dbg->cur->desc = rz_debug_desc_plugin_native;
-	return w32_init(dbg);
-}
-
-static void rz_debug_native_fini(RzDebug *dbg, void *user) {
-}
-
 #if __i386__ || __x86_64__
 static void sync_drx_regs(RzDebug *dbg, drxt *regs, size_t num_regs) {
 	/* sanity check, we rely on this assumption */
 	if (num_regs != NUM_DRX_REGISTERS) {
-		eprintf("drx: Unsupported number of registers for get_debug_regs\n");
+		RZ_LOG_ERROR("drx: Unsupported number of registers for get_debug_regs\n");
 		return;
 	}
 
@@ -349,7 +359,7 @@ static void sync_drx_regs(RzDebug *dbg, drxt *regs, size_t num_regs) {
 static void set_drx_regs(RzDebug *dbg, drxt *regs, size_t num_regs) {
 	/* sanity check, we rely on this assumption */
 	if (num_regs != NUM_DRX_REGISTERS) {
-		eprintf("drx: Unsupported number of registers for get_debug_regs\n");
+		RZ_LOG_ERROR("drx: Unsupported number of registers for get_debug_regs\n");
 		return;
 	}
 
@@ -391,7 +401,7 @@ static int rz_debug_native_drx(RzDebug *dbg, int n, ut64 addr, int sz, int rwx, 
 		break;
 	default:
 		/* this should not happen, someone misused the API */
-		eprintf("drx: Unsupported api type in rz_debug_native_drx\n");
+		RZ_LOG_ERROR("drx: Unsupported api type in rz_debug_native_drx\n");
 		retval = false;
 	}
 
@@ -399,7 +409,7 @@ static int rz_debug_native_drx(RzDebug *dbg, int n, ut64 addr, int sz, int rwx, 
 
 	return retval;
 #else
-	eprintf("drx: Unsupported platform\n");
+	RZ_LOG_ERROR("drx: Unsupported platform\n");
 #endif
 	return -1;
 }
@@ -434,3 +444,65 @@ static int rz_debug_desc_native_open(const char *path) {
 static bool rz_debug_gcore(RzDebug *dbg, char *path, RzBuffer *dest) {
 	return false;
 }
+
+struct rz_debug_desc_plugin_t rz_debug_desc_plugin_native = {
+	.open = rz_debug_desc_native_open,
+	.list = rz_debug_desc_native_list,
+};
+
+static bool rz_debug_native_init(RzDebug *dbg, void **user) {
+	dbg->cur->desc = rz_debug_desc_plugin_native;
+	return w32_init(dbg);
+}
+
+static void rz_debug_native_fini(RzDebug *dbg, void *user) {
+	return;
+}
+
+RzDebugPlugin rz_debug_plugin_native = {
+	.name = "native",
+	.license = "LGPL3",
+#if __i386__ /* X86 */
+	.bits = RZ_SYS_BITS_32,
+	.arch = "x86",
+	.canstep = 1,
+#elif __x86_64__ /* X86_64 */
+	.bits = RZ_SYS_BITS_32 | RZ_SYS_BITS_64,
+	.arch = "x86",
+	.canstep = 1, // XXX it's 1 on some platforms...
+#elif __aarch64__ /*  arm64 */
+	.bits = RZ_SYS_BITS_16 | RZ_SYS_BITS_32 | RZ_SYS_BITS_64,
+	.arch = "arm",
+	.canstep = 0,
+#elif __arm__ /* arm32 */
+	.bits = RZ_SYS_BITS_16 | RZ_SYS_BITS_32,
+	.arch = "arm",
+	.canstep = 0,
+#endif /* end */
+	.init = &rz_debug_native_init,
+	.fini = &rz_debug_native_fini,
+	.step = &rz_debug_native_step,
+	.cont = &rz_debug_native_continue,
+	.stop = &rz_debug_native_stop,
+	.contsc = &rz_debug_native_continue_syscall,
+	.attach = &rz_debug_native_attach,
+	.detach = &rz_debug_native_detach,
+	.select = &rz_debug_native_select,
+	.pids = &rz_debug_native_pids,
+	.threads = &rz_debug_native_threads,
+	.wait = &rz_debug_native_wait,
+	.kill = &rz_debug_native_kill,
+	.frames = &rz_debug_native_frames, // rename to backtrace ?
+	.reg_profile = rz_debug_native_reg_profile,
+	.reg_read = rz_debug_native_reg_read,
+	.info = rz_debug_native_info,
+	.reg_write = (void *)&rz_debug_native_reg_write,
+	.map_alloc = rz_debug_native_map_alloc,
+	.map_dealloc = rz_debug_native_map_dealloc,
+	.map_get = rz_debug_native_map_get,
+	.modules_get = rz_debug_native_modules_get,
+	.map_protect = rz_debug_native_map_protect,
+	.breakpoint = rz_debug_native_bp,
+	.drx = rz_debug_native_drx,
+	.gcore = rz_debug_gcore,
+};

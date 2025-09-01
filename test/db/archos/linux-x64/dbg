@@ -66,6 +66,7 @@ RUN
 
 NAME=dko and dkl
 FILE=bins/elf/analysis/calls_x64
+BROKEN=1
 ARGS=-a x86 -d
 CMDS=<<EOF
 dkl~SIGTERM

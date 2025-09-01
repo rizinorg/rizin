@@ -2,28 +2,30 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_userconf.h>
-
-#include <rz_debug.h>
-#include <rz_reg.h>
-#include <rz_lib.h>
-#include <rz_analysis.h>
-#include <signal.h>
-#include <sys/uio.h>
-#include <errno.h>
 #include "linux_debug.h"
 #include "../procfs.h"
 
+#include <sys/mman.h>
 #include <sys/syscall.h>
 #include <unistd.h>
 #include <elf.h>
 
 #include "linux_ptrace.h"
+#include "rz_debug.h"
 
 #ifdef __GLIBC__
 #define HAVE_YMM 1
 #else
 #define HAVE_YMM 0
 #endif
+
+#define PROC_NAME_SZ   1024
+#define PROC_REGION_SZ 100
+// PROC_REGION_SZ - 2 (used for `0x`). Due to how RZ_STR_DEF works this can't be
+// computed.
+#define PROC_REGION_LEFT_SZ 98
+#define PROC_PERM_SZ        5
+#define PROC_UNKSTR_SZ      128
 
 #if (__i386__ || __x86_64__) && defined(PTRACE_GETREGSET) && defined(NT_X86_XSTATE)
 long rz_debug_ptrace_get_x86_xstate(RzDebug *dbg, pid_t pid, struct iovec *iov) {
@@ -51,45 +53,6 @@ long rz_debug_ptrace_get_x86_xstate(RzDebug *dbg, pid_t pid, struct iovec *iov) 
 	return -1;
 }
 #endif
-
-char *linux_reg_profile(RzDebug *dbg) {
-#if __arm__
-#include "reg/linux-arm.h"
-#elif __riscv
-#include "reg/linux-riscv64.h"
-#elif __arm64__ || __aarch64__
-#include "reg/linux-arm64.h"
-#elif __mips__
-	if ((dbg->bits & RZ_SYS_BITS_32) && (dbg->bp->endian == 1)) {
-#include "reg/linux-mips.h"
-	} else {
-#include "reg/linux-mips64.h"
-	}
-#elif (__i386__ || __x86_64__)
-	if (dbg->bits & RZ_SYS_BITS_32) {
-#if __x86_64__
-#include "reg/linux-x64-32.h"
-#else
-#include "reg/linux-x86.h"
-#endif
-	} else {
-#include "reg/linux-x64.h"
-	}
-#elif __powerpc__
-	if (dbg->bits & RZ_SYS_BITS_32) {
-#include "reg/linux-ppc.h"
-	} else {
-#include "reg/linux-ppc64.h"
-	}
-#elif __s390x__
-#include "reg/linux-s390x.h"
-#elif __loongarch64
-#include "reg/linux-loongarch64.h"
-#else
-#error "Unsupported Linux CPU"
-	return NULL;
-#endif
-}
 
 static void linux_detach_all(RzDebug *dbg);
 static char *read_link(int pid, const char *file);
@@ -179,8 +142,8 @@ int linux_handle_signals(RzDebug *dbg, int tid) {
 		}
 		if (dbg->reason.signum != SIGTRAP &&
 			(dbg->reason.signum != SIGINT || !rz_cons_is_breaked())) {
-			eprintf("[+] SIGNAL %d errno=%d addr=0x%08" PFMT64x
-				" code=%d si_pid=%d ret=%d\n",
+			rz_cons_printf("[+] SIGNAL %d errno=%d addr=0x%08" PFMT64x
+				       " code=%d si_pid=%d ret=%d\n",
 				siginfo.si_signo, siginfo.si_errno,
 				(ut64)(size_t)siginfo.si_addr, siginfo.si_code, siginfo.si_pid, ret);
 		}
@@ -273,7 +236,7 @@ RzDebugReasonType linux_ptrace_event(RzDebug *dbg, int ptid, int status, bool do
 		if (dbg->trace_clone) {
 			rz_debug_select(dbg, dbg->pid, (int)data);
 		}
-		eprintf("(%d) Created thread %d\n", ptid, (int)data);
+		rz_cons_printf("(%d) Created thread %d\n", ptid, (int)data);
 		return RZ_DEBUG_REASON_NEW_TID;
 	case PTRACE_EVENT_VFORK:
 	case PTRACE_EVENT_FORK:
@@ -290,7 +253,7 @@ RzDebugReasonType linux_ptrace_event(RzDebug *dbg, int ptid, int status, bool do
 				perror("waitpid");
 			}
 		}
-		eprintf("(%d) Created process %d\n", ptid, (int)data);
+		RZ_LOG_WARN("(%d) Created process %d\n", ptid, (int)data);
 		if (!dbg->trace_forks) {
 			// We need to do this even if the new process will be detached since the
 			// breakpoints are inherited from the parent
@@ -308,14 +271,14 @@ RzDebugReasonType linux_ptrace_event(RzDebug *dbg, int ptid, int status, bool do
 		}
 		// TODO: Check other processes exit if dbg->trace_forks is on
 		if (ptid != dbg->pid) {
-			eprintf("(%d) Thread exited with status=0x%" PFMT64x "\n", ptid, (ut64)data);
+			RZ_LOG_WARN("(%d) Thread exited with status=0x%" PFMT64x "\n", ptid, (ut64)data);
 			return RZ_DEBUG_REASON_EXIT_TID;
 		} else {
-			eprintf("(%d) Process exited with status=0x%" PFMT64x "\n", ptid, (ut64)data);
+			RZ_LOG_WARN("(%d) Process exited with status=0x%" PFMT64x "\n", ptid, (ut64)data);
 			return RZ_DEBUG_REASON_EXIT_PID;
 		}
 	default:
-		eprintf("Unknown PTRACE_EVENT encountered: %d\n", pt_evt);
+		RZ_LOG_ERROR("Unknown PTRACE_EVENT encountered: %d\n", pt_evt);
 		break;
 	}
 	return RZ_DEBUG_REASON_UNKNOWN;
@@ -490,14 +453,14 @@ static void linux_dbg_wait_break_main(RzDebug *dbg) {
 	// in another process group.
 	if (dpgid != tpgid) {
 		if (!linux_kill_thread(dbg->pid, SIGINT)) {
-			eprintf("Could not interrupt pid (%d)\n", dbg->pid);
+			RZ_LOG_ERROR("Could not interrupt pid (%d)\n", dbg->pid);
 		}
 	}
 }
 
 static void linux_dbg_wait_break(RzDebug *dbg) {
 	if (!linux_kill_thread(dbg->pid, SIGINT)) {
-		eprintf("Could not interrupt pid (%d)\n", dbg->pid);
+		RZ_LOG_ERROR("Could not interrupt pid (%d)\n", dbg->pid);
 	}
 }
 
@@ -553,15 +516,15 @@ RzDebugReasonType linux_dbg_wait(RzDebug *dbg, int pid) {
 					rz_list_free(dbg->threads);
 					dbg->threads = NULL;
 					reason = RZ_DEBUG_REASON_DEAD;
-					eprintf("(%d) Process terminated with status %d\n", tid, WEXITSTATUS(status));
+					RZ_LOG_WARN("(%d) Process terminated with status %d\n", tid, WEXITSTATUS(status));
 					break;
 				} else {
-					eprintf("(%d) Child terminated with status %d\n", tid, WEXITSTATUS(status));
+					RZ_LOG_WARN("(%d) Child terminated with status %d\n", tid, WEXITSTATUS(status));
 					linux_remove_thread(dbg, tid);
 					continue;
 				}
 			} else if (WIFSIGNALED(status)) {
-				eprintf("child received signal %d\n", WTERMSIG(status));
+				RZ_LOG_WARN("child received signal %d\n", WTERMSIG(status));
 				reason = RZ_DEBUG_REASON_SIGNAL;
 			} else if (WIFSTOPPED(status)) {
 				// If tid is not in the thread list and stopped by SIGSTOP,
@@ -577,25 +540,25 @@ RzDebugReasonType linux_dbg_wait(RzDebug *dbg, int pid) {
 				if (linux_handle_signals(dbg, tid)) {
 					reason = dbg->reason.type;
 				} else {
-					eprintf("can't handle signals\n");
+					RZ_LOG_ERROR("can't handle signals\n");
 					return RZ_DEBUG_REASON_ERROR;
 				}
 #ifdef WIFCONTINUED
 			} else if (WIFCONTINUED(status)) {
-				eprintf("child continued...\n");
+				RZ_LOG_WARN("child continued...\n");
 				reason = RZ_DEBUG_REASON_NONE;
 #endif
 			} else if (status == 1) {
-				eprintf("debugger is dead with status 1\n");
+				RZ_LOG_WARN("debugger is dead with status 1\n");
 				reason = RZ_DEBUG_REASON_DEAD;
 			} else if (status == 0) {
-				eprintf("debugger is dead with status 0\n");
+				RZ_LOG_WARN("debugger is dead with status 0\n");
 				reason = RZ_DEBUG_REASON_DEAD;
 			} else {
 				if (ret != tid) {
 					reason = RZ_DEBUG_REASON_NEW_PID;
 				} else {
-					eprintf("returning from wait without knowing why...\n");
+					RZ_LOG_ERROR("returning from wait without knowing why...\n");
 				}
 			}
 			if (reason != RZ_DEBUG_REASON_UNKNOWN) {
@@ -696,13 +659,13 @@ static bool linux_attach_single_pid(RzDebug *dbg, int ptid) {
 		// Make sure SIGSTOP is delivered and wait for it since we can't affect the pid
 		// until it hits SIGSTOP.
 		if (!linux_stop_thread(dbg, ptid)) {
-			eprintf("Could not stop pid (%d)\n", ptid);
+			RZ_LOG_ERROR("Could not stop pid (%d)\n", ptid);
 			return false;
 		}
 	}
 
 	if (!linux_set_options(dbg, ptid)) {
-		eprintf("failed set_options on %d\n", ptid);
+		RZ_LOG_ERROR("failed set_options on %d\n", ptid);
 		return false;
 	}
 	return true;
@@ -1171,7 +1134,7 @@ int linux_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 			long ret = rz_debug_ptrace(dbg, PTRACE_PEEKUSER, pid,
 				(void *)rz_offsetof(struct user, u_debugreg[i]), 0);
 			if ((i + 1) * sizeof(ret) > size) {
-				eprintf("linux_reg_get: Buffer too small %d\n", size);
+				RZ_LOG_ERROR("linux_reg_get: Buffer too small %d\n", size);
 				break;
 			}
 			memcpy(buf + (i * sizeof(ret)), &ret, sizeof(ret));
@@ -1334,7 +1297,7 @@ int linux_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
 			}
 			if (rz_debug_ptrace(dbg, PTRACE_POKEUSER, pid,
 				    (void *)rz_offsetof(struct user, u_debugreg[i]), (rz_ptrace_data_t)val[i])) {
-				eprintf("ptrace error for dr %d\n", i);
+				RZ_LOG_ERROR("ptrace error for dr %d\n", i);
 				rz_sys_perror("ptrace POKEUSER");
 			}
 		}
@@ -1447,4 +1410,353 @@ fail:
 	rz_list_free(ret);
 	closedir(dd);
 	return NULL;
+}
+
+static int sys_thp_mode(void) {
+	size_t i;
+	const char *thp[] = {
+		"/sys/kernel/mm/transparent_hugepage/enabled",
+		"/sys/kernel/mm/redhat_transparent_hugepage/enabled",
+	};
+	int ret = 0;
+
+	for (i = 0; i < RZ_ARRAY_SIZE(thp); i++) {
+		char *val = rz_file_slurp(thp[i], NULL);
+		if (val) {
+			if (strstr(val, "[madvise]")) {
+				ret = 1;
+			} else if (strstr(val, "[always]")) {
+				ret = 2;
+			}
+			free(val);
+			break;
+		}
+	}
+
+	return ret;
+}
+
+static int linux_map_thp(RzDebug *dbg, ut64 addr, int size) {
+#if defined(MADV_HUGEPAGE)
+	RzBuffer *buf = NULL;
+	char code[1024];
+	int ret = true;
+	char *asm_list[] = {
+		"x86", "x86.as",
+		"x64", "x86.as",
+		NULL
+	};
+	// In architectures where rizin is supported, arm and x86, it is 2MB
+	const size_t thpsize = 1 << 21;
+
+	if ((size % thpsize)) {
+		RZ_LOG_ERROR("size not a power of huge pages size\n");
+		return false;
+	}
+	// In always mode, is more into mmap syscall level
+	// even though the address might not have the 'hg'
+	// vmflags
+	if (sys_thp_mode() != 1) {
+		RZ_LOG_ERROR("transparent huge page mode is not in madvise mode\n");
+		return false;
+	}
+
+	int num = rz_syscall_get_num(dbg->analysis->syscall, "madvise");
+
+	snprintf(code, sizeof(code),
+		"sc_madvise@syscall(%d);\n"
+		"main@naked(0) { .rarg0 = sc_madvise(0x%08" PFMT64x ",%d, %d);break;\n"
+		"}\n",
+		num, addr, size, MADV_HUGEPAGE);
+	rz_egg_reset(dbg->egg);
+	rz_egg_setup(dbg->egg, dbg->arch, 8 * dbg->bits, 0, 0);
+	rz_egg_load(dbg->egg, code, 0);
+	if (!rz_egg_compile(dbg->egg)) {
+		RZ_LOG_ERROR("Cannot compile.\n");
+		goto err_linux_map_thp;
+	}
+	if (!rz_egg_assemble_asm(dbg->egg, asm_list)) {
+		RZ_LOG_ERROR("rz_egg_assemble: invalid assembly\n");
+		goto err_linux_map_thp;
+	}
+	buf = rz_egg_get_bin(dbg->egg);
+	if (buf) {
+		rz_reg_arena_push(dbg->reg);
+		ut64 tmpsz;
+		const ut8 *tmp = rz_buf_data(buf, &tmpsz);
+		ret = rz_debug_execute(dbg, tmp, tmpsz, 1) == 0;
+		rz_reg_arena_pop(dbg->reg);
+	}
+err_linux_map_thp:
+	return ret;
+#else
+	return false;
+#endif
+}
+
+RzDebugMap *linux_map_alloc(RzDebug *dbg, ut64 addr, int size, bool thp) {
+	RzBuffer *buf = NULL;
+	RzDebugMap *map = NULL;
+	char code[1024], *sc_name;
+	int num;
+	/* force to usage of x86.as, not yet working x86.nz */
+	char *asm_list[] = {
+		"x86", "x86.as",
+		"x64", "x86.as",
+		NULL
+	};
+
+	/* NOTE: Since kernel 2.4,  that  system  call  has  been  superseded  by
+		 mmap2(2 and  nowadays  the  glibc  mmap()  wrapper  function invokes
+		 mmap2(2)). If arch is x86_32 then usage mmap2() */
+	if (!strcmp(dbg->arch, "x86") && dbg->bits == 4) {
+		sc_name = "mmap2";
+	} else {
+		sc_name = "mmap";
+	}
+	num = rz_syscall_get_num(dbg->analysis->syscall, sc_name);
+#ifndef MAP_ANONYMOUS
+#define MAP_ANONYMOUS 0x20
+#endif
+	snprintf(code, sizeof(code),
+		"sc_mmap@syscall(%d);\n"
+		"main@naked(0) { .rarg0 = sc_mmap(0x%08" PFMT64x ",%d,%d,%d,%d,%d);break;\n"
+		"}\n",
+		num, addr, size, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+	rz_egg_reset(dbg->egg);
+	rz_egg_setup(dbg->egg, dbg->arch, 8 * dbg->bits, 0, 0);
+	rz_egg_load(dbg->egg, code, 0);
+	if (!rz_egg_compile(dbg->egg)) {
+		RZ_LOG_ERROR("Cannot compile egg code for map allocation.\n");
+		goto err_linux_map_alloc;
+	}
+	if (!rz_egg_assemble_asm(dbg->egg, asm_list)) {
+		RZ_LOG_ERROR("rz_egg_assemble: invalid assembly\n");
+		goto err_linux_map_alloc;
+	}
+	buf = rz_egg_get_bin(dbg->egg);
+	if (buf) {
+		ut64 map_addr;
+
+		rz_reg_arena_push(dbg->reg);
+		ut64 tmpsz;
+		const ut8 *tmp = rz_buf_data(buf, &tmpsz);
+		map_addr = rz_debug_execute(dbg, tmp, tmpsz, 1);
+		rz_reg_arena_pop(dbg->reg);
+		if (map_addr != (ut64)-1) {
+			if (thp) {
+				if (!linux_map_thp(dbg, map_addr, size)) {
+					RZ_LOG_ERROR("map promotion to huge page failed\n");
+				}
+			}
+			rz_debug_map_sync(dbg);
+			map = rz_debug_map_get(dbg, map_addr);
+		}
+	}
+err_linux_map_alloc:
+	return map;
+}
+
+int linux_map_dealloc(RzDebug *dbg, ut64 addr, int size) {
+	RzBuffer *buf = NULL;
+	char code[1024];
+	int ret = 0;
+	char *asm_list[] = {
+		"x86", "x86.as",
+		"x64", "x86.as",
+		NULL
+	};
+	int num = rz_syscall_get_num(dbg->analysis->syscall, "munmap");
+
+	snprintf(code, sizeof(code),
+		"sc_munmap@syscall(%d);\n"
+		"main@naked(0) { .rarg0 = sc_munmap(0x%08" PFMT64x ",%d);break;\n"
+		"}\n",
+		num, addr, size);
+	rz_egg_reset(dbg->egg);
+	rz_egg_setup(dbg->egg, dbg->arch, 8 * dbg->bits, 0, 0);
+	rz_egg_load(dbg->egg, code, 0);
+	if (!rz_egg_compile(dbg->egg)) {
+		RZ_LOG_ERROR("Cannot compile egg code for map deallocation.\n");
+		goto err_linux_map_dealloc;
+	}
+	if (!rz_egg_assemble_asm(dbg->egg, asm_list)) {
+		RZ_LOG_ERROR("rz_egg_assemble: invalid assembly\n");
+		goto err_linux_map_dealloc;
+	}
+	buf = rz_egg_get_bin(dbg->egg);
+	if (buf) {
+		rz_reg_arena_push(dbg->reg);
+		ut64 tmpsz;
+		const ut8 *tmp = rz_buf_data(buf, &tmpsz);
+		ret = rz_debug_execute(dbg, tmp, tmpsz, 1) == 0;
+		rz_reg_arena_pop(dbg->reg);
+	}
+err_linux_map_dealloc:
+	return ret;
+}
+
+static void _map_free(RzDebugMap *map) {
+	if (!map) {
+		return;
+	}
+	free(map->name);
+	free(map->file);
+	free(map);
+}
+
+RzList /*<RzDebugMap *>*/ *linux_map_get(RzDebug *dbg) {
+	RzList *list = NULL;
+	RzDebugMap *map;
+	int i, perm, unk = 0;
+	char *pos_c;
+	char path[1024], line[1024], name[PROC_NAME_SZ + 1];
+	char region[PROC_REGION_SZ + 1], region2[PROC_REGION_SZ + 1], perms[PROC_PERM_SZ + 1];
+	FILE *fd;
+	if (dbg->pid == -1) {
+		// eprintf ("rz_debug_native_map_get: No selected pid (-1)\n");
+		return NULL;
+	}
+	/* prepend 0x prefix */
+	region[0] = region2[0] = '0';
+	region[1] = region2[1] = 'x';
+
+	snprintf(path, sizeof(path), "/proc/%d/maps", dbg->pid);
+
+	fd = rz_sys_fopen(path, "r");
+	if (!fd) {
+		char *errmsg = rz_str_newf("Cannot open '%s'", path);
+		rz_sys_perror(errmsg);
+		free(errmsg);
+		return NULL;
+	}
+
+	list = rz_list_new();
+	if (!list) {
+		fclose(fd);
+		return NULL;
+	}
+	list->free = (RzListFree)_map_free;
+	while (!feof(fd)) {
+		size_t line_len;
+		bool map_is_shared = false;
+		ut64 map_start, map_end;
+
+		if (!fgets(line, sizeof(line), fd)) {
+			break;
+		}
+		/* kill the newline if we got one */
+		line_len = strlen(line);
+		if (line[line_len - 1] == '\n') {
+			line[line_len - 1] = '\0';
+			line_len--;
+		}
+		/* maps files should not have empty lines */
+		if (line_len == 0) {
+			break;
+		}
+
+		ut64 offset = 0;
+		// 7fc8124c4000-7fc81278d000 r--p 00000000 fc:00 17043921 /usr/lib/locale/locale-archive
+		i = sscanf(line, "%" RZ_STR_DEF(PROC_REGION_LEFT_SZ) "s %" RZ_STR_DEF(PROC_PERM_SZ) "s %08" PFMT64x " %*s %*s %" RZ_STR_DEF(PROC_NAME_SZ) "[^\n]", &region[2], perms, &offset, name);
+
+		if (i == 3) {
+			name[0] = '\0';
+		} else if (i != 4) {
+			RZ_LOG_ERROR("%s: Unable to parse \"%s\"\n", __func__, path);
+			RZ_LOG_ERROR("%s: problematic line: %s\n", __func__, line);
+			rz_list_free(list);
+			return NULL;
+		}
+
+		/* split the region in two */
+		pos_c = strchr(&region[2], '-');
+		if (!pos_c) { // should this be an error?
+			continue;
+		}
+		strncpy(&region2[2], pos_c + 1, sizeof(region2) - 2 - 1);
+
+		if (!*name) {
+			snprintf(name, sizeof(name), "unk%d", unk++);
+		}
+		perm = 0;
+		for (i = 0; i < 5 && perms[i]; i++) {
+			switch (perms[i]) {
+			case 'r': perm |= RZ_PERM_R; break;
+			case 'w': perm |= RZ_PERM_W; break;
+			case 'x': perm |= RZ_PERM_X; break;
+			case 'p': map_is_shared = false; break;
+			case 's': map_is_shared = true; break;
+			}
+		}
+
+		map_start = rz_num_get(NULL, region);
+		map_end = rz_num_get(NULL, region2);
+		if (map_start == map_end || map_end == 0) {
+			RZ_LOG_WARN("%s: ignoring invalid map size: %s - %s\n", __func__, region, region2);
+			continue;
+		}
+		map = rz_debug_map_new(name, map_start, map_end, perm, 0);
+		if (!map) {
+			break;
+		}
+		map->offset = offset;
+		map->shared = map_is_shared;
+		map->file = rz_str_dup(name);
+		rz_list_append(list, map);
+	}
+	fclose(fd);
+	return list;
+}
+
+static int io_perms_to_prot(int io_perms) {
+	int prot_perms = PROT_NONE;
+
+	if (io_perms & RZ_PERM_R) {
+		prot_perms |= PROT_READ;
+	}
+	if (io_perms & RZ_PERM_W) {
+		prot_perms |= PROT_WRITE;
+	}
+	if (io_perms & RZ_PERM_X) {
+		prot_perms |= PROT_EXEC;
+	}
+	return prot_perms;
+}
+
+int linux_map_protect(RzDebug *dbg, ut64 addr, int size, int perms) {
+	RzBuffer *buf = NULL;
+	char code[1024];
+	int num;
+
+	num = rz_syscall_get_num(dbg->analysis->syscall, "mprotect");
+	snprintf(code, sizeof(code),
+		"sc@syscall(%d);\n"
+		"main@global(0) { sc(%p,%d,%d);\n"
+		":int3\n"
+		"}\n",
+		num, (void *)(size_t)addr, size, io_perms_to_prot(perms));
+
+	rz_egg_reset(dbg->egg);
+	rz_egg_setup(dbg->egg, dbg->arch, 8 * dbg->bits, 0, 0);
+	rz_egg_load(dbg->egg, code, 0);
+	if (!rz_egg_compile(dbg->egg)) {
+		RZ_LOG_ERROR("Cannot compile egg code for mprotect.\n");
+		return false;
+	}
+	if (!rz_egg_assemble(dbg->egg)) {
+		RZ_LOG_ERROR("rz_egg_assemble: invalid assembly\n");
+		return false;
+	}
+	buf = rz_egg_get_bin(dbg->egg);
+	if (buf) {
+		rz_reg_arena_push(dbg->reg);
+		ut64 tmpsz;
+		const ut8 *tmp = rz_buf_data(buf, &tmpsz);
+		rz_debug_execute(dbg, tmp, tmpsz, 1);
+		rz_reg_arena_pop(dbg->reg);
+		return true;
+	}
+
+	return false;
 }

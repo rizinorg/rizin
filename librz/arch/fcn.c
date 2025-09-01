@@ -542,6 +542,17 @@ static inline bool jump_leaves_mapped_mem(RzAnalysis *analysis, ut64 insn_addr, 
 	return (jump_target < map->itv.addr || jump_target >= map->itv.addr + map->itv.size);
 }
 
+static bool is_unknown_call_from_plt(RzAnalysis *analysis, ut64 op_address) {
+	RzBinSection *s = analysis->binb.get_vsect_at(analysis->binb.bin, op_address);
+	if (!s) {
+		return false;
+	}
+	return RZ_STR_EQ(s->name, ".MIPS.stubs") ||
+		RZ_STR_EQ(s->name, ".plt.got") ||
+		RZ_STR_EQ(s->name, ".plt.sec") ||
+		RZ_STR_EQ(s->name, ".plt");
+}
+
 /**
  * \brief Analyses the given task item \p item for branches.
  *
@@ -1243,7 +1254,8 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			// XXX: this is TYPE_MCALL or indirect-call
 			(void)rz_analysis_xrefs_set(analysis, op.addr, op.ptr, RZ_ANALYSIS_XREF_TYPE_CALL);
 
-			if (rz_analysis_noreturn_at(analysis, op.ptr)) {
+			if (is_unknown_call_from_plt(analysis, at) ||
+				rz_analysis_noreturn_at(analysis, op.ptr)) {
 				RzAnalysisFunction *f = rz_analysis_get_function_at(analysis, op.ptr);
 				if (f) {
 					f->is_noreturn = true;
