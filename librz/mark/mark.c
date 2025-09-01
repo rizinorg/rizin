@@ -175,11 +175,12 @@ static void mark_iterate_matches(RzMark *b, ut64 off, RzMarkMatchMode mode,
 		RzMarkItem *bi;
 
 		rz_list_foreach (cur->marks, it, bi) {
-			if (mark_item_matches(bi, off, mode)) {
-				rz_list_append(out, bi);
-				if (stop_on_first) {
-					return;
-				}
+			if (!mark_item_matches(bi, off, mode)) {
+				continue;
+			}
+			rz_list_append(out, bi);
+			if (stop_on_first) {
+				return;
 			}
 		}
 		if (cur->off == 0) {

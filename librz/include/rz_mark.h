@@ -20,12 +20,12 @@ RZ_LIB_VERSION_HEADER(rz_mark);
 #define RZ_MARK_NAME_SIZE 512
 
 typedef struct rz_mark_item_t {
-	ut64 from; /* inclusive starting address of mark */
-	ut64 to; /* inclusive ending address of mark */
-	char *name; /* unique name for each mark, escaped to avoid issues with rizin shell */
-	char *realname; /* real name, without any escaping */
-	char *comment; /* item comment */
-	char *color; /* item color */
+	ut64 from; ///< inclusive starting address of mark
+	ut64 to; ///< inclusive ending address of mark
+	char *name; ///< unique name for each mark, escaped to avoid issues with rizin shell
+	char *realname; ///< real name, without any escaping
+	char *comment; ///< item comment
+	char *color; ///< item color
 } RzMarkItem;
 
 typedef struct rz_marks_at_offset_t {
