@@ -38,13 +38,13 @@ Print \\x00 after initialization and after every command executed
 Redirect stderr to stdout
 .It Fl 2
 Close stderr file descriptor (silent warning messages)
-.It Fl a Ar [arch]
+.It Fl a Ar arch
 Set the assembly architecture.(x86, ppc, arm, mips, bf, java, ...)
 .It Fl A
 Run 'aaa' command before prompt or patch to analyze all referenced code
-.It Fl b Ar [bits]
+.It Fl b Ar bits
 Set the assembly bitness. (16, 32, 64)
-.It Fl B Ar [baddr]
+.It Fl B Ar baddr
 Set the base address for Position-Independent Executables (PIE)
 .It Fl c Ar 'cmd..'
 Execute the specified Rizin command
@@ -52,29 +52,29 @@ Execute the specified Rizin command
 Specify a file in the format "host:port" to run Rizin remotely through HTTP
 .It Fl d
 Debug the executable 'file' or running process 'pid'
-.It Fl D Ar [backend]
+.It Fl D Ar backend
 Enable debug mode, setting the configuration variable 'cfg.debug=true'
 .It Fl e Ar k=v
 Evaluate the specified configuration variable
 .It Fl f
 Set block size to be equal to file size
-.It -F [binplugin]
+.It -F binplugin
 Force the use of a specific rbin plugin
 .It Fl h, hh
 Show help messages, with -hh showing detailed help
 .It Fl H
 Print information about the installation paths and configuration settings of Rizin. This option is useful for obtaining details about the installation location, directories, and various components of Rizin
-.It Fl i Ar [file]
+.It Fl i Ar file
 Run the commands from the script file
-.It Fl I Ar [file]
+.It Fl I Ar file
 Run script file. Before the file is loaded
-.It Fl k Ar [OS/kern]
+.It Fl k Ar OS/kern
 Set the assembly operating system
-.It Fl l Ar [lib]
+.It Fl l Ar lib
 Load the specified plugin file
 .It Fl L
 List supported IO plugins
-.It Fl m Ar [addr]
+.It Fl m Ar addr
 Map file at given address
 .It Fl M
 Disable demangling
@@ -90,13 +90,13 @@ Quiet mode, suppresses prompt and quits after script execution
 Quit before showing the prompt. Right after all the -e -c and -i arguments are evaluated
 .It Fl Q
 Same as q, but exiting without freeing RzCore, this produces leaks at exit time, but saves some precious ms to run the testsuite in fast mode
-.It Fl p Ar [prj]
+.It Fl p Ar prj
 Set project file
-.It Fl r Ar [rz-run]
+.It Fl r Ar rz-run
 Specify dbg.profile rz-run profile to use when spawning a program for debugging
-.It Fl R Ar [rule]
+.It Fl R Ar rule
 Specify custom rz-run directives without having to create a rz-run profile
-.It Fl s Ar [addr]
+.It Fl s Ar addr
 Start seeking at this address
 .It Fl T
 Avoid computing the file hashes
