@@ -1,8 +1,6 @@
 // SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#define USE_THREADS       1
-#define ALLOW_THREADED    0
 #define UNCOLORIZE_NONTTY 0
 
 #include <rz_core.h>
@@ -132,9 +130,6 @@ static int main_help(RZ_BORROW RZ_NONNULL RzCore *core, int line) {
 			"-r",          "rz-run",    "Specify rz-run profile to load (same as -e dbg.profile=X)",
 			"-R",          "rule",      "Specify custom rz-run directive",
 			"-s",          "addr",      "Initial seek",
-		#if USE_THREADS && ALLOW_THREADED
-			"-t",          "",          "load rz-bin info in thread",
-		#endif
 			"-T",          "",          "Do not compute file hashes",
 			"-u",          "",          "Set bin.filter=false to get raw sym/sec/cls names",
 			"-v, -V",      "",          "Show rizin version (-V show lib versions)",
@@ -693,15 +688,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		case 's':
 			s_seek = opt.arg;
 			break;
-#if USE_THREADS
-		case 't':
-#if ALLOW_THREADED
-			threaded = true;
-#else
-			eprintf("WARNING: -t is temporarily disabled!\n");
-#endif
-			break;
-#endif
 		case 'T':
 			compute_hashes = false;
 			break;
