@@ -115,7 +115,7 @@ static int main_help(RZ_BORROW RZ_NONNULL RzCore *core, int line) {
 			"-f",          "",          "Block size = file size",
 			"-F",          "binplug",   "Force to use that rbin plugin",
 			"-h, -hh",     "",          "Show help message, -hh for long",
-			"-H",          "var",       "Display variable",
+			"-H",          "[var]",     "Display variable",
 			"-i",          "file",      "Run script file",
 			"-I",          "file",      "Run script file before the file is opened",
 			"-k",          "OS/kern",   "Set asm.os (linux, macos, w32, netbsd, ...)",
