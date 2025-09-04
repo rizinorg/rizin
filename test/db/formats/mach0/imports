@@ -112,12 +112,12 @@ RUN
 
 NAME=mach0 arm64e legacy chained imports (BIND_OPCODE_THREADED)
 FILE=bins/mach0/imports-arm64e-threaded
-ARGS=-a arm -b 64
 CMDS=<<EOF
+obs arm_64_arm64e
 ii
 ir
-pxr 0x10 @ section.13.__DATA.__objc_classrefs
-pD 0x10 @ section.13.__DATA.__objc_classrefs
+pxr 0x10 @ section.15.__DATA.__objc_classrefs
+pD 0x10 @ section.15.__DATA.__objc_classrefs
 ic
 EOF
 EXPECT=<<EOF
@@ -171,7 +171,6 @@ RUN
 
 NAME=mach0 arm64e chained imports
 FILE=bins/mach0/imports-arm64e-chained
-ARGS=-a arm -b 64
 CMDS=<<EOF
 ii
 ir

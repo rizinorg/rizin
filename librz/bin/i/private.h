@@ -26,7 +26,7 @@ RZ_IPI void rz_bin_object_free(RzBinObject *o);
 RZ_IPI ut64 rz_bin_object_get_baddr(RzBinObject *o);
 RZ_IPI RzBinObject *rz_bin_object_new(RzBinFile *binfile, RzBinPlugin *plugin, RzBinObjectLoadOptions *opts, ut64 offset, ut64 sz);
 RZ_IPI RzBinObject *rz_bin_object_get_cur(RzBin *bin);
-RZ_IPI RzBinObject *rz_bin_object_find_by_arch_bits(RzBinFile *binfile, const char *arch, int bits, const char *name);
+RZ_IPI RzBinObject *rz_bin_object_find_by_arch_bits(RzBinFile *bf, RZ_NONNULL const char *arch, int bits, RZ_NULLABLE const char *machine);
 
 RZ_IPI RzBinFile *rz_bin_file_xtr_load_buffer(RzBin *bin, RzBinXtrPlugin *xtr, const char *filename, RzBuffer *buf, RzBinObjectLoadOptions *obj_opts, int idx, int fd);
 RZ_IPI RzBinFile *rz_bin_file_new_from_buffer(RzBin *bin, const char *file, RzBuffer *buf, RzBinObjectLoadOptions *opts, int fd, const char *pluginname);

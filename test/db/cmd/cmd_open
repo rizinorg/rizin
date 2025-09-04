@@ -707,3 +707,183 @@ EXPECT=<<EOF
  1 fd: 3 +0x00000000 0x00000000 * 0x000001ff rwx 
 EOF
 RUN
+
+NAME=M68k, HPPA, Sparc, x86
+FILE=bins/mach0/2048-NeXTSTEP
+CMDS=<<EOF
+iA
+EOF
+EXPECT=<<EOF
+    offset  size arch  bits machine  big_endian 
+------------------------------------------------
+0x00002000 49152 m68k    32 mc68030  true
+0x0000e000 40960 x86     32 386      false
+0x00018000 49152 hppa    32 hppa7100 true
+0x00024000 49152 sparc   32 all      true
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=M68k, HPPA, Sparc, x86
+FILE=bins/mach0/2048-NeXTSTEP
+CMDS=<<EOF
+
+# Test if sane defaults were selected
+echo default (m68k)
+e asm.arch
+e asm.cpu
+e asm.bits
+e cfg.bigendian
+pd 10 @ section.0.__TEXT.__text
+
+obs hppa_32_hppa7100
+e asm.arch
+e asm.cpu
+e asm.bits
+e cfg.bigendian
+pd 10 @ section.0.__TEXT.__text
+
+obs sparc_32_all
+e asm.arch
+e asm.cpu
+e asm.bits
+e cfg.bigendian
+pd 10 @ section.0.__TEXT.__text
+
+obs x86_32_386
+e asm.arch
+e asm.cpu
+e asm.bits
+e cfg.bigendian
+pd 10 @ section.0.__TEXT.__text
+
+obs m68k_32_mc68030
+e asm.arch
+e asm.cpu
+e asm.bits
+e cfg.bigendian
+pd 10 @ section.0.__TEXT.__text
+EOF
+EXPECT=<<EOF
+default (m68k)
+m68k
+mc68030
+32
+true
+            ;-- section.0.__TEXT.__text:
+            0x000049c0      movea.l a7, a0                             ; [00] -r-x section size 6638 named 0.__TEXT.__text
+            0x000049c2      suba.w 0xc, a7
+            0x000049c6      move.l (a0)+, d0
+            0x000049c8      move.l d0, (a7)
+            0x000049ca      move.l d0, 0x8004.l
+            0x000049d0      move.l a0, 0x4(a7)
+            0x000049d4      move.l a0, 0x8008.l
+            0x000049da      addq.l 0x1, d0
+            0x000049dc      asl.l 0x2, d0
+            0x000049de      adda.l d0, a0
+hppa
+hppa7100
+32
+true
+            ;-- section.0.__TEXT.__text:
+            0x000039e8      ldw   0(sp),r26                            ; [00] -r-x section size 10588 named 0.__TEXT.__text
+            0x000039ec      ldo   7f(sp),sp
+            0x000039f0      ldil  L%3800,r1
+            0x000039f4      be    1fc(sr4,r1)
+            0x000039f8      depwi 0,31,6,sp
+            0x000039fc      stw   rp,-14(sp)
+            0x00003a00      stw,ma r5,80(sp)
+            0x00003a04      stw   r4,-7c(sp)
+            0x00003a08      stw   r3,-78(sp)
+            0x00003a0c      copy  r26,r4
+sparc
+all
+32
+true
+            ;-- section.0.__TEXT.__text:
+            0x0000441c      mov   sp, o0                               ; [00] -r-x section size 7912 named 0.__TEXT.__text
+            0x00004420      sethi 0x11, o5
+            0x00004424      or    o5, 0x30, o5
+            0x00004428      jmp   o5
+            0x0000442c      nop
+            0x00004430      save  sp, -0x70, sp
+            0x00004434      add   i0, 0x44, o1
+            0x00004438      sethi 0x20, o2
+            0x0000443c      st    o1, [o2+8]
+            0x00004440      ld    [i0+0x40], o0
+x86
+386
+32
+false
+            ;-- section.0.__TEXT.__text:
+            0x00002a24      push  ebp                                  ; [00] -r-x section size 6524 named 0.__TEXT.__text
+            0x00002a25      mov   ebp, esp
+            0x00002a27      push  edi
+            0x00002a28      push  esi
+            0x00002a29      push  ebx
+            0x00002a2a      lea   esi, dword [ebp+0x04]
+            0x00002a2d      mov   edx, dword [esi]
+            0x00002a2f      mov   dword [0x6004], edx
+            0x00002a35      lea   eax, dword [esi+0x04]
+            0x00002a38      mov   dword [0x6008], eax
+m68k
+mc68030
+32
+true
+            ;-- section.0.__TEXT.__text:
+            0x000049c0      movea.l a7, a0                             ; [00] -r-x section size 6638 named 0.__TEXT.__text
+            0x000049c2      suba.w 0xc, a7
+            0x000049c6      move.l (a0)+, d0
+            0x000049c8      move.l d0, (a7)
+            0x000049ca      move.l d0, 0x8004.l
+            0x000049d0      move.l a0, 0x4(a7)
+            0x000049d4      move.l a0, 0x8008.l
+            0x000049da      addq.l 0x1, d0
+            0x000049dc      asl.l 0x2, d0
+            0x000049de      adda.l d0, a0
+EOF
+EXPECT_ERR=<<EOF
+ERROR: unknown thread state structure 11
+ERROR: mach0: Cannot parse thread
+EOF
+RUN
+
+NAME=Switch between same archs, with different bits and machine
+FILE=bins/mach0/AppIOSEntitlements.ios
+CMDS=<<EOF
+obs
+echo "# default"
+e asm.arch
+e asm.bits
+e asm.cpu
+
+obs arm_64_all
+echo "# arm_64_all"
+e asm.arch
+e asm.bits
+e asm.cpu
+
+obs arm_32_v7
+echo "# arm_32_v7"
+e asm.arch
+e asm.bits
+e asm.cpu
+EOF
+EXPECT=<<EOF
+arm_32_v7
+arm_64_all
+# default
+arm
+32
+v7
+# arm_64_all
+arm
+64
+all
+# arm_32_v7
+arm
+32
+v7
+EOF
+EXPECT_ERR=
+RUN

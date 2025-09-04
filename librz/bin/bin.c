@@ -822,10 +822,21 @@ trashbin:
 	return NULL;
 }
 
-RZ_API bool rz_bin_use_arch(RzBin *bin, const char *arch, int bits, const char *name) {
+/**
+ * \brief Sets the object file match the \p arch, \p bits and optionally the \p machine.
+ *
+ * \param The current RzBin instance.
+ * \param The architecture of the binary file.
+ * \param The architecture bits of the binary file.
+ * \param (Optionally) The machine of the binary file.
+ * \param name Deprecated, should not be used. Can be NULL.
+ *
+ * \return True if the binary file was successfully set according to the parameters. False otherwise.
+ */
+RZ_API bool rz_bin_use_arch(RzBin *bin, const char *arch, int bits, RZ_NULLABLE const char *machine, RZ_DEPRECATE RZ_NULLABLE const char *name) {
 	rz_return_val_if_fail(bin && arch, false);
 
-	RzBinFile *binfile = rz_bin_file_find_by_arch_bits(bin, arch, bits);
+	RzBinFile *binfile = rz_bin_file_find_by_arch_bits(bin, arch, bits, machine);
 	if (!binfile) {
 		RZ_LOG_WARN("Cannot find binfile with arch/bits %s/%d\n", arch, bits);
 		return false;
@@ -851,15 +862,13 @@ RZ_API bool rz_bin_use_arch(RzBin *bin, const char *arch, int bits, const char *
 	return rz_bin_set_cur_binfile(bin, binfile);
 }
 
-RZ_API bool rz_bin_select(RzBin *bin, const char *arch, int bits, const char *name) {
-	rz_return_val_if_fail(bin, false);
+RZ_API bool rz_bin_select(RzBin *bin, RZ_NONNULL const char *arch, int bits, RZ_NULLABLE const char *machine) {
+	rz_return_val_if_fail(bin && arch, false);
 
-	RzBinFile *cur = rz_bin_cur(bin);
 	RzBinObject *obj = NULL;
-	name = !name && cur ? cur->file : name;
-	RzBinFile *binfile = rz_bin_file_find_by_arch_bits(bin, arch ? arch : name, bits);
-	if (binfile && name) {
-		obj = rz_bin_object_find_by_arch_bits(binfile, arch ? arch : name, bits, name);
+	RzBinFile *binfile = rz_bin_file_find_by_arch_bits(bin, arch, bits, machine);
+	if (binfile) {
+		obj = rz_bin_object_find_by_arch_bits(binfile, arch, bits, machine);
 	}
 	if (!rz_bin_file_set_obj(binfile, obj)) {
 		return NULL;

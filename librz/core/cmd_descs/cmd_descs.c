@@ -78,6 +78,7 @@ static const RzCmdDescDetail history_list_or_exec_details[2];
 static const RzCmdDescDetail cmd_info_query_details[2];
 static const RzCmdDescDetail query_sdb_get_set_details[2];
 static const RzCmdDescDetail plugins_asm_print_details[2];
+static const RzCmdDescDetail open_binary_select_details[2];
 static const RzCmdDescDetail cmd_print_byte_array_details[3];
 static const RzCmdDescDetail pf_details[3];
 static const RzCmdDescDetail print_string_details[2];
@@ -648,6 +649,7 @@ static const RzCmdDescArg open_binary_select_fd_args[2];
 static const RzCmdDescArg open_binary_del_args[2];
 static const RzCmdDescArg open_binary_add_args[2];
 static const RzCmdDescArg open_binary_file_args[2];
+static const RzCmdDescArg open_binary_select_args[2];
 static const RzCmdDescArg open_binary_reload_args[2];
 static const RzCmdDescArg open_use_args[2];
 static const RzCmdDescArg open_prioritize_args[2];
@@ -14224,6 +14226,31 @@ static const RzCmdDescHelp open_binary_file_help = {
 	.args = open_binary_file_args,
 };
 
+static const RzCmdDescDetailEntry open_binary_select_Examples_detail_entries[] = {
+	{ .text = "obs", .arg_str = NULL, .comment = "List all architectures the fat binary supports contains." },
+	{ .text = "obs sparc", .arg_str = NULL, .comment = "Select and load the binary for Sparc" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_binary_select_details[] = {
+	{ .name = "Examples", .entries = open_binary_select_Examples_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg open_binary_select_args[] = {
+	{
+		.name = "arch",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_binary_select_help = {
+	.summary = "Select the binary version for the specified architecture from the fat binary.",
+	.details = open_binary_select_details,
+	.args = open_binary_select_args,
+};
+
 static const RzCmdDescArg open_binary_reload_args[] = {
 	{
 		.name = "baddr",
@@ -24049,6 +24076,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *open_binary_file_cd = rz_cmd_desc_argv_new(core->rcmd, ob_cd, "obf", rz_open_binary_file_handler, &open_binary_file_help);
 	rz_warn_if_fail(open_binary_file_cd);
+
+	RzCmdDesc *open_binary_select_cd = rz_cmd_desc_argv_new(core->rcmd, ob_cd, "obs", rz_open_binary_select_handler, &open_binary_select_help);
+	rz_warn_if_fail(open_binary_select_cd);
 
 	RzCmdDesc *open_binary_reload_cd = rz_cmd_desc_argv_new(core->rcmd, ob_cd, "obR", rz_open_binary_reload_handler, &open_binary_reload_help);
 	rz_warn_if_fail(open_binary_reload_cd);

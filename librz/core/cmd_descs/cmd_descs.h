@@ -1870,6 +1870,8 @@ RZ_IPI RzCmdStatus rz_open_binary_show_handler(RzCore *core, int argc, const cha
 RZ_IPI RzCmdStatus rz_open_binary_add_handler(RzCore *core, int argc, const char **argv);
 // "obf"
 RZ_IPI RzCmdStatus rz_open_binary_file_handler(RzCore *core, int argc, const char **argv);
+// "obs"
+RZ_IPI RzCmdStatus rz_open_binary_select_handler(RzCore *core, int argc, const char **argv);
 // "obR"
 RZ_IPI RzCmdStatus rz_open_binary_reload_handler(RzCore *core, int argc, const char **argv);
 // "ou"

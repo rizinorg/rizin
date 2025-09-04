@@ -301,6 +301,9 @@ RZ_API bool rz_core_bin_apply_all_info(RzCore *r, RzBinFile *binfile) {
 	r->dbg->bp->baddr = baseaddr;
 	rz_config_set(r->config, "asm.arch", arch);
 	rz_config_set_i(r->config, "asm.bits", bits);
+	if (info->cpu) {
+		rz_config_set(r->config, "asm.cpu", info->cpu);
+	}
 	rz_config_set(r->config, "analysis.arch", arch);
 	if (RZ_STR_ISNOTEMPTY(info->cpu)) {
 		rz_config_set(r->config, "analysis.cpu", info->cpu);
@@ -4649,26 +4652,18 @@ static int bin_versioninfo(RzCore *r, PJ *pj, int mode) {
 	return true;
 }
 
-RZ_API int rz_core_bin_set_arch_bits(RzCore *r, const char *name, const char *arch, ut16 bits) {
-	int fd = rz_io_fd_get_current(r->io);
-	RzIODesc *desc = rz_io_desc_get(r->io, fd);
+RZ_API int rz_core_bin_set_arch_bits(RzCore *r, RZ_DEPRECATE const char *name, const char *arch, ut16 bits) {
 	RzBinFile *curfile, *binfile = NULL;
-	if (!name) {
-		if (!desc || !desc->name) {
-			return false;
-		}
-		name = desc->name;
-	}
 	/* Check if the arch name is a valid name */
 	if (!rz_asm_is_valid(r->rasm, arch)) {
 		return false;
 	}
 	/* Find a file with the requested name/arch/bits */
-	binfile = rz_bin_file_find_by_arch_bits(r->bin, arch, bits);
+	binfile = rz_bin_file_find_by_arch_bits(r->bin, arch, bits, NULL);
 	if (!binfile) {
 		return false;
 	}
-	if (!rz_bin_use_arch(r->bin, arch, bits, name)) {
+	if (!rz_bin_use_arch(r->bin, arch, bits, NULL, NULL)) {
 		return false;
 	}
 	curfile = rz_bin_cur(r->bin);

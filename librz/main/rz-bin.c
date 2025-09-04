@@ -172,7 +172,7 @@ static int rzbin_show_help(int v) {
 			"-e",           "",             "Entrypoint",
 			"-ee",          "",             "Constructor/destructor entrypoints",
 			"-E",           "",             "Globally exportable symbols",
-			"-f",           "[str]",        "Select sub-bin named str",
+			"-f",           "[mach]",       "Select sub-binary for the machine [mach].",
 			"-F",           "[binfmt]",     "Force to use that bin plugin (ignore header check)",
 			"-g",           "",             "Same as -SMZIHVResizcld -SS -SSS -ee (show all info)",
 			"-G",           "[addr]",       "Load address . offset to header",
@@ -717,7 +717,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	int c, bits = 0, actions = 0;
 	char *create = NULL;
 	ut64 action = RZ_BIN_REQ_UNK;
-	char *tmp, *ptr, *arch_name = NULL;
+	char *tmp, *ptr, *machine = NULL;
 	const char *arch = NULL;
 	const char *forcebin = NULL;
 	const char *chksum = NULL;
@@ -858,7 +858,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 				set_action(RZ_BIN_REQ_CLASSES);
 			}
 			break;
-		case 'f': arch_name = rz_str_dup(opt.arg); break;
+		case 'f': machine = rz_str_dup(opt.arg); break;
 		case 'F': forcebin = opt.arg; break;
 		case 'b': bits = rz_num_math(NULL, opt.arg); break;
 		case 'm':
@@ -1003,6 +1003,10 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			action |= RZ_BIN_REQ_HELP;
 			break;
 		}
+	}
+	if (machine && !(arch && bits)) {
+		RZ_LOG_ERROR("Selecting a machine requires [arch] and [bits].")
+		RZ_FREE(machine);
 	}
 
 	if (is_active(RZ_BIN_REQ_LISTPLUGINS)) {
@@ -1297,12 +1301,12 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	start_state(&state);
 
 	// List fatmach0 sub-binaries, etc
-	if (action & RZ_BIN_REQ_LISTARCHS || ((arch || bits || arch_name) && !rz_bin_select(bin, arch, bits, arch_name))) {
+	if (action & RZ_BIN_REQ_LISTARCHS || (((arch && bits) || machine) && !rz_bin_select(bin, arch, bits, machine))) {
 		RzCmdStateOutput *st = add_header(&state, mode == RZ_OUTPUT_MODE_STANDARD ? RZ_OUTPUT_MODE_TABLE : mode, "archs");
 		rz_core_bin_archs_print(bin, st);
 		add_footer(&state, st);
-		free(arch_name);
 	}
+	free(machine);
 	if (action & RZ_BIN_REQ_PDB_DWNLD) {
 		SPDBOptions pdbopts;
 		pdbopts.symbol_server = (char *)rz_config_get(core.config, "pdb.server");
@@ -1339,7 +1343,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	}
 	if (action & RZ_BIN_REQ_EXTRACT) {
 		if (bf->xtr_data) {
-			rzbin_extract(bin, (!arch && !arch_name && !bits));
+			rzbin_extract(bin, (!arch && !machine && !bits));
 		} else {
 			eprintf(
 				"Cannot extract bins from '%s'. No supported "

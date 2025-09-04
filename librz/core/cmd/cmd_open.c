@@ -757,6 +757,57 @@ RZ_IPI RzCmdStatus rz_open_binary_file_handler(RzCore *core, int argc, const cha
 	return RZ_CMD_STATUS_OK;
 }
 
+static inline bool xtr_selection_matches(RzList *selection, const RzBinXtrMetadata *metadata) {
+	rz_return_val_if_fail(selection && metadata && rz_list_length(selection) >= 2, false);
+	return (RZ_STR_EQ(rz_list_get_n(selection, 0), metadata->arch) &&
+		atoi(rz_list_get_n(selection, 1)) == metadata->bits &&
+		(rz_list_length(selection) < 3 || RZ_STR_ISEMPTY(metadata->machine) || RZ_STR_EQ(rz_list_get_n(selection, 2), metadata->machine)));
+}
+
+RZ_IPI RzCmdStatus rz_open_binary_select_handler(RzCore *core, int argc, const char **argv) {
+	RzBin *bin = core->bin;
+	if (!bin) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	bool list_existing = argc == 1;
+	RzListIter *iter;
+	RzBinFile *binfile = NULL;
+	RzBinXtrData *xtr_data;
+	size_t bits = 0;
+
+	rz_list_foreach (bin->binfiles, iter, binfile) {
+		RzListIter *iter_xtr;
+		if (!binfile->xtr_data) {
+			continue;
+		}
+		rz_list_foreach (binfile->xtr_data, iter_xtr, xtr_data) {
+			if (list_existing) {
+				rz_cons_printf("%s_%i_%s\n", xtr_data->metadata->arch, xtr_data->metadata->bits, xtr_data->metadata->machine);
+				continue;
+			}
+			RzList *selection = rz_str_split_duplist(argv[1], "_", 0);
+			if (rz_list_length(selection) < 2) {
+				RZ_LOG_WARN("Invalid argument.\n");
+				return RZ_CMD_STATUS_ERROR;
+			}
+			if (xtr_selection_matches(selection, xtr_data->metadata)) {
+				bits = xtr_data->metadata->bits;
+				if (!rz_bin_select(bin, rz_list_get_n(selection, 0), bits, NULL)) {
+					rz_list_free(selection);
+					return RZ_CMD_STATUS_ERROR;
+				}
+				if (!rz_core_bin_apply_all_info(core, binfile)) {
+					rz_list_free(selection);
+					return RZ_CMD_STATUS_ERROR;
+				}
+				break;
+			}
+			rz_list_free(selection);
+		}
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
 RZ_IPI RzCmdStatus rz_open_binary_reload_handler(RzCore *core, int argc, const char **argv) {
 	// XXX: this will reload the bin using the buffer.
 	// An assumption is made that assumes there is an underlying

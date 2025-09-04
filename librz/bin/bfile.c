@@ -117,13 +117,13 @@ RZ_API bool rz_bin_file_object_new_from_xtr_data(RzBin *bin, RzBinFile *bf, RzBi
 	return true;
 }
 
-static bool xtr_metadata_match(RzBinXtrData *xtr_data, const char *arch, int bits) {
+static bool xtr_metadata_match(RzBinXtrData *xtr_data, const char *arch, int bits, RZ_NULLABLE const char *machine) {
 	if (!xtr_data->metadata || !xtr_data->metadata->arch) {
 		return false;
 	}
 	const char *iter_arch = xtr_data->metadata->arch;
 	int iter_bits = xtr_data->metadata->bits;
-	return bits == iter_bits && !strcmp(iter_arch, arch) && !xtr_data->loaded;
+	return bits == iter_bits && !strcmp(iter_arch, arch) && (!machine || RZ_STR_EQ(machine, xtr_data->metadata->machine)) && !xtr_data->loaded;
 }
 
 RZ_IPI RzBinFile *rz_bin_file_new_from_buffer(RzBin *bin, const char *file, RzBuffer *buf, RzBinObjectLoadOptions *opts, int fd, const char *pluginname) {
@@ -150,7 +150,17 @@ RZ_IPI RzBinFile *rz_bin_file_new_from_buffer(RzBin *bin, const char *file, RzBu
 	return bf;
 }
 
-RZ_API RzBinFile *rz_bin_file_find_by_arch_bits(RzBin *bin, const char *arch, int bits) {
+/**
+ * \brief Search the matching binary file for \p arch \p bits and \p machine (optional).
+ *
+ * \param bin The current RzBin instance.
+ * \param arch The architecture of the binary file.
+ * \param bits The architecture bits of the binary file.
+ * \param machine (Optional) The machine the binary file is for.
+ *
+ * \return The binary file or NULL if no matching exists.
+ */
+RZ_API RZ_BORROW RzBinFile *rz_bin_file_find_by_arch_bits(RzBin *bin, const char *arch, int bits, RZ_NULLABLE const char *machine) {
 	RzListIter *iter;
 	RzBinFile *binfile = NULL;
 	RzBinXtrData *xtr_data;
@@ -164,7 +174,7 @@ RZ_API RzBinFile *rz_bin_file_find_by_arch_bits(RzBin *bin, const char *arch, in
 		}
 		// look for sub-bins in Xtr Data and Load if we need to
 		rz_list_foreach (binfile->xtr_data, iter_xtr, xtr_data) {
-			if (xtr_metadata_match(xtr_data, arch, bits)) {
+			if (xtr_metadata_match(xtr_data, arch, bits, machine)) {
 				if (!rz_bin_file_object_new_from_xtr_data(bin, binfile, &xtr_data->obj_opts, xtr_data)) {
 					return NULL;
 				}
