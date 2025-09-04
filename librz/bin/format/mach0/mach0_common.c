@@ -46,7 +46,7 @@ RZ_API RZ_NONNULL const char *rz_mach0_cputype_to_string(ut32 cputype) {
 	case CPU_TYPE_VAX:
 		return "vax";
 	case CPU_TYPE_MC680x0:
-		return "mc680x0";
+		return "m68k";
 	case CPU_TYPE_I386:
 	case CPU_TYPE_X86_64:
 		return "x86";

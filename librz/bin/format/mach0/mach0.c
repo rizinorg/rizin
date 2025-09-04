@@ -3352,7 +3352,7 @@ RzStructuredData *MACH0_(mach_structure)(RzBinFile *bf) {
 		rz_structured_data_map_add_string(mach0, "CpuType", "vax");
 		break;
 	case CPU_TYPE_MC680x0:
-		rz_structured_data_map_add_string(mach0, "CpuType", "mc680x0");
+		rz_structured_data_map_add_string(mach0, "CpuType", "m68k");
 		break;
 	case CPU_TYPE_X86:
 		rz_structured_data_map_add_string(mach0, "CpuType", "x86");
