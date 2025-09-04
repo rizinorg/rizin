@@ -190,6 +190,38 @@ struct arm_thread_state64 {
 	ut32 flags;
 };
 
+/**
+ * \brief This layout is guessed. I couldn't find a reference online
+ * implementing linking of Mach-O Sparc binaries and has the layout of the thread state.
+ * The layout below is the one used for the registers in the ELF core dumps.
+ * I use this in the hope the Mach-O and ELF devs had some
+ * commen documentation they were refering to.
+ */
+struct sparc_thread_state64 {
+	ut64 g[8];
+	ut64 o[8];
+	ut64 l[8];
+	ut64 i[8];
+	ut64 tstate;
+	ut64 tpc;
+	ut64 tnpc;
+	ut64 y;
+};
+
+/**
+ * \brief Assume layout of register file from the ISA:
+ *
+ * Figure 2-1:
+ * https://www.nxp.com/docs/en/reference-manual/MC68000UM.pdf
+ * https://web.archive.org/web/20250716224705/https://www.nxp.com/docs/en/reference-manual/MC68000UM.pdf
+ */
+struct mc680x0_thread_state {
+	ut32 d[8];
+	ut32 a[8];
+	ut32 pc;
+	ut8 ccr;
+};
+
 typedef struct {
 	uint8_t uuid[16];
 	uint64_t loadAddress;

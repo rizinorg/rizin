@@ -728,52 +728,53 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"=A1    a1\n"
 		"=A2    a2\n"
 		"=A3    a3\n"
-		"gpr	d0	.32	0	0\n"
-		"gpr	d1	.32	4	0\n"
-		"gpr	d2	.32	8	0\n"
-		"gpr	d3	.32	12	0\n"
-		"gpr	d4	.32	16	0\n"
-		"gpr	d5	.32	20	0\n"
-		"gpr	d6	.32	24	0\n"
-		"gpr	d7	.32	28	0\n"
-		"gpr	a0	.32	32	0\n"
-		"gpr	a1	.32	36	0\n"
-		"gpr	a2 	.32	40	0\n"
-		"gpr	a3 	.32	44	0\n"
-		"gpr	a4 	.32	48	0\n"
-		"gpr	a5	.32	52	0\n"
-		"gpr	a6 	.32	56	0\n"
-		"gpr	a7 	.32	60	0\n"
-		"gpr	fp0	.32	64	0\n" // FPU register 0, 96bits to write and read max
-		"gpr	fp1	.32	68	0\n" // FPU register 1, 96bits to write and read max
-		"gpr	fp2	.32	72	0\n" // FPU register 2, 96bits to write and read max
-		"gpr	fp3 	.32	76	0\n" // FPU register 3, 96bits to write and read max
-		"gpr	fp4 	.32	80	0\n" // FPU register 4, 96bits to write and read max
-		"gpr	fp5 	.32	84	0\n" // FPU register 5, 96bits to write and read max
-		"gpr	fp6 	.32	88	0\n" // FPU register 6, 96bits to write and read max
-		"gpr	fp7 	.32	92	0\n" // FPU register 7, 96bits to write and read max
-		"gpr	pc 	.32	96	0\n"
-		"gpr	sr 	.32	100	0\n" // only available for read and write access during supervisor mode 16bit
-		"gpr	ccr 	.32	104	0\n" // subset of the SR, available from any mode
-		"gpr	sfc 	.32	108	0\n" // source function code register
-		"gpr	dfc	.32	112	0\n" // destination function code register
-		"gpr	usp	.32	116	0\n" // user stack point this is an shadow register of A7 user mode, SR bit 0xD is 0
-		"gpr	vbr	.32	120	0\n" // vector base register, this is a Address pointer
-		"gpr	cacr	.32	124	0\n" // cache control register, implementation specific
-		"gpr	caar	.32	128	0\n" // cache address register, 68020, 68EC020, 68030 and 68EC030 only.
-		"gpr	msp	.32	132	0\n" // master stack pointer, this is an shadow register of A7 supervisor mode, SR bits 0xD && 0xC are set
-		"gpr	isp	.32	136	0\n" // interrupt stack pointer, this is an shadow register of A7  supervisor mode, SR bit 0xD is set, 0xC is not.
-		"gpr	tc	.32	140	0\n"
-		"gpr	itt0	.32	144	0\n" // in 68EC040 this is IACR0
-		"gpr	itt1	.32	148	0\n" // in 68EC040 this is IACR1
-		"gpr	dtt0	.32	156	0\n" // in 68EC040 this is DACR0
-		"gpr	dtt1	.32	160	0\n" // in 68EC040 this is DACR1
-		"gpr	mmusr	.32	164	0\n"
-		"gpr	urp	.32	168	0\n"
-		"gpr	srp	.32	172	0\n"
-		"gpr	fpcr	.32	176	0\n"
-		"gpr	fpsr	.32	180	0\n"
-		"gpr	fpiar	.32	184	0\n";
+		"gpr	d0		.32	0	0\n"
+		"gpr	d1		.32	4	0\n"
+		"gpr	d2		.32	8	0\n"
+		"gpr	d3		.32	12	0\n"
+		"gpr	d4		.32	16	0\n"
+		"gpr	d5		.32	20	0\n"
+		"gpr	d6		.32	24	0\n"
+		"gpr	d7		.32	28	0\n"
+		"gpr	a0		.32	32	0\n"
+		"gpr	a1		.32	36	0\n"
+		"gpr	a2 		.32	40	0\n"
+		"gpr	a3 		.32	44	0\n"
+		"gpr	a4 		.32	48	0\n"
+		"gpr	a5		.32	52	0\n"
+		"gpr	a6 		.32	56	0\n"
+		"gpr	a7 		.32	60	0\n"
+		"gpr	pc 		.32	64	0\n"
+		"gpr	ccr 	.8	68	0\n" // subset of the SR, available from any mode
+		"gpr	fp0		.32	69	0\n" // FPU register 0, 96bits to write and read max
+		"gpr	fp1		.32	73	0\n" // FPU register 1, 96bits to write and read max
+		"gpr	fp2		.32	77	0\n" // FPU register 2, 96bits to write and read max
+		"gpr	fp3 	.32	81	0\n" // FPU register 3, 96bits to write and read max
+		"gpr	fp4 	.32	85	0\n" // FPU register 4, 96bits to write and read max
+		"gpr	fp5 	.32	89	0\n" // FPU register 5, 96bits to write and read max
+		"gpr	fp6 	.32	93	0\n" // FPU register 6, 96bits to write and read max
+		"gpr	fp7 	.32	97	0\n" // FPU register 7, 96bits to write and read max
+		"gpr	fpcr	.32	101	0\n"
+		"gpr	fpsr	.32	105	0\n"
+		"gpr	fpiar	.32	109	0\n"
+		"gpr	sr 		.32	113	0\n" // only available for read and write access during supervisor mode 16bit
+		"gpr	sfc 	.32	117	0\n" // source function code register
+		"gpr	dfc		.32	121	0\n" // destination function code register
+		"gpr	usp		.32	125	0\n" // user stack point this is an shadow register of A7 user mode, SR bit 0xD is 0
+		"gpr	vbr		.32	129	0\n" // vector base register, this is a Address pointer
+		"gpr	cacr	.32	133	0\n" // cache control register, implementation specific
+		"gpr	caar	.32	137	0\n" // cache address register, 68020, 68EC020, 68030 and 68EC030 only.
+		"gpr	msp		.32	141	0\n" // master stack pointer, this is an shadow register of A7 supervisor mode, SR bits 0xD && 0xC are set
+		"gpr	isp		.32	145	0\n" // interrupt stack pointer, this is an shadow register of A7  supervisor mode, SR bit 0xD is set, 0xC is not.
+		"gpr	tc		.32	149	0\n"
+		"gpr	itt0	.32	153	0\n" // in 68EC040 this is IACR0
+		"gpr	itt1	.32	157	0\n" // in 68EC040 this is IACR1
+		"gpr	dtt0	.32	161	0\n" // in 68EC040 this is DACR0
+		"gpr	dtt1	.32	165	0\n" // in 68EC040 this is DACR1
+		"gpr	mmusr	.32	169	0\n"
+		"gpr	urp		.32	173	0\n"
+		"gpr	srp		.32	177	0\n"
+	;
 	return rz_str_dup(p);
 }
 

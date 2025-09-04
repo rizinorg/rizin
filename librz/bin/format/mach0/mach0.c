@@ -1070,8 +1070,36 @@ static int parse_thread(struct MACH0_(obj_t) * bin, struct load_command *lc, ut6
 		arw_ptr = (ut8 *)&bin->thread_state.arm_64;
 		arw_sz = sizeof(struct arm_thread_state64);
 		break;
+	case CPU_TYPE_MC680x0:
+		if (ptr_thread + sizeof(struct mc680x0_thread_state) > bin->size) {
+			return false;
+		}
+		if (rz_buf_fread_at(bin->b, ptr_thread,
+			    (ut8 *)&bin->thread_state.mc680x0, bin->big_endian ? "17I1c" : "17i1c", 1) == -1) {
+			RZ_LOG_ERROR("read thread state mc680x064\n");
+			return false;
+		}
+		pc = bin->thread_state.mc680x0.pc;
+		pc_offset = ptr_thread + rz_offsetof(struct mc680x0_thread_state, pc);
+		arw_ptr = (ut8 *)&bin->thread_state.mc680x0;
+		arw_sz = sizeof(struct mc680x0_thread_state);
+		break;
+	case CPU_TYPE_SPARC:
+		if (ptr_thread + sizeof(struct sparc_thread_state64) > bin->size) {
+			return false;
+		}
+		if (rz_buf_fread_at(bin->b, ptr_thread,
+			    (ut8 *)&bin->thread_state.mc680x0, bin->big_endian ? "36L" : "36l", 1) == -1) {
+			RZ_LOG_ERROR("read thread state sparc64\n");
+			return false;
+		}
+		pc = bin->thread_state.sparc_64.tpc;
+		pc_offset = ptr_thread + rz_offsetof(struct sparc_thread_state64, tpc);
+		arw_ptr = (ut8 *)&bin->thread_state.sparc_64;
+		arw_sz = sizeof(struct sparc_thread_state64);
+		break;
 	default:
-		RZ_LOG_ERROR("unknown thread state structure\n");
+		RZ_LOG_ERROR("unknown thread state structure %" PFMT32u "\n", bin->hdr.cputype);
 		return false;
 	}
 

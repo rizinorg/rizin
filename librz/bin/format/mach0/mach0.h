@@ -188,6 +188,8 @@ struct MACH0_(obj_t) {
 		struct ppc_thread_state64 ppc_64;
 		struct arm_thread_state32 arm_32;
 		struct arm_thread_state64 arm_64;
+		struct sparc_thread_state64 sparc_64;
+		struct mc680x0_thread_state mc680x0;
 	} thread_state;
 	char (*libs)[RZ_BIN_MACH0_STRING_LENGTH];
 	int nlibs;
