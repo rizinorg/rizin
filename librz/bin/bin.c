@@ -857,9 +857,9 @@ RZ_API bool rz_bin_select(RzBin *bin, const char *arch, int bits, const char *na
 	RzBinFile *cur = rz_bin_cur(bin);
 	RzBinObject *obj = NULL;
 	name = !name && cur ? cur->file : name;
-	RzBinFile *binfile = rz_bin_file_find_by_arch_bits(bin, arch, bits);
+	RzBinFile *binfile = rz_bin_file_find_by_arch_bits(bin, arch ? arch : name, bits);
 	if (binfile && name) {
-		obj = rz_bin_object_find_by_arch_bits(binfile, arch, bits, name);
+		obj = rz_bin_object_find_by_arch_bits(binfile, arch ? arch : name, bits, name);
 	}
 	if (!rz_bin_file_set_obj(binfile, obj)) {
 		return NULL;
