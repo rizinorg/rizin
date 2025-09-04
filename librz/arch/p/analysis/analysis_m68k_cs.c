@@ -773,8 +773,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"gpr	dtt1	.32	165	0\n" // in 68EC040 this is DACR1
 		"gpr	mmusr	.32	169	0\n"
 		"gpr	urp		.32	173	0\n"
-		"gpr	srp		.32	177	0\n"
-	;
+		"gpr	srp		.32	177	0\n";
 	return rz_str_dup(p);
 }
 
