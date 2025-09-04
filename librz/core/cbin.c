@@ -4675,11 +4675,6 @@ RZ_API int rz_core_bin_set_arch_bits(RzCore *r, const char *name, const char *ar
 	// set env if the binfile changed or we are dealing with xtr
 	if (curfile != binfile || binfile->curxtr) {
 		rz_core_bin_set_cur(r, binfile);
-		if (binfile->o && binfile->o->info) {
-			free(binfile->o->info->arch);
-			binfile->o->info->arch = rz_str_dup(arch);
-			binfile->o->info->bits = bits;
-		}
 		return rz_core_bin_apply_all_info(r, binfile);
 	}
 	return true;
@@ -5394,12 +5389,13 @@ struct arch_ctx {
 	ut64 size;
 	const char *arch;
 	int bits;
+	bool big_endian;
 	const char *machine;
 };
 
 static void print_arch(RzBin *bin, RzCmdStateOutput *state, struct arch_ctx *ctx, const char *flag, RzBinInfo *info) {
 	char str_fmt[30];
-	const char *fmt = "Xnss";
+	const char *fmt = "Xnsisb";
 
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_QUIET:
@@ -5409,6 +5405,7 @@ static void print_arch(RzBin *bin, RzCmdStateOutput *state, struct arch_ctx *ctx
 		pj_o(state->d.pj);
 		pj_ks(state->d.pj, "arch", ctx->arch);
 		pj_ki(state->d.pj, "bits", ctx->bits);
+		pj_kb(state->d.pj, "big_endian", ctx->big_endian);
 		pj_kn(state->d.pj, "offset", ctx->offset);
 		pj_kn(state->d.pj, "size", ctx->size);
 		if (info) {
@@ -5422,11 +5419,11 @@ static void print_arch(RzBin *bin, RzCmdStateOutput *state, struct arch_ctx *ctx
 		break;
 	case RZ_OUTPUT_MODE_TABLE:
 		if (flag && strcmp(flag, "unknown_flag")) {
-			rz_strf(str_fmt, "%s_%i %s", ctx->arch, ctx->bits, flag);
+			rz_strf(str_fmt, "%s %s", ctx->arch, flag);
 		} else {
-			rz_strf(str_fmt, "%s_%i", ctx->arch, ctx->bits);
+			rz_strf(str_fmt, "%s", ctx->arch);
 		}
-		rz_table_add_rowf(state->d.t, fmt, ctx->offset, ctx->size, str_fmt, ctx->machine);
+		rz_table_add_rowf(state->d.t, fmt, ctx->offset, ctx->size, str_fmt, ctx->bits, ctx->machine, ctx->big_endian);
 		break;
 	default:
 		rz_warn_if_reached();
@@ -5442,9 +5439,9 @@ RZ_API bool rz_core_bin_archs_print(RZ_NONNULL RzBin *bin, RZ_NONNULL RzCmdState
 		return false;
 	}
 
-	const char *fmt = "Xnss";
+	const char *fmt = "Xnsisb";
 	rz_cmd_state_output_array_start(state);
-	rz_cmd_state_output_set_columnsf(state, fmt, "offset", "size", "arch", "machine", NULL);
+	rz_cmd_state_output_set_columnsf(state, fmt, "offset", "size", "arch", "bits", "machine", "big_endian", NULL);
 
 	if (binfile->curxtr) {
 		RzListIter *iter_xtr;
@@ -5459,6 +5456,7 @@ RZ_API bool rz_core_bin_archs_print(RZ_NONNULL RzBin *bin, RZ_NONNULL RzCmdState
 			ctx.size = xtr_data->size;
 			ctx.arch = xtr_data->metadata->arch;
 			ctx.bits = xtr_data->metadata->bits;
+			ctx.big_endian = xtr_data->metadata->big_endian;
 			ctx.machine = xtr_data->metadata->machine;
 
 			print_arch(bin, state, &ctx, NULL, NULL);
@@ -5471,6 +5469,7 @@ RZ_API bool rz_core_bin_archs_print(RZ_NONNULL RzBin *bin, RZ_NONNULL RzCmdState
 		ctx.size = obj->obj_size;
 		ctx.arch = (info && info->arch) ? info->arch : "unk_0";
 		ctx.bits = info ? info->bits : 0;
+		ctx.big_endian = info ? info->big_endian : false;
 		ctx.machine = info ? info->machine : "unknown_machine";
 
 		const char *h_flag = info ? info->head_flag : NULL;

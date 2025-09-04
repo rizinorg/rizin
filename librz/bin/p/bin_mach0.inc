@@ -474,7 +474,7 @@ static RzBinInfo *mach0_info(RzBinFile *bf) {
 	ret->cpu = MACH0_(get_cpusubtype)(bf->o->bin_obj);
 	ret->machine = MACH0_(get_cpusubtype)(bf->o->bin_obj);
 	ret->type = MACH0_(get_filetype)(bf->o->bin_obj);
-	ret->big_endian = MACH0_(is_big_endian)(bf->o->bin_obj);
+	ret->big_endian = MACH0_(is_big_endian)(bf->buf);
 	ret->bits = 32;
 	if (bf && bf->o && bf->o->bin_obj) {
 		ret->has_crypto = ((struct MACH0_(obj_t) *)

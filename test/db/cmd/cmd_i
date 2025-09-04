@@ -319,10 +319,10 @@ iA
 iAj
 EOF
 EXPECT=<<EOF
-    offset   size arch                          machine               
-----------------------------------------------------------------------
-0x00000000 266108 mips_32 mips32 noreorder pic  MIPS R3000 big-endian
-[{"arch":"mips","bits":32,"offset":0,"size":266108,"cpu":"mips32","features":"noreorder pic cpic o32 n32","machine":"MIPS R3000 big-endian"}]
+    offset   size arch                          bits machine               big_endian 
+--------------------------------------------------------------------------------------
+0x00000000 266108 mips mips32 noreorder pic cpi   32 MIPS R3000 big-endian true
+[{"arch":"mips","bits":32,"big_endian":true,"offset":0,"size":266108,"cpu":"mips32","features":"noreorder pic cpic o32 n32","machine":"MIPS R3000 big-endian"}]
 EOF
 RUN
 
@@ -333,10 +333,10 @@ iA
 iAj
 EOF
 EXPECT=<<EOF
-    offset    size arch                          machine               
------------------------------------------------------------------------
-0x00000000 1039368 mips_64 mips64r2 noreorder pi MIPS R3000 big-endian
-[{"arch":"mips","bits":64,"offset":0,"size":1039368,"cpu":"mips64r2","features":"noreorder pic cpic n64","machine":"MIPS R3000 big-endian"}]
+    offset    size arch                          bits machine               big_endian 
+---------------------------------------------------------------------------------------
+0x00000000 1039368 mips mips64r2 noreorder pic c   64 MIPS R3000 big-endian false
+[{"arch":"mips","bits":64,"big_endian":false,"offset":0,"size":1039368,"cpu":"mips64r2","features":"noreorder pic cpic n64","machine":"MIPS R3000 big-endian"}]
 EOF
 RUN
 
@@ -344,9 +344,9 @@ NAME=iA (file x86)
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=iA
 EXPECT=<<EOF
-    offset size arch   machine     
------------------------------------
-0x00000000 4899 x86_32 Intel 80386
+    offset size arch bits machine     big_endian 
+-------------------------------------------------
+0x00000000 4899 x86    32 Intel 80386 false
 EOF
 RUN
 
@@ -3350,9 +3350,9 @@ NAME=iA (file x86_64)
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=iA
 EXPECT=<<EOF
-    offset size arch   machine                 
------------------------------------------------
-0x00000000 6710 x86_64 AMD x86-64 architecture
+    offset size arch bits machine                 big_endian 
+-------------------------------------------------------------
+0x00000000 6710 x86    64 AMD x86-64 architecture false
 EOF
 RUN
 

@@ -111,6 +111,7 @@ RZ_API bool rz_bin_file_object_new_from_xtr_data(RzBin *bin, RzBinFile *bf, RzBi
 	o->info->machine = rz_str_dup(data->metadata->machine);
 	o->info->type = rz_str_dup(data->metadata->type);
 	o->info->bits = data->metadata->bits;
+	o->info->big_endian = data->metadata->big_endian;
 	o->info->has_crypto = bf->o->info->has_crypto;
 	data->loaded = true;
 	return true;

@@ -1272,3 +1272,55 @@ paddr vaddr len size section type string
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=fat binary - endianness
+FILE=bins/mach0/2048-NeXTSTEP
+CMDS=!rz-bin -I -A ${RZ_FILE}
+EXPECT=<<EOF
+[Archs]
+    offset  size arch  bits machine  big_endian 
+------------------------------------------------
+0x00002000 49152 m68k    32 mc68030  true
+0x0000e000 40960 x86     32 386      false
+0x00018000 49152 hppa    32 hppa7100 true
+0x00024000 49152 sparc   32 all      true
+
+[Info]
+arch     m68k
+cpu      mc68030
+features N/A
+baddr    0x00002000
+binsz    0x0000e000
+bintype  mach0
+bits     32
+class    MACH0
+compiler N/A
+dbg_file N/A
+endian   BE
+hdr.csum N/A
+guid     N/A
+intrp    N/A
+laddr    0x00000000
+lang     c
+machine  mc68030
+minopsz  1
+os       darwin
+cc       N/A
+rpath    N/A
+subsys   unknown
+stripped false
+crypto   false
+havecode true
+va       true
+sanitiz  false
+static   true
+linenum  false
+lsyms    false
+canary   false
+PIE      false
+RELROCS  false
+NX       false
+
+EOF
+EXPECT_ERR=
+RUN

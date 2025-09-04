@@ -2873,12 +2873,11 @@ int MACH0_(get_bits_from_hdr)(struct MACH0_(mach_header) * hdr) {
 	return 32;
 }
 
-bool MACH0_(is_big_endian)(struct MACH0_(obj_t) * bin) {
-	if (bin) {
-		const int cpu = bin->hdr.cputype;
-		return cpu == CPU_TYPE_POWERPC || cpu == CPU_TYPE_POWERPC64;
-	}
-	return false;
+bool MACH0_(is_big_endian)(RZ_NONNULL RzBuffer *buf) {
+	rz_return_val_if_fail(buf, false);
+	bool big_endian;
+	free(MACH0_(get_hdr)(buf, &big_endian));
+	return big_endian;
 }
 
 const char *MACH0_(get_intrp)(struct MACH0_(obj_t) * bin) {
@@ -2995,7 +2994,8 @@ void MACH0_(mach_headerfields)(RzBinFile *bf) {
 	RzBuffer *buf = bf->buf;
 	ut64 length = rz_buf_size(buf);
 	int n = 0;
-	struct MACH0_(mach_header) *mh = MACH0_(get_hdr)(buf);
+	bool big_endian;
+	struct MACH0_(mach_header) *mh = MACH0_(get_hdr)(buf, &big_endian);
 	if (!mh) {
 		return;
 	}
@@ -3020,13 +3020,6 @@ void MACH0_(mach_headerfields)(RzBinFile *bf) {
 	ut64 addr = 0x20 - 4;
 	ut32 word = 0;
 	ut8 wordbuf[sizeof(word)];
-	bool isBe = false;
-	switch (mh->cputype) {
-	case CPU_TYPE_POWERPC:
-	case CPU_TYPE_POWERPC64:
-		isBe = true;
-		break;
-	}
 #define READWORD() \
 	if (rz_buf_read_at(buf, addr, (ut8 *)wordbuf, 4) != 4) { \
 		eprintf("Invalid address in buffer."); \
@@ -3034,7 +3027,7 @@ void MACH0_(mach_headerfields)(RzBinFile *bf) {
 	} \
 	addr += 4; \
 	pvaddr += 4; \
-	word = isBe ? rz_read_be32(wordbuf) : rz_read_le32(wordbuf);
+	word = rz_read_ble32(wordbuf, big_endian);
 
 	if (is64) {
 		addr += 4;
@@ -3063,13 +3056,13 @@ void MACH0_(mach_headerfields)(RzBinFile *bf) {
 		switch (lcType) {
 		case LC_BUILD_VERSION: {
 			ut32 platform;
-			if (!rz_buf_read_le32_at(buf, addr, &platform)) {
+			if (!rz_buf_read_ble32_at(buf, addr, &platform, big_endian)) {
 				break;
 			}
 			cb_printf("0x%08" PFMT64x "  platform    %s\n", pvaddr, rz_mach0_platform_to_string(platform));
 
 			ut16 minos1;
-			if (!rz_buf_read_le16_at(buf, addr + 6, &minos1)) {
+			if (!rz_buf_read_ble16_at(buf, addr + 6, &minos1, big_endian)) {
 				break;
 			}
 			ut8 minos2;
@@ -3083,7 +3076,7 @@ void MACH0_(mach_headerfields)(RzBinFile *bf) {
 			cb_printf("0x%08" PFMT64x "  minos       %d.%d.%d\n", pvaddr + 4, minos1, minos2, minos3);
 
 			ut16 sdk1;
-			if (!rz_buf_read_le16_at(buf, addr + 10, &sdk1)) {
+			if (!rz_buf_read_ble16_at(buf, addr + 10, &sdk1, big_endian)) {
 				break;
 			}
 			ut8 sdk2;
@@ -3097,7 +3090,7 @@ void MACH0_(mach_headerfields)(RzBinFile *bf) {
 			cb_printf("0x%08" PFMT64x "  sdk         %d.%d.%d\n", pvaddr + 8, sdk1, sdk2, sdk3);
 
 			ut32 ntools;
-			if (!rz_buf_read_le32_at(buf, addr + 12, &ntools)) {
+			if (!rz_buf_read_ble32_at(buf, addr + 12, &ntools, big_endian)) {
 				break;
 			}
 			cb_printf("0x%08" PFMT64x "  ntools      %d\n", pvaddr + 12, ntools);
@@ -3107,7 +3100,7 @@ void MACH0_(mach_headerfields)(RzBinFile *bf) {
 				cb_printf("pf.mach0_build_version_tool @ 0x%08" PFMT64x "\n", pvaddr + off);
 
 				ut32 tool;
-				if (!rz_buf_read_le32_at(buf, addr + off, &tool)) {
+				if (!rz_buf_read_ble32_at(buf, addr + off, &tool, big_endian)) {
 					break;
 				}
 				cb_printf("0x%08" PFMT64x "  tool        %s\n", pvaddr + off, rz_mach0_build_version_tool_to_string(tool));
@@ -3118,7 +3111,7 @@ void MACH0_(mach_headerfields)(RzBinFile *bf) {
 				}
 
 				ut16 version1;
-				if (!rz_buf_read_le16_at(buf, addr + off + 2, &version1)) {
+				if (!rz_buf_read_ble16_at(buf, addr + off + 2, &version1, big_endian)) {
 					break;
 				}
 				ut8 version2;
@@ -3139,14 +3132,14 @@ void MACH0_(mach_headerfields)(RzBinFile *bf) {
 			ut8 data[64] = { 0 };
 			rz_buf_read_at(buf, addr, data, sizeof(data));
 #if RZ_BIN_MACH064
-			ut64 ep = rz_read_ble64(&data, false); //  bin->big_endian);
+			ut64 ep = rz_read_ble64(&data, big_endian);
 			cb_printf("0x%08" PFMT64x "  entry0      0x%" PFMT64x "\n", pvaddr, ep);
-			ut64 ss = rz_read_ble64(&data[8], false); //  bin->big_endian);
+			ut64 ss = rz_read_ble64(&data[8], big_endian);
 			cb_printf("0x%08" PFMT64x "  stacksize   0x%" PFMT64x "\n", pvaddr + 8, ss);
 #else
-			ut32 ep = rz_read_ble32(&data, false); //  bin->big_endian);
+			ut32 ep = rz_read_ble32(&data, big_endian);
 			cb_printf("0x%08" PFMT32x "  entry0      0x%" PFMT32x "\n", (ut32)pvaddr, ep);
-			ut32 ss = rz_read_ble32(&data[4], false); //  bin->big_endian);
+			ut32 ss = rz_read_ble32(&data[4], big_endian);
 			cb_printf("0x%08" PFMT32x "  stacksize   0x%" PFMT32x "\n", (ut32)pvaddr + 4, ss);
 #endif
 		} break;
@@ -3154,14 +3147,14 @@ void MACH0_(mach_headerfields)(RzBinFile *bf) {
 			break;
 		case LC_ID_DYLIB: { // install_name_tool
 			ut32 str_off;
-			if (!rz_buf_read_ble32_at(buf, addr, &str_off, isBe)) {
+			if (!rz_buf_read_ble32_at(buf, addr, &str_off, big_endian)) {
 				break;
 			}
 
 			char *id = rz_buf_get_string(buf, addr + str_off - 8);
 
 			ut16 current1;
-			if (!rz_buf_read_le16_at(buf, addr + 10, &current1)) {
+			if (!rz_buf_read_ble16_at(buf, addr + 10, &current1, big_endian)) {
 				free(id);
 				break;
 			}
@@ -3178,7 +3171,7 @@ void MACH0_(mach_headerfields)(RzBinFile *bf) {
 			cb_printf("0x%08" PFMT64x "  current     %d.%d.%d\n", pvaddr + 8, current1, current2, current3);
 
 			ut16 compat1;
-			if (!rz_buf_read_le16_at(buf, addr + 14, &compat1)) {
+			if (!rz_buf_read_ble16_at(buf, addr + 14, &compat1, big_endian)) {
 				free(id);
 				break;
 			}
@@ -3214,7 +3207,7 @@ void MACH0_(mach_headerfields)(RzBinFile *bf) {
 			rz_buf_read_at(buf, addr, name, sizeof(name) - 1);
 			cb_printf("0x%08" PFMT64x "  name        %s\n", pvaddr, name);
 			ut32 nsects;
-			if (!rz_buf_read_le32_at(buf, addr - 8 + (is64 ? 64 : 48), &nsects)) {
+			if (!rz_buf_read_ble32_at(buf, addr - 8 + (is64 ? 64 : 48), &nsects, big_endian)) {
 				break;
 			}
 			ut64 off = is64 ? 72 : 56;
@@ -3231,12 +3224,12 @@ void MACH0_(mach_headerfields)(RzBinFile *bf) {
 		case LC_LOAD_DYLIB:
 		case LC_LOAD_WEAK_DYLIB: {
 			ut32 str_off;
-			if (!rz_buf_read_ble32_at(buf, addr, &str_off, isBe)) {
+			if (!rz_buf_read_ble32_at(buf, addr, &str_off, big_endian)) {
 				break;
 			}
 			char *load_dylib = rz_buf_get_string(buf, addr + str_off - 8);
 			ut16 current1;
-			if (!rz_buf_read_le16_at(buf, addr + 10, &current1)) {
+			if (!rz_buf_read_ble16_at(buf, addr + 10, &current1, big_endian)) {
 				free(load_dylib);
 				break;
 			}
@@ -3252,7 +3245,7 @@ void MACH0_(mach_headerfields)(RzBinFile *bf) {
 			}
 			cb_printf("0x%08" PFMT64x "  current     %d.%d.%d\n", pvaddr + 8, current1, current2, current3);
 			ut16 compat1;
-			if (!rz_buf_read_le16_at(buf, addr + 14, &compat1)) {
+			if (!rz_buf_read_ble16_at(buf, addr + 14, &compat1, big_endian)) {
 				free(load_dylib);
 				break;
 			}
@@ -3282,17 +3275,17 @@ void MACH0_(mach_headerfields)(RzBinFile *bf) {
 		case LC_ENCRYPTION_INFO:
 		case LC_ENCRYPTION_INFO_64: {
 			ut32 word;
-			if (!rz_buf_read_le32_at(buf, addr, &word)) {
+			if (!rz_buf_read_ble32_at(buf, addr, &word, big_endian)) {
 				break;
 			}
 			cb_printf("0x%08" PFMT64x "  cryptoff   0x%08x\n", pvaddr, word);
 
-			if (!rz_buf_read_le32_at(buf, addr + 4, &word)) {
+			if (!rz_buf_read_ble32_at(buf, addr + 4, &word, big_endian)) {
 				break;
 			}
 			cb_printf("0x%08" PFMT64x "  cryptsize  %d\n", pvaddr + 4, word);
 
-			if (!rz_buf_read_le32_at(buf, addr + 8, &word)) {
+			if (!rz_buf_read_ble32_at(buf, addr + 8, &word, big_endian)) {
 				break;
 			}
 			cb_printf("0x%08" PFMT64x "  cryptid    %d\n", pvaddr + 8, word);
@@ -3318,8 +3311,9 @@ RzStructuredData *MACH0_(mach_structure)(RzBinFile *bf) {
 
 	RzBuffer *buf = bf->buf;
 	ut64 length = rz_buf_size(buf);
+	bool big_endian;
 
-	struct MACH0_(mach_header) *mh = MACH0_(get_hdr)(buf);
+	struct MACH0_(mach_header) *mh = MACH0_(get_hdr)(buf, &big_endian);
 	if (!mh) {
 		return NULL;
 	}
@@ -3328,7 +3322,6 @@ RzStructuredData *MACH0_(mach_structure)(RzBinFile *bf) {
 	ut32 word = 0;
 	char tmp[256] = { 0 };
 
-	bool big_endian = (mh->cputype & CPU_TYPE_POWERPC) != 0;
 	bool is_64bit = mh->cputype >> 16;
 
 	RzStructuredData *info = rz_structured_data_new_map();
@@ -3460,13 +3453,13 @@ RzStructuredData *MACH0_(mach_structure)(RzBinFile *bf) {
 		switch (lcType) {
 		case LC_BUILD_VERSION: {
 			ut32 platform;
-			if (!rz_buf_read_le32_at(buf, addr, &platform)) {
+			if (!rz_buf_read_ble32_at(buf, addr, &platform, big_endian)) {
 				break;
 			}
 			rz_structured_data_map_add_string(lc_info, "Platform", rz_mach0_platform_to_string(platform));
 
 			ut16 minos1;
-			if (!rz_buf_read_le16_at(buf, addr + 6, &minos1)) {
+			if (!rz_buf_read_ble16_at(buf, addr + 6, &minos1, big_endian)) {
 				break;
 			}
 			ut8 minos2;
@@ -3481,7 +3474,7 @@ RzStructuredData *MACH0_(mach_structure)(RzBinFile *bf) {
 			rz_structured_data_map_add_string(lc_info, "MinOS", tmp);
 
 			ut16 sdk1;
-			if (!rz_buf_read_le16_at(buf, addr + 10, &sdk1)) {
+			if (!rz_buf_read_ble16_at(buf, addr + 10, &sdk1, big_endian)) {
 				break;
 			}
 			ut8 sdk2;
@@ -3496,7 +3489,7 @@ RzStructuredData *MACH0_(mach_structure)(RzBinFile *bf) {
 			rz_structured_data_map_add_string(lc_info, "SDK", tmp);
 
 			ut32 ntools;
-			if (!rz_buf_read_le32_at(buf, addr + 12, &ntools)) {
+			if (!rz_buf_read_ble32_at(buf, addr + 12, &ntools, big_endian)) {
 				break;
 			}
 			rz_structured_data_map_add_unsigned(lc_info, "nTools", ntools, false);
@@ -3518,7 +3511,7 @@ RzStructuredData *MACH0_(mach_structure)(RzBinFile *bf) {
 				}
 
 				ut32 tool;
-				if (!rz_buf_read_le32_at(buf, addr + off, &tool)) {
+				if (!rz_buf_read_ble32_at(buf, addr + off, &tool, big_endian)) {
 					break;
 				}
 				rz_structured_data_map_add_string(build, "Tool", rz_mach0_build_version_tool_to_string(tool));
@@ -3529,7 +3522,7 @@ RzStructuredData *MACH0_(mach_structure)(RzBinFile *bf) {
 				}
 
 				ut16 version1;
-				if (!rz_buf_read_le16_at(buf, addr + off + 2, &version1)) {
+				if (!rz_buf_read_ble16_at(buf, addr + off + 2, &version1, big_endian)) {
 					break;
 				}
 				ut8 version2;
@@ -3552,11 +3545,11 @@ RzStructuredData *MACH0_(mach_structure)(RzBinFile *bf) {
 			ut8 data[64] = { 0 };
 			rz_buf_read_at(buf, addr, data, sizeof(data));
 #if RZ_BIN_MACH064
-			ut64 ep = rz_read_ble64(&data, false); //  bin->big_endian);
-			ut64 ss = rz_read_ble64(&data[8], false); //  bin->big_endian);
+			ut64 ep = rz_read_ble64(&data, big_endian);
+			ut64 ss = rz_read_ble64(&data[8], big_endian);
 #else
-			ut32 ep = rz_read_ble32(&data, false); //  bin->big_endian);
-			ut32 ss = rz_read_ble32(&data[4], false); //  bin->big_endian);
+			ut32 ep = rz_read_ble32(&data, big_endian);
+			ut32 ss = rz_read_ble32(&data[4], big_endian);
 #endif
 			rz_structured_data_map_add_unsigned(lc_info, "Entry", ep, true);
 			rz_structured_data_map_add_unsigned(lc_info, "StackSize", ss, false);
@@ -3576,7 +3569,7 @@ RzStructuredData *MACH0_(mach_structure)(RzBinFile *bf) {
 			free(id);
 
 			ut16 current1;
-			if (!rz_buf_read_le16_at(buf, addr + 10, &current1)) {
+			if (!rz_buf_read_ble16_at(buf, addr + 10, &current1, big_endian)) {
 				break;
 			}
 			ut8 current2;
@@ -3591,7 +3584,7 @@ RzStructuredData *MACH0_(mach_structure)(RzBinFile *bf) {
 			rz_structured_data_map_add_string(lc_info, "Current", tmp);
 
 			ut16 compat1;
-			if (!rz_buf_read_le16_at(buf, addr + 14, &compat1)) {
+			if (!rz_buf_read_ble16_at(buf, addr + 14, &compat1, big_endian)) {
 				break;
 			}
 			ut8 compat2;
@@ -3624,7 +3617,7 @@ RzStructuredData *MACH0_(mach_structure)(RzBinFile *bf) {
 			rz_structured_data_map_add_string(lc_info, "Name", name);
 
 			ut32 nsects;
-			if (!rz_buf_read_le32_at(buf, addr - 8 + (is_64bit ? 64 : 48), &nsects)) {
+			if (!rz_buf_read_ble32_at(buf, addr - 8 + (is_64bit ? 64 : 48), &nsects, big_endian)) {
 				break;
 			}
 			rz_structured_data_map_add_unsigned(lc_info, "nSects", nsects, false);
@@ -3643,7 +3636,7 @@ RzStructuredData *MACH0_(mach_structure)(RzBinFile *bf) {
 			free(load_dylib);
 
 			ut16 current1;
-			if (!rz_buf_read_le16_at(buf, addr + 10, &current1)) {
+			if (!rz_buf_read_ble16_at(buf, addr + 10, &current1, big_endian)) {
 				break;
 			}
 			ut8 current2;
@@ -3658,7 +3651,7 @@ RzStructuredData *MACH0_(mach_structure)(RzBinFile *bf) {
 			rz_structured_data_map_add_string(lc_info, "Current", tmp);
 
 			ut16 compat1;
-			if (!rz_buf_read_le16_at(buf, addr + 14, &compat1)) {
+			if (!rz_buf_read_ble16_at(buf, addr + 14, &compat1, big_endian)) {
 				break;
 			}
 			ut8 compat2;
@@ -3684,17 +3677,17 @@ RzStructuredData *MACH0_(mach_structure)(RzBinFile *bf) {
 		case LC_ENCRYPTION_INFO:
 		case LC_ENCRYPTION_INFO_64: {
 			ut32 word;
-			if (!rz_buf_read_le32_at(buf, addr, &word)) {
+			if (!rz_buf_read_ble32_at(buf, addr, &word, big_endian)) {
 				break;
 			}
 			rz_structured_data_map_add_unsigned(lc_info, "CryptOffset", word, true);
 
-			if (!rz_buf_read_le32_at(buf, addr + 4, &word)) {
+			if (!rz_buf_read_ble32_at(buf, addr + 4, &word, big_endian)) {
 				break;
 			}
 			rz_structured_data_map_add_unsigned(lc_info, "CryptSize", word, false);
 
-			if (!rz_buf_read_le32_at(buf, addr + 8, &word)) {
+			if (!rz_buf_read_ble32_at(buf, addr + 8, &word, big_endian)) {
 				break;
 			}
 			rz_structured_data_map_add_unsigned(lc_info, "CryptId", word, false);
@@ -3721,7 +3714,8 @@ RzStructuredData *MACH0_(mach_structure)(RzBinFile *bf) {
 RzPVector /*<RzBinField *>*/ *MACH0_(mach_fields)(RzBinFile *bf) {
 	RzBuffer *buf = bf->buf;
 	ut64 length = rz_buf_size(buf);
-	struct MACH0_(mach_header) *mh = MACH0_(get_hdr)(buf);
+	bool big_endian;
+	struct MACH0_(mach_header) *mh = MACH0_(get_hdr)(buf, &big_endian);
 	if (!mh) {
 		return NULL;
 	}
@@ -3742,23 +3736,15 @@ RzPVector /*<RzBinField *>*/ *MACH0_(mach_fields)(RzBinFile *bf) {
 		paddr += 4;
 	}
 
-	bool isBe = false;
-	switch (mh->cputype) {
-	case CPU_TYPE_POWERPC:
-	case CPU_TYPE_POWERPC64:
-		isBe = true;
-		break;
-	}
-
 	int n;
 	char tmpbuf[128];
 	for (n = 0; n < mh->ncmds; n++) {
 		ut32 lcType;
-		if (!rz_buf_read_ble32_at(buf, paddr, &lcType, isBe)) {
+		if (!rz_buf_read_ble32_at(buf, paddr, &lcType, big_endian)) {
 			break;
 		}
 		ut32 word;
-		if (!rz_buf_read_ble32_at(buf, paddr + 4, &word, isBe)) {
+		if (!rz_buf_read_ble32_at(buf, paddr + 4, &word, big_endian)) {
 			break;
 		}
 		if (paddr + 8 > length) {
@@ -3780,7 +3766,7 @@ RzPVector /*<RzBinField *>*/ *MACH0_(mach_fields)(RzBinFile *bf) {
 		switch (lcType) {
 		case LC_BUILD_VERSION: {
 			ut32 ntools;
-			if (!rz_buf_read_le32_at(buf, paddr + 20, &ntools)) {
+			if (!rz_buf_read_ble32_at(buf, paddr + 20, &ntools, big_endian)) {
 				break;
 			}
 			ut64 off = 24;
@@ -3794,7 +3780,7 @@ RzPVector /*<RzBinField *>*/ *MACH0_(mach_fields)(RzBinFile *bf) {
 		case LC_SEGMENT:
 		case LC_SEGMENT_64: {
 			ut32 nsects;
-			if (!rz_buf_read_le32_at(buf, addr + (is64 ? 64 : 48), &nsects)) {
+			if (!rz_buf_read_ble32_at(buf, addr + (is64 ? 64 : 48), &nsects, big_endian)) {
 				break;
 			}
 			ut64 off = is64 ? 72 : 56;
@@ -3819,7 +3805,7 @@ RzPVector /*<RzBinField *>*/ *MACH0_(mach_fields)(RzBinFile *bf) {
 	return ret;
 }
 
-struct MACH0_(mach_header) * MACH0_(get_hdr)(RzBuffer *buf) {
+struct MACH0_(mach_header) * MACH0_(get_hdr)(RzBuffer *buf, RZ_NULLABLE RZ_OUT bool *is_big_endian) {
 	ut8 magicbytes[sizeof(ut32)] = { 0 };
 	ut8 machohdrbytes[sizeof(struct MACH0_(mach_header))] = { 0 };
 	int len;
@@ -3845,6 +3831,9 @@ struct MACH0_(mach_header) * MACH0_(get_hdr)(RzBuffer *buf) {
 		big_endian = false;
 	} else if (rz_read_be32(magicbytes) == 0xfeedfacf) {
 		big_endian = true;
+	}
+	if (is_big_endian) {
+		*is_big_endian = big_endian;
 	}
 	len = rz_buf_read_at(buf, 0, machohdrbytes, sizeof(machohdrbytes));
 	if (len != sizeof(struct MACH0_(mach_header))) {

@@ -181,12 +181,12 @@ iA
 iAj
 EOF
 EXPECT=<<EOF
-    offset  size arch   machine    
------------------------------------
-0x00001000 13792 x86_64 x86 64 all
-0x00005000 13760 x86_32 386
-0x00009000 13616 ppc_32 7400
-[{"arch":"x86","bits":64,"offset":4096,"size":13792,"machine":"x86 64 all"},{"arch":"x86","bits":32,"offset":20480,"size":13760,"machine":"386"},{"arch":"ppc","bits":32,"offset":36864,"size":13616,"machine":"7400"}]
+    offset  size arch bits machine    big_endian 
+-------------------------------------------------
+0x00001000 13792 x86    64 x86 64 all false
+0x00005000 13760 x86    32 386        false
+0x00009000 13616 ppc    32 7400       true
+[{"arch":"x86","bits":64,"big_endian":false,"offset":4096,"size":13792,"machine":"x86 64 all"},{"arch":"x86","bits":32,"big_endian":false,"offset":20480,"size":13760,"machine":"386"},{"arch":"ppc","bits":32,"big_endian":true,"offset":36864,"size":13616,"machine":"7400"}]
 EOF
 RUN
 
@@ -198,13 +198,13 @@ CMDS=<<EOF
 EOF
 EXPECT=<<EOF
 [Archs]
-    offset  size arch   machine    
------------------------------------
-0x00001000 13792 x86_64 x86 64 all
-0x00005000 13760 x86_32 386
-0x00009000 13616 ppc_32 7400
+    offset  size arch bits machine    big_endian 
+-------------------------------------------------
+0x00001000 13792 x86    64 x86 64 all false
+0x00005000 13760 x86    32 386        false
+0x00009000 13616 ppc    32 7400       true
 
-{"archs":[{"arch":"x86","bits":64,"offset":4096,"size":13792,"machine":"x86 64 all"},{"arch":"x86","bits":32,"offset":20480,"size":13760,"machine":"386"},{"arch":"ppc","bits":32,"offset":36864,"size":13616,"machine":"7400"}]}
+{"archs":[{"arch":"x86","bits":64,"big_endian":false,"offset":4096,"size":13792,"machine":"x86 64 all"},{"arch":"x86","bits":32,"big_endian":false,"offset":20480,"size":13760,"machine":"386"},{"arch":"ppc","bits":32,"big_endian":true,"offset":36864,"size":13616,"machine":"7400"}]}
 EOF
 RUN
 
@@ -308,4 +308,20 @@ EXPECT=<<EOF
 0x100004088 0x00000001000092e8   ........ 4295004904 18.__DATA.__objc_data class AppDelegate R 0x1000092c0
 0x100004090 0x0000000100009338   8....... 4295004984 18.__DATA.__objc_data class SceneDelegate R 0x100009310
 EOF
+RUN
+
+NAME=M68k, HPPA, Sparc, x86
+FILE=bins/mach0/2048-NeXTSTEP
+CMDS=<<EOF
+iA
+EOF
+EXPECT=<<EOF
+    offset  size arch  bits machine  big_endian 
+------------------------------------------------
+0x00002000 49152 m68k    32 mc68030  true
+0x0000e000 40960 x86     32 386      false
+0x00018000 49152 hppa    32 hppa7100 true
+0x00024000 49152 sparc   32 all      true
+EOF
+EXPECT_ERR=
 RUN

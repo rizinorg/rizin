@@ -425,6 +425,7 @@ typedef struct rz_bin_xtr_metadata_t {
 	char *libname;
 	char *machine;
 	char *type;
+	bool big_endian;
 	const char *xtr_type;
 } RzBinXtrMetadata;
 

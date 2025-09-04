@@ -59,11 +59,12 @@ static int size(RzBin *bin) {
 	return 0;
 }
 
-static inline void fill_metadata_info_from_hdr(RzBinXtrMetadata *meta, struct MACH0_(mach_header) * hdr) {
+static inline void fill_metadata_info_from_hdr(RzBinXtrMetadata *meta, struct MACH0_(mach_header) * hdr, bool is_big_endian) {
 	meta->arch = rz_str_dup(MACH0_(get_cputype_from_hdr)(hdr));
 	meta->bits = MACH0_(get_bits_from_hdr)(hdr);
 	meta->machine = MACH0_(get_cpusubtype_from_hdr)(hdr);
 	meta->type = MACH0_(get_filetype_from_hdr)(hdr);
+	meta->big_endian = is_big_endian;
 	meta->libname = NULL;
 	meta->xtr_type = "fat";
 }
@@ -82,14 +83,15 @@ static RzBinXtrData *extract(RzBin *bin, int idx) {
 		free(arch);
 		return NULL;
 	}
-	struct MACH0_(mach_header) *hdr = MACH0_(get_hdr)(arch->b);
+	bool big_endian;
+	struct MACH0_(mach_header) *hdr = MACH0_(get_hdr)(arch->b, &big_endian);
 	if (!hdr) {
 		free(metadata);
 		free(arch);
 		free(hdr);
 		return NULL;
 	}
-	fill_metadata_info_from_hdr(metadata, hdr);
+	fill_metadata_info_from_hdr(metadata, hdr, big_endian);
 	RzBinXtrData *res = rz_bin_xtrdata_new(arch->b, arch->offset, arch->size, narch, metadata);
 	rz_buf_free(arch->b);
 	free(arch);
@@ -106,23 +108,27 @@ static RzBinXtrData *oneshot_buffer(RzBin *bin, RzBuffer *b, int idx) {
 	int narch;
 	struct rz_bin_fatmach0_obj_t *fb = bin->cur->xtr_obj;
 	struct rz_bin_fatmach0_arch_t *arch = rz_bin_fatmach0_extract(fb, idx, &narch);
-	if (arch) {
-		RzBinXtrMetadata *metadata = RZ_NEW0(RzBinXtrMetadata);
-		if (metadata) {
-			struct MACH0_(mach_header) *hdr = MACH0_(get_hdr)(arch->b);
-			if (hdr) {
-				fill_metadata_info_from_hdr(metadata, hdr);
-				RzBinXtrData *res = rz_bin_xtrdata_new(arch->b, arch->offset, arch->size, narch, metadata);
-				rz_buf_free(arch->b);
-				free(arch);
-				free(hdr);
-				return res;
-			}
-			free(metadata);
-		}
-		free(arch);
+	if (!arch) {
+		return NULL;
 	}
-	return NULL;
+	RzBinXtrMetadata *metadata = RZ_NEW0(RzBinXtrMetadata);
+	if (!metadata) {
+		free(arch);
+		return NULL;
+	}
+	bool big_endian;
+	struct MACH0_(mach_header) *hdr = MACH0_(get_hdr)(arch->b, &big_endian);
+	if (!hdr) {
+		free(metadata);
+		free(arch);
+		return NULL;
+	}
+	fill_metadata_info_from_hdr(metadata, hdr, big_endian);
+	RzBinXtrData *res = rz_bin_xtrdata_new(arch->b, arch->offset, arch->size, narch, metadata);
+	rz_buf_free(arch->b);
+	free(arch);
+	free(hdr);
+	return res;
 }
 
 static RzList /*<RzBinXtrData *>*/ *oneshotall_buffer(RzBin *bin, RzBuffer *b) {
