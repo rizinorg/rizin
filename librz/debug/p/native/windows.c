@@ -135,7 +135,8 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 							}
 							dbg->corebind.cmd(core, "idp");
 						}
-						rz_bin_file_set_cur_binfile(core->bin, cur);
+						rz_bin_file_set_obj(cur, cur->o);
+						rz_bin_set_cur_binfile(core->bin, cur);
 					}
 				} else {
 					RZ_LOG_ERROR("The library %s does not exist.\n", lib->Path);

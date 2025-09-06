@@ -1485,7 +1485,8 @@ RZ_API bool rz_core_file_bin_raise(RzCore *core, ut32 bfid) {
 	RzBinFile *bf = rz_list_get_n(bin->binfiles, bfid);
 	bool res = false;
 	if (bf) {
-		res = rz_bin_file_set_cur_binfile(bin, bf);
+		res = rz_bin_file_set_obj(bf, bf->o);
+		res &= rz_bin_set_cur_binfile(bin, bf);
 		if (res) {
 			rz_io_use_fd(core->io, bf->fd);
 		}

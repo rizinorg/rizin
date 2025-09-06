@@ -68,7 +68,8 @@ static GHT GH(get_va_symbol)(RzCore *core, const char *path, const char *sym_nam
 	}
 
 	rz_bin_file_delete(bin, libc_bf);
-	rz_bin_file_set_cur_binfile(bin, current_bf);
+	rz_bin_file_set_obj(current_bf, current_bf->o);
+	rz_bin_set_cur_binfile(bin, current_bf);
 	return vaddr;
 }
 
@@ -181,7 +182,8 @@ cleanup:
 	free(buf);
 	rz_pvector_free(sections);
 	rz_bin_file_delete(bin, libc_buf);
-	rz_bin_file_set_cur_binfile(bin, current_bf);
+	rz_bin_file_set_obj(current_bf, current_bf->o);
+	rz_bin_set_cur_binfile(bin, current_bf);
 	return ret_buf;
 }
 

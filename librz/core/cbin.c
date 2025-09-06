@@ -1730,7 +1730,8 @@ RZ_API bool rz_core_bin_set_cur(RZ_NONNULL RzCore *core, RZ_NULLABLE RzBinFile *
 			return false;
 		}
 	}
-	rz_bin_file_set_cur_binfile(core->bin, binfile);
+	rz_bin_file_set_obj(binfile, binfile->o);
+	rz_bin_set_cur_binfile(core->bin, binfile);
 	return true;
 }
 

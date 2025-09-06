@@ -386,7 +386,8 @@ fail:
 	rz_bin_pdb_free(pdb);
 	free(pdb_path);
 	rz_bin_file_delete(core->bin, bf);
-	rz_bin_file_set_cur_binfile(core->bin, obf);
+	rz_bin_file_set_obj(obf, obf->o);
+	rz_bin_set_cur_binfile(core->bin, obf);
 	rz_io_fd_close(core->io, fd);
 	return has_heap_globals(dbg->RtlpHpHeapGlobalsOffset, dbg->RtlpLFHKeyOffset);
 }

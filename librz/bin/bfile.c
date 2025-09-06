@@ -241,19 +241,39 @@ RZ_API RzBinFile *rz_bin_file_find_by_name(RzBin *bin, const char *name) {
 
 RZ_API bool rz_bin_file_set_cur_by_id(RzBin *bin, ut32 bin_id) {
 	RzBinFile *bf = rz_bin_file_find_by_id(bin, bin_id);
-	return bf ? rz_bin_file_set_cur_binfile(bin, bf) : false;
+	if (!bf) {
+		return false;
+	}
+	if (!rz_bin_file_set_obj(bf, bf->o)) {
+		return false;
+	}
+	return rz_bin_set_cur_binfile(bin, bf);
 }
 
 RZ_API bool rz_bin_file_set_cur_by_fd(RzBin *bin, ut32 bin_fd) {
 	RzBinFile *bf = rz_bin_file_find_by_fd(bin, bin_fd);
-	return bf ? rz_bin_file_set_cur_binfile(bin, bf) : false;
+	if (!bf) {
+		return false;
+	}
+	if (!rz_bin_file_set_obj(bf, bf->o)) {
+		return false;
+	}
+	return rz_bin_set_cur_binfile(bin, bf);
 }
 
-RZ_IPI bool rz_bin_file_set_obj(RzBin *bin, RzBinFile *bf, RzBinObject *obj) {
-	rz_return_val_if_fail(bin && bf, false);
-	bin->file = bf->file;
-	bin->cur = bf;
-	bin->narch = bf->narch;
+/**
+ * \brief Sets the given \p obj as the object of binfile \p bf.
+ * and updates obj->info->lang.
+ * If \p obj is NULL updates the existing object bf->obj if any.
+ *
+ * \param bf The binfile to set the object.
+ * \param obj The object to set in the binfile.
+ *
+ * \return True if setting succeeded, false in case of failure or
+ * if obj->info was NULL.
+ */
+RZ_API bool rz_bin_file_set_obj(RZ_BORROW RZ_NONNULL RzBinFile *bf, RZ_OWN RZ_NULLABLE RzBinObject *obj) {
+	rz_return_val_if_fail(bf, false);
 	if (obj) {
 		bf->o = obj;
 	} else {
@@ -270,15 +290,24 @@ RZ_IPI bool rz_bin_file_set_obj(RzBin *bin, RzBinFile *bf, RzBinObject *obj) {
 	return true;
 }
 
-RZ_API bool rz_bin_file_set_cur_binfile(RzBin *bin, RzBinFile *bf) {
+RZ_API bool rz_bin_set_cur_binfile(RzBin *bin, RzBinFile *bf) {
 	rz_return_val_if_fail(bin && bf, false);
-	return rz_bin_file_set_obj(bin, bf, bf->o);
+	bin->file = bf->file;
+	bin->cur = bf;
+	bin->narch = bf->narch;
+	return true;
 }
 
 RZ_API bool rz_bin_file_set_cur_by_name(RzBin *bin, const char *name) {
 	rz_return_val_if_fail(bin && name, false);
 	RzBinFile *bf = rz_bin_file_find_by_name(bin, name);
-	return rz_bin_file_set_cur_binfile(bin, bf);
+	if (!bf) {
+		return false;
+	}
+	if (!rz_bin_file_set_obj(bf, bf->o)) {
+		return false;
+	}
+	return rz_bin_set_cur_binfile(bin, bf);
 }
 
 RZ_IPI RzBinFile *rz_bin_file_xtr_load_buffer(RzBin *bin, RzBinXtrPlugin *xtr, const char *filename, RzBuffer *buf, RzBinObjectLoadOptions *obj_opts, int idx, int fd) {

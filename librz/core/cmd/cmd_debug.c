@@ -699,7 +699,8 @@ static bool get_bin_info(RzCore *core, const char *file, ut64 baseaddr,
 	}
 	rz_core_bin_print(core, bf, action, filter, state, NULL);
 	rz_bin_file_delete(core->bin, bf);
-	rz_bin_file_set_cur_binfile(core->bin, obf);
+	rz_bin_file_set_obj(obf, obf->o);
+	rz_bin_set_cur_binfile(core->bin, obf);
 	rz_io_fd_close(core->io, fd);
 	return true;
 }

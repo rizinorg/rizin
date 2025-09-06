@@ -297,7 +297,8 @@ RZ_API RzBinFile *rz_bin_open_buf(RzBin *bin, RzBuffer *buf, RzBinOptions *opt) 
 			return NULL;
 		}
 	}
-	rz_bin_file_set_cur_binfile(bin, bf);
+	rz_bin_file_set_obj(bf, bf->o);
+	rz_bin_set_cur_binfile(bin, bf);
 	rz_id_storage_set(bin->ids, bin->cur, bf->id);
 	return bf;
 }
@@ -844,7 +845,10 @@ RZ_API bool rz_bin_use_arch(RzBin *bin, const char *arch, int bits, const char *
 		}
 		obj = binfile->o;
 	}
-	return rz_bin_file_set_obj(bin, binfile, obj);
+	if (!rz_bin_file_set_obj(binfile, obj)) {
+		return false;
+	}
+	return rz_bin_set_cur_binfile(bin, binfile);
 }
 
 RZ_API bool rz_bin_select(RzBin *bin, const char *arch, int bits, const char *name) {
@@ -857,20 +861,23 @@ RZ_API bool rz_bin_select(RzBin *bin, const char *arch, int bits, const char *na
 	if (binfile && name) {
 		obj = rz_bin_object_find_by_arch_bits(binfile, arch, bits, name);
 	}
-	return rz_bin_file_set_obj(bin, binfile, obj);
-}
-
-RZ_API int rz_bin_select_object(RzBinFile *binfile, const char *arch, int bits, const char *name) {
-	rz_return_val_if_fail(binfile, false);
-	RzBinObject *obj = rz_bin_object_find_by_arch_bits(binfile, arch, bits, name);
-	return rz_bin_file_set_obj(binfile->rbin, binfile, obj);
+	if (!rz_bin_file_set_obj(binfile, obj)) {
+		return NULL;
+	}
+	return rz_bin_set_cur_binfile(bin, binfile);
 }
 
 // NOTE: this functiona works as expected, but  we need to merge bfid and boid
 RZ_API bool rz_bin_select_bfid(RzBin *bin, ut32 bf_id) {
 	rz_return_val_if_fail(bin, false);
 	RzBinFile *bf = rz_bin_file_find_by_id(bin, bf_id);
-	return bf ? rz_bin_file_set_obj(bin, bf, NULL) : false;
+	if (!bf) {
+		return false;
+	}
+	if (!rz_bin_file_set_obj(bf, bf->o)) {
+		return false;
+	}
+	return rz_bin_set_cur_binfile(bin, bf);
 }
 
 RZ_API void rz_bin_set_user_ptr(RzBin *bin, void *user) {

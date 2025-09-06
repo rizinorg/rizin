@@ -525,7 +525,8 @@ RZ_IPI RzBinObject *rz_bin_object_new(RzBinFile *bf, RzBinPlugin *plugin, RzBinO
 	// the object is created from. The reason for this is to prevent
 	// mis-reporting when the file is loaded from impartial bytes or is
 	// extracted from a set of bytes in the file
-	rz_bin_file_set_obj(bf->rbin, bf, o);
+	rz_bin_file_set_obj(bf, o);
+	rz_bin_set_cur_binfile(bf->rbin, bf);
 	rz_bin_set_baddr(bf->rbin, o->opts.baseaddr);
 	rz_bin_object_process_plugin_data(bf, o);
 

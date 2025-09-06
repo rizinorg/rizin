@@ -56,7 +56,8 @@ static GHT GH(je_get_va_symbol)(RzCore *core, const char *path, const char *sym_
 	}
 
 	rz_bin_file_delete(bin, libc_bf);
-	rz_bin_file_set_cur_binfile(bin, current_bf);
+	rz_bin_file_set_obj(current_bf, current_bf->o);
+	rz_bin_set_cur_binfile(bin, current_bf);
 	return vaddr;
 }
 
