@@ -499,7 +499,7 @@ static RzPVector /*<RzBinMap *>*/ *maps_unpatched_obj(void *elf_obj, size_t size
 			map->perm = iter->data.p_flags | RZ_PERM_R;
 
 			// map names specific to core files...
-			if (core_sp != UT64_MAX && core_sp >= iter->data.p_vaddr && core_sp < iter->data.p_vaddr + iter->data.p_memsz) {
+			if (core_sp && core_sp != UT64_MAX && core_sp >= iter->data.p_vaddr && core_sp < iter->data.p_vaddr + iter->data.p_memsz) {
 				map->name = rz_str_dup("[stack]");
 			} else {
 				RzBinElfNoteFile *nf = note_file_for_load_segment(obj, &iter->data);

@@ -33,10 +33,7 @@ ut64 Elf_(rz_bin_elf_get_sp_val)(RZ_NONNULL ELFOBJ *bin) {
 			default:
 				continue;
 			case NT_PRSTATUS:
-			case NT_PRFPREG:
-			case NT_OPENBSD_REGS:
-			case NT_OPENBSD_FPREGS:
-			case NT_OPENBSD_XFPREGS: {
+			case NT_OPENBSD_REGS: {
 				RzBinElfNotePrStatus *note = &tmp->prstatus;
 				if (layout->sp_offset + layout->sp_size / 8 > note->regstate_size) {
 					rz_warn_if_reached();
