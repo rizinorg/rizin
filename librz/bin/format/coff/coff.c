@@ -187,7 +187,7 @@ static inline bool coff_is_symbol_name(const char *name, const char *expected) {
 /* Try to get a valid entrypoint using the methods outlined in
  * http://ftp.gnu.org/old-gnu/Manuals/ld-2.9.1/html_mono/ld.html#SEC24 */
 RZ_API RzBinAddr *rz_coff_get_entry(struct rz_bin_coff_obj *obj) {
-	if (!!obj->hdr.f_nsyms) {
+	if (rz_vector_empty(obj->symbols)) {
 		return NULL;
 	}
 
@@ -199,12 +199,6 @@ RZ_API RzBinAddr *rz_coff_get_entry(struct rz_bin_coff_obj *obj) {
 	if (obj->hdr.f_opthdr) {
 		addr->paddr = obj->opt_hdr.entry;
 		return addr;
-	}
-	/* No help from the header eh? Use the address of the symbols '_start'
-	 * or 'main' if present */
-	if (!obj->symbols) {
-		free(addr);
-		return NULL;
 	}
 
 	CoffSym *sym;
