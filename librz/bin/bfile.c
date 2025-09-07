@@ -160,7 +160,7 @@ RZ_IPI RzBinFile *rz_bin_file_new_from_buffer(RzBin *bin, const char *file, RzBu
  *
  * \return The binary file or NULL if no matching exists.
  */
-RZ_API RZ_BORROW RzBinFile *rz_bin_file_find_by_arch_bits(RzBin *bin, const char *arch, int bits, RZ_NULLABLE const char *machine) {
+RZ_API RZ_BORROW RzBinFile *rz_bin_file_find_by_arch_bits(RzBin *bin, const char *arch, int bits, RZ_NULLABLE const char *machine, RZ_NULLABLE const char *filename) {
 	RzListIter *iter;
 	RzBinFile *binfile = NULL;
 	RzBinXtrData *xtr_data;

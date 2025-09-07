@@ -1301,7 +1301,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	start_state(&state);
 
 	// List fatmach0 sub-binaries, etc
-	if (action & RZ_BIN_REQ_LISTARCHS || (((arch && bits) || machine) && !rz_bin_select(bin, arch, bits, machine))) {
+	if (action & RZ_BIN_REQ_LISTARCHS || (arch && bits && !rz_bin_select(bin, arch, bits, machine, NULL))) {
 		RzCmdStateOutput *st = add_header(&state, mode == RZ_OUTPUT_MODE_STANDARD ? RZ_OUTPUT_MODE_TABLE : mode, "archs");
 		rz_core_bin_archs_print(bin, st);
 		add_footer(&state, st);

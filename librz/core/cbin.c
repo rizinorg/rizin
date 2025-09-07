@@ -4652,18 +4652,18 @@ static int bin_versioninfo(RzCore *r, PJ *pj, int mode) {
 	return true;
 }
 
-RZ_API int rz_core_bin_set_arch_bits(RzCore *r, RZ_DEPRECATE const char *name, const char *arch, ut16 bits) {
+RZ_API int rz_core_bin_set_arch_bits(RzCore *r, RZ_DEPRECATE const char *filename, const char *arch, ut16 bits) {
 	RzBinFile *curfile, *binfile = NULL;
 	/* Check if the arch name is a valid name */
 	if (!rz_asm_is_valid(r->rasm, arch)) {
 		return false;
 	}
 	/* Find a file with the requested name/arch/bits */
-	binfile = rz_bin_file_find_by_arch_bits(r->bin, arch, bits, NULL);
+	binfile = rz_bin_file_find_by_arch_bits(r->bin, arch, bits, NULL, filename);
 	if (!binfile) {
 		return false;
 	}
-	if (!rz_bin_use_arch(r->bin, arch, bits, NULL, NULL)) {
+	if (!rz_bin_use_arch(r->bin, arch, bits, NULL, filename)) {
 		return false;
 	}
 	curfile = rz_bin_cur(r->bin);

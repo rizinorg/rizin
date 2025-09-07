@@ -999,9 +999,9 @@ RZ_API RzBinFile *rz_bin_cur(RzBin *bin);
 RZ_API RzBinObject *rz_bin_cur_object(RzBin *bin);
 
 // select/list binfiles functions
-RZ_API bool rz_bin_select(RzBin *bin, const char *arch, int bits, const char *name);
+RZ_API bool rz_bin_select(RzBin *bin, RZ_NONNULL const char *arch, int bits, RZ_NULLABLE const char *machine, RZ_NULLABLE const char *filename);
 RZ_API bool rz_bin_select_bfid(RzBin *bin, ut32 bf_id);
-RZ_API bool rz_bin_use_arch(RzBin *bin, const char *arch, int bits, const char *name, RZ_NULLABLE const char *machine);
+RZ_API bool rz_bin_use_arch(RzBin *bin, const char *arch, int bits, RZ_NULLABLE const char *machine, RZ_DEPRECATE RZ_NULLABLE const char *filename);
 RZ_API RzBuffer *rz_bin_create(RzBin *bin, const char *plugin_name, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt);
 
 RZ_API const char *rz_bin_entry_type_string(int etype);
@@ -1013,7 +1013,7 @@ RZ_API bool rz_bin_file_object_new_from_xtr_data(RzBin *bin, RzBinFile *bf, RzBi
 RZ_API RzBinFile *rz_bin_file_at(RzBin *bin, ut64 addr);
 RZ_API RzPVector /*<RzBinSymbol *>*/ *rz_bin_file_get_symbols(RzBinFile *bf);
 // RzBinFile.find
-RZ_API RZ_BORROW RzBinFile *rz_bin_file_find_by_arch_bits(RzBin *bin, const char *arch, int bits, RZ_NULLABLE const char *machine);
+RZ_API RZ_BORROW RzBinFile *rz_bin_file_find_by_arch_bits(RzBin *bin, const char *arch, int bits, RZ_NULLABLE const char *machine, RZ_NULLABLE const char *filename);
 RZ_API RzBinFile *rz_bin_file_find_by_id(RzBin *bin, ut32 bin_id);
 RZ_API RzBinFile *rz_bin_file_find_by_fd(RzBin *bin, ut32 bin_fd);
 RZ_API RzBinFile *rz_bin_file_find_by_name(RzBin *bin, const char *name);

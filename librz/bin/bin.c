@@ -829,20 +829,20 @@ trashbin:
  * \param The architecture of the binary file.
  * \param The architecture bits of the binary file.
  * \param (Optionally) The machine of the binary file.
- * \param name Deprecated, should not be used. Can be NULL.
+ * \param filename Deprecated, should not be used. Can be NULL.
  *
  * \return True if the binary file was successfully set according to the parameters. False otherwise.
  */
-RZ_API bool rz_bin_use_arch(RzBin *bin, const char *arch, int bits, RZ_NULLABLE const char *machine, RZ_DEPRECATE RZ_NULLABLE const char *name) {
+RZ_API bool rz_bin_use_arch(RzBin *bin, const char *arch, int bits, RZ_NULLABLE const char *machine, RZ_DEPRECATE RZ_NULLABLE const char *filename) {
 	rz_return_val_if_fail(bin && arch, false);
 
-	RzBinFile *binfile = rz_bin_file_find_by_arch_bits(bin, arch, bits, machine);
+	RzBinFile *binfile = rz_bin_file_find_by_arch_bits(bin, arch, bits, machine, filename);
 	if (!binfile) {
 		RZ_LOG_WARN("Cannot find binfile with arch/bits %s/%d\n", arch, bits);
 		return false;
 	}
 
-	RzBinObject *obj = rz_bin_object_find_by_arch_bits(binfile, arch, bits, name);
+	RzBinObject *obj = rz_bin_object_find_by_arch_bits(binfile, arch, bits, machine, filename);
 	if (!obj && binfile->xtr_data) {
 		RzBinXtrData *xtr_data = rz_list_get_n(binfile->xtr_data, 0);
 		if (xtr_data && !xtr_data->loaded) {
@@ -862,13 +862,25 @@ RZ_API bool rz_bin_use_arch(RzBin *bin, const char *arch, int bits, RZ_NULLABLE 
 	return rz_bin_set_cur_binfile(bin, binfile);
 }
 
-RZ_API bool rz_bin_select(RzBin *bin, RZ_NONNULL const char *arch, int bits, RZ_NULLABLE const char *machine) {
+/**
+ * \brief Selects the binfile matching \p arch, \p bits and optionally \p machine
+ * and sets it as current binfile in RzBin.
+ *
+ * \param The current RzBin instance.
+ * \param The architecture of the binary file.
+ * \param The architecture bits of the binary file.
+ * \param (Optionally) The machine of the binary file.
+ * \param filename Deprecated, should not be used. Can be NULL.
+ *
+ * \return True if the binary file was successfully set according to the parameters. False otherwise.
+ */
+RZ_API bool rz_bin_select(RzBin *bin, RZ_NONNULL const char *arch, int bits, RZ_NULLABLE const char *machine, RZ_NULLABLE const char *filename) {
 	rz_return_val_if_fail(bin && arch, false);
 
 	RzBinObject *obj = NULL;
-	RzBinFile *binfile = rz_bin_file_find_by_arch_bits(bin, arch, bits, machine);
+	RzBinFile *binfile = rz_bin_file_find_by_arch_bits(bin, arch, bits, machine, filename);
 	if (binfile) {
-		obj = rz_bin_object_find_by_arch_bits(binfile, arch, bits, machine);
+		obj = rz_bin_object_find_by_arch_bits(binfile, arch, bits, machine, filename);
 	}
 	if (!rz_bin_file_set_obj(binfile, obj)) {
 		return NULL;
