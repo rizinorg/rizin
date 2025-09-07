@@ -6,31 +6,100 @@
 
 #include "coff.h"
 
-RZ_API bool rz_coff_supported_arch(const ut8 *buf) {
-	ut16 arch = rz_read_le16(buf);
+static bool coff_is_supported_arch(ut16 arch) {
 	switch (arch) {
-	case COFF_FILE_MACHINE_MIPS16:
-	case COFF_FILE_MACHINE_MIPSFPU:
-	case COFF_FILE_MACHINE_MIPSFPU16:
+	case COFF_FILE_MACHINE_ALPHA:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_ALPHA64:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_AM33:
+		/* fall-thru */
 	case COFF_FILE_MACHINE_AMD64:
-	case COFF_FILE_MACHINE_I386:
-	case COFF_FILE_MACHINE_H8300:
-	case COFF_FILE_TI_COFF:
-	case COFF_FILE_MACHINE_R4000:
-	case COFF_FILE_MACHINE_AMD29KBE:
-	case COFF_FILE_MACHINE_AMD29KLE:
-	case COFF_FILE_MACHINE_SH3:
-	case COFF_FILE_MACHINE_SH3DSP:
-	case COFF_FILE_MACHINE_SH4:
-	case COFF_FILE_MACHINE_SH5:
-	case COFF_FILE_MACHINE_THUMB:
+		/* fall-thru */
 	case COFF_FILE_MACHINE_ARM:
-	case COFF_FILE_MACHINE_ARM64:
+		/* fall-thru */
 	case COFF_FILE_MACHINE_ARMNT:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_ARM64:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_EBC:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_I386:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_I386_PTX:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_I386_AIX:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_IA64:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_M32R:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_MIPS16:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_MIPSFPU:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_MIPSFPU16:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_AMD29KBE:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_AMD29KLE:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_POWERPC:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_POWERPCFP:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_SH3:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_SH3DSP:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_SH4:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_SH5:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_THUMB:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_WCEMIPSV2:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_H8300:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_M68K:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_68KAUX:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_PIC30:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_I960RO:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_I960RW:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_R3000:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_R4000:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_R10000:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_RISCV32:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_RISCV64:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_RISCV128:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_TI_1:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_TI_2:
 		return true;
 	default:
 		return false;
 	}
+}
+
+RZ_API bool rz_coff_supported_arch(const ut8 *buf) {
+	ut16 arch = rz_read_le16(buf);
+	if (coff_is_supported_arch(arch)) {
+		return true;
+	}
+	arch = rz_read_be16(buf);
+	return coff_is_supported_arch(arch);
 }
 
 RZ_API ut64 rz_coff_perms_from_section_flags(ut32 flags) {
@@ -100,6 +169,10 @@ static inline bool coff_is_symbol_name(const char *name, const char *expected) {
 /* Try to get a valid entrypoint using the methods outlined in
  * http://ftp.gnu.org/old-gnu/Manuals/ld-2.9.1/html_mono/ld.html#SEC24 */
 RZ_API RzBinAddr *rz_coff_get_entry(struct rz_bin_coff_obj *obj) {
+	if (!!obj->hdr.f_nsyms) {
+		return NULL;
+	}
+
 	RzBinAddr *addr = RZ_NEW0(RzBinAddr);
 	if (!addr) {
 		return NULL;
@@ -128,26 +201,34 @@ RZ_API RzBinAddr *rz_coff_get_entry(struct rz_bin_coff_obj *obj) {
 	return NULL;
 }
 
-static bool rz_bin_coff_init_hdr(struct rz_bin_coff_obj *obj) {
-	ut16 magic;
-	if (!rz_buf_read_le16_at(obj->b, 0, &magic)) {
+static bool coff_is_ti_machine(struct rz_bin_coff_obj *obj) {
+	return obj->hdr.f_magic == COFF_FILE_MACHINE_TI_1 ||
+		obj->hdr.f_magic == COFF_FILE_MACHINE_TI_2;
+}
+
+static bool bin_coff_init_hdr(struct rz_bin_coff_obj *obj) {
+	ut16 magic = 0;
+	if (!rz_buf_read_be16_at(obj->b, 0, &magic)) {
 		return false;
 	}
-
-	switch (magic) {
-	case COFF_FILE_MACHINE_H8300:
-	case COFF_FILE_MACHINE_AMD29KBE:
-		obj->endian = COFF_IS_BIG_ENDIAN;
-		break;
-	default:
-		obj->endian = COFF_IS_LITTLE_ENDIAN;
+	if (coff_is_supported_arch(magic)) {
+		// big endian
+		obj->endian = true;
+	} else {
+		magic = rz_read_le16(&magic);
+		if (!coff_is_supported_arch(magic)) {
+			return false;
+		}
+		// little endian
+		obj->endian = false;
 	}
-	int ret = 0;
-	ret = rz_buf_fread_at(obj->b, 0, (ut8 *)&obj->hdr, obj->endian ? "2S3I2S" : "2s3i2s", 1);
+
+	int ret = rz_buf_fread_at(obj->b, 0, (ut8 *)&obj->hdr, obj->endian ? "2S3I2S" : "2s3i2s", 1);
 	if (ret != sizeof(struct coff_hdr)) {
 		return false;
 	}
-	if (obj->hdr.f_magic == COFF_FILE_TI_COFF) {
+
+	if (coff_is_ti_machine(obj)) {
 		ret = rz_buf_fread(obj->b, (ut8 *)&obj->target_id, obj->endian ? "S" : "s", 1);
 		if (ret != sizeof(ut16)) {
 			return false;
@@ -156,7 +237,7 @@ static bool rz_bin_coff_init_hdr(struct rz_bin_coff_obj *obj) {
 	return true;
 }
 
-static bool rz_bin_coff_init_opt_hdr(struct rz_bin_coff_obj *obj) {
+static bool bin_coff_init_opt_hdr(struct rz_bin_coff_obj *obj) {
 	int ret;
 	if (!obj->hdr.f_opthdr) {
 		return false;
@@ -169,10 +250,10 @@ static bool rz_bin_coff_init_opt_hdr(struct rz_bin_coff_obj *obj) {
 	return true;
 }
 
-static bool rz_bin_coff_init_scn_hdr(struct rz_bin_coff_obj *obj) {
+static bool bin_coff_init_scn_hdr(struct rz_bin_coff_obj *obj) {
 	int ret, size;
 	ut64 offset = sizeof(struct coff_hdr) + (obj->hdr.f_opthdr ? sizeof(struct coff_opt_hdr) : 0);
-	if (obj->hdr.f_magic == COFF_FILE_TI_COFF) {
+	if (coff_is_ti_machine(obj)) {
 		offset += 2;
 	}
 	size = obj->hdr.f_nscns * sizeof(struct coff_scn_hdr);
@@ -191,11 +272,13 @@ static bool rz_bin_coff_init_scn_hdr(struct rz_bin_coff_obj *obj) {
 	return true;
 }
 
-static bool rz_bin_coff_init_symtable(struct rz_bin_coff_obj *obj) {
+static bool bin_coff_init_symtable(struct rz_bin_coff_obj *obj) {
 	int ret, size;
 	ut64 offset = obj->hdr.f_symptr;
-	if (obj->hdr.f_nsyms >= 0xffff || !obj->hdr.f_nsyms) { // too much symbols, probably not allocatable
+	if (obj->hdr.f_nsyms >= 0xffff) { // too much symbols, probably not allocatable
 		return false;
+	} else if (!obj->hdr.f_nsyms) {
+		return true;
 	}
 	size = obj->hdr.f_nsyms * sizeof(struct coff_symbol);
 	if (size < 0 ||
@@ -216,7 +299,7 @@ static bool rz_bin_coff_init_symtable(struct rz_bin_coff_obj *obj) {
 	return true;
 }
 
-static bool rz_bin_coff_init_scn_va(struct rz_bin_coff_obj *obj) {
+static bool bin_coff_init_scn_va(struct rz_bin_coff_obj *obj) {
 	obj->scn_va = RZ_NEWS(ut64, obj->hdr.f_nscns);
 	if (!obj->scn_va) {
 		return false;
@@ -231,31 +314,44 @@ static bool rz_bin_coff_init_scn_va(struct rz_bin_coff_obj *obj) {
 	return true;
 }
 
-static int rz_bin_coff_init(struct rz_bin_coff_obj *obj, RzBuffer *buf, bool verbose) {
+RZ_API struct rz_bin_coff_obj *rz_bin_coff_new_buf(RzBuffer *buf, bool verbose) {
+	struct rz_bin_coff_obj *obj = RZ_NEW0(struct rz_bin_coff_obj);
+	if (!obj) {
+		return NULL;
+	}
 	obj->b = rz_buf_ref(buf);
 	obj->size = rz_buf_size(buf);
 	obj->verbose = verbose;
 	obj->sym_ht = ht_up_new(NULL, NULL);
 	obj->imp_ht = ht_up_new(NULL, NULL);
 	obj->imp_index = ht_uu_new();
-	if (!rz_bin_coff_init_hdr(obj)) {
+
+	if (!bin_coff_init_hdr(obj)) {
 		RZ_LOG_ERROR("failed to init hdr\n");
-		return false;
+		rz_bin_coff_free(obj);
+		return NULL;
 	}
-	rz_bin_coff_init_opt_hdr(obj);
-	if (!rz_bin_coff_init_scn_hdr(obj)) {
+
+	bin_coff_init_opt_hdr(obj);
+	if (!bin_coff_init_scn_hdr(obj)) {
 		RZ_LOG_ERROR("failed to init section header\n");
-		return false;
+		rz_bin_coff_free(obj);
+		return NULL;
 	}
-	if (!rz_bin_coff_init_scn_va(obj)) {
+
+	if (!bin_coff_init_scn_va(obj)) {
 		RZ_LOG_ERROR("failed to init section VA table\n");
-		return false;
+		rz_bin_coff_free(obj);
+		return NULL;
 	}
-	if (!rz_bin_coff_init_symtable(obj)) {
+
+	if (!bin_coff_init_symtable(obj)) {
 		RZ_LOG_ERROR("failed to init symtable\n");
-		return false;
+		rz_bin_coff_free(obj);
+		return NULL;
 	}
-	return true;
+
+	return obj;
 }
 
 RZ_API void rz_bin_coff_free(struct rz_bin_coff_obj *obj) {
@@ -268,10 +364,4 @@ RZ_API void rz_bin_coff_free(struct rz_bin_coff_obj *obj) {
 	rz_buf_free(obj->buf_patched);
 	rz_buf_free(obj->b);
 	free(obj);
-}
-
-RZ_API struct rz_bin_coff_obj *rz_bin_coff_new_buf(RzBuffer *buf, bool verbose) {
-	struct rz_bin_coff_obj *bin = RZ_NEW0(struct rz_bin_coff_obj);
-	rz_bin_coff_init(bin, buf, verbose);
-	return bin;
 }

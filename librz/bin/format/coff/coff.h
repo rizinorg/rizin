@@ -26,7 +26,7 @@ struct rz_bin_coff_obj {
 
 	RzBuffer *b;
 	size_t size;
-	ut8 endian;
+	bool endian;
 	Sdb *kv;
 	bool verbose;
 	HtUP /*<symidx, RzBinSymbol>*/ *sym_ht;
@@ -39,7 +39,7 @@ struct rz_bin_coff_obj {
 	bool relocs_patched;
 };
 
-RZ_API bool rz_coff_supported_arch(const ut8 *buf); /* Reads two bytes from buf. */
+RZ_API bool rz_coff_supported_arch(const ut8 *buf);
 RZ_API ut64 rz_coff_perms_from_section_flags(ut32 flags);
 RZ_API struct rz_bin_coff_obj *rz_bin_coff_new_buf(RzBuffer *buf, bool verbose);
 RZ_API void rz_bin_coff_free(struct rz_bin_coff_obj *obj);
