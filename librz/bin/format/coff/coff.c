@@ -219,16 +219,18 @@ RZ_API RzBinAddr *rz_coff_get_entry(struct rz_bin_coff_obj *obj) {
 	return NULL;
 }
 
-static bool bin_coff_init_hdr(RzBuffer *b, struct rz_bin_coff_obj *obj, ut64 *offset) {
-	bool result = rz_buf_read_ble16_offset(b, offset, &obj->hdr.f_magic, obj->big_endian) &&
-		rz_buf_read_ble16_offset(b, offset, &obj->hdr.f_nscns, obj->big_endian) &&
-		rz_buf_read_ble32_offset(b, offset, &obj->hdr.f_timdat, obj->big_endian) &&
-		rz_buf_read_ble32_offset(b, offset, &obj->hdr.f_symptr, obj->big_endian) &&
-		rz_buf_read_ble32_offset(b, offset, &obj->hdr.f_nsyms, obj->big_endian) &&
-		rz_buf_read_ble16_offset(b, offset, &obj->hdr.f_opthdr, obj->big_endian) &&
-		rz_buf_read_ble16_offset(b, offset, &obj->hdr.f_flags, obj->big_endian);
+static bool coff_init_hdr(RzBuffer *b, ut64 *offset, struct coff_hdr *hdr, bool big_endian) {
+	return rz_buf_read_ble16_offset(b, offset, &hdr->f_magic, big_endian) &&
+		rz_buf_read_ble16_offset(b, offset, &hdr->f_nscns, big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &hdr->f_timdat, big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &hdr->f_symptr, big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &hdr->f_nsyms, big_endian) &&
+		rz_buf_read_ble16_offset(b, offset, &hdr->f_opthdr, big_endian) &&
+		rz_buf_read_ble16_offset(b, offset, &hdr->f_flags, big_endian);
+}
 
-	if (!result) {
+static bool bin_coff_init_hdr(RzBuffer *b, struct rz_bin_coff_obj *obj, ut64 *offset) {
+	if (!coff_init_hdr(b, offset, &obj->hdr, obj->big_endian)) {
 		return false;
 	} else if (coff_is_ti_machine(obj)) {
 		return rz_buf_read_ble16_offset(b, offset, &obj->target_id, obj->big_endian);
