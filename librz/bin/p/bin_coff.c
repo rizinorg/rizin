@@ -13,9 +13,9 @@
 #define VFILE_NAME_RELOC_TARGETS "reloc-targets"
 #define VFILE_NAME_PATCHED       "patched"
 
-static void populate_symbols(RzBinFile *bf);
+static void coff_populate_symbols(RzBinFile *bf);
 
-static Sdb *get_sdb(RzBinFile *bf) {
+static Sdb *coff_get_sdb(RzBinFile *bf) {
 	RzBinObject *o = bf->o;
 	if (!o) {
 		return NULL;
@@ -27,11 +27,11 @@ static Sdb *get_sdb(RzBinFile *bf) {
 	return NULL;
 }
 
-static bool rz_coff_is_stripped(struct rz_bin_coff_obj *obj) {
+static bool coff_is_stripped(struct rz_bin_coff_obj *obj) {
 	return !!(obj->hdr.f_flags & (COFF_FLAGS_TI_F_RELFLG | COFF_FLAGS_TI_F_LNNO | COFF_FLAGS_TI_F_LSYMS));
 }
 
-static bool check_buffer(RzBuffer *buf) {
+static bool coff_check_buffer(RzBuffer *buf) {
 	ut8 tmp[20];
 	int r = rz_buf_read_at(buf, 0, tmp, sizeof(tmp));
 	if (r != sizeof(tmp)) {
@@ -40,21 +40,13 @@ static bool check_buffer(RzBuffer *buf) {
 	return rz_coff_supported_arch(tmp);
 }
 
-static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
+static bool coff_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
 	obj->bin_obj = rz_bin_coff_new_buf(buf, bf->rbin->verbose);
 	return obj->bin_obj != NULL;
 }
 
-static void destroy(RzBinFile *bf) {
+static void coff_destroy(RzBinFile *bf) {
 	rz_bin_coff_free((struct rz_bin_coff_obj *)bf->o->bin_obj);
-}
-
-static ut64 baddr(RzBinFile *bf) {
-	return 0;
-}
-
-static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol sym) {
-	return NULL;
 }
 
 #define DTYPE_IS_FUNCTION(type) (COFF_SYM_GET_DTYPE(type) == COFF_SYM_DTYPE_FUNCTION)
@@ -63,7 +55,7 @@ static bool is_imported_symbol(struct coff_symbol *s) {
 	return s->n_scnum == COFF_SYM_SCNUM_UNDEF && s->n_sclass == COFF_SYM_CLASS_EXTERNAL;
 }
 
-static bool _fill_bin_symbol(RzBin *rbin, struct rz_bin_coff_obj *bin, int idx, RzBinSymbol **sym) {
+static bool coff_fill_bin_symbol(RzBin *rbin, struct rz_bin_coff_obj *bin, int idx, RzBinSymbol **sym) {
 	RzBinSymbol *ptr = *sym;
 	struct coff_scn_hdr *sc_hdr = NULL;
 	if (idx < 0 || idx > bin->hdr.f_nsyms) {
@@ -152,7 +144,7 @@ static bool _fill_bin_symbol(RzBin *rbin, struct rz_bin_coff_obj *bin, int idx, 
 	return true;
 }
 
-static RzBinImport *_fill_bin_import(struct rz_bin_coff_obj *bin, int idx) {
+static RzBinImport *coff_fill_bin_import(struct rz_bin_coff_obj *bin, int idx) {
 	RzBinImport *ptr = RZ_NEW0(RzBinImport);
 	if (!ptr || idx < 0 || idx > bin->hdr.f_nsyms) {
 		free(ptr);
@@ -176,7 +168,7 @@ static RzBinImport *_fill_bin_import(struct rz_bin_coff_obj *bin, int idx) {
 	return ptr;
 }
 
-static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+static RzPVector /*<RzBinAddr *>*/ *coff_entries(RzBinFile *bf) {
 	struct rz_bin_coff_obj *obj = (struct rz_bin_coff_obj *)bf->o->bin_obj;
 	RzPVector *ret;
 	if (!(ret = rz_pvector_new(free))) {
@@ -189,7 +181,7 @@ static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	return ret;
 }
 
-static RzPVector /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
+static RzPVector /*<RzBinVirtualFile *>*/ *coff_virtual_files(RzBinFile *bf) {
 	RzPVector *r = rz_pvector_new((RzPVectorFree)rz_bin_virtual_file_free);
 	if (!r) {
 		return NULL;
@@ -199,7 +191,7 @@ static RzPVector /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 	if (!obj) {
 		return r;
 	}
-	populate_symbols(bf); // the patching depends on symbols to be available
+	coff_populate_symbols(bf); // the patching depends on symbols to be available
 	// virtual file for reloc targets (where the relocs will point into)
 	ut64 rtmsz = rz_coff_get_reloc_targets_vfile_size(obj);
 	if (rtmsz) {
@@ -230,7 +222,7 @@ static RzPVector /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 	return r;
 }
 
-static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
+static RzPVector /*<RzBinMap *>*/ *coff_maps(RzBinFile *bf) {
 	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_map_free);
 	if (!ret) {
 		return NULL;
@@ -240,7 +232,7 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	if (!obj || !obj->scn_hdrs) {
 		return ret;
 	}
-	populate_symbols(bf);
+	coff_populate_symbols(bf);
 	for (size_t i = 0; i < obj->hdr.f_nscns; i++) {
 		RzBinMap *ptr = RZ_NEW0(RzBinMap);
 		if (!ptr) {
@@ -279,7 +271,7 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	return ret;
 }
 
-static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+static RzPVector /*<RzBinSection *>*/ *coff_sections(RzBinFile *bf) {
 	struct rz_bin_coff_obj *obj = (struct rz_bin_coff_obj *)bf->o->bin_obj;
 	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_section_free);
 	if (!ret) {
@@ -310,14 +302,14 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	return ret;
 }
 
-static void populate_imports(struct rz_bin_coff_obj *obj) {
+static void coff_populate_imports(struct rz_bin_coff_obj *obj) {
 	if (obj->imp_index->count || !obj->symbols) {
 		return;
 	}
 	int ord = 0;
 	ut64 imp_idx = 0;
 	for (size_t i = 0; i < obj->hdr.f_nsyms; i++) {
-		RzBinImport *ptr = _fill_bin_import(obj, i);
+		RzBinImport *ptr = coff_fill_bin_import(obj, i);
 		if (ptr) {
 			ptr->ordinal = ord++;
 			ht_up_insert(obj->imp_ht, (ut64)i, ptr);
@@ -327,18 +319,18 @@ static void populate_imports(struct rz_bin_coff_obj *obj) {
 	}
 }
 
-static void populate_symbols(RzBinFile *bf) {
+static void coff_populate_symbols(RzBinFile *bf) {
 	struct rz_bin_coff_obj *obj = (struct rz_bin_coff_obj *)bf->o->bin_obj;
 	if (obj->sym_ht->count || !obj->symbols) {
 		return;
 	}
-	populate_imports(obj);
+	coff_populate_imports(obj);
 	for (size_t i = 0; i < obj->hdr.f_nsyms; i++) {
 		RzBinSymbol *ptr = RZ_NEW0(RzBinSymbol);
 		if (!ptr) {
 			break;
 		}
-		if (_fill_bin_symbol(bf->rbin, obj, i, &ptr)) {
+		if (coff_fill_bin_symbol(bf->rbin, obj, i, &ptr)) {
 			ht_up_insert(obj->sym_ht, (ut64)i, ptr);
 		} else {
 			free(ptr);
@@ -347,14 +339,14 @@ static void populate_symbols(RzBinFile *bf) {
 	}
 }
 
-static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
+static RzPVector /*<RzBinSymbol *>*/ *coff_symbols(RzBinFile *bf) {
 	struct rz_bin_coff_obj *obj = (struct rz_bin_coff_obj *)bf->o->bin_obj;
 	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_symbol_free);
 	if (!ret) {
 		return NULL;
 	}
 	if (obj->symbols) {
-		populate_symbols(bf);
+		coff_populate_symbols(bf);
 		for (size_t i = 0; i < obj->hdr.f_nsyms; i++) {
 			RzBinSymbol *ptr = ht_up_find(obj->sym_ht, i, NULL);
 			if (ptr) {
@@ -366,7 +358,7 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	return ret;
 }
 
-static RzPVector /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
+static RzPVector /*<RzBinImport *>*/ *coff_imports(RzBinFile *bf) {
 	int i;
 	struct rz_bin_coff_obj *obj = (struct rz_bin_coff_obj *)bf->o->bin_obj;
 	RzPVector *ret = rz_pvector_new((RzListFree)rz_bin_import_free);
@@ -374,7 +366,7 @@ static RzPVector /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 		return NULL;
 	}
 	if (obj->symbols) {
-		populate_imports(obj);
+		coff_populate_imports(obj);
 		for (i = 0; i < obj->hdr.f_nsyms; i++) {
 			RzBinImport *ptr = ht_up_find(obj->imp_ht, i, NULL);
 			if (ptr) {
@@ -386,16 +378,12 @@ static RzPVector /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 	return ret;
 }
 
-static RzPVector /*<char *>*/ *libs(RzBinFile *bf) {
-	return NULL;
-}
-
-static RzPVector /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
-	populate_symbols(bf);
+static RzPVector /*<RzBinReloc *>*/ *coff_relocs(RzBinFile *bf) {
+	coff_populate_symbols(bf);
 	return rz_coff_get_relocs(bf->o->bin_obj);
 }
 
-static RzBinInfo *info(RzBinFile *bf) {
+static RzBinInfo *coff_info(RzBinFile *bf) {
 	RzBinInfo *ret = RZ_NEW0(RzBinInfo);
 	struct rz_bin_coff_obj *obj = (struct rz_bin_coff_obj *)bf->o->bin_obj;
 
@@ -409,7 +397,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->has_va = true;
 	ret->dbg_info = 0;
 
-	if (rz_coff_is_stripped(obj)) {
+	if (coff_is_stripped(obj)) {
 		ret->dbg_info |= RZ_BIN_DBG_STRIPPED;
 	} else {
 		if (!(obj->hdr.f_flags & COFF_FLAGS_TI_F_RELFLG)) {
@@ -636,14 +624,6 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-static RzPVector /*<RzBinField *>*/ *fields(RzBinFile *bf) {
-	return NULL;
-}
-
-static ut64 size(RzBinFile *bf) {
-	return 0;
-}
-
 #define ADD_FLAG_MASK(x, m) \
 	if ((flag & m) == COFF_SCN_##x) { \
 		rz_list_append(flag_list, RZ_STR(x)); \
@@ -703,23 +683,18 @@ RzBinPlugin rz_bin_plugin_coff = {
 	.desc = "COFF (Common Object File Format)",
 	.license = "LGPL3",
 	.author = "Fedor Sakharov",
-	.get_sdb = &get_sdb,
-	.load_buffer = &load_buffer,
-	.destroy = &destroy,
-	.check_buffer = &check_buffer,
-	.baddr = &baddr,
-	.binsym = &binsym,
-	.entries = &entries,
-	.virtual_files = &virtual_files,
-	.maps = &maps,
-	.sections = &sections,
-	.symbols = &symbols,
-	.imports = &imports,
-	.info = &info,
-	.fields = &fields,
-	.size = &size,
-	.libs = &libs,
-	.relocs = &relocs,
+	.get_sdb = &coff_get_sdb,
+	.load_buffer = &coff_load_buffer,
+	.destroy = &coff_destroy,
+	.check_buffer = &coff_check_buffer,
+	.entries = &coff_entries,
+	.virtual_files = &coff_virtual_files,
+	.maps = &coff_maps,
+	.sections = &coff_sections,
+	.symbols = &coff_symbols,
+	.imports = &coff_imports,
+	.info = &coff_info,
+	.relocs = &coff_relocs,
 	.section_flag_to_rzlist = coff_section_flag_to_rzlist,
 };
 
