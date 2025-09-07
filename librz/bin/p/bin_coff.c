@@ -36,7 +36,7 @@ static bool coff_check_buffer(RzBuffer *buf) {
 }
 
 static bool coff_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
-	obj->bin_obj = rz_bin_coff_new_buf(buf, bf->rbin->verbose);
+	obj->bin_obj = rz_bin_coff_new_buf(buf);
 	return obj->bin_obj != NULL;
 }
 
@@ -74,7 +74,7 @@ static bool coff_fill_bin_symbol(RzBin *rbin, struct rz_bin_coff_obj *bin, int i
 	ptr->vaddr = UT64_MAX;
 	if (s->n_scnum < bin->hdr.f_nscns + 1 && s->n_scnum > 0) {
 		// first index is 0 that is why -1
-		sc_hdr = &bin->scn_hdrs[s->n_scnum - 1];
+		sc_hdr = rz_vector_index_ptr(bin->scn_hdrs, s->n_scnum - 1);
 		ptr->paddr = sc_hdr->s_scnptr + s->n_value;
 		if (bin->scn_va) {
 			ptr->vaddr = bin->scn_va[s->n_scnum - 1] + s->n_value;
@@ -228,12 +228,14 @@ static RzPVector /*<RzBinMap *>*/ *coff_maps(RzBinFile *bf) {
 		return ret;
 	}
 	coff_populate_symbols(bf);
-	for (size_t i = 0; i < obj->hdr.f_nscns; i++) {
+
+	size_t i = 0;
+	CoffScnHdr *hdr;
+	rz_vector_enumerate (obj->scn_hdrs, hdr, i) {
 		RzBinMap *ptr = RZ_NEW0(RzBinMap);
 		if (!ptr) {
 			return ret;
 		}
-		struct coff_scn_hdr *hdr = &obj->scn_hdrs[i];
 		ptr->name = rz_coff_symbol_name(obj, (const ut8 *)hdr->s_name);
 		ptr->psize = hdr->s_size;
 		ptr->vsize = hdr->s_size;
@@ -275,19 +277,22 @@ static RzPVector /*<RzBinSection *>*/ *coff_sections(RzBinFile *bf) {
 	if (!obj || !obj->scn_hdrs) {
 		return ret;
 	}
-	for (size_t i = 0; i < obj->hdr.f_nscns; i++) {
+
+	size_t i = 0;
+	CoffScnHdr *scn_hdr;
+	rz_vector_enumerate (obj->scn_hdrs, scn_hdr, i) {
 		RzBinSection *ptr = RZ_NEW0(RzBinSection);
 		if (!ptr) {
 			return ret;
 		}
-		ptr->name = rz_coff_symbol_name(obj, (const ut8 *)&obj->scn_hdrs[i].s_name);
+		ptr->name = rz_coff_symbol_name(obj, (const ut8 *)scn_hdr->s_name);
 		if (strstr(ptr->name, "data")) {
 			ptr->is_data = true;
 		}
-		ptr->size = obj->scn_hdrs[i].s_size;
-		ptr->vsize = obj->scn_hdrs[i].s_size;
-		ptr->paddr = obj->scn_hdrs[i].s_scnptr;
-		ptr->flags = obj->scn_hdrs[i].s_flags;
+		ptr->size = scn_hdr->s_size;
+		ptr->vsize = scn_hdr->s_size;
+		ptr->paddr = scn_hdr->s_scnptr;
+		ptr->flags = scn_hdr->s_flags;
 		if (obj->scn_va) {
 			ptr->vaddr = obj->scn_va[i];
 		}

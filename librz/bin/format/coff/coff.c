@@ -170,7 +170,8 @@ static bool coff_rebase_sym(struct rz_bin_coff_obj *obj, RzBinAddr *addr, struct
 	if (sym->n_scnum < 1 || sym->n_scnum > obj->hdr.f_nscns) {
 		return false;
 	}
-	addr->paddr = obj->scn_hdrs[sym->n_scnum - 1].s_scnptr + sym->n_value;
+	CoffScnHdr *scn_hdr = rz_vector_index_ptr(obj->scn_hdrs, sym->n_scnum - 1);
+	addr->paddr = scn_hdr->s_scnptr + sym->n_value;
 	return true;
 }
 
@@ -251,25 +252,33 @@ static bool bin_coff_init_opt_hdr(RzBuffer *b, struct rz_bin_coff_obj *obj, ut64
 		rz_buf_read_ble32_offset(b, offset, &obj->opt_hdr.data_start, obj->big_endian);
 }
 
-static bool bin_coff_init_scn_hdr(RzBuffer *b, struct rz_bin_coff_obj *obj) {
-	int ret, size;
-	ut64 offset = sizeof(struct coff_hdr) + (obj->hdr.f_opthdr ? sizeof(struct coff_opt_hdr) : 0);
-	if (coff_is_ti_machine(obj)) {
-		offset += 2;
-	}
-	size = obj->hdr.f_nscns * sizeof(struct coff_scn_hdr);
-	if (offset > obj->size || offset + size > obj->size || size < 0) {
-		return false;
-	}
-	obj->scn_hdrs = calloc(1, size + sizeof(struct coff_scn_hdr));
+static bool coff_init_scn_hdr(RzBuffer *b, struct coff_scn_hdr *scn, ut64 *offset, bool big_endian) {
+	return rz_buf_read_offset(b, offset, (ut8 *)scn->s_name, sizeof(scn->s_name)) &&
+		rz_buf_read_ble32_offset(b, offset, &scn->s_paddr, big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &scn->s_vaddr, big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &scn->s_size, big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &scn->s_scnptr, big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &scn->s_relptr, big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &scn->s_lnnoptr, big_endian) &&
+		rz_buf_read_ble16_offset(b, offset, &scn->s_nreloc, big_endian) &&
+		rz_buf_read_ble16_offset(b, offset, &scn->s_nlnno, big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &scn->s_flags, big_endian);
+}
+
+static bool bin_coff_init_scn_hdr(RzBuffer *b, struct rz_bin_coff_obj *obj, ut64 *offset) {
+	obj->scn_hdrs = rz_vector_new(sizeof(struct coff_scn_hdr), NULL, NULL);
 	if (!obj->scn_hdrs) {
 		return false;
 	}
-	ret = rz_buf_fread_at(b, offset, (ut8 *)obj->scn_hdrs, obj->big_endian ? "8c6I2S1I" : "8c6i2s1i", obj->hdr.f_nscns);
-	if (ret != size) {
-		RZ_FREE(obj->scn_hdrs);
-		return false;
+
+	for (size_t i = 0; i < obj->hdr.f_nscns; ++i) {
+		struct coff_scn_hdr scn = { 0 };
+		if (!coff_init_scn_hdr(b, &scn, offset, obj->big_endian)) {
+			return false;
+		}
+		rz_vector_push(obj->scn_hdrs, &scn);
 	}
+
 	return true;
 }
 
@@ -305,17 +314,18 @@ static bool bin_coff_init_scn_va(struct rz_bin_coff_obj *obj) {
 	if (!obj->scn_va) {
 		return false;
 	}
-	int i;
+	size_t i = 0;
 	ut64 va = 0;
-	for (i = 0; i < obj->hdr.f_nscns; i++) {
+	CoffScnHdr *scn_hdr;
+	rz_vector_enumerate (obj->scn_hdrs, scn_hdr, i) {
 		obj->scn_va[i] = va;
-		va += obj->scn_hdrs[i].s_size ? obj->scn_hdrs[i].s_size : 16;
+		va += scn_hdr->s_size ? scn_hdr->s_size : 16;
 		va = RZ_ROUND(va, 16ULL);
 	}
 	return true;
 }
 
-RZ_API struct rz_bin_coff_obj *rz_bin_coff_new_buf(RzBuffer *buf, bool verbose) {
+RZ_API struct rz_bin_coff_obj *rz_bin_coff_new_buf(RzBuffer *buf) {
 	ut64 offset = 0;
 	struct rz_bin_coff_obj *obj = RZ_NEW0(struct rz_bin_coff_obj);
 	if (!obj) {
@@ -323,7 +333,6 @@ RZ_API struct rz_bin_coff_obj *rz_bin_coff_new_buf(RzBuffer *buf, bool verbose) 
 	}
 	obj->b = rz_buf_ref(buf);
 	obj->size = rz_buf_size(buf);
-	obj->verbose = verbose;
 	obj->sym_ht = ht_up_new(NULL, NULL);
 	obj->imp_ht = ht_up_new(NULL, NULL);
 	obj->imp_index = ht_uu_new();
@@ -339,7 +348,7 @@ RZ_API struct rz_bin_coff_obj *rz_bin_coff_new_buf(RzBuffer *buf, bool verbose) 
 		RZ_LOG_ERROR("failed to init optional hdr\n");
 		rz_bin_coff_free(obj);
 		return NULL;
-	} else if (!bin_coff_init_scn_hdr(buf, obj)) {
+	} else if (!bin_coff_init_scn_hdr(buf, obj, &offset)) {
 		RZ_LOG_ERROR("failed to init section header\n");
 		rz_bin_coff_free(obj);
 		return NULL;
@@ -361,7 +370,7 @@ RZ_API void rz_bin_coff_free(struct rz_bin_coff_obj *obj) {
 	ht_up_free(obj->imp_ht);
 	ht_uu_free(obj->imp_index);
 	free(obj->scn_va);
-	free(obj->scn_hdrs);
+	rz_vector_free(obj->scn_hdrs);
 	free(obj->symbols);
 	rz_buf_free(obj->buf_patched);
 	free(obj);

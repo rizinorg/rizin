@@ -16,7 +16,7 @@
 struct rz_bin_coff_obj {
 	struct coff_hdr hdr;
 	struct coff_opt_hdr opt_hdr;
-	struct coff_scn_hdr *scn_hdrs;
+	RzVector /*<struct coff_scn_hdr>*/ *scn_hdrs;
 	struct coff_symbol *symbols;
 
 	ut16 target_id; /* TI COFF specific */
@@ -25,7 +25,6 @@ struct rz_bin_coff_obj {
 	size_t size;
 	bool big_endian;
 	Sdb *kv;
-	bool verbose;
 	HtUP /*<symidx, RzBinSymbol>*/ *sym_ht;
 	HtUP /*<symidx, RzBinImport>*/ *imp_ht;
 	HtUU /*<symidx, ut64>*/ *imp_index; ///< locally-generated indices for imports, in particular for deterministically assigning reloc targets
@@ -38,7 +37,7 @@ struct rz_bin_coff_obj {
 
 RZ_API bool rz_coff_supported_arch(RzBuffer *b);
 RZ_API ut64 rz_coff_perms_from_section_flags(ut32 flags);
-RZ_API struct rz_bin_coff_obj *rz_bin_coff_new_buf(RzBuffer *buf, bool verbose);
+RZ_API struct rz_bin_coff_obj *rz_bin_coff_new_buf(RzBuffer *buf);
 RZ_API void rz_bin_coff_free(struct rz_bin_coff_obj *obj);
 RZ_API RzBinAddr *rz_coff_get_entry(struct rz_bin_coff_obj *obj);
 RZ_API RZ_OWN char *rz_coff_symbol_name(RZ_NONNULL struct rz_bin_coff_obj *obj, RZ_NULLABLE const ut8 *ptr);

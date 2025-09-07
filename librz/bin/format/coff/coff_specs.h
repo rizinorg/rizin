@@ -202,19 +202,18 @@ typedef struct coff_opt_hdr {
 	ut32 data_start; /* Base of Data used for this file */
 } CoffOptHdr;
 
-RZ_PACKED(
-	struct coff_scn_hdr {
-		char s_name[8]; /* Section Name */
-		ut32 s_paddr; /* Physical Address */
-		ut32 s_vaddr; /* Virtual Address */
-		ut32 s_size; /* Section Size in Bytes */
-		ut32 s_scnptr; /* File offset to the Section data */
-		ut32 s_relptr; /* File offset to the Relocation table for this Section */
-		ut32 s_lnnoptr; /* File offset to the Line Number table for this Section */
-		ut16 s_nreloc; /* Number of Relocation table entries */
-		ut16 s_nlnno; /* Number of Line Number table entries */
-		ut32 s_flags; /* Flags for this section */
-	});
+typedef struct coff_scn_hdr {
+	char s_name[8]; /* Section Name */
+	ut32 s_paddr; /* Physical Address */
+	ut32 s_vaddr; /* Virtual Address */
+	ut32 s_size; /* Section Size in Bytes */
+	ut32 s_scnptr; /* File offset to the Section data */
+	ut32 s_relptr; /* File offset to the Relocation table for this Section */
+	ut32 s_lnnoptr; /* File offset to the Line Number table for this Section */
+	ut16 s_nreloc; /* Number of Relocation table entries */
+	ut16 s_nlnno; /* Number of Line Number table entries */
+	ut32 s_flags; /* Flags for this section */
+} CoffScnHdr;
 
 RZ_PACKED(
 	struct coff_symbol {
