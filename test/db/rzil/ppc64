@@ -823,6 +823,7 @@ QSMwX\x14Q_El\x17\x7fnx\x7f\x1c
 Hello from RzIL!
 EOF
 EXPECT_ERR=<<EOF
+WARNING: Fetching registers from core file not supported for this architecture.
 ERROR: I128/U128 not supported
 ERROR: I128/U128 not supported
 ERROR: I128/U128 not supported

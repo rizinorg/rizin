@@ -5,7 +5,6 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "elf.h"
-#include "elf/glibc_elf.h"
 
 #define ROUND_UP_4(x) ((x) + (4 - 1)) / 4 * 4
 
