@@ -95,7 +95,7 @@ static int main_help(RZ_BORROW RZ_NONNULL RzCore *core, int line) {
 		const char *options[] = {
 			// clang-format off
 			"--",          "",          "Run rizin without opening any file",
-			"=",           "",          "Same as 'rizin malloc://512",
+			"=",           "",          "Same as 'rizin malloc://512'",
 			"- ",          "",          "Read file from stdin",
 			"-=",          "",          "Perform R=! command to run all commands remotely",
 			"-0",          "",          "Print \\x00 after init and every command",
@@ -107,7 +107,7 @@ static int main_help(RZ_BORROW RZ_NONNULL RzCore *core, int line) {
 			"-B",          "baddr",     "Set base address for PIE binaries",
 			"-c",          "'cmd..'",   "Execute rizin command",
 			"-C",          "",          "File is host:port (alias for -cR+http://%%s/cmd/)",
-			"-d",          "",          "Debug the executable 'file' or running process 'pid",
+			"-d",          "",          "Debug the executable 'file' or running process 'pid'",
 			"-D",          "backend",   "Enable debug mode (e cfg.debug=true)",
 			"-e",          "k=v",       "Evaluate config var",
 			"-f",          "",          "Block size = file size",
