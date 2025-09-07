@@ -154,7 +154,7 @@ RZ_API RZ_OWN char *rz_coff_symbol_name(RZ_NONNULL struct rz_bin_coff_obj *obj, 
 	if (zero) {
 		return rz_str_ndup((const char *)ptr, 8);
 	}
-	ut32 addr = obj->hdr.f_symptr + obj->hdr.f_nsyms * sizeof(struct coff_symbol) + offset;
+	ut32 addr = obj->hdr.f_symptr + (obj->hdr.f_nsyms * COFF_SYMBOL_SIZE) + offset;
 	if (addr > obj->size) {
 		return rz_str_dup("");
 	}
@@ -207,10 +207,11 @@ RZ_API RzBinAddr *rz_coff_get_entry(struct rz_bin_coff_obj *obj) {
 		return NULL;
 	}
 
-	for (size_t i = 0; i < obj->hdr.f_nsyms; i++) {
-		if ((coff_is_symbol_name(obj->symbols[i].n_name, "start") ||
-			    coff_is_symbol_name(obj->symbols[i].n_name, "main")) &&
-			coff_rebase_sym(obj, addr, &obj->symbols[i])) {
+	CoffSym *sym;
+	rz_vector_foreach (obj->symbols, sym) {
+		if ((coff_is_symbol_name(sym->n_name, "start") ||
+			    coff_is_symbol_name(sym->n_name, "main")) &&
+			coff_rebase_sym(obj, addr, sym)) {
 			return addr;
 		}
 	}
@@ -254,7 +255,7 @@ static bool bin_coff_init_opt_hdr(RzBuffer *b, struct rz_bin_coff_obj *obj, ut64
 		rz_buf_read_ble32_offset(b, offset, &obj->opt_hdr.data_start, obj->big_endian);
 }
 
-static bool coff_init_scn_hdr(RzBuffer *b, struct coff_scn_hdr *scn, ut64 *offset, bool big_endian) {
+static bool coff_init_scn_hdr(RzBuffer *b, ut64 *offset, struct coff_scn_hdr *scn, bool big_endian) {
 	return rz_buf_read_offset(b, offset, (ut8 *)scn->s_name, sizeof(scn->s_name)) &&
 		rz_buf_read_ble32_offset(b, offset, &scn->s_paddr, big_endian) &&
 		rz_buf_read_ble32_offset(b, offset, &scn->s_vaddr, big_endian) &&
@@ -275,7 +276,7 @@ static bool bin_coff_init_scn_hdr(RzBuffer *b, struct rz_bin_coff_obj *obj, ut64
 
 	for (size_t i = 0; i < obj->hdr.f_nscns; ++i) {
 		struct coff_scn_hdr scn = { 0 };
-		if (!coff_init_scn_hdr(b, &scn, offset, obj->big_endian)) {
+		if (!coff_init_scn_hdr(b, offset, &scn, obj->big_endian)) {
 			return false;
 		}
 		rz_vector_push(obj->scn_hdrs, &scn);
@@ -284,30 +285,35 @@ static bool bin_coff_init_scn_hdr(RzBuffer *b, struct rz_bin_coff_obj *obj, ut64
 	return true;
 }
 
+static bool coff_init_sym(RzBuffer *b, ut64 *offset, struct coff_symbol *sym, bool big_endian) {
+	return rz_buf_read_offset(b, offset, (ut8 *)sym->n_name, sizeof(sym->n_name)) &&
+		rz_buf_read_ble32_offset(b, offset, &sym->n_value, big_endian) &&
+		rz_buf_read_ble16_offset(b, offset, &sym->n_scnum, big_endian) &&
+		rz_buf_read_ble16_offset(b, offset, &sym->n_type, big_endian) &&
+		rz_buf_read_ble8_offset(b, offset, &sym->n_sclass, big_endian) &&
+		rz_buf_read_ble8_offset(b, offset, &sym->n_numaux, big_endian);
+}
+
 static bool bin_coff_init_symtable(RzBuffer *b, struct rz_bin_coff_obj *obj) {
-	int ret, size;
 	ut64 offset = obj->hdr.f_symptr;
-	if (obj->hdr.f_nsyms >= 0xffff) { // too much symbols, probably not allocatable
-		return false;
-	} else if (!obj->hdr.f_nsyms) {
-		return true;
-	}
-	size = obj->hdr.f_nsyms * sizeof(struct coff_symbol);
-	if (size < 0 ||
-		size > obj->size ||
-		offset > obj->size ||
-		offset + size > obj->size) {
+	if (obj->hdr.f_nsyms >= 0xffff) {
+		// too many symbols, probably not allocatable
 		return false;
 	}
-	obj->symbols = calloc(1, size + sizeof(struct coff_symbol));
+
+	obj->symbols = rz_vector_new(sizeof(struct coff_symbol), NULL, NULL);
 	if (!obj->symbols) {
 		return false;
 	}
-	ret = rz_buf_fread_at(b, offset, (ut8 *)obj->symbols, obj->big_endian ? "8c1I2S2c" : "8c1i2s2c", obj->hdr.f_nsyms);
-	if (ret != size) {
-		RZ_FREE(obj->symbols);
-		return false;
+
+	for (size_t i = 0; i < obj->hdr.f_nsyms; ++i) {
+		struct coff_symbol sym = { 0 };
+		if (!coff_init_sym(b, &offset, &sym, obj->big_endian)) {
+			return false;
+		}
+		rz_vector_push(obj->symbols, &sym);
 	}
+
 	return true;
 }
 
@@ -373,7 +379,7 @@ RZ_API void rz_bin_coff_free(struct rz_bin_coff_obj *obj) {
 	ht_uu_free(obj->imp_index);
 	free(obj->scn_va);
 	rz_vector_free(obj->scn_hdrs);
-	free(obj->symbols);
+	rz_vector_free(obj->symbols);
 	rz_buf_free(obj->buf_patched);
 	free(obj);
 }

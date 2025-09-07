@@ -87,7 +87,7 @@ static ut8 handle_i386_relocs(struct rz_bin_coff_obj *bin, RzBinReloc *reloc, ut
 		return reloc_general_arch_rel32_common(bin, reloc, sym_vaddr, patch_buf, "IMAGE_REL_I386_REL32");
 		// TODO: Missing handling of other relocation types
 	default:
-		RZ_LOG_WARN("Unimplemented/unknown COFF i386 relocation type: %d\n", reloc_type);
+		RZ_LOG_DEBUG("Unimplemented/unknown COFF i386 relocation type: %d\n", reloc_type);
 		break;
 	}
 
@@ -100,7 +100,7 @@ static ut8 handle_amd64_relocs(struct rz_bin_coff_obj *bin, RzBinReloc *reloc, u
 		return reloc_general_arch_rel32_common(bin, reloc, sym_vaddr, patch_buf, "IMAGE_REL_AMD64_REL32");
 		// TODO: Missing handling of other relocation types
 	default:
-		RZ_LOG_WARN("Unimplemented/unknown COFF AMD64 relocation type: %d\n", reloc_type);
+		RZ_LOG_DEBUG("Unimplemented/unknown COFF AMD64 relocation type: %d\n", reloc_type);
 		break;
 	}
 
@@ -115,7 +115,7 @@ static ut8 handle_arm_relocs(struct rz_bin_coff_obj *bin, RzBinReloc *reloc, ut6
 		return reloc_arm_branches_common(bin, reloc, sym_vaddr, patch_buf, "IMAGE_REL_ARM_BLX23T");
 		// TODO: Missing handling of other relocation types
 	default:
-		RZ_LOG_WARN("Unimplemented/unknown COFF ARM relocation type: %d\n", reloc_type);
+		RZ_LOG_DEBUG("Unimplemented/unknown COFF ARM relocation type: %d\n", reloc_type);
 		break;
 	}
 
@@ -137,7 +137,7 @@ static ut8 handle_arm64_relocs(struct rz_bin_coff_obj *bin, RzBinReloc *reloc, u
 		return 4;
 		// TODO: Missing handling of other relocation types
 	default:
-		RZ_LOG_WARN("Unimplemented/unknown COFF ARM64 relocation type: %d\n", reloc_type);
+		RZ_LOG_DEBUG("Unimplemented/unknown COFF ARM64 relocation type: %d\n", reloc_type);
 		break;
 	}
 
@@ -223,7 +223,7 @@ static void relocs_foreach(struct rz_bin_coff_obj *bin, RelocsForeachCb cb, void
 					plen = handle_arm64_relocs(bin, &reloc, sym_vaddr, patch_buf, rel[j].rz_type);
 					break;
 				default:
-					RZ_LOG_WARN("Unimplemented/unknown COFF architecture type: %d\n", bin->hdr.f_magic);
+					RZ_LOG_DEBUG("Unimplemented/unknown COFF architecture type: %d\n", bin->hdr.f_magic);
 					break;
 				}
 			}

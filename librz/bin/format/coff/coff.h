@@ -17,7 +17,7 @@ struct rz_bin_coff_obj {
 	struct coff_hdr hdr;
 	struct coff_opt_hdr opt_hdr;
 	RzVector /*<struct coff_scn_hdr>*/ *scn_hdrs;
-	struct coff_symbol *symbols;
+	RzVector /*<struct coff_symbol>*/ *symbols;
 
 	ut16 target_id; /* TI COFF specific */
 

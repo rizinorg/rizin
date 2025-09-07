@@ -50,7 +50,7 @@ static bool is_imported_symbol(struct coff_symbol *s) {
 	return s->n_scnum == COFF_SYM_SCNUM_UNDEF && s->n_sclass == COFF_SYM_CLASS_EXTERNAL;
 }
 
-static bool coff_fill_bin_symbol(RzBin *rbin, struct rz_bin_coff_obj *bin, int idx, RzBinSymbol **sym) {
+static bool coff_fill_bin_symbol(RzBin *rbin, struct rz_bin_coff_obj *bin, size_t idx, RzBinSymbol **sym) {
 	RzBinSymbol *ptr = *sym;
 	struct coff_scn_hdr *sc_hdr = NULL;
 	if (idx < 0 || idx > bin->hdr.f_nsyms) {
@@ -60,7 +60,7 @@ static bool coff_fill_bin_symbol(RzBin *rbin, struct rz_bin_coff_obj *bin, int i
 		return false;
 	}
 	char tmpbuf[32];
-	struct coff_symbol *s = &bin->symbols[idx];
+	struct coff_symbol *s = rz_vector_index_ptr(bin->symbols, idx);
 	char *coffname = rz_coff_symbol_name(bin, (const ut8 *)&s->n_name);
 	if (!coffname) {
 		return false;
@@ -139,13 +139,13 @@ static bool coff_fill_bin_symbol(RzBin *rbin, struct rz_bin_coff_obj *bin, int i
 	return true;
 }
 
-static RzBinImport *coff_fill_bin_import(struct rz_bin_coff_obj *bin, int idx) {
+static RzBinImport *coff_fill_bin_import(struct rz_bin_coff_obj *bin, size_t idx) {
 	RzBinImport *ptr = RZ_NEW0(RzBinImport);
 	if (!ptr || idx < 0 || idx > bin->hdr.f_nsyms) {
 		free(ptr);
 		return NULL;
 	}
-	struct coff_symbol *s = &bin->symbols[idx];
+	struct coff_symbol *s = rz_vector_index_ptr(bin->symbols, idx);
 	if (!is_imported_symbol(s)) {
 		free(ptr);
 		return NULL;
@@ -315,7 +315,8 @@ static void coff_populate_imports(struct rz_bin_coff_obj *obj) {
 			ht_up_insert(obj->imp_ht, (ut64)i, ptr);
 			ht_uu_insert(obj->imp_index, (ut64)i, imp_idx++);
 		}
-		i += obj->symbols[i].n_numaux;
+		struct coff_symbol *sym = rz_vector_index_ptr(obj->symbols, i);
+		i += sym->n_numaux;
 	}
 }
 
@@ -335,7 +336,9 @@ static void coff_populate_symbols(RzBinFile *bf) {
 		} else {
 			free(ptr);
 		}
-		i += obj->symbols[i].n_numaux;
+
+		struct coff_symbol *sym = rz_vector_index_ptr(obj->symbols, i);
+		i += sym->n_numaux;
 	}
 }
 
@@ -352,7 +355,8 @@ static RzPVector /*<RzBinSymbol *>*/ *coff_symbols(RzBinFile *bf) {
 			if (ptr) {
 				rz_pvector_push(ret, ptr);
 			}
-			i += obj->symbols[i].n_numaux;
+			struct coff_symbol *sym = rz_vector_index_ptr(obj->symbols, i);
+			i += sym->n_numaux;
 		}
 	}
 	return ret;
@@ -372,7 +376,9 @@ static RzPVector /*<RzBinImport *>*/ *coff_imports(RzBinFile *bf) {
 			if (ptr) {
 				rz_pvector_push(ret, ptr);
 			}
-			i += obj->symbols[i].n_numaux;
+
+			struct coff_symbol *sym = rz_vector_index_ptr(obj->symbols, i);
+			i += sym->n_numaux;
 		}
 	}
 	return ret;

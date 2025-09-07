@@ -215,15 +215,16 @@ typedef struct coff_scn_hdr {
 	ut32 s_flags; /* Flags for this section */
 } CoffScnHdr;
 
-RZ_PACKED(
-	struct coff_symbol {
-		char n_name[8]; /* Symbol Name */
-		ut32 n_value; /* Value of Symbol */
-		ut16 n_scnum; /* Section Number */
-		ut16 n_type; /* Symbol Type */
-		ut8 n_sclass; /* Storage Class */
-		ut8 n_numaux; /* Auxiliary Count */
-	});
+typedef struct coff_symbol {
+	char n_name[8]; /* Symbol Name */
+	ut32 n_value; /* Value of Symbol */
+	ut16 n_scnum; /* Section Number */
+	ut16 n_type; /* Symbol Type */
+	ut8 n_sclass; /* Storage Class */
+	ut8 n_numaux; /* Auxiliary Count */
+} CoffSym;
+
+#define COFF_SYMBOL_SIZE 18
 
 struct coff_reloc {
 	ut32 rz_vaddr; /* Reference Address */
