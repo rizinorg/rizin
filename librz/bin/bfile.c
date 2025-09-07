@@ -80,8 +80,25 @@ static RzBinPlugin *get_plugin_from_buffer(RzBin *bin, const char *pluginname, R
 	return rz_bin_get_binplugin_by_name(bin, "any");
 }
 
-RZ_API bool rz_bin_file_object_new_from_xtr_data(RzBin *bin, RzBinFile *bf, RzBinObjectLoadOptions *opts, RzBinXtrData *data) {
+static inline void mark_all_xtr_as_unloaded(RzBin *bin) {
+	RzListIter *iter;
+	RzBinFile *binfile = NULL;
+	rz_list_foreach (bin->binfiles, iter, binfile) {
+		if (!binfile->xtr_data) {
+			continue;
+		}
+		RzBinXtrData *xtr_data;
+		RzListIter *iter_xtr;
+		rz_list_foreach (binfile->xtr_data, iter_xtr, xtr_data) {
+			xtr_data->loaded = false;
+		}
+	}
+}
+
+RZ_API bool rz_bin_file_set_xtr_data_as_current_obj(RzBin *bin, RzBinFile *bf, RzBinObjectLoadOptions *opts, RzBinXtrData *data) {
 	rz_return_val_if_fail(bin && bf && data, false);
+
+	mark_all_xtr_as_unloaded(bin);
 
 	ut64 offset = data->offset;
 	ut64 sz = data->size;
@@ -175,7 +192,7 @@ RZ_API RZ_BORROW RzBinFile *rz_bin_file_find_by_arch_bits(RzBin *bin, const char
 		// look for sub-bins in Xtr Data and Load if we need to
 		rz_list_foreach (binfile->xtr_data, iter_xtr, xtr_data) {
 			if (xtr_metadata_match(xtr_data, arch, bits, machine)) {
-				if (!rz_bin_file_object_new_from_xtr_data(bin, binfile, &xtr_data->obj_opts, xtr_data)) {
+				if (!rz_bin_file_set_xtr_data_as_current_obj(bin, binfile, &xtr_data->obj_opts, xtr_data)) {
 					return NULL;
 				}
 				return binfile;

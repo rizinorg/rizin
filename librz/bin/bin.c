@@ -850,7 +850,7 @@ RZ_API bool rz_bin_use_arch(RzBin *bin, const char *arch, int bits, RZ_NULLABLE 
 				.baseaddr = UT64_MAX,
 				.loadaddr = rz_bin_get_laddr(bin)
 			};
-			if (!rz_bin_file_object_new_from_xtr_data(bin, binfile, &obj_opts, xtr_data)) {
+			if (!rz_bin_file_set_xtr_data_as_current_obj(bin, binfile, &obj_opts, xtr_data)) {
 				return false;
 			}
 		}
