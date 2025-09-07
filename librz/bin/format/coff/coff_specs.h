@@ -191,17 +191,16 @@ typedef struct coff_hdr {
 	ut16 f_flags; /* Flags */
 } CoffHdr;
 
-RZ_PACKED(
-	struct coff_opt_hdr {
-		ut16 magic; /* Magic Number                    */
-		ut16 vstamp; /* Version stamp                   */
-		ut32 tsize; /* Text size in bytes              */
-		ut32 dsize; /* Initialised data size           */
-		ut32 bsize; /* Uninitialised data size         */
-		ut32 entry; /* Entry point                     */
-		ut32 text_start; /* Base of Text used for this file */
-		ut32 data_start; /* Base of Data used for this file */
-	});
+typedef struct coff_opt_hdr {
+	ut16 magic; /* Magic Number */
+	ut16 vstamp; /* Version stamp  */
+	ut32 tsize; /* Text size in bytes */
+	ut32 dsize; /* Initialised data size */
+	ut32 bsize; /* Uninitialised data size */
+	ut32 entry; /* Entry point */
+	ut32 text_start; /* Base of Text used for this file */
+	ut32 data_start; /* Base of Data used for this file */
+} CoffOptHdr;
 
 RZ_PACKED(
 	struct coff_scn_hdr {

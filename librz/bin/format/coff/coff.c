@@ -218,35 +218,37 @@ RZ_API RzBinAddr *rz_coff_get_entry(struct rz_bin_coff_obj *obj) {
 	return NULL;
 }
 
-static bool bin_coff_init_hdr(RzBuffer *b, struct rz_bin_coff_obj *obj) {
-	ut64 offset = 0;
-	bool result = rz_buf_read_ble16_offset(b, &offset, &obj->hdr.f_magic, obj->big_endian) &&
-		rz_buf_read_ble16_offset(b, &offset, &obj->hdr.f_nscns, obj->big_endian) &&
-		rz_buf_read_ble32_offset(b, &offset, &obj->hdr.f_timdat, obj->big_endian) &&
-		rz_buf_read_ble32_offset(b, &offset, &obj->hdr.f_symptr, obj->big_endian) &&
-		rz_buf_read_ble32_offset(b, &offset, &obj->hdr.f_nsyms, obj->big_endian) &&
-		rz_buf_read_ble16_offset(b, &offset, &obj->hdr.f_opthdr, obj->big_endian) &&
-		rz_buf_read_ble16_offset(b, &offset, &obj->hdr.f_flags, obj->big_endian);
+static bool bin_coff_init_hdr(RzBuffer *b, struct rz_bin_coff_obj *obj, ut64 *offset) {
+	bool result = rz_buf_read_ble16_offset(b, offset, &obj->hdr.f_magic, obj->big_endian) &&
+		rz_buf_read_ble16_offset(b, offset, &obj->hdr.f_nscns, obj->big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &obj->hdr.f_timdat, obj->big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &obj->hdr.f_symptr, obj->big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &obj->hdr.f_nsyms, obj->big_endian) &&
+		rz_buf_read_ble16_offset(b, offset, &obj->hdr.f_opthdr, obj->big_endian) &&
+		rz_buf_read_ble16_offset(b, offset, &obj->hdr.f_flags, obj->big_endian);
 
 	if (!result) {
 		return false;
 	} else if (coff_is_ti_machine(obj)) {
-		return rz_buf_read_ble16_offset(b, &offset, &obj->target_id, obj->big_endian);
+		return rz_buf_read_ble16_offset(b, offset, &obj->target_id, obj->big_endian);
 	}
 	return true;
 }
 
-static bool bin_coff_init_opt_hdr(RzBuffer *b, struct rz_bin_coff_obj *obj) {
-	int ret;
+static bool bin_coff_init_opt_hdr(RzBuffer *b, struct rz_bin_coff_obj *obj, ut64 *offset) {
 	if (!obj->hdr.f_opthdr) {
+		// optional header is not present.
 		return true;
 	}
-	ret = rz_buf_fread_at(b, sizeof(struct coff_hdr),
-		(ut8 *)&obj->opt_hdr, obj->big_endian ? "2S6I" : "2s6i", 1);
-	if (ret != sizeof(struct coff_opt_hdr)) {
-		return false;
-	}
-	return true;
+
+	return rz_buf_read_ble16_offset(b, offset, &obj->opt_hdr.magic, obj->big_endian) &&
+		rz_buf_read_ble16_offset(b, offset, &obj->opt_hdr.vstamp, obj->big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &obj->opt_hdr.tsize, obj->big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &obj->opt_hdr.dsize, obj->big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &obj->opt_hdr.bsize, obj->big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &obj->opt_hdr.entry, obj->big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &obj->opt_hdr.text_start, obj->big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &obj->opt_hdr.data_start, obj->big_endian);
 }
 
 static bool bin_coff_init_scn_hdr(RzBuffer *b, struct rz_bin_coff_obj *obj) {
@@ -314,6 +316,7 @@ static bool bin_coff_init_scn_va(struct rz_bin_coff_obj *obj) {
 }
 
 RZ_API struct rz_bin_coff_obj *rz_bin_coff_new_buf(RzBuffer *buf, bool verbose) {
+	ut64 offset = 0;
 	struct rz_bin_coff_obj *obj = RZ_NEW0(struct rz_bin_coff_obj);
 	if (!obj) {
 		return NULL;
@@ -328,11 +331,11 @@ RZ_API struct rz_bin_coff_obj *rz_bin_coff_new_buf(RzBuffer *buf, bool verbose) 
 	if (!coff_guess_endianness(buf, &obj->big_endian)) {
 		RZ_LOG_ERROR("failed to guess magic & endianness\n");
 		return NULL;
-	} else if (!bin_coff_init_hdr(buf, obj)) {
+	} else if (!bin_coff_init_hdr(buf, obj, &offset)) {
 		RZ_LOG_ERROR("failed to init hdr\n");
 		rz_bin_coff_free(obj);
 		return NULL;
-	} else if (!bin_coff_init_opt_hdr(buf, obj)) {
+	} else if (!bin_coff_init_opt_hdr(buf, obj, &offset)) {
 		RZ_LOG_ERROR("failed to init optional hdr\n");
 		rz_bin_coff_free(obj);
 		return NULL;
