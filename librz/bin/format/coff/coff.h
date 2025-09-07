@@ -11,9 +11,6 @@
 #include <rz_util/ht_up.h>
 #include <rz_util/ht_uu.h>
 
-#define COFF_IS_BIG_ENDIAN    1
-#define COFF_IS_LITTLE_ENDIAN 0
-
 #include "coff_specs.h"
 
 struct rz_bin_coff_obj {
@@ -26,7 +23,7 @@ struct rz_bin_coff_obj {
 
 	RzBuffer *b;
 	size_t size;
-	bool endian;
+	bool big_endian;
 	Sdb *kv;
 	bool verbose;
 	HtUP /*<symidx, RzBinSymbol>*/ *sym_ht;

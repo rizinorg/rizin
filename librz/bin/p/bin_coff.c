@@ -393,7 +393,7 @@ static RzBinInfo *coff_info(RzBinFile *bf) {
 	ret->type = rz_str_dup("COFF (Executable file)");
 	ret->os = rz_str_dup("any");
 	ret->subsystem = rz_str_dup("any");
-	ret->big_endian = obj->endian;
+	ret->big_endian = obj->big_endian;
 	ret->has_va = true;
 	ret->dbg_info = 0;
 

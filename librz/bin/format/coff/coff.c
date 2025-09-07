@@ -132,8 +132,8 @@ RZ_API RZ_OWN char *rz_coff_symbol_name(RZ_NONNULL struct rz_bin_coff_obj *obj, 
 	if (!ptr) {
 		return rz_str_dup("");
 	}
-	ut32 zero = rz_read_at_ble32(ptr, 0, obj->endian == COFF_IS_BIG_ENDIAN);
-	ut32 offset = rz_read_at_ble32(ptr, 4, obj->endian == COFF_IS_BIG_ENDIAN);
+	ut32 zero = rz_read_at_ble32(ptr, 0, obj->big_endian);
+	ut32 offset = rz_read_at_ble32(ptr, 4, obj->big_endian);
 	if (zero) {
 		return rz_str_ndup((const char *)ptr, 8);
 	}
@@ -213,23 +213,23 @@ static bool bin_coff_init_hdr(struct rz_bin_coff_obj *obj) {
 	}
 	if (coff_is_supported_arch(magic)) {
 		// big endian
-		obj->endian = true;
+		obj->big_endian = true;
 	} else {
 		magic = rz_read_le16(&magic);
 		if (!coff_is_supported_arch(magic)) {
 			return false;
 		}
 		// little endian
-		obj->endian = false;
+		obj->big_endian = false;
 	}
 
-	int ret = rz_buf_fread_at(obj->b, 0, (ut8 *)&obj->hdr, obj->endian ? "2S3I2S" : "2s3i2s", 1);
+	int ret = rz_buf_fread_at(obj->b, 0, (ut8 *)&obj->hdr, obj->big_endian ? "2S3I2S" : "2s3i2s", 1);
 	if (ret != sizeof(struct coff_hdr)) {
 		return false;
 	}
 
 	if (coff_is_ti_machine(obj)) {
-		ret = rz_buf_fread(obj->b, (ut8 *)&obj->target_id, obj->endian ? "S" : "s", 1);
+		ret = rz_buf_fread(obj->b, (ut8 *)&obj->target_id, obj->big_endian ? "S" : "s", 1);
 		if (ret != sizeof(ut16)) {
 			return false;
 		}
@@ -243,7 +243,7 @@ static bool bin_coff_init_opt_hdr(struct rz_bin_coff_obj *obj) {
 		return false;
 	}
 	ret = rz_buf_fread_at(obj->b, sizeof(struct coff_hdr),
-		(ut8 *)&obj->opt_hdr, obj->endian ? "2S6I" : "2s6i", 1);
+		(ut8 *)&obj->opt_hdr, obj->big_endian ? "2S6I" : "2s6i", 1);
 	if (ret != sizeof(struct coff_opt_hdr)) {
 		return false;
 	}
@@ -264,7 +264,7 @@ static bool bin_coff_init_scn_hdr(struct rz_bin_coff_obj *obj) {
 	if (!obj->scn_hdrs) {
 		return false;
 	}
-	ret = rz_buf_fread_at(obj->b, offset, (ut8 *)obj->scn_hdrs, obj->endian ? "8c6I2S1I" : "8c6i2s1i", obj->hdr.f_nscns);
+	ret = rz_buf_fread_at(obj->b, offset, (ut8 *)obj->scn_hdrs, obj->big_endian ? "8c6I2S1I" : "8c6i2s1i", obj->hdr.f_nscns);
 	if (ret != size) {
 		RZ_FREE(obj->scn_hdrs);
 		return false;
@@ -291,7 +291,7 @@ static bool bin_coff_init_symtable(struct rz_bin_coff_obj *obj) {
 	if (!obj->symbols) {
 		return false;
 	}
-	ret = rz_buf_fread_at(obj->b, offset, (ut8 *)obj->symbols, obj->endian ? "8c1I2S2c" : "8c1i2s2c", obj->hdr.f_nsyms);
+	ret = rz_buf_fread_at(obj->b, offset, (ut8 *)obj->symbols, obj->big_endian ? "8c1I2S2c" : "8c1i2s2c", obj->hdr.f_nsyms);
 	if (ret != size) {
 		RZ_FREE(obj->symbols);
 		return false;
