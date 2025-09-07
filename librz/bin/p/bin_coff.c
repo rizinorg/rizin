@@ -32,12 +32,7 @@ static bool coff_is_stripped(struct rz_bin_coff_obj *obj) {
 }
 
 static bool coff_check_buffer(RzBuffer *buf) {
-	ut8 tmp[20];
-	int r = rz_buf_read_at(buf, 0, tmp, sizeof(tmp));
-	if (r != sizeof(tmp)) {
-		return false;
-	}
-	return rz_coff_supported_arch(tmp);
+	return rz_coff_supported_arch(buf);
 }
 
 static bool coff_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {

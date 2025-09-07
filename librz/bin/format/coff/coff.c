@@ -6,7 +6,7 @@
 
 #include "coff.h"
 
-static bool coff_is_supported_arch(ut16 arch) {
+static bool coff_is_magic(ut16 arch) {
 	switch (arch) {
 	case COFF_FILE_MACHINE_ALPHA:
 		/* fall-thru */
@@ -93,13 +93,30 @@ static bool coff_is_supported_arch(ut16 arch) {
 	}
 }
 
-RZ_API bool rz_coff_supported_arch(const ut8 *buf) {
-	ut16 arch = rz_read_le16(buf);
-	if (coff_is_supported_arch(arch)) {
+static bool coff_is_ti_machine(struct rz_bin_coff_obj *obj) {
+	return obj->hdr.f_magic == COFF_FILE_MACHINE_TI_1 ||
+		obj->hdr.f_magic == COFF_FILE_MACHINE_TI_2;
+}
+
+static bool coff_guess_endianness(RzBuffer *b, bool *big_endian) {
+	ut16 magic = 0;
+	if (!rz_buf_read_le16_at(b, 0, &magic)) {
+		return false;
+	} else if (coff_is_magic(magic)) {
+		*big_endian = false;
+		return true;
+	} else if (!rz_buf_read_be16_at(b, 0, &magic)) {
+		return false;
+	} else if (coff_is_magic(magic)) {
+		*big_endian = true;
 		return true;
 	}
-	arch = rz_read_be16(buf);
-	return coff_is_supported_arch(arch);
+	return false;
+}
+
+RZ_API bool rz_coff_supported_arch(RzBuffer *b) {
+	bool big_endian = false;
+	return coff_guess_endianness(b, &big_endian);
 }
 
 RZ_API ut64 rz_coff_perms_from_section_flags(ut32 flags) {
@@ -201,48 +218,30 @@ RZ_API RzBinAddr *rz_coff_get_entry(struct rz_bin_coff_obj *obj) {
 	return NULL;
 }
 
-static bool coff_is_ti_machine(struct rz_bin_coff_obj *obj) {
-	return obj->hdr.f_magic == COFF_FILE_MACHINE_TI_1 ||
-		obj->hdr.f_magic == COFF_FILE_MACHINE_TI_2;
-}
+static bool bin_coff_init_hdr(RzBuffer *b, struct rz_bin_coff_obj *obj) {
+	ut64 offset = 0;
+	bool result = rz_buf_read_ble16_offset(b, &offset, &obj->hdr.f_magic, obj->big_endian) &&
+		rz_buf_read_ble16_offset(b, &offset, &obj->hdr.f_nscns, obj->big_endian) &&
+		rz_buf_read_ble32_offset(b, &offset, &obj->hdr.f_timdat, obj->big_endian) &&
+		rz_buf_read_ble32_offset(b, &offset, &obj->hdr.f_symptr, obj->big_endian) &&
+		rz_buf_read_ble32_offset(b, &offset, &obj->hdr.f_nsyms, obj->big_endian) &&
+		rz_buf_read_ble16_offset(b, &offset, &obj->hdr.f_opthdr, obj->big_endian) &&
+		rz_buf_read_ble16_offset(b, &offset, &obj->hdr.f_flags, obj->big_endian);
 
-static bool bin_coff_init_hdr(struct rz_bin_coff_obj *obj) {
-	ut16 magic = 0;
-	if (!rz_buf_read_be16_at(obj->b, 0, &magic)) {
+	if (!result) {
 		return false;
-	}
-	if (coff_is_supported_arch(magic)) {
-		// big endian
-		obj->big_endian = true;
-	} else {
-		magic = rz_read_le16(&magic);
-		if (!coff_is_supported_arch(magic)) {
-			return false;
-		}
-		// little endian
-		obj->big_endian = false;
-	}
-
-	int ret = rz_buf_fread_at(obj->b, 0, (ut8 *)&obj->hdr, obj->big_endian ? "2S3I2S" : "2s3i2s", 1);
-	if (ret != sizeof(struct coff_hdr)) {
-		return false;
-	}
-
-	if (coff_is_ti_machine(obj)) {
-		ret = rz_buf_fread(obj->b, (ut8 *)&obj->target_id, obj->big_endian ? "S" : "s", 1);
-		if (ret != sizeof(ut16)) {
-			return false;
-		}
+	} else if (coff_is_ti_machine(obj)) {
+		return rz_buf_read_ble16_offset(b, &offset, &obj->target_id, obj->big_endian);
 	}
 	return true;
 }
 
-static bool bin_coff_init_opt_hdr(struct rz_bin_coff_obj *obj) {
+static bool bin_coff_init_opt_hdr(RzBuffer *b, struct rz_bin_coff_obj *obj) {
 	int ret;
 	if (!obj->hdr.f_opthdr) {
-		return false;
+		return true;
 	}
-	ret = rz_buf_fread_at(obj->b, sizeof(struct coff_hdr),
+	ret = rz_buf_fread_at(b, sizeof(struct coff_hdr),
 		(ut8 *)&obj->opt_hdr, obj->big_endian ? "2S6I" : "2s6i", 1);
 	if (ret != sizeof(struct coff_opt_hdr)) {
 		return false;
@@ -250,7 +249,7 @@ static bool bin_coff_init_opt_hdr(struct rz_bin_coff_obj *obj) {
 	return true;
 }
 
-static bool bin_coff_init_scn_hdr(struct rz_bin_coff_obj *obj) {
+static bool bin_coff_init_scn_hdr(RzBuffer *b, struct rz_bin_coff_obj *obj) {
 	int ret, size;
 	ut64 offset = sizeof(struct coff_hdr) + (obj->hdr.f_opthdr ? sizeof(struct coff_opt_hdr) : 0);
 	if (coff_is_ti_machine(obj)) {
@@ -264,7 +263,7 @@ static bool bin_coff_init_scn_hdr(struct rz_bin_coff_obj *obj) {
 	if (!obj->scn_hdrs) {
 		return false;
 	}
-	ret = rz_buf_fread_at(obj->b, offset, (ut8 *)obj->scn_hdrs, obj->big_endian ? "8c6I2S1I" : "8c6i2s1i", obj->hdr.f_nscns);
+	ret = rz_buf_fread_at(b, offset, (ut8 *)obj->scn_hdrs, obj->big_endian ? "8c6I2S1I" : "8c6i2s1i", obj->hdr.f_nscns);
 	if (ret != size) {
 		RZ_FREE(obj->scn_hdrs);
 		return false;
@@ -272,7 +271,7 @@ static bool bin_coff_init_scn_hdr(struct rz_bin_coff_obj *obj) {
 	return true;
 }
 
-static bool bin_coff_init_symtable(struct rz_bin_coff_obj *obj) {
+static bool bin_coff_init_symtable(RzBuffer *b, struct rz_bin_coff_obj *obj) {
 	int ret, size;
 	ut64 offset = obj->hdr.f_symptr;
 	if (obj->hdr.f_nsyms >= 0xffff) { // too much symbols, probably not allocatable
@@ -291,7 +290,7 @@ static bool bin_coff_init_symtable(struct rz_bin_coff_obj *obj) {
 	if (!obj->symbols) {
 		return false;
 	}
-	ret = rz_buf_fread_at(obj->b, offset, (ut8 *)obj->symbols, obj->big_endian ? "8c1I2S2c" : "8c1i2s2c", obj->hdr.f_nsyms);
+	ret = rz_buf_fread_at(b, offset, (ut8 *)obj->symbols, obj->big_endian ? "8c1I2S2c" : "8c1i2s2c", obj->hdr.f_nsyms);
 	if (ret != size) {
 		RZ_FREE(obj->symbols);
 		return false;
@@ -326,26 +325,26 @@ RZ_API struct rz_bin_coff_obj *rz_bin_coff_new_buf(RzBuffer *buf, bool verbose) 
 	obj->imp_ht = ht_up_new(NULL, NULL);
 	obj->imp_index = ht_uu_new();
 
-	if (!bin_coff_init_hdr(obj)) {
+	if (!coff_guess_endianness(buf, &obj->big_endian)) {
+		RZ_LOG_ERROR("failed to guess magic & endianness\n");
+		return NULL;
+	} else if (!bin_coff_init_hdr(buf, obj)) {
 		RZ_LOG_ERROR("failed to init hdr\n");
 		rz_bin_coff_free(obj);
 		return NULL;
-	}
-
-	bin_coff_init_opt_hdr(obj);
-	if (!bin_coff_init_scn_hdr(obj)) {
+	} else if (!bin_coff_init_opt_hdr(buf, obj)) {
+		RZ_LOG_ERROR("failed to init optional hdr\n");
+		rz_bin_coff_free(obj);
+		return NULL;
+	} else if (!bin_coff_init_scn_hdr(buf, obj)) {
 		RZ_LOG_ERROR("failed to init section header\n");
 		rz_bin_coff_free(obj);
 		return NULL;
-	}
-
-	if (!bin_coff_init_scn_va(obj)) {
+	} else if (!bin_coff_init_scn_va(obj)) {
 		RZ_LOG_ERROR("failed to init section VA table\n");
 		rz_bin_coff_free(obj);
 		return NULL;
-	}
-
-	if (!bin_coff_init_symtable(obj)) {
+	} else if (!bin_coff_init_symtable(buf, obj)) {
 		RZ_LOG_ERROR("failed to init symtable\n");
 		rz_bin_coff_free(obj);
 		return NULL;
@@ -362,6 +361,5 @@ RZ_API void rz_bin_coff_free(struct rz_bin_coff_obj *obj) {
 	free(obj->scn_hdrs);
 	free(obj->symbols);
 	rz_buf_free(obj->buf_patched);
-	rz_buf_free(obj->b);
 	free(obj);
 }

@@ -36,7 +36,7 @@ struct rz_bin_coff_obj {
 	bool relocs_patched;
 };
 
-RZ_API bool rz_coff_supported_arch(const ut8 *buf);
+RZ_API bool rz_coff_supported_arch(RzBuffer *b);
 RZ_API ut64 rz_coff_perms_from_section_flags(ut32 flags);
 RZ_API struct rz_bin_coff_obj *rz_bin_coff_new_buf(RzBuffer *buf, bool verbose);
 RZ_API void rz_bin_coff_free(struct rz_bin_coff_obj *obj);

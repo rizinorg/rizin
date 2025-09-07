@@ -181,16 +181,15 @@
 #define COFF_REL_ARM64_ADDR32NB 2
 #define COFF_REL_ARM64_BRANCH26 3
 
-RZ_PACKED(
-	struct coff_hdr {
-		ut16 f_magic; /* Magic number */
-		ut16 f_nscns; /* Number of Sections */
-		ut32 f_timdat; /* Time & date stamp */
-		ut32 f_symptr; /* File pointer to Symbol Table */
-		ut32 f_nsyms; /* Number of Symbols */
-		ut16 f_opthdr; /* sizeof(Optional Header) */
-		ut16 f_flags; /* Flags */
-	}); // __attribute__ ((packed));
+typedef struct coff_hdr {
+	ut16 f_magic; /* Magic number */
+	ut16 f_nscns; /* Number of Sections */
+	ut32 f_timdat; /* Time & date stamp */
+	ut32 f_symptr; /* File pointer to Symbol Table */
+	ut32 f_nsyms; /* Number of Symbols */
+	ut16 f_opthdr; /* sizeof(Optional Header) */
+	ut16 f_flags; /* Flags */
+} CoffHdr;
 
 RZ_PACKED(
 	struct coff_opt_hdr {
