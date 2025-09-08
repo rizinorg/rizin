@@ -1,5 +1,5 @@
+// SPDX-FileCopyrightText: 2019-2025 deroad <deroad@kumo.xn--q9jyb4c>
 // SPDX-FileCopyrightText: 2014-2019 Fedor Sakharov <fedor.sakharov@gmail.com>
-// SPDX-FileCopyrightText: 2019 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_types.h>

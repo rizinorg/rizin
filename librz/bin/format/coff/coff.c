@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2019-2025 deroad <deroad@kumo.xn--q9jyb4c>
 // SPDX-FileCopyrightText: 2008-2019 pancake <pancake@nopcode.org>
 // SPDX-FileCopyrightText: 2008-2019 inisider <inisider@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
