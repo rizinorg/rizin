@@ -757,7 +757,7 @@ RZ_IPI RzCmdStatus rz_open_binary_file_handler(RzCore *core, int argc, const cha
 	return RZ_CMD_STATUS_OK;
 }
 
-static inline bool xtr_selection_matches(RzList *selection, const RzBinXtrMetadata *metadata) {
+static inline bool xtr_selection_matches(RzList /*<const char *>*/ *selection, const RzBinXtrMetadata *metadata) {
 	rz_return_val_if_fail(selection && metadata && rz_list_length(selection) >= 2, false);
 	return (RZ_STR_EQ(rz_list_get_n(selection, 0), metadata->arch) &&
 		atoi(rz_list_get_n(selection, 1)) == metadata->bits &&
