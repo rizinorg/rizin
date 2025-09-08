@@ -326,6 +326,8 @@ ar
 # Also check out the comments about the layout at
 # elf_notes.c::SPARC32_FPREGS_SIZE and elf_notes.c::SPARC64_OPENBSD_FPREGS_SIZE.
 # You can see the difference there.
+# Issue:
+# https://github.com/rizinorg/rizin/issues/5334
 arF
 EOF
 EXPECT=<<EOF

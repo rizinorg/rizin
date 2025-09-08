@@ -333,6 +333,18 @@ RZ_BORROW RzBinElfPrStatusLayout *Elf_(rz_bin_elf_get_prstatus_layout)(RZ_NONNUL
 	return NULL;
 }
 
+/**
+ * \brief Returns the register layout for an ELF note type storing register values.
+ * Commonly this is PR_STATUS. But on some OS (OpenBSD) there is a specific
+ * note type just for register values.
+ * For these ones the layout is returned.
+ * For PRSTATUS use Elf_(rz_bin_elf_get_prstatus_layout)().
+ *
+ * \param bin The ELF object.
+ * \param The note type.
+ *
+ * \return The register layout or NULL in case of failure.
+ */
 RZ_BORROW RzBinElfPrStatusLayout *Elf_(rz_bin_elf_get_regset_layout)(RZ_NONNULL ELFOBJ *bin, Elf_(Word) n_type) {
 	rz_return_val_if_fail(bin, NULL);
 
