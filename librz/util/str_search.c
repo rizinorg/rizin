@@ -258,6 +258,7 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 	// Counter of correctly decoded characters/code points.
 	int char_count = 0;
 	int i = 0;
+	bool stopped_with_undef_cp = false;
 
 	/* Eat a whole C string */
 	for (i = 0; i < opt->max_str_length - look_ahead && needle < to; i += char_bytes) {
@@ -349,7 +350,8 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 			}
 			char_count++;
 		} else {
-			/* \0 marks the end of C-strings */
+			/* \0 or undefined code point, marks the end of C-strings */
+			stopped_with_undef_cp = r != 0;
 			break;
 		}
 	}
@@ -373,6 +375,12 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 		ds->type = str_type;
 		ds->length = char_count;
 		ds->size = needle - str_addr;
+		if (stopped_with_undef_cp) {
+			// The decoding stops if a byte sequence is an undefined unicode code point.
+			// This last undefined code point still increments needle by its code point width.
+			// Subtract it again, so we don't have it in the string length.
+			ds->size -= char_bytes;
+		}
 		ds->addr = str_addr;
 		ds->byte_mem_map = byte_mem_map;
 
