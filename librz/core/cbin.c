@@ -4664,8 +4664,8 @@ static int bin_versioninfo(RzCore *r, PJ *pj, int mode) {
  *
  * \return True if loading the binary file was successful. False otherwise.
  */
-RZ_API bool rz_core_bin_set_arch_bits(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *filename, RZ_NONNULL const char *arch, ut16 bits) {
-	rz_return_val_if_fail(r && arch, false);
+RZ_API bool rz_core_bin_set_arch_bits(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *filename, RZ_NULLABLE const char *arch, ut16 bits) {
+	rz_return_val_if_fail(r, false);
 	RzBinFile *curfile, *binfile = NULL;
 	/* Check if the arch name is a valid name */
 	if (!rz_asm_is_valid(r->rasm, arch)) {
