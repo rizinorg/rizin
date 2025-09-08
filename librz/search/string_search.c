@@ -299,8 +299,11 @@ RZ_API bool rz_search_collection_string_add(RZ_NONNULL RzSearchCollection *col, 
 
 	bool code_point_matches_alignment = rz_string_code_points_align(ss->encoding, match_alignment);
 	RzDetectedString *s = setup_str_regex(regex_pattern, cflags, code_point_matches_alignment ? ss->encoding : RZ_STRING_ENC_UTF8);
+	if (!s) {
+		return false;
+	}
 	s->alignment = match_alignment;
-	if (!s || !rz_pvector_push(ss->strings, s)) {
+	if (!rz_pvector_push(ss->strings, s)) {
 		RZ_LOG_ERROR("search: cannot add the string '%s'.\n", regex_pattern);
 		rz_detected_string_free(s);
 		return false;
