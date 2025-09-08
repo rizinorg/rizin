@@ -1728,10 +1728,10 @@ static char *rz_str_escape_utf(const char *buf, int buf_size, RzStrEnc enc, cons
 		case RZ_STRING_ENC_UTF32LE:
 		case RZ_STRING_ENC_UTF32BE:
 			if (enc == RZ_STRING_ENC_UTF16LE || enc == RZ_STRING_ENC_UTF16BE) {
-				ch_bytes = rz_utf16_decode((ut8 *)p, end - p, &ch, enc == RZ_STRING_ENC_UTF16BE, true);
+				ch_bytes = rz_utf16_decode((ut8 *)p, end - p, &ch, true, enc == RZ_STRING_ENC_UTF16BE);
 				min_char_width = 2;
 			} else {
-				ch_bytes = rz_utf32_decode((ut8 *)p, end - p, &ch, enc == RZ_STRING_ENC_UTF32BE, true);
+				ch_bytes = rz_utf32_decode((ut8 *)p, end - p, &ch, true, enc == RZ_STRING_ENC_UTF32BE);
 				min_char_width = 4;
 			}
 			break;
