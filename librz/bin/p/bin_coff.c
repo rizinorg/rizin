@@ -613,7 +613,8 @@ static RzBinInfo *coff_info(RzBinFile *bf) {
 			ret->bits = 32;
 			break;
 		case COFF_FILE_TARGET_TI_TMS320C5500_PLUS:
-			ret->machine = rz_str_dup("c55x+");
+			ret->machine = rz_str_dup("TMS320C5500+");
+			ret->cpu = rz_str_dup("c55x+");
 			ret->arch = rz_str_dup("tms320");
 			ret->bits = 32;
 			break;
