@@ -1001,13 +1001,17 @@ RZ_API RzBinObject *rz_bin_cur_object(RzBin *bin);
 // select/list binfiles functions
 RZ_API bool rz_bin_select(RzBin *bin, RZ_NONNULL const char *arch, int bits, RZ_NULLABLE const char *machine, RZ_NULLABLE const char *filename);
 RZ_API bool rz_bin_select_bfid(RzBin *bin, ut32 bf_id);
-RZ_API bool rz_bin_use_arch(RzBin *bin, const char *arch, int bits, RZ_NULLABLE const char *machine, RZ_DEPRECATE RZ_NULLABLE const char *filename);
+RZ_API bool rz_bin_use_arch(RzBin *bin, const char *arch, int bits, RZ_NULLABLE const char *machine, RZ_NULLABLE const char *filename);
 RZ_API RzBuffer *rz_bin_create(RzBin *bin, const char *plugin_name, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt);
 
 RZ_API const char *rz_bin_entry_type_string(int etype);
 RZ_API ut64 rz_bin_get_first_entrypoint(RZ_NULLABLE RzBinObject *obj);
 
-RZ_API bool rz_bin_file_set_xtr_data_as_current_obj(RzBin *bin, RzBinFile *bf, RzBinObjectLoadOptions *opts, RzBinXtrData *data);
+RZ_API bool rz_bin_file_set_xtr_data_as_current_obj(
+	RZ_BORROW RZ_NONNULL RzBin *bin,
+	RZ_BORROW RZ_NONNULL RzBinFile *bf,
+	RZ_BORROW RZ_NONNULL RzBinObjectLoadOptions *opts,
+	RZ_BORROW RZ_NONNULL RzBinXtrData *data);
 
 // RzBinFile.get
 RZ_API RzBinFile *rz_bin_file_at(RzBin *bin, ut64 addr);

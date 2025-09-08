@@ -4652,7 +4652,20 @@ static int bin_versioninfo(RzCore *r, PJ *pj, int mode) {
 	return true;
 }
 
-RZ_API int rz_core_bin_set_arch_bits(RzCore *r, RZ_DEPRECATE const char *filename, const char *arch, ut16 bits) {
+/**
+ * \brief Sets the current architecture and bits to the given values.
+ * If there is a RzBinFile with \p filename, and/or an object for \p arch and \p bits,
+ * it will load it and set it as main object file.
+ *
+ * \param r The current RzCore isntance to update.
+ * \param filename (Optional) The filename of the RzBinFile to load.
+ * \param arch The architecture name.
+ * \param bits The architecture bits.
+ *
+ * \return True if loading the binary file was successful. False otherwise.
+ */
+RZ_API bool rz_core_bin_set_arch_bits(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *filename, RZ_NONNULL const char *arch, ut16 bits) {
+	rz_return_val_if_fail(r && arch, false);
 	RzBinFile *curfile, *binfile = NULL;
 	/* Check if the arch name is a valid name */
 	if (!rz_asm_is_valid(r->rasm, arch)) {

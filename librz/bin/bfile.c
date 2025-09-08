@@ -95,8 +95,31 @@ static inline void mark_all_xtr_as_unloaded(RzBin *bin) {
 	}
 }
 
-RZ_API bool rz_bin_file_set_xtr_data_as_current_obj(RzBin *bin, RzBinFile *bf, RzBinObjectLoadOptions *opts, RzBinXtrData *data) {
-	rz_return_val_if_fail(bin && bf && data, false);
+/**
+ * \brief Updates the current active object of the binfile \p bf
+ * with the RzBinXtrData \p data.
+ * It creates a new RzBinObj instance according to \p data
+ * and loads it as current object.
+ *
+ * NOTE: It will mark all other RzBinXtrData insances in all RzBinFiles
+ * as unloaded. This is a required side effect of Rizin only supporting
+ * one active object at a time.
+ * NOTE: \p data must be an element from the bf->xtr_data list.
+ * Otherwise the result is undefined.
+ *
+ * \param bin The current RzBin isntance.
+ * \param bf The RzBinFile to update.
+ * \param opts Loading options for the new object.
+ * \param data The RzBinXtrData to load.
+ *
+ * \return True if the loading was successful. False otherwise.
+ */
+RZ_API bool rz_bin_file_set_xtr_data_as_current_obj(
+	RZ_BORROW RZ_NONNULL RzBin *bin,
+	RZ_BORROW RZ_NONNULL RzBinFile *bf,
+	RZ_BORROW RZ_NONNULL RzBinObjectLoadOptions *opts,
+	RZ_BORROW RZ_NONNULL RzBinXtrData *data) {
+	rz_return_val_if_fail(bin && bf && data && opts, false);
 
 	mark_all_xtr_as_unloaded(bin);
 

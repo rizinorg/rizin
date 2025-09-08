@@ -823,17 +823,17 @@ trashbin:
 }
 
 /**
- * \brief Sets the object file match the \p arch, \p bits and optionally the \p machine.
+ * \brief Sets the object file matching the \p arch, \p bits and optionally the \p machine and \p filename.
  *
- * \param The current RzBin instance.
- * \param The architecture of the binary file.
- * \param The architecture bits of the binary file.
- * \param (Optionally) The machine of the binary file.
- * \param filename Deprecated, should not be used. Can be NULL.
+ * \param bin The current RzBin instance.
+ * \param arch The architecture of the binary file.
+ * \param bits The architecture bits of the binary file.
+ * \param machine (Optional) The machine of the binary file.
+ * \param filename (Optional) The filename of the RzBinFile to load. Can be NULL.
  *
  * \return True if the binary file was successfully set according to the parameters. False otherwise.
  */
-RZ_API bool rz_bin_use_arch(RzBin *bin, const char *arch, int bits, RZ_NULLABLE const char *machine, RZ_DEPRECATE RZ_NULLABLE const char *filename) {
+RZ_API bool rz_bin_use_arch(RzBin *bin, const char *arch, int bits, RZ_NULLABLE const char *machine, RZ_NULLABLE const char *filename) {
 	rz_return_val_if_fail(bin && arch, false);
 
 	RzBinFile *binfile = rz_bin_file_find_by_arch_bits(bin, arch, bits, machine, filename);
@@ -864,13 +864,13 @@ RZ_API bool rz_bin_use_arch(RzBin *bin, const char *arch, int bits, RZ_NULLABLE 
 
 /**
  * \brief Selects the binfile matching \p arch, \p bits and optionally \p machine
- * and sets it as current binfile in RzBin.
+ * and \p filename and sets it as current binfile in RzBin.
  *
- * \param The current RzBin instance.
- * \param The architecture of the binary file.
- * \param The architecture bits of the binary file.
- * \param (Optionally) The machine of the binary file.
- * \param filename Deprecated, should not be used. Can be NULL.
+ * \param bin The current RzBin instance.
+ * \param arch The architecture of the binary file.
+ * \param bits The architecture bits of the binary file.
+ * \param machine (Optional) The machine of the binary file.
+ * \param filename (Optional) The filename of RzBinFile to load.
  *
  * \return True if the binary file was successfully set according to the parameters. False otherwise.
  */
