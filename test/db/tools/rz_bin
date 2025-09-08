@@ -1243,7 +1243,7 @@ FILE=bins/mz/broken.exe
 CMDS=!rz-bin -zzj ${RZ_FILE} ; echo ""
 EXPECT=<<EOF
 {}
-[{"vaddr":77,"paddr":77,"size":45,"length":44,"section":"","type":"ascii","string":"!This program cannot be run in DOS mode.\r\r\n$"},{"vaddr":155,"paddr":155,"size":6,"length":5,"section":"","type":"ascii","string":"Q\fb.Q"},{"vaddr":189,"paddr":189,"size":4,"length":4,"section":"","type":"ascii","string":"b.Q{"},{"vaddr":205,"paddr":205,"size":7,"length":7,"section":"","type":"ascii","string":"b.Q4<*P"},{"vaddr":213,"paddr":213,"size":5,"length":5,"section":"","type":"ascii","string":"b.Q4<"},{"vaddr":221,"paddr":221,"size":7,"length":7,"section":"","type":"ascii","string":"b.Q4<,P"},{"vaddr":229,"paddr":229,"size":7,"length":7,"section":"","type":"ascii","string":"b.QRich"},{"vaddr":241,"paddr":241,"size":30,"length":29,"section":"","type":"ascii","string":"https://malwarec2.com/drd.exe"}]
+[{"vaddr":77,"paddr":77,"size":45,"length":44,"section":"","type":"ascii","string":"!This program cannot be run in DOS mode.\r\r\n$"},{"vaddr":155,"paddr":155,"size":5,"length":5,"section":"","type":"ascii","string":"Q\fb.Q"},{"vaddr":189,"paddr":189,"size":4,"length":4,"section":"","type":"ascii","string":"b.Q{"},{"vaddr":205,"paddr":205,"size":7,"length":7,"section":"","type":"ascii","string":"b.Q4<*P"},{"vaddr":213,"paddr":213,"size":5,"length":5,"section":"","type":"ascii","string":"b.Q4<"},{"vaddr":221,"paddr":221,"size":7,"length":7,"section":"","type":"ascii","string":"b.Q4<,P"},{"vaddr":229,"paddr":229,"size":7,"length":7,"section":"","type":"ascii","string":"b.QRich"},{"vaddr":241,"paddr":241,"size":30,"length":29,"section":"","type":"ascii","string":"https://malwarec2.com/drd.exe"}]
 EOF
 RUN
 
