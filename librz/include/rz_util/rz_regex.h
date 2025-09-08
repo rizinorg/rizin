@@ -24,9 +24,9 @@
  * M   is inspected during rz_regex_match() execution
  * D   is inspected during pcre2_dfa_match() execution (not used).
  */
-#define RZ_REGEX_DEFAULT       0
-#define RZ_REGEX_LITERAL       0x02000000u /* PCRE2_LITERAL       - C      */
-#define RZ_REGEX_CASELESS      0x00000008u /* PCRE2_CASELESS      - C      */
+#define RZ_REGEX_DEFAULT  0
+#define RZ_REGEX_LITERAL  0x02000000u /* PCRE2_LITERAL       - C      */
+#define RZ_REGEX_CASELESS 0x00000008u /* PCRE2_CASELESS      - C      */
 /**
  * \brief If RZ_REGEX_EXTENDED is passed to rz_regex_new_16() or rz_regex_new_32()
  * spaces in the pattern **will** be skipped! You need to replace them with \s.

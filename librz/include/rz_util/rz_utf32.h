@@ -14,7 +14,7 @@
 /**
  * \brief Width of an UTF32 character in bytes.
  */
-#define RZ_UTF32_WIDTH_CHAR 4
+#define RZ_UTF32_WIDTH_CHAR       4
 #define RZ_UTF32_CODE_POINT_WIDTH 4
 
 RZ_API size_t rz_utf32_decode(RZ_NONNULL const ut8 *buf, size_t buf_len, RZ_NULLABLE RZ_OUT RzCodePoint *ch, bool check_is_def, bool big_endian);
