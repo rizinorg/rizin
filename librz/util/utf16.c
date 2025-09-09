@@ -25,7 +25,7 @@ static RzCodePoint utf16_surrogate_to_codepoint(ut16 high_surrogate, ut16 low_su
  *
  * \param buf       The buffer to read the bytes from.
  * \param buf_len   The buffer length.
- * \param codepoint The decoded code point.
+ * \param codepoint (Optional) The decoded code point.
  * \param check_is_def If true, checks the code point against the defined
  * Unicode table. It will not write \p cp and return 0 if the decoded code
  * point is undefined.
@@ -73,7 +73,7 @@ check_assign:
  *
  * \param buf       The buffer to read the bytes from.
  * \param buf_len   The buffer length.
- * \param codepoint The decoded code point.
+ * \param codepoint (Optional) The decoded code point.
  * \param check_is_def If true, checks the code point against the defined
  * Unicode table. It will not write \p cp and return 0 if the decoded code
  * point is undefined.
@@ -93,7 +93,7 @@ RZ_API size_t rz_utf16le_decode(RZ_NONNULL const ut8 *buf, size_t buf_len, RZ_NU
  *
  * \param buf       The buffer to read the bytes from.
  * \param buf_len   The buffer length.
- * \param codepoint The decoded code point.
+ * \param codepoint (Optional) The decoded code point.
  * \param check_is_def If true, checks the code point against the defined
  * Unicode table. It will not write \p cp and return 0 if the decoded code
  * point is undefined.
