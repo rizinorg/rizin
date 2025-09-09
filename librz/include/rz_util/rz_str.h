@@ -151,7 +151,7 @@ RZ_API const char *rz_str_sysbits(const int v);
 RZ_API char *rz_str_trunc_ellipsis(const char *str, int len);
 RZ_API const char *rz_str_bool(int b);
 RZ_API bool rz_str_is_true(const char *s);
-RZ_API bool rz_str_is_false(const char *s);
+RZ_API bool rz_str_is_false(RZ_NULLABLE const char *s);
 RZ_API bool rz_str_is_bool(const char *val);
 RZ_API const char *rz_str_ansi_chrn(const char *str, size_t n);
 RZ_API size_t rz_str_ansi_len(const char *str);

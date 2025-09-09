@@ -4044,7 +4044,17 @@ RZ_API bool rz_str_is_true(const char *s) {
 	return !rz_str_casecmp("yes", s) || !rz_str_casecmp("on", s) || !rz_str_casecmp("true", s) || !rz_str_casecmp("1", s);
 }
 
-RZ_API bool rz_str_is_false(const char *s) {
+/**
+ * \brief Returns true if string is case insensitive equal to:
+ * - no
+ * - off
+ * - false
+ * - 0
+ */
+RZ_API bool rz_str_is_false(RZ_NULLABLE const char *s) {
+	if (!s) {
+		return false;
+	}
 	return !rz_str_casecmp("no", s) || !rz_str_casecmp("off", s) || !rz_str_casecmp("false", s) || !rz_str_casecmp("0", s) || !*s;
 }
 
