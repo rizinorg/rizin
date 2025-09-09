@@ -2798,6 +2798,19 @@ RZ_API const char *rz_str_lastbut(const char *s, char ch, const char *but) {
 	return lp;
 }
 
+// Must be merged inside strlen
+RZ_API size_t rz_str_len_utf8char(const char *s, int left) {
+	size_t i = 1;
+	while (s[i] && (!left || i < left)) {
+		if ((s[i] & 0xc0) != 0x80) {
+			i++;
+		} else {
+			break;
+		}
+	}
+	return i;
+}
+
 RZ_API size_t rz_str_len_utf8(const char *s) {
 	size_t i = 0, j = 0, fullwidths = 0;
 	while (s[i]) {

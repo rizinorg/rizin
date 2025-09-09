@@ -93,6 +93,7 @@ RZ_API size_t rz_str_len_utf8(const char *s);
 RZ_API size_t rz_str_utf8_num_ucp(RZ_NONNULL const char *str);
 RZ_API size_t rz_str_utf8_get_width_utf16(RZ_NONNULL const char *str);
 RZ_API size_t rz_str_len_utf8_ansi(const char *str);
+RZ_API size_t rz_str_len_utf8char(const char *s, int left);
 RZ_API size_t rz_str_utf8_charsize(const char *str);
 RZ_API size_t rz_str_utf8_charsize_prev(const char *str, int prev_len);
 RZ_API size_t rz_str_utf8_charsize_last(const char *str);
