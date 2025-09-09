@@ -1089,7 +1089,7 @@ static int parse_thread(struct MACH0_(obj_t) * bin, struct load_command *lc, ut6
 			return false;
 		}
 		if (rz_buf_fread_at(bin->b, ptr_thread,
-			    (ut8 *)&bin->thread_state.mc680x0, bin->big_endian ? "36L" : "36l", 1) == -1) {
+			    (ut8 *)&bin->thread_state.sparc_64, bin->big_endian ? "36L" : "36l", 1) == -1) {
 			RZ_LOG_ERROR("read thread state sparc64\n");
 			return false;
 		}
