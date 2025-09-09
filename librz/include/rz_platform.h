@@ -22,14 +22,9 @@ extern "C" {
 #error "Unsupported endianness"
 #endif
 #else
-#include <stdbit.h>
-#if __STDC_ENDIAN_NATIVE__ == __STDC_ENDIAN_LITTLE__
-#define RZ_HOST_BIG_ENDIAN false
-#elif __STDC_ENDIAN_NATIVE__ == __STDC_ENDIAN_BIG__
-#define RZ_HOST_BIG_ENDIAN true
-#else
-#error "Unsupported endianness"
-#endif
+// Hacky version to determine endianness
+static const ut32 rz_endianness_one = 1;
+#define RZ_HOST_BIG_ENDIAN !(*((char *)&(rz_endianness_one)) == 1)
 #endif
 
 typedef struct rz_platform_profile_t {
