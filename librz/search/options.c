@@ -72,6 +72,17 @@ RZ_API bool rz_search_opt_set_max_threads(RZ_NONNULL RzSearchOpt *opt, RzThreadN
 	return true;
 }
 
+/**
+ * \brief Enables the printing of progress during the search.
+ *
+ * \param opt The search options to update.
+ * \param show_progress A string describing the progress type. Can be:
+ * - "off", "no", "false", "0": No progress is printed.
+ * - "interval": The currently searched in interval is printed.
+ * - else: Print number of current hits during search.
+ *
+ * \return True if options were correctly updated, false otherwise.
+ */
 RZ_API bool rz_search_opt_set_show_progress_from_str(RZ_NONNULL RzSearchOpt *opt, const char *show_progress) {
 	rz_return_val_if_fail(opt, false);
 	if (rz_str_is_false(show_progress)) {
