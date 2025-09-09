@@ -105,6 +105,7 @@ RZ_API RzFlagItem *rz_flag_get_at(RzFlag *f, ut64 off, bool closest);
 RZ_API RZ_BORROW RzFlagItem *rz_flag_get_at_by_spaces(RZ_NONNULL RzFlag *f, bool closest, ut64 off, ...);
 RZ_API RzList /*<RzFlagItem *>*/ *rz_flag_all_list(RzFlag *f, bool by_space);
 RZ_API const RzList /*<RzFlagItem *>*/ *rz_flag_get_list(RzFlag *f, ut64 off);
+RZ_API bool rz_flag_reset_obj_flags(RZ_NONNULL RZ_BORROW RzFlag *flags, RZ_NULLABLE const char *backup_filename);
 RZ_API char *rz_flag_get_liststr(RzFlag *f, ut64 off);
 RZ_API bool rz_flag_unset(RzFlag *f, RzFlagItem *item);
 RZ_API bool rz_flag_unset_name(RzFlag *f, const char *name);
