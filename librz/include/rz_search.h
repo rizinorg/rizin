@@ -264,7 +264,7 @@ RZ_API RZ_OWN RzSearchCollection *rz_search_collection_bytes();
 RZ_API bool rz_search_collection_bytes_add(RZ_NONNULL RzSearchCollection *col, RZ_NULLABLE const char *pattern_desc, RZ_NONNULL const ut8 *bytes, RZ_NULLABLE const ut8 *mask, size_t length);
 RZ_API bool rz_search_collection_bytes_add_pattern(RZ_NONNULL RzSearchCollection *col, RZ_NONNULL RZ_OWN RzSearchBytesPattern *bytes_pattern);
 
-RZ_API RZ_OWN RzSearchCollection *rz_search_collection_strings(RZ_NONNULL RzUtilStrScanOptions *opts, RzStrEnc expected);
+RZ_API RZ_OWN RzSearchCollection *rz_search_collection_strings(RZ_BORROW RzUtilStrScanOptions *opts, RzStrEnc expected, size_t alignment);
 RZ_API bool rz_search_collection_string_add(RZ_NONNULL RzSearchCollection *col, RZ_NONNULL const char *regex_pattern, RzRegexFlags cflags, size_t match_alignment);
 RZ_API bool rz_search_collection_strings_check_config_improvements(
 	RZ_NULLABLE const RzSearchCollection *col,
@@ -279,6 +279,7 @@ RZ_API void rz_search_collection_free(RZ_NULLABLE RzSearchCollection *sc);
 RZ_API RZ_OWN RzSearchCollection *rz_search_collection_magic(RZ_NONNULL const char *magic_dir);
 
 RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_search_on_io(RZ_BORROW RZ_NONNULL RzSearchOpt *opt, RZ_BORROW RZ_NONNULL RzSearchCollection *col, RZ_BORROW RZ_NONNULL RzIO *io, RZ_BORROW RZ_NONNULL RzList /*<RzIOMap *>*/ *search_in);
+RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_search_on_buffer(RZ_BORROW RZ_NONNULL RzSearchOpt *opt, RZ_BORROW RZ_NONNULL RzSearchCollection *col, RZ_BORROW RZ_NONNULL RzBuffer *buffer);
 
 #ifdef __cplusplus
 }

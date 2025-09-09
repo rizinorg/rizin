@@ -108,7 +108,12 @@ RZ_API const RzSearchFindOpt *rz_search_opt_get_find_options(RZ_NONNULL const Rz
 }
 
 RZ_API RZ_OWN RzSearchFindOpt *rz_search_find_opt_new() {
-	return RZ_NEW0(RzSearchFindOpt);
+	RzSearchFindOpt *fopts = RZ_NEW0(RzSearchFindOpt);
+	if (!fopts) {
+		return NULL;
+	}
+	fopts->alignment = 1;
+	return fopts;
 }
 
 RZ_API void rz_search_find_opt_free(RZ_NULLABLE RzSearchFindOpt *opt) {

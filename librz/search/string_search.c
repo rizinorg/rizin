@@ -8,6 +8,7 @@
 #include <rz_vector.h>
 #include <rz_util/ht_uu.h>
 #include <rz_util/rz_str_search.h>
+#include "rz_util/rz_str.h"
 #include "search_internal.h"
 
 typedef struct string_search {
@@ -102,7 +103,7 @@ static bool string_find(RzSearchFindOpt *fopt, void *user, ut64 offset, const Rz
 	}
 
 	// Everything below is the slow and resource extensive route to search strings.
-	// It will scan the whole buffer for strings, decoding each one with the
+	// It will scan the whole buffer for strings, decode each one with the
 	// correct encoding and length and match them.
 	// This costs a lot. So it is only done for strings with:
 	// A) A funny encodig we can't match directly with RzRegex/PCRE2 (e.g. EBCDIC).
@@ -201,13 +202,23 @@ static void string_free(void *user) {
 /**
  * \brief      Allocates and initialize a string RzSearchCollection
  *
- * \param      opts      The RzUtilStrScanOptions options to use
- * \param[in]  expected  The expected encoding
+ * \param      opts        The RzUtilStrScanOptions options to use.
+ *                         It is allowed to be NULL iff the expected encoding is
+ *                         Unicode, has the native machines endianness, and
+ *                         \p alignment is the same as the encoding code point width.
+ * \param[in]  expected    The expected encoding
+ * \param[in]  alignment   The alignment of matches.
  *
  * \return     On success returns a valid pointer, otherwise NULL
  */
-RZ_API RZ_OWN RzSearchCollection *rz_search_collection_strings(RZ_NONNULL RzUtilStrScanOptions *opts, RzStrEnc expected) {
-	rz_return_val_if_fail(opts, NULL);
+RZ_API RZ_OWN RzSearchCollection *rz_search_collection_strings(RZ_BORROW RzUtilStrScanOptions *scan_opts, RzStrEnc expected, size_t alignment) {
+	if ((!rz_string_enc_is_utf_native_endian(expected) ||
+		    !rz_string_code_points_align(expected, alignment)) &&
+		!scan_opts) {
+		RZ_LOG_ERROR("Initalizeing string search collection failed: opts is not"
+			     "allowed to be NULL if the searched encoding has not the same endianness as the machine.\n");
+		return NULL;
+	}
 
 	StringSearch *ss = RZ_NEW0(StringSearch);
 	if (!ss) {
@@ -222,7 +233,9 @@ RZ_API RZ_OWN RzSearchCollection *rz_search_collection_strings(RZ_NONNULL RzUtil
 		return NULL;
 	}
 
-	ss->options = *opts; // Copy the values
+	if (scan_opts) {
+		ss->options = *scan_opts; // Copy because they are shared between threads.
+	}
 	ss->encoding = expected;
 
 	return rz_search_collection_new_bytes_space(string_find, string_is_empty, string_free, ss);

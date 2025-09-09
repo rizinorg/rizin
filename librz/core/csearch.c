@@ -293,8 +293,8 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_string(RZ_NONNULL RzCor
 		goto quit;
 	}
 
-	collection = rz_search_collection_strings(&scan_opt, expected);
 	size_t match_alignment = rz_search_find_opt_get_alignment(rz_search_opt_get_find_options(user_opts));
+	collection = rz_search_collection_strings(&scan_opt, expected, match_alignment);
 	if (!collection ||
 		!rz_search_collection_string_add(collection, re_pattern, cflags, match_alignment)) {
 		rz_search_collection_free(collection);
