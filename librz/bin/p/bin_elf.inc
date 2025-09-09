@@ -14,6 +14,7 @@
 #include <rz_cons.h>
 #include "../i/private.h"
 #include "elf/elf.h"
+#include "elf/glibc_elf.h"
 #include <rz_analysis.h>
 #include <rz_util/ht_uu.h>
 
@@ -368,12 +369,18 @@ static char *regstate(RzBinFile *bf) {
 	rz_bin_elf_foreach_notes_segment(obj, notes) {
 		RzBinElfNote *tmp;
 		rz_vector_foreach (notes, tmp) {
-			if (tmp->type != NT_PRSTATUS) {
+			switch (tmp->type) {
+			default:
 				continue;
+			case NT_PRSTATUS:
+			case NT_FPREGSET:
+			case NT_OPENBSD_REGS:
+			case NT_OPENBSD_FPREGS:
+			case NT_OPENBSD_XFPREGS: {
+				RzBinElfNotePrStatus *note = &tmp->prstatus;
+				return rz_hex_bin2strdup(note->regstate, note->regstate_size);
 			}
-
-			RzBinElfNotePrStatus *note = &tmp->prstatus;
-			return rz_hex_bin2strdup(note->regstate, note->regstate_size);
+			}
 		}
 	}
 
@@ -492,7 +499,7 @@ static RzPVector /*<RzBinMap *>*/ *maps_unpatched_obj(void *elf_obj, size_t size
 			map->perm = iter->data.p_flags | RZ_PERM_R;
 
 			// map names specific to core files...
-			if (core_sp != UT64_MAX && core_sp >= iter->data.p_vaddr && core_sp < iter->data.p_vaddr + iter->data.p_memsz) {
+			if (core_sp && core_sp != UT64_MAX && core_sp >= iter->data.p_vaddr && core_sp < iter->data.p_vaddr + iter->data.p_memsz) {
 				map->name = rz_str_dup("[stack]");
 			} else {
 				RzBinElfNoteFile *nf = note_file_for_load_segment(obj, &iter->data);

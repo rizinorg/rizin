@@ -5,40 +5,56 @@
 
 #include <rz_types_base.h>
 
-#define COFF_FILE_MACHINE_UNKNOWN   0x0
-#define COFF_FILE_MACHINE_AM33      0x1d3
+#define COFF_FILE_MACHINE_UNKNOWN   0x0000
+#define COFF_FILE_MACHINE_ALPHA     0x0184
+#define COFF_FILE_MACHINE_ALPHA64   0x0284
+#define COFF_FILE_MACHINE_AM33      0x01d3 // Matsushita AM33
 #define COFF_FILE_MACHINE_AMD64     0x8664
-#define COFF_FILE_MACHINE_ARM       0x1c0
-#define COFF_FILE_MACHINE_ARMNT     0x1c4
+#define COFF_FILE_MACHINE_ARM       0x01c0
+#define COFF_FILE_MACHINE_THUMB     0x01c2
+#define COFF_FILE_MACHINE_ARMNT     0x01c4
 #define COFF_FILE_MACHINE_ARM64     0xaa64
-#define COFF_FILE_MACHINE_EBC       0xebc
-#define COFF_FILE_MACHINE_I386      0x14c
-#define COFF_FILE_MACHINE_IA64      0x200
-#define COFF_FILE_MACHINE_M32R      0x9041
-#define COFF_FILE_MACHINE_MIPS16    0x266
-#define COFF_FILE_MACHINE_MIPSFPU   0x366
-#define COFF_FILE_MACHINE_MIPSFPU16 0x466
-#define COFF_FILE_MACHINE_AMD29KBE  0x7a01
-#define COFF_FILE_MACHINE_AMD29KLE  0x17a
-#define COFF_FILE_MACHINE_POWERPC   0x1f0
-#define COFF_FILE_MACHINE_POWERPCFP 0x1f1
-#define COFF_FILE_MACHINE_R4000     0x166
-#define COFF_FILE_MACHINE_SH3       0x1a2
-#define COFF_FILE_MACHINE_SH3DSP    0x1a3
-#define COFF_FILE_MACHINE_SH4       0x1a6
-#define COFF_FILE_MACHINE_SH5       0x1a8
-#define COFF_FILE_MACHINE_THUMB     0x1c2
-#define COFF_FILE_MACHINE_WCEMIPSV2 0x169
+#define COFF_FILE_MACHINE_EBC       0x0ebc
+#define COFF_FILE_MACHINE_I386      0x014c
+#define COFF_FILE_MACHINE_I386_PTX  0x0154
+#define COFF_FILE_MACHINE_I386_AIX  0x0175
+#define COFF_FILE_MACHINE_IA64      0x0200 // Intel Itanium
+#define COFF_FILE_MACHINE_M32R      0x9041 // Mitsubishi M32R
+#define COFF_FILE_MACHINE_MIPS16    0x0266
+#define COFF_FILE_MACHINE_MIPSFPU   0x0366
+#define COFF_FILE_MACHINE_MIPSFPU16 0x0466
+#define COFF_FILE_MACHINE_AMD29KBE  0x017a
+#define COFF_FILE_MACHINE_AMD29KLE  0x017b
+#define COFF_FILE_MACHINE_POWERPC   0x01f0
+#define COFF_FILE_MACHINE_POWERPCFP 0x01f1
+#define COFF_FILE_MACHINE_SH3       0x01a2
+#define COFF_FILE_MACHINE_SH3DSP    0x01a3
+#define COFF_FILE_MACHINE_SH4       0x01a6
+#define COFF_FILE_MACHINE_SH5       0x01a8
+#define COFF_FILE_MACHINE_WCEMIPSV2 0x0169
 #define COFF_FILE_MACHINE_H8300     0x0083
+#define COFF_FILE_MACHINE_M68K      0x0268
+#define COFF_FILE_MACHINE_68KAUX    0x0150 // Motorola 68k Apple A/UX
+#define COFF_FILE_MACHINE_PIC30     0x1236 // PIC-30 (dsPIC30F)
+#define COFF_FILE_MACHINE_I960RO    0x0160 // i960 read-only text segments
+#define COFF_FILE_MACHINE_I960RW    0x0161 // i960 read-write text segments
+#define COFF_FILE_MACHINE_R3000     0x0162 // MIPS R3000
+#define COFF_FILE_MACHINE_R4000     0x0166 // MIPS R4000
+#define COFF_FILE_MACHINE_R10000    0x0168 // MIPS R10000
+#define COFF_FILE_MACHINE_RISCV32   0x5032
+#define COFF_FILE_MACHINE_RISCV64   0x5064
+#define COFF_FILE_MACHINE_RISCV128  0x5128
+#define COFF_FILE_MACHINE_TI_1      0x00c1
+#define COFF_FILE_MACHINE_TI_2      0x00c2
 
-#define COFF_FILE_TI_COFF               0xc1
-#define COFF_FILE_MACHINE_TMS470        0x0097
-#define COFF_FILE_MACHINE_TMS320C54     0x0098
-#define COFF_FILE_MACHINE_TMS320C60     0x0099
-#define COFF_FILE_MACHINE_TMS320C55     0x009C
-#define COFF_FILE_MACHINE_TMS320C28     0x009D
-#define COFF_FILE_MACHINE_MSP430        0x00A0
-#define COFF_FILE_MACHINE_TMS320C55PLUS 0x00A1
+#define COFF_FILE_TARGET_TI_TMS320C3x4x      0x0093
+#define COFF_FILE_TARGET_TI_TMS470           0x0097
+#define COFF_FILE_TARGET_TI_TMS320C5400      0x0098
+#define COFF_FILE_TARGET_TI_TMS320C6000      0x0099
+#define COFF_FILE_TARGET_TI_TMS320C5500      0x009c
+#define COFF_FILE_TARGET_TI_TMS320C2800      0x009d
+#define COFF_FILE_TARGET_TI_MSP430           0x00a0
+#define COFF_FILE_TARGET_TI_TMS320C5500_PLUS 0x00a1
 
 #define COFF_FLAGS_TI_F_RELFLG 0x0001
 #define COFF_FLAGS_TI_F_EXEC   0x0002
@@ -165,52 +181,50 @@
 #define COFF_REL_ARM64_ADDR32NB 2
 #define COFF_REL_ARM64_BRANCH26 3
 
-RZ_PACKED(
-	struct coff_hdr {
-		ut16 f_magic; /* Magic number */
-		ut16 f_nscns; /* Number of Sections */
-		ut32 f_timdat; /* Time & date stamp */
-		ut32 f_symptr; /* File pointer to Symbol Table */
-		ut32 f_nsyms; /* Number of Symbols */
-		ut16 f_opthdr; /* sizeof(Optional Header) */
-		ut16 f_flags; /* Flags */
-	}); // __attribute__ ((packed));
+typedef struct coff_hdr {
+	ut16 f_magic; /* Magic number */
+	ut16 f_nscns; /* Number of Sections */
+	ut32 f_timdat; /* Time & date stamp */
+	ut32 f_symptr; /* File pointer to Symbol Table */
+	ut32 f_nsyms; /* Number of Symbols */
+	ut16 f_opthdr; /* sizeof(Optional Header) */
+	ut16 f_flags; /* Flags */
+} CoffHdr;
 
-RZ_PACKED(
-	struct coff_opt_hdr {
-		ut16 magic; /* Magic Number                    */
-		ut16 vstamp; /* Version stamp                   */
-		ut32 tsize; /* Text size in bytes              */
-		ut32 dsize; /* Initialised data size           */
-		ut32 bsize; /* Uninitialised data size         */
-		ut32 entry; /* Entry point                     */
-		ut32 text_start; /* Base of Text used for this file */
-		ut32 data_start; /* Base of Data used for this file */
-	});
+typedef struct coff_opt_hdr {
+	ut16 magic; /* Magic Number */
+	ut16 vstamp; /* Version stamp  */
+	ut32 tsize; /* Text size in bytes */
+	ut32 dsize; /* Initialised data size */
+	ut32 bsize; /* Uninitialised data size */
+	ut32 entry; /* Entry point */
+	ut32 text_start; /* Base of Text used for this file */
+	ut32 data_start; /* Base of Data used for this file */
+} CoffOptHdr;
 
-RZ_PACKED(
-	struct coff_scn_hdr {
-		char s_name[8]; /* Section Name */
-		ut32 s_paddr; /* Physical Address */
-		ut32 s_vaddr; /* Virtual Address */
-		ut32 s_size; /* Section Size in Bytes */
-		ut32 s_scnptr; /* File offset to the Section data */
-		ut32 s_relptr; /* File offset to the Relocation table for this Section */
-		ut32 s_lnnoptr; /* File offset to the Line Number table for this Section */
-		ut16 s_nreloc; /* Number of Relocation table entries */
-		ut16 s_nlnno; /* Number of Line Number table entries */
-		ut32 s_flags; /* Flags for this section */
-	});
+typedef struct coff_scn_hdr {
+	char s_name[8]; /* Section Name */
+	ut32 s_paddr; /* Physical Address */
+	ut32 s_vaddr; /* Virtual Address */
+	ut32 s_size; /* Section Size in Bytes */
+	ut32 s_scnptr; /* File offset to the Section data */
+	ut32 s_relptr; /* File offset to the Relocation table for this Section */
+	ut32 s_lnnoptr; /* File offset to the Line Number table for this Section */
+	ut16 s_nreloc; /* Number of Relocation table entries */
+	ut16 s_nlnno; /* Number of Line Number table entries */
+	ut32 s_flags; /* Flags for this section */
+} CoffScnHdr;
 
-RZ_PACKED(
-	struct coff_symbol {
-		char n_name[8]; /* Symbol Name */
-		ut32 n_value; /* Value of Symbol */
-		ut16 n_scnum; /* Section Number */
-		ut16 n_type; /* Symbol Type */
-		ut8 n_sclass; /* Storage Class */
-		ut8 n_numaux; /* Auxiliary Count */
-	});
+typedef struct coff_symbol {
+	char n_name[8]; /* Symbol Name */
+	ut32 n_value; /* Value of Symbol */
+	ut16 n_scnum; /* Section Number */
+	ut16 n_type; /* Symbol Type */
+	ut8 n_sclass; /* Storage Class */
+	ut8 n_numaux; /* Auxiliary Count */
+} CoffSym;
+
+#define COFF_SYMBOL_SIZE 18
 
 struct coff_reloc {
 	ut32 rz_vaddr; /* Reference Address */

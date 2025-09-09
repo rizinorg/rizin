@@ -919,6 +919,14 @@ typedef struct
 #define NT_MIPS_FP_MODE 0x801 /* MIPS floating-point mode.  */
 #define NT_MIPS_MSA     0x802 /* MIPS SIMD registers.  */
 
+#define NT_OPENBSD_PROCINFO 10 /* Contains an elfcore_procinfo structure with information about the kernel state of the process. */
+#define NT_OPENBSD_AUXV     11 /* ELF auxiliary vector data. */
+#define NT_OPENBSD_REGS     20 /* Regular registers. */
+#define NT_OPENBSD_FPREGS   21 /* Floating point registers. */
+#define NT_OPENBSD_XFPREGS  22 /* ?? 64bit FPR regs ??*/
+#define NT_OPENBSD_WCOOKIE  23 /* Contains the process's ‘window cookie’. */
+#define NT_OPENBSD_PACMASK  24 /* ?? Pointer auth related ?? */
+
 /* Legal values for the note segment descriptor types for object files.  */
 
 #define NT_VERSION 1 /* Contains a version string.  */

@@ -203,7 +203,10 @@ EXPECT=<<EOF
 QSMwX\x14Q_El\x17\x7fnx\x7f\x1c
 Hello from RzIL!
 EOF
-EXPECT_ERR=
+EXPECT_ERR=<<EOF
+WARNING: Fetching registers from core file not supported for this architecture.
+WARNING: Fetching registers from core file not supported for this architecture.
+EOF
 RUN
 
 NAME=emulateme-little-endian

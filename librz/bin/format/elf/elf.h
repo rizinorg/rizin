@@ -176,7 +176,10 @@ typedef struct Elf_(rz_bin_elf_note_file_t) {
 }
 RzBinElfNoteFile;
 
-/// Parsed PT_NOTE of type NT_PRSTATUS
+/**
+ * \brief Parsed PT_NOTE of type NT_PRSTATUS.
+ * This struct is also used by the NT_OPENBSD_*REG notes.
+ */
 typedef struct rz_bin_elf_note_prstatus_t {
 	size_t regstate_size;
 	ut8 *regstate;
@@ -323,6 +326,7 @@ ut64 Elf_(rz_bin_elf_get_main_offset)(RZ_NONNULL ELFOBJ *bin);
 
 // elf_notes.c
 RZ_BORROW RzBinElfPrStatusLayout *Elf_(rz_bin_elf_get_prstatus_layout)(RZ_NONNULL ELFOBJ *bin);
+RZ_BORROW RzBinElfPrStatusLayout *Elf_(rz_bin_elf_get_regset_layout)(RZ_NONNULL ELFOBJ *bin, Elf_(Word) n_type);
 RZ_OWN RzVector /*<RzVector<RzBinElfNote>>*/ *Elf_(rz_bin_elf_notes_new)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_has_notes)(RZ_NONNULL ELFOBJ *bin);
 

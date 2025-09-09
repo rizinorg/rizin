@@ -1,5 +1,5 @@
+// SPDX-FileCopyrightText: 2019-2025 deroad <deroad@kumo.xn--q9jyb4c>
 // SPDX-FileCopyrightText: 2014-2019 Fedor Sakharov <fedor.sakharov@gmail.com>
-// SPDX-FileCopyrightText: 2019 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_types.h>
@@ -13,9 +13,9 @@
 #define VFILE_NAME_RELOC_TARGETS "reloc-targets"
 #define VFILE_NAME_PATCHED       "patched"
 
-static void populate_symbols(RzBinFile *bf);
+static void coff_populate_symbols(RzBinFile *bf);
 
-static Sdb *get_sdb(RzBinFile *bf) {
+static Sdb *coff_get_sdb(RzBinFile *bf) {
 	RzBinObject *o = bf->o;
 	if (!o) {
 		return NULL;
@@ -27,25 +27,21 @@ static Sdb *get_sdb(RzBinFile *bf) {
 	return NULL;
 }
 
-static bool rz_coff_is_stripped(struct rz_bin_coff_obj *obj) {
+static bool coff_is_stripped(struct rz_bin_coff_obj *obj) {
 	return !!(obj->hdr.f_flags & (COFF_FLAGS_TI_F_RELFLG | COFF_FLAGS_TI_F_LNNO | COFF_FLAGS_TI_F_LSYMS));
 }
 
-static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
-	obj->bin_obj = rz_bin_coff_new_buf(buf, bf->rbin->verbose);
+static bool coff_check_buffer(RzBuffer *buf) {
+	return rz_coff_supported_arch(buf);
+}
+
+static bool coff_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
+	obj->bin_obj = rz_bin_coff_new_buf(buf);
 	return obj->bin_obj != NULL;
 }
 
-static void destroy(RzBinFile *bf) {
+static void coff_destroy(RzBinFile *bf) {
 	rz_bin_coff_free((struct rz_bin_coff_obj *)bf->o->bin_obj);
-}
-
-static ut64 baddr(RzBinFile *bf) {
-	return 0;
-}
-
-static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol sym) {
-	return NULL;
 }
 
 #define DTYPE_IS_FUNCTION(type) (COFF_SYM_GET_DTYPE(type) == COFF_SYM_DTYPE_FUNCTION)
@@ -54,7 +50,7 @@ static bool is_imported_symbol(struct coff_symbol *s) {
 	return s->n_scnum == COFF_SYM_SCNUM_UNDEF && s->n_sclass == COFF_SYM_CLASS_EXTERNAL;
 }
 
-static bool _fill_bin_symbol(RzBin *rbin, struct rz_bin_coff_obj *bin, int idx, RzBinSymbol **sym) {
+static bool coff_fill_bin_symbol(RzBin *rbin, struct rz_bin_coff_obj *bin, size_t idx, RzBinSymbol **sym) {
 	RzBinSymbol *ptr = *sym;
 	struct coff_scn_hdr *sc_hdr = NULL;
 	if (idx < 0 || idx > bin->hdr.f_nsyms) {
@@ -64,7 +60,7 @@ static bool _fill_bin_symbol(RzBin *rbin, struct rz_bin_coff_obj *bin, int idx, 
 		return false;
 	}
 	char tmpbuf[32];
-	struct coff_symbol *s = &bin->symbols[idx];
+	struct coff_symbol *s = rz_vector_index_ptr(bin->symbols, idx);
 	char *coffname = rz_coff_symbol_name(bin, (const ut8 *)&s->n_name);
 	if (!coffname) {
 		return false;
@@ -78,7 +74,7 @@ static bool _fill_bin_symbol(RzBin *rbin, struct rz_bin_coff_obj *bin, int idx, 
 	ptr->vaddr = UT64_MAX;
 	if (s->n_scnum < bin->hdr.f_nscns + 1 && s->n_scnum > 0) {
 		// first index is 0 that is why -1
-		sc_hdr = &bin->scn_hdrs[s->n_scnum - 1];
+		sc_hdr = rz_vector_index_ptr(bin->scn_hdrs, s->n_scnum - 1);
 		ptr->paddr = sc_hdr->s_scnptr + s->n_value;
 		if (bin->scn_va) {
 			ptr->vaddr = bin->scn_va[s->n_scnum - 1] + s->n_value;
@@ -143,13 +139,13 @@ static bool _fill_bin_symbol(RzBin *rbin, struct rz_bin_coff_obj *bin, int idx, 
 	return true;
 }
 
-static RzBinImport *_fill_bin_import(struct rz_bin_coff_obj *bin, int idx) {
+static RzBinImport *coff_fill_bin_import(struct rz_bin_coff_obj *bin, size_t idx) {
 	RzBinImport *ptr = RZ_NEW0(RzBinImport);
 	if (!ptr || idx < 0 || idx > bin->hdr.f_nsyms) {
 		free(ptr);
 		return NULL;
 	}
-	struct coff_symbol *s = &bin->symbols[idx];
+	struct coff_symbol *s = rz_vector_index_ptr(bin->symbols, idx);
 	if (!is_imported_symbol(s)) {
 		free(ptr);
 		return NULL;
@@ -167,7 +163,7 @@ static RzBinImport *_fill_bin_import(struct rz_bin_coff_obj *bin, int idx) {
 	return ptr;
 }
 
-static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+static RzPVector /*<RzBinAddr *>*/ *coff_entries(RzBinFile *bf) {
 	struct rz_bin_coff_obj *obj = (struct rz_bin_coff_obj *)bf->o->bin_obj;
 	RzPVector *ret;
 	if (!(ret = rz_pvector_new(free))) {
@@ -180,7 +176,7 @@ static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	return ret;
 }
 
-static RzPVector /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
+static RzPVector /*<RzBinVirtualFile *>*/ *coff_virtual_files(RzBinFile *bf) {
 	RzPVector *r = rz_pvector_new((RzPVectorFree)rz_bin_virtual_file_free);
 	if (!r) {
 		return NULL;
@@ -190,7 +186,7 @@ static RzPVector /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 	if (!obj) {
 		return r;
 	}
-	populate_symbols(bf); // the patching depends on symbols to be available
+	coff_populate_symbols(bf); // the patching depends on symbols to be available
 	// virtual file for reloc targets (where the relocs will point into)
 	ut64 rtmsz = rz_coff_get_reloc_targets_vfile_size(obj);
 	if (rtmsz) {
@@ -221,7 +217,7 @@ static RzPVector /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 	return r;
 }
 
-static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
+static RzPVector /*<RzBinMap *>*/ *coff_maps(RzBinFile *bf) {
 	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_map_free);
 	if (!ret) {
 		return NULL;
@@ -231,13 +227,15 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	if (!obj || !obj->scn_hdrs) {
 		return ret;
 	}
-	populate_symbols(bf);
-	for (size_t i = 0; i < obj->hdr.f_nscns; i++) {
+	coff_populate_symbols(bf);
+
+	size_t i = 0;
+	CoffScnHdr *hdr;
+	rz_vector_enumerate (obj->scn_hdrs, hdr, i) {
 		RzBinMap *ptr = RZ_NEW0(RzBinMap);
 		if (!ptr) {
 			return ret;
 		}
-		struct coff_scn_hdr *hdr = &obj->scn_hdrs[i];
 		ptr->name = rz_coff_symbol_name(obj, (const ut8 *)hdr->s_name);
 		ptr->psize = hdr->s_size;
 		ptr->vsize = hdr->s_size;
@@ -270,7 +268,7 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	return ret;
 }
 
-static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+static RzPVector /*<RzBinSection *>*/ *coff_sections(RzBinFile *bf) {
 	struct rz_bin_coff_obj *obj = (struct rz_bin_coff_obj *)bf->o->bin_obj;
 	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_section_free);
 	if (!ret) {
@@ -279,19 +277,22 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	if (!obj || !obj->scn_hdrs) {
 		return ret;
 	}
-	for (size_t i = 0; i < obj->hdr.f_nscns; i++) {
+
+	size_t i = 0;
+	CoffScnHdr *scn_hdr;
+	rz_vector_enumerate (obj->scn_hdrs, scn_hdr, i) {
 		RzBinSection *ptr = RZ_NEW0(RzBinSection);
 		if (!ptr) {
 			return ret;
 		}
-		ptr->name = rz_coff_symbol_name(obj, (const ut8 *)&obj->scn_hdrs[i].s_name);
+		ptr->name = rz_coff_symbol_name(obj, (const ut8 *)scn_hdr->s_name);
 		if (strstr(ptr->name, "data")) {
 			ptr->is_data = true;
 		}
-		ptr->size = obj->scn_hdrs[i].s_size;
-		ptr->vsize = obj->scn_hdrs[i].s_size;
-		ptr->paddr = obj->scn_hdrs[i].s_scnptr;
-		ptr->flags = obj->scn_hdrs[i].s_flags;
+		ptr->size = scn_hdr->s_size;
+		ptr->vsize = scn_hdr->s_size;
+		ptr->paddr = scn_hdr->s_scnptr;
+		ptr->flags = scn_hdr->s_flags;
 		if (obj->scn_va) {
 			ptr->vaddr = obj->scn_va[i];
 		}
@@ -301,63 +302,67 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	return ret;
 }
 
-static void populate_imports(struct rz_bin_coff_obj *obj) {
+static void coff_populate_imports(struct rz_bin_coff_obj *obj) {
 	if (obj->imp_index->count || !obj->symbols) {
 		return;
 	}
 	int ord = 0;
 	ut64 imp_idx = 0;
 	for (size_t i = 0; i < obj->hdr.f_nsyms; i++) {
-		RzBinImport *ptr = _fill_bin_import(obj, i);
+		RzBinImport *ptr = coff_fill_bin_import(obj, i);
 		if (ptr) {
 			ptr->ordinal = ord++;
 			ht_up_insert(obj->imp_ht, (ut64)i, ptr);
 			ht_uu_insert(obj->imp_index, (ut64)i, imp_idx++);
 		}
-		i += obj->symbols[i].n_numaux;
+		struct coff_symbol *sym = rz_vector_index_ptr(obj->symbols, i);
+		i += sym->n_numaux;
 	}
 }
 
-static void populate_symbols(RzBinFile *bf) {
+static void coff_populate_symbols(RzBinFile *bf) {
 	struct rz_bin_coff_obj *obj = (struct rz_bin_coff_obj *)bf->o->bin_obj;
 	if (obj->sym_ht->count || !obj->symbols) {
 		return;
 	}
-	populate_imports(obj);
+	coff_populate_imports(obj);
 	for (size_t i = 0; i < obj->hdr.f_nsyms; i++) {
 		RzBinSymbol *ptr = RZ_NEW0(RzBinSymbol);
 		if (!ptr) {
 			break;
 		}
-		if (_fill_bin_symbol(bf->rbin, obj, i, &ptr)) {
+		if (coff_fill_bin_symbol(bf->rbin, obj, i, &ptr)) {
 			ht_up_insert(obj->sym_ht, (ut64)i, ptr);
 		} else {
 			free(ptr);
 		}
-		i += obj->symbols[i].n_numaux;
+
+		struct coff_symbol *sym = rz_vector_index_ptr(obj->symbols, i);
+		i += sym->n_numaux;
 	}
 }
 
-static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
+static RzPVector /*<RzBinSymbol *>*/ *coff_symbols(RzBinFile *bf) {
 	struct rz_bin_coff_obj *obj = (struct rz_bin_coff_obj *)bf->o->bin_obj;
 	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_symbol_free);
 	if (!ret) {
 		return NULL;
 	}
 	if (obj->symbols) {
-		populate_symbols(bf);
+		coff_populate_symbols(bf);
 		for (size_t i = 0; i < obj->hdr.f_nsyms; i++) {
 			RzBinSymbol *ptr = ht_up_find(obj->sym_ht, i, NULL);
 			if (ptr) {
 				rz_pvector_push(ret, ptr);
 			}
-			i += obj->symbols[i].n_numaux;
+			struct coff_symbol *sym = rz_vector_index_ptr(obj->symbols, i);
+			i += sym->n_numaux;
 		}
 	}
 	return ret;
 }
 
-static RzPVector /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
+static RzPVector /*<RzBinImport *>*/ *coff_imports(RzBinFile *bf) {
 	int i;
 	struct rz_bin_coff_obj *obj = (struct rz_bin_coff_obj *)bf->o->bin_obj;
 	RzPVector *ret = rz_pvector_new((RzListFree)rz_bin_import_free);
@@ -365,28 +370,26 @@ static RzPVector /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 		return NULL;
 	}
 	if (obj->symbols) {
-		populate_imports(obj);
+		coff_populate_imports(obj);
 		for (i = 0; i < obj->hdr.f_nsyms; i++) {
 			RzBinImport *ptr = ht_up_find(obj->imp_ht, i, NULL);
 			if (ptr) {
 				rz_pvector_push(ret, ptr);
 			}
-			i += obj->symbols[i].n_numaux;
+
+			struct coff_symbol *sym = rz_vector_index_ptr(obj->symbols, i);
+			i += sym->n_numaux;
 		}
 	}
 	return ret;
 }
 
-static RzPVector /*<char *>*/ *libs(RzBinFile *bf) {
-	return NULL;
-}
-
-static RzPVector /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
-	populate_symbols(bf);
+static RzPVector /*<RzBinReloc *>*/ *coff_relocs(RzBinFile *bf) {
+	coff_populate_symbols(bf);
 	return rz_coff_get_relocs(bf->o->bin_obj);
 }
 
-static RzBinInfo *info(RzBinFile *bf) {
+static RzBinInfo *coff_info(RzBinFile *bf) {
 	RzBinInfo *ret = RZ_NEW0(RzBinInfo);
 	struct rz_bin_coff_obj *obj = (struct rz_bin_coff_obj *)bf->o->bin_obj;
 
@@ -396,11 +399,11 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->type = rz_str_dup("COFF (Executable file)");
 	ret->os = rz_str_dup("any");
 	ret->subsystem = rz_str_dup("any");
-	ret->big_endian = obj->endian;
+	ret->big_endian = obj->big_endian;
 	ret->has_va = true;
 	ret->dbg_info = 0;
 
-	if (rz_coff_is_stripped(obj)) {
+	if (coff_is_stripped(obj)) {
 		ret->dbg_info |= RZ_BIN_DBG_STRIPPED;
 	} else {
 		if (!(obj->hdr.f_flags & COFF_FLAGS_TI_F_RELFLG)) {
@@ -415,45 +418,29 @@ static RzBinInfo *info(RzBinFile *bf) {
 	}
 
 	switch (obj->hdr.f_magic) {
-	case COFF_FILE_MACHINE_R4000:
-		ret->cpu = rz_str_dup("mips3");
-		ret->bits = 64;
-		break;
-		/* fall-thru */
-	case COFF_FILE_MACHINE_MIPS16:
-		if (!ret->cpu) {
-			ret->cpu = rz_str_dup("mips16");
-		}
-		/* fall-thru */
-	case COFF_FILE_MACHINE_MIPSFPU:
-	case COFF_FILE_MACHINE_MIPSFPU16:
-		ret->machine = rz_str_dup("mips");
-		ret->arch = rz_str_dup("mips");
-		if (!ret->cpu) {
-			ret->cpu = rz_str_dup("mips32");
-		}
+	case COFF_FILE_MACHINE_ALPHA:
+		ret->machine = rz_str_dup("alpha");
+		ret->cpu = rz_str_dup("alpha");
 		ret->bits = 32;
 		break;
-	case COFF_FILE_MACHINE_I386:
-		ret->machine = rz_str_dup("i386");
-		ret->arch = rz_str_dup("x86");
+	case COFF_FILE_MACHINE_ALPHA64:
+		ret->machine = rz_str_dup("alpha");
+		ret->cpu = rz_str_dup("alpha");
+		ret->bits = 64;
+		break;
+	case COFF_FILE_MACHINE_AM33:
+		ret->machine = rz_str_dup("am33");
+		ret->cpu = rz_str_dup("am33");
 		ret->bits = 32;
 		break;
 	case COFF_FILE_MACHINE_AMD64:
-		ret->machine = rz_str_dup("AMD64");
+		ret->machine = rz_str_dup("amd64");
 		ret->arch = rz_str_dup("x86");
 		ret->bits = 64;
 		break;
-	case COFF_FILE_MACHINE_H8300:
-		ret->machine = rz_str_dup("H8300");
-		ret->arch = rz_str_dup("h8300");
-		ret->bits = 16;
-		break;
-	case COFF_FILE_MACHINE_AMD29KBE:
-	case COFF_FILE_MACHINE_AMD29KLE:
-		ret->cpu = rz_str_dup("29000");
-		ret->machine = rz_str_dup("amd29k");
-		ret->arch = rz_str_dup("amd29k");
+	case COFF_FILE_MACHINE_ARM:
+		ret->machine = rz_str_dup("arm");
+		ret->arch = rz_str_dup("arm");
 		ret->bits = 32;
 		break;
 	case COFF_FILE_MACHINE_THUMB:
@@ -461,7 +448,6 @@ static RzBinInfo *info(RzBinFile *bf) {
 		ret->arch = rz_str_dup("arm");
 		ret->bits = 16;
 		break;
-	case COFF_FILE_MACHINE_ARM:
 	case COFF_FILE_MACHINE_ARMNT:
 		ret->machine = rz_str_dup("arm");
 		ret->arch = rz_str_dup("arm");
@@ -472,61 +458,177 @@ static RzBinInfo *info(RzBinFile *bf) {
 		ret->arch = rz_str_dup("arm");
 		ret->bits = 64;
 		break;
+	case COFF_FILE_MACHINE_EBC:
+		ret->machine = rz_str_dup("ebc");
+		ret->arch = rz_str_dup("ebc");
+		ret->bits = 32;
+		break;
+	case COFF_FILE_MACHINE_I386:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_I386_PTX:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_I386_AIX:
+		ret->machine = rz_str_dup("i386");
+		ret->arch = rz_str_dup("x86");
+		ret->bits = 32;
+		break;
+	case COFF_FILE_MACHINE_IA64:
+		ret->machine = rz_str_dup("ia64");
+		ret->arch = rz_str_dup("x86");
+		ret->bits = 64;
+		break;
+	case COFF_FILE_MACHINE_M32R:
+		ret->machine = rz_str_dup("m32r");
+		ret->arch = rz_str_dup("m32r");
+		ret->bits = 32;
+		break;
+	case COFF_FILE_MACHINE_MIPS16:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_MIPSFPU16:
+		ret->machine = rz_str_dup("mips");
+		ret->arch = rz_str_dup("mips");
+		ret->cpu = rz_str_dup("mips16");
+		ret->bits = 32;
+		break;
+	case COFF_FILE_MACHINE_MIPSFPU:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_WCEMIPSV2:
+		ret->machine = rz_str_dup("mips");
+		ret->arch = rz_str_dup("mips");
+		ret->cpu = rz_str_dup("mips32");
+		ret->bits = 32;
+		break;
+	case COFF_FILE_MACHINE_AMD29KBE:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_AMD29KLE:
+		ret->cpu = rz_str_dup("29000");
+		ret->machine = rz_str_dup("amd29k");
+		ret->arch = rz_str_dup("amd29k");
+		ret->bits = 32;
+		break;
+	case COFF_FILE_MACHINE_POWERPC:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_POWERPCFP:
+		ret->machine = rz_str_dup("ppc");
+		ret->arch = rz_str_dup("ppc");
+		ret->bits = 32;
+		break;
 	case COFF_FILE_MACHINE_SH3:
+		/* fall-thru */
 	case COFF_FILE_MACHINE_SH3DSP:
+		/* fall-thru */
 	case COFF_FILE_MACHINE_SH4:
+		/* fall-thru */
 	case COFF_FILE_MACHINE_SH5:
 		ret->machine = rz_str_dup("sh");
 		ret->arch = rz_str_dup("sh");
 		ret->bits = 32;
 		break;
-	case COFF_FILE_TI_COFF:
+	case COFF_FILE_MACHINE_H8300:
+		ret->machine = rz_str_dup("H8300");
+		ret->arch = rz_str_dup("h8300");
+		ret->bits = 16;
+		break;
+	case COFF_FILE_MACHINE_M68K:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_68KAUX:
+		ret->machine = rz_str_dup("m68k");
+		ret->arch = rz_str_dup("m68k");
+		ret->bits = 32;
+		break;
+	case COFF_FILE_MACHINE_PIC30:
+		ret->machine = rz_str_dup("pic30");
+		ret->arch = rz_str_dup("pic");
+		ret->bits = 32;
+		break;
+	case COFF_FILE_MACHINE_I960RO:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_I960RW:
+		ret->machine = rz_str_dup("i960");
+		ret->arch = rz_str_dup("x86");
+		ret->bits = 32;
+		break;
+	case COFF_FILE_MACHINE_R3000:
+		ret->machine = rz_str_dup("MIPS R3000");
+		ret->arch = rz_str_dup("mips");
+		ret->cpu = rz_str_dup("r3000");
+		ret->bits = 32;
+		break;
+	case COFF_FILE_MACHINE_R4000:
+		ret->machine = rz_str_dup("MIPS R4000");
+		ret->arch = rz_str_dup("mips");
+		ret->cpu = rz_str_dup("r4000");
+		ret->bits = 32;
+		break;
+	case COFF_FILE_MACHINE_R10000:
+		ret->machine = rz_str_dup("MIPS R10000");
+		ret->arch = rz_str_dup("mips");
+		ret->cpu = rz_str_dup("r10000");
+		ret->bits = 32;
+		break;
+	case COFF_FILE_MACHINE_TI_1:
+		/* fall-thru */
+	case COFF_FILE_MACHINE_TI_2:
 		switch (obj->target_id) {
-		case COFF_FILE_MACHINE_TMS320C54:
-			ret->machine = rz_str_dup("c54x");
+		case COFF_FILE_TARGET_TI_TMS320C3x4x:
+			ret->machine = rz_str_dup("TMS320C3x/4x");
+			ret->cpu = rz_str_dup("c54x");
 			ret->arch = rz_str_dup("tms320");
 			ret->bits = 32;
 			break;
-		case COFF_FILE_MACHINE_TMS320C55:
-			ret->machine = rz_str_dup("c55x");
+		case COFF_FILE_TARGET_TI_TMS470:
+			ret->machine = rz_str_dup("TMS470");
+			ret->cpu = rz_str_dup("c54x");
 			ret->arch = rz_str_dup("tms320");
 			ret->bits = 32;
 			break;
-		case COFF_FILE_MACHINE_TMS320C55PLUS:
-			ret->machine = rz_str_dup("c55x+");
+		case COFF_FILE_TARGET_TI_TMS320C5400:
+			ret->machine = rz_str_dup("TMS320C5400");
+			ret->cpu = rz_str_dup("c54x");
 			ret->arch = rz_str_dup("tms320");
 			ret->bits = 32;
+			break;
+		case COFF_FILE_TARGET_TI_TMS320C6000:
+			ret->machine = rz_str_dup("TMS320C6000");
+			ret->cpu = rz_str_dup("c55x");
+			ret->arch = rz_str_dup("tms320");
+			ret->bits = 32;
+			break;
+		case COFF_FILE_TARGET_TI_TMS320C5500:
+			ret->machine = rz_str_dup("TMS320C5500");
+			ret->cpu = rz_str_dup("c55x");
+			ret->arch = rz_str_dup("tms320");
+			ret->bits = 32;
+			break;
+		case COFF_FILE_TARGET_TI_TMS320C2800:
+			ret->machine = rz_str_dup("TMS320C2800");
+			ret->cpu = rz_str_dup("c54x");
+			ret->arch = rz_str_dup("tms320");
+			ret->bits = 32;
+			break;
+		case COFF_FILE_TARGET_TI_MSP430:
+			ret->machine = rz_str_dup("TMS320C2800");
+			ret->cpu = rz_str_dup("c54x");
+			ret->arch = rz_str_dup("tms320");
+			ret->bits = 32;
+			break;
+		case COFF_FILE_TARGET_TI_TMS320C5500_PLUS:
+			ret->machine = rz_str_dup("TMS320C5500+");
+			ret->cpu = rz_str_dup("c55x+");
+			ret->arch = rz_str_dup("tms320");
+			ret->bits = 32;
+			break;
+		default:
+			ret->machine = rz_str_newf("unknown TI 0x%08x", obj->target_id);
 			break;
 		}
 		break;
 	default:
-		ret->machine = rz_str_dup("unknown");
+		ret->machine = rz_str_newf("unknown 0x%08x", obj->hdr.f_magic);
+		break;
 	}
 
 	return ret;
-}
-
-static RzPVector /*<RzBinField *>*/ *fields(RzBinFile *bf) {
-	return NULL;
-}
-
-static ut64 size(RzBinFile *bf) {
-	return 0;
-}
-
-static bool check_buffer(RzBuffer *buf) {
-	// TODO: do more checks here to avoid false positives
-	// ut16 MACHINE
-	// ut16 NSECTIONS
-	// ut32 DATE
-	// ut32 PTRTOSYMTABLE
-	// ut32 NUMOFSYMS
-	// ut16 OPTHDRSIZE
-	// ut16 CHARACTERISTICS
-
-	ut8 tmp[20];
-	int r = rz_buf_read_at(buf, 0, tmp, sizeof(tmp));
-	return r >= 20 && rz_coff_supported_arch(tmp);
 }
 
 #define ADD_FLAG_MASK(x, m) \
@@ -588,23 +690,18 @@ RzBinPlugin rz_bin_plugin_coff = {
 	.desc = "COFF (Common Object File Format)",
 	.license = "LGPL3",
 	.author = "Fedor Sakharov",
-	.get_sdb = &get_sdb,
-	.load_buffer = &load_buffer,
-	.destroy = &destroy,
-	.check_buffer = &check_buffer,
-	.baddr = &baddr,
-	.binsym = &binsym,
-	.entries = &entries,
-	.virtual_files = &virtual_files,
-	.maps = &maps,
-	.sections = &sections,
-	.symbols = &symbols,
-	.imports = &imports,
-	.info = &info,
-	.fields = &fields,
-	.size = &size,
-	.libs = &libs,
-	.relocs = &relocs,
+	.get_sdb = &coff_get_sdb,
+	.load_buffer = &coff_load_buffer,
+	.destroy = &coff_destroy,
+	.check_buffer = &coff_check_buffer,
+	.entries = &coff_entries,
+	.virtual_files = &coff_virtual_files,
+	.maps = &coff_maps,
+	.sections = &coff_sections,
+	.symbols = &coff_symbols,
+	.imports = &coff_imports,
+	.info = &coff_info,
+	.relocs = &coff_relocs,
 	.section_flag_to_rzlist = coff_section_flag_to_rzlist,
 };
 

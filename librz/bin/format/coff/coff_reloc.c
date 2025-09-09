@@ -15,13 +15,16 @@ RZ_API ut64 rz_coff_get_reloc_targets_map_base(struct rz_bin_coff_obj *obj) {
 		return 0;
 	}
 	ut64 max = 0;
-	for (size_t i = 0; i < obj->hdr.f_nscns; i++) {
-		struct coff_scn_hdr *hdr = &obj->scn_hdrs[i];
+
+	size_t i = 0;
+	CoffScnHdr *hdr;
+	rz_vector_enumerate (obj->scn_hdrs, hdr, i) {
 		ut64 val = obj->scn_va[i] + hdr->s_size;
 		if (val > max) {
 			max = val;
 		}
 	}
+
 	max += 8;
 	max += rz_num_align_delta(max, RZ_COFF_RELOC_TARGET_SIZE);
 	obj->reloc_targets_map_base = max;
@@ -84,7 +87,7 @@ static ut8 handle_i386_relocs(struct rz_bin_coff_obj *bin, RzBinReloc *reloc, ut
 		return reloc_general_arch_rel32_common(bin, reloc, sym_vaddr, patch_buf, "IMAGE_REL_I386_REL32");
 		// TODO: Missing handling of other relocation types
 	default:
-		RZ_LOG_WARN("Unimplemented/unknown COFF i386 relocation type: %d\n", reloc_type);
+		RZ_LOG_DEBUG("Unimplemented/unknown COFF i386 relocation type: %d\n", reloc_type);
 		break;
 	}
 
@@ -97,7 +100,7 @@ static ut8 handle_amd64_relocs(struct rz_bin_coff_obj *bin, RzBinReloc *reloc, u
 		return reloc_general_arch_rel32_common(bin, reloc, sym_vaddr, patch_buf, "IMAGE_REL_AMD64_REL32");
 		// TODO: Missing handling of other relocation types
 	default:
-		RZ_LOG_WARN("Unimplemented/unknown COFF AMD64 relocation type: %d\n", reloc_type);
+		RZ_LOG_DEBUG("Unimplemented/unknown COFF AMD64 relocation type: %d\n", reloc_type);
 		break;
 	}
 
@@ -112,7 +115,7 @@ static ut8 handle_arm_relocs(struct rz_bin_coff_obj *bin, RzBinReloc *reloc, ut6
 		return reloc_arm_branches_common(bin, reloc, sym_vaddr, patch_buf, "IMAGE_REL_ARM_BLX23T");
 		// TODO: Missing handling of other relocation types
 	default:
-		RZ_LOG_WARN("Unimplemented/unknown COFF ARM relocation type: %d\n", reloc_type);
+		RZ_LOG_DEBUG("Unimplemented/unknown COFF ARM relocation type: %d\n", reloc_type);
 		break;
 	}
 
@@ -134,7 +137,7 @@ static ut8 handle_arm64_relocs(struct rz_bin_coff_obj *bin, RzBinReloc *reloc, u
 		return 4;
 		// TODO: Missing handling of other relocation types
 	default:
-		RZ_LOG_WARN("Unimplemented/unknown COFF ARM64 relocation type: %d\n", reloc_type);
+		RZ_LOG_DEBUG("Unimplemented/unknown COFF ARM64 relocation type: %d\n", reloc_type);
 		break;
 	}
 
@@ -145,11 +148,14 @@ static void relocs_foreach(struct rz_bin_coff_obj *bin, RelocsForeachCb cb, void
 	if (!bin->scn_hdrs) {
 		return;
 	}
-	for (size_t i = 0; i < bin->hdr.f_nscns; i++) {
-		if (!bin->scn_hdrs[i].s_nreloc) {
+
+	size_t i = 0;
+	CoffScnHdr *scn_hdr = NULL;
+	rz_vector_enumerate (bin->scn_hdrs, scn_hdr, i) {
+		if (!scn_hdr->s_nreloc) {
 			continue;
 		}
-		int size = bin->scn_hdrs[i].s_nreloc * sizeof(struct coff_reloc);
+		int size = scn_hdr->s_nreloc * sizeof(struct coff_reloc);
 		if (size < 0) {
 			break;
 		}
@@ -157,14 +163,14 @@ static void relocs_foreach(struct rz_bin_coff_obj *bin, RelocsForeachCb cb, void
 		if (!rel) {
 			break;
 		}
-		if (bin->scn_hdrs[i].s_relptr > bin->size ||
-			bin->scn_hdrs[i].s_relptr + size > bin->size) {
+		if (scn_hdr->s_relptr > bin->size ||
+			scn_hdr->s_relptr + size > bin->size) {
 			free(rel);
 			break;
 		}
-		ut64 offset = bin->scn_hdrs[i].s_relptr;
+		ut64 offset = scn_hdr->s_relptr;
 		bool read_success = false;
-		for (size_t j = 0; j < bin->scn_hdrs[i].s_nreloc; j++) {
+		for (size_t j = 0; j < scn_hdr->s_nreloc; j++) {
 			struct coff_reloc *coff_rel = rel + j;
 			read_success = rz_buf_read_le32_offset(bin->b, &offset, &coff_rel->rz_vaddr) &&
 				rz_buf_read_le32_offset(bin->b, &offset, &coff_rel->rz_symndx) &&
@@ -177,7 +183,7 @@ static void relocs_foreach(struct rz_bin_coff_obj *bin, RelocsForeachCb cb, void
 			free(rel);
 			break;
 		}
-		for (size_t j = 0; j < bin->scn_hdrs[i].s_nreloc; j++) {
+		for (size_t j = 0; j < scn_hdr->s_nreloc; j++) {
 			RzBinSymbol *symbol = (RzBinSymbol *)ht_up_find(bin->sym_ht, (ut64)rel[j].rz_symndx, NULL);
 			if (!symbol) {
 				continue;
@@ -185,7 +191,7 @@ static void relocs_foreach(struct rz_bin_coff_obj *bin, RelocsForeachCb cb, void
 			RzBinReloc reloc = { 0 };
 
 			reloc.symbol = symbol;
-			reloc.paddr = bin->scn_hdrs[i].s_scnptr + rel[j].rz_vaddr;
+			reloc.paddr = scn_hdr->s_scnptr + rel[j].rz_vaddr;
 			if (bin->scn_va) {
 				reloc.vaddr = bin->scn_va[i] + rel[j].rz_vaddr;
 			}
@@ -217,7 +223,7 @@ static void relocs_foreach(struct rz_bin_coff_obj *bin, RelocsForeachCb cb, void
 					plen = handle_arm64_relocs(bin, &reloc, sym_vaddr, patch_buf, rel[j].rz_type);
 					break;
 				default:
-					RZ_LOG_WARN("Unimplemented/unknown COFF architecture type: %d\n", bin->hdr.f_magic);
+					RZ_LOG_DEBUG("Unimplemented/unknown COFF architecture type: %d\n", bin->hdr.f_magic);
 					break;
 				}
 			}

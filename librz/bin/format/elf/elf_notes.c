@@ -8,24 +8,121 @@
 
 #define ROUND_UP_4(x) ((x) + (4 - 1)) / 4 * 4
 
-#define X86      0
-#define X86_64   1
-#define ARM      2
-#define AARCH64  3
-#define ARCH_LEN 4
+#define X86          0
+#define X86_64       1
+#define ARM          2
+#define AARCH64      3
+#define SPARC        4
+#define SPARC_V8PLUS 5
+#define SPARC_V9     6
+#define SPARC32_FP   (FP_LAYOUT | SPARC)
+#define SPARC64_FP   (FP_LAYOUT | SPARC_V9)
+// OpenBSD regs have their own note types in coredumps.
+// They are only for registers and store no other information.
+#define OPENBSD_SPARC_V9    7
+#define OPENBSD_SPARC_V9_FP (FP_LAYOUT | OPENBSD_SPARC_V9)
+// Floating point register layout.
+#define FP_LAYOUT 0x10
+#define ARCH_LEN  (FP_LAYOUT | 0xf)
+
+// See elf.c::elfcore_grok_solaris_note_impl() of binutil's bfd
+// https://sourceware.org/git/?p=binutils-gdb.git;a=blob;f=bfd/elf.c;h=6ef603010918f14eda69f0d0dc1637b4d51e8157;hb=HEAD#l11777
+// OR
+// linux/arch/sparc/include/asm/elf_64.h or elf_32.h
+// Shared by OpenBSD and Linux
+// Layout is:
+// G0 --> G7
+// O0 --> O7
+// L0 --> L7
+// I0 --> I7
+// PSR, PC, nPC, Y, WIM, TBR
+#define SPARC32_REGS_SIZE (4 * 38)
+// Layout is:
+// G0 --> G7
+// O0 --> O7
+// L0 --> L7
+// I0 --> I7
+// TSTATE, TPC, TNPC, Y
+#define SPARC64_REGS_SIZE            (8 * 36)
+#define SPARC32_PR_STATUS_REG_OFFSET 0x48
+#define SPARC64_PR_STATUS_REG_OFFSET 0x70
+// OpenBSD has an extra note type for the registers and
+// hence an extra buffer (not shared with PRSTATUS)
+#define SPARC64_OPENBSD_REG_OFFSET 0x0
+
+// The ones for Linux coredumps.
+// linux/arch/sparc/include/asm/elf_64.h or elf_32.h
+//
+// ```
+// typedef struct {
+// 	union {
+// 		unsigned int	pr_regs[32]; // unsigned long in elf_32.h
+// 		unsigned long	pr_dregs[16];
+// 	} pr_fr;
+// 	unsigned int __unused;
+// 	unsigned int	pr_fsr; // unsigned long in elf_32.h
+// 	unsigned char	pr_qcnt;
+// 	unsigned char	pr_q_entrysize;
+// 	unsigned char	pr_en;
+// 	unsigned int	pr_q[64];
+// } compat_elf_fpregset_t;
+// ```
+#define SPARC32_FPREGS_SIZE ((4 * 32) + 4 + 4 + 1 + 1 + 1) /* Ignore q regs. They are invalid for Sparc32. */
+#define SPARC64_FPREGS_SIZE ((4 * 32) + 4 + 4 + 1 + 1 + 1 + (8 * 32))
+// See:
+// https://github.com/torvalds/linux/blob/b320789d6883cc00ac78ce83bccbfe7ed58afcf0/fs/binfmt_elf_fdpic.c#L1378
+#define SPARC32_FPREG_OFFSET 0x0
+#define SPARC64_FPREG_OFFSET 0x0
+
+// From openbsd/sys/arch/sparc64/include/reg.h
+//
+// These are 64 + 2 + 1 = 67 4byte words.
+//
+// ```
+// struct fpreg {
+// 	u_int	fr_regs[64];		/* our view is 64 32-bit registers */
+// 	int64_t	fr_fsr;			/* %fsr */
+// 	int	fr_gsr;			/* graphics state reg */
+// };
+// ```
+#define SPARC64_OPENBSD_FPREGS_SIZE  ((4 * 64) + 8 + 4)
+#define SPARC64_OPENBSD_FPREG_OFFSET 0x0
+
+// o6 is the stack pointer. So g0-g7,o0-5 come before it.
+// Same for OpenBSD and Linux.
+#define SPARC32_PR_STATUS_REG_OFFSET_SP (4 * 14)
+#define SPARC64_PR_STATUS_REG_OFFSET_SP (8 * 14)
 
 static RzBinElfPrStatusLayout prstatus_layouts[ARCH_LEN] = {
 	[X86] = { 160, 0x48, 32, 0x3c },
 	[X86_64] = { 216, 0x70, 64, 0x98 },
 	[ARM] = { 72, 0x48, 32, 0x34 },
-	[AARCH64] = { 272, 0x70, 64, 0xf8 }
+	[AARCH64] = { 272, 0x70, 64, 0xf8 },
+
+	[SPARC] = { SPARC32_REGS_SIZE, SPARC32_PR_STATUS_REG_OFFSET, 32, SPARC32_PR_STATUS_REG_OFFSET_SP },
+	[SPARC_V8PLUS] = { SPARC32_REGS_SIZE, SPARC32_PR_STATUS_REG_OFFSET, 32, SPARC32_PR_STATUS_REG_OFFSET_SP },
+	[SPARC_V9] = { SPARC64_REGS_SIZE, SPARC64_PR_STATUS_REG_OFFSET, 64, SPARC64_PR_STATUS_REG_OFFSET_SP },
+	[OPENBSD_SPARC_V9] = { SPARC64_REGS_SIZE, SPARC64_OPENBSD_REG_OFFSET, 64, SPARC64_PR_STATUS_REG_OFFSET_SP },
+
+	[SPARC32_FP] = { SPARC32_FPREGS_SIZE, SPARC32_FPREG_OFFSET, 0, 0 },
+	[SPARC64_FP] = { SPARC64_FPREGS_SIZE, SPARC32_FPREG_OFFSET, 0, 0 },
+	[OPENBSD_SPARC_V9_FP] = { SPARC64_OPENBSD_FPREGS_SIZE, SPARC64_OPENBSD_FPREG_OFFSET, 0, 0 },
 };
 
-static bool parse_note_prstatus(ELFOBJ *bin, RzVector /*<RzBinElfNote>*/ *notes, Elf_(Nhdr) * note_segment_header, ut64 offset) {
-	RzBinElfPrStatusLayout *layout = Elf_(rz_bin_elf_get_prstatus_layout)(bin);
-	if (!layout) {
-		RZ_LOG_WARN("Fetching registers from core file not supported for this architecture.\n");
-		return false;
+static bool parse_register_note(ELFOBJ *bin, RzVector /*<RzBinElfNote>*/ *notes, Elf_(Nhdr) * note_segment_header, ut64 offset, size_t n_type) {
+	RzBinElfPrStatusLayout *layout = NULL;
+	if (n_type == NT_PRSTATUS) {
+		layout = Elf_(rz_bin_elf_get_prstatus_layout)(bin);
+		if (!layout) {
+			RZ_LOG_WARN("Fetching registers from core file not supported for this architecture.\n");
+			return false;
+		}
+	} else {
+		layout = Elf_(rz_bin_elf_get_regset_layout)(bin, n_type);
+		if (!layout) {
+			RZ_LOG_WARN("Fetching FP registers from core file not supported for this architecture.\n");
+			return false;
+		}
 	}
 
 	RzBinElfNote *note = rz_vector_push(notes, NULL);
@@ -33,7 +130,7 @@ static bool parse_note_prstatus(ELFOBJ *bin, RzVector /*<RzBinElfNote>*/ *notes,
 		return false;
 	}
 
-	note->type = NT_PRSTATUS;
+	note->type = n_type;
 
 	note->prstatus.regstate_size = layout->regsize;
 	note->prstatus.regstate = RZ_NEWS(ut8, layout->regsize);
@@ -115,17 +212,28 @@ static bool parse_note_file(ELFOBJ *bin, RzVector /*<RzBinElfNote>*/ *notes, Elf
 	return true;
 }
 
+/**
+ * \brief Psrse note and return true if the parsing should continue. False if there was an error.
+ */
 static bool set_note(ELFOBJ *bin, RzVector /*<RzBinElfNote>*/ *notes, Elf_(Nhdr) * note_segment_header, ut64 offset) {
 	switch (note_segment_header->n_type) {
+	default:
+		RZ_LOG_INFO("n_type %u not handled.\n", note_segment_header->n_type);
+		break;
+	case NT_PRSTATUS:
+	case NT_FPREGSET:
+	case NT_OPENBSD_REGS:
+	case NT_OPENBSD_FPREGS:
+	case NT_OPENBSD_XFPREGS:
+		if (!parse_register_note(bin, notes, note_segment_header, offset, note_segment_header->n_type)) {
+			RZ_LOG_INFO("Failed to parse n_type %u.\n", note_segment_header->n_type);
+			// The parsing should continue if FP registers are not parsed for the current architecture.
+			return Elf_(rz_bin_elf_get_regset_layout)(bin, note_segment_header->n_type) == NULL;
+		}
+		break;
 	case NT_FILE:
 		if (!parse_note_file(bin, notes, note_segment_header, offset)) {
 			RZ_LOG_WARN("Failed to parse NT_FILE.\n");
-			return false;
-		}
-		break;
-	case NT_PRSTATUS:
-		if (!parse_note_prstatus(bin, notes, note_segment_header, offset)) {
-			RZ_LOG_WARN("Failed to parse NT_PRSTATUS.\n");
 			return false;
 		}
 		break;
@@ -153,7 +261,7 @@ static bool read_note_segment_header(ELFOBJ *bin, ut64 *offset, Elf_(Nhdr) * not
 static bool set_note_segment(ELFOBJ *bin, RzVector /*<RzBinElfNote>*/ *notes, RzBinElfSegment *segment) {
 	ut64 offset = segment->data.p_offset;
 
-	while (offset < segment->data.p_filesz) {
+	while (offset < segment->data.p_offset + segment->data.p_filesz) {
 		Elf_(Nhdr) note_segment_header;
 
 		if (!read_note_segment_header(bin, &offset, &note_segment_header)) {
@@ -166,7 +274,7 @@ static bool set_note_segment(ELFOBJ *bin, RzVector /*<RzBinElfNote>*/ *notes, Rz
 			return false;
 		}
 
-		offset += ROUND_UP_4(note_segment_header.n_descsz); // skip name
+		offset += ROUND_UP_4(note_segment_header.n_descsz); // skip note description
 	}
 
 	return true;
@@ -188,6 +296,10 @@ static void note_free(void *e, RZ_UNUSED void *user) {
 		note_file_free(&ptr->file);
 		break;
 	case NT_PRSTATUS:
+	case NT_FPREGSET:
+	case NT_OPENBSD_REGS:
+	case NT_OPENBSD_FPREGS:
+	case NT_OPENBSD_XFPREGS:
 		note_prstatus_free(&ptr->prstatus);
 		break;
 	}
@@ -210,9 +322,64 @@ RZ_BORROW RzBinElfPrStatusLayout *Elf_(rz_bin_elf_get_prstatus_layout)(RZ_NONNUL
 		return prstatus_layouts + X86;
 	case EM_X86_64:
 		return prstatus_layouts + X86_64;
+	case EM_SPARC:
+		return prstatus_layouts + SPARC;
+	case EM_SPARC32PLUS:
+		return prstatus_layouts + SPARC_V8PLUS;
+	case EM_SPARCV9:
+		return prstatus_layouts + SPARC_V9;
 	}
 
 	return NULL;
+}
+
+/**
+ * \brief Returns the register layout for an ELF note type storing register values.
+ * Commonly this is PR_STATUS. But on some OS (OpenBSD) there is a specific
+ * note type just for register values.
+ * For these ones the layout is returned.
+ * For PRSTATUS use Elf_(rz_bin_elf_get_prstatus_layout)().
+ *
+ * \param bin The ELF object.
+ * \param The note type.
+ *
+ * \return The register layout or NULL in case of failure.
+ */
+RZ_BORROW RzBinElfPrStatusLayout *Elf_(rz_bin_elf_get_regset_layout)(RZ_NONNULL ELFOBJ *bin, Elf_(Word) n_type) {
+	rz_return_val_if_fail(bin, NULL);
+
+	size_t off = 0;
+	switch (bin->ehdr.e_machine) {
+	default:
+		return NULL;
+	case EM_SPARC:
+		if (n_type == NT_FPREGSET) {
+			off = FP_LAYOUT | SPARC;
+		} else {
+			rz_warn_if_reached();
+			return NULL;
+		}
+		break;
+	case EM_SPARC32PLUS:
+		if (n_type == NT_FPREGSET) {
+			off = FP_LAYOUT | SPARC_V8PLUS;
+		} else {
+			rz_warn_if_reached();
+			return NULL;
+		}
+		break;
+	case EM_SPARCV9:
+		if (n_type == NT_FPREGSET) {
+			off = FP_LAYOUT | SPARC_V9;
+		} else if (n_type == NT_OPENBSD_REGS) {
+			off = OPENBSD_SPARC_V9;
+		} else {
+			off = FP_LAYOUT | OPENBSD_SPARC_V9;
+		}
+		break;
+	}
+
+	return prstatus_layouts + off;
 }
 
 RZ_OWN RzVector /*<RzVector<RzBinElfNote>>*/ *Elf_(rz_bin_elf_notes_new)(RZ_NONNULL ELFOBJ *bin) {

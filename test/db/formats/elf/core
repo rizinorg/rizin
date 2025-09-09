@@ -308,3 +308,200 @@ cpsr = 0x60000010
 fpscr = 0x00000000
 EOF
 RUN
+
+NAME=core regs openbsd sparc64
+FILE=bins/elf/core/core-openbsd-sparc64
+CMDS=<<EOF
+# Output confirmed with readelf
+ar
+# arF doesn't work (prints nothing) as it looks like.
+# I have intentionally not extracted this command into a BROKEN test.
+# The issue is that the register layout of the ELF note
+# differs between Linux and OpenBSD.
+# Especially, the upper FP regs of Sparc64.
+# Please ping me if it gets fixed and the registers floating point regs
+# are printed here.
+# Setting the FP regs arena requires a user defined method to do so.
+# Beause just memcpy the bytes won't do it due to the different layout.
+# Also check out the comments about the layout at
+# elf_notes.c::SPARC32_FPREGS_SIZE and elf_notes.c::SPARC64_OPENBSD_FPREGS_SIZE.
+# You can see the difference there.
+# Issue:
+# https://github.com/rizinorg/rizin/issues/5334
+arF
+EOF
+EXPECT=<<EOF
+g0 = 0x0000000082000202
+g1 = 0x000000a06ed006d4
+g2 = 0x000000a06ed006d8
+g3 = 0x000000001518e0e0
+g4 = 0x0000000000000000
+g5 = 0x0000000000000000
+g6 = 0x0000000000000000
+g7 = 0xfffffe849aea7d28
+o0 = 0x000000000000000c
+o1 = 0x0000000000000000
+o2 = 0x0000000000000000
+o3 = 0x000000a2be486940
+o4 = 0x00000400fb3bdee0
+o5 = 0x0000000000000009
+sp = 0x000000a06ed02206
+o7 = 0x0000000000000000
+l0 = 0x0000000000000000
+l1 = 0x0000000000000000
+l2 = 0xfffffe849aea75e1
+l3 = 0x000000a06ed021f4
+l4 = 0x000000a328709400
+l5 = 0x0000000028709400
+l6 = 0x0000000000000000
+l7 = 0x0000000000000000
+i0 = 0x0000000000000000
+i1 = 0x0000000000000000
+i2 = 0x0000000000000000
+i3 = 0x000000a3528060c0
+i4 = 0x000000006f004080
+i5 = 0xfffffe849aea8008
+fp = 0xfffffe849aea8018
+i7 = 0x0000000000000000
+y = 0x000000a06ed003b0
+pc = 0x0000000000000000
+npc = 0x0000000000000000
+asr = 0x0000000000000000
+csr = 0x0000000000000000
+asi = 0x0000000000000000
+fsr = 0x0000000000000000
+EOF
+EXPECT_ERR=<<EOF
+WARNING: phdr entry: p_offset and p_vaddr are not congruent for p_align.
+WARNING: The segment 0 at 0x40 seems to be invalid.
+WARNING: phdr entry: p_offset and p_vaddr are not congruent for p_align.
+WARNING: The segment 1 at 0x78 seems to be invalid.
+WARNING: phdr entry: p_offset and p_vaddr are not congruent for p_align.
+WARNING: The segment 2 at 0xb0 seems to be invalid.
+WARNING: phdr entry: p_offset and p_vaddr are not congruent for p_align.
+WARNING: The segment 3 at 0xe8 seems to be invalid.
+WARNING: phdr entry: p_offset and p_vaddr are not congruent for p_align.
+WARNING: The segment 4 at 0x120 seems to be invalid.
+WARNING: phdr entry: p_offset and p_vaddr are not congruent for p_align.
+WARNING: The segment 5 at 0x158 seems to be invalid.
+WARNING: phdr entry: p_offset and p_vaddr are not congruent for p_align.
+WARNING: The segment 6 at 0x190 seems to be invalid.
+WARNING: phdr entry: p_offset and p_vaddr are not congruent for p_align.
+WARNING: The segment 7 at 0x1c8 seems to be invalid.
+WARNING: phdr entry: p_offset and p_vaddr are not congruent for p_align.
+WARNING: The segment 8 at 0x200 seems to be invalid.
+WARNING: phdr entry: p_offset and p_vaddr are not congruent for p_align.
+WARNING: The segment 9 at 0x238 seems to be invalid.
+WARNING: phdr entry: p_offset and p_vaddr are not congruent for p_align.
+WARNING: The segment 10 at 0x270 seems to be invalid.
+WARNING: phdr entry: p_offset and p_vaddr are not congruent for p_align.
+WARNING: The segment 11 at 0x2a8 seems to be invalid.
+WARNING: phdr entry: p_offset and p_vaddr are not congruent for p_align.
+WARNING: The segment 12 at 0x2e0 seems to be invalid.
+WARNING: phdr entry: p_offset and p_vaddr are not congruent for p_align.
+WARNING: The segment 13 at 0x318 seems to be invalid.
+WARNING: phdr entry: p_offset and p_vaddr are not congruent for p_align.
+WARNING: The segment 14 at 0x350 seems to be invalid.
+WARNING: phdr entry: p_offset and p_vaddr are not congruent for p_align.
+WARNING: The segment 15 at 0x388 seems to be invalid.
+WARNING: phdr entry: p_offset and p_vaddr are not congruent for p_align.
+WARNING: The segment 16 at 0x3c0 seems to be invalid.
+WARNING: phdr entry: p_offset and p_vaddr are not congruent for p_align.
+WARNING: The segment 17 at 0x3f8 seems to be invalid.
+WARNING: phdr entry: p_offset and p_vaddr are not congruent for p_align.
+WARNING: The segment 18 at 0x430 seems to be invalid.
+WARNING: phdr entry: p_offset and p_vaddr are not congruent for p_align.
+WARNING: The segment 19 at 0x468 seems to be invalid.
+WARNING: phdr entry: p_offset and p_vaddr are not congruent for p_align.
+WARNING: The segment 20 at 0x4a0 seems to be invalid.
+WARNING: phdr entry: p_offset and p_vaddr are not congruent for p_align.
+WARNING: The segment 21 at 0x4d8 seems to be invalid.
+WARNING: phdr entry: p_offset and p_vaddr are not congruent for p_align.
+WARNING: The segment 22 at 0x510 seems to be invalid.
+WARNING: phdr entry: p_offset and p_vaddr are not congruent for p_align.
+WARNING: The segment 23 at 0x548 seems to be invalid.
+WARNING: phdr entry: p_offset and p_vaddr are not congruent for p_align.
+WARNING: The segment 24 at 0x580 seems to be invalid.
+WARNING: phdr entry: p_offset and p_vaddr are not congruent for p_align.
+WARNING: The segment 25 at 0x5b8 seems to be invalid.
+WARNING: phdr entry: p_offset and p_vaddr are not congruent for p_align.
+WARNING: The segment 26 at 0x5f0 seems to be invalid.
+WARNING: phdr entry: p_offset and p_vaddr are not congruent for p_align.
+WARNING: The segment 27 at 0x628 seems to be invalid.
+WARNING: phdr entry: p_offset and p_vaddr are not congruent for p_align.
+WARNING: The segment 28 at 0x660 seems to be invalid.
+WARNING: phdr entry: p_offset and p_vaddr are not congruent for p_align.
+WARNING: The segment 29 at 0x698 seems to be invalid.
+WARNING: phdr entry: p_offset and p_vaddr are not congruent for p_align.
+WARNING: The segment 30 at 0x6d0 seems to be invalid.
+WARNING: phdr entry: p_offset and p_vaddr are not congruent for p_align.
+WARNING: The segment 31 at 0x708 seems to be invalid.
+WARNING: phdr entry: p_offset and p_vaddr are not congruent for p_align.
+WARNING: The segment 32 at 0x740 seems to be invalid.
+WARNING: phdr entry: p_offset and p_vaddr are not congruent for p_align.
+WARNING: The segment 33 at 0x778 seems to be invalid.
+WARNING: phdr entry: p_offset and p_vaddr are not congruent for p_align.
+WARNING: The segment 34 at 0x7b0 seems to be invalid.
+WARNING: phdr entry: p_offset and p_vaddr are not congruent for p_align.
+WARNING: The segment 35 at 0x7e8 seems to be invalid.
+WARNING: phdr entry: p_offset and p_vaddr are not congruent for p_align.
+WARNING: The segment 36 at 0x820 seems to be invalid.
+WARNING: phdr entry: p_offset and p_vaddr are not congruent for p_align.
+WARNING: The segment 37 at 0x858 seems to be invalid.
+WARNING: phdr entry: p_offset and p_vaddr are not congruent for p_align.
+WARNING: The segment 38 at 0x890 seems to be invalid.
+WARNING: phdr entry: p_offset and p_vaddr are not congruent for p_align.
+WARNING: The segment 39 at 0x8c8 seems to be invalid.
+WARNING: phdr entry: p_offset and p_vaddr are not congruent for p_align.
+WARNING: The segment 40 at 0x900 seems to be invalid.
+EOF
+RUN
+
+NAME=core regs openbsd sparc64
+FILE=bins/elf/core/core-linux-sparc64
+CMDS=<<EOF
+ar
+EOF
+EXPECT=<<EOF
+g0 = 0x0000000000000000
+g1 = 0x0000000000000001
+g2 = 0x0000000000000010
+g3 = 0x00000100001021f0
+g4 = 0x0000000000000021
+g5 = 0x000000000000000f
+g6 = 0x0000000083287020
+g7 = 0xfffff80100027700
+o0 = 0x0000000000000001
+o1 = 0x0000000000000000
+o2 = 0x0000000000000000
+o3 = 0x0000000000000000
+o4 = 0x0000000000000000
+o5 = 0x0000000000000000
+sp = 0x000007feffa00f91
+o7 = 0x00000100000009b4
+l0 = 0x0000000000000000
+l1 = 0x0000000000000000
+l2 = 0x0000000000000000
+l3 = 0x0000000000000000
+l4 = 0x0000000000000000
+l5 = 0x0000000000000000
+l6 = 0x0000000000000000
+l7 = 0x0000010000102000
+i0 = 0x0000000000000001
+i1 = 0x000007feffa01bf8
+i2 = 0x000007feffa01c08
+i3 = 0xfffff8010038f1c0
+i4 = 0x0000000000000001
+i5 = 0x0000000000000001
+fp = 0x000007feffa01051
+i7 = 0xfffff8010014f128
+y = 0x0000000000000000
+pc = 0x0000000000000000
+npc = 0x0000000000000000
+asr = 0x0000000000000000
+csr = 0x0000000000000000
+asi = 0x0000000000000000
+fsr = 0x0000000000000000
+EOF
+EXPECT_ERR=
+RUN
