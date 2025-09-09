@@ -153,7 +153,7 @@ EXPECT=<<EOF
 ;-- str.sort:
 ;-- str.sync:
 ;-- str.AAAA:
-14534
+14541
 bufio
 bytes
 compress/flate
@@ -273,7 +273,7 @@ EXPECT=<<EOF
 0x0065de6d str.version
 0x0065de8a str.HTTP_version
 0x0065dfe6 str.
-15080
+15086
 bufio
 bytes
 compress/flate
@@ -629,7 +629,7 @@ EXPECT=<<EOF
 0x0026e4b8 str.btcctl.conf
 0x0026e53c str.rpc.cert
 0x0026e5c0 str.rpc.cert
-16744
+16769
 EOF
 RUN
 

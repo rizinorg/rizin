@@ -4,7 +4,7 @@ CMDS=izz
 EXPECT=<<EOF
      paddr      vaddr len size section   type    string                                 
 ----------------------------------------------------------------------------------------
-0x00000034 0x00400034   4   10           utf16le @8\b@
+0x00000034 0x00400034   4    8           utf16le @8\b@
 0x00000200 0x00400200  25   26 .interp   ascii   /lib/ld-linux-x86-64.so.2
 0x000002e1 0x004002e1  14   15 .dynstr   ascii   __gmon_start__
 0x000002f0 0x004002f0   9   10 .dynstr   ascii   libc.so.6
