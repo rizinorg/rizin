@@ -906,9 +906,15 @@ RZ_IPI int rz_search_hit_cmp(RZ_NULLABLE RzSearchHit *a, RZ_NULLABLE RzSearchHit
 	} else if (!b) {
 		return 1;
 	}
-	if (a->address == b->address) {
+	if (a->address < b->address) {
+		return -1;
+	} else if (a->address > b->address) {
+		return 1;
+	}
+
+	if (a->size == b->size) {
 		return 0;
-	} else if (a->address < b->address) {
+	} else if (a->size < b->size) {
 		return -1;
 	}
 	return 1;
