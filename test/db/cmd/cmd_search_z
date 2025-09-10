@@ -406,6 +406,22 @@ EOF
 EXPECT_ERR=
 RUN
 
+NAME=String Search - Encoding: utf8 - Hindi - Regex
+FILE=bins/cmd/search/string_encodings/Hindi-Lipsum.utf8
+CMDS=<<EOF
+/z "प.+चने वैश्विक एसलिये .+आदी" r utf8
+# Requires increasing the block size because -.-
+b 0x1000
+# Check string is actually at offset of the hit.
+ps utf8 unprintable @ hit.string.utf8.0
+EOF
+EXPECT=<<EOF
+0x00000086 97 hit.string.utf8.0
+पहोचने वैश्विक एसलिये पुस्तक हुआआदी विश्व उनका खरिदने समस्याओ मार्गदर्शन रखते तरीके यायेका विश्लेषण पुष्टिकर्ता चुनने सकता बढाता वेबजाल गोपनीयता लिए। संपादक करेसाथ रचना नवंबर
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=String Search - Encoding: utf8 - Korean2
 FILE=bins/cmd/search/string_encodings/Korean2-Lipsum.utf8
 CMDS=<<EOF
