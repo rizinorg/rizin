@@ -228,12 +228,12 @@ PPC:
   - librz/arch/p/analysis/*_ppc_*
   - librz/bp/p/bp_ppc.c
 
-6502:
+_6502:
   - librz/arch/is*/6502/**/*
   - librz/arch/p/asm/_*6502*_
   - librz/arch/p/analysis/_*6502*_
 
-8051:
+_8051:
   - librz/arch/is*/8051/**/*
   - librz/arch/p/asm/_*8051*_
   - librz/arch/p/analysis/_*8051*_
