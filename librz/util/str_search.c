@@ -231,6 +231,12 @@ static inline size_t buf_look_ahead(const RzUtilStrScanOptions *opt, RzStrEnc en
 	}
 }
 
+/**
+ * \brief Number of characters to store on the stack during scanning.
+ * If the scanned string has more characters than this or is valid
+ * it is copied to the heap.
+ * Used to save unnecessary memory allocations.
+ */
 #define SCANNING_STACK_BUF_CHARS 16
 #define SCANNING_STACK_BUF_SIZE  (RZ_UNICODE_MAX_BYTES_PER_CHAR * SCANNING_STACK_BUF_CHARS)
 
@@ -322,7 +328,6 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 			}
 			size_t mem_offset = needle;
 			byte_mem_map[utf8_char_offset] = mem_offset;
-			// printf("mem_char_map[0x%llx] = 0x%lx\n", utf8_char_offset, mem_offset);
 		}
 
 		needle += char_bytes;
@@ -350,7 +355,7 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 			}
 			char_count++;
 		} else {
-			/* \0 or undefined code point, marks the end of C-strings */
+			/* \0 or undefined code point marks the end of C-strings */
 			stopped_with_undef_cp = r != 0;
 			break;
 		}

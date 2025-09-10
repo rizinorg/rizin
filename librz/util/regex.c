@@ -153,10 +153,10 @@ static RZ_OWN void *regex_new(RZ_NONNULL const char *pattern, RzRegexFlags cflag
  *
  * \param pattern The regex pattern string.
  * \param cflags The compilation flags or zero for default.
- * PCRE2_UTF | PCRE2_NO_UTF_CHECK | PCRE2_MATCH_INVALID_UTF are enforced currently.
+ *        PCRE2_UTF | PCRE2_NO_UTF_CHECK | PCRE2_MATCH_INVALID_UTF are enforced currently.
  * \param jflags The compilation flags for the JIT compiler.
- * You can pass RZ_REGEX_JIT_PARTIAL_SOFT or RZ_REGEX_JIT_PARTIAL_HARD if you
- * intend to use the pattern for partial matching. Otherwise set it to 0.
+ *        You can pass RZ_REGEX_JIT_PARTIAL_SOFT or RZ_REGEX_JIT_PARTIAL_HARD if you
+ *        intend to use the pattern for partial matching. Otherwise set it to 0.
  * \param ccontext A compile context or NULL.
  *
  * \return The compiled regex or NULL in case of failure.
@@ -177,10 +177,10 @@ RZ_API RZ_OWN RzRegex *rz_regex_new(RZ_NONNULL const char *pattern, RzRegexFlags
  *
  * \param pattern The regex pattern string. It must be an UTF-8 encoded string.
  * \param cflags The compilation flags or zero for default.
- * PCRE2_UTF | PCRE2_NO_UTF_CHECK | PCRE2_MATCH_INVALID_UTF are enforced currently.
+ *        PCRE2_UTF | PCRE2_NO_UTF_CHECK | PCRE2_MATCH_INVALID_UTF are enforced currently.
  * \param jflags The compilation flags for the JIT compiler.
- * You can pass RZ_REGEX_JIT_PARTIAL_SOFT or RZ_REGEX_JIT_PARTIAL_HARD if you
- * intend to use the pattern for partial matching. Otherwise set it to 0.
+ *        You can pass RZ_REGEX_JIT_PARTIAL_SOFT or RZ_REGEX_JIT_PARTIAL_HARD if you
+ *        intend to use the pattern for partial matching. Otherwise set it to 0.
  * \param ccontext A compile context or NULL.
  *
  * \return The compiled regex or NULL in case of failure.
@@ -199,10 +199,10 @@ RZ_API RZ_OWN RzRegex16 *rz_regex_new_16(RZ_NONNULL const char *pattern, RzRegex
  *
  * \param pattern The regex pattern string. It must be an UTF-8 encoded string.
  * \param cflags The compilation flags or zero for default.
- * PCRE2_UTF | PCRE2_NO_UTF_CHECK | PCRE2_MATCH_INVALID_UTF are enforced currently.
+ *        PCRE2_UTF | PCRE2_NO_UTF_CHECK | PCRE2_MATCH_INVALID_UTF are enforced currently.
  * \param jflags The compilation flags for the JIT compiler.
- * You can pass RZ_REGEX_JIT_PARTIAL_SOFT or RZ_REGEX_JIT_PARTIAL_HARD if you
- * intend to use the pattern for partial matching. Otherwise set it to 0.
+ *        You can pass RZ_REGEX_JIT_PARTIAL_SOFT or RZ_REGEX_JIT_PARTIAL_HARD if you
+ *        intend to use the pattern for partial matching. Otherwise set it to 0.
  * \param ccontext A compile context or NULL.
  *
  * \return The compiled regex or NULL in case of failure.
@@ -220,10 +220,10 @@ RZ_API RZ_OWN RzRegex32 *rz_regex_new_32(RZ_NONNULL const char *pattern, RzRegex
  *
  * \param pattern The regex pattern string. It must be an UTF-8 encoded string.
  * \param cflags The compilation flags or zero for default.
- * PCRE2_UTF | PCRE2_NO_UTF_CHECK | PCRE2_MATCH_INVALID_UTF are enforced currently.
+ *        PCRE2_UTF | PCRE2_NO_UTF_CHECK | PCRE2_MATCH_INVALID_UTF are enforced currently.
  * \param jflags The compilation flags for the JIT compiler.
- * You can pass RZ_REGEX_JIT_PARTIAL_SOFT or RZ_REGEX_JIT_PARTIAL_HARD if you
- * intend to use the pattern for partial matching. Otherwise set it to RZ_REGEX_DEFAULT.
+ *        You can pass RZ_REGEX_JIT_PARTIAL_SOFT or RZ_REGEX_JIT_PARTIAL_HARD if you
+ *        intend to use the pattern for partial matching. Otherwise set it to RZ_REGEX_DEFAULT.
  * \param ccontext A compile context or NULL.
  * \param type The string encoding type the pattern should match.
  *
@@ -273,8 +273,8 @@ RZ_API RZ_OWN RzRegexMulti *rz_regex_new_multi(RZ_NONNULL const char *pattern, R
  * \param pattern_len The pattern length.
  * \param cflags The compilation flags.
  * \param jflags The compilation flags for the JIT compiler.
- * You can pass RZ_REGEX_JIT_PARTIAL_SOFT or RZ_REGEX_JIT_PARTIAL_HARD if you
- * intend to use the pattern for partial matching. Otherwise set it to 0.
+ *        You can pass RZ_REGEX_JIT_PARTIAL_SOFT or RZ_REGEX_JIT_PARTIAL_HARD if you
+ *        intend to use the pattern for partial matching. Otherwise set it to 0.
  * \param ccontext A compile context or NULL.
  *
  * \return The compiled regex or NULL in case of failure.
@@ -350,8 +350,8 @@ RZ_API void rz_regex_free_32(RZ_OWN RzRegex32 *regex) {
  *
  * \param regex The multi regex to clone.
  * \param clone_jit If set, the clone will also have JIT pattern matching.
- * If unset it still clones the pattern, but the clone won't support
- * JIT pattern matching.
+ *        If unset it still clones the pattern, but the clone won't support
+ *        JIT pattern matching.
  *
  * \return The clone for \p regex or NULL in case of failure.
  */
@@ -447,7 +447,7 @@ static void rz_regex_match_data_free(RZ_OWN RzRegexMatchData *match_data) {
  * \param regex The regex pattern to match.
  * \param text The text to search in.
  * \param text_size The length of the buffer pointed to by \p text.
- * Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
+ *        Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
  * \param text_offset The offset into \p text from where the search starts.
  * \param mflags Match flags. PCRE2_NO_UTF_CHECK is enforced currently.
  *
@@ -473,7 +473,7 @@ RZ_API RzRegexStatus rz_regex_match(RZ_NONNULL const RzRegex *regex, RZ_NONNULL 
  * \param regex The regex pattern to match.
  * \param text The text to search in. UTF-16 encoded in the host's endianness.
  * \param text_size The length of the buffer pointed to by \p text.
- * Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
+ *        Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
  * \param text_offset The offset into \p text from where the search starts.
  * \param mflags Match flags. PCRE2_NO_UTF_CHECK is enforced currently.
  *
@@ -499,7 +499,7 @@ RZ_API RzRegexStatus rz_regex_match_16(RZ_NONNULL const RzRegex16 *regex, RZ_NON
  * \param regex The regex pattern to match.
  * \param text The text to search in. UTF-32 encoded in the host's endianness.
  * \param text_size The length of the buffer pointed to by \p text.
- * Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
+ *        Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
  * \param text_offset The offset into \p text from where the search starts.
  * \param mflags Match flags. PCRE2_NO_UTF_CHECK is enforced currently.
  *
@@ -690,7 +690,7 @@ static RZ_OWN RzPVector /*<RzRegexMatch *>*/ *match_first_16(
 	rc = pcre2_match_16(regex, (PCRE2_SPTR16)text, text_size_code_units, text_offset_code_units, mflags | PCRE2_NO_UTF_CHECK, mdata, NULL);
 
 	if (rc == PCRE2_ERROR_NOMATCH) {
-		// Nothing matched return empty vector.
+		// Nothing matched, return an empty vector
 		goto fini;
 	}
 
@@ -816,7 +816,7 @@ fini:
  * \param regex The regex pattern to match.
  * \param text The text to search in.
  * \param text_size The length of the buffer pointed to by \p text.
- * Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
+ *        Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
  * \param text_offset The offset into \p text from where the search starts.
  * \param mflags Match flags.
  *
@@ -846,7 +846,7 @@ RZ_API RZ_OWN RzPVector /*<RzRegexMatch *>*/ *rz_regex_match_first(
  * \param regex The regex pattern to match.
  * \param text The text to search in. It should be UTF-16 (host-endianness) encoded.
  * \param text_size The length of the buffer pointed to by \p text in code units.
- * Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
+ *        Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
  * \param text_offset The offset into \p text from where the search starts in code units.
  * \param mflags Match flags.
  *
@@ -876,7 +876,7 @@ RZ_API RZ_OWN RzPVector /*<RzRegexMatch *>*/ *rz_regex_match_first_16(
  * \param regex The regex pattern to match.
  * \param text The text to search in. It should be UTF-32 (host-endianness) encoded.
  * \param text_size The length of the buffer pointed to by \p text in code units.
- * Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
+ *        Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
  * \param text_offset The offset into \p text from where the search starts in code units.
  * \param mflags Match flags.
  *
@@ -905,7 +905,7 @@ RZ_API RZ_OWN RzPVector /*<RzRegexMatch *>*/ *rz_regex_match_first_32(
  * \param regex The regex pattern to match.
  * \param text The text to search in.
  * \param text_size The length of the buffer pointed to by \p text.
- * Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
+ *        Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
  * \param text_offset The offset into \p text from where the search starts.
  * \param mflags Match flags.
  *
@@ -1022,13 +1022,13 @@ static RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *match_all_internal_32(
  * \param pattern The regex pattern to match.
  * \param text The text to search in.
  * \param text_size The length of the buffer pointed to by \p text.
- * Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
+ *        Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
  * \param text_offset The offset into \p text from where the search starts.
  * \param mflags Match flags.
  * \param allow_overlap If true it will match also overlapping patterns.
  *
  * \return PVector of every match in the given string or NULL in case of failure.
- * One match with all its groups is again assembled in a pvector.
+ *         One match with all its groups is again assembled in a pvector.
  */
 RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all_overlap(
 	RZ_NONNULL const RzRegex *regex,
@@ -1045,12 +1045,12 @@ RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all_ove
  * \param pattern The regex pattern to match.
  * \param text The text to search in.
  * \param text_size The length of the buffer pointed to by \p text.
- * Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
+ *        Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
  * \param text_offset The offset into \p text from where the search starts.
  * \param mflags Match flags.
  *
  * \return PVector of every match in the given string or NULL in case of failure.
- * One match with all its groups is again assembled in a pvector.
+ *         One match with all its groups is again assembled in a pvector.
  */
 RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all(
 	RZ_NONNULL const RzRegex *regex,
@@ -1069,13 +1069,13 @@ RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all(
  * \param pattern The regex pattern to match.
  * \param text The text to search in. It should be UTF-16 host-endianness encoded.
  * \param text_size The length of the buffer pointed to by \p text in code units..
- * Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
+ *        Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
  * \param text_offset The offset into \p text from where the search starts in code units..
  * \param mflags Match flags.
  * \param allow_overlap If true it will match also overlapping patterns.
  *
  * \return PVector of every match in the given string or NULL in case of failure.
- * One match with all its groups is again assembled in a pvector.
+ *         One match with all its groups is again assembled in a pvector.
  */
 RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all_overlap_16(
 	RZ_NONNULL const RzRegex16 *regex,
@@ -1094,12 +1094,12 @@ RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all_ove
  * \param pattern The regex pattern to match.
  * \param text The text to search in. It should be UTF-16 host-endianness encoded.
  * \param text_size The length of the buffer pointed to by \p text in code units..
- * Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
+ *        Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
  * \param text_offset The offset into \p text from where the search starts in code units..
  * \param mflags Match flags.
  *
  * \return PVector of every match in the given string or NULL in case of failure.
- * One match with all its groups is again assembled in a pvector.
+ *         One match with all its groups is again assembled in a pvector.
  */
 RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all_16(
 	RZ_NONNULL const RzRegex16 *regex,
@@ -1118,13 +1118,13 @@ RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all_16(
  * \param pattern The regex pattern to match.
  * \param text The text to search in. It should be UTF-32 host-endianness encoded.
  * \param text_size The length of the buffer pointed to by \p text in code units..
- * Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
+ *        Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
  * \param text_offset The offset into \p text from where the search starts in code units..
  * \param mflags Match flags.
  * \param allow_overlap If true it will match also overlapping patterns.
  *
  * \return PVector of every match in the given string or NULL in case of failure.
- * One match with all its groups is again assembled in a pvector.
+ *         One match with all its groups is again assembled in a pvector.
  */
 RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all_overlap_32(
 	RZ_NONNULL const RzRegex32 *regex,
@@ -1182,12 +1182,12 @@ RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all_mul
  * \param pattern The regex pattern to match.
  * \param text The text to search in. It should be UTF-32 host-endianness encoded.
  * \param text_size The length of the buffer pointed to by \p text in code units..
- * Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
+ *        Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
  * \param text_offset The offset into \p text from where the search starts in code units..
  * \param mflags Match flags.
  *
  * \return PVector of every match in the given string or NULL in case of failure.
- * One match with all its groups is again assembled in a pvector.
+ *         One match with all its groups is again assembled in a pvector.
  */
 RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all_32(
 	RZ_NONNULL const RzRegex32 *regex,
@@ -1204,7 +1204,7 @@ RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all_32(
  * \param pattern The regex pattern to match.
  * \param text The text to search in.
  * \param text_size The length of the buffer pointed to by \p text.
- * Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
+ *        Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
  * \param text_offset The offset into \p text from where the search starts.
  * \param cflags Compile flags.
  * \param mflags Match flags.
@@ -1233,7 +1233,7 @@ RZ_API bool rz_regex_contains(RZ_NONNULL const char *pattern, RZ_NONNULL const c
  * \param pattern The regex pattern to match.
  * \param text The text to search in.
  * \param text_size The length of the buffer pointed to by \p text.
- * Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
+ *        Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
  * \param cflags Compile flags.
  * \param mflags Match flags.
  * \param separator A string to separate the matches.
@@ -1283,7 +1283,7 @@ fini:
  * \param pattern The regex pattern to match.
  * \param text The text to search in.
  * \param text_size The length of the buffer pointed to by \p text.
- * Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
+ *        Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
  * \param text_offset The offset into \p text from where the search starts.
  * \param cflags Compile flags.
  * \param mflags Match flags.

@@ -4,6 +4,9 @@
 /* For RzStrEnc definition */
 #include "rz_unicode.h"
 
+/**
+ * \brief Width of an UTF32 character in bytes.
+ */
 #define RZ_UTF8_CODE_POINT_WIDTH 1
 
 /**

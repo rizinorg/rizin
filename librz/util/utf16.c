@@ -27,11 +27,11 @@ static RzCodePoint utf16_surrogate_to_codepoint(ut16 high_surrogate, ut16 low_su
  * \param buf_len   The buffer length.
  * \param codepoint (Optional) The decoded code point.
  * \param check_is_def If true, checks the code point against the defined
- * Unicode table. It will not write \p cp and return 0 if the decoded code
- * point is undefined.
- * If false, it won't perform any checks and just decode.
- * Be aware, the check has a runtime of O(log n).
- * Where n: number of undefined Unicode ranges.
+ *        Unicode table. It will not write \p cp and return 0 if the decoded code
+ *        point is undefined.
+ *        If false, it won't perform any checks and just decode.
+ *        Be aware, the check has a runtime of O(log n).
+ *        Where n: number of undefined Unicode ranges.
  * \param bigendian Flag if the \p buf holds UTF-16 bytes in big endian.
  *
  * \return Number of bytes decoded.
@@ -75,11 +75,11 @@ check_assign:
  * \param buf_len   The buffer length.
  * \param codepoint (Optional) The decoded code point.
  * \param check_is_def If true, checks the code point against the defined
- * Unicode table. It will not write \p cp and return 0 if the decoded code
- * point is undefined.
- * If false, it won't perform any checks and just decode.
- * Be aware, the check has a runtime of O(log n).
- * Where n: number of undefined Unicode ranges.
+ *        Unicode table. It will not write \p cp and return 0 if the decoded code
+ *        point is undefined.
+ *        If false, it won't perform any checks and just decode.
+ *        Be aware, the check has a runtime of O(log n).
+ *        Where n: number of undefined Unicode ranges.
  *
  * \return Number of bytes decoded.
  */
@@ -95,11 +95,11 @@ RZ_API size_t rz_utf16le_decode(RZ_NONNULL const ut8 *buf, size_t buf_len, RZ_NU
  * \param buf_len   The buffer length.
  * \param codepoint (Optional) The decoded code point.
  * \param check_is_def If true, checks the code point against the defined
- * Unicode table. It will not write \p cp and return 0 if the decoded code
- * point is undefined.
- * If false, it won't perform any checks and just decode.
- * Be aware, the check has a runtime of O(log n).
- * Where n: number of undefined Unicode ranges.
+ *        Unicode table. It will not write \p cp and return 0 if the decoded code
+ *        point is undefined.
+ *        If false, it won't perform any checks and just decode.
+ *        Be aware, the check has a runtime of O(log n).
+ *        Where n: number of undefined Unicode ranges.
  *
  * \return Number of bytes decoded.
  */
@@ -168,7 +168,7 @@ RZ_API size_t rz_utf16_encode(RZ_NONNULL RZ_OUT ut8 *buf, RzCodePoint codepoint,
  * \param buf_len The buffer length.
  * \param big_endian Should be set if the bytes in the buffer are in big endian order.
  * \param lookahead Number of code points to check.
- * Note: if the buffer can't cover all \p lookahead code points, this returns false.
+ *        NOTE: if the buffer can't cover all \p lookahead code points, this returns false.
  *
  * \return True if the buffer has \p lookahead number of printable UTF-16 characters.
  * \return False otherwise.

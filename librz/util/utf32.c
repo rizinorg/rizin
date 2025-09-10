@@ -11,11 +11,11 @@
  * \param buf_len The buffer size in bytes.
  * \param cp The decoded code point.
  * \param check_is_def If true, checks the code point against the defined
- * Unicode table. It will not write \p cp and return 0 if the decoded code
- * point is undefined.
- * If false, it won't perform any checks and just decode.
- * Be aware, the check has a runtime of O(log n).
- * Where n: number of undefined Unicode ranges.
+ *        Unicode table. It will not write \p cp and return 0 if the decoded code
+ *        point is undefined.
+ *        If false, it won't perform any checks and just decode.
+ *        Be aware, the check has a runtime of O(log n).
+ *        Where n: number of undefined Unicode ranges.
  * \param big_endian If the buffer bytes have big endian order.
  *
  * \return The number of bytes converted. For UTF-32 this is always 0 or 4.
@@ -55,7 +55,7 @@ RZ_API int rz_utf32be_decode(const ut8 *ptr, int ptrlen, RZ_NULLABLE RZ_OUT RzCo
  * \param buf_len The buffer length.
  * \param big_endian Should be set if the bytes in the buffer are in big endian order.
  * \param lookahead Number of code points to check.
- * Note: if the buffer can't cover all \p lookahead code points, this returns false.
+ *        NOTE: if the buffer can't cover all \p lookahead code points, this returns false.
  *
  * \return True if the buffer has \p lookahead valid UTF-32 code points.
  * \return False otherwise.
@@ -87,7 +87,7 @@ RZ_API bool rz_utf32_valid_code_point(RZ_NONNULL const ut8 *buf, size_t buf_len,
  * \brief Encodes the Unicode code point \p ucp into \p buf.
  *
  * \param buf The buffer to write the UTF-32 character into.
- * The buffer must be at least 4 bytes in size.
+ *        The buffer must be at least 4 bytes in size.
  * \param ucp The Unicode code point to encode.
  * \param big_endian If true it will encode \p ucp as a big endian character. If false, as little endian.
  *

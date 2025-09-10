@@ -233,7 +233,7 @@ RZ_API void rz_str_uri_decode(char *buf);
 RZ_API char *rz_str_uri_encode(const char *buf);
 RZ_API char *rz_str_utf16_decode(const ut8 *s, int len);
 RZ_API int rz_str_utf16_to_utf8(ut8 *dst, int len_dst, const ut8 *src, int len_src, bool little_endian);
-RZ_API char *rz_str_utf16_encode(const char *s, int len);
+RZ_DEPRECATE RZ_API char *rz_str_utf16_encode(const char *s, int len);
 RZ_API RZ_OWN ut16 *rz_str_utf8_to_utf16(RZ_NONNULL const char *utf8_str, bool big_endian);
 RZ_API RZ_OWN ut32 *rz_str_utf8_to_utf32(RZ_NONNULL const char *utf8_str, bool big_endian);
 RZ_API char *rz_str_escape_utf8_for_json(const char *s, int len);
@@ -297,12 +297,12 @@ RZ_API const char *rz_str_indent(int indent);
  * Examples:
  *
  * ```c
- * // IBM290 character width is always one byte, but the equivalent Japanes
+ * // IBM290 character width is always one byte, but the equivalent Japanese
  * // characters in UTF-8 are 3 bytes.
  * assert(rz_string_enc_same_char_width_as_utf8(RZ_STR_ENC_IBM290) == false);
  *
  * // ASCII character width is always one byte, and the equivalent
- * // UTF-8 characters are also always 1 bytes.
+ * // UTF-8 characters are also always 1 byte.
  * assert(rz_string_enc_same_char_width_as_utf8(RZ_STR_ENC_8BIT) == true);
  * ```
  */
@@ -312,6 +312,7 @@ static inline bool rz_string_enc_same_char_width_as_utf8(RzStrEnc enc) {
 
 RZ_API bool rz_string_enc_is_utf_native_endian(RzStrEnc enc);
 RZ_API size_t rz_string_enc_code_point_width(RzStrEnc enc);
+
 static inline bool rz_string_code_points_align(RzStrEnc enc, size_t memory_alignment) {
 	if (rz_string_enc_code_point_width(enc) == memory_alignment) {
 		return true;

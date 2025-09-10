@@ -371,11 +371,11 @@ RZ_API const char *rz_utf_block_name(int idx) {
  * \param The buffer length in bytes.
  * \param cp The decoded code point.
  * \param check_is_def If true, checks the code point against the defined
- * Unicode table. It will not write \p cp and return 0 if the decoded code
- * point is undefined.
- * If false, it won't perform any checks and just decode.
- * Be aware, the check has a runtime of O(log n).
- * Where n: number of undefined Unicode ranges.
+ *        Unicode table. It will not write \p cp and return 0 if the decoded code
+ *        point is undefined.
+ *        If false, it won't perform any checks and just decode.
+ *        Be aware, the check has a runtime of O(log n).
+ *        Where n: number of undefined Unicode ranges.
  *
  * \return The number of bytes decoded. Is always between 0-4.
  */

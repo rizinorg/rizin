@@ -342,9 +342,9 @@ RZ_API bool rz_search_collection_strings_check_config_improvements(
 	}
 	if (!rz_string_code_points_align(ss->encoding, search_options->find_opts->alignment)) {
 		if (log_suggestions) {
-			RZ_LOG_INFO("The string encoding has code points of more than 1 byte. But setting search.align = 1.\n"
-				    "The search will take consume more resources, because alignment is not a multiple of the code point size.\n"
-				    "For larget binaries consider changing the encoding to a multiple of 2 (UTF-16) or 4 (UTF-32).\n");
+			RZ_LOG_INFO("The string encoding has code points of more than 1 byte. But search.align is set to 1.\n"
+				    "The search will consume more resources, because alignment is not a multiple of the code point size.\n"
+				    "For larger binaries consider to change the encoding to a multiple of 2 (UTF-16) or 4 (UTF-32).\n");
 		}
 		return false;
 	}

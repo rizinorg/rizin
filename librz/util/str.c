@@ -7,6 +7,7 @@
 #include "rz_types.h"
 #include <rz_util.h>
 #include "rz_cons.h"
+#include "rz_util/rz_assert.h"
 #include "rz_util/rz_unicode.h"
 #include <rz_vector.h>
 #include <stdio.h>
@@ -2832,6 +2833,7 @@ RZ_API size_t rz_str_len_utf8(const char *s) {
  * \return The number of Unicode code points *including* the final NUL.
  */
 RZ_API size_t rz_str_utf8_num_ucp(RZ_NONNULL const char *str) {
+	rz_return_val_if_fail(str, 0);
 	size_t i = 0, char_cnt = 0;
 	while (str[i]) {
 		if ((str[i] & 0xc0) != 0x80) {
@@ -2849,6 +2851,7 @@ RZ_API size_t rz_str_utf8_num_ucp(RZ_NONNULL const char *str) {
  * \return The number of bytes required for an UTF16 string, *including* the final NUL.
  */
 RZ_API size_t rz_str_utf8_get_width_utf16(RZ_NONNULL const char *str) {
+	rz_return_val_if_fail(str, 0);
 	size_t i = 0, byte_cnt = 0, extend_cnt = 0;
 	while (str[i]) {
 		if ((str[i] & 0xc0) != 0x80) {
@@ -3197,7 +3200,8 @@ RZ_API RZ_OWN ut32 *rz_str_utf8_to_utf32(RZ_NONNULL const char *utf8_str, bool b
 }
 
 // TODO: kill this completely, it makes no sense:
-RZ_API char *rz_str_utf16_encode(const char *s, int len) {
+// Even better, rewrite with the rz_utf16_encode() functions.
+RZ_DEPRECATE RZ_API char *rz_str_utf16_encode(const char *s, int len) {
 	int i;
 	char ch[4], *d, *od, *tmp;
 	if (!s) {
@@ -4437,7 +4441,7 @@ RZ_API const char *rz_str_indent(int indent) {
 }
 
 /**
- * \brief Checks given encoding if it is UTF-8, UTF16, or UTF-32
+ * \brief Checks given encoding if it is UTF-8, UTF-16, or UTF-32
  * of the host's endianness.
  *
  * \return true For UTF-8/ASCII.

@@ -4,8 +4,14 @@
 /* For RzCodePoint definition */
 #include "rz_utf8.h"
 
+/**
+ * \brief First Unicode code point which needs 4 bytes to be encoded.
+ */
 #define RZ_UTF16_FIRST_4BYTES_CODE_POINT 0x10000
-#define RZ_UTF16_CODE_POINT_WIDTH        2
+/**
+ * \brief Width of an UTF16 character in bytes.
+ */
+#define RZ_UTF16_CODE_POINT_WIDTH 2
 
 RZ_API size_t rz_utf16_decode(RZ_NONNULL const ut8 *buf, size_t buf_len, RZ_NULLABLE RZ_OUT RzCodePoint *ch, bool check_is_def, bool bigendian);
 RZ_API size_t rz_utf16le_decode(RZ_NONNULL const ut8 *buf, size_t buf_len, RZ_NULLABLE RZ_OUT RzCodePoint *ch, bool check_is_def);
