@@ -73,7 +73,7 @@ def main():
     if "md5: " in post_text:
         post_text = post_text.split("md5: ")[1].rstrip()
     else:
-        raise Exception(f"cannot find 'md5: ' in post_text: '{post_text}'") 
+        raise Exception(f"cannot find 'md5: ' in post_text: '{post_text}'")
 
     # analyze the file by old GET-cmd
     get_cmd = requests.get(URL + "/cmd/" + cmd, timeout=5)
@@ -81,7 +81,7 @@ def main():
     if "md5: " in get_text:
         get_text = get_text.split("md5: ")[1].rstrip()
     else:
-        raise Exception(f"cannot find 'md5: ' in get_text: '{get_text}'") 
+        raise Exception(f"cannot find 'md5: ' in get_text: '{get_text}'")
 
     # compare results
     if post_text == get_text:
