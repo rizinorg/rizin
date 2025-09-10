@@ -3,7 +3,7 @@
 
 #include <rz_util.h>
 #include "minunit.h"
-#include <rz_platform.h>
+#include <rz_types.h>
 
 // TODO test rz_str_chop_path
 
@@ -844,8 +844,8 @@ bool test_rz_str_utf8_to_utf16(void) {
 	mu_assert_memeq((ut8 *)out, apine16_le, sizeof(apine16_le), "string mismatch");
 	free(out);
 
-	out = rz_str_utf8_to_utf16(apine, RZ_HOST_BIG_ENDIAN);
-	mu_assert_memeq((ut8 *)out, RZ_HOST_BIG_ENDIAN ? apine16_be : apine16_le, RZ_HOST_BIG_ENDIAN ? sizeof(apine16_be) : sizeof(apine16_le), "string with host endian mismatches");
+	out = rz_str_utf8_to_utf16(apine, RZ_HOST_IS_BIG_ENDIAN);
+	mu_assert_memeq((ut8 *)out, RZ_HOST_IS_BIG_ENDIAN ? apine16_be : apine16_le, RZ_HOST_IS_BIG_ENDIAN ? sizeof(apine16_be) : sizeof(apine16_le), "string with host endian mismatches");
 	free(out);
 
 	out = rz_str_utf8_to_utf16(nul, true);
@@ -893,8 +893,8 @@ bool test_rz_str_utf8_to_utf32(void) {
 	mu_assert_memeq((ut8 *)out, apine32_le, sizeof(apine32_le), "string mismatch");
 	free(out);
 
-	out = rz_str_utf8_to_utf32(apine, RZ_HOST_BIG_ENDIAN);
-	mu_assert_memeq((ut8 *)out, RZ_HOST_BIG_ENDIAN ? apine32_be : apine32_le, RZ_HOST_BIG_ENDIAN ? sizeof(apine32_be) : sizeof(apine32_le), "string with host endian mismatches");
+	out = rz_str_utf8_to_utf32(apine, RZ_HOST_IS_BIG_ENDIAN);
+	mu_assert_memeq((ut8 *)out, RZ_HOST_IS_BIG_ENDIAN ? apine32_be : apine32_le, RZ_HOST_IS_BIG_ENDIAN ? sizeof(apine32_be) : sizeof(apine32_le), "string with host endian mismatches");
 	free(out);
 
 	out = rz_str_utf8_to_utf32(nul, true);

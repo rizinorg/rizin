@@ -205,23 +205,23 @@ static st64 buf_format(RzBuffer *dst, RzBuffer *src, const char *fmt, int n) {
 					goto err_exit;
 				}
 
-				if (tok->big_endian != RZ_SYS_ENDIAN && tok->type_size > 1) {
+				if ((RZ_HOST_IS_BIG_ENDIAN != (bool)tok->big_endian) && tok->type_size > 1) {
 					// just swap endianness if the host endianness
 					// is not the same and is not one byte
 					switch (tok->type_size) {
 					case 2: {
 						ut16 value = rz_read_ble16(tmp, tok->big_endian);
-						rz_write_ble16(tmp, value, RZ_SYS_ENDIAN);
+						rz_write_ble16(tmp, value, RZ_HOST_IS_BIG_ENDIAN);
 						break;
 					}
 					case 4: {
 						ut32 value = rz_read_ble32(tmp, tok->big_endian);
-						rz_write_ble32(tmp, value, RZ_SYS_ENDIAN);
+						rz_write_ble32(tmp, value, RZ_HOST_IS_BIG_ENDIAN);
 						break;
 					}
 					case 8: {
 						ut64 value = rz_read_ble64(tmp, tok->big_endian);
-						rz_write_ble64(tmp, value, RZ_SYS_ENDIAN);
+						rz_write_ble64(tmp, value, RZ_HOST_IS_BIG_ENDIAN);
 						break;
 					}
 					default:

@@ -4454,10 +4454,10 @@ RZ_API bool rz_string_enc_is_utf_native_endian(RzStrEnc enc) {
 		return true;
 	case RZ_STRING_ENC_UTF16LE:
 	case RZ_STRING_ENC_UTF32LE:
-		return !RZ_HOST_BIG_ENDIAN;
+		return RZ_HOST_IS_LITTLE_ENDIAN;
 	case RZ_STRING_ENC_UTF16BE:
 	case RZ_STRING_ENC_UTF32BE:
-		return RZ_HOST_BIG_ENDIAN;
+		return RZ_HOST_IS_BIG_ENDIAN;
 	}
 }
 

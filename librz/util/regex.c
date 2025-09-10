@@ -11,7 +11,7 @@
 #include <rz_types.h>
 #include <rz_util/rz_assert.h>
 #include <rz_util.h>
-#include <rz_platform.h>
+#include <rz_types.h>
 
 typedef pcre2_general_context_8 RzRegexGeneralContext8; ///< General context.
 // typedef pcre2_compile_context RzRegexCompContext; ///< The context for compiling.
@@ -118,7 +118,7 @@ static RZ_OWN void *regex_new(RZ_NONNULL const char *pattern, RzRegexFlags cflag
 		}
 #endif
 	} else {
-		ut32 *utf32_pat = rz_str_utf8_to_utf32(pat, RZ_HOST_BIG_ENDIAN);
+		ut32 *utf32_pat = rz_str_utf8_to_utf32(pat, RZ_HOST_IS_BIG_ENDIAN);
 		regex = pcre2_compile_32(
 			(PCRE2_SPTR32)utf32_pat,
 			PCRE2_ZERO_TERMINATED,

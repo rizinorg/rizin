@@ -279,7 +279,7 @@ bool test_rz_regex_match_all_native_utf16(void) {
 
 	const char *utf8 = "A salat with 🍇🍉🍍 Extra 🍍🍍🍍现代汉语常用字表 please.";
 	// Encode to host endianess UTF-16/32
-	ut16 *utf16_he = rz_str_utf8_to_utf16(utf8, RZ_HOST_BIG_ENDIAN);
+	ut16 *utf16_he = rz_str_utf8_to_utf16(utf8, RZ_HOST_IS_BIG_ENDIAN);
 
 	RzRegex16 *re = rz_regex_new_16("🍍..", RZ_REGEX_EXTENDED, 0, NULL);
 	mu_assert_notnull(re, "Regex was NULL");
@@ -342,7 +342,7 @@ bool test_rz_regex_match_all_native_utf32(void) {
 
 	const char *utf8 = "A salat with 🍇🍉🍍 Extra 🍍🍍🍍现代汉语常用字表 please.";
 	// Encode to host endianess UTF-32/32
-	ut32 *utf32_he = rz_str_utf8_to_utf32(utf8, RZ_HOST_BIG_ENDIAN);
+	ut32 *utf32_he = rz_str_utf8_to_utf32(utf8, RZ_HOST_IS_BIG_ENDIAN);
 
 	RzRegex32 *re = rz_regex_new_32("🍍..", RZ_REGEX_EXTENDED, 0, NULL);
 	mu_assert_notnull(re, "Regex was NULL");

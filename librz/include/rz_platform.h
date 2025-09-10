@@ -13,20 +13,6 @@
 extern "C" {
 #endif
 
-#if defined(__BYTE_ORDER__)
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-#define RZ_HOST_BIG_ENDIAN false
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-#define RZ_HOST_BIG_ENDIAN true
-#else
-#error "Unsupported endianness"
-#endif
-#else
-// Hacky version to determine endianness
-static const ut32 rz_endianness_one = 1;
-#define RZ_HOST_BIG_ENDIAN !(*((char *)&(rz_endianness_one)) == 1)
-#endif
-
 typedef struct rz_platform_profile_t {
 	ut64 rom_size;
 	ut64 ram_size;
