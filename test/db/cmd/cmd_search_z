@@ -1332,26 +1332,26 @@ EOF
 EXPECT=<<EOF
 WARNING: The string encoding for the search is set to "guess".
 The search will consume vastly more resources and the guessing is unreliable.
-You can set a specific encoding with 'e str.encoding'.
+You can set a specific encoding with 'e str.encoding=<encoding>'.
 0x00000030 2 hit.string.ascii.0
 WARNING: |ab| < search.str.min_length so some search hits may be hidden. Set search.str.min_length to 2 to see them.
 ----
 WARNING: The string encoding for the search is set to "guess".
 The search will consume vastly more resources and the guessing is unreliable.
-You can set a specific encoding with 'e str.encoding'.
+You can set a specific encoding with 'e str.encoding=<encoding>'.
 0x00000010 2 hit.string.ascii.0
 0x00000020 2 hit.string.ascii.1
 0x00000030 2 hit.string.ascii.2
 
 WARNING: The string encoding for the search is set to "guess".
 The search will consume vastly more resources and the guessing is unreliable.
-You can set a specific encoding with 'e str.encoding'.
+You can set a specific encoding with 'e str.encoding=<encoding>'.
 0x00000050 9 hit.string.utf8.0
 WARNING: |¢€𐍈| < search.str.min_length so some search hits may be hidden. Set search.str.min_length to 3 to see them.
 ----
 WARNING: The string encoding for the search is set to "guess".
 The search will consume vastly more resources and the guessing is unreliable.
-You can set a specific encoding with 'e str.encoding'.
+You can set a specific encoding with 'e str.encoding=<encoding>'.
 0x00000040 9 hit.string.utf8.0
 0x00000050 9 hit.string.utf8.1
 EOF
@@ -1365,7 +1365,7 @@ EXPECT=<<EOF
 [2K[0x00000000]> [0x00000000]> [2K[2K[0x00000000]> /[0x00000000]> /[2K[2K[0x00000000]> /z[0x00000000]> /z[2K[2K[0x00000000]> /z [0x00000000]> /z [2K[2K[0x00000000]> /z a[0x00000000]> /z a[2K[2K[0x00000000]> /z ab[0x00000000]> /z ab[2K[0x00000000]> /z ab
 WARNING: The string encoding for the search is set to "guess".
 The search will consume vastly more resources and the guessing is unreliable.
-You can set a specific encoding with 'e str.encoding'.
+You can set a specific encoding with 'e str.encoding=<encoding>'.
 WARNING: |ab| < search.str.min_length so some search hits may be hidden. Set search.str.min_length to 2 to see them.
 [2K[0x00000000]> [0x00000000]> [2K[2K[0x00000000]> q[0x00000000]> q[2K[0x00000000]> q
 EOF
@@ -1377,7 +1377,7 @@ CMDS=!!rizin -1 -qc "e search.show_progress=0 search.str.min_length=4 log.show.s
 EXPECT=<<EOF
 WARNING: rz_search_collection_strings_check_config_improvements in ../librz/search/string_search.c:###: The string encoding for the search is set to "guess".
 The search will consume vastly more resources and the guessing is unreliable.
-You can set a specific encoding with 'e str.encoding'.
+You can set a specific encoding with 'e str.encoding=<encoding>'.
 WARNING: rz_core_print_warnings_after in ../librz/core/core.c:###: cmd_string_search_generic in ../librz/core/cmd/cmd_search.c:####: |¢€𐍈| < search.str.min_length so some search hits may be hidden. Set search.str.min_length to # to see them.
 EOF
 RUN

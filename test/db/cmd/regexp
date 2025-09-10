@@ -98,19 +98,19 @@ EOF
 EXPECT_ERR=<<EOF
 WARNING: The string encoding for the search is set to "guess".
 The search will consume vastly more resources and the guessing is unreliable.
-You can set a specific encoding with 'e str.encoding'.
+You can set a specific encoding with 'e str.encoding=<encoding>'.
 WARNING: The string encoding for the search is set to "guess".
 The search will consume vastly more resources and the guessing is unreliable.
-You can set a specific encoding with 'e str.encoding'.
+You can set a specific encoding with 'e str.encoding=<encoding>'.
 WARNING: The string encoding for the search is set to "guess".
 The search will consume vastly more resources and the guessing is unreliable.
-You can set a specific encoding with 'e str.encoding'.
+You can set a specific encoding with 'e str.encoding=<encoding>'.
 WARNING: The string encoding for the search is set to "guess".
 The search will consume vastly more resources and the guessing is unreliable.
-You can set a specific encoding with 'e str.encoding'.
+You can set a specific encoding with 'e str.encoding=<encoding>'.
 WARNING: The string encoding for the search is set to "guess".
 The search will consume vastly more resources and the guessing is unreliable.
-You can set a specific encoding with 'e str.encoding'.
+You can set a specific encoding with 'e str.encoding=<encoding>'.
 EOF
 RUN
 
@@ -141,10 +141,10 @@ EOF
 EXPECT_ERR=<<EOF
 WARNING: The string encoding for the search is set to "guess".
 The search will consume vastly more resources and the guessing is unreliable.
-You can set a specific encoding with 'e str.encoding'.
+You can set a specific encoding with 'e str.encoding=<encoding>'.
 WARNING: The string encoding for the search is set to "guess".
 The search will consume vastly more resources and the guessing is unreliable.
-You can set a specific encoding with 'e str.encoding'.
+You can set a specific encoding with 'e str.encoding=<encoding>'.
 EOF
 RUN
 
