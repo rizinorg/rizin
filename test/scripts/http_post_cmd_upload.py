@@ -69,11 +69,19 @@ def main():
 
     # analyze the file via new POST-cmd
     post_cmd = requests.post(URL + "/cmd/", data=cmd, timeout=5)
-    post_text = post_cmd.text.split("md5: ")[1].rstrip()
+    post_text = post_cmd.text
+    if "md5: " in post_text:
+        post_text = post_text.split("md5: ")[1].rstrip()
+    else:
+        raise Exception(f"cannot find 'md5: ' in post_text: '{post_text}'") 
 
     # analyze the file by old GET-cmd
     get_cmd = requests.get(URL + "/cmd/" + cmd, timeout=5)
-    get_text = get_cmd.text.split("md5: ")[1].rstrip()
+    get_text = get_cmd.text
+    if "md5: " in get_text:
+        get_text = get_text.split("md5: ")[1].rstrip()
+    else:
+        raise Exception(f"cannot find 'md5: ' in get_text: '{get_text}'") 
 
     # compare results
     if post_text == get_text:
