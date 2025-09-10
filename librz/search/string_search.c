@@ -336,7 +336,7 @@ RZ_API bool rz_search_collection_strings_check_config_improvements(
 		if (log_suggestions) {
 			RZ_LOG_WARN("The string encoding for the search is set to \"guess\".\n"
 				    "The search will consume vastly more resources and the guessing is unreliable.\n"
-				    "You can set a specific encoding with 'e str.encoding'.\n");
+				    "You can set a specific encoding with 'e str.encoding=<encoding>'.\n");
 		}
 		return false;
 	}
