@@ -331,3 +331,43 @@ RZ_API void rz_mem_memzero(void *dst, size_t l) {
 #endif
 #endif
 }
+
+/**
+ * \brief Makes a copy of the buffer \p buf but starts copying data at \p offset.
+ * That is: `rz_mem_align_byte(buf, n, i)` will return a copy of `buf[i:n]`.
+ * The bytes `[n - i:n]` of the returned buffer are set to 0x00.
+ *
+ * \param buf The buffer to copy.
+ * \param buf_size The size of \p buf in bytes. If 0, this function just performce a memcpy.
+ * \param offset The offset to start copying from. If larger than \p buf_size,
+ *        it returns a zeroed buffer of size \p buf_size.
+ *
+ * \return The copied buffer or NULL in case of failure. If \p offset >= \p buf_size
+ *         the returned buffer is all zeros.
+ *
+ * NOTE: This function is useful to align the data in \p buf to a certain offset.
+ * E.g. reading ut64 values from \p buf + 3 would be undefined behavior and fail under certain conditions.
+ * Instead this function can be used to get a copy of the buffer at this offset:
+ *
+ * Example:
+ * ```c
+ * // This is undefined behavior, because the memory access is misaligned for ut64 values.
+ * ut64 x = *((ut64 *)buf + 3);
+ *
+ * // Instead you can align buf with this function:
+ * ut8 *out = rz_mem_align_byte(buf, buf_size, 3);
+ * ut64 v = *((ut64 *)out);
+ * ```
+ */
+RZ_API RZ_OWN ut8 *rz_mem_copy_offset(const ut8 *buf, size_t buf_size, size_t offset) {
+	rz_return_val_if_fail(buf && buf_size > 0, NULL);
+	ut8 *dst = RZ_NEWS0(ut8, buf_size);
+	if (offset >= buf_size) {
+		return dst;
+	}
+	if (!rz_mem_copy(dst, buf_size + offset, buf + offset, buf_size - offset)) {
+		free(dst);
+		return NULL;
+	}
+	return dst;
+}
