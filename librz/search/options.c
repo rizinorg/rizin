@@ -115,17 +115,6 @@ RZ_API void rz_search_find_opt_free(RZ_NULLABLE RzSearchFindOpt *opt) {
 	free(opt);
 }
 
-RZ_API bool rz_search_find_opt_set_inverse_match(RZ_NONNULL RzSearchFindOpt *opt, bool inverse_match) {
-	rz_return_val_if_fail(opt, false);
-	opt->match_inverse = inverse_match;
-	return true;
-}
-
-RZ_API bool rz_search_find_opt_get_inverse_match(RZ_NONNULL RzSearchFindOpt *opt) {
-	rz_return_val_if_fail(opt, false);
-	return opt->match_inverse;
-}
-
 RZ_API bool rz_search_find_opt_set_overlap_match(RZ_NONNULL RzSearchFindOpt *opt, bool overlap_match) {
 	rz_return_val_if_fail(opt, false);
 	opt->match_overlap = overlap_match;

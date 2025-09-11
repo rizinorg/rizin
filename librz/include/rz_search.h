@@ -219,7 +219,6 @@ RZ_API const RzSearchFindOpt *rz_search_opt_get_find_options(RZ_NONNULL const Rz
 
 RZ_API RZ_OWN RzSearchFindOpt *rz_search_find_opt_new();
 RZ_API void rz_search_find_opt_free(RZ_NULLABLE RzSearchFindOpt *opt);
-RZ_API bool rz_search_find_opt_set_inverse_match(RZ_NONNULL RzSearchFindOpt *opt, bool inverse_match);
 RZ_API bool rz_search_find_opt_set_overlap_match(RZ_NONNULL RzSearchFindOpt *opt, bool overlap_match);
 RZ_API bool rz_search_find_opt_set_alignment(RZ_NONNULL RzSearchFindOpt *opt, size_t alignment);
 RZ_API ut16 rz_search_find_opt_get_alignment(RZ_NONNULL const RzSearchFindOpt *opt);

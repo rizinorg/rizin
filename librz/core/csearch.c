@@ -27,8 +27,7 @@ RZ_API RZ_OWN RzSearchFindOpt *rz_core_setup_default_search_find_opts(RzCore *co
 		RZ_LOG_ERROR("Failed allocating find options.\n");
 		return NULL;
 	}
-	if (!(rz_search_find_opt_set_inverse_match(fopts, rz_config_get_b(core->config, "search.inverse")) &&
-		    rz_search_find_opt_set_overlap_match(fopts, rz_config_get_b(core->config, "search.overlap")) &&
+	if (!(rz_search_find_opt_set_overlap_match(fopts, rz_config_get_b(core->config, "search.overlap")) &&
 		    rz_search_find_opt_set_alignment(fopts, rz_config_get_i(core->config, "search.align")))) {
 		RZ_LOG_ERROR("Failed set find options.\n");
 		rz_search_find_opt_free(fopts);
