@@ -647,7 +647,7 @@ RZ_API int rz_scan_strings(RZ_NONNULL RzBuffer *buf_to_scan, RZ_NONNULL RzList /
 	} else if (from > to) {
 		RZ_LOG_ERROR("rz_scan_strings: Invalid range to find strings 0x%" PFMT64x " .. 0x%" PFMT64x "\n", from, to);
 		return -1;
-	} else if (type == RZ_STRING_ENC_MUTF8 || type == RZ_STRING_ENC_BASE64) {
+	} else if (type == RZ_STRING_ENC_MUTF8) {
 		RZ_LOG_ERROR("rz_scan_strings: %s search type is not supported.\n", rz_str_enc_as_string(type));
 		return -1;
 	}
@@ -679,7 +679,7 @@ RZ_API int rz_scan_strings(RZ_NONNULL RzBuffer *buf_to_scan, RZ_NONNULL RzList /
  */
 RZ_API int rz_scan_strings_whole_buf(RZ_NONNULL const RzBuffer *buf_to_scan, RZ_NONNULL RzList /*<RzDetectedString *>*/ *list, RZ_NONNULL const RzUtilStrScanOptions *opt, RzStrEnc type) {
 	rz_return_val_if_fail(opt && list && buf_to_scan, -1);
-	if (type == RZ_STRING_ENC_MUTF8 || type == RZ_STRING_ENC_BASE64) {
+	if (type == RZ_STRING_ENC_MUTF8) {
 		RZ_LOG_ERROR("rz_scan_strings_whole_buf: '%s' search type is not supported.\n", rz_str_enc_as_string(type));
 		return -1;
 	}

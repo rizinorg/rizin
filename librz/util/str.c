@@ -59,8 +59,6 @@ RZ_API const char *rz_str_enc_as_string(RzStrEnc enc) {
 		return "utf16be";
 	case RZ_STRING_ENC_UTF32BE:
 		return "utf32be";
-	case RZ_STRING_ENC_BASE64:
-		return "base64";
 	case RZ_STRING_ENC_IBM037:
 		return "ibm037";
 	case RZ_STRING_ENC_IBM290:
@@ -116,8 +114,6 @@ RZ_API RzStrEnc rz_str_enc_string_as_type(RZ_NULLABLE const char *encoding) {
 		return RZ_STRING_ENC_EBCDIC_US;
 	} else if (!strcmp(encoding, "settings")) {
 		return RZ_STRING_ENC_SETTINGS;
-	} else if (!strcmp(encoding, "base64")) {
-		return RZ_STRING_ENC_BASE64;
 	}
 
 	RZ_LOG_ERROR("rz_str: encoding '%s' not supported\n", encoding);
@@ -4475,7 +4471,6 @@ RZ_API size_t rz_string_enc_code_point_width(RzStrEnc enc) {
 	switch (enc) {
 	default:
 	case RZ_STRING_ENC_GUESS:
-	case RZ_STRING_ENC_BASE64:
 	case RZ_STRING_ENC_SETTINGS:
 		return 0;
 	case RZ_STRING_ENC_8BIT:

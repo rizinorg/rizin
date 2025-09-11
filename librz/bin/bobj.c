@@ -33,7 +33,7 @@ RZ_IPI void rz_bin_string_decode_base64(RZ_NONNULL RzBinString *bstr) {
 	free(bstr->string);
 	bstr->string = decoded;
 	bstr->length = strlen(decoded);
-	bstr->type = RZ_STRING_ENC_BASE64;
+	bstr->type = RZ_STRING_ENC_UTF8;
 }
 
 RZ_API void rz_bin_mem_free(RZ_NULLABLE void *data) {

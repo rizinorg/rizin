@@ -17,6 +17,9 @@ typedef enum {
 	RZ_STRING_TYPE_SIZED, ///< Pascal-style strings with the first byte marking the size of the string
 } RzStrType;
 
+/**
+ * \brief String character encodings.
+ */
 typedef enum {
 	/**
 	 * \brief Unknown 8bit encoding but with ASCII from 0 to 0x7f.
@@ -29,7 +32,6 @@ typedef enum {
 	RZ_STRING_ENC_UTF32LE = 'U',
 	RZ_STRING_ENC_UTF16BE = 'n',
 	RZ_STRING_ENC_UTF32BE = 'N',
-	RZ_STRING_ENC_BASE64 = '6',
 	RZ_STRING_ENC_IBM037 = 'c',
 	RZ_STRING_ENC_IBM290 = 'd',
 	RZ_STRING_ENC_EBCDIC_UK = 'k',
@@ -318,7 +320,6 @@ static inline bool rz_string_code_points_align(RzStrEnc enc, size_t memory_align
 		return true;
 	}
 	switch (enc) {
-	case RZ_STRING_ENC_BASE64:
 	case RZ_STRING_ENC_SETTINGS:
 		rz_warn_if_reached();
 		return false;
