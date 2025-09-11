@@ -6,11 +6,16 @@
  * The code here can also serve as example how to use the search API
  * with minimal dependencies.
  *
+ * NOTE: These tests must be run from `<repo_root>/test/` and
+ * `git clone https://github.com/rizinorg/rizin-testbins/ <repo_root>/test/bins`
+ * must have been executed before.
+ *
  * For a general overview how the search is implemented see
  * librz/search/README.md
  */
 
 #include "../unit/minunit.h"
+#include <rz_core.h>
 #include "rz_list.h"
 #include "rz_search.h"
 #include "rz_util/rz_buf.h"
@@ -19,9 +24,7 @@
 // The files to search in.
 static const char *files[] = {
 	"./bins/cmd/search/string_encodings/Hindi-Lipsum.utf8",
-	"./bins/cmd/search/string_encodings/Hindi-Lipsum.utf16be",
-	"./bins/cmd/search/string_encodings/regex_search.russian.utf8.utf32le.utf16be",
-	"./bins/cmd/search/string_encodings/Japanese-Katakana-Lipsum.ibm290",
+	"./bins/elf/analysis/hello-utf-16",
 
 	// Big binaries
 	//
@@ -42,9 +45,7 @@ static const char *files[] = {
 static const char *patterns[][3] = {
 	// Same Hindi strings but one is shorter.
 	{ "पहोचने वैश्विक एसलिये पुस्तक हुआआदी", "प.+चने वैश्विक एसलिये .+आ", NULL },
-	{ "पहोचने वैश्विक एसलिये पुस्तक हुआआदी", "प.+चने वैश्विक एसलिये .+आ", NULL },
-	{ "ипсум", "и.{3}м", NULL },
-	{ "!¥*);¬アイウエオカキクケコ", "¥.+ケコ", NULL },
+	{ "heLLo woRlD", NULL, NULL },
 
 	// Big binaries' strings
 	//
@@ -117,12 +118,94 @@ int test_rz_str_search_single_simple(void) {
 		free(hit_str);
 	}
 
-	// mu_assert_notnull(result, "valid callback (false)");
+	mu_end;
+}
+
+/**
+ * \brief Do a string search in a binary file.
+ * The file is opened with as an RzIO instance. Not just as simple buffer.
+ * Useful if the binary has to be analyzed beyond searching strings in it.
+ */
+int test_rz_str_search_io_simple(void) {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "NULL check failed");
+	rz_core_init(core);
+	mu_assert_true(rz_core_file_open_load(core, files[1], 0, RZ_PERM_R, false), "Loading file failed");
+
+	// Setup search options. These are _not_ specific for the string search.
+	// They are applicable to the whole search module, independently what
+	// is searched (bytes, strings, cryptographic material, values...).
+	// Configuring specific values is optional.
+	RzSearchOpt *search_opts = rz_search_opt_new();
+	mu_assert_notnull(search_opts, "NULL check failed");
+	rz_search_opt_set_max_threads(search_opts, 4);
+	rz_search_opt_set_max_hits(search_opts, 10);
+	rz_search_opt_set_show_progress_from_str(search_opts, "no");
+	rz_search_opt_set_chunk_size(search_opts, ELEMENT_SIZE);
+
+	// The find options allow to configure string specific settings.
+	RzSearchFindOpt *find_opts = rz_search_find_opt_new();
+	mu_assert_notnull(find_opts, "NULL check failed");
+
+	// Set alignment to 2, because we search UTF-16 and its code points are aligned to 2.
+	// It is possible to also set it to any other value of course.
+	// But any value not aligned to the code point width of UTF-16 (anything not a multiple of 2)
+	// will slow down the search.
+	// For details see librz/search/README.md
+	size_t match_alignment = 2;
+	rz_search_find_opt_set_alignment(find_opts, match_alignment);
+	rz_search_find_opt_set_overlap_match(find_opts, false);
+
+	// Assign find options to the search options.
+	rz_search_opt_set_find_options(search_opts, find_opts);
+
+	// Please refer to librz/search/README.md for an explanation why string scan options
+	// are needed for an UTF-16 search.
+	RzUtilStrScanOptions scan_opt = {
+		.max_str_length = ELEMENT_SIZE,
+		.min_str_length = 4,
+		.prefer_big_endian = false,
+		.check_ascii_freq = false,
+	};
+
+	RzSearchCollection *collection = rz_search_collection_strings(&scan_opt, RZ_STRING_ENC_UTF16LE, match_alignment);
+	mu_assert_notnull(collection, "NULL check failed");
+
+	// Now add the pattern we search for.
+	rz_search_collection_string_add(collection, patterns[1][0], RZ_REGEX_CASELESS, match_alignment);
+
+	// Get the boundaries the strings are searched in.
+	// The default address ranges are in the main config under `search.from`, `search.to`.
+	// The maps to search in are in the config under `search.in`.
+	RzList *boundaries = rz_core_get_boundaries_select(core, "search.from", "search.to", "search.in");
+	mu_assert_notnull(boundaries, "NULL check failed");
+	mu_assert_true(rz_list_length(boundaries) != 0, "The search boundaries are emtpy");
+
+	RzList *hits = rz_search_on_io(search_opts, collection, core->io, boundaries);
+
+	// Print the hits.
+	// NOTE: The string address is 0x004005ea.
+	// This is the virtual address where the string starts.
+	// If you examine the two bytes before the string's address
+	// you will notice it is preceeded by a BOM:
+	// ```
+	// > px 16 @ 0x004005e8
+	// - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+	// 0x004005e8  fffe 4800 6500 6c00 6c00 6f00 2000 5700  ..H.e.l.l.o. .W.
+	// ```
+	// So the string search does not count the BOM to the string!
+	mu_assert_eq(rz_list_length(hits), 1, "Incorrect number of strings.");
+	const RzSearchHit *hit = rz_list_get_n(hits, 0);
+	printf("Hit at 0x%" PFMT64x " size: %" PFMTSZd "\n", hit->address, hit->size);
+	mu_assert_true(hit->size == 22, "Incorrect size");
+	mu_assert_eq(hit->address, 0x004005ea, "Incorrect address");
+
 	mu_end;
 }
 
 int all_tests() {
 	mu_run_test(test_rz_str_search_single_simple);
+	mu_run_test(test_rz_str_search_io_simple);
 	return tests_passed != tests_run;
 }
 
