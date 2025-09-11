@@ -181,7 +181,7 @@ static RzIODesc *__open(RzIO *io, const char *pathname, int rw, int mode) {
 			int rw = 7;
 			free(reply);
 			eprintf("Wine-dbg is ready to go!\n");
-			return rz_io_desc_new(io, &rz_io_plugin_winedbg, pathname, rw, mode, gs);
+			return rz_io_desc_new(io, &rz_io_plugin_winedbg, pathname, rw, gs);
 		}
 		eprintf("Can't find the Wine-dbg prompt\n");
 	}

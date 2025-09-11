@@ -249,7 +249,7 @@ static RzIODesc *shm__open(RzIO *io, const char *uri, int rw, int mode) {
 	RZ_LOG_INFO("Connected to shared memory \"%s\" (0x%08x) size 0x%x\n",
 		shm->name, shm->id, shm->size);
 #endif // __WINDOWS__
-	return rz_io_desc_new(io, &rz_io_plugin_shm, uri, rw, mode, shm);
+	return rz_io_desc_new(io, &rz_io_plugin_shm, uri, rw, shm);
 }
 
 RzIOPlugin rz_io_plugin_shm = {

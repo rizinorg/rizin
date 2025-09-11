@@ -587,7 +587,7 @@ static RzIODesc *windbg_open(RzIO *io, const char *uri, int perm, int mode) {
 	rz_str_argv_free(argv);
 remote_client:
 	io_windbg->idbg = idbg;
-	fd = rz_io_desc_new(io, &rz_io_plugin_windbg, uri, perm | RZ_PERM_X, mode, io_windbg);
+	fd = rz_io_desc_new(io, &rz_io_plugin_windbg, uri, perm | RZ_PERM_X, io_windbg);
 	fd->name = rz_str_dup(args);
 	if (cur_dbg_plugin_is_windbg(core->dbg)) {
 		core->dbg->plugin_data = idbg;

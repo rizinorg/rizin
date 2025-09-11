@@ -132,7 +132,7 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 			return NULL;
 		}
 		ret = rz_io_desc_new(io, &rz_io_plugin_w32dbg,
-			file, rw | RZ_PERM_X, mode, wrap);
+			file, rw | RZ_PERM_X, wrap);
 		ret->name = rz_sys_pid_to_path(wrap->pi.dwProcessId);
 		return ret;
 	}

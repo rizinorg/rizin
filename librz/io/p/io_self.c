@@ -293,7 +293,7 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 		return NULL;
 	}
 	io_self->self_sections = (RzIOSelfSection *)calloc(SELF_SECTION_NUM, sizeof(RzIOSelfSection));
-	RzIODesc *desc = rz_io_desc_new(io, &rz_io_plugin_self, file, rw, mode, io_self);
+	RzIODesc *desc = rz_io_desc_new(io, &rz_io_plugin_self, file, rw, io_self);
 	int ret, pid = getpid();
 	io->va = true; // nop
 	ret = update_self_regions(io, desc, pid);

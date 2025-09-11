@@ -131,7 +131,7 @@ static RzIODesc *rz_io_def_mmap_open(RzIO *io, const char *file, int perm, int m
 	if (!mmo) {
 		return NULL;
 	}
-	RzIODesc *d = rz_io_desc_new(io, &rz_io_plugin_default, mmo->filename, perm, mode, mmo);
+	RzIODesc *d = rz_io_desc_new(io, &rz_io_plugin_default, mmo->filename, perm, mmo);
 	if (!d->name) {
 		d->name = rz_str_dup(mmo->filename);
 	}

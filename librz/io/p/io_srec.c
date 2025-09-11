@@ -495,7 +495,7 @@ static RzIODesc *__open(RzIO *io, const char *pathname, st32 rw, st32 mode) {
 			return NULL;
 		}
 		free(str);
-		return rz_io_desc_new(io, &rz_io_plugin_srec, pathname, rw, mode, mal);
+		return rz_io_desc_new(io, &rz_io_plugin_srec, pathname, rw, mal);
 	}
 	return NULL;
 }
