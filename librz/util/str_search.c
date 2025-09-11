@@ -268,42 +268,43 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 
 	/* Eat a whole C string */
 	for (i = 0; i < opt->max_str_length - look_ahead && needle < to; i += char_bytes) {
-		RzCodePoint r = 0;
+		// Decoded Unicode code point
+		RzCodePoint ucp = 0;
 
 		switch (str_type) {
 		case RZ_STRING_ENC_UTF32LE:
-			char_bytes = rz_utf32le_decode(buf + needle - from, to - needle, &r, false);
+			char_bytes = rz_utf32le_decode(buf + needle - from, to - needle, &ucp, false);
 			break;
 		case RZ_STRING_ENC_UTF16LE:
-			char_bytes = rz_utf16le_decode(buf + needle - from, to - needle, &r, false);
+			char_bytes = rz_utf16le_decode(buf + needle - from, to - needle, &ucp, false);
 			break;
 		case RZ_STRING_ENC_UTF32BE:
-			char_bytes = rz_utf32be_decode(buf + needle - from, to - needle, &r, false);
+			char_bytes = rz_utf32be_decode(buf + needle - from, to - needle, &ucp, false);
 			break;
 		case RZ_STRING_ENC_UTF16BE:
-			char_bytes = rz_utf16be_decode(buf + needle - from, to - needle, &r, false);
+			char_bytes = rz_utf16be_decode(buf + needle - from, to - needle, &ucp, false);
 			break;
 		case RZ_STRING_ENC_IBM037:
-			char_bytes = rz_str_ibm037_to_unicode(*(buf + needle - from), &r);
+			char_bytes = rz_str_ibm037_to_unicode(*(buf + needle - from), &ucp);
 			break;
 		case RZ_STRING_ENC_IBM290:
-			char_bytes = rz_str_ibm290_to_unicode(*(buf + needle - from), &r);
+			char_bytes = rz_str_ibm290_to_unicode(*(buf + needle - from), &ucp);
 			break;
 		case RZ_STRING_ENC_EBCDIC_ES:
-			char_bytes = rz_str_ebcdic_es_to_unicode(*(buf + needle - from), &r);
+			char_bytes = rz_str_ebcdic_es_to_unicode(*(buf + needle - from), &ucp);
 			break;
 		case RZ_STRING_ENC_EBCDIC_UK:
-			char_bytes = rz_str_ebcdic_uk_to_unicode(*(buf + needle - from), &r);
+			char_bytes = rz_str_ebcdic_uk_to_unicode(*(buf + needle - from), &ucp);
 			break;
 		case RZ_STRING_ENC_EBCDIC_US:
-			char_bytes = rz_str_ebcdic_us_to_unicode(*(buf + needle - from), &r);
+			char_bytes = rz_str_ebcdic_us_to_unicode(*(buf + needle - from), &ucp);
 			break;
 		case RZ_STRING_ENC_SETTINGS:
 			rz_warn_if_reached();
 			RZ_LOG_ERROR("Illegal state reached. 'settings' encoding is not a valid value here.\n");
 			return NULL;
 		default:
-			char_bytes = rz_utf8_decode(buf + needle - from, to - needle, &r, false);
+			char_bytes = rz_utf8_decode(buf + needle - from, to - needle, &ucp, false);
 			if (char_bytes > 1) {
 				str_type = RZ_STRING_ENC_UTF8;
 				look_ahead = buf_look_ahead(opt, RZ_STRING_ENC_UTF8);
@@ -312,7 +313,7 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 		}
 
 		/* Invalid sequence detected */
-		if (!char_bytes || (ascii_only && r > RZ_UNICODE_LAST_ASCII)) {
+		if (!char_bytes || (ascii_only && ucp > RZ_UNICODE_LAST_ASCII)) {
 			// Either an invalid code point decoded or a non-ASCII character.
 			break;
 		}
@@ -343,12 +344,12 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 			output_buf = heap_alloc;
 		}
 
-		if (rz_unicode_code_point_is_printable(r) && r != '\\') {
-			char_bytes = rz_utf8_encode(output_buf + i, r);
+		if (rz_unicode_code_point_is_printable(ucp) && ucp != '\\') {
+			char_bytes = rz_utf8_encode(output_buf + i, ucp);
 			char_count++;
-		} else if (r && r < 0x100 && is_c_escape_sequence((char)r)) {
-			if ((i + 32) < opt->max_str_length && r < 93) {
-				char_bytes = rz_utf8_encode(output_buf + i, r);
+		} else if (ucp && ucp < 0x100 && is_c_escape_sequence((char)ucp)) {
+			if ((i + 32) < opt->max_str_length && ucp < 93) {
+				char_bytes = rz_utf8_encode(output_buf + i, ucp);
 			} else {
 				// String too long
 				break;
@@ -356,7 +357,7 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 			char_count++;
 		} else {
 			/* \0 or undefined code point marks the end of C-strings */
-			stopped_with_undef_cp = r != 0;
+			stopped_with_undef_cp = ucp != 0;
 			break;
 		}
 	}
