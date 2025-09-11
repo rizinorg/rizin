@@ -29,7 +29,7 @@ jobs:
     outputs:
       edited: ${{ steps.filter.outputs.edited }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dorny/paths-filter@v3
         id: filter
         with:
@@ -189,7 +189,7 @@ jobs:
       - name: Show available memory on Linux
         if: contains(matrix.os, 'macos') != true && matrix.enabled
         run: free -h
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         if: matrix.enabled
         with:
           fetch-depth: 2
@@ -204,7 +204,7 @@ jobs:
         run: pip3 install --user gcovr
       - name: Checkout rzpipe
         if: matrix.enabled
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: rizinorg/rz-pipe
           path: test/rz-pipe
@@ -274,13 +274,13 @@ jobs:
           CC: ${{ matrix.compiler }}
       - name: Checkout our Testsuite Binaries
         if: matrix.enabled
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: rizinorg/rizin-testbins
           path: test/bins
       - name: Checkout fuzz targets # TODO: this can be removed as soon as the fuzztargets repo is public
         if: matrix.run_tests && matrix.enabled && (github.event_name != 'pull_request' || contains(github.event.pull_request.head.ref, 'fuzz'))
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: rizinorg/rizin-fuzztargets
           path: test/fuzz/targets
@@ -573,7 +573,7 @@ jobs:
         run: sudo apt-get --assume-yes install python3-wheel python3-setuptools python3-pip
       - name: Install meson and ninja
         run: pip3 install --user meson ninja PyYAML
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Extract rizin version
         run: echo "version=$(python sys/version.py)" >> $GITHUB_OUTPUT
         id: extract_version
@@ -634,7 +634,7 @@ jobs:
     if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'osx') || contains(github.head_ref, 'mac') || ((contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') && github.event_name == 'push') || github.event_name == 'schedule'
     needs: [ build-and-test ]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 2
       - name: Install meson and ninja
@@ -674,7 +674,7 @@ jobs:
             meson_options: --default-library=shared -Dportable=true
             bits: 32
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-python@v5
       - name: Install dependencies
         run: |
@@ -706,7 +706,7 @@ jobs:
       matrix:
         name: [ x86_64, arm, aarch64 ]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install dependencies
         run: sudo apt-get --assume-yes install pax wget unzip python3-wheel python3-setuptools python3-pip && pip3 install --user meson ninja
       - name: Compile with meson
@@ -731,7 +731,7 @@ jobs:
     if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'cpp') || ((contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') && github.event_name == 'push') || github.event_name == 'schedule'
     needs: [ build-and-test ]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install dependencies
         run: sudo apt-get --assume-yes install pax wget unzip python3-wheel python3-setuptools python3-pip
       - name: Install meson and ninja
@@ -757,7 +757,7 @@ jobs:
     if: contains(github.head_ref, 'dist') || ((contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') && github.event_name == 'push') || github.event_name == 'schedule'
     needs: [ build-and-test ]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install dependencies
         run: sudo apt-get --assume-yes install pax wget unzip python3-wheel python3-setuptools python3-pip
       - name: Install meson and ninja
@@ -885,7 +885,7 @@ jobs:
           - name: clang_cl_x86
             bits: 32
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-python@v5
       - name: Install pkg-config and cmake
         shell: pwsh
@@ -947,7 +947,7 @@ jobs:
         build-rzpipe,
       ]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Extract rizin version
         run: echo "branch=$(python sys/version.py)" >> $GITHUB_OUTPUT
         id: extract_version
@@ -991,7 +991,7 @@ jobs:
     runs-on: ubuntu-24.04
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && contains(github.head_ref, 'container'))
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install dependencies
         run: sudo apt-get --assume-yes install python3-wheel python3-setuptools python3-pip && pip3 install --user meson
       - name: Download subprojects
@@ -1027,7 +1027,7 @@ jobs:
     needs: [ build-and-test ]
     runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - name: Install dependencies
       run: |
         sudo apt-get --assume-yes update
@@ -1042,7 +1042,7 @@ jobs:
     - name: Meson setup
       run: meson setup build .github/subproject_test/
     - name: Checkout our Testsuite Binaries
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
           repository: rizinorg/rizin-testbins
           path: .github/subproject_teyt/subprojects/rizin/test/bins
