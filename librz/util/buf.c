@@ -1572,7 +1572,7 @@ RZ_API st64 rz_buf_sleb128(RZ_NONNULL RzBuffer *buffer, RZ_NONNULL st64 *value) 
 	return used;
 }
 
-RZ_API RzBufferType rz_buf_type(const RzBuffer *b) {
+RZ_API RzBufferType rz_buf_type(RZ_NONNULL const RzBuffer *b) {
 	rz_return_val_if_fail(b, RZ_BUFFER_INVALID);
 	return b->type;
 }
