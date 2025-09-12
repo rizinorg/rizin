@@ -298,6 +298,7 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_string(RZ_NONNULL RzCor
 	if (!collection ||
 		!rz_search_collection_string_add(collection, re_pattern, cflags, match_alignment)) {
 		rz_search_collection_free(collection);
+		rz_list_free(boundaries);
 		RZ_LOG_ERROR("core: Failed to initialize search collection.\n");
 		return NULL;
 	}

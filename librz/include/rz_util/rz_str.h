@@ -316,6 +316,7 @@ RZ_API bool rz_string_enc_is_utf_native_endian(RzStrEnc enc);
 RZ_API size_t rz_string_enc_code_point_width(RzStrEnc enc);
 
 static inline bool rz_string_code_points_align(RzStrEnc enc, size_t memory_alignment) {
+	rz_return_val_if_fail(memory_alignment, false);
 	if (rz_string_enc_code_point_width(enc) == memory_alignment) {
 		return true;
 	}

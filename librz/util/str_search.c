@@ -370,6 +370,7 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 				goto error;
 			} else if (false_positive_result == RETRY_ASCII) {
 				free(heap_alloc);
+				free(byte_mem_map);
 				return process_one_string(buf, from, str_addr, to, str_type, true, opt, false);
 			}
 		}
