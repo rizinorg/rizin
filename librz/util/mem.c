@@ -404,7 +404,7 @@ RZ_API RZ_OWN ut8 *rz_mem_swap_bytes_2(RZ_NONNULL const ut8 *buf, size_t buf_siz
 	rz_return_val_if_fail(buf && buf_size != 0, NULL);
 	size_t al = rz_mem_ptr_alignment(buf);
 	if (al < 2) {
-		RZ_LOG_ERROR("mem: Given memory is not aligned to 0x2 or greater.\n");
+		RZ_LOG_ERROR("mem: Given memory is not aligned to 0x2 or greater. ptr = %p\n", buf);
 		return NULL;
 	}
 	ut8 *dst = RZ_NEWS0(ut8, buf_size);
@@ -473,7 +473,7 @@ RZ_API RZ_OWN ut8 *rz_mem_swap_bytes_4(RZ_NONNULL const ut8 *buf, size_t buf_siz
 	rz_return_val_if_fail(buf && buf_size != 0, NULL);
 	size_t al = rz_mem_ptr_alignment(buf);
 	if (al < 4) {
-		RZ_LOG_ERROR("mem: Given memory is not aligned to 0x4 or greater.\n");
+		RZ_LOG_ERROR("mem: Given memory is not aligned to 0x4 or greater. ptr = %p\n", buf);
 		return NULL;
 	}
 	ut8 *dst = RZ_NEWS0(ut8, buf_size);

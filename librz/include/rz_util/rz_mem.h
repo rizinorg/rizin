@@ -55,10 +55,10 @@ RZ_API RZ_OWN ut8 *rz_mem_swap_bytes_4(RZ_NONNULL const ut8 *buf, size_t buf_siz
  * extra handling.
  */
 static inline ut64 rz_mem_ptr_alignment(RZ_NONNULL const void *ptr) {
-	if (ptr == NULL || ((ut64) ptr) == 0) {
+	if (ptr == NULL || ((ut64)ptr) == 0) {
 		return UT64_MAX;
 	}
-	return 1ull << rz_bits_trailing_zeros((ut64) ptr);
+	return 1ull << rz_bits_trailing_zeros((ut64)ptr);
 }
 
 #ifdef __cplusplus
