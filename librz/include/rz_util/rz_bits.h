@@ -33,6 +33,45 @@ DEFINE_COUNT_ONES(ut32);
 DEFINE_COUNT_ONES(ut16);
 DEFINE_COUNT_ONES(ut8);
 
+static inline size_t rz_bits_trailing_zeros(ut64 v) {
+	if (v == 0) {
+		return 64;
+	}
+#if HAS___BUILTIN_STDC_FIRST_TRAILING_ZERO
+	return __builtin_stdc_first_trailing_zero(v);
+#else
+	// src: https://graphics.stanford.edu/~seander/bithacks.html#ZerosOnRightBinSearch
+	size_t c;
+	if (v & 0x1) {
+		// special case for odd v (assumed to happen half of the time)
+		return 0;
+	}
+	c = 1;
+	if ((v & 0xffffffff) == 0) {
+		v >>= 32;
+		c += 32;
+	}
+	if ((v & 0xffff) == 0) {
+		v >>= 16;
+		c += 16;
+	}
+	if ((v & 0xff) == 0) {
+		v >>= 8;
+		c += 8;
+	}
+	if ((v & 0xf) == 0) {
+		v >>= 4;
+		c += 4;
+	}
+	if ((v & 0x3) == 0) {
+		v >>= 2;
+		c += 2;
+	}
+	c -= v & 0x1;
+	return c;
+#endif
+}
+
 /**
  * \brief Get the number of leading zeros of a 64-bit integer in binary representation.
  * \param x the 64-bit integer

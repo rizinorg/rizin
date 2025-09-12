@@ -3,6 +3,7 @@
 
 #include <rz_util.h>
 #include "minunit.h"
+#include "rz_util/rz_bits.h"
 
 bool test_rz_bits_count(void) {
 	mu_assert_eq(rz_bits_count_ones_ut64(0xffffffffffffffff), 64, "Bit count mismatch.");
@@ -35,6 +36,15 @@ bool test_rz_bits_count(void) {
 	mu_end;
 }
 
+bool test_rz_bits_trailing_zero(void) {
+	mu_assert_eq(rz_bits_trailing_zeros(0), 64, "Bit count mismatch.");
+	for (size_t i = 1, j = 0; i != 0; i <<= 1, j++) {
+		mu_assert_eq(rz_bits_trailing_zeros(i), j, "Bit count mismatch.");
+	}
+
+	mu_end;
+}
+
 bool test_rz_bits_spread(void) {
 	mu_assert_eq(rz_bits_spread(0xffffffffffffffff, 0xffffffffffffffff), 0xffffffffffffffff, "Spread mismatch.");
 	mu_assert_eq(rz_bits_spread(0, 0xffffffffffffffff), 0, "Spread mismatch.");
@@ -52,6 +62,7 @@ bool test_rz_bits_spread(void) {
 bool all_tests() {
 	mu_run_test(test_rz_bits_count);
 	mu_run_test(test_rz_bits_spread);
+	mu_run_test(test_rz_bits_trailing_zero);
 
 	return tests_passed != tests_run;
 }
