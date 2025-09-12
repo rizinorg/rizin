@@ -40,6 +40,7 @@ RZ_API bool rz_mem_is_zero(const ut8 *b, int l);
 RZ_API ut64 rz_mem_align_padding(const ut64 address, ut64 alignment);
 RZ_API RZ_OWN ut8 *rz_mem_copy_offset(const ut8 *buf, size_t buf_size, size_t offset);
 RZ_API RZ_OWN ut8 *rz_mem_swap_bytes_2(RZ_NONNULL const ut8 *buf, size_t buf_size);
+RZ_API RZ_OWN ut8 *rz_mem_swap_bytes_4(RZ_NONNULL const ut8 *buf, size_t buf_size);
 
 /**
  * \brief Returns the alignment of the \p ptr.
