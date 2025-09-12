@@ -101,9 +101,20 @@ bool test_rz_mem_align_byte(void) {
 	mu_end;
 }
 
+bool test_rz_mem_ptr_alignment(void) {
+	mu_assert_eq(rz_mem_ptr_alignment(NULL), UT64_MAX, "Error case failed.");
+	mu_assert_eq(rz_mem_ptr_alignment((void *)0), UT64_MAX, "Error case failed.");
+	for (ut64 i = 1; i != 0; i <<= 1) {
+		mu_assert_eq(rz_mem_ptr_alignment((void *)i), i, "Pointer alignment mismatches.");
+	}
+
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_mem_align_padding);
 	mu_run_test(test_rz_mem_align_byte);
+	mu_run_test(test_rz_mem_ptr_alignment);
 
 	return tests_passed != tests_run;
 }
