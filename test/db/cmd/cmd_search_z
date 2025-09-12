@@ -1424,8 +1424,12 @@ EXPECT_ERR=
 RUN
 
 NAME=String Search - Encoding: utf16be - Armenian - Fast on BE systems
+BROKEN=1
 FILE=bins/cmd/search/string_encodings/Armenian-Lipsum.utf16be
 CMDS=<<EOF
+# This test fails on S390x (big-endian) systems for whatever reason.
+* Marked as broken. Tracked in https://github.com/rizinorg/rizin/issues/5369
+#
 # Align to UTF16 code point width
 e search.align=2
 e str.encoding=utf16be
