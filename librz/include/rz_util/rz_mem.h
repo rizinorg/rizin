@@ -47,18 +47,13 @@ RZ_API RZ_OWN ut8 *rz_mem_swap_bytes_4(RZ_NONNULL const ut8 *buf, size_t buf_siz
  *
  * \param ptr The pointer to get the alignment for.
  *
- * \return Returns the pointer alignment or UT64_MAX if \p ptr == NULL or ((ut64) ptr) == 0.
- *
- * NOTE: This function assumes that ((ut64) void *) yeilds the bits of the pointer.
- * This conversion is not defined in the C standard but is implementation
- * specific. If this function fails you found a funny implementation which needs
- * extra handling.
+ * \return Returns the pointer alignment or UT64_MAX if \p ptr == NULL or ((utptr) ptr) == 0.
  */
 static inline ut64 rz_mem_ptr_alignment(RZ_NONNULL const void *ptr) {
-	if (ptr == NULL || ((ut64)ptr) == 0) {
+	if (ptr == NULL || ((utptr)ptr) == 0) {
 		return UT64_MAX;
 	}
-	return 1ull << rz_bits_trailing_zeros((ut64)ptr);
+	return 1ull << rz_bits_trailing_zeros((utptr)ptr);
 }
 
 #ifdef __cplusplus

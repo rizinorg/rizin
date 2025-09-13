@@ -27,6 +27,7 @@
 #define st16  short
 #define ut8   unsigned char
 #define st8   signed char
+#define utptr uintptr_t
 #define boolt int
 
 #if defined(_MSC_VER)
