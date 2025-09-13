@@ -144,8 +144,6 @@ bool test_rz_mem_byte_swap_2(void) {
 	};
 	// clang-format on
 
-	mu_assert_null(rz_mem_swap_bytes_2((void *)1, 1), "Error case failed.");
-
 	ut8 *test_out;
 
 #define TEST(input, expected, msg) \
@@ -206,8 +204,6 @@ bool test_rz_mem_byte_swap_4(void) {
 		0x55, 0x44
 	};
 	// clang-format on
-
-	mu_assert_null(rz_mem_swap_bytes_4((void *)1, 1), "Error case failed.");
 
 	ut8 *test_out;
 

@@ -377,7 +377,7 @@ RZ_API RZ_OWN ut8 *rz_mem_copy_offset(const ut8 *buf, size_t buf_size, size_t of
  * the result.
  * Remainders of less than 2 bytes at the end of the buffer won't be swapped.
  *
- * \param buf The input buffer. The buffer pointer must be aligned to 0x2.
+ * \param buf The input buffer.
  * \param buf_size The size of the input buffer. Must be greater than 0.
  *
  * \return The input buffer with swapped bytes or NULL in case of failure.
@@ -402,41 +402,41 @@ RZ_API RZ_OWN ut8 *rz_mem_copy_offset(const ut8 *buf, size_t buf_size, size_t of
  */
 RZ_API RZ_OWN ut8 *rz_mem_swap_bytes_2(RZ_NONNULL const ut8 *buf, size_t buf_size) {
 	rz_return_val_if_fail(buf && buf_size != 0, NULL);
-	size_t al = rz_mem_ptr_alignment(buf);
-	if (al < 2) {
-		RZ_LOG_ERROR("mem: Given memory is not aligned to 0x2 or greater. ptr = %p\n", buf);
-		return NULL;
-	}
 	ut8 *dst = RZ_NEWS0(ut8, buf_size);
 	if (!dst) {
 		return NULL;
 	}
+	if (!rz_mem_copy(dst, buf_size, buf, buf_size)) {
+		free(dst);
+		return NULL;
+	}
+	size_t al = rz_mem_ptr_alignment(dst);
+	if (al < 2) {
+		// malloc guarantees to return an aligned pointer for all data which fits
+		// into the allocated memory.
+		// So, if the pointer is only aligned to less than 2 bytes,
+		// it means buf_size was == 1.
+		// Hence we return simply a clone of the buffer.
+		return dst;
+	}
 
-	const ut64 *src_64 = (const ut64 *)buf;
 	ut64 *dst_64 = (ut64 *)dst;
-	while (al >= 8 && buf_size >= 8) {
-		*dst_64++ = ((*src_64 & 0xff00ff00ff00ff00) >> 8) | ((*src_64 & 0x00ff00ff00ff00ff) << 8);
-		src_64++;
+	while (buf_size >= 8) {
+		*dst_64 = ((*dst_64 & 0xff00ff00ff00ff00) >> 8) | ((*dst_64 & 0x00ff00ff00ff00ff) << 8);
+		dst_64++;
 		buf_size -= 8;
 	}
-	const ut32 *src_32 = (const ut32 *)src_64;
 	ut32 *dst_32 = (ut32 *)dst_64;
-	while (al >= 4 && buf_size >= 4) {
-		*dst_32++ = ((*src_32 & 0xff00ff00) >> 8) | ((*src_32 & 0x00ff00ff) << 8);
-		src_32++;
+	while (buf_size >= 4) {
+		*dst_32 = ((*dst_32 & 0xff00ff00) >> 8) | ((*dst_32 & 0x00ff00ff) << 8);
+		dst_32++;
 		buf_size -= 4;
 	}
-	const ut16 *src_16 = (const ut16 *)src_32;
 	ut16 *dst_16 = (ut16 *)dst_32;
 	while (buf_size >= 2) {
-		*dst_16++ = ((*src_16 & 0xff00) >> 8) | ((*src_16 & 0x00ff) << 8);
-		src_16++;
+		*dst_16 = ((*dst_16 & 0xff00) >> 8) | ((*dst_16 & 0x00ff) << 8);
+		dst_16++;
 		buf_size -= 2;
-	}
-	if (buf_size == 1) {
-		const ut8 *src_8 = (const ut8 *)src_16;
-		ut8 *dst_8 = (ut8 *)dst_16;
-		*dst_8++ = *src_8;
 	}
 	return dst;
 }
@@ -446,7 +446,7 @@ RZ_API RZ_OWN ut8 *rz_mem_swap_bytes_2(RZ_NONNULL const ut8 *buf, size_t buf_siz
  * the result.
  * Remainders of less than 4 bytes at the end of the buffer won't be swapped.
  *
- * \param buf The input buffer. The buffer pointer must be aligned to 0x4.
+ * \param buf The input buffer.
  * \param buf_size The size of the input buffer. Must be greater than 0.
  *
  * \return The input buffer with swapped bytes or NULL in case of failure.
@@ -471,41 +471,41 @@ RZ_API RZ_OWN ut8 *rz_mem_swap_bytes_2(RZ_NONNULL const ut8 *buf, size_t buf_siz
  */
 RZ_API RZ_OWN ut8 *rz_mem_swap_bytes_4(RZ_NONNULL const ut8 *buf, size_t buf_size) {
 	rz_return_val_if_fail(buf && buf_size != 0, NULL);
-	size_t al = rz_mem_ptr_alignment(buf);
-	if (al < 4) {
-		RZ_LOG_ERROR("mem: Given memory is not aligned to 0x4 or greater. ptr = %p\n", buf);
-		return NULL;
-	}
 	ut8 *dst = RZ_NEWS0(ut8, buf_size);
 	if (!dst) {
 		return NULL;
 	}
+	if (!rz_mem_copy(dst, buf_size, buf, buf_size)) {
+		free(dst);
+		return NULL;
+	}
+	size_t al = rz_mem_ptr_alignment(dst);
+	if (al < 4) {
+		// malloc guarantees to return an aligned pointer for all data which fits
+		// into the allocated memory.
+		// So, if the pointer is only aligned to less than 4 bytes,
+		// it means buf_size was <= 3.
+		// Hence we return simply a clone of the buffer.
+		return dst;
+	}
 
-	const ut64 *src_64 = (const ut64 *)buf;
 	ut64 *dst_64 = (ut64 *)dst;
-	while (al >= 8 && buf_size >= 8) {
-		*dst_64++ = ((*src_64 & 0xff000000ff000000) >> 24) |
-			((*src_64 & 0x00ff000000ff0000) >> 8) |
-			((*src_64 & 0x0000ff000000ff00) << 8) |
-			((*src_64 & 0x000000ff000000ff) << 24);
-		src_64++;
+	while (buf_size >= 8) {
+		*dst_64 = ((*dst_64 & 0xff000000ff000000) >> 24) |
+			((*dst_64 & 0x00ff000000ff0000) >> 8) |
+			((*dst_64 & 0x0000ff000000ff00) << 8) |
+			((*dst_64 & 0x000000ff000000ff) << 24);
+		dst_64++;
 		buf_size -= 8;
 	}
-	const ut32 *src_32 = (const ut32 *)src_64;
 	ut32 *dst_32 = (ut32 *)dst_64;
 	while (buf_size >= 4) {
-		*dst_32++ = ((*src_32 & 0xff000000) >> 24) |
-			((*src_32 & 0x00ff0000) >> 8) |
-			((*src_32 & 0x0000ff00) << 8) |
-			((*src_32 & 0x000000ff) << 24);
-		src_32++;
+		*dst_32 = ((*dst_32 & 0xff000000) >> 24) |
+			((*dst_32 & 0x00ff0000) >> 8) |
+			((*dst_32 & 0x0000ff00) << 8) |
+			((*dst_32 & 0x000000ff) << 24);
+		dst_32++;
 		buf_size -= 4;
-	}
-	const ut8 *src_8 = (const ut8 *)src_32;
-	ut8 *dst_8 = (ut8 *)dst_32;
-	while (buf_size > 0) {
-		*dst_8++ = *src_8++;
-		buf_size--;
 	}
 	return dst;
 }
