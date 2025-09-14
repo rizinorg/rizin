@@ -95,7 +95,23 @@ bcd
 0x00000010 5 hit.string.ascii.0
 bcccde
 EOF
-EXPECT_ERR=
+EXPECT_ERR=<<EOF
+WARNING: The string encoding for the search is set to "guess".
+The search will consume vastly more resources and the guessing is unreliable.
+You can set a specific encoding with 'e str.encoding=<encoding>'.
+WARNING: The string encoding for the search is set to "guess".
+The search will consume vastly more resources and the guessing is unreliable.
+You can set a specific encoding with 'e str.encoding=<encoding>'.
+WARNING: The string encoding for the search is set to "guess".
+The search will consume vastly more resources and the guessing is unreliable.
+You can set a specific encoding with 'e str.encoding=<encoding>'.
+WARNING: The string encoding for the search is set to "guess".
+The search will consume vastly more resources and the guessing is unreliable.
+You can set a specific encoding with 'e str.encoding=<encoding>'.
+WARNING: The string encoding for the search is set to "guess".
+The search will consume vastly more resources and the guessing is unreliable.
+You can set a specific encoding with 'e str.encoding=<encoding>'.
+EOF
 RUN
 
 NAME=/z at block end
@@ -122,7 +138,14 @@ bd
 0x000001fe 2 hit.string.ascii.0
 bd
 EOF
-EXPECT_ERR=
+EXPECT_ERR=<<EOF
+WARNING: The string encoding for the search is set to "guess".
+The search will consume vastly more resources and the guessing is unreliable.
+You can set a specific encoding with 'e str.encoding=<encoding>'.
+WARNING: The string encoding for the search is set to "guess".
+The search will consume vastly more resources and the guessing is unreliable.
+You can set a specific encoding with 'e str.encoding=<encoding>'.
+EOF
 RUN
 
 NAME=consistency btw /z and /x

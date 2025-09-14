@@ -72,6 +72,17 @@ RZ_API bool rz_search_opt_set_max_threads(RZ_NONNULL RzSearchOpt *opt, RzThreadN
 	return true;
 }
 
+/**
+ * \brief Enables the printing of progress during the search.
+ *
+ * \param opt The search options to update.
+ * \param show_progress A string describing the progress type. Can be:
+ * - "off", "no", "false", "0": No progress is printed.
+ * - "interval": The currently searched in interval is printed.
+ * - else: Print number of current hits during search.
+ *
+ * \return True if options were correctly updated, false otherwise.
+ */
 RZ_API bool rz_search_opt_set_show_progress_from_str(RZ_NONNULL RzSearchOpt *opt, const char *show_progress) {
 	rz_return_val_if_fail(opt, false);
 	if (rz_str_is_false(show_progress)) {
@@ -102,23 +113,22 @@ RZ_API bool rz_search_opt_set_find_options(RZ_NONNULL RzSearchOpt *opt, RZ_OWN R
 	return true;
 }
 
+RZ_API const RzSearchFindOpt *rz_search_opt_get_find_options(RZ_NONNULL const RzSearchOpt *opt) {
+	rz_return_val_if_fail(opt, NULL);
+	return opt->find_opts;
+}
+
 RZ_API RZ_OWN RzSearchFindOpt *rz_search_find_opt_new() {
-	return RZ_NEW0(RzSearchFindOpt);
+	RzSearchFindOpt *fopts = RZ_NEW0(RzSearchFindOpt);
+	if (!fopts) {
+		return NULL;
+	}
+	fopts->alignment = 1;
+	return fopts;
 }
 
 RZ_API void rz_search_find_opt_free(RZ_NULLABLE RzSearchFindOpt *opt) {
 	free(opt);
-}
-
-RZ_API bool rz_search_find_opt_set_inverse_match(RZ_NONNULL RzSearchFindOpt *opt, bool inverse_match) {
-	rz_return_val_if_fail(opt, false);
-	opt->match_inverse = inverse_match;
-	return true;
-}
-
-RZ_API bool rz_search_find_opt_get_inverse_match(RZ_NONNULL RzSearchFindOpt *opt) {
-	rz_return_val_if_fail(opt, false);
-	return opt->match_inverse;
 }
 
 RZ_API bool rz_search_find_opt_set_overlap_match(RZ_NONNULL RzSearchFindOpt *opt, bool overlap_match) {
@@ -138,7 +148,7 @@ RZ_API bool rz_search_find_opt_set_alignment(RZ_NONNULL RzSearchFindOpt *opt, si
 	return true;
 }
 
-RZ_API ut16 rz_search_find_opt_get_alignment(RZ_NONNULL RzSearchFindOpt *opt) {
+RZ_API ut16 rz_search_find_opt_get_alignment(RZ_NONNULL const RzSearchFindOpt *opt) {
 	rz_return_val_if_fail(opt, 0);
 	return opt->alignment;
 }

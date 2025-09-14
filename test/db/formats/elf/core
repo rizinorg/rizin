@@ -505,3 +505,99 @@ fsr = 0x0000000000000000
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=core regs linux mipsel
+FILE=bins/elf/core/core-linux-mips32el-bin-ls
+CMDS=<<EOF
+ar
+EOF
+EXPECT=<<EOF
+zero = 0x00000000
+at = 0x824dd370
+v0 = 0xffffffff
+v1 = 0xffffffff
+a0 = 0x555922d0
+a1 = 0x55592350
+a2 = 0xffffffff
+a3 = 0x00000000
+t0 = 0x00000000
+t1 = 0x8214ad88
+t2 = 0x8242de00
+t3 = 0xffffffff
+t4 = 0x00000000
+t5 = 0x77f68e20
+t6 = 0x00000000
+t7 = 0x77f68e20
+s0 = 0x555922d0
+s1 = 0x55592190
+s2 = 0x00000000
+s3 = 0x7fffcbac
+s4 = 0x7fffcbb0
+s5 = 0xffffffff
+s6 = 0x77ffbf04
+s7 = 0x00000000
+t8 = 0x00000000
+t9 = 0x77e33978
+k0 = 0x55592190
+k1 = 0x00000000
+gp = 0x77fb8050
+sp = 0x7fffcb90
+fp = 0x00000000
+ra = 0x77f7ef54
+lo = 0x0000000c
+hi = 0x00000008
+pc = 0x77e33978
+badvaddr = 0x77dff180
+status = 0x0000a413
+cause = 0x10800024
+t = 0x00000000
+EOF
+RUN
+
+NAME=core regs linux mips64el
+FILE=bins/elf/core/core-linux-mips64le-bin-ls
+CMDS=<<EOF
+ar
+EOF
+EXPECT=<<EOF
+zero = 0x0000000000000000
+at = 0xffffffff82588dac
+v0 = 0xffffffffffffffff
+v1 = 0xffffffffffffffff
+a0 = 0x000000aaaaae2480
+a1 = 0xffffffffffffffff
+a2 = 0x0000000000000400
+a3 = 0x0000000000000000
+t0 = 0xfefefefefefefeff
+t1 = 0x0000000000000001
+t2 = 0x7373737373737373
+t3 = 0xffffffffffffffff
+t4 = 0x0000000000000000
+t5 = 0xffffffff84080018
+t6 = 0xffffffff824d85f0
+t7 = 0x0000000074786509
+s0 = 0x000000aaaaae2480
+s1 = 0x000000aaaaae22a0
+s2 = 0x0000000000000000
+s3 = 0x000000ffffffca10
+s4 = 0x000000ffffffca08
+s5 = 0xffffffffffffffff
+s6 = 0x000000fff7ffae68
+s7 = 0x0000000000000000
+t8 = 0x0000000000000012
+t9 = 0x000000fff7e1d010
+k0 = 0x000000aaaaae22a0
+k1 = 0x0000000000000000
+gp = 0x000000fff7fb8060
+sp = 0x000000ffffffca00
+fp = 0x0000000000000000
+ra = 0x000000fff7f80938
+lo = 0x0000000000000007
+hi = 0x0000000000000000
+pc = 0x000000fff7e1d010
+badvaddr = 0x000000fff7f55c28
+status = 0x000000000000a4f3
+cause = 0x0000000010800024
+t = 0x0000000000000000
+EOF
+RUN

@@ -5,10 +5,15 @@
 #include "rz_unicode.h"
 
 /**
+ * \brief Width of an UTF32 character in bytes.
+ */
+#define RZ_UTF8_CODE_POINT_WIDTH 1
+
+/**
  * \brief An Unicode code point.
  */
 RZ_API int rz_utf8_encode(ut8 *ptr, const RzCodePoint ch);
-RZ_API size_t rz_utf8_decode(RZ_NONNULL const ut8 *buf, size_t buf_len, RZ_NULLABLE RZ_OUT RzCodePoint *cp);
+RZ_API size_t rz_utf8_decode(RZ_NONNULL const ut8 *buf, size_t buf_len, RZ_NULLABLE RZ_OUT RzCodePoint *cp, bool check_is_def);
 RZ_API int rz_mutf8_decode(const ut8 *ptr, int ptrlen, RzCodePoint *ch);
 RZ_API int rz_utf8_encode_str(const RzCodePoint *str, ut8 *dst, const int dst_length);
 RZ_API int rz_utf8_size(const ut8 *ptr);

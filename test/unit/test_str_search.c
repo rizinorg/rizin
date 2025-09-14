@@ -8,7 +8,7 @@ static RzUtilStrScanOptions g_opt = {
 	.max_str_length = 2048,
 	.min_str_length = 4,
 	.prefer_big_endian = false,
-	.check_ascii_freq = true
+	.check_ascii_freq = true,
 };
 
 bool test_rz_scan_strings_detect_ascii(void) {

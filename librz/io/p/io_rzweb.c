@@ -127,7 +127,7 @@ static RzIODesc *__open(RzIO *io, const char *pathname, int rw, int mode) {
 			free(out);
 			free(url);
 			return rz_io_desc_new(io, &rz_io_plugin_rzweb,
-				pathname, rw, mode, mal);
+				pathname, rw, mal);
 		}
 		free(url);
 		free(mal);

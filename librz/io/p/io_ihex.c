@@ -416,7 +416,7 @@ static RzIODesc *__open(RzIO *io, const char *pathname, int rw, int mode) {
 		}
 		free(str);
 		return rz_io_desc_new(io, &rz_io_plugin_ihex,
-			pathname, rw, mode, mal);
+			pathname, rw, mal);
 	}
 	return NULL;
 }

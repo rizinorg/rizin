@@ -121,7 +121,6 @@ struct rz_search_opt_t {
 };
 
 struct rz_search_find_opt_t {
-	bool match_inverse; ///< Set if the inverse of the given pattern should be matched.
 	bool match_overlap; ///< Set if hits can overlap.
 	size_t alignment; ///< The address alignment to start the search from. If >1, only `buffer + (alignment * x)` is searched.
 };

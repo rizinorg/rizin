@@ -98,7 +98,7 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 	qnxr_init(qnx_desc);
 	int i_port = atoi(port);
 	if (qnxr_connect(qnx_desc, host, i_port) == 0) {
-		rioqnx = rz_io_desc_new(io, &rz_io_plugin_qnx, file, rw, mode, qnx_desc);
+		rioqnx = rz_io_desc_new(io, &rz_io_plugin_qnx, file, rw, qnx_desc);
 		return rioqnx;
 	}
 	eprintf("qnx.io.open: Cannot connect to host.\n");

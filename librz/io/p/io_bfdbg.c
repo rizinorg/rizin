@@ -186,7 +186,7 @@ static RzIODesc *__open(RzIO *io, const char *pathname, int rw, int mode) {
 			memcpy(mal->buf, out, rlen);
 			free(out);
 			return rz_io_desc_new(io, &rz_io_plugin_bfdbg,
-				pathname, rw, mode, mal);
+				pathname, rw, mal);
 		}
 		eprintf("Cannot allocate (%s) %" PFMT32u " byte(s)\n",
 			pathname + 9, mal->size);

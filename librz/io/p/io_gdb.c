@@ -113,7 +113,7 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 		} else if ((i_pid = desc->pid) < 0) {
 			i_pid = -1;
 		}
-		riogdb = rz_io_desc_new(io, &rz_io_plugin_gdb, file, RZ_PERM_RWX, mode, desc);
+		riogdb = rz_io_desc_new(io, &rz_io_plugin_gdb, file, RZ_PERM_RWX, desc);
 	}
 	// Get name
 	if (riogdb) {

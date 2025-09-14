@@ -368,7 +368,7 @@ RZ_API RzIOPlugin *rz_io_plugin_resolve(RzIO *io, const char *filename, bool man
 RZ_API RzIOPlugin *rz_io_plugin_get_default(RzIO *io, const char *filename, bool many);
 
 // desc.c
-RZ_API RzIODesc *rz_io_desc_new(RzIO *io, RzIOPlugin *plugin, const char *uri, int flags, int mode, void *data);
+RZ_API RzIODesc *rz_io_desc_new(RzIO *io, RzIOPlugin *plugin, const char *uri, int flags, void *data);
 RZ_API RzIODesc *rz_io_desc_open(RzIO *io, const char *uri, int flags, int mode);
 RZ_API RzIODesc *rz_io_desc_open_plugin(RzIO *io, RzIOPlugin *plugin, const char *uri, int flags, int mode);
 RZ_API bool rz_io_desc_close(RzIODesc *desc);

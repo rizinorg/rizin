@@ -3,6 +3,7 @@
 
 #include <rz_util.h>
 #include "minunit.h"
+#include <rz_types.h>
 
 // TODO test rz_str_chop_path
 
@@ -780,6 +781,132 @@ bool test_rz_str_isXutf8(void) {
 	mu_end;
 }
 
+bool test_rz_str_utf8_conversions(void) {
+	const char *needs_4 = "a";
+	const char *needs_6 = "🍍";
+	const char *needs_22 = "aa🍍🍍🍍aa";
+	const char *only_nul_needs_2 = "";
+
+	mu_assert_eq(rz_str_utf8_get_width_utf16(only_nul_needs_2), 2, "Should have been 0 + 2 = 2.");
+	mu_assert_eq(rz_str_utf8_get_width_utf16(needs_4), 4, "Should have been 2 + 2 = 4.");
+	mu_assert_eq(rz_str_utf8_get_width_utf16(needs_6), 6, "Should have been 4 + 2 = 6.");
+	mu_assert_eq(rz_str_utf8_get_width_utf16(needs_22), 22, "Should have been 20 + 2 = 22.");
+
+	mu_end;
+}
+
+bool test_rz_str_utf8_count_ucp(void) {
+	const char *a = "a";
+	const char *pine = "🍍";
+	const char *apine = "aa🍍🍍🍍aa";
+	const char *nul = "";
+
+	mu_assert_eq(rz_str_utf8_num_ucp(nul), 1, "Should have been 1 code point.");
+	mu_assert_eq(rz_str_utf8_num_ucp(a), 2, "Should have been 2 code points.");
+	mu_assert_eq(rz_str_utf8_num_ucp(pine), 2, "Should have been 2 code points.");
+	mu_assert_eq(rz_str_utf8_num_ucp(apine), 8, "Should have been 8 code points.");
+
+	mu_end;
+}
+
+bool test_rz_str_utf8_to_utf16(void) {
+	const char *a = "a";
+	const ut8 a16_le[] = { 0x61, 0x00, 0x00, 0x00 };
+	const ut8 a16_be[] = { 0x00, 0x61, 0x00, 0x00 };
+	const char *pine = "🍍";
+	const ut8 pine16_le[] = { 0x3c, 0xd8, 0x4d, 0xdf, 0x00, 0x00 };
+	const ut8 pine16_be[] = { 0xd8, 0x3c, 0xdf, 0x4d, 0x00, 0x00 };
+	const char *apine = "aa🍍🍍🍍aa";
+	const ut8 apine16_le[] = { 0x61, 0x00, 0x61, 0x00, 0x3c, 0xd8, 0x4d, 0xdf, 0x3c, 0xd8, 0x4d, 0xdf, 0x3c, 0xd8, 0x4d, 0xdf, 0x61, 0x00, 0x61, 0x00, 0x00, 0x00 };
+	const ut8 apine16_be[] = { 0x00, 0x61, 0x00, 0x61, 0xd8, 0x3c, 0xdf, 0x4d, 0xd8, 0x3c, 0xdf, 0x4d, 0xd8, 0x3c, 0xdf, 0x4d, 0x00, 0x61, 0x00, 0x61, 0x00, 0x00 };
+	const char *nul = "";
+	const ut8 nul16_le[] = { 0x0, 0x0 };
+	const ut8 nul16_be[] = { 0x0, 0x0 };
+
+	ut16 *out = rz_str_utf8_to_utf16(a, true);
+	mu_assert_memeq((ut8 *)out, a16_be, sizeof(a16_be), "string mismatch");
+	free(out);
+	out = rz_str_utf8_to_utf16(a, false);
+	mu_assert_memeq((ut8 *)out, a16_le, sizeof(a16_le), "string mismatch");
+	free(out);
+
+	out = rz_str_utf8_to_utf16(pine, true);
+	mu_assert_memeq((ut8 *)out, pine16_be, sizeof(pine16_be), "string mismatch");
+	free(out);
+	out = rz_str_utf8_to_utf16(pine, false);
+	mu_assert_memeq((ut8 *)out, pine16_le, sizeof(pine16_le), "string mismatch");
+	free(out);
+
+	out = rz_str_utf8_to_utf16(apine, true);
+	mu_assert_memeq((ut8 *)out, apine16_be, sizeof(apine16_be), "string mismatch");
+	free(out);
+	out = rz_str_utf8_to_utf16(apine, false);
+	mu_assert_memeq((ut8 *)out, apine16_le, sizeof(apine16_le), "string mismatch");
+	free(out);
+
+	out = rz_str_utf8_to_utf16(apine, RZ_HOST_IS_BIG_ENDIAN);
+	mu_assert_memeq((ut8 *)out, RZ_HOST_IS_BIG_ENDIAN ? apine16_be : apine16_le, RZ_HOST_IS_BIG_ENDIAN ? sizeof(apine16_be) : sizeof(apine16_le), "string with host endian mismatches");
+	free(out);
+
+	out = rz_str_utf8_to_utf16(nul, true);
+	mu_assert_memeq((ut8 *)out, nul16_be, sizeof(nul16_be), "string mismatch");
+	free(out);
+	out = rz_str_utf8_to_utf16(nul, false);
+	mu_assert_memeq((ut8 *)out, nul16_le, sizeof(nul16_le), "string mismatch");
+	free(out);
+
+	mu_end;
+}
+
+bool test_rz_str_utf8_to_utf32(void) {
+	const char *a = "a";
+	const ut8 a32_le[] = { 0x61, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+	const ut8 a32_be[] = { 0x00, 0x00, 0x00, 0x61, 0x00, 0x00, 0x00, 0x00 };
+	const char *pine = "🍍";
+	const ut8 pine32_le[] = { 0x4d, 0xf3, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00 };
+	const ut8 pine32_be[] = { 0x00, 0x01, 0xf3, 0x4d, 0x00, 0x00, 0x00, 0x00 };
+	const char *apine = "aa🍍🍍🍍aa";
+	const ut8 apine32_le[] = { 0x61, 0x00, 0x00, 0x00, 0x61, 0x00, 0x00, 0x00, 0x4d, 0xf3, 0x01, 0x00, 0x4d, 0xf3, 0x01, 0x00, 0x4d, 0xf3, 0x01, 0x00, 0x61, 0x00, 0x00, 0x00, 0x61, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+	const ut8 apine32_be[] = { 0x00, 0x00, 0x00, 0x61, 0x00, 0x00, 0x00, 0x61, 0x00, 0x01, 0xf3, 0x4d, 0x00, 0x01, 0xf3, 0x4d, 0x00, 0x01, 0xf3, 0x4d, 0x00, 0x00, 0x00, 0x61, 0x00, 0x00, 0x00, 0x61, 0x00, 0x00, 0x00, 0x00 };
+	const char *nul = "";
+	const ut8 nul32_le[] = { 0x0, 0x00, 0x00, 0x0 };
+	const ut8 nul32_be[] = { 0x0, 0x00, 0x00, 0x0 };
+
+	ut32 *out = rz_str_utf8_to_utf32(a, true);
+	mu_assert_memeq((ut8 *)out, a32_be, sizeof(a32_be), "string mismatch");
+	free(out);
+	out = rz_str_utf8_to_utf32(a, false);
+	mu_assert_memeq((ut8 *)out, a32_le, sizeof(a32_le), "string mismatch");
+	free(out);
+
+	out = rz_str_utf8_to_utf32(pine, true);
+	mu_assert_memeq((ut8 *)out, pine32_be, sizeof(pine32_be), "string mismatch");
+	free(out);
+	out = rz_str_utf8_to_utf32(pine, false);
+	mu_assert_memeq((ut8 *)out, pine32_le, sizeof(pine32_le), "string mismatch");
+	free(out);
+
+	out = rz_str_utf8_to_utf32(apine, true);
+	mu_assert_memeq((ut8 *)out, apine32_be, sizeof(apine32_be), "string mismatch");
+	free(out);
+	out = rz_str_utf8_to_utf32(apine, false);
+	mu_assert_memeq((ut8 *)out, apine32_le, sizeof(apine32_le), "string mismatch");
+	free(out);
+
+	out = rz_str_utf8_to_utf32(apine, RZ_HOST_IS_BIG_ENDIAN);
+	mu_assert_memeq((ut8 *)out, RZ_HOST_IS_BIG_ENDIAN ? apine32_be : apine32_le, RZ_HOST_IS_BIG_ENDIAN ? sizeof(apine32_be) : sizeof(apine32_le), "string with host endian mismatches");
+	free(out);
+
+	out = rz_str_utf8_to_utf32(nul, true);
+	mu_assert_memeq((ut8 *)out, nul32_be, sizeof(nul32_be), "string mismatch");
+	free(out);
+	out = rz_str_utf8_to_utf32(nul, false);
+	mu_assert_memeq((ut8 *)out, nul32_le, sizeof(nul32_le), "string mismatch");
+	free(out);
+
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_str_newf);
 	mu_run_test(test_rz_str_replace_char_once);
@@ -823,6 +950,10 @@ bool all_tests() {
 	mu_run_test(test_rz_str_filter);
 	mu_run_test(test_rz_str_strchr);
 	mu_run_test(test_rz_str_isXutf8);
+	mu_run_test(test_rz_str_utf8_conversions);
+	mu_run_test(test_rz_str_utf8_count_ucp);
+	mu_run_test(test_rz_str_utf8_to_utf16);
+	mu_run_test(test_rz_str_utf8_to_utf32);
 	return tests_passed != tests_run;
 }
 

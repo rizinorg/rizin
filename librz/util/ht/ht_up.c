@@ -29,7 +29,9 @@ static void init_options(HT_(Options) *opt, HT_(DupValue) valdup, HT_(FreeValue)
 /**
  * \brief Create a new hash table that has ut64 as key and void* as value.
  * \param valdup Function to making copy of a value when inserting
+ *        If NULL simple assignment operator is used for copy.
  * \param valfree Function to releasing a stored value
+ *        If NULL data is not freed.
  */
 RZ_API RZ_OWN HtName_(Ht) *Ht_(new)(RZ_NULLABLE HT_(DupValue) valdup, RZ_NULLABLE HT_(FreeValue) valfree) {
 	HT_(Options) opt;
@@ -42,6 +44,7 @@ RZ_API RZ_OWN HtName_(Ht) *Ht_(new)(RZ_NULLABLE HT_(DupValue) valdup, RZ_NULLABL
  *        with preallocated buckets for \p initial_size entries.
  * \param initial_size Initial size of the hash table
  * \param valdup Function to making copy of a value when inserting
+ *        If NULL simple assignment operator is used for copy.
  * \param valfree Function to releasing a stored value
  */
 RZ_API RZ_OWN HtName_(Ht) *Ht_(new_size)(ut32 initial_size, RZ_NULLABLE HT_(DupValue) valdup, RZ_NULLABLE HT_(FreeValue) valfree) {

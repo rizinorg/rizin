@@ -3778,19 +3778,19 @@ EOF
 EXPECT=<<EOF
 0x000002f6 0x000002f6   8    9         ibm037  SRSGENER
 0x000004dc 0x000004dc   8    9         ibm037  SRSGENER
-0x00000668 0x00000668  92   93         ibm037  SRSGENER_03/06/08_14.16 SRS Version 1.3.0_BASE    COPYRIGHT 1998-2008 DAVID W DANNER ALL RIG
+0x00000668 0x00000668  92   92         ibm037  SRSGENER_03/06/08_14.16 SRS Version 1.3.0_BASE    COPYRIGHT 1998-2008 DAVID W DANNER ALL RIG
 0x00001682 0x00001682  30   31         ibm037  SRSGENERNO     *SRS>   NONHELD
-0x00002faa 0x00002faa  49   50         ibm037  SHUTDOWNSRSOPTS SRSTBLK SRSGENERALL     STARTINGS
+0x00002faa 0x00002faa  49   49         ibm037  SHUTDOWNSRSOPTS SRSTBLK SRSGENERALL     STARTINGS
 0x0000029a 0x0000029a   8    9         ibm037  SRSPRHEX
 0x00000362 0x00000362   8    9         ibm037  SRSPRHEX
 0x000016d4 0x000016d4   8    9         ibm037  SRSPRHEX
-0x00001861 0x00001861  27   28         ibm037  SRSPRHEX_03/06/08_14.17°Ö}\f
+0x00001861 0x00001861  27   27         ibm037  SRSPRHEX_03/06/08_14.17°Ö}\f
 0x0000191f 0x0000191f   9   10         ibm037  ÏSRSPRHEX
-0x0000315b 0x0000315b  27   28         ibm037  SRSPRHEX_03/06/08_14.17°Ö}\f
+0x0000315b 0x0000315b  27   27         ibm037  SRSPRHEX_03/06/08_14.17°Ö}\f
 0x0000323f 0x0000323f   9   10         ibm037  3SRSPRHEX
-0x00004c0f 0x00004c0f  27   28         ibm037  SRSPRHEX_03/06/08_14.17°Ö}\f
+0x00004c0f 0x00004c0f  27   27         ibm037  SRSPRHEX_03/06/08_14.17°Ö}\f
 0x000003ba 0x000003ba   8    9         ibm037  SRSTASK 
-0x00002545 0x00002545  12   13         ibm037  «SRSTASK  \-
+0x00002545 0x00002545  12   12         ibm037  «SRSTASK  \-
 0x00003230 0x00003230   8    9         ibm037  SRSTASK 
 0x000033e4 0x000033e4 103  104         ibm037  SRSTASK_12/31/08_20.31 SRS Version 1.3.0_A13001  COPYRIGHT 1998-2008 DAVID W DANNER ALL RIGHTS RESERVED
 EOF
@@ -4651,7 +4651,7 @@ NAME=izz
 FILE=bins/mach0/fatmach0-3true
 CMDS=izz~http~codesigning
 EXPECT=<<EOF
-0x00003f3c 0x100002f3c  47   48                         ascii  ,http://www.apple.com/appleca/codesigning.crl0\r
+0x00003f3c 0x100002f3c  47   47                         ascii  ,http://www.apple.com/appleca/codesigning.crl0\r
 EOF
 RUN
 
@@ -4660,7 +4660,7 @@ FILE=bins/arm/elf/hello_world
 CMDS=aaa;izxq
 EXPECT=<<EOF
 0x574 13 12 Hello world!
-0x494 11 10 \bH\tKxD\tJ{D
+0x494 10 10 \bH\tKxD\tJ{D
 EOF
 RUN
 
@@ -4768,7 +4768,7 @@ EXPECT=<<EOF
 0x00489d8a 26 52 .text utf16le http://pomf.cat/upload.php
 0x00489edd 19 38 .text utf16le https://a.pomf.cat/
 0x0048b9ed 26 52 .text utf16le http://pomf.cat/upload.php
-0x0048ba22 19 40 .text utf16le https://a.pomf.cat/
+0x0048ba22 19 38 .text utf16le https://a.pomf.cat/
 EOF
 RUN
 
@@ -5167,7 +5167,7 @@ EXPECT=<<EOF
      paddr      vaddr flag               len size section type  xref-from   string        
 ------------------------------------------------------------------------------------------
 0x00000574 0x00000574 str.Hello_world     12   13 .rodata ascii 0x00000512  Hello world!
-0x00000494 0x00000494 register_tm_clones  10   11 .text   ascii entry.init0 \bH\tKxD\tJ{D
+0x00000494 0x00000494 register_tm_clones  10   10 .text   ascii entry.init0 \bH\tKxD\tJ{D
 EOF
 RUN
 
@@ -5178,6 +5178,6 @@ aaa
 izxj
 EOF
 EXPECT=<<EOF
-[{"vaddr":1396,"paddr":1396,"size":13,"length":12,"section":".rodata","type":"ascii","flag":"str.Hello_world","xref-from":"0x00000512","string":"Hello world!"},{"vaddr":1172,"paddr":1172,"size":11,"length":10,"section":".text","type":"ascii","flag":"register_tm_clones","xref-from":"entry.init0","string":"\bH\tKxD\tJ{D"}]
+[{"vaddr":1396,"paddr":1396,"size":13,"length":12,"section":".rodata","type":"ascii","flag":"str.Hello_world","xref-from":"0x00000512","string":"Hello world!"},{"vaddr":1172,"paddr":1172,"size":10,"length":10,"section":".text","type":"ascii","flag":"register_tm_clones","xref-from":"entry.init0","string":"\bH\tKxD\tJ{D"}]
 EOF
 RUN

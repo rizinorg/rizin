@@ -77,7 +77,7 @@ static RzIODesc *__open(RzIO *io, const char *pathname, int rw, int mode) {
 		mal->buf = tcpme(pathname, &code, &rlen);
 		if (mal->buf && rlen > 0) {
 			mal->size = rlen;
-			return rz_io_desc_new(io, &rz_io_plugin_tcp, pathname, rw, mode, mal);
+			return rz_io_desc_new(io, &rz_io_plugin_tcp, pathname, rw, mal);
 		}
 		eprintf("No TCP segment\n");
 		free(mal);

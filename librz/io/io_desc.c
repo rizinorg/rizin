@@ -8,7 +8,7 @@
 #include <string.h>
 
 // shall be used by plugins for creating descs
-RZ_API RzIODesc *rz_io_desc_new(RzIO *io, RzIOPlugin *plugin, const char *uri, int perm, int mode, void *data) {
+RZ_API RzIODesc *rz_io_desc_new(RzIO *io, RzIOPlugin *plugin, const char *uri, int perm, void *data) {
 	ut32 fd32 = 0;
 	// this is required for emscripten builds to work, but should assert
 	if (!io || !plugin || !uri) {

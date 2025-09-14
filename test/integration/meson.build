@@ -28,6 +28,7 @@ if get_option('enable_tests') and cli_enabled
     'pdb',
     'project_migrate',
     'rzpipe',
+    'str_search',
   ]
 
   unit_test_env = environment()
@@ -45,6 +46,7 @@ if get_option('enable_tests') and cli_enabled
         rz_socket_dep,
         rz_core_dep,
         rz_io_dep,
+        rz_search_dep,
         rz_bin_dep,
         rz_flag_dep,
         rz_cons_dep,

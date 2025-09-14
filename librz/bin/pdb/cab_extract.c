@@ -111,7 +111,7 @@ static char *sanitize_cab_filename(struct mscabd_file *file, const char *output_
 		RzCodePoint code_point;
 		for (; input < endp;) {
 			code_point = 0;
-			int len = rz_utf8_decode(input, endp - input, &code_point);
+			int len = rz_utf8_decode(input, endp - input, &code_point, true);
 			if (!len) {
 				len = 1;
 				code_point = 0xFFFD;

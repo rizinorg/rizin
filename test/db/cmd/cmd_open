@@ -781,6 +781,7 @@ true
             0x000049da      addq.l 0x1, d0
             0x000049dc      asl.l 0x2, d0
             0x000049de      adda.l d0, a0
+Backed up flag space into 'flags.hppa_32_hppa7100.sdb'. You can restore the flags with the 'ko' command.
 hppa
 hppa7100
 32
@@ -796,6 +797,7 @@ true
             0x00003a04      stw   r4,-7c(sp)
             0x00003a08      stw   r3,-78(sp)
             0x00003a0c      copy  r26,r4
+Backed up flag space into 'flags.sparc_32_all.sdb'. You can restore the flags with the 'ko' command.
 sparc
 all
 32
@@ -811,6 +813,7 @@ true
             0x00004438      sethi 0x20, o2
             0x0000443c      st    o1, [o2+8]
             0x00004440      ld    [i0+0x40], o0
+Backed up flag space into 'flags.x86_32_386.sdb'. You can restore the flags with the 'ko' command.
 x86
 386
 32
@@ -826,6 +829,7 @@ false
             0x00002a2f      mov   dword [0x6004], edx
             0x00002a35      lea   eax, dword [esi+0x04]
             0x00002a38      mov   dword [0x6008], eax
+Backed up flag space into 'flags.m68k_32_mc68030.sdb'. You can restore the flags with the 'ko' command.
 m68k
 mc68030
 32
@@ -852,10 +856,6 @@ NAME=Switch between same archs, with different bits and machine
 FILE=bins/mach0/AppIOSEntitlements.ios
 CMDS=<<EOF
 obs
-echo "# default"
-e asm.arch
-e asm.bits
-e asm.cpu
 
 obs arm_64_all
 echo "# arm_64_all"
@@ -872,14 +872,12 @@ EOF
 EXPECT=<<EOF
 arm_32_v7
 arm_64_all
-# default
-arm
-32
-v7
+Backed up flag space into 'flags.arm_64_all.sdb'. You can restore the flags with the 'ko' command.
 # arm_64_all
 arm
 64
 all
+Backed up flag space into 'flags.arm_32_v7.sdb'. You can restore the flags with the 'ko' command.
 # arm_32_v7
 arm
 32

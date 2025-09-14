@@ -24,7 +24,7 @@ jobs:
       prettier: ${{ steps.filter.outputs.prettier }}
       python: ${{ steps.filter.outputs.python }}
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - uses: dorny/paths-filter@v3
       id: filter
       with:
@@ -59,7 +59,7 @@ jobs:
     runs-on: ubuntu-24.04
     if: ${{ needs.changes.outputs.yaml == 'true' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install tools
         run: sudo apt-get install yamllint python3-yaml
       - name: Check YamlLint
@@ -76,7 +76,7 @@ jobs:
     if: ${{ needs.changes.outputs.bindgen-linter == 'true' }}
     steps:
       - name: Checkout rizin
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           path: rizin
       - name: Checkout rz-bindgen (stable)
@@ -108,7 +108,7 @@ jobs:
     if: ${{ needs.changes.outputs.clang-format == 'true' }}
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Install clang-format-16
       run: sudo apt --assume-yes install clang-format-16
@@ -128,7 +128,7 @@ jobs:
     if: ${{ needs.changes.outputs.prettier == 'true' }}
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Install prettier
       run: |
@@ -144,7 +144,7 @@ jobs:
     if: ${{ needs.changes.outputs.python == 'true' }}
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Install pylint, black, isort
       run: pip install pylint black isort
@@ -163,6 +163,6 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: REUSE Compliance Check
       uses: fsfe/reuse-action@v1

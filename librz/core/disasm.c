@@ -3790,7 +3790,7 @@ static char *ds_esc_str(RzDisasmState *ds, const char *str, int len, const char 
 				end = str + len - 1;
 			}
 			for (ptr = str; ptr < end; ptr += 4) {
-				if (rz_utf32le_decode((ut8 *)ptr, end - ptr, &ch) == 0) {
+				if (rz_utf32le_decode((ut8 *)ptr, end - ptr, &ch, true) == 0) {
 					enc = RZ_STRING_ENC_8BIT;
 					break;
 				}

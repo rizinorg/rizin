@@ -19,40 +19,40 @@ bool test_rz_utf8_decode(void) {
 	const ut8 utf8_4b_valid_first[] = { 0xF0, 0x90, 0x80, 0x80 };
 	const ut8 utf8_4b_valid_last[] = { 0xF4, 0x8F, 0xBF, 0xBD };
 
-	mu_assert_eq(rz_utf8_decode(utf8_1b_valid_first, sizeof(utf8_1b_valid_first), &codepoint), 1, "Decode failed");
+	mu_assert_eq(rz_utf8_decode(utf8_1b_valid_first, sizeof(utf8_1b_valid_first), &codepoint, true), 1, "Decode failed");
 	mu_assert_eq(codepoint, 0, "Code point incorrect");
-	mu_assert_eq(rz_utf8_decode(utf8_1b_valid_last, sizeof(utf8_1b_valid_last), &codepoint), 1, "Decode failed");
+	mu_assert_eq(rz_utf8_decode(utf8_1b_valid_last, sizeof(utf8_1b_valid_last), &codepoint, true), 1, "Decode failed");
 	mu_assert_eq(codepoint, 0x7f, "Code point incorrect");
 
-	mu_assert_eq(rz_utf8_decode(utf8_2b_valid_first, sizeof(utf8_2b_valid_first), &codepoint), 2, "Decode failed");
+	mu_assert_eq(rz_utf8_decode(utf8_2b_valid_first, sizeof(utf8_2b_valid_first), &codepoint, true), 2, "Decode failed");
 	mu_assert_eq(codepoint, 0x80, "Code point incorrect");
-	mu_assert_eq(rz_utf8_decode(utf8_2b_valid_last, sizeof(utf8_2b_valid_last), &codepoint), 2, "Decode failed");
+	mu_assert_eq(rz_utf8_decode(utf8_2b_valid_last, sizeof(utf8_2b_valid_last), &codepoint, true), 2, "Decode failed");
 	mu_assert_eq(codepoint, 0x07FF, "Code point incorrect");
 
-	mu_assert_eq(rz_utf8_decode(utf8_3b_valid_first, sizeof(utf8_3b_valid_first), &codepoint), 3, "Decode failed");
+	mu_assert_eq(rz_utf8_decode(utf8_3b_valid_first, sizeof(utf8_3b_valid_first), &codepoint, true), 3, "Decode failed");
 	mu_assert_eq(codepoint, 0x800, "Code point incorrect");
-	mu_assert_eq(rz_utf8_decode(utf8_3b_valid_last, sizeof(utf8_3b_valid_last), &codepoint), 3, "Decode failed");
+	mu_assert_eq(rz_utf8_decode(utf8_3b_valid_last, sizeof(utf8_3b_valid_last), &codepoint, true), 3, "Decode failed");
 	mu_assert_eq(codepoint, 0xFFFD, "Code point incorrect");
 
-	mu_assert_eq(rz_utf8_decode(utf8_4b_valid_first, sizeof(utf8_4b_valid_first), &codepoint), 4, "Decode failed");
+	mu_assert_eq(rz_utf8_decode(utf8_4b_valid_first, sizeof(utf8_4b_valid_first), &codepoint, true), 4, "Decode failed");
 	mu_assert_eq(codepoint, 0x10000, "Code point incorrect");
-	mu_assert_eq(rz_utf8_decode(utf8_4b_valid_last, sizeof(utf8_4b_valid_last), &codepoint), 4, "Decode failed");
+	mu_assert_eq(rz_utf8_decode(utf8_4b_valid_last, sizeof(utf8_4b_valid_last), &codepoint, true), 4, "Decode failed");
 	mu_assert_eq(codepoint, 0x10FFFD, "Code point incorrect");
 
 	const ut8 utf8_1b_invalid_F[] = { 0xFF };
 	const ut8 utf8_2b_invalid_F[] = { 0xFF, 0x00 };
 	const ut8 utf8_3b_invalid_F[] = { 0xFF, 0x00, 0x00 };
-	mu_assert_eq(rz_utf8_decode(utf8_1b_invalid_F, sizeof(utf8_1b_invalid_F), &codepoint), 0, "Invalid decode, prefix bit false.");
-	mu_assert_eq(rz_utf8_decode(utf8_2b_invalid_F, sizeof(utf8_2b_invalid_F), &codepoint), 0, "Invalid decode, prefix bit false.");
-	mu_assert_eq(rz_utf8_decode(utf8_3b_invalid_F, sizeof(utf8_3b_invalid_F), &codepoint), 0, "Invalid decode, prefix bit false.");
+	mu_assert_eq(rz_utf8_decode(utf8_1b_invalid_F, sizeof(utf8_1b_invalid_F), &codepoint, true), 0, "Invalid decode, prefix bit false.");
+	mu_assert_eq(rz_utf8_decode(utf8_2b_invalid_F, sizeof(utf8_2b_invalid_F), &codepoint, true), 0, "Invalid decode, prefix bit false.");
+	mu_assert_eq(rz_utf8_decode(utf8_3b_invalid_F, sizeof(utf8_3b_invalid_F), &codepoint, true), 0, "Invalid decode, prefix bit false.");
 
 	const ut8 utf8_2b_invalid_small_code_point[] = { 0xC0, 0x80 };
 	const ut8 utf8_3b_invalid_small_code_point[] = { 0xE0, 0x80, 0x80 };
 	const ut8 utf8_4b_invalid_small_code_point[] = { 0xF0, 0x80, 0x80, 0x80 };
 
-	mu_assert_eq(rz_utf8_decode(utf8_2b_invalid_small_code_point, sizeof(utf8_2b_invalid_small_code_point), &codepoint), 0, "Invalid decode, code point is too small for encoding.");
-	mu_assert_eq(rz_utf8_decode(utf8_3b_invalid_small_code_point, sizeof(utf8_3b_invalid_small_code_point), &codepoint), 0, "Invalid decode, code point is too small for encoding.");
-	mu_assert_eq(rz_utf8_decode(utf8_4b_invalid_small_code_point, sizeof(utf8_4b_invalid_small_code_point), &codepoint), 0, "Invalid decode, code point is too small for encoding.");
+	mu_assert_eq(rz_utf8_decode(utf8_2b_invalid_small_code_point, sizeof(utf8_2b_invalid_small_code_point), &codepoint, true), 0, "Invalid decode, code point is too small for encoding.");
+	mu_assert_eq(rz_utf8_decode(utf8_3b_invalid_small_code_point, sizeof(utf8_3b_invalid_small_code_point), &codepoint, true), 0, "Invalid decode, code point is too small for encoding.");
+	mu_assert_eq(rz_utf8_decode(utf8_4b_invalid_small_code_point, sizeof(utf8_4b_invalid_small_code_point), &codepoint, true), 0, "Invalid decode, code point is too small for encoding.");
 
 	mu_end;
 }
@@ -63,20 +63,20 @@ bool test_rz_utf8_decode(void) {
 bool test_rz_utf16_decode(void) {
 	RzCodePoint codepoint = 0;
 	const ut8 utf16le_surrogate[] = { 0xd8, 0x00 };
-	mu_assert_eq(rz_utf16_decode(utf16le_surrogate, 2, &codepoint, true), 0, "Invalid decode");
+	mu_assert_eq(rz_utf16_decode(utf16le_surrogate, 2, &codepoint, true, true), 0, "Invalid decode");
 
 	char utf8_out[5] = { 0 };
 	const ut8 utf16le_A[] = { 0x41, 0x00 };
 	const ut8 utf16be_A[] = { 0x00, 0x41 };
 
-	int nbytes = rz_utf16_decode(utf16le_A, 2, &codepoint, false);
+	int nbytes = rz_utf16_decode(utf16le_A, 2, &codepoint, true, false);
 	mu_assert_eq(nbytes, 2, "Decoded number of bytes mismatch.");
 	mu_assert_eq_fmt(codepoint, 0x0041, "Character decode failed.", "0x%" PFMT64x);
 	rz_utf8_encode((ut8 *)utf8_out, codepoint);
 	mu_assert_streq(utf8_out, "A", "Encode failed.");
 	memset(utf8_out, 0, sizeof(utf8_out));
 
-	nbytes = rz_utf16_decode(utf16be_A, 2, &codepoint, true);
+	nbytes = rz_utf16_decode(utf16be_A, 2, &codepoint, true, true);
 	mu_assert_eq(nbytes, 2, "Decoded number of bytes mismatch.");
 	mu_assert_eq_fmt(codepoint, 0x0041, "Character decode failed.", "0x%" PFMT64x);
 	rz_utf8_encode((ut8 *)utf8_out, codepoint);
@@ -86,14 +86,14 @@ bool test_rz_utf16_decode(void) {
 	const ut8 utf16le[] = { 0xAC, 0x20 };
 	const ut8 utf16be[] = { 0x20, 0xAC };
 
-	nbytes = rz_utf16_decode(utf16le, 2, &codepoint, false);
+	nbytes = rz_utf16_decode(utf16le, 2, &codepoint, true, false);
 	mu_assert_eq(nbytes, 2, "Decoded number of bytes mismatch.");
 	mu_assert_eq_fmt(codepoint, 0x20AC, "Character decode failed.", "0x%" PFMT64x);
 	rz_utf8_encode((ut8 *)utf8_out, codepoint);
 	mu_assert_streq(utf8_out, "€", "Encode failed.");
 	memset(utf8_out, 0, sizeof(utf8_out));
 
-	nbytes = rz_utf16_decode(utf16be, 2, &codepoint, true);
+	nbytes = rz_utf16_decode(utf16be, 2, &codepoint, true, true);
 	mu_assert_eq(nbytes, 2, "Decoded number of bytes mismatch.");
 	mu_assert_eq_fmt(codepoint, 0x20AC, "Character decode failed.", "0x%" PFMT64x);
 	rz_utf8_encode((ut8 *)utf8_out, codepoint);
@@ -104,14 +104,14 @@ bool test_rz_utf16_decode(void) {
 	const ut8 utf16le_surr[] = { 0x01, 0xD8, 0x37, 0xDC };
 	const ut8 utf16be_surr[] = { 0xD8, 0x01, 0xDC, 0x37 };
 
-	nbytes = rz_utf16_decode(utf16le_surr, 4, &codepoint, false);
+	nbytes = rz_utf16_decode(utf16le_surr, 4, &codepoint, true, false);
 	mu_assert_eq(nbytes, 4, "Decoded number of bytes mismatch.");
 	mu_assert_eq_fmt(codepoint, 0x10437, "Character decode failed.", "0x%" PFMT64x);
 	rz_utf8_encode((ut8 *)utf8_out, codepoint);
 	mu_assert_streq(utf8_out, "𐐷", "Encode failed.");
 	memset(utf8_out, 0, sizeof(utf8_out));
 
-	nbytes = rz_utf16_decode(utf16be_surr, 4, &codepoint, true);
+	nbytes = rz_utf16_decode(utf16be_surr, 4, &codepoint, true, true);
 	mu_assert_eq(nbytes, 4, "Decoded number of bytes mismatch.");
 	mu_assert_eq_fmt(codepoint, 0x10437, "Character decode failed.", "0x%" PFMT64x);
 	rz_utf8_encode((ut8 *)utf8_out, codepoint);
@@ -121,14 +121,14 @@ bool test_rz_utf16_decode(void) {
 	const ut8 utf16le_first_surr[] = { 0x00, 0xD8, 0x00, 0xDC };
 	const ut8 utf16be_first_surr[] = { 0xD8, 0x00, 0xDC, 0x00 };
 
-	nbytes = rz_utf16_decode(utf16le_first_surr, 4, &codepoint, false);
+	nbytes = rz_utf16_decode(utf16le_first_surr, 4, &codepoint, true, false);
 	mu_assert_eq(nbytes, 4, "Decoded number of bytes mismatch.");
 	mu_assert_eq_fmt(codepoint, 0x10000, "Character decode failed.", "0x%" PFMT64x);
 	rz_utf8_encode((ut8 *)utf8_out, codepoint);
 	mu_assert_streq(utf8_out, "𐀀", "Encode failed.");
 	memset(utf8_out, 0, sizeof(utf8_out));
 
-	nbytes = rz_utf16_decode(utf16be_first_surr, 4, &codepoint, true);
+	nbytes = rz_utf16_decode(utf16be_first_surr, 4, &codepoint, true, true);
 	mu_assert_eq(nbytes, 4, "Decoded number of bytes mismatch.");
 	mu_assert_eq_fmt(codepoint, 0x10000, "Character decode failed.", "0x%" PFMT64x);
 	rz_utf8_encode((ut8 *)utf8_out, codepoint);
@@ -138,38 +138,44 @@ bool test_rz_utf16_decode(void) {
 	const ut8 utf16le_last_surr[] = { 0xFF, 0xDB, 0xFF, 0xDF };
 	const ut8 utf16be_last_surr[] = { 0xDB, 0xFF, 0xDF, 0xFF };
 
-	nbytes = rz_utf16_decode(utf16le_last_surr, 4, &codepoint, false);
+	nbytes = rz_utf16_decode(utf16le_last_surr, 4, &codepoint, true, false);
 	mu_assert_eq(nbytes, 0, "Undefined code point.");
 
-	nbytes = rz_utf16_decode(utf16be_last_surr, 4, &codepoint, true);
+	nbytes = rz_utf16_decode(utf16be_last_surr, 4, &codepoint, true, true);
 	mu_assert_eq(nbytes, 0, "Undefined code point.");
+
+	nbytes = rz_utf16_decode(utf16be_last_surr, 2, &codepoint, false, true);
+	mu_assert_eq(nbytes, 0, "Surrogate should never be allowed.");
+	const ut8 utf16_undef[] = { 0xFF, 0xFF };
+	nbytes = rz_utf16_decode(utf16_undef, 2, &codepoint, false, true);
+	mu_assert_eq(nbytes, 2, "Undefined was allowed.");
 
 	const ut8 utf16le_invalid_small_surr[] = { 0x00, 0xD7, 0x00, 0xDB };
 	const ut8 utf16be_invalid_small_surr[] = { 0xD7, 0x00, 0xDB, 0x00 };
 
 	// Fails to decode 4, should decode 2 bytes.
-	nbytes = rz_utf16_decode(utf16le_invalid_small_surr, 4, &codepoint, false);
+	nbytes = rz_utf16_decode(utf16le_invalid_small_surr, 4, &codepoint, true, false);
 	mu_assert_eq(nbytes, 2, "Decoded number of bytes mismatch.");
 	mu_assert_eq_fmt(codepoint, 0xD700, "Character decode failed.", "0x%" PFMT64x);
 
-	nbytes = rz_utf16_decode(utf16be_invalid_small_surr, 4, &codepoint, true);
+	nbytes = rz_utf16_decode(utf16be_invalid_small_surr, 4, &codepoint, true, true);
 	mu_assert_eq(nbytes, 2, "Decoded number of bytes mismatch.");
 	mu_assert_eq_fmt(codepoint, 0xD700, "Character decode failed.", "0x%" PFMT64x);
 
 	const ut8 utf16le_invalid_big_surr[] = { 0x01, 0xDC, 0x37, 0xE0 };
 	const ut8 utf16be_invalid_big_surr[] = { 0xDC, 0x01, 0xE0, 0x37 };
 
-	nbytes = rz_utf16_decode(utf16le_invalid_big_surr, 4, &codepoint, false);
+	nbytes = rz_utf16_decode(utf16le_invalid_big_surr, 4, &codepoint, true, false);
 	mu_assert_eq(nbytes, 0, "Undefined code point.");
-	nbytes = rz_utf16_decode(utf16be_invalid_big_surr, 4, &codepoint, true);
+	nbytes = rz_utf16_decode(utf16be_invalid_big_surr, 4, &codepoint, true, true);
 	mu_assert_eq(nbytes, 0, "Undefined code point.");
 
 	const ut8 utf16le_last_non_surr[] = { 0xff, 0xff, 0xff, 0xff };
 	const ut8 utf16be_last_non_surr[] = { 0xff, 0xff, 0xff, 0xff };
 
-	nbytes = rz_utf16_decode(utf16le_last_non_surr, 4, &codepoint, false);
+	nbytes = rz_utf16_decode(utf16le_last_non_surr, 4, &codepoint, true, false);
 	mu_assert_eq(nbytes, 0, "Undefined code point.");
-	nbytes = rz_utf16_decode(utf16be_last_non_surr, 4, &codepoint, true);
+	nbytes = rz_utf16_decode(utf16be_last_non_surr, 4, &codepoint, true, true);
 	mu_assert_eq(nbytes, 0, "Undefined code point.");
 
 	mu_end;
@@ -182,39 +188,58 @@ bool test_rz_utf16_encode(void) {
 	ut8 utf16_out[5] = { 0 };
 
 	const ut8 utf16le[] = { 0xAC, 0x20 };
+	const ut8 utf16be[] = { 0x20, 0xAC };
 	RzCodePoint codepoint = 0x20AC;
-	int nbytes = rz_utf16le_encode(utf16_out, codepoint);
+	int nbytes = rz_utf16_encode(utf16_out, codepoint, false);
 	mu_assert_eq(nbytes, 2, "Decoded number of bytes mismatch.");
 	mu_assert_memeq(utf16_out, utf16le, sizeof(utf16le), "Encode failed.");
+	nbytes = rz_utf16_encode(utf16_out, codepoint, true);
+	mu_assert_eq(nbytes, 2, "Decoded number of bytes mismatch.");
+	mu_assert_memeq(utf16_out, utf16be, sizeof(utf16be), "Encode failed.");
 	memset(utf16_out, 0, sizeof(utf16_out));
 
 	// With surrogate
 	const ut8 utf16le_surr[] = { 0x01, 0xD8, 0x37, 0xDC };
+	const ut8 utf16be_surr[] = { 0xD8, 0x01, 0xDC, 0x37 };
 	codepoint = 0x10437;
-	nbytes = rz_utf16le_encode(utf16_out, codepoint);
+	nbytes = rz_utf16_encode(utf16_out, codepoint, false);
 	mu_assert_eq(nbytes, 4, "Decoded number of bytes mismatch.");
 	mu_assert_memeq(utf16_out, utf16le_surr, sizeof(utf16le), "Encode failed.");
+	nbytes = rz_utf16_encode(utf16_out, codepoint, true);
+	mu_assert_eq(nbytes, 4, "Decoded number of bytes mismatch.");
+	mu_assert_memeq(utf16_out, utf16be_surr, sizeof(utf16be_surr), "Encode failed.");
 	memset(utf16_out, 0, sizeof(utf16_out));
 
 	const ut8 utf16le_first_surr[] = { 0x00, 0xD8, 0x00, 0xDC };
+	const ut8 utf16be_first_surr[] = { 0xD8, 0x00, 0xDC, 0x00 };
 	codepoint = 0x10000;
-	nbytes = rz_utf16le_encode(utf16_out, codepoint);
+	nbytes = rz_utf16_encode(utf16_out, codepoint, false);
 	mu_assert_eq(nbytes, 4, "Decoded number of bytes mismatch.");
-	mu_assert_memeq(utf16_out, utf16le_first_surr, sizeof(utf16le), "Encode failed.");
+	mu_assert_memeq(utf16_out, utf16le_first_surr, sizeof(utf16le_first_surr), "Encode failed.");
+	nbytes = rz_utf16_encode(utf16_out, codepoint, true);
+	mu_assert_eq(nbytes, 4, "Decoded number of bytes mismatch.");
+	mu_assert_memeq(utf16_out, utf16be_first_surr, sizeof(utf16be_first_surr), "Encode failed.");
 	memset(utf16_out, 0, sizeof(utf16_out));
 
 	const ut8 utf16le_last_surr[] = { 0xFF, 0xDB, 0xFF, 0xDF };
+	const ut8 utf16be_last_surr[] = { 0xDB, 0xFF, 0xDF, 0xFF };
 	codepoint = RZ_UNICODE_LAST_CODE_POINT;
-	nbytes = rz_utf16le_encode(utf16_out, codepoint);
+	nbytes = rz_utf16_encode(utf16_out, codepoint, false);
 	mu_assert_eq(nbytes, 4, "Decoded number of bytes mismatch.");
-	mu_assert_memeq(utf16_out, utf16le_last_surr, sizeof(utf16le), "Encode failed.");
+	mu_assert_memeq(utf16_out, utf16le_last_surr, sizeof(utf16le_last_surr), "Encode failed.");
+	nbytes = rz_utf16_encode(utf16_out, codepoint, true);
+	mu_assert_eq(nbytes, 4, "Decoded number of bytes mismatch.");
+	mu_assert_memeq(utf16_out, utf16be_last_surr, sizeof(utf16be_last_surr), "Encode failed.");
+
 	memset(utf16_out, 0, sizeof(utf16_out));
 
 	ut8 zero[5] = { 0 };
 	codepoint = 0x110000;
-	nbytes = rz_utf16le_encode(utf16_out, codepoint);
+	nbytes = rz_utf16_encode(utf16_out, codepoint, false);
 	mu_assert_eq(nbytes, 0, "Decoded number of bytes mismatch.");
-	mu_assert_memeq(utf16_out, zero, sizeof(utf16le), "Encode failed.");
+	nbytes = rz_utf16_encode(utf16_out, codepoint, true);
+	mu_assert_eq(nbytes, 0, "Decoded number of bytes mismatch.");
+	mu_assert_memeq(utf16_out, zero, sizeof(zero), "Encode failed.");
 
 	mu_end;
 }
@@ -242,36 +267,37 @@ bool test_rz_utf32_decode(void) {
 	const ut8 utf32le_red_general_black_tower[] = { 0x60, 0xFA, 0x01, 0x00, 0x41, 0xFA, 0x01, 0x00 };
 
 	RzCodePoint cp;
-	mu_assert_eq(rz_utf32_decode((ut8 *)INT_MIN, 0, &cp, false), 0, "Length check failed");
-	mu_assert_eq(rz_utf32_decode(utf32_size_1, sizeof(utf32_size_1), &cp, false), 0, "Length check failed");
-	mu_assert_eq(rz_utf32_decode(utf32_size_2, sizeof(utf32_size_2), &cp, false), 0, "Length check failed");
-	mu_assert_eq(rz_utf32_decode(utf32_size_3, sizeof(utf32_size_3), &cp, false), 0, "Length check failed");
-	mu_assert_eq(rz_utf32_decode(utf32_undefined_I, sizeof(utf32_undefined_I), &cp, false), 0, "Undefined");
-	mu_assert_eq(rz_utf32_decode(utf32_invalid_surrogate, sizeof(utf32_invalid_surrogate), &cp, false), 0, "Undefined");
+	mu_assert_eq(rz_utf32_decode((ut8 *)INT_MIN, 0, &cp, true, false), 0, "Length check failed");
+	mu_assert_eq(rz_utf32_decode(utf32_size_1, sizeof(utf32_size_1), &cp, true, false), 0, "Length check failed");
+	mu_assert_eq(rz_utf32_decode(utf32_size_2, sizeof(utf32_size_2), &cp, true, false), 0, "Length check failed");
+	mu_assert_eq(rz_utf32_decode(utf32_size_3, sizeof(utf32_size_3), &cp, true, false), 0, "Length check failed");
+	mu_assert_eq(rz_utf32_decode(utf32_undefined_I, sizeof(utf32_undefined_I), &cp, true, false), 0, "Undefined");
+	mu_assert_eq(rz_utf32_decode(utf32_undefined_I, sizeof(utf32_undefined_I), &cp, false, false), 4, "Undefined was allowed");
+	mu_assert_eq(rz_utf32_decode(utf32_invalid_surrogate, sizeof(utf32_invalid_surrogate), &cp, true, false), 0, "Undefined");
 
-	mu_assert_eq(rz_utf32_decode(utf32be_A, sizeof(utf32be_A), &cp, true), 4, "Length check failed");
+	mu_assert_eq(rz_utf32_decode(utf32be_A, sizeof(utf32be_A), &cp, true, true), 4, "Length check failed");
 	mu_assert_eq(cp, 0x41, "Incorrect decoding.");
-	mu_assert_eq(rz_utf32_decode(utf32le_A, sizeof(utf32le_A), &cp, false), 4, "Length check failed");
+	mu_assert_eq(rz_utf32_decode(utf32le_A, sizeof(utf32le_A), &cp, true, false), 4, "Length check failed");
 	mu_assert_eq(cp, 0x41, "Incorrect decoding.");
 
-	mu_assert_eq(rz_utf32_decode(utf32be_a, sizeof(utf32be_a), &cp, true), 4, "Length check failed");
+	mu_assert_eq(rz_utf32_decode(utf32be_a, sizeof(utf32be_a), &cp, true, true), 4, "Length check failed");
 	mu_assert_eq(cp, 0xff41, "Incorrect decoding.");
-	mu_assert_eq(rz_utf32_decode(utf32le_a, sizeof(utf32le_a), &cp, false), 4, "Length check failed");
+	mu_assert_eq(rz_utf32_decode(utf32le_a, sizeof(utf32le_a), &cp, true, false), 4, "Length check failed");
 	mu_assert_eq(cp, 0xff41, "Incorrect decoding.");
 
-	mu_assert_eq(rz_utf32_decode(utf32be_red_general, sizeof(utf32be_red_general), &cp, true), 4, "Length check failed");
+	mu_assert_eq(rz_utf32_decode(utf32be_red_general, sizeof(utf32be_red_general), &cp, true, true), 4, "Length check failed");
 	mu_assert_eq(cp, 0x01fa60, "Incorrect decoding.");
-	mu_assert_eq(rz_utf32_decode(utf32le_red_general, sizeof(utf32le_red_general), &cp, false), 4, "Length check failed");
-	mu_assert_eq(cp, 0x01fa60, "Incorrect decoding.");
-
-	mu_assert_eq(rz_utf32_decode(utf32be_red_general_black_tower, sizeof(utf32be_red_general_black_tower), &cp, true), 4, "Length check failed");
-	mu_assert_eq(cp, 0x01fa60, "Incorrect decoding.");
-	mu_assert_eq(rz_utf32_decode(utf32le_red_general_black_tower, sizeof(utf32le_red_general_black_tower), &cp, false), 4, "Length check failed");
+	mu_assert_eq(rz_utf32_decode(utf32le_red_general, sizeof(utf32le_red_general), &cp, true, false), 4, "Length check failed");
 	mu_assert_eq(cp, 0x01fa60, "Incorrect decoding.");
 
-	mu_assert_eq(rz_utf32_decode(utf32be_red_general_black_tower + 4, sizeof(utf32be_red_general_black_tower) - 4, &cp, true), 4, "Length check failed");
+	mu_assert_eq(rz_utf32_decode(utf32be_red_general_black_tower, sizeof(utf32be_red_general_black_tower), &cp, true, true), 4, "Length check failed");
+	mu_assert_eq(cp, 0x01fa60, "Incorrect decoding.");
+	mu_assert_eq(rz_utf32_decode(utf32le_red_general_black_tower, sizeof(utf32le_red_general_black_tower), &cp, true, false), 4, "Length check failed");
+	mu_assert_eq(cp, 0x01fa60, "Incorrect decoding.");
+
+	mu_assert_eq(rz_utf32_decode(utf32be_red_general_black_tower + 4, sizeof(utf32be_red_general_black_tower) - 4, &cp, true, true), 4, "Length check failed");
 	mu_assert_eq(cp, 0x01fa41, "Incorrect decoding.");
-	mu_assert_eq(rz_utf32_decode(utf32le_red_general_black_tower + 4, sizeof(utf32le_red_general_black_tower) - 4, &cp, false), 4, "Length check failed");
+	mu_assert_eq(rz_utf32_decode(utf32le_red_general_black_tower + 4, sizeof(utf32le_red_general_black_tower) - 4, &cp, true, false), 4, "Length check failed");
 	mu_assert_eq(cp, 0x01fa41, "Incorrect decoding.");
 
 	mu_end;

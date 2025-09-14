@@ -158,6 +158,7 @@ RZ_API void rz_buf_set_overflow_byte(RZ_NONNULL RzBuffer *b, ut8 Oxff);
 RZ_API bool rz_buf_is_bytes_buf(const RzBuffer *b);
 RZ_DEPRECATE RZ_API RZ_BORROW ut8 *rz_buf_data(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut64 *size);
 RZ_API RZ_BORROW const ut8 *rz_buf_get_whole_hot_paths(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut64 *sz);
+RZ_API RzBufferType rz_buf_type(RZ_NONNULL const RzBuffer *b);
 
 /**
  * \brief Callback to be used with rz_buf_fwd_scan().

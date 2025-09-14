@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2007-2020 ret2libc <sirmy15@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <sdb.h>
 #include <rz_flag.h>
 #include <rz_util.h>
 #include <rz_cons.h>
@@ -305,6 +306,52 @@ RZ_API RzFlagItem *rz_flag_get(RzFlag *f, const char *name) {
 	rz_return_val_if_fail(f, NULL);
 	RzFlagItem *r = ht_sp_find(f->ht_name, name, NULL);
 	return r ? evalFlag(f, r) : NULL;
+}
+
+/**
+ * \brief Resets all flag spaces associated with object files.
+ * These are:
+ * - classes
+ * - imports
+ * - relocs
+ * - sections
+ * - segments
+ * - strings
+ * - symbols
+ * - globals
+ * - maps
+ *
+ * \param flags The RzFlag instance to use.
+ * \param backup_filename If not NULL, the RzFlag instance will
+ * be backed up into the file before the reset.
+ *
+ * \return True on success, false othewise.
+ */
+RZ_API bool rz_flag_reset_obj_flags(RZ_NONNULL RZ_BORROW RzFlag *flags, RZ_NULLABLE const char *backup_filename) {
+	rz_return_val_if_fail(flags, false);
+	bool backup_succeeded = !backup_filename;
+	if (backup_filename) {
+		Sdb *sdb = sdb_new0();
+		if (!sdb) {
+			return false;
+		}
+		rz_serialize_flag_save(sdb, flags);
+		backup_succeeded = sdb_text_save(sdb, backup_filename, false);
+	}
+	if (!backup_succeeded) {
+		RZ_LOG_WARN("Could not backup RzFlag before resetting flag space. Abort flag space reset.\n");
+		return false;
+	}
+	rz_flag_unset_all_in_space(flags, "classes");
+	rz_flag_unset_all_in_space(flags, "imports");
+	rz_flag_unset_all_in_space(flags, "relocs");
+	rz_flag_unset_all_in_space(flags, "sections");
+	rz_flag_unset_all_in_space(flags, "segments");
+	rz_flag_unset_all_in_space(flags, "strings");
+	rz_flag_unset_all_in_space(flags, "symbols");
+	rz_flag_unset_all_in_space(flags, "globals");
+	rz_flag_unset_all_in_space(flags, "maps");
+	return true;
 }
 
 /* return the first flag item that can be found at offset "off", or NULL otherwise */

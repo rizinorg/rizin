@@ -68,7 +68,7 @@ static RzIODesc *vf_open(RzIO *io, const char *pathname, int rw, int mode) {
 	ctx->bf = bf;
 	ctx->vfile = vfile;
 	ctx->off = 0;
-	desc = rz_io_desc_new(io, &rz_core_io_plugin_vfile, pathname, rw, mode, ctx);
+	desc = rz_io_desc_new(io, &rz_core_io_plugin_vfile, pathname, rw, ctx);
 	if (!desc) {
 		free(ctx);
 	}

@@ -146,7 +146,7 @@ static RzIODesc *__open(RzIO *io, const char *pathname, int rw, int mode) {
 		rzp = rzpipe_open(pathname + 9);
 	}
 	return rzp ? rz_io_desc_new(io, &rz_io_plugin_rzpipe,
-			     pathname, rw, mode, rzp)
+			     pathname, rw, rzp)
 		   : NULL;
 }
 

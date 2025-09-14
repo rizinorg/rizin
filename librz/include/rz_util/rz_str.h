@@ -2,6 +2,7 @@
 #define RZ_STR_H
 
 #include <wchar.h>
+#include "rz_assert.h"
 #include "rz_str_util.h"
 #include "rz_list.h"
 #include "rz_types.h"
@@ -16,15 +17,21 @@ typedef enum {
 	RZ_STRING_TYPE_SIZED, ///< Pascal-style strings with the first byte marking the size of the string
 } RzStrType;
 
+/**
+ * \brief String character encodings.
+ */
 typedef enum {
-	RZ_STRING_ENC_8BIT = 'b', // unknown 8bit encoding but with ASCII from 0 to 0x7f
+	/**
+	 * \brief Unknown 8bit encoding but with ASCII from 0 to 0x7f.
+	 * It is also used everywhere like it is ASCII.
+	 */
+	RZ_STRING_ENC_8BIT = 'b',
 	RZ_STRING_ENC_UTF8 = '8',
 	RZ_STRING_ENC_MUTF8 = 'm', // modified utf8
 	RZ_STRING_ENC_UTF16LE = 'u',
 	RZ_STRING_ENC_UTF32LE = 'U',
 	RZ_STRING_ENC_UTF16BE = 'n',
 	RZ_STRING_ENC_UTF32BE = 'N',
-	RZ_STRING_ENC_BASE64 = '6',
 	RZ_STRING_ENC_IBM037 = 'c',
 	RZ_STRING_ENC_IBM290 = 'd',
 	RZ_STRING_ENC_EBCDIC_UK = 'k',
@@ -85,6 +92,8 @@ RZ_API char *rz_str_crop(const char *str, unsigned int x, unsigned int y, unsign
 RZ_API char *rz_str_scale(const char *r, int w, int h);
 RZ_API bool rz_str_range_in(const char *r, ut64 addr);
 RZ_API size_t rz_str_len_utf8(const char *s);
+RZ_API size_t rz_str_utf8_num_ucp(RZ_NONNULL const char *str);
+RZ_API size_t rz_str_utf8_get_width_utf16(RZ_NONNULL const char *str);
 RZ_API size_t rz_str_len_utf8_ansi(const char *str);
 RZ_API size_t rz_str_len_utf8char(const char *s, int left);
 RZ_API size_t rz_str_utf8_charsize(const char *str);
@@ -142,7 +151,7 @@ RZ_API const char *rz_str_sysbits(const int v);
 RZ_API char *rz_str_trunc_ellipsis(const char *str, int len);
 RZ_API const char *rz_str_bool(int b);
 RZ_API bool rz_str_is_true(const char *s);
-RZ_API bool rz_str_is_false(const char *s);
+RZ_API bool rz_str_is_false(RZ_NULLABLE const char *s);
 RZ_API bool rz_str_is_bool(const char *val);
 RZ_API const char *rz_str_ansi_chrn(const char *str, size_t n);
 RZ_API size_t rz_str_ansi_len(const char *str);
@@ -226,7 +235,9 @@ RZ_API void rz_str_uri_decode(char *buf);
 RZ_API char *rz_str_uri_encode(const char *buf);
 RZ_API char *rz_str_utf16_decode(const ut8 *s, int len);
 RZ_API int rz_str_utf16_to_utf8(ut8 *dst, int len_dst, const ut8 *src, int len_src, bool little_endian);
-RZ_API char *rz_str_utf16_encode(const char *s, int len);
+RZ_DEPRECATE RZ_API char *rz_str_utf16_encode(const char *s, int len);
+RZ_API RZ_OWN ut16 *rz_str_utf8_to_utf16(RZ_NONNULL const char *utf8_str, bool big_endian);
+RZ_API RZ_OWN ut32 *rz_str_utf8_to_utf32(RZ_NONNULL const char *utf8_str, bool big_endian);
 RZ_API char *rz_str_escape_utf8_for_json(const char *s, int len);
 RZ_API char *rz_str_escape_mutf8_for_json(const char *s, int len);
 RZ_API char *rz_str_home(const char *str);
@@ -281,8 +292,42 @@ RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NU
 
 RZ_API const char *rz_str_indent(int indent);
 
-static inline bool rz_string_enc_is_utf8_compatible(RzStrEnc enc) {
+/**
+ * \brief Returns true if the given encoding has the same byte character width as UTF-8.
+ * This is only true for UTF-8 and ASCII.
+ *
+ * Examples:
+ *
+ * ```c
+ * // IBM290 character width is always one byte, but the equivalent Japanese
+ * // characters in UTF-8 are 3 bytes.
+ * assert(rz_string_enc_same_char_width_as_utf8(RZ_STR_ENC_IBM290) == false);
+ *
+ * // ASCII character width is always one byte, and the equivalent
+ * // UTF-8 characters are also always 1 byte.
+ * assert(rz_string_enc_same_char_width_as_utf8(RZ_STR_ENC_8BIT) == true);
+ * ```
+ */
+static inline bool rz_string_enc_same_char_width_as_utf8(RzStrEnc enc) {
 	return enc == RZ_STRING_ENC_UTF8 || enc == RZ_STRING_ENC_8BIT;
+}
+
+RZ_API bool rz_string_enc_is_utf_native_endian(RzStrEnc enc);
+RZ_API size_t rz_string_enc_code_point_width(RzStrEnc enc);
+
+static inline bool rz_string_code_points_align(RzStrEnc enc, size_t memory_alignment) {
+	if (rz_string_enc_code_point_width(enc) == memory_alignment) {
+		return true;
+	}
+	switch (enc) {
+	case RZ_STRING_ENC_SETTINGS:
+		rz_warn_if_reached();
+		return false;
+	case RZ_STRING_ENC_GUESS:
+		return false;
+	default:
+		return memory_alignment % rz_string_enc_code_point_width(enc) == 0;
+	}
 }
 
 #ifdef __cplusplus

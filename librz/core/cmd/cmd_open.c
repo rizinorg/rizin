@@ -791,8 +791,18 @@ RZ_IPI RzCmdStatus rz_open_binary_select_handler(RzCore *core, int argc, const c
 				return RZ_CMD_STATUS_ERROR;
 			}
 			if (xtr_selection_matches(selection, xtr_data->metadata)) {
+				// Backup and reset flag spaces with object flags (sections and such).
+				char bak_file[128] = { 0 };
+				rz_strf(bak_file, "flags.%s.sdb", argv[1]);
+				if (!rz_flag_reset_obj_flags(core->flags, bak_file)) {
+					RZ_LOG_ERROR("Failed to backup and reset flag spaces. Refusing to switch object.\n");
+					return RZ_CMD_STATUS_ERROR;
+				}
+				rz_cons_printf("Backed up flag space into '%s'. You can restore the flags with the 'ko' command.\n", bak_file);
+
 				bits = xtr_data->metadata->bits;
 				const char *mach = rz_list_length(selection) > 2 ? rz_list_get_n(selection, 2) : NULL;
+
 				if (!rz_bin_select(bin, rz_list_get_n(selection, 0), bits, mach, NULL)) {
 					rz_list_free(selection);
 					return RZ_CMD_STATUS_ERROR;

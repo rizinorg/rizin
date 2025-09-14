@@ -400,119 +400,150 @@ static inline void *rz_new_copy(int size, const void *data) {
 #define O_BINARY 0
 #endif
 
+// clang-format off
 #if __APPLE__
-#if __i386__
-#define RZ_SYS_BASE ((ut64)0x1000)
-#elif __x86_64__
-#define RZ_SYS_BASE ((ut64)0x100000000)
-#else
-#define RZ_SYS_BASE ((ut64)0x1000)
-#endif
+	#if __i386__
+		#define RZ_SYS_BASE ((ut64)0x1000)
+	#elif __x86_64__
+		#define RZ_SYS_BASE ((ut64)0x100000000)
+	#else
+		#define RZ_SYS_BASE ((ut64)0x1000)
+	#endif
 #elif __WINDOWS__
-#define RZ_SYS_BASE ((ut64)0x01001000)
+	#define RZ_SYS_BASE ((ut64)0x01001000)
 #else // linux, bsd, ...
-#if __arm__ || __arm64__
-#define RZ_SYS_BASE ((ut64)0x4000)
-#else
-#define RZ_SYS_BASE ((ut64)0x8048000)
-#endif
+	#if __arm__ || __arm64__
+		#define RZ_SYS_BASE ((ut64)0x4000)
+	#else
+		#define RZ_SYS_BASE ((ut64)0x8048000)
+	#endif
 #endif
 
-/* arch */
-#if __i386__
-#define RZ_SYS_ARCH   "x86"
-#define RZ_SYS_BITS   RZ_SYS_BITS_32
-#define RZ_SYS_ENDIAN 0
-#elif __EMSCRIPTEN__
-#define RZ_SYS_ARCH   "wasm"
-#define RZ_SYS_BITS   (RZ_SYS_BITS_32 | RZ_SYS_BITS_64)
-#define RZ_SYS_ENDIAN 0
-#elif __x86_64__
-#define RZ_SYS_ARCH   "x86"
-#define RZ_SYS_BITS   (RZ_SYS_BITS_32 | RZ_SYS_BITS_64)
-#define RZ_SYS_ENDIAN 0
-#elif __POWERPC__
-#define RZ_SYS_ARCH "ppc"
-#ifdef __powerpc64__
-#define RZ_SYS_BITS (RZ_SYS_BITS_32 | RZ_SYS_BITS_64)
-#else
-#define RZ_SYS_BITS RZ_SYS_BITS_32
-#endif
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-#define RZ_SYS_ENDIAN 0
-#else
-#define RZ_SYS_ENDIAN 1
-#endif
-#elif __arm__
-#define RZ_SYS_ARCH   "arm"
-#define RZ_SYS_BITS   RZ_SYS_BITS_32
-#define RZ_SYS_ENDIAN 0
-#elif __arm64__ || __aarch64__
-#define RZ_SYS_ARCH   "arm"
-#define RZ_SYS_BITS   (RZ_SYS_BITS_32 | RZ_SYS_BITS_64)
-#define RZ_SYS_ENDIAN 0
-#elif __arc__
-#define RZ_SYS_ARCH   "arc"
-#define RZ_SYS_BITS   RZ_SYS_BITS_32
-#define RZ_SYS_ENDIAN 0
-#elif __s390x__
-#define RZ_SYS_ARCH   "sysz"
-#define RZ_SYS_BITS   RZ_SYS_BITS_64
-#define RZ_SYS_ENDIAN 1
-#elif __sparc__
-#define RZ_SYS_ARCH   "sparc"
-#define RZ_SYS_BITS   RZ_SYS_BITS_32
-#define RZ_SYS_ENDIAN 1
-#elif __mips__
-#define RZ_SYS_ARCH   "mips"
-#define RZ_SYS_BITS   RZ_SYS_BITS_32
-#define RZ_SYS_ENDIAN 1
-#elif __EMSCRIPTEN__
-/* we should default to wasm when ready */
-#define RZ_SYS_ARCH "x86"
-#define RZ_SYS_BITS RZ_SYS_BITS_32
-#elif __riscv__ || __riscv
-#define RZ_SYS_ARCH   "riscv"
-#define RZ_SYS_ENDIAN 0
-#if __riscv_xlen == 32
-#define RZ_SYS_BITS RZ_SYS_BITS_32
-#else
-#define RZ_SYS_BITS (RZ_SYS_BITS_32 | RZ_SYS_BITS_64)
-#endif
-#else
-#ifdef _MSC_VER
-#if defined(_M_X64) || defined(_M_AMD64)
-#define RZ_SYS_ARCH   "x86"
-#define RZ_SYS_BITS   (RZ_SYS_BITS_32 | RZ_SYS_BITS_64)
-#define RZ_SYS_ENDIAN 0
-#define __x86_64__    1
-#elif defined(_M_IX86)
-#define RZ_SYS_ARCH   "x86"
-#define RZ_SYS_BITS   (RZ_SYS_BITS_32)
-#define RZ_SYS_ENDIAN 0
-#define __i386__      1
-#elif defined(_M_ARM64)
-#define RZ_SYS_ARCH   "arm"
-#define RZ_SYS_BITS   (RZ_SYS_BITS_32 | RZ_SYS_BITS_64)
-#define RZ_SYS_ENDIAN 0
-#define __arm64__     1
-#elif defined(_M_ARM)
-#define RZ_SYS_ARCH   "arm"
-#define RZ_SYS_BITS   RZ_SYS_BITS_32
-#define RZ_SYS_ENDIAN 0
-#define __arm__       1
-#endif
-#else
-#define RZ_SYS_ARCH   "unknown"
-#define RZ_SYS_BITS   RZ_SYS_BITS_32
-#define RZ_SYS_ENDIAN 0
-#endif
-#endif
+static const ut32 rz_endianness_one = 1;
 
 #define RZ_SYS_ENDIAN_NONE   0
 #define RZ_SYS_ENDIAN_LITTLE 1
 #define RZ_SYS_ENDIAN_BIG    2
 #define RZ_SYS_ENDIAN_BI     3
+
+/* arch */
+#if __i386__
+	#define RZ_SYS_ARCH   "x86"
+	#define RZ_SYS_BITS   RZ_SYS_BITS_32
+	#define RZ_SYS_ENDIAN RZ_SYS_ENDIAN_LITTLE
+#elif __EMSCRIPTEN__
+	#define RZ_SYS_ARCH   "wasm"
+	#define RZ_SYS_BITS   (RZ_SYS_BITS_32 | RZ_SYS_BITS_64)
+	#define RZ_SYS_ENDIAN RZ_SYS_ENDIAN_LITTLE
+#elif __x86_64__
+	#define RZ_SYS_ARCH   "x86"
+	#define RZ_SYS_BITS   (RZ_SYS_BITS_32 | RZ_SYS_BITS_64)
+	#define RZ_SYS_ENDIAN RZ_SYS_ENDIAN_LITTLE
+#elif __POWERPC__
+	#define RZ_SYS_ARCH "ppc"
+	#ifdef __powerpc64__
+		#define RZ_SYS_BITS (RZ_SYS_BITS_32 | RZ_SYS_BITS_64)
+	#else
+		#define RZ_SYS_BITS RZ_SYS_BITS_32
+	#endif
+
+	#if defined(__BYTE_ORDER__)
+		#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+			#define RZ_SYS_ENDIAN RZ_SYS_ENDIAN_LITTLE
+		#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+			#define RZ_SYS_ENDIAN RZ_SYS_ENDIAN_BIG
+		#else
+			#error "Unsupported endianness"
+		#endif
+	#else
+		#define RZ_SYS_ENDIAN ((*((char *)&(rz_endianness_one)) == 1) ? RZ_SYS_ENDIAN_LITTLE : RZ_SYS_ENDIAN_BIG)
+	#endif
+#elif __arm__
+	#define RZ_SYS_ARCH   "arm"
+	#define RZ_SYS_BITS   RZ_SYS_BITS_32
+	#define RZ_SYS_ENDIAN RZ_SYS_ENDIAN_LITTLE
+#elif __arm64__ || __aarch64__
+	#define RZ_SYS_ARCH   "arm"
+	#define RZ_SYS_BITS   (RZ_SYS_BITS_32 | RZ_SYS_BITS_64)
+	#define RZ_SYS_ENDIAN RZ_SYS_ENDIAN_LITTLE
+#elif __arc__
+	#define RZ_SYS_ARCH   "arc"
+	#define RZ_SYS_BITS   RZ_SYS_BITS_32
+	#define RZ_SYS_ENDIAN RZ_SYS_ENDIAN_LITTLE
+#elif __s390x__
+	#define RZ_SYS_ARCH   "sysz"
+	#define RZ_SYS_BITS   RZ_SYS_BITS_64
+	#define RZ_SYS_ENDIAN RZ_SYS_ENDIAN_BIG
+#elif __sparc__
+	#define RZ_SYS_ARCH   "sparc"
+	#define RZ_SYS_BITS   RZ_SYS_BITS_32
+	#if defined(__BYTE_ORDER__)
+		#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+			#define RZ_SYS_ENDIAN RZ_SYS_ENDIAN_LITTLE
+		#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+			#define RZ_SYS_ENDIAN RZ_SYS_ENDIAN_BIG
+		#else
+			#error "Unsupported endianness"
+		#endif
+	#else
+		#define RZ_SYS_ENDIAN ((*((char *)&(rz_endianness_one)) == 1) ? RZ_SYS_ENDIAN_LITTLE : RZ_SYS_ENDIAN_BIG)
+	#endif
+#elif __mips__
+	#define RZ_SYS_ARCH   "mips"
+	#define RZ_SYS_BITS   RZ_SYS_BITS_32
+	#define RZ_SYS_ENDIAN RZ_SYS_ENDIAN_BIG
+#elif __EMSCRIPTEN__
+	/* we should default to wasm when ready */
+	#define RZ_SYS_ARCH "x86"
+	#define RZ_SYS_BITS RZ_SYS_BITS_32
+#elif __riscv__ || __riscv
+	#define RZ_SYS_ARCH   "riscv"
+	#define RZ_SYS_ENDIAN RZ_SYS_ENDIAN_LITTLE
+	#if __riscv_xlen == 32
+		#define RZ_SYS_BITS RZ_SYS_BITS_32
+	#else
+		#define RZ_SYS_BITS (RZ_SYS_BITS_32 | RZ_SYS_BITS_64)
+	#endif
+#else
+	#ifdef _MSC_VER
+		#if defined(_M_X64) || defined(_M_AMD64)
+			#define RZ_SYS_ARCH   "x86"
+			#define RZ_SYS_BITS   (RZ_SYS_BITS_32 | RZ_SYS_BITS_64)
+			#define RZ_SYS_ENDIAN RZ_SYS_ENDIAN_LITTLE
+			#define __x86_64__    1
+		#elif defined(_M_IX86)
+			#define RZ_SYS_ARCH   "x86"
+			#define RZ_SYS_BITS   (RZ_SYS_BITS_32)
+			#define RZ_SYS_ENDIAN RZ_SYS_ENDIAN_LITTLE
+			#define __i386__      1
+		#elif defined(_M_ARM64)
+			#define RZ_SYS_ARCH   "arm"
+			#define RZ_SYS_BITS   (RZ_SYS_BITS_32 | RZ_SYS_BITS_64)
+			#define RZ_SYS_ENDIAN RZ_SYS_ENDIAN_LITTLE
+			#define __arm64__     1
+		#elif defined(_M_ARM)
+			#define RZ_SYS_ARCH   "arm"
+			#define RZ_SYS_BITS   RZ_SYS_BITS_32
+			#define RZ_SYS_ENDIAN RZ_SYS_ENDIAN_LITTLE
+			#define __arm__       1
+		#else
+			#error "Unhandled Windows architecture."
+		#endif
+	#else
+		#error "Unhandled bits and edianness definitions for this architecture."
+	#endif
+#endif
+
+#ifndef RZ_SYS_ENDIAN
+	#error "Endianness for this architecture is not defined. This is no longer valid."
+#elif (RZ_SYS_ENDIAN == RZ_SYS_ENDIAN_BI || RZ_SYS_ENDIAN == RZ_SYS_ENDIAN_NONE)
+	#error "RZ_SYS_ENDIAN_BI or RZ_SYS_ENDIAN_NONE are invalid values for the architecture endianness."
+#endif
+
+// clang-format on
+
+#define RZ_HOST_IS_LITTLE_ENDIAN (RZ_SYS_ENDIAN == RZ_SYS_ENDIAN_LITTLE)
+#define RZ_HOST_IS_BIG_ENDIAN    (RZ_SYS_ENDIAN == RZ_SYS_ENDIAN_BIG)
 
 typedef enum {
 	RZ_SYS_ARCH_NONE = 0,

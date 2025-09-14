@@ -451,7 +451,7 @@ static int rasm_asm(RzAsmState *as, const char *buf, ut64 offset, ut64 len, int 
 				if (hexwords) {
 					size_t i = 0;
 					for (i = 0; i < acode->len; i += sizeof(ut32)) {
-						ut32 dword = rz_read_ble32(acode->bytes + i, RZ_SYS_ENDIAN);
+						ut32 dword = rz_read_ble32(acode->bytes + i, RZ_HOST_IS_BIG_ENDIAN);
 						printf("0x%08x ", dword);
 						if ((i / 4) == 7) {
 							printf("\n");

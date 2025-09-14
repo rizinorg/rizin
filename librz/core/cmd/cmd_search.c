@@ -12,6 +12,7 @@
 
 #include "cmd_search_rop.c"
 #include "rz_cons.h"
+#include <rz_config.h>
 #include <rz_flag.h>
 #include <rz_util/rz_file.h>
 #include <rz_util/rz_log.h>
@@ -2606,6 +2607,9 @@ static RzCmdStatus cmd_string_search_generic(RzCore *core, const char *string, c
 	if (!search_opts) {
 		return RZ_CMD_STATUS_ERROR;
 	}
+	bool memset_ff = rz_config_get_b(core->config, "io.ff");
+	// Disable memset of IO memory at read to be way faster.
+	rz_config_set_b(core->config, "io.ff", false);
 
 	CMD_SEARCH_BEGIN();
 
@@ -2650,17 +2654,20 @@ static RzCmdStatus cmd_string_search_generic(RzCore *core, const char *string, c
 		RZ_LOG_ERROR("code: Failed to setup default search options.\n");
 		free(search_str);
 		rz_search_opt_free(search_opts);
+		rz_config_set_b(core->config, "io.ff", memset_ff);
 		CMD_SEARCH_END();
 		return RZ_CMD_STATUS_ERROR;
 	}
 	RzList *hits = rz_core_search_string(core, search_opts, search_str, search_str_len, flags, expected);
 
+	rz_config_set_b(core->config, "io.ff", memset_ff);
 	free(search_str);
 	rz_search_opt_free(search_opts);
 	CMD_SEARCH_END();
 	return cmd_core_handle_search_hits(core, state, hits);
 
 invalid_args:
+	rz_config_set_b(core->config, "io.ff", memset_ff);
 	free(search_str);
 	rz_search_opt_free(search_opts);
 	CMD_SEARCH_END();

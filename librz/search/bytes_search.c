@@ -220,7 +220,9 @@ static bool bytes_find(RzSearchFindOpt *fopts, void *user, ut64 address, const R
 	rz_pvector_foreach (patterns, it) {
 		RzSearchBytesPattern *hp = (RzSearchBytesPattern *)*it;
 		if (hp->regex) {
+			RzRegexMulti *re = rz_regex_multi_clone(hp->regex, true);
 			RzPVector *matches = fopts->match_overlap ? rz_regex_match_all_overlap(hp->regex, (const char *)raw_buf, size, 0, RZ_REGEX_DEFAULT) : rz_regex_match_all(hp->regex, (const char *)raw_buf, size, 0, RZ_REGEX_DEFAULT);
+			rz_regex_free_multi_clone(re);
 			void **it;
 			RzPVector *match;
 			rz_pvector_foreach (matches, it) {

@@ -369,12 +369,17 @@ RZ_API const char *rz_utf_block_name(int idx) {
  *
  * \param buf The buffer to read from.
  * \param The buffer length in bytes.
- * \param cp The decoded code point. It is only written if a valid
- * Unicode code point was decoded.
+ * \param cp The decoded code point.
+ * \param check_is_def If true, checks the code point against the defined
+ *        Unicode table. It will not write \p cp and return 0 if the decoded code
+ *        point is undefined.
+ *        If false, it won't perform any checks and just decode.
+ *        Be aware, the check has a runtime of O(log n).
+ *        Where n: number of undefined Unicode ranges.
  *
  * \return The number of bytes decoded. Is always between 0-4.
  */
-RZ_API size_t rz_utf8_decode(RZ_NONNULL const ut8 *buf, size_t buf_len, RZ_NULLABLE RZ_OUT RzCodePoint *cp) {
+RZ_API size_t rz_utf8_decode(RZ_NONNULL const ut8 *buf, size_t buf_len, RZ_NULLABLE RZ_OUT RzCodePoint *cp, bool check_is_def) {
 	rz_return_val_if_fail(buf, 0);
 	if (buf_len < 1) {
 		return 0;
@@ -403,7 +408,7 @@ RZ_API size_t rz_utf8_decode(RZ_NONNULL const ut8 *buf, size_t buf_len, RZ_NULLA
 		}
 		bytes_used = 4;
 	}
-	if (!rz_unicode_code_point_is_legal_decode(code_point)) {
+	if (check_is_def && !rz_unicode_code_point_is_legal_decode(code_point)) {
 		return 0;
 	}
 	if (cp) {
@@ -420,7 +425,7 @@ RZ_API int rz_mutf8_decode(const ut8 *ptr, int ptrlen, RzCodePoint *ch) {
 		}
 		return 2;
 	}
-	return rz_utf8_decode(ptr, ptrlen, ch);
+	return rz_utf8_decode(ptr, ptrlen, ch, false);
 }
 
 /* Convert a unicode RzCodePoint into an UTF-8 buf */
@@ -638,7 +643,7 @@ RZ_API int *rz_utf_block_list(const ut8 *str, int len, int **freq_list) {
 	RzCodePoint ch = 0;
 	while (str_ptr < str_end) {
 		int block_idx;
-		int ch_bytes = rz_utf8_decode(str_ptr, str_end - str_ptr, &ch);
+		int ch_bytes = rz_utf8_decode(str_ptr, str_end - str_ptr, &ch, true);
 		if (!ch_bytes) {
 			block_idx = RZ_UNICODE_BLOCKS_COUNT - 1;
 			ch_bytes = 1;

@@ -116,11 +116,12 @@ CMDS=<<EOF
 obs arm_64_arm64e
 ii
 ir
-pxr 0x10 @ section.15.__DATA.__objc_classrefs
-pD 0x10 @ section.15.__DATA.__objc_classrefs
+pxr 0x10 @ section.13.__DATA.__objc_classrefs
+pD 0x10 @ section.13.__DATA.__objc_classrefs
 ic
 EOF
 EXPECT=<<EOF
+Backed up flag space into 'flags.arm_64_arm64e.sdb'. You can restore the flags with the 'ko' command.
 nth       vaddr bind type           lib name                     
 -----------------------------------------------------------------
   0  ---------- NONE OBJC_CLASS         NSString
@@ -157,14 +158,12 @@ nth       vaddr bind type           lib name
 0x100008108 0x00008108 0x100010048 SET_64 NSObject
 0x100008110 0x00008110 0x100010040 SET_64 _objc_empty_cache
 0x100008120 0x00008120  0x00000000 SET_64 
-0x1000080e0 0x0000000100010038   8....... @ reloc.NSObject.1000080e0 4295032888 NSObject R 0x0
-0x1000080e8 0x0000000100010040   @....... @ reloc._objc_empty_cache.1000080e8 4295032896 _objc_empty_cache R 0x0
-            ;-- section.15.__DATA.__objc_classrefs:
-            ;-- NSObject:
-            0x1000080e0      .qword 0x0000000100010038 ; reloc.target.NSObject; RELOC 64 NSObject ; [15] -rw- section size 16 named 15.__DATA.__objc_classrefs
+0x1000080c0 0x0000000100008100   ........ @ section.13.__DATA.__objc_classrefs 4295000320 15.__DATA.__objc_data class Stub R 0x1000080d8
+0x1000080c8 0x0000000100010030   0....... @ reloc.NSString 4295032880 NSString R 0x0
+            ;-- section.13.__DATA.__objc_classrefs:
+            0x1000080c0      .qword 0x0000000100008100 ; sym.class_Stub; RELOC 64  ; [13] -rw- section size 16 named 13.__DATA.__objc_classrefs
             ;-- NSString:
-            ;-- _objc_empty_cache:
-            0x1000080e8      .qword 0x0000000100010040 ; reloc.target._objc_empty_cache; RELOC 64 _objc_empty_cache
+            0x1000080c8      .qword 0x0000000100010030 ; reloc.target.NSString; RELOC 64 NSString
     address         min         max name super    
 --------------------------------------------------
 0x1000080d8 0x1000080d8 0x1000080d8 Stub NSObject
@@ -174,6 +173,7 @@ RUN
 NAME=mach0 arm64e chained imports
 FILE=bins/mach0/imports-arm64e-chained
 CMDS=<<EOF
+obs arm_64_arm64e
 ii
 pd 3 @ 0x100003f48
 ir
@@ -182,21 +182,22 @@ pD 0x10 @ section.13.__DATA.__objc_classrefs
 ic
 EOF
 EXPECT=<<EOF
+Backed up flag space into 'flags.arm_64_arm64e.sdb'. You can restore the flags with the 'ko' command.
 nth       vaddr bind type           lib name                     
 -----------------------------------------------------------------
-  0 0x100003f30 NONE FUNC               objc_alloc
-  1 0x100003f3c NONE FUNC               objc_alloc_init
-  2 0x100003f48 NONE FUNC               objc_autoreleasePoolPop
-  3 0x100003f54 NONE FUNC               objc_autoreleasePoolPush
+  0 0x100003f20 NONE FUNC               objc_alloc
+  1 0x100003f30 NONE FUNC               objc_alloc_init
+  2 0x100003f40 NONE FUNC               objc_autoreleasePoolPop
+  3 0x100003f50 NONE FUNC               objc_autoreleasePoolPush
   4  ---------- NONE FUNC               objc_msgSend
   5  ---------- NONE OBJC_CLASS         NSString
   6  ---------- NONE FUNC               _objc_empty_cache
   7  ---------- NONE OBJC_METACLASS     NSObject
   8  ---------- NONE OBJC_CLASS         NSObject
-            ;-- objc_autoreleasePoolPop:
-            0x100003f48      adrp  x16, reloc.objc_alloc               ; 0x100004000
-            0x100003f4c      ldr   x16, [x16, 0x10]                    ; [0x10:4]=0x400000
-            0x100003f50      br    x16
+            0x100003f48      ldr   x16, [x17]
+            0x100003f4c      braa  x16, x17
+            ;-- objc_autoreleasePoolPush:
+            0x100003f50      adrp  x17, reloc.objc_alloc               ; 0x100004000
       vaddr      paddr      target type   name                     
 -------------------------------------------------------------------
 0x100004000 0x00004000 0x100010008 SET_64 objc_alloc

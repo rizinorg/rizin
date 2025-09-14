@@ -2,10 +2,12 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util/rz_regex.h>
+#include <rz_platform.h>
 #include "rz_list.h"
 #include "rz_types.h"
 #include <rz_util.h>
 #include "rz_cons.h"
+#include "rz_util/rz_assert.h"
 #include "rz_util/rz_unicode.h"
 #include <rz_vector.h>
 #include <stdio.h>
@@ -57,8 +59,6 @@ RZ_API const char *rz_str_enc_as_string(RzStrEnc enc) {
 		return "utf16be";
 	case RZ_STRING_ENC_UTF32BE:
 		return "utf32be";
-	case RZ_STRING_ENC_BASE64:
-		return "base64";
 	case RZ_STRING_ENC_IBM037:
 		return "ibm037";
 	case RZ_STRING_ENC_IBM290:
@@ -114,8 +114,6 @@ RZ_API RzStrEnc rz_str_enc_string_as_type(RZ_NULLABLE const char *encoding) {
 		return RZ_STRING_ENC_EBCDIC_US;
 	} else if (!strcmp(encoding, "settings")) {
 		return RZ_STRING_ENC_SETTINGS;
-	} else if (!strcmp(encoding, "base64")) {
-		return RZ_STRING_ENC_BASE64;
 	}
 
 	RZ_LOG_ERROR("rz_str: encoding '%s' not supported\n", encoding);
@@ -1727,15 +1725,15 @@ static char *rz_str_escape_utf(const char *buf, int buf_size, RzStrEnc enc, cons
 		case RZ_STRING_ENC_UTF32LE:
 		case RZ_STRING_ENC_UTF32BE:
 			if (enc == RZ_STRING_ENC_UTF16LE || enc == RZ_STRING_ENC_UTF16BE) {
-				ch_bytes = rz_utf16_decode((ut8 *)p, end - p, &ch, enc == RZ_STRING_ENC_UTF16BE);
+				ch_bytes = rz_utf16_decode((ut8 *)p, end - p, &ch, true, enc == RZ_STRING_ENC_UTF16BE);
 				min_char_width = 2;
 			} else {
-				ch_bytes = rz_utf32_decode((ut8 *)p, end - p, &ch, enc == RZ_STRING_ENC_UTF32BE);
+				ch_bytes = rz_utf32_decode((ut8 *)p, end - p, &ch, true, enc == RZ_STRING_ENC_UTF32BE);
 				min_char_width = 4;
 			}
 			break;
 		default:
-			ch_bytes = rz_utf8_decode((ut8 *)p, end - p, &ch);
+			ch_bytes = rz_utf8_decode((ut8 *)p, end - p, &ch, true);
 			min_char_width = 1;
 		}
 		if (!rz_str_escape_code_point(ch, ch_bytes, esc_opts)) {
@@ -1844,7 +1842,7 @@ static char *escape_utf8_for_json(const char *buf, int buf_size, bool mutf8) {
 	q = new_buf;
 	while (p < end) {
 		ptrdiff_t bytes_left = end - p;
-		ch_bytes = mutf8 ? rz_mutf8_decode(p, bytes_left, &ch) : rz_utf8_decode(p, bytes_left, &ch);
+		ch_bytes = mutf8 ? rz_mutf8_decode(p, bytes_left, &ch) : rz_utf8_decode(p, bytes_left, &ch, true);
 		if (ch_bytes == 1) {
 			switch (*p) {
 			case '\n':
@@ -2129,7 +2127,7 @@ RZ_API bool rz_str_is_utf8(RZ_NONNULL const char *str) {
 	const ut8 *ptr = (const ut8 *)str;
 	size_t len = strlen(str);
 	while (len) {
-		int bytes = rz_utf8_decode(ptr, len, NULL);
+		int bytes = rz_utf8_decode(ptr, len, NULL, true);
 		if (!bytes) {
 			return false;
 		}
@@ -2141,7 +2139,7 @@ RZ_API bool rz_str_is_utf8(RZ_NONNULL const char *str) {
 
 RZ_API bool rz_str_is_printable(const char *str) {
 	while (*str) {
-		int ulen = rz_utf8_decode((const ut8 *)str, strlen(str), NULL);
+		int ulen = rz_utf8_decode((const ut8 *)str, strlen(str), NULL, true);
 		if (ulen > 1) {
 			str += ulen;
 			continue;
@@ -2156,7 +2154,7 @@ RZ_API bool rz_str_is_printable(const char *str) {
 
 RZ_API bool rz_str_is_printable_limited(const char *str, int size) {
 	while (size > 0 && *str) {
-		int ulen = rz_utf8_decode((const ut8 *)str, strlen(str), NULL);
+		int ulen = rz_utf8_decode((const ut8 *)str, strlen(str), NULL, true);
 		if (ulen > 1) {
 			str += ulen;
 			continue;
@@ -2172,7 +2170,7 @@ RZ_API bool rz_str_is_printable_limited(const char *str, int size) {
 
 RZ_API bool rz_str_is_printable_incl_newlines(const char *str) {
 	while (*str) {
-		int ulen = rz_utf8_decode((const ut8 *)str, strlen(str), NULL);
+		int ulen = rz_utf8_decode((const ut8 *)str, strlen(str), NULL, true);
 		if (ulen > 1) {
 			str += ulen;
 			continue;
@@ -2824,6 +2822,55 @@ RZ_API size_t rz_str_len_utf8(const char *s) {
 	return j + fullwidths;
 }
 
+/**
+ * \brief Counts the number of UTF-8 encoded
+ * Unicode code points in the given string.
+ *
+ * \return The number of Unicode code points *including* the final NUL.
+ */
+RZ_API size_t rz_str_utf8_num_ucp(RZ_NONNULL const char *str) {
+	rz_return_val_if_fail(str, 0);
+	size_t i = 0, char_cnt = 0;
+	while (str[i]) {
+		if ((str[i] & 0xc0) != 0x80) {
+			char_cnt++;
+		}
+		i++;
+	}
+	return char_cnt + 1;
+}
+
+/**
+ * \brief Determines the number of bytes required to encode the given UTF-8
+ * string into an UTF-16 string.
+ *
+ * \return The number of bytes required for an UTF16 string, *including* the final NUL.
+ */
+RZ_API size_t rz_str_utf8_get_width_utf16(RZ_NONNULL const char *str) {
+	rz_return_val_if_fail(str, 0);
+	size_t i = 0, byte_cnt = 0, extend_cnt = 0;
+	while (str[i]) {
+		if ((str[i] & 0xc0) != 0x80) {
+			extend_cnt = 0;
+			byte_cnt += 2;
+			i++;
+			continue;
+		}
+		// Check if code point is >= 0x10000
+		extend_cnt++;
+		if (extend_cnt == 3) {
+			RzCodePoint cp = 0;
+			rz_utf8_decode((ut8 *)str + (i - 3), 4, &cp, false);
+			if (cp >= RZ_UTF16_FIRST_4BYTES_CODE_POINT) {
+				byte_cnt += 2; // Add the additional two bytes needed.
+			}
+			extend_cnt = 0;
+		}
+		i++;
+	}
+	return byte_cnt + 2; // NUL terminator
+}
+
 RZ_API size_t rz_str_len_utf8_ansi(const char *str) {
 	int i = 0, len = 0, fullwidths = 0;
 	while (str[i]) {
@@ -3092,8 +3139,65 @@ RZ_API char *rz_str_utf16_decode(const ut8 *s, int len) {
 	return result;
 }
 
+/**
+ * \brief Converts an UTF-8 string to an UTF-16 string of the
+ * requested endianess.
+ * If the \p utf8_str contains invalid Unicode code points, the new string
+ * will end at the first invalid one.
+ *
+ * \param utf8_str The UTF-8 encoded string.
+ * \param big_endian If true the returned UTF-16 string will be in big endian.
+ *
+ * \return The NUL terminated UTF-16 string or NULL in case of failure.
+ */
+RZ_API RZ_OWN ut16 *rz_str_utf8_to_utf16(RZ_NONNULL const char *utf8_str, bool big_endian) {
+	rz_return_val_if_fail(utf8_str, NULL);
+	size_t utf16_len = rz_str_utf8_get_width_utf16(utf8_str);
+	ut8 *utf16_str = RZ_NEWS0(ut8, utf16_len);
+	size_t utf16_idx = 0;
+	RzCodePoint ucp;
+	size_t char_width = 1;
+	size_t utf8_size = strlen(utf8_str) + 1;
+	for (size_t i = 0; i < utf8_size; i += char_width) {
+		if (!(char_width = rz_utf8_decode((ut8 *)utf8_str + i, utf8_size - i, &ucp, true))) {
+			break;
+		}
+		utf16_idx += rz_utf16_encode(utf16_str + utf16_idx, ucp, big_endian);
+	}
+	return (ut16 *)utf16_str;
+}
+
+/**
+ * \brief Converts an UTF-8 string to an UTF-32 string of the
+ * requested endianess.
+ * If the \p utf8_str contains invalid Unicode code points, the new string
+ * will end at the first invalid one.
+ *
+ * \param utf8_str The UTF-8 encoded string.
+ * \param big_endian If true the returned UTF-32 string will be in big endian.
+ *
+ * \return The NUL terminated UTF-32 string or NULL in case of failure.
+ */
+RZ_API RZ_OWN ut32 *rz_str_utf8_to_utf32(RZ_NONNULL const char *utf8_str, bool big_endian) {
+	rz_return_val_if_fail(utf8_str, NULL);
+	size_t utf32_len = rz_str_utf8_num_ucp(utf8_str) * RZ_UTF32_WIDTH_CHAR;
+	ut8 *utf32_str = RZ_NEWS0(ut8, utf32_len);
+	size_t utf32_idx = 0;
+	RzCodePoint ucp;
+	size_t char_width = 1;
+	size_t utf8_size = strlen(utf8_str) + 1;
+	for (size_t i = 0; i < utf8_size; i += char_width) {
+		if (!(char_width = rz_utf8_decode((ut8 *)utf8_str + i, utf8_size - i, &ucp, true))) {
+			break;
+		}
+		utf32_idx += rz_utf32_encode(utf32_str + utf32_idx, ucp, big_endian);
+	}
+	return (ut32 *)utf32_str;
+}
+
 // TODO: kill this completely, it makes no sense:
-RZ_API char *rz_str_utf16_encode(const char *s, int len) {
+// Even better, rewrite with the rz_utf16_encode() functions.
+RZ_DEPRECATE RZ_API char *rz_str_utf16_encode(const char *s, int len) {
 	int i;
 	char ch[4], *d, *od, *tmp;
 	if (!s) {
@@ -3940,7 +4044,17 @@ RZ_API bool rz_str_is_true(const char *s) {
 	return !rz_str_casecmp("yes", s) || !rz_str_casecmp("on", s) || !rz_str_casecmp("true", s) || !rz_str_casecmp("1", s);
 }
 
-RZ_API bool rz_str_is_false(const char *s) {
+/**
+ * \brief Returns true if string is case insensitive equal to:
+ * - no
+ * - off
+ * - false
+ * - 0
+ */
+RZ_API bool rz_str_is_false(RZ_NULLABLE const char *s) {
+	if (!s) {
+		return false;
+	}
 	return !rz_str_casecmp("no", s) || !rz_str_casecmp("off", s) || !rz_str_casecmp("false", s) || !rz_str_casecmp("0", s) || !*s;
 }
 
@@ -4155,22 +4269,22 @@ RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NU
 	rz_strbuf_init(&sb);
 	for (ut32 i = 0, line_runes = 0; i < buflen; i += rsize) {
 		if (enc == RZ_STRING_ENC_UTF32LE) {
-			rsize = rz_utf32le_decode(&buf[i], buflen - i, &code_point);
+			rsize = rz_utf32le_decode(&buf[i], buflen - i, &code_point, true);
 			if (rsize) {
 				rsize = 4;
 			}
 		} else if (enc == RZ_STRING_ENC_UTF16LE) {
-			rsize = rz_utf16le_decode(&buf[i], buflen - i, &code_point);
+			rsize = rz_utf16le_decode(&buf[i], buflen - i, &code_point, true);
 			if (rsize == 1) {
 				rsize = 2;
 			}
 		} else if (enc == RZ_STRING_ENC_UTF32BE) {
-			rsize = rz_utf32be_decode(&buf[i], buflen - i, &code_point);
+			rsize = rz_utf32be_decode(&buf[i], buflen - i, &code_point, true);
 			if (rsize) {
 				rsize = 4;
 			}
 		} else if (enc == RZ_STRING_ENC_UTF16BE) {
-			rsize = rz_utf16be_decode(&buf[i], buflen - i, &code_point);
+			rsize = rz_utf16be_decode(&buf[i], buflen - i, &code_point, true);
 			if (rsize == 1) {
 				rsize = 2;
 			}
@@ -4188,7 +4302,7 @@ RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NU
 			code_point = buf[i];
 			rsize = code_point < 0x7F ? 1 : 0;
 		} else {
-			rsize = rz_utf8_decode(&buf[i], buflen - i, &code_point);
+			rsize = rz_utf8_decode(&buf[i], buflen - i, &code_point, true);
 		}
 
 		if (rsize == 0) {
@@ -4330,4 +4444,59 @@ RZ_API const char *rz_str_indent(int indent) {
 		return "";
 	}
 	return indent_tbl[indent];
+}
+
+/**
+ * \brief Checks given encoding if it is UTF-8, UTF-16, or UTF-32
+ * of the host's endianness.
+ *
+ * \return true For UTF-8/ASCII.
+ * \return true For UTF-16-LE/UTF-32-LE if Rizin was built for a little endian architecture.
+ * \return true For UTF-16-BB/UTF-32-BB if Rizin was built for a big endian architecture.
+ * \return false Otherwise.
+ */
+RZ_API bool rz_string_enc_is_utf_native_endian(RzStrEnc enc) {
+	switch (enc) {
+	default:
+		return false;
+	case RZ_STRING_ENC_8BIT:
+	case RZ_STRING_ENC_UTF8:
+		return true;
+	case RZ_STRING_ENC_UTF16LE:
+	case RZ_STRING_ENC_UTF32LE:
+		return RZ_HOST_IS_LITTLE_ENDIAN;
+	case RZ_STRING_ENC_UTF16BE:
+	case RZ_STRING_ENC_UTF32BE:
+		return RZ_HOST_IS_BIG_ENDIAN;
+	}
+}
+
+/**
+ * \brief Returns the size of the code point in bytes.
+ * UTF-8 = 1, UTF-16 = 2, UTF-32 = 4 etc.
+ *
+ * \return Size of code point in bytes or 0 if given encoding is invalid.
+ */
+RZ_API size_t rz_string_enc_code_point_width(RzStrEnc enc) {
+	switch (enc) {
+	default:
+	case RZ_STRING_ENC_GUESS:
+	case RZ_STRING_ENC_SETTINGS:
+		return 0;
+	case RZ_STRING_ENC_8BIT:
+	case RZ_STRING_ENC_UTF8:
+	case RZ_STRING_ENC_MUTF8:
+	case RZ_STRING_ENC_IBM037:
+	case RZ_STRING_ENC_IBM290:
+	case RZ_STRING_ENC_EBCDIC_UK:
+	case RZ_STRING_ENC_EBCDIC_US:
+	case RZ_STRING_ENC_EBCDIC_ES:
+		return 1;
+	case RZ_STRING_ENC_UTF16LE:
+	case RZ_STRING_ENC_UTF16BE:
+		return 2;
+	case RZ_STRING_ENC_UTF32LE:
+	case RZ_STRING_ENC_UTF32BE:
+		return 4;
+	}
 }

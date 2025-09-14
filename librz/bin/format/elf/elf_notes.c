@@ -8,6 +8,8 @@
 
 #define ROUND_UP_4(x) ((x) + (4 - 1)) / 4 * 4
 
+#define FP_LAYOUT 0x10
+
 #define X86          0
 #define X86_64       1
 #define ARM          2
@@ -21,9 +23,14 @@
 // They are only for registers and store no other information.
 #define OPENBSD_SPARC_V9    7
 #define OPENBSD_SPARC_V9_FP (FP_LAYOUT | OPENBSD_SPARC_V9)
+// MIPS related constants.
+// The size of the pr status depends on the ABI
+#define MIPS_32   8
+#define MIPS_64   9
+#define MIPS_FP32 (FP_LAYOUT | MIPS_32)
+#define MIPS_FP64 (FP_LAYOUT | MIPS_64)
 // Floating point register layout.
-#define FP_LAYOUT 0x10
-#define ARCH_LEN  (FP_LAYOUT | 0xf)
+#define ARCH_LEN (FP_LAYOUT | 0xf)
 
 // See elf.c::elfcore_grok_solaris_note_impl() of binutil's bfd
 // https://sourceware.org/git/?p=binutils-gdb.git;a=blob;f=bfd/elf.c;h=6ef603010918f14eda69f0d0dc1637b4d51e8157;hb=HEAD#l11777
@@ -93,6 +100,16 @@
 #define SPARC32_PR_STATUS_REG_OFFSET_SP (4 * 14)
 #define SPARC64_PR_STATUS_REG_OFFSET_SP (8 * 14)
 
+// MIPS number of registers.
+#define MIPS_N_GPR_REGS          45
+#define MIPS_N_FP_REGS           33
+#define MIPS32_REGS_SIZE         (4 * MIPS_N_GPR_REGS) // int32
+#define MIPS64_REGS_SIZE         (8 * MIPS_N_GPR_REGS) // int64
+#define MIPS_FP32_REGS_SIZE      (4 * MIPS_N_FP_REGS) // float32
+#define MIPS_FP64_REGS_SIZE      (8 * MIPS_N_FP_REGS) // float64
+#define MIPS_GPR32_STATUS_OFFSET (96)
+#define MIPS_GPR64_STATUS_OFFSET (112)
+
 static RzBinElfPrStatusLayout prstatus_layouts[ARCH_LEN] = {
 	[X86] = { 160, 0x48, 32, 0x3c },
 	[X86_64] = { 216, 0x70, 64, 0x98 },
@@ -104,9 +121,15 @@ static RzBinElfPrStatusLayout prstatus_layouts[ARCH_LEN] = {
 	[SPARC_V9] = { SPARC64_REGS_SIZE, SPARC64_PR_STATUS_REG_OFFSET, 64, SPARC64_PR_STATUS_REG_OFFSET_SP },
 	[OPENBSD_SPARC_V9] = { SPARC64_REGS_SIZE, SPARC64_OPENBSD_REG_OFFSET, 64, SPARC64_PR_STATUS_REG_OFFSET_SP },
 
+	[MIPS_32] = { MIPS32_REGS_SIZE, MIPS_GPR32_STATUS_OFFSET, 0, 0 },
+	[MIPS_64] = { MIPS64_REGS_SIZE, MIPS_GPR64_STATUS_OFFSET, 0, 0 },
+
 	[SPARC32_FP] = { SPARC32_FPREGS_SIZE, SPARC32_FPREG_OFFSET, 0, 0 },
 	[SPARC64_FP] = { SPARC64_FPREGS_SIZE, SPARC32_FPREG_OFFSET, 0, 0 },
 	[OPENBSD_SPARC_V9_FP] = { SPARC64_OPENBSD_FPREGS_SIZE, SPARC64_OPENBSD_FPREG_OFFSET, 0, 0 },
+
+	[MIPS_FP32] = { MIPS_FP32_REGS_SIZE, 4, 0, 0 },
+	[MIPS_FP64] = { MIPS_FP64_REGS_SIZE, 8, 0, 0 },
 };
 
 static bool parse_register_note(ELFOBJ *bin, RzVector /*<RzBinElfNote>*/ *notes, Elf_(Nhdr) * note_segment_header, ut64 offset, size_t n_type) {
@@ -310,6 +333,14 @@ static void note_segment_free(void *e, RZ_UNUSED void *user) {
 	rz_vector_fini(ptr);
 }
 
+static const size_t elf_get_prstatus_layout_mips(const ELFOBJ *bin, bool is_fp) {
+	size_t fp = is_fp ? FP_LAYOUT : 0;
+	if (bin->ehdr.e_ident[EI_CLASS] == ELFCLASS64) {
+		return fp | MIPS_64;
+	}
+	return fp | MIPS_32;
+}
+
 RZ_BORROW RzBinElfPrStatusLayout *Elf_(rz_bin_elf_get_prstatus_layout)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
@@ -328,6 +359,12 @@ RZ_BORROW RzBinElfPrStatusLayout *Elf_(rz_bin_elf_get_prstatus_layout)(RZ_NONNUL
 		return prstatus_layouts + SPARC_V8PLUS;
 	case EM_SPARCV9:
 		return prstatus_layouts + SPARC_V9;
+	case EM_MIPS:
+		/* fall-thru */
+	case EM_MIPS_RS3_LE:
+		/* fall-thru */
+	case EM_MIPS_X:
+		return prstatus_layouts + elf_get_prstatus_layout_mips(bin, false);
 	}
 
 	return NULL;
@@ -352,6 +389,18 @@ RZ_BORROW RzBinElfPrStatusLayout *Elf_(rz_bin_elf_get_regset_layout)(RZ_NONNULL 
 	switch (bin->ehdr.e_machine) {
 	default:
 		return NULL;
+	case EM_MIPS:
+		/* fall-thru */
+	case EM_MIPS_RS3_LE:
+		/* fall-thru */
+	case EM_MIPS_X:
+		if (n_type == NT_FPREGSET) {
+			off = elf_get_prstatus_layout_mips(bin, true);
+		} else {
+			rz_warn_if_reached();
+			return NULL;
+		}
+		break;
 	case EM_SPARC:
 		if (n_type == NT_FPREGSET) {
 			off = FP_LAYOUT | SPARC;
