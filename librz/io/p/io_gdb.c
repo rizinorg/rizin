@@ -99,6 +99,7 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 		i_port = atoi(port);
 	}
 
+	desc = RZ_NEW(libgdbr_t);
 	gdbr_init(desc, false);
 
 	if (gdbr_connect(desc, host, i_port) == 0) {
