@@ -248,7 +248,7 @@ quit:
  *
  * \return     On success returns a valid pointer to a list of search hits, otherwise NULL.
  */
-RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_string(RZ_NONNULL RzCore *core, RZ_BORROW RZ_NONNULL RzSearchOpt *user_opts, RZ_NONNULL const char *re_pattern, size_t re_pattern_len, RzRegexFlags cflags, RzStrEnc expected) {
+RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_string(RZ_NONNULL RzCore *core, RZ_BORROW RZ_NONNULL RzSearchOpt *user_opts, RZ_NONNULL const char *re_pattern, size_t re_pattern_len, RzRegexFlags cflags, RzStrEnc encoding) {
 	rz_return_val_if_fail(core && user_opts && re_pattern, NULL);
 
 	if (RZ_STR_ISEMPTY(re_pattern)) {
@@ -294,9 +294,9 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_string(RZ_NONNULL RzCor
 	}
 
 	size_t match_alignment = rz_search_find_opt_get_alignment(rz_search_opt_get_find_options(user_opts));
-	collection = rz_search_collection_strings(&scan_opt, expected, match_alignment);
+	collection = rz_search_collection_strings(&scan_opt);
 	if (!collection ||
-		!rz_search_collection_string_add(collection, re_pattern, cflags, match_alignment)) {
+		!rz_search_collection_string_add(collection, re_pattern, cflags, match_alignment, encoding)) {
 		rz_search_collection_free(collection);
 		rz_list_free(boundaries);
 		RZ_LOG_ERROR("core: Failed to initialize search collection.\n");

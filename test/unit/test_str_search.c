@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util.h>
+#include <rz_search.h>
 #include "minunit.h"
 
 static RzUtilStrScanOptions g_opt = {
@@ -424,6 +425,28 @@ bool test_rz_scan_strings_detect_length_utf8(void) {
 	mu_end;
 }
 
+/**
+ * \brief Test that rz_search_collection_string_add() refuses to add a string if
+ * the search requires string scanning, but no scan optoins were given.
+ */
+bool test_rz_scan_strings_scan_options_error(void) {
+	RzSearchCollection *collection = rz_search_collection_strings(NULL);
+	mu_assert_false(rz_search_collection_string_add(collection, "", 0, 1, RZ_STRING_ENC_UTF16BE), "Should fail for this config");
+	mu_assert_false(rz_search_collection_string_add(collection, "", 0, 1, RZ_STRING_ENC_UTF16LE), "Should fail for this config");
+	mu_assert_false(rz_search_collection_string_add(collection, "", 0, 1, RZ_STRING_ENC_UTF32BE), "Should fail for this config");
+	mu_assert_false(rz_search_collection_string_add(collection, "", 0, 1, RZ_STRING_ENC_UTF32LE), "Should fail for this config");
+	mu_assert_false(rz_search_collection_string_add(collection, "", 0, 1, RZ_STRING_ENC_IBM037), "Should fail for this config");
+	mu_assert_false(rz_search_collection_string_add(collection, "", 0, 1, RZ_STRING_ENC_IBM290), "Should fail for this config");
+	mu_assert_false(rz_search_collection_string_add(collection, "", 0, 1, RZ_STRING_ENC_EBCDIC_UK), "Should fail for this config");
+	mu_assert_false(rz_search_collection_string_add(collection, "", 0, 1, RZ_STRING_ENC_EBCDIC_US), "Should fail for this config");
+	mu_assert_false(rz_search_collection_string_add(collection, "", 0, 1, RZ_STRING_ENC_EBCDIC_ES), "Should fail for this config");
+	mu_assert_false(rz_search_collection_string_add(collection, "", 0, 1, RZ_STRING_ENC_GUESS), "Should fail for this config");
+	mu_assert_true(rz_search_collection_string_add(collection, "some_pattern", 0, 1, RZ_STRING_ENC_8BIT), "Should succeed for this config");
+	mu_assert_true(rz_search_collection_string_add(collection, "some_pattern", 0, 1, RZ_STRING_ENC_UTF8), "Should succeed for this config");
+	rz_search_collection_free(collection);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_scan_strings_detect_ascii);
 	mu_run_test(test_rz_scan_strings_detect_ibm037);
@@ -438,6 +461,7 @@ bool all_tests() {
 	mu_run_test(test_rz_scan_strings_extended_ascii);
 	mu_run_test(test_rz_scan_strings_detect_length_ascii);
 	mu_run_test(test_rz_scan_strings_detect_length_utf8);
+	mu_run_test(test_rz_scan_strings_scan_options_error);
 
 	return tests_passed != tests_run;
 }

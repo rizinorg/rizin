@@ -264,8 +264,13 @@ RZ_API RZ_OWN RzSearchCollection *rz_search_collection_bytes();
 RZ_API bool rz_search_collection_bytes_add(RZ_NONNULL RzSearchCollection *col, RZ_NULLABLE const char *pattern_desc, RZ_NONNULL const ut8 *bytes, RZ_NULLABLE const ut8 *mask, size_t length);
 RZ_API bool rz_search_collection_bytes_add_pattern(RZ_NONNULL RzSearchCollection *col, RZ_NONNULL RZ_OWN RzSearchBytesPattern *bytes_pattern);
 
-RZ_API RZ_OWN RzSearchCollection *rz_search_collection_strings(RZ_BORROW RzUtilStrScanOptions *opts, RzStrEnc expected, size_t alignment);
-RZ_API bool rz_search_collection_string_add(RZ_NONNULL RzSearchCollection *col, RZ_NONNULL const char *regex_pattern, RzRegexFlags cflags, size_t match_alignment);
+RZ_API RZ_OWN RzSearchCollection *rz_search_collection_strings(RZ_NULLABLE RZ_BORROW RzUtilStrScanOptions *scan_opts);
+RZ_API bool rz_search_collection_string_add(
+	RZ_NONNULL RzSearchCollection *col,
+	RZ_NONNULL const char *regex_pattern,
+	RzRegexFlags cflags,
+	size_t match_alignment,
+	RzStrEnc encoding);
 RZ_API bool rz_search_collection_strings_check_config_improvements(
 	RZ_NULLABLE const RzSearchCollection *col,
 	RZ_NULLABLE const RzList /*<RzIOMap *>*/ *boundaries,

@@ -8,6 +8,7 @@
 #include <rz_util.h>
 #include "rz_cons.h"
 #include "rz_util/rz_assert.h"
+#include "rz_util/rz_str.h"
 #include "rz_util/rz_unicode.h"
 #include <rz_vector.h>
 #include <stdio.h>

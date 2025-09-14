@@ -25,6 +25,9 @@
 static const char *files[] = {
 	"./bins/cmd/search/string_encodings/Hindi-Lipsum.utf8",
 	"./bins/elf/analysis/hello-utf-16",
+	// This file has the same lorem ipsum string in three different encodings:
+	// "Лорем ипсум долор сит амет\x00\x00\x00\x00\x00\x00\x00ЛОРЕМ ИПСУМ ДОЛОР СИТ АМЕТ"
+	"./bins/cmd/search/string_encodings/regex_search.russian.utf8.utf32le.utf16be",
 
 	// Big binaries
 	//
@@ -46,6 +49,7 @@ static const char *patterns[][3] = {
 	// Same Hindi strings but one is shorter.
 	{ "पहोचने वैश्विक एसलिये पुस्तक हुआआदी", "प.+चने वैश्विक एसलिये .+आ", NULL },
 	{ "heLLo woRlD", NULL, NULL },
+	{ "и.{3}м", NULL, NULL },
 
 	// Big binaries' strings
 	//
@@ -96,12 +100,12 @@ int test_rz_str_search_single_simple(void) {
 	// We can pass NULL here to the RzUtilStrScanOptions parameter,
 	// because UTF-8 is endianness independent and can directly match the buffer with PCRE2.
 	// No scanning for strings is required. Hence we don't need the options for it.
-	RzSearchCollection *collection = rz_search_collection_strings(NULL, RZ_STRING_ENC_UTF8, match_alignment);
+	RzSearchCollection *collection = rz_search_collection_strings(NULL);
 	mu_assert_notnull(collection, "NULL check failed");
 
 	// Now add the two patterns we search for
-	rz_search_collection_string_add(collection, patterns[0][0], RZ_REGEX_LITERAL, match_alignment);
-	rz_search_collection_string_add(collection, patterns[0][1], RZ_REGEX_EXTENDED, match_alignment);
+	rz_search_collection_string_add(collection, patterns[0][0], RZ_REGEX_LITERAL, match_alignment, RZ_STRING_ENC_UTF8);
+	rz_search_collection_string_add(collection, patterns[0][1], RZ_REGEX_EXTENDED, match_alignment, RZ_STRING_ENC_UTF8);
 
 	RzList *hits = rz_search_on_buffer(search_opts, collection, file_buffer);
 	mu_assert_eq(rz_list_length(hits), 2, "Incorrect number of strings.");
@@ -168,11 +172,11 @@ int test_rz_str_search_io_simple(void) {
 		.check_ascii_freq = false,
 	};
 
-	RzSearchCollection *collection = rz_search_collection_strings(&scan_opt, RZ_STRING_ENC_UTF16LE, match_alignment);
+	RzSearchCollection *collection = rz_search_collection_strings(&scan_opt);
 	mu_assert_notnull(collection, "NULL check failed");
 
 	// Now add the pattern we search for.
-	rz_search_collection_string_add(collection, patterns[1][0], RZ_REGEX_CASELESS, match_alignment);
+	rz_search_collection_string_add(collection, patterns[1][0], RZ_REGEX_CASELESS, match_alignment, RZ_STRING_ENC_UTF16LE);
 
 	// Get the boundaries the strings are searched in.
 	// The default address ranges are in the main config under `search.from`, `search.to`.
@@ -203,9 +207,89 @@ int test_rz_str_search_io_simple(void) {
 	mu_end;
 }
 
+/**
+ * \brief Do a regex search for strings of multiple encodings in a single file.
+ */
+int test_rz_str_search_multiple_enc(void) {
+	// Open file as RzBuffer
+	RzBuffer *file_buffer = rz_buf_new_file(files[2], O_RDONLY, 0);
+	mu_assert_notnull(file_buffer, "Failed to open file");
+
+	// Setup search options. These are _not_ specific for the string search.
+	// They are applicable to the whole search module, independently what
+	// is searched (bytes, strings, cryptographic material, values...).
+	// Configuring specific values is optional.
+	RzSearchOpt *search_opts = rz_search_opt_new();
+	mu_assert_notnull(search_opts, "NULL check failed");
+	rz_search_opt_set_max_threads(search_opts, 4);
+	rz_search_opt_set_max_hits(search_opts, 10);
+	rz_search_opt_set_show_progress_from_str(search_opts, "no");
+	rz_search_opt_set_chunk_size(search_opts, ELEMENT_SIZE);
+
+	// The find options allow to configure string specific settings.
+	RzSearchFindOpt *find_opts = rz_search_find_opt_new();
+	mu_assert_notnull(find_opts, "NULL check failed");
+
+	// Set alignment to 1, because we search UTF-8/16/32.
+	// The alignment can be abtrirary.
+	size_t match_alignment = 1;
+	rz_search_find_opt_set_alignment(find_opts, match_alignment);
+	rz_search_find_opt_set_overlap_match(find_opts, false);
+
+	// Assign find options to the search options.
+	rz_search_opt_set_find_options(search_opts, find_opts);
+
+	// Please refer to librz/search/README.md for an explanation why string scan options
+	// are needed for an UTF-16 search.
+	RzUtilStrScanOptions scan_opt = {
+		.max_str_length = ELEMENT_SIZE,
+		.min_str_length = 5,
+		.prefer_big_endian = true,
+		.check_ascii_freq = false,
+	};
+
+	RzSearchCollection *collection = rz_search_collection_strings(&scan_opt);
+	mu_assert_notnull(collection, "NULL check failed");
+
+	// Now add the patterns we search for. One for each encoding in the file.
+	// utf8/utf32le/utf16be
+	rz_search_collection_string_add(collection, patterns[2][0], RZ_REGEX_EXTENDED, match_alignment, RZ_STRING_ENC_UTF8);
+	rz_search_collection_string_add(collection, patterns[2][0], RZ_REGEX_EXTENDED, match_alignment, RZ_STRING_ENC_UTF16BE);
+	rz_search_collection_string_add(collection, patterns[2][0], RZ_REGEX_EXTENDED, match_alignment, RZ_STRING_ENC_UTF32LE);
+
+	RzList *hits = rz_search_on_buffer(search_opts, collection, file_buffer);
+	mu_assert_eq(rz_list_length(hits), 6, "Incorrect number of strings.");
+	const RzSearchHit *hit;
+	// Hits are sorted by address and size.
+	// There are two matches for the pattern: "и.{3}м"
+	// "ипсум" and "ит ам". So 6 in total, two for each encoding.
+	hit = rz_list_get_n(hits, 0);
+	mu_assert_eq(hit->address, 0x0000000b, "Incorrect address");
+	mu_assert_eq(hit->size, 10, "Incorrect size");
+	hit = rz_list_get_n(hits, 1);
+	mu_assert_eq(hit->address, 0x00000023, "Incorrect address");
+	mu_assert_eq(hit->size, 9, "Incorrect size");
+	hit = rz_list_get_n(hits, 2);
+	mu_assert_eq(hit->address, 0x00000087, "Incorrect address");
+	mu_assert_eq(hit->size, 20, "Incorrect size");
+	hit = rz_list_get_n(hits, 3);
+	mu_assert_eq(hit->address, 0x000000bb, "Incorrect address");
+	mu_assert_eq(hit->size, 20, "Incorrect size");
+	hit = rz_list_get_n(hits, 4);
+	mu_assert_eq(hit->address, 0x00000314, "Incorrect address");
+	mu_assert_eq(hit->size, 10, "Incorrect size");
+	hit = rz_list_get_n(hits, 5);
+	mu_assert_eq(hit->address, 0x0000032e, "Incorrect address");
+	mu_assert_eq(hit->size, 10, "Incorrect size");
+
+	rz_list_free(hits);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_rz_str_search_single_simple);
 	mu_run_test(test_rz_str_search_io_simple);
+	mu_run_test(test_rz_str_search_multiple_enc);
 	return tests_passed != tests_run;
 }
 
