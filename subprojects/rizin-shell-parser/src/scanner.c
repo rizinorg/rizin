@@ -33,7 +33,7 @@ unsigned tree_sitter_rzcmd_external_scanner_serialize(void *payload, char *buffe
 void tree_sitter_rzcmd_external_scanner_deserialize(void *payload, const char *buffer, unsigned length) {
 }
 
-static bool is_env_cmd(const char *s) {
+static bool is_env_cmd(const char *s) { //
 	return !strncmp (s, "env", 3);
 }
 
