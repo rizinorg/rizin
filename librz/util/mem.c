@@ -380,22 +380,22 @@ RZ_API RZ_OWN ut8 *rz_mem_copy_offset(const ut8 *buf, size_t buf_size, size_t of
  * \param buf The input buffer.
  * \param buf_size The size of the input buffer. Must be greater than 0.
  *
- * \return The input buffer with swapped bytes or NULL in case of failure.
+ * \return A clone of the input buffer with swapped bytes or NULL in case of failure.
  *
  * NOTE: This function can be used to change the endianness of 2 byte values
  * in the given buffer.
  *
  * Examples:
  * ```c
- * ut8 a[4] = { 0xff, 0x00, 0x99, 0x00 };
- * ut8 b[4] = { 0x00, 0xff, 0x00, 0x99 };
+ * const ut8 a[4] = { 0xff, 0x00, 0x99, 0x00 };
+ * const ut8 b[4] = { 0x00, 0xff, 0x00, 0x99 };
  * ut8 *swapped = rz_mem_swap_bytes_2(a);
  * assert(memcmp(swapped, b, sizeof(a)) == 0);
  * ```
  *
  * ```c
- * ut8 a[4] = { 0xff, 0x00, 0x99, 0x00, 0x11 };
- * ut8 b[4] = { 0x00, 0xff, 0x00, 0x99, 0x11 };
+ * const ut8 a[4] = { 0xff, 0x00, 0x99, 0x00, 0x11 };
+ * const ut8 b[4] = { 0x00, 0xff, 0x00, 0x99, 0x11 };
  * ut8 *swapped = rz_mem_swap_bytes_2(a);
  * assert(memcmp(swapped, b, sizeof(a)) == 0);
  * ```
@@ -410,6 +410,41 @@ RZ_API RZ_OWN ut8 *rz_mem_swap_bytes_2(RZ_NONNULL const ut8 *buf, size_t buf_siz
 		free(dst);
 		return NULL;
 	}
+	return rz_mem_swap_bytes_2_inplace(dst, buf_size);
+}
+
+/**
+ * \brief Swaps the bytes in 2 byte blocks from the given buffer and returns
+ * the result.
+ * Remainders of less than 2 bytes at the end of the buffer won't be swapped.
+ *
+ * \param buf The input buffer.
+ * \param buf_size The size of the input buffer. Must be greater than 0.
+ *
+ * \return A clone of the input buffer with swapped bytes or NULL in case of failure.
+ *
+ * NOTE: This function can be used to change the endianness of 2 byte values
+ * in the given buffer.
+ *
+ * Examples:
+ * ```c
+ * ut8 a[4] = { 0xff, 0x00, 0x99, 0x00 };
+ * const ut8 b[4] = { 0x00, 0xff, 0x00, 0x99 };
+ * ut8 *swapped = rz_mem_swap_bytes_2(a);
+ * assert(a == swapped);
+ * assert(memcmp(swapped, b, sizeof(a)) == 0);
+ * ```
+ *
+ * ```c
+ * ut8 a[4] = { 0xff, 0x00, 0x99, 0x00, 0x11 };
+ * const ut8 b[4] = { 0x00, 0xff, 0x00, 0x99, 0x11 };
+ * ut8 *swapped = rz_mem_swap_bytes_2(a);
+ * assert(a == swapped);
+ * assert(memcmp(swapped, b, sizeof(a)) == 0);
+ * ```
+ */
+RZ_API RZ_OWN ut8 *rz_mem_swap_bytes_2_inplace(RZ_OUT RZ_NONNULL ut8 *dst, size_t buf_size) {
+	rz_return_val_if_fail(dst && buf_size, NULL);
 	size_t al = rz_mem_ptr_alignment(dst);
 	if (al < 2) {
 		// malloc guarantees to return an aligned pointer for all data which fits
@@ -449,22 +484,22 @@ RZ_API RZ_OWN ut8 *rz_mem_swap_bytes_2(RZ_NONNULL const ut8 *buf, size_t buf_siz
  * \param buf The input buffer.
  * \param buf_size The size of the input buffer. Must be greater than 0.
  *
- * \return The input buffer with swapped bytes or NULL in case of failure.
+ * \return A clone of the input buffer with swapped bytes or NULL in case of failure.
  *
  * NOTE: This function can be used to change the endianness of 4 byte values
  * in the given buffer.
  *
  * Examples:
  * ```c
- * ut8 a[4] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07 };
- * ut8 b[4] = { 0x03, 0x02, 0x01, 0x00, 0x07, 0x06, 0x05, 0x04 };
+ * const ut8 a[4] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07 };
+ * const ut8 b[4] = { 0x03, 0x02, 0x01, 0x00, 0x07, 0x06, 0x05, 0x04 };
  * ut8 *swapped = rz_mem_swap_bytes_4(a);
  * assert(memcmp(swapped, b, sizeof(a)) == 0);
  * ```
  *
  * ```c
- * ut8 a[4] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0xff, 0xfe };
- * ut8 a[4] = { 0x03, 0x02, 0x01, 0x00, 0x07, 0x06, 0x05, 0x04, 0xff, 0xfe };
+ * const ut8 a[4] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0xff, 0xfe };
+ * const ut8 b[4] = { 0x03, 0x02, 0x01, 0x00, 0x07, 0x06, 0x05, 0x04, 0xff, 0xfe };
  * ut8 *swapped = rz_mem_swap_bytes_4(a);
  * assert(memcmp(swapped, b, sizeof(a)) == 0);
  * ```
@@ -479,6 +514,41 @@ RZ_API RZ_OWN ut8 *rz_mem_swap_bytes_4(RZ_NONNULL const ut8 *buf, size_t buf_siz
 		free(dst);
 		return NULL;
 	}
+	return rz_mem_swap_bytes_4_inplace(dst, buf_size);
+}
+
+/**
+ * \brief Swaps the bytes in 4 byte blocks from the given buffer and returns
+ * the result.
+ * Remainders of less than 4 bytes at the end of the buffer won't be swapped.
+ *
+ * \param buf The input buffer.
+ * \param buf_size The size of the input buffer. Must be greater than 0.
+ *
+ * \return The input buffer with swapped bytes or NULL in case of failure.
+ *
+ * NOTE: This function can be used to change the endianness of 4 byte values
+ * in the given buffer.
+ *
+ * Examples:
+ * ```c
+ * ut8 a[4] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07 };
+ * const ut8 b[4] = { 0x03, 0x02, 0x01, 0x00, 0x07, 0x06, 0x05, 0x04 };
+ * ut8 *swapped = rz_mem_swap_bytes_4(a);
+ * assert(a == swapped);
+ * assert(memcmp(swapped, b, sizeof(a)) == 0);
+ * ```
+ *
+ * ```c
+ * ut8 a[4] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0xff, 0xfe };
+ * const ut8 b[4] = { 0x03, 0x02, 0x01, 0x00, 0x07, 0x06, 0x05, 0x04, 0xff, 0xfe };
+ * ut8 *swapped = rz_mem_swap_bytes_4(a);
+ * assert(a == swapped);
+ * assert(memcmp(swapped, b, sizeof(a)) == 0);
+ * ```
+ */
+RZ_API RZ_OWN ut8 *rz_mem_swap_bytes_4_inplace(RZ_OUT RZ_NONNULL ut8 *dst, size_t buf_size) {
+	rz_return_val_if_fail(dst && buf_size, NULL);
 	size_t al = rz_mem_ptr_alignment(dst);
 	if (al < 4) {
 		// malloc guarantees to return an aligned pointer for all data which fits
