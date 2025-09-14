@@ -42,3 +42,22 @@ EXPECT=<<EOF
 0x10000290c
 EOF
 RUN
+
+NAME=objc message dispatch (amd64)
+FILE=bins/mach0/objc-employee
+CMDS=<<EOF
+aaaa
+avD @ main
+avx method_Employee_sayHello
+avxt method_Employee_sayHello
+EOF
+EXPECT=<<EOF
+Virtual xrefs to method_Employee_sayHello
+C 0x100001914 call qword [reloc.objc_msgSend]
+C 0x100001937 call qword [reloc.objc_msgSend]
+       from 
+------------
+0x100001914
+0x100001937
+EOF
+RUN

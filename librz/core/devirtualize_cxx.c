@@ -861,7 +861,7 @@ static bool free_virt_calls(void *user, const ut64 key, const void *v) {
 }
 
 static bool add_virtual_xref(RzAnalysis *analysis, const ut64 key, RzSetS *vfunc_set) {
-	HtSP *virtual_xref = analysis->ht_cpp_virtual_xrefs;
+	HtSP *virtual_xref = analysis->ht_virtual_xrefs;
 	RzPVector *pvect = rz_set_s_to_vector(vfunc_set);
 	void **it;
 	rz_pvector_foreach (pvect, it) {
@@ -953,7 +953,7 @@ static bool print_virtual_xrefs(RzCore *core, ut64 key, void *val) {
  */
 RZ_API void rz_analysis_virtual_xrefs_print(RzAnalysis *analysis, const char *vfunc) {
 	RzCore *core = analysis->core;
-	HtSP *ht_virtual_xrefs = analysis->ht_cpp_virtual_xrefs;
+	HtSP *ht_virtual_xrefs = analysis->ht_virtual_xrefs;
 	bool found = false;
 	RzSetU *set = ht_sp_find(ht_virtual_xrefs, vfunc, &found);
 	if (!found) {
@@ -973,7 +973,7 @@ static bool add_virtual_xref_row(RzTable *table, const ut64 addr, void *val) {
  * \brief print xrefs of virtual functions as table
  */
 RZ_API void rz_analysis_virtual_xrefs_print_table(RzAnalysis *analysis, const char *vfunc, RzTable *table) {
-	HtSP *ht_virtual_xrefs = analysis->ht_cpp_virtual_xrefs;
+	HtSP *ht_virtual_xrefs = analysis->ht_virtual_xrefs;
 	bool found = false;
 	RzSetU *set = ht_sp_find(ht_virtual_xrefs, vfunc, &found);
 	if (!found) {

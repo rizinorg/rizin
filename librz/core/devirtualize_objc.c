@@ -142,6 +142,17 @@ static RzSetU *allocator_xrefs(RzAnalysis *analysis) {
 	return xref_addrs;
 }
 
+static void add_virtual_xrefs(RzAnalysis *analysis, const char *method_name, ut64 addr) {
+	bool found = false;
+	HtSP *virtual_xrefs = analysis->ht_virtual_xrefs;
+	RzSetU *set = ht_sp_find(virtual_xrefs, method_name, &found);
+	if (!found) {
+		set = rz_set_u_new();
+		ht_sp_insert(virtual_xrefs, method_name, set);
+	}
+	rz_set_u_add(set, addr);
+}
+
 static void devirtualize_msg_dispatch(RzAnalysis *analysis, RzSetU *msg_dispatch_addr) {
 	RzCore *core = analysis->core;
 
@@ -206,6 +217,7 @@ static void devirtualize_msg_dispatch(RzAnalysis *analysis, RzSetU *msg_dispatch
 				const char *str_comment = rz_strbuf_drain(comment);
 				rz_core_meta_comment_add(core, str_comment, start);
 				RZ_FREE(str_comment);
+				add_virtual_xrefs(analysis, vmethod_name, op->addr);
 			}
 		}
 		start += op->size;
@@ -266,7 +278,7 @@ RZ_API void rz_analysis_devirtualize_objc_methods(RzAnalysis *analysis) {
 	// Check if the binary file has message dispatch methods
 	// First find in symbols, then in relocs
 	bool msg_dispatch = false;
-	ut64 msg_dispatch_addr = 0;
+	RzVector *msg_dispatch_addrs = rz_vector_new(sizeof(ut64), NULL, NULL);
 
 	const RzPVector *symbols = rz_bin_object_get_symbols(bf->o);
 	void **iter;
@@ -274,37 +286,41 @@ RZ_API void rz_analysis_devirtualize_objc_methods(RzAnalysis *analysis) {
 		RzBinSymbol *symbol = *iter;
 		if (!rz_str_cmp(symbol->name, "objc_msgSend", -1)) {
 			msg_dispatch = true;
-			msg_dispatch_addr = symbol->vaddr;
+			rz_vector_push(msg_dispatch_addrs, &(symbol->vaddr));
 			break;
 		}
 	}
 
-	if (!msg_dispatch) {
-		RzBinRelocStorage *relocs = rz_bin_object_patch_relocs(bf, obj);
-		for (size_t i = 0; i < relocs->relocs_count; i++) {
-			RzBinReloc *reloc = relocs->relocs[i];
-			bool demangle = rz_config_get_b(core->config, "bin.demangle");
-			char *name = construct_reloc_name(reloc, NULL, demangle);
-			if (!rz_str_cmp(name, "objc_msgSend", -1)) {
-				msg_dispatch = true;
-				msg_dispatch_addr = reloc->vaddr;
-			}
-			free(name);
+	RzBinRelocStorage *relocs = rz_bin_object_patch_relocs(bf, obj);
+	for (size_t i = 0; i < relocs->relocs_count; i++) {
+		RzBinReloc *reloc = relocs->relocs[i];
+		bool demangle = rz_config_get_b(core->config, "bin.demangle");
+		char *name = construct_reloc_name(reloc, NULL, demangle);
+		if (!rz_str_cmp(name, "objc_msgSend", -1)) {
+			msg_dispatch = true;
+			rz_vector_push(msg_dispatch_addrs, &(reloc->vaddr));
 		}
+		free(name);
 	}
 
 	RzSetU *msg_dispatch_xref_addr = rz_set_u_new();
 
 	// Note all xrefs to message dispatch
-	RzList *xref_list = rz_analysis_xrefs_get_to(analysis, msg_dispatch_addr);
-	RzListIter *it;
-	RzAnalysisXRef *xref;
-	rz_list_foreach (xref_list, it, xref) {
-		rz_set_u_add(msg_dispatch_xref_addr, xref->from);
+	ut64 *itt;
+	rz_vector_foreach (msg_dispatch_addrs, itt) {
+		ut64 addr = *itt;
+		RzList *xref_list = rz_analysis_xrefs_get_to(analysis, addr);
+		RzListIter *it;
+		RzAnalysisXRef *xref;
+		rz_list_foreach (xref_list, it, xref) {
+			rz_set_u_add(msg_dispatch_xref_addr, xref->from);
+		}
+		rz_list_free(xref_list);
 	}
-	rz_list_free(xref_list);
+	rz_vector_free(msg_dispatch_addrs);
 
 	if (msg_dispatch) {
 		devirtualize_msg_dispatch(analysis, msg_dispatch_xref_addr);
 	}
+	rz_set_u_free(msg_dispatch_xref_addr);
 }

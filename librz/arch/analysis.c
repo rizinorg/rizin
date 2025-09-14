@@ -159,7 +159,7 @@ RZ_API RzAnalysis *rz_analysis_new(RZ_NULLABLE const char *sdb_types_path) {
 	analysis->debug_info = rz_analysis_debug_info_new();
 	analysis->cmpval = UT64_MAX;
 	analysis->lea_jmptbl_ip = UT64_MAX;
-	analysis->ht_cpp_virtual_xrefs = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_set_u_free);
+	analysis->ht_virtual_xrefs = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_set_u_free);
 	return analysis;
 }
 
