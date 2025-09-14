@@ -58,8 +58,8 @@ static bool native_string_find(RzSearchFindOpt *fopt, RzDetectedString *find, ut
 			rz_pvector_free(matches);
 			return false;
 		}
-		ut64 str_mem_len = group0->len * rz_string_enc_code_point_width(find->type);
-		ut64 str_mem_offset = group0->start * rz_string_enc_code_point_width(find->type);
+		ut64 str_mem_len = group0->len * rz_string_enc_code_point_width(find->encoding);
+		ut64 str_mem_offset = group0->start * rz_string_enc_code_point_width(find->encoding);
 		if (fopt->alignment > 1 && rz_mem_align_padding(str_mem_offset, fopt->alignment) != 0) {
 			// Match has not the correct alignment in memory.
 			continue;
@@ -69,7 +69,7 @@ static bool native_string_find(RzSearchFindOpt *fopt, RzDetectedString *find, ut
 			continue;
 		}
 		char hit_type[64] = { 0 };
-		rz_strf(hit_type, "string.%s", rz_str_enc_as_string(find->type));
+		rz_strf(hit_type, "string.%s", rz_str_enc_as_string(find->encoding));
 		RzSearchHit *hit = rz_search_hit_new(hit_type, str_mem_offset + offset, str_mem_len, NULL);
 		if (!hit || !rz_th_queue_push(hits, hit, true)) {
 			rz_search_hit_free(hit);
@@ -95,7 +95,7 @@ static bool string_find(RzSearchFindOpt *fopt, void *user, ut64 offset, const Rz
 	void **it_m = NULL;
 	rz_pvector_foreach (ss->strings, it_m) {
 		RzDetectedString *find = *it_m;
-		if (do_search_by_direct_matching(find->type, fopt->alignment)) {
+		if (do_search_by_direct_matching(find->encoding, fopt->alignment)) {
 			// The expected encoding is UTF with native endian.
 			// For those we can do simple regex matching, skipping the whole decoding stuff.
 			if (!native_string_find(fopt, find, offset, buffer, hits, n_hits)) {
@@ -127,7 +127,7 @@ static bool string_find(RzSearchFindOpt *fopt, void *user, ut64 offset, const Rz
 		// race-conditions editing and freeing it.
 		RzUtilStrScanOptions options = ss->options;
 
-		int n_str_in_buf = rz_scan_strings_whole_buf(buffer, found, &options, find->type);
+		int n_str_in_buf = rz_scan_strings_whole_buf(buffer, found, &options, find->encoding);
 		if (n_str_in_buf < 0) {
 			RZ_LOG_ERROR("Failed to scan buffer for strings.\n");
 			rz_list_free(found);
@@ -156,7 +156,7 @@ static bool string_find(RzSearchFindOpt *fopt, void *user, ut64 offset, const Rz
 				}
 				ut64 str_mem_len;
 				ut64 str_mem_offset;
-				align_offsets(options, detected->type, detected, group0, &str_mem_offset, &str_mem_len);
+				align_offsets(options, detected->encoding, detected, group0, &str_mem_offset, &str_mem_len);
 				if (fopt->alignment > 1 && rz_mem_align_padding(str_mem_offset, fopt->alignment) != 0) {
 					// Match has not the correct alignment in memory.
 					continue;
@@ -166,7 +166,7 @@ static bool string_find(RzSearchFindOpt *fopt, void *user, ut64 offset, const Rz
 					continue;
 				}
 				char hit_type[64] = { 0 };
-				rz_strf(hit_type, "string.%s", rz_str_enc_as_string(detected->type));
+				rz_strf(hit_type, "string.%s", rz_str_enc_as_string(detected->encoding));
 				RzSearchHit *hit = rz_search_hit_new(hit_type, str_mem_offset + offset, str_mem_len, NULL);
 				if (!hit || !rz_th_queue_push(hits, hit, true)) {
 					rz_search_hit_free(hit);
@@ -275,7 +275,7 @@ static RzDetectedString *setup_str_regex(const char *re_pattern, RzRegexFlags cf
 	ds->string = re_pattern_clone;
 	ds->regex = re;
 	ds->length = strlen(re_pattern_clone);
-	ds->type = encoding;
+	ds->encoding = encoding;
 	ds->alignment = match_alignment;
 	return ds;
 }
@@ -352,7 +352,7 @@ RZ_API bool rz_search_collection_strings_check_config_improvements(
 	;
 	rz_pvector_foreach (ss->strings, it) {
 		RzDetectedString *ds = *it;
-		if (ds->type == RZ_STRING_ENC_GUESS) {
+		if (ds->encoding == RZ_STRING_ENC_GUESS) {
 			if (log_suggestions) {
 				RZ_LOG_WARN("The string encoding for the search is set to \"guess\".\n"
 					    "The search will consume vastly more resources and the guessing is unreliable.\n"
@@ -360,7 +360,7 @@ RZ_API bool rz_search_collection_strings_check_config_improvements(
 			}
 			return false;
 		}
-		if (!rz_string_code_points_align(ds->type, search_options->find_opts->alignment)) {
+		if (!rz_string_code_points_align(ds->encoding, search_options->find_opts->alignment)) {
 			if (log_suggestions) {
 				RZ_LOG_INFO("The string encoding has code points of more than 1 byte. But search.align is set to 1.\n"
 					    "The search will consume more resources, because alignment is not a multiple of the code point size.\n"

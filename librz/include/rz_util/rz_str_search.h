@@ -20,7 +20,7 @@ typedef struct {
 	ut64 addr; ///< Address/offset of the string in the RzBuffer
 	ut32 size; ///< Size of buffer containing the string in bytes
 	ut32 length; ///< Length of string in chars
-	RzStrEnc type; ///< String encoding in memory.
+	RzStrEnc encoding; ///< String encoding in memory.
 	size_t alignment; ///< The address alignment a matched string must have. If search.align is set, both must match.
 	/**
 	 * \brief Maps UTF-8 code point offsets to their memory offset.

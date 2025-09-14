@@ -491,7 +491,7 @@ RZ_API bool rz_core_meta_string_add(RzCore *core, ut64 addr, ut64 size, RzStrEnc
 		if (!ds) {
 			goto out;
 		}
-		encoding = ds->type;
+		encoding = ds->encoding;
 		n = ds->size;
 	}
 	if (!name) {

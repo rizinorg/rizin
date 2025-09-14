@@ -98,7 +98,7 @@ static bool find_string_at(RzCore *core, RzBinObject *bobj, ut64 pointer, char *
 		*length = detected->size;
 	}
 	if (encoding) {
-		*encoding = detected->type;
+		*encoding = detected->encoding;
 	}
 	ret = true;
 

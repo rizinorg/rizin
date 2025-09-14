@@ -64,7 +64,7 @@ static RzBinString *to_bin_string(RzDetectedString *src) {
 	dst->string = src->string;
 	dst->size = src->size;
 	dst->length = src->length;
-	dst->type = src->type;
+	dst->type = src->encoding;
 	dst->paddr = src->addr;
 	dst->vaddr = src->addr;
 

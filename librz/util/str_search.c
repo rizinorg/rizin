@@ -379,7 +379,7 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 		if (!ds) {
 			goto error;
 		}
-		ds->type = str_type;
+		ds->encoding = str_type;
 		ds->length = char_count;
 		ds->size = needle - str_addr;
 		if (stopped_with_undef_cp) {
