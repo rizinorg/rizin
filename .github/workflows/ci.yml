@@ -199,7 +199,7 @@ jobs:
       - name: Install meson and ninja
         if: matrix.build_system == 'meson' && matrix.enabled
         run: pip3 install --user meson ninja PyYAML
-      - name: Install meson and ninja
+      - name: Install gcovr
         if: matrix.coverage && matrix.enabled
         run: pip3 install --user gcovr
       - name: Checkout rzpipe
