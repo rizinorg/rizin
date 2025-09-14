@@ -582,3 +582,23 @@ nth        addr  vt_offset type        name
                                      `-----------------'
 EOF
 RUN
+
+NAME=Analyze class inheritance in objc
+FILE=bins/mach0/arm64-objc-bin
+CMDS=<<EOF
+aaa
+acll
+EOF
+EXPECT=<<EOF
+[Animal]
+nth        addr  vt_offset type    name  
+-----------------------------------------
+  1 0x100003e1c ---------- DEFAULT speak
+
+[Dog: Animal]
+nth        addr  vt_offset type    name  
+-----------------------------------------
+  1 0x100003e48 ---------- DEFAULT speak
+
+EOF
+RUN
