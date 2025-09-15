@@ -989,7 +989,7 @@ jobs:
     name: Publish Docker image on Docker Hub
     needs: [ build-and-test ]
     runs-on: ubuntu-24.04
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && contains(github.head_ref, 'container'))
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v5
       - name: Install dependencies
