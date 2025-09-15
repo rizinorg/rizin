@@ -37,8 +37,8 @@ static inline size_t rz_bits_trailing_zeros(ut64 v) {
 	if (v == 0) {
 		return 64;
 	}
-#if HAS___BUILTIN_STDC_FIRST_TRAILING_ZERO
-	return __builtin_stdc_first_trailing_zero(v);
+#if HAVE___BUILTIN_CTZLL
+	return __builtin_ctzll(v);
 #else
 	// src: https://graphics.stanford.edu/~seander/bithacks.html#ZerosOnRightBinSearch
 	size_t c;
@@ -78,7 +78,10 @@ static inline size_t rz_bits_trailing_zeros(ut64 v) {
  * \return the number of leading zeros
  */
 static inline int rz_bits_leading_zeros(ut64 x) {
-#if HAS___BUILTIN_CLZLL
+	if (x == 0) {
+		return 64;
+	}
+#if HAVE___BUILTIN_CLZLL
 	return __builtin_clzll(x);
 #else
 	int n = 0;
