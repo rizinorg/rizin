@@ -102,7 +102,10 @@ RZ_API int rz_search_strings_update(RzSearch *s, ut64 from, const ut8 *buf, int 
 	rz_list_foreach (s->kws, iter, kw) {
 		RzDetectedString *dstr;
 		rz_list_foreach (str_list, iter2, dstr) {
-			rz_search_legacy_hit_new(s, kw, dstr->addr);
+			if (rz_search_legacy_hit_new(s, kw, dstr->addr) != 1) {
+				// Max hits or error
+				break;
+			}
 			matches++;
 		}
 	}

@@ -253,6 +253,7 @@ static RzDetectedString *setup_str_regex(const char *re_pattern, RzRegexFlags cf
 		switch (encoding) {
 		default:
 			rz_warn_if_reached();
+			free(re_pattern_clone);
 			return NULL;
 		case RZ_STRING_ENC_UTF8:
 		case RZ_STRING_ENC_8BIT:
