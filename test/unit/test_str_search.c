@@ -430,7 +430,7 @@ bool test_rz_scan_strings_detect_length_utf8(void) {
  * the search requires string scanning, but no scan optoins were given.
  */
 bool test_rz_scan_strings_scan_options_error(void) {
-	RzSearchCollection *collection = rz_search_collection_strings(NULL);
+	RzSearchCollection *collection = rz_search_collection_strings(NULL, 4);
 	mu_assert_false(rz_search_collection_string_add(collection, "", 0, 1, RZ_STRING_ENC_UTF16BE), "Should fail for this config");
 	mu_assert_false(rz_search_collection_string_add(collection, "", 0, 1, RZ_STRING_ENC_UTF16LE), "Should fail for this config");
 	mu_assert_false(rz_search_collection_string_add(collection, "", 0, 1, RZ_STRING_ENC_UTF32BE), "Should fail for this config");

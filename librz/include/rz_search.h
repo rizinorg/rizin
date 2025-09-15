@@ -211,6 +211,7 @@ RZ_API void rz_search_opt_free(RZ_NULLABLE RzSearchOpt *opt);
 RZ_API bool rz_search_opt_set_max_hits(RZ_NONNULL RzSearchOpt *opt, size_t max_hits);
 RZ_API bool rz_search_opt_set_chunk_size(RZ_NONNULL RzSearchOpt *opt, ut64 chunk_size);
 RZ_API bool rz_search_opt_set_max_threads(RZ_NONNULL RzSearchOpt *opt, RzThreadNCores max_threads);
+RZ_API size_t rz_search_opt_get_max_threads(RZ_NONNULL const RzSearchOpt *opt);
 RZ_API bool rz_search_opt_set_show_progress_from_str(RZ_NONNULL RzSearchOpt *opt, const char *show_progress);
 RZ_API RzSearchProgress rz_search_opt_get_show_progress(RZ_NONNULL RzSearchOpt *opt);
 RZ_API bool rz_search_opt_set_cancel_cb(RZ_NONNULL RzSearchOpt *opt, RzSearchCancelCallback callback, void *user);
@@ -264,7 +265,7 @@ RZ_API RZ_OWN RzSearchCollection *rz_search_collection_bytes();
 RZ_API bool rz_search_collection_bytes_add(RZ_NONNULL RzSearchCollection *col, RZ_NULLABLE const char *pattern_desc, RZ_NONNULL const ut8 *bytes, RZ_NULLABLE const ut8 *mask, size_t length);
 RZ_API bool rz_search_collection_bytes_add_pattern(RZ_NONNULL RzSearchCollection *col, RZ_NONNULL RZ_OWN RzSearchBytesPattern *bytes_pattern);
 
-RZ_API RZ_OWN RzSearchCollection *rz_search_collection_strings(RZ_NULLABLE RZ_BORROW RzUtilStrScanOptions *scan_opts);
+RZ_API RZ_OWN RzSearchCollection *rz_search_collection_strings(RZ_NULLABLE RZ_BORROW RzUtilStrScanOptions *scan_opts, size_t n_threads);
 RZ_API bool rz_search_collection_string_add(
 	RZ_NONNULL RzSearchCollection *col,
 	RZ_NONNULL const char *regex_pattern,

@@ -4473,6 +4473,28 @@ RZ_API bool rz_string_enc_is_utf_native_endian(RzStrEnc enc) {
 }
 
 /**
+ * \brief Checks given encoding if it is UTF-8, UTF-16, or UTF-32.
+ *
+ * \return true For UTF-8/ASCII.
+ * \return true For UTF-16-LE/UTF-32-LE.
+ * \return true For UTF-16-BE/UTF-32-BE.
+ * \return false Otherwise.
+ */
+RZ_API bool rz_string_enc_is_utf(RzStrEnc enc) {
+	switch (enc) {
+	default:
+		return false;
+	case RZ_STRING_ENC_8BIT:
+	case RZ_STRING_ENC_UTF8:
+	case RZ_STRING_ENC_UTF16LE:
+	case RZ_STRING_ENC_UTF32LE:
+	case RZ_STRING_ENC_UTF16BE:
+	case RZ_STRING_ENC_UTF32BE:
+		return true;
+	}
+}
+
+/**
  * \brief Returns the size of the code point in bytes.
  * UTF-8 = 1, UTF-16 = 2, UTF-32 = 4 etc.
  *
@@ -4483,6 +4505,7 @@ RZ_API size_t rz_string_enc_code_point_width(RzStrEnc enc) {
 	default:
 	case RZ_STRING_ENC_GUESS:
 	case RZ_STRING_ENC_SETTINGS:
+		rz_warn_if_reached();
 		return 0;
 	case RZ_STRING_ENC_8BIT:
 	case RZ_STRING_ENC_UTF8:

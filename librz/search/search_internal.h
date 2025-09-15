@@ -24,6 +24,9 @@
 
 /**
  * \brief Minimal buffer size for each find() thread in bytes.
+ *
+ * ATTENTION: This value must be aligned to at least 4bytes.
+ * Otherwise the string search breaks.
  */
 #define RZ_SEARCH_MIN_CHUNK_SIZE 32ull
 
@@ -33,6 +36,9 @@
  *
  * ATTENTION: If you change this value, update the test
  * in cmd_search_x::"search over boundary"
+ *
+ * ATTENTION: This value must be aligned to at least 4bytes.
+ * Otherwise the string search breaks.
  */
 #define RZ_SEARCH_DEFAULT_CHUNK_SIZE 0x1000ull
 

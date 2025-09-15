@@ -13,6 +13,9 @@
 #include <rz_util.h>
 #include <rz_types.h>
 
+#define RZ_REGEX_JIT_STACK_MIN (512 * 1024)
+#define RZ_REGEX_JIT_STACK_MAX (1024 * 1024)
+
 typedef pcre2_general_context_8 RzRegexGeneralContext8; ///< General context.
 // typedef pcre2_compile_context RzRegexCompContext; ///< The context for compiling.
 typedef pcre2_match_context_8 RzRegexMatchContext8; ///< The context for matching.
@@ -90,6 +93,7 @@ static RZ_OWN void *regex_new(RZ_NONNULL const char *pattern, RzRegexFlags cflag
 		}
 #ifdef SUPPORTS_PCRE2_JIT
 		RzRegexStatus jit_err = pcre2_jit_compile_8(regex, jflags);
+
 		if (jit_err < 0) {
 			print_pcre2_err(pat, jit_err, 0);
 		}
@@ -259,6 +263,27 @@ RZ_API RZ_OWN RzRegexMulti *rz_regex_new_multi(RZ_NONNULL const char *pattern, R
 		free(re);
 		return NULL;
 	}
+#ifdef SUPPORTS_PCRE2_JIT
+	switch (type) {
+	default:
+		rz_warn_if_reached();
+		return NULL;
+	case RZ_REGEX_UTF8:
+		re->jit_stack = pcre2_jit_stack_create_8(RZ_REGEX_JIT_STACK_MIN, RZ_REGEX_JIT_STACK_MAX, NULL);
+		break;
+	case RZ_REGEX_UTF16:
+		re->jit_stack = pcre2_jit_stack_create_16(RZ_REGEX_JIT_STACK_MIN, RZ_REGEX_JIT_STACK_MAX, NULL);
+		break;
+	case RZ_REGEX_UTF32:
+		re->jit_stack = pcre2_jit_stack_create_32(RZ_REGEX_JIT_STACK_MIN, RZ_REGEX_JIT_STACK_MAX, NULL);
+		break;
+	}
+	if (!re->jit_stack) {
+		rz_warn_if_reached();
+		rz_regex_free_multi(re);
+		return NULL;
+	}
+#endif
 	return re;
 }
 
@@ -434,6 +459,19 @@ RZ_API void rz_regex_free_multi(RZ_NULLABLE RZ_OWN RzRegexMulti *regex_multi) {
 		rz_regex_free_32(regex_multi->re32);
 		break;
 	}
+#ifdef SUPPORTS_PCRE2_JIT
+	switch (regex_multi->re_type) {
+	case RZ_REGEX_UTF8:
+		pcre2_jit_stack_free_8(regex_multi->jit_stack);
+		break;
+	case RZ_REGEX_UTF16:
+		pcre2_jit_stack_free_16(regex_multi->jit_stack);
+		break;
+	case RZ_REGEX_UTF32:
+		pcre2_jit_stack_free_32(regex_multi->jit_stack);
+		break;
+	}
+#endif
 	free(regex_multi);
 }
 
@@ -613,14 +651,26 @@ static RZ_OWN RzPVector /*<RzRegexMatch *>*/ *match_first_8(
 	RZ_NONNULL const ut8 *text,
 	RzRegexSize text_size,
 	RzRegexSize text_offset,
-	RzRegexFlags mflags) {
+	RzRegexFlags mflags,
+	RZ_NULLABLE void *jit_stack) {
 	rz_return_val_if_fail(regex && text, NULL);
 
 	RzPVector *matches = NULL;
 	RzRegexMatchData *mdata = NULL;
 	mdata = pcre2_match_data_create_from_pattern_8(regex, NULL);
+
+	pcre2_match_context_8 *mcontext = NULL;
+#ifdef SUPPORTS_PCRE2_JIT
+	if (jit_stack) {
+		mcontext = pcre2_match_context_create_8(NULL);
+		if (!mcontext) {
+			goto fini;
+		}
+		pcre2_jit_stack_assign_8(mcontext, NULL, jit_stack);
+	}
+#endif
 	RzRegexStatus rc = 0;
-	rc = pcre2_match_8(regex, (PCRE2_SPTR8)text, text_size, text_offset, mflags | PCRE2_NO_UTF_CHECK, mdata, NULL);
+	rc = pcre2_match_8(regex, (PCRE2_SPTR8)text, text_size, text_offset, mflags | PCRE2_NO_UTF_CHECK, mdata, mcontext);
 
 	if (rc == PCRE2_ERROR_NOMATCH) {
 		// Nothing matched return empty vector.
@@ -680,14 +730,26 @@ static RZ_OWN RzPVector /*<RzRegexMatch *>*/ *match_first_16(
 	RZ_NONNULL const ut16 *text,
 	RzRegexSize text_size_code_units,
 	RzRegexSize text_offset_code_units,
-	RzRegexFlags mflags) {
+	RzRegexFlags mflags,
+	RZ_NULLABLE void *jit_stack) {
 	rz_return_val_if_fail(regex && text, NULL);
 
 	RzPVector *matches = NULL;
 	RzRegexMatchData *mdata = NULL;
 	mdata = pcre2_match_data_create_from_pattern_16(regex, NULL);
+
+	pcre2_match_context_16 *mcontext = NULL;
+#ifdef SUPPORTS_PCRE2_JIT
+	if (jit_stack) {
+		mcontext = pcre2_match_context_create_16(NULL);
+		if (!mcontext) {
+			goto fini;
+		}
+		pcre2_jit_stack_assign_16(mcontext, NULL, jit_stack);
+	}
+#endif
 	RzRegexStatus rc = 0;
-	rc = pcre2_match_16(regex, (PCRE2_SPTR16)text, text_size_code_units, text_offset_code_units, mflags | PCRE2_NO_UTF_CHECK, mdata, NULL);
+	rc = pcre2_match_16(regex, (PCRE2_SPTR16)text, text_size_code_units, text_offset_code_units, mflags | PCRE2_NO_UTF_CHECK, mdata, mcontext);
 
 	if (rc == PCRE2_ERROR_NOMATCH) {
 		// Nothing matched, return an empty vector
@@ -747,14 +809,26 @@ static RZ_OWN RzPVector /*<RzRegexMatch *>*/ *match_first_32(
 	RZ_NONNULL const ut32 *text,
 	RzRegexSize text_size_code_units,
 	RzRegexSize text_offset_code_units,
-	RzRegexFlags mflags) {
+	RzRegexFlags mflags,
+	RZ_NULLABLE void *jit_stack) {
 	rz_return_val_if_fail(regex && text, NULL);
 
 	RzPVector *matches = NULL;
 	RzRegexMatchData *mdata = NULL;
 	mdata = pcre2_match_data_create_from_pattern_32(regex, NULL);
+
+	pcre2_match_context_32 *mcontext = NULL;
+#ifdef SUPPORTS_PCRE2_JIT
+	if (jit_stack) {
+		mcontext = pcre2_match_context_create_32(NULL);
+		if (!mcontext) {
+			goto fini;
+		}
+		pcre2_jit_stack_assign_32(mcontext, NULL, jit_stack);
+	}
+#endif
 	RzRegexStatus rc = 0;
-	rc = pcre2_match_32(regex, (PCRE2_SPTR32)text, text_size_code_units, text_offset_code_units, mflags | PCRE2_NO_UTF_CHECK, mdata, NULL);
+	rc = pcre2_match_32(regex, (PCRE2_SPTR32)text, text_size_code_units, text_offset_code_units, mflags | PCRE2_NO_UTF_CHECK, mdata, mcontext);
 
 	if (rc == PCRE2_ERROR_NOMATCH) {
 		// Nothing matched return empty vector.
@@ -834,7 +908,7 @@ RZ_API RZ_OWN RzPVector /*<RzRegexMatch *>*/ *rz_regex_match_first(
 		(ut8 *)text,
 		text_size,
 		text_offset,
-		mflags);
+		mflags, NULL);
 }
 
 /**
@@ -864,7 +938,7 @@ RZ_API RZ_OWN RzPVector /*<RzRegexMatch *>*/ *rz_regex_match_first_16(
 		text,
 		text_size,
 		text_offset,
-		mflags);
+		mflags, NULL);
 }
 
 /**
@@ -894,7 +968,7 @@ RZ_API RZ_OWN RzPVector /*<RzRegexMatch *>*/ *rz_regex_match_first_32(
 		text,
 		text_size,
 		text_offset,
-		mflags);
+		mflags, NULL);
 }
 
 /**
@@ -947,18 +1021,19 @@ static RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *match_all_internal_8(
 	RzRegexSize text_size,
 	RzRegexSize text_offset,
 	RzRegexFlags mflags,
-	bool allow_overlap) {
+	bool allow_overlap,
+	RZ_NULLABLE void *jit_stack) {
 	rz_return_val_if_fail(regex && text, NULL);
 
 	RzPVector *all_matches = rz_pvector_new((RzPVectorFree)rz_pvector_free);
 	RzPVector *matches = NULL;
-	matches = match_first_8(regex, text, text_size, text_offset, mflags);
+	matches = match_first_8(regex, text, text_size, text_offset, mflags, jit_stack);
 	while (matches && rz_pvector_len(matches) > 0) {
 		rz_pvector_push(all_matches, matches);
 		RzRegexMatch *m = rz_pvector_head(matches);
 		// Search again after the last match.
 		text_offset = allow_overlap ? m->start + 1 : m->start + m->len;
-		matches = match_first_8(regex, text, text_size, text_offset, mflags);
+		matches = match_first_8(regex, text, text_size, text_offset, mflags, jit_stack);
 	}
 
 	// Free last vector without matches.
@@ -972,18 +1047,19 @@ static RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *match_all_internal_16(
 	RzRegexSize text_size_code_units,
 	RzRegexSize text_offset_code_units,
 	RzRegexFlags mflags,
-	bool allow_overlap) {
+	bool allow_overlap,
+	RZ_NULLABLE void *jit_stack) {
 	rz_return_val_if_fail(regex && text, NULL);
 
 	RzPVector *all_matches = rz_pvector_new((RzPVectorFree)rz_pvector_free);
 	RzPVector *matches = NULL;
-	matches = match_first_16(regex, text, text_size_code_units, text_offset_code_units, mflags);
+	matches = match_first_16(regex, text, text_size_code_units, text_offset_code_units, mflags, jit_stack);
 	while (matches && rz_pvector_len(matches) > 0) {
 		rz_pvector_push(all_matches, matches);
 		RzRegexMatch *m = rz_pvector_head(matches);
 		// Search again after the last match.
 		text_offset_code_units = allow_overlap ? m->start + 1 : m->start + m->len;
-		matches = match_first_16(regex, text, text_size_code_units, text_offset_code_units, mflags);
+		matches = match_first_16(regex, text, text_size_code_units, text_offset_code_units, mflags, jit_stack);
 	}
 
 	// Free last vector without matches.
@@ -997,18 +1073,19 @@ static RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *match_all_internal_32(
 	RzRegexSize text_size_code_units,
 	RzRegexSize text_offset_code_units,
 	RzRegexFlags mflags,
-	bool allow_overlap) {
+	bool allow_overlap,
+	RZ_NULLABLE void *jit_stack) {
 	rz_return_val_if_fail(regex && text, NULL);
 
 	RzPVector *all_matches = rz_pvector_new((RzPVectorFree)rz_pvector_free);
 	RzPVector *matches = NULL;
-	matches = match_first_32(regex, text, text_size_code_units, text_offset_code_units, mflags);
+	matches = match_first_32(regex, text, text_size_code_units, text_offset_code_units, mflags, jit_stack);
 	while (matches && rz_pvector_len(matches) > 0) {
 		rz_pvector_push(all_matches, matches);
 		RzRegexMatch *m = rz_pvector_head(matches);
 		// Search again after the last match.
 		text_offset_code_units = allow_overlap ? m->start + 1 : m->start + m->len;
-		matches = match_first_32(regex, text, text_size_code_units, text_offset_code_units, mflags);
+		matches = match_first_32(regex, text, text_size_code_units, text_offset_code_units, mflags, jit_stack);
 	}
 
 	// Free last vector without matches.
@@ -1036,7 +1113,7 @@ RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all_ove
 	RzRegexSize text_size,
 	RzRegexSize text_offset,
 	RzRegexFlags mflags) {
-	return match_all_internal_8(regex, (ut8 *)text, text_size, text_offset, mflags, true);
+	return match_all_internal_8(regex, (ut8 *)text, text_size, text_offset, mflags, true, NULL);
 }
 
 /**
@@ -1058,7 +1135,7 @@ RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all(
 	RzRegexSize text_size,
 	RzRegexSize text_offset,
 	RzRegexFlags mflags) {
-	return match_all_internal_8(regex, (ut8 *)text, text_size, text_offset, mflags, false);
+	return match_all_internal_8(regex, (ut8 *)text, text_size, text_offset, mflags, false, NULL);
 }
 
 /**
@@ -1083,7 +1160,7 @@ RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all_ove
 	RzRegexSize text_size,
 	RzRegexSize text_offset,
 	RzRegexFlags mflags) {
-	return match_all_internal_16(regex, text, text_size, text_offset, mflags, true);
+	return match_all_internal_16(regex, text, text_size, text_offset, mflags, true, NULL);
 }
 
 /**
@@ -1107,7 +1184,7 @@ RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all_16(
 	RzRegexSize text_size,
 	RzRegexSize text_offset,
 	RzRegexFlags mflags) {
-	return match_all_internal_16(regex, text, text_size, text_offset, mflags, false);
+	return match_all_internal_16(regex, text, text_size, text_offset, mflags, false, NULL);
 }
 
 /**
@@ -1132,7 +1209,7 @@ RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all_ove
 	RzRegexSize text_size,
 	RzRegexSize text_offset,
 	RzRegexFlags mflags) {
-	return match_all_internal_32(regex, text, text_size, text_offset, mflags, true);
+	return match_all_internal_32(regex, text, text_size, text_offset, mflags, true, NULL);
 }
 
 /**
@@ -1146,11 +1223,11 @@ RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all_ove
 	RzRegexFlags mflags) {
 	switch (regex->re_type) {
 	case RZ_REGEX_UTF8:
-		return match_all_internal_8(regex->re8, (ut8 *)text, text_size, text_offset, mflags, true);
+		return match_all_internal_8(regex->re8, (ut8 *)text, text_size, text_offset, mflags, true, regex->jit_stack);
 	case RZ_REGEX_UTF16:
-		return match_all_internal_16(regex->re16, (ut16 *)text, text_size / RZ_UTF16_CODE_POINT_WIDTH, text_offset / RZ_UTF16_CODE_POINT_WIDTH, mflags, true);
+		return match_all_internal_16(regex->re16, (ut16 *)text, text_size / RZ_UTF16_CODE_POINT_WIDTH, text_offset / RZ_UTF16_CODE_POINT_WIDTH, mflags, true, regex->jit_stack);
 	case RZ_REGEX_UTF32:
-		return match_all_internal_32(regex->re32, (ut32 *)text, text_size / RZ_UTF32_CODE_POINT_WIDTH, text_offset / RZ_UTF32_CODE_POINT_WIDTH, mflags, true);
+		return match_all_internal_32(regex->re32, (ut32 *)text, text_size / RZ_UTF32_CODE_POINT_WIDTH, text_offset / RZ_UTF32_CODE_POINT_WIDTH, mflags, true, regex->jit_stack);
 	}
 	rz_warn_if_reached();
 	return NULL;
@@ -1164,11 +1241,11 @@ RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all_mul
 	RzRegexFlags mflags) {
 	switch (regex->re_type) {
 	case RZ_REGEX_UTF8:
-		return match_all_internal_8(regex->re8, (ut8 *)text, text_size, text_offset, mflags, false);
+		return match_all_internal_8(regex->re8, (ut8 *)text, text_size, text_offset, mflags, false, regex->jit_stack);
 	case RZ_REGEX_UTF16:
-		return match_all_internal_16(regex->re16, (ut16 *)text, text_size / RZ_UTF16_CODE_POINT_WIDTH, text_offset / RZ_UTF16_CODE_POINT_WIDTH, mflags, false);
+		return match_all_internal_16(regex->re16, (ut16 *)text, text_size / RZ_UTF16_CODE_POINT_WIDTH, text_offset / RZ_UTF16_CODE_POINT_WIDTH, mflags, false, regex->jit_stack);
 	case RZ_REGEX_UTF32:
-		return match_all_internal_32(regex->re32, (ut32 *)text, text_size / RZ_UTF32_CODE_POINT_WIDTH, text_offset / RZ_UTF32_CODE_POINT_WIDTH, mflags, false);
+		return match_all_internal_32(regex->re32, (ut32 *)text, text_size / RZ_UTF32_CODE_POINT_WIDTH, text_offset / RZ_UTF32_CODE_POINT_WIDTH, mflags, false, regex->jit_stack);
 	}
 	rz_warn_if_reached();
 	return NULL;
@@ -1195,7 +1272,7 @@ RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all_32(
 	RzRegexSize text_size,
 	RzRegexSize text_offset,
 	RzRegexFlags mflags) {
-	return match_all_internal_32(regex, text, text_size, text_offset, mflags, false);
+	return match_all_internal_32(regex, text, text_size, text_offset, mflags, false, NULL);
 }
 
 /**

@@ -38,10 +38,6 @@ static const char *files[] = {
 	//
 	// sha256: dc365472d8bbfdc3a3d47b5a0d8061c7d18233b131b0ed12fe599b53248629b2
 	// "test/bins/test/bins/test_strings_zh.utf-32-le",
-	//
-	// Big endian strings to search. Search will significantly slower on little endian machines.
-	// sha256: 315e96099d4c0ad7501e47f28a7781b8ed9fef0902bce5e962276a285362a684
-	// "test/bins/test/bins/test_strings_zh.utf-16-be",
 };
 
 // Patterns/strings to search in the files from above.
@@ -65,6 +61,8 @@ static const char *patterns[][3] = {
 // Always check RzSearchHit->size for the real byte length of a string.
 #define ELEMENT_SIZE 50
 
+#define N_THREADS 4
+
 /**
  * \brief Do a simple literal and regex search for strings in Hindi.
  */
@@ -79,7 +77,7 @@ int test_rz_str_search_single_simple(void) {
 	// Configuring specific values is optional.
 	RzSearchOpt *search_opts = rz_search_opt_new();
 	mu_assert_notnull(search_opts, "NULL check failed");
-	rz_search_opt_set_max_threads(search_opts, 4);
+	rz_search_opt_set_max_threads(search_opts, N_THREADS);
 	rz_search_opt_set_max_hits(search_opts, 10);
 	rz_search_opt_set_show_progress_from_str(search_opts, "no");
 	rz_search_opt_set_chunk_size(search_opts, ELEMENT_SIZE);
@@ -100,7 +98,7 @@ int test_rz_str_search_single_simple(void) {
 	// We can pass NULL here to the RzUtilStrScanOptions parameter,
 	// because UTF-8 is endianness independent and can directly match the buffer with PCRE2.
 	// No scanning for strings is required. Hence we don't need the options for it.
-	RzSearchCollection *collection = rz_search_collection_strings(NULL);
+	RzSearchCollection *collection = rz_search_collection_strings(NULL, N_THREADS);
 	mu_assert_notnull(collection, "NULL check failed");
 
 	// Now add the two patterns we search for
@@ -142,7 +140,7 @@ int test_rz_str_search_io_simple(void) {
 	// Configuring specific values is optional.
 	RzSearchOpt *search_opts = rz_search_opt_new();
 	mu_assert_notnull(search_opts, "NULL check failed");
-	rz_search_opt_set_max_threads(search_opts, 4);
+	rz_search_opt_set_max_threads(search_opts, N_THREADS);
 	rz_search_opt_set_max_hits(search_opts, 10);
 	rz_search_opt_set_show_progress_from_str(search_opts, "no");
 	rz_search_opt_set_chunk_size(search_opts, ELEMENT_SIZE);
@@ -153,8 +151,6 @@ int test_rz_str_search_io_simple(void) {
 
 	// Set alignment to 2, because we search UTF-16 and its code points are aligned to 2.
 	// It is possible to also set it to any other value of course.
-	// But any value not aligned to the code point width of UTF-16 (anything not a multiple of 2)
-	// will slow down the search.
 	// For details see librz/search/README.md
 	size_t match_alignment = 2;
 	rz_search_find_opt_set_alignment(find_opts, match_alignment);
@@ -172,7 +168,7 @@ int test_rz_str_search_io_simple(void) {
 		.check_ascii_freq = false,
 	};
 
-	RzSearchCollection *collection = rz_search_collection_strings(&scan_opt);
+	RzSearchCollection *collection = rz_search_collection_strings(&scan_opt, N_THREADS);
 	mu_assert_notnull(collection, "NULL check failed");
 
 	// Now add the pattern we search for.
@@ -221,7 +217,7 @@ int test_rz_str_search_multiple_enc(void) {
 	// Configuring specific values is optional.
 	RzSearchOpt *search_opts = rz_search_opt_new();
 	mu_assert_notnull(search_opts, "NULL check failed");
-	rz_search_opt_set_max_threads(search_opts, 4);
+	rz_search_opt_set_max_threads(search_opts, N_THREADS);
 	rz_search_opt_set_max_hits(search_opts, 10);
 	rz_search_opt_set_show_progress_from_str(search_opts, "no");
 	rz_search_opt_set_chunk_size(search_opts, ELEMENT_SIZE);
@@ -248,7 +244,7 @@ int test_rz_str_search_multiple_enc(void) {
 		.check_ascii_freq = false,
 	};
 
-	RzSearchCollection *collection = rz_search_collection_strings(&scan_opt);
+	RzSearchCollection *collection = rz_search_collection_strings(&scan_opt, N_THREADS);
 	mu_assert_notnull(collection, "NULL check failed");
 
 	// Now add the patterns we search for. One for each encoding in the file.

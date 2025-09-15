@@ -312,6 +312,7 @@ static inline bool rz_string_enc_same_char_width_as_utf8(RzStrEnc enc) {
 	return enc == RZ_STRING_ENC_UTF8 || enc == RZ_STRING_ENC_8BIT;
 }
 
+RZ_API bool rz_string_enc_is_utf(RzStrEnc enc);
 RZ_API bool rz_string_enc_is_utf_native_endian(RzStrEnc enc);
 RZ_API size_t rz_string_enc_code_point_width(RzStrEnc enc);
 
