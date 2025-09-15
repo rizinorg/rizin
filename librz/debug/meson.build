@@ -85,7 +85,9 @@ if has_debugger
     rz_debug_sources += ['p/native/linux/linux_debug.c']
   endif
   if host_machine.system() == 'linux'
-    rz_debug_sources += ['p/native/linux/linux_coredump.c']
+    if host_machine.cpu_family() == 'x86' or host_machine.cpu_family() == 'x86_64' or host_machine.cpu_family() == 'arm' or host_machine.cpu_family() == 'aarch64'
+      rz_debug_sources += ['p/native/linux/linux_coredump.c']
+    endif
   endif
 
   # Linux OS

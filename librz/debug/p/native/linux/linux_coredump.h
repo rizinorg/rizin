@@ -169,7 +169,7 @@ typedef struct thread_elf_note {
 	siginfo_t *siginfo;
 #if __i386__ || __x86_64__
 	void *xsave_data;
-#elif __arm__ || __arm64__
+#elif __arm__ || __aarch64__
 	void *arm_vfp_data;
 #endif
 	struct thread_elf_note *n;
@@ -196,7 +196,7 @@ typedef enum {
 #endif
 #if __i386__ || __x86_64__
 	NT_X86_XSTATE_T,
-#elif __arm__ || __arm64__
+#elif __arm__ || __aarch64__
 	NT_ARM_VFP_T,
 #endif
 	NT_LENGHT_T

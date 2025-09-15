@@ -3,7 +3,6 @@
 
 #include <rz_debug.h>
 
-#if __x86_64__ || __i386__ || __arm__ || __arm64__
 #include <sys/uio.h>
 #include <sys/ptrace.h>
 #include <asm/ptrace.h>
@@ -11,7 +10,7 @@
 #include "linux_ptrace.h"
 
 /* For compatibility */
-#if __x86_64__ || __arm64__
+#if __x86_64__ || __aarch64__
 typedef Elf64_auxv_t elf_auxv_t;
 typedef Elf64_Ehdr elf_hdr_t;
 typedef Elf64_Phdr elf_phdr_t;
@@ -223,8 +222,13 @@ static prstatus_t *linux_get_prstatus(RzDebug *dbg, int pid, int tid, proc_conte
 	p->pr_cstime.tv_sec = proc_data->per_thread->cstime / 1000;
 	p->pr_cstime.tv_usec = (proc_data->per_thread->cstime % 1000) / 1000;
 
+#if __aarch64__
+	if (rz_debug_ptrace(dbg, PTRACE_GETREGSET, tid, (void *)NT_PRSTATUS, &regs) < 0) {
+		perror("PTRACE_GETREGSET & NT_PRSTATUS");
+#else
 	if (rz_debug_ptrace(dbg, PTRACE_GETREGS, tid, NULL, &regs) < 0) {
 		perror("PTRACE_GETREGS");
+#endif
 		RZ_FREE(proc_data->per_thread);
 		free(p);
 		return NULL;
@@ -236,15 +240,20 @@ static prstatus_t *linux_get_prstatus(RzDebug *dbg, int pid, int tid, proc_conte
 
 static elf_fpregset_t *linux_get_fp_regset(RzDebug *dbg, int pid) {
 	elf_fpregset_t *p = RZ_NEW0(elf_fpregset_t);
-	if (p) {
-		if (rz_debug_ptrace(dbg, PTRACE_GETFPREGS, pid, NULL, p) < 0) {
-			perror("PTRACE_GETFPREGS");
-			free(p);
-			return NULL;
-		}
-		return p;
+	if (!p) {
+		return NULL;
 	}
-	return NULL;
+#if __aarch64__
+	if (rz_debug_ptrace(dbg, PTRACE_GETREGSET, pid, (void *)NT_PRFPREG, p) < 0) {
+		perror("PTRACE_GETREGSET & NT_PRFREG");
+#else
+	if (rz_debug_ptrace(dbg, PTRACE_GETFPREGS, pid, NULL, p) < 0) {
+		perror("PTRACE_GETFPREGS");
+#endif
+		free(p);
+		return NULL;
+	}
+	return p;
 }
 
 static siginfo_t *linux_get_siginfo(RzDebug *dbg, int pid) {
@@ -602,7 +611,7 @@ static elf_hdr_t *build_elf_hdr(int n_segments) {
 	h->e_ident[EI_MAG1] = ELFMAG1;
 	h->e_ident[EI_MAG2] = ELFMAG2;
 	h->e_ident[EI_MAG3] = ELFMAG3;
-#if __x86_64__ || __arm64__
+#if __x86_64__ || __aarch64__
 	h->e_ident[EI_CLASS] = ELFCLASS64; /*64bits */
 #elif __i386__ || __arm__
 	h->e_ident[EI_CLASS] = ELFCLASS32;
@@ -622,7 +631,7 @@ static elf_hdr_t *build_elf_hdr(int n_segments) {
 	h->e_machine = EM_386;
 #elif __arm__
 	h->e_machine = EM_ARM;
-#elif __arm64__
+#elif __aarch64__
 	h->e_machine = EM_AARCH64;
 #endif
 	h->e_version = EV_CURRENT;
@@ -944,7 +953,7 @@ void *linux_get_xsave_data(RzDebug *dbg, int tid, ut32 size) {
 }
 #endif
 
-#if __arm__ || __arm64__
+#if __arm__ || __aarch64__
 void *linux_get_arm_vfp_data(RzDebug *dbg, int tid) {
 #ifdef PTRACE_GETVFPREGS
 	char *vfp_data = calloc(ARM_VFPREGS_SIZE + 1, 1);
@@ -1005,7 +1014,7 @@ void write_note_hdr(note_type_t type, ut8 **note_data) {
 		note_type = NT_X86_XSTATE;
 		nhdr.n_descsz = note_info[type].size;
 		break;
-#elif __arm__ || __arm64__
+#elif __arm__ || __aarch64__
 	case NT_ARM_VFP_T:
 		note_type = NT_ARM_VFP;
 		nhdr.n_descsz = note_info[type].size;
@@ -1095,7 +1104,7 @@ static ut8 *build_note_section(RzDebug *dbg, elf_proc_note_t *elf_proc_note, pro
 #endif
 #if __i386__ || __x86_64__
 	bool xsave_flag = false;
-#elif __arm__ || __arm64__
+#elif __arm__ || __aarch64__
 	bool vfp_flag = false;
 #endif
 
@@ -1159,7 +1168,7 @@ static ut8 *build_note_section(RzDebug *dbg, elf_proc_note_t *elf_proc_note, pro
 			n_notes++;
 		}
 #endif
-#if __arm__ || __arm64__
+#if __arm__ || __aarch64__
 		type = NT_ARM_VFP_T;
 		if (note_info[type].size) {
 			vfp_flag = true;
@@ -1225,7 +1234,7 @@ static ut8 *build_note_section(RzDebug *dbg, elf_proc_note_t *elf_proc_note, pro
 					goto fail;
 				}
 			}
-#elif __arm__ || __arm64__
+#elif __arm__ || __aarch64__
 			if (vfp_flag) {
 				elf_proc_note->thread_note->arm_vfp_data = linux_get_arm_vfp_data(dbg, thread_id[i]);
 				if (!elf_proc_note->thread_note->arm_vfp_data) {
@@ -1264,7 +1273,7 @@ static ut8 *build_note_section(RzDebug *dbg, elf_proc_note_t *elf_proc_note, pro
 			memcpy(note_data, elf_proc_note->thread_note->fp_regset, note_info[type].size);
 			note_data += note_info[type].size_roundedup;
 
-#if __arm__ || __arm64
+#if __arm__ || __aarch64__
 			if (vfp_flag) {
 				type = NT_ARM_VFP_T;
 				write_note_hdr(type, &note_data);
@@ -1321,7 +1330,7 @@ fail:
 #endif
 #if __i386__ || __x86_64__
 		free(elf_proc_note->thread_note->xsave_data);
-#elif __arm__ || __arm64__
+#elif __arm__ || __aarch64__
 		free(elf_proc_note->thread_note->arm_vfp_data);
 #endif
 	}
@@ -1375,7 +1384,7 @@ static int get_i386_fpx_size(void) {
 }
 #endif
 
-#if __arm__ || __arm64__
+#if __arm__ || __aarch64__
 static int get_arm_vfpregs_size(void) {
 #ifdef PTRACE_GETVFPREGS
 	return ARM_VFPREGS_SIZE;
@@ -1441,7 +1450,7 @@ static void init_note_info_structure(RzDebug *dbg, int pid, size_t auxv_size) {
 	note_info[type].size_roundedup = round_up(note_info[type].size);
 	note_info[type].size_name = len_name_linux;
 	strncpy(note_info[type].name, "LINUX", sizeof(note_info[type].name));
-#elif __arm__ || __arm64__
+#elif __arm__ || __aarch64__
 	/* NT_ARM_VFP_T */
 	type = NT_ARM_VFP_T;
 	note_info[type].size = get_arm_vfpregs_size();
@@ -1540,4 +1549,3 @@ cleanup:
 	free(note_data);
 	return !error;
 }
-#endif
