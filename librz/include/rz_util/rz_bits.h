@@ -33,6 +33,14 @@ DEFINE_COUNT_ONES(ut32);
 DEFINE_COUNT_ONES(ut16);
 DEFINE_COUNT_ONES(ut8);
 
+/**
+ * \brief Count trailing zeros of \p v.
+ * If v == 0 it returns 64.
+ *
+ * \param v The value to count the trailing zeros for.
+ *
+ * \return The number of trailing zeros.
+ */
 static inline size_t rz_bits_trailing_zeros(ut64 v) {
 	if (v == 0) {
 		return 64;
