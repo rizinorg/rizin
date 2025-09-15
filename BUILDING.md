@@ -174,6 +174,8 @@ You can find an
 [example](https://github.com/rizinorg/rizin/blob/dev/.github/meson-android-aarch64.ini)
 of such a file in our codebase, but you should adjust it to match your system.
 
+More examples are in the [doc/examples/cross_builds/](https://github.com/rizinorg/rizin/blob/dev/doc/examples/cross_builds/) directory.
+
 To make the deployment and usage of the rizin tools easier from within your
 Android device, we suggest to compile statically and by using the *blob*
 feature, which will produce just one executable and link all the other tools to
