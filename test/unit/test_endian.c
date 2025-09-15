@@ -364,10 +364,31 @@ bool test_rz_swap_ut64(void) {
 	mu_end;
 }
 
+bool test_rz_swap_4b_ut64(void) {
+	ut64 a = 0x1122334455667788;
+	ut64 b = rz_swap_4b_ut64(a);
+	mu_assert_eq(b, 0x4433221188776655, "rz_swap_4b_ut64");
+	mu_end;
+}
+
+bool test_rz_swap_2b_ut64(void) {
+	ut64 a = 0x1122334455667788;
+	ut64 b = rz_swap_2b_ut64(a);
+	mu_assert_eq(b, 0x2211443366558877, "rz_swap_2b_ut64");
+	mu_end;
+}
+
 bool test_rz_swap_ut32(void) {
 	ut32 a = 0x11223344;
 	ut32 b = rz_swap_ut32(a);
 	mu_assert_eq(b, 0x44332211, "rz_swap_ut32");
+	mu_end;
+}
+
+bool test_rz_swap_2b_ut32(void) {
+	ut32 a = 0x11223344;
+	ut32 b = rz_swap_2b_ut32(a);
+	mu_assert_eq(b, 0x22114433, "rz_swap_2b_ut32");
 	mu_end;
 }
 
@@ -494,7 +515,10 @@ int all_tests() {
 
 	mu_run_test(test_endian);
 	mu_run_test(test_rz_swap_ut64);
+	mu_run_test(test_rz_swap_4b_ut64);
+	mu_run_test(test_rz_swap_2b_ut64);
 	mu_run_test(test_rz_swap_ut32);
+	mu_run_test(test_rz_swap_2b_ut32);
 	mu_run_test(test_rz_swap_ut16);
 	mu_run_test(test_be);
 	mu_run_test(test_le);

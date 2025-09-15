@@ -457,19 +457,19 @@ RZ_API RZ_OWN ut8 *rz_mem_swap_bytes_2_inplace(RZ_OUT RZ_NONNULL ut8 *dst, size_
 
 	ut64 *dst_64 = (ut64 *)dst;
 	while (buf_size >= 8) {
-		*dst_64 = ((*dst_64 & 0xff00ff00ff00ff00) >> 8) | ((*dst_64 & 0x00ff00ff00ff00ff) << 8);
+		*dst_64 = rz_swap_2b_ut64(*dst_64);
 		dst_64++;
 		buf_size -= 8;
 	}
 	ut32 *dst_32 = (ut32 *)dst_64;
 	while (buf_size >= 4) {
-		*dst_32 = ((*dst_32 & 0xff00ff00) >> 8) | ((*dst_32 & 0x00ff00ff) << 8);
+		*dst_32 = rz_swap_2b_ut32(*dst_32);
 		dst_32++;
 		buf_size -= 4;
 	}
 	ut16 *dst_16 = (ut16 *)dst_32;
 	while (buf_size >= 2) {
-		*dst_16 = ((*dst_16 & 0xff00) >> 8) | ((*dst_16 & 0x00ff) << 8);
+		*dst_16 = rz_swap_ut16(*dst_16);
 		dst_16++;
 		buf_size -= 2;
 	}
@@ -561,19 +561,13 @@ RZ_API RZ_OWN ut8 *rz_mem_swap_bytes_4_inplace(RZ_OUT RZ_NONNULL ut8 *dst, size_
 
 	ut64 *dst_64 = (ut64 *)dst;
 	while (buf_size >= 8) {
-		*dst_64 = ((*dst_64 & 0xff000000ff000000) >> 24) |
-			((*dst_64 & 0x00ff000000ff0000) >> 8) |
-			((*dst_64 & 0x0000ff000000ff00) << 8) |
-			((*dst_64 & 0x000000ff000000ff) << 24);
+		*dst_64 = rz_swap_4b_ut64(*dst_64);
 		dst_64++;
 		buf_size -= 8;
 	}
 	ut32 *dst_32 = (ut32 *)dst_64;
 	while (buf_size >= 4) {
-		*dst_32 = ((*dst_32 & 0xff000000) >> 24) |
-			((*dst_32 & 0x00ff0000) >> 8) |
-			((*dst_32 & 0x0000ff00) << 8) |
-			((*dst_32 & 0x000000ff) << 24);
+		*dst_32 = rz_swap_ut32(*dst_32);
 		dst_32++;
 		buf_size -= 4;
 	}

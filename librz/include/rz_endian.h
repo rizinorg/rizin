@@ -1813,6 +1813,60 @@ static inline ut64 rz_swap_ut64(ut64 val) {
 }
 #endif
 
+/**
+ * \def rz_swap_2b_ut64
+ * \brief Swaps pairs of 2 bytes in a 64bit value
+ *
+ * # Example
+ *
+ * \code{.c}
+ * ut32 x =      0x8899AABBCCDDEEFF;
+ * ut32 result = 0x9988BBAADDCCFFEE;
+ * assert(rz_swap_2b_ut64(x) == result);
+ * \endcode
+ */
+static inline ut64 rz_swap_2b_ut64(ut64 val) {
+	val = ((val & 0xff00ff00ff00ff00) >> 8) | ((val & 0x00ff00ff00ff00ff) << 8);
+	return val;
+}
+
+/**
+ * \def rz_swap_4b_ut64
+ * \brief Swaps pairs of 4 bytes in a 64bit value
+ *
+ * # Example
+ *
+ * \code{.c}
+ * ut32 x =      0x8899AABBCCDDEEFF;
+ * ut32 result = 0xBBAA9988FFEEDDCC;
+ * assert(rz_swap_4b_ut64(x) == result);
+ * \endcode
+ */
+static inline ut64 rz_swap_4b_ut64(ut64 val) {
+	val = ((val & 0xff000000ff000000) >> 24) |
+		((val & 0x00ff000000ff0000) >> 8) |
+		((val & 0x0000ff000000ff00) << 8) |
+		((val & 0x000000ff000000ff) << 24);
+	return val;
+}
+
+/**
+ * \def rz_swap_2b_ut32
+ * \brief Swaps pairs of 2 bytes in a 32bit value
+ *
+ * # Example
+ *
+ * \code{.c}
+ * ut32 x =      0xCCDDEEFF;
+ * ut32 result = 0xDDCCFFEE;
+ * assert(rz_swap_2b_ut32(x) == result);
+ * \endcode
+ */
+static inline ut32 rz_swap_2b_ut32(ut32 val) {
+	val = ((val & 0xff00ff00) >> 8) | ((val & 0x00ff00ff) << 8);
+	return val;
+}
+
 /* Some "secured" functions, to do basic operation (mul, sub, add...) on integers */
 
 /**
