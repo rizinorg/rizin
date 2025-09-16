@@ -637,12 +637,12 @@ endif
 
 softfloat_dep = dependency('softfloat', required: get_option('use_sys_softfloat'), static: is_static_build)
 if not softfloat_dep.found()
-  softfloat_proj = subproject('softfloat', default_options: ['default_library=static'])
+  softfloat_proj = subproject('softfloat')
   softfloat_dep = softfloat_proj.get_variable('softfloat_dep')
 endif
 
 if meson.is_cross_build()
-  softfloat_cross_native_proj = subproject('softfloat_cross_native', default_options: ['default_library=static', 'cross_native=true'])
+  softfloat_cross_native_proj = subproject('softfloat_cross_native', default_options: ['cross_native=true'])
   softfloat_cross_native_dep = softfloat_cross_native_proj.get_variable('softfloat_dep')
 endif
 
