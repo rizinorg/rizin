@@ -159,16 +159,7 @@ int test_rz_str_search_io_simple(void) {
 	// Assign find options to the search options.
 	rz_search_opt_set_find_options(search_opts, find_opts);
 
-	// Please refer to librz/search/README.md for an explanation why string scan options
-	// are needed for an UTF-16 search.
-	RzUtilStrScanOptions scan_opt = {
-		.max_str_length = ELEMENT_SIZE,
-		.min_str_length = 4,
-		.prefer_big_endian = false,
-		.check_ascii_freq = false,
-	};
-
-	RzSearchCollection *collection = rz_search_collection_strings(&scan_opt, N_THREADS);
+	RzSearchCollection *collection = rz_search_collection_strings(NULL, N_THREADS);
 	mu_assert_notnull(collection, "NULL check failed");
 
 	// Now add the pattern we search for.
@@ -235,16 +226,7 @@ int test_rz_str_search_multiple_enc(void) {
 	// Assign find options to the search options.
 	rz_search_opt_set_find_options(search_opts, find_opts);
 
-	// Please refer to librz/search/README.md for an explanation why string scan options
-	// are needed for an UTF-16 search.
-	RzUtilStrScanOptions scan_opt = {
-		.max_str_length = ELEMENT_SIZE,
-		.min_str_length = 5,
-		.prefer_big_endian = true,
-		.check_ascii_freq = false,
-	};
-
-	RzSearchCollection *collection = rz_search_collection_strings(&scan_opt, N_THREADS);
+	RzSearchCollection *collection = rz_search_collection_strings(NULL, N_THREADS);
 	mu_assert_notnull(collection, "NULL check failed");
 
 	// Now add the patterns we search for. One for each encoding in the file.

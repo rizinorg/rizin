@@ -30,6 +30,36 @@ typedef struct string_search {
 } StringSearch;
 
 /**
+ * \brief Returns true if the string encoding requires scanning and conversion
+ * to UTF-8 for searching.
+ * Returns false if direct matching with PCRE2 is supported.
+ */
+RZ_API bool rz_search_str_enc_needs_scanning(RzStrEnc encoding) {
+	switch (encoding) {
+	case RZ_STRING_ENC_8BIT:
+	case RZ_STRING_ENC_UTF8:
+	case RZ_STRING_ENC_MUTF8:
+	case RZ_STRING_ENC_UTF16LE:
+	case RZ_STRING_ENC_UTF32LE:
+	case RZ_STRING_ENC_UTF16BE:
+	case RZ_STRING_ENC_UTF32BE:
+		return false;
+	case RZ_STRING_ENC_IBM037:
+	case RZ_STRING_ENC_IBM290:
+	case RZ_STRING_ENC_EBCDIC_UK:
+	case RZ_STRING_ENC_EBCDIC_US:
+	case RZ_STRING_ENC_EBCDIC_ES:
+	case RZ_STRING_ENC_GUESS:
+		return true;
+	case RZ_STRING_ENC_SETTINGS:
+		rz_warn_if_reached();
+		return true;
+	}
+	rz_warn_if_reached();
+	return true;
+}
+
+/**
  * \brief UTF-8 and the encoding of the real string (in memory) must not match.
  * For example, if the real string is UTF-16 or UTF-32.
  * Here we set the real (in memory encoded) string offsets and string length.
@@ -437,11 +467,10 @@ RZ_API bool rz_search_collection_string_add(
 	RzStrEnc encoding) {
 	rz_return_val_if_fail(col && regex_pattern, false);
 	StringSearch *ss = (StringSearch *)col->user;
-	if ((!rz_string_enc_is_utf_native_endian(encoding) ||
-		    !rz_string_code_points_align(encoding, match_alignment)) &&
-		ss->options.max_str_length == 0) {
+	if ((rz_search_str_enc_needs_scanning(encoding) &&
+		    ss->options.max_str_length == 0)) {
 		RZ_LOG_ERROR("Cannot add pattern to collection: RzUtilStrScanOptions::max_str_length == 0."
-			     "This is not allowed if the serached encoding requires string scanning.\n");
+			     "This is not allowed if the searched encoding requires string scanning.\n");
 		return false;
 	}
 

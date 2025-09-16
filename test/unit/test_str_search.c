@@ -431,16 +431,17 @@ bool test_rz_scan_strings_detect_length_utf8(void) {
  */
 bool test_rz_scan_strings_scan_options_error(void) {
 	RzSearchCollection *collection = rz_search_collection_strings(NULL, 4);
-	mu_assert_false(rz_search_collection_string_add(collection, "", 0, 1, RZ_STRING_ENC_UTF16BE), "Should fail for this config");
-	mu_assert_false(rz_search_collection_string_add(collection, "", 0, 1, RZ_STRING_ENC_UTF16LE), "Should fail for this config");
-	mu_assert_false(rz_search_collection_string_add(collection, "", 0, 1, RZ_STRING_ENC_UTF32BE), "Should fail for this config");
-	mu_assert_false(rz_search_collection_string_add(collection, "", 0, 1, RZ_STRING_ENC_UTF32LE), "Should fail for this config");
 	mu_assert_false(rz_search_collection_string_add(collection, "", 0, 1, RZ_STRING_ENC_IBM037), "Should fail for this config");
 	mu_assert_false(rz_search_collection_string_add(collection, "", 0, 1, RZ_STRING_ENC_IBM290), "Should fail for this config");
 	mu_assert_false(rz_search_collection_string_add(collection, "", 0, 1, RZ_STRING_ENC_EBCDIC_UK), "Should fail for this config");
 	mu_assert_false(rz_search_collection_string_add(collection, "", 0, 1, RZ_STRING_ENC_EBCDIC_US), "Should fail for this config");
 	mu_assert_false(rz_search_collection_string_add(collection, "", 0, 1, RZ_STRING_ENC_EBCDIC_ES), "Should fail for this config");
 	mu_assert_false(rz_search_collection_string_add(collection, "", 0, 1, RZ_STRING_ENC_GUESS), "Should fail for this config");
+	mu_assert_false(rz_search_collection_string_add(collection, "", 0, 1, RZ_STRING_ENC_SETTINGS), "Should fail for this config");
+	mu_assert_true(rz_search_collection_string_add(collection, "some_pattern", 0, 1, RZ_STRING_ENC_UTF16BE), "Should succeed for this config");
+	mu_assert_true(rz_search_collection_string_add(collection, "some_pattern", 0, 1, RZ_STRING_ENC_UTF16LE), "Should succeed for this config");
+	mu_assert_true(rz_search_collection_string_add(collection, "some_pattern", 0, 1, RZ_STRING_ENC_UTF32BE), "Should succeed for this config");
+	mu_assert_true(rz_search_collection_string_add(collection, "some_pattern", 0, 1, RZ_STRING_ENC_UTF32LE), "Should succeed for this config");
 	mu_assert_true(rz_search_collection_string_add(collection, "some_pattern", 0, 1, RZ_STRING_ENC_8BIT), "Should succeed for this config");
 	mu_assert_true(rz_search_collection_string_add(collection, "some_pattern", 0, 1, RZ_STRING_ENC_UTF8), "Should succeed for this config");
 	rz_search_collection_free(collection);

@@ -287,6 +287,8 @@ RZ_API RZ_OWN RzSearchCollection *rz_search_collection_magic(RZ_NONNULL const ch
 RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_search_on_io(RZ_BORROW RZ_NONNULL RzSearchOpt *opt, RZ_BORROW RZ_NONNULL RzSearchCollection *col, RZ_BORROW RZ_NONNULL RzIO *io, RZ_BORROW RZ_NONNULL RzList /*<RzIOMap *>*/ *search_in);
 RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_search_on_buffer(RZ_BORROW RZ_NONNULL RzSearchOpt *opt, RZ_BORROW RZ_NONNULL RzSearchCollection *col, RZ_BORROW RZ_NONNULL RzBuffer *buffer);
 
+RZ_API bool rz_search_str_enc_needs_scanning(RzStrEnc encoding);
+
 #ifdef __cplusplus
 }
 #endif
