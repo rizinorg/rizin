@@ -681,7 +681,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install meson ninja PyYAML
+          pip install meson==1.8.3 ninja PyYAML
       - name: Extract rizin version
         shell: pwsh
         run: echo "branch=$(python sys/version.py)" >> $Env:GITHUB_OUTPUT
