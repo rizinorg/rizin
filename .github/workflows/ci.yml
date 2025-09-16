@@ -675,6 +675,8 @@ jobs:
             bits: 32
     steps:
       - uses: actions/checkout@v5
+      - name: Install Inno Setup
+        run: choco install innosetup
       - uses: actions/setup-python@v6
       - name: Install dependencies
         run: |
