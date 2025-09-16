@@ -13,10 +13,9 @@ endif
 
 inc = include_directories('.')
 
-libxxhash = library('xxhash',
+libxxhash = static_library('xxhash',
     ['xxhash.c'],
     include_directories : inc,
-    version : meson.project_version(),
     install : false)
 
 xxhash_dep = declare_dependency(
