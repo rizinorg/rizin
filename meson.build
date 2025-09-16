@@ -635,7 +635,7 @@ if r.returncode() == 1 and get_option('subprojects_check')
   error(subproject_clean_error_msg)
 endif
 
-softfloat_dep = dependency('softfloat', required: get_option('use_sys_softfloat'), static: true)
+softfloat_dep = dependency('softfloat', required: get_option('use_sys_softfloat'), static: is_static_build)
 if not softfloat_dep.found()
   softfloat_proj = subproject('softfloat', default_options: ['default_library=static'])
   softfloat_dep = softfloat_proj.get_variable('softfloat_dep')
