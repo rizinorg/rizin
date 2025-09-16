@@ -99,7 +99,7 @@ static RZ_OWN void *regex_new(RZ_NONNULL const char *pattern, RzRegexFlags cflag
 		}
 #endif
 	} else if (pcre2_word_width == 16) {
-		ut16 *utf16_pat = rz_str_utf8_to_utf16(pat, false);
+		ut16 *utf16_pat = rz_str_utf8_to_utf16(pat, RZ_HOST_IS_BIG_ENDIAN);
 		regex = pcre2_compile_16(
 			(PCRE2_SPTR16)utf16_pat,
 			PCRE2_ZERO_TERMINATED,
