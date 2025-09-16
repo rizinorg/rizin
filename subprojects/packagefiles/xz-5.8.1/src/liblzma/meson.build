@@ -120,7 +120,7 @@ endif
 lzmainc = include_directories('api', 'common',
   'check', 'lz', 'rangecoder', 'lzma', 'delta', 'simple', '../common')
 
-liblzma = library('lzma', lzma_sources,
+liblzma = static_library('lzma', lzma_sources,
   main_dec_sources, main_enc_sources, check_sources,
   simplefilter_sources, lzma1_sources,
   lz_sources, delta_sources,
