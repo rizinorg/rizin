@@ -349,7 +349,6 @@ RZ_API bool rz_search_collection_strings_check_config_improvements(
 	}
 	StringSearch *ss = col->user;
 	void **it;
-	;
 	rz_pvector_foreach (ss->strings, it) {
 		RzDetectedString *ds = *it;
 		if (ds->encoding == RZ_STRING_ENC_GUESS) {
