@@ -960,6 +960,15 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			rz_core_block_read(r);
 			free(buf);
 			free(path);
+			if (asmarch) {
+				rz_config_set(r->config, "asm.arch", asmarch);
+			}
+			if (asmbits) {
+				rz_config_set(r->config, "asm.bits", asmbits);
+			}
+			if (asmos) {
+				rz_config_set(r->config, "asm.os", asmos);
+			}
 			// TODO: load rbin thing
 		} else {
 			RZ_LOG_ERROR("Cannot slurp from stdin\n");

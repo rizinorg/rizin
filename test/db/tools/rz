@@ -228,7 +228,7 @@ CMDS=<<EOF
 EOF
 EXPECT=<<EOF
             0x00000004      add   byte [rax], al
-            0x00000004      add   byte [rax], al
-            0x00000004      add   byte [rax], al
+            0x00000004      add   byte [eax], al
+            0x00000004      nop
 EOF
 RUN
