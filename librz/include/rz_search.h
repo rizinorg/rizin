@@ -279,7 +279,6 @@ RZ_API bool rz_search_collection_strings_check_config_improvements(
 	RZ_NULLABLE const RzUtilStrScanOptions *scan_opt,
 	bool print_msg);
 
-RZ_API bool rz_search_collection_match_any(RZ_NULLABLE RzSearchCollection *sc, RZ_NONNULL const ut8 *buffer, size_t length);
 RZ_API void rz_search_collection_free(RZ_NULLABLE RzSearchCollection *sc);
 
 RZ_API RZ_OWN RzSearchCollection *rz_search_collection_magic(RZ_NONNULL const char *magic_dir);
