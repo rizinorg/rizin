@@ -217,3 +217,18 @@ EXPECT=<<EOF
 0x00000000  0d0a 0aff ffff ffff ffff ffff ffff ffff  ................
 EOF
 RUN
+
+NAME=honor -a -b on stdin bin
+FILE=--
+CMDS=<<EOF
+(catbin arch bit; !cat bins/flat/=.bin | rizin -N -e scr.color=0 -a ${arch} -b ${bit} -qc "s 4;pd 1" -)
+.(catbin x86 64)
+.(catbin x86 32)
+.(catbin mips 64)
+EOF
+EXPECT=<<EOF
+            0x00000004      add   byte [rax], al
+            0x00000004      add   byte [rax], al
+            0x00000004      add   byte [rax], al
+EOF
+RUN
