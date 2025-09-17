@@ -12,6 +12,22 @@
 #include <rz_util/rz_mem.h>
 #include "search_internal.h"
 
+typedef struct byte_search {
+	/**
+	 * \brief Bytes patterns to search.
+	 * Each thread gets its own thread safe copy of the patterns to search.
+	 * The outer vector is indexed by thread ID.
+	 */
+	RzPVector /*<RzPVector<BytesPattern *> *>*/ *patterns;
+	/**
+	 * \brief This queue holds the thread ids. Each worker is draws a
+	 * one number and then pick its thread safe object for searching bytes from
+	 * above.
+	 * On return it must push its ID into the queue again to release it.
+	 */
+	RzThreadQueue *thread_ids;
+} ByteSearch;
+
 /**
  * \brief Initialize a new search bytes pattern and return it.
  *
@@ -74,7 +90,12 @@ RZ_API size_t rz_search_bytes_pattern_len(RZ_NONNULL const RzSearchBytesPattern 
 
 RZ_API RZ_OWN RzSearchBytesPattern *rz_search_bytes_pattern_copy(RZ_NONNULL RZ_BORROW RzSearchBytesPattern *hp) {
 	rz_return_val_if_fail(hp, NULL);
-	return rz_search_bytes_pattern_new(rz_new_copy(hp->length, hp->bytes), rz_new_copy(hp->length, hp->mask), hp->length, hp->pattern_desc, hp->regex != NULL);
+	return rz_search_bytes_pattern_new(
+		rz_new_copy(hp->length, hp->bytes),
+		hp->mask ? rz_new_copy(hp->length, hp->mask) : NULL,
+		hp->length,
+		hp->pattern_desc,
+		hp->regex != NULL);
 }
 
 static bool parse_custom_mask(const char *bytes_pattern, const RzRegexMatch *mask_match, const RzRegexMatch *bytes_match, ut8 *mask) {
@@ -214,15 +235,18 @@ static bool bytes_find(RzSearchFindOpt *fopts, void *user, ut64 address, const R
 	ut64 size = 0;
 	// Remove const classifier. Because the buffer API is not constified, unfortunately.
 	const ut8 *raw_buf = rz_buf_get_whole_hot_paths((RzBuffer *)buffer, &size);
+	ByteSearch *bs = (ByteSearch *)user;
+	size_t *thread_id = rz_th_queue_pop(bs->thread_ids, false);
+	if (!thread_id) {
+		return false;
+	}
+	RzPVector *patterns = rz_pvector_at(bs->patterns, *thread_id);
 	void **it = NULL;
-	RzPVector /*<BytesPattern *>*/ *patterns = (RzPVector *)user;
 	*n_hits = 0;
 	rz_pvector_foreach (patterns, it) {
 		RzSearchBytesPattern *hp = (RzSearchBytesPattern *)*it;
 		if (hp->regex) {
-			RzRegexMulti *re = rz_regex_multi_clone(hp->regex, true);
 			RzPVector *matches = fopts->match_overlap ? rz_regex_match_all_overlap(hp->regex, (const char *)raw_buf, size, 0, RZ_REGEX_DEFAULT) : rz_regex_match_all(hp->regex, (const char *)raw_buf, size, 0, RZ_REGEX_DEFAULT);
-			rz_regex_free_multi_clone(re);
 			void **it;
 			RzPVector *match;
 			rz_pvector_foreach (matches, it) {
@@ -236,7 +260,7 @@ static bool bytes_find(RzSearchFindOpt *fopts, void *user, ut64 address, const R
 				if (!hit || !rz_th_queue_push(hits, hit, true)) {
 					rz_search_hit_free(hit);
 					rz_pvector_free(matches);
-					return false;
+					goto release_thread_id_ret_false;
 				}
 				(*n_hits)++;
 			}
@@ -263,31 +287,81 @@ static bool bytes_find(RzSearchFindOpt *fopts, void *user, ut64 address, const R
 			RzSearchHit *hit = rz_search_hit_new(hp->pattern_desc, address + offset, hp->length, NULL);
 			if (!hit || !rz_th_queue_push(hits, hit, true)) {
 				rz_search_hit_free(hit);
-				return false;
+				goto release_thread_id_ret_false;
 			}
 			(*n_hits)++;
 			offset += fopts->match_overlap ? 1 : hp->length;
 		}
 	}
+	rz_th_queue_push(bs->thread_ids, thread_id, true);
 	return true;
+
+release_thread_id_ret_false:
+	rz_th_queue_push(bs->thread_ids, thread_id, true);
+	return false;
 }
 
 static bool bytes_is_empty(void *user) {
-	return rz_pvector_empty((RzPVector *)user);
+	ByteSearch *bs = (ByteSearch *)user;
+	void **it;
+	rz_pvector_foreach (bs->patterns, it) {
+		RzPVector *pv = *it;
+		if (!rz_pvector_empty(pv)) {
+			return false;
+		}
+	}
+	return true;
+}
+
+static void bytes_free(void *user) {
+	if (!user) {
+		return;
+	}
+	ByteSearch *bs = (ByteSearch *)user;
+	rz_pvector_free(bs->patterns);
+	free(bs);
 }
 
 /**
  * \brief      Allocates and initialize a RzSearchCollection for hexadecimal byte searching.
  *
+ * \param      n_threads   Number of threads for the search. Must be >0.
+ *
  * \return     On success returns a valid pointer, otherwise NULL
  */
-RZ_API RZ_OWN RzSearchCollection *rz_search_collection_bytes() {
-	RzPVector /*<BytesPattern *>*/ *patterns = rz_pvector_new((RzPVectorFree)rz_search_bytes_pattern_free);
-	if (!patterns) {
-		RZ_LOG_ERROR("search: failed to initialize bytes collection\n");
+RZ_API RZ_OWN RzSearchCollection *rz_search_collection_bytes(size_t n_threads) {
+	rz_return_val_if_fail(n_threads, NULL);
+	ByteSearch *bs = RZ_NEW0(ByteSearch);
+	if (!bs) {
+		RZ_LOG_ERROR("search: failed to allocate ByteSearch\n");
 		return NULL;
 	}
-	return rz_search_collection_new_bytes_space(bytes_find, bytes_is_empty, (RzSearchFreeCallback)rz_pvector_free, patterns);
+
+	bs->patterns = rz_pvector_new((RzPVectorFree)rz_pvector_free);
+	bs->thread_ids = rz_th_queue_new(n_threads, NULL);
+	if (!bs->patterns || !bs->thread_ids) {
+		goto error;
+	}
+	for (size_t t = 0; t < n_threads; ++t) {
+		RzPVector /*<BytesPattern *>*/ *thread_patterns = rz_pvector_new((RzPVectorFree)rz_search_bytes_pattern_free);
+		if (!thread_patterns) {
+			goto error;
+		}
+		size_t *t_ptr = RZ_NEW(size_t);
+		if (!t_ptr) {
+			goto error;
+		}
+		*t_ptr = t;
+		if (!rz_th_queue_push(bs->thread_ids, t_ptr, true)) {
+			goto error;
+		}
+		rz_pvector_push(bs->patterns, thread_patterns);
+	}
+	return rz_search_collection_new_bytes_space(bytes_find, bytes_is_empty, bytes_free, bs);
+error:
+	RZ_LOG_ERROR("search: failed to initialize bytes collection\n");
+	bytes_free(bs);
+	return NULL;
 }
 
 /**
@@ -306,9 +380,24 @@ RZ_API bool rz_search_collection_bytes_add_pattern(RZ_NONNULL RzSearchCollection
 		return false;
 	}
 
-	if (!rz_pvector_push((RzPVector *)col->user, bytes_pattern)) {
-		RZ_LOG_ERROR("search: cannot add byte pattern to search.\n");
-		return false;
+	RzSearchBytesPattern *hp = bytes_pattern;
+	ByteSearch *bs = (ByteSearch *)col->user;
+	size_t i = 0;
+	void **it;
+	rz_pvector_foreach (bs->patterns, it) {
+		RzPVector *thread_patterns = *it;
+		if (i++ > 0) {
+			hp = rz_search_bytes_pattern_copy(bytes_pattern);
+		}
+		if (!hp) {
+			return false;
+		}
+
+		if (!rz_pvector_push(thread_patterns, hp)) {
+			RZ_LOG_ERROR("search: cannot add bytes pattern.\n");
+			rz_search_bytes_pattern_free(hp);
+			return false;
+		}
 	}
 	return true;
 }
@@ -338,13 +427,19 @@ RZ_API bool rz_search_collection_bytes_add(RZ_NONNULL RzSearchCollection *col, R
 		return false;
 	}
 
-	RzSearchBytesPattern *hp = rz_search_bytes_pattern_new(rz_new_copy(length, bytes), rz_new_copy(length, mask), length, pattern_desc, false);
-	if (!hp) {
-		return false;
-	} else if (!rz_pvector_push((RzPVector *)col->user, hp)) {
-		RZ_LOG_ERROR("search: cannot add bytes pattern.\n");
-		rz_search_bytes_pattern_free(hp);
-		return false;
+	ByteSearch *bs = (ByteSearch *)col->user;
+	void **it;
+	rz_pvector_foreach (bs->patterns, it) {
+		RzPVector *thread_patterns = *it;
+		RzSearchBytesPattern *hp = rz_search_bytes_pattern_new(rz_new_copy(length, bytes), rz_new_copy(length, mask), length, pattern_desc, false);
+		if (!hp) {
+			return false;
+		}
+		if (!rz_pvector_push(thread_patterns, hp)) {
+			RZ_LOG_ERROR("search: cannot add bytes pattern.\n");
+			rz_search_bytes_pattern_free(hp);
+			return false;
+		}
 	}
 	return true;
 }

@@ -144,11 +144,10 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_bytes(RZ_NONNULL RzCore
 	RzList *boundaries = NULL;
 	RzSearchOpt *search_opts = NULL;
 
-	RzSearchCollection *collection = rz_search_collection_bytes();
+	RzSearchCollection *collection = rz_search_collection_bytes(rz_search_opt_get_max_threads(user_opts));
 	if (!collection ||
 		!rz_search_collection_bytes_add_pattern(collection, pattern)) {
 		RZ_LOG_ERROR("core: Failed to initialize search collection.\n");
-		rz_search_bytes_pattern_free(pattern);
 		goto quit;
 	}
 

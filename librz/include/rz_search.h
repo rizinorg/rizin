@@ -261,7 +261,7 @@ RZ_API bool rz_search_collection_entropy_add(RZ_NONNULL RzSearchCollection *col,
 RZ_API RZ_OWN RzSearchCollection *rz_search_collection_values();
 RZ_API bool rz_search_collection_values_add(RZ_NONNULL RzSearchCollection *col, RZ_NONNULL RZ_OWN RzVector /*<RzSearchValueRange>*/ *vranges);
 
-RZ_API RZ_OWN RzSearchCollection *rz_search_collection_bytes();
+RZ_API RZ_OWN RzSearchCollection *rz_search_collection_bytes(size_t n_threads);
 RZ_API bool rz_search_collection_bytes_add(RZ_NONNULL RzSearchCollection *col, RZ_NULLABLE const char *pattern_desc, RZ_NONNULL const ut8 *bytes, RZ_NULLABLE const ut8 *mask, size_t length);
 RZ_API bool rz_search_collection_bytes_add_pattern(RZ_NONNULL RzSearchCollection *col, RZ_NONNULL RZ_OWN RzSearchBytesPattern *bytes_pattern);
 
