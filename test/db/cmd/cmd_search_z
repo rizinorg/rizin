@@ -1509,3 +1509,16 @@ EXPECT=<<EOF
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=Check adjusting of offsets and lengths
+FILE=bins/cmd/search/string_encodings/regex_search.russian.utf8.utf32le.utf16be
+CMDS=<<EOF
+/z "Æ}º}Æ}µ" ei ibm037
+ps ibm037 unprintable @ hit.string.ibm037.0
+EOF
+EXPECT=<<EOF
+0x00000050 7 hit.string.ibm037.0
+Æ}º}Æ}µ
+EOF
+EXPECT_ERR=
+RUN

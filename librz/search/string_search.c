@@ -72,7 +72,8 @@ static void align_offsets(RzUtilStrScanOptions options, RzStrEnc encoding, RzDet
 	}
 
 	*str_mem_offset = detected->byte_mem_map[group0->start];
-	*str_mem_len = detected->byte_mem_map[group0->start + group0->len] - *str_mem_offset;
+	ut64 end = detected->byte_mem_map[group0->start + group0->len];
+	*str_mem_len = end - *str_mem_offset;
 }
 
 static bool native_string_find(RzSearchFindOpt *fopt, RzDetectedString *find, ut64 offset, const RzBuffer *buffer,
@@ -353,6 +354,7 @@ static void string_free(void *user) {
  *                         It can be NULL if string scanning is not required.
  *                         rz_search_collection_string_add() will refuse in this case to
  *                         add patterns to the collection which require it.
+ *                         Any non-UTF or guessed encoding requires scanning.
  * \param      n_threads   Number of threads for the search. Must be >0.
  *
  * \return     On success returns a valid pointer, otherwise NULL

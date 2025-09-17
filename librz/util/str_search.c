@@ -240,6 +240,22 @@ static inline size_t buf_look_ahead(const RzUtilStrScanOptions *opt, RzStrEnc en
 #define SCANNING_STACK_BUF_CHARS 16
 #define SCANNING_STACK_BUF_SIZE  (RZ_UNICODE_MAX_BYTES_PER_CHAR * SCANNING_STACK_BUF_CHARS)
 
+static void add_byte_mem_mapping(ut64 **byte_mem_map, size_t *byte_mem_map_size, size_t utf8_char_offset, size_t mem_offset) {
+	size_t size = *byte_mem_map_size;
+	if (!*byte_mem_map) {
+		*byte_mem_map = RZ_NEWS0(ut64, SCANNING_STACK_BUF_SIZE);
+		*byte_mem_map_size += SCANNING_STACK_BUF_SIZE;
+	} else if (utf8_char_offset >= size) {
+		*byte_mem_map = realloc(*byte_mem_map, (size + SCANNING_STACK_BUF_SIZE) * sizeof(ut64));
+		*byte_mem_map_size += SCANNING_STACK_BUF_SIZE;
+	}
+	if (utf8_char_offset >= *byte_mem_map_size) {
+		// Invalid string
+		return;
+	}
+	(*byte_mem_map)[utf8_char_offset] = mem_offset;
+}
+
 static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut64 needle, const ut64 to,
 	RzStrEnc str_type, bool ascii_only, const RzUtilStrScanOptions *opt, bool test_false_positives) {
 	rz_return_val_if_fail(str_type != RZ_STRING_ENC_GUESS, NULL);
@@ -319,16 +335,7 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 		}
 
 		if (!rz_string_enc_same_char_width_as_utf8(str_type)) {
-			size_t utf8_char_offset = i;
-			if (!byte_mem_map) {
-				byte_mem_map = RZ_NEWS0(ut64, SCANNING_STACK_BUF_SIZE);
-				byte_mem_map_size += SCANNING_STACK_BUF_SIZE;
-			} else if (utf8_char_offset >= byte_mem_map_size) {
-				byte_mem_map = realloc(byte_mem_map, (byte_mem_map_size + SCANNING_STACK_BUF_SIZE) * sizeof(ut64));
-				byte_mem_map_size += SCANNING_STACK_BUF_SIZE;
-			}
-			size_t mem_offset = needle;
-			byte_mem_map[utf8_char_offset] = mem_offset;
+			add_byte_mem_mapping(&byte_mem_map, &byte_mem_map_size, i, needle);
 		}
 
 		needle += char_bytes;
@@ -361,6 +368,7 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 			break;
 		}
 	}
+	add_byte_mem_mapping(&byte_mem_map, &byte_mem_map_size, i, needle);
 
 	int strbuf_size = i;
 	if (char_count >= opt->min_str_length && char_count <= opt->max_str_length) {

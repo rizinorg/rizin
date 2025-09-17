@@ -25,7 +25,7 @@ typedef struct {
 	/**
 	 * \brief Maps UTF-8 code point offsets to their memory offset.
 	 * This is necessary if the string's character width in memory doesn't match UTF-8 character width.
-	 * E.g. the in memory string is UTF-32 and has a character width of 4 bytes.
+	 * E.g. the in memory string is IBM270 (Japanese) and has a character width of 1 bytes.
 	 * But the decoded string above is always UTF-8 and has a character width of 1-4 bytes.
 	 *
 	 * It is NULL if the string encoding in memory is UTF-8 or ASCII.
