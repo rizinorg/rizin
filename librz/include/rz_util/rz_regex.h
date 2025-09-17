@@ -74,7 +74,7 @@ typedef struct {
 		RzRegex16 *re16;
 		RzRegex32 *re32;
 	};
-	void *jit_stack; ///< The JIT stac for this pattern. Must only be used by one thread at a time.
+	void *jit_stack; ///< The JIT stack for this pattern. Must be used only by one thread at a time.
 } RzRegexMulti;
 
 typedef struct {
