@@ -126,7 +126,7 @@ RZ_API bool rz_search_pattern(RzSearch *s, ut64 from, ut64 to);
 #endif // RZ_API
 
 //
-// New search.
+// NEW SEARCH BEGIN
 // Everything above is only there to not break the build.
 //
 

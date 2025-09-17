@@ -544,7 +544,7 @@ RZ_API void rz_search_kw_reset(RzSearch *s) {
 }
 
 //
-// New search.
+// NEW SEARCH BEGIN
 // Everything above is only there to not break the build.
 //
 
