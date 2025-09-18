@@ -18,7 +18,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 }
 
 RzAsmPlugin rz_asm_plugin_h8500 = {
-	.name = "h8300",
+	.name = "h8500",
 	.license = "LGPL3",
 	.desc = "Hitachi/Renesas H8/500 disassembly plugin",
 	.arch = "h8500",

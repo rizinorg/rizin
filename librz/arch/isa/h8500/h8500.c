@@ -30,7 +30,6 @@ static bool h8500_ea_parse(const ut8 *buf, ut8 len, H8500Instruction *ins) {
 		uint8_t b = buf[0];
 		if ((ea->nibbles[0] & MASK_CONST) == (b >> 4) &&
 			(ea->nibbles[1] & MASK_CONST) == (b & 0xf)) {
-			printf("match %s\n", ea->mnemonic);
 			ins->ea_describe = ea;
 			return true;
 		}
