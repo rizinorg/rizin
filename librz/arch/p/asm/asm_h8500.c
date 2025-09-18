@@ -10,8 +10,11 @@
 
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	H8500Instruction ins = { 0 };
-	h8500_instruction_parse(buf, len, &ins);
-	return -1;
+	if (!h8500_instruction_parse(buf, len, &ins)) {
+		return -1;
+	}
+	rz_asm_op_setf_asm(op, "%s%s%s", ins.opcode_describe->mnemonic, "", "");
+	return ins.size;
 }
 
 RzAsmPlugin rz_asm_plugin_h8500 = {
