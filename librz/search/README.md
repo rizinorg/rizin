@@ -5,7 +5,8 @@ Rizin has two search implementations: the new one and the legacy one.
 This document only describes the new implementation.
 It is implemented in [librz/search/search.c](https://github.com/rizinorg/rizin/blob/dev/librz/search/search.c) and [rz_search.h](https://github.com/rizinorg/rizin/blob/dev/librz/include/rz_search.h),
 starting at the comment `// NEW SEARCH BEGIN`.
-Everything above this comment is the legacy search code and is not discussed here.
+Everything above this comment is the legacy search code and is not discussed here
+because the it will be replaced step by step to the new design.
 
 ## Examples
 
@@ -47,77 +48,75 @@ The three essential components of the search are the
 The general workflow of a search is:
 
 1. Create a collection and configure it with the options.
-1. Add one or more jobs to the collection.
-1. Start the search on a search space (e.g., a buffer of bytes or a graph).
-1. The search space is divided into chunks, each of which is given to a `find worker` in a thread.
-1. The worker searches for the different jobs and reports any hits.
-1. After the whole search space is covered, it returns the hits to the user.
+2. Add one or more jobs to the collection.
+3. Start the search on a search space (e.g., a buffer of bytes or a graph).
+4. The search space is divided into chunks, each of which is given to a "find worker" in a thread.
+5. The worker searches for the different jobs and reports any hits.
+6. After the whole search space is covered, it returns the hits to the user.
 
 ```
-              │                                                             
-              │                                                             
-              │                                                             
-    Create    │   ┌───────────┐      ┌─────────────────────┐                
- 1. Collection│   │Collection │      │ Search/Find Options │                
-    & options │   └───────────┘      └─────────────────────┘                
-              │                                                             
-              │                                                             
- ─────────────┼──────────────────────────────────────────────────────────── 
-              │   ┌───────────┐      ┌─────────────────────┐                
-              │   │Collection │      │ Search/Find Options │                
-  2. Add jobs │   ├────┬─┬────┤      └─────────────────────┘                
-              │   │Job1│ │Job2│                                             
-              │   └────┘ └────┘                                             
-──────────────┼──────────────────────────────────────────────────────────── 
-              │   ┌───────────┐      ┌─────────────────────┐  ┌────────┐    
- 3. Start     │   │Collection ├──┐   │ Search/Find Options │  │ Buffer │    
-    Search    │   ├────┬─┬────┤  │   └─────────┬───────────┘  └───┬────┘    
-              │   │Job1│ │Job2│  │             │                  │         
-  (here on    │   └────┘ └────┘  └───────┐     └──────┐        ┌──┘         
-   a buffer)  │                          │            │        │            
-              │                          ▼            ▼        ▼            
-              │   rz_search_on_buffer(collection , options, buffer, ...)    
-              │                                                             
-              │                                                             
- ─────────────┼─────────────────────────────────────────────────────────────
-              │              ┌────────┐                                     
-              │              │ Buffer │                                     
- 4. Divide    │              └───┬────┘                                     
-    and       │        ┌─────────┼────────┐                                 
-    dispatch  │        ▼         ▼        ▼                                 
-              │     ┌──────┐┌──────┐   ┌──────┐                             
-              │     │Chunk0││Chunk1│...│ChunkM│ : M chunks                  
-              │     └──┬───┘└───┬──┘│  └──────┘                             
-              │        │        │   │                                       
-              │        │        │   │                                       
-              │      ┌─┘        │   └─────────┐                             
-              │      ▼          ▼             ▼                             
-              │    worker_0() worker_1() ... worker_n() : n threads         
-              │          ▲       ▲              ▲                           
-              │          ├───────┴──────────────┘                           
-              │   ┌──────┴───────┐                                          
-              │   │ Find options │                                          
-              │   └──────────────┘                                          
-              │                                                             
- ─────────────┼──────────────────────────────────────────────────────────── 
-              │                                                             
- 5. Search    │                                                             
-              │                 │foreach job in { Job1, Job2 }:             
-              │                 │  hits = perform_seach(chunk, job)         
-              │   worker()─────►│  report_hits(queue, hits)                 
-              │                 │                                           
-              │                                                             
- ─────────────┼──────────────────────────────────────────────────────────── 
-              │                                                             
- 6. Report    │                                                             
-    to user   │                           │ // Wait for workers to finish   
-              │                           │                                 
-              │  rz_search_on_buffer()───►│ hits = pop_all(queue)           
-              │                           │ return hits                     
-              │                                                             
+                │                                                             
+                │                                                             
+                │                                                             
+    Create      │   ┌────────────┐      ┌─────────────────────┐                
+ 1. Collection  │   │ Collection │      │ Search/Find Options │                
+    & options   │   └────────────┘      └─────────────────────┘                
+                │                                                             
+                │                                                             
+────────────────┼──────────────────────────────────────────────────────────── 
+                │   ┌────────────┐      ┌─────────────────────┐                
+                │   │ Collection │      │ Search/Find Options │                
+ 2. Add jobs    │   ├────┬──┬────┤      └─────────────────────┘                
+                │   │Job1│  │Job2│                                             
+                │   └────┘  └────┘                                             
+────────────────┼──────────────────────────────────────────────────────────── 
+                │   ┌────────────┐      ┌─────────────────────┐  ┌────────┐    
+ 3. Start       │   │ Collection ├──┐   │ Search/Find Options │  │ Buffer │    
+    Search      │   ├────┬──┬────┤  │   └─────────┬───────────┘  └───┬────┘    
+                │   │Job1│  │Job2│  │             │                  │         
+  (here on      │   └────┘  └────┘  └───────┐     └──────┐        ┌──┘         
+   a buffer)    │                           │            │        │            
+                │                           ▼            ▼        ▼            
+                │    rz_search_on_buffer(collection , options, buffer, ...)    
+                │                                                             
+                │                                                             
+────────────────┼─────────────────────────────────────────────────────────────
+                │              ┌────────┐                                     
+                │              │ Buffer │                                     
+ 4. Divide      │              └───┬────┘                                     
+    and         │        ┌─────────┼────────┐                                 
+    dispatch    │        ▼         ▼        ▼                                 
+                │     ┌──────┐┌──────┐   ┌──────┐                             
+                │     │Chunk0││Chunk1│...│ChunkM│ : M chunks                  
+                │     └──┬───┘└───┬──┘│  └──────┘                             
+                │        │        │   │                                       
+                │        │        │   │                                       
+                │      ┌─┘        │   └─────────┐                             
+                │      ▼          ▼             ▼                             
+                │    worker_0() worker_1() ... worker_n() : n threads         
+                │          ▲       ▲              ▲                           
+                │          ├───────┴─────────┬────┘                           
+                │   ┌──────┴───────┐  ┌──────┴───────┐                 
+                │   │ Find options │  │  Job1, Job2  │                 
+                │   └──────────────┘  └──────────────┘                 
+                │                                                             
+────────────────┼──────────────────────────────────────────────────────────── 
+                │                                                             
+ 5. Search      │                                                             
+                │                 │foreach job in { Job1, Job2 }:             
+                │                 │  hits = perform_search(chunk, job)         
+                │   worker()─────►│  report_hits(queue, hits)                 
+                │                 │                                           
+                │                                                             
+────────────────┼──────────────────────────────────────────────────────────── 
+                │                                                             
+ 6. Report      │                                                             
+    to user     │                           │ // Wait for workers to finish   
+                │                           │                                 
+                │  rz_search_on_buffer()───►│ hits = pop_all(queue)           
+                │                           │ return hits                     
+                │                                                             
 ```
-
-Let's go over the most important components in more detail.
 
 ### Search Collection
 
