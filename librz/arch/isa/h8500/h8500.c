@@ -88,12 +88,12 @@ static bool h8500_ea_parse(const ut8 *buf, ut8 len, H8500Instruction *ins) {
 				case H8500_RI:
 				case H8500_RI_PRE_DEC:
 				case H8500_RI_POST_INC:
-					snprintf(nummber_buf, RZ_ARRAY_SIZE(nummber_buf), "%d", ins->ea.rn);
-					rz_str_replace(ins->ea.op_str, "n", nummber_buf, 0);
+					snprintf(nummber_buf, RZ_ARRAY_SIZE(nummber_buf), "r%d", ins->ea.rn);
+					rz_str_replace(ins->ea.op_str, "Rn", nummber_buf, 0);
 					break;
 				case H8500_RI_DISP:
-					snprintf(nummber_buf, RZ_ARRAY_SIZE(nummber_buf), "%d", ins->ea.ri_disp.rn);
-					rz_str_replace(ins->ea.op_str, "n", nummber_buf, 0);
+					snprintf(nummber_buf, RZ_ARRAY_SIZE(nummber_buf), "r%d", ins->ea.ri_disp.rn);
+					rz_str_replace(ins->ea.op_str, "Rn", nummber_buf, 0);
 					snprintf(nummber_buf, RZ_ARRAY_SIZE(nummber_buf), "%d", ins->ea.ri_disp.disp);
 					rz_str_replace(ins->ea.op_str, "d", nummber_buf, 0);
 					break;
