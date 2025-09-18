@@ -33,19 +33,20 @@ typedef enum {
  */
 typedef enum {
 	Rrr = 1 << 8,
-	Disp8 = 2 << 8,
-	Disp16 = 3 << 8,
-	Addr8 = 4 << 8,
-	Addr16 = 5 << 8,
-	Data8 = 6 << 8,
-	Data16 = 7 << 8,
-	Placeholder = 8 << 8,
+	Disp8 = 1 << (8 + 1),
+	Disp16 = 1 << (8 + 2),
+	Addr8 = 1 << (8 + 3),
+	Addr16 = 1 << (8 + 4),
+	Data8 = 1 << (8 + 5),
+	Data16 = 1 << (8 + 6),
+	Placeholder = 1 << (8 + 7),
 	Sz = 0b1 << 16,
 	END = 0b1 << 31,
 } H8500OperandNibbleFlag;
 
 enum {
-	MASK_CONST = 0xff,
+	MASK_CONST_OFF = 24,
+	MASK_CONST = 0xff << MASK_CONST_OFF,
 	MASK_Rrr = 0b111,
 	MASK_Sz = 0b1000,
 };
