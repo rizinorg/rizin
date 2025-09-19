@@ -8,6 +8,7 @@
 #include <rz_types.h>
 
 typedef enum {
+	H8500_INVALID,
 	H8500_RD,
 	H8500_RI,
 	H8500_RI_DISP,
@@ -40,7 +41,10 @@ typedef enum {
 	Data8 = 1 << (8 + 5),
 	Data16 = 1 << (8 + 6),
 	Placeholder = 1 << (8 + 7),
-	Sz = 0b1 << 16,
+	Sz = 1 << 16,
+	HasOperand = 1 << 17,
+	DST = 1 << 18,
+	SRC = 1 << 19,
 	END = 0b1 << 31,
 } H8500OperandNibbleFlag;
 
@@ -62,7 +66,8 @@ typedef struct {
 } H8500EADescribe;
 
 typedef enum {
-	ADD_Q
+	ADD_Q,
+	ADDS,
 } H8500InstructionId;
 
 typedef struct {
@@ -70,7 +75,7 @@ typedef struct {
 	const char *mnemonic;
 	const char *op_mnemonic;
 	uint8_t size;
-	H8500Pat pats[4];
+	H8500Pat pats[8];
 	uint8_t args[4];
 } H8500OpcodeDescribe;
 
@@ -96,6 +101,7 @@ typedef struct {
 	uint8_t size;
 	uint8_t bytes[4];
 	H8500Operand operands[4];
+	ut8 num_operands;
 	H8500Operand ea;
 	char ops_str[32];
 } H8500Instruction;
