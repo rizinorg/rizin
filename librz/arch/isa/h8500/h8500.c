@@ -232,6 +232,6 @@ bool h8500_instruction_parse(const ut8 *buf, ut8 len, H8500Instruction *ins) {
 	}
 	memcpy(ins, &ins_in, sizeof(H8500Instruction));
 	ins->size = (ins_in.ea_describe ? ins_in.ea_describe->size : 0) + ins_in.opcode_describe->size;
-	memcpy(ins->bytes, buf, ins_in.size);
+	memcpy(ins->bytes, buf, ins->size);
 	return true;
 }
