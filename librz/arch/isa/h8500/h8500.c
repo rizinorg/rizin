@@ -88,28 +88,28 @@ static bool EA_check_pat(const ut8 *buf, size_t pat_index, ut8 len,
 }
 
 static bool generate_opstr(char *out, H8500Operand *op) {
-	char nummber_buf[16] = { 0 };
+	char number_buf[16] = { 0 };
 	switch (op->mode) {
 	case H8500_RD:
 	case H8500_RI:
 	case H8500_RI_PRE_DEC:
 	case H8500_RI_POST_INC:
-		snprintf(nummber_buf, RZ_ARRAY_SIZE(nummber_buf), "r%d", op->rn);
-		rz_str_replace(out, "Rn", nummber_buf, 0);
+		snprintf(number_buf, RZ_ARRAY_SIZE(number_buf), "r%d", op->rn);
+		rz_str_replace(out, "Rn", number_buf, 0);
 		break;
 	case H8500_RI_DISP:
-		snprintf(nummber_buf, RZ_ARRAY_SIZE(nummber_buf), "r%d", op->ri_disp.rn);
-		rz_str_replace(out, "Rn", nummber_buf, 0);
-		snprintf(nummber_buf, RZ_ARRAY_SIZE(nummber_buf), "%d", op->ri_disp.disp);
-		rz_str_replace_in(out, RZ_ARRAY_SIZE(op->op_str), "d", nummber_buf, 0);
+		snprintf(number_buf, RZ_ARRAY_SIZE(number_buf), "r%d", op->ri_disp.rn);
+		rz_str_replace(out, "Rn", number_buf, 0);
+		snprintf(number_buf, RZ_ARRAY_SIZE(number_buf), "%d", op->ri_disp.disp);
+		rz_str_replace_in(out, RZ_ARRAY_SIZE(op->op_str), "d", number_buf, 0);
 		break;
 	case H8500_ABS_ADDR:
-		snprintf(nummber_buf, RZ_ARRAY_SIZE(nummber_buf), "0x%x", op->aa);
-		rz_str_replace_in(out, RZ_ARRAY_SIZE(op->op_str), "aa", nummber_buf, 0);
+		snprintf(number_buf, RZ_ARRAY_SIZE(number_buf), "0x%x", op->aa);
+		rz_str_replace_in(out, RZ_ARRAY_SIZE(op->op_str), "aa", number_buf, 0);
 		break;
 	case H8500_IMM:
-		snprintf(nummber_buf, RZ_ARRAY_SIZE(nummber_buf), "0x%x", op->imm);
-		rz_str_replace_in(out, RZ_ARRAY_SIZE(op->op_str), "xx", nummber_buf, 0);
+		snprintf(number_buf, RZ_ARRAY_SIZE(number_buf), "0x%x", op->imm);
+		rz_str_replace_in(out, RZ_ARRAY_SIZE(op->op_str), "xx", number_buf, 0);
 		break;
 	case H8500_PC_REL:
 	default: break;
