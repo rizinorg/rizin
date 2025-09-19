@@ -17,8 +17,8 @@ static const H8500EADescribe h8500_eas[] = {
 	{ H8500_RI_POST_INC, 16, "@Rn+", { H(0b1100) | Sz | Rrr, END }, 1 },
 	{ H8500_ABS_ADDR, 8, "@aa:8", { BM(0b00000101, 0xf7) | Sz, Addr8, END }, 2 },
 	{ H8500_ABS_ADDR, 16, "@aa:16", { BM(0b00010101, 0xf7) | Sz, Placeholder, Addr16, END }, 3 },
-	{ H8500_IMM, 8, "@xx:8", { B(0b00000100), Data8, END }, 2 },
-	{ H8500_IMM, 16, "@xx:16", { B(0b00001100), Placeholder, Data16, END }, 3 },
+	{ H8500_IMM, 8, "#xx:8", { B(0b00000100), Data8, END }, 2 },
+	{ H8500_IMM, 16, "#xx:16", { B(0b00001100), Placeholder, Data16, END }, 3 },
 	//{ H8500_PC_REL, 16, "disp", { END }, 1 /* or 2  */ },
 };
 

@@ -8,12 +8,12 @@ d "add:q.b #1,@-r0" b008
 d "add:q.b #1,@r0+" c008
 d "add:q.b #1,@0x11:8" 051108
 d "add:q.b #1,@0x1111:16" 15111108
-d "add:q.b #1,@0x11:8" 041108
-d "add:q.b #1,@0x1111:16" 0c111108
+d "add:q.b #1,#0x11:8" 041108
+d "add:q.b #1,#0x1111:16" 0c111108
 d "add:q.b #1,(-1:16,r0)" f0ffff08
 d "adds.b (-1:16,r0),r1" f0ffff29
 d "addx.b (4369:16,r0),r1" f01111a1
-d "addx.b @0x1111:16,r1" 0c1111a1
+d "addx.b #0x1111:16,r1" 0c1111a1
 d "and.b (4369:16,r0),r1" f0111151
-d "andc.b @0x11:8,ccr" 041159
-d "andc.b @0x1111:16,ccr" 0c111159
+d "andc.b #0x11:8,ccr" 041159
+d "andc.b #0x1111:16,ccr" 0c111159
