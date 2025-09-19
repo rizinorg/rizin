@@ -17,7 +17,7 @@ typedef enum {
 	H8500_ABS_ADDR,
 	H8500_IMM,
 	H8500_PC_REL,
-} H8500AddrssingMode;
+} H8500AddressingFlags;
 
 typedef enum {
 	BYTE_OPERAND,
@@ -45,8 +45,9 @@ typedef enum {
 	HasOperand = 1 << 17,
 	DST = 1 << 18,
 	SRC = 1 << 19,
+	Crr = 1 << 20,
 	END = 0b1 << 31,
-} H8500OperandNibbleFlag;
+} H8500OperandFlag;
 
 enum {
 	MASK_CONST_OFF = 24,
@@ -58,7 +59,7 @@ enum {
 typedef uint32_t H8500Pat;
 
 typedef struct {
-	H8500AddrssingMode addr_mode;
+	H8500AddressingFlags addr_mode;
 	uint8_t ea_width; // 8 or 16
 	const char *mnemonic;
 	H8500Pat pats[8];
@@ -83,8 +84,7 @@ typedef struct {
 } H8500OpcodeDescribe;
 
 typedef struct {
-	H8500AddrssingMode mode;
-	H8500OperandSize operand_size;
+	H8500AddressingFlags mode;
 	union {
 		uint16_t aa;
 		uint16_t imm;
@@ -95,7 +95,6 @@ typedef struct {
 			int16_t disp;
 		} ri_disp;
 	};
-	char op_str[16];
 } H8500Operand;
 
 typedef struct {
@@ -106,6 +105,7 @@ typedef struct {
 	H8500Operand operands[4];
 	ut8 num_operands;
 	H8500Operand ea;
+	H8500OperandSize operand_size;
 	char mnemonic[16];
 	char ops_str[32];
 } H8500Instruction;

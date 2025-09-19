@@ -32,18 +32,70 @@ static const H8500OpcodeDescribe h8500_opcodes[] = {
 	{ AND, "and.<Sz>", "<EA>,Rn", 1, { BM(0b01010000, 0xf8) | Rrr | HasOperand, END }, { 0 } },
 	// Some instructions only accept specific EA types, and it may be necessary to add some constraints.
 	{ ANDC, "andc.<Sz>", "<EA>,CR", 1, { BM(0b01011000, 0xf8) | Rrr | HasOperand, END }, { 0 } },
-	/*8*/ { ANDC, "andc.<Sz>", "<EA>,CR", 1, { BM(0b01011000, 0xf8) | Rrr | HasOperand, END }, { 0 } },
+	/*8*/ { ANDC, "andc.<Sz>", "<EA>,CR", 1, { BM(0b01011000, 0xf8) | Crr | HasOperand, END }, { 0 } },
 };
+
+typedef struct {
+	const char *name;
+	H8500OperandSize sz;
+} CCRDescribe;
+
+static const CCRDescribe h8500_ccrs[] = {
+	[0] = { "sr", WORD_OPERAND },
+	[1] = { "ccr", BYTE_OPERAND },
+	[2] = { 0 },
+	[3] = { "br", BYTE_OPERAND },
+	[4] = { "ep", BYTE_OPERAND },
+	[5] = { "dp", BYTE_OPERAND },
+	[6] = { 0 },
+	[7] = { "tp", BYTE_OPERAND },
+};
+
+static const char *h8500_rns[] = {
+	"r0",
+	"r1",
+	"r2",
+	"r3",
+	"r4",
+	"r5",
+	"r6",
+	"r7",
+};
+
+static const CCRDescribe *get_ccr_describe(ut8 crr) {
+	if (crr >= RZ_ARRAY_SIZE(h8500_ccrs)) {
+		goto branch_fail;
+	}
+	const CCRDescribe *ccr = h8500_ccrs + crr;
+	if (RZ_STR_ISEMPTY(ccr->name)) {
+		goto branch_fail;
+	}
+	return ccr;
+branch_fail:
+	rz_warn_if_reached();
+	return NULL;
+}
+
+static const char *Rn_to_string(ut8 i) {
+	if (i >= RZ_ARRAY_SIZE(h8500_rns)) {
+		goto branch_fail;
+	}
+	return h8500_rns[i];
+branch_fail:
+	rz_warn_if_reached();
+	return NULL;
+}
 
 #define CONST_CHECK(pat, b) ((pat & ((pat & MASK_CONST) >> MASK_CONST_OFF)) == (b & ((pat & MASK_CONST) >> MASK_CONST_OFF)))
 
 static bool EA_check_pat(const ut8 *buf, size_t pat_index, ut8 len,
-	const H8500EADescribe *ea_describe, H8500Operand *op) {
+	const H8500EADescribe *ea_describe, H8500Instruction *ins) {
 	if (len < 1) {
 		return false;
 	}
+	H8500Operand *op = &ins->ea;
 	const H8500Pat *pats = ea_describe->pats;
-	H8500AddrssingMode mode = ea_describe->addr_mode;
+	H8500AddressingFlags mode = ea_describe->addr_mode;
 	ut8 b = buf[pat_index];
 	H8500Pat pat = pats[pat_index];
 	if (!CONST_CHECK(pat, b)) {
@@ -57,7 +109,7 @@ static bool EA_check_pat(const ut8 *buf, size_t pat_index, ut8 len,
 		}
 	}
 	if (pat & Sz) {
-		op->operand_size = (b & MASK_Sz) ? WORD_OPERAND : BYTE_OPERAND;
+		ins->operand_size = (b & MASK_Sz) ? WORD_OPERAND : BYTE_OPERAND;
 	}
 	if (pat & Placeholder) {
 		if (len < 2) {
@@ -87,29 +139,27 @@ static bool EA_check_pat(const ut8 *buf, size_t pat_index, ut8 len,
 	return true;
 }
 
-static bool generate_opstr(char *out, H8500Operand *op) {
-	char number_buf[16] = { 0 };
+static bool generate_opstr(char *out, size_t len, H8500Operand *op) {
+	char buf[16] = { 0 };
 	switch (op->mode) {
 	case H8500_RD:
 	case H8500_RI:
 	case H8500_RI_PRE_DEC:
 	case H8500_RI_POST_INC:
-		snprintf(number_buf, RZ_ARRAY_SIZE(number_buf), "r%d", op->rn);
-		rz_str_replace(out, "Rn", number_buf, 0);
+		rz_str_replace(out, "Rn", Rn_to_string(op->rn), 0);
 		break;
 	case H8500_RI_DISP:
-		snprintf(number_buf, RZ_ARRAY_SIZE(number_buf), "r%d", op->ri_disp.rn);
-		rz_str_replace(out, "Rn", number_buf, 0);
-		snprintf(number_buf, RZ_ARRAY_SIZE(number_buf), "%d", op->ri_disp.disp);
-		rz_str_replace_in(out, RZ_ARRAY_SIZE(op->op_str), "d", number_buf, 0);
+		rz_str_replace(out, "Rn", Rn_to_string(op->ri_disp.rn), 0);
+		snprintf(buf, RZ_ARRAY_SIZE(buf), "%d", op->ri_disp.disp);
+		rz_str_replace_in(out, len, "d", buf, 0);
 		break;
 	case H8500_ABS_ADDR:
-		snprintf(number_buf, RZ_ARRAY_SIZE(number_buf), "0x%x", op->aa);
-		rz_str_replace_in(out, RZ_ARRAY_SIZE(op->op_str), "aa", number_buf, 0);
+		snprintf(buf, RZ_ARRAY_SIZE(buf), "0x%x", op->aa);
+		rz_str_replace_in(out, len, "aa", buf, 0);
 		break;
 	case H8500_IMM:
-		snprintf(number_buf, RZ_ARRAY_SIZE(number_buf), "0x%x", op->imm);
-		rz_str_replace_in(out, RZ_ARRAY_SIZE(op->op_str), "xx", number_buf, 0);
+		snprintf(buf, RZ_ARRAY_SIZE(buf), "0x%x", op->imm);
+		rz_str_replace_in(out, len, "xx", buf, 0);
 		break;
 	case H8500_PC_REL:
 	default: break;
@@ -127,7 +177,7 @@ static bool h8500_ea_parse(const ut8 *buf, ut8 len, H8500Instruction *ins) {
 				ins->ea.mode = ea_describe->addr_mode;
 				goto branch_ok;
 			}
-			if (!EA_check_pat(buf, j, len - j, ea_describe, &ins->ea)) {
+			if (!EA_check_pat(buf, j, len - j, ea_describe, ins)) {
 				goto branch_next_ea;
 			}
 		}
@@ -136,8 +186,6 @@ static bool h8500_ea_parse(const ut8 *buf, ut8 len, H8500Instruction *ins) {
 	}
 	return false;
 branch_ok:
-	strcpy(ins->ea.op_str, ea_describe->mnemonic);
-	generate_opstr(ins->ea.op_str, &ins->ea);
 	return true;
 }
 
@@ -158,8 +206,15 @@ static bool opcode_check_pat(const ut8 *buf, size_t pat_index, ut8 len,
 		op->rn = b & MASK_Rrr;
 		op->mode = H8500_RD;
 	}
+
+	if (pat & Crr) {
+		op->rn = b & MASK_Rrr;
+		ins->operand_size = get_ccr_describe(op->rn)->sz;
+		op->mode = H8500_RD;
+	}
+
 	if (pat & Sz) {
-		op->operand_size = (b & MASK_Sz) ? WORD_OPERAND : BYTE_OPERAND;
+		ins->operand_size = (b & MASK_Sz) ? WORD_OPERAND : BYTE_OPERAND;
 	}
 	if (pat & Placeholder) {
 		if (len < 2) {
@@ -195,6 +250,7 @@ static bool h8500_opcode_parse(const ut8 *buf, size_t offset, ut8 len, H8500Inst
 		return false;
 	}
 	const H8500OpcodeDescribe *opcode_describe = NULL;
+	char ea_str_buf[16] = { 0 };
 	for (int i = 0; i < RZ_ARRAY_SIZE(h8500_opcodes); ++i) {
 		opcode_describe = &h8500_opcodes[i];
 		for (int j = 0;; j += 1) {
@@ -212,11 +268,14 @@ static bool h8500_opcode_parse(const ut8 *buf, size_t offset, ut8 len, H8500Inst
 	return false;
 branch_ok:
 	strcpy(ins->mnemonic, opcode_describe->mnemonic);
-	rz_str_replace(ins->mnemonic, "<Sz>", (ins->ea.operand_size == WORD_OPERAND) ? "w" : "b", 0);
+	rz_str_replace(ins->mnemonic, "<Sz>", (ins->operand_size == WORD_OPERAND) ? "w" : "b", 0);
+
 	strcpy(ins->ops_str, opcode_describe->op_mnemonic);
-	rz_str_replace_in(ins->ops_str, RZ_ARRAY_SIZE(ins->ops_str), "<EA>", ins->ea.op_str, 0);
+	strcpy(ea_str_buf, ins->ea_describe->mnemonic);
+	generate_opstr(ea_str_buf, RZ_ARRAY_SIZE(ea_str_buf), &ins->ea);
+	rz_str_replace_in(ins->ops_str, RZ_ARRAY_SIZE(ins->ops_str), "<EA>", ea_str_buf, 0);
 	for (int i = 0; i < ins->num_operands; ++i) {
-		generate_opstr(ins->ops_str, &ins->operands[i]);
+		generate_opstr(ins->ops_str, RZ_ARRAY_SIZE(ins->ops_str), &ins->operands[i]);
 	}
 	return true;
 }
@@ -232,6 +291,6 @@ bool h8500_instruction_parse(const ut8 *buf, ut8 len, H8500Instruction *ins) {
 	}
 	memcpy(ins, &ins_in, sizeof(H8500Instruction));
 	ins->size = (ins_in.ea_describe ? ins_in.ea_describe->size : 0) + ins_in.opcode_describe->size;
-	memcpy(ins->bytes, buf, ins->size);
+	memcpy(ins->bytes, buf, ins_in.size);
 	return true;
 }
