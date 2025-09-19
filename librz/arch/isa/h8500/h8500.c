@@ -9,16 +9,16 @@
 #define B(X)     BM(X, 0xff)
 
 static const H8500EADescribe h8500_eas[] = {
-	{ H8500_RD, 16, "Rn", { H(0b1010) | Sz | Rrr, END }, 1 },
-	{ H8500_RI, 16, "@Rn", { H(0b1101) | Sz | Rrr, END }, 1 },
-	{ H8500_RI_DISP, 8, "(d:8,Rn)", { H(0b1110) | Sz | Rrr, Disp8, END }, 2 },
-	{ H8500_RI_DISP, 16, "(d:16,Rn)", { H(0b1111) | Sz | Rrr, Placeholder, Disp16, END }, 3 },
-	{ H8500_RI_PRE_DEC, 16, "@-Rn", { H(0b1011) | Sz | Rrr, END }, 1 },
-	{ H8500_RI_POST_INC, 16, "@Rn+", { H(0b1100) | Sz | Rrr, END }, 1 },
-	{ H8500_ABS_ADDR, 8, "@aa:8", { BM(0b00000101, 0xf7) | Sz, Addr8, END }, 2 },
-	{ H8500_ABS_ADDR, 16, "@aa:16", { BM(0b00010101, 0xf7) | Sz, Placeholder, Addr16, END }, 3 },
-	{ H8500_IMM, 8, "#xx:8", { B(0b00000100), Data8, END }, 2 },
-	{ H8500_IMM, 16, "#xx:16", { B(0b00001100), Placeholder, Data16, END }, 3 },
+	{ AddrRD, 16, "Rn", { H(0b1010) | Sz | Rrr, END }, 1 },
+	{ AddrRI, 16, "@Rn", { H(0b1101) | Sz | Rrr, END }, 1 },
+	{ AddrRIDisp, 8, "(d:8,Rn)", { H(0b1110) | Sz | Rrr, Disp8, END }, 2 },
+	{ AddrRIDisp, 16, "(d:16,Rn)", { H(0b1111) | Sz | Rrr, Placeholder, Disp16, END }, 3 },
+	{ AddrRIPreDec, 16, "@-Rn", { H(0b1011) | Sz | Rrr, END }, 1 },
+	{ AddrRIPostInc, 16, "@Rn+", { H(0b1100) | Sz | Rrr, END }, 1 },
+	{ AddrAbs, 8, "@aa:8", { BM(0b00000101, 0xf7) | Sz, Addr8, END }, 2 },
+	{ AddrAbs, 16, "@aa:16", { BM(0b00010101, 0xf7) | Sz, Placeholder, Addr16, END }, 3 },
+	{ AddrIMM, 8, "#xx:8", { B(0b00000100), Data8, END }, 2 },
+	{ AddrIMM, 16, "#xx:16", { B(0b00001100), Placeholder, Data16, END }, 3 },
 	//{ H8500_PC_REL, 16, "disp", { END }, 1 /* or 2  */ },
 };
 
@@ -33,6 +33,8 @@ static const H8500OpcodeDescribe h8500_opcodes[] = {
 	// Some instructions only accept specific EA types, and it may be necessary to add some constraints.
 	{ ANDC, "andc.<Sz>", "<EA>,CR", 1, { BM(0b01011000, 0xf8) | Crr | HasOperand, END }, { 0 } },
 	/*8*/ { ANDC, "andc.<Sz>", "<EA>,CR", 1, { BM(0b01011000, 0xf8) | Crr | HasOperand, END }, { 0 } },
+	// TODO: Bcc also support 16-bit displacement
+	{ Bcc, "<cc>", "disp", 2, { H(0b0010) | cc, Disp8 | HasOperand, END }, { 0 } },
 };
 
 typedef struct {
@@ -62,6 +64,25 @@ static const char *h8500_rns[] = {
 	"r7",
 };
 
+static const char *h8500_cc_mnemonics[] = {
+	"bra",
+	"brn",
+	"bhi",
+	"bls",
+	"bcc",
+	"bcs",
+	"bne",
+	"beq",
+	"bvc",
+	"bvs",
+	"bpl",
+	"bmi",
+	"bge",
+	"blt",
+	"bgt",
+	"ble",
+};
+
 static const CCRDescribe *get_ccr_describe(ut8 crr) {
 	if (crr >= RZ_ARRAY_SIZE(h8500_ccrs)) {
 		goto branch_fail;
@@ -86,6 +107,16 @@ branch_fail:
 	return NULL;
 }
 
+static const char *cc_mnemonic(ut8 i) {
+	if (i >= RZ_ARRAY_SIZE(h8500_cc_mnemonics)) {
+		goto branch_fail;
+	}
+	return h8500_cc_mnemonics[i];
+branch_fail:
+	rz_warn_if_reached();
+	return NULL;
+}
+
 #define CONST_CHECK(pat, b) ((pat & ((pat & MASK_CONST) >> MASK_CONST_OFF)) == (b & ((pat & MASK_CONST) >> MASK_CONST_OFF)))
 
 static bool EA_check_pat(const ut8 *buf, size_t pat_index, ut8 len,
@@ -102,7 +133,7 @@ static bool EA_check_pat(const ut8 *buf, size_t pat_index, ut8 len,
 		return false;
 	}
 	if (pat & Rrr) {
-		if (mode != H8500_RI_DISP) {
+		if (mode != AddrRIDisp) {
 			op->rn = b & MASK_Rrr;
 		} else {
 			op->ri_disp.rn = b & MASK_Rrr;
@@ -117,7 +148,7 @@ static bool EA_check_pat(const ut8 *buf, size_t pat_index, ut8 len,
 		}
 		H8500Pat patl = pats[pat_index + 1];
 		ut16 val16 = (b << 8) | buf[pat_index + 1];
-		if (patl & Disp16 && mode == H8500_RI_DISP) {
+		if (patl & Disp16 && mode == AddrRIDisp) {
 			op->ri_disp.disp = (st16)val16;
 		}
 		if (patl & Addr16) {
@@ -127,7 +158,7 @@ static bool EA_check_pat(const ut8 *buf, size_t pat_index, ut8 len,
 			op->imm = val16;
 		}
 	}
-	if (pat & Disp8 && mode == H8500_RI_DISP) {
+	if (pat & Disp8 && mode == AddrRIDisp) {
 		op->ri_disp.disp = (st8)b;
 	}
 	if (pat & Addr8) {
@@ -139,13 +170,13 @@ static bool EA_check_pat(const ut8 *buf, size_t pat_index, ut8 len,
 	return true;
 }
 
-static bool generate_opstr(char *out, size_t len, H8500Operand *op) {
+static bool replace_op_str(char *out, size_t len, H8500Operand *op) {
 	char buf[16] = { 0 };
 	switch (op->flags & MASK_AddressingMode) {
-	case H8500_RD:
-	case H8500_RI:
-	case H8500_RI_PRE_DEC:
-	case H8500_RI_POST_INC:
+	case AddrRD:
+	case AddrRI:
+	case AddrRIPreDec:
+	case AddrRIPostInc:
 		if (op->flags & Crr) {
 			if (!get_ccr_describe(op->rn)) {
 				rz_warn_if_reached();
@@ -157,20 +188,22 @@ static bool generate_opstr(char *out, size_t len, H8500Operand *op) {
 		}
 
 		break;
-	case H8500_RI_DISP:
+	case AddrRIDisp:
 		rz_str_replace(out, "Rn", Rn_to_string(op->ri_disp.rn), 0);
 		snprintf(buf, RZ_ARRAY_SIZE(buf), "%d", op->ri_disp.disp);
 		rz_str_replace_in(out, len, "d", buf, 0);
 		break;
-	case H8500_ABS_ADDR:
+	case AddrAbs:
 		snprintf(buf, RZ_ARRAY_SIZE(buf), "0x%x", op->aa);
 		rz_str_replace_in(out, len, "aa", buf, 0);
 		break;
-	case H8500_IMM:
+	case AddrIMM:
 		snprintf(buf, RZ_ARRAY_SIZE(buf), "0x%x", op->imm);
 		rz_str_replace_in(out, len, "xx", buf, 0);
 		break;
-	case H8500_PC_REL:
+	case AddrPCRel:
+		snprintf(buf, RZ_ARRAY_SIZE(buf), "%+d", op->disp);
+		rz_str_replace_in(out, len, "disp", buf, 0);
 	default: break;
 	}
 	return true;
@@ -211,15 +244,19 @@ static bool opcode_check_pat(const ut8 *buf, size_t pat_index, ut8 len,
 	if (!CONST_CHECK(pat, b)) {
 		return false;
 	}
+	if (pat & cc) {
+		ins->condition_code = b & MASK_cc;
+	}
+
 	if (pat & Rrr) {
 		op->rn = b & MASK_Rrr;
-		op->flags = H8500_RD;
+		op->flags = AddrRD;
 	}
 
 	if (pat & Crr) {
 		op->rn = b & MASK_Rrr;
 		ins->operand_size = get_ccr_describe(op->rn)->sz;
-		op->flags = H8500_RD | Crr;
+		op->flags = AddrRD | Crr;
 	}
 
 	if (pat & Sz) {
@@ -233,20 +270,28 @@ static bool opcode_check_pat(const ut8 *buf, size_t pat_index, ut8 len,
 		ut16 val16 = (b << 8) | buf[pat_index + 1];
 		if (patl & Addr16) {
 			op->aa = val16;
-			op->flags = H8500_ABS_ADDR;
+			op->flags = AddrAbs;
 		}
 		if (patl & Data16) {
 			op->imm = val16;
-			op->flags = H8500_IMM;
+			op->flags = AddrIMM;
+		}
+		if (patl & Disp16) {
+			op->disp = (st16)val16;
+			op->flags = AddrPCRel;
 		}
 	}
 	if (pat & Addr8) {
 		op->aa = b;
-		op->flags = H8500_ABS_ADDR;
+		op->flags = AddrAbs;
 	}
 	if (pat & Data8) {
 		op->imm = b;
-		op->flags = H8500_IMM;
+		op->flags = AddrIMM;
+	}
+	if (pat & Disp8) {
+		op->disp = (st8)b;
+		op->flags = AddrPCRel;
 	}
 	if (pat & HasOperand) {
 		ins->num_operands++;
@@ -264,6 +309,9 @@ static bool h8500_opcode_parse(const ut8 *buf, size_t offset, ut8 len, H8500Inst
 		opcode_describe = &h8500_opcodes[i];
 		for (int j = 0;; j += 1) {
 			if (opcode_describe->pats[j] == END) {
+				if (strstr(opcode_describe->op_mnemonic, "<EA>") != NULL && !ins->ea_describe) {
+					goto branch_next_ea;
+				}
 				ins->opcode_describe = opcode_describe;
 				goto branch_ok;
 			}
@@ -278,13 +326,16 @@ static bool h8500_opcode_parse(const ut8 *buf, size_t offset, ut8 len, H8500Inst
 branch_ok:
 	strcpy(ins->mnemonic, opcode_describe->mnemonic);
 	rz_str_replace(ins->mnemonic, "<Sz>", (ins->operand_size == WORD_OPERAND) ? "w" : "b", 0);
+	rz_str_replace(ins->mnemonic, "<cc>", cc_mnemonic(ins->condition_code), 0);
 
 	strcpy(ins->ops_str, opcode_describe->op_mnemonic);
-	strcpy(ea_str_buf, ins->ea_describe->mnemonic);
-	generate_opstr(ea_str_buf, RZ_ARRAY_SIZE(ea_str_buf), &ins->ea);
-	rz_str_replace_in(ins->ops_str, RZ_ARRAY_SIZE(ins->ops_str), "<EA>", ea_str_buf, 0);
+	if (ins->ea_describe) {
+		strcpy(ea_str_buf, ins->ea_describe->mnemonic);
+		replace_op_str(ea_str_buf, RZ_ARRAY_SIZE(ea_str_buf), &ins->ea);
+		rz_str_replace_in(ins->ops_str, RZ_ARRAY_SIZE(ins->ops_str), "<EA>", ea_str_buf, 0);
+	}
 	for (int i = 0; i < ins->num_operands; ++i) {
-		generate_opstr(ins->ops_str, RZ_ARRAY_SIZE(ins->ops_str), &ins->operands[i]);
+		replace_op_str(ins->ops_str, RZ_ARRAY_SIZE(ins->ops_str), &ins->operands[i]);
 	}
 	return true;
 }
