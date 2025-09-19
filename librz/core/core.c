@@ -1695,7 +1695,6 @@ RZ_API bool rz_core_init(RzCore *core) {
 	if (sdb_types_path) {
 		free(sdb_types_path);
 	}
-	core->gadgets = rz_list_newf((RzListFree)rz_core_gadget_free);
 	core->analysis->ev = core->ev;
 	core->analysis->read_at = rz_core_analysis_read_at;
 	core->analysis->flag_get = rz_core_flag_get_by_spaces;
@@ -1858,7 +1857,6 @@ RZ_API void rz_core_fini(RzCore *c) {
 	RZ_FREE(c->stkcmd);
 	RZ_FREE(c->block);
 
-	RZ_FREE_CUSTOM(c->gadgets, rz_list_free);
 	RZ_FREE_CUSTOM(c->num, rz_num_free);
 	RZ_FREE(c->table_query);
 	RZ_FREE_CUSTOM(c->io, rz_io_free);
@@ -2039,9 +2037,6 @@ RZ_API int rz_core_prompt(RzCore *r, int sync) {
 	}
 	free(r->cmdqueue);
 	r->cmdqueue = rz_str_dup(line);
-	if (r->scr_gadgets && *line && *line != 'q') {
-		rz_core_gadget_print(r);
-	}
 	r->num->value = r->rc;
 	return true;
 }

@@ -2068,14 +2068,6 @@ RZ_IPI RzCmdStatus rz_cmd_print_pkcs7_handler(RzCore *core, int argc, const char
 RZ_IPI RzCmdStatus rz_cmd_print_x509_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "pFA"
 RZ_IPI RzCmdStatus rz_cmd_print_axml_handler(RzCore *core, int argc, const char **argv);
-// "pg"
-RZ_IPI RzCmdStatus rz_cmd_print_gadget_add_handler(RzCore *core, int argc, const char **argv);
-// "pg*"
-RZ_IPI RzCmdStatus rz_cmd_print_gadget_print_as_rizin_handler(RzCore *core, int argc, const char **argv);
-// "pg-*"
-RZ_IPI RzCmdStatus rz_cmd_print_gadget_remove_handler(RzCore *core, int argc, const char **argv);
-// "pgm"
-RZ_IPI RzCmdStatus rz_cmd_print_gadget_move_handler(RzCore *core, int argc, const char **argv);
 // "ph"
 RZ_IPI RzCmdStatus rz_cmd_print_hash_cfg_handler(RzCore *core, int argc, const char **argv);
 // "phl"

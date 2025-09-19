@@ -418,12 +418,6 @@ RZ_API void rz_core_log_after(RZ_NONNULL RzCore *core, const char *funcname, con
 #define RZ_LOG_WARN_AFTER(core, fmtstr, ...) rz_core_log_after(core, MACRO_LOG_FUNC, __FILE__, \
 	__LINE__, RZ_LOGLVL_WARN, fmtstr, ##__VA_ARGS__);
 
-/**
- * \brief APIs to handle Visual Gadgets
- */
-RZ_API void rz_core_gadget_free(RzCoreGadget *g);
-RZ_API void rz_core_gadget_print(RzCore *core);
-
 RZ_API bool rz_core_plugin_init(RzCore *core);
 RZ_API bool rz_core_plugin_add(RzCore *core, RZ_NONNULL RzCorePlugin *plugin);
 RZ_API bool rz_core_plugin_del(RzCore *core, RZ_NONNULL RzCorePlugin *plugin);

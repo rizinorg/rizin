@@ -720,8 +720,6 @@ static const RzCmdDescArg cmd_print_format_file_args[2];
 static const RzCmdDescArg cmd_print_format_size_args[2];
 static const RzCmdDescArg cmd_print_format_value_args[2];
 static const RzCmdDescArg cmd_print_format_write_args[3];
-static const RzCmdDescArg cmd_print_gadget_add_args[6];
-static const RzCmdDescArg cmd_print_gadget_move_args[6];
 static const RzCmdDescArg cmd_print_hash_cfg_args[2];
 static const RzCmdDescArg print_instr_args[2];
 static const RzCmdDescArg print_instr_opcodes_args[2];
@@ -15699,97 +15697,6 @@ static const RzCmdDescHelp cmd_print_axml_help = {
 	.args = cmd_print_axml_args,
 };
 
-static const RzCmdDescHelp cmd_print_gadget_help = {
-	.summary = "Print gadgets",
-};
-static const RzCmdDescArg cmd_print_gadget_add_args[] = {
-	{
-		.name = "x",
-		.type = RZ_CMD_ARG_TYPE_NUM,
-		.optional = true,
-
-	},
-	{
-		.name = "y",
-		.type = RZ_CMD_ARG_TYPE_NUM,
-		.optional = true,
-
-	},
-	{
-		.name = "w",
-		.type = RZ_CMD_ARG_TYPE_NUM,
-		.optional = true,
-
-	},
-	{
-		.name = "h",
-		.type = RZ_CMD_ARG_TYPE_NUM,
-		.optional = true,
-
-	},
-	{
-		.name = "cmd",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_print_gadget_add_help = {
-	.summary = "Add a new gadget / Print all existing gadgets",
-	.args = cmd_print_gadget_add_args,
-};
-
-static const RzCmdDescArg cmd_print_gadget_print_as_rizin_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_print_gadget_print_as_rizin_help = {
-	.summary = "Print all gadgets as Rizin commands",
-	.args = cmd_print_gadget_print_as_rizin_args,
-};
-
-static const RzCmdDescArg cmd_print_gadget_remove_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_print_gadget_remove_help = {
-	.summary = "Remove all gadgets",
-	.args = cmd_print_gadget_remove_args,
-};
-
-static const RzCmdDescArg cmd_print_gadget_move_args[] = {
-	{
-		.name = "n",
-		.type = RZ_CMD_ARG_TYPE_NUM,
-
-	},
-	{
-		.name = "x",
-		.type = RZ_CMD_ARG_TYPE_NUM,
-
-	},
-	{
-		.name = "y",
-		.type = RZ_CMD_ARG_TYPE_NUM,
-
-	},
-	{
-		.name = "w",
-		.type = RZ_CMD_ARG_TYPE_NUM,
-
-	},
-	{
-		.name = "h",
-		.type = RZ_CMD_ARG_TYPE_NUM,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_print_gadget_move_help = {
-	.summary = "Move the position of the n-th gadget",
-	.args = cmd_print_gadget_move_args,
-};
-
 static const RzCmdDescHelp cmd_print_default_help = {
 	.summary = "Print hash/message digest or entropy",
 };
@@ -24364,17 +24271,6 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_print_axml_cd = rz_cmd_desc_argv_new(core->rcmd, pF_cd, "pFA", rz_cmd_print_axml_handler, &cmd_print_axml_help);
 	rz_warn_if_fail(cmd_print_axml_cd);
-
-	RzCmdDesc *cmd_print_gadget_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_cd, "pg", rz_cmd_print_gadget_add_handler, &cmd_print_gadget_add_help, &cmd_print_gadget_help);
-	rz_warn_if_fail(cmd_print_gadget_cd);
-	RzCmdDesc *cmd_print_gadget_print_as_rizin_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_gadget_cd, "pg*", rz_cmd_print_gadget_print_as_rizin_handler, &cmd_print_gadget_print_as_rizin_help);
-	rz_warn_if_fail(cmd_print_gadget_print_as_rizin_cd);
-
-	RzCmdDesc *cmd_print_gadget_remove_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_gadget_cd, "pg-*", rz_cmd_print_gadget_remove_handler, &cmd_print_gadget_remove_help);
-	rz_warn_if_fail(cmd_print_gadget_remove_cd);
-
-	RzCmdDesc *cmd_print_gadget_move_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_gadget_cd, "pgm", rz_cmd_print_gadget_move_handler, &cmd_print_gadget_move_help);
-	rz_warn_if_fail(cmd_print_gadget_move_cd);
 
 	RzCmdDesc *cmd_print_default_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_cd, "ph", rz_cmd_print_hash_cfg_handler, &cmd_print_hash_cfg_help, &cmd_print_default_help);
 	rz_warn_if_fail(cmd_print_default_cd);

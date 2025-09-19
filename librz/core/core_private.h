@@ -445,9 +445,6 @@ RZ_IPI bool rz_core_visual_hud(RzCore *core);
 RZ_IPI bool rz_core_visual_config_hud(RzCore *core);
 RZ_IPI bool rz_core_visual_hudclasses(RzCore *core);
 
-/* tui/rop.c */
-RZ_IPI int rz_core_visual_view_rop(RzCore *core);
-
 /* tui/tabs.c */
 RZ_IPI void rz_core_visual_tab_free(RzCoreVisualTab *tab);
 RZ_IPI int rz_core_visual_tab_count(RzCore *core);

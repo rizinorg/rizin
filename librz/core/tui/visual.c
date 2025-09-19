@@ -1951,7 +1951,6 @@ RZ_IPI void rz_core_visual_browse(RzCore *core, const char *input) {
 		" m  maps\n"
 		" p  pids/threads\n"
 		" q  quit\n"
-		" r  ROP gadgets\n"
 		" s  symbols\n"
 		" T  themes\n"
 		" v  vars\n"
@@ -1978,9 +1977,6 @@ RZ_IPI void rz_core_visual_browse(RzCore *core, const char *input) {
 			if (rz_core_visual_view_graph(core)) {
 				return;
 			}
-			break;
-		case 'r': // "vbr"
-			rz_core_visual_view_rop(core);
 			break;
 		case 'f': // "vbf"
 			rz_core_visual_trackflags(core);
@@ -3735,10 +3731,6 @@ static void visual_refresh(RzCore *core) {
 		rz_cons_visual_flush();
 	} else {
 		rz_cons_reset();
-	}
-	if (core->scr_gadgets) {
-		rz_core_gadget_print(core);
-		rz_cons_flush();
 	}
 	core->cons->blankline = false;
 	core->cons->blankline = true;
