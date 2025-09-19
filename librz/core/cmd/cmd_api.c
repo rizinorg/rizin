@@ -38,7 +38,7 @@ static inline const char *get_vertical_line(size_t idx, size_t len, bool scr_cur
 	} else if (scr_curvy && (idx == len - 1)) {
 		return RUNE_CURVE_CORNER_BL;
 	} else if (scr_utf8) {
-		return RUNE_LINE_VERT;
+		return RUNE_LINE_VERT " ";
 	}
 	return "| ";
 }
@@ -1193,7 +1193,7 @@ static char *group_get_help(RzCmd *cmd, RzCmdDesc *cd, bool use_color) {
 
 static void fill_argv_modes_help_strbuf(RzCmd *cmd, RzStrBuf *sb, RzCmdDesc *cd, bool use_color) {
 	bool scr_utf8 = core_config_get_b(cmd->core, "scr.utf8");
-	const char *vertical_line = scr_utf8 ? RUNE_LINE_VERT : "| ";
+	const char *vertical_line = scr_utf8 ? RUNE_LINE_VERT " " : "| ";
 
 	size_t max_len = 0, min_len = SIZE_MAX;
 	update_minmax_len(cd, &max_len, &min_len, true);
@@ -1516,7 +1516,7 @@ RZ_API bool rz_cmd_get_help_strbuf(RzCmd *cmd, const RzCmdDesc *cd, bool use_col
 	rz_return_val_if_fail(cmd && cd && sb, false);
 
 	bool scr_utf8 = core_config_get_b(cmd->core, "scr.utf8");
-	const char *vertical_line = scr_utf8 ? RUNE_LINE_VERT : "| ";
+	const char *vertical_line = scr_utf8 ? RUNE_LINE_VERT " " : "| ";
 
 	do_print_child_help(cmd, sb, cd, cd->name, cd->help->summary, vertical_line, false, MAX_RIGHT_ALIGHNMENT, use_color);
 	return true;
