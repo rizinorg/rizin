@@ -1,4 +1,5 @@
 d "add:q.b #1,r0" a008
+d "add:q.w #1,r1" a908
 d "add:q.b #2,@r1" d109
 d "add:q.b #-1,@r1" d10c
 d "add:q.b #-2,@r1" d10d
@@ -14,5 +15,5 @@ d "adds.b (-1:16,r0),r1" f0ffff29
 d "addx.b (4369:16,r0),r1" f01111a1
 d "addx.b @0x1111:16,r1" 0c1111a1
 d "and.b (4369:16,r0),r1" f0111151
-d "andc.b @0x11:8,CR" 041159
-d "andc.b @0x1111:16,CR" 0c111159
+d "andc.b @0x11:8,ccr" 041159
+d "andc.b @0x1111:16,ccr" 0c111159

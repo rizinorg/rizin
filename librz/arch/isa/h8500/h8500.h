@@ -8,18 +8,6 @@
 #include <rz_types.h>
 
 typedef enum {
-	H8500_INVALID,
-	H8500_RD,
-	H8500_RI,
-	H8500_RI_DISP,
-	H8500_RI_PRE_DEC,
-	H8500_RI_POST_INC,
-	H8500_ABS_ADDR,
-	H8500_IMM,
-	H8500_PC_REL,
-} H8500AddressingFlags;
-
-typedef enum {
 	BYTE_OPERAND,
 	WORD_OPERAND,
 } H8500OperandSize;
@@ -33,6 +21,15 @@ typedef enum {
  * 100: R4 101: R5 110: R6 111: R7
  */
 typedef enum {
+	H8500_INVALID,
+	H8500_RD,
+	H8500_RI,
+	H8500_RI_DISP,
+	H8500_RI_PRE_DEC,
+	H8500_RI_POST_INC,
+	H8500_ABS_ADDR,
+	H8500_IMM,
+	H8500_PC_REL,
 	Rrr = 1 << 8,
 	Disp8 = 1 << (8 + 1),
 	Disp16 = 1 << (8 + 2),
@@ -47,19 +44,20 @@ typedef enum {
 	SRC = 1 << 19,
 	Crr = 1 << 20,
 	END = 0b1 << 31,
-} H8500OperandFlag;
+} H8500OperandFlags;
 
 enum {
 	MASK_CONST_OFF = 24,
 	MASK_CONST = 0xff << MASK_CONST_OFF,
 	MASK_Rrr = 0b111,
 	MASK_Sz = 0b1000,
+	MASK_AddressingMode = 0xff,
 };
 
 typedef uint32_t H8500Pat;
 
 typedef struct {
-	H8500AddressingFlags addr_mode;
+	H8500OperandFlags flags;
 	uint8_t ea_width; // 8 or 16
 	const char *mnemonic;
 	H8500Pat pats[8];
@@ -80,11 +78,11 @@ typedef struct {
 	const char *op_mnemonic;
 	uint8_t size;
 	H8500Pat pats[8];
-	uint8_t args[4];
+	H8500Pat args[8];
 } H8500OpcodeDescribe;
 
 typedef struct {
-	H8500AddressingFlags mode;
+	H8500OperandFlags flags;
 	union {
 		uint16_t aa;
 		uint16_t imm;
