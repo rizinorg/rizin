@@ -108,6 +108,34 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=help with scr.utf8=true
+FILE=--
+CMDS=e scr.utf8=true; aa?
+EXPECT=<<EOF
+Usage: aa[?]   # Analysis commands
+│aa                # Analyze all flags starting with sym. and entry
+│aaa               # Analyze all calls, references, emulation and applies signatures
+│aaaa              # Experimental analysis
+│aac[i]            # Analysis function calls commands
+│aaC               # Analysis classes from RzBin
+│aad               # Analyze data references to code
+│aae[f]            # Analysis commands using ESIL
+│aaf[ert]          # Analysis function commands
+│aai[j]            # Print preformed analysis details
+│aaj               # Analyze all unresolved jumps
+│aal<g?>           # Language specific analysis commands
+│aan[r]            # Automatic rename functions commands
+│aap               # Analyze all preludes
+│aar [<n_bytes>]   # Analyze xrefs in current section or by n_bytes
+│aas               # Analyze only the symbols
+│aaS               # Analyze only the flags starting as sym.* and entry*
+│aat [<func_name>] # Analyze all/given function to convert immediate to linked structure offsets
+│aaT [<n_bytes>]   # Prints commands to create functions after a trap call
+│aau [<min_len>]   # Print memory areas not covered by functions
+│aav[*]            # Analyze values referencing a specific section or map
+EOF
+RUN
+
 NAME=recursive help json (old style)
 FILE==
 CMDS=<<EOF
