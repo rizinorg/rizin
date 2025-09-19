@@ -68,6 +68,9 @@ typedef struct {
 typedef enum {
 	ADD_Q,
 	ADDS,
+	ADDX,
+	AND,
+	ANDC,
 } H8500InstructionId;
 
 typedef struct {
@@ -103,6 +106,7 @@ typedef struct {
 	H8500Operand operands[4];
 	ut8 num_operands;
 	H8500Operand ea;
+	char mnemonic[16];
 	char ops_str[32];
 } H8500Instruction;
 

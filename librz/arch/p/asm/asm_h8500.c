@@ -13,7 +13,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	if (!h8500_instruction_parse(buf, len, &ins)) {
 		return -1;
 	}
-	rz_asm_op_setf_asm(op, "%s%s%s", ins.opcode_describe->mnemonic, RZ_STR_ISEMPTY(ins.ops_str) ? "" : " ", ins.ops_str);
+	rz_asm_op_setf_asm(op, "%s%s%s", ins.mnemonic, RZ_STR_ISEMPTY(ins.ops_str) ? "" : " ", ins.ops_str);
 	return ins.size;
 }
 
