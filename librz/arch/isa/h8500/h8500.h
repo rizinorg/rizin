@@ -86,6 +86,7 @@ typedef enum {
 	DIVXU,
 	EXTS,
 	EXTU,
+	JMP,
 } H8500InstructionId;
 
 typedef struct {

@@ -30,8 +30,13 @@ static const H8500EADescribe h8500_eas[] = {
 #define Data8Op  (Data8 | HasOperand)
 #define Data16Op Placeholder, Data16 | HasOperand
 #define ccOp     (cc | HasOperand)
+#define AA8Op    (Addr8 | HasOperand)
+#define AA16Op   Placeholder, Addr16 | HasOperand
+
 #define HR(X)    (BM(X << 3, 0xf8) | RrrOp)
 #define HC(X)    (BM(X << 3, 0xf8) | CrrOp)
+#define HRD8(X)  (BM(X << 3, 0xf8) | Rrr), Disp8Op
+#define HRD16(X) (BM(X << 3, 0xf8) | Rrr), Disp16Op
 
 static const H8500OpcodeDescribe h8500_opcodes[] = {
 	{ ADD_Q, "add:q.<Sz>", "#1,<EA>", 1, { B(0b00001000), END }, { 1 } },
@@ -66,6 +71,10 @@ static const H8500OpcodeDescribe h8500_opcodes_without_ea[] = {
 	{ DADD, "dadd", "Rn,Rn", 3, { HR(0b10100), B(0x00), HR(0b10100), END }, { 0 } },
 	{ EXTS, "exts", "Rn", 2, { HR(0b10100), B(0x11), END }, { 0 } },
 	{ EXTU, "extu", "Rn", 2, { HR(0b10100), B(0x12), END }, { 0 } },
+	{ JMP, "jmp", "@Rn", 2, { B(0x11), HR(0b11010), END }, { AddrRI } },
+	{ JMP, "jmp", "@(d:8,Rn)", 3, { B(0x11), HRD8(0b11100), END }, { AddrRIDisp } },
+	{ JMP, "jmp", "@(d:16,Rn)", 4, { B(0x11), HRD16(0b11110), END }, { AddrRIDisp } },
+	{ JMP, "jmp", "@aa:16", 3, { B(0x10), AA16Op, END }, { AddrAbs } },
 };
 
 typedef struct {
@@ -167,10 +176,11 @@ static bool EA_check_pat(const ut8 *buf, size_t pat_index, ut8 len,
 		return false;
 	}
 	if (pat & Rrr) {
+		ut8 index = b & MASK_Rrr;
 		if (mode != AddrRIDisp) {
-			op->rn = b & MASK_Rrr;
+			op->rn = index;
 		} else {
-			op->ri_disp.rn = b & MASK_Rrr;
+			op->ri_disp.rn = index;
 		}
 	}
 	if (pat & Sz) {
@@ -274,6 +284,7 @@ static bool opcode_check_pat(const ut8 *buf, size_t pat_index, ut8 len,
 	ut8 b = buf[pat_index];
 	H8500Pat pat = pats[pat_index];
 	H8500Operand *op = &ins->operands[ins->num_operands];
+	H8500OperandFlags mode = opcode_describe->args[ins->num_operands] & MASK_AddressingMode;
 
 	if (!pat_const_check(pat, b)) {
 		return false;
@@ -283,8 +294,14 @@ static bool opcode_check_pat(const ut8 *buf, size_t pat_index, ut8 len,
 	}
 
 	if (pat & Rrr) {
-		op->rn = b & MASK_Rrr;
-		op->flags = AddrRD;
+		ut8 index = b & MASK_Rrr;
+		if (mode != AddrRIDisp) {
+			op->rn = index;
+			op->flags = AddrRIDisp;
+		} else {
+			op->ri_disp.rn = index;
+			op->flags = AddrRD;
+		}
 	}
 
 	if (pat & Crr) {
@@ -311,8 +328,13 @@ static bool opcode_check_pat(const ut8 *buf, size_t pat_index, ut8 len,
 			op->flags = AddrIMM;
 		}
 		if (patl & Disp16) {
-			op->disp = (st16)val16;
-			op->flags = AddrPCRel;
+			if (mode == AddrRIDisp) {
+				op->ri_disp.disp = (st16)val16;
+				op->flags = AddrRIDisp;
+			} else {
+				op->disp = (st16)val16;
+				op->flags = AddrPCRel;
+			}
 		}
 	}
 	if (pat & Addr8) {
@@ -328,8 +350,13 @@ static bool opcode_check_pat(const ut8 *buf, size_t pat_index, ut8 len,
 		op->flags = AddrIMM;
 	}
 	if (pat & Disp8) {
-		op->disp = (st8)b;
-		op->flags = AddrPCRel;
+		if (mode == AddrRIDisp) {
+			op->ri_disp.disp = (st16)b;
+			op->flags = AddrRIDisp;
+		} else {
+			op->disp = (st16)b;
+			op->flags = AddrPCRel;
+		}
 	}
 	if (pat & HasOperand) {
 		ins->num_operands++;
@@ -348,17 +375,20 @@ static bool h8500_opcode_parse(const ut8 *buf, size_t offset, ut8 len, H8500Inst
 		for (int j = 0;; j += 1) {
 			if (opcode_describe->pats[j] == END) {
 				if (strstr(opcode_describe->op_mnemonic, "<EA>") != NULL && !ins->ea_describe) {
-					goto branch_next_ea;
+					goto branch_next;
 				}
 				ins->opcode_describe = opcode_describe;
 				goto branch_ok;
 			}
 			if (!opcode_check_pat(buf + offset, j, len - offset - j, opcode_describe, ins)) {
-				goto branch_next_ea;
+				goto branch_next;
 			}
 		}
-	branch_next_ea:
-		continue;
+	branch_next:
+		if (ins->num_operands > 0) {
+			memset(ins->operands, 0, sizeof(ins->operands));
+			ins->num_operands = 0;
+		}
 	}
 	return false;
 branch_ok:
