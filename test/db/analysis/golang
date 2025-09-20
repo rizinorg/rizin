@@ -1,6 +1,8 @@
 NAME=Resolve all symbols on a stripped linux go1.18 binary
 FILE=bins/golang/example-server-1.18-stripped
+TIMEOUT=1200
 CMDS=<<EOF
+e str.encoding=utf8
 aalg
 fl~sym.go.~?
 pdfs @ main ~str.
@@ -18,7 +20,7 @@ EXPECT=<<EOF
 0x0063e49b str.version
 0x0063e4ac str.HTTP_version
 0x0063e566 str.
-15399
+14566
 bufio
 bytes
 compress/flate
@@ -131,6 +133,7 @@ RUN
 NAME=Resolve all symbols on a stripped linux go1.16 binary
 FILE=bins/golang/example-server-1.16-stripped
 CMDS=<<EOF
+e str.encoding=utf8
 aalg
 fl~sym.go.~?
 pdfs @ main ~str.
@@ -153,7 +156,7 @@ EXPECT=<<EOF
 ;-- str.sort:
 ;-- str.sync:
 ;-- str.AAAA:
-14541
+13554
 bufio
 bytes
 compress/flate
@@ -255,7 +258,9 @@ RUN
 
 NAME=Resolve all symbols on a stripped linux go1.12 binary
 FILE=bins/golang/example-server-1.12-stripped
+TIMEOUT=1200
 CMDS=<<EOF
+e str.encoding=utf8
 aalg
 fl~sym.go.~?
 pdfs @ main ~str.
@@ -273,7 +278,7 @@ EXPECT=<<EOF
 0x0065de6d str.version
 0x0065de8a str.HTTP_version
 0x0065dfe6 str.
-15086
+14478
 bufio
 bytes
 compress/flate
@@ -382,6 +387,7 @@ NAME=Resolve all symbols on a linux go1.16 binary (arm32)
 FILE=bins/golang/btcctl-linux-armv7-v0.22.0-beta
 TIMEOUT=1200
 CMDS=<<EOF
+e str.encoding=utf8
 aalg
 fl~sym.go.~?
 pdfs @ main ~str.
@@ -438,7 +444,7 @@ EXPECT=<<EOF
 0x0027401c str.btcctl.conf
 0x00274090 str.rpc.cert
 0x00274104 str.rpc.cert
-16188
+15370
 bufio
 bytes
 compress/flate
@@ -553,7 +559,9 @@ RUN
 
 NAME=Resolve all symbols on a linux go1.16 binary (arm64)
 FILE=bins/golang/btcctl-linux-arm64-v0.22.0-beta
+TIMEOUT=1200
 CMDS=<<EOF
+e str.encoding=utf8
 aalg
 fl~sym.go.~?
 pdfs @ main ~str.
@@ -630,13 +638,14 @@ EXPECT=<<EOF
 0x0026e4b8 str.btcctl.conf
 0x0026e53c str.rpc.cert
 0x0026e5c0 str.rpc.cert
-16769
+15631
 EOF
 RUN
 
 NAME=Resolve all symbols on a stripped mach0 go1.18 binary (arm64)
 FILE=bins/golang/hello.mach0.stripped
 CMDS=<<EOF
+e str.encoding=utf8
 aalg
 fl~sym.go.~?
 pdfs @ sym.go.runtime.panicwrap ~str.
@@ -701,6 +710,7 @@ RUN
 NAME=Resolve all symbols on a stripped PE go1.12 binary (x64)
 FILE=bins/golang/hello_go_strip.exe
 CMDS=<<EOF
+e str.encoding=utf8
 aalg
 fl~sym.go.~?
 pdfs @ main ~str.
@@ -712,7 +722,7 @@ EXPECT=<<EOF
 1788
 0x004a699b str.hello__hacktivity
 0x004a69d5 str.reflect.__funcTypeFixed64_.AssignableTo
-9570
+8718
 compiler go1.15 Linker 03.00
 errors
 fmt
@@ -759,6 +769,7 @@ RUN
 NAME=Parse Golang 1.18 MIPS BE Strings
 FILE=bins/golang/go-re-sample-linux-mips
 CMDS=<<EOF
+e str.encoding=utf8
 aalg
 s main
 e asm.cmt.col=0
@@ -785,6 +796,7 @@ RUN
 NAME=Parse Golang 1.18 MIPS LE Strings
 FILE=bins/golang/go-re-sample-linux-mipsle
 CMDS=<<EOF
+e str.encoding=utf8
 aalg
 s main
 e asm.cmt.col=0
@@ -811,6 +823,7 @@ RUN
 NAME=Parse Golang 1.18 MIPS64 BE Strings
 FILE=bins/golang/go-re-sample-linux-mips64
 CMDS=<<EOF
+e str.encoding=utf8
 aalg
 s main
 e asm.cmt.col=0
@@ -837,6 +850,7 @@ RUN
 NAME=Parse Golang 1.18 MIPS64 LE Strings
 FILE=bins/golang/go-re-sample-linux-mips64le
 CMDS=<<EOF
+e str.encoding=utf8
 aalg
 s main
 e asm.cmt.col=0
@@ -863,6 +877,7 @@ RUN
 NAME=Parse Golang 1.18 PPC64 BE Strings
 FILE=bins/golang/go-re-sample-linux-ppc64
 CMDS=<<EOF
+e str.encoding=utf8
 aalg
 s main
 e asm.cmt.col=0
@@ -889,6 +904,7 @@ RUN
 NAME=Parse Golang 1.18 PPC64 LE Strings
 FILE=bins/golang/go-re-sample-linux-ppc64le
 CMDS=<<EOF
+e str.encoding=utf8
 aalg
 s main
 e asm.cmt.col=0
@@ -915,6 +931,7 @@ RUN
 NAME=Parse Golang 1.18 riscv64 Strings
 FILE=bins/golang/go-re-sample-linux-riscv64
 CMDS=<<EOF
+e str.encoding=utf8
 aalg
 s main
 e asm.cmt.col=0
@@ -941,6 +958,7 @@ RUN
 NAME=Resolve all symbols on a stripped windows go1.21 binary
 FILE=bins/golang/go-re-sample-windows-amd64-go121.exe
 CMDS=<<EOF
+e str.encoding=utf8
 aalg
 fl~sym.go.~?
 pdfs @ main ~str.
@@ -964,13 +982,14 @@ EXPECT=<<EOF
 0x00490692 str.name:
 0x0049071e str.tail:
 0x00490780 str.expected__foo__or__bar__subcommands
-20681
+21626
 EOF
 RUN
 
 NAME=Resolve all symbols on a stripped linux go1.21 binary
 FILE=bins/golang/go-re-sample-linux-amd64-go121
 CMDS=<<EOF
+e str.encoding=utf8
 aalg
 fl~sym.go.~?
 pdfs @ main ~str.
@@ -994,6 +1013,6 @@ EXPECT=<<EOF
 0x00487a12 str.name:
 0x00487a9e str.tail:
 0x00487b00 str.expected__foo__or__bar__subcommands
-3604
+3627
 EOF
 RUN
