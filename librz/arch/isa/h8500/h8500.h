@@ -44,7 +44,9 @@ typedef enum {
 	SRC = 1 << 19,
 	Crr = 1 << 20,
 	cc = 1 << 21,
-	END = 0b1 << 31,
+	Data4 = 1 << 22,
+	// 24-31 = MASK_CONST
+	END = 1 << 31,
 } H8500OperandFlags;
 
 enum {
@@ -54,6 +56,7 @@ enum {
 	MASK_Sz = 0b1000,
 	MASK_AddressingMode = 0xff,
 	MASK_cc = 0xf,
+	MASK_Data4 = 0xf,
 };
 
 typedef uint32_t H8500Pat;
@@ -73,6 +76,12 @@ typedef enum {
 	AND,
 	ANDC,
 	Bcc,
+	BNOT,
+	BSET,
+	BSR,
+	BTST,
+	CLR,
+	CMP,
 } H8500InstructionId;
 
 typedef struct {

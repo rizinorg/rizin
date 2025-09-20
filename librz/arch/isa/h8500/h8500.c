@@ -35,6 +35,16 @@ static const H8500OpcodeDescribe h8500_opcodes[] = {
 	/*8*/ { ANDC, "andc.<Sz>", "<EA>,CR", 1, { BM(0b01011000, 0xf8) | Crr | HasOperand, END }, { 0 } },
 	// TODO: Bcc also support 16-bit displacement
 	{ Bcc, "<cc>", "disp", 2, { H(0b0010) | cc, Disp8 | HasOperand, END }, { 0 } },
+	{ BNOT, "bnot.<Sz>", "#xx,<EA>", 1, { H(0b1110) | Data4 | HasOperand, END }, { 0 } },
+	{ BNOT, "bnot.<Sz>", "Rn,<EA>", 1, { BM(0b01101000, 0xf8) | Rrr | HasOperand, END }, { 0 } },
+	{ BSET, "bset.<Sz>", "#xx,<EA>", 1, { H(0b1100) | Data4 | HasOperand, END }, { 0 } },
+	{ BSET, "bset.<Sz>", "Rn,<EA>", 1, { BM(0b01001000, 0xf8) | Rrr | HasOperand, END }, { 0 } },
+	{ BTST, "btst.<Sz>", "#xx,<EA>", 1, { H(0b1111) | Data4 | HasOperand, END }, { 0 } },
+	{ BTST, "btst.<Sz>", "Rn,<EA>", 1, { BM(0b01111000, 0xf8) | Rrr | HasOperand, END }, { 0 } },
+
+	{ BSR, "bsr", "disp", 1, { B(0b00001110), Disp8 | HasOperand, END }, { 0 } },
+	{ BSR, "bsr", "disp", 2, { B(0b00011110), Placeholder, Disp16 | HasOperand, END }, { 0 } },
+
 };
 
 typedef struct {
@@ -284,6 +294,10 @@ static bool opcode_check_pat(const ut8 *buf, size_t pat_index, ut8 len,
 	if (pat & Addr8) {
 		op->aa = b;
 		op->flags = AddrAbs;
+	}
+	if (pat & Data4) {
+		op->aa = b & MASK_Data4;
+		op->flags = AddrIMM;
 	}
 	if (pat & Data8) {
 		op->imm = b;
