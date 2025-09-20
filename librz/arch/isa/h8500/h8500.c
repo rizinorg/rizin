@@ -75,6 +75,10 @@ static const H8500OpcodeDescribe h8500_opcodes_without_ea[] = {
 	{ JMP, "jmp", "@(d:8,Rn)", 3, { B(0x11), HRD8(0b11100), END }, { AddrRIDisp } },
 	{ JMP, "jmp", "@(d:16,Rn)", 4, { B(0x11), HRD16(0b11110), END }, { AddrRIDisp } },
 	{ JMP, "jmp", "@aa:16", 3, { B(0x10), AA16Op, END }, { AddrAbs } },
+	{ JSR, "jsr", "@Rn", 2, { B(0x11), HR(0b11011), END }, { AddrRI } },
+	{ JSR, "jsr", "@(d:8,Rn)", 3, { B(0x11), HRD8(0b11101), END }, { AddrRIDisp } },
+	{ JSR, "jsr", "@(d:16,Rn)", 4, { B(0x11), HRD16(0b11111), END }, { AddrRIDisp } },
+	{ JSR, "jsr", "@aa:16", 3, { B(0x18), AA16Op, END }, { AddrAbs } },
 };
 
 typedef struct {

@@ -87,6 +87,7 @@ typedef enum {
 	EXTS,
 	EXTU,
 	JMP,
+	JSR,
 } H8500InstructionId;
 
 typedef struct {
