@@ -54,6 +54,7 @@ static const H8500OpcodeDescribe h8500_opcodes[] = {
 	{ CMP, "cmp:g.<Sz>", "#xx,<EA>", 2, { B(0b00000100), Data8Op, END }, { 0 } },
 	{ CMP, "cmp:g.<Sz>", "#xx,<EA>", 3, { B(0b00000101), Data16Op, END }, { 0 } },
 	{ CMP, "cmp:g.<Sz>", "<EA>,Rn", 1, { HR(0b01110), END }, { 0 } },
+	{ DIVXU, "divxu.<Sz>", "<EA>,Rn", 1, { HR(0b10111), END }, { 0 } },
 
 };
 
@@ -63,6 +64,8 @@ static const H8500OpcodeDescribe h8500_opcodes_without_ea[] = {
 	{ BSR, "bsr", "disp", 2, { B(0b00001110), Disp8Op, END }, { 0 } },
 	{ BSR, "bsr", "disp", 3, { B(0b00011110), Disp16Op, END }, { 0 } },
 	{ DADD, "dadd", "Rn,Rn", 3, { HR(0b10100), B(0x00), HR(0b10100), END }, { 0 } },
+	{ EXTS, "exts", "Rn", 2, { HR(0b10100), B(0x11), END }, { 0 } },
+	{ EXTU, "extu", "Rn", 2, { HR(0b10100), B(0x12), END }, { 0 } },
 };
 
 typedef struct {

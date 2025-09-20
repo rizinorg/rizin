@@ -83,6 +83,9 @@ typedef enum {
 	CLR,
 	CMP,
 	DADD,
+	DIVXU,
+	EXTS,
+	EXTU,
 } H8500InstructionId;
 
 typedef struct {
