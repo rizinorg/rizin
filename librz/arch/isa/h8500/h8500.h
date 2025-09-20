@@ -82,6 +82,7 @@ typedef enum {
 	BTST,
 	CLR,
 	CMP,
+	DADD,
 } H8500InstructionId;
 
 typedef struct {

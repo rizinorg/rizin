@@ -22,33 +22,47 @@ static const H8500EADescribe h8500_eas[] = {
 	//{ H8500_PC_REL, 16, "disp", { END }, 1 /* or 2  */ },
 };
 
+#define RrrOp    (Rrr | HasOperand)
+#define CrrOp    (Crr | HasOperand)
+#define Disp8Op  (Disp8 | HasOperand)
+#define Disp16Op Placeholder, Disp16 | HasOperand
+#define Data4Op  (Data4 | HasOperand)
+#define Data8Op  (Data8 | HasOperand)
+#define Data16Op Placeholder, Data16 | HasOperand
+#define ccOp     (cc | HasOperand)
+#define HR(X)    (BM(X << 3, 0xf8) | RrrOp)
+#define HC(X)    (BM(X << 3, 0xf8) | CrrOp)
+
 static const H8500OpcodeDescribe h8500_opcodes[] = {
 	{ ADD_Q, "add:q.<Sz>", "#1,<EA>", 1, { B(0b00001000), END }, { 1 } },
 	{ ADD_Q, "add:q.<Sz>", "#2,<EA>", 1, { B(0b00001001), END }, { 2 } },
 	{ ADD_Q, "add:q.<Sz>", "#-1,<EA>", 1, { B(0b00001100), END }, { -1 } },
 	{ ADD_Q, "add:q.<Sz>", "#-2,<EA>", 1, { B(0b00001101), END }, { -2 } },
-	{ ADDS, "adds.<Sz>", "<EA>,Rn", 1, { BM(0b00101000, 0xf8) | Rrr | HasOperand, END }, { 0 } },
-	{ ADDX, "addx.<Sz>", "<EA>,Rn", 1, { BM(0b10100000, 0xf8) | Rrr | HasOperand, END }, { 0 } },
-	{ AND, "and.<Sz>", "<EA>,Rn", 1, { BM(0b01010000, 0xf8) | Rrr | HasOperand, END }, { 0 } },
-	// Some instructions only accept specific EA types, and it may be necessary to add some constraints.
-	{ ANDC, "andc.<Sz>", "<EA>,CR", 1, { BM(0b01011000, 0xf8) | Crr | HasOperand, END }, { 0 } },
-	/*8*/ { ANDC, "andc.<Sz>", "<EA>,CR", 1, { BM(0b01011000, 0xf8) | Crr | HasOperand, END }, { 0 } },
-	// TODO: Bcc also support 16-bit displacement
-	{ Bcc, "<cc>", "disp", 2, { H(0b0010) | cc, Disp8 | HasOperand, END }, { 0 } },
-	{ BNOT, "bnot.<Sz>", "#xx,<EA>", 1, { H(0b1110) | Data4 | HasOperand, END }, { 0 } },
-	{ BNOT, "bnot.<Sz>", "Rn,<EA>", 1, { BM(0b01101000, 0xf8) | Rrr | HasOperand, END }, { 0 } },
-	{ BSET, "bset.<Sz>", "#xx,<EA>", 1, { H(0b1100) | Data4 | HasOperand, END }, { 0 } },
-	{ BSET, "bset.<Sz>", "Rn,<EA>", 1, { BM(0b01001000, 0xf8) | Rrr | HasOperand, END }, { 0 } },
-	{ BTST, "btst.<Sz>", "#xx,<EA>", 1, { H(0b1111) | Data4 | HasOperand, END }, { 0 } },
-	{ BTST, "btst.<Sz>", "Rn,<EA>", 1, { BM(0b01111000, 0xf8) | Rrr | HasOperand, END }, { 0 } },
+	{ ADDS, "adds.<Sz>", "<EA>,Rn", 1, { HR(0b00101), END }, { 0 } },
+	{ ADDX, "addx.<Sz>", "<EA>,Rn", 1, { HR(0b10100), END }, { 0 } },
+	{ AND, "and.<Sz>", "<EA>,Rn", 1, { HR(0b01010), END }, { 0 } },
+	{ ANDC, "andc.<Sz>", "<EA>,CR", 1, { HC(0b01011), END }, { 0 } },
+	/*8*/ { ANDC, "andc.<Sz>", "<EA>,CR", 1, { HC(0b01011), END }, { 0 } },
+	{ BNOT, "bnot.<Sz>", "#xx,<EA>", 1, { H(0b1110) | Data4Op, END }, { 0 } },
+	{ BNOT, "bnot.<Sz>", "Rn,<EA>", 1, { HR(0b01101), END }, { 0 } },
+	{ BSET, "bset.<Sz>", "#xx,<EA>", 1, { H(0b1100) | Data4Op, END }, { 0 } },
+	{ BSET, "bset.<Sz>", "Rn,<EA>", 1, { HR(0b01001), END }, { 0 } },
+	{ BTST, "btst.<Sz>", "#xx,<EA>", 1, { H(0b1111) | Data4Op, END }, { 0 } },
+	{ BTST, "btst.<Sz>", "Rn,<EA>", 1, { HR(0b01111), END }, { 0 } },
 
-	{ BSR, "bsr", "disp", 2, { B(0b00001110), Disp8 | HasOperand, END }, { 0 } },
-	{ BSR, "bsr", "disp", 3, { B(0b00011110), Placeholder, Disp16 | HasOperand, END }, { 0 } },
 	{ CLR, "clr.<Sz>", "<EA>", 1, { B(0b00010011), END }, { 0 } },
-	{ CMP, "cmp:g.<Sz>", "#xx,<EA>", 2, { B(0b00000100), Data8 | HasOperand, END }, { 0 } },
-	{ CMP, "cmp:g.<Sz>", "#xx,<EA>", 3, { B(0b00000101), Placeholder, Data16 | HasOperand, END }, { 0 } },
-	{ CMP, "cmp:g.<Sz>", "<EA>,Rn", 1, { BM(0b01110000, 0xf8) | Rrr | HasOperand, END }, { 0 } },
+	{ CMP, "cmp:g.<Sz>", "#xx,<EA>", 2, { B(0b00000100), Data8Op, END }, { 0 } },
+	{ CMP, "cmp:g.<Sz>", "#xx,<EA>", 3, { B(0b00000101), Data16Op, END }, { 0 } },
+	{ CMP, "cmp:g.<Sz>", "<EA>,Rn", 1, { HR(0b01110), END }, { 0 } },
 
+};
+
+static const H8500OpcodeDescribe h8500_opcodes_without_ea[] = {
+	// TODO: Bcc also support 16-bit displacement
+	{ Bcc, "<cc>", "disp", 2, { H(0b0010) | cc, Disp8Op, END }, { 0 } },
+	{ BSR, "bsr", "disp", 2, { B(0b00001110), Disp8Op, END }, { 0 } },
+	{ BSR, "bsr", "disp", 3, { B(0b00011110), Disp16Op, END }, { 0 } },
+	{ DADD, "dadd", "Rn,Rn", 3, { HR(0b10100), B(0x00), HR(0b10100), END }, { 0 } },
 };
 
 typedef struct {
@@ -131,7 +145,10 @@ branch_fail:
 	return NULL;
 }
 
-#define CONST_CHECK(pat, b) ((pat & ((pat & MASK_CONST) >> MASK_CONST_OFF)) == (b & ((pat & MASK_CONST) >> MASK_CONST_OFF)))
+static bool pat_const_check(ut32 pat, ut32 b) {
+	const ut32 mask = (pat & MASK_CONST) >> MASK_CONST_OFF;
+	return (pat & mask) == (b & mask);
+}
 
 static bool EA_check_pat(const ut8 *buf, size_t pat_index, ut8 len,
 	const H8500EADescribe *ea_describe, H8500Instruction *ins) {
@@ -143,7 +160,7 @@ static bool EA_check_pat(const ut8 *buf, size_t pat_index, ut8 len,
 	H8500OperandFlags mode = ea_describe->flags & MASK_AddressingMode;
 	ut8 b = buf[pat_index];
 	H8500Pat pat = pats[pat_index];
-	if (!CONST_CHECK(pat, b)) {
+	if (!pat_const_check(pat, b)) {
 		return false;
 	}
 	if (pat & Rrr) {
@@ -255,7 +272,7 @@ static bool opcode_check_pat(const ut8 *buf, size_t pat_index, ut8 len,
 	H8500Pat pat = pats[pat_index];
 	H8500Operand *op = &ins->operands[ins->num_operands];
 
-	if (!CONST_CHECK(pat, b)) {
+	if (!pat_const_check(pat, b)) {
 		return false;
 	}
 	if (pat & cc) {
@@ -317,14 +334,14 @@ static bool opcode_check_pat(const ut8 *buf, size_t pat_index, ut8 len,
 	return true;
 }
 
-static bool h8500_opcode_parse(const ut8 *buf, size_t offset, ut8 len, H8500Instruction *ins) {
+static bool h8500_opcode_parse(const ut8 *buf, size_t offset, ut8 len, H8500Instruction *ins, const H8500OpcodeDescribe *tbl, ut32 tbl_size) {
 	if (len < offset + 1) {
 		return false;
 	}
 	const H8500OpcodeDescribe *opcode_describe = NULL;
 	char ea_str_buf[16] = { 0 };
-	for (int i = 0; i < RZ_ARRAY_SIZE(h8500_opcodes); ++i) {
-		opcode_describe = &h8500_opcodes[i];
+	for (int i = 0; i < tbl_size; ++i) {
+		opcode_describe = &tbl[i];
 		for (int j = 0;; j += 1) {
 			if (opcode_describe->pats[j] == END) {
 				if (strstr(opcode_describe->op_mnemonic, "<EA>") != NULL && !ins->ea_describe) {
@@ -363,10 +380,18 @@ bool h8500_instruction_parse(const ut8 *buf, ut8 len, H8500Instruction *ins) {
 		return false;
 	}
 	H8500Instruction ins_in = { 0 };
-	h8500_ea_parse(buf, len, &ins_in);
-	if (!h8500_opcode_parse(buf, ins_in.ea_describe ? ins_in.ea_describe->size : 0, len, &ins_in)) {
+
+	if (h8500_opcode_parse(buf, ins_in.ea_describe ? ins_in.ea_describe->size : 0, len, &ins_in,
+		    h8500_opcodes_without_ea, RZ_ARRAY_SIZE(h8500_opcodes_without_ea))) {
+		goto branch_ok;
+	}
+	if (!(h8500_ea_parse(buf, len, &ins_in) &&
+		    h8500_opcode_parse(buf, ins_in.ea_describe ? ins_in.ea_describe->size : 0, len, &ins_in,
+			    h8500_opcodes, RZ_ARRAY_SIZE(h8500_opcodes)))) {
 		return false;
 	}
+
+branch_ok:
 	memcpy(ins, &ins_in, sizeof(H8500Instruction));
 	ins->size = (ins_in.ea_describe ? ins_in.ea_describe->size : 0) + ins_in.opcode_describe->size;
 	memcpy(ins->bytes, buf, ins_in.size);
