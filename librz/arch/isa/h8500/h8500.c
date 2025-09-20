@@ -42,8 +42,12 @@ static const H8500OpcodeDescribe h8500_opcodes[] = {
 	{ BTST, "btst.<Sz>", "#xx,<EA>", 1, { H(0b1111) | Data4 | HasOperand, END }, { 0 } },
 	{ BTST, "btst.<Sz>", "Rn,<EA>", 1, { BM(0b01111000, 0xf8) | Rrr | HasOperand, END }, { 0 } },
 
-	{ BSR, "bsr", "disp", 1, { B(0b00001110), Disp8 | HasOperand, END }, { 0 } },
-	{ BSR, "bsr", "disp", 2, { B(0b00011110), Placeholder, Disp16 | HasOperand, END }, { 0 } },
+	{ BSR, "bsr", "disp", 2, { B(0b00001110), Disp8 | HasOperand, END }, { 0 } },
+	{ BSR, "bsr", "disp", 3, { B(0b00011110), Placeholder, Disp16 | HasOperand, END }, { 0 } },
+	{ CLR, "clr.<Sz>", "<EA>", 1, { B(0b00010011), END }, { 0 } },
+	{ CMP, "cmp:g.<Sz>", "#xx,<EA>", 2, { B(0b00000100), Data8 | HasOperand, END }, { 0 } },
+	{ CMP, "cmp:g.<Sz>", "#xx,<EA>", 3, { B(0b00000101), Placeholder, Data16 | HasOperand, END }, { 0 } },
+	{ CMP, "cmp:g.<Sz>", "<EA>,Rn", 1, { BM(0b01110000, 0xf8) | Rrr | HasOperand, END }, { 0 } },
 
 };
 
