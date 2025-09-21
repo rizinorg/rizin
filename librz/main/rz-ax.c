@@ -189,7 +189,8 @@ static void print_ascii_table(void) {
 
 static int help(void) {
 	printf(
-		"  =[base]                      ;  rz-ax =10 0x46 -> output in base 10\n"
+		"Usage: rz-ax [options] [expr ...]\n"
+		"If expr is not provided, reads from stdin\n"
 		"  int     ->  hex              ;  rz-ax 10\n"
 		"  hex     ->  int              ;  rz-ax 0xa\n"
 		"  -int    ->  hex              ;  rz-ax -77\n"
@@ -208,6 +209,7 @@ static int help(void) {
 		"  hex     ->  ternary          ;  rz-ax Tx23\n"
 		"  raw     ->  hex              ;  rz-ax -S < /binfile\n"
 		"  hex     ->  raw              ;  rz-ax -s 414141\n"
+		"  =base                        ;  rz-ax =10 0x46 -> output in base 10\n"
 		"  -l                           ;  append newline to output (for -E/-D/-r/..\n"
 		"  -a      show ascii table     ;  rz-ax -a\n"
 		"  -b      bin -> str           ;  rz-ax -b 01000101 01110110\n"
@@ -319,7 +321,6 @@ static int rax(RzNum *num, char *str, int len, int last, ut64 *_flags, int *fm) 
 					}
 					return format_output(num, out_mode, str, *fm, flags);
 				}
-				printf("Usage: rz-ax [options] [expr ...]\n");
 				return help();
 			}
 			str++;
