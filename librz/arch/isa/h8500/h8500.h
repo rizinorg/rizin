@@ -45,6 +45,7 @@ typedef enum {
 	Crr = 1 << 20,
 	cc = 1 << 21,
 	Data4 = 1 << 22,
+	RegList = 1 << 23,
 	// 24-31 = MASK_CONST
 	END = 1 << 31,
 } H8500OperandFlags;
@@ -88,6 +89,9 @@ typedef enum {
 	EXTU,
 	JMP,
 	JSR,
+	LDC,
+	LDM,
+	LINK,
 } H8500InstructionId;
 
 typedef struct {

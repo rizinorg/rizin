@@ -3,6 +3,7 @@
 
 #include "h8500.h"
 #include <rz_util/rz_str.h>
+#include <rz_util/rz_strbuf.h>
 
 #define H(X)     ((X << 4) | (0xf0 << MASK_CONST_OFF))
 #define BM(X, M) ((X) | M << MASK_CONST_OFF)
@@ -60,6 +61,7 @@ static const H8500OpcodeDescribe h8500_opcodes[] = {
 	{ CMP, "cmp:g.<Sz>", "#xx,<EA>", 3, { B(0b00000101), Data16Op, END }, { 0 } },
 	{ CMP, "cmp:g.<Sz>", "<EA>,Rn", 1, { HR(0b01110), END }, { 0 } },
 	{ DIVXU, "divxu.<Sz>", "<EA>,Rn", 1, { HR(0b10111), END }, { 0 } },
+	{ LDC, "ldc.<Sz>", "<EA>,CR", 1, { HC(0b10001), END }, { 0 } },
 
 };
 
@@ -79,6 +81,9 @@ static const H8500OpcodeDescribe h8500_opcodes_without_ea[] = {
 	{ JSR, "jsr", "@(d:8,Rn)", 3, { B(0x11), HRD8(0b11101), END }, { AddrRIDisp } },
 	{ JSR, "jsr", "@(d:16,Rn)", 4, { B(0x11), HRD16(0b11111), END }, { AddrRIDisp } },
 	{ JSR, "jsr", "@aa:16", 3, { B(0x18), AA16Op, END }, { AddrAbs } },
+	{ LDM, "ldm", "@SP+,<register list>", 2, { B(0x02), RegList | HasOperand, END }, { 0 } },
+	{ LINK, "link", "fp,#xx:8", 2, { B(0x17), Data8Op, END }, { 0 } },
+	{ LINK, "link", "fp,#xx:16", 3, { B(0x1f), Data16Op, END }, { 0 } },
 };
 
 typedef struct {
@@ -218,7 +223,7 @@ static bool EA_check_pat(const ut8 *buf, size_t pat_index, ut8 len,
 	return true;
 }
 
-static bool replace_op_str(char *out, size_t len, H8500Operand *op) {
+static bool operand_to_string(char *out, size_t len, H8500Operand *op) {
 	char buf[16] = { 0 };
 	switch (op->flags & MASK_AddressingMode) {
 	case AddrRD:
@@ -253,6 +258,34 @@ static bool replace_op_str(char *out, size_t len, H8500Operand *op) {
 		snprintf(buf, RZ_ARRAY_SIZE(buf), "%+d", op->disp);
 		rz_str_replace_in(out, len, "disp", buf, 0);
 	default: break;
+	}
+	if (op->flags & RegList) {
+		RzStrBuf sb = { 0 };
+		rz_strbuf_init(&sb);
+		st8 l = -1;
+		st8 r = -1;
+		ut8 group_count = 0;
+		for (st8 i = 0; i < 9; ++i) {
+			if ((op->rn & 0xff) & (1 << i)) {
+				if (l == -1 && r == -1) {
+					if (group_count > 0) {
+						rz_strbuf_append(&sb, ",");
+					}
+					rz_strbuf_append(&sb, Rn_to_string(i));
+					l = r = i;
+					group_count++;
+				} else {
+					r = i;
+				}
+			} else {
+				if (r > l) {
+					rz_strbuf_appendf(&sb, "-%s", Rn_to_string(i - 1));
+				}
+				l = r = -1;
+			}
+		}
+		rz_str_replace_in(out, len, "<register list>", rz_strbuf_get(&sb), 0);
+		rz_strbuf_fini(&sb);
 	}
 	return true;
 }
@@ -362,6 +395,10 @@ static bool opcode_check_pat(const ut8 *buf, size_t pat_index, ut8 len,
 			op->flags = AddrPCRel;
 		}
 	}
+	if (pat & RegList) {
+		op->rn = b;
+		op->flags = RegList;
+	}
 	if (pat & HasOperand) {
 		ins->num_operands++;
 	}
@@ -403,11 +440,11 @@ branch_ok:
 	strcpy(ins->ops_str, opcode_describe->op_mnemonic);
 	if (ins->ea_describe) {
 		strcpy(ea_str_buf, ins->ea_describe->mnemonic);
-		replace_op_str(ea_str_buf, RZ_ARRAY_SIZE(ea_str_buf), &ins->ea);
+		operand_to_string(ea_str_buf, RZ_ARRAY_SIZE(ea_str_buf), &ins->ea);
 		rz_str_replace_in(ins->ops_str, RZ_ARRAY_SIZE(ins->ops_str), "<EA>", ea_str_buf, 0);
 	}
 	for (int i = 0; i < ins->num_operands; ++i) {
-		replace_op_str(ins->ops_str, RZ_ARRAY_SIZE(ins->ops_str), &ins->operands[i]);
+		operand_to_string(ins->ops_str, RZ_ARRAY_SIZE(ins->ops_str), &ins->operands[i]);
 	}
 	return true;
 }
@@ -422,6 +459,7 @@ bool h8500_instruction_parse(const ut8 *buf, ut8 len, H8500Instruction *ins) {
 		    h8500_opcodes_without_ea, RZ_ARRAY_SIZE(h8500_opcodes_without_ea))) {
 		goto branch_ok;
 	}
+	memset(&ins_in, 0, sizeof(H8500Instruction));
 	if (!(h8500_ea_parse(buf, len, &ins_in) &&
 		    h8500_opcode_parse(buf, ins_in.ea_describe ? ins_in.ea_describe->size : 0, len, &ins_in,
 			    h8500_opcodes, RZ_ARRAY_SIZE(h8500_opcodes)))) {

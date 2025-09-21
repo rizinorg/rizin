@@ -57,3 +57,7 @@ d "jsr @r7" 11df
 d "jsr @(17:8,r7)" 11ef11
 d "jsr @(4369:16,r7)" 11ff1111
 d "jsr @0x1234:16" 181234
+d "ldc.b (4369:16,r7),tp" ff11118f
+d "ldm @SP+,r0-r2,r4,r6-r7" 02d7
+d "link fp,#0x11:8" 1711
+d "link fp,#0x1111:16" 1f1111
