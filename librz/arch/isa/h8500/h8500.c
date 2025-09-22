@@ -335,10 +335,10 @@ static bool opcode_check_pat(const ut8 *buf, size_t pat_index, ut8 len,
 		ut8 index = b & MASK_Rrr;
 		if (mode != AddrRIDisp) {
 			op->rn = index;
-			op->flags = AddrRIDisp;
+			op->flags = AddrRD;
 		} else {
 			op->ri_disp.rn = index;
-			op->flags = AddrRD;
+			op->flags = AddrRIDisp;
 		}
 	}
 
