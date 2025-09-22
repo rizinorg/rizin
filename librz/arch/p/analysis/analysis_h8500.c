@@ -11,6 +11,7 @@
 
 static int h8500_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	const ut8 *buf, int len, RzAnalysisOpMask mask) {
+	// TODO: Implement basic instruction analysis for H8500 architecture.
 	return -1;
 }
 
