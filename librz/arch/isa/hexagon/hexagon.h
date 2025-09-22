@@ -269,6 +269,7 @@ typedef struct {
 	RzConfig *cfg;
 	RzPVector /*<RzAsmTokenPattern *>*/ *token_patterns; ///< PVector with token patterns. Priority ordered.
 	bool utf8_enabled; ///< If set, print UTF-8 characters.
+	bool might_have_jumped; ///< Is set if a previous IL packet was a branch. Indicates the next decoded packet is valid.
 } HexState;
 
 /**

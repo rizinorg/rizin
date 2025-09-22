@@ -349,7 +349,6 @@ static inline bool pkt_at_addr_is_emu_ready(const HexPkt *pkt, const ut32 addr) 
  */
 RZ_IPI RZ_OWN RzILOpEffect *hex_get_il_op(const ut32 addr, const bool get_pkt_op, RZ_NONNULL HexState *state) {
 	rz_return_val_if_fail(state, NULL);
-	static bool might_has_jumped = false;
 	HexPkt *p = hex_get_pkt(state, addr);
 	if (!p) {
 		RZ_LOG_WARN("Packet was NULL although it should have been disassembled at this point.\n");
@@ -362,13 +361,13 @@ RZ_IPI RZ_OWN RzILOpEffect *hex_get_il_op(const ut32 addr, const bool get_pkt_op
 	if (hic->identifier == HEX_INS_INVALID_DECODE) {
 		return NULL;
 	}
-	if (state->just_init || might_has_jumped) {
+	if (state->just_init || state->might_have_jumped) {
 		// Assume that the instruction at the address the VM was initialized is the first instruction.
 		// Also make it valid if a jump let to this packet.
 		p->is_valid = true;
 		hic->pkt_info.first_insn = true;
 		state->just_init = false;
-		might_has_jumped = false;
+		state->might_have_jumped = false;
 	}
 
 	if (!get_pkt_op && !hic->pkt_info.last_insn) {
@@ -382,7 +381,7 @@ RZ_IPI RZ_OWN RzILOpEffect *hex_get_il_op(const ut32 addr, const bool get_pkt_op
 	}
 
 	if (!rz_pvector_empty(p->il_ops)) {
-		check_for_jumps(p, &might_has_jumped);
+		check_for_jumps(p, &state->might_have_jumped);
 		return hex_pkt_to_il_seq(p);
 	}
 
@@ -410,7 +409,7 @@ RZ_IPI RZ_OWN RzILOpEffect *hex_get_il_op(const ut32 addr, const bool get_pkt_op
 	// Add a jump to the next packet.
 	rz_pvector_push(p->il_ops, &hex_next_jump_to_next_pkt);
 
-	check_for_jumps(p, &might_has_jumped);
+	check_for_jumps(p, &state->might_have_jumped);
 
 	return hex_pkt_to_il_seq(p);
 }
