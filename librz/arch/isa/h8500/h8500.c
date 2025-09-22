@@ -257,6 +257,7 @@ static bool operand_to_string(char *out, size_t len, H8500Operand *op) {
 	case AddrPCRel:
 		snprintf(buf, RZ_ARRAY_SIZE(buf), "%+d", op->disp);
 		rz_str_replace_in(out, len, "disp", buf, 0);
+		break;
 	default: break;
 	}
 	if (op->flags & RegList) {
