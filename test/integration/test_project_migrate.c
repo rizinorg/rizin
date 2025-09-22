@@ -604,6 +604,24 @@ static bool test_migrate_v18_v19_str_config() {
 	mu_end;
 }
 
+static bool test_migrate_v20_v21_debase64() {
+	RzProject *prj = rz_project_load_file_raw("prj/v20-debase64.rzdb");
+	mu_assert_notnull(prj, "load raw project");
+	RzSerializeResultInfo *res = rz_serialize_result_info_new();
+	bool s = rz_project_migrate_v20_v21(prj, res);
+	mu_assert_true(s, "migrate success");
+
+	Sdb *core_db = sdb_ns(prj, "core", false);
+	mu_assert_notnull(core_db, "core ns");
+	Sdb *config_db = sdb_ns(core_db, "config", false);
+	mu_assert_notnull(config_db, "config ns");
+	mu_assert_null(sdb_get(config_db, "bin.debase64"), "bin.debase64 still there.");
+
+	rz_serialize_result_info_free(res);
+	rz_project_free(prj);
+	mu_end;
+}
+
 static bool test_migrate_v16_v17_flags_base() {
 	RzProject *prj = rz_project_load_file_raw("prj/v16-flags-base.rzdb");
 	mu_assert_notnull(prj, "load raw project");
@@ -1056,6 +1074,7 @@ int all_tests() {
 	mu_run_test(test_migrate_v16_v17_flags_base);
 	mu_run_test(test_migrate_v17_v18_rop_config);
 	mu_run_test(test_migrate_v18_v19_str_config);
+	mu_run_test(test_migrate_v20_v21_debase64);
 	mu_run_test(test_load_v1_noreturn);
 	mu_run_test(test_load_v1_noreturn_empty);
 	mu_run_test(test_load_v1_unknown_type);

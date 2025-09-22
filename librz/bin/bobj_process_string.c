@@ -32,10 +32,6 @@ RZ_IPI void rz_bin_set_and_process_strings(RzBinFile *bf, RzBinObject *o) {
 		string = *it;
 		// rebase physical address
 		string->paddr += o->opts.loadaddr;
-
-		if (bin->debase64) {
-			rz_bin_string_decode_base64(string);
-		}
 	}
 
 	o->strings = rz_bin_string_database_new(strings);

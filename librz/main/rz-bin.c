@@ -236,7 +236,6 @@ static int rzbin_show_help(int v) {
 	if (v) {
 		printf("Environment:\n"
 		       " RZ_BIN_CODESIGN_VERBOSE:                               # make code signatures verbose\n"
-		       " RZ_BIN_DEBASE64:         e bin.debase64                # try to debase64 all strings\n"
 		       " RZ_BIN_DEBUGINFOD_URLS:  e bin.dbginfo.debuginfod_urls # use alternative debuginfod server\n"
 		       " RZ_BIN_DEMANGLE=0:       e bin.demangle                # do not demangle symbols\n"
 		       " RZ_BIN_LANG:             e bin.lang                    # assume lang for demangling\n"
@@ -793,10 +792,6 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	}
 	if ((tmp = rz_sys_getenv("RZ_BIN_STRPURGE"))) {
 		rz_config_set(core.config, "bin.str.purge", tmp);
-		free(tmp);
-	}
-	if ((tmp = rz_sys_getenv("RZ_BIN_DEBASE64"))) {
-		rz_config_set(core.config, "bin.debase64", tmp);
 		free(tmp);
 	}
 	if ((tmp = rz_sys_getenv("RZ_BIN_PDBSERVER"))) {

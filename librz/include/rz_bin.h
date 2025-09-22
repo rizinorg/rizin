@@ -387,7 +387,6 @@ struct rz_bin_t {
 	void *user;
 	RzEvent *event;
 	/* preconfigured values */
-	int debase64;
 	ut64 maxstrbuf;
 	int rawstr;
 	RZ_DEPRECATE Sdb *sdb;

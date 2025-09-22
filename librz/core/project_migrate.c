@@ -718,6 +718,21 @@ RZ_API bool rz_project_migrate_v19_v20(RzProject *prj, RzSerializeResultInfo *re
 	return true;
 }
 
+// --
+// Migration 20 -> 21
+//
+// Removal of bin.debase64 option.
+
+RZ_API bool rz_project_migrate_v20_v21(RzProject *prj, RzSerializeResultInfo *res) {
+	Sdb *core_db;
+	RZ_SERIALIZE_SUB(prj, core_db, res, "core", return false;);
+	Sdb *config_db;
+	RZ_SERIALIZE_SUB(core_db, config_db, res, "config", return false;);
+	sdb_remove(config_db, "bin.debase64");
+
+	return true;
+}
+
 static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = {
 	rz_project_migrate_v1_v2,
 	rz_project_migrate_v2_v3,
@@ -738,6 +753,7 @@ static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = 
 	rz_project_migrate_v17_v18,
 	rz_project_migrate_v18_v19,
 	rz_project_migrate_v19_v20,
+	rz_project_migrate_v20_v21,
 };
 
 /// Migrate the given project to the current version in-place
