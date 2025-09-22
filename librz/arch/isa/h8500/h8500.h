@@ -20,7 +20,7 @@ typedef enum {
  * 000: R0 001: R1 010: R2 011: R3
  * 100: R4 101: R5 110: R6 111: R7
  */
-enum {
+typedef enum {
 	AddrINVALID,
 	AddrREG,
 	AddrRI,
