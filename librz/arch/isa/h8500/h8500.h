@@ -22,7 +22,7 @@ typedef enum {
  */
 enum {
 	AddrINVALID,
-	AddrRD,
+	AddrREG,
 	AddrRI,
 	AddrRIDisp,
 	AddrRIPreDec,
@@ -35,8 +35,8 @@ enum {
 static const ut64 Rrr = 1 << 8;
 static const ut64 Disp8 = 1 << (8 + 1);
 static const ut64 Disp16 = 1 << (8 + 2);
-static const ut64 Addr8 = 1 << (8 + 3);
-static const ut64 Addr16 = 1 << (8 + 4);
+static const ut64 AA8 = 1 << (8 + 3);
+static const ut64 AA16 = 1 << (8 + 4);
 static const ut64 Data8 = 1 << (8 + 5);
 static const ut64 Data16 = 1 << (8 + 6);
 static const ut64 Placeholder = 1 << (8 + 7);
@@ -48,18 +48,20 @@ static const ut64 Crr = 1 << 20;
 static const ut64 cc = 1 << 21;
 static const ut64 Data4 = 1 << 22;
 static const ut64 RegList = 1 << 23; // 24-31 = MASK_CONS
-static const ut64 END = 1 << 31;
-static const ut64 EA = 1ull << 32;
+static const ut64 EA = 1ull << 32; // 59-62 = Operand index
+static const ut64 HasINDEX = 1ull << 33;
+static const ut64 ImpliedR6 = 1ull << 34;
+static const ut64 END = 1ull << 63;
 
-enum {
-	MASK_CONST_OFF = 24,
-	MASK_CONST = 0xff << MASK_CONST_OFF,
-	MASK_Rrr = 0b111,
-	MASK_Sz = 0b1000,
-	MASK_AddressingMode = 0xff,
-	MASK_cc = 0xf,
-	MASK_Data4 = 0xf,
-};
+static const ut64 MASK_CONST_OFF = 24;
+static const ut64 MASK_CONST = 0xff << MASK_CONST_OFF;
+static const ut64 MASK_INDEX_OFF = 59;
+static const ut64 MASK_INDEX = 0xfull << MASK_INDEX_OFF;
+static const ut64 MASK_Rrr = 0b111;
+static const ut64 MASK_Sz = 0b1000;
+static const ut64 MASK_AddressingMode = 0xff;
+static const ut64 MASK_cc = 0xf;
+static const ut64 MASK_Data4 = 0xf;
 
 typedef ut64 H8500Pat;
 
@@ -93,6 +95,10 @@ typedef enum {
 	LDC,
 	LDM,
 	LINK,
+	MOV,
+	MOVFPE,
+	MOVTPE,
+	MULXU,
 } H8500InstructionId;
 
 typedef struct {

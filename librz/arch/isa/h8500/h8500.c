@@ -5,19 +5,19 @@
 #include <rz_util/rz_str.h>
 #include <rz_util/rz_strbuf.h>
 
-#define H(X)     ((X << 4) | (0xf0 << MASK_CONST_OFF))
-#define BM(X, M) ((X) | M << MASK_CONST_OFF)
-#define B(X)     BM(X, 0xff)
+#define H(X)     ((X << 4) | (0xf0ull << MASK_CONST_OFF))
+#define BM(X, M) ((X) | (ut64)M << MASK_CONST_OFF)
+#define B(X)     BM(X, 0xffull)
 
 static const H8500EADescribe h8500_eas[] = {
-	{ AddrRD, 16, "Rn", { H(0b1010) | Sz | Rrr, END }, 1 },
+	{ AddrREG, 16, "Rn", { H(0b1010) | Sz | Rrr, END }, 1 },
 	{ AddrRI, 16, "@Rn", { H(0b1101) | Sz | Rrr, END }, 1 },
 	{ AddrRIDisp, 8, "(d:8,Rn)", { H(0b1110) | Sz | Rrr, Disp8, END }, 2 },
 	{ AddrRIDisp, 16, "(d:16,Rn)", { H(0b1111) | Sz | Rrr, Placeholder, Disp16, END }, 3 },
 	{ AddrRIPreDec, 16, "@-Rn", { H(0b1011) | Sz | Rrr, END }, 1 },
 	{ AddrRIPostInc, 16, "@Rn+", { H(0b1100) | Sz | Rrr, END }, 1 },
-	{ AddrAbs, 8, "@aa:8", { BM(0b00000101, 0xf7) | Sz, Addr8, END }, 2 },
-	{ AddrAbs, 16, "@aa:16", { BM(0b00010101, 0xf7) | Sz, Placeholder, Addr16, END }, 3 },
+	{ AddrAbs, 8, "@aa:8", { BM(0b00000101, 0xf7) | Sz, AA8, END }, 2 },
+	{ AddrAbs, 16, "@aa:16", { BM(0b00010101, 0xf7) | Sz, Placeholder, AA16, END }, 3 },
 	{ AddrIMM, 8, "#xx:8", { B(0b00000100), Data8, END }, 2 },
 	{ AddrIMM, 16, "#xx:16", { B(0b00001100), Placeholder, Data16, END }, 3 },
 	//{ H8500_PC_REL, 16, "disp", { END }, 1 /* or 2  */ },
@@ -31,13 +31,16 @@ static const H8500EADescribe h8500_eas[] = {
 #define Data8Op  (Data8 | HasOperand)
 #define Data16Op Placeholder, Data16 | HasOperand
 #define ccOp     (cc | HasOperand)
-#define AA8Op    (Addr8 | HasOperand)
-#define AA16Op   Placeholder, Addr16 | HasOperand
+#define AA8Op    (AA8 | HasOperand)
+#define AA16Op   Placeholder, AA16 | HasOperand
 
 #define HR(X)    (BM(X << 3, 0xf8) | RrrOp)
 #define HC(X)    (BM(X << 3, 0xf8) | CrrOp)
 #define HRD8(X)  (BM(X << 3, 0xf8) | Rrr), Disp8Op
 #define HRD16(X) (BM(X << 3, 0xf8) | Rrr), Disp16Op
+#define HSR(X)   (H(X) | Sz | RrrOp)
+
+#define IDX(I) (((ut64)I << MASK_INDEX_OFF) | HasINDEX)
 
 static const H8500OpcodeDescribe h8500_opcodes[] = {
 	{ ADD_Q, "add:q.<Sz>", "#1,<EA>", 1, { B(0b00001000), END }, { 1 } },
@@ -62,7 +65,10 @@ static const H8500OpcodeDescribe h8500_opcodes[] = {
 	{ CMP, "cmp:g.<Sz>", "<EA>,Rn", 1, { HR(0b01110), END }, { 0 } },
 	{ DIVXU, "divxu.<Sz>", "<EA>,Rn", 1, { HR(0b10111), END }, { 0 } },
 	{ LDC, "ldc.<Sz>", "<EA>,CR", 1, { HC(0b10001), END }, { 0 } },
-
+	{ MOV, "mov:g.<Sz>", "<EA>,Rn", 1, { HR(0b10000), END }, { 0 } },
+	{ MOV, "mov:g.<Sz>", "Rn,<EA>", 1, { HR(0b10010), END }, { 0 } },
+	{ MOV, "mov:g.<Sz>", "#xx,<EA>", 2, { B(0x06), Data8Op, END }, { 0 } },
+	{ MOV, "mov:g.<Sz>", "#xx,<EA>", 3, { B(0x07), Data16Op, END }, { 0 } },
 };
 
 static const H8500OpcodeDescribe h8500_opcodes_without_ea[] = {
@@ -84,6 +90,13 @@ static const H8500OpcodeDescribe h8500_opcodes_without_ea[] = {
 	{ LDM, "ldm", "@SP+,<register list>", 2, { B(0x02), RegList | HasOperand, END }, { 0 } },
 	{ LINK, "link", "fp,#xx:8", 2, { B(0x17), Data8Op, END }, { 0 } },
 	{ LINK, "link", "fp,#xx:16", 3, { B(0x1f), Data16Op, END }, { 0 } },
+	{ MOV, "mov:e", "#xx:8,Rn", 2, { HR(0b01010) | IDX(1), Data8Op | IDX(0), END }, { AddrIMM, AddrREG } },
+	{ MOV, "mov:f.<Sz>", "@(d:8,Rn),Rn", 2, { HSR(0b1000) | IDX(1), Disp8Op | ImpliedR6 | IDX(0), END }, { AddrRIDisp, AddrREG } },
+	{ MOV, "mov:f.<Sz>", "Rn,@(d:8,Rn)", 2, { HSR(0b1001), Disp8Op | ImpliedR6, END }, { AddrREG, AddrRIDisp } },
+	{ MOV, "mov:i", "#xx:16,Rn", 3, { HR(0b01011) | IDX(1), Data16Op | IDX(0), END }, { AddrIMM, AddrREG } },
+	{ MOV, "mov:l.<Sz>", "@aa:8,Rn", 2, { HSR(0b0110) | IDX(1), AA8Op | IDX(0), END }, { AddrAbs, AddrREG } },
+	{ MOV, "mov:s.<Sz>", "Rn,@aa:8", 2, { HSR(0b0111), AA8Op, END }, { AddrREG, AddrAbs } },
+
 };
 
 typedef struct {
@@ -171,7 +184,7 @@ static bool pat_const_check(ut32 pat, ut32 b) {
 	return (pat & mask) == (b & mask);
 }
 
-static bool EA_check_pat(const ut8 *buf, size_t pat_index, ut8 len,
+static bool EA_parse(const ut8 *buf, size_t pat_index, ut8 len,
 	const H8500EADescribe *ea_describe, H8500Instruction *ins) {
 	if (len < 1) {
 		return false;
@@ -204,7 +217,7 @@ static bool EA_check_pat(const ut8 *buf, size_t pat_index, ut8 len,
 		if (patl & Disp16 && mode == AddrRIDisp) {
 			op->ri_disp.disp = (st16)val16;
 		}
-		if (patl & Addr16) {
+		if (patl & AA16) {
 			op->aa = val16;
 		}
 		if (patl & Data16) {
@@ -214,7 +227,7 @@ static bool EA_check_pat(const ut8 *buf, size_t pat_index, ut8 len,
 	if (pat & Disp8 && mode == AddrRIDisp) {
 		op->ri_disp.disp = (st8)b;
 	}
-	if (pat & Addr8) {
+	if (pat & AA8) {
 		op->aa = b;
 	}
 	if (pat & Data8) {
@@ -226,7 +239,7 @@ static bool EA_check_pat(const ut8 *buf, size_t pat_index, ut8 len,
 static bool operand_to_string(char *out, size_t len, H8500Operand *op) {
 	char buf[16] = { 0 };
 	switch (op->flags & MASK_AddressingMode) {
-	case AddrRD:
+	case AddrREG:
 	case AddrRI:
 	case AddrRIPreDec:
 	case AddrRIPostInc:
@@ -301,7 +314,7 @@ static bool h8500_ea_parse(const ut8 *buf, ut8 len, H8500Instruction *ins) {
 				ins->ea.flags = ea_describe->flags;
 				goto branch_ok;
 			}
-			if (!EA_check_pat(buf, j, len - j, ea_describe, ins)) {
+			if (!EA_parse(buf, j, len - j, ea_describe, ins)) {
 				goto branch_next_ea;
 			}
 		}
@@ -313,7 +326,15 @@ branch_ok:
 	return true;
 }
 
-static bool opcode_check_pat(const ut8 *buf, size_t pat_index, ut8 len,
+static ut8 operand_index(H8500Pat pat, H8500Instruction *ins) {
+	ut8 operand_index = (pat & HasINDEX)
+		? ((pat & MASK_INDEX) >> MASK_INDEX_OFF)
+		: ins->num_operands;
+	rz_warn_if_fail(operand_index < RZ_ARRAY_SIZE(ins->operands));
+	return operand_index;
+}
+
+static bool operand_parse(const ut8 *buf, size_t pat_index, ut8 len,
 	const H8500OpcodeDescribe *opcode_describe, H8500Instruction *ins) {
 	if (len < 1) {
 		return false;
@@ -321,12 +342,13 @@ static bool opcode_check_pat(const ut8 *buf, size_t pat_index, ut8 len,
 	const H8500Pat *pats = opcode_describe->pats;
 	ut8 b = buf[pat_index];
 	H8500Pat pat = pats[pat_index];
-	H8500Operand *op = &ins->operands[ins->num_operands];
-	ut64 mode = opcode_describe->args[ins->num_operands] & MASK_AddressingMode;
-
 	if (!pat_const_check(pat, b)) {
 		return false;
 	}
+
+	H8500Operand *op = &ins->operands[operand_index(pat, ins)];
+	ut64 mode = opcode_describe->args[operand_index(pat, ins)] & MASK_AddressingMode;
+
 	if (pat & cc) {
 		ins->condition_code = b & MASK_cc;
 	}
@@ -335,7 +357,7 @@ static bool opcode_check_pat(const ut8 *buf, size_t pat_index, ut8 len,
 		ut8 index = b & MASK_Rrr;
 		if (mode != AddrRIDisp) {
 			op->rn = index;
-			op->flags = AddrRD;
+			op->flags = AddrREG;
 		} else {
 			op->ri_disp.rn = index;
 			op->flags = AddrRIDisp;
@@ -345,7 +367,7 @@ static bool opcode_check_pat(const ut8 *buf, size_t pat_index, ut8 len,
 	if (pat & Crr) {
 		op->rn = b & MASK_Rrr;
 		ins->operand_size = get_ccr_describe(op->rn)->sz;
-		op->flags = AddrRD | Crr;
+		op->flags = AddrREG | Crr;
 	}
 
 	if (pat & Sz) {
@@ -356,8 +378,9 @@ static bool opcode_check_pat(const ut8 *buf, size_t pat_index, ut8 len,
 			return false;
 		}
 		H8500Pat patl = pats[pat_index + 1];
+		op = &ins->operands[operand_index(patl, ins)];
 		ut16 val16 = (b << 8) | buf[pat_index + 1];
-		if (patl & Addr16) {
+		if (patl & AA16) {
 			op->aa = val16;
 			op->flags = AddrAbs;
 		}
@@ -375,7 +398,7 @@ static bool opcode_check_pat(const ut8 *buf, size_t pat_index, ut8 len,
 			}
 		}
 	}
-	if (pat & Addr8) {
+	if (pat & AA8) {
 		op->aa = b;
 		op->flags = AddrAbs;
 	}
@@ -403,6 +426,9 @@ static bool opcode_check_pat(const ut8 *buf, size_t pat_index, ut8 len,
 	if (pat & HasOperand) {
 		ins->num_operands++;
 	}
+	if ((op->flags & AddrRIDisp) && (pat & ImpliedR6)) {
+		op->ri_disp.rn = 6;
+	}
 	return true;
 }
 
@@ -422,7 +448,7 @@ static bool h8500_opcode_parse(const ut8 *buf, size_t offset, ut8 len, H8500Inst
 				ins->opcode_describe = opcode_describe;
 				goto branch_ok;
 			}
-			if (!opcode_check_pat(buf + offset, j, len - offset - j, opcode_describe, ins)) {
+			if (!operand_parse(buf + offset, j, len - offset - j, opcode_describe, ins)) {
 				goto branch_next;
 			}
 		}
