@@ -20,7 +20,7 @@ typedef enum {
  * 000: R0 001: R1 010: R2 011: R3
  * 100: R4 101: R5 110: R6 111: R7
  */
-typedef enum {
+enum {
 	AddrINVALID,
 	AddrRD,
 	AddrRI,
@@ -30,25 +30,26 @@ typedef enum {
 	AddrAbs,
 	AddrIMM,
 	AddrPCRel,
-	Rrr = 1 << 8,
-	Disp8 = 1 << (8 + 1),
-	Disp16 = 1 << (8 + 2),
-	Addr8 = 1 << (8 + 3),
-	Addr16 = 1 << (8 + 4),
-	Data8 = 1 << (8 + 5),
-	Data16 = 1 << (8 + 6),
-	Placeholder = 1 << (8 + 7),
-	Sz = 1 << 16,
-	HasOperand = 1 << 17,
-	DST = 1 << 18,
-	SRC = 1 << 19,
-	Crr = 1 << 20,
-	cc = 1 << 21,
-	Data4 = 1 << 22,
-	RegList = 1 << 23,
-	// 24-31 = MASK_CONST
-	END = 1 << 31,
-} H8500OperandFlags;
+} H8500AddressingMode;
+
+static const ut64 Rrr = 1 << 8;
+static const ut64 Disp8 = 1 << (8 + 1);
+static const ut64 Disp16 = 1 << (8 + 2);
+static const ut64 Addr8 = 1 << (8 + 3);
+static const ut64 Addr16 = 1 << (8 + 4);
+static const ut64 Data8 = 1 << (8 + 5);
+static const ut64 Data16 = 1 << (8 + 6);
+static const ut64 Placeholder = 1 << (8 + 7);
+static const ut64 Sz = 1 << 16;
+static const ut64 HasOperand = 1 << 17;
+static const ut64 DST = 1 << 18;
+static const ut64 SRC = 1 << 19;
+static const ut64 Crr = 1 << 20;
+static const ut64 cc = 1 << 21;
+static const ut64 Data4 = 1 << 22;
+static const ut64 RegList = 1 << 23; // 24-31 = MASK_CONS
+static const ut64 END = 1 << 31;
+static const ut64 EA = 1ull << 32;
 
 enum {
 	MASK_CONST_OFF = 24,
@@ -60,10 +61,10 @@ enum {
 	MASK_Data4 = 0xf,
 };
 
-typedef uint32_t H8500Pat;
+typedef ut64 H8500Pat;
 
 typedef struct {
-	H8500OperandFlags flags;
+	ut64 flags;
 	uint8_t ea_width; // 8 or 16
 	const char *mnemonic;
 	H8500Pat pats[8];
@@ -104,7 +105,7 @@ typedef struct {
 } H8500OpcodeDescribe;
 
 typedef struct {
-	H8500OperandFlags flags;
+	ut64 flags;
 	union {
 		uint16_t aa;
 		uint16_t imm;

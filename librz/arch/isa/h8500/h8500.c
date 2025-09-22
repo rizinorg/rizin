@@ -178,7 +178,7 @@ static bool EA_check_pat(const ut8 *buf, size_t pat_index, ut8 len,
 	}
 	H8500Operand *op = &ins->ea;
 	const H8500Pat *pats = ea_describe->pats;
-	H8500OperandFlags mode = ea_describe->flags & MASK_AddressingMode;
+	ut64 mode = ea_describe->flags & MASK_AddressingMode;
 	ut8 b = buf[pat_index];
 	H8500Pat pat = pats[pat_index];
 	if (!pat_const_check(pat, b)) {
@@ -322,7 +322,7 @@ static bool opcode_check_pat(const ut8 *buf, size_t pat_index, ut8 len,
 	ut8 b = buf[pat_index];
 	H8500Pat pat = pats[pat_index];
 	H8500Operand *op = &ins->operands[ins->num_operands];
-	H8500OperandFlags mode = opcode_describe->args[ins->num_operands] & MASK_AddressingMode;
+	ut64 mode = opcode_describe->args[ins->num_operands] & MASK_AddressingMode;
 
 	if (!pat_const_check(pat, b)) {
 		return false;
