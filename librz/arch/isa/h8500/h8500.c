@@ -69,6 +69,9 @@ static const H8500OpcodeDescribe h8500_opcodes[] = {
 	{ MOV, "mov:g.<Sz>", "Rn,<EA>", 1, { HR(0b10010), END }, { 0 } },
 	{ MOV, "mov:g.<Sz>", "#xx,<EA>", 2, { B(0x06), Data8Op, END }, { 0 } },
 	{ MOV, "mov:g.<Sz>", "#xx,<EA>", 3, { B(0x07), Data16Op, END }, { 0 } },
+	{ MOVFPE, "movfpe", "<EA>,Rn", 2, { B(0x00), HR(0b10000), END }, { 0 } },
+	{ MOVTPE, "movtpe", "Rn,<EA>", 2, { B(0x00), HR(0b10010), END }, { 0 } },
+	{ MULXU, "mulxu.<Sz>", "<EA>,Rn", 1, { HR(0b10101), END }, { 0 } },
 };
 
 static const H8500OpcodeDescribe h8500_opcodes_without_ea[] = {
