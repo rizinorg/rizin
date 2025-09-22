@@ -232,3 +232,143 @@ EXPECT=<<EOF
             0x00000004      nop
 EOF
 RUN
+
+NAME=<program> -h
+FILE=--
+CMDS=<<EOF
+!rizin -h
+echo
+!rz-ax -h
+echo
+!rz-hash -h
+EOF
+EXPECT=<<EOF
+[36mUsage: [0mrizin [-ACdfLMnNqStuvwzX] [-P patch] [-p prj] [-a arch] [-b bits] [-i file]
+             [-s addr] [-B baddr] [-m maddr] [-c cmd] [-e k=v] file|pid|-|--|=
+[32m --[0m         [0mRun rizin without opening any file
+[32m =[0m          [0mSame as 'rizin malloc://512'
+[32m - [0m         [0mRead file from stdin
+[32m -=[0m         [0mPerform R=! command to run all commands remotely
+[32m -0[0m         [0mPrint \x00 after init and every command
+[32m -1[0m         [0mRedirect stderr to stdout
+[32m -2[0m         [0mClose stderr file descriptor (silent warning messages)
+[32m -a[0m[33m arch [0m   [0mSet asm.arch
+[32m -A[0m         [0mRun 'aaa' command to analyze all referenced code
+[32m -b[0m[33m bits [0m   [0mSet asm.bits
+[32m -B[0m[33m baddr [0m  [0mSet base address for PIE binaries
+[32m -c[0m[33m 'cmd..' [0m[0mExecute rizin command
+[32m -C[0m         [0mFile is host:port (alias for -cR+http://%%s/cmd/)
+[32m -d[0m         [0mDebug the executable 'file' or running process 'pid'
+[32m -D[0m[33m backend [0m[0mEnable debug mode (e cfg.debug=true)
+[32m -e[0m[33m k=v [0m    [0mEvaluate config var
+[32m -f[0m         [0mBlock size = file size
+[32m -F[0m[33m binplug [0m[0mForce to use that rbin plugin
+[32m -h, -hh[0m    [0mShow help message, -hh for long
+[32m -H[0m[33m [var] [0m  [0mDisplay variable
+[32m -i[0m[33m file [0m   [0mRun script file
+[32m -I[0m[33m file [0m   [0mRun script file before the file is opened
+[32m -k[0m[33m OS/kern [0m[0mSet asm.os (linux, macos, w32, netbsd, ...)
+[32m -l[0m[33m lib [0m    [0mLoad plugin file
+[32m -L[0m         [0mList supported IO plugins
+[32m -m[0m[33m addr [0m   [0mMap file at given address (loadaddr)
+[32m -M[0m         [0mDo not demangle symbol names
+[32m -n, -nn[0m    [0mDo not load RzBin info (-nn only load bin structures)
+[32m -N[0m         [0mDo not load user settings and scripts
+[32m -NN[0m        [0mDo not load any script or plugin
+[32m -q[0m         [0mQuiet mode (no prompt) and quit after -i and -c
+[32m -qq[0m        [0mQuiet mode (no prompt) and force quit
+[32m -p[0m[33m p.rzdb [0m [0mLoad project file
+[32m -r[0m[33m rz-run [0m [0mSpecify rz-run profile to load (same as -e dbg.profile=X)
+[32m -R[0m[33m rule [0m   [0mSpecify custom rz-run directive
+[32m -s[0m[33m addr [0m   [0mInitial seek
+[32m -T[0m         [0mDo not compute file hashes
+[32m -u[0m         [0mSet bin.filter=false to get raw sym/sec/cls names
+[32m -v, -V[0m     [0mShow rizin version (-V show lib versions)
+[32m -w[0m         [0mOpen file in write mode
+[32m -x[0m         [0mOpen without exec-flag (asm.emu will not work), See io.exec
+[32m -X[0m         [0mSame as -e bin.usextr=false (useful for dyldcache)
+[32m -z, -zz[0m    [0mDo not load strings or load them even in raw
+
+Usage: rz-ax [options] [expr ...]
+If expr is not provided, reads from stdin
+  int     ->  hex              ;  rz-ax 10
+  hex     ->  int              ;  rz-ax 0xa
+  -int    ->  hex              ;  rz-ax -77
+  -hex    ->  int              ;  rz-ax 0xffffffb3
+  int     ->  bin              ;  rz-ax b30
+  int     ->  ternary          ;  rz-ax t42
+  bin     ->  int              ;  rz-ax 1010d
+  ternary ->  int              ;  rz-ax 1010dt
+  float   ->  hex              ;  rz-ax 3.33f
+  hex     ->  float            ;  rz-ax Fx40551ed8
+  oct     ->  hex              ;  rz-ax 35o
+  hex     ->  oct              ;  rz-ax Ox12 (O is a letter)
+  bin     ->  hex              ;  rz-ax 1100011b
+  hex     ->  bin              ;  rz-ax Bx63
+  ternary ->  hex              ;  rz-ax 212t
+  hex     ->  ternary          ;  rz-ax Tx23
+  raw     ->  hex              ;  rz-ax -S < /binfile
+  hex     ->  raw              ;  rz-ax -s 414141
+  =base                        ;  rz-ax =10 0x46 -> output in base 10
+  -l                           ;  append newline to output (for -E/-D/-r/..
+  -a      show ascii table     ;  rz-ax -a
+  -b      bin -> str           ;  rz-ax -b 01000101 01110110
+  -B      str -> bin           ;  rz-ax -B hello
+  -d      force integer        ;  rz-ax -d 3 -> 3 instead of 0x3
+  -e      swap endianness      ;  rz-ax -e 0x33
+  -D      base64 decode        ;
+  -E      base64 encode        ;
+  -f      floating point       ;  rz-ax -f 6.3+2.1
+  -F      stdin slurp code hex ;  rz-ax -F < shellcode.[c/py/js]
+  -h      show this help       ;  rz-ax -h
+  -i      dump as C byte array ;  rz-ax -i < bytes
+  -I      IP address <-> LONG  ;  rz-ax -I 3530468537
+  -k      keep base            ;  rz-ax -k 33+3 -> 36
+  -L      bin -> hex(bignum)   ;  rz-ax -L 111111111 # 0x1ff
+  -n      int value -> hexpairs;  rz-ax -n 0x1234 # 34120000
+  -o      octalstr -> raw      ;  rz-ax -o \162 \172 # rz
+  -N      binary number        ;  rz-ax -N 0x1234 # \x34\x12\x00\x00
+  -r      rz style output      ;  rz-ax -r 0x1234
+  -s      hexstr -> raw        ;  rz-ax -s 43 4a 50
+  -S      raw -> hexstr        ;  rz-ax -S < /bin/ls > ls.hex
+  -t      Unix tstamp -> str   ;  rz-ax -t 1234567890
+  -m      MS-DOS tstamp -> str ;  rz-ax -m 1234567890
+  -W      Win32 tstamp -> str  ;  rz-ax -W 1234567890
+  -x      hash string          ;  rz-ax -x linux osx
+  -u      units                ;  rz-ax -u 389289238 # 317.0M
+  -w      signed word          ;  rz-ax -w 16 0xffff
+  -v      version              ;  rz-ax -v
+  -p      position of set bits ;  rz-ax -p 0xb3
+
+[36mUsage: [0mrz-hash [-vhBkjLq] [-b S] [-a A] [-c H] [-E A] [-D A] [-s S] [-x S] [-f O] [-t O] [files|-] ...
+[32m -v[0m        [0mShow version information
+[32m -h[0m        [0mShow this help
+[32m -[0m         [0mInput read from stdin instead from a file
+[32m -a[0m[33m algo [0m  [0mHash algorithm to use and you can specify multiple ones by
+[32m [0m          [0mAppending a comma (example: sha1,md4,md5,sha256)
+[32m -B[0m        [0mOutput the calculated value for each block
+[32m -b[0m[33m size [0m  [0mSet the block size
+[32m -c[0m[33m value [0m [0mCompare calculated value with a given one (hexadecimal)
+[32m -e[0m[33m endian [0m[0mSet the endianness (default: 'big' accepted: 'big' or 'little')
+[32m -D[0m[33m algo [0m  [0mDecrypt the given input; use -S to set key and -I to set IV (if needed)
+[32m -E[0m[33m algo [0m  [0mEncrypt the given input; use -S to set key and -I to set IV (if needed)
+[32m -f[0m[33m from [0m  [0mStart the calculation at given offset
+[32m -t[0m[33m to [0m    [0mStop the calculation at given offset
+[32m -I[0m[33m iv [0m    [0mSet the initialization vector (IV)
+[32m -i[0m[33m times [0m [0mRepeat the calculation N times
+[32m -j[0m        [0mOutput the result as a JSON structure
+[32m -k[0m        [0mOutput the calculated value using openssh's randomkey algorithm
+[32m -L[0m        [0mList all algorithms
+[32m -q[0m        [0mSet quiet mode (use -qq to get only the calculated value)
+[32m -S[0m[33m seed [0m  [0mSet the seed for -a, use '^' to append it before the input, use '@'
+[32m [0m          [0mPrefix to load it from a file and '-' from read it
+[32m -K[0m[33m key [0m   [0mSet the hmac key for -a and the key for -E/-D, use '@' prefix to
+[32m [0m          [0mLoad it from a file and '-' from read it
+[32m [0m          [0mFrom stdin (you can combine them)
+[32m -s[0m[33m string [0m[0mInput read from a zero-terminated string instead from a file
+[32m -x[0m[33m hex [0m   [0mInput read from a hexadecimal value instead from a file
+[32m [0m          [0m
+[32m [0m          [0mAll the input (besides -s/-x/-c) can be hexadecimal or strings
+[32m [0m          [0mIf 's:' prefix is specified
+EOF
+RUN
