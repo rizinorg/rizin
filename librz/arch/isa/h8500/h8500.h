@@ -99,6 +99,9 @@ typedef enum {
 	MOVFPE,
 	MOVTPE,
 	MULXU,
+	NEG,
+	NOP,
+	NOT,
 } H8500InstructionId;
 
 typedef struct {

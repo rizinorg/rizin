@@ -72,6 +72,8 @@ static const H8500OpcodeDescribe h8500_opcodes[] = {
 	{ MOVFPE, "movfpe", "<EA>,Rn", 2, { B(0x00), HR(0b10000), END }, { 0 } },
 	{ MOVTPE, "movtpe", "Rn,<EA>", 2, { B(0x00), HR(0b10010), END }, { 0 } },
 	{ MULXU, "mulxu.<Sz>", "<EA>,Rn", 1, { HR(0b10101), END }, { 0 } },
+	{ NEG, "neg.<Sz>", "<EA>", 1, { B(0x14), END }, { 0 } },
+	{ NOT, "not.<Sz>", "<EA>", 1, { B(0x15), END }, { 0 } },
 };
 
 static const H8500OpcodeDescribe h8500_opcodes_without_ea[] = {
@@ -99,6 +101,7 @@ static const H8500OpcodeDescribe h8500_opcodes_without_ea[] = {
 	{ MOV, "mov:i", "#xx:16,Rn", 3, { HR(0b01011) | IDX(1), Data16Op | IDX(0), END }, { AddrIMM, AddrREG } },
 	{ MOV, "mov:l.<Sz>", "@aa:8,Rn", 2, { HSR(0b0110) | IDX(1), AA8Op | IDX(0), END }, { AddrAbs, AddrREG } },
 	{ MOV, "mov:s.<Sz>", "Rn,@aa:8", 2, { HSR(0b0111), AA8Op, END }, { AddrREG, AddrAbs } },
+	{ NOP, "nop", "", 1, { B(0x00), END }, { 0 } },
 
 };
 
@@ -480,7 +483,7 @@ branch_ok:
 }
 
 bool h8500_instruction_parse(const ut8 *buf, ut8 len, H8500Instruction *ins) {
-	if (len < 2 || !ins) {
+	if (len < 1 || !ins) {
 		return false;
 	}
 	H8500Instruction ins_in = { 0 };
