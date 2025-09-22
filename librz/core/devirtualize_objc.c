@@ -45,6 +45,8 @@ static void rz_track_init(RzAnalysis *analysis, RzCore *core) {
 	} else if (!rz_str_cmp(analysis->arch_target->arch, "arm", -1)) {
 		rz_core_analysis_il_vm_set(core, "fp", 0x1fff);
 		rz_core_analysis_il_vm_set(core, "sp", 0x1fff);
+	} else {
+		RZ_LOG_WARN("arch %s not supported", analysis->arch_target->arch);
 	}
 }
 
@@ -63,8 +65,7 @@ static ut64 get_reg_value(RzAnalysis *analysis, const char *reg_name) {
 	return val;
 }
 
-static RZ_OWN char *get_message_dispatch_method(RzAnalysis *analysis, ut64 meta_class_addr, ut64 meth_str_addr) {
-	RzCore *core = analysis->core;
+static RZ_OWN char *get_message_dispatch_method(RzCore *core, ut64 meta_class_addr, ut64 meth_str_addr) {
 	RzBinFile *bf = rz_bin_cur(core->bin);
 	void **it;
 
@@ -99,7 +100,7 @@ static RZ_OWN char *get_message_dispatch_method(RzAnalysis *analysis, ut64 meta_
 	methname = rz_str_newf("method_%s_%s", classname, methname);
 	RZ_FREE(oldname);
 
-	RzVector *methods = rz_analysis_class_method_get_all(analysis, classname);
+	RzVector *methods = rz_analysis_class_method_get_all(core->analysis, classname);
 	bool found = false;
 	if (methods) {
 		RzAnalysisMethod *method;
@@ -153,8 +154,7 @@ static void add_virtual_xrefs(RzAnalysis *analysis, const char *method_name, ut6
 	rz_set_u_add(set, addr);
 }
 
-static void devirtualize_msg_dispatch(RzAnalysis *analysis, RzSetU *msg_dispatch_addr) {
-	RzCore *core = analysis->core;
+static void devirtualize_msg_dispatch(RzCore *core, RzSetU *msg_dispatch_addr) {
 
 	RzAnalysisFunction *function = rz_analysis_get_fcn_in(core->analysis, core->offset, RZ_ANALYSIS_FCN_TYPE_ROOT);
 	if (!function) {
@@ -166,20 +166,20 @@ static void devirtualize_msg_dispatch(RzAnalysis *analysis, RzSetU *msg_dispatch
 	}
 
 	// The first argument is usually the register holding class meta info
-	const char *cl_reg = rz_analysis_cc_arg(analysis, function->cc, 0);
+	const char *cl_reg = rz_analysis_cc_arg(core->analysis, function->cc, 0);
 
 	// The second argument is usually the register holding message selector
-	const char *m_reg = rz_analysis_cc_arg(analysis, function->cc, 1);
+	const char *m_reg = rz_analysis_cc_arg(core->analysis, function->cc, 1);
 
 	// The return argument stores the value of instance after call to allocator
 	const char *ret_reg = rz_analysis_cc_ret(core->analysis, function->cc);
 
-	RzSetU *xref_addrs = allocator_xrefs(analysis);
+	RzSetU *xref_addrs = allocator_xrefs(core->analysis);
 
 	ut64 start = function->addr; // start of the function
 	ut64 end = rz_analysis_function_max_addr(function);
 	RzAnalysisOp *op = rz_analysis_op_new();
-	rz_track_init(analysis, core);
+	rz_track_init(core->analysis, core);
 
 	ut8 *bytes = malloc(end - start);
 	if (!rz_io_read_at(core->io, start, bytes, end - start)) {
@@ -189,7 +189,7 @@ static void devirtualize_msg_dispatch(RzAnalysis *analysis, RzSetU *msg_dispatch
 
 	bool refresh_vm = false;
 	while (start < end) {
-		rz_analysis_op(analysis, op, start, bytes + offset, end - start, RZ_ANALYSIS_OP_MASK_ALL);
+		rz_analysis_op(core->analysis, op, start, bytes + offset, end - start, RZ_ANALYSIS_OP_MASK_ALL);
 		if (refresh_vm) {
 			rz_core_analysis_il_reinit(core);
 			refresh_vm = false;
@@ -200,24 +200,24 @@ static void devirtualize_msg_dispatch(RzAnalysis *analysis, RzSetU *msg_dispatch
 
 		if (rz_set_u_contains(xref_addrs, start)) {
 			// continue track past allocator call
-			ut64 val = get_reg_value(analysis, cl_reg);
+			ut64 val = get_reg_value(core->analysis, cl_reg);
 			rz_core_analysis_il_vm_set(core, ret_reg, val);
 		}
 
 		if (rz_set_u_contains(msg_dispatch_addr, op->addr)) {
 			// Devirtualize the message dispatch
-			ut64 vf_addr = get_reg_value(analysis, m_reg);
-			ut64 cmeta_addr = get_reg_value(analysis, cl_reg);
+			ut64 vf_addr = get_reg_value(core->analysis, m_reg);
+			ut64 cmeta_addr = get_reg_value(core->analysis, cl_reg);
 
 			// Get function name called by message dispatch
-			char *vmethod_name = get_message_dispatch_method(analysis, cmeta_addr, vf_addr);
+			char *vmethod_name = get_message_dispatch_method(core, cmeta_addr, vf_addr);
 			if (vmethod_name) {
 				RzStrBuf *comment = rz_strbuf_new(NULL);
 				rz_strbuf_setf(comment, "Message dispatch to %s", vmethod_name);
 				const char *str_comment = rz_strbuf_drain(comment);
 				rz_core_meta_comment_add(core, str_comment, start);
 				RZ_FREE(str_comment);
-				add_virtual_xrefs(analysis, vmethod_name, op->addr);
+				add_virtual_xrefs(core->analysis, vmethod_name, op->addr);
 			}
 		}
 		start += op->size;
@@ -232,6 +232,9 @@ static void devirtualize_msg_dispatch(RzAnalysis *analysis, RzSetU *msg_dispatch
 
 static char *construct_reloc_name(RZ_NONNULL RzBinReloc *reloc, RZ_NULLABLE const char *name, bool demangle) {
 	RzStrBuf *buf = rz_strbuf_new("");
+	if (!buf) {
+		return NULL;
+	}
 
 	// (optional) libname_
 	if (reloc->import && reloc->import->libname) {
@@ -264,10 +267,13 @@ static char *construct_reloc_name(RZ_NONNULL RzBinReloc *reloc, RZ_NULLABLE cons
 /**
  * \brief devirtualize Objective-C message dispatch methods
  *
- * \param analysis The RzAnalysis instance to work with.
+ * \param core The RzCore instance to work with.
  */
-RZ_API void rz_analysis_devirtualize_objc_methods(RzAnalysis *analysis) {
-	RzCore *core = analysis->core;
+RZ_API void rz_analysis_devirtualize_objc_methods(RZ_NULLABLE RzCore *core) {
+	if (!core) {
+		RZ_LOG_ERROR("devirtualization analysis failed");
+		return;
+	}
 	RzBinFile *bf = rz_bin_cur(core->bin);
 	RzBinObject *obj = rz_bin_cur_object(core->bin);
 
@@ -309,7 +315,7 @@ RZ_API void rz_analysis_devirtualize_objc_methods(RzAnalysis *analysis) {
 	ut64 *itt;
 	rz_vector_foreach (msg_dispatch_addrs, itt) {
 		ut64 addr = *itt;
-		RzList *xref_list = rz_analysis_xrefs_get_to(analysis, addr);
+		RzList *xref_list = rz_analysis_xrefs_get_to(core->analysis, addr);
 		RzListIter *it;
 		RzAnalysisXRef *xref;
 		rz_list_foreach (xref_list, it, xref) {
@@ -320,7 +326,7 @@ RZ_API void rz_analysis_devirtualize_objc_methods(RzAnalysis *analysis) {
 	rz_vector_free(msg_dispatch_addrs);
 
 	if (msg_dispatch) {
-		devirtualize_msg_dispatch(analysis, msg_dispatch_xref_addr);
+		devirtualize_msg_dispatch(core, msg_dispatch_xref_addr);
 	}
 	rz_set_u_free(msg_dispatch_xref_addr);
 }

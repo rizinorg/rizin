@@ -6122,12 +6122,17 @@ RZ_IPI RzCmdStatus rz_analysis_devirtualize_handler(RzCore *core, int argc, cons
 		RZ_LOG_ERROR("Cannot get current bin object\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	if (obj->lang == RZ_BIN_LANGUAGE_CXX) {
+	switch (obj->lang) {
+	case RZ_BIN_LANGUAGE_CXX:
 		rz_analysis_devirtualize_cxx_methods(core->analysis);
-	} else if (obj->lang == RZ_BIN_LANGUAGE_OBJC || obj->lang == RZ_BIN_LANGUAGE_SWIFT) {
-		rz_analysis_devirtualize_objc_methods(core->analysis);
-	} else {
+		break;
+	case RZ_BIN_LANGUAGE_OBJC:
+	case RZ_BIN_LANGUAGE_SWIFT:
+		rz_analysis_devirtualize_objc_methods(core);
+		break;
+	default:
 		RZ_LOG_ERROR("Devirtualization is only supported for C++ and Objective-C binaries.\n");
+		break;
 	}
 	return RZ_CMD_STATUS_OK;
 }

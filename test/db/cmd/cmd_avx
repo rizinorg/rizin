@@ -61,3 +61,25 @@ C 0x100001937 call qword [reloc.objc_msgSend]
 0x100001937
 EOF
 RUN
+
+NAME=objc msg dispatch (arm64)
+FILE=bins/mach0/objc-employee-ios14-arm64e
+CMDS=<<EOF
+aaaa
+avD @ main
+avx method_Employee_base
+avx method_Employee_sayHello
+avxt method_Employee_sayHello
+EOF
+EXPECT=<<EOF
+Virtual xrefs to method_Employee_base
+C 0x100007804 bl sym.imp.objc_msgSend
+Virtual xrefs to method_Employee_sayHello
+C 0x1000077d4 bl sym.imp.objc_msgSend
+C 0x1000077c0 bl sym.imp.objc_msgSend
+       from 
+------------
+0x1000077d4
+0x1000077c0
+EOF
+RUN
