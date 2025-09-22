@@ -1,3 +1,4 @@
+d "add:q.b (-1:16,r0),r7" f0ffff27
 d "add:q.b #1,r0" a008
 d "add:q.w #1,r1" a908
 d "add:q.b #2,@r1" d109
@@ -8,8 +9,6 @@ d "add:q.b #1,@-r0" b008
 d "add:q.b #1,@r0+" c008
 d "add:q.b #1,@0x11:8" 051108
 d "add:q.b #1,@0x1111:16" 15111108
-d "add:q.b #1,#0x11:8" 041108
-d "add:q.b #1,#0x1111:16" 0c111108
 d "add:q.b #1,(-1:16,r0)" f0ffff08
 d "adds.b (-1:16,r0),r1" f0ffff29
 d "addx.b (4369:16,r0),r1" f01111a1
@@ -33,10 +32,10 @@ d "bge +17" 2c11
 d "blt +17" 2d11
 d "bgt +17" 2e11
 d "ble +17" 2f11
-d "bnot.b #0x7,#0x1111:16" 0c1111e7
-d "bnot.b r1,#0x1111:16" 0c111169
-d "bset.b #0x7,#0x1111:16" 0c1111c7
-d "bset.b r1,#0x1111:16" 0c111149
+d "bclr.b #0xf,(4369:16,r0)" f01111df
+d "bclr.b r7,(4369:16,r0)" f011115f
+d "bnot.b r1,(4369:16,r0)" f0111169
+d "bset.b r1,(4369:16,r0)" f0111149
 d "bsr +17" 0e11
 d "bsr +4369" 1e1111
 d "btst.b #0x7,(4369:16,r0)" f01111f7
@@ -77,3 +76,6 @@ d "mulxu.w (4369:16,r7),r7" ff1111af
 d "neg.w (4369:16,r7)" ff111114
 d "nop" 00
 d "not.w (4369:16,r7)" ff111115
+d "or.w (4369:16,r7),r7" ff111147
+d "orc.b #0x11,tp" 04114f
+d "orc.b #0x1111,tp" 0c11114f

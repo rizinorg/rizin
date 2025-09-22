@@ -43,40 +43,44 @@ static const H8500EADescribe h8500_eas[] = {
 #define IDX(I) (((ut64)I << MASK_INDEX_OFF) | HasINDEX)
 
 static const H8500OpcodeDescribe h8500_opcodes[] = {
-	{ ADD_Q, "add:q.<Sz>", "#1,<EA>", 1, { B(0b00001000), END }, { 1 } },
-	{ ADD_Q, "add:q.<Sz>", "#2,<EA>", 1, { B(0b00001001), END }, { 2 } },
-	{ ADD_Q, "add:q.<Sz>", "#-1,<EA>", 1, { B(0b00001100), END }, { -1 } },
-	{ ADD_Q, "add:q.<Sz>", "#-2,<EA>", 1, { B(0b00001101), END }, { -2 } },
+	{ ADD_Q, "add:q.<Sz>", "<EA>,Rn", 1, { HR(0b00100), END }, { 1 } },
+	{ ADD_Q, "add:q.<Sz>", "#1,<EA>", 1, { B(0b00001000), END }, { 1 }, EA_BanIMM },
+	{ ADD_Q, "add:q.<Sz>", "#2,<EA>", 1, { B(0b00001001), END }, { 2 }, EA_BanIMM },
+	{ ADD_Q, "add:q.<Sz>", "#-1,<EA>", 1, { B(0b00001100), END }, { -1 }, EA_BanIMM },
+	{ ADD_Q, "add:q.<Sz>", "#-2,<EA>", 1, { B(0b00001101), END }, { -2 }, EA_BanIMM },
 	{ ADDS, "adds.<Sz>", "<EA>,Rn", 1, { HR(0b00101), END }, { 0 } },
 	{ ADDX, "addx.<Sz>", "<EA>,Rn", 1, { HR(0b10100), END }, { 0 } },
 	{ AND, "and.<Sz>", "<EA>,Rn", 1, { HR(0b01010), END }, { 0 } },
-	{ ANDC, "andc.<Sz>", "<EA>,CR", 1, { HC(0b01011), END }, { 0 } },
-	/*8*/ { ANDC, "andc.<Sz>", "<EA>,CR", 1, { HC(0b01011), END }, { 0 } },
-	{ BNOT, "bnot.<Sz>", "#xx,<EA>", 1, { H(0b1110) | Data4Op, END }, { 0 } },
-	{ BNOT, "bnot.<Sz>", "Rn,<EA>", 1, { HR(0b01101), END }, { 0 } },
-	{ BSET, "bset.<Sz>", "#xx,<EA>", 1, { H(0b1100) | Data4Op, END }, { 0 } },
-	{ BSET, "bset.<Sz>", "Rn,<EA>", 1, { HR(0b01001), END }, { 0 } },
-	{ BTST, "btst.<Sz>", "#xx,<EA>", 1, { H(0b1111) | Data4Op, END }, { 0 } },
-	{ BTST, "btst.<Sz>", "Rn,<EA>", 1, { HR(0b01111), END }, { 0 } },
+	{ BCLR, "bclr.<Sz>", "#xx,<EA>", 1, { H(0b1101) | Data4Op, END }, { 0 }, EA_BanIMM },
+	{ BCLR, "bclr.<Sz>", "Rn,<EA>", 1, { HR(0b01011), END }, { 0 }, EA_BanIMM },
+	{ BNOT, "bnot.<Sz>", "#xx,<EA>", 1, { H(0b1110) | Data4Op, END }, { 0 }, EA_BanIMM },
+	{ BNOT, "bnot.<Sz>", "Rn,<EA>", 1, { HR(0b01101), END }, { 0 }, EA_BanIMM },
+	{ BSET, "bset.<Sz>", "#xx,<EA>", 1, { H(0b1100) | Data4Op, END }, { 0 }, EA_BanIMM },
+	{ BSET, "bset.<Sz>", "Rn,<EA>", 1, { HR(0b01001), END }, { 0 }, EA_BanIMM },
+	{ BTST, "btst.<Sz>", "#xx,<EA>", 1, { H(0b1111) | Data4Op, END }, { 0 }, EA_BanIMM },
+	{ BTST, "btst.<Sz>", "Rn,<EA>", 1, { HR(0b01111), END }, { 0 }, EA_BanIMM },
 
-	{ CLR, "clr.<Sz>", "<EA>", 1, { B(0b00010011), END }, { 0 } },
-	{ CMP, "cmp:g.<Sz>", "#xx,<EA>", 2, { B(0b00000100), Data8Op, END }, { 0 } },
-	{ CMP, "cmp:g.<Sz>", "#xx,<EA>", 3, { B(0b00000101), Data16Op, END }, { 0 } },
+	{ CLR, "clr.<Sz>", "<EA>", 1, { B(0b00010011), END }, { 0 }, EA_BanIMM },
+	{ CMP, "cmp:g.<Sz>", "#xx,<EA>", 2, { B(0b00000100), Data8Op, END }, { 0 }, EA_BanIMM },
+	{ CMP, "cmp:g.<Sz>", "#xx,<EA>", 3, { B(0b00000101), Data16Op, END }, { 0 }, EA_BanIMM },
 	{ CMP, "cmp:g.<Sz>", "<EA>,Rn", 1, { HR(0b01110), END }, { 0 } },
 	{ DIVXU, "divxu.<Sz>", "<EA>,Rn", 1, { HR(0b10111), END }, { 0 } },
 	{ LDC, "ldc.<Sz>", "<EA>,CR", 1, { HC(0b10001), END }, { 0 } },
 	{ MOV, "mov:g.<Sz>", "<EA>,Rn", 1, { HR(0b10000), END }, { 0 } },
-	{ MOV, "mov:g.<Sz>", "Rn,<EA>", 1, { HR(0b10010), END }, { 0 } },
-	{ MOV, "mov:g.<Sz>", "#xx,<EA>", 2, { B(0x06), Data8Op, END }, { 0 } },
-	{ MOV, "mov:g.<Sz>", "#xx,<EA>", 3, { B(0x07), Data16Op, END }, { 0 } },
-	{ MOVFPE, "movfpe", "<EA>,Rn", 2, { B(0x00), HR(0b10000), END }, { 0 } },
-	{ MOVTPE, "movtpe", "Rn,<EA>", 2, { B(0x00), HR(0b10010), END }, { 0 } },
+	{ MOV, "mov:g.<Sz>", "Rn,<EA>", 1, { HR(0b10010), END }, { 0 }, EA_BanIMM },
+	{ MOV, "mov:g.<Sz>", "#xx,<EA>", 2, { B(0x06), Data8Op, END }, { 0 }, EA_BanIMM },
+	{ MOV, "mov:g.<Sz>", "#xx,<EA>", 3, { B(0x07), Data16Op, END }, { 0 }, EA_BanIMM },
+	{ MOVFPE, "movfpe", "<EA>,Rn", 2, { B(0x00), HR(0b10000), END }, { 0 }, EA_BanIMM },
+	{ MOVTPE, "movtpe", "Rn,<EA>", 2, { B(0x00), HR(0b10010), END }, { 0 }, EA_BanIMM },
 	{ MULXU, "mulxu.<Sz>", "<EA>,Rn", 1, { HR(0b10101), END }, { 0 } },
-	{ NEG, "neg.<Sz>", "<EA>", 1, { B(0x14), END }, { 0 } },
-	{ NOT, "not.<Sz>", "<EA>", 1, { B(0x15), END }, { 0 } },
+	{ NEG, "neg.<Sz>", "<EA>", 1, { B(0x14), END }, { 0 }, EA_BanIMM },
+	{ NOT, "not.<Sz>", "<EA>", 1, { B(0x15), END }, { 0 }, EA_BanIMM },
+	{ OR, "or.<Sz>", "<EA>,Rn", 1, { HR(0b01000), END }, { 0 } },
 };
 
 static const H8500OpcodeDescribe h8500_opcodes_without_ea[] = {
+	{ ANDC, "andc.<Sz>", "#xx:8,CR", 3, { B(0x04), Data8Op, HC(0b01011), END }, { 0 } },
+	{ ANDC, "andc.<Sz>", "#xx:16,CR", 4, { B(0x0c), Data16Op, HC(0b01011), END }, { 0 } },
 	// TODO: Bcc also support 16-bit displacement
 	{ Bcc, "<cc>", "disp", 2, { H(0b0010) | cc, Disp8Op, END }, { 0 } },
 	{ BSR, "bsr", "disp", 2, { B(0b00001110), Disp8Op, END }, { 0 } },
@@ -102,6 +106,8 @@ static const H8500OpcodeDescribe h8500_opcodes_without_ea[] = {
 	{ MOV, "mov:l.<Sz>", "@aa:8,Rn", 2, { HSR(0b0110) | IDX(1), AA8Op | IDX(0), END }, { AddrAbs, AddrREG } },
 	{ MOV, "mov:s.<Sz>", "Rn,@aa:8", 2, { HSR(0b0111), AA8Op, END }, { AddrREG, AddrAbs } },
 	{ NOP, "nop", "", 1, { B(0x00), END }, { 0 } },
+	{ ORC, "orc.<Sz>", "#xx,CR", 3, { B(0x04), Data8Op, HC(0b01001), END }, { 0 } },
+	{ ORC, "orc.<Sz>", "#xx,CR", 4, { B(0x0c), Data16Op, HC(0b01001), END }, { 0 } },
 
 };
 
@@ -448,7 +454,9 @@ static bool h8500_opcode_parse(const ut8 *buf, size_t offset, ut8 len, H8500Inst
 		opcode_describe = &tbl[i];
 		for (int j = 0;; j += 1) {
 			if (opcode_describe->pats[j] == END) {
-				if (strstr(opcode_describe->op_mnemonic, "<EA>") != NULL && !ins->ea_describe) {
+				if ((opcode_describe->ea_flags & EA_BanIMM) &&
+					ins->ea_describe &&
+					((ins->ea_describe->flags & MASK_AddressingMode) == AddrIMM)) {
 					goto branch_next;
 				}
 				ins->opcode_describe = opcode_describe;

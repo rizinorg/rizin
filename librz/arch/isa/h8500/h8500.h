@@ -80,6 +80,7 @@ typedef enum {
 	AND,
 	ANDC,
 	Bcc,
+	BCLR,
 	BNOT,
 	BSET,
 	BSR,
@@ -102,7 +103,13 @@ typedef enum {
 	NEG,
 	NOP,
 	NOT,
+	OR,
+	ORC,
 } H8500InstructionId;
+
+// EA flags
+enum { EA_UNK,
+	EA_BanIMM };
 
 typedef struct {
 	H8500InstructionId id;
@@ -111,6 +118,7 @@ typedef struct {
 	uint8_t size;
 	H8500Pat pats[8];
 	H8500Pat args[8];
+	ut32 ea_flags;
 } H8500OpcodeDescribe;
 
 typedef struct {
