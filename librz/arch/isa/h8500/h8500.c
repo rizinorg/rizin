@@ -122,7 +122,10 @@ static const H8500OpcodeDescribe h8500_opcodes_without_ea[] = {
 	{ PRTD, "prtd", "#xx:8", 3, { B(0x11), B(0x14), Data8Op, END }, { AddrIMM } },
 	{ PRTD, "prtd", "#xx:16", 4, { B(0x11), B(0x1c), Data16Op, END }, { AddrIMM } },
 	{ PRTS, "prts", "", 2, { B(0x11), B(0x19), END }, {} },
-
+	{ RTD, "rtd", "#xx:8", 2, { B(0x14), Data8Op, END }, { AddrIMM } },
+	{ RTD, "rtd", "#xx:16", 3, { B(0x1c), Data16Op, END }, { AddrIMM } },
+	{ RTE, "rte", "", 1, { B(0x0a), END }, {} },
+	{ RTS, "rts", "", 1, { B(0x19), END }, {} },
 };
 
 typedef struct {
