@@ -77,8 +77,8 @@ d "neg.w (4369:16,r7)" ff111114
 d "nop" 00
 d "not.w (4369:16,r7)" ff111115
 d "or.w (4369:16,r7),r7" ff111147
-d "orc.b #0x11,tp" 04114f
-d "orc.b #0x1111,tp" 0c11114f
+d "orc.b #0x11:8,tp" 04114f
+d "orc.b #0x1111:16,tp" 0c11114f
 d "pjmp #0x111111:24" 13111111
 d "pjmp @r7" 11c7
 d "pjsr #0x111111:24" 03111111
@@ -109,6 +109,11 @@ d "subs.w (4369:16,r7),r7" ff11113f
 d "subx.w (4369:16,r7),r7" ff1111b7
 d "swap r7" a710
 d "tas (4369:16,r7)" ff111117
-d "" 081f
+d "trapa #0xf" 081f
 d "trap/vs" 09
 d "tst (4369:16,r7)" ff111116
+d "unlk fp" 0f
+d "xch r7,r7" af97
+d "xor (4369:16,r7),r7" ff111167
+d "xorc.b #0x11:8,tp" 04116f
+d "xorc.b #0x1111:16,tp" 0c11116f

@@ -93,6 +93,7 @@ static const H8500OpcodeDescribe h8500_opcodes[] = {
 	{ SUBX, "subx.<Sz>", "<EA>,Rn", 1, { HR(0b10110), END }, { EA, AddrREG } },
 	{ TAS, "tas", "<EA>", 1, { B(0x17), END }, { 0 }, EA_BanIMM },
 	{ TST, "tst", "<EA>", 1, { B(0x16), END }, { 0 }, EA_BanIMM },
+	{ XOR, "xor", "<EA>,Rn", 1, { HR(0b01100), END }, { EA, AddrREG } },
 };
 
 static const H8500OpcodeDescribe h8500_opcodes_without_ea[] = {
@@ -123,8 +124,8 @@ static const H8500OpcodeDescribe h8500_opcodes_without_ea[] = {
 	{ MOV, "mov:l.<Sz>", "@aa:8,Rn", 2, { HSR(0b0110) | IDX(1), AA8Op | IDX(0), END }, { AddrAbs, AddrREG } },
 	{ MOV, "mov:s.<Sz>", "Rn,@aa:8", 2, { HSR(0b0111), AA8Op, END }, { AddrREG, AddrAbs } },
 	{ NOP, "nop", "", 1, { B(0x00), END }, { 0 } },
-	{ ORC, "orc.<Sz>", "#xx,CR", 3, { B(0x04), Data8Op, HC(0b01001), END }, { AddrIMM, AddrREGcr } },
-	{ ORC, "orc.<Sz>", "#xx,CR", 4, { B(0x0c), Data16Op, HC(0b01001), END }, { AddrIMM, AddrREGcr } },
+	{ ORC, "orc.<Sz>", "#xx:8,CR", 3, { B(0x04), Data8Op, HC(0b01001), END }, { AddrIMM, AddrREGcr } },
+	{ ORC, "orc.<Sz>", "#xx:16,CR", 4, { B(0x0c), Data16Op, HC(0b01001), END }, { AddrIMM, AddrREGcr } },
 	{ PJMP, "pjmp", "#aa:24", 4, { B(0x13), AA24Op, END }, { AddrIMM } },
 	{ PJMP, "pjmp", "@Rn", 2, { B(0x11), HR(0b11000), END }, { AddrRI } },
 	{ PJSR, "pjsr", "#aa:24", 4, { B(0x03), AA24Op, END }, { AddrIMM } },
@@ -144,6 +145,10 @@ static const H8500OpcodeDescribe h8500_opcodes_without_ea[] = {
 	{ SWAP, "swap", "Rn", 2, { HR(0b10100), B(0x10), END }, { AddrREG } },
 	{ TRAPA, "trapa", "#xx", 2, { B(0x08), H(0x1) | VEC | Data4 | HasOperand, END }, { AddrIMM } },
 	{ TRAP_VS, "trap/vs", "", 1, { B(0x09), END }, {} },
+	{ UNLK, "unlk", "fp", 1, { B(0x0f), END }, {} },
+	{ XCH, "xch", "Rn,Rn", 2, { HR(0b10101), HR(0b10010), END }, { AddrREG, AddrREG } },
+	{ XORC, "xorc.<Sz>", "#xx:8,CR", 3, { B(0x04), Data8Op, HC(0b01101), END }, { AddrIMM, AddrREGcr } },
+	{ XORC, "xorc.<Sz>", "#xx:16,CR", 4, { B(0x0c), Data16Op, HC(0b01101), END }, { AddrIMM, AddrREGcr } },
 
 };
 

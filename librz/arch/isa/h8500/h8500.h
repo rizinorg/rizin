@@ -136,6 +136,10 @@ typedef enum {
 	TRAPA,
 	TRAP_VS,
 	TST,
+	UNLK,
+	XCH,
+	XOR,
+	XORC,
 } H8500InstructionId;
 
 // EA flags
