@@ -51,6 +51,7 @@ static const ut64 RegList = 1 << 23; // 24-31 = MASK_CONS
 static const ut64 EA = 1ull << 32; // 59-62 = Operand index
 static const ut64 HasINDEX = 1ull << 33;
 static const ut64 ImpliedR6 = 1ull << 34;
+static const ut64 AA24 = 1ull << 35;
 static const ut64 END = 1ull << 63;
 
 static const ut64 MASK_CONST_OFF = 24;
@@ -105,6 +106,10 @@ typedef enum {
 	NOT,
 	OR,
 	ORC,
+	PJMP,
+	PJSR,
+	PRTD,
+	PTTS,
 } H8500InstructionId;
 
 // EA flags
@@ -124,13 +129,13 @@ typedef struct {
 typedef struct {
 	ut64 flags;
 	union {
-		uint16_t aa;
-		uint16_t imm;
-		int16_t disp;
+		uint32_t aa;
+		uint32_t imm;
+		int32_t disp;
 		uint8_t rn;
 		struct {
 			uint8_t rn;
-			int16_t disp;
+			int32_t disp;
 		} ri_disp;
 	};
 } H8500Operand;

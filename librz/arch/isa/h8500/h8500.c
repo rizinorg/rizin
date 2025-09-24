@@ -33,6 +33,7 @@ static const H8500EADescribe h8500_eas[] = {
 #define ccOp     (cc | HasOperand)
 #define AA8Op    (AA8 | HasOperand)
 #define AA16Op   Placeholder, AA16 | HasOperand
+#define AA24Op   Placeholder, Placeholder, AA24 | HasOperand
 
 #define HR(X)    (BM(X << 3, 0xf8) | RrrOp)
 #define HC(X)    (BM(X << 3, 0xf8) | CrrOp)
@@ -41,6 +42,8 @@ static const H8500EADescribe h8500_eas[] = {
 #define HSR(X)   (H(X) | Sz | RrrOp)
 
 #define IDX(I) (((ut64)I << MASK_INDEX_OFF) | HasINDEX)
+
+#define AddrREGcr (Crr | AddrREG)
 
 static const H8500OpcodeDescribe h8500_opcodes[] = {
 	{ ADD_Q, "add:q.<Sz>", "<EA>,Rn", 1, { HR(0b00100), END }, { 1 } },
@@ -79,15 +82,15 @@ static const H8500OpcodeDescribe h8500_opcodes[] = {
 };
 
 static const H8500OpcodeDescribe h8500_opcodes_without_ea[] = {
-	{ ANDC, "andc.<Sz>", "#xx:8,CR", 3, { B(0x04), Data8Op, HC(0b01011), END }, { 0 } },
-	{ ANDC, "andc.<Sz>", "#xx:16,CR", 4, { B(0x0c), Data16Op, HC(0b01011), END }, { 0 } },
+	{ ANDC, "andc.<Sz>", "#xx:8,CR", 3, { B(0x04), Data8Op, HC(0b01011), END }, { AddrIMM, AddrREGcr } },
+	{ ANDC, "andc.<Sz>", "#xx:16,CR", 4, { B(0x0c), Data16Op, HC(0b01011), END }, { AddrIMM, AddrREGcr } },
 	// TODO: Bcc also support 16-bit displacement
-	{ Bcc, "<cc>", "disp", 2, { H(0b0010) | cc, Disp8Op, END }, { 0 } },
-	{ BSR, "bsr", "disp", 2, { B(0b00001110), Disp8Op, END }, { 0 } },
-	{ BSR, "bsr", "disp", 3, { B(0b00011110), Disp16Op, END }, { 0 } },
-	{ DADD, "dadd", "Rn,Rn", 3, { HR(0b10100), B(0x00), HR(0b10100), END }, { 0 } },
-	{ EXTS, "exts", "Rn", 2, { HR(0b10100), B(0x11), END }, { 0 } },
-	{ EXTU, "extu", "Rn", 2, { HR(0b10100), B(0x12), END }, { 0 } },
+	{ Bcc, "<cc>", "disp", 2, { H(0b0010) | cc, Disp8Op, END }, { AddrPCRel } },
+	{ BSR, "bsr", "disp", 2, { B(0b00001110), Disp8Op, END }, { AddrPCRel } },
+	{ BSR, "bsr", "disp", 3, { B(0b00011110), Disp16Op, END }, { AddrPCRel } },
+	{ DADD, "dadd", "Rn,Rn", 3, { HR(0b10100), B(0x00), HR(0b10100), END }, { AddrREG, AddrREG } },
+	{ EXTS, "exts", "Rn", 2, { HR(0b10100), B(0x11), END }, { AddrREG } },
+	{ EXTU, "extu", "Rn", 2, { HR(0b10100), B(0x12), END }, { AddrREG } },
 	{ JMP, "jmp", "@Rn", 2, { B(0x11), HR(0b11010), END }, { AddrRI } },
 	{ JMP, "jmp", "@(d:8,Rn)", 3, { B(0x11), HRD8(0b11100), END }, { AddrRIDisp } },
 	{ JMP, "jmp", "@(d:16,Rn)", 4, { B(0x11), HRD16(0b11110), END }, { AddrRIDisp } },
@@ -96,9 +99,9 @@ static const H8500OpcodeDescribe h8500_opcodes_without_ea[] = {
 	{ JSR, "jsr", "@(d:8,Rn)", 3, { B(0x11), HRD8(0b11101), END }, { AddrRIDisp } },
 	{ JSR, "jsr", "@(d:16,Rn)", 4, { B(0x11), HRD16(0b11111), END }, { AddrRIDisp } },
 	{ JSR, "jsr", "@aa:16", 3, { B(0x18), AA16Op, END }, { AddrAbs } },
-	{ LDM, "ldm", "@SP+,<register list>", 2, { B(0x02), RegList | HasOperand, END }, { 0 } },
-	{ LINK, "link", "fp,#xx:8", 2, { B(0x17), Data8Op, END }, { 0 } },
-	{ LINK, "link", "fp,#xx:16", 3, { B(0x1f), Data16Op, END }, { 0 } },
+	{ LDM, "ldm", "@SP+,<register list>", 2, { B(0x02), RegList | HasOperand, END }, { RegList } },
+	{ LINK, "link", "fp,#xx:8", 2, { B(0x17), Data8Op, END }, { AddrIMM } },
+	{ LINK, "link", "fp,#xx:16", 3, { B(0x1f), Data16Op, END }, { AddrIMM } },
 	{ MOV, "mov:e", "#xx:8,Rn", 2, { HR(0b01010) | IDX(1), Data8Op | IDX(0), END }, { AddrIMM, AddrREG } },
 	{ MOV, "mov:f.<Sz>", "@(d:8,Rn),Rn", 2, { HSR(0b1000) | IDX(1), Disp8Op | ImpliedR6 | IDX(0), END }, { AddrRIDisp, AddrREG } },
 	{ MOV, "mov:f.<Sz>", "Rn,@(d:8,Rn)", 2, { HSR(0b1001), Disp8Op | ImpliedR6, END }, { AddrREG, AddrRIDisp } },
@@ -106,8 +109,10 @@ static const H8500OpcodeDescribe h8500_opcodes_without_ea[] = {
 	{ MOV, "mov:l.<Sz>", "@aa:8,Rn", 2, { HSR(0b0110) | IDX(1), AA8Op | IDX(0), END }, { AddrAbs, AddrREG } },
 	{ MOV, "mov:s.<Sz>", "Rn,@aa:8", 2, { HSR(0b0111), AA8Op, END }, { AddrREG, AddrAbs } },
 	{ NOP, "nop", "", 1, { B(0x00), END }, { 0 } },
-	{ ORC, "orc.<Sz>", "#xx,CR", 3, { B(0x04), Data8Op, HC(0b01001), END }, { 0 } },
-	{ ORC, "orc.<Sz>", "#xx,CR", 4, { B(0x0c), Data16Op, HC(0b01001), END }, { 0 } },
+	{ ORC, "orc.<Sz>", "#xx,CR", 3, { B(0x04), Data8Op, HC(0b01001), END }, { AddrIMM, AddrREGcr } },
+	{ ORC, "orc.<Sz>", "#xx,CR", 4, { B(0x0c), Data16Op, HC(0b01001), END }, { AddrIMM, AddrREGcr } },
+	{ PJMP, "pjmp", "#aa:24", 4, { B(0x13), AA24Op, END }, { AddrIMM } },
+	{ PJMP, "pjmp", "@Rn", 2, { B(0x11), HR(0b11000), END }, { AddrRI } },
 
 };
 
@@ -410,6 +415,13 @@ static bool operand_parse(const ut8 *buf, size_t pat_index, ut8 len,
 			}
 		}
 	}
+	if (pat & AA24) {
+		if (pat_index < 3) {
+			return false;
+		}
+		op->aa = b | (buf[pat_index - 1] << 8) | (buf[pat_index - 2] << 16);
+		op->flags = AddrAbs;
+	}
 	if (pat & AA8) {
 		op->aa = b;
 		op->flags = AddrAbs;
@@ -462,7 +474,7 @@ static bool h8500_opcode_parse(const ut8 *buf, size_t offset, ut8 len, H8500Inst
 				ins->opcode_describe = opcode_describe;
 				goto branch_ok;
 			}
-			if (!operand_parse(buf + offset, j, len - offset - j, opcode_describe, ins)) {
+			if (!operand_parse(buf + offset, j, len - offset, opcode_describe, ins)) {
 				goto branch_next;
 			}
 		}
