@@ -87,6 +87,7 @@ static const H8500OpcodeDescribe h8500_opcodes[] = {
 	{ SHAR, "shar.<Sz>", "<EA>", 1, { B(0x19), END }, { 0 }, EA_BanIMM },
 	{ SHLL, "shll.<Sz>", "<EA>", 1, { B(0x1a), END }, { 0 }, EA_BanIMM },
 	{ SHLR, "shlr.<Sz>", "<EA>", 1, { B(0x1b), END }, { 0 }, EA_BanIMM },
+	{ STC, "stc.<Sz>", "CR,<EA>", 1, { HC(0b10011), END }, { AddrREGcr, EA }, EA_BanIMM },
 };
 
 static const H8500OpcodeDescribe h8500_opcodes_without_ea[] = {
@@ -133,6 +134,8 @@ static const H8500OpcodeDescribe h8500_opcodes_without_ea[] = {
 	{ SCB_F, "scb/f", "Rn,disp", 3, { B(0x01), HR(0b10111), Disp8, END }, { AddrREG, AddrPCRel } },
 	{ SCB_NE, "scb/ne", "Rn,disp", 3, { B(0x06), HR(0b10111), Disp8, END }, { AddrREG, AddrPCRel } },
 	{ SCB_EQ, "scb/eq", "Rn,disp", 3, { B(0x07), HR(0b10111), Disp8, END }, { AddrREG, AddrPCRel } },
+	{ SLEEP, "sleep", "", 1, { B(0x1a), END }, {} },
+	{ STM, "stm.<Sz>", "<register list>,@-SP", 2, { B(0x12), RegList | HasOperand, END }, { RegList, AddrRIPreDec }, EA_BanIMM },
 };
 
 typedef struct {
@@ -312,6 +315,7 @@ static bool operand_to_string(char *out, size_t len, H8500Operand *op) {
 	if (op->flags & RegList) {
 		RzStrBuf sb = { 0 };
 		rz_strbuf_init(&sb);
+		rz_strbuf_append(&sb, "(");
 		st8 l = -1;
 		st8 r = -1;
 		ut8 group_count = 0;
@@ -334,6 +338,7 @@ static bool operand_to_string(char *out, size_t len, H8500Operand *op) {
 				l = r = -1;
 			}
 		}
+		rz_strbuf_append(&sb, ")");
 		rz_str_replace_in(out, len, "<register list>", rz_strbuf_get(&sb), 0);
 		rz_strbuf_fini(&sb);
 	}

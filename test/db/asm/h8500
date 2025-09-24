@@ -57,7 +57,7 @@ d "jsr @(17:8,r7)" 11ef11
 d "jsr @(4369:16,r7)" 11ff1111
 d "jsr @0x1234:16" 181234
 d "ldc.b (4369:16,r7),tp" ff11118f
-d "ldm @SP+,r0-r2,r4,r6-r7" 02d7
+d "ldm @SP+,(r0-r2,r4,r6-r7)" 02d7
 d "link fp,#0x11:8" 1711
 d "link fp,#0x1111:16" 1f1111
 d "mov:g.w (4369:16,r7),r7" ff111187
@@ -101,3 +101,6 @@ d "shal.w (4369:16,r7)" ff111118
 d "shar.w (4369:16,r7)" ff111119
 d "shll.w (4369:16,r7)" ff11111a
 d "shlr.w (4369:16,r7)" ff11111b
+d "sleep" 1a
+d "stc.b tp,(4369:16,r7)" ff11119f
+d "stm.b (r0-r2,r4,r6-r7),@-SP" 12d7
