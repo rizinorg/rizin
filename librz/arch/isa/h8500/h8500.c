@@ -88,6 +88,9 @@ static const H8500OpcodeDescribe h8500_opcodes[] = {
 	{ SHLL, "shll.<Sz>", "<EA>", 1, { B(0x1a), END }, { 0 }, EA_BanIMM },
 	{ SHLR, "shlr.<Sz>", "<EA>", 1, { B(0x1b), END }, { 0 }, EA_BanIMM },
 	{ STC, "stc.<Sz>", "CR,<EA>", 1, { HC(0b10011), END }, { AddrREGcr, EA }, EA_BanIMM },
+	{ SUB, "sub.<Sz>", "<EA>,Rn", 1, { HR(0b00110), END }, { EA, AddrREG } },
+	{ SUBS, "subs.<Sz>", "<EA>,Rn", 1, { HR(0b00111), END }, { EA, AddrREG } },
+	{ SUBX, "subx.<Sz>", "<EA>,Rn", 1, { HR(0b10110), END }, { EA, AddrREG } },
 };
 
 static const H8500OpcodeDescribe h8500_opcodes_without_ea[] = {
