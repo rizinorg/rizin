@@ -126,6 +126,9 @@ static const H8500OpcodeDescribe h8500_opcodes_without_ea[] = {
 	{ RTD, "rtd", "#xx:16", 3, { B(0x1c), Data16Op, END }, { AddrIMM } },
 	{ RTE, "rte", "", 1, { B(0x0a), END }, {} },
 	{ RTS, "rts", "", 1, { B(0x19), END }, {} },
+	{ SCB_F, "scb/f", "Rn,disp", 3, { B(0x01), HR(0b10111), Disp8, END }, { AddrREG, AddrPCRel } },
+	{ SCB_NE, "scb/ne", "Rn,disp", 3, { B(0x06), HR(0b10111), Disp8, END }, { AddrREG, AddrPCRel } },
+	{ SCB_EQ, "scb/eq", "Rn,disp", 3, { B(0x07), HR(0b10111), Disp8, END }, { AddrREG, AddrPCRel } },
 };
 
 typedef struct {

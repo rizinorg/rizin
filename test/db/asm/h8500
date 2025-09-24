@@ -94,3 +94,7 @@ d "rtd #0x11:8" 1411
 d "rtd #0x1111:16" 1c1111
 d "rte" 0a
 d "rts" 19
+d "scb/f r7,disp" 01bf11
+d "scb/ne r7,disp" 06bf11
+d "scb/eq r7,disp" 07bf11
+

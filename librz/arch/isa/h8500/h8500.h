@@ -117,6 +117,20 @@ typedef enum {
 	RTD,
 	RTE,
 	RTS,
+	SCB_F,
+	SCB_NE,
+	SCB_EQ,
+	SHAL,
+	SHAR,
+	SHLL,
+	SHLR,
+	SLEEP,
+	STC,
+	STM,
+	SUB,
+	SUBS,
+	SUBX,
+	SWAP,
 } H8500InstructionId;
 
 // EA flags
