@@ -97,4 +97,7 @@ d "rts" 19
 d "scb/f r7,disp" 01bf11
 d "scb/ne r7,disp" 06bf11
 d "scb/eq r7,disp" 07bf11
-
+d "shal.w (4369:16,r7)" ff111118
+d "shar.w (4369:16,r7)" ff111119
+d "shll.w (4369:16,r7)" ff11111a
+d "shlr.w (4369:16,r7)" ff11111b

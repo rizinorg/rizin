@@ -83,6 +83,10 @@ static const H8500OpcodeDescribe h8500_opcodes[] = {
 	{ ROTR, "rotr.<Sz>", "<EA>", 1, { B(0x1d), END }, { 0 }, EA_BanIMM },
 	{ ROTL, "rotxl.<Sz>", "<EA>", 1, { B(0x1e), END }, { 0 }, EA_BanIMM },
 	{ ROTR, "rotxr.<Sz>", "<EA>", 1, { B(0x1f), END }, { 0 }, EA_BanIMM },
+	{ SHAL, "shal.<Sz>", "<EA>", 1, { B(0x18), END }, { 0 }, EA_BanIMM },
+	{ SHAR, "shar.<Sz>", "<EA>", 1, { B(0x19), END }, { 0 }, EA_BanIMM },
+	{ SHLL, "shll.<Sz>", "<EA>", 1, { B(0x1a), END }, { 0 }, EA_BanIMM },
+	{ SHLR, "shlr.<Sz>", "<EA>", 1, { B(0x1b), END }, { 0 }, EA_BanIMM },
 };
 
 static const H8500OpcodeDescribe h8500_opcodes_without_ea[] = {
