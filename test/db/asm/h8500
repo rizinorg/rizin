@@ -86,3 +86,7 @@ d "pjsr @r7" 11cf
 d "prtd #0x11:8" 111411
 d "prtd #0x1111:16" 111c1111
 d "prts" 1119
+d "rotl.w (4369:16,r7)" ff11111c
+d "rotr.w (4369:16,r7)" ff11111d
+d "rotxl.w (4369:16,r7)" ff11111e
+d "rotxr.w (4369:16,r7)" ff11111f

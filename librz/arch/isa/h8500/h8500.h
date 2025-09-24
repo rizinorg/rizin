@@ -110,6 +110,13 @@ typedef enum {
 	PJSR,
 	PRTD,
 	PRTS,
+	ROTL,
+	ROTR,
+	ROTXL,
+	ROTXR,
+	RTD,
+	RTE,
+	RTS,
 } H8500InstructionId;
 
 // EA flags

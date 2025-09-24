@@ -79,6 +79,10 @@ static const H8500OpcodeDescribe h8500_opcodes[] = {
 	{ NEG, "neg.<Sz>", "<EA>", 1, { B(0x14), END }, { 0 }, EA_BanIMM },
 	{ NOT, "not.<Sz>", "<EA>", 1, { B(0x15), END }, { 0 }, EA_BanIMM },
 	{ OR, "or.<Sz>", "<EA>,Rn", 1, { HR(0b01000), END }, { 0 } },
+	{ ROTL, "rotl.<Sz>", "<EA>", 1, { B(0x1c), END }, { 0 }, EA_BanIMM },
+	{ ROTR, "rotr.<Sz>", "<EA>", 1, { B(0x1d), END }, { 0 }, EA_BanIMM },
+	{ ROTL, "rotxl.<Sz>", "<EA>", 1, { B(0x1e), END }, { 0 }, EA_BanIMM },
+	{ ROTR, "rotxr.<Sz>", "<EA>", 1, { B(0x1f), END }, { 0 }, EA_BanIMM },
 };
 
 static const H8500OpcodeDescribe h8500_opcodes_without_ea[] = {
