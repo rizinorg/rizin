@@ -139,6 +139,7 @@ static const H8500OpcodeDescribe h8500_opcodes_without_ea[] = {
 	{ SCB_EQ, "scb/eq", "Rn,disp", 3, { B(0x07), HR(0b10111), Disp8, END }, { AddrREG, AddrPCRel } },
 	{ SLEEP, "sleep", "", 1, { B(0x1a), END }, {} },
 	{ STM, "stm.<Sz>", "<register list>,@-SP", 2, { B(0x12), RegList | HasOperand, END }, { RegList, AddrRIPreDec }, EA_BanIMM },
+	{ SWAP, "swap", "Rn", 2, { HR(0b10100), B(0x10), END }, {} },
 };
 
 typedef struct {
