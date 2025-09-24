@@ -91,6 +91,8 @@ static const H8500OpcodeDescribe h8500_opcodes[] = {
 	{ SUB, "sub.<Sz>", "<EA>,Rn", 1, { HR(0b00110), END }, { EA, AddrREG } },
 	{ SUBS, "subs.<Sz>", "<EA>,Rn", 1, { HR(0b00111), END }, { EA, AddrREG } },
 	{ SUBX, "subx.<Sz>", "<EA>,Rn", 1, { HR(0b10110), END }, { EA, AddrREG } },
+	{ TAS, "tas", "<EA>", 1, { B(0x17), END }, { 0 }, EA_BanIMM },
+	{ TST, "tst", "<EA>", 1, { B(0x16), END }, { 0 }, EA_BanIMM },
 };
 
 static const H8500OpcodeDescribe h8500_opcodes_without_ea[] = {
@@ -139,7 +141,10 @@ static const H8500OpcodeDescribe h8500_opcodes_without_ea[] = {
 	{ SCB_EQ, "scb/eq", "Rn,disp", 3, { B(0x07), HR(0b10111), Disp8, END }, { AddrREG, AddrPCRel } },
 	{ SLEEP, "sleep", "", 1, { B(0x1a), END }, {} },
 	{ STM, "stm.<Sz>", "<register list>,@-SP", 2, { B(0x12), RegList | HasOperand, END }, { RegList, AddrRIPreDec }, EA_BanIMM },
-	{ SWAP, "swap", "Rn", 2, { HR(0b10100), B(0x10), END }, {} },
+	{ SWAP, "swap", "Rn", 2, { HR(0b10100), B(0x10), END }, { AddrREG } },
+	{ TRAPA, "trapa", "#xx", 2, { B(0x08), H(0x1) | VEC | Data4 | HasOperand, END }, { AddrIMM } },
+	{ TRAP_VS, "trap/vs", "", 1, { B(0x09), END }, {} },
+
 };
 
 typedef struct {

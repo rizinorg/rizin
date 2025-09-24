@@ -52,6 +52,7 @@ static const ut64 EA = 1ull << 32; // 59-62 = Operand index
 static const ut64 HasINDEX = 1ull << 33;
 static const ut64 ImpliedR6 = 1ull << 34;
 static const ut64 AA24 = 1ull << 35;
+static const ut64 VEC = 1ull << 36;
 static const ut64 END = 1ull << 63;
 
 static const ut64 MASK_CONST_OFF = 24;
@@ -131,6 +132,10 @@ typedef enum {
 	SUBS,
 	SUBX,
 	SWAP,
+	TAS,
+	TRAPA,
+	TRAP_VS,
+	TST,
 } H8500InstructionId;
 
 // EA flags
