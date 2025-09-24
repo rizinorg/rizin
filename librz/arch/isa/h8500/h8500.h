@@ -109,7 +109,7 @@ typedef enum {
 	PJMP,
 	PJSR,
 	PRTD,
-	PTTS,
+	PRTS,
 } H8500InstructionId;
 
 // EA flags

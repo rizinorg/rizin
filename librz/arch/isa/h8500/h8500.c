@@ -113,6 +113,11 @@ static const H8500OpcodeDescribe h8500_opcodes_without_ea[] = {
 	{ ORC, "orc.<Sz>", "#xx,CR", 4, { B(0x0c), Data16Op, HC(0b01001), END }, { AddrIMM, AddrREGcr } },
 	{ PJMP, "pjmp", "#aa:24", 4, { B(0x13), AA24Op, END }, { AddrIMM } },
 	{ PJMP, "pjmp", "@Rn", 2, { B(0x11), HR(0b11000), END }, { AddrRI } },
+	{ PJSR, "pjsr", "#aa:24", 4, { B(0x03), AA24Op, END }, { AddrIMM } },
+	{ PJSR, "pjsr", "@Rn", 2, { B(0x11), HR(0b11001), END }, { AddrRI } },
+	{ PRTD, "prtd", "#xx:8", 3, { B(0x11), B(0x14), Data8Op, END }, { AddrIMM } },
+	{ PRTD, "prtd", "#xx:16", 4, { B(0x11), B(0x1c), Data16Op, END }, { AddrIMM } },
+	{ PRTS, "prts", "", 2, { B(0x11), B(0x19), END }, {} },
 
 };
 
