@@ -32,46 +32,49 @@ typedef enum {
 	AddrPCRel,
 } H8500AddressingMode;
 
-static const ut64 Rrr = 1 << 8;
-static const ut64 Disp8 = 1 << (8 + 1);
-static const ut64 Disp16 = 1 << (8 + 2);
-static const ut64 AA8 = 1 << (8 + 3);
-static const ut64 AA16 = 1 << (8 + 4);
-static const ut64 Data8 = 1 << (8 + 5);
-static const ut64 Data16 = 1 << (8 + 6);
-static const ut64 Placeholder = 1 << (8 + 7);
-static const ut64 Sz = 1 << 16;
-static const ut64 HasOperand = 1 << 17;
-static const ut64 DST = 1 << 18;
-static const ut64 SRC = 1 << 19;
-static const ut64 Crr = 1 << 20;
-static const ut64 cc = 1 << 21;
-static const ut64 Data4 = 1 << 22;
-static const ut64 RegList = 1 << 23; // 24-31 = MASK_CONS
-static const ut64 EA = 1ull << 32; // 59-62 = Operand index
-static const ut64 HasINDEX = 1ull << 33;
-static const ut64 ImpliedR6 = 1ull << 34;
-static const ut64 AA24 = 1ull << 35;
-static const ut64 VEC = 1ull << 36;
-static const ut64 END = 1ull << 63;
+#define MASK_CONST_OFF 24
+#define MASK_INDEX_OFF 59
 
-static const ut64 MASK_CONST_OFF = 24;
-static const ut64 MASK_CONST = 0xff << 24;
-static const ut64 MASK_INDEX_OFF = 59;
-static const ut64 MASK_INDEX = 0xfull << 59;
-static const ut64 MASK_Rrr = 0b111;
-static const ut64 MASK_Sz = 0b1000;
-static const ut64 MASK_AddressingMode = 0xff;
-static const ut64 MASK_cc = 0xf;
-static const ut64 MASK_Data4 = 0xf;
+typedef enum {
+	Rrr = 1 << 8,
+	Disp8 = 1 << (8 + 1),
+	Disp16 = 1 << (8 + 2),
+	AA8 = 1 << (8 + 3),
+	AA16 = 1 << (8 + 4),
+	Data8 = 1 << (8 + 5),
+	Data16 = 1 << (8 + 6),
+	Placeholder = 1 << (8 + 7),
+	Sz = 1 << 16,
+	HasOperand = 1 << 17,
+	DST = 1 << 18,
+	SRC = 1 << 19,
+	Crr = 1 << 20,
+	cc = 1 << 21,
+	Data4 = 1 << 22,
+	RegList = 1 << 23, // 24-31 = MASK_CON,
+} H8500PatFlags;
+
+#define EA                  (1ull << 32)
+#define HasINDEX            (1ull << 33)
+#define ImpliedR6           (1ull << 34)
+#define AA24                (1ull << 35)
+#define VEC                 (1ull << 36)
+#define END                 (1ull << 63)
+#define MASK_CONST          (0xff << MASK_CONST_OFF)
+#define MASK_INDEX          (0xfull << MASK_INDEX_OFF)
+#define MASK_Rrr            (0b111)
+#define MASK_Sz             (0b1000)
+#define MASK_AddressingMode (0xff)
+#define MASK_cc             (0xf)
+#define MASK_Data4          (0xf)
 
 typedef ut64 H8500Pat;
 
 typedef struct {
 	ut64 flags;
-	uint8_t ea_width; // 8 or 16
 	const char *mnemonic;
 	H8500Pat pats[8];
+	uint8_t ea_width; // 8 or 16
 	uint8_t size;
 } H8500EADescribe;
 

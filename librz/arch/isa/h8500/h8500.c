@@ -10,16 +10,16 @@
 #define B(X)     BM(X, 0xffull)
 
 static const H8500EADescribe h8500_eas[] = {
-	{ AddrREG, 16, "Rn", { H(0b1010) | Sz | Rrr, END }, 1 },
-	{ AddrRI, 16, "@Rn", { H(0b1101) | Sz | Rrr, END }, 1 },
-	{ AddrRIDisp, 8, "(d:8,Rn)", { H(0b1110) | Sz | Rrr, Disp8, END }, 2 },
-	{ AddrRIDisp, 16, "(d:16,Rn)", { H(0b1111) | Sz | Rrr, Placeholder, Disp16, END }, 3 },
-	{ AddrRIPreDec, 16, "@-Rn", { H(0b1011) | Sz | Rrr, END }, 1 },
-	{ AddrRIPostInc, 16, "@Rn+", { H(0b1100) | Sz | Rrr, END }, 1 },
-	{ AddrAbs, 8, "@aa:8", { BM(0b00000101, 0xf7) | Sz, AA8, END }, 2 },
-	{ AddrAbs, 16, "@aa:16", { BM(0b00010101, 0xf7) | Sz, Placeholder, AA16, END }, 3 },
-	{ AddrIMM, 8, "#xx:8", { B(0b00000100), Data8, END }, 2 },
-	{ AddrIMM, 16, "#xx:16", { B(0b00001100), Placeholder, Data16, END }, 3 },
+	{ AddrREG, "Rn", { H(0b1010) | Sz | Rrr, END }, 16, 1 },
+	{ AddrRI, "@Rn", { H(0b1101) | Sz | Rrr, END }, 16, 1 },
+	{ AddrRIDisp, "(d:8,Rn)", { H(0b1110) | Sz | Rrr, Disp8, END }, 8, 2 },
+	{ AddrRIDisp, "(d:16,Rn)", { H(0b1111) | Sz | Rrr, Placeholder, Disp16, END }, 16, 3 },
+	{ AddrRIPreDec, "@-Rn", { H(0b1011) | Sz | Rrr, END }, 16, 1 },
+	{ AddrRIPostInc, "@Rn+", { H(0b1100) | Sz | Rrr, END }, 16, 1 },
+	{ AddrAbs, "@aa:8", { BM(0b00000101, 0xf7) | Sz, AA8, END }, 8, 2 },
+	{ AddrAbs, "@aa:16", { BM(0b00010101, 0xf7) | Sz, Placeholder, AA16, END }, 16, 3 },
+	{ AddrIMM, "#xx:8", { B(0b00000100), Data8, END }, 8, 2 },
+	{ AddrIMM, "#xx:16", { B(0b00001100), Placeholder, Data16, END }, 16, 3 },
 	//{ H8500_PC_REL, 16, "disp", { END }, 1 /* or 2  */ },
 };
 
