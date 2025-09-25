@@ -185,5 +185,6 @@ typedef struct {
 } H8500Instruction;
 
 bool h8500_instruction_parse(const ut8 *buf, ut8 len, H8500Instruction *ins);
+const char *h8500_reg_name(const H8500Operand *op, ut8 reg);
 
 #endif // H8500_H

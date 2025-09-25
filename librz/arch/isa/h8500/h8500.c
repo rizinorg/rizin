@@ -222,6 +222,17 @@ branch_fail:
 	return NULL;
 }
 
+const char *h8500_reg_name(const H8500Operand *op, ut8 reg) {
+	if (op->flags & Crr) {
+		const CCRDescribe *ccr = get_ccr_describe(reg);
+		if (!ccr) {
+			return NULL;
+		}
+		return ccr->name;
+	}
+	return Rn_to_string(reg);
+}
+
 static const char *cc_mnemonic(ut8 i) {
 	if (i >= RZ_ARRAY_SIZE(h8500_cc_mnemonics)) {
 		goto branch_fail;
