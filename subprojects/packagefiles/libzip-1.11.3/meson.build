@@ -3,9 +3,6 @@ project('libzip', 'c',
   license: 'BSD-3-clause',
   meson_version: '>=0.55.0',
 )
-if host_machine.system() != 'windows'
-  add_project_arguments('-Wno-error', language: ['c'])
-endif
 
 py3_exe = import('python').find_installation()
 cc = meson.get_compiler('c')
