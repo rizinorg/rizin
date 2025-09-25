@@ -335,7 +335,7 @@ if r.returncode() == 1 and get_option('subprojects_check')
   error(subproject_clean_error_msg)
 endif
 
-rizin_grammar_c_proj = subproject('rizin-grammar-c', default_options: ['default_library=static'])
+rizin_grammar_c_proj = subproject('rizin-grammar-c', default_options: ['default_library=static', 'werror=false'])
 rizin_grammar_c_dep = rizin_grammar_c_proj.get_variable('rizin_grammar_c_dep')
 # override done in rizin-grammar-c subproject
 
