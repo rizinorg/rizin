@@ -56,9 +56,9 @@ static const ut64 VEC = 1ull << 36;
 static const ut64 END = 1ull << 63;
 
 static const ut64 MASK_CONST_OFF = 24;
-static const ut64 MASK_CONST = 0xff << MASK_CONST_OFF;
+static const ut64 MASK_CONST = 0xff << 24;
 static const ut64 MASK_INDEX_OFF = 59;
-static const ut64 MASK_INDEX = 0xfull << MASK_INDEX_OFF;
+static const ut64 MASK_INDEX = 0xfull << 59;
 static const ut64 MASK_Rrr = 0b111;
 static const ut64 MASK_Sz = 0b1000;
 static const ut64 MASK_AddressingMode = 0xff;
