@@ -9,10 +9,263 @@
 #include <rz_util.h>
 #include <h8500/h8500.h>
 
+#define NEXT_PC        (ctx->aop->addr + ctx->ins->size)
+#define PC_ADD_EA_DISP (NEXT_PC + ctx->ins->ea.disp)
+#define NOPS           (ctx->ins->num_operands)
+#define IOP(I)         (ctx->ins->operands + (I))
+
+typedef struct {
+	RzAnalysis *analysis;
+	H8500Instruction *ins;
+	RzAnalysisOp *aop;
+} AContext;
+
+static void h8500_op2val(AContext *ctx, RzAnalysisValue *av, H8500Operand *iop) {
+	switch (iop->flags & MASK_AddressingMode) {
+	case AddrREG:
+		av->type = RZ_ANALYSIS_VAL_REG;
+		av->reg = rz_reg_get(ctx->analysis->reg, h8500_reg_name(iop, iop->rn), RZ_REG_TYPE_ANY);
+		break;
+	case AddrIMM:
+		av->type = RZ_ANALYSIS_VAL_IMM;
+		av->imm = iop->imm;
+		break;
+	case AddrAbs:
+		av->type = RZ_ANALYSIS_VAL_MEM;
+		av->absolute = iop->imm;
+		break;
+	case AddrPCRel:
+		av->type = RZ_ANALYSIS_VAL_MEM;
+		av->base =
+			av->delta = iop->disp;
+		break;
+	case AddrRIDisp:
+		av->type = RZ_ANALYSIS_VAL_MEM;
+		av->reg = rz_reg_get(ctx->analysis->reg, h8500_reg_name(iop, iop->ri_disp.rn), RZ_REG_TYPE_ANY);
+		av->delta = iop->ri_disp.disp;
+		break;
+	case AddrRI:
+		av->type = RZ_ANALYSIS_VAL_MEM;
+		av->reg = rz_reg_get(ctx->analysis->reg, h8500_reg_name(iop, iop->rn), RZ_REG_TYPE_ANY);
+		break;
+	case AddrRIPostInc:
+	case AddrRIPreDec:
+		av->type = RZ_ANALYSIS_VAL_MEM;
+		av->reg = rz_reg_get(ctx->analysis->reg, h8500_reg_name(iop, iop->rn), RZ_REG_TYPE_ANY);
+		break;
+	default: break;
+	}
+}
+
+static void h8500_analyze_val(AContext *ctx) {
+	uint8_t srci = 0;
+
+	for (uint8_t i = 0; i < NOPS; ++i) {
+		H8500Operand *iop = IOP(i);
+		RzAnalysisValue *av = rz_analysis_value_new();
+		if (!av) {
+			rz_warn_if_reached();
+			return;
+		}
+		h8500_op2val(ctx, av, iop);
+		if (NOPS > 1 && i < NOPS - 1) {
+			av->access |= RZ_ANALYSIS_ACC_R;
+			ctx->aop->src[srci++] = av;
+		}
+		if (NOPS == 1 || i == NOPS - 1) {
+			av->access |= RZ_ANALYSIS_ACC_W;
+			if (ctx->aop->dst) {
+				rz_warn_if_reached();
+			}
+			if (srci > 0 && av == ctx->aop->src[srci - 1]) {
+				av = rz_mem_dup(av, sizeof(RzAnalysisValue));
+			}
+			ctx->aop->dst = av;
+		}
+	}
+}
+
+static void aop_set_from_ea(AContext *ctx) {
+	switch (ctx->ins->ea.flags & MASK_AddressingMode) {
+	case AddrAbs:
+		ctx->aop->jump = ctx->ins->ea.aa;
+		break;
+	case AddrRI:
+		ctx->aop->type |= RZ_ANALYSIS_OP_TYPE_IND | RZ_ANALYSIS_OP_TYPE_REG;
+		ctx->aop->reg = h8500_reg_name(&ctx->ins->ea, ctx->ins->ea.rn);
+		break;
+	default:
+		ctx->aop->type |= RZ_ANALYSIS_OP_TYPE_MEM;
+		ctx->aop->reg = h8500_reg_name(&ctx->ins->ea, ctx->ins->ea.ri_disp.rn);
+		ctx->aop->disp = ctx->ins->ea.ri_disp.disp;
+		break;
+	}
+	ctx->aop->fail = NEXT_PC;
+}
+
+static void h8500_analyze(AContext *ctx) {
+	switch (ctx->ins->opcode_describe->id) {
+	case ADD_Q:
+	case ADDS:
+	case ADDX:
+	case DADD:
+		ctx->aop->type = RZ_ANALYSIS_OP_TYPE_ADD;
+		break;
+	case AND: break;
+	case ANDC:
+		ctx->aop->type = RZ_ANALYSIS_OP_TYPE_AND;
+		break;
+	case Bcc:
+		ctx->aop->type = RZ_ANALYSIS_OP_TYPE_CJMP;
+		ctx->aop->jump = PC_ADD_EA_DISP;
+		ctx->aop->fail = NEXT_PC;
+		break;
+	case BSR:
+		ctx->aop->type = RZ_ANALYSIS_OP_TYPE_CALL;
+		ctx->aop->jump = PC_ADD_EA_DISP;
+		ctx->aop->fail = NEXT_PC;
+		break;
+	case BCLR:
+	case BNOT:
+	case BSET:
+	case BTST:
+	case CLR:
+		ctx->aop->type = RZ_ANALYSIS_OP_TYPE_UNK;
+		break;
+	case CMP:
+		ctx->aop->type = RZ_ANALYSIS_OP_TYPE_CMP;
+		break;
+	case DIVXU:
+		ctx->aop->type = RZ_ANALYSIS_OP_TYPE_DIV;
+		break;
+	case EXTS:
+	case EXTU:
+		ctx->aop->type = RZ_ANALYSIS_OP_TYPE_CAST;
+		break;
+	case JMP:
+	case PJMP:
+		ctx->aop->type = RZ_ANALYSIS_OP_TYPE_UJMP;
+		aop_set_from_ea(ctx);
+		break;
+	case JSR:
+	case PJSR:
+		ctx->aop->type = RZ_ANALYSIS_OP_TYPE_UCALL;
+		aop_set_from_ea(ctx);
+		break;
+	case LDC:
+	case LDM:
+		ctx->aop->type = RZ_ANALYSIS_OP_TYPE_LOAD;
+		break;
+	case LINK:
+		ctx->aop->type = RZ_ANALYSIS_OP_TYPE_UNK;
+		break;
+	case MOV:
+	case MOVFPE:
+	case MOVTPE:
+		ctx->aop->type = RZ_ANALYSIS_OP_TYPE_MOV;
+		break;
+	case MULXU:
+		ctx->aop->type = RZ_ANALYSIS_OP_TYPE_MUL;
+		break;
+	case NOP:
+		ctx->aop->type = RZ_ANALYSIS_OP_TYPE_NOP;
+		break;
+	case NEG:
+	case NOT:
+		ctx->aop->type = RZ_ANALYSIS_OP_TYPE_NOT;
+		break;
+	case OR:
+	case ORC:
+		ctx->aop->type = RZ_ANALYSIS_OP_TYPE_OR;
+		break;
+
+	case PRTD:
+	case PRTS:
+		ctx->aop->type = RZ_ANALYSIS_OP_TYPE_RET;
+		break;
+	case ROTL:
+	case ROTXL:
+		ctx->aop->type = RZ_ANALYSIS_OP_TYPE_ROL;
+		break;
+	case ROTR:
+	case ROTXR:
+		ctx->aop->type = RZ_ANALYSIS_OP_TYPE_ROR;
+		break;
+	case RTD:
+	case RTE:
+	case RTS:
+		ctx->aop->type = RZ_ANALYSIS_OP_TYPE_RET;
+		break;
+	case SCB_F:
+	case SCB_NE:
+	case SCB_EQ:
+		ctx->aop->type = RZ_ANALYSIS_OP_TYPE_CJMP;
+		break;
+	case SHAL:
+	case SHLL:
+		ctx->aop->type = RZ_ANALYSIS_OP_TYPE_SHL;
+		break;
+	case SHAR:
+	case SHLR:
+		ctx->aop->type = RZ_ANALYSIS_OP_TYPE_SHR;
+		break;
+	case SLEEP:
+		ctx->aop->type = RZ_ANALYSIS_OP_TYPE_UNK;
+		break;
+	case STC:
+	case STM:
+		ctx->aop->type = RZ_ANALYSIS_OP_TYPE_STORE;
+		break;
+	case SUB:
+	case SUBS:
+	case SUBX:
+		ctx->aop->type = RZ_ANALYSIS_OP_TYPE_SUB;
+		break;
+	case SWAP:
+		ctx->aop->type = RZ_ANALYSIS_OP_TYPE_UNK;
+		break;
+	case TAS:
+	case TST:
+		ctx->aop->type = RZ_ANALYSIS_OP_TYPE_MOV;
+		break;
+	case TRAPA:
+	case TRAP_VS:
+		ctx->aop->type = RZ_ANALYSIS_OP_TYPE_TRAP;
+		break;
+	case UNLK:
+	case XCH:
+		ctx->aop->type = RZ_ANALYSIS_OP_TYPE_UNK;
+		break;
+	case XOR:
+	case XORC:
+		ctx->aop->type = RZ_ANALYSIS_OP_TYPE_XOR;
+		break;
+	}
+}
+
 static int h8500_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	const ut8 *buf, int len, RzAnalysisOpMask mask) {
-	// TODO: Implement basic instruction analysis for H8500 architecture.
-	return -1;
+	H8500Instruction ins = { 0 };
+	if (!h8500_instruction_parse(buf, len, &ins)) {
+		return -1;
+	}
+
+	AContext ctx = {
+		.analysis = analysis,
+		.ins = &ins,
+		.aop = op
+	};
+
+	h8500_analyze(&ctx);
+
+	if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
+		ctx.aop->mnemonic = rz_str_newf("%s%s%s", ins.mnemonic, RZ_STR_ISEMPTY(ins.ops_str) ? "" : " ", ins.ops_str);
+	}
+
+	if (mask & RZ_ANALYSIS_OP_MASK_VAL) {
+		h8500_analyze_val(&ctx);
+	}
+	return ins.size;
 }
 
 static char *get_reg_profile(RzAnalysis *analysis) {
