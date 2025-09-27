@@ -529,6 +529,11 @@ static RzBinInfo *coff_info(RzBinFile *bf) {
 		ret->arch = rz_str_dup("h8300");
 		ret->bits = 16;
 		break;
+	case COFF_FILE_MACHINE_H8500:
+		ret->machine = rz_str_dup("H8500");
+		ret->arch = rz_str_dup("h8500");
+		ret->bits = 16;
+		break;
 	case COFF_FILE_MACHINE_M68K:
 		/* fall-thru */
 	case COFF_FILE_MACHINE_68KAUX:
