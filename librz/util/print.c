@@ -1468,7 +1468,7 @@ RZ_API void rz_print_colored_help_option(const char *option, const char *arg, co
 		}
 		size_t optionWidth = strlen(option);
 		size_t maxSpaces = maxOptionAndArgLength + 2;
-		printf(Color_GREEN " %-.*s" Color_RESET, (int)optionWidth, option);
+		printf(" " Color_GREEN "%-.*s" Color_RESET, (int)optionWidth, option);
 		size_t remainingSpaces = maxSpaces - optionWidth;
 		if (RZ_STR_ISNOTEMPTY(arg)) {
 			printf(Color_YELLOW " %-s " Color_RESET, arg);

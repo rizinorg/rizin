@@ -243,80 +243,80 @@ EOF
 EXPECT=<<EOF
 [36mUsage: [0mrizin [-ACdfLMnNqStuvwzX] [-P patch] [-p prj] [-a arch] [-b bits] [-i file]
              [-s addr] [-B baddr] [-m maddr] [-c cmd] [-e k=v] file|pid|-|--|=
-[32m --[0m         [0mRun rizin without opening any file
-[32m =[0m          [0mSame as 'rizin malloc://512'
-[32m - [0m         [0mRead file from stdin
-[32m -=[0m         [0mPerform R=! command to run all commands remotely
-[32m -0[0m         [0mPrint \x00 after init and every command
-[32m -1[0m         [0mRedirect stderr to stdout
-[32m -2[0m         [0mClose stderr file descriptor (silent warning messages)
-[32m -a[0m[33m arch [0m   [0mSet asm.arch
-[32m -A[0m         [0mRun 'aaa' command to analyze all referenced code
-[32m -b[0m[33m bits [0m   [0mSet asm.bits
-[32m -B[0m[33m baddr [0m  [0mSet base address for PIE binaries
-[32m -c[0m[33m 'cmd..' [0m[0mExecute rizin command
-[32m -C[0m         [0mFile is host:port (alias for -cR+http://%%s/cmd/)
-[32m -d[0m         [0mDebug the executable 'file' or running process 'pid'
-[32m -D[0m[33m backend [0m[0mEnable debug mode (e cfg.debug=true)
-[32m -e[0m[33m k=v [0m    [0mEvaluate config var
-[32m -f[0m         [0mBlock size = file size
-[32m -F[0m[33m binplug [0m[0mForce to use that rbin plugin
-[32m -h, -hh[0m    [0mShow help message, -hh for long
-[32m -H[0m[33m [var] [0m  [0mDisplay variable
-[32m -i[0m[33m file [0m   [0mRun script file
-[32m -I[0m[33m file [0m   [0mRun script file before the file is opened
-[32m -k[0m[33m OS/kern [0m[0mSet asm.os (linux, macos, w32, netbsd, ...)
-[32m -l[0m[33m lib [0m    [0mLoad plugin file
-[32m -L[0m         [0mList supported IO plugins
-[32m -m[0m[33m addr [0m   [0mMap file at given address (loadaddr)
-[32m -M[0m         [0mDo not demangle symbol names
-[32m -n, -nn[0m    [0mDo not load RzBin info (-nn only load bin structures)
-[32m -N[0m         [0mDo not load user settings and scripts
-[32m -NN[0m        [0mDo not load any script or plugin
-[32m -q[0m         [0mQuiet mode (no prompt) and quit after -i and -c
-[32m -qq[0m        [0mQuiet mode (no prompt) and force quit
-[32m -p[0m[33m p.rzdb [0m [0mLoad project file
-[32m -r[0m[33m rz-run [0m [0mSpecify rz-run profile to load (same as -e dbg.profile=X)
-[32m -R[0m[33m rule [0m   [0mSpecify custom rz-run directive
-[32m -s[0m[33m addr [0m   [0mInitial seek
-[32m -T[0m         [0mDo not compute file hashes
-[32m -u[0m         [0mSet bin.filter=false to get raw sym/sec/cls names
-[32m -v, -V[0m     [0mShow rizin version (-V show lib versions)
-[32m -w[0m         [0mOpen file in write mode
-[32m -x[0m         [0mOpen without exec-flag (asm.emu will not work), See io.exec
-[32m -X[0m         [0mSame as -e bin.usextr=false (useful for dyldcache)
-[32m -z, -zz[0m    [0mDo not load strings or load them even in raw
+ [32m--[0m         [0mRun rizin without opening any file
+ [32m=[0m          [0mSame as 'rizin malloc://512'
+ [32m- [0m         [0mRead file from stdin
+ [32m-=[0m         [0mPerform R=! command to run all commands remotely
+ [32m-0[0m         [0mPrint \x00 after init and every command
+ [32m-1[0m         [0mRedirect stderr to stdout
+ [32m-2[0m         [0mClose stderr file descriptor (silent warning messages)
+ [32m-a[0m[33m arch [0m   [0mSet asm.arch
+ [32m-A[0m         [0mRun 'aaa' command to analyze all referenced code
+ [32m-b[0m[33m bits [0m   [0mSet asm.bits
+ [32m-B[0m[33m baddr [0m  [0mSet base address for PIE binaries
+ [32m-c[0m[33m 'cmd..' [0m[0mExecute rizin command
+ [32m-C[0m         [0mFile is host:port (alias for -cR+http://%%s/cmd/)
+ [32m-d[0m         [0mDebug the executable 'file' or running process 'pid'
+ [32m-D[0m[33m backend [0m[0mEnable debug mode (e cfg.debug=true)
+ [32m-e[0m[33m k=v [0m    [0mEvaluate config var
+ [32m-f[0m         [0mBlock size = file size
+ [32m-F[0m[33m binplug [0m[0mForce to use that rbin plugin
+ [32m-h, -hh[0m    [0mShow help message, -hh for long
+ [32m-H[0m[33m [var] [0m  [0mDisplay variable
+ [32m-i[0m[33m file [0m   [0mRun script file
+ [32m-I[0m[33m file [0m   [0mRun script file before the file is opened
+ [32m-k[0m[33m OS/kern [0m[0mSet asm.os (linux, macos, w32, netbsd, ...)
+ [32m-l[0m[33m lib [0m    [0mLoad plugin file
+ [32m-L[0m         [0mList supported IO plugins
+ [32m-m[0m[33m addr [0m   [0mMap file at given address (loadaddr)
+ [32m-M[0m         [0mDo not demangle symbol names
+ [32m-n, -nn[0m    [0mDo not load RzBin info (-nn only load bin structures)
+ [32m-N[0m         [0mDo not load user settings and scripts
+ [32m-NN[0m        [0mDo not load any script or plugin
+ [32m-q[0m         [0mQuiet mode (no prompt) and quit after -i and -c
+ [32m-qq[0m        [0mQuiet mode (no prompt) and force quit
+ [32m-p[0m[33m p.rzdb [0m [0mLoad project file
+ [32m-r[0m[33m rz-run [0m [0mSpecify rz-run profile to load (same as -e dbg.profile=X)
+ [32m-R[0m[33m rule [0m   [0mSpecify custom rz-run directive
+ [32m-s[0m[33m addr [0m   [0mInitial seek
+ [32m-T[0m         [0mDo not compute file hashes
+ [32m-u[0m         [0mSet bin.filter=false to get raw sym/sec/cls names
+ [32m-v, -V[0m     [0mShow rizin version (-V show lib versions)
+ [32m-w[0m         [0mOpen file in write mode
+ [32m-x[0m         [0mOpen without exec-flag (asm.emu will not work), See io.exec
+ [32m-X[0m         [0mSame as -e bin.usextr=false (useful for dyldcache)
+ [32m-z, -zz[0m    [0mDo not load strings or load them even in raw
 
 [36mUsage: [0mrz-asm [-ACdDehLBvw] [-a arch] [-b bits] [-m plugin] [-o addr] [-s syntax]
              [-f file] [-F fil:ter] [-i skip] [-l len] 'code'|hex|-
-[32m -a[0m[33m arch [0m    [0mSet architecture to assemble/disassemble (see -L)
-[32m -A[0m          [0mShow Analysis information from given hexpairs
-[32m -b[0m[33m bits [0m    [0mSet cpu register size (8, 16, 32, 64) (RZ_ASM_BITS)
-[32m -B[0m          [0mBinary input/output (-l is mandatory for binary input)
-[32m -c[0m[33m cpu [0m     [0mSelect specific CPU (depends on arch)
-[32m -C[0m          [0mOutput in C format
-[32m -d, -D[0m      [0mDisassemble from hexpair bytes (-D show hexpairs)
-[32m -e[0m          [0mUse big endian instead of little endian
-[32m -I[0m          [0mDisplay lifted RzIL code (same input as in -d, IL is also validated)
-[32m -E[0m          [0mDisplay ESIL expression (same input as in -d)
-[32m -f[0m[33m file [0m    [0mRead data from file
-[32m -F[0m[33m in:out [0m  [0mSpecify input and/or output filters (att2intel, x86.pseudo, ...)
-[32m -h, -hh[0m     [0mShow this help, -hh for long
-[32m -i[0m[33m len [0m     [0mIgnore N bytes of the input buffer
-[32m -j[0m          [0mOutput in JSON format
-[32m -k[0m[33m kernel [0m  [0mSelect operating system (linux, windows, darwin, ..)
-[32m -l[0m[33m len [0m     [0mInput/Output length
-[32m -L[0m          [0mList Asm plugins: (a=asm, d=disasm, A=analyze, e=ESIL, I=RzIL)
-[32m -m[0m[33m plugin [0m  [0mList supported CPUs for the chosen plugin
-[32m -o, -@[0m[33m addr [0m[0mSet start address for code (default 0)
-[32m -O[0m[33m file [0m    [0mOutput file name (rz-asm -Bf a.asm -O a)
-[32m -p[0m          [0mRun SPP over input for assembly
-[32m -q[0m          [0mQuiet mode
-[32m -r[0m          [0mOutput in rizin commands
-[32m -s[0m[33m syntax [0m  [0mSelect syntax (intel, att)
-[32m -v[0m          [0mShow version information
-[32m -x[0m          [0mUse hex dwords instead of hex pairs when assembling.
-[32m -w[0m          [0mDescribe opcode
+ [32m-a[0m[33m arch [0m    [0mSet architecture to assemble/disassemble (see -L)
+ [32m-A[0m          [0mShow Analysis information from given hexpairs
+ [32m-b[0m[33m bits [0m    [0mSet cpu register size (8, 16, 32, 64) (RZ_ASM_BITS)
+ [32m-B[0m          [0mBinary input/output (-l is mandatory for binary input)
+ [32m-c[0m[33m cpu [0m     [0mSelect specific CPU (depends on arch)
+ [32m-C[0m          [0mOutput in C format
+ [32m-d, -D[0m      [0mDisassemble from hexpair bytes (-D show hexpairs)
+ [32m-e[0m          [0mUse big endian instead of little endian
+ [32m-I[0m          [0mDisplay lifted RzIL code (same input as in -d, IL is also validated)
+ [32m-E[0m          [0mDisplay ESIL expression (same input as in -d)
+ [32m-f[0m[33m file [0m    [0mRead data from file
+ [32m-F[0m[33m in:out [0m  [0mSpecify input and/or output filters (att2intel, x86.pseudo, ...)
+ [32m-h, -hh[0m     [0mShow this help, -hh for long
+ [32m-i[0m[33m len [0m     [0mIgnore N bytes of the input buffer
+ [32m-j[0m          [0mOutput in JSON format
+ [32m-k[0m[33m kernel [0m  [0mSelect operating system (linux, windows, darwin, ..)
+ [32m-l[0m[33m len [0m     [0mInput/Output length
+ [32m-L[0m          [0mList Asm plugins: (a=asm, d=disasm, A=analyze, e=ESIL, I=RzIL)
+ [32m-m[0m[33m plugin [0m  [0mList supported CPUs for the chosen plugin
+ [32m-o, -@[0m[33m addr [0m[0mSet start address for code (default 0)
+ [32m-O[0m[33m file [0m    [0mOutput file name (rz-asm -Bf a.asm -O a)
+ [32m-p[0m          [0mRun SPP over input for assembly
+ [32m-q[0m          [0mQuiet mode
+ [32m-r[0m          [0mOutput in rizin commands
+ [32m-s[0m[33m syntax [0m  [0mSelect syntax (intel, att)
+ [32m-v[0m          [0mShow version information
+ [32m-x[0m          [0mUse hex dwords instead of hex pairs when assembling.
+ [32m-w[0m          [0mDescribe opcode
  If '-l' value is greater than output length, output is padded with nops
  If the last argument is '-' reads from stdin
 Environment:
@@ -381,64 +381,64 @@ If expr is not provided, reads from stdin
 [36mUsage: [0mrz-bin [-AcdeEghHiIjlLMqrRsSUvVxzZ] [-@ at] [-a arch] [-b bits] [-B addr]
               [-C F:C:D] [-f str] [-m addr] [-n str] [-N m:M] [-P pdb]
               [-o str] [-O str] [-k query] [-D lang symname] file
-[32m -@[0m[33m [addr] [0m      [0mShow section, symbol, or import at the given address
-[32m -A[0m              [0mList sub-binaries and their arch-bits pairs
-[32m -a[0m[33m [arch] [0m      [0mSet arch (x86, arm, .. or <arch>_<bits>)
-[32m -b[0m[33m [bits] [0m      [0mSet bits (32, 64 ...)
-[32m -B[0m[33m [addr] [0m      [0mOverride base address (pie bins)
-[32m -c[0m              [0mList classes
-[32m -cc[0m             [0mList classes in header format
-[32m -C[0m[33m [fmt:C:D] [0m   [0mCreate [elf,mach0,pe] with Code and Data hexpairs (see -a)
-[32m -d[0m              [0mShow debug/dwarf information
-[32m -dd[0m             [0mLoad debug/dwarf information from debuginfod server
-[32m -D[0m[33m lang name [0m   [0mDemangle symbol name (-D all for bin.demangle=true)z
-[32m -e[0m              [0mEntrypoint
-[32m -ee[0m             [0mConstructor/destructor entrypoints
-[32m -E[0m              [0mGlobally exportable symbols
-[32m -f[0m[33m [mach] [0m      [0mSelect sub-binary for the machine [mach].
-[32m -F[0m[33m [binfmt] [0m    [0mForce to use that bin plugin (ignore header check)
-[32m -g[0m              [0mSame as -SMZIHVResizcld -SS -SSS -ee (show all info)
-[32m -G[0m[33m [addr] [0m      [0mLoad address . offset to header
-[32m -h[0m              [0mShow this help
-[32m -H[0m              [0mHeader fields
-[32m -i[0m              [0mImport (symbols imported from libraries)
-[32m -I[0m              [0mBinary info
-[32m -j[0m              [0mOutput in JSON
-[32m -k[0m[33m [sdb-query] [0m [0mRun sdb query. for example: '*'
-[32m -K[0m[33m [algo] [0m      [0mCalculate checksums (md5, sha1, ..)
-[32m -l[0m              [0mLinked libraries
-[32m -L[0m[33m [plugin] [0m    [0mList supported bin plugins or plugin details
-[32m -m[0m[33m [addr] [0m      [0mShow source line at addr
-[32m -M[0m              [0mMain (show address of main symbol)
-[32m -n[0m[33m [str] [0m       [0mShow section, symbol or import named str
-[32m -N[0m[33m [min:max] [0m   [0mForce min:max number of chars per string (see -z and -zz)
-[32m -o[0m[33m [str] [0m       [0mOutput file/folder for write operations (out by default)
-[32m -O[0m[33m [str] [0m       [0mWrite/extract operations (-O help)
-[32m -p[0m              [0mShow physical addresses
-[32m -P[0m              [0mShow debug/pdb information
-[32m -PP[0m             [0mDownload pdb file for binary
-[32m -q[0m              [0mQuiet mode, just show fewer data
-[32m -qq[0m             [0mShow less info (no offset/size for -z for ex.)
-[32m -Q[0m              [0mShow load address used by dlopen (non-aslr libs)
-[32m -r[0m              [0mShow output in rizin format
-[32m -R[0m              [0mShow relocations
-[32m -s[0m              [0mSymbols
-[32m -S[0m              [0mSections
-[32m -SS[0m             [0mSegments
-[32m -SSS[0m            [0mSections mapping to segments
-[32m -T[0m              [0mDisplay file signature
-[32m -u[0m              [0mUnfiltered (no rename duplicated symbols/sections)
-[32m -U[0m              [0mResources
-[32m -v[0m              [0mShow version information
-[32m -V[0m              [0mShow binary version information
-[32m -w[0m              [0mDisplay try/catch blocks
-[32m -x[0m              [0mExtract bins contained in file
-[32m -X[0m[33m [fmt] [f] .. [0m[0mPackage in fat or zip the given files and bins contained in file
-[32m -Y[0m[33m [fw file] [0m   [0mCalculate all the possibles base address candidates of a firmware bin
-[32m -z[0m              [0mShow strings (from data section)
-[32m -zz[0m             [0mShow strings (from raw strings from bin)
-[32m -zzz[0m            [0mDump raw strings to stdout (for huge files)
-[32m -Z[0m              [0mGuess size of binary program
+ [32m-@[0m[33m [addr] [0m      [0mShow section, symbol, or import at the given address
+ [32m-A[0m              [0mList sub-binaries and their arch-bits pairs
+ [32m-a[0m[33m [arch] [0m      [0mSet arch (x86, arm, .. or <arch>_<bits>)
+ [32m-b[0m[33m [bits] [0m      [0mSet bits (32, 64 ...)
+ [32m-B[0m[33m [addr] [0m      [0mOverride base address (pie bins)
+ [32m-c[0m              [0mList classes
+ [32m-cc[0m             [0mList classes in header format
+ [32m-C[0m[33m [fmt:C:D] [0m   [0mCreate [elf,mach0,pe] with Code and Data hexpairs (see -a)
+ [32m-d[0m              [0mShow debug/dwarf information
+ [32m-dd[0m             [0mLoad debug/dwarf information from debuginfod server
+ [32m-D[0m[33m lang name [0m   [0mDemangle symbol name (-D all for bin.demangle=true)z
+ [32m-e[0m              [0mEntrypoint
+ [32m-ee[0m             [0mConstructor/destructor entrypoints
+ [32m-E[0m              [0mGlobally exportable symbols
+ [32m-f[0m[33m [mach] [0m      [0mSelect sub-binary for the machine [mach].
+ [32m-F[0m[33m [binfmt] [0m    [0mForce to use that bin plugin (ignore header check)
+ [32m-g[0m              [0mSame as -SMZIHVResizcld -SS -SSS -ee (show all info)
+ [32m-G[0m[33m [addr] [0m      [0mLoad address . offset to header
+ [32m-h[0m              [0mShow this help
+ [32m-H[0m              [0mHeader fields
+ [32m-i[0m              [0mImport (symbols imported from libraries)
+ [32m-I[0m              [0mBinary info
+ [32m-j[0m              [0mOutput in JSON
+ [32m-k[0m[33m [sdb-query] [0m [0mRun sdb query. for example: '*'
+ [32m-K[0m[33m [algo] [0m      [0mCalculate checksums (md5, sha1, ..)
+ [32m-l[0m              [0mLinked libraries
+ [32m-L[0m[33m [plugin] [0m    [0mList supported bin plugins or plugin details
+ [32m-m[0m[33m [addr] [0m      [0mShow source line at addr
+ [32m-M[0m              [0mMain (show address of main symbol)
+ [32m-n[0m[33m [str] [0m       [0mShow section, symbol or import named str
+ [32m-N[0m[33m [min:max] [0m   [0mForce min:max number of chars per string (see -z and -zz)
+ [32m-o[0m[33m [str] [0m       [0mOutput file/folder for write operations (out by default)
+ [32m-O[0m[33m [str] [0m       [0mWrite/extract operations (-O help)
+ [32m-p[0m              [0mShow physical addresses
+ [32m-P[0m              [0mShow debug/pdb information
+ [32m-PP[0m             [0mDownload pdb file for binary
+ [32m-q[0m              [0mQuiet mode, just show fewer data
+ [32m-qq[0m             [0mShow less info (no offset/size for -z for ex.)
+ [32m-Q[0m              [0mShow load address used by dlopen (non-aslr libs)
+ [32m-r[0m              [0mShow output in rizin format
+ [32m-R[0m              [0mShow relocations
+ [32m-s[0m              [0mSymbols
+ [32m-S[0m              [0mSections
+ [32m-SS[0m             [0mSegments
+ [32m-SSS[0m            [0mSections mapping to segments
+ [32m-T[0m              [0mDisplay file signature
+ [32m-u[0m              [0mUnfiltered (no rename duplicated symbols/sections)
+ [32m-U[0m              [0mResources
+ [32m-v[0m              [0mShow version information
+ [32m-V[0m              [0mShow binary version information
+ [32m-w[0m              [0mDisplay try/catch blocks
+ [32m-x[0m              [0mExtract bins contained in file
+ [32m-X[0m[33m [fmt] [f] .. [0m[0mPackage in fat or zip the given files and bins contained in file
+ [32m-Y[0m[33m [fw file] [0m   [0mCalculate all the possibles base address candidates of a firmware bin
+ [32m-z[0m              [0mShow strings (from data section)
+ [32m-zz[0m             [0mShow strings (from raw strings from bin)
+ [32m-zzz[0m            [0mDump raw strings to stdout (for huge files)
+ [32m-Z[0m              [0mGuess size of binary program
 Environment:
  RZ_BIN_CODESIGN_VERBOSE:                               # make code signatures verbose
  RZ_BIN_DEBUGINFOD_URLS:  e bin.dbginfo.debuginfod_urls # use alternative debuginfod server
@@ -454,45 +454,45 @@ Environment:
  RZ_NOPLUGINS:                                          # do not load plugins
 
 [36mUsage: [0mrz-diff [options] <file0> <file1>
-[32m -a[0m[33m [arch] [0m[0mSpecify architecture plugin to use (x86, arm, ..)
-[32m -b[0m[33m [bits] [0m[0mSpecify register size for arch (16 (thumb), 32, 64, ..)
-[32m -d[0m[33m [algo] [0m[0mCompute edit distance based on the chosen algorithm:
-[32m [0m          [0m   myers  | Eugene W. Myers' O(ND) algorithm (no substitution)
-[32m [0m          [0m   leven  | Levenshtein O(N^2) algorithm (with substitution)
-[32m [0m          [0m   ssdeep | Context triggered piecewise hashing comparison
-[32m -i[0m        [0mUse command line arguments instead of files (only for -d)
-[32m -H[0m        [0mHexadecimal visual mode
-[32m -h[0m        [0mShow this help
-[32m -j[0m        [0mJSON output
-[32m -q[0m        [0mQuite output
-[32m -V[0m        [0mShow version information
-[32m -v[0m        [0mBe more verbose (stderr output)
-[32m -e[0m[33m [k=v] [0m [0mSet an evaluable config variable
-[32m -A[0m        [0mCompare virtual and physical addresses
-[32m -B[0m        [0mRun 'aaa' when loading the bin
-[32m -C[0m        [0mDisable colors
-[32m -T[0m        [0mShow timestamp information
-[32m -S[0m[33m [WxH] [0m [0mSet the width and height of the terminal for visual mode
-[32m -0[0m[33m [cmd] [0m [0mInput for file0 when option -t 'commands' is given.
-[32m [0m          [0mThe same value will be set for file1, if -1 is not set.
-[32m -1[0m[33m [cmd] [0m [0mInput for file1 when option -t 'commands' is given.
-[32m -t[0m[33m [type] [0m[0mCompute the difference between two files based on its type:
-[32m [0m          [0m   bytes      | compare raw bytes in the files (only for small files)
-[32m [0m          [0m   lines      | compare text files
-[32m [0m          [0m   functions  | compare functions found in the files
-[32m [0m          [0m              | optional -0 <fcn name|offset> to compare only one function
-[32m [0m          [0m   classes    | compare classes found in the files
-[32m [0m          [0m   command    | compare command output returned when executed in both files
-[32m [0m          [0m              | require -0 <cmd> and -1 <cmd> is optional
-[32m [0m          [0m   entries    | compare entries found in the files
-[32m [0m          [0m   fields     | compare fields found in the files
-[32m [0m          [0m   graphs     | compare 2 functions and outputs in graphviz/dot format
-[32m [0m          [0m              | require -0 <fcn name|offset> and -1 <fcn name|offset> is optional
-[32m [0m          [0m   imports    | compare imports found in the files
-[32m [0m          [0m   libraries  | compare libraries found in the files
-[32m [0m          [0m   sections   | compare sections found in the files
-[32m [0m          [0m   strings    | compare strings found in the files
-[32m [0m          [0m   symbols    | compare symbols found in the files
+ [32m-a[0m[33m [arch] [0m[0mSpecify architecture plugin to use (x86, arm, ..)
+ [32m-b[0m[33m [bits] [0m[0mSpecify register size for arch (16 (thumb), 32, 64, ..)
+ [32m-d[0m[33m [algo] [0m[0mCompute edit distance based on the chosen algorithm:
+ [32m[0m          [0m   myers  | Eugene W. Myers' O(ND) algorithm (no substitution)
+ [32m[0m          [0m   leven  | Levenshtein O(N^2) algorithm (with substitution)
+ [32m[0m          [0m   ssdeep | Context triggered piecewise hashing comparison
+ [32m-i[0m        [0mUse command line arguments instead of files (only for -d)
+ [32m-H[0m        [0mHexadecimal visual mode
+ [32m-h[0m        [0mShow this help
+ [32m-j[0m        [0mJSON output
+ [32m-q[0m        [0mQuite output
+ [32m-V[0m        [0mShow version information
+ [32m-v[0m        [0mBe more verbose (stderr output)
+ [32m-e[0m[33m [k=v] [0m [0mSet an evaluable config variable
+ [32m-A[0m        [0mCompare virtual and physical addresses
+ [32m-B[0m        [0mRun 'aaa' when loading the bin
+ [32m-C[0m        [0mDisable colors
+ [32m-T[0m        [0mShow timestamp information
+ [32m-S[0m[33m [WxH] [0m [0mSet the width and height of the terminal for visual mode
+ [32m-0[0m[33m [cmd] [0m [0mInput for file0 when option -t 'commands' is given.
+ [32m[0m          [0mThe same value will be set for file1, if -1 is not set.
+ [32m-1[0m[33m [cmd] [0m [0mInput for file1 when option -t 'commands' is given.
+ [32m-t[0m[33m [type] [0m[0mCompute the difference between two files based on its type:
+ [32m[0m          [0m   bytes      | compare raw bytes in the files (only for small files)
+ [32m[0m          [0m   lines      | compare text files
+ [32m[0m          [0m   functions  | compare functions found in the files
+ [32m[0m          [0m              | optional -0 <fcn name|offset> to compare only one function
+ [32m[0m          [0m   classes    | compare classes found in the files
+ [32m[0m          [0m   command    | compare command output returned when executed in both files
+ [32m[0m          [0m              | require -0 <cmd> and -1 <cmd> is optional
+ [32m[0m          [0m   entries    | compare entries found in the files
+ [32m[0m          [0m   fields     | compare fields found in the files
+ [32m[0m          [0m   graphs     | compare 2 functions and outputs in graphviz/dot format
+ [32m[0m          [0m              | require -0 <fcn name|offset> and -1 <fcn name|offset> is optional
+ [32m[0m          [0m   imports    | compare imports found in the files
+ [32m[0m          [0m   libraries  | compare libraries found in the files
+ [32m[0m          [0m   sections   | compare sections found in the files
+ [32m[0m          [0m   strings    | compare strings found in the files
+ [32m[0m          [0m   symbols    | compare symbols found in the files
 palette colors can be changed by adding the following lines
 inside the $HOME/.rizinrc file
 ec diff.unknown blue   | offset color
@@ -500,115 +500,115 @@ ec diff.match   green  | match color
 ec diff.unmatch red    | mismatch color
 
 [36mUsage: [0mrz-find [-mXnzZhqv] [-a align] [-b sz] [-f/t from/to] [-[e|s|w|S|I] str] [-x hex] -|file|dir ..
-[32m -a[0m[33m [align] [0m[0mOnly accept aligned hits
-[32m -b[0m[33m [size] [0m [0mSet block size
-[32m -e[0m[33m [regex] [0m[0mSearch for regex matches (can be used multiple times)
-[32m -E[0m[33m [cmd] [0m  [0mExecute command for each file found
-[32m -f[0m[33m [from] [0m [0mStart searching from address 'from'
-[32m -F[0m[33m [file] [0m [0mRead the contents of the file and use it as keyword
-[32m -h[0m         [0mShow this help
-[32m -i[0m         [0mIdentify filetype (rizin -nqcpm file)
-[32m -j[0m         [0mOutput in JSON
-[32m -m[0m         [0mMagic search, file-type carver
-[32m -M[0m[33m [str] [0m  [0mSet a binary mask to be applied on keywords
-[32m -n[0m         [0mDo not stop on read errors
-[32m -r[0m         [0mPrint using rizin commands
-[32m -s[0m[33m [str] [0m  [0mSearch for a specific string (can be used multiple times)
-[32m -w[0m[33m [str] [0m  [0mSearch for a specific wide string (can be used multiple times). Assumes str is UTF-8.
-[32m -I[0m[33m [str] [0m  [0mSearch for an entry in import table.
-[32m -S[0m[33m [str] [0m  [0mSearch for a symbol in symbol table.
-[32m -t[0m[33m [to] [0m   [0mStop search at address 'to'
-[32m -q[0m         [0mQuiet - do not show headings (filenames) above matching contents (default for searching a single file)
-[32m -v[0m         [0mShow version information
-[32m -x[0m[33m [hex] [0m  [0mSearch for hexpair string (909090) (can be used multiple times)
-[32m -X[0m         [0mShow hexdump of search results
-[32m -z[0m         [0mSearch for zero-terminated strings
-[32m -Z[0m         [0mShow string found on each search hit
+ [32m-a[0m[33m [align] [0m[0mOnly accept aligned hits
+ [32m-b[0m[33m [size] [0m [0mSet block size
+ [32m-e[0m[33m [regex] [0m[0mSearch for regex matches (can be used multiple times)
+ [32m-E[0m[33m [cmd] [0m  [0mExecute command for each file found
+ [32m-f[0m[33m [from] [0m [0mStart searching from address 'from'
+ [32m-F[0m[33m [file] [0m [0mRead the contents of the file and use it as keyword
+ [32m-h[0m         [0mShow this help
+ [32m-i[0m         [0mIdentify filetype (rizin -nqcpm file)
+ [32m-j[0m         [0mOutput in JSON
+ [32m-m[0m         [0mMagic search, file-type carver
+ [32m-M[0m[33m [str] [0m  [0mSet a binary mask to be applied on keywords
+ [32m-n[0m         [0mDo not stop on read errors
+ [32m-r[0m         [0mPrint using rizin commands
+ [32m-s[0m[33m [str] [0m  [0mSearch for a specific string (can be used multiple times)
+ [32m-w[0m[33m [str] [0m  [0mSearch for a specific wide string (can be used multiple times). Assumes str is UTF-8.
+ [32m-I[0m[33m [str] [0m  [0mSearch for an entry in import table.
+ [32m-S[0m[33m [str] [0m  [0mSearch for a symbol in symbol table.
+ [32m-t[0m[33m [to] [0m   [0mStop search at address 'to'
+ [32m-q[0m         [0mQuiet - do not show headings (filenames) above matching contents (default for searching a single file)
+ [32m-v[0m         [0mShow version information
+ [32m-x[0m[33m [hex] [0m  [0mSearch for hexpair string (909090) (can be used multiple times)
+ [32m-X[0m         [0mShow hexdump of search results
+ [32m-z[0m         [0mSearch for zero-terminated strings
+ [32m-Z[0m         [0mShow string found on each search hit
 
 [36mUsage: [0mrz-gg [-FOLsrxhvz] [-a arch] [-b bits] [-k os] [-o file] [-I path]
              [-i sc] [-e enc] [-B hex] [-c k=v] [-C file] [-p pad] [-q off]
              [-S string] [-f fmt] [-nN dword] [-dDw off:hex] file|f.asm|-
-[32m -a[0m[33m [arch] [0m     [0mSelect architecture (x86, mips, arm)
-[32m -b[0m[33m [bits] [0m     [0mSet Register size (32, 64, ..)
-[32m -B[0m[33m [hexpairs] [0m [0mAppend some hexpair bytes
-[32m -c[0m[33m [k=v] [0m      [0mSet configuration options
-[32m -C[0m[33m [file] [0m     [0mAppend contents of file
-[32m -d[0m[33m [off:dword] [0m[0mPatch dword (4 bytes) at given offset
-[32m -D[0m[33m [off:qword] [0m[0mPatch qword (8 bytes) at given offset
-[32m -e[0m[33m [encoder] [0m  [0mUse specific encoder. see -L
-[32m -f[0m[33m [format] [0m   [0mOutput format (raw, c, pe, elf, mach0, python, javascript)
-[32m -F[0m             [0mOutput native format (osx=mach0, linux=elf, ..)
-[32m -h[0m             [0mShow this help
-[32m -i[0m[33m [shellcode] [0m[0mInclude shellcode plugin, uses options. see -L
-[32m -I[0m[33m [path] [0m     [0mAdd include path
-[32m -k[0m[33m [kernel] [0m   [0mOperating system's kernel (linux,bsd,osx,w32)
-[32m -L[0m             [0mList all plugins (shellcodes and encoders)
-[32m -n[0m[33m [dword] [0m    [0mAppend 32bit number (4 bytes)
-[32m -N[0m[33m [dword] [0m    [0mAppend 64bit number (8 bytes)
-[32m -o[0m[33m [file] [0m     [0mOutput file
-[32m -O[0m             [0mUse default output file (filename without extension or a.out)
-[32m -p[0m[33m [padding] [0m  [0mAdd padding after compilation (padding=n10s32)
-[32m [0m               [0mntas : begin nop, trap, 'a', sequence
-[32m [0m               [0mNTAS : same as above, but at the end
-[32m -P[0m[33m [size] [0m     [0mPrepend debruijn sequence of given length
-[32m -q[0m[33m [fragment] [0m [0mDebruijn pattern offset
-[32m -r[0m             [0mShow raw bytes instead of hexpairs
-[32m -s[0m             [0mShow assembler
-[32m -S[0m[33m [string] [0m   [0mAppend a string
-[32m -v[0m             [0mShow version information
-[32m -w[0m[33m [off:hex] [0m  [0mPatch hexpairs at given offset
-[32m -x[0m             [0mExecute
-[32m -X[0m[33m [hexpairs] [0m [0mExecute rop chain, using the stack provided
-[32m -z[0m             [0mOutput in C string syntax
+ [32m-a[0m[33m [arch] [0m     [0mSelect architecture (x86, mips, arm)
+ [32m-b[0m[33m [bits] [0m     [0mSet Register size (32, 64, ..)
+ [32m-B[0m[33m [hexpairs] [0m [0mAppend some hexpair bytes
+ [32m-c[0m[33m [k=v] [0m      [0mSet configuration options
+ [32m-C[0m[33m [file] [0m     [0mAppend contents of file
+ [32m-d[0m[33m [off:dword] [0m[0mPatch dword (4 bytes) at given offset
+ [32m-D[0m[33m [off:qword] [0m[0mPatch qword (8 bytes) at given offset
+ [32m-e[0m[33m [encoder] [0m  [0mUse specific encoder. see -L
+ [32m-f[0m[33m [format] [0m   [0mOutput format (raw, c, pe, elf, mach0, python, javascript)
+ [32m-F[0m             [0mOutput native format (osx=mach0, linux=elf, ..)
+ [32m-h[0m             [0mShow this help
+ [32m-i[0m[33m [shellcode] [0m[0mInclude shellcode plugin, uses options. see -L
+ [32m-I[0m[33m [path] [0m     [0mAdd include path
+ [32m-k[0m[33m [kernel] [0m   [0mOperating system's kernel (linux,bsd,osx,w32)
+ [32m-L[0m             [0mList all plugins (shellcodes and encoders)
+ [32m-n[0m[33m [dword] [0m    [0mAppend 32bit number (4 bytes)
+ [32m-N[0m[33m [dword] [0m    [0mAppend 64bit number (8 bytes)
+ [32m-o[0m[33m [file] [0m     [0mOutput file
+ [32m-O[0m             [0mUse default output file (filename without extension or a.out)
+ [32m-p[0m[33m [padding] [0m  [0mAdd padding after compilation (padding=n10s32)
+ [32m[0m               [0mntas : begin nop, trap, 'a', sequence
+ [32m[0m               [0mNTAS : same as above, but at the end
+ [32m-P[0m[33m [size] [0m     [0mPrepend debruijn sequence of given length
+ [32m-q[0m[33m [fragment] [0m [0mDebruijn pattern offset
+ [32m-r[0m             [0mShow raw bytes instead of hexpairs
+ [32m-s[0m             [0mShow assembler
+ [32m-S[0m[33m [string] [0m   [0mAppend a string
+ [32m-v[0m             [0mShow version information
+ [32m-w[0m[33m [off:hex] [0m  [0mPatch hexpairs at given offset
+ [32m-x[0m             [0mExecute
+ [32m-X[0m[33m [hexpairs] [0m [0mExecute rop chain, using the stack provided
+ [32m-z[0m             [0mOutput in C string syntax
 
 [36mUsage: [0mrz-hash [-vhBkjLq] [-b S] [-a A] [-c H] [-E A] [-D A] [-s S] [-x S] [-f O] [-t O] [files|-] ...
-[32m -v[0m        [0mShow version information
-[32m -h[0m        [0mShow this help
-[32m -[0m         [0mInput read from stdin instead from a file
-[32m -a[0m[33m algo [0m  [0mHash algorithm to use and you can specify multiple ones by
-[32m [0m          [0mAppending a comma (example: sha1,md4,md5,sha256)
-[32m -B[0m        [0mOutput the calculated value for each block
-[32m -b[0m[33m size [0m  [0mSet the block size
-[32m -c[0m[33m value [0m [0mCompare calculated value with a given one (hexadecimal)
-[32m -e[0m[33m endian [0m[0mSet the endianness (default: 'big' accepted: 'big' or 'little')
-[32m -D[0m[33m algo [0m  [0mDecrypt the given input; use -S to set key and -I to set IV (if needed)
-[32m -E[0m[33m algo [0m  [0mEncrypt the given input; use -S to set key and -I to set IV (if needed)
-[32m -f[0m[33m from [0m  [0mStart the calculation at given offset
-[32m -t[0m[33m to [0m    [0mStop the calculation at given offset
-[32m -I[0m[33m iv [0m    [0mSet the initialization vector (IV)
-[32m -i[0m[33m times [0m [0mRepeat the calculation N times
-[32m -j[0m        [0mOutput the result as a JSON structure
-[32m -k[0m        [0mOutput the calculated value using openssh's randomkey algorithm
-[32m -L[0m        [0mList all algorithms
-[32m -q[0m        [0mSet quiet mode (use -qq to get only the calculated value)
-[32m -S[0m[33m seed [0m  [0mSet the seed for -a, use '^' to append it before the input, use '@'
-[32m [0m          [0mPrefix to load it from a file and '-' from read it
-[32m -K[0m[33m key [0m   [0mSet the hmac key for -a and the key for -E/-D, use '@' prefix to
-[32m [0m          [0mLoad it from a file and '-' from read it
-[32m [0m          [0mFrom stdin (you can combine them)
-[32m -s[0m[33m string [0m[0mInput read from a zero-terminated string instead from a file
-[32m -x[0m[33m hex [0m   [0mInput read from a hexadecimal value instead from a file
-[32m [0m          [0m
-[32m [0m          [0mAll the input (besides -s/-x/-c) can be hexadecimal or strings
-[32m [0m          [0mIf 's:' prefix is specified
+ [32m-v[0m        [0mShow version information
+ [32m-h[0m        [0mShow this help
+ [32m-[0m         [0mInput read from stdin instead from a file
+ [32m-a[0m[33m algo [0m  [0mHash algorithm to use and you can specify multiple ones by
+ [32m[0m          [0mAppending a comma (example: sha1,md4,md5,sha256)
+ [32m-B[0m        [0mOutput the calculated value for each block
+ [32m-b[0m[33m size [0m  [0mSet the block size
+ [32m-c[0m[33m value [0m [0mCompare calculated value with a given one (hexadecimal)
+ [32m-e[0m[33m endian [0m[0mSet the endianness (default: 'big' accepted: 'big' or 'little')
+ [32m-D[0m[33m algo [0m  [0mDecrypt the given input; use -S to set key and -I to set IV (if needed)
+ [32m-E[0m[33m algo [0m  [0mEncrypt the given input; use -S to set key and -I to set IV (if needed)
+ [32m-f[0m[33m from [0m  [0mStart the calculation at given offset
+ [32m-t[0m[33m to [0m    [0mStop the calculation at given offset
+ [32m-I[0m[33m iv [0m    [0mSet the initialization vector (IV)
+ [32m-i[0m[33m times [0m [0mRepeat the calculation N times
+ [32m-j[0m        [0mOutput the result as a JSON structure
+ [32m-k[0m        [0mOutput the calculated value using openssh's randomkey algorithm
+ [32m-L[0m        [0mList all algorithms
+ [32m-q[0m        [0mSet quiet mode (use -qq to get only the calculated value)
+ [32m-S[0m[33m seed [0m  [0mSet the seed for -a, use '^' to append it before the input, use '@'
+ [32m[0m          [0mPrefix to load it from a file and '-' from read it
+ [32m-K[0m[33m key [0m   [0mSet the hmac key for -a and the key for -E/-D, use '@' prefix to
+ [32m[0m          [0mLoad it from a file and '-' from read it
+ [32m[0m          [0mFrom stdin (you can combine them)
+ [32m-s[0m[33m string [0m[0mInput read from a zero-terminated string instead from a file
+ [32m-x[0m[33m hex [0m   [0mInput read from a hexadecimal value instead from a file
+ [32m[0m          [0m
+ [32m[0m          [0mAll the input (besides -s/-x/-c) can be hexadecimal or strings
+ [32m[0m          [0mIf 's:' prefix is specified
 
 [36mUsage: [0m[directives] [script.rz] [--] [program] [args]
-[32m -h[0m                  [0mShow this help
-[32m -l[0m                  [0mShow profile options
-[32m -t[0m                  [0mOutput template profile
-[32m -v[0m                  [0mShow version information
-[32m -w[0m                  [0mWait for incoming terminal process
-[32m --[0m[33m [program] [args] [0m[0mRun commands
+ [32m-h[0m                  [0mShow this help
+ [32m-l[0m                  [0mShow profile options
+ [32m-t[0m                  [0mOutput template profile
+ [32m-v[0m                  [0mShow version information
+ [32m-w[0m                  [0mWait for incoming terminal process
+ [32m--[0m[33m [program] [args] [0m[0mRun commands
 
 [36mUsage: [0mrz-sign [options] [file]
-[32m -h[0m                          [0mShow this help
-[32m -a[0m[33m [-a] [0m                    [0mAdd extra 'a' to analysis command (available only with -o option)
-[32m -e[0m[33m [k=v] [0m                   [0mSet an evaluable config variable (available only with -o option)
-[32m -c[0m[33m [output.pat] [input.sig] [0m[0mParse a FLIRT signature and convert it to its other format
-[32m -o[0m[33m [output.sig] [input.bin] [0m[0mPerform an analysis on the binary and generate the FLIRT signature
-[32m -d[0m[33m [flirt.sig] [0m             [0mParse a FLIRT signature and dump its content
-[32m -q[0m                          [0mQuiet mode
-[32m -v[0m                          [0mShow version information
+ [32m-h[0m                          [0mShow this help
+ [32m-a[0m[33m [-a] [0m                    [0mAdd extra 'a' to analysis command (available only with -o option)
+ [32m-e[0m[33m [k=v] [0m                   [0mSet an evaluable config variable (available only with -o option)
+ [32m-c[0m[33m [output.pat] [input.sig] [0m[0mParse a FLIRT signature and convert it to its other format
+ [32m-o[0m[33m [output.sig] [input.bin] [0m[0mPerform an analysis on the binary and generate the FLIRT signature
+ [32m-d[0m[33m [flirt.sig] [0m             [0mParse a FLIRT signature and dump its content
+ [32m-q[0m                          [0mQuiet mode
+ [32m-v[0m                          [0mShow version information
 Examples:
   rz-sign -d signature.sig
   rz-sign -c new_signature.pat old_signature.sig
