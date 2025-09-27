@@ -310,8 +310,11 @@ libdemangle_proj = subproject('libdemangle', default_options: libdemangle_option
 libdemangle_dep = libdemangle_proj.get_variable('libdemangle_dep')
 
 # handle blake3 algo
-blake3_proj = subproject('blake3', default_options: ['default_library=static', 'werror=false'])
-blake3_dep = blake3_proj.get_variable('blake3_dep')
+blake3_dep = dependency('libblake3', required: get_option('use_sys_blake3'), static: is_static_build)
+if not blake3_dep.found()
+  blake3_proj = subproject('blake3', default_options: ['default_library=static', 'werror=false'])
+  blake3_dep = blake3_proj.get_variable('blake3_dep')
+endif
 
 # handle openssl library
 sys_openssl = dependency('openssl', required: get_option('use_sys_openssl'), static: is_static_build)
@@ -842,6 +845,7 @@ summary({
   'System zlib library': zlib_dep.found() and zlib_dep.type_name() != 'internal',
   'System zstd library': libzstd_dep.found() and libzstd_dep.type_name() != 'internal',
   'System zip library': libzip_dep.found() and libzip_dep.type_name() != 'internal',
+  'System blake3 library': blake3_dep.found() and blake3_dep.type_name() != 'internal',
   'Use ptrace-wrap': use_ptrace_wrap,
   'Use RPATH': rpath_summary,
 }, section: 'Configuration', bool_yn: true)

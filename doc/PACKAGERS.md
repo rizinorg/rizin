@@ -87,6 +87,7 @@ At the time of writing, these are:
 * `use_sys_tree_sitter`
 * `use_sys_softfloat`
 * `use_sys_zydis`
+* `use_sys_blake3`
 
 See [meson_options.txt][] for a complete list of compile-time options.
 
