@@ -1456,25 +1456,66 @@ RZ_API RZ_OWN RzStrBuf *rz_print_colorize_asm_str(RZ_BORROW RzPrint *p, const Rz
 	return out;
 }
 
-// Prints a help option with the option/arg strings colorized and aligned to a max length.
-RZ_API void rz_print_colored_help_option(const char *option, const char *arg, const char *description, size_t maxOptionAndArgLength) {
-	bool desc_start = !option && !arg;
+/**
+ * \brief Prints a help option with the option flag and arg strings colorized, and description aligned to a column.
+ *
+ * \param flag Option flag, will be colored green.
+ * \param arg Option arg, will be colored yellow.
+ * \param desc Option description, will be aligned in the third column.
+ * \param maxFlagAndArgLength Width of column containing \p flag and \p arg. It needs to be calculated beforehand
+ *        as the max over all options.
+ */
+RZ_API void rz_print_colored_help_option(const char *flag, const char *arg, const char *desc,
+	size_t maxFlagAndArgLength) {
+
+	rz_return_if_fail(flag && arg && desc);
+	rz_print_colored_help_option_example(flag, arg, desc, maxFlagAndArgLength, NULL, 0);
+}
+
+/**
+ * \brief Prints a help option with example, with the option flag and arg strings colorized, and both description and
+ *        example aligned to columns.
+ *
+ * \param flag Option flag, will be colored green.
+ * \param arg Option arg, will be colored yellow.
+ * \param desc Option description, will be aligned in the third column unless both \p flag and \p arg are NULL. If so,
+ *        it will be aligned at the first column.
+ * \param maxFlagAndArgLength Width of column containing \p flag and \p arg. It needs to be calculated beforehand
+ *        as the max over all options.
+ * \param example Optional option example, will be aligned in a column after the description and prefixed with ";  ".
+ * \param maxDescLength Width of column containing \p desc. It needs to be calculated beforehand as the max over all
+ *        descriptions.
+ */
+RZ_API void rz_print_colored_help_option_example(RZ_NULLABLE const char *flag, RZ_NULLABLE const char *arg,
+	const char *desc, size_t maxFlagAndArgLength, RZ_NULLABLE const char *example, size_t maxDescLength) {
+
+	rz_return_if_fail(desc);
+	bool desc_start = !flag && !arg;
+	size_t maxOptSpaces = maxFlagAndArgLength + 2;
+	printf(" ");
 	if (!desc_start) {
-		if (!option) {
-			option = "";
+		if (!flag) {
+			flag = "";
 		}
 		if (!arg) {
 			arg = "";
 		}
-		size_t optionWidth = strlen(option);
-		size_t maxSpaces = maxOptionAndArgLength + 2;
-		printf(" " Color_GREEN "%-.*s" Color_RESET, (int)optionWidth, option);
-		size_t remainingSpaces = maxSpaces - optionWidth;
+		printf(Color_GREEN "%s" Color_RESET, flag);
+		size_t remainingSpaces = maxOptSpaces - strlen(flag);
 		if (RZ_STR_ISNOTEMPTY(arg)) {
-			printf(Color_YELLOW " %-s " Color_RESET, arg);
+			printf(Color_YELLOW " %s " Color_RESET, arg);
 			remainingSpaces -= strlen(arg) + 2;
+			if (arg[0] == '\b') {
+				remainingSpaces += 2;
+			}
 		}
-		printf("%-*.*s", (int)remainingSpaces, (int)remainingSpaces, "");
+		printf("%*s", (int)remainingSpaces, "");
 	}
-	printf(Color_RESET "%s\n", description);
+	printf(Color_RESET "%s", desc);
+	if (example) {
+		size_t maxDescSpaces = (desc_start ? maxOptSpaces : 0) + maxDescLength;
+		size_t remainingSpaces = maxDescSpaces - strlen(desc);
+		printf("%*s ;  %s", (int)remainingSpaces, "", example);
+	}
+	printf("\n");
 }

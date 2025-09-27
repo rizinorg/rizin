@@ -327,56 +327,56 @@ Environment:
  RZ_DEBUG                # if defined, show error messages and crash signal
  RZ_NOPLUGINS            # do not load shared plugins (speedup loading)
 
-Usage: rz-ax [options] [expr ...]
+[36mUsage:[0m rz-ax [options] [expr ...]
 If expr is not provided, reads from stdin
-  int     ->  hex              ;  rz-ax 10
-  hex     ->  int              ;  rz-ax 0xa
-  -int    ->  hex              ;  rz-ax -77
-  -hex    ->  int              ;  rz-ax 0xffffffb3
-  int     ->  bin              ;  rz-ax b30
-  int     ->  ternary          ;  rz-ax t42
-  bin     ->  int              ;  rz-ax 1010d
-  ternary ->  int              ;  rz-ax 1010dt
-  float   ->  hex              ;  rz-ax 3.33f
-  hex     ->  float            ;  rz-ax Fx40551ed8
-  oct     ->  hex              ;  rz-ax 35o
-  hex     ->  oct              ;  rz-ax Ox12 (O is a letter)
-  bin     ->  hex              ;  rz-ax 1100011b
-  hex     ->  bin              ;  rz-ax Bx63
-  ternary ->  hex              ;  rz-ax 212t
-  hex     ->  ternary          ;  rz-ax Tx23
-  raw     ->  hex              ;  rz-ax -S < /binfile
-  hex     ->  raw              ;  rz-ax -s 414141
-  =base                        ;  rz-ax =10 0x46 -> output in base 10
-  -l                           ;  append newline to output (for -E/-D/-r/..
-  -a      show ascii table     ;  rz-ax -a
-  -b      bin -> str           ;  rz-ax -b 01000101 01110110
-  -B      str -> bin           ;  rz-ax -B hello
-  -d      force integer        ;  rz-ax -d 3 -> 3 instead of 0x3
-  -e      swap endianness      ;  rz-ax -e 0x33
-  -D      base64 decode        ;
-  -E      base64 encode        ;
-  -f      floating point       ;  rz-ax -f 6.3+2.1
-  -F      stdin slurp code hex ;  rz-ax -F < shellcode.[c/py/js]
-  -h      show this help       ;  rz-ax -h
-  -i      dump as C byte array ;  rz-ax -i < bytes
-  -I      IP address <-> LONG  ;  rz-ax -I 3530468537
-  -k      keep base            ;  rz-ax -k 33+3 -> 36
-  -L      bin -> hex(bignum)   ;  rz-ax -L 111111111 # 0x1ff
-  -n      int value -> hexpairs;  rz-ax -n 0x1234 # 34120000
-  -o      octalstr -> raw      ;  rz-ax -o \162 \172 # rz
-  -N      binary number        ;  rz-ax -N 0x1234 # \x34\x12\x00\x00
-  -r      rz style output      ;  rz-ax -r 0x1234
-  -s      hexstr -> raw        ;  rz-ax -s 43 4a 50
-  -S      raw -> hexstr        ;  rz-ax -S < /bin/ls > ls.hex
-  -t      Unix tstamp -> str   ;  rz-ax -t 1234567890
-  -m      MS-DOS tstamp -> str ;  rz-ax -m 1234567890
-  -W      Win32 tstamp -> str  ;  rz-ax -W 1234567890
-  -x      hash string          ;  rz-ax -x linux osx
-  -u      units                ;  rz-ax -u 389289238 # 317.0M
-  -w      signed word          ;  rz-ax -w 16 0xffff
-  -v      version              ;  rz-ax -v
-  -p      position of set bits ;  rz-ax -p 0xb3
+ [0mint     ->  hex               ;  rz-ax 10
+ [0mhex     ->  int               ;  rz-ax 0xa
+ [0m-int    ->  hex               ;  rz-ax -77
+ [0m-hex    ->  int               ;  rz-ax 0xffffffb3
+ [0mint     ->  bin               ;  rz-ax b30
+ [0mint     ->  ternary           ;  rz-ax t42
+ [0mbin     ->  int               ;  rz-ax 1010d
+ [0mternary ->  int               ;  rz-ax 1010dt
+ [0mfloat   ->  hex               ;  rz-ax 3.33f
+ [0mhex     ->  float             ;  rz-ax Fx40551ed8
+ [0moct     ->  hex               ;  rz-ax 35o
+ [0mhex     ->  oct               ;  rz-ax Ox12 (O is a letter)
+ [0mbin     ->  hex               ;  rz-ax 1100011b
+ [0mhex     ->  bin               ;  rz-ax Bx63
+ [0mternary ->  hex               ;  rz-ax 212t
+ [0mhex     ->  ternary           ;  rz-ax Tx23
+ [0mraw     ->  hex               ;  rz-ax -S < /binfile
+ [0mhex     ->  raw               ;  rz-ax -s 414141
+ [32m=[0m[33m base [0m  [0m                      ;  rz-ax =10 0x46 -> output in base 10
+ [32m-l[0m      [0m                      ;  append newline to output (for -E/-D/-r/..
+ [32m-a[0m      [0mshow ascii table      ;  rz-ax -a
+ [32m-b[0m      [0mbin -> str            ;  rz-ax -b 01000101 01110110
+ [32m-B[0m      [0mstr -> bin            ;  rz-ax -B hello
+ [32m-d[0m      [0mforce integer         ;  rz-ax -d 3 -> 3 instead of 0x3
+ [32m-e[0m      [0mswap endianness       ;  rz-ax -e 0x33
+ [32m-D[0m      [0mbase64 decode
+ [32m-E[0m      [0mbase64 encode
+ [32m-f[0m      [0mfloating point        ;  rz-ax -f 6.3+2.1
+ [32m-F[0m      [0mstdin slurp code hex  ;  rz-ax -F < shellcode.[c/py/js]
+ [32m-h[0m      [0mshow this help        ;  rz-ax -h
+ [32m-i[0m      [0mdump as C byte array  ;  rz-ax -i < bytes
+ [32m-I[0m      [0mIP address <-> LONG   ;  rz-ax -I 3530468537
+ [32m-k[0m      [0mkeep base             ;  rz-ax -k 33+3 -> 36
+ [32m-L[0m      [0mbin -> hex(bignum)    ;  rz-ax -L 111111111 # 0x1ff
+ [32m-n[0m      [0mint value -> hexpairs ;  rz-ax -n 0x1234 # 34120000
+ [32m-o[0m      [0moctalstr -> raw       ;  rz-ax -o \162 \172 # rz
+ [32m-N[0m      [0mbinary number         ;  rz-ax -N 0x1234 # \x34\x12\x00\x00
+ [32m-r[0m      [0mrz style output       ;  rz-ax -r 0x1234
+ [32m-s[0m      [0mhexstr -> raw         ;  rz-ax -s 43 4a 50
+ [32m-S[0m      [0mraw -> hexstr         ;  rz-ax -S < /bin/ls > ls.hex
+ [32m-t[0m      [0mUnix tstamp -> str    ;  rz-ax -t 1234567890
+ [32m-m[0m      [0mMS-DOS tstamp -> str  ;  rz-ax -m 1234567890
+ [32m-W[0m      [0mWin32 tstamp -> str   ;  rz-ax -W 1234567890
+ [32m-x[0m      [0mhash string           ;  rz-ax -x linux osx
+ [32m-u[0m      [0munits                 ;  rz-ax -u 389289238 # 317.0M
+ [32m-w[0m      [0msigned word           ;  rz-ax -w 16 0xffff
+ [32m-v[0m      [0mversion               ;  rz-ax -v
+ [32m-p[0m      [0mposition of set bits  ;  rz-ax -p 0xb3
 
 [36mUsage: [0mrz-bin [-AcdeEghHiIjlLMqrRsSUvVxzZ] [-@ at] [-a arch] [-b bits] [-B addr]
               [-C F:C:D] [-f str] [-m addr] [-n str] [-N m:M] [-P pdb]

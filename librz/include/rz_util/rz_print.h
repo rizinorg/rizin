@@ -234,7 +234,10 @@ RZ_API RZ_OWN char *rz_print_json_indent(RZ_NULLABLE const char *s, bool color, 
 RZ_API char *rz_print_json_human(const char *s);
 
 RZ_API RZ_OWN RzStrBuf *rz_print_colorize_asm_str(RZ_BORROW RzPrint *p, const RzAsmTokenString *toks);
-RZ_API void rz_print_colored_help_option(const char *option, const char *arg, const char *description, size_t maxOptionAndArgLength);
+RZ_API void rz_print_colored_help_option(const char *flag, const char *arg, const char *desc,
+	size_t maxFlagAndArgLength);
+RZ_API void rz_print_colored_help_option_example(RZ_NULLABLE const char *flag, RZ_NULLABLE const char *arg,
+	const char *desc, size_t maxFlagAndArgLength, RZ_NULLABLE const char *example, size_t maxDescLength);
 #endif
 
 #ifdef __cplusplus
