@@ -300,6 +300,7 @@ RzAnalysisPlugin rz_analysis_plugin_h8500 = {
 	.desc = "H8500 code analysis plugin",
 	.license = "LGPL3",
 	.arch = "h8500",
+	.author = "billow",
 	.bits = 16,
 	.op = &h8500_op,
 	.get_reg_profile = get_reg_profile,
