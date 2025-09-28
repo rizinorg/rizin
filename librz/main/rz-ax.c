@@ -253,9 +253,9 @@ static int help(void) {
 	for (int i = 0; i < RZ_ARRAY_SIZE(options); i += 4) {
 		size_t flagLength = options[i] ? strlen(options[i]) : 0;
 		size_t argLength = options[i + 1] ? strlen(options[i + 1]) : 0;
-		size_t totalFlagAndArgLength = flagLength + argLength;
-		if (totalFlagAndArgLength > maxFlagAndArgLength) {
-			maxFlagAndArgLength = totalFlagAndArgLength;
+		size_t flagAndArgLength = flagLength + argLength;
+		if (flagAndArgLength > maxFlagAndArgLength) {
+			maxFlagAndArgLength = flagAndArgLength;
 		}
 		size_t descLength = strlen(options[i + 2]);
 		if (descLength > maxDescLength) {
