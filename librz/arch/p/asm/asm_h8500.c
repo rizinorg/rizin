@@ -18,6 +18,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		return -1;
 	}
 	rz_asm_op_setf_asm(op, "%s%s%s", opstr.mnemonic, RZ_STR_ISEMPTY(opstr.ops_str) ? "" : " ", opstr.ops_str);
+	op->size = ins.size;
 	return ins.size;
 }
 

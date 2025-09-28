@@ -93,6 +93,7 @@ typedef enum {
 	CLR,
 	CMP,
 	DADD,
+	DSUB,
 	DIVXU,
 	EXTS,
 	EXTU,

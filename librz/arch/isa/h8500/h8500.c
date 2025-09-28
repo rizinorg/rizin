@@ -12,8 +12,8 @@
 static const H8500EADescribe h8500_eas[] = {
 	{ AddrREG, "Rn", { H(0b1010) | Sz | Rrr, END }, 16, 1 },
 	{ AddrRI, "@Rn", { H(0b1101) | Sz | Rrr, END }, 16, 1 },
-	{ AddrRIDisp, "(d:8,Rn)", { H(0b1110) | Sz | Rrr, Disp8, END }, 8, 2 },
-	{ AddrRIDisp, "(d:16,Rn)", { H(0b1111) | Sz | Rrr, Placeholder, Disp16, END }, 16, 3 },
+	{ AddrRIDisp, "@(d:8,Rn)", { H(0b1110) | Sz | Rrr, Disp8, END }, 8, 2 },
+	{ AddrRIDisp, "@(d:16,Rn)", { H(0b1111) | Sz | Rrr, Placeholder, Disp16, END }, 16, 3 },
 	{ AddrRIPreDec, "@-Rn", { H(0b1011) | Sz | Rrr, END }, 16, 1 },
 	{ AddrRIPostInc, "@Rn+", { H(0b1100) | Sz | Rrr, END }, 16, 1 },
 	{ AddrAbs, "@aa:8", { BM(0b00000101, 0xf7) | Sz, AA8, END }, 8, 2 },
@@ -104,6 +104,7 @@ static const H8500OpcodeDescribe h8500_opcodes_without_ea[] = {
 	{ BSR, "bsr", "disp", 2, { B(0b00001110), Disp8Op, END }, { AddrPCRel } },
 	{ BSR, "bsr", "disp", 3, { B(0b00011110), Disp16Op, END }, { AddrPCRel } },
 	{ DADD, "dadd", "Rn,Rn", 3, { HR(0b10100), B(0x00), HR(0b10100), END }, { AddrREG, AddrREG } },
+	{ DSUB, "dsub", "Rn,Rn", 3, { HR(0b10100), B(0x00), HR(0b10110), END }, { AddrREG, AddrREG } },
 	{ EXTS, "exts", "Rn", 2, { HR(0b10100), B(0x11), END }, { AddrREG } },
 	{ EXTU, "extu", "Rn", 2, { HR(0b10100), B(0x12), END }, { AddrREG } },
 	{ JMP, "jmp", "@Rn", 2, { B(0x11), HR(0b11010), END }, { AddrRI } },
