@@ -370,7 +370,7 @@ static bool operand_to_string(char *out, size_t len, H8500Operand *op) {
 	return true;
 }
 
-static bool h8500_ea_parse(const ut8 *buf, ut8 len, H8500Instruction *ins) {
+static bool h8500_ea_parse(const ut8 *buf, int len, H8500Instruction *ins) {
 	const H8500EADescribe *ea_describe = NULL;
 	for (int i = 0; i < RZ_ARRAY_SIZE(h8500_eas); ++i) {
 		ea_describe = &h8500_eas[i];
@@ -400,7 +400,7 @@ static ut8 operand_index(H8500Pat pat, H8500Instruction *ins) {
 	return operand_index;
 }
 
-static bool operand_parse(const ut8 *buf, size_t pat_index, ut8 len,
+static bool operand_parse(const ut8 *buf, size_t pat_index, int len,
 	const H8500OpcodeDescribe *opcode_describe, H8500Instruction *ins) {
 	if (len < 1) {
 		return false;
@@ -526,7 +526,7 @@ bool h8500_instruction_get_opstr(H8500Instruction *ins, H8500InstructionOpstr *o
 	return true;
 }
 
-static bool h8500_opcode_parse(const ut8 *buf, size_t offset, ut8 len, H8500Instruction *ins, const H8500OpcodeDescribe *tbl, ut32 tbl_size) {
+static bool h8500_opcode_parse(const ut8 *buf, size_t offset, int len, H8500Instruction *ins, const H8500OpcodeDescribe *tbl, ut32 tbl_size) {
 	if (len < offset + 1) {
 		return false;
 	}
@@ -558,7 +558,7 @@ branch_ok:
 	return true;
 }
 
-bool h8500_instruction_parse(const ut8 *buf, ut8 len, H8500Instruction *ins) {
+bool h8500_instruction_parse(const ut8 *buf, int len, H8500Instruction *ins) {
 	if (len < 1 || !ins) {
 		return false;
 	}
