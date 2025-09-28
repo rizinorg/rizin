@@ -30,9 +30,9 @@ static void rz_sign_show_help(void) {
 	for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
 		size_t flagLength = strlen(options[i]);
 		size_t argLength = strlen(options[i + 1]);
-		size_t totalLength = flagLength + argLength;
-		if (totalLength > maxFlagAndArgLength) {
-			maxFlagAndArgLength = totalLength;
+		size_t flagAndArgLength = flagLength + argLength;
+		if (flagAndArgLength > maxFlagAndArgLength) {
+			maxFlagAndArgLength = flagAndArgLength;
 		}
 	}
 	for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
