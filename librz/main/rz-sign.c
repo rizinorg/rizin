@@ -26,18 +26,18 @@ static void rz_sign_show_help(void) {
 		"-v",       "",                         "Show version information",
 		// clang-format on
 	};
-	size_t maxOptionAndArgLength = 0;
+	size_t maxFlagAndArgLength = 0;
 	for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
 		size_t optionLength = strlen(options[i]);
 		size_t argLength = strlen(options[i + 1]);
 		size_t totalLength = optionLength + argLength;
-		if (totalLength > maxOptionAndArgLength) {
-			maxOptionAndArgLength = totalLength;
+		if (totalLength > maxFlagAndArgLength) {
+			maxFlagAndArgLength = totalLength;
 		}
 	}
 	for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
 		if (i + 1 < sizeof(options) / sizeof(options[0])) {
-			rz_print_colored_help_option(options[i], options[i + 1], options[i + 2], maxOptionAndArgLength);
+			rz_print_colored_help_option(options[i], options[i + 1], options[i + 2], maxFlagAndArgLength);
 		}
 	}
 	printf("Examples:\n"
