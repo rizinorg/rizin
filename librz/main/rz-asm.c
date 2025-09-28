@@ -208,7 +208,7 @@ static int rasm_show_help(int v) {
 	};
 	if (v != 1) {
 		size_t maxFlagAndArgLength = 0;
-		for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
+		for (int i = 0; i < RZ_ARRAY_SIZE(options); i += 3) {
 			size_t flagLength = strlen(options[i]);
 			size_t argLength = strlen(options[i + 1]);
 			size_t flagAndArgLength = flagLength + argLength;
@@ -216,8 +216,8 @@ static int rasm_show_help(int v) {
 				maxFlagAndArgLength = flagAndArgLength;
 			}
 		}
-		for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
-			if (i + 1 < sizeof(options) / sizeof(options[0])) {
+		for (int i = 0; i < RZ_ARRAY_SIZE(options); i += 3) {
+			if (i + 1 < RZ_ARRAY_SIZE(options)) {
 				rz_print_colored_help_option(options[i], options[i + 1], options[i + 2], maxFlagAndArgLength);
 			}
 		}
