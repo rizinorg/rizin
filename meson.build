@@ -437,6 +437,7 @@ foreach it : ccs
   it_userconf.set10('HAVE_PTHREAD', have_pthread)
   it_userconf.set10('HAVE_LZMA', get_option('use_lzma'))
   it_userconf.set10('HAVE_ZLIB', get_option('use_zlib'))
+  it_userconf.set10('USE_SYS_ZYDIS', zydis_dep.found() and zydis_dep.type_name() != 'internal')
   it_userconf.set10('SUPPORTS_PCRE2_JIT', pcre2_jit_supported)
   it_userconf.set('N_THREAD_LIMIT', get_option('n_thread_limit'))
 
