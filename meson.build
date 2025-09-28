@@ -219,9 +219,20 @@ endif
 
 pcre2_dep_opt = get_option('use_sys_pcre2')
 pcre2_dep = disabler()
+sys_pcre2_found = false
 if (pcre2_dep_opt.enabled() or pcre2_dep_opt.auto()) and not meson.is_cross_build()
-  pcre2_dep = dependency('libpcre2-8', required: false, static: false)
-  if not pcre2_dep.found()
+  pcre2_deps = []
+  sys_pcre2_found = true
+  foreach utf : [8, 16, 32]
+    pcre2_utf_dep = dependency('libpcre2-@0@'.format(utf), required: false, static: false)
+    if not pcre2_utf_dep.found()
+      sys_pcre2_found = false
+    endif
+    pcre2_deps += pcre2_utf_dep
+  endforeach
+  if sys_pcre2_found
+    pcre2_dep = declare_dependency(dependencies: pcre2_deps, version: pcre2_deps[0].version())
+  else
     pcre2_dep = cc.find_library('pcre2', required: true, static: true)
   endif
 else
@@ -829,7 +840,7 @@ summary({
   'PCRE2 version': pcre2_dep.version(),
   'PCRE2 JIT': pcre2_jit_supported,
   'System magic library': sys_magic.found() and sys_magic.type_name() != 'internal',
-  'System pcre2 library': pcre2_dep.found() and pcre2_dep.type_name() != 'internal',
+  'System pcre2 library': pcre2_dep.found() and sys_pcre2_found,
   'System xxhash library': xxhash_dep.found() and xxhash_dep.type_name() != 'internal',
   'System libmspack library': libmspack_dep.found() and libmspack_dep.type_name() != 'internal',
   'System openssl library': sys_openssl.found() and sys_openssl.type_name() != 'internal',
