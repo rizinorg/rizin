@@ -220,9 +220,9 @@ static int rzbin_show_help(int v) {
 		};
 		size_t maxFlagAndArgLength = 0;
 		for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
-			size_t optionLength = strlen(options[i]);
+			size_t flagLength = strlen(options[i]);
 			size_t argLength = strlen(options[i + 1]);
-			size_t totalLength = optionLength + argLength;
+			size_t totalLength = flagLength + argLength;
 			if (totalLength > maxFlagAndArgLength) {
 				maxFlagAndArgLength = totalLength;
 			}
