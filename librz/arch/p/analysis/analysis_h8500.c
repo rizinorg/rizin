@@ -111,7 +111,7 @@ static void h8500_analyze(AContext *ctx) {
 	case DADD:
 		ctx->aop->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		break;
-	case AND: break;
+	case AND:
 	case ANDC:
 		ctx->aop->type = RZ_ANALYSIS_OP_TYPE_AND;
 		break;
@@ -219,6 +219,7 @@ static void h8500_analyze(AContext *ctx) {
 	case SUB:
 	case SUBS:
 	case SUBX:
+	case DSUB:
 		ctx->aop->type = RZ_ANALYSIS_OP_TYPE_SUB;
 		break;
 	case SWAP:

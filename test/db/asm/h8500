@@ -32,6 +32,22 @@ d "bge +17" 2c11
 d "blt +17" 2d11
 d "bgt +17" 2e11
 d "ble +17" 2f11
+d "bra +17" 2011
+d "brn +4369" 311111
+d "bhi +4369" 321111
+d "bls +4369" 331111
+d "bcc +4369" 341111
+d "bcs +4369" 351111
+d "bne +4369" 361111
+d "beq +4369" 371111
+d "bvc +4369" 381111
+d "bvs +4369" 391111
+d "bpl +4369" 3a1111
+d "bmi +4369" 3b1111
+d "bge +4369" 3c1111
+d "blt +4369" 3d1111
+d "bgt +4369" 3e1111
+d "ble +4369" 3f1111
 d "bclr.b #0xf,@(4369:16,r0)" f01111df
 d "bclr.b r7,@(4369:16,r0)" f011115f
 d "bnot.b r1,@(4369:16,r0)" f0111169
@@ -94,9 +110,9 @@ d "rtd #0x11:8" 1411
 d "rtd #0x1111:16" 1c1111
 d "rte" 0a
 d "rts" 19
-d "scb/f r7,disp" 01bf11
-d "scb/ne r7,disp" 06bf11
-d "scb/eq r7,disp" 07bf11
+d "scb/f r7,+17" 01bf11
+d "scb/ne r7,+17" 06bf11
+d "scb/eq r7,+17" 07bf11
 d "shal.w @(4369:16,r7)" ff111118
 d "shar.w @(4369:16,r7)" ff111119
 d "shll.w @(4369:16,r7)" ff11111a

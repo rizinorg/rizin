@@ -99,8 +99,8 @@ static const H8500OpcodeDescribe h8500_opcodes[] = {
 static const H8500OpcodeDescribe h8500_opcodes_without_ea[] = {
 	{ ANDC, "andc.<Sz>", "#xx:8,CR", 3, { B(0x04), Data8Op, HC(0b01011), END }, { AddrIMM, AddrREGcr } },
 	{ ANDC, "andc.<Sz>", "#xx:16,CR", 4, { B(0x0c), Data16Op, HC(0b01011), END }, { AddrIMM, AddrREGcr } },
-	// TODO: Bcc also support 16-bit displacement
 	{ Bcc, "<cc>", "disp", 2, { H(0b0010) | cc, Disp8Op, END }, { AddrPCRel } },
+	{ Bcc, "<cc>", "disp", 3, { H(0b0011) | cc, Disp16Op, END }, { AddrPCRel } },
 	{ BSR, "bsr", "disp", 2, { B(0b00001110), Disp8Op, END }, { AddrPCRel } },
 	{ BSR, "bsr", "disp", 3, { B(0b00011110), Disp16Op, END }, { AddrPCRel } },
 	{ DADD, "dadd", "Rn,Rn", 3, { HR(0b10100), B(0x00), HR(0b10100), END }, { AddrREG, AddrREG } },
@@ -138,9 +138,9 @@ static const H8500OpcodeDescribe h8500_opcodes_without_ea[] = {
 	{ RTD, "rtd", "#xx:16", 3, { B(0x1c), Data16Op, END }, { AddrIMM } },
 	{ RTE, "rte", "", 1, { B(0x0a), END }, { AddrINVALID } },
 	{ RTS, "rts", "", 1, { B(0x19), END }, { AddrINVALID } },
-	{ SCB_F, "scb/f", "Rn,disp", 3, { B(0x01), HR(0b10111), Disp8, END }, { AddrREG, AddrPCRel } },
-	{ SCB_NE, "scb/ne", "Rn,disp", 3, { B(0x06), HR(0b10111), Disp8, END }, { AddrREG, AddrPCRel } },
-	{ SCB_EQ, "scb/eq", "Rn,disp", 3, { B(0x07), HR(0b10111), Disp8, END }, { AddrREG, AddrPCRel } },
+	{ SCB_F, "scb/f", "Rn,disp", 3, { B(0x01), HR(0b10111), Disp8Op, END }, { AddrREG, AddrPCRel } },
+	{ SCB_NE, "scb/ne", "Rn,disp", 3, { B(0x06), HR(0b10111), Disp8Op, END }, { AddrREG, AddrPCRel } },
+	{ SCB_EQ, "scb/eq", "Rn,disp", 3, { B(0x07), HR(0b10111), Disp8Op, END }, { AddrREG, AddrPCRel } },
 	{ SLEEP, "sleep", "", 1, { B(0x1a), END }, { AddrINVALID } },
 	{ STM, "stm.<Sz>", "<register list>,@-SP", 2, { B(0x12), RegList | HasOperand, END }, { RegList, AddrRIPreDec }, EA_BanIMM },
 	{ SWAP, "swap", "Rn", 2, { HR(0b10100), B(0x10), END }, { AddrREG } },
@@ -540,6 +540,16 @@ static bool h8500_opcode_parse(const ut8 *buf, size_t offset, int len, H8500Inst
 					ins->ea_describe &&
 					((ins->ea_describe->flags & MASK_AddressingMode) == AddrIMM)) {
 					goto branch_next;
+				}
+				int ops_count = 0;
+				for (int k = 0; k < RZ_ARRAY_SIZE(opcode_describe->args); ++k) {
+					if (opcode_describe->args[k] != AddrINVALID) {
+						ops_count++;
+					}
+				}
+				if (ins->num_operands != ops_count) {
+					RZ_LOG_ERROR("invalid number of %s %s operands: %d, expect: %d\n",
+						opcode_describe->mnemonic, opcode_describe->op_mnemonic, ins->num_operands, ops_count);
 				}
 				ins->opcode_describe = opcode_describe;
 				goto branch_ok;
