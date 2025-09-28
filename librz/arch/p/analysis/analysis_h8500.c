@@ -259,7 +259,10 @@ static int h8500_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	h8500_analyze(&ctx);
 
 	if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
-		ctx.aop->mnemonic = rz_str_newf("%s%s%s", ins.mnemonic, RZ_STR_ISEMPTY(ins.ops_str) ? "" : " ", ins.ops_str);
+		H8500InstructionOpstr opstr = { 0 };
+		if (h8500_instruction_get_opstr(&ins, &opstr)) {
+			ctx.aop->mnemonic = rz_str_newf("%s%s%s", opstr.mnemonic, RZ_STR_ISEMPTY(opstr.ops_str) ? "" : " ", opstr.ops_str);
+		}
 	}
 
 	if (mask & RZ_ANALYSIS_OP_MASK_VAL) {
@@ -295,6 +298,24 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 	return rz_str_dup(p);
 }
 
+static int archinfo(RzAnalysis *analysis, RzAnalysisInfoType query) {
+
+	switch (query) {
+	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
+		return 1;
+	case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE:
+		return 6;
+	case RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN:
+		return 1;
+	case RZ_ANALYSIS_ARCHINFO_DATA_ALIGN:
+		return 1;
+	case RZ_ANALYSIS_ARCHINFO_CAN_USE_POINTERS:
+		return true;
+	default:
+		return -1;
+	}
+}
+
 RzAnalysisPlugin rz_analysis_plugin_h8500 = {
 	.name = "h8500",
 	.desc = "H8500 code analysis plugin",
@@ -304,6 +325,7 @@ RzAnalysisPlugin rz_analysis_plugin_h8500 = {
 	.bits = 16,
 	.op = &h8500_op,
 	.get_reg_profile = get_reg_profile,
+	.archinfo = archinfo,
 	.il_config = NULL,
 	.preludes = NULL,
 };

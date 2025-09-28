@@ -178,16 +178,19 @@ typedef struct {
 	const H8500EADescribe *ea_describe;
 	uint8_t size;
 	uint8_t condition_code;
-	uint8_t bytes[4];
 	H8500Operand operands[4];
 	ut8 num_operands;
 	H8500Operand ea;
 	H8500OperandSize operand_size;
-	char mnemonic[16];
-	char ops_str[32];
 } H8500Instruction;
 
+typedef struct {
+	char mnemonic[16];
+	char ops_str[32];
+} H8500InstructionOpstr;
+
 bool h8500_instruction_parse(const ut8 *buf, ut8 len, H8500Instruction *ins);
+bool h8500_instruction_get_opstr(H8500Instruction *ins, H8500InstructionOpstr *opstr);
 const char *h8500_reg_name(const H8500Operand *op, ut8 reg);
 
 #endif // H8500_H

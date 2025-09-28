@@ -505,12 +505,32 @@ static bool operand_parse(const ut8 *buf, size_t pat_index, ut8 len,
 	return true;
 }
 
+bool h8500_instruction_get_opstr(H8500Instruction *ins, H8500InstructionOpstr *opstr) {
+	rz_return_val_if_fail(ins && opstr, false);
+	memset(opstr, 0, sizeof(H8500InstructionOpstr));
+	const H8500OpcodeDescribe *opcode_describe = ins->opcode_describe;
+	char ea_str_buf[16] = { 0 };
+	strcpy(opstr->mnemonic, opcode_describe->mnemonic);
+	rz_str_replace(opstr->mnemonic, "<Sz>", (ins->operand_size == WORD_OPERAND) ? "w" : "b", 0);
+	rz_str_replace(opstr->mnemonic, "<cc>", cc_mnemonic(ins->condition_code), 0);
+
+	strcpy(opstr->ops_str, opcode_describe->op_mnemonic);
+	if (ins->ea_describe) {
+		strcpy(ea_str_buf, ins->ea_describe->mnemonic);
+		operand_to_string(ea_str_buf, RZ_ARRAY_SIZE(ea_str_buf), &ins->ea);
+		rz_str_replace_in(opstr->ops_str, RZ_ARRAY_SIZE(opstr->ops_str), "<EA>", ea_str_buf, 0);
+	}
+	for (int i = 0; i < ins->num_operands; ++i) {
+		operand_to_string(opstr->ops_str, RZ_ARRAY_SIZE(opstr->ops_str), &ins->operands[i]);
+	}
+	return true;
+}
+
 static bool h8500_opcode_parse(const ut8 *buf, size_t offset, ut8 len, H8500Instruction *ins, const H8500OpcodeDescribe *tbl, ut32 tbl_size) {
 	if (len < offset + 1) {
 		return false;
 	}
 	const H8500OpcodeDescribe *opcode_describe = NULL;
-	char ea_str_buf[16] = { 0 };
 	for (int i = 0; i < tbl_size; ++i) {
 		opcode_describe = &tbl[i];
 		for (int j = 0;; j += 1) {
@@ -535,19 +555,6 @@ static bool h8500_opcode_parse(const ut8 *buf, size_t offset, ut8 len, H8500Inst
 	}
 	return false;
 branch_ok:
-	strcpy(ins->mnemonic, opcode_describe->mnemonic);
-	rz_str_replace(ins->mnemonic, "<Sz>", (ins->operand_size == WORD_OPERAND) ? "w" : "b", 0);
-	rz_str_replace(ins->mnemonic, "<cc>", cc_mnemonic(ins->condition_code), 0);
-
-	strcpy(ins->ops_str, opcode_describe->op_mnemonic);
-	if (ins->ea_describe) {
-		strcpy(ea_str_buf, ins->ea_describe->mnemonic);
-		operand_to_string(ea_str_buf, RZ_ARRAY_SIZE(ea_str_buf), &ins->ea);
-		rz_str_replace_in(ins->ops_str, RZ_ARRAY_SIZE(ins->ops_str), "<EA>", ea_str_buf, 0);
-	}
-	for (int i = 0; i < ins->num_operands; ++i) {
-		operand_to_string(ins->ops_str, RZ_ARRAY_SIZE(ins->ops_str), &ins->operands[i]);
-	}
 	return true;
 }
 
@@ -571,6 +578,5 @@ bool h8500_instruction_parse(const ut8 *buf, ut8 len, H8500Instruction *ins) {
 branch_ok:
 	memcpy(ins, &ins_in, sizeof(H8500Instruction));
 	ins->size = (ins_in.ea_describe ? ins_in.ea_describe->size : 0) + ins_in.opcode_describe->size;
-	memcpy(ins->bytes, buf, ins->size);
 	return true;
 }
