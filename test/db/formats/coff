@@ -35,7 +35,7 @@ nth      vaddr bind type lib name
  25 0x0000b758 NONE UNK      __fltused
      paddr   size      vaddr  vsize align perm name          type flags                                        
 ---------------------------------------------------------------------------------------------------------------
-0x000001cc   0x2f 0x00000000   0x2f   0x0 ---- .drectve           LNK_INFO,LNK_REMOVE,ALIGN_1BYTES,MEM_NO_READ
+0x000001cc   0x2f 0x00000000   0x2f   0x0 -r-- .drectve           LNK_INFO,LNK_REMOVE,ALIGN_1BYTES,MEM_NO_READ
 0x000001fb 0x8670 0x00000030 0x8670   0x0 -r-- .debug_S           CNT_INIT_DATA,ALIGN_1BYTES,MEM_DISCARDABLE
 0x0000ad73   0x70 0x000086a0   0x70   0x0 -r-- .debug_T           CNT_INIT_DATA,ALIGN_1BYTES,MEM_DISCARDABLE
 0x0000ade3  0x625 0x00008710  0x625   0x0 -rw- .data              CNT_INIT_DATA,ALIGN_8BYTES
@@ -84,7 +84,7 @@ pd 2
 EOF
 EXPECT=<<EOF
  1 fd: 4 +0x00000000 0x00000e60 - 0x00000e6f r-- vmap.reloc-targets
- 2 fd: 3 +0x0000017c 0x00000000 - 0x000000ee --- fmap..drectve
+ 2 fd: 3 +0x0000017c 0x00000000 - 0x000000ee r-- fmap..drectve
  3 fd: 3 +0x0000026b 0x000000f0 - 0x00000b9f r-- fmap..debug$S
  4 fd: 3 +0x00000d1b 0x00000ba0 - 0x00000c13 r-- fmap..debug$T
  5 fd: 3 +0x00000d8f 0x00000c20 * 0x00000c4c r-x fmap..text$mn
@@ -95,7 +95,7 @@ EXPECT=<<EOF
 10 fd: 5 +0x00001000 0x00000e50 - 0x00000e53 r-- vmap..rtc$TMZ
      paddr  size      vaddr vsize align perm name           type flags                                                 
 -----------------------------------------------------------------------------------------------------------------------
-0x0000017c  0xef 0x00000000  0xef   0x0 ---- .drectve            LNK_INFO,LNK_REMOVE,ALIGN_1BYTES,MEM_NO_READ
+0x0000017c  0xef 0x00000000  0xef   0x0 -r-- .drectve            LNK_INFO,LNK_REMOVE,ALIGN_1BYTES,MEM_NO_READ
 0x0000026b 0xab0 0x000000f0 0xab0   0x0 -r-- .debug_S            CNT_INIT_DATA,ALIGN_1BYTES,MEM_DISCARDABLE
 0x00000d1b  0x74 0x00000ba0  0x74   0x0 -r-- .debug_T            CNT_INIT_DATA,ALIGN_1BYTES,MEM_DISCARDABLE
 0x00000d8f  0x2d 0x00000c20  0x2d   0x0 -r-x .text_mn            CNT_CODE,LNK_COMDAT,ALIGN_16BYTES
