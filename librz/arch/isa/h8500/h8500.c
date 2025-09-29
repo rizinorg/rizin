@@ -42,57 +42,58 @@ static const H8500EADescribe h8500_eas[] = {
 #define HSR(X)   (H(X) | Sz | RrrOp)
 
 #define IDX(I) (((ut64)I << MASK_INDEX_OFF) | HasINDEX)
+#define SP_IDX 7
 
 #define AddrREGcr (Crr | AddrREG)
 
 static const H8500OpcodeDescribe h8500_opcodes[] = {
-	{ ADD_Q, "add:q.<Sz>", "<EA>,Rn", 1, { HR(0b00100), END }, { 1 } },
-	{ ADD_Q, "add:q.<Sz>", "#1,<EA>", 1, { B(0b00001000), END }, { 1 }, EA_BanIMM },
-	{ ADD_Q, "add:q.<Sz>", "#2,<EA>", 1, { B(0b00001001), END }, { 2 }, EA_BanIMM },
-	{ ADD_Q, "add:q.<Sz>", "#-1,<EA>", 1, { B(0b00001100), END }, { -1 }, EA_BanIMM },
-	{ ADD_Q, "add:q.<Sz>", "#-2,<EA>", 1, { B(0b00001101), END }, { -2 }, EA_BanIMM },
-	{ ADDS, "adds.<Sz>", "<EA>,Rn", 1, { HR(0b00101), END }, { 0 } },
-	{ ADDX, "addx.<Sz>", "<EA>,Rn", 1, { HR(0b10100), END }, { 0 } },
-	{ AND, "and.<Sz>", "<EA>,Rn", 1, { HR(0b01010), END }, { 0 } },
-	{ BCLR, "bclr.<Sz>", "#xx,<EA>", 1, { H(0b1101) | Data4Op, END }, { 0 }, EA_BanIMM },
-	{ BCLR, "bclr.<Sz>", "Rn,<EA>", 1, { HR(0b01011), END }, { 0 }, EA_BanIMM },
-	{ BNOT, "bnot.<Sz>", "#xx,<EA>", 1, { H(0b1110) | Data4Op, END }, { 0 }, EA_BanIMM },
-	{ BNOT, "bnot.<Sz>", "Rn,<EA>", 1, { HR(0b01101), END }, { 0 }, EA_BanIMM },
-	{ BSET, "bset.<Sz>", "#xx,<EA>", 1, { H(0b1100) | Data4Op, END }, { 0 }, EA_BanIMM },
-	{ BSET, "bset.<Sz>", "Rn,<EA>", 1, { HR(0b01001), END }, { 0 }, EA_BanIMM },
-	{ BTST, "btst.<Sz>", "#xx,<EA>", 1, { H(0b1111) | Data4Op, END }, { 0 }, EA_BanIMM },
-	{ BTST, "btst.<Sz>", "Rn,<EA>", 1, { HR(0b01111), END }, { 0 }, EA_BanIMM },
+	{ ADD_Q, "add:q.<Sz>", "<EA>,Rn", 1, { HR(0b00100), END }, { EA, AddrREG } },
+	{ ADD_Q, "add:q.<Sz>", "#1,<EA>", 1, { B(0b00001000), END }, { ARG_PACK_DATA(1) | AddrIMM, EA }, EA_BanIMM },
+	{ ADD_Q, "add:q.<Sz>", "#2,<EA>", 1, { B(0b00001001), END }, { ARG_PACK_DATA(2) | AddrIMM, EA }, EA_BanIMM },
+	{ ADD_Q, "add:q.<Sz>", "#-1,<EA>", 1, { B(0b00001100), END }, { ARG_PACK_DATA(1) | AddrIMM, EA }, EA_BanIMM },
+	{ ADD_Q, "add:q.<Sz>", "#-2,<EA>", 1, { B(0b00001101), END }, { ARG_PACK_DATA(2) | AddrIMM, EA }, EA_BanIMM },
+	{ ADDS, "adds.<Sz>", "<EA>,Rn", 1, { HR(0b00101), END }, { EA, AddrREG } },
+	{ ADDX, "addx.<Sz>", "<EA>,Rn", 1, { HR(0b10100), END }, { EA, AddrREG } },
+	{ AND, "and.<Sz>", "<EA>,Rn", 1, { HR(0b01010), END }, { EA, AddrREG } },
+	{ BCLR, "bclr.<Sz>", "#xx,<EA>", 1, { H(0b1101) | Data4Op, END }, { AddrIMM, EA }, EA_BanIMM },
+	{ BCLR, "bclr.<Sz>", "Rn,<EA>", 1, { HR(0b01011), END }, { AddrREG, EA }, EA_BanIMM },
+	{ BNOT, "bnot.<Sz>", "#xx,<EA>", 1, { H(0b1110) | Data4Op, END }, { AddrIMM, EA }, EA_BanIMM },
+	{ BNOT, "bnot.<Sz>", "Rn,<EA>", 1, { HR(0b01101), END }, { AddrREG, EA }, EA_BanIMM },
+	{ BSET, "bset.<Sz>", "#xx,<EA>", 1, { H(0b1100) | Data4Op, END }, { AddrIMM, EA }, EA_BanIMM },
+	{ BSET, "bset.<Sz>", "Rn,<EA>", 1, { HR(0b01001), END }, { AddrREG, EA }, EA_BanIMM },
+	{ BTST, "btst.<Sz>", "#xx,<EA>", 1, { H(0b1111) | Data4Op, END }, { AddrIMM, EA }, EA_BanIMM },
+	{ BTST, "btst.<Sz>", "Rn,<EA>", 1, { HR(0b01111), END }, { AddrREG, EA }, EA_BanIMM },
 
-	{ CLR, "clr.<Sz>", "<EA>", 1, { B(0b00010011), END }, { 0 }, EA_BanIMM },
-	{ CMP, "cmp:g.<Sz>", "#xx,<EA>", 2, { B(0b00000100), Data8Op, END }, { 0 }, EA_BanIMM },
-	{ CMP, "cmp:g.<Sz>", "#xx,<EA>", 3, { B(0b00000101), Data16Op, END }, { 0 }, EA_BanIMM },
-	{ CMP, "cmp:g.<Sz>", "<EA>,Rn", 1, { HR(0b01110), END }, { 0 } },
-	{ DIVXU, "divxu.<Sz>", "<EA>,Rn", 1, { HR(0b10111), END }, { 0 } },
-	{ LDC, "ldc.<Sz>", "<EA>,CR", 1, { HC(0b10001), END }, { 0 } },
-	{ MOV, "mov:g.<Sz>", "<EA>,Rn", 1, { HR(0b10000), END }, { 0 } },
-	{ MOV, "mov:g.<Sz>", "Rn,<EA>", 1, { HR(0b10010), END }, { 0 }, EA_BanIMM },
-	{ MOV, "mov:g.<Sz>", "#xx,<EA>", 2, { B(0x06), Data8Op, END }, { 0 }, EA_BanIMM },
-	{ MOV, "mov:g.<Sz>", "#xx,<EA>", 3, { B(0x07), Data16Op, END }, { 0 }, EA_BanIMM },
-	{ MOVFPE, "movfpe", "<EA>,Rn", 2, { B(0x00), HR(0b10000), END }, { 0 }, EA_BanIMM },
-	{ MOVTPE, "movtpe", "Rn,<EA>", 2, { B(0x00), HR(0b10010), END }, { 0 }, EA_BanIMM },
-	{ MULXU, "mulxu.<Sz>", "<EA>,Rn", 1, { HR(0b10101), END }, { 0 } },
-	{ NEG, "neg.<Sz>", "<EA>", 1, { B(0x14), END }, { 0 }, EA_BanIMM },
-	{ NOT, "not.<Sz>", "<EA>", 1, { B(0x15), END }, { 0 }, EA_BanIMM },
-	{ OR, "or.<Sz>", "<EA>,Rn", 1, { HR(0b01000), END }, { 0 } },
-	{ ROTL, "rotl.<Sz>", "<EA>", 1, { B(0x1c), END }, { 0 }, EA_BanIMM },
-	{ ROTR, "rotr.<Sz>", "<EA>", 1, { B(0x1d), END }, { 0 }, EA_BanIMM },
-	{ ROTL, "rotxl.<Sz>", "<EA>", 1, { B(0x1e), END }, { 0 }, EA_BanIMM },
-	{ ROTR, "rotxr.<Sz>", "<EA>", 1, { B(0x1f), END }, { 0 }, EA_BanIMM },
-	{ SHAL, "shal.<Sz>", "<EA>", 1, { B(0x18), END }, { 0 }, EA_BanIMM },
-	{ SHAR, "shar.<Sz>", "<EA>", 1, { B(0x19), END }, { 0 }, EA_BanIMM },
-	{ SHLL, "shll.<Sz>", "<EA>", 1, { B(0x1a), END }, { 0 }, EA_BanIMM },
-	{ SHLR, "shlr.<Sz>", "<EA>", 1, { B(0x1b), END }, { 0 }, EA_BanIMM },
+	{ CLR, "clr.<Sz>", "<EA>", 1, { B(0b00010011), END }, { EA }, EA_BanIMM },
+	{ CMP, "cmp:g.<Sz>", "#xx,<EA>", 2, { B(0b00000100), Data8Op, END }, { AddrIMM, EA }, EA_BanIMM },
+	{ CMP, "cmp:g.<Sz>", "#xx,<EA>", 3, { B(0b00000101), Data16Op, END }, { AddrIMM, EA }, EA_BanIMM },
+	{ CMP, "cmp:g.<Sz>", "<EA>,Rn", 1, { HR(0b01110), END }, { EA, AddrREG } },
+	{ DIVXU, "divxu.<Sz>", "<EA>,Rn", 1, { HR(0b10111), END }, { EA, AddrREG } },
+	{ LDC, "ldc.<Sz>", "<EA>,CR", 1, { HC(0b10001), END }, { EA, AddrREGcr } },
+	{ MOV, "mov:g.<Sz>", "<EA>,Rn", 1, { HR(0b10000), END }, { EA, AddrREG } },
+	{ MOV, "mov:g.<Sz>", "Rn,<EA>", 1, { HR(0b10010), END }, { AddrREG, EA }, EA_BanIMM },
+	{ MOV, "mov:g.<Sz>", "#xx,<EA>", 2, { B(0x06), Data8Op, END }, { AddrIMM, EA }, EA_BanIMM },
+	{ MOV, "mov:g.<Sz>", "#xx,<EA>", 3, { B(0x07), Data16Op, END }, { AddrIMM, EA }, EA_BanIMM },
+	{ MOVFPE, "movfpe", "<EA>,Rn", 2, { B(0x00), HR(0b10000), END }, { EA, AddrREG }, EA_BanIMM },
+	{ MOVTPE, "movtpe", "Rn,<EA>", 2, { B(0x00), HR(0b10010), END }, { AddrREG, EA }, EA_BanIMM },
+	{ MULXU, "mulxu.<Sz>", "<EA>,Rn", 1, { HR(0b10101), END }, { EA, AddrREG } },
+	{ NEG, "neg.<Sz>", "<EA>", 1, { B(0x14), END }, { EA }, EA_BanIMM },
+	{ NOT, "not.<Sz>", "<EA>", 1, { B(0x15), END }, { EA }, EA_BanIMM },
+	{ OR, "or.<Sz>", "<EA>,Rn", 1, { HR(0b01000), END }, { EA, AddrREG } },
+	{ ROTL, "rotl.<Sz>", "<EA>", 1, { B(0x1c), END }, { EA }, EA_BanIMM },
+	{ ROTR, "rotr.<Sz>", "<EA>", 1, { B(0x1d), END }, { EA }, EA_BanIMM },
+	{ ROTL, "rotxl.<Sz>", "<EA>", 1, { B(0x1e), END }, { EA }, EA_BanIMM },
+	{ ROTR, "rotxr.<Sz>", "<EA>", 1, { B(0x1f), END }, { EA }, EA_BanIMM },
+	{ SHAL, "shal.<Sz>", "<EA>", 1, { B(0x18), END }, { EA }, EA_BanIMM },
+	{ SHAR, "shar.<Sz>", "<EA>", 1, { B(0x19), END }, { EA }, EA_BanIMM },
+	{ SHLL, "shll.<Sz>", "<EA>", 1, { B(0x1a), END }, { EA }, EA_BanIMM },
+	{ SHLR, "shlr.<Sz>", "<EA>", 1, { B(0x1b), END }, { EA }, EA_BanIMM },
 	{ STC, "stc.<Sz>", "CR,<EA>", 1, { HC(0b10011), END }, { AddrREGcr, EA }, EA_BanIMM },
 	{ SUB, "sub.<Sz>", "<EA>,Rn", 1, { HR(0b00110), END }, { EA, AddrREG } },
 	{ SUBS, "subs.<Sz>", "<EA>,Rn", 1, { HR(0b00111), END }, { EA, AddrREG } },
 	{ SUBX, "subx.<Sz>", "<EA>,Rn", 1, { HR(0b10110), END }, { EA, AddrREG } },
-	{ TAS, "tas", "<EA>", 1, { B(0x17), END }, { 0 }, EA_BanIMM },
-	{ TST, "tst", "<EA>", 1, { B(0x16), END }, { 0 }, EA_BanIMM },
+	{ TAS, "tas", "<EA>", 1, { B(0x17), END }, { EA }, EA_BanIMM },
+	{ TST, "tst", "<EA>", 1, { B(0x16), END }, { EA }, EA_BanIMM },
 	{ XOR, "xor", "<EA>,Rn", 1, { HR(0b01100), END }, { EA, AddrREG } },
 };
 
@@ -115,7 +116,7 @@ static const H8500OpcodeDescribe h8500_opcodes_without_ea[] = {
 	{ JSR, "jsr", "@(d:8,Rn)", 3, { B(0x11), HRD8(0b11101), END }, { AddrRIDisp } },
 	{ JSR, "jsr", "@(d:16,Rn)", 4, { B(0x11), HRD16(0b11111), END }, { AddrRIDisp } },
 	{ JSR, "jsr", "@aa:16", 3, { B(0x18), AA16Op, END }, { AddrAbs } },
-	{ LDM, "ldm", "@SP+,<register list>", 2, { B(0x02), RegList | HasOperand, END }, { RegList } },
+	{ LDM, "ldm", "@SP+,<register list>", 2, { B(0x02), RegList | HasOperand, END }, { ARG_PACK_DATA(SP_IDX) | AddrRIPostInc, RegList } },
 	{ LINK, "link", "fp,#xx:8", 2, { B(0x17), Data8Op, END }, { AddrIMM } },
 	{ LINK, "link", "fp,#xx:16", 3, { B(0x1f), Data16Op, END }, { AddrIMM } },
 	{ MOV, "mov:e", "#xx:8,Rn", 2, { HR(0b01010) | IDX(1), Data8Op | IDX(0), END }, { AddrIMM, AddrREG } },
@@ -142,7 +143,7 @@ static const H8500OpcodeDescribe h8500_opcodes_without_ea[] = {
 	{ SCB_NE, "scb/ne", "Rn,disp", 3, { B(0x06), HR(0b10111), Disp8Op, END }, { AddrREG, AddrPCRel } },
 	{ SCB_EQ, "scb/eq", "Rn,disp", 3, { B(0x07), HR(0b10111), Disp8Op, END }, { AddrREG, AddrPCRel } },
 	{ SLEEP, "sleep", "", 1, { B(0x1a), END }, { AddrINVALID } },
-	{ STM, "stm.<Sz>", "<register list>,@-SP", 2, { B(0x12), RegList | HasOperand, END }, { RegList, AddrRIPreDec }, EA_BanIMM },
+	{ STM, "stm.<Sz>", "<register list>,@-SP", 2, { B(0x12), RegList | HasOperand, END }, { RegList, ARG_PACK_DATA(SP_IDX) | AddrRIPreDec }, EA_BanIMM },
 	{ SWAP, "swap", "Rn", 2, { HR(0b10100), B(0x10), END }, { AddrREG } },
 	{ TRAPA, "trapa", "#xx", 2, { B(0x08), H(0x1) | VEC | Data4 | HasOperand, END }, { AddrIMM } },
 	{ TRAP_VS, "trap/vs", "", 1, { B(0x09), END }, { AddrINVALID } },
@@ -256,7 +257,7 @@ static bool EA_parse(const ut8 *buf, size_t pat_index, ut8 len,
 	}
 	H8500Operand *op = &ins->ea;
 	const H8500Pat *pats = ea_describe->pats;
-	ut64 mode = ea_describe->flags & MASK_AddressingMode;
+	ut64 mode = ea_describe->flags & ARG_MASK_AddressingMode;
 	ut8 b = buf[pat_index];
 	H8500Pat pat = pats[pat_index];
 	if (!pat_const_check(pat, b)) {
@@ -303,7 +304,7 @@ static bool EA_parse(const ut8 *buf, size_t pat_index, ut8 len,
 
 static bool operand_to_string(char *out, size_t len, H8500Operand *op) {
 	char buf[16] = { 0 };
-	switch (op->flags & MASK_AddressingMode) {
+	switch (op->flags & ARG_MASK_AddressingMode) {
 	case AddrREG:
 	case AddrRI:
 	case AddrRIPreDec:
@@ -414,7 +415,7 @@ static bool operand_parse(const ut8 *buf, size_t pat_index, int len,
 	}
 
 	H8500Operand *op = &ins->operands[operand_index(pat, ins)];
-	ut64 mode = opcode_describe->args[operand_index(pat, ins)] & MASK_AddressingMode;
+	ut64 mode = opcode_describe->args[operand_index(pat, ins)] & ARG_MASK_AddressingMode;
 
 	if (pat & cc) {
 		ins->condition_code = b & MASK_cc;
@@ -527,6 +528,19 @@ bool h8500_instruction_get_opstr(H8500Instruction *ins, H8500InstructionOpstr *o
 	return true;
 }
 
+static H8500Operand *insert_operand(H8500Instruction *ins, int index) {
+	if (ins->num_operands + 1 >= RZ_ARRAY_SIZE(ins->operands) || index > ins->num_operands + 1) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+	if (index < ins->num_operands && ins->num_operands > 0) {
+		memmove(ins->operands + index + 1, ins->operands + index, sizeof(H8500Operand) * (ins->num_operands - index));
+		memset(&ins->operands[index], 0, sizeof(H8500Operand));
+	}
+	ins->num_operands++;
+	return &ins->operands[index];
+}
+
 static bool h8500_opcode_parse(const ut8 *buf, size_t offset, int len, H8500Instruction *ins, const H8500OpcodeDescribe *tbl, ut32 tbl_size) {
 	if (len < offset + 1) {
 		return false;
@@ -538,14 +552,38 @@ static bool h8500_opcode_parse(const ut8 *buf, size_t offset, int len, H8500Inst
 			if (opcode_describe->pats[j] == END) {
 				if ((opcode_describe->ea_flags & EA_BanIMM) &&
 					ins->ea_describe &&
-					((ins->ea_describe->flags & MASK_AddressingMode) == AddrIMM)) {
+					((ins->ea_describe->flags & ARG_MASK_AddressingMode) == AddrIMM)) {
 					goto branch_next;
 				}
+				// All patterns for this opcode match,
+				// but I want to use the hint in `args` to verify whether the operands are correct and modify the operands accordingly.
 				int ops_count = 0;
 				for (int k = 0; k < RZ_ARRAY_SIZE(opcode_describe->args); ++k) {
-					if (opcode_describe->args[k] != AddrINVALID) {
-						ops_count++;
+					H8500Pat arg = opcode_describe->args[k];
+					if (arg == AddrINVALID) {
+						break;
 					}
+					if (arg == EA)
+					{
+						continue;
+					}
+					if (ARG_DATA(arg) != 0 && ins->operands[ops_count].flags != ARG_FLAGS(arg)) {
+						H8500Operand *op = insert_operand(ins, ops_count);
+						op->flags = ARG_FLAGS(arg);
+						switch (ARG_MODE(arg)) {
+						case AddrIMM:
+							op->imm = ARG_DATA(arg);
+							break;
+						case AddrRIPostInc:
+						case AddrRIPreDec:
+							op->rn = ARG_DATA(arg);
+							break;
+						default:
+							rz_warn_if_reached();
+							break;
+						}
+					}
+					ops_count++;
 				}
 				if (ins->num_operands != ops_count) {
 					RZ_LOG_ERROR("invalid number of %s %s operands: %d, expect: %d\n",

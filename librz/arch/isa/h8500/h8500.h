@@ -32,6 +32,13 @@ typedef enum {
 	AddrPCRel,
 } H8500AddressingMode;
 
+#define ARG_MASK_AddressingMode (0xff)
+#define ARG_MODE(A)             (A & ARG_MASK_AddressingMode)
+#define ARG_MASK_DATA           (0xff << 8)
+#define ARG_PACK_DATA(A)        ((A << 8) & ARG_MASK_DATA)
+#define ARG_DATA(A)             ((A & ARG_MASK_DATA) >> 8)
+#define ARG_FLAGS(A)            (A & ~(ARG_MASK_DATA))
+
 #define MASK_CONST_OFF 24
 #define MASK_INDEX_OFF 59
 
@@ -54,21 +61,21 @@ typedef enum {
 	RegList = 1 << 23, // 24-31 = MASK_CON,
 } H8500PatFlags;
 
-#define EA                  (1ull << 32)
-#define HasINDEX            (1ull << 33)
-#define ImpliedR6           (1ull << 34)
-#define AA24                (1ull << 35)
-#define VEC                 (1ull << 36)
-#define END                 (1ull << 63)
-#define MASK_CONST          (0xff << MASK_CONST_OFF)
-#define MASK_INDEX          (0xfull << MASK_INDEX_OFF)
-#define MASK_Rrr            (0b111)
-#define MASK_Sz             (0b1000)
-#define MASK_AddressingMode (0xff)
-#define MASK_cc             (0xf)
-#define MASK_Data4          (0xf)
+#define EA         (1ull << 32)
+#define HasINDEX   (1ull << 33)
+#define ImpliedR6  (1ull << 34)
+#define AA24       (1ull << 35)
+#define VEC        (1ull << 36)
+#define END        (1ull << 63)
+#define MASK_CONST (0xff << MASK_CONST_OFF)
+#define MASK_INDEX (0xfull << MASK_INDEX_OFF)
+#define MASK_Rrr   (0b111)
+#define MASK_Sz    (0b1000)
+#define MASK_cc    (0xf)
+#define MASK_Data4 (0xf)
 
 typedef ut64 H8500Pat;
+typedef ut64 H8500Arg;
 
 typedef struct {
 	ut64 flags;
@@ -156,7 +163,7 @@ typedef struct {
 	const char *op_mnemonic;
 	uint8_t size;
 	H8500Pat pats[8];
-	H8500Pat args[8];
+	H8500Arg args[8];
 	ut32 ea_flags;
 } H8500OpcodeDescribe;
 

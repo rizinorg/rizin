@@ -21,7 +21,7 @@ typedef struct {
 } AContext;
 
 static void h8500_op2val(AContext *ctx, RzAnalysisValue *av, H8500Operand *iop) {
-	switch (iop->flags & MASK_AddressingMode) {
+	switch (iop->flags & ARG_MASK_AddressingMode) {
 	case AddrREG:
 		av->type = RZ_ANALYSIS_VAL_REG;
 		av->reg = rz_reg_get(ctx->analysis->reg, h8500_reg_name(iop, iop->rn), RZ_REG_TYPE_ANY);
@@ -86,7 +86,7 @@ static void h8500_analyze_val(AContext *ctx) {
 }
 
 static void aop_set_from_ea(AContext *ctx) {
-	switch (ctx->ins->ea.flags & MASK_AddressingMode) {
+	switch (ctx->ins->ea.flags & ARG_MASK_AddressingMode) {
 	case AddrAbs:
 		ctx->aop->jump = ctx->ins->ea.aa;
 		break;
