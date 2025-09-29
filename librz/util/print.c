@@ -1457,13 +1457,47 @@ RZ_API RZ_OWN RzStrBuf *rz_print_colorize_asm_str(RZ_BORROW RzPrint *p, const Rz
 }
 
 /**
+ * \brief Returns the maximum flag+arg length in \p options, and optionally the maximum description length.
+ *
+ * \param options Options string array, with 3 (default) or 4 strings per option depending on \p maxDescLength.
+ * \param options_len Length of \p options in strings, should be RZ_ARRAY_SIZE(options).
+ * \param maxDescLength If not NULL, this will contain the maximum description length in \p options, and function will
+ *        assume that there are 4 strings per option.
+ * \return The maximum flag+arg length in \p options.
+ */
+RZ_API size_t rz_print_options_get_max_len(const char **options, size_t options_len,
+	RZ_NULLABLE size_t *maxDescLength) {
+
+	int items_per_opt = maxDescLength ? 4 : 3;
+	size_t maxFlagAndArgLength = 0;
+	if (maxDescLength) {
+		*maxDescLength = 0;
+	}
+	for (int i = 0; i < options_len; i += items_per_opt) {
+		size_t flagLength = options[i] ? strlen(options[i]) : 0;
+		size_t argLength = options[i + 1] ? strlen(options[i + 1]) : 0;
+		size_t flagAndArgLength = flagLength + argLength;
+		if (flagAndArgLength > maxFlagAndArgLength) {
+			maxFlagAndArgLength = flagAndArgLength;
+		}
+		if (maxDescLength) {
+			size_t descLength = strlen(options[i + 2]);
+			if (descLength > *maxDescLength) {
+				*maxDescLength = descLength;
+			}
+		}
+	}
+	return maxFlagAndArgLength;
+}
+
+/**
  * \brief Prints a help option with the option flag and arg strings colorized, and description aligned to a column.
  *
  * \param flag Option flag, will be colored green.
  * \param arg Option arg, will be colored yellow.
  * \param desc Option description, will be aligned in the third column.
  * \param maxFlagAndArgLength Width of column containing \p flag and \p arg. It needs to be calculated beforehand
- *        as the max over all options.
+ *        as the max over all options, perhaps via rz_print_options_get_max_len().
  */
 RZ_API void rz_print_colored_help_option(const char *flag, const char *arg, const char *desc,
 	size_t maxFlagAndArgLength) {
@@ -1481,10 +1515,10 @@ RZ_API void rz_print_colored_help_option(const char *flag, const char *arg, cons
  * \param desc Option description, will be aligned in the third column unless both \p flag and \p arg are NULL. If so,
  *        it will be aligned at the first column.
  * \param maxFlagAndArgLength Width of column containing \p flag and \p arg. It needs to be calculated beforehand
- *        as the max over all options.
+ *        as the max over all options, perhaps via rz_print_options_get_max_len().
  * \param example Optional option example, will be aligned in a column after the description and prefixed with ";  ".
  * \param maxDescLength Width of column containing \p desc. It needs to be calculated beforehand as the max over all
- *        descriptions.
+ *        descriptions, perhaps via rz_print_options_get_max_len().
  */
 RZ_API void rz_print_colored_help_option_example(RZ_NULLABLE const char *flag, RZ_NULLABLE const char *arg,
 	const char *desc, size_t maxFlagAndArgLength, RZ_NULLABLE const char *example, size_t maxDescLength) {

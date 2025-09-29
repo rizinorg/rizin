@@ -248,20 +248,8 @@ static int help(void) {
 #undef CF
 #undef CA
 #undef CR
-	size_t maxFlagAndArgLength = 0;
-	size_t maxDescLength = 0;
-	for (int i = 0; i < RZ_ARRAY_SIZE(options); i += 4) {
-		size_t flagLength = options[i] ? strlen(options[i]) : 0;
-		size_t argLength = options[i + 1] ? strlen(options[i + 1]) : 0;
-		size_t flagAndArgLength = flagLength + argLength;
-		if (flagAndArgLength > maxFlagAndArgLength) {
-			maxFlagAndArgLength = flagAndArgLength;
-		}
-		size_t descLength = strlen(options[i + 2]);
-		if (descLength > maxDescLength) {
-			maxDescLength = descLength;
-		}
-	}
+	size_t maxDescLength = SIZE_MAX;
+	size_t maxFlagAndArgLength = rz_print_options_get_max_len(options, RZ_ARRAY_SIZE(options), &maxDescLength);
 	for (int i = 0; i < RZ_ARRAY_SIZE(options); i += 4) {
 		if (i + 1 < RZ_ARRAY_SIZE(options)) {
 			rz_print_colored_help_option_example(options[i], options[i + 1], options[i + 2],
