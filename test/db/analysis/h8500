@@ -1,0 +1,176 @@
+NAME=h8500 regs
+FILE=bins/coff/test.h8500.o
+CMDS=<<EOF
+ar
+EOF
+EXPECT=<<EOF
+r0 = 0x0000
+r1 = 0x0000
+r2 = 0x0000
+r3 = 0x0000
+r4 = 0x0000
+r5 = 0x0000
+r6 = 0x0000
+r7 = 0x0000
+pc = 0x000000
+ccr = 0x00
+cp = 0x00
+dp = 0x00
+ep = 0x00
+tp = 0x00
+br = 0x00
+EOF
+RUN
+
+NAME=h8500 analysis
+FILE=bins/coff/test.h8500.o
+CMDS=<<EOF
+aaa
+afl
+pd 120
+EOF
+EXPECT=<<EOF
+0x00000000    1 1            entry0
+0x00000001    2 159          fcn.00000001
+            ;-- section..text:
+            ;-- .text:
+            ;-- _start:
+/ entry0();
+\           0x00000000      nop                                        ; [00] -r-x section size 274 named .text
+            ; CALL XREF from sym.next_same_page @ 
+            ; CALL XREF from sym.scb_loop_eq @ +0x6
+/ fcn.00000001();
+|   ..----> 0x00000001  ~   mov:i #0x9d:16, r7
+| ..------> 0x00000002      nop
+| ::::      0x00000003      mov:f.w r5, @(23:8, r6)
+| ::::      0x00000005      jmp   @0x120f:16
+| ::::      0x00000008      ldm   @SP+, (r0-r3)
+| ::::      0x0000000a      mov:e #0x12:8, r0
+| ::::      0x0000000c      mov:i #0x1234:16, r1
+| ::::      0x0000000f      mov:g.b r0, @0x112:16
+| ::::      0x00000013      mov:g.w @0x113:16, r2
+| ::::      0x00000017      xch   r0, r1
+| ::::      0x00000019      swap  r1
+| ::::      0x0000001b      mov:f.b @(4:8, r6), r3
+| ::::      0x0000001d      mov:f.b r3, @(8:8, r6)
+| ::::      0x0000001f      movfpe @section..data:16, r4
+| ::::      0x00000024      movtpe r4, @0x121:16
+| ::::      0x00000029      add:q.b #1, r0
+| ::::      0x0000002b      sub.b #0x10:16, r1
+| ::::      0x0000002f      addx.b r0, r3
+| ::::      0x00000031      subx.w r1, r2
+| ::::      0x00000033      adds.b #0x4:16, r7
+| ::::      0x00000037      subs.b #0x4:16, r7
+| ::::      0x0000003b      mov:e #0x45:8, r0
+| ::::      0x0000003d      mov:e #0x27:8, r1
+| ::::      0x0000003f      dadd  r1, r0
+| ::::      0x00000042      dsub  r1, r0
+| ::::      0x00000045      mov:i #0x12c:16, r2
+| ::::      0x00000048      mov:i #0x15:16, r3
+| ::::      0x0000004b      mulxu.w r3, r2
+| ::::      0x0000004d      mov:i #0x7:16, r4
+| ::::      0x00000050      divxu.w r4, r0
+| ::::      0x00000052      cmp:g.b r0, r3
+| ::::      0x00000054      exts  r0
+| ::::      0x00000056      extu  r0
+| ::::      0x00000058      tst   r0
+| ::::      0x0000005a      neg.w r1
+| ::::      0x0000005c      clr.b r3
+| ::::      0x0000005e      tas   @0x112:16
+| ::::      0x00000062      and.b #0xfff:16, r2
+| ::::      0x00000066      or.b  #0x80:8, r0
+| ::::      0x00000069      xor   r3, r2
+| ::::      0x0000006b      not.b r0
+| ::::      0x0000006d      shal.b r0
+| ::::      0x0000006f      shar.w r1
+| ::::      0x00000071      shll.b r0
+| ::::      0x00000073      shlr.w r1
+| ::::      0x00000075      rotl.b r0
+| ::::      0x00000077      rotr.w r1
+| ::::      0x00000079      rotxl.b r0
+| ::::      0x0000007b      rotxr.w r1
+| ::::      0x0000007d      bset.w #0x3, r0
+| ::::      0x0000007f      bclr.w #0x0, @0x112:16
+| ::::      0x00000083      btst.w #0x7, r0
+| ::::      0x00000085      bnot.w #0x5, @0x112:16
+| ::::      0x00000089      ldc.b #0x0:8, ccr
+| ::::      0x0000008c      orc.b #0x80:8, ccr
+| ::::      0x0000008f      andc.b #0x7f:8, ccr
+| ::::      0x00000092      xorc.b #0x3:8, ccr
+| ::::      0x00000095      stc.b ccr, r0
+| ::::      0x00000097      ldc.w #0x1234:16, sr
+| ::::      0x0000009b      stc.w sr, r2
+\ ========< 0x0000009d      bhi   +0
+  ========< 0x000000a0      bls   +0                                   ; fcn.00000001+0x1
+  ========< 0x000000a3      bcc   +0                                   ; fcn.00000001+0x1
+  ========< 0x000000a6      bcs   +0                                   ; fcn.00000001+0x1
+  ========< 0x000000a9      bne   +0                                   ; fcn.00000001+0x1
+  ========< 0x000000ac      beq   +0                                   ; fcn.00000001+0x1
+  ========< 0x000000af      bvc   +0                                   ; fcn.00000001+0x1
+  ========< 0x000000b2      bvs   +0                                   ; fcn.00000001+0x1
+  ========< 0x000000b5      bpl   +0                                   ; fcn.00000001+0x1
+  ========< 0x000000b8      bmi   +0                                   ; fcn.00000001+0x1
+  ========< 0x000000bb      bge   +0                                   ; fcn.00000001+0x1
+  ========< 0x000000be      blt   +0                                   ; fcn.00000001+0x1
+  ========< 0x000000c1      bgt   +0                                   ; fcn.00000001+0x1
+  ``======< 0x000000c4      ble   +0                                   ; fcn.00000001+0x1
+    ::      0x000000c7      nop
+    ::      0x000000c8      jmp   @0xcb:16
+    ::      ;-- next_same_page:
+    ::      0x000000cb      bsr   +31                                  ; fcn.00000001
+    ::      0x000000cd      jsr   @r5
+    ::      0x000000cf      rts
+    ::      0x000000d0      mov:i #0x9:16, r4
+    ::      ;-- scb_loop_f:
+    ::,===< 0x000000d3      scb/f r4, +253
+    ::|     0x000000d6      mov:i #0x9:16, r4
+    ::|     ;-- scb_loop_ne:
+    ::|     0x000000d9      cmp:g.b #0x41, @r6+
+    ::|,==< 0x000000dc      scb/ne r4, +250
+    ::||    0x000000df      mov:i #0x9:16, r4
+    ::||    ;-- scb_loop_eq:
+    ::||    0x000000e2      cmp:g.b #0x41, @r6+
+    ::||,=< 0x000000e5      scb/eq r4, +250
+    ::|||   0x000000e8      bsr   +7                                   ; fcn.00000001
+    ``====< 0x000000ea      bra   +7                                   ; fcn.00000001
+      |||   ;-- local_sub:
+      |||   0x000000qec      adds.b #0x2:16, r7
+      |||   0x000000f0      rts
+      |||   ;-- func_demo:
+      |||   0x000000f1      rtd   #0x2:8
+      |||   ;-- do_traps:
+      |||   0x000000f3      trapa #0x3
+      |||   0x000000f5      mov:i #0x8000:16, r0
+      |||   0x000000f8      add:q.b #0x8000:16, r0
+      |||   0x000000fc      trap/vs
+      |||   0x000000fd      sleep
+      |||   ;-- after_sleep:
+      |||   0x000000fe      mov:i #sym.far_entry:16, r2
+      |||   0x00000101      pjsr  @r2
+      |||   0x00000103      prts
+      |||   0x00000105      mov:i #0x4:16, r0
+      |||   0x00000108      prtd  #0x4:8
+      |||   0x0000010b      unlk  fp
+      |||   ;-- halt:
+      |||   0x0000010c      bra   +254                                 ; fcn.00000001
+      |||   ;-- far_entry:
+      |||   0x0000010e      rts
+      |||   ;-- trap_vs_handler:
+      |||   0x0000010f      rts
+      |||   ;-- trapa3:
+      |||   0x00000110      rts
+      |||   0x00000111      nop
+      |||   0x00000112      btst.w #0xf, @(-1:16, r7)
+      |||   0x00000116      btst.w #0xf, @(-1:16, r7)
+      |||   0x0000011a      btst.w #0xf, @(-1:16, r7)
+      |||   0x0000011e      
+      |||   0x0000011f  ~   sub.w @(18:16, r7), r4
+      |||   ;-- section..data:
+      |||   0x00000120      nop                                        ; [01] -rw- section size 4 named .data
+      |||   0x00000121      stm.b (r2,r4-r5), @-SP
+      |||   0x00000123      nop
+      |||   0x00000124      btst.w #0xf, @(-1:16, r7)
+      |||   0x00000128      btst.w #0xf, @(-1:16, r7)
+      |||   0x0000012c      btst.w #0xf, @(-1:16, r7)
+EOF
+RUN
