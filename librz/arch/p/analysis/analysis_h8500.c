@@ -269,6 +269,8 @@ static int h8500_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	if (mask & RZ_ANALYSIS_OP_MASK_VAL) {
 		h8500_analyze_val(&ctx);
 	}
+
+	op->size = ins.size;
 	return ins.size;
 }
 
