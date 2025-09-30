@@ -67,12 +67,12 @@ typedef enum {
 #define AA24       (1ull << 35)
 #define VEC        (1ull << 36)
 #define END        (1ull << 63)
-#define MASK_CONST (0xff << MASK_CONST_OFF)
+#define MASK_CONST (0xffull << MASK_CONST_OFF)
 #define MASK_INDEX (0xfull << MASK_INDEX_OFF)
-#define MASK_Rrr   (0b111)
-#define MASK_Sz    (0b1000)
-#define MASK_cc    (0xf)
-#define MASK_Data4 (0xf)
+#define MASK_Rrr   (0b111ull)
+#define MASK_Sz    (0b1000ull)
+#define MASK_cc    (0xfull)
+#define MASK_Data4 (0xfull)
 
 typedef ut64 H8500Pat;
 typedef ut64 H8500Arg;

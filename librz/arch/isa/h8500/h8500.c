@@ -247,7 +247,7 @@ branch_fail:
 	return NULL;
 }
 
-static bool pat_const_check(ut32 pat, ut32 b) {
+static bool pat_const_check(ut64 pat, ut32 b) {
 	const ut32 mask = (pat & MASK_CONST) >> MASK_CONST_OFF;
 	return (pat & mask) == (b & mask);
 }
@@ -406,7 +406,7 @@ static ut8 operand_index(H8500Pat pat, H8500Instruction *ins) {
 
 static bool operand_parse(const ut8 *buf, size_t pat_index, int len,
 	const H8500OpcodeDescribe *opcode_describe, H8500Instruction *ins) {
-	if (len < 1) {
+	if (len <= pat_index) {
 		return false;
 	}
 	const H8500Pat *pats = opcode_describe->pats;
@@ -444,7 +444,7 @@ static bool operand_parse(const ut8 *buf, size_t pat_index, int len,
 		ins->operand_size = (b & MASK_Sz) ? WORD_OPERAND : BYTE_OPERAND;
 	}
 	if (pat & Placeholder) {
-		if (len < 2) {
+		if (len <= pat_index + 1) {
 			return false;
 		}
 		H8500Pat patl = pats[pat_index + 1];
