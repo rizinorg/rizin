@@ -1553,3 +1553,23 @@ RZ_API void rz_print_colored_help_option_example(RZ_NULLABLE const char *flag, R
 	}
 	printf("\n");
 }
+
+/**
+ * \brief Print colored help from \p options.
+ *
+ * \param options Options string array, with 3 (default) or 4 strings per option depending on \p have_examples.
+ * \param options_len Length of \p options in strings, should be RZ_ARRAY_SIZE(options).
+ * \param have_examples If false, there are 3 strings per option: flag, argument and description. If true, there is a
+ *        4th string for each option that contains an example.
+ */
+RZ_API void rz_print_colored_help(const char **options, size_t options_len, bool have_examples) {
+	size_t maxDescLength = 0;
+	size_t maxFlagAndArgLength = rz_print_options_get_max_len(options, options_len,
+		have_examples ? &maxDescLength : NULL);
+	for (int i = 0; i < options_len; i += have_examples ? 4 : 3) {
+		if (i + 1 < options_len) {
+			rz_print_colored_help_option_example(options[i], options[i + 1], options[i + 2],
+				maxFlagAndArgLength, have_examples ? options[i + 3] : NULL, maxDescLength);
+		}
+	}
+}

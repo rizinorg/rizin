@@ -240,6 +240,7 @@ RZ_API void rz_print_colored_help_option(const char *flag, const char *arg, cons
 	size_t maxFlagAndArgLength);
 RZ_API void rz_print_colored_help_option_example(RZ_NULLABLE const char *flag, RZ_NULLABLE const char *arg,
 	const char *desc, size_t maxFlagAndArgLength, RZ_NULLABLE const char *example, size_t maxDescLength);
+RZ_API void rz_print_colored_help(const char **options, size_t options_len, bool have_examples);
 #endif
 
 #ifdef __cplusplus
