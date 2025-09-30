@@ -1502,8 +1502,8 @@ static size_t options_get_max_len(const char **options, size_t options_len, RZ_N
  * \param maxDescLength Width of column containing \p desc. It needs to be calculated beforehand as the max over all
  *        descriptions, perhaps via options_get_max_len().
  */
-static void rz_print_colored_help_option_example(RZ_NULLABLE const char *flag, RZ_NULLABLE const char *arg,
-	const char *desc, size_t maxFlagAndArgLength, RZ_NULLABLE const char *example, size_t maxDescLength) {
+static void print_colored_help_option(RZ_NULLABLE const char *flag, RZ_NULLABLE const char *arg, const char *desc,
+	size_t maxFlagAndArgLength, RZ_NULLABLE const char *example, size_t maxDescLength) {
 
 	rz_return_if_fail(desc);
 	bool desc_start = !flag && !arg;
@@ -1549,8 +1549,8 @@ RZ_API void rz_print_colored_help(const char **options, size_t options_len, bool
 	size_t maxFlagAndArgLength = options_get_max_len(options, options_len, have_examples ? &maxDescLength : NULL);
 	for (int i = 0; i < options_len; i += have_examples ? 4 : 3) {
 		if (i + 1 < options_len) {
-			rz_print_colored_help_option_example(options[i], options[i + 1], options[i + 2],
-				maxFlagAndArgLength, have_examples ? options[i + 3] : NULL, maxDescLength);
+			print_colored_help_option(options[i], options[i + 1], options[i + 2], maxFlagAndArgLength,
+				have_examples ? options[i + 3] : NULL, maxDescLength);
 		}
 	}
 }
