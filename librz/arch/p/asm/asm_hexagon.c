@@ -77,7 +77,7 @@ static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns() {
 	pat = RZ_NEW0(RzAsmTokenPattern);
 	pat->type = RZ_ASM_TOKEN_OPERATOR;
 	pat->pattern = rz_str_dup(
-		"[+*&+?=!^\\/|-~]{1,2}" // +,-,=,],[, ! (not the packet prefix)
+		"[+*&+?=!^\\/|~\\-]{1,2}" // +,-,=,],[, ! (not the packet prefix)
 	);
 	rz_pvector_push(pvec, pat);
 
