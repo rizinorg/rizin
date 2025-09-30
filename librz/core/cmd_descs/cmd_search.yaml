@@ -557,6 +557,19 @@ commands:
           - name: Gadget address
             type: RZ_CMD_ARG_TYPE_STRING
             optional: true
+
+      - name: "/Rgl" 
+        cname: cmd_detail_gadget_long
+        summary: Gadget detail info in long format (combines /R and /Rg output)  
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+        - RZ_OUTPUT_MODE_STANDARD
+        - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: Gadget address
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      
   - name: "/v"
     summary: Value search.
     subcommands:

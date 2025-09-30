@@ -159,6 +159,7 @@ static const RzCmdDescArg cmd_info_gadget_args[2];
 static const RzCmdDescArg cmd_search_gadget_args[2];
 static const RzCmdDescArg cmd_query_gadget_args[2];
 static const RzCmdDescArg cmd_detail_gadget_args[2];
+static const RzCmdDescArg cmd_detail_gadget_long_args[2];
 static const RzCmdDescArg cmd_search_value_args[3];
 static const RzCmdDescArg cmd_search_value_alias_v1_args[2];
 static const RzCmdDescArg cmd_search_value_alias_v2_args[2];
@@ -2225,6 +2226,21 @@ static const RzCmdDescArg cmd_detail_gadget_args[] = {
 static const RzCmdDescHelp cmd_detail_gadget_help = {
 	.summary = "Gadget detail info",
 	.args = cmd_detail_gadget_args,
+};
+
+static const RzCmdDescArg cmd_detail_gadget_long_args[] = {
+	{
+		.name = "Gadget address",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_detail_gadget_long_help = {
+	.summary = "Gadget detail info in long format (combines /R and /Rg output)",
+	.args = cmd_detail_gadget_long_args,
 };
 
 static const RzCmdDescHelp slash_v_help = {
@@ -21465,6 +21481,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_detail_gadget_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_R_cd, "/Rg", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_detail_gadget_handler, &cmd_detail_gadget_help);
 	rz_warn_if_fail(cmd_detail_gadget_cd);
+
+	RzCmdDesc *cmd_detail_gadget_long_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_R_cd, "/Rgl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_detail_gadget_long_handler, &cmd_detail_gadget_long_help);
+	rz_warn_if_fail(cmd_detail_gadget_long_cd);
 
 	RzCmdDesc *slash_v_cd = rz_cmd_desc_group_state_new(core->rcmd, slash__cd, "/v", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_value_handler, &cmd_search_value_help, &slash_v_help);
 	rz_warn_if_fail(slash_v_cd);
