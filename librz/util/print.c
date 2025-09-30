@@ -1465,7 +1465,7 @@ RZ_API RZ_OWN RzStrBuf *rz_print_colorize_asm_str(RZ_BORROW RzPrint *p, const Rz
  *        assume that there are 4 strings per option.
  * \return The maximum flag+arg length in \p options.
  */
-RZ_API size_t rz_print_options_get_max_len(const char **options, size_t options_len,
+static size_t rz_print_options_get_max_len(const char **options, size_t options_len,
 	RZ_NULLABLE size_t *maxDescLength) {
 
 	int items_per_opt = maxDescLength ? 4 : 3;
@@ -1491,22 +1491,6 @@ RZ_API size_t rz_print_options_get_max_len(const char **options, size_t options_
 }
 
 /**
- * \brief Prints a help option with the option flag and arg strings colorized, and description aligned to a column.
- *
- * \param flag Option flag, will be colored green.
- * \param arg Option arg, will be colored yellow.
- * \param desc Option description, will be aligned in the third column.
- * \param maxFlagAndArgLength Width of column containing \p flag and \p arg. It needs to be calculated beforehand
- *        as the max over all options, perhaps via rz_print_options_get_max_len().
- */
-RZ_API void rz_print_colored_help_option(const char *flag, const char *arg, const char *desc,
-	size_t maxFlagAndArgLength) {
-
-	rz_return_if_fail(flag && arg && desc);
-	rz_print_colored_help_option_example(flag, arg, desc, maxFlagAndArgLength, NULL, 0);
-}
-
-/**
  * \brief Prints a help option with example, with the option flag and arg strings colorized, and both description and
  *        example aligned to columns.
  *
@@ -1520,7 +1504,7 @@ RZ_API void rz_print_colored_help_option(const char *flag, const char *arg, cons
  * \param maxDescLength Width of column containing \p desc. It needs to be calculated beforehand as the max over all
  *        descriptions, perhaps via rz_print_options_get_max_len().
  */
-RZ_API void rz_print_colored_help_option_example(RZ_NULLABLE const char *flag, RZ_NULLABLE const char *arg,
+static void rz_print_colored_help_option_example(RZ_NULLABLE const char *flag, RZ_NULLABLE const char *arg,
 	const char *desc, size_t maxFlagAndArgLength, RZ_NULLABLE const char *example, size_t maxDescLength) {
 
 	rz_return_if_fail(desc);
