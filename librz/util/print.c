@@ -1465,9 +1465,7 @@ RZ_API RZ_OWN RzStrBuf *rz_print_colorize_asm_str(RZ_BORROW RzPrint *p, const Rz
  *        assume that there are 4 strings per option.
  * \return The maximum flag+arg length in \p options.
  */
-static size_t rz_print_options_get_max_len(const char **options, size_t options_len,
-	RZ_NULLABLE size_t *maxDescLength) {
-
+static size_t options_get_max_len(const char **options, size_t options_len, RZ_NULLABLE size_t *maxDescLength) {
 	int items_per_opt = maxDescLength ? 4 : 3;
 	size_t maxFlagAndArgLength = 0;
 	if (maxDescLength) {
@@ -1499,10 +1497,10 @@ static size_t rz_print_options_get_max_len(const char **options, size_t options_
  * \param desc Option description, will be aligned in the third column unless both \p flag and \p arg are NULL. If so,
  *        it will be aligned at the first column.
  * \param maxFlagAndArgLength Width of column containing \p flag and \p arg. It needs to be calculated beforehand
- *        as the max over all options, perhaps via rz_print_options_get_max_len().
+ *        as the max over all options, perhaps via options_get_max_len().
  * \param example Optional option example, will be aligned in a column after the description and prefixed with ";  ".
  * \param maxDescLength Width of column containing \p desc. It needs to be calculated beforehand as the max over all
- *        descriptions, perhaps via rz_print_options_get_max_len().
+ *        descriptions, perhaps via options_get_max_len().
  */
 static void rz_print_colored_help_option_example(RZ_NULLABLE const char *flag, RZ_NULLABLE const char *arg,
 	const char *desc, size_t maxFlagAndArgLength, RZ_NULLABLE const char *example, size_t maxDescLength) {
@@ -1548,8 +1546,7 @@ static void rz_print_colored_help_option_example(RZ_NULLABLE const char *flag, R
  */
 RZ_API void rz_print_colored_help(const char **options, size_t options_len, bool have_examples) {
 	size_t maxDescLength = 0;
-	size_t maxFlagAndArgLength = rz_print_options_get_max_len(options, options_len,
-		have_examples ? &maxDescLength : NULL);
+	size_t maxFlagAndArgLength = options_get_max_len(options, options_len, have_examples ? &maxDescLength : NULL);
 	for (int i = 0; i < options_len; i += have_examples ? 4 : 3) {
 		if (i + 1 < options_len) {
 			rz_print_colored_help_option_example(options[i], options[i + 1], options[i + 2],
