@@ -134,7 +134,7 @@ EXPECT=<<EOF
     ::|||   0x000000e8      bsr   +7                                   ; fcn.00000001
     ``====< 0x000000ea      bra   +7                                   ; fcn.00000001
       |||   ;-- local_sub:
-      |||   0x000000qec      adds.b #0x2:16, r7
+      |||   0x000000ec      adds.b #0x2:16, r7
       |||   0x000000f0      rts
       |||   ;-- func_demo:
       |||   0x000000f1      rtd   #0x2:8
