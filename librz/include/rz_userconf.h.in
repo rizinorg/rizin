@@ -35,6 +35,7 @@
 #define USE_LIB_MAGIC               @USE_LIB_MAGIC@
 #define HAVE_LIB_XXHASH             @HAVE_LIB_XXHASH@
 #define USE_LIB_XXHASH              @USE_LIB_XXHASH@
+#define USE_SYS_ZYDIS               @USE_SYS_ZYDIS@
 #define HAVE_LIB_SSL                @HAVE_OPENSSL@
 #define HAVE_PTRACE                 @HAVE_PTRACE@
 #define USE_PTRACE_WRAP             @USE_PTRACE_WRAP@

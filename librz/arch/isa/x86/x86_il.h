@@ -7,7 +7,12 @@
 
 #include <rz_lib.h>
 #include <rz_analysis.h>
+
+#if USE_SYS_ZYDIS
+#include <Zydis/Zydis.h>
+#else
 #include <Zydis.h>
+#endif
 
 #define BITS_PER_BYTE    8
 #define GPR_FAMILY_COUNT 10

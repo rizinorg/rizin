@@ -207,12 +207,7 @@ static int rasm_show_help(int v) {
 		// clang-format on
 	};
 	if (v != 1) {
-		size_t maxFlagAndArgLength = rz_print_options_get_max_len(options, RZ_ARRAY_SIZE(options), NULL);
-		for (int i = 0; i < RZ_ARRAY_SIZE(options); i += 3) {
-			if (i + 1 < RZ_ARRAY_SIZE(options)) {
-				rz_print_colored_help_option(options[i], options[i + 1], options[i + 2], maxFlagAndArgLength);
-			}
-		}
+		rz_print_colored_help(options, RZ_ARRAY_SIZE(options), false);
 	}
 	printf(" If '-l' value is greater than output length, output is padded with nops\n"
 	       " If the last argument is '-' reads from stdin\n"

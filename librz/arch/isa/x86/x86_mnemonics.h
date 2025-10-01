@@ -4,7 +4,11 @@
 #ifndef X86_MNEMONIC_H
 #define X86_MNEMONIC_H
 
+#if USE_SYS_ZYDIS
+#include <Zydis/Zydis.h>
+#else
 #include <Zydis.h>
+#endif
 
 // Instructions
 #define X86_INS_ENDING          ZYDIS_MNEMONIC_MAX_VALUE

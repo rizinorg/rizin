@@ -248,14 +248,7 @@ static int help(void) {
 #undef CF
 #undef CA
 #undef CR
-	size_t maxDescLength = SIZE_MAX;
-	size_t maxFlagAndArgLength = rz_print_options_get_max_len(options, RZ_ARRAY_SIZE(options), &maxDescLength);
-	for (int i = 0; i < RZ_ARRAY_SIZE(options); i += 4) {
-		if (i + 1 < RZ_ARRAY_SIZE(options)) {
-			rz_print_colored_help_option_example(options[i], options[i + 1], options[i + 2],
-				maxFlagAndArgLength, options[i + 3], maxDescLength);
-		}
-	}
+	rz_print_colored_help(options, RZ_ARRAY_SIZE(options), true);
 	return true;
 }
 

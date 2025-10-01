@@ -26,12 +26,7 @@ static void rz_sign_show_help(void) {
 		"-v",       "",                         "Show version information",
 		// clang-format on
 	};
-	size_t maxFlagAndArgLength = rz_print_options_get_max_len(options, RZ_ARRAY_SIZE(options), NULL);
-	for (int i = 0; i < RZ_ARRAY_SIZE(options); i += 3) {
-		if (i + 1 < RZ_ARRAY_SIZE(options)) {
-			rz_print_colored_help_option(options[i], options[i + 1], options[i + 2], maxFlagAndArgLength);
-		}
-	}
+	rz_print_colored_help(options, RZ_ARRAY_SIZE(options), false);
 	printf("Examples:\n"
 	       "  rz-sign -d signature.sig\n"
 	       "  rz-sign -c new_signature.pat old_signature.sig\n"
