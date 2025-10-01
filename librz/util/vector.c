@@ -226,6 +226,9 @@ RZ_API void *rz_vector_insert(RzVector *vec, size_t index, void *x) {
 
 RZ_API void *rz_vector_insert_range(RzVector *vec, size_t index, void *first, size_t count) {
 	rz_return_val_if_fail(vec && index <= vec->len, NULL);
+	if (count == 0) {
+		return (char *)vec->a + vec->elem_size * index;
+	}
 	if (vec->len + count > vec->capacity) {
 		RESIZE_OR_RETURN_NULL(RZ_MAX(NEXT_VECTOR_CAPACITY, vec->len + count));
 	}
