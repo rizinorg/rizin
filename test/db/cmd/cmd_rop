@@ -602,3 +602,32 @@ Gadget size: 10
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=/Rgl command help
+FILE=-
+CMDS=<<EOF
+/R?~Rgl
+EOF
+EXPECT=<<EOF
+│ /Rgl[j] [<Gadget address>]                  # Gadget detail info in long format (combines /R and /Rg output)
+EOF
+
+NAME=/Rgl basic test
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e scr.color=false
+wx 4158c3
+/Rgl
+q
+EOF
+EXPECT=<<EOF
+  0x00000000                 41  inc ecx
+  0x00000001                 58  pop rax
+  0x00000002                 c3  ret
+Gadget size: 3
+EOF
+
+
+
