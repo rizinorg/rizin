@@ -561,20 +561,27 @@ static bool h8500_opcode_parse(const ut8 *buf, size_t offset, int len, H8500Inst
 					if (arg == EA) {
 						continue;
 					}
-					if (ARG_DATA(arg) != 0 && ins->operands[ops_count].flags != ARG_FLAGS(arg)) {
-						H8500Operand *op = insert_operand(ins, ops_count);
-						op->flags = ARG_FLAGS(arg);
-						switch (ARG_MODE(arg)) {
-						case AddrIMM:
-							op->imm = ARG_DATA(arg);
-							break;
-						case AddrRIPostInc:
-						case AddrRIPreDec:
-							op->rn = ARG_DATA(arg);
-							break;
-						default:
+#define INS_OP(I) (&ins->operands[ops_count])
+					if (INS_OP(ops_count)->flags != ARG_FLAGS(arg)) {
+						if (ARG_DATA(arg) != 0) {
+							H8500Operand *op = insert_operand(ins, ops_count);
+							op->flags = ARG_FLAGS(arg);
+							switch (ARG_MODE(arg)) {
+							case AddrIMM:
+								op->imm = ARG_DATA(arg);
+								break;
+							case AddrRIPostInc:
+							case AddrRIPreDec:
+								op->rn = ARG_DATA(arg);
+								break;
+							default:
+								rz_warn_if_reached();
+								break;
+							}
+						} else if (ARG_MODE(INS_OP(ops_count)->flags) == AddrREG && ARG_MODE(arg) == AddrRI) {
+							INS_OP(ops_count)->flags = ARG_FLAGS(arg);
+						} else {
 							rz_warn_if_reached();
-							break;
 						}
 					}
 					ops_count++;
