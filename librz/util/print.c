@@ -1529,8 +1529,8 @@ static void print_colored_help_option(RZ_NULLABLE const char *flag, RZ_NULLABLE 
 	}
 	printf(Color_RESET "%s", desc);
 	if (example) {
-		size_t maxDescSpaces = (desc_start ? max_opt_spaces : 0) + max_desc_len;
-		size_t remaining_spaces = maxDescSpaces - strlen(desc);
+		size_t max_desc_spaces = (desc_start ? max_opt_spaces : 0) + max_desc_len;
+		size_t remaining_spaces = max_desc_spaces - strlen(desc);
 		printf("%*s ;  %s", (int)remaining_spaces, "", example);
 	}
 	printf("\n");
