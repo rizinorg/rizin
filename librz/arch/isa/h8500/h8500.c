@@ -106,6 +106,8 @@ static const H8500OpcodeDescribe h8500_opcodes_without_ea[] = {
 	{ Bcc, "<cc>", "disp", 3, { H(0x3) | cc, Disp16Op, END }, { AddrPCRel } },
 	{ BSR, "bsr", "disp", 2, { B(0x0E), Disp8Op, END }, { AddrPCRel } },
 	{ BSR, "bsr", "disp", 3, { B(0x1E), Disp16Op, END }, { AddrPCRel } },
+	{ CMP, "cmp.b", "#xx:8" SEP "Rn", 2, { HR(0x08), Data8Op, END }, { AddrIMM, AddrREG } },
+	{ CMP, "cmp.w", "#xx:16" SEP "Rn", 3, { HR(0x09), Data16Op, END }, { AddrIMM, AddrREG } },
 	{ DADD, "dadd", "Rn" SEP "Rn", 3, { HR(0x14), B(0x00), HR(0x14), END }, { AddrREG, AddrREG } },
 	{ DSUB, "dsub", "Rn" SEP "Rn", 3, { HR(0x14), B(0x00), HR(0x16), END }, { AddrREG, AddrREG } },
 	{ EXTS, "exts", "Rn", 2, { HR(0x14), B(0x11), END }, { AddrREG } },
