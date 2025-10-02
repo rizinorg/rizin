@@ -9,16 +9,32 @@
 #include <rz_util.h>
 #include <h8500/h8500.h>
 
-#define NEXT_PC        (ctx->aop->addr + ctx->ins->size)
-#define PC_ADD_EA_DISP (NEXT_PC + ctx->ins->ea.disp)
-#define NOPS           (ctx->ins->num_operands)
-#define IOP(I)         (ctx->ins->operands + (I))
+#define NEXT_PC (ctx->aop->addr + ctx->ins->size)
+#define NOPS    (ctx->ins->num_operands)
+#define IOP(I)  (ctx->ins->operands + (I))
 
 typedef struct {
 	RzAnalysis *analysis;
 	H8500Instruction *ins;
 	RzAnalysisOp *aop;
 } AContext;
+
+static const H8500Operand *real_ea(const AContext *ctx) {
+	return ctx->ins->ea_describe
+		? &ctx->ins->ea
+		: ctx->ins->num_operands == 1
+		? IOP(0)
+		: NULL;
+}
+
+static ut64 pc_relative(AContext *ctx) {
+	const H8500Operand *ea = real_ea(ctx);
+	if (!(ea && ARG_MODE(ea->flags) == AddrPCRel)) {
+		rz_warn_if_reached();
+		return NEXT_PC;
+	}
+	return (NEXT_PC + ea->disp);
+}
 
 static void h8500_op2val(AContext *ctx, RzAnalysisValue *av, H8500Operand *iop) {
 	switch (iop->flags & ARG_MASK_AddressingMode) {
@@ -85,25 +101,8 @@ static void h8500_analyze_val(AContext *ctx) {
 	}
 }
 
-static void aop_set_from_ea(AContext *ctx) {
-	switch (ctx->ins->ea.flags & ARG_MASK_AddressingMode) {
-	case AddrAbs:
-		ctx->aop->jump = ctx->ins->ea.aa;
-		break;
-	case AddrRI:
-		ctx->aop->type |= RZ_ANALYSIS_OP_TYPE_IND | RZ_ANALYSIS_OP_TYPE_REG;
-		ctx->aop->reg = h8500_reg_name(&ctx->ins->ea, ctx->ins->ea.rn);
-		break;
-	default:
-		ctx->aop->type |= RZ_ANALYSIS_OP_TYPE_MEM;
-		ctx->aop->reg = h8500_reg_name(&ctx->ins->ea, ctx->ins->ea.ri_disp.rn);
-		ctx->aop->disp = ctx->ins->ea.ri_disp.disp;
-		break;
-	}
-	ctx->aop->fail = NEXT_PC;
-}
-
 static void h8500_analyze(AContext *ctx) {
+	const H8500Operand *ea = NULL;
 	switch (ctx->ins->opcode_describe->id) {
 	case ADD_Q:
 	case ADDS:
@@ -117,12 +116,12 @@ static void h8500_analyze(AContext *ctx) {
 		break;
 	case Bcc:
 		ctx->aop->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-		ctx->aop->jump = PC_ADD_EA_DISP;
+		ctx->aop->jump = pc_relative(ctx);
 		ctx->aop->fail = NEXT_PC;
 		break;
 	case BSR:
 		ctx->aop->type = RZ_ANALYSIS_OP_TYPE_CALL;
-		ctx->aop->jump = PC_ADD_EA_DISP;
+		ctx->aop->jump = pc_relative(ctx);
 		ctx->aop->fail = NEXT_PC;
 		break;
 	case BCLR:
@@ -144,13 +143,57 @@ static void h8500_analyze(AContext *ctx) {
 		break;
 	case JMP:
 	case PJMP:
-		ctx->aop->type = RZ_ANALYSIS_OP_TYPE_UJMP;
-		aop_set_from_ea(ctx);
+		ctx->aop->fail = NEXT_PC;
+		ctx->aop->type = RZ_ANALYSIS_OP_TYPE_JMP;
+		ea = real_ea(ctx);
+		if (!ea) {
+			rz_warn_if_reached();
+			return;
+		}
+		switch (ARG_MODE(ea->flags)) {
+		case AddrAbs:
+			ctx->aop->jump = ea->aa;
+			break;
+		case AddrRI:
+			ctx->aop->type = RZ_ANALYSIS_OP_TYPE_IRJMP;
+			ctx->aop->reg = h8500_reg_name(ea, ea->rn);
+			break;
+		case AddrRIDisp:
+			ctx->aop->type = RZ_ANALYSIS_OP_TYPE_MJMP;
+			ctx->aop->reg = h8500_reg_name(ea, ea->ri_disp.rn);
+			ctx->aop->disp = ea->ri_disp.disp;
+			break;
+		default:
+			rz_warn_if_reached();
+			break;
+		}
 		break;
 	case JSR:
 	case PJSR:
-		ctx->aop->type = RZ_ANALYSIS_OP_TYPE_UCALL;
-		aop_set_from_ea(ctx);
+		ctx->aop->fail = NEXT_PC;
+		ctx->aop->type = RZ_ANALYSIS_OP_TYPE_CALL;
+		ea = real_ea(ctx);
+		if (!ea) {
+			rz_warn_if_reached();
+			return;
+		}
+		switch (ARG_MODE(ea->flags)) {
+		case AddrAbs:
+			ctx->aop->jump = ea->aa;
+			break;
+		case AddrRI:
+			ctx->aop->type = RZ_ANALYSIS_OP_TYPE_IRCALL;
+			ctx->aop->reg = h8500_reg_name(ea, ea->rn);
+			break;
+		case AddrRIDisp:
+			ctx->aop->type = RZ_ANALYSIS_OP_TYPE_UCALL;
+			ctx->aop->reg = h8500_reg_name(ea, ea->ri_disp.rn);
+			ctx->aop->disp = ea->ri_disp.disp;
+			break;
+		default:
+			rz_warn_if_reached();
+			break;
+		}
 		break;
 	case LDC:
 	case LDM:
@@ -158,6 +201,13 @@ static void h8500_analyze(AContext *ctx) {
 		break;
 	case LINK:
 		ctx->aop->type = RZ_ANALYSIS_OP_TYPE_UNK;
+		ctx->aop->stackop = RZ_ANALYSIS_STACK_INC;
+		ctx->aop->stackptr = (st64)IOP(0)->disp;
+		break;
+	case UNLK:
+		ctx->aop->type = RZ_ANALYSIS_OP_TYPE_UNK;
+		ctx->aop->stackop = RZ_ANALYSIS_STACK_INC;
+		ctx->aop->stackptr = 2;
 		break;
 	case MOV:
 	case MOVFPE:
@@ -233,7 +283,6 @@ static void h8500_analyze(AContext *ctx) {
 	case TRAP_VS:
 		ctx->aop->type = RZ_ANALYSIS_OP_TYPE_TRAP;
 		break;
-	case UNLK:
 	case XCH:
 		ctx->aop->type = RZ_ANALYSIS_OP_TYPE_UNK;
 		break;
@@ -256,7 +305,7 @@ static int h8500_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 		.ins = &ins,
 		.aop = op
 	};
-
+	op->addr = addr;
 	h8500_analyze(&ctx);
 
 	if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
