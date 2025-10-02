@@ -1,6 +1,15 @@
 // SPDX-FileCopyrightText: 2025 billow <billow.fun@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+/**
+ * \file h8500.c
+ * \brief H8/500 (H8500) instruction decoding tables and parser.
+ * \details Implements effective-address parsing, opcode pattern matching,
+ *          operand formatting, and mnemonic rendering for the Renesas H8/500 family.
+ * \see H8/5xx Programming Manual:
+ *      https://evoecu.logic.net/mirror/cpudocs/h8539f/H8%205XX%20Programming.pdf
+ */
+
 #include "h8500.h"
 #include <rz_util/rz_str.h>
 #include <rz_util/rz_strbuf.h>
@@ -22,6 +31,11 @@ static const H8500EADescribe h8500_eas[] = {
 	{ AddrAbs, "@aa:16", { BM(0x15, 0xf7) | Sz, Placeholder, AA16, END }, 16, 3 },
 	{ AddrIMM, "#xx:8", { B(0x04), Data8, END }, 8, 2 },
 	{ AddrIMM, "#xx:16", { B(0x0C), Placeholder, Data16, END }, 16, 3 },
+	/**
+	 * Although the EA in PC-relative mode is classified as an EA in the documentation,
+	 * it lacks a pattern for matching and cannot be parsed as EA+Opcode.
+	 * In practice, it can only be processed by parsing the Opcode+EA format.
+	 */
 	//{ H8500_PC_REL, 16, "disp", { END }, 1 /* or 2  */ },
 };
 
