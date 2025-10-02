@@ -146,7 +146,7 @@ static const H8500OpcodeDescribe h8500_opcodes_without_ea[] = {
 	{ NOP, "nop", "", 1, { B(0x00), END }, { 0 } },
 	{ ORC, "orc.<Sz>", "#xx:8" SEP "CR", 3, { B(0x04), Data8Op, HC(0x09), END }, { AddrIMM, AddrREGcr } },
 	{ ORC, "orc.<Sz>", "#xx:16" SEP "CR", 4, { B(0x0c), Data16Op, HC(0x09), END }, { AddrIMM, AddrREGcr } },
-	{ PJMP, "pjmp", "#aa:24", 4, { B(0x13), AA24Op, END }, { AddrIMM } },
+	{ PJMP, "pjmp", "@aa:24", 4, { B(0x13), AA24Op, END }, { AddrAbs } },
 	{ PJMP, "pjmp", "@Rn", 2, { B(0x11), HR(0x18), END }, { AddrRI } },
 	{ PJSR, "pjsr", "@aa:24", 4, { B(0x03), AA24Op, END }, { AddrAbs } },
 	{ PJSR, "pjsr", "@Rn", 2, { B(0x11), HR(0x19), END }, { AddrRI } },
