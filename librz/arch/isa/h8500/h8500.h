@@ -67,8 +67,8 @@ typedef enum {
 #define END        (1ull << 63)
 #define MASK_CONST (0xffull << MASK_CONST_OFF)
 #define MASK_INDEX (0xfull << MASK_INDEX_OFF)
-#define MASK_Rrr   (0b111ull)
-#define MASK_Sz    (0b1000ull)
+#define MASK_Rrr   (0x7ull)
+#define MASK_Sz    (0x8ull)
 #define MASK_cc    (0xfull)
 #define MASK_Data4 (0xfull)
 
