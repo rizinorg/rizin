@@ -1473,8 +1473,8 @@ static size_t options_get_max_len(const char **options, size_t options_len, RZ_N
 	}
 	for (int i = 0; i < options_len; i += items_per_opt) {
 		size_t flag_len = options[i] ? strlen(options[i]) : 0;
-		size_t argLength = options[i + 1] ? strlen(options[i + 1]) : 0;
-		size_t flag_and_arg_len = flag_len + argLength;
+		size_t arg_len = options[i + 1] ? strlen(options[i + 1]) : 0;
+		size_t flag_and_arg_len = flag_len + arg_len;
 		if (flag_and_arg_len > max_flag_and_arg_len) {
 			max_flag_and_arg_len = flag_and_arg_len;
 		}
