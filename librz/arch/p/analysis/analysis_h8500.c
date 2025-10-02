@@ -9,9 +9,10 @@
 #include <rz_util.h>
 #include <h8500/h8500.h>
 
-#define NEXT_PC (ctx->aop->addr + ctx->ins->size)
-#define NOPS    (ctx->ins->num_operands)
-#define IOP(I)  (ctx->ins->operands + (I))
+#define NEXT_PC          (ctx->aop->addr + ctx->ins->size)
+#define NOPS             (ctx->ins->num_operands)
+#define IOP(I)           (ctx->ins->operands + (I))
+#define IARG_MATCH(I, M) (ARG_MODE(ctx->ins->opcode_describe->args[I]) == M)
 
 typedef struct {
 	RzAnalysis *analysis;
@@ -213,6 +214,16 @@ static void h8500_analyze(AContext *ctx) {
 	case MOVFPE:
 	case MOVTPE:
 		ctx->aop->type = RZ_ANALYSIS_OP_TYPE_MOV;
+		if (ctx->ins->ea_describe && ARG_MODE(ctx->ins->ea.flags) == AddrRIDisp && ctx->ins->ea.ri_disp.rn == H8500_FP) {
+			// match mov @(xx,fp), ri
+			ctx->aop->type = RZ_ANALYSIS_OP_TYPE_POP;
+		} else if (IARG_MATCH(0, AddrRIDisp) && IOP(0)->ri_disp.rn == H8500_FP && NOPS == 2) {
+			// match mov @(xx,fp), ri
+			ctx->aop->type = RZ_ANALYSIS_OP_TYPE_POP;
+		} else if (IARG_MATCH(1, AddrRIDisp) && IOP(1)->ri_disp.rn == H8500_FP && NOPS == 2) {
+			// match mov ri, @(xx,fp)
+			ctx->aop->type = RZ_ANALYSIS_OP_TYPE_PUSH;
+		}
 		break;
 	case MULXU:
 		ctx->aop->type = RZ_ANALYSIS_OP_TYPE_MUL;
@@ -232,6 +243,8 @@ static void h8500_analyze(AContext *ctx) {
 	case PRTD:
 	case PRTS:
 		ctx->aop->type = RZ_ANALYSIS_OP_TYPE_RET;
+		ctx->aop->stackop = RZ_ANALYSIS_STACK_INC;
+		ctx->aop->stackptr = (st64)IOP(0)->imm + 4;
 		break;
 	case ROTL:
 	case ROTXL:
@@ -327,6 +340,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 	char *p =
 		"=PC	pc\n"
 		"=SP	r7\n"
+		"=BP	r6\n"
 		"=A0	r0\n"
 		"gpr	r0	.16	0	0\n"
 		"gpr	r1	.16	2	0\n"

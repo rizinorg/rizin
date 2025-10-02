@@ -151,6 +151,19 @@ typedef enum {
 	XORC,
 } H8500InstructionId;
 
+typedef enum {
+	H8500_R0,
+	H8500_R1,
+	H8500_R2,
+	H8500_R3,
+	H8500_R4,
+	H8500_R5,
+	H8500_R6,
+	H8500_R7,
+#define H8500_FP H8500_R6
+#define H8500_SP H8500_R7
+} H8500Register;
+
 // EA flags
 enum { EA_UNK,
 	EA_BanIMM };
