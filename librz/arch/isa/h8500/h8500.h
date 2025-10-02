@@ -3,8 +3,6 @@
 
 #ifndef H8500_H
 #define H8500_H
-#include <stdbool.h>
-#include <stdint.h>
 #include <rz_types.h>
 
 typedef enum {
@@ -81,8 +79,8 @@ typedef struct {
 	ut64 flags;
 	const char *mnemonic;
 	H8500Pat pats[8];
-	uint8_t ea_width; // 8 or 16
-	uint8_t size;
+	ut8 ea_width; // 8 or 16
+	ut8 size;
 } H8500EADescribe;
 
 typedef enum {
@@ -161,7 +159,7 @@ typedef struct {
 	H8500InstructionId id;
 	const char *mnemonic;
 	const char *op_mnemonic;
-	uint8_t size;
+	ut8 size;
 	H8500Pat pats[8];
 	H8500Arg args[8];
 	ut32 ea_flags;
@@ -170,13 +168,13 @@ typedef struct {
 typedef struct {
 	ut64 flags;
 	union {
-		uint32_t aa;
-		uint32_t imm;
-		int32_t disp;
-		uint8_t rn;
+		ut32 aa;
+		ut32 imm;
+		st32 disp;
+		ut8 rn;
 		struct {
-			uint8_t rn;
-			int32_t disp;
+			ut8 rn;
+			st32 disp;
 		} ri_disp;
 	};
 } H8500Operand;
@@ -184,8 +182,8 @@ typedef struct {
 typedef struct {
 	const H8500OpcodeDescribe *opcode_describe;
 	const H8500EADescribe *ea_describe;
-	uint8_t size;
-	uint8_t condition_code;
+	ut8 size;
+	ut8 condition_code;
 	H8500Operand operands[4];
 	ut8 num_operands;
 	H8500Operand ea;

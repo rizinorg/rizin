@@ -206,7 +206,7 @@ static const CCRDescribe *get_ccr_describe(ut8 crr) {
 	if (crr >= RZ_ARRAY_SIZE(h8500_ccrs)) {
 		goto branch_fail;
 	}
-	const CCRDescribe *ccr = h8500_ccrs + crr;
+	const CCRDescribe *ccr = &h8500_ccrs[crr];
 	if (RZ_STR_ISEMPTY(ccr->name)) {
 		goto branch_fail;
 	}
@@ -218,33 +218,28 @@ branch_fail:
 
 static const char *Rn_to_string(ut8 i) {
 	if (i >= RZ_ARRAY_SIZE(h8500_rns)) {
-		goto branch_fail;
+		rz_warn_if_reached();
+		return NULL;
 	}
 	return h8500_rns[i];
-branch_fail:
-	rz_warn_if_reached();
-	return NULL;
 }
 
 const char *h8500_reg_name(const H8500Operand *op, ut8 reg) {
-	if (op->flags & Crr) {
-		const CCRDescribe *ccr = get_ccr_describe(reg);
-		if (!ccr) {
-			return NULL;
-		}
-		return ccr->name;
+	if (!(op->flags & Crr))
+		return Rn_to_string(reg);
+	const CCRDescribe *ccr = get_ccr_describe(reg);
+	if (!ccr) {
+		return NULL;
 	}
-	return Rn_to_string(reg);
+	return ccr->name;
 }
 
 static const char *cc_mnemonic(ut8 i) {
 	if (i >= RZ_ARRAY_SIZE(h8500_cc_mnemonics)) {
-		goto branch_fail;
+		rz_warn_if_reached();
+		return NULL;
 	}
 	return h8500_cc_mnemonics[i];
-branch_fail:
-	rz_warn_if_reached();
-	return NULL;
 }
 
 static bool pat_const_check(ut64 pat, ut32 b) {
@@ -324,19 +319,19 @@ static bool operand_to_string(char *out, size_t len, H8500Operand *op) {
 		break;
 	case AddrRIDisp:
 		rz_str_replace(out, "Rn", Rn_to_string(op->ri_disp.rn), 0);
-		snprintf(buf, RZ_ARRAY_SIZE(buf), "%d", op->ri_disp.disp);
+		rz_strf(buf, "%d", op->ri_disp.disp);
 		rz_str_replace_in(out, len, "d", buf, 0);
 		break;
 	case AddrAbs:
-		snprintf(buf, RZ_ARRAY_SIZE(buf), "0x%x", op->aa);
+		rz_strf(buf, "0x%x", op->aa);
 		rz_str_replace_in(out, len, "aa", buf, 0);
 		break;
 	case AddrIMM:
-		snprintf(buf, RZ_ARRAY_SIZE(buf), "0x%x", op->imm);
+		rz_strf(buf, "0x%x", op->imm);
 		rz_str_replace_in(out, len, "xx", buf, 0);
 		break;
 	case AddrPCRel:
-		snprintf(buf, RZ_ARRAY_SIZE(buf), "%+d", op->disp);
+		rz_strf(buf, "%+d", op->disp);
 		rz_str_replace_in(out, len, "disp", buf, 0);
 		break;
 	default: break;
@@ -382,18 +377,14 @@ static bool h8500_ea_parse(const ut8 *buf, int len, H8500Instruction *ins) {
 			if (ea_describe->pats[j] == END) {
 				ins->ea_describe = ea_describe;
 				ins->ea.flags = ea_describe->flags;
-				goto branch_ok;
+				return true;
 			}
 			if (!EA_parse(buf, j, len - j, ea_describe, ins)) {
-				goto branch_next_ea;
+				break;
 			}
 		}
-	branch_next_ea:
-		continue;
 	}
 	return false;
-branch_ok:
-	return true;
 }
 
 static ut8 operand_index(H8500Pat pat, H8500Instruction *ins) {
@@ -591,7 +582,7 @@ static bool h8500_opcode_parse(const ut8 *buf, size_t offset, int len, H8500Inst
 						opcode_describe->mnemonic, opcode_describe->op_mnemonic, ins->num_operands, ops_count);
 				}
 				ins->opcode_describe = opcode_describe;
-				goto branch_ok;
+				return true;
 			}
 			if (!operand_parse(buf + offset, j, len - offset, opcode_describe, ins)) {
 				goto branch_next;
@@ -604,8 +595,6 @@ static bool h8500_opcode_parse(const ut8 *buf, size_t offset, int len, H8500Inst
 		}
 	}
 	return false;
-branch_ok:
-	return true;
 }
 
 bool h8500_instruction_parse(const ut8 *buf, int len, H8500Instruction *ins) {
