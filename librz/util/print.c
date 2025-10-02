@@ -1517,21 +1517,21 @@ static void print_colored_help_option(RZ_NULLABLE const char *flag, RZ_NULLABLE 
 			arg = "";
 		}
 		printf(Color_GREEN "%s" Color_RESET, flag);
-		size_t remainingSpaces = max_opt_spaces - strlen(flag);
+		size_t remaining_spaces = max_opt_spaces - strlen(flag);
 		if (RZ_STR_ISNOTEMPTY(arg)) {
 			printf(Color_YELLOW " %s " Color_RESET, arg);
-			remainingSpaces -= strlen(arg) + 2;
+			remaining_spaces -= strlen(arg) + 2;
 			if (arg[0] == '\b') {
-				remainingSpaces += 2;
+				remaining_spaces += 2;
 			}
 		}
-		printf("%*s", (int)remainingSpaces, "");
+		printf("%*s", (int)remaining_spaces, "");
 	}
 	printf(Color_RESET "%s", desc);
 	if (example) {
 		size_t maxDescSpaces = (desc_start ? max_opt_spaces : 0) + max_desc_len;
-		size_t remainingSpaces = maxDescSpaces - strlen(desc);
-		printf("%*s ;  %s", (int)remainingSpaces, "", example);
+		size_t remaining_spaces = maxDescSpaces - strlen(desc);
+		printf("%*s ;  %s", (int)remaining_spaces, "", example);
 	}
 	printf("\n");
 }
