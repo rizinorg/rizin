@@ -1479,9 +1479,9 @@ static size_t options_get_max_len(const char **options, size_t options_len, RZ_N
 			maxFlagAndArgLength = flagAndArgLength;
 		}
 		if (max_desc_len) {
-			size_t descLength = strlen(options[i + 2]);
-			if (descLength > *max_desc_len) {
-				*max_desc_len = descLength;
+			size_t desc_len = strlen(options[i + 2]);
+			if (desc_len > *max_desc_len) {
+				*max_desc_len = desc_len;
 			}
 		}
 	}
