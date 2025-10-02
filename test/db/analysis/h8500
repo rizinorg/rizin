@@ -187,9 +187,11 @@ CMDS=<<EOF
 aaa
 afl
 axl
+afi @ sym.varfunc
 pdf @ sym.varfunc
 afvl @ sym.varfunc
 afv= @ sym.varfunc
+afi @ sym.leaffunc
 afv= @ sym.leaffunc
 EOF
 EXPECT=<<EOF
@@ -201,6 +203,32 @@ EXPECT=<<EOF
                               sym..L3+30 0x84 ->      CALL -> 0x4 sym.leaffunc
                               sym.main+7 0x9a ->      CALL -> 0x18 sym.varfunc
                              sym.main+19 0xa6 ->      CALL -> 0x0 entry0
+offset: 0x00000018
+name: sym.varfunc
+size: 123
+is-pure: true
+realsz: 123
+stackframe: 250
+cyclomatic-cost: 0
+cyclomatic-complexity: 5
+loops: 0
+bits: 16
+type: sym
+num-bbs: 6
+edges: 9
+end-bbs: 1
+call-refs: 0x00000004 C
+data-refs:
+code-xrefs: 0x0000009a C
+noreturn: false
+in-degree: 1
+out-degree: 1
+data-xrefs:
+locals: 0
+args: 3
+arg int16_t arg_4h @ stack + 0x4
+arg int16_t arg_f8h @ stack + 0xf8
+arg int16_t arg_feh @ stack + 0xfe
             ; CALL XREF from sym.main @ 0x9a
 / sym.varfunc(int16_t arg_4h, int16_t arg_f8h, int16_t arg_feh);
 |           ; arg int16_t arg_4h @ stack + 0x4
@@ -257,6 +285,33 @@ R 0x1a  mov:f.w @(4:8, r6), r0
 R 0x8b  mov:f.w @(248:8, r6), r0
 * arg_feh
 R 0x8f  mov:f.w @(254:8, r6), r0
+offset: 0x00000004
+name: sym.leaffunc
+size: 20
+is-pure: true
+realsz: 20
+stackframe: 2
+cyclomatic-cost: 0
+cyclomatic-complexity: 1
+loops: 0
+bits: 16
+type: fcn
+num-bbs: 1
+edges: 0
+end-bbs: 1
+call-refs:
+data-refs:
+code-xrefs: 0x00000084 C
+noreturn: false
+in-degree: 1
+out-degree: 0
+data-xrefs:
+locals: 0
+args: 4
+arg int16_t arg_4h @ stack + 0x4
+arg int16_t arg_6h @ stack + 0x6
+arg int16_t arg_8h @ stack + 0x8
+arg int16_t arg_ah @ stack + 0xa
 * arg_4h
 R 0x6  mov:f.w @(4:8, r6), r0
 * arg_6h
