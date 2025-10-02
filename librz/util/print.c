@@ -1507,7 +1507,7 @@ static void print_colored_help_option(RZ_NULLABLE const char *flag, RZ_NULLABLE 
 
 	rz_return_if_fail(desc);
 	bool desc_start = !flag && !arg;
-	size_t maxOptSpaces = max_flag_and_arg_len + 2;
+	size_t max_opt_spaces = max_flag_and_arg_len + 2;
 	printf(" ");
 	if (!desc_start) {
 		if (!flag) {
@@ -1517,7 +1517,7 @@ static void print_colored_help_option(RZ_NULLABLE const char *flag, RZ_NULLABLE 
 			arg = "";
 		}
 		printf(Color_GREEN "%s" Color_RESET, flag);
-		size_t remainingSpaces = maxOptSpaces - strlen(flag);
+		size_t remainingSpaces = max_opt_spaces - strlen(flag);
 		if (RZ_STR_ISNOTEMPTY(arg)) {
 			printf(Color_YELLOW " %s " Color_RESET, arg);
 			remainingSpaces -= strlen(arg) + 2;
@@ -1529,7 +1529,7 @@ static void print_colored_help_option(RZ_NULLABLE const char *flag, RZ_NULLABLE 
 	}
 	printf(Color_RESET "%s", desc);
 	if (example) {
-		size_t maxDescSpaces = (desc_start ? maxOptSpaces : 0) + max_desc_len;
+		size_t maxDescSpaces = (desc_start ? max_opt_spaces : 0) + max_desc_len;
 		size_t remainingSpaces = maxDescSpaces - strlen(desc);
 		printf("%*s ;  %s", (int)remainingSpaces, "", example);
 	}
