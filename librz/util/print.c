@@ -1545,12 +1545,11 @@ static void print_colored_help_option(RZ_NULLABLE const char *flag, RZ_NULLABLE 
  *        4th string for each option that contains an example.
  */
 RZ_API void rz_print_colored_help(const char **options, size_t options_len, bool have_examples) {
+	rz_return_if_fail(options_len % (have_examples ? 4 : 3) == 0);
 	size_t max_desc_len = 0;
 	size_t max_flag_n_arg_len = options_get_max_len(options, options_len, have_examples ? &max_desc_len : NULL);
 	for (int i = 0; i < options_len; i += have_examples ? 4 : 3) {
-		if (i + 1 < options_len) {
-			print_colored_help_option(options[i], options[i + 1], options[i + 2], max_flag_n_arg_len,
-				have_examples ? options[i + 3] : NULL, max_desc_len);
-		}
+		print_colored_help_option(options[i], options[i + 1], options[i + 2], max_flag_n_arg_len,
+			have_examples ? options[i + 3] : NULL, max_desc_len);
 	}
 }
