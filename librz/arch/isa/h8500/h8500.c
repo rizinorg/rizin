@@ -575,7 +575,7 @@ static bool h8500_opcode_parse(const ut8 *buf, size_t offset, int len, H8500Inst
 					if (arg == EA) {
 						continue;
 					}
-#define INS_OP(I) (&ins->operands[ops_count])
+#define INS_OP(I) (&ins->operands[I])
 					if (INS_OP(ops_count)->flags != ARG_FLAGS(arg)) {
 						if (ARG_DATA(arg) != 0) {
 							H8500Operand *op = insert_operand(ins, ops_count);
