@@ -208,18 +208,19 @@ static bool rz_bin_dmp64_init_triage_drivers(struct rz_bin_dmp64_obj_t *obj) {
 			return false;
 		}
 		ut8 *file = calloc(str.count + 1, sizeof(ut16));
-		ut8 *file_utf8 = calloc(str.count + 1, sizeof(ut16));
-		if (!file || !file_utf8) {
+		if (!file) {
 			free(driver);
 			free(file);
-			free(file_utf8);
 			return false;
 		}
 		rz_buf_read(obj->b, file, str.count * sizeof(ut16));
 		const size_t size = (str.count + 1) * sizeof(ut16);
-		rz_str_utf16_to_utf8(file_utf8, size, file, size, true);
-		driver->file = (char *)file_utf8;
+		driver->file = (char *)rz_str_utf16_to_utf8(file, size, false);
 		free(file);
+		if (!driver) {
+			free(driver);
+			return false;
+		}
 		rz_list_push(obj->drivers, driver);
 		address += sizeof(dmp_driver_entry64);
 	}

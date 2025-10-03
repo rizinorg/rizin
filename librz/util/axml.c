@@ -172,16 +172,13 @@ static char *string_lookup(string_pool_t *pool, const ut8 *data, ut64 data_size,
 		// Size of UTF-16LE without NULL
 		n *= 2;
 
-		name = calloc(n * 2 + 1, 1);
-
 		if ((uintptr_t)start16 > (uintptr_t)data + data_size - sizeof(ut32) - n - 1) {
-			free(name);
 			return NULL;
 		}
 
+		name = (char *)rz_str_utf16_to_utf8((const ut8 *)start16, n, false);
 		// If UTF-16LE, decode to UTF-8 so we can print it to the screen
-		if (rz_str_utf16_to_utf8((ut8 *)name, n * 2, (const ut8 *)start16, n, true) < 0) {
-			free(name);
+		if (!name) {
 			RZ_LOG_ERROR("Failed to decode UTF16-LE\n");
 			return NULL;
 		}

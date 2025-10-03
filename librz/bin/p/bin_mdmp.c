@@ -269,12 +269,11 @@ static RzPVector /*<RzBinSection *>*/ *mdmp_sections(RzBinFile *bf) {
 			return ret;
 		}
 
-		ptr->name = RZ_NEWS0(char, ptr_name_len);
+		ptr->name = (char *)rz_str_utf16_to_utf8(str_buffer, str_length, false);
 		if (!ptr->name) {
 			free(ptr);
 			continue;
 		}
-		rz_str_utf16_to_utf8((ut8 *)ptr->name, str_length * 4, str_buffer, str_length, true);
 		ptr->vaddr = module->base_of_image;
 		ptr->vsize = module->size_of_image;
 		ptr->paddr = rz_bin_mdmp_get_paddr(obj, ptr->vaddr);

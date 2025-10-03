@@ -234,7 +234,6 @@ RZ_API RZ_OWN char *rz_str_format_msvc_argv(size_t argc, const char **argv);
 RZ_API void rz_str_uri_decode(char *buf);
 RZ_API char *rz_str_uri_encode(const char *buf);
 RZ_API char *rz_str_utf16_decode(const ut8 *s, int len);
-RZ_API int rz_str_utf16_to_utf8(ut8 *dst, int len_dst, const ut8 *src, int len_src, bool little_endian);
 RZ_DEPRECATE RZ_API char *rz_str_utf16_encode(const char *s, int len);
 RZ_API RZ_OWN ut16 *rz_str_utf8_to_utf16(RZ_NONNULL const char *utf8_str, bool big_endian);
 RZ_API RZ_OWN ut32 *rz_str_utf8_to_utf32(RZ_NONNULL const char *utf8_str, bool big_endian);

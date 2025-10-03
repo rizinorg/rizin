@@ -733,12 +733,11 @@ RzList /*<WindModule *>*/ *winkd_list_modules(RZ_BORROW RZ_NONNULL WindCtx *ctx)
 		}
 		read_at_uva_or_kernel(ctx, bufferaddr, unname, length);
 
-		mod->name = calloc((ut64)length + 1, 1);
+		mod->name = (char *)rz_str_utf16_to_utf8(unname, length + 2, false);
+		free(unname);
 		if (!mod->name) {
 			break;
 		}
-		rz_str_utf16_to_utf8((ut8 *)mod->name, length + 1, unname, length + 2, true);
-		free(unname);
 		rz_list_add_sorted(ret, mod, map_comparator, NULL);
 
 		ptr = next;

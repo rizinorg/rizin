@@ -195,3 +195,43 @@ RZ_API bool rz_utf16_is_printable_code_point(RZ_NONNULL const ut8 *buf, size_t b
 	}
 	return true;
 }
+
+/**
+ * \brief Converts the \p utf16_str into an UTF-8 string.
+ * The conversion will stop if there are any encoding or decoding issues
+ * (e.g. any code point is larger than RZ_UNICODE_LAST_CODE_POINT or a surrogate).
+ *
+ * \param utf16_str The UTF-16 string to convert to UTF-8. It must be at least
+ * 2 bytes long.
+ * \param len The len of \p utf16_str in bytes.
+ * \param big_endian Flag if \p ut16_str is encoded in big endian.
+ *
+ * \return The restulting UTF-8 string or NULL in case of failure.
+ */
+RZ_API RZ_OWN ut8 *rz_str_utf16_to_utf8(RZ_NONNULL const ut8 *utf16_str, size_t len, bool big_endian) {
+	rz_return_val_if_fail(utf16_str && len > 1, NULL);
+	// Worst case each 2 bytes UTF-16 character requires 3 bytes in UTF-8.
+	// Each 4 bytes UTF-16 character also needs 4 bytes in UTF-8.
+	size_t len_dst = len * 2;
+	ut8 *dst = RZ_NEWS0(ut8, len_dst);
+
+	size_t k = 0;
+	for (size_t i = 0; i < len;) {
+		RzCodePoint ucp;
+		size_t x = rz_utf16_decode(utf16_str + i, len - i, &ucp, false, big_endian);
+		if (!x) {
+			// Failed to decode.
+			goto return_dst;
+		}
+		i += x;
+		size_t utf8_bytes = rz_utf8_encode(dst + k, ucp);
+		if (!utf8_bytes) {
+			// Code point is larger than the last Unicode code point.
+			goto return_dst;
+		}
+		k += utf8_bytes;
+	}
+
+return_dst:
+	return dst;
+}
