@@ -110,3 +110,40 @@ RZ_API size_t rz_utf32_encode(RZ_NONNULL RZ_OUT ut8 *buf, RzCodePoint ucp, bool 
 	buf[3] = (ucp >> 24) & 0xff;
 	return 4;
 }
+
+/**
+ * \brief Converts the \p utf32_str into an UTF-8 string.
+ * The conversion will stop if there are any encoding or decoding issues
+ * (e.g. any code point is larger than RZ_UNICODE_LAST_CODE_POINT or a surrogate).
+ *
+ * \param utf32_str The UTF-32 string to convert to UTF-8. It must be at least
+ * 4 bytes long.
+ * \param len The len of \p utf32_str in bytes.
+ * \param big_endian Flag if \p ut32_str is encoded in big endian.
+ *
+ * \return The resulting UTF-8 string or NULL in case of failure.
+ */
+RZ_API RZ_OWN ut8 *rz_str_utf32_to_utf8(RZ_NONNULL const ut8 *utf32_str, size_t len, bool big_endian) {
+	rz_return_val_if_fail(utf32_str && len > 3, NULL);
+	// Worst case each character is also 4 bytes in UTF-8.
+	size_t len_dst = len + 1;
+	ut8 *dst = RZ_NEWS0(ut8, len_dst);
+
+	size_t k = 0;
+	for (size_t i = 0; i < len; i += 4) {
+		RzCodePoint ucp;
+		if (!rz_utf32_decode(utf32_str + i, len - i, &ucp, false, big_endian)) {
+			// Failed to decode.
+			goto return_dst;
+		}
+		size_t utf8_bytes = rz_utf8_encode(dst + k, ucp);
+		if (!utf8_bytes) {
+			// Code point is larger than the last Unicode code point.
+			goto return_dst;
+		}
+		k += utf8_bytes;
+	}
+
+return_dst:
+	return dst;
+}
