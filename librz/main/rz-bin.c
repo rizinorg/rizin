@@ -210,7 +210,6 @@ static int rzbin_show_help(int v) {
 			"-V",           "",             "Show binary version information",
 			"-w",           "",             "Display try/catch blocks",
 			"-x",           "",             "Extract bins contained in file",
-			"-X",           "[fmt] [f] ..", "Package in fat or zip the given files and bins contained in file",
 			"-Y",           "[fw file]",    "Calculate all the possibles base address candidates of a firmware bin",
 			"-z",           "",             "Show strings (from data section)",
 			"-zz",          "",             "Show strings (from raw strings from bin)",
@@ -794,7 +793,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	}
 #define unset_action(x) action &= ~x
 	RzGetopt opt;
-	rz_getopt_init(&opt, argc, argv, "DjgAf:F:a:B:G:b:cC:k:K:dD:Mm:n:N:@:isSVIHeEUlRwO:o:pPqQrTvLhuxYXzZ");
+	rz_getopt_init(&opt, argc, argv, "DjgAf:F:a:B:G:b:cC:k:K:dD:Mm:n:N:@:isSVIHeEUlRwO:o:pPqQrTvLhuxYzZ");
 	while ((c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case 'g':
