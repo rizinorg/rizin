@@ -381,63 +381,63 @@ If expr is not provided, reads from stdin
 [36mUsage: [0mrz-bin [-AcdeEghHiIjlLMqrRsSUvVxzZ] [-@ at] [-a arch] [-b bits] [-B addr]
               [-C F:C:D] [-f str] [-m addr] [-n str] [-N m:M] [-P pdb]
               [-o str] [-O str] [-k query] [-D lang symname] file
- [32m-@[0m[33m [addr] [0m     [0mShow section, symbol, or import at the given address
- [32m-A[0m             [0mList sub-binaries and their arch-bits pairs
- [32m-a[0m[33m [arch] [0m     [0mSet arch (x86, arm, .. or <arch>_<bits>)
- [32m-b[0m[33m [bits] [0m     [0mSet bits (32, 64 ...)
- [32m-B[0m[33m [addr] [0m     [0mOverride base address (pie bins)
- [32m-c[0m             [0mList classes
- [32m-cc[0m            [0mList classes in header format
- [32m-C[0m[33m [fmt:C:D] [0m  [0mCreate [elf,mach0,pe] with Code and Data hexpairs (see -a)
- [32m-d[0m             [0mShow debug/dwarf information
- [32m-dd[0m            [0mLoad debug/dwarf information from debuginfod server
- [32m-D[0m[33m lang name [0m  [0mDemangle symbol name (-D all for bin.demangle=true)z
- [32m-e[0m             [0mEntrypoint
- [32m-ee[0m            [0mConstructor/destructor entrypoints
- [32m-E[0m             [0mGlobally exportable symbols
- [32m-f[0m[33m [mach] [0m     [0mSelect sub-binary for the machine [mach].
- [32m-F[0m[33m [binfmt] [0m   [0mForce to use that bin plugin (ignore header check)
- [32m-g[0m             [0mSame as -SMZIHVResizcld -SS -SSS -ee (show all info)
- [32m-G[0m[33m [addr] [0m     [0mLoad address . offset to header
- [32m-h[0m             [0mShow this help
- [32m-H[0m             [0mHeader fields
- [32m-i[0m             [0mImport (symbols imported from libraries)
- [32m-I[0m             [0mBinary info
- [32m-j[0m             [0mOutput in JSON
- [32m-k[0m[33m [sdb-query] [0m[0mRun sdb query. for example: '*'
- [32m-K[0m[33m [algo] [0m     [0mCalculate checksums (md5, sha1, ..)
- [32m-l[0m             [0mLinked libraries
- [32m-L[0m[33m [plugin] [0m   [0mList supported bin plugins or plugin details
- [32m-m[0m[33m [addr] [0m     [0mShow source line at addr
- [32m-M[0m             [0mMain (show address of main symbol)
- [32m-n[0m[33m [str] [0m      [0mShow section, symbol or import named str
- [32m-N[0m[33m [min:max] [0m  [0mForce min:max number of chars per string (see -z and -zz)
- [32m-o[0m[33m [str] [0m      [0mOutput file/folder for write operations (out by default)
- [32m-O[0m[33m [str] [0m      [0mWrite/extract operations (-O help)
- [32m-p[0m             [0mShow physical addresses
- [32m-P[0m             [0mShow debug/pdb information
- [32m-PP[0m            [0mDownload pdb file for binary
- [32m-q[0m             [0mQuiet mode, just show fewer data
- [32m-qq[0m            [0mShow less info (no offset/size for -z for ex.)
- [32m-Q[0m             [0mShow load address used by dlopen (non-aslr libs)
- [32m-r[0m             [0mShow output in rizin format
- [32m-R[0m             [0mShow relocations
- [32m-s[0m             [0mSymbols
- [32m-S[0m             [0mSections
- [32m-SS[0m            [0mSegments
- [32m-SSS[0m           [0mSections mapping to segments
- [32m-T[0m             [0mDisplay file signature
- [32m-u[0m             [0mUnfiltered (no rename duplicated symbols/sections)
- [32m-U[0m             [0mResources
- [32m-v[0m             [0mShow version information
- [32m-V[0m             [0mShow binary version information
- [32m-w[0m             [0mDisplay try/catch blocks
- [32m-x[0m             [0mExtract bins contained in file
- [32m-Y[0m[33m [fw file] [0m  [0mCalculate all the possibles base address candidates of a firmware bin
- [32m-z[0m             [0mShow strings (from data section)
- [32m-zz[0m            [0mShow strings (from raw strings from bin)
- [32m-zzz[0m           [0mDump raw strings to stdout (for huge files)
- [32m-Z[0m             [0mGuess size of binary program
+ [32m-@[0m[33m addr [0m     [0mShow section, symbol, or import at the given address
+ [32m-A[0m           [0mList sub-binaries and their arch-bits pairs
+ [32m-a[0m[33m arch [0m     [0mSet arch (x86, arm, .. or <arch>_<bits>)
+ [32m-b[0m[33m bits [0m     [0mSet bits (32, 64 ...)
+ [32m-B[0m[33m addr [0m     [0mOverride base address (pie bins)
+ [32m-c[0m           [0mList classes
+ [32m-cc[0m          [0mList classes in header format
+ [32m-C[0m[33m fmt:C:D [0m  [0mCreate [elf,mach0,pe] with Code and Data hexpairs (see -a)
+ [32m-d[0m           [0mShow debug/dwarf information
+ [32m-dd[0m          [0mLoad debug/dwarf information from debuginfod server
+ [32m-D[0m[33m lang name [0m[0mDemangle symbol name (-D all for bin.demangle=true)
+ [32m-e[0m           [0mEntrypoint
+ [32m-ee[0m          [0mConstructor/destructor entrypoints
+ [32m-E[0m           [0mGlobally exportable symbols
+ [32m-f[0m[33m mach [0m     [0mSelect sub-binary for the machine [mach].
+ [32m-F[0m[33m binfmt [0m   [0mForce to use that bin plugin (ignore header check)
+ [32m-g[0m           [0mSame as -SMZIHVResizcld -SS -SSS -ee (show all info)
+ [32m-G[0m[33m addr [0m     [0mLoad address . offset to header
+ [32m-h[0m           [0mShow this help
+ [32m-H[0m           [0mHeader fields
+ [32m-i[0m           [0mImport (symbols imported from libraries)
+ [32m-I[0m           [0mBinary info
+ [32m-j[0m           [0mOutput in JSON
+ [32m-k[0m[33m sdb-query [0m[0mRun sdb query. for example: '*'
+ [32m-K[0m[33m algo [0m     [0mCalculate checksums (md5, sha1, ..)
+ [32m-l[0m           [0mLinked libraries
+ [32m-L[0m[33m [plugin] [0m [0mList supported bin plugins or plugin details
+ [32m-m[0m[33m addr [0m     [0mShow source line at addr
+ [32m-M[0m           [0mMain (show address of main symbol)
+ [32m-n[0m[33m str [0m      [0mShow section, symbol or import named str
+ [32m-N[0m[33m min:max [0m  [0mForce min:max number of chars per string (see -z and -zz)
+ [32m-o[0m[33m str [0m      [0mOutput file/folder for write operations (out by default)
+ [32m-O[0m[33m str [0m      [0mWrite/extract operations (-O help)
+ [32m-p[0m           [0mShow physical addresses
+ [32m-P[0m           [0mShow debug/pdb information
+ [32m-PP[0m          [0mDownload pdb file for binary
+ [32m-q[0m           [0mQuiet mode, just show fewer data
+ [32m-qq[0m          [0mShow less info (no offset/size for -z for ex.)
+ [32m-Q[0m           [0mShow load address used by dlopen (non-aslr libs)
+ [32m-r[0m           [0mShow output in rizin format
+ [32m-R[0m           [0mShow relocations
+ [32m-s[0m           [0mSymbols
+ [32m-S[0m           [0mSections
+ [32m-SS[0m          [0mSegments
+ [32m-SSS[0m         [0mSections mapping to segments
+ [32m-T[0m           [0mDisplay file signature
+ [32m-u[0m           [0mUnfiltered (no rename duplicated symbols/sections)
+ [32m-U[0m           [0mResources
+ [32m-v[0m           [0mShow version information
+ [32m-V[0m           [0mShow binary version information
+ [32m-w[0m           [0mDisplay try/catch blocks
+ [32m-x[0m           [0mExtract bins contained in file
+ [32m-Y[0m           [0mCalculate all the possibles base address candidates of a firmware bin
+ [32m-z[0m           [0mShow strings (from data section)
+ [32m-zz[0m          [0mShow strings (from raw strings from bin)
+ [32m-zzz[0m         [0mDump raw strings to stdout (for huge files)
+ [32m-Z[0m           [0mGuess size of binary program
 Environment:
  RZ_BIN_CODESIGN_VERBOSE:                               # make code signatures verbose
  RZ_BIN_DEBUGINFOD_URLS:  e bin.dbginfo.debuginfod_urls # use alternative debuginfod server
