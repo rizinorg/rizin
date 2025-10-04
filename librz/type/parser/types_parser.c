@@ -1503,6 +1503,7 @@ int parse_type_abstract_declarator_node(CParserState *state, TSNode node, const 
 			parser_error(state, "ERROR: storing the new callable type: \"%s\"\n", name);
 			return -1;
 		}
+		result = 0;
 	}
 	return result;
 }
