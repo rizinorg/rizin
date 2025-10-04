@@ -368,9 +368,7 @@ RZ_API RZ_OWN RzType *rz_type_parse_string_single(RzTypeParser *parser, const ch
 	for (i = 0; i < root_node_child_count; i++) {
 		parser_debug(parser->state, "Processing %d child...\n", i);
 		TSNode child = ts_node_named_child(root_node, i);
-		if (!parse_type_descriptor_single(parser->state, child, patched_code, &tpair)) {
-			break;
-		}
+		result += parse_type_descriptor_single(parser->state, child, patched_code, &tpair);
 	}
 
 	// If there were errors during the parser then the result is different from 0
