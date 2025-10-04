@@ -8328,3 +8328,16 @@ typedef moo_t (0x48) "c*q a z"
 typedef goo_t (0xf8) "p[10]c? a b (anonymous struct 4)q"
 EOF
 RUN
+
+NAME=Types with nested callables containing mixed pointers and arrays
+FILE=--
+CMDS=<<EOF
+td "struct foo { wchar_t (*(*bar)[])(int, const char*); };"
+tc foo
+EOF
+EXPECT=<<EOF
+struct foo {
+	wchar_t (*((*bar)[]))(int arg0, const char *arg1);
+};
+EOF
+RUN
