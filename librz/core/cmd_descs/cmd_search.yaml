@@ -804,6 +804,8 @@ commands:
           comment: "Extended regular expression."
         - text: "m"
           comment: "Multiline regular expression (equivalent flag: PCRE2_MULTILINE)"
+        - text: "d"
+          comment: "Dot matches any one character, without exception (equivalent flag: PCRE2_DOTALL)"
     - name: "Examples"
       entries:
         - text: "/z (ABC*)"

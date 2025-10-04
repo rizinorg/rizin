@@ -1465,6 +1465,10 @@ RZ_API RzRegexFlags rz_regex_parse_flag_desc(RZ_NULLABLE const char *re_flags_de
 		fcount++;
 		flags |= RZ_REGEX_MULTILINE;
 	}
+	if (strchr(re_flags_desc, 'd')) {
+		fcount++;
+		flags |= RZ_REGEX_DOTALL;
+	}
 return_flags:
 	if (fcount != strlen(re_flags_desc)) {
 		RZ_LOG_ERROR("Flag combination '%s' is invalid.\n", re_flags_desc);

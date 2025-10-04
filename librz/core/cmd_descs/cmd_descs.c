@@ -2472,6 +2472,7 @@ static const RzCmdDescDetailEntry slash_z_Regex_space_Flags_detail_entries[] = {
 	{ .text = "r", .arg_str = NULL, .comment = "Regular expression." },
 	{ .text = "e", .arg_str = NULL, .comment = "Extended regular expression." },
 	{ .text = "m", .arg_str = NULL, .comment = "Multiline regular expression (equivalent flag: PCRE2_MULTILINE)" },
+	{ .text = "d", .arg_str = NULL, .comment = "Dot matches any one character, without exception (equivalent flag: PCRE2_DOTALL)" },
 	{ 0 },
 };
 
