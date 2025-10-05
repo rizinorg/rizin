@@ -460,6 +460,13 @@ static bool test_vector_insert_range(void) {
 	mu_assert_eq(*((ut32 *)rz_vector_index_ptr(&v, 5)), 2, "rz_vector_insert_range (resize) => old content");
 	rz_vector_clear(&v);
 
+	init_test_vector(&v, 3, 0, NULL, NULL);
+	rz_vector_insert_range(&v, rz_vector_len(&v), NULL, v.capacity - rz_vector_len(&v));
+	p = (ut32 *)rz_vector_insert_range(&v, rz_vector_len(&v), NULL, 0);
+	mu_assert_ptreq(p, rz_vector_tail(&v) + v.elem_size,
+		"rz_vector_insert_range (0 count at vector end) returned ptr");
+	rz_vector_clear(&v);
+
 	mu_end;
 }
 
