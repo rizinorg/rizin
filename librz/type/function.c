@@ -472,7 +472,7 @@ static inline char *callable_name_or_ptr(RZ_NONNULL const RzCallable *callable, 
 		RzTypeKind last_kind = RZ_TYPE_KIND_POINTER;
 
 		st64 *it;
-		rz_vector_foreach(wrapper_type_infos, it) {
+		rz_vector_foreach (wrapper_type_infos, it) {
 			st64 array_len = *it;
 
 			RzTypeKind current_kind;
