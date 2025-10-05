@@ -15,15 +15,15 @@ rz-diff compares two files or binary programs and highlights the differences bet
 .Bl -tag -width Fl
 .It Fl A
 Compare virtual addresses from file0 with physical addresses in file1
-.It Fl a Ar [arch]	
+.It Fl a Ar arch	
 Specify the architecture plugin to use for analysis (e.g., x86, arm)
-.It Fl b Ar [bits]
+.It Fl b Ar bits
 Specify the register size for the chosen architecture (e.g., 16, 32, 64)
 .It Fl B
 Run 'aaa' when loading the binary
 .It Fl C
 Disable the use of colors in the output
-.It Fl d Ar [algo]
+.It Fl d Ar algo
 Compute the edit distance between files using the chosen algorithm:
 .Bl -tag -width
 .It Ic myers
@@ -33,7 +33,7 @@ Levenshtein O(N^2) algorithm (with substitution)
 .It Ic ssdeep
 Context triggered piecewise hashing comparison
 .El
-.It Fl e Ar [k=v]
+.It Fl e Ar k=v
 Set an evaluable config variable
 .It Fl H 
 Enable hexadecimal visual mode for comparing files in hexadecimal format
@@ -45,13 +45,13 @@ Use command line arguments instead of files (only for -d)
 Output the comparison results in JSON format
 .It Fl q
 Generate quiet output with minimal information
-.It Fl 0 Ar [cmd]
+.It Fl 0 Ar cmd
 Input for file0 when option -t 'commands' is given
-.It Fl 1 Ar [cmd]
+.It Fl 1 Ar cmd
 Input for file1 when option -t 'commands' is given
-.It Fl S Ar [WxH]
+.It Fl S Ar WxH
 Set the width and height of the terminal for visual mode
-.It Fl t Ar [type]
+.It Fl t Ar type
 Compute the difference between two files based on the specified type:
 .Bl -tag -width
 .It Ic bytes
