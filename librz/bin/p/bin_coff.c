@@ -217,6 +217,23 @@ static RzPVector /*<RzBinVirtualFile *>*/ *coff_virtual_files(RzBinFile *bf) {
 	return r;
 }
 
+static ut32 coff_guess_perms_from_section_name(const char *section_name) {
+	// this function should be called only if rz_coff_perms_from_section_flags
+	// returns an 0 permission flag, which is unusual.
+	if (RZ_STR_ISEMPTY(section_name)) {
+		RZ_LOG_WARN("coff: found a no-named section with no permissions\n");
+		return RZ_PERM_R;
+	} else if (RZ_STR_EQ(section_name, ".text")) {
+		return RZ_PERM_RX;
+	} else if (RZ_STR_EQ(section_name, ".data")) {
+		return RZ_PERM_RW;
+	} else if (RZ_STR_EQ(section_name, ".bss")) {
+		return RZ_PERM_RW;
+	}
+	RZ_LOG_INFO("coff: unhandled section '%s' with no permissions\n", section_name);
+	return RZ_PERM_R;
+}
+
 static RzPVector /*<RzBinMap *>*/ *coff_maps(RzBinFile *bf) {
 	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_map_free);
 	if (!ret) {
@@ -244,6 +261,9 @@ static RzPVector /*<RzBinMap *>*/ *coff_maps(RzBinFile *bf) {
 			ptr->vaddr = obj->scn_va[i];
 		}
 		ptr->perm = rz_coff_perms_from_section_flags(hdr->s_flags);
+		if (!ptr->perm) {
+			ptr->perm = coff_guess_perms_from_section_name(ptr->name);
+		}
 		if (hdr->s_nreloc) {
 			ptr->vfile_name = rz_str_dup(VFILE_NAME_PATCHED);
 		}
@@ -297,6 +317,9 @@ static RzPVector /*<RzBinSection *>*/ *coff_sections(RzBinFile *bf) {
 			ptr->vaddr = obj->scn_va[i];
 		}
 		ptr->perm = rz_coff_perms_from_section_flags(ptr->flags);
+		if (!ptr->perm) {
+			ptr->perm = coff_guess_perms_from_section_name(ptr->name);
+		}
 		rz_pvector_push(ret, ptr);
 	}
 	return ret;
@@ -527,6 +550,11 @@ static RzBinInfo *coff_info(RzBinFile *bf) {
 	case COFF_FILE_MACHINE_H8300:
 		ret->machine = rz_str_dup("H8300");
 		ret->arch = rz_str_dup("h8300");
+		ret->bits = 16;
+		break;
+	case COFF_FILE_MACHINE_H8500:
+		ret->machine = rz_str_dup("H8500");
+		ret->arch = rz_str_dup("h8500");
 		ret->bits = 16;
 		break;
 	case COFF_FILE_MACHINE_M68K:

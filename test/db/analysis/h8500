@@ -1,0 +1,324 @@
+NAME=h8500 regs
+FILE=bins/coff/test.h8500.o
+CMDS=<<EOF
+ar
+EOF
+EXPECT=<<EOF
+r0 = 0x0000
+r1 = 0x0000
+r2 = 0x0000
+r3 = 0x0000
+r4 = 0x0000
+r5 = 0x0000
+r6 = 0x0000
+r7 = 0x0000
+pc = 0x000000
+ccr = 0x00
+cp = 0x00
+dp = 0x00
+ep = 0x00
+tp = 0x00
+br = 0x00
+EOF
+RUN
+
+NAME=h8500 analysis
+FILE=bins/coff/test.h8500.o
+CMDS=<<EOF
+aaa
+afl
+pd 120
+EOF
+EXPECT=<<EOF
+0x00000000    1 1            entry0
+0x00000001   16 207          fcn.00000001
+0x000000ec    1 5            sym.local_sub
+0x000000f1    1 2            sym.func_demo
+            ;-- section..text:
+            ;-- .text:
+            ;-- _start:
+/ entry0(int16_t arg_4h);
+|           ; arg int16_t arg_4h @ stack + 0x4
+\           0x00000000      nop                                        ; [00] -r-x section size 274 named .text
+/ fcn.00000001(int16_t arg_4h);
+|           ; arg int16_t arg_4h @ stack + 0x4
+|           0x00000001      mov:i #0x9d:16, r7
+|           0x00000004      link  fp, #0x10:8
+|           0x00000006      stm.b (r0-r3), @-SP
+|           0x00000008      ldm   @SP+, (r0-r3)
+|           0x0000000a      mov:e #0x12:8, r0
+|           0x0000000c      mov:i #0x1234:16, r1
+|           0x0000000f      mov:g.b r0, @0x112:16
+|           0x00000013      mov:g.w @0x113:16, r2
+|           0x00000017      xch   r0, r1
+|           0x00000019      swap  r1
+|           0x0000001b      mov:f.b @(4:8, r6), r3
+|           0x0000001d      mov:f.b r3, @(8:8, r6)
+|           0x0000001f      movfpe @section..data:16, r4
+|           0x00000024      movtpe r4, @0x121:16
+|           0x00000029      add:q.b #1, r0
+|           0x0000002b      sub.b #0x10:16, r1
+|           0x0000002f      addx.b r0, r3
+|           0x00000031      subx.w r1, r2
+|           0x00000033      adds.b #0x4:16, r7
+|           0x00000037      subs.b #0x4:16, r7
+|           0x0000003b      mov:e #0x45:8, r0
+|           0x0000003d      mov:e #0x27:8, r1
+|           0x0000003f      dadd  r1, r0
+|           0x00000042      dsub  r1, r0
+|           0x00000045      mov:i #0x12c:16, r2
+|           0x00000048      mov:i #0x15:16, r3
+|           0x0000004b      mulxu.w r3, r2
+|           0x0000004d      mov:i #0x7:16, r4
+|           0x00000050      divxu.w r4, r0
+|           0x00000052      cmp:g.b r0, r3
+|           0x00000054      exts  r0
+|           0x00000056      extu  r0
+|           0x00000058      tst   r0
+|           0x0000005a      neg.w r1
+|           0x0000005c      clr.b r3
+|           0x0000005e      tas   @0x112:16
+|           0x00000062      and.b #0xfff:16, r2
+|           0x00000066      or.b  #0x80:8, r0
+|           0x00000069      xor   r3, r2
+|           0x0000006b      not.b r0
+|           0x0000006d      shal.b r0
+|           0x0000006f      shar.w r1
+|           0x00000071      shll.b r0
+|           0x00000073      shlr.w r1
+|           0x00000075      rotl.b r0
+|           0x00000077      rotr.w r1
+|           0x00000079      rotxl.b r0
+|           0x0000007b      rotxr.w r1
+|           0x0000007d      bset.w #0x3, r0
+|           0x0000007f      bclr.w #0x0, @0x112:16
+|           0x00000083      btst.w #0x7, r0
+|           0x00000085      bnot.w #0x5, @0x112:16
+|           0x00000089      ldc.b #0x0:8, ccr
+|           0x0000008c      orc.b #0x80:8, ccr
+|           0x0000008f      andc.b #0x7f:8, ccr
+|           0x00000092      xorc.b #0x3:8, ccr
+|           0x00000095      stc.b ccr, r0
+|           0x00000097      ldc.w #0x1234:16, sr
+|           0x0000009b      stc.w sr, r2
+|    ,====< 0x0000009d      bhi   +0
+|   ,`----> 0x000000a0      bls   +0
+|   `,====< 0x000000a3      bcc   +0
+|   ,`----> 0x000000a6      bcs   +0
+|   `,====< 0x000000a9      bne   +0
+|   ,`----> 0x000000ac      beq   +0
+|   `,====< 0x000000af      bvc   +0
+|   ,`----> 0x000000b2      bvs   +0
+|   `,====< 0x000000b5      bpl   +0
+|   ,`----> 0x000000b8      bmi   +0
+|   `,====< 0x000000bb      bge   +0
+|   ,`----> 0x000000be      blt   +0
+|   `,====< 0x000000c1      bgt   +0
+|   ,`----> 0x000000c4      ble   +0
+|   `-----> 0x000000c7      nop
+|    ,====< 0x000000c8      jmp   @0xcb:16
+|    |      ; CODE XREF from fcn.00000001 @ 0xc8
+|    |      ;-- next_same_page:
+|    `----> 0x000000cb      bsr   +31                                  ; sym.local_sub
+|           0x000000cd      jsr   @r5
+\           0x000000cf      rts
+            0x000000d0      mov:i #0x9:16, r4
+            ;-- scb_loop_f:
+      ,===< 0x000000d3      scb/f r4, +253
+      |     0x000000d6      mov:i #0x9:16, r4
+      |     ;-- scb_loop_ne:
+      |     0x000000d9      cmp:g.b #0x41, @r6+
+      |,==< 0x000000dc      scb/ne r4, +250
+      ||    0x000000df      mov:i #0x9:16, r4
+      ||    ;-- scb_loop_eq:
+      ||    0x000000e2      cmp:g.b #0x41, @r6+
+      ||,=< 0x000000e5      scb/eq r4, +250
+      |||   0x000000e8      bsr   +7                                   ; sym.func_demo
+      ||,=< 0x000000ea      bra   +7
+     ||||   ; CALL XREF from fcn.00000001 @ 0xcb
+/ sym.local_sub();
+|    ||||   0x000000ec      adds.b #0x2:16, r7
+\    ||||   0x000000f0      rts
+     ||||   ; CALL XREF from sym.scb_loop_eq @ +0x6
+/ sym.func_demo();
+\    ||||   0x000000f1      rtd   #0x2:8
+     ||||   ;-- do_traps:
+      ||`-> 0x000000f3      trapa #0x3
+      |||   0x000000f5      mov:i #0x8000:16, r0
+      |||   0x000000f8      add:q.b #0x8000:16, r0
+      |||   0x000000fc      trap/vs
+      |||   0x000000fd      sleep
+      |||   ;-- after_sleep:
+      |||   0x000000fe      mov:i #sym.far_entry:16, r2
+      |||   0x00000101      pjsr  @r2
+      |||   0x00000103      prts
+      |||   0x00000105      mov:i #0x4:16, r0
+      |||   0x00000108      prtd  #0x4:8
+      |||   0x0000010b      unlk  fp
+      |||   ;-- halt:
+      |||   0x0000010c      bra   +254
+      |||   ;-- far_entry:
+      |||   0x0000010e      rts
+      |||   ;-- trap_vs_handler:
+      |||   0x0000010f      rts
+      |||   ;-- trapa3:
+      |||   0x00000110      rts
+      |||   0x00000111      nop
+      |||   0x00000112      btst.w #0xf, @(-1:16, r7)
+      |||   0x00000116      btst.w #0xf, @(-1:16, r7)
+      |||   0x0000011a      btst.w #0xf, @(-1:16, r7)
+      |||   0x0000011e      
+      |||   0x0000011f  ~   sub.w @(18:16, r7), r4
+      |||   ;-- section..data:
+      |||   0x00000120      nop                                        ; [01] -rw- section size 4 named .data
+      |||   0x00000121      stm.b (r2,r4-r5), @-SP
+      |||   0x00000123      nop
+      |||   0x00000124      btst.w #0xf, @(-1:16, r7)
+      |||   0x00000128      btst.w #0xf, @(-1:16, r7)
+      |||   0x0000012c      btst.w #0xf, @(-1:16, r7)
+      |||   ;-- section..bss:
+      |||   0x00000130      btst.w #0xf, @(-1:16, r7)                  ; [02] -rw- section size 0 named .bss
+EOF
+RUN
+
+NAME=h8500 analysis varfunc
+FILE=bins/coff/varfunc.h8500.coff
+CMDS=<<EOF
+aaa
+afl
+axl
+afi @ sym.varfunc
+pdf @ sym.varfunc
+afvl @ sym.varfunc
+afv= @ sym.varfunc
+afi @ sym.leaffunc
+afv= @ sym.leaffunc
+EOF
+EXPECT=<<EOF
+0x00000000    1 4            entry0
+0x00000004    1 20           sym.leaffunc
+0x00000018    6 123          sym.varfunc
+0x00000093    1 31           sym.main
+                                  entry0 0x0 ->      CALL -> 0x93 sym.main
+                              sym..L3+30 0x84 ->      CALL -> 0x4 sym.leaffunc
+                              sym.main+7 0x9a ->      CALL -> 0x18 sym.varfunc
+                             sym.main+19 0xa6 ->      CALL -> 0x0 entry0
+offset: 0x00000018
+name: sym.varfunc
+size: 123
+is-pure: true
+realsz: 123
+stackframe: 250
+cyclomatic-cost: 0
+cyclomatic-complexity: 5
+loops: 0
+bits: 16
+type: sym
+num-bbs: 6
+edges: 9
+end-bbs: 1
+call-refs: 0x00000004 C
+data-refs:
+code-xrefs: 0x0000009a C
+noreturn: false
+in-degree: 1
+out-degree: 1
+data-xrefs:
+locals: 0
+args: 3
+arg int16_t arg_4h @ stack + 0x4
+arg int16_t arg_f8h @ stack + 0xf8
+arg int16_t arg_feh @ stack + 0xfe
+            ; CALL XREF from sym.main @ 0x9a
+/ sym.varfunc(int16_t arg_4h, int16_t arg_f8h, int16_t arg_feh);
+|           ; arg int16_t arg_4h @ stack + 0x4
+|           ; arg int16_t arg_f8h @ stack + 0xf8
+|           ; arg int16_t arg_feh @ stack + 0xfe
+|           0x00000018      link  fp, #0xf8:8
+|           0x0000001a      mov:f.w @(4:8, r6), r0
+|           0x0000001c      cmp.w #0x1:16, r0
+|       ,=< 0x0000001f      beq   +27
+|       |   0x00000021      cmp.w #0x2:16, r0
+|      ,==< 0x00000024      beq   +44
+|      ||   0x00000026      mov:g.w #0x2a, @(-2:8, r6)
+|      ||   0x0000002b      mov:g.w #0x2a, @(-4:8, r6)
+|      ||   0x00000030      mov:g.w #0x2a, @(-6:8, r6)
+|      ||   0x00000035      mov:g.w #0x2a, @(-8:8, r6)
+|     ,===< 0x0000003a      bra   +42
+|     |||   ;-- .L1:
+|     ||`-> 0x0000003c      mov:g.w #0x1, @(-2:8, r6)
+|     ||    0x00000041      mov:g.w #0x2, @(-4:8, r6)
+|     ||    0x00000046      mov:g.w #0x3, @(-6:8, r6)
+|     ||    0x0000004b      mov:g.w #0x4, @(-8:8, r6)
+|     ||,=< 0x00000050      bra   +20
+|     |||   ;-- .L2:
+|     |`--> 0x00000052      mov:g.w #0x9, @(-2:8, r6)
+|     | |   0x00000057      mov:g.w #0x8, @(-4:8, r6)
+|     | |   0x0000005c      mov:g.w #0x7, @(-6:8, r6)
+|     | |   0x00000061      mov:g.w #0x6, @(-8:8, r6)
+|     | |   ;-- .L3:
+|     `-`-> 0x00000066      mov:g.w r6, r1
+|           0x00000068      add:q.b #0xfff8:16, r1
+|           0x0000006c      mov:g.w r1, @-r7
+|           0x0000006e      mov:g.w r6, r1
+|           0x00000070      add:q.b #0xfffa:16, r1
+|           0x00000074      mov:g.w r1, @-r7
+|           0x00000076      mov:g.w r6, r1
+|           0x00000078      add:q.b #0xfffc:16, r1
+|           0x0000007c      mov:g.w r1, @-r7
+|           0x0000007e      mov:g.w r6, r1
+|           0x00000080      add:q.w #-2, r1
+|           0x00000082      mov:g.w r1, @-r7
+|           0x00000084      jsr   @0x4:16                              ; sym.leaffunc
+|           0x00000087      add:q.b #0x8:16, r7
+|           0x0000008b      mov:f.w @(248:8, r6), r0
+|           0x0000008d      mov:f.w r0, @(252:8, r6)
+|           0x0000008f      mov:f.w @(254:8, r6), r0
+|           0x00000091      unlk  fp
+\           0x00000092      rts
+arg int16_t arg_4h @ stack + 0x4
+arg int16_t arg_f8h @ stack + 0xf8
+arg int16_t arg_feh @ stack + 0xfe
+* arg_4h
+R 0x1a  mov:f.w @(4:8, r6), r0
+* arg_f8h
+R 0x8b  mov:f.w @(248:8, r6), r0
+* arg_feh
+R 0x8f  mov:f.w @(254:8, r6), r0
+offset: 0x00000004
+name: sym.leaffunc
+size: 20
+is-pure: true
+realsz: 20
+stackframe: 2
+cyclomatic-cost: 0
+cyclomatic-complexity: 1
+loops: 0
+bits: 16
+type: fcn
+num-bbs: 1
+edges: 0
+end-bbs: 1
+call-refs:
+data-refs:
+code-xrefs: 0x00000084 C
+noreturn: false
+in-degree: 1
+out-degree: 0
+data-xrefs:
+locals: 0
+args: 4
+arg int16_t arg_4h @ stack + 0x4
+arg int16_t arg_6h @ stack + 0x6
+arg int16_t arg_8h @ stack + 0x8
+arg int16_t arg_ah @ stack + 0xa
+* arg_4h
+R 0x6  mov:f.w @(4:8, r6), r0
+* arg_6h
+R 0x8  mov:f.w @(6:8, r6), r1
+* arg_8h
+R 0xa  mov:f.w @(8:8, r6), r2
+* arg_ah
+R 0xc  mov:f.w @(10:8, r6), r3
+EOF
+RUN

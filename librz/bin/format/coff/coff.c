@@ -63,6 +63,8 @@ static bool coff_is_magic(ut16 arch) {
 		/* fall-thru */
 	case COFF_FILE_MACHINE_H8300:
 		/* fall-thru */
+	case COFF_FILE_MACHINE_H8500:
+		/* fall-thru */
 	case COFF_FILE_MACHINE_M68K:
 		/* fall-thru */
 	case COFF_FILE_MACHINE_68KAUX:

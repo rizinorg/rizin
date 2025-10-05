@@ -32,7 +32,8 @@
 #define COFF_FILE_MACHINE_SH4       0x01a6
 #define COFF_FILE_MACHINE_SH5       0x01a8
 #define COFF_FILE_MACHINE_WCEMIPSV2 0x0169
-#define COFF_FILE_MACHINE_H8300     0x0083
+#define COFF_FILE_MACHINE_H8300     0x0083 // Renesas H8/300 (formerly Hitachi H8/300)
+#define COFF_FILE_MACHINE_H8500     0x8500 // Renesas H8/500 (formerly Hitachi H8/500)
 #define COFF_FILE_MACHINE_M68K      0x0268
 #define COFF_FILE_MACHINE_68KAUX    0x0150 // Motorola 68k Apple A/UX
 #define COFF_FILE_MACHINE_PIC30     0x1236 // PIC-30 (dsPIC30F)

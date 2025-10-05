@@ -1,0 +1,139 @@
+d "add:q.b @(-1:16, r0), r7" f0ffff27
+d "add:q.b #1, r0" a008
+d "add:q.w #1, r1" a908
+d "add:q.b #2, @r1" d109
+d "add:q.b #-1, @r1" d10c
+d "add:q.b #-2, @r1" d10d
+d "add:q.b #1, @(4369:16, r0)" f0111108
+d "add:q.b #1, @-r0" b008
+d "add:q.b #1, @r0+" c008
+d "add:q.b #1, @0x11:8" 051108
+d "add:q.b #1, @0x1111:16" 15111108
+d "add:q.b #1, @(-1:16, r0)" f0ffff08
+d "adds.b @(-1:16, r0), r1" f0ffff29
+d "addx.b @(4369:16, r0), r1" f01111a1
+d "addx.b #0x1111:16, r1" 0c1111a1
+d "and.b @(4369:16, r0), r1" f0111151
+d "andc.b #0x11:8, ccr" 041159
+d "andc.b #0x1111:16, ccr" 0c111159
+d "bra +17" 2011
+d "brn +17" 2111
+d "bhi +17" 2211
+d "bls +17" 2311
+d "bcc +17" 2411
+d "bcs +17" 2511
+d "bne +17" 2611
+d "beq +17" 2711
+d "bvc +17" 2811
+d "bvs +17" 2911
+d "bpl +17" 2a11
+d "bmi +17" 2b11
+d "bge +17" 2c11
+d "blt +17" 2d11
+d "bgt +17" 2e11
+d "ble +17" 2f11
+d "bra +17" 2011
+d "brn +4369" 311111
+d "bhi +4369" 321111
+d "bls +4369" 331111
+d "bcc +4369" 341111
+d "bcs +4369" 351111
+d "bne +4369" 361111
+d "beq +4369" 371111
+d "bvc +4369" 381111
+d "bvs +4369" 391111
+d "bpl +4369" 3a1111
+d "bmi +4369" 3b1111
+d "bge +4369" 3c1111
+d "blt +4369" 3d1111
+d "bgt +4369" 3e1111
+d "ble +4369" 3f1111
+d "bclr.b #0xf, @(4369:16, r0)" f01111df
+d "bclr.b r7, @(4369:16, r0)" f011115f
+d "bnot.b r1, @(4369:16, r0)" f0111169
+d "bset.b r1, @(4369:16, r0)" f0111149
+d "bsr +17" 0e11
+d "bsr +4369" 1e1111
+d "btst.b #0x7, @(4369:16, r0)" f01111f7
+d "btst.b r1, @(4369:16, r0)" f0111179
+d "clr.b @(4369:16, r0)" f0111113
+d "cmp:g.b #0x11, @(4369:16, r0)" f011110411
+d "cmp:g.b #0x1111, @(4369:16, r0)" f01111051111
+d "cmp:g.b @(4369:16, r0), r7" f0111177
+d "cmp.b #0x11:8, r7" 4711
+d "cmp.w #0x1111:16, r7" 4f1111
+d "dadd r7, r3" a700a3
+d "divxu.w @(4369:16, r7), r1" ff1111b9
+d "exts r7" a711
+d "extu r7" a712
+d "jmp @r7" 11d7
+d "jmp @(17:8, r7)" 11e711
+d "jmp @(4369:16, r7)" 11f71111
+d "jmp @0x1234:16" 101234
+d "jsr @r7" 11df
+d "jsr @(17:8, r7)" 11ef11
+d "jsr @(4369:16, r7)" 11ff1111
+d "jsr @0x1234:16" 181234
+d "ldc.b @(4369:16, r7), tp" ff11118f
+d "ldm @SP+, (r0-r2,r4,r6-r7)" 02d7
+d "link fp, #0x11:8" 1711
+d "link fp, #0x1111:16" 1f1111
+d "mov:g.w @(4369:16, r7), r7" ff111187
+d "mov:g.w r7, @(4369:16, r7)" ff111197
+d "mov:g.w #0x11, @(4369:16, r7)" ff11110611
+d "mov:g.w #0x1111, @(4369:16, r7)" ff1111071111
+d "mov:e #0x11:8, r7" 5711
+d "mov:f.b @(17:8, r6), r7" 8711
+d "mov:f.b r7, @(17:8, r6)" 9711
+d "mov:i #0x1111:16, r7" 5f1111
+d "mov:l.w @0x11:8, r7" 6f11
+d "mov:s.w r7, @0x11:8" 7f11
+d "movfpe @(4369:16, r7), r7" ff11110087
+d "movtpe r7, @(4369:16, r7)" ff11110097
+d "mulxu.w @(4369:16, r7), r7" ff1111af
+d "neg.w @(4369:16, r7)" ff111114
+d "nop" 00
+d "not.w @(4369:16, r7)" ff111115
+d "or.w @(4369:16, r7), r7" ff111147
+d "orc.b #0x11:8, tp" 04114f
+d "orc.b #0x1111:16, tp" 0c11114f
+d "pjmp @0x111111:24" 13111111
+d "pjmp @r7" 11c7
+d "pjsr @0x111111:24" 03111111
+d "pjsr @r7" 11cf
+d "prtd #0x11:8" 111411
+d "prtd #0x1111:16" 111c1111
+d "prts" 1119
+d "rotl.w @(4369:16, r7)" ff11111c
+d "rotr.w @(4369:16, r7)" ff11111d
+d "rotxl.w @(4369:16, r7)" ff11111e
+d "rotxr.w @(4369:16, r7)" ff11111f
+d "rtd #0x11:8" 1411
+d "rtd #0x1111:16" 1c1111
+d "rte" 0a
+d "rts" 19
+d "scb/f r7, +17" 01bf11
+d "scb/ne r7, +17" 06bf11
+d "scb/eq r7, +17" 07bf11
+d "shal.w @(4369:16, r7)" ff111118
+d "shar.w @(4369:16, r7)" ff111119
+d "shll.w @(4369:16, r7)" ff11111a
+d "shlr.w @(4369:16, r7)" ff11111b
+d "sleep" 1a
+d "stc.b tp, @(4369:16, r7)" ff11119f
+d "stm.b (r0-r2,r4,r6-r7), @-SP" 12d7
+d "sub.w @(4369:16, r7), r7" ff111137
+d "subs.w @(4369:16, r7), r7" ff11113f
+d "subx.w @(4369:16, r7), r7" ff1111b7
+d "swap r7" a710
+d "tas @(4369:16, r7)" ff111117
+d "trapa #0xf" 081f
+d "trap/vs" 09
+d "tst @(4369:16, r7)" ff111116
+d "unlk fp" 0f
+d "xch r7, r7" af97
+d "xor @(4369:16, r7), r7" ff111167
+d "xorc.b #0x11:8, tp" 04116f
+d "xorc.b #0x1111:16, tp" 0c11116f
+d "mov:i #0x2000:16, r7" 5f2000
+d "dsub r1, r0" a100b0
