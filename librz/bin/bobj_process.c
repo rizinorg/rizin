@@ -173,7 +173,6 @@ RZ_IPI bool rz_bin_object_process_plugin_data(RZ_NONNULL RzBinFile *bf, RZ_NONNU
 	rz_bin_set_imports_from_plugin(bf, o);
 	rz_bin_set_symbols_from_plugin(bf, o);
 	rz_bin_set_and_process_sections(bf, o);
-	rz_bin_set_and_process_strings(bf, o);
 	rz_bin_set_and_process_fields(bf, o);
 	rz_bin_set_and_process_classes(bf, o);
 
@@ -200,6 +199,9 @@ RZ_IPI bool rz_bin_object_process_plugin_data(RZ_NONNULL RzBinFile *bf, RZ_NONNU
 	if (RZ_BIN_LANGUAGE_MASK(o->lang) == RZ_BIN_LANGUAGE_UNKNOWN) {
 		o->lang = rz_bin_language_detect(bf);
 	}
+	// Process strings after the language was set.
+	// Because some languages imply a specific encoding.
+	rz_bin_set_and_process_strings(bf, o);
 
 	// now we can process the data.
 	RzDemanglerFlag flags = rz_demangler_get_flags(bf->rbin->demangler);
