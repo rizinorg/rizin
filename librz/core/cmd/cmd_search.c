@@ -97,19 +97,32 @@ RZ_IPI RzCmdStatus rz_cmd_detail_gadget_handler(RzCore *core, int argc, const ch
 // "/Rgl"
 RZ_IPI RzCmdStatus rz_cmd_detail_gadget_long_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
     const char *input = argc > 1 ? argv[1] : "";
+    RzCmdStatus status;
     
-    // Create context with combined flags for long output
-    RzRopSearchContext *context = rz_core_rop_search_context_new(core, input, false, 
-        RZ_ROP_GADGET_PRINT | RZ_ROP_GADGET_PRINT_DETAIL | RZ_ROP_GADGET_ANALYZE, state);
-    
-    if (!context) {
+    // First: Show basic gadget info (like /R command)
+    RzRopSearchContext *context1 = rz_core_rop_search_context_new(core, input, false, RZ_ROP_GADGET_PRINT, state);
+    if (!context1) {
         return RZ_CMD_STATUS_ERROR;
     }
+    status = rz_core_rop_search(core, context1);
+    rz_core_rop_search_context_free(context1);
     
-    RzCmdStatus status = rz_core_rop_search(core, context);
-    rz_core_rop_search_context_free(context);
+    if (status != RZ_CMD_STATUS_OK) {
+        return status;
+    }
+    
+    // Second: Show detailed analysis for specific gadgets (like /Rg command)
+    RzRopSearchContext *context2 = rz_core_rop_search_context_new(core, input, false, 
+        RZ_ROP_GADGET_PRINT_DETAIL | RZ_ROP_GADGET_ANALYZE, state);
+    if (!context2) {
+        return RZ_CMD_STATUS_ERROR;
+    }
+    status = rz_core_rop_search(core, context2);
+    rz_core_rop_search_context_free(context2);
+    
     return status;
 }
+
 
 
 static void cmd_search_bin(RzCore *core, RzInterval itv) {

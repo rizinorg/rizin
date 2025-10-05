@@ -603,16 +603,7 @@ EOF
 EXPECT_ERR=
 RUN
 
-NAME=/Rgl command help
-FILE=-
-CMDS=<<EOF
-/R?~Rgl
-EOF
-EXPECT=<<EOF
-│ /Rgl[j] [<Gadget address>]                  # Gadget detail info in long format (combines /R and /Rg output)
-EOF
-
-NAME=/Rgl basic test
+NAME=/Rgl combined output test
 FILE=-
 CMDS=<<EOF
 e asm.arch=x86
@@ -627,7 +618,23 @@ EXPECT=<<EOF
   0x00000001                 58  pop rax
   0x00000002                 c3  ret
 Gadget size: 3
+
+Gadget 0x00000000
+Stack change: 0x0
+Changed registers: 
+Register dependencies:
+
+Gadget 0x00000001
+Stack change: 0x8
+Changed registers: rax
+Register dependencies:
+
+Gadget 0x00000002
+Stack change: 0x0
+Changed registers: 
+Register dependencies:
 EOF
+
 
 
 
