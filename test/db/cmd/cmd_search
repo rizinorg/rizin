@@ -102,7 +102,7 @@ CMDS=<<EOF
 /zj hello
 EOF
 EXPECT=<<EOF
-[{"address":8019,"size":5,"flag":"hit.string.ascii.0"}]
+[{"address":8019,"size":5,"flag":"hit.string.ascii.0","detail":5}]
 EOF
 RUN
 
@@ -118,7 +118,7 @@ e search.str.min_length=3
 /z ELF
 EOF
 EXPECT=<<EOF
-0x00000001 3 hit.string.ascii.0
+0x00000001 3 hit.string.ascii.0 3
 EOF
 RUN
 
@@ -135,7 +135,7 @@ e search.str.min_length=3
 /z ELF
 EOF
 EXPECT=<<EOF
-0x00000001 3 hit.string.ascii.0
+0x00000001 3 hit.string.ascii.0 3
 EOF
 RUN
 
@@ -147,7 +147,7 @@ e search.str.min_length=3
 /zj foo
 EOF
 EXPECT=<<EOF
-[{"address":0,"size":3,"flag":"hit.string.ascii.0"}]
+[{"address":0,"size":3,"flag":"hit.string.ascii.0","detail":3}]
 EOF
 RUN
 
@@ -882,10 +882,10 @@ ww Hello World this is Rizin
 /zj world i utf16le
 EOF
 EXPECT=<<EOF
-0x0000000c 10 hit.string.utf16le.0
-0x0000000c 10 hit.string.utf16le.0
-[{"address":12,"size":10,"flag":"hit.string.utf16le.0"}]
-[{"address":12,"size":10,"flag":"hit.string.utf16le.0"}]
+0x0000000c 10 hit.string.utf16le.0 5
+0x0000000c 10 hit.string.utf16le.0 5
+[{"address":12,"size":10,"flag":"hit.string.utf16le.0","detail":5}]
+[{"address":12,"size":10,"flag":"hit.string.utf16le.0","detail":5}]
 EOF
 RUN
 
@@ -948,8 +948,8 @@ EXPECT=<<EOF
 [0x0, 0x207ff): 1
 [0x20000, 0x4000a): 2
 [0x40000, 0x4000a): 1
-0x00020000 5 hit.string.ascii.0
-0x00040000 5 hit.string.ascii.1
+0x00020000 5 hit.string.ascii.0 5
+0x00040000 5 hit.string.ascii.1 5
 ----
 [0x0, 0x1004): 0
 [0x1000, 0x2004): 0

@@ -12,8 +12,8 @@ ps ascii @ hit.string.ascii.1
 EOF
 EXPECT=<<EOF
 
-0x00000000 4 hit.string.ascii.0
-0x000001bc 4 hit.string.ascii.1
+0x00000000 4 hit.string.ascii.0 4
+0x000001bc 4 hit.string.ascii.1 4
 test
 Test
 EOF
@@ -46,8 +46,8 @@ ps ascii @ hit.string.ascii.1
 EOF
 EXPECT=<<EOF
 
-0x00000001 10 hit.string.ascii.0
-0x000001bd 10 hit.string.ascii.1
+0x00000001 10 hit.string.ascii.0 17
+0x000001bd 10 hit.string.ascii.1 17
 test123 ab"
 Test123 ab"
 EOF
@@ -78,21 +78,21 @@ ps ascii @ hit.string.ascii.0
 EOF
 EXPECT=<<EOF
 -- 1 --
-0x00000001 3 hit.string.ascii.0
-0x00000010 5 hit.string.ascii.1
+0x00000001 3 hit.string.ascii.0 4
+0x00000010 5 hit.string.ascii.1 4
 bcd
 bcccde
 -- 2 --
 -- 3 --
-0x00000001 3 hit.string.ascii.0
-0x00000010 5 hit.string.ascii.1
+0x00000001 3 hit.string.ascii.0 4
+0x00000010 5 hit.string.ascii.1 4
 bcd
 bcccde
 -- 4 --
-0x00000001 3 hit.string.ascii.0
+0x00000001 3 hit.string.ascii.0 5
 bcd
 -- 5 --
-0x00000010 5 hit.string.ascii.0
+0x00000010 5 hit.string.ascii.0 5
 bcccde
 EOF
 EXPECT_ERR=<<EOF
@@ -130,12 +130,12 @@ echo ----
 ps ascii unprintable @ hit.string.ascii.0
 EOF
 EXPECT=<<EOF
-0x000000fe 5 hit.string.ascii.0
-0x000001fe 2 hit.string.ascii.1
+0x000000fe 5 hit.string.ascii.0 4
+0x000001fe 2 hit.string.ascii.1 4
 bcccde
 bd
 ----
-0x000001fe 2 hit.string.ascii.0
+0x000001fe 2 hit.string.ascii.0 5
 bd
 EOF
 EXPECT_ERR=<<EOF
@@ -174,14 +174,14 @@ EXPECT=<<EOF
 [0x61bdf0, 0x61c5f4): 0
 [0x61c5f4, 0x61d360): 0
 [0x61d368, 0x61d720): 0
-0x00400239 3 hit.string.ascii.0
-0x00400f19 3 hit.string.ascii.1
-0x00400fae 3 hit.string.ascii.2
-0x00400feb 3 hit.string.ascii.3
-0x004013c3 3 hit.string.ascii.4
-0x0041769a 3 hit.string.ascii.5
-0x004186e0 3 hit.string.ascii.6
-0x00418e58 3 hit.string.ascii.7
+0x00400239 3 hit.string.ascii.0 3
+0x00400f19 3 hit.string.ascii.1 3
+0x00400fae 3 hit.string.ascii.2 3
+0x00400feb 3 hit.string.ascii.3 3
+0x004013c3 3 hit.string.ascii.4 3
+0x0041769a 3 hit.string.ascii.5 3
+0x004186e0 3 hit.string.ascii.6 3
+0x00418e58 3 hit.string.ascii.7 3
 ----
 [0x400000, 0x401002): 4
 [0x401000, 0x402002): 1

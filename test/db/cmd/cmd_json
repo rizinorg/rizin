@@ -38,7 +38,8 @@ EXPECT=<<EOF
   {
     "address": 4203952,
     "size": 23,
-    "flag": "hit.string.ascii.0"
+    "flag": "hit.string.ascii.0",
+    "detail": 23
   }
 ]
 EOF

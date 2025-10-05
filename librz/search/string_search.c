@@ -108,7 +108,8 @@ static bool native_string_find(RzSearchFindOpt *fopt, RzDetectedString *find, ut
 		}
 		char hit_type[64] = { 0 };
 		rz_strf(hit_type, "string.%s", rz_str_enc_as_string(find->encoding));
-		RzSearchHit *hit = rz_search_hit_new(hit_type, str_mem_offset + offset, str_mem_len, NULL);
+		RzSearchHitDetail *char_len = rz_search_hit_detail_unsigned_new(group0->len);
+		RzSearchHit *hit = rz_search_hit_new(hit_type, str_mem_offset + offset, str_mem_len, char_len);
 		if (!hit || !rz_th_queue_push(hits, hit, true)) {
 			rz_search_hit_free(hit);
 			rz_pvector_free(matches);
@@ -305,7 +306,8 @@ static bool string_find(RzSearchFindOpt *fopt, void *user, ut64 offset, const Rz
 				}
 				char hit_type[64] = { 0 };
 				rz_strf(hit_type, "string.%s", rz_str_enc_as_string(detected->encoding));
-				RzSearchHit *hit = rz_search_hit_new(hit_type, str_mem_offset + offset, str_mem_len, NULL);
+				RzSearchHitDetail *char_len = rz_search_hit_detail_unsigned_new(find->length);
+				RzSearchHit *hit = rz_search_hit_new(hit_type, str_mem_offset + offset, str_mem_len, char_len);
 				if (!hit || !rz_th_queue_push(hits, hit, true)) {
 					rz_search_hit_free(hit);
 					rz_list_free(found);

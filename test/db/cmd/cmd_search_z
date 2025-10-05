@@ -65,15 +65,15 @@ ps ascii unprintable @ hit.string.ascii.7
 ps ascii unprintable @ hit.string.ascii.8
 EOF
 EXPECT=<<EOF
-0x00000018 2 hit.string.ascii.0
-0x00000042 2 hit.string.ascii.1
-0x0000008f 2 hit.string.ascii.2
-0x000000be 2 hit.string.ascii.3
-0x0000010a 2 hit.string.ascii.4
-0x0000012b 2 hit.string.ascii.5
-0x0000013a 2 hit.string.ascii.6
-0x00000152 2 hit.string.ascii.7
-0x00000175 2 hit.string.ascii.8
+0x00000018 2 hit.string.ascii.0 2
+0x00000042 2 hit.string.ascii.1 2
+0x0000008f 2 hit.string.ascii.2 2
+0x000000be 2 hit.string.ascii.3 2
+0x0000010a 2 hit.string.ascii.4 2
+0x0000012b 2 hit.string.ascii.5 2
+0x0000013a 2 hit.string.ascii.6 2
+0x00000152 2 hit.string.ascii.7 2
+0x00000175 2 hit.string.ascii.8 2
 et, at eligendi adipisci ius, ex natum appetere officiis has, nibh quas torquatos pro te. Quo at deleniti repudiandae, et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
 etere officiis has, nibh quas torquatos pro te. Quo at deleniti repudiandae, et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
 et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
@@ -106,15 +106,15 @@ ps ebcdicuk unprintable @ hit.string.ebcdicuk.7
 ps ebcdicuk unprintable @ hit.string.ebcdicuk.8
 EOF
 EXPECT=<<EOF
-0x00000018 2 hit.string.ebcdicuk.0
-0x00000042 2 hit.string.ebcdicuk.1
-0x0000008f 2 hit.string.ebcdicuk.2
-0x000000be 2 hit.string.ebcdicuk.3
-0x0000010a 2 hit.string.ebcdicuk.4
-0x0000012b 2 hit.string.ebcdicuk.5
-0x0000013a 2 hit.string.ebcdicuk.6
-0x00000152 2 hit.string.ebcdicuk.7
-0x00000175 2 hit.string.ebcdicuk.8
+0x00000018 2 hit.string.ebcdicuk.0 2
+0x00000042 2 hit.string.ebcdicuk.1 2
+0x0000008f 2 hit.string.ebcdicuk.2 2
+0x000000be 2 hit.string.ebcdicuk.3 2
+0x0000010a 2 hit.string.ebcdicuk.4 2
+0x0000012b 2 hit.string.ebcdicuk.5 2
+0x0000013a 2 hit.string.ebcdicuk.6 2
+0x00000152 2 hit.string.ebcdicuk.7 2
+0x00000175 2 hit.string.ebcdicuk.8 2
 et, at eligendi adipisci ius, ex natum appetere officiis has, nibh quas torquatos pro te. Quo at deleniti repudiandae, et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
 etere officiis has, nibh quas torquatos pro te. Quo at deleniti repudiandae, et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
 et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
@@ -147,15 +147,15 @@ ps ebcdicus unprintable @ hit.string.ebcdicus.7
 ps ebcdicus unprintable @ hit.string.ebcdicus.8
 EOF
 EXPECT=<<EOF
-0x00000018 2 hit.string.ebcdicus.0
-0x00000042 2 hit.string.ebcdicus.1
-0x0000008f 2 hit.string.ebcdicus.2
-0x000000be 2 hit.string.ebcdicus.3
-0x0000010a 2 hit.string.ebcdicus.4
-0x0000012b 2 hit.string.ebcdicus.5
-0x0000013a 2 hit.string.ebcdicus.6
-0x00000152 2 hit.string.ebcdicus.7
-0x00000175 2 hit.string.ebcdicus.8
+0x00000018 2 hit.string.ebcdicus.0 2
+0x00000042 2 hit.string.ebcdicus.1 2
+0x0000008f 2 hit.string.ebcdicus.2 2
+0x000000be 2 hit.string.ebcdicus.3 2
+0x0000010a 2 hit.string.ebcdicus.4 2
+0x0000012b 2 hit.string.ebcdicus.5 2
+0x0000013a 2 hit.string.ebcdicus.6 2
+0x00000152 2 hit.string.ebcdicus.7 2
+0x00000175 2 hit.string.ebcdicus.8 2
 et, at eligendi adipisci ius, ex natum appetere officiis has, nibh quas torquatos pro te. Quo at deleniti repudiandae, et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
 etere officiis has, nibh quas torquatos pro te. Quo at deleniti repudiandae, et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
 et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
@@ -188,15 +188,15 @@ ps ebcdices unprintable @ hit.string.ebcdices.7
 ps ebcdices unprintable @ hit.string.ebcdices.8
 EOF
 EXPECT=<<EOF
-0x00000018 2 hit.string.ebcdices.0
-0x00000042 2 hit.string.ebcdices.1
-0x0000008f 2 hit.string.ebcdices.2
-0x000000be 2 hit.string.ebcdices.3
-0x0000010a 2 hit.string.ebcdices.4
-0x0000012b 2 hit.string.ebcdices.5
-0x0000013a 2 hit.string.ebcdices.6
-0x00000152 2 hit.string.ebcdices.7
-0x00000175 2 hit.string.ebcdices.8
+0x00000018 2 hit.string.ebcdices.0 2
+0x00000042 2 hit.string.ebcdices.1 2
+0x0000008f 2 hit.string.ebcdices.2 2
+0x000000be 2 hit.string.ebcdices.3 2
+0x0000010a 2 hit.string.ebcdices.4 2
+0x0000012b 2 hit.string.ebcdices.5 2
+0x0000013a 2 hit.string.ebcdices.6 2
+0x00000152 2 hit.string.ebcdices.7 2
+0x00000175 2 hit.string.ebcdices.8 2
 et, at eligendi adipisci ius, ex natum appetere officiis has, nibh quas torquatos pro te. Quo at deleniti repudiandae, et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
 etere officiis has, nibh quas torquatos pro te. Quo at deleniti repudiandae, et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
 et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
@@ -220,7 +220,7 @@ b 0x1000
 ps ascii unprintable @ hit.string.ascii.0
 EOF
 EXPECT=<<EOF
-0x00000000 376 hit.string.ascii.0
+0x00000000 376 hit.string.ascii.0 178
 Lorem ipsum dolor sit amet, at eligendi adipisci ius, ex natum appetere officiis has, nibh quas torquatos pro te. Quo at deleniti repudiandae, et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
 EOF
 EXPECT_ERR=
@@ -234,7 +234,7 @@ CMDS=<<EOF
 # ps ascii unprintable @ hit.string.ibm037.0
 EOF
 EXPECT=<<EOF
-0x0000001f 24 hit.string.ibm037.0
+0x0000001f 24 hit.string.ibm037.0 24
 EOF
 EXPECT_ERR=
 RUN
@@ -247,7 +247,7 @@ CMDS=<<EOF
 ps ibm290 unprintable @ hit.string.ibm290.0
 EOF
 EXPECT=<<EOF
-0x00000018 16 hit.string.ibm290.0
+0x00000018 16 hit.string.ibm290.0 38
 !¥*);¬アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフ¯ヘホマミムメモヤユヨラリルレロワン゛゜゜
 EOF
 EXPECT_ERR=
@@ -261,7 +261,7 @@ e str.encoding=ibm290
 ps ibm290 unprintable @ hit.string.ibm290.0
 EOF
 EXPECT=<<EOF
-0x00000018 16 hit.string.ibm290.0
+0x00000018 16 hit.string.ibm290.0 38
 !¥*);¬アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフ¯ヘホマミムメモヤユヨラリルレロワン゛゜゜
 EOF
 EXPECT_ERR=
@@ -277,7 +277,7 @@ b 0x1000
 ps ascii unprintable @ hit.string.ascii.0
 EOF
 EXPECT=<<EOF
-0x000000fa 31 hit.string.ascii.0
+0x000000fa 31 hit.string.ascii.0 31
 placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
 EOF
 EXPECT_ERR=
@@ -304,7 +304,7 @@ b 0x1000
 ps utf8 unprintable @ hit.string.utf8.0
 EOF
 EXPECT=<<EOF
-0x00000116 43 hit.string.utf8.0
+0x00000116 43 hit.string.utf8.0 43
 ا الأوضاع, لم بوابة المبرمة عرض. إبّان اسبوعين البشريةً تعد في. كنقطة إيطاليا قام بل, أضف أن وبغطاء الباهضة.
 EOF
 EXPECT_ERR=
@@ -320,7 +320,7 @@ b 0x1000
 ps utf8 unprintable @ hit.string.utf8.0
 EOF
 EXPECT=<<EOF
-0x000001dc 61 hit.string.utf8.0
+0x000001dc 61 hit.string.utf8.0 61
 դեֆինիթիոնես ին վիս, ծասե պեռթինածիա նե վիս. ին մելիուս ֆածիլիս եոս, եսթ եռոս պոպուլո թիմեամ թե. իուս նո ծոնսուլաթու.
 EOF
 EXPECT_ERR=
@@ -336,7 +336,7 @@ b 0x1000
 ps utf8 unprintable @ hit.string.utf8.0
 EOF
 EXPECT=<<EOF
-0x000000de 48 hit.string.utf8.0
+0x000000de 48 hit.string.utf8.0 48
 京確年禁読応米新報書了号活修佐。央良持著宣込警石寂益好独田接読仕。漂戦辺量食害恐人給景族缶掲価済教放。響城引真際通御芭情査男倍淺早住。金握崎利契事用鹿仮交体受寄終山率大。
 EOF
 EXPECT_ERR=
@@ -352,7 +352,7 @@ b 0x1000
 ps utf8 unprintable @ hit.string.utf8.0
 EOF
 EXPECT=<<EOF
-0x00000282 132 hit.string.utf8.0
+0x00000282 132 hit.string.utf8.0 84
 რე, იუს ეა უთინამ დელიცათისსიმი. მელ ფერსეყუერის ლიბერავისსე თე, გრაეცო ფრინციფეს ასსენთიორ სით ეუ. ჰის მალორუმ ანთიოფამ თჰეოფჰრასთუს ნე, ეუ ეუმ ყუას ეთიამ.
 EOF
 EXPECT_ERR=
@@ -368,7 +368,7 @@ b 0x1000
 ps utf8 unprintable @ hit.string.utf8.0
 EOF
 EXPECT=<<EOF
-0x0000010b 88 hit.string.utf8.0
+0x0000010b 88 hit.string.utf8.0 88
 παρτεμ ποσιδονιθμ ατ. Ετ πρι περιcθλισ σπλενδιδε μνεσαρcηθμ, vελ ατ cονσεqθατ εξπετενδισ. Τε ηασ qθεμ πετεντιθμ.
 EOF
 EXPECT_ERR=
@@ -384,7 +384,7 @@ b 0x1000
 ps utf8 unprintable @ hit.string.utf8.0
 EOF
 EXPECT=<<EOF
-0x00000141 34 hit.string.utf8.0
+0x00000141 34 hit.string.utf8.0 34
 ים משחקים ממונרכיה אנא גם.
 EOF
 EXPECT_ERR=
@@ -400,7 +400,7 @@ b 0x1000
 ps utf8 unprintable @ hit.string.utf8.0
 EOF
 EXPECT=<<EOF
-0x00000086 97 hit.string.utf8.0
+0x00000086 97 hit.string.utf8.0 97
 पहोचने वैश्विक एसलिये पुस्तक हुआआदी विश्व उनका खरिदने समस्याओ मार्गदर्शन रखते तरीके यायेका विश्लेषण पुष्टिकर्ता चुनने सकता बढाता वेबजाल गोपनीयता लिए। संपादक करेसाथ रचना नवंबर
 EOF
 EXPECT_ERR=
@@ -416,7 +416,7 @@ b 0x1000
 ps utf8 unprintable @ hit.string.utf8.0
 EOF
 EXPECT=<<EOF
-0x00000086 97 hit.string.utf8.0
+0x00000086 97 hit.string.utf8.0 97
 पहोचने वैश्विक एसलिये पुस्तक हुआआदी विश्व उनका खरिदने समस्याओ मार्गदर्शन रखते तरीके यायेका विश्लेषण पुष्टिकर्ता चुनने सकता बढाता वेबजाल गोपनीयता लिए। संपादक करेसाथ रचना नवंबर
 EOF
 EXPECT_ERR=
@@ -432,7 +432,7 @@ b 0x1000
 ps utf8 unprintable @ hit.string.utf8.0
 EOF
 EXPECT=<<EOF
-0x000000dc 27 hit.string.utf8.0
+0x000000dc 27 hit.string.utf8.0 27
 생의 과실이 있으며. 찬미를 사람은 그들에게 너의 청춘이 인류의 그들의 칼이다.
 EOF
 EXPECT_ERR=
@@ -448,7 +448,7 @@ b 0x1000
 ps utf8 unprintable @ hit.string.utf8.0
 EOF
 EXPECT=<<EOF
-0x00000042 35 hit.string.utf8.0
+0x00000042 35 hit.string.utf8.0 35
  ·--· ·---- ··· - ···· --·· --··· -· ··· -·· -·-- ···· ·--- ·-·-·- · ··- - ··- ···- ··--- ·-·-·- -·- -··- ----- -·
 EOF
 EXPECT_ERR=
@@ -464,7 +464,7 @@ b 0x1000
 ps utf8 unprintable @ hit.string.utf8.0
 EOF
 EXPECT=<<EOF
-0x00000055 49 hit.string.utf8.0
+0x00000055 49 hit.string.utf8.0 49
 тани ад. Цум хендрерит персецути ех, миним еяуидем цонсецтетуер яуи ид. Либер малуиссет нам еа, еа граеце дефиниебас.
 EOF
 EXPECT_ERR=
@@ -480,7 +480,7 @@ b 0x1000
 ps utf16be unprintable @ hit.string.utf16be.0
 EOF
 EXPECT=<<EOF
-0x00000138 48 hit.string.utf16be.0
+0x00000138 48 hit.string.utf16be.0 24
 ا الأوضاع, لم بوابة المبرمة عرض. إبّان اسبوعين البشريةً تعد في. كنقطة إيطاليا قام بل, أضف أن وبغطاء الباهضة.
 EOF
 EXPECT_ERR=
@@ -496,7 +496,7 @@ b 0x1000
 ps utf16be unprintable @ hit.string.utf16be.0
 EOF
 EXPECT=<<EOF
-0x00000094 32 hit.string.utf16be.0
+0x00000094 32 hit.string.utf16be.0 16
 京確年禁読応米新報書了号活修佐。央良持著宣込警石寂益好独田接読仕。漂戦辺量食害恐人給景族缶掲価済教放。響城引真際通御芭情査男倍淺早住。金握崎利契事用鹿仮交体受寄終山率大。
 EOF
 EXPECT_ERR=
@@ -512,7 +512,7 @@ b 0x1000
 ps utf16be unprintable @ hit.string.utf16be.0
 EOF
 EXPECT=<<EOF
-0x000001ec 100 hit.string.utf16be.0
+0x000001ec 100 hit.string.utf16be.0 50
 რე, იუს ეა უთინამ დელიცათისსიმი. მელ ფერსეყუერის ლიბერავისსე თე, გრაეცო ფრინციფეს ასსენთიორ სით ეუ. ჰის მალორუმ ანთიოფამ თჰეოფჰრასთუს ნე, ეუ ეუმ ყუას ეთიამ.
 EOF
 EXPECT_ERR=
@@ -528,7 +528,7 @@ b 0x1000
 ps utf16be unprintable @ hit.string.utf16be.0
 EOF
 EXPECT=<<EOF
-0x0000012c 96 hit.string.utf16be.0
+0x0000012c 96 hit.string.utf16be.0 48
 παρτεμ ποσιδονιθμ ατ. Ετ πρι περιcθλισ σπλενδιδε μνεσαρcηθμ, vελ ατ cονσεqθατ εξπετενδισ. Τε ηασ qθεμ πετεντιθμ.
 EOF
 EXPECT_ERR=
@@ -544,7 +544,7 @@ b 0x1000
 ps utf16be unprintable @ hit.string.utf16be.0
 EOF
 EXPECT=<<EOF
-0x00000168 36 hit.string.utf16be.0
+0x00000168 36 hit.string.utf16be.0 18
 ים משחקים ממונרכיה אנא גם.
 EOF
 EXPECT_ERR=
@@ -560,7 +560,7 @@ b 0x1000
 ps utf16be unprintable @ hit.string.utf16be.0
 EOF
 EXPECT=<<EOF
-0x00000064 70 hit.string.utf16be.0
+0x00000064 70 hit.string.utf16be.0 35
 पहोचने वैश्विक एसलिये पुस्तक हुआआदी विश्व उनका खरिदने समस्याओ मार्गदर्शन रखते तरीके यायेका विश्लेषण पुष्टिकर्ता चुनने सकता बढाता वेबजाल गोपनीयता लिए। संपादक करेसाथ रचना नवंबर
 EOF
 EXPECT_ERR=
@@ -576,7 +576,7 @@ b 0x1000
 ps utf16be unprintable @ hit.string.utf16be.0
 EOF
 EXPECT=<<EOF
-0x000000bc 22 hit.string.utf16be.0
+0x000000bc 22 hit.string.utf16be.0 11
 생의 과실이 있으며. 찬미를 사람은 그들에게 너의 청춘이 인류의 그들의 칼이다.
 EOF
 EXPECT_ERR=
@@ -592,7 +592,7 @@ b 0x1000
 ps utf16be unprintable @ hit.string.utf16be.0
 EOF
 EXPECT=<<EOF
-0x0000005c 50 hit.string.utf16be.0
+0x0000005c 50 hit.string.utf16be.0 25
  ·--· ·---- ··· - ···· --·· --··· -· ··· -·· -·-- ···· ·--- ·-·-·- · ··- - ··- ···- ··--- ·-·-·- -·- -··- ----- -·
 EOF
 EXPECT_ERR=
@@ -608,7 +608,7 @@ b 0x1000
 ps utf16be unprintable @ hit.string.utf16be.0
 EOF
 EXPECT=<<EOF
-0x0000005e 54 hit.string.utf16be.0
+0x0000005e 54 hit.string.utf16be.0 27
 тани ад. Цум хендрерит персецути ех, миним еяуидем цонсецтетуер яуи ид. Либер малуиссет нам еа, еа граеце дефиниебас.
 EOF
 EXPECT_ERR=
@@ -624,7 +624,7 @@ b 0x1000
 # psutf1 unprintable @ hit.string.utf16le.0
 EOF
 EXPECT=<<EOF
-0x00000138 48 hit.string.utf16le.0
+0x00000138 48 hit.string.utf16le.0 24
 EOF
 EXPECT_ERR=
 RUN
@@ -639,7 +639,7 @@ b 0x1000
 ps utf16le unprintable @ hit.string.utf16le.0
 EOF
 EXPECT=<<EOF
-0x00000094 32 hit.string.utf16le.0
+0x00000094 32 hit.string.utf16le.0 16
 京確年禁読応米新報書了号活修佐。央良持著宣込警石寂益好独田接読仕。漂戦辺量食害恐人給景族缶掲価済教放。響城引真際通御芭情査男倍淺早住。金握崎利契事用鹿仮交体受寄終山率大。
 EOF
 EXPECT_ERR=
@@ -655,7 +655,7 @@ b 0x1000
 ps utf16le unprintable @ hit.string.utf16le.0
 EOF
 EXPECT=<<EOF
-0x000001ec 100 hit.string.utf16le.0
+0x000001ec 100 hit.string.utf16le.0 50
 რე, იუს ეა უთინამ დელიცათისსიმი. მელ ფერსეყუერის ლიბერავისსე თე, გრაეცო ფრინციფეს ასსენთიორ სით ეუ. ჰის მალორუმ ანთიოფამ თჰეოფჰრასთუს ნე, ეუ ეუმ ყუას ეთიამ.
 EOF
 EXPECT_ERR=
@@ -671,7 +671,7 @@ b 0x1000
 ps utf16le unprintable @ hit.string.utf16le.0
 EOF
 EXPECT=<<EOF
-0x0000012c 96 hit.string.utf16le.0
+0x0000012c 96 hit.string.utf16le.0 48
 παρτεμ ποσιδονιθμ ατ. Ετ πρι περιcθλισ σπλενδιδε μνεσαρcηθμ, vελ ατ cονσεqθατ εξπετενδισ. Τε ηασ qθεμ πετεντιθμ.
 EOF
 EXPECT_ERR=
@@ -687,7 +687,7 @@ b 0x1000
 ps utf16le unprintable @ hit.string.utf16le.0
 EOF
 EXPECT=<<EOF
-0x00000168 36 hit.string.utf16le.0
+0x00000168 36 hit.string.utf16le.0 18
 ים משחקים ממונרכיה אנא גם.
 EOF
 EXPECT_ERR=
@@ -703,7 +703,7 @@ b 0x1000
 ps utf16le unprintable @ hit.string.utf16le.0
 EOF
 EXPECT=<<EOF
-0x00000064 70 hit.string.utf16le.0
+0x00000064 70 hit.string.utf16le.0 35
 पहोचने वैश्विक एसलिये पुस्तक हुआआदी विश्व उनका खरिदने समस्याओ मार्गदर्शन रखते तरीके यायेका विश्लेषण पुष्टिकर्ता चुनने सकता बढाता वेबजाल गोपनीयता लिए। संपादक करेसाथ रचना नवंबर
 EOF
 EXPECT_ERR=
@@ -719,7 +719,7 @@ b 0x1000
 ps utf16le unprintable @ hit.string.utf16le.0
 EOF
 EXPECT=<<EOF
-0x000000bc 22 hit.string.utf16le.0
+0x000000bc 22 hit.string.utf16le.0 11
 생의 과실이 있으며. 찬미를 사람은 그들에게 너의 청춘이 인류의 그들의 칼이다.
 EOF
 EXPECT_ERR=
@@ -735,7 +735,7 @@ b 0x1000
 ps utf16le unprintable @ hit.string.utf16le.0
 EOF
 EXPECT=<<EOF
-0x0000005c 50 hit.string.utf16le.0
+0x0000005c 50 hit.string.utf16le.0 25
  ·--· ·---- ··· - ···· --·· --··· -· ··· -·· -·-- ···· ·--- ·-·-·- · ··- - ··- ···- ··--- ·-·-·- -·- -··- ----- -·
 EOF
 EXPECT_ERR=
@@ -751,7 +751,7 @@ b 0x1000
 ps utf16le unprintable @ hit.string.utf16le.0
 EOF
 EXPECT=<<EOF
-0x0000005e 54 hit.string.utf16le.0
+0x0000005e 54 hit.string.utf16le.0 27
 тани ад. Цум хендрерит персецути ех, миним еяуидем цонсецтетуер яуи ид. Либер малуиссет нам еа, еа граеце дефиниебас.
 EOF
 EXPECT_ERR=
@@ -767,7 +767,7 @@ b 0x1000
 ps utf32be unprintable @ hit.string.utf32be.0
 EOF
 EXPECT=<<EOF
-0x00000270 96 hit.string.utf32be.0
+0x00000270 96 hit.string.utf32be.0 24
 ا الأوضاع, لم بوابة المبرمة عرض. إبّان اسبوعين البشريةً تعد في. كنقطة إيطاليا قام بل, أضف أن وبغطاء الباهضة.
 EOF
 EXPECT_ERR=
@@ -783,7 +783,7 @@ b 0x1000
 ps utf32be unprintable @ hit.string.utf32be.0
 EOF
 EXPECT=<<EOF
-0x00000418 132 hit.string.utf32be.0
+0x00000418 132 hit.string.utf32be.0 33
 դեֆինիթիոնես ին վիս, ծասե պեռթինածիա նե վիս. ին մելիուս ֆածիլիս եոս, եսթ եռոս պոպուլո թիմեամ թե. իուս նո ծոնսուլաթու.
 EOF
 EXPECT_ERR=
@@ -799,7 +799,7 @@ b 0x1000
 ps utf32be unprintable @ hit.string.utf32be.0
 EOF
 EXPECT=<<EOF
-0x000003d8 200 hit.string.utf32be.0
+0x000003d8 200 hit.string.utf32be.0 50
 რე, იუს ეა უთინამ დელიცათისსიმი. მელ ფერსეყუერის ლიბერავისსე თე, გრაეცო ფრინციფეს ასსენთიორ სით ეუ. ჰის მალორუმ ანთიოფამ თჰეოფჰრასთუს ნე, ეუ ეუმ ყუას ეთიამ.
 EOF
 EXPECT_ERR=
@@ -815,7 +815,7 @@ b 0x1000
 ps utf32be unprintable @ hit.string.utf32be.0
 EOF
 EXPECT=<<EOF
-0x00000258 192 hit.string.utf32be.0
+0x00000258 192 hit.string.utf32be.0 48
 παρτεμ ποσιδονιθμ ατ. Ετ πρι περιcθλισ σπλενδιδε μνεσαρcηθμ, vελ ατ cονσεqθατ εξπετενδισ. Τε ηασ qθεμ πετεντιθμ.
 EOF
 EXPECT_ERR=
@@ -831,7 +831,7 @@ b 0x1000
 ps utf32be unprintable @ hit.string.utf32be.0
 EOF
 EXPECT=<<EOF
-0x000002d0 72 hit.string.utf32be.0
+0x000002d0 72 hit.string.utf32be.0 18
 ים משחקים ממונרכיה אנא גם.
 EOF
 EXPECT_ERR=
@@ -847,7 +847,7 @@ b 0x1000
 ps utf32be unprintable @ hit.string.utf32be.0
 EOF
 EXPECT=<<EOF
-0x000000c8 140 hit.string.utf32be.0
+0x000000c8 140 hit.string.utf32be.0 35
 पहोचने वैश्विक एसलिये पुस्तक हुआआदी विश्व उनका खरिदने समस्याओ मार्गदर्शन रखते तरीके यायेका विश्लेषण पुष्टिकर्ता चुनने सकता बढाता वेबजाल गोपनीयता लिए। संपादक करेसाथ रचना नवंबर
 EOF
 EXPECT_ERR=
@@ -863,7 +863,7 @@ b 0x1000
 ps utf32be unprintable @ hit.string.utf32be.0
 EOF
 EXPECT=<<EOF
-0x00000178 44 hit.string.utf32be.0
+0x00000178 44 hit.string.utf32be.0 11
 생의 과실이 있으며. 찬미를 사람은 그들에게 너의 청춘이 인류의 그들의 칼이다.
 EOF
 EXPECT_ERR=
@@ -879,7 +879,7 @@ b 0x1000
 ps utf32be unprintable @ hit.string.utf32be.0
 EOF
 EXPECT=<<EOF
-0x000000b8 100 hit.string.utf32be.0
+0x000000b8 100 hit.string.utf32be.0 25
  ·--· ·---- ··· - ···· --·· --··· -· ··· -·· -·-- ···· ·--- ·-·-·- · ··- - ··- ···- ··--- ·-·-·- -·- -··- ----- -·
 EOF
 EXPECT_ERR=
@@ -895,7 +895,7 @@ b 0x1000
 ps utf32be unprintable @ hit.string.utf32be.0
 EOF
 EXPECT=<<EOF
-0x000000bc 108 hit.string.utf32be.0
+0x000000bc 108 hit.string.utf32be.0 27
 тани ад. Цум хендрерит персецути ех, миним еяуидем цонсецтетуер яуи ид. Либер малуиссет нам еа, еа граеце дефиниебас.
 EOF
 EXPECT_ERR=
@@ -911,7 +911,7 @@ b 0x1000
 ps utf32le unprintable @ hit.string.utf32le.0
 EOF
 EXPECT=<<EOF
-0x00000418 132 hit.string.utf32le.0
+0x00000418 132 hit.string.utf32le.0 33
 դեֆինիթիոնես ին վիս, ծասե պեռթինածիա նե վիս. ին մելիուս ֆածիլիս եոս, եսթ եռոս պոպուլո թիմեամ թե. իուս նո ծոնսուլաթու.
 EOF
 EXPECT_ERR=
@@ -927,7 +927,7 @@ b 0x1000
 ps utf32le unprintable @ hit.string.utf32le.0
 EOF
 EXPECT=<<EOF
-0x00000128 64 hit.string.utf32le.0
+0x00000128 64 hit.string.utf32le.0 16
 京確年禁読応米新報書了号活修佐。央良持著宣込警石寂益好独田接読仕。漂戦辺量食害恐人給景族缶掲価済教放。響城引真際通御芭情査男倍淺早住。金握崎利契事用鹿仮交体受寄終山率大。
 EOF
 EXPECT_ERR=
@@ -943,7 +943,7 @@ b 0x1000
 ps utf32le unprintable @ hit.string.utf32le.0
 EOF
 EXPECT=<<EOF
-0x000003d8 200 hit.string.utf32le.0
+0x000003d8 200 hit.string.utf32le.0 50
 რე, იუს ეა უთინამ დელიცათისსიმი. მელ ფერსეყუერის ლიბერავისსე თე, გრაეცო ფრინციფეს ასსენთიორ სით ეუ. ჰის მალორუმ ანთიოფამ თჰეოფჰრასთუს ნე, ეუ ეუმ ყუას ეთიამ.
 EOF
 EXPECT_ERR=
@@ -959,7 +959,7 @@ b 0x1000
 ps utf32le unprintable @ hit.string.utf32le.0
 EOF
 EXPECT=<<EOF
-0x00000258 192 hit.string.utf32le.0
+0x00000258 192 hit.string.utf32le.0 48
 παρτεμ ποσιδονιθμ ατ. Ετ πρι περιcθλισ σπλενδιδε μνεσαρcηθμ, vελ ατ cονσεqθατ εξπετενδισ. Τε ηασ qθεμ πετεντιθμ.
 EOF
 EXPECT_ERR=
@@ -975,7 +975,7 @@ b 0x1000
 ps utf32le unprintable @ hit.string.utf32le.0
 EOF
 EXPECT=<<EOF
-0x000002d0 72 hit.string.utf32le.0
+0x000002d0 72 hit.string.utf32le.0 18
 ים משחקים ממונרכיה אנא גם.
 EOF
 EXPECT_ERR=
@@ -991,7 +991,7 @@ b 0x1000
 ps utf32le unprintable @ hit.string.utf32le.0
 EOF
 EXPECT=<<EOF
-0x000000c8 140 hit.string.utf32le.0
+0x000000c8 140 hit.string.utf32le.0 35
 पहोचने वैश्विक एसलिये पुस्तक हुआआदी विश्व उनका खरिदने समस्याओ मार्गदर्शन रखते तरीके यायेका विश्लेषण पुष्टिकर्ता चुनने सकता बढाता वेबजाल गोपनीयता लिए। संपादक करेसाथ रचना नवंबर
 EOF
 EXPECT_ERR=
@@ -1007,7 +1007,7 @@ b 0x1000
 ps utf32le unprintable @ hit.string.utf32le.0
 EOF
 EXPECT=<<EOF
-0x00000178 44 hit.string.utf32le.0
+0x00000178 44 hit.string.utf32le.0 11
 생의 과실이 있으며. 찬미를 사람은 그들에게 너의 청춘이 인류의 그들의 칼이다.
 EOF
 EXPECT_ERR=
@@ -1023,7 +1023,7 @@ b 0x1000
 ps utf32le unprintable @ hit.string.utf32le.0
 EOF
 EXPECT=<<EOF
-0x000000b8 100 hit.string.utf32le.0
+0x000000b8 100 hit.string.utf32le.0 25
  ·--· ·---- ··· - ···· --·· --··· -· ··· -·· -·-- ···· ·--- ·-·-·- · ··- - ··- ···- ··--- ·-·-·- -·- -··- ----- -·
 EOF
 EXPECT_ERR=
@@ -1039,7 +1039,7 @@ b 0x1000
 ps utf32le unprintable @ hit.string.utf32le.0
 EOF
 EXPECT=<<EOF
-0x000000bc 108 hit.string.utf32le.0
+0x000000bc 108 hit.string.utf32le.0 27
 тани ад. Цум хендрерит персецути ех, миним еяуидем цонсецтетуер яуи ид. Либер малуиссет нам еа, еа граеце дефиниебас.
 EOF
 EXPECT_ERR=
@@ -1056,8 +1056,8 @@ ps utf8 unprintable @ hit.string.utf8.0
 ps utf8 unprintable @ hit.string.utf8.1
 EOF
 EXPECT=<<EOF
-0x0000000b 10 hit.string.utf8.0
-0x00000042 10 hit.string.utf8.1
+0x0000000b 10 hit.string.utf8.0 10
+0x00000042 10 hit.string.utf8.1 10
 ипсум долор сит амет
 ИПСУМ ДОЛОР СИТ АМЕТ
 EOF
@@ -1075,8 +1075,8 @@ ps utf32le unprintable @ hit.string.utf32le.0
 ps utf32le unprintable @ hit.string.utf32le.1
 EOF
 EXPECT=<<EOF
-0x00000087 20 hit.string.utf32le.0
-0x000000bb 20 hit.string.utf32le.1
+0x00000087 20 hit.string.utf32le.0 5
+0x000000bb 20 hit.string.utf32le.1 5
 ипсум долор сит амет, при унум семпер тритани ад. Цум хендрерит персецути ех, миним еяуидем цонсецтетуер яуи ид. Либер малуиссет нам еа, еа граеце дефиниебас.
 ит амет, при унум семпер тритани ад. Цум хендрерит персецути ех, миним еяуидем цонсецтетуер яуи ид. Либер малуиссет нам еа, еа граеце дефиниебас.
 EOF
@@ -1096,10 +1096,10 @@ ps utf8 unprintable @ hit.string.utf8.2
 ps utf8 unprintable @ hit.string.utf8.3
 EOF
 EXPECT=<<EOF
-0x0000000b 10 hit.string.utf8.0
-0x00000023 9 hit.string.utf8.1
-0x00000042 10 hit.string.utf8.2
-0x0000005a 9 hit.string.utf8.3
+0x0000000b 10 hit.string.utf8.0 10
+0x00000023 9 hit.string.utf8.1 9
+0x00000042 10 hit.string.utf8.2 10
+0x0000005a 9 hit.string.utf8.3 9
 ипсум долор сит амет
 ит амет
 ИПСУМ ДОЛОР СИТ АМЕТ
@@ -1118,8 +1118,8 @@ ps utf16be unprintable @ hit.string.utf16be.0
 ps utf16be unprintable @ hit.string.utf16be.1
 EOF
 EXPECT=<<EOF
-0x00000000 10 hit.string.utf16be.0
-0x000000ee 10 hit.string.utf16be.1
+0x00000000 10 hit.string.utf16be.0 5
+0x000000ee 10 hit.string.utf16be.1 5
 Лорем ипсум долор сит амет, при унум семпер тритани ад. Цум хендрерит персецути ех, миним еяуидем цонсецтетуер яуи ид. Либер малуиссет нам еа, еа граеце дефиниебас.
 Либер малуиссет нам еа, еа граеце дефиниебас.
 EOF
@@ -1136,8 +1136,8 @@ ps utf32le unprintable @ hit.string.utf32le.0
 ps utf32le unprintable @ hit.string.utf32le.1
 EOF
 EXPECT=<<EOF
-0x00000000 20 hit.string.utf32le.0
-0x000001dc 20 hit.string.utf32le.1
+0x00000000 20 hit.string.utf32le.0 5
+0x000001dc 20 hit.string.utf32le.1 5
 Лорем ипсум долор сит амет, при унум семпер тритани ад. Цум хендрерит персецути ех, миним еяуидем цонсецтетуер яуи ид. Либер малуиссет нам еа, еа граеце дефиниебас.
 Либер малуиссет нам еа, еа граеце дефиниебас.
 EOF
@@ -1159,12 +1159,12 @@ echo Alignment=0x100
 ps utf32le unprintable @ hit.string.utf32le.0
 EOF
 EXPECT=<<EOF
-0x00000000 20 hit.string.utf32le.0
-0x000001dc 20 hit.string.utf32le.1
+0x00000000 20 hit.string.utf32le.0 5
+0x000001dc 20 hit.string.utf32le.1 5
 Лорем ипсум долор сит амет, при унум семпер тритани ад. Цум хендрерит персецути ех, миним еяуидем цонсецтетуер яуи ид. Либер малуиссет нам еа, еа граеце дефиниебас.
 Либер малуиссет нам еа, еа граеце дефиниебас.
 Alignment=0x100
-0x00000000 20 hit.string.utf32le.0
+0x00000000 20 hit.string.utf32le.0 5
 Лорем ипсум долор сит амет, при унум семпер тритани ад. Цум хендрерит персецути ех, миним еяуидем цонсецтетуер яуи ид. Либер малуиссет нам еа, еа граеце дефиниебас.
 EOF
 EXPECT_ERR=
@@ -1224,15 +1224,15 @@ ps ebcdicuk unprintable @ hit.string.ebcdicuk.7
 ps ebcdicuk unprintable @ hit.string.ebcdicuk.8
 EOF
 EXPECT=<<EOF
-0x00000018 2 hit.string.ebcdicuk.0
-0x00000042 2 hit.string.ebcdicuk.1
-0x0000008f 2 hit.string.ebcdicuk.2
-0x000000be 2 hit.string.ebcdicuk.3
-0x0000010a 2 hit.string.ebcdicuk.4
-0x0000012b 2 hit.string.ebcdicuk.5
-0x0000013a 2 hit.string.ebcdicuk.6
-0x00000152 2 hit.string.ebcdicuk.7
-0x00000175 2 hit.string.ebcdicuk.8
+0x00000018 2 hit.string.ebcdicuk.0 2
+0x00000042 2 hit.string.ebcdicuk.1 2
+0x0000008f 2 hit.string.ebcdicuk.2 2
+0x000000be 2 hit.string.ebcdicuk.3 2
+0x0000010a 2 hit.string.ebcdicuk.4 2
+0x0000012b 2 hit.string.ebcdicuk.5 2
+0x0000013a 2 hit.string.ebcdicuk.6 2
+0x00000152 2 hit.string.ebcdicuk.7 2
+0x00000175 2 hit.string.ebcdicuk.8 2
 et, at eligendi adipisci ius, ex natum appetere officiis has, nibh quas torquatos pro te. Quo at deleniti repudiandae, et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
 etere officiis has, nibh quas torquatos pro te. Quo at deleniti repudiandae, et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
 et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
@@ -1265,15 +1265,15 @@ ps ebcdicus unprintable @ hit.string.ebcdicus.7
 ps ebcdicus unprintable @ hit.string.ebcdicus.8
 EOF
 EXPECT=<<EOF
-0x00000018 2 hit.string.ebcdicus.0
-0x00000042 2 hit.string.ebcdicus.1
-0x0000008f 2 hit.string.ebcdicus.2
-0x000000be 2 hit.string.ebcdicus.3
-0x0000010a 2 hit.string.ebcdicus.4
-0x0000012b 2 hit.string.ebcdicus.5
-0x0000013a 2 hit.string.ebcdicus.6
-0x00000152 2 hit.string.ebcdicus.7
-0x00000175 2 hit.string.ebcdicus.8
+0x00000018 2 hit.string.ebcdicus.0 2
+0x00000042 2 hit.string.ebcdicus.1 2
+0x0000008f 2 hit.string.ebcdicus.2 2
+0x000000be 2 hit.string.ebcdicus.3 2
+0x0000010a 2 hit.string.ebcdicus.4 2
+0x0000012b 2 hit.string.ebcdicus.5 2
+0x0000013a 2 hit.string.ebcdicus.6 2
+0x00000152 2 hit.string.ebcdicus.7 2
+0x00000175 2 hit.string.ebcdicus.8 2
 et, at eligendi adipisci ius, ex natum appetere officiis has, nibh quas torquatos pro te. Quo at deleniti repudiandae, et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
 etere officiis has, nibh quas torquatos pro te. Quo at deleniti repudiandae, et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
 et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
@@ -1306,15 +1306,15 @@ ps ebcdices unprintable @ hit.string.ebcdices.7
 ps ebcdices unprintable @ hit.string.ebcdices.8
 EOF
 EXPECT=<<EOF
-0x00000018 2 hit.string.ebcdices.0
-0x00000042 2 hit.string.ebcdices.1
-0x0000008f 2 hit.string.ebcdices.2
-0x000000be 2 hit.string.ebcdices.3
-0x0000010a 2 hit.string.ebcdices.4
-0x0000012b 2 hit.string.ebcdices.5
-0x0000013a 2 hit.string.ebcdices.6
-0x00000152 2 hit.string.ebcdices.7
-0x00000175 2 hit.string.ebcdices.8
+0x00000018 2 hit.string.ebcdices.0 2
+0x00000042 2 hit.string.ebcdices.1 2
+0x0000008f 2 hit.string.ebcdices.2 2
+0x000000be 2 hit.string.ebcdices.3 2
+0x0000010a 2 hit.string.ebcdices.4 2
+0x0000012b 2 hit.string.ebcdices.5 2
+0x0000013a 2 hit.string.ebcdices.6 2
+0x00000152 2 hit.string.ebcdices.7 2
+0x00000175 2 hit.string.ebcdices.8 2
 et, at eligendi adipisci ius, ex natum appetere officiis has, nibh quas torquatos pro te. Quo at deleniti repudiandae, et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
 etere officiis has, nibh quas torquatos pro te. Quo at deleniti repudiandae, et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
 et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et.
@@ -1349,27 +1349,27 @@ EXPECT=<<EOF
 WARNING: The string encoding for the search is set to "guess".
 The search will consume vastly more resources and the guessing is unreliable.
 You can set a specific encoding with 'e str.encoding=<encoding>'.
-0x00000030 2 hit.string.ascii.0
+0x00000030 2 hit.string.ascii.0 2
 WARNING: |ab| < search.str.min_length so some search hits may be hidden. Set search.str.min_length to 2 to see them.
 ----
 WARNING: The string encoding for the search is set to "guess".
 The search will consume vastly more resources and the guessing is unreliable.
 You can set a specific encoding with 'e str.encoding=<encoding>'.
-0x00000010 2 hit.string.ascii.0
-0x00000020 2 hit.string.ascii.1
-0x00000030 2 hit.string.ascii.2
+0x00000010 2 hit.string.ascii.0 2
+0x00000020 2 hit.string.ascii.1 2
+0x00000030 2 hit.string.ascii.2 2
 
 WARNING: The string encoding for the search is set to "guess".
 The search will consume vastly more resources and the guessing is unreliable.
 You can set a specific encoding with 'e str.encoding=<encoding>'.
-0x00000050 9 hit.string.utf8.0
+0x00000050 9 hit.string.utf8.0 9
 WARNING: |¢€𐍈| < search.str.min_length so some search hits may be hidden. Set search.str.min_length to 3 to see them.
 ----
 WARNING: The string encoding for the search is set to "guess".
 The search will consume vastly more resources and the guessing is unreliable.
 You can set a specific encoding with 'e str.encoding=<encoding>'.
-0x00000040 9 hit.string.utf8.0
-0x00000050 9 hit.string.utf8.1
+0x00000040 9 hit.string.utf8.0 9
+0x00000050 9 hit.string.utf8.1 9
 EOF
 RUN
 
@@ -1415,7 +1415,7 @@ b 0x1000
 # psutf3 unprintable @ hit.string.utf32le.0
 EOF
 EXPECT=<<EOF
-0x00000270 96 hit.string.utf32le.0
+0x00000270 96 hit.string.utf32le.0 24
 EOF
 EXPECT_ERR=
 RUN
@@ -1433,7 +1433,7 @@ b 0x1000
 ps utf32be unprintable @ hit.string.utf32be.0
 EOF
 EXPECT=<<EOF
-0x00000128 64 hit.string.utf32be.0
+0x00000128 64 hit.string.utf32be.0 16
 京確年禁読応米新報書了号活修佐。央良持著宣込警石寂益好独田接読仕。漂戦辺量食害恐人給景族缶掲価済教放。響城引真際通御芭情査男倍淺早住。金握崎利契事用鹿仮交体受寄終山率大。
 EOF
 EXPECT_ERR=
@@ -1451,7 +1451,7 @@ b 0x1000
 ps utf16be unprintable @ hit.string.utf16be.0
 EOF
 EXPECT=<<EOF
-0x0000020c 66 hit.string.utf16be.0
+0x0000020c 66 hit.string.utf16be.0 33
 դեֆինիթիոնես ին վիս, ծասե պեռթինածիա նե վիս. ին մելիուս ֆածիլիս եոս, եսթ եռոս պոպուլո թիմեամ թե. իուս նո ծոնսուլաթու.
 EOF
 EXPECT_ERR=
@@ -1470,7 +1470,7 @@ b 0x1000
 ps utf16le unprintable @ hit.string.utf16le.0
 EOF
 EXPECT=<<EOF
-0x0000020c 66 hit.string.utf16le.0
+0x0000020c 66 hit.string.utf16le.0 33
 դեֆինիթիոնես ին վիս, ծասե պեռթինածիա նե վիս. ին մելիուս ֆածիլիս եոս, եսթ եռոս պոպուլո թիմեամ թե. իուս նո ծոնսուլաթու.
 EOF
 EXPECT_ERR=
@@ -1487,7 +1487,7 @@ b 0x1000
 ps utf32le unprintable @ hit.string.utf32le.0
 EOF
 EXPECT=<<EOF
-0x00000270 96 hit.string.utf32le.0
+0x00000270 96 hit.string.utf32le.0 24
 ا الأوضاع, لم بوابة المبرمة عرض. إبّان اسبوعين البشريةً تعد في. كنقطة إيطاليا قام بل, أضف أن وبغطاء الباهضة.
 EOF
 EXPECT_ERR=
@@ -1504,7 +1504,7 @@ b 0x1000
 ps utf16le unprintable @ hit.string.utf16le.0
 EOF
 EXPECT=<<EOF
-0x0000020c 66 hit.string.utf16le.0
+0x0000020c 66 hit.string.utf16le.0 33
 դեֆինիթիոնես ին վիս, ծասե պեռթինածիա նե վիս. ին մելիուս ֆածիլիս եոս, եսթ եռոս պոպուլո թիմեամ թե. իուս նո ծոնսուլաթու.
 EOF
 EXPECT_ERR=
@@ -1517,7 +1517,7 @@ CMDS=<<EOF
 ps ibm037 unprintable @ hit.string.ibm037.0
 EOF
 EXPECT=<<EOF
-0x00000050 7 hit.string.ibm037.0
+0x00000050 7 hit.string.ibm037.0 11
 Æ}º}Æ}µ
 EOF
 EXPECT_ERR=
