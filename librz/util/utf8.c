@@ -428,8 +428,22 @@ RZ_API int rz_mutf8_decode(const ut8 *ptr, int ptrlen, RzCodePoint *ch) {
 	return rz_utf8_decode(ptr, ptrlen, ch, false);
 }
 
-/* Convert a unicode RzCodePoint into an UTF-8 buf */
-RZ_API int rz_utf8_encode(ut8 *ptr, const RzCodePoint ch) {
+/**
+ * \brief Encodes the Unicode code point \p ch in UTF-8 and
+ * writes it to the buffer \p ptr;
+ * The buffer must be at least 4 bytes large!
+ *
+ * \param ptr The buffer of at least 4 bytes to write the UTF-8 encoded code point.
+ * \param ch The Unicode code point to encode.
+ *
+ * \return The number of bytes written to \p ptr.
+ * 0 if the Unicode code point is larger than RZ_UNICODE_LAST_CODE_POINT.
+ */
+RZ_API size_t rz_utf8_encode(RZ_OUT RZ_NONNULL ut8 *ptr, const RzCodePoint ch) {
+	rz_return_val_if_fail(ptr, 0);
+	if (ch > RZ_UNICODE_LAST_CODE_POINT) {
+		return 0;
+	}
 	if (ch < 0x80) {
 		ptr[0] = (ut8)ch;
 		return 1;
@@ -442,7 +456,7 @@ RZ_API int rz_utf8_encode(ut8 *ptr, const RzCodePoint ch) {
 		ptr[1] = 0x80 | ((ch >> 6) & 0x3f);
 		ptr[2] = 0x80 | (ch & 0x3f);
 		return 3;
-	} else if (ch < 0x200000) {
+	} else if (ch <= RZ_UNICODE_LAST_CODE_POINT) {
 		ptr[0] = 0xf0 | (ch >> 18);
 		ptr[1] = 0x80 | ((ch >> 12) & 0x3f);
 		ptr[2] = 0x80 | ((ch >> 6) & 0x3f);
