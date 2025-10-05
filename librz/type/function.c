@@ -440,69 +440,73 @@ RZ_API bool rz_type_is_callable_ptr_nested(RZ_NONNULL const RzType *type) {
 	}
 }
 
-static const RzCallable *callable_ptr_unwrap(RZ_NONNULL const RzType *type, RZ_NONNULL RzStack *stack) {
-	rz_return_val_if_fail(type && stack, NULL);
+static const RzCallable *callable_ptr_unwrap(RZ_NONNULL const RzType *type, RZ_NONNULL RzVector *wrapper_type_infos) {
+	rz_return_val_if_fail(type && wrapper_type_infos, NULL);
 
 	if (type->kind == RZ_TYPE_KIND_POINTER) {
-		st64 *array_len = RZ_NEW(st64);
-		*array_len = -1;
-		rz_stack_push(stack, array_len);
+		st64 array_len = -1;
+		rz_vector_push(wrapper_type_infos, &array_len);
 
-		return callable_ptr_unwrap(type->pointer.type, stack);
+		return callable_ptr_unwrap(type->pointer.type, wrapper_type_infos);
 	} else if (type->kind == RZ_TYPE_KIND_ARRAY) {
-		st64 *array_len = RZ_NEW(st64);
-		*array_len = type->array.count;
-		rz_stack_push(stack, array_len);
+		st64 array_len = type->array.count;
+		rz_vector_push(wrapper_type_infos, &array_len);
 
-		return callable_ptr_unwrap(type->array.type, stack);
+		return callable_ptr_unwrap(type->array.type, wrapper_type_infos);
 	}
 
 	return type->kind == RZ_TYPE_KIND_CALLABLE ? type->callable : NULL;
 }
 
-static inline char *callable_name_or_ptr(RZ_NONNULL const RzCallable *callable, RZ_NONNULL RzStack *stack, bool zero_vla) {
-	rz_return_val_if_fail(callable && stack, NULL);
+static inline char *callable_name_or_ptr(RZ_NONNULL const RzCallable *callable, RZ_NONNULL RzVector *wrapper_type_infos, bool zero_vla) {
+	rz_return_val_if_fail(callable && wrapper_type_infos, NULL);
 
-	if (rz_stack_is_empty(stack)) {
+	if (rz_vector_empty(wrapper_type_infos)) {
 		return rz_str_dup(rz_str_get(callable->name));
 	} else {
 		RzStrBuf *buf = rz_strbuf_new(callable->name);
 		rz_return_val_if_fail(buf, NULL);
 
 		/* We expect the top of the stack to be a pointer, so setting the
-		 * last_array_len to -1 helps us in avoiding any superfluous initial parens. */
-		st64 last_array_len = -1;
+		 * last_kind to pointer helps us in avoiding any superfluous initial parens. */
+		RzTypeKind last_kind = RZ_TYPE_KIND_POINTER;
 
-		while (!rz_stack_is_empty(stack)) {
-			st64 *array_len = rz_stack_pop(stack);
-			rz_return_val_if_fail(array_len, NULL);
+		st64 *it;
+		rz_vector_foreach(wrapper_type_infos, it) {
+			st64 array_len = *it;
 
-			if (*array_len != last_array_len) {
-				/* Change in the wrapping type */
+			RzTypeKind current_kind;
+			if (array_len < 0) {
+				current_kind = RZ_TYPE_KIND_POINTER;
+			} else {
+				current_kind = RZ_TYPE_KIND_ARRAY;
+			}
+
+			if (last_kind != current_kind) {
+				/* Change in the wrapping type's kind */
 				rz_strbuf_prepend(buf, "(");
 				rz_strbuf_append(buf, ")");
 			}
-			last_array_len = *array_len;
+			last_kind = current_kind;
 
-			if (*array_len < 0) {
-				/* pointer */
+			if (current_kind == RZ_TYPE_KIND_POINTER) {
 				rz_strbuf_prepend(buf, "*");
-			} else {
+			} else if (current_kind == RZ_TYPE_KIND_ARRAY) {
 				char *array_str;
 
-				if (*array_len == 0) {
+				if (array_len == 0) {
 					array_str = rz_str_newf("[%s]", zero_vla ? "0" : "");
 				} else {
-					array_str = rz_str_newf("[%lld]", *array_len);
+					array_str = rz_str_newf("[%lld]", array_len);
 				}
 
 				rz_return_val_if_fail(array_str, NULL);
 				rz_strbuf_append(buf, array_str);
 
 				RZ_FREE(array_str);
+			} else {
+				rz_return_val_if_reached(NULL);
 			}
-
-			RZ_FREE(array_len);
 		}
 
 		rz_strbuf_prepend(buf, "(");
@@ -512,14 +516,14 @@ static inline char *callable_name_or_ptr(RZ_NONNULL const RzCallable *callable, 
 	}
 }
 
-static bool callable_as_string(RzStrBuf *buf, const RzTypeDB *typedb, RZ_NONNULL const RzCallable *callable, RZ_NONNULL RzStack *stack, bool zero_vla) {
-	rz_return_val_if_fail(buf && typedb && callable && stack, false);
+static bool callable_as_string(RzStrBuf *buf, const RzTypeDB *typedb, RZ_NONNULL const RzCallable *callable, RZ_NONNULL RzVector *wrapper_type_infos, bool zero_vla) {
+	rz_return_val_if_fail(buf && typedb && callable && wrapper_type_infos, false);
 
 	if (callable->noret) {
 		rz_strbuf_append(buf, "__attribute__((noreturn)) ");
 	}
 	char *ret_str = callable->ret ? rz_type_as_string(typedb, callable->ret) : NULL;
-	char *callable_name = callable_name_or_ptr(callable, stack, zero_vla);
+	char *callable_name = callable_name_or_ptr(callable, wrapper_type_infos, zero_vla);
 	rz_strbuf_appendf(buf, "%s %s(", ret_str ? ret_str : "void", callable_name);
 	free(ret_str);
 	free(callable_name);
@@ -555,21 +559,22 @@ RZ_API RZ_OWN char *rz_type_callable_ptr_as_string(const RzTypeDB *typedb, RZ_NO
 	rz_return_val_if_fail(typedb && type, NULL);
 	rz_return_val_if_fail(could_be_callable(type->kind), NULL);
 
-	RzStack *callable_depth = rz_stack_newf(4, free);
-	const RzCallable *callable = callable_ptr_unwrap(type, callable_depth);
+	RzVector *wrapper_type_infos = rz_vector_new(sizeof(st64), NULL, free);
+
+	const RzCallable *callable = callable_ptr_unwrap(type, wrapper_type_infos);
 	if (!callable) {
-		rz_stack_free(callable_depth);
+		rz_vector_free(wrapper_type_infos);
 		return NULL;
 	}
 	RzStrBuf *buf = rz_strbuf_new("");
-	if (!callable_as_string(buf, typedb, callable, callable_depth, zero_vla)) {
-		rz_stack_free(callable_depth);
+	if (!callable_as_string(buf, typedb, callable, wrapper_type_infos, zero_vla)) {
+		rz_vector_free(wrapper_type_infos);
 		rz_strbuf_free(buf);
 
 		return NULL;
 	}
 
-	rz_stack_free(callable_depth);
+	rz_vector_free(wrapper_type_infos);
 	return rz_strbuf_drain(buf);
 }
 
@@ -583,15 +588,15 @@ RZ_API RZ_OWN char *rz_type_callable_as_string(const RzTypeDB *typedb, RZ_NONNUL
 	rz_return_val_if_fail(typedb && callable, NULL);
 	RzStrBuf *buf = rz_strbuf_new("");
 
-	RzStack *callable_depth = rz_stack_new(1);
-	if (!callable_as_string(buf, typedb, callable, callable_depth, false)) {
+	RzVector *wrapper_type_infos = rz_vector_new(sizeof(st64), NULL, free);
+	if (!callable_as_string(buf, typedb, callable, wrapper_type_infos, false)) {
 		rz_strbuf_free(buf);
-		rz_stack_free(callable_depth);
+		rz_vector_free(wrapper_type_infos);
 
 		return NULL;
 	}
 
-	rz_stack_free(callable_depth);
+	rz_vector_free(wrapper_type_infos);
 	return rz_strbuf_drain(buf);
 }
 

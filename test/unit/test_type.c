@@ -586,7 +586,7 @@ static char *pretty_enum_multiline = "enum MCU {\n"
 				     "\tCAPM = 0x2077\n"
 				     "} enumult;";
 static char *pretty_simple_typedef = "typedef long time_t;";
-static char *pretty_nested_callable = "struct xyz { wchar_t (*((*abc)[7]))(int foo, const char *bar); } lmn;";
+static char *pretty_nested_callable = "struct xyz { wchar_t (*((***abc)[7][5]))(int foo, const char *bar); } lmn;";
 
 static bool test_type_as_pretty_string(void) {
 	RzTypeDB *typedb = rz_type_db_new();
