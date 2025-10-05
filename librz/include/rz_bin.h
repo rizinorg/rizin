@@ -509,6 +509,21 @@ typedef struct rz_bin_plugin_t {
 	RZ_OWN RzBinSourceLineInfo *(*lines)(RzBinFile *bf); //< only called once on load, ownership is transferred to the caller
 	RzPVector /*<RzBinSymbol *>*/ *(*symbols)(RzBinFile *bf);
 	RzPVector /*<RzBinImport *>*/ *(*imports)(RzBinFile *bf);
+	/**
+	 * \brief A method to search for strings in the binary.
+	 * If the binary always has a known string encoding (ASCII, UTF-8, UTF-16 etc.),
+	 * it is advisable to implement this function.
+	 * A simple implementation like the following is enough:
+	 * ```c
+	 * RzPVector *strings(RzBinFile *bf) {
+	 *   RzBinStringSearchOpt opt;
+	 *   rz_bin_string_search_opt_init(&opt);
+	 *   opt.mode = RZ_BIN_STRING_SEARCH_MODE_READ_ONLY_SECTIONS;
+	 *   opt.string_encoding = RZ_STRING_ENC_UTF8;
+	 *   return rz_bin_file_strings(bf, &opt);
+	 * }
+	 * ```
+	 */
 	RzPVector /*<RzBinString *>*/ *(*strings)(RzBinFile *bf);
 	RzBinInfo *(*info)(RzBinFile *bf);
 	RzStructuredData *(*bin_structure)(RzBinFile *bf);
