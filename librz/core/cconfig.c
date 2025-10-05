@@ -3829,7 +3829,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETICB("search.str.min_length", RZ_BIN_STRING_SEARCH_MIN_STRING, &cb_search_str_min_length, "Smallest string length (in number of characters).");
 	SETICB("search.str.max_length", RZ_BIN_STRING_SEARCH_BUFFER_SIZE, &cb_search_str_max_length, "Maximum string length (in number of characters).");
 	SETICB("search.str.max_region_size", RZ_BIN_STRING_SEARCH_MAX_REGION_SIZE, &cb_search_str_max_region_size, "Maximum allowable size for the string search interval between two memory regions.");
-	SETICB("search.str.raw_alignment", RZ_BIN_STRING_SEARCH_RAW_FILE_ALIGNMENT, &cb_search_str_raw_alignment, "Memory sector alignment used for the raw string search (RzBin only. Use search.align for /z).");
+	SETICB("search.str.raw_alignment", RZ_BIN_STRING_SEARCH_RAW_FILE_ALIGNMENT, &cb_search_str_raw_alignment, "Memory search interval alignment used for the raw string search (RzBin only. Use search.align for /z).");
 	SETICB("search.str.check_ascii_freq", RZ_BIN_STRING_SEARCH_CHECK_ASCII_FREQ, &cb_search_str_check_ascii_freq, "If true, perform check on ASCII frequencies when looking for false positives during string search");
 
 	SETICB("search.align", 1, &cb_searchalign, "Address alignment (searches only if 'address % search.align == 0').");
