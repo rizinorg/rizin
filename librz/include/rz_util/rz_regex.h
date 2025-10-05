@@ -207,5 +207,6 @@ RZ_API RZ_OWN RzRegexCompContext *rz_regex_compile_context_new();
 RZ_API void rz_regex_compile_context_free(RzRegexCompContext *ccontext);
 RZ_API void rz_regex_set_nul_as_newline(RZ_NONNULL RzRegexCompContext *ccontext);
 RZ_API RzRegexFlags rz_regex_parse_flag_desc(RZ_NULLABLE const char *re_flags_desc);
+RZ_API RZ_OWN char *rz_regex_create_wildcard_pattern(size_t min_len, size_t max_len);
 
 #endif /* RZ_REGEX_H */

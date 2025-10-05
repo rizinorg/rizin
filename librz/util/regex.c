@@ -1476,3 +1476,27 @@ return_flags:
 	}
 	return flags;
 }
+
+/**
+ * \brief Returns a Regex pattern of the form "(\pL|\pN|\pP|\pS|\pZ|\s){min_len, max_len}".
+ *
+ * This pattern matches strings with:
+ * Letters (L), Numbers (N), Punctuation (P), Synbols (S), Seperators (Z), or
+ * white space characters (\s).
+ *
+ * If min_len == max_len == 0, the function returns "(\pL|\pN|\pP|\pS|\pZ|\s)*".
+ * If min_len > max_len, the function returns "(\pL|\pN|\pP|\pS|\pZ|\s){min_len,}".
+ *
+ * \param min_len The minimum length of the wildcard regex pattern.
+ * \param max_len The maximum length of the wildcard regex pattern.
+ *
+ * \return The pattern or NULL in case of failure.
+ */
+RZ_API RZ_OWN char *rz_regex_create_wildcard_pattern(size_t min_len, size_t max_len) {
+	if (min_len == 0 && max_len == 0) {
+		return rz_str_dup("(\\pL|\\pN|\\pP|\\pS|\\pZ}|\\s)*");
+	} else if (min_len > max_len) {
+		return rz_str_newf("(\\pL|\\pN|\\pP|\\pS|\\pZ}|\\s){%" PFMTSZd ",}", min_len);
+	}
+	return rz_str_newf("(\\pL|\\pN|\\pP|\\pS|\\pZ}|\\s){%" PFMTSZd ",%" PFMTSZd "}", min_len, max_len);
+}
