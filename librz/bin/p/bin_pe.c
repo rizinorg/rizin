@@ -541,6 +541,7 @@ RzBinPlugin rz_bin_plugin_pe = {
 	.hashes = &pe_compute_hashes,
 	.resources = &pe_resources,
 	.section_flag_to_rzlist = &PE_(section_flag_to_rzlist),
+	.strings = &pe_strings,
 };
 
 #ifndef RZ_PLUGIN_INCORE

@@ -659,6 +659,7 @@ RzBinPlugin rz_bin_plugin_pe64 = {
 	.trycatch = &pe64_trycatch,
 	.hashes = &pe_compute_hashes,
 	.resources = &pe_resources,
+	.strings = &pe_strings,
 	.section_flag_to_rzlist = &PE_(section_flag_to_rzlist),
 };
 

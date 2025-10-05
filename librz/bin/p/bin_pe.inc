@@ -789,3 +789,18 @@ static ut64 pe_get_offset(RzBinFile *bf, int type, int idx) {
 
 	return UT64_MAX;
 }
+
+static RzPVector /*<RzBinString *>*/ *pe_strings(RzBinFile *bf) {
+	RzBinStringSearchOpt opt;
+	rz_bin_string_search_opt_init(&opt);
+	opt.mode = RZ_BIN_STRING_SEARCH_MODE_AUTO;
+	opt.min_length = RZ_BIN_STRING_SEARCH_MIN_STRING;
+	opt.string_encoding = RZ_STRING_ENC_GUESS;
+
+	RzPVector *strings = rz_bin_file_strings(bf, &opt);
+	if (!strings) {
+		RZ_LOG_ERROR("Failed to search for strings. Abort.\n");
+		return NULL;
+	}
+	return strings;
+}
