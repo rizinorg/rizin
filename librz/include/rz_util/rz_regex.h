@@ -35,14 +35,19 @@
  * If RZ_REGEX_EXTENDED is passed to rz_regex_new() (the UTF-8 regular expressions)
  * the spaces **will not** be skipped but interally be replaced with '\s'.
  * This was done to keep our interal regex matching stable.
+ *
+ * Values can be passed as cflags.
  */
 #define RZ_REGEX_EXTENDED      0x00000080u /* PCRE2_EXTENDED      - C      */
 #define RZ_REGEX_EXTENDED_MORE 0x01000000u /* PCRE2_EXTENDED_MORE - C      */
 #define RZ_REGEX_MULTILINE     0x00000400u /* PCRE2_MULTILINE     - C      */
+#define RZ_REGEX_DOTALL        0x00000020u /* PCRE2_DOTALL        - C      */
 
+// Can be passed as jflags
 #define RZ_REGEX_JIT_PARTIAL_SOFT 0x00000002u /* PCRE2_JIT_PARTIAL_SOFT */
 #define RZ_REGEX_JIT_PARTIAL_HARD 0x00000004u /* PCRE2_JIT_PARTIAL_HARD */
 
+// Can be passed for mflags
 #define RZ_REGEX_PARTIAL_SOFT 0x00000010u /* PCRE2_PARTIAL_SOFT */
 #define RZ_REGEX_PARTIAL_HARD 0x00000020u /* PCRE2_PARTIAL_HARD */
 
