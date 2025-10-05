@@ -4463,3 +4463,36 @@ RZ_API size_t rz_string_enc_code_point_width(RzStrEnc enc) {
 		return 4;
 	}
 }
+
+/**
+ * \brief Tells if a string encoding requires scanning the search space or if
+ * it can match directly with RzRegex.
+ * Scanning is in general one or two magnitudes slower than direct matching with RzRegex.
+ *
+ * \param enc The string encoding to check.
+ *
+ * \return true Searching this strings of this encoding will scan the search space. The search will be slow.
+ * \return false Searching this encoding will match the searched pattern directly. The search will be fast.
+ */
+RZ_API bool rz_string_enc_requires_scanning(RzStrEnc enc) {
+	switch (enc) {
+	case RZ_STRING_ENC_GUESS:
+	case RZ_STRING_ENC_SETTINGS:
+	case RZ_STRING_ENC_MUTF8:
+	case RZ_STRING_ENC_IBM037:
+	case RZ_STRING_ENC_IBM290:
+	case RZ_STRING_ENC_EBCDIC_UK:
+	case RZ_STRING_ENC_EBCDIC_US:
+	case RZ_STRING_ENC_EBCDIC_ES:
+		return true;
+	case RZ_STRING_ENC_8BIT:
+	case RZ_STRING_ENC_UTF8:
+	case RZ_STRING_ENC_UTF16LE:
+	case RZ_STRING_ENC_UTF16BE:
+	case RZ_STRING_ENC_UTF32LE:
+	case RZ_STRING_ENC_UTF32BE:
+		return false;
+	}
+	rz_warn_if_reached();
+	return true;
+}
