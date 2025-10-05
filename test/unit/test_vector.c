@@ -463,7 +463,7 @@ static bool test_vector_insert_range(void) {
 	init_test_vector(&v, 3, 0, NULL, NULL);
 	rz_vector_insert_range(&v, rz_vector_len(&v), NULL, v.capacity - rz_vector_len(&v));
 	p = (ut32 *)rz_vector_insert_range(&v, rz_vector_len(&v), NULL, 0);
-	mu_assert_ptreq(p, rz_vector_tail(&v) + v.elem_size,
+	mu_assert_ptreq(p, (ut32 *)rz_vector_tail(&v) + 1,
 		"rz_vector_insert_range (0 count at vector end) returned ptr");
 	rz_vector_clear(&v);
 
