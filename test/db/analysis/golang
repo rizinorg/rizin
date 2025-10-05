@@ -4,6 +4,11 @@ CMDS=<<EOF
 aalg
 fl~sym.go.~?
 pdfs @ main ~str.
+# Attempt to get some refernce strings when the count changes with izq.
+echo HEAD
+izq~:..10
+echo TAIL
+izq~:-10..
 izq~?
 ilq
 EOF
@@ -18,7 +23,29 @@ EXPECT=<<EOF
 0x0063e49b str.version
 0x0063e4ac str.HTTP_version
 0x0063e566 str.
-15399
+HEAD
+0x63f4be 4 4 flag
+0x63f4c4 4 4 sort
+0x63f4ca 4 4 sync
+0x63f4d0 4 4 *int
+0x63f4d6 4 4 AAAA
+0x63f4dc 4 4 Addr
+0x63f4e2 4 4 Args
+0x63f4e8 4 4 Atim
+0x63f4ee 4 4 Attr
+0x63f4f4 4 4 Back
+TAIL
+0x6a6d1d 2 2 HT
+0x6a7847 10 10 server.crt
+0x6ab8fb 23 23 Got response %d: %s %s\n
+0x6af1a8 32 32 Failed reading response body: %s
+0x6a8859 14 14 Failed get: %s
+0x6ab4eb 22 22 https://localhost:8000
+0x6ae630 30 30 Reading server certificate: %s
+0x6a6b9f 7 7 version
+0x6a7efb 2 2 HT
+0x6a7efb 12 12 HTTP version
+12465
 bufio
 bytes
 compress/flate
@@ -134,6 +161,11 @@ CMDS=<<EOF
 aalg
 fl~sym.go.~?
 pdfs @ main ~str.
+# Attempt to get some refernce strings when the count changes with izq.
+echo HEAD
+izq~:..10
+echo TAIL
+izq~:-10..
 izq~?
 ilq
 EOF
@@ -152,8 +184,29 @@ EXPECT=<<EOF
 ;-- str.flag:
 ;-- str.sort:
 ;-- str.sync:
-;-- str.AAAA:
-14541
+HEAD
+0x66e6cb 4 4 flag
+0x66e6d3 4 4 sort
+0x66e6db 4 4 sync
+0x66e6e2 4 4 *int
+0x66e6e9 4 4 AAAA
+0x66e6f0 4 4 Addr
+0x66e6f7 4 4 Args
+0x66e6fe 4 4 Atim
+0x66e705 4 4 Attr
+0x66e70c 4 4 Back
+TAIL
+0x5 22 22 \xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff
+0x6f10e1 25 25 http2: Request.URI is nil
+0x6ec547 10 10 server.crt
+0x6f0013 22 22 https://localhost:8000
+0x6f03f7 23 23 Got response %d: %s %s\n
+0x6f397b 32 32 Failed reading response body: %s
+0x6ed500 14 14 Failed get: %s
+0x6f2e40 30 30 Reading server certificate: %s
+0x6eb88e 7 7 version
+0x6ecbc3 12 12 HTTP version
+12679
 bufio
 bytes
 compress/flate
@@ -259,6 +312,11 @@ CMDS=<<EOF
 aalg
 fl~sym.go.~?
 pdfs @ main ~str.
+# Attempt to get some refernce strings when the count changes with izq.
+echo HEAD
+izq~:..10
+echo TAIL
+izq~:-10..
 izq~?
 ilq
 EOF
@@ -273,7 +331,29 @@ EXPECT=<<EOF
 0x0065de6d str.version
 0x0065de8a str.HTTP_version
 0x0065dfe6 str.
-15086
+HEAD
+0x65f99f 4 4 flag
+0x65f9a7 4 4 hash
+0x65f9af 4 4 sort
+0x65f9b7 4 4 sync
+0x65f9bf 4 4 time
+0x65f9c6 4 4 *int
+0x65f9cd 4 4 AAAA
+0x65f9d4 4 4 Addr
+0x65f9db 4 4 Args
+0x65f9e2 4 4 Atim
+TAIL
+0x705389 56 56 http2: request body larger than specified content length
+0x6fc61a 25 25 http2: Request.URI is nil
+0x6f8031 10 10 server.crt
+0x6fb5da 22 22 https://localhost:8000
+0x6fb9a8 23 23 Got response %d: %s %s\n
+0x6fecea 32 32 Failed reading response body: %s
+0x6f8e6f 14 14 Failed get: %s
+0x6fe2c3 30 30 Reading server certificate: %s
+0x6f7521 7 7 version
+0x6f85b4 12 12 HTTP version
+12053
 bufio
 bytes
 compress/flate
@@ -380,11 +460,15 @@ RUN
 
 NAME=Resolve all symbols on a linux go1.16 binary (arm32)
 FILE=bins/golang/btcctl-linux-armv7-v0.22.0-beta
-TIMEOUT=1200
 CMDS=<<EOF
 aalg
 fl~sym.go.~?
 pdfs @ main ~str.
+# Attempt to get some refernce strings when the count changes with izq.
+echo HEAD
+izq~:..10
+echo TAIL
+izq~:-10..
 izq~?
 ilq
 EOF
@@ -395,14 +479,12 @@ EXPECT=<<EOF
 0x00270db8 str.1.0
 0x002710ec str.Failed_to_unmarshal_result:__v
 0x0027124c str.Failed_to_format_result:__v
-0x00271338 str.PH2
 0x0027140c str.s_command:__v__code:__s
 0x002714b0 str.The___s__command_can_only_be_used_via_websockets
 0x00271580 str.Unrecognized_command___s
 0x00271608 str.No_command_specified
 0x0027186c str.Chain_Server_Commands:DEBUG_HTTP2
 0x0027187c str.Wallet_Server_Commands____wallet_:
-0x00271ab4 str.PH2
 0x00271bbc str.cannot_use__wallet_with__regtest__btcwallet_not_yet_compatible_with_regtest
 0x00271e10 str.localhost
 0x00272018 str.Use__s__h_to_show_options
@@ -438,7 +520,29 @@ EXPECT=<<EOF
 0x0027401c str.btcctl.conf
 0x00274090 str.rpc.cert
 0x00274104 str.rpc.cert
-16188
+HEAD
+0x280a6f 4 4 main
+0x280a77 4 4 sort
+0x280a7f 4 4 sync
+0x280a87 4 4 time
+0x280a8e 4 4 *int
+0x280a95 4 4 AAAA
+0x280a9c 4 4 Add2
+0x280aa3 4 4 Addr
+0x280aaa 4 4 Args
+0x280ab1 4 4 Atim
+TAIL
+0x2e9fd2 5 5 %s+%s
+0x2fe095 63 63 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-
+0x2e9e6b 5 5 btcdc
+0x2e9e6b 4 4 btcd
+0x2ea4ca 5 5 btcct
+0x2ea4ca 6 6 btcctl
+0x2eb50f 5 5 btcwa
+0x2eb50f 9 9 btcwallet
+0x2ec40d 11 11 btcctl.conf
+0x2eb053 8 8 rpc.cert
+14171
 bufio
 bytes
 compress/flate
@@ -557,6 +661,11 @@ CMDS=<<EOF
 aalg
 fl~sym.go.~?
 pdfs @ main ~str.
+# Attempt to get some refernce strings when the count changes with izq.
+echo HEAD
+izq~:..10
+echo TAIL
+izq~:-10..
 izq~?
 EOF
 EXPECT=<<EOF
@@ -630,7 +739,29 @@ EXPECT=<<EOF
 0x0026e4b8 str.btcctl.conf
 0x0026e53c str.rpc.cert
 0x0026e5c0 str.rpc.cert
-16769
+HEAD
+0x270767 4 4 main
+0x27076f 4 4 sort
+0x270777 4 4 sync
+0x27077f 4 4 time
+0x270786 4 4 *int
+0x27078d 4 4 AAAA
+0x270794 4 4 Add2
+0x27079b 4 4 Addr
+0x2707a2 4 4 Args
+0x2707a9 4 4 Atim
+TAIL
+0x306b9a 5 5 %s+%s
+0x31abbf 63 63 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-
+0x306a26 5 5 btcdc
+0x306a26 4 4 btcd
+0x30708d 5 5 btcct
+0x30708d 6 6 btcctl
+0x308060 5 5 btcwa
+0x308060 9 9 btcwallet
+0x308f22 11 11 btcctl.conf
+0x307bd6 8 8 rpc.cert
+14229
 EOF
 RUN
 
@@ -640,6 +771,11 @@ CMDS=<<EOF
 aalg
 fl~sym.go.~?
 pdfs @ sym.go.runtime.panicwrap ~str.
+# Attempt to get some refernce strings when the count changes with izq.
+echo HEAD
+izq~:..10
+echo TAIL
+izq~:-10..
 izq~?
 izq~ slice bounds out of range
 iI~compiler
@@ -652,6 +788,28 @@ EXPECT=<<EOF
 0x100006e64 str.pointer
 0x100006eac str.panicwrap:_no___in
 0x1000076d0 str.internal_error___misuse_of_itab
+HEAD
+0x1001822b3 46 46 \xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff
+0x10008b966 31 31 fmt: unknown base; can't happen
+0x100087f8a 11 11 unreachable
+0x10008e827 71 71 too many concurrent operations on a single file or socket (max 1048575)
+0x10008a75e 25 25 inconsistent poll.fdMutex
+0x10008b332 29 29 reflect: Elem of invalid type
+0x10008b740 30 30 reflect: Len of non-array type
+0x100087ddd 11 11 Hello Rizin
+0x1000879fd 9 9 invalid n
+0x10008880c 15 15 invalid argSize
+TAIL
+0x100088c1d 10 10 0123456789
+0x100088c1d 17 17 0123456789abcdefx
+0x100087058 5 5 <nil>
+0x100087277 6 6 String
+0x10008707b 5 5 Error
+0x1000875ed 8 8 GoString
+0x100087217 6 6 Format
+0x1000872ad 6 6 []byte
+0x10008ca10 36 36 syntax error scanning complex number
+0x10008b454 29 29 syntax error scanning boolean
 1709
 0x10008bada 31 31 slice bounds out of range [:%x]
 0x10008babb 31 31 slice bounds out of range [%x:]
@@ -704,6 +862,11 @@ CMDS=<<EOF
 aalg
 fl~sym.go.~?
 pdfs @ main ~str.
+# Attempt to get some refernce strings when the count changes with izq.
+echo HEAD
+izq~:..10
+echo TAIL
+izq~:-10..
 izq~?
 iI~compiler
 ilq
@@ -712,6 +875,28 @@ EXPECT=<<EOF
 1788
 0x004a699b str.hello__hacktivity
 0x004a69d5 str.reflect.__funcTypeFixed64_.AssignableTo
+HEAD
+0x4a7323 5 4 sort
+0x4a732b 5 4 sync
+0x4a7333 5 4 time
+0x4a733a 4 4 *int
+0x4a7341 4 4 Addr
+0x4a7348 4 4 Bits
+0x4a734f 4 4 Bool
+0x4a7356 4 4 Call
+0x4a735d 4 4 Data
+0x4a7364 4 4 Elem
+TAIL
+0x4cc34c 11 11 /dev/stderr
+0x4d4101 55 55 os: invalid use of WriteAt on file opened with O_APPEND
+0x4cd67f 17 17 0123456789abcdefx
+0x4cd66e 17 17 0123456789ABCDEFX
+0x4cb67c 5 5 <nil>
+0x4cb8cc 6 6 []byte
+0x4cf0eb 23 23 <invalid reflect.Value>
+0x4d247e 36 36 syntax error scanning complex number
+0x4d0da9 29 29 syntax error scanning boolean
+0x4cdc0f 18 18 hello, hacktivity\n
 9570
 compiler go1.15 Linker 03.00
 errors
@@ -944,6 +1129,11 @@ CMDS=<<EOF
 aalg
 fl~sym.go.~?
 pdfs @ main ~str.
+# Attempt to get some refernce strings when the count changes with izq.
+echo HEAD
+izq~:..10
+echo TAIL
+izq~:-10..
 izq~?
 EOF
 EXPECT=<<EOF
@@ -964,6 +1154,28 @@ EXPECT=<<EOF
 0x00490692 str.name:
 0x0049071e str.tail:
 0x00490780 str.expected__foo__or__bar__subcommands
+HEAD
+0x4911d6 4 4 tls\b
+0x491244 4 4 flag
+0x49124a 5 4 Name
+0x491250 4 4 keys
+0x491256 4 4 Args
+0x49125c 4 4 Bool
+0x491262 4 4 Func
+0x491268 4 4 Init
+0x49126e 4 4 NArg
+0x491274 5 4 Uint
+TAIL
+0x4b2609 27 27 flag needs an argument: -%s
+0x4b3a8f 33 33 invalid value %q for flag -%s: %v
+0x4b25ee 27 27 invalid boolean flag %s: %v
+0x4b4325 36 36 invalid boolean value %q for -%s: %v
+0x4b3e4c 34 34 flag provided but not defined: -%s
+0x4ae39e 3 3 foo
+0x4ae4d9 5 5 level
+0x4ae5d3 6 6 enable
+0x4ae40d 4 4 name
+0x4ae3a1 3 3 bar
 20681
 EOF
 RUN
@@ -974,6 +1186,11 @@ CMDS=<<EOF
 aalg
 fl~sym.go.~?
 pdfs @ main ~str.
+# Attempt to get some refernce strings when the count changes with izq.
+echo HEAD
+izq~:..10
+echo TAIL
+izq~:-10..
 izq~?
 EOF
 EXPECT=<<EOF
@@ -994,6 +1211,28 @@ EXPECT=<<EOF
 0x00487a12 str.name:
 0x00487a9e str.tail:
 0x00487b00 str.expected__foo__or__bar__subcommands
-3604
+HEAD
+0x488211 4 4 flag
+0x488217 4 4 Name
+0x48821d 4 4 keys
+0x488223 4 4 Args
+0x488229 4 4 Bool
+0x48822f 4 4 Func
+0x488235 4 4 Init
+0x48823b 4 4 NArg
+0x488241 4 4 Uint
+0x488247 4 4 name
+TAIL
+0x4a6752 27 27 flag needs an argument: -%s
+0x4a7bf3 33 33 invalid value %q for flag -%s: %v
+0x4a6737 27 27 invalid boolean flag %s: %v
+0x4a84a8 36 36 invalid boolean value %q for -%s: %v
+0x4a7ff2 34 34 flag provided but not defined: -%s
+0x4a2cde 3 3 foo
+0x4a2e19 5 5 level
+0x4a2f0e 6 6 enable
+0x4a2d4d 4 4 name
+0x4a2ce1 3 3 bar
+3232
 EOF
 RUN

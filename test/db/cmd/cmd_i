@@ -3236,18 +3236,18 @@ EXPECT=<<EOF
 -- default --
      paddr      vaddr len size section type  string       
 ----------------------------------------------------------
-0x000004b0 0x080484b0  12   13 .rodata ascii Hello world!
+0x000004b0 0x080484b0  12   12 .rodata ascii Hello world!
 -- geq 12 --
      paddr      vaddr len size section type  string       
 ----------------------------------------------------------
-0x000004b0 0x080484b0  12   13 .rodata ascii Hello world!
+0x000004b0 0x080484b0  12   12 .rodata ascii Hello world!
 -- geq 13 --
 paddr vaddr len size section type string 
 -----------------------------------------
 -- geq 0 --
      paddr      vaddr len size section type  string       
 ----------------------------------------------------------
-0x000004b0 0x080484b0  12   13 .rodata ascii Hello world!
+0x000004b0 0x080484b0  12   12 .rodata ascii Hello world!
 -- small buffer 12 --
      paddr      vaddr len size section type  string       
 ----------------------------------------------------------
@@ -3871,15 +3871,15 @@ wx 26252625262526250000
 EOF
 EXPECT=<<EOF
 0x00000004 0x00000004   8    9         ascii abcdefgh
-0x00000004 0x00000004   8    9         ascii abcdefgh
-0x00000004 0x00000004   8    9         ascii abcdefgh
-0x00000000 0x00000000   6   14         utf16le ki扡摣晥桧 blocks=Basic Latin,CJK Unified Ideographs
+0x00000004 0x00000004   8    8         ascii abcdefgh
+0x00000004 0x00000004   8    8         utf8 abcdefgh
+0x00000000 0x00000000   6   12         utf16le ki扡摣晥桧 blocks=Basic Latin,CJK Unified Ideographs
 
 0x00000001 0x00000001   6   14         utf16le %%%%最h blocks=Basic Latin,CJK Unified Ideographs
-0x00000000 0x00000000   4   10         utf16le ──── blocks=Box Drawing
+0x00000000 0x00000000   4    8         utf16le ──── blocks=Box Drawing
 
 0x00000000 0x00000000   8    9         ascii &%&%&%&%
-0x00000000 0x00000000   4   10         utf16le ┦┦┦┦ blocks=Box Drawing
+0x00000000 0x00000000   4    8         utf16le ┦┦┦┦ blocks=Box Drawing
 EOF
 RUN
 
@@ -3901,7 +3901,7 @@ EOF
 EXPECT=<<EOF
 0x000004b0 0x080484b0  12   13 .rodata ascii Hello world!
 0x000004b4 0x080484b4   8    9 .rodata ascii abcdefgh
-0x000004b4 0x080484b4   8    9 .rodata ascii abcdefgh
+0x000004b4 0x080484b4   8    8 .rodata utf8 abcdefgh
 EOF
 RUN
 
