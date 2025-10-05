@@ -4,7 +4,12 @@
 
 #include <rz_asm.h>
 #include <rz_lib.h>
+
+#if USE_SYS_ZYDIS
+#include <Zydis/Zydis.h>
+#else
 #include <Zydis.h>
+#endif
 
 #include "asm_x86_vm.c"
 

@@ -243,13 +243,7 @@ static void rz_diff_show_help(bool usage_only) {
 		"",         "",             "   symbols    | compare symbols found in the files",
 		// clang-format on
 	};
-	size_t maxFlagAndArgLength = rz_print_options_get_max_len(options, RZ_ARRAY_SIZE(options), NULL);
-	for (int i = 0; i < RZ_ARRAY_SIZE(options); i += 3) {
-		if (i + 1 < RZ_ARRAY_SIZE(options)) {
-			rz_print_colored_help_option(options[i], options[i + 1], options[i + 2], maxFlagAndArgLength);
-		}
-	}
-
+	rz_print_colored_help(options, RZ_ARRAY_SIZE(options), false);
 	printf(
 		"palette colors can be changed by adding the following lines\n"
 		"inside the $HOME/.rizinrc file\n"

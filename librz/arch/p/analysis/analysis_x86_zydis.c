@@ -4,7 +4,13 @@
 
 #include <rz_analysis.h>
 #include <rz_lib.h>
+
+#if USE_SYS_ZYDIS
+#include <Zydis/Zydis.h>
+#else
 #include <Zydis.h>
+#endif
+
 #include <x86/x86_il.h>
 #include <x86/x86_mnemonics.h>
 
