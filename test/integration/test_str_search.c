@@ -106,7 +106,7 @@ int test_rz_str_search_single_simple(void) {
 	mu_assert_true(rz_search_collection_string_add(collection, patterns[0][0], RZ_REGEX_LITERAL, match_alignment, RZ_STRING_ENC_UTF8), "Failed to add job");
 	mu_assert_true(rz_search_collection_string_add(collection, patterns[0][1], RZ_REGEX_EXTENDED, match_alignment, RZ_STRING_ENC_UTF8), "Failed to add job");
 
-	RzList *hits = rz_search_on_buffer(search_opts, collection, file_buffer);
+	RzList *hits = rz_search_on_buffer(search_opts, collection, file_buffer, NULL);
 	mu_assert_eq(rz_list_length(hits), 2, "Incorrect number of strings.");
 	RzListIter *it;
 	const RzSearchHit *hit;
@@ -245,7 +245,7 @@ int test_rz_str_search_multiple_enc(void) {
 	mu_assert_true(rz_search_collection_string_add(collection, patterns[2][0], RZ_REGEX_EXTENDED, match_alignment, RZ_STRING_ENC_UTF32LE), "Adding failed");
 	mu_assert_true(rz_search_collection_string_add(collection, patterns[3][0], RZ_REGEX_EXTENDED, match_alignment, RZ_STRING_ENC_IBM037), "Adding failed");
 
-	RzList *hits = rz_search_on_buffer(search_opts, collection, file_buffer);
+	RzList *hits = rz_search_on_buffer(search_opts, collection, file_buffer, NULL);
 	mu_assert_notnull(hits, "NULL check failed");
 	mu_assert_eq(rz_list_length(hits), 7, "Incorrect number of strings.");
 	const RzSearchHit *hit;

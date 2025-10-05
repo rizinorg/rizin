@@ -2,8 +2,11 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_bin.h>
-#include <rz_util/rz_log.h>
-#include <rz_util/rz_str_search.h>
+#include <rz_list.h>
+#include <rz_search.h>
+#include <rz_types.h>
+#include <rz_util.h>
+#include <rz_vector.h>
 
 typedef struct search_interval_t {
 	ut64 paddr;
@@ -71,6 +74,137 @@ static RzBinString *to_bin_string(RzDetectedString *src) {
 	// variables has been transfered to RzBinString
 	free(src);
 	return dst;
+}
+
+static RzPVector /*<RzBinString *>*/ *string_wildcard_search(
+	RzBinFile *bf,
+	const RzList /*<RzInterval *>*/ *intervals,
+	const RzBinStringSearchOpt *opt) {
+	// If the string encoding doesn't need scanning,
+	// we can create a wildcard pattern and search it.
+	// This speeds up the string search a lot.
+	RzSearchOpt *search_opts = rz_search_opt_new();
+	if (!search_opts) {
+		RZ_LOG_ERROR("bin_file_strings: search_opts NULL check failed!\n");
+		return NULL;
+	}
+	size_t n_threads = opt->max_threads ? opt->max_threads : rz_th_max_threads(0);
+	// We only search with one thread, because this function
+	// was already dispatched into its own thread.
+	rz_search_opt_set_max_threads(search_opts, n_threads);
+	rz_search_opt_set_show_progress_from_str(search_opts, "no");
+	if (opt->max_region_size) {
+		rz_search_opt_set_chunk_size(search_opts, opt->max_region_size);
+	}
+
+	// The find options allow to configure string specific settings.
+	RzSearchFindOpt *find_opts = rz_search_find_opt_new();
+	if (!find_opts) {
+		rz_search_opt_free(search_opts);
+		RZ_LOG_ERROR("bin_file_strings: find_opts NULL check failed!\n");
+		return NULL;
+	}
+
+	size_t match_alignment = rz_string_enc_code_point_width(opt->string_encoding);
+	if (!match_alignment) {
+		rz_warn_if_reached();
+		match_alignment = 1;
+	}
+
+	rz_search_find_opt_set_alignment(find_opts, match_alignment);
+	rz_search_find_opt_set_overlap_match(find_opts, false);
+	if (!rz_search_opt_set_find_options(search_opts, find_opts)) {
+		rz_search_opt_free(search_opts);
+		RZ_LOG_ERROR("bin_file_strings: Setting find options failed!\n");
+		return NULL;
+	}
+	rz_search_find_opt_set_alignment(find_opts, match_alignment);
+	rz_search_find_opt_set_overlap_match(find_opts, false);
+
+	RzSearchCollection *collection = rz_search_collection_strings(NULL, n_threads);
+	if (!collection) {
+		rz_search_opt_free(search_opts);
+		RZ_LOG_ERROR("bin_file_strings: Collection NULL check failed!\n");
+		return NULL;
+	}
+
+	char *wildcard = rz_regex_create_wildcard_pattern(opt->min_length, 0);
+	if (!wildcard) {
+		RZ_LOG_ERROR("bin_file_strings: Failed to create wildcard pattern!\n");
+		return NULL;
+	}
+	if (!rz_search_collection_string_add(collection, wildcard, RZ_REGEX_EXTENDED, match_alignment, opt->string_encoding)) {
+		RZ_LOG_ERROR("bin_file_strings: Failed to add wildcard pattern!\n");
+		rz_search_collection_free(collection);
+		return NULL;
+	}
+	free(wildcard);
+
+	RzList *hits = rz_search_on_buffer(search_opts, collection, bf->buf, intervals);
+	rz_search_collection_free(collection);
+	rz_search_opt_free(search_opts);
+
+	if (!hits) {
+		RZ_LOG_ERROR("bin_file_strings: rz_search_on_buffer() failed!\n");
+		return NULL;
+	}
+	RzPVector *bin_strings = rz_pvector_new((RzPVectorFree)rz_bin_string_free);
+	if (!bin_strings) {
+		rz_list_free(hits);
+		return NULL;
+	}
+	RzListIter *it;
+	RzSearchHit *hit;
+	rz_list_foreach (hits, it, hit) {
+		RzBinString *bfs = RZ_NEW0(RzBinString);
+		if (!bfs) {
+			goto convert_error;
+		}
+		bfs->string = RZ_NEWS0(char, hit->size + 1);
+		if (!bfs->string) {
+			goto convert_error;
+		}
+		if (rz_buf_read_at(bf->buf, hit->address, (ut8 *)bfs->string, hit->size) == 0) {
+			RZ_LOG_WARN("bin_file_strings: Failed read RzBinString data at paddr: 0x%" PFMT64x "\n", hit->address);
+			continue;
+		}
+		ut8 *utf8_str = NULL;
+		if (!(opt->string_encoding == RZ_STRING_ENC_8BIT || opt->string_encoding == RZ_STRING_ENC_UTF8)) {
+			// Convert to UTF-8.
+			switch (opt->string_encoding) {
+			default:
+				rz_warn_if_reached();
+				break;
+			case RZ_STRING_ENC_UTF16LE:
+			case RZ_STRING_ENC_UTF16BE:
+				utf8_str = rz_str_utf16_to_utf8((ut8 *)bfs->string, hit->size, opt->string_encoding == RZ_STRING_ENC_UTF16BE);
+				break;
+			case RZ_STRING_ENC_UTF32LE:
+			case RZ_STRING_ENC_UTF32BE:
+				utf8_str = rz_str_utf32_to_utf8((ut8 *)bfs->string, hit->size, opt->string_encoding == RZ_STRING_ENC_UTF32BE);
+				break;
+			}
+		}
+		if (utf8_str) {
+			free(bfs->string);
+			bfs->string = (char *)utf8_str;
+		}
+		ut64 length;
+		rz_search_hit_detail_get_unsigned(hit->detail, &length);
+		bfs->length = length;
+		bfs->size = hit->size;
+		bfs->paddr = hit->address + bf->o->boffset;
+		bfs->vaddr = rz_bin_object_p2v(bf->o, bfs->paddr);
+		bfs->type = opt->string_encoding;
+		rz_pvector_push(bin_strings, bfs);
+	}
+	rz_list_free(hits);
+	return bin_strings;
+
+convert_error:
+	rz_list_free(hits);
+	RZ_LOG_ERROR("bin_file_strings: Critical convert error.\n");
+	return NULL;
 }
 
 static RzList /*<RzDetectedString *>*/ *string_scan_range(SharedData *shared, const ut64 paddr, const ut64 interval_size) {
@@ -318,53 +452,14 @@ RZ_API void rz_bin_string_search_opt_init(RZ_NONNULL RzBinStringSearchOpt *opt) 
 	opt->mode = RZ_BIN_STRING_SEARCH_MODE_AUTO;
 }
 
-/**
- * \brief  Generates a RzList struct containing RzBinString from a given RzBinFile
- *
- * \param  bf   The RzBinFile to use for searching for strings
- * \param  opt  The options regarding the string search.
- *
- * \return On success returns RzList pointer, otherwise NULL
- */
-RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_bin_file_strings(RZ_NONNULL RzBinFile *bf, RZ_NONNULL const RzBinStringSearchOpt *opt) {
-	rz_return_val_if_fail(bf && opt, NULL);
-
-	HtUP *strings_db = NULL;
-	RzPVector *results = NULL;
-	RzThreadQueue *intervals = NULL;
-	RzThreadPool *pool = NULL;
-	RzThreadLock *lock = NULL;
-	size_t pool_size = 1;
-	bool prefer_big_endian = false;
+static RzList /*<RzInterval *>*/ *gen_intervals(RzBinFile *bf, const RzBinStringSearchOpt *opt, size_t pool_size, bool list_doesnt_own) {
+	bool has_sections = bf->o && !rz_pvector_empty(bf->o->sections);
 	const size_t raw_alignment = opt->raw_alignment;
 	RzBinStringSearchMode mode = opt->mode;
-
-	pool = rz_th_pool_new(opt->max_threads);
-	if (!pool) {
-		RZ_LOG_ERROR("bin_file_strings: cannot allocate thread pool.\n");
-		goto fail;
-	}
-	pool_size = rz_th_pool_size(pool);
-
-	lock = rz_th_lock_new(false);
-	if (!lock) {
-		RZ_LOG_ERROR("bin_file_strings: cannot allocate thread lock.\n");
-		goto fail;
-	}
-
-	intervals = rz_th_queue_new(RZ_THREAD_QUEUE_UNLIMITED, (RzListFree)free);
+	RzList *intervals = list_doesnt_own ? rz_list_new() : rz_list_newf((RzListFree)rz_itv_free);
 	if (!intervals) {
-		RZ_LOG_ERROR("bin_file_strings: cannot allocate intervals queue.\n");
 		goto fail;
 	}
-
-	strings_db = ht_up_new(NULL, NULL);
-	if (!strings_db) {
-		RZ_LOG_ERROR("bin_file_strings: cannot allocate string map.\n");
-		goto fail;
-	}
-
-	bool has_sections = bf->o && !rz_pvector_empty(bf->o->sections);
 
 	if (mode == RZ_BIN_STRING_SEARCH_MODE_AUTO && !has_sections) {
 		mode = RZ_BIN_STRING_SEARCH_MODE_RAW_BINARY;
@@ -400,10 +495,8 @@ RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_bin_file_strings(RZ_NONNULL RzBi
 			if ((itv->paddr + itv->psize) > bf->size) {
 				itv->psize = bf->size - itv->paddr;
 			}
-
-			if (!rz_th_queue_push(intervals, itv, true)) {
-				free(itv);
-				RZ_LOG_ERROR("bin_file_strings: cannot append SearchInterval to list.\n");
+			if (!rz_list_push(intervals, itv)) {
+				RZ_LOG_ERROR("bin_file_strings: failed to push SearchInterval.\n");
 				goto fail;
 			}
 		}
@@ -438,14 +531,93 @@ RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_bin_file_strings(RZ_NONNULL RzBi
 			if ((itv->paddr + itv->psize) > bf->size) {
 				itv->psize = bf->size - itv->paddr;
 			}
-
-			if (!rz_th_queue_push(intervals, itv, true)) {
-				free(itv);
-				RZ_LOG_ERROR("bin_file_strings: cannot append SearchInterval to list.\n");
+			if (!rz_list_push(intervals, itv)) {
+				RZ_LOG_ERROR("bin_file_strings: failed to push SearchInterval.\n");
 				goto fail;
 			}
 		}
+	} else {
+		RZ_LOG_WARN("The binary loader searches strings only in the read only sections,"
+			    "but the binary has no sections.\n Please search strings manually with /z.\n");
 	}
+	return intervals;
+
+fail:
+	rz_list_free(intervals);
+	return NULL;
+}
+
+/**
+ * \brief  Generates a RzList struct containing RzBinString from a given RzBinFile
+ *
+ * \param  bf   The RzBinFile to use for searching for strings
+ * \param  opt  The options regarding the string search.
+ *
+ * \return On success returns RzList pointer, otherwise NULL
+ */
+RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_bin_file_strings(RZ_NONNULL RzBinFile *bf, RZ_NONNULL const RzBinStringSearchOpt *opt) {
+	rz_return_val_if_fail(bf && opt, NULL);
+
+	HtUP *strings_db = NULL;
+	RzPVector *results = NULL;
+	RzThreadQueue *intervals = NULL;
+	RzThreadPool *pool = NULL;
+	RzThreadLock *lock = NULL;
+	size_t pool_size = 1;
+	bool prefer_big_endian = false;
+
+	pool = rz_th_pool_new(opt->max_threads);
+	if (!pool) {
+		RZ_LOG_ERROR("bin_file_strings: cannot allocate thread pool.\n");
+		goto fail;
+	}
+	pool_size = rz_th_pool_size(pool);
+	bool scan_for_strings = rz_search_str_enc_needs_scanning(opt->string_encoding);
+	RzList *itv_list = gen_intervals(bf, opt, pool_size, scan_for_strings);
+
+	if (!itv_list) {
+		RZ_LOG_ERROR("bin_file_strings: Failed to generate interval list.\n");
+		goto fail;
+	}
+
+	if (!scan_for_strings) {
+		// If scanning is not needed for the string search we
+		// can instead just default to our normal string search
+		// with a wildcard pattern.
+		// It is much faster than scanning.
+		RzPVector *res = string_wildcard_search(bf, itv_list, opt);
+		rz_list_free(itv_list);
+		return res;
+	}
+
+	lock = rz_th_lock_new(false);
+	if (!lock) {
+		RZ_LOG_ERROR("bin_file_strings: cannot allocate thread lock.\n");
+		goto fail;
+	}
+
+	intervals = rz_th_queue_new(RZ_THREAD_QUEUE_UNLIMITED, (RzListFree)free);
+	if (!intervals) {
+		RZ_LOG_ERROR("bin_file_strings: cannot allocate intervals queue.\n");
+		goto fail;
+	}
+
+	strings_db = ht_up_new(NULL, NULL);
+	if (!strings_db) {
+		RZ_LOG_ERROR("bin_file_strings: cannot allocate string map.\n");
+		goto fail;
+	}
+
+	RzListIter *it;
+	RzInterval *itv;
+	rz_list_foreach (itv_list, it, itv) {
+		if (!rz_th_queue_push(intervals, itv, true)) {
+			free(itv);
+			RZ_LOG_ERROR("bin_file_strings: cannot append SearchInterval to list.\n");
+			goto fail;
+		}
+	}
+	rz_list_free(itv_list);
 
 	if (rz_th_queue_is_empty(intervals)) {
 		// we just fail directly and return an empty vector, since there are no search intervals.

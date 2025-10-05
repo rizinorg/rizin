@@ -809,13 +809,16 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_search_on_io(
  * \param      opt        The RzSearchOpt to use
  * \param      col        The RzSearchCollection to use
  * \param      buffer     The RzBuffer to search in.
+ * \param      ranges     An optional list of ranges to search in. The whole
+ *                        buffer is searched if NULL.
  *
  * \return     On success returns all the hits.
  */
 RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_search_on_buffer(
 	RZ_BORROW RZ_NONNULL RzSearchOpt *opt,
 	RZ_BORROW RZ_NONNULL RzSearchCollection *col,
-	RZ_BORROW RZ_NONNULL RzBuffer *buffer) {
+	RZ_BORROW RZ_NONNULL RzBuffer *buffer,
+	RZ_NULLABLE const RzList /*<RzInterval *>*/ *ranges) {
 	rz_return_val_if_fail(opt && col && buffer, NULL);
 	search_ctx_t ctx = { 0 };
 	RzList *results = NULL;
@@ -842,10 +845,21 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_search_on_buffer(
 	}
 
 	RzList *search_in = rz_list_new();
-	RzIOMap *map = RZ_NEW0(RzIOMap);
-	map->itv.addr = 0;
-	map->itv.size = rz_buf_size(buffer);
-	rz_list_append(search_in, map);
+	if (ranges) {
+		RzListIter *it;
+		RzInterval *itv;
+		rz_list_foreach (ranges, it, itv) {
+			RzIOMap *map = RZ_NEW0(RzIOMap);
+			map->itv.addr = itv->addr;
+			map->itv.size = itv->size;
+			rz_list_append(search_in, map);
+		}
+	} else {
+		RzIOMap *map = RZ_NEW0(RzIOMap);
+		map->itv.addr = 0;
+		map->itv.size = rz_buf_size(buffer);
+		rz_list_append(search_in, map);
+	}
 	windows = assemble_search_window_list(search_in, opt);
 	rz_list_free(search_in);
 
