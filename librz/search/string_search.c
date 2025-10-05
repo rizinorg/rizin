@@ -346,6 +346,7 @@ static void string_free(void *user) {
 	}
 	StringSearch *ss = (StringSearch *)user;
 	rz_pvector_free(ss->strings);
+	rz_th_queue_free(ss->thread_ids);
 	free(ss);
 }
 
