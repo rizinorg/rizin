@@ -467,9 +467,8 @@ static inline char *callable_name_or_ptr(RZ_NONNULL const RzCallable *callable, 
 		RzStrBuf *buf = rz_strbuf_new(callable->name);
 		rz_return_val_if_fail(buf, NULL);
 
-		/* We expect the top of the stack to be a pointer, so setting the
-		 * last_kind to pointer helps us in avoiding any superfluous initial parens. */
-		RzTypeKind last_kind = RZ_TYPE_KIND_POINTER;
+		RzTypeKind last_kind;
+		bool innermost_wrapper = true;
 
 		st64 *it;
 		rz_vector_foreach (wrapper_type_infos, it) {
@@ -482,12 +481,15 @@ static inline char *callable_name_or_ptr(RZ_NONNULL const RzCallable *callable, 
 				current_kind = RZ_TYPE_KIND_ARRAY;
 			}
 
-			if (last_kind != current_kind) {
+			/* No need for parens for the innermost wrapper, since they would be superfluous. */
+			if (!innermost_wrapper && last_kind != current_kind) {
 				/* Change in the wrapping type's kind */
 				rz_strbuf_prepend(buf, "(");
 				rz_strbuf_append(buf, ")");
 			}
 			last_kind = current_kind;
+
+			innermost_wrapper = false;
 
 			if (current_kind == RZ_TYPE_KIND_POINTER) {
 				rz_strbuf_prepend(buf, "*");
