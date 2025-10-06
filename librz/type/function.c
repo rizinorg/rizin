@@ -440,7 +440,7 @@ RZ_API bool rz_type_is_callable_ptr_nested(RZ_NONNULL const RzType *type) {
 	}
 }
 
-static const RzCallable *callable_ptr_unwrap(RZ_NONNULL const RzType *type, RZ_NONNULL RzVector *wrapper_type_infos) {
+static const RzCallable *callable_ptr_unwrap(RZ_NONNULL const RzType *type, RZ_NONNULL RzVector /*<st64>*/ *wrapper_type_infos) {
 	rz_return_val_if_fail(type && wrapper_type_infos, NULL);
 
 	if (type->kind == RZ_TYPE_KIND_POINTER) {
@@ -458,7 +458,7 @@ static const RzCallable *callable_ptr_unwrap(RZ_NONNULL const RzType *type, RZ_N
 	return type->kind == RZ_TYPE_KIND_CALLABLE ? type->callable : NULL;
 }
 
-static inline char *callable_name_or_ptr(RZ_NONNULL const RzCallable *callable, RZ_NONNULL RzVector *wrapper_type_infos, bool zero_vla) {
+static inline char *callable_name_or_ptr(RZ_NONNULL const RzCallable *callable, RZ_NONNULL RzVector /*<st64>*/ *wrapper_type_infos, bool zero_vla) {
 	rz_return_val_if_fail(callable && wrapper_type_infos, NULL);
 
 	if (rz_vector_empty(wrapper_type_infos)) {
@@ -467,7 +467,7 @@ static inline char *callable_name_or_ptr(RZ_NONNULL const RzCallable *callable, 
 		RzStrBuf *buf = rz_strbuf_new(callable->name);
 		rz_return_val_if_fail(buf, NULL);
 
-		RzTypeKind last_kind;
+		RzTypeKind last_kind = RZ_TYPE_KIND_IDENTIFIER;
 		bool innermost_wrapper = true;
 
 		st64 *it;
@@ -518,7 +518,7 @@ static inline char *callable_name_or_ptr(RZ_NONNULL const RzCallable *callable, 
 	}
 }
 
-static bool callable_as_string(RzStrBuf *buf, const RzTypeDB *typedb, RZ_NONNULL const RzCallable *callable, RZ_NONNULL RzVector *wrapper_type_infos, bool zero_vla) {
+static bool callable_as_string(RzStrBuf *buf, const RzTypeDB *typedb, RZ_NONNULL const RzCallable *callable, RZ_NONNULL RzVector /*<st64>*/ *wrapper_type_infos, bool zero_vla) {
 	rz_return_val_if_fail(buf && typedb && callable && wrapper_type_infos, false);
 
 	if (callable->noret) {
