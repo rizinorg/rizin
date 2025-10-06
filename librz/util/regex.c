@@ -14,8 +14,9 @@
 #include <rz_types.h>
 
 // Default JIT stack size is 32KiB.
-#define RZ_REGEX_JIT_STACK_MIN (32 * 1024)
-// 512KiB to 1MiB are documented as reasoable maxima.
+// But the wildcard pattern we have for strings takes more.
+#define RZ_REGEX_JIT_STACK_MIN (512 * 1024)
+// 1MiB are documented as reasoable maxima.
 #define RZ_REGEX_JIT_STACK_MAX (1024 * 1024)
 
 typedef pcre2_general_context_8 RzRegexGeneralContext8; ///< General context.
