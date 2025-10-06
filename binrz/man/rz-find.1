@@ -26,6 +26,8 @@ Only accept aligned hits
 Set block size
 .It Fl e Ar regex
 Search for regex matches (can be used multiple times)
+.It Fl E Ar cmd
+Execute command for each file found
 .It Fl f Ar from
 Start searching from address 'from'
 .It Fl F Ar file
@@ -66,8 +68,6 @@ Show hexdump of search results
 Search for zero-terminated strings
 .It Fl Z
 Show string found on each search hit
-.It Fl E Ar command
-Execute <command> for each file found.
 .Pp
 .Sh SEE ALSO
 .Pp
