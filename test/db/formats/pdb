@@ -44,23 +44,23 @@ idp bins/pdb/Project1.pdb
 avgl
 EOF
 EXPECT=<<EOF
-global void (*type_0x1093)() [4] __xc_a @ 0x15000
+global void (*(type_0x1093[4]))() __xc_a @ 0x15000
 global void (*type_0x1093)() pcppinit @ 0x15104
-global void (*type_0x1093)() [4] __xc_z @ 0x15208
-global void (*type_0x1093)() [4] __xi_a @ 0x1530c
+global void (*(type_0x1093[4]))() __xc_z @ 0x15208
+global void (*(type_0x1093[4]))() __xi_a @ 0x1530c
 global int32_t (*type_0x1028)() pcinit @ 0x15410
 global int32_t (*type_0x1028)() pinit @ 0x15514
-global void (*type_0x1093)() [4] __xi_z @ 0x1571c
+global void (*(type_0x1093[4]))() __xi_z @ 0x1571c
 global const char *[24] _RTC_ErrorMessages @ 0x1594c
 global const char *[20] _RTC_errlist @ 0x16034
 global wchar_t [26] mspdbName @ 0x1640c
 global wchar_t [8] dllExt @ 0x1654c
 global struct _EXCEPTION_POINTERS GS_ExceptionPointers @ 0x165a0
 global struct IMAGE_LOAD_CONFIG_DIRECTORY32_2 _load_config_used @ 0x165b0
-global void (*type_0x1093)() [4] __rtc_iaa @ 0x168e0
-global void (*type_0x1093)() [4] __rtc_izz @ 0x16ae8
-global void (*type_0x1093)() [4] __rtc_taa @ 0x16bec
-global void (*type_0x1093)() [4] __rtc_tzz @ 0x16df4
+global void (*(type_0x1093[4]))() __rtc_iaa @ 0x168e0
+global void (*(type_0x1093[4]))() __rtc_izz @ 0x16ae8
+global void (*(type_0x1093[4]))() __rtc_taa @ 0x16bec
+global void (*(type_0x1093[4]))() __rtc_tzz @ 0x16df4
 global int32_t [20] _RTC_ErrorLevels @ 0x18000
 global int32_t __defaultmatherr @ 0x18018
 global int32_t __globallocalestatus @ 0x1801c
@@ -111,19 +111,19 @@ EOF
 EXPECT=<<EOF
 global const unsigned char _guard_dispatch_icall_nop @ 0x140009a80
 global const unsigned char _guard_xfg_dispatch_icall_nop @ 0x140009aa0
-global void (*type_0x1001)() [8] __xc_a @ 0x14000c000
+global void (*(type_0x1001[8]))() __xc_a @ 0x14000c000
 global void (*type_0x1001)() pre_cpp_initializer @ 0x14000c110
-global void (*type_0x1001)() [8] __xc_z @ 0x14000c220
-global int32_t (*type_0x1015)() [8] __xi_a @ 0x14000c330
+global void (*(type_0x1001[8]))() __xc_z @ 0x14000c220
+global int32_t (*(type_0x1015[8]))() __xi_a @ 0x14000c330
 global int32_t (*type_0x1015)() pre_c_initializer @ 0x14000c440
 global int32_t (*type_0x1015)() post_pgo_initializer @ 0x14000c550
-global int32_t (*type_0x1015)() [8] __xi_z @ 0x14000c660
-global void (*type_0x1001)() [8] __xp_a @ 0x14000c770
-global void (*type_0x1001)() [8] __xp_z @ 0x14000c880
-global void (*type_0x1001)() [8] __xt_a @ 0x14000c990
-global void (*type_0x1001)() [8] __xt_z @ 0x14000caa0
-global void (*type_0x1001)() [24] std::exception::`vftable' @ 0x14000d530
-global void (*type_0x1001)() [24] std::runtime_error::`vftable' @ 0x14000d808
+global int32_t (*(type_0x1015[8]))() __xi_z @ 0x14000c660
+global void (*(type_0x1001[8]))() __xp_a @ 0x14000c770
+global void (*(type_0x1001[8]))() __xp_z @ 0x14000c880
+global void (*(type_0x1001[8]))() __xt_a @ 0x14000c990
+global void (*(type_0x1001[8]))() __xt_z @ 0x14000caa0
+global void (*(type_0x1001[24]))() std::exception::`vftable' @ 0x14000d530
+global void (*(type_0x1001[24]))() std::runtime_error::`vftable' @ 0x14000d808
 global const char [15] uninit_premsg @ 0x14000d8d0
 global const char [43] uninit_postmsg @ 0x14000d8e0
 global const char *[40] _RTC_errlist @ 0x14000df58
@@ -133,10 +133,10 @@ global wchar_t [8] dllExt @ 0x14000e240
 global struct _RS5_IMAGE_LOAD_CONFIG_DIRECTORY64 _load_config_used @ 0x14000e2d0
 global void * __CastGuardVftablesStart @ 0x14000e600
 global void * __CastGuardVftablesEnd @ 0x14000e710
-global void (*type_0x1001)() [8] __rtc_iaa @ 0x14000ed88
-global void (*type_0x1001)() [8] __rtc_izz @ 0x14000efa8
-global void (*type_0x1001)() [8] __rtc_taa @ 0x14000f0b8
-global void (*type_0x1001)() [8] __rtc_tzz @ 0x14000f2d8
+global void (*(type_0x1001[8]))() __rtc_iaa @ 0x14000ed88
+global void (*(type_0x1001[8]))() __rtc_izz @ 0x14000efa8
+global void (*(type_0x1001[8]))() __rtc_taa @ 0x14000f0b8
+global void (*(type_0x1001[8]))() __rtc_tzz @ 0x14000f2d8
 global unsigned char $xdatasym @ 0x14000ff40
 global uint64_t __security_cookie_complement @ 0x140011000
 global uint64_t __security_cookie @ 0x140011008

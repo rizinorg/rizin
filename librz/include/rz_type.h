@@ -448,7 +448,7 @@ RZ_API bool rz_type_is_callable(RZ_NONNULL const RzType *type);
 RZ_API bool rz_type_is_callable_ptr(RZ_NONNULL const RzType *type);
 RZ_API bool rz_type_is_callable_ptr_nested(RZ_NONNULL const RzType *type);
 RZ_API RZ_OWN char *rz_type_callable_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzCallable *callable);
-RZ_API RZ_OWN char *rz_type_callable_ptr_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzType *type);
+RZ_API RZ_OWN char *rz_type_callable_ptr_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzType *type, bool zero_vla);
 
 RZ_API bool rz_type_func_is_noreturn(RzTypeDB *typedb, RZ_NONNULL const char *name);
 RZ_API bool rz_type_func_noreturn_add(RzTypeDB *typedb, RZ_NONNULL const char *name);

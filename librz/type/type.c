@@ -892,7 +892,7 @@ static bool type_decl_as_pretty_string(const RzTypeDB *typedb, const RzType *typ
 	}
 	case RZ_TYPE_KIND_POINTER:
 		if (rz_type_is_callable_ptr_nested(type)) { // function pointers
-			char *typestr = rz_type_callable_ptr_as_string(typedb, type);
+			char *typestr = rz_type_callable_ptr_as_string(typedb, type, zero_vla);
 			rz_strbuf_append(phbuf.typename, typestr);
 			free(typestr);
 		} else {
@@ -903,13 +903,19 @@ static bool type_decl_as_pretty_string(const RzTypeDB *typedb, const RzType *typ
 		}
 		break;
 	case RZ_TYPE_KIND_ARRAY:
-		if (type->array.count) {
-			rz_strbuf_appendf(phbuf.arraybuf, "[%" PFMT64d "]", type->array.count);
-		} else { // variable length arrays
-			rz_strbuf_appendf(phbuf.arraybuf, "[%s]", zero_vla ? "0" : "");
+		if (rz_type_is_callable_ptr_nested(type)) { // arrays to function pointers
+			char *typestr = rz_type_callable_ptr_as_string(typedb, type, zero_vla);
+			rz_strbuf_append(phbuf.typename, typestr);
+			free(typestr);
+		} else {
+			if (type->array.count) {
+				rz_strbuf_appendf(phbuf.arraybuf, "[%" PFMT64d "]", type->array.count);
+			} else { // variable length arrays
+				rz_strbuf_appendf(phbuf.arraybuf, "[%s]", zero_vla ? "0" : "");
+			}
+			type_decl_as_pretty_string(typedb, type->array.type, used_types, phbuf, self_ref, self_ref_typename,
+				zero_vla, print_anon, show_typedefs, allow_non_exist);
 		}
-		type_decl_as_pretty_string(typedb, type->array.type, used_types, phbuf, self_ref, self_ref_typename,
-			zero_vla, print_anon, show_typedefs, allow_non_exist);
 		break;
 	case RZ_TYPE_KIND_CALLABLE: {
 		char *callstr = rz_type_callable_as_string(typedb, type->callable);
@@ -985,7 +991,7 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 	if (type->kind == RZ_TYPE_KIND_IDENTIFIER) {
 		is_anon = !strncmp(type->identifier.name, "anonymous ", 10);
 		btype = rz_type_db_get_base_type(typedb, type->identifier.name);
-	} else if ((type->kind == RZ_TYPE_KIND_POINTER && rz_type_is_callable_ptr_nested(type)) || type->kind == RZ_TYPE_KIND_CALLABLE) {
+	} else if (rz_type_is_callable_ptr_nested(type) || type->kind == RZ_TYPE_KIND_CALLABLE) {
 		identifier = NULL; // no need to separately print identifier for function pointers or functions
 	}
 	char *typename_str = rz_strbuf_drain(phbuf.typename);

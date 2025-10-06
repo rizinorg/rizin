@@ -363,18 +363,17 @@ RZ_API RZ_OWN RzType *rz_type_parse_string_single(RzTypeParser *parser, const ch
 	// And only after that - run the normal C/C++ syntax parsing
 
 	// Filter types function prototypes and start parsing
-	int i = 0, result = 0;
 	ParserTypePair *tpair = NULL;
-	for (i = 0; i < root_node_child_count; i++) {
+	for (int i = 0; i < root_node_child_count; i++) {
 		parser_debug(parser->state, "Processing %d child...\n", i);
 		TSNode child = ts_node_named_child(root_node, i);
-		if (!parse_type_descriptor_single(parser->state, child, patched_code, &tpair)) {
+		if (parse_type_descriptor_single(parser->state, child, patched_code, &tpair)) {
 			break;
 		}
 	}
 
 	// If there were errors during the parser then the result is different from 0
-	if (result || !tpair) {
+	if (!tpair) {
 		char *error_msgs = rz_strbuf_drain_nofree(parser->state->errors);
 		RZ_LOG_DEBUG("Errors:\n");
 		RZ_LOG_DEBUG("%s", error_msgs);
