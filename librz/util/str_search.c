@@ -615,9 +615,6 @@ RZ_API int rz_scan_strings_raw(RZ_NONNULL const ut8 *buf, RZ_NONNULL RzList /*<R
 					str_type = RZ_STRING_ENC_8BIT;
 				}
 			}
-		} else if (type == RZ_STRING_ENC_UTF8) {
-			// It gets promoted to UTF-8 in process_one_string() if an UTF-8 character was decoded.
-			str_type = RZ_STRING_ENC_8BIT;
 		}
 
 		RzDetectedString *ds = process_one_string(buf, from, needle, to, str_type, false, opt, test_false_positives);
