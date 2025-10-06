@@ -13,8 +13,10 @@
 #include <rz_util.h>
 #include <rz_types.h>
 
-#define RZ_REGEX_JIT_STACK_MIN (512 * 1024 * 1024)
-#define RZ_REGEX_JIT_STACK_MAX (1024 * 1024 * 1024)
+// Default JIT stack size is 32KiB.
+#define RZ_REGEX_JIT_STACK_MIN (32 * 1024)
+// 512KiB to 1MiB are documented as reasoable maxima.
+#define RZ_REGEX_JIT_STACK_MAX (1024 * 1024)
 
 typedef pcre2_general_context_8 RzRegexGeneralContext8; ///< General context.
 // typedef pcre2_compile_context RzRegexCompContext; ///< The context for compiling.

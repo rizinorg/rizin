@@ -322,7 +322,8 @@ static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 	RzBinStringSearchOpt opt;
 	rz_bin_string_search_opt_init(&opt);
 	opt.mode = RZ_BIN_STRING_SEARCH_MODE_READ_ONLY_SECTIONS;
-	// https://webassembly.github.io/spec/core/bikeshed/#dependencies%E2%91%A0
+	// The WebAssembly standard defines names in UTF-8:
+	// https://webassembly.github.io/spec/core/bikeshed/#binary-utf8
 	opt.string_encoding = RZ_STRING_ENC_UTF8;
 	return rz_bin_file_strings(bf, &opt);
 }

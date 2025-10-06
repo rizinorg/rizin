@@ -186,9 +186,9 @@ void mbn_destroy(RzBinFile *bf) {
 RzPVector /*<RzBinString *>*/ *mbn_strings(RzBinFile *bf) {
 	RzBinStringSearchOpt opt;
 	rz_bin_string_search_opt_init(&opt);
+	// we only search strings with a minimum length of 10 bytes.
 	opt.mode = RZ_BIN_STRING_SEARCH_MODE_READ_ONLY_SECTIONS;
-	opt.min_length = 6;
-	opt.string_encoding = RZ_STRING_ENC_UTF8;
+	opt.min_length = 10;
 	return rz_bin_file_strings(bf, &opt);
 }
 

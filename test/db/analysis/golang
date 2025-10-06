@@ -4,7 +4,7 @@ CMDS=<<EOF
 aalg
 fl~sym.go.~?
 pdfs @ main ~str.
-# Attempt to get some refernce strings when the count changes with izq.
+# Attempt to get some reference strings when the count changes with izq.
 echo HEAD
 izq~:..10
 echo TAIL
@@ -161,7 +161,7 @@ CMDS=<<EOF
 aalg
 fl~sym.go.~?
 pdfs @ main ~str.
-# Attempt to get some refernce strings when the count changes with izq.
+# Attempt to get some reference strings when the count changes with izq.
 echo HEAD
 izq~:..10
 echo TAIL
@@ -312,7 +312,7 @@ CMDS=<<EOF
 aalg
 fl~sym.go.~?
 pdfs @ main ~str.
-# Attempt to get some refernce strings when the count changes with izq.
+# Attempt to get some reference strings when the count changes with izq.
 echo HEAD
 izq~:..10
 echo TAIL
@@ -464,7 +464,7 @@ CMDS=<<EOF
 aalg
 fl~sym.go.~?
 pdfs @ main ~str.
-# Attempt to get some refernce strings when the count changes with izq.
+# Attempt to get some reference strings when the count changes with izq.
 echo HEAD
 izq~:..10
 echo TAIL
@@ -661,7 +661,7 @@ CMDS=<<EOF
 aalg
 fl~sym.go.~?
 pdfs @ main ~str.
-# Attempt to get some refernce strings when the count changes with izq.
+# Attempt to get some reference strings when the count changes with izq.
 echo HEAD
 izq~:..10
 echo TAIL
@@ -771,7 +771,7 @@ CMDS=<<EOF
 aalg
 fl~sym.go.~?
 pdfs @ sym.go.runtime.panicwrap ~str.
-# Attempt to get some refernce strings when the count changes with izq.
+# Attempt to get some reference strings when the count changes with izq.
 echo HEAD
 izq~:..10
 echo TAIL
@@ -862,7 +862,7 @@ CMDS=<<EOF
 aalg
 fl~sym.go.~?
 pdfs @ main ~str.
-# Attempt to get some refernce strings when the count changes with izq.
+# Attempt to get some reference strings when the count changes with izq.
 echo HEAD
 izq~:..10
 echo TAIL
@@ -1129,7 +1129,7 @@ CMDS=<<EOF
 aalg
 fl~sym.go.~?
 pdfs @ main ~str.
-# Attempt to get some refernce strings when the count changes with izq.
+# Attempt to get some reference strings when the count changes with izq.
 echo HEAD
 izq~:..10
 echo TAIL
@@ -1186,7 +1186,7 @@ CMDS=<<EOF
 aalg
 fl~sym.go.~?
 pdfs @ main ~str.
-# Attempt to get some refernce strings when the count changes with izq.
+# Attempt to get some reference strings when the count changes with izq.
 echo HEAD
 izq~:..10
 echo TAIL

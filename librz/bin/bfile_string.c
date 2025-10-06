@@ -548,7 +548,8 @@ fail:
 }
 
 /**
- * \brief  Generates a RzList struct containing RzBinString from a given RzBinFile
+ * \brief  Generates a RzList struct containing RzBinString from a given RzBinFile.
+ * The search is performed multi-threaded.
  *
  * \param  bf   The RzBinFile to use for searching for strings
  * \param  opt  The options regarding the string search.

@@ -795,6 +795,12 @@ static RzPVector /*<RzBinString *>*/ *pe_strings(RzBinFile *bf) {
 	rz_bin_string_search_opt_init(&opt);
 	opt.mode = RZ_BIN_STRING_SEARCH_MODE_AUTO;
 	opt.min_length = RZ_BIN_STRING_SEARCH_MIN_STRING;
+	// Sticking with string guessing for now.
+	// PE doesn't specifiy the encoding, but commonly it is UTF-8 for symbol names
+	// and such, but UTF-16-le for Windows strings.
+	// Doing two searches here is easily possible
+	// but breaks a few tests which need investigation.
+	// So it should be done in a separated PR.
 	opt.string_encoding = RZ_STRING_ENC_GUESS;
 
 	RzPVector *strings = rz_bin_file_strings(bf, &opt);
