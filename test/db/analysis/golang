@@ -45,7 +45,7 @@ TAIL
 0x6a6b9f 7 7 version
 0x6a7efb 2 2 HT
 0x6a7efb 12 12 HTTP version
-12465
+12715
 bufio
 bytes
 compress/flate
@@ -206,7 +206,7 @@ TAIL
 0x6f2e40 30 30 Reading server certificate: %s
 0x6eb88e 7 7 version
 0x6ecbc3 12 12 HTTP version
-12679
+12823
 bufio
 bytes
 compress/flate
@@ -353,7 +353,7 @@ TAIL
 0x6fe2c3 30 30 Reading server certificate: %s
 0x6f7521 7 7 version
 0x6f85b4 12 12 HTTP version
-12053
+12176
 bufio
 bytes
 compress/flate
@@ -542,7 +542,7 @@ TAIL
 0x2eb50f 9 9 btcwallet
 0x2ec40d 11 11 btcctl.conf
 0x2eb053 8 8 rpc.cert
-14171
+14315
 bufio
 bytes
 compress/flate
@@ -761,7 +761,7 @@ TAIL
 0x308060 9 9 btcwallet
 0x308f22 11 11 btcctl.conf
 0x307bd6 8 8 rpc.cert
-14229
+14368
 EOF
 RUN
 
@@ -1233,6 +1233,6 @@ TAIL
 0x4a2f0e 6 6 enable
 0x4a2d4d 4 4 name
 0x4a2ce1 3 3 bar
-3232
+3249
 EOF
 RUN

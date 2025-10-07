@@ -15,7 +15,7 @@
 
 // Default JIT stack size is 32KiB.
 // But the wildcard pattern we have for strings takes more.
-#define RZ_REGEX_JIT_STACK_MIN (512 * 1024)
+#define RZ_REGEX_JIT_STACK_MIN (32 * 1024)
 // 1MiB are documented as reasoable maxima.
 #define RZ_REGEX_JIT_STACK_MAX (1024 * 1024)
 
@@ -78,6 +78,9 @@ static RZ_OWN void *regex_new(RZ_NONNULL const char *pattern, RzRegexFlags cflag
 		}
 	} else {
 		pat = pattern;
+	}
+	if (!(cflags & PCRE2_LITERAL)) {
+		cflags |= PCRE2_UCP;
 	}
 
 	void *regex;
@@ -160,7 +163,7 @@ static RZ_OWN void *regex_new(RZ_NONNULL const char *pattern, RzRegexFlags cflag
  *
  * \param pattern The regex pattern string.
  * \param cflags The compilation flags or zero for default.
- *        PCRE2_UTF | PCRE2_NO_UTF_CHECK | PCRE2_MATCH_INVALID_UTF are enforced currently.
+ *        PCRE2_UTF | PCRE2_NO_UTF_CHECK | PCRE2_MATCH_INVALID_UTF and PCRE2_UCP are enforced currently.
  * \param jflags The compilation flags for the JIT compiler.
  *        You can pass RZ_REGEX_JIT_PARTIAL_SOFT or RZ_REGEX_JIT_PARTIAL_HARD if you
  *        intend to use the pattern for partial matching. Otherwise set it to 0.
@@ -184,7 +187,7 @@ RZ_API RZ_OWN RzRegex *rz_regex_new(RZ_NONNULL const char *pattern, RzRegexFlags
  *
  * \param pattern The regex pattern string. It must be an UTF-8 encoded string.
  * \param cflags The compilation flags or zero for default.
- *        PCRE2_UTF | PCRE2_NO_UTF_CHECK | PCRE2_MATCH_INVALID_UTF are enforced currently.
+ *        PCRE2_UTF | PCRE2_NO_UTF_CHECK | PCRE2_MATCH_INVALID_UTF and PCRE2_UCP are enforced currently.
  * \param jflags The compilation flags for the JIT compiler.
  *        You can pass RZ_REGEX_JIT_PARTIAL_SOFT or RZ_REGEX_JIT_PARTIAL_HARD if you
  *        intend to use the pattern for partial matching. Otherwise set it to 0.
@@ -206,7 +209,7 @@ RZ_API RZ_OWN RzRegex16 *rz_regex_new_16(RZ_NONNULL const char *pattern, RzRegex
  *
  * \param pattern The regex pattern string. It must be an UTF-8 encoded string.
  * \param cflags The compilation flags or zero for default.
- *        PCRE2_UTF | PCRE2_NO_UTF_CHECK | PCRE2_MATCH_INVALID_UTF are enforced currently.
+ *        PCRE2_UTF | PCRE2_NO_UTF_CHECK | PCRE2_MATCH_INVALID_UTF and PCRE2_UCP are enforced currently.
  * \param jflags The compilation flags for the JIT compiler.
  *        You can pass RZ_REGEX_JIT_PARTIAL_SOFT or RZ_REGEX_JIT_PARTIAL_HARD if you
  *        intend to use the pattern for partial matching. Otherwise set it to 0.
@@ -227,7 +230,7 @@ RZ_API RZ_OWN RzRegex32 *rz_regex_new_32(RZ_NONNULL const char *pattern, RzRegex
  *
  * \param pattern The regex pattern string. It must be an UTF-8 encoded string.
  * \param cflags The compilation flags or zero for default.
- *        PCRE2_UTF | PCRE2_NO_UTF_CHECK | PCRE2_MATCH_INVALID_UTF are enforced currently.
+ *        PCRE2_UCP | PCRE2_UTF | PCRE2_NO_UTF_CHECK | PCRE2_MATCH_INVALID_UTF are enforced currently.
  * \param jflags The compilation flags for the JIT compiler.
  *        You can pass RZ_REGEX_JIT_PARTIAL_SOFT or RZ_REGEX_JIT_PARTIAL_HARD if you
  *        intend to use the pattern for partial matching. Otherwise set it to RZ_REGEX_DEFAULT.
@@ -1481,14 +1484,19 @@ return_flags:
 }
 
 /**
- * \brief Returns a Regex pattern of the form "(\pL|\pN|\pP|\pS|\pZ|\s){min_len, max_len}".
+ * \brief The string characters in binary files.
+ * The characters matched with this pattern are assumed to belong to
+ * single string.
+ * Any character not matching this pattern is assumed to end a string.
+ * Note: A new line is a valid character within a string.
+ */
+#define RZ_REGEX_STR_WILDARD "[\\w\\e\\pS\\s\\n\\r\\pP]"
+
+/**
+ * \brief Returns a Regex pattern of the form "[\w\e\pS\s\n\r\pP]{min_len, max_len}".
  *
- * This pattern matches strings with:
- * Letters (L), Numbers (N), Punctuation (P), Synbols (S), Seperators (Z), or
- * white space characters (\s).
- *
- * If min_len == max_len == 0, the function returns "(\pL|\pN|\pP|\pS|\pZ|\s)*".
- * If min_len > max_len, the function returns "(\pL|\pN|\pP|\pS|\pZ|\s){min_len,}".
+ * If min_len == max_len == 0, the function returns "[\w\e\pS\s\n\r\pP]*".
+ * If min_len > max_len, the function returns "[\w\e\pS\s\n\r\pP]{min_len,}".
  *
  * \param min_len The minimum length of the wildcard regex pattern.
  * \param max_len The maximum length of the wildcard regex pattern.
@@ -1497,9 +1505,9 @@ return_flags:
  */
 RZ_API RZ_OWN char *rz_regex_create_wildcard_pattern(size_t min_len, size_t max_len) {
 	if (min_len == 0 && max_len == 0) {
-		return rz_str_dup("(\\pL|\\pN|\\pP|\\pS|\\pZ}|\\s)*");
+		return rz_str_dup(RZ_REGEX_STR_WILDARD "*");
 	} else if (min_len > max_len) {
-		return rz_str_newf("(\\pL|\\pN|\\pP|\\pS|\\pZ}|\\s){%" PFMTSZd ",}", min_len);
+		return rz_str_newf(RZ_REGEX_STR_WILDARD "{%" PFMTSZd ",}", min_len);
 	}
-	return rz_str_newf("(\\pL|\\pN|\\pP|\\pS|\\pZ}|\\s){%" PFMTSZd ",%" PFMTSZd "}", min_len, max_len);
+	return rz_str_newf(RZ_REGEX_STR_WILDARD "{%" PFMTSZd ",%" PFMTSZd "}", min_len, max_len);
 }
