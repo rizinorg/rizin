@@ -557,7 +557,7 @@ ec diff.unmatch red    | mismatch color
  [32m-v[0m             [0mShow version information
  [32m-w[0m[33m [off:hex] [0m  [0mPatch hexpairs at given offset
  [32m-x[0m             [0mExecute
- [32m-X[0m[33m [hexpairs] [0m [0mExecute rop chain, using the stack provided
+ [32m-X[0m             [0mExecute rop chain, using the stack provided
  [32m-z[0m             [0mOutput in C string syntax
 
 [36mUsage: [0mrz-hash [-vhBkjLq] [-b S] [-a A] [-c H] [-E A] [-D A] [-s S] [-x S] [-f O] [-t O] [files|-] ...

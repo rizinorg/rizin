@@ -46,7 +46,7 @@ static int usage(int v) {
 			"-v",		""              ,"Show version information",
 			"-w",		"[off:hex]"     ,"Patch hexpairs at given offset",
 			"-x",		""              ,"Execute",
-			"-X",		"[hexpairs]"    ,"Execute rop chain, using the stack provided",
+			"-X",		""              ,"Execute rop chain, using the stack provided",
 			"-z",		""              ,"Output in C string syntax",
 			// clang-format on
 		};
