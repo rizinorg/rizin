@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2014 Fedor Sakharov <fedor.sakharov@gmail.com>
+// SPDX-FileCopyrightText: 2025 Billow <billow.fun@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef RZ_H8300_DISAS_H
@@ -324,8 +325,72 @@ typedef enum {
 	H8300_OP_CCR,
 } H8300OperandType;
 
+/**
+ * Register Specification
+ * 1. 16 x 8-bit registers: R0H-R7H + E0L-E7L
+ * 2. 16 x 16-bit registers: R0-R7 + E0-E7
+ * 3. 8 x 32-bit registers: ER0-ER7
+ */
+typedef enum h8300_registers_t {
+	H8300_REG_INVALID = 0,
+	H8300_R0H,
+	H8300_R1H,
+	H8300_R2H,
+	H8300_R3H,
+	H8300_R4H,
+	H8300_R5H,
+	H8300_R6H,
+	H8300_R7H,
+	H8300_R0L,
+	H8300_R1L,
+	H8300_R2L,
+	H8300_R3L,
+	H8300_R4L,
+	H8300_R5L,
+	H8300_R6L,
+	H8300_R7L,
+#define H8300_REG8_BEGIN H8300_R0H
+#define H8300_REG8_END   H8300_E7L
+	H8300_R0,
+	H8300_R1,
+	H8300_R2,
+	H8300_R3,
+	H8300_R4,
+	H8300_R5,
+	H8300_R6,
+	H8300_R7,
+	H8300_E0,
+	H8300_E1,
+	H8300_E2,
+	H8300_E3,
+	H8300_E4,
+	H8300_E5,
+	H8300_E6,
+	H8300_E7,
+#define H8300_REG16_BEGIN H8300_R0
+#define H8300_REG16_END   H8300_E7
+
+	H8300_ER0,
+	H8300_ER1,
+	H8300_ER2,
+	H8300_ER3,
+	H8300_ER4,
+	H8300_ER5,
+	H8300_ER6,
+	H8300_ER7,
+#define H8300_REG32_BEGIN H8300_ER0
+#define H8300_REG32_END   H8300_ER7
+#define H8300_SP          H8300_ER7
+} H8300Register;
+
 typedef struct {
 	H8300OperandType typ;
+	enum {
+		H8300Operand_UNK,
+		H8300Operand_8,
+		H8300Operand_16,
+		H8300Operand_32,
+	} width;
 	union {
 		ut8 reg;
 		ut32 imm;
@@ -337,25 +402,32 @@ typedef struct {
 	};
 } H8300Operand;
 
-typedef struct h8300_cmd {
-	char instr[H8300_INSTR_MAXLEN];
-	char ops_str[H8300_OPS_MAXLEN];
+typedef struct h8300_instruction_t {
+	enum {
+		CPU_H8300H,
+		CPU_H8300,
+		CPU_H8300L,
+	} cpu_type;
 	H8300InsnId id;
 	H8300InsnFormat fmt;
 	H8300Operand ops[H8300_OPERAND_MAX];
 	ut8 ops_count;
 	ut8 size;
 	ut64 pc;
-} H8300Cmd;
+} H8300Instruction;
+
+typedef struct h8300_ops_str_t {
+	char instr[H8300_INSTR_MAXLEN];
+	char ops_str[H8300_OPS_MAXLEN];
+} H8300InstructionStr;
 
 int h8300_analyze_op_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf);
-int h8300_analyze_op_il(RzAnalysis *a, RzAnalysisOp *op, H8300Cmd *cmd);
-int h8300_decode_command(const ut8 *instr, ut64 len, struct h8300_cmd *cmd, ut64 pc);
+int h8300_analyze_op_il(RzAnalysis *a, RzAnalysisOp *op, H8300Instruction *cmd);
+int h8300_decode_command(const ut8 *instr, ut64 len, H8300Instruction *cmd, ut64 pc, const char *cpu);
+bool h8300_make_opstr(H8300Instruction *cmd, H8300InstructionStr *ins_str);
 RzAnalysisILConfig *h8300_il_config(RzAnalysis *a);
 
 const char *h8300_get_opcode_name(H8300InsnId id);
-const char *h8300_get_register8_name(ut8 id);
-const char *h8300_get_register16_name(ut8 id);
-const char *h8300_get_register32_name(ut8 id);
+const char *h8300_get_register_name(H8300Register id);
 
 #endif /* H8300_DISAS_H */
