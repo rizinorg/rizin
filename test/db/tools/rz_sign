@@ -10,7 +10,7 @@ NAME=rz-sign help
 FILE==
 CMDS=!!rz-sign -h~Usage
 EXPECT=<<EOF
-Usage: rz-sign [options] [file]
+Usage: rz-sign [-aqv] [-e k=v] (-c pat sig | -o sig bin | -d sig)
 EOF
 RUN
 
