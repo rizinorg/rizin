@@ -208,7 +208,7 @@ var int i @ stack - 0x2
 |    |:|:   ;-- .L57:
 |    |:|:   ;-- .LM160:
 |   .-----> 0x00000532      mov.l er6,er2                              ; main.c:223
-|   :|:|:   0x00000534      subs  #0x4,r2
+|   :|:|:   0x00000534      subs  #0x4,er2
 |   :|:|:   0x00000536      mov.w #0x2,r1
 |   :|:|:   0x0000053a      mov.l er2,er0
 |   :|:|:   0x0000053c      jsr   @dbg.st_lcd_out_data                 ;  st_lcd_out_data(const unsigned char *buffer, unsigned int length)
@@ -251,7 +251,7 @@ var int i @ stack - 0x2
 | ; var int b @ stack - 0x8           |
 | push.l er6                          |
 | mov.l er7,er6                       |
-| subs #0x4,r7                        |
+| subs #0x4,er7                       |
 | ;-- .LM26:                          |
 | mov.w #0x5,r2                       |
 | mov.w r2,@(-2,er6)                  |
@@ -283,15 +283,15 @@ var int i @ stack - 0x2
       '----------.        |
                  | .------'
                  | |
-           .--------------.
-           |  0x17e       |
-           | ;-- .L11:    |
-           | ;-- .LM31:   |
-           | nop          |
-           | adds #0x4,r7 |
-           | pop.l er6    |
-           | rts          |
-           `--------------'
+           .---------------.
+           |  0x17e        |
+           | ;-- .L11:     |
+           | ;-- .LM31:    |
+           | nop           |
+           | adds #0x4,er7 |
+           | pop.l er6     |
+           | rts           |
+           `---------------'
 EOF
 RUN
 
@@ -429,7 +429,7 @@ args: 0
 |    ,====< 0x00000530      bra   .+20
 |    |:|:   ;-- .L57:
 |   .-----> 0x00000532      mov.l er6,er2
-|   :|:|:   0x00000534      subs  #0x4,r2
+|   :|:|:   0x00000534      subs  #0x4,er2
 |   :|:|:   0x00000536      mov.w #0x2,r1
 |   :|:|:   0x0000053a      mov.l er2,er0
 |   :|:|:   0x0000053c      jsr   @loc._st_lcd_out_data
@@ -460,7 +460,7 @@ args: 0
 | loc._test_branch();               |
 | push.l er6                        |
 | mov.l er7,er6                     |
-| subs #0x4,r7                      |
+| subs #0x4,er7                     |
 | mov.w #0x5,r2                     |
 | mov.w r2,@(-2,er6)                |
 | mov.w #0x3,r2                     |
@@ -486,13 +486,13 @@ args: 0
      '----------.        |
                 | .------'
                 | |
-          .--------------.
-          |  0x17e       |
-          | ;-- .L11:    |
-          | nop          |
-          | adds #0x4,r7 |
-          | pop.l er6    |
-          | rts          |
-          `--------------'
+          .---------------.
+          |  0x17e        |
+          | ;-- .L11:     |
+          | nop           |
+          | adds #0x4,er7 |
+          | pop.l er6     |
+          | rts           |
+          `---------------'
 EOF
 RUN

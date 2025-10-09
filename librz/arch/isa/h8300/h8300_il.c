@@ -141,12 +141,12 @@ static RzILOpEffect *sp_inc(ut8 x) {
 
 static RzILOpPure *ri_op(ut8 N, H8300Instruction *cmd, ut8 i) {
 	T_OP_DECL(H8300_OP_RI, i);
-	return LOADW(N, AS_ADDR(INS_OPS(i).typ == H8300Operand_32 ? r32_op_i(op->reg) : r16_op_i(op->reg)));
+	return LOADW(N, AS_ADDR(INS_OPS(i).width == H8300Operand_32 ? r32_op_i(op->reg) : r16_op_i(op->reg)));
 }
 
 static RzILOpEffect *ri_op_set(H8300Instruction *cmd, ut8 i, RzILOpPure *x) {
 	T_OP_DECL(H8300_OP_RI, i);
-	return STOREW(AS_ADDR(INS_OPS(i).typ == H8300Operand_32 ? r32_op_i(op->reg) : r16_op_i(op->reg)), x);
+	return STOREW(AS_ADDR(INS_OPS(i).width == H8300Operand_32 ? r32_op_i(op->reg) : r16_op_i(op->reg)), x);
 }
 
 static RzILOpPure *rd_op(ut8 N, H8300Instruction *cmd, ut8 i) {

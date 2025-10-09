@@ -256,10 +256,10 @@ static ut8 r32_high(ut8 x) {
 
 static void append_ri(H8300Instruction *cmd, ut8 reg) {
 	if (cmd->cpu_type == CPU_H8300H) {
-		INS_OP(1).width = H8300Operand_32;
+		INS_OP(cmd->ops_count).width = H8300Operand_32;
 		OPS_ADD(H8300_OP_RI, reg, r32_low(reg));
 	} else {
-		INS_OP(1).width = H8300Operand_16;
+		INS_OP(cmd->ops_count).width = H8300Operand_16;
 		OPS_ADD(H8300_OP_RI, reg, r16_low(reg));
 	}
 }
