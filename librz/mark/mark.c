@@ -435,15 +435,15 @@ RZ_API void rz_mark_foreach(RZ_NONNULL RzMark *b, RZ_NONNULL RzMarkItemCb cb, RZ
 }
 
 /**
- * \brief Iterate through all mark items matching a glob pattern.
+ * \brief Iterate through all mark items matching a regex pattern.
  *
  * \param b The mark container.
- * \param glob Glob/Regex pattern to filter mark names.
+ * \param regex Regex pattern to filter mark names.
  * \param cb Callback function to invoke for each matching mark item.
  * \param user User-provided data passed to the callback.
  */
-RZ_API void rz_mark_foreach_glob(RZ_NONNULL RzMark *b, RZ_NONNULL const char *glob, RZ_NONNULL RzMarkItemCb cb, RZ_NULLABLE void *user) {
-	FOREACH_BODY(!glob || rz_str_glob(bi->name, glob));
+RZ_API void rz_mark_foreach_regex(RZ_NONNULL RzMark *b, RZ_NONNULL const char *regex, RZ_NONNULL RzMarkItemCb cb, RZ_NULLABLE void *user) {
+	FOREACH_BODY(!regex || rz_str_glob(bi->name, regex));
 }
 
 struct unset_off_foreach_t {
@@ -514,7 +514,7 @@ static bool unset_foreach(RzMarkItem *bi, void *user) {
 RZ_API int rz_mark_unset_glob(RZ_NONNULL RzMark *b, RZ_NONNULL const char *glob) {
 	rz_return_val_if_fail(b, -1);
 	struct unset_foreach_t u = { .b = b, .n = 0 };
-	rz_mark_foreach_glob(b, glob, unset_foreach, &u);
+	rz_mark_foreach_regex(b, glob, unset_foreach, &u);
 	return u.n;
 }
 
@@ -597,6 +597,6 @@ static bool mark_count_foreach(RzMarkItem *fi, void *user) {
 RZ_API int rz_mark_count(RZ_NONNULL RzMark *b, RZ_NONNULL const char *glob) {
 	int count = 0;
 	rz_return_val_if_fail(b, -1);
-	rz_mark_foreach_glob(b, glob, mark_count_foreach, &count);
+	rz_mark_foreach_regex(b, glob, mark_count_foreach, &count);
 	return count;
 }

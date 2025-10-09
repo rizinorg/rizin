@@ -70,7 +70,7 @@ RZ_API void rz_mark_unset_all(RZ_NONNULL RzMark *b);
 RZ_API int rz_mark_unset_glob(RZ_NONNULL RzMark *b, RZ_NONNULL const char *glob);
 RZ_API int rz_mark_count(RZ_NONNULL RzMark *b, RZ_NONNULL const char *glob);
 RZ_API void rz_mark_foreach(RZ_NONNULL RzMark *b, RZ_NONNULL RzMarkItemCb cb, RZ_NULLABLE void *user);
-RZ_API void rz_mark_foreach_glob(RZ_NONNULL RzMark *b, RZ_NONNULL const char *glob, RZ_NONNULL RzMarkItemCb cb, RZ_NULLABLE void *user);
+RZ_API void rz_mark_foreach_regex(RZ_NONNULL RzMark *b, RZ_NONNULL const char *glob, RZ_NONNULL RzMarkItemCb cb, RZ_NULLABLE void *user);
 
 /* serialize */
 

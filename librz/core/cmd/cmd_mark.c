@@ -44,7 +44,7 @@ static int mark_to_mark(RzCore *core, const char *glob) {
 	rz_return_val_if_fail(glob, 0);
 	glob = rz_str_trim_head_ro(glob);
 	struct mark_to_mark_t u = { .next = UT64_MAX, .offset = core->offset };
-	rz_mark_foreach_glob(core->marks, glob, mark_to_mark_foreach, &u);
+	rz_mark_foreach_regex(core->marks, glob, mark_to_mark_foreach, &u);
 	if (u.next != UT64_MAX && u.next > core->offset) {
 		return u.next - core->offset;
 	}
