@@ -599,15 +599,15 @@ ec diff.unmatch red    | mismatch color
  [32m-w[0m                  [0mWait for incoming terminal process
  [32m--[0m[33m [program] [args] [0m[0mRun commands
 
-[36mUsage: [0mrz-sign [options] [file]
- [32m-h[0m                          [0mShow this help
- [32m-a[0m[33m [-a] [0m                    [0mAdd extra 'a' to analysis command (available only with -o option)
- [32m-e[0m[33m [k=v] [0m                   [0mSet an evaluable config variable (available only with -o option)
- [32m-c[0m[33m [output.pat] [input.sig] [0m[0mParse a FLIRT signature and convert it to its other format
- [32m-o[0m[33m [output.sig] [input.bin] [0m[0mPerform an analysis on the binary and generate the FLIRT signature
- [32m-d[0m[33m [flirt.sig] [0m             [0mParse a FLIRT signature and dump its content
- [32m-q[0m                          [0mQuiet mode
- [32m-v[0m                          [0mShow version information
+[36mUsage: [0mrz-sign [-aqv] [-e k=v] (-c pat sig | -o sig bin | -d sig)
+ [32m-h[0m                      [0mShow this help
+ [32m-a, -aa[0m                 [0mAdd extra 'a' to analysis command (available only with -o option)
+ [32m-e[0m[33m k=v [0m                 [0mSet an evaluable config variable (available only with -o option)
+ [32m-c[0m[33m output.pat input.sig [0m[0mParse a FLIRT signature and convert it to its other format
+ [32m-o[0m[33m output.sig input.bin [0m[0mPerform an analysis on the binary and generate the FLIRT signature
+ [32m-d[0m[33m flirt.sig [0m           [0mParse a FLIRT signature and dump its content
+ [32m-q[0m                      [0mQuiet mode
+ [32m-v[0m                      [0mShow version information
 Examples:
   rz-sign -d signature.sig
   rz-sign -c new_signature.pat old_signature.sig

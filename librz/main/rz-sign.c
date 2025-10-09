@@ -13,15 +13,15 @@ enum rz_sign_option {
 
 static void rz_sign_show_help(void) {
 	printf("%s%s%s", Color_CYAN, "Usage: ", Color_RESET);
-	printf("rz-sign [options] [file]\n");
+	printf("rz-sign [-aqv] [-e k=v] (-c pat sig | -o sig bin | -d sig)\n");
 	const char *options[] = {
 		// clang-format off
 		"-h",       "",                         "Show this help",
-		"-a",       "[-a]",                     "Add extra 'a' to analysis command (available only with -o option)",
-		"-e",       "[k=v]",                    "Set an evaluable config variable (available only with -o option)",
-		"-c",       "[output.pat] [input.sig]", "Parse a FLIRT signature and convert it to its other format",
-		"-o",       "[output.sig] [input.bin]", "Perform an analysis on the binary and generate the FLIRT signature",
-		"-d",       "[flirt.sig]",              "Parse a FLIRT signature and dump its content",
+		"-a, -aa",  "",                         "Add extra 'a' to analysis command (available only with -o option)",
+		"-e",       "k=v",                      "Set an evaluable config variable (available only with -o option)",
+		"-c",       "output.pat input.sig",     "Parse a FLIRT signature and convert it to its other format",
+		"-o",       "output.sig input.bin",     "Perform an analysis on the binary and generate the FLIRT signature",
+		"-d",       "flirt.sig",                "Parse a FLIRT signature and dump its content",
 		"-q",       "",                         "Quiet mode",
 		"-v",       "",                         "Show version information",
 		// clang-format on
