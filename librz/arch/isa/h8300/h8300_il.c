@@ -149,16 +149,36 @@ static RzILOpEffect *ri_op_set(H8300Instruction *cmd, ut8 i, RzILOpPure *x) {
 	return STOREW(AS_ADDR(INS_OPS(i).width == H8300Operand_32 ? r32_op_i(op->reg) : r16_op_i(op->reg)), x);
 }
 
-static RzILOpPure *rd_op(ut8 N, H8300Instruction *cmd, ut8 i) {
+static RzILOpPure *rd_adr(H8300Instruction *cmd, ut8 i) {
 	T_OP_DECL(H8300_OP_RD, i);
-	RzILOpPure *r = r32_op_i(op->rd.reg);
-	return LOADW(N, AS_ADDR(ADD(r, S32(op->rd.disp))));
+	switch (op->width) {
+	case H8300Operand_16: {
+		RzILOpPure *r = r16_op_i(op->rd.reg);
+		return AS_ADDR(ADD(r, S16(op->rd.disp)));
+	}
+	case H8300Operand_32: {
+		RzILOpPure *r = r32_op_i(op->rd.reg);
+		return AS_ADDR(ADD(r, S32(op->rd.disp)));
+	}
+	default:
+		rz_warn_if_reached();
+		return NULL;
+	}
+}
+
+static RzILOpPure *rd_op(ut8 N, H8300Instruction *cmd, ut8 i) {
+	RzILOpPure *adr = rd_adr(cmd, i);
+	if (!adr) {
+		return NULL;
+	}
+	return LOADW(N, adr);
 }
 
 static RzILOpEffect *rd_op_set(H8300Instruction *cmd, ut8 i, RzILOpPure *x) {
-	T_OP_DECL(H8300_OP_RD, i);
-	RzILOpPure *r = r32_op_i(op->rd.reg);
-	RzILOpPure *adr = AS_ADDR(ADD(r, S32(op->rd.disp)));
+	RzILOpPure *adr = rd_adr(cmd, i);
+	if (!adr) {
+		return NULL;
+	}
 	return STOREW(adr, x);
 }
 

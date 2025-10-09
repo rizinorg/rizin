@@ -264,6 +264,16 @@ static void append_ri(H8300Instruction *cmd, ut8 reg) {
 	}
 }
 
+static void append_rd(H8300Instruction *cmd, ut8 reg, st32 disp) {
+	if (cmd->cpu_type == CPU_H8300H) {
+		INS_OP(cmd->ops_count).width = H8300Operand_32;
+		OPS_ADD_EXT2(H8300_OP_RD, rd, reg, disp, r32_low(reg), disp);
+	} else {
+		INS_OP(cmd->ops_count).width = H8300Operand_16;
+		OPS_ADD_EXT2(H8300_OP_RD, rd, reg, disp, r16_low(reg), disp);
+	}
+}
+
 static void decode_operands(H8300Instruction *cmd, H8300InstructionStr *opstr) {
 	for (int i = 0; i < cmd->ops_count; ++i) {
 		H8300Operand *op = cmd->ops + i;
@@ -665,21 +675,15 @@ static int decode_r8ri_4(const ut8 *bytes, H8300Instruction *cmd) {
 
 static int decode_rd3216_6(const ut8 *bytes, H8300Instruction *cmd) {
 	int ret = 6;
-
-	st32 d = read_disp(16, bytes);
-	ut8 r = r32_high(bytes[3]);
 	cmd->fmt = H8300_INSN_FORMAT_RD;
-	OPS_ADD_EXT2(H8300_OP_RD, rd, reg, disp, r, d);
+	append_rd(cmd, BHIGH(bytes[3]), read_disp(16, bytes));
 	return ret;
 }
 
 static int decode_rd3224_10(const ut8 *bytes, H8300Instruction *cmd) {
 	int ret = 10;
-
-	st32 d = read_disp(24, bytes);
-	ut8 r = r32_high(bytes[3]);
 	cmd->fmt = H8300_INSN_FORMAT_RD;
-	OPS_ADD_EXT2(H8300_OP_RD, rd, reg, disp, r, d);
+	append_rd(cmd, BHIGH(bytes[3]), read_disp(24, bytes));
 	return ret;
 }
 
@@ -687,15 +691,15 @@ static int decode_rd3224_10(const ut8 *bytes, H8300Instruction *cmd) {
 	static int decode_rd32##Bd##r##Br##_##B(const ut8 *bytes, H8300Instruction *cmd) { \
 		int ret = B; \
 		st32 d = read_disp(Bd, bytes); \
-		ut8 rrd = r32_high(bytes[OFRD]); \
+		ut8 rrd = BHIGH(bytes[OFRD]); \
 		ut8 r = r##Br##_low(bytes[OFR]); \
 		if (bytes[OFRD] & 0x80) { \
 			cmd->fmt = H8300_INSN_FORMAT_R##Br##RD; \
 			OPS_ADD(H8300_OP_R##Br, reg, r); \
-			OPS_ADD_EXT2(H8300_OP_RD, rd, reg, disp, rrd, d); \
+			append_rd(cmd, rrd, d); \
 		} else { \
 			cmd->fmt = H8300_INSN_FORMAT_RDR##Br; \
-			OPS_ADD_EXT2(H8300_OP_RD, rd, reg, disp, rrd, d); \
+			append_rd(cmd, rrd, d); \
 			OPS_ADD(H8300_OP_R##Br, reg, r); \
 		} \
 		return ret; \
@@ -705,10 +709,10 @@ static int decode_rd3224_10(const ut8 *bytes, H8300Instruction *cmd) {
 	static int decode_rd32##Bd##r##Br##_##B(const ut8 *bytes, H8300Instruction *cmd) { \
 		int ret = B; \
 		st32 d = read_disp(Bd, bytes); \
-		ut8 rrd = r32_high(bytes[OFRD]); \
+		ut8 rrd = BHIGH(bytes[OFRD]); \
 		ut8 r = r##Br##_low(bytes[OFR]); \
 		cmd->fmt = H8300_INSN_FORMAT_RDR##Br; \
-		OPS_ADD_EXT2(H8300_OP_RD, rd, reg, disp, rrd, d); \
+		append_rd(cmd, rrd, d); \
 		OPS_ADD(H8300_OP_R##Br, reg, r); \
 		return ret; \
 	}
@@ -716,11 +720,11 @@ static int decode_rd3224_10(const ut8 *bytes, H8300Instruction *cmd) {
 	static int decode_r##Br##rd32##Bd##_##B(const ut8 *bytes, H8300Instruction *cmd) { \
 		int ret = B; \
 		st32 d = read_disp(Bd, bytes); \
-		ut8 rrd = r32_high(bytes[OFRD]); \
+		ut8 rrd = BHIGH(bytes[OFRD]); \
 		ut8 r = r##Br##_low(bytes[OFR]); \
 		cmd->fmt = H8300_INSN_FORMAT_R##Br##RD; \
 		OPS_ADD(H8300_OP_R##Br, reg, r); \
-		OPS_ADD_EXT2(H8300_OP_RD, rd, reg, disp, rrd, d); \
+		append_rd(cmd, rrd, d); \
 		return ret; \
 	}
 
