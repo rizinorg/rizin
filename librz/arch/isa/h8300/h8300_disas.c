@@ -376,7 +376,6 @@ static int decode_sr16_32(const ut8 *bytes, H8300Instruction *cmd) {
 	default: return -1;
 	}
 
-	cmd->fmt = H8300_INSN_FORMAT_IMMR16;
 	OPS_ADD(H8300_OP_IMM, imm, val);
 	if (cmd->cpu_type == CPU_H8300H) {
 		cmd->fmt = H8300_INSN_FORMAT_IMMR32;

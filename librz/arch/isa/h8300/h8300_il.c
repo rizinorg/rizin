@@ -537,6 +537,8 @@ static RzILOpEffect *op_adds(H8300Instruction *cmd) {
 	switch (cmd->fmt) {
 	case H8300_INSN_FORMAT_IMMR16:
 		return R16_X(1, ADD(IMM_OP(16, 0), R16_OP(1)));
+	case H8300_INSN_FORMAT_IMMR32:
+		return R32_X(1, ADD(IMM_OP(32, 0), R32_OP(1)));
 	default: NOT_IMPLEMENTED;
 	}
 }
@@ -1007,6 +1009,8 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Instruction *cmd)
 		switch (cmd->fmt) {
 		case H8300_INSN_FORMAT_IMMR16:
 			return R16_X(1, SUB(R16_OP(1), IMM_OP(16, 0)));
+		case H8300_INSN_FORMAT_IMMR32:
+			return R32_X(1, SUB(R32_OP(1), IMM_OP(32, 0)));
 		default: NOT_IMPLEMENTED;
 		}
 	case H8300_INSN_OR_B: return op_logical2_formats_8(cmd, rz_il_op_new_log_or);
