@@ -315,6 +315,25 @@ static bool EA_parse(const ut8 *buf, size_t pat_index, ut8 len,
 	return true;
 }
 
+static bool str_replace_once_no_heap(const char *str, const char *key, const char *val, ut64 sz) {
+	rz_return_val_if_fail(str && key && val, false);
+	char *p = strstr(str, key);
+	if (!p) {
+		return false;
+	}
+	size_t key_len = strlen(key);
+	size_t val_len = strlen(val);
+	size_t tail_len = strlen(p + key_len);
+	if (strlen(str) + val_len - key_len + 1 > sz) {
+		rz_warn_if_reached();
+		return false;
+	}
+	// Move the tail part to make space for the new value
+	memmove(p + val_len, p + key_len, tail_len + 1);
+	memcpy(p, val, val_len);
+	return true;
+}
+
 static bool operand_to_string(char *out, size_t len, H8500Operand *op) {
 	char buf[16] = { 0 };
 	switch (op->flags & ARG_MASK_AddressingMode) {
@@ -327,28 +346,28 @@ static bool operand_to_string(char *out, size_t len, H8500Operand *op) {
 				rz_warn_if_reached();
 				return false;
 			}
-			rz_str_replace_in(out, len, "CR", get_ccr_describe(op->rn)->name, 0);
+			str_replace_once_no_heap(out, "CR", get_ccr_describe(op->rn)->name, len);
 		} else {
-			rz_str_replace(out, "Rn", Rn_to_string(op->rn), 0);
+			str_replace_once_no_heap(out, "Rn", Rn_to_string(op->rn), len);
 		}
 
 		break;
 	case AddrRIDisp:
-		rz_str_replace(out, "Rn", Rn_to_string(op->ri_disp.rn), 0);
+		str_replace_once_no_heap(out, "Rn", Rn_to_string(op->ri_disp.rn), len);
 		rz_strf(buf, "%d", op->ri_disp.disp);
-		rz_str_replace_in(out, len, "d", buf, 0);
+		str_replace_once_no_heap(out, "d", buf, len);
 		break;
 	case AddrAbs:
 		rz_strf(buf, "0x%x", op->aa);
-		rz_str_replace_in(out, len, "aa", buf, 0);
+		str_replace_once_no_heap(out, "aa", buf, len);
 		break;
 	case AddrIMM:
 		rz_strf(buf, "0x%x", op->imm);
-		rz_str_replace_in(out, len, "xx", buf, 0);
+		str_replace_once_no_heap(out, "xx", buf, len);
 		break;
 	case AddrPCRel:
 		rz_strf(buf, "%+d", op->disp);
-		rz_str_replace_in(out, len, "disp", buf, 0);
+		str_replace_once_no_heap(out, "disp", buf, len);
 		break;
 	default: break;
 	}
@@ -379,7 +398,7 @@ static bool operand_to_string(char *out, size_t len, H8500Operand *op) {
 			}
 		}
 		rz_strbuf_append(&sb, ")");
-		rz_str_replace_in(out, len, "<register list>", rz_strbuf_get(&sb), 0);
+		str_replace_once_no_heap(out, "<register list>", rz_strbuf_get(&sb), len);
 		rz_strbuf_fini(&sb);
 	}
 	return true;
@@ -455,7 +474,12 @@ static bool operand_parse(const ut8 *buf, size_t pat_index, int len,
 			return false;
 		}
 		H8500Pat patl = pats[pat_index + 1];
-		op = &ins->operands[operand_index(patl, ins)];
+		ut8 new_pat_index = operand_index(patl, ins);
+		if (new_pat_index >= RZ_ARRAY_SIZE(ins->operands)) {
+			rz_warn_if_reached();
+			return false;
+		}
+		op = &ins->operands[new_pat_index];
 		ut16 val16 = (b << 8) | buf[pat_index + 1];
 		if (patl & AA16) {
 			op->aa = val16;
@@ -521,15 +545,20 @@ bool h8500_instruction_get_opstr(H8500Instruction *ins, H8500InstructionOpstr *o
 	memset(opstr, 0, sizeof(H8500InstructionOpstr));
 	const H8500OpcodeDescribe *opcode_describe = ins->opcode_describe;
 	char ea_str_buf[16] = { 0 };
-	strcpy(opstr->mnemonic, opcode_describe->mnemonic);
-	rz_str_replace(opstr->mnemonic, "<Sz>", (ins->operand_size == WORD_OPERAND) ? "w" : "b", 0);
-	rz_str_replace(opstr->mnemonic, "<cc>", cc_mnemonic(ins->condition_code), 0);
+	rz_str_ncpy(opstr->mnemonic, opcode_describe->mnemonic, RZ_ARRAY_SIZE(opstr->mnemonic));
+	if (ins->opcode_describe->id == Bcc) {
+		str_replace_once_no_heap(opstr->mnemonic, "<cc>",
+			cc_mnemonic(ins->condition_code), RZ_ARRAY_SIZE(opstr->mnemonic));
+	} else {
+		str_replace_once_no_heap(opstr->mnemonic, "<Sz>",
+			(ins->operand_size == WORD_OPERAND) ? "w" : "b", RZ_ARRAY_SIZE(opstr->mnemonic));
+	}
 
-	strcpy(opstr->ops_str, opcode_describe->op_mnemonic);
+	rz_str_ncpy(opstr->ops_str, opcode_describe->op_mnemonic, RZ_ARRAY_SIZE(opstr->ops_str));
 	if (ins->ea_describe) {
-		strcpy(ea_str_buf, ins->ea_describe->mnemonic);
+		rz_str_ncpy(ea_str_buf, ins->ea_describe->mnemonic, RZ_ARRAY_SIZE(ea_str_buf));
 		operand_to_string(ea_str_buf, RZ_ARRAY_SIZE(ea_str_buf), &ins->ea);
-		rz_str_replace_in(opstr->ops_str, RZ_ARRAY_SIZE(opstr->ops_str), "<EA>", ea_str_buf, 0);
+		str_replace_once_no_heap(opstr->ops_str, "<EA>", ea_str_buf, RZ_ARRAY_SIZE(opstr->ops_str));
 	}
 	for (int i = 0; i < ins->num_operands; ++i) {
 		operand_to_string(opstr->ops_str, RZ_ARRAY_SIZE(opstr->ops_str), &ins->operands[i]);
