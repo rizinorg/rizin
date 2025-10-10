@@ -1,7 +1,29 @@
+NAME=h8300h regs
+FILE=
+CMDS=<<EOF
+e asm.arch=h8300
+e asm.cpu=h8300h
+ar
+EOF
+EXPECT=<<EOF
+er0 = 0x00000000
+er1 = 0x00000000
+er2 = 0x00000000
+er3 = 0x00000000
+er4 = 0x00000000
+er5 = 0x00000000
+er6 = 0x00000000
+er7 = 0x00000000
+pc = 0x000000
+ccr = 0x00
+EOF
+RUN
+
 NAME=h8300 regs
 FILE=
 CMDS=<<EOF
 e asm.arch=h8300
+e asm.cpu=h8300
 ar
 EOF
 EXPECT=<<EOF
@@ -13,16 +35,8 @@ r4 = 0x0000
 r5 = 0x0000
 r6 = 0x0000
 r7 = 0x0000
-pc = 0x000000
+pc = 0x0000
 ccr = 0x00
-e0 = 0x0000
-e1 = 0x0000
-e2 = 0x0000
-e3 = 0x0000
-e4 = 0x0000
-e5 = 0x0000
-e6 = 0x0000
-e7 = 0x0000
 EOF
 RUN
 

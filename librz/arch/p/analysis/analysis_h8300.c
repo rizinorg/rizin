@@ -377,7 +377,7 @@ static int h8300_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 }
 
 static char *get_reg_profile(RzAnalysis *analysis) {
-	if (RZ_STR_EQ(analysis->cpu, "h8300h") || RZ_STR_EQ(analysis->cpu, "H8300H")) {
+	if (h8300_cpu_type(analysis->cpu) == CPU_H8300H) {
 		char *p =
 			"=PC	pc\n"
 			"=SP	er7\n"
@@ -400,7 +400,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 			"gpr	r2l	.8	9	0\n"
 			"gpr	e2	.16	10	0\n"
 
-			"gpr	er3	.16	12	0\n"
+			"gpr	er3	.32	12	0\n"
 			"gpr	r3	.16	12	0\n"
 			"gpr	r3h	.8	12	0\n"
 			"gpr	r3l	.8	13	0\n"

@@ -403,12 +403,14 @@ typedef struct {
 	};
 } H8300Operand;
 
+typedef enum {
+	CPU_H8300H,
+	CPU_H8300,
+	CPU_H8300L,
+} H8300CpuType;
+
 typedef struct h8300_instruction_t {
-	enum {
-		CPU_H8300H,
-		CPU_H8300,
-		CPU_H8300L,
-	} cpu_type;
+	H8300CpuType cpu_type;
 	H8300InsnId id;
 	H8300InsnFormat fmt;
 	H8300Operand ops[H8300_OPERAND_MAX];
@@ -427,6 +429,7 @@ int h8300_analyze_op_il(RzAnalysis *a, RzAnalysisOp *op, H8300Instruction *cmd);
 int h8300_decode_command(const ut8 *instr, ut64 len, H8300Instruction *cmd, ut64 pc, const char *cpu);
 bool h8300_make_opstr(H8300Instruction *cmd, H8300InstructionStr *ins_str);
 RzAnalysisILConfig *h8300_il_config(RzAnalysis *a);
+H8300CpuType h8300_cpu_type(const char *cpu);
 
 const char *h8300_get_opcode_name(H8300InsnId id);
 const char *h8300_get_register_name(H8300Register id);

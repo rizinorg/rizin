@@ -1513,6 +1513,11 @@ int h8300_analyze_op_il(RzAnalysis *a, RzAnalysisOp *op, H8300Instruction *cmd) 
 
 static const char *reg_bindings[] = {
 	"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7",
+	"ccr", NULL
+};
+
+static const char *h8300h_reg_bindings[] = {
+	"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7",
 	"e0", "e1", "e2", "e3", "e4", "e5", "e6", "e7",
 	"ccr", NULL
 };
@@ -1524,7 +1529,7 @@ RzAnalysisILConfig *h8300_il_config(RzAnalysis *a) {
 	if (!cfg) {
 		return NULL;
 	}
-	cfg->reg_bindings = reg_bindings;
+	cfg->reg_bindings = h8300_cpu_type(a->cpu) == CPU_H8300H ? h8300h_reg_bindings : reg_bindings;
 	cfg->init_state = rz_analysis_il_init_state_new();
 	if (!cfg->init_state) {
 		rz_analysis_il_config_free(cfg);

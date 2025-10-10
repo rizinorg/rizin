@@ -254,15 +254,20 @@ static ut8 r32_high(ut8 x) {
 	return (BHIGH(x) & 0x7) + H8300_REG32_BEGIN;
 }
 
-static void append_ri(H8300Instruction *cmd, ut8 reg) {
-	if (cmd->cpu_type == CPU_H8300H) {
-		INS_OP(cmd->ops_count).width = H8300Operand_32;
-		OPS_ADD(H8300_OP_RI, reg, r32_low(reg));
-	} else {
-		INS_OP(cmd->ops_count).width = H8300Operand_16;
-		OPS_ADD(H8300_OP_RI, reg, r16_low(reg));
+#define IMPL_APPEND_OPERAND(name, F, T) \
+	static void append_##name(H8300Instruction *cmd, ut8 reg) { \
+		if (cmd->cpu_type == CPU_H8300H) { \
+			INS_OP(cmd->ops_count).width = H8300Operand_32; \
+			OPS_ADD(T, F, r32_low(reg)); \
+		} else { \
+			INS_OP(cmd->ops_count).width = H8300Operand_16; \
+			OPS_ADD(T, F, r16_low(reg)); \
+		} \
 	}
-}
+
+IMPL_APPEND_OPERAND(ri, reg, H8300_OP_RI);
+IMPL_APPEND_OPERAND(rpostinc, reg, H8300_OP_RPOSTINC);
+IMPL_APPEND_OPERAND(rpredec, reg, H8300_OP_RPREDEC);
 
 static void append_rd(H8300Instruction *cmd, ut8 reg, st32 disp) {
 	if (cmd->cpu_type == CPU_H8300H) {
@@ -475,17 +480,15 @@ static int decode_r32_4l(const ut8 *bytes, H8300Instruction *cmd) {
 
 static int decode_rinc_4(const ut8 *bytes, H8300Instruction *cmd) {
 	int ret = 4;
-	ut8 r = r32_high(bytes[3]);
 	cmd->fmt = H8300_INSN_FORMAT_RPOSTINC;
-	OPS_ADD(H8300_OP_RPOSTINC, reg, r);
+	append_rpostinc(cmd, BHIGH(bytes[3]));
 	return ret;
 }
 
 static int decode_rdec_4(const ut8 *bytes, H8300Instruction *cmd) {
 	int ret = 4;
-	ut8 r = r32_high(bytes[3]);
 	cmd->fmt = H8300_INSN_FORMAT_RPREDEC;
-	OPS_ADD(H8300_OP_RPREDEC, reg, r);
+	append_rpredec(cmd, BHIGH(bytes[3]));
 	return ret;
 }
 
@@ -496,10 +499,10 @@ static int decode_incdecr16(const ut8 *bytes, H8300Instruction *cmd) {
 	if (bytes[1] & 0x80) {
 		cmd->fmt = H8300_INSN_FORMAT_R16RDEC;
 		OPS_ADD(H8300_OP_R16, reg, r16_low(bytes[1]));
-		OPS_ADD(H8300_OP_RPREDEC, reg, r32_high(bytes[1]));
+		append_rpredec(cmd, BHIGH(bytes[1]));
 	} else {
 		cmd->fmt = H8300_INSN_FORMAT_RINCR16;
-		OPS_ADD(H8300_OP_RPOSTINC, reg, r32_high(bytes[1]));
+		append_rpostinc(cmd, BHIGH(bytes[1]));
 		OPS_ADD(H8300_OP_R16, reg, r16_low(bytes[1]));
 	}
 
@@ -799,10 +802,10 @@ static int decode_incdecr8(const ut8 *bytes, H8300Instruction *cmd) {
 	if (bytes[1] & 0x80) {
 		cmd->fmt = H8300_INSN_FORMAT_R8RDEC;
 		OPS_ADD(H8300_OP_R8, reg, r8_low(bytes[1]));
-		OPS_ADD(H8300_OP_RPREDEC, reg, r32_high(bytes[1]));
+		append_rpredec(cmd, BHIGH(bytes[1]));
 	} else {
 		cmd->fmt = H8300_INSN_FORMAT_RINCR8;
-		OPS_ADD(H8300_OP_RPOSTINC, reg, r32_high(bytes[1]));
+		append_rpostinc(cmd, BHIGH(bytes[1]));
 		OPS_ADD(H8300_OP_R8, reg, r8_low(bytes[1]));
 	}
 	return ret;
@@ -810,24 +813,17 @@ static int decode_incdecr8(const ut8 *bytes, H8300Instruction *cmd) {
 
 static int decode_rincr32_4(const ut8 *bytes, H8300Instruction *cmd) {
 	int ret = 4;
-
 	cmd->fmt = H8300_INSN_FORMAT_RINCR32;
-	OPS_ADD(H8300_OP_RPOSTINC, reg, r32_high(bytes[3]));
+	append_rpostinc(cmd, BHIGH(bytes[3]));
 	OPS_ADD(H8300_OP_R32, reg, r32_low(bytes[3]));
-
 	return ret;
 }
 
 static int decode_r32rdec_4(const ut8 *bytes, H8300Instruction *cmd) {
 	int ret = 4;
-
-	ut8 rs = r32_low(bytes[3]);
-	ut8 rd = r32_high(bytes[3]);
-
 	cmd->fmt = H8300_INSN_FORMAT_R32RDEC;
-	OPS_ADD(H8300_OP_R32, reg, rs);
-	OPS_ADD(H8300_OP_RPREDEC, reg, rd);
-
+	OPS_ADD(H8300_OP_R32, reg, r32_low(bytes[3]));
+	append_rpredec(cmd, BHIGH(bytes[3]));
 	return ret;
 }
 
@@ -1421,6 +1417,19 @@ static int h8300_decode_2(const ut8 *instr, H8300Instruction *cmd) {
 	return ret;
 }
 
+H8300CpuType h8300_cpu_type(const char *cpu) {
+	if (RZ_STR_EQ(cpu, "h8300") || RZ_STR_EQ(cpu, "H8300")) {
+		return CPU_H8300;
+	}
+	if (RZ_STR_EQ(cpu, "h8300l") || RZ_STR_EQ(cpu, "H8300L")) {
+		return CPU_H8300L;
+	}
+	if (RZ_STR_EQ(cpu, "h8300h") || RZ_STR_EQ(cpu, "H8300H")) {
+		return CPU_H8300H;
+	}
+	return CPU_H8300;
+}
+
 int h8300_decode_command(const ut8 *instr, ut64 len, H8300Instruction *cmd, ut64 pc, const char *cpu) {
 	cmd->pc = pc;
 	int ret = 0;
@@ -1432,14 +1441,7 @@ int h8300_decode_command(const ut8 *instr, ut64 len, H8300Instruction *cmd, ut64
 		} \
 	}
 
-	cmd->cpu_type = CPU_H8300;
-	if (RZ_STR_EQ(cpu, "h8300") || RZ_STR_EQ(cpu, "H8300")) {
-		cmd->cpu_type = CPU_H8300;
-	} else if (RZ_STR_EQ(cpu, "h8300l") || RZ_STR_EQ(cpu, "H8300L")) {
-		cmd->cpu_type = CPU_H8300L;
-	} else if (RZ_STR_EQ(cpu, "h8300h") || RZ_STR_EQ(cpu, "H8300H")) {
-		cmd->cpu_type = CPU_H8300H;
-	}
+	cmd->cpu_type = h8300_cpu_type(cpu);
 
 	FAST_PATH(10);
 	FAST_PATH(8);
