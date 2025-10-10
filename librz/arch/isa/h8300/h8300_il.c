@@ -104,22 +104,26 @@ static RzILOpEffect *r32_op_set(H8300Instruction *cmd, ut8 i, RzILOpPure *x) {
 
 static RzILOpPure *rpostinc_op(H8300Instruction *cmd, ut8 i) {
 	T_OP_DECL(H8300_OP_RPOSTINC, i);
-	return r32_op_i(op->reg);
+	return cmd->cpu_type == CPU_H8300H ? r32_op_i(op->reg) : r16_op_i(op->reg);
 }
 
 static RzILOpEffect *rpostinc_op_inc(H8300Instruction *cmd, ut8 i, ut8 x) {
 	T_OP_DECL(H8300_OP_RPOSTINC, i);
-	return r32_op_i_set(op->reg, ADD(r32_op_i(op->reg), U32(x)));
+	return cmd->cpu_type == CPU_H8300H
+		? r32_op_i_set(op->reg, ADD(r32_op_i(op->reg), U32(x)))
+		: r16_op_i_set(op->reg, ADD(r16_op_i(op->reg), U16(x)));
 }
 
 static RzILOpPure *rpredec_op(H8300Instruction *cmd, ut8 i) {
 	T_OP_DECL(H8300_OP_RPREDEC, i);
-	return r32_op_i(op->reg);
+	return cmd->cpu_type == CPU_H8300H ? r32_op_i(op->reg) : r16_op_i(op->reg);
 }
 
 static RzILOpEffect *rpredec_op_dec(H8300Instruction *cmd, ut8 i, ut8 x) {
 	T_OP_DECL(H8300_OP_RPREDEC, i);
-	return r32_op_i_set(op->reg, SUB(r32_op_i(op->reg), U32(x)));
+	return cmd->cpu_type == CPU_H8300H
+		? r32_op_i_set(op->reg, SUB(r32_op_i(op->reg), U32(x)))
+		: r16_op_i_set(op->reg, SUB(r16_op_i(op->reg), U16(x)));
 }
 
 static RzILOpPure *ri_op(ut8 N, H8300Instruction *cmd, ut8 i) {
@@ -849,13 +853,16 @@ static RzILOpEffect *op_mulxs(H8300Instruction *cmd, ut8 N) {
 
 static RzILOpEffect *op_eepmov(H8300Instruction *cmd, ut8 N) {
 	const H8300Register _4 = N == 8 ? H8300_R4L : H8300_R4;
+	const H8300Register _5 = cmd->cpu_type == CPU_H8300H ? H8300_ER5 : H8300_R5;
+	const H8300Register _6 = cmd->cpu_type == CPU_H8300H ? H8300_ER6 : H8300_R6;
+	const ut8 _56sz = cmd->cpu_type == CPU_H8300H ? 32 : 16;
 	return REPEAT(
 		NE(rx_op_i(N, _4), UN(N, 0)),
 		SEQ5(
-			SETL("data_val", LOADW(N, AS_ADDR(r32_op_i(H8300_ER5)))),
-			STOREW(AS_ADDR(r32_op_i(H8300_ER6)), VARL("data_val")),
-			r32_op_i_set(H8300_ER5, ADD(r32_op_i(H8300_ER5), U32(N / 8))),
-			r32_op_i_set(H8300_ER6, ADD(r32_op_i(H8300_ER6), U32(N / 8))),
+			SETL("data_val", LOADW(N, AS_ADDR(rx_op_i(_56sz, _5)))),
+			STOREW(AS_ADDR(rx_op_i(_56sz, _6)), VARL("data_val")),
+			rx_op_i_set(_56sz, _5, ADD(rx_op_i(_56sz, _5), UN(_56sz, N / 8))),
+			rx_op_i_set(_56sz, _6, ADD(rx_op_i(_56sz, _6), UN(_56sz, N / 8))),
 			rx_op_i_set(N, _4, SUB(rx_op_i(N, _4), UN(N, 1)))));
 }
 
