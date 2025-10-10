@@ -162,10 +162,12 @@ static RzPVector /*<RzBinString *>*/ *string_wildcard_search(
 		}
 		bfs->string = RZ_NEWS0(char, hit->size + 1);
 		if (!bfs->string) {
+			rz_bin_string_free(bfs);
 			goto convert_error;
 		}
 		if (rz_buf_read_at(bf->buf, hit->address, (ut8 *)bfs->string, hit->size) == 0) {
 			RZ_LOG_WARN("bin_file_strings: Failed read RzBinString data at paddr: 0x%" PFMT64x "\n", hit->address);
+			rz_bin_string_free(bfs);
 			continue;
 		}
 		ut8 *utf8_str = NULL;
@@ -202,6 +204,7 @@ static RzPVector /*<RzBinString *>*/ *string_wildcard_search(
 	return bin_strings;
 
 convert_error:
+	rz_pvector_free(bin_strings);
 	rz_list_free(hits);
 	RZ_LOG_ERROR("bin_file_strings: Critical convert error.\n");
 	return NULL;
@@ -566,6 +569,7 @@ RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_bin_file_strings(RZ_NONNULL RzBi
 	RzThreadLock *lock = NULL;
 	size_t pool_size = 1;
 	bool prefer_big_endian = false;
+	RzList *itv_list = NULL;
 
 	pool = rz_th_pool_new(opt->max_threads);
 	if (!pool) {
@@ -574,7 +578,7 @@ RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_bin_file_strings(RZ_NONNULL RzBi
 	}
 	pool_size = rz_th_pool_size(pool);
 	bool scan_for_strings = rz_search_str_enc_needs_scanning(opt->string_encoding);
-	RzList *itv_list = gen_intervals(bf, opt, pool_size, scan_for_strings);
+	itv_list = gen_intervals(bf, opt, pool_size, scan_for_strings);
 
 	if (!itv_list) {
 		RZ_LOG_ERROR("bin_file_strings: Failed to generate interval list.\n");
@@ -587,6 +591,7 @@ RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_bin_file_strings(RZ_NONNULL RzBi
 		// with a wildcard pattern.
 		// It is much faster than scanning.
 		RzPVector *res = string_wildcard_search(bf, itv_list, opt);
+		rz_th_pool_free(pool);
 		rz_list_free(itv_list);
 		return res;
 	}
@@ -619,6 +624,7 @@ RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_bin_file_strings(RZ_NONNULL RzBi
 		}
 	}
 	rz_list_free(itv_list);
+	itv_list = NULL;
 
 	if (rz_th_queue_is_empty(intervals)) {
 		// we just fail directly and return an empty vector, since there are no search intervals.
@@ -690,6 +696,7 @@ fail:
 		}
 		rz_th_pool_free(pool);
 	}
+	rz_list_free(itv_list);
 	ht_up_free(strings_db);
 	rz_th_lock_free(lock);
 	rz_th_queue_free(intervals);
