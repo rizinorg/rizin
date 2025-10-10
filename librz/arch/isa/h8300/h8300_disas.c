@@ -973,6 +973,14 @@ static int h8300_decode_4(const ut8 *instr, H8300Instruction *cmd) {
 		}
 	}
 
+	if (cmd->cpu_type != CPU_H8300L) {
+		switch (x2 & 0xfff0) {
+			CASE_F_F(decode_abs16r8_4, 0x6a40, MOVFPE);
+			CASE_F_F(decode_r8abs16_4, 0x6ac0, MOVTPE);
+			CASE_DEFAULT_BREAK;
+		}
+	}
+
 	switch (x2) {
 		CASE_F_F(decode_pc_rel16, 0x5800, BRA);
 		CASE_F_F(decode_pc_rel16, 0x5810, BRN);
@@ -1012,9 +1020,6 @@ static int h8300_decode_4(const ut8 *instr, H8300Instruction *cmd) {
 		CASE_F_F(decode_i16r16_4, 0x7900, MOV_W);
 		CASE_F_F(decode_abs16r16_4, 0x6b00, MOV_W);
 		CASE_F_F(decode_r16abs16_4, 0x6b80, MOV_W);
-
-		CASE_F_F(decode_abs16r8_4, 0x6a40, MOVFPE);
-		CASE_F_F(decode_r8abs16_4, 0x6ac0, MOVTPE);
 	default:
 		break;
 	}
