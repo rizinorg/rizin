@@ -377,6 +377,71 @@ static int h8300_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 }
 
 static char *get_reg_profile(RzAnalysis *analysis) {
+	if (RZ_STR_EQ(analysis->cpu, "h8300h") || RZ_STR_EQ(analysis->cpu, "H8300H")) {
+		char *p =
+			"=PC	pc\n"
+			"=SP	er7\n"
+			"=A0	r0\n"
+			"gpr	er0	.32	0	0\n"
+			"gpr	r0	.16	0	0\n"
+			"gpr	r0h	.8	0	0\n"
+			"gpr	r0l	.8	1	0\n"
+			"gpr	e0	.16	2	0\n"
+
+			"gpr	er1	.32	4	0\n"
+			"gpr	r1	.16	4	0\n"
+			"gpr	r1h	.8	4	0\n"
+			"gpr	r1l	.8	5	0\n"
+			"gpr	e1	.16	6	0\n"
+
+			"gpr	er2	.32	8	0\n"
+			"gpr	r2	.16	8	0\n"
+			"gpr	r2h	.8	8	0\n"
+			"gpr	r2l	.8	9	0\n"
+			"gpr	e2	.16	10	0\n"
+
+			"gpr	er3	.16	12	0\n"
+			"gpr	r3	.16	12	0\n"
+			"gpr	r3h	.8	12	0\n"
+			"gpr	r3l	.8	13	0\n"
+			"gpr	e3	.16	14	0\n"
+
+			"gpr	er4	.32	16	0\n"
+			"gpr	r4	.16	16	0\n"
+			"gpr	r4h	.8	16	0\n"
+			"gpr	r4l	.8	17	0\n"
+			"gpr	e4	.16	18	0\n"
+
+			"gpr	er5	.32	20	0\n"
+			"gpr	r5	.16	20	0\n"
+			"gpr	r5h	.8	20	0\n"
+			"gpr	r5l	.8	21	0\n"
+			"gpr	e5	.16	22	0\n"
+
+			"gpr	er6	.32	24	0\n"
+			"gpr	r6	.16	24	0\n"
+			"gpr	r6h	.8	24	0\n"
+			"gpr	r6l	.8	25	0\n"
+			"gpr	e6	.16	26	0\n"
+
+			"gpr	er7	.32	28	0\n"
+			"gpr	r7	.16	28	0\n"
+			"gpr	r7h	.8	28	0\n"
+			"gpr	r7l	.8	29	0\n"
+			"gpr	e7	.16	30	0\n"
+
+			"gpr	pc	.24	32	0\n"
+			"gpr	ccr	.8	35	0\n"
+			"gpr	I	.1	.287	0\n"
+			"gpr	U1	.1	.286	0\n"
+			"gpr	H	.1	.285	0\n"
+			"gpr	U2	.1	.284	0\n"
+			"gpr	N	.1	.283	0\n"
+			"gpr	Z	.1	.282	0\n"
+			"gpr	V	.1	.281	0\n"
+			"gpr	C	.1	.280	0\n";
+		return strdup(p);
+	}
 	char *p =
 		"=PC	pc\n"
 		"=SP	r7\n"
@@ -405,16 +470,8 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"gpr	r7	.16	14	0\n"
 		"gpr	r7h	.8	14	0\n"
 		"gpr	r7l	.8	15	0\n"
-		"gpr	pc	.24	16	0\n"
-		"gpr	ccr	.8	19	0\n"
-		"gpr	e0	.16	30	0\n"
-		"gpr	e1	.16	32	0\n"
-		"gpr	e2	.16	34	0\n"
-		"gpr	e3	.16	36	0\n"
-		"gpr	e4	.16	38	0\n"
-		"gpr	e5	.16	40	0\n"
-		"gpr	e6	.16	44	0\n"
-		"gpr	e7	.16	46	0\n"
+		"gpr	pc	.16	16	0\n"
+		"gpr	ccr	.8	18	0\n"
 		"gpr	I	.1	.151	0\n"
 		"gpr	U1	.1	.150	0\n"
 		"gpr	H	.1	.149	0\n"
