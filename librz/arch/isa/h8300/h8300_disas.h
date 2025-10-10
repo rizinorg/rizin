@@ -380,7 +380,8 @@ typedef enum h8300_registers_t {
 	H8300_ER7,
 #define H8300_REG32_BEGIN H8300_ER0
 #define H8300_REG32_END   H8300_ER7
-#define H8300_SP          H8300_ER7
+#define H8300_SP          H8300_R7
+#define H8300H_SP         H8300_ER7
 } H8300Register;
 
 typedef struct {

@@ -122,23 +122,6 @@ static RzILOpEffect *rpredec_op_dec(H8300Instruction *cmd, ut8 i, ut8 x) {
 	return r32_op_i_set(op->reg, SUB(r32_op_i(op->reg), U32(x)));
 }
 
-// SP=ER7
-static RzILOpPure *sp_op() {
-	return AS_ADDR(r32_op_i(H8300_SP));
-}
-
-static RzILOpEffect *sp_set(RzILOpPure *x) {
-	return STOREW(sp_op(), x);
-}
-
-static RzILOpEffect *sp_dec(ut8 x) {
-	return r32_op_i_set(H8300_SP, SUB(r32_op_i(H8300_SP), U32(x)));
-}
-
-static RzILOpEffect *sp_inc(ut8 x) {
-	return r32_op_i_set(H8300_SP, ADD(r32_op_i(H8300_SP), U32(x)));
-}
-
 static RzILOpPure *ri_op(ut8 N, H8300Instruction *cmd, ut8 i) {
 	T_OP_DECL(H8300_OP_RI, i);
 	return LOADW(N, AS_ADDR(INS_OPS(i).width == H8300Operand_32 ? r32_op_i(op->reg) : r16_op_i(op->reg)));
@@ -270,6 +253,36 @@ static RzILOpEffect *rx_op_set(H8300Instruction *cmd, ut8 N, ut8 I, RzILOpPure *
 
 #define RX_OP(N, I)   rx_op(cmd, N, I)
 #define RX_X(N, I, X) rx_op_set(cmd, N, I, X)
+
+static ut8 sp_index_from_cpu_type(int cpu_type) {
+	return cpu_type == CPU_H8300H ? H8300H_SP : H8300_SP;
+}
+
+static ut8 sp_width_from_cpu_type(int cpu_type) {
+	return cpu_type == CPU_H8300H ? 32 : 16;
+}
+
+static RzILOpPure *sp_op(const H8300Instruction *cmd) {
+	return cmd->cpu_type == CPU_H8300H ? r32_op_i(H8300H_SP) : r16_op_i(H8300_SP);
+}
+
+static RzILOpPure *sp_op_as_adr(const H8300Instruction *cmd) {
+	return AS_ADDR(sp_op(cmd));
+}
+
+static RzILOpEffect *sp_set(const H8300Instruction *cmd, RzILOpPure *x) {
+	return STOREW(sp_op_as_adr(cmd), x);
+}
+
+static RzILOpEffect *sp_dec(const H8300Instruction *cmd, ut8 x) {
+	return rx_op_i_set(sp_width_from_cpu_type(cmd->cpu_type), sp_index_from_cpu_type(cmd->cpu_type),
+		SUB(sp_op(cmd), UN(sp_width_from_cpu_type(cmd->cpu_type), x)));
+}
+
+static RzILOpEffect *sp_inc(const H8300Instruction *cmd, ut8 x) {
+	return rx_op_i_set(sp_width_from_cpu_type(cmd->cpu_type), sp_index_from_cpu_type(cmd->cpu_type),
+		ADD(sp_op(cmd), UN(sp_width_from_cpu_type(cmd->cpu_type), x)));
+}
 
 typedef enum {
 	CCR_C,
@@ -1223,19 +1236,19 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Instruction *cmd)
 	case H8300_INSN_EXTU_L: return op_extu(cmd, 32);
 	case H8300_INSN_RTS:
 		return SEQ3(
-			SETL("@sp", LOADW(32, sp_op())),
-			sp_inc(4),
+			SETL("@sp", LOADW(32, sp_op_as_adr(cmd))),
+			sp_inc(cmd, 4),
 			JMP(UNSIGNED(24, VARL("@sp"))));
 	case H8300_INSN_RTE:
 		return SEQ4(
-			SETL("ccr_pc", LOADW(32, sp_op())),
-			sp_inc(4),
+			SETL("ccr_pc", LOADW(32, sp_op_as_adr(cmd))),
+			sp_inc(cmd, 4),
 			SETG("ccr", UNSIGNED(8, SHIFTR0(VARL("ccr_pc"), U8(24)))),
 			JMP(UNSIGNED(24, VARL("ccr_pc"))));
 	case H8300_INSN_BSR:
 		return SEQ3(
-			sp_dec(4),
-			STOREW(sp_op(), PC_VAL),
+			sp_dec(cmd, 4),
+			STOREW(sp_op_as_adr(cmd), PC_VAL),
 			JMP(ADD(PC_VAL, PCREL_OP(0))));
 	case H8300_INSN_JMP:
 		switch (cmd->fmt) {
@@ -1251,18 +1264,18 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Instruction *cmd)
 		switch (cmd->fmt) {
 		case H8300_INSN_FORMAT_RI:
 			return SEQ3(
-				sp_dec(4),
-				STOREW(sp_op(), UNSIGNED(32, PC_NEXT_VAL)),
+				sp_dec(cmd, 4),
+				STOREW(sp_op_as_adr(cmd), UNSIGNED(32, PC_NEXT_VAL)),
 				JMP(ri_op(24, cmd, 0)));
 		case H8300_INSN_FORMAT_ABS:
 			return SEQ3(
-				sp_dec(4),
-				STOREW(sp_op(), UNSIGNED(32, PC_NEXT_VAL)),
+				sp_dec(cmd, 4),
+				STOREW(sp_op_as_adr(cmd), UNSIGNED(32, PC_NEXT_VAL)),
 				JMP(UADDR(INS_OPS(0).imm)));
 		case H8300_INSN_FORMAT_MI8:
 			return SEQ3(
-				sp_dec(4),
-				STOREW(sp_op(), UNSIGNED(32, PC_NEXT_VAL)),
+				sp_dec(cmd, 4),
+				STOREW(sp_op_as_adr(cmd), UNSIGNED(32, PC_NEXT_VAL)),
 				JMP(LOADW(24, MI8_OP(0))));
 		default: NOT_IMPLEMENTED;
 		}
@@ -1451,34 +1464,34 @@ static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Instruction *cmd)
 		}
 	case H8300_INSN_POP_W:
 		return SEQ4(
-			SETL("val", LOADW(16, sp_op())),
+			SETL("val", LOADW(16, sp_op_as_adr(cmd))),
 			R16_X(0, VARL("val")),
-			sp_inc(2),
+			sp_inc(cmd, 2),
 			ccr_xNZV0(16, VARL("val")));
 	case H8300_INSN_POP_L:
 		return SEQ4(
-			SETL("val", LOADW(32, sp_op())),
+			SETL("val", LOADW(32, sp_op_as_adr(cmd))),
 			R32_X(0, VARL("val")),
-			sp_inc(4),
+			sp_inc(cmd, 4),
 			ccr_xNZV0(32, VARL("val")));
 	case H8300_INSN_PUSH_W:
 		return SEQ3(
-			sp_dec(2),
-			STOREW(sp_op(), R16_OP(0)),
+			sp_dec(cmd, 2),
+			STOREW(sp_op_as_adr(cmd), R16_OP(0)),
 			ccr_xNZV0(16, R16_OP(0)));
 	case H8300_INSN_PUSH_L:
 		return SEQ3(
-			sp_dec(4),
-			STOREW(sp_op(), R32_OP(0)),
+			sp_dec(cmd, 4),
+			STOREW(sp_op_as_adr(cmd), R32_OP(0)),
 			ccr_xNZV0(32, R32_OP(0)));
 	case H8300_INSN_INVALID: return NOP();
 
 	case H8300_INSN_TRAPA:
 		return SEQ5(
-			sp_dec(4),
-			sp_set(PC_NEXT_VAL),
-			sp_dec(2),
-			sp_set(VARG("ccr")),
+			sp_dec(cmd, 4),
+			sp_set(cmd, PC_NEXT_VAL),
+			sp_dec(cmd, 2),
+			sp_set(cmd, VARG("ccr")),
 			JMP(vector_addr(cmd, INS_OPS(0).imm)));
 	case H8300_INSN_MOVFPE:
 		return SEQ2(
