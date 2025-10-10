@@ -858,23 +858,37 @@ static int decode_r32rdec_4(const ut8 *bytes, H8300Instruction *cmd) {
 		OPS_ADD(H8300_OP_CCR, imm, 0); \
 		CASE_F_F_IMPL_BODY(F, I) \
 		return cmd->size;
+#define CASE_DEFAULT_BREAK \
+	default: break;
 
 static int h8300_decode_10(const ut8 *instr, H8300Instruction *cmd) {
 	ut64 x7 = rz_read_be64(instr) >> 8;
+	if (cmd->cpu_type == CPU_H8300H) {
+		switch (x7 & 0xffffff8ffff8ff) {
+			CASE_F_F(decode_rd3224r32_10, 0x010078006b2000, MOV_L);
+			CASE_F_F(decode_r32rd3224_10, 0x010078806ba000, MOV_L);
+			CASE_DEFAULT_BREAK;
+		}
+	}
+
 	switch (x7 & 0xffffff8fffffff) {
 		CASE_F_F_CCR(decode_rd3224_10, 0x014078006b2000, LDC_W);
 		CASE_F_CCR_F(decode_rd3224_10, 0x014078006ba000, STC_W);
 	default: break;
 	}
-	switch (x7 & 0xffffff8ffff8ff) {
-		CASE_F_F(decode_rd3224r32_10, 0x010078006b2000, MOV_L);
-		CASE_F_F(decode_r32rd3224_10, 0x010078806ba000, MOV_L);
-	default: break;
-	}
+
 	return -1;
 }
 static int h8300_decode_8(const ut8 *instr, H8300Instruction *cmd) {
 	ut64 x5 = rz_read_be64(instr) >> 24;
+	if (cmd->cpu_type == CPU_H8300H) {
+		switch (x5 & 0xfffffff8ff) {
+			CASE_F_F(decode_abs24r32_8, 0x01006b2000, MOV_L);
+			CASE_F_F(decode_r32abs24_8, 0x01006ba000, MOV_L);
+			CASE_DEFAULT_BREAK;
+		}
+	}
+
 	switch (x5) {
 		CASE_F_F_CCR(decode_abs24_8, 0x01406b2000, LDC_W);
 		CASE_F_CCR_F(decode_abs24_8, 0x01406ba000, STC_W);
@@ -885,11 +899,6 @@ static int h8300_decode_8(const ut8 *instr, H8300Instruction *cmd) {
 		CASE_F_F(decode_r8rd3224_8, 0x78006aa000, MOV_B);
 		CASE_F_F(decode_rd3224r16_8, 0x78006b2000, MOV_W);
 		CASE_F_F(decode_r16rd3224_8, 0x78006ba000, MOV_W);
-	default: break;
-	}
-	switch (x5 & 0xfffffff8ff) {
-		CASE_F_F(decode_abs24r32_8, 0x01006b2000, MOV_L);
-		CASE_F_F(decode_r32abs24_8, 0x01006ba000, MOV_L);
 	default: break;
 	}
 	return -1;
@@ -907,16 +916,16 @@ static int h8300_decode_6(const ut8 *instr, H8300Instruction *cmd) {
 			CASE_F_F(decode_i32r32_6, 0x7a00, MOV_L);
 			CASE_F_F(decode_i32r32_6, 0x7a40, OR_L);
 			CASE_F_F(decode_i32r32_6, 0x7a50, XOR_L);
-		default: break;
+			CASE_DEFAULT_BREAK;
 		}
 		switch (x4 & 0xfffffff8) {
 			CASE_F_F(decode_abs16r32_6, 0x01006b00, MOV_L);
 			CASE_F_F(decode_r32abs16_6, 0x01006b80, MOV_L);
-		default: break;
+			CASE_DEFAULT_BREAK;
 		}
 		switch (x4 & 0xffffff08) {
 			CASE_F_F(decode_rd3216r32_6, 0x01006f00, MOV_L);
-		default: break;
+			CASE_DEFAULT_BREAK;
 		}
 	}
 
@@ -943,6 +952,26 @@ static int h8300_decode_6(const ut8 *instr, H8300Instruction *cmd) {
 static int h8300_decode_4(const ut8 *instr, H8300Instruction *cmd) {
 	ut32 x2 = rz_read_be16(instr);
 	ut32 x4 = rz_read_be32(instr);
+
+	if (cmd->cpu_type == CPU_H8300H) {
+		switch (x4 & 0xfffffff8) {
+			CASE_F_F(decode_r32_4l, 0x01006d70, POP_L);
+			CASE_F_F(decode_r32_4l, 0x01006df0, PUSH_L);
+			CASE_DEFAULT_BREAK;
+		}
+		switch (x4 & 0xffffff88) {
+			CASE_F_F(decode_r32r32_4, 0x01f06600, AND_L);
+
+			CASE_F_F(decode_rir32_4, 0x01006900, MOV_L);
+			CASE_F_F(decode_rir32_4, 0x01006980, MOV_L);
+			CASE_F_F(decode_rincr32_4, 0x01006d00, MOV_L);
+			CASE_F_F(decode_r32rdec_4, 0x01006d80, MOV_L);
+
+			CASE_F_F(decode_r32r32_4, 0x01f06400, OR_L);
+			CASE_F_F(decode_r32r32_4, 0x01f06500, XOR_L);
+			CASE_DEFAULT_BREAK;
+		}
+	}
 
 	switch (x2) {
 		CASE_F_F(decode_pc_rel16, 0x5800, BRA);
@@ -1062,25 +1091,6 @@ static int h8300_decode_4(const ut8 *instr, H8300Instruction *cmd) {
 	default:
 		break;
 	}
-	switch (x4 & 0xfffffff8) {
-		CASE_F_F(decode_r32_4l, 0x01006d70, POP_L);
-		CASE_F_F(decode_r32_4l, 0x01006df0, PUSH_L);
-	default:
-		break;
-	}
-	switch (x4 & 0xffffff88) {
-		CASE_F_F(decode_r32r32_4, 0x01f06600, AND_L);
-
-		CASE_F_F(decode_rir32_4, 0x01006900, MOV_L);
-		CASE_F_F(decode_rir32_4, 0x01006980, MOV_L);
-		CASE_F_F(decode_rincr32_4, 0x01006d00, MOV_L);
-		CASE_F_F(decode_r32rdec_4, 0x01006d80, MOV_L);
-
-		CASE_F_F(decode_r32r32_4, 0x01f06400, OR_L);
-		CASE_F_F(decode_r32r32_4, 0x01f06500, XOR_L);
-	default:
-		break;
-	}
 	switch (x4 & 0xffffff00) {
 		CASE_F_F(decode_r8r16_4, 0x01d05100, DIVXS_B);
 		CASE_F_F(decode_r8r16_4, 0x01c05000, MULXS_B);
@@ -1098,6 +1108,40 @@ static int h8300_decode_4(const ut8 *instr, H8300Instruction *cmd) {
 
 static int h8300_decode_2(const ut8 *instr, H8300Instruction *cmd) {
 	ut32 x2 = rz_read_be16(instr);
+
+	if (cmd->cpu_type == CPU_H8300H) {
+		switch (x2 & 0xff88) {
+			CASE_F_F(decode_r32r32_2, 0x0a80, ADD_L);
+			CASE_F_F(decode_r32r32_2, 0x1a80, SUB_L);
+			CASE_F_F(decode_r32r32_2, 0x1f80, CMP_L);
+			CASE_F_F(decode_r32r32_2, 0x0f80, MOV_L);
+			CASE_DEFAULT_BREAK;
+		}
+		switch (x2 & 0xfff0) {
+			CASE_F_F(decode_r32_2, 0x17b0, NEG_L);
+			CASE_F_F(decode_r32_2, 0x1730, NOT_L);
+
+			CASE_F_F(decode_r32_2, 0x12b0, ROTL_L);
+			CASE_F_F(decode_r32_2, 0x13b0, ROTR_L);
+			CASE_F_F(decode_r32_2, 0x1230, ROTXL_L);
+			CASE_F_F(decode_r32_2, 0x1330, ROTXR_L);
+			CASE_F_F(decode_r32_2, 0x10b0, SHAL_L);
+			CASE_F_F(decode_r32_2, 0x1030, SHLL_L);
+			CASE_F_F(decode_r32_2, 0x11b0, SHAR_L);
+			CASE_F_F(decode_r32_2, 0x1130, SHLR_L);
+
+			CASE_F_F(decode_r32_2, 0x17f0, EXTS_L);
+			CASE_F_F(decode_r32_2, 0x1770, EXTU_L);
+			CASE_DEFAULT_BREAK;
+		}
+		switch (x2 & 0xfff8) {
+			CASE_F_F_VA(decode_xr32, 0x1b70, DEC_L, 1);
+			CASE_F_F_VA(decode_xr32, 0x1bf0, DEC_L, 2);
+			CASE_F_F_VA(decode_xr32, 0x0b70, INC_L, 1);
+			CASE_F_F_VA(decode_xr32, 0x0bf0, INC_L, 2);
+			CASE_DEFAULT_BREAK;
+		}
+	}
 
 	switch (x2 & 0xffcf) {
 		CASE_F_F(decode_i2_2, 0x5700, TRAPA);
@@ -1134,10 +1178,8 @@ static int h8300_decode_2(const ut8 *instr, H8300Instruction *cmd) {
 		CASE_F_R8(0x0a00, INC_B);
 		CASE_F_R8(0x1780, NEG_B);
 		CASE_F_F(decode_r16_2, 0x1790, NEG_W);
-		CASE_F_F(decode_r32_2, 0x17b0, NEG_L);
 		CASE_F_R8(0x1700, NOT_B);
 		CASE_F_F(decode_r16_2, 0x1710, NOT_W);
-		CASE_F_F(decode_r32_2, 0x1730, NOT_L);
 
 		CASE_F_R8(0x1280, ROTL_B);
 		CASE_F_R8(0x1380, ROTR_B);
@@ -1157,19 +1199,8 @@ static int h8300_decode_2(const ut8 *instr, H8300Instruction *cmd) {
 		CASE_F_F(decode_r16_2, 0x1190, SHAR_W);
 		CASE_F_F(decode_r16_2, 0x1110, SHLR_W);
 
-		CASE_F_F(decode_r32_2, 0x12b0, ROTL_L);
-		CASE_F_F(decode_r32_2, 0x13b0, ROTR_L);
-		CASE_F_F(decode_r32_2, 0x1230, ROTXL_L);
-		CASE_F_F(decode_r32_2, 0x1330, ROTXR_L);
-		CASE_F_F(decode_r32_2, 0x10b0, SHAL_L);
-		CASE_F_F(decode_r32_2, 0x1030, SHLL_L);
-		CASE_F_F(decode_r32_2, 0x11b0, SHAR_L);
-		CASE_F_F(decode_r32_2, 0x1130, SHLR_L);
-
 		CASE_F_F(decode_r16_2, 0x17d0, EXTS_W);
-		CASE_F_F(decode_r32_2, 0x17f0, EXTS_L);
 		CASE_F_F(decode_r16_2, 0x1750, EXTU_W);
-		CASE_F_F(decode_r32_2, 0x1770, EXTU_L);
 
 		CASE_F_F_VA(decode_xr16, 0x1b50, DEC_W, 1);
 		CASE_F_F_VA(decode_xr16, 0x1bd0, DEC_W, 2);
@@ -1186,11 +1217,6 @@ static int h8300_decode_2(const ut8 *instr, H8300Instruction *cmd) {
 		CASE_F_F(decode_i16r16_4, 0x7900, MOV_W);
 		CASE_F_F(decode_abs16r8_4, 0x6b00, MOV_W);
 
-		CASE_F_F_VA(decode_xr32, 0x1b70, DEC_L, 1);
-		CASE_F_F_VA(decode_xr32, 0x1bf0, DEC_L, 2);
-		CASE_F_F_VA(decode_xr32, 0x0b70, INC_L, 1);
-		CASE_F_F_VA(decode_xr32, 0x0bf0, INC_L, 2);
-
 	case 0x0b00:
 	case 0x0b80:
 	case 0x0b90:
@@ -1201,15 +1227,6 @@ static int h8300_decode_2(const ut8 *instr, H8300Instruction *cmd) {
 	case 0x1b90:
 		CASE_F_F_IMPL(decode_sr16_32, SUBS);
 
-	default:
-		break;
-	}
-
-	switch (x2 & 0xff88) {
-		CASE_F_F(decode_r32r32_2, 0x0a80, ADD_L);
-		CASE_F_F(decode_r32r32_2, 0x1a80, SUB_L);
-		CASE_F_F(decode_r32r32_2, 0x1f80, CMP_L);
-		CASE_F_F(decode_r32r32_2, 0x0f80, MOV_L);
 	default:
 		break;
 	}
