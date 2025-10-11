@@ -5,17 +5,16 @@
 .Nd rizin utility to run programs in custom environments
 .Sh SYNOPSIS
 .Nm rz-run
-.Op [directives]
-.Op [script.rz]
-.Op [--] [program] [args]
+.Op Ar directives | script.rz
+.Op Fl - Ar program Op Ar args
 .Sh DESCRIPTION
 This command is part of the Rizin project.
 .Pp
-This program is used as a launcher for running programs with different environment, arguments, permissions, directories and overridden default filedescriptors.
+This program is used as a launcher for running programs with different environment, arguments, permissions, directories and overridden default file descriptors.
 .Pp
 .Bl -tag -width Fl
 .It Fl l
-List all the supported profile options.
+List all the supported profile directives.
 .Pp
 .It Fl t
 Output a base template profile. Try rz-run -d > profile.rz
@@ -24,7 +23,7 @@ Output a base template profile. Try rz-run -d > profile.rz
 Show the terminal name and wait for a connection from another process. Try rz-run stdio=<ttypath> program=/bin/sh
 .El
 .Pp
-The program just accepts a single argument which is the filename of the configuration file to run the program.
+The program accepts a single argument which is the filename of the configuration file to run the program.
 .Pp
 It is useful when you have to run a program using long arguments or pass long data to stdin or things like that usually required for exploiting crackmes :)
 .Sh DIRECTIVES

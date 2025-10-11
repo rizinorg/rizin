@@ -26,15 +26,15 @@ static void rz_run_tty(void) {
 static void rz_run_help(int v) {
 	if (v == 0) {
 		printf(Color_CYAN "Usage: ");
-		printf(Color_RESET "[directives] [script.rz] [--] [program] [args]\n");
+		printf(Color_RESET "rz-run [directives | script.rz] [-- program [args]]\n");
 		const char *options[] = {
 			// clang-format off
 			"-h",       "",                 "Show this help",
-			"-l",       "",                 "Show profile options",
+			"-l",       "",                 "Show profile directives",
 			"-t",       "",                 "Output template profile",
 			"-v",       "",                 "Show version information",
 			"-w",       "",                 "Wait for incoming terminal process",
-			"--",       "[program] [args]", "Run commands",
+			"--",       "program [args]",   "Run program",
 			// clang-format on
 		};
 		rz_print_colored_help(options, RZ_ARRAY_SIZE(options), false);
@@ -93,7 +93,7 @@ static void rz_run_help(int v) {
 	}
 	if (v == 2) {
 		// clang-format off
-		printf(Color_CYAN "Supported RzRun profile options:\n"
+		printf(Color_CYAN "Supported RzRun profile directives:\n"
 			Color_RESET
 			"arg[0-511]  Set value for argument N passed to the program\n"
 			"aslr        Enable or disable ASLR\n"

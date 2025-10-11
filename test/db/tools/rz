@@ -591,13 +591,13 @@ ec diff.unmatch red    | mismatch color
  [32m[0m          [0mAll the input (besides -s/-x/-c) can be hexadecimal or strings
  [32m[0m          [0mIf 's:' prefix is specified
 
-[36mUsage: [0m[directives] [script.rz] [--] [program] [args]
- [32m-h[0m                  [0mShow this help
- [32m-l[0m                  [0mShow profile options
- [32m-t[0m                  [0mOutput template profile
- [32m-v[0m                  [0mShow version information
- [32m-w[0m                  [0mWait for incoming terminal process
- [32m--[0m[33m [program] [args] [0m[0mRun commands
+[36mUsage: [0mrz-run [directives | script.rz] -- program [args]
+ [32m-h[0m                [0mShow this help
+ [32m-l[0m                [0mShow profile directives
+ [32m-t[0m                [0mOutput template profile
+ [32m-v[0m                [0mShow version information
+ [32m-w[0m                [0mWait for incoming terminal process
+ [32m--[0m[33m program [args] [0m[0mRun program
 
 [36mUsage: [0mrz-sign [-aqv] [-e k=v] (-c pat sig | -o sig bin | -d sig)
  [32m-h[0m                      [0mShow this help
