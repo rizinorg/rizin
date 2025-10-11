@@ -591,7 +591,7 @@ ec diff.unmatch red    | mismatch color
  [32m[0m          [0mAll the input (besides -s/-x/-c) can be hexadecimal or strings
  [32m[0m          [0mIf 's:' prefix is specified
 
-[36mUsage: [0mrz-run [directives | script.rz] -- program [args]
+[36mUsage: [0mrz-run [directives | script.rz] [-- program [args]]
  [32m-h[0m                [0mShow this help
  [32m-l[0m                [0mShow profile directives
  [32m-t[0m                [0mOutput template profile
