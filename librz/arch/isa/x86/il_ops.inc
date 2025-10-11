@@ -237,12 +237,55 @@ IL_LIFTER(bsf) {
 /**
  * CBW
  * Convert byte to word
- * 98 | Valid | Valid
+ * 98 | ZO | Valid | Valid
  */
 IL_LIFTER(cbw) {
-	/* The UNSIGNED(16, ...) cast is useless in case of 32 bits,
-	but removing it will cause issues for 16-bit */
-	return x86_il_set_reg(X86_REG_AX, UNSIGNED(16, x86_il_get_reg(X86_REG_AL)));
+	return x86_il_set_reg(X86_REG_AX, SIGNED(16, x86_il_get_reg(X86_REG_AL)));
+}
+
+/**
+ * CWDE
+ * Convert word to doubleword
+ * 98 | ZO | Valid | Valid
+ */
+IL_LIFTER(cwde) {
+	return x86_il_set_reg(X86_REG_EAX, SIGNED(32, x86_il_get_reg(X86_REG_AX)));
+}
+
+/**
+ * CDQE
+ * Convert doubleword to quadword
+ * REX.W + 98 | ZO | Valid | Valid
+ */
+IL_LIFTER(cdqe) {
+	return x86_il_set_reg(X86_REG_RAX, SIGNED(64, x86_il_get_reg(X86_REG_EAX)));
+}
+
+/**
+ * CWD
+ * Convert word to doubleword
+ * 99 | ZO | Valid | Valid
+ */
+IL_LIFTER(cwd) {
+	return x86_il_set_reg(X86_REG_DX, ITE(MSB(x86_il_get_reg(X86_REG_AX)), UN(16, 0xffff), UN(16, 0)));
+}
+
+/**
+ * CDQ
+ * Convert doubleword to quadword
+ * 99 | ZO | Valid | Valid
+ */
+IL_LIFTER(cdq) {
+	return x86_il_set_reg(X86_REG_EDX, ITE(MSB(x86_il_get_reg(X86_REG_EAX)), UN(32, 0xffffffffUL), UN(32, 0)));
+}
+
+/**
+ * CQO
+ * Convert quadword to double-quadword (octword?)
+ * REX.W + 99 | ZO | Valid | Valid
+ */
+IL_LIFTER(cqo) {
+	return x86_il_set_reg(X86_REG_RDX, ITE(MSB(x86_il_get_reg(X86_REG_RAX)), UN(64, 0xffffffffffffffffULL), UN(64, 0)));
 }
 
 /**
@@ -1485,7 +1528,7 @@ IL_LIFTER(nop) {
  * One's complement negation
  * Encoding: M
  */
-IL_LIFTER(not ) {
+IL_LIFTER(not) {
 	return x86_il_set_op(0, LOGNOT(x86_il_get_op(0)));
 }
 
