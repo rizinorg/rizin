@@ -71,9 +71,8 @@ struct rz_magic {
 #define INDIROFFADD 0x04 /* if '>&(' appears */
 #define UNSIGNED    0x08 /* comparison is unsigned */
 #define NOSPACE     0x10 /* suppress space character before output */
-#define BINTEST     0x20 /* test is for a binary type (set only \
-			for top-level tests) */
-#define TEXTTEST 0 /* for passing to file_softmagic */
+#define BINTEST     0x20 /* test is for a binary type (set only for top-level tests) */
+#define TEXTTEST    0 /* for passing to file_softmagic */
 
 	ut8 dummy1;
 
