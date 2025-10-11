@@ -107,10 +107,10 @@ static void write_path(int fd, RzList /*<char *>*/ *path) {
 			write_(fd, "/", 1);
 		}
 		ESCAPE_LOOP(fd, path_token,
-			    ESCAPE('\\', "\\", 1);
-			    ESCAPE('/', "/", 1);
-			    ESCAPE('\n', "n", 1);
-			    ESCAPE('\r', "r", 1););
+			ESCAPE('\\', "\\", 1);
+			ESCAPE('/', "/", 1);
+			ESCAPE('\n', "n", 1);
+			ESCAPE('\r', "r", 1););
 	}
 }
 
@@ -120,17 +120,17 @@ static void write_key(int fd, const char *k) {
 		write_(fd, "\\", 1);
 	}
 	ESCAPE_LOOP(fd, k,
-		    ESCAPE('\\', "\\", 1);
-		    ESCAPE('=', "=", 1);
-		    ESCAPE('\n', "n", 1);
-		    ESCAPE('\r', "r", 1););
+		ESCAPE('\\', "\\", 1);
+		ESCAPE('=', "=", 1);
+		ESCAPE('\n', "n", 1);
+		ESCAPE('\r', "r", 1););
 }
 
 static void write_value(int fd, const char *v) {
 	ESCAPE_LOOP(fd, v,
-		    ESCAPE('\\', "\\", 1);
-		    ESCAPE('\n', "n", 1);
-		    ESCAPE('\r', "r", 1););
+		ESCAPE('\\', "\\", 1);
+		ESCAPE('\n', "n", 1);
+		ESCAPE('\r', "r", 1););
 }
 #undef FLUSH
 #undef ESCAPE_LOOP

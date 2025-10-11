@@ -182,7 +182,7 @@ static void sm3_process_block(const void *buffer, ut64 len, sm3_ctx_t *ctx) {
 	ctx->total[0] += low_len;
 	ctx->total[1] += (len >> 31 >> 1) + (ctx->total[0] < low_len);
 
-#define rol(x, n) (((x) << ((n)&31)) | ((x) >> ((32 - (n)) & 31)))
+#define rol(x, n) (((x) << ((n) & 31)) | ((x) >> ((32 - (n)) & 31)))
 #define P0(x)     ((x) ^ rol(x, 9) ^ rol(x, 17))
 #define P1(x)     ((x) ^ rol(x, 15) ^ rol(x, 23))
 

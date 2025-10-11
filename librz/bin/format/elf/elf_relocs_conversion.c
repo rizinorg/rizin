@@ -853,7 +853,7 @@ static RzBinReloc *reloc_convert_ppc64(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT
 // MIPS64 has subtypes for relocs but we do not support it.
 #define ELF64_MIPS_R_TYPE3(i) (((i) >> 16) & 0xff)
 #define ELF64_MIPS_R_TYPE2(i) (((i) >> 8) & 0xff)
-#define ELF64_MIPS_R_TYPE(i)  ((i)&0xff)
+#define ELF64_MIPS_R_TYPE(i)  ((i) & 0xff)
 
 static RzBinReloc *reloc_convert_mips(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 	ut64 P = rel->vaddr;

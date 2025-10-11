@@ -10,7 +10,9 @@
 #ifndef HAVE_EPRINTF
 #include <stdio.h>
 #define eprintf(...) \
-	{ fprintf(stderr, ##__VA_ARGS__); }
+	{ \
+		fprintf(stderr, ##__VA_ARGS__); \
+	}
 #define HAVE_EPRINTF 1
 #endif
 

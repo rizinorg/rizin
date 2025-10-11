@@ -7,7 +7,7 @@
 #include <sys/user.h>
 
 #ifndef offsetof
-#define offsetof(type, field) ((size_t) & ((type *)0)->field)
+#define offsetof(type, field) ((size_t)&((type *)0)->field)
 #endif
 
 #endif //__linux__

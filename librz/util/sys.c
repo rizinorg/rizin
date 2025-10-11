@@ -129,8 +129,8 @@ RZ_LIB_VERSION(rz_util);
 #else
 #define RZ_SYS_ASM_START_ROP() \
 	__asm__ __volatile__("leaq %0, %%rsp; ret" \
-			     : \
-			     : "m"(*bufptr));
+		: \
+		: "m"(*bufptr));
 #endif
 #elif __i386__
 #ifdef _MSC_VER
@@ -142,8 +142,8 @@ RZ_LIB_VERSION(rz_util);
 #else
 #define RZ_SYS_ASM_START_ROP() \
 	__asm__ __volatile__("leal %0, %%esp; ret" \
-			     : \
-			     : "m"(*bufptr));
+		: \
+		: "m"(*bufptr));
 #endif
 #else
 #define RZ_SYS_ASM_START_ROP() \

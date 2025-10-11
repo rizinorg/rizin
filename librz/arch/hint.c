@@ -198,8 +198,8 @@ static RzAnalysisRangedHintRecordBase *ensure_ranged_hint_record(RBTree *tree, u
 
 RZ_API void rz_analysis_hint_set_offset(RzAnalysis *a, ut64 addr, const char *typeoff) {
 	SET_HINT(RZ_ANALYSIS_ADDR_HINT_TYPE_TYPE_OFFSET,
-		 free(r->type_offset);
-		 r->type_offset = rz_str_dup(typeoff););
+		free(r->type_offset);
+		r->type_offset = rz_str_dup(typeoff););
 }
 
 RZ_API void rz_analysis_hint_set_nword(RzAnalysis *a, ut64 addr, int nword) {
@@ -240,20 +240,20 @@ RZ_API void rz_analysis_hint_set_ret(RzAnalysis *a, ut64 addr, ut64 val) {
 
 RZ_API void rz_analysis_hint_set_syntax(RzAnalysis *a, ut64 addr, const char *syn) {
 	SET_HINT(RZ_ANALYSIS_ADDR_HINT_TYPE_SYNTAX,
-		 free(r->syntax);
-		 r->syntax = rz_str_dup(syn););
+		free(r->syntax);
+		r->syntax = rz_str_dup(syn););
 }
 
 RZ_API void rz_analysis_hint_set_opcode(RzAnalysis *a, ut64 addr, const char *opcode) {
 	SET_HINT(RZ_ANALYSIS_ADDR_HINT_TYPE_OPCODE,
-		 free(r->opcode);
-		 r->opcode = rz_str_dup(opcode););
+		free(r->opcode);
+		r->opcode = rz_str_dup(opcode););
 }
 
 RZ_API void rz_analysis_hint_set_esil(RzAnalysis *a, ut64 addr, const char *esil) {
 	SET_HINT(RZ_ANALYSIS_ADDR_HINT_TYPE_ESIL,
-		 free(r->esil);
-		 r->esil = rz_str_dup(esil););
+		free(r->esil);
+		r->esil = rz_str_dup(esil););
 }
 
 RZ_API void rz_analysis_hint_set_type(RzAnalysis *a, ut64 addr, int type) {

@@ -113,8 +113,7 @@ typedef struct Ht_(kv) {
 	VALUE_TYPE value;
 	ut32 key_len;
 	ut32 value_len;
-}
-HT_(Kv);
+} HT_(Kv);
 
 typedef void (*HT_(FiniKv))(HT_(Kv) *kv, void *user);
 typedef KEY_TYPE (*HT_(DupKey))(const KEY_TYPE);
@@ -129,8 +128,7 @@ typedef bool (*HT_(ForeachCallback))(void *user, const KEY_TYPE, const VALUE_TYP
 typedef struct Ht_(bucket_t) {
 	HT_(Kv) *arr;
 	ut32 count;
-}
-HT_(Bucket);
+} HT_(Bucket);
 
 /**
  * Options contain all the settings of the hashtable.
@@ -155,8 +153,7 @@ typedef struct Ht_(options_t) {
 	void *finiKV_user; ///< RZ_NULLABLE. User data which is passed into finiKV.
 	size_t elem_size; ///< Size of each HtKv element (useful for subclassing like SdbKv).
 			  ///< Zero value means to use default size of HtKv.
-}
-HT_(Options);
+} HT_(Options);
 
 /* Ht is the hashtable structure */
 typedef struct Ht_(t) {
@@ -165,24 +162,21 @@ typedef struct Ht_(t) {
 	HT_(Bucket) *table; ///< Actual table.
 	ut32 prime_idx;
 	HT_(Options) opt;
-}
-HtName_(Ht);
+} HtName_(Ht);
 
 typedef struct Ht_(iter_mut_t) {
 	HtName_(Ht) *ht; ///< The hash table to iterate over.
 	ut32 ti; ///< Table index
 	ut32 bi; ///< Bucket index
 	HT_(Kv) *kv; ///< Current Key-Value-pair.
-}
-HT_(IterMutState);
+} HT_(IterMutState);
 
 typedef struct Ht_(iter_t) {
 	const HtName_(Ht) *ht; ///< The hash table to iterate over.
 	ut32 ti; ///< Table index
 	ut32 bi; ///< Bucket index
 	const HT_(Kv) *kv; ///< Current Key-Value-pair.
-}
-HT_(IterState);
+} HT_(IterState);
 
 // Create a new Ht with the provided Options
 RZ_API RZ_OWN HtName_(Ht) *Ht_(new_opt)(RZ_NONNULL HT_(Options) *opt);

@@ -25,7 +25,7 @@
 
 #define plugin_crca_preset_small_block(crcalgo, preset) \
 	static bool plugin_crca_##crcalgo##_small_block(const ut8 *data, ut64 size, ut8 **digest, RzHashSize *digest_size) { \
-		rz_return_val_if_fail(data &&digest, false); \
+		rz_return_val_if_fail(data && digest, false); \
 		RzCrc ctx; \
 		crc_init_preset(&ctx, preset); \
 		ut8 *dgst = malloc(plugin_crca_digest_size(&ctx)); \

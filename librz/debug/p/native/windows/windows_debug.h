@@ -114,10 +114,8 @@ typedef struct {
 } LIB_ITEM, *PLIB_ITEM;
 
 // Vista
-BOOL(WINAPI *w32_ProcessIdToSessionId)
-(DWORD, DWORD *);
-BOOL(WINAPI *w32_QueryFullProcessImageNameW)
-(HANDLE, DWORD, LPWSTR, PDWORD);
+BOOL(WINAPI *w32_ProcessIdToSessionId)(DWORD, DWORD *);
+BOOL(WINAPI *w32_QueryFullProcessImageNameW)(HANDLE, DWORD, LPWSTR, PDWORD);
 // Internal NT functions (winternl.h)
 NTSTATUS(WINAPI *w32_NtQuerySystemInformation)
 (ULONG, PVOID, ULONG, PULONG);
@@ -129,14 +127,11 @@ NTSTATUS(WINAPI *w32_NtQueryObject)
 (HANDLE, ULONG, PVOID, ULONG, PULONG);
 // fpu access API (Windows 7)
 ut64(WINAPI *w32_GetEnabledXStateFeatures)();
-BOOL(WINAPI *w32_InitializeContext)
-(PVOID, DWORD, PCONTEXT *, PDWORD);
-BOOL(WINAPI *w32_GetXStateFeaturesMask)
-(PCONTEXT Context, PDWORD64);
+BOOL(WINAPI *w32_InitializeContext)(PVOID, DWORD, PCONTEXT *, PDWORD);
+BOOL(WINAPI *w32_GetXStateFeaturesMask)(PCONTEXT Context, PDWORD64);
 PVOID(WINAPI *w32_LocateXStateFeature)
 (PCONTEXT Context, DWORD, PDWORD);
-BOOL(WINAPI *w32_SetXStateFeaturesMask)
-(PCONTEXT Context, DWORD64);
+BOOL(WINAPI *w32_SetXStateFeaturesMask)(PCONTEXT Context, DWORD64);
 
 // APIs
 int w32_init(RzDebug *dbg);

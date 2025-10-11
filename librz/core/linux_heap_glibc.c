@@ -280,8 +280,7 @@ static RZ_BORROW RzList /*<RzList *>*/ *GH(fill_tcache_entries)(RzCore *core, GH
 		bin->bin_num = i;
 		bin->chunks = rz_list_newf((RzListFree)GH(rz_heap_chunk_free));
 		if (!bin->chunks) {
-			GH(rz_heap_bin_free)
-			(bin);
+			GH(rz_heap_bin_free)(bin);
 			goto error;
 		}
 		rz_list_append(tcache_bins_list, bin);
@@ -292,8 +291,7 @@ static RZ_BORROW RzList /*<RzList *>*/ *GH(fill_tcache_entries)(RzCore *core, GH
 		// get first chunk
 		RzHeapChunkListItem *chunk = RZ_NEW0(RzHeapChunkListItem);
 		if (!chunk) {
-			GH(rz_heap_bin_free)
-			(bin);
+			GH(rz_heap_bin_free)(bin);
 			goto error;
 		}
 		chunk->addr = (ut64)(entry - GH(HDR_SZ));
@@ -367,8 +365,7 @@ static void GH(print_tcache)(RzCore *core, RzList /*<RzList *>*/ *bins, PJ *pj, 
 			if (!pj) {
 				rz_cons_printf(" -> ");
 			}
-			GH(print_heap_chunk_simple)
-			(core, pos->addr, NULL, pj);
+			GH(print_heap_chunk_simple)(core, pos->addr, NULL, pj);
 			if (!pj) {
 				rz_cons_newline();
 			}
@@ -527,8 +524,7 @@ RZ_API bool GH(rz_heap_update_main_arena)(RzCore *core, GHT m_arena, MallocState
 		if (!cmain_arena->next) {
 			return false;
 		}
-		GH(update_arena_with_tc)
-		(cmain_arena, main_arena);
+		GH(update_arena_with_tc)(cmain_arena, main_arena);
 		free(cmain_arena);
 	} else {
 		GH(RzHeap_MallocState) *cmain_arena = RZ_NEW0(GH(RzHeap_MallocState));
@@ -536,8 +532,7 @@ RZ_API bool GH(rz_heap_update_main_arena)(RzCore *core, GHT m_arena, MallocState
 			return false;
 		}
 		(void)rz_io_read_at(core->io, m_arena, (ut8 *)cmain_arena, sizeof(GH(RzHeap_MallocState)));
-		GH(update_arena_without_tc)
-		(cmain_arena, main_arena);
+		GH(update_arena_without_tc)(cmain_arena, main_arena);
 		free(cmain_arena);
 	}
 	return true;
@@ -783,8 +778,7 @@ RZ_API bool GH(rz_heap_resolve_main_arena)(RzCore *core, GHT *m_arena) {
 		return false;
 	}
 
-	GH(get_brks)
-	(core, &brk_start, &brk_end);
+	GH(get_brks)(core, &brk_start, &brk_end);
 	if (brk_start == GHT_MAX || brk_end == GHT_MAX) {
 		RZ_LOG_ERROR("core: no heap section\n");
 		return false;
@@ -798,16 +792,14 @@ RZ_API bool GH(rz_heap_resolve_main_arena)(RzCore *core, GHT *m_arena) {
 	}
 
 	if (main_arena_sym != GHT_MAX) {
-		GH(rz_heap_update_main_arena)
-		(core, main_arena_sym, ta);
+		GH(rz_heap_update_main_arena)(core, main_arena_sym, ta);
 		*m_arena = main_arena_sym;
 		core->dbg->main_arena_resolved = true;
 		free(ta);
 		return true;
 	}
 	while (addr_srch < libc_addr_end) {
-		GH(rz_heap_update_main_arena)
-		(core, addr_srch, ta);
+		GH(rz_heap_update_main_arena)(core, addr_srch, ta);
 		if (ta->top > brk_start && ta->top < brk_end &&
 			ta->system_mem == heap_sz) {
 
@@ -866,18 +858,15 @@ static bool GH(parse_tcache_from_addr)(RzCore *core, const GHT tls_addr, const G
 #endif
 		tcache_heap = GH(tcache_new)(core);
 		if (!GH(tcache_read)(core, tcache_guess, tcache_heap)) {
-			GH(tcache_free)
-			(tcache_heap);
+			GH(tcache_free)(tcache_heap);
 			tcache_heap = NULL;
 		}
 		break;
 	}
 	if (tcache_heap != NULL) {
 		RzList *bins = GH(fill_tcache_entries)(core, tcache_heap);
-		GH(print_tcache)
-		(core, bins, NULL, tid);
-		GH(tcache_free)
-		(tcache_heap);
+		GH(print_tcache)(core, bins, NULL, tid);
+		GH(tcache_free)(tcache_heap);
 		tcache_heap = NULL;
 		return true;
 	}
@@ -954,8 +943,7 @@ static void GH(resolve_tcache_perthread)(RZ_NONNULL RzCore *core) {
 			RzList *thread_list = rz_debug_native_threads(dbg, dbg->pid);
 			RzDebugPid *thread_dbg = rz_debug_get_thread(thread_list, th->pid);
 			if (thread_dbg) {
-				GH(parse_tls_data)
-				(core, thread_dbg, tid);
+				GH(parse_tls_data)(core, thread_dbg, tid);
 			}
 		}
 	}
@@ -965,15 +953,13 @@ RZ_API RZ_OWN bool GH(resolve_heap_tcache)(RZ_NONNULL RzCore *core, GHT arena_ba
 	RzDebug *dbg = core->dbg;
 
 	if (dbg->threads) {
-		GH(resolve_tcache_perthread)
-		(core);
+		GH(resolve_tcache_perthread)(core);
 		return true;
 	}
 
 	// Only main thread is present
 	RzList *bins = GH(rz_heap_tcache_content)(core, arena_base);
-	GH(print_tcache)
-	(core, bins, NULL, 0);
+	GH(print_tcache)(core, bins, NULL, 0);
 
 	return true;
 }
@@ -1263,8 +1249,7 @@ static int GH(print_double_linked_list_bin)(RzCore *core, MallocState *main_aren
 		return -1;
 	}
 
-	GH(get_brks)
-	(core, &brk_start, &brk_end);
+	GH(get_brks)(core, &brk_start, &brk_end);
 	if (brk_start == GHT_MAX || brk_end == GHT_MAX) {
 		RZ_LOG_ERROR("core: no heap section\n");
 		return -1;
@@ -1313,8 +1298,7 @@ static void GH(print_heap_bin)(RzCore *core, GHT m_arena, MallocState *main_aren
 		PRINT_YA("Bins {\n");
 		for (size_t i = 0; i < NBINS - 1; i++) {
 			PRINTF_YA(" Bin %03" PFMTSZu ":\n", i);
-			GH(print_double_linked_list_bin)
-			(core, main_arena, m_arena, offset, i, print_graph);
+			GH(print_double_linked_list_bin)(core, main_arena, m_arena, offset, i, print_graph);
 		}
 		PRINT_YA("\n}\n");
 	} else {
@@ -1324,8 +1308,7 @@ static void GH(print_heap_bin)(RzCore *core, GHT m_arena, MallocState *main_aren
 			return;
 		}
 		PRINTF_YA("  Bin %03" PFMT64u ":\n", (ut64)num_bin);
-		GH(print_double_linked_list_bin)
-		(core, main_arena, m_arena, offset, num_bin, print_graph);
+		GH(print_double_linked_list_bin)(core, main_arena, m_arena, offset, num_bin, print_graph);
 	}
 	return;
 }
@@ -1359,8 +1342,7 @@ RZ_API RzHeapBin *GH(rz_heap_fastbin_content)(RzCore *core, MallocState *main_ar
 		free(cnk);
 		return heap_bin;
 	}
-	GH(get_brks)
-	(core, &brk_start, &brk_end);
+	GH(get_brks)(core, &brk_start, &brk_end);
 	heap_bin->fd = next;
 	if (brk_start == GHT_MAX || brk_end == GHT_MAX) {
 		free(cnk);
@@ -1468,8 +1450,7 @@ void GH(print_heap_fastbin)(RzCore *core, GHT m_arena, MallocState *main_arena, 
 				if (!pj) {
 					rz_cons_printf(" -> ");
 				}
-				GH(print_heap_chunk_simple)
-				(core, pos->addr, NULL, pj);
+				GH(print_heap_chunk_simple)(core, pos->addr, NULL, pj);
 				if (!pj) {
 					rz_cons_newline();
 				}
@@ -1482,8 +1463,7 @@ void GH(print_heap_fastbin)(RzCore *core, GHT m_arena, MallocState *main_arena, 
 			pj_end(pj);
 			pj_end(pj);
 		}
-		GH(rz_heap_bin_free)
-		(bin);
+		GH(rz_heap_bin_free)(bin);
 	}
 }
 
@@ -1553,8 +1533,7 @@ RZ_API RzList /*<RzHeapBin *>*/ *GH(rz_heap_tcache_content)(RzCore *core, GHT ar
 	}
 
 	GHT brk_start = GHT_MAX, brk_end = GHT_MAX, initial_brk = GHT_MAX;
-	GH(get_brks)
-	(core, &brk_start, &brk_end);
+	GH(get_brks)(core, &brk_start, &brk_end);
 	GHT fc_offset = GH(tcache_chunk_size)(core, brk_start);
 	initial_brk = brk_start + fc_offset;
 	if (brk_start == GHT_MAX || brk_end == GHT_MAX || initial_brk == GHT_MAX) {
@@ -1587,8 +1566,7 @@ RZ_API RzList /*<RzHeapBin *>*/ *GH(rz_heap_tcache_content)(RzCore *core, GHT ar
 	// Get rz_tcache struct
 	GH(RTcache) *tcache = GH(tcache_new)(core);
 	if (!GH(tcache_read)(core, tcache_start, tcache)) {
-		GH(tcache_free)
-		(tcache);
+		GH(tcache_free)(tcache);
 		return NULL;
 	}
 
@@ -1608,8 +1586,7 @@ RZ_API RzList /*<RzHeapBin *>*/ *GH(rz_heap_tcache_content)(RzCore *core, GHT ar
 		bin->bin_num = i;
 		bin->chunks = rz_list_newf((RzListFree)GH(rz_heap_chunk_free));
 		if (!bin->chunks) {
-			GH(rz_heap_bin_free)
-			(bin);
+			GH(rz_heap_bin_free)(bin);
 			goto error;
 		}
 
@@ -1673,8 +1650,7 @@ static void GH(print_tcache_content)(RzCore *core, GHT arena_base, GHT main_aren
 		}
 		PRINTF_YA("0x%" PFMT64x "\n", (ut64)arena_base);
 	}
-	GH(print_tcache)
-	(core, bins, pj, 0);
+	GH(print_tcache)(core, bins, pj, 0);
 }
 
 void GH(print_malloc_states)(RzCore *core, GHT m_arena, MallocState *main_arena, bool json) {
@@ -1792,8 +1768,7 @@ void GH(print_malloc_info)(RzCore *core, GHT m_state, GHT malloc_state) {
 			return;
 		}
 		rz_io_read_at(core->io, h_info, (ut8 *)heap_info, sizeof(GH(RzHeapInfo)));
-		GH(print_inst_minfo)
-		(core, heap_info, h_info);
+		GH(print_inst_minfo)(core, heap_info, h_info);
 		MallocState *ms = RZ_NEW0(MallocState);
 		if (!ms) {
 			free(heap_info);
@@ -1809,8 +1784,7 @@ void GH(print_malloc_info)(RzCore *core, GHT m_state, GHT malloc_state) {
 			if ((ms->top >> 16) << 16 != h_info) {
 				h_info = (ms->top >> 16) << 16;
 				rz_io_read_at(core->io, h_info, (ut8 *)heap_info, sizeof(GH(RzHeapInfo)));
-				GH(print_inst_minfo)
-				(core, heap_info, h_info);
+				GH(print_inst_minfo)(core, heap_info, h_info);
 			}
 		}
 		free(heap_info);
@@ -1868,8 +1842,7 @@ RZ_API RzHeapBin *GH(rz_heap_bin_content)(RzCore *core, MallocState *main_arena,
 	bin->chunks = rz_list_newf(free);
 	GH(RzHeapChunk) *head = RZ_NEW0(GH(RzHeapChunk));
 	if (!head) {
-		GH(rz_heap_bin_free)
-		(bin);
+		GH(rz_heap_bin_free)(bin);
 		return NULL;
 	}
 
@@ -1880,13 +1853,11 @@ RZ_API RzHeapBin *GH(rz_heap_bin_content)(RzCore *core, MallocState *main_arena,
 	}
 	GH(RzHeapChunk) *cnk = RZ_NEW0(GH(RzHeapChunk));
 	if (!cnk) {
-		GH(rz_heap_bin_free)
-		(bin);
+		GH(rz_heap_bin_free)(bin);
 		return NULL;
 	}
 	GHT brk_start = GHT_MAX, brk_end = GHT_MAX, initial_brk = GHT_MAX;
-	GH(get_brks)
-	(core, &brk_start, &brk_end);
+	GH(get_brks)(core, &brk_start, &brk_end);
 	if (brk_start == GHT_MAX || brk_end == GHT_MAX) {
 		free(cnk);
 		return bin;
@@ -1936,8 +1907,7 @@ static int GH(print_bin_content)(RzCore *core, MallocState *main_arena, int bin_
 	RzHeapBin *bin = GH(rz_heap_bin_content)(core, main_arena, bin_num, m_arena);
 	RzList *chunks = bin->chunks;
 	if (rz_list_length(chunks) == 0) {
-		GH(rz_heap_bin_free)
-		(bin);
+		GH(rz_heap_bin_free)(bin);
 		return 0;
 	}
 	int chunks_cnt = 0;
@@ -1967,8 +1937,7 @@ static int GH(print_bin_content)(RzCore *core, MallocState *main_arena, int bin_
 		if (!pj) {
 			rz_cons_printf(" -> ");
 		}
-		GH(print_heap_chunk_simple)
-		(core, pos->addr, NULL, pj);
+		GH(print_heap_chunk_simple)(core, pos->addr, NULL, pj);
 		if (!pj) {
 			rz_cons_newline();
 		}
@@ -1977,8 +1946,7 @@ static int GH(print_bin_content)(RzCore *core, MallocState *main_arena, int bin_
 	if (bin->message) {
 		PRINTF_RA("%s\n", bin->message);
 	}
-	GH(rz_heap_bin_free)
-	(bin);
+	GH(rz_heap_bin_free)(bin);
 	if (pj) {
 		pj_end(pj);
 	}
@@ -2098,31 +2066,26 @@ static void GH(print_main_arena_bins)(RzCore *core, GHT m_arena, MallocState *ma
 		pj_ka(pj, "bins");
 	}
 	if (format == RZ_HEAP_BIN_ANY || format == RZ_HEAP_BIN_TCACHE) {
-		GH(print_tcache_content)
-		(core, m_arena, main_arena_base, pj);
+		GH(print_tcache_content)(core, m_arena, main_arena_base, pj);
 		rz_cons_newline();
 	}
 	if (format == RZ_HEAP_BIN_ANY || format == RZ_HEAP_BIN_FAST) {
 		char *input = rz_str_newlen("", 1);
 		bool main_arena_only = true;
-		GH(print_heap_fastbin)
-		(core, m_arena, main_arena, global_max_fast, input, main_arena_only, pj);
+		GH(print_heap_fastbin)(core, m_arena, main_arena, global_max_fast, input, main_arena_only, pj);
 		free(input);
 		rz_cons_newline();
 	}
 	if (format == RZ_HEAP_BIN_ANY || format == RZ_HEAP_BIN_UNSORTED) {
-		GH(print_unsortedbin_description)
-		(core, m_arena, main_arena, pj);
+		GH(print_unsortedbin_description)(core, m_arena, main_arena, pj);
 		rz_cons_newline();
 	}
 	if (format == RZ_HEAP_BIN_ANY || format == RZ_HEAP_BIN_SMALL) {
-		GH(print_smallbin_description)
-		(core, m_arena, main_arena, pj);
+		GH(print_smallbin_description)(core, m_arena, main_arena, pj);
 		rz_cons_newline();
 	}
 	if (format == RZ_HEAP_BIN_ANY || format == RZ_HEAP_BIN_LARGE) {
-		GH(print_largebin_description)
-		(core, m_arena, main_arena, pj);
+		GH(print_largebin_description)(core, m_arena, main_arena, pj);
 		rz_cons_newline();
 	}
 	if (json) {
@@ -2215,8 +2178,7 @@ RZ_API RzList /*<RzHeapChunkListItem *>*/ *GH(rz_heap_chunks_list)(RzCore *core,
 	int glibc_version = core->dbg->glibc_version;
 
 	if (m_arena == m_state) {
-		GH(get_brks)
-		(core, &brk_start, &brk_end);
+		GH(get_brks)(core, &brk_start, &brk_end);
 		if (tcache) {
 			initial_brk = ((brk_start >> 12) << 12) + GH(HDR_SZ);
 			if (rz_config_get_b(core->config, "cfg.debug")) {
@@ -2324,8 +2286,7 @@ RZ_API RzList /*<RzHeapChunkListItem *>*/ *GH(rz_heap_chunks_list)(RzCore *core,
 				free(cnk_next);
 				return chunks;
 			}
-			GH(tcache_read)
-			(core, tcache_initial_brk, tcache_heap);
+			GH(tcache_read)(core, tcache_initial_brk, tcache_heap);
 			size_t i;
 			for (i = 0; i < TCACHE_MAX_BINS; i++) {
 				int count = GH(tcache_get_count)(tcache_heap, i);
@@ -2355,8 +2316,7 @@ RZ_API RzList /*<RzHeapChunkListItem *>*/ *GH(rz_heap_chunks_list)(RzCore *core,
 					}
 				}
 			}
-			GH(tcache_free)
-			(tcache_heap);
+			GH(tcache_free)(tcache_heap);
 		}
 
 		next_chunk += size_tmp;
@@ -2477,8 +2437,7 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunks_print_handler)(RzCore *core, int argc, 
 	}
 	GHT brk_start, brk_end;
 	if (m_arena == m_state) {
-		GH(get_brks)
-		(core, &brk_start, &brk_end);
+		GH(get_brks)(core, &brk_start, &brk_end);
 
 	} else {
 		brk_start = ((m_state >> 16) << 16);
@@ -2534,8 +2493,7 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunks_print_handler)(RzCore *core, int argc, 
 	}
 	rz_list_foreach (chunks, iter, pos) {
 		if (mode == RZ_OUTPUT_MODE_STANDARD || mode == RZ_OUTPUT_MODE_LONG) {
-			GH(print_heap_chunk_simple)
-			(core, pos->addr, pos->status, NULL);
+			GH(print_heap_chunk_simple)(core, pos->addr, pos->status, NULL);
 			rz_cons_newline();
 			if (mode == RZ_OUTPUT_MODE_LONG) {
 				int size = 0x10;
@@ -2577,8 +2535,7 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunks_print_handler)(RzCore *core, int argc, 
 		}
 	}
 	if (mode == RZ_OUTPUT_MODE_STANDARD || mode == RZ_OUTPUT_MODE_LONG) {
-		GH(print_heap_chunk_simple)
-		(core, main_arena->top, "free", NULL);
+		GH(print_heap_chunk_simple)(core, main_arena->top, "free", NULL);
 		PRINT_RA("[top]");
 		rz_cons_printf("[brk_start: ");
 		PRINTF_YA("0x%" PFMT64x, (ut64)brk_start);
@@ -2644,8 +2601,7 @@ RZ_IPI RzCmdStatus GH(rz_cmd_main_arena_print_handler)(RzCore *core, int argc, c
 		free(main_arena);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	GH(print_arena_stats)
-	(core, m_state, main_arena, global_max_fast, mode);
+	GH(print_arena_stats)(core, m_state, main_arena, global_max_fast, mode);
 	free(main_arena);
 	return RZ_CMD_STATUS_OK;
 }
@@ -2661,8 +2617,7 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunk_print_handler)(RzCore *core, int argc, c
 		return RZ_CMD_STATUS_ERROR;
 	}
 	ut64 addr = core->offset;
-	GH(print_heap_chunk)
-	(core, addr);
+	GH(print_heap_chunk)(core, addr);
 	free(main_arena);
 	return RZ_CMD_STATUS_OK;
 }
@@ -2692,8 +2647,7 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_info_print_handler)(RzCore *core, int argc, co
 		free(main_arena);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	GH(print_malloc_info)
-	(core, m_arena, m_state);
+	GH(print_malloc_info)(core, m_arena, m_state);
 	free(main_arena);
 	return RZ_CMD_STATUS_OK;
 }
@@ -2747,8 +2701,7 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_bins_list_print_handler)(RzCore *core, const c
 			free(dup);
 			return RZ_CMD_STATUS_ERROR;
 		}
-		GH(print_heap_bin)
-		(core, m_state, main_arena, dup, mode == RZ_OUTPUT_MODE_GRAPH);
+		GH(print_heap_bin)(core, m_state, main_arena, dup, mode == RZ_OUTPUT_MODE_GRAPH);
 	} else {
 		PRINT_RA("This address is not part of the arenas\n");
 		free(main_arena);
@@ -2792,8 +2745,7 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_fastbins_print_handler)(void *data, const char
 			free(main_arena);
 			return RZ_CMD_STATUS_ERROR;
 		}
-		GH(print_heap_fastbin)
-		(core, m_state, main_arena, global_max_fast, dup, main_arena_only, NULL);
+		GH(print_heap_fastbin)(core, m_state, main_arena, global_max_fast, dup, main_arena_only, NULL);
 	} else {
 		PRINT_RA("This address is not part of the arenas\n");
 		free(dup);
@@ -2851,8 +2803,7 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_arena_bins_print_handler)(RzCore *core, int ar
 			bin_format = RZ_HEAP_BIN_LARGE;
 		}
 	}
-	GH(print_main_arena_bins)
-	(core, m_state, main_arena, m_arena, global_max_fast, bin_format, json);
+	GH(print_main_arena_bins)(core, m_state, main_arena, m_arena, global_max_fast, bin_format, json);
 	free(main_arena);
 	return RZ_CMD_STATUS_OK;
 }

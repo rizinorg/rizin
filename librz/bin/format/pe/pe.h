@@ -78,7 +78,7 @@ typedef struct rz_bin_pe_reloc_block_t {
 
 // encoding is 12 bits for type and 4 bits for offset.
 #define PE_RELOC_ENT_TYPE(val)   ((val) >> 12)
-#define PE_RELOC_ENT_OFFSET(val) ((val)&0xfff)
+#define PE_RELOC_ENT_OFFSET(val) ((val) & 0xfff)
 
 typedef struct rz_bin_pe_reloc_ent_t {
 	ut16 raw_val; ///< Type + Offset of the relocation entry

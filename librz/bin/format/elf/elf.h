@@ -134,8 +134,7 @@ typedef struct rz_bin_elf_section_t {
 typedef struct Elf_(rz_bin_elf_segment_t) {
 	Elf_(Phdr) data;
 	bool is_valid;
-}
-RzBinElfSegment;
+} RzBinElfSegment;
 
 typedef struct rz_bin_elf_symbol_t {
 	ut64 paddr;
@@ -173,8 +172,7 @@ typedef struct Elf_(rz_bin_elf_note_file_t) {
 	Elf_(Addr) end_vaddr;
 	Elf_(Addr) file_off;
 	char *file;
-}
-RzBinElfNoteFile;
+} RzBinElfNoteFile;
 
 /**
  * \brief Parsed PT_NOTE of type NT_PRSTATUS.
@@ -193,8 +191,7 @@ typedef struct Elf_(rz_bin_elf_note_t) {
 		RzBinElfNoteFile file; //< for type == NT_FILE
 		RzBinElfNotePrStatus prstatus; //< for type = NT_PRSTATUS
 	};
-}
-RzBinElfNote;
+} RzBinElfNote;
 
 typedef struct rz_bin_elf_strtab RzBinElfStrtab;
 

@@ -179,7 +179,7 @@ bool test_rz_bv_init_signed(void) {
 bool test_rz_bv_logic(void) {
 	RzBitVector *x, *y;
 	RzBitVector *result;
-	RzBitVector *and, * or, *xor, *neg, *not, *ls, *rs, *ls_fill, *rs_fill;
+	RzBitVector *and, *or, *xor, *neg, *not, *ls, *rs, *ls_fill, *rs_fill;
 
 	// x : 0101 0101
 	x = rz_bv_new(8);
@@ -196,11 +196,11 @@ bool test_rz_bv_logic(void) {
 	rz_bv_set(y, 7, true);
 
 	// and : 0000 0001
-	and = rz_bv_new(8);
+	and= rz_bv_new(8);
 	rz_bv_set(and, 0, true);
 
 	// xor : 1111 1100
-	xor = rz_bv_new(8);
+	xor= rz_bv_new(8);
 	rz_bv_toggle_all(xor);
 	rz_bv_set(xor, 0, false);
 	rz_bv_set(xor, 1, false);
@@ -211,7 +211,7 @@ bool test_rz_bv_logic(void) {
 	rz_bv_set(or, 1, false);
 
 	// not of x : 1010 1010
-	not = rz_bv_new(8);
+	not= rz_bv_new(8);
 	rz_bv_set(not, 1, true);
 	rz_bv_set(not, 3, true);
 	rz_bv_set(not, 5, true);
@@ -267,9 +267,9 @@ bool test_rz_bv_logic(void) {
 	rz_bv_free(xor);
 
 	result = rz_bv_not(x);
-	mu_assert("not x", is_equal_bv(result, not ));
+	mu_assert("not x", is_equal_bv(result, not));
 	rz_bv_free(result);
-	rz_bv_free(not );
+	rz_bv_free(not);
 
 	result = rz_bv_neg(x);
 	mu_assert("neg x", is_equal_bv(result, neg));

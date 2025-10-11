@@ -1485,7 +1485,7 @@ IL_LIFTER(nop) {
  * One's complement negation
  * Encoding: M
  */
-IL_LIFTER(not ) {
+IL_LIFTER(not) {
 	return x86_il_set_op(0, LOGNOT(x86_il_get_op(0)));
 }
 

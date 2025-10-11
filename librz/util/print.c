@@ -294,14 +294,11 @@ static bool isAllZeros(const ut8 *buf, int len) {
 RZ_API void rz_print_hexii(RzPrint *rp, ut64 addr, const ut8 *buf, int len, int step) {
 	PrintfCallback p = (PrintfCallback)rp->cb_printf;
 	bool c = rp->flags & RZ_PRINT_FLAGS_COLOR;
-	const char *color_0xff = c ? (Pal(rp, b0xff)
-					     : Color_RED)
+	const char *color_0xff = c ? (Pal(rp, b0xff) : Color_RED)
 				   : "";
-	const char *color_text = c ? (Pal(rp, btext)
-					     : Color_MAGENTA)
+	const char *color_text = c ? (Pal(rp, btext) : Color_MAGENTA)
 				   : "";
-	const char *color_other = c ? (Pal(rp, other)
-					      : Color_WHITE)
+	const char *color_other = c ? (Pal(rp, other) : Color_WHITE)
 				    : "";
 	const char *color_reset = c ? Color_RESET : "";
 	int i, j;

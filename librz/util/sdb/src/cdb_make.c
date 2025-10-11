@@ -69,7 +69,7 @@ static int pack_kvlen(ut8 *buf, ut32 klen, ut32 vlen) {
 		return 0;
 	}
 	buf[0] = (ut8)klen;
-	buf[1] = (ut8)((vlen)&0xff);
+	buf[1] = (ut8)((vlen) & 0xff);
 	buf[2] = (ut8)((vlen >> 8) & 0xff);
 	buf[3] = (ut8)((vlen >> 16) & 0xff);
 	return 1;

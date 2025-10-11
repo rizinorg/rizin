@@ -497,16 +497,13 @@ static void GH(jemalloc_get_runs)(RzCore *core, const char *input) {
 static void GH(cmd_dbg_map_jemalloc)(RzCore *core, char dmx_variant, const char *arg) {
 	switch (dmx_variant) {
 	case 'a': // dmxa
-		GH(jemalloc_print_narenas)
-		(core, arg);
+		GH(jemalloc_print_narenas)(core, arg);
 		break;
 	case 'b': // dmxb
-		GH(jemalloc_get_bins)
-		(core, arg);
+		GH(jemalloc_get_bins)(core, arg);
 		break;
 	case 'c': // dmxc
-		GH(jemalloc_get_chunks)
-		(core, arg);
+		GH(jemalloc_get_chunks)(core, arg);
 		break;
 	}
 }

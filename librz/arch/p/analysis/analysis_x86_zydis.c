@@ -1656,16 +1656,16 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, const ut8 *buf, int len, 
 		ut64 xor = 0;
 		switch (bitsize) {
 		case 8:
-			xor = 0xff;
+			xor= 0xff;
 			break;
 		case 16:
-			xor = 0xffff;
+			xor= 0xffff;
 			break;
 		case 32:
-			xor = 0xffffffff;
+			xor= 0xffffffff;
 			break;
 		case 64:
-			xor = 0xffffffffffffffff;
+			xor= 0xffffffffffffffff;
 			break;
 		default:
 			RZ_LOG_ERROR("x86: unhandled neg bitsize %" PFMT32d "\n", bitsize);

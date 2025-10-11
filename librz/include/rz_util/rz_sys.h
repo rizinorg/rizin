@@ -154,7 +154,9 @@ RZ_API void rz_sys_backtrace(void);
 #ifndef rz_sys_breakpoint
 #if __WINDOWS__
 #define rz_sys_breakpoint() \
-	{ __debugbreak(); }
+	{ \
+		__debugbreak(); \
+	}
 #else
 #if __GNUC__
 #define rz_sys_breakpoint() __builtin_trap()

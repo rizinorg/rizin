@@ -134,8 +134,7 @@ static void print_offset_in_binary_line_bar(RzAnnotatedCode *code, ut64 offset, 
 			width--;
 		}
 	} else {
-		PRINT_COLOR(PALETTE(offset)
-			    : Color_GREEN);
+		PRINT_COLOR(PALETTE(offset) : Color_GREEN);
 		rz_cons_printf(fmt[width], offset);
 		PRINT_COLOR(Color_RESET);
 	}

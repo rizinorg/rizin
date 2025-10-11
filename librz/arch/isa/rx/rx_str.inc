@@ -165,7 +165,7 @@ const char *cond_names[RX_COND_RESERVED] = {
 };
 
 #define RxNameOp(op)     ((op) < _RX_OP_COUNT ? opnames[(op)] : "invalid")
-#define RxNameExt(ext)   ((ext) < _RX_EXT_COUNT ? extmark_names[((ext)-RX_EXT_B)] : "invalid")
-#define RxNameReg(reg)   ((reg) < RX_REG_RESERVED ? reg_names[(reg)-RX_REG_R0] : "invalid")
+#define RxNameExt(ext)   ((ext) < _RX_EXT_COUNT ? extmark_names[((ext) - RX_EXT_B)] : "invalid")
+#define RxNameReg(reg)   ((reg) < RX_REG_RESERVED ? reg_names[(reg) - RX_REG_R0] : "invalid")
 #define RxNameFlag(flag) ((flag) < 7 ? flag_names[(flag)] : "invalid")
 #define RxNameCond(cond) ((cond) < RX_COND_RESERVED ? cond_names[(cond)] : "invalid")

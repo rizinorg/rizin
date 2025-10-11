@@ -389,14 +389,14 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 			rz_sys_dlclose(lib);
 		}
 		if (argc == 1) {
-			size_t (*cb)() = (size_t(*)())cbptr;
+			size_t (*cb)() = (size_t (*)())cbptr;
 			if (cb) {
 				result = cb();
 			} else {
 				eprintf("No callback defined\n");
 			}
 		} else if (argc == 2) {
-			size_t (*cb)(size_t a0) = (size_t(*)(size_t))cbptr;
+			size_t (*cb)(size_t a0) = (size_t (*)(size_t))cbptr;
 			if (cb) {
 				ut64 a0 = rz_num_math(NULL, rz_str_word_get0(argv, 1));
 				result = cb(a0);
@@ -404,7 +404,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 				eprintf("No callback defined\n");
 			}
 		} else if (argc == 3) {
-			size_t (*cb)(size_t a0, size_t a1) = (size_t(*)(size_t, size_t))cbptr;
+			size_t (*cb)(size_t a0, size_t a1) = (size_t (*)(size_t, size_t))cbptr;
 			ut64 a0 = rz_num_math(NULL, rz_str_word_get0(argv, 1));
 			ut64 a1 = rz_num_math(NULL, rz_str_word_get0(argv, 2));
 			if (cb) {
@@ -414,7 +414,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 			}
 		} else if (argc == 4) {
 			size_t (*cb)(size_t a0, size_t a1, size_t a2) =
-				(size_t(*)(size_t, size_t, size_t))cbptr;
+				(size_t (*)(size_t, size_t, size_t))cbptr;
 			ut64 a0 = rz_num_math(NULL, rz_str_word_get0(argv, 1));
 			ut64 a1 = rz_num_math(NULL, rz_str_word_get0(argv, 2));
 			ut64 a2 = rz_num_math(NULL, rz_str_word_get0(argv, 3));
@@ -425,7 +425,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 			}
 		} else if (argc == 5) {
 			size_t (*cb)(size_t a0, size_t a1, size_t a2, size_t a3) =
-				(size_t(*)(size_t, size_t, size_t, size_t))cbptr;
+				(size_t (*)(size_t, size_t, size_t, size_t))cbptr;
 			ut64 a0 = rz_num_math(NULL, rz_str_word_get0(argv, 1));
 			ut64 a1 = rz_num_math(NULL, rz_str_word_get0(argv, 2));
 			ut64 a2 = rz_num_math(NULL, rz_str_word_get0(argv, 3));
@@ -437,7 +437,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 			}
 		} else if (argc == 6) {
 			size_t (*cb)(size_t a0, size_t a1, size_t a2, size_t a3, size_t a4) =
-				(size_t(*)(size_t, size_t, size_t, size_t, size_t))cbptr;
+				(size_t (*)(size_t, size_t, size_t, size_t, size_t))cbptr;
 			ut64 a0 = rz_num_math(NULL, rz_str_word_get0(argv, 1));
 			ut64 a1 = rz_num_math(NULL, rz_str_word_get0(argv, 2));
 			ut64 a2 = rz_num_math(NULL, rz_str_word_get0(argv, 3));

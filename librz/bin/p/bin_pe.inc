@@ -32,8 +32,7 @@ static bool pe_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *
 }
 
 static void pe_destroy(RzBinFile *bf) {
-	PE_(rz_bin_pe_free)
-	((struct PE_(rz_bin_pe_obj_t) *)bf->o->bin_obj);
+	PE_(rz_bin_pe_free)((struct PE_(rz_bin_pe_obj_t) *)bf->o->bin_obj);
 }
 
 static ut64 pe_baddr(RzBinFile *bf) {
@@ -166,8 +165,7 @@ static RzPVector /*<RzBinMap *>*/ *pe_maps(RzBinFile *bf) {
 	map->vsize = RZ_ROUND(map->psize, 4096);
 	map->perm = RZ_PERM_R;
 	rz_pvector_push(ret, map);
-	PE_(rz_bin_pe_check_sections)
-	(bin, &sections);
+	PE_(rz_bin_pe_check_sections)(bin, &sections);
 	for (size_t i = 0; !sections[i].last; i++) {
 		RzBinMap *map = RZ_NEW0(RzBinMap);
 		if (!map) {
@@ -210,8 +208,7 @@ static RzPVector /*<RzBinSection *>*/ *pe_sections(RzBinFile *bf) {
 		rz_pvector_free(ret);
 		return NULL;
 	}
-	PE_(rz_bin_pe_check_sections)
-	(bin, &sections);
+	PE_(rz_bin_pe_check_sections)(bin, &sections);
 	for (i = 0; !sections[i].last; i++) {
 		if (!(ptr = RZ_NEW0(RzBinSection))) {
 			break;

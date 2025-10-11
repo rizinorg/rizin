@@ -188,7 +188,7 @@ static inline st64 rz_buf_sleb128_at(RzBuffer *b, ut64 addr, st64 *v) {
 
 #define DEFINE_RZ_BUF_READ_BLE(size) \
 	static inline bool rz_buf_read_ble##size(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut##size *result, bool big_endian) { \
-		rz_return_val_if_fail(b &&result, false); \
+		rz_return_val_if_fail(b && result, false); \
 \
 		ut8 tmp[sizeof(ut##size)]; \
 		if (rz_buf_read(b, tmp, sizeof(tmp)) != sizeof(tmp)) { \
@@ -200,7 +200,7 @@ static inline st64 rz_buf_sleb128_at(RzBuffer *b, ut64 addr, st64 *v) {
 	} \
 \
 	static inline bool rz_buf_read_ble##size##_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL RZ_OUT ut##size *result, bool big_endian) { \
-		rz_return_val_if_fail(b &&result, false); \
+		rz_return_val_if_fail(b && result, false); \
 \
 		ut8 tmp[sizeof(ut##size)]; \
 		if (rz_buf_read_at(b, addr, tmp, sizeof(tmp)) != sizeof(tmp)) { \
@@ -254,7 +254,7 @@ DEFINE_RZ_BUF_WRITE_BLE(128)
 
 #define DEFINE_RZ_BUF_READ_OFFSET_BLE(size) \
 	static inline bool rz_buf_read_ble##size##_offset(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_INOUT ut64 *offset, RZ_NONNULL RZ_OUT ut##size *result, bool big_endian) { \
-		rz_return_val_if_fail(b &&offset &&result, false); \
+		rz_return_val_if_fail(b && offset && result, false); \
 		if (!rz_buf_read_ble##size##_at(b, *offset, result, big_endian)) { \
 			return false; \
 		} \
@@ -273,7 +273,7 @@ static inline bool rz_buf_read_offset(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_INOU
 
 #define DEFINE_RZ_BUF_WRITE_OFFSET_BLE(size) \
 	static inline bool rz_buf_write_ble##size##_offset(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_INOUT ut64 *offset, ut##size value, bool big_endian) { \
-		rz_return_val_if_fail(b &&offset, false); \
+		rz_return_val_if_fail(b && offset, false); \
 		if (!rz_buf_write_ble##size##_at(b, *offset, value, big_endian)) { \
 			return false; \
 		} \

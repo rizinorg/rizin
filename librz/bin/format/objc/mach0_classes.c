@@ -18,7 +18,7 @@
 #define METHOD_LIST_FLAG_IS_PREOPT    0x3
 #define METHOD_LIST_ENTSIZE_FLAG_MASK 0xffff0003
 
-#define RO_DATA_PTR(x) ((x)&FAST_DATA_MASK)
+#define RO_DATA_PTR(x) ((x) & FAST_DATA_MASK)
 
 #if RZ_BIN_MACH064
 #define rz_buf_read_mach0_ut_offset rz_buf_read_ble64_offset

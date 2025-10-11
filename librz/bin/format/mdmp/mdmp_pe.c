@@ -70,8 +70,7 @@ RzPVector /*<RzBinAddr *>*/ *PE_(rz_bin_mdmp_pe_get_entrypoint)(struct PE_(rz_bi
 		rz_pvector_push(ret, ptr);
 	}
 
-	PE_(add_tls_callbacks)
-	(pe_bin->bin, ret);
+	PE_(add_tls_callbacks)(pe_bin->bin, ret);
 
 	free(entry);
 
@@ -135,8 +134,7 @@ RzPVector /*<RzBinSection *>*/ *PE_(rz_bin_mdmp_pe_get_sections)(struct PE_(rz_b
 		rz_pvector_free(ret);
 		return NULL;
 	}
-	PE_(rz_bin_pe_check_sections)
-	(pe_bin->bin, &sections);
+	PE_(rz_bin_pe_check_sections)(pe_bin->bin, &sections);
 	for (i = 0; !sections[i].last; i++) {
 		if (!(ptr = RZ_NEW0(RzBinSection))) {
 			break;

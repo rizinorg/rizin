@@ -78,7 +78,7 @@ static RzILOpEffect *x_setg(const char *name, RzILOpPure *x) {
 #define B2U32(X) BOOL_TO_BV(X, 32)
 
 typedef RzAnalysisLiftedILOp (*fn_analyze_op_il)(XtensaContext *ctx);
-typedef RzILOpPure *(fn_op2)(RzILOpBool *x, RzILOpBool *y);
+typedef RzILOpPure *(fn_op2)(RzILOpBool * x, RzILOpBool *y);
 
 enum {
 	PS_INTLEVEL, /// Interrupt level mask

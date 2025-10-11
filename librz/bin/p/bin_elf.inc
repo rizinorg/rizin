@@ -1176,7 +1176,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-static bool add_fields_aux(ELFOBJ *bin, RzPVector /*<RzBinField *>*/ *result, ut64 offset, size_t size, const char *name, char *(get_value)(ELFOBJ *bin), const char *fmt) {
+static bool add_fields_aux(ELFOBJ *bin, RzPVector /*<RzBinField *>*/ *result, ut64 offset, size_t size, const char *name, char *(get_value)(ELFOBJ * bin), const char *fmt) {
 	char *value = get_value(bin);
 	if (!value) {
 		return false;

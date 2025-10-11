@@ -327,7 +327,7 @@ RZ_API void rz_mem_memzero(void *dst, size_t l) {
 #else
 	memset(dst, 0, l);
 	__asm__ volatile("" ::"r"(dst)
-			 : "memory");
+		: "memory");
 #endif
 #endif
 }

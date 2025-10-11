@@ -219,7 +219,7 @@ extern "C" {
 typedef int (*PrintfCallback)(const char *str, ...) RZ_PRINTF_CHECK(1, 2);
 
 /* compile-time introspection helpers */
-#define CTO(y, z)    ((size_t) & ((y *)0)->z)
+#define CTO(y, z)    ((size_t)&((y *)0)->z)
 #define CTA(x, y, z) (x + CTO(y, z))
 #define CTI(x, y, z) (*((size_t *)(CTA(x, y, z))))
 #define CTS(x, y, z, t, v) \
@@ -664,7 +664,7 @@ static inline void rz_run_call10(void *fcn, void *arg1, void *arg2, void *arg3, 
 
 #ifndef container_of
 #ifdef _MSC_VER
-#define container_of(ptr, type, member) ((type *)((char *)(ptr)-offsetof(type, member)))
+#define container_of(ptr, type, member) ((type *)((char *)(ptr) - offsetof(type, member)))
 #else
 #define container_of(ptr, type, member) ((type *)((char *)(__typeof__(((type *)0)->member) *){ ptr } - offsetof(type, member)))
 #endif

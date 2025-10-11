@@ -30,21 +30,21 @@
 
 #define rz_fletcher_common_plugin_update(bits) \
 	static bool plugin_fletcher##bits##_update(void *context, const ut8 *data, ut64 size) { \
-		rz_return_val_if_fail(context &&data, false); \
+		rz_return_val_if_fail(context && data, false); \
 		rz_fletcher##bits##_update((RzFletcher##bits *)context, data, size); \
 		return true; \
 	}
 
 #define rz_fletcher_common_plugin_final(bits) \
 	static bool plugin_fletcher##bits##_final(void *context, ut8 *digest) { \
-		rz_return_val_if_fail(context &&digest, false); \
+		rz_return_val_if_fail(context && digest, false); \
 		rz_fletcher##bits##_final(digest, (RzFletcher##bits *)context); \
 		return true; \
 	}
 
 #define rz_fletcher_common_plugin_small_block(bits) \
 	static bool plugin_fletcher##bits##_small_block(const ut8 *data, ut64 size, ut8 **digest, RzHashSize *digest_size) { \
-		rz_return_val_if_fail(data &&digest, false); \
+		rz_return_val_if_fail(data && digest, false); \
 		ut8 *dgst = malloc(RZ_HASH_FLETCHER##bits##_DIGEST_SIZE); \
 		if (!dgst) { \
 			return false; \

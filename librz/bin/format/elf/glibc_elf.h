@@ -517,7 +517,7 @@ typedef struct
 #define SHN_LORESERVE 0xff00 /* Start of reserved indices */
 #define SHN_LOPROC    0xff00 /* Start of processor-specific */
 #define SHN_BEFORE    0xff00 /* Order section before all others \
-				(Solaris).  */
+			     (Solaris).  */
 #define SHN_AFTER 0xff01 /* Order section after all others \
 			    (Solaris).  */
 #define SHN_HIPROC    0xff1f /* End of processor-specific */
@@ -584,7 +584,7 @@ typedef struct
 #define SHF_MASKOS     0x0ff00000 /* OS-specific.  */
 #define SHF_MASKPROC   0xf0000000 /* Processor-specific */
 #define SHF_ORDERED    (1 << 30) /* Special ordering requirement \
-				    (Solaris).  */
+				 (Solaris).  */
 #define SHF_EXCLUDE (1U << 31) /* Section is excluded unless \
 				  referenced or allocated (Solaris).*/
 
@@ -672,8 +672,8 @@ typedef struct
 /* How to extract and insert information held in the st_info field.  */
 
 #define ELF32_ST_BIND(val)        (((unsigned char)(val)) >> 4)
-#define ELF32_ST_TYPE(val)        ((val)&0xf)
-#define ELF32_ST_INFO(bind, type) (((bind) << 4) + ((type)&0xf))
+#define ELF32_ST_TYPE(val)        ((val) & 0xf)
+#define ELF32_ST_INFO(bind, type) (((bind) << 4) + ((type) & 0xf))
 
 /* Both Elf32_Sym and Elf64_Sym use the same one-byte st_info field.  */
 #define ELF64_ST_BIND(val)        ELF32_ST_BIND(val)
@@ -716,7 +716,7 @@ typedef struct
 
 /* How to extract and insert information held in the st_other field.  */
 
-#define ELF32_ST_VISIBILITY(o) ((o)&0x03)
+#define ELF32_ST_VISIBILITY(o) ((o) & 0x03)
 
 /* For ELF64 the definitions are the same.  */
 #define ELF64_ST_VISIBILITY(o) ELF32_ST_VISIBILITY(o)
@@ -765,11 +765,11 @@ typedef struct
 /* How to extract and insert information held in the r_info field.  */
 
 #define ELF32_R_SYM(val)        ((val) >> 8)
-#define ELF32_R_TYPE(val)       ((val)&0xff)
-#define ELF32_R_INFO(sym, type) (((sym) << 8) + ((type)&0xff))
+#define ELF32_R_TYPE(val)       ((val) & 0xff)
+#define ELF32_R_INFO(sym, type) (((sym) << 8) + ((type) & 0xff))
 
 #define ELF64_R_SYM(i)          ((i) >> 32)
-#define ELF64_R_TYPE(i)         ((i)&0xffffffff)
+#define ELF64_R_TYPE(i)         ((i) & 0xffffffff)
 #define ELF64_R_INFO(sym, type) ((((Elf64_Xword)(sym)) << 32) + (type))
 
 /* Program segment header.  */
@@ -840,7 +840,7 @@ typedef struct
 
 #define NT_PRSTATUS 1 /* Contains copy of prstatus struct */
 #define NT_PRFPREG  2 /* Contains copy of fpregset \
-			 struct.  */
+			struct.  */
 #define NT_FPREGSET   2 /* Contains copy of fpregset struct */
 #define NT_PRPSINFO   3 /* Contains copy of prpsinfo struct */
 #define NT_PRXREG     4 /* Contains copy of prxregset struct */
@@ -857,7 +857,7 @@ typedef struct
 #define NT_LWPSINFO   17 /* Contains copy of lwpinfo struct */
 #define NT_PRFPXREG   20 /* Contains copy of fprxregset struct */
 #define NT_SIGINFO    0x53494749 /* Contains copy of siginfo_t, \
-				    size might increase */
+				 size might increase */
 #define NT_FILE 0x46494c45 /* Contains information about mapped \
 			      files */
 #define NT_PRXFPREG    0x46e62b7f /* Contains copy of user_fxsr_struct */
@@ -895,11 +895,11 @@ typedef struct
 #define NT_S390_SYSTEM_CALL 0x307 /* s390 system call restart data */
 #define NT_S390_TDB         0x308 /* s390 transaction diagnostic block */
 #define NT_S390_VXRS_LOW    0x309 /* s390 vector registers 0-15 \
-				     upper half.  */
+				  upper half.  */
 #define NT_S390_VXRS_HIGH 0x30a /* s390 vector registers 16-31.  */
 #define NT_S390_GS_CB     0x30b /* s390 guarded storage registers.  */
 #define NT_S390_GS_BC     0x30c /* s390 guarded storage \
-				   broadcast control block.  */
+			       broadcast control block.  */
 #define NT_S390_RI_CB      0x30d /* s390 runtime instrumentation.  */
 #define NT_ARM_VFP         0x400 /* ARM VFP/NEON registers */
 #define NT_ARM_TLS         0x401 /* ARM TLS register */
@@ -907,7 +907,7 @@ typedef struct
 #define NT_ARM_HW_WATCH    0x403 /* ARM hardware watchpoint registers */
 #define NT_ARM_SYSTEM_CALL 0x404 /* ARM system call number */
 #define NT_ARM_SVE         0x405 /* ARM Scalable Vector Extension \
-				    registers */
+			    registers */
 #define NT_ARM_PAC_MASK 0x406 /* ARM pointer authentication \
 				 code masks.  */
 #define NT_ARM_PACA_KEYS 0x407 /* ARM pointer authentication \
@@ -1008,7 +1008,7 @@ typedef struct
 #define DT_MOVESZ         0x6ffffdfb
 #define DT_FEATURE_1      0x6ffffdfc /* Feature selection (DTF_*).  */
 #define DT_POSFLAG_1      0x6ffffdfd /* Flags for DT_* entries, effecting \
-					the following DT_* entry.  */
+				   the following DT_* entry.  */
 #define DT_SYMINSZ        0x6ffffdfe /* Size of syminfo table (in bytes) */
 #define DT_SYMINENT       0x6ffffdff /* Entry size of syminfo */
 #define DT_VALRNGHI       0x6ffffdff
@@ -1046,10 +1046,10 @@ typedef struct
 /* These were chosen by Sun.  */
 #define DT_FLAGS_1 0x6ffffffb /* State flags, see DF_1_* below.  */
 #define DT_VERDEF  0x6ffffffc /* Address of version definition \
-				 table */
+				table */
 #define DT_VERDEFNUM 0x6ffffffd /* Number of version definitions */
 #define DT_VERNEED   0x6ffffffe /* Address of table with needed \
-				   versions */
+				 versions */
 #define DT_VERNEEDNUM         0x6fffffff /* Number of needed versions */
 #define DT_VERSIONTAGIDX(tag) (DT_VERNEEDNUM - (tag)) /* Reverse order! */
 #define DT_VERSIONTAGNUM      16
@@ -1275,7 +1275,7 @@ typedef struct
 /* Some more special a_type values describing the hardware.  */
 #define AT_PLATFORM 15 /* String identifying platform.  */
 #define AT_HWCAP    16 /* Machine-dependent hints about \
-			  processor capabilities.  */
+		       processor capabilities.  */
 
 /* This entry gives some information about the FPU initialization
    performed by the kernel.  */
@@ -1525,7 +1525,7 @@ typedef struct
 #define R_68K_TLS_IE16  35 /* 16 bit GOT offset for IE */
 #define R_68K_TLS_IE8   36 /* 8 bit GOT offset for IE */
 #define R_68K_TLS_LE32  37 /* 32 bit offset relative to \
-			      static TLS block */
+			     static TLS block */
 #define R_68K_TLS_LE16 38 /* 16 bit offset relative to \
 			     static TLS block */
 #define R_68K_TLS_LE8 39 /* 8 bit offset relative to \
@@ -2860,7 +2860,7 @@ enum {
 #define STO_PPC64_LOCAL_BIT  5
 #define STO_PPC64_LOCAL_MASK (7 << STO_PPC64_LOCAL_BIT)
 #define PPC64_LOCAL_ENTRY_OFFSET(other) \
-	(((1 << (((other)&STO_PPC64_LOCAL_MASK) >> STO_PPC64_LOCAL_BIT)) >> 2) << 2)
+	(((1 << (((other) & STO_PPC64_LOCAL_MASK) >> STO_PPC64_LOCAL_BIT)) >> 2) << 2)
 
 /* ARM specific declarations */
 
@@ -2892,7 +2892,7 @@ enum {
 #define EF_ARM_BE8 0x00800000
 #define EF_ARM_LE8 0x00400000
 
-#define EF_ARM_EABI_VERSION(flags) ((flags)&EF_ARM_EABIMASK)
+#define EF_ARM_EABI_VERSION(flags) ((flags) & EF_ARM_EABIMASK)
 #define EF_ARM_EABI_UNKNOWN        0x00000000
 #define EF_ARM_EABI_VER1           0x01000000
 #define EF_ARM_EABI_VER2           0x02000000
@@ -2907,7 +2907,7 @@ enum {
 /* ARM-specific values for sh_flags */
 #define SHF_ARM_ENTRYSECT 0x10000000 /* Section contains an entry point */
 #define SHF_ARM_COMDEF    0x80000000 /* Section may be multiply defined \
-					in the input to a link step.  */
+				     in the input to a link step.  */
 
 /* ARM-specific program header flags */
 #define PF_ARM_SB 0x10000000 /* Segment contains the location \
@@ -3085,7 +3085,7 @@ enum {
 #define R_ARM_SBREL32  9
 #define R_ARM_THM_PC22 10 /* PC relative 24 bit (Thumb32 BL).  */
 #define R_ARM_THM_PC8  11 /* PC relative & 0x3FC \
-			      (Thumb16 LDR, ADD, ADR).  */
+			     (Thumb16 LDR, ADD, ADR).  */
 #define R_ARM_AMP_VCALL9   12
 #define R_ARM_SWI24        13 /* Obsolete static relocation.  */
 #define R_ARM_TLS_DESC     13 /* Dynamic relocation.  */
@@ -3105,7 +3105,7 @@ enum {
 #define R_ARM_PLT32        27 /* Deprecated, 32 bit PLT address.  */
 #define R_ARM_CALL         28 /* PC relative 24 bit (BL, BLX).  */
 #define R_ARM_JUMP24       29 /* PC relative 24 bit \
-				  (B, BL<cond>).  */
+			    (B, BL<cond>).  */
 #define R_ARM_THM_JUMP24      30 /* PC relative 24 bit (Thumb32 B.W).  */
 #define R_ARM_BASE_ABS        31 /* Adjust by program base.  */
 #define R_ARM_ALU_PCREL_7_0   32 /* Obsolete.  */
@@ -3125,7 +3125,7 @@ enum {
 #define R_ARM_MOVT_PREL       46 /* PC relative (MOVT).  */
 #define R_ARM_THM_MOVW_ABS_NC 47 /* Direct 16 bit (Thumb32 MOVW).  */
 #define R_ARM_THM_MOVT_ABS    48 /* Direct high 16 bit \
-				     (Thumb32 MOVT).  */
+				  (Thumb32 MOVT).  */
 #define R_ARM_THM_MOVW_PREL_NC 49 /* PC relative 16 bit \
 				      (Thumb32 MOVW).  */
 #define R_ARM_THM_MOVT_PREL 50 /* PC relative high 16 bit \
@@ -3148,7 +3148,7 @@ enum {
 #define R_ARM_LDR_PC_G1    62 /* PC relative (LDR,STR,LDRB,STRB).  */
 #define R_ARM_LDR_PC_G2    63 /* PC relative (LDR,STR,LDRB,STRB).  */
 #define R_ARM_LDRS_PC_G0   64 /* PC relative (STR{D,H}, \
-				  LDR{D,SB,H,SH}).  */
+				LDR{D,SB,H,SH}).  */
 #define R_ARM_LDRS_PC_G1 65 /* PC relative (STR{D,H}, \
 				LDR{D,SB,H,SH}).  */
 #define R_ARM_LDRS_PC_G2 66 /* PC relative (STR{D,H}, \
@@ -3162,7 +3162,7 @@ enum {
 #define R_ARM_ALU_SB_G1    73 /* Program base relative (ADD,SUB).  */
 #define R_ARM_ALU_SB_G2    74 /* Program base relative (ADD,SUB).  */
 #define R_ARM_LDR_SB_G0    75 /* Program base relative (LDR, \
-			  STR, LDRB, STRB).  */
+		       STR, LDRB, STRB).  */
 #define R_ARM_LDR_SB_G1 76 /* Program base relative \
 		       (LDR, STR, LDRB, STRB).  */
 #define R_ARM_LDR_SB_G2 77 /* Program base relative \
@@ -3196,7 +3196,7 @@ enum {
 #define R_ARM_GOT_ABS      95 /* GOT entry.  */
 #define R_ARM_GOT_PREL     96 /* PC relative GOT entry.  */
 #define R_ARM_GOT_BREL12   97 /* GOT entry relative to GOT \
-				  origin (LDR).  */
+				origin (LDR).  */
 #define R_ARM_GOTOFF12 98 /* 12 bit, GOT entry relative \
 			      to GOT origin (LDR, STR).  */
 #define R_ARM_GOTRELAX      99
@@ -3204,7 +3204,7 @@ enum {
 #define R_ARM_GNU_VTINHERIT 101
 #define R_ARM_THM_PC11      102 /* PC relative & 0xFFE (Thumb16 B).  */
 #define R_ARM_THM_PC9       103 /* PC relative & 0x1FE \
-				    (Thumb16 B/B<cond>).  */
+			      (Thumb16 B/B<cond>).  */
 #define R_ARM_TLS_GD32 104 /* PC-rel 32 bit for global dynamic \
 			       thread local data */
 #define R_ARM_TLS_LDM32 105 /* PC-rel 32 bit for local dynamic \
@@ -3226,7 +3226,7 @@ enum {
 #define R_ARM_THM_TLS_DESCSEQ16 129
 #define R_ARM_THM_TLS_DESCSEQ32 130
 #define R_ARM_THM_GOT_BREL12    131 /* GOT entry relative to GOT \
-					origin, 12 bit (Thumb32 LDR).  */
+				     origin, 12 bit (Thumb32 LDR).  */
 #define R_ARM_IRELATIVE 160
 #define R_ARM_RXPC25    249
 #define R_ARM_RSBREL32  250
@@ -3573,7 +3573,7 @@ enum {
 #define R_390_TLS_DTPMOD 54 /* ID of module containing symbol.  */
 #define R_390_TLS_DTPOFF 55 /* Offset in TLS block.	 */
 #define R_390_TLS_TPOFF  56 /* Negated offset in static TLS \
-			block.  */
+		       block.  */
 #define R_390_20          57 /* Direct 20 bit.  */
 #define R_390_GOT20       58 /* 20 bit GOT offset.  */
 #define R_390_GOTPLT20    59 /* 20 bit offset to jump slot.  */
@@ -3685,7 +3685,7 @@ enum {
 #define R_MN10300_TLS_LD        25 /* 32-bit offset for local dynamic.  */
 #define R_MN10300_TLS_LDO       26 /* Module-relative offset.  */
 #define R_MN10300_TLS_GOTIE     27 /* GOT offset for static TLS block \
-				       offset.  */
+				   offset.  */
 #define R_MN10300_TLS_IE 28 /* GOT address for static TLS block \
 				offset.  */
 #define R_MN10300_TLS_LE 29 /* Offset relative to static TLS \
@@ -3694,7 +3694,7 @@ enum {
 #define R_MN10300_TLS_DTPOFF 31 /* Offset in module TLS block.  */
 #define R_MN10300_TLS_TPOFF  32 /* Offset in static TLS block.  */
 #define R_MN10300_SYM_DIFF   33 /* Adjustment for next reloc as needed \
-				    by linker relaxation.  */
+				  by linker relaxation.  */
 #define R_MN10300_ALIGN 34 /* Alignment requirement for linker \
 		       relaxation.  */
 #define R_MN10300_NUM 35
@@ -3812,7 +3812,7 @@ enum {
 #define R_NIOS2_CJMP          19 /* Conditional branch.  */
 #define R_NIOS2_CALLR         20 /* Indirect call through register.  */
 #define R_NIOS2_ALIGN         21 /* Alignment requirement for \
-				     linker relaxation.  */
+			     linker relaxation.  */
 #define R_NIOS2_GOT16       22 /* 16 bit GOT entry.  */
 #define R_NIOS2_CALL16      23 /* 16 bit GOT entry for function.  */
 #define R_NIOS2_GOTOFF_LO   24 /* %lo of offset to GOT pointer.  */
