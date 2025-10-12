@@ -614,25 +614,25 @@ Examples:
   rz-sign -o libc.sig libc.so.6
 
 Usage: rz-test [-qvVnL] [-j threads] [test file/dir | @test-type]
- -h           Show this help
- -v           Show version information
- -q           Quiet mode
- -V           Be verbose
- -i           Interactive mode
- -y           Accept all interactive changes
- -n           Do nothing (don't run any test, just load/parse them)
- -L           Log mode (better printing for CI, logfiles, etc.)
- -F [dir]     Run fuzz tests (open and default analysis) on all files in the given dir
- -j [threads] How many threads to use for running tests concurrently (default is 8)
- -r [rizin]   Path to rizin executable (default is rizin)
- -m [rz-asm]  Path to rz-asm executable (default is rz-asm)
- -f [file]    File to use for JSON tests (default is bins/elf/crackme0x00b)
- -C [dir]     Chdir before running rz-test (default follows test pathname/cwd)
- -t [seconds] Timeout per test (default is 960 seconds)
- -o [file]    Output test run information in JSON format to file
- -e [dir]     Exclude a particular directory while testing (this option can appear many times)
- -s [num]     Number of expected successful tests
- -x [num]     Number of expected failed tests
+ -h         Show this help
+ -v         Show version information
+ -q         Quiet mode
+ -V         Be verbose
+ -i         Interactive mode
+ -y         Accept all interactive changes
+ -n         Do nothing (don't run any test, just load/parse them)
+ -L         Log mode (better printing for CI, logfiles, etc.)
+ -F dir     Run fuzz tests (open and default analysis) on all files in the given dir
+ -j threads How many threads to use for running tests concurrently (default is 8)
+ -r rizin   Path to rizin executable (default is rizin)
+ -m rz-asm  Path to rz-asm executable (default is rz-asm)
+ -f file    File to use for JSON tests (default is bins/elf/crackme0x00b)
+ -C dir     Chdir before running rz-test (default follows test pathname/cwd)
+ -t seconds Timeout per test (default is 960 seconds)
+ -o file    Output test run information in JSON format to file
+ -e dir     Exclude a particular directory while testing (this option can appear many times)
+ -s num     Number of expected successful tests
+ -x num     Number of expected failed tests
 Supported test types: @json @unit @fuzz @cmds
 EOF
 RUN
