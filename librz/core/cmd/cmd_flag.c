@@ -881,12 +881,12 @@ RZ_IPI RzCmdStatus rz_flag_comment_handler(RzCore *core, int argc, const char **
 		}
 		return bool2status(flag_set_comment(item, argv[2]));
 	} else {
-		item = rz_flag_get_i(core->flags, rz_num_math(core->num, argv[1]));
-		if (item && item->comment) {
-			rz_cons_println(item->comment);
-		} else {
+		item = rz_flag_get(core->flags, argv[1]);
+		if (!item) {
 			RZ_LOG_ERROR("Cannot find the flag\n");
 			return RZ_CMD_STATUS_ERROR;
+		} else if (item->comment) {
+			rz_cons_println(item->comment);
 		}
 	}
 	return RZ_CMD_STATUS_OK;

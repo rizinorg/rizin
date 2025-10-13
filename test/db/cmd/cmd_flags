@@ -740,3 +740,15 @@ ERROR: Wrong number of arguments passed to `fO`, see its help with `fO?`
 ERROR: Usage: fO <glob>   # Flag as ordinals (sym.* func.* method.*)
 EOF
 RUN
+
+NAME=fC for overlapping flags
+FILE==
+CMDS=<<EOF
+f foo 0x10 first
+f+ bar 0x20 second
+fC foo
+EOF
+EXPECT=<<EOF
+first
+EOF
+RUN
