@@ -3134,7 +3134,7 @@ enum {
 #define R_ARM_GNU_VTINHERIT      101
 #define R_ARM_THM_JUMP11         102 /* PC relative & 0xFFE (Thumb16 B).  */
 #define R_ARM_THM_JUMP8          103 /* PC relative & 0x1FE \
-		      (Thumb16 B/B<cond>).  */
+	     (Thumb16 B/B<cond>).  */
 #define R_ARM_TLS_GD32          104 /* PC-rel 32 bit for global dynamic thread local data */
 #define R_ARM_TLS_LDM32         105 /* PC-rel 32 bit for local dynamic thread local data */
 #define R_ARM_TLS_LDO32         106 /* 32 bit offset relative to TLS block */
@@ -3148,7 +3148,7 @@ enum {
 #define R_ARM_THM_TLS_DESCSEQ16 129
 #define R_ARM_THM_TLS_DESCSEQ32 130
 #define R_ARM_THM_GOT_BREL12    131 /* GOT entry relative to GOT origin, 12 bit (Thumb32 LDR).  */
-define R_ARM_THM_ALU_ABS_G0_NC  132
+#define R_ARM_THM_ALU_ABS_G0_NC 132
 #define R_ARM_THM_ALU_ABS_G1_NC 133
 #define R_ARM_THM_ALU_ABS_G2_NC 134
 #define R_ARM_THM_ALU_ABS_G3    135
@@ -4463,6 +4463,6 @@ ARM32 relocations:
 #define R_RX_OPromtop  0x95
 #define R_RX_OPramtop  0x96
 
-	__END_DECLS
+__END_DECLS
 
 #endif /* elf.h */
