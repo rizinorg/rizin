@@ -1555,6 +1555,7 @@ static bool check_token_coverage(RzAsmTokenString *toks) {
 			RZ_LOG_WARN("i = %" PFMT32d ", Part of asm string is not covered by a token."
 				    " Empty range between token[%s] %" PFMT32d ":%" PFMT32d " and token[%s] %" PFMT32d ":%" PFMT32d "\n",
 				i, token_str(prev), pi, pj, token_str(cur), ci, cj);
+			RZ_LOG_WARN("This can happen if two token patterns match the same characters and overlap.\n");
 			error = true;
 		}
 		i = cur->start + cur->len;

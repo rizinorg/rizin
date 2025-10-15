@@ -141,42 +141,81 @@ You can also add multiple patterns of the same type. Each of which is further up
 static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns() {
 	// ...
 
+#define TOKEN(_type, _pat) \
+	do { \
+		RzAsmTokenPattern *pat = RZ_NEW0(RzAsmTokenPattern); \
+		pat->type = RZ_ASM_TOKEN_##_type; \
+		pat->pattern = rz_str_dup(_pat); \
+		rz_pvector_push(pvec, pat); \
+	} while (0)
+
 	// Patterns get added here.
+
 	// Mnemonic pattern
-	RzAsmTokenPattern *pat = RZ_NEW0(RzAsmTokenPattern);
-	pat->type = RZ_ASM_TOKEN_MNEMONIC;
-	pat->pattern = strdup(
-		"^((while)|(inc)|(dec)|(trap)|(nop)|(invalid)|(loop))"
-	);
+	TOKEN(RZ_ASM_TOKEN_MNEMONIC, "^((while)|(inc)|(dec)|(trap)|(nop)|(invalid)|(loop))");
 	rz_pvector_push(pvec, pat);
 
 	// ptr pattern
-	pat = RZ_NEW0(RzAsmTokenPattern);
-	pat->type = RZ_ASM_TOKEN_REGISTER;
-	pat->pattern = strdup(
-		"(ptr)"
-	);
+	TOKEN(RZ_ASM_TOKEN_REGISTER, "(ptr)");
 	rz_pvector_push(pvec, pat);
 
-	// reference pattern
-	pat = RZ_NEW0(RzAsmTokenPattern);
-	pat->type = RZ_ASM_TOKEN_OPERATOR;
-	pat->pattern = strdup(
-		"(\\[)|(\\])" // Matches a single bracket
-	);
+	// Reference pattern
+	// Matches a single bracket
+	TOKEN(RZ_ASM_TOKEN_OPERATOR, "(\\[)|(\\])");
 	rz_pvector_push(pvec, pat);
 
 	// Separator pattern
-	pat = RZ_NEW0(RzAsmTokenPattern);
-	pat->type = RZ_ASM_TOKEN_SEPARATOR;
-	pat->pattern = strdup(
-		"([[:blank:]]+)"
-	);
+	TOKEN(RZ_ASM_TOKEN_SEPARATOR, "(\\s+)");
 	rz_pvector_push(pvec, pat);
 
 	return pvec;
 }
 ```
+
+> [!CAUTION]
+> Overlapping patterns are not allowed.
+> Thus, if a higher priority pattern matches first,
+> any other lower priority pattern matching a substring of it will be ignored.
+> This can lead to holes and parsing failure.
+>
+> Consider the string `mnem, op` and the following patterns:
+>
+> ```c
+> TOKEN(RZ_ASM_TOKEN_META, ",");
+> TOKEN(RZ_ASM_TOKEN_SEPARATOR, "[,\\s]+)");
+> TOKEN(RZ_ASM_TOKEN_MNEMONIC, "\\w+");
+> ```
+>
+> First, the `,` is matched with the `META` pattern.
+> Then the `SEPARATOR` pattern **would** match `, ` but it doesn't.
+> Because it overlaps with the previous `META` match it is ignored.
+> Lastly the letters are matched normally with the `MNEMONIC`.
+> Unfortunately, now the space ` ` is not covered by a token, and the tokenization step fails.
+> The default coloring will be applied instead.
+
+> [!TIP]
+> Test your patterns with a simple one-line command:
+>
+> ```bash
+> > rizin -a <ARCHITECTURE> -qc "wx <instruction bytes> ; pi 1" =
+> ```
+>
+> Example failure:
+>
+> ```
+> > rizin -a c166 -qc "wx 0d0b ; pi 1" =
+> WARNING: i = 11, Part of asm string is not covered by a token. Empty range between token[META] 5:11 and token[NUMBER] 12:22
+> WARNING: This can happen if two token patterns match the same characters and overlap.
+> WARNING: Parsing errors in asm str: jmpr cc_UC, 0x00000018
+> jmpr cc_UC, 0x00000018
+> ```
+>
+> Example success:
+>
+> ```
+> > rizin -a c166 -qc "wx 0d0b ; pi 1" =
+> jmpr cc_UC, 0x00000018
+> ```
 
 Now we can parse every disassembled asm string into tokens by passing it to `rz_asm_tokenize_asm_regex()`.
 The result should be assigned to `RzAsm.asm_toks`.
