@@ -213,6 +213,7 @@ RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *a) {
 	ht_up_free(a->ht_rop_semantics);
 	ht_sp_free(a->plugins);
 	rz_analysis_debug_info_free(a->debug_info);
+	ht_sp_free(a->ht_virtual_xrefs);
 	free(a->sdb_types_path);
 	free(a);
 	return NULL;
