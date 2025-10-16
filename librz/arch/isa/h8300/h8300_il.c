@@ -22,11 +22,11 @@
 #define UADDR(X)              UN(24, X)
 #define AS_ADDR(X)            UNSIGNED(24, X)
 
-static ut8 r16_index_from_r8_register(H8300Register reg) {
+static inline ut8 r16_index_from_r8_register(H8300Register reg) {
 	return (reg - H8300_REG8_BEGIN) % 8 + H8300_REG16_BEGIN;
 }
 
-static RzILOpPure *r8_op_i(ut8 index) {
+static inline RzILOpPure *r8_op_i(ut8 index) {
 	rz_return_val_if_fail(index >= H8300_R0H && index <= H8300_R7L, NULL);
 	ut8 i = r16_index_from_r8_register(index);
 	bool low = index > H8300_R7H;
@@ -34,7 +34,7 @@ static RzILOpPure *r8_op_i(ut8 index) {
 	return low ? UNSIGNED(8, x) : UNSIGNED(8, SHIFTR0(x, U8(8)));
 }
 
-static RzILOpEffect *r8_op_i_set(ut8 index, RzILOpPure *x) {
+static inline RzILOpEffect *r8_op_i_set(ut8 index, RzILOpPure *x) {
 	rz_return_val_if_fail(index >= H8300_R0H && index <= H8300_R7L, NULL);
 	ut8 i = r16_index_from_r8_register(index);
 	bool low = index > H8300_R7H;
@@ -42,41 +42,41 @@ static RzILOpEffect *r8_op_i_set(ut8 index, RzILOpPure *x) {
 		DEPOSIT16(VARG(h8300_get_register_name(i)), low ? U32(0) : U32(8), U32(8), x));
 }
 
-static RzILOpPure *r8_op(H8300Instruction *cmd, ut8 i) {
+static inline RzILOpPure *r8_op(H8300Instruction *cmd, ut8 i) {
 	T_OP_DECL(H8300_OP_R8, i);
 	return r8_op_i(op->reg);
 }
 
-static RzILOpEffect *r8_op_set(H8300Instruction *cmd, ut8 i, RzILOpPure *x) {
+static inline RzILOpEffect *r8_op_set(H8300Instruction *cmd, ut8 i, RzILOpPure *x) {
 	T_OP_DECL(H8300_OP_R8, i);
 	return r8_op_i_set(op->reg, x);
 }
 
-static RzILOpPure *r16_op_i(ut8 index) {
+static inline RzILOpPure *r16_op_i(ut8 index) {
 	rz_return_val_if_fail(index >= H8300_R0 && index <= H8300_E7, NULL);
 	return VARG(h8300_get_register_name(index));
 }
 
-static RzILOpEffect *r16_op_i_set(ut8 index, RzILOpPure *x) {
+static inline RzILOpEffect *r16_op_i_set(ut8 index, RzILOpPure *x) {
 	rz_return_val_if_fail(index >= H8300_R0 && index <= H8300_E7, NULL);
 	return SETG(h8300_get_register_name(index), x);
 }
 
-static RzILOpPure *r16_op(H8300Instruction *cmd, ut8 i) {
+static inline RzILOpPure *r16_op(H8300Instruction *cmd, ut8 i) {
 	T_OP_DECL(H8300_OP_R16, i);
 	return r16_op_i(op->reg);
 }
 
-static RzILOpEffect *r16_op_set(H8300Instruction *cmd, ut8 i, RzILOpPure *x) {
+static inline RzILOpEffect *r16_op_set(H8300Instruction *cmd, ut8 i, RzILOpPure *x) {
 	T_OP_DECL(H8300_OP_R16, i);
 	return r16_op_i_set(op->reg, x);
 }
 
-static ut8 r16_index_from_r32_register(H8300Register reg) {
+static inline ut8 r16_index_from_r32_register(H8300Register reg) {
 	return reg - H8300_REG32_BEGIN + H8300_REG16_BEGIN;
 }
 
-static RzILOpPure *r32_op_i(ut8 index) {
+static inline RzILOpPure *r32_op_i(ut8 index) {
 	rz_return_val_if_fail(index >= H8300_ER0 && index <= H8300_ER7, NULL);
 	index = r16_index_from_r32_register(index);
 	return APPEND(
@@ -84,7 +84,7 @@ static RzILOpPure *r32_op_i(ut8 index) {
 		VARG(h8300_get_register_name(index)));
 }
 
-static RzILOpEffect *r32_op_i_set(ut8 index, RzILOpPure *x) {
+static inline RzILOpEffect *r32_op_i_set(ut8 index, RzILOpPure *x) {
 	rz_return_val_if_fail(index >= H8300_ER0 && index <= H8300_ER7, NULL);
 	index = r16_index_from_r32_register(index);
 	return SEQ2(
@@ -92,51 +92,51 @@ static RzILOpEffect *r32_op_i_set(ut8 index, RzILOpPure *x) {
 		SETG(h8300_get_register_name(index), UNSIGNED(16, DUP(x))));
 }
 
-static RzILOpPure *r32_op(H8300Instruction *cmd, ut8 i) {
+static inline RzILOpPure *r32_op(H8300Instruction *cmd, ut8 i) {
 	T_OP_DECL(H8300_OP_R32, i);
 	return r32_op_i(op->reg);
 }
 
-static RzILOpEffect *r32_op_set(H8300Instruction *cmd, ut8 i, RzILOpPure *x) {
+static inline RzILOpEffect *r32_op_set(H8300Instruction *cmd, ut8 i, RzILOpPure *x) {
 	T_OP_DECL(H8300_OP_R32, i);
 	return r32_op_i_set(op->reg, x);
 }
 
-static RzILOpPure *rpostinc_op(H8300Instruction *cmd, ut8 i) {
+static inline RzILOpPure *rpostinc_op(H8300Instruction *cmd, ut8 i) {
 	T_OP_DECL(H8300_OP_RPOSTINC, i);
 	return cmd->cpu_type == CPU_H8300H ? r32_op_i(op->reg) : r16_op_i(op->reg);
 }
 
-static RzILOpEffect *rpostinc_op_inc(H8300Instruction *cmd, ut8 i, ut8 x) {
+static inline RzILOpEffect *rpostinc_op_inc(H8300Instruction *cmd, ut8 i, ut8 x) {
 	T_OP_DECL(H8300_OP_RPOSTINC, i);
 	return cmd->cpu_type == CPU_H8300H
 		? r32_op_i_set(op->reg, ADD(r32_op_i(op->reg), U32(x)))
 		: r16_op_i_set(op->reg, ADD(r16_op_i(op->reg), U16(x)));
 }
 
-static RzILOpPure *rpredec_op(H8300Instruction *cmd, ut8 i) {
+static inline RzILOpPure *rpredec_op(H8300Instruction *cmd, ut8 i) {
 	T_OP_DECL(H8300_OP_RPREDEC, i);
 	return cmd->cpu_type == CPU_H8300H ? r32_op_i(op->reg) : r16_op_i(op->reg);
 }
 
-static RzILOpEffect *rpredec_op_dec(H8300Instruction *cmd, ut8 i, ut8 x) {
+static inline RzILOpEffect *rpredec_op_dec(H8300Instruction *cmd, ut8 i, ut8 x) {
 	T_OP_DECL(H8300_OP_RPREDEC, i);
 	return cmd->cpu_type == CPU_H8300H
 		? r32_op_i_set(op->reg, SUB(r32_op_i(op->reg), U32(x)))
 		: r16_op_i_set(op->reg, SUB(r16_op_i(op->reg), U16(x)));
 }
 
-static RzILOpPure *ri_op(ut8 N, H8300Instruction *cmd, ut8 i) {
+static inline RzILOpPure *ri_op(ut8 N, H8300Instruction *cmd, ut8 i) {
 	T_OP_DECL(H8300_OP_RI, i);
 	return LOADW(N, AS_ADDR(INS_OPS(i).width == H8300Operand_32 ? r32_op_i(op->reg) : r16_op_i(op->reg)));
 }
 
-static RzILOpEffect *ri_op_set(H8300Instruction *cmd, ut8 i, RzILOpPure *x) {
+static inline RzILOpEffect *ri_op_set(H8300Instruction *cmd, ut8 i, RzILOpPure *x) {
 	T_OP_DECL(H8300_OP_RI, i);
 	return STOREW(AS_ADDR(INS_OPS(i).width == H8300Operand_32 ? r32_op_i(op->reg) : r16_op_i(op->reg)), x);
 }
 
-static RzILOpPure *rd_adr(H8300Instruction *cmd, ut8 i) {
+static inline RzILOpPure *rd_adr(H8300Instruction *cmd, ut8 i) {
 	T_OP_DECL(H8300_OP_RD, i);
 	switch (op->width) {
 	case H8300Operand_16: {
@@ -153,7 +153,7 @@ static RzILOpPure *rd_adr(H8300Instruction *cmd, ut8 i) {
 	}
 }
 
-static RzILOpPure *rd_op(ut8 N, H8300Instruction *cmd, ut8 i) {
+static inline RzILOpPure *rd_op(ut8 N, H8300Instruction *cmd, ut8 i) {
 	RzILOpPure *adr = rd_adr(cmd, i);
 	if (!adr) {
 		return NULL;
@@ -161,7 +161,7 @@ static RzILOpPure *rd_op(ut8 N, H8300Instruction *cmd, ut8 i) {
 	return LOADW(N, adr);
 }
 
-static RzILOpEffect *rd_op_set(H8300Instruction *cmd, ut8 i, RzILOpPure *x) {
+static inline RzILOpEffect *rd_op_set(H8300Instruction *cmd, ut8 i, RzILOpPure *x) {
 	RzILOpPure *adr = rd_adr(cmd, i);
 	if (!adr) {
 		return NULL;
@@ -169,23 +169,23 @@ static RzILOpEffect *rd_op_set(H8300Instruction *cmd, ut8 i, RzILOpPure *x) {
 	return STOREW(adr, x);
 }
 
-static RzILOpPure *abs_op(ut8 N, H8300Instruction *cmd, ut8 i) {
+static inline RzILOpPure *abs_op(ut8 N, H8300Instruction *cmd, ut8 i) {
 	T_OP_DECL(H8300_OP_ABS, i);
 	return LOADW(N, UADDR(op->imm));
 }
 
-static RzILOpEffect *abs_op_set(H8300Instruction *cmd, ut8 i, RzILOpPure *x) {
+static inline RzILOpEffect *abs_op_set(H8300Instruction *cmd, ut8 i, RzILOpPure *x) {
 	T_OP_DECL(H8300_OP_ABS, i);
 	return STOREW(UADDR(op->imm), x);
 }
 
-static RzILOpPure *pc_rel_op(H8300Instruction *cmd, ut8 i) {
+static inline RzILOpPure *pc_rel_op(H8300Instruction *cmd, ut8 i) {
 	T_OP_DECL(H8300_OP_PCREL, i);
 	st32 dst = (st32)cmd->pc + cmd->size + op->disp;
 	return UADDR(dst);
 }
 
-static RzILOpPure *imm_op(ut8 N, H8300Instruction *cmd, ut8 i) {
+static inline RzILOpPure *imm_op(ut8 N, H8300Instruction *cmd, ut8 i) {
 	T_OP_DECL(H8300_OP_IMM, i);
 	return UN(N, op->imm);
 }
@@ -219,7 +219,7 @@ X_OP_GET_IMPL(H8300_OP_MI8, UADDR, mi8);
 #define R32_X(I, X)   r32_op_set(cmd, (I), (X))
 #define R32_I_X(I, X) r32_op_i_set((INS_OPS(I).reg), (X))
 
-static RzILOpPure *rx_op_i(ut8 N, ut8 I) {
+static inline RzILOpPure *rx_op_i(ut8 N, ut8 I) {
 	switch (N) {
 	case 8: return r8_op_i(I);
 	case 16: return r16_op_i(I);
@@ -228,7 +228,7 @@ static RzILOpPure *rx_op_i(ut8 N, ut8 I) {
 	}
 }
 
-static RzILOpEffect *rx_op_i_set(ut8 N, ut8 I, RzILOpPure *x) {
+static inline RzILOpEffect *rx_op_i_set(ut8 N, ut8 I, RzILOpPure *x) {
 	switch (N) {
 	case 8: return r8_op_i_set(I, x);
 	case 16: return r16_op_i_set(I, x);
@@ -237,7 +237,7 @@ static RzILOpEffect *rx_op_i_set(ut8 N, ut8 I, RzILOpPure *x) {
 	}
 }
 
-static RzILOpPure *rx_op(H8300Instruction *cmd, ut8 N, ut8 I) {
+static inline RzILOpPure *rx_op(H8300Instruction *cmd, ut8 N, ut8 I) {
 	switch (N) {
 	case 8: return R8_OP(I);
 	case 16: return R16_OP(I);
@@ -246,7 +246,7 @@ static RzILOpPure *rx_op(H8300Instruction *cmd, ut8 N, ut8 I) {
 	}
 }
 
-static RzILOpEffect *rx_op_set(H8300Instruction *cmd, ut8 N, ut8 I, RzILOpPure *x) {
+static inline RzILOpEffect *rx_op_set(H8300Instruction *cmd, ut8 N, ut8 I, RzILOpPure *x) {
 	switch (N) {
 	case 8: return r8_op_set(cmd, I, x);
 	case 16: return r16_op_set(cmd, I, x);
@@ -258,32 +258,32 @@ static RzILOpEffect *rx_op_set(H8300Instruction *cmd, ut8 N, ut8 I, RzILOpPure *
 #define RX_OP(N, I)   rx_op(cmd, N, I)
 #define RX_X(N, I, X) rx_op_set(cmd, N, I, X)
 
-static ut8 sp_index_from_cpu_type(int cpu_type) {
+static inline ut8 sp_index_from_cpu_type(int cpu_type) {
 	return cpu_type == CPU_H8300H ? H8300H_SP : H8300_SP;
 }
 
-static ut8 sp_width_from_cpu_type(int cpu_type) {
+static inline ut8 sp_width_from_cpu_type(int cpu_type) {
 	return cpu_type == CPU_H8300H ? 32 : 16;
 }
 
-static RzILOpPure *sp_op(const H8300Instruction *cmd) {
+static inline RzILOpPure *sp_op(const H8300Instruction *cmd) {
 	return cmd->cpu_type == CPU_H8300H ? r32_op_i(H8300H_SP) : r16_op_i(H8300_SP);
 }
 
-static RzILOpPure *sp_op_as_adr(const H8300Instruction *cmd) {
+static inline RzILOpPure *sp_op_as_adr(const H8300Instruction *cmd) {
 	return AS_ADDR(sp_op(cmd));
 }
 
-static RzILOpEffect *sp_set(const H8300Instruction *cmd, RzILOpPure *x) {
+static inline RzILOpEffect *sp_set(const H8300Instruction *cmd, RzILOpPure *x) {
 	return STOREW(sp_op_as_adr(cmd), x);
 }
 
-static RzILOpEffect *sp_dec(const H8300Instruction *cmd, ut8 x) {
+static inline RzILOpEffect *sp_dec(const H8300Instruction *cmd, ut8 x) {
 	return rx_op_i_set(sp_width_from_cpu_type(cmd->cpu_type), sp_index_from_cpu_type(cmd->cpu_type),
 		SUB(sp_op(cmd), UN(sp_width_from_cpu_type(cmd->cpu_type), x)));
 }
 
-static RzILOpEffect *sp_inc(const H8300Instruction *cmd, ut8 x) {
+static inline RzILOpEffect *sp_inc(const H8300Instruction *cmd, ut8 x) {
 	return rx_op_i_set(sp_width_from_cpu_type(cmd->cpu_type), sp_index_from_cpu_type(cmd->cpu_type),
 		ADD(sp_op(cmd), UN(sp_width_from_cpu_type(cmd->cpu_type), x)));
 }
@@ -304,34 +304,34 @@ typedef enum {
 #define B_TO_16(x) BOOL_TO_BV(x, 16)
 #define B_TO_32(x) BOOL_TO_BV(x, 32)
 
-static RzILOpBool *ccr_val(CCR_BIT bit) {
+static inline RzILOpBool *ccr_val(CCR_BIT bit) {
 	return NON_ZERO(EXTRACT32(UNSIGNED(32, VARG("ccr")), U32(bit), U32(1)));
 }
 
-static RzILOpEffect *ccr_set(CCR_BIT bit, RzILOpBool *x) {
+static inline RzILOpEffect *ccr_set(CCR_BIT bit, RzILOpBool *x) {
 	return SETG("ccr", DEPOSIT8(VARG("ccr"), U32(bit), U32(1), B_TO_16(x)));
 }
 
-static RzILOpEffect *ccr_NZV(ut8 N, RzILOpBool *n, RzILOpBool *z, RzILOpBool *v) {
+static inline RzILOpEffect *ccr_NZV(ut8 N, RzILOpBool *n, RzILOpBool *z, RzILOpBool *v) {
 	return SEQ3(
 		ccr_set(CCR_N, n),
 		ccr_set(CCR_Z, z),
 		ccr_set(CCR_V, v));
 }
 
-static RzILOpEffect *ccr_xNZ(ut8 N, RzILOpPure *x) {
+static inline RzILOpEffect *ccr_xNZ(ut8 N, RzILOpPure *x) {
 	return SEQ2(
 		ccr_set(CCR_N, SLT(x, UN(N, 0))),
 		ccr_set(CCR_Z, IS_ZERO(DUP(x))));
 }
 
-static RzILOpEffect *ccr_xNZV(ut8 N, RzILOpPure *x, RzILOpBool *v) {
+static inline RzILOpEffect *ccr_xNZV(ut8 N, RzILOpPure *x, RzILOpBool *v) {
 	return SEQ2(
 		ccr_xNZ(N, x),
 		ccr_set(CCR_V, v));
 }
 
-static RzILOpEffect *ccr_xNZVC(ut8 N, RzILOpPure *x, RzILOpBool *v, RzILOpBool *c) {
+static inline RzILOpEffect *ccr_xNZVC(ut8 N, RzILOpPure *x, RzILOpBool *v, RzILOpBool *c) {
 	return SEQ2(
 		ccr_xNZV(N, x, v),
 		ccr_set(CCR_C, c));
@@ -339,7 +339,7 @@ static RzILOpEffect *ccr_xNZVC(ut8 N, RzILOpPure *x, RzILOpBool *v, RzILOpBool *
 
 #define ccr_xNZV0(N, X) ccr_xNZV(N, X, IL_FALSE)
 
-static RzILOpEffect *op_mov_b(H8300Instruction *cmd) {
+static inline RzILOpEffect *op_mov_b(H8300Instruction *cmd) {
 	switch (cmd->fmt) {
 	case H8300_INSN_FORMAT_R8R8:
 		return SEQ3(
@@ -376,7 +376,7 @@ static RzILOpEffect *op_mov_b(H8300Instruction *cmd) {
 	}
 }
 
-static RzILOpEffect *op_mov_w(H8300Instruction *cmd) {
+static inline RzILOpEffect *op_mov_w(H8300Instruction *cmd) {
 	switch (cmd->fmt) {
 	case H8300_INSN_FORMAT_R16R16:
 		return SEQ3(
@@ -422,7 +422,7 @@ static RzILOpEffect *op_mov_w(H8300Instruction *cmd) {
 	}
 }
 
-static RzILOpEffect *op_mov_l(H8300Instruction *cmd) {
+static inline RzILOpEffect *op_mov_l(H8300Instruction *cmd) {
 	switch (cmd->fmt) {
 	case H8300_INSN_FORMAT_R32R32:
 		return SEQ3(
@@ -473,7 +473,7 @@ static RzILOpEffect *op_mov_l(H8300Instruction *cmd) {
 #define ADD3(X, Y, Z) ADD(X, ADD(Y, Z))
 #define SUB3(X, Y, Z) SUB(X, ADD(Y, Z))
 
-static RzILOpEffect *ccr_add(RzILOpPure *a, RzILOpPure *b, RzILOpBool *c, ut8 n, ut8 carry_h, ut8 carry_c) {
+static inline RzILOpEffect *ccr_add(RzILOpPure *a, RzILOpPure *b, RzILOpBool *c, ut8 n, ut8 carry_h, ut8 carry_c) {
 	RzILOpPure *lown = ADD3(LOGAND(a, UN(n, (1ULL << (carry_h + 1)) - 1)),
 		LOGAND(b, UN(n, (1ULL << (carry_h + 1)) - 1)), BOOL_TO_BV(c, n));
 	RzILOpPure *H = NON_ZERO(LOGAND(lown, UN(n, 1ULL << (carry_h + 1))));
@@ -491,7 +491,7 @@ static RzILOpEffect *ccr_add(RzILOpPure *a, RzILOpPure *b, RzILOpBool *c, ut8 n,
 		ccr_set(CCR_V, V));
 }
 
-static RzILOpEffect *ccr_sub(RzILOpPure *a, RzILOpPure *b, RzILOpBool *c, ut8 n, ut8 carry_h, ut8 carry_c) {
+static inline RzILOpEffect *ccr_sub(RzILOpPure *a, RzILOpPure *b, RzILOpBool *c, ut8 n, ut8 carry_h, ut8 carry_c) {
 	RzILOpPure *lown = SUB3(LOGAND(a, UN(n, (1ULL << (carry_h + 1)) - 1)),
 		LOGAND(b, UN(n, (1ULL << (carry_h + 1)) - 1)), BOOL_TO_BV(c, n));
 	RzILOpPure *H = NON_ZERO(LOGAND(lown, UN(n, 1ULL << (carry_h + 1))));
@@ -516,7 +516,7 @@ static RzILOpEffect *ccr_sub(RzILOpPure *a, RzILOpPure *b, RzILOpBool *c, ut8 n,
 #define ccr_sub_w(A, B, C) ccr_sub(A, B, C, 16, 11, 15)
 #define ccr_sub_l(A, B, C) ccr_sub(A, B, C, 32, 27, 31)
 
-static RzILOpEffect *op_add_b(H8300Instruction *cmd) {
+static inline RzILOpEffect *op_add_b(H8300Instruction *cmd) {
 	switch (cmd->fmt) {
 	case H8300_INSN_FORMAT_R8R8:
 		return SEQ4(
@@ -534,7 +534,7 @@ static RzILOpEffect *op_add_b(H8300Instruction *cmd) {
 	}
 }
 
-static RzILOpEffect *op_add_w(H8300Instruction *cmd) {
+static inline RzILOpEffect *op_add_w(H8300Instruction *cmd) {
 	switch (cmd->fmt) {
 	case H8300_INSN_FORMAT_R16R16:
 		return SEQ4(
@@ -552,7 +552,7 @@ static RzILOpEffect *op_add_w(H8300Instruction *cmd) {
 	}
 }
 
-static RzILOpEffect *op_add_l(H8300Instruction *cmd) {
+static inline RzILOpEffect *op_add_l(H8300Instruction *cmd) {
 	switch (cmd->fmt) {
 	case H8300_INSN_FORMAT_R32R32:
 		return SEQ4(
@@ -570,7 +570,7 @@ static RzILOpEffect *op_add_l(H8300Instruction *cmd) {
 	}
 }
 
-static RzILOpEffect *op_adds(H8300Instruction *cmd) {
+static inline RzILOpEffect *op_adds(H8300Instruction *cmd) {
 	switch (cmd->fmt) {
 	case H8300_INSN_FORMAT_IMMR16:
 		return R16_X(1, ADD(IMM_OP(16, 0), R16_OP(1)));
@@ -580,7 +580,7 @@ static RzILOpEffect *op_adds(H8300Instruction *cmd) {
 	}
 }
 
-static RzILOpEffect *op_addx(H8300Instruction *cmd) {
+static inline RzILOpEffect *op_addx(H8300Instruction *cmd) {
 	RzILOpBool *C = ccr_val(CCR_C);
 	switch (cmd->fmt) {
 	case H8300_INSN_FORMAT_IMMR8:
@@ -605,7 +605,7 @@ static RzILOpEffect *op_addx(H8300Instruction *cmd) {
 	}
 }
 
-static RzILOpEffect *ccr_cmp(RzILOpPure *a, RzILOpPure *b, RzILOpBool *c, ut8 n, ut8 carry_h, ut8 carry_c) {
+static inline RzILOpEffect *ccr_cmp(RzILOpPure *a, RzILOpPure *b, RzILOpBool *c, ut8 n, ut8 carry_h, ut8 carry_c) {
 	RzILOpPure *lown = ADD3(LOGAND(a, UN(n, (1ULL << (carry_h + 1)) - 1)),
 		LOGAND(b, UN(n, (1ULL << (carry_h + 1)) - 1)), BOOL_TO_BV(c, n));
 	RzILOpPure *H = NON_ZERO(LOGAND(lown, UN(n, 1ULL << (carry_h + 1))));
@@ -631,7 +631,7 @@ typedef RzILOpPure *(*op2)(RzILOpPure *a, RzILOpPure *b);
 typedef RzILOpPure *(*op1)(RzILOpPure *a);
 typedef RzILOpEffect *(*setter)(H8300Instruction *, ut8, RzILOpPure *);
 
-static RzILOpEffect *op_logical2(H8300Instruction *cmd, RzILOpPure *a, RzILOpPure *b, op2 f, setter s, ut8 N) {
+static inline RzILOpEffect *op_logical2(H8300Instruction *cmd, RzILOpPure *a, RzILOpPure *b, op2 f, setter s, ut8 N) {
 	return SEQ3(
 		SETL("_res", f(a, b)),
 		s(cmd, 1, VARL("_res")),
@@ -653,14 +653,14 @@ op_logical2_formats_IMPL(8);
 op_logical2_formats_IMPL(16);
 op_logical2_formats_IMPL(32);
 
-static RzILOpEffect *op_logical1(H8300Instruction *cmd, RzILOpPure *a, op1 f, RzILOpEffect *ccr_setter, ut8 N) {
+static inline RzILOpEffect *op_logical1(H8300Instruction *cmd, RzILOpPure *a, op1 f, RzILOpEffect *ccr_setter, ut8 N) {
 	return SEQ3(
 		SETL("_res", f(a)),
 		ccr_setter,
 		RX_X(N, 0, VARL("_res")));
 }
 
-static RzILOpEffect *op_neg(H8300Instruction *cmd) {
+static inline RzILOpEffect *op_neg(H8300Instruction *cmd) {
 	switch (cmd->fmt) {
 	case H8300_INSN_FORMAT_R8:
 		// TODO: fix ccr_sub
@@ -673,7 +673,7 @@ static RzILOpEffect *op_neg(H8300Instruction *cmd) {
 	}
 }
 
-static RzILOpEffect *op_not(H8300Instruction *cmd) {
+static inline RzILOpEffect *op_not(H8300Instruction *cmd) {
 	switch (cmd->fmt) {
 	case H8300_INSN_FORMAT_R8:
 		return op_logical1(cmd, R8_OP(0), rz_il_op_new_log_not, ccr_xNZV0(8, VARL("_res")), 8);
@@ -685,7 +685,7 @@ static RzILOpEffect *op_not(H8300Instruction *cmd) {
 	}
 }
 
-static RzILOpEffect *op_logical_i8ccr(H8300Instruction *cmd, op2 f) {
+static inline RzILOpEffect *op_logical_i8ccr(H8300Instruction *cmd, op2 f) {
 	switch (cmd->fmt) {
 	case H8300_INSN_FORMAT_IMM:
 		return SETG("ccr", f(IMM8_OP(0), VARG("ccr")));
@@ -699,7 +699,7 @@ static RzILOpEffect *op_logical_i8ccr(H8300Instruction *cmd, op2 f) {
 #define IN_RANGE(X, L, H) AND(UGE(X, L), ULE(X, H))
 #define UNDEFINED8        U8(0)
 
-static RzILOpEffect *op_daa(H8300Instruction *cmd) {
+static inline RzILOpEffect *op_daa(H8300Instruction *cmd) {
 	RzILOpPure *ch = APPEND(BOOL_TO_BV(ccr_val(CCR_C), 1), BOOL_TO_BV(ccr_val(CCR_H), 1));
 	RzILOpPure *un = UNSIGNED(4, SHIFTR0(R8_OP(0), U8(4)));
 	RzILOpPure *ln = UNSIGNED(4, R8_OP(0));
@@ -773,7 +773,7 @@ static RzILOpEffect *op_daa(H8300Instruction *cmd) {
 		ccr_set(CCR_C, result_c));
 }
 
-static RzILOpEffect *op_das(H8300Instruction *cmd) {
+static inline RzILOpEffect *op_das(H8300Instruction *cmd) {
 	RzILOpPure *ch = APPEND(BOOL_TO_BV(ccr_val(CCR_C), 1), BOOL_TO_BV(ccr_val(CCR_H), 1));
 	RzILOpPure *un = UNSIGNED(4, SHIFTR0(R8_OP(0), U8(4)));
 	RzILOpPure *ln = UNSIGNED(4, R8_OP(0));
@@ -823,11 +823,11 @@ static RzILOpEffect *op_das(H8300Instruction *cmd) {
 		ccr_xNZ(8, VARL("result")));
 }
 
-static RzILOpEffect *op_Bcc(H8300Instruction *cmd, RzILOpPure *cnd) {
+static inline RzILOpEffect *op_Bcc(H8300Instruction *cmd, RzILOpPure *cnd) {
 	return BRANCH(cnd, JMP(PCREL_OP(0)), NOP());
 }
 
-static RzILOpEffect *op_divxu(H8300Instruction *cmd, ut8 N) {
+static inline RzILOpEffect *op_divxu(H8300Instruction *cmd, ut8 N) {
 	return SEQ4(
 		SETL("quotient", UNSIGNED(N, DIV(RX_OP(N * 2, 1), UNSIGNED(N * 2, RX_OP(N, 0))))),
 		SETL("remainder", UNSIGNED(N, MOD(RX_OP(N * 2, 1), UNSIGNED(N * 2, RX_OP(N, 0))))),
@@ -835,7 +835,7 @@ static RzILOpEffect *op_divxu(H8300Instruction *cmd, ut8 N) {
 		RX_X(N * 2, 1, APPEND(VARL("remainder"), VARL("quotient"))));
 }
 
-static RzILOpEffect *op_divxs(H8300Instruction *cmd, ut8 N) {
+static inline RzILOpEffect *op_divxs(H8300Instruction *cmd, ut8 N) {
 	return SEQ4(
 		SETL("quotient", SIGNED(N, SDIV(RX_OP(N * 2, 1), SIGNED(N * 2, RX_OP(N, 0))))),
 		SETL("remainder", SIGNED(N, SMOD(RX_OP(N * 2, 1), SIGNED(N * 2, RX_OP(N, 0))))),
@@ -843,15 +843,15 @@ static RzILOpEffect *op_divxs(H8300Instruction *cmd, ut8 N) {
 		RX_X(N * 2, 1, APPEND(VARL("remainder"), VARL("quotient"))));
 }
 
-static RzILOpEffect *op_mulxu(H8300Instruction *cmd, ut8 N) {
+static inline RzILOpEffect *op_mulxu(H8300Instruction *cmd, ut8 N) {
 	return RX_X(N * 2, 1, MUL(UNSIGNED(N * 2, RX_OP(N, 0)), LOGAND(RX_OP(N * 2, 1), UN(N * 2, (1 << N) - 1))));
 }
 
-static RzILOpEffect *op_mulxs(H8300Instruction *cmd, ut8 N) {
+static inline RzILOpEffect *op_mulxs(H8300Instruction *cmd, ut8 N) {
 	return RX_X(N * 2, 1, MUL(SIGNED(N * 2, RX_OP(N, 0)), LOGAND(RX_OP(N * 2, 1), UN(N * 2, (1 << N) - 1))));
 }
 
-static RzILOpEffect *op_eepmov(H8300Instruction *cmd, ut8 N) {
+static inline RzILOpEffect *op_eepmov(const H8300Instruction *cmd, ut8 N) {
 	const H8300Register _4 = N == 8 ? H8300_R4L : H8300_R4;
 	const H8300Register _5 = cmd->cpu_type == CPU_H8300H ? H8300_ER5 : H8300_R5;
 	const H8300Register _6 = cmd->cpu_type == CPU_H8300H ? H8300_ER6 : H8300_R6;
@@ -866,21 +866,21 @@ static RzILOpEffect *op_eepmov(H8300Instruction *cmd, ut8 N) {
 			rx_op_i_set(N, _4, SUB(rx_op_i(N, _4), UN(N, 1)))));
 }
 
-static RzILOpEffect *op_extu(H8300Instruction *cmd, ut8 N) {
+static inline RzILOpEffect *op_extu(H8300Instruction *cmd, ut8 N) {
 	return SEQ3(
 		SETL("val", LOGAND(RX_OP(N, 0), UN(N, (1 << N / 2) - 1))),
 		RX_X(N, 0, VARL("val")),
 		ccr_NZV(N, IL_FALSE, IS_ZERO(VARL("val")), IL_FALSE));
 }
 
-static RzILOpEffect *op_exts(H8300Instruction *cmd, ut8 N) {
+static inline RzILOpEffect *op_exts(H8300Instruction *cmd, ut8 N) {
 	return SEQ3(
 		SETL("val", UNSIGNED(N, SEXTRACT32(UNSIGNED(32, RX_OP(N, 0)), U32(N / 2), U32(N / 2)))),
 		RX_X(N, 0, VARL("val")),
 		ccr_xNZV0(N, VARL("val")));
 }
 
-static RzILOpEffect *op_rotl(H8300Instruction *cmd, ut8 N) {
+static inline RzILOpEffect *op_rotl(H8300Instruction *cmd, ut8 N) {
 	return SEQ3(
 		SETL("result", SHIFTL(MSB(RX_OP(N, 0)), RX_OP(N, 0), UN(N, 1))),
 		ccr_xNZVC(N, VARL("result"),
@@ -889,7 +889,7 @@ static RzILOpEffect *op_rotl(H8300Instruction *cmd, ut8 N) {
 		RX_X(N, 0, VARL("result")));
 }
 
-static RzILOpEffect *op_rotr(H8300Instruction *cmd, ut8 N) {
+static inline RzILOpEffect *op_rotr(H8300Instruction *cmd, ut8 N) {
 	return SEQ3(
 		SETL("result", SHIFTR(LSB(RX_OP(N, 0)), RX_OP(N, 0), UN(N, 1))),
 		ccr_xNZVC(N, VARL("result"),
@@ -898,7 +898,7 @@ static RzILOpEffect *op_rotr(H8300Instruction *cmd, ut8 N) {
 		RX_X(N, 0, VARL("result")));
 }
 
-static RzILOpEffect *op_rotxl(H8300Instruction *cmd, ut8 N) {
+static inline RzILOpEffect *op_rotxl(H8300Instruction *cmd, ut8 N) {
 	return SEQ3(
 		SETL("result", SHIFTL(ccr_val(CCR_C), RX_OP(N, 0), UN(N, 1))),
 		ccr_xNZVC(N, VARL("result"),
@@ -907,7 +907,7 @@ static RzILOpEffect *op_rotxl(H8300Instruction *cmd, ut8 N) {
 		RX_X(N, 0, VARL("result")));
 }
 
-static RzILOpEffect *op_rotxr(H8300Instruction *cmd, ut8 N) {
+static inline RzILOpEffect *op_rotxr(H8300Instruction *cmd, ut8 N) {
 	return SEQ3(
 		SETL("result", SHIFTR(ccr_val(CCR_C), RX_OP(N, 0), UN(N, 1))),
 		ccr_xNZVC(N, VARL("result"),
@@ -916,7 +916,7 @@ static RzILOpEffect *op_rotxr(H8300Instruction *cmd, ut8 N) {
 		RX_X(N, 0, VARL("result")));
 }
 
-static RzILOpEffect *op_shal(H8300Instruction *cmd, ut8 N) {
+static inline RzILOpEffect *op_shal(H8300Instruction *cmd, ut8 N) {
 	return SEQ3(
 		SETL("result", SHIFTL0(RX_OP(N, 0), UN(N, 1))),
 		ccr_xNZVC(N, VARL("result"),
@@ -925,7 +925,7 @@ static RzILOpEffect *op_shal(H8300Instruction *cmd, ut8 N) {
 		RX_X(N, 0, VARL("result")));
 }
 
-static RzILOpEffect *op_shar(H8300Instruction *cmd, ut8 N) {
+static inline RzILOpEffect *op_shar(H8300Instruction *cmd, ut8 N) {
 	return SEQ3(
 		SETL("result", SHIFTRA(RX_OP(N, 0), UN(N, 1))),
 		ccr_xNZVC(N, VARL("result"),
@@ -934,7 +934,7 @@ static RzILOpEffect *op_shar(H8300Instruction *cmd, ut8 N) {
 		RX_X(N, 0, VARL("result")));
 }
 
-static RzILOpEffect *op_shll(H8300Instruction *cmd, ut8 N) {
+static inline RzILOpEffect *op_shll(H8300Instruction *cmd, ut8 N) {
 	return SEQ3(
 		SETL("result", SHIFTL0(RX_OP(N, 0), UN(N, 1))),
 		ccr_xNZVC(N, VARL("result"),
@@ -943,7 +943,7 @@ static RzILOpEffect *op_shll(H8300Instruction *cmd, ut8 N) {
 		RX_X(N, 0, VARL("result")));
 }
 
-static RzILOpEffect *op_shlr(H8300Instruction *cmd, ut8 N) {
+static inline RzILOpEffect *op_shlr(H8300Instruction *cmd, ut8 N) {
 	return SEQ3(
 		SETL("result", SHIFTR0(RX_OP(N, 0), UN(N, 1))),
 		ccr_xNZVC(N, VARL("result"),
@@ -952,7 +952,7 @@ static RzILOpEffect *op_shlr(H8300Instruction *cmd, ut8 N) {
 		RX_X(N, 0, VARL("result")));
 }
 
-static RzILOpPure *vector_addr(H8300Instruction *cmd, ut8 x) {
+static inline RzILOpPure *vector_addr(H8300Instruction *cmd, ut8 x) {
 	// TODO: This is a temporary solution, distinguish between normal and advanced mode
 	switch (x) {
 	case 0: return UADDR(0x20);
@@ -963,7 +963,7 @@ static RzILOpPure *vector_addr(H8300Instruction *cmd, ut8 x) {
 	}
 }
 
-static RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Instruction *cmd) {
+static inline RzILOpEffect *aop(RzAnalysis *a, RzAnalysisOp *op, H8300Instruction *cmd) {
 	switch (cmd->id) {
 	case H8300_INSN_MOV_B: return op_mov_b(cmd);
 	case H8300_INSN_MOV_W: return op_mov_w(cmd);
