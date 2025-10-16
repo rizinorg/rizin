@@ -1913,10 +1913,23 @@ static void config_print_node(RzConfig *cfg, RzConfigNode *node, RzCmdStateOutpu
 		rz_cons_printf("e %s=%s\n", node->name, es);
 		free(es);
 		break;
-	case RZ_OUTPUT_MODE_STANDARD:
-		rz_cons_printf("%20s: %s\n", node->name,
-			node->desc ? node->desc : "");
+	case RZ_OUTPUT_MODE_STANDARD: {
+		char alphaChar = node->name[0];
+		const char *color;
+
+		switch (alphaChar % 6) {
+			case 0: color = Color_BWHITE; break;
+			case 1: color = Color_BGREEN; break;
+			case 2: color = Color_BYELLOW; break;
+			case 3: color = Color_BBLUE; break;
+			case 4: color = Color_BMAGENTA; break;
+			default: color = Color_BCYAN; break;
+		}
+
+		rz_cons_printf("%s%20s" Color_RESET ": " Color_CYAN "%s" Color_RESET "\n",
+			color, node->name, node->desc ? node->desc : "");
 		break;
+	}
 	case RZ_OUTPUT_MODE_STR_BUF:
 		rz_strbuf_appendf(state->d.sbuf, "%20s: %10s - %s\n", node->name,
 			rz_config_node_type(node),
