@@ -34,9 +34,9 @@
 // Based on Config and Line order choses the vertical line shape
 static inline const char *get_vertical_line(size_t idx, size_t len, bool scr_curvy, bool scr_utf8) {
 	if (scr_curvy && !idx) {
-		return RUNE_CURVE_CORNER_TL;
+		return RUNE_CURVE_CORNER_TL " ";
 	} else if (scr_curvy && (idx == len - 1)) {
-		return RUNE_CURVE_CORNER_BL;
+		return RUNE_CURVE_CORNER_BL " ";
 	} else if (scr_utf8) {
 		return RUNE_LINE_VERT " ";
 	}

@@ -141,7 +141,7 @@ FILE=--
 CMDS=e scr.utf8=true scr.utf8.curvy=true; w?
 EXPECT=<<EOF
 Usage: w[?]   # Write commands
-╭w <string>        # Write string
+╭ w <string>        # Write string
 │ wB[-]             # Set or unset bits with given value
 │ wv[1248]          # Write value of given size
 │ w0 <len>          # Write <len> bytes with value 0x00
@@ -161,7 +161,7 @@ Usage: w[?]   # Write commands
 │ wo<?>             # Write a block with a special operation
 │ wD[/]             # Write de Bruijn pattern
 │ wd <src> <len>    # Duplicate <len> bytes from <src> offset to current seek
-╰ws <string>       # Write 1 byte for length and then the string
+╰ ws <string>       # Write 1 byte for length and then the string
 
 Detailed help for w <string> is provided by w??.
 EOF
